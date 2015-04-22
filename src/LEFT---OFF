@@ -44,8 +44,6 @@ tooltips and event timers seem to be frelled
 
 object reordering frelled, strange bbox display offset, 
 
-key window not showing fields!!!
-
 clone a child.. NOT PUTTING CORRECTLY!!!! totally wrong matrix
 cloning, change original, not triggering bbox update in clone
 cloning, jump to object in offscreen page, switches pages, but bounding box wrong place
@@ -87,8 +85,6 @@ svg out, EquivalentObject doesn't play nice with defs.. only accessed once.. how
 	-> when equiv objects are composed of groups, what happens?
 
 SimpleColorAttribute() should have double rgbaf available, and various css3 stuff
-
-impositioneditor not remembering window position
 
 sigimp fail for multiple stacks with no folds!!
 
@@ -168,28 +164,11 @@ put rss/g+ links on all menu pages
 test:
   each window type: about palette view spread command text
     help: window pane does funky stuff
-  each export filter
-  make some test scripts for command line testing
   test in different window managers
+  DONE each export filter (via command line in new script in examples.. ignoring problems in eps)
+  DONE make some test scripts for command line testing
 make sure undo is experimental only
 
-
-filters:
-  need to test all exports from command line!!!  
-  DONE import vector should default to current page import 
-  DONE export window should default cursor position to end of file path
-image
-  DONE (via switch to pdf based) path hole bad, no engraver fill, page size appears wrong
-  DONE make trip to gs based on pdf, NOT on postscript
-DONE pdf: engraver fill exports black and offset
-svg
-  after in: nodes right on each other produce bad vectors
-  in hangs.. should NOT default to powerstroke.. the cache for complex stuff REALLY bogs down, creating NaN draws
-  in needs to account for viewBox
-  in for powerstroke
-  after in, does weird things with width node -> child objects not display correctly
-  DONE export needs implementation for options for mesh and powerstroke
-  DONE export needs specialized export config
 
 engraving tool: Engraving 
   freehand not being interpreted correctly
@@ -197,7 +176,6 @@ engraving tool: Engraving
   establish path needs better smoothness assignments
   trace once not working
   keys being caught in patch, not in child path
-  export doesn't work for: pdf:(done)exports black, and offset, nothing for (done)image, scribus, eps, ps
   test: bez cache needs updating when points are moved around
   test: dash cache needs updating when points are moved OR thickness changed
 
@@ -207,6 +185,7 @@ engraving tool: Engraving
   trace object needs to be in page context, not object context (or must be default option)
 
   ------0.096:------
+  export doesn't work for: nothing for scribus, eps, ps
   need option to export trace object in same position as the traced lines, so it can be further processed elsewhere
   instant global thickness adjust on orientation tool?
   always brings current object to front (normal refresh in place, and then interface draw on top).. should be very optional, as it blocks out white overlays
@@ -256,43 +235,6 @@ engraving tool: Engraving
   must implement mode based shortcuts in Laxkit
   stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
 
-  DONE select next/prev object is removing panel
-  DONE change dash/trace/other settings should trigger a remap of all groups using those settings
-  DONE offsetting the object screws up the path mouse overs and clicks
-  DONE bug: panel draws on top, but you can still click on page marker interface below
-  DONE mode switch must remove child interface
-  DONE change color for not currently selected group should map to the one clicked
-  DONE when flipping between objects, gives no indication that we are on a new object, like a thick outline
-  DONE dash caps on really thin gaps create incorrect overlaps -> wrong fill mode
-  DONE bug: engraver lines with 1 or 2 points FAIL BADLY load in problem?
-  DONE dup leaving empty group
-  DONE  i/o for dashes, traces
-  DONE bug: object ref, change original object, the trace is not updated
-  DONE bug: ref trace object loading not working.. must resolve on load in (done), identifier not showing
-  DONE brush outline should go off when over panel
-  DONE need to be able to load and save trace object and position
-  DONE should have minimum dash density control, like zero==50% 
-  DONE bug: it is possible to click on slider balls, but drag whole panel
-  DONE 'f' should center objects in resulting svg -> viewBox behavior!
-  DONE on canvas direction and spacing controller
-  DONE trace object should still be visible when no actual data
-  DONE when trace object management worked out, need to fully implement relevant bits in data->duplicate()
-  DONE should have group link so that distortion tools affect all those selected
-  DONE multiple burins for different point groups? (done vie group flipping)
-  DONE pointgroup i/o
-  DONE not exporting correct color
-  DONE move group up or down
-  DONE dup current group (part of new)
-  DONE spacingmap in GrowLines needs to use as object point as input, not s,t
-  DONE freehand should probably discard final 1/10 second of input which makes all lines terribly pointy on one end
-  DONE toggle on trace box to show/not show trace object (should be transparency slider)
-  DONE should be able to increase point sample resolution
-  DONE value image to trace to lines
-  DONE trying to draw paths over other objects is next to impossible. -> needed to set primary==1
-  DONE edit brush ramp
-  DONE twirl
-  DONE turbulence mode
-  DONE duplicate does not duplicate the line
 
 PathInterface:
   zero tips not working on mesh edit? with import test-engrave.laidout
@@ -354,67 +296,7 @@ PathInterface:
     if add points, show dotted line to indicate a new segment incoming
   finish new path/pathoperator/pathsubinterface/pathinterface structure 
 
-  DONE line caps are slightly rounded, they should either be rounded, butt, or zero caps for now
-  DONE finish implementing center and outline interpolation: first/last point mixup, not interpolating right, duping start+end
-  DONE bug: have non identity object trasform makes nodes display wrong, but scan works
-  DONE need command to reset offset
-  DONE need convert to straight lines (no bez controls)
-  DONE need convert to straight bezier lines
-  DONE add(done), close(done), open path(done), cut(done) needs to adjust weight nodes
-  DONE debug ConnectEndpoints
-  DONE debug reverse path effect on weight nodes
-  DONE displayer->drawFormattedPoints needs to work correctly with draw_thing_coordinates
-  DONE straight (non bez) line segments fools join mechanism
-  DONE creation of new weight node must grab approximate weight
-  DONE create 3 vertex path with 2 weight nodes, delete 3rd point, click on rotate part of second weight node.. crash!
-  DONE? (can't duplicate) delete single point -> crash!
-  DONE discontinuity in outline at point boundaries?
-  DONE displayer->drawFormattedPoints needs to be finalized
-  DONE curvemap needs wraparound mode for approximating widths on curved lines
-  DONE draggable width/offset/angle changer
-
-TreeSelector:
-  makeinwindow() doesn't account for columns
-  option to use markup for labels
-  spacing for column heads is NOT selecting for bounds
-  DONE objecttree printing columns TWICE
-
-layers palette
-  key controls for navigation within menu:
-    space/enter toggle open and closed submenu
-  edit colors not highlighting every other
-  move
-  rename in place
-  implement buttons
-  locked
-  visible
-  selectable
-
-
-cloner:
-  debug groupify
-  click on base cell, update viewport color box
-  save color hints of base cells with Tiling object
-  change color of boundary, and outline preview
-  1m and mg do not seem to work: need a final transform to apply, NOT repeatX/YDir().. those shift without rotate
-  select objects, wrap base cell around it
-  debug recursive
-  need rudimentary editor
-  need flag for ok for cell to shear, ok for cell to scale x/y independently, and have it apply as it should afterwards
-  need finishing tool
-  design interface for clone on path
-  implement circular interface
-  penrose/heesh/net clone interface
-  need progressive search when mouse over box
-
-  DONE need mass select page for all tiling types
-
-space cloning/duping doesn't work
  
-move impose-only attributes to newdoc/export dialog or otherwise somehow give access to all imposition stuff
-Convert impose-only to be based on feeding it an ExportConfig
-
-autorecover.. autosave every X minutes -> need to decide on autosave location and how many to build up, how to remove old
 
 
 
@@ -433,9 +315,35 @@ test:
   make some test scripts for command line testing
   test in different window managers
 
+save as should change save/import/export/current directory to that directory
+
+autorecover.. autosave every X minutes -> need to decide on autosave location and how many to build up, how to remove old
+
+TreeSelector:
+  makeinwindow() doesn't account for columns
+  option to use markup for labels
+  spacing for column heads is NOT selecting for bounds
+  DONE objecttree printing columns TWICE
+
+layers palette
+  key controls for navigation within menu:
+    space/enter toggle open and closed submenu
+  edit colors not highlighting every other
+  move
+  rename in place
+  implement buttons
+  locked
+  visible
+  selectable
+
 image filters:
   graphicsmagick
   gmic
+
+for purely command line execution, should be able to make totally not X dependent.
+
+maybe expand the page label system to have some kind of to-do markup.. this could be combined with preflight verifiers
+  or other search activities as work-in-progress annotations
 
 filters 0.096:
   need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
@@ -460,7 +368,16 @@ Scribus:
   scribus import: need to read page sizes from actual page attributes, as it may well be different than in document attributes
     -> this necessitates revamp of singles to use more than one paper type
   scribus out doesn't do gradients
+eps:
+  export seems to be rather broken
+  command line export file name defaults to "output#.eps"
 svg:
+  after in: nodes right on each other produce bad vectors
+  in hangs.. should NOT default to powerstroke.. the cache for complex stuff REALLY bogs down, creating NaN draws
+  in needs to account for viewBox
+  in for powerstroke
+  after in, does weird things with width node -> child objects not display correctly
+
   need in for style on paths
   in/out for meshes
   radial: transparent inner circle, patch edges
@@ -508,8 +425,6 @@ curves:
   curvemap needs brush ramp mode to show symmetric graph
   clip wrap render to graph rect
   brush ramp edit mode: incompatible with wrap? or just have editor move points symmetrically?
-  DONE Base CurveWindow on CurveInterface instead. the interface will be getting the actual work
-  DONE move CurveInfo to own file.
 
 lineedit:
   seems to be an occasional redo bug, reinserting in wrong position
@@ -521,6 +436,8 @@ lineedit:
 scribus plugin needs a proper dealing with temporary files
 
 need infrastructure to propagate and save tool settings 
+
+Convert impose-only to be based on feeding it an ExportConfig
 
 FileDialog2:
   bookmarks, have recent there
@@ -575,7 +492,6 @@ to be a decent editing platform, Laidout needs:
   guides
   clipping
   text
-  DONE need way to jump to any spread, not just next or prev
 
 General Laxkit Interfaces needs:
   stack of available interfaces
@@ -614,20 +530,6 @@ Spread Editor:
 	debug drag and drop
   create new document from spread view?
   hide should collapse into a single thing so you can arrange more simply, instead of still having to sift through many
-
-  DONE when rearranging pages, need to shift page contents according to margin area
-  DONE shortcut for select all with same markers+color
-  DONE should be able to hide groups of pages, since render speed of hundreds of pages is slow
-  DONE memory hole: ./laidout -n letter, do f3, quit. investigate Leaves obj imposition #721, doc is #750 -> spreadeditorviewport
-  DONE slide and swap needs to act with whole range
-  DONE control left button to toggle pages in and out of selection
-  DONE shift left button to select ranges
-  DONE integration of page label gui with spreadeditor, select pages, pop up the dialog?
-  DONE need page number overlay 
-  DONE insert blanks before or after
-  DONE update page label type to be color+shape, shape being circle, square, diamond, or triangle
-    DONE default colors: white, gray, dark gray, black, red, yellow
-
 
 Color sliders:
   maybe should have an "ok" button to get rid of floating box
@@ -717,6 +619,23 @@ cloning: convert to master: make a clone be the original..
   means swapping the actual master with the clone
   ..if an object is cloned, maybe just have them all be clones, and original becomes a remote "data block"
       to be dumped to file in a defs section? if all refs gone but one, then it takes place of clone?
+
+cloner:
+  debug groupify
+  click on base cell, update viewport color box
+  save color hints of base cells with Tiling object
+  change color of boundary, and outline preview
+  1m and mg do not seem to work: need a final transform to apply, NOT repeatX/YDir().. those shift without rotate
+  select objects, wrap base cell around it
+  debug recursive
+  need rudimentary editor
+  need flag for ok for cell to shear, ok for cell to scale x/y independently, and have it apply as it should afterwards
+  need finishing tool
+  design interface for clone on path
+  implement circular interface
+  penrose/heesh/net clone interface
+  need progressive search when mouse over box
+
 
 overlays should get first pick of input, BUT if another has a button lock, it shouldn't mouse move update
 
@@ -848,27 +767,6 @@ calculator
   how best to allow created object defs to be referenced as parameter, variable, or set types, it is a mess right now
   destructors
   show overloaded entries
-
-  DONE debug "return value"
-  DONE debug foreach
-  DONE debug "break;"
-  DONE debug class definitions
-  DONE implement GenericValue, to allow fully scripted values
-  DONE need "print" function
-  DONE show (variable) should show the objectdef for that variable
-  DONE debug if,while
-  DONE debug if {a=2, b=3} or {a:2, b:3} or {a:2; b:3}, then scan in hash instead of set
-  DONE 1/0 crashes
-  DONE assignment still off, need to be able to do a.x=3;
-  DONE debug function definitions
-  DONE skipBlock does not obey // and /**/ commenting
-  DONE a=(1,2); a.x crashes
-  DONE show Laidout.Affine should show all fields
-  DONE debug name lookup, assignment, etc
-  DONE debug things like "show Math.sin"  --> is looking in scope namespace, rather than entries
-  DONE allow // or /*comments*/ ?
-  DONE AddName seems to work unevenly
-  DONE change toCChar() and CChar() to int makeStr(char *&buffer,int &len, int oktoreallocate);
 
 
 gshell:
@@ -1371,3 +1269,114 @@ DONE mesh/patch controls:
 DONE export needs "batch" send, break into smaller segments 
 DONE image load relative paths not working on loading a document
 DONE image patch not activating image dialog popup
+DONE filters:
+  DONE need to test all exports from command line!!!  
+  DONE import vector should default to current page import 
+  DONE export window should default cursor position to end of file path
+DONE image
+  DONE (via switch to pdf based) path hole bad, no engraver fill, page size appears wrong
+  DONE make trip to gs based on pdf, NOT on postscript
+DONE pdf: engraver fill exports black and offset
+DONE svg:
+  DONE export needs implementation for options for mesh and powerstroke
+  DONE export needs specialized export config
+DONE move impose-only attributes to newdoc/export dialog or otherwise somehow give access to all imposition stuff
+DONE space cloning/duping doesn't work 
+DONE cloner: need mass select page for all tiling types
+DONE curves: Base CurveWindow on CurveInterface instead. the interface will be getting the actual work
+DONE curves: move CurveInfo to own file.
+DONE need way to jump to any spread, not just next or prev
+DONE spread editor:
+  DONE when rearranging pages, need to shift page contents according to margin area
+  DONE shortcut for select all with same markers+color
+  DONE should be able to hide groups of pages, since render speed of hundreds of pages is slow
+  DONE memory hole: ./laidout -n letter, do f3, quit. investigate Leaves obj imposition #721, doc is #750 -> spreadeditorviewport
+  DONE slide and swap needs to act with whole range
+  DONE control left button to toggle pages in and out of selection
+  DONE shift left button to select ranges
+  DONE integration of page label gui with spreadeditor, select pages, pop up the dialog?
+  DONE need page number overlay 
+  DONE insert blanks before or after
+  DONE update page label type to be color+shape, shape being circle, square, diamond, or triangle
+    DONE default colors: white, gray, dark gray, black, red, yellow
+DONE calculator:
+  DONE debug "return value"
+  DONE debug foreach
+  DONE debug "break;"
+  DONE debug class definitions
+  DONE implement GenericValue, to allow fully scripted values
+  DONE need "print" function
+  DONE show (variable) should show the objectdef for that variable
+  DONE debug if,while
+  DONE debug if {a=2, b=3} or {a:2, b:3} or {a:2; b:3}, then scan in hash instead of set
+  DONE 1/0 crashes
+  DONE assignment still off, need to be able to do a.x=3;
+  DONE debug function definitions
+  DONE skipBlock does not obey // and /**/ commenting
+  DONE a=(1,2); a.x crashes
+  DONE show Laidout.Affine should show all fields
+  DONE debug name lookup, assignment, etc
+  DONE debug things like "show Math.sin"  --> is looking in scope namespace, rather than entries
+  DONE allow // or /*comments*/ ?
+  DONE AddName seems to work unevenly
+  DONE change toCChar() and CChar() to int makeStr(char *&buffer,int &len, int oktoreallocate);
+DONE? key window not showing fields!!!  
+DONE impositioneditor not remembering window position
+DONE PathInterface:
+  DONE line caps are slightly rounded, they should either be rounded, butt, or zero caps for now
+  DONE finish implementing center and outline interpolation: first/last point mixup, not interpolating right, duping start+end
+  DONE bug: have non identity object trasform makes nodes display wrong, but scan works
+  DONE need command to reset offset
+  DONE need convert to straight lines (no bez controls)
+  DONE need convert to straight bezier lines
+  DONE add(done), close(done), open path(done), cut(done) needs to adjust weight nodes
+  DONE debug ConnectEndpoints
+  DONE debug reverse path effect on weight nodes
+  DONE displayer->drawFormattedPoints needs to work correctly with draw_thing_coordinates
+  DONE straight (non bez) line segments fools join mechanism
+  DONE creation of new weight node must grab approximate weight
+  DONE create 3 vertex path with 2 weight nodes, delete 3rd point, click on rotate part of second weight node.. crash!
+  DONE? (can't duplicate) delete single point -> crash!
+  DONE discontinuity in outline at point boundaries?
+  DONE displayer->drawFormattedPoints needs to be finalized
+  DONE curvemap needs wraparound mode for approximating widths on curved lines
+  DONE draggable width/offset/angle changer
+DONE engraving tool: Engraving 
+  DONE need export to pdf, image
+  DONE select next/prev object is removing panel
+  DONE change dash/trace/other settings should trigger a remap of all groups using those settings
+  DONE offsetting the object screws up the path mouse overs and clicks
+  DONE bug: panel draws on top, but you can still click on page marker interface below
+  DONE mode switch must remove child interface
+  DONE change color for not currently selected group should map to the one clicked
+  DONE when flipping between objects, gives no indication that we are on a new object, like a thick outline
+  DONE dash caps on really thin gaps create incorrect overlaps -> wrong fill mode
+  DONE bug: engraver lines with 1 or 2 points FAIL BADLY load in problem?
+  DONE dup leaving empty group
+  DONE  i/o for dashes, traces
+  DONE bug: object ref, change original object, the trace is not updated
+  DONE bug: ref trace object loading not working.. must resolve on load in (done), identifier not showing
+  DONE brush outline should go off when over panel
+  DONE need to be able to load and save trace object and position
+  DONE should have minimum dash density control, like zero==50% 
+  DONE bug: it is possible to click on slider balls, but drag whole panel
+  DONE 'f' should center objects in resulting svg -> viewBox behavior!
+  DONE on canvas direction and spacing controller
+  DONE trace object should still be visible when no actual data
+  DONE when trace object management worked out, need to fully implement relevant bits in data->duplicate()
+  DONE should have group link so that distortion tools affect all those selected
+  DONE multiple burins for different point groups? (done vie group flipping)
+  DONE pointgroup i/o
+  DONE not exporting correct color
+  DONE move group up or down
+  DONE dup current group (part of new)
+  DONE spacingmap in GrowLines needs to use as object point as input, not s,t
+  DONE freehand should probably discard final 1/10 second of input which makes all lines terribly pointy on one end
+  DONE toggle on trace box to show/not show trace object (should be transparency slider)
+  DONE should be able to increase point sample resolution
+  DONE value image to trace to lines
+  DONE trying to draw paths over other objects is next to impossible. -> needed to set primary==1
+  DONE edit brush ramp
+  DONE twirl
+  DONE turbulence mode
+  DONE duplicate does not duplicate the line

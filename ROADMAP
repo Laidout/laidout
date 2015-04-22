@@ -12,34 +12,40 @@ VERSION 0.095
 (done) engraver tool linear, radial, or circular line fills
 (done) engraver tool, implement dashes
 (done) allow editing meshes based on a path
-       layers (object tree) palette
 (done) PathInterface varying width lines, offsets, and different kinds of line joins (bevel, round, miter)
-       debug line outline cache
-       PathInterface subpaths for hole making should work: check exports
+(done) PathInterface subpaths for hole making should work: check exports (ignoring eps and ps for now)
 (done) Cache transforms to optimize ColorPatch/ImagePatchData point lookup
 (done) allow export even or odd
 (done) allow export in batches
-       test new export even/odd and batches for all exporters
 (done) Freehand drawing with tablet pressure support
 (done) Clickable page numbers to select markers
 (done) impose-only mode should allow access to all imposition types, not just signatures
 (done) Scribus import of doc with 2 page spreads on export imposes incorrect object positions
-       autosave for autorecover
-       Re-fix cut and paste from system clipboard
-       make window resize work in gnome, test in kde
 
 
 VERSION 0.096
 -------------
+       test new export even/odd and batches for all exporters
+       autosave for autorecover
+       Re-fix cut and paste from system clipboard
+       make window resize work in gnome, test in kde
+       debug line outline cache, especially for joins
+       layers (object tree) palette
+       Finish Implementing cairo renderer, make meshes finally render faster, plus general rendering niceness
        export option alternate each paper 180 deg
        export option, put out in reverse order
        export preview
+       Finish implementing double sided net impositions
+       allow inserting net impositions as foldouts in regular Signature Imposition stacks
+       Net imposition interactive unwrapper, via optional opengl Polyptych
+       Net imposition build net interface
+       option to specify alignment of different size signature stacks
+       Fix object bleeding across pages for signatures and nets
        Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
        engraver tool grow point mode
        engraver tool, resolution cut mode
        debug previous version!
        PathInterface extrapolate line join
-       Implement cairo renderer, make meshes finally render faster, plus general rendering niceness
        Scribus import should try to do something appropriate with page spreads >= 2 pages wide
        PDF in, at least as 1 image per page, for purposes of imposition
        Undo/Redo
@@ -50,14 +56,11 @@ VERSION 0.096
        graphical shell should also help find and set key shortcuts
        Signature editor: detect non staplable binding edge, show red rather than green
        color styles, so objects can refer to a named color, just change that named to change all
-       Net imposition interactive unwrapper, via optional opengl Polyptych
-       Net imposition build net interface
        Clean up project load/save internals and dialogs
        fix object transform handles for really small objects (handles should still be accessible)
        Clean up patch controls
        Scribus import should do something meaningful with original Scribus page bleed values
        Collect for out
-       Fix object bleeding across pages for signatures and nets
        double click on group should change selection area to group contents?
        Moving selected things in group contents does not update group bounds
        should not be able to select both group and group contents at same time

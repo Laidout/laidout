@@ -206,8 +206,15 @@ void SvgExportConfig::dump_out(FILE *f,int indent,int what,Laxkit::anObject *con
 	DocumentExportConfig::dump_out(f,indent,what,context);
 
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	fprintf(f,"%suse_mesh %s",spc,use_mesh?"yes":"no");
-	fprintf(f,"%suse_powerstroke %s",spc,use_powerstroke?"yes":"no");
+
+	if (what==-1) {
+		fprintf(f,"%suse_mesh %s          #whether to output meshes as svg2 meshes\n",spc,use_mesh?"yes":"no");
+		fprintf(f,"%suse_powerstroke %s  #whether to use Inkscape's powerstroke LPE with paths where appropriate\n",spc,use_powerstroke?"yes":"no");
+		return;
+	}
+
+	fprintf(f,"%suse_mesh %s\n",spc,use_mesh?"yes":"no");
+	fprintf(f,"%suse_powerstroke %s\n",spc,use_powerstroke?"yes":"no");
 }
 
 void SvgExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
