@@ -487,7 +487,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			return 2;
 		}
 		file=newstr(doc->saveas);
-		appendstr(file,".ps");
+		appendstr(file,".pdf");
 	} else file=newstr(filename);
 
 	f=open_file_for_writing(file,0,&log);
