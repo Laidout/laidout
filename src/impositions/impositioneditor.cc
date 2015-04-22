@@ -91,6 +91,8 @@ Laxkit::anXWindow *newImpositionEditor(Laxkit::anXWindow *parnt,const char *nnam
  * \brief A Laxkit::ViewerWindow that gets filled with stuff appropriate for signature editing.
  *
  * This creates the window with a SignatureInterface.
+ *
+ * Currently, imposearg is "in=infile out=outfile prefer=booklet width=(paper width) height=(paper height).
  */
 
 
@@ -184,12 +186,14 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 		//If non-laidout, then create new singles, and import
 		//add extra field for impose out
 
-		Attribute att;
 		DBG const char *in="",*out="";
 
-		const char *prefer=NULL;
+		Attribute att;
 		NameValueToAttribute(&att,imposearg,'=',',');
+
+		const char *prefer=NULL;
 		const char *name,*value;
+
 		for (int c=0; c<att.attributes.n; c++) {
 			name =att.attributes.e[c]->name;
 			value=att.attributes.e[c]->value;
@@ -223,10 +227,13 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 			} else if (!strcmp(name,"out")) {
 				makestr(imposeout,value);
 				DBG out=value;
+
 			} else if (!strcmp(name,"prefer")) {
 				prefer=value;
+
 			} else if (!strcmp(name,"width")) {
 				DoubleAttribute(value,&ww,NULL);
+
 			} else if (!strcmp(name,"height")) {
 				DoubleAttribute(value,&hh,NULL);
 			}
