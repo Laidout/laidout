@@ -253,35 +253,43 @@ FILE *open_file_for_reading(const char *file,ErrorLog *log)
 /*! \ingroup misc
  *
  * what is the type of file, for instance "Project" or "Document".	
- * Returns the opened file, or NULL if file cannot be opened for reading,
- * and log gets set to a proper error message if *log was not NULL,
+ * Returns the opened file, or NULL if file cannot be opened for reading.
+ * If warn_if_fial==true, log gets set to a proper error message if *log was not NULL,
  *
  * This assumes that the normal locale is in effect.
  *
  * The file pointer will point to the very beginning of the file on return.
  */
-FILE *open_laidout_file_to_read(const char *file,const char *what,ErrorLog *log)
+FILE *open_laidout_file_to_read(const char *file,const char *what,ErrorLog *log, bool warn_if_fail)
 {
 	FILE *f=open_file_for_reading(file,log);
-	if (!f) return NULL;
+	if (!f) {
+		if (log) {
+			log->AddMessage(_("Could not open file!"),ERROR_Fail);
+		}
+		return NULL;
+	}
 
 	 // make sure it is a laidout file!!
 	char first100[100];
 	int n=fread(first100,1,100,f);
 	first100[n-1]='\0';
 	int err=1;
+
 	if (!strncmp(first100,"#Laidout ",9)) {
 		char *version=first100+9;
 		int c=9,c2=0,c3;
 		while (c<n && isspace(*version) && *version!='\n') { version++; c++; }
 		while (c<n && !isspace(version[c2])) { c2++; c++; }
 		 //now the laidout version of the file is in version[0..c2)
+
 		c3=c2;
 		while (c<n && isspace(version[c3])) { c3++; c++; }
 		if (!strncmp(version+c3,what,strlen(what)) && isspace(version[c3+strlen(what)])) err=0;
 	}
+
 	if (err) {
-		if (log) {
+		if (log && warn_if_fail) {
 			char scratch[strlen(file)+strlen(what)+100];//****this definite 100 might cause problems!!
 			sprintf(scratch, _("%s does not appear to be a Laidout %s file."), file, what);
 			log->AddMessage(scratch,ERROR_Fail);
@@ -289,6 +297,7 @@ FILE *open_laidout_file_to_read(const char *file,const char *what,ErrorLog *log)
 		fclose(f);
 		return NULL;
 	}
+
 	rewind(f);
 	return f;
 }
