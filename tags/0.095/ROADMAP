@@ -1,0 +1,428 @@
+LAIDOUT ROADMAP
+---------------
+Things to do before the next release.
+This is a very rough draft of a roadmap, and is by no means the final word.
+
+
+
+VERSION 0.095
+-------------
+(done) be able to trace images in engraver tool
+(done) engraver tool point groups to trace from same object to different trace settings
+(done) engraver tool linear, radial, or circular line fills
+(done) engraver tool, implement dashes
+(done) allow editing meshes based on a path
+(done) PathInterface varying width lines, offsets, and different kinds of line joins (bevel, round, miter)
+(done) PathInterface subpaths for hole making should work: check exports (ignoring eps and ps for now)
+(done) Cache transforms to optimize ColorPatch/ImagePatchData point lookup
+(done) allow export even or odd
+(done) allow export in batches
+(done) Freehand drawing with tablet pressure support
+(done) Clickable page numbers to select markers
+(done) impose-only mode should allow access to all imposition types, not just signatures
+(done) Scribus import of doc with 2 page spreads on export imposes incorrect object positions
+
+
+VERSION 0.096
+-------------
+       test new export even/odd and batches for all exporters
+       autosave for autorecover
+       Re-fix cut and paste from system clipboard
+       make window resize work in gnome, test in kde
+       debug line outline cache, especially for joins
+       layers (object tree) palette
+       Finish Implementing cairo renderer, make meshes finally render faster, plus general rendering niceness
+       export option alternate each paper 180 deg
+       export option, put out in reverse order
+       export preview
+       Finish implementing double sided net impositions
+       allow inserting net impositions as foldouts in regular Signature Imposition stacks
+       Net imposition interactive unwrapper, via optional opengl Polyptych
+       Net imposition build net interface
+       option to specify alignment of different size signature stacks
+       Fix object bleeding across pages for signatures and nets
+       Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
+       engraver tool grow point mode
+       engraver tool, resolution cut mode
+       debug previous version!
+       PathInterface extrapolate line join
+       Scribus import should try to do something appropriate with page spreads >= 2 pages wide
+       PDF in, at least as 1 image per page, for purposes of imposition
+       Undo/Redo
+       Tool scripting
+       Custom line caps
+       Clean up symmetry clone interface, not easy to use currently
+       Soup up the color box so one can recall previous colors, and/or integration with palette window
+       graphical shell should also help find and set key shortcuts
+       Signature editor: detect non staplable binding edge, show red rather than green
+       color styles, so objects can refer to a named color, just change that named to change all
+       Clean up project load/save internals and dialogs
+       fix object transform handles for really small objects (handles should still be accessible)
+       Clean up patch controls
+       Scribus import should do something meaningful with original Scribus page bleed values
+       Collect for out
+       double click on group should change selection area to group contents?
+       Moving selected things in group contents does not update group bounds
+       should not be able to select both group and group contents at same time
+       Merge EpsData with normal images
+       Externally rendered objects, similar to Scribus render frames
+       Examine and improve ease of use of import images dialog, particularly for previewing
+       In image properties dialog, be able to select from possible potential previews
+       Tools should remember their settings
+       Object and resource tags
+       Masking, clip paths and/or softmask
+       Optimize pdf export to rescale to target dpi, and compress image data
+       Clone Pattern Builder
+       Custom alignments to parents, not just affine transform to parent
+       drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
+       drag-n-drop with system, like drag images into viewwindow from an external file browser
+
+
+
+VERSION 0.1 
+-----------
+       First and foremost, need copious testing by people who are not me.
+       Implement poor man's multi-contact interface for all appropriate interfaces
+       Text for god's sake!! It's been what, 10 years!? 
+       implement command line language tag
+       SpreadEditor: be able to eject a page into limbo, for creation threads, connect, then insert as a group
+       When importing from an image list file, should be able to say if and when to auto-make previews
+       Full internationalization support in window controls for input and output, including left, right. pango?
+       Basic infrastructure for most things (except text) should be in place.
+       Must be Stable, not merely "Stable"
+       Creep management controls
+       Construct an adequate command core, so that no X connection necessary for batch processing
+       Improve open from template to be able to use names (defined in a file), not just filenames
+       perhaps have image open window pane for main split window? drag and drop in images? that would be AWESOME
+       Change cursor or otherwise indicate what will happen as mouse moves around
+       Should have option to print/see or not print/see big, preview, or no images, per image
+       When adjusting things with the object tool, must have option to be temporarily a little transparent
+       All the pdf 1.4 group combine properties, like most importantly transparency
+       Configurable icon panel/menu system, make the button box actually function
+       Linear (including curvilinear) guides
+       Have imagepatch be a transform you can apply to any object
+       Allow objects to have any number of various kinds of transforms applied to it
+       Some sort of basic scripting infrastructure allowing easy addition of other scripting language plugins. Swig?
+       Plugin infrastructure should be in place: add objects, panes, commands, interfaces, resources, command-line-options?
+       allow for easy method for runaround area determination
+       Full color management implemented, with up to at least 16 bit per channel color
+       Resource manager/style edit window
+       a real PrintDialog that can configure itself based on printer info
+       non-hacky new document box that can retrieve printer capabilities, and adjust accordingly (ie grok ppds)
+       all things must define their styledefs
+       Low level tree editor, akin to the xml editor in inkscape
+       make it easy to add/remove/prioritize/replace import/export filters
+       support for the svg filters?
+       Provide some kind of visual feedback while doing lengthy operations
+       Improve and/or make new logo and splash image, and generate icons from a laidout doc
+       Somehow combine the ViewWindow and SpreadEditor to optionally allow the sort of 'infinite scroll'
+       Be able to interact with patches in a way reminiscent of Inkscape's node sculpting
+       Object and page templates, aka master pages
+       Pages with curved edges, to allow nets for shapes resulting from intersecting cylinders, for instance
+       Optional Midi controller usage
+       Able to select and transform nodes from different objects at the same time
+       Color channel density control, to not overdo CMYK mix, for instance
+       Allow accessing scribus image cache, or try to spin off a non project specific general image cache
+       Backwards compatibility with previous Laidout versions, without extra utilities, starting with 0.1
+       update french and spanish translations, if possible
+       Paper sizes should be translated strings
+
+
+VERSION 0.2
+-----------
+Full multi-contact, blob and pressure sensitive touch with tuio,touchlib(?). See www.nuigroup.com/touchlib for diy surfaces
+partial Laidout export
+Figure out best way to expose laidout functions to other program's scripters (ie inkscape and scribus)
+Bezier color patch freeform, rather than just grid.
+The other Postscript/Pdf gradients?: Triangle strip and Triangle Mesh
+Possibly allow pure function gradients, and redefining the functions for the other gradients..
+Maybe bez part of path interface should have segment move like inkscape
+Somehow be able to do simulated add-ins/foldouts from within any page of an imposition
+use any path as a kind of tab stop
+Numbered lists
+Mixed left/right text in text streams
+Tables
+Optional multi-key shortcuts?
+hanging punctuation
+Automatic table of contents
+Bibliography
+Footnotes
+auto track chapter/section
+Automatic, yet overrideable hyphenation
+layout inside anything that provides an 'area' and runaround facility.
+Finally decide on a real rendering backend: cairo? antigrain? antigrain/freetype/pango? graphite?
+GraphicsMagick/ImageMagick plugin or integration: benefits: a gazillion file formats, including EPS, and color profiles
+  Imlib chokes on really big image files, whereas this would not
+Would be nice to have tex/latex text and equation reader
+Would be nice to be able to handle metapost/metafun sort of things
+Would be nice to be able to handle lilypond sort of things
+Load/save various gimp/inkscape/etc things like gradients, palettes, and paths, perhaps extract from/to xcf
+Maybe have ability to break apart and use parts of gimp.xcf/inkscape.svg/scribus.sla, and put them back in?
+Stream/Story editor, maybe html export from streameditor?
+for plain postscript, there's bitmask, but no transparency. maybe optionally do simulation with dithered bitmask
+Cooperate with photo programs like KPhotoalbum, f-spot
+Make nets cooperate with Hugin/Enblend: plugin for panorama projection to/from nets?
+Work and turn/work and tumble
+openoffice files import
+Uniconverter support
+Super import place tool, including recursive placement
+fore edge printing
+fore edge sculpting
+Vx support?
+Verse support?
+Content version control?
+dbus?
+port to other os
+port to tablet, or subset functionality, like check out to tablet, work on lower res version, to later import to system with full resources
+Net/polyhedron layout 3-d previewer extra (maybe?? software BSP tree? opengl?) pdf 1.6 can embed rotatable 3-d
+Perhaps have animation support/mode, 1 page=1 frame or separate time slider and keyframes
+Akin to animation mode, have movie/sound objects available to html export, for instance?
+a FlexibleImposition for html/streamed output target?
+JDF,JTAPI support?
+Saveable undo stack(?) (see http://people.csail.mit.edu/sarasu/history/ for inspiration)
+
+
+VERSION 1.0
+-----------
+End world hunger
+Stabilize the biosphere without causing mass extinction
+Neutralize all nuclear waste
+Visit Pluto
+While i'm at it, I'd like a pony.
+
+
+
+            ---------------- 
+------------- OLD RELEASES -----------------
+            ----------------
+
+VERSION 0.094  --  released 20 February 2014!
+-------------
+(done) need partial Laidout import
+(done) should probably put laidout stuff in its own namespace, just to be polite
+(done) Rough draft of Custom alignments to parents, not just affine transform to parent
+(done) Cloning
+(done) Clone Tiler
+(done) Shortcuts editor dialog
+(done) Signature editor needs option to preview pages while folding
+(done) Signature editor: have variable num of pages per signature
+(done) Optimize pdf export to not duplicate images
+(done) SpreadEditor: insert blanks, delete pages
+(done) SpreadEditor: working with >100 image heavy pages does strange hangs, and starts really slow. Fix!
+(done) Color sliders, when double clicking on color box
+(done) implement scale pages to new imposition when reimposing
+(done) graphical shell, kind of a searching calculator and function caller
+(done) Laidout application icon for window manager paging seems to be broken
+(done) More robust scripting: loops, variables, functions, classes (still a bit buggy, but much has been done)
+
+
+VERSION 0.093  --  released 17 July 2012!
+-------------
+(done) On canvas flip controls
+(done) Align tool
+(done) Nup tool
+(done) Fully configurable shortcuts (editable through config file)
+(done) PathInterface must be improved
+
+
+VERSION 0.092  --  released 30 December 2011!
+-------------
+(done) Debug enough to hopefully not be too embarrassing
+(done) Actually implement path exporting. Make that path icon mean something this time!
+(done) At bare minimum, path interface use should not cause a seg fault
+(done) Fix broken paper tiling interface
+(done) Ability to add custom printer marks
+(done) Fix multi-object selection move when crossing page boundaries
+(done) Gui for modifying Page Labels
+(done) Scribus import must support master pages
+(done) Scribus import/export should support PageRange <-> Section conversion on import
+(done) Units, especially Allow changing units in rulers
+(done) Add proper .desktop and application icons installation
+(done) Use ~/.config/laidout, instead of ~/.laidout
+(done) Implement wavefront obj file format in/out for polyhedra
+(done) from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs or menus are up (maybe done)
+(done) from laxkit: clean up pop up menus which currently REALLY SUCK -> now deletes menus when clicking outside them
+
+
+VERSION 0.091  --  released 13 November 2010!
+------------
+(done) Well, maybe done: Debug enough to not be too embarrassing
+(done) impose-only mode, so as to allow easy plugin in access, to for instance do booklets inside scribus
+(done) Do a poor man's multi-contact touch screen interface with 2 mice and Xinput2: object tool only, so far
+(done) Images should maintain their aspect ratio by default when scaling
+(done) Scribus import must make sure linked text and linked table mystery data behave properly on export
+(done) Export PLAN files for podofoimpose
+(done) Generic fold and trim imposition
+(done) Be able to load imposition instances, a form of resource
+(done) Import images as flow/centered within page margins, not within page outline
+(done) Import images with alignment per page type into the page margin region
+(done) SpreadEditor: improvements: re-re-fix auto layout
+(done) SpreadEditor: load/ save many spread editor views with doc (including marker placement, other settings)
+(done) SpreadEditor: editor should allow changing working document
+(done) SpreadEditor: be able to change marks of many pages at once
+
+
+VERSION 0.09  --  released 21 February 2010!
+------------
+(done) Test, test, test! from fresh install to print out, make booklet, portrait, landscape
+(done) More libintl support, means finally adapting laxkit and laidout to utf8 internally, no small task!
+(done) Add, delete, and rename limbos
+(done) Load, save, add, delete paper groups
+(done) Finish implementing project based setup, particularly being able to save a project, not just load one   
+(done) Use the freedesktop recommended ~/.recently-used (on laxkit's todo also)
+(done) NetImposition needs to be able to import 3-d models such as from OFF files
+(done) Debug net impositions!!
+(done) Selected region out to image(s), regions optionally remembered (done via custom papergroups)
+(done) be able to reimpose a document from gui and command (from command mostly works)
+(done) Import(), Export(), NewDocument() commands
+(done) Make commands actually available in the command prompt window
+(done) command line option to pass in commands, like "import blah; reimpose box; export blah2"
+(done) plain text edit window for notes/scripts/whatever save with project or doc or its own file
+(done) Image and Color patches, gradients should allow transparent colors
+(done) When importing, need infrastructure to preserve mystery data as possible, to be later exported back out
+(done) Passepartout import
+(done-very, very partially, anyway) Svg import
+(done-very partially, anyway) Scribus import 
+(done) fix the memory hole (in papergroups?)
+(done) fix the other memory hole (triggered by importing images?), something in paperinterface, too
+(done) for some reason, podofobrowser doesn't like laidout produced pdfs, but they're fine with xpdf. huh!
+(done) control-q quits now rather than plain 'q'
+(done) from laxkit: Fix cut and paste from system clipboard
+(done) mouse releasing grab when crossing window control boundaries, makes color box unusable. address this!!!
+
+
+VERSION 0.08  --  released 15 September 2007!
+------------
+(done) Test, test, test! from fresh install to print out, make booklet, portrait, landscape
+(done) fix hard to trace crash in importimages dialog for shift select range of files
+(done, sort of, load but not save) Finish implementing project based setup, especially when loading
+(done) limbos should be selectable, and saved independently of windows
+(done) Basic libintl support, latin-1 translations only!
+(done) Paper tiler interface
+(done) Zoom handles screw up viewer transform aspect. Fix it!!
+(done) Fix linear/radial gradient editing when object is sheared
+(done) Dialogs should remember their placements
+(done) Standardize the import/export mechanism
+(done) PDF out
+(done) svg out
+(done) Export all/current paper/paper range, by singles, page layout, or paper layout to any filter
+(done) Export to various things from command line to allow batch processing
+(done) Export as a Scribus document
+(done) Print/export to images (via ghostscript)
+(done) Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
+         (fixed PageStyle mess up, now problem in viewwindow->curobj probably)
+
+
+VERSION 0.07  --  released 2 June 2007!
+------------
+(done) Have command line option to output to a file a pseudocode mockup of the file format
+(done) EPS out booklet landscape is broken, fix it!
+(done) Implement all preview config options, namely auto preview files over a certain size
+(done) Be able to search for existing previews in ~/.thumbnails/large and normal
+(done) Document selector button up in corner should work
+(done) Clean up image import dialog
+(done) Fix icons/makeimages.py!! "from xml.sax import saxexts" somehow stopped working
+(done) Eye dropper-ish color grabber, ideally grab any color anywhere on the screen
+(done, sort of) Make the select by dragging out a rectangle work
+(done) limbo objects should save with the document, instead of just disappearing!!!
+(done) Linear and radial Gradients should have vastly better interfaces
+(done) Image and Color patches should have vastly better interfaces
+(done, but only because I can't reproduce it any more for some mysterious reason) from laxkit: 
+           fix tooltips: seems laxkit accidentally allows multiple tooltips on rare occasions
+
+
+VERSION 0.06  -- released 25 April 2007!
+------------
+(done) parent/child nesting and interface for that: nesting, and grouping: layer trees
+(done) New document creation from templates
+(done) Be able to work with preview images more easily
+(done) Basic EPS import, would open up all kinds of down and dirty tricks using other programs:latex,lilypond,...
+
+
+VERSION 0.05  -- released 4 November 2006!
+------------
+(done) Build a features.html for the webpage
+(done) Be able to work with preview images, rather than hundreds of 15M tiffs
+(done) Show adjacent pages in Net Singles view (prelude to being able to unwrap shapes any way they can)
+(done) Use a ~/.laidout/0.05/laidoutrc
+(done) SpreadEditor: re-fix auto arranging
+(done) ObjectInterface for selecting and resizing multiple stuff
+(done) Import images from a list file
+(done) Make ImageInterface scaling suck less, and distinguish between no image and broken image
+(done) autoconfiscate or cmake or (this one)have simple "configure" thingy
+(done) Should be able to 'Open Document' without restarting Laidout!!
+(done) Improve internal icon management
+
+
+VERSION 0.04  -- released 4 September 2006!
+------------
+(done) Palette Window
+(done) RSS feed for website
+(done) A style manager, which is Not dependent on laxkit::refcounter, which is being removed
+(done) from laxkit: SplitWindow: swap window positions
+(done) Simple multiple image import by selecting one or more from a directory
+(done) Allow for window docking, floating, swapping panes, and temporary pane maximize
+(done) Page Ranges controlling page number labels
+(done) Make workspace bounds and popup panner save with the document
+(done) Fix page/spread flip by number
+
+
+VERSION 0.03  -- released 13 May 2006!
+-----------
+(done,but needs serious optimizing) Bezier patch with image for the color (this would be HOT for the gimp! a side project..)
+(done) if an image is selected, should be able to import an image to it
+(done) printing: produce masked images based on 50% threshhold of alpha channel of images
+(done) When loading files from the command line, should understand: 'file:///path/to/it'
+(done) Whoops! Change reference from LGPL to GPL in source code!! Crap!!
+(done) Load and save window configurations
+(done) EPS out to file###.eps by page not paper
+(done) Be able to print a paper range
+(done) an About window
+(done) command prompt window
+(done) Get rid of vertical white stripe toward bottom of the laidout webpage
+(done) SpreadEditor: drag to viewer to work on that page or spread
+(done) SpreadEditor: fix auto arranging
+(done) Make doc tree changes sanely update the various windows
+(done) Be able to DEselect all objects!!
+
+
+VERSION 0.02 - released 8 April 2006!
+------------
+(done) Rename Disposition to Imposition. Why oh why did I call it Disposition??
+(done) Insert some way to turn off debug info dumped to cout (done in a convoluted way, perhaps)
+(done) Linear Gradients edit, save, and printout
+(done) Circle Gradients edit, save, and printout
+(done) Color patches should work better than in 0.01
+(done) Overall windowing setup using Laxkit::SplitWindows, 
+(done) from laxkit: replacement of 'datastack' should be complete, do same here
+(done) Popup tool selector
+(done) ObjectInterface for resizing and shearing
+(done) Make Save/Save As dialog box suck less: 'test/1.doc' should mean cd test, save '1.doc'
+(done) Make it easy to make deb packages from source
+(done) extremely basic print dialog: print to file (ask on overwrite) or send via shell command
+(done) make the directory spot in viewer keep updated current directory
+(done) debug SpreadEditor thumbnail updating, and clip thumb to page
+(done) A help button to popup a list of all the otherwise unmentioned key shortcuts
+(done) Debug 'Delete Page'
+(done) Button for pageclips
+(done) Implement SpreadEditor Reset button
+
+
+VERSION 0.01 -- released 12 March 2006!
+------------
+(done) Clean up web page a bit.
+(done) TILING MUST WORK!!!!!!! for booklets also 
+(done) Get NetDisposition sort of going
+(done) Implement page clipping for display AND for printing..
+(done) Images should work well
+(done) Color patches should work enough to be getting on with
+(done) in the laxkit: menuselector,
+(done) tooltips IMPORTANT!!,
+(done) and set said tooltips for the mystery numbers in ViewWindow 
+(done) Add copyright notice to source files
+(done) Add and Delete Page buttons
+(done) Throw together a quick key-stroke cheat sheet
+
+
+
+$Id$

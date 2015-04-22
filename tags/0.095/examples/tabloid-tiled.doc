@@ -1,0 +1,133 @@
+#Laidout 0.09.1 Document
+saveas ./tabloid-tiled.doc
+imposition SignatureImposition
+  numpages 4
+  showwholecover no
+  signature
+    autoaddsheets yes
+    pattern
+      numhfolds 0
+      numvfolds 1
+      fold \
+        1 Right #0
+
+      binding Left
+      trimtop 0
+      trimbottom 0
+      trimleft 0
+      trimright 0
+      margintop 0
+      marginbottom 0
+      marginleft 0
+      marginright 0
+      up Top
+      positivex Right
+      positivey Top
+    partition
+      paper
+        name Tabloid
+        units in
+        width 11
+        height 17
+        dpi 360
+        orientation portrait
+      insettop 0
+      insetbottom 0
+      insetleft 0
+      insetright 0
+      tilegapx 0
+      tilegapy 0
+      tilex 1
+      tiley 3
+page 0
+  labeltype 0
+  layer 0
+    matrix 1 0 0 1 0 0
+    visible
+    prints
+    object 0 GradientData
+      matrix -0.9609698121 -0.2766532491 0.2766532491 -0.9609698121 3.915416779 2.985415505
+      p1 1.113404989
+      p2 1.113020339
+      r1 0
+      r2 1.487923419
+      radial
+      spot #0
+        t 0
+        rgba 0 0 65535 65535
+      spot #1
+        t 1.06150048
+        rgba 65535 0 0 65535
+page 1
+  labeltype 1
+  layer 0
+    matrix 1 0 0 1 0 0
+    visible
+    prints
+    object 0 GradientData
+      matrix 0.05372827258 0.9985555932 -0.9985555932 0.05372827258 2.780251991 2.294502614
+      p1 0.566215764
+      p2 1.02913786
+      r1 1
+      r2 0
+      radial
+      spot #0
+        t 0
+        rgba 0 0 65535 65535
+      spot #1
+        t 0.9738371281
+        rgba 65535 65535 0 65535
+page 2
+  labeltype 2
+  layer 0
+    matrix 1 0 0 1 0 0
+    visible
+    prints
+    object 0 GradientData
+      matrix 1 0 0 1 1.727337119 2.639157939
+      p1 0.6377337734
+      p2 1.185148515
+      r1 0
+      r2 1
+      radial
+      spot #0
+        t 0.104149262
+        rgba 0 0 65535 65535
+      spot #1
+        t 1
+        rgba 65535 40000 0 65535
+page 3
+  labeltype 3
+  layer 0
+    matrix 1 0 0 1 0 0
+    visible
+    prints
+    object 0 GradientData
+      matrix -0.4836673692 0.8752518929 -0.8752518929 -0.4836673692 3.523736044 1.313367759
+      p1 1.46935343
+      p2 1.48746537
+      r1 1
+      r2 0
+      radial
+      spot #0
+        t 0
+        rgba 0 65535 0 65535
+      spot #1
+        t 0.9949912868
+        rgba 4000 8000 0 65535
+limbo Limbo 1
+  matrix 1 0 0 1 0 0
+  id Limbo 1
+window
+  xywh 0 64 500 500
+  pane
+    xyxy 0 0 500 500
+    window ViewWindow
+      document ./tabloid-tiled.doc
+      layout Papers
+      spread 1
+      page 0
+      matrix 19.03743316 0 0 -19.03743316 120.3315938 339.6775191
+      xbounds -11 22
+      ybounds -8.5 25.5
+      limbo Limbo 1

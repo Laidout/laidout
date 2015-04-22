@@ -1,0 +1,29 @@
+Source: laidout
+Section: graphics
+Priority: optional
+Maintainer: Tom Lechner <tomlechner@users.sourceforge.net>
+Build-Depends: debhelper (>= 7.0.0), libx11-dev, libimlib2-dev, libpng12-dev, libfreetype6-dev, libxext-dev
+Standards-Version: 3.8.4
+Homepage: http://www.laidout.org
+
+Package: laidout
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Lay out pictures in cut and folded books.
+ Laidout is burgeoning desktop publishing software.
+ It can currently be used to lay out pictures, linear,
+ radial and mesh gradients into booklets.
+ These objects can be moved between pages by dragging them
+ to and from the scratchboard. The pages themselves can be
+ rearranged in a convenient page spread editor.
+ .
+ The whole shebang can be edited as single pages, or how the
+ pages appear when the book is assembled, or how the pages
+ appear on master printing pages according to whichever
+ imposition you use.
+ .
+ The definition of an imposition is broad enough to allow
+ pages that do not even have to be rectangular. You can
+ define and use a net that might correspond to some arcane
+ polyhedron, for instance a dodecahedron with 12 images
+ corresponding to the 12 months of the year.

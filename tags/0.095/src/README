@@ -1,0 +1,21 @@
+/*! \page dev Developing Laidout
+
+Here are a few notes about the general layout of the Laidout code.
+
+
+  \section dirs Directories	
+
+<pre>
+
+calculator    The guts of the internal interpreter
+api           Various functions and classes that can be used in the interpreter
+dataobjects   Data objects used in Laidout
+impositions   All things impositions
+interfaces    Extra interfaces
+filetypes     Export and import code
+printing      Code for printing, and postscript export
+extras        Extra plugins and such, not to be considered part of core functionality
+
+</pre>
+
+*/

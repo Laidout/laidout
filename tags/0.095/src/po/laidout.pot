@@ -1,0 +1,4037 @@
+# LAIDOUT TRANSLATION TEMPLATE
+# Copyright (C) 2011
+# This file is distributed under the same license as Laidout.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: laidout\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2011-12-18 18:07-0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../document.cc:153
+msgid "Page Label for Range"
+msgstr ""
+
+#: ../document.cc:153
+msgid "Page labels"
+msgstr ""
+
+#: ../document.cc:160 ../filetypes/filefilters.cc:189
+#: ../filetypes/filefilters.cc:638
+msgid "End"
+msgstr ""
+
+#: ../document.cc:161
+msgid "The document page index at which this range ends."
+msgstr ""
+
+#: ../document.cc:169 ../filetypes/filefilters.cc:182
+#: ../filetypes/filefilters.cc:630
+msgid "Start"
+msgstr ""
+
+#: ../document.cc:170
+msgid "The document page index at which this range starts."
+msgstr ""
+
+#: ../document.cc:178 ../document.cc:179
+msgid "First page number of the range"
+msgstr ""
+
+#: ../document.cc:185 ../document.cc:186
+msgid "Page label template"
+msgstr ""
+
+#: ../document.cc:191
+msgid "Page number style"
+msgstr ""
+
+#: ../document.cc:192
+msgid "Arabic"
+msgstr ""
+
+#: ../document.cc:192
+msgid "Arabic: 1,2,3..."
+msgstr ""
+
+#: ../document.cc:193
+msgid "Lower case roman numerals"
+msgstr ""
+
+#: ../document.cc:193
+msgid "Roman: i,ii,iii..."
+msgstr ""
+
+#: ../document.cc:194
+msgid "Upper case roman numerals"
+msgstr ""
+
+#: ../document.cc:194
+msgid "Roman: I,II,III..."
+msgstr ""
+
+#: ../document.cc:195
+msgid "Letter numbering"
+msgstr ""
+
+#: ../document.cc:195
+msgid "a,b,c,..,aa,ab,..."
+msgstr ""
+
+#: ../document.cc:196
+msgid "Capital letter numbering"
+msgstr ""
+
+#: ../document.cc:196
+msgid "A,B,C,..,AA,AB,..."
+msgstr ""
+
+#: ../document.cc:197
+msgid "Don't show any labels for this range"
+msgstr ""
+
+#: ../document.cc:201
+msgid "Reverse order"
+msgstr ""
+
+#: ../document.cc:202
+msgid "Whether the range goes 1,2,3.. or ..3,2,1."
+msgstr ""
+
+#: ../document.cc:704
+msgid "Need a file name to save to!"
+msgstr ""
+
+#: ../document.cc:710
+msgid "File cannot be opened for writing"
+msgstr ""
+
+#: ../document.cc:1177 ../document.cc:1178
+msgid "new"
+msgstr ""
+
+#: ../papersizes.cc:325 ../api/openandnew.cc:103 ../api/openandnew.cc:282
+#: ../api/importexport.cc:86 ../api/importexport.cc:249
+msgid "Easy for you to say!"
+msgstr ""
+
+#: ../papersizes.cc:340
+msgid "Invalid name for paper!"
+msgstr ""
+
+#: ../papersizes.cc:348 ../api/openandnew.cc:162 ../api/openandnew.cc:172
+msgid "Invalid object for paper!"
+msgstr ""
+
+#: ../papersizes.cc:354 ../api/openandnew.cc:180 ../api/reimpose.cc:188
+msgid "Invalid format for orientation!"
+msgstr ""
+
+#: ../papersizes.cc:363 ../papersizes.cc:365
+msgid "Invalid width parameter!"
+msgstr ""
+
+#: ../papersizes.cc:370 ../papersizes.cc:372
+msgid "Invalid height parameter!"
+msgstr ""
+
+#: ../papersizes.cc:377 ../papersizes.cc:379
+msgid "Invalid dpi parameter!"
+msgstr ""
+
+#: ../papersizes.cc:402 ../impositions/signatureinterface.cc:398
+#: ../api/openandnew.cc:61
+msgid "Paper"
+msgstr ""
+
+#: ../papersizes.cc:403
+msgid "A basic rectangular paper with orientation"
+msgstr ""
+
+#: ../papersizes.cc:413 ../impositions/signatures.cc:1397
+msgid "Name"
+msgstr ""
+
+#: ../papersizes.cc:414
+msgid "Name of the paper, like A4 or Letter"
+msgstr ""
+
+#: ../papersizes.cc:421 ../api/reimpose.cc:70
+msgid "Orientation"
+msgstr ""
+
+#: ../papersizes.cc:422 ../api/openandnew.cc:69
+msgid "Either portrait (0) or landscape (1)"
+msgstr ""
+
+#: ../papersizes.cc:425 ../impositions/signatureinterface.cc:396
+#: ../impositions/singleseditor.cc:132 ../newdoc.cc:336
+#: ../api/openandnew.cc:72 ../api/reimpose.cc:74
+msgid "Portrait"
+msgstr ""
+
+#: ../papersizes.cc:425
+msgid "Width and height are as normal"
+msgstr ""
+
+#: ../papersizes.cc:426 ../impositions/signatureinterface.cc:397
+#: ../impositions/singleseditor.cc:133 ../newdoc.cc:337
+#: ../api/openandnew.cc:73 ../api/reimpose.cc:75
+msgid "Landscape"
+msgstr ""
+
+#: ../papersizes.cc:426
+msgid "Width and height are swapped"
+msgstr ""
+
+#: ../papersizes.cc:429
+msgid "Width"
+msgstr ""
+
+#: ../papersizes.cc:430
+msgid "Width of the paper, after orientation is applied"
+msgstr ""
+
+#: ../papersizes.cc:435
+msgid "Height"
+msgstr ""
+
+#: ../papersizes.cc:436
+msgid "Height of the paper, after orientation is applied"
+msgstr ""
+
+#: ../papersizes.cc:441
+msgid "Dpi"
+msgstr ""
+
+#: ../papersizes.cc:442
+msgid "Default dots per inch of the paper"
+msgstr ""
+
+#: ../importimages.cc:250
+msgid "Jump to previous selected file"
+msgstr ""
+
+#: ../importimages.cc:256
+msgid "Jump to next selected file"
+msgstr ""
+
+#: ../importimages.cc:267
+msgid "Select from possible automatic previews"
+msgstr ""
+
+#: ../importimages.cc:278
+msgid "Generate"
+msgstr ""
+
+#: ../importimages.cc:279
+msgid "Generate a preview for file at this location."
+msgstr ""
+
+#: ../importimages.cc:297
+msgid "Start Page:"
+msgstr ""
+
+#: ../importimages.cc:299
+msgid ""
+"The starting document page index to drop images onto. 0 is the first page."
+msgstr ""
+
+#: ../importimages.cc:307
+msgid "Align on page:"
+msgstr ""
+
+#: ../importimages.cc:315
+msgid "Alignment for this page type"
+msgstr ""
+
+#: ../importimages.cc:329
+msgid "Align X:"
+msgstr ""
+
+#: ../importimages.cc:332
+msgid "0 means align left, 50 center, 100 right, etc."
+msgstr ""
+
+#: ../importimages.cc:338
+msgid "Align Y:"
+msgstr ""
+
+#: ../importimages.cc:341
+msgid "0 means align top, 50 center, 100 bottom, etc."
+msgstr ""
+
+#: ../importimages.cc:349 ../newdoc.cc:366 ../newdoc.cc:1001
+msgid "Default dpi:"
+msgstr ""
+
+#: ../importimages.cc:354
+msgid "Scale up"
+msgstr ""
+
+#: ../importimages.cc:356
+msgid "If necessary, scale up images to just fit within the target area"
+msgstr ""
+
+#: ../importimages.cc:360
+msgid "Scale down"
+msgstr ""
+
+#: ../importimages.cc:362
+msgid "If necessary, scale down images to just fit within the target area"
+msgstr ""
+
+#: ../importimages.cc:371
+msgid "Images Per Page:"
+msgstr ""
+
+#: ../importimages.cc:378
+msgid "Exactly this many:"
+msgstr ""
+
+#: ../importimages.cc:399
+msgid "As many as will fit per page"
+msgstr ""
+
+#: ../importimages.cc:407
+msgid "All on one page"
+msgstr ""
+
+#: ../importimages.cc:415
+msgid "Default name for previews:"
+msgstr ""
+
+#: ../importimages.cc:416 ../importimages.cc:991
+msgid "any"
+msgstr ""
+
+#: ../importimages.cc:419
+#, c-format
+msgid ""
+"For file.jpg,\n"
+"* gets replaced with the original file name (\"file.jpg\"), and\n"
+"% gets replaced with the file name without the final suffix (\"file\")\n"
+msgstr ""
+
+#: ../importimages.cc:431
+msgid "Select from the available preview bases"
+msgstr ""
+
+#: ../importimages.cc:436
+msgid "Default max width for new previews:"
+msgstr ""
+
+#: ../importimages.cc:439
+msgid ""
+"Any newly generated previews must fit\n"
+"in a square this many pixels wide"
+msgstr ""
+
+#: ../importimages.cc:444
+msgid "Make previews for files larger than"
+msgstr ""
+
+#: ../importimages.cc:453
+msgid ""
+"Previews will be automatically generated \n"
+"for files over this size, and then only \n"
+"whenever the generated preview name doesn't\n"
+"exist already"
+msgstr ""
+
+#: ../importimages.cc:465 ../viewwindow.cc:3289
+#: ../filetypes/importdialog.cc:245 ../filetypes/filefilters.cc:155
+#: ../api/importexport.cc:36
+msgid "Import"
+msgstr ""
+
+#: ../importimages.cc:529 ../importimages.cc:545
+#: ../impositions/signatureinterface.cc:2338
+msgid "left"
+msgstr ""
+
+#: ../importimages.cc:530 ../importimages.cc:535 ../importimages.cc:546
+#: ../importimages.cc:561
+msgid "center"
+msgstr ""
+
+#: ../importimages.cc:531 ../importimages.cc:547
+#: ../impositions/signatureinterface.cc:2336
+msgid "right"
+msgstr ""
+
+#: ../importimages.cc:534 ../importimages.cc:560
+#: ../impositions/signatureinterface.cc:2335
+msgid "top"
+msgstr ""
+
+#: ../importimages.cc:536 ../importimages.cc:562
+#: ../impositions/signatureinterface.cc:2337
+msgid "bottom"
+msgstr ""
+
+#: ../printing/print.cc:53 ../filetypes/postscript.cc:100
+msgid "Postscript LL3"
+msgstr ""
+
+#: ../printing/print.cc:69 ../printing/print.cc:71 ../viewwindow.cc:3324
+#: ../../laxkit/lax/button.cc:160
+msgid "Print"
+msgstr ""
+
+#: ../printing/psout.cc:324 ../filetypes/pdf.cc:402 ../filetypes/image.cc:221
+#: ../filetypes/scribus.cc:353 ../filetypes/podofoimposeplan.cc:141
+#: ../filetypes/ppt.cc:260 ../filetypes/svg.cc:680
+msgid "Nothing to export!"
+msgstr ""
+
+#: ../printing/psout.cc:336 ../filetypes/pdf.cc:413 ../filetypes/image.cc:235
+#: ../filetypes/scribus.cc:368 ../filetypes/podofoimposeplan.cc:152
+#: ../filetypes/ppt.cc:271 ../filetypes/svg.cc:691
+msgid "Cannot save without a filename."
+msgstr ""
+
+#: ../helpwindow.cc:85
+msgid ""
+"---- Laidout Quick key reference ----\n"
+"\n"
+"Press escape to get rid of this window.\n"
+"Right click drag scrolls this help.\n"
+"Right click drag with shift or control scrolls faster.\n"
+msgstr ""
+
+#: ../helpwindow.cc:101
+msgid ""
+"In a viewer:\n"
+"   ^'s'          save file\n"
+"   ^+'s'         save as -- just change the file name?? (not imp)\n"
+"   'T' or left   prev tool \n"
+"   't' or right  next tool\n"
+"   '<'           previous page \n"
+"   '>'           next page\n"
+"   F1            popup this quick reference\n"
+"   F2            popup an About window\n"
+"   F5            popup new spread editor window\n"
+"\n"
+msgstr ""
+
+#: ../helpwindow.cc:113
+msgid ""
+"   left      previous tool   \n"
+"   right     next tool       \n"
+"   ','       previous object \n"
+"   '.'       next object     \n"
+" +^'a'       deselect all currently selected objects\n"
+"   '<'       previous page   \n"
+"   '>'       next page       \n"
+" \n"
+msgstr ""
+
+#: ../helpwindow.cc:122
+msgid ""
+"   'D'        toggle drawing of axes for each object\n"
+"   's'        toggle showing of the spread (shows only limbo)\n"
+"   'm'        move current selection to another page, pops up a dialog "
+"***imp me!\n"
+"   ' '        center the spread\n"
+"   +' '       center the page\n"
+"   '=' or '+' zoom in around mouse\n"
+"   '-'        zoom out around mouse\n"
+"   'o'        clear any display rotation\n"
+"   'O'        center the viewer on the viewer origin\n"
+"\n"
+msgstr ""
+
+#: ../helpwindow.cc:133
+msgid ""
+"    // these are like inkscape:\n"
+"   pgup      raise selection by 1 within layer\n"
+"   pgdown    lower selection by 1 within layer\n"
+"   home      bring selection to top within layer\n"
+"   end       drop selection to bottom within layer\n"
+msgstr ""
+
+#: ../helpwindow.cc:147
+msgid ""
+"Signature Editor:\n"
+"  'h'/'H' Increase or decrease the number of horizontal folds\n"
+"  'v'/'V' Increase or decrease the number of vertical folds\n"
+"  'm'/'M' Increase or decrease page margin values\n"
+"  ^'m'    Switch which margin value is changed by keyboard controls\n"
+"  't'/'T' Increase or decrease page trim values\n"
+"  ^'t'    Switch which trim value is changed by keyboard controls\n"
+"  'i'/'I' Increase or decrease paper inset values\n"
+"  ^'i'    Switch which inset value is changed by keyboard controls\n"
+"  'x'/'X' Increase or decrease the number of tiles horizontally\n"
+"  'y'/'Y' Increase or decrease the number of tiles vertically\n"
+"  'g'/'G' Increase or decrease the size of the gap between tiles\n"
+"  'b'/'B' Move the binding edge\n"
+"\n"
+"\n"
+msgstr ""
+
+#: ../helpwindow.cc:163
+msgid ""
+"SpreadEditor:\n"
+"   ' '    Center with all little spreads in view\n"
+"   'c'    toggle where the page labels go\n"
+"   'm'    toggle mark of current page\n"
+"   'M'    reverse toggle mark of current page\n"
+"   't'    toggle drawing of thumbnails\n"
+"   'A'    toggle how to arrange the spreads\n"
+"  ^'A'    force arranging the spreads using current arrange style\n"
+"   'p'    *** for debugging thumbs\n"
+"\n"
+"\n"
+msgstr ""
+
+#: ../helpwindow.cc:175
+msgid ""
+"ObjectInterface:\n"
+"  'c'          toggle if drag resizes from center or opposite edge\n"
+"  'd'          toggle the showing of decorations\n"
+"  'n'          normalize, that is, make norm(xaxis)==norm(yaxis) and "
+"y=transpose(x)\n"
+"  'N'          like 'n', but also clear rotation\n"
+"  bksp or del  remove whichever of center, rotation handle, or shear handle\n"
+"                 is selected\n"
+"  ^left-click  define a center, rotation handle, or shear handle\n"
+"  \n"
+"  plain click on a center, rotation handle, or shear handle, then press "
+"control\n"
+"    to move the point, rather than modify the object\n"
+"\n"
+"\n"
+msgstr ""
+
+#: ../helpwindow.cc:189
+msgid ""
+"ImageInterface:\n"
+"  'n'           normalize, that is, make norm(xaxis)==norm(yaxis) and "
+"y=transpose(x)\n"
+"  'N'           like 'n', but also clear rotation\n"
+"  'd'           Toggle drawing decorations\n"
+"  'f'           Toggle writing the filename next to the image\n"
+"  double-click  bring up the image properties dialog\n"
+"\n"
+"\n"
+msgstr ""
+
+#: ../helpwindow.cc:198
+msgid ""
+"ColorPatchInterface and ImagePatchInterface:\n"
+"  'w'    warp the patch to an arc, rows are at radius, cols go from center\n"
+"  'm'    toggle between drawing just the grid, or draw full colors.\n"
+"  'a'    select all points, or deselect all if any are selected\n"
+"  'y'    constrain to y changes, or release the constraint\n"
+"  'x'    constrain to x changes, or release the constraint\n"
+"  'o'    decrease how much to recurse for rendering screen preview\n"
+"  'O'    increase how much to recurse for rendering screen preview\n"
+"  'R'    increase how many rows to divide each row into\n"
+" ^'R'    decrease how many rows to divide each row into\n"
+"  'r'    subdivide rows\n"
+"  'c'    subdivide columns\n"
+"  'C'    increase how many columns to divide each column into\n"
+" ^'C'    decrease how many columns to divide each column into\n"
+"  's'    subdivide rows and columns\n"
+"  'z'    reset to rectangular\n"
+"  'd'    toggle decorations\n"
+"  'h'    select all points adjacent horizontally to current points\n"
+"  'v'    select all points adjacent vertically to current points\n"
+"  'b'    toggle which control points are available\n"
+"  'B'    reverse of 'b'\n"
+"  'j'    toggle smooth node editing (j for jagged)\n"
+"  '1'    select corners:  0,0  0,3  3,0  3,3\n"
+"  '2'    select center controls: 1,1  1,2  2,1  2,2\n"
+"  '3'    select edge controls: 0,1  0,2  1,0  2,0  1,3  2,3  3,1  3,2\n"
+"  '4'    select top and bottom controls: 1,0  2,0  1,3  2,3\n"
+"  '5'    select left and right controls: 0,1  0,2  3,1  3,2\n"
+"  '8'    select a 3x3 group of points around each current point\n"
+"\n"
+"\n"
+msgstr ""
+
+#: ../helpwindow.cc:229
+msgid ""
+"GradientInterface:\n"
+"  'r'   Radial gradient\n"
+"  'l'   Linear Gradient\n"
+"  'f'   flip the order of the colors\n"
+"  'd'   Toggle showing of decorations\n"
+"  left  Select next point\n"
+"  right Select previous point\n"
+"  \n"
+"  shift-left-click: add a new color spot\n"
+"\n"
+"\n"
+msgstr ""
+
+#: ../helpwindow.cc:241
+msgid ""
+"PathInterface:\n"
+"  'o'    Select the next pathop.\n"
+"  left   Roll the curpoints one step previous.\n"
+"  right  Roll the curpoints one step next.\n"
+"  'A'    Toggle whether to add points after or before\n"
+"  'a'    Select all if none selected, else deselect all\n"
+"  'c'    Toggle closed path\n"
+"  'b'    Start a new PathsData\n"
+"  delete or bksp: Delete currently selected points.\n"
+"  'd'    Toggle displaying of decorations\n"
+"  '?'    Show some kind of help somewhere....?\n"
+"  'p'    Like a, but only in current part of a compound path\n"
+msgstr ""
+
+#: ../helpwindow.cc:257
+msgid "Right click drag scrolls this help."
+msgstr ""
+
+#: ../about.cc:41
+msgid "About"
+msgstr ""
+
+#: ../about.cc:77
+msgid "[pretend there is a splash logo here!]\n"
+msgstr ""
+
+#: ../about.cc:79
+msgid "Laidout Version "
+msgstr ""
+
+#: ../about.cc:82
+msgid ""
+"\n"
+"using Laxkit version "
+msgstr ""
+
+#: ../spreadeditor.cc:109
+msgid "Spread Tool"
+msgstr ""
+
+#: ../spreadeditor.cc:194 ../spreadeditor.cc:315
+msgid "new view"
+msgstr ""
+
+#: ../spreadeditor.cc:516
+msgid "Spread Editor"
+msgstr ""
+
+#: ../spreadeditor.cc:530
+msgid "New view"
+msgstr ""
+
+#: ../spreadeditor.cc:531
+msgid "Save view"
+msgstr ""
+
+#: ../spreadeditor.cc:533
+msgid "Delete current view"
+msgstr ""
+
+#: ../spreadeditor.cc:878
+msgid "Cannot apply when there are unconnected threads"
+msgstr ""
+
+#: ../spreadeditor.cc:1341
+msgid "Document list"
+msgstr ""
+
+#: ../spreadeditor.cc:1354 ../viewwindow.cc:3199
+msgid "The current tool"
+msgstr ""
+
+#: ../spreadeditor.cc:1379
+msgid "Name of the current view"
+msgstr ""
+
+#: ../spreadeditor.cc:1383 ../plaintextwindow.cc:405
+msgid "Apply"
+msgstr ""
+
+#: ../spreadeditor.cc:1386
+msgid "Reset"
+msgstr ""
+
+#: ../spreadeditor.cc:1389
+msgid "Update Thumbs"
+msgstr ""
+
+#: ../spreadeditor.cc:1494 ../viewwindow.cc:3694 ../plaintextwindow.cc:269
+msgid "Documents"
+msgstr ""
+
+#: ../impositions/netdialog.cc:89
+msgid "Select Dodecahedron"
+msgstr ""
+
+#: ../impositions/netdialog.cc:91 ../impositions/netimposition.cc:173
+#: ../impositions/netimposition.cc:246
+msgid "Dodecahedron"
+msgstr ""
+
+#: ../impositions/netdialog.cc:98
+msgid "Select File"
+msgstr ""
+
+#: ../impositions/netdialog.cc:100
+msgid "Polyhedron or net"
+msgstr ""
+
+#: ../impositions/netdialog.cc:101 ../impositions/netdialog.cc:108
+msgid "Create from a polyhedron or a net file."
+msgstr ""
+
+#: ../impositions/netdialog.cc:115
+msgid "Search for a polyhedron or a net file"
+msgstr ""
+
+#: ../impositions/netdialog.cc:121
+msgid "Select Box"
+msgstr ""
+
+#: ../impositions/netdialog.cc:123
+msgid "Box "
+msgstr ""
+
+#: ../impositions/netdialog.cc:128
+msgid "Width, length, height:"
+msgstr ""
+
+#: ../impositions/netdialog.cc:142
+msgid "Extra scaling"
+msgstr ""
+
+#: ../impositions/netdialog.cc:144
+msgid ""
+"Extra scaling by which to multiply lengths of a net.\n"
+"1 means no extra scaling."
+msgstr ""
+
+#: ../impositions/netdialog.cc:159 ../impositions/signatureinterface.cc:2676
+#: ../interfaces/paperinterface.cc:257 ../interfaces/pagerangeinterface.cc:224
+#: ../../laxkit/lax/button.cc:150
+msgid "Ok"
+msgstr ""
+
+#: ../impositions/netdialog.cc:230 ../newdoc.cc:642
+msgid "Imposition from file"
+msgstr ""
+
+#: ../impositions/signatures.cc:50
+msgid "Under Right"
+msgstr ""
+
+#: ../impositions/signatures.cc:51 ../impositions/signatures.cc:1476
+msgid "Under Left"
+msgstr ""
+
+#: ../impositions/signatures.cc:52
+msgid "Under Bottom"
+msgstr ""
+
+#: ../impositions/signatures.cc:53
+msgid "Under Top"
+msgstr ""
+
+#: ../impositions/signatures.cc:55 ../impositions/signatures.cc:1477
+#: ../impositions/signatures.cc:1478 ../impositions/signatures.cc:1497
+#: ../impositions/signatures.cc:1633 ../../laxkit/lax/colorbox.cc:191
+#, c-format
+msgid "Right"
+msgstr ""
+
+#: ../impositions/signatures.cc:56 ../impositions/signatures.cc:1475
+#: ../impositions/signatures.cc:1496 ../impositions/signatures.cc:1632
+#: ../../laxkit/lax/colorbox.cc:189
+#, c-format
+msgid "Left"
+msgstr ""
+
+#: ../impositions/signatures.cc:57 ../impositions/signatures.cc:1481
+#: ../impositions/signatures.cc:1482 ../impositions/signatures.cc:1499
+#: ../impositions/signatures.cc:1633
+msgid "Bottom"
+msgstr ""
+
+#: ../impositions/signatures.cc:58 ../impositions/signatures.cc:1479
+#: ../impositions/signatures.cc:1480 ../impositions/signatures.cc:1498
+#: ../impositions/signatures.cc:1632
+msgid "Top"
+msgstr ""
+
+#: ../impositions/signatures.cc:1070
+msgid "Double Sided Singles"
+msgstr ""
+
+#: ../impositions/signatures.cc:1072
+msgid "Imposition of single pages meant to be next to each other"
+msgstr ""
+
+#: ../impositions/signatures.cc:1080
+msgid "Booklet"
+msgstr ""
+
+#: ../impositions/signatures.cc:1082
+msgid "Imposition for a stack of sheets, folded down the middle"
+msgstr ""
+
+#: ../impositions/signatures.cc:1120
+#, c-format
+msgid "%d, %d page signature, tiled %dx%d"
+msgstr ""
+
+#: ../impositions/signatures.cc:1123
+#, c-format
+msgid "%d fold, %d page signature"
+msgstr ""
+
+#: ../impositions/signatures.cc:1153 ../impositions/signatures.cc:1222
+#: ../impositions/singles.cc:370 ../filetypes/filefilters.cc:253
+#: ../filetypes/filefilters.cc:704
+msgid "Missing parameters!"
+msgstr ""
+
+#: ../impositions/signatures.cc:1170
+#, c-format
+msgid "Index out of range!"
+msgstr ""
+
+#: ../impositions/signatures.cc:1174 ../impositions/signatures.cc:1187
+#: ../impositions/signatures.cc:1240 ../impositions/signatures.cc:1245
+#: ../impositions/signatures.cc:1250 ../impositions/signatures.cc:1255
+#: ../impositions/signatures.cc:1260 ../impositions/signatures.cc:1265
+#: ../impositions/signatures.cc:1270 ../impositions/signatures.cc:1275
+#: ../impositions/signatures.cc:1280 ../impositions/signatures.cc:1285
+#: ../impositions/signatures.cc:1290 ../impositions/signatures.cc:1295
+#: ../impositions/signatures.cc:1300 ../impositions/signatures.cc:1305
+#: ../impositions/signatures.cc:1310 ../impositions/signatures.cc:1315
+#: ../impositions/signatures.cc:1320 ../impositions/signatures.cc:1325
+#: ../impositions/signatures.cc:1330 ../impositions/signatures.cc:1335
+#: ../impositions/signatures.cc:1340 ../impositions/signatures.cc:1346
+#: ../impositions/singles.cc:385 ../impositions/singles.cc:390
+#: ../impositions/singles.cc:395 ../impositions/singles.cc:400
+#: ../impositions/singles.cc:405 ../impositions/singles.cc:410
+#: ../impositions/singles.cc:415 ../impositions/singles.cc:420
+#: ../impositions/singles.cc:425 ../impositions/singles.cc:430
+#: ../impositions/singles.cc:435 ../impositions/singles.cc:440
+#: ../filetypes/filefilters.cc:274 ../filetypes/filefilters.cc:282
+#: ../filetypes/filefilters.cc:293 ../filetypes/filefilters.cc:298
+#: ../filetypes/filefilters.cc:303 ../filetypes/filefilters.cc:308
+#: ../filetypes/filefilters.cc:320 ../filetypes/filefilters.cc:333
+#: ../filetypes/filefilters.cc:352 ../filetypes/filefilters.cc:362
+#: ../filetypes/filefilters.cc:363 ../filetypes/filefilters.cc:725
+#: ../filetypes/filefilters.cc:730 ../filetypes/filefilters.cc:735
+#: ../filetypes/filefilters.cc:740 ../filetypes/filefilters.cc:745
+#: ../filetypes/filefilters.cc:752 ../filetypes/filefilters.cc:761
+#: ../filetypes/filefilters.cc:762 ../filetypes/filefilters.cc:774
+#: ../filetypes/filefilters.cc:809
+#, c-format
+msgid "Invalid format for %s!"
+msgstr ""
+
+#: ../impositions/signatures.cc:1204
+msgid "Incomplete Fold definition!"
+msgstr ""
+
+#: ../impositions/signatures.cc:1348
+#, c-format
+msgid "Expecting %s!"
+msgstr ""
+
+#: ../impositions/signatures.cc:1367
+msgid "Imposition has invalid configuration!"
+msgstr ""
+
+#: ../impositions/signatures.cc:1388
+msgid "Signature"
+msgstr ""
+
+#: ../impositions/signatures.cc:1389
+msgid "Imposition based on signatures"
+msgstr ""
+
+#: ../impositions/signatures.cc:1397
+msgid "Name of the imposition"
+msgstr ""
+
+#: ../impositions/signatures.cc:1404
+msgid "Description"
+msgstr ""
+
+#: ../impositions/signatures.cc:1404
+msgid "Brief, one line description of the imposition"
+msgstr ""
+
+#: ../impositions/signatures.cc:1411
+msgid "Show whole cover"
+msgstr ""
+
+#: ../impositions/signatures.cc:1411
+msgid "Whether to let the front cover bleed over onto the back cover"
+msgstr ""
+
+#: ../impositions/signatures.cc:1419
+msgid "Sheets per signature"
+msgstr ""
+
+#: ../impositions/signatures.cc:1419
+msgid "Number of pieces of paper in each signature"
+msgstr ""
+
+#: ../impositions/signatures.cc:1422
+msgid "Auto add sheets"
+msgstr ""
+
+#: ../impositions/signatures.cc:1423
+msgid ""
+"When adding pages, whether to add new sheets to a signature, using only one "
+"signature for the whole document, or add more signatures"
+msgstr ""
+
+#: ../impositions/signatures.cc:1427 ../impositions/signatureinterface.cc:1698
+#: ../impositions/singles.cc:497
+#, c-format
+msgid "Top Inset"
+msgstr ""
+
+#: ../impositions/signatures.cc:1427
+msgid "Space at the top of a paper before tiling for signatures"
+msgstr ""
+
+#: ../impositions/signatures.cc:1430 ../impositions/signatureinterface.cc:1721
+#: ../impositions/singles.cc:504
+#, c-format
+msgid "Bottom Inset"
+msgstr ""
+
+#: ../impositions/signatures.cc:1430
+msgid "Space at the bottom of a paper before tiling for signatures"
+msgstr ""
+
+#: ../impositions/signatures.cc:1433 ../impositions/signatureinterface.cc:1743
+#: ../impositions/singles.cc:482
+#, c-format
+msgid "Left Inset"
+msgstr ""
+
+#: ../impositions/signatures.cc:1433
+msgid "Space at the left of a paper before tiling for signatures"
+msgstr ""
+
+#: ../impositions/signatures.cc:1436 ../impositions/signatureinterface.cc:1765
+#: ../impositions/singles.cc:490
+#, c-format
+msgid "Right Inset"
+msgstr ""
+
+#: ../impositions/signatures.cc:1436
+msgid "Space at the right of a paper before tiling for signatures"
+msgstr ""
+
+#: ../impositions/signatures.cc:1439
+msgid "Horizontal Tiles"
+msgstr ""
+
+#: ../impositions/signatures.cc:1439
+msgid "The number of folding sections horizontally to divide a piece of paper"
+msgstr ""
+
+#: ../impositions/signatures.cc:1442
+msgid "Vertical Tiles"
+msgstr ""
+
+#: ../impositions/signatures.cc:1442
+msgid "The number of folding sections vertically to divide a piece of paper"
+msgstr ""
+
+#: ../impositions/signatures.cc:1445
+msgid "H Tile Gap"
+msgstr ""
+
+#: ../impositions/signatures.cc:1445
+msgid "How much space to put between folding areas horizontally"
+msgstr ""
+
+#: ../impositions/signatures.cc:1448
+msgid "V Tile Gap"
+msgstr ""
+
+#: ../impositions/signatures.cc:1448
+msgid "How much space to put between folding areas vertically"
+msgstr ""
+
+#: ../impositions/signatures.cc:1451
+msgid "Horizontal Folds"
+msgstr ""
+
+#: ../impositions/signatures.cc:1451
+msgid "The number of horizontal fold lines of a folding pattern"
+msgstr ""
+
+#: ../impositions/signatures.cc:1454
+msgid "Vertical Folds"
+msgstr ""
+
+#: ../impositions/signatures.cc:1454
+msgid "The number of vertical fold lines of a folding pattern"
+msgstr ""
+
+#: ../impositions/signatures.cc:1461
+msgid "Fold"
+msgstr ""
+
+#: ../impositions/signatures.cc:1462
+msgid "Info about a fold in a signature"
+msgstr ""
+
+#: ../impositions/signatures.cc:1470
+msgid "Index"
+msgstr ""
+
+#: ../impositions/signatures.cc:1470
+msgid "The index of the fold, starting from 0, from the top or left."
+msgstr ""
+
+#: ../impositions/signatures.cc:1473
+msgid "Direction"
+msgstr ""
+
+#: ../impositions/signatures.cc:1473
+msgid "Direction of the fold: left, right, top, or bottom."
+msgstr ""
+
+#: ../impositions/signatures.cc:1475
+msgid "Right over to Left"
+msgstr ""
+
+#: ../impositions/signatures.cc:1476
+msgid "Right under to Left"
+msgstr ""
+
+#: ../impositions/signatures.cc:1477
+msgid "Left over to Right"
+msgstr ""
+
+#: ../impositions/signatures.cc:1478
+msgid "Left under to Right"
+msgstr ""
+
+#: ../impositions/signatures.cc:1479
+msgid "Bottom over to Top"
+msgstr ""
+
+#: ../impositions/signatures.cc:1480
+msgid "Bottom under to Top"
+msgstr ""
+
+#: ../impositions/signatures.cc:1481
+msgid "Top over to Bottom"
+msgstr ""
+
+#: ../impositions/signatures.cc:1482
+msgid "Top under to Bottom"
+msgstr ""
+
+#: ../impositions/signatures.cc:1489
+msgid "Folds"
+msgstr ""
+
+#: ../impositions/signatures.cc:1489
+msgid "Set of the folds making the signature"
+msgstr ""
+
+#: ../impositions/signatures.cc:1494
+msgid "Binding"
+msgstr ""
+
+#: ../impositions/signatures.cc:1494
+msgid "left, right, top, or bottom. The side to expect a document to be bound."
+msgstr ""
+
+#: ../impositions/signatures.cc:1503 ../impositions/signatureinterface.cc:1812
+#, c-format
+msgid "Top Trim"
+msgstr ""
+
+#: ../impositions/signatures.cc:1503
+msgid "How much to trim off the top of a totally folded section"
+msgstr ""
+
+#: ../impositions/signatures.cc:1506 ../impositions/signatureinterface.cc:1827
+#, c-format
+msgid "Bottom Trim"
+msgstr ""
+
+#: ../impositions/signatures.cc:1506
+msgid "How much to trim off the bottom of a totally folded section"
+msgstr ""
+
+#: ../impositions/signatures.cc:1509 ../impositions/signatureinterface.cc:1842
+#, c-format
+msgid "Left Trim"
+msgstr ""
+
+#: ../impositions/signatures.cc:1509
+msgid "How much to trim off the left of a totally folded section"
+msgstr ""
+
+#: ../impositions/signatures.cc:1512 ../impositions/signatureinterface.cc:1857
+#, c-format
+msgid "Right Trim"
+msgstr ""
+
+#: ../impositions/signatures.cc:1512
+msgid "How much to trim off the right of a totally folded section"
+msgstr ""
+
+#: ../impositions/signatures.cc:1515 ../impositions/signatureinterface.cc:1872
+#: ../impositions/singleseditor.cc:241 ../impositions/singles.cc:554
+#: ../page.cc:456
+#, c-format
+msgid "Top Margin"
+msgstr ""
+
+#: ../impositions/signatures.cc:1515
+msgid "Default top margin on a totally folded section"
+msgstr ""
+
+#: ../impositions/signatures.cc:1518 ../impositions/signatureinterface.cc:1887
+#: ../impositions/singleseditor.cc:249 ../impositions/singles.cc:561
+#: ../page.cc:473
+#, c-format
+msgid "Bottom Margin"
+msgstr ""
+
+#: ../impositions/signatures.cc:1518
+msgid "Default bottom margin on a totally folded section"
+msgstr ""
+
+#: ../impositions/signatures.cc:1521 ../impositions/signatureinterface.cc:1902
+#: ../impositions/singleseditor.cc:258 ../impositions/singles.cc:539
+#: ../page.cc:422
+#, c-format
+msgid "Left Margin"
+msgstr ""
+
+#: ../impositions/signatures.cc:1521
+msgid "Default left margin on a totally folded section"
+msgstr ""
+
+#: ../impositions/signatures.cc:1524 ../impositions/signatureinterface.cc:1917
+#: ../impositions/singleseditor.cc:266 ../impositions/singles.cc:547
+#: ../page.cc:439
+#, c-format
+msgid "Right Margin"
+msgstr ""
+
+#: ../impositions/signatures.cc:1524
+msgid "Default right margin on a totally folded section"
+msgstr ""
+
+#: ../impositions/signatures.cc:1998 ../impositions/imposition.cc:771
+msgid "Papers"
+msgstr ""
+
+#: ../impositions/signatures.cc:1999 ../impositions/imposition.cc:772
+#: ../api/openandnew.cc:45
+msgid "Pages"
+msgstr ""
+
+#: ../impositions/signatures.cc:2000 ../impositions/imposition.cc:773
+#: ../impositions/singles.cc:49 ../impositions/singles.cc:92
+#: ../impositions/singles.cc:115 ../impositions/singles.cc:472
+msgid "Singles"
+msgstr ""
+
+#: ../impositions/signatures.cc:2001 ../impositions/imposition.cc:774
+msgid "Little Spreads"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:307
+msgid "Signature Folder"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:321
+#, c-format
+msgid "Base holds %d pages."
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:387
+msgid "Signature Interface"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:400
+#: ../impositions/signatureinterface.cc:401
+#: ../interfaces/paperinterface.cc:146 ../interfaces/paperinterface.cc:147
+#: ../api/reimpose.cc:62
+msgid "Paper Size"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:412
+msgid "Paper Size to Final Size"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:416
+msgid "Save as resource..."
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:431 ../viewwindow.cc:3921
+#: ../viewwindow.cc:4158 ../plaintextwindow.cc:334
+msgid "Save As..."
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:509
+msgid "Saved."
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:530
+msgid "Inset top"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:531
+msgid "Inset bottom"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:532
+msgid "Inset left"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:533
+msgid "Inset right"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:536
+msgid "Trim top of page"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:537
+msgid "Trim bottom of page"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:538
+msgid "Trim left of page"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:539
+msgid "Trim right of page"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:542
+msgid "Margin top of page"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:543
+msgid "Margin bottom of page"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:544
+msgid "Margin left of page"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:545
+msgid "Margin right of page"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:548
+msgid "Binding edge, drag to place"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:551
+#: ../impositions/signatureinterface.cc:552
+msgid "Tile horizontally, wheel or drag changes"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:553
+#: ../impositions/signatureinterface.cc:554
+msgid "Tile vertically, wheel or drag changes"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:556
+msgid "Vertical gap between tiles"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:557
+msgid "Horizontal gap between tiles"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:560
+#: ../impositions/signatureinterface.cc:561
+msgid "Number of horizontal folds"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:562
+#: ../impositions/signatureinterface.cc:563
+msgid "Number of vertical folds"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:565
+msgid "Wheel or drag changes"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:566
+msgid "Wheel or drag changes number of pages"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:567
+msgid "Number of signatures needed"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:569
+msgid "Wheel or click to select auto printer marks"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:618
+#: ../impositions/signatureinterface.cc:1530
+#: ../impositions/signatureinterface.cc:1554
+#, c-format
+msgid "%d pages"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:625
+#: ../impositions/signatureinterface.cc:1534
+#: ../impositions/signatureinterface.cc:1550
+#, c-format
+msgid "%d sigs"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:1110
+#, c-format
+msgid "%d pages per pattern, Final size: %g x %g %s"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:1139
+#, c-format
+msgid "Many sheets in a single signature"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:1140
+#, c-format
+msgid "1 sheet per signature"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:1141
+#, c-format
+msgid "%d sheets per signature"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:1197
+#, c-format
+msgid ""
+"Laidout %s\n"
+"(impose only)\n"
+"By Tom Lechner"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:1699
+#: ../impositions/signatureinterface.cc:1722
+#: ../impositions/signatureinterface.cc:1744
+#: ../impositions/signatureinterface.cc:1766
+#: ../impositions/signatureinterface.cc:1782
+#: ../impositions/signatureinterface.cc:1798
+#: ../impositions/signatureinterface.cc:1813
+#: ../impositions/signatureinterface.cc:1828
+#: ../impositions/signatureinterface.cc:1843
+#: ../impositions/signatureinterface.cc:1858
+#: ../impositions/signatureinterface.cc:1873
+#: ../impositions/signatureinterface.cc:1888
+#: ../impositions/signatureinterface.cc:1903
+#: ../impositions/signatureinterface.cc:1918
+#, c-format
+msgid " %.10g"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:1781
+#: ../impositions/signatureinterface.cc:1797
+#, c-format
+msgid "Tile gap"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:2334 ../filetypes/importdialog.cc:200
+#: ../filetypes/importdialog.cc:371
+msgid "all"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:2374
+#, c-format
+msgid "Sets %s inset"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:2475
+#, c-format
+msgid "Set %s trim"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:2500
+#, c-format
+msgid "Set %s margin"
+msgstr ""
+
+#: ../impositions/signatureinterface.cc:2679 ../viewwindow.cc:726
+#: ../viewwindow.cc:781 ../interfaces/paperinterface.cc:258
+#: ../interfaces/pagerangeinterface.cc:225 ../filetypes/exportdialog.cc:384
+#: ../../laxkit/lax/button.cc:151 ../../laxkit/lax/filedialog.cc:868
+msgid "Cancel"
+msgstr ""
+
+#: ../impositions/singleseditor.cc:107 ../newdoc.cc:297
+msgid "Paper Size  x:"
+msgstr ""
+
+#: ../impositions/singleseditor.cc:114 ../newdoc.cc:304
+msgid "y:"
+msgstr ""
+
+#: ../impositions/singleseditor.cc:145
+msgid "Tile y:"
+msgstr ""
+
+#: ../impositions/singleseditor.cc:152
+msgid "Tile x:"
+msgstr ""
+
+#: ../impositions/singleseditor.cc:155
+msgid "How many times to repeat a spread horizontally on a paper."
+msgstr ""
+
+#: ../impositions/singleseditor.cc:161
+msgid "Gap y:"
+msgstr ""
+
+#: ../impositions/singleseditor.cc:168
+msgid "Gap x:"
+msgstr ""
+
+#: ../impositions/singleseditor.cc:183
+msgid "Inset Top:"
+msgstr ""
+
+#: ../impositions/singleseditor.cc:185 ../impositions/singleseditor.cc:194
+#: ../impositions/singleseditor.cc:204 ../impositions/singleseditor.cc:213
+msgid "Amount to chop from paper before applying tiling"
+msgstr ""
+
+#: ../impositions/singleseditor.cc:192
+msgid "Inset Bottom:"
+msgstr ""
+
+#: ../impositions/singleseditor.cc:202
+msgid "Inset Left:"
+msgstr ""
+
+#: ../impositions/singleseditor.cc:211
+msgid "Inset Right:"
+msgstr ""
+
+#: ../impositions/singleseditor.cc:235
+msgid "Default page margins:"
+msgstr ""
+
+#: ../impositions/singles.cc:94
+msgid "One sided single sheets"
+msgstr ""
+
+#: ../impositions/singles.cc:473
+msgid "Imposition of single pages"
+msgstr ""
+
+#: ../impositions/singles.cc:483
+msgid "How much a page is inset in a paper on the left"
+msgstr ""
+
+#: ../impositions/singles.cc:491
+msgid "How much a page is inset in a paper on the right"
+msgstr ""
+
+#: ../impositions/singles.cc:498
+msgid "How much a page is inset in a paper from the top"
+msgstr ""
+
+#: ../impositions/singles.cc:505
+msgid "How much a page is inset in a paper from the bottom"
+msgstr ""
+
+#: ../impositions/singles.cc:511
+msgid "Tile X"
+msgstr ""
+
+#: ../impositions/singles.cc:512
+msgid "How many to tile horizontally"
+msgstr ""
+
+#: ../impositions/singles.cc:518
+msgid "Tile Y"
+msgstr ""
+
+#: ../impositions/singles.cc:519
+msgid "How many to tile vertically"
+msgstr ""
+
+#: ../impositions/singles.cc:525
+msgid "Horizontal gap"
+msgstr ""
+
+#: ../impositions/singles.cc:526
+msgid "Gap between tiles horizontally"
+msgstr ""
+
+#: ../impositions/singles.cc:532
+msgid "Vertical gap"
+msgstr ""
+
+#: ../impositions/singles.cc:533
+msgid "Gap between tiles vertically"
+msgstr ""
+
+#: ../impositions/singles.cc:540
+msgid "Default left page margin"
+msgstr ""
+
+#: ../impositions/singles.cc:548
+msgid "Default right page margin"
+msgstr ""
+
+#: ../impositions/singles.cc:555
+msgid "Default top page margin"
+msgstr ""
+
+#: ../impositions/singles.cc:562
+msgid "Default bottom page margin"
+msgstr ""
+
+#: ../impositions/singles.cc:781
+msgid "Page"
+msgstr ""
+
+#: ../impositions/netimposition.cc:115
+msgid "NetImposition"
+msgstr ""
+
+#: ../impositions/netimposition.cc:175
+msgid "12 pentagons"
+msgstr ""
+
+#: ../impositions/netimposition.cc:180 ../impositions/netimposition.cc:264
+msgid "Cube"
+msgstr ""
+
+#: ../impositions/netimposition.cc:182
+msgid "6 squares"
+msgstr ""
+
+#: ../impositions/netimposition.cc:195 ../impositions/netimposition.cc:365
+#: ../impositions/netimposition.cc:380
+msgid "Net"
+msgstr ""
+
+#: ../impositions/netimposition.cc:223
+#, c-format
+msgid "%s, %d face net"
+msgstr ""
+
+#: ../impositions/netimposition.cc:366
+msgid "Imposition of a fairly arbitrary net"
+msgstr ""
+
+#: ../impositions/netimposition.cc:374
+msgid "Print Net"
+msgstr ""
+
+#: ../impositions/netimposition.cc:375
+msgid "Whether to show the net outline when printing out a document."
+msgstr ""
+
+#: ../impositions/netimposition.cc:381
+msgid "What kind of net is the imposition using"
+msgstr ""
+
+#: ../impositions/netimposition.cc:584
+msgid "Singles With Adjacent"
+msgstr ""
+
+#: ../viewwindow.cc:475
+msgid "limbo"
+msgstr ""
+
+#: ../viewwindow.cc:476
+msgid "spread"
+msgstr ""
+
+#: ../viewwindow.cc:477
+msgid "papergroup"
+msgstr ""
+
+#: ../viewwindow.cc:556
+msgid "(no doc)"
+msgstr ""
+
+#: ../viewwindow.cc:678
+msgid "How does one remove nothing?"
+msgstr ""
+
+#: ../viewwindow.cc:682
+msgid "Document removed"
+msgstr ""
+
+#: ../viewwindow.cc:686
+msgid "Edit document settings"
+msgstr ""
+
+#: ../viewwindow.cc:714 ../viewwindow.cc:2183
+#, c-format
+msgid "Limbo %d"
+msgstr ""
+
+#: ../viewwindow.cc:724 ../viewwindow.cc:779
+msgid "New name?"
+msgstr ""
+
+#: ../viewwindow.cc:725 ../viewwindow.cc:780
+msgid "Rename"
+msgstr ""
+
+#: ../viewwindow.cc:734
+msgid "Cannot delete the only limbo."
+msgstr ""
+
+#: ../viewwindow.cc:862
+msgid "Object moved."
+msgstr ""
+
+#: ../viewwindow.cc:864
+msgid "Failed to move object"
+msgstr ""
+
+#: ../viewwindow.cc:952
+msgid "Limbo "
+msgstr ""
+
+#: ../viewwindow.cc:953
+msgid "Paper "
+msgstr ""
+
+#: ../viewwindow.cc:956
+msgid "Page "
+msgstr ""
+
+#: ../viewwindow.cc:957
+msgid "?"
+msgstr ""
+
+#: ../viewwindow.cc:1092
+#, c-format
+msgid "Viewing spread number %d/%d"
+msgstr ""
+
+#: ../viewwindow.cc:2577
+msgid "Move To"
+msgstr ""
+
+#: ../viewwindow.cc:2578
+msgid "New Context"
+msgstr ""
+
+#: ../viewwindow.cc:2581
+msgid "Limbo"
+msgstr ""
+
+#: ../viewwindow.cc:2582
+#, c-format
+msgid "Limbo: %s"
+msgstr ""
+
+#: ../viewwindow.cc:2591
+#, c-format
+msgid "Page %s"
+msgstr ""
+
+#: ../viewwindow.cc:2600
+msgid "Some other page.."
+msgstr ""
+
+#: ../viewwindow.cc:2603 ../interfaces/paperinterface.cc:162
+msgid "Paper Group"
+msgstr ""
+
+#: ../viewwindow.cc:2606
+msgid "Move"
+msgstr ""
+
+#: ../viewwindow.cc:2862
+msgid "Untitled"
+msgstr ""
+
+#: ../viewwindow.cc:3102
+msgid "The current page"
+msgstr ""
+
+#: ../viewwindow.cc:3186
+msgid "Display list"
+msgstr ""
+
+#: ../viewwindow.cc:3226
+msgid "Previous spread"
+msgstr ""
+
+#: ../viewwindow.cc:3231
+msgid "Next spread"
+msgstr ""
+
+#: ../viewwindow.cc:3252
+msgid "Single"
+msgstr ""
+
+#: ../viewwindow.cc:3253
+msgid "Page Layout"
+msgstr ""
+
+#: ../viewwindow.cc:3254
+msgid "Paper Layout"
+msgstr ""
+
+#: ../viewwindow.cc:3265 ../page.cc:231
+msgid "Page Clips"
+msgstr ""
+
+#: ../viewwindow.cc:3266
+msgid "Whether pages clips its contents"
+msgstr ""
+
+#: ../viewwindow.cc:3271
+msgid "Delete Page"
+msgstr ""
+
+#: ../viewwindow.cc:3272
+msgid "Delete the current page"
+msgstr ""
+
+#: ../viewwindow.cc:3276
+msgid "Add Page"
+msgstr ""
+
+#: ../viewwindow.cc:3277
+msgid "Add 1 page after this one"
+msgstr ""
+
+#: ../viewwindow.cc:3281 ../viewwindow.cc:3837
+msgid "Import Images"
+msgstr ""
+
+#: ../viewwindow.cc:3282
+msgid "Import one or more images"
+msgstr ""
+
+#: ../viewwindow.cc:3290
+msgid "Try to import various vector based files into the document"
+msgstr ""
+
+#: ../viewwindow.cc:3317 ../filetypes/exportdialog.cc:84
+#: ../filetypes/exportdialog.cc:380 ../api/importexport.cc:184
+msgid "Export"
+msgstr ""
+
+#: ../viewwindow.cc:3318
+msgid "Export the document in various ways"
+msgstr ""
+
+#: ../viewwindow.cc:3325
+msgid "Print the document"
+msgstr ""
+
+#: ../viewwindow.cc:3330 ../plaintextwindow.cc:393 ../newdoc.cc:86
+#: ../api/openandnew.cc:242 ../../laxkit/lax/button.cc:152
+msgid "Open"
+msgstr ""
+
+#: ../viewwindow.cc:3331
+msgid "Open a document from disk"
+msgstr ""
+
+#: ../viewwindow.cc:3335 ../plaintextwindow.cc:399
+#: ../../laxkit/lax/button.cc:153
+msgid "Save"
+msgstr ""
+
+#: ../viewwindow.cc:3336
+msgid "Save the current document"
+msgstr ""
+
+#: ../viewwindow.cc:3342
+msgid "Help!"
+msgstr ""
+
+#: ../viewwindow.cc:3343
+msgid "Popup a list of shortcuts"
+msgstr ""
+
+#: ../viewwindow.cc:3384
+#, c-format
+msgid "%d images imported."
+msgstr ""
+
+#: ../viewwindow.cc:3385
+#, c-format
+msgid "Image imported."
+msgstr ""
+
+#: ../viewwindow.cc:3387
+#, c-format
+msgid "No images imported."
+msgstr ""
+
+#: ../viewwindow.cc:3404 ../viewwindow.cc:3489
+#, c-format
+msgid "Saved to %s."
+msgstr ""
+
+#: ../viewwindow.cc:3411 ../viewwindow.cc:3495 ../viewwindow.cc:3936
+#: ../viewwindow.cc:4175
+msgid "Problem saving. Not saved."
+msgstr ""
+
+#: ../viewwindow.cc:3443
+#, c-format
+msgid "File not saved: Could not change directory to \"%s\""
+msgstr ""
+
+#: ../viewwindow.cc:3475
+msgid "Illegal characters in file name. Not saved."
+msgstr ""
+
+#: ../viewwindow.cc:3516
+msgid "Exporting..."
+msgstr ""
+
+#: ../viewwindow.cc:3520 ../laidout.cc:923
+msgid "Exported."
+msgstr ""
+
+#: ../viewwindow.cc:3521 ../viewwindow.cc:3523
+msgid "Error exporting."
+msgstr ""
+
+#: ../viewwindow.cc:3523
+msgid "Warning!"
+msgstr ""
+
+#: ../viewwindow.cc:3526 ../plaintextwindow.cc:312
+msgid "Dammit!"
+msgstr ""
+
+#: ../viewwindow.cc:3549 ../viewwindow.cc:3565
+#, c-format
+msgid "New Color r:%.4f g:%.4f b:%.4f a:%.4f"
+msgstr ""
+
+#: ../viewwindow.cc:3603
+msgid "None"
+msgstr ""
+
+#: ../viewwindow.cc:3608
+msgid "Edit current document settings"
+msgstr ""
+
+#: ../viewwindow.cc:3609
+msgid "Remove current document"
+msgstr ""
+
+#: ../viewwindow.cc:3611
+msgid "Add new document"
+msgstr ""
+
+#: ../viewwindow.cc:3618
+msgid "Scratch"
+msgstr ""
+
+#: ../viewwindow.cc:3623
+#, c-format
+msgid "(Limbo %d)"
+msgstr ""
+
+#: ../viewwindow.cc:3632
+msgid "Add new limbo"
+msgstr ""
+
+#: ../viewwindow.cc:3634
+msgid "Rename current limbo"
+msgstr ""
+
+#: ../viewwindow.cc:3636
+msgid "Delete current limbo"
+msgstr ""
+
+#: ../viewwindow.cc:3644
+msgid "Paper Groups"
+msgstr ""
+
+#: ../viewwindow.cc:3645
+msgid "default"
+msgstr ""
+
+#: ../viewwindow.cc:3652
+#, c-format
+msgid "(Paper Group %d)"
+msgstr ""
+
+#: ../viewwindow.cc:3661
+msgid "Add new paper group"
+msgstr ""
+
+#: ../viewwindow.cc:3663
+msgid "Rename current paper group"
+msgstr ""
+
+#: ../viewwindow.cc:3664
+msgid "Delete current paper group"
+msgstr ""
+
+#: ../viewwindow.cc:3738
+#, c-format
+msgid "Page number %d added (%d total)."
+msgstr ""
+
+#: ../viewwindow.cc:3743
+msgid "Error adding page."
+msgstr ""
+
+#: ../viewwindow.cc:3756
+#, c-format
+msgid "Page %d deleted. %d remaining."
+msgstr ""
+
+#: ../viewwindow.cc:3766
+msgid "Cannot delete the only page."
+msgstr ""
+
+#: ../viewwindow.cc:3767
+msgid "Error deleting page."
+msgstr ""
+
+#: ../viewwindow.cc:3848
+msgid "Sorry, there are no import filters installed."
+msgstr ""
+
+#: ../viewwindow.cc:3851
+msgid "Importing..."
+msgstr ""
+
+#: ../viewwindow.cc:3862
+msgid "Import File"
+msgstr ""
+
+#: ../viewwindow.cc:3903 ../headwindow.cc:877
+msgid "Open Document"
+msgstr ""
+
+#: ../viewwindow.cc:3914 ../viewwindow.cc:4146 ../utils.cc:69
+msgid "untitled"
+msgstr ""
+
+#: ../viewwindow.cc:4137
+msgid "Project saved."
+msgstr ""
+
+#: ../viewwindow.cc:4141
+msgid "No document to save!"
+msgstr ""
+
+#: ../calculator/interpreter.cc:57
+msgid "The python interpreter. See python.org for more."
+msgstr ""
+
+#: ../calculator/calculator.cc:104 ../calculator/calculator.cc:252
+#: ../calculator/calculator.cc:284
+msgid "Ok."
+msgstr ""
+
+#: ../calculator/calculator.cc:201
+msgid "Abrupt ending"
+msgstr ""
+
+#: ../calculator/calculator.cc:253 ../commandwindow.cc:61
+msgid "You are surrounded by twisty passages, all alike."
+msgstr ""
+
+#: ../calculator/calculator.cc:270
+msgid "Blank expression"
+msgstr ""
+
+#: ../calculator/calculator.cc:349
+msgid "The only recognized commands are:"
+msgstr ""
+
+#: ../calculator/calculator.cc:416
+msgid "Possible values:\n"
+msgstr ""
+
+#: ../calculator/calculator.cc:436 ../calculator/calculator.cc:857
+msgid "Unknown name!"
+msgstr ""
+
+#: ../calculator/calculator.cc:444
+msgid "Project: "
+msgstr ""
+
+#: ../calculator/calculator.cc:446
+msgid "(untitled)"
+msgstr ""
+
+#: ../calculator/calculator.cc:461 ../drawdata.cc:151
+msgid "unknown"
+msgstr ""
+
+#: ../calculator/calculator.cc:467
+msgid ""
+"\n"
+"Object Definitions:\n"
+msgstr ""
+
+#: ../calculator/calculator.cc:482
+msgid ""
+"\n"
+"Math functions: "
+msgstr ""
+
+#: ../calculator/calculator.cc:489
+msgid ""
+"\n"
+"Function Definitions:\n"
+msgstr ""
+
+#: ../calculator/calculator.cc:507
+msgid "Nothing to see here. Move along."
+msgstr ""
+
+#: ../calculator/calculator.cc:545
+msgid "+ needs number"
+msgstr ""
+
+#: ../calculator/calculator.cc:616
+msgid "Number exepected."
+msgstr ""
+
+#: ../calculator/calculator.cc:621
+msgid "')' expected."
+msgstr ""
+
+#: ../calculator/calculator.cc:786
+msgid "String not closed."
+msgstr ""
+
+#: ../calculator/calculator.cc:840
+msgid "Command failed, tell the devs to properly document failure!!"
+msgstr ""
+
+#: ../calculator/calculator.cc:841
+msgid ""
+"Command succeeded with warnings, tell the devs to properly document "
+"warnings!!"
+msgstr ""
+
+#: ../calculator/calculator.cc:951
+msgid "Cannot compute with that type"
+msgstr ""
+
+#: ../calculator/calculator.cc:952
+msgid "Parameter must be greater than or equal to 0"
+msgstr ""
+
+#: ../calculator/calculator.cc:953
+msgid "Parameter must be in range [-1,1]"
+msgstr ""
+
+#: ../calculator/calculator.cc:954
+msgid "Parameter must be greater than 0"
+msgstr ""
+
+#: ../calculator/calculator.cc:955
+msgid "Can't do that math"
+msgstr ""
+
+#: ../calculator/calculator.cc:1006
+msgid "Cannot add those types"
+msgstr ""
+
+#: ../calculator/calculator.cc:1034
+msgid "Cannot subtract those types"
+msgstr ""
+
+#: ../calculator/calculator.cc:1062
+msgid "Cannot multiply those types"
+msgstr ""
+
+#: ../calculator/calculator.cc:1082
+msgid "Cannot divide with that type"
+msgstr ""
+
+#: ../calculator/calculator.cc:1084
+msgid "Division by zero"
+msgstr ""
+
+#: ../calculator/calculator.cc:1103
+msgid "Cannot divide those types"
+msgstr ""
+
+#: ../calculator/calculator.cc:1120 ../calculator/calculator.cc:1124
+msgid "Cannot raise powers with those types"
+msgstr ""
+
+#: ../calculator/calculator.cc:1126
+msgid "Cannot compute 0^x"
+msgstr ""
+
+#: ../calculator/calculator.cc:1128
+msgid "(-x)^(non int): Complex not allowed"
+msgstr ""
+
+#: ../calculator/calculator.cc:1231
+msgid "Problem parsing enumeration value"
+msgstr ""
+
+#: ../calculator/calculator.cc:1255
+msgid "Expected closing ')'"
+msgstr ""
+
+#: ../polyptych/nets.cc:1380
+msgid "Cannot read that file."
+msgstr ""
+
+#: ../polyptych/hedronwindow.cc:2446
+msgid "Could not load "
+msgstr ""
+
+#: ../polyptych/hedronwindow.cc:2485
+#, c-format
+msgid "Error with %s: %s"
+msgstr ""
+
+#: ../polyptych/hedronwindow.cc:2486
+#, c-format
+msgid "Loaded image %s"
+msgstr ""
+
+#: ../polyptych/hedronwindow.cc:2610
+msgid "Rendered."
+msgstr ""
+
+#: ../polyptych/hedronwindow.cc:2661
+msgid "New Polyhedron"
+msgstr ""
+
+#: ../polyptych/hedronwindow.cc:2673
+msgid "New Image"
+msgstr ""
+
+#: ../polyptych/hedronwindow.cc:2695
+msgid "Select render directory"
+msgstr ""
+
+#: ../polyptych/hedronwindow.cc:2735
+msgid "Save as..."
+msgstr ""
+
+#: ../polyptych/hedronwindow.cc:2790
+msgid "Do not draw net edges or unwrap path."
+msgstr ""
+
+#: ../polyptych/hedronwindow.cc:2791
+msgid "Draw net edges, but not unwrap path."
+msgstr ""
+
+#: ../polyptych/hedronwindow.cc:2792
+msgid "Draw unwrap path, but not net edges."
+msgstr ""
+
+#: ../polyptych/hedronwindow.cc:2793
+msgid "Draw both net edges, and unwrap path."
+msgstr ""
+
+#: ../utils.cc:70
+#, c-format
+msgid "untitled %d"
+msgstr ""
+
+#: ../utils.cc:196 ../utils.cc:218
+#, c-format
+msgid "Cannot write to %s."
+msgstr ""
+
+#: ../utils.cc:205
+#, c-format
+msgid "Cannot overwrite %s."
+msgstr ""
+
+#: ../utils.cc:242
+#, c-format
+msgid "Cannot read the file %s. Wrong type."
+msgstr ""
+
+#: ../utils.cc:255
+#, c-format
+msgid "Cannot read file %s."
+msgstr ""
+
+#: ../utils.cc:301
+#, c-format
+msgid "%s does not appear to be a Laidout %s file."
+msgstr ""
+
+#: ../laidout.cc:82
+#, c-format
+msgid ""
+"Laidout Version %s\n"
+"http://www.laidout.org\n"
+"by Tom Lechner, sometime between 2006 and 2011\n"
+"Released under the GNU Public License, Version 2.\n"
+" (using Laxkit Version %s)"
+msgstr ""
+
+#: ../laidout.cc:779
+msgid "No input script!"
+msgstr ""
+
+#: ../laidout.cc:785
+msgid "Could not open "
+msgstr ""
+
+#: ../laidout.cc:847
+msgid "Impose..."
+msgstr ""
+
+#: ../laidout.cc:891
+msgid "Bad export configuration"
+msgstr ""
+
+#: ../laidout.cc:901
+msgid "Fatal errors loading document:"
+msgstr ""
+
+#: ../laidout.cc:905
+msgid "Warnings encountered while loading document:"
+msgstr ""
+
+#: ../laidout.cc:916 ../filetypes/filefilters.cc:1148
+msgid "Export failed."
+msgstr ""
+
+#: ../laidout.cc:919
+msgid "Export finished with warnings:"
+msgstr ""
+
+#: ../laidout.cc:1242
+msgid "pages"
+msgstr ""
+
+#: ../project.cc:371
+msgid "Cannot save to blank file name."
+msgstr ""
+
+#: ../project.cc:378
+msgid "Cannot open file for writing"
+msgstr ""
+
+#: ../interfaces/paperinterface.cc:51 ../interfaces/paperinterface.cc:52
+#, c-format
+msgid "Paper Group %d"
+msgstr ""
+
+#: ../interfaces/paperinterface.cc:114
+msgid "Paper Group Tool"
+msgstr ""
+
+#: ../interfaces/paperinterface.cc:136 ../interfaces/pagerangeinterface.cc:183
+#: ../interfaces/nupinterface.cc:149
+msgid "Paper Interface"
+msgstr ""
+
+#: ../interfaces/paperinterface.cc:139 ../dataobjects/groupinterface.cc:107
+msgid "Add Registration Mark"
+msgstr ""
+
+#: ../interfaces/paperinterface.cc:140 ../dataobjects/groupinterface.cc:108
+msgid "Add Gray Bars"
+msgstr ""
+
+#: ../interfaces/paperinterface.cc:141
+msgid "Add Cut Marks"
+msgstr ""
+
+#: ../interfaces/paperinterface.cc:158
+msgid "Print with paper group"
+msgstr ""
+
+#: ../interfaces/paperinterface.cc:163 ../filetypes/filefilters.cc:678
+msgid "Paper group"
+msgstr ""
+
+#: ../interfaces/paperinterface.cc:170
+msgid "(unnamed)"
+msgstr ""
+
+#: ../interfaces/paperinterface.cc:176
+msgid "New paper group..."
+msgstr ""
+
+#: ../interfaces/paperinterface.cc:177
+msgid "Rename current paper group..."
+msgstr ""
+
+#: ../interfaces/paperinterface.cc:178
+msgid "Delete current paper group..."
+msgstr ""
+
+#: ../interfaces/paperinterface.cc:253
+msgid "New paper group name"
+msgstr ""
+
+#: ../interfaces/paperinterface.cc:256 ../plaintextwindow.cc:378
+msgid "Name:"
+msgstr ""
+
+#: ../interfaces/pagerangeinterface.cc:123
+msgid "Page Range Organizer"
+msgstr ""
+
+#: ../interfaces/pagerangeinterface.cc:151
+msgid "(no numbers)"
+msgstr ""
+
+#: ../interfaces/pagerangeinterface.cc:185 ../interfaces/nupinterface.cc:151
+msgid "Custom base..."
+msgstr ""
+
+#: ../interfaces/pagerangeinterface.cc:186
+msgid "Reverse"
+msgstr ""
+
+#: ../interfaces/pagerangeinterface.cc:197 ../interfaces/nupinterface.cc:162
+msgid "(none)"
+msgstr ""
+
+#: ../interfaces/pagerangeinterface.cc:220
+msgid "New page label base"
+msgstr ""
+
+#: ../interfaces/pagerangeinterface.cc:223
+msgid "Label:"
+msgstr ""
+
+#: ../interfaces/pagerangeinterface.cc:770
+msgid "Click to divide range"
+msgstr ""
+
+#: ../interfaces/pagerangeinterface.cc:771
+msgid "Wheel to change label type"
+msgstr ""
+
+#: ../interfaces/pagerangeinterface.cc:772
+msgid "Document page range"
+msgstr ""
+
+#: ../interfaces/pagerangeinterface.cc:773
+msgid "Wheel to change first page of labels"
+msgstr ""
+
+#: ../interfaces/pagerangeinterface.cc:774
+msgid "Drag to adjust range"
+msgstr ""
+
+#: ../interfaces/nupinterface.cc:141
+msgid "N-up"
+msgstr ""
+
+#: ../interfaces/nupinterface.cc:154
+msgid "Delete range"
+msgstr ""
+
+#: ../page.cc:217
+msgid "Generic Page"
+msgstr ""
+
+#: ../page.cc:218
+msgid "A page"
+msgstr ""
+
+#: ../page.cc:225
+msgid "Margins Clip"
+msgstr ""
+
+#: ../page.cc:226
+msgid "Whether a page's margins clip the contents"
+msgstr ""
+
+#: ../page.cc:232
+msgid "Whether a page's outline clips the contents"
+msgstr ""
+
+#: ../page.cc:237
+msgid "Facing Pages Bleed"
+msgstr ""
+
+#: ../page.cc:238
+msgid "Whether nearby pages are allowed to bleed onto this page"
+msgstr ""
+
+#: ../page.cc:394 ../page.cc:395
+msgid "Rectangular Facing Page"
+msgstr ""
+
+#: ../page.cc:401 ../page.cc:402
+msgid "Rectangular Top Facing Page"
+msgstr ""
+
+#: ../page.cc:406 ../page.cc:407
+msgid "Rectangular Page"
+msgstr ""
+
+#: ../page.cc:415 ../page.cc:449
+msgid "Inside Margin"
+msgstr ""
+
+#: ../page.cc:416 ../page.cc:450
+msgid "How much space to put on the inside of facing pages."
+msgstr ""
+
+#: ../page.cc:423
+msgid "How much space to put in the left margin."
+msgstr ""
+
+#: ../page.cc:432 ../page.cc:466
+msgid "Outside Margin"
+msgstr ""
+
+#: ../page.cc:433 ../page.cc:467
+msgid "How much space to put on the outside of facing pages."
+msgstr ""
+
+#: ../page.cc:440
+msgid "How much space to put in the right margin."
+msgstr ""
+
+#: ../page.cc:457
+msgid "How much space to put in the top margin."
+msgstr ""
+
+#: ../page.cc:474
+msgid "How much space to put in the bottom margin."
+msgstr ""
+
+#: ../plaintext.cc:136
+msgid "file: "
+msgstr ""
+
+#: ../plaintextwindow.cc:87
+msgid "Text object"
+msgstr ""
+
+#: ../plaintextwindow.cc:132
+msgid "Open text file..."
+msgstr ""
+
+#: ../plaintextwindow.cc:136
+msgid "Open as text"
+msgstr ""
+
+#: ../plaintextwindow.cc:158 ../plaintextwindow.cc:374
+#: ../plaintextwindow.cc:442
+msgid "(temporary)"
+msgstr ""
+
+#: ../plaintextwindow.cc:218
+msgid "Project texts"
+msgstr ""
+
+#: ../plaintextwindow.cc:234
+msgid "Content save location"
+msgstr ""
+
+#: ../plaintextwindow.cc:240
+msgid "Save with project"
+msgstr ""
+
+#: ../plaintextwindow.cc:241
+msgid "Save in its own file"
+msgstr ""
+
+#: ../plaintextwindow.cc:243 ../plaintextwindow.cc:244
+msgid "Save in file: "
+msgstr ""
+
+#: ../plaintextwindow.cc:246
+msgid "Save within project file"
+msgstr ""
+
+#: ../plaintextwindow.cc:263
+msgid "Add new to project"
+msgstr ""
+
+#: ../plaintextwindow.cc:264
+msgid "Remove current"
+msgstr ""
+
+#: ../plaintextwindow.cc:308 ../plaintextwindow.cc:309
+msgid "Script output"
+msgstr ""
+
+#: ../plaintextwindow.cc:394
+msgid "Open a file from disk"
+msgstr ""
+
+#: ../plaintextwindow.cc:400
+msgid "Save the current text"
+msgstr ""
+
+#: ../plaintextwindow.cc:406
+msgid ""
+"Syncronize the text object with the text in the editor\n"
+"This should update any objects that depend on the current\n"
+"text object, if any"
+msgstr ""
+
+#: ../plaintextwindow.cc:413
+msgid "Run"
+msgstr ""
+
+#: ../plaintextwindow.cc:414
+msgid "Run this text as a script"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:217
+msgid "The file format to export into"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:226 ../../laxkit/lax/simpleprint.cc:105
+msgid "By Command: "
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:228 ../filetypes/exportdialog.cc:236
+msgid "Run this command on a single exported file"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:245 ../../laxkit/lax/simpleprint.cc:86
+msgid "To File: "
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:247 ../filetypes/exportdialog.cc:259
+#: ../filetypes/exportdialog.cc:673
+msgid "Export to this file"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:265 ../filetypes/exportdialog.cc:295
+msgid "Browse for a new location"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:274
+msgid "To Files: "
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:276 ../filetypes/exportdialog.cc:287
+#: ../filetypes/exportdialog.cc:711
+msgid ""
+"Export to these files. A '#' is replaced with\n"
+"the spread index. A \"###\" for an index like 3\n"
+"will get replaced with \"003\"."
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:319
+msgid "The type of spreads to export"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:333
+msgid "Export All"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:341
+msgid "Export Current"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:349
+msgid "Export From:"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:361
+msgid "The starting index"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:364
+msgid "To:"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:371
+msgid "The ending index"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:636
+msgid "Select"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:665
+msgid "Cannot overwrite this kind of file!"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:669
+msgid "WARNING: This file will be overwritten on export!"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:679
+msgid "Cannot write to nothing!"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:703
+msgid "Some files cannot be overwritten!"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:707
+msgid "Warning: Some files will be overwritten!"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:794
+msgid "Error with command"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:797
+msgid "Printed."
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:805
+msgid "Error printing"
+msgstr ""
+
+#: ../filetypes/pdf.cc:108
+msgid "Pdf 1.4"
+msgstr ""
+
+#: ../filetypes/pdf.cc:109
+msgid "Pdf 1.3"
+msgstr ""
+
+#: ../filetypes/pdf.cc:124
+msgid "Pdf Export Configuration"
+msgstr ""
+
+#: ../filetypes/pdf.cc:125
+msgid "Configuration to export a document to a pdf."
+msgstr ""
+
+#: ../filetypes/pdf.cc:280
+#, c-format
+msgid "Warning: Cannot export %s to Pdf"
+msgstr ""
+
+#: ../filetypes/image.cc:120
+msgid "Image"
+msgstr ""
+
+#: ../filetypes/image.cc:171
+msgid "Image Export Configuration"
+msgstr ""
+
+#: ../filetypes/image.cc:172
+msgid "Configuration to export a document to a png."
+msgstr ""
+
+#: ../filetypes/image.cc:227
+msgid "Currently need Ghostscript to output to image files."
+msgstr ""
+
+#: ../filetypes/image.cc:248 ../filetypes/image.cc:253
+msgid "Error exporting to image."
+msgstr ""
+
+#: ../filetypes/image.cc:309
+msgid "Ghostscript interrupted from making image."
+msgstr ""
+
+#: ../filetypes/image.cc:312
+msgid "Ghostscript had error while making image."
+msgstr ""
+
+#: ../filetypes/scribus.cc:286
+msgid "Scribus 1.3.3.12"
+msgstr ""
+
+#: ../filetypes/scribus.cc:300
+msgid "Scribus Export Configuration"
+msgstr ""
+
+#: ../filetypes/scribus.cc:301
+msgid "Configuration to export a document to a Scribus file."
+msgstr ""
+
+#: ../filetypes/scribus.cc:1239 ../filetypes/scribus.cc:1240
+#, c-format
+msgid "Warning: Cannot export %s to Scribus.\n"
+msgstr ""
+
+#: ../filetypes/scribus.cc:1665
+msgid "Scribus"
+msgstr ""
+
+#: ../filetypes/scribus.cc:1689
+msgid "Scribus Import Configuration"
+msgstr ""
+
+#: ../filetypes/scribus.cc:1690
+msgid "Configuration to import a Scribus file."
+msgstr ""
+
+#: ../filetypes/scribus.cc:1722
+msgid "Missing config!"
+msgstr ""
+
+#: ../filetypes/scribus.cc:1730
+msgid "Could not read file!"
+msgstr ""
+
+#: ../filetypes/postscript.cc:120
+msgid "Postscript Export Configuration"
+msgstr ""
+
+#: ../filetypes/postscript.cc:121
+msgid "Configuration to export a document to a postscript file."
+msgstr ""
+
+#: ../filetypes/postscript.cc:137
+msgid "EPS 3.0"
+msgstr ""
+
+#: ../filetypes/postscript.cc:160
+msgid "EPS Export Configuration"
+msgstr ""
+
+#: ../filetypes/postscript.cc:161
+msgid "Configuration to export a document to an EPS file."
+msgstr ""
+
+#: ../filetypes/podofoimposeplan.cc:73
+msgid "Podofoimpose PLAN"
+msgstr ""
+
+#: ../filetypes/podofoimposeplan.cc:87
+msgid "Podofo Export Configuration"
+msgstr ""
+
+#: ../filetypes/podofoimposeplan.cc:88
+msgid ""
+"Configuration to export a document to a Podofoimpose PLAN file for external "
+"impositioning."
+msgstr ""
+
+#: ../filetypes/podofoimposeplan.cc:162
+msgid "Cannot open file for writing."
+msgstr ""
+
+#: ../filetypes/importdialog.cc:190
+msgid "No file selected"
+msgstr ""
+
+#: ../filetypes/importdialog.cc:200
+msgid "Import page range:"
+msgstr ""
+
+#: ../filetypes/importdialog.cc:202
+msgid ""
+"The range of pages of the file to import, numbered from 0.\n"
+"Such as \"3-9\". Currently, only one range per import"
+msgstr ""
+
+#: ../filetypes/importdialog.cc:212
+msgid "Start Index:"
+msgstr ""
+
+#: ../filetypes/importdialog.cc:215
+msgid "The document page to start importing into"
+msgstr ""
+
+#: ../filetypes/importdialog.cc:222
+msgid "Ignore mystery data"
+msgstr ""
+
+#: ../filetypes/importdialog.cc:223
+msgid "Ignore anything Laidout doesn't understand"
+msgstr ""
+
+#: ../filetypes/importdialog.cc:229
+msgid "Keep mystery data as necessary"
+msgstr ""
+
+#: ../filetypes/importdialog.cc:230
+msgid "Use mystery data for things Laidout cannot convert"
+msgstr ""
+
+#: ../filetypes/importdialog.cc:236
+msgid "All objects are mystery data"
+msgstr ""
+
+#: ../filetypes/importdialog.cc:237
+msgid "Do not convert any object to native Laidout objects"
+msgstr ""
+
+#: ../filetypes/importdialog.cc:294
+msgid "File cannot be imported."
+msgstr ""
+
+#: ../filetypes/importdialog.cc:404
+msgid "Error importing file."
+msgstr ""
+
+#: ../filetypes/importdialog.cc:408
+msgid "File imported."
+msgstr ""
+
+#: ../filetypes/filefilters.cc:156
+msgid "A filter that imports a vector file to an existing document or a group."
+msgstr ""
+
+#: ../filetypes/filefilters.cc:165 ../api/openandnew.cc:253
+#: ../../laxkit/lax/imagedialog.cc:175 ../../laxkit/lax/fontdialog.cc:171
+msgid "File"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:166 ../api/importexport.cc:59
+msgid "Path to file to import"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:173
+msgid "Keep mystery data"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:174
+msgid "Whether to attempt to preserve things not understood"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:177 ../../laxkit/lax/button.cc:163
+msgid "No"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:177
+msgid "Ignore all mystery data"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:178
+msgid "Sometimes"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:178
+msgid "Convert what is possible, preserve other mystery data"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:179
+msgid "Always"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:179
+msgid "Treat everything as mystery data"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:183
+msgid "First page to import from a multipage file"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:190
+msgid "Last page to import from a multipage file"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:196
+msgid "To page"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:197
+msgid "The page in the existing document to begin importing to"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:203
+msgid "Default dpi"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:204
+msgid "Default dpi to use while importing if necessary"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:210
+msgid "Spread"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:211
+msgid "Index of the spread to import to"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:217 ../filetypes/filefilters.cc:646
+msgid "Layout"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:218
+msgid ""
+"Type of layout in which to count the spread index. Depends on the imposition."
+msgstr ""
+
+#: ../filetypes/filefilters.cc:224 ../filetypes/filefilters.cc:622
+#: ../api/reimpose.cc:39
+msgid "Document"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:225
+msgid "Which document to import to, if not importing to a group"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:231 ../filetypes/filefilters.cc:654
+msgid "Group"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:232
+msgid "Group to import to, if not importing to a document"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:323
+msgid "Document not found!"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:351 ../filetypes/filefilters.cc:808
+msgid "Invalid layout name!"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:547
+msgid "Bad import configuration"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:594
+msgid "Export Configuration"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:595
+msgid ""
+"Settings for a filter that exports a document to one or more files of "
+"various formats."
+msgstr ""
+
+#: ../filetypes/filefilters.cc:605 ../api/importexport.cc:58
+#: ../api/importexport.cc:196
+msgid "Filename"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:606 ../api/importexport.cc:197
+msgid ""
+"Path of exported file. For multiple files, use \"file##.svg\", for instance."
+msgstr ""
+
+#: ../filetypes/filefilters.cc:614
+msgid "Output target"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:615
+msgid "Whether to try to save to a single file (0), or multiple files (1)"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:618
+msgid "One file"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:618
+msgid "Export all pages to a single file if possible"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:619
+msgid "Many files"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:619
+msgid "Export each page to different files"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:623
+msgid "The document to export, if not exporting a group."
+msgstr ""
+
+#: ../filetypes/filefilters.cc:631
+msgid "Starting index of a document spread to export"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:639
+msgid "Ending index of a document spread to export"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:647
+msgid ""
+"Type of spread layout to export as. Possibilities defined by the imposition."
+msgstr ""
+
+#: ../filetypes/filefilters.cc:655
+msgid "Group to export, if not exporting a document."
+msgstr ""
+
+#: ../filetypes/filefilters.cc:662
+msgid "Rasterize"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:663
+msgid ""
+"Whether to rasterize objects that cannot be otherwise dealt with natively in "
+"the target format."
+msgstr ""
+
+#: ../filetypes/filefilters.cc:670
+msgid "Collect for out"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:671
+msgid ""
+"Whether to copy all the accessed resources to the same directory as the "
+"exported file."
+msgstr ""
+
+#: ../filetypes/filefilters.cc:679
+msgid ""
+"The paper group to export onto. Do not include if you want to use the "
+"default paper group."
+msgstr ""
+
+#: ../filetypes/filefilters.cc:750
+msgid "Invalid target value!"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:789
+msgid "Need something to export!"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:1044
+msgid "Missing export filter!"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:1047
+msgid "Missing export source!"
+msgstr ""
+
+#: ../filetypes/filefilters.cc:1089
+msgid "Filter cannot export more than one page to a single file."
+msgstr ""
+
+#: ../filetypes/filefilters.cc:1139 ../filetypes/filefilters.cc:1140
+#, c-format
+msgid "Export failed at file %d out of %d"
+msgstr ""
+
+#: ../filetypes/ppt.cc:98 ../filetypes/ppt.cc:186 ../filetypes/ppt.cc:319
+#: ../filetypes/ppt.cc:432 ../filetypes/ppt.cc:572 ../filetypes/ppt.cc:584
+msgid "Passepartout"
+msgstr ""
+
+#: ../filetypes/ppt.cc:112
+msgid "Passepartout Export Configuration"
+msgstr ""
+
+#: ../filetypes/ppt.cc:113
+msgid "Configuration to export a document to a Passepartout file."
+msgstr ""
+
+#: ../filetypes/ppt.cc:446
+msgid "Passepartout Import Configuration"
+msgstr ""
+
+#: ../filetypes/ppt.cc:447
+msgid "Configuration to import a Passepartout file."
+msgstr ""
+
+#: ../filetypes/svg.cc:104 ../filetypes/svg.cc:872
+msgid "Svg 1.1"
+msgstr ""
+
+#: ../filetypes/svg.cc:118
+msgid "Svg Export Configuration"
+msgstr ""
+
+#: ../filetypes/svg.cc:119
+msgid "Configuration to export a document to an svg file."
+msgstr ""
+
+#: ../filetypes/svg.cc:221
+msgid "Cannot export Eps objects into svg.\n"
+msgstr ""
+
+#: ../filetypes/svg.cc:244
+msgid "Warning: interpolating a color patch object\n"
+msgstr ""
+
+#: ../filetypes/svg.cc:482 ../filetypes/svg.cc:483
+#, c-format
+msgid "Cannot export %s objects into svg."
+msgstr ""
+
+#: ../filetypes/svg.cc:895
+msgid "Svg Import Configuration"
+msgstr ""
+
+#: ../filetypes/svg.cc:896
+msgid "Configuration to import a Svg file."
+msgstr ""
+
+#: ../dataobjects/groupinterface.cc:106
+msgid "Group Interface"
+msgstr ""
+
+#: ../dataobjects/epsdata.cc:256
+msgid "EPS Tool"
+msgstr ""
+
+#: ../spreadview.cc:39
+msgid "Auto arrange on each window size change"
+msgstr ""
+
+#: ../spreadview.cc:40
+msgid "Auto arrange until you move a spread"
+msgstr ""
+
+#: ../spreadview.cc:41
+msgid "Arrange in one row"
+msgstr ""
+
+#: ../spreadview.cc:42
+msgid "Arrange in one column"
+msgstr ""
+
+#: ../spreadview.cc:43
+msgid "Arrange in a grid based on screen proportions"
+msgstr ""
+
+#: ../spreadview.cc:44
+msgid "You will do all arranging"
+msgstr ""
+
+#: ../spreadview.cc:45
+msgid "? error: bad arrange value"
+msgstr ""
+
+#: ../newdoc.cc:64 ../headwindow.cc:170 ../headwindow.cc:187
+#: ../headwindow.cc:690
+msgid "Laidout"
+msgstr ""
+
+#: ../newdoc.cc:70 ../newdoc.cc:71 ../api/openandnew.cc:34
+msgid "New Document"
+msgstr ""
+
+#: ../newdoc.cc:74 ../newdoc.cc:75 ../newdoc.cc:1203
+msgid "New Project"
+msgstr ""
+
+#: ../newdoc.cc:85
+msgid "Open a copy"
+msgstr ""
+
+#: ../newdoc.cc:85
+msgid "This means use that document as a template"
+msgstr ""
+
+#: ../newdoc.cc:266
+msgid "Save As:"
+msgstr ""
+
+#: ../newdoc.cc:347
+msgid "Number of pages:"
+msgstr ""
+
+#: ../newdoc.cc:351
+msgid "The number of pages with which to start a document."
+msgstr ""
+
+#: ../newdoc.cc:413
+msgid "Imposition:"
+msgstr ""
+
+#: ../newdoc.cc:420
+msgid "Current"
+msgstr ""
+
+#: ../newdoc.cc:433
+msgid "From file..."
+msgstr ""
+
+#: ../newdoc.cc:435
+msgid "NEW Signature..."
+msgstr ""
+
+#: ../newdoc.cc:437
+msgid "NEW Net..."
+msgstr ""
+
+#: ../newdoc.cc:450
+msgid "Edit the currently selected imposition"
+msgstr ""
+
+#: ../newdoc.cc:469
+msgid "Scale pages to fit new imposition"
+msgstr ""
+
+#: ../newdoc.cc:470
+msgid "Scale each page up or down to fit the page sizes in a new imposition"
+msgstr ""
+
+#: ../newdoc.cc:486
+msgid "Apply settings"
+msgstr ""
+
+#: ../newdoc.cc:486
+msgid "Create Document"
+msgstr ""
+
+#: ../newdoc.cc:521
+#, c-format
+msgid "Imposition holds 1 page, %.3g x %.3g"
+msgstr ""
+
+#: ../newdoc.cc:522
+#, c-format
+msgid "Imposition holds %d pages, %.3g x %.3g"
+msgstr ""
+
+#: ../newdoc.cc:554 ../newdoc.cc:636
+msgid "Select net..."
+msgstr ""
+
+#: ../newdoc.cc:559 ../newdoc.cc:629
+msgid "Signature Editor"
+msgstr ""
+
+#: ../newdoc.cc:565
+msgid "Singles Editor"
+msgstr ""
+
+#: ../newdoc.cc:714 ../../laxkit/lax/button.cc:154
+msgid "Save As"
+msgstr ""
+
+#: ../newdoc.cc:929
+msgid "Project Name:"
+msgstr ""
+
+#: ../newdoc.cc:931
+msgid "A descriptive name for the project"
+msgstr ""
+
+#: ../newdoc.cc:938
+msgid "Project filename:"
+msgstr ""
+
+#: ../newdoc.cc:941
+msgid "Project file location"
+msgstr ""
+
+#: ../newdoc.cc:947 ../newdoc.cc:967
+msgid "Browse for a location"
+msgstr ""
+
+#: ../newdoc.cc:953
+msgid "Create directory"
+msgstr ""
+
+#: ../newdoc.cc:954
+msgid "Check if you want to use a dedicated project directory"
+msgstr ""
+
+#: ../newdoc.cc:961
+msgid "Optional directory for storing project resources and data"
+msgstr ""
+
+#: ../newdoc.cc:1049
+msgid "Create Project"
+msgstr ""
+
+#: ../newdoc.cc:1159 ../newdoc.cc:1168
+msgid "Save Project In"
+msgstr ""
+
+#: ../api/openandnew.cc:35
+msgid "Create a document and install in the project"
+msgstr ""
+
+#: ../api/openandnew.cc:46
+msgid "The number of pages"
+msgstr ""
+
+#: ../api/openandnew.cc:53 ../api/reimpose.cc:47
+msgid "New Imposition"
+msgstr ""
+
+#: ../api/openandnew.cc:54 ../api/reimpose.cc:48
+msgid "The new imposition to use"
+msgstr ""
+
+#: ../api/openandnew.cc:62
+msgid "Type of paper to use"
+msgstr ""
+
+#: ../api/openandnew.cc:68
+msgid "Orientiation"
+msgstr ""
+
+#: ../api/openandnew.cc:72 ../api/reimpose.cc:74
+msgid "Long direction is vertical"
+msgstr ""
+
+#: ../api/openandnew.cc:73 ../api/reimpose.cc:75
+msgid "Short direction is vertical"
+msgstr ""
+
+#: ../api/openandnew.cc:77
+msgid "Save as"
+msgstr ""
+
+#: ../api/openandnew.cc:78
+msgid "The path to save the document to, if any. It is not saved immediately."
+msgstr ""
+
+#: ../api/openandnew.cc:125
+msgid "File exists already. Please remove first."
+msgstr ""
+
+#: ../api/openandnew.cc:126 ../api/openandnew.cc:316
+msgid "Document already loaded"
+msgstr ""
+
+#: ../api/openandnew.cc:132
+msgid "Invalid number of pages!"
+msgstr ""
+
+#: ../api/openandnew.cc:141 ../api/openandnew.cc:153
+msgid "Invalid object for imposition!"
+msgstr ""
+
+#: ../api/openandnew.cc:189
+msgid "Missing a paper type!"
+msgstr ""
+
+#: ../api/openandnew.cc:190
+msgid "Missing an imposition type!"
+msgstr ""
+
+#: ../api/openandnew.cc:200
+msgid "Error creating document instance!"
+msgstr ""
+
+#: ../api/openandnew.cc:229
+msgid "Document added."
+msgstr ""
+
+#: ../api/openandnew.cc:230
+msgid "Error adding document. Not added"
+msgstr ""
+
+#: ../api/openandnew.cc:243
+msgid "Open a document"
+msgstr ""
+
+#: ../api/openandnew.cc:254
+msgid "Path to the file to open"
+msgstr ""
+
+#: ../api/openandnew.cc:261
+msgid "Open from template"
+msgstr ""
+
+#: ../api/openandnew.cc:262
+msgid "Open a copy of the specified file"
+msgstr ""
+
+#: ../api/openandnew.cc:295 ../api/importexport.cc:96
+#: ../api/importexport.cc:317
+msgid "Missing filename."
+msgstr ""
+
+#: ../api/openandnew.cc:314
+msgid "Could not load that."
+msgstr ""
+
+#: ../api/openandnew.cc:330
+msgid "Errors loading:\n"
+msgstr ""
+
+#: ../api/openandnew.cc:331
+msgid "Not loaded."
+msgstr ""
+
+#: ../api/openandnew.cc:343
+msgid "Opened."
+msgstr ""
+
+#: ../api/openandnew.cc:345
+msgid "Warnings encountered while loading:\n"
+msgstr ""
+
+#: ../api/openandnew.cc:346
+msgid "Loaded anyway."
+msgstr ""
+
+#: ../api/importexport.cc:37
+msgid ""
+"Import a vector file to an existing document or a group. Each filter may "
+"have additional options you can pass in. Usually the file format will be "
+"detected automatically, but you may also force a specific filter to be used."
+msgstr ""
+
+#: ../api/importexport.cc:66 ../api/importexport.cc:212
+msgid "Filter"
+msgstr ""
+
+#: ../api/importexport.cc:67
+msgid "The import filter to use to import"
+msgstr ""
+
+#: ../api/importexport.cc:126 ../api/importexport.cc:296
+msgid "Unknown filter!"
+msgstr ""
+
+#: ../api/importexport.cc:132
+msgid "Cannot open file!"
+msgstr ""
+
+#: ../api/importexport.cc:146 ../api/importexport.cc:298
+msgid "Filter not found!"
+msgstr ""
+
+#: ../api/importexport.cc:185
+msgid ""
+"Export a document or a group with the specified export filter to the "
+"specified file or files."
+msgstr ""
+
+#: ../api/importexport.cc:213
+msgid "The filter to export with."
+msgstr ""
+
+#: ../api/importexport.cc:305
+msgid "Missing an export config!"
+msgstr ""
+
+#: ../api/reimpose.cc:28
+msgid "Reimpose"
+msgstr ""
+
+#: ../api/reimpose.cc:29
+msgid "Replace a document's imposition"
+msgstr ""
+
+#: ../api/reimpose.cc:40
+msgid "The document to reimpose. Pulled from context if none given"
+msgstr ""
+
+#: ../api/reimpose.cc:55
+msgid "Scale Pages"
+msgstr ""
+
+#: ../api/reimpose.cc:56
+msgid "Yes or no, whether to scale the old pages to fit the new pages"
+msgstr ""
+
+#: ../api/reimpose.cc:63
+msgid ""
+"New paper size to use in the new imposition. Use a Paper object or a known "
+"paper name. A string such as \"tabloid,landscape\" will also work."
+msgstr ""
+
+#: ../api/reimpose.cc:71
+msgid "Orientation of the paper. Either portrait (0) or landscape (1)."
+msgstr ""
+
+#: ../api/reimpose.cc:79
+msgid "Create new"
+msgstr ""
+
+#: ../api/reimpose.cc:80
+msgid "Reimpose to a new document"
+msgstr ""
+
+#: ../api/reimpose.cc:115
+msgid "Reimpose needs parameters!"
+msgstr ""
+
+#: ../api/reimpose.cc:155 ../api/reimpose.cc:160
+msgid "You must specify a document to reimpose."
+msgstr ""
+
+#: ../api/reimpose.cc:157
+msgid "Cannot find that document!"
+msgstr ""
+
+#: ../api/reimpose.cc:164
+msgid "You must specify an imposition!"
+msgstr ""
+
+#: ../api/reimpose.cc:173
+msgid "Imposition not found!"
+msgstr ""
+
+#: ../api/reimpose.cc:178
+msgid "Wrong format for imposition!"
+msgstr ""
+
+#: ../api/reimpose.cc:216
+msgid "You must provide a paper size!"
+msgstr ""
+
+#: ../../laxkit/lax/laxoptions.cc:149
+msgid "Options:"
+msgstr ""
+
+#: ../../laxkit/lax/palette.cc:645
+msgid "Load Palette"
+msgstr ""
+
+#: ../../laxkit/lax/simpleprint.cc:71
+msgid "Print:"
+msgstr ""
+
+#: ../../laxkit/lax/simpleprint.cc:127
+msgid "Print All"
+msgstr ""
+
+#: ../../laxkit/lax/simpleprint.cc:135
+msgid "Print Current"
+msgstr ""
+
+#: ../../laxkit/lax/simpleprint.cc:143
+msgid "Print From:"
+msgstr ""
+
+#: ../../laxkit/lax/dateutils.cc:80
+msgid "Sunday"
+msgstr ""
+
+#: ../../laxkit/lax/dateutils.cc:81
+msgid "Monday"
+msgstr ""
+
+#: ../../laxkit/lax/dateutils.cc:82
+msgid "Tuesday"
+msgstr ""
+
+#: ../../laxkit/lax/dateutils.cc:83
+msgid "Wednesday"
+msgstr ""
+
+#: ../../laxkit/lax/dateutils.cc:84
+msgid "Thursday"
+msgstr ""
+
+#: ../../laxkit/lax/dateutils.cc:85
+msgid "Friday"
+msgstr ""
+
+#: ../../laxkit/lax/dateutils.cc:86
+msgid "Saturday"
+msgstr ""
+
+#: ../../laxkit/lax/dateutils.cc:116
+msgid "January"
+msgstr ""
+
+#: ../../laxkit/lax/dateutils.cc:117
+msgid "February"
+msgstr ""
+
+#: ../../laxkit/lax/dateutils.cc:118
+msgid "March"
+msgstr ""
+
+#: ../../laxkit/lax/dateutils.cc:119
+msgid "April"
+msgstr ""
+
+#: ../../laxkit/lax/dateutils.cc:120
+msgid "May"
+msgstr ""
+
+#: ../../laxkit/lax/dateutils.cc:121
+msgid "June"
+msgstr ""
+
+#: ../../laxkit/lax/dateutils.cc:122
+msgid "July"
+msgstr ""
+
+#: ../../laxkit/lax/dateutils.cc:123
+msgid "August"
+msgstr ""
+
+#: ../../laxkit/lax/dateutils.cc:124
+msgid "September"
+msgstr ""
+
+#: ../../laxkit/lax/dateutils.cc:125
+msgid "October"
+msgstr ""
+
+#: ../../laxkit/lax/dateutils.cc:126
+msgid "November"
+msgstr ""
+
+#: ../../laxkit/lax/dateutils.cc:127
+msgid "December"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/objectinterface.cc:79
+msgid "Object Tool"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/imagepatchinterface.cc:365
+msgid "Image Patch Tool"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/imagepatchinterface.cc:405
+#: ../../laxkit/lax/interfaces/colorpatchinterface.cc:595
+#, c-format
+msgid "New Recurse Depth %d: "
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/colorpatchinterface.cc:557
+msgid "Color Patch Tool"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/imageinterface.cc:450
+msgid "Image Tool"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/pathinterface.cc:809
+msgid "Path Tool"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/pathinterface.cc:2199
+msgid "Send color to fill"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/pathinterface.cc:2199
+msgid "Send color to stroke"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/patchinterface.cc:1986
+msgid "Patch Tool"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/patchinterface.cc:3151
+msgid ""
+"a=select all/none, y=constrain y, x=constrain x, r/c/s=subdivide, z=reset, "
+"1,2,3,4,5,8,v,h"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/patchinterface.cc:3160
+#: ../../laxkit/lax/interfaces/patchinterface.cc:3168
+#, c-format
+msgid "Recurse for screen %d times"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/patchinterface.cc:3177
+msgid "Smooth edit mode"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/patchinterface.cc:3196
+msgid "Edit as a linear patches"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/patchinterface.cc:3197
+msgid "Edit as Coons patches"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/patchinterface.cc:3198
+msgid "Edit with border controls only"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/patchinterface.cc:3199
+msgid "Edit full cubic bezier patch"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/patchinterface.cc:3232
+#: ../../laxkit/lax/interfaces/patchinterface.cc:3239
+#, c-format
+msgid "Divide each row into %d rows now"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/patchinterface.cc:3259
+#: ../../laxkit/lax/interfaces/patchinterface.cc:3266
+#, c-format
+msgid "Divide each column into %d columns now"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/patchinterface.cc:3304
+msgid "Patches need more than 1 column of subpatches to warp."
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/rectinterface.cc:229
+msgid "Affine Tool"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/gradientinterface.cc:922
+msgid "Radial Gradient Tool"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/gradientinterface.cc:923
+msgid "Linear Gradient Tool"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/gradientinterface.cc:924
+msgid "Gradient Tool"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/gradientinterface.cc:1941
+msgid "d=decorations, f=flip color order, l=linear, r=radial"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/gradientinterface.cc:1991
+msgid "Don't show object on top, no decorations"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/gradientinterface.cc:1992
+msgid "Don't show object on top, but show decorations"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/gradientinterface.cc:1993
+msgid "Show object on top without decorations"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/gradientinterface.cc:1994
+msgid "Show object on top with decorations"
+msgstr ""
+
+#: ../../laxkit/lax/button.cc:155
+msgid "Save All"
+msgstr ""
+
+#: ../../laxkit/lax/button.cc:156
+msgid "Close"
+msgstr ""
+
+#: ../../laxkit/lax/button.cc:157
+msgid "Close All"
+msgstr ""
+
+#: ../../laxkit/lax/button.cc:158
+msgid "Quit"
+msgstr ""
+
+#: ../../laxkit/lax/button.cc:159
+msgid "Quit Anyway"
+msgstr ""
+
+#: ../../laxkit/lax/button.cc:161 ../../laxkit/lax/imagedialog.cc:192
+msgid "Preview"
+msgstr ""
+
+#: ../../laxkit/lax/button.cc:162
+msgid "Yes"
+msgstr ""
+
+#: ../../laxkit/lax/button.cc:164
+msgid "Overwrite"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:192
+msgid "File?"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:193
+msgid "Filename to use"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:216
+msgid "Path:"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:217
+msgid "Current Directory"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:220
+msgid "Mask:"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:222
+msgid "Mask to apply to the end of path"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:441
+msgid "Recent"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:442
+msgid "Select a recently used file"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:462
+msgid "Bookmarks"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:463
+msgid "Select existing bookmark or make a new bookmark"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:478
+msgid ""
+"Choose from these files.\n"
+"Right-click drag scrolls"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:492
+msgid "Bookmark"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:493
+msgid "Bookmark the current directory"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:500
+msgid "New Dir"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:501
+msgid "Create a new directory"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:507
+msgid "Up"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:508
+msgid "Go up a directory"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:513
+msgid "Refresh"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:514
+msgid "Re-read current directory"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:519
+msgid "Details"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:521 ../../laxkit/lax/filedialog.cc:528
+#: ../../laxkit/lax/filedialog.cc:535
+msgid "(Not implemented yet)"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:526
+msgid "Back"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:533
+msgid "Forward"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:642 ../../laxkit/lax/filedialog.cc:753
+msgid "Add current directory"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:866
+msgid "New directory?"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:867
+msgid "Create"
+msgstr ""
+
+#: ../../laxkit/lax/imagedialog.cc:185
+msgid "..."
+msgstr ""
+
+#: ../../laxkit/lax/imagedialog.cc:211
+msgid "Regenerate preview:"
+msgstr ""
+
+#: ../../laxkit/lax/imagedialog.cc:211
+msgid "Generate preview:"
+msgstr ""
+
+#: ../../laxkit/lax/rulerwin.cc:616
+msgid "Units"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:51
+msgid "in"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:51
+msgid "inch"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:51
+msgid "inches"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:52
+msgid "ft"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:52
+msgid "foot"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:52
+msgid "feet"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:53
+msgid "yd"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:53
+msgid "yard"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:53
+msgid "yards"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:54
+msgid "cm"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:54
+msgid "centimeter"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:54
+msgid "centimeters"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:55
+msgid "mm"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:55
+msgid "millimeter"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:55
+msgid "millimeters"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:56
+msgid "m"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:56
+msgid "meter"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:56
+msgid "meters"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:57
+msgid "pt"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:57
+msgid "point"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:57
+msgid "points"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:58
+msgid "px"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:58
+msgid "pixel"
+msgstr ""
+
+#: ../../laxkit/lax/units.cc:58
+msgid "pixels"
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:185
+#, c-format
+msgid "Shift-"
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:186
+#, c-format
+msgid "Control-"
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:187
+#, c-format
+msgid "Meta-"
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:188
+#, c-format
+msgid "Alt-"
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:190
+#, c-format
+msgid "Middle"
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:201
+msgid "For red, drag "
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:208
+msgid "For green, drag "
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:215
+msgid "For blue, drag "
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:222
+msgid "For cyan, drag "
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:229
+msgid "For magenta, drag "
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:236
+msgid "For yellow, drag "
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:243
+msgid "For black, drag "
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:250
+msgid "For alpha, drag "
+msgstr ""
+
+#: ../../laxkit/lax/overwrite.cc:62
+msgid "Overwrite?"
+msgstr ""
+
+#: ../../laxkit/lax/fontdialog.cc:144
+msgid "Family"
+msgstr ""
+
+#: ../../laxkit/lax/fontdialog.cc:145
+msgid "Family name of the font"
+msgstr ""
+
+#: ../../laxkit/lax/fontdialog.cc:155
+msgid "Style"
+msgstr ""
+
+#: ../../laxkit/lax/fontdialog.cc:156
+msgid "Style of the font"
+msgstr ""
+
+#: ../../laxkit/lax/fontdialog.cc:163
+msgid "Size"
+msgstr ""
+
+#: ../../laxkit/lax/fontdialog.cc:164
+msgid "Size of the font"
+msgstr ""
+
+#: ../../laxkit/lax/fontdialog.cc:172
+msgid "File of the font"
+msgstr ""

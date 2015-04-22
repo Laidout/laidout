@@ -1,0 +1,85 @@
+laidout (0.094.1) unstable; urgency=low
+
+  * Dev version
+
+ -- Tom Lechner <tomlechner@users.sourceforge.net>  Fri, 21 Feb 2014 21:15:50 -0800
+
+laidout (0.094) unstable; urgency=low
+
+  * Thirteenth Release
+
+ -- Tom Lechner <tomlechner@users.sourceforge.net>  Thu, 20 Feb 2014 21:15:50 -0800
+
+laidout (0.093) unstable; urgency=low
+
+  * Twelfth Release
+
+ -- Tom Lechner <tomlechner@users.sourceforge.net>  Sun, 17 Jul 2012 21:15:50 -0800
+
+laidout (0.092) unstable; urgency=low
+
+  * Eleventh Release
+
+ -- Tom Lechner <tomlechner@users.sourceforge.net>  Sun, 30 Dec 2011 21:15:50 -0800
+
+laidout (0.091) unstable; urgency=low
+
+  * Tenth Release
+
+ -- Tom Lechner <tomlechner@users.sourceforge.net>  Sun, 13 Nov 2010 21:15:50 -0800
+
+laidout (0.09) unstable; urgency=low
+
+  * Ninth Release
+
+ -- Tom Lechner <tomlechner@users.sourceforge.net>  Sun, 21 Feb 2010 21:15:50 -0800
+
+laidout (0.08) unstable; urgency=low
+
+  * Eighth Release
+
+ -- Tom Lechner <tomlechner@users.sourceforge.net>  Sun, 15 Sep 2007 21:10:50 -0800
+
+laidout (0.07) unstable; urgency=low
+
+  * Seventh Release
+
+ -- Tom Lechner <tomlechner@users.sourceforge.net>  Sun, 2 Jun 2007 21:10:50 -0800
+ 
+laidout (0.06) unstable; urgency=low
+
+  * Sixth release 
+
+ -- Tom Lechner <tomlechner@users.sourceforge.net>  Sun, 25 Apr 2007 21:10:50 -0800
+ 
+laidout (0.05) unstable; urgency=low
+
+  * Fifth release 
+
+ -- Tom Lechner <tomlechner@users.sourceforge.net>  Sun, 5 Nov 2006 15:29:50 -0800
+ 
+laidout (0.04) unstable; urgency=low
+
+  * Fourth release 
+
+ -- Tom Lechner <tomlechner@users.sourceforge.net>  Sun, 4 Sep 2006 15:29:50 -0800
+ 
+laidout (0.03) unstable; urgency=low
+
+  * Third release 
+
+ -- Tom Lechner <tomlechner@users.sourceforge.net>  Mon, 13 May 2006 15:29:50 -0800
+ 
+laidout (0.02) unstable; urgency=low
+
+  * Second release 
+  * First debian package of it too
+
+ -- Tom Lechner <tomlechner@users.sourceforge.net>  Sat, 8 Apr 2006 15:29:50 -0800
+ 
+laidout (0.01) unstable; urgency=low
+
+  * Initial release 
+
+ -- Tom Lechner <tomlechner@users.sourceforge.net>  Sat, 18 Mar 2006 21:29:50 -0800
+

@@ -1,0 +1,19 @@
+show arrow indicator for page size inc/dec
+
+make adaptions for mobile that doesn't have a mouse, thus mouseovers
+
+show fold indicator on the pages
+
+should show pages for all fold levels
+
+for hasfinal should show margins, etc at all unfolded OR all folded
+
+red line for unstaplable edge
+
+
+-------------------
+DONE showing front versus showing back
+DONE showing partial folds frelled.. reallocation error?
+DONE sliding
+DONE save
+
