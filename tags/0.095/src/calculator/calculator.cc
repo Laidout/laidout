@@ -1112,7 +1112,7 @@ LaidoutCalculator::LaidoutCalculator()
 	global_scope.scope_namespace=new ObjectDef(NULL, "Global", _("Global"), _("Global namespace"), "namespace",NULL,NULL);
 	scopes.push(&global_scope,0); //push so as to not delete global scope
 
-	DBG cerr <<" ~~~~~~~ New Calculator created."<<endl;
+	//DBG cerr <<" ~~~~~~~ New Calculator created."<<endl;
 
 
 	 //initialize base modules
@@ -1277,7 +1277,7 @@ int LaidoutCalculator::RunShell()
 		input=readline(prompt); //tempexprs is malloc based
 
 		if (input==NULL) continue;
-		//DBG cout<<"\nreadline:"<<input;
+		////DBG cout<<"\nreadline:"<<input;
 
 		if (strlen(input)>0) {
 			if (!strcmp(input,"quit")) return 0;
@@ -1759,7 +1759,7 @@ void LaidoutCalculator::skipwscomment()
 		while (isspace(curexprs[from]) && from<curexprslen) {
 			if (curexprs[from]=='\n') {
 				curline++;
-				DBG cerr <<"next line ("<<curline<<")..."<<endl;
+				//DBG cerr <<"next line ("<<curline<<")..."<<endl;
 			}
 			from++;
 		}
@@ -1775,7 +1775,7 @@ void LaidoutCalculator::skipwscomment()
 			while ((curexprs[from]!='*' || curexprs[from+1]!='/') && from<curexprslen) {
 				if (curexprs[from]=='\n') {
 					curline++;
-					DBG cerr <<"next line ("<<curline<<")..."<<endl;
+					//DBG cerr <<"next line ("<<curline<<")..."<<endl;
 				}
 				from++;
 			}
@@ -1843,7 +1843,7 @@ void LaidoutCalculator::pushScope(BlockTypes scopetype, int loop_start, int cond
  */
 BlockTypes LaidoutCalculator::popScope()
 {
-	DBG cerr <<"pop scope!"<<endl;
+	//DBG cerr <<"pop scope!"<<endl;
 
 	if (scopes.n==1) { calcerr(_("Unexpected end!")); return BLOCK_error; }
 	BlockInfo *scope=scopes.e[scopes.n-1];
@@ -1968,7 +1968,7 @@ void LaidoutCalculator::skipBlock(char ch)
 		if (!str) calcerr(_("Missing end!"));
 		if (*str=='\n') {
 			curline++;
-			DBG cerr <<"next line ("<<curline<<")..."<<endl;
+			//DBG cerr <<"next line ("<<curline<<")..."<<endl;
 			from++;
 			continue;
 		}
@@ -2270,7 +2270,7 @@ int LaidoutCalculator::checkBlock(Value **value_ret)
 //! Replace curexprs with newex, and set from=0.
 void LaidoutCalculator::newcurexprs(const char *newex,int len)
 {
-	DBG cerr <<"new curexprs: "<<newex<<endl;
+	//DBG cerr <<"new curexprs: "<<newex<<endl;
 
 	makenstr(curexprs,newex,len);
 	curexprslen=strlen(curexprs);
@@ -2798,8 +2798,8 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 		currentLevel()->AddName(currentLevel()->scope_namespace, def, NULL);
 		pushScope(BLOCK_class, 0, 0, NULL, NULL, def);
 
-		DBG cerr<<"start class definition:"<<endl;
-		DBG def->dump_out(stdout,2,0,NULL);
+		//DBG cerr<<"start class definition:"<<endl;
+		//DBG def->dump_out(stdout,2,0,NULL);
 		return 1;
 	}
 
@@ -3345,7 +3345,7 @@ Value *LaidoutCalculator::number()
  */
 Value *LaidoutCalculator::dereference(Value *val)
 {
-	DBG if (val->GetObjectDef()) cerr <<" --- trying to deref "<<val->GetObjectDef()->name<<endl;
+	//DBG if (val->GetObjectDef()) cerr <<" --- trying to deref "<<val->GetObjectDef()->name<<endl;
 	const char *name=NULL;
 	int index=-1;
 	int n=0;
@@ -4290,8 +4290,8 @@ int LaidoutCalculator::addOperator(const char *op,int dir,int priority, int modu
  */
 void LaidoutCalculator::messageOut(const char *str,int output_lines)
 {//***
-	//DBG cerr <<"*** must implement LaidoutCalculator::messageOut() properly! "<<endl;
-	//DBG if (laidout->runmode!=RUNMODE_Shell) cerr <<str<<endl;
+	////DBG cerr <<"*** must implement LaidoutCalculator::messageOut() properly! "<<endl;
+	////DBG if (laidout->runmode!=RUNMODE_Shell) cerr <<str<<endl;
 
 	if (output_lines) appendline(messagebuffer,str);
 	else appendstr(messagebuffer,str);
@@ -4379,10 +4379,10 @@ ValueHash *LaidoutCalculator::parseParameters(ObjectDef *def)
 					}
 					ObjectDef *ev=NULL;
 					if (ename) ev=def->getField(enumcheck);
-					DBG if (!ev) { cerr <<" ***** Missing fields in expected enum!!!"<<endl;  }
+					//DBG if (!ev) { cerr <<" ***** Missing fields in expected enum!!!"<<endl;  }
 					
 					 //*** warning, assumes no extended enum, or dynamic enum!!! maybe bad....
-					DBG cerr <<"*** enum value scan must search for dynamic enums eventually..."<<endl;
+					//DBG cerr <<"*** enum value scan must search for dynamic enums eventually..."<<endl;
 					if (ev && ev->fields) for (int c=0; c<ev->fields->n; c++) {
 						if (strcmp(ev->fields->e[c]->name,ename)==0) {
 							skipwscomment();
@@ -4675,7 +4675,7 @@ int LaidoutCalculator::Evaluate(const char *word,int len, ValueHash *context, Va
  */
 int LaidoutCalculator::Assignment(Value *num1, Value *num2, Value **value_ret, ErrorLog *log)
 {
-	DBG cerr <<" *** assignment"<<endl;
+	//DBG cerr <<" *** assignment"<<endl;
 
 	if (num1->type()!=VALUE_LValue) {
 		calcerr(_("Cannot assign to that!"));

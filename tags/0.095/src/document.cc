@@ -49,13 +49,13 @@ namespace Laidout {
 	// ***********TEMP!!!
 int Document::inc_count()
 {
-	DBG cerr <<"document "<<object_id<<" inc_count to "<<_count+1<<endl;
+	//DBG cerr <<"document "<<object_id<<" inc_count to "<<_count+1<<endl;
 	return anObject::inc_count();
 }
 
 int Document::dec_count()
 {
-	DBG cerr <<"document "<<object_id<<" dec_count to "<<_count-1<<endl;
+	//DBG cerr <<"document "<<object_id<<" dec_count to "<<_count-1<<endl;
 	return anObject::dec_count();
 }
 
@@ -471,7 +471,7 @@ Document::Document(Imposition *imp,const char *filename)//stuff=NULL
 
 Document::~Document()
 {
-	DBG cerr <<" Document destructor.."<<endl;
+	//DBG cerr <<" Document destructor.."<<endl;
 	pages.flush();
 	pageranges.flush();
 	if (saveas) delete[] saveas;
@@ -731,9 +731,9 @@ int Document::RemovePages(int start,int n)
 	if (start<0 || start>=pages.n) return -1;
 	if (start+n>pages.n) n=pages.n-start;
 	for (int c=0; c<n; c++) {
-		DBG cerr << "---page id:"<<pages.e[start]->object_id<<"... "<<endl;
+		//DBG cerr << "---page id:"<<pages.e[start]->object_id<<"... "<<endl;
 		pages.remove(start);
-		DBG cerr << "---  Done removing page "<<start+c<<endl;
+		//DBG cerr << "---  Done removing page "<<start+c<<endl;
 	}
 	imposition->NumPages(pages.n);
 	SyncPages(start,-1, true);
@@ -756,19 +756,19 @@ int Document::Save(int includelimbos,int includewindows,ErrorLog &log)
 {
 	FILE *f=NULL;
 	if (isblank(saveas)) {
-		DBG cerr <<"**** cannot save, saveas is null."<<endl;
+		//DBG cerr <<"**** cannot save, saveas is null."<<endl;
 		log.AddMessage(_("Need a file name to save to!"),ERROR_Fail);
 		return 2;
 	}
 	f=fopen(saveas,"w");
 	if (!f) {
-		DBG cerr <<"**** cannot save, file \""<<saveas<<"\" cannot be opened for writing."<<endl;
+		//DBG cerr <<"**** cannot save, file \""<<saveas<<"\" cannot be opened for writing."<<endl;
 		log.AddMessage(_("File cannot be opened for writing"),ERROR_Fail);
 		return 3;
 	}
 
 	setlocale(LC_ALL,"C");
-	DBG cerr <<"....Saving document to "<<saveas<<endl;
+	//DBG cerr <<"....Saving document to "<<saveas<<endl;
 //	f=stdout;//***
 	fprintf(f,"#Laidout %s Document\n",LAIDOUT_VERSION);
 	
@@ -833,7 +833,7 @@ int Document::Save(int includelimbos,int includewindows,ErrorLog &log)
  */
 int Document::Load(const char *file,ErrorLog &log)
 {
-	DBG cerr <<"----Document::Load read file "<<(file?file:"**** AH! null file!")<<" into a new Document"<<endl;
+	//DBG cerr <<"----Document::Load read file "<<(file?file:"**** AH! null file!")<<" into a new Document"<<endl;
 	if (!file) return 0;
 	
 	FILE *f=open_laidout_file_to_read(file,"Document",&log);
@@ -877,12 +877,12 @@ int Document::Load(const char *file,ErrorLog &log)
 	SyncPages(0,-1, false);
 
 	laidout->project->ClarifyRefs(log);
-	DBG cerr<<" *** Document::Load should probably have a load context storing refs that need to be sorted, to save time loading..."<<endl;
+	//DBG cerr<<" *** Document::Load should probably have a load context storing refs that need to be sorted, to save time loading..."<<endl;
 
 	if (!strstr(file,".laidout") && !strstr(file,"/templates/")) //***bit of a hack to not touch templates
 		touch_recently_used(file,"application/x-laidout-doc","Laidout",NULL);
 
-	DBG cerr <<"------ Done reading "<<file<<endl<<endl;
+	//DBG cerr <<"------ Done reading "<<file<<endl<<endl;
 	return 1;
 }
 
@@ -916,7 +916,7 @@ int Document::SyncPages(int start,int n, bool shift_within_margins)
 		if (pages.e[c]->label) delete[] pages.e[c]->label;
 		pages.e[c]->label=label;
 		pages.e[c]->Touch();
-		DBG cerr <<"=============page["<<c<<"] label="<<label<<endl;
+		//DBG cerr <<"=============page["<<c<<"] label="<<label<<endl;
 	}
 	return n;
 }
@@ -1139,7 +1139,7 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *
 	//****** finish this:
 	if (imposition) imposition->NumPages(pages.n);
 	else {
-		DBG cerr <<"**** no imposition in Document::dump_in_atts\n";
+		//DBG cerr <<"**** no imposition in Document::dump_in_atts\n";
 	}
 	
 	 // make sure pages all have proper labels and pagestyles

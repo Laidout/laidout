@@ -268,7 +268,7 @@ LaidoutApp::LaidoutApp()
 //! Destructor, only have to delete project!
 LaidoutApp::~LaidoutApp() 
 {
-	DBG cerr <<"LaidoutApp destructor.."<<endl;
+	//DBG cerr <<"LaidoutApp destructor.."<<endl;
 	 //these flush automatically, but are listed here for occasional debugging purposes...
 //	papersizes.flush(); 
 //	impositionpool.flush();
@@ -330,14 +330,14 @@ int LaidoutApp::Autosave()
 		doc->Saveas(oldname);
 		delete[] oldname;
 
-		DBG if (status==0) cerr <<" .... autosaved to: "<<fname<<endl;
-		DBG else cerr <<" .... ERROR trying to autosave to: "<<fname<<endl;
+		//DBG if (status==0) cerr <<" .... autosaved to: "<<fname<<endl;
+		//DBG else cerr <<" .... ERROR trying to autosave to: "<<fname<<endl;
 
 		delete[] fmt;
 		delete[] fname;
 	}
 
-	DBG cerr <<" *** need to finish implementing autosave!!"<<endl;
+	//DBG cerr <<" *** need to finish implementing autosave!!"<<endl;
 
 	return 1;
 }
@@ -454,7 +454,7 @@ int LaidoutApp::init(int argc,char **argv)
 //		DBG cerr <<"Added uninstalled icon dir "<<iconpath<<" to icon path"<<endl;
 //		delete[] iconpath;
 //	} else {
-		DBG cerr <<"Added installed icon dir "<<ICON_DIRECTORY<<" to icon path"<<endl;
+		//DBG cerr <<"Added installed icon dir "<<ICON_DIRECTORY<<" to icon path"<<endl;
 		if (icon_dir) icons->AddPath(icon_dir);
 		icons->AddPath(ICON_DIRECTORY);
 		if (!icon_dir) makestr(icon_dir,ICON_DIRECTORY);
@@ -464,17 +464,17 @@ int LaidoutApp::init(int argc,char **argv)
 
 	 //------setup initial pools
 	 
-	DBG cerr <<"---file filters init"<<endl;
+	//DBG cerr <<"---file filters init"<<endl;
 	installFilters();
 	
-	DBG cerr <<"---imposition pool init"<<endl;
+	//DBG cerr <<"---imposition pool init"<<endl;
 	GetBuiltinImpositionPool(&impositionpool);
-	DBG cerr <<"---imposition pool init done"<<endl;
+	//DBG cerr <<"---imposition pool init done"<<endl;
 	
-	DBG cerr <<"---papersizes pool init"<<endl;
+	//DBG cerr <<"---papersizes pool init"<<endl;
 	GetBuiltinPaperSizes(&papersizes);
 	
-	DBG cerr <<"---interfaces pool init"<<endl;
+	//DBG cerr <<"---interfaces pool init"<<endl;
 	PushBuiltinPathops(); // this must be called before getinterfaces because of pathops...
 	GetBuiltinInterfaces(&interfacepool);
 
@@ -485,7 +485,7 @@ int LaidoutApp::init(int argc,char **argv)
 	}
 
 	 //establish user accesible api
-	DBG cerr<<"---install functions"<<endl;
+	//DBG cerr<<"---install functions"<<endl;
 	InitFunctions();
 	InitObjectDefinitions();
 	
@@ -517,11 +517,11 @@ int LaidoutApp::init(int argc,char **argv)
 
 
 	 //initialize the main calculator
-	DBG cerr<<"---init main calculator"<<endl;
+	//DBG cerr<<"---init main calculator"<<endl;
 	if (!calculator) calculator=new LaidoutCalculator();
 
 	 // Note parseargs has to come after initing all the pools and whatever else
-	DBG cerr <<"---init: parse args"<<endl;
+	//DBG cerr <<"---init: parse args"<<endl;
 	parseargs(argc,argv);
 	
 	 // Define default project if necessary, and Pop something up if there hasn't been anything yet
@@ -541,7 +541,7 @@ int LaidoutApp::init(int argc,char **argv)
 
 		if (prefs.autosave>0) {
 			int ms=prefs.autosave*60*1000;
-			DBG cerr <<"Will autosave every "<<int(prefs.autosave)<<":"<<int((prefs.autosave-floor(prefs.autosave))*60)<<" min"<<endl;
+			//DBG cerr <<"Will autosave every "<<int(prefs.autosave)<<":"<<int((prefs.autosave-floor(prefs.autosave))*60)<<" min"<<endl;
 			autosaveid=addtimer(this, ms,ms, -1);
 		}
 
@@ -553,7 +553,7 @@ int LaidoutApp::init(int argc,char **argv)
 		return 0;
 	}
 
-	DBG cerr <<"---done with init"<<endl;
+	//DBG cerr <<"---done with init"<<endl;
 	
 	return 0;
 };
@@ -598,7 +598,7 @@ int LaidoutApp::IsProject()
  */
 int LaidoutApp::createlaidoutrc()
 {
-	DBG cerr <<"-------------Creating $HOME/.config/laidout/(version)/laidoutrc----------"<<endl;
+	//DBG cerr <<"-------------Creating $HOME/.config/laidout/(version)/laidoutrc----------"<<endl;
 
 	 // ensure that ~/.config/ladiout/(version) exists
 	 //   if not, create, and put in a README explaining what's what:
@@ -759,7 +759,7 @@ int LaidoutApp::createlaidoutrc()
 int LaidoutApp::readinLaidoutDefaults()
 {
 
-	DBG cerr <<"-------------Checking $HOME/.laidout/(version)/laidoutrc----------"<<endl;
+	//DBG cerr <<"-------------Checking $HOME/.laidout/(version)/laidoutrc----------"<<endl;
 	int foundkeys=0;
 
 	FILE *f=NULL;
@@ -778,7 +778,7 @@ int LaidoutApp::readinLaidoutDefaults()
 		value=att.attributes.e[c]->value;
 		if (!name) continue;
 
-		//DBG cerr <<(name?name:"(no name)")<<": "<<(value?value:"(no value)")<<endl;
+		////DBG cerr <<(name?name:"(no name)")<<": "<<(value?value:"(no value)")<<endl;
 
 		if (!strcmp(name,"laxconfig")) {
 			dump_in_rc(att.attributes.e[c],NULL);
@@ -851,7 +851,7 @@ int LaidoutApp::readinLaidoutDefaults()
 		
 		} else if (!strcmp(name,"previewName")) {
 			preview_file_bases.push(newstr(value));
-			DBG cerr<<"preview_file_bases local for top="<<(int)preview_file_bases.islocal[preview_file_bases.n-1]<<endl;
+			//DBG cerr<<"preview_file_bases local for top="<<(int)preview_file_bases.islocal[preview_file_bases.n-1]<<endl;
 		
 		} else if (!strcmp(name,"maxPreviewLength")) {
 			IntAttribute(value,&max_preview_length);
@@ -882,13 +882,13 @@ int LaidoutApp::readinLaidoutDefaults()
 	
 	fclose(f);
 	setlocale(LC_ALL,"");
-	DBG cerr <<"-------------Done with $HOME/.laidout/(version)/laidoutrc----------"<<endl;
+	//DBG cerr <<"-------------Done with $HOME/.laidout/(version)/laidoutrc----------"<<endl;
 
 	if (foundkeys==0) {
 		char *keys=newstr(laidout->config_dir);
 		appendstr(keys,"/default.keys");
 		if (readable_file(keys)) {
-			DBG cerr <<" ----- reading in default shortcuts file ------"<<endl;
+			//DBG cerr <<" ----- reading in default shortcuts file ------"<<endl;
 
 			InitializeShortcuts();
 			ShortcutManager *m=GetDefaultShortcutManager();
@@ -972,7 +972,7 @@ void InitOptions()
  */
 void LaidoutApp::parseargs(int argc,char **argv)
 {
-	DBG cerr <<"---------start options"<<endl;
+	//DBG cerr <<"---------start options"<<endl;
 	//InitOptions(); <- this is done in main()
 	//c=options.Parse(argc,argv, &index); <- now down in main also
 	
@@ -1068,7 +1068,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 
 			case 'O': { // list export options for a given format
-					//DBG cout <<"   ***** --list-export-options IS A HACK!! Code me right! ***"<<endl;
+					////DBG cout <<"   ***** --list-export-options IS A HACK!! Code me right! ***"<<endl;
 					//printf("format   = \"theformat\"    #the format to export as\n");
 					//printf("tofile   = /file/to/export/to\n");
 					//printf("tofiles  = \"/files/like###.this\"  #the \"###\" section is replaced with the spread index\n");
@@ -1122,7 +1122,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 						prefs.default_units=id;
 						units->DefaultUnits(prefs.unitname);
 						notifyPrefsChanged(NULL,PrefsDefaultUnits);
-						DBG cerr <<"laidout:units->DefaultUnits:"<<prefs.default_units<<"  from um:"<<units->DefaultUnits(prefs.unitname)<<endl;
+						//DBG cerr <<"laidout:units->DefaultUnits:"<<prefs.default_units<<"  from um:"<<units->DefaultUnits(prefs.unitname)<<endl;
 					}
 
 				} break;
@@ -1199,13 +1199,13 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	} //if exprt
 
 	 // options are now basically parsed, must handle any resulting commands like export
-	DBG o=options.remaining();
-	DBG if (o) {
-	DBG 	cerr <<"Read in these files:"<<endl;
-	DBG     int num=options.more()+1;
-	DBG 	for (int c=1 ; o; o=options.next(), c++) 
-	DBG 		cerr <<"  "<<c<<"/"<<num<<":  "<<o->arg()<<endl;
-	DBG }
+	//DBG o=options.remaining();
+	//DBG if (o) {
+	//DBG 	cerr <<"Read in these files:"<<endl;
+	//DBG     int num=options.more()+1;
+	//DBG 	for (int c=1 ; o; o=options.next(), c++) 
+	//DBG 		cerr <<"  "<<c<<"/"<<num<<":  "<<o->arg()<<endl;
+	//DBG }
 
 
 	 // load in any projects or documents after the args
@@ -1214,7 +1214,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	if (!project) project=new Project;
 	ErrorLog log;
 	for (o=options.remaining(); o; o=options.next()) {
-		DBG cerr <<"----Read in:  "<<o->arg()<<endl;
+		//DBG cerr <<"----Read in:  "<<o->arg()<<endl;
 		doc=NULL;
 		if (Load(o->arg(),log)==0) doc=curdoc;
 		if (topwindows.n==index) {
@@ -1223,7 +1223,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		}
 	}
 	
-	DBG cerr <<"---------end options"<<endl;
+	//DBG cerr <<"---------end options"<<endl;
 }
 
 //! Return whether win is in topwindows.
@@ -1479,7 +1479,7 @@ int LaidoutApp::NewDocument(const char *spec)
 {
 	if (!spec) return 1;
 	if (!strcmp(spec,"default")) spec="letter, portrait, singles";
-	DBG cerr <<"------create new doc from \""<<spec<<"\""<<endl;
+	//DBG cerr <<"------create new doc from \""<<spec<<"\""<<endl;
 	
 	char *saveas=NULL;
 	Imposition *imp=NULL;
@@ -1494,7 +1494,7 @@ int LaidoutApp::NewDocument(const char *spec)
 	char **fields=split(spec,',',NULL),
 		 *field=NULL;
 	if (!fields) { 
-		DBG cout <<"*** broken spec"<<endl;
+		//DBG cout <<"*** broken spec"<<endl;
 		return 2; 
 	}
 	int c,c2,n; // n is length of first alnum word in field
@@ -1611,7 +1611,7 @@ int LaidoutApp::NewDocument(Imposition *imposition, const char *filename)
 	if (!project) project=new Project();
 	project->Push(newdoc); //adds count to newdoc
 
-	DBG cerr <<"***** just pushed newdoc using imposition "<<newdoc->imposition->Name()<<", must make viewwindow *****"<<endl;
+	//DBG cerr <<"***** just pushed newdoc using imposition "<<newdoc->imposition->Name()<<", must make viewwindow *****"<<endl;
 	newdoc->dec_count();
 	
 	
@@ -1742,11 +1742,11 @@ int main(int argc,char **argv)
 	bindtextdomain(scratch,LANGUAGE_PATH);
 	textdomain(scratch);
 
-	DBG cerr<<"---------Intl settings----------"<<endl;
-	DBG cerr<<"Text domain: "<<textdomain(NULL)<<endl;
-	DBG cerr<<"Domain dir:  "<<bindtextdomain("laidout",NULL)<<endl;
-	DBG cerr<<"Locale:      "<<setlocale(LC_MESSAGES,NULL)<<endl;
-	DBG cerr<<"--------------------------------"<<endl;
+	//DBG cerr<<"---------Intl settings----------"<<endl;
+	//DBG cerr<<"Text domain: "<<textdomain(NULL)<<endl;
+	//DBG cerr<<"Domain dir:  "<<bindtextdomain("laidout",NULL)<<endl;
+	//DBG cerr<<"Locale:      "<<setlocale(LC_MESSAGES,NULL)<<endl;
+	//DBG cerr<<"--------------------------------"<<endl;
 
 
 	InitOptions();
@@ -1791,20 +1791,20 @@ int main(int argc,char **argv)
 	o=options.find("experimental",0);
 	if (o && o->parsed_present) laidout->experimental=1;
 
-	DBG cerr <<" *** Warning! Undo is VERY VERY experimental, and not uniformly implemented!! use at your own risk!!!"<<endl;
+	//DBG cerr <<" *** Warning! Undo is VERY VERY experimental, and not uniformly implemented!! use at your own risk!!!"<<endl;
 	//if (!laidout->experimental) EnableUndo(false);
 	//EnableUndo(true);
 
 	
 	laidout->init(argc,argv);
 
-	//DBG cerr <<"------------ stylemanager->dump --------------------"<<endl;
-	//DBG stylemanager.dump(stderr,3);
-	//DBG cerr <<"---------- stylemanager->dump end ---------------------"<<endl;
+	////DBG cerr <<"------------ stylemanager->dump --------------------"<<endl;
+	////DBG stylemanager.dump(stderr,3);
+	////DBG cerr <<"---------- stylemanager->dump end ---------------------"<<endl;
 
 	laidout->run();
 
-	DBG cerr <<"---------Laidout Close--------------"<<endl;
+	//DBG cerr <<"---------Laidout Close--------------"<<endl;
 	 //for debugging purposes, spread out closing down various things....
 	laidout->close();
 	Laxkit::SetUndoManager(NULL);
@@ -1812,13 +1812,13 @@ int main(int argc,char **argv)
 	Laxkit::IconManager::SetDefault(NULL);
 	laidout->dec_count();
 	
-	DBG cerr <<"---------------stylemanager-----------------"<<endl;
-	DBG cerr <<"  stylemanager.getNumFields()="<<(stylemanager.getNumFields())<<endl;
-	//DBG cerr <<"  stylemanager.styles.n="<<(stylemanager.styles.n)<<endl;
+	//DBG cerr <<"---------------stylemanager-----------------"<<endl;
+	//DBG cerr <<"  stylemanager.getNumFields()="<<(stylemanager.getNumFields())<<endl;
+	////DBG cerr <<"  stylemanager.styles.n="<<(stylemanager.styles.n)<<endl;
 	stylemanager.Clear();
 
 	cout <<"-----------------------------Bye!--------------------------"<<endl;
-	DBG cerr <<"------------end of code, default destructors follow--------"<<endl;
+	//DBG cerr <<"------------end of code, default destructors follow--------"<<endl;
 
 	return 0;
 }

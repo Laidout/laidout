@@ -1060,13 +1060,13 @@ DocumentExportConfig::~DocumentExportConfig()
 
 Value *DocumentExportConfig::dereference(const char *extstring, int len)
 {
-	DBG cerr <<" *** Need to implement DocumentExportConfig::dereference()!!"<<endl;
+	//DBG cerr <<" *** Need to implement DocumentExportConfig::dereference()!!"<<endl;
 	return NULL;
 }
 
 int DocumentExportConfig::assign(FieldExtPlace *ext,Value *v)
 {
-	DBG cerr <<" *** Need to implement DocumentExportConfig::assign()!!"<<endl;
+	//DBG cerr <<" *** Need to implement DocumentExportConfig::assign()!!"<<endl;
 	return 0;
 }
 
@@ -1086,7 +1086,7 @@ void DocumentExportConfig::dump_out(FILE *f,int indent,int what,Laxkit::anObject
 		fprintf(f,"%sbatches 4            #for multi-page capable targets, the number of spreads to put in a single file, repeat for whole range\n",spc);
 		fprintf(f,"%sevenodd odd          #all|even|odd. Based on spread index, maybe export only even or odd spreads.\n",spc);
 		//fprintf(f,"%spaperrotation 0      #0|90|180|270. Whether to rotate each exported (final) paper by that number of degrees\n",spc);
-		DBG cerr <<" *** need to implement DocumentExportConfig::paperrotation!"<<endl;
+		//DBG cerr <<" *** need to implement DocumentExportConfig::paperrotation!"<<endl;
 		return;
 	}
 	if (filename) fprintf(f,"%stofile %s\n",spc,filename);
@@ -1222,7 +1222,7 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 		return 1;
 	}
 
-	DBG cerr << "export_document begin to \""<<config->filter->VersionName()<<"\"......."<<endl;
+	//DBG cerr << "export_document begin to \""<<config->filter->VersionName()<<"\"......."<<endl;
 
 	 //figure out what paper arrangement to print out on
 	PaperGroup *papergroup=config->papergroup;
@@ -1354,7 +1354,7 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 		} else err=config->filter->Out(NULL,config,log); //multi-spread files
 	}
 	
-	DBG cerr << "export_document end."<<endl;
+	//DBG cerr << "export_document end."<<endl;
 
 	if (err>0) {
 		log.AddMessage(_("Export failed."),ERROR_Fail);

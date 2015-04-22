@@ -311,14 +311,14 @@ int SinglesEditor::init()
 
 int SinglesEditor::Event(const EventData *data,const char *mes)
 {
-	DBG cerr <<"newdocmessage: "<<(mes?mes:"(unknown)")<<endl;
+	//DBG cerr <<"newdocmessage: "<<(mes?mes:"(unknown)")<<endl;
 
 	if (!strcmp(mes,"paper name")) { 
 		 // new paper selected from the popup, so must find the x/y and set x/y appropriately
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
 
 		int i=s->info1;
-		DBG cerr <<"new paper size:"<<i<<endl;
+		//DBG cerr <<"new paper size:"<<i<<endl;
 		if (i<0 || i>=laidout->papersizes.n) return 0;
 		delete papertype;
 		papertype=(PaperStyle *)laidout->papersizes.e[i]->duplicate();
@@ -338,7 +338,7 @@ int SinglesEditor::Event(const EventData *data,const char *mes)
 	} else if (!strcmp(mes,"orientation")) {
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
 		int l=s->info1;
-		DBG cerr <<"New orientation:"<<l<<endl;
+		//DBG cerr <<"New orientation:"<<l<<endl;
 		if (l!=curorientation) {
 			char *txt=paperx->GetText(),
 				*txt2=papery->GetText();
