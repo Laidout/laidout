@@ -701,7 +701,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			      for (cc=0; cc<numdiv; cc++) {
 					s=(c+(float)cc/numdiv)/(patch->xsize/3);
 					t=(r+(float)rr/numdiv)/(patch->ysize/3);
-					DBG cerr <<" point s,t:"<<s<<','<<t<<endl;
+					//DBG cerr <<" point s,t:"<<s<<','<<t<<endl;
 
 				     //get color for point (r+rr,c+cc)
 					tt=t/(1-dt);
@@ -881,7 +881,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 	} else if (!strcmp(obj->whattype(),"SomeDataRef")) {
 		SomeDataRef *ref=dynamic_cast<SomeDataRef*>(obj);
 		if (!ref->thedata) {
-			DBG cerr <<" WARNING! missing thedata in a somedataref id:"<<ref->object_id<<endl;
+			//DBG cerr <<" WARNING! missing thedata in a somedataref id:"<<ref->object_id<<endl;
 		} else {
 			double m[6],m2[6];
 			transform_invert(m,ref->thedata->m());
@@ -1157,7 +1157,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	char *file=NULL;
 	if (!filename) {
 		if (isblank(doc->saveas)) {
-			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
+			//DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
 			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
 			out->dec_count();
@@ -1169,7 +1169,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 
 	f=open_file_for_writing(file,0,&log);//appends any error string
 	if (!f) {
-		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
+		//DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
 		delete[] file;
 		out->dec_count();
 		return 3;
@@ -1637,7 +1637,7 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 			 //gradientUnits = "userSpaceOnUse | objectBoundingBox"
 			//if (!strcmp(value,"userSpaceOnUse")) units=0;
 			//else if (!strcmp(value,"objectBoundingBox")) units=1;
-			DBG cerr <<" warning: ignoring gradientUnits on svg gradient in"<<endl;
+			//DBG cerr <<" warning: ignoring gradientUnits on svg gradient in"<<endl;
 
 		} else if (!strcmp(name,"gradientTransform")) {
 			svgtransform(value,gm);
@@ -1836,7 +1836,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 				paths->m(m);
 
 			} else if (!strcmp(name,"style")) {
-				DBG cerr <<" *** need to implement scanning of svg style attribute in svg path on import!"<<endl;
+				//DBG cerr <<" *** need to implement scanning of svg style attribute in svg path on import!"<<endl;
 
 			} else if (!strcmp(name,"inkscape:path-effect")) {
 				//path-effect is something like: "#path-effect3338;#path-effect3343"

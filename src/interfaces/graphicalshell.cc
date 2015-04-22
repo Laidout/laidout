@@ -193,7 +193,7 @@ void GraphicalShell::base_init()
 
 GraphicalShell::~GraphicalShell()
 {
-	DBG cerr <<"GraphicalShell destructor.."<<endl;
+	//DBG cerr <<"GraphicalShell destructor.."<<endl;
 
 	if (doc) doc->dec_count();
 	if (sc) sc->dec_count();
@@ -242,7 +242,7 @@ anInterface *GraphicalShell::duplicate(anInterface *dup)//dup=NULL
 
 int GraphicalShell::InterfaceOn()
 {
-	DBG cerr <<"gshell On()"<<endl;
+	//DBG cerr <<"gshell On()"<<endl;
 	Setup();
 	showdecs=1;
 	needtodraw=1;
@@ -257,7 +257,7 @@ int GraphicalShell::InterfaceOff()
 	if (le) app->unmapwindow(le);
 
 	needtodraw=1;
-	DBG cerr <<"gshell Off()"<<endl;
+	//DBG cerr <<"gshell Off()"<<endl;
 	return 0;
 }
 
@@ -394,18 +394,18 @@ int GraphicalShell::UpdateContext()
 {
 	int mod=0;
 	
-	DBG anInterface *curtool=dynamic_cast<ViewerWindow*>(viewport->win_parent)->CurrentTool();
-	DBG anInterface *contexttool= dynamic_cast<anInterface*>(context.find("tool"));
-	DBG DrawableObject *curobject=dynamic_cast<DrawableObject*>(dynamic_cast<LaidoutViewport*>(viewport)->curobj.obj);
-	DBG DrawableObject *contextobject=dynamic_cast<DrawableObject*>(context.find("object"));
+	//DBG anInterface *curtool=dynamic_cast<ViewerWindow*>(viewport->win_parent)->CurrentTool();
+	//DBG anInterface *contexttool= dynamic_cast<anInterface*>(context.find("tool"));
+	//DBG DrawableObject *curobject=dynamic_cast<DrawableObject*>(dynamic_cast<LaidoutViewport*>(viewport)->curobj.obj);
+	//DBG DrawableObject *contextobject=dynamic_cast<DrawableObject*>(context.find("object"));
 
-	DBG cerr <<" UpdateContext():"<<endl;
-	DBG cerr <<"    "<< (curtool==contexttool ? "tool same" : "tool different") <<", "<<(curtool?curtool->whattype():"null")<<endl;
-	DBG cerr <<"    "<< (curobject==contextobject ? "object same" : "object different") <<", "<<(curobject?curobject->whattype():"null")<<endl;
+	//DBG cerr <<" UpdateContext():"<<endl;
+	//DBG cerr <<"    "<< (curtool==contexttool ? "tool same" : "tool different") <<", "<<(curtool?curtool->whattype():"null")<<endl;
+	//DBG cerr <<"    "<< (curobject==contextobject ? "object same" : "object different") <<", "<<(curobject?curobject->whattype():"null")<<endl;
 
-	DBG if (curobject!=contextobject) {
-	DBG 	cerr <<"booyah"<<endl;
-	DBG }
+	//DBG if (curobject!=contextobject) {
+	//DBG 	cerr <<"booyah"<<endl;
+	//DBG }
 
 	if (dynamic_cast<ViewerWindow*>(viewport->win_parent)->CurrentTool()
 			 != dynamic_cast<anInterface*>(context.find("tool"))) {
@@ -645,7 +645,7 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 			 //enter pressed
 			//execute command
 			
-			DBG cerr <<" -------shell enter------"<<endl;
+			//DBG cerr <<" -------shell enter------"<<endl;
 			UpdateContext();
 
 			char *command=le->GetText();
@@ -717,7 +717,7 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 			delete[] result;
 			needtodraw=1;
 			needtomap=true;
-			DBG cerr <<" -------shell enter done------"<<endl;
+			//DBG cerr <<" -------shell enter done------"<<endl;
 			return 0;
 
 		} else if (type==GSHELL_Esc) {
@@ -1100,12 +1100,12 @@ int GraphicalShell::scan(int x,int y, int *column, int *item)
 
 	if (i==num_lines_above) return GSHELL_Num_Lines;
 
-	DBG cerr <<"gshell scan curcol,item: "<<current_column<<","<<current_item<<endl;
+	//DBG cerr <<"gshell scan curcol,item: "<<current_column<<","<<current_item<<endl;
 	for (int c=0; c<3; c++) {
 		if (columns[c].num_matches==0) continue;
 
-		DBG cerr <<"gshell column "<<c<<" nummatches:"<<columns[c].num_matches<<endl;
-		DBG cerr <<"  x:"<<x<<"  colx,w:"<<columns[c].x<<','<<columns[c].width<<endl;
+		//DBG cerr <<"gshell column "<<c<<" nummatches:"<<columns[c].num_matches<<endl;
+		//DBG cerr <<"  x:"<<x<<"  colx,w:"<<columns[c].x<<','<<columns[c].width<<endl;
 
 		if (x>=columns[c].x && x<=columns[c].x+columns[c].width) {
 			if (column) *column=c;
@@ -1137,8 +1137,8 @@ int GraphicalShell::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 	}
 
 
-	DBG flatpoint fp;
-	DBG fp=dp->screentoreal(x,y);
+	//DBG flatpoint fp;
+	//DBG fp=dp->screentoreal(x,y);
 
 	int column=-1, item=-1;
 	int over=scan(x,y, &column,&item);
@@ -1167,7 +1167,7 @@ int GraphicalShell::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 	int column=-1, item=-1;
 	int over=scan(x,y, &column,&item);
 
-	DBG cerr <<" --- old/new col: "<<oldcolumn<<','<<column<<"  old/new item: "<<olditem<<','<<item<<"  over="<<over<<"  dragged="<<dragged<<endl;
+	//DBG cerr <<" --- old/new col: "<<oldcolumn<<','<<column<<"  old/new item: "<<olditem<<','<<item<<"  over="<<over<<"  dragged="<<dragged<<endl;
 
 	if (over==GSHELL_None) return 0;
 	if (column!=oldcolumn || item!=olditem || item<0) return 0;
@@ -1186,7 +1186,7 @@ int GraphicalShell::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 		} else if (over==GSHELL_Item && column>=0 && item>=0) {
 			const char *str=GetItemText(column,item);
 			if (isblank(str)) {
-				DBG cerr <<" *** BLANK LBUP STR!!!!!"<<endl;
+				//DBG cerr <<" *** BLANK LBUP STR!!!!!"<<endl;
 				return 0;
 			}
 
@@ -1213,7 +1213,7 @@ const char *GraphicalShell::GetItemText(int column,int item)
 		item--;
 	}
 
-	DBG cerr <<" ** WARNING! couldn't find string for col,item:"<<column<<','<<item<<endl;
+	//DBG cerr <<" ** WARNING! couldn't find string for col,item:"<<column<<','<<item<<endl;
 	return NULL;
 }
 
@@ -1237,7 +1237,7 @@ int GraphicalShell::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 		hover_item=item;
 		if (over!=GSHELL_Item) hover_item=over;
 
-		DBG cerr <<"over box: "<<over<<"  column:"<<column<<"  item:"<<item<<endl;
+		//DBG cerr <<"over box: "<<over<<"  column:"<<column<<"  item:"<<item<<endl;
 
 		if (!(state&ShiftMask)) return 1;
 		return 0;
@@ -1252,7 +1252,7 @@ int GraphicalShell::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 		if (placement_gravity==LAX_TOP) nl=(y-box.maxy)/dp->textheight()+1;
 		else nl=(box.miny-y)/dp->textheight()+1;
 
-		DBG cerr << " **********new nl:"<<nl<<"  old: "<<num_lines_above<<endl;
+		//DBG cerr << " **********new nl:"<<nl<<"  old: "<<num_lines_above<<endl;
 
 		if (nl>0 && nl!=num_lines_above) {
 			num_lines_above=nl;
@@ -1272,7 +1272,7 @@ int GraphicalShell::WheelUp(int x,int y,unsigned int state,int count,const Laxki
 	//int over=
 	scan(x,y, &column,&item);
 
-	DBG cerr <<" ***********wheel up ***********"<<endl;
+	//DBG cerr <<" ***********wheel up ***********"<<endl;
 	if (column>=0 && item>=0) {
 		columns[column].offset++;
 		if (columns[column].offset+num_lines_above > columns[column].num_matches)
@@ -1291,7 +1291,7 @@ int GraphicalShell::WheelDown(int x,int y,unsigned int state,int count,const Lax
 	//int over=
 	scan(x,y, &column,&item);
 
-	DBG cerr <<" ***********wheel down ***********"<<endl;
+	//DBG cerr <<" ***********wheel down ***********"<<endl;
 	if (column>=0 && item>=0) {
 		columns[column].offset--;
 		if (columns[column].offset<0) columns[column].offset=0;
@@ -1364,7 +1364,7 @@ void GraphicalShell::MakeHoverInWindow()
 
 int GraphicalShell::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	DBG cerr<<" got ch:"<<ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
+	//DBG cerr<<" got ch:"<<ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
 	
 	if (!sc) GetShortcuts();
 	int action=sc->FindActionNumber(ch,state&LAX_STATE_MASK,0);

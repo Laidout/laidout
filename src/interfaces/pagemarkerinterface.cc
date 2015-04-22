@@ -176,7 +176,7 @@ Laxkit::MenuInfo *PageMarkerInterface::ContextMenu(int x,int y,int deviceid, Lax
 
 int PageMarkerInterface::Event(const Laxkit::EventData *data, const char *mes)
 {
-    DBG cerr <<"PageMarkerInterface got message: "<<(mes?mes:"?")<<endl;
+    //DBG cerr <<"PageMarkerInterface got message: "<<(mes?mes:"?")<<endl;
 
 // ----: unnecessary? now that doc->pages are refcounted??
 //    if (!strcmp(mes,"docTreeChange")) {
@@ -277,7 +277,7 @@ int PageMarkerInterface::Refresh()
 				default:   t=THING_Circle;  break;
 			}
 			//dp->drawthing(p.x,p.y,w,h, 2, t);
-			//DBG cerr <<"draw bg color: "<<bg->Pixel()<<endl;
+			////DBG cerr <<"draw bg color: "<<bg->Pixel()<<endl;
 			dp->drawthing(p.x,p.y,w,h, t, fg,bg->Pixel(), lwidth);
 
 			dp->NewFG(standoutcolor(pages.e[c]->page->labelcolor,true));
@@ -396,7 +396,7 @@ int PageMarkerInterface::LBDown(int x,int y,unsigned int state,int count, const 
 		}
 		int yy=NearestColor(&pages.e[index]->page->labelcolor);
 		boxoffset=flatpoint(x,y)-flatpoint(pad+(xx+.5)*uiscale*th, pad+(yy+.5)*uiscale*th);
-		DBG cerr <<"   lbdown page marker: "<<xx<<','<<yy<<endl;
+		//DBG cerr <<"   lbdown page marker: "<<xx<<','<<yy<<endl;
 
 		mode=PSTATE_Select;
 		int ii;
@@ -450,11 +450,11 @@ int PageMarkerInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxM
 		int what, index=-1;
 		buttondown.up(d->id,LEFTBUTTON, &what, &index);
 
-		DBG cerr <<"PageMarkerInterface LBUp: "<<x<<','<<y<<"  i:"<<index<<" what:"<<what<<endl;
-		DBG int ci=index/shapes.n;
-		DBG if (ci>=0 && ci<colors.n) {
-		DBG 	cerr <<"  color: "<<colors.e[ci]->red<<","<<colors.e[ci]->green<<","<<colors.e[ci]->blue<<','<<colors.e[ci]->alpha<<endl;
-		DBG } else cerr <<endl;
+		//DBG cerr <<"PageMarkerInterface LBUp: "<<x<<','<<y<<"  i:"<<index<<" what:"<<what<<endl;
+		//DBG int ci=index/shapes.n;
+		//DBG if (ci>=0 && ci<colors.n) {
+		//DBG 	cerr <<"  color: "<<colors.e[ci]->red<<","<<colors.e[ci]->green<<","<<colors.e[ci]->blue<<','<<colors.e[ci]->alpha<<endl;
+		//DBG } else cerr <<endl;
 
 		if (mode==PSTATE_Select && index>=0) {
 			int color=index/shapes.n;
@@ -472,8 +472,8 @@ int PageMarkerInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxM
 				app->SendMessage(data, owner->object_id, "pagemarker", object_id);
 	
 			} else {
-				//DBG ci=color;
-				//DBG cerr <<"  new page color: "<<colors.e[ci]->red<<","<<colors.e[ci]->green<<","<<colors.e[ci]->blue<<','<<colors.e[ci]->alpha<<endl;
+				////DBG ci=color;
+				////DBG cerr <<"  new page color: "<<colors.e[ci]->red<<","<<colors.e[ci]->green<<","<<colors.e[ci]->blue<<','<<colors.e[ci]->alpha<<endl;
 			}
 		}
 
@@ -490,11 +490,11 @@ int PageMarkerInterface::MouseMove(int x,int y,unsigned int state, const Laxkit:
 	int index=-1;
 	int what=scan(x,y, index);
 
-	//DBG cerr <<"PageMarkerInterface move: "<<x<<','<<y<<"  i:"<<index<<" what:"<<what<<endl;
-	//DBG int ci=index/shapes.n;
-	//DBG if (ci>=0 && ci<colors.n) {
-	//DBG 	cerr <<"  color: "<<colors.e[ci]->red<<","<<colors.e[ci]->green<<","<<colors.e[ci]->blue<<endl;
-	//DBG } else cerr <<endl;
+	////DBG cerr <<"PageMarkerInterface move: "<<x<<','<<y<<"  i:"<<index<<" what:"<<what<<endl;
+	////DBG int ci=index/shapes.n;
+	////DBG if (ci>=0 && ci<colors.n) {
+	////DBG 	cerr <<"  color: "<<colors.e[ci]->red<<","<<colors.e[ci]->green<<","<<colors.e[ci]->blue<<endl;
+	////DBG } else cerr <<endl;
 
 	if (!buttondown.any()) { 
 		if (hover!=what || index!=hoveri) {
@@ -579,7 +579,7 @@ int PageMarkerInterface::send()
 
 int PageMarkerInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state, const Laxkit::LaxKeyboard *d)
 {
-	DBG cerr <<"mode: "<<mode<<"  "<<(int)PSTATE_Select<<" "<<(int)PSTATE_SelectFull<<endl;
+	//DBG cerr <<"mode: "<<mode<<"  "<<(int)PSTATE_Select<<" "<<(int)PSTATE_SelectFull<<endl;
 	if (ch==LAX_Esc && (mode==PSTATE_Select || mode==PSTATE_SelectFull)) {
 		mode=PSTATE_Normal;
 		needtodraw=1;
