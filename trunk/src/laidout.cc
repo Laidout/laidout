@@ -1068,14 +1068,35 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 
 			case 'O': { // list export options for a given format
-					DBG cout <<"   ***** --list-export-options IS A HACK!! Code me right! ***"<<endl;
-					printf("format   = \"%s\"    #the format to export as\n",optarg);
-					printf("tofile   = /file/to/export/to\n");
-					printf("tofiles  = \"/files/like###.this\"  #the \"###\" section is replaced with the spread index\n");
-					printf("                                  #Either tofile or tofiles should be present, not both\n");
-					printf("layout   = pages   #the value depends on the particular imposition used by the document\n");
-					printf("start    = 3       #the starting index to export, counting from 0\n");
-					printf("end      = 5       #the ending index to export, counting from 0\n");
+					//DBG cout <<"   ***** --list-export-options IS A HACK!! Code me right! ***"<<endl;
+					//printf("format   = \"theformat\"    #the format to export as\n");
+					//printf("tofile   = /file/to/export/to\n");
+					//printf("tofiles  = \"/files/like###.this\"  #the \"###\" section is replaced with the spread index\n");
+					//printf("                                  #Either tofile or tofiles should be present, not both\n");
+					//printf("layout   = papers  #usually singles, papers, or pages, but full range of possible values\n");
+					//printf("                   #    depends on the particular imposition used by the document\n");
+					//printf("start    = 3       #the starting index to export, counting from 0\n");
+					//printf("end      = 5       #the ending index to export, counting from 0\n");
+					//---------
+					if (!o->arg()) {
+						//cerr << "Must specify one of:"<<endl;
+						//for (int c=0; c<exportfilters.n; c++) cerr << exportfilters.e[c]->VersionName() <<endl;
+						cout << "Must specify one of:"<<endl;
+						for (int c=0; c<exportfilters.n; c++) cout << exportfilters.e[c]->VersionName() <<endl;
+						exit(1);
+					}
+
+					ExportFilter *filter=FindExportFilter(o->arg(),false);
+					if (!filter) {
+						//cerr << "Filter "<<o->arg()<<" not found!"<<endl;
+						cout << "Filter "<<o->arg()<<" not found!"<<endl;
+						exit(1);
+					}
+
+					DocumentExportConfig *config=filter->CreateConfig(NULL);
+					config->filter=filter;
+					cout << filter->VersionName() << " options:" << endl;
+					config->dump_out(stdout, 2, -1, NULL);
 					exit(0);
 				} break;
 
@@ -1123,25 +1144,36 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		//*** is this obsoleted by --command?
 
 		 //parse the config string into a config
-		DocumentExportConfig config;
 		Attribute att;
 		NameValueToAttribute(&att,exprt,'=',0);
 
-		 //figure out where to export to
+		 //figure out where to export from
 		const char *filename=NULL;
 		o=options.remaining();
 		if (o) filename=o->arg();
-		config.dump_in_atts(&att,0,NULL);
-		 
-		 //-------export
-		if (!filename || !config.filter) {
-			cout <<_("Bad export configuration")<<endl;
+
+		const char *format=att.findValue("format");
+		ExportFilter *filter=FindExportFilter(format,false);
+		if (!filter) {
+			cout <<_("Format not found!")<<endl;
 			exit(1);
 		}
-		ErrorLog error;
+
+		DocumentExportConfig *config=filter->CreateConfig(NULL);
+		config->dump_in_atts(&att,0,NULL);
+
 		 
+		 //-------export
+		if (!filename) {
+			cout <<_("No file to export from specified!")<<endl;
+			exit(1);
+		}
+
+
 		 //load in document to pass with config
+		ErrorLog error;		 
 		Document *doc=NULL;
+
 		if (Load(filename,error)==0) doc=curdoc;
 		if (error.Total()) {
 			if (!doc) {
@@ -1151,10 +1183,10 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			dumperrorlog(_("Warnings encountered while loading document:"),error);
 		}
 
-		config.doc=doc;
-		config.doc->inc_count();
-		config.dump_in_atts(&att,0,NULL);//second time with doc!
-		int err=export_document(&config,error);
+		config->doc=doc;
+		config->doc->inc_count();
+		config->dump_in_atts(&att,0,NULL);//second time with doc!
+		int err=export_document(config,error);
 		if (err>0) {
 			dumperrorlog(_("Export failed."),error);
 			exit(1);
@@ -1385,7 +1417,7 @@ int LaidoutApp::Load(const char *filename, ErrorLog &log)
 		return 0;
 	}
 	
-	FILE *f=open_laidout_file_to_read(fullname,"Project",&log);
+	FILE *f=open_laidout_file_to_read(fullname,"Project",&log, false);
 	if (f) {
 		fclose(f);
 		if (project) project->clear();
@@ -1612,6 +1644,31 @@ int LaidoutApp::NewProject(Project *proj, ErrorLog &log)
 	project->Save(log);
 
 	return 0;
+}
+
+/*! Return the export filter with name as its ExportFilter::VersionName().
+ * First search exact matches to name, but if !exact_only, then also do a
+ * case insensitive search for part of name in VersionName().
+ */
+ExportFilter *LaidoutApp::FindExportFilter(const char *name, bool exact_only)
+{
+	 //search for exact format match first
+	for (int c=0; c<laidout->exportfilters.n; c++) {
+		if (!strcmp(laidout->exportfilters.e[c]->VersionName(),name)) {
+			return laidout->exportfilters.e[c];
+		}
+	}
+
+	if (exact_only) return NULL;
+
+	 //if no match, search for first case insensitive match
+	for (int c=0; c<laidout->exportfilters.n; c++) {
+		if (!strncasecmp(laidout->exportfilters.e[c]->VersionName(),name,strlen(name))) {
+			return laidout->exportfilters.e[c];
+		}
+	}
+
+	return NULL;
 }
 
 //! Push onto exportfilters, in alphabetical order.
