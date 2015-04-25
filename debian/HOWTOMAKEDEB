@@ -14,6 +14,7 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
   README.md  <-  must have updated dependency list
   the laidoutrc description dump out in laidout.cc
 
+  make sure all the examples work.
 
 2. ----Copy trunk to a new tag------
  svn copy https://svn.code.sf.net/p/laidout/code/trunk \
@@ -43,7 +44,7 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
  make sure 'make' does not try to make lax or laxinterfaces unless laxkit has been 
    downloaded into the source tree...
  
- make sure all the examples work, and have the correct version number
+ Make sure all examples have the correct version number.
 
 
 4. ---hide the debugging garbage and commit---
@@ -76,9 +77,9 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
   e) if cairo is still not working, make sure to disable in code and not link in Makefiles
 
   f) make icons  (we make before packaging for convenience, in case people don't have inkscape installed):
-	  cd laxkit/lax/icons; make;   # these use Inkscape to render from svg files to png 
-	  cp *png ../../src/icons      # <- copy the laxkit icons to the Laidout icon dir
-      cd laidout/src/icons; make   # <- this will then overwrite any icons from Laidout supercede Laxkit
+	  cd laxkit/lax/icons; make;    # these use Inkscape to render from svg files to png 
+	  cp *png ../../../src/icons    # <- copy the laxkit icons to the Laidout icon dir
+      cd ../../../src/icons; make   # <- this will then overwrite any icons from Laidout supercede Laxkit
 
   g) cd to dir above laidout, and do:
       tar cjv (the dir) > laidout-version.tar.bz2 

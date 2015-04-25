@@ -60,10 +60,13 @@ Modifiers<br/>
   <tr><td class="key">Del       </td><td class="id">DeleteObject             </td><td class="description">Delete current object</td></tr>
   <tr><td class="key">j         </td><td class="id">ShiftLeft                </td><td class="description">Shift view left</td></tr>
   <tr><td class="key">l         </td><td class="id">ShiftRight               </td><td class="description">Shift view right</td></tr>
-  <tr><td class="key">i         </td><td class="id">Object Info              </td><td class="description">Toggle showing object information</td></tr>
+  <tr><td class="key">i         </td><td class="id">ObjectInfo               </td><td class="description">Toggle showing object information</td></tr>
   <tr><td class="key">k         </td><td class="id">ShiftDown                </td><td class="description">Shift view Down</td></tr>
   <tr><td class="key">^[        </td><td class="id">IncShift                 </td><td class="description">Increase view shift amount</td></tr>
   <tr><td class="key">^]        </td><td class="id">DecShift                 </td><td class="description">Decrease view shift amount</td></tr>
+  <tr><td class="key">^z        </td><td class="id">Undo                     </td><td class="description">Undo</td></tr>
+  <tr><td class="key">^y        </td><td class="id">Redo                     </td><td class="description">Redo</td></tr>
+  <tr><td class="key">+^Z       </td><td class="id">Redo                     </td><td class="description">Redo</td></tr>
   <tr><td class="key">Tab       </td><td class="id">NextObject               </td><td class="description">Select next object</td></tr>
   <tr><td class="key">+Tab      </td><td class="id">PreviousObject           </td><td class="description">Select previous object</td></tr>
   <tr><td class="key">+^A       </td><td class="id">DeselectAll              </td><td class="description">Deselect all</td></tr>
@@ -91,23 +94,31 @@ Modifiers<br/>
   <tr><td class="key">+<        </td><td class="id">PreviousPage             </td><td class="description">Previous page</td></tr>
   <tr><td class="key">F1        </td><td class="id">Help                     </td><td class="description">Help</td></tr>
   <tr><td class="key">F2        </td><td class="id">About                    </td><td class="description">About Laidout</td></tr>
-  <tr><td class="key">F5        </td><td class="id">SpreadEditor             </td><td class="description">Popup a spread editor</td></tr>
-  <tr><td class="key">F6        </td><td class="id">EditImposition           </td><td class="description">Edit current imposition</td></tr>
+  <tr><td class="key">F3        </td><td class="id">SpreadEditor             </td><td class="description">Popup a spread editor</td></tr>
+  <tr><td class="key">F4        </td><td class="id">EditImposition           </td><td class="description">Edit current imposition</td></tr>
+  <tr><td class="key">F5        </td><td class="id">PathTool                 </td><td class="description">Change to path tool</td></tr>
+  <tr><td class="key">F6        </td><td class="id">ImageTool                </td><td class="description">Change to image tool</td></tr>
+  <tr><td class="key">F7        </td><td class="id">GradientTool             </td><td class="description">Change to gradient tool</td></tr>
+  <tr><td class="key">F8        </td><td class="id">MeshGradientTool         </td><td class="description">Change to mesh gradient tool</td></tr>
+  <tr><td class="key">F9        </td><td class="id">EngraverTool             </td><td class="description">Change to engraver fill tool</td></tr>
   <tr><td class="key">/         </td><td class="id">Prompt                   </td><td class="description">Popup a the graphical shell</td></tr>
 <tr><td colspan="3" class="area">SpreadInterface</td></tr>
   <tr><td class="key">a         </td><td class="id">ToggleSelect             </td><td class="description">Select all or none</td></tr>
+  <tr><td class="key">^m        </td><td class="id">SelectSimilar            </td><td class="description">Select all pages with the same kind of markers</td></tr>
   <tr><td class="key">space     </td><td class="id">Center                   </td><td class="description">Center</td></tr>
   <tr><td class="key">l         </td><td class="id">LabelPos                 </td><td class="description">Move label position</td></tr>
   <tr><td class="key">c         </td><td class="id">ToggleColor              </td><td class="description">Toggle color among defined colors</td></tr>
+  <tr><td class="key">+C        </td><td class="id">ToggleColorR             </td><td class="description">Toggle color among defined colors</td></tr>
   <tr><td class="key">m         </td><td class="id">ToggleMark               </td><td class="description">Toggle mark type</td></tr>
   <tr><td class="key">+M        </td><td class="id">ToggleMarkR              </td><td class="description">Toggle mark type</td></tr>
   <tr><td class="key">t         </td><td class="id">Thumbs                   </td><td class="description">Toggle showing thumbnails</td></tr>
   <tr><td class="key">+A        </td><td class="id">Arrange                  </td><td class="description">Toggle arrangement type</td></tr>
   <tr><td class="key">+^A       </td><td class="id">RefreshArrange           </td><td class="description">Refresh with current arrangement type</td></tr>
-  <tr><td class="key">p         </td><td class="id">Add Page                 </td><td class="description">Add a page after current</td></tr>
-  <tr><td class="key">+P        </td><td class="id">Add Page Before          </td><td class="description">Add a page before current</td></tr>
-  <tr><td class="key">Del       </td><td class="id">Delete pages             </td><td class="description">Delete pages</td></tr>
-  <tr><td class="key">Bksp      </td><td class="id">Delete pages             </td><td class="description">Delete pages</td></tr>
+  <tr><td class="key">p         </td><td class="id">AddPage                  </td><td class="description">Add a page after current</td></tr>
+  <tr><td class="key">+P        </td><td class="id">AddPageBefore            </td><td class="description">Add a page before current</td></tr>
+  <tr><td class="key">Del       </td><td class="id">Deletepages              </td><td class="description">Delete pages</td></tr>
+  <tr><td class="key">Bksp      </td><td class="id">Deletepages              </td><td class="description">Delete pages</td></tr>
+  <tr><td class="key">h         </td><td class="id">Hidepages                </td><td class="description">Toggle hiding of pages</td></tr>
 <tr><td colspan="3" class="area">SpreadEditor</td></tr>
   <tr><td class="key">t         </td><td class="id">NextTool                 </td><td class="description">Next tool</td></tr>
   <tr><td class="key">+T        </td><td class="id">PreviousTool             </td><td class="description">Previous tool</td></tr>
@@ -190,6 +201,7 @@ Modifiers<br/>
   <tr><td class="key">0         </td><td class="id">ScaleUp                  </td><td class="description">Scale object up</td></tr>
   <tr><td class="key">9         </td><td class="id">ScaleDown                </td><td class="description">Scale object down</td></tr>
   <tr><td class="key">space     </td><td class="id">ResetView                </td><td class="description">Make camera point at object from a reasonable distance</td></tr>
+  <tr><td class="key">^e        </td><td class="id">ToggleStereo             </td><td class="description">Toggle viewing in crosseye stereo, straight stereo, or no stereo</td></tr>
 <tr><td colspan="3" class="area">ObjectInterface</td></tr>
   <tr><td class="key">+d        </td><td class="id">Decorations              </td><td class="description">Toggle decorations</td></tr>
   <tr><td class="key">n         </td><td class="id">Nup                      </td><td class="description">Distribute selected objects in rows and columns</td></tr>
@@ -281,36 +293,42 @@ Modifiers<br/>
   <tr><td class="key">a         </td><td class="id">Select                   </td><td class="description">Select all, or deselect</td></tr>
   <tr><td class="key">Del       </td><td class="id">Delete                   </td><td class="description">Delete</td></tr>
   <tr><td class="key">Bksp      </td><td class="id">Delete                   </td><td class="description">Delete</td></tr>
-<tr><td colspan="3" class="area">ImagePatchInterface</td></tr>
-  <tr><td class="key">m         </td><td class="id">RenderMode               </td><td class="description">Render mode</td></tr>
-  <tr><td class="key">o         </td><td class="id">RecurseInc               </td><td class="description">Increment screen recursion</td></tr>
-  <tr><td class="key">+O        </td><td class="id">RecurseDec               </td><td class="description">Decrement screen recursion</td></tr>
-  <tr><td class="key">j         </td><td class="id">SmoothEdit               </td><td class="description">Toggle smooth editing</td></tr>
-  <tr><td class="key">b         </td><td class="id">MeshType                 </td><td class="description">Toggle mesh type</td></tr>
-  <tr><td class="key">+B        </td><td class="id">MeshTypeR,               </td><td class="description">Toggle mesh type in reverse</td></tr>
+<tr><td colspan="3" class="area">PathInterface</td></tr>
+  <tr><td class="key">h         </td><td class="id">HandlePoint              </td><td class="description">Switch between handle and vertex</td></tr>
+  <tr><td class="key">+H        </td><td class="id">HandlePointR             </td><td class="description">Switch between handle and vertex</td></tr>
+  <tr><td class="key">o         </td><td class="id">Pathop                   </td><td class="description">Change path operator</td></tr>
+  <tr><td class="key">+^        </td><td class="id">ToggleAbsAngle           </td><td class="description">Toggle absolute angles in subpaths</td></tr>
+  <tr><td class="key">+F        </td><td class="id">ToggleFillRule           </td><td class="description">Toggle fill rule</td></tr>
+  <tr><td class="key">f         </td><td class="id">ToggleFill               </td><td class="description">Toggle fill</td></tr>
+  <tr><td class="key">s         </td><td class="id">ToggleStroke             </td><td class="description">Toggle stroke</td></tr>
+  <tr><td class="key">x         </td><td class="id">ColorDest                </td><td class="description">Send colors to fill or to stroke</td></tr>
+  <tr><td class="key">Right     </td><td class="id">RollNext                 </td><td class="description">Select next points</td></tr>
+  <tr><td class="key">Left      </td><td class="id">RollPrev                 </td><td class="description">Select previous points</td></tr>
+  <tr><td class="key">n         </td><td class="id">AddAfter                 </td><td class="description">Toggle add after</td></tr>
+  <tr><td class="key">p         </td><td class="id">PointType                </td><td class="description">Change point type</td></tr>
   <tr><td class="key">a         </td><td class="id">Select                   </td><td class="description">Select all or deselect</td></tr>
-  <tr><td class="key">y         </td><td class="id">ConstrainY               </td><td class="description">Constrain to vertical movements</td></tr>
-  <tr><td class="key">x         </td><td class="id">ConstrainX               </td><td class="description">Constrain to horizontal movements</td></tr>
-  <tr><td class="key">+^R       </td><td class="id">RowDivInc                </td><td class="description">Increment row subdivisions</td></tr>
-  <tr><td class="key">^r        </td><td class="id">RowDicDec                </td><td class="description">Decrement row subdivisions</td></tr>
-  <tr><td class="key">+^C       </td><td class="id">ColDivInc                </td><td class="description">Increment row subdivisions</td></tr>
-  <tr><td class="key">^c        </td><td class="id">ColDivDec                </td><td class="description">Decrement row subdivisions</td></tr>
-  <tr><td class="key">s         </td><td class="id">Subdivide                </td><td class="description">Subdivide</td></tr>
-  <tr><td class="key">r         </td><td class="id">SubdivideRows            </td><td class="description">Subdivide rows</td></tr>
-  <tr><td class="key">c         </td><td class="id">SubdivideCols            </td><td class="description">Subdivide columns</td></tr>
-  <tr><td class="key">z         </td><td class="id">Rectify                  </td><td class="description">Zap back to a rectangle</td></tr>
+  <tr><td class="key">+A        </td><td class="id">SelectInPath             </td><td class="description">Select all in path or deselect</td></tr>
+  <tr><td class="key">c         </td><td class="id">ToggleClosed             </td><td class="description">Toggle closed</td></tr>
   <tr><td class="key">d         </td><td class="id">Decorations              </td><td class="description">Toggle decorations</td></tr>
-  <tr><td class="key">w         </td><td class="id">CircleWarp               </td><td class="description">Make circle</td></tr>
-  <tr><td class="key">1         </td><td class="id">SelectCorners            </td><td class="description">Select corners</td></tr>
-  <tr><td class="key">2         </td><td class="id">SelectMids               </td><td class="description">Select middle controls</td></tr>
-  <tr><td class="key">3         </td><td class="id">SelectEdgeMids           </td><td class="description">Select edge controls</td></tr>
-  <tr><td class="key">4         </td><td class="id">SelectVerticalEdgeMids   </td><td class="description">Select vertical edge controls</td></tr>
-  <tr><td class="key">5         </td><td class="id">SelectHorizontalEdgeMids </td><td class="description">Select horizontal edge controls</td></tr>
-  <tr><td class="key">6         </td><td class="id">SelectAround             </td><td class="description">Select points around current points</td></tr>
-  <tr><td class="key">+V        </td><td class="id">SelectAllVertically      </td><td class="description">Select all vertically</td></tr>
-  <tr><td class="key">v         </td><td class="id">SelectMoreVertically     </td><td class="description">Select next points vertically</td></tr>
-  <tr><td class="key">+H        </td><td class="id">SelectAllHorizontally    </td><td class="description">Select all horizontally</td></tr>
-  <tr><td class="key">h         </td><td class="id">SelectMoreHorizontally   </td><td class="description">Select next points horizontally</td></tr>
+  <tr><td class="key">+B        </td><td class="id">NewPath                  </td><td class="description">Start a totally new path object</td></tr>
+  <tr><td class="key">b         </td><td class="id">NewSubpath               </td><td class="description">Start a new subpath</td></tr>
+  <tr><td class="key">+_        </td><td class="id">ToggleOutline            </td><td class="description">Toggle indicating outlines (DEBUGGING)</td></tr>
+  <tr><td class="key">+|        </td><td class="id">ToggleBaseline           </td><td class="description">Toggle indicating base line references</td></tr>
+  <tr><td class="key">w         </td><td class="id">ToggleWeights            </td><td class="description">Toggle editing of weights along lines</td></tr>
+  <tr><td class="key">l         </td><td class="id">Wider                    </td><td class="description">Thicken the line</td></tr>
+  <tr><td class="key">+L        </td><td class="id">Thinner                  </td><td class="description">Thin the line</td></tr>
+  <tr><td class="key">^l        </td><td class="id">WidthStep                </td><td class="description">Change how much change for width changes</td></tr>
+  <tr><td class="key">+^L       </td><td class="id">WidthStepR               </td><td class="description">Change how much change for width changes</td></tr>
+  <tr><td class="key">0         </td><td class="id">Circle                   </td><td class="description">Arrange points in a circle</td></tr>
+  <tr><td class="key">+R        </td><td class="id">Rect                     </td><td class="description">Arrange points in a rectangle</td></tr>
+  <tr><td class="key">r         </td><td class="id">Reverse                  </td><td class="description">Reverse direction of current path</td></tr>
+  <tr><td class="key">Del       </td><td class="id">Delete                   </td><td class="description">Delete selected points</td></tr>
+  <tr><td class="key">Bksp      </td><td class="id">Delete                   </td><td class="description">Delete selected points</td></tr>
+  <tr><td class="key">+^_       </td><td class="id">ApplyOffset              </td><td class="description">Apply offset to current paths</td></tr>
+  <tr><td class="key">+^|       </td><td class="id">ResetOffset              </td><td class="description">Make offset values (if any) be 0 of current paths</td></tr>
+  <tr><td class="key">+I        </td><td class="id">MakeStraight             </td><td class="description">Make segments of current points be straight</td></tr>
+  <tr><td class="key">i         </td><td class="id">MakeBezStraight          </td><td class="description">Make segments of current points be straight with bezier handles</td></tr>
+  <tr><td class="key">+<        </td><td class="id">ResetAngle               </td><td class="description">Make weight angles be zero, and set to not absolute angles</td></tr>
 <tr><td colspan="3" class="area">ColorPatchInterface</td></tr>
   <tr><td class="key">m         </td><td class="id">RenderMode               </td><td class="description">Render mode</td></tr>
   <tr><td class="key">o         </td><td class="id">RecurseInc               </td><td class="description">Increment screen recursion</td></tr>
@@ -341,33 +359,36 @@ Modifiers<br/>
   <tr><td class="key">v         </td><td class="id">SelectMoreVertically     </td><td class="description">Select next points vertically</td></tr>
   <tr><td class="key">+H        </td><td class="id">SelectAllHorizontally    </td><td class="description">Select all horizontally</td></tr>
   <tr><td class="key">h         </td><td class="id">SelectMoreHorizontally   </td><td class="description">Select next points horizontally</td></tr>
-<tr><td colspan="3" class="area">PathInterface</td></tr>
-  <tr><td class="key">h         </td><td class="id">HandlePoint              </td><td class="description">Switch between handle and vertex</td></tr>
-  <tr><td class="key">+H        </td><td class="id">HandlePointR             </td><td class="description">Switch between handle and vertex</td></tr>
-  <tr><td class="key">o         </td><td class="id">Pathop                   </td><td class="description">Change path operator</td></tr>
-  <tr><td class="key">+F        </td><td class="id">ToggleFillRule           </td><td class="description">Toggle fill rule</td></tr>
-  <tr><td class="key">f         </td><td class="id">ToggleFill               </td><td class="description">Toggle fill</td></tr>
-  <tr><td class="key">s         </td><td class="id">ToggleStroke             </td><td class="description">Toggle stroke</td></tr>
-  <tr><td class="key">x         </td><td class="id">ColorDest                </td><td class="description">Send colors to fill or to stroke</td></tr>
-  <tr><td class="key">Right     </td><td class="id">RollNext                 </td><td class="description">Select next points</td></tr>
-  <tr><td class="key">Left      </td><td class="id">RollPrev                 </td><td class="description">Select previous points</td></tr>
-  <tr><td class="key">n         </td><td class="id">AddAfter                 </td><td class="description">Toggle add after</td></tr>
-  <tr><td class="key">p         </td><td class="id">PointType                </td><td class="description">Change point type</td></tr>
+<tr><td colspan="3" class="area">ImagePatchInterface</td></tr>
+  <tr><td class="key">m         </td><td class="id">RenderMode               </td><td class="description">Render mode</td></tr>
+  <tr><td class="key">o         </td><td class="id">RecurseInc               </td><td class="description">Increment screen recursion</td></tr>
+  <tr><td class="key">+O        </td><td class="id">RecurseDec               </td><td class="description">Decrement screen recursion</td></tr>
+  <tr><td class="key">j         </td><td class="id">SmoothEdit               </td><td class="description">Toggle smooth editing</td></tr>
+  <tr><td class="key">b         </td><td class="id">MeshType                 </td><td class="description">Toggle mesh type</td></tr>
+  <tr><td class="key">+B        </td><td class="id">MeshTypeR,               </td><td class="description">Toggle mesh type in reverse</td></tr>
   <tr><td class="key">a         </td><td class="id">Select                   </td><td class="description">Select all or deselect</td></tr>
-  <tr><td class="key">+A        </td><td class="id">SelectInPath             </td><td class="description">Select all in path or deselect</td></tr>
-  <tr><td class="key">c         </td><td class="id">ToggleClosed             </td><td class="description">Toggle closed</td></tr>
+  <tr><td class="key">y         </td><td class="id">ConstrainY               </td><td class="description">Constrain to vertical movements</td></tr>
+  <tr><td class="key">x         </td><td class="id">ConstrainX               </td><td class="description">Constrain to horizontal movements</td></tr>
+  <tr><td class="key">+^R       </td><td class="id">RowDivInc                </td><td class="description">Increment row subdivisions</td></tr>
+  <tr><td class="key">^r        </td><td class="id">RowDicDec                </td><td class="description">Decrement row subdivisions</td></tr>
+  <tr><td class="key">+^C       </td><td class="id">ColDivInc                </td><td class="description">Increment row subdivisions</td></tr>
+  <tr><td class="key">^c        </td><td class="id">ColDivDec                </td><td class="description">Decrement row subdivisions</td></tr>
+  <tr><td class="key">s         </td><td class="id">Subdivide                </td><td class="description">Subdivide</td></tr>
+  <tr><td class="key">r         </td><td class="id">SubdivideRows            </td><td class="description">Subdivide rows</td></tr>
+  <tr><td class="key">c         </td><td class="id">SubdivideCols            </td><td class="description">Subdivide columns</td></tr>
+  <tr><td class="key">z         </td><td class="id">Rectify                  </td><td class="description">Zap back to a rectangle</td></tr>
   <tr><td class="key">d         </td><td class="id">Decorations              </td><td class="description">Toggle decorations</td></tr>
-  <tr><td class="key">+B        </td><td class="id">NewPath                  </td><td class="description">Start a totally new path object</td></tr>
-  <tr><td class="key">b         </td><td class="id">NewSubpath               </td><td class="description">Start a new subpath</td></tr>
-  <tr><td class="key">w         </td><td class="id">Wider                    </td><td class="description">Thicken the line</td></tr>
-  <tr><td class="key">+W        </td><td class="id">Thinner                  </td><td class="description">Thin the line</td></tr>
-  <tr><td class="key">^w        </td><td class="id">WidthStep                </td><td class="description">Change how much change for width changes</td></tr>
-  <tr><td class="key">+^W       </td><td class="id">WidthStepR               </td><td class="description">Change how much change for width changes</td></tr>
-  <tr><td class="key">0         </td><td class="id">Circle                   </td><td class="description">Arrange points in a circle</td></tr>
-  <tr><td class="key">+R        </td><td class="id">Rect                     </td><td class="description">Arrange points in a rectangle</td></tr>
-  <tr><td class="key">r         </td><td class="id">Reverse                  </td><td class="description">Reverse direction of current path</td></tr>
-  <tr><td class="key">Del       </td><td class="id">Delete                   </td><td class="description">Delete selected points</td></tr>
-  <tr><td class="key">Bksp      </td><td class="id">Delete                   </td><td class="description">Delete selected points</td></tr>
+  <tr><td class="key">w         </td><td class="id">CircleWarp               </td><td class="description">Make circle</td></tr>
+  <tr><td class="key">1         </td><td class="id">SelectCorners            </td><td class="description">Select corners</td></tr>
+  <tr><td class="key">2         </td><td class="id">SelectMids               </td><td class="description">Select middle controls</td></tr>
+  <tr><td class="key">3         </td><td class="id">SelectEdgeMids           </td><td class="description">Select edge controls</td></tr>
+  <tr><td class="key">4         </td><td class="id">SelectVerticalEdgeMids   </td><td class="description">Select vertical edge controls</td></tr>
+  <tr><td class="key">5         </td><td class="id">SelectHorizontalEdgeMids </td><td class="description">Select horizontal edge controls</td></tr>
+  <tr><td class="key">6         </td><td class="id">SelectAround             </td><td class="description">Select points around current points</td></tr>
+  <tr><td class="key">+V        </td><td class="id">SelectAllVertically      </td><td class="description">Select all vertically</td></tr>
+  <tr><td class="key">v         </td><td class="id">SelectMoreVertically     </td><td class="description">Select next points vertically</td></tr>
+  <tr><td class="key">+H        </td><td class="id">SelectAllHorizontally    </td><td class="description">Select all horizontally</td></tr>
+  <tr><td class="key">h         </td><td class="id">SelectMoreHorizontally   </td><td class="description">Select next points horizontally</td></tr>
 <tr><td colspan="3" class="area">EngraverFillInterface</td></tr>
   <tr><td class="key">m         </td><td class="id">SwitchMode               </td><td class="description">Switch edit mode</td></tr>
   <tr><td class="key">o         </td><td class="id">RecurseInc               </td><td class="description">Increment screen recursion</td></tr>
@@ -384,10 +405,10 @@ Modifiers<br/>
   <tr><td class="key">^c        </td><td class="id">ColDivDec                </td><td class="description">Decrement row subdivisions</td></tr>
   <tr><td class="key">s         </td><td class="id">SpacingInc               </td><td class="description">Increase default spacing</td></tr>
   <tr><td class="key">r         </td><td class="id">RotateDir                </td><td class="description">Rotate default line direction</td></tr>
-  <tr><td class="key">c         </td><td class="id">SubdivideCols            </td><td class="description">Subdivide columns</td></tr>
+  <tr><td class="key">c         </td><td class="id">TogglePanel              </td><td class="description">Toggle showing control panel</td></tr>
   <tr><td class="key">z         </td><td class="id">Rectify                  </td><td class="description">Zap back to a rectangle</td></tr>
-  <tr><td class="key">d         </td><td class="id">Decorations              </td><td class="description">Toggle decorations</td></tr>
-  <tr><td class="key">w         </td><td class="id">CircleWarp               </td><td class="description">Make circle</td></tr>
+  <tr><td class="key">d         </td><td class="id">ToggleDir                </td><td class="description">Toggle showing direction map</td></tr>
+  <tr><td class="key">w         </td><td class="id">ToggleWarp               </td><td class="description">Toggle warping when modifying mesh</td></tr>
   <tr><td class="key">1         </td><td class="id">SelectCorners            </td><td class="description">Select corners</td></tr>
   <tr><td class="key">2         </td><td class="id">SelectMids               </td><td class="description">Select middle controls</td></tr>
   <tr><td class="key">3         </td><td class="id">SelectEdgeMids           </td><td class="description">Select edge controls</td></tr>
@@ -403,9 +424,18 @@ Modifiers<br/>
   <tr><td class="key">+R        </td><td class="id">RotateDirR               </td><td class="description">Rotate default line direction</td></tr>
   <tr><td class="key">+S        </td><td class="id">SpacingDec               </td><td class="description">Decrease default spacing</td></tr>
   <tr><td class="key">p         </td><td class="id">ShowPoints               </td><td class="description">Toggle showing sample points</td></tr>
+  <tr><td class="key">^p        </td><td class="id">ShowPointsN              </td><td class="description">Toggle showing sample point numbers</td></tr>
+  <tr><td class="key">+^P       </td><td class="id">MorePoints               </td><td class="description">Subdivide all lines to have more sample points</td></tr>
+  <tr><td class="key">g         </td><td class="id">ToggleGrow               </td><td class="description">Toggle grow mode</td></tr>
+  <tr><td class="key">^d        </td><td class="id">LoadDir                  </td><td class="description">Load a normal map for direction</td></tr>
+  <tr><td class="key">Left      </td><td class="id">NextFillType             </td><td class="description">Switch to next fill type</td></tr>
+  <tr><td class="key">Right     </td><td class="id">PreviousFillType         </td><td class="description">Switch to previous fill type</td></tr>
   <tr><td class="key">none      </td><td class="id">RenderMode               </td><td class="description">Render mode</td></tr>
   <tr><td class="key">none      </td><td class="id">Subdivide                </td><td class="description">Subdivide</td></tr>
   <tr><td class="key">none      </td><td class="id">SubdivideRows            </td><td class="description">Subdivide rows</td></tr>
+  <tr><td class="key">none      </td><td class="id">SubdivideCols            </td><td class="description">Subdivide columns</td></tr>
+  <tr><td class="key">none      </td><td class="id">Decorations              </td><td class="description">Toggle decorations</td></tr>
+  <tr><td class="key">none      </td><td class="id">CircleWarp               </td><td class="description">Make circle</td></tr>
 <tr><td colspan="3" class="area">CloneInterface</td></tr>
   <tr><td class="key">Left      </td><td class="id">NextTiling               </td><td class="description">Select next tiling</td></tr>
   <tr><td class="key">Right     </td><td class="id">PreviousTiling           </td><td class="description">Select previous tiling</td></tr>
