@@ -319,6 +319,8 @@ save as should change save/import/export/current directory to that directory
 
 autorecover.. autosave every X minutes -> need to decide on autosave location and how many to build up, how to remove old
 
+clear out warnings due to make hidegarbage
+
 TreeSelector:
   makeinwindow() doesn't account for columns
   option to use markup for labels
