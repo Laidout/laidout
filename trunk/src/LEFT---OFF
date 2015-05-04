@@ -149,7 +149,7 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 
 
-----------------0.095 ROADMAP ITEMS: features and enhancements------------------------
+----------------0.096 ROADMAP ITEMS: features and enhancements------------------------
 website: clarify how to get debs from the tarball
 website: explain a bit more how to install dev versions, and place side by side with "stable"
 
@@ -165,9 +165,12 @@ test:
   each window type: about palette view spread command text
     help: window pane does funky stuff
   test in different window managers
-  DONE each export filter (via command line in new script in examples.. ignoring problems in eps)
-  DONE make some test scripts for command line testing
+  each export filter (via command line in new script in examples.. ignoring problems in eps)
+  make some test scripts for command line testing
 make sure undo is experimental only
+
+
+need more mechanism so that popup dialogs stay on top of window they are "children" of
 
 
 engraving tool: Engraving 
@@ -184,7 +187,7 @@ engraving tool: Engraving
   trace adjustment mode should prioritize moving the trace object, scan for it BEFORE scan for engrave object
   trace object needs to be in page context, not object context (or must be default option)
 
-  ------0.096:------
+  drawing custom freehand (with width) lines within the mesh area
   export doesn't work for: nothing for scribus, eps, ps
   need option to export trace object in same position as the traced lines, so it can be further processed elsewhere
   instant global thickness adjust on orientation tool?
@@ -300,20 +303,6 @@ PathInterface:
 
 
 
-----------------0.096 ROADMAP ITEMS: features and enhancements------------------------
-update fileformat.txt
-check laidout.1 when time to release
-update docs to have new release number
-update translation base files
-update screenshots
-update dtpcompare.html
-put rss/g+ links on all menu pages
-test:
-  each window type: about palette view spread command text
-    help: window pane does funky stuff
-  each export filter
-  make some test scripts for command line testing
-  test in different window managers
 
 save as should change save/import/export/current directory to that directory
 
