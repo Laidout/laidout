@@ -1,4 +1,4 @@
-LAIDOUT Version 0.094.1
+LAIDOUT Version 0.095.1
 =======================
 http://laidout.org
 

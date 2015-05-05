@@ -1,8 +1,14 @@
-laidout (0.094.1) unstable; urgency=low
+laidout (0.095.1) unstable; urgency=low
 
   * Dev version
 
- -- Tom Lechner <tomlechner@users.sourceforge.net>  Fri, 21 Feb 2014 21:15:50 -0800
+ -- Tom Lechner <tomlechner@users.sourceforge.net>  Thu, 23 Apr 2015 21:15:50 -0800
+
+laidout (0.095) unstable; urgency=low
+
+  * Fourteenth Release 
+
+ -- Tom Lechner <tomlechner@users.sourceforge.net>  Thu, 23 Apr 2015 21:15:50 -0800
 
 laidout (0.094) unstable; urgency=low
 

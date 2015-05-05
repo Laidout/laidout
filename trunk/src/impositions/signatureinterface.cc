@@ -2549,7 +2549,8 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 	lasthover.set(x,y);
 	//fp now holds coordinates relative to the element cell
 
-	DBG int over=scan(x,y, &row,&col, &mm.x,&mm.y, &tilerow,&tilecol);
+	DBG int over=
+	scan(x,y, &row,&col, &mm.x,&mm.y, &tilerow,&tilecol);
 	DBG cerr <<"over element "<<over<<": r,c="<<row<<','<<col<<"  mm="<<mm.x<<','<<mm.y<<"  tile r,c:"<<tilerow<<','<<tilecol;
 	DBG if (row>=0 && row<signature->numhfolds+1 && col>=0 && col<signature->numvfolds+1)
 	DBG    cerr <<"  xflip: "<<foldinfo[row][col].x_flipped<<"  yflip:"<<foldinfo[row][col].y_flipped
