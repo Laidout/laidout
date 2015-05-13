@@ -116,7 +116,8 @@ char *letter_numeral(int i,char cap)
 	char *n=NULL;
 
 	if (i==0) return newstr("0");
-	if (i<0) { appendstr(n,"-"); i=-i; }
+	bool neg=false;
+	if (i<0) { neg=true; i=-i; }
 
 	char d[2];
 	d[1]='\0';
@@ -127,7 +128,8 @@ char *letter_numeral(int i,char cap)
 		i/=26; 
 	} while (i>0);
 
-	if (cap) for (unsigned int c=0; c<strlen(n); c++) n[c]+='A'-'a';
+	if (cap) for (unsigned int c=0; c<strlen(n); c++) if (n[c]>='a' && n[c]<='z') n[c]+='A'-'a';
+	if (neg) prependstr(n,"-");
 	return n;
 }
 
@@ -158,7 +160,7 @@ char *roman_numeral(int i,char cap)
 	if (i>=4) { appendstr(n,"iv"); i-=4; }
 	while (i>=1) { appendstr(n,"i"); i--; }
 
-	if (cap) for (unsigned int c=0; c<strlen(n); c++) n[c]+='A'-'a';
+	if (cap) for (unsigned int c=0; c<strlen(n); c++) if (n[c]>='a' && n[c]<='z') n[c]+='A'-'a';
 	return n;
 }
 

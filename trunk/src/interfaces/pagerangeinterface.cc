@@ -191,6 +191,7 @@ Laxkit::MenuInfo *PageRangeInterface::ContextMenu(int x,int y,int deviceid, Laxk
 	int pos=-1;
 	int s=scan(x,y, &pos, &range, &part, &index);
 	if (!s) return menu;
+	currange=range;
 
 	if (!menu) menu=new MenuInfo(_("Paper Interface"));
 	else menu->AddSep(_("Paper"));
@@ -198,10 +199,10 @@ Laxkit::MenuInfo *PageRangeInterface::ContextMenu(int x,int y,int deviceid, Laxk
 	menu->AddItem(_("Custom base..."),RANGE_Custom_Base);
 	menu->AddItem(_("Reverse"),RANGE_Reverse);
 	menu->AddSep();
-	if (doc && doc->pageranges.n>1) {
-		//menu->AddItem(_("Delete range"),RANGE_Delete);
-		menu->AddSep();
-	}
+	//if (doc && doc->pageranges.n>1) {
+	//	menu->AddItem(_("Delete range"),RANGE_Delete);
+	//	menu->AddSep();
+	//}
 
 	char *str=NULL;
 	for (int c=0; c<Numbers_MAX; c++) {
@@ -226,6 +227,7 @@ int PageRangeInterface::Event(const Laxkit::EventData *e,const char *mes)
 	if (!strcmp(mes,"menuevent")) {
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
 		int i=s->info2; //id of menu item
+		
 		if (i==RANGE_Custom_Base) {
 			if (!doc || hover_range<0 || hover_range>=doc->pageranges.n) return 0;
 
