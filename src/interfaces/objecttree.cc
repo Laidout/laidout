@@ -24,6 +24,9 @@
 #include <lax/displayer.h>
 
 
+#define DBG
+
+
 using namespace Laxkit;
 
 
@@ -88,7 +91,7 @@ void ObjectTree::UseContainer(ObjectContainer *container)
 	}
 
 	if (!menu->parent) {
-		menuinfoDump(menu,0);
+		DBG menuinfoDump(menu,0);
 	}
 }
 
@@ -170,7 +173,7 @@ void ObjectTreeWindow::UseContainerRecursive(ObjectContainer *container)
 	}
 
 	if (!menu->parent) {
-		menuinfoDump(menu,0);
+		DBG menuinfoDump(menu,0);
 	}
 }
 
