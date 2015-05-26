@@ -4520,6 +4520,7 @@ int ViewWindow::SelectToolFor(const char *datatype,LaxInterfaces::ObjectContext 
 int ViewWindow::SelectTool(int id)
 {
 	int c=ViewerWindow::SelectTool(id);
+
 	if (toolselector) {
 		if (c==0) toolselector->Select(curtool->id);
 		else if (c==-1) {
@@ -4530,11 +4531,13 @@ int ViewWindow::SelectTool(int id)
 			}
 		}
 	}
+
 	DocumentUser *d;
 	for (int c2=0; c2<viewport->interfaces.n; c2++) {
 		d=dynamic_cast<DocumentUser*>(viewport->interfaces.e[c2]);
 		if (d) d->UseThisDocument(doc);
 	}
+
 	return c;
 }
 
