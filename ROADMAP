@@ -5,24 +5,6 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 
 
-VERSION 0.095
--------------
-(done) be able to trace images in engraver tool
-(done) engraver tool point groups to trace from same object to different trace settings
-(done) engraver tool linear, radial, or circular line fills
-(done) engraver tool, implement dashes
-(done) allow editing meshes based on a path
-(done) PathInterface varying width lines, offsets, and different kinds of line joins (bevel, round, miter)
-(done) PathInterface subpaths for hole making should work: check exports (ignoring eps and ps for now)
-(done) Cache transforms to optimize ColorPatch/ImagePatchData point lookup
-(done) allow export even or odd
-(done) allow export in batches
-(done) Freehand drawing with tablet pressure support
-(done) Clickable page numbers to select markers
-(done) impose-only mode should allow access to all imposition types, not just signatures
-(done) Scribus import of doc with 2 page spreads on export imposes incorrect object positions
-
-
 VERSION 0.096
 -------------
        test new export even/odd and batches for all exporters
@@ -88,7 +70,7 @@ VERSION 0.1
        SpreadEditor: be able to eject a page into limbo, for creation threads, connect, then insert as a group
        When importing from an image list file, should be able to say if and when to auto-make previews
        Full internationalization support in window controls for input and output, including left, right. pango?
-       Basic infrastructure for most things (except text) should be in place.
+       Basic infrastructure for most things should be in place.
        Must be Stable, not merely "Stable"
        Creep management controls
        Construct an adequate command core, so that no X connection necessary for batch processing
@@ -140,7 +122,7 @@ Maybe bez part of path interface should have segment move like inkscape
 Somehow be able to do simulated add-ins/foldouts from within any page of an imposition
 use any path as a kind of tab stop
 Numbered lists
-Mixed left/right text in text streams
+Mixed left/right/vertical text in text streams
 Tables
 Optional multi-key shortcuts?
 hanging punctuation
@@ -153,6 +135,7 @@ layout inside anything that provides an 'area' and runaround facility.
 Finally decide on a real rendering backend: cairo? antigrain? antigrain/freetype/pango? graphite?
 GraphicsMagick/ImageMagick plugin or integration: benefits: a gazillion file formats, including EPS, and color profiles
   Imlib chokes on really big image files, whereas this would not
+gmic filter plugin
 Would be nice to have tex/latex text and equation reader
 Would be nice to be able to handle metapost/metafun sort of things
 Would be nice to be able to handle lilypond sort of things
@@ -195,6 +178,24 @@ While i'm at it, I'd like a pony.
             ---------------- 
 ------------- OLD RELEASES -----------------
             ----------------
+
+VERSION 0.095  --  released 23 April 2015!
+-------------
+(done) be able to trace images in engraver tool
+(done) engraver tool point groups to trace from same object to different trace settings
+(done) engraver tool linear, radial, or circular line fills
+(done) engraver tool, implement dashes
+(done) allow editing meshes based on a path
+(done) PathInterface varying width lines, offsets, and different kinds of line joins (bevel, round, miter)
+(done) PathInterface subpaths for hole making should work: check exports (ignoring eps and ps for now)
+(done) Cache transforms to optimize ColorPatch/ImagePatchData point lookup
+(done) allow export even or odd
+(done) allow export in batches
+(done) Freehand drawing with tablet pressure support
+(done) Clickable page numbers to select markers
+(done) impose-only mode should allow access to all imposition types, not just signatures
+(done) Scribus import of doc with 2 page spreads on export imposes incorrect object positions
+
 
 VERSION 0.094  --  released 20 February 2014!
 -------------
