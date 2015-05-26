@@ -17,8 +17,6 @@ memory hole, activate tool, lay down one paper, quit, 3 objects remain
 
 pdf out needs clone deref
 
-roman numeral menu select range editor not changing to roman!!
-
 reimpose memory hole.. reimposed 5 page booklet
 
 object layer positioning for Home and End keys projecting out in wrong way
@@ -26,15 +24,11 @@ object layer positioning for Home and End keys projecting out in wrong way
 ubuntu resize window failing
 gnome "application" does one per window, not one per app. this is not a bad thing imnsho, but should be easy to conform to desktop spec application properly
 
-click enter area of color pickers, does not install color!!!!
-
 scribus plugin: if directory of executable script is not writable, it fails! 
  -> should find one that is writable
 
 ContextMenu: tablet mouse can't click down in?!?? -> because slight drag cancels... should allow tiny drags
 ContextMenu: mouse hover scan appears to ignore text pad
-
-hang after reparent
 
 text window controls have difficulties
 
@@ -42,17 +36,17 @@ shearing produced null axes
 
 tooltips and event timers seem to be frelled
 
+hang after reparent object 
+don't allow reparent to a child!! or reparent as appropriate 
+grouping frelled.. can group, but cannot seem to select existing groups to ungroup 
 object reordering frelled, strange bbox display offset, 
 
 clone a child.. NOT PUTTING CORRECTLY!!!! totally wrong matrix
 cloning, change original, not triggering bbox update in clone
 cloning, jump to object in offscreen page, switches pages, but bounding box wrong place
 
-don't allow reparent to a child!! or reparent as appropriate
-
 prompt window is f'd up
-
-grouping frelled.. can group, but cannot seem to select existing groups to ungroup
+Laxkit::MultiLineEdit needs some serious debugging 
 
 Printing only goes to letter, even though page size says go full page, in image, pdf and ps out!!! *(#@*&#*(&*&$(
 print command to printer is not respecting the paper size
@@ -80,6 +74,7 @@ memory hole helpwindow
 memory hole when graphical shell activated 
 
 Lightness slider appears black to white, but the middle is full color, needs segmented render like hue
+click enter area of color pickers, does not install color!!!!  
 
 svg out, EquivalentObject doesn't play nice with defs.. only accessed once.. how to upkeep clones in this case?
 	-> when equiv objects are composed of groups, what happens?
@@ -98,7 +93,7 @@ html dump must convert chars to entities
 
 svg coord numpoints==0???? numpoints doesn't really serve any purpose other than debugging, but....
 
-spiltwindow cursors existing in subwindows
+splitwindow cursors existing in subwindows
 
 copy paste not working again
 
@@ -117,7 +112,7 @@ place 3 images, object select, must press delete twice...!?!?!?!
 
 should not be able to group select an object and another object nested within
 
-transparency in paths does not work on screen
+transparency in paths does not work on screen (will fix with update to cairo)
 
 file previewer not updating preview when using arrow keys
 
@@ -139,8 +134,6 @@ make sure all imposition types are available in interpreter
 resource impositions not showing description when selected
 
 GradientInterface problem rendering radial when two circles separated by large distance
-
-Laxkit::MultiLineEdit needs some serious debugging
 
 headwindow swapping is now REALLY messed up
 pane swapping/dropto on maximized, swapping in general...
@@ -170,98 +163,137 @@ test:
 make sure undo is experimental only
 
 
+Do separate package for icons, to aid those who can't get inkscape to make the icons in both lax and laidout
+
 need more mechanism so that popup dialogs stay on top of window they are "children" of
 
+need a global Laidout method of making unique ids
+ -> update in Engraver tool, and object indicator overlay
 
 engraving tool: Engraving 
-  freehand not being interpreted correctly
-    non-equal smooth is adding erroneous extra mesh column
+  make a LineEdit overlay for number input.. Next bdown is ignored!! l, m, or right all ignored
+  multiobject:
+    object lines in group list needs eye per object, affect actual object visibility
+    resource settings need to be able to be shared across objects and survive file io
+      need ability to store overall styles of a patch, not just each individually
+	  -> need more thorough resource management to track resources/users
+      setting sharing is confusing, need much better interface for that
+
+	DONE escape off curvemap, trouble with somedata in GroupInterface Refresh
+    DONE should be able to change object name from within panel
+	DONE (i think) click off an object, selection not flushing properly?
+	DONE-ish collapse/show groups on per object basis? <- no, easier to just show all, wheel the panel up and down
+	DONE right click to remove object from list? or just shift click again? <- just click off
+	DONE distort tools need to act on all objects in selection
+	DONE implement push to all
+    DONE shared state needs to look if other objects have groups that can possibly be shared with
+	DONE use from list not showing group names correctly
+    DONE clicking on other object's group name should select it first, not do the rename thing
+    DONE double click in viewport should activate tool with multiple objects.. only works with one right now
+	DONE select tool from menu or with 't' should activate tool and transfer selection
+	DONE object tool must act with viewport->selection
+    DONE be able to autotrace to multiple engraved objects
+
+  orient:
+    option to remember old values while adjusting
+	DONE remember default width
+    DONE should be able to enter numbers for orient by click no drag
+    DONE instant global thickness adjust on orientation tool?
+
+  tracing:
+    bug: memory hole after tracing
+	shift-drag (or drag anything not covered by trace object) should drag ANY of the meshes in selection, not just current
+    trace object scaling and rotation should happen around mouse point
+    need option to export trace object in same position as the traced lines, so it can be further processed elsewhere
+    trace object transparency slider should actually slide transparency
+    custom sample of channels
+    edge abutment in tracing
+    DONE invert trace sampling: sample white instead of black, <- curvemapinterface: right click menu option
+    DONE trace adjustment mode should prioritize moving the trace object, scan for it BEFORE scan for engrave object
+    DONE trace function should be in EngraverPointGroup, not so much at interface level
+    DONE trace once not working
+    DONE trace object needs to be in page context, not object context (or must be default option)
+
+  freehand/path:
+    freehand not being interpreted correctly: non-equal smooth is adding erroneous extra mesh column
+    drawing custom freehand (with width) lines within the mesh area
+  line generation: 
+    grow: implement custom line merge and break to preserve spacing across mesh contraction
+    grow: edge abutment when generating
+    need standard for adding different preset line types:
+      path AND thickness, like for half circle fill, thin at tips, thick in middle
+    sample point generation should be based on lines per mesh square, not total mesh field
+
+  curvemap needs predefined ramp profiles, remember last, load/save (per context?)
+    -> options to insert various predefined patterns
+	DONE curvemapinterface: right click menu option works in trace, but not in brush ramp edit!!
+
   establish path needs better smoothness assignments
-  trace once not working
   keys being caught in patch, not in child path
   test: bez cache needs updating when points are moved around
   test: dash cache needs updating when points are moved OR thickness changed
-
-  bug: memory hole after tracing
-
-  trace adjustment mode should prioritize moving the trace object, scan for it BEFORE scan for engrave object
-  trace object needs to be in page context, not object context (or must be default option)
-
-  drawing custom freehand (with width) lines within the mesh area
   export doesn't work for: nothing for scribus, eps, ps
-  need option to export trace object in same position as the traced lines, so it can be further processed elsewhere
-  instant global thickness adjust on orientation tool?
   always brings current object to front (normal refresh in place, and then interface draw on top).. should be very optional, as it blocks out white overlays
   don't warp, move points, then warp, almost always has bad points: PatchData::getPointReverse() is too inaccurate
-  be able to autotrace to multiple engraved objects
-    -> larger question of edit multi objects in mesh tool.. should be able to move around many nodes?
+  when manual tweaking of spacing, need to produce value reference so that future line orienting preserves line thicknesses
   undo/redo
-  needs to be an indicator on red linked circle when current group is selected, as it acts as green then
   need mouse sensitivity sliders
   finish implement making the circle lines be closed circles
-  need standard for adding different preset line types:
-    path AND thickness, like for half circle fill, thin at tips, thick in middle
   current blockout is not very precise, needs approximation between existing point samples
   direction map is not showing actual direction
   implement direction section
   implement spacing section
   need some kind of smooth out: smooth out width, and smooth out path
-  hover over mode icons should show text of what you are hovering over.. hard to remember, annoying to look at status bar otherwise
-  setting sharing is confusing, need much better interface for that
+  hover over mode icons should show text of what you are hovering over (verbose mode?).. hard to remember, annoying to look at status bar otherwise
   edit brush ramp as symmetric ramp 
-  invert trace sampling: sample white instead of black, a shortcut to what needs to be implemented in curvemapinterface?
-  curvemap needs predefined ramp profiles, remember last, load/save (per context?)
-    -> options to insert various predefined patterns
-  should be able to draw a line and have that be a baseline for dashes
-  implement custom line merge and break to preserve spacing across mesh contraction
+  finish making value to weight map on canvas editable and work right
+  should be able to draw a line and have that be a baseline for dash division
   option: either drop out of bounds points, or zap mesh to point bounds
   resolution tool: click to add between points within brush, control to destroy points in brush
   need optional spacing image map, which is a mask like image that preserves spacing after distorting mesh
-  need duplicate group button for easy crosshatch
   need merge group
-  custom sample of channels
   numsliders should have click on arrows for single increase, and a dismiss x for input box
   should probably abstract control panel creation so we don't have to hardcode everything all the time
-  edge abutment
   sampling could be more sophisticated, currently just grabs pixels, could downsample the image based on current spacing
-  finish making value to weight map on canvas editable and work right
-  trace object transparency slider should actually slide transparency
-  maybe expanding list of point groups, with ability to toggle linked and active in list
   Danger! coons patch produces discontinuous contours within multiblock meshes!! who knew!?
-  sample point generation should be based on lines per mesh square, not total mesh field
-  scale to map weights to line thickness, broken line behavior, and under zero_threshhold render as blocked out
-  when manual tweaking of spacing, need to produce value reference so that future line orienting preserves line thicknesses
   perhaps allow path objects to be adjusted with engrave tool for custom outlier lines not part of mesh?
   turbulence needs optional direction constraints, size of turbulent cell, and per line turbulence
     would be better if turbulence could be a field effect, not independently on each sample point
   allow temp override of linked to adjust only current?
-  must implement mode based shortcuts in Laxkit
+  must implement mode based shortcuts in Laxkit. currently all mesh shortcuts are active
   stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
+
+  DONE escape off brush ramp edit is exiting all tool, not just engraver tool
+  DONE maybe expanding list of point groups, with ability to toggle linked and active in list
+  DONE need duplicate group button for easy crosshatch <- Add button copies from current group
+  DONE wheel over panel should move the panel, not the viewport
+  DONE bug: one obj with 2 groups, one with 1 group, switch with . and ,, does not trigger resize panel
+  DONE needs to be an indicator on red linked circle when current group is selected, as it acts as green then
 
 
 PathInterface:
-  zero tips not working on mesh edit? with import test-engrave.laidout
-  bug: when path is a child, width nodes are not drawn correctly
-  interfs.cc: weights not being shown unless '_'
-  bug: problems for non-bez-controlled corners at endpoint. Also variable offset causes weird connections
   bug: should not create new control points by pressing cntl, unless there is movement
   bug: shift click down then up on a point selects then deselects.. control can toggle
   bug: seems to be possible to move nodes out of order
+  debug remove points affect on weight nodes
+  dup path object links the path style, but save and load, it is not linked... need to sort out line/fill style inheritance/linking
+
+  zero tips not working on mesh edit? with import test-engrave.laidout
+  bug: when path is a child, width nodes are not drawn correctly
+  bug: problems for non-bez-controlled corners at endpoint. Also variable offset causes weird connections
   bug: make new line with freehand tool, cannot move weight nodes in a rational way
   bug: applyoffset, the bez part at joins is messed up when no offset, suspect problem in FlatpointToCoordinate, mismatch with bez join next to sample points
   bug: now node scan and display works, but drag doesn't!!
   bug: delete last weight node, width is wrong
   debug cache sample point distribution, the interpolator is really bad as is
-  debug remove points affect on weight nodes
   powerstroke export requires apply offset.. else weight nodes are all messed up
-  dup path object links the path style, but save and load, it is not linked... need to sort out line/fill style inheritance/linking
   clarify export for weighted paths, use outlinecache and areacache as needed, check all filetypes exporters: svg pdf scribus image/ps/eps
   finish implementing joins. need to clarify weight behavior at corner joins
   weight computation is currently done based on even t spacing, but probably should be mapped based on distance
+  interfs.cc: weights not being shown unless '_'
 
-  ---------.096:
   debug extrapolate
-  implement open at any point to possible break into separate subpaths
+  implement open at any point to possibly break into separate subpaths
   need numerical entry for all weight node characteristics
   need to protect against reentrants at corner joins.. makes holes unless nonzero rule, and sometimes sticks out the other side
   sliding around the nodes is really annoying.. should do according to proximity to center line
@@ -299,6 +331,8 @@ PathInterface:
     if add points, show dotted line to indicate a new segment incoming
   finish new path/pathoperator/pathsubinterface/pathinterface structure 
 
+  DONE default path width should be thicker, maybe a few pixels wide
+  DONE bug: add seg for endpoint, then try to select a point: crash! -> improper curpoints.push()
  
 
 
@@ -328,15 +362,17 @@ layers palette
   selectable
 
 image filters:
+  node editor
   graphicsmagick
   gmic
+plugin for easy antiprism import
 
 for purely command line execution, should be able to make totally not X dependent.
 
 maybe expand the page label system to have some kind of to-do markup.. this could be combined with preflight verifiers
   or other search activities as work-in-progress annotations
 
-filters 0.096:
+filters:
   need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
   remember last export 
   importing should not spawn new windows
@@ -390,8 +426,11 @@ export/print dialog
   export should have a preview of what is actually going out, flip through spreads
 
 Clean up mesh/patch controls: 
-  reverse lookup is not very precise
+  maybe should not be able to escape off path tool when editing as path
+  reverse lookup is not very precise: need to warp back and forth ONLY when necessary, as when
+    switching to different, non-point-distort mode
 
+  edit multi objects in mesh tool.. should be able to move around many nodes?
   coons are not really smooth at internal edges? try with engraver, makes corners with current inner interpolation
   tracing infrastructure should be part of base mesh class.. would make easy for color mesh to use
   when on edge, it highlights, but if you are outside of mesh, it will switch to other object
@@ -410,6 +449,9 @@ Clean up mesh/patch controls:
   implement more right button config options to make the settings more discoverable
   circle warp needs a proper circle/ellipse interface
   make base path dump_out as Path, not PathsData? make it easier to read file removing the unnecessary??
+
+ellipseinterface:
+  crash on lbdown: dp is null???
 
 curves:
   curvemap needs predefined ramp profiles, remember last, load/save
@@ -487,9 +529,11 @@ to be a decent editing platform, Laidout needs:
 General Laxkit Interfaces needs:
   stack of available interfaces
   DrawData for arbitrary rendering of any known objects to any Displayer object
-  iconmanager
+  DONE iconmanager
 
 align tool:
+  need to make discoverable, not just as key shortcuts
+    -> make as standalone tools, now that viewport stores selection?
   endpoints should be oriented triangle, not circles which make it look like path nodes
   explode in normal align
   should be able to scale and rotate a non-line path when not in path mode
@@ -527,6 +571,7 @@ Color sliders:
   be able to choose which color sets are visible
   make color slider box be able to be a pane
   would be nice to enter number values in any color format
+  need some kind of palette tab
 
 need to remember previous export settings
 need infrastructure to propagate and save tool settings 
@@ -611,7 +656,7 @@ cloning: convert to master: make a clone be the original..
   ..if an object is cloned, maybe just have them all be clones, and original becomes a remote "data block"
       to be dumped to file in a defs section? if all refs gone but one, then it takes place of clone?
 
-cloner:
+tiling cloner:
   debug groupify
   click on base cell, update viewport color box
   save color hints of base cells with Tiling object
@@ -626,13 +671,16 @@ cloner:
   implement circular interface
   penrose/heesh/net clone interface
   need progressive search when mouse over box
+  autocreate seamless tile image
+  autofit source objects/images to the pattern to minimize gaps
+  clipping options when source images overlap in final layout
 
 
 overlays should get first pick of input, BUT if another has a button lock, it shouldn't mouse move update
 
 need a way to tell rect interface to enter move mode with lbdown, as when initialize a child interface
 
-standardize new Impositions: each has:
+standardize new Impositions: convert to new ResourceManager system. each has:
    interface OR window editor
    class type
    default resources
@@ -680,15 +728,22 @@ how best to integrate Styles, Attributes, and Values??? style types:
    would be advantageous to write a single object def, and output options and documention to
    each of the 3 targets
 
+Imposition use cases:
+  booklet contains two threads, read one way, flip book over, read the other way
+  booklet but each paper is trimmed differently, like for tabs
+  moebius
+  need cutting marks for posterizing for lining up different sheets
+  impose only needs access to papergroups
 Net imposition
+  create from papergroup: one papergroup used as page spreads, another used as actual paper group?
   net extra scaling non-functional
   NetImposition needs import/export net,
   export svg
   convert to/from laidout elements
   interactive unwrapper and build net interface figure out bleeding and connectivity infrastructure
   figure out more efficient clipping of Imlib images
-
-saving when net is internal is not proper.. does not distinguish between diff. nets and whole
+  finish implementing double sided nets
+  saving when net is internal is not proper.. does not distinguish between diff. nets and whole
 
 hedron window:
   send imp
@@ -710,6 +765,7 @@ For objects that are really skinny, it is not practical to have the handles be a
   part.. should have minimum drag areas?  
 
 customizable object child relationships to parent, rather than simple transform
+  incorporate gss!!
   DONE scale x
   scale y
   scale free
@@ -867,20 +923,14 @@ move Value and FieldPlace to laxkit? ValueHash would be very useful to ease conf
 
 merge set and ValueHash?
 
-review Imposition types:
-  each has:
-    class
-	interface and/or editor
-
 Masking
     pathinterface conversion must be done
     true object tree with all lax data objects subclassed to hold children, and reference parent
 
-make pdf default output format for sending to lp
 
 
 Palettes:
-  load palette should have a preview
+  load palette should have a preview: file dialog preview function
   allow editing palette strips, import those to gradient tools
   custom palettes
   if height < 2*textheight, then hide name info
@@ -915,13 +965,13 @@ pagerangeinterface:
 for range on import/export, should have a range parser that accepts unconnected ranges, ie "2,4, 5-10"
 
 shortcut dialog:
+  area heads need to have human titles, _("Image Tool") instead of "ImageInterface"
   mode for shortcut check not quite working, such as ' ' with button to duplicate
   need hierarchy overlap features... it is easy to get lost in different zones
   panning f'd up, close but incorrect bounds checking when drag
   needs to make in window for cursor moving
   numberpadmask?
   char names for wacky xf86 codes.. accept 0x*
-  area heads need to have human titles, _("Image Tool") instead of "ImageInterface"
   mode based shortcuts have no display capability
   implement search
   need ability to add multiple keys for same action
@@ -966,6 +1016,11 @@ signature editor  Signature editor Signature Editor
   detect non staplable binding edge, show red rather than green
   test impose-only for all imposition types
   be able to specify single sided.. allows bound accordian foldings?
+  implement creep
+
+Make extension to be able to use Inkscape live path effects (lpe)!! The run on svg snippets, so should be somewhat
+  straightforward to call externally.. BUT have optional tool overlay. Figure out how to reverse implement to also
+  run within Inkscape.
 
 printer mark rendering default to a single color? editing of net outline allowed, but
 then changes not stored
@@ -1021,16 +1076,14 @@ page navigator should allow type in shortcuts like "end"
 messages to the status line should have priorities? so once mouse over messages are cleared, it would revert
   back to a lower priority message
 
-plugin for easy antiprism import
-
-
-
 perhaps split radial and linear gradients to different tools? makes more sense
 
 all at once imposition... this would allow mapping of scribus layout without fuss. that
   could be a special case of n-up, where you specify n to be infinity, with m number of
   columns, not necessarily aligned, as scribus does.
 
+
+importimages: remember last settings
 
 
 ===================Anything below here probably needs discussion before implementing================
@@ -1071,8 +1124,6 @@ impositions:
    or paper net is proper to hold the layout... means:
    paperstyle=imposition->Paper(layout);
    imposition return a spread with flag for if papergroup is for printing or printing and viewing
-
-importimages: remember last settings
 
 object selection:
  shift on a selected object should remove that object from selection
@@ -1167,18 +1218,11 @@ directory reorganization?
  windows/ <-- purely ui elements
  core/ <-- implies isolating core functions
 
-paper tiler: for custom pages, drag out a paper size?
-
-intl support: ready for pango?
+intl support: ready for pango? or Harfbuzz/cairo/freetype?
 
 template/master pages: 
  have objects be tagged with ref object, so you can create a page with a master page
   that has a "text frame" for instance, but different children per page
-
-rulercornerbutton:
-  Insert v
-    Pagetemplate1
-    template2
 
 a "Place" tool like indesign?? preview images and place by dragging out one by one, as well
  as optionally into Arrangements
@@ -1197,6 +1241,9 @@ file format prettification
     #docs for following atts indented same as previous atts
     next_att #(one or more) next_att docs
 
+
+food for thought:
+  haskell envelope function:  http://projects.haskell.org/diagrams/doc/manual.html
 
 
 ======================================DONE=================================================
@@ -1371,3 +1418,10 @@ DONE engraving tool: Engraving
   DONE twirl
   DONE turbulence mode
   DONE duplicate does not duplicate the line
+
+
+for 1st bugfix after 0.095:
+DONE roman numeral capitals negative number has mystery box
+DONE? (seems to work now) roman numeral menu select range editor not changing to roman!!
+DONE make pdf default output format for sending to lp
+
