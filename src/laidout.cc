@@ -33,6 +33,7 @@
 #include <lax/laximages-imlib.h>
 #include <lax/laxoptions.h>
 #include <lax/units.h>
+#include <lax/bitmaputils.h>
 #include <sys/file.h>
 
 #define LAIDOUT_CC
@@ -1810,6 +1811,7 @@ int main(int argc,char **argv)
 	Laxkit::SetUndoManager(NULL);
 	Laxkit::InstallShortcutManager(NULL); //forces deletion of shortcut lists in Laxkit
 	Laxkit::IconManager::SetDefault(NULL);
+	Laxkit::SetDefaultImageProcessor(NULL);
 	laidout->dec_count();
 	
 	DBG cerr <<"---------------stylemanager-----------------"<<endl;
