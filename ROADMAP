@@ -7,13 +7,13 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.096
 -------------
-       test new export even/odd and batches for all exporters
-       autosave for autorecover
-       Re-fix cut and paste from system clipboard
+       Finish Implementing cairo renderer, make meshes finally render faster, plus general rendering niceness
        make window resize work in gnome, test in kde
+       Re-fix cut and paste from system clipboard
+       autosave for autorecover
        debug line outline cache, especially for joins
        layers (object tree) palette
-       Finish Implementing cairo renderer, make meshes finally render faster, plus general rendering niceness
+       test new export even/odd and batches for all exporters
        export option alternate each paper 180 deg
        export option, put out in reverse order
        export preview
@@ -26,14 +26,15 @@ VERSION 0.096
        Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
        engraver tool grow point mode
        engraver tool, resolution cut mode
+(done) engraver, allow work on multiple objects at once, including tracing
        debug previous version!
        PathInterface extrapolate line join
-       Scribus import should try to do something appropriate with page spreads >= 2 pages wide
        PDF in, at least as 1 image per page, for purposes of imposition
        Undo/Redo
        Tool scripting
        Custom line caps
        Clean up symmetry clone interface, not easy to use currently
+       Clone Pattern Builder
        Soup up the color box so one can recall previous colors, and/or integration with palette window
        graphical shell should also help find and set key shortcuts
        Signature editor: detect non staplable binding edge, show red rather than green
@@ -41,6 +42,7 @@ VERSION 0.096
        Clean up project load/save internals and dialogs
        fix object transform handles for really small objects (handles should still be accessible)
        Clean up patch controls
+       Scribus import should try to do something appropriate with page spreads >= 2 pages wide
        Scribus import should do something meaningful with original Scribus page bleed values
        Collect for out
        double click on group should change selection area to group contents?
@@ -54,7 +56,6 @@ VERSION 0.096
        Object and resource tags
        Masking, clip paths and/or softmask
        Optimize pdf export to rescale to target dpi, and compress image data
-       Clone Pattern Builder
        Custom alignments to parents, not just affine transform to parent
        drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
        drag-n-drop with system, like drag images into viewwindow from an external file browser

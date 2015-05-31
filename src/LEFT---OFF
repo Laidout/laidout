@@ -171,7 +171,9 @@ need a global Laidout method of making unique ids
  -> update in Engraver tool, and object indicator overlay
 
 engraving tool: Engraving 
-  make a LineEdit overlay for number input.. Next bdown is ignored!! l, m, or right all ignored
+  make a LineEdit overlay for number input.. Next bdown is ignored!! l, m, or right all ignored: viewportwindow line 947
+  bug: 'f' objects appear to connect to points outside 0..1, but screen render doesn't
+    -> line creation is allowing points with value > 1
   multiobject:
     object lines in group list needs eye per object, affect actual object visibility
     resource settings need to be able to be shared across objects and survive file io
@@ -201,13 +203,21 @@ engraving tool: Engraving
     DONE instant global thickness adjust on orientation tool?
 
   tracing:
-    bug: memory hole after tracing
-	shift-drag (or drag anything not covered by trace object) should drag ANY of the meshes in selection, not just current
-    trace object scaling and rotation should happen around mouse point
+	trace object needs flip, at least h and v, not really needing the whole affine thing
+    trace object should have its own dumping functions, since they might stand on their own as a resource
     need option to export trace object in same position as the traced lines, so it can be further processed elsewhere
     trace object transparency slider should actually slide transparency
     custom sample of channels
-    edge abutment in tracing
+    sharp edge detection in tracing
+	snapshot should be for all in selection
+	shift-drag (or drag anything not covered by trace object) should drag ANY of the meshes in selection, not just current
+	when multi objects, the traceobject is interweaved, based on draw order, only under current object, should be under all?
+
+    DONE bug: memory hole after tracing
+	DONE snapshot needs to align to correct area
+    DONE opacity bubble extends in to panel area, clicking on it moves panel, not bubble
+    DONE 2 objects, push to all for tracing, do new on one, then trace once does BOTH
+    DONE trace object scaling and rotation should happen around mouse point
     DONE invert trace sampling: sample white instead of black, <- curvemapinterface: right click menu option
     DONE trace adjustment mode should prioritize moving the trace object, scan for it BEFORE scan for engrave object
     DONE trace function should be in EngraverPointGroup, not so much at interface level
@@ -237,7 +247,6 @@ engraving tool: Engraving
   don't warp, move points, then warp, almost always has bad points: PatchData::getPointReverse() is too inaccurate
   when manual tweaking of spacing, need to produce value reference so that future line orienting preserves line thicknesses
   undo/redo
-  need mouse sensitivity sliders
   finish implement making the circle lines be closed circles
   current blockout is not very precise, needs approximation between existing point samples
   direction map is not showing actual direction
@@ -263,6 +272,8 @@ engraving tool: Engraving
   must implement mode based shortcuts in Laxkit. currently all mesh shortcuts are active
   stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
 
+  DONE need mouse sensitivity sliders
+  DONE distort tools should be pressure sensitive
   DONE escape off brush ramp edit is exiting all tool, not just engraver tool
   DONE maybe expanding list of point groups, with ability to toggle linked and active in list
   DONE need duplicate group button for easy crosshatch <- Add button copies from current group
@@ -386,6 +397,7 @@ pdf:
   still true? pdf export if a path has null linestyle/fillstyle it buffers until next path drawn
      instead of drawing with some default style
 Scribus:
+  check for updates in file format for 1.5
   import/export color meshes, for recent versions of Scribus
   import/export linear and radial gradients
   scribus in/out: font sizes, stroke widths
