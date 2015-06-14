@@ -78,7 +78,7 @@ ImportFileDialog::~ImportFileDialog()
 	if (config) config->dec_count();
 }
 
-void ImportFileDialog::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void ImportFileDialog::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	Attribute *att=dump_out_atts(NULL,0,context);
 	att->dump_out(f,indent);
@@ -87,7 +87,7 @@ void ImportFileDialog::dump_out(FILE *f,int indent,int what,Laxkit::anObject *co
 
 /*! Append to att if att!=NULL, else return new att.
  */
-Attribute *ImportFileDialog::dump_out_atts(Attribute *att,int what,Laxkit::anObject *context)
+Attribute *ImportFileDialog::dump_out_atts(Attribute *att,int what,LaxFiles::DumpContext *context)
 {
 	if (!att) att=new Attribute("ImportFileDialog",NULL);
 	char scratch[100];
@@ -114,7 +114,7 @@ Attribute *ImportFileDialog::dump_out_atts(Attribute *att,int what,Laxkit::anObj
 
 /*! \todo  *** ensure that the dimensions read in are in part on screen...
  */
-void ImportFileDialog::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
+void ImportFileDialog::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	char *name,*value;
 	for (int c=0; c<att->attributes.n; c++) {

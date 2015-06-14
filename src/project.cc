@@ -14,7 +14,6 @@
 // Copyright (C) 2004-2007 by Tom Lechner
 //
 
-#include <lax/interfaces/dumpcontext.h>
 #include <lax/interfaces/somedataref.h>
 #include <lax/interfaces/engraverfillinterface.h>
 #include <lax/fileutils.h>
@@ -182,7 +181,7 @@ int Project::Pop(Document *doc)
  *
  * If what==-1, then dump out a pseudocode mockup of the file format.
  */
-void Project::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void Project::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -268,7 +267,7 @@ void Project::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	laidout->DumpWindows(f,0,NULL);
 }
 
-void Project::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void Project::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	if (!att) return;
 	char *name,*value;
@@ -281,10 +280,11 @@ void Project::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *c
 				 // assume file name is value
 				if (isblank(value)) continue;
 				char *file=NULL;
-				DumpContext *dump=dynamic_cast<DumpContext *>(context);
-				if (dump && dump->basedir) 
-					file=full_path_for_file(value,dump->basedir);
+
+				if (context && context->basedir) 
+					file=full_path_for_file(value,context->basedir);
 				Document *doc=new Document;
+
 				if (doc->Load(file?file:value,log)) Push(doc);
 				else {
 					delete doc;
@@ -360,7 +360,7 @@ int Project::Load(const char *file,ErrorLog &log)
 	setlocale(LC_ALL,"C");
 
 	char *dir=lax_dirname(filename,0);
-	DumpContext context(dir,1);
+	DumpContext context(dir,1, object_id);
 	dump_in(f,0,0,&context,NULL);
 	if (!name) makestr(name,filename);
 
@@ -394,7 +394,7 @@ int Project::Save(ErrorLog &log)
 	fprintf(f,"#Laidout %s Project\n",LAIDOUT_VERSION);
 
 	char *dir=lax_dirname(filename,0);
-	DumpContext context(dir,1);
+	DumpContext context(dir,1, object_id);
 	dump_out(f,0,0,&context);
 	delete[] dir;
 	

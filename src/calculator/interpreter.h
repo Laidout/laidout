@@ -53,9 +53,9 @@ class Interpreter : public Laxkit::anObject, public LaxFiles::DumpUtility
 	char *GetError(int *input_index_ret) = 0;
 	void ClearError() = 0;
 
-    virtual void       dump_out(FILE *f,int indent,int what,Laxkit::anObject *savecontext);
-    virtual Attribute *dump_out_atts(Attribute *att,int what,Laxkit::anObject *savecontext) = 0;
-    virtual void dump_in_atts(Attribute *att,int flag,Laxkit::anObject *loadcontext) =0;
+    virtual void       dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+    virtual Attribute *dump_out_atts(Attribute *att,int what,LaxFiles::DumpContext *context) = 0;
+    virtual void dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context) =0;
 
 };
 

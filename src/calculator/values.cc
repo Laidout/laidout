@@ -495,7 +495,7 @@ char *appendescaped(char *&dest, const char *src, char quote)
 #define DEFOUT_CPP           (-4)
 #define DEFOUT_JSON          (-5)
 
-LaxFiles::Attribute *ObjectDef::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *savecontext)
+LaxFiles::Attribute *ObjectDef::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
 {
 	if (what==0 || what==-1) {
 		 //Attribute format, ala indented data
@@ -636,7 +636,7 @@ LaxFiles::Attribute *ObjectDef::dump_out_atts(LaxFiles::Attribute *att,int what,
 /*! If this styledef extends another, this does not write out the whole
  * def of that, only the name element of it.
  */
-void ObjectDef::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void ObjectDef::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	
@@ -681,7 +681,7 @@ void ObjectDef::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 
 /*! \todo *** imp me!!
  */
-void ObjectDef::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
+void ObjectDef::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	cout<<" *** imp me! ObjectDef::dump_in_atts(Attribute *att,int flag,context)"<<endl;
 	
@@ -2080,7 +2080,7 @@ int Value::FieldIndex(const char *name)
  * NOTE that this does not automatically put in subattributes for values that have them.
  * It uses getValueStr() to attach a string to each FieldInfo().
  */
-LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *savecontext)
+LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
 {
 	if (!att) att=new Attribute;
 
@@ -2229,7 +2229,7 @@ void dump_out_desc(Attribute *att, FILE *f, int indent, int columns)
 
 /*! Default will not output the Value's id string. The object calling this class should be doing that.
  */
-void Value::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void Value::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	if (what==-1) {
 		Attribute att;
@@ -2310,7 +2310,7 @@ void Value::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	}
 }
 
-void Value::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void Value::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 { //  ***
 }
 

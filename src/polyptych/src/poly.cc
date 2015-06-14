@@ -992,7 +992,7 @@ int Polyhedron::AddFace(const char *str)
  *    z 0 0 1
  * </pre>
  */
-void Polyhedron::dump_out(FILE *ff,int indent,int what,Laxkit::anObject *context)
+void Polyhedron::dump_out(FILE *ff,int indent,int what,LaxFiles::DumpContext *context)
 {
 	DBG cerr << "\ndump_out Polyhedron... "<<endl;
 	if (!ff) return;
@@ -1093,7 +1093,7 @@ void Polyhedron::dump_out(FILE *ff,int indent,int what,Laxkit::anObject *context
 }
 
 //! Read in a polyhedron from an Attribute.
-void Polyhedron::dump_in_atts(Attribute *att,int what,Laxkit::anObject *context)
+void Polyhedron::dump_in_atts(Attribute *att,int what,LaxFiles::DumpContext *context)
 {
 	clear();
 

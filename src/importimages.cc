@@ -91,7 +91,7 @@ ImportImagesDialog::~ImportImagesDialog()
 	if (settings) settings->dec_count();
 }
 
-void ImportImagesDialog::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void ImportImagesDialog::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	Attribute *att=dump_out_atts(NULL,0,context);
 	att->dump_out(f,indent);
@@ -100,7 +100,7 @@ void ImportImagesDialog::dump_out(FILE *f,int indent,int what,Laxkit::anObject *
 
 /*! Append to att if att!=NULL, else return new att.
  */
-Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what,Laxkit::anObject *context)
+Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what,LaxFiles::DumpContext *context)
 {
 	if (!att) att=new Attribute("ImportImagesDialog",NULL);
 	char scratch[100];
@@ -153,7 +153,7 @@ Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what,Laxkit::anO
 
 /*! \todo  *** ensure that the dimensions read in are in part on screen...
  */
-void ImportImagesDialog::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
+void ImportImagesDialog::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	char *name,*value;
 	for (int c=0; c<att->attributes.n; c++) {

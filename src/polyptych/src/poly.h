@@ -174,8 +174,8 @@ class Polyhedron :
 	virtual ExtraFace *newExtraFace();
 	virtual void collapseVertices(double zero, int vstart=-1, int vend=-1);
 
-	virtual void dump_out(FILE *ff,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context);
+	virtual void dump_out(FILE *ff,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
 
 	virtual const char *InFileFormats();
 	virtual int dumpInFile(const char *file, char **error_ret);

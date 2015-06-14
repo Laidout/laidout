@@ -142,7 +142,7 @@ int PageStyle::set(const char *flag, int newstate)
 /*! Recognizes 'pageclips', 'marginsclip', 'facingpagesbleed', 'width', and 'height'.
  * Discards all else.
  */
-void PageStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void PageStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	if (!att) return;
 	flags=0;
@@ -191,7 +191,7 @@ void PageStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject 
  *  facingpagesbleed
  * </pre>
  */
-void PageStyle::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void PageStyle::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -322,7 +322,7 @@ RectPageStyle::RectPageStyle(unsigned int ntype,double l,double r,double t,doubl
  * 'marginsclip', 'facingpagesbleed', 'width', and 'height'.
  * Discards all else.
  */
-void RectPageStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void RectPageStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	ml=mr=mt=mb=0;
 	recttype=0;
@@ -361,7 +361,7 @@ void RectPageStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObj
  * \todo when reading in, must remember to let some features be overridden,
  *   but lrtb, iotb, etc are always set by the imposition
  */
-void RectPageStyle::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void RectPageStyle::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -647,7 +647,7 @@ int Page::InstallPageStyle(PageStyle *pstyle, bool shift_within_margins)
  * pagestyle should have been set to the default page style for this page.
  *
  */
-void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	char *name,*value;
 	for (int c=0; c<att->attributes.n; c++)  {
@@ -715,7 +715,7 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
  * 
  * If what==-1, then output pseudocode mockup of file format.
  */
-void Page::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void Page::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 

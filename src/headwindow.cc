@@ -480,7 +480,7 @@ int HeadWindow::splitthewindow(anXWindow *fillwindow)
 //! Dump out what's in the window, and the borders.
 /*! \todo *** stacked panes, simply have multiple window blocks under pane
 */
-void HeadWindow::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void HeadWindow::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
@@ -528,7 +528,7 @@ void HeadWindow::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 /*! 
  * \todo *** as time goes on, must ensure that header can deal with new types of windows...
  */
-void HeadWindow::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void HeadWindow::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	if (!att) return;
 	char *name,*value;

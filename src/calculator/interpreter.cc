@@ -83,7 +83,7 @@ Interpreter::~Interpreter()
 }
 
 
-void Interpreter::dump_out(FILE *f,int indent,int what,Laxkit::anObject *savecontext)
+void Interpreter::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *savecontext)
 {
 	Attribute att;
 	dump_out_atts(&att, what, savecontext);

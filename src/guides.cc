@@ -73,12 +73,12 @@ void PointAnchor::Set(const char *nname, int type, flatpoint pp1,flatpoint pp2, 
     p2=pp2;
 }
 
-void PointAnchor::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void PointAnchor::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	cerr <<" *** need to implement PathGuide::dump_out"<<endl;
 }
 
-void PointAnchor::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void PointAnchor::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	cerr <<" *** need to implement PathGuide::dump_in_atts"<<endl;
 }
@@ -120,8 +120,8 @@ class PathGuide : public LaxInterfaces::SomeData, public LaxFiles::DumpUtility
 	PathGuide();
 	virtual ~PathGuide();
 	virtual const char *whattype() { return "PathGuide"; }
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 
 PathGuide::PathGuide()
@@ -139,12 +139,12 @@ PathGuide::~PathGuide()
 	if (guide) guide->dec_count();
 }
 
-void PathGuide::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void PathGuide::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	cerr <<" *** need to implement PathGuide::dump_out"<<endl;
 }
 
-void PathGuide::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void PathGuide::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	cerr <<" *** need to implement PathGuide::dump_in_atts"<<endl;
 }
@@ -171,8 +171,8 @@ class Grid : public LaxFiles::DumpUtility
 	Grid();
 	virtual ~Grid();
 	virtual const char *whattype() { return "Grid"; }
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 
 Grid::Grid()
@@ -192,12 +192,12 @@ Grid::~Grid()
 {}
 
 
-void Grid::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void Grid::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	cerr <<" *** need to implement Grid::dump_out"<<endl;
 }
 
-void Grid::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void Grid::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	cerr <<" *** need to implement Grid::dump_in_atts"<<endl;
 }

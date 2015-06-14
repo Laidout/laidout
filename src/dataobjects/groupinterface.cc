@@ -1042,12 +1042,12 @@ Value *GroupInterface::dereference(const char *extstring, int len)
 }
 
 
-void GroupInterface::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void GroupInterface::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	ObjectInterface::dump_out(f,indent,what,context);
 }
 
-void GroupInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void GroupInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	ObjectInterface::dump_in_atts(att,flag,context);
 }

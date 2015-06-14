@@ -91,7 +91,7 @@ ImportImageSettings *ImportImageSettings::duplicate()
 	return d;
 }
 
-void ImportImageSettings::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void ImportImageSettings::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	char *name,*value;
 	for (int c=0; c<att->attributes.n; c++) {
@@ -115,7 +115,7 @@ void ImportImageSettings::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit:
 	}
 }
 
-void ImportImageSettings::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void ImportImageSettings::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 }
 

@@ -471,7 +471,7 @@ ImportConfig::~ImportConfig()
 	//if (filter) filter->dec_count(); ***filter assumed non-local, always living in laidoutapp?
 }
 
-void ImportConfig::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void ImportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	cout <<"***ImportConfig::dump_out() is incomplete!! Finish implementing!"<<endl;
 
@@ -493,7 +493,7 @@ void ImportConfig::dump_out(FILE *f,int indent,int what,Laxkit::anObject *contex
 	//fprintf(f,"%send   %d\n\n",spc,end);
 }
 
-void ImportConfig::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
+void ImportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	cout <<"***ImportConfig::dump_in_atts() is incomplete!! Finish implementing!"<<endl;
 
@@ -1070,7 +1070,7 @@ int DocumentExportConfig::assign(FieldExtPlace *ext,Value *v)
 	return 0;
 }
 
-void DocumentExportConfig::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void DocumentExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -1107,7 +1107,7 @@ void DocumentExportConfig::dump_out(FILE *f,int indent,int what,Laxkit::anObject
 
 }
 
-void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
+void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	char *name,*value;
 	int c,c2;

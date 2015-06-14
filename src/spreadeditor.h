@@ -143,8 +143,8 @@ class SpreadInterface : public LaxInterfaces::anInterface, virtual public LaxFil
 	virtual int ChangeMarks(int newmark);
 	virtual int DeselectPage(int page,LittleSpread *spread);
 
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 
 	friend class SpreadEditor;
 };
@@ -172,8 +172,8 @@ class SpreadEditor : public LaxInterfaces::ViewerWindow
 	virtual int UseThisDoc(Document *ndoc);
 	virtual int SelectTool(int id);
 
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 
 

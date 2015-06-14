@@ -18,7 +18,6 @@
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
 #include <lax/freedesktop.h>
-#include <lax/interfaces/dumpcontext.h>
 
 #include <lax/refptrstack.cc>
 
@@ -294,7 +293,7 @@ char *PageRange::GetLabel(int i,int altfirst,int alttype)
  *
  * \todo *** finish what==-1
  */
-void PageRange::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void PageRange::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
@@ -334,7 +333,7 @@ void PageRange::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 
 /*! \todo ultimately PageRange will have to make full switch to Style.
  */
-void PageRange::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void PageRange::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	if (!att) return;
 	char *name,*value;
@@ -773,7 +772,7 @@ int Document::Save(int includelimbos,int includewindows,ErrorLog &log)
 	fprintf(f,"#Laidout %s Document\n",LAIDOUT_VERSION);
 	
 	char *dir=lax_dirname(laidout->project->filename,0);
-	DumpContext context(dir,1);
+	DumpContext context(dir,1, object_id);
 	if (dir) delete[] dir;
 	dump_out(f,0,0,&context);
 
@@ -847,7 +846,7 @@ int Document::Load(const char *file,ErrorLog &log)
 	 //so now, assume ok to load attribute styled Document file
 
 	char *dir=lax_dirname(file,0);
-	DumpContext context(dir,1);
+	DumpContext context(dir,1, object_id);
 	if (dir) delete[] dir;
 
 	clear();
@@ -1044,7 +1043,7 @@ int Document::ReImpose(Imposition *newimp,int scale_page_contents_to_fit)
  *   handling all the window business. Always nice to separate the windows
  *   from the doc structure.
  */
-void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	if (!att) return;
 	Page *page;
@@ -1163,7 +1162,7 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *
 //! Dumps imposition, pages, pageranges, plus various project attributes if not in project mode.
 /*! If what==-1, write out pseudocode mockup.
  */
-void Document::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void Document::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 

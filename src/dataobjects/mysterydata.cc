@@ -75,7 +75,7 @@ int MysteryData::installAtts(LaxFiles::Attribute *att)
 	return 0;
 }
 
-void MysteryData::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void MysteryData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	
@@ -110,7 +110,7 @@ void MysteryData::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context
  * height as given in the file are curretly ignored, and the actual pixel 
  * width and height of the image are used instead.
  */
-void MysteryData::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
+void MysteryData::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	if (!att) return;
 	char *nname,*value;

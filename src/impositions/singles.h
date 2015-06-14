@@ -69,8 +69,8 @@ class Singles : public Imposition
 	virtual int SpreadType(int spread);
 	virtual ImpositionInterface *Interface();
 
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 
 	 //-- extra functions for this class:
 	virtual void setPage();

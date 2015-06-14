@@ -64,7 +64,7 @@ int LSomeDataRef::pointin(flatpoint pp,int pin)
 }
 
 
-void LSomeDataRef::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void LSomeDataRef::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -81,7 +81,7 @@ void LSomeDataRef::dump_out(FILE *f,int indent,int what,Laxkit::anObject *contex
 
 /*! If no "config" element, then it is assumed there are no DrawableObject fields.
  */
-void LSomeDataRef::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void LSomeDataRef::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	DrawableObject::dump_in_atts(att,flag,context);
 	int foundconfig=0;

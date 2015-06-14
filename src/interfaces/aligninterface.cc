@@ -123,7 +123,7 @@ AlignInfo::~AlignInfo()
 	if (name) delete[] name;
 }
 
-void AlignInfo::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void AlignInfo::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
@@ -212,7 +212,7 @@ int FlatpointAttribute(const char *v, flatpoint *p, char **endptr)
 	return 0;
 }
 
-void AlignInfo::dump_in_atts(LaxFiles::Attribute *att, int flag, Laxkit::anObject*context)
+void AlignInfo::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context)
 {
     if (!att) return;
     char *name,*value;
@@ -2774,11 +2774,11 @@ flatpoint AlignInterface::ClosestPoint(flatpoint p, double *d, double *t)
 	return transform_point(aligninfo->path->m(),found);
 }
 
-void AlignInterface::dump_out(FILE *f,int indent,int what,Laxkit::anObject *savecontext)
+void AlignInterface::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *savecontext)
 { //***
 }
 
-void AlignInterface::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *loadcontext)
+void AlignInterface::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *loadcontext)
 { //***
 }
 

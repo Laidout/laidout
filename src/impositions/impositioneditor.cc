@@ -276,14 +276,14 @@ ImpositionEditor::~ImpositionEditor()
 }
 
 //! Passes off to SignatureInterface::dump_out().
-void ImpositionEditor::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void ImpositionEditor::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	// *** ((SignatureInterface *)curtool)->dump_out(f,indent,what,context);
 	anXWindow::dump_out(f,indent,what,context);
 }
 
 //! Passes off to SignatureInterface::dump_in_atts().
-void ImpositionEditor::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void ImpositionEditor::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	// *** ((SignatureInterface *)curtool)->dump_in_atts(att,flag,context);
 	anXWindow::dump_in_atts(att,flag,context);

@@ -857,12 +857,12 @@ int BasicNet::dumpOutNet(FILE *f,int indent,int what)
 	return 0;
 }
 
-void BasicNet::dump_out(FILE *f,int indent,int what,Laxkit::anObject *savecontext)
+void BasicNet::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *savecontext)
 {
 	cout <<"***imp BasicNet::dump_out!"<<endl;
 }
 
-void BasicNet::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void BasicNet::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	cout <<"***imp BasicNet::dump_in_atts!"<<endl;
 }
@@ -1197,7 +1197,7 @@ void Net::pushline(NetLine &l,int what,int where,int how)//where=-1, how=1
  *
  * \todo *** implement abstract net references and file references
  */
-void Net::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void Net::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -1260,7 +1260,7 @@ void Net::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
  * 
  * \todo *** MUST implement the sanity check..
  */
-void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	if (!att) return;
 	char *name,*value;

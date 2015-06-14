@@ -95,7 +95,7 @@ NUpInfo::~NUpInfo()
 	if (name) delete[] name;
 }
 
-void NUpInfo::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void NUpInfo::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
@@ -161,7 +161,7 @@ int AlignmentAttribute(const char *value,double *a)
 	return DoubleAttribute(value,a,NULL);
 }
 
-void NUpInfo::dump_in_atts(LaxFiles::Attribute *att, int, Laxkit::anObject*)
+void NUpInfo::dump_in_atts(LaxFiles::Attribute *att, int, LaxFiles::DumpContext*)
 {
     if (!att) return;
     char *name,*value;

@@ -100,8 +100,8 @@ class SimpleNet : public Polyptych::AbstractNet,
 	virtual double *basisOfFace(int which,double *mm=NULL,int total=0);
 
 	 //io functions
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *savecontext);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 
 	 //AbstractNet functions
 	virtual const char *whattype() { return "SimpleNet"; }

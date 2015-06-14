@@ -1062,7 +1062,7 @@ const char *DrawableObject::Id(const char *newid)
 { return SomeData::Id(newid); }
 
 //! Dump out iohints and metadata, if any.
-void DrawableObject::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	
@@ -1196,7 +1196,7 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,Laxkit::anObject *cont
 	}
 }
 
-void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	char *name,*value;
 	int foundconfig=0;
@@ -1516,7 +1516,7 @@ LaxInterfaces::SomeData *DrawableObject::FindChild(const char *id)
  * Discards all else.
  * The kids should have been flushed before coming here.
  */
-void DrawableObject::dump_in_group_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void DrawableObject::dump_in_group_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	int nlocked=-1, nvisible=-1, nprints=-1;
 	char *name,*value;
@@ -1567,7 +1567,7 @@ void DrawableObject::dump_in_group_atts(LaxFiles::Attribute *att,int flag,Laxkit
  *
  * \todo automate object management, necessary here for what==-1
  */
-void DrawableObject::dump_out_group(FILE *f,int indent,int what,Laxkit::anObject *context)
+void DrawableObject::dump_out_group(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {

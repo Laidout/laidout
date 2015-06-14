@@ -255,9 +255,9 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 //	virtual int callFunction(const char *field, ValueHash *context, ValueHash *parameters,
 //							 Value **value_ret, CalcSettings *settings, Laxkit::ErrorLog *log);
 
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *savecontext);
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 
 typedef ObjectDef StyleDef;
@@ -296,9 +296,9 @@ class Value : virtual public Laxkit::anObject, virtual public LaxFiles::DumpUtil
     virtual const char *FieldName(int i);
     virtual int FieldIndex(const char *name);
 
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *savecontext);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 	//virtual int Validate(); //after load in, make sure values are valid for type
 };
 
