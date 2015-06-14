@@ -1624,8 +1624,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.6130719"
-     inkscape:cx="474.79727"
-     inkscape:cy="241.81827"
+     inkscape:cx="637.91028"
+     inkscape:cy="1477.3993"
      inkscape:document-units="in"
      inkscape:current-layer="layer1"
      inkscape:window-width="1918"
@@ -8815,7 +8815,7 @@
          sodipodi:role="line"
          id="tspan6253"
          x="6.014585"
-         y="-611.57416">Note: makeimages.py will render any top object whose id starts with a capital letter, </tspan><tspan
+         y="-611.57416">Note: makeimages.py currently uses Inkscape to render any top object whose id starts with a capital letter, </tspan><tspan
          sodipodi:role="line"
          x="6.014585"
          y="-586.57416"

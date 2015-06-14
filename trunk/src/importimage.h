@@ -65,8 +65,8 @@ class ImportImageSettings : public Laxkit::anObject, public LaxFiles::DumpUtilit
 	virtual ~ImportImageSettings();
 	virtual ImportImageSettings *duplicate();
 
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 };
 
 

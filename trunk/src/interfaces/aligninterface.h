@@ -78,8 +78,8 @@ class AlignInfo : public Laxkit::anObject, public LaxFiles::DumpUtility
 	AlignInfo();
 	virtual ~AlignInfo();
 
-	virtual void dump_out(FILE*, int, int, Laxkit::anObject*);
-	virtual void dump_in_atts(LaxFiles::Attribute*, int, Laxkit::anObject*);
+	virtual void dump_out(FILE*, int, int, LaxFiles::DumpContext*);
+	virtual void dump_in_atts(LaxFiles::Attribute*, int, LaxFiles::DumpContext*);
 };
 
 
@@ -229,8 +229,8 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 
 	virtual int UpdateFromPath();
 
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *savecontext);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *loadcontext);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *savecontext);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *loadcontext);
 };
 
 

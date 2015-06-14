@@ -562,7 +562,7 @@ SimpleNet *SimpleNet::duplicate()
  *    matrix 1 0 0 1 .2 .3
  * </pre>
  */
-void SimpleNet::dump_out(FILE *f,int indent,int what,Laxkit::anObject *savecontext)
+void SimpleNet::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -641,7 +641,7 @@ void SimpleNet::dump_out(FILE *f,int indent,int what,Laxkit::anObject *saveconte
  * 
  * \todo *** MUST implement the sanity check..
  */
-void SimpleNet::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void SimpleNet::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	if (!att) return;
 	char *name,*value,*t,*e,*newname=NULL;

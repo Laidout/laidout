@@ -69,8 +69,8 @@ class ImageExportConfig : public DocumentExportConfig
 	//char *imagetype;
 	//int use_transparent_bkgd;
 	ImageExportConfig();
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 
 //! Set the filter to the Image export filter stored in the laidout object.
@@ -84,12 +84,12 @@ ImageExportConfig::ImageExportConfig()
 	}
 }
 
-void ImageExportConfig::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void ImageExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	DocumentExportConfig::dump_out(f,indent,what,context);
 }
 
-void ImageExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void ImageExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	DocumentExportConfig::dump_in_atts(att,flag,context);
 }

@@ -53,9 +53,9 @@ class ImportFileDialog : public Laxkit::FileDialog
 	virtual int send(int id);
 	//virtual void SetFile(const char *f,const char *pfile);
 
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 
 

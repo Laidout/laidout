@@ -811,7 +811,7 @@ unsigned int Signature::Validity()
 	return 0;
 }
 
-void Signature::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void Signature::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -889,7 +889,7 @@ void Signature::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 
 }
 
-Attribute *Signature::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context)
+Attribute *Signature::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
 {
 	if (!att) att=new Attribute;
 	if (what==-1) {
@@ -956,7 +956,7 @@ Attribute *Signature::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::an
 	return att;
 }
 
-void Signature::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void Signature::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	char *name,*value;
 	int numhf=0, numvf=0;
@@ -1345,14 +1345,14 @@ double PaperPartition::PatternWidth()
 	return w/tilex;
 }
 
-void PaperPartition::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void PaperPartition::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
     Attribute att;
 	dump_out_atts(&att,0,context);
     att.dump_out(f,indent);
 }
 
-LaxFiles::Attribute *PaperPartition::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context)
+LaxFiles::Attribute *PaperPartition::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
 {
     if (!att) att=new Attribute("PaperPartition",NULL);
 	
@@ -1413,7 +1413,7 @@ LaxFiles::Attribute *PaperPartition::dump_out_atts(LaxFiles::Attribute *att,int 
 	return att;
 }
 
-void PaperPartition::dump_in_atts(Attribute *att,int what,Laxkit::anObject *context)
+void PaperPartition::dump_in_atts(Attribute *att,int what,LaxFiles::DumpContext *context)
 {
 	char *name,*value;
 
@@ -2233,14 +2233,14 @@ LaxInterfaces::SomeData *SignatureInstance::GetPageMarginOutline(int pagenum)
 	return newpath;
 }
 
-void SignatureInstance::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void SignatureInstance::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
     Attribute att;
 	dump_out_atts(&att,0,context);
     att.dump_out(f,indent);
 }
 
-LaxFiles::Attribute *SignatureInstance::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context)
+LaxFiles::Attribute *SignatureInstance::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
 {
 	if (!att) att=new Attribute;
 
@@ -2300,7 +2300,7 @@ LaxFiles::Attribute *SignatureInstance::dump_out_atts(LaxFiles::Attribute *att,i
 }
 
 
-void SignatureInstance::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void SignatureInstance::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	char *name,*value;
 	int nump=-1;
@@ -3759,7 +3759,7 @@ int SignatureImposition::RemoveStack(int stack, int insert)
 
 //----------------- signatureimposition i/o
 
-void SignatureImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void SignatureImposition::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	if (what==-1) {
 		Value::dump_out(f,indent,-1,context);
@@ -3771,7 +3771,7 @@ void SignatureImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject 
     att.dump_out(f,indent);
 }
 
-LaxFiles::Attribute *SignatureImposition::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context)
+LaxFiles::Attribute *SignatureImposition::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
 {
 	if (!att) att=new Attribute;
 
@@ -3806,7 +3806,7 @@ LaxFiles::Attribute *SignatureImposition::dump_out_atts(LaxFiles::Attribute *att
 }
 
 
-void SignatureImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void SignatureImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	char *name,*value;
 	int nump=-1;

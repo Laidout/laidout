@@ -118,8 +118,8 @@ class SpreadView : public Laxkit::anObject,
 	virtual int MoveToThread(int pageindex,int thread, int threadplace);
 	virtual void FindBBox();
 
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 
 

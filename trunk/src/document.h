@@ -75,8 +75,8 @@ class PageRange : public LaxFiles::DumpUtility
 	char *GetLabel(int i);
 	char *GetLabel(int i,int altfirst,int alttype);
 
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 
 //------------------------- Document ------------------------------------
@@ -131,8 +131,8 @@ class Document : public ObjectContainer, public Value
 	virtual int FindPageIndexFromLabel(const char *label, int lookafter=-1);
 	
 	 //i/o
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 	virtual int Load(const char *file,Laxkit::ErrorLog &log);
 	virtual int Save(int includelimbos,int includewindows,Laxkit::ErrorLog &log);
 	

@@ -34,8 +34,8 @@ class LEngraverFillData : public DrawableObject,
 	virtual const char *whattype() { return "EngraverFillData"; }
 	virtual void FindBBox();
 	virtual int pointin(flatpoint pp,int pin=1);
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
 	virtual LaxInterfaces::SomeData *EquivalentObject();
 

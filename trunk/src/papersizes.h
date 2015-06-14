@@ -71,9 +71,9 @@ class PaperStyle : public Value
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *dereference(const char *extstring, int len);
 
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *savecontext);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
 };
 
 
@@ -125,8 +125,8 @@ class PaperGroup : public ObjectContainer, public LaxFiles::DumpUtility
 	PaperGroup(PaperStyle *paperstyle);
 	virtual ~PaperGroup();
 	virtual const char *whattype() { return "PaperGroup"; }
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 
 	virtual int AddPaper(double w,double h,double offsetx,double offsety);
 	virtual int AddPaper(const char *nme,double w,double h,const double *m);

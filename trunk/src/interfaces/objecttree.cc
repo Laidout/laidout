@@ -249,20 +249,20 @@ int ObjectTreeWindow::init()
 
 
 
-void ObjectTreeWindow::dump_out(FILE *f,int indent,int what,Laxkit::anObject *savecontext)
+void ObjectTreeWindow::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *savecontext)
 {   
     LaxFiles::Attribute att;
     dump_out_atts(&att,what,savecontext); 
     att.dump_out(f,indent);
 }   
 
-LaxFiles::Attribute *ObjectTreeWindow::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *savecontext)
+LaxFiles::Attribute *ObjectTreeWindow::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
 { 
 	if (tree) return tree->dump_out_atts(att,what,savecontext); 
 	return anXWindow::dump_out_atts(att,what,savecontext);
 }
 
-void ObjectTreeWindow::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *loadcontext)
+void ObjectTreeWindow::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *loadcontext)
 {
 	if (tree) return tree->dump_in_atts(att,flag,loadcontext); 
 	return anXWindow::dump_in_atts(att,flag,loadcontext);

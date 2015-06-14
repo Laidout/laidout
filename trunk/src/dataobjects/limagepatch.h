@@ -33,8 +33,8 @@ class LImagePatchData : public DrawableObject,
 	LImagePatchData(LaxInterfaces::SomeData *refobj=NULL);
 	virtual ~LImagePatchData();
 	virtual const char *whattype() { return "ImagePatchData"; }
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 	virtual void FindBBox();
 	virtual int pointin(flatpoint pp,int pin=1);
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
@@ -57,8 +57,8 @@ class LColorPatchData : public DrawableObject,
 	LColorPatchData(LaxInterfaces::SomeData *refobj=NULL);
 	virtual ~LColorPatchData();
 	virtual const char *whattype() { return "ColorPatchData"; }
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 	virtual void FindBBox();
 	virtual int pointin(flatpoint pp,int pin=1);
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
@@ -91,8 +91,8 @@ class LImagePatchInterface : public LaxInterfaces::ImagePatchInterface,
 	virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual Value *dereference(const char *extstring, int len);
 
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 
 
@@ -112,8 +112,8 @@ class LColorPatchInterface : public LaxInterfaces::ColorPatchInterface,
 	virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual Value *dereference(const char *extstring, int len);
 
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 
 

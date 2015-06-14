@@ -77,8 +77,8 @@ class SvgExportConfig : public DocumentExportConfig
 	SvgExportConfig();
 	SvgExportConfig(DocumentExportConfig *config);
     virtual ObjectDef* makeObjectDef();
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);
 };
@@ -201,7 +201,7 @@ ObjectDef* SvgExportConfig::makeObjectDef()
 	return def;
 }
 
-void SvgExportConfig::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void SvgExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	DocumentExportConfig::dump_out(f,indent,what,context);
 
@@ -217,7 +217,7 @@ void SvgExportConfig::dump_out(FILE *f,int indent,int what,Laxkit::anObject *con
 	fprintf(f,"%suse_powerstroke %s\n",spc,use_powerstroke?"yes":"no");
 }
 
-void SvgExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void SvgExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	DocumentExportConfig::dump_in_atts(att,flag,context);
 

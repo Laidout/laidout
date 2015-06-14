@@ -338,7 +338,7 @@ int PaperStyle::SetFromString(const char *nname)
  *   landscape
  * </pre>
  */
-void PaperStyle::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void PaperStyle::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -364,7 +364,7 @@ void PaperStyle::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	fprintf(f,"%s%s\n",spc,(flags&1?"landscape":"portrait"));
 }
 
-LaxFiles::Attribute *PaperStyle::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *savecontext)
+LaxFiles::Attribute *PaperStyle::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
 {
 	if (!att) att=new Attribute;
 
@@ -390,7 +390,7 @@ LaxFiles::Attribute *PaperStyle::dump_out_atts(LaxFiles::Attribute *att,int what
 }
 
 //! Basically reverse of dump_out.
-void PaperStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+void PaperStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	if (!att) return;
 
@@ -868,7 +868,7 @@ PaperStyle *PaperGroup::GetBasePaper(int index)
  *     dpi 360
  * </pre>
  */
-void PaperGroup::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void PaperGroup::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -908,7 +908,7 @@ void PaperGroup::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	}	
 }
 
-void PaperGroup::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
+void PaperGroup::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	if (!att) return;
 

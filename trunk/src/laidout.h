@@ -19,6 +19,7 @@
 #include <lax/anxapp.h>
 #include <lax/iconmanager.h>
 #include <lax/errorlog.h>
+#include <lax/resources.h>
 
 #include "laidoutprefs.h"
 #include "papersizes.h"
@@ -114,6 +115,8 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 
 	char *ghostscript_binary;
 	
+	Laxkit::ResourceManager resources;
+
 //	Laxkit::PtrStack<Style> stylestack:
 //	Laxkit::PtrStack<FontThing> fontstack;
 	Laxkit::RefPtrStack<LaxInterfaces::anInterface> interfacepool;

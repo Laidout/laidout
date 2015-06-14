@@ -80,8 +80,8 @@ class NUpInfo : public Laxkit::DoubleBBox, public Laxkit::anObject, public LaxFi
 	NUpInfo();
 	virtual ~NUpInfo();
 
-	virtual void dump_out(FILE*, int, int, Laxkit::anObject*);
-	virtual void dump_in_atts(LaxFiles::Attribute*, int, Laxkit::anObject*);
+	virtual void dump_out(FILE*, int, int, LaxFiles::DumpContext*);
+	virtual void dump_in_atts(LaxFiles::Attribute*, int, LaxFiles::DumpContext*);
 };
 
 

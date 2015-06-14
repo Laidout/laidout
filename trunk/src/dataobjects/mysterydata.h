@@ -42,8 +42,8 @@ class MysteryData : virtual public DrawableObject,
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
 	virtual int installAtts(LaxFiles::Attribute *att);
 	
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 
 } //namespace Laidout

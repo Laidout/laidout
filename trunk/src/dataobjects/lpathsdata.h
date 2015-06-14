@@ -34,8 +34,8 @@ class LPathsData : public DrawableObject,
 	LPathsData(LaxInterfaces::SomeData *refobj=NULL);
 	virtual ~LPathsData();
 	virtual const char *whattype() { return "PathsData"; }
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 	virtual void FindBBox();
 	virtual int pointin(flatpoint pp,int pin=1);
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
@@ -66,8 +66,8 @@ class LPathInterface : public LaxInterfaces::PathInterface,
 	virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual Value *dereference(const char *extstring, int len);
 
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 
 

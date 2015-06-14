@@ -129,8 +129,8 @@ class BasicNet : public AbstractNet, public Laxkit::PtrStack<NetFace>
 	virtual NetFace *GetFace(int i,double scaling);
 
 	virtual int dumpOutNet(FILE *f,int indent,int what);
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *savecontext);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *savecontext);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 
 //----------------------------------- Net -----------------------------------
@@ -197,8 +197,8 @@ class Net : public LaxInterfaces::SomeData
 	virtual int LoadFile(const char *file,char **error_ret);
 	virtual int SaveSvg(const char *file,char **error_ret);
 
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *savecontext);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *savecontext);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 					
 };
 

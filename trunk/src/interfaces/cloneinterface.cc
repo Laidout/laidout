@@ -284,7 +284,7 @@ void Tiling::DefaultHex(double side_length)
 }
 
 	
-LaxFiles::Attribute *Tiling::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context)
+LaxFiles::Attribute *Tiling::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
 {
 	// ***
 	return NULL;
@@ -296,7 +296,7 @@ ObjectDef *Tiling::makeObjectDef()
 	return NULL;
 }
 
-void Tiling::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+void Tiling::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
@@ -357,7 +357,7 @@ void Tiling::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	}
 }
 
-void Tiling::dump_in_atts(LaxFiles::Attribute *att, int flag, Laxkit::anObject *context)
+void Tiling::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context)
 {
     if (!att) return;
 
