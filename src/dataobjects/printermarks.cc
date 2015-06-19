@@ -41,7 +41,7 @@ DrawableObject *RegistrationMark(double pointsize, double linewidthinpoints)
 {
 	double d=pointsize/72/2;
 
-	LPathsData *paths=dynamic_cast<LPathsData*>(somedatafactory->newObject(LAX_PATHSDATA));
+	LPathsData *paths=dynamic_cast<LPathsData*>(somedatafactory()->NewObject(LAX_PATHSDATA));
 
 	paths->flags|=SOMEDATA_LOCK_CONTENTS;
 	ScreenColor color(0,0,0,65535);
@@ -84,7 +84,7 @@ DrawableObject *BWColorBars(double pointsize, int colorsystem)
 	 //add fills
 	ScreenColor color;
 	for (int c=0; c<11; c++) {
-		b=dynamic_cast<LPathsData*>(somedatafactory->newObject(LAX_PATHSDATA));
+		b=dynamic_cast<LPathsData*>(somedatafactory()->NewObject(LAX_PATHSDATA));
 		b->appendRect(c*s,0,s,s);
 		if (colorsystem==LAX_COLOR_GRAY) { color.grayf((10-c)/10.); b->fill(&color); }
 		else if (colorsystem==LAX_COLOR_RGB) { color.rgbf((10-c)/10.,(10-c)/10.,(10-c)/10.);  b->fill(&color); }
@@ -98,7 +98,7 @@ DrawableObject *BWColorBars(double pointsize, int colorsystem)
 	}
 
 	 //create outline of whole
-	b=dynamic_cast<LPathsData*>(somedatafactory->newObject(LAX_PATHSDATA));
+	b=dynamic_cast<LPathsData*>(somedatafactory()->NewObject(LAX_PATHSDATA));
 	color.rgbf(0,0,0);//black outline
 	b->line(s/72,CapButt,JoinMiter,&color);
 	b->appendRect(0,0,11*s,s);
@@ -124,7 +124,7 @@ DrawableObject *ColorBars(double pointsize, Palette *palette, int numrows, int n
 	double s=pointsize/72;
 
 	Group *g=new Group;
-	LPathsData *b=dynamic_cast<LPathsData*>(somedatafactory->newObject(LAX_PATHSDATA));
+	LPathsData *b=dynamic_cast<LPathsData*>(somedatafactory()->NewObject(LAX_PATHSDATA));
 
 	 //create outline
 	b->appendRect(0,0,numcols*s,numrows*s);
@@ -137,7 +137,7 @@ DrawableObject *ColorBars(double pointsize, Palette *palette, int numrows, int n
 	ScreenColor color;
 	for (int c=0; c<numcols; c++) {
 		for (int r=0; r<numrows; r++) {
-			b=dynamic_cast<LPathsData*>(somedatafactory->newObject(LAX_PATHSDATA));
+			b=dynamic_cast<LPathsData*>(somedatafactory()->NewObject(LAX_PATHSDATA));
 			b->appendRect(c*s,r*s,s,s);
 			color.rgb(palette->colors.e[c]->channels[0],
 					  palette->colors.e[c]->channels[1],

@@ -14,8 +14,8 @@
 // Copyright (C) 2012-2013 by Tom Lechner
 //
 
+#include <lax/interfaces/somedatafactory.h>
 #include "lengraverfilldata.h"
-#include "datafactory.h"
 #include "../stylemanager.h"
 #include "../language.h"
 
@@ -87,7 +87,7 @@ void LEngraverFillData::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles:
 
 Value *LEngraverFillData::duplicate()
 {
-	SomeData *dup=LaxInterfaces::somedatafactory->newObject("EngraverFillData");
+	SomeData *dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("EngraverFillData"));
 	EngraverFillData::duplicate(dup);
 	DrawableObject::duplicate(dup);
 	return dynamic_cast<Value*>(dup);
@@ -96,7 +96,7 @@ Value *LEngraverFillData::duplicate()
 LaxInterfaces::SomeData *LEngraverFillData::duplicate(LaxInterfaces::SomeData *dup)
 {
 	if (dup && !dynamic_cast<LEngraverFillData*>(dup)) return NULL; //wrong type for referencc object!
-	if (!dup) dup=LaxInterfaces::somedatafactory->newObject("EngraverFillData");
+	if (!dup) dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("EngraverFillData"));
 	EngraverFillData::duplicate(dup);
 	DrawableObject::duplicate(dup);
 	return dup;

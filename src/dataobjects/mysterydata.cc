@@ -151,14 +151,6 @@ LaxInterfaces::SomeData *MysteryData::duplicate(LaxInterfaces::SomeData *dup)
 	if (!mdata && dup) return NULL;
 
 	char set=1;
-//	if (!dup && somedatafactory) {
-//		dup=somedatafactory->newObject(LAIDOUT_MYSTERYDATA,this);
-//		if (dup) {
-//			dup->setbounds(minx,maxx,miny,maxy);
-//			set=0;
-//		}
-//		i=dynamic_cast<ImageData*>(dup);
-//	} 
 	if (!mdata) {
 		mdata=new MysteryData();
 		dup=mdata;

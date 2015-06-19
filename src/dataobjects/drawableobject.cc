@@ -236,7 +236,7 @@ DrawObjectChain::~DrawObjectChain()
  */
 
 
-DrawableObject::DrawableObject(LaxInterfaces::SomeData *refobj)
+DrawableObject::DrawableObject()
 {
 	clip=NULL;
 	clip_path=wrap_path=inset_path=NULL;
@@ -1526,13 +1526,17 @@ void DrawableObject::dump_in_group_atts(LaxFiles::Attribute *att,int flag,LaxFil
 
 		if (!strcmp(name,"locked")) {
 			locked=BooleanAttribute(value);
+
 		} else if (!strcmp(name,"visible")) {
 			visible=BooleanAttribute(value);
+
 		} else if (!strcmp(name,"prints")) {
 			prints=BooleanAttribute(value);
+
 		} else if (!strcmp(name,"matrix")) {
 			double mm[6];
 			if (DoubleListAttribute(value,mm,6)==6) m(mm);
+
 		} else if (!strcmp(name,"object")) {
 			int n;
 			char **strs=splitspace(value,&n);

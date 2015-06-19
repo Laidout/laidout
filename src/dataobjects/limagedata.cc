@@ -89,7 +89,7 @@ void LImageData::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCo
 
 Value *LImageData::duplicate()
 {
-	SomeData *dup=LaxInterfaces::somedatafactory->newObject("ImageData");
+	SomeData *dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("ImageData"));
 	ImageData::duplicate(dup);
 	DrawableObject::duplicate(dup);
 	return dynamic_cast<Value*>(dup);
@@ -98,7 +98,7 @@ Value *LImageData::duplicate()
 LaxInterfaces::SomeData *LImageData::duplicate(LaxInterfaces::SomeData *dup)
 {
 	if (dup && !dynamic_cast<LImageData*>(dup)) return NULL; //wrong type for referencc object!
-	if (!dup) dup=LaxInterfaces::somedatafactory->newObject("ImageData");
+	if (!dup) dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("ImageData"));
 	ImageData::duplicate(dup);
 	DrawableObject::duplicate(dup);
 	return dup;
