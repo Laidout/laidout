@@ -182,7 +182,8 @@ class DrawableObject :  virtual public ObjectContainer,
 	LaxFiles::Attribute iohints;
 
 
-	DrawableObject(LaxInterfaces::SomeData *refobj=NULL);
+	//DrawableObject(LaxInterfaces::SomeData *refobj=NULL);
+	DrawableObject();
 	virtual ~DrawableObject();
 	virtual const char *whattype() { return "Group"; }
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);

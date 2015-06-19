@@ -34,6 +34,7 @@
 #include <lax/laxoptions.h>
 #include <lax/units.h>
 #include <lax/bitmaputils.h>
+#include <lax/interfaces/interfacemanager.h>
 #include <sys/file.h>
 
 #define LAIDOUT_CC
@@ -1788,7 +1789,7 @@ int main(int argc,char **argv)
 	}
 
 				
-	 //refedine Laxkit's default preview maker
+	 //redefine Laxkit's default preview maker
 	generate_preview_image=laidout_preview_maker;
 
 	laidout=new LaidoutApp();
@@ -1799,6 +1800,7 @@ int main(int argc,char **argv)
 	//if (!laidout->experimental) EnableUndo(false);
 	//EnableUndo(true);
 
+	// *** LaxInterfaces::InterfaceManager::SetDefault(new LInterfaceManager(),true);
 	
 	laidout->init(argc,argv);
 
@@ -1811,6 +1813,7 @@ int main(int argc,char **argv)
 	DBG cerr <<"---------Laidout Close--------------"<<endl;
 	 //for debugging purposes, spread out closing down various things....
 	laidout->close();
+	LaxInterfaces::InterfaceManager::SetDefault(NULL,true);
 	Laxkit::SetUndoManager(NULL);
 	Laxkit::InstallShortcutManager(NULL); //forces deletion of shortcut lists in Laxkit
 	Laxkit::IconManager::SetDefault(NULL);

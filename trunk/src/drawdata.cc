@@ -32,11 +32,12 @@
 #include <lax/transformmath.h>
 
 #include <lax/interfaces/somedataref.h>
+#include <lax/interfaces/somedatafactory.h>
 #include "drawdata.h"
 #include "dataobjects/mysterydata.h"
 #include "laidout.h"
 #include "language.h"
-#include "dataobjects/datafactory.h"
+//#include "dataobjects/datafactory.h"
 
 using namespace Laxkit;
 using namespace LaxInterfaces;
@@ -195,16 +196,10 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
  * This text should be the same as is returned by the object's whattype() function.
  *
  * See src/dataobjects/datafactory.cc for currently allowed object types.
- *
- *   \todo *** there needs to be a mechanism to automate this so new types can be
- *   added on the fly:
- *     objectfactory->new(SOMEDATA_ID);
- *     objectfactory->addtype(cchar *type,newDataFunc,int id);
- *     objectfactory->remove(id/"sometype");
  */
 SomeData *newObject(const char *thetype)
 {
-	return somedatafactory->newObject(thetype);
+	return dynamic_cast<SomeData*>(somedatafactory()->NewObject(thetype));
 }
 
 //! Return whether all corners of bbox have nonzero winding numbers for points.

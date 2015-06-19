@@ -733,14 +733,18 @@ void Page::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 
 
          //dump out each available object type...
-        SomeData *o;
+        anObject *o;
+		SomeData *d;
         const char *t;
-        for (int c=0; c<somedatafactory->NumTypes(); c++) {
-            t=somedatafactory->TypeStr(c);
+		ObjectFactory *factory=somedatafactory();
+
+        for (int c=0; c<factory->NumTypes(); c++) {
+            t=factory->TypeStr(c);
             fprintf(f,"%s    object %s\n",spc, t);
 
-            o=somedatafactory->newObject(t);
-            o->dump_out(f,indent+6, -1, context);
+            o=factory->NewObject(t);
+			d=dynamic_cast<SomeData*>(o);
+			if (d) d->dump_out(f,indent+6, -1, context);
             o->dec_count();
 
 			fprintf(f,"\n");

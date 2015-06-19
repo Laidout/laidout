@@ -87,7 +87,7 @@ void LPathsData::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCo
 LaxInterfaces::SomeData *LPathsData::duplicate(LaxInterfaces::SomeData *dup)
 {
 	if (dup && !dynamic_cast<LPathsData*>(dup)) return NULL; //wrong type for referencc object!
-	if (!dup) dup=LaxInterfaces::somedatafactory->newObject("PathsData");
+	if (!dup) dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 	PathsData::duplicate(dup);
 	DrawableObject::duplicate(dup);
 	return dup;
@@ -99,7 +99,7 @@ LaxInterfaces::SomeData *LPathsData::duplicate(LaxInterfaces::SomeData *dup)
 
 Value *LPathsData::duplicate()
 {
-	SomeData *dup=LaxInterfaces::somedatafactory->newObject("PathsData");
+	SomeData *dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 	PathsData::duplicate(dup);
 	DrawableObject::duplicate(dup);
 	return dynamic_cast<Value*>(dup);

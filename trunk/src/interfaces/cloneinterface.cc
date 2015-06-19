@@ -27,7 +27,6 @@
 
 #include "cloneinterface.h"
 #include "../laidout.h"
-#include "../dataobjects/datafactory.h"
 #include "../drawdata.h"
 #include "../viewwindow.h"
 #include "../version.h"
@@ -36,6 +35,7 @@
 #include <lax/laxutils.h>
 #include <lax/filedialog.h>
 #include <lax/interfaces/somedataref.h>
+#include <lax/interfaces/somedatafactory.h>
 #include <lax/interfaces/rectinterface.h>
 
 #include <lax/lists.cc>
@@ -423,7 +423,7 @@ void Tiling::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpCont
 					op->flexible_aspect=BooleanAttribute(value);
 
 		        } else if (!strcmp(name,"outline")) {
-					op->celloutline=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+					op->celloutline=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 					op->celloutline->dump_in_atts(att->attributes.e[c]->attributes.e[c2], flag,context);
 
 		        } else if (!strcmp(name,"transform")) {
@@ -627,7 +627,7 @@ Group *Tiling::Render(Group *parent_space,
 
 			if (trace_cells) {
 			  if (dest->traceable) {
-				clone=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory->newObject("SomeDataRef"));
+				clone=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory()->NewObject("SomeDataRef"));
 				clone->Set(trace->e(c),0);
 				clone->Multiply(clonet);
 				clone->FindBBox();
@@ -640,7 +640,7 @@ Group *Tiling::Render(Group *parent_space,
 			  for (int s=0; s<source_objects->n(); s++) {
 				if (source_objects->e_info(s)!=c) continue;
 
-				clone=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory->newObject("SomeDataRef"));
+				clone=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory()->NewObject("SomeDataRef"));
 				base=source_objects->e(s)->obj;
 				if (dynamic_cast<SomeDataRef*>(base)) base=dynamic_cast<SomeDataRef*>(base)->GetFinalObject();
 				clone->Set(base,1); //the 1 means don't copy matrix also
@@ -662,7 +662,7 @@ Group *Tiling::Render(Group *parent_space,
 
 				if (trace_cells) {
 				  if (dest->traceable) {
-					clone=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory->newObject("SomeDataRef"));
+					clone=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory()->NewObject("SomeDataRef"));
 					clone->Set(trace->e(c),0);
 					clone->Multiply(clonet);
 					clone->FindBBox();
@@ -675,7 +675,7 @@ Group *Tiling::Render(Group *parent_space,
 				  for (int s=0; s<source_objects->n(); s++) {
 					if (source_objects->e_info(s)!=c) continue;
 
-					clone=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory->newObject("SomeDataRef"));
+					clone=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory()->NewObject("SomeDataRef"));
 					base=source_objects->e(s)->obj;
 					if (dynamic_cast<SomeDataRef*>(base)) base=dynamic_cast<SomeDataRef*>(base)->GetFinalObject();
 					clone->Set(base,1); //the 1 means don't copy matrix also
@@ -742,7 +742,7 @@ Tiling *CreateRadial(double start_angle, //!< radians
 
 
 	 //define cell outline
-	PathsData *path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+	PathsData *path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 	double a =start_angle;
 	double a2=a+cellangle;
 	path->append(start_radius*flatpoint(cos(a),sin(a)));
@@ -819,7 +819,7 @@ Tiling *CreateSpiral(double start_angle, //!< radians
 	double ner=end_radius  *exp(cellangle/2/M_PI*log(end_radius/start_radius));
 
 	 //define cell outline
-	PathsData *path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+	PathsData *path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 	double a = start_angle;
 	double a2= start_angle + cellangle;
 	path->append(  end_radius*flatpoint(cos(a),sin(a)));
@@ -876,7 +876,7 @@ Tiling *CreateWallpaper(Tiling *tiling,const char *group)
 
 	if (!strcasecmp(group,"p1")) {
 		 //define single base cell, covers whole unit cell
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendRect(0,0,1,1);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
@@ -886,7 +886,7 @@ Tiling *CreateWallpaper(Tiling *tiling,const char *group)
 
 	} else if (!strcasecmp(group,"p2")) {
 		 //rotate on edge
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendRect(0,0,.5,1);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
@@ -900,7 +900,7 @@ Tiling *CreateWallpaper(Tiling *tiling,const char *group)
 
 	} else if (!strcasecmp(group,"pm")) {
 		 //flip on edge
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendRect(0,0,.5,1);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
@@ -913,7 +913,7 @@ Tiling *CreateWallpaper(Tiling *tiling,const char *group)
 
 	} else if (!strcasecmp(group,"pg")) {
 		 //glide reflect
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendRect(0,0,.5,1);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
@@ -927,7 +927,7 @@ Tiling *CreateWallpaper(Tiling *tiling,const char *group)
 
 	} else if (!strcasecmp(group,"cm")) {
 		 //reflect vertically, glide reflect horizontally
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendRect(0,0,.5,.5);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
@@ -949,7 +949,7 @@ Tiling *CreateWallpaper(Tiling *tiling,const char *group)
 
 	} else if (!strcasecmp(group,"pmm")) {
 		 //reflect vertically, reflect horizontally
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendRect(0,0,.5,.5);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
@@ -971,7 +971,7 @@ Tiling *CreateWallpaper(Tiling *tiling,const char *group)
 
 	} else if (!strcasecmp(group,"pmg")) {
 		 //flip vertically, rotate on right edge
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendRect(0,0,.5,.5);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
@@ -993,7 +993,7 @@ Tiling *CreateWallpaper(Tiling *tiling,const char *group)
 
 	} else if (!strcasecmp(group,"pgg")) {
 		 //rotate on top edge, glide reflect horizontally
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendRect(0,0,.5,.5);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
@@ -1016,7 +1016,7 @@ Tiling *CreateWallpaper(Tiling *tiling,const char *group)
 
 	} else if (!strcasecmp(group,"p4")) {
 		 //rotate about center 3 times
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendRect(0,0,.5,.5);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
@@ -1038,7 +1038,7 @@ Tiling *CreateWallpaper(Tiling *tiling,const char *group)
 		 //8 components:
 		 //reflect on right edge, then glide reflect those two
 		 //reflect on top edge, with that one, reflect on right, glide reflect those top two
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendRect(0,0,.25,.5);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1); //0,0
@@ -1079,7 +1079,7 @@ Tiling *CreateWallpaper(Tiling *tiling,const char *group)
 		 //8 right isosceles triangles with hypotenuse at square center, reflected 
 		 //all around center. is equivalent to flip once on hypotenuse, then 
 		 //rotate those 2 around
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(0,0);
 		path->append(.5,0);
 		path->append(.5,.5);
@@ -1124,7 +1124,7 @@ Tiling *CreateWallpaper(Tiling *tiling,const char *group)
 		 //8 right isosceles triangles with hypotenuse NOT at square center.
 		 //is equivalent to flip once on hypotenuse, then 
 		 //rotate those 2 around
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(0,0);
 		path->append(.5,0);
 		path->append(0,.5);
@@ -1172,7 +1172,7 @@ Tiling *CreateWallpaper(Tiling *tiling,const char *group)
 		 //x horizontal, y 60 degrees off x
 		tiling->DefaultHex(1);
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(sqrt(3)/2,0);
 		path->append(sqrt(3)/2,1);
 		path->append(0,1.5);
@@ -1195,7 +1195,7 @@ Tiling *CreateWallpaper(Tiling *tiling,const char *group)
 		 //6 triangle hexagon, flip each around line through center
 		tiling->DefaultHex(1);
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(sqrt(3)/2,0);
 		path->append(sqrt(3)/2,1);
 		path->append(0,.5);
@@ -1232,7 +1232,7 @@ Tiling *CreateWallpaper(Tiling *tiling,const char *group)
 		 //of 3 is flipped around as in p3m1
 		tiling->DefaultHex(1);
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(0,.5);
 		path->append(1./2/sqrt(3),1);
 		path->append(0,1.5);
@@ -1332,7 +1332,7 @@ Tiling *CreateWallpaper(Tiling *tiling,const char *group)
 		 //of 3 is rotated (not flipped) around hexagon center
 		tiling->DefaultHex(1);
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(0,.5);
 		path->append(1./2/sqrt(3),1);
 		path->append(0,1.5);
@@ -1372,7 +1372,7 @@ Tiling *CreateWallpaper(Tiling *tiling,const char *group)
 		 //around egdges that touch the center
 		tiling->DefaultHex(1);
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(0,.5);
 		path->append(sqrt(3)/2,1);
 		path->append(0,1);
@@ -1430,7 +1430,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		if (!strcasecmp(coloring,"square 3")) tiling->repeatYDir(flatpoint(1,2));
 		else tiling->repeatYDir(flatpoint(0,2));
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendRect(0,0,1,1);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
@@ -1444,7 +1444,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		affine.Translate(flatpoint(-1,1));
 		op->AddTransform(affine);
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendRect(1,1,1,1);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
@@ -1461,7 +1461,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 			tiling->repeatXDir(flatpoint(1,1));
 		}
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendRect(0,0,1,1);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
@@ -1469,7 +1469,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		op->flexible_aspect=true;
 		op->AddTransform(affine);
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendRect(0,1,1,1);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
@@ -1490,7 +1490,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		if (!strcasecmp(coloring,"square 7")) tiling->repeatYDir(flatpoint(1,2));
 		else tiling->repeatYDir(flatpoint(0,2));
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendRect(0,0,1,1);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
@@ -1499,7 +1499,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		op->AddTransform(affine);
 
 		if (!strcasecmp(coloring,"square 9")) {
-			path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+			path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 			path->appendRect(1,0,1,1);
 			path->FindBBox();
 			op=tiling->AddBase(path,1,1);
@@ -1513,7 +1513,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 			op->AddTransform(affine);
 		}
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendRect(0,1,1,1);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
@@ -1522,7 +1522,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		affine.setIdentity();
 		op->AddTransform(affine);
 	
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendRect(1,1,1,1);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
@@ -1538,7 +1538,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 	} else if (!strcasecmp(coloring,"hexagonal 1")) {
 		tiling->DefaultHex(1);
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		Coordinate *cc=CoordinatePolygon(flatpoint(sqrt(3)/2,1), 1, false, 6, 1);
 		path->appendCoord(cc);
 		path->FindBBox();
@@ -1550,7 +1550,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		tiling->repeatXDir(flatpoint(3*sqrt(3)/2,1.5));
 		tiling->repeatYDir(flatpoint(0,3));
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		Coordinate *cc=CoordinatePolygon(flatpoint(sqrt(3)/2,1), 1, false, 6, 1);
 		path->appendCoord(cc);
 		path->FindBBox();
@@ -1560,7 +1560,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		op->AddTransform(affine);
 
 		cc=CoordinatePolygon(flatpoint(sqrt(3),2.5), 1, false, 6, 1);
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendCoord(cc);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1, false,false);
@@ -1571,14 +1571,14 @@ Tiling *CreateUniformColoring(const char *coloring)
 		tiling->repeatXDir(flatpoint(3*sqrt(3)/2,1.5));
 		tiling->repeatYDir(flatpoint(0,3));
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		Coordinate *cc=CoordinatePolygon(flatpoint(sqrt(3)/2,1), 1, false, 6, 1);
 		path->appendCoord(cc);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1, false,false);
 		op->AddTransform(affine);
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		cc=CoordinatePolygon(flatpoint(3*sqrt(3)/2,1), 1, false, 6, 1);
 		path->appendCoord(cc);
 		path->FindBBox();
@@ -1587,7 +1587,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		op->AddTransform(affine);
 
 		cc=CoordinatePolygon(flatpoint(sqrt(3),2.5), 1, false, 6, 1);
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendCoord(cc);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1, false,false);
@@ -1601,7 +1601,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		tiling->repeatXDir(flatpoint(1+sqrt(3),0));
 
 		 //diamond
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(0,sqrt(3)/2);
 		path->append(.5,0);
 		path->append(1,sqrt(3)/2);
@@ -1617,7 +1617,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		op->AddTransform(affine);
 
 		 //square1
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(.5,0);
 		path->append(.5+sqrt(3)/2,-.5);
 		path->append( 1+sqrt(3)/2,-.5+sqrt(3)/2);
@@ -1635,7 +1635,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 
 		} else {
 			 //square2
-			path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+			path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 			path->append(1,sqrt(3)/2);
 			path->append(1+sqrt(3)/2,sqrt(3)/2+.5);
 			path->append(.5+sqrt(3)/2, sqrt(3)+.5);
@@ -1650,7 +1650,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 	} else if (!strcasecmp(coloring,"elongated triangular")) {
 		tiling->repeatYDir(flatpoint(-.5,1+sqrt(3)/2));
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(0,0);
 		path->append(1,0);
 		path->append(.5,sqrt(3)/2);
@@ -1662,7 +1662,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		affine.Rotate(M_PI, flatpoint(.75,sqrt(3)/4));
 		op->AddTransform(affine);
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendRect(0,-1, 1,1);
 		op=tiling->AddBase(path,1,1);
 		affine.setIdentity();
@@ -1683,7 +1683,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		double x=.5+1/sqrt(2);
 		double r=sqrt(.25+x*x);
 		Coordinate *cc=CoordinatePolygon(flatpoint(x,x), r, false, 8, 1);
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendCoord(cc);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1, false,false);
@@ -1699,7 +1699,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		}
 
 		 //the square
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		double a=1/sqrt(2);
 		path->append(-a,0);
 		path->append(0, a);
@@ -1721,7 +1721,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 	} else if (!strcasecmp(coloring,"triangular 1")) {
 		tiling->repeatYDir(flatpoint(.5,-sqrt(3)/2));
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(0,0);
 		path->append(1,0);
 		path->append(.5,sqrt(3)/2);
@@ -1737,7 +1737,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		tiling->repeatXDir(flatpoint(1.5,-sqrt(3)/2));
 		tiling->repeatYDir(flatpoint(0,sqrt(3)));
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(0,0);
 		path->append(1,0);
 		path->append(.5,sqrt(3)/2);
@@ -1758,7 +1758,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		affine.Rotate(-M_PI/3,flatpoint(1,0));
 		op->AddTransform(affine);
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(.5,sqrt(3)/2);
 		path->append(1,0);
 		path->append(1.5,sqrt(3)/2);
@@ -1772,7 +1772,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		tiling->repeatXDir(flatpoint(1,0));
 		tiling->repeatYDir(flatpoint(.5,sqrt(3)/2));
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(0,0);
 		path->append(1,0);
 		path->append(.5,sqrt(3)/2);
@@ -1781,7 +1781,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		op=tiling->AddBase(path,1,1, false,false);
 		op->AddTransform(affine);
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(.5,sqrt(3)/2);
 		path->append(1,0);
 		path->append(1.5,sqrt(3)/2);
@@ -1794,7 +1794,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		tiling->repeatXDir(flatpoint(2,0));
 		tiling->repeatYDir(flatpoint(0,sqrt(3)));
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(0,0);
 		path->append(1,0);
 		path->append(.5,sqrt(3)/2);
@@ -1813,7 +1813,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		affine.Rotate(M_PI, flatpoint(1.75,-sqrt(3)/4));
 		op->AddTransform(affine);
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(0,0);
 		path->append(1,0);
 		path->append(.5,-sqrt(3)/2);
@@ -1840,7 +1840,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		tiling->repeatXDir(flatpoint(1.5,-sqrt(3)/2));
 		tiling->repeatYDir(flatpoint(0,sqrt(3)));
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(1,0);
 		path->append(1.5,sqrt(3)/2);
 		path->append(.5,sqrt(3)/2);
@@ -1860,7 +1860,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 			op->AddTransform(affine);
 		}
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(0,0);
 		path->append(1,0);
 		path->append(.5,sqrt(3)/2);
@@ -1883,7 +1883,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		tiling->repeatXDir(flatpoint(1,0));
 		tiling->repeatYDir(flatpoint(0,sqrt(3)));
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(0,0);
 		path->append(1,0);
 		path->append(.5,sqrt(3)/2);
@@ -1895,7 +1895,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		affine.Rotate(M_PI, flatpoint(.75,sqrt(3)/4));
 		op->AddTransform(affine);
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(0,0);
 		path->append(1,0);
 		path->append(.5,-sqrt(3)/2);
@@ -1914,7 +1914,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		tiling->repeatXDir(flatpoint(1.5,-sqrt(3)/2));
 		tiling->repeatYDir(flatpoint(0,sqrt(3)));
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(.5,sqrt(3)/2);
 		path->append(1,0);
 		path->append(1.5,sqrt(3)/2);
@@ -1940,7 +1940,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 			op->AddTransform(affine);
 		}
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(0,0);
 		path->append(1,0);
 		path->append(.5,sqrt(3)/2);
@@ -1963,7 +1963,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 
 		 //hexagon
 		Coordinate *cc=CoordinatePolygon(flatpoint(1,0), 1, true, 6, 1);
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendCoord(cc);
 		path->close();
 		path->FindBBox();
@@ -1971,7 +1971,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		op->AddTransform(affine);
 
 		 //triangle
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(2,0);
 		path->append(2.5,sqrt(3)/2);
 		path->append(1.5,sqrt(3)/2);
@@ -1998,7 +1998,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 
 		 //hexagon
 		Coordinate *cc=CoordinatePolygon(flatpoint(1,0), 1, true, 6, 1);
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendCoord(cc);
 		path->close();
 		path->FindBBox();
@@ -2006,7 +2006,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		op->AddTransform(affine);
 
 		 //triangles
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(0,0);
 		path->append(-.5,sqrt(3)/2);
 		path->append(-1,0);
@@ -2043,7 +2043,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 
 		 //hexagon
 		Coordinate *cc=CoordinatePolygon(flatpoint(1,0), 1, true, 6, 1);
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendCoord(cc);
 		path->close();
 		path->FindBBox();
@@ -2051,7 +2051,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		op->AddTransform(affine);
 
 		 //squares
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(0,0);
 		path->append(.5,sqrt(3)/2);
 		path->append(.5-sqrt(3)/2,.5+sqrt(3)/2);
@@ -2070,7 +2070,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		op->AddTransform(affine);
 
 		 //triangles
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(.5,sqrt(3)/2);
 		path->append(.5,1+sqrt(3)/2);
 		path->append(.5-sqrt(3)/2,.5+sqrt(3)/2);
@@ -2090,14 +2090,14 @@ Tiling *CreateUniformColoring(const char *coloring)
 		tiling->repeatXDir(flatpoint(2*rx,0));
 		tiling->repeatYDir(flatpoint(rx,rx*sqrt(3)));
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		Coordinate *cc=CoordinatePolygon(flatpoint(0,0), r, false, 12, 1);
 		path->appendCoord(cc);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1, false,false);
 		op->AddTransform(affine);
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->append(-.5,-rx);
 		path->append(.5,-rx);
 		path->append(0,-rx-sqrt(3)/2);
@@ -2115,7 +2115,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		tiling->repeatXDir(flatpoint((1+2*rx)*sqrt(3)/2,(1+2*rx)/2));
 		tiling->repeatYDir(flatpoint(0,1+2*rx));
 
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		Coordinate *cc=CoordinatePolygon(flatpoint(0,0), r, false, 12, 1);
 		path->appendCoord(cc);
 		path->FindBBox();
@@ -2123,7 +2123,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		op->AddTransform(affine);
 
 		 //squares
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		path->appendRect(-.5,rx, 1,1);
 		op=tiling->AddBase(path,1,1, false,false);
 		op->AddTransform(affine);
@@ -2138,7 +2138,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		op->AddTransform(affine);
 
 		 //hexagons
-		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+		path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 		cc=CoordinatePolygon(flatpoint(0,0), 1, false, 6, 1);
 		path->appendCoord(cc);
 		path->Translate(flatpoint(-(.5+sqrt(3)/2),rx+.5));
@@ -2395,7 +2395,7 @@ CloneInterface::CloneInterface(anInterface *nowner,int nid,Laxkit::Displayer *nd
 
 	current_base=-1;
 	ScreenColor col(0.,.7,0.,1.);
-	boundary=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+	boundary=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 	boundary->style=PathsData::PATHS_Ignore_Weights;
 	boundary->line(-1,-1,-1,&col);
 	boundary->appendRect(0,0,4,4);
@@ -3192,7 +3192,7 @@ int CloneInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 			 //set up proxy object
 			VObjContext *noc=dynamic_cast<VObjContext*>(oc->duplicate());
 			noc->clearToPage();
-			SomeDataRef *ref=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory->newObject("SomeDataRef"));
+			SomeDataRef *ref=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory()->NewObject("SomeDataRef"));
 			ref->Set(obj, false);
 			ref->flags|=SOMEDATA_KEEP_ASPECT;
 			double m[6];

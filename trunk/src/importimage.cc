@@ -15,16 +15,17 @@
 //
 
 
+#include <lax/attributes.h>
+#include <lax/fileutils.h>
+#include <lax/transformmath.h>
+#include <lax/interfaces/somedatafactory.h>
+#include <dirent.h>
+#include <unistd.h>
+
 #include "version.h"
 #include "importimage.h"
 #include "dataobjects/epsdata.h"
 #include "utils.h"
-#include "dataobjects/datafactory.h"
-#include <lax/attributes.h>
-#include <lax/fileutils.h>
-#include <lax/transformmath.h>
-#include <dirent.h>
-#include <unistd.h>
 
 #include <lax/lists.cc>
 
@@ -466,7 +467,7 @@ int dumpInImageList(ImportImageSettings *settings, Document *doc,LaxFiles::Attri
 
 			 //if not eps, then do generic image. If not openable as image, then create a broken image
 			if (!image) {
-				image=dynamic_cast<ImageData*>(LaxInterfaces::somedatafactory->newObject("ImageData"));
+				image=dynamic_cast<ImageData*>(LaxInterfaces::somedatafactory()->NewObject("ImageData"));
 				image->LoadImage(file,preview,0,0,0,0);
 			}
 			image->SetDescription(desc);
@@ -611,7 +612,7 @@ int dumpInImages(ImportImageSettings *settings,
 		if (image) {
 			DBG cerr << "dump image files: "<<imagefiles[c]<<endl;
 
-			imaged=dynamic_cast<ImageData*>(LaxInterfaces::somedatafactory->newObject("ImageData"));
+			imaged=dynamic_cast<ImageData*>(LaxInterfaces::somedatafactory()->NewObject("ImageData"));
 			imaged->SetImage(image);//incs count of image
 			image->dec_count();
 

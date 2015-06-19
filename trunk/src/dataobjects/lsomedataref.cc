@@ -96,7 +96,7 @@ void LSomeDataRef::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Dump
 
 Value *LSomeDataRef::duplicate()
 {
-	SomeData *dup=LaxInterfaces::somedatafactory->newObject("SomeDataRef");
+	SomeData *dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("SomeDataRef"));
 	SomeDataRef::duplicate(dup);
 	DrawableObject::duplicate(dup);
 	return dynamic_cast<Value*>(dup);
@@ -105,7 +105,7 @@ Value *LSomeDataRef::duplicate()
 LaxInterfaces::SomeData *LSomeDataRef::duplicate(LaxInterfaces::SomeData *dup)
 {
 	if (dup && !dynamic_cast<LSomeDataRef*>(dup)) return NULL; //wrong type for referencc object!
-	if (!dup) dup=LaxInterfaces::somedatafactory->newObject("SomeDataRef");
+	if (!dup) dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("SomeDataRef"));
 	SomeDataRef::duplicate(dup);
 	DrawableObject::duplicate(dup);
 	return dup;

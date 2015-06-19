@@ -90,7 +90,7 @@ void LImagePatchData::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::D
 LaxInterfaces::SomeData *LImagePatchData::duplicate(LaxInterfaces::SomeData *dup)
 {
 	if (dup && !dynamic_cast<LImagePatchData*>(dup)) return NULL; //wrong type for referencc object!
-	if (!dup) dup=somedatafactory->newObject("ImagePatchData");
+	if (!dup) dup=dynamic_cast<SomeData*>(somedatafactory()->NewObject("ImagePatchData"));
 	ImagePatchData::duplicate(dup);
 	DrawableObject::duplicate(dup);
 	return dup;
@@ -101,7 +101,7 @@ LaxInterfaces::SomeData *LImagePatchData::duplicate(LaxInterfaces::SomeData *dup
 
 Value *LImagePatchData::duplicate()
 {
-	SomeData *dup=LaxInterfaces::somedatafactory->newObject("ImagePatchData");
+	SomeData *dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("ImagePatchData"));
 	ImagePatchData::duplicate(dup);
 	DrawableObject::duplicate(dup);
 	return dynamic_cast<Value*>(dup);
@@ -242,7 +242,7 @@ void LColorPatchData::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::D
 LaxInterfaces::SomeData *LColorPatchData::duplicate(LaxInterfaces::SomeData *dup)
 {
 	if (dup && !dynamic_cast<LColorPatchData*>(dup)) return NULL; //wrong type for referencc object!
-	if (!dup) dup=somedatafactory->newObject("ColorPatchData");
+	if (!dup) dup=dynamic_cast<SomeData*>(somedatafactory()->NewObject("ColorPatchData"));
 	ColorPatchData::duplicate(dup);
 	DrawableObject::duplicate(dup);
 	return dup;
@@ -253,7 +253,7 @@ LaxInterfaces::SomeData *LColorPatchData::duplicate(LaxInterfaces::SomeData *dup
 
 Value *LColorPatchData::duplicate()
 {
-	SomeData *dup=LaxInterfaces::somedatafactory->newObject("ColorPatchData");
+	SomeData *dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("ColorPatchData"));
 	ColorPatchData::duplicate(dup);
 	DrawableObject::duplicate(dup);
 	return dynamic_cast<Value*>(dup);

@@ -87,7 +87,7 @@ void LGradientData::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Dum
 LaxInterfaces::SomeData *LGradientData::duplicate(LaxInterfaces::SomeData *dup)
 {
 	if (dup && !dynamic_cast<LGradientData*>(dup)) return NULL; //wrong type for referencc object!
-	if (!dup) dup=LaxInterfaces::somedatafactory->newObject("GradientData");
+	if (!dup) dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("GradientData"));
 	GradientData::duplicate(dup);
 	DrawableObject::duplicate(dup);
 	return dup;
@@ -98,7 +98,7 @@ LaxInterfaces::SomeData *LGradientData::duplicate(LaxInterfaces::SomeData *dup)
 
 Value *LGradientData::duplicate()
 {
-	SomeData *dup=LaxInterfaces::somedatafactory->newObject("GradientData");
+	SomeData *dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("GradientData"));
 	GradientData::duplicate(dup);
 	DrawableObject::duplicate(dup);
 	return dynamic_cast<Value*>(dup);

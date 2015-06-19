@@ -17,8 +17,8 @@
 
 #include "../language.h"
 #include "../drawdata.h"
-#include "../dataobjects/datafactory.h"
 #include "anchorinterface.h"
+#include <lax/interfaces/somedatafactory.h>
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
 #include <lax/transformmath.h>
@@ -977,7 +977,7 @@ int AnchorInterface::LBDown(int x,int y,unsigned int state,int count,const Laxki
 		if (NumInvariants()==0
 			  || (NumInvariants()==1 && active_i1>=0)
 			  || (NumInvariants()==2 && active_i1>=0 && active_i2>=0)) {
-			proxy=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory->newObject("SomeDataRef"));
+			proxy=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory()->NewObject("SomeDataRef"));
 			proxy->Set(cur_oc->obj,1);
 			double m[6];
 			viewport->transformToContext(m,cur_oc,0,1);
