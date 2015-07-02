@@ -41,6 +41,13 @@ LEngraverFillData::~LEngraverFillData()
 {
 }
 
+const char *LEngraverFillData::Id()
+{ return EngraverFillData::Id(); }
+    
+const char *LEngraverFillData::Id(const char *newid)
+{ return EngraverFillData::Id(newid); }
+    
+
 	
 void LEngraverFillData::FindBBox()
 {

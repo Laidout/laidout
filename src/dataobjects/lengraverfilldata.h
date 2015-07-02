@@ -32,6 +32,9 @@ class LEngraverFillData : public DrawableObject,
 	LEngraverFillData();
 	virtual ~LEngraverFillData();
 	virtual const char *whattype() { return "EngraverFillData"; }
+    virtual const char *Id(); 
+	virtual const char *Id(const char *newid);
+
 	virtual void FindBBox();
 	virtual int pointin(flatpoint pp,int pin=1);
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
