@@ -18,6 +18,7 @@
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
 #include <lax/freedesktop.h>
+#include <lax/interfaces/interfacemanager.h>
 
 #include <lax/refptrstack.cc>
 
@@ -744,8 +745,8 @@ int Document::RemovePages(int start,int n)
 //! Return 0 if saved, return nonzero if not saved.
 /*! Save as document file.
  *
- * If includelimbos, then also save laidout->project->papergroups, and 
- * laidout->project->textobjects too.
+ * If includelimbos, then also save laidout->project->papergroups,  
+ * laidout->project->textobjects in addition to existing limbo objects.
  *
  * \todo *** only checks for saveas existence, does no sanity checking on it...
  * \todo  need to work out saving Specific project/no proj but many docs/single doc
@@ -1058,6 +1059,10 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCont
 		} else if (!strcmp(nme,"saveas")) {
 			makestr(saveas,value);//*** make sure saveas is abs path
 
+		} else if (!strcmp(nme,"resources")) {
+			ResourceManager *resources=InterfaceManager::GetDefault(true)->GetResourceManager();
+			resources->dump_in_atts(att->attributes.e[c],0,context);
+
 		} else if (!strcmp(nme,"imposition")) {
 			if (imposition) imposition->dec_count();
 			 // figure out which kind of imposition it is..
@@ -1171,6 +1176,10 @@ void Document::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *conte
 		fprintf(f,"%sname   Some name for the doc  #any random name you care to give the document\n",spc);
 		fprintf(f,"%ssaveas /path/to/filename.doc  #The path previously saved as, which\n",spc);
 		fprintf(f,"%s                              #is currently ignored when reading in again.\n",spc);
+
+		 //resources
+		fprintf(f,"%sresources                     #a list of resource objects used in the document, grouped by type\n",spc);
+		fprintf(f,"%s  ...\n",spc);
 		
 		 //imposition
 		fprintf(f,"%s#A document has only 1 imposition. It can be one of any imposition resources\n",spc);
@@ -1230,6 +1239,13 @@ void Document::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *conte
 
 	if (name) fprintf(f,"%sname %s\n",spc,name);
 	if (saveas) fprintf(f,"%ssaveas %s\n",spc,saveas);
+
+
+	 //dump out resources
+	ResourceManager *resources=InterfaceManager::GetDefault(true)->GetResourceManager();
+	fprintf(f,"%sresources\n", spc);
+	resources->dump_out(f,indent+2,0,context);
+
 
 	 // dump imposition
 	if (imposition) {
