@@ -148,6 +148,7 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	
 	 //-----Engraver
 	i=new EngraverFillInterface(id++,NULL);
+	i->InitializeResources();
 	existingpool->push(i);
 	i->dec_count();
 
