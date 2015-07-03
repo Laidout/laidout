@@ -175,11 +175,13 @@ when resizing viewportwindow and a temp_input window active, make sure it stays 
 searchable menus
 
 engraving tool: Engraving 
+  CRASH: select engraver object, add page, crash!!!
   make a LineEdit overlay for number input.. Next bdown is ignored!! l, m, or right all ignored: viewportwindow line 947
   bug: 'f' objects appear to connect to points outside 0..1, but screen render doesn't
     -> line creation is allowing points with value > 1
   multiobject:
     object lines in group list needs eye per object, affect actual object visibility
+	need to enforce resource unique names
     resource settings need to be able to be shared across objects(done) and survive file io
       need ability to store overall styles of a patch, not just each individually
 	  -> need more thorough resource management to track resources/users
@@ -249,6 +251,7 @@ engraving tool: Engraving
 	need magnify do dads for easy expanding of countour without having to place each and every node
 	DONE curvemapinterface: right click menu option works in trace, but not in brush ramp edit!!
 
+  no writability check on exportsnapshot
   fully implement resolution adjustments for auto lines
   single group (not group list) view is too old, doesn't do link circle, and can only select from current object groups.. remove it entirely?
   allow temp override of linked to adjust only current?
@@ -451,6 +454,7 @@ export/print dialog
   rotate every other page 180
   print in reverse order
   export should have a preview of what is actually going out, flip through spreads
+  in papergroups with multiple papers and double sided impositions, need to ensure front and back are output properly for printer 
 
 Clean up mesh/patch controls: 
   maybe should not be able to escape off path tool when editing as path
@@ -613,7 +617,8 @@ Tools should remember their settings
 
 paperinterface:
   interface for custom paper size
-  implement paper favorites
+  implement paper favorites:
+    be able to nest favorites, item->favorite = "submenu/23", item2->favorite="2", final element is number?
   laidoutrc needs list of custom paper sizes
   papergroup tool needs custom paper input
   debug papergroup tool in spread editor
@@ -734,8 +739,10 @@ mystery data enhancement: import as placeholder objects: if convertible to laido
                   ---> this is useful to have a standard object indicator built from laidout objects, but
                          do not let them be editable
 
-really should have option to separate or merge resources when multiple documents open, rather than
-always merge?
+resources: 
+  should have a way to narrow down what resources are saved when you save a single document.. right now, if you
+    have multiple docs open, the resources are mixed
+  really should have option to separate or merge resources when multiple documents open, rather than always merge?
 
 how best to integrate Styles, Attributes, and Values??? style types:
  Laidout
