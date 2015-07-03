@@ -54,6 +54,7 @@ class ExportDialog : public Laxkit::RowFrame
 	Laxkit::CheckBox *printall,*printcurrent,*printrange;
 	Laxkit::CheckBox *everyspread, *evenonly, *oddonly;
 	Laxkit::CheckBox *batches;
+	Laxkit::CheckBox *reverse;
 	Laxkit::LineEdit *batchnumber;
 	ExportFilter *filter;
 

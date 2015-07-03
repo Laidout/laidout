@@ -437,6 +437,15 @@ int ExportDialog::init()
 	AddNull();
 
 
+	last=reverse=new CheckBox(this,"reverse",NULL,CHECK_CIRCLE|CHECK_LEFT,
+						 0,0,0,filesedit->win_h,0, 
+						 last,object_id,"reverse",
+						 _("Reverse order"), 0,5);
+	reverse->State(config->reverse_order ? LAX_ON : LAX_OFF);
+	AddWin(reverse,1, reverse->win_w,0,1000,50,0, reverse->win_h,0,0,50,0, -1);
+	AddNull();
+
+
 	//-------------------------- Extra settings per export type ------------------------------------
 	AddWin(NULL,0, 0,0,9999,50,0, 12,0,0,50,0, -1);
 	AddNull();
@@ -715,6 +724,12 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 			batches->State(LAX_ON);
 			config->batches=n;
 		}
+		return 0;
+
+	} else if (!strcmp(mes,"reverse")) {
+		int s=reverse->State();
+		if (s==LAX_ON) config->reverse_order=1;
+		else config->reverse_order=0;
 		return 0;
 
 	} else if (!strcmp(mes,"ps-printall")) {

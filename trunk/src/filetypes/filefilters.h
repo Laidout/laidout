@@ -101,6 +101,7 @@ class DocumentExportConfig : public Style
 	int batches;
 	int paperrotation;
 	int reverse_order;
+	int rotate180; //1 for odd, 2 for even
 	char collect_for_out;
 	char rasterize;
 
