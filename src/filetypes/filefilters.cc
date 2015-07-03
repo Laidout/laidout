@@ -703,6 +703,23 @@ ObjectDef *makeExportConfigDef()
 			"even", _("Even"), _("Export only even spreads"),
 			"odd", _("Odd"), _("Export only odd spreads"),
 			NULL);
+	sd->pushEnum("rotate180",
+			_("Alternate rotation"),
+			_("Whether to rotate by 180 degrees even, odd, or no spreads. This is in addition to paperrotation."),
+			"none",  //defvalue
+			NULL,NULL, //newfunc
+			"none", _("none"), _("Don't rotate"),
+			"even", _("Even"), _("Rotate spreads with even index"),
+			"odd", _("Odd"), _("Rotate spreads with odd index"),
+			NULL);
+	sd->push("reverse",
+			_("Reverse order"),
+			_("Whether to export in reverse order or not."),
+			"boolean",
+			NULL, //range
+			"false",  //defvalue
+			0,    //flags
+			NULL);//newfunc
 	sd->push("layout",
 			_("Layout"),
 			_("Type of spread layout to export as. Possibilities defined by the imposition."),
@@ -818,10 +835,23 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 			else if (i==2) config->evenodd=DocumentExportConfig::Odd;
 		} else if (e==2) { sprintf(error, _("Invalid format for %s!"),"evenodd"); throw error; }
 
+		 //---rotate180
+		i=parameters->findInt("rotate180",-1,&e);
+		if (e==0) {
+			if (i==0) config->rotate180=0;
+			else if (i==1) config->rotate180=1;
+			else if (i==2) config->rotate180=2;
+		} else if (e==2) { sprintf(error, _("Invalid format for %s!"),"rotate180"); throw error; }
+
 		 //---paperrotation
 		i=parameters->findInt("paperrotation",-1,&e);
 		if (e==0) config->paperrotation=i;
 		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"batches"); throw error; }
+
+		 //---reverse
+		i=parameters->findInt("reverse",-1,&e);
+		if (e==0) config->reverse_order=i;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"reverse"); throw error; }
 
 		 //---target
 		i=parameters->findInt("target",-1,&e);
@@ -958,6 +988,8 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 DocumentExportConfig::DocumentExportConfig()
 {
 	paperrotation=0;
+	rotate180=0;
+	reverse_order=0;
 	evenodd=All;
 	batches=0;
 	filter=NULL;
@@ -983,6 +1015,8 @@ DocumentExportConfig::DocumentExportConfig(Document *ndoc,
 										   PaperGroup *group)
 {
 	paperrotation=0;
+	rotate180=0;
+	reverse_order=0;
 	evenodd=All;
 	batches=0;
 
@@ -1007,6 +1041,8 @@ DocumentExportConfig::DocumentExportConfig(DocumentExportConfig *config)
 { 
 	if (config==NULL) {
 		paperrotation=0;
+		rotate180=0;
+		reverse_order=0;
 		evenodd=All;
 		batches=0;
 		filter=NULL;
@@ -1024,6 +1060,8 @@ DocumentExportConfig::DocumentExportConfig(DocumentExportConfig *config)
 	}
 
     paperrotation=config->paperrotation; 
+	rotate180    =config->rotate180;
+	reverse_order=config->reverse_order;
     evenodd      =config->evenodd; 
     batches      =config->batches; 
     target       =config->target; 
@@ -1085,7 +1123,9 @@ void DocumentExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpCo
 		fprintf(f,"%send   5              #the ending index to export, counting from 0\n",spc);
 		fprintf(f,"%sbatches 4            #for multi-page capable targets, the number of spreads to put in a single file, repeat for whole range\n",spc);
 		fprintf(f,"%sevenodd odd          #all|even|odd. Based on spread index, maybe export only even or odd spreads.\n",spc);
-		//fprintf(f,"%spaperrotation 0      #0|90|180|270. Whether to rotate each exported (final) paper by that number of degrees\n",spc);
+		fprintf(f,"%spaperrotation 0      #0|90|180|270. Whether to rotate each exported (final) paper by that number of degrees\n",spc);
+		fprintf(f,"%srotate180 none       #or even, or odd. Whether to rotate by 180 degrees the even or odd spread numbers, in addition to paperrotation\n",spc);
+
 		DBG cerr <<" *** need to implement DocumentExportConfig::paperrotation!"<<endl;
 		return;
 	}
@@ -1100,6 +1140,8 @@ void DocumentExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpCo
 	fprintf(f,"%send   %d\n",spc,end);
 
 	fprintf(f,"%spaperrotation %d\n",spc,paperrotation);
+	fprintf(f,"%srotate180 %s\n",spc, rotate180==0 ? "none" : (rotate180==1 ? "odd" : "even")); 
+	fprintf(f,"%sreverse %s\n",spc,reverse_order ? "yes" : "no");
 	fprintf(f,"%sbatches %d\n",spc,batches);
 	if (evenodd==Odd) fprintf(f,"%sevenodd odd\n",spc);
 	else if (evenodd==Even) fprintf(f,"%sevenodd even\n",spc);
@@ -1150,8 +1192,16 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpCo
 		} else if (!strcmp(name,"end")) {
 			IntAttribute(value,&end);
 
+		} else if (!strcmp(name,"reverse")) {
+			reverse_order=BooleanAttribute(value);
+
 		} else if (!strcmp(name,"paperrotation")) {
 			IntAttribute(value,&paperrotation);
+
+		} else if (!strcmp(name,"rotate180")) {
+			if (isblank(value) || !strcasecmp(value,"none")) rotate180=0;
+			else if (!strcasecmp(value,"odd")) rotate180=1;
+			else rotate180=2;
 
 		} else if (!strcmp(name,"batches")) {
 			IntAttribute(value,&batches);
@@ -1288,8 +1338,11 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 			end=config->end;
 		PaperGroup *oldpg=config->papergroup;
 		int left=0;
-		//for (int c=start; (end>=start ? c<=end : c>=end); (end>=start ? c++: c--)) { //loop over each spread
-		for (int c=start; c<=end; c++) { //loop over each spread
+
+		if (config->reverse_order) { int temp=start; start=end; end=temp; }
+
+		for (int c=start; (end>=start ? c<=end : c>=end); (end>=start ? c++ : c--)) { //loop over each spread
+		//for (int c=start; c<=end; c++) { //loop over each spread
 			if (config->evenodd==DocumentExportConfig::Even && c%2==0) continue;
 			if (config->evenodd==DocumentExportConfig::Odd && c%2==1) continue;
 
@@ -1311,6 +1364,8 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 			}
 			if (err>0) { left+=(end-c+1)*papergroup->papers.n; break; }
 		}
+
+		if (config->reverse_order) { int temp=start; start=end; end=temp; }
 		config->papergroup=oldpg;
 		config->start=start;
 		config->end=end;
@@ -1329,6 +1384,7 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 			char *fname=NULL;
 			char str[20];
 			char *ext=strrchr(oldfilename,'.');
+
 			for (int c=s; err==0 && c<=e; c+=config->batches) {
 				config->start=c;
 				config->end=c+config->batches-1;
@@ -1347,6 +1403,7 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 				err=config->filter->Out(NULL,config,log);
 				delete[] fname;
 			}
+
 			config->start=s;
 			config->end=e;
 			config->filename=oldfilename;
