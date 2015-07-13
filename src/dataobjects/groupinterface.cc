@@ -298,7 +298,7 @@ int GroupInterface::LBDown(int x, int y,unsigned int state, int count,const Laxk
 	}
 
 	//if (count==2 && selection->n()==1 && strcmp(selection->e(0)->obj->whattype(),"Group")) {
-	if (count==2 && strcmp(selection->e(0)->obj->whattype(),"Group")) {
+	if (count==2 && selection->n() && strcmp(selection->e(0)->obj->whattype(),"Group")) {
 		//double click to switch to more specific tool
 		if (viewport) viewport->ChangeObject(selection->e(0),1);
 		buttondown.clear();
