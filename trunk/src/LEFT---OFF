@@ -175,18 +175,19 @@ when resizing viewportwindow and a temp_input window active, make sure it stays 
 searchable menus
 
 engraving tool: Engraving 
-  CRASH: select engraver object, add page, crash!!!
-  make a LineEdit overlay for number input.. Next bdown is ignored!! l, m, or right all ignored: viewportwindow line 947
-  bug: 'f' objects appear to connect to points outside 0..1, but screen render doesn't
-    -> line creation is allowing points with value > 1
+  bug: make a LineEdit overlay for number input, then Next bdown is ignored!! l, m, or right all ignored: viewportwindow line 947
+  bug: object rotate works fine. but then enter and leave engraver tool. Now object rotate is messed up
+  bug: 'z' zaps mesh, but does not change cache border or point mapping
+
   multiobject:
     object lines in group list needs eye per object, affect actual object visibility
 	need to enforce resource unique names
-    resource settings need to be able to be shared across objects(done) and survive file io
-      need ability to store overall styles of a patch, not just each individually
-	  -> need more thorough resource management to track resources/users
-      setting sharing is confusing, need much better interface for that
+    need ability to store overall styles of a patch, not just each individually
+	on resource menus, should check mark if current matches a resource??
 
+    DONE resource settings need to be able to be shared across objects(done) and survive file io
+	DONE need more thorough resource management to track resources/users
+    DONE-ishsetting sharing is confusing, need much better interface for that
 	DONE escape off curvemap, trouble with somedata in GroupInterface Refresh
     DONE should be able to change object name from within panel
 	DONE (i think) click off an object, selection not flushing properly?
@@ -203,18 +204,19 @@ engraving tool: Engraving
     DONE be able to autotrace to multiple engraved objects
 
   orient:
-    with test-engrave-trace2.laidout, do the quick adjust, does not preserve line the first time, using old value of thickness?
-    option to remember old values while adjusting
+    should adjust all linked
+    with test-engrave-trace2.laidout, do the quick adjust, does not preserve width the first time, using old value of thickness?
+    option to remember old values while adjusting position, rotation, spacing
+     -> when manual tweaking of spacing, need to produce value reference so that future line orienting preserves line thicknesses
 	DONE remember default width
     DONE should be able to enter numbers for orient by click no drag
     DONE instant global thickness adjust on orientation tool?
 
   tracing:
+    seems to be grabbing spurious tracing values outside of the tracing object, and at borders of trace object
     tracing object, lines abort just inside the image, maybe should just go one off the edge?
-    need option to have it always show trace object
 	make trace object image opacity work
 	trace object needs flip, at least h and v, not really needing the whole affine thing
-    trace object should have its own dumping functions, since they might stand on their own as a resource
     need option to export trace object in same position as the traced lines, so it can be further processed elsewhere
     trace object transparency slider should actually slide transparency
     custom sample of channels
@@ -222,7 +224,10 @@ engraving tool: Engraving
 	snapshot should be for all in selection
 	shift-drag (or drag anything not covered by trace object) should drag ANY of the meshes in selection, not just current
 	when multi objects, the traceobject is interweaved, based on draw order, only under current object, should be under all?
+	make gradient interface work in trace mode
 
+    DONE need option to have it always show trace object
+    DONE trace object should have its own dumping functions, since they might stand on their own as a resource
     DONE bug: memory hole after tracing
 	DONE snapshot needs to align to correct area
     DONE opacity bubble extends in to panel area, clicking on it moves panel, not bubble
@@ -239,56 +244,72 @@ engraving tool: Engraving
     drawing custom freehand (with width) lines within the mesh area
   mesh path:
     'a' not selecting all in line
-  line generation: 
-    grow: implement custom line merge and break to preserve spacing across mesh contraction
-    grow: edge abutment when generating
-    need standard for adding different preset line types:
-      path AND thickness, like for half circle fill, thin at tips, thick in middle
-    sample point generation should be based on lines per mesh square, not total mesh field
 
   curvemap needs predefined ramp profiles, remember last, load/save (per context?)
     -> options to insert various predefined patterns
 	need magnify do dads for easy expanding of countour without having to place each and every node
 	DONE curvemapinterface: right click menu option works in trace, but not in brush ramp edit!!
 
-  no writability check on exportsnapshot
-  fully implement resolution adjustments for auto lines
+  direction:
+    need accuracy modifiers for dragging controls around
+    line profile start point at 0 producing bubbles
+	only when at endpoints, lineprofile not producing smooth results at random spots inside
+    should be able to adjust number of sample points to match up well enough for points in lineprofile 
+    random end point sliders should inc or dec according to which side mouse clicked down on compared to absolute end point
+    spiral spacing computation bad when spokes are nearer radial
+    save the opensimplex line displacement from line/point randomness, to be used to also adjust a spacing map to preserve value when viewed at a distance
+	option for "adjust for spacing", making weight reflect the spacing, either for constant width or trace
+    line profiles
+	grow
+    line generation: 
+      grow: implement custom line merge and break to preserve spacing across mesh contraction
+      grow: edge abutment when generating
+      sample point generation should be based on lines per mesh square, not total mesh field
+      finish implementing spacing section -> spacing map
+    DONE button to remap lines, so not done automatically? shift press button to always remap
+
+  fully implement resolution adjustments for auto lines -> needs resolution tool
   single group (not group list) view is too old, doesn't do link circle, and can only select from current object groups.. remove it entirely?
+  shortcut to unlink all, or toggle all linked, toggle all in group linked
+  export doesn't work for: nothing for scribus, eps, ps
+  edit brush ramp as symmetric ramp 
+  resolution tool: click to add between points within brush, control to destroy points in brush
+  need merge group
+  turbulence needs optional direction constraints, size of turbulent cell, and per line turbulence
+    would be better if turbulence could be a field effect, not independently on each sample point
+
+  screen view, need option for Fast|Accurate
+  no writability check on exportsnapshot
   allow temp override of linked to adjust only current?
-  shortcut to unlink all, or toggle all linked
   establish path needs better smoothness assignments
   keys being caught in patch, not in child path
   test: bez cache needs updating when points are moved around
   test: dash cache needs updating when points are moved OR thickness changed
-  export doesn't work for: nothing for scribus, eps, ps
   always brings current object to front (normal refresh in place, and then interface draw on top).. should be very optional, as it blocks out white overlays
   don't warp, move points, then warp, almost always has bad points: PatchData::getPointReverse() is too inaccurate
-  when manual tweaking of spacing, need to produce value reference so that future line orienting preserves line thicknesses
   undo/redo
   finish implement making the circle lines be closed circles
   current blockout is not very precise, needs approximation between existing point samples
-  direction map is not showing actual direction
-  implement direction section
-  implement spacing section
   need some kind of smooth out: smooth out width, and smooth out path
   hover over mode icons should show text of what you are hovering over (verbose mode?).. hard to remember, annoying to look at status bar otherwise
-  edit brush ramp as symmetric ramp 
-  finish making value to weight map on canvas editable and work right
   should be able to draw a line and have that be a baseline for dash division
   option: either drop out of bounds points, or zap mesh to point bounds
-  resolution tool: click to add between points within brush, control to destroy points in brush
-  need optional spacing image map, which is a mask like image that preserves spacing after distorting mesh
-  need merge group
   numsliders should have click on arrows for single increase, and a dismiss x for input box
   should probably abstract control panel creation so we don't have to hardcode everything all the time
   sampling could be more sophisticated, currently just grabs pixels, could downsample the image based on current spacing
   Danger! coons patch produces discontinuous contours within multiblock meshes!! who knew!?
   perhaps allow path objects to be adjusted with engrave tool for custom outlier lines not part of mesh?
-  turbulence needs optional direction constraints, size of turbulent cell, and per line turbulence
-    would be better if turbulence could be a field effect, not independently on each sample point
   must implement mode based shortcuts in Laxkit. currently all mesh shortcuts are active
   stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
 
+  DONE space duplicate produces unnamed new groups as well as old group copies
+  DONE need shortcuts for next/prev group
+  DONE direction map is not showing actual direction
+  DONE bug: seed values not letting me put in 0, goes to -1
+  DONE point/line randomness in all fill types: linear, radial, circular, spiral
+  DONE finish making value to weight map on canvas editable and work right
+  DONE bug: 'f' objects appear to connect to points outside 0..1, but screen render doesn't -> line creation is allowing points with value > 1
+  DONE CRASH: select engraver object, add page, crash!!!
   DONE bug: offset panel, the input lineedit is not starting at proper offset
   DONE need mouse sensitivity sliders
   DONE distort tools should be pressure sensitive
@@ -363,8 +384,6 @@ PathInterface:
   DONE default path width should be thicker, maybe a few pixels wide
   DONE bug: add seg for endpoint, then try to select a point: crash! -> improper curpoints.push()
  
-
-
 
 
 save as should change save/import/export/current directory to that directory
@@ -443,6 +462,7 @@ When there are errors or warnings in exporting, should be able to have the error
   and maybe also mass edit things, like edit all images..
   - have ViewWindow::JumpToObject(&place, objectid);
 
+collect for out: define directory to pull all files and external resources in, including the .laidout file
 
 newdoc:
   when change number off named paper, make it "custom"
