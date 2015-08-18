@@ -963,6 +963,7 @@ void InitOptions()
 	options.Add("default-units",      'u', 1, "Use the specified units.",                    0, "(in|cm|mm|m|ft|yards)");
 	options.Add("load-dir",           'l', 1, "Start in this directory.",                    0, "path");
 	options.Add("experimental",       'E', 0, "Enable any compiled in experimental features",0, NULL);
+	options.Add("backend",            'B', 1, "Either xlib or cairo (cairo very experimental).",0, NULL);
 	options.Add("impose-only",        'I', 1, "Run only as a file imposer, not full Laidout",0, NULL);
 	options.Add("list-shortcuts",     'S', 0, "Print out a list of current keyboard bindings, then exit",0,NULL);
 	options.Add("helphtml",           'H', 0, "Output an html fragment of key shortcuts.",   0, NULL);
@@ -1787,14 +1788,22 @@ int main(int argc,char **argv)
 		cout <<LaidoutVersion()<<endl;
 		exit(0);
 	}
+	const char *backend=NULL;
+	o=options.find("backend",0);
+	if (o && o->parsed_present) {
+		if (!strcasecmp(o->arg(),"xlib")) backend="xlib";
+		else if (!strcasecmp(o->arg(),"cairo")) backend="cairo";
+	}
 
 				
 	 //redefine Laxkit's default preview maker
 	generate_preview_image=laidout_preview_maker;
 
 	laidout=new LaidoutApp();
+	if (backend) laidout->Backend(backend);
 	o=options.find("experimental",0);
 	if (o && o->parsed_present) laidout->experimental=1;
+
 
 	DBG cerr <<" *** Warning! Undo is VERY VERY experimental, and not uniformly implemented!! use at your own risk!!!"<<endl;
 	//if (!laidout->experimental) EnableUndo(false);
