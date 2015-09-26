@@ -137,7 +137,6 @@ class Page : public ObjectContainer
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 	virtual LaxInterfaces::ImageData *Thumbnail();
-	virtual LaxInterfaces::ImageData *Thumbnail2();
 	virtual int InstallPageStyle(PageStyle *pstyle, bool shift_within_margins);
 
 	virtual int n() { return layers.n(); }

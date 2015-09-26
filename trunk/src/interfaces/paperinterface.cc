@@ -441,7 +441,8 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 
 	int w=1;
 	if (data==curbox || curboxes.findindex(data)>=0) w=2;
-	dp->LineAttributes(w,LineSolid,CapButt,JoinMiter);
+	dp->LineAttributes(-1,LineSolid,CapButt,JoinMiter);
+	dp->LineWidthScreen(w);
 	//dp->PushAndNewTransform(data->m());
 
 	PaperBox *box=data->box;
@@ -463,10 +464,11 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 			dp->ShiftScreen(shadow,shadow);
 			dp->drawlines(p,4,1,1);
 			dp->PopAxes();
+			dp->LineWidthScreen(w);
 		}
 		
 		 //draw white fill or plain outline
-		if (fill||shadow) {
+		if (fill || shadow) {
 			dp->NewFG(data->red>>8,data->green>>8,data->blue>>8);
 			dp->NewBG(~0);
 			dp->drawlines(p,4,1,2);
@@ -484,14 +486,17 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 			p1=p1+.1*v;
 			p2=p2-.1*v;
 			dp->DrawScreen();
+			dp->LineWidthScreen(w);
 			dp->drawline(p1,p2);
 			dp->drawline(p2,p2-v2*.2-v*.2);
 			dp->drawline(p2,p2+v2*.2-v*.2);
 			dp->DrawReal();
+			dp->LineWidthScreen(w);
 		}
 
 	}
 	dp->DrawScreen();
+	dp->LineWidthScreen(w);
 	if ((what&ArtBox) && (box->which&ArtBox)) {
 		p[0]=dp->realtoscreen(box->art.minx,box->art.miny);
 		p[1]=dp->realtoscreen(box->art.minx,box->art.maxy);
@@ -564,7 +569,8 @@ int PaperInterface::Refresh()
 		if (maybebox) {
 			box=maybebox->box;
 			dp->PushAndNewTransform(maybebox->m());
-			dp->LineAttributes(0,LineDoubleDash,CapButt,JoinMiter);
+			dp->LineAttributes(-1,LineDoubleDash,CapButt,JoinMiter);
+			dp->LineWidthScreen(1);
 			p[0]=flatpoint(box->media.minx,box->media.miny);
 			p[1]=flatpoint(box->media.minx,box->media.maxy);
 			p[2]=flatpoint(box->media.maxx,box->media.maxy);

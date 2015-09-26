@@ -459,8 +459,8 @@ void LImagePatchInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFil
 LColorPatchInterface::LColorPatchInterface(int nid,Laxkit::Displayer *ndp)
 	: ColorPatchInterface(nid,ndp)
 {
-	drawrendermode=1;
-	rendermode=3;
+	drawrendermode=2;
+	rendermode=2;
 }
 
 anInterface *LColorPatchInterface::duplicate(anInterface *dup)

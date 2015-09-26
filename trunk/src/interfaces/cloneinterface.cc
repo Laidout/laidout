@@ -571,7 +571,7 @@ Group *Tiling::Render(Group *parent_space,
 		 //set up outlines 
 		double w=norm( basecells.e[0]->celloutline->ReferencePoint(LAX_TOP_RIGHT,true)-
 				basecells.e[0]->celloutline->ReferencePoint(LAX_BOTTOM_LEFT,true))/100;
-		LineStyle *ls=new LineStyle(65535,0,0,65535, w, LAXCAP_Round,LAXJOIN_Round,0,LAXOP_Source);
+		LineStyle *ls=new LineStyle(65535,0,0,65535, w, LAXCAP_Round,LAXJOIN_Round,0,LAXOP_Over);
 		trace=new Group;
 		trace->Id("base_cells");
 		PathsData *d;

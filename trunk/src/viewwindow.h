@@ -135,7 +135,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 
 	virtual const char *Pageviewlabel();
 	virtual void Center(int w=0);
-	virtual int NewData(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectContext **oc);
+	virtual int NewData(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectContext **oc, bool clear_selection=true);
 	virtual int SelectPage(int i);
 	virtual int SelectSpread(int i);
 	virtual int NextSpread();

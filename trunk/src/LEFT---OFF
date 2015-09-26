@@ -64,6 +64,8 @@ switch to None document, and units change to unreasonable
 
 ------------ other bugs:
 
+"edit imposition", then escape.. removes window, but not the frame!
+
 DONE??? need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)
 
 pop up a menu, close the originating window. The popup is still up!! "transientfor" problems?
@@ -95,8 +97,6 @@ svg coord numpoints==0???? numpoints doesn't really serve any purpose other than
 
 splitwindow cursors existing in subwindows
 
-copy paste not working again
-
 object tool shift-control for rotate does not allow positioning on drag bars
 
 'g' for color sample changes cursor to cancel now, and changes on border cross!!!
@@ -111,8 +111,6 @@ object deleting funky, import svg images, select one, hit delete, doesn't delete
 place 3 images, object select, must press delete twice...!?!?!?!
 
 should not be able to group select an object and another object nested within
-
-transparency in paths does not work on screen (will fix with update to cairo)
 
 file previewer not updating preview when using arrow keys
 
@@ -163,6 +161,10 @@ test:
 make sure undo is experimental only
 
 
+color slider popup should pop near the mouse and have a "Done" button
+
+make drag and drop selections work
+
 Do separate package for icons, to aid those who can't get inkscape to make the icons in both lax and laidout
 
 need more mechanism so that popup dialogs stay on top of window they are "children" of
@@ -178,6 +180,7 @@ engraving tool: Engraving
   bug: make a LineEdit overlay for number input, then Next bdown is ignored!! l, m, or right all ignored: viewportwindow line 947
   bug: object rotate works fine. but then enter and leave engraver tool. Now object rotate is messed up
   bug: 'z' zaps mesh, but does not change cache border or point mapping
+  blockout doesn't work
 
   multiobject:
     object lines in group list needs eye per object, affect actual object visibility
@@ -215,10 +218,9 @@ engraving tool: Engraving
   tracing:
     seems to be grabbing spurious tracing values outside of the tracing object, and at borders of trace object
     tracing object, lines abort just inside the image, maybe should just go one off the edge?
-	make trace object image opacity work
+    trace object transparency slider should actually slide transparency
 	trace object needs flip, at least h and v, not really needing the whole affine thing
     need option to export trace object in same position as the traced lines, so it can be further processed elsewhere
-    trace object transparency slider should actually slide transparency
     custom sample of channels
     sharp edge detection in tracing
 	snapshot should be for all in selection
@@ -242,6 +244,7 @@ engraving tool: Engraving
   freehand/path:
     freehand not being interpreted correctly: non-equal smooth is adding erroneous extra mesh column
     drawing custom freehand (with width) lines within the mesh area
+
   mesh path:
     'a' not selecting all in line
 
@@ -252,31 +255,32 @@ engraving tool: Engraving
 
   direction:
     need accuracy modifiers for dragging controls around
-    line profile start point at 0 producing bubbles
 	only when at endpoints, lineprofile not producing smooth results at random spots inside
     should be able to adjust number of sample points to match up well enough for points in lineprofile 
     random end point sliders should inc or dec according to which side mouse clicked down on compared to absolute end point
     spiral spacing computation bad when spokes are nearer radial
     save the opensimplex line displacement from line/point randomness, to be used to also adjust a spacing map to preserve value when viewed at a distance
+	be able to trigger a reline on load in
+	be able to set a 3-d parameter for noise? useful for animated noise
 	option for "adjust for spacing", making weight reflect the spacing, either for constant width or trace
-    line profiles
+    line profiles: (done) linear, circular, radial, spiral?
+	be able to edit and create new profiles
 	grow
     line generation: 
       grow: implement custom line merge and break to preserve spacing across mesh contraction
       grow: edge abutment when generating
       sample point generation should be based on lines per mesh square, not total mesh field
       finish implementing spacing section -> spacing map
+    DONE line profile start point at 0 producing bubbles
     DONE button to remap lines, so not done automatically? shift press button to always remap
 
+  need convert to path object ability
   fully implement resolution adjustments for auto lines -> needs resolution tool
   single group (not group list) view is too old, doesn't do link circle, and can only select from current object groups.. remove it entirely?
-  shortcut to unlink all, or toggle all linked, toggle all in group linked
   export doesn't work for: nothing for scribus, eps, ps
   edit brush ramp as symmetric ramp 
   resolution tool: click to add between points within brush, control to destroy points in brush
   need merge group
-  turbulence needs optional direction constraints, size of turbulent cell, and per line turbulence
-    would be better if turbulence could be a field effect, not independently on each sample point
 
   screen view, need option for Fast|Accurate
   no writability check on exportsnapshot
@@ -302,6 +306,8 @@ engraving tool: Engraving
   must implement mode based shortcuts in Laxkit. currently all mesh shortcuts are active
   stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
 
+  DONE (done) size of turbulent cell, and (done) per line turbulence
+  DONE shortcut to unlink all, or toggle all linked, toggle all in group linked
   DONE space duplicate produces unnamed new groups as well as old group copies
   DONE need shortcuts for next/prev group
   DONE direction map is not showing actual direction
@@ -387,6 +393,7 @@ PathInterface:
 
 
 save as should change save/import/export/current directory to that directory
+save incremented?
 
 autorecover.. autosave every X minutes -> need to decide on autosave location and how many to build up, how to remove old
 
@@ -541,14 +548,17 @@ FileDialog2:
 
 file button:
    Save
+   Save incremented
    Save As...
    Save a copy...
    Save as template... <- need to enter template name and file?
+   Save as default template
    Quick save backup
    ----
    Commit (git/svn)  
-   Commit...  <- choose or set up repository
+   Commit settings...  <- choose or set up repository
    Revert...  <- show log, select old 
+
 icons for the following, perhaps be right click on the save button? or modifiers on buttons
   save as
   save a copy
@@ -582,8 +592,8 @@ guides:
   snap objects edges to various things
 
 General Laxkit Interfaces needs:
-  stack of available interfaces
   DrawData for arbitrary rendering of any known objects to any Displayer object
+  DONE stack of available interfaces -> interfacemanager.cc
   DONE iconmanager
 
 align tool:
@@ -671,6 +681,7 @@ paperinterface:
 
 finish implement cairo backend
   decide on image importers, cairo can only do 8 bit png
+  gradient outline not working
 
 should take precautions so that dialogs do not get buried, would need to respond to circulate events
 
@@ -1076,6 +1087,9 @@ signature editor  Signature editor Signature Editor
   be able to specify single sided.. allows bound accordian foldings?
   implement creep
 
+  DONE stacks should display below squared bounding box of pages? currently rotate canvas, the text is messed up 
+  		-> have text rotate with it, more clearly shows where "bottom" is
+
 Make extension to be able to use Inkscape live path effects (lpe)!! The run on svg snippets, so should be somewhat
   straightforward to call externally.. BUT have optional tool overlay. Figure out how to reverse implement to also
   run within Inkscape.
@@ -1480,4 +1494,8 @@ for 1st bugfix after 0.095:
 DONE roman numeral capitals negative number has mystery box
 DONE? (seems to work now) roman numeral menu select range editor not changing to roman!!
 DONE make pdf default output format for sending to lp
+DONE copy paste not working again
+DONE transparency in paths does not work on screen (will fix with update to cairo)
+
+
 

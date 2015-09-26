@@ -258,7 +258,10 @@ void ObjectTreeWindow::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContex
 
 LaxFiles::Attribute *ObjectTreeWindow::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
 { 
-	if (tree) return tree->dump_out_atts(att,what,savecontext); 
+	if (tree) {
+		att=tree->dump_out_atts(att,what,savecontext); 
+		makestr(att->name, whattype());
+	}
 	return anXWindow::dump_out_atts(att,what,savecontext);
 }
 

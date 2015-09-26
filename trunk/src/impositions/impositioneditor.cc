@@ -31,6 +31,8 @@
 #include "netdialog.h"
 #include "singleseditor.h"
 
+// DBG !!!!!
+#include <lax/displayer-cairo.h>
 
 using namespace Laxkit;
 using namespace LaxFiles;
@@ -131,6 +133,9 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 	win_colors->bg=rgbcolor(200,200,200);
 	viewport->dp->NewBG(200,200,200);
 
+	DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(viewport->dp);
+	DBG if (ddp->GetCairo()) cerr <<" ImpositionEditor initialized, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+
 	needtodraw=1;
 	tool=interface;
 
@@ -150,6 +155,7 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 
 
 	AddTool(tool,1,1); // local, and select it
+	DBG if (ddp->GetCairo()) cerr <<" ImpositionEditor initialized, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 	
 
 	if (imposition && dynamic_cast<NetImposition*>(imposition)) {
@@ -266,6 +272,8 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 		DBG cerr <<"Impose only from "<<in<<" to "<<out<<endl;
 	}
 
+	DBG if (ddp->GetCairo()) cerr <<" ImpositionEditor initialized, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+
 }
 
 ImpositionEditor::~ImpositionEditor()
@@ -364,6 +372,9 @@ int ImpositionEditor::init()
 	if (whichactive!=WHICH_Signature) {
 		ChangeImposition(firstimp);
 	}
+
+	DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(viewport->dp);
+	DBG if (ddp->GetCairo()) cerr <<" ImpositionEditor initialized, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 	return 0;
 }
