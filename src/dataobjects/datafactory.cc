@@ -23,6 +23,7 @@
 #include "limagepatch.h"
 #include "lsomedataref.h"
 #include "lengraverfilldata.h"
+#include "lcaptiondata.h"
 
 #include <lax/interfaces/interfacemanager.h>
 #include <lax/lists.cc>
@@ -120,6 +121,14 @@ Laxkit::anObject *createLEngraverFillData(Laxkit::anObject *refobj)
 }
 
 
+//---------------------------- LCaptionData --------------------------------
+
+//! For somedatafactory.
+Laxkit::anObject *createLCaptionData(Laxkit::anObject *refobj)
+{
+	return new LCaptionData();
+}
+
 
 //---------------------------- SomeDataFactory Setup --------------------------
 
@@ -138,6 +147,7 @@ void InitializeDataFactory()
 	lobjectfactory->DefineNewObject(LAX_COLORPATCHDATA,  "ColorPatchData",  createLColorPatchData,  NULL);
 	lobjectfactory->DefineNewObject(LAX_SOMEDATAREF,     "SomeDataRef",     createLSomeDataRef,     NULL);
 	lobjectfactory->DefineNewObject(LAX_ENGRAVERFILLDATA,"EngraverFillData",createLEngraverFillData,NULL);
+	lobjectfactory->DefineNewObject(LAX_CAPTIONDATA,     "CaptionData",     createLCaptionData,     NULL);
 
 	DBG lobjectfactory->dump_out(stderr,0);
 }

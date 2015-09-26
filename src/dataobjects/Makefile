@@ -28,6 +28,7 @@ objs= \
 	mysterydata.o \
 	lsomedataref.o \
 	lengraverfilldata.o \
+	lcaptiondata.o \
 	printermarks.o 
 
 
