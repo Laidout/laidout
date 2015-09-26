@@ -27,6 +27,9 @@
 #include <lax/filedialog.h>
 #include <lax/units.h>
 
+// DBG !!!!!
+#include <lax/displayer-cairo.h>
+
 #include <lax/lists.cc>
 
 using namespace Laxkit;
@@ -617,6 +620,9 @@ void SignatureInterface::remapHandles(int which)
 	if (!dp) return;
 	if (controls.n==0) createHandles();
 
+	DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(dp);
+	DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf remapHandles, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+
 	ActionArea *area;
 	flatpoint *p;
 	int n;
@@ -842,6 +848,8 @@ void SignatureInterface::remapHandles(int which)
 		//area->Points(NULL,4,1); //doesn't actually need points, it is checked for very manually
 		area->hidden=!(hasfinal && foldlevel==signature->folds.n);
 	} //page area items
+
+	DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf remapHandles end, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 }
 
 
@@ -898,6 +906,10 @@ int SignatureInterface::Refresh()
 
 	if (firsttime) { remapHandles(); firsttime=0; }
 
+
+	DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(dp);
+	DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+
 	double patternheight=siginstance->PatternHeight();
 	double patternwidth =siginstance->PatternWidth();
 
@@ -907,7 +919,8 @@ int SignatureInterface::Refresh()
 	 //----------------draw whole outline
 	dp->NewFG(1.,0.,1.); //purple for paper outline, like custom papergroup border color
 	GetDimensions(w,h);
-	dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+	dp->LineAttributes(-1,LineSolid, CapButt, JoinMiter);
+	dp->LineWidthScreen(1);
 	dp->drawline(0,0, w,0);
 	dp->drawline(w,0, w,h);
 	dp->drawline(w,h, 0,h);
@@ -920,6 +933,8 @@ int SignatureInterface::Refresh()
 	if (siginstance->partition->insettop)    dp->drawline(0,h-siginstance->partition->insettop, w,h-siginstance->partition->insettop);
 	if (siginstance->partition->insetbottom) dp->drawline(0,siginstance->partition->insetbottom, w,siginstance->partition->insetbottom);
 
+
+	DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh draw pattern, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 	 //------------------draw fold pattern in each tile
 	double ew=patternwidth/(signature->numvfolds+1);
@@ -965,7 +980,8 @@ int SignatureInterface::Refresh()
 			}
 
 			 //first draw filled face, grayed if no current faces
-			dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+			dp->LineAttributes(-1,LineSolid, CapButt, JoinMiter);
+			dp->LineWidthScreen(1);
 			pts[0]=flatpoint(x+ucc*ew,y+urr*eh); //lower left
 			pts[1]=pts[0]+flatpoint(ew,0);      //lower right
 			pts[2]=pts[0]+flatpoint(ew,eh);    //upper right
@@ -1038,6 +1054,8 @@ int SignatureInterface::Refresh()
 					 //show thumbnails
 					if (foldlevel==0) {
 						if (showthumbs && document && i-1>=0 && i-1<document->pages.n) {
+							DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh show thumbs, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+
 							 //draw page i in box defined by pts
 							thumb=document->pages.e[i-1]->Thumbnail();
 							if (thumb) {
@@ -1087,25 +1105,34 @@ int SignatureInterface::Refresh()
 								dp->PopAxes();
 
 							}
+							DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh show thumbs end, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 						}
 					}
 
-					dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+					dp->LineAttributes(-1,LineSolid, CapButt, JoinMiter);
+					dp->LineWidthScreen(1);
 
 					pts[0]=flatpoint(x+(ucc+.5)*ew,y+(urr+.25+.5*(yflip?1:0))*eh);
 					pts[1]=flatpoint(0,yflip?-1:1)*eh/4; //a vector, not a point
 					dp->drawarrow(pts[0],pts[1], 0,eh/2,1);
 					fp=pts[0]-pts[1]/2;
 
+					fp=dp->realtoscreen(fp);
+					dp->DrawScreen();
 					dp->textout(fp.x,fp.y, str,-1, LAX_CENTER);
+					dp->DrawReal();
 
 				} //if has final
 			} //if location rr,cc hasface
 
+
+			DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh draw final decs, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+
 			 //draw markings for final page binding edge, up, trim, margin
 			 //draws only when totally folded
 			if (hasfinal && foldlevel==signature->folds.n && rr==finalr && cc==finalc) {
-				dp->LineAttributes(2,LineSolid, CapButt, JoinMiter);
+				dp->LineAttributes(-1,LineSolid, CapButt, JoinMiter);
+				dp->LineWidthScreen(2);
 
 				xx=x+ucc*ew;
 				yy=y+urr*eh;
@@ -1118,7 +1145,8 @@ int SignatureInterface::Refresh()
 				dp->drawline(xx+ew-signature->marginright,yy, xx+ew-signature->marginright,yy+eh);			
 
 				 //draw red trim edge
-				dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+				dp->LineAttributes(-1,LineSolid, CapButt, JoinMiter);
+				dp->LineWidthScreen(1);
 				dp->NewFG(color_trim);
 				if (signature->trimbottom>0) dp->drawline(xx,yy+signature->trimbottom, xx+ew,yy+signature->trimbottom);			
 				if (signature->trimtop>0)    dp->drawline(xx,yy+eh-signature->trimtop, xx+ew,yy+eh-signature->trimtop);			
@@ -1126,7 +1154,8 @@ int SignatureInterface::Refresh()
 				if (signature->trimright>0)  dp->drawline(xx+ew-signature->trimright,yy, xx+ew-signature->trimright,yy+eh);			
 
 				 //draw green binding edge
-				dp->LineAttributes((overoverlay==SP_Binding?4:2),LineSolid, CapButt, JoinMiter);
+				dp->LineAttributes(-1,LineSolid, CapButt, JoinMiter);
+				dp->LineWidthScreen((overoverlay==SP_Binding?4:2));
 				dp->NewFG(color_binding);
 
 				 //todo: draw a solid line, but a dashed line toward the inner part of the page...??
@@ -1143,7 +1172,8 @@ int SignatureInterface::Refresh()
 
 		 //draw fold pattern outline
 		dp->NewFG(1.,0.,0.);
-		dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+		dp->LineAttributes(-1,LineSolid, CapButt, JoinMiter);
+		dp->LineWidthScreen(1);
 		dp->drawline(x,    y, x+w,  y);
 		dp->drawline(x+w,  y, x+w,y+h);
 		dp->drawline(x+w,y+h, x  ,y+h);
@@ -1151,7 +1181,8 @@ int SignatureInterface::Refresh()
 
 		 //draw all fold lines
 		dp->NewFG(.5,.5,.5);
-		dp->LineAttributes(1,LineOnOffDash, CapButt, JoinMiter);
+		dp->LineAttributes(-1,LineOnOffDash, CapButt, JoinMiter);
+		dp->LineWidthScreen(1);
 		for (int c=0; c<signature->numvfolds; c++) { //verticals
 			dp->drawline(x+(c+1)*ew,y, x+(c+1)*ew,y+h);
 		}
@@ -1165,9 +1196,11 @@ int SignatureInterface::Refresh()
 	  x+=patternwidth+siginstance->partition->tilegapx;
 	} //ty
 
+
 	 //draw in progress folding
 	int device=0;
-	DBG cerr <<"----------------any "<<buttondown.any(0,LEFTBUTTON,&device)<<endl;
+	DBG cerr <<"----------------any device down"<<buttondown.any(0,LEFTBUTTON,&device)<<endl;
+
 	if (buttondown.any(0,LEFTBUTTON,&device) && folddirection && folddirection!='x') {
 		 //this will draw a light gray tilting region across foldindex, in folddirection, with foldunder.
 		 //it will correspond to foldr1,foldr2, and foldc1,foldc2.
@@ -1183,7 +1216,8 @@ int SignatureInterface::Refresh()
 		else if (folddirection=='l') dir.x=-1;
 		else if (folddirection=='r') dir.x=1;
 
-		dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+		dp->LineAttributes(-1,LineSolid, CapButt, JoinMiter);
+		dp->LineWidthScreen(1);
 		//dp->drawarrow(p,dir,0,25,0);
 
 
@@ -1202,12 +1236,14 @@ int SignatureInterface::Refresh()
 
 		if (foldunder) {
 			dp->NewFG(.2,.2,.2);
-			dp->LineAttributes(2, LineOnOffDash, CapButt, JoinMiter);
+			dp->LineAttributes(-1, LineOnOffDash, CapButt, JoinMiter);
+			dp->LineWidthScreen(2);
 			if (folddirection=='l' || folddirection=='r') axis.y=-axis.y;
 			else axis.x=-axis.x;
 		} else {
 			dp->NewFG(.9,.9,.9);
-			dp->LineAttributes(1, LineSolid, CapButt, JoinMiter);
+			dp->LineAttributes(-1, LineSolid, CapButt, JoinMiter);
+			dp->LineWidthScreen(1);
 		}
 
 		x=siginstance->partition->insetleft;
@@ -1236,11 +1272,15 @@ int SignatureInterface::Refresh()
 		}
 	}
 
+
+	DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh fold indicator, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+
 	 //draw fold indicator overlays on left side of screen
-	dp->LineAttributes(1, LineSolid, CapButt, JoinMiter);
+	dp->LineAttributes(-1, LineSolid, CapButt, JoinMiter);
 
 	DrawThingTypes thing;
 	dp->DrawScreen();
+	dp->LineWidthScreen(1);
 	for (int c=signature->folds.n-1; c>=-1; c--) {
 		if (c==-1) thing=THING_Circle;
 		else if (c==signature->folds.n-1 && hasfinal) thing=THING_Square;
@@ -1257,6 +1297,7 @@ int SignatureInterface::Refresh()
 	}
 	dp->DrawReal();
 
+
 	 //write out final page dimensions
 	dp->NewFG(0.,0.,0.);
 	dp->DrawScreen();
@@ -1269,8 +1310,13 @@ int SignatureInterface::Refresh()
 	dp->DrawReal();
 
 
+	DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh draw stacks, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+
 	 //-----------------draw stacks
 	drawStacks();
+
+
+	DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh draw handles, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 	 //-----------------draw control handles
 	ActionArea *area;
@@ -1280,6 +1326,7 @@ int SignatureInterface::Refresh()
 	double totalheight, totalwidth;
 	GetDimensions(totalwidth,totalheight);
 	flatpoint dv;
+	dp->LineAttributes(-1, LineSolid, CapButt, JoinMiter);
 
 	for (int c=controls.n-1; c>=0; c--) {
 		area=controls.e[c];
@@ -1289,12 +1336,15 @@ int SignatureInterface::Refresh()
 			if (!area->hidden) {
 				dp->NewFG(color_inset);
 				dv=flatpoint((area->minx+area->maxx)/2,(area->miny+area->maxy)/2);
+				dv=dp->realtoscreen(dv);
+				dp->DrawScreen();
 				dp->textout(dv.x,dv.y,area->text,-1,LAX_CENTER);
+				dp->DrawReal();
 			}
 
 		} else if (area->action==SP_Tile_Gap_X) {
 			if (overoverlay==SP_Tile_Gap_X) {
-				dp->LineAttributes(5, LineSolid, CapButt, JoinMiter);
+				dp->LineWidthScreen(5);
 				for (int c2=0; c2<siginstance->partition->tilex-1; c2++) {
 					d=pp->insetleft+(c2+1)*(pp->tilegapx+s->PatternWidth()) - pp->tilegapx/2;
 					dp->drawline(d,0, d,totalheight);
@@ -1303,7 +1353,7 @@ int SignatureInterface::Refresh()
 
 		} else if (area->action==SP_Tile_Gap_Y) {
 			if (overoverlay==SP_Tile_Gap_Y) {
-				dp->LineAttributes(5, LineSolid, CapButt, JoinMiter);
+				dp->LineWidthScreen(5);
 				for (int c2=0; c2<siginstance->partition->tiley-1; c2++) {
 					d=pp->insetbottom+(c2+1)*(pp->tilegapy+s->PatternHeight()) - pp->tilegapy/2;
 					dp->drawline(0,d, totalwidth,d);
@@ -1318,9 +1368,11 @@ int SignatureInterface::Refresh()
 			else dp->NewFG(color_h);
 
 			dp->DrawScreen();
+			dp->LineWidthScreen(1);
 			dp->drawthing(lasthover.x-INDICATOR_SIZE,lasthover.y, INDICATOR_SIZE/2,INDICATOR_SIZE/2,0,THING_Triangle_Left);
 			dp->drawthing(lasthover.x+INDICATOR_SIZE,lasthover.y, INDICATOR_SIZE/2,INDICATOR_SIZE/2,0,THING_Triangle_Right);
 			dp->DrawReal();
+			dp->LineWidthScreen(1);
 
 		} else if (overoverlay==area->action &&
 				(area->action==SP_H_Folds_left || area->action==SP_H_Folds_right ||
@@ -1330,13 +1382,15 @@ int SignatureInterface::Refresh()
 			else dp->NewFG(color_h);
 
 			dp->DrawScreen();
+			dp->LineWidthScreen(1);
 			dp->drawthing(lasthover.x,lasthover.y-INDICATOR_SIZE, INDICATOR_SIZE/2,INDICATOR_SIZE/2,0,THING_Triangle_Up);
 			dp->drawthing(lasthover.x,lasthover.y+INDICATOR_SIZE, INDICATOR_SIZE/2,INDICATOR_SIZE/2,0,THING_Triangle_Down);
 			dp->DrawReal();
+			dp->LineWidthScreen(1);
 
 		} else if (area->outline && area->visible) {
 			 //catch all for remaining areas
-			dp->LineAttributes(1, LineSolid, CapButt, JoinMiter);
+			dp->LineWidthScreen(1);
 			dv.x=dv.y=0;
 			if (area->category==2) { //page specific
 				dv.x=pp->insetleft  +activetilex*(s->PatternWidth() +pp->tilegapx) + finalc*s->PageWidth(0);
@@ -1357,6 +1411,8 @@ int SignatureInterface::Refresh()
 				-1,LAX_CENTER);
 		dp->DrawReal();
 	}
+
+	DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh end, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 	return 0;
 }
@@ -1392,6 +1448,7 @@ void SignatureInterface::drawStacks()
 	double totalw=blockw*n + blockh*(n-1)/2;
 	double x,y;
 
+	flatpoint fp;
 	flatpoint pts[8];
 	pts[0]=flatpoint(a,-blockh);
 	pts[1]=flatpoint(0,-blockh+a);
@@ -1433,13 +1490,13 @@ void SignatureInterface::drawStacks()
 			}
 			if (i==siginstance) {
 				 //set attributes to draw thick line around current
-				dp->LineAttributes(2,LineSolid,CapButt,JoinMiter);
+				dp->LineWidthScreen(2);
 				dp->NewFG(0.,.5,0.);
 			}
 			dp->drawlines(pts,8, i->next_insert && i!=siginstance?0:1, 0);
 			dp->ShiftReal(-x,-y);
 
-			dp->LineAttributes(1,LineSolid,CapButt,JoinMiter);
+			dp->LineWidthScreen(1);
 			if (onoverlay_i==si && onoverlay_ii==ii && sigimp->TotalNumStacks()>1) {
 				 //draw delete thing
 				if (overoverlay==SP_Delete_Stack) {
@@ -1448,6 +1505,7 @@ void SignatureInterface::drawStacks()
 					dp->NewFG(color_text);
 					dp->drawline(x+blockw-textheight*.75,y-a-textheight*.25, x+blockw-a-textheight*.25,y-a-textheight*.75);
 					dp->drawline(x+blockw-textheight*.75,y-a-textheight*.75, x+blockw-a-textheight*.25,y-a-textheight*.25);
+
 				} else if (overoverlay==SP_On_Stack) {
 					dp->NewFG(color_text);
 					dp->drawline(x+blockw-textheight*.75,y-a-textheight*.25, x+blockw-a-textheight*.25,y-a-textheight*.75);
@@ -1468,10 +1526,17 @@ void SignatureInterface::drawStacks()
 
 			 //n sheets/m pages
 			dp->NewFG(color_text);
+			dp->DrawScreen();
+			double angle=-dp->XAxis().angle();
+
 			sprintf(scratch,"%c%d sheet",(i->autoaddsheets?'*':' '), i->sheetspersignature);
-			dp->textout(x+blockh,y-textheight/2, scratch,-1, LAX_LEFT|LAX_TOP);
+			fp=dp->realtoscreen(x+blockh,y-textheight/2);
+			dp->textout(angle, fp.x,fp.y, scratch,-1, LAX_LEFT|LAX_TOP);
+
 			sprintf(scratch,"%d pgs",i->PagesPerSignature(0,1));
-			dp->textout(x+blockh,y-textheight*1.5, scratch,-1, LAX_LEFT|LAX_TOP);
+			fp=dp->realtoscreen(x+blockh,y-textheight*1.5);
+			dp->textout(angle, fp.x,fp.y, scratch,-1, LAX_LEFT|LAX_TOP);
+			dp->DrawReal();
 
 			ii++;
 			y-=blockh;
@@ -1499,6 +1564,7 @@ void SignatureInterface::drawHandle(ActionArea *area, flatpoint offset)
 	dp->PushAxes();
 
 	if (area->real==1) dp->DrawReal(); else dp->DrawScreen();
+	dp->LineWidthScreen(1);
 
 	if (area->outline) {
 		flatpoint shift=offset+area->offset;
@@ -1536,6 +1602,7 @@ void SignatureInterface::drawHandle(ActionArea *area, flatpoint offset)
 
 	dp->PopAxes();
 	dp->DrawReal();
+	dp->LineWidthScreen(1);
 
 }
 

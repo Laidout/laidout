@@ -19,7 +19,7 @@
 #include "interfaces/pagerangeinterface.h"
 #include "interfaces/objectindicator.h"
 
-//#include <lax/interfaces/captioninterface.h>
+#include <lax/interfaces/captioninterface.h>
 #include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
 #include <lax/interfaces/pathinterface.h>
@@ -88,9 +88,9 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	if (laidout->experimental) {
 		// *************** testing:
 
-		//i=new CaptionInterface(id++,NULL);
-		//existingpool->push(i);
-		//i->dec_count();
+		i=new CaptionInterface(id++,NULL);
+		existingpool->push(i);
+		i->dec_count();
 		
 		 //------Anchor
 		i=new AnchorInterface(NULL,id++,NULL);

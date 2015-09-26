@@ -39,6 +39,11 @@
 #include "language.h"
 //#include "dataobjects/datafactory.h"
 
+
+// DBG !!!!!
+#include <lax/displayer-cairo.h>
+
+
 using namespace Laxkit;
 using namespace LaxInterfaces;
 
@@ -54,16 +59,20 @@ namespace Laidout {
  * *** uh, this is unnecessary? the other one does this already....
  * should it not??
  */
-void DrawData(Displayer *dp,double *m,SomeData *data,anObject *a1,anObject *a2,unsigned int flags)
-{
-	dp->PushAndNewTransform(m);
-	DrawData(dp,data,a1,a2,flags);
-	dp->PopAxes();
-}
+//void DrawData(Displayer *dp,double *m,SomeData *data,anObject *a1,anObject *a2,unsigned int flags)
+//{
+//	dp->PushAndNewTransform(m);
+//	DrawData(dp,data,a1,a2,flags);
+//	dp->PopAxes();
+//}
 
 //! Just like DrawData(), but don't push data matrix.
 void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned int flags)
 {
+	DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(dp);
+    DBG if (ddp && ddp->GetCairo()) cerr <<" DrawDataStraight for "<<data->Id()<<", cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+
+
 	if (flags&DRAW_AXES) dp->drawaxes();
 	if (flags&DRAW_BOX && data->validbounds()) {
 		dp->NewFG(128,128,128);
@@ -143,7 +152,8 @@ void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,uns
 		 	 //draw outline if any
 			if (mdata->numpoints) {
 				dp->NewFG(0,0,0);
-				dp->LineAttributes(1,LineSolid,CapButt,JoinMiter);
+				dp->LineAttributes(-1,LineSolid,CapButt,JoinMiter);
+				dp->LineWidthScreen(1);
 				dp->drawbez(mdata->outline,mdata->numpoints/3,
 							mdata->outline[0]==mdata->outline[mdata->numpoints-1],0);
 			}
@@ -159,12 +169,13 @@ void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,uns
 
 		 //draw box around it
 		dp->NewFG(0,0,255);
-		dp->LineAttributes(2,LineSolid,CapButt,JoinMiter);
+		dp->LineAttributes(-1,LineSolid,CapButt,JoinMiter);
 		flatpoint ul=dp->realtoscreen(flatpoint(data->minx,data->miny)), 
 				  ur=dp->realtoscreen(flatpoint(data->maxx,data->miny)), 
 				  ll=dp->realtoscreen(flatpoint(data->minx,data->maxy)), 
 				  lr=dp->realtoscreen(flatpoint(data->maxx,data->maxy));
 		dp->DrawScreen();
+		dp->LineWidthScreen(2);
 		dp->drawline(ul,ur);
 		dp->drawline(ur,lr);
 		dp->drawline(lr,ll);

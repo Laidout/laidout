@@ -916,7 +916,8 @@ int GroupInterface::Refresh()
 		 //draw heavy outline of object to reparent to
 		if (reparent_temp.obj) {
 			dp->NewFG(0.,.7,0.);
-			dp->LineAttributes(3,LineSolid,LAXCAP_Butt,LAXJOIN_Miter);
+			dp->LineAttributes(-1,LineSolid,LAXCAP_Butt,LAXJOIN_Miter);
+			dp->LineWidthScreen(3);
 			double m[6];
 			viewport->transformToContext(m,&reparent_temp,0,1);
 			dp->moveto(dp->realtoscreen(transform_point(m,reparent_temp.obj->minx,reparent_temp.obj->miny)));
@@ -957,7 +958,8 @@ void GroupInterface::DrawReparentArrows()
 	p=dp->realtoscreen(p);
 
 	dp->NewFG(0.,.7,0.);
-	dp->LineAttributes(2,LineSolid,LAXCAP_Butt,LAXJOIN_Miter);
+	dp->LineAttributes(-2,LineSolid,LAXCAP_Butt,LAXJOIN_Miter);
+	dp->LineWidthScreen(2);
 	for (int c=1; c<selection->n(); c++) {
 		obj=selection->e(c)->obj;
 		viewport->transformToContext(m,selection->e(c),0,1);

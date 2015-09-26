@@ -222,7 +222,6 @@ int PageMarkerInterface::Refresh()
 
 	if (shapes.n==0 || colors.n==0) return 0;
 
-	dp->LineAttributes(1,LineSolid,LAXCAP_Round,LAXJOIN_Round);
 	double th=dp->textheight();
 	double pad=th/3;
 
@@ -234,6 +233,7 @@ int PageMarkerInterface::Refresh()
 	 //else draw numbers on pages
 	if (shownumbers) {
 		dp->DrawScreen();
+		dp->LineAttributes(1,LineSolid,LAXCAP_Round,LAXJOIN_Round);
 
 		flatpoint p;
 		DrawThingTypes t=THING_None;
@@ -295,6 +295,7 @@ int PageMarkerInterface::Refresh()
 		double dx,dy;
 
 		dp->DrawScreen();
+		dp->LineAttributes(1,LineSolid,LAXCAP_Round,LAXJOIN_Round);
 
 		 //fill background
 		dp->NewFG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg,.3));

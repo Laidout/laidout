@@ -29,8 +29,7 @@
 #include <lax/anxapp.h>
 #include <lax/version.h>
 #include <lax/fileutils.h>
-#include <lax/laximlib.h>
-#include <lax/laximages-imlib.h>
+#include <lax/laximages.h>
 #include <lax/laxoptions.h>
 #include <lax/units.h>
 #include <lax/bitmaputils.h>
@@ -113,7 +112,7 @@ const char *LaidoutVersion()
  */
 int laidout_preview_maker(const char *original, const char *preview, const char *format, int width, int height, int fit)
 {
-	if (!laximlib_generate_preview(original,preview,format,width,height,fit)) return 0;
+	if (!generate_preview_image(original,preview,format,width,height,fit)) return 0;
 
 	 //normal preview maker didn't work, so try something else...
 	DoubleBBox bbox;
@@ -511,14 +510,12 @@ int LaidoutApp::init(int argc,char **argv)
 		preview_file_bases.push(newstr(".laidout-%.jpg"));
 	}
 	
-	 //init imlib and define default icon
-	InitLaxImlib();//***need to be able to set default font and general imlib cache size
+	 //define default icon
 	char *str=newstr(icon_dir);
 	//appendstr(str,"/Laidout-shaded-icon-48x48.png");
 	appendstr(str,"/laidout-48x48.png");
 	DefaultIcon(str);
 	delete[] str;
-	//imlib_set_cache_size(10 * 1024 * 1024); // in bytes
 
 
 	 //initialize the main calculator

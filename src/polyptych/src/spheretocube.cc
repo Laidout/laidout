@@ -237,8 +237,9 @@ int main(int argc,char **argv)
 	const char *filebase="cube";
 	if (argc>2) filebase=argv[2];
 
-	int width=500;
+	int width=0;
 	if (argc>3) width=strtol(argv[3],NULL,10);
+	if (width<=0) width=sphere.baseColumns()/M_PI;
 
 	cout <<"Making cube faces "<<width<<" x "<<width<<endl;
 

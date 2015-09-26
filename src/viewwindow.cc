@@ -32,6 +32,9 @@
 #include <lax/units.h>
 #include <lax/shortcutwindow.h>
 
+// DBG !!!!!
+#include <lax/displayer-cairo.h>
+
 #include <cstdarg>
 #include <cups/cups.h>
 #include <sys/stat.h>
@@ -505,11 +508,18 @@ flatpoint LaidoutViewport::screentoreal(int x,int y)
 //! Map real to the current page, layer, or object space.
 /*! This assumes that dp currently has plain view coordinates.
  */
-double LaidoutViewport::Getmag(int c)
+double LaidoutViewport::Getmag(int y)
 {
+	double tt[6];
+	transform_mult(tt, dp->Getctm(),ectm);
+	if (y) return sqrt(tt[2]*tt[2]+tt[3]*tt[3]);
+    return sqrt(tt[0]*tt[0]+tt[1]*tt[1]);
+	//----------
+	//if (c) return norm(realtoscreen(flatpoint(0,1)-realtoscreen(flatpoint(0,0))));
+	//-----------
 	//dp:if (c) return sqrt(ctm[2]*ctm[2]+ctm[3]*ctm[3]);
 	//        return sqrt(ctm[0]*ctm[0]+ctm[1]*ctm[1]);
-	return dp->Getmag(c);
+	//return dp->Getmag(c);
 }
 
 //! Map real to the current page, layer, or object space.
@@ -1205,7 +1215,7 @@ int LaidoutViewport::DeleteObject(LaxInterfaces::ObjectContext *oc)
  *
  * Original contents of oc are ignored. d is placed in the context of curobj.
  */
-int LaidoutViewport::NewData(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectContext **oc)
+int LaidoutViewport::NewData(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectContext **oc, bool clear_selection)
 {
 	if (!d) return -1;
 
@@ -1218,6 +1228,8 @@ int LaidoutViewport::NewData(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectCon
 	}
 	Group *o=dynamic_cast<Group*>(getanObject(curobj.context,0,-1));
 	if (!o) return -1; //context had to be a Group!
+
+	if (clear_selection) SetSelection(NULL);
 
 	int c=o->push(d);
 	curobj.context.push(c);
@@ -2317,6 +2329,10 @@ void LaidoutViewport::Refresh()
 
 	dp->StartDrawing(this);
 
+	DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(dp);
+	DBG if (ddp && ddp->GetCairo()) cerr <<" LO viewport refresh, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+
+
 	 // draw the scratchboard, just blank out screen..
 	dp->ClearWindow();
 
@@ -2332,6 +2348,9 @@ void LaidoutViewport::Refresh()
 		DrawData(dp,limbo->e(c),NULL,NULL,drawflags);
 	}
 
+	DBG if (ddp && ddp->GetCairo()) cerr <<" LO viewport after  limbo, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+
+
 	 //draw papergroup
 	DBG cerr <<"drawing viewport->papergroup.."<<endl;
 	if (papergroup) {
@@ -2339,10 +2358,14 @@ void LaidoutViewport::Refresh()
 		PaperInterface *pi=dynamic_cast<PaperInterface *>(vw->FindInterface("PaperInterface"));
 		if (pi) pi->DrawGroup(papergroup,1,1,0);
 	}
+
+
+	DBG if (ddp && ddp->GetCairo()) cerr <<" LO viewport after  papergroup, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+
 	
 	DBG cerr <<"drawing spread objects.."<<endl;
 	if (spread && showstate==1) {
-		dp->BlendMode(LAXOP_Source);
+		dp->BlendMode(LAXOP_Over);
 
 //		 //draw the spread's papergroup *** done above
 //		PaperGroup *pgrp=NULL;
@@ -2357,24 +2380,34 @@ void LaidoutViewport::Refresh()
 		 // draw shadow
 		if (spread->path) {
 			 //draw shadow if papergroup does not exist
-			FillStyle fs(0,0,0,0xffff, WindingRule,FillSolid,GXcopy);
+			FillStyle fs(0,0,0,0xffff, WindingRule,FillSolid,LAXOP_Over);
+			LineStyle ls(0xffff,0,0,0xffff, 1, LAXCAP_Round,LAXJOIN_Miter,0,LAXOP_Over);
+			ls.widthtype=0;
+			ls.function=LAXOP_Over;
+
 			if (!(papergroup && papergroup->papers.n)) {
 			//if (!pgrp && !(papergroup && papergroup->papers.n)) { ***
 				dp->NewFG(0,0,0);
 				dp->PushAxes();
 				dp->ShiftScreen(laidout->prefs.pagedropshadow,laidout->prefs.pagedropshadow);
-				DrawData(dp,spread->path,NULL,&fs,drawflags); //***,linestyle,fillstyle)
+				if (dynamic_cast<PathsData*>(spread->path)) {
+					dynamic_cast<PathsData*>(spread->path)->style|=PathsData::PATHS_Ignore_Weights;
+				}
+				DrawData(dp,spread->path, &ls,&fs,drawflags);
 				dp->PopAxes();
 			}
 
 			 // draw outline *** must draw filled with paper color
 			fs.Color(0xffff,0xffff,0xffff,0xffff);
 			//DrawData(dp,spread->path->m(),spread->path,NULL,&fs,drawflags);
-			DrawData(dp,spread->path,NULL,&fs,drawflags);
+			DrawData(dp,spread->path, &ls,&fs,drawflags);
 		}
 
 		if (spread->marks) DrawData(dp,spread->marks,NULL,NULL,drawflags);
 		 
+
+		DBG if (ddp && ddp->GetCairo()) cerr <<" LO viewport after spread, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+
 		 // draw the pages
 		Page *page=NULL;
 		int pagei=-1;
@@ -2384,12 +2417,14 @@ void LaidoutViewport::Refresh()
 			DBG cerr <<" drawing from pagestack.e["<<c<<"], which has page "<<spread->pagestack.e[c]->index<<endl;
 			page=spread->pagestack.e[c]->page;
 			pagei=spread->pagestack.e[c]->index;
+
 			if (!page) { // try to look up page in doc using pagestack->index
 				if (spread->pagestack.e[c]->index>=0 && spread->pagestack.e[c]->index<doc->pages.n) {
 					pagei=spread->pagestack.e[c]->index;
 					page=spread->pagestack.e[c]->page=doc->pages.e[pagei];
 				}
 			}
+
 			//if (spread->pagestack.e[c]->index<0) {
 			if (!page) {
 				 //if no page, then draw an x through the page stack outline
@@ -2403,6 +2438,7 @@ void LaidoutViewport::Refresh()
 				p=p->firstPoint(1);
 				Coordinate *tp=p;
 				dp->LineAttributes(0,LineSolid, CapButt, JoinMiter);
+				dp->LineWidthScreen(1);
 				dp->NewFG(0,0,0);
 				do {
 					if (tp->flags&POINT_VERTEX) 
@@ -2433,15 +2469,6 @@ void LaidoutViewport::Refresh()
 	//		DBG dp->drawrline(flatpoint(sd->minx,sd->miny), flatpoint(sd->maxx,sd->maxy));
 	//		DBG dp->drawrline(flatpoint(sd->maxx,sd->miny), flatpoint(sd->minx,sd->maxy));
 	
-			 // write page number near the page..
-			 // mostly for debugging at the moment, might be useful to have
-			 // this be a togglable feature.
-			//p=dp->realtoscreen(flatpoint(0,0));
-			//if (page==curpage) dp->NewFG(0,0,0);
-			//dp->DrawScreen();
-			//if (page->label) dp->textout((int)p.x,(int)p.y,page->label,-1);
-			//  else dp->drawnum((int)p.x,(int)p.y,spread->pagestack.e[c]->index+1);
-			//dp->DrawReal();
 
 			 // Draw page margin path, if any
 			SomeData *marginoutline=doc->imposition->GetPageMarginOutline(pagei,1);
@@ -2449,7 +2476,11 @@ void LaidoutViewport::Refresh()
 				DBG cerr <<"********outline bounds ll:"<<marginoutline->minx<<','<<marginoutline->miny
 				DBG      <<"  ur:"<<marginoutline->maxx<<','<<marginoutline->maxy<<endl;
 				// ***DrawData(dp,marginoutline,&margin_linestyle,NULL,drawflags);
-				LineStyle ls(0xa000,0xa000,0xa000,0xffff, 0,CapButt,JoinBevel,0,GXcopy);
+				LineStyle ls(0xa000,0xa000,0xa000,0xffff, 1,CapButt,JoinBevel,0,LAXOP_Over);
+				ls.widthtype=0;
+				if (dynamic_cast<PathsData*>(marginoutline)) {
+					dynamic_cast<PathsData*>(marginoutline)->style|=PathsData::PATHS_Ignore_Weights;
+				}
 				DrawData(dp,marginoutline,&ls,NULL,drawflags);
 				marginoutline->dec_count();
 			}
@@ -2469,6 +2500,9 @@ void LaidoutViewport::Refresh()
 			dp->PopAxes(); // remove page transform
 		}
 	}
+
+	DBG if (ddp && ddp->GetCairo()) cerr <<" LO viewport after pages, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+
 	
 	 // Call Refresh for each interface that needs it, ignoring clipping region
 	
@@ -2537,6 +2571,9 @@ void LaidoutViewport::Refresh()
 	}
 
 	dp->Updates(1);
+
+	DBG if (ddp && ddp->GetCairo()) cerr <<" LO viewport refresh end, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+
 
 	 // swap buffers
 	SwapBuffers();
@@ -2832,16 +2869,6 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 	//DBG 	return 0;
 	//DBG }
 
-	if (ch=='o') {
-		ObjectTreeWindow *otree=new ObjectTreeWindow(NULL, "tree","Object Tree", 0,NULL, this);
-		app->addwindow(otree);
-
-		//otree=new ObjectTreeWindow(NULL, "tree","Project Tree", 0,NULL, laidout->project);
-		//app->addwindow(otree);
-
-		return 0;
-	}
-
 	if (ch==LAX_Esc && (state&LAX_STATE_MASK)==0 && viewportmode==VIEW_GRAB_COLOR) {
 		 //escape out of grabbing color
 		viewportmode=VIEW_NORMAL;
@@ -2851,6 +2878,17 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 
 	 // ask interfaces, and default viewport stuff, which queries all action based activity.
 	if (ViewportWindow::CharInput(ch,buffer,len,state,d)==0) return 0;
+
+	DBG // ******** for debugging objecttreewindow:
+	if (ch=='o') {
+		ObjectTreeWindow *otree=new ObjectTreeWindow(NULL, "tree","Object Tree", 0,NULL, this);
+		app->addwindow(otree);
+
+		//otree=new ObjectTreeWindow(NULL, "tree","Project Tree", 0,NULL, laidout->project);
+		//app->addwindow(otree);
+
+		return 0;
+	}
 
 
 
@@ -3250,6 +3288,7 @@ ViewWindow::ViewWindow(Document *newdoc)
 					0,0,500,600,1,new LaidoutViewport(newdoc))
 { 
 	viewport->dec_count(); //remove extra creation count
+	viewport->dp->defaultRighthanded(true);
 	project=NULL;
 	pagenumber=NULL;
 	toolselector=NULL;
@@ -3267,6 +3306,7 @@ ViewWindow::ViewWindow(anXWindow *parnt,const char *nname,const char *ntitle,uns
 	: ViewerWindow(parnt,nname,ntitle,nstyle,xx,yy,ww,hh,brder,new LaidoutViewport(newdoc))
 {
 	viewport->dec_count(); //remove extra creation count
+	viewport->dp->defaultRighthanded(true);
 	viewport->GetShortcuts();
 	project=NULL;
 	toolselector=NULL;

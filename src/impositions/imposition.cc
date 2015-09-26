@@ -835,6 +835,7 @@ Spread *Imposition::SingleLayout(int whichpage)
 
 	 // Get the page outline. It will be a counted object with 1 count for path pointer.
 	spread->path=GetPageOutline(whichpage,0);
+	//spread->path->style|=PathsData::PATHS_Ignore_Weights;
 	spread->path->setIdentity(); // clear any transform
 	
 	 // define maximum/minimum points 

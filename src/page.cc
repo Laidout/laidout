@@ -793,86 +793,6 @@ void Page::Touch(clock_t at_time)
  */
 ImageData *Page::Thumbnail()
 {
-	return Thumbnail2();
-
-	if (!pagestyle) return NULL;
-	if (thumbmodtime>modtime) return thumbnail;
-
-	DoubleBBox bbox;
-	int c;
-	for (c=0; c<layers.n(); c++) {
-		layers.e(c)->FindBBox();
-		bbox.addtobounds(layers.e(c)->m(),layers.e(c));
-	}
-	
-	double w=bbox.maxx-bbox.minx,
-		   h=bbox.maxy-bbox.miny;
-	h=h*200./w;
-	w=200.;
-	DBG cerr <<"..----making thumbnail "<<w<<" x "<<h<<"  pgW,H:"<<pagestyle->w()<<','<<pagestyle->h()
-	DBG 	<<"  bbox:"<<bbox.minx<<','<<bbox.maxx<<' '<<bbox.miny<<','<<bbox.maxy<<endl;
-	if (!thumbnail) thumbnail=new ImageData(); 
-	thumbnail->xaxis(flatpoint((bbox.maxx-bbox.minx)/w,0));
-	thumbnail->yaxis(flatpoint(0,(bbox.maxx-bbox.minx)/w));
-	thumbnail->origin(flatpoint(bbox.minx,bbox.miny));
-	
-	Displayer *dp=newDisplayer(NULL);
-	dp->CreateSurface((int)w,(int)h);
-	
-	 // setup dp to have proper scaling...
-	dp->NewTransform(1.,0.,0.,-1.,0.,0.);
-	//dp->NewTransform(1.,0.,0.,1.,0.,0.);
-	dp->SetSpace(bbox.minx,bbox.maxx,bbox.miny,bbox.maxy);
-	dp->Center(bbox.minx,bbox.maxx,bbox.miny,bbox.maxy);
-		
-	dp->NewBG(255,255,255); // *** this should be the paper color for paper the page is on...
-	dp->NewFG(0,0,0,255);
-	//dp->m()[4]=0;
-	//dp->m()[5]=2*h;
-	//dp->Newmag(w/(bbox.maxx-bbox.minx));
-	dp->ClearWindow();
-
-	//DBG flatpoint p;
-	//DBG p=dp->realtoscreen(1,1);
-	//DBG dp->textout((int)p.x,(int)p.y,"++",2,LAX_CENTER);
-	//DBG p=dp->realtoscreen(1,-1);
-	//DBG dp->textout((int)p.x,(int)p.y,"+-",2,LAX_CENTER);
-	//DBG p=dp->realtoscreen(-1,1);
-	//DBG dp->textout((int)p.x,(int)p.y,"-+",2,LAX_CENTER);
-	//DBG p=dp->realtoscreen(-1,-1);
-	//DBG dp->textout((int)p.x,(int)p.y,"--",2,LAX_CENTER);
-
-	for (int c=0; c<layers.n(); c++) {
-		//dp->PushAndNewTransform(layers.e[c]->m());
-		DrawData(dp,layers.e(c));
-		//dp->PopAxes();
-	}
-	dp->EndDrawing();
-		
-	LaxImage *img=dp->GetSurface();
-	if (img) {
-		thumbnail->SetImage(img); //*** must implement using diff size image than is in maxx,y
-		//thumbnail->xaxis(flatpoint(pagestyle->w()/w,0));
-		//thumbnail->yaxis(flatpoint(0,pagestyle->w()/w));
-		img->dec_count();
-	}
-	
-	DBG cerr <<"Thumbnail dump_out:"<<endl;
-	DBG thumbnail->dump_out(stderr,2,0,NULL);
-	DBG cerr <<"  minx "<<thumbnail->minx<<endl;
-	DBG cerr <<"  maxx "<<thumbnail->maxx<<endl;
-	DBG cerr <<"  miny "<<thumbnail->miny<<endl;
-	DBG cerr <<"  maxy "<<thumbnail->maxy<<endl;
-
-	DBG cerr <<"==--- Done Page::updating thumbnail.."<<endl;
-	thumbmodtime=times(NULL);
-	dp->dec_count();
-
-	return thumbnail;
-}
-
-ImageData *Page::Thumbnail2()
-{
 	if (!pagestyle) return NULL;
 	if (thumbmodtime>modtime) return thumbnail;
 
@@ -911,7 +831,6 @@ ImageData *Page::Thumbnail2()
 		DrawData(dp,layers.e(c));
 		//dp->PopAxes();
 	}
-	dp->EndDrawing();
 		
 	LaxImage *img=dp->GetSurface();
 	if (img) {
@@ -928,6 +847,8 @@ ImageData *Page::Thumbnail2()
 
 	DBG cerr <<"==--- Done Page::updating thumbnail.."<<endl;
 	thumbmodtime=times(NULL);
+
+	dp->EndDrawing();
 	dp->dec_count();
 
 	return thumbnail;
