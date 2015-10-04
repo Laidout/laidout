@@ -11,10 +11,11 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2007-2009,2011-2012 by Tom Lechner
+// Copyright (C) 2007-2009,2011-2012,2015 by Tom Lechner
 //
 
 
+#include <lax/interfaces/captioninterface.h>
 #include <lax/interfaces/imageinterface.h>
 #include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
@@ -543,6 +544,30 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			fprintf(f,"%s  />\n",spc);
 		}
 
+	} else if (!strcmp(obj->whattype(),"CaptionData")) {
+		CaptionData *caption=dynamic_cast<CaptionData*>(obj);
+		if (!caption) return 0;
+
+		fprintf(f,"%s<text transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
+				    spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
+		fprintf(f,"%s   style=\"fill:#%02x%02x%02x; fill-opacity:%.10g; ",
+					spc, int(caption->red*255+.5), int(caption->green*255+.5), int(caption->blue*255+.5),
+						 caption->alpha);
+		fprintf(f,"font-family:%s; font-style:%s; font-size:%.10g;\">\n",
+					caption->fontfamily, caption->fontstyle, caption->fontsize);
+		double h=caption->maxy-caption->miny;
+		double x;
+		double y=caption->origin().y - h*caption->ycentering/100 + caption->font->ascent();
+
+		for (int c=0; c<caption->lines.n; c++) {
+			x=caption->origin().x - caption->xcentering/100*(caption->linelengths[c]);
+			 //the sodipodi bit is necessary to make Inkscape (at least to 0.091) let you access lines beyond the first
+			fprintf(f,"%s  <tspan sodipodi:role=\"line\" x=\"%.10g\" y=\"%.10g\" textLength=\"%.10g\">%s</tspan>\n",
+					spc, x,y, caption->linelengths[c], caption->lines.e[c]);
+			y+=caption->fontsize;
+		}
+		fprintf(f,"%s</text>\n", spc);
+
 	} else if (!strcmp(obj->whattype(),"EpsData")) {
 		setlocale(LC_ALL,"");
 		log.AddMessage(_("Cannot export Eps objects into svg.\n"),ERROR_Warning);
@@ -1042,6 +1067,7 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgE
 								grad->colors.e[cc]->color.alpha/65535.); //opacity
 			}
 			fprintf(f,"    </radialGradient>\n");
+
 		} else {
 			fprintf(f,"    <linearGradient  id=\"linearGradient%ld\"\n", grad->object_id);
 			fprintf(f,"        x1=\"%f\"\n", grad->p1);
