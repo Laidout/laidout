@@ -609,6 +609,11 @@ ActionArea *SignatureInterface::control(int what)
 	return NULL;
 }
 
+void SignatureInterface::ViewportResized()
+{
+	remapHandles(0);
+}
+
 //! Position the handles to be where they should.
 /*! which==0 means do all.
  *  which&1 do singletons,
@@ -1419,6 +1424,7 @@ int SignatureInterface::Refresh()
 
 void SignatureInterface::drawAdd(double x,double y,double r, int fill)
 {
+	dp->LineWidthScreen(1);
 	r*=2/3.;
 	//r*=dp->Getmag();
 	if (fill) {
@@ -1432,6 +1438,8 @@ void SignatureInterface::drawAdd(double x,double y,double r, int fill)
 	dp->drawline(x-r/2,y, x+r/2,y);
 }
 
+/*! Draw the stack connection info below the paper sheet.
+ */
 void SignatureInterface::drawStacks()
 {
 	double w,h;
@@ -1472,6 +1480,8 @@ void SignatureInterface::drawStacks()
 	x=w/2-totalw/2;
 	int si=0, ii;
 	double off=0;
+	dp->LineWidthScreen(1);
+
 	for (SignatureInstance *s=sigimp->GetSignature(0,0); s; s=s->next_stack) {
 		y=-yoff;
 		ii=0;
@@ -1527,6 +1537,7 @@ void SignatureInterface::drawStacks()
 			 //n sheets/m pages
 			dp->NewFG(color_text);
 			dp->DrawScreen();
+			dp->LineWidthScreen(1);
 			double angle=-dp->XAxis().angle();
 
 			sprintf(scratch,"%c%d sheet",(i->autoaddsheets?'*':' '), i->sheetspersignature);
@@ -1537,6 +1548,7 @@ void SignatureInterface::drawStacks()
 			fp=dp->realtoscreen(x+blockh,y-textheight*1.5);
 			dp->textout(angle, fp.x,fp.y, scratch,-1, LAX_LEFT|LAX_TOP);
 			dp->DrawReal();
+			dp->LineWidthScreen(1);
 
 			ii++;
 			y-=blockh;
