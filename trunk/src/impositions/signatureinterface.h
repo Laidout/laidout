@@ -104,6 +104,7 @@ class SignatureInterface : public ImpositionInterface
 
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);
+
  public:
 	SignatureInterface(LaxInterfaces::anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL,
 						SignatureImposition *sig=NULL, PaperStyle *p=NULL, Document *ndoc=NULL);
@@ -136,6 +137,7 @@ class SignatureInterface : public ImpositionInterface
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int Refresh();
+	virtual void ViewportResized();
 
 	virtual int UseThisSignature(Signature *sig);
 
