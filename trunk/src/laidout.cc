@@ -238,7 +238,7 @@ LaidoutApp::LaidoutApp()
 	appendstr(config_dir,LAIDOUT_VERSION);
 	appendstr(config_dir,"/");
 
-	makestr(controlfontstr,"sans-11");
+	makestr(controlfontstr,"sans-15");
 	
 	curcolor=0;
 	lastview=NULL;
@@ -1785,14 +1785,14 @@ int main(int argc,char **argv)
 		cout <<LaidoutVersion()<<endl;
 		exit(0);
 	}
-	const char *backend=NULL;
+	const char *backend="cairo";
 	o=options.find("backend",0);
 	if (o && o->parsed_present) {
 		if (!strcasecmp(o->arg(),"xlib")) backend="xlib";
 		else if (!strcasecmp(o->arg(),"cairo")) backend="cairo";
 	}
 
-				
+
 	 //redefine Laxkit's default preview maker
 	generate_preview_image=laidout_preview_maker;
 
