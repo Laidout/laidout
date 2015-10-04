@@ -88,10 +88,6 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	if (laidout->experimental) {
 		// *************** testing:
 
-		i=new CaptionInterface(id++,NULL);
-		existingpool->push(i);
-		i->dec_count();
-		
 		 //------Anchor
 		i=new AnchorInterface(NULL,id++,NULL);
 		existingpool->push(i);
@@ -129,11 +125,11 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	existingpool->push(i); //2nd null is pathop pool
 	i->dec_count();
 
-	 //------Freehand
-	i=new FreehandInterface(NULL,id++,NULL);
+	 //-----Caption
+	i=new CaptionInterface(id++,NULL);
 	existingpool->push(i);
 	i->dec_count();
-
+		
 	 //------Color Patch
 	i=new LColorPatchInterface(id++,NULL);
 	existingpool->push(i);
@@ -154,6 +150,11 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 
 	 //------Clone tiler
 	i=new CloneInterface(NULL,id++,NULL);
+	existingpool->push(i);
+	i->dec_count();
+
+	 //------Freehand
+	i=new FreehandInterface(NULL,id++,NULL);
 	existingpool->push(i);
 	i->dec_count();
 
