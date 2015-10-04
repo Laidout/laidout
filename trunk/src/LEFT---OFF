@@ -161,7 +161,27 @@ test:
 make sure undo is experimental only
 
 
+finish implement cairo backend
+  resize viewport freezes cairo
+  decide on image importers, cairo can only do 8 bit png
+  gradient outline not working
+  use cairo_debug_reset_static_data() at final close to release any remaining stuff in cairo memory
+  copy/paste with utf8 freezes cairo
+
+  DONE resize sig interface doesn't reposition boxes
+
+caption/fontdialog
+  autoselect actual line when popping up font dialog
+
 color slider popup should pop near the mouse and have a "Done" button
+
+text on path:
+  kern handles
+  offset from stroke or from path
+  multiline
+
+text:
+  lineedit/multilineedit copy/pasting freezes cairo
 
 make drag and drop selections work
 
@@ -175,6 +195,9 @@ need a global Laidout method of making unique ids
 when resizing viewportwindow and a temp_input window active, make sure it stays on screen?
 
 searchable menus
+
+viewport:
+  needs menu box between scrollers to select various view/zoom/rotation/other settings
 
 engraving tool: Engraving 
   bug: make a LineEdit overlay for number input, then Next bdown is ignored!! l, m, or right all ignored: viewportwindow line 947
@@ -678,10 +701,6 @@ paperinterface:
            0 0 8.5 11       X: 0   Y: 0
                           W: 8.5 H: 11
         [delete paper type][new paper type]
-
-finish implement cairo backend
-  decide on image importers, cairo can only do 8 bit png
-  gradient outline not working
 
 should take precautions so that dialogs do not get buried, would need to respond to circulate events
 
