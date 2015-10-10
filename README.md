@@ -13,8 +13,7 @@ Tom Lechner (http://www.tomlechner.com)
 
 WHAT IT CAN DO RIGHT NOW
 ------------------------
-Laidout is currently in the 'Kind of a hack, but mostly works
-on my machine' stage of development.
+Laidout is currently in the 'mostly works on my machine' stage of development.
 
 Laidout currently can arrange pages into various impositions,
 such as a booklet, or even a dodecahedron. You can manipulate images
@@ -37,12 +36,12 @@ If you are compiling from development svn, not from a release, please see
 You will need a few extra development libraries on your computer in order
 to compile Laidout. Running ./configure does a simple check for these,
 but the check is so simple, that it may miss them or otherwise get confused.
-You will need the header files for Imlib2, freetype2, fontconfig, x11, xft,
+You will need the header files for Imlib2, freetype2, fontconfig, cairo, x11, xft
 ssl, and cups.
 
 If you are on a debian based system, you can probably install these with this command:
 
-    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev
+    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libcairo2-dev
 
 If you want to use the optional Opengl based unwrapper, you should also do this:
 
@@ -183,15 +182,28 @@ Here is a fast and easy way to get Laidout up and running from svn:
     being developed basically side by side. Just remove those parts of the Makefiles
     if you want to compile only Laidout.
 
-4.  Steps 1-3 have (ideally) compiled everything. You can run Laidout (at src/laidout)
+    Note that if your computer has, say, 8 processors, you can compile much faster
+    using `make -j 8` instead of plain make.
+
+4.  Icons.
+    Steps 1-3 have (ideally) compiled everything. You can run Laidout (at src/laidout)
     without icons and also without installing it anywhere.
 
     When downloaded through svn, the icons have not yet been generated. Making the icons
     requires Inkscape (http://www.inkscape.org) to generate icons from src/icons/icons.svg,
-    and python to run the script that calls Inkscape. cd to src/icons and run "make".
+    and in laxkit/lax/icons/icons.svg. A python script there calls Inkscape.
+    cd to src/icons and run "make". Do the same for laxkit/lax/icons/.
 
-    Some day, the icons will themselves be stored in a Laidout
-    file, and Laidout itself will generate the icons (maybe!).
+    The laxkit icons need to be put in the laidout icon area. do this with:
+
+        cp laxkit/lax/icons/*png src/icons
+
+    All this in one step:
+
+        cd laxkit/lax/icons; make; cp *png ../../../src/icons; cd ../../../src/icons; make
+
+    Some day, the icons will themselves be stored in a Laidout file, and Laidout itself
+    will generate the icons (maybe!). The current system is a bit cumbersome.
 
     You can use src/icons/makeimages.py to regenerate all icons, or single icons if you
     like. The master icon file is src/icons.svg. Each top level object in that file

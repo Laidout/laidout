@@ -68,12 +68,11 @@ switch to None document, and units change to unreasonable
 
 DONE??? need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)
 
-pop up a menu, close the originating window. The popup is still up!! "transientfor" problems?
-
 create new pane should dup old pane.. currently divide viewport, removes document focus
 
 memory hole helpwindow 
 memory hole when graphical shell activated 
+memory hole cairo backend
 
 Lightness slider appears black to white, but the middle is full color, needs segmented render like hue
 click enter area of color pickers, does not install color!!!!  
@@ -173,7 +172,10 @@ finish implement cairo backend
 caption/fontdialog
   autoselect actual line when popping up font dialog
 
-color slider popup should pop near the mouse and have a "Done" button
+color slider popup should pop near the mouse (done) and have a "Done"/"Dismiss" button
+
+object tool:
+  things to allow editing of wrap, inset, clip paths, and chains
 
 text on path:
   kern handles
@@ -181,7 +183,9 @@ text on path:
   multiline
 
 text:
-  lineedit/multilineedit copy/pasting freezes cairo
+  fribidi/harfbuzz?
+  DONE access combine character pairs
+  DONE lineedit/multilineedit copy/pasting freezes cairo
 
 make drag and drop selections work
 
@@ -1515,6 +1519,6 @@ DONE? (seems to work now) roman numeral menu select range editor not changing to
 DONE make pdf default output format for sending to lp
 DONE copy paste not working again
 DONE transparency in paths does not work on screen (will fix with update to cairo)
-
+DONE pop up a menu, close the originating window. The popup is still up!! "transientfor" problems?  
 
 
