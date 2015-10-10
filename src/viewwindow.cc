@@ -2301,14 +2301,9 @@ void LaidoutViewport::DrawSomeData(LaxInterfaces::SomeData *ndata,
  *
  * </pre>
  *
- * \todo *** have choice whether to back buffer, also smart refreshing, and in diff.
+ * \todo *** have choice about smart refreshing, and in diff.
  *   thread.. periodically check to see if more recent refresh requested?
- * \todo *** this is rather horrible, needs near complete revamp, have to decide
- *   on graphics backend. cairo? antigrain?
  * \todo *** implement the 'whatever' page, which is basically just a big whiteboard
- * \todo *** this should be modified so order things are drawn is adjustible,
- *   so limbo then pages, or pages then limbo, or just limbo, etc: drawing zones,
- *   including limbo, spread(s), paper objects, imposition control objects, etc..
  */
 void LaidoutViewport::Refresh()
 {
@@ -2339,8 +2334,20 @@ void LaidoutViewport::Refresh()
 	if (drawflags&DRAW_AXES) dp->drawaxes();
 	int c,c2;
 
-
 	dp->Updates(0);
+
+	// *** HACK to make matrix map properly.. not sure why it fails
+	dp->DrawScreen();
+	dp->DrawReal();
+
+
+	//DBG dp->BlendMode(LAXOP_Over);
+	//DBG dp->LineWidthScreen(1);
+	//DBG dp->drawline(0.,0., 10.,10.);
+
+    DBG for (int c=0; c<interfaces.n; c++) interfaces.e[c]->Needtodraw(0);
+
+	DBG cerr <<"LO viewport needtodraw: "<<Needtodraw()<<endl;
 
 	 // draw limbo objects
 	DBG cerr <<"drawing limbo objects.."<<endl;
@@ -2359,6 +2366,7 @@ void LaidoutViewport::Refresh()
 		if (pi) pi->DrawGroup(papergroup,1,1,0);
 	}
 
+	
 
 	DBG if (ddp && ddp->GetCairo()) cerr <<" LO viewport after  papergroup, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
@@ -2367,14 +2375,6 @@ void LaidoutViewport::Refresh()
 	if (spread && showstate==1) {
 		dp->BlendMode(LAXOP_Over);
 
-//		 //draw the spread's papergroup *** done above
-//		PaperGroup *pgrp=NULL;
-//		if (!pgrp) pgrp=spread->papergroup;
-//		if (pgrp) {
-//			ViewerWindow *vw=dynamic_cast<ViewerWindow *>(win_parent);
-//			PaperInterface *pi=dynamic_cast<PaperInterface *>(vw->FindInterface("PaperInterface"));
-//			if (pi) pi->DrawGroup(pgrp,1,1,0);
-//		}
 
 		 // draw 5 pixel offset heavy line like shadow for page first, then fill draw the path...
 		 // draw shadow
@@ -2449,6 +2449,7 @@ void LaidoutViewport::Refresh()
 
 				continue;
 			}
+
 			 //else we have a page, so draw it all
 			sd=spread->pagestack.e[c]->outline;
 			dp->PushAndNewTransform(sd->m()); // transform to page coords
@@ -2572,7 +2573,7 @@ void LaidoutViewport::Refresh()
 
 	dp->Updates(1);
 
-	DBG if (ddp && ddp->GetCairo()) cerr <<" LO viewport refresh end, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+	//DBG if (ddp && ddp->GetCairo()) cerr <<" LO viewport refresh end, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 
 	 // swap buffers
@@ -2879,7 +2880,7 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 	 // ask interfaces, and default viewport stuff, which queries all action based activity.
 	if (ViewportWindow::CharInput(ch,buffer,len,state,d)==0) return 0;
 
-	DBG // ******** for debugging objecttreewindow:
+	DBG // ******** vvvvvvvv  for debugging objecttreewindow:
 	if (ch=='o') {
 		ObjectTreeWindow *otree=new ObjectTreeWindow(NULL, "tree","Object Tree", 0,NULL, this);
 		app->addwindow(otree);
@@ -2889,6 +2890,7 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 
 		return 0;
 	}
+	DBG // ******** ^^^^^^^  for debugging objecttreewindow:
 
 
 
@@ -4452,6 +4454,11 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		pg->dec_count();
 		app->rundialog(p);
 		return 0;
+
+	} else if (data->type==LAX_onUnmapped) { // print to output.ps
+		DBG cerr << "ViewWindow got LAX_onUnmapped"<<endl;
+		app->ClearTransients(viewport);
+		return ViewerWindow::Event(data,mes);
 	}
 	
 	return ViewerWindow::Event(data,mes);
