@@ -21,6 +21,10 @@ import subprocess, sys
 #from xml.sax import saxexts
 import xml.sax
 import types
+import locale
+
+#not sure if this is necessary: seems to work for me with or without under a french locale
+locale.setlocale(locale.LC_ALL, '')
 
 makethisonly="" #maybe select only one icon to generate
 bitmapw=24
