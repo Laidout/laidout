@@ -1824,6 +1824,7 @@ int main(int argc,char **argv)
 	Laxkit::InstallShortcutManager(NULL); //forces deletion of shortcut lists in Laxkit
 	Laxkit::IconManager::SetDefault(NULL);
 	Laxkit::ImageProcessor::SetDefault(NULL);
+	Laxkit::ImageLoader::FlushLoaders();
 	laidout->dec_count();
 	
 	DBG cerr <<"---------------stylemanager-----------------"<<endl;
