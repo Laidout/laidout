@@ -613,7 +613,7 @@ int dumpInImages(ImportImageSettings *settings,
 			DBG cerr << "dump image files: "<<imagefiles[c]<<endl;
 
 			imaged=dynamic_cast<ImageData*>(LaxInterfaces::somedatafactory()->NewObject("ImageData"));
-			imaged->SetImage(image);//incs count of image
+			imaged->SetImage(image,NULL);//incs count of image
 			image->dec_count();
 
 		} else {

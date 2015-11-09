@@ -84,7 +84,7 @@ void psImagePatch(FILE *f,LaxInterfaces::ImagePatchData *i)
 	imlib_image_flip_vertical();
 	ImageData img;
 	LaxImage *limg=new LaxImlibImage(NULL,image);
-	img.SetImage(limg);
+	img.SetImage(limg,NULL);
 	limg->dec_count();
 
 	 // set image transform

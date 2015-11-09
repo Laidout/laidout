@@ -740,14 +740,16 @@ void Page::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 
         for (int c=0; c<factory->NumTypes(); c++) {
             t=factory->TypeStr(c);
-            fprintf(f,"%s    object %s\n",spc, t);
 
             o=factory->NewObject(t);
 			d=dynamic_cast<SomeData*>(o);
-			if (d) d->dump_out(f,indent+6, -1, context);
+			if (d) {
+            	fprintf(f,"%s    object %s\n",spc, t);
+				d->dump_out(f,indent+6, -1, context);
+				fprintf(f,"\n");
+			}
             o->dec_count();
 
-			fprintf(f,"\n");
         }
 
 		return;
@@ -834,7 +836,7 @@ ImageData *Page::Thumbnail()
 		
 	LaxImage *img=dp->GetSurface();
 	if (img) {
-		thumbnail->SetImage(img); //*** must implement using diff size image than is in maxx,y
+		thumbnail->SetImage(img,NULL); //*** must implement using diff size image than is in maxx,y
 		img->dec_count();
 	}
 	
