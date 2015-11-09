@@ -548,25 +548,46 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 		CaptionData *caption=dynamic_cast<CaptionData*>(obj);
 		if (!caption) return 0;
 
-		fprintf(f,"%s<text transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
-				    spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
-		fprintf(f,"%s   style=\"fill:#%02x%02x%02x; fill-opacity:%.10g; ",
-					spc, int(caption->red*255+.5), int(caption->green*255+.5), int(caption->blue*255+.5),
-						 caption->alpha);
-		fprintf(f,"font-family:%s; font-style:%s; font-size:%.10g;\">\n",
-					caption->fontfamily, caption->fontstyle, caption->fontsize);
-		double h=caption->maxy-caption->miny;
-		double x;
-		double y=caption->origin().y - h*caption->ycentering/100 + caption->font->ascent();
+		double rr,gg,bb,aa;
+		Palette *palette=dynamic_cast<Palette*>(caption->font->GetColor());
 
-		for (int c=0; c<caption->lines.n; c++) {
-			x=caption->origin().x - caption->xcentering/100*(caption->linelengths[c]);
-			 //the sodipodi bit is necessary to make Inkscape (at least to 0.091) let you access lines beyond the first
-			fprintf(f,"%s  <tspan sodipodi:role=\"line\" x=\"%.10g\" y=\"%.10g\" textLength=\"%.10g\">%s</tspan>\n",
-					spc, x,y, caption->linelengths[c], caption->lines.e[c]);
-			y+=caption->fontsize;
+		int layer=0;
+		for (LaxFont *font=caption->font; font; font=font->nextlayer) {
+			fprintf(f,"%s<text transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
+						spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
+			if (palette && layer<palette->colors.n) {
+				rr=palette->colors.e[layer]->channels[0]/(double)palette->colors.e[layer]->maxcolor;
+				gg=palette->colors.e[layer]->channels[1]/(double)palette->colors.e[layer]->maxcolor;
+				bb=palette->colors.e[layer]->channels[2]/(double)palette->colors.e[layer]->maxcolor;
+				aa=palette->colors.e[layer]->channels[3]/(double)palette->colors.e[layer]->maxcolor; 
+			} else {
+				rr=caption->red;
+				gg=caption->green;
+				bb=caption->blue;
+				aa=caption->alpha;
+			}
+
+			fprintf(f,"%s   style=\"fill:#%02x%02x%02x; fill-opacity:%.10g; ",
+						spc, int(rr*255+.5), int(gg*255+.5), int(bb*255+.5), aa);
+			fprintf(f,"font-family:%s; font-style:%s; font-size:%.10g;\">\n",
+						font->Family(), font->Style(), caption->fontsize);
+			//fprintf(f,"font-family:%s; font-style:%s; font-size:%.10g;\">\n",
+			//			caption->fontfamily, caption->fontstyle, caption->fontsize);
+			double h=caption->maxy-caption->miny;
+			double x;
+			double y=caption->origin().y - h*caption->ycentering/100 + caption->font->ascent();
+
+			for (int c=0; c<caption->lines.n; c++) {
+				x=caption->origin().x - caption->xcentering/100*(caption->linelengths[c]);
+				 //the sodipodi bit is necessary to make Inkscape (at least to 0.091) let you access lines beyond the first
+				fprintf(f,"%s  <tspan sodipodi:role=\"line\" x=\"%.10g\" y=\"%.10g\" textLength=\"%.10g\">%s</tspan>\n",
+						spc, x,y, caption->linelengths[c], caption->lines.e[c]);
+				y+=caption->fontsize;
+			}
+			fprintf(f,"%s</text>\n", spc);
+
+			layer++;
 		}
-		fprintf(f,"%s</text>\n", spc);
 
 	} else if (!strcmp(obj->whattype(),"EpsData")) {
 		setlocale(LC_ALL,"");

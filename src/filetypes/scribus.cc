@@ -19,6 +19,7 @@
 #include <lax/interfaces/imageinterface.h>
 #include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
+#include <lax/interfaces/captioninterface.h>
 #include <lax/transformmath.h>
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
@@ -166,7 +167,8 @@ class PageObject
 	int links;
 	int l,r,t,b, next,prev;
 	int nativeid;
-	PageObject(LaxInterfaces::SomeData *d, int native,int ll,int rr,int tt,int bb,int nn,int pp);
+	int index;
+	PageObject(LaxInterfaces::SomeData *d, int native,int ll,int rr,int tt,int bb,int nn,int pp, int ii);
 	~PageObject();
 };
 
@@ -177,8 +179,9 @@ class PageObject
 #define LINK_Next    16
 #define LINK_Prev    32
 
-PageObject::PageObject(SomeData *d, int native,int ll,int rr,int tt,int bb,int nn,int pp)
+PageObject::PageObject(SomeData *d, int native,int ll,int rr,int tt,int bb,int nn,int pp, int ii)
 {
+	index=ii;
 	nativeid=native;
 	l=ll; r=rr; t=tt; b=bb; next=nn; prev=pp;
 	links=0; //bits say if l..prev are original (0) or new (1)
@@ -194,7 +197,7 @@ PageObject::~PageObject()
 
 
 static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects,double *mm,SomeData *obj,ErrorLog &log,int &warning);
-static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &palette, SomeData *obj);
+static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &palette, SomeData *obj, int index=0);
 static int findobj(PtrStack<PageObject> &pageobjects, int nativeid, int what);
 static int findobjnumber(Attribute *att, const char *what);
 
@@ -270,12 +273,14 @@ int createScribusImportConfig(ValueHash *context,ValueHash *parameters,Value **v
 //---------------------------- ScribusExportFilter --------------------------------
 
 /*! \class ScribusExportFilter
- * \brief Export as 1.3.3.12 or thereabouts.
+ * \brief Export as 1.4.5 or thereabouts.
  *
  * <pre>
- *  current 1.3.3.* file format is supposedly at:
+ *  1.3.3.* file format is supposedly at:
  *  http://docs.scribus.net/index.php?lang=en&sm=scribusfileformat&page=scribusfileformat
  *  but it only has fully written up 1.2 format
+ *
+ *  Not sure where 1.4.5 spec is.
  * </pre>
  */
 
@@ -294,10 +299,10 @@ ScribusExportFilter::ScribusExportFilter()
 	flags=FILTER_MULTIPAGE;
 }
 
-//! "Scribus 1.3.3.12".
+//! "Scribus 1.4.5".
 const char *ScribusExportFilter::VersionName()
 {
-	return _("Scribus 1.3.3.12");
+	return _("Scribus 1.4.5");
 }
 
 //! Try to grab from stylemanager, and install a new one there if not found.
@@ -423,13 +428,13 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	
 	 // write out header
 	Attribute *temp=NULL;
-	const char *str="1.3.3.12";
+	const char *str="1.4.5";
 	if (scribushints) {
 		temp=scribushints->find("scribusVersion");
 		if (temp) str=temp->value;
 	}
 	 //>=1.3.5svn needs the xml line, otherwise omit
-	if (!strncmp(str,"1.3.5",5)) {
+	if (strncmp(str,"1.3.5",5)>0) {
 		fprintf(f,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 				  "<SCRIBUSUTF8NEW Version=\"%s\">\n",str);
 	} else fprintf(f,"<SCRIBUSUTF8NEW Version=\"%s\">\n",str);
@@ -529,8 +534,6 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	} else {
 		 //write out default elements of DOCUMENT
 
-		//****write out default <COLOR> sections?
-			
 		
 		 //----------Write layers, assuming just background. Everything else is grouping
 		fprintf(f,"    <LAYERS DRUCKEN=\"1\" NUMMER=\"0\" EDIT=\"1\" NAME=\"Background\" SICHTBAR=\"1\" LEVEL=\"0\" />\n");
@@ -790,6 +793,9 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 
 	 //--------output COLOR sections gleened above
 	if (palette.colors.n) {
+		 //provide an easy fallback color
+		fprintf(f,"    <COLOR NAME=\"Black\" RGB=\"#000000\" Spot=\"0\" Register=\"0\" />\n");
+
 		PaletteEntry *color;
 		for (int c=0; c<palette.colors.n; c++) {
 			color=palette.colors.e[c];
@@ -826,8 +832,16 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 					palette.colors.e[c]->channels[0]>>8); //b
 			}
 		}
+	} else {
+		 //provide an easy fallback color
+		fprintf(f,"    <COLOR NAME=\"Black\" RGB=\"#000000\" Spot=\"0\" Register=\"0\" />\n");
 	}
 		 
+
+	 //---------styles
+	fprintf(f,"    <STYLE NAME=\"Default Paragraph Style\" DefaultStyle=\"1\" ALIGN=\"0\" LINESPMode=\"1\" LINESP=\"15\" INDENT=\"0\" RMARGIN=\"0\" FIRST=\"0\" VOR=\"0\" NACH=\"0\" DROP=\"0\" DROPLIN=\"2\" DROPDIST=\"0\"/>\n");
+	fprintf(f,"    <CHARSTYLE CNAME=\"Default Character Style\" DefaultStyle=\"1\" FONT=\"Bitstream Charter Bold\" FONTSIZE=\"12\" FEATURES=\"inherit\" FCOLOR=\"Black\" FSHADE=\"100\" SCOLOR=\"Black\" SSHADE=\"100\" TXTSHX=\"5\" TXTSHY=\"-5\" TXTOUT=\"1\" TXTULP=\"-0.1\" TXTULW=\"-0.1\" TXTSTP=\"-0.1\" TXTSTW=\"-0.1\" SCALEH=\"100\" SCALEV=\"100\" BASEO=\"0\" KERN=\"0\" LANGUAGE=\"English\"/>");
+
 
 
 	int curobj=0;
@@ -955,18 +969,18 @@ int addColor(Palette &palette, ScreenColor *color)
 {
 	 //search for existing color
 	char name[100];
-	sprintf(name,"%d,%d,%d", color->red, color->green, color->blue);
+	sprintf(name,"%d,%d,%d,%d", color->red, color->green, color->blue, color->alpha);
 	for (int c=0; c<palette.colors.n; c++) {
 		if (!strcmp(palette.colors.e[c]->name,name)) return 0;
 	}
-	palette.AddRGB(name, color->red, color->green, color->blue, 65535);
+	palette.AddRGB(name, color->red, color->green, color->blue, color->alpha);
 	return 1;
 }
 
 //! Internal function to find object to pageobject mapping.
 /*! This adds one entry per object that will actually be dumped out is scribusdumpobj().
  */
-static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &palette, SomeData *obj)
+static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &palette, SomeData *obj, int index) //::appendobjfordumping
 {
 	//WARNING! This function must mirror scribusdumpobj() for what objects actually get output..
 
@@ -991,6 +1005,39 @@ static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &pale
 		if (paths->fillstyle) addColor(palette,&paths->fillstyle->color);
 		for (int c=0; c<paths->paths.n; c++) {
 			if (paths->paths.e[c]->linestyle) addColor(palette,&paths->paths.e[c]->linestyle->color);
+		}
+
+	} else if (!strcmp(obj->whattype(),"CaptionData")) {
+		CaptionData *caption=dynamic_cast<CaptionData *>(obj);
+		if (!caption) return;
+
+		if (caption->font->Layers()>1) {
+			if (index==0) {
+				int layer=0;
+				Palette *fpalette=dynamic_cast<Palette*>(caption->font->GetColor());
+				ScreenColor color;
+
+				for (LaxFont *font=caption->font; font; font=font->nextlayer) {
+					if (fpalette && layer<fpalette->colors.n) {
+						color.rgbf(fpalette->colors.e[layer]->channels[0]/(double)fpalette->colors.e[layer]->maxcolor,
+								   fpalette->colors.e[layer]->channels[1]/(double)fpalette->colors.e[layer]->maxcolor,
+								   fpalette->colors.e[layer]->channels[2]/(double)fpalette->colors.e[layer]->maxcolor,
+								   fpalette->colors.e[layer]->channels[3]/(double)fpalette->colors.e[layer]->maxcolor
+								);
+						addColor(palette, &color);
+					}
+					appendobjfordumping(pageobjects,palette, caption, 1+layer);
+					layer++;	
+				}
+				return;
+
+			} else {
+				ptype=PTYPE_Text;
+			}
+		} else {
+			ptype=PTYPE_Text;
+			ScreenColor color(caption->red, caption->green, caption->blue, caption->alpha);
+			addColor(palette, &color);
 		}
 
 	//} else if (!strcmp(obj->whattype(),"GradientData")) {
@@ -1049,7 +1096,7 @@ static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &pale
 	}
 
 	 //add new reference
-	PageObject *o=new PageObject(obj, nativeid,l,r,t,b,next,prev);
+	PageObject *o=new PageObject(obj, nativeid,l,r,t,b,next,prev, index);
 	o->count=count;
 	pageobjects.push(o,1);
 }
@@ -1156,7 +1203,7 @@ static int scribusaddpath(NumStack<flatpoint> &pts, Coordinate *path)
 }
 
 //! Internal function to dump out the obj.
-/*! Can be Group, ImageData, PathsData, or GradientData.
+/*! Can be Group, ImageData, PathsData, or CaptionData.
  *
  * \todo could have special mode where every non-recognizable object gets
  *   rasterized, and a new dir with all relevant files is created.
@@ -1174,6 +1221,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 	ImageData *img=NULL;
 	GradientData *grad=NULL;
 	double localscx=1,localscy=1;
+	double isize=12;
 	int ptype=-1; //>0 is translatable to scribus object.
 				  //2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
 	              //-1 is not handled, -2 is laidout gradient, -3 is MysteryData
@@ -1184,7 +1232,10 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 	flatpoint *pocoor=NULL, *cocoor=NULL;
 	LineStyle *lstyle=NULL;
 	FillStyle *fstyle=NULL;
+	FillStyle *tstyle=NULL;
 	int createrect=1;
+	CaptionData *text=NULL;
+
 
 	if (!strcmp(obj->whattype(),"ImageData") || !strcmp(obj->whattype(),"EpsData")) {
 		img=dynamic_cast<ImageData *>(obj);
@@ -1206,6 +1257,8 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 		NumStack<flatpoint> pts;
 		lstyle=pdata->linestyle;
 		fstyle=pdata->fillstyle;
+		if (lstyle) lstyle->inc_count();
+		if (fstyle) fstyle->inc_count();
 		Coordinate *p;
 		int n=0;
 
@@ -1230,6 +1283,26 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 		memcpy(cocoor,pocoor,sizeof(flatpoint)*numpo);
 
 	
+	} else if (!strcmp(obj->whattype(),"CaptionData")) {
+		text=dynamic_cast<CaptionData *>(obj);
+		Palette *palette=dynamic_cast<Palette*>(text->font->GetColor());
+
+		int i=pageobjects.e[curobj]->index-1;
+		if (palette && i>=0 && i<palette->colors.n) {
+			tstyle=new FillStyle(
+							palette->colors.e[i]->channels[0]/(double)palette->colors.e[i]->maxcolor*65535, //r
+							palette->colors.e[i]->channels[1]/(double)palette->colors.e[i]->maxcolor*65535, //g
+							palette->colors.e[i]->channels[2]/(double)palette->colors.e[i]->maxcolor*65535, //b
+							palette->colors.e[i]->channels[3]/(double)palette->colors.e[i]->maxcolor*65535, //a
+							 LAXFILL_EvenOdd, FillSolid, LAXOP_Over);
+		} else {
+			tstyle=new FillStyle(text->red*65535,text->green*65535,text->blue*65535,text->alpha*65535,
+							 LAXFILL_EvenOdd, FillSolid, LAXOP_Over);
+		}
+
+		isize=text->Size();
+		ptype=PTYPE_Text;
+
 	} else if (!strcmp(obj->whattype(),"Group")) {
 		 //must propogate transform...
 		Group *g;
@@ -1295,10 +1368,12 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 	double rot,x,y,width,height;
 
 	vx=transform_vector(ctm,flatpoint(1,0));
+	double xmag=norm(vx);
 	vy=transform_vector(ctm,flatpoint(0,1));
 	rot=atan2(vx.y, vx.x)/M_PI*180; //rotation in degrees
 	//p=transform_point(ctm,flatpoint(0,0));
 	p=transform_point(ctm,flatpoint(obj->minx,obj->maxy)); //scribus origin is upper left
+	if (ptype==PTYPE_Text) p=transform_point(ctm,flatpoint(obj->minx,obj->miny)); //scribus origin is upper left
 	x=p.x;
 	y=p.y;
 
@@ -1339,6 +1414,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 			// to current bounding box, which is done below
 		}
 	}
+
 	if (createrect) {
 		 //no coordinate path otherwise found, so create a rectangle based on the object bounding box
 		numpo=16;
@@ -1485,6 +1561,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 				  "    TransBlend=\"0\" \n"      //not 1.2
 				  "    TransBlendS=\"0\" \n"     //not 1.2
 			//---------text tags:
+				  "    FLOP=\"1\" \n"          //first line offset type, 1 is use font ascent, 0 max ascent, 2 line spacing
 				  "    COLGAP=\"0\" \n"        //Gap between text columns
 				  "    COLUMNS=\"1\" \n"       //Number of columns in text
 				  "    EXTRA=\"0\" \n"          //Distance of text from the left edge of the frame
@@ -1498,13 +1575,24 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 				  "    textPathFlipped=\"0\" \n" //not 1.2
 				  "    textPathType=\"0\" \n"    //not 1.2
 				  "    REVERS=\"0\" \n"         //(opt) text is rendered reverse
-				  "    REXTRA=\"0\" \n");       //(opt) Distance of text from the right edge of the frame
+				  "    REXTRA=\"0\" \n"       //(opt) Distance of text from the right edge of the frame
+			      "    ISIZE=\"%.10g\" \n",
+				  	isize);
+			if (tstyle) {
+				fprintf(f, "    TXTFILL=\"%d,%d,%d\" \n",
+					 tstyle ? tstyle->color.red   : 0,
+					 tstyle ? tstyle->color.green : 0,
+					 tstyle ? tstyle->color.blue  : 0
+					);
+			}
+
 			//---------eps tags:
 		//fprintf(f,"    BBOXH=\"0\" \n"      //height of eps object (opt)
 				  //"    BBOXX=\"0\" \n"      //width of eps object (opt)
 
 			//---------path tags, fill/stroke
 		if (!(lstyle && lstyle->hasStroke())) {
+			 //no explicit linestyle, or no stroke, so ignore linestyle..
 			fprintf(f,
 				  "    NAMEDLST=\"\" \n"        //(opt) name of the custom line style
 				  "    DASHOFF=\"0\" \n"        //(opt) offset for first dash
@@ -1518,6 +1606,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 				  "    TransValueS=\"0\" \n"    //(opt) Transparency value for stroke
 				  "    PCOLOR2=\"None\" \n");  //color of stroke
 		} else {
+			 //has lstyle->hasStroke
 			fprintf(f,
 				  "    NAMEDLST=\"\" \n"        //(opt) name of the custom line style
 				  "    SHADE2=\"100\" \n"       //shading for stroke
@@ -1659,15 +1748,44 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 	fprintf(f,">\n"); //close PAGEOBJECT opening tag
 	 //output PAGEOBJECT elements
 	if (mysteryatts && content>=0) {
-		AttributeToXMLFile(f,mysteryatts->attributes.e[content],6);
+		AttributeToXMLFile(f, mysteryatts->attributes.e[content],6);
 	}
+
+	 //output text of a CaptionData
+	if (text) {
+		LaxFont *font=text->font;
+		if (pageobjects.e[curobj]->index>0) font=font->Layer(pageobjects.e[curobj]->index-1);
+
+		for (int c=0; c<text->lines.n; c++) {
+			cerr <<" *** WARNING! need to code processing & ' \" < > to &amp; etc for Scribus out"<<endl;
+
+			fprintf(f, "    <ITEXT FONT=\"%s %s\" FONTSIZE=\"%.10g\" FCOLOR=\"%d,%d,%d\" CH=\"%s\" />\n",
+					//text->fontfamily, text->fontstyle,
+					font->Family(), font->Style(),
+					text->fontsize*xmag,
+					tstyle ? tstyle->color.red   : 0,
+					tstyle ? tstyle->color.green : 0,
+					tstyle ? tstyle->color.blue  : 0,
+					text->lines.e[c]);
+			if (c<text->lines.n-1) fprintf(f, "    <para LINESPMode=\"1\" />\n"); //line break
+		}
+	}
+
 	fprintf(f,"  </PAGEOBJECT>\n");  //end of PAGEOBJECT
 
-
+	if (lstyle) lstyle->dec_count();
+	if (fstyle) fstyle->dec_count();
+	if (tstyle) tstyle->dec_count();
 	delete[] pocoor;
 	psPopCtm();
 
 	curobj++;
+	if (curobj<pageobjects.n && pageobjects.e[curobj]->index>0 
+			&& pageobjects.e[curobj-1]->data==pageobjects.e[curobj]->data) {
+
+		 //deal with font layers..
+		scribusdumpobj(f, curobj, pageobjects, mm, obj, log, warning);
+	}
 }
 
 
