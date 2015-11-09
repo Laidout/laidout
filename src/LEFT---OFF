@@ -12,6 +12,8 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now: 
 
+delete page doesn't update page flipper
+
 bug: add gray marks, then '.' for next object, endless loop!
 memory hole, activate tool, lay down one paper, quit, 3 objects remain
 
@@ -63,6 +65,8 @@ switch to None document, and units change to unreasonable
 
 
 ------------ other bugs:
+
+file-format dump says "Pattern has 2 elts" at very beginning... some kind of fontconfig or cairo errata?
 
 "edit imposition", then escape.. removes window, but not the frame!
 
@@ -137,7 +141,7 @@ pane swapping/dropto on maximized, swapping in general...
 
 WATCH OUT for when preview file is OLDER than original file!!
 
-
+stackframe seems to be ignoring window borders on layout
 
 ----------------0.096 ROADMAP ITEMS: features and enhancements------------------------
 website: clarify how to get debs from the tarball
@@ -161,21 +165,85 @@ make sure undo is experimental only
 
 
 finish implement cairo backend
-  resize viewport freezes cairo
+  zoom up and down jumps way out sometimes
+  multiline text out doesn't seem to work: noticed in tooltip
   decide on image importers, cairo can only do 8 bit png
   gradient outline not working
   use cairo_debug_reset_static_data() at final close to release any remaining stuff in cairo memory
-  copy/paste with utf8 freezes cairo
 
+  DONE copy/paste with utf8 freezes cairo
+  DONE resize viewport freezes cairo
   DONE resize sig interface doesn't reposition boxes
 
-caption/fontdialog
-  autoselect actual line when popping up font dialog
+color slider popup:
+  have a "Done"/"Dismiss" button
+  DONE should pop near the mouse
 
-color slider popup should pop near the mouse (done) and have a "Done"/"Dismiss" button
+
 
 object tool:
   things to allow editing of wrap, inset, clip paths, and chains
+
+caption CaptionInterface
+  text to path
+  fonts need to dump in/out by themselves
+  when hovering over other text objects, highlight their boxes
+  should adapt from multiline edit, since it already has cut/paste, selections, and is mostly debugged??
+  change centering not smooth, text placement hops
+  click to place caret
+  select, copy, paste 
+  right to left
+  opentype variations
+  baseline justify
+  insert character interface
+  control-u hack for poweruser unicode character insertion
+  use selected text as sample when popping up font dialog
+  lorem ipsum
+  color fonts
+    overlay fonts, semi-manually overlaid
+	consider native otf: Mozilla and Adobe’s svg table, microsoft's colr/cpal, Google’s PNG images (CBDT/CBLC tables), Apple’s PNG images (SBIX table)
+
+  DONE start dialog not selecting current font
+  DONE use last selected object's font settings for new objects
+  DONE interface off or object change, remove blank objects
+  DONE click no drag to input font size, angle
+  DONE on read in for Laidout, the line spacing is wrong
+  DONE size of non-active object all wrong in laidout
+  DONE mods to change speed of size change
+  DONE cursor up and down goes to wrong position
+  DONE i/o color, set viewport color on selection
+
+fontdialog:
+  font Arrange not working
+  should REALLY have a LayerFont head containing the whole list, not a stand alone list which causes too many problems
+  when sorting and there's just a couple, need to ensure that they all appear on screen
+  should really get around to implementing scrollers
+  font->SetFromFile() should do more fontconfig checking to grab propper file+family+style+size
+  need a way to remember layered fonts, to easily activate and deactivate
+  FindFont() is faulty, as it only lookes up family/style.. should search by the unique file name
+  pgup and down doesn't select a reasonable one
+  start up with correct font selected
+  vague search via fontconfig matching, to find a match for something like a "sans"
+  sometimes family+style is not unique, but has different languages.. should detect this
+    use postscriptname: "DroidSansHebrew-Bold" -->  "Droid Sans Hebrew"/"Bold"
+  font to zero size screws up everything
+  language coverage search
+  select default language/script
+  select opentype features
+  sample block should resize according to text size
+  font preview in list
+  should be able to access list of font favorites, and a user's preferred organization of fonts.. fontmatrix import?
+    fontmatrix uses a sqlite database.. should be straighforward to scan it
+  optional common font finishers? like centering, underline, color, highlight, fg/bg, etc
+
+  DONE font list should be saveable across dialog instances -> store in fontmanager
+  DONE should be able to set color(s) in "ok" event -> palette passed in font
+  DONE style should be drop down
+  DONE size has to be floating point.. means changing numslider to be double ready
+  DONE scrolling: problem with Sync zapping start, sync calls SetBoxAspect which messes with start
+  DONE resizeable sample box
+  DONE sample block fg/bg
+  DONE progressive search
 
 text on path:
   kern handles
@@ -183,7 +251,9 @@ text on path:
   multiline
 
 text:
-  fribidi/harfbuzz?
+  multicolor (via overlaying) fonts
+  freetype/fribidi/harfbuzz?
+  interface base for utf8 based editing.. share this with window edits somehow
   DONE access combine character pairs
   DONE lineedit/multilineedit copy/pasting freezes cairo
 
@@ -418,6 +488,8 @@ PathInterface:
   DONE bug: add seg for endpoint, then try to select a point: crash! -> improper curpoints.push()
  
 
+command prompt window: command line
+  option to record/save/load whole session of prompt window
 
 save as should change save/import/export/current directory to that directory
 save incremented?
@@ -427,9 +499,12 @@ autorecover.. autosave every X minutes -> need to decide on autosave location an
 clear out warnings due to make hidegarbage
 
 TreeSelector:
+  with text colors, mouse over highlight is off
+  cursor movement jiggles view.. problem with makeinwindow??
   makeinwindow() doesn't account for columns
   option to use markup for labels
   spacing for column heads is NOT selecting for bounds
+
   DONE objecttree printing columns TWICE
 
 layers palette
@@ -486,6 +561,7 @@ svg:
   in hangs.. should NOT default to powerstroke.. the cache for complex stuff REALLY bogs down, creating NaN draws
   in needs to account for viewBox
   in for powerstroke
+  in needs to parse "use" elements and other "#" refs
   after in, does weird things with width node -> child objects not display correctly
 
   need in for style on paths
@@ -1325,7 +1401,8 @@ NetImposition:
     export vrml? pdf 1.6?
 
 
-file format prettification
+file format prettification  --file-format
+  dump should differentiate between DrawableObject and pure resource objects... right now, all lumped together
   adapt the scribus xml/att convertor to parse the output of laidout --file-format
   into something meaningful...
   #-------blah--------  <- mark a new section

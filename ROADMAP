@@ -8,13 +8,16 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 VERSION 0.096
 -------------
 (done) Finish Implementing cairo renderer, make meshes finally render faster, plus general rendering niceness
+(done) Text for god's sake!! It's been what, 10 years!? 
+(done) text: layered color fonts, each layer has to be a separate font file
+(done) Caption text tool
+       Caption tool, implement exporters for major types: svg (done), scribus, pdf
        make window resize work in gnome, test in kde
        autosave for autorecover
        layers (object tree) palette
        test new export even/odd and batches for all exporters
        export option alternate each paper 180 deg
        export option, put out in reverse order
-       export preview
 (done) Infrastructure for resource sharing between objects
        engraver tool, fix blockout! how did it break?!
        engraver tool grow point mode
@@ -33,8 +36,10 @@ VERSION 0.096
 
 VERSION 0.097
 -------------
-       Tools should remember their settings
        debug previous version!
+       Tools should remember their settings
+       Finish implementing anchor tool. maybe gss compatibility?
+       export preview
        Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
        Externally rendered objects, similar to Scribus render frames
        Custom alignments to parents, not just affine transform to parent
@@ -71,12 +76,10 @@ VERSION 0.097
 VERSION 0.1 
 -----------
        First and foremost, need copious testing by people who are not me.
-       Implement poor man's multi-contact interface for all appropriate interfaces
-       Text for god's sake!! It's been what, 10 years!? 
        implement command line language tag
+       Full internationalization support in window controls for input and output, including rtl/mixed text?  
        SpreadEditor: be able to eject a page into limbo, for creation threads, connect, then insert as a group
        When importing from an image list file, should be able to say if and when to auto-make previews
-       Full internationalization support in window controls for input and output, including left, right. pango?
        Basic infrastructure for most things should be in place.
        Must be Stable, not merely "Stable"
        Creep management controls
@@ -117,6 +120,7 @@ VERSION 0.1
        Backwards compatibility with previous Laidout versions, without extra utilities, starting with 0.1
        update french and spanish translations, if possible
        Paper sizes should be translated strings
+       Implement poor man's multi-contact interface for all appropriate interfaces
 
 
 VERSION 0.2
@@ -130,20 +134,24 @@ Possibly allow pure function gradients, and redefining the functions for the oth
 Maybe bez part of path interface should have segment move like inkscape
 Somehow be able to do simulated add-ins/foldouts from within any page of an imposition
 use any path as a kind of tab stop
-Numbered lists
-Mixed left/right/vertical text in text streams
-Tables
-Optional multi-key shortcuts?
-hanging punctuation
-Automatic table of contents
-Bibliography
-Footnotes
-auto track chapter/section
-Automatic, yet overrideable hyphenation
-layout inside anything that provides an 'area' and runaround facility.
-Finally decide on a real rendering backend: cairo? antigrain? antigrain/freetype/pango? graphite?
+Optional multi-key shortcuts?  
+Flowed text tool
+text: Opentype feature support (other than multicolor stuff)
+text: Opentype color font support
+text: Mixed left/right/vertical text in text streams
+text: Numbered lists
+text: Tables 
+text: hanging punctuation
+text: Automatic table of contents
+text: Bibliography
+text: Footnotes
+text: auto track chapter/section
+text: Automatic, yet overrideable hyphenation
+text: layout inside anything that provides an 'area' and runaround facility.  
+Decide on adequate rendering backend: going with cairo for now, but that's only 8bit. antigrain? antigrain/freetype/harfbuzz/gm?
 GraphicsMagick/ImageMagick plugin or integration: benefits: a gazillion file formats, including EPS, and color profiles
   Imlib chokes on really big image files, whereas this would not
+svgfont/cairo user font support.. too special of a case?
 gmic filter plugin
 Would be nice to have tex/latex text and equation reader
 Would be nice to be able to handle metapost/metafun sort of things

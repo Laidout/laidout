@@ -209,24 +209,56 @@ SCRIBUSUTF8NEW   #Wraps up the whole enchilada
               RAMP   #Position of the colour stop, range from 0.0 till 1.0
               SHADE   #Shading of the stop colour in Percent
               TRANS   #Transparency of the colour stop, range from 0.0 till 1.0
-        STYLE           #A paragraph style
+        STYLE           #A paragraph style. Attributes need not appear if inherited from PARENT.
           NAME          #Name of the style
           PARENT        #Parent style name
-          DefaultStyle  #Whether this is the default style
-          ALIGN       
-          LINESPMode
-          LINESP    
+          DefaultStyle  #Whether this is the default style, 0 or 1
+          ALIGN      #0 = Left
+                     #1 = Center
+                     #2 = Right
+                     #3 = Justify
+                     #4 = Force justify
+          LINESPMode #Line spacing mode, fixed, auto, or align to baseline.
+                     #0 = fixed line spacing
+                     #1 = auto line spacing
+                     #2 = align to baseline mode
+          LINESP     #Value for fixed line spacing in points
           INDENT     #Left indent
           RMARGIN    #Right margin
           FIRST      #First indent
           VOR        #Gap before
           NACH       #Gap after
+          ParagraphEffectCharStyle
+          ParagraphEffectOffset
+          ParagraphEffectIndent
           DROP       #Has drop cap
           DROPLIN    #Number of lines for a drop cap
           DROPDIST   #Drop cap offset
-          OpticalMargins #Whether to use optical margins
+          Bullet
+          BulletStr
+          Numeration
+          NumerationFormat
+          NumerationName
+          NumerationLevel
+          NumerationPrefix
+          NumerationSuffix
+          NumerationStart
+          NumerationRestart
+          NumerationOther
+          NumerationHigher
+          OpticalMargins
           HyphenationMode
           MinWordTrack
+          MinGlyphShrink
+          MaxGlyphExtend
+          KeepLinesStart
+          KeepLinesEnd
+          KeepWithNext
+          KeepTogether 
+          OpticalMargins  #Whether to use optical margins
+          HyphenationMode
+          MinWordTrack    #Ratio for minimum word tracking. 1.0 is normal.
+          wordTrack       #Ratio for tracking. 1.0 is normal (character advance)
           MinGlyphShrink
           MaxGlyphExtend
           PSHORTCUT    #Key shortcut for this style
@@ -242,13 +274,20 @@ SCRIBUSUTF8NEW   #Wraps up the whole enchilada
         CHARSTYLE   #A character style
           CNAME     #Name of the style
           CPARENT    #Parent style name
-          FONT       #Font name
-          FONTSIZE   #Font size
-          FEATURES
+          DefaultStyle  #Whether this is the default style, 0 or 1
+          FONT       #Name of the Font, usually "font-family font-style"
+          FONTSIZE   #Fontsize in points
           FCOLOR     #Fill color
+          KERN       #Percentage to kern
           FSHADE     #Fill shade
+          EFFECTS
+          EFFECT
+          FEATURES
           SCOLOR     #Stroke color
           SSHADE     #Stroke shade
+          SCALEH     #Percentage scaling horizontally
+          SCALEV     #Percentage scaling vertically
+          BASEO      #Offset from baseline
           TXTSHX     #Text shadow offset horizontally
           TXTSHY     #Text shadow offset vertically
           TXTOUT     #Outline width
@@ -256,11 +295,7 @@ SCRIBUSUTF8NEW   #Wraps up the whole enchilada
           TXTULW     #Underline width
           TXTSTP     #Strikethrough offset
           TXTSTW     #Strikethrough width
-          SCALEH     #Scaling horizontally
-          SCALEV     #Scaling vertically
-          BASEO      #Offset from baseline
-          KERN
-          wordTrack
+          LANGUAGE
           SHORTCUT   #Shortcut for this style
         HYPHEN       #Hyphenator lists
           EXCEPTION  #Special words
@@ -503,8 +538,8 @@ SCRIBUSUTF8NEW   #Wraps up the whole enchilada
           ANEXTERN   #(optional) Path or URL for an external PDF-Link
           ANFACT   #(optional) JavaScript executed before formatting the PFD-Field
           ANFEED   #(optional) Feedback for PDF-Button press
-		           #0 = None
-		  		   #1 = Invert
+                   #0 = None
+                   #1 = Invert
                    #2 = Outlined
                    #3 = Push animation
           ANFLAG   #(optional) Flags for Annotations, value is the bitwise or of the following constants 
@@ -601,6 +636,10 @@ SCRIBUSUTF8NEW   #Wraps up the whole enchilada
           EXTRAV   #(optional) Kerning value
           FLIPPEDH   #Set to an uneven number if object is flipped horizontal
           FLIPPEDV   #Set to an uneven number if object is flipped vertical
+          FLOP     #First text line offset type
+                   #0 = Maximum ascent for characters in first line
+                   #1 = the font's ascent value
+                   #2 = the line spacing
           FRTYPE   #(optional) Type of the shape of an object 
                    #0 = Rectangle 
                    #1 = Ellipse 
@@ -631,9 +670,12 @@ SCRIBUSUTF8NEW   #Wraps up the whole enchilada
                     #1 = Relative Colorimetric 
                     #2 = Saturation
                     #3 = Absolute Colorimetric
-          ISIZE        #(optional) Fontsize for text
+          ISIZE        #(optional) Basically default fontsize for this pageobject. Can be overridden by individual ITEXT elements.
           isTableItem   #(optional) Set to 1 if the object belongs to a table
-          LINESPMode 
+          LINESPMode #Line spacing mode, fixed, auto, or align to baseline. See also CHARSTYLE->LINESPMode
+                     #0 = fixed line spacing
+                     #1 = auto line spacing
+                     #2 = align to baseline mode
           LANGUAGE     #(optional) Language of the object
           LAYER       #(optional) Layer number the object belongs to
           LeftLine   #(optional) Set to 1 if the table item has a left line
@@ -708,7 +750,7 @@ SCRIBUSUTF8NEW   #Wraps up the whole enchilada
           TopLINK     #(optional) Number of the object that is above this object in tables
           TransValue   #(optional) Transparency value for fill, in range [0..100]
           TransValueS   #(optional) Transparency value for stroke, in range [0..100]
-          TXTFILL   #(optional) Name of the default text fill colour
+          TXTFILL   #(optional) Name of the default text fill colour for this object
           TXTFILLSH   #(optional) Default shading for the text fill colour
           TXTSCALE   #(optional) Default text scaling
           TXTSTROKE   #(optional) Name of the default colour for stroking text
@@ -744,7 +786,8 @@ SCRIBUSUTF8NEW   #Wraps up the whole enchilada
               SHADE   #Shading of the stop colour in Percent
               TRANS   #Transparency of the colour stop, range from 0.0 till 1.0
                 
-            ITEXT      #Chunk of text
+            ITEXT      #Chunk of text. These can have CHARSTYLE attributes, which will override
+                       #default character style values.  
               CAB       #Paragraph style for the character 
                         #0 = No Style, left aligned 
                         #1 = Align Text Center
@@ -778,6 +821,9 @@ SCRIBUSUTF8NEW   #Wraps up the whole enchilada
               CULW
               CSHX
               CSHY
+              FONT      #Name of the Font, usually "font-family font-style"
+              FONTSIZE  #Fontsize in points
+            para          #A paragraph break. See DOCUMENT.STYLE for paragraph style options
             var     #Variable text chunk
               name   #can be "pgno" for page number, or "pgco" for total page count
 

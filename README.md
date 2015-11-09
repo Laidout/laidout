@@ -30,7 +30,7 @@ Laidout is built upon the Laxkit (http://laxkit.sourceforge.net).
 COMPILING RELEASES
 ------------------
 
-If you are compiling from development svn, not from a release, please see
+If you are compiling from development source, not from a release, please see
 'Compiling from source' below.
 
 You will need a few extra development libraries on your computer in order
@@ -152,18 +152,18 @@ For the Laidout development version, you will need the Laxkit development
 version from the same date, give or take 10 minutes or so. Be advised that
 the dev version may be rather buggy compared to "stable" versions!
 
-Here is a fast and easy way to get Laidout up and running from svn:
+Here is a fast and easy way to get Laidout up and running from development source:
 
-1.  Grab Laidout svn (make sure the subversion package is installed):
-        svn co svn://svn.code.sf.net/p/laidout/code/trunk laidout-svn
+1. Grab Laidout source from github (make sure the git package is installed):
+        git clone https://github.com/Laidout/laidout.git
 
 2. Grab Laxkit git:
-   Enter the laidout-svn directory and get the Laxkit svn:
+   Enter the laidout directory and get the Laxkit source:
 
-        cd laidout-svn
+        cd laidout
         git clone http://github.com/tomlechner/laxkit.git laxkit
 
-   In laidout-svn/configure, make sure the LAXDIR lines look like this:
+   In laidout/configure, make sure the LAXDIR lines look like this:
         #LAXDIR="/usr/local/include/lax"
         LAXDIR="`pwd`/laxkit/lax"
 
@@ -177,22 +177,22 @@ Here is a fast and easy way to get Laidout up and running from svn:
         make depends
         make
 
-    Note that the Makefiles in the svn code are for the development source, which
+    Note that the Makefiles in git are for the development source, which
     also tries to do `make` of the Laxkit, since Laxkit and Laidout are 
     being developed basically side by side. Just remove those parts of the Makefiles
     if you want to compile only Laidout.
 
-    Note that if your computer has, say, 8 processors, you can compile much faster
+    Also note that if your computer has, say, 8 processors, you can compile much faster
     using `make -j 8` instead of plain make.
 
 4.  Icons.
     Steps 1-3 have (ideally) compiled everything. You can run Laidout (at src/laidout)
     without icons and also without installing it anywhere.
 
-    When downloaded through svn, the icons have not yet been generated. Making the icons
-    requires Inkscape (http://www.inkscape.org) to generate icons from src/icons/icons.svg,
-    and in laxkit/lax/icons/icons.svg. A python script there calls Inkscape.
-    cd to src/icons and run "make". Do the same for laxkit/lax/icons/.
+    When downloading development source code, the icons have not yet been generated. 
+    Making the icons requires Inkscape (http://www.inkscape.org) to generate icons 
+    from src/icons/icons.svg, and in laxkit/lax/icons/icons.svg. A python script there 
+    calls Inkscape. cd to src/icons and run "make". Do the same for laxkit/lax/icons/.
 
     The laxkit icons need to be put in the laidout icon area. do this with:
 

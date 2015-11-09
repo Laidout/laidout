@@ -103,6 +103,12 @@ Tables that can optionally span multiple pages
 
 
 
+text direction
+--------------
+Arabic can use Kashidas to justif text, not stretching whitespace. These are basically extra stretch marks
+span direction versus larger flow direction across columns, for instance
+
+
 
 line breaking:
 ------------
