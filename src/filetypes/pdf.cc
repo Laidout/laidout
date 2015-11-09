@@ -1187,7 +1187,7 @@ static void pdfImage(FILE *f,
 		imagexobj=existing->number;
 
 	} else {
-		imlib_context_set_image(imlibimg->Image(1));
+		imlib_context_set_image(imlibimg->Image());
 		int width=imlib_image_get_width(),
 			height=imlib_image_get_height();
 		DATA32 *buf=imlib_image_get_data_for_reading_only(); // ARGB
@@ -1356,7 +1356,7 @@ static void pdfImagePatch(FILE *f,
 	imlib_image_flip_vertical();
 	ImageData img;
 	LaxImage *limg=new LaxImlibImage(NULL,image);
-	img.SetImage(limg);
+	img.SetImage(limg, NULL);
 	limg->dec_count();
 
 	 // set image transform
