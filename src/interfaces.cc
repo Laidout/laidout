@@ -20,6 +20,7 @@
 #include "interfaces/objectindicator.h"
 
 #include <lax/interfaces/captioninterface.h>
+#include <lax/interfaces/characterinterface.h>
 #include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
 #include <lax/interfaces/pathinterface.h>
@@ -87,6 +88,11 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 
 	if (laidout->experimental) {
 		// *************** testing:
+
+		 //------Insert Character
+		i=new CharacterInterface(NULL,id++,NULL);
+		existingpool->push(i);
+		i->dec_count();
 
 		 //------Anchor
 		i=new AnchorInterface(NULL,id++,NULL);
