@@ -12,6 +12,16 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now: 
 
+page flipper text differs from page number indicator
+
+paper tool has bad shadow offset, and too thick lines
+
+text is interfering with the page number circle text out
+
+cannot go up directory in file dialog when path input line is bad
+
+'N' to zap matrix in object tool jumps the object to random location
+
 delete page doesn't update page flipper
 
 bug: add gray marks, then '.' for next object, endless loop!
@@ -184,6 +194,8 @@ color slider popup:
 object tool:
   things to allow editing of wrap, inset, clip paths, and chains
 
+CharacterInterface characterinterface
+
 caption CaptionInterface
   text to path
   fonts need to dump in/out by themselves
@@ -199,10 +211,9 @@ caption CaptionInterface
   control-u hack for poweruser unicode character insertion
   use selected text as sample when popping up font dialog
   lorem ipsum
-  color fonts
-    overlay fonts, semi-manually overlaid
-	consider native otf: Mozilla and Adobe’s svg table, microsoft's colr/cpal, Google’s PNG images (CBDT/CBLC tables), Apple’s PNG images (SBIX table)
+  color fonts: consider native otf: Mozilla and Adobe’s svg table, microsoft's colr/cpal, Google’s PNG images (CBDT/CBLC tables), Apple’s PNG images (SBIX table)
 
+  DONE color fonts overlay fonts, semi-manually overlaid
   DONE start dialog not selecting current font
   DONE use last selected object's font settings for new objects
   DONE interface off or object change, remove blank objects
@@ -214,28 +225,36 @@ caption CaptionInterface
   DONE i/o color, set viewport color on selection
 
 fontdialog:
-  font Arrange not working
-  should REALLY have a LayerFont head containing the whole list, not a stand alone list which causes too many problems
+  sample block should not strictly adhere to fontsize, as it can get very big
+  sample block should be multiline
   when sorting and there's just a couple, need to ensure that they all appear on screen
+  start up with correct font selected
+
+  favorites: tag and column
+  user tags, not just fontmatrix tags, option to update fontmatrix?
+  should REALLY have a LayerFont head containing the whole list, not a stand alone list which causes too many problems
   should really get around to implementing scrollers
   font->SetFromFile() should do more fontconfig checking to grab propper file+family+style+size
   need a way to remember layered fonts, to easily activate and deactivate
   FindFont() is faulty, as it only lookes up family/style.. should search by the unique file name
   pgup and down doesn't select a reasonable one
-  start up with correct font selected
   vague search via fontconfig matching, to find a match for something like a "sans"
   sometimes family+style is not unique, but has different languages.. should detect this
     use postscriptname: "DroidSansHebrew-Bold" -->  "Droid Sans Hebrew"/"Bold"
-  font to zero size screws up everything
   language coverage search
   select default language/script
   select opentype features
-  sample block should resize according to text size
-  font preview in list
+  font preview column in list, custom sample
   should be able to access list of font favorites, and a user's preferred organization of fonts.. fontmatrix import?
     fontmatrix uses a sqlite database.. should be straighforward to scan it
   optional common font finishers? like centering, underline, color, highlight, fg/bg, etc
+  fontconfig directory config options
 
+  DONE needs to work on a duplicate font, not the original passed in
+  DONE font to zero size screws up everything -> now has epsilon, won't let it go all the way to 0
+  DONE sample block should resize according to text size
+  DONE scan in Fontmatrix tags, search by tag
+  DONE font Arrange not working
   DONE font list should be saveable across dialog instances -> store in fontmanager
   DONE should be able to set color(s) in "ok" event -> palette passed in font
   DONE style should be drop down
@@ -251,9 +270,11 @@ text on path:
   multiline
 
 text:
-  multicolor (via overlaying) fonts
   freetype/fribidi/harfbuzz?
   interface base for utf8 based editing.. share this with window edits somehow
+  maybe fonts should point to their creators to make duplication more reliable if there are more than just default fontmanager
+
+  DONE multicolor (via overlaying) fonts
   DONE access combine character pairs
   DONE lineedit/multilineedit copy/pasting freezes cairo
 
@@ -444,6 +465,7 @@ PathInterface:
   finish implementing joins. need to clarify weight behavior at corner joins
   weight computation is currently done based on even t spacing, but probably should be mapped based on distance
   interfs.cc: weights not being shown unless '_'
+  be able to pull points back along path near endpoints
 
   debug extrapolate
   implement open at any point to possibly break into separate subpaths
