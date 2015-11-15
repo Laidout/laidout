@@ -19,6 +19,7 @@ GS="/usr/bin/gs"
 
 LAIDOUT_NOGL=""
 USINGGL="yes"
+USESQLITE="yes"
 ONAMAC="no"
 FORCE="no"
 
@@ -56,13 +57,20 @@ while true ; do
 		echo " --language=path/to/langs     The path where translation files should be installed."
 		echo "                                This will normally be 'share/locale', and the files"
 		echo "                                themselves then get put in prefix/share/locale/*."
-		echo " --force                      Try to compile even if libraries are not detected"
+        echo " --disable-sqlite             Optional. Used to get font tags in Fontmatrix database (if it exists)"
 		echo " --nogl                       Do not compile with gl based features"
+		echo " --force                      Try to compile even if libraries are not detected"
         echo ""
 		exit 1 ;;
+
     --force)  
 		FORCE="yes";
 		shift ;;
+
+	--disable-sqlite)
+		unset USESQLITE
+		shift;;
+
     --finalprefix)  
         if [ -z $optarg ] ; then 
           optarg=$2
@@ -155,6 +163,18 @@ if [ $USINGGL == "yes" ]; then
 		fi
 	done
 fi
+
+OPTIONAL='sqlite3'
+for NAME in $OPTIONAL; do
+    echo -n Checking for $NAME......;
+    if [ "`pkg-config --exists --print-errors --errors-to-stdout $NAME`"xxx != "xxx" ] ; then 
+		if [ $NAME == 'sqlite3' ] ; then
+	        echo "Didn't find optional $NAME. Install that to get access to Fontmatrix tags."; 
+		fi
+    else 
+        echo "ok"; 
+    fi
+done
 
 
 
@@ -257,8 +277,12 @@ echo "LAXIDIR=$LAXDIR/interfaces"     >> Makefile-toinclude
 echo "LANGUAGE_PATH=$PREFIX/$LANGUAGE_PATH"   >> Makefile-toinclude
 echo "POLYPTYCHBASEDIR="`pwd`"/src"     >> Makefile-toinclude
 echo "LAIDOUT_USING_GL=$USINGGL"        >> Makefile-toinclude
+if [ x$USESQLITE  != x ] ; then echo "LAIDOUT_USES_SQLITE=yes" >> Makefile-toinclude; fi
 echo "" >> Makefile-toinclude
 
+
+
+if [ x$USESQLITE  != x ] ; then USESQLITE="yes"; else USESQLITE="no"; fi
 
  ##
  ## generate config.log
@@ -273,6 +297,7 @@ echo "   Language Path:  $PREFIX/$LANGUAGE_PATH"  >> config.log
 echo "  Laxkit headers:  $LAXDIR"                 >> config.log
 echo "     Ghostscript:  $GS"                     >> config.log
 echo "       Enable GL:  $USINGGL"                >> config.log
+echo "          Sqlite:  $USESQLITE"              >> config.log
 
 
 echo 
@@ -284,6 +309,7 @@ echo "   Language Path:  $PREFIX/$LANGUAGE_PATH"
 echo "  Laxkit headers:  $LAXDIR"
 echo "     Ghostscript:  $GS"
 echo "       Enable GL:  $USINGGL"
+echo "          Sqlite:  $USESQLITE"             
 echo
 echo "If compiling from svn, please follow \"COMPILING FROM SOURCE\" in README.md.";
 echo
