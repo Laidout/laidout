@@ -971,6 +971,7 @@ void AlignInterface::showPresets()
 	// rc  c  lc  *vc
 	// tl  tc tr  *t
 	// *r *hc *l   O
+
 	if (!presetdata) {
 		 //from icons/alignment.svg
 		const char *d="m 130.99396,977.61545 0,20.20305 29.16815,0 0,-20.20305 z m -8.14435,20.32931 0,21.08694 45.45686,0 0,-21.08694 z m 10.54346,21.46574 0,17.2989 24.36993,0 0,-17.2989 z m -67.86966,-0.4132 0,17.2989 24.37,0 0,-17.2989 z m -21.0869,-21.46575 0,21.08695 45.4569,0 0,-21.08695 z m 16.2887,-20.32931 0,20.20305 29.1682,0 0,-20.20305 z m 163.64472,41.66876 0,17.2989 -24.36993,0 0,-17.2989 z m 21.08692,-21.46572 0,21.08692 -45.45686,0 0,-21.08692 z m -16.2887,-20.32931 0,20.20305 -29.16815,0 0,-20.20305 z m -83.71639,60.90683 0,14.4758 m 0,-89.99999 0,16.30401 m -55.55835,-16.30401 0,89.99999 M 200,962.45861 l 0,89.99999 m 115.15684,-231.10569 20.20305,0 0,-29.16815 -20.20305,0 z m 20.32931,8.14435 21.08694,0 0,-45.45686 -21.08694,0 z m 21.46573,-10.54346 17.29886,0 0,-24.36993 -17.29886,0 z m -0.41321,67.86963 17.29886,0 0,-24.36993 -17.29886,0 z m -21.46573,21.08692 21.08694,0 0,-45.45686 -21.08694,0 z m -20.32931,-16.2887 20.20305,0 0,-29.16815 -20.20305,0 z m 41.66877,-163.64471 17.29886,0 0,24.36993 -17.29886,0 z m -21.46573,-21.08692 21.08694,0 0,45.45686 -21.08694,0 z m -20.32931,16.2887 20.20305,0 0,29.16815 -20.20305,0 z M 200,862.45349 l 36.36549,0 0,35.86042 -36.36549,0 z m -73.73093,0 36.36549,0 0,35.86042 -36.36549,0 z m -72.634556,0 36.36549,0 0,35.86042 -36.36549,0 z m -8e-6,-73.48865 36.36549,0 0,35.86042 -36.36549,0 z m 72.634564,0.25257 36.36549,0 0,35.86041 -36.36549,0 z M 200,788.83862 l 36.36549,0 0,35.86042 -36.36549,0 z m 0,-72.35217 36.36549,0 0,35.86042 -36.36549,0 z m -74.36227,0 36.36549,0 0,35.86042 -36.36549,0 z m -72.099644,0 36.36549,0 0,35.86042 -36.36549,0 z m 236.442564,90.40862 -54.26815,0 m -35.63543,-44.4518 0,90 M 290,862.4535 l -90,0 0,90.67387 m 90,-200.7805 -90,0 0,-90.26074 m 175.52421,144.80898 14.47579,0 m -90,0 16.30401,0 M 300,862.4535 l 90,0 m -90,-110.10663 90,0 m -8.08121,254.63953 c 0,19.5711 -15.86545,35.4365 -35.43646,35.4365 -19.57102,0 -35.43646,-15.8654 -35.43646,-35.4365 0,-19.57097 15.86544,-35.43642 35.43646,-35.43642 19.57101,0 35.43646,15.86545 35.43646,35.43642 z m -255.78953,-200.09129 -26.12926,0 m 62.78973,0.0632 L 190,806.89511 m -45.54819,18.18275 0,28.28427 m 0,-90.91373 0,27.13612 m 0,163.78271 0.0939,-53.79062 M 100,862.4535 l 90,0 m -191.010148,-55.55839 54.268149,0 M 90,762.4433 l 0,90 m 54.45181,-190 0,53.03301 M 100,752.34687 l 90,0 M 1.91878,862.4535 l 88.08122,0 0,91.92387 M 1.9187796,752.34687 90,752.34687 90,662.4433";
@@ -1002,6 +1003,7 @@ void AlignInterface::showPresets()
 
 		presetdata->xaxis(scale*presetdata->xaxis());
 		presetdata->yaxis(scale*presetdata->yaxis());
+		presetdata->style|=PathsData::PATHS_Ignore_Weights;
 	}
 
 
@@ -1012,6 +1014,7 @@ void AlignInterface::showPresets()
 	dp->NewFG(&controlcolor);
 	dp->NewBG(1.,1.,1.);
 	dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+	dp->LineWidthScreen(1);
 	dp->drawrectangle(hoverpoint.x,hoverpoint.y, panelwidth,panelwidth, 2);
 
 	 //highlight current
@@ -1029,6 +1032,7 @@ void AlignInterface::showPresets()
 	//ls.width=1;
 	dp->PushAxes();
 	dp->NewTransform(1,0,0,1,0,0);
+	dp->LineWidthScreen(1);
 	presetdata->origin(flatpoint(0,0));
 	presetdata->origin(hoverpoint - transform_point(presetdata->m(),flatpoint(presetdata->minx,presetdata->miny)));
 	Laidout::DrawData(dp,presetdata,NULL,NULL,0);
@@ -1049,24 +1053,24 @@ struct PresetStruct {
 };
 
 const PresetStruct presets[]={
-					{ 0, FALIGN_Align, FALIGN_Align, 0, 100}, //ALIGN_PRESET_RightBottom
-					{ 0, FALIGN_Align, FALIGN_Align, 0, 50}, //ALIGN_PRESET_CenterBottom
-					{ 0, FALIGN_Align, FALIGN_Align, 0, 0}, //ALIGN_PRESET_LeftBottom
-					{ 0, FALIGN_Align, FALIGN_None,  0, 50}, //ALIGN_PRESET_Bottom
+					{ 0, FALIGN_Align, FALIGN_Align,  0,  100}, //ALIGN_PRESET_RightBottom
+					{ 0, FALIGN_Align, FALIGN_Align,  0,  50}, //ALIGN_PRESET_CenterBottom
+					{ 0, FALIGN_Align, FALIGN_Align,  0,  0}, //ALIGN_PRESET_LeftBottom
+					{ 0, FALIGN_Align, FALIGN_None,   0,  50}, //ALIGN_PRESET_Bottom
 
 					{ 1, FALIGN_Align, FALIGN_Align, 100, 50}, //ALIGN_PRESET_RightCenter
-					{ 0, FALIGN_Align, FALIGN_Align, 50, 50}, //ALIGN_PRESET_Center
-					{ 1, FALIGN_Align, FALIGN_Align, 0, 50}, //ALIGN_PRESET_LeftCenter
-					{ 0, FALIGN_Align, FALIGN_None,  50, 50}, //ALIGN_PRESET_VCenter
+					{ 0, FALIGN_Align, FALIGN_Align, 50,  50}, //ALIGN_PRESET_Center
+					{ 1, FALIGN_Align, FALIGN_Align, 0,   50}, //ALIGN_PRESET_LeftCenter
+					{ 0, FALIGN_Align, FALIGN_None,  50,  50}, //ALIGN_PRESET_VCenter
 
 					{ 0, FALIGN_Align, FALIGN_Align, 100, 100}, //ALIGN_PRESET_RightTop
 					{ 0, FALIGN_Align, FALIGN_Align, 100, 50}, //ALIGN_PRESET_CenterTop
 					{ 0, FALIGN_Align, FALIGN_Align, 100, 0}, //ALIGN_PRESET_LeftTop
 					{ 0, FALIGN_Align, FALIGN_None,  100, 50}, //ALIGN_PRESET_Top
 
-					{ 1, FALIGN_Align, FALIGN_None, 0, 50}, //ALIGN_PRESET_Right
-					{ 1, FALIGN_Align, FALIGN_None, 50, 50}, //ALIGN_PRESET_HCenter
-					{ 1, FALIGN_Align, FALIGN_None, 100, 50}, //ALIGN_PRESET_Left
+					{ 1, FALIGN_Align, FALIGN_None,  0,   50}, //ALIGN_PRESET_Right
+					{ 1, FALIGN_Align, FALIGN_None,  50,  50}, //ALIGN_PRESET_HCenter
+					{ 1, FALIGN_Align, FALIGN_None,  100, 50}, //ALIGN_PRESET_Left
 				};
 
 /*! type must be [0..15].
