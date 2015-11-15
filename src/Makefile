@@ -15,6 +15,12 @@ DEBUGFLAGS= -g -gdwarf-2
 CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) -I. -I.. -I../.. -I$(LAXDIR)/.. -I/usr/include/freetype2 -I$(POLYPTYCHBASEDIR)
 
 
+#---optional libs:
+ifeq ($(LAIDOUT_USES_SQLITE), yes)
+OPTIONALLIBS= -lsqlite3
+endif
+
+
 #---polyptych related:
 ifeq ($(LAIDOUT_USING_GL), yes)
 #---if gl:
@@ -75,7 +81,7 @@ objs= \
 all: laidout
 
 laidout: lax laxinterface $(dirs) $(objs) $(POLYPTYCHFORLAIDOUT)
-	$(LD) $(objs) [a-z]*/*.o $(POLYPTYCH_GL_OBJS) $(POLYPTYCHOBJS) -llaxinterfaces -llaxkit -lcairo -lfontconfig $(LDFLAGS) -lreadline -lcrypto $(POLYPTYCHLIBS) -o $@
+	$(LD) $(objs) [a-z]*/*.o $(POLYPTYCH_GL_OBJS) $(POLYPTYCHOBJS) -llaxinterfaces -llaxkit -lcairo -lfontconfig $(LDFLAGS) $(OPTIONALLIBS) -lreadline -lcrypto $(POLYPTYCHLIBS) -o $@
 
 icons:
 	cd src/icons && $(MAKE)
