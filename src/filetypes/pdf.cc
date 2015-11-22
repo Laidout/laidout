@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2007-2013 by Tom Lechner
+// Copyright (C) 2007-2015 by Tom Lechner
 //
 #include <lax/interfaces/imageinterface.h>
 #include <lax/interfaces/gradientinterface.h>
@@ -19,9 +19,10 @@
 #include <lax/interfaces/imagepatchinterface.h>
 #include <lax/interfaces/pathinterface.h>
 #include <lax/interfaces/somedataref.h>
-#include <lax/laximages-imlib.h>
+#include <lax/interfaces/captioninterface.h>
 #include <lax/transformmath.h>
 #include <lax/attributes.h>
+#include <lax/fileutils.h>
 
 #include <lax/lists.cc>
 
@@ -215,6 +216,8 @@ class PdfObjInfo
 	char *data;//optional for writing out
 	long len; //length of data, just in case data has bytes with 0 value
 	unsigned long lo_object_id;
+	anObject *lo_object;
+
 	PdfObjInfo();
 	virtual ~PdfObjInfo();
 };
@@ -224,6 +227,7 @@ PdfObjInfo::PdfObjInfo()
 {
 	i=o++; 
 	lo_object_id=0;
+	lo_object=NULL;
 	DBG cerr<<"creating PdfObjInfo "<<i<<"..."<<endl;
 }
 PdfObjInfo::~PdfObjInfo()
@@ -266,6 +270,8 @@ static void pdfGradient(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stre
 						LaxInterfaces::GradientData *g, ErrorLog &log,int &warning);
 static void pdfPaths(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
 						LaxInterfaces::PathsData *g, ErrorLog &log,int &warning);
+static void pdfCaption(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
+						LaxInterfaces::CaptionData *g, ErrorLog &log,int &warning);
 
 
 //-------------------------------- pdfdumpobj
@@ -330,6 +336,9 @@ void pdfdumpobj(FILE *f,
 
 	} else if (!strcmp(object->whattype(),"GradientData")) {
 		pdfGradient(f,objs,obj,stream,objectcount,resources,dynamic_cast<GradientData *>(object), log,warning);
+
+	} else if (!strcmp(object->whattype(),"CaptionData")) {
+		pdfCaption(f,objs,obj,stream,objectcount,resources,dynamic_cast<CaptionData *>(object), log,warning);
 
 	} else {
 		DrawableObject *dobj=dynamic_cast<DrawableObject*>(object);
@@ -1144,12 +1153,44 @@ static void pdfColorPatch(FILE *f,
 
 //--------------------------------------- pdfImage() ----------------------------------------
 
+/*! Assuming argb, return true if any a is not 255.
+ */
+bool image_has_alpha(const unsigned char *buf, int len)
+{
+	int i=3;
+	for (int c=0; c<len; c++) {
+	  if (buf[i]<255) return true;
+	  i+=4;
+	}
+
+	return false;
+}
+
+void ascii_out(unsigned char *buf, int width, int height)
+{
+	double w=100;
+	double h=w*height/width;
+
+	int xx,yy,i;
+
+	cerr <<"dump buf:"<<endl;
+	for (int x=0; x<w; x++) {
+	  for (int y=0; y<h; y++) {
+		xx=x/w*width;
+		yy=y/h*height;
+		i=4*(yy*width + xx);
+		cerr <<(char)(32+(buf[i]/255.)*94);
+  	  }
+	  cerr <<endl;
+	}
+	cerr <<endl;
+}
+
 //! Append an image to pdf export. 
 /*! 
  * \todo *** the output should be tailored to a specified dpi, otherwise the output
  *   file will sometimes be quite enormous. Also, repeat images are outputted for each
  *   instance, which also potentially increases size a lot
- * \todo *** this still assumes a LaxImlibImage.
  * \todo image alternates?
  * \todo DCTDecode for jpgs
  */
@@ -1168,8 +1209,6 @@ static void pdfImage(FILE *f,
 	
 	if (!img || !img->image) return;
 
-	LaxImlibImage *imlibimg=dynamic_cast<LaxImlibImage *>(img->image);
-	if (!imlibimg) return;
 
 
 	// *** search current PDfObjInfos for occurance of this image.
@@ -1187,13 +1226,14 @@ static void pdfImage(FILE *f,
 		imagexobj=existing->number;
 
 	} else {
-		imlib_context_set_image(imlibimg->Image());
-		int width=imlib_image_get_width(),
-			height=imlib_image_get_height();
-		DATA32 *buf=imlib_image_get_data_for_reading_only(); // ARGB
-		
+		LaxImage *image=img->image;
+
+		int width =image->w();
+		int height=image->h();
+		unsigned char *buf=image->getImageBuffer(); // ARGB
+
 		int softmask=-1;
-		if (imlib_image_has_alpha()) { 
+		if (image_has_alpha(buf,width*height)) { 
 			 // softmask image XObject dict
 			softmask=objectcount++;
 
@@ -1220,9 +1260,11 @@ static void pdfImage(FILE *f,
 					  "stream\n");
 
 			unsigned char a;
+			int i=3;
 			for (int y=0; y<height; y++) {
 				for (int x=0; x<width; x++) {
-					a=(buf[y*width+x]&(0xff000000))>>24;
+					a=buf[i];
+					i+=4;
 					fprintf(f,"%c",a);
 				}
 			}
@@ -1267,18 +1309,22 @@ static void pdfImage(FILE *f,
 				  "stream\n");
 
 		unsigned char r,g,b;
+		int i=0;
 		for (int y=0; y<height; y++) {
 			for (int x=0; x<width; x++) {
-				r=(buf[y*width+x]&(0xff0000))>>16;
-				g=(buf[y*width+x]&(0xff00))>>8;
-				b=buf[y*width+x]& 0xff;
+				b=buf[i++];
+				g=buf[i++];
+				r=buf[i++];
+				i++;
 				fprintf(f,"%c%c%c",r,g,b);
+
+				//DBG cerr <<(char)(32+(buf[i]/255.)*94);
 			}
 		}
 		fprintf(f,"\nendstream\n"
 				  "endobj\n");
 
-		imlibimg->doneForNow();
+		image->doneWithBuffer(buf);
 	} //if !existing
 
 
@@ -1289,6 +1335,7 @@ static void pdfImage(FILE *f,
 				img->maxx,img->maxy,
 				img->object_id);
 	appendstr(stream,scratch);
+
 
 	 //Add image XObject function to resources
 	Attribute *xobject=resources.find("/XObject");
@@ -1317,7 +1364,6 @@ static void pdfImagePatch(FILE *f,
 {
 	 // make an ImageData covering the bounding box
 
-	Imlib_Image image;
 	int width,height;
 
 	flatpoint ul=transform_point(psCTM(),flatpoint(i->minx,i->miny)),
@@ -1332,17 +1378,13 @@ static void pdfImagePatch(FILE *f,
 	width= (int)(sqrt((ul-ur)*(ul-ur))/72*psDpi());
 	height=(int)(sqrt((ul-ll)*(ul-ll))/72*psDpi());
 	
-	image=imlib_create_image(width,height);
-	imlib_context_set_image(image);
-	imlib_image_set_has_alpha(1);
-	DATA32 *buf=imlib_image_get_data();
-	memset(buf,0,width*height*4); // make whole transparent/black
+	LaxImage *image = create_new_image(width,height);
+	unsigned char *buffer=image->getImageBuffer();
+	memset(buffer,0,width*height*4); // make whole transparent/black
 	//memset(buf,0xff,width*height*4); // makes whole non-transparent/white
 	
 	 // create an image where the patch goes
 	double m[6]; //takes points from i to buffer
-	unsigned char *buffer;
-	buffer=(unsigned char *) buf;
 	double a=(i->maxx-i->minx)/width,
 		   d=(i->miny-i->maxy)/height;
 	m[0]=1/a;
@@ -1352,17 +1394,19 @@ static void pdfImagePatch(FILE *f,
 	m[4]=-i->minx/a;
 	m[5]=-i->maxy/d;
 	i->renderToBuffer(buffer,width,height, 0,8,4);
-	imlib_image_put_back_data(buf);
-	imlib_image_flip_vertical();
+	//imlib_image_flip_vertical();
+	image->doneWithBuffer(buffer);
 	ImageData img;
-	LaxImage *limg=new LaxImlibImage(NULL,image);
-	img.SetImage(limg, NULL);
-	limg->dec_count();
+	img.SetImage(image, NULL);
+	image->dec_count();
 
 	 // set image transform
 	double mm[6];
 	transform_invert(mm,m);
 	img.m(mm);
+	img.Flip(0);
+	//img.Flip(img.transformPoint(flatpoint(img.minx,(img.miny+img.maxy)/2)),
+			 //img.transformPoint(flatpoint(img.maxx,(img.miny+img.maxy)/2)));
 
 	 // push axes
 	psPushCtm();
@@ -1379,6 +1423,265 @@ static void pdfImagePatch(FILE *f,
 	appendstr(stream,"Q\n");
 	psPopCtm();
 }
+
+//--------------------------------------- pdfCaption() ----------------------------------------
+
+//! Output pdf for a CaptionData. 
+static void pdfCaption(FILE *f,
+					 	PdfObjInfo *objs, 
+						PdfObjInfo *&obj,
+						char *&stream,
+						int &objectcount,
+						Attribute &resources,
+						LaxInterfaces::CaptionData *caption,
+						ErrorLog &log,int &warning)
+{
+	if (!caption) return;
+
+	LaxFont *font=caption->font;
+
+	char scratch[100];
+
+
+	// search for existing font object 
+	int fontdict=0;
+	PdfObjInfo *existing=objs;
+	while (existing) {
+		if (existing->lo_object_id==font->object_id) break;
+		existing=existing->next;
+	}
+
+	if (existing) {
+		 //found existing!
+		fontdict=obj->number;
+
+	} else {
+		 //Must create a new font object..
+		obj->next=new PdfObjInfo;
+		obj=obj->next;
+		obj->byteoffset = ftell(f);
+		obj->number = objectcount++;
+		obj->lo_object_id = font->object_id;
+		fontdict=obj->number;
+
+		const char *file=font->FontFile();
+		if (!S_ISREG(file_exists(file,1,NULL))) {
+			 //can't find font file, just use Helvetica
+			fprintf(f,"%ld 0 obj\n",obj->number);
+			fprintf(f,"<<\n"
+					  "  /Type /Font\n"
+					  "  /Subtype /Type1\n");
+			fprintf(f,"  /BaseFont /Helvetica\n");
+			fprintf(f,">>\n");
+
+            setlocale(LC_ALL,"");
+            char buffer[strlen(_("Using Helvetica in place of mystery font %s."))+strlen(font->Family())+1];
+            sprintf(buffer,_("Using Helvetica in place of mystery font %s."), font->Family());
+            log.AddMessage(caption->object_id, caption->Id(), NULL, buffer, ERROR_Warning);
+            setlocale(LC_ALL,"C");
+            warning++;
+
+		} else {
+			 //need to create a font dict corresponding to font at that file
+			int widths = obj->number+1;
+			int fontdescriptor = obj->number+2;
+
+			FT_Library *ft_library=anXApp::app->fontmanager->GetFreetypeLibrary();
+			if (!ft_library) return; //this shouldn't happen!
+
+
+			 //scan in from a freetype face
+			FT_Face ft_face=NULL;
+			FT_Error ft_error = FT_New_Face(*ft_library, font->FontFile(), 0, &ft_face);
+			if (ft_error) {
+				DBG cerr <<" ERROR loading "<<font->FontFile()<<" with FT_New_Face"<<endl;
+				return;
+			}
+
+			 //find defined characters for font
+			int code;
+			int firstchar=0, lastchar=0;
+			FT_UInt gindex=0;
+
+			firstchar = lastchar = code = FT_Get_First_Char( ft_face, &gindex );
+
+			while (gindex != 0) {
+				//chars.push(code);
+				code = FT_Get_Next_Char( ft_face, code, &gindex );
+				if (gindex!=0) lastchar=code;
+			}
+
+			const char *fonttype="Type1";
+			FontManager *fontmanager=GetDefaultFontManager();
+			FontDialogFont *fontinfo=fontmanager->FindFontFromFile(file);
+			if (fontinfo) {
+				if (!strcmp(fontinfo->format, "Type 1")) fonttype="Type1";
+				else if (!strcmp(fontinfo->format, "TrueType")) fonttype="TrueType";
+				else if (!strcmp(fontinfo->format, "CFF")) fonttype="TrueType"; // *** big assumption!!
+			}
+
+			fprintf(f,"%ld 0 obj\n",obj->number);
+			fprintf(f,"<<\n"
+					  "  /Type /Font\n"
+					  "  /Subtype /%s\n", fonttype);
+			fprintf(f,"  /BaseFont /%s\n", font->PostscriptName());
+
+			fprintf(f,"  /FirstChar %d\n", firstchar);
+			fprintf(f,"  /LastChar %d\n", lastchar);
+			fprintf(f,"  /Widths %d 0 R\n", widths);
+			fprintf(f,"  /FontDescriptor %d 0 R\n", fontdescriptor);
+			//fprintf(f,"  /Encoding %d\n", ***); //optional, name or dict
+			//fprintf(f,"  /ToUnicode %d\n", ***); //(Optional; PDF 1.2) A stream containing a CMap file that maps character codes to Unicode values
+			fprintf(f,">>\n");
+
+
+			 //Add widths array object.
+			 // one value per character, LastChar-FirstChar+1 entries, in units 1/1000 of text unit
+			obj->next=new PdfObjInfo;
+			obj=obj->next;
+			obj->byteoffset = ftell(f);
+			obj->number = objectcount++;
+
+			fprintf(f,"%ld 0 obj\n",obj->number);
+			fprintf(f,"<<\n [ ");
+			for (int c=firstchar; c<=lastchar; c++) {
+				gindex = FT_Get_Char_Index(ft_face, c);
+				if (gindex==0) {
+					fprintf(f, "0 ");
+					continue;
+				}
+
+				FT_Load_Glyph( ft_face, gindex, FT_LOAD_NO_SCALE );
+				fprintf(f, "%d ", (int)ft_face->glyph->advance.x);
+			}
+			fprintf(f," ]\n");
+			fprintf(f,">>\n");
+
+
+			 //Add FontDescriptor object
+			obj->next=new PdfObjInfo;
+			obj=obj->next;
+			obj->byteoffset = ftell(f);
+			obj->number = objectcount++;
+
+			fprintf(f,"%ld 0 obj\n",obj->number);
+			fprintf(f,"<<\n"
+					  "  /Type /FontDescriptor\n"
+					  "  /FontName /%s\n", font->PostscriptName());
+			// /FontFamily    optional, pdf 1.5
+			// /FontStretch   optional, pdf 1.5, must be one of UltraCondensed , ExtraCondensed ,
+			//                   Condensed , SemiCondensed , Normal , SemiExpanded , Expanded , ExtraExpanded or UltraExpanded
+			// /FontWeight    optional, pdf 1.5, must be one of 100, 200, 300, 400, 500, 600, 700, 800, or 900. 400 is normal, 700 is bold
+
+			// /Flags         required. Used as hints for possible substitution.
+			//                   or'd Bits: 1=Fixed pitch, 2=serif, 3=symbolic (any chars outside Adobe standard latin)
+			//                              4=script, 6=nonsymbolic (3 or 6 MUST be set), 7=italic, 17=all cap, 18=small cap, 19=force bold
+			unsigned int flags=0;
+			if (FT_IS_FIXED_WIDTH(ft_face)) flags|=(1<<1);
+			if (ft_face->style_flags & FT_STYLE_FLAG_ITALIC) flags|=(1<<7);
+			fprintf(f,"  /Flags %u\n", flags);
+
+			// /FontBBox      required except for Type3 fonts
+			fprintf(f,"  /Flags [ %d %d %d %d ]\n",
+					(int)ft_face->bbox.xMin, (int)ft_face->bbox.yMin,
+					(int)ft_face->bbox.xMax, (int)ft_face->bbox.yMax);
+
+			// /ItalicAngle   required. degrees off vertical
+			fprintf(f,"  /ItalicAngle 0\n"); // ***using 0 because all this meta gets me down
+
+			// /Ascent        required except for Type3 fonts.
+			fprintf(f,"  /Ascent %d\n", (int)ft_face->ascender);
+
+			// /Descent       required except for Type3 fonts.
+			fprintf(f,"  /Descent %d\n", (int)ft_face->descender);
+
+			// /Leading       optional (default 0)
+			if (ft_face->height!=ft_face->ascender-ft_face->descender)
+				fprintf(f,"  /Leading %d\n", (int)(ft_face->height - (ft_face->ascender-ft_face->descender)));
+
+			// /CapHeight     Required for fonts that have Latin characters, except for Type 3 fonts
+			DBG cerr <<" Warning! using totally made up value for CapHeight in pdf out!!"<<endl;
+			fprintf(f,"  /CapHeight 100\n"); // *** WARNING!! MADE UP VALUE!!
+
+			// /XHeight       optional
+			// /StemV         required except for Type3 fonts, thickness of vertical strokes
+			DBG cerr <<" Warning! using totally made up value for StemV in pdf out!!"<<endl;
+			fprintf(f,"  /StemV 100\n"); // *** WARNING!! MADE UP VALUE!!
+
+			// /StemH         optional
+			// /AvgWidth      (Optional) The average width of glyphs in the font. Default value: 0.
+			// /MaxWidth      (Optional) The maximum width of glyphs in the font. Default value: 0.
+			// /MissingWidth  (Optional) The width to use for chars not in widths array
+			// /FontFile      (Optional) A stream containing a Type 1 font program (see Section 5.8, “Embedded Font Programs”).
+			// /FontFile2     (Optional; PDF 1.1) A stream containing a TrueType font program (see Section 5.8, “Embedded Font Programs”).
+			// /FontFile3     (Optional; PDF 1.2) A stream containing a font program whose format is specified by the 
+			//                  Subtype entry in the stream dictionary (see Table 5.23 and implementation note 68 in Appendix H).
+			//                  At most, only one of the FontFile , FontFile2 , and FontFile3 entries may be present.
+			// /CharSet       (Optional; meaningful only in Type 1 fonts; PDF 1.1) An ascii or byte string listing the char-
+			//					 acter names defined in a font subset. The names in this string must be in PDF
+			// 					syntax—that is, each name preceded by a slash ( / ). The names can appear in
+			// 					any order. The name . notdef should be omitted; it is assumed to exist in the
+			// 					font subset. If this entry is absent, the only indication of a font subset is the
+			// 					subset tag in the FontName entry (see Section 5.5.3, “Font Subsets”).
+
+			fprintf(f,">>\n");
+
+
+			if (ft_face) {
+				FT_Done_Face(ft_face);
+				ft_face=NULL;
+			}
+		}
+	} //end creating new font dict
+
+
+
+	 //append text object to stream
+	sprintf(scratch,"%.10g %.10g %.10g rg\n",  //set fill color
+				caption->red, caption->green, caption->blue);
+	appendstr(stream,scratch);
+
+	appendstr(stream, "BT\n");
+	sprintf(scratch, " /font%ld %.10g Tf\n", caption->font->object_id, caption->fontsize);
+	appendstr(stream, scratch);
+	sprintf(scratch, " 1 0 0 -1 0 %.10g Tm\n", -caption->fontsize);
+	appendstr(stream, scratch);
+	
+	int i1,i2;
+	for (int c=0; c<caption->lines.n; c++) {
+		sprintf(scratch, "%.10g %.10g Td\n", 0., -(c==0 ? 2 : 1)*caption->fontsize*caption->linespacing);
+		appendstr(stream, scratch);
+
+		appendstr(stream, "(");
+		 //add a backslash to '(' and ')'
+		i1=i2=0;
+		while (caption->lines.e[c][i1]!='\0') {
+			if (caption->lines.e[c][i1]=='(') scratch[i2++]='\\';
+			else if (caption->lines.e[c][i1]==')') scratch[i2++]='\\';
+
+			scratch[i2++]=caption->lines.e[c][i1++];
+			if (i2>95 || caption->lines.e[c][i1]=='\0') {
+				scratch[i2]='\0';
+				appendstr(stream, scratch);
+				i2=0;
+			} 
+		}
+		//appendstr(stream, caption->lines.e[c]);
+		appendstr(stream, ") Tj\n");
+	}
+	appendstr(stream, "ET\n");
+
+
+	 //Add font to resources
+	Attribute *fonts=resources.find("/Font");
+	sprintf(scratch,"/font%ld %d 0 R\n",caption->font->object_id, fontdict);
+	if (fonts) {
+		if (!strstr(fonts->value, scratch)) appendstr(fonts->value,scratch);
+	} else {
+		resources.push("/Font",scratch);
+	}
+}
+
 
 //--------------------------------------- pdfGradient() ----------------------------------------
 
@@ -1456,7 +1759,7 @@ static void pdfGradient(FILE *f,
 			  "endobj\n", objectcount); //end shading dict
 
 
-	 //stitchting function object
+	 //stitching function object
 	obj->next=new PdfObjInfo;
 	obj=obj->next;
 	obj->byteoffset=ftell(f);
