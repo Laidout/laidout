@@ -52,6 +52,8 @@ using namespace LaxInterfaces;
 
 namespace Laidout {
 
+//need to figure out font sizing 
+#define TEXTHACK (.75)
 
 //1.5 inches and 1/4 inch
 #define CANVAS_MARGIN_X 100.
@@ -1300,7 +1302,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 							 LAXFILL_EvenOdd, FillSolid, LAXOP_Over);
 		}
 
-		isize=text->Size();
+		isize=text->Size()*TEXTHACK; // *** arbitrary size reduction to make it fit in scribus boxes
 		ptype=PTYPE_Text;
 
 	} else if (!strcmp(obj->whattype(),"Group")) {
@@ -1336,7 +1338,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 		setlocale(LC_ALL,"");
 		char *tmp=new char[strlen(_("Warning: Cannot export %s to Scribus.\n"))+strlen(obj->whattype())+1];
 		sprintf(tmp,_("Warning: Cannot export %s to Scribus.\n"),obj->whattype());
-		log.AddMessage(tmp,ERROR_Warning);
+		log.AddMessage(obj->object_id, obj->Id(), NULL, tmp,ERROR_Warning);
 		setlocale(LC_ALL,"C");
 		warning++;
 		delete[] tmp;
@@ -1578,13 +1580,24 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 				  "    REXTRA=\"0\" \n"       //(opt) Distance of text from the right edge of the frame
 			      "    ISIZE=\"%.10g\" \n",
 				  	isize);
-			if (tstyle) {
-				fprintf(f, "    TXTFILL=\"%d,%d,%d\" \n",
-					 tstyle ? tstyle->color.red   : 0,
-					 tstyle ? tstyle->color.green : 0,
-					 tstyle ? tstyle->color.blue  : 0
-					);
+
+		if (text) {
+			fprintf(f, "    ALIGN=\"%d\" \n", (text->xcentering<25 ? 0 : (text->xcentering<75 ? 1 : 2)));
+			if (text->xcentering!=0 && text->xcentering!=50 && text->xcentering!=100) {
+				setlocale(LC_ALL,"");
+				log.AddMessage(text->object_id, text->Id(), NULL,  _("Warning: approximating non left/right/center alignment!"),ERROR_Warning);
+				setlocale(LC_ALL,"C");
+				warning++;
 			}
+		}
+
+		if (tstyle) {
+			fprintf(f, "    TXTFILL=\"%d,%d,%d\" \n",
+				 tstyle ? tstyle->color.red   : 0,
+				 tstyle ? tstyle->color.green : 0,
+				 tstyle ? tstyle->color.blue  : 0
+				);
+		}
 
 			//---------eps tags:
 		//fprintf(f,"    BBOXH=\"0\" \n"      //height of eps object (opt)
@@ -1762,7 +1775,10 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 			fprintf(f, "    <ITEXT FONT=\"%s %s\" FONTSIZE=\"%.10g\" FCOLOR=\"%d,%d,%d\" CH=\"%s\" />\n",
 					//text->fontfamily, text->fontstyle,
 					font->Family(), font->Style(),
-					text->fontsize*xmag,
+			//----
+			//fprintf(f, "    <ITEXT FONT=\"%s %s\" FONTSIZE=\"%.10g\" FCOLOR=\"%d,%d,%d\" CH=\"%s\" />\n",
+					//font->PostscriptName(),
+					text->fontsize*xmag*TEXTHACK,
 					tstyle ? tstyle->color.red   : 0,
 					tstyle ? tstyle->color.green : 0,
 					tstyle ? tstyle->color.blue  : 0,
