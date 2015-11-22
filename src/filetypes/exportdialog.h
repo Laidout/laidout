@@ -55,11 +55,14 @@ class ExportDialog : public Laxkit::RowFrame
 	Laxkit::CheckBox *everyspread, *evenonly, *oddonly;
 	Laxkit::CheckBox *batches;
 	Laxkit::CheckBox *reverse;
+	Laxkit::CheckBox *rotatealternate;
+	Laxkit::CheckBox *rotate0, *rotate90, *rotate180, *rotate270;
 	Laxkit::LineEdit *batchnumber;
 	ExportFilter *filter;
 
 	virtual void changeToEvenOdd(DocumentExportConfig::EvenOdd t);
 	virtual void changeTofile(int t);
+	virtual void paperRotation(int rotation);
 	virtual void changeRangeTarget(int t);
 	virtual void configBounds();
 	virtual void overwriteCheck();

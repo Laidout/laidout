@@ -86,7 +86,7 @@ ExportDialog::ExportDialog(unsigned long nstyle,unsigned long nowner,const char 
 						   int pmax, //!< The maximum of the range
 						   int pcur) //!< The current element of the range
 	: RowFrame(NULL,NULL,_("Export"),
-			   (nstyle&ANXWIN_MASK)|ROWFRAME_ROWS|ROWFRAME_VCENTER|ANXWIN_REMEMBER,
+			   (nstyle&ANXWIN_MASK)|ROWFRAME_ROWS|ROWFRAME_TOP|ANXWIN_REMEMBER,
 			   0,0,0,0,0,
 			   NULL,nowner,nsend, 5)
 {
@@ -195,6 +195,10 @@ int ExportDialog::init()
 	Button *tbut=NULL;
 	int c;
 	int linpheight=app->defaultlaxfont->textheight();
+	double textheight=text_height();
+	double CHECKGAP = textheight/4;
+
+	padinset = linpheight/2;
 
 	if (!config->filename) {
 		config->filename=newstr("output");
@@ -233,7 +237,7 @@ int ExportDialog::init()
 		last=commandcheck=new CheckBox(this,"command-check",NULL,CHECK_CIRCLE|CHECK_LEFT, 
 							 0,0,0,0,0, 
 							 last,object_id,"command-check",
-							 _("By Command: "), 0,5);
+							 _("By Command: "), CHECKGAP,5);
 		commandcheck->State(LAX_ON);
 		commandcheck->tooltip(_("Run this command on a single exported file"));
 		AddWin(commandcheck,1,-1);
@@ -252,7 +256,7 @@ int ExportDialog::init()
 	last=filecheck=new CheckBox(this,"tofile-check",NULL,CHECK_CIRCLE|CHECK_LEFT, 
 						 0,0,0,0,0, 
 	 					 last,object_id,"tofile-check",
-						 _("To File: "), 0,5);
+						 _("To File: "), CHECKGAP,5);
 	filecheck->State(LAX_ON);
 	filecheck->tooltip(_("Export to this file"));
 	AddWin(filecheck,1,-1);
@@ -282,7 +286,7 @@ int ExportDialog::init()
 	last=filescheck=new CheckBox(this,"tofiles",NULL,CHECK_CIRCLE|CHECK_LEFT, 
 						 0,0,0,0,0, 
 	 					 last,object_id,"tofiles-check",
-						 _("To Files: "), 0,5);
+						 _("To Files: "), CHECKGAP,5);
 	filescheck->State(LAX_OFF);
 	filescheck->tooltip(_("Export to these files. A '#' is replaced with\n"
 						  "the spread index. A \"###\" for an index like 3\n"
@@ -342,23 +346,23 @@ int ExportDialog::init()
 	last=printall=new CheckBox(this,"ps-printall",NULL,CHECK_CIRCLE|CHECK_LEFT,
 						 0,0,0,0,0, 
 						 last,object_id,"ps-printall",
-						 _("Export All"), 0,5);
+						 _("Export All"), CHECKGAP,5);
 	printall->State(LAX_ON);
-	AddWin(printall,1, win_w,0,2000,0,0, 20,0,0,50,0, -1);
+	AddWin(printall,1, win_w,0,2000,0,0, printall->win_h,0,0,50,0, -1);
 	AddNull();
 
 	last=printcurrent=new CheckBox(this,"ps-printcurrent",NULL,CHECK_CIRCLE|CHECK_LEFT,
 						 0,0,0,0,0, 
 						 last,object_id,"ps-printcurrent",
-						 _("Export Current"), 0,5);
+						 _("Export Current"), CHECKGAP,5);
 	printcurrent->State(LAX_OFF);
-	AddWin(printcurrent,1, win_w,0,2000,0,0, 20,0,0,50,0, -1);
+	AddWin(printcurrent,1, win_w,0,2000,0,0, last->win_h,0,0,50,0, -1);
 	AddNull();
 
 	last=printrange=new CheckBox(this,"ps-printrange",NULL,CHECK_CIRCLE|CHECK_LEFT,
 						 0,0,0,0,0, 
 						 last,object_id,"ps-printrange",
-						 _("Export From:"), 0,5);
+						 _("Export From:"), CHECKGAP,5);
 	printrange->State(LAX_OFF);
 	AddWin(printrange,1,-1);
 
@@ -383,47 +387,21 @@ int ExportDialog::init()
 	printend->tooltip(_("The ending index"));
 	AddWin(printend,1, printend->win_w,0,1000,50,0, printend->win_h,0,0,50,0, -1);
 	AddNull();
+
 	AddWin(NULL,0, 0,0,9999,50,0, 12,0,0,50,0, -1);
 	AddNull();
 
 
 	//----------------------------- Selected range options
-	double textheight=text_height();
-	last=everyspread=new CheckBox(this,"everyspread",NULL,CHECK_CIRCLE|CHECK_LEFT,
-						 0,0,0,filesedit->win_h,0, 
-						 last,object_id,"everyspread",
-						 _("Every spread"), 0,5);
-	everyspread->State(config->evenodd==DocumentExportConfig::All ? LAX_ON : LAX_OFF);
-	everyspread->tooltip(_("Export each spread"));
-	AddWin(everyspread,1,-1);
-
-	AddHSpacer(textheight,0,2*textheight,50);
-	last=evenonly=new CheckBox(this,"evenonly",NULL,CHECK_CIRCLE|CHECK_LEFT,
-						 0,0,0,0,0, 
-						 last,object_id,"evenonly",
-						 _("Even only"), 0,5);
-	evenonly->State(config->evenodd==DocumentExportConfig::Even ? LAX_ON : LAX_OFF);
-	evenonly->tooltip(_("Export only spreads with even indices"));
-	AddWin(evenonly,1,-1);
-
-	AddHSpacer(textheight,0,2*textheight,50);
-	last=oddonly=new CheckBox(this,"oddonly",NULL,CHECK_CIRCLE|CHECK_LEFT,
-						 0,0,0,0,0, 
-						 last,object_id,"oddonly",
-						 _("Odd only"), 0,5);
-	oddonly->State(config->evenodd==DocumentExportConfig::Odd ? LAX_ON : LAX_OFF);
-	oddonly->tooltip(_("Export only spreads with odd indices"));
-	AddWin(oddonly,1,-1);
-	AddNull();
-
-
+	//----export batches
 	last=batches=new CheckBox(this,"batches",NULL,CHECK_CIRCLE|CHECK_LEFT,
 						 0,0,0,0,0, 
 						 last,object_id,"batches",
-						 _("Export in batches"), 0,5);
+						 _("Export in batches"), CHECKGAP,5);
 	batches->State(config->batches>1 ? LAX_ON : LAX_OFF);
 	batches->tooltip(_("Export this many spreads at once, continue for whole range"));
 	AddWin(batches,1,-1);
+	AddHSpacer(textheight,0,0,50);
 
 	sprintf(blah,"%d",config->batches>0?config->batches:1);
 	last=batchnumber=new LineEdit(this,"batchnumber",NULL,
@@ -437,12 +415,96 @@ int ExportDialog::init()
 	AddNull();
 
 
+	//----reverse order
 	last=reverse=new CheckBox(this,"reverse",NULL,CHECK_CIRCLE|CHECK_LEFT,
-						 0,0,0,filesedit->win_h,0, 
+						 0,0,0,0,0, 
 						 last,object_id,"reverse",
-						 _("Reverse order"), 0,5);
+						 _("Reverse order"), CHECKGAP,5);
 	reverse->State(config->reverse_order ? LAX_ON : LAX_OFF);
 	AddWin(reverse,1, reverse->win_w,0,1000,50,0, reverse->win_h,0,0,50,0, -1);
+	AddNull();
+
+
+	AddWin(NULL,0, 0,0,9999,50,0, 12,0,0,50,0, -1);
+	AddNull();
+
+
+	//----export all/even/odd
+	AddWin(new MessageBar(this,"end",NULL,0, 0,0,0,0,0, _("Which: ")),1,-1);
+
+	last=everyspread=new CheckBox(this,"everyspread",NULL,CHECK_CIRCLE|CHECK_LEFT,
+						 0,0,0,0,0, 
+						 last,object_id,"everyspread",
+						 _("All"), CHECKGAP,5);
+	everyspread->State(config->evenodd==DocumentExportConfig::All ? LAX_ON : LAX_OFF);
+	everyspread->tooltip(_("Export each spread"));
+	AddWin(everyspread,1,-1);
+
+	AddHSpacer(textheight,textheight,textheight,50);
+	last=evenonly=new CheckBox(this,"evenonly",NULL,CHECK_CIRCLE|CHECK_LEFT,
+						 0,0,0,0,0, 
+						 last,object_id,"evenonly",
+						 _("Even only"), CHECKGAP,5);
+	evenonly->State(config->evenodd==DocumentExportConfig::Even ? LAX_ON : LAX_OFF);
+	evenonly->tooltip(_("Export only spreads with even indices"));
+	AddWin(evenonly,1,-1);
+
+	AddHSpacer(textheight,textheight,textheight,50);
+	last=oddonly=new CheckBox(this,"oddonly",NULL,CHECK_CIRCLE|CHECK_LEFT,
+						 0,0,0,0,0, 
+						 last,object_id,"oddonly",
+						 _("Odd only"), CHECKGAP,5);
+	oddonly->State(config->evenodd==DocumentExportConfig::Odd ? LAX_ON : LAX_OFF);
+	oddonly->tooltip(_("Export only spreads with odd indices"));
+	AddWin(oddonly,1,-1);
+	AddHSpacer(10*textheight,10*textheight,10*textheight,50);
+	AddNull();
+
+
+	 //rotation
+	AddWin(new MessageBar(this,"end",NULL,0, 0,0,0,0,0, _("Paper rotation: ")),1,-1);
+
+	last=rotate0=new CheckBox(this,"rotate0",NULL,CHECK_CIRCLE|CHECK_LEFT,
+						 0,0,0,0,0, 
+						 last,object_id,"rotate0",
+						 _("0"), CHECKGAP,5);
+	rotate0->State(config->paperrotation==0 ? LAX_ON : LAX_OFF);
+	rotate0->tooltip(_("No extra paper rotation"));
+	AddWin(rotate0,1,-1);
+
+	last=rotate90=new CheckBox(this,"rotate90",NULL,CHECK_CIRCLE|CHECK_LEFT,
+						 0,0,0,0,0, 
+						 last,object_id,"rotate90",
+						 _("90"), CHECKGAP,5);
+	rotate90->State(config->paperrotation==90 ? LAX_ON : LAX_OFF);
+	rotate90->tooltip(_("Rotate each paper by 90 degrees"));
+	AddWin(rotate90,1,-1);
+
+	last=rotate180=new CheckBox(this,"rotate180",NULL,CHECK_CIRCLE|CHECK_LEFT,
+						 0,0,0,0,0, 
+						 last,object_id,"rotate180",
+						 _("180"), CHECKGAP,5);
+	rotate180->State(config->paperrotation==180 ? LAX_ON : LAX_OFF);
+	rotate180->tooltip(_("Rotate each paper by 180 degrees"));
+	AddWin(rotate180,1,-1);
+
+	last=rotate270=new CheckBox(this,"rotate270",NULL,CHECK_CIRCLE|CHECK_LEFT,
+						 0,0,0,0,0, 
+						 last,object_id,"rotate270",
+						 _("270"), CHECKGAP,5);
+	rotate270->State(config->paperrotation==270 ? LAX_ON : LAX_OFF);
+	rotate270->tooltip(_("Rotate each paper by 270 degrees"));
+	AddWin(rotate270,1,-1);
+	AddNull();
+
+	 //rotate alternate 180
+	last=rotatealternate=new CheckBox(this,"rotatealternate",NULL,CHECK_CIRCLE|CHECK_LEFT,
+						 0,0,0,0,0, 
+						 last,object_id,"rotatealternate",
+						 _("Alternate 180"), CHECKGAP,5);
+	rotatealternate->tooltip(_("Rotate every other spread by 180 degrees"));
+	rotatealternate->State(config->rotate180 ? LAX_ON : LAX_OFF);
+	AddWin(rotatealternate,1, rotatealternate->win_w,0,1000,50,0, rotatealternate->win_h,0,0,50,0, -1);
 	AddNull();
 
 
@@ -569,6 +631,10 @@ int ExportDialog::updateExt()
 			delete[] s;
 		}
 	}
+
+	fileedit->SetCurpos(-1); //these seem to need the window to be inited already, so do this here
+	filesedit->SetCurpos(-1);
+
 	return 0;
 }
 
@@ -724,6 +790,28 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 			batches->State(LAX_ON);
 			config->batches=n;
 		}
+		return 0;
+
+	} else if (!strcmp(mes,"rotatealternate")) {
+		int s=rotatealternate->State();
+		if (s==LAX_ON) config->rotate180=1;
+		else config->rotate180=0;
+		return 0;
+
+	} else if (!strcmp(mes,"rotate0")) {
+		paperRotation(0);
+		return 0;
+
+	} else if (!strcmp(mes,"rotate90")) {
+		paperRotation(90);
+		return 0;
+
+	} else if (!strcmp(mes,"rotate180")) {
+		paperRotation(180);
+		return 0;
+
+	} else if (!strcmp(mes,"rotate270")) {
+		paperRotation(270);
 		return 0;
 
 	} else if (!strcmp(mes,"reverse")) {
@@ -917,6 +1005,16 @@ void ExportDialog::overwriteCheck()
 	}
 }
 
+/*! Update the paper rotation checkboxes to only have rotation checked.
+ */
+void ExportDialog::paperRotation(int rotation)
+{
+	config->paperrotation=rotation;
+	rotate0  ->State(rotation==0   ? LAX_ON : LAX_OFF);
+	rotate90 ->State(rotation==90  ? LAX_ON : LAX_OFF);
+	rotate180->State(rotation==180 ? LAX_ON : LAX_OFF);
+	rotate270->State(rotation==270 ? LAX_ON : LAX_OFF);
+}
 
 //! This allows special things to happen when a different printing target is selected.
 /*! Updates the target checkboxes.
