@@ -233,6 +233,7 @@ int PageMarkerInterface::Refresh()
 	 //else draw numbers on pages
 	if (shownumbers) {
 		dp->DrawScreen();
+		dp->font(app->defaultlaxfont);
 		dp->LineAttributes(1,LineSolid,LAXCAP_Round,LAXJOIN_Round);
 
 		flatpoint p;
