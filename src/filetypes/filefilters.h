@@ -99,8 +99,8 @@ class DocumentExportConfig : public Style
 	int layout;
 	enum EvenOdd { All,Even,Odd } evenodd;
 	int batches;
-	int paperrotation;
 	int reverse_order;
+	int paperrotation;
 	int rotate180; //1 for odd, 2 for even
 	char collect_for_out;
 	char rasterize;
