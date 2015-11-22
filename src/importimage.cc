@@ -590,7 +590,8 @@ int dumpInImages(ImportImageSettings *settings,
 	ImagePlopInfo *images=NULL;
 	int c,numonpage=0;
 	LaxImage *image=NULL;
-	ImageData *imaged;
+	LaxImage *pimage=NULL;
+	ImageData *imaged=NULL;
 
 	int curpage=settings->startpage;
 	double dpi;
@@ -605,10 +606,14 @@ int dumpInImages(ImportImageSettings *settings,
 	for (c=0; c<nfiles; c++) {
 		if (!imagefiles[c] || !strcmp(imagefiles[c],".") || !strcmp(imagefiles[c],"..")) continue;
 		
+		imaged=NULL;
+		image=pimage=NULL;
+
 		dpi=settings->defaultdpi;
 
 		 //first check if Imlib2 recognizes it as image (the easiest check)
-		image=load_image_with_preview(imagefiles[c],previewfiles?previewfiles[c]:NULL,0,0,0);
+		image=load_image_with_loaders(imagefiles[c], (previewfiles ? previewfiles[c] : NULL),0,0,&pimage, 0,-1,NULL);
+
 		if (image) {
 			DBG cerr << "dump image files: "<<imagefiles[c]<<endl;
 
@@ -619,6 +624,8 @@ int dumpInImages(ImportImageSettings *settings,
 		} else {
 			 // check to see if it is an image list or EPS based on first chars of file.
 			 // Otherwise ignore
+			imaged=NULL;
+
 			f=fopen(imagefiles[c],"r");
 			if (f) {
 				int n=0;
