@@ -11,7 +11,9 @@ VERSION 0.096
 (done) Text for god's sake!! It's been what, 10 years!? 
 (done) text: layered color fonts, each layer has to be a separate font file
 (done) Caption text tool
-       Caption tool, implement exporters for major types: svg (done), scribus, pdf
+(done) Caption tool, export svg: done, but due to svg, problem specifying colorfont fonts
+(done) Caption tool, scribus -> done-ish, font naming problem for color fonts, and sizing
+(done) Caption tool, pdf -> very poorly exported, fails for text outside latin-1, because fonts in pdf are a terrible headache. Will probably bail and use an external pdf library in future
        make window resize work in gnome, test in kde
        autosave for autorecover
        layers (object tree) palette
@@ -19,24 +21,22 @@ VERSION 0.096
        export option alternate each paper 180 deg
        export option, put out in reverse order
 (done) Infrastructure for resource sharing between objects
-       engraver tool, fix blockout! how did it break?!
-       engraver tool grow point mode
-       engraver tool, resolution cut mode
+(done) engraver tool, fix blockout! how did it break?!
 (done) engraver, allow work on multiple objects at once, including tracing
        debug line outline cache, especially for joins
-       PathInterface extrapolate line join
        double click on group should change selection area to group contents?
        Moving selected things in group contents does not update group bounds
        should not be able to select both group and group contents at same time
 (done) Re-fix cut and paste from system clipboard
 (done) Re-Re-fix paste from system clipboard. I swear it was working.
-       drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
-       drag-n-drop with system, like drag images into viewwindow from an external file browser
 
 
 VERSION 0.097
 -------------
        debug previous version!
+       engraver tool grow point mode
+       engraver tool, resolution cut mode
+       engraver tool, blockout needs to be more precise
        Tools should remember their settings
        Finish implementing anchor tool. maybe gss compatibility?
        export preview
@@ -62,6 +62,7 @@ VERSION 0.097
        Clean up symmetry clone interface, not easy to use currently
        Clone Pattern Builder
        Soup up the color box so one can recall previous colors, and/or integration with palette window
+       make PathInterface extrapolate line join work
        Signature editor: detect non staplable binding edge, show red rather than green
        color styles, so objects can refer to a named color, just change that named to change all
        fix object transform handles for really small objects (handles should still be accessible)
@@ -69,8 +70,11 @@ VERSION 0.097
        Scribus import should do something meaningful with original Scribus page bleed values
        Collect for out
        PDF in, at least as 1 image per page, for purposes of imposition
+       pdf export, unicode capable
        Optimize pdf export to rescale to target dpi, and compress image data
        fix tooltips
+       drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
+       drag-n-drop with system, like drag images into viewwindow from an external file browser
 
 
 VERSION 0.1 

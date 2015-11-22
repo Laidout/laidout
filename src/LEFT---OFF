@@ -12,6 +12,10 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now: 
 
+image out pdf not working!!
+
+configure should check for libreadline-dev
+
 page flipper text differs from page number indicator
 
 paper tool has bad shadow offset, and too thick lines
@@ -174,7 +178,10 @@ test:
 make sure undo is experimental only
 
 
+need option for always write relative links.. now defaults to absolute
+
 finish implement cairo backend
+  wallpaper icons messed up
   zoom up and down jumps way out sometimes
   multiline text out doesn't seem to work: noticed in tooltip
   decide on image importers, cairo can only do 8 bit png
@@ -195,24 +202,27 @@ object tool:
   things to allow editing of wrap, inset, clip paths, and chains
 
 CharacterInterface characterinterface
+  implement recent
+  implement suggestions
 
-caption CaptionInterface
-  text to path
+captioninterface CaptionInterface
   fonts need to dump in/out by themselves
-  when hovering over other text objects, highlight their boxes
   should adapt from multiline edit, since it already has cut/paste, selections, and is mostly debugged??
-  change centering not smooth, text placement hops
-  click to place caret
   select, copy, paste 
-  right to left
+  right to left (figure out how to do with harfbuzz)
+
+  text to path
+  change centering not smooth, text placement hops
   opentype variations
   baseline justify
-  insert character interface
   control-u hack for poweruser unicode character insertion
   use selected text as sample when popping up font dialog
   lorem ipsum
   color fonts: consider native otf: Mozilla and Adobe’s svg table, microsoft's colr/cpal, Google’s PNG images (CBDT/CBLC tables), Apple’s PNG images (SBIX table)
 
+  DONE click to place caret
+  DONE insert character interface
+  DONE when hovering over other text objects, highlight their boxes
   DONE color fonts overlay fonts, semi-manually overlaid
   DONE start dialog not selecting current font
   DONE use last selected object's font settings for new objects
@@ -270,6 +280,7 @@ text on path:
   multiline
 
 text:
+  global font list, finish implementing uniquinizing font names, need final step of some kind of file name diff
   freetype/fribidi/harfbuzz?
   interface base for utf8 based editing.. share this with window edits somehow
   maybe fonts should point to their creators to make duplication more reliable if there are more than just default fontmanager
@@ -295,10 +306,10 @@ viewport:
   needs menu box between scrollers to select various view/zoom/rotation/other settings
 
 engraving tool: Engraving 
+  need preview generator for engraver objects, with cairo, it is painfully slow
   bug: make a LineEdit overlay for number input, then Next bdown is ignored!! l, m, or right all ignored: viewportwindow line 947
   bug: object rotate works fine. but then enter and leave engraver tool. Now object rotate is messed up
   bug: 'z' zaps mesh, but does not change cache border or point mapping
-  blockout doesn't work
 
   multiobject:
     object lines in group list needs eye per object, affect actual object visibility
@@ -393,6 +404,7 @@ engraving tool: Engraving
     DONE button to remap lines, so not done automatically? shift press button to always remap
 
   need convert to path object ability
+  current blockout is not very precise, needs approximation between existing point samples
   fully implement resolution adjustments for auto lines -> needs resolution tool
   single group (not group list) view is too old, doesn't do link circle, and can only select from current object groups.. remove it entirely?
   export doesn't work for: nothing for scribus, eps, ps
@@ -411,7 +423,6 @@ engraving tool: Engraving
   don't warp, move points, then warp, almost always has bad points: PatchData::getPointReverse() is too inaccurate
   undo/redo
   finish implement making the circle lines be closed circles
-  current blockout is not very precise, needs approximation between existing point samples
   need some kind of smooth out: smooth out width, and smooth out path
   hover over mode icons should show text of what you are hovering over (verbose mode?).. hard to remember, annoying to look at status bar otherwise
   should be able to draw a line and have that be a baseline for dash division
@@ -424,6 +435,7 @@ engraving tool: Engraving
   must implement mode based shortcuts in Laxkit. currently all mesh shortcuts are active
   stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
 
+  DONE blockout doesn't work
   DONE (done) size of turbulent cell, and (done) per line turbulence
   DONE shortcut to unlink all, or toggle all linked, toggle all in group linked
   DONE space duplicate produces unnamed new groups as well as old group copies
@@ -565,6 +577,8 @@ pdf:
   still true? pdf export if a path has null linestyle/fillstyle it buffers until next path drawn
      instead of drawing with some default style
 Scribus:
+  font size confusion
+  caption export centering
   check for updates in file format for 1.5
   import/export color meshes, for recent versions of Scribus
   import/export linear and radial gradients
