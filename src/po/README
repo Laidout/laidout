@@ -1,4 +1,11 @@
-//note: this file is processed by doxygen for your viewing pleasure
+//note: This file is meant more for devs than translators. If you are looking only
+//      to translate, simply copy "laidout.pot" to "your_language.po" and
+//      edit the strings in it. You can use a program like kbabel or poedit
+//      which may be easier if you don't like plain text editors.
+
+//this file is processed by doxygen for your viewing pleasure via "make docs" in main laidout directory.
+      
+
 
 
 /*! \page translating   Translations
@@ -17,14 +24,17 @@ Any po files you make MUST be encoded as UTF-8 characters.
 1. POTFILES is a list of files to grab translatable strings from.
    To regenerate that file, do:
     make potfiles
+
    Also, if you have a link to the laxkit source directory from the top laidout
    directory, then in the laidout/po directory, you can do:
     make potfiles-withlax
+
    which will target all the Laidout and Laxkit source files as having translatable strings.
 
 
 2. laidout.pot is the base template file. Refresh with:
     make update
+
    This will make a file laidout-freshdump.pot, and merge it with any existing laidout.pot.
    laidout-freshdump.pot may be removed at this point. laidout.pot is the file you want.
 
@@ -33,10 +43,11 @@ Any po files you make MUST be encoded as UTF-8 characters.
 -------------------------- Making New Translations -------------------
 1. Update the basic info as above.
 
-2. Combine with Laxkit strings, if you did not do so above.
-   The Laxkit also has a few translatable strings. These can be found
-   in its laxkit.pot file. Those strings may have been translated to the desired
-   language already. If so, you can add those to your new one with the "msgcat" command:
+2. Combine with Laxkit strings, if you did not do so above, by appending the contents of
+   laxkit/lax/po/laxkit.pot to laidout/src/po/laidout.pot.
+   The Laxkit  strings may have been translated to the desired
+   language already. If so, you can add those to your new one with the "msgcat" command.
+   For instance, for spanish (es), you could do this:
 
      msgcat es-laidout.po es-laxkit.po -o es-merged.po
 
@@ -72,6 +83,7 @@ Any po files you make MUST be encoded as UTF-8 characters.
 
 2. Now run this command:
     msgmerge your_old_po_file.po laidout.pot > your_updated_po_file.po
+
    Now the your_updated_po_file.po file will contain all the currently needed strings, 
    preserving all the old translations, as long as they are still needed. Now just translate
    the new strings, and put it in place of your_old_po_file.po.
