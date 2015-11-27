@@ -210,7 +210,7 @@ int ExportDialog::init()
 		char *p=strrchr(config->tofiles,'.'),
 			 *s=strrchr(config->tofiles,'/');
 		if (p && p>s && p!=config->tofiles) *p='\0';
-		appendstr(config->tofiles,"#.");
+		appendstr(config->tofiles,"##.");
 		appendstr(config->tofiles,filter->DefaultExtension());
 	}
 	
@@ -789,6 +789,7 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 		} else {
 			batches->State(LAX_ON);
 			config->batches=n;
+			changeTofile(2);
 		}
 		return 0;
 
@@ -1030,6 +1031,7 @@ void ExportDialog::changeTofile(int t)
 	tofile=t;
 	config->target=t-1;
 
+	if (t==1) batches->State(LAX_OFF);
 	filecheck-> State(tofile==1?LAX_ON:LAX_OFF);
 	filescheck->State(tofile==2?LAX_ON:LAX_OFF);
 	if (commandcheck) commandcheck->State(tofile==3?LAX_ON:LAX_OFF);
