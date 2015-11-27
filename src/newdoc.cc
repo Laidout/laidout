@@ -444,7 +444,7 @@ int NewDocWindow::init()
 		impsel->AddItem(laidout->impositionpool.e[c]->name,c);
 		if (whichimp<0 && doc && !strcmp(doc->imposition->Name(),laidout->impositionpool.e[c]->name))
 			whichimp=c;
-		if (!strcmp(laidout->impositionpool.e[c]->name,"Singles")) singles=c;
+		if (!strcmp(laidout->impositionpool.e[c]->name,_("Singles"))) singles=c;
 	}
 	if (whichimp<0) whichimp=singles;
 
@@ -475,9 +475,11 @@ int NewDocWindow::init()
 
 
 	 //------ imposition brief description
-	impmesbar=new MessageBar(this,"mesbar 1.1",NULL,MB_LEFT|MB_MOVE, 0,0, 0,0, 0,
-			(doc?doc->imposition->BriefDescription()
-			 :laidout->impositionpool.e[whichimp]->description));
+	const char *brief=NULL;
+	if (doc) brief=doc->imposition->BriefDescription();
+	if (!brief && whichimp>=0 && whichimp<laidout->impositionpool.n) brief=laidout->impositionpool.e[whichimp]->description;
+
+	impmesbar=new MessageBar(this,"mesbar 1.1",NULL,MB_LEFT|MB_MOVE, 0,0, 0,0, 0, brief);
 	AddWin(impmesbar,1, 2500,2300,0,50,0, linpheight,0,0,50,0, -1);
 
 	AddWin(NULL,0, 2000,2000,0,50,0, textheight*2/3,0,0,0,0, -1);// forced linebreak, vertical spacer
