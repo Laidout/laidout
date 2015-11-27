@@ -1240,8 +1240,14 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 		height=spread->path->maxy-spread->path->miny;
 		width =spread->path->maxx-spread->path->minx;
 	}
-	if (height==0) height=papergroup->papers.e[0]->box->paperstyle->h();
+	if (height==0) height=papergroup->papers.e[0]->box->paperstyle->h(); //takes in to account landscape status
 	if (width==0)  width =papergroup->papers.e[0]->box->paperstyle->w();
+
+	if (out->curpaperrotation==90 || out->curpaperrotation==270) {
+		double tt=height;
+		height=width;
+		width=tt;
+	}
 
 	fprintf(f,"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
 	fprintf(f,"<!-- Created with Laidout, http://www.laidout.org -->\n");
@@ -1258,8 +1264,8 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			
 
 	 //write out global defs section
+	 //   ..gradients and such
 	fprintf(f,"  <defs>\n");
-	//*************** gradients and such
 
 	 //dump out defs for limbo objects if any
 	if (limbo && limbo->n()) {
@@ -1295,10 +1301,28 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	 // Write out objects....
 
 	 //transform to paper * conversion to left handed system, and 1/90th of an inch per unit
-	transform_set(mm,90,0,0,-90,0,height*72*1.25);
+	//transform_set(m,90,0,0,-90,0,height*72*1.25);
+	transform_set(m,90,0,0,-90, 0,0);
+	if (out->curpaperrotation>0) {
+		transform_identity(mm);
+		transform_rotate(mm, out->curpaperrotation*M_PI/180.);
+		transform_mult(mmm,m,mm);
+		transform_copy(m,mmm);
+	}
+
+	if (out->curpaperrotation==0) { m[5]=height*90; }
+	else if (out->curpaperrotation==90) { m[4]=width*90; m[5]=height*90; }
+	else if (out->curpaperrotation==180) { m[4]=width*90; }
+	else if (out->curpaperrotation==270) { }
+
+	//fprintf(f,"  <g transform=\"matrix(90,0,0,-90, 0,%f)\">\n", height*72*1.25);
+	fprintf(f,"    <g transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
+					m[0], m[1], m[2], m[3], m[4], m[5]); 
+
 	transform_invert(mmm,papergroup->papers.e[0]->m());
 	transform_mult(m,mmm,mm);
-	fprintf(f,"  <g transform=\"matrix(90,0,0,-90, 0,%f)\">\n", height*72*1.25);
+
+
 
 	 //dump out limbo objects if any
 	if (limbo && limbo->n()) {
@@ -1486,6 +1510,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 		 //figure out the paper size, orientation
 		PaperStyle *paper=NULL;
 		int landscape=0;
+
 		 //svg/inkscape uses width and height, but not paper names as far as I can see
 		 //search for paper size known to laidout within certain approximation
 		for (c=0; c<laidout->papersizes.n; c++) {
