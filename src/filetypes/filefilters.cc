@@ -676,16 +676,6 @@ ObjectDef *makeExportConfigDef()
 			NULL,  //defvalue
 			0,    //flags
 			NULL);//newfunc
-	sd->pushEnum("paperrotation",
-			_("Rotate paper"),
-			_("Whether to rotate the final exported paper on export"),
-			"0",  //defvalue
-			NULL,NULL, //newfunc
-			"0", _("0"), _("No rotation"),
-			"90", _("90"), _("90 degree rotation"),
-			"180", _("180"), _("180 degree rotation"),
-			"270", _("270"), _("270 degree rotation"),
-			NULL);
 	sd->push("batches",
 			_("Batches"),
 			_("For multi-page capable targets, how many spreads to include in a single file. Repeat to cover whole range."),
@@ -703,15 +693,24 @@ ObjectDef *makeExportConfigDef()
 			"even", _("Even"), _("Export only even spreads"),
 			"odd", _("Odd"), _("Export only odd spreads"),
 			NULL);
-	sd->pushEnum("rotate180",
-			_("Alternate rotation"),
-			_("Whether to rotate by 180 degrees even, odd, or no spreads. This is in addition to paperrotation."),
-			"none",  //defvalue
+	sd->pushEnum("paperrotation",
+			_("Rotate paper"),
+			_("Whether to rotate the final exported paper on export"),
+			"0",  //defvalue
 			NULL,NULL, //newfunc
-			"none", _("none"), _("Don't rotate"),
-			"even", _("Even"), _("Rotate spreads with even index"),
-			"odd", _("Odd"), _("Rotate spreads with odd index"),
+			"0", _("0"), _("No rotation"),
+			"90", _("90"), _("90 degree rotation"),
+			"180", _("180"), _("180 degree rotation"),
+			"270", _("270"), _("270 degree rotation"),
 			NULL);
+	sd->push("rotate180",
+			_("Alternate 180 degrees"),
+			_("Whether to rotate every other paper by 180 degrees."),
+			"boolean",
+			NULL, //range
+			"false",  //defvalue
+			0,    //flags
+			NULL);//newfunc
 	sd->push("reverse",
 			_("Reverse order"),
 			_("Whether to export in reverse order or not."),
@@ -987,6 +986,7 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 
 DocumentExportConfig::DocumentExportConfig()
 {
+	curpaperrotation=0;
 	paperrotation=0;
 	rotate180=0;
 	reverse_order=0;
@@ -1014,6 +1014,7 @@ DocumentExportConfig::DocumentExportConfig(Document *ndoc,
 										   int l,int s,int e,
 										   PaperGroup *group)
 {
+	curpaperrotation=0;
 	paperrotation=0;
 	rotate180=0;
 	reverse_order=0;
@@ -1124,7 +1125,7 @@ void DocumentExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpCo
 		fprintf(f,"%sbatches 4            #for multi-page capable targets, the number of spreads to put in a single file, repeat for whole range\n",spc);
 		fprintf(f,"%sevenodd odd          #all|even|odd. Based on spread index, maybe export only even or odd spreads.\n",spc);
 		fprintf(f,"%spaperrotation 0      #0|90|180|270. Whether to rotate each exported (final) paper by that number of degrees\n",spc);
-		fprintf(f,"%srotate180 none       #or even, or odd. Whether to rotate by 180 degrees the even or odd spread numbers, in addition to paperrotation\n",spc);
+		fprintf(f,"%srotate180 yes        #or no. Whether to rotate every other paper by 180 degrees, in addition to paperrotation\n",spc);
 
 		DBG cerr <<" *** need to implement DocumentExportConfig::paperrotation!"<<endl;
 		return;
@@ -1140,7 +1141,8 @@ void DocumentExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpCo
 	fprintf(f,"%send   %d\n",spc,end);
 
 	fprintf(f,"%spaperrotation %d\n",spc,paperrotation);
-	fprintf(f,"%srotate180 %s\n",spc, rotate180==0 ? "none" : (rotate180==1 ? "odd" : "even")); 
+	//fprintf(f,"%srotate180 %s\n",spc, rotate180==0 ? "none" : (rotate180==1 ? "odd" : "even")); 
+	fprintf(f,"%srotate180 %s\n",spc, rotate180==0 ? "yes" : "no"); 
 	fprintf(f,"%sreverse %s\n",spc,reverse_order ? "yes" : "no");
 	fprintf(f,"%sbatches %d\n",spc,batches);
 	if (evenodd==Odd) fprintf(f,"%sevenodd odd\n",spc);
@@ -1199,9 +1201,10 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpCo
 			IntAttribute(value,&paperrotation);
 
 		} else if (!strcmp(name,"rotate180")) {
-			if (isblank(value) || !strcasecmp(value,"none")) rotate180=0;
-			else if (!strcasecmp(value,"odd")) rotate180=1;
-			else rotate180=2;
+			rotate180=BooleanAttribute(value);
+			//if (isblank(value) || !strcasecmp(value,"none")) rotate180=0;
+			//else if (!strcasecmp(value,"odd")) rotate180=1;
+			//else rotate180=2;
 
 		} else if (!strcmp(name,"batches")) {
 			IntAttribute(value,&batches);
@@ -1310,14 +1313,15 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 		if (config->end<config->start) config->end=config->start;
 	}
 
-	int n=(config->end-config->start+1)*papergroup->papers.n;
-	if (n>1 && config->target==0 && !(config->filter->flags&FILTER_MULTIPAGE)) {
+	int numoutput = (config->end-config->start+1)*papergroup->papers.n; //number of output "pages"
+	//int numdigits=log10(numoutput);
+	if (numoutput>1 && config->target==0 && !(config->filter->flags&FILTER_MULTIPAGE)) {
 		log.AddMessage(_("Filter cannot export more than one page to a single file."),ERROR_Fail);
 		return 1;
 	}
 
 	int err=0;
-	if (n>1 && config->target==1 && !(config->filter->flags&FILTER_MANY_FILES)) {
+	if (numoutput>1 && config->target==1 && !(config->filter->flags&FILTER_MANY_FILES)) {
 		 //filter does not support outputting to many files, so loop over each paper and spread,
 		 //exporting 1 file per each spread-paper combination
 
@@ -1349,6 +1353,12 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 			for (int p=0; p<papergroup->papers.n; p++) { //loop over each paper in a spread
 				config->start=config->end=c;
 
+				config->curpaperrotation = config->paperrotation;
+				if (config->rotate180 && c%2==1) {
+					config->curpaperrotation+=180;
+					if (config->curpaperrotation>=360) config->curpaperrotation -= 360;
+				}
+
 				if (papergroup->papers.n==1) sprintf(filename,filebase,c);
 				else sprintf(filename,filebase,c,p);
 
@@ -1373,11 +1383,15 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 
 		if (left) {
 			char scratch[strlen(_("Export failed at file %d out of %d"))+20];
-			sprintf(scratch,_("Export failed at file %d out of %d"),n-left,n);
+			sprintf(scratch,_("Export failed at file %d out of %d"), numoutput-left, numoutput);
 			log.AddMessage(scratch,ERROR_Fail);
 		}
+
 	} else {
+		 //output filter can handle multiple pages...
+		 //
 		if (config->target==0 && config->batches>0 && config->batches<config->end-config->start+1) {
+			 //divide into batches
 			int s=config->start;
 			int e=config->end;
 			char *oldfilename=config->filename;
@@ -1399,6 +1413,7 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 					fname=newstr(oldfilename);
 					appendstr(fname,str);
 				}
+
 				config->filename=fname;
 				err=config->filter->Out(NULL,config,log);
 				delete[] fname;
@@ -1408,7 +1423,7 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 			config->end=e;
 			config->filename=oldfilename;
 
-		} else err=config->filter->Out(NULL,config,log); //multi-spread files
+		} else err=config->filter->Out(NULL,config,log); //send all pages at once to filter
 	}
 	
 	DBG cerr << "export_document end."<<endl;
