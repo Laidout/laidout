@@ -248,7 +248,9 @@ class PdfPageInfo : public PdfObjInfo
 	DoubleBBox bbox;
 	char *pagelabel;
 	Attribute resources;
-	PdfPageInfo() { pagelabel=NULL; }
+	int rotation;
+
+	PdfPageInfo() { pagelabel=NULL; rotation=0; }
 	virtual ~PdfPageInfo();
 };
 
@@ -478,6 +480,9 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	PaperGroup *papergroup=config->papergroup;
 	if (!filename) filename=config->filename;
 	
+	if (config->reverse_order) { int temp=start; start=end; end=temp; }
+
+
 	 //we must have something to export...
 	if (!doc && !limbo) {
 		//|| !doc->imposition || !doc->imposition->paper)...
@@ -546,14 +551,13 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 
 	
 	 //figure out paper orientation
-	int landscape=0;
-	double paperwidth; //,paperheight;
 	 // note this is orientation for only the first paper in papergroup.
 	 // If there are more than one papers, this may not work as expected...
 	 // The ps Orientation comment determines how onscreen viewers will show 
 	 // pages. This can be overridden by the %%PageOrientation: comment
-	landscape=(papergroup->papers.e[0]->box->paperstyle->flags&1)?1:0;
-	paperwidth=papergroup->papers.e[0]->box->paperstyle->width;
+	//double paperwidth = papergroup->papers.e[0]->box->paperstyle->width;
+	//double paperheight;
+	//int landscape = (papergroup->papers.e[0]->box->paperstyle->flags&1)?1:0;
 
 
 	 //object numbers of various dictionaries
@@ -572,11 +576,12 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	int pgindex;  //convenience variable
 	char *desc=NULL;
 	int plandscape;
+	int paperrotate;
 	int p;
 	
 	 // find basic pdf page info, and generate content streams.
 	 // Actual page objects are written out after the contents of all the pages have been processed.
-	for (int c=start; c<=end; c++) {
+	for (int c=start; (end>=start ? c<=end : c>=end); (end>=start ? c++ : c--)) {
 		if (config->evenodd==DocumentExportConfig::Even && c%2==0) continue;
         if (config->evenodd==DocumentExportConfig::Odd && c%2==1) continue;
 			
@@ -592,7 +597,16 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 				pageobj->next=new PdfPageInfo;
 				pageobj=(PdfPageInfo *)pageobj->next;
 			}
+
+			paperrotate=config->paperrotation;
+			if (config->rotate180 && c%2==1) paperrotate+=180;
+			if (paperrotate>=360) paperrotate-=360; 
 			plandscape=(papergroup->papers.e[p]->box->paperstyle->flags&1)?1:0;
+			if (plandscape) {
+				paperrotate+=90;
+				if (paperrotate>=360) paperrotate-=360;
+			}
+			pageobj->rotation = paperrotate;
 
 			pageobj->pagelabel=newstr(desc);//***should be specific to spread/paper
 			pageobj->bbox.setbounds(0,
@@ -607,12 +621,12 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			psConcat(72.,0.,0.,72.,0.,0.);
 
 			 //adjust for landscape
-			if (plandscape) {
-				 // paperstyle->width 0 translate   90 rotate  
-				sprintf(scratch,"0 1 -1 0 %.10f 0 cm\n",paperwidth);
-				appendstr(stream,scratch);
-				psConcat(0.,1.,-1.,0., paperwidth,0.);
-			}
+//			if (paperrotate>0) {
+//				 // paperstyle->width 0 translate   90 rotate  
+//				psConcat(0.,1.,-1.,0., paperwidth,0.);
+//				sprintf(scratch,"0 1 -1 0 %.10f 0 cm\n",paperwidth);
+//				appendstr(stream,scratch);
+//			}
 
 			 //apply papergroup->paper transform
 			transform_invert(m,papergroup->papers.e[p]->m());
@@ -633,7 +647,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 
 			if (spread) {
 				 // print out printer marks
-				 // *** later this will be more like pdf printer mark annotations
+				 // *** later maybe this will be more like pdf printer mark annotations
 				if ((spread->mask&SPREAD_PRINTERMARKS) && spread->marks) {
 					pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,spread->marks,log,warning);
 				}
@@ -666,14 +680,20 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 						pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,page->layers.e(l),log,warning);
 					}
 
-					appendstr(stream,"Q\n"); //pop ctm
+					appendstr(stream,"Q\n"); //pop ctm, page transform
 					psPopCtm();
 				}
 			}
 
 			 // print out paper footer
-			appendstr(stream,"Q\n"); //pop ctm
+			appendstr(stream,"Q\n"); //pop papergroup transform
 			psPopCtm();
+//			if (paperrotate>0) {
+//				appendstr(stream,"Q\n"); //pop paper rotation transform
+//				psPopCtm();
+//			}
+			//appendstr(stream,"Q\n"); //pop  pt to inches conversion (not really necessary
+			//psPopCtm();
 
 
 
@@ -702,12 +722,16 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	
 	
 	 // write out pdf /Page dicts, which do not have their object number or offsets yet.
-	int numpages=(end-start+1)*papergroup->papers.n;
+	//int numpages=(end-start+1)*papergroup->papers.n;
+	int numpages=0;
+	for (pageobj=pageobjs; pageobj; pageobj=(PdfPageInfo *)pageobj->next) numpages++;
+
 	pages=objcount + numpages; //object number of parent Pages dict
 	pageobj=pageobjs;
 	obj->next=pageobj;
 	obj=obj->next; //both obj and pageobj now point to first page object
-	for (int c=0; c<numpages; c++) {
+
+	while (pageobj) {
 		pageobj->number=objcount++;
 		pageobj->byteoffset=ftell(f);
 
@@ -726,17 +750,22 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			fprintf(f,"  >>\n");
 		} else fprintf(f,"  /Resources << >>\n");
 		fprintf(f,"  /Contents %d 0 R\n",pageobj->contents); //not req, but of course necessary if stuff on page
-		if (landscape) {//***ignores per page landscape
-			fprintf(f,"  /MediaBox [%f %f %f %f]\n",
-					pageobj->bbox.miny*72, pageobjs->bbox.minx*72,
-					pageobj->bbox.maxy*72, pageobjs->bbox.maxx*72);
-			fprintf(f,"  /Rotate 90\n");   //number of 90 increments to rotate clockwise
-		} else {
-			fprintf(f,"  /MediaBox [%f %f %f %f]\n",
-					pageobj->bbox.minx*72, pageobjs->bbox.miny*72,
-					pageobj->bbox.maxx*72, pageobjs->bbox.maxy*72);
-			fprintf(f,"  /Rotate 0\n");   //number of 90 increments to rotate clockwise
-		}
+
+
+		fprintf(f,"  /Rotate %d\n", pageobj->rotation);   //number of 90 increments to rotate clockwise
+//		if (pageobj->rotation==90 || pageobj->rotation==270) {
+//			fprintf(f,"  /MediaBox [%f %f %f %f]\n",
+//					pageobj->bbox.miny*72, pageobjs->bbox.minx*72,
+//					pageobj->bbox.maxy*72, pageobjs->bbox.maxx*72);
+//		} else {
+//			fprintf(f,"  /MediaBox [%f %f %f %f]\n",
+//					pageobj->bbox.minx*72, pageobjs->bbox.miny*72,
+//					pageobj->bbox.maxx*72, pageobjs->bbox.maxy*72);
+//		}
+		fprintf(f,"  /MediaBox [%f %f %f %f]\n",
+				pageobj->bbox.minx*72, pageobjs->bbox.miny*72,
+				pageobj->bbox.maxx*72, pageobjs->bbox.maxy*72);
+
 
 		 //the rest is optional
 		//fprintf(f,"  /LastModified %s\n",lastmoddate);
@@ -857,8 +886,8 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	//fprintf(f,"  /Author (%s)\n",***);
 	//fprintf(f,"  /Subject (%s)\n",***);
 	//fprintf(f,"  /Keywords (%s)\n",***);
-	//fprintf(f,"  /Creator (Laidout %s)\n",LAIDOUT_VERSION);
-	//fprintf(f,"  /Producer (Laidout %s)\n",LAIDOUT_VERSION);
+	//fprintf(f,"  /Creator (Laidout %s)\n",LAIDOUT_VERSION);  //for pdf creators
+	//fprintf(f,"  /Producer (Laidout %s)\n",LAIDOUT_VERSION); //for pdf convertors
 	//fprintf(f,"  /CreationDate (%s)\n",***);
 	char *tmp=newstr(ctime(&t));
 	tmp[strlen(tmp)-1]='\0';
