@@ -366,6 +366,8 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	PaperGroup *papergroup=config->papergroup;
 	if (!filename) filename=config->filename;
 	
+	if (config->reverse_order) { int temp=start; start=end; end=temp; }
+
 	 //we must have something to export...
 	if (!doc && !limbo) {
 		//|| !doc->imposition || !doc->imposition->paper)...
@@ -405,7 +407,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	Spread *spread=NULL;
 	Group *g=NULL;
 	Palette palette;
-	int c,c2,l,pg,c3;
+	int c2,l,pg,c3;
 
 	
 //	 //find out how many groups there are for DOCUMENT->GROUPC
@@ -452,7 +454,8 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	paperwidth= defaultpaper->width;
 	paperheight=defaultpaper->height;
 
-	int totalnumpages=(end-start+1)*papergroup->papers.n;
+	int totalnumpages = (abs(end-start)+1)*papergroup->papers.n;
+
 	if (config->evenodd==DocumentExportConfig::Even) {
 		totalnumpages/=2;
 		if (config->end%2==0) totalnumpages++;
@@ -657,13 +660,14 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	psFlushCtms();
 	psCtmInit();
 	double pageypos=CANVAS_MARGIN_Y;
-	int pagec;
+
+	int paperrotation;
 
 	 //find object to pageobject link mapping
 	PtrStack<PageObject> pageobjects; //we need to keep track of pageobject correspondence, as scribus docs
 									 //object id is the order they appear in the file, so for linked objects,
 									 //we need to know the order that they will appear!
-	for (c=start; c<=end; c++) { //for each spread
+	for (int c=start; (end>=start ? c<=end : c>=end); (end>=start ? c++ : c--)) { //for each spread
 		if (config->evenodd==DocumentExportConfig::Even && c%2==0) continue;
 		if (config->evenodd==DocumentExportConfig::Odd && c%2==1) continue;
 
@@ -847,30 +851,54 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 
 
 	int curobj=0;
+	int scribuspagei=0;
 
 	 //------now dump pages and objects to the file
-	for (c=start; c<=end; c++) { //for each spread
+	for (int c=start; (end>=start ? c<=end : c>=end); (end>=start ? c++ : c--)) { //for each spread
+		if (config->evenodd==DocumentExportConfig::Even && c%2==0) continue;
+		if (config->evenodd==DocumentExportConfig::Odd && c%2==1) continue;
+
 		if (doc) spread=doc->imposition->Layout(layout,c);
+
 		for (p=0; p<papergroup->papers.n; p++) { //for each paper
+			paperrotation=config->paperrotation;
+            if (config->rotate180 && c%2==1) paperrotation+=180;
+            if (paperrotation>=360) paperrotation-=360;
+
 			paperwidth= 72*papergroup->papers.e[p]->box->paperstyle->w(); //scribus wants visual w/h
 			paperheight=72*papergroup->papers.e[p]->box->paperstyle->h();
+
+			if (paperrotation==90 || paperrotation==270) {
+				double tt=paperwidth;  paperwidth=paperheight;  paperheight=tt;
+			}
+
 			plandscape=papergroup->papers.e[p]->box->paperstyle->landscape();
-			pagec=(c-start)*papergroup->papers.n+p; //effective scribus page index
-			currentpage=pagec;
+			//pagec=(c-start)*papergroup->papers.n+p; //effective scribus page index
+			//currentpage=pagec;
+			currentpage=scribuspagei;
 
 			 //build transform from laidout space to current page on scribus canvas
 			 //current laidout paper origin (lower left corner) must map to the
 			 //lower left corner of current scribus page,
 			 //which is (CANVAS_MARGIN_X, pageypos+paperheight) in scribus coords
-			transform_set(ms,1,0,0,-1,CANVAS_MARGIN_X,pageypos+paperheight);
-			transform_invert(m,ms); //m=ms^-1
+			transform_set(ms, 1,0,0,-1,  CANVAS_MARGIN_X, pageypos+paperheight);
+			//transform_invert(m,ms); //m=ms^-1
 
 			psCtmInit();
 			psPushCtm(); //so we can always fall back to identity
 			transform_invert(mmm,papergroup->papers.e[p]->m()); // papergroup->paper transform
-			transform_set(mm,72.,0.,0.,72.,0.,0.); //correction for inches <-> ps points
+			transform_set(mm, 72.,0.,0.,72.,0.,0.); //correction for inches <-> ps points
 			transform_mult(mmmm,mmm,mm);
 			transform_mult(m,mmmm,ms); //m = mmmm * ms
+
+			if (paperrotation>0) {
+				transform_rotate(m, paperrotation*M_PI/180.);
+			}
+			if (paperrotation==0) { }
+			else if (paperrotation==90) { /*m[4]+=paperwidth;*/ m[5]-=paperheight; }
+			else if (paperrotation==180) { m[4]+=paperwidth; m[5]-=paperheight;}
+			else if (paperrotation==270) { m[4]+=paperwidth; }
+
 			psConcat(m); //(scribus page coord) = (laidout paper coord) * psCTM()
 
 			DBG cerr <<"spread:"<<c<<"  paper:"<<p<<"  paperwidth:"<<paperwidth<<"  paperheight:"<<paperheight<<endl;
@@ -892,7 +920,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 			fprintf(f,"    PAGEWIDTH=\"%f\" \n",paperwidth);
 			fprintf(f,"    PAGEXPOS=\"%f\" \n",CANVAS_MARGIN_X);
 			fprintf(f,"    PAGEYPOS=\"%f\" \n",pageypos);
-			fprintf(f,"    NUM=\"%d\" \n",(c-start)*papergroup->papers.n+p); //number of the page, starting at 0
+			fprintf(f,"    NUM=\"%d\" \n",currentpage); //number of the page, starting at 0
 			fprintf(f,"    BORDERTOP=\"0\" \n"     //page margins?
 					  "    BORDERLEFT=\"0\" \n"
 					  "    BORDERBOTTOM=\"0\" \n"
@@ -941,11 +969,15 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 
 				}
 			} //if (spread)
+
 			psPopCtm();
 			//pageypos+=72*(papergroup->papers.e[p]->box->media.maxy-papergroup->papers.e[p]->box->media.miny)
 			//				+ CANVAS_GAP;
 			pageypos+=paperheight + CANVAS_GAP;
+			
+			scribuspagei++;
 		} //for each paper
+
 		if (spread) { delete spread; spread=NULL; }
 	} //for each spread
 		
