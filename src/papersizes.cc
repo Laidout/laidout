@@ -131,6 +131,8 @@ PtrStack<PaperStyle> *GetBuiltinPaperSizes(PtrStack<PaperStyle> *papers)
 	if (papers==NULL) papers=new PtrStack<PaperStyle>;
 	double x,y; 
 	double dpi;
+
+	setlocale(LC_ALL,"C"); //because "8.5" in the list above is not the same as "8,5" for some locales
 	for (int c=0; BuiltinPaperSizes[c]; c+=4) {
 		 // x,y were in inches
 		x=atof(BuiltinPaperSizes[c+1]);
@@ -140,6 +142,8 @@ PtrStack<PaperStyle> *GetBuiltinPaperSizes(PtrStack<PaperStyle> *papers)
 
 		papers->push(new PaperStyle(BuiltinPaperSizes[c],x,y,0,dpi,BuiltinPaperSizes[c+3]));
 	}
+	setlocale(LC_ALL,"");
+
 	return papers;
 }
 
