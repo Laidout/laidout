@@ -12,11 +12,13 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now: 
 
-image out pdf not working!!
+set inset in singles edit imposition, nothing changes!
 
-configure should check for libreadline-dev
+Edit imposition, choose booklet, not showing the pages!!! have to press space for it to show up
 
-page flipper text differs from page number indicator
+bg for spread flipper not the same as the other buttons. wtf??? only sometimes??
+
+page flipper text differs from page number indicator on start up
 
 paper tool has bad shadow offset, and too thick lines
 
@@ -79,6 +81,8 @@ switch to None document, and units change to unreasonable
 
 
 ------------ other bugs:
+
+configure should check for libreadline-dev?
 
 file-format dump says "Pattern has 2 elts" at very beginning... some kind of fontconfig or cairo errata?
 
@@ -178,7 +182,7 @@ test:
 make sure undo is experimental only
 
 
-need option for always write relative links.. now defaults to absolute
+clear out warnings due to make hidegarbage
 
 finish implement cairo backend
   wallpaper icons messed up
@@ -192,25 +196,13 @@ finish implement cairo backend
   DONE resize viewport freezes cairo
   DONE resize sig interface doesn't reposition boxes
 
-color slider popup:
-  have a "Done"/"Dismiss" button
-  DONE should pop near the mouse
-
-
-
-object tool:
-  things to allow editing of wrap, inset, clip paths, and chains
-
-CharacterInterface characterinterface
-  implement recent
-  implement suggestions
-
 captioninterface CaptionInterface
-  fonts need to dump in/out by themselves
   should adapt from multiline edit, since it already has cut/paste, selections, and is mostly debugged??
   select, copy, paste 
   right to left (figure out how to do with harfbuzz)
 
+  --0.097--
+  fonts need to dump in/out by themselves
   text to path
   change centering not smooth, text placement hops
   opentype variations
@@ -240,6 +232,7 @@ fontdialog:
   when sorting and there's just a couple, need to ensure that they all appear on screen
   start up with correct font selected
 
+  --0.097--
   favorites: tag and column
   user tags, not just fontmatrix tags, option to update fontmatrix?
   should REALLY have a LayerFont head containing the whole list, not a stand alone list which causes too many problems
@@ -274,6 +267,66 @@ fontdialog:
   DONE sample block fg/bg
   DONE progressive search
 
+Do separate package for icons, to aid those who can't get inkscape to make the icons in both lax and laidout
+
+autorecover.. autosave every X minutes -> need to decide on autosave location and how many to build up, how to remove old
+
+TreeSelector:
+  with text colors, mouse over highlight is off
+  cursor movement jiggles view.. problem with makeinwindow??
+  makeinwindow() doesn't account for columns
+  option to use markup for labels
+  spacing for column heads is NOT selecting for bounds
+  tree display flat option
+
+  DONE objecttree printing columns TWICE
+
+
+----------------0.097 ROADMAP ITEMS: features and enhancements------------------------
+
+
+need option for always write relative links.. now defaults to absolute
+
+color slider popup:
+  have a "Done"/"Dismiss" button
+  be able to choose which color sets are visible
+  make color slider box be able to be a pane
+  would be nice to enter number values in any color format
+  need some kind of palette tab
+  need palette selection tab
+  DONE should pop near the mouse 
+
+Palettes:
+  load palette should have a preview: file dialog preview function
+  allow editing palette strips, import those to gradient tools
+  custom palettes
+  if height < 2*textheight, then hide name info
+  wheel between loaded palettes?
+  have a none color
+  right click for:
+    load palette
+	select palette
+	save palette
+	dup palette
+	New from a generator (like rainbow)
+Soup up the color box so one can recall previous colors, and/or integration with palette window
+    -->delay until proper color implementation in place
+gradient resources
+  owner: file/user global/system global
+  name
+  tags
+  color strip: stops
+    position
+    color
+
+
+object tool:
+  things to allow editing of wrap, inset, clip paths, and chains
+
+CharacterInterface characterinterface
+  implement recent
+  implement suggestions
+
 text on path:
   kern handles
   offset from stroke or from path
@@ -291,8 +344,6 @@ text:
 
 make drag and drop selections work
 
-Do separate package for icons, to aid those who can't get inkscape to make the icons in both lax and laidout
-
 need more mechanism so that popup dialogs stay on top of window they are "children" of
 
 need a global Laidout method of making unique ids
@@ -301,9 +352,6 @@ need a global Laidout method of making unique ids
 when resizing viewportwindow and a temp_input window active, make sure it stays on screen?
 
 searchable menus
-
-viewport:
-  needs menu box between scrollers to select various view/zoom/rotation/other settings
 
 engraving tool: Engraving 
   need preview generator for engraver objects, with cairo, it is painfully slow
@@ -458,6 +506,7 @@ engraving tool: Engraving
 
 
 PathInterface:
+  select nodes with rectangle broken?
   bug: should not create new control points by pressing cntl, unless there is movement
   bug: shift click down then up on a point selects then deselects.. control can toggle
   bug: seems to be possible to move nodes out of order
@@ -528,19 +577,6 @@ command prompt window: command line
 save as should change save/import/export/current directory to that directory
 save incremented?
 
-autorecover.. autosave every X minutes -> need to decide on autosave location and how many to build up, how to remove old
-
-clear out warnings due to make hidegarbage
-
-TreeSelector:
-  with text colors, mouse over highlight is off
-  cursor movement jiggles view.. problem with makeinwindow??
-  makeinwindow() doesn't account for columns
-  option to use markup for labels
-  spacing for column heads is NOT selecting for bounds
-
-  DONE objecttree printing columns TWICE
-
 layers palette
   key controls for navigation within menu:
     space/enter toggle open and closed submenu
@@ -552,7 +588,7 @@ layers palette
   visible
   selectable
 
-image filters:
+image graphics filters:
   node editor
   graphicsmagick
   gmic
@@ -563,14 +599,32 @@ for purely command line execution, should be able to make totally not X dependen
 maybe expand the page label system to have some kind of to-do markup.. this could be combined with preflight verifiers
   or other search activities as work-in-progress annotations
 
-filters:
-  need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
+export/print dialog
+  make print button experimental only?
+  vital to debug send to printer
+  export should have a preview of what is actually going out, flip through spreads
+  in papergroups with multiple papers and double sided impositions, need to ensure front and back are output properly for printer 
+
+  DONE rotate on export useful, especially pdf export: implement DocumentExportConfig paperrotation
+  DONE rotate every other page 180
+  DONE print in reverse order
+
+file filters: filefilters:
+  selecting out should auto select tofile | tofiles, depending on how many selected for out
+  export ranges should accept "1-4, 6, 20-25" and "5-1", or by name "iii - iv"
   remember last export 
   importing should not spawn new windows
   importing should sort out duplicate names
+  need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
+  When there are errors or warnings in exporting, should be able to have the error log such that
+    you can just jump to the offending bit easily. This would also be used for preflight verifiers,
+    and maybe also mass edit things, like edit all images..
+    - have ViewWindow::JumpToObject(&place, objectid);
 image
   make sure temp file is removed, should probably locate in user space maybe? or make sure perms set reasonably
   should really make this graphicsmagick based, not gs+pdf based
+laidout:
+  need a Laidout out! for partial exports, or conversions between nets/papergroup lines/etc
 pdf:
   export complex engraving is really, really slow. probably all the string reallocation?
   pdf optimize jpg dump, compress image data
@@ -588,10 +642,6 @@ Scribus:
   scribus export should show actual version export
   scribus import: need to read page sizes from actual page attributes, as it may well be different than in document attributes
     -> this necessitates revamp of singles to use more than one paper type
-  scribus out doesn't do gradients
-eps:
-  export seems to be rather broken
-  command line export file name defaults to "output#.eps"
 svg:
   after in: nodes right on each other produce bad vectors
   in hangs.. should NOT default to powerstroke.. the cache for complex stuff REALLY bogs down, creating NaN draws
@@ -603,24 +653,27 @@ svg:
   need in for style on paths
   in/out for meshes
   radial: transparent inner circle, patch edges
-When there are errors or warnings in exporting, should be able to have the error log such that
-  you can just jump to the offending bit easily. This would also be used for preflight verifiers,
-  and maybe also mass edit things, like edit all images..
-  - have ViewWindow::JumpToObject(&place, objectid);
+plan:
+  need an In()
+  implement paper rotation for out
+ppt:
+  implement paper rotation
+ps:
+  for plain postscript, there's bitmask, but no transparency. maybe optionally do simulation with dithered bitmask..
+    a lot of work for a deprecated format, but could have other uses, like for PDF/X-1a
+  implement paper rotation
+eps:
+  export seems to be rather broken
+  command line export file name defaults to "output#.eps"
+  implement paper rotation
+ 
 
 collect for out: define directory to pull all files and external resources in, including the .laidout file
 
 newdoc:
+  need to spiffify tabframe.. it is hideous
   when change number off named paper, make it "custom"
-
-export/print dialog
-  make print button experimental only?
-  vital to debug send to printer
-  rotate on export useful, especially pdf export: implement DocumentExportConfig paperrotation
-  rotate every other page 180
-  print in reverse order
-  export should have a preview of what is actually going out, flip through spreads
-  in papergroups with multiple papers and double sided impositions, need to ensure front and back are output properly for printer 
+  open on image should create a new singles with default paper and image centered
 
 Clean up mesh/patch controls: 
   maybe should not be able to escape off path tool when editing as path
@@ -669,21 +722,27 @@ need infrastructure to propagate and save tool settings
 
 Convert impose-only to be based on feeding it an ExportConfig
 
+update touch_recent for Laidout files in the newer xbel type 
+
 FileDialog2:
-  bookmarks, have recent there
-  bookmarks, display as separated list, not tree
-  implement icon list selector
-  hover is selecting.. should be just hovering
+  sort by details 
+  need add and remove bookmarks
+  need laidout only bookmarks file
   edits color style: bg alternating isn't highlighting
-  have little x to clear masks..
-  need way to draw grayed out icons
-  details: name  mod-date  w x h  size
-  sort by details
-  tree display flat option
+  implement icon list selector
+  show directories first
   tooltip to show full path of bookmarks
-  do recent right, figure out current way other desktops do it
   exclude/include directories when listing files
-  need hover indicator, and better scan.. ignoring offset
+
+  DONE bookmarks should auto wrap width
+  DONE details: name  mod-date  size
+  DONE if no recent, should show "(No recent)"
+  DONE window vertical alignment problems.. click up, offsets wrong
+  DONE do recent right, figure out current way other desktops do it
+  DONE bookmarks, display as separated list, not tree
+  DONE need way to draw grayed out icons
+  DONE have little x to clear masks..
+  DONE bookmarks, have recent there
 
 file button:
    Save
@@ -730,11 +789,6 @@ guides:
   snap guides to objects
   snap objects edges to various things
 
-General Laxkit Interfaces needs:
-  DrawData for arbitrary rendering of any known objects to any Displayer object
-  DONE stack of available interfaces -> interfacemanager.cc
-  DONE iconmanager
-
 align tool:
   need to make discoverable, not just as key shortcuts
     -> make as standalone tools, now that viewport stores selection?
@@ -770,14 +824,6 @@ Spread Editor:
   create new document from spread view?
   hide should collapse into a single thing so you can arrange more simply, instead of still having to sift through many
 
-Color sliders:
-  maybe should have an "ok" button to get rid of floating box
-  be able to choose which color sets are visible
-  make color slider box be able to be a pane
-  would be nice to enter number values in any color format
-  need some kind of palette tab
-
-need to remember previous export settings
 need infrastructure to propagate and save tool settings 
 Tools should remember their settings
     figure out which settings need to be remembered, and install as resource.. what happens when diff
@@ -1131,31 +1177,6 @@ Masking
     pathinterface conversion must be done
     true object tree with all lax data objects subclassed to hold children, and reference parent
 
-
-
-Palettes:
-  load palette should have a preview: file dialog preview function
-  allow editing palette strips, import those to gradient tools
-  custom palettes
-  if height < 2*textheight, then hide name info
-  wheel between loaded palettes?
-  have a none color
-  right click for:
-    load palette
-	select palette
-	save palette
-	dup palette
-	New from a generator (like rainbow)
-Soup up the color box so one can recall previous colors, and/or integration with palette window
-    -->delay until proper color implementation in place
-gradient resources
-  owner: file/user global/system global
-  name
-  tags
-  color strip: stops
-    position
-    color
-
 debug multi head? seems to crash when showing with projectors plugged in
 	screen info should return x,y,w,h, with flag saying it is part of a whole.
 	if only one screen, then x,y is 0
@@ -1401,6 +1422,16 @@ need conversions: gradient->color patch
                   image -> imagepatch <- do with image filters rather than specific object type
                   imagepatch -> image
                   colorpatch -> image?
+				  engraver -> path
+				  path -> engraver
+				  text -> path
+Convert:
+  bool reversible;
+  char *from;
+  char *to;
+  int support; //like how reliable it is to convert, warnings for what is lost
+  CanConvert(object, from, to, warnings_ret);
+  newobject = Convert(object, to);
 
 remember tool settings: double click on tool icon? right click...
 remember tool settings
@@ -1423,7 +1454,7 @@ directory reorganization?
  windows/ <-- purely ui elements
  core/ <-- implies isolating core functions
 
-intl support: ready for pango? or Harfbuzz/cairo/freetype?
+intl support: Harfbuzz/cairo/freetype
 
 template/master pages: 
  have objects be tagged with ref object, so you can create a page with a master page
@@ -1633,5 +1664,12 @@ DONE make pdf default output format for sending to lp
 DONE copy paste not working again
 DONE transparency in paths does not work on screen (will fix with update to cairo)
 DONE pop up a menu, close the originating window. The popup is still up!! "transientfor" problems?  
+DONE image out pdf not working!!  
+DONE viewport: needs menu box between scrollers to select various view/zoom/rotation/other settings 
+DONE General Laxkit Interfaces needs:
+  DONE DrawData for arbitrary rendering of any known objects to any Displayer object
+  DONE stack of available interfaces -> interfacemanager.cc
+  DONE iconmanager
+DONE choose letter size while in spanish locale, makes it 8 x 11, not 8.5!! . vs , problem??  
 
 

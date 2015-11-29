@@ -12,21 +12,20 @@ VERSION 0.096
 (done) text: layered color fonts, each layer has to be a separate font file
 (done) Caption text tool
 (done) Caption tool, export svg: done, but due to svg, problem specifying colorfont fonts
-(done) Caption tool, scribus -> done-ish, font naming problem for color fonts, and sizing
-(done) Caption tool, pdf -> very poorly exported, fails for text outside latin-1, because fonts in pdf are a terrible headache. Will probably bail and use an external pdf library in future
+(done) Caption tool, scribus -> done-ish, font naming problem for color fonts, and a sizing discrepancy
+(done) Caption tool, pdf -> done sort of, fails for text outside latin-1, because fonts in pdf are a terrible headache.
        make window resize work in gnome, test in kde
        autosave for autorecover
        layers (object tree) palette
-       test new export even/odd and batches for all exporters
-       export option alternate each paper 180 deg
-       export option, put out in reverse order
+(done) test new export even/odd, batches, and paper rotation for major exporters: svg image pdf scribus, not done: ps eps plan ppt 
+(done) export option alternate each paper 180 deg
+(done) export option rotate every paper by increments of 90
+(done) export option, put out in reverse order
 (done) Infrastructure for resource sharing between objects
 (done) engraver tool, fix blockout! how did it break?!
 (done) engraver, allow work on multiple objects at once, including tracing
        debug line outline cache, especially for joins
-       double click on group should change selection area to group contents?
        Moving selected things in group contents does not update group bounds
-       should not be able to select both group and group contents at same time
 (done) Re-fix cut and paste from system clipboard
 (done) Re-Re-fix paste from system clipboard. I swear it was working.
 
@@ -44,8 +43,8 @@ VERSION 0.097
        Externally rendered objects, similar to Scribus render frames
        Custom alignments to parents, not just affine transform to parent
        Merge EpsData with normal images
-       Examine and improve ease of use of import images dialog, particularly for previewing
-       In image properties dialog, be able to select from possible potential previews
+       Import Images dialog needs total reprogramming
+       In image properties dialog, be able to select from various default preview configs
        Clean up patch controls
        Clean up project load/save internals and dialogs
        Object and resource tags interface
@@ -61,6 +60,7 @@ VERSION 0.097
        Undo/Redo
        Clean up symmetry clone interface, not easy to use currently
        Clone Pattern Builder
+       lock down color backend.. it's currently a series of weak hacks based on 8-bit screen rgb
        Soup up the color box so one can recall previous colors, and/or integration with palette window
        make PathInterface extrapolate line join work
        Signature editor: detect non staplable binding edge, show red rather than green
@@ -73,6 +73,8 @@ VERSION 0.097
        pdf export, unicode capable
        Optimize pdf export to rescale to target dpi, and compress image data
        fix tooltips
+       should not be able to select both group and group contents at same time
+       double click on group should change selection area to group contents?
        drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
        drag-n-drop with system, like drag images into viewwindow from an external file browser
 
@@ -84,6 +86,7 @@ VERSION 0.1
        Full internationalization support in window controls for input and output, including rtl/mixed text?  
        SpreadEditor: be able to eject a page into limbo, for creation threads, connect, then insert as a group
        When importing from an image list file, should be able to say if and when to auto-make previews
+       pick and choose export range, not single "from:start to:end", but like "1-3,5,19-20"
        Basic infrastructure for most things should be in place.
        Must be Stable, not merely "Stable"
        Creep management controls
@@ -129,16 +132,6 @@ VERSION 0.1
 
 VERSION 0.2
 -----------
-Full multi-contact, blob and pressure sensitive touch with tuio,touchlib(?). See www.nuigroup.com/touchlib for diy surfaces
-partial Laidout export
-Figure out best way to expose laidout functions to other program's scripters (ie inkscape and scribus)
-Bezier color patch freeform, rather than just grid.
-The other Postscript/Pdf gradients?: Triangle strip and Triangle Mesh
-Possibly allow pure function gradients, and redefining the functions for the other gradients..
-Maybe bez part of path interface should have segment move like inkscape
-Somehow be able to do simulated add-ins/foldouts from within any page of an imposition
-use any path as a kind of tab stop
-Optional multi-key shortcuts?  
 Flowed text tool
 text: Opentype feature support (other than multicolor stuff)
 text: Opentype color font support
@@ -152,11 +145,22 @@ text: Footnotes
 text: auto track chapter/section
 text: Automatic, yet overrideable hyphenation
 text: layout inside anything that provides an 'area' and runaround facility.  
-Decide on adequate rendering backend: going with cairo for now, but that's only 8bit. antigrain? antigrain/freetype/harfbuzz/gm?
+Full multi-contact, blob and pressure sensitive touch with tuio,touchlib(?). See www.nuigroup.com/touchlib for diy surfaces
+partial Laidout export
+implement export even/odd, batches, and paper rotation for other exporters: ps eps plan ppt 
+Figure out best way to expose laidout functions to other program's scripters (ie inkscape and scribus)
+Bezier color patch freeform, rather than just grid.
+Possibly allow pure function gradients, and redefining the functions for the other gradients..
+Maybe bez part of path interface should have segment move like inkscape
+Somehow be able to do simulated add-ins/foldouts from within any page of an imposition
+use any path as a kind of tab stop
+Optional multi-key shortcuts?  
+Decide on adequate rendering backend: going with cairo for now, but that's only 8bit. gegl? antigrain? antigrain/freetype/harfbuzz/gm?
 GraphicsMagick/ImageMagick plugin or integration: benefits: a gazillion file formats, including EPS, and color profiles
   Imlib chokes on really big image files, whereas this would not
 svgfont/cairo user font support.. too special of a case?
 gmic filter plugin
+full TeX importer
 Would be nice to have tex/latex text and equation reader
 Would be nice to be able to handle metapost/metafun sort of things
 Would be nice to be able to handle lilypond sort of things
@@ -170,6 +174,7 @@ Work and turn/work and tumble
 openoffice files import
 Uniconverter support
 Super import place tool, including recursive placement
+The other Postscript/Pdf gradients?: Triangle strip and Triangle Mesh
 fore edge printing
 fore edge sculpting
 Vx support?
