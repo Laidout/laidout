@@ -2881,7 +2881,7 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 	if (ViewportWindow::CharInput(ch,buffer,len,state,d)==0) return 0;
 
 	DBG // ******** vvvvvvvv  for debugging objecttreewindow:
-	if (ch=='o') {
+	if (laidout->experimental && ch=='O' && (state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) {
 		ObjectTreeWindow *otree=new ObjectTreeWindow(NULL, "tree","Object Tree", 0,NULL, this);
 		app->addwindow(otree);
 
