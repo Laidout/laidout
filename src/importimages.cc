@@ -19,6 +19,7 @@
 #include "importimage.h"
 #include "laidout.h"
 #include "utils.h"
+
 #include <lax/checkbox.h>
 #include <lax/fileutils.h>
 #include <lax/menubutton.h>
@@ -653,7 +654,6 @@ int ImportImagesDialog::Event(const Laxkit::EventData *data,const char *mes)
 						menu,1);
 		popup->pad=3;
 		popup->Select(0);
-	//	popup->SetFirst(curitem,x,y); 
 		popup->WrapToMouse(None);
 		app->rundialog(popup);
 		if (popup->object_id) app->setfocus(popup);
@@ -676,34 +676,29 @@ int ImportImagesDialog::Event(const Laxkit::EventData *data,const char *mes)
 
 	} else if (!strcmp(mes,"nextfile") || !strcmp(mes,"prevfile")) {
 			
-		int *which=filelist->WhichSelected(LAX_ON);
-		if (!images.n || !which) return 0;
-		int c,i;
-		if (curitem<1 || curitem>which[0]) {
-			c=filelist->Curitem();
-			for (i=1; i<=which[0]; i++) 
-				if (which[i]==c) break;
-			if (i<=which[0]) curitem=i;
-			else curitem=1;
-		}
+		if (!images.n || !filelist->NumSelected()) return 0;
+		
+		if (curitem<0 || curitem>=filelist->NumSelected())
+			curitem=filelist->NumSelected()-1;
+
 		if (!strcmp(mes,"prevfile")) {
 			curitem--;
-			if (curitem<1) curitem=which[0];
+			if (curitem<0) curitem=filelist->NumSelected()-1;
 		} else {
 			curitem++;
-			if (curitem>which[0]) curitem=1;
+			if (curitem>filelist->NumSelected()-1) curitem=0;
 		}
 
 		 //set current file/path/previewer to c
-		const MenuItem *m=filelist->Item(which[curitem]);
+		const MenuItem *m=filelist->GetSelected(curitem);
 		char *full=fullFilePath(m->name);
+		int c;
 		ImageInfo *info=findImageInfo(full,&c);
 		delete[] full;
 		if (info) {
 			SetFile(info->filename,info->previewfile);
 			previewer->Preview(info->filename);
 		}
-		delete[] which;
 		return 0;
 	}
 
@@ -752,17 +747,13 @@ void ImportImagesDialog::updateFileList()
 {//***
 	DBG cerr <<"ImportImagesDialog::updateFileList()"<<endl;
 	curitem=-1;
-	int *which=filelist->WhichSelected(LAX_ON);
-	if (!which) return;
-
-	DBG cerr<<"ImportImagesDialog::updateFileList()...which.n:"<<which[0]<<endl;
 
 	const MenuItem *item=NULL;
 	ImageInfo *info=NULL;
 	char *full=NULL;
-	for (int c=0; c<which[0]; c++) {
-		item=filelist->Item(which[c+1]);
-		DBG cerr<<"  c:"<<c<<"  which:"<<which[c+1]<<"  item:"<<(item?item->name:"NO ITEM!!!!")<<endl;
+
+	for (int c=0; c<filelist->NumSelected(); c++) {
+		item=filelist->GetSelected(c);
 		
 		 // find file in list 
 		full=fullFilePath(item->name);
@@ -778,7 +769,6 @@ void ImportImagesDialog::updateFileList()
 
 		delete[] full;	
 	}
-	delete[] which;
 	DBG cerr <<"... done ImportImagesDialog::updateFileList()"<<endl;
 }
 	
@@ -865,18 +855,19 @@ int ImportImagesDialog::send(int id)
 	
 	DBG cerr <<"====Generating file names for import images..."<<endl;
 	
-	int *which=filelist->WhichSelected(LAX_ON);
 	int n=0;
 	char **imagefiles=NULL, **previewfiles=NULL;
-	if (which!=NULL) {
+
+	if (filelist->NumSelected()>0) {
 		n=0;
-		imagefiles  =new char*[which[0]];
-		previewfiles=new char*[which[0]];
+		imagefiles  =new char*[filelist->NumSelected()];
+		previewfiles=new char*[filelist->NumSelected()];
 		
 		const MenuItem *item;
-		for (int c=0; c<which[0]; c++) {
+		for (int c=0; c<filelist->NumSelected(); c++) {
 			imagefiles[n]=previewfiles[n]=NULL;
-			item=filelist->Item(which[c+1]);
+			item=filelist->GetSelected(c);
+
 			if (item) {
 				imagefiles[n]=path->GetText();
 				if (imagefiles[n][strlen(imagefiles[n])-1]!='/') appendstr(imagefiles[n],"/");
@@ -892,7 +883,6 @@ int ImportImagesDialog::send(int id)
 			delete[] imagefiles;   imagefiles=NULL;
 			delete[] previewfiles; previewfiles=NULL;
 		}
-		delete[] which;
 
 	} else { 
 		 //nothing currently selected in the item list...

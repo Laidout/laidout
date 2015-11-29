@@ -17,6 +17,7 @@
 #define IMPORTIMAGES_H
 
 #include <lax/filedialog.h>
+#include <lax/menuselector.h>
 #include <lax/imageinfo.h>
 #include <lax/lists.h>
 #include <lax/dump.h>
