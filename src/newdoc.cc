@@ -77,15 +77,18 @@ LaidoutOpenWindow::LaidoutOpenWindow(int whichstart)
 				_("New Document"),
 				NULL,
 				0);
-	AddWin(new NewProjectWindow(this,"New Project",_("New Project"),0, 0,0,0,0, 0), 1,
+
+	if (laidout->experimental) {
+		AddWin(new NewProjectWindow(this,"New Project",_("New Project"),0, 0,0,0,0, 0), 1,
 				_("New Project"),
 				NULL,
 				0);
+	}
 
 	FileDialog *fd=new FileDialog(this,"open doc","open doc",
 					ANXWIN_REMEMBER, 0,0,0,0, 0,
 					object_id, "open doc",
-					FILES_NO_CANCEL|FILES_OPEN_MANY|FILES_FILES_ONLY,
+					FILES_NO_CANCEL |FILES_OPEN_MANY |FILES_FILES_ONLY |FILES_PREVIEW,
 					NULL,NULL,NULL,
 					"Laidout");//recent group
 	fd->AddFinalButton(_("Open a copy"),_("This means use that document as a template"),2,1);
