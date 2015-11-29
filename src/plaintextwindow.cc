@@ -19,6 +19,7 @@
 #include <lax/messagebar.h>
 //#include <lax/textbutton.h>
 #include <lax/menubutton.h>
+#include <lax/menuselector.h>
 #include <lax/filedialog.h>
 #include <lax/messagebox.h>
 
