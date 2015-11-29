@@ -444,9 +444,11 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 	dp->LineAttributes(-1,LineSolid,CapButt,JoinMiter);
 	dp->LineWidthScreen(w);
 	//dp->PushAndNewTransform(data->m());
+	double sshadow = shadow/dp->Getmag();
 
 	PaperBox *box=data->box;
 	flatpoint p[4];
+
 	if ((what&MediaBox) && (box->which&MediaBox)) {
 		p[0]=flatpoint(box->media.minx,box->media.miny);
 		p[1]=flatpoint(box->media.minx,box->media.maxy);
@@ -461,7 +463,7 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 		if (shadow) {
 			dp->NewFG(0,0,0);
 			dp->PushAxes();
-			dp->ShiftScreen(shadow,shadow);
+			dp->ShiftScreen(sshadow,-sshadow);
 			dp->drawlines(p,4,1,1);
 			dp->PopAxes();
 			dp->LineWidthScreen(w);
@@ -495,6 +497,7 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 		}
 
 	}
+
 	dp->DrawScreen();
 	dp->LineWidthScreen(w);
 	if ((what&ArtBox) && (box->which&ArtBox)) {
@@ -525,6 +528,7 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 		p[3]=dp->realtoscreen(box->bleed.maxx,box->bleed.miny);
 		dp->drawlines(p,4,1,0);
 	}
+
 	dp->DrawReal();
 	//dp->PopAxes(); //spread axes
 }
