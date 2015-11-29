@@ -3407,7 +3407,7 @@ int HedronWindow::PerformAction(int action)
 									object_id,"new poly",
 									FILES_OPEN_ONE
 									);
-		f->Recent("Polyhedron");
+		f->RecentGroup("Polyhedron");
 		app->rundialog(f);
 		return 0;
 
