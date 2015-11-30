@@ -32,9 +32,6 @@
 #include <lax/units.h>
 #include <lax/shortcutwindow.h>
 
-// DBG !!!!!
-#include <lax/displayer-cairo.h>
-
 #include <cstdarg>
 #include <cups/cups.h>
 #include <sys/stat.h>
@@ -69,6 +66,10 @@
 
 #include <iostream>
 using namespace std;
+
+// DBG !!!!!
+#include <lax/displayer-cairo.h>
+#define DBGCAIROSTATUS(text) { DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(dp); if (ddp && ddp->GetCairo()) cerr <<text<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl; }
 
 #define DBG 
 
@@ -2324,8 +2325,7 @@ void LaidoutViewport::Refresh()
 
 	dp->StartDrawing(this);
 
-	DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(dp);
-	DBG if (ddp && ddp->GetCairo()) cerr <<" LO viewport refresh, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+	DBGCAIROSTATUS(" LO viewport refresh, cairo status:  ")
 
 
 	 // draw the scratchboard, just blank out screen..
@@ -2355,7 +2355,7 @@ void LaidoutViewport::Refresh()
 		DrawData(dp,limbo->e(c),NULL,NULL,drawflags);
 	}
 
-	DBG if (ddp && ddp->GetCairo()) cerr <<" LO viewport after  limbo, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+	DBGCAIROSTATUS(" LO viewport after  limbo, cairo status:  ")
 
 
 	 //draw papergroup
@@ -2367,8 +2367,7 @@ void LaidoutViewport::Refresh()
 	}
 
 	
-
-	DBG if (ddp && ddp->GetCairo()) cerr <<" LO viewport after  papergroup, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+	DBGCAIROSTATUS(" LO viewport after  papergroup, cairo status:  ")
 
 	
 	DBG cerr <<"drawing spread objects.."<<endl;
@@ -2405,8 +2404,7 @@ void LaidoutViewport::Refresh()
 
 		if (spread->marks) DrawData(dp,spread->marks,NULL,NULL,drawflags);
 		 
-
-		DBG if (ddp && ddp->GetCairo()) cerr <<" LO viewport after spread, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+		DBGCAIROSTATUS(" LO viewport after spread, cairo status:  ")
 
 		 // draw the pages
 		Page *page=NULL;
@@ -2501,8 +2499,8 @@ void LaidoutViewport::Refresh()
 			dp->PopAxes(); // remove page transform
 		}
 	}
-
-	DBG if (ddp && ddp->GetCairo()) cerr <<" LO viewport after pages, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+	
+	DBGCAIROSTATUS(" LO viewport after pages, cairo status:  ")
 
 	
 	 // Call Refresh for each interface that needs it, ignoring clipping region
@@ -2573,7 +2571,6 @@ void LaidoutViewport::Refresh()
 
 	dp->Updates(1);
 
-	//DBG if (ddp && ddp->GetCairo()) cerr <<" LO viewport refresh end, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 
 	 // swap buffers
@@ -3580,6 +3577,8 @@ void PageFlipper::Refresh()
 
 //-------------end PageFlipper
 
+
+
 //! Dec count of old doc, inc count of newdoc.
 /*! Does not currently update any context labels....
  */
@@ -4534,8 +4533,8 @@ void ViewWindow::updateContext(int messagetoo)
 		} else strcat(blah,"none");
 		if (mesbar) mesbar->SetText(blah);
 
-		PageFlipper *pageflipper=dynamic_cast<PageFlipper*>(findChildWindowByName("page number"));
-		if (pageflipper) makestr(pageflipper->currentcontext,blah);
+		//PageFlipper *pageflipper=dynamic_cast<PageFlipper*>(findChildWindowByName("page number"));
+		//if (pageflipper) makestr(pageflipper->currentcontext,blah);
 	}
 
 
@@ -4551,6 +4550,8 @@ void ViewWindow::updateContext(int messagetoo)
 			}
 		}
 	}
+
+	pagenumber->Select(lviewport->CurrentSpread()+1);
 }
 
 
