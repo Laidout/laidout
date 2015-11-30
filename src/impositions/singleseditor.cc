@@ -21,6 +21,7 @@
 #include <lax/button.h>
 #include <lax/messagebar.h>
 #include <lax/sliderpopup.h>
+#include <lax/numslider.h>
 #include <lax/units.h>
 
 
@@ -192,8 +193,16 @@ int SinglesEditor::init()
 			            _("Inset Top:"),NULL,0,
 			            0,0,3,0,3,3);
 	linp->tooltip(_("Amount to chop from paper before applying tiling"));
-	if (imp) linp->SetText(units->Convert(imp->insettop,UNITS_Inches,laidout->prefs.default_units,NULL));
+	if (imp) linp->SetText(units->Convert(imp->insettop,UNITS_Inches,laidout->prefs.default_units,NULL)); 
 	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
+	 // ******
+//	NumSlider *slider=new NumSlider(this,"inset t",NULL, NumSlider::NO_MAXIMUM,
+//			            0,0,0,linpheight, 0, 
+//						last,object_id,"inset t2",
+//						NULL, 0,1000, units->Convert(imp->insettop,UNITS_Inches,laidout->prefs.default_units,NULL), .05);
+//	last=slider;
+//	slider->tooltip(_("Amount to chop from paper before applying tiling"));
+//	AddWin(slider,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	
 	last=linp=insetb=new LineInput(this,"inset b",NULL,LINP_ONLEFT,
 			            5,250,0,0, 0, 
@@ -360,6 +369,19 @@ int SinglesEditor::Event(const EventData *data,const char *mes)
 		//***should switch to custom paper maybe
 		makestr(papertype->name,_("Custom"));
 
+	} else if (!strcmp(mes,"inset l")) {
+	} else if (!strcmp(mes,"inset r")) {
+	} else if (!strcmp(mes,"inset t")) {
+	} else if (!strcmp(mes,"inset b")) {
+	} else if (!strcmp(mes,"y tiling")) {
+	} else if (!strcmp(mes,"x tiling")) {
+	} else if (!strcmp(mes,"ygap")) {
+	} else if (!strcmp(mes,"xgap")) {
+	} else if (!strcmp(mes,"margit t")) {
+	} else if (!strcmp(mes,"margit b")) {
+	} else if (!strcmp(mes,"margit l")) {
+	} else if (!strcmp(mes,"margit r")) {
+
 	} else if (!strcmp(mes,"Ok")) {
 		send();
 		if (win_parent) app->destroywindow(win_parent);
@@ -419,6 +441,44 @@ void SinglesEditor::send()
 	app->SendMessage(data, win_owner, win_sendthis, object_id);
 }
 
+Imposition *SinglesEditor::GetImposition()
+{
+	int npgs=(doc?doc->pages.n:1);
+	int xtile=1, ytile=1;
+	if (tilex) xtile=atoi(tilex->GetCText());
+	if (tiley) ytile=atoi(tiley->GetCText());
+
+	SimpleUnit *units=GetUnitManager();
+	double xgap=0, ygap=0;
+	if (gapx) xgap=units->Convert(atof(gapx->GetCText()),laidout->prefs.default_units,UNITS_Inches,NULL);
+	if (gapy) ygap=units->Convert(atof(gapy->GetCText()),laidout->prefs.default_units,UNITS_Inches,NULL);
+
+	if (npgs<=0) npgs=1;
+
+	if (xtile<=0) xtile=1;
+	if (ytile<=0) ytile=1;
+
+	imp->tilex=xtile;
+	imp->tiley=ytile;
+	imp->gapx=xgap;
+	imp->gapy=ygap;
+	imp->insetleft  =units->Convert(insetl->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL);
+	imp->insetright =units->Convert(insetr->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL);
+	imp->insettop   =units->Convert(insett->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL);
+	imp->insetbottom=units->Convert(insetb->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL);
+	imp->SetDefaultMargins(
+					units->Convert(marginl->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL),
+					units->Convert(marginr->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL),
+					units->Convert(margint->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL),
+					units->Convert(marginb->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL)
+				);
+
+	imp->NumPages(npgs);
+	imp->SetPaperSize(papertype);
+
+	return imp;
+}
+
 //! Make sure the dialog and the imposition have sync'd up paper types.
 /*! If dialogtoimp!=0, then update imp with the dialog's paper, otherwise
  * update the dialog to reflect the imposition paper.
@@ -467,9 +527,6 @@ void SinglesEditor::UpdatePaper(int dialogtoimp)
 
 const char *SinglesEditor::ImpositionType()
 { return "Singles"; }
-
-Imposition *SinglesEditor::GetImposition()
-{ return imp; }
 
 /*! Note, changes document, NOT the imposition.
  */

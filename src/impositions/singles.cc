@@ -198,10 +198,10 @@ int Singles::SetPaperSize(PaperStyle *npaper)
 int Singles::SetDefaultMargins(double l,double r,double t,double b)
 {
 	if (!pagestyle) return 1;
-	pagestyle->ml=l;
-	pagestyle->mr=r;
-	pagestyle->mt=t;
-	pagestyle->mb=b;
+	pagestyle->ml = marginleft  = l;
+	pagestyle->mr = marginright = r;
+	pagestyle->mt = margintop   = t;
+	pagestyle->mb = marginbottom= b;
 
 	return 0;
 }
@@ -219,9 +219,11 @@ void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpConte
 {
 	if (!att) return;
 	char *name,*value;
+
 	for (int c=0; c<att->attributes.n; c++) {
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
+
 		if (!strcmp(name,"insetleft")) {
 			DoubleAttribute(value,&insetleft);
 		} else if (!strcmp(name,"insetright")) {
@@ -357,16 +359,17 @@ Value *Singles::duplicate()
 		pagestyle->inc_count();
 		sn->pagestyle=pagestyle;
 	}
-	sn->marginleft=marginleft;
-	sn->marginright=marginright;
-	sn->margintop=margintop;
+
+	sn->marginleft  =marginleft;
+	sn->marginright =marginright;
+	sn->margintop   =margintop;
 	sn->marginbottom=marginbottom;
-	sn->insetleft=insetleft;
-	sn->insetright=insetright;
-	sn->insettop=insettop;
-	sn->insetbottom=insetbottom;
-	sn->tilex=tilex;
-	sn->tiley=tiley;
+	sn->insetleft   =insetleft;
+	sn->insetright  =insetright;
+	sn->insettop    =insettop;
+	sn->insetbottom =insetbottom;
+	sn->tilex       =tilex;
+	sn->tiley       =tiley;
 
 	return sn;  
 }
@@ -672,6 +675,7 @@ Spread *Singles::PaperLayout(int whichpaper)
 
 	 // fill spread with paper and page outline
 	PathsData *newpath=new PathsData();
+	newpath->style|=PathsData::PATHS_Ignore_Weights;
 	spread->path=(SomeData *)newpath;
 	
 	 // make the outline around the inset, then lines to demarcate the tiles
