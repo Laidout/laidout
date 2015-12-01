@@ -12,45 +12,23 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now: 
 
-set inset in singles edit imposition, nothing changes!
-
-Edit imposition, choose booklet, not showing the pages!!! have to press space for it to show up
-
-bg for spread flipper not the same as the other buttons. wtf??? only sometimes??
-
-page flipper text differs from page number indicator on start up
-
-paper tool has bad shadow offset, and too thick lines
-
-text is interfering with the page number circle text out
-
-cannot go up directory in file dialog when path input line is bad
-
-'N' to zap matrix in object tool jumps the object to random location
-
-delete page doesn't update page flipper
+****** doing text extents on wrong font??? changing default displayer font to last multicolor!!!
 
 bug: add gray marks, then '.' for next object, endless loop!
 memory hole, activate tool, lay down one paper, quit, 3 objects remain
-
-pdf out needs clone deref
+test-tiled-mark.laidout: delete the bars, add bars back then try to export, program stops (not a segfault)!!!! headwindow gets decremented somehow 
 
 reimpose memory hole.. reimposed 5 page booklet
 
 object layer positioning for Home and End keys projecting out in wrong way
 
 ubuntu resize window failing
-gnome "application" does one per window, not one per app. this is not a bad thing imnsho, but should be easy to conform to desktop spec application properly
-
-scribus plugin: if directory of executable script is not writable, it fails! 
- -> should find one that is writable
+gnome "application" does one per window, not one per app. this is not a bad thing imnsho, but should be easy to conform to desktop application spec properly
 
 ContextMenu: tablet mouse can't click down in?!?? -> because slight drag cancels... should allow tiny drags
 ContextMenu: mouse hover scan appears to ignore text pad
 
-text window controls have difficulties
-
-shearing produced null axes
+shearing produced null axes occasionally
 
 tooltips and event timers seem to be frelled
 
@@ -63,6 +41,8 @@ clone a child.. NOT PUTTING CORRECTLY!!!! totally wrong matrix
 cloning, change original, not triggering bbox update in clone
 cloning, jump to object in offscreen page, switches pages, but bounding box wrong place
 
+text window controls have difficulties
+
 prompt window is f'd up
 Laxkit::MultiLineEdit needs some serious debugging 
 
@@ -74,17 +54,20 @@ laidout import, does not appear to scale correctly, does odd scaling, and insert
   option to insert new pages, or merge onto existing pages
   need to center within new margin area, as compared to previous margin area
 
-test-tiled-mark.laidout: delete the bars, add bars back then try to export, program stops (not a segfault)!!!! headwindow gets decremented somehow
+
+------------ other bugs:
 
 select none, select doc, viewport jumps around... it should stay the same area
 switch to None document, and units change to unreasonable
 
+pdf out needs clone deref
 
------------- other bugs:
+bg for spread flipper not the same as the other buttons. wtf??? only sometimes??
+
+scribus plugin: if directory of executable script is not writable, it fails! 
+ -> should find one that is writable
 
 configure should check for libreadline-dev?
-
-file-format dump says "Pattern has 2 elts" at very beginning... some kind of fontconfig or cairo errata?
 
 "edit imposition", then escape.. removes window, but not the frame!
 
@@ -110,7 +93,7 @@ viewwindow, change to spreadview, change back to view.. Horizontal ruler origin 
 
 lineinput not propagating escapable
 
-datarefs on images scale not like images
+clones of images scale not like images
 
 html dump must convert chars to entities
 
@@ -161,9 +144,12 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 stackframe seems to be ignoring window borders on layout
 
+
 ----------------0.096 ROADMAP ITEMS: features and enhancements------------------------
 website: clarify how to get debs from the tarball
 website: explain a bit more how to install dev versions, and place side by side with "stable"
+website: revamp features page
+website: combine faq and help?
 
 update fileformat.txt
 check laidout.1 when time to release
@@ -181,6 +167,10 @@ test:
   make some test scripts for command line testing
 make sure undo is experimental only
 
+
+Spread editor:
+  not showing thumbnails!!
+  does not respond to viewport zoom menu stuff
 
 clear out warnings due to make hidegarbage
 
@@ -226,7 +216,7 @@ captioninterface CaptionInterface
   DONE cursor up and down goes to wrong position
   DONE i/o color, set viewport color on selection
 
-fontdialog:
+fontdialog: FontDialog
   sample block should not strictly adhere to fontsize, as it can get very big
   sample block should be multiline
   when sorting and there's just a couple, need to ensure that they all appear on screen
@@ -234,6 +224,7 @@ fontdialog:
 
   --0.097--
   favorites: tag and column
+  option to search by spacing, ie monospace, see fontconfig: FC_PROPORTIONAL, FC_DUAL, FC_MONO, FC_CHARCELL
   user tags, not just fontmatrix tags, option to update fontmatrix?
   should REALLY have a LayerFont head containing the whole list, not a stand alone list which causes too many problems
   should really get around to implementing scrollers
@@ -1671,5 +1662,14 @@ DONE General Laxkit Interfaces needs:
   DONE stack of available interfaces -> interfacemanager.cc
   DONE iconmanager
 DONE choose letter size while in spanish locale, makes it 8 x 11, not 8.5!! . vs , problem??  
+DONE set inset in singles edit imposition, nothing changes!  
+DONE cannot go up directory in file dialog when path input line is bad 
+DONE ?(can't duplicate anymore) Edit imposition, choose booklet, not showing the pages!!! have to press space for it to show up 
+DONE file-format dump says "Pattern has 2 elts" at very beginning... some kind of fontconfig or cairo errata?  
+DONE page flipper text differs from page number indicator on start up 
+DONE delete page doesn't update page flipper 
+DONE paper tool has bad shadow offset, and too thick lines 
+DONE text is interfering with the page number circle text out 
+DONE (can't duplicate any more) 'N' to zap matrix in object tool jumps the object to random location 
 
 
