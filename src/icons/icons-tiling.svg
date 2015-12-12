@@ -14,7 +14,7 @@
    height="990"
    id="svg2"
    version="1.1"
-   inkscape:version="0.48.4 r9939"
+   inkscape:version="0.91 r13725"
    sodipodi:docname="icons-tiling.svg">
   <defs
      id="defs4">
@@ -142,9 +142,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.94747473"
-     inkscape:cx="511.89695"
-     inkscape:cy="406.71874"
+     inkscape:zoom="0.94747475"
+     inkscape:cx="312.78252"
+     inkscape:cy="492.14679"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -200,7 +200,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -668,7 +668,7 @@
          x="297"
          y="767.06219">spiral</tspan></text>
     <rect
-       ry="44.822475"
+       ry="0"
        rx="0"
        y="113.37582"
        x="-42.443626"
@@ -684,7 +684,7 @@
        x="94.75"
        y="111.86218"
        rx="0"
-       ry="44.822479"
+       ry="0"
        inkscape:label="#rect3786" />
     <rect
        style="fill:#6aa5d6;fill-opacity:1;stroke:none"
@@ -694,9 +694,9 @@
        x="283.64679"
        y="-59.158234"
        rx="0"
-       ry="44.822475" />
+       ry="0" />
     <rect
-       ry="44.822475"
+       ry="0"
        rx="0"
        y="-54.915596"
        x="459.71637"
@@ -705,7 +705,7 @@
        id="rect5945"
        style="fill:#2f72a9;fill-opacity:1;stroke:none" />
     <rect
-       ry="44.822475"
+       ry="0"
        rx="0"
        y="-119.96942"
        x="283.29321"
@@ -721,9 +721,9 @@
        x="459.36279"
        y="-115.72678"
        rx="0"
-       ry="44.822475" />
+       ry="0" />
     <rect
-       ry="44.822475"
+       ry="0"
        rx="0"
        y="-89.563828"
        x="282.23254"
@@ -739,9 +739,9 @@
        x="458.30212"
        y="-85.321182"
        rx="0"
-       ry="44.822475" />
+       ry="0" />
     <rect
-       ry="44.822475"
+       ry="0"
        rx="0"
        y="-29.106194"
        x="281.52542"
@@ -757,33 +757,33 @@
        x="457.595"
        y="-24.863556"
        rx="0"
-       ry="44.822475" />
+       ry="0" />
     <g
        id="Frieze_11"
        inkscape:label="#g8369"
        transform="translate(0,45)"
        style="stroke:#265c8a;stroke-opacity:1;stroke-width:0.3;stroke-miterlimit:4;stroke-dasharray:none">
       <rect
-         ry="44.822475"
+         ry="0"
          rx="0"
          y="66.862183"
          x="322.20001"
          height="36"
          width="36"
          id="rect3778"
-         style="fill:#c8def0;fill-opacity:1;stroke:#265c8a;stroke-opacity:1;stroke-width:0.3;stroke-miterlimit:4;stroke-dasharray:none" />
+         style="fill:#c8def0;fill-opacity:1;stroke:#265c8a;stroke-opacity:1;stroke-width:0.3;" />
       <rect
-         ry="44.822475"
+         ry="0"
          rx="0"
          y="66.862183"
          x="361.79999"
          height="36"
          width="36"
          id="rect3945"
-         style="fill:#c8def0;fill-opacity:1;stroke:#265c8a;stroke-opacity:1;stroke-width:0.3;stroke-miterlimit:4;stroke-dasharray:none" />
+         style="fill:#c8def0;fill-opacity:1;stroke:#265c8a;stroke-opacity:1;stroke-width:0.3;" />
     </g>
     <rect
-       ry="44.822475"
+       ry="0"
        rx="0"
        y="-3.655571"
        x="59.287651"
@@ -800,12 +800,12 @@
        x="9.7922058"
        y="-190.02127"
        rx="0"
-       ry="44.822475" />
+       ry="0" />
     <g
        transform="translate(-78.842405,-163.24295)"
        id="g3977">
       <rect
-         ry="44.822475"
+         ry="0"
          rx="0"
          y="158.21178"
          x="96.825729"
@@ -831,7 +831,7 @@
          x="96.825729"
          y="158.21178"
          rx="0"
-         ry="44.822475" />
+         ry="0" />
       <path
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
@@ -843,7 +843,7 @@
        transform="matrix(0.5,0,0,0.5,-88.740558,212.97131)"
        id="g4644">
       <rect
-         ry="89.644951"
+         ry="0"
          rx="0"
          y="158.21178"
          x="96.825729"
@@ -869,7 +869,7 @@
          x="96.825729"
          y="158.21178"
          rx="0"
-         ry="89.644951" />
+         ry="0" />
       <path
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
@@ -881,7 +881,7 @@
        transform="matrix(0.5,0,0,1,-88.36695,44.297723)"
        id="g4003">
       <rect
-         ry="44.822475"
+         ry="0"
          rx="0"
          y="158.21178"
          x="96.825729"
@@ -900,7 +900,7 @@
        transform="matrix(0.5,0,0,1,-90.752673,-0.202277)"
        id="g4603">
       <rect
-         ry="44.822475"
+         ry="0"
          rx="0"
          y="158.21178"
          x="96.825729"
@@ -920,7 +920,7 @@
        transform="matrix(0.5,0,0,1,-89.02228,44.25)">
       <rect
          transform="scale(-1,1)"
-         ry="44.822475"
+         ry="0"
          rx="0"
          y="158.21178"
          x="-162.77449"
@@ -954,12 +954,12 @@
          x="-130.75"
          y="-147.854"
          rx="0"
-         ry="44.822475" />
+         ry="0" />
       <g
          transform="matrix(0.54631671,0,0,1.1240761,41.852486,-65.971726)"
          id="g5949">
         <rect
-           ry="39.874947"
+           ry="0"
            rx="0"
            y="158.21178"
            x="96.825729"
@@ -990,7 +990,7 @@
            transform="matrix(1.0691817,0,0,1.129526,-22.787026,21.334769)"
            id="g6828">
           <rect
-             ry="39.682552"
+             ry="0"
              rx="0"
              y="-191.69031"
              x="-393.37283"
@@ -1018,7 +1018,7 @@
              x="323.28622"
              y="-191.33676"
              rx="0"
-             ry="39.682537" />
+             ry="0" />
           <path
              sodipodi:nodetypes="cccc"
              inkscape:connector-curvature="0"
@@ -1030,7 +1030,7 @@
       <g
          id="g6840">
         <rect
-           ry="44.822475"
+           ry="0"
            rx="0"
            y="-237.85396"
            x="-397.80002"
@@ -1048,7 +1048,7 @@
            x="322.20001"
            y="-237.85399"
            rx="0"
-           ry="44.822475" />
+           ry="0" />
       </g>
     </g>
     <g
@@ -1068,7 +1068,7 @@
              x="-394.07993"
              y="-236.23804"
              rx="0"
-             ry="39.682556" />
+             ry="0" />
           <path
              sodipodi:nodetypes="cccc"
              inkscape:connector-curvature="0"
@@ -1080,7 +1080,7 @@
            transform="matrix(1.0691812,0,0,1.1295259,-23.829526,16.416325)"
            id="g6882">
           <rect
-             ry="39.682556"
+             ry="0"
              rx="0"
              y="204.02727"
              x="323.63974"
@@ -1107,9 +1107,9 @@
            x="-397.79999"
            y="-282.85394"
            rx="0"
-           ry="44.822475" />
+           ry="0" />
         <rect
-           ry="44.822475"
+           ry="0"
            rx="0"
            y="246.87041"
            x="322.20001"
@@ -1123,7 +1123,7 @@
        transform="translate(5.6568542,46.414214)"
        id="g4572">
       <rect
-         ry="44.822475"
+         ry="0"
          rx="0"
          y="-91.129799"
          x="52.529892"
@@ -1149,7 +1149,7 @@
          x="52.529892"
          y="-91.129799"
          rx="0"
-         ry="44.822475" />
+         ry="0" />
       <path
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
@@ -1168,7 +1168,7 @@
          x="52.529892"
          y="-91.129799"
          rx="0"
-         ry="44.822475" />
+         ry="0" />
       <path
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
@@ -1187,7 +1187,7 @@
          x="52.529892"
          y="-91.129799"
          rx="0"
-         ry="89.644951" />
+         ry="0" />
       <path
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
@@ -1199,7 +1199,7 @@
        id="g4760"
        transform="matrix(-0.5,0,0,0.5,18.2358,382.22388)">
       <rect
-         ry="89.644951"
+         ry="0"
          rx="0"
          y="-91.129799"
          x="52.529892"
@@ -1225,7 +1225,7 @@
          x="52.529892"
          y="-91.129799"
          rx="0"
-         ry="89.644951" />
+         ry="0" />
       <path
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
@@ -1237,7 +1237,7 @@
        id="g4766"
        transform="matrix(-0.5,0,0,-0.5,18.23579,324.0227)">
       <rect
-         ry="89.644951"
+         ry="0"
          rx="0"
          y="-91.129799"
          x="52.529892"
@@ -1256,7 +1256,7 @@
        id="g4662"
        transform="matrix(0.5,0,0,-0.5,-66.819356,279.6477)">
       <rect
-         ry="89.644951"
+         ry="0"
          rx="0"
          y="-91.129799"
          x="52.529892"
@@ -1279,7 +1279,7 @@
          transform="matrix(0.54631674,0,0,0.53652503,41.852482,161.9815)"
          id="g4039">
         <rect
-           ry="83.542191"
+           ry="0"
            rx="0"
            y="158.21178"
            x="96.825729"
@@ -1305,7 +1305,7 @@
            x="52.529892"
            y="-91.129799"
            rx="0"
-           ry="83.542191" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -1324,7 +1324,7 @@
            x="52.529892"
            y="-91.129799"
            rx="0"
-           ry="84.210861" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -1336,7 +1336,7 @@
          id="g4057"
          transform="matrix(0.54503727,0,0,-0.53652513,66.11925,233.96486)">
         <rect
-           ry="83.542175"
+           ry="0"
            rx="0"
            y="-91.129799"
            x="52.529892"
@@ -1363,7 +1363,7 @@
          x="52.529892"
          y="-91.129799"
          rx="0"
-         ry="89.644951" />
+         ry="0" />
       <path
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
@@ -1386,7 +1386,7 @@
            x="96.825729"
            y="158.21178"
            rx="0"
-           ry="83.542168" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -1398,7 +1398,7 @@
          id="g4027"
          transform="matrix(-0.54631662,0,0,0.53652514,159.44795,340.75951)">
         <rect
-           ry="83.542168"
+           ry="0"
            rx="0"
            y="-91.129799"
            x="52.529892"
@@ -1417,7 +1417,7 @@
          id="g4033"
          transform="matrix(-0.54631677,0,0,-0.53652515,159.44796,278.96486)">
         <rect
-           ry="83.542168"
+           ry="0"
            rx="0"
            y="-91.129799"
            x="52.529892"
@@ -1443,7 +1443,7 @@
            x="52.529892"
            y="-91.129799"
            rx="0"
-           ry="83.542168" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -1475,7 +1475,7 @@
          x="96.825729"
          y="158.21178"
          rx="0"
-         ry="89.644951" />
+         ry="0" />
       <path
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
@@ -1487,7 +1487,7 @@
        id="g4802"
        transform="matrix(-0.5,0,0,-0.5,17.91466,352.44171)">
       <rect
-         ry="89.644951"
+         ry="0"
          rx="0"
          y="-91.129799"
          x="52.529892"
@@ -1506,7 +1506,7 @@
        id="g4808"
        transform="matrix(-0.5,0,0,0.5,17.91465,444.64289)">
       <rect
-         ry="89.644951"
+         ry="0"
          rx="0"
          y="-91.129799"
          x="52.529892"
@@ -1532,7 +1532,7 @@
          x="52.529892"
          y="-91.129799"
          rx="0"
-         ry="89.644951" />
+         ry="0" />
       <path
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
@@ -1555,7 +1555,7 @@
            x="96.825729"
            y="158.21178"
            rx="0"
-           ry="83.542198" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -1567,7 +1567,7 @@
          id="g4027-8"
          transform="matrix(-0.54631677,0,0,-0.53652529,159.44796,305.06484)">
         <rect
-           ry="83.542145"
+           ry="0"
            rx="0"
            y="-91.129799"
            x="52.529892"
@@ -1586,7 +1586,7 @@
          id="g4033-0"
          transform="matrix(-0.54631673,0,0,0.53652523,159.44796,404.65952)">
         <rect
-           ry="83.542152"
+           ry="0"
            rx="0"
            y="-91.129799"
            x="52.529892"
@@ -1612,7 +1612,7 @@
            x="52.529892"
            y="-91.129799"
            rx="0"
-           ry="83.54216" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -1632,7 +1632,7 @@
          x="96.825729"
          y="158.21178"
          rx="0"
-         ry="89.644951" />
+         ry="0" />
       <path
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
@@ -1644,7 +1644,7 @@
        id="g4844"
        transform="matrix(0.5,0,0,-0.5,-50.972605,397.16622)">
       <rect
-         ry="89.644951"
+         ry="0"
          rx="0"
          y="-91.129799"
          x="52.529892"
@@ -1663,7 +1663,7 @@
        id="g4850"
        transform="matrix(-0.5,0,0,0.5,17.20754,489.3674)">
       <rect
-         ry="89.644951"
+         ry="0"
          rx="0"
          y="-91.129799"
          x="52.529892"
@@ -1689,7 +1689,7 @@
          x="52.529892"
          y="-91.129799"
          rx="0"
-         ry="89.644951" />
+         ry="0" />
       <path
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
@@ -1712,7 +1712,7 @@
            x="96.825729"
            y="158.21178"
            rx="0"
-           ry="83.542168" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -1724,7 +1724,7 @@
          id="g4027-4"
          transform="matrix(0.54631656,0,0,-0.53652509,84.95205,350.06486)">
         <rect
-           ry="83.542183"
+           ry="0"
            rx="0"
            y="-91.129799"
            x="52.529892"
@@ -1743,7 +1743,7 @@
          id="g4033-5"
          transform="matrix(-0.54631672,0,0,0.53652525,159.44796,449.65951)">
         <rect
-           ry="83.54216"
+           ry="0"
            rx="0"
            y="-91.129799"
            x="52.529892"
@@ -1769,7 +1769,7 @@
            x="52.529892"
            y="-91.129799"
            rx="0"
-           ry="83.542183" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -1789,7 +1789,7 @@
          x="96.825729"
          y="158.21178"
          rx="0"
-         ry="89.644951" />
+         ry="0" />
       <path
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
@@ -1801,7 +1801,7 @@
        id="g4886"
        transform="matrix(-0.25,0,0,0.5,-11.91521,518.68289)">
       <rect
-         ry="89.644951"
+         ry="0"
          rx="0"
          y="-91.129799"
          x="52.529892"
@@ -1820,7 +1820,7 @@
        id="g4892"
        transform="matrix(-0.25,0,0,-0.5,-11.91522,460.48171)">
       <rect
-         ry="89.644951"
+         ry="0"
          rx="0"
          y="-91.129799"
          x="52.529892"
@@ -1846,7 +1846,7 @@
          x="52.529892"
          y="-91.129799"
          rx="0"
-         ry="89.644951" />
+         ry="0" />
       <path
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
@@ -1865,7 +1865,7 @@
          x="52.529892"
          y="-91.129799"
          rx="0"
-         ry="89.644951" />
+         ry="0" />
       <path
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
@@ -1877,7 +1877,7 @@
        id="g4910"
        transform="matrix(0.25,0,0,-0.5,-37.52,443.12815)">
       <rect
-         ry="89.644951"
+         ry="0"
          rx="0"
          y="-91.129799"
          x="52.529892"
@@ -1896,7 +1896,7 @@
        id="g4916"
        transform="matrix(-0.25,0,0,0.5,5.1437401,535.50611)">
       <rect
-         ry="89.644951"
+         ry="0"
          rx="0"
          y="-91.129799"
          x="52.529892"
@@ -1922,7 +1922,7 @@
          x="52.529892"
          y="-91.129799"
          rx="0"
-         ry="89.644951" />
+         ry="0" />
       <path
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
@@ -1945,7 +1945,7 @@
            x="96.825729"
            y="158.21178"
            rx="0"
-           ry="83.54216" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -1957,7 +1957,7 @@
          id="g4027-85"
          transform="matrix(-0.2300282,0,0,0.53652515,123.93336,475.75951)">
         <rect
-           ry="83.542175"
+           ry="0"
            rx="0"
            y="-91.129799"
            x="52.529892"
@@ -1976,7 +1976,7 @@
          id="g4033-3"
          transform="matrix(-0.24440493,0,0,-0.53652505,124.68857,413.96487)">
         <rect
-           ry="83.542191"
+           ry="0"
            rx="0"
            y="-91.129799"
            x="52.529892"
@@ -2002,7 +2002,7 @@
            x="52.529892"
            y="-91.129799"
            rx="0"
-           ry="83.542168" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -2021,7 +2021,7 @@
            x="52.529892"
            y="-91.129799"
            rx="0"
-           ry="83.542152" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -2033,7 +2033,7 @@
          id="g4027-42"
          transform="matrix(0.23002794,0,0,-0.53652507,101.56666,395.06486)">
         <rect
-           ry="83.542191"
+           ry="0"
            rx="0"
            y="-91.129799"
            x="52.529892"
@@ -2052,7 +2052,7 @@
          id="g4033-33"
          transform="matrix(-0.24440481,0,0,0.53652516,143.58856,494.65951)">
         <rect
-           ry="83.542168"
+           ry="0"
            rx="0"
            y="-91.129799"
            x="52.529892"
@@ -2078,7 +2078,7 @@
            x="52.529892"
            y="-91.129799"
            rx="0"
-           ry="83.542191" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -2098,7 +2098,7 @@
          x="96.825729"
          y="158.21178"
          rx="0"
-         ry="89.644951" />
+         ry="0" />
       <path
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
@@ -2110,7 +2110,7 @@
        id="g5919"
        transform="matrix(0,0.5,-0.5,0,-54.836662,491.53995)">
       <rect
-         ry="89.644951"
+         ry="0"
          rx="0"
          y="-91.129799"
          x="52.529892"
@@ -2129,7 +2129,7 @@
        id="g5925"
        transform="matrix(-0.5,0,0,-0.5,16.85399,505.02944)">
       <rect
-         ry="89.644951"
+         ry="0"
          rx="0"
          y="-91.129799"
          x="52.529892"
@@ -2155,7 +2155,7 @@
          x="52.529892"
          y="-91.129799"
          rx="0"
-         ry="89.644951" />
+         ry="0" />
       <path
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
@@ -2178,7 +2178,7 @@
            x="184.5"
            y="471.86618"
            rx="0"
-           ry="45.970245" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -2190,7 +2190,7 @@
          transform="matrix(1.073051,0,0,1.0926321,-13.050138,-45.705378)"
          id="g4970">
         <rect
-           ry="41.771057"
+           ry="0"
            rx="0"
            y="-217.64693"
            x="473.68878"
@@ -2210,7 +2210,7 @@
          transform="matrix(1.0926334,0,0,1.0730497,-17.156202,-35.618031)"
          id="g4982">
         <rect
-           ry="41.771107"
+           ry="0"
            rx="0"
            y="-506.47821"
            x="-217.50772"
@@ -2237,7 +2237,7 @@
            x="-506.46405"
            y="184.34329"
            rx="0"
-           ry="41.771091"
+           ry="0"
            transform="matrix(0,-1,1,0,0,0)" />
         <path
            sodipodi:nodetypes="cccc"
@@ -2446,8 +2446,7 @@
        sodipodi:cx="649.83112"
        sodipodi:cy="630.21942"
        sodipodi:rx="22.627417"
-       sodipodi:ry="22.627417"
-       d="m 672.45853,630.21942 c 0,12.49678 -10.13064,22.62742 -22.62741,22.62742 -12.49678,0 -22.62742,-10.13064 -22.62742,-22.62742 0,-12.49678 10.13064,-22.62742 22.62742,-22.62742 12.49677,0 22.62741,10.13064 22.62741,22.62742 z"
+       sodipodi:ry="0"
        transform="matrix(0.83979612,0,0,0.83979612,-775.08984,223.90438)" />
     <path
        id="path4720"
@@ -4364,7 +4363,7 @@
        id="g5152"
        transform="translate(-223.00268,46.128567)">
       <rect
-         ry="44.822475"
+         ry="0"
          rx="0"
          y="-488.33273"
          x="-155.28233"
@@ -4374,7 +4373,7 @@
          style="fill:url(#linearGradient5158);fill-opacity:1;stroke:none"
          transform="scale(-1,-1)" />
       <rect
-         ry="44.822475"
+         ry="0"
          rx="0"
          y="156.37325"
          x="-488.19174"
@@ -4384,7 +4383,7 @@
          style="fill:url(#linearGradient5160);fill-opacity:1;stroke:none"
          transform="matrix(0,-1,1,0,0,0)" />
       <rect
-         ry="44.822475"
+         ry="0"
          rx="0"
          y="489.90137"
          x="156.60263"
@@ -4401,7 +4400,7 @@
          x="489.95398"
          y="-155.33493"
          rx="0"
-         ry="44.822475" />
+         ry="0" />
     </g>
     <g
        id="Frieze_1m"
@@ -4412,7 +4411,7 @@
            id="g7025"
            transform="matrix(0,0.51756309,-1.1295267,0,255.25826,309.67465)">
           <rect
-             ry="86.602921"
+             ry="0"
              rx="0"
              y="-91.129799"
              x="52.529892"
@@ -4438,7 +4437,7 @@
              x="52.529892"
              y="-91.129799"
              rx="0"
-             ry="86.602921" />
+             ry="0" />
           <path
              sodipodi:nodetypes="cccc"
              inkscape:connector-curvature="0"
@@ -4450,7 +4449,7 @@
            id="g7038"
            transform="matrix(0,-0.51756324,-1.1295267,0,255.25826,400.04972)">
           <rect
-             ry="86.602898"
+             ry="0"
              rx="0"
              y="-91.129799"
              x="52.529892"
@@ -4476,7 +4475,7 @@
              x="52.529892"
              y="-91.129799"
              rx="0"
-             ry="86.602875" />
+             ry="0" />
           <path
              sodipodi:nodetypes="cccc"
              inkscape:connector-curvature="0"
@@ -4489,7 +4488,7 @@
          id="g7051">
         <rect
            transform="matrix(0,1,-1,0,0,0)"
-           ry="97.820312"
+           ry="0"
            rx="0"
            y="-358.1918"
            x="336.86218"
@@ -4506,10 +4505,10 @@
            x="336.86218"
            y="-397.79181"
            rx="0"
-           ry="97.820305" />
+           ry="0" />
         <rect
            transform="matrix(0,-1,-1,0,0,0)"
-           ry="97.820282"
+           ry="0"
            rx="0"
            y="-358.1918"
            x="-372.86218"
@@ -4526,7 +4525,7 @@
            x="-372.86218"
            y="-397.79181"
            rx="0"
-           ry="97.820251" />
+           ry="0" />
       </g>
     </g>
     <g
@@ -4545,7 +4544,7 @@
              x="52.529892"
              y="-91.129799"
              rx="0"
-             ry="89.644951" />
+             ry="0" />
           <path
              sodipodi:nodetypes="cccc"
              inkscape:connector-curvature="0"
@@ -4557,7 +4556,7 @@
            id="g6939"
            transform="matrix(0,0.51756309,-1.1295267,0,294.85826,264.67465)">
           <rect
-             ry="86.602921"
+             ry="0"
              rx="0"
              y="-91.129799"
              x="52.529892"
@@ -4583,7 +4582,7 @@
              x="52.529892"
              y="-91.129799"
              rx="0"
-             ry="86.602898" />
+             ry="0" />
           <path
              sodipodi:nodetypes="cccc"
              inkscape:connector-curvature="0"
@@ -4595,7 +4594,7 @@
            id="g6951"
            transform="matrix(0,-0.51756324,1.1295268,0,464.74175,355.04972)">
           <rect
-             ry="86.602898"
+             ry="0"
              rx="0"
              y="-91.129799"
              x="52.529892"
@@ -4622,10 +4621,10 @@
            x="291.86218"
            y="322.20822"
            rx="0"
-           ry="101.25636" />
+           ry="0" />
         <rect
            transform="matrix(0,1,-1,0,0,0)"
-           ry="97.820312"
+           ry="0"
            rx="0"
            y="-397.79181"
            x="291.86218"
@@ -4642,10 +4641,10 @@
            x="-327.86218"
            y="-358.1918"
            rx="0"
-           ry="97.820282" />
+           ry="0" />
         <rect
            transform="matrix(0,-1,1,0,0,0)"
-           ry="97.820297"
+           ry="0"
            rx="0"
            y="361.8082"
            x="-327.86218"
@@ -4662,7 +4661,7 @@
          id="g7147">
         <rect
            transform="matrix(0,1,1,0,0,0)"
-           ry="97.820236"
+           ry="0"
            rx="0"
            y="322.20822"
            x="381.86218"
@@ -4678,7 +4677,7 @@
            sodipodi:nodetypes="cccc" />
         <rect
            transform="matrix(0,1,-1,0,0,0)"
-           ry="97.820312"
+           ry="0"
            rx="0"
            y="-397.79178"
            x="381.86218"
@@ -4694,7 +4693,7 @@
            sodipodi:nodetypes="cccc" />
         <rect
            transform="matrix(0,-1,-1,0,0,0)"
-           ry="92.671852"
+           ry="0"
            rx="0"
            y="-397.79178"
            x="-417.86218"
@@ -4710,7 +4709,7 @@
            sodipodi:nodetypes="cccc" />
         <rect
            transform="matrix(0,-1,1,0,0,0)"
-           ry="92.671852"
+           ry="0"
            rx="0"
            y="322.20822"
            x="-417.86218"
@@ -4735,7 +4734,7 @@
            x="381.86218"
            y="322.20822"
            rx="0"
-           ry="97.820236"
+           ry="0"
            transform="matrix(0,1,1,0,0,0)" />
         <rect
            style="fill:none;fill-opacity:1;stroke:#265c8a;stroke-opacity:1;stroke-width:0.3;stroke-miterlimit:4;stroke-dasharray:none"
@@ -4745,7 +4744,7 @@
            x="381.86218"
            y="-397.79178"
            rx="0"
-           ry="97.820312"
+           ry="0"
            transform="matrix(0,1,-1,0,0,0)" />
         <rect
            style="fill:none;fill-opacity:1;stroke:#265c8a;stroke-opacity:1;stroke-width:0.3;stroke-miterlimit:4;stroke-dasharray:none"
@@ -4755,7 +4754,7 @@
            x="-417.86218"
            y="-397.79178"
            rx="0"
-           ry="92.671852"
+           ry="0"
            transform="matrix(0,-1,-1,0,0,0)" />
         <rect
            style="fill:none;fill-opacity:1;stroke:#265c8a;stroke-opacity:1;stroke-width:0.3;stroke-miterlimit:4;stroke-dasharray:none"
@@ -4765,7 +4764,7 @@
            x="-417.86218"
            y="322.20822"
            rx="0"
-           ry="92.671852"
+           ry="0"
            transform="matrix(0,-1,1,0,0,0)" />
       </g>
     </g>
@@ -5233,7 +5232,7 @@
            x="156.86218"
            y="322.20001"
            rx="0"
-           ry="44.822472" />
+           ry="0" />
         <path
            style="color:#000000;fill:#6aa5d6;fill-opacity:1;fill-rule:nonzero;stroke:none;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
            d="m 322.2,174.31672 35.99999,18.54546 -35.99984,-0.002 z"
@@ -5249,7 +5248,7 @@
            x="-192.86218"
            y="361.79999"
            rx="0"
-           ry="44.822472" />
+           ry="0" />
         <path
            style="color:#000000;fill:#6aa5d6;fill-opacity:1;fill-rule:nonzero;stroke:none;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
            d="m 361.8,175.40764 36,-18.54546 -35.99985,0.002 z"
@@ -5260,7 +5259,7 @@
       <g
          id="g6800">
         <rect
-           ry="44.822472"
+           ry="0"
            rx="0"
            y="322.20001"
            x="156.86218"
@@ -5270,7 +5269,7 @@
            style="fill:none;fill-opacity:1;stroke:#265c8a;stroke-opacity:1;stroke-width:0.3;stroke-miterlimit:4;stroke-dasharray:none"
            transform="matrix(0,1,1,0,0,0)" />
         <rect
-           ry="44.822472"
+           ry="0"
            rx="0"
            y="361.79999"
            x="-192.86218"
@@ -5296,7 +5295,7 @@
            x="96.825729"
            y="158.21178"
            rx="0"
-           ry="39.74194" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -5315,7 +5314,7 @@
            x="-162.77449"
            y="158.21178"
            rx="0"
-           ry="39.74194"
+           ry="0"
            transform="scale(-1,1)" />
         <path
            sodipodi:nodetypes="cccc"
@@ -5333,7 +5332,7 @@
          transform="matrix(0.54631672,0,0,1.1295265,41.852485,23.166)"
          id="g4015-0">
         <rect
-           ry="39.682537"
+           ry="0"
            rx="0"
            y="158.21178"
            x="96.825729"
@@ -5352,7 +5351,7 @@
          id="g4021-6"
          transform="matrix(0.54631659,0,0,-1.1295267,84.95205,134.92044)">
         <rect
-           ry="39.682526"
+           ry="0"
            rx="0"
            y="-91.129799"
            x="52.529892"
@@ -15924,7 +15923,7 @@
              x="52.529892"
              y="-91.129799"
              rx="0"
-             ry="89.644951" />
+             ry="0" />
           <path
              sodipodi:nodetypes="cccc"
              inkscape:connector-curvature="0"
@@ -15943,7 +15942,7 @@
              x="52.529892"
              y="-91.129799"
              rx="0"
-             ry="86.602898" />
+             ry="0" />
           <path
              sodipodi:nodetypes="cccc"
              inkscape:connector-curvature="0"
@@ -15955,7 +15954,7 @@
            id="g7252"
            transform="matrix(0.51756309,0,0,-1.1295267,334.61247,359.92043)">
           <rect
-             ry="86.602921"
+             ry="0"
              rx="0"
              y="-91.129799"
              x="52.529892"
@@ -15974,7 +15973,7 @@
            id="g7258"
            transform="matrix(-0.51756324,0,0,-1.1295268,424.98754,359.92043)">
           <rect
-             ry="86.602898"
+             ry="0"
              rx="0"
              y="-91.129799"
              x="52.529892"
@@ -16000,7 +15999,7 @@
            x="322.20001"
            y="426.87039"
            rx="0"
-           ry="101.25636" />
+           ry="0" />
         <rect
            transform="scale(-1,1)"
            style="fill:none;fill-opacity:1;stroke:#265c8a;stroke-opacity:1;stroke-width:0.3;stroke-miterlimit:4;stroke-dasharray:none"
@@ -16010,10 +16009,10 @@
            x="-358.20001"
            y="426.87039"
            rx="0"
-           ry="97.820282" />
+           ry="0" />
         <rect
            transform="scale(1,-1)"
-           ry="97.820312"
+           ry="0"
            rx="0"
            y="-462.85397"
            x="361.80002"
@@ -16023,7 +16022,7 @@
            style="fill:none;fill-opacity:1;stroke:#265c8a;stroke-opacity:1;stroke-width:0.3;stroke-miterlimit:4;stroke-dasharray:none" />
         <rect
            transform="scale(-1,-1)"
-           ry="97.820297"
+           ry="0"
            rx="0"
            y="-462.85397"
            x="-397.79999"
@@ -16493,14 +16492,14 @@
       </g>
     </g>
     <rect
-       style="fill:#6aa5d6;fill-opacity:1;stroke:#265c8a;stroke-opacity:1;stroke-width:0.3;stroke-miterlimit:4;stroke-dasharray:none"
+       style="fill:#6aa5d6;fill-opacity:1;stroke:#265c8a;stroke-width:0.30000001;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        id="Wallpaper_p1"
        width="36"
        height="36"
        x="139.51599"
        y="111.82616"
        rx="0"
-       ry="44.822479"
+       ry="0"
        inkscape:label="#rect3786" />
     <g
        id="Wallpaper_p2"
@@ -16516,12 +16515,12 @@
            x="-175.51599"
            y="-192.81799"
            rx="0"
-           ry="44.822475" />
+           ry="0" />
         <g
            transform="matrix(0.54631671,0,0,1.1240761,86.61848,-21.007738)"
            id="g8059">
           <rect
-             ry="39.874947"
+             ry="0"
              rx="0"
              y="158.21178"
              x="96.825729"
@@ -16546,7 +16545,7 @@
       <g
          id="g8067">
         <rect
-           ry="44.822475"
+           ry="0"
            rx="0"
            y="-192.81799"
            x="-175.51599"
@@ -16556,7 +16555,7 @@
            style="fill:none;fill-opacity:1;stroke:#265c8a;stroke-opacity:1;stroke-width:0.3;stroke-miterlimit:4;stroke-dasharray:none"
            transform="scale(-1,-1)" />
         <rect
-           ry="44.822475"
+           ry="0"
            rx="0"
            y="156.83434"
            x="139.51599"
@@ -16580,7 +16579,7 @@
            x="96.825729"
            y="158.21178"
            rx="0"
-           ry="83.542168" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -16592,7 +16591,7 @@
          id="g4027-6"
          transform="matrix(-0.54631662,0,0,0.53652514,204.21394,385.7235)">
         <rect
-           ry="83.542168"
+           ry="0"
            rx="0"
            y="-91.129799"
            x="52.529892"
@@ -16611,7 +16610,7 @@
          id="g4033-1"
          transform="matrix(-0.54631677,0,0,-0.53652515,204.21395,323.92885)">
         <rect
-           ry="83.542168"
+           ry="0"
            rx="0"
            y="-91.129799"
            x="52.529892"
@@ -16634,10 +16633,10 @@
          x="139.51599"
          y="336.83008"
          rx="0"
-         ry="44.822472" />
+         ry="0" />
       <rect
          transform="scale(-1,1)"
-         ry="44.822472"
+         ry="0"
          rx="0"
          y="336.83008"
          x="-175.51599"
@@ -16647,7 +16646,7 @@
          style="fill:none;fill-opacity:1;stroke:#265c8a;stroke-opacity:1;stroke-width:0.3;stroke-miterlimit:4;stroke-dasharray:none" />
       <rect
          transform="scale(-1,-1)"
-         ry="44.822475"
+         ry="0"
          rx="0"
          y="-372.82227"
          x="-175.51599"
@@ -16664,7 +16663,7 @@
          x="139.51599"
          y="-372.82227"
          rx="0"
-         ry="44.822475" />
+         ry="0" />
       <path
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
@@ -16673,7 +16672,7 @@
          style="color:#000000;fill:#8cbbde;fill-opacity:1;fill-rule:nonzero;stroke:none;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate" />
       <rect
          transform="scale(1,-1)"
-         ry="44.822475"
+         ry="0"
          rx="0"
          y="-372.82227"
          x="139.51599"
@@ -16696,7 +16695,7 @@
            x="96.825729"
            y="158.21178"
            rx="0"
-           ry="83.542198" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -16708,7 +16707,7 @@
          id="g4027-8-0"
          transform="matrix(-0.54631677,0,0,-0.53652529,204.21395,350.02883)">
         <rect
-           ry="83.542145"
+           ry="0"
            rx="0"
            y="-91.129799"
            x="52.529892"
@@ -16727,7 +16726,7 @@
          id="g4033-0-7"
          transform="matrix(-0.54631673,0,0,0.53652523,204.21395,449.62351)">
         <rect
-           ry="83.542152"
+           ry="0"
            rx="0"
            y="-91.129799"
            x="52.529892"
@@ -16745,7 +16744,7 @@
       <g
          id="g9003">
         <rect
-           ry="44.822475"
+           ry="0"
            rx="0"
            y="381.83008"
            x="139.51599"
@@ -16762,7 +16761,7 @@
            x="-175.51599"
            y="-398.92227"
            rx="0"
-           ry="44.822472" />
+           ry="0" />
         <rect
            transform="scale(-1,1)"
            style="fill:none;fill-opacity:1;stroke:#265c8a;stroke-opacity:1;stroke-width:0.3;stroke-miterlimit:4;stroke-dasharray:none"
@@ -16772,7 +16771,7 @@
            x="-175.51599"
            y="400.73007"
            rx="0"
-           ry="44.822472" />
+           ry="0" />
         <g
            transform="matrix(0.54631681,0,0,-0.5365252,110.81802,368.92884)"
            id="g8983">
@@ -16784,7 +16783,7 @@
              x="52.529892"
              y="-91.129799"
              rx="0"
-             ry="83.54216" />
+             ry="0" />
           <path
              sodipodi:nodetypes="cccc"
              inkscape:connector-curvature="0"
@@ -16795,7 +16794,7 @@
       </g>
       <rect
          transform="scale(1,-1)"
-         ry="44.822475"
+         ry="0"
          rx="0"
          y="-417.82227"
          x="139.51598"
@@ -16817,7 +16816,7 @@
              transform="matrix(0.5463167,0,0,0.53652513,41.852487,296.98149)"
              id="g8319">
             <rect
-               ry="83.542168"
+               ry="0"
                rx="0"
                y="158.21178"
                x="96.825729"
@@ -16843,7 +16842,7 @@
                x="52.529892"
                y="-91.129799"
                rx="0"
-               ry="83.542183" />
+               ry="0" />
             <path
                sodipodi:nodetypes="cccc"
                inkscape:connector-curvature="0"
@@ -16862,7 +16861,7 @@
                x="52.529892"
                y="-91.129799"
                rx="0"
-               ry="83.54216" />
+               ry="0" />
             <path
                sodipodi:nodetypes="cccc"
                inkscape:connector-curvature="0"
@@ -16874,7 +16873,7 @@
              id="g8337"
              transform="matrix(-0.54631665,0,0,-0.53652508,140.54795,368.96486)">
             <rect
-               ry="83.542183"
+               ry="0"
                rx="0"
                y="-91.129799"
                x="52.529892"
@@ -16903,10 +16902,10 @@
            x="94.75"
            y="381.86609"
            rx="0"
-           ry="44.822472" />
+           ry="0" />
         <rect
            transform="scale(1,-1)"
-           ry="44.822475"
+           ry="0"
            rx="0"
            y="-398.95828"
            x="113.65"
@@ -16916,7 +16915,7 @@
            style="fill:none;fill-opacity:1;stroke:#265c8a;stroke-opacity:1;stroke-width:0.29999999999999999;stroke-miterlimit:4;stroke-dasharray:none" />
         <rect
            transform="scale(-1,1)"
-           ry="44.822479"
+           ry="0"
            rx="0"
            y="400.76608"
            x="-130.75"
@@ -16933,7 +16932,7 @@
            x="-111.85"
            y="-417.85828"
            rx="0"
-           ry="44.822475" />
+           ry="0" />
       </g>
     </g>
     <g
@@ -16950,7 +16949,7 @@
            x="184.5"
            y="471.86618"
            rx="0"
-           ry="45.970245" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -16962,7 +16961,7 @@
          transform="matrix(1.073051,0,0,1.0926321,-58.034151,-0.74138)"
          id="g4970-4">
         <rect
-           ry="41.771057"
+           ry="0"
            rx="0"
            y="-217.64693"
            x="473.68878"
@@ -16982,7 +16981,7 @@
          transform="matrix(1.0926334,0,0,1.0730497,-62.140215,9.345967)"
          id="g4982-8">
         <rect
-           ry="41.771107"
+           ry="0"
            rx="0"
            y="-506.47821"
            x="-217.50772"
@@ -17006,9 +17005,9 @@
          x="139.51599"
          y="516.83008"
          rx="0"
-         ry="44.822475" />
+         ry="0" />
       <rect
-         ry="44.822475"
+         ry="0"
          rx="0"
          y="-175.5121"
          x="516.82617"
@@ -17018,7 +17017,7 @@
          style="fill:none;fill-opacity:1;stroke:#265c8a;stroke-opacity:1;stroke-width:0.3;stroke-miterlimit:4;stroke-dasharray:none"
          transform="matrix(0,1,-1,0,0,0)" />
       <rect
-         ry="44.822475"
+         ry="0"
          rx="0"
          y="-552.82227"
          x="-175.51599"
@@ -17032,7 +17031,7 @@
          transform="matrix(1.0730502,0,0,1.0926335,-58.289719,-0.55342)">
         <rect
            transform="matrix(0,-1,1,0,0,0)"
-           ry="41.771091"
+           ry="0"
            rx="0"
            y="184.34329"
            x="-506.46405"
@@ -17049,7 +17048,7 @@
       </g>
       <rect
          transform="matrix(0,-1,1,0,0,0)"
-         ry="44.822479"
+         ry="0"
          rx="0"
          y="139.51988"
          x="-552.82617"
@@ -17318,7 +17317,7 @@
            x="96.825729"
            y="158.21178"
            rx="0"
-           ry="39.74194" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -17334,13 +17333,13 @@
          x="139.51599"
          y="201.88818"
          rx="0"
-         ry="44.822475" />
+         ry="0" />
       <g
          id="g8427"
          transform="matrix(0.54631671,0,0,1.1278381,86.58957,23.397097)">
         <rect
            transform="scale(-1,1)"
-           ry="39.74194"
+           ry="0"
            rx="0"
            y="158.21178"
            x="-162.77449"
@@ -17357,7 +17356,7 @@
       </g>
       <rect
          transform="scale(-1,1)"
-         ry="44.822475"
+         ry="0"
          rx="0"
          y="201.83437"
          x="-175.51599"
@@ -17373,7 +17372,7 @@
          transform="matrix(0.54631672,0,0,1.1295265,86.618479,68.129988)"
          id="g4015-0-2">
         <rect
-           ry="39.682537"
+           ry="0"
            rx="0"
            y="158.21178"
            x="96.825729"
@@ -17389,7 +17388,7 @@
            sodipodi:nodetypes="cccc" />
       </g>
       <rect
-         ry="44.822475"
+         ry="0"
          rx="0"
          y="246.83438"
          x="139.51599"
@@ -17399,7 +17398,7 @@
          style="fill:none;fill-opacity:1;stroke:#265c8a;stroke-opacity:1;stroke-width:0.3;stroke-miterlimit:4;stroke-dasharray:none" />
       <rect
          transform="scale(1,-1)"
-         ry="44.822472"
+         ry="0"
          rx="0"
          y="-282.81796"
          x="158.41599"
@@ -17422,7 +17421,7 @@
          x="158.41599"
          y="-282.81796"
          rx="0"
-         ry="44.822472" />
+         ry="0" />
     </g>
     <g
        id="Wallpaper_p3"
@@ -17469,13 +17468,13 @@
          x="139.51599"
          y="-327.82227"
          rx="0"
-         ry="44.822475"
+         ry="0"
          transform="scale(1,-1)" />
       <g
          transform="matrix(0.54631674,0,0,0.53652503,86.618476,206.94549)"
          id="g4039-3">
         <rect
-           ry="83.542191"
+           ry="0"
            rx="0"
            y="158.21178"
            x="96.825729"
@@ -17501,7 +17500,7 @@
            x="52.529892"
            y="-91.129799"
            rx="0"
-           ry="83.542191" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -17520,7 +17519,7 @@
            x="52.529892"
            y="-91.129799"
            rx="0"
-           ry="84.210861" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -17529,7 +17528,7 @@
            style="fill:#8cbbde;fill-opacity:1;stroke:none" />
       </g>
       <rect
-         ry="44.822475"
+         ry="0"
          rx="0"
          y="291.83008"
          x="139.51599"
@@ -17546,7 +17545,7 @@
          x="158.41599"
          y="-308.92227"
          rx="0"
-         ry="44.822472" />
+         ry="0" />
       <rect
          style="fill:none;fill-opacity:1;stroke:#265c8a;stroke-opacity:1;stroke-width:0.3;stroke-miterlimit:4;stroke-dasharray:none"
          id="rect8613"
@@ -17555,7 +17554,7 @@
          x="158.45602"
          y="310.73004"
          rx="0"
-         ry="44.822475" />
+         ry="0" />
       <path
          style="color:#000000;fill:#8cbbde;fill-opacity:1;fill-rule:nonzero;stroke:none;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
          d="m 147.84193,310.72634 8.73109,17.09983 -8.2e-4,-17.09976 z"
@@ -17564,7 +17563,7 @@
          sodipodi:nodetypes="cccc" />
       <rect
          transform="scale(1,-1)"
-         ry="44.822475"
+         ry="0"
          rx="0"
          y="-327.82227"
          x="139.51599"
@@ -17587,7 +17586,7 @@
            x="96.825729"
            y="158.21178"
            rx="0"
-           ry="83.54216" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -17599,7 +17598,7 @@
          id="g4027-85-7"
          transform="matrix(-0.2300282,0,0,0.53652515,168.69935,520.7235)">
         <rect
-           ry="83.542175"
+           ry="0"
            rx="0"
            y="-91.129799"
            x="52.529892"
@@ -17618,7 +17617,7 @@
          id="g4033-3-6"
          transform="matrix(-0.24440493,0,0,-0.53652505,169.45456,458.92886)">
         <rect
-           ry="83.542191"
+           ry="0"
            rx="0"
            y="-91.129799"
            x="52.529892"
@@ -17644,7 +17643,7 @@
            x="52.529892"
            y="-91.129799"
            rx="0"
-           ry="83.542168" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -17663,7 +17662,7 @@
            x="52.529892"
            y="-91.129799"
            rx="0"
-           ry="83.542152" />
+           ry="0" />
         <path
            sodipodi:nodetypes="cccc"
            inkscape:connector-curvature="0"
@@ -17675,7 +17674,7 @@
          id="g4027-42-2"
          transform="matrix(0.23002794,0,0,-0.53652507,146.33265,440.02885)">
         <rect
-           ry="83.542191"
+           ry="0"
            rx="0"
            y="-91.129799"
            x="52.529892"
@@ -17694,7 +17693,7 @@
          id="g4033-33-8"
          transform="matrix(-0.24440481,0,0,0.53652516,188.35455,539.6235)">
         <rect
-           ry="83.542168"
+           ry="0"
            rx="0"
            y="-91.129799"
            x="52.529892"
@@ -17717,10 +17716,10 @@
          x="139.51599"
          y="471.83008"
          rx="0"
-         ry="44.822475" />
+         ry="0" />
       <rect
          transform="scale(-1,1)"
-         ry="44.822479"
+         ry="0"
          rx="0"
          y="471.83008"
          x="-156.616"
@@ -17730,7 +17729,7 @@
          style="fill:none;fill-opacity:1;stroke:#265c8a;stroke-opacity:1;stroke-width:0.3;stroke-miterlimit:4;stroke-dasharray:none" />
       <rect
          transform="scale(-1,-1)"
-         ry="44.822479"
+         ry="0"
          rx="0"
          y="-507.82227"
          x="-156.616"
@@ -17747,7 +17746,7 @@
          x="139.51599"
          y="-507.82227"
          rx="0"
-         ry="44.822475" />
+         ry="0" />
       <rect
          transform="scale(-1,-1)"
          style="fill:none;fill-opacity:1;stroke:#265c8a;stroke-opacity:1;stroke-width:0.3;stroke-miterlimit:4;stroke-dasharray:none"
@@ -17757,10 +17756,10 @@
          x="-175.51599"
          y="-488.92227"
          rx="0"
-         ry="44.822479" />
+         ry="0" />
       <rect
          transform="scale(1,-1)"
-         ry="44.822479"
+         ry="0"
          rx="0"
          y="-488.92227"
          x="158.416"
@@ -17770,7 +17769,7 @@
          style="fill:none;fill-opacity:1;stroke:#265c8a;stroke-opacity:1;stroke-width:0.3;stroke-miterlimit:4;stroke-dasharray:none" />
       <rect
          transform="scale(-1,1)"
-         ry="44.822475"
+         ry="0"
          rx="0"
          y="490.73007"
          x="-175.51599"
@@ -17779,7 +17778,7 @@
          id="rect8753"
          style="fill:none;fill-opacity:1;stroke:#265c8a;stroke-opacity:1;stroke-width:0.3;stroke-miterlimit:4;stroke-dasharray:none" />
       <rect
-         ry="44.822475"
+         ry="0"
          rx="0"
          y="490.73007"
          x="158.41599"
@@ -17801,7 +17800,7 @@
          x="158.41599"
          y="490.73007"
          rx="0"
-         ry="44.822475" />
+         ry="0" />
     </g>
     <g
        id="Wallpaper_p31m"
