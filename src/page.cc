@@ -221,11 +221,15 @@ Style *PageStyle::duplicate(Style *s)//s=NULL
 	else s=dynamic_cast<PageStyle *>(s);
 	PageStyle *ps=dynamic_cast<PageStyle *>(s);
 	if (!ps) return NULL;
+
 	ps->flags=flags;
 	ps->width=width;
 	ps->height=height;
 	ps->min_x=min_x;
 	ps->min_y=min_y;
+	if (margin)  ps->margin  = dynamic_cast<PathsData*>(margin ->duplicate(NULL));
+	if (outline) ps->outline = dynamic_cast<PathsData*>(outline->duplicate(NULL));
+
 	return s;
 }
 
