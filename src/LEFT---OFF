@@ -171,9 +171,9 @@ finish implement cairo backend
   DONE resize sig interface doesn't reposition boxes
 
 fontdialog: FontDialog
+  start up with correct font selected
   sample block should not strictly adhere to fontsize, as it can get very big
   sample block should be multiline
-  start up with correct font selected
 
   DONE needs to work on a duplicate font, not the original passed in
   DONE when sorting and there's just a couple, need to ensure that they all appear on screen
@@ -304,10 +304,6 @@ text:
   interface base for utf8 based editing.. share this with window edits somehow
   maybe fonts should point to their creators to make duplication more reliable if there are more than just default fontmanager
 
-  DONE multicolor (via overlaying) fonts
-  DONE access combine character pairs
-  DONE lineedit/multilineedit copy/pasting freezes cairo
-
 make drag and drop selections work
 
 need more mechanism so that popup dialogs stay on top of window they are "children" of
@@ -319,7 +315,7 @@ when resizing viewportwindow and a temp_input window active, make sure it stays 
 
 searchable menus
 
-engraving tool: Engraving 
+engraving tool: Engraving  engraver
   need preview generator for engraver objects, with cairo, it is painfully slow
   bug: make a LineEdit overlay for number input, then Next bdown is ignored!! l, m, or right all ignored: viewportwindow line 947
   bug: object rotate works fine. but then enter and leave engraver tool. Now object rotate is messed up
@@ -331,32 +327,11 @@ engraving tool: Engraving
     need ability to store overall styles of a patch, not just each individually
 	on resource menus, should check mark if current matches a resource??
 
-    DONE resource settings need to be able to be shared across objects(done) and survive file io
-	DONE need more thorough resource management to track resources/users
-    DONE-ishsetting sharing is confusing, need much better interface for that
-	DONE escape off curvemap, trouble with somedata in GroupInterface Refresh
-    DONE should be able to change object name from within panel
-	DONE (i think) click off an object, selection not flushing properly?
-	DONE-ish collapse/show groups on per object basis? <- no, easier to just show all, wheel the panel up and down
-	DONE right click to remove object from list? or just shift click again? <- just click off
-	DONE distort tools need to act on all objects in selection
-	DONE implement push to all
-    DONE shared state needs to look if other objects have groups that can possibly be shared with
-	DONE use from list not showing group names correctly
-    DONE clicking on other object's group name should select it first, not do the rename thing
-    DONE double click in viewport should activate tool with multiple objects.. only works with one right now
-	DONE select tool from menu or with 't' should activate tool and transfer selection
-	DONE object tool must act with viewport->selection
-    DONE be able to autotrace to multiple engraved objects
-
   orient:
     should adjust all linked
     with test-engrave-trace2.laidout, do the quick adjust, does not preserve width the first time, using old value of thickness?
     option to remember old values while adjusting position, rotation, spacing
      -> when manual tweaking of spacing, need to produce value reference so that future line orienting preserves line thicknesses
-	DONE remember default width
-    DONE should be able to enter numbers for orient by click no drag
-    DONE instant global thickness adjust on orientation tool?
 
   tracing:
     seems to be grabbing spurious tracing values outside of the tracing object, and at borders of trace object
@@ -371,19 +346,6 @@ engraving tool: Engraving
 	when multi objects, the traceobject is interweaved, based on draw order, only under current object, should be under all?
 	make gradient interface work in trace mode
 
-    DONE need option to have it always show trace object
-    DONE trace object should have its own dumping functions, since they might stand on their own as a resource
-    DONE bug: memory hole after tracing
-	DONE snapshot needs to align to correct area
-    DONE opacity bubble extends in to panel area, clicking on it moves panel, not bubble
-    DONE 2 objects, push to all for tracing, do new on one, then trace once does BOTH
-    DONE trace object scaling and rotation should happen around mouse point
-    DONE invert trace sampling: sample white instead of black, <- curvemapinterface: right click menu option
-    DONE trace adjustment mode should prioritize moving the trace object, scan for it BEFORE scan for engrave object
-    DONE trace function should be in EngraverPointGroup, not so much at interface level
-    DONE trace once not working
-    DONE trace object needs to be in page context, not object context (or must be default option)
-
   freehand/path:
     freehand not being interpreted correctly: non-equal smooth is adding erroneous extra mesh column
     drawing custom freehand (with width) lines within the mesh area
@@ -394,7 +356,6 @@ engraving tool: Engraving
   curvemap needs predefined ramp profiles, remember last, load/save (per context?)
     -> options to insert various predefined patterns
 	need magnify do dads for easy expanding of countour without having to place each and every node
-	DONE curvemapinterface: right click menu option works in trace, but not in brush ramp edit!!
 
   direction:
     need accuracy modifiers for dragging controls around
@@ -414,9 +375,8 @@ engraving tool: Engraving
       grow: edge abutment when generating
       sample point generation should be based on lines per mesh square, not total mesh field
       finish implementing spacing section -> spacing map
-    DONE line profile start point at 0 producing bubbles
-    DONE button to remap lines, so not done automatically? shift press button to always remap
 
+  need stroke+fill options?
   need convert to path object ability
   current blockout is not very precise, needs approximation between existing point samples
   fully implement resolution adjustments for auto lines -> needs resolution tool
@@ -448,27 +408,6 @@ engraving tool: Engraving
   perhaps allow path objects to be adjusted with engrave tool for custom outlier lines not part of mesh?
   must implement mode based shortcuts in Laxkit. currently all mesh shortcuts are active
   stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
-
-  DONE blockout doesn't work
-  DONE (done) size of turbulent cell, and (done) per line turbulence
-  DONE shortcut to unlink all, or toggle all linked, toggle all in group linked
-  DONE space duplicate produces unnamed new groups as well as old group copies
-  DONE need shortcuts for next/prev group
-  DONE direction map is not showing actual direction
-  DONE bug: seed values not letting me put in 0, goes to -1
-  DONE point/line randomness in all fill types: linear, radial, circular, spiral
-  DONE finish making value to weight map on canvas editable and work right
-  DONE bug: 'f' objects appear to connect to points outside 0..1, but screen render doesn't -> line creation is allowing points with value > 1
-  DONE CRASH: select engraver object, add page, crash!!!
-  DONE bug: offset panel, the input lineedit is not starting at proper offset
-  DONE need mouse sensitivity sliders
-  DONE distort tools should be pressure sensitive
-  DONE escape off brush ramp edit is exiting all tool, not just engraver tool
-  DONE maybe expanding list of point groups, with ability to toggle linked and active in list
-  DONE need duplicate group button for easy crosshatch <- Add button copies from current group
-  DONE wheel over panel should move the panel, not the viewport
-  DONE bug: one obj with 2 groups, one with 1 group, switch with . and ,, does not trigger resize panel
-  DONE needs to be an indicator on red linked circle when current group is selected, as it acts as green then
 
 
 PathInterface:
@@ -532,9 +471,6 @@ PathInterface:
   toggle between add points / select points?
     if add points, show dotted line to indicate a new segment incoming
   finish new path/pathoperator/pathsubinterface/pathinterface structure 
-
-  DONE default path width should be thicker, maybe a few pixels wide
-  DONE bug: add seg for endpoint, then try to select a point: crash! -> improper curpoints.push()
  
 
 command prompt window: command line
@@ -701,16 +637,6 @@ FileDialog2:
   show directories first
   tooltip to show full path of bookmarks
   exclude/include directories when listing files
-
-  DONE bookmarks should auto wrap width
-  DONE details: name  mod-date  size
-  DONE if no recent, should show "(No recent)"
-  DONE window vertical alignment problems.. click up, offsets wrong
-  DONE do recent right, figure out current way other desktops do it
-  DONE bookmarks, display as separated list, not tree
-  DONE need way to draw grayed out icons
-  DONE have little x to clear masks..
-  DONE bookmarks, have recent there
 
 file button:
    Save
@@ -1686,5 +1612,82 @@ DONE captioninterface CaptionInterface
 DONE clear out warnings due to make hidegarbage
 DONE fix the zooming discontinuity!!
 DONE reimpose test-numbers.laidout as dodecahedron.. CRASH!!  -> document.cc ReImpose crash on pagestyle->margin==NULL 
-
+DONE FileDialog2:
+  DONE bookmarks should auto wrap width
+  DONE details: name  mod-date  size
+  DONE if no recent, should show "(No recent)"
+  DONE window vertical alignment problems.. click up, offsets wrong
+  DONE do recent right, figure out current way other desktops do it
+  DONE bookmarks, display as separated list, not tree
+  DONE need way to draw grayed out icons
+  DONE have little x to clear masks..
+  DONE bookmarks, have recent there
+DONE PathInterface:
+  DONE default path width should be thicker, maybe a few pixels wide
+  DONE bug: add seg for endpoint, then try to select a point: crash! -> improper curpoints.push()
+DONE engraving tool: Engraving  engraver
+  DONE multiobject:
+    DONE resource settings need to be able to be shared across objects(done) and survive file io
+	DONE need more thorough resource management to track resources/users
+    DONE-ishsetting sharing is confusing, need much better interface for that
+	DONE escape off curvemap, trouble with somedata in GroupInterface Refresh
+    DONE should be able to change object name from within panel
+	DONE (i think) click off an object, selection not flushing properly?
+	DONE-ish collapse/show groups on per object basis? <- no, easier to just show all, wheel the panel up and down
+	DONE right click to remove object from list? or just shift click again? <- just click off
+	DONE distort tools need to act on all objects in selection
+	DONE implement push to all
+    DONE shared state needs to look if other objects have groups that can possibly be shared with
+	DONE use from list not showing group names correctly
+    DONE clicking on other object's group name should select it first, not do the rename thing
+    DONE double click in viewport should activate tool with multiple objects.. only works with one right now
+	DONE select tool from menu or with 't' should activate tool and transfer selection
+	DONE object tool must act with viewport->selection
+    DONE be able to autotrace to multiple engraved objects 
+  DONE orient:
+	DONE remember default width
+    DONE should be able to enter numbers for orient by click no drag
+    DONE instant global thickness adjust on orientation tool?
+  DONE tracing:
+    DONE need option to have it always show trace object
+    DONE trace object should have its own dumping functions, since they might stand on their own as a resource
+    DONE bug: memory hole after tracing
+	DONE snapshot needs to align to correct area
+    DONE opacity bubble extends in to panel area, clicking on it moves panel, not bubble
+    DONE 2 objects, push to all for tracing, do new on one, then trace once does BOTH
+    DONE trace object scaling and rotation should happen around mouse point
+    DONE invert trace sampling: sample white instead of black, <- curvemapinterface: right click menu option
+    DONE trace adjustment mode should prioritize moving the trace object, scan for it BEFORE scan for engrave object
+    DONE trace function should be in EngraverPointGroup, not so much at interface level
+    DONE trace once not working
+    DONE trace object needs to be in page context, not object context (or must be default option)
+  DONE curvemap needs predefined ramp profiles, remember last, load/save (per context?)
+	DONE curvemapinterface: right click menu option works in trace, but not in brush ramp edit!!
+  DONE direction:
+    DONE line profile start point at 0 producing bubbles
+    DONE button to remap lines, so not done automatically? shift press button to always remap
+  DONE blockout doesn't work
+  DONE (done) size of turbulent cell, and (done) per line turbulence
+  DONE shortcut to unlink all, or toggle all linked, toggle all in group linked
+  DONE space duplicate produces unnamed new groups as well as old group copies
+  DONE need shortcuts for next/prev group
+  DONE direction map is not showing actual direction
+  DONE bug: seed values not letting me put in 0, goes to -1
+  DONE point/line randomness in all fill types: linear, radial, circular, spiral
+  DONE finish making value to weight map on canvas editable and work right
+  DONE bug: 'f' objects appear to connect to points outside 0..1, but screen render doesn't -> line creation is allowing points with value > 1
+  DONE CRASH: select engraver object, add page, crash!!!
+  DONE bug: offset panel, the input lineedit is not starting at proper offset
+  DONE need mouse sensitivity sliders
+  DONE distort tools should be pressure sensitive
+  DONE escape off brush ramp edit is exiting all tool, not just engraver tool
+  DONE maybe expanding list of point groups, with ability to toggle linked and active in list
+  DONE need duplicate group button for easy crosshatch <- Add button copies from current group
+  DONE wheel over panel should move the panel, not the viewport
+  DONE bug: one obj with 2 groups, one with 1 group, switch with . and ,, does not trigger resize panel
+  DONE needs to be an indicator on red linked circle when current group is selected, as it acts as green then 
+DONE text:
+  DONE multicolor (via overlaying) fonts
+  DONE access combine character pairs
+  DONE lineedit/multilineedit copy/pasting freezes cairo
 

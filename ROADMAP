@@ -25,7 +25,6 @@ VERSION 0.096
 (done) Infrastructure for resource sharing between objects
 (done) engraver tool, fix blockout! how did it break?!
 (done) engraver, allow work on multiple objects at once, including tracing
-       Moving selected things in group contents does not update group bounds
 (done) Re-fix cut and paste from system clipboard
 (done) Re-Re-fix paste from system clipboard. I swear it was working.
 
@@ -40,6 +39,11 @@ VERSION 0.097
        Tools should remember their settings
        Finish implementing anchor tool. maybe gss compatibility?
        layers (object tree) palette
+       Moving selected things in group contents does not update group bounds
+       should not be able to select both group and group contents at same time
+       double click on group should change selection area to group contents?
+       Masking, clip paths and/or softmask
+       Fix object bleeding across pages for signatures and nets
        export preview
        Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
        Externally rendered objects, similar to Scribus render frames
@@ -50,23 +54,21 @@ VERSION 0.097
        Clean up patch controls
        Clean up project load/save internals and dialogs
        Object and resource tags interface
-       Masking, clip paths and/or softmask
        Finish implementing double sided net impositions
        allow inserting net impositions as foldouts in regular Signature Imposition stacks
        Net imposition interactive unwrapper, via optional opengl Polyptych
        Net imposition build net interface
        option to specify alignment of different size signature stacks
-       Fix object bleeding across pages for signatures and nets
        Tool scripting
        Custom line caps
        Undo/Redo
        Clean up symmetry clone interface, not easy to use currently
        Clone Pattern Builder
        lock down color backend.. it's currently a series of weak hacks based on 8-bit screen rgb
+       color styles, so objects can refer to a named color, just change that named to change all
        Soup up the color box so one can recall previous colors, and/or integration with palette window
        make PathInterface extrapolate line join work
        Signature editor: detect non staplable binding edge, show red rather than green
-       color styles, so objects can refer to a named color, just change that named to change all
        fix object transform handles for really small objects (handles should still be accessible)
        Scribus import should try to do something appropriate with page spreads >= 2 pages wide
        Scribus import should do something meaningful with original Scribus page bleed values
@@ -75,8 +77,6 @@ VERSION 0.097
        pdf export, unicode capable
        Optimize pdf export to rescale to target dpi, and compress image data
        fix tooltips
-       should not be able to select both group and group contents at same time
-       double click on group should change selection area to group contents?
        drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
        drag-n-drop with system, like drag images into viewwindow from an external file browser
 
@@ -107,7 +107,7 @@ VERSION 0.1
        Some sort of basic scripting infrastructure allowing easy addition of other scripting language plugins. Swig?
        Plugin infrastructure should be in place: add objects, panes, commands, interfaces, resources, command-line-options?
        allow for easy method for runaround area determination
-       Full color management implemented, with up to at least 16 bit per channel color
+       Full color management implemented, floating point or integer. Got to keep up with Krita and Gimp!
        CieLab color space
        Resource manager/style edit window
        a real PrintDialog that can configure itself based on printer info
@@ -191,7 +191,7 @@ Perhaps have animation support/mode, 1 page=1 frame or separate time slider and 
 Akin to animation mode, have movie/sound objects available to html export, for instance?
 a FlexibleImposition for html/streamed output target?
 JDF,JTAPI support?
-Saveable undo stack(?) (see http://people.csail.mit.edu/sarasu/history/ for inspiration)
+Saveable undo stack(?) see http://people.csail.mit.edu/sarasu/history/ for inspiration. Also Xara has this.
 
 
 VERSION 1.0
