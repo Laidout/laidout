@@ -44,10 +44,10 @@ void psImagePatch(FILE *f,LaxInterfaces::ImagePatchData *i)
 	 // make an ImageData covering the bounding box
 
 	 //find bounds of the patch in paper coordinates
-	flatpoint ul=transform_point(psCTM(),flatpoint(i->minx,i->miny)),
-			  ur=transform_point(psCTM(),flatpoint(i->maxx,i->miny)),
-			  ll=transform_point(psCTM(),flatpoint(i->minx,i->maxy)),
-			  lr=transform_point(psCTM(),flatpoint(i->maxx,i->maxy));
+	flatpoint ul=transform_point(psCTM(),flatpoint(i->minx,i->miny));
+	flatpoint ur=transform_point(psCTM(),flatpoint(i->maxx,i->miny));
+	flatpoint ll=transform_point(psCTM(),flatpoint(i->minx,i->maxy));
+	DBG flatpoint lr=transform_point(psCTM(),flatpoint(i->maxx,i->maxy));
 	DBG cerr <<"  ul: "<<ul.x<<','<<ul.y<<endl;
 	DBG cerr <<"  ur: "<<ur.x<<','<<ur.y<<endl;
 	DBG cerr <<"  ll: "<<ll.x<<','<<ll.y<<endl;
