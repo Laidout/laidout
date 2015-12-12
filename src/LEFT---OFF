@@ -576,6 +576,7 @@ export/print dialog
   DONE print in reverse order
 
 file filters: filefilters:
+  need equirectangular out 
   selecting out should auto select tofile | tofiles, depending on how many selected for out
   export ranges should accept "1-4, 6, 20-25" and "5-1", or by name "iii - iv"
   remember last export 
@@ -1684,5 +1685,6 @@ DONE captioninterface CaptionInterface
   DONE i/o color, set viewport color on selection
 DONE clear out warnings due to make hidegarbage
 DONE fix the zooming discontinuity!!
+DONE reimpose test-numbers.laidout as dodecahedron.. CRASH!!  -> document.cc ReImpose crash on pagestyle->margin==NULL 
 
 
