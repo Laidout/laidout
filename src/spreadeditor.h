@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2013 by Tom Lechner
+// Copyright (C) 2004-2015 by Tom Lechner
 //
 #ifndef SPREADEDITOR_H
 #define SPREADEDITOR_H
