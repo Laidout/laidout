@@ -816,13 +816,14 @@ ImageData *Page::Thumbnail()
 	thumbnail->origin(flatpoint(bbox.minx,bbox.miny));
 	
 	Displayer *dp=newDisplayer(NULL);
+	dp->defaultRighthanded(true);
 	dp->CreateSurface((int)w,(int)h);
 	
 	 // setup dp to have proper scaling...
 	dp->NewTransform(1.,0.,0.,-1.,0.,0.);
 	//dp->NewTransform(1.,0.,0.,1.,0.,0.);
-	dp->SetSpace(bbox.minx,bbox.maxx,bbox.miny,bbox.maxy);
-	dp->Center(bbox.minx,bbox.maxx,bbox.miny,bbox.maxy);
+	dp->SetSpace(bbox.minx,bbox.maxx, bbox.miny,bbox.maxy);
+	dp->Center  (bbox.minx,bbox.maxx, bbox.miny,bbox.maxy);
 		
 	dp->NewBG(255,255,255); // *** this should be the paper color for paper the page is on...
 	dp->NewFG(0,0,0,255);
@@ -846,6 +847,7 @@ ImageData *Page::Thumbnail()
 	DBG cerr <<"  maxx "<<thumbnail->maxx<<endl;
 	DBG cerr <<"  miny "<<thumbnail->miny<<endl;
 	DBG cerr <<"  maxy "<<thumbnail->maxy<<endl;
+	//DBG save_image(img, "DBG.png", "png");
 
 	DBG cerr <<"==--- Done Page::updating thumbnail.."<<endl;
 	thumbmodtime=times(NULL);
