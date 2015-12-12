@@ -644,7 +644,7 @@ int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	 //set up config
 	Document *doc =out->doc;
 	int start     =out->start;
-	int end       =out->end;
+	DBG int end       =out->end;
 	int layout    =out->layout;
 	Group *limbo  =out->limbo;
 	PaperGroup *papergroup=out->papergroup;
