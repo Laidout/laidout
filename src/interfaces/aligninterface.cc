@@ -1219,7 +1219,7 @@ int AlignInterface::scan(int x,int y, int &index, unsigned int state)
 
 	if (showrotation) {
 		if (d<aligninfo->uiscale*RADIUS*ROTRADIUS+PAD && d>aligninfo->uiscale*RADIUS*ROTRADIUS-PAD) {
-			double cura=atan2(fp.y,fp.x);
+			DBG double cura=atan2(fp.y,fp.x);
 			DBG cerr <<"angle: "<<cura<<endl;
 			//M_PI/2+aligninfo->extrarotation
 			return ALIGN_Rotation;
