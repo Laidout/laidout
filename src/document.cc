@@ -810,7 +810,12 @@ int Document::Save(int includelimbos,int includewindows,ErrorLog &log)
 	
 	fclose(f);
 	setlocale(LC_ALL,"");
-	touch_recently_used(saveas,"application/x-laidout-doc","Laidout",NULL);
+	touch_recently_used_xbel(saveas,"application/x-laidout-doc",
+							"Laidout","laidout", //application
+							"Laidout", //group
+							true, //visited
+							true, //modified
+							NULL); //recent file
 	return 0;
 }
 
@@ -879,8 +884,14 @@ int Document::Load(const char *file,ErrorLog &log)
 	laidout->project->ClarifyRefs(log);
 	DBG cerr<<" *** Document::Load should probably have a load context storing refs that need to be sorted, to save time loading..."<<endl;
 
-	if (!strstr(file,".laidout") && !strstr(file,"/templates/")) //***bit of a hack to not touch templates
-		touch_recently_used(file,"application/x-laidout-doc","Laidout",NULL);
+	if (!strstr(file,".laidout") && !strstr(file,"/templates/")) { //***bit of a hack to not touch templates
+		touch_recently_used_xbel(saveas,"application/x-laidout-doc",
+								"Laidout","laidout", //application
+								"Laidout", //group
+								true, //visited
+								false, //modified
+								NULL); //recent file
+	}
 
 	DBG cerr <<"------ Done reading "<<file<<endl<<endl;
 	return 1;
