@@ -2228,7 +2228,9 @@ void LaidoutViewport::Center(int w)
 			}
 		}
 			
-		dp->Center(&box);
+		if (!spread && !papergroup) dp->CenterReal();
+		else dp->Center(&box);
+
 		syncrulers();
 		needtodraw=1;
 
@@ -2326,7 +2328,7 @@ void LaidoutViewport::Refresh()
 	dp->StartDrawing(this);
 
 	DBGCAIROSTATUS(" LO viewport refresh, cairo status:  ")
-
+	DBG cerr <<"LO viewport Transform start: "<<endl; dumpctm(dp->Getctm());
 
 	 // draw the scratchboard, just blank out screen..
 	dp->ClearWindow();
@@ -2382,7 +2384,7 @@ void LaidoutViewport::Refresh()
 			FillStyle fs(0,0,0,0xffff, WindingRule,FillSolid,LAXOP_Over);
 			LineStyle ls(0xffff,0,0,0xffff, 1, LAXCAP_Round,LAXJOIN_Miter,0,LAXOP_Over);
 			ls.widthtype=0;
-			ls.function=LAXOP_Over;
+			ls.function=LAXOP_None;
 
 			if (!(papergroup && papergroup->papers.n)) {
 			//if (!pgrp && !(papergroup && papergroup->papers.n)) { ***
@@ -2398,6 +2400,7 @@ void LaidoutViewport::Refresh()
 
 			 // draw outline *** must draw filled with paper color
 			fs.Color(0xffff,0xffff,0xffff,0xffff);
+			ls.function=LAXOP_Over;
 			//DrawData(dp,spread->path->m(),spread->path,NULL,&fs,drawflags);
 			DrawData(dp,spread->path, &ls,&fs,drawflags);
 		}
@@ -2577,6 +2580,7 @@ void LaidoutViewport::Refresh()
 	SwapBuffers();
 
 	DBG cerr <<"======= done refreshing LaidoutViewport.."<<endl;
+	DBG cerr <<"LO viewport Transform end: "<<endl; dumpctm(dp->Getctm());
 }
 
 
@@ -4801,7 +4805,10 @@ int ViewWindow::PerformAction(int action)
 		 //popup a SpreadEditor
 		char blah[30+strlen(doc->Name(1))+1];
 		sprintf(blah,"Spread Editor for %s",doc->Name(0));
-		app->addwindow(newHeadWindow(doc,"SpreadEditor"));
+		HeadWindow *head=dynamic_cast<HeadWindow *>(newHeadWindow(doc,"SpreadEditor"));
+		SpreadEditor *editor=dynamic_cast<SpreadEditor*>(head->GetPaneWindow(0));
+		editor->UseThisDoc(doc);
+		app->addwindow(head);
 		return 0;
 
 	} else if (action==VIEW_EditImposition) {
