@@ -414,6 +414,7 @@ int SpreadInterface::Refresh()
 	FillStyle hfs(0xdddd,0xffff,0xffff,0xffff, WindingRule,FillSolid,GXcopy); //hidden
 	FillStyle efs(0xdddd,0xdddd,0xdddd,0xffff, WindingRule,FillSolid,GXcopy); //empty
 	LineStyle ls(0,0,0xffff,0xffff, 4/dp->Getmag(),CapButt,JoinMiter,~0,GXcopy);
+	ls.widthtype=0;
 	//Page *page;
 	ImageData *thumb=NULL;
 	dp->ClearClip();
@@ -477,6 +478,9 @@ int SpreadInterface::Refresh()
 					dp->PushClip(1);
 					SetClipFromPaths(dp,view->spreads.e[c]->spread->pagestack.e[c2]->outline,dp->Getctm());
 					
+					//dp->PushAndNewTransform(thumb->m());
+					//dp->imageout(thumb->image, thumb->minx,thumb->maxy, thumb->maxx-thumb->minx,thumb->miny-thumb->maxy);
+					//dp->PopAxes();
 					Laidout::DrawData(dp,thumb,NULL,NULL);
 					
 					 //remove clipping region
@@ -499,7 +503,8 @@ int SpreadInterface::Refresh()
 
 				unsigned long oldfg=dp->FG();
 				dp->NewFG(0,0,255);
-				dp->LineAttributes(3,LineSolid,CapButt,JoinMiter);
+				dp->LineAttributes(-1,LineSolid,CapButt,JoinMiter);
+				dp->LineWidthScreen(3);
 				Laidout::DrawData(dp,outline, &ls,NULL);
 				dp->NewFG(oldfg);
 			}
@@ -511,8 +516,8 @@ int SpreadInterface::Refresh()
 	 //draw selection rectangle, if any
 	if (buttondown.isdown(0,LEFTBUTTON) && dragpage<0) {
 		dp->NewFG(0,0,255);
-		dp->LineAttributes(1,LineSolid,CapButt,JoinMiter);
 		dp->DrawScreen();
+		dp->LineAttributes(1,LineSolid,CapButt,JoinMiter);
 		dp->drawline(  lbdown.x,   lbdown.y,   lbdown.x, lastmove.y);
 		dp->drawline(  lbdown.x, lastmove.y, lastmove.x, lastmove.y);
 		dp->drawline(lastmove.x, lastmove.y, lastmove.x,   lbdown.y);
@@ -1409,6 +1414,9 @@ int SpreadInterface::PerformAction(int action)
 		needtodraw=1;
 		return 0;
 
+	} else if (action==VIEWPORT_ResetView || action==VIEWPORT_Default_Zoom) {
+		return PerformAction(SIA_Center);
+
 	} else if (action==SIA_ToggleSelect) {
 		if (curpages.n>0) {
 			 //unselect all
@@ -1492,6 +1500,8 @@ int SpreadInterface::PerformAction(int action)
 	} else if (action==SIA_Thumbnails) {
 		drawthumbnails=!drawthumbnails;
 		DBG cerr <<"-- drawthumbnails: "<<drawthumbnails<<endl;
+		if (drawthumbnails) PostMessage(_("Show page previews"));
+		else PostMessage(_("Don't show page previews"));
 		needtodraw=1;
 		return 0;
 
@@ -1798,14 +1808,19 @@ void SpreadEditor::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Dump
  */
 int SpreadEditor::UseThisDoc(Document *ndoc)
 {
-	if (doc) doc->dec_count();
-	doc=ndoc;
-	if (doc) doc->inc_count();
+	if (ndoc != doc) {
+		if (ndoc) ndoc->inc_count();
+		if (doc) doc->dec_count();
+		doc=ndoc;
+	}
 
 	DocumentUser *d;
 	for (int c=0; c<viewport->interfaces.n; c++) {
 		d=dynamic_cast<DocumentUser*>(viewport->interfaces.e[c]);
 		if (d) d->UseThisDocument(doc);
+		else if (dynamic_cast<SpreadInterface*>(viewport->interfaces.e[c])) {
+			dynamic_cast<SpreadInterface*>(viewport->interfaces.e[c])->UseThisDoc(doc);
+		}
 	}
 	//spreadtool->UseThisDoc(doc);
 	return 0;
@@ -2060,7 +2075,7 @@ int SpreadEditor::Event(const Laxkit::EventData *data,const char *mes)
 
 		 //0-999 was document things
 		if (i-500>=0 && i-500<laidout->project->docs.n) {
-			UseThisDoc(laidout->project->docs.e[i]->doc);
+			UseThisDoc(laidout->project->docs.e[i-500]->doc);
 			return 0;
 
 		} else if (i>=0 && i<doc->spreadviews.n) {
@@ -2074,7 +2089,8 @@ int SpreadEditor::Event(const Laxkit::EventData *data,const char *mes)
 		viewport->Needtodraw(1);
 		return 0;
 	}
-	return 1;
+
+	return ViewerWindow::Event(data, mes);
 }
 
 int SpreadEditor::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
