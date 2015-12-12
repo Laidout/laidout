@@ -239,7 +239,7 @@ LaidoutApp::LaidoutApp()
 	appendstr(config_dir,"/");
 
 	makestr(controlfontstr,"sans-15");
-	
+
 	curcolor=0;
 	lastview=NULL;
 	
@@ -301,6 +301,7 @@ int LaidoutApp::Idle(int tid)
  */
 int LaidoutApp::Autosave()
 {
+	// *** TO DO: 
 	//types of saves:
 	//  save a backup when you do a normal save
 	//  autosave actual files
@@ -310,9 +311,11 @@ int LaidoutApp::Autosave()
 	//              file-autosave2.laidout
 	//              file-autosave3.laidout
 	//  save for crash recovery in some standard location, like with "lock" files or something
+	//  saves documents only, not project at the moment
 
 	const char *bname;
-	const char *fmt, *fname;
+	char *fmt;
+	char *fname;
 	const char *oldname;
 	int status;
 	Document *doc;
@@ -322,26 +325,41 @@ int LaidoutApp::Autosave()
 		doc=project->docs.e[c]->doc;
 		if (!doc) continue;
 
-		bname=lax_basename(project->docs.e[c]->doc->Saveas());
+		bname=lax_basename(doc->Saveas());
 		fmt=newstr(prefs.autosave_path);
 		fname=replaceallname(fmt, "%f", isblank(bname)?"untitled":bname);
 
 		//expand with dir of doc->saveas
 		//fname should be either absolute or relative to that saveas
-		oldname=newstr(doc->Saveas());
+		oldname=newstr(doc->Saveas()); //normally this will be full path of file
+		expand_home_inplace(fname);
+		if (is_relative_path(fname)) {
+			 //need to expand to a place relative to the original file
+			char *path=lax_dirname(oldname, 1);
+			if (path) {
+				if (path[strlen(path)-1]!='/') appendstr(path,"/");
+				appendstr(path,fname);
+				simplify_path(path);
+				delete[] fname;
+				fname=path;
+			}
+		}
 		doc->Saveas(fname);
 		status=doc->Save(true,true,log);
 		doc->Saveas(oldname);
 		delete[] oldname;
 
-		DBG if (status==0) cerr <<" .... autosaved to: "<<fname<<endl;
-		DBG else cerr <<" .... ERROR trying to autosave to: "<<fname<<endl;
+		if (status==0) {
+			cerr <<" .... autosaved to: "<<fname<<endl;
+		} else {
+			cerr <<" .... ERROR trying to autosave to: "<<fname<<endl;
+		}
 
 		delete[] fmt;
 		delete[] fname;
 	}
 
-	DBG cerr <<" *** need to finish implementing autosave!!"<<endl;
+	//DBG cerr <<" *** need to finish implementing autosave!!"<<endl;
 
 	return 1;
 }
@@ -651,7 +669,7 @@ int LaidoutApp::createlaidoutrc()
 					   //autosave
 					  " #Autosave settings\n"
 					  "autosave 0  #number of minutes (such as 1.5) between autosaves\n"
-					  "autosave_path ./.%%f.autosave  #default location for autosave, relative to actual file\n"
+					  "autosave_path ./%%f.autosave  #default location for autosave, relative to actual file\n"
 					  "\n"
 
 					   //units
