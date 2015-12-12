@@ -12,25 +12,20 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now: 
 
-****** doing text extents on wrong font??? changing default displayer font to last multicolor!!!
-
-bug: add gray marks, then '.' for next object, endless loop!
-memory hole, activate tool, lay down one paper, quit, 3 objects remain
-test-tiled-mark.laidout: delete the bars, add bars back then try to export, program stops (not a segfault)!!!! headwindow gets decremented somehow 
-
-reimpose memory hole.. reimposed 5 page booklet
-
-object layer positioning for Home and End keys projecting out in wrong way
+tooltips and event timers seem to be frelled
 
 ubuntu resize window failing
 gnome "application" does one per window, not one per app. this is not a bad thing imnsho, but should be easy to conform to desktop application spec properly
 
-ContextMenu: tablet mouse can't click down in?!?? -> because slight drag cancels... should allow tiny drags
-ContextMenu: mouse hover scan appears to ignore text pad
+bug: add gray marks, then '.' for next object, endless loop!
+bug: add gray bars, move to a page, ^g crashes!
+memory hole, activate tool, lay down one paper, quit, 3 objects remain
+test-tiled-mark.laidout: delete the bars, add bars back then try to export, program stops (not a segfault)!!!! headwindow gets decremented somehow 
+cut marks are too thick.. cairo problem??  grey bars export to pdf ok, but don't display correctly, outline is too thick
+
+object layer positioning for Home and End keys projecting out in wrong way
 
 shearing produced null axes occasionally
-
-tooltips and event timers seem to be frelled
 
 hang after reparent object 
 don't allow reparent to a child!! or reparent as appropriate 
@@ -42,9 +37,6 @@ cloning, change original, not triggering bbox update in clone
 cloning, jump to object in offscreen page, switches pages, but bounding box wrong place
 
 text window controls have difficulties
-
-prompt window is f'd up
-Laxkit::MultiLineEdit needs some serious debugging 
 
 Printing only goes to letter, even though page size says go full page, in image, pdf and ps out!!! *(#@*&#*(&*&$(
 print command to printer is not respecting the paper size
@@ -75,9 +67,11 @@ DONE??? need to implement scale pages to new imposition when reimposing (enable 
 
 create new pane should dup old pane.. currently divide viewport, removes document focus
 
+memory hole in reimpose .. reimposed 5 page booklet 
 memory hole helpwindow 
 memory hole when graphical shell activated 
 memory hole cairo backend
+memory hole do laidout -n letter, split a window, then quit. undeleted Objects remain!
 
 Lightness slider appears black to white, but the middle is full color, needs segmented render like hue
 click enter area of color pickers, does not install color!!!!  
@@ -95,8 +89,6 @@ lineinput not propagating escapable
 
 clones of images scale not like images
 
-html dump must convert chars to entities
-
 svg coord numpoints==0???? numpoints doesn't really serve any purpose other than debugging, but....
 
 splitwindow cursors existing in subwindows
@@ -106,8 +98,6 @@ object tool shift-control for rotate does not allow positioning on drag bars
 'g' for color sample changes cursor to cancel now, and changes on border cross!!!
 
 possible modifier-pairing error with multiple mice...
-
-do laidout -n letter, split a window, then quit. undeleted Objects remain!
 
 recent files do not appear to be most recent file opened
 
@@ -148,14 +138,14 @@ stackframe seems to be ignoring window borders on layout
 ----------------0.096 ROADMAP ITEMS: features and enhancements------------------------
 website: clarify how to get debs from the tarball
 website: explain a bit more how to install dev versions, and place side by side with "stable"
-website: revamp features page
+DONE website: revamp features page, maybe merge with screen shots
 website: combine faq and help?
 
 update fileformat.txt
 check laidout.1 when time to release
 update docs to have new release number
-update translation base files
-update screenshots
+DONE update translation base files
+update screenshots, merge with features
 update links page, add boomaga?
 update dtpcompare.html
 put rss/g+ links on all menu pages
@@ -168,61 +158,44 @@ test:
 make sure undo is experimental only
 
 
-Spread editor:
-  not showing thumbnails!!
-  does not respond to viewport zoom menu stuff
-
-clear out warnings due to make hidegarbage
-
 finish implement cairo backend
-  wallpaper icons messed up
-  zoom up and down jumps way out sometimes
-  multiline text out doesn't seem to work: noticed in tooltip
-  decide on image importers, cairo can only do 8 bit png
   gradient outline not working
-  use cairo_debug_reset_static_data() at final close to release any remaining stuff in cairo memory
+  use cairo_debug_reset_static_data() at final close to release any remaining stuff in cairo memory??
 
+  DONE zoom up and down, or rotate jumps way out sometimes.. does not seem to do that in SpreadEditor
+  DONE wallpaper icons messed up
+  DONE decide on image importers, cairo can only do 8 bit png
+  DONE multiline text out doesn't seem to work: noticed in tooltip
   DONE copy/paste with utf8 freezes cairo
   DONE resize viewport freezes cairo
   DONE resize sig interface doesn't reposition boxes
 
-captioninterface CaptionInterface
-  should adapt from multiline edit, since it already has cut/paste, selections, and is mostly debugged??
-  select, copy, paste 
-  right to left (figure out how to do with harfbuzz)
-
-  --0.097--
-  fonts need to dump in/out by themselves
-  text to path
-  change centering not smooth, text placement hops
-  opentype variations
-  baseline justify
-  control-u hack for poweruser unicode character insertion
-  use selected text as sample when popping up font dialog
-  lorem ipsum
-  color fonts: consider native otf: Mozilla and Adobe’s svg table, microsoft's colr/cpal, Google’s PNG images (CBDT/CBLC tables), Apple’s PNG images (SBIX table)
-
-  DONE click to place caret
-  DONE insert character interface
-  DONE when hovering over other text objects, highlight their boxes
-  DONE color fonts overlay fonts, semi-manually overlaid
-  DONE start dialog not selecting current font
-  DONE use last selected object's font settings for new objects
-  DONE interface off or object change, remove blank objects
-  DONE click no drag to input font size, angle
-  DONE on read in for Laidout, the line spacing is wrong
-  DONE size of non-active object all wrong in laidout
-  DONE mods to change speed of size change
-  DONE cursor up and down goes to wrong position
-  DONE i/o color, set viewport color on selection
-
 fontdialog: FontDialog
   sample block should not strictly adhere to fontsize, as it can get very big
   sample block should be multiline
-  when sorting and there's just a couple, need to ensure that they all appear on screen
   start up with correct font selected
 
-  --0.097--
+  DONE needs to work on a duplicate font, not the original passed in
+  DONE when sorting and there's just a couple, need to ensure that they all appear on screen
+  DONE font to zero size screws up everything -> now has epsilon, won't let it go all the way to 0
+  DONE sample block should resize according to text size
+  DONE scan in Fontmatrix tags, search by tag
+  DONE font Arrange not working
+  DONE font list should be saveable across dialog instances -> store in fontmanager
+  DONE should be able to set color(s) in "ok" event -> palette passed in font
+  DONE style should be drop down
+  DONE size has to be floating point.. means changing numslider to be double ready
+  DONE scrolling: problem with Sync zapping start, sync calls SetBoxAspect which messes with start
+  DONE resizeable sample box
+  DONE sample block fg/bg
+  DONE progressive search
+
+
+----------------0.097 ROADMAP ITEMS: features and enhancements------------------------
+
+fontdialog: FontDialog
+  need a way to remember layer fonts as a single font
+  needs line spacing slider
   favorites: tag and column
   option to search by spacing, ie monospace, see fontconfig: FC_PROPORTIONAL, FC_DUAL, FC_MONO, FC_CHARCELL
   user tags, not just fontmatrix tags, option to update fontmatrix?
@@ -244,39 +217,41 @@ fontdialog: FontDialog
   optional common font finishers? like centering, underline, color, highlight, fg/bg, etc
   fontconfig directory config options
 
-  DONE needs to work on a duplicate font, not the original passed in
-  DONE font to zero size screws up everything -> now has epsilon, won't let it go all the way to 0
-  DONE sample block should resize according to text size
-  DONE scan in Fontmatrix tags, search by tag
-  DONE font Arrange not working
-  DONE font list should be saveable across dialog instances -> store in fontmanager
-  DONE should be able to set color(s) in "ok" event -> palette passed in font
-  DONE style should be drop down
-  DONE size has to be floating point.. means changing numslider to be double ready
-  DONE scrolling: problem with Sync zapping start, sync calls SetBoxAspect which messes with start
-  DONE resizeable sample box
-  DONE sample block fg/bg
-  DONE progressive search
-
-Do separate package for icons, to aid those who can't get inkscape to make the icons in both lax and laidout
-
-autorecover.. autosave every X minutes -> need to decide on autosave location and how many to build up, how to remove old
+captioninterface CaptionInterface
+  select, copy
+  right to left (figure out how to do with harfbuzz)
+  should adapt from multiline edit, since it already has cut/paste, selections, and is mostly debugged??
+  needs line spacing slider
+  fonts need to dump in/out by themselves
+  text to path
+  change centering not smooth, text placement hops
+  opentype variations
+  baseline justify
+  control-u hack for poweruser unicode character insertion
+  use selected text as sample when popping up font dialog
+  lorem ipsum
+  color fonts: consider native otf: Mozilla and Adobe’s svg table, microsoft's colr/cpal, Google’s PNG images (CBDT/CBLC tables), Apple’s PNG images (SBIX table)
 
 TreeSelector:
   with text colors, mouse over highlight is off
-  cursor movement jiggles view.. problem with makeinwindow??
-  makeinwindow() doesn't account for columns
+  not showing alternate gray/white bgs
   option to use markup for labels
-  spacing for column heads is NOT selecting for bounds
   tree display flat option
+  makeinwindow() doesn't account for columns
 
-  DONE objecttree printing columns TWICE
+Spread editor: SpreadEditor spread editor spreadeditor
+  should have border drag to move, not middle drag
 
-
-----------------0.097 ROADMAP ITEMS: features and enhancements------------------------
-
+autosave
+  need a gui
+  autorecover..
+  every X minutes
+  option to choose how many to save near original file, and how to remove old
 
 need option for always write relative links.. now defaults to absolute
+
+need to clarify what happens when you open and close documents. open already open pops new window, not sure if it should
+  also ownership of limbos, open and close docs always leaves limbos behind
 
 color slider popup:
   have a "Done"/"Dismiss" button
@@ -650,6 +625,7 @@ plan:
 ppt:
   implement paper rotation
 ps:
+  must make sure it doesn't depend on Imlib
   for plain postscript, there's bitmask, but no transparency. maybe optionally do simulation with dithered bitmask..
     a lot of work for a deprecated format, but could have other uses, like for PDF/X-1a
   implement paper rotation
@@ -1110,6 +1086,7 @@ implement undo.. ideally use same code for both undo and recordable/assignable a
   metadata stuff
   cloner
   during scripting?!
+  saveable?
 
 maybe flag whether to export limbo with spreads?
 
@@ -1671,5 +1648,41 @@ DONE delete page doesn't update page flipper
 DONE paper tool has bad shadow offset, and too thick lines 
 DONE text is interfering with the page number circle text out 
 DONE (can't duplicate any more) 'N' to zap matrix in object tool jumps the object to random location 
+DONE doing text extents on wrong font??? changing default displayer font to last multicolor!!!  
+DONE clipping not working.. not the clip page, or spreadeditor clip 
+DONE ContextMenu: mouse hover scan appears to ignore text pad
+DONE ContextMenu: tablet mouse can't click down in?!?? -> because slight drag cancels... should allow tiny drags 
+DONE prompt window is f'd up (done I guess? seems to be working ok now)
+DONE Laxkit::MultiLineEdit needs some serious debugging 
+DONE Do separate package for icons, to aid those who can't get inkscape to make the icons in both lax and laidout
+DONE autosave:  need to decide on autosave location -> defaulting to ./%f.autosave 
+DONE SpreadEditor:
+  DONE in chooser, select second document, spreads are not updated
+  DONE have two documents, f3 from second does not start window with the second selected
+  DONE does not respond to viewport zoom menu stuff
+  DONE not showing thumbnails!!
+DONE Key shortcut html dump must convert chars to entities
+DONE touchrecent needs to work 
+DONE TreeSelector:
+  DONE cursor movement jiggles view.. problem with makeinwindow??
+  DONE spacing for column heads is NOT selecting for bounds
+  DONE objecttree printing columns TWICE 
+DONE captioninterface CaptionInterface
+  DONE paste 
+  DONE click to place caret
+  DONE insert character interface
+  DONE when hovering over other text objects, highlight their boxes
+  DONE color fonts overlay fonts, semi-manually overlaid
+  DONE start dialog not selecting current font
+  DONE use last selected object's font settings for new objects
+  DONE interface off or object change, remove blank objects
+  DONE click no drag to input font size, angle
+  DONE on read in for Laidout, the line spacing is wrong
+  DONE size of non-active object all wrong in laidout
+  DONE mods to change speed of size change
+  DONE cursor up and down goes to wrong position
+  DONE i/o color, set viewport color on selection
+DONE clear out warnings due to make hidegarbage
+DONE fix the zooming discontinuity!!
 
 

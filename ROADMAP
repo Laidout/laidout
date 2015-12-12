@@ -14,9 +14,10 @@ VERSION 0.096
 (done) Caption tool, export svg: done, but due to svg, problem specifying colorfont fonts
 (done) Caption tool, scribus -> done-ish, font naming problem for color fonts, and a sizing discrepancy
 (done) Caption tool, pdf -> done sort of, fails for text outside latin-1, because fonts in pdf are a terrible headache.
+(done) reprogram file dialog to have adequate presentation of recent and bookmarks
+(done) fix viewport zoom and rotate wigging out on right click mouse move
        make window resize work in gnome, test in kde
-       autosave for autorecover
-       layers (object tree) palette
+(done) autosave for autorecover -> done, but you have to set manually in ~/.config/laidout/(version)/laidoutrc
 (done) test new export even/odd, batches, and paper rotation for major exporters: svg image pdf scribus, not done: ps eps plan ppt 
 (done) export option alternate each paper 180 deg
 (done) export option rotate every paper by increments of 90
@@ -24,7 +25,6 @@ VERSION 0.096
 (done) Infrastructure for resource sharing between objects
 (done) engraver tool, fix blockout! how did it break?!
 (done) engraver, allow work on multiple objects at once, including tracing
-       debug line outline cache, especially for joins
        Moving selected things in group contents does not update group bounds
 (done) Re-fix cut and paste from system clipboard
 (done) Re-Re-fix paste from system clipboard. I swear it was working.
@@ -33,11 +33,13 @@ VERSION 0.096
 VERSION 0.097
 -------------
        debug previous version!
+       debug line outline cache, especially for joins
        engraver tool grow point mode
        engraver tool, resolution cut mode
        engraver tool, blockout needs to be more precise
        Tools should remember their settings
        Finish implementing anchor tool. maybe gss compatibility?
+       layers (object tree) palette
        export preview
        Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
        Externally rendered objects, similar to Scribus render frames
@@ -181,6 +183,7 @@ Vx support?
 Verse support?
 Content version control?
 dbus?
+3-d/vr interface support (mainly for hedron unwrapper)
 port to other os
 port to tablet, or subset functionality, like check out to tablet, work on lower res version, to later import to system with full resources
 Net/polyhedron layout 3-d previewer extra (maybe?? software BSP tree? opengl?) pdf 1.6 can embed rotatable 3-d
@@ -196,7 +199,8 @@ VERSION 1.0
 End world hunger
 Stabilize the biosphere without causing mass extinction
 Neutralize all nuclear waste
-Visit Pluto
+(done) Visit Pluto
+Visit Pluto (in person)
 While i'm at it, I'd like a pony.
 
 
