@@ -396,7 +396,7 @@ int HedronWindow::Save(const char *saveto)
 
 
 	fclose(f);
-	touch_recently_used(saveto, "application/x-polyptych-doc", "Polyptych", NULL);
+	touch_recently_used_xbel(saveto, "application/x-polyptych-doc", NULL,NULL, "Polyptych", true,true, NULL);
 	return 0;
 }
 
@@ -3046,7 +3046,7 @@ int HedronWindow::installPolyhedron(const char *file)
 		newMessage(message);
 		return 1;
 	}
-	touch_recently_used(file, "application/x-polyhedron-doc", "Polyhedron", NULL);
+	touch_recently_used_xbel(file, "application/x-polyptych-doc", NULL,NULL, "Polyptych", true,false, NULL);
 	char str[200];
 	sprintf(str,"Loaded new polyhedron: %s",lax_basename(file));
 	newMessage(str);
