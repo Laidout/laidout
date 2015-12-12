@@ -760,17 +760,17 @@ int Signature::locatePaperFromPage(int pagenumber, int *row, int *col, int num_s
 	 //
 	 //To do this, we find where it is in the pattern...
 
-	int front;  //Whether sigindex is on top or bottom of unfolded pattern
+	DBG int front;  //Whether sigindex is on top or bottom of unfolded pattern
 	int countdir; //Whether a pattern cell has a higher page number on top (1) or not (0).
 	int rr=-1, cc=-1;
 	for (rr=0; rr<numhfolds+1; rr++) {
 	  for (cc=0; cc<numvfolds+1; cc++) {
 		if (sigindex==foldinfo[rr][cc].finalindexfront) {
-			front=1;
+			DBG front=1;
 			countdir=(foldinfo[rr][cc].finalindexfront>foldinfo[rr][cc].finalindexback);
 			break;
 		} else if (sigindex==foldinfo[rr][cc].finalindexback) {
-			front=0;
+			DBG front=0;
 			countdir=(foldinfo[rr][cc].finalindexfront>foldinfo[rr][cc].finalindexback);
 			break;
 		}
