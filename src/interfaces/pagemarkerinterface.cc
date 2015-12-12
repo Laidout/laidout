@@ -222,7 +222,7 @@ int PageMarkerInterface::Refresh()
 
 	if (shapes.n==0 || colors.n==0) return 0;
 
-	double th=dp->textheight();
+	double th=app->defaultlaxfont->textheight();
 	double pad=th/3;
 
 	if (boxw==0) {
