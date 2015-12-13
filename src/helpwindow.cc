@@ -57,10 +57,12 @@ Laxkit::anXWindow *newHelpWindow(const char *place)
 
 	laidout->InitializeShortcuts();
 	ShortcutManager *manager=GetDefaultShortcutManager();
+
 	if (isblank(manager->setfile)) {
 		makestr(manager->setfile,laidout->config_dir);
 		appendstr(manager->setfile,"/default.keys");
 	}
+
 	ShortcutWindow *shortcutwin=new ShortcutWindow(frame,"Shortcuts",_("Shortcuts"),
 					ANXWIN_REMEMBER|SHORTCUTW_Show_Search|SHORTCUTW_Load_Save,
 					0,0,400,600,0,place);
@@ -71,7 +73,7 @@ Laxkit::anXWindow *newHelpWindow(const char *place)
 
 	AboutWindow *about=new AboutWindow(frame);
 	frame->AddWin(about, 1, _("About"), NULL, 0);
-	
+
 
 	return frame;
 }
