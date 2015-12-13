@@ -77,6 +77,12 @@ uninstall:
 	rm -f  $(BINDIR)/$(LAIDOUTNAME)
 	cd src/po && $(MAKE) uninstall
 
+#link debian to debian-lo if not there.. Debian guidelines say don't put 
+#a "debian" directory in upstream sources by default.
+deb:
+	if [ ! -e debian ] ; then ln -s debian-lo debian; fi
+	dpkg-buildpackage -rfakeroot
+
 hidegarbage: touchdepends
 	cd src && $(MAKE) hidegarbage
 
