@@ -4160,8 +4160,8 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"help")) {
-		//app->addwindow(new HelpWindow());
-		app->addwindow(newHelpWindow(CurrentTool()?CurrentTool()->whattype():"ViewWindow"));
+		anXWindow *win = newHelpWindow(CurrentTool()?CurrentTool()->whattype():"ViewWindow");
+		app->addwindow(win);
 		return 0;
 
 	} else if (!strcmp(mes,"contextChange")) { // curobj was changed, now maybe diff page, spread, etc.
