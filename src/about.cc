@@ -46,8 +46,12 @@ AboutWindow::AboutWindow(Laxkit::anXWindow *parent)
 {
 	win_style|=ANXWIN_ESCAPABLE;
 
-	if (laidout->prefs.splash_image_file) splash=load_image(laidout->prefs.splash_image_file);
-	else splash=NULL;
+	splash=NULL;
+	if (laidout->prefs.splash_image_file) {
+		splash=load_image_with_loaders(laidout->prefs.splash_image_file,
+									   NULL,0,0,NULL,
+									   0,-1,NULL);
+	} else splash=NULL;
 }
 
 AboutWindow::~AboutWindow()
@@ -79,6 +83,7 @@ int AboutWindow::preinit()
 
 	char *about=NULL;
 	if (!splash) about=newstr(_("[pretend there is a splash logo here!]\n"));
+
 	appendstr(about,"\n");
 	appendstr(about,_("Laidout Version "));
 	appendstr(about,LAIDOUT_VERSION);
@@ -122,6 +127,7 @@ int AboutWindow::preinit()
 int AboutWindow::init()
 {
 	
+//------done in preinit now to avoid moveresize not resizing:
 //	m[1]=BOX_SHOULD_WRAP;
 //	m[7]=BOX_SHOULD_WRAP; //<-- this triggers a wrap in rowcol-figureDims
 //	//WrapToExtent: 
@@ -168,7 +174,8 @@ int AboutWindow::CharInput(unsigned int ch,unsigned int state,const LaxKeyboard 
 
 int AboutWindow::Event(const Laxkit::EventData *e,const char *mes)
 {
-	if (win_parent) ((HeadWindow *)win_parent)->WindowGone(this);
+	if (win_parent && dynamic_cast<HeadWindow*>(win_parent))
+		dynamic_cast<HeadWindow*>(win_parent)->WindowGone(this);
 	return MessageBox::Event(e,mes);
 }
 
