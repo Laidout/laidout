@@ -14,12 +14,12 @@ Those are purged with each release.
 
 tooltips and event timers seem to be frelled
 
-ubuntu resize window failing
+ubuntu maximize window failing (but not on today's debian unstable gnome), resize seems to work now
 gnome "application" does one per window, not one per app. this is not a bad thing imnsho, but should be easy to conform to desktop application spec properly
 
 bug: add gray marks, then '.' for next object, endless loop!
 bug: add gray bars, move to a page, ^g crashes!
-memory hole, activate tool, lay down one paper, quit, 3 objects remain
+memory hole paper interface, activate tool, lay down one paper, quit, 3 objects remain
 test-tiled-mark.laidout: delete the bars, add bars back then try to export, program stops (not a segfault)!!!! headwindow gets decremented somehow 
 cut marks are too thick.. cairo problem??  grey bars export to pdf ok, but don't display correctly, outline is too thick
 
@@ -32,6 +32,7 @@ don't allow reparent to a child!! or reparent as appropriate
 grouping frelled.. can group, but cannot seem to select existing groups to ungroup 
 object reordering frelled, strange bbox display offset, 
 
+clone via space bar not moving object after space.. moves bounding box, but actual objects stays put
 clone a child.. NOT PUTTING CORRECTLY!!!! totally wrong matrix
 cloning, change original, not triggering bbox update in clone
 cloning, jump to object in offscreen page, switches pages, but bounding box wrong place
@@ -54,7 +55,7 @@ switch to None document, and units change to unreasonable
 
 pdf out needs clone deref
 
-bg for spread flipper not the same as the other buttons. wtf??? only sometimes??
+bg for spread flipper not the same as the other buttons after popping up spread editor.. wtf???
 
 scribus plugin: if directory of executable script is not writable, it fails! 
  -> should find one that is writable
@@ -72,6 +73,7 @@ memory hole helpwindow
 memory hole when graphical shell activated 
 memory hole cairo backend
 memory hole do laidout -n letter, split a window, then quit. undeleted Objects remain!
+memory hole shortcut window
 
 Lightness slider appears black to white, but the middle is full color, needs segmented render like hue
 click enter area of color pickers, does not install color!!!!  
@@ -136,19 +138,17 @@ stackframe seems to be ignoring window borders on layout
 
 
 ----------------0.096 ROADMAP ITEMS: features and enhancements------------------------
-website: clarify how to get debs from the tarball
-website: explain a bit more how to install dev versions, and place side by side with "stable"
+DONE website: clarify how to get debs from the tarball
 DONE website: revamp features page, maybe merge with screen shots
-website: combine faq and help?
 
 update fileformat.txt
-check laidout.1 when time to release
 update docs to have new release number
+DONE check laidout.1 when time to release
 DONE update translation base files
-update screenshots, merge with features
-update links page, add boomaga?
-update dtpcompare.html
-put rss/g+ links on all menu pages
+DONE update screenshots, sync with features
+DONE update links page, add boomaga?
+DONE update dtpcompare.html
+DONE update help
 test:
   each window type: about palette view spread command text
     help: window pane does funky stuff
@@ -158,42 +158,31 @@ test:
 make sure undo is experimental only
 
 
-finish implement cairo backend
-  gradient outline not working
-  use cairo_debug_reset_static_data() at final close to release any remaining stuff in cairo memory??
-
-  DONE zoom up and down, or rotate jumps way out sometimes.. does not seem to do that in SpreadEditor
-  DONE wallpaper icons messed up
-  DONE decide on image importers, cairo can only do 8 bit png
-  DONE multiline text out doesn't seem to work: noticed in tooltip
-  DONE copy/paste with utf8 freezes cairo
-  DONE resize viewport freezes cairo
-  DONE resize sig interface doesn't reposition boxes
-
-fontdialog: FontDialog
-  start up with correct font selected
-  sample block should not strictly adhere to fontsize, as it can get very big
-  sample block should be multiline
-
-  DONE needs to work on a duplicate font, not the original passed in
-  DONE when sorting and there's just a couple, need to ensure that they all appear on screen
-  DONE font to zero size screws up everything -> now has epsilon, won't let it go all the way to 0
-  DONE sample block should resize according to text size
-  DONE scan in Fontmatrix tags, search by tag
-  DONE font Arrange not working
-  DONE font list should be saveable across dialog instances -> store in fontmanager
-  DONE should be able to set color(s) in "ok" event -> palette passed in font
-  DONE style should be drop down
-  DONE size has to be floating point.. means changing numslider to be double ready
-  DONE scrolling: problem with Sync zapping start, sync calls SetBoxAspect which messes with start
-  DONE resizeable sample box
-  DONE sample block fg/bg
-  DONE progressive search
-
 
 ----------------0.097 ROADMAP ITEMS: features and enhancements------------------------
+website: combine faq and help?
+website: explain a bit more how to install dev versions, and place side by side with "stable"
+
+update fileformat.txt
+check laidout.1 when time to release
+update docs to have new release number
+update translation base files
+update screenshots, sync with features
+update links page
+update help page
+update dtpcompare.html
+test:
+  each window type: about palette view spread command text
+    help: window pane does funky stuff
+  test in different window managers
+  each export filter (via command line in new script in examples.. ignoring problems in eps)
+  make some test scripts for command line testing
+put rss/g+ links on all menu pages
+
 
 fontdialog: FontDialog
+  sample block should not strictly adhere to fontsize, as it can get very big
+  sample block should be multiline
   need a way to remember layer fonts as a single font
   needs line spacing slider
   favorites: tag and column
@@ -223,8 +212,10 @@ captioninterface CaptionInterface
   should adapt from multiline edit, since it already has cut/paste, selections, and is mostly debugged??
   needs line spacing slider
   fonts need to dump in/out by themselves
-  text to path
-  change centering not smooth, text placement hops
+  text to path:
+    option to do all one path,
+	or separate objects per character (or glyph), but clones of a resourced group of glyphs
+  change centering not smooth, text placement hops, font to bitmap render size snafus?
   opentype variations
   baseline justify
   control-u hack for poweruser unicode character insertion
@@ -316,7 +307,7 @@ when resizing viewportwindow and a temp_input window active, make sure it stays 
 searchable menus
 
 engraving tool: Engraving  engraver
-  need preview generator for engraver objects, with cairo, it is painfully slow
+  cairo render NEEDS VAST IMPROVEMENT.. the clunky xlib approximation was fast, but not transferrable to cairo
   bug: make a LineEdit overlay for number input, then Next bdown is ignored!! l, m, or right all ignored: viewportwindow line 947
   bug: object rotate works fine. but then enter and leave engraver tool. Now object rotate is messed up
   bug: 'z' zaps mesh, but does not change cache border or point mapping
@@ -1686,8 +1677,41 @@ DONE engraving tool: Engraving  engraver
   DONE wheel over panel should move the panel, not the viewport
   DONE bug: one obj with 2 groups, one with 1 group, switch with . and ,, does not trigger resize panel
   DONE needs to be an indicator on red linked circle when current group is selected, as it acts as green then 
+  DONE need preview generator for engraver objects, with cairo, it is painfully slow
 DONE text:
   DONE multicolor (via overlaying) fonts
   DONE access combine character pairs
   DONE lineedit/multilineedit copy/pasting freezes cairo
+DONE fix help window crash when closing window
+DONE fontdialog: FontDialog
+  DONE start up with correct font selected
+  DONE needs to work on a duplicate font, not the original passed in
+  DONE when sorting and there's just a couple, need to ensure that they all appear on screen
+  DONE font to zero size screws up everything -> now has epsilon, won't let it go all the way to 0
+  DONE sample block should resize according to text size
+  DONE scan in Fontmatrix tags, search by tag
+  DONE font Arrange not working
+  DONE font list should be saveable across dialog instances -> store in fontmanager
+  DONE should be able to set color(s) in "ok" event -> palette passed in font
+  DONE style should be drop down
+  DONE size has to be floating point.. means changing numslider to be double ready
+  DONE scrolling: problem with Sync zapping start, sync calls SetBoxAspect which messes with start
+  DONE resizeable sample box
+  DONE sample block fg/bg
+  DONE progressive search
+DONE engraver trace not working anymore
+DONE finish implement cairo backend
+  DONE need preview render for engraver objects, takes forever for cairo render 
+  DONE use cairo_debug_reset_static_data() at final close to release any remaining stuff in cairo memory??
+  DONE gradient outline not working
+  DONE zoom up and down, or rotate jumps way out sometimes.. does not seem to do that in SpreadEditor
+  DONE wallpaper icons messed up
+  DONE decide on image importers, cairo can only do 8 bit png
+  DONE multiline text out doesn't seem to work: noticed in tooltip
+  DONE copy/paste with utf8 freezes cairo
+  DONE resize viewport freezes cairo
+  DONE resize sig interface doesn't reposition boxes
+
+
+
 
