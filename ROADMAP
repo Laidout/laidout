@@ -16,7 +16,7 @@ VERSION 0.096
 (done) Caption tool, pdf -> done sort of, fails for text outside latin-1, because fonts in pdf are a terrible headache.
 (done) reprogram file dialog to have adequate presentation of recent and bookmarks
 (done) fix viewport zoom and rotate wigging out on right click mouse move
-       make window resize work in gnome, test in kde
+(done) make window maximize work in gnome (magically seems to work again in recent gnome, resize also seems to work again in recent gnome)
 (done) autosave for autorecover -> done, but you have to set manually in ~/.config/laidout/(version)/laidoutrc
 (done) test new export even/odd, batches, and paper rotation for major exporters: svg image pdf scribus, not done: ps eps plan ppt 
 (done) export option alternate each paper 180 deg
