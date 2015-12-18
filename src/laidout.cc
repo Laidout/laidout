@@ -59,6 +59,10 @@
 #include <sys/stat.h>
 #include <cstdio>
 
+#ifdef LAX_USES_CAIRO
+#include <cairo/cairo-xlib.h>
+#endif
+
 
 using namespace Laxkit;
 using namespace LaxFiles;
@@ -1849,6 +1853,10 @@ int main(int argc,char **argv)
 	DBG cerr <<"  stylemanager.getNumFields()="<<(stylemanager.getNumFields())<<endl;
 	//DBG cerr <<"  stylemanager.styles.n="<<(stylemanager.styles.n)<<endl;
 	stylemanager.Clear();
+
+#ifdef LAX_USES_CAIRO
+	DBG cairo_debug_reset_static_data();
+#endif
 
 	cout <<"-----------------------------Bye!--------------------------"<<endl;
 	DBG cerr <<"------------end of code, default destructors follow--------"<<endl;
