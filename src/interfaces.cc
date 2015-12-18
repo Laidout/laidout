@@ -14,11 +14,7 @@
 // Copyright (C) 2005-2013 by Tom Lechner
 //
 
-#include "interfaces/aligninterface.h"
-#include "interfaces/nupinterface.h"
-#include "interfaces/pagerangeinterface.h"
-#include "interfaces/objectindicator.h"
-
+#include <lax/interfaces/interfacemanager.h>
 #include <lax/interfaces/captioninterface.h>
 #include <lax/interfaces/characterinterface.h>
 #include <lax/interfaces/gradientinterface.h>
@@ -40,6 +36,10 @@
 #include "dataobjects/lgradientdata.h"
 #include "dataobjects/lpathsdata.h"
 
+#include "interfaces/aligninterface.h"
+#include "interfaces/nupinterface.h"
+#include "interfaces/pagerangeinterface.h"
+#include "interfaces/objectindicator.h" 
 #include "interfaces/paperinterface.h"
 #include "interfaces/graphicalshell.h"
 #include "interfaces/anchorinterface.h"
@@ -84,6 +84,11 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	int id=1;
 	anInterface *i;
 
+	//-----------------new fangled InterfaceManager tools-----------------
+	InterfaceManager *imanager = InterfaceManager::GetDefault(true);
+	ResourceManager *tools = imanager->GetTools();
+
+	//-----------------end new fangled InterfaceManager tools-----------------
 
 
 	if (laidout->experimental) {
@@ -150,6 +155,9 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	
 	 //-----Engraver
 	i=new EngraverFillInterface(id++,NULL);
+	//-----------------new fangled InterfaceManager tools-----------------
+	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+	//-----------------end new fangled InterfaceManager tools-----------------
 	i->InitializeResources();
 	existingpool->push(i);
 	i->dec_count();
