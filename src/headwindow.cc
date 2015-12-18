@@ -311,7 +311,7 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 //! Empty virtual destructor.
 HeadWindow::~HeadWindow()
 {
-	DBG cerr <<"in HeadWindow destructor"<<endl;
+	//DBG cerr <<"in HeadWindow destructor"<<endl;
 	if (sc) sc->dec_count();
 }
 
@@ -345,13 +345,13 @@ int HeadWindow::Mark(int c)
 	if (c==-1) {
 		markedpane=curbox;
 		markedhead=this;
-		DBG cerr <<"----head marking curbox in window "<<object_id<<endl;
+		//DBG cerr <<"----head marking curbox in window "<<object_id<<endl;
 
 	} else {
 		if (c<0 || c>windows.n) return 1;
 		markedpane=windows.e[c];
 		markedhead=this;
-		DBG cerr <<"----head marking box "<<c<<" in window "<<object_id<<endl;
+		//DBG cerr <<"----head marking box "<<c<<" in window "<<object_id<<endl;
 	}
 	return 0;
 }
@@ -361,7 +361,7 @@ int HeadWindow::Mark(int c)
 */
 int HeadWindow::SwapWithMarked()
 {
-	//DBG cerr <<" --SwapWithMarked: "<<
+	////DBG cerr <<" --SwapWithMarked: "<<
 	if (curbox==NULL || markedpane==NULL || markedhead==NULL || curbox==markedpane) return 0;
 
 	// make sure markedhead is toplevel
@@ -448,7 +448,7 @@ Document *HeadWindow::findAnyDoc()
 */
 int HeadWindow::splitthewindow(anXWindow *fillwindow)
 {
-	DBG cerr <<"********SPLITTING THE WINDOW"<<endl;
+	//DBG cerr <<"********SPLITTING THE WINDOW"<<endl;
 	//Get doc from curbox. If win has no doc, then get first
 	//doc found in head. If none in head, then first in project (***should be last accessed?)
 	Document *doc=findAnyDoc();
@@ -560,7 +560,7 @@ void HeadWindow::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCo
 					if (c3>2) box->x2=i[2];
 					if (c3>3) box->y2=i[3];
 				} else if (!strcmp(name,"window")) {
-					DBG cerr <<"HeadWindow add new "<<value<<endl;
+					//DBG cerr <<"HeadWindow add new "<<value<<endl;
 					win=NewWindow(value);
 					if (win) {
 						wind=dynamic_cast<DumpUtility *>(win);
@@ -568,7 +568,7 @@ void HeadWindow::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCo
 						box->NewWindow(win); //incs count
 						win->dec_count();
 					} else {
-						DBG cerr <<"**** *** warning: window func not found for "<<(value?value:"(unknown)")<<endl;
+						//DBG cerr <<"**** *** warning: window func not found for "<<(value?value:"(unknown)")<<endl;
 					}
 				}
 			}
@@ -626,7 +626,7 @@ int HeadWindow::init()
  */
 MenuInfo *HeadWindow::GetMenu()
 {
-	DBG cerr <<"*************GetMenu: mode="<<mode<<endl;
+	//DBG cerr <<"*************GetMenu: mode="<<mode<<endl;
 	MenuInfo *menu=new MenuInfo();
 
 	//make sure this always agrees with SplitWindow::mode!!
@@ -669,7 +669,7 @@ MenuInfo *HeadWindow::GetMenu()
 */
 int HeadWindow::Event(const Laxkit::EventData *data,const char *mes)
 {
-	DBG cerr <<"HeadWindow got message: "<<(mes?mes:"(no str)")<<endl;
+	//DBG cerr <<"HeadWindow got message: "<<(mes?mes:"(no str)")<<endl;
 	if (!strcmp(mes,"docTreeChange")) {
 		const TreeChangeEvent *te=dynamic_cast<const TreeChangeEvent *>(data);
 
@@ -688,8 +688,8 @@ int HeadWindow::Event(const Laxkit::EventData *data,const char *mes)
 			if (yes){
 				TreeChangeEvent *edata=new TreeChangeEvent(*te);
 				app->SendMessage(edata,windows.e[c]->win()->object_id,"docTreeChange",object_id);
-				DBG cerr <<"---sending docTreeChange to "<<
-				DBG 	(windows.e[c]->win()->WindowTitle())<<endl;
+				//DBG cerr <<"---sending docTreeChange to "<<
+				//DBG 	(windows.e[c]->win()->WindowTitle())<<endl;
 				yes=0;
 			}
 		}
@@ -722,13 +722,13 @@ int HeadWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 	} else if (data->type==LAX_onMouseOut && mode!=SWAPWITH && mode!=DROPTO) {
 		mousein=0;
-		DBG cerr <<"************************UNDEFINE CURSOR**************** mode="<<mode<<endl;
+		//DBG cerr <<"************************UNDEFINE CURSOR**************** mode="<<mode<<endl;
 		const EnterExitData *e=dynamic_cast<const EnterExitData*>(data);
 		if (!buttondown.any()) dynamic_cast<LaxMouse*>(e->device)->setMouseShape(this,0);
 
 	} else if (!strcmp(mes,"popupsplitmenu")) {
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
-		DBG cerr <<"popupsplitmenu: "<<s->info2<<endl;
+		//DBG cerr <<"popupsplitmenu: "<<s->info2<<endl;
 
 		if (s->info2==HEADW_NewWindow) {
 			 //add new window
@@ -756,7 +756,7 @@ int HeadWindow::Event(const Laxkit::EventData *data,const char *mes)
 			 //set mode to select which pane to drop a window to
 
 			if (mode!=0 || !curbox) return 0;
-			DBG cerr <<"  HeadWindow:: Drop To..."<<endl;
+			//DBG cerr <<"  HeadWindow:: Drop To..."<<endl;
 
 			//XWindowAttributes atts;
 			//XGetWindowAttributes(app->dpy,window, &atts);
@@ -765,41 +765,41 @@ int HeadWindow::Event(const Laxkit::EventData *data,const char *mes)
 			//if (XGrabPointer(app->dpy, window, False,ButtonPressMask|ButtonReleaseMask|PointerMotionMask,
 			//			GrabModeAsync,GrabModeAsync,
 			//			None, None, CurrentTime)!=GrabSuccess) return 0;
-			//DBG cerr <<"***********************GRAB***********************"<<endl;
+			////DBG cerr <<"***********************GRAB***********************"<<endl;
 			app->Tooltips(0);
 
-			DBG cerr <<"***********************CURSOR***********************"<<endl;
+			//DBG cerr <<"***********************CURSOR***********************"<<endl;
 			//***mouse->setMouseShape(this,LAX_MOUSE_Down);
 
 			markedhead=NULL;
 			markedpane=NULL;
 			mode=DROPTO;
-			DBG cerr <<"***************changing mode to DROPTO"<<endl;
+			//DBG cerr <<"***************changing mode to DROPTO"<<endl;
 			return 0;
 
 		} else if (s->info2==HEADW_SwapWith) {
 			// swap with...
 
 			if (mode!=0 || !curbox) return 0;
-			DBG cerr <<"  HeadWindow:: Swap With..."<<endl;
+			//DBG cerr <<"  HeadWindow:: Swap With..."<<endl;
 
 			//XWindowAttributes atts;
 			//XGetWindowAttributes(app->dpy,window, &atts);
 			//if (atts.map_state!=IsViewable) return 0;
 
-			//DBG cerr <<"***********************GRAB***********************"<<endl;
+			////DBG cerr <<"***********************GRAB***********************"<<endl;
 			//if (XGrabPointer(app->dpy, window, False,ButtonPressMask|ButtonReleaseMask|PointerMotionMask,
 			//			GrabModeAsync,GrabModeAsync,
 			//			None, None, CurrentTime)!=GrabSuccess) return 0;
 
-			DBG cerr <<"***********************CURSOR***********************"<<endl;
+			//DBG cerr <<"***********************CURSOR***********************"<<endl;
 			//***mouse->setMouseShape(this,LAX_MOUSE_Exchange);
 
 			app->Tooltips(0);
 			markedhead=NULL;
 			markedpane=NULL;
 			mode=SWAPWITH;
-			DBG cerr <<"***************changing mode to SWAPWITH"<<endl;
+			//DBG cerr <<"***************changing mode to SWAPWITH"<<endl;
 			return 0;
 		}
 	}
@@ -810,7 +810,7 @@ int HeadWindow::Event(const Laxkit::EventData *data,const char *mes)
 //! Intercept and do nothing when grabbed for a "drop to..." to or "swap with...".
 int HeadWindow::LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
-	DBG cerr <<"***********HeadWindow::LBDown mode=="<<mode<<endl;
+	//DBG cerr <<"***********HeadWindow::LBDown mode=="<<mode<<endl;
 	if (mode!=DROPTO && mode!=SWAPWITH) return SplitWindow::LBDown(x,y,state,count,d);
 	//markedpane=NULL;
 	//markedhead=NULL;
@@ -820,21 +820,21 @@ int HeadWindow::LBDown(int x,int y,unsigned int state,int count,const Laxkit::La
 //! Intercept to do a "drop to..." to or "swap with...".
 int HeadWindow::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {
-	DBG cerr <<"***********HeadWindow::LBUp mode=="<<mode<<endl;
+	//DBG cerr <<"***********HeadWindow::LBUp mode=="<<mode<<endl;
 	if (mode!=DROPTO && mode!=SWAPWITH) return SplitWindow::LBUp(x,y,state,d);
 
 	XUngrabPointer(app->dpy, CurrentTime);
 	app->Tooltips(1);
-	DBG cerr <<"***********************UN-GRAB***********************"<<endl;
+	//DBG cerr <<"***********************UN-GRAB***********************"<<endl;
 	if (!laidout->isTopWindow(markedhead)) { 
-		DBG if (!markedhead) cerr <<"***********no marked head"<<endl;
-		DBG else cerr <<"***********marked head is not top"<<endl;
-		DBG cerr <<"***************changing mode to NORMAL"<<endl;
+		//DBG if (!markedhead) cerr <<"***********no marked head"<<endl;
+		//DBG else cerr <<"***********marked head is not top"<<endl;
+		//DBG cerr <<"***************changing mode to NORMAL"<<endl;
 		mode=0;
 		return 0; 
 	}
 	if (!markedpane) {
-		DBG cerr <<"***********no marked pane"<<endl;
+		//DBG cerr <<"***********no marked pane"<<endl;
 		return 0;
 	}
 
@@ -843,41 +843,41 @@ int HeadWindow::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 			// remove original pane and put it in markedhead/markedpane.
 			// If there was only one pane in *this, then remove this HeadWindow.
 
-			DBG cerr <<"********Dropping... \"float\" curbox, then split markedpane according to mouse position"<<endl;
+			//DBG cerr <<"********Dropping... \"float\" curbox, then split markedpane according to mouse position"<<endl;
 			int side=-1,x,y;
 			mouseposition(d->id,markedhead,&x,&y,NULL,NULL);
-			DBG cerr <<"********** x,y: "<<x<<','<<y<<endl;
-			//DBG cerr <<"********"<<markedhead->win_x<<","<<markedhead->win_y<<"  "<<
+			//DBG cerr <<"********** x,y: "<<x<<','<<y<<endl;
+			////DBG cerr <<"********"<<markedhead->win_x<<","<<markedhead->win_y<<"  "<<
 			//*** this should probably go by corner to corner, not x=y and x=-y.
 			x-=markedpane->x1+(markedpane->x2-markedpane->x1)/2;
 			y-=markedpane->y1+(markedpane->y2-markedpane->y1)/2;
-			DBG cerr <<"********** x,y: "<<x<<','<<y<<endl;
+			//DBG cerr <<"********** x,y: "<<x<<','<<y<<endl;
 			if (y>0 && y>x && y>-x) side=LAX_BOTTOM;
 			else if (y<0 && y<x && y<-x) side=LAX_TOP;
 			else if (x>0 && y<x && y>-x) side=LAX_RIGHT;
 			else side=LAX_LEFT;
-			DBG cerr <<"*******side="<<side<<endl;
+			//DBG cerr <<"*******side="<<side<<endl;
 
 			anXWindow *win=curbox->win();
 			win->inc_count();
 			curbox->NewWindow(NULL);
-			DBG cerr <<"***********markedhead->numwindows()="<<markedhead->numwindows()<<endl;
+			//DBG cerr <<"***********markedhead->numwindows()="<<markedhead->numwindows()<<endl;
 			markedhead->Split(markedhead->FindBoxIndex(markedpane), side, win);//this reparents win
 			win->dec_count();
-			DBG cerr <<"***********markedhead->numwindows()="<<markedhead->numwindows()<<endl;
+			//DBG cerr <<"***********markedhead->numwindows()="<<markedhead->numwindows()<<endl;
 			RemoveCurbox();
 			if (windows.n==1) {
 				app->destroywindow(this);
 			}
-			DBG cerr <<"*************done Dropping"<<endl;
+			//DBG cerr <<"*************done Dropping"<<endl;
 		}
 	} else { //SWAPWITH
-		DBG cerr <<"**************** SWAPWITH"<<endl;
+		//DBG cerr <<"**************** SWAPWITH"<<endl;
 		SwapWithMarked();
 	}
 
 	mode=0;
-	DBG cerr <<"***************changing mode to NORMAL"<<endl;
+	//DBG cerr <<"***************changing mode to NORMAL"<<endl;
 	return 0;
 }
 
@@ -886,7 +886,7 @@ int HeadWindow::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 */
 int HeadWindow::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {//***
-	DBG cerr <<"***********HeadWindow::MouseMove  mode=="<<mode<<endl;
+	//DBG cerr <<"***********HeadWindow::MouseMove  mode=="<<mode<<endl;
 	if (mode!=DROPTO && mode!=SWAPWITH) return SplitWindow::MouseMove(x,y,state,d);
 
 	//***based on mouseposition set markedhead and markedpane
@@ -898,7 +898,7 @@ int HeadWindow::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse 
 		return 0;
 	}
 	while (win->win_parent!=NULL) {
-		DBG cerr <<"  -----"<<(win->WindowTitle())<<endl;
+		//DBG cerr <<"  -----"<<(win->WindowTitle())<<endl;
 		win=win->win_parent;
 	}
 
@@ -911,7 +911,7 @@ int HeadWindow::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse 
 	x=markedhead->FindBox(x,y);
 	if (x<0) markedhead=NULL;
 	else markedhead->Mark(x);
-	DBG cerr <<"***************markedpane="<<x<<endl;
+	//DBG cerr <<"***************markedpane="<<x<<endl;
 
 	return 0;
 }
@@ -979,7 +979,7 @@ int HeadWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 	}
 
 	if (ch==LAX_Esc) {
-		DBG cerr <<"***************changing mode to NORMAL"<<endl;
+		//DBG cerr <<"***************changing mode to NORMAL"<<endl;
 		mode=NORMAL;
 		d->paired_mouse->setMouseShape(this,0);
 		d->paired_mouse->ungrabDevice();
@@ -1001,12 +1001,12 @@ int HeadWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 //! Reset mode when focus somehow leaves the window during non-normal modes.
 int HeadWindow::FocusOff(const FocusChangeData *e)
 { //***
-	DBG cerr <<"**********************HeadWindow::FocusOff"<<endl;
+	//DBG cerr <<"**********************HeadWindow::FocusOff"<<endl;
 	if (e->target==this) {
 		//if (mode!=SWAPWITH && mode!=DROPTO && mode!=MAXIMIZED) {
 		if (mode==SWAPWITH || mode==DROPTO || mode==MAXIMIZED) {
 			mode=NORMAL;
-			DBG cerr <<"***********************UN-GRAB***********************"<<endl;
+			//DBG cerr <<"***********************UN-GRAB***********************"<<endl;
 
 			LaxMouse *mouse=dynamic_cast<LaxKeyboard*>(const_cast<LaxDevice*>(e->device))->paired_mouse;
 			mouse->ungrabDevice();
@@ -1038,7 +1038,7 @@ anXWindow *HeadWindow::NewWindow(const char *wtype,anXWindow *likethis)
 			win=winfuncs.e[c]->function(this,blah,winfuncs.e[c]->style,NULL);
 			if (!win || !likethis) return win;
 
-			DBG cerr <<"*** need to repair HeadWindow::NewWindow"<<endl;
+			//DBG cerr <<"*** need to repair HeadWindow::NewWindow"<<endl;
 
 			// need to dump_out_atts from likethis, then if wtype is same, dump in atts,
 			// else just transfer the Document...

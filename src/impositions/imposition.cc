@@ -267,9 +267,9 @@ int *Spread::pagesFromSpread()
 			if (c2==list.n) { list.push(i,c2); }
 		}
 	}
-	DBG cerr <<"pagesfromSpread list: ";
-	DBG for (c=0; c<list.n; c++) cerr <<list.e[c]<<' '; 
-	DBG cerr <<endl;
+	//DBG cerr <<"pagesfromSpread list: ";
+	//DBG for (c=0; c<list.n; c++) cerr <<list.e[c]<<' '; 
+	//DBG cerr <<endl;
 	
 	 //now list holds a monotonically increasing list of pages. 
 	 //now crunch down ranges..
@@ -283,9 +283,9 @@ int *Spread::pagesFromSpread()
 	}
 	list2.push(-2);
 
-	DBG cerr <<"pagesfromSpread list2: ";
-	DBG for (c=0; c<list2.n; c++) cerr <<list2.e[c]<<' ';
-	DBG cerr <<endl;
+	//DBG cerr <<"pagesfromSpread list2: ";
+	//DBG for (c=0; c<list2.n; c++) cerr <<list2.e[c]<<' ';
+	//DBG cerr <<endl;
 
 	return list2.extractArray();
 }
@@ -545,7 +545,7 @@ Imposition::Imposition(const char *nsname)
 	numpages=numpapers=0; 
 	numdocpages=0;
 	
-	DBG cerr <<"imposition base class init for object "<<object_id<<endl;
+	//DBG cerr <<"imposition base class init for object "<<object_id<<endl;
 }
 
 /*! Does paperstyle->dec_count().
@@ -559,7 +559,7 @@ Imposition::~Imposition()
 	if (paper) paper->dec_count();
 	if (papergroup) papergroup->dec_count();
 
-	DBG cerr <<"imposition base class destructor for object "<<object_id<<endl;
+	//DBG cerr <<"imposition base class destructor for object "<<object_id<<endl;
 }
 
 /*! Always return a nonnull name.

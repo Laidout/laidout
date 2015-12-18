@@ -389,9 +389,9 @@ void DrawableObject::UpdateFromRules()
 			//a do nothing rule
 
 		} else if (link->type==ALIGNMENTRULE_EdgeMagnet) {
-			DBG cerr <<" *** need to implement ALIGNMENTRULE_EdgeMagnet"<<endl;
+			//DBG cerr <<" *** need to implement ALIGNMENTRULE_EdgeMagnet"<<endl;
 		} else if (link->type==ALIGNMENTRULE_Code) {
-			DBG cerr <<" *** need to implement ALIGNMENTRULE_Code"<<endl;
+			//DBG cerr <<" *** need to implement ALIGNMENTRULE_Code"<<endl;
 
 		} else if (link->type==ALIGNMENTRULE_Align) {
 			 // Align particular bounding box point to particular parent bounding box point
@@ -410,7 +410,7 @@ void DrawableObject::UpdateFromRules()
 
 		} else {
 			if (!link->target) {
-				DBG cerr << " warning: null rule link->target, skipping for now"<<endl;
+				//DBG cerr << " warning: null rule link->target, skipping for now"<<endl;
 				break;
 			}
 
@@ -1548,15 +1548,15 @@ void DrawableObject::dump_in_group_atts(LaxFiles::Attribute *att,int flag,LaxFil
 				if (data) {
 					push(data);
 					data->dump_in_atts(att->attributes[c],flag,context);
-					DBG if (!dynamic_cast<DrawableObject*>(data)) cerr <<" --- WARNING! newObject returned a non-DrawableObject"<<endl;
+					//DBG if (!dynamic_cast<DrawableObject*>(data)) cerr <<" --- WARNING! newObject returned a non-DrawableObject"<<endl;
 					data->dec_count();
 				}
 				deletestrs(strs,n);
 			} else {
-				DBG cerr <<"*** readin blank object for Group..."<<endl;
+				//DBG cerr <<"*** readin blank object for Group..."<<endl;
 			}
 		} else { 
-			DBG cerr <<"Group dump_in:*** unknown attribute!!"<<endl;
+			//DBG cerr <<"Group dump_in:*** unknown attribute!!"<<endl;
 		}
 	}
 	if (nlocked>0)  locked=nlocked;

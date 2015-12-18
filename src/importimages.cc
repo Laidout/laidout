@@ -493,7 +493,7 @@ int ImportImagesDialog::Event(const Laxkit::EventData *data,const char *mes)
 
 	} else if (!strcmp(mes,"files")) {
 		FileDialog::Event(data,mes);
-		DBG cerr <<"back in ImportImagesDialog files message..."<<endl;
+		//DBG cerr <<"back in ImportImagesDialog files message..."<<endl;
 		updateFileList();
 		rebuildPreviewName();
 		return 0;
@@ -719,7 +719,7 @@ void ImportImagesDialog::SetFile(const char *f,const char *pfile)
 //! Change the Preview input to reflect a new file name.
 void ImportImagesDialog::rebuildPreviewName()
 {//***
-	DBG cerr <<"ImportImagesDialog::rebuildPreviewName()"<<endl;
+	//DBG cerr <<"ImportImagesDialog::rebuildPreviewName()"<<endl;
 
 	//int ifauto=dynamic_cast<CheckBox *>(findWindow("autopreview"))->State()==LAX_ON;
 	//const char *f=linp->GetCText();
@@ -728,7 +728,7 @@ void ImportImagesDialog::rebuildPreviewName()
 	char *full=fullFilePath(NULL);
 	ImageInfo *info=findImageInfo(full);
 	LineInput *preview= dynamic_cast<LineInput *>(findWindow("preview"));
-	DBG if (!preview) { cerr <<"*********rebuildPreviewName ERROR!!"<<endl; exit(1); }
+	//DBG if (!preview) { cerr <<"*********rebuildPreviewName ERROR!!"<<endl; exit(1); }
 	
 	char *prev=NULL;
 	if (info) prev=newstr(info->previewfile);
@@ -737,7 +737,7 @@ void ImportImagesDialog::rebuildPreviewName()
 	preview->SetText(prev);
 	delete[] full;
 	delete[] prev;
-	DBG cerr <<"...done with ImportImagesDialog::rebuildPreviewName()"<<endl;
+	//DBG cerr <<"...done with ImportImagesDialog::rebuildPreviewName()"<<endl;
 }
 
 //! Create new ImageInfo nodes for any selected files not in the list.
@@ -745,7 +745,7 @@ void ImportImagesDialog::rebuildPreviewName()
  */
 void ImportImagesDialog::updateFileList()
 {//***
-	DBG cerr <<"ImportImagesDialog::updateFileList()"<<endl;
+	//DBG cerr <<"ImportImagesDialog::updateFileList()"<<endl;
 	curitem=-1;
 
 	const MenuItem *item=NULL;
@@ -769,7 +769,7 @@ void ImportImagesDialog::updateFileList()
 
 		delete[] full;	
 	}
-	DBG cerr <<"... done ImportImagesDialog::updateFileList()"<<endl;
+	//DBG cerr <<"... done ImportImagesDialog::updateFileList()"<<endl;
 }
 	
 //! Convert things like "24kb" and "3M" to kb.
@@ -853,7 +853,7 @@ int ImportImagesDialog::send(int id)
 {
 	//if (!owner) return 0;
 	
-	DBG cerr <<"====Generating file names for import images..."<<endl;
+	//DBG cerr <<"====Generating file names for import images..."<<endl;
 	
 	int n=0;
 	char **imagefiles=NULL, **previewfiles=NULL;
@@ -932,11 +932,11 @@ int ImportImagesDialog::send(int id)
 				templi=dynamic_cast<LineInput *>(findWindow("MinSize"));			
 				str_to_byte_size(templi->GetCText(), &si);
 				if (s>si) {
-					DBG cerr <<"-=-=-=--=-==-==-=-==-- Generate preview at: "<<previewfiles[c]<<endl;
+					//DBG cerr <<"-=-=-=--=-==-==-=-==-- Generate preview at: "<<previewfiles[c]<<endl;
 					si=dynamic_cast<LineInput *>(findWindow("PreviewWidth"))->GetLineEdit()->GetLong(NULL);
 					if (si<10) si=128;
 					if (generate_preview_image(imagefiles[c],previewfiles[c],"jpg",si,si,1)) {
-						DBG cerr <<"              ***generate preview failed....."<<endl;
+						//DBG cerr <<"              ***generate preview failed....."<<endl;
 					}
 				}
 			} else {

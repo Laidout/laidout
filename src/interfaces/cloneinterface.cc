@@ -2613,14 +2613,14 @@ int CloneInterface::PerformAction(int action)
 	} else if (action==CLONEIA_Next_Basecell) {
 		if (current_base<0) current_base=0; else current_base--;
 		if (current_base<0) current_base=tiling->basecells.n-1;
-		DBG cerr <<" ***** current_base: "<<current_base<<endl;
+		//DBG cerr <<" ***** current_base: "<<current_base<<endl;
 		needtodraw=1;
 		return 0;
 
 	} else if (action==CLONEIA_Previous_Basecell) {
 		if (current_base<0) current_base=0; else current_base++;
 		if (current_base>=tiling->basecells.n) current_base=0;
-		DBG cerr <<" ***** current_base: "<<current_base<<endl;
+		//DBG cerr <<" ***** current_base: "<<current_base<<endl;
 		needtodraw=1;
 		return 0;
 
@@ -3036,13 +3036,13 @@ int CloneInterface::scan(int x,int y, int *i)
 	flatpoint fp=dp->screentoreal(x,y);
 	flatpoint p;
 	ObjectContext *oc;
-	DBG cerr <<" ----- fpoint: "<<fp.x<<','<<fp.y<<endl;
+	//DBG cerr <<" ----- fpoint: "<<fp.x<<','<<fp.y<<endl;
 	for (int c=0; c<source_proxies.n(); c++) {
 		oc=source_proxies.e(c);
 
-		DBG cerr <<" ----- source "<<c<<"/"<<source_proxies.n()<<" bbox: "<<oc->obj->minx<<"  "<<oc->obj->miny<<"  "<<oc->obj->maxx<<"  "<<oc->obj->maxy<<endl;
-		DBG p=transform_point_inverse(oc->obj->m(), fp);
-		DBG cerr <<" ----- point: "<<p.x<<','<<p.y<<endl;
+		//DBG cerr <<" ----- source "<<c<<"/"<<source_proxies.n()<<" bbox: "<<oc->obj->minx<<"  "<<oc->obj->miny<<"  "<<oc->obj->maxx<<"  "<<oc->obj->maxy<<endl;
+		//DBG p=transform_point_inverse(oc->obj->m(), fp);
+		//DBG cerr <<" ----- point: "<<p.x<<','<<p.y<<endl;
 
 		if (oc->obj->pointin(fp,1)) {
 			if (i) *i=c;
@@ -3054,8 +3054,8 @@ int CloneInterface::scan(int x,int y, int *i)
 	 //check for inside base cell outlines
 	p=transform_point_inverse(base_cells.m(),fp);
 	for (int c=0; c<tiling->basecells.n; c++) {
-		DBG cerr <<" ----- base cell "<<c<<"/"<<base_cells.n()<<" bbox: "<<base_cells.e(c)->minx<<"  "<<base_cells.e(c)->miny<<"  "<<base_cells.e(c)->maxx<<"  "<<base_cells.e(c)->maxy<<endl;
-		DBG cerr <<" ----- point: "<<p.x<<','<<p.y<<endl;
+		//DBG cerr <<" ----- base cell "<<c<<"/"<<base_cells.n()<<" bbox: "<<base_cells.e(c)->minx<<"  "<<base_cells.e(c)->miny<<"  "<<base_cells.e(c)->maxx<<"  "<<base_cells.e(c)->maxy<<endl;
+		//DBG cerr <<" ----- point: "<<p.x<<','<<p.y<<endl;
 		if (!base_cells.e(c)->pointin(p,1)) continue;
 		if (i) *i=c;
 		return CLONEI_BaseCell;
@@ -3082,12 +3082,12 @@ int CloneInterface::scanSelected(int x,int y)
 	y-=selected_offset+(dp->Miny+dp->Maxy)/2-boxh/2+icon_width*.2;
 	row=y/icon_width/1.2;
 
-	DBG cerr <<" scanSelected r,c: "<<row<<','<<col<<endl;
+	//DBG cerr <<" scanSelected r,c: "<<row<<','<<col<<endl;
 
 	int i=-1;
 	if (col>=0 && col<num_cols && row>=0 && row<num_rows) {
 		i=col+row*num_cols;
-		DBG cerr <<"   i="<<i<<endl;
+		//DBG cerr <<"   i="<<i<<endl;
 		if  (i>=0 && i<NumBuiltinTilings()) {
 			//found one
 		} else i=-1;
@@ -3394,7 +3394,7 @@ int CloneInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 	int i=-1;
 	int over=scan(x,y,&i);
 
-	//DBG flatpoint fp=dp->screentoreal(x,y);
+	////DBG flatpoint fp=dp->screentoreal(x,y);
 
 	if (over==firstover) {
 		if (over==CLONEI_Circle) {
@@ -3461,7 +3461,7 @@ int CloneInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 
 	int i=-1;
 	int over=scan(x,y,&i);
-	DBG cerr <<"over box: "<<over<<endl;
+	//DBG cerr <<"over box: "<<over<<endl;
 
 	if (!buttondown.any()) {
 		if (lastover!=over) needtodraw=1;
@@ -3532,7 +3532,7 @@ int CloneInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxki
 
 
 	int over=scan(x,y,NULL);
-	DBG cerr <<"wheel up clone interface: "<<over<<endl;
+	//DBG cerr <<"wheel up clone interface: "<<over<<endl;
 
 	if (over==CLONEI_Tiling) {
 		PerformAction(CLONEIA_Previous_Tiling);
@@ -3563,7 +3563,7 @@ int CloneInterface::WheelDown(int x,int y,unsigned int state,int count,const Lax
 
 
 	int over=scan(x,y,NULL);
-	DBG cerr <<"wheel down clone interface: "<<over<<endl;
+	//DBG cerr <<"wheel down clone interface: "<<over<<endl;
 
 	if (over==CLONEI_Tiling) {
 		PerformAction(CLONEIA_Next_Tiling);
@@ -3581,7 +3581,7 @@ int CloneInterface::WheelDown(int x,int y,unsigned int state,int count,const Lax
 
 int CloneInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	DBG cerr<<" got ch:"<<ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
+	//DBG cerr<<" got ch:"<<ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
 	
 	if (mode==CMODE_Select) {
 		int found=0;

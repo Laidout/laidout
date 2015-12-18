@@ -149,7 +149,7 @@ void InitializeDataFactory()
 	lobjectfactory->DefineNewObject(LAX_ENGRAVERFILLDATA,"EngraverFillData",createLEngraverFillData,NULL);
 	lobjectfactory->DefineNewObject(LAX_CAPTIONDATA,     "CaptionData",     createLCaptionData,     NULL);
 
-	DBG lobjectfactory->dump_out(stderr,0);
+	//DBG lobjectfactory->dump_out(stderr,0);
 }
 
 

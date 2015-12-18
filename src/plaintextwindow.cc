@@ -105,7 +105,7 @@ void PlainTextWindow::uniqueName(PlainText *obj)
 
 int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 {
-	DBG cerr <<"plaintext message: "<<(mes?mes:"(some event)")<<endl;
+	//DBG cerr <<"plaintext message: "<<(mes?mes:"(some event)")<<endl;
 
 	if (!strcmp(mes,"openPopup")) {
 		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
@@ -306,9 +306,9 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 		}
 		if (!input) return 0;
 		char *output=laidout->calculator->In(input);
-		DBG if (!output) cerr  << "script in: "<<input<<endl<< "script out: (none)" <<endl;
+		//DBG if (!output) cerr  << "script in: "<<input<<endl<< "script out: (none)" <<endl;
 		if (output) {
-			DBG cerr << "script in: "<<input<<endl<< "script out" << output<<endl;
+			//DBG cerr << "script in: "<<input<<endl<< "script out" << output<<endl;
 			prependstr(output,":\n");
 			prependstr(output,_("Script output"));
 			MessageBox *mbox=new MessageBox(NULL,NULL,_("Script output"),ANXWIN_CENTER|MB_LEFT, 0,0,0,0,0,
@@ -322,7 +322,7 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 	} else if (!strcmp(mes,"nameinput")) { 
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
-		DBG cerr<<"plaintextwindow nameinput update "<<s->info1<<endl;
+		//DBG cerr<<"plaintextwindow nameinput update "<<s->info1<<endl;
 		if (!textobj) return 0;
 		int i=s->info1;
 		if (i==1 || i==3) { //focus left or enter pressed for nameinput

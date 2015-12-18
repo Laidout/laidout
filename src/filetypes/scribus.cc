@@ -353,7 +353,7 @@ static int countGroups(Group *g)
 //! Export the document as a Scribus file.
 int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 {
-	DBG cerr <<"-----Scribus export start-------"<<endl;
+	//DBG cerr <<"-----Scribus export start-------"<<endl;
 
 	DocumentExportConfig *config=dynamic_cast<DocumentExportConfig *>(context);
 	if (!config) return 1;
@@ -384,7 +384,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	char *file=NULL;
 	if (!filename) {
 		if (isblank(doc->saveas)) {
-			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
+			//DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
 			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
 			return 2;
@@ -395,7 +395,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 
 	f=open_file_for_writing(file,0,&log);
 	if (!f) {
-		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
+		//DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
 		delete[] file;
 		return 3;
 	}
@@ -710,7 +710,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	int ll,o;
 	PageObject *obj;
 	for (int c=0; c<pageobjects.n; c++) {
-		DBG cerr <<"pageobject "<<c<<": "<<pageobjects.e[c]->data->whattype()<<", count="<<pageobjects.e[c]->count<<endl;
+		//DBG cerr <<"pageobject "<<c<<": "<<pageobjects.e[c]->data->whattype()<<", count="<<pageobjects.e[c]->count<<endl;
 
 		obj=pageobjects.e[c];
 		ll=obj->links;
@@ -901,17 +901,17 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 
 			psConcat(m); //(scribus page coord) = (laidout paper coord) * psCTM()
 
-			DBG cerr <<"spread:"<<c<<"  paper:"<<p<<"  paperwidth:"<<paperwidth<<"  paperheight:"<<paperheight<<endl;
-			DBG dumpctm(psCTM());
-			DBG flatpoint pt;
-			DBG pt=transform_point(psCTM(),0,0);
-			DBG cerr <<"ll: "<<pt.x<<","<<pt.y<<endl;
-			DBG pt=transform_point(psCTM(),0,paperheight/72);
-			DBG cerr <<"ul: "<<pt.x<<","<<pt.y<<endl;
-			DBG pt=transform_point(psCTM(),paperwidth/72,paperheight/72);
-			DBG cerr <<"ur: "<<pt.x<<","<<pt.y<<endl;
-			DBG pt=transform_point(psCTM(),paperwidth/72,0);
-			DBG cerr <<"lr: "<<pt.x<<","<<pt.y<<endl;
+			//DBG cerr <<"spread:"<<c<<"  paper:"<<p<<"  paperwidth:"<<paperwidth<<"  paperheight:"<<paperheight<<endl;
+			//DBG dumpctm(psCTM());
+			//DBG flatpoint pt;
+			//DBG pt=transform_point(psCTM(),0,0);
+			//DBG cerr <<"ll: "<<pt.x<<","<<pt.y<<endl;
+			//DBG pt=transform_point(psCTM(),0,paperheight/72);
+			//DBG cerr <<"ul: "<<pt.x<<","<<pt.y<<endl;
+			//DBG pt=transform_point(psCTM(),paperwidth/72,paperheight/72);
+			//DBG cerr <<"ur: "<<pt.x<<","<<pt.y<<endl;
+			//DBG pt=transform_point(psCTM(),paperwidth/72,0);
+			//DBG cerr <<"lr: "<<pt.x<<","<<pt.y<<endl;
 
 			 //------------page header
 			fprintf(f,"  <PAGE \n"
@@ -989,7 +989,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	fclose(f);
 	setlocale(LC_ALL,"");
 
-	DBG cerr <<"-----Scribus export end success-------"<<endl;
+	//DBG cerr <<"-----Scribus export end success-------"<<endl;
 
 	return 0;
 }
@@ -1426,7 +1426,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 			for (int c=0; c<numpo; c++) {
 				pocoor[c]=transform_point(ctm,coords[c*2]/72,coords[c*2+1]/72);
 				//pocoor[c]=flatpoint(coords[c*2],coords[c*2+1]);
-				DBG cerr <<"pocoor to canvas: "<<pocoor[c].x<<','<<pocoor[c].y<<endl;
+				//DBG cerr <<"pocoor to canvas: "<<pocoor[c].x<<','<<pocoor[c].y<<endl;
 			}
 			//note that these are raw coordinates read on input, they still have to be scaled
 			// to current bounding box, which is done below
@@ -1442,7 +1442,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 			cocoor=new flatpoint[numco];
 			for (int c=0; c<numco; c++) {
 				cocoor[c]=transform_point(ctm,coords[c*2]/72,coords[c*2+1]/72);
-				DBG cerr <<"cocoor to canvas: "<<cocoor[c].x<<','<<cocoor[c].y<<endl;
+				//DBG cerr <<"cocoor to canvas: "<<cocoor[c].x<<','<<cocoor[c].y<<endl;
 			}
 			//note that these are raw coordinates read on input, they still have to be scaled
 			// to current bounding box, which is done below
@@ -1471,7 +1471,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 
 	width =norm(transform_point(ctm,flatpoint(obj->maxx,obj->miny))-transform_point(ctm,flatpoint(obj->minx,obj->miny)));
 	height=norm(transform_point(ctm,flatpoint(obj->minx,obj->miny))-transform_point(ctm,flatpoint(obj->minx,obj->maxy)));
-	DBG cerr <<"object dimensions: "<<width<<" x "<<height<<endl;
+	//DBG cerr <<"object dimensions: "<<width<<" x "<<height<<endl;
 
 	 //create a basis for the object, which has same scaling as the scratch space, but
 	 //possibly different translation and rotation
@@ -1481,23 +1481,23 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 	p=transform_point(ctm,flatpoint(obj->minx,obj->miny));
 	transform_from_basis(mmm,p,vx,vy);
 	transform_invert(m,mmm);
-	DBG cerr<<"transform back to object:"; dumpctm(m);
+	//DBG cerr<<"transform back to object:"; dumpctm(m);
 
 	 //pocoor and cocoor are in canvas coordinates, need to
 	 //make pocoor and cocoor coords relative to the object origin, not the canvas
 	for (int c=0; c<numpo; c++) {
-		DBG cerr <<"pocoor: "<<pocoor[c].x<<','<<pocoor[c].y;
+		//DBG cerr <<"pocoor: "<<pocoor[c].x<<','<<pocoor[c].y;
 		if (pocoor[c].x!=999999) pocoor[c]=transform_point(m,pocoor[c]);
 		if (fabs(pocoor[c].x)<1e-10) pocoor[c].x=0;
 		if (fabs(pocoor[c].y)<1e-10) pocoor[c].y=0;
-		DBG cerr <<" -->  "<<pocoor[c].x<<','<<pocoor[c].y<<endl;
+		//DBG cerr <<" -->  "<<pocoor[c].x<<','<<pocoor[c].y<<endl;
 	}
 	for (int c=0; c<numco; c++) {
-		DBG cerr <<"cocoor: "<<cocoor[c].x<<','<<cocoor[c].y;
+		//DBG cerr <<"cocoor: "<<cocoor[c].x<<','<<cocoor[c].y;
 		if (pocoor[c].x!=999999) cocoor[c]=transform_point(m,cocoor[c]);
 		if (fabs(cocoor[c].x)<1e-10) cocoor[c].x=0;
 		if (fabs(cocoor[c].y)<1e-10) cocoor[c].y=0;
-		DBG cerr <<" -->  "<<cocoor[c].x<<','<<cocoor[c].y<<endl;
+		//DBG cerr <<" -->  "<<cocoor[c].x<<','<<cocoor[c].y<<endl;
 	}
 	if (ptype==PTYPE_Image) { //image
 		localscx=width /(img->maxx-img->minx); //assumes maxx-minx==file width
@@ -1906,7 +1906,7 @@ ObjectDef *ScribusImportFilter::GetObjectDef()
  */
 int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log)
 {
-	DBG cerr <<"-----Scribus import start-------"<<endl;
+	//DBG cerr <<"-----Scribus import start-------"<<endl;
 
 	ImportConfig *in=dynamic_cast<ImportConfig *>(context);
 	if (!in) {
@@ -2396,11 +2396,11 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 			  layer=dynamic_cast<Group*>(master->layers.e(c2));//this is a layer
 			  for (int c3=0; c3<layer->n(); c3++) {//for each object in c2 layer of master page
 				obj=layer->e(c3);
-				DBG cerr<<"scribus master page object: "<<obj->whattype()<<endl;
+				//DBG cerr<<"scribus master page object: "<<obj->whattype()<<endl;
 
 				newobj=obj->duplicate(NULL);
 				if (!newobj) {
-					DBG cerr<<" *** could not duplicate "<<obj->whattype()<<endl;
+					//DBG cerr<<" *** could not duplicate "<<obj->whattype()<<endl;
 					continue;
 				}
 				dynamic_cast<Group *>(docpage->layers.e(0))->push(newobj);
@@ -2465,7 +2465,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 		doc->dec_count();
 	}
 	
-	DBG cerr <<"-----Scribus import end successfully-------"<<endl;
+	//DBG cerr <<"-----Scribus import end successfully-------"<<endl;
 	delete att;
 	return 0;
 

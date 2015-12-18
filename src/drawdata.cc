@@ -69,14 +69,14 @@ namespace Laidout {
 //! Just like DrawData(), but don't push data matrix.
 void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned int flags)
 {
-	DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(dp);
-    DBG if (ddp && ddp->GetCairo()) cerr <<" DrawDataStraight for "<<data->Id()<<", cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+	//DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(dp);
+    //DBG if (ddp && ddp->GetCairo()) cerr <<" DrawDataStraight for "<<data->Id()<<", cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 
 	if (flags&DRAW_AXES) dp->drawaxes();
 	if (flags&DRAW_BOX && data->validbounds()) {
 		dp->NewFG(128,128,128);
-		DBG cerr<<" drawing obj "<<data->object_id<<":"<<data->minx<<' '<<data->maxx<<' '<<data->miny<<' '<<data->maxy<<endl;
+		//DBG cerr<<" drawing obj "<<data->object_id<<":"<<data->minx<<' '<<data->maxx<<' '<<data->miny<<' '<<data->maxy<<endl;
 		dp->drawline(flatpoint(data->minx,data->miny),flatpoint(data->maxx,data->miny));
 		dp->drawline(flatpoint(data->maxx,data->miny),flatpoint(data->maxx,data->maxy));
 		dp->drawline(flatpoint(data->maxx,data->maxy),flatpoint(data->minx,data->maxy));

@@ -94,10 +94,10 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	if (laidout->experimental) {
 		// *************** testing:
 
-		 //------Insert Character
-		i=new CharacterInterface(NULL,id++,NULL,NULL);
-		existingpool->push(i);
-		i->dec_count();
+		 ////------Insert Character
+		//i=new CharacterInterface(NULL,id++,NULL,NULL);
+		//existingpool->push(i);
+		//i->dec_count();
 
 		 //------Anchor
 		i=new AnchorInterface(NULL,id++,NULL);

@@ -1099,13 +1099,13 @@ DocumentExportConfig::~DocumentExportConfig()
 
 Value *DocumentExportConfig::dereference(const char *extstring, int len)
 {
-	DBG cerr <<" *** Need to implement DocumentExportConfig::dereference()!!"<<endl;
+	//DBG cerr <<" *** Need to implement DocumentExportConfig::dereference()!!"<<endl;
 	return NULL;
 }
 
 int DocumentExportConfig::assign(FieldExtPlace *ext,Value *v)
 {
-	DBG cerr <<" *** Need to implement DocumentExportConfig::assign()!!"<<endl;
+	//DBG cerr <<" *** Need to implement DocumentExportConfig::assign()!!"<<endl;
 	return 0;
 }
 
@@ -1127,7 +1127,7 @@ void DocumentExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpCo
 		fprintf(f,"%spaperrotation 0      #0|90|180|270. Whether to rotate each exported (final) paper by that number of degrees\n",spc);
 		fprintf(f,"%srotate180 yes        #or no. Whether to rotate every other paper by 180 degrees, in addition to paperrotation\n",spc);
 
-		DBG cerr <<" *** need to implement DocumentExportConfig::paperrotation!"<<endl;
+		//DBG cerr <<" *** need to implement DocumentExportConfig::paperrotation!"<<endl;
 		return;
 	}
 	if (filename) fprintf(f,"%stofile %s\n",spc,filename);
@@ -1275,7 +1275,7 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 		return 1;
 	}
 
-	DBG cerr << "export_document begin to \""<<config->filter->VersionName()<<"\"......."<<endl;
+	//DBG cerr << "export_document begin to \""<<config->filter->VersionName()<<"\"......."<<endl;
 
 	 //figure out what paper arrangement to print out on
 	PaperGroup *papergroup=config->papergroup;
@@ -1426,7 +1426,7 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 		} else err=config->filter->Out(NULL,config,log); //send all pages at once to filter
 	}
 	
-	DBG cerr << "export_document end."<<endl;
+	//DBG cerr << "export_document end."<<endl;
 
 	if (err>0) {
 		log.AddMessage(_("Export failed."),ERROR_Fail);

@@ -91,7 +91,7 @@ void ObjectTree::UseContainer(ObjectContainer *container)
 	}
 
 	if (!menu->parent) {
-		DBG menuinfoDump(menu,0);
+		//DBG menuinfoDump(menu,0);
 	}
 }
 
@@ -173,7 +173,7 @@ void ObjectTreeWindow::UseContainerRecursive(ObjectContainer *container)
 	}
 
 	if (!menu->parent) {
-		DBG menuinfoDump(menu,0);
+		//DBG menuinfoDump(menu,0);
 	}
 }
 

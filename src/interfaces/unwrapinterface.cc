@@ -88,7 +88,7 @@ UnwrapInterface::UnwrapInterface(Polyhedron *nabstractnet,Net *nnet,const char *
 			}
 		}
 	}
-	DBG cerr <<"Done reading in images..."<<endl;
+	//DBG cerr <<"Done reading in images..."<<endl;
 }
 
 //! Return the first face not already in the net. It can be a potential face.
@@ -111,7 +111,7 @@ NetFace *UnwrapInterface::findNewSeed()
 UnwrapInterface::~UnwrapInterface()
 { *** 	
 	deletedata();
-	DBG cerr <<"----in UnwrapInterface destructor"<<endl;
+	//DBG cerr <<"----in UnwrapInterface destructor"<<endl;
 }
 
 //! Return new UnwrapInterface.
@@ -130,7 +130,7 @@ anInterface *UnwrapInterface::duplicate(anInterface *dup)
 //! Sets showdecs=1, and needtodraw=1.
 int UnwrapInterface::InterfaceOn()
 { ***
-	DBG cerr <<"imageinterfaceOn()"<<endl;
+	//DBG cerr <<"imageinterfaceOn()"<<endl;
 	showdecs=1;
 	needtodraw=1;
 	mode=0;
@@ -143,7 +143,7 @@ int UnwrapInterface::InterfaceOff()
 	Clear(NULL);
 	showdecs=0;
 	needtodraw=1;
-	DBG cerr <<"imageinterfaceOff()"<<endl;
+	//DBG cerr <<"imageinterfaceOff()"<<endl;
 	return 0;
 }
 
@@ -304,7 +304,7 @@ int UnwrapInterface::Refresh()
 		dp->NewFG(255,255,255);
 	}
 
-	//DBG cerr<<"..Done drawing UnwrapInterface"<<endl;
+	////DBG cerr<<"..Done drawing UnwrapInterface"<<endl;
 	return 0;
 }
 
@@ -325,7 +325,7 @@ void UnwrapInterface::deletedata()
  */
 int UnwrapInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 { ***
-	DBG cerr << "  in unwrapinterface lbd..";
+	//DBG cerr << "  in unwrapinterface lbd..";
 	buttondown.down(d->id,LEFTBUTTON, x,y);
 
 	//***Find which face clicked down in if any
@@ -342,7 +342,7 @@ int UnwrapInterface::LBDown(int x,int y,unsigned int state,int count,const Laxki
 
 	needtodraw=1;
 	return 0;
-	DBG cerr <<"..unwrapinterfacelbd done   ";
+	//DBG cerr <<"..unwrapinterfacelbd done   ";
 }
 
 //! If data, then call viewport->ObjectMove(data).
@@ -494,7 +494,7 @@ int UnwrapInterface::CharInput(unsigned int ch, const char *buffer,int len,unsig
 		showfile++;
 		if (showfile==3) showfile=0;
 		needtodraw=1;
-		DBG cerr <<"UnwrapInterface showfile: "<<(int)showfile<<endl;
+		//DBG cerr <<"UnwrapInterface showfile: "<<(int)showfile<<endl;
 		return 0;
 
 	} else if (ch=='D' && (state&LAX_STATE_MASK)==0) {

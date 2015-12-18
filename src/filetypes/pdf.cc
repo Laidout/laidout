@@ -228,11 +228,11 @@ PdfObjInfo::PdfObjInfo()
 	i=o++; 
 	lo_object_id=0;
 	lo_object=NULL;
-	DBG cerr<<"creating PdfObjInfo "<<i<<"..."<<endl;
+	//DBG cerr<<"creating PdfObjInfo "<<i<<"..."<<endl;
 }
 PdfObjInfo::~PdfObjInfo()
 {
-	DBG cerr<<"delete PdfObjInfo i="<<i<<", number="<<number<<"..."<<endl;
+	//DBG cerr<<"delete PdfObjInfo i="<<i<<", number="<<number<<"..."<<endl;
 	if (next) delete next; 
 
 }
@@ -256,7 +256,7 @@ class PdfPageInfo : public PdfObjInfo
 
 PdfPageInfo::~PdfPageInfo()
 {
-	DBG cerr<<"   delete PdfPageInfo i="<<i<<", number="<<number<<"..."<<endl;
+	//DBG cerr<<"   delete PdfPageInfo i="<<i<<", number="<<number<<"..."<<endl;
 	if (pagelabel) delete[] pagelabel; 
 }
 
@@ -495,7 +495,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	char *file=NULL;
 	if (!filename) {
 		if (!doc || isblank(doc->saveas)) {
-			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
+			//DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
 			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
 			return 2;
@@ -506,7 +506,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 
 	f=open_file_for_writing(file,0,&log);
 	if (!f) {
-		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
+		//DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
 		delete[] file;
 		return 3;
 	}
@@ -514,8 +514,8 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 
 	setlocale(LC_ALL,"C");
 	
-	DBG cerr <<"=================== start pdf out "<<start<<" to "<<end<<", papers:"
-	DBG      <<papergroup->papers.n<<" ====================\n";
+	//DBG cerr <<"=================== start pdf out "<<start<<" to "<<end<<", papers:"
+	//DBG      <<papergroup->papers.n<<" ====================\n";
 
 	 // initialize outside accessible ctm
 	psCtmInit();
@@ -670,7 +670,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 					psConcat(m);
 
 					 // set clipping region
-					DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
+					//DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
 					if (page->pagestyle->flags&PAGE_CLIPS) {
 						pdfSetClipToPath(stream,spread->pagestack.e[c2]->outline,0);
 					} 
@@ -896,13 +896,13 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	//fprintf(f,"  /Trapped /False\n");
 	fprintf(f,">>\nendobj\n");
 	
-	DBG cerr <<"feof:"<<feof(f)<<"  ferror:"<<ferror(f)<<endl;
+	//DBG cerr <<"feof:"<<feof(f)<<"  ferror:"<<ferror(f)<<endl;
 	
 	 //write xref table
 	long xrefpos=ftell(f);
 	int count=0;
 	for (obj=objs; obj; obj=obj->next) count++; //should be same as objcount
-	DBG cerr <<"objcount:"<<objcount<<"  should == count:"<<count<<endl;
+	//DBG cerr <<"objcount:"<<objcount<<"  should == count:"<<count<<endl;
 
 	fprintf(f,"xref\n%d %d\n",0,count);
 	for (obj=objs; obj; obj=obj->next) {
@@ -928,16 +928,16 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 
 
 	 //clean up
-	DBG cerr <<"done writing pdf, cleaning up.."<<endl;
+	//DBG cerr <<"done writing pdf, cleaning up.."<<endl;
 	obj=objs;
 	while (obj) {
-		DBG cerr <<"PbfObjInfo i="<<obj->i<<"  num="<<obj->number<<endl;
+		//DBG cerr <<"PbfObjInfo i="<<obj->i<<"  num="<<obj->number<<endl;
 		obj=obj->next;
 	}
 	 //*** double check that this is all that needs cleanup:
 	if (objs) delete objs;
 
-	DBG cerr <<"=================== end pdf out ========================\n";
+	//DBG cerr <<"=================== end pdf out ========================\n";
 
 	return 0;
 }
@@ -1347,7 +1347,7 @@ static void pdfImage(FILE *f,
 				i++;
 				fprintf(f,"%c%c%c",r,g,b);
 
-				//DBG cerr <<(char)(32+(buf[i]/255.)*94);
+				////DBG cerr <<(char)(32+(buf[i]/255.)*94);
 			}
 		}
 		fprintf(f,"\nendstream\n"
@@ -1399,10 +1399,10 @@ static void pdfImagePatch(FILE *f,
 			  ur=transform_point(psCTM(),flatpoint(i->maxx,i->miny)),
 			  ll=transform_point(psCTM(),flatpoint(i->minx,i->maxy));
 			  //lr=transform_point(psCTM(),flatpoint(i->maxx,i->maxy));
-	//DBG cerr <<"  ul: "<<ul.x<<','<<ul.y<<endl;
-	//DBG cerr <<"  ur: "<<ur.x<<','<<ur.y<<endl;
-	//DBG cerr <<"  ll: "<<ll.x<<','<<ll.y<<endl;
-	//DBG cerr <<"  lr: "<<lr.x<<','<<lr.y<<endl;
+	////DBG cerr <<"  ul: "<<ul.x<<','<<ul.y<<endl;
+	////DBG cerr <<"  ur: "<<ur.x<<','<<ur.y<<endl;
+	////DBG cerr <<"  ll: "<<ll.x<<','<<ll.y<<endl;
+	////DBG cerr <<"  lr: "<<lr.x<<','<<lr.y<<endl;
 
 	width= (int)(sqrt((ul-ur)*(ul-ur))/72*psDpi());
 	height=(int)(sqrt((ul-ll)*(ul-ll))/72*psDpi());
@@ -1523,7 +1523,7 @@ static void pdfCaption(FILE *f,
 			FT_Face ft_face=NULL;
 			FT_Error ft_error = FT_New_Face(*ft_library, font->FontFile(), 0, &ft_face);
 			if (ft_error) {
-				DBG cerr <<" ERROR loading "<<font->FontFile()<<" with FT_New_Face"<<endl;
+				//DBG cerr <<" ERROR loading "<<font->FontFile()<<" with FT_New_Face"<<endl;
 				return;
 			}
 
@@ -1629,12 +1629,12 @@ static void pdfCaption(FILE *f,
 				fprintf(f,"  /Leading %d\n", (int)(ft_face->height - (ft_face->ascender-ft_face->descender)));
 
 			// /CapHeight     Required for fonts that have Latin characters, except for Type 3 fonts
-			DBG cerr <<" Warning! using totally made up value for CapHeight in pdf out!!"<<endl;
+			//DBG cerr <<" Warning! using totally made up value for CapHeight in pdf out!!"<<endl;
 			fprintf(f,"  /CapHeight 100\n"); // *** WARNING!! MADE UP VALUE!!
 
 			// /XHeight       optional
 			// /StemV         required except for Type3 fonts, thickness of vertical strokes
-			DBG cerr <<" Warning! using totally made up value for StemV in pdf out!!"<<endl;
+			//DBG cerr <<" Warning! using totally made up value for StemV in pdf out!!"<<endl;
 			fprintf(f,"  /StemV 100\n"); // *** WARNING!! MADE UP VALUE!!
 
 			// /StemH         optional
