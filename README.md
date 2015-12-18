@@ -1,4 +1,4 @@
-LAIDOUT Version 0.095.1
+LAIDOUT Version 0.096
 =======================
 http://laidout.org
 
@@ -20,9 +20,8 @@ such as a booklet, or even a dodecahedron. You can manipulate images
 and gradients (linear, radial, and mesh). Also, 
 you can make a type of image that can be stretched around. The very 
 basics to get my cartoon books done, in other words. Many more features
-are planned, like such non-essentials (to me anyway) as text! Who needs 
-text when a picture is worth a thousand words? You can import
-EPS or image files from other programs as a way to fake having text.
+are planned, like such non-essentials (to me anyway) as streamed text!
+Who needs text when a picture is worth a thousand words?
 
 Laidout is built upon the Laxkit (http://laxkit.sourceforge.net).
 
@@ -126,7 +125,7 @@ clobbering or corrupting files from other versions.
 You can change the version number manually by specifying it when you run
 ./configure with somelike:
 
-    ./configure --version=0.092-different
+    ./configure --version=0.096-different
 
 You should try to preserve the main version number (which is 0.092 in this
 example), or it might confuse Laidout at some point.
