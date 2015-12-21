@@ -5,30 +5,6 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 
 
-VERSION 0.096
--------------
-(done) Finish Implementing cairo renderer, make meshes finally render faster, plus general rendering niceness
-(done) Text for god's sake!! It's been what, 10 years!? 
-(done) text: layered color fonts, each layer has to be a separate font file
-(done) Caption text tool
-(done) Caption tool, export svg: done, but due to svg, problem specifying colorfont fonts
-(done) Caption tool, scribus -> done-ish, font naming problem for color fonts, and a sizing discrepancy
-(done) Caption tool, pdf -> done sort of, fails for text outside latin-1, because fonts in pdf are a terrible headache.
-(done) reprogram file dialog to have adequate presentation of recent and bookmarks
-(done) fix viewport zoom and rotate wigging out on right click mouse move
-(done) make window maximize work in gnome (magically seems to work again in recent gnome, resize also seems to work again in recent gnome)
-(done) autosave for autorecover -> done, but you have to set manually in ~/.config/laidout/(version)/laidoutrc
-(done) test new export even/odd, batches, and paper rotation for major exporters: svg image pdf scribus, not done: ps eps plan ppt 
-(done) export option alternate each paper 180 deg
-(done) export option rotate every paper by increments of 90
-(done) export option, put out in reverse order
-(done) Infrastructure for resource sharing between objects
-(done) engraver tool, fix blockout! how did it break?!
-(done) engraver, allow work on multiple objects at once, including tracing
-(done) Re-fix cut and paste from system clipboard
-(done) Re-Re-fix paste from system clipboard. I swear it was working.
-
-
 VERSION 0.097
 -------------
        debug previous version!
@@ -208,6 +184,30 @@ While i'm at it, I'd like a pony.
             ---------------- 
 ------------- OLD RELEASES -----------------
             ----------------
+
+VERSION 0.096  --  released 18 December 2015!
+-------------
+(done) Finish Implementing cairo renderer, make meshes finally render faster, plus general rendering niceness
+(done) Text for god's sake!! It's been what, 10 years!? 
+(done) text: layered color fonts, each layer has to be a separate font file
+(done) Caption text tool
+(done) Caption tool, export svg: done, but due to svg, problem specifying colorfont fonts
+(done) Caption tool, scribus -> done-ish, font naming problem for color fonts, and a sizing discrepancy
+(done) Caption tool, pdf -> done sort of, fails for text outside latin-1, because fonts in pdf are a terrible headache.
+(done) reprogram file dialog to have adequate presentation of recent and bookmarks
+(done) fix viewport zoom and rotate wigging out on right click mouse move
+(done) make window maximize work in gnome (magically seems to work again in recent gnome, resize also seems to work again in recent gnome)
+(done) autosave for autorecover -> done, but you have to set manually in ~/.config/laidout/(version)/laidoutrc
+(done) test new export even/odd, batches, and paper rotation for major exporters: svg image pdf scribus, not done: ps eps plan ppt 
+(done) export option alternate each paper 180 deg
+(done) export option rotate every paper by increments of 90
+(done) export option, put out in reverse order
+(done) Infrastructure for resource sharing between objects
+(done) engraver tool, fix blockout! how did it break?!
+(done) engraver, allow work on multiple objects at once, including tracing
+(done) Re-fix cut and paste from system clipboard
+(done) Re-Re-fix paste from system clipboard. I swear it was working.
+
 
 VERSION 0.095  --  released 23 April 2015!
 -------------

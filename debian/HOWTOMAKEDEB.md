@@ -42,30 +42,37 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 		README.md                     :LAIDOUT Version *****
 		all the example docs
 		--> vi debian/changelog debian/laidout.1 docs/doxygen/laidoutintro.txt docs/Doxyfile docs/Doxyfile-with-laxkit configure README.md
+
 	make sure the Quick Key References in QUICKREF.html are current (make quickref).
-	touch Makefile-toinclude; make touchdepends;
 	
 	make sure configure defaults to 'prefix=/usr/local/'. This is what should be in a source tarball
-	make sure 'make' does not try to make lax or laxinterfaces unless laxkit has been downloaded into the source tree...
 	
-	Make sure all examples have the correct version number.
+	Make sure all examples have the correct version number, and actually load correctly
+
+	make sure experimental shield is behaving properly  in src/interfaces.cc
+
+	git commit --all -m'Last minute touchups to this tag'
 
 
 4.  ---hide the debugging garbage and commit to the release branch---
+	touch Makefile-toinclude; make touchdepends;
 	make hidegarbage 
-	(make sure same is done for laxkit, as Laidout currently statically
-	 links against laxkit, which also uses the same system to hide debugging code)
-	make sure experimental shield is active in src/interfaces.cc
-	git commit --all -m'Last minute touchups to this tag'
+	cd src/polyptych/src
+	make hidegarbage
+	cd ../../..
+	git commit --all -m'Hid debugging garbage'
+
 	git push
 
+	Delay creating actual release tag until after you test compile, just in case new errors are uncovered.
 
-5. ---Export a copy of the new tag and make a tarball.---
+
+5. ---Export a fresh copy of the new tag and make a tarball.---
   a) Clone the new release, and delete the git dir.
 
-  	   git clone https://github.com/Laidout/laidout.git laidout-(version)
+  	   git clone -b release https://github.com/Laidout/laidout.git laidout-(version)
 	   cd laidout-(version)
-	   git checkout tags/(version)
+	   git branch release
 	   rm -rf .git
 
 	 If Laxkit is to be included, you should export that to the top laidout dir: 
@@ -99,11 +106,16 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 	  tar xjvf ../laidout-version.tar.bz2
 	  cd laidout-version
 	  ./configure --prefix=`pwd`/../test-install
+	  make -j 8
+	  make install
+	  ../test-install/bin/laidout
 
 
 6. ---build a deb package---
 
-dpkg-buildpackage -rfakeroot in top laidout directory
+In top laidout directory:
+
+  dpkg-buildpackage -rfakeroot
 
 This often will expose otherwise unknown errors, I think because making the deb packages uses lots more
 compile flags. You can do "fakeroot debian/rules binary" to not have to recompile everything after fixing.
@@ -117,7 +129,17 @@ in debian/rules to:
 Maybe something to do with non-packaged NVidia drivers?
 
 
-7. After file release is uploaded, do not forget to:
+7. --- Test ON A DIFFERENT COMPUTER ---
+
+	If all clear, rejoice, and go to next step
+
+
+8. --- finalize git release tag ---
+	
+	In github, create new release on release branch with new version tag,
+	uploading tarball and deb file(s).
+
+	After file release is uploaded, do not forget to:
      - add release tarball and deb to github or whereever
      - update the help and screenshots sections on the website, and the website in general
 	 - update the coop section to have links to current scripts
