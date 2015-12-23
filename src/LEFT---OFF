@@ -204,7 +204,9 @@ captioninterface CaptionInterface
   control-u hack for poweruser unicode character insertion
   use selected text as sample when popping up font dialog
   lorem ipsum
-  color fonts: consider native otf: Mozilla and Adobe’s svg table, microsoft's colr/cpal, Google’s PNG images (CBDT/CBLC tables), Apple’s PNG images (SBIX table)
+  color fonts: consider native otf:
+    Mozilla and Adobe’s svg table, microsoft's colr/cpal, Google’s PNG images (CBDT/CBLC tables), Apple’s PNG images (SBIX table)
+	freetype dev branch maybe supports colr/cpal and google's way?
 
 TreeSelector:
   with text colors, mouse over highlight is off

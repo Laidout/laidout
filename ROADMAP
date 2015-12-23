@@ -37,6 +37,7 @@ VERSION 0.097
        option to specify alignment of different size signature stacks
        Tool scripting
        Custom line caps
+       debug svg in
        Undo/Redo
        Clean up symmetry clone interface, not easy to use currently
        Clone Pattern Builder
@@ -111,8 +112,9 @@ VERSION 0.1
 VERSION 0.2
 -----------
 Flowed text tool
+text: harfbuzz based
 text: Opentype feature support (other than multicolor stuff)
-text: Opentype color font support
+text: Opentype color font support: COLR/CPAL, SVG
 text: Mixed left/right/vertical text in text streams
 text: Numbered lists
 text: Tables 
@@ -123,6 +125,7 @@ text: Footnotes
 text: auto track chapter/section
 text: Automatic, yet overrideable hyphenation
 text: layout inside anything that provides an 'area' and runaround facility.  
+text: math mode
 Full multi-contact, blob and pressure sensitive touch with tuio,touchlib(?). See www.nuigroup.com/touchlib for diy surfaces
 partial Laidout export
 implement export even/odd, batches, and paper rotation for other exporters: ps eps plan ppt 
@@ -155,6 +158,7 @@ Super import place tool, including recursive placement
 The other Postscript/Pdf gradients?: Triangle strip and Triangle Mesh
 fore edge printing
 fore edge sculpting
+hdr color support
 Vx support?
 Verse support?
 Content version control?
