@@ -52,8 +52,8 @@ using namespace LaxInterfaces;
 
 namespace Laidout {
 
-//need to figure out font sizing 
-#define TEXTHACK (.75)
+//Export always seems to be just under what is needed, so reduce font size just slightly:
+#define TEXTHACK (1)
 
 //1.5 inches and 1/4 inch
 #define CANVAS_MARGIN_X 100.
@@ -1334,7 +1334,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 							 LAXFILL_EvenOdd, FillSolid, LAXOP_Over);
 		}
 
-		isize=text->Size()*TEXTHACK; // *** arbitrary size reduction to make it fit in scribus boxes
+		isize=text->MSize()*TEXTHACK;
 		ptype=PTYPE_Text;
 
 	} else if (!strcmp(obj->whattype(),"Group")) {
@@ -1810,7 +1810,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 			//----
 			//fprintf(f, "    <ITEXT FONT=\"%s %s\" FONTSIZE=\"%.10g\" FCOLOR=\"%d,%d,%d\" CH=\"%s\" />\n",
 					//font->PostscriptName(),
-					text->fontsize*xmag*TEXTHACK,
+					text->MSize()*xmag*TEXTHACK,
 					tstyle ? tstyle->color.red   : 0,
 					tstyle ? tstyle->color.green : 0,
 					tstyle ? tstyle->color.blue  : 0,
