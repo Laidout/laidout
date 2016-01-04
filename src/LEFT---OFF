@@ -50,6 +50,8 @@ laidout import, does not appear to scale correctly, does odd scaling, and insert
 
 ------------ other bugs:
 
+App/window icon in window manager not showing.. 
+
 select none, select doc, viewport jumps around... it should stay the same area
 switch to None document, and units change to unreasonable
 
@@ -160,6 +162,8 @@ put rss/g+ links on all menu pages.. need way to automate including menu bar stu
 
 
 fontdialog: FontDialog
+  need to implement load specific file for a font
+  makeinwindow SOMETIMES not working, select one, puts on bottom line
   you can still scroll off when few visible items.. grrr!!
   sample block should not strictly adhere to fontsize, as it can get very big
   sample block should be multiline
@@ -190,23 +194,55 @@ fontdialog: FontDialog
   fontconfig directory config options
 
 captioninterface CaptionInterface
-  select, copy
+  need handling when opening a file and the font is not found!!!!!!!  options for substitution
+  for overstretched alignment, bounding box not updating correctly
+  debug for rtl and vertical as returned by hb, or set explicitly with direction
+  implement the different layout modes
+  update exporters to using linespacing and glyphs
   right to left (figure out how to do with harfbuzz)
+  select, copy
   should adapt from multiline edit, since it already has cut/paste, selections, and is mostly debugged??
-  needs line spacing slider
   fonts need to dump in/out by themselves
   text to path:
     option to do all one path,
 	or separate objects per character (or glyph), but clones of a resourced group of glyphs
-  change centering not smooth, text placement hops, font to bitmap render size snafus?
   opentype variations
-  baseline justify
   control-u hack for poweruser unicode character insertion
   use selected text as sample when popping up font dialog
   lorem ipsum
   color fonts: consider native otf:
     Mozilla and Adobe’s svg table, microsoft's colr/cpal, Google’s PNG images (CBDT/CBLC tables), Apple’s PNG images (SBIX table)
 	freetype dev branch maybe supports colr/cpal and google's way?
+  DONE FindPos needs to account for glyph/cluster coverage
+  DONE (seems to be gone with switch to harfbuzz) change centering not smooth, text placement hops, font to bitmap render size snafus?
+  DONE key move for caret not working for ffi
+  DONE deleting leaving excess glyphs???
+  DONE needs line spacing slider
+  DONE baseline justify
+    DONE needs hint to preserve baseline align when changing font size or line spacing
+
+CharacterInterface characterinterface
+  should show unicode number/glyph name if available
+  implement recent
+  implement suggestions
+  DONE outclick needs to destroy without sending
+
+text on path:
+  kern handles
+  offset from stroke or from path
+  multiline
+
+text (see also src/text/text.txt):
+  global font list, finish implementing uniquinizing font names, need final step of some kind of file name diff
+  freetype/fribidi/harfbuzz all over everything?
+  interface base for utf8 based editing.. share this with window edits somehow
+  maybe fonts should point to their creators to make duplication more reliable if there are more than just default fontmanager
+  harfbuzz support
+  math mode
+  track bookmarks
+  inline graphics
+  css import/export
+  tabs on arbitrary paths 
 
 TreeSelector:
   with text colors, mouse over highlight is off
@@ -227,7 +263,7 @@ autosave
 need option for always write relative links.. now defaults to absolute
 
 need to clarify what happens when you open and close documents. open already open pops new window, not sure if it should
-  also ownership of limbos, open and close docs always leaves limbos behind
+  also record ownership of limbos, open and close docs always leaves limbos behind
 
 color slider popup:
   have a "Done"/"Dismiss" button
@@ -276,23 +312,6 @@ Colors:
 
 object tool:
   things to allow editing of wrap, inset, clip paths, and chains
-
-CharacterInterface characterinterface
-  should show unicode number/glyph name if available
-  implement recent
-  implement suggestions
-  DONE outclick needs to destroy without sending
-
-text on path:
-  kern handles
-  offset from stroke or from path
-  multiline
-
-text:
-  global font list, finish implementing uniquinizing font names, need final step of some kind of file name diff
-  freetype/fribidi/harfbuzz?
-  interface base for utf8 based editing.. share this with window edits somehow
-  maybe fonts should point to their creators to make duplication more reliable if there are more than just default fontmanager
 
 make drag and drop selections work
 
@@ -505,6 +524,8 @@ file filters: filefilters:
   importing should not spawn new windows
   importing should sort out duplicate names
   need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
+  for export, need way to have easy crop, especially from command line 
+  perhaps switch export/import objects to new cascading Style as base..  
   When there are errors or warnings in exporting, should be able to have the error log such that
     you can just jump to the offending bit easily. This would also be used for preflight verifiers,
     and maybe also mass edit things, like edit all images..
@@ -519,6 +540,7 @@ pdf:
   pdf optimize jpg dump, compress image data
   still true? pdf export if a path has null linestyle/fillstyle it buffers until next path drawn
      instead of drawing with some default style
+  needs clone deref still?
 Scribus:
   font size confusion
   caption export centering
@@ -598,6 +620,8 @@ Clean up mesh/patch controls:
 ellipseinterface:
   crash on lbdown: dp is null???
 
+extension for delauney/voronoi interface
+
 curves:
   curvemap needs predefined ramp profiles, remember last, load/save
   curvemap needs brush ramp mode to show symmetric graph
@@ -621,6 +645,7 @@ update touch_recent for Laidout files in the newer xbel type
 
 FileDialog2:
   sort by details 
+  columns need to autosize out of the way
   need add and remove bookmarks
   need laidout only bookmarks file
   edits color style: bg alternating isn't highlighting
@@ -631,15 +656,15 @@ FileDialog2:
 
 file button:
    Save
-   Save incremented
    Save As...
    Save a copy...
+   Save a copy incremented
    Save as template... <- need to enter template name and file?
    Save as default template
    Quick save backup
    ----
    Commit (git/svn)  
-   Commit settings...  <- choose or set up repository
+   Commit settings...  <- choose or set up repository, how to handle passwords??
    Revert...  <- show log, select old 
 
 icons for the following, perhaps be right click on the save button? or modifiers on buttons
@@ -651,8 +676,6 @@ when you try to open anything in ~/.laidout/*/templates, then it should open as 
                                     
 transfer from DrawableObject to Somedata locks, visible, selectable
 transfer group behavior to SomeData? would greatly simplify some things
-
-for export, need way to have easy crop, especially from command line
 
 General design usability
 to be a decent editing platform, Laidout needs:
@@ -674,7 +697,8 @@ guides:
   snap guides to objects
   snap objects edges to various things
 
-align tool:
+align tool: aligninterface AlignInterface
+  need way to specify center of rotation per object
   need to make discoverable, not just as key shortcuts
     -> make as standalone tools, now that viewport stores selection?
   endpoints should be oriented triangle, not circles which make it look like path nodes
@@ -750,8 +774,6 @@ paperinterface:
         [delete paper type][new paper type]
 
 should take precautions so that dialogs do not get buried, would need to respond to circulate events
-
-perhaps switch export/import objects to new cascading Style as base..
 
 ungroup should have ungrouped objects selected after ungrouping
 
@@ -1214,15 +1236,6 @@ for translations, there is a difference between locale translations and language
 
 investigate pdfcreator as method to reduce file size
 
-text (see also src/text/text.txt):
-  harfbuzz support
-  math mode
-  track bookmarks
-  inline graphics
-  css import/export
-  tabs on arbitrary paths
-  text to path
-
 repeater tool on path: could be adapted to help animation tweening
 
 DumpImages within Arrangements, which are sort of a template of rect regions (2-d guides)
@@ -1374,5 +1387,8 @@ These can then be purged after each release...
 ===========================================================================================
 
 
+
+DONE inkscape bug!! zoom out, NextSpread/PreviousSpread icons stroke on side disappears, somehow handle related, adding more handles fixes
+DONE wrong git rep on website 
 
 
