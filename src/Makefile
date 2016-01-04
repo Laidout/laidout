@@ -81,7 +81,7 @@ objs= \
 all: laidout
 
 laidout: lax laxinterface $(dirs) $(objs) $(POLYPTYCHFORLAIDOUT)
-	$(LD) $(objs) [a-z]*/*.o $(POLYPTYCH_GL_OBJS) $(POLYPTYCHOBJS) -llaxinterfaces -llaxkit -lcairo -lfreetype -lfontconfig $(LDFLAGS) $(OPTIONALLIBS) -lreadline -lcrypto $(POLYPTYCHLIBS) -o $@
+	$(LD) $(objs) [a-z]*/*.o $(POLYPTYCH_GL_OBJS) $(POLYPTYCHOBJS) -llaxinterfaces -llaxkit -lharfbuzz -lcairo -lfreetype -lfontconfig $(LDFLAGS) $(OPTIONALLIBS) -lreadline -lcrypto $(POLYPTYCHLIBS) -o $@
 
 icons:
 	cd src/icons && $(MAKE)
