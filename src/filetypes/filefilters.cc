@@ -735,6 +735,14 @@ ObjectDef *makeExportConfigDef()
 			NULL,  //defvalue
 			0,    //flags
 			NULL);//newfunc
+	sd->push("textaspaths",
+			_("Text as paths"),
+			_("Whether to export any text based objects as path objects, instead of text."),
+			"boolean",
+			NULL, //range
+			"false",  //defvalue
+			0,    //flags
+			NULL);//newfunc
 	sd->push("rasterize",
 			_("Rasterize"),
 			_("Whether to rasterize objects that cannot be otherwise dealt with natively in the target format."),
@@ -800,6 +808,11 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 		const char *str=parameters->findString("filename",-1,&e);
 		if (e==0) { if (str) makestr(config->filename,str); }
 		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"file"); throw error; }
+
+		 //---textaspaths
+		i=parameters->findInt("textaspaths",-1,&e);
+		if (e==0) config->textaspaths=i;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"textaspaths"); throw error; }
 
 		 //---rasterize
 		i=parameters->findInt("rasterize",-1,&e);
@@ -1003,6 +1016,7 @@ DocumentExportConfig::DocumentExportConfig()
 	limbo=NULL;
 	collect_for_out=COLLECT_Dont_Collect;
 	rasterize=0;
+	textaspaths=false;
 }
 
 /*! Increments count on ndoc if it exists.
@@ -1031,6 +1045,9 @@ DocumentExportConfig::DocumentExportConfig(Document *ndoc,
 	limbo=lmbo;
 	collect_for_out=COLLECT_Dont_Collect;
 
+	textaspaths=false;
+	rasterize=0;
+
 	filter=NULL;
 	if (doc) doc->inc_count();
 	if (limbo) limbo->inc_count();
@@ -1057,6 +1074,7 @@ DocumentExportConfig::DocumentExportConfig(DocumentExportConfig *config)
 		limbo=NULL;
 		collect_for_out=COLLECT_Dont_Collect;
 		rasterize=0;
+		textaspaths=false;
 		return;
 	}
 
@@ -1070,6 +1088,7 @@ DocumentExportConfig::DocumentExportConfig(DocumentExportConfig *config)
     layout       =config->layout; 
     collect_for_out=config->collect_for_out; 
     rasterize    =config->rasterize; 
+	textaspaths  =config->textaspaths;
  
     filename=newstr(config->filename); 
     tofiles =newstr(config->tofiles); 

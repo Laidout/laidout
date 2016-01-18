@@ -105,6 +105,7 @@ class DocumentExportConfig : public Style
 	int curpaperrotation; //set automatically, not a user variable
 	char collect_for_out;
 	char rasterize;
+	bool textaspaths;
 
 	Document *doc;
 	Group *limbo;
