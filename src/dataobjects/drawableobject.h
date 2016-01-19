@@ -20,6 +20,7 @@
 #include <lax/tagged.h>
 #include <lax/refptrstack.h>
 #include <lax/interfaces/somedata.h>
+#include <lax/interfaces/groupdata.h>
 #include <lax/interfaces/pathinterface.h>
 #include "objectcontainer.h"
 #include "../guides.h"
@@ -147,17 +148,15 @@ enum DrawableObjectLockTypes {
 
 class DrawableObject :  virtual public ObjectContainer,
 						virtual public Laxkit::Tagged,
-						virtual public LaxInterfaces::SomeData,
+						virtual public LaxInterfaces::GroupData,
 					    virtual public FunctionEvaluator,
 					    virtual public Value
 {
  protected:
  public:
-	DrawableObject *parent;
+	DrawableObject *dparent;
 	AlignmentRule *parent_link;
 
-	int locks; //lock object contents|matrix|rotation|shear|scale|kids|selectable
-	char locked, visible, prints, selectable;
 
 	SomeData *clip; //If not a PathsData, then is an object for a softmask
 	LaxInterfaces::PathsData *clip_path;
@@ -192,24 +191,17 @@ class DrawableObject :  virtual public ObjectContainer,
 
 	 //sub classes MUST redefine pointin() and FindBBox() to point to the proper things.
 	 //default is point to things particular to Groups.
-	virtual int pointin(flatpoint pp,int pin=1);
+	//virtual int pointin(flatpoint pp,int pin=1);
 	virtual void FindBBox();
 	virtual int AddAlignmentRule(AlignmentRule *newlink, bool replace=false, int where=-1);
 	virtual int RemoveAlignmentRule(int index);
 	virtual void UpdateFromRules();
-	virtual LaxInterfaces::SomeData *GetParent();
-	virtual Laxkit::Affine GetTransformToContext(bool invert, int partial);
-
-	virtual int Selectable();
-	virtual int Visible();
-	virtual int IsLocked(int which);
-	virtual void Lock(int which);
-	virtual void Unlock(int which);
+	//virtual Laxkit::Affine GetTransformToContext(bool invert, int partial);
 
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_out_group(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
-	virtual void dump_in_group_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	//virtual void dump_out_group(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	//virtual void dump_in_group_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 	
 	 //new functions for DrawableObject
 	virtual LaxInterfaces::SomeData *EquivalentObject();
@@ -231,19 +223,6 @@ class DrawableObject :  virtual public ObjectContainer,
 
 
 	 //Group specific functions:
-	Laxkit::RefPtrStack<LaxInterfaces::SomeData> kids;
-	virtual LaxInterfaces::SomeData *FindChild(const char *id);
-	virtual LaxInterfaces::SomeData *findobj(LaxInterfaces::SomeData *d,int *n=NULL);
-	virtual int findindex(LaxInterfaces::SomeData *d) { return kids.findindex(d); }
-	virtual int push(LaxInterfaces::SomeData *obj);
-	virtual int pushnodup(LaxInterfaces::SomeData *obj);
-	virtual int remove(int i);
-	virtual LaxInterfaces::SomeData *pop(int which);
-	virtual int popp(LaxInterfaces::SomeData *d);
-	virtual void flush();
-	virtual void swap(int i1,int i2) { kids.swap(i1,i2); }
-	virtual int slide(int i1,int i2);
-
 	//virtual int contains(SomeData *d,FieldPlace &place);
 	//virtual LaxInterfaces::SomeData *getObject(FieldPlace &place,int offset=0);
 	//virtual int nextObject(FieldPlace &place, FieldPlace &first, int curlevel, LaxInterfaces::SomeData **d=NULL);

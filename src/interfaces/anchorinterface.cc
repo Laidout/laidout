@@ -251,7 +251,7 @@ int AnchorInterface::AddAnchor(flatpoint p,int p_type, const char *name, int sou
 	DrawableObject *o=dynamic_cast<DrawableObject*>(owner);
 	while (o) {
 		p=o->transformPoint(p);
-		o=o->parent;
+		o=dynamic_cast<DrawableObject*>(o->parent);
 	}
 
 	anchors.push(new Anchors(a,p, source,1));

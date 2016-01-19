@@ -389,12 +389,15 @@ int GroupInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 			context.SetObject(NULL);
 			context.context.pop();
 			anObject *object=vp->getanObject(context.context,0,0);
+
 			DrawableObject *pp=dynamic_cast<DrawableObject*>(object);
-			if (pp && pp->parent && pp->parent->parent && pp->selectable && !pp->IsLocked(OBJLOCK_Selectable)) {
+			if (pp && dynamic_cast<DrawableObject*>(pp->parent)
+				   && dynamic_cast<DrawableObject*>(pp->parent)->parent && pp->Selectable() && !pp->IsLocked(OBJLOCK_Selectable)) {
 				context.SetObject(pp);
 				vp->ChangeObject(&context,0);
 				FreeSelection();
 				AddToSelection(&context);
+
 			} else {
 				PostMessage(_("Cannot select parent"));
 			}
@@ -411,7 +414,7 @@ int GroupInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 				for (int c=1; c<selection->n(); c++) {
 					d=NULL;
 					if (dynamic_cast<DrawableObject*>(selection->e(c)->obj)) {
-						d=dynamic_cast<DrawableObject*>(selection->e(c)->obj)->parent;
+						d=dynamic_cast<DrawableObject*>(dynamic_cast<DrawableObject*>(selection->e(c)->obj)->parent);
 						viewport->transformToContext(m,selection->e(c),0,1);
 						if (d && d->popp(selection->e(c)->obj)) {
 							 //successful popping, now add to selection 0
