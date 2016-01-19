@@ -570,19 +570,19 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			fprintf(f,"%s   style=\"fill:#%02x%02x%02x; fill-opacity:%.10g; ",
 						spc, int(rr*255+.5), int(gg*255+.5), int(bb*255+.5), aa);
 			fprintf(f,"font-family:%s; font-style:%s; font-size:%.10g;\">\n",
-						font->Family(), font->Style(), caption->fontsize);
-			//fprintf(f,"font-family:%s; font-style:%s; font-size:%.10g;\">\n",
-			//			caption->fontfamily, caption->fontstyle, caption->fontsize);
+						font->Family(), font->Style(), font->Msize());
 			double h=caption->maxy-caption->miny;
 			double x;
 			double y=caption->origin().y - h*caption->ycentering/100 + caption->font->ascent();
+			//double y=caption->origin().y - h*caption->ycentering/100;
 
 			for (int c=0; c<caption->lines.n; c++) {
-				x=caption->origin().x - caption->xcentering/100*(caption->linelengths[c]);
+				x = -caption->xcentering/100*(caption->linelengths[c]);
+
 				 //the sodipodi bit is necessary to make Inkscape (at least to 0.091) let you access lines beyond the first
-				fprintf(f,"%s  <tspan sodipodi:role=\"line\" x=\"%.10g\" y=\"%.10g\" textLength=\"%.10g\">%s</tspan>\n",
-						spc, x,y, caption->linelengths[c], caption->lines.e[c]);
-				y+=caption->fontsize;
+				fprintf(f,"%s  <tspan sodipodi:role=\"line\" dx=\"%.10g\" dy=\"%.10g\" textLength=\"%.10g\">%s</tspan>\n",
+						spc, x,caption->font->ascent(), caption->linelengths[c], caption->lines.e[c]);
+				//y+=caption->fontsize*caption->LineSpacing();
 			}
 			fprintf(f,"%s</text>\n", spc);
 
@@ -1319,8 +1319,9 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	fprintf(f,"    <g transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
 					m[0], m[1], m[2], m[3], m[4], m[5]); 
 
-	transform_invert(mmm,papergroup->papers.e[0]->m());
-	transform_mult(m,mmm,mm);
+	// *** need to adjust for multipaper...
+	//transform_invert(mmm,papergroup->papers.e[0]->m());
+	//transform_mult(mm, m,mmm);
 
 
 
@@ -1359,45 +1360,13 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 				fprintf(f,"    </g>\n ");
 			}
 		}
+
+		delete spread;
 	}
 
-	delete spread;
 	fprintf(f,"  </g>\n"); //from unit correction and paper
 
-//-------or----------adapt to multipagesvg with page and pagesets
-//	 // Write out spread....  *** SVG 1.2 has been abandoned!!
-//	if (version==1.2) {
-//		fprintf(f,"  <pageSet>\n");
-//		*********needs work
-//		if (doc) {
-//			for (c=0; c<doc->imposition->numpapers; c++) {
-//				fprintf(f,"    <page>\n");
-//				fprintf(f,"      <g>\n");
-//				spread=doc->imposition->PaperLayout(c);
-//				 // for each page in paper layout..
-//				for (c2=0; c2<spread->pagestack.n; c2++) {
-//					pg=spread->pagestack.e[c2]->index;
-//					if (pg>=doc->pages.n) continue;
-//					 // for each layer on the page..
-//					for (l=0; l<doc->pages[pg]->layers.n(); l++) {
-//						 // for each object in layer
-//						g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
-//						for (c3=0; c3<g->n(); c3++) {
-//							transform_copy(m,spread->pagestack.e[c2]->outline->m());
-//							svgdumpobj(f,m,g->e(c3), out);
-//						}
-//					}
-//				}
-//
-//				delete spread;
-//				fprintf(f,"      </g>\n");
-//				fprintf(f,"    </page>\n");
-//			}
-//			fprintf(f,"    </pageSet>\n");
-//		}
-//	}
-//--------------------
-		
+
 	 // write out footer
 	fprintf(f,"</svg>\n");
 	
