@@ -161,7 +161,10 @@ test:
 put rss/g+ links on all menu pages.. need way to automate including menu bar stuff
 
 
+minimum dp size is not small enough
+
 fontdialog: FontDialog
+  bookman font style names getting chopped off
   need to implement load specific file for a font
   makeinwindow SOMETIMES not working, select one, puts on bottom line
   you can still scroll off when few visible items.. grrr!!
@@ -194,12 +197,14 @@ fontdialog: FontDialog
   fontconfig directory config options
 
 captioninterface CaptionInterface
+  bug: convert to path with viewport->ChangeObject(), puts obj way off, doesn't show path decs, other weird
+  bug: bitstream vera sans, "Text" convert to path puts e correct, but screen render puts it out too far. huh??
   need handling when opening a file and the font is not found!!!!!!!  options for substitution
   for overstretched alignment, bounding box not updating correctly
+  implement the different layout modes: rtl ttb
   debug for rtl and vertical as returned by hb, or set explicitly with direction
-  implement the different layout modes
-  update exporters to using linespacing and glyphs
   right to left (figure out how to do with harfbuzz)
+  update exporters to using linespacing and glyphs
   select, copy
   should adapt from multiline edit, since it already has cut/paste, selections, and is mostly debugged??
   fonts need to dump in/out by themselves
@@ -209,10 +214,13 @@ captioninterface CaptionInterface
   opentype variations
   control-u hack for poweruser unicode character insertion
   use selected text as sample when popping up font dialog
-  lorem ipsum
   color fonts: consider native otf:
     Mozilla and Adobe’s svg table, microsoft's colr/cpal, Google’s PNG images (CBDT/CBLC tables), Apple’s PNG images (SBIX table)
 	freetype dev branch maybe supports colr/cpal and google's way?
+  lorem ipsum
+  markov ipsum
+
+  DONE memory hole after convert to path
   DONE FindPos needs to account for glyph/cluster coverage
   DONE (seems to be gone with switch to harfbuzz) change centering not smooth, text placement hops, font to bitmap render size snafus?
   DONE key move for caret not working for ffi
@@ -225,6 +233,7 @@ CharacterInterface characterinterface
   should show unicode number/glyph name if available
   implement recent
   implement suggestions
+  alternate glyphs
   DONE outclick needs to destroy without sending
 
 text on path:
@@ -233,10 +242,12 @@ text on path:
   multiline
 
 text (see also src/text/text.txt):
+  need options per font on export to: convert to path, subset, embed
   global font list, finish implementing uniquinizing font names, need final step of some kind of file name diff
   freetype/fribidi/harfbuzz all over everything?
   interface base for utf8 based editing.. share this with window edits somehow
   maybe fonts should point to their creators to make duplication more reliable if there are more than just default fontmanager
+  need support for font substitution
   harfbuzz support
   math mode
   track bookmarks
@@ -299,7 +310,6 @@ gradient resources
 
 Colors:
   convert to using Color objects instead of all ScreenColor:
-    images
 	gradient
 	color patch gradient
 	image patch
@@ -307,7 +317,7 @@ Colors:
 	linestyle
 	fillstyle
 	path
-
+    DONE images (doesn't use color per se)
 
 
 object tool:
@@ -419,8 +429,11 @@ engraving tool: Engraving  engraver
   stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
 
 
-PathInterface:
-  select nodes with rectangle broken?
+PathInterface: pathinterface
+  compound paths, change width only changes one. no way to affect all
+  needs input boxes for width nodes
+  need to show hints for when new points will be placed
+  bug: line cache on a square produces inf. lines off when final+initial coincide
   bug: should not create new control points by pressing cntl, unless there is movement
   bug: shift click down then up on a point selects then deselects.. control can toggle
   bug: seems to be possible to move nodes out of order
@@ -481,9 +494,7 @@ PathInterface:
     if add points, show dotted line to indicate a new segment incoming
   finish new path/pathoperator/pathsubinterface/pathinterface structure 
  
-
-command prompt window: command line
-  option to record/save/load whole session of prompt window
+  DONE select nodes with rectangle broken? <- no, just drawing really thin, misplaced LineWidthScreen
 
 save as should change save/import/export/current directory to that directory
 save incremented?
@@ -617,8 +628,13 @@ Clean up mesh/patch controls:
   circle warp needs a proper circle/ellipse interface
   make base path dump_out as Path, not PathsData? make it easier to read file removing the unnecessary??
 
+conformal mapping option instead of mesh? see http://benpaulthurstonblog.blogspot.com/2015/12/parameterized-quadratic-conformal.html
+
 ellipseinterface:
   crash on lbdown: dp is null???
+
+command prompt window: command line
+  option to record/save/load whole session of prompt window
 
 extension for delauney/voronoi interface
 
