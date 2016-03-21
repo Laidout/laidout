@@ -201,6 +201,8 @@ ObjectDef *PdfExportFilter::GetObjectDef()
 //---------------------------- PdfObjInfo
 static int o=1;//***DBG
 
+double current_dpi = 300;
+
 /*! \class PdfObjInfo
  * \brief Temporary class to hold info about pdf objects during export.
  */
@@ -654,7 +656,8 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 				
 				 // for each paper in paper layout..
 				for (c2=0; c2<spread->pagestack.n(); c2++) {
-					psDpi(doc->imposition->paper->paperstyle->dpi);
+					PaperStyle *defaultpaper=doc->imposition->GetDefaultPaper();
+					psDpi(defaultpaper->dpi);
 					
 					pgindex=spread->pagestack.e[c2]->index;
 					if (pgindex<0 || pgindex>=doc->pages.n) continue;
@@ -1544,9 +1547,9 @@ static void pdfCaption(FILE *f,
 			FontManager *fontmanager=GetDefaultFontManager();
 			FontDialogFont *fontinfo=fontmanager->FindFontFromFile(file);
 			if (fontinfo) {
-				if (!strcmp(fontinfo->format, "Type 1")) fonttype="Type1";
-				else if (!strcmp(fontinfo->format, "TrueType")) fonttype="TrueType";
-				else if (!strcmp(fontinfo->format, "CFF")) fonttype="TrueType"; // *** big assumption!!
+				if (     !strcmp(fontmanager->GetTagName(fontinfo->format),"Type 1")) fonttype="Type1";
+				else if (!strcmp(fontmanager->GetTagName(fontinfo->format),"TrueType")) fonttype="TrueType";
+				else if (!strcmp(fontmanager->GetTagName(fontinfo->format),"CFF")) fonttype="TrueType"; // *** big assumption!!
 			}
 
 			fprintf(f,"%ld 0 obj\n",obj->number);
