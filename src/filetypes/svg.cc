@@ -51,6 +51,10 @@ namespace Laidout {
 
 
 
+//-------forward decs for helper funcs
+int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::LineStyle *linestyle, LaxInterfaces::FillStyle *fillstyle);
+
+
 //--------------------------------- install SVG filter
 
 //! Tells the Laidout application that there's a new filter in town.
@@ -571,9 +575,9 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 						spc, int(rr*255+.5), int(gg*255+.5), int(bb*255+.5), aa);
 			fprintf(f,"font-family:%s; font-style:%s; font-size:%.10g;\">\n",
 						font->Family(), font->Style(), font->Msize());
-			double h=caption->maxy-caption->miny;
+			//double h=caption->maxy-caption->miny;
 			double x;
-			double y=caption->origin().y - h*caption->ycentering/100 + caption->font->ascent();
+			//double y=caption->origin().y - h*caption->ycentering/100 + caption->font->ascent();
 			//double y=caption->origin().y - h*caption->ycentering/100;
 
 			for (int c=0; c<caption->lines.n; c++) {
@@ -1454,7 +1458,10 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 		char *name,*value;
 		double width=0, height=0;
 		Attribute *svgdoc=att->find("svg");
-		if (!svgdoc) throw 3;
+		if (!svgdoc) {
+			log.AddMessage(_("Could not find svg tag.\n"),ERROR_Fail);
+			throw 3;
+		}
 
 		for (c=0; c<svgdoc->attributes.n; c++) {
 			name=svgdoc->attributes.e[c]->name;
@@ -1464,68 +1471,84 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 			if (svghints) svg->push(svgdoc->attributes.e[c]->duplicate(),-1);
 			 
 			 //find the width and height of the document
-			if (!strcmp(name,"width"))
+			if (!strcmp(name,"width")) { // *** warning!!!! could be named units here!!!
 				DoubleAttribute(value,&width);
-			else if (!strcmp(name,"height"))
+
+			} else if (!strcmp(name,"height")) {
 				DoubleAttribute(value,&height);
+			}
 		}
+
 		svgdoc=svgdoc->find("content:");
-		if (!svgdoc || width==0 || height==0) throw 4;
-		
-		 //svg units == 1.2 * (postscript units == 72 / inch)
-		width*=.8/72; //convert width and height to inches *** use postscript units instead??
-		height*=.8/72;
-
-		 //figure out the paper size, orientation
-		PaperStyle *paper=NULL;
-		int landscape=0;
-
-		 //svg/inkscape uses width and height, but not paper names as far as I can see
-		 //search for paper size known to laidout within certain approximation
-		for (c=0; c<laidout->papersizes.n; c++) {
-			if (     fabs(width- laidout->papersizes.e[c]->width)<.0001
-				  && fabs(height-laidout->papersizes.e[c]->height)) {
-				paper=laidout->papersizes.e[c];
-				break;
-			}
-			if (     fabs(height-laidout->papersizes.e[c]->width)<.0001
-				  && fabs(width -laidout->papersizes.e[c]->height)) {
-				paper=laidout->papersizes.e[c];
-				landscape=1;
-				break;
-			}
+		if (!svgdoc) {
+			log.AddMessage(_("Empty svg tag!\n"),ERROR_Fail); 
+			throw 4;
 		}
-		if (!paper) paper=laidout->papersizes.e[0];
-		
-		 //document page to start dumping onto
-		int docpagenum=in->topage; //the page in laidout doc to start dumping into
-		int curdocpage; //the current page in the laidout document, used in loop below
-		if (docpagenum<0) docpagenum=0;
-
-		 //preliminary start and end pages for the svg
-//		int start,end;
-//		if (in->instart<0) start=0; else start=in->instart;
-//		if (in->inend<0) end=10000000; 
-//			else end=in->inend;
 
 
-
-		 //now svgdoc's subattributes should be a combination of 
-		 //defs, sodipodi:namedview, metadata
-		 // PLUS any number of graphic elements, such as g, rect, image, text....
-
-		 //create the document if necessary
+		 //create a new document if necessary
 		if (!doc && !in->toobj) {
+			if (width==0 || height==0) {
+				 //use default paper size, if no width or height found
+				PaperStyle *pp = laidout->GetDefaultPaper();
+				width  = pp->w();
+				height = pp->h();
+
+			} else {			
+				 //convert default svg units to inches
+				 //svg units == 1.2 * (postscript units == 72 / inch)
+				width*=.8/72;
+				height*=.8/72;
+			}
+
+			 //figure out the paper size, orientation
+			PaperStyle *paper=NULL;
+			int landscape=0;
+
+			 //svg/inkscape uses width and height, but not paper names as far as I can see
+			 //search for paper size known to laidout within certain approximation
+			for (c=0; c<laidout->papersizes.n; c++) {
+				if (     fabs(width- laidout->papersizes.e[c]->width)<.0001
+					  && fabs(height-laidout->papersizes.e[c]->height)) {
+					paper=laidout->papersizes.e[c];
+					break;
+				}
+				if (     fabs(height-laidout->papersizes.e[c]->width)<.0001
+					  && fabs(width -laidout->papersizes.e[c]->height)) {
+					paper=laidout->papersizes.e[c];
+					landscape=1;
+					break;
+				}
+			}
+			if (!paper) paper=laidout->papersizes.e[0];
+			
+			 //preliminary start and end pages for the svg
+	//		int start,end;
+	//		if (in->instart<0) start=0; else start=in->instart;
+	//		if (in->inend<0) end=10000000; 
+	//			else end=in->inend; 
+
+
+			 //now svgdoc's subattributes should be a combination of 
+			 //defs, sodipodi:namedview, metadata
+			 // PLUS any number of graphic elements, such as g, rect, image, text....
+
 			Imposition *imp=new Singles;
 			paper->flags=((paper->flags)&~1)|(landscape?1:0);//***note this changes the default paper flag!!
 			imp->SetPaperSize(paper);
 			doc=new Document(imp,Untitled_name());
 			imp->dec_count();
-		}
+		} //if (!doc && !in->toobj)
+
 
 		Group *group=in->toobj;
 
 		if (!group && doc) {
+			 //document page to start dumping onto
+			int docpagenum=in->topage; //the page in laidout doc to start dumping into
+			int curdocpage; //the current page in the laidout document, used in loop below
+			if (docpagenum<0) docpagenum=0; 
+
 			 //update group to point to the document page's group
 			curdocpage=docpagenum;
 			group=dynamic_cast<Group *>(doc->pages.e[curdocpage]->layers.e(0)); //pick layer 0 of the page
@@ -1672,7 +1695,7 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 			if (xlink) svgDumpInGradientDef(xlink, defs, type, gradient);
 
 		} else if (!strcmp(name,"id")) {
-			makestr(gradient->nameid,value);
+			if (!isblank(value)) gradient->Id(value);
 
 		} else if (!strcmp(name,"gradientUnits")) {
 			 //gradientUnits = "userSpaceOnUse | objectBoundingBox"
@@ -1748,7 +1771,7 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 							DoubleAttribute(value,&alpha,NULL);
 
 						} else if (!strcmp(name,"id")) {
-							//ignore
+							//ignore stop id
 						}
 					}
 					gradient->AddColor(offset,&color);
@@ -1775,6 +1798,7 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribute> &powerstrokes, ErrorLog &log)
 {
 	char *name,*value;
+
 	if (!strcmp(element->name,"g")) {
 		Group *g=new Group;
 		for (int c=0; c<element->attributes.n; c++) {
@@ -1782,7 +1806,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 			value=element->attributes.e[c]->value;
 
 			if (!strcmp(name,"id")) {
-//				makestr(g->id,value);
+				if (!isblank(value)) g->Id(value);
 
 			} else if (!strcmp(name,"transform")) {
 				double m[6];
@@ -1794,13 +1818,16 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 					svgDumpInObjects(0,g,element->attributes.e[c]->attributes.e[c2],powerstrokes,log);
 			}
 		}
+
 		if (top) {
 			for (int c=0; c<6; c++) g->m(c,g->m(c)*.8/72); //correct for svg scaling
 			double t[6],m[6];
-			transform_set(t,1,0,0,-1,0,top*72/.8);
+			//transform_set(t,1,0,0,-1,0,top*72/.8);
+			transform_set(t,1,0,0,-1,0,top);
 			transform_mult(m,t,g->m());
 			g->m(m);
 		}
+
 		 //do not add empty groups
 		if (g->n()!=0) {
 			g->FindBBox();
@@ -1813,48 +1840,51 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 		ImageData *image=dynamic_cast<ImageData *>(newObject("ImageData"));
 		int foundcoord=0;
 		double x=0,y=0,w=0,h=0;
+		int err=0;
+
 		for (int c=0; c<element->attributes.n; c++) {
 			name =element->attributes.e[c]->name;
 			value=element->attributes.e[c]->value;
 
 			if (!strcmp(name,"id")) {
-				//makestr(image->id,value);
+				if (!isblank(value)) image->Id(value);
+
 			} else if (!strcmp(name,"x")) {
 				foundcoord|=1;
 				DoubleAttribute(value,&x,NULL);
+
 			} else if (!strcmp(name,"y")) {
 				foundcoord|=2;
 				DoubleAttribute(value,&y,NULL);
+
 			} else if (!strcmp(name,"width")) {
 				foundcoord|=4;
 				DoubleAttribute(value,&w,NULL);
+
 			} else if (!strcmp(name,"height")) {
 				foundcoord|=8;
 				DoubleAttribute(value,&h,NULL);
+
 			} else if (!strcmp(name,"xlink:href")) {
-				image->LoadImage(value);
+				err=image->LoadImage(value);
+				if (err) break;
+
 			} else if (!strcmp(name,"transform")) {
 				double m[6];
+				transform_identity(m);
 				svgtransform(value,m);
-				image->m(m);
+				if (!is_degenerate_transform(m)) image->m(m);
 			}
 		}
-		 //adjust matrix
-		//if (foundcoord&1) image->m(4,x);
-		//if (foundcoord&2) image->m(5,y);
-		//if (foundcoord&4 && foundcoord&8) {
-			//DoubleBBox bbox(0,0,w,h);
-			//image->fitto(NULL,&bbox,0,0);
-		//}
-		DoubleBBox bbox(x,x+w, y,y+h);
-		image->fitto(NULL, &bbox, 50, 50);
-		//image->minx=x;
-		//image->maxx=x+w;
-		//image->miny=y;
-		//image->maxy=y+h;
 
-		image->Flip(0);
-		group->push(image);
+		if (err==0) {
+			DoubleBBox bbox(x,x+w, y,y+h);
+			image->fitto(NULL, &bbox, 50, 50);
+
+			image->Flip(0);
+			group->push(image);
+		} //else error loading image
+
 		image->dec_count();
 		return 1;
 
@@ -1871,13 +1901,29 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 			value=element->attributes.e[c]->value;
 
 			if (!strcmp(name,"id")) {
+				if (!isblank(value)) paths->Id(value);
+
 			} else if (!strcmp(name,"transform")) {
 				double m[6];
 				svgtransform(value,m);
 				paths->m(m);
 
 			} else if (!strcmp(name,"style")) {
-				DBG cerr <<" *** need to implement scanning of svg style attribute in svg path on import!"<<endl;
+				LineStyle *linestyle = paths->linestyle;
+				FillStyle *fillstyle = paths->fillstyle;
+
+				if (!linestyle) {
+					linestyle=new LineStyle;
+					paths->InstallLineStyle(linestyle);
+					linestyle->dec_count();
+				}
+				if (!fillstyle) {
+					fillstyle=new FillStyle;
+					paths->InstallFillStyle(fillstyle);
+					fillstyle->dec_count();
+				}
+
+				StyleToFillAndStroke(value, linestyle, fillstyle);
 
 			} else if (!strcmp(name,"inkscape:path-effect")) {
 				//path-effect is something like: "#path-effect3338;#path-effect3343"
@@ -1911,7 +1957,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 		}
 
 		if (d_index>=0) {
-			SvgToPathsData(paths,element->attributes.e[d_index]->value,NULL, powerstroke);
+			SvgToPathsData(paths, element->attributes.e[d_index]->value, NULL, powerstroke);
 		}
 
 		if (paths->paths.n) {
@@ -1930,7 +1976,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 			value=element->attributes.e[c]->value;
 
 			if (!strcmp(name,"id")) {
-				//makestr(image->id,value);
+				if (!isblank(value)) paths->Id(value);
 			} else if (!strcmp(name,"rx")) {
 				DoubleAttribute(value,&rx,NULL);
 			} else if (!strcmp(name,"ry")) {
@@ -2002,7 +2048,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 			value=element->attributes.e[c]->value;
 
 			if (!strcmp(name,"id")) {
-				//makestr(image->id,value);
+				if (!isblank(value)) paths->Id(value);
 			} else if (!strcmp(name,"rx")) { //present in ellipses
 				DoubleAttribute(value,&rx,NULL);
 			} else if (!strcmp(name,"ry")) { //present in ellipses 
@@ -2075,6 +2121,132 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 	return 0;
 }
+
+
+//---------------------------- Helper Functions --------------------------------------------
+
+/*! value should be a simple css like list, as you might find in the "style" part of an svg path.
+ *
+ * Basically just something like "color:#000000;clip-rule:nonzero;display:inline;".
+ * A string of name:value pairs, semicolon separated.
+ *
+ * It is NOT full css.
+ *
+ * linestyle and fillstyle must not be NULL.
+ */
+int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::LineStyle *linestyle, LaxInterfaces::FillStyle *fillstyle)
+{
+	if (!inlinecss) return 1;
+
+	Attribute att;
+	InlineCSSToAttribute(inlinecss, &att);
+
+	const char *name, *value;
+	double d;
+	double strokecolor[4], fillcolor[4], defaultcolor[4];
+	int founddefcol=0, foundstroke=0, foundfill=0;
+
+	for (int c=0; c<att.attributes.n; c++) {
+		name =att.attributes.e[c]->name;
+		value=att.attributes.e[c]->value;
+
+		if (!strcmp(name,"color")) { //default in absence of fill/stroke colors.. #000000
+			if (value && !strcmp(value,"none")) {
+				founddefcol=-1;
+			} else {
+				SimpleColorAttribute(value, defaultcolor, NULL);
+				founddefcol=1;
+			}
+
+		} else if (!strcmp(name,"stroke")) { //the stroke color: #021bd9
+			if (value && !strcmp(value,"none")) {
+				foundstroke=-1;
+			} else {
+				d=strokecolor[3];
+				SimpleColorAttribute(value, strokecolor, NULL);
+				if (foundstroke==2) strokecolor[3]=d;
+				foundstroke=1;
+			}
+
+		} else if (!strcmp(name,"stroke-width")) { //35.29999924
+			if (DoubleAttribute(value, &d)) linestyle->width = d;
+
+		} else if (!strcmp(name,"stroke-opacity")) { //0..1
+			if (DoubleAttribute(value, &d)) strokecolor[3]=d;
+			if (foundstroke==0) foundstroke=2;
+
+		} else if (!strcmp(name,"fill")) { //fill color #ff0000
+			if (value && !strcmp(value,"none")) {
+				foundfill=-1;
+			} else {
+				d=fillcolor[3];
+				SimpleColorAttribute(value, fillcolor, NULL);
+				if (foundfill==2) fillcolor[3]=d; //opacity was found first, but SCA overwrites
+				foundfill=1;
+			}
+
+		} else if (!strcmp(name,"fill-opacity")) { //0..1
+			if (DoubleAttribute(value, &d)) fillcolor[3]=d;
+			if (foundfill==0) foundfill=2;
+
+		} else if (!strcmp(name,"fill-rule") && value) { //evenodd | nonzero | inherit
+			if (!strcmp(value, "evenodd")) fillstyle->fillrule = LAXFILL_EvenOdd;
+			else if (!strcmp(value, "nonzero")) fillstyle->fillrule = LAXFILL_Nonzero;
+
+		} else if (!strcmp(name,"stroke-linecap")) { //butt
+			// *** todo!!
+		} else if (!strcmp(name,"stroke-linejoin")) { //miter
+			// *** todo!!
+		} else if (!strcmp(name,"stroke-miterlimit")) { //4
+			// *** todo!!
+		} else if (!strcmp(name,"stroke-dasharray")) { //none
+			// *** todo!!
+		} else if (!strcmp(name,"stroke-dashoffset")) { //0
+			// *** todo!!
+		}
+
+		 //other stuff found in inkscape svgs:
+		//} else if (!strcmp(name,opacity)) { //1
+		//} else if (!strcmp(name,clip-rule)) { //nonzero
+		//} else if (!strcmp(name,display)) { //inline
+		//} else if (!strcmp(name,overflow)) { //visible
+		//} else if (!strcmp(name,visibility)) { //visible
+		//} else if (!strcmp(name,isolation)) { //auto
+		//} else if (!strcmp(name,mix-blend-mode)) { //normal
+		//} else if (!strcmp(name,color-interpolation)) { //sRGB
+		//} else if (!strcmp(name,color-interpolation-filters)) { //linearRGB
+		//} else if (!strcmp(name,solid-color)) { //#000000
+		//} else if (!strcmp(name,solid-opacity)) { //1
+		//} else if (!strcmp(name,marker)) { //none
+		//} else if (!strcmp(name,color-rendering)) { //auto
+		//} else if (!strcmp(name,image-rendering)) { //auto
+		//} else if (!strcmp(name,shape-rendering)) { //auto
+		//} else if (!strcmp(name,text-rendering)) { //auto
+		//} else if (!strcmp(name,enable-background)) { //accumulate"
+	}
+
+	if (founddefcol) {
+		 // *** note: fails when opacity but not color specified
+		if (!foundstroke) memcpy(strokecolor, defaultcolor, 4*sizeof(double));
+		if (!foundfill)   memcpy(fillcolor,   defaultcolor, 4*sizeof(double));
+	}
+
+	if (foundstroke) {
+		if (foundstroke==-1) linestyle->function = LAXOP_None;
+		else linestyle->Colorf(strokecolor[0],strokecolor[1],strokecolor[2],strokecolor[3]);
+	}
+	if (foundfill) {
+		if (foundfill==-1) fillstyle->function = LAXOP_None;
+		fillstyle->Colorf(fillcolor[0],fillcolor[1],fillcolor[2],fillcolor[3]);
+	}
+
+
+	return 0;
+}
+
+
+
+
 
 } // namespace Laidout
 
