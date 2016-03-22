@@ -771,6 +771,8 @@ int LaidoutApp::createlaidoutrc()
 		mkdir(path,0755);
 		sprintf(path,"%s/palettes",config_dir);
 		mkdir(path,0755);
+		sprintf(path,"%s/fonts",config_dir);
+		mkdir(path,0755);
 	} else return -1;
 	return 0;
 }
@@ -887,7 +889,7 @@ int LaidoutApp::readinLaidoutDefaults()
 		} else if (!strcmp(name,"defaultunits")) {
 			if (value) {
 				int id=0;
-				SimpleUnit *units=GetUnitManager();
+				UnitManager *units=GetUnitManager();
 				if (units->UnitInfo(value,&id,NULL,NULL,NULL,NULL)==0) {
 					makestr(prefs.unitname,value);
 					prefs.default_units=id;
@@ -1140,7 +1142,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 
 			case 'u': { // default units
-					SimpleUnit *units=GetUnitManager();
+					UnitManager *units=GetUnitManager();
 					int id=0;
 					if (units->UnitInfo(o->arg(),&id,NULL,NULL,NULL,NULL)==0) {
 						makestr(prefs.unitname,o->arg());
@@ -1841,20 +1843,30 @@ int main(int argc,char **argv)
 	DBG cerr <<"---------Laidout Close--------------"<<endl;
 	 //for debugging purposes, spread out closing down various things....
 	laidout->close();
+	DBG cerr <<"---------  close interface manager..."<<endl;
 	LaxInterfaces::InterfaceManager::SetDefault(NULL,true);
+	DBG cerr <<"---------  close undo manager..."<<endl;
 	Laxkit::SetUndoManager(NULL);
+	DBG cerr <<"---------  close shortcut manager..."<<endl;
 	Laxkit::InstallShortcutManager(NULL); //forces deletion of shortcut lists in Laxkit
+	DBG cerr <<"---------  close icon manager..."<<endl;
 	Laxkit::IconManager::SetDefault(NULL);
+	DBG cerr <<"---------  close image processor..."<<endl;
 	Laxkit::ImageProcessor::SetDefault(NULL);
+	DBG cerr <<"---------  close image loaders manager..."<<endl;
 	Laxkit::ImageLoader::FlushLoaders();
+	DBG cerr <<"---------  close units manager..."<<endl;
+	Laxkit::SetUnitManager(NULL);
+	DBG cerr <<"---------  close laidout app..."<<endl;
 	laidout->dec_count();
 	
-	DBG cerr <<"---------------stylemanager-----------------"<<endl;
+	DBG cerr <<"---------  close stylemanager"<<endl;
 	DBG cerr <<"  stylemanager.getNumFields()="<<(stylemanager.getNumFields())<<endl;
 	//DBG cerr <<"  stylemanager.styles.n="<<(stylemanager.styles.n)<<endl;
 	stylemanager.Clear();
 
 #ifdef LAX_USES_CAIRO
+	DBG cerr <<"---------  cairo_debug_reset_static_data()..."<<endl;
 	DBG cairo_debug_reset_static_data();
 #endif
 
