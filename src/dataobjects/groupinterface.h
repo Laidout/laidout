@@ -63,6 +63,8 @@ class GroupInterface : public LaxInterfaces::ObjectInterface, public Value
 	virtual int MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
 	virtual int GrabSelection(unsigned int state);
 	virtual int ToggleGroup();
+	virtual int GroupObjects();
+    virtual int UngroupObjects();
 
 	//from value
 	virtual int type() { return VALUE_Fields; }

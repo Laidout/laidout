@@ -479,6 +479,81 @@ int GroupInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 	return ObjectInterface::MouseMove(x,y,state,d);
 }
 
+int GroupInterface::GroupObjects()
+{
+//	if (selection->n()==0) {
+//		viewport->postmessage("No objects selected.");
+//		return 0;
+//	}
+	return GroupObjects();
+}
+
+/*! Ungroup any Group objects in selection.
+ *
+ * Return 1 if change, else 0.
+ */
+int GroupInterface::UngroupObjects()
+{
+	if (selection->n()==0) {
+		viewport->postmessage("No objects selected.");
+		return 0;
+	}
+
+	Selection *newselection = new Selection;
+	Group *group;
+	int error=0;
+
+	for (int c=0; c<selection->n(); c++) {
+		group = dynamic_cast<Group*>(selection->e(c)->obj);
+		if (!group) {
+			newselection->Add(selection->e(c),-1);
+			continue;
+		}
+
+		Group *base=NULL;
+		FieldPlace place;
+
+		if (!((LaidoutViewport *)viewport)->locateObject(group, place)) {
+			//viewport->postmessage("Ugly internal error finding a selected object! Fire the programmer.");
+			continue;
+		} 
+
+		base = dynamic_cast<Group*>(group->GetParent());
+		if (!base) {
+			viewport->postmessage(_("Bad group/ungroup parent."));
+			delete newselection;
+			return 1;
+		}
+
+		int numgrouped=group->NumKids();
+		int nerror = base->UnGroup(place.e(place.n()-1)); //group is invalid now
+		error |= nerror;
+		if (nerror) continue;
+
+		VObjContext element;
+		if (nerror==0) {
+			int which=place.e(place.n());
+			for (int c=which; c<which+numgrouped; c++) {
+				element.clear();
+				element.obj=base->e(c);
+				element.obj->inc_count();
+				for (int c2=0; c2<place.n(); c2++) {
+					element.push(place.e(c2));
+				}
+				newselection->Add(&element, -1);
+			}
+		} 
+	}
+
+	FreeSelection();
+	AddToSelection(newselection);
+	newselection->dec_count(); 
+
+	viewport->postmessage(error ? _("Ungrouped (with some errors)") : _("Ungrouped.")); 
+	
+	return 0;
+}
+
 //! Return 1 if change, else 0.
 int GroupInterface::ToggleGroup()
 {
@@ -488,18 +563,20 @@ int GroupInterface::ToggleGroup()
 		viewport->postmessage("No objects selected.");
 		return 0;
 	}
+
 	 // selected objects are of form spread.pagelocation.layer.index...
 	 // or limbo.index...
 	 // Whether grouping or ungrouping, it is necessary to find either the
-	 // layer object or the limbo object:
+	 // layer object or the limbo object to act as base for the grouping:
 	
 	 //*** this requires more thought to incorporate other "object zones".
 	 //now there is limbo, and doc-page-spread, but there should also be
 	 //paper-objects, stickies(a type of bookmark)
-	 //***also must store contexts when adding objects to a selection....
+
 	int error=0;
 	Group *base=NULL;
 	FieldPlace place;
+
 	if (!((LaidoutViewport *)viewport)->locateObject(selection->e(0)->obj,place)) {
 		viewport->postmessage("Ugly internal error finding a selected object! Fire the programmer.");
 		return 0;
@@ -507,19 +584,22 @@ int GroupInterface::ToggleGroup()
 
 	DBG place.out("toggle group point: ");
 
-	 // find the base group which contains the group to ungroup, or which contains the
-	 // first selected object to group with others..
-	ObjectContainer *objc=((LaidoutViewport *)viewport);
-	for (int i=0; i<place.n()-1; i++) {
-		if (!objc) break;
-		objc=dynamic_cast<ObjectContainer*>(objc->object_e(place.e(i)));
-	}
-	if (dynamic_cast<Page*>(objc)) base=&(dynamic_cast<Page*>(objc)->layers);
-	else base=dynamic_cast<Group*>(objc);
+	base = dynamic_cast<Group*>(selection->e(0)->obj->GetParent());
+//	------
+//	 // find the base group which contains the group to ungroup, or which contains the
+//	 // first selected object to group with others..
+//	ObjectContainer *objc=((LaidoutViewport *)viewport);
+//	for (int i=0; i<place.n()-1; i++) {
+//		if (!objc) break;
+//		objc=dynamic_cast<ObjectContainer*>(objc->object_e(place.e(i)));
+//	}
+//	if (dynamic_cast<Page*>(objc)) base=&(dynamic_cast<Page*>(objc)->layers);
+//	else base=dynamic_cast<Group*>(objc);
 	if (!base) {
-		viewport->postmessage("Ugly internal error finding a selected object! Fire the programmer.");
+		viewport->postmessage("Bad group/ungroup parent.");
 		return 0;
 	}
+
 
 	 // now base is either limbo or the Group of page layers, and place is the full place of selection[0]
 	
@@ -539,7 +619,7 @@ int GroupInterface::ToggleGroup()
 		FreeSelection();
 		VObjContext element;
 		if (error==0) {
-			int which=place.e(place.n());
+			int which=place.e(place.n()-1);
 			for (int c=which; c<which+numgrouped; c++) {
 				element.clear();
 				element.obj=base->e(c); element.obj->inc_count();
