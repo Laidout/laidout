@@ -35,8 +35,6 @@ void DrawData(Laxkit::Displayer *dp,LaxInterfaces::SomeData *data,
 LaxInterfaces::SomeData *newObject(const char *thetype);
 int boxisin(flatpoint *points, int n,Laxkit::DoubleBBox *bbox);
 
-int SetClipFromPaths(Laxkit::Displayer *dp,LaxInterfaces::SomeData *outline, const double *extra_m);
-
 
 } // namespace Laidout
 
