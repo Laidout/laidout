@@ -36,7 +36,6 @@ namespace Laidout {
  * particular templates/types of data, master pages for instance
  * interpreters (python, yacas, octave, tex/latex?  -> investigate swig)
  * 
- * 
  */
 
 
@@ -46,6 +45,18 @@ PluginBase::PluginBase()
 
 PluginBase::~PluginBase()
 {
+}
+
+
+/*! Return a ResourceType with "tools" and "objects" resource groups.
+ * If "tools" and "objects" don't exist, then it is assumed only tools are present.
+ *
+ * For tools, you must specify in what window types they should appear. Do this in
+ * a "usein" attribute in resource->meta.
+ */
+Laxkit::ResourceType **PluginBase::Tools()
+{
+	return NULL;
 }
 
 
