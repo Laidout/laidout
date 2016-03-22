@@ -311,7 +311,7 @@ echo "     Ghostscript:  $GS"
 echo "       Enable GL:  $USINGGL"
 echo "          Sqlite:  $USESQLITE"             
 echo
-echo "If compiling from svn, please follow \"COMPILING FROM SOURCE\" in README.md.";
+echo "If compiling from git, please follow \"COMPILING FROM SOURCE\" in README.md.";
 echo
 echo "Otherwise, now type make to build.";
 
