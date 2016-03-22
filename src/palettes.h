@@ -16,7 +16,7 @@
 #ifndef PALETTES_H
 #define PALETTES_H
 
-#include <lax/palette.h>
+#include <lax/palettewindow.h>
 
 
 
