@@ -279,7 +279,7 @@ int PaperStyle::SetFromString(const char *nname)
 		while (isspace(*nname)) nname++;
 
 		int units=UNITS_None;
-		SimpleUnit *unitmanager=GetUnitManager();
+		UnitManager *unitmanager=GetUnitManager();
 		if (isalpha(*nname)) {
 			//read units
 			const char *cendptr=nname;
