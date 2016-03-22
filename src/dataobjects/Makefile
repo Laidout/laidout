@@ -16,6 +16,7 @@ CPPFLAGS= -Wall $(DEBUGFLAGS) -I. -I.. -I$(LAXDIR)/.. -I/usr/include/freetype2
 objs= \
 	group.o \
 	objectcontainer.o \
+	objectfilter.o \
 	drawableobject.o \
 	datafactory.o \
 	groupinterface.o \
