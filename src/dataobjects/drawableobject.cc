@@ -146,52 +146,6 @@ AlignmentRule::~AlignmentRule()
 }
 
 
-//----------------------------- ObjectFilter ---------------------------------
-/*! \class ObjectFilter
- * \brief Class that modifies any DrawableObject somehow.
- *
- * This could be blur, contrast, saturation, etc. 
- *
- * This could also be a adapted to be a dynamic
- * filter that depends on some resource, such as a global integer resource
- * representing the current frame, that might
- * adjust an object's matrix based on keyframes, for instance.
- *
- * Every object can have any number of filters applied to it. Filters behave in
- * a manner similar to svg filters. They can specify the input source(s), and output target,
- * which can then be the input of another filter.
- *
- * \todo it would be nice to support all the built in svg filters, and additionally
- *   image warping as a filter.
- */
-class ObjectFilter : virtual public Laxkit::anObject
-{
- public:
-	char *filtername;
-
-	PtrStack<ObjectFilter> inputs;
-	ObjectFilter *output;
-
-	RefPtrStack<Laxkit::anObject> dependencies; //other resources, not filters in filter tree
-	virtual int RequiresRasterization() = 0; //whether object contents readonly while filter is on
-	virtual double *FilterTransform() = 0; //additional affine transform to apply to object's transform
-	virtual LaxInterfaces::anInterface *Interface() = 0; //optional editing interface
-
-	ObjectFilter();
-	virtual ~ObjectFilter();
-};
-
-ObjectFilter::ObjectFilter()
-{
-	filtername=NULL;
-}
-
-ObjectFilter::~ObjectFilter()
-{
-	if (filtername) delete[] filtername;
-}
-
-
 //---------------------------------- DrawObjectChain ---------------------------------
 /*! \class DrawObjectChain
  * \brief Class to link objects together.
