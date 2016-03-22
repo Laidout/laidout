@@ -23,6 +23,7 @@
 #include <lax/interfaces/groupdata.h>
 #include <lax/interfaces/pathinterface.h>
 #include "objectcontainer.h"
+#include "objectfilter.h"
 #include "../guides.h"
 #include "../calculator/values.h"
 //#include "objectfilter.h"
