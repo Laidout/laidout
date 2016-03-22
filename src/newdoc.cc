@@ -312,8 +312,9 @@ int NewDocWindow::init()
 	char blah[100],blah2[100];
 	o=papertype->landscape();
 	curorientation=o;
+
 	 // -----Paper Size X
-	SimpleUnit *units=GetUnitManager();
+	UnitManager *units=GetUnitManager();
 	sprintf(blah,"%.10g", units->Convert(papertype->w(),UNITS_Inches,laidout->prefs.default_units,NULL));
 	sprintf(blah2,"%.10g",units->Convert(papertype->h(),UNITS_Inches,laidout->prefs.default_units,NULL));
 	last=paperx=new LineInput(this,"paper x",NULL,LINP_ONLEFT|LINP_FLOAT, 0,0,0,0, 0, 
@@ -603,7 +604,7 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		if (!strcmp(papertype->name,"custom")) return 0;
 		papertype->landscape(curorientation);
 		char num[30];
-		SimpleUnit *units=GetUnitManager();
+		UnitManager *units=GetUnitManager();
 		numtostr(num,30,units->Convert(papertype->w(),UNITS_Inches,laidout->prefs.default_units,NULL),0);
 		paperx->SetText(num);
 		numtostr(num,30,units->Convert(papertype->h(),UNITS_Inches,laidout->prefs.default_units,NULL),0);
@@ -646,7 +647,7 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
 
 		int i=s->info1;
-		SimpleUnit *units=GetUnitManager();
+		UnitManager *units=GetUnitManager();
 		int id;
 		char *name;
 		units->UnitInfoIndex(i,&id, NULL,NULL,NULL,&name);
@@ -798,7 +799,7 @@ void NewDocWindow::UpdatePaper(int dialogtoimp)
 
 		 //update dimensions
 		char num[30];
-		SimpleUnit *units=GetUnitManager();
+		UnitManager *units=GetUnitManager();
 		numtostr(num,30,units->Convert(papertype->w(),UNITS_Inches,laidout->prefs.default_units,NULL),0);
 		paperx->SetText(num);
 		numtostr(num,30,units->Convert(papertype->h(),UNITS_Inches,laidout->prefs.default_units,NULL),0);
