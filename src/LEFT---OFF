@@ -12,6 +12,9 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now: 
 
+file open, click around recent, etc, crashes!!
+lost ability to define new bookmarks.. bad!!
+
 tooltips and event timers seem to be frelled
 
 ubuntu maximize window failing (but not on today's debian unstable gnome), resize seems to work now
@@ -165,35 +168,36 @@ minimum dp size is not small enough
 
 fontdialog: FontDialog
   bookman font style names getting chopped off
-  need to implement load specific file for a font
   makeinwindow SOMETIMES not working, select one, puts on bottom line
   you can still scroll off when few visible items.. grrr!!
   sample block should not strictly adhere to fontsize, as it can get very big
   sample block should be multiline
   figure out why some color fonts are not scanned by fontconfig
   need support for svg fonts.. useful for pure svg fonts, and opentype svg, see cairo user fonts
-  need a way to remember layer fonts as a single font
-    read from standard fonts places, like .config/laidout/(version)/fonts
   needs line spacing slider
-  favorites: tag and column
   option to search by spacing, ie monospace, see fontconfig: FC_PROPORTIONAL, FC_DUAL, FC_MONO, FC_CHARCELL
-  user tags, not just fontmatrix tags, option to update fontmatrix?
-  should REALLY have a LayerFont head containing the whole list, not a stand alone list which causes too many problems
   should really get around to implementing scrollers
   font->SetFromFile() should do more fontconfig checking to grab propper file+family+style+size
-  need a way to remember layered fonts, to easily activate and deactivate
   FindFont() is faulty, as it only lookes up family/style.. should search by the unique file name
   pgup and down doesn't select a reasonable one
   vague search via fontconfig matching, to find a match for something like a "sans"
   sometimes family+style is not unique, but has different languages.. should detect this
     use postscriptname: "DroidSansHebrew-Bold" -->  "Droid Sans Hebrew"/"Bold"
+
+  font preview column in list, custom sample
   language coverage search
   select default language/script
   select opentype features
-  font preview column in list, custom sample
+  optional common font finishers? like centering, underline, color, highlight, fg/bg, etc
+
+  need a way to remember layered fonts, to easily activate and deactivate
+    read from standard fonts places, like .config/laidout/(version)/fonts
+  favorites: tag and column
+  user tags, not just fontmatrix tags, option to update fontmatrix?
+  should REALLY have a LayerFont head containing the whole list, not a stand alone list which causes too many problems
   should be able to access list of font favorites, and a user's preferred organization of fonts.. fontmatrix import?
     fontmatrix uses a sqlite database.. should be straighforward to scan it
-  optional common font finishers? like centering, underline, color, highlight, fg/bg, etc
+  need to implement load specific file for a font
   fontconfig directory config options
 
 captioninterface CaptionInterface
@@ -528,6 +532,8 @@ export/print dialog
   in papergroups with multiple papers and double sided impositions, need to ensure front and back are output properly for printer 
 
 file filters: filefilters:
+  import option to preserve broken links
+  when saving, name shouldn't be red if ok to save
   need equirectangular out 
   selecting out should auto select tofile | tofiles, depending on how many selected for out
   export ranges should accept "1-4, 6, 20-25" and "5-1", or by name "iii - iv"
@@ -565,6 +571,8 @@ Scribus:
   scribus import: need to read page sizes from actual page attributes, as it may well be different than in document attributes
     -> this necessitates revamp of singles to use more than one paper type
 svg:
+  can't get at the weight nodes after import
+
   after in: nodes right on each other produce bad vectors
   in hangs.. should NOT default to powerstroke.. the cache for complex stuff REALLY bogs down, creating NaN draws
   in needs to account for viewBox
@@ -590,6 +598,8 @@ eps:
   command line export file name defaults to "output#.eps"
   implement paper rotation
 laidout:
+  save option to force path data into svg d style
+  save option to not output line caches
   partial import of page ranges
   import of resources
   import of master pages
@@ -597,6 +607,10 @@ laidout:
  
 
 collect for out: define directory to pull all files and external resources in, including the .laidout file
+
+externally saved pages, for long documents
+  save "page" files? reference from Document?
+  and/or save "object" files, with layers in the file, have special DrawableObject flag to save its contents externally
 
 newdoc:
   need to spiffify tabframe.. it is hideous
@@ -708,6 +722,8 @@ to be a decent editing platform, Laidout needs:
   guides
   clipping
   text
+  Grouping:
+    ungroup doesn't check if FieldPlace indices change, making ungroup a group unreliable
 
 guides:
   snap guides to objects
