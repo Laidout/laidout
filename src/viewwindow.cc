@@ -2206,6 +2206,7 @@ void LaidoutViewport::Center(int w)
 		//dp->Center(m,spread->pagestack.e[c]->outline);
 		syncrulers();
 		needtodraw=1;
+		return;
 
 	} else if (w==1) { // center spread
 		DoubleBBox box,box2;
@@ -2233,12 +2234,15 @@ void LaidoutViewport::Center(int w)
 
 		syncrulers();
 		needtodraw=1;
+		return;
 
 	} else if (w==3) { // center curobj
 		if (!curobj.obj) return;
 		double m[6];
 		transformToContext(m,curobj.context,0,curobj.context.n()-1);
 		dp->Center(m,curobj.obj);
+		syncrulers();
+		needtodraw=1;
 	}
 }
 
@@ -2643,6 +2647,7 @@ Laxkit::ShortcutHandler *LaidoutViewport::GetShortcuts()
 	sc->Add(LOV_DeselectAll,    'A',ShiftMask|ControlMask,0, _("DeselectAll"), _("Deselect all"),NULL,0);
 	sc->Add(LOV_CenterDrawing,  '4',0,0,        _("CenterDrawing"),  _("Center drawing"),NULL,0);
 	sc->AddShortcut(' ',0,0, LOV_CenterDrawing);
+	sc->Add(VIEWPORT_Center_Object,'4',0,0,     _("CenterObject"),   _("Center on current object"),NULL,0);
 	sc->Add(LOV_ZoomToPage,     '5',0,0,        _("ZoomToPage"),     _("Zoom to the current page"),NULL,0);
 	sc->AddShortcut(' ',ShiftMask,0, LOV_ZoomToPage);
 	sc->Add(LOV_GrabColor,      'g',0,0,        _("GrabColor"),      _("Grab color"),NULL,0);
@@ -2683,6 +2688,11 @@ int LaidoutViewport::PerformAction(int action)
 		ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); // always returns non-null
 		viewer->PerformAction(VIEW_ObjectIndicator);
 		needtodraw=1;
+		return 0;
+
+	} else if (action==VIEWPORT_Center_Object || action==VIEWPORT_Zoom_To_Object) {
+		if (!curobj.obj) { Center(1); return 0; }
+		Center(3); 
 		return 0;
 
 	} else if (action==LOV_CenterDrawing || action==VIEWPORT_Center_View) {
