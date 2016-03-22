@@ -131,6 +131,9 @@ class Page : public ObjectContainer
 	Group layers;
 	Laxkit::PtrStack<PageBleed> pagebleeds;
 
+	//char *external_page_file;
+	//int page_loaded; //-1 for not applicable, 0 for no, 1 for yes
+
 	Page(PageStyle *npagestyle=NULL,int num=-1); 
 	virtual ~Page(); 
 	virtual const char *whattype() { return "Page"; }
