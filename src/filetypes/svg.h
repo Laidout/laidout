@@ -29,6 +29,10 @@ namespace Laidout {
 void installSvgFilter();
 
 
+//------------------------ Svg in/reimpose/out helpers -------------------------------------
+int addSvgDocument(const char *file, Document *existingdoc=NULL);
+
+
 //------------------------------------ SvgOutputFilter ----------------------------------
 class SvgOutputFilter : public ExportFilter
 {

@@ -24,6 +24,7 @@
 
 #include "document.h"
 #include "filetypes/scribus.h"
+#include "filetypes/svg.h"
 #include "printing/psout.h"
 #include "version.h"
 #include "laidout.h"
@@ -843,9 +844,15 @@ int Document::Load(const char *file,ErrorLog &log)
 	
 	FILE *f=open_laidout_file_to_read(file,"Document",&log);
 	if (!f) {
-		if (!isScribusFile(file)) return 0;
-		int c=addScribusDocument(file,this); //0 success, 1 failure
-		if (c==0) return 1;
+		if (isScribusFile(file)) {
+			int c=addScribusDocument(file,this); //0 success, 1 failure
+			if (c==0) return 1;
+		}
+
+		if (isSvgFile(file)) {
+			int c=addSvgDocument(file,this); //0 success, 1 failure
+			if (c==0) return 1;
+		}
 		return 0;
 	}
 	

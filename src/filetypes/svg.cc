@@ -55,6 +55,92 @@ namespace Laidout {
 int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::LineStyle *linestyle, LaxInterfaces::FillStyle *fillstyle);
 
 
+
+//------------------------ Svg in/reimpose/out helpers -------------------------------------
+
+//! Creates a Laidout Document from a Svg file, and adds to laidout->project.
+/*! Return 0 for success or nonzero for error.
+ *
+ * If existingdoc!=NULL, then insert the file to that Document. In this case, it is not
+ * pushed onto the project, as it is assumed it is elsewhere. Note that this will
+ * basically wipe the existing document, and replace with the Svg document.
+ */
+int addSvgDocument(const char *file, Document *existingdoc)
+{
+	FILE *f=fopen(file,"r");
+	if (!f) return 1;
+	char chunk[2000];
+	size_t c=fread(chunk,1,1999,f);
+	chunk[c]='\0';
+	fclose(f);
+
+	 //find default page width and height
+	double width,height;
+
+	 //width
+	char *endptr;
+	const char *ptr=strstr(chunk,"width");
+	if (!ptr) return 2;
+	ptr+=5;
+	while (isspace(*ptr) || *ptr=='=') ptr++;
+	if (*ptr!='\"') return 3;
+	ptr++;
+	width=strtod(ptr,&endptr);
+	if (*ptr!='\"') {
+		 // *** need to parse units
+	}
+	if (width<=0) return 4;
+
+	 //height
+	ptr=strstr(chunk,"height");
+	if (!ptr) return 2;
+	ptr+=6;
+	while (isspace(*ptr) || *ptr=='=') ptr++;
+	if (*ptr!='\"') return 5;
+	ptr++;
+	height=strtod(ptr,&endptr);
+	if (*ptr!='\"') {
+		 // *** need to parse units
+	}
+	if (height<=0) return 6;
+
+
+	PaperStyle paper("custom",width,height,0,300,"pt");
+	
+	Singles *imp=new Singles;
+	imp->SetPaperSize(&paper);
+	imp->NumPages(1);
+
+	Document *newdoc=existingdoc;
+	if (newdoc) {
+		makestr(newdoc->saveas,NULL); //force rename later
+		if (newdoc->imposition) newdoc->imposition->dec_count();
+		newdoc->imposition=imp;
+		imp->inc_count();
+	} else {
+		newdoc=new Document(imp,NULL);//null file name to force rename on save
+	}
+
+	makestr(newdoc->name,"From ");
+	appendstr(newdoc->name,file);
+	imp->dec_count();
+
+	if (!existingdoc) laidout->project->Push(newdoc);
+	else newdoc->inc_count();
+
+	SvgImportFilter filter;
+	ImportConfig config(file,300, 0,-1, 0,-1,-1, newdoc,NULL);
+	config.keepmystery=0;
+	config.filter=&filter;
+	ErrorLog log;
+	filter.In(file,&config,log);
+
+	newdoc->dec_count();
+
+	return 0;
+}
+
+
 //--------------------------------- install SVG filter
 
 //! Tells the Laidout application that there's a new filter in town.
@@ -1551,6 +1637,9 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 
 			 //update group to point to the document page's group
 			curdocpage=docpagenum;
+			if (curdocpage>=doc->pages.n) {
+				doc->NewPages(-1,(curdocpage+1)-doc->pages.n);
+			}
 			group=dynamic_cast<Group *>(doc->pages.e[curdocpage]->layers.e(0)); //pick layer 0 of the page
 		}
 
