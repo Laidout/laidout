@@ -53,6 +53,7 @@ const char *IdentifyFile(const char *file, char **version1, char **version2);
 int isOffFile(const char *file);
 int isPdfFile(const char *file,float *pdfversion);
 int isEpsFile(const char *file,float *psversion, float *epsversion);
+int isSvgFile(const char *file);
 int isScribusFile(const char *file);
 int isJpg(const char *file);
 int is_bitmap_image(const char *file);

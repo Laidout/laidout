@@ -563,7 +563,7 @@ int laidout_version_check(const char *version, const char *minversion, const cha
 //! Return string identifying the type of file.
 /*! \ingroup misc
  *
- * Currently, this checks for EPS, OFF, and Laidout files.
+ * Currently, this checks for EPS, OFF, Scribus, SVG, and Laidout files.
  *
  * EPS files return "EPS", with version1==postscript version, version2=eps version.
  *
@@ -591,12 +591,48 @@ const char *IdentifyFile(const char *file, char **version1, char **version2)
 
 	if (laidout_file_type(file, NULL, NULL, version1, NULL, version2)) return "Laidout";
 
+	if (isSvgFile(file)) return "SVG";
+
+	if (isScribusFile(file)) return "Scribus";
+
 	if (isPdfFile(file,&v1)) {
 		if (version1) *version1=numtostr(v1);
 		return "PDF";
 	}
 
 	return NULL;
+}
+
+//! Return whether file is an SVG document.
+int isSvgFile(const char *file)
+{
+	FILE *f=fopen(file,"r");
+	if (!f) return 0;
+
+	char first[1001];
+	int c=fread(first,1,1000,f);
+	first[c]='\0';
+	c=-1;
+
+	 //check for the various OFF starts
+	 //should have something like <SCRIBUSUTF8NEW Version="..."
+	const char *p=strstr(first,"<svg");
+
+	int foundsvg=0;
+	if (p) { //extract version...
+		foundsvg=1;
+		//p=strstr(first,"version");
+		//if (p) {
+		//	while (*p && *p!="\"") p++;
+		//	if (*p) {
+		//		const char *v=p;
+		//		while (*p && *p!="\"") p++;
+		//	}
+		//}
+	}
+
+	fclose(f);
+	return foundsvg;
 }
 
 //! Return whether file is a Scribus document.
@@ -610,7 +646,6 @@ int isScribusFile(const char *file)
 	first100[c]='\0';
 	c=-1;
 
-	 //check for the various OFF starts
 	 //should have something like <SCRIBUSUTF8NEW Version="..."
 	const char *p=strstr(first100,"SCRIBUSUTF8NEW");
 	int foundscribus=0;
