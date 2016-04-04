@@ -12,6 +12,8 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now: 
 
+shell broken.. bad font??
+
 file open, click around recent, etc, crashes!!
 lost ability to define new bookmarks.. bad!!
 
@@ -241,9 +243,16 @@ CharacterInterface characterinterface
   DONE outclick needs to destroy without sending
 
 text on path:
+  baseline handles
+  offset handles
+  rotation handle
+  envelope
   kern handles
   offset from stroke or from path
-  multiline
+  multiline?
+  drag out line to define chain connection
+  auto line
+  convert to path
 
 text (see also src/text/text.txt):
   need options per font on export to: convert to path, subset, embed
@@ -553,11 +562,14 @@ image
 laidout:
   need a Laidout out! for partial exports, or conversions between nets/papergroup lines/etc
 pdf:
+  export lines has outlines in evince?
   export complex engraving is really, really slow. probably all the string reallocation?
   pdf optimize jpg dump, compress image data
   still true? pdf export if a path has null linestyle/fillstyle it buffers until next path drawn
      instead of drawing with some default style
   needs clone deref still?
+  page labels?
+  pdf out needs clone deref
 Scribus:
   font size confusion
   caption export centering
@@ -575,14 +587,14 @@ svg:
 
   after in: nodes right on each other produce bad vectors
   in hangs.. should NOT default to powerstroke.. the cache for complex stuff REALLY bogs down, creating NaN draws
+  need to pares units
   in needs to account for viewBox
   in for powerstroke
   in needs to parse "use" elements and other "#" refs
-  after in, does weird things with width node -> child objects not display correctly
-
-  need in for style on paths
+  after in, does weird things with width node -> child objects not display correctly 
   in/out for meshes
   radial: transparent inner circle, patch edges
+  DONE need in for style on paths
 plan:
   need an In()
   implement paper rotation for out
@@ -1296,9 +1308,6 @@ clean up and test:
 --print  'from=3; to=32; layout=pages; printer=epson-usb/matte360'
   same as:
 --export 'filter="Postscript LL3"  from=3  to=32  layout=pages  command="lp -d epson-usb/matte360"'
-
-pdf export:
- page labels
 
 Import image list: default previews
 
