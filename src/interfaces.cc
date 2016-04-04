@@ -23,6 +23,7 @@
 #include <lax/interfaces/engraverfillinterface.h>
 #include <lax/interfaces/freehandinterface.h>
 #include <lax/interfaces/textstreaminterface.h>
+#include <lax/interfaces/textonpathinterface.h>
 #include <lax/lists.cc>
 
 #include "interfaces.h"
@@ -102,6 +103,12 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		//i=new CharacterInterface(NULL,id++,NULL,NULL);
 		//existingpool->push(i);
 		//i->dec_count();
+
+		 //------TextOnPath
+		i=new TextOnPathInterface(NULL,id++);
+		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+		existingpool->push(i);
+		i->dec_count();
 
 		 //------TextStream
 		i=new TextStreamInterface(NULL,id++,NULL);
