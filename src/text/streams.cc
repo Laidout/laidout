@@ -1123,6 +1123,7 @@ LFont *MatchCSSFont(const char *font_family, int italic, const char *variant, in
  */
 Color *CSSColorValue(const char *value, int *ret_type)
 {
+	//css3 has 147 named colors
 	//css3 has rgba, and hsl/hsla
 	//  not implemented: x11 colors
 	//  not implemented: system colors: see http://www.w3.org/TR/CSS2/ui.html#system-colors
@@ -1136,7 +1137,9 @@ Color *CSSColorValue(const char *value, int *ret_type)
 	int r=-1,g=-1,b=-1, a=0xff;
 
 	 //css named colors
-	if      (!strcmp(value,"maroon"))  { r=0x80; g=0x00; b=0x00; }
+	if      (!strcmp(value,"white"))   { r=0xff; g=0xff; b=0xff; }
+	else if (!strcmp(value,"black"))   { r=0x00; g=0x00; b=0x00; }
+	else if (!strcmp(value,"maroon"))  { r=0x80; g=0x00; b=0x00; }
 	else if (!strcmp(value,"red"))     { r=0xff; g=0x00; b=0x00; }
 	else if (!strcmp(value,"orange"))  { r=0xff; g=0xA5; b=0x00; }
 	else if (!strcmp(value,"yellow"))  { r=0xff; g=0xff; b=0x00; }
