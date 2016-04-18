@@ -1,0 +1,3 @@
+[submodule "laxkit"]
+	path = laxkit
+	url = git://github.com/tomlechner/laxkit.git
