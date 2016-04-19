@@ -157,15 +157,11 @@ Here is a fast and easy way to get Laidout up and running from development sourc
 1. Grab Laidout source from github (make sure the git package is installed):
         git clone https://github.com/Laidout/laidout.git
 
-2. Grab Laxkit git:
-   Enter the laidout directory and get the Laxkit source:
+2. Grab the Laxkit submodule:
+   Enter the laidout directory and execute this to initialize the laxkit submodule:
 
         cd laidout
-        git clone http://github.com/tomlechner/laxkit.git laxkit
-
-   In laidout/configure, make sure the LAXDIR lines look like this:
-        #LAXDIR="/usr/local/include/lax"
-        LAXDIR="`pwd`/laxkit/lax"
+        git submodule update --init
 
 3. Compile the goods, by doing this:
 
@@ -173,7 +169,7 @@ Here is a fast and easy way to get Laidout up and running from development sourc
         ./configure
         make depends
         cd ..
-        ./configure --laxkit=`pwd`/laxkit/lax
+        ./configure
         make depends
         make
 
