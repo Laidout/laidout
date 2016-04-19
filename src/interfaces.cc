@@ -22,8 +22,12 @@
 #include <lax/interfaces/pathinterface.h>
 #include <lax/interfaces/engraverfillinterface.h>
 #include <lax/interfaces/freehandinterface.h>
+
+//experimental:
 #include <lax/interfaces/textstreaminterface.h>
+#include <lax/interfaces/delauneyinterface.h>
 #include <lax/interfaces/textonpathinterface.h>
+
 #include <lax/lists.cc>
 
 #include "interfaces.h"
@@ -112,6 +116,12 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 
 		 //------TextStream
 		i=new TextStreamInterface(NULL,id++,NULL);
+		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+		existingpool->push(i);
+		i->dec_count();
+
+		 //------Delauney
+		i=new DelauneyInterface(NULL,id++,NULL);
 		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 		existingpool->push(i);
 		i->dec_count();
