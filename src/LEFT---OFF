@@ -67,7 +67,7 @@ bg for spread flipper not the same as the other buttons after popping up spread 
 scribus plugin: if directory of executable script is not writable, it fails! 
  -> should find one that is writable
 
-configure should check for libreadline-dev?
+configure should check for libreadline-dev? apparently not pkg-config ready
 
 "edit imposition", then escape.. removes window, but not the frame!
 
@@ -172,7 +172,7 @@ fontdialog: FontDialog
   bookman font style names getting chopped off
   makeinwindow SOMETIMES not working, select one, puts on bottom line
   you can still scroll off when few visible items.. grrr!!
-  sample block should not strictly adhere to fontsize, as it can get very big
+  sample block should not strictly adhere to fontsize, as it can get very big (or too small)
   sample block should be multiline
   figure out why some color fonts are not scanned by fontconfig
   need support for svg fonts.. useful for pure svg fonts, and opentype svg, see cairo user fonts
@@ -243,10 +243,11 @@ CharacterInterface characterinterface
   DONE outclick needs to destroy without sending
 
 text on path:
-  baseline handles
-  offset handles
+  DONE baseline handles
+  DONE offset handles
   rotation handle
-  envelope
+  DONE envelope
+  stretch envelope
   kern handles
   offset from stroke or from path
   multiline?
@@ -368,7 +369,7 @@ engraving tool: Engraving  engraver
   tracing:
     seems to be grabbing spurious tracing values outside of the tracing object, and at borders of trace object
     tracing object, lines abort just inside the image, maybe should just go one off the edge?
-    trace object transparency slider should actually slide transparency
+    DONE trace object transparency slider should actually slide transparency
 	trace object needs flip, at least h and v, not really needing the whole affine thing
     need option to export trace object in same position as the traced lines, so it can be further processed elsewhere
     custom sample of channels

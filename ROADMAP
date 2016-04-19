@@ -12,6 +12,8 @@ VERSION 0.097
        engraver tool grow point mode
        engraver tool, resolution cut mode
        engraver tool, blockout needs to be more precise
+	   engraver tool, fix non-live updates when tweaking various parameters
+	   engraver tool, fully test tool effects when many objects selected
        Tools should remember their settings
        Finish implementing anchor tool. maybe gss compatibility?
        layers (object tree) palette
