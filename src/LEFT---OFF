@@ -349,10 +349,15 @@ when resizing viewportwindow and a temp_input window active, make sure it stays 
 searchable menus
 
 engraving tool: Engraving  engraver
-  cairo render NEEDS VAST IMPROVEMENT.. the clunky xlib approximation was fast, but not transferrable to cairo
   bug: make a LineEdit overlay for number input, then Next bdown is ignored!! l, m, or right all ignored: viewportwindow line 947
   bug: object rotate works fine. but then enter and leave engraver tool. Now object rotate is messed up
   bug: 'z' zaps mesh, but does not change cache border or point mapping
+  cairo render NEEDS VAST IMPROVEMENT.. the clunky xlib approximation was fast, but not transferrable to cairo
+
+  DONE bug: several update triggers failing --> due to recent switch to cached image
+  DONE bug: show_points broken
+  DONE bug: add group, messes up the with: and not shared lines
+  DONE bug: Remane a resource, not updating name in resource list
 
   multiobject:
     object lines in group list needs eye per object, affect actual object visibility
@@ -1432,5 +1437,5 @@ These can then be purged after each release...
 
 DONE inkscape bug!! zoom out, NextSpread/PreviousSpread icons stroke on side disappears, somehow handle related, adding more handles fixes
 DONE wrong git rep on website 
-
+DONE option to change default exported file name
 
