@@ -4367,12 +4367,18 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		if (!pg || !pg->papers.n) l=NULL; else l=((LaidoutViewport *)viewport)->limbo;
 		char *file=NULL;
 		if (doc) {
-			file = newstr(doc->Saveas());
-			chop_extension(file);
-			appendstr(file, "-exported.huh");
-			//file=lax_dirname(doc->Saveas(),1);
-			//convert_to_full_path(file,NULL);
-			//appendstr(file,"exported-file.huh");
+			if (!isblank(laidout->prefs.exportfilename)) {
+				char *nfile = newstr(laidout->prefs.exportfilename);
+				file = replaceallname(nfile, "%f", isblank(doc->Saveas()) ? "untitled" : doc->Saveas());
+				delete[] nfile;
+
+			} else {
+				file = newstr(doc->Saveas());
+				chop_extension(file);
+				appendstr(file, "-exported.huh");
+			}
+
+			convert_to_full_path(file,NULL);
 		} else {
 			file=full_path_for_file("exported-file.huh",NULL);
 		}

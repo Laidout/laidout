@@ -669,11 +669,19 @@ int LaidoutApp::createlaidoutrc()
 					   //drop shadow
 					  "# Customize how some things get dispalyed or entered:\n"
 					  "#pagedropshadow 5    #how much to offset drop shadows around papers and pages \n"
+					  "\n"
 
 					   //autosave
 					  " #Autosave settings\n"
-					  "autosave 0  #number of minutes (such as 1.5) between autosaves\n"
+					  "autosave 0  #number of minutes (such as 1.5) between autosaves. 0 means no autosave\n"
 					  "autosave_path ./%%f.autosave  #default location for autosave, relative to actual file\n"
+					  "\n"
+
+					   //default exported file name
+					  " #Default export file name base. An extension is added automatically by the exporter.\n"
+					  " #Use \"%%f\" to substitute document file name. Everything here after a '.' till the \n"
+					  " #end of the string is replaced when the file extension is changed.\n"
+					  "#export_file_name %%f-exported\n"
 					  "\n"
 
 					   //units
@@ -688,6 +696,7 @@ int LaidoutApp::createlaidoutrc()
 
 					   //default paper
 					  "#defaultpapersize letter #Name of default paper to use\n"
+					  "\n"
 
 					   //default template
 					  " #if the following is commented out, then running \"laidout\" will\n"
@@ -897,6 +906,9 @@ int LaidoutApp::readinLaidoutDefaults()
 					notifyPrefsChanged(NULL,PrefsDefaultUnits);
 				}
 			}
+
+		} else if (!strcmp(name,"export_file_name")) {
+			if (!isblank(value)) makestr(prefs.exportfilename, value);
 
 		} else if (!strcmp(name,"autosave_path")) {
 			if (!isblank(value)) makestr(prefs.autosave_path, value);

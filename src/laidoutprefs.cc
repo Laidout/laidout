@@ -75,6 +75,8 @@ LaidoutPreferences::LaidoutPreferences()
 	autosave_path=newstr("./%f.autosave");
 
 	experimental=false;
+
+	exportfilename=newstr("%f-exported.whatever");
 }
 
 LaidoutPreferences::~LaidoutPreferences()
@@ -86,6 +88,7 @@ LaidoutPreferences::~LaidoutPreferences()
 	delete[] defaultpaper;
 	delete[] temp_dir;
 	delete[] palette_dir;
+	delete[] exportfilename;
 }
 
 Value *LaidoutPreferences::duplicate()
@@ -102,6 +105,7 @@ Value *LaidoutPreferences::duplicate()
 	makestr(p->temp_dir,temp_dir);
 	p->autosave=autosave;
 	makestr(p->autosave_path,autosave_path);
+	makestr(p->exportfilename, exportfilename);
 	p->experimental=experimental;
 
 	return p;
@@ -125,6 +129,13 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 			"class", //Value format
 			NULL, //range
 			NULL); //defaultvalue
+
+	def->push("experimental",
+			_("Experimental"),
+			_("Whether to activate experimental features."),
+			"boolean", NULL,"false",
+			0,
+			NULL);
 
 	def->push("shortcutsfile",
 			_("Shortcuts file"),
@@ -207,6 +218,13 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 			_("Autosave path"),
 			_("Where and how to save when autosaving. Relative paths are to current file, %%f is current file name."),
 			"string", NULL,NULL,
+			0,
+			NULL);
+
+	def->push("export_file_name",
+			_("Export file name"),
+			_("Default base name (without extension) to use when exporting."),
+			"string", NULL,"%f-exported",
 			0,
 			NULL);
 

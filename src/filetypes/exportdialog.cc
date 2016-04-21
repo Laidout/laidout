@@ -204,7 +204,11 @@ int ExportDialog::init()
 		config->filename=newstr("output");
 		appendstr(config->filename,".");
 		appendstr(config->filename,filter->DefaultExtension());
+	} else {
+		 //make sure template has extension
+		if (!strrchr(config->filename,'.')) appendstr(config->filename,".huh");
 	}
+
 	if (!config->tofiles) {
 		makestr(config->tofiles,config->filename);
 		char *p=strrchr(config->tofiles,'.'),
