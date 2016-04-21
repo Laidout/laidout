@@ -31,6 +31,9 @@ laidout:
 
 all: laidout docs
 
+icons:
+	cd src/icons && make
+
 docs:
 	cd docs && doxygen
 	
@@ -103,7 +106,7 @@ touchdepends:
 	touch src/api/makedepend
 	touch src/polyptych/src/makedepend
 
-.PHONY: all laidout clean docs install uninstall hidegarbage unhidegarbage depends touchdepends
+.PHONY: all icons laidout clean docs install uninstall hidegarbage unhidegarbage depends touchdepends
 clean:
 	cd src && $(MAKE) clean
 	
