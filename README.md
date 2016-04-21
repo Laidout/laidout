@@ -156,9 +156,8 @@ This is on my long to-do list, but is a low priority. If this is a problem, let 
 
 COMPILING FROM DEVELOPMENT GIT
 ------------------------------
-For the Laidout development version, you will need the Laxkit development 
-version from the same date, give or take 10 minutes or so. Be advised that
-the dev version may be rather buggy compared to "stable" versions!
+Compiling from git source requires a few more steps than compiling releases.
+Be advised that the dev version may be rather buggy compared to "stable" versions!
 
 Here is a fast and easy way to get Laidout up and running from development source:
 
@@ -212,8 +211,10 @@ Here is a fast and easy way to get Laidout up and running from development sourc
 
         cd laxkit/lax/icons && make && cp *png ../../../src/icons && cd ../../../src/icons && make
 
-    Some day, the icons will themselves be stored in a Laidout file, and Laidout itself
-    will generate the icons (maybe!). The current system is a bit cumbersome.
+    The current system can take a long time, depending on the speed of your computer, since
+	the script has to start Inkscape separately for each icon. Some day, the icons will be
+	generated directly from the base icons file by Laidout, for a large speed improvement, but
+	much work needs to be done on the SVG importer before that can happen.
 
     You can use src/icons/makeimages.py to regenerate all icons, or single icons if you
     like. The master icon file is src/icons.svg. Each top level object in that file
