@@ -9,10 +9,10 @@ LAXIDIR=$(LAXDIR)/interfaces
 
 
 LD=g++
-LDFLAGS= -L/usr/X11R6/lib -lXi -lXext -lX11 -lm -lpng `imlib2-config --libs` \
+LDFLAGS= -L/usr/X11R6/lib -lXi -lXext -lX11 -lm -lpng `imlib2-config --libs` `freetype-config --libs`\
 		 `cups-config --libs` -lXft -L$(LAXIDIR) -L$(LAXDIR)
 DEBUGFLAGS= -g -gdwarf-2
-CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) -I. -I.. -I../.. -I$(LAXDIR)/.. -I/usr/include/freetype2 -I$(POLYPTYCHBASEDIR)
+CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) -I. -I.. -I../.. -I$(LAXDIR)/.. `freetype-config --cflags` -I$(POLYPTYCHBASEDIR)
 
 
 #---optional libs:
@@ -81,7 +81,7 @@ objs= \
 all: laidout
 
 laidout: lax laxinterface $(dirs) $(objs) $(POLYPTYCHFORLAIDOUT)
-	$(LD) $(objs) [a-z]*/*.o $(POLYPTYCH_GL_OBJS) $(POLYPTYCHOBJS) -llaxinterfaces -llaxkit -lharfbuzz -lcairo -lfreetype -lfontconfig $(LDFLAGS) $(OPTIONALLIBS) -lreadline -lcrypto $(POLYPTYCHLIBS) -o $@
+	$(LD) $(objs) [a-z]*/*.o $(POLYPTYCH_GL_OBJS) $(POLYPTYCHOBJS) -llaxinterfaces -llaxkit -lharfbuzz -lcairo -lfontconfig $(LDFLAGS) $(OPTIONALLIBS) -lreadline -lcrypto $(POLYPTYCHLIBS) -o $@
 
 icons:
 	cd src/icons && $(MAKE)
