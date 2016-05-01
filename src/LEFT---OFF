@@ -12,7 +12,7 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now: 
 
-shell broken.. bad font??
+shell broken sometimes.. bad font??
 
 file open, click around recent, etc, crashes!!
 lost ability to define new bookmarks.. bad!!
@@ -78,9 +78,9 @@ create new pane should dup old pane.. currently divide viewport, removes documen
 memory hole in reimpose .. reimposed 5 page booklet 
 memory hole helpwindow 
 memory hole when graphical shell activated 
-memory hole cairo backend
 memory hole do laidout -n letter, split a window, then quit. undeleted Objects remain!
 memory hole shortcut window
+DONE memory hole cairo backend (can't duplicate)
 
 Lightness slider appears black to white, but the middle is full color, needs segmented render like hue
 click enter area of color pickers, does not install color!!!!  
@@ -197,10 +197,10 @@ fontdialog: FontDialog
   favorites: tag and column
   user tags, not just fontmatrix tags, option to update fontmatrix?
   should REALLY have a LayerFont head containing the whole list, not a stand alone list which causes too many problems
-  should be able to access list of font favorites, and a user's preferred organization of fonts.. fontmatrix import?
-    fontmatrix uses a sqlite database.. should be straighforward to scan it
+  should be able to access list of font favorites, and a user's preferred organization of fonts..
   need to implement load specific file for a font
   fontconfig directory config options
+  DONE fontmatrix import? fontmatrix uses a sqlite database.. should be straighforward to scan it
 
 captioninterface CaptionInterface
   bug: convert to path with viewport->ChangeObject(), puts obj way off, doesn't show path decs, other weird
@@ -252,8 +252,9 @@ text on path:
   offset from stroke or from path
   multiline?
   drag out line to define chain connection
-  auto line
+  option to auto expand line
   convert to path
+  click for new, then save, saves a blank one! probably issue in captioninterface also
 
 text (see also src/text/text.txt):
   need options per font on export to: convert to path, subset, embed
@@ -269,6 +270,8 @@ text (see also src/text/text.txt):
   css import/export
   tabs on arbitrary paths 
 
+anInterface::PreRefresh(), for instance to get engraver trace object to render below all selected objects
+
 TreeSelector:
   with text colors, mouse over highlight is off
   not showing alternate gray/white bgs
@@ -278,6 +281,11 @@ TreeSelector:
 
 Spread editor: SpreadEditor spread editor spreadeditor
   should have border drag to move, not middle drag
+
+voronoi Voronoi delauney Delauney:
+  implement proper file name for in/out
+  Equivalent object to PathsData, or GroupData with delauney, voronoi, points
+  implement data tree insertion
 
 autosave
   need a gui
@@ -353,6 +361,7 @@ engraving tool: Engraving  engraver
   bug: object rotate works fine. but then enter and leave engraver tool. Now object rotate is messed up
   bug: 'z' zaps mesh, but does not change cache border or point mapping
   cairo render NEEDS VAST IMPROVEMENT.. the clunky xlib approximation was fast, but not transferrable to cairo
+  bug: change type not tracing
 
   DONE bug: several update triggers failing --> due to recent switch to cached image
   DONE bug: show_points broken
@@ -408,12 +417,14 @@ engraving tool: Engraving  engraver
     line profiles: (done) linear, circular, radial, spiral?
 	be able to edit and create new profiles
 	grow
+	spiral arm count makes poor resolution
     line generation: 
       grow: implement custom line merge and break to preserve spacing across mesh contraction
       grow: edge abutment when generating
       sample point generation should be based on lines per mesh square, not total mesh field
       finish implementing spacing section -> spacing map
 
+  add special group: half offset, perpendicular
   need stroke+fill options?
   need convert to path object ability
   current blockout is not very precise, needs approximation between existing point samples
@@ -593,7 +604,7 @@ svg:
 
   after in: nodes right on each other produce bad vectors
   in hangs.. should NOT default to powerstroke.. the cache for complex stuff REALLY bogs down, creating NaN draws
-  need to pares units
+  need to parse units
   in needs to account for viewBox
   in for powerstroke
   in needs to parse "use" elements and other "#" refs
@@ -623,6 +634,9 @@ laidout:
   import of master pages
   import of limbos
  
+Units:
+  need something like Convert(value, units_from, units_to, &error, overrides), where overrides is 
+    something like: list of [units_id, newscaling], like for temp redefining "Em" or "px"
 
 collect for out: define directory to pull all files and external resources in, including the .laidout file
 
@@ -1438,4 +1452,4 @@ These can then be purged after each release...
 DONE inkscape bug!! zoom out, NextSpread/PreviousSpread icons stroke on side disappears, somehow handle related, adding more handles fixes
 DONE wrong git rep on website 
 DONE option to change default exported file name
-
+DONE make saveas file edit color code right: red for can't save, yellow for overwrite

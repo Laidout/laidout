@@ -8,22 +8,37 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 VERSION 0.097
 -------------
        debug previous version!
-       debug line outline cache, especially for joins
        engraver tool grow point mode
        engraver tool, resolution cut mode
        engraver tool, blockout needs to be more precise
-	   engraver tool, fix non-live updates when tweaking various parameters
-	   engraver tool, fully test tool effects when many objects selected
+(done) engraver tool, fix non-live updates when tweaking various parameters
+       engraver tool, fully test tool effects when many objects selected
+(done) Allow setting custom default exported file name (via a line in laidoutrc)
        Tools should remember their settings
-       Finish implementing anchor tool. maybe gss compatibility?
+       Text on path tool
+(done) text: harfbuzz based
        layers (object tree) palette
        Moving selected things in group contents does not update group bounds
        should not be able to select both group and group contents at same time
        double click on group should change selection area to group contents?
+       Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
+       option to specify alignment of different size signature stacks
+       debug svg in
+       lock down color backend.. it's currently a series of weak hacks based on 8-bit screen rgb
+       PDF in, at least as 1 image per page, for purposes of imposition
+       pdf export, unicode capable
+       fix tooltips
+       drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
+       drag-n-drop with system, like drag images into viewwindow from an external file browser
+
+
+VERSION 0.098
+-------------
+       debug line outline cache, especially for joins
+       Finish implementing anchor tool. maybe gss compatibility?
        Masking, clip paths and/or softmask
        Fix object bleeding across pages for signatures and nets
        export preview
-       Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
        Externally rendered objects, similar to Scribus render frames
        Custom alignments to parents, not just affine transform to parent
        Merge EpsData with normal images
@@ -34,16 +49,13 @@ VERSION 0.097
        Object and resource tags interface
        Finish implementing double sided net impositions
        allow inserting net impositions as foldouts in regular Signature Imposition stacks
-       Net imposition interactive unwrapper, via optional opengl Polyptych
+       debug Net imposition interactive unwrapper, via optional opengl Polyptych
        Net imposition build net interface
-       option to specify alignment of different size signature stacks
        Tool scripting
        Custom line caps
-       debug svg in
        Undo/Redo
        Clean up symmetry clone interface, not easy to use currently
        Clone Pattern Builder
-       lock down color backend.. it's currently a series of weak hacks based on 8-bit screen rgb
        color styles, so objects can refer to a named color, just change that named to change all
        Soup up the color box so one can recall previous colors, and/or integration with palette window
        make PathInterface extrapolate line join work
@@ -52,12 +64,7 @@ VERSION 0.097
        Scribus import should try to do something appropriate with page spreads >= 2 pages wide
        Scribus import should do something meaningful with original Scribus page bleed values
        Collect for out
-       PDF in, at least as 1 image per page, for purposes of imposition
-       pdf export, unicode capable
        Optimize pdf export to rescale to target dpi, and compress image data
-       fix tooltips
-       drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
-       drag-n-drop with system, like drag images into viewwindow from an external file browser
 
 
 VERSION 0.1 
@@ -114,7 +121,6 @@ VERSION 0.1
 VERSION 0.2
 -----------
 Flowed text tool
-text: harfbuzz based
 text: Opentype feature support (other than multicolor stuff)
 text: Opentype color font support: COLR/CPAL, SVG
 text: Mixed left/right/vertical text in text streams
