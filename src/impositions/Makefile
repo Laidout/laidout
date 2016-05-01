@@ -55,4 +55,4 @@ unhidegarbage:
 .PHONY: clean impositions hidegarbage unhidegarbage
 clean:
 	rm -f *.o
-	
+

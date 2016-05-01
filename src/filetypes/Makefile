@@ -46,4 +46,4 @@ unhidegarbage:
 .PHONY: clean filetypes hidegarbage unhidegarbage
 clean:
 	rm -f *.o
-	
+

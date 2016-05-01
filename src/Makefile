@@ -159,4 +159,4 @@ include makedepend
 clean:
 	rm -f laidout *.o
 	for NAME in $(dirs); do $(MAKE) -C $$NAME clean; done
-	
+

@@ -30,6 +30,7 @@ objs= \
 	lsomedataref.o \
 	lengraverfilldata.o \
 	lcaptiondata.o \
+	ltextonpath.o \
 	printermarks.o 
 
 
@@ -51,4 +52,4 @@ unhidegarbage:
 .PHONY: clean printing hidegarbage unhidegarbage
 clean:
 	rm -f *.o
-	
+

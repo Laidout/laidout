@@ -34,4 +34,4 @@ unhidegarbage:
 .PHONY: clean printing hidegarbage unhidegarbage
 clean:
 	rm -f *.o
-	
+

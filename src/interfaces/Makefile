@@ -46,4 +46,4 @@ unhidegarbage:
 .PHONY: clean interfaces hidegarbage unhidegarbage
 clean:
 	rm -f *.o
-	
+
