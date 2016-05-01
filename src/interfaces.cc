@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2005-2013 by Tom Lechner
+// Copyright (C) 2005-2016 by Tom Lechner
 //
 
 #include <lax/interfaces/interfacemanager.h>
@@ -22,13 +22,12 @@
 #include <lax/interfaces/pathinterface.h>
 #include <lax/interfaces/engraverfillinterface.h>
 #include <lax/interfaces/freehandinterface.h>
+#include <lax/interfaces/textonpathinterface.h>
 
 //experimental:
 #include <lax/interfaces/textstreaminterface.h>
 #include <lax/interfaces/delauneyinterface.h>
-#include <lax/interfaces/textonpathinterface.h>
 
-#include <lax/lists.cc>
 
 #include "interfaces.h"
 #include "laidout.h"
@@ -53,6 +52,9 @@
 #include "interfaces/pagemarkerinterface.h"
 
 #include "interfaces/animationinterface.h"
+
+
+#include <lax/lists.cc>
 
 
 using namespace Laxkit;
@@ -102,17 +104,6 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 
 	if (laidout->experimental) {
 		// *************** testing:
-
-		// //------Insert Character
-		//i=new CharacterInterface(NULL,id++,NULL,NULL);
-		//existingpool->push(i);
-		//i->dec_count();
-
-		 //------TextOnPath
-		i=new TextOnPathInterface(NULL,id++);
-		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
-		existingpool->push(i);
-		i->dec_count();
 
 		 //------TextStream
 		i=new TextStreamInterface(NULL,id++,NULL);
@@ -175,6 +166,12 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	existingpool->push(i);
 	i->dec_count();
 		
+	 //------TextOnPath
+	i=new TextOnPathInterface(NULL,id++);
+	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+	existingpool->push(i);
+	i->dec_count();
+
 	 //------Color Patch
 	i=new LColorPatchInterface(id++,NULL);
 	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);

@@ -24,6 +24,7 @@
 #include "lsomedataref.h"
 #include "lengraverfilldata.h"
 #include "lcaptiondata.h"
+#include "ltextonpath.h"
 
 #include <lax/interfaces/interfacemanager.h>
 #include <lax/lists.cc>
@@ -130,6 +131,15 @@ Laxkit::anObject *createLCaptionData(Laxkit::anObject *refobj)
 }
 
 
+//---------------------------- LTextOnPath --------------------------------
+
+//! For somedatafactory.
+Laxkit::anObject *createLTextOnPath(Laxkit::anObject *refobj)
+{
+	return new LTextOnPath();
+}
+
+
 //---------------------------- SomeDataFactory Setup --------------------------
 
 
@@ -148,6 +158,7 @@ void InitializeDataFactory()
 	lobjectfactory->DefineNewObject(LAX_SOMEDATAREF,     "SomeDataRef",     createLSomeDataRef,     NULL);
 	lobjectfactory->DefineNewObject(LAX_ENGRAVERFILLDATA,"EngraverFillData",createLEngraverFillData,NULL);
 	lobjectfactory->DefineNewObject(LAX_CAPTIONDATA,     "CaptionData",     createLCaptionData,     NULL);
+	lobjectfactory->DefineNewObject(LAX_TEXTONPATH,      "TextOnPath",      createLTextOnPath,      NULL);
 
 	DBG lobjectfactory->dump_out(stderr,0);
 }
