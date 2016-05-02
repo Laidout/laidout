@@ -109,4 +109,5 @@ touchdepends:
 .PHONY: all icons laidout clean docs install uninstall hidegarbage unhidegarbage depends touchdepends
 clean:
 	cd src && $(MAKE) clean
-	
+	cd src/polyptych && $(MAKE) clean
+
