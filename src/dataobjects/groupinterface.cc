@@ -17,7 +17,7 @@
 #include <lax/transformmath.h>
 #include <lax/interfaces/rectpointdefs.h>
 #include <lax/colors.h>
-#include "dataobjects/lsomedataref.h"
+#include "lsomedataref.h"
 #include "groupinterface.h"
 #include "../interfaces/anchorinterface.h"
 #include "../interfaces/aligninterface.h"

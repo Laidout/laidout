@@ -16,7 +16,7 @@ include ../../../Makefile-toinclude
 
 LD=g++
 DEBUGFLAGS= -g -gdwarf-2
-CPPFLAGS= -Wall $(DEBUGFLAGS) -I. -I.. -I$(LAXDIR)/.. -I$(LAXIDIR) `freetype-config --cflags` `pkg-config GraphicsMagick++ --cflags`
+CPPFLAGS= -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. -I$(LAXIDIR) `freetype-config --cflags` `pkg-config GraphicsMagick++ --cflags`
 LDFLAGS= -L/usr/X11R6/lib -lsqlite3 -lXft -lXi -lXext -lX11 -lftgl -lfontconfig -lm -lpng -lcairo -lcrypto `pkg-config GraphicsMagick++ --libs` `freetype-config --libs` `imlib2-config --libs` -L$(LAXDIR) -L$(LAXIDIR)
 
 

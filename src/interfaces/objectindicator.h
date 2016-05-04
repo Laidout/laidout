@@ -20,7 +20,7 @@
 #include <lax/refptrstack.h>
 
 #include "../laidout.h"
-#include "viewwindow.h"
+#include "../viewwindow.h"
 
 
 namespace Laidout {

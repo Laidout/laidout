@@ -15,13 +15,14 @@
 //
 
 
-#include "../language.h"
-#include "pagerangeinterface.h"
-#include "viewwindow.h"
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
 #include <lax/transformmath.h>
 #include <lax/inputdialog.h>
+
+#include "../language.h"
+#include "pagerangeinterface.h"
+#include "../viewwindow.h"
 
 #include <lax/lists.cc>
 
