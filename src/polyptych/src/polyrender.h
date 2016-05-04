@@ -19,7 +19,7 @@
 #define POLYRENDER_H
 
 
-#include </usr/include/GraphicsMagick/Magick++.h>
+#include <GraphicsMagick/Magick++.h>
 #include <lax/transformmath.h>
 #include <lax/errorlog.h>
 

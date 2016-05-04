@@ -35,7 +35,7 @@
 #include <lax/freedesktop.h>
 #include <lax/laxoptions.h>
 
-#include </usr/include/GraphicsMagick/Magick++.h>
+#include <GraphicsMagick/Magick++.h>
 
 //#define POLYPTYCH_TUIO
 #ifdef POLYPTYCH_TUIO
@@ -232,7 +232,7 @@ int main(int argc, char **argv)
 	anXApp app;
 	app.Theme("Dark");
 	app.init(argc,argv);
-	InitLaxImlib();
+	InitLaxImlib(1000, true); // *** this should be configurable or autocompute based on available ram!!
 	Magick::InitializeMagick(*argv);
 	const char *tuio=NULL;
 
@@ -312,7 +312,12 @@ int main(int argc, char **argv)
 		polyatt.dump_in(polyptychfile,NULL);
 		makestr(polyhedronfile,NULL);
 
-		touch_recently_used(polyptychfile, "application/x-polyptych-doc", "Polyptych", NULL);
+		touch_recently_used_xbel(polyptychfile, "application/x-polyptych-doc",
+								"Polyptych", "polyptych",
+								"Polyptych",
+								true, //visited
+								false,//modified
+								NULL);
 
 		char *name, *value;
 		for (int c=0; c<polyatt.attributes.n; c++) {
@@ -363,7 +368,9 @@ int main(int argc, char **argv)
 			if (error) cerr <<" with error: "<<error<<endl;
 			exit(1);
 		}
-		if (polyhedronfile) touch_recently_used(polyhedronfile, "application/x-polyhedron-doc", "Polyhedron", NULL);
+		if (polyhedronfile) {
+			touch_recently_used_xbel(polyhedronfile, "application/x-polyhedron-doc", "Polyhedron", "polyptych", "Polyhedron", true, false, NULL);
+		}
 		if (!poly.faces.n) defineCube();
 
 		poly.BuildExtra();

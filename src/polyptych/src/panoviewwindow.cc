@@ -306,7 +306,7 @@ int PanoViewWindow::Save(const char *saveto)
 		   );
 
 	fclose(f);
-	touch_recently_used(saveto, "application/x-polyptych-doc", "Polyptych", NULL);
+	touch_recently_used_xbel(saveto, "application/x-polyptych-doc", "Polyptych", "polyptych", "Polyptych", true, true, NULL);
 	return 0;
 }
 

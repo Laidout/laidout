@@ -35,7 +35,7 @@
 #include <lax/freedesktop.h>
 #include <lax/laxoptions.h>
 
-#include </usr/include/GraphicsMagick/Magick++.h>
+#include <GraphicsMagick/Magick++.h>
 
 //#define POLYPTYCH_TUIO
 #ifdef POLYPTYCH_TUIO
@@ -226,7 +226,7 @@ int main(int argc, char **argv)
 	anXApp app;
 	app.Theme("Dark");
 	app.init(argc,argv);
-	InitLaxImlib();
+	InitLaxImlib(1000, true);
 	Magick::InitializeMagick(*argv);
 	const char *tuio=NULL;
 
