@@ -3728,6 +3728,7 @@ int ViewWindow::init()
 	}
 	p->Select(vm);
 	p->WrapToExtent();
+	p->tooltip(_("Spread view type"));
 	AddWin(p,1, p->win_w,0,50,50,0, p->win_h,0,50,50,0, -1);
 
 	last=colorbox=new ColorBox(this,"colorbox",NULL,
