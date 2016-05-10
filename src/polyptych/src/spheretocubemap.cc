@@ -15,7 +15,7 @@
 //
 
 #include <iostream>
-#include </usr/include/GraphicsMagick/Magick++.h>
+#include <GraphicsMagick/Magick++.h>
 
 #include <lax/vectors.h>
 #include <cstring>

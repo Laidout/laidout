@@ -19,7 +19,7 @@
 
 #include <lax/treeselector.h>
 #include <lax/rowframe.h>
-#include "dataobjects/objectcontainer.h"
+#include "../dataobjects/objectcontainer.h"
 
 
 namespace Laidout {

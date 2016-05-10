@@ -67,14 +67,19 @@ If you are on a debian based system, you can probably install these with this co
 
     apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libcairo2-dev libharfbuzz-dev libsqlite3-dev libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev
 
+On Fedora, this list is more like this:
+
+	sudo dnf install -y cairo-devel cups-devel fontconfig-devel ftgl-devel glibc-headers harfbuzz-devel imlib2-devel lcms-devel libpng-devel libX11-devel libXext-devel libXft-devel libXi-devel mesa-libGL-devel mesa-libGLU-devel openssl-devel readline-devel sqlite-devel xorg-x11-proto-devel zlib-devel GraphicsMagick-c++-devel libstdc++-devel freetype-devel imake
+
 
 For only the bare minimum, without the polyhedron unwrapper (requires opengl),
 and without the ability to grab Fontmatrix font tags (requires sqlite), you 
 only need the following. Note that you will also need to pass 
-in "--nogl and --disable-sqlite" to ./configure below if you are not
+in "--nogl" and "--disable-sqlite" to ./configure below if you are not
 compiling everything:
 
     apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libcairo2-dev libharfbuzz-dev
+
 
 
 To compile and install Laidout, just run these three easy steps:
@@ -108,7 +113,7 @@ MAKING A DEB PACKAGE
 --------------------
 If you want to create a deb package of Laidout, make sure you have the fakeroot,
 dpkg-dev, and debhelper packages installed, and have all the other packages listed 
-from the COMPILING section above, and do this from the top laidout directory:
+from the COMPILING RELEASES section above, and do this from the top laidout directory:
 
     dpkg-buildpackage -rfakeroot
 
@@ -120,38 +125,6 @@ If you fail with this error:
 then you need to change: `dh_shlibdeps` in debian/rules to: `dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info`
 Maybe something to do with non-packaged NVidia drivers?
 
-
-
-INSTALLING DIFFERENT VERSIONS AT THE SAME TIME
-----------------------------------------------
-
-It is quite ok to install different versions of Laidout at the same time.
-The ~/.config/laidout/ directory keeps all the config information in subdirectories
-based on the version. The same applies for installed binaries and other
-resources that get put in prefix/share/laidout. This way, you do not risk
-clobbering or corrupting files from other versions. 
-
-You can change the version number manually by specifying it when you run
-./configure with somelike:
-
-    ./configure --version=0.096-different
-
-You should try to preserve the main version number (which is 0.096 in this
-example), or it might confuse Laidout at some point.
-
-HOWEVER, (todo) work needs to be done on "make uninstall" to not remove 
-things that were installed to those directories outside of "make install". 
-Right now, everything in prefix/share/laidout/version will be removed on uninstall
-(but not anything in ~/.config/laidout). If this is causing you difficulty, please
-let me know, and I'll try to finally fix this.
-
-In any case, if you can, it's really safer to build the deb package, which 
-automatically keeps track of such things, though with deb packages, you currently
-can have only one at a time, without tinkering with debian/control.
-
-Also, though you can have different versions coexist, there is not currently an
-automatic way to convert resources from older laidout versions to newer ones.
-This is on my long to-do list, but is a low priority. If this is a problem, let me know!
 
 
 COMPILING FROM DEVELOPMENT GIT
@@ -170,7 +143,8 @@ Here is a fast and easy way to get Laidout up and running from development sourc
         cd laidout
         git clone http://github.com/tomlechner/laxkit.git laxkit
 
-3. Compile the goods, by doing this:
+3. Compile the goods. Make sure you have all the packages from the Compiling Releases section 
+   above, then do this:
 
         cd laxkit
         ./configure
@@ -230,6 +204,38 @@ Here is a fast and easy way to get Laidout up and running from development sourc
     can just run Laidout like this:
 
         laidout 2> /dev/null
+
+
+INSTALLING DIFFERENT VERSIONS AT THE SAME TIME
+----------------------------------------------
+
+It is quite ok to install different versions of Laidout at the same time.
+The ~/.config/laidout/ directory keeps all the config information in subdirectories
+based on the version. The same applies for installed binaries and other
+resources that get put in prefix/share/laidout. This way, you do not risk
+clobbering or corrupting files from other versions. 
+
+You can change the version number manually by specifying it when you run
+./configure with somelike:
+
+    ./configure --version=0.096-different
+
+You should try to preserve the main version number (which is 0.096 in this
+example), or it might confuse Laidout at some point.
+
+HOWEVER, (todo) work needs to be done on "make uninstall" to not remove 
+things that were installed to those directories outside of "make install". 
+Right now, everything in prefix/share/laidout/version will be removed on uninstall
+(but not anything in ~/.config/laidout). If this is causing you difficulty, please
+let me know, and I'll try to finally fix this.
+
+In any case, if you can, it's really safer to build the deb package, which 
+automatically keeps track of such things, though with deb packages, you currently
+can have only one at a time, without tinkering with debian/control.
+
+Also, though you can have different versions coexist, there is not currently an
+automatic way to convert resources from older laidout versions to newer ones.
+This is on my long to-do list, but is a low priority. If this is a problem, let me know!
 
 
 SOURCE CODE DOCUMENTATION and CONTRIBUTING

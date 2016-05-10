@@ -29,7 +29,7 @@
 // ./spheretopoly --point-at 120.1,45.555,10,10.55
 //
 
-#include </usr/include/GraphicsMagick/Magick++.h>
+#include <GraphicsMagick/Magick++.h>
 #include <getopt.h>
 #include <lax/strmanip.h>
 #include <lax/interfaces/coordinate.h>
