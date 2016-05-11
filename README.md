@@ -3,26 +3,28 @@ LAIDOUT Version 0.096.1
 http://laidout.org
 
 
-Please post any complaints and other correspondence to the Laidout
-general mailing list found at:
-https://lists.sourceforge.net/lists/listinfo/laidout-general
-
-Currently the only developer (and creator of Laidout) is also a client:
-Tom Lechner (http://www.tomlechner.com)
-
-
 WHAT IT CAN DO RIGHT NOW
 ------------------------
-Laidout is currently in the 'mostly works on my machine' stage of development.
-
-Laidout currently can arrange pages into various impositions,
-such as a booklet, or even a dodecahedron. You can also manipulate images,
-gradients (linear, radial, and mesh), mesh transformed
-images, engraving-like fill objects, and some basic text.
+Laidout is desktop publishing software built from the ground up with
+imposition in mind. Currently one may arrange pages into various 
+impositions, such as a booklet, or even a dodecahedron. You can fill
+pages with images, gradients (linear, radial, and mesh), mesh 
+transformed images, engraving-like fill objects, and some basic text.
 Export with varying degrees of success to Svg, Scribus, Pdf, and more.
 
 Sometimes there are experimental tools you can activate by
 running: `laidout --experimental` or `laidout -E`
+
+Please post any complaints and other correspondence either to Laidout's
+github issue tracker: https://github.com/Laidout/laidout/issues,
+or to the Laidout general mailing list found at:
+https://lists.sourceforge.net/lists/listinfo/laidout-general
+
+Laidout is currently in the 'mostly works on my machine' stage of development.
+
+Currently the only developer (and creator of Laidout) is also a client:
+Tom Lechner (http://www.tomlechner.com)
+
 
 
 SYSTEM REQUIREMENTS
@@ -40,12 +42,8 @@ test on. Donations of the newest, most expensive and lightest Macs are welcome!
 Laidout will not currently run on Windows. Feel free to subsidize a port
 by showering the developer with money.
 
-
 Please see http://www.laidout.org/faq.html for some extra help. Let me
 know if you get stuck trying to install. It is supposed to be easy!
-
-Laidout is currently built upon its own custom gui library called 
-the Laxkit (http://laxkit.sourceforge.net).
 
 
 COMPILING RELEASES
@@ -137,7 +135,10 @@ Here is a fast and easy way to get Laidout up and running from development sourc
 1. Grab Laidout source from github (make sure the git package is installed):
         git clone https://github.com/Laidout/laidout.git
 
-2. Grab Laxkit git:
+2. Laidout is currently built upon its own custom gui library called 
+   the Laxkit (http://laxkit.sourceforge.net).
+
+   Grab Laxkit git:
    Enter the laidout directory and get the Laxkit source:
 
         cd laidout
