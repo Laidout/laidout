@@ -27,8 +27,8 @@ VERSION 0.097
        lock down color backend.. it's currently a series of weak hacks based on 8-bit screen rgb
        PDF in, at least as 1 image per page, for purposes of imposition
        pdf export, unicode capable
-       fix tooltips
-       drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
+(done) fix tooltips
+       drag-n-drop text to and from the various text edits
        drag-n-drop with system, like drag images into viewwindow from an external file browser
 
 
@@ -71,7 +71,7 @@ VERSION 0.1
 -----------
        First and foremost, need copious testing by people who are not me.
        implement command line language tag
-       Full internationalization support in window controls for input and output, including rtl/mixed text?  
+       Full internationalization support (via harfbuzz) in window controls for input and output, including rtl/mixed text?  
        SpreadEditor: be able to eject a page into limbo, for creation threads, connect, then insert as a group
        When importing from an image list file, should be able to say if and when to auto-make previews
        pick and choose export range, not single "from:start to:end", but like "1-3,5,19-20"

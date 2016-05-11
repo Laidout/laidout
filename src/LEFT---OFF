@@ -17,8 +17,6 @@ shell broken sometimes.. bad font??
 file open, click around recent, etc, crashes!!
 lost ability to define new bookmarks.. bad!!
 
-tooltips and event timers seem to be frelled
-
 ubuntu maximize window failing (but not on today's debian unstable gnome), resize seems to work now
 gnome "application" does one per window, not one per app. this is not a bad thing imnsho, but should be easy to conform to desktop application spec properly
 
@@ -307,6 +305,11 @@ color slider popup:
   need palette selection tab
   DONE should pop near the mouse 
 
+Gradient:
+  resize inner circle, make small past a threshhold makes circle go away
+  extending past bounds
+  double click to call up color selector
+
 Palettes:
   load palette should have a preview: file dialog preview function
   allow editing palette strips, import those to gradient tools
@@ -579,6 +582,7 @@ image
 laidout:
   need a Laidout out! for partial exports, or conversions between nets/papergroup lines/etc
 pdf:
+  graphicsmagick for import? subimage and subrange of image_info passed to ReadImage
   export lines has outlines in evince?
   export complex engraving is really, really slow. probably all the string reallocation?
   pdf optimize jpg dump, compress image data
@@ -1453,3 +1457,5 @@ DONE inkscape bug!! zoom out, NextSpread/PreviousSpread icons stroke on side dis
 DONE wrong git rep on website 
 DONE option to change default exported file name
 DONE make saveas file edit color code right: red for can't save, yellow for overwrite
+DONE tooltips and event timers seem to be frelled
+
