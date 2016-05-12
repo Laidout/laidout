@@ -133,12 +133,12 @@ Be advised that the dev version may be rather buggy compared to "stable" version
 Here is a fast and easy way to get Laidout up and running from development source:
 
 1. Grab Laidout source from github (make sure the git package is installed):
+
         git clone https://github.com/Laidout/laidout.git
 
 2. Laidout is currently built upon its own custom gui library called 
    the Laxkit (http://laxkit.sourceforge.net).
 
-   Grab Laxkit git:
    Enter the laidout directory and get the Laxkit source:
 
         cd laidout
