@@ -1168,6 +1168,8 @@ void DocumentExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpCo
 	else if (evenodd==Even) fprintf(f,"%sevenodd even\n",spc);
 	else fprintf(f,"%sevenodd all\n",spc);
 
+	fprintf(f,"%stextaspaths %s\n",spc,textaspaths ? "yes" : "no");
+
 }
 
 void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context)
@@ -1233,6 +1235,9 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpCo
 			else if (strcmp(value,"odd")) evenodd=Odd;
 			else if (strcmp(value,"even")) evenodd=Even;
 			else evenodd=All;
+
+		} else if (!strcmp(name,"textaspaths")) {
+			textaspaths = BooleanAttribute(value);
 		}
 	}
 	if (start<0) start=0;
