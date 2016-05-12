@@ -58,6 +58,7 @@ class ExportDialog : public Laxkit::RowFrame
 	Laxkit::CheckBox *rotatealternate;
 	Laxkit::CheckBox *rotate0, *rotate90, *rotate180, *rotate270;
 	Laxkit::LineEdit *batchnumber;
+	Laxkit::CheckBox *textaspaths;
 	ExportFilter *filter;
 
 	virtual void changeToEvenOdd(DocumentExportConfig::EvenOdd t);
@@ -90,8 +91,8 @@ class ExportDialog : public Laxkit::RowFrame
 	virtual int CharInput(unsigned int ch, unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what, LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag, LaxFiles::DumpContext *context);
 };
 
 
