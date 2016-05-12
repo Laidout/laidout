@@ -19,9 +19,11 @@
 #include <lax/interfaces/imageinterface.h>
 #include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
+#include <lax/interfaces/captioninterface.h>
 #include <lax/interfaces/svgcoord.h>
 #include <lax/interfaces/somedataref.h>
 #include <lax/transformmath.h>
+#include <lax/units.h>
 #include <lax/attributes.h>
 
 //for some reason compilation fails on some systems without:
@@ -76,6 +78,7 @@ int addSvgDocument(const char *file, Document *existingdoc)
 
 	 //find default page width and height
 	double width,height;
+	UnitManager *unitm = GetUnitManager();
 
 	 //width
 	char *endptr;
@@ -86,9 +89,15 @@ int addSvgDocument(const char *file, Document *existingdoc)
 	if (*ptr!='\"') return 3;
 	ptr++;
 	width=strtod(ptr,&endptr);
+	ptr=endptr;
 	if (*ptr!='\"') {
-		 // *** need to parse units
-	}
+		 //need to parse units
+		while (isspace(*ptr)) ptr++;
+		const char *eptr=ptr;
+		while (isalpha(*eptr)) eptr++;
+		int units = unitm->UnitId(ptr, eptr-ptr);
+		if (units!=UNITS_None) width = unitm->Convert(width, units, UNITS_Inches, NULL);
+	} else width/=90;
 	if (width<=0) return 4;
 
 	 //height
@@ -99,13 +108,19 @@ int addSvgDocument(const char *file, Document *existingdoc)
 	if (*ptr!='\"') return 5;
 	ptr++;
 	height=strtod(ptr,&endptr);
+	ptr=endptr;
 	if (*ptr!='\"') {
-		 // *** need to parse units
-	}
+		 //need to parse units
+		while (isspace(*ptr)) ptr++;
+		const char *eptr=ptr;
+		while (isalpha(*eptr)) eptr++;
+		int units = unitm->UnitId(ptr, eptr-ptr);
+		if (units!=UNITS_None) height = unitm->Convert(height, units, UNITS_Inches, NULL);
+	} else height/=90;
 	if (height<=0) return 6;
 
 
-	PaperStyle paper("custom",width,height,0,300,"pt");
+	PaperStyle paper("custom",width,height, 0,300, "in");
 	
 	Singles *imp=new Singles;
 	imp->SetPaperSize(&paper);
@@ -1558,10 +1573,35 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 			 
 			 //find the width and height of the document
 			if (!strcmp(name,"width")) { // *** warning!!!! could be named units here!!!
-				DoubleAttribute(value,&width);
+				char *endptr=NULL;
+				DoubleAttribute(value,&width, &endptr);
+				if (*endptr) {
+					 //parse units 
+					UnitManager *unitm = GetUnitManager();
+					while (isspace(*endptr)) endptr++;
+					const char *ptr=endptr;
+					while (isalpha(*ptr)) ptr++;
+					int units = unitm->UnitId(ptr, endptr-ptr);
+					if (units!=UNITS_None) width = unitm->Convert(width, units, UNITS_Inches, NULL);
+
+				} else width/=90; //no specified units, assume svg pts
 
 			} else if (!strcmp(name,"height")) {
-				DoubleAttribute(value,&height);
+				char *endptr=NULL;
+				DoubleAttribute(value,&height, &endptr);
+				if (*endptr) {
+					 //parse units 
+					UnitManager *unitm = GetUnitManager();
+					while (isspace(*endptr)) endptr++;
+					const char *ptr=endptr;
+					while (isalpha(*ptr)) ptr++;
+					int units = unitm->UnitId(ptr, endptr-ptr);
+					if (units!=UNITS_None) height = unitm->Convert(height, units, UNITS_Inches, NULL);
+
+				} else height/=90; //no specified units, assume svg pts
+				
+			} else if (!strcmp(name,"viewBox")) {
+				// *** also need to look out for other transform defined on base svg level, maybe nonstandard, but sometimes it's present
 			}
 		}
 
@@ -1580,11 +1620,6 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 				width  = pp->w();
 				height = pp->h();
 
-			} else {			
-				 //convert default svg units to inches
-				 //svg units == 1.2 * (postscript units == 72 / inch)
-				width*=.8/72;
-				height*=.8/72;
 			}
 
 			 //figure out the paper size, orientation
@@ -1606,7 +1641,10 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 					break;
 				}
 			}
-			if (!paper) paper=laidout->papersizes.e[0];
+			if (paper) paper=dynamic_cast<PaperStyle*>(paper->duplicate());
+			else {
+				paper=new PaperStyle(_("Custom"), width,height, 0, 300, "in");
+			}
 			
 			 //preliminary start and end pages for the svg
 	//		int start,end;
@@ -1620,8 +1658,9 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 			 // PLUS any number of graphic elements, such as g, rect, image, text....
 
 			Imposition *imp=new Singles;
-			paper->flags=((paper->flags)&~1)|(landscape?1:0);//***note this changes the default paper flag!!
+			paper->landscape(landscape);
 			imp->SetPaperSize(paper);
+			paper->dec_count();
 			doc=new Document(imp,Untitled_name());
 			imp->dec_count();
 		} //if (!doc && !in->toobj)
@@ -1770,6 +1809,7 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 			if (!value || value[0]!='#') continue;
 			char *xlinkid=value+1;
 			Attribute *xlink=NULL;
+
 			for (int c=0; c<defs->attributes.n; c++) {
 				name =def->attributes.e[c]->name;
 				value=def->attributes.e[c]->value;
@@ -1909,12 +1949,11 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 		}
 
 		if (top) {
-			for (int c=0; c<6; c++) g->m(c,g->m(c)*.8/72); //correct for svg scaling
-			double t[6],m[6];
-			//transform_set(t,1,0,0,-1,0,top*72/.8);
-			transform_set(t,1,0,0,-1,0,top);
-			transform_mult(m,t,g->m());
-			g->m(m);
+			for (int c=0; c<6; c++) g->m(c,g->m(c)/90); //correct for svg scaling
+
+			g->m(5,top-g->m(5)); //flip in page
+			g->m(2, -g->m(2));
+			g->m(3, -g->m(3));
 		}
 
 		 //do not add empty groups
@@ -2060,6 +2099,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 		double x=0,y=0,w=0,h=0;
 		double rx=-1, ry=-1;
 		PathsData *paths=dynamic_cast<PathsData *>(newObject("PathsData"));
+
 		for (int c=0; c<element->attributes.n; c++) {
 			name =element->attributes.e[c]->name;
 			value=element->attributes.e[c]->value;
@@ -2078,10 +2118,28 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 				DoubleAttribute(value,&w,NULL);
 			} else if (!strcmp(name,"height")) {
 				DoubleAttribute(value,&h,NULL);
+
 			} else if (!strcmp(name,"transform")) {
 				double m[6];
 				svgtransform(value,m);
 				paths->m(m);
+
+			} else if (!strcmp(name,"style")) {
+				LineStyle *linestyle = paths->linestyle;
+				FillStyle *fillstyle = paths->fillstyle;
+
+				if (!linestyle) {
+					linestyle=new LineStyle;
+					paths->InstallLineStyle(linestyle);
+					linestyle->dec_count();
+				}
+				if (!fillstyle) {
+					fillstyle=new FillStyle;
+					paths->InstallFillStyle(fillstyle);
+					fillstyle->dec_count();
+				}
+
+				StyleToFillAndStroke(value, linestyle, fillstyle); 
 			}
 		}
 		 //rx and ry are the x and y radii of an ellipse at the corners
@@ -2089,6 +2147,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 		if (ry<0) ry=rx;
 		if (rx>w/2) rx=w/2;
 		if (ry>h/2) ry=h/2;
+
 		 //put a possible rounded rectangle in x,y,w,h
 		if (w>0 && h>0) {
 			if (rx>0 && ry>0) {
@@ -2097,10 +2156,10 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 				paths->append(x+xb,y,POINT_TONEXT);
 				paths->append(x+rx,y  );
 				paths->append(x+w-rx,y  );
-				paths->append(x+w-rx-xb,y,   POINT_TOPREV);
+				paths->append(x+w-xb,y,   POINT_TOPREV);
 				paths->append(x+w,      y+yb,POINT_TONEXT);
 				paths->append(x+w       ,y+ry);
-				paths->append(x+w       ,y+h/2);
+				//paths->append(x+w       ,y+h/2);
 				paths->append(x+w       ,y+h-ry);
 				paths->append(x+w       ,y+h-yb,POINT_TOPREV);
 				paths->append(x+w-xb    ,y+h,POINT_TONEXT);
@@ -2108,9 +2167,11 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 				paths->append(x+rx      ,y+h);
 				paths->append(x+xb      ,y+h, POINT_TOPREV);
 				paths->append(x         ,y+h-yb, POINT_TONEXT);
-				paths->append(x  ,ry);
-				paths->append(x  ,yb);
+				paths->append(x         ,y+h-ry);
+				paths->append(x         ,y+ry);
+				paths->append(x         ,y+yb, POINT_TOPREV);
 				paths->close();
+
 			} else {
 				paths->append(x  ,y  );
 				paths->append(x+w,y  );
@@ -2154,6 +2215,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 				paths->m(m);
 			}
 		}
+
 		 //rx and ry are the x and y radii of an ellipse at the corners
 		if (r>0 || (rx>0 && ry>0)) {
 			if (rx<0) { rx=r; ry=r; }
@@ -2192,16 +2254,60 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 		cout <<"***need to implement svg in:  polygon"<<endl;
 
 	} else if (!strcmp(element->name,"text")) {
+		//SomeData *data = SvgTextIn(element);
+		//group->push(data);
+		//data->dec_count();
+		//----
+		CaptionData *textobj=dynamic_cast<CaptionData *>(newObject("CaptionData"));
+
+		char *name;
+		char *value;
+		double x=0, y=0;
 		for (int c=0; c<element->attributes.n; c++) {
-			if (!strcmp(element->attributes.e[c]->name,"id")) {
-			} else if (!strcmp(element->attributes.e[c]->name,"transform")) {
-			} else if (!strcmp(element->attributes.e[c]->name,"style")) {
-			} else if (!strcmp(element->attributes.e[c]->name,"x")) {
-			} else if (!strcmp(element->attributes.e[c]->name,"y")) {
-			} else if (!strcmp(element->attributes.e[c]->name,"content:")) {
+			name  = element->attributes.e[c]->name;
+			value = element->attributes.e[c]->value;
+
+			if (!strcmp(name,"id")) {
+				textobj->Id(value);
+
+			} else if (!strcmp(name,"x")) {
+				DoubleAttribute(value, &x);
+
+			} else if (!strcmp(name,"y")) {
+				DoubleAttribute(value, &y);
+
+			} else if (!strcmp(name,"transform")) {
+			} else if (!strcmp(name,"style")) {
+
+			} else if (!strcmp(name,"content:")) {
+				int nl=0,pos=0;
+
+				for (int c2=0; c2<element->attributes.e[c]->attributes.n; c2++) {
+					name  = element->attributes.e[c]->attributes.e[c2]->name;
+					value = element->attributes.e[c]->attributes.e[c2]->value;
+
+					if (!strcmp(name, "tspan")) {
+						Attribute *att = element->attributes.e[c]->attributes.e[c2]->find("content:");
+						if (att && !isblank(att->value)) textobj->InsertString(att->value,-1, 0, -1, &nl,&pos);
+
+					} else if (!strcmp(name, "cdata:")) {
+						if (!isblank(value)) textobj->InsertString(value,-1, 0, -1, &nl,&pos);
+
+					}
+				}
 			}
 		}
-		cout <<"***need to implement svg in:  text"<<endl;
+
+		if (textobj->IsBlank()) {
+			textobj->dec_count();
+			DBG cerr <<"ignoring blank text object "<<(textobj->Id()?textobj->Id():"unnamed")<<endl;
+
+		} else {
+			textobj->origin(flatpoint(x,y));
+			group->push(textobj);
+		}
+
+		cout <<"***need to finish implementing svg in:  text"<<endl;
 
 	} else if (!strcmp(element->name,"use")) {
 		 //references to other objects
