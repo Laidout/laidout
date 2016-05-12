@@ -201,6 +201,7 @@ fontdialog: FontDialog
   DONE fontmatrix import? fontmatrix uses a sqlite database.. should be straighforward to scan it
 
 captioninterface CaptionInterface
+  need option to mirror
   bug: convert to path with viewport->ChangeObject(), puts obj way off, doesn't show path decs, other weird
   bug: bitstream vera sans, "Text" convert to path puts e correct, but screen render puts it out too far. huh??
   need handling when opening a file and the font is not found!!!!!!!  options for substitution
@@ -1458,4 +1459,5 @@ DONE wrong git rep on website
 DONE option to change default exported file name
 DONE make saveas file edit color code right: red for can't save, yellow for overwrite
 DONE tooltips and event timers seem to be frelled
+DONE for objectindicator, more than one input window allowed.. should block, and turn off when mouse out click
 

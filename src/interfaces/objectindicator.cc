@@ -272,7 +272,7 @@ int ObjectIndicator::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse 
 			const char *str=d->Id();
 			double th=dp->textheight();
 			LineEdit *le= new LineEdit(viewport,"rename",_("Rename object"),
-										LINEEDIT_DESTROY_ON_ENTER|LINEEDIT_GRAB_ON_MAP|ANXWIN_ESCAPABLE,
+										ANXWIN_OUT_CLICK_DESTROYS|LINEEDIT_DESTROY_ON_ENTER|LINEEDIT_GRAB_ON_MAP|ANXWIN_ESCAPABLE,
 										2*th,dp->Maxy-(i+3)*th, 2*dp->textextent(str,-1,NULL,NULL),1.2*th, 4,
 										   NULL,object_id,"renameobj",
 										   str);
