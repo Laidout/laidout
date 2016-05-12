@@ -233,6 +233,7 @@ PaperStyle::PaperStyle(const char *nname,double w,double h,unsigned int nflags,d
 	if (!strcmp(defaultunits,"mm")) { width/=25.4; height/=25.4; }
 	else if (!strcmp(defaultunits,"cm")) { width/=2.54; height/=2.54; }
 	else if (!strcmp(defaultunits,"pt")) { width/=72; height/=72; }
+	else if (!strcmp(defaultunits,"svgpt")) { width/=90; height/=90; }
 
 	DBG cerr <<"PaperStyle created, obj "<<object_id<<endl;
 }
