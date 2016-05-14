@@ -530,9 +530,10 @@ int GroupInterface::UngroupObjects()
 		error |= nerror;
 		if (nerror) continue;
 
+		 //objects are ungrouped now, need to repopulate selection
 		VObjContext element;
 		if (nerror==0) {
-			int which=place.e(place.n());
+			int which=place.e(place.n()-1);
 			for (int c=which; c<which+numgrouped; c++) {
 				element.clear();
 				element.obj=base->e(c);
@@ -890,8 +891,8 @@ int GroupInterface::Refresh()
 	//GetOuterRect(&box,NULL);
 
 
+	 //if is link, draw clone options
 	if (selection->n()==1 && !strcmp(selection->e(0)->obj->whattype(),"SomeDataRef")) {
-		 //is link
 		SomeData *obj=selection->e(0)->obj;
 		double m[6];
 		viewport->transformToContext(m,selection->e(0),0,1);
