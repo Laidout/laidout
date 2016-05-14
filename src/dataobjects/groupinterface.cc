@@ -123,21 +123,24 @@ int GroupInterface::UseThis(anObject *newdata,unsigned int)
 	return 1;
 }
 
-#define GROUP_RegistrationMark 8
-#define GROUP_GrayBars         9 
-#define GROUP_CutMarks         10 
-
 Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
+	if (child) return menu;
+
 	rx=x,ry=y;
+
+	if (!menu) menu=new MenuInfo(_("Group Interface"));
+	menu->AddItem(_("Align..."), GIA_Align);
+	menu->AddItem(_("Distribute..."), GIA_Distribute);
+	
 
 	LaidoutViewport *lvp=dynamic_cast<LaidoutViewport*>(viewport);
 	if (lvp->papergroup) {
 		if (!menu) menu=new MenuInfo(_("Group Interface"));
 		else if (menu->n()==0) menu->AddSep(_("Group"));
 
-		menu->AddItem(_("Add Registration Mark"),GROUP_RegistrationMark);
-		menu->AddItem(_("Add Gray Bars"),GROUP_GrayBars);
+		menu->AddItem(_("Add Registration Mark"), GIA_RegistrationMark);
+		menu->AddItem(_("Add Gray Bars"), GIA_GrayBars);
 		//menu->AddItem(_("Add Cut Marks"),PAPERM_CutMarks);
 		//menu->AddSep();
 	}
@@ -152,9 +155,8 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 		int i=s->info2; //id of menu item
 
 		LaidoutViewport *lvp=dynamic_cast<LaidoutViewport*>(viewport);
-		if (!lvp->papergroup) return 0;
 
-		if (i==GROUP_RegistrationMark) {
+		if (i==GIA_RegistrationMark) {
 			if (!lvp->papergroup) return 0;
 			DrawableObject *obj= RegistrationMark(18,1);
 			flatpoint fp=dp->screentoreal(rx,ry);
@@ -163,13 +165,17 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 			needtodraw=1;
 			return 0;
 
-		} else if (i==GROUP_GrayBars) {
+		} else if (i==GIA_GrayBars) {
 			if (!lvp->papergroup) return 0;
 			DrawableObject *obj= BWColorBars(18,LAX_COLOR_GRAY);
 			flatpoint fp=dp->screentoreal(rx,ry);
 			obj->origin(fp);
 			lvp->papergroup->objs.push(obj);
 			needtodraw=1;
+			return 0;
+
+		} else if (i==GIA_Align || i==GIA_Distribute) {
+			PerformAction(i);
 			return 0;
 		}
 
@@ -718,16 +724,6 @@ int GroupInterface::GrabSelection(unsigned int state)
 	
 	return n;
 }
-
-enum GroupInterfaceActions {
-	GIA_Align = OIA_MAX,
-	GIA_Distribute,
-	GIA_Clone,
-	GIA_CloneB,
-	GIA_Duplicate,
-	GIA_DuplicateB,
-	GIA_MAX
-};
 
 Laxkit::ShortcutHandler *GroupInterface::GetShortcuts()
 {
