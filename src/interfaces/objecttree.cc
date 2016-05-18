@@ -50,8 +50,8 @@ ObjectTree::ObjectTree(anXWindow *parnt,const char *nname,const char *ntitle,
                 0,NULL)
 {
 	tree_column=1;
-	AddColumn("Flags", NULL, 2*GetDefaultDisplayer()->textheight(),    TreeSelector::ColumnInfo::ColumnFlags,  1);
-	AddColumn("Object",NULL, 400-2*GetDefaultDisplayer()->textheight(),TreeSelector::ColumnInfo::ColumnString, 0);
+	AddColumn("Flags", NULL, 2*GetDefaultDisplayer()->textheight(),0,    TreeSelector::ColumnInfo::ColumnFlags,  1);
+	AddColumn("Object",NULL, 400-2*GetDefaultDisplayer()->textheight(),0,TreeSelector::ColumnInfo::ColumnString, 0);
 }
 
 
