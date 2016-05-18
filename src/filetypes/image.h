@@ -29,7 +29,7 @@ namespace Laidout {
 void installImageFilter();
 
 
-//------------------------------------ SvgOutputFilter ----------------------------------
+//------------------------------------ ImageExportFilter ----------------------------------
 class ImageExportFilter : public ExportFilter
 {
  protected:
