@@ -25,7 +25,7 @@ INSTALLDIR=install -d
 
 LAIDOUTNAME=laidout-$(LAIDOUTVERSION)
 
-laidout: 
+laidout: touchdepends
 	cd src && $(MAKE)
 	cd src/po && $(MAKE)
 
