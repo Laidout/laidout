@@ -353,20 +353,7 @@ Value *NewNetImposition()
 	return n;
 }
 
-//! Return a new EnumStyle instance that has Dodecahedron listed.
-/*! \todo this has to be automated....
- */
-Style *CreateNetListEnum(ObjectDef *sd)
-{
-	EnumStyle *e=new EnumStyle;
-	e->add("Dodecahedron",0);
-	e->add("Box",1);
-	return e;
-}
-
 //! Make an instance of the NetImposition objectdef.
-/* ...
- */
 ObjectDef *makeNetImpositionObjectDef()
 {
 	ObjectDef *sd=new ObjectDef(NULL,
