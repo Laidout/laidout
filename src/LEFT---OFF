@@ -12,13 +12,14 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now: 
 
+cairo doesn't cache images like Imlib does, so every image is totally loaded on file open. bad, bad, bad!!!
+
 shell broken sometimes.. bad font??
 
 file open, click around recent, etc, crashes!!
 lost ability to define new bookmarks.. bad!!
 
-ubuntu maximize window failing (but not on today's debian unstable gnome), resize seems to work now
-gnome "application" does one per window, not one per app. this is not a bad thing imnsho, but should be easy to conform to desktop application spec properly
+objects disappear on group
 
 bug: add gray marks, then '.' for next object, endless loop!
 bug: add gray bars, move to a page, ^g crashes!
@@ -30,6 +31,7 @@ object layer positioning for Home and End keys projecting out in wrong way
 
 shearing produced null axes occasionally
 
+group/ungroup broken
 hang after reparent object 
 don't allow reparent to a child!! or reparent as appropriate 
 grouping frelled.. can group, but cannot seem to select existing groups to ungroup 
@@ -53,6 +55,10 @@ laidout import, does not appear to scale correctly, does odd scaling, and insert
 
 ------------ other bugs:
 
+button or key down doesn't cancel tooltip once it is up
+
+ubuntu maximize window failing (but not on today's debian unstable gnome), resize seems to work now
+gnome "application" does one per window, not one per app. this is not a bad thing imnsho, but should be easy to conform to desktop application spec properly
 App/window icon in window manager not showing.. 
 
 select none, select doc, viewport jumps around... it should stay the same area
@@ -710,10 +716,14 @@ Convert impose-only to be based on feeding it an ExportConfig
 
 update touch_recent for Laidout files in the newer xbel type 
 
+load document, should load images on display, or create previews in background.. seems to
+try to load right away..
+
 FileDialog2:
+  need add and remove bookmarks
+  should probably have a scroll bar
   sort by details 
   columns need to autosize out of the way
-  need add and remove bookmarks
   need laidout only bookmarks file
   edits color style: bg alternating isn't highlighting
   implement icon list selector
@@ -728,11 +738,21 @@ file button:
    Save a copy incremented
    Save as template... <- need to enter template name and file?
    Save as default template
-   Quick save backup
+   ---
+   New...
+   ----
+   Open...
+   ---
+   Backup settings...
+     autosave time between backups
+	 naming scheme
+	 backup incremented on save
    ----
    Commit (git/svn)  
    Commit settings...  <- choose or set up repository, how to handle passwords??
    Revert...  <- show log, select old 
+   ----
+   Laidout settings...
 
 icons for the following, perhaps be right click on the save button? or modifiers on buttons
   save as
@@ -747,7 +767,6 @@ transfer group behavior to SomeData? would greatly simplify some things
 General design usability
 to be a decent editing platform, Laidout needs:
   undo/redo
-  better screen renderer
   master pages with auto page number is important.. for image based page numbers, dynamic objects important!!
   would be convenient to send to gimp for editing, update later live
   when delete/add pages, need option to reposition to same orientation in margin area
@@ -761,12 +780,14 @@ to be a decent editing platform, Laidout needs:
   text
   Grouping:
     ungroup doesn't check if FieldPlace indices change, making ungroup a group unreliable
+  DONE better screen renderer
 
 guides:
   snap guides to objects
   snap objects edges to various things
 
 align tool: aligninterface AlignInterface
+  context menu seems to be the group interface menu
   need way to specify center of rotation per object
   need to make discoverable, not just as key shortcuts
     -> make as standalone tools, now that viewport stores selection?
@@ -1292,6 +1313,8 @@ Master Pages master pages / template pages:
     that has a "text frame" for instance, but different children per page
   need option to import master pages
 
+some kind of grease pencil?
+
 
 ===================Anything below here probably needs discussion before implementing================
 ---------------------------------- other enhancements ----------------------------------
@@ -1460,4 +1483,5 @@ DONE option to change default exported file name
 DONE make saveas file edit color code right: red for can't save, yellow for overwrite
 DONE tooltips and event timers seem to be frelled
 DONE for objectindicator, more than one input window allowed.. should block, and turn off when mouse out click
+DONE crash on ungroup
 
