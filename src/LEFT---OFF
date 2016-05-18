@@ -714,22 +714,22 @@ need infrastructure to propagate and save tool settings
 
 Convert impose-only to be based on feeding it an ExportConfig
 
-update touch_recent for Laidout files in the newer xbel type 
-
 load document, should load images on display, or create previews in background.. seems to
 try to load right away..
 
 FileDialog2:
+  Resizing zaps vie to top, should preserve 1st in window
   need add and remove bookmarks
   should probably have a scroll bar
   sort by details 
-  columns need to autosize out of the way
-  need laidout only bookmarks file
-  edits color style: bg alternating isn't highlighting
   implement icon list selector
   show directories first
+  need laidout only bookmarks file
+  edits color style: bg alternating isn't highlighting
   tooltip to show full path of bookmarks
   exclude/include directories when listing files
+
+  DONE columns need to autosize
 
 file button:
    Save
@@ -1484,4 +1484,5 @@ DONE make saveas file edit color code right: red for can't save, yellow for over
 DONE tooltips and event timers seem to be frelled
 DONE for objectindicator, more than one input window allowed.. should block, and turn off when mouse out click
 DONE crash on ungroup
+DONE update touch_recent for Laidout files in the newer xbel type 
 
