@@ -485,13 +485,70 @@ int GroupInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 	return ObjectInterface::MouseMove(x,y,state,d);
 }
 
+/*! Group all objects in selection, even if there is only one selected.
+ *
+ * Return 1 if change, else 0.
+ */
 int GroupInterface::GroupObjects()
 {
-//	if (selection->n()==0) {
-//		viewport->postmessage("No objects selected.");
-//		return 0;
-//	}
-	return GroupObjects();
+	if (selection->n()==0) {
+		viewport->postmessage(_("No objects selected."));
+		return 0;
+	}
+
+	int error=0;
+	Group *base=NULL;
+	FieldPlace place;
+
+	if (!((LaidoutViewport *)viewport)->locateObject(selection->e(0)->obj, place)) {
+		viewport->postmessage("Ugly internal error finding a selected object! Fire the programmer.");
+		return 0;
+	} 
+
+	DBG place.out("toggle group point: ");
+
+	base = dynamic_cast<Group*>(selection->e(0)->obj->GetParent());
+	if (!base) {
+		viewport->postmessage(_("Bad group/ungroup parent."));
+		return 0;
+	}
+
+	
+	 // check that all selected objects are same level, 
+	 // then make new Group object and fill in selection,
+	 // updating LaidoutViewport and Document
+	 
+	FieldPlace place1;
+	Laxkit::NumStack<int> list;
+	LaidoutViewport *vp=((LaidoutViewport *)viewport);
+	list.push(place.pop()); //remove top index from place, which was selection[0]
+
+	for (int c=1; c<selection->n(); c++) {
+		vp->locateObject(selection->e(c)->obj,place1);
+		list.pushnodup(place1.pop());
+
+		if (!(place1==place)) {
+			viewport->postmessage("Items must all be at same level to group.");
+			return 0;
+		}
+	}
+	
+	 //now place points to the parent object, and base is limbo or spread->page->layers
+	if (place.e(0)==0) place.pop(0); // remove spread index
+	else if (place.e(0)==1) { 
+		place.pop(0); // remove spread index and pagelocation index
+		place.pop(0); 
+	} else {
+		viewport->postmessage("Containing object must be limbo or a spread.");
+		return 0;
+	}
+	error=base->GroupObjs(list.n,list.e);
+	viewport->postmessage(error ? _("Group failed.") : _("Grouped."));
+	
+	DBG cout <<"*** need to revamp selection after group"<<endl;
+	FreeSelection();
+
+	return 1;
 }
 
 /*! Ungroup any Group objects in selection.
@@ -528,7 +585,7 @@ int GroupInterface::UngroupObjects()
 		if (!base) {
 			viewport->postmessage(_("Bad group/ungroup parent."));
 			delete newselection;
-			return 1;
+			return 0;
 		}
 
 		int numgrouped=group->NumKids();
@@ -542,9 +599,9 @@ int GroupInterface::UngroupObjects()
 			int which=place.e(place.n()-1);
 			for (int c=which; c<which+numgrouped; c++) {
 				element.clear();
-				element.obj=base->e(c);
-				element.obj->inc_count();
+				element.SetObject(base->e(c));
 				for (int c2=0; c2<place.n(); c2++) {
+					element.push(c2==place.n()-1 ? c : place.e(c2));
 					element.push(place.e(c2));
 				}
 				newselection->Add(&element, -1);
@@ -558,134 +615,31 @@ int GroupInterface::UngroupObjects()
 
 	viewport->postmessage(error ? _("Ungrouped (with some errors)") : _("Ungrouped.")); 
 	
-	return 0;
+	return 1;
 }
 
-//! Return 1 if change, else 0.
+/*! Return 1 if change, else 0.
+ *
+ * If only one object selected, then ungroup if it is a group. If not a group,
+ * then nothing is done.
+ *
+ * If many selected, then group them.
+ */
 int GroupInterface::ToggleGroup()
 {
-	DBG cerr <<"*******GroupInterface.ToggleGroup"<<endl;
-
 	if (selection->n()==0) {
-		viewport->postmessage("No objects selected.");
-		return 0;
-	}
-
-	 // selected objects are of form spread.pagelocation.layer.index...
-	 // or limbo.index...
-	 // Whether grouping or ungrouping, it is necessary to find either the
-	 // layer object or the limbo object to act as base for the grouping:
-	
-	 //*** this requires more thought to incorporate other "object zones".
-	 //now there is limbo, and doc-page-spread, but there should also be
-	 //paper-objects, stickies(a type of bookmark)
-
-	int error=0;
-	Group *base=NULL;
-	FieldPlace place;
-
-	if (!((LaidoutViewport *)viewport)->locateObject(selection->e(0)->obj,place)) {
-		viewport->postmessage("Ugly internal error finding a selected object! Fire the programmer.");
+		viewport->postmessage(_("No objects selected."));
 		return 0;
 	} 
-
-	DBG place.out("toggle group point: ");
-
-	base = dynamic_cast<Group*>(selection->e(0)->obj->GetParent());
-//	------
-//	 // find the base group which contains the group to ungroup, or which contains the
-//	 // first selected object to group with others..
-//	ObjectContainer *objc=((LaidoutViewport *)viewport);
-//	for (int i=0; i<place.n()-1; i++) {
-//		if (!objc) break;
-//		objc=dynamic_cast<ObjectContainer*>(objc->object_e(place.e(i)));
-//	}
-//	if (dynamic_cast<Page*>(objc)) base=&(dynamic_cast<Page*>(objc)->layers);
-//	else base=dynamic_cast<Group*>(objc);
-	if (!base) {
-		viewport->postmessage("Bad group/ungroup parent.");
-		return 0;
-	}
-
-
-	 // now base is either limbo or the Group of page layers, and place is the full place of selection[0]
 	
 	if (selection->n()==1) {
 		 // a single Group is selected, ungroup its objects...
-		 // or there is a single object that is not a Group, should have option to
-		 // force a group of one object maybe..
-		if (strcmp(selection->e(0)->obj->whattype(),"Group")) {
-			viewport->postmessage("Cannot group single objects like that.");
-			return 1;
-		}
-
-		DBG cerr <<"*** must revamp selection after ungroup to have all the subobjs selected!!"<<endl;
-		int numgrouped=base->n();
-		error=base->UnGroup(place.e(place.n()-1));
-
-		FreeSelection();
-		VObjContext element;
-		if (error==0) {
-			int which=place.e(place.n()-1);
-			for (int c=which; c<which+numgrouped; c++) {
-				element.clear();
-				element.obj=base->e(c); element.obj->inc_count();
-				for (int c2=0; c2<place.n(); c2++) {
-					element.push(place.e(c2));
-				}
-				AddToSelection(&element);
-			}
-		}
-
-		viewport->postmessage(error?"Ungroup failed.":"Ungrouped.");
-		
-		return error?0:1;
-		
-		//---------
-		//in the future, depending on how linked data objects/object containers are, might then be
-		//possible to simply do:
-		//((Group *)selection->e(0))->UnGroup();
-		//which would ungroup its elements into its parent object
+		Group *group = dynamic_cast<Group*>(selection->e(0)->obj);
+		if (!group) return 0;
+		return UngroupObjects();
 	}
-	
-	 // to be here, there are multiple objects selected, so group them
-	
-	 // check that all selected objects are same level, 
-	 // then make new Group object and fill in selection,
-	 // updating LaidoutViewport and Document
-	 //
-	 // *** note that this is rather inefficient.. object selecting must be
-	 // reprogrammed to remember the context, rather than searching for it 
-	 // everytime as here..
-	FieldPlace place1;
-	Laxkit::NumStack<int> list;
-	LaidoutViewport *vp=((LaidoutViewport *)viewport);
-	list.push(place.pop()); //remove top index from place, which was selection[0]
-	for (int c=1; c<selection->n(); c++) {
-		vp->locateObject(selection->e(c)->obj,place1);
-		list.pushnodup(place1.pop());
-		if (!(place1==place)) {
-			viewport->postmessage("Items must all be at same level to group.");
-			return 0;
-		}
-	}
-	
-	 //now place holds the place of the parent object, and base is limbo or spread->page->layers
-	if (place.e(0)==0) place.pop(0); // remove spread index
-	else if (place.e(0)==1) { 
-		place.pop(0); // remove spread index and pagelocation index
-		place.pop(0); 
-	} else {
-		viewport->postmessage("Containing object must be limbo or a spread.");
-		return 0;
-	}
-	error=base->GroupObjs(list.n,list.e);
-	viewport->postmessage(error?"Group failed.":"Grouped.");
-	
-	cout <<"*** need to revamp selection after group"<<endl;
-	FreeSelection();
 
-	return 1;
+	return GroupObjects();
 }
 
 /*! Returns the number of new things added to the selection.

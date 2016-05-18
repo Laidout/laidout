@@ -30,6 +30,21 @@ namespace Laidout {
 
 //----------------------------- GroupInterface -----------------------
 
+enum GroupInterfaceActions {
+	GIA_Align = LaxInterfaces::OIA_MAX,
+	GIA_Distribute,
+	GIA_Clone,
+	GIA_CloneB,
+	GIA_Duplicate,
+	GIA_DuplicateB,
+	GIA_RegistrationMark,
+	GIA_GrayBars,
+	GIA_CutMarks,
+
+	GIA_MAX
+};
+
+
 class GroupInterface : public LaxInterfaces::ObjectInterface, public Value
 {
   protected:
