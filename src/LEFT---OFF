@@ -569,6 +569,8 @@ export/print dialog
   export should have a preview of what is actually going out, flip through spreads
   in papergroups with multiple papers and double sided impositions, need to ensure front and back are output properly for printer 
 
+Import image list: default previews 
+
 file filters: filefilters:
   import option to preserve broken links
   need equirectangular out 
@@ -1335,6 +1337,27 @@ Master Pages master pages / template pages:
 
 some kind of grease pencil?
 
+Saving: multiple documents open, save only the headwindows that refer only to that doc,
+OR save no window configs (saved with project), OR save custom configs
+
+need conversions: gradient->color patch
+                  image -> imagepatch <- do with image filters rather than specific object type
+                  imagepatch -> image
+                  colorpatch -> image?
+				  engraver -> path
+				  path -> engraver
+				  text -> path
+Convert:
+  bool reversible;
+  char *from;
+  char *to;
+  int support; //like how reliable it is to convert, warnings for what is lost
+  CanConvert(object, from, to, warnings_ret);
+  newobject = Convert(object, to);
+
+remember tool settings: double click on tool icon? right click...
+remember tool settings
+
 
 ===================Anything below here probably needs discussion before implementing================
 ---------------------------------- other enhancements ----------------------------------
@@ -1360,28 +1383,12 @@ measure tool.. configure measurements to be:
  units mapped to either type of units, so can use light years for units that are actually inch physical paper units
 have arrows, and write on screen what the size is...
 
-impositions:
-  for printing/exporting non-paper layouts, should have option to specify what sort of paper
-   or paper net is proper to hold the layout... means:
-   paperstyle=imposition->Paper(layout);
-   imposition return a spread with flag for if papergroup is for printing or printing and viewing
-
 object selection:
  shift on a selected object should remove that object from selection
  would be nice to show what would be selected during rect-dragout
 change object that is part of group object does not force remap of bbox of group
 
-clean up and test:
---export-options format  List all the options for the given format
---print  'from=3; to=32; layout=pages; printer=epson-usb/matte360'
-  same as:
---export 'filter="Postscript LL3"  from=3  to=32  layout=pages  command="lp -d epson-usb/matte360"'
-
-Import image list: default previews
-
-
 export with limbo, and no doc or papergroup, means use bounding box for limbo?
-
 
 when importing, have MysteryData, which has special attributes "@file-pos" which says
  where in the original file the attribute starts:
@@ -1411,43 +1418,6 @@ Net:
  save different setups: papertile AND net layout
  load save nets from: 1.net files or 2.OFF files(done)
 
-LaxFiles::ColorAttribute()
-default: make list of as many as there are in segment, if name has 'f' then assume float,
- if lettersNumber, then number is num of bits UNLESS it is 100
-general: rgb     65535 0 0
-         rgb_8   255   0 0
-         rgb_100 100.0 0 0
-         rgba_8  255   0 0 255
-         rgb_16  65535 0 0
-         rgba_f  1.0 0 0 1.0
-         gray    65535
-         graya_f 1.0 1.0
-         cmy
-         cmyk
-         cmykaf
-         hex    ffff0000ffff <- maybe autodetect how many bits
-         hex8   ffffff
-		 hex4   fff
-         rgbx   0xffffff
-
-need conversions: gradient->color patch
-                  image -> imagepatch <- do with image filters rather than specific object type
-                  imagepatch -> image
-                  colorpatch -> image?
-				  engraver -> path
-				  path -> engraver
-				  text -> path
-Convert:
-  bool reversible;
-  char *from;
-  char *to;
-  int support; //like how reliable it is to convert, warnings for what is lost
-  CanConvert(object, from, to, warnings_ret);
-  newobject = Convert(object, to);
-
-remember tool settings: double click on tool icon? right click...
-remember tool settings
-
 configurable command buttons to automate certain things with minimal window clutter....
 
 preflighting: compatibility should be determined by object type managers, not individual objects
@@ -1458,9 +1428,6 @@ like "PS LL3", "EPS 3.0", "SVG 1.2", "PDF 1.3", "PDF 1.4" "HTML/CSS2"
 this would simplify preflight checking
 
 dump OUT an image list? Scribus has "review images" feature.. can jump to location, edit print/view, etc
-
-Saving: multiple documents open, save only the headwindows that refer only to that doc,
-OR save no window configs (saved with project), OR save custom configs
 
 directory reorganization?
  windows/ <-- purely ui elements
@@ -1490,11 +1457,11 @@ food for thought:
   haskell envelope function:  http://projects.haskell.org/diagrams/doc/manual.html
 
 
+
 ======================================DONE=================================================
 When releasing new version, combine these with ROADMAP items for release notes.
 These can then be purged after each release...
 ===========================================================================================
-
 
 
 DONE inkscape bug!! zoom out, NextSpread/PreviousSpread icons stroke on side disappears, somehow handle related, adding more handles fixes
