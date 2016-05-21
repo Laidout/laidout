@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 <head>
 <title>Laidout Feature Timeline</title>
@@ -45,12 +46,144 @@ Dodecahedron,">
 </head>
 <body>
 
-<font size=+1>Laidout Features</font><br>
+<font size=+1>Laidout Feature History</font><br>
 <a href="http://www.laidout.org">laidout.org</a>
 <br><br><br>
 
+VERSION 0.096  --  released 18 December 2015!
+-------------
+(done) Finish Implementing cairo renderer, make meshes finally render faster, plus general rendering niceness
+(done) Text for god's sake!! It's been what, 10 years!? 
+(done) text: layered color fonts, each layer has to be a separate font file
+(done) Caption text tool
+(done) Caption tool, export svg: done, but due to svg, problem specifying colorfont fonts
+(done) Caption tool, scribus -> done-ish, font naming problem for color fonts, and a sizing discrepancy
+(done) Caption tool, pdf -> done sort of, fails for text outside latin-1, because fonts in pdf are a terrible headache.
+(done) reprogram file dialog to have adequate presentation of recent and bookmarks
+(done) fix viewport zoom and rotate wigging out on right click mouse move
+(done) make window maximize work in gnome (magically seems to work again in recent gnome, resize also seems to work again in recent gnome)
+(done) autosave for autorecover -> done, but you have to set manually in ~/.config/laidout/(version)/laidoutrc
+(done) test new export even/odd, batches, and paper rotation for major exporters: svg image pdf scribus, not done: ps eps plan ppt 
+(done) export option alternate each paper 180 deg
+(done) export option rotate every paper by increments of 90
+(done) export option, put out in reverse order
+(done) Infrastructure for resource sharing between objects
+(done) engraver tool, fix blockout! how did it break?!
+(done) engraver, allow work on multiple objects at once, including tracing
+(done) Re-fix cut and paste from system clipboard
+(done) Re-Re-fix paste from system clipboard. I swear it was working.
+</ul>
+</p>
+
+<br>
+
+
+VERSION 0.095  --  released 23 April 2015!
+-------------
+(done) be able to trace images in engraver tool
+(done) engraver tool point groups to trace from same object to different trace settings
+(done) engraver tool linear, radial, or circular line fills
+(done) engraver tool, implement dashes
+(done) allow editing meshes based on a path
+(done) PathInterface varying width lines, offsets, and different kinds of line joins (bevel, round, miter)
+(done) PathInterface subpaths for hole making should work: check exports (ignoring eps and ps for now)
+(done) Cache transforms to optimize ColorPatch/ImagePatchData point lookup
+(done) allow export even or odd
+(done) allow export in batches
+(done) Freehand drawing with tablet pressure support
+(done) Clickable page numbers to select markers
+(done) impose-only mode should allow access to all imposition types, not just signatures
+(done) Scribus import of doc with 2 page spreads on export imposes incorrect object positions
+</ul>
+</p>
+
+<br>
+
+
+VERSION 0.094  --  released 20 February 2014!
+-------------
+(done) need partial Laidout import
+(done) should probably put laidout stuff in its own namespace, just to be polite
+(done) Rough draft of Custom alignments to parents, not just affine transform to parent
+(done) Cloning
+(done) Clone Tiler
+(done) Shortcuts editor dialog
+(done) Signature editor needs option to preview pages while folding
+(done) Signature editor: have variable num of pages per signature
+(done) Optimize pdf export to not duplicate images
+(done) SpreadEditor: insert blanks, delete pages
+(done) SpreadEditor: working with >100 image heavy pages does strange hangs, and starts really slow. Fix!
+(done) Color sliders, when double clicking on color box
+(done) implement scale pages to new imposition when reimposing
+(done) graphical shell, kind of a searching calculator and function caller
+(done) Laidout application icon for window manager paging seems to be broken
+(done) More robust scripting: loops, variables, functions, classes (still a bit buggy, but much has been done)
+</ul>
+</p>
+
+<br>
+
+
+VERSION 0.093  --  released 17 July 2012!
+-------------
+(done) On canvas flip controls
+(done) Align tool
+(done) Nup tool
+(done) Fully configurable shortcuts (editable through config file)
+(done) PathInterface must be improved
+</ul>
+</p>
+
+<br>
+
+
+VERSION 0.092  --  released 30 December 2011!
+-------------
+(done) Debug enough to hopefully not be too embarrassing
+(done) Actually implement path exporting. Make that path icon mean something this time!
+(done) At bare minimum, path interface use should not cause a seg fault
+(done) Fix broken paper tiling interface
+(done) Ability to add custom printer marks
+(done) Fix multi-object selection move when crossing page boundaries
+(done) Gui for modifying Page Labels
+(done) Scribus import must support master pages
+(done) Scribus import/export should support PageRange <-> Section conversion on import
+(done) Units, especially Allow changing units in rulers
+(done) Add proper .desktop and application icons installation
+(done) Use ~/.config/laidout, instead of ~/.laidout
+(done) Implement wavefront obj file format in/out for polyhedra
+(done) from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs or menus are up (maybe done)
+(done) from laxkit: clean up pop up menus which currently REALLY SUCK -> now deletes menus when clicking outside them
+</ul>
+</p>
+
+<br>
+
+
+<p>VERSION 0.091  --  released 13 November 2010!<br>
+------------<br>
+<ul>
+(done) impose-only mode, so as to allow easy plugin in access, to for instance do booklets inside scribus
+(done) Do a poor man's multi-contact touch screen interface with 2 mice and Xinput2: object tool only, so far
+(done) Images should maintain their aspect ratio by default when scaling
+(done) Scribus import must make sure linked text and linked table mystery data behave properly on export
+(done) Export PLAN files for podofoimpose
+(done) Generic fold and trim imposition
+(done) Be able to load imposition instances, a form of resource
+(done) Import images as flow/centered within page margins, not within page outline
+(done) Import images with alignment per page type into the page margin region
+(done) SpreadEditor: improvements: re-re-fix auto layout
+(done) SpreadEditor: load/ save many spread editor views with doc (including marker placement, other settings)
+(done) SpreadEditor: editor should allow changing working document
+(done) SpreadEditor: be able to change marks of many pages at once
+</ul>
+</p>
+
+<br>
+
+
 <p>VERSION 0.09  -- released 21 February 2010!<br>
-------------
+------------<br>
 <ul>
 <li>Import Passepartout, Scribus, and very partially SVG.
 Most data that Laidout doesn't know how to convert is stored as Mystery Data, which can then be exported
@@ -71,7 +204,7 @@ undergoing an overhall, so the state they are in now will be improved with the n
 
 
 <p>VERSION 0.08  -- released 15 September 2007!<br>
-------------
+------------<br>
 <ul>
 <li>A Paper Tiler, to spread one page on contents over many pieces of paper</li>
 <li>Latin-1 internationalization support</li>
