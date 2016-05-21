@@ -80,10 +80,10 @@ uninstall:
 	rm -f  $(BINDIR)/$(LAIDOUTNAME)
 	cd src/po && $(MAKE) uninstall
 
-#link debian to debian-lo if not there.. Debian guidelines say don't put 
+#link debian to deb if not there.. Debian guidelines say don't put 
 #a "debian" directory in upstream sources by default.
-deb:
-	if [ ! -e debian ] ; then ln -s debian-lo debian; fi
+deb: touchdepends
+	if [ ! -e debian ] ; then ln -s deb debian; fi
 	dpkg-buildpackage -rfakeroot
 
 hidegarbage: touchdepends
@@ -106,7 +106,7 @@ touchdepends:
 	touch src/api/makedepend
 	touch src/polyptych/src/makedepend
 
-.PHONY: all icons laidout clean docs install uninstall hidegarbage unhidegarbage depends touchdepends
+.PHONY: all icons laidout clean docs install uninstall hidegarbage unhidegarbage depends touchdepends deb
 clean:
 	cd src && $(MAKE) clean
 	cd src/polyptych && $(MAKE) clean
