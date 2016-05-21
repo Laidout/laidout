@@ -120,8 +120,10 @@ This makes sure there is a "debian" directory, then calls `dpkg-buildpackage -rf
 If the magic works, you will find installable packages in the directory directly
 above the Laidout directory. If it does not work, please let me know so I can fix it!
 
-If you fail with this error:
-  dpkg-shlibdeps: error: no dependency information found for /usr/lib/libGL.so.1
+If the magic does NOT work, and you fail with this error:
+
+	dpkg-shlibdeps: error: no dependency information found for /usr/lib/libGL.so.1
+
 then you need to change: `dh_shlibdeps` in debian/rules to: `dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info`
 Maybe something to do with non-packaged NVidia drivers?
 
