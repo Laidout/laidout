@@ -19,7 +19,14 @@ shell broken sometimes.. bad font??
 file open, click around recent, etc, crashes!!
 lost ability to define new bookmarks.. bad!!
 
-objects disappear on group
+hang after reparent object 
+don't allow reparent to a child!! or reparent as appropriate 
+
+group/ungroup calling TreeObjectReorder, and clearing any selection, needs to stay selected after
+ungroup is not applying transform appropriately
+DONE grouping frelled.. can group, but cannot seem to select existing groups to ungroup 
+DONE group/ungroup broken
+DONE objects disappear on group <- due to SOMEDATA_LOCK_CONTENTS blocking it out.. it shouldn't though 
 
 bug: add gray marks, then '.' for next object, endless loop!
 bug: add gray bars, move to a page, ^g crashes!
@@ -27,15 +34,10 @@ memory hole paper interface, activate tool, lay down one paper, quit, 3 objects 
 test-tiled-mark.laidout: delete the bars, add bars back then try to export, program stops (not a segfault)!!!! headwindow gets decremented somehow 
 cut marks are too thick.. cairo problem??  grey bars export to pdf ok, but don't display correctly, outline is too thick
 
+object reordering frelled, strange bbox display offset, 
 object layer positioning for Home and End keys projecting out in wrong way
 
 shearing produced null axes occasionally
-
-group/ungroup broken
-hang after reparent object 
-don't allow reparent to a child!! or reparent as appropriate 
-grouping frelled.. can group, but cannot seem to select existing groups to ungroup 
-object reordering frelled, strange bbox display offset, 
 
 clone via space bar not moving object after space.. moves bounding box, but actual objects stays put
 clone a child.. NOT PUTTING CORRECTLY!!!! totally wrong matrix
@@ -470,6 +472,7 @@ engraving tool: Engraving  engraver
 
 
 PathInterface: pathinterface
+  bug: drag point, press i or I while dragging, moves all points or crashes
   compound paths, change width only changes one. no way to affect all
   needs input boxes for width nodes
   need to show hints for when new points will be placed
@@ -579,6 +582,7 @@ file filters: filefilters:
   need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
   for export, need way to have easy crop, especially from command line 
   perhaps switch export/import objects to new cascading Style as base..  
+  standardize basic load such that non-laidout files create new document of proper size then import
   When there are errors or warnings in exporting, should be able to have the error log such that
     you can just jump to the offending bit easily. This would also be used for preflight verifiers,
     and maybe also mass edit things, like edit all images..
@@ -611,8 +615,8 @@ Scribus:
   scribus import: need to read page sizes from actual page attributes, as it may well be different than in document attributes
     -> this necessitates revamp of singles to use more than one paper type
 svg:
-  can't get at the weight nodes after import
-
+  dup nodes causing bad stroke approximation
+  can't get at the weight nodes after import 
   after in: nodes right on each other produce bad vectors
   in hangs.. should NOT default to powerstroke.. the cache for complex stuff REALLY bogs down, creating NaN draws
   need to parse units
@@ -779,7 +783,10 @@ to be a decent editing platform, Laidout needs:
   clipping
   text
   Grouping:
-    ungroup doesn't check if FieldPlace indices change, making ungroup a group unreliable
+    select only within group zone
+	easy selection of proper group zone
+	remove 'i' from common shortcuts for all tools to let it be used for ObjectIndicator
+    DONE ungroup doesn't check if FieldPlace indices change, making ungroup and group unreliable
   DONE better screen renderer
 
 guides:
