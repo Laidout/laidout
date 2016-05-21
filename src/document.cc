@@ -92,8 +92,6 @@ const char *pageLabelTypeName(PageLabelType t)
  * \brief Holds info about page labels.
  *
  * Labels are 1,2,3... or i,ii,iii...
- * 
- * \todo *** this might be better off as a doubly linked list
  */
 /*! \var char *PageRange::name
  * \brief An id for this range.
@@ -292,8 +290,6 @@ char *PageRange::GetLabel(int i,int altfirst,int alttype)
  *    will have to make full switch to Style.
  *
  * If what==-1, write out pseudocode mockup.
- *
- * \todo *** finish what==-1
  */
 void PageRange::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
@@ -333,8 +329,6 @@ void PageRange::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *cont
 	fprintf(f,"\n");
 }
 
-/*! \todo ultimately PageRange will have to make full switch to Style.
- */
 void PageRange::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	if (!att) return;
@@ -388,8 +382,6 @@ void PageRange::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCon
  * type of paper. Thus, a book with a larger cover, for instance, is most likely
  * two documents: the body pages, and the cover page, which together might
  * constitute a Project.
- *
- * \todo Do a scribus out/in, and a passepartout in.
  */
 /*! \var int Document::curpage
  * \brief The index into pages of the current page.
@@ -523,9 +515,6 @@ Spread *Document::GetLayout(int type, int index)
 	
 //! Add n new blank pages starting before page index starting, or at end if starting==-1.
 /*! Returns number of pages added, or negative for error.
- *
- * \todo *** figure out how to handle upkeep of page range and labels
- * \todo *** if np<0 insert before index starting, else after
  */
 int Document::NewPages(int starting,int np)
 {
@@ -721,10 +710,6 @@ int Document::ApplyPageRange(const char *name, int type, const char *base, int s
 /*! Return the number of pages removed, or negative for error.
  *
  * Return -1 for start out of range, -2 for not enough pages to allow deleting.
- * 
- * \todo *** figure out how to handle upkeep of page range and labels
- * \todo *** this is slightly broken.. does not reorient pagestyles
- *   properly.
  */
 int Document::RemovePages(int start,int n)
 {
@@ -732,9 +717,7 @@ int Document::RemovePages(int start,int n)
 	if (start<0 || start>=pages.n) return -1;
 	if (start+n>pages.n) n=pages.n-start;
 	for (int c=0; c<n; c++) {
-		DBG cerr << "---page id:"<<pages.e[start]->object_id<<"... "<<endl;
 		pages.remove(start);
-		DBG cerr << "---  Done removing page "<<start+c<<endl;
 	}
 	imposition->NumPages(pages.n);
 	SyncPages(start,-1, true);
@@ -751,7 +734,6 @@ int Document::RemovePages(int start,int n)
  *
  * \todo *** only checks for saveas existence, does no sanity checking on it...
  * \todo  need to work out saving Specific project/no proj but many docs/single doc
- * \todo *** implement dump context
  */
 int Document::Save(int includelimbos,int includewindows,ErrorLog &log)
 {
@@ -828,14 +810,9 @@ int Document::Save(int includelimbos,int includewindows,ErrorLog &log)
  * here unless there is a window attribute in the file. (should probably separate
  * window creation from base Document class).
  *
- * \todo *** for file, check that it is in fact a Laidout file! Maybe there should
- *   be a similar function as a standalone so if the file can
- *   be interpreted as another importable file, then loading should be delegated
- *   to the appropriate function....
  * \todo window attributes are found when document is saved independent of a project.
  *   must have mechanism to pass those back to LaidoutApp? right now, that is in
  *   dump_in_atts(), and it shouldn't be there....
- * \todo *** implement dump context
  */
 int Document::Load(const char *file,ErrorLog &log)
 {
@@ -953,7 +930,6 @@ int Document::SyncPages(int start,int n, bool shift_within_margins)
  * something in that imposition instance, and pages merely need to be synced
  * (and possibly resized).
  *
- * \todo need to scale one margin area to another, not just page to page
  * \todo when master pages are implemented, will need to ensure they are scaled properly
  * \todo rescaling assumes rectangular pages, but maybe it shouldn't.
  */
