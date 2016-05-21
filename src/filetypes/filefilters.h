@@ -106,6 +106,7 @@ class DocumentExportConfig : public Style
 	char collect_for_out;
 	char rasterize;
 	bool textaspaths;
+	Laxkit::DoubleBBox crop;
 
 	Document *doc;
 	Group *limbo;
