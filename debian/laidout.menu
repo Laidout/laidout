@@ -1,2 +1,0 @@
-?package(laidout):needs="X11" section="Applications/Graphics"\
-  title="Laidout" command="/usr/bin/laidout"
