@@ -24,8 +24,11 @@ namespace Laidout {
 
 
 
-const int LO_GROUP       =10000; //note: this must be greater than all Laxkit object ids
-const int LO_MYSTERYDATA =10001;
+enum LaidoutDataObjects {
+	LO_MYSTERYDATA = LaxInterfaces::LAX_DATA_MAX,
+
+	LO_DATA_MAX
+};
 
 void InitializeDataFactory();
 
