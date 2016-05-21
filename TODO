@@ -1,17 +1,6 @@
 LAIDOUT TODO
 
-See ROADMAP and src/TODO and the doxygen produced todo list in docs/html/todo.html
-Also src/LEFT---OFF for a more specific and lengthy list of things to do.
-
-
-
-
-
-//-----------------------------------------------
-Note to self: When Compiling and packaging, REMEMBER:
-install in different dirs for different versions
-the binary should be laidout-version, with a link from 'laidout' to it.
-Any supporting files /usr/local/share/laidout/* (of which there are none currently)
-should go in /usr/local/share/laidout/version/*?
+See ROADMAP for a general list of goals, and src/LEFT---OFF for a more specific and lengthy list.
+You might also check the doxygen produced todo list in docs/html/todo.html (via make alldocs).  
 
 

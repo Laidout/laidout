@@ -341,6 +341,7 @@ gradient resources
     color
 
 Colors:
+  color picker that previews text?
   convert to using Color objects instead of all ScreenColor:
 	gradient
 	color patch gradient
@@ -983,11 +984,14 @@ how best to integrate Styles, Attributes, and Values??? style types:
    each of the 3 targets
 
 Imposition use cases:
+  for same document, have stack of impostions, each with its own page set? would make make docs with body pages
+    cover easier, without having to implement full "project"
   booklet contains two threads, read one way, flip book over, read the other way
   booklet but each paper is trimmed differently, like for tabs
   moebius
   need cutting marks for posterizing for lining up different sheets
   impose only needs access to papergroups
+  may any spread setup temporarily to another imposition on export?
 Net imposition
   create from papergroup: one papergroup used as page spreads, another used as actual paper group?
   net extra scaling non-functional
@@ -1008,6 +1012,8 @@ hedron window:
   need to implement more options for polyhedron connections, to allow mobius strips...
 
   DONE proper units for papers
+
+when closing a document window, decide whether this removes access to it, or just the view to it
 
 from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
     focus off a dialog, then refocus, must manually set control focus. should store which subwindow
@@ -1047,7 +1053,8 @@ customizable object child relationships to parent, rather than simple transform
   need edge indicators for more convenient snapping
 
 
-calculator
+calculator/scripting
+  security restrictions?
   showing defined functions should show the code
   set dump_out_atts should do full atts if any subattribute has full atts, else output "set": "{1,2,3}"
   dump_out_atts should output raw toStr things.. Strings currently return "str" which is output "\"str\""
@@ -1128,6 +1135,10 @@ implement undo.. ideally use same code for both undo and recordable/assignable a
 maybe flag whether to export limbo with spreads?
 
 action/shortcut selector overlay
+
+templates Templates:
+  save as default, or just save as.
+  partial templates, fill in non defined, like use booklet but manually define paper size
 
 importing images should default the image id to a variant of the file name
 
@@ -1278,6 +1289,7 @@ global resources:
   current language, for conditional text
 
 external tools:
+  figure out a way to standardize verifying that tool exists and is executable
   to image renderers
   to object renderers
   Image editor (gimp, krita)
@@ -1308,6 +1320,7 @@ messages to the status line should have priorities? so once mouse over messages 
 
 perhaps split radial and linear gradients to different tools? makes more sense
 
+WhateverImposition, to only have limbos, but extra handling for exporting
 all at once imposition... this would allow mapping of scribus layout without fuss. that
   could be a special case of n-up, where you specify n to be infinity, with m number of
   columns, not necessarily aligned, as scribus does.
