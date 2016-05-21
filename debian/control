@@ -1,7 +1,7 @@
 Source: laidout
 Section: graphics
 Priority: optional
-Maintainer: Tom Lechner <tomlechner@users.sourceforge.net>
+Maintainer: Tom Lechner <tomscoding@gmail.com>
 Build-Depends: debhelper (>= 9.0.0), libx11-dev, libimlib2-dev, libpng12-dev, libfreetype6-dev, libxext-dev
 Standards-Version: 3.8.4
 Homepage: http://www.laidout.org
