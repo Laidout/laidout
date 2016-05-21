@@ -767,6 +767,14 @@ ObjectDef *makeExportConfigDef()
 			NULL,  //defvalue
 			0,    //flags
 			NULL);//newfunc
+	sd->push("crop",
+			_("Crop"),
+			_("Cropping boundary, applied per spread."),
+			"BBox",
+			NULL, //range
+			NULL,  //defvalue
+			0,    //flags
+			NULL);//newfunc
 
 	return sd;
 }
@@ -858,7 +866,7 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 		 //---paperrotation
 		i=parameters->findInt("paperrotation",-1,&e);
 		if (e==0) config->paperrotation=i;
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"batches"); throw error; }
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"paperrotation"); throw error; }
 
 		 //---reverse
 		i=parameters->findInt("reverse",-1,&e);
@@ -870,7 +878,14 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 		if (e==0) {
 			if (i!=0 && i!=1) throw _("Invalid target value!");
 			config->target=i;
-		} else if (e==2) { sprintf(error, _("Invalid format for %s!"),"end"); throw error; }
+		} else if (e==2) { sprintf(error, _("Invalid format for %s!"),"target"); throw error; }
+
+		 //---crop
+		BBoxValue *crop=dynamic_cast<BBoxValue*>(parameters->findObject("crop",-1,&e));
+		if (e==0) {
+			if (i!=0 && i!=1) throw _("Invalid crop value!");
+			config->target=i;
+		} else if (e==2) { sprintf(error, _("Invalid format for %s!"),"crop"); throw error; }
 
 		 //---group
 		Laxkit::anObject *r=parameters->findObject("group",-1,&e);

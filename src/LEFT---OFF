@@ -14,8 +14,6 @@ Those are purged with each release.
 
 cairo doesn't cache images like Imlib does, so every image is totally loaded on file open. bad, bad, bad!!!
 
-shell broken sometimes.. bad font??
-
 file open, click around recent, etc, crashes!!
 lost ability to define new bookmarks.. bad!!
 
@@ -572,11 +570,10 @@ export/print dialog
 
 file filters: filefilters:
   import option to preserve broken links
-  when saving, name shouldn't be red if ok to save
   need equirectangular out 
   selecting out should auto select tofile | tofiles, depending on how many selected for out
   export ranges should accept "1-4, 6, 20-25" and "5-1", or by name "iii - iv"
-  remember last export 
+  remember full export settings
   importing should not spawn new windows
   importing should sort out duplicate names
   need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
@@ -587,9 +584,11 @@ file filters: filefilters:
     you can just jump to the offending bit easily. This would also be used for preflight verifiers,
     and maybe also mass edit things, like edit all images..
     - have ViewWindow::JumpToObject(&place, objectid);
+  DONE remember last export type
+  DONE when saving, name shouldn't be red if ok to save
 image
   make sure temp file is removed, should probably locate in user space maybe? or make sure perms set reasonably
-  should really make this graphicsmagick based, not gs+pdf based
+  should really make this graphicsmagick or cairo based, not gs+pdf based
 laidout:
   need a Laidout out! for partial exports, or conversions between nets/papergroup lines/etc
 pdf:
@@ -603,6 +602,7 @@ pdf:
   page labels?
   pdf out needs clone deref
 Scribus:
+  make sure it works for 1.5.2
   font size confusion
   caption export centering
   check for updates in file format for 1.5
@@ -1492,4 +1492,5 @@ DONE tooltips and event timers seem to be frelled
 DONE for objectindicator, more than one input window allowed.. should block, and turn off when mouse out click
 DONE crash on ungroup
 DONE update touch_recent for Laidout files in the newer xbel type 
+DONE shell broken sometimes.. bad font??  
 

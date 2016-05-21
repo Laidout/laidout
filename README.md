@@ -22,7 +22,7 @@ https://lists.sourceforge.net/lists/listinfo/laidout-general
 
 Laidout is currently in the 'mostly works on my machine' stage of development.
 
-Currently the only developer (and creator of Laidout) is also a client:
+Currently the only developer (and creator of Laidout) is:
 Tom Lechner (http://www.tomlechner.com)
 
 
@@ -63,7 +63,7 @@ For everything, you will need the header files for at least:
 
 If you are on a debian based system, you can probably install these with this command:
 
-    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libcairo2-dev libharfbuzz-dev libsqlite3-dev libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev
+    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libcairo2-dev libharfbuzz-dev libsqlite3-dev libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev zlib1g-dev
 
 On Fedora, this list is more like this:
 
@@ -76,7 +76,7 @@ only need the following. Note that you will also need to pass
 in "--nogl" and "--disable-sqlite" to ./configure below if you are not
 compiling everything:
 
-    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libcairo2-dev libharfbuzz-dev
+    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libcairo2-dev libharfbuzz-dev zlib1g-dev
 
 
 
@@ -113,7 +113,9 @@ If you want to create a deb package of Laidout, make sure you have the fakeroot,
 dpkg-dev, and debhelper packages installed, and have all the other packages listed 
 from the COMPILING RELEASES section above, and do this from the top laidout directory:
 
-    dpkg-buildpackage -rfakeroot
+    make deb
+
+This makes sure there is a "debian" directory, then calls `dpkg-buildpackage -rfakeroot`.
 
 If the magic works, you will find installable packages in the directory directly
 above the Laidout directory. If it does not work, please let me know so I can fix it!
