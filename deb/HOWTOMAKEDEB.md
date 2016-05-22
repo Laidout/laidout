@@ -77,7 +77,7 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 
 	 If Laxkit is to be included, you should export that to the top laidout dir: 
 
-	  git clone http://github.com/tomlechner/laxkit.git laxkit
+	  git clone http://github.com/Laidout/laxkit.git laxkit
 	  cd laxkit; rm -rf .git;
 
 	  make sure in laidout/configure: LAXDIR=`pwd`/laxkit/lax
