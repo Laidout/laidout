@@ -169,6 +169,7 @@ test:
   make some test scripts for command line testing
 put rss/g+ links on all menu pages.. need way to automate including menu bar stuff
 
+perhaps laidout configure should call laxkit configure if it thinks laxkit is not configured yet
 
 minimum dp size is not small enough
 
