@@ -281,8 +281,6 @@ void VObjContext::clearToPage()
  * \todo *** need to be able to work only on current zone or only on current layer...
  *   a zone would be: limbo, imposition specific zones (like printer marks), page outline,
  *   the spread itself, the current page only.. the zone could be the objcontext->spread()?,
- *   *** might be useful to have more things potentially represented in curobj.spread()..
- *   possibilities: limbo, main spread, printer marks, --Other Spreads--...
  */
 /*! \var Page *LaidoutViewport::curpage
  * \brief Pointer to the current page.
@@ -967,8 +965,6 @@ const char *LaidoutViewport::SetViewMode(int m,int sprd)
 //! Update and return pageviewlabel.
 /*! This is a label that says what pages are in the current spread, 
  * and also which is the current page.
- *
- * \todo how to internationalize this?
  */
 const char *LaidoutViewport::Pageviewlabel()
 {
