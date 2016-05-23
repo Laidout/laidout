@@ -106,7 +106,12 @@ touchdepends:
 	touch src/api/makedepend
 	touch src/polyptych/src/makedepend
 
-.PHONY: all icons laidout clean docs install uninstall hidegarbage unhidegarbage depends touchdepends deb
+dist-clean: clean
+	rm -f Makefile-toinclude config.log src/version.h src/configured.h
+	rm -f src/makedepend src/calculator/makedepend src/dataobjects/makedepend src/filetypes/makedepend
+	rm -f src/impositions/makedepend src/interfaces/makedepend src/printing/makedepend src/api/makedepend src/polyptych/src/makedepend
+
+.PHONY: all icons laidout dist-clean clean docs install uninstall hidegarbage unhidegarbage depends touchdepends deb
 clean:
 	cd src && $(MAKE) clean
 	cd src/polyptych && $(MAKE) clean
