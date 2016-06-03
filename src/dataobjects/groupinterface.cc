@@ -398,14 +398,13 @@ int GroupInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 		} else if (hover==GROUP_Jump_To_Parent) {
 			LaidoutViewport *vp=((LaidoutViewport *)viewport);
 			VObjContext context=*dynamic_cast<VObjContext*>(selection->e(0));
-			selection->e(0)->obj->inc_count(); //*** dbg
 			context.SetObject(NULL);
 			context.context.pop();
-			anObject *object=vp->getanObject(context.context,0,0);
+			SomeData *object=dynamic_cast<SomeData*>(vp->getanObject(context.context,0,0));
 
-			DrawableObject *pp=dynamic_cast<DrawableObject*>(object);
-			if (pp && dynamic_cast<DrawableObject*>(pp->parent)
-				   && dynamic_cast<DrawableObject*>(pp->parent)->parent && pp->Selectable() && !pp->IsLocked(OBJLOCK_Selectable)) {
+			DrawableObject *pp=dynamic_cast<DrawableObject*>(object->GetParent());
+			if (pp && pp->Selectable()
+				   && !pp->IsLocked(OBJLOCK_Selectable)) {
 				context.SetObject(pp);
 				vp->ChangeObject(&context,0);
 				FreeSelection();
@@ -555,7 +554,7 @@ int GroupInterface::GroupObjects()
 	PostMessage(error ? _("Group failed.") : _("Grouped."));
 	
 	if (!error && index>=0) {
-		FreeSelection();
+		FreeSelection();//only flushes (not deletes) selection object
 		place.push(index);
 		
 		VObjContext context;
@@ -565,6 +564,8 @@ int GroupInterface::GroupObjects()
 
 		DBG place.out(".....group position after grouping: ");
 	}
+
+	((LaidoutViewport *)viewport)->clearCurobj();
 
 	return 1;
 }
@@ -620,7 +621,7 @@ int GroupInterface::UngroupObjects()
 				element.SetObject(base->e(c));
 				for (int c2=0; c2<place.n(); c2++) {
 					element.push(c2==place.n()-1 ? c : place.e(c2));
-					element.push(place.e(c2));
+					//element.push(place.e(c2));
 				}
 				newselection->Add(&element, -1);
 			}
@@ -630,6 +631,9 @@ int GroupInterface::UngroupObjects()
 	FreeSelection();
 	AddToSelection(newselection);
 	newselection->dec_count(); 
+
+	((LaidoutViewport *)viewport)->clearCurobj();
+	((LaidoutViewport *)viewport)->SetSelection(selection);
 
 	PostMessage(error ? _("Ungrouped (with some errors)") : _("Ungrouped.")); 
 	
