@@ -850,6 +850,13 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext 
 
 	fprintf(f,"%sid %s\n",spc,Id());
 
+	
+    fprintf(f,"%sminx %.10g\n",spc,minx);
+    fprintf(f,"%smaxx %.10g\n",spc,maxx);
+    fprintf(f,"%sminy %.10g\n",spc,miny);
+    fprintf(f,"%smaxy %.10g\n",spc,maxy);
+
+
 	 // dump notes/meta data
 	if (metadata.attributes.n) {
 		fprintf(f,"%smetadata\n",spc);
