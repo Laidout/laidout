@@ -1755,16 +1755,19 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *nname,const char
 		}
 	} 
 
+	DBG if (viewport) cerr <<"*** there shouldn't be a viewport here, SpreadEditor::SpreadEditor()!!!"<<endl;
 	SpreadEditorViewport *sed=new SpreadEditorViewport(this,"spread-editor-viewport","spread-editor-viewport",
 									ANXWIN_HOVER_FOCUS|VIEWPORT_RIGHT_HANDED|VIEWPORT_BACK_BUFFER|VIEWPORT_ROTATABLE,
-									0,0,0,0,0,NULL,spreadtool);
-	DBG if (viewport) cerr <<"*** there shouldn't be a viewport here, SpreadEditor::SpreadEditor()!!!"<<endl;
-
+									0,0,0,0,0,NULL,spreadtool); 
 	viewport=sed;
+	WindowColors *col = win_colors->duplicate();
+	installColors(col);
+	viewport->installColors(col);
 	win_colors->bg=rgbcolor(200,200,200);
-	viewport->win_colors->bg=rgbcolor(200,200,200);
-	viewport->dp->NewBG(255,255,255);
- 
+	col->dec_count();
+	viewport->dp->NewBG(255,255,255); 
+	viewer_style |= VIEWPORT_NO_XRULER|VIEWPORT_NO_YRULER;
+
 	//app->reparent(viewport,this);
 	//viewport->dec_count();
 	//*** doing this here removes memory hole, but adds rulers to window!?!?!?!?
@@ -1852,10 +1855,7 @@ int SpreadEditor::init()
 	//AddWin(***)...
 	ViewerWindow::init();
 
-	 // *** remove the rulers.... not actually deleting?
-	wholelist.remove(0); //first null
-	wholelist.remove(0); //x
-	wholelist.remove(0); //y
+	 //remove refs to nonexistent rulers....
 	viewport->UseTheseRulers(NULL,NULL);
 	viewport->dec_count(); //remove initial creation count from constructor
 
