@@ -444,7 +444,9 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 	dp->LineAttributes(-1,LineSolid,CapButt,JoinMiter);
 	dp->LineWidthScreen(w);
 	//dp->PushAndNewTransform(data->m());
-	double sshadow = shadow/dp->Getmag();
+
+	//double sshadow = shadow*dp->Getmag(); <- this one scales properly
+	double sshadow = shadow;
 
 	PaperBox *box=data->box;
 	flatpoint p[4];
@@ -533,25 +535,34 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 	//dp->PopAxes(); //spread axes
 }
 
-void PaperInterface::DrawGroup(PaperGroup *group,char shadow,char fill,char arrow)
+/*! If which&1 draw paper outline. If which&2, draw paper objects.
+ */
+void PaperInterface::DrawGroup(PaperGroup *group, char shadow, char fill, char arrow, int which)
 {
-	 //draw shadow under whole group
-	if (shadow) {
+	if (which&1) {
+		 //draw shadow under whole group
+		if (shadow) {
+			for (int c=0; c<group->papers.n; c++) {
+				dp->PushAndNewTransform(group->papers.e[c]->m());
+				DrawPaper(group->papers.e[c],MediaBox, fill,laidout->prefs.pagedropshadow,0);
+				dp->PopAxes(); 
+			}
+		}
+
+		 //draw paper
 		for (int c=0; c<group->papers.n; c++) {
 			dp->PushAndNewTransform(group->papers.e[c]->m());
-			DrawPaper(group->papers.e[c],MediaBox, fill,laidout->prefs.pagedropshadow,0);
+			DrawPaper(group->papers.e[c],drawwhat, fill,0,arrow);
 			dp->PopAxes(); 
 		}
 	}
-	for (int c=0; c<group->papers.n; c++) {
-		dp->PushAndNewTransform(group->papers.e[c]->m());
-		DrawPaper(group->papers.e[c],drawwhat, fill,0,arrow);
-		dp->PopAxes(); 
-	}
 
-	if (group->objs.n()) {
-		for (int c=0; c<group->objs.n(); c++) {
-			Laidout::DrawData(dp,group->objs.e(c),NULL,NULL,0);
+	 //draw papergroup objects
+	if (which&2) {
+		if (group->objs.n()) {
+			for (int c=0; c<group->objs.n(); c++) {
+				Laidout::DrawData(dp,group->objs.e(c),NULL,NULL,0);
+			}
 		}
 	}
 }
