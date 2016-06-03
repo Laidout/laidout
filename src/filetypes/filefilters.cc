@@ -885,6 +885,7 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 		if (e==0) {
 			if (i!=0 && i!=1) throw _("Invalid crop value!");
 			config->target=i;
+			config->crop=*crop;
 		} else if (e==2) { sprintf(error, _("Invalid format for %s!"),"crop"); throw error; }
 
 		 //---group

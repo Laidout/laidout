@@ -274,21 +274,13 @@ void VObjContext::clearToPage()
  * \brief General viewport to pass to the ViewerWindow base class of ViewWindow
  *
  * Creates different type of ObjectContext so that curobj,
- * firstobj, and foundobj are all VObjContext instances which shadow the ViewportWindow
- * variables of the same names.
+ * firstobj, and foundobj are all VObjContext instances.
  * 
  * \todo *** need to check through that all the searching stuff, and cur obj/page/layer stuff
  *   are reset where appropriate.. 
  * \todo *** need to be able to work only on current zone or only on current layer...
  *   a zone would be: limbo, imposition specific zones (like printer marks), page outline,
  *   the spread itself, the current page only.. the zone could be the objcontext->spread()?,
- *   *** might be useful to have more things potentially represented in curobj.spread()..
- *   possibilities: limbo, main spread, printer marks, --Other Spreads--...
- * \todo *** in paper spread view, perhaps that is where a spread()==printer marks is useful..
- *   also, depending on the imposition, there might be other operations permitted in paper spread..
- *   like in a postering imposition, the page data stays stationary, but multiple paper outlines can latch
- *   on to different parts of it...(or perhaps the page moves around, not paper)
- * \todo please note that LaidoutViewport has 2 anObject base classes.. really it shouldn't..
  */
 /*! \var Page *LaidoutViewport::curpage
  * \brief Pointer to the current page.
@@ -565,7 +557,12 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 		} else if (te->changetype==TreeObjectReorder ||
 				te->changetype==TreeObjectDiffPage ||
 				te->changetype==TreeObjectDeleted ||
-				te->changetype==TreeObjectAdded || 
+				te->changetype==TreeObjectAdded) {
+
+			 //for object only changes, just tell current interfaces to validate their refs.
+			 //Interfaces must intercept these messages in their Event() function.
+
+		} else if (
 				te->changetype==TreePagesAdded ||
 				te->changetype==TreePagesDeleted ||
 				te->changetype==TreePagesMoved) {
@@ -968,8 +965,6 @@ const char *LaidoutViewport::SetViewMode(int m,int sprd)
 //! Update and return pageviewlabel.
 /*! This is a label that says what pages are in the current spread, 
  * and also which is the current page.
- *
- * \todo how to internationalize this?
  */
 const char *LaidoutViewport::Pageviewlabel()
 {

@@ -148,7 +148,7 @@ void InitializeDataFactory()
 	InterfaceManager *imanager=InterfaceManager::GetDefault(true);
 	ObjectFactory *lobjectfactory = imanager->GetObjectFactory();
 
-	lobjectfactory->DefineNewObject(LO_GROUP,            "Group",           createGroup,            NULL);
+	lobjectfactory->DefineNewObject(LAX_GROUPDATA,       "Group",           createGroup,            NULL);
 	lobjectfactory->DefineNewObject(LO_MYSTERYDATA,      "MysteryData",     createMysteryData,      NULL);
 	lobjectfactory->DefineNewObject(LAX_IMAGEDATA,       "ImageData",       createLImageData,       NULL);
 	lobjectfactory->DefineNewObject(LAX_PATHSDATA,       "PathsData",       createLPathsData,       NULL);

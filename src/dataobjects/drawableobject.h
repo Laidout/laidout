@@ -228,7 +228,7 @@ class DrawableObject :  virtual public ObjectContainer,
 	//virtual LaxInterfaces::SomeData *getObject(FieldPlace &place,int offset=0);
 	//virtual int nextObject(FieldPlace &place, FieldPlace &first, int curlevel, LaxInterfaces::SomeData **d=NULL);
 
-	virtual int GroupObjs(int n, int *which);
+	virtual int GroupObjs(int n, int *which, int *newgroupindex);
 	virtual int UnGroup(int which);
 	virtual int UnGroup(int n,const int *which);
 	

@@ -67,7 +67,7 @@ If you are on a debian based system, you can probably install these with this co
 
 On Fedora, this list is more like this:
 
-	sudo dnf install -y cairo-devel cups-devel fontconfig-devel ftgl-devel glibc-headers harfbuzz-devel imlib2-devel lcms-devel libpng-devel libX11-devel libXext-devel libXft-devel libXi-devel mesa-libGL-devel mesa-libGLU-devel openssl-devel readline-devel sqlite-devel xorg-x11-proto-devel zlib-devel GraphicsMagick-c++-devel libstdc++-devel freetype-devel imake
+    sudo dnf install -y cairo-devel cups-devel fontconfig-devel ftgl-devel glibc-headers harfbuzz-devel imlib2-devel lcms-devel libpng-devel libX11-devel libXext-devel libXft-devel libXi-devel mesa-libGL-devel mesa-libGLU-devel openssl-devel readline-devel sqlite-devel xorg-x11-proto-devel zlib-devel GraphicsMagick-c++-devel libstdc++-devel freetype-devel imake
 
 
 For only the bare minimum, without the polyhedron unwrapper (requires opengl),
@@ -120,8 +120,10 @@ This makes sure there is a "debian" directory, then calls `dpkg-buildpackage -rf
 If the magic works, you will find installable packages in the directory directly
 above the Laidout directory. If it does not work, please let me know so I can fix it!
 
-If you fail with this error:
-  dpkg-shlibdeps: error: no dependency information found for /usr/lib/libGL.so.1
+If the magic does NOT work, and you fail with this error:
+
+    dpkg-shlibdeps: error: no dependency information found for /usr/lib/libGL.so.1
+
 then you need to change: `dh_shlibdeps` in debian/rules to: `dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info`
 Maybe something to do with non-packaged NVidia drivers?
 
@@ -144,24 +146,23 @@ Here is a fast and easy way to get Laidout up and running from development sourc
    Enter the laidout directory and get the Laxkit source:
 
         cd laidout
-        git clone http://github.com/tomlechner/laxkit.git laxkit
+        git clone http://github.com/Laidout/laxkit.git laxkit
 
 3. Compile the goods. Make sure you have all the packages from the Compiling Releases section 
    above, then do this:
 
         cd laxkit
         ./configure
-        make depends
+        make
         cd ..
         ./configure --laxkit=`pwd`/laxkit/lax
-        make depends
         make
 
     Or all this in one command:
 
-        cd laxkit  && ./configure  && make depends  && cd ..  && ./configure --laxkit=`pwd`/laxkit/lax  && make depends  && make
+        cd laxkit  && ./configure  && make  && cd ..  && ./configure --laxkit=`pwd`/laxkit/lax  && make
 
-	Do NOT `make install` yet.
+    Do NOT `make install` yet.
     Also note that if your computer has, say, 8 processors, you can compile much faster
     using `make -j 8` instead of plain make.
 
@@ -174,11 +175,11 @@ Here is a fast and easy way to get Laidout up and running from development sourc
     from src/icons/icons.svg, and in laxkit/lax/icons/icons.svg. A python script there 
     calls Inkscape. cd to src/icons and run "make". Do the same for laxkit/lax/icons/:
 
-		cd src/icons
-		make
-		cd ../../laxkit/lax/icons
-		make
-		cd ../../..
+        cd src/icons
+        make
+        cd ../../laxkit/lax/icons
+        make
+        cd ../../..
 
     The laxkit icons need to be put in the laidout icon area. do this with:
 
@@ -189,9 +190,9 @@ Here is a fast and easy way to get Laidout up and running from development sourc
         cd laxkit/lax/icons && make && cp *png ../../../src/icons && cd ../../../src/icons && make
 
     The current system can take a long time, depending on the speed of your computer, since
-	the script has to start Inkscape separately for each icon. Some day, the icons will be
-	generated directly from the base icons file by Laidout, for a large speed improvement, but
-	much work needs to be done on the SVG importer before that can happen.
+    the script has to start Inkscape separately for each icon. Some day, the icons will be
+    generated directly from the base icons file by Laidout, for a large speed improvement, but
+    much work needs to be done on the SVG importer before that can happen.
 
     You can use src/icons/makeimages.py to regenerate all icons, or single icons if you
     like. The master icon file is src/icons.svg. Each top level object in that file
@@ -207,6 +208,9 @@ Here is a fast and easy way to get Laidout up and running from development sourc
     can just run Laidout like this:
 
         laidout 2> /dev/null
+    
+    Also, if you make any changes to the include lines of source files, make sure
+    to run `make depends`. This will update dependencies for the next time you compile.
 
 
 INSTALLING DIFFERENT VERSIONS AT THE SAME TIME

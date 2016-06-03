@@ -787,9 +787,9 @@ const double *DrawableObject::object_transform(int i)
  *
  * Return 0 for success, or nonzero error.
  */
-int DrawableObject::GroupObjs(int ne, int *which)
+int DrawableObject::GroupObjs(int ne, int *which, int *newgroupindex)
 {
-	int status = GroupData::GroupObjs(ne,which);
+	int status = GroupData::GroupObjs(ne,which,newgroupindex);
 	if (status!=0) return status;
 	laidout->notifyDocTreeChanged(NULL,TreeObjectReorder,0,0);
 	return 0;

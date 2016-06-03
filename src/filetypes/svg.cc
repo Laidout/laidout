@@ -1580,7 +1580,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 					UnitManager *unitm = GetUnitManager();
 					while (isspace(*endptr)) endptr++;
 					const char *ptr=endptr;
-					while (isalpha(*ptr)) ptr++;
+					while (isalpha(*endptr)) endptr++;
 					int units = unitm->UnitId(ptr, endptr-ptr);
 					if (units!=UNITS_None) width = unitm->Convert(width, units, UNITS_Inches, NULL);
 
@@ -1594,7 +1594,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 					UnitManager *unitm = GetUnitManager();
 					while (isspace(*endptr)) endptr++;
 					const char *ptr=endptr;
-					while (isalpha(*ptr)) ptr++;
+					while (isalpha(*endptr)) endptr++;
 					int units = unitm->UnitId(ptr, endptr-ptr);
 					if (units!=UNITS_None) height = unitm->Convert(height, units, UNITS_Inches, NULL);
 
@@ -2188,11 +2188,11 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 		return 1;
 
 	} else if (!strcmp(element->name,"circle") || !strcmp(element->name,"ellipse")) {
-		cout <<"***need to implement svg in:  circle"<<endl;
 		 //using 4 vertices as bez points, the vector length is 4*(sqrt(2)-1)/3 = about .5523 with radius 1
 
 		double cx=0,cy=0,r=-1,rx=-1, ry=-1;
 		PathsData *paths=dynamic_cast<PathsData *>(newObject("PathsData"));
+
 		for (int c=0; c<element->attributes.n; c++) {
 			name =element->attributes.e[c]->name;
 			value=element->attributes.e[c]->value;
@@ -2209,10 +2209,28 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 				DoubleAttribute(value,&cx,NULL);
 			} else if (!strcmp(name,"cy")) {
 				DoubleAttribute(value,&cy,NULL);
+
 			} else if (!strcmp(name,"transform")) {
 				double m[6];
 				svgtransform(value,m);
 				paths->m(m);
+
+			} else if (!strcmp(name,"style")) {
+				LineStyle *linestyle = paths->linestyle;
+				FillStyle *fillstyle = paths->fillstyle;
+
+				if (!linestyle) {
+					linestyle=new LineStyle;
+					paths->InstallLineStyle(linestyle);
+					linestyle->dec_count();
+				}
+				if (!fillstyle) {
+					fillstyle=new FillStyle;
+					paths->InstallFillStyle(fillstyle);
+					fillstyle->dec_count();
+				}
+
+				StyleToFillAndStroke(value, linestyle, fillstyle); 
 			}
 		}
 

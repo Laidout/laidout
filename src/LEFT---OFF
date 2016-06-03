@@ -17,7 +17,14 @@ cairo doesn't cache images like Imlib does, so every image is totally loaded on 
 file open, click around recent, etc, crashes!!
 lost ability to define new bookmarks.. bad!!
 
-objects disappear on group
+hang after reparent object 
+don't allow reparent to a child!! or reparent as appropriate 
+
+group/ungroup calling TreeObjectReorder, and clearing any selection, needs to stay selected after
+ungroup is not applying transform appropriately
+DONE grouping frelled.. can group, but cannot seem to select existing groups to ungroup 
+DONE group/ungroup broken
+DONE objects disappear on group <- due to SOMEDATA_LOCK_CONTENTS blocking it out.. it shouldn't though 
 
 bug: add gray marks, then '.' for next object, endless loop!
 bug: add gray bars, move to a page, ^g crashes!
@@ -25,15 +32,10 @@ memory hole paper interface, activate tool, lay down one paper, quit, 3 objects 
 test-tiled-mark.laidout: delete the bars, add bars back then try to export, program stops (not a segfault)!!!! headwindow gets decremented somehow 
 cut marks are too thick.. cairo problem??  grey bars export to pdf ok, but don't display correctly, outline is too thick
 
+object reordering frelled, strange bbox display offset, 
 object layer positioning for Home and End keys projecting out in wrong way
 
 shearing produced null axes occasionally
-
-group/ungroup broken
-hang after reparent object 
-don't allow reparent to a child!! or reparent as appropriate 
-grouping frelled.. can group, but cannot seem to select existing groups to ungroup 
-object reordering frelled, strange bbox display offset, 
 
 clone via space bar not moving object after space.. moves bounding box, but actual objects stays put
 clone a child.. NOT PUTTING CORRECTLY!!!! totally wrong matrix
@@ -160,6 +162,7 @@ test:
   make some test scripts for command line testing
 put rss/g+ links on all menu pages.. need way to automate including menu bar stuff
 
+perhaps laidout configure should call laxkit configure if it thinks laxkit is not configured yet
 
 minimum dp size is not small enough
 
@@ -332,6 +335,7 @@ gradient resources
     color
 
 Colors:
+  color picker that previews text?
   convert to using Color objects instead of all ScreenColor:
 	gradient
 	color patch gradient
@@ -461,6 +465,7 @@ engraving tool: Engraving  engraver
 
 
 PathInterface: pathinterface
+  bug: drag point, press i or I while dragging, moves all points or crashes
   compound paths, change width only changes one. no way to affect all
   needs input boxes for width nodes
   need to show hints for when new points will be placed
@@ -558,6 +563,8 @@ export/print dialog
   export should have a preview of what is actually going out, flip through spreads
   in papergroups with multiple papers and double sided impositions, need to ensure front and back are output properly for printer 
 
+Import image list: default previews 
+
 file filters: filefilters:
   import option to preserve broken links
   need equirectangular out 
@@ -569,6 +576,7 @@ file filters: filefilters:
   need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
   for export, need way to have easy crop, especially from command line 
   perhaps switch export/import objects to new cascading Style as base..  
+  standardize basic load such that non-laidout files create new document of proper size then import
   When there are errors or warnings in exporting, should be able to have the error log such that
     you can just jump to the offending bit easily. This would also be used for preflight verifiers,
     and maybe also mass edit things, like edit all images..
@@ -604,8 +612,8 @@ Scribus:
   scribus import: need to read page sizes from actual page attributes, as it may well be different than in document attributes
     -> this necessitates revamp of singles to use more than one paper type
 svg:
-  can't get at the weight nodes after import
-
+  dup nodes causing bad stroke approximation
+  can't get at the weight nodes after import 
   after in: nodes right on each other produce bad vectors
   in hangs.. should NOT default to powerstroke.. the cache for complex stuff REALLY bogs down, creating NaN draws
   need to parse units
@@ -772,7 +780,10 @@ to be a decent editing platform, Laidout needs:
   clipping
   text
   Grouping:
-    ungroup doesn't check if FieldPlace indices change, making ungroup a group unreliable
+    select only within group zone
+	easy selection of proper group zone
+	remove 'i' from common shortcuts for all tools to let it be used for ObjectIndicator
+    DONE ungroup doesn't check if FieldPlace indices change, making ungroup and group unreliable
   DONE better screen renderer
 
 guides:
@@ -969,11 +980,14 @@ how best to integrate Styles, Attributes, and Values??? style types:
    each of the 3 targets
 
 Imposition use cases:
+  for same document, have stack of impostions, each with its own page set? would make make docs with body pages
+    cover easier, without having to implement full "project"
   booklet contains two threads, read one way, flip book over, read the other way
   booklet but each paper is trimmed differently, like for tabs
   moebius
   need cutting marks for posterizing for lining up different sheets
   impose only needs access to papergroups
+  may any spread setup temporarily to another imposition on export?
 Net imposition
   create from papergroup: one papergroup used as page spreads, another used as actual paper group?
   net extra scaling non-functional
@@ -994,6 +1008,8 @@ hedron window:
   need to implement more options for polyhedron connections, to allow mobius strips...
 
   DONE proper units for papers
+
+when closing a document window, decide whether this removes access to it, or just the view to it
 
 from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
     focus off a dialog, then refocus, must manually set control focus. should store which subwindow
@@ -1033,7 +1049,8 @@ customizable object child relationships to parent, rather than simple transform
   need edge indicators for more convenient snapping
 
 
-calculator
+calculator/scripting
+  security restrictions?
   showing defined functions should show the code
   set dump_out_atts should do full atts if any subattribute has full atts, else output "set": "{1,2,3}"
   dump_out_atts should output raw toStr things.. Strings currently return "str" which is output "\"str\""
@@ -1114,6 +1131,10 @@ implement undo.. ideally use same code for both undo and recordable/assignable a
 maybe flag whether to export limbo with spreads?
 
 action/shortcut selector overlay
+
+templates Templates:
+  save as default, or just save as.
+  partial templates, fill in non defined, like use booklet but manually define paper size
 
 importing images should default the image id to a variant of the file name
 
@@ -1264,6 +1285,7 @@ global resources:
   current language, for conditional text
 
 external tools:
+  figure out a way to standardize verifying that tool exists and is executable
   to image renderers
   to object renderers
   Image editor (gimp, krita)
@@ -1294,6 +1316,7 @@ messages to the status line should have priorities? so once mouse over messages 
 
 perhaps split radial and linear gradients to different tools? makes more sense
 
+WhateverImposition, to only have limbos, but extra handling for exporting
 all at once imposition... this would allow mapping of scribus layout without fuss. that
   could be a special case of n-up, where you specify n to be infinity, with m number of
   columns, not necessarily aligned, as scribus does.
@@ -1307,6 +1330,27 @@ Master Pages master pages / template pages:
   need option to import master pages
 
 some kind of grease pencil?
+
+Saving: multiple documents open, save only the headwindows that refer only to that doc,
+OR save no window configs (saved with project), OR save custom configs
+
+need conversions: gradient->color patch
+                  image -> imagepatch <- do with image filters rather than specific object type
+                  imagepatch -> image
+                  colorpatch -> image?
+				  engraver -> path
+				  path -> engraver
+				  text -> path
+Convert:
+  bool reversible;
+  char *from;
+  char *to;
+  int support; //like how reliable it is to convert, warnings for what is lost
+  CanConvert(object, from, to, warnings_ret);
+  newobject = Convert(object, to);
+
+remember tool settings: double click on tool icon? right click...
+remember tool settings
 
 
 ===================Anything below here probably needs discussion before implementing================
@@ -1333,28 +1377,12 @@ measure tool.. configure measurements to be:
  units mapped to either type of units, so can use light years for units that are actually inch physical paper units
 have arrows, and write on screen what the size is...
 
-impositions:
-  for printing/exporting non-paper layouts, should have option to specify what sort of paper
-   or paper net is proper to hold the layout... means:
-   paperstyle=imposition->Paper(layout);
-   imposition return a spread with flag for if papergroup is for printing or printing and viewing
-
 object selection:
  shift on a selected object should remove that object from selection
  would be nice to show what would be selected during rect-dragout
 change object that is part of group object does not force remap of bbox of group
 
-clean up and test:
---export-options format  List all the options for the given format
---print  'from=3; to=32; layout=pages; printer=epson-usb/matte360'
-  same as:
---export 'filter="Postscript LL3"  from=3  to=32  layout=pages  command="lp -d epson-usb/matte360"'
-
-Import image list: default previews
-
-
 export with limbo, and no doc or papergroup, means use bounding box for limbo?
-
 
 when importing, have MysteryData, which has special attributes "@file-pos" which says
  where in the original file the attribute starts:
@@ -1384,43 +1412,6 @@ Net:
  save different setups: papertile AND net layout
  load save nets from: 1.net files or 2.OFF files(done)
 
-LaxFiles::ColorAttribute()
-default: make list of as many as there are in segment, if name has 'f' then assume float,
- if lettersNumber, then number is num of bits UNLESS it is 100
-general: rgb     65535 0 0
-         rgb_8   255   0 0
-         rgb_100 100.0 0 0
-         rgba_8  255   0 0 255
-         rgb_16  65535 0 0
-         rgba_f  1.0 0 0 1.0
-         gray    65535
-         graya_f 1.0 1.0
-         cmy
-         cmyk
-         cmykaf
-         hex    ffff0000ffff <- maybe autodetect how many bits
-         hex8   ffffff
-		 hex4   fff
-         rgbx   0xffffff
-
-need conversions: gradient->color patch
-                  image -> imagepatch <- do with image filters rather than specific object type
-                  imagepatch -> image
-                  colorpatch -> image?
-				  engraver -> path
-				  path -> engraver
-				  text -> path
-Convert:
-  bool reversible;
-  char *from;
-  char *to;
-  int support; //like how reliable it is to convert, warnings for what is lost
-  CanConvert(object, from, to, warnings_ret);
-  newobject = Convert(object, to);
-
-remember tool settings: double click on tool icon? right click...
-remember tool settings
-
 configurable command buttons to automate certain things with minimal window clutter....
 
 preflighting: compatibility should be determined by object type managers, not individual objects
@@ -1431,9 +1422,6 @@ like "PS LL3", "EPS 3.0", "SVG 1.2", "PDF 1.3", "PDF 1.4" "HTML/CSS2"
 this would simplify preflight checking
 
 dump OUT an image list? Scribus has "review images" feature.. can jump to location, edit print/view, etc
-
-Saving: multiple documents open, save only the headwindows that refer only to that doc,
-OR save no window configs (saved with project), OR save custom configs
 
 directory reorganization?
  windows/ <-- purely ui elements
@@ -1463,11 +1451,11 @@ food for thought:
   haskell envelope function:  http://projects.haskell.org/diagrams/doc/manual.html
 
 
+
 ======================================DONE=================================================
 When releasing new version, combine these with ROADMAP items for release notes.
 These can then be purged after each release...
 ===========================================================================================
-
 
 
 DONE inkscape bug!! zoom out, NextSpread/PreviousSpread icons stroke on side disappears, somehow handle related, adding more handles fixes

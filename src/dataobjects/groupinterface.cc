@@ -180,7 +180,14 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 		}
 
 	} else if (!strcmp(mes,"docTreeChange")) {
-		//***
+		 //valid all refs in selection
+		LaidoutViewport *vp=((LaidoutViewport *)viewport);
+		for (int c=selection->n()-1; c>=0; c--) {
+			if (!vp->validContext(dynamic_cast<VObjContext*>(selection->e(c)))) {
+				selection->Remove(c);
+			} 
+		}
+
 		RemapBounds();
 		needtodraw=1;
 		return 0;
@@ -492,7 +499,7 @@ int GroupInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 int GroupInterface::GroupObjects()
 {
 	if (selection->n()==0) {
-		viewport->postmessage(_("No objects selected."));
+		PostMessage(_("No objects selected."));
 		return 0;
 	}
 
@@ -501,7 +508,7 @@ int GroupInterface::GroupObjects()
 	FieldPlace place;
 
 	if (!((LaidoutViewport *)viewport)->locateObject(selection->e(0)->obj, place)) {
-		viewport->postmessage("Ugly internal error finding a selected object! Fire the programmer.");
+		PostMessage("Ugly internal error finding a selected object! Fire the programmer.");
 		return 0;
 	} 
 
@@ -509,7 +516,7 @@ int GroupInterface::GroupObjects()
 
 	base = dynamic_cast<Group*>(selection->e(0)->obj->GetParent());
 	if (!base) {
-		viewport->postmessage(_("Bad group/ungroup parent."));
+		PostMessage(_("Bad group parent."));
 		return 0;
 	}
 
@@ -528,25 +535,36 @@ int GroupInterface::GroupObjects()
 		list.pushnodup(place1.pop());
 
 		if (!(place1==place)) {
-			viewport->postmessage("Items must all be at same level to group.");
+			PostMessage("Items must all be at same level to group.");
 			return 0;
 		}
 	}
 	
 	 //now place points to the parent object, and base is limbo or spread->page->layers
-	if (place.e(0)==0) place.pop(0); // remove spread index
-	else if (place.e(0)==1) { 
-		place.pop(0); // remove spread index and pagelocation index
-		place.pop(0); 
-	} else {
-		viewport->postmessage("Containing object must be limbo or a spread.");
-		return 0;
-	}
-	error=base->GroupObjs(list.n,list.e);
-	viewport->postmessage(error ? _("Group failed.") : _("Grouped."));
+//	if (place.e(0)==0) place.pop(0); // remove spread index
+//	else if (place.e(0)==1) { 
+//		place.pop(0); // remove spread index and pagelocation index
+//		place.pop(0); 
+//	} else {
+//		PostMessage("Containing object must be limbo or a spread.");
+//		return 0;
+//	}
+
+	int index=-1;
+	error=base->GroupObjs(list.n,list.e, &index);
+	PostMessage(error ? _("Group failed.") : _("Grouped."));
 	
-	DBG cout <<"*** need to revamp selection after group"<<endl;
-	FreeSelection();
+	if (!error && index>=0) {
+		FreeSelection();
+		place.push(index);
+		
+		VObjContext context;
+		context.SetObject(base->e(index));
+		context.context = place;
+		AddToSelection(&context);
+
+		DBG place.out(".....group position after grouping: ");
+	}
 
 	return 1;
 }
@@ -558,7 +576,7 @@ int GroupInterface::GroupObjects()
 int GroupInterface::UngroupObjects()
 {
 	if (selection->n()==0) {
-		viewport->postmessage("No objects selected.");
+		PostMessage("No objects selected.");
 		return 0;
 	}
 
@@ -577,13 +595,13 @@ int GroupInterface::UngroupObjects()
 		FieldPlace place;
 
 		if (!((LaidoutViewport *)viewport)->locateObject(group, place)) {
-			//viewport->postmessage("Ugly internal error finding a selected object! Fire the programmer.");
+			//PostMessage("Ugly internal error finding a selected object! Fire the programmer.");
 			continue;
 		} 
 
 		base = dynamic_cast<Group*>(group->GetParent());
 		if (!base) {
-			viewport->postmessage(_("Bad group/ungroup parent."));
+			PostMessage(_("Bad ungroup parent."));
 			delete newselection;
 			return 0;
 		}
@@ -613,7 +631,7 @@ int GroupInterface::UngroupObjects()
 	AddToSelection(newselection);
 	newselection->dec_count(); 
 
-	viewport->postmessage(error ? _("Ungrouped (with some errors)") : _("Ungrouped.")); 
+	PostMessage(error ? _("Ungrouped (with some errors)") : _("Ungrouped.")); 
 	
 	return 1;
 }
@@ -628,7 +646,7 @@ int GroupInterface::UngroupObjects()
 int GroupInterface::ToggleGroup()
 {
 	if (selection->n()==0) {
-		viewport->postmessage(_("No objects selected."));
+		PostMessage(_("No objects selected."));
 		return 0;
 	} 
 	
@@ -727,7 +745,7 @@ int GroupInterface::PerformAction(int action)
 		align->owner=this;
 		child=align;
 		viewport->Push(align,-1,0);
-		viewport->postmessage(_("Align"));
+		PostMessage(_("Align"));
 		//viewport->Pop(this);
 		FreeSelection();
 		return 0;
@@ -740,7 +758,7 @@ int GroupInterface::PerformAction(int action)
 		nup->owner=this;
 		child=nup;
 		viewport->Push(nup,-1,0);
-		viewport->postmessage(_("Flow objects"));
+		PostMessage(_("Flow objects"));
 		FreeSelection();
 		return 0;
 
