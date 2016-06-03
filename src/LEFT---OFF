@@ -19,21 +19,29 @@ lost ability to define new bookmarks.. bad!!
 
 hang after reparent object 
 don't allow reparent to a child!! or reparent as appropriate 
+jump to parent seems to be broken
+object reordering frelled, strange bbox display offset, 
+object layer positioning for Home and End keys projecting out in wrong way 
 
-group/ungroup calling TreeObjectReorder, and clearing any selection, needs to stay selected after
-ungroup is not applying transform appropriately
+objectinterface/groupinterface deleteobject goes out of sync when telling viewport to delete: oi.cc:830
+loop over selected fails when object order changes.. need to update contexts of other objs in contexts
+DONE group/ungroup needs to update viewport selection to current selection object
+DONE group/ungroup calling TreeObjectReorder, and clearing any selection, needs to stay selected after
+DONE ungroup is not applying transform appropriately
 DONE grouping frelled.. can group, but cannot seem to select existing groups to ungroup 
 DONE group/ungroup broken
 DONE objects disappear on group <- due to SOMEDATA_LOCK_CONTENTS blocking it out.. it shouldn't though 
 
-bug: add gray marks, then '.' for next object, endless loop!
-bug: add gray bars, move to a page, ^g crashes!
+gray bars does not have accurate bounding box initially
+memory hole: add gray bars and quit
+DONE add gray bars, displays wrong width, but save and load, width is proper. wtf?
+DONE papergroup objects are drawing beneath the white of the pages
+DONE bug: add gray marks, then '.' for next object, endless loop!
+DONE bug: add gray bars, move to a page, ^g crashes!
+
 memory hole paper interface, activate tool, lay down one paper, quit, 3 objects remain
 test-tiled-mark.laidout: delete the bars, add bars back then try to export, program stops (not a segfault)!!!! headwindow gets decremented somehow 
-cut marks are too thick.. cairo problem??  grey bars export to pdf ok, but don't display correctly, outline is too thick
-
-object reordering frelled, strange bbox display offset, 
-object layer positioning for Home and End keys projecting out in wrong way
+DONE cut marks are too thick.. cairo problem??  grey bars export to pdf ok, but don't display correctly, outline is too thick
 
 shearing produced null axes occasionally
 
@@ -65,8 +73,6 @@ select none, select doc, viewport jumps around... it should stay the same area
 switch to None document, and units change to unreasonable
 
 pdf out needs clone deref
-
-bg for spread flipper not the same as the other buttons after popping up spread editor.. wtf???
 
 scribus plugin: if directory of executable script is not writable, it fails! 
  -> should find one that is writable
@@ -172,6 +178,17 @@ put rss/g+ links on all menu pages.. need way to automate including menu bar stu
 perhaps laidout configure should call laxkit configure if it thinks laxkit is not configured yet
 
 minimum dp size is not small enough
+
+GroupInterface groupinterface ObjectInterface objectinterface:
+  viewport should fully utilize Selection::CurrentObject(), keep curobj in sync
+  implement move to "Some other page..." when 'm' in groupinterface
+
+ObjectIndicator objectindicator:
+  need ability to click on object to select that object. Rename only when already selected
+  hover over parents to pop list of alternate children to reparent to
+  show (root) at bottom of stack
+  allow drag reparenting
+  render text with white halo
 
 fontdialog: FontDialog
   bookman font style names getting chopped off
@@ -472,6 +489,7 @@ engraving tool: Engraving  engraver
 
 
 PathInterface: pathinterface
+  bug: when path is a child, width nodes are not drawn correctly
   bug: drag point, press i or I while dragging, moves all points or crashes
   compound paths, change width only changes one. no way to affect all
   needs input boxes for width nodes
@@ -484,7 +502,6 @@ PathInterface: pathinterface
   dup path object links the path style, but save and load, it is not linked... need to sort out line/fill style inheritance/linking
 
   zero tips not working on mesh edit? with import test-engrave.laidout
-  bug: when path is a child, width nodes are not drawn correctly
   bug: problems for non-bez-controlled corners at endpoint. Also variable offset causes weird connections
   bug: make new line with freehand tool, cannot move weight nodes in a rational way
   bug: applyoffset, the bez part at joins is messed up when no offset, suspect problem in FlatpointToCoordinate, mismatch with bez join next to sample points
@@ -536,6 +553,7 @@ PathInterface: pathinterface
   toggle between add points / select points?
     if add points, show dotted line to indicate a new segment incoming
   finish new path/pathoperator/pathsubinterface/pathinterface structure 
+  have a widthtype == hairline? use width==0 as no stroke
  
   DONE select nodes with rectangle broken? <- no, just drawing really thin, misplaced LineWidthScreen
 
@@ -1009,9 +1027,17 @@ Net imposition
 hedron window:
   send imp
   receive imp
+  remember net and paper placement
+  sometimes paper disappears
+  tutorial
+  auto generate equirectangular -> flat
+  reverse project net onto an equirect for export
+  highlight paper when dragging will move it
   need to draw other nets in outline (at least) in paper view
   need to preview sides on hedron
   memory hole in polyptych
+  file open, preview hedra
+  file open, preview equirects
   need to implement more options for polyhedron connections, to allow mobius strips...
 
   DONE proper units for papers
@@ -1474,4 +1500,7 @@ DONE for objectindicator, more than one input window allowed.. should block, and
 DONE crash on ungroup
 DONE update touch_recent for Laidout files in the newer xbel type 
 DONE shell broken sometimes.. bad font??  
+DONE Singles not loading what was saved
+DONE paper spread view, shadow is offset wrong 
+DONE bg for spread flipper not the same as the other buttons after popping up spread editor.. wtf???  
 
