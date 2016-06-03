@@ -63,16 +63,12 @@ laidout import, does not appear to scale correctly, does odd scaling, and insert
 
 ------------ other bugs:
 
-button or key down doesn't cancel tooltip once it is up
-
 ubuntu maximize window failing (but not on today's debian unstable gnome), resize seems to work now
 gnome "application" does one per window, not one per app. this is not a bad thing imnsho, but should be easy to conform to desktop application spec properly
 App/window icon in window manager not showing.. 
 
 select none, select doc, viewport jumps around... it should stay the same area
 switch to None document, and units change to unreasonable
-
-pdf out needs clone deref
 
 scribus plugin: if directory of executable script is not writable, it fails! 
  -> should find one that is writable
@@ -83,13 +79,18 @@ configure should check for libreadline-dev? apparently not pkg-config ready
 
 DONE??? need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)
 
+splitwindow SplitWindow:
 create new pane should dup old pane.. currently divide viewport, removes document focus
+viewwindow, change to spreadview, change back to view.. Horizontal ruler origin is REALLY off 
+splitwindow cursors existing in subwindows 
+create new window, defaults to no doc. should select doc of last pane 
+headwindow swapping is now REALLY messed up
+pane swapping/dropto on maximized, swapping in general...
 
 memory hole in reimpose .. reimposed 5 page booklet 
 memory hole helpwindow 
 memory hole when graphical shell activated 
 memory hole do laidout -n letter, split a window, then quit. undeleted Objects remain!
-memory hole shortcut window
 DONE memory hole cairo backend (can't duplicate)
 
 Lightness slider appears black to white, but the middle is full color, needs segmented render like hue
@@ -98,19 +99,16 @@ click enter area of color pickers, does not install color!!!!
 svg out, EquivalentObject doesn't play nice with defs.. only accessed once.. how to upkeep clones in this case?
 	-> when equiv objects are composed of groups, what happens?
 
-SimpleColorAttribute() should have double rgbaf available, and various css3 stuff
+SimpleColorAttribute() should have double rgbaf available (done)
+SimpleColorAttribute() should allow css3 stuff, like rgb(50%, 25%, .5), and hsl(), where h->[0..360)
 
 sigimp fail for multiple stacks with no folds!!
-
-viewwindow, change to spreadview, change back to view.. Horizontal ruler origin is REALLY off
 
 lineinput not propagating escapable
 
 clones of images scale not like images
 
 svg coord numpoints==0???? numpoints doesn't really serve any purpose other than debugging, but....
-
-splitwindow cursors existing in subwindows
 
 object tool shift-control for rotate does not allow positioning on drag bars
 
@@ -126,8 +124,6 @@ place 3 images, object select, must press delete twice...!?!?!?!
 should not be able to group select an object and another object nested within
 
 file previewer not updating preview when using arrow keys
-
-create new window, defaults to no doc. should select doc of last pane
 
 add blank image, change description, do not change filename, makes width/height zap back to 0...
 
@@ -145,9 +141,6 @@ make sure all imposition types are available in interpreter
 resource impositions not showing description when selected
 
 GradientInterface problem rendering radial when two circles separated by large distance
-
-headwindow swapping is now REALLY messed up
-pane swapping/dropto on maximized, swapping in general...
 
 WATCH OUT for when preview file is OLDER than original file!!
 
@@ -613,7 +606,7 @@ image
   should really make this graphicsmagick or cairo based, not gs+pdf based
 laidout:
   need a Laidout out! for partial exports, or conversions between nets/papergroup lines/etc
-pdf:
+pdf PDF:
   graphicsmagick for import? subimage and subrange of image_info passed to ReadImage
   export lines has outlines in evince?
   export complex engraving is really, really slow. probably all the string reallocation?
@@ -1503,4 +1496,5 @@ DONE shell broken sometimes.. bad font??
 DONE Singles not loading what was saved
 DONE paper spread view, shadow is offset wrong 
 DONE bg for spread flipper not the same as the other buttons after popping up spread editor.. wtf???  
+DONE button or key down doesn't cancel tooltip once it is up 
 
