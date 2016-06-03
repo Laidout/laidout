@@ -334,10 +334,12 @@ void VObjContext::clearToPage()
  * </pre>
  * \todo *** implement these
  */
+//searchmode
 #define Search_None    0
 #define Search_Find    1
 #define Search_Select  2
 
+//searchcriteria
 #define Search_Any              0
 #define Search_Visible          1
 #define Search_UnderMouse       2 
@@ -1253,6 +1255,7 @@ int LaidoutViewport::SelectObject(int i)
 		findAny();
 		if (firstobj.obj) setCurobj(&firstobj);
 		else return 0;
+		needtodraw=1;
 
 	} else if (i==-2 || i==-1) { //prev or next
 		VObjContext o;
@@ -1274,10 +1277,28 @@ int LaidoutViewport::SelectObject(int i)
 	} else return 0;
 	
 	ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); // always returns non-null
-	if (viewer) {
-		viewer->SelectToolFor(curobj.obj->whattype(),&curobj);
-		viewer->updateContext(1);
-	}
+	viewer->SelectToolFor(curobj.obj->whattype(),&curobj);
+	//viewer->updateContext(1);
+
+//	if (!viewer->CurrentTool()->draws(curobj.obj->whattype())) {
+//		 //current tool can't handle current object, switch to object tool
+//		for (c=0; c<tools.n; c++) {
+//			if (!strcmp(tools.e[c]->whattype(),"ObjectInterface")) {
+//				***
+//				SelectTool(tools.e[c]->object_id);
+//				((ObjectInterface*)tools.e[c])->FreeSelection();
+//				((ObjectInterface*)tools.e[c])->AddToSelection(oc);
+//				break;
+//			}
+//		}
+//
+//	} else {
+//		 //set obj of current tool
+//		viewer->CurrentTool()->UseThisObject(&curobj);
+//	}
+
+	viewer->updateContext(1);
+	needtodraw=1;
 	return 1;
 }
 
@@ -1344,13 +1365,14 @@ int LaidoutViewport::FindObject(int x,int y,
 										int start,
 										LaxInterfaces::ObjectContext **oc)
 {
-	
+	DBG cerr <<"lov.FindObject START: "<<endl;
+
 	 //init the search, if necessary
 	VObjContext nextindex;
 	if (searchmode!=Search_Find || start || x!=searchx || y!=searchy) { //init search
 		foundobj.clear();
 		firstobj.clear();
-		 
+
 		 // Set up firstobj
 		FieldPlace context;
 		if (exclude) {
@@ -1377,7 +1399,7 @@ int LaidoutViewport::FindObject(int x,int y,
 		nextindex=foundtypeobj;
 	}
 	foundtypeobj.clear(); // this one is always reset?
-	if (!firstobj.obj) return 0;
+	if (!firstobj.obj) return 0; //no first object was found. give up!
 	if (dtype) searchtype=dtype;
 
 	if (!start) nextObject(&nextindex);
@@ -1391,7 +1413,6 @@ int LaidoutViewport::FindObject(int x,int y,
 	double m[6];
 	DBG firstobj.context.out("firstobj");
 	
-	//while (start || (!start && !(nextindex==firstobj))) {
 	int nob=1; //is there a next object
 	while (nob==1) {
 		if (start) start=0;
@@ -1409,7 +1430,7 @@ int LaidoutViewport::FindObject(int x,int y,
 		DBG		<<nextindex.obj->object_id<<" ("<<nextindex.obj->whattype()<<") "<<endl;
 
 		if (nextindex.obj->pointin(pp)) {
-			DBG cerr <<" -- found"<<endl;
+			DBG cerr <<" -- found point in object"<<endl;
 			if (!foundobj.obj) foundobj=nextindex;
 			if (searchtype && strcmp(nextindex.obj->whattype(),searchtype)) {
 				nob=nextObject(&nextindex);
@@ -1421,7 +1442,7 @@ int LaidoutViewport::FindObject(int x,int y,
 			DBG foundtypeobj.context.out("  foundtype");//for debugging
 			return 1;
 		}
-		DBG cerr <<" -- not found in "<<nextindex.obj->object_id<<endl;
+		DBG cerr <<" -- point not found in "<<nextindex.obj->object_id<<endl;
 		nob=nextObject(&nextindex);
 	}
 	 
@@ -1576,29 +1597,45 @@ int LaidoutViewport::nextObject(VObjContext *oc,int inc)//inc=0
 {
 	int c;
 	anObject *d=NULL;
+
 	DBG int cn=1;
+	DBG firstobj.context.out("lov::nextObject() firstobj:");
+
 	do {
 		DBG cerr <<"LaidoutViewport->nextObject count="<<cn++<<endl;
 
-		c=ObjectContainer::nextObject(oc->context,0,Next_SkipLockedKids|(inc?Next_Increment:Next_Decrement),&d);
+		c=ObjectContainer::nextObject(oc->context, 0, Next_SkipLockedKids|(inc?Next_Increment:Next_Decrement), &d);
 		oc->SetObject(dynamic_cast<SomeData *>(d));
 		if (c==Next_Error) return 0; //error finding a next
 
 		 //at this point oc/d might be a somedata, or it might be a container
 		 //like this, or a spread..
-		if (*oc==firstobj) return 0; //wrapped around to first
+		if (*oc==firstobj) {
+			DBG cerr <<"search hit first, aborting with nothing!"<<endl;
+			return 0; //wrapped around to first
+		}
 		
 		 //if is Unselectable, then continue. Else return the found object.
-		if (!(oc->obj)) continue;
-		if (dynamic_cast<ObjectContainer*>(oc->obj) 
-			  && (dynamic_cast<ObjectContainer*>(oc->obj)->object_flags() & OBJ_Unselectable)) {
+		if (!(oc->obj)) {
+			DBG cerr <<"no obj in found oc, continuing search!"<<endl;
 			continue;
 		}
+
+		if (dynamic_cast<ObjectContainer*>(oc->obj) 
+			  && (dynamic_cast<ObjectContainer*>(oc->obj)->object_flags() & OBJ_Unselectable)) {
+			DBG cerr <<"found objectcontainer is unselectable, continuing search!"<<endl;
+			continue;
+		}
+
 		if (dynamic_cast<SomeData*>(oc->obj)) {
-			if (dynamic_cast<SomeData*>(oc->obj)->flags&SOMEDATA_UNSELECTABLE) continue;
+			if (dynamic_cast<SomeData*>(oc->obj)->flags&SOMEDATA_UNSELECTABLE) {
+				DBG cerr <<"found somedata is unselectable, continuing search!"<<endl;
+				continue;
+			}
 
 		}
 
+		DBG cerr <<"lov::nextObject Found an object to return!"<<endl;
 		return 1;
 	} while (1);
 	
@@ -1654,8 +1691,9 @@ void LaidoutViewport::findAny()
 	int c,c2;
 	SomeData *obj=NULL;
 	firstobj.clear();
-	Page *page;
+
 	if (spread) {
+		Page *page;
 		for (c=0; c<spread->pagestack.n(); c++) {
 			page=dynamic_cast<Page *>(spread->pagestack.object_e(c));
 			if (!page) continue;
@@ -1668,6 +1706,7 @@ void LaidoutViewport::findAny()
 			}
 		}
 	}
+
 	if (!obj) {
 		if (limbo->n()) {
 			firstobj.set(limbo->e(0),2,0,0);
@@ -1675,6 +1714,7 @@ void LaidoutViewport::findAny()
 			return;
 		}	
 	}
+
 	if (!obj && papergroup && papergroup->n()) {
 		firstobj.set(dynamic_cast<SomeData*>(papergroup->object_e(0)), 2, 2,0);
 		DBG firstobj.context.out(" findAny found: ");
@@ -2362,9 +2402,10 @@ void LaidoutViewport::Refresh()
 	 //draw papergroup
 	DBG cerr <<"drawing viewport->papergroup.."<<endl;
 	if (papergroup) {
+		 //draw paper outlines
 		ViewerWindow *vw=dynamic_cast<ViewerWindow *>(win_parent);
 		PaperInterface *pi=dynamic_cast<PaperInterface *>(vw->FindInterface("PaperInterface"));
-		if (pi) pi->DrawGroup(papergroup,1,1,0);
+		if (pi) pi->DrawGroup(papergroup,1,1,0, 1);
 	}
 
 	
@@ -2408,7 +2449,7 @@ void LaidoutViewport::Refresh()
 		 
 		DBGCAIROSTATUS(" LO viewport after spread, cairo status:  ")
 
-		 // draw the pages
+		 // draw the page's objects and margins
 		Page *page=NULL;
 		int pagei=-1;
 		flatpoint p;
@@ -2502,6 +2543,13 @@ void LaidoutViewport::Refresh()
 		}
 	}
 	
+	if (papergroup) {
+		 //draw paper objects
+		ViewerWindow *vw=dynamic_cast<ViewerWindow *>(win_parent);
+		PaperInterface *pi=dynamic_cast<PaperInterface *>(vw->FindInterface("PaperInterface"));
+		if (pi) pi->DrawGroup(papergroup,1,1,0, 2);
+	}
+
 	DBGCAIROSTATUS(" LO viewport after pages, cairo status:  ")
 
 	
@@ -3518,7 +3566,7 @@ class PageFlipper : public NumSlider
 	PageFlipper(Document *ndoc,anXWindow *parnt,const char *ntitle,
 				anXWindow *prev,unsigned long nowner,const char *nsendthis,const char *nlabel);
 	virtual ~PageFlipper();
-	virtual void Refresh();
+	//virtual void Refresh();
 	virtual const char *tooltip(int mouseid=0);
 };
 
@@ -3546,42 +3594,6 @@ const char *PageFlipper::tooltip(int mouseid)
 		else return _("The current spread");
 	}
 	return currentcontext;
-}
-
-void PageFlipper::Refresh()
-{
-	NumSlider::Refresh();
-//	if (!win_on || !needtodraw) return;
-//	background_color(win_colors->bg);
-//	clear_window(this);
-//
-//	int x,y;
-//	unsigned int state;
-//	if (buttondown) {
-//		mouseposition(buttondowndevice,this,&x,&y,&state,NULL);
-//		if ((x>=0 && x<win_w && y>0 && y<win_h)) {
-//			if (x<win_w/2) {
-//				 // draw left arrow
-//				foreground_color(coloravg(win_colors->bg,win_colors->fg,.1));
-//				draw_thing(this, win_w/4,win_h/2, win_w/4,win_h/2,1, THING_Triangle_Left);
-//			} else {
-//				 // draw right arrow
-//				foreground_color(coloravg(win_colors->bg,win_colors->fg,.1));
-//				draw_thing(this, win_w*3/4,win_h/2, win_w/4,win_h/2,1, THING_Triangle_Right);
-//			}
-//		}
-//	}
-//
-//	foreground_color(win_colors->fg);
-//	
-//	char *str=newstr(label);
-//	if (doc && curitem>=0 && curitem<doc->pages.n) appendstr(str,doc->pages.e[curitem]->label);
-//	else appendstr(str,"limbo");
-//
-//	textout(this, str,-1,win_w/2,win_h/2,LAX_CENTER);
-//	delete[] str;
-//
-//	needtodraw=0;
 }
 
 //-------------end PageFlipper
