@@ -826,9 +826,11 @@ Laxkit::anObject *PaperGroup::object_e(int i)
 	return NULL;
 }
 
-//! Objects have no special names, so return NULL.
 const char *PaperGroup::object_e_name(int i)
-{ return NULL; }
+{
+	if (i>=0 && i<objs.n()) return objs.e(i)->Id();
+	return NULL;
+}
 
 const double *PaperGroup::object_transform(int i)
 {
