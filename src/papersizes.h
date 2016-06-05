@@ -57,8 +57,8 @@ class PaperStyle : public Value
 	PaperStyle(const char *nname=NULL);
 	PaperStyle(const char *nname,double ww,double hh,unsigned int nflags,double ndpi,const char *defunits);
 	virtual ~PaperStyle();
-	virtual double w() { if (flags&1) return height; else return width; }
-	virtual double h() { if (flags&1) return width; else return height; }
+	virtual double w() { if (landscape()) return height; else return width; }
+	virtual double h() { if (landscape()) return width; else return height; }
 	virtual int landscape() { return flags&PAPERSTYLE_Landscape; }
 	virtual int landscape(int l)
 		{ if (l) flags|=PAPERSTYLE_Landscape; else flags&=~PAPERSTYLE_Landscape; return flags&PAPERSTYLE_Landscape; }
