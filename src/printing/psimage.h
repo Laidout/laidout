@@ -23,10 +23,9 @@
 namespace Laidout {
 
 
-void psImage(FILE *f,LaxInterfaces::ImageData *i);
-void psImage_masked_interleave1(FILE *f,LaxInterfaces::ImageData *img);
-void psImage_masked_interleave2(FILE *f,LaxInterfaces::ImageData *img);
-void psImage_103(FILE *f,LaxInterfaces::ImageData *img);
+int psImage(FILE *f,LaxInterfaces::ImageData *i);
+int psImage_masked_interleave1(FILE *f, unsigned char *buf, int width, int height);
+int psImage_103(FILE *f, unsigned char *buf, int width, int height);
 
 
 } // namespace Laidout
