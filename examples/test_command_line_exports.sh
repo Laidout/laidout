@@ -21,13 +21,14 @@
 LAIDOUT=../src/laidout
 
 
-$LAIDOUT -e 'format=pdf' test-all-objects.laidout
-$LAIDOUT -e 'format=scribus' test-all-objects.laidout
-$LAIDOUT -e 'format=svg' test-all-objects.laidout 
-$LAIDOUT -e 'format=image' test-all-objects.laidout
-$LAIDOUT -e 'format=podofo' test-all-objects.laidout
+$LAIDOUT -e 'format=pdf'          test-all-objects.laidout
+$LAIDOUT -e 'format=scribus'      test-all-objects.laidout
+$LAIDOUT -e 'format=svg'          test-all-objects.laidout 
+$LAIDOUT -e 'format=image'        test-all-objects.laidout
+$LAIDOUT -e 'format="image via ghostscript"' test-all-objects.laidout
+$LAIDOUT -e 'format=podofo'       test-all-objects.laidout
 $LAIDOUT -e 'format=passepartout' test-all-objects.laidout
-$LAIDOUT -e 'format=postscript' test-all-objects.laidout
-$LAIDOUT -e 'format=eps' test-all-objects.laidout
+$LAIDOUT -e 'format=postscript'   test-all-objects.laidout
+$LAIDOUT -e 'format=eps'          test-all-objects.laidout
 
 

@@ -1698,7 +1698,7 @@ ExportFilter *LaidoutApp::FindExportFilter(const char *name, bool exact_only)
 {
 	 //search for exact format match first
 	for (int c=0; c<laidout->exportfilters.n; c++) {
-		if (!strcmp(laidout->exportfilters.e[c]->VersionName(),name)) {
+		if (!strcasecmp(laidout->exportfilters.e[c]->VersionName(),name)) {
 			return laidout->exportfilters.e[c];
 		}
 	}

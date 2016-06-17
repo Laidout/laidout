@@ -20,6 +20,7 @@
 #include "postscript.h"
 #include "svg.h"
 #include "image.h"
+#include "image-gs.h"
 #include "scribus.h"
 #include "pdf.h"
 #include "podofoimposeplan.h"
@@ -37,6 +38,7 @@ void installFilters()
 	installScribusFilter();
 	installLaidoutFilter();
 	installImageFilter();
+	installImageGsFilter();
 	installPodofoFilter();
 	installPptFilter();
 	installPostscriptFilters();

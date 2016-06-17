@@ -602,8 +602,10 @@ file filters: filefilters:
   DONE remember last export type
   DONE when saving, name shouldn't be red if ok to save
 image
-  make sure temp file is removed, should probably locate in user space maybe? or make sure perms set reasonably
+  export format should be an enum. need to extract possible save formats form Laxkit
   should really make this graphicsmagick or cairo based, not gs+pdf based
+  should color background per paper if !transparent, and use some default for limbo color
+  for gs, make sure temp file is removed, should probably locate in user space maybe? or make sure perms set reasonably
 laidout:
   need a Laidout out! for partial exports, or conversions between nets/papergroup lines/etc
 pdf PDF:

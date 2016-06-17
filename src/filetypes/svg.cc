@@ -263,7 +263,10 @@ int SvgExportConfig::assign(FieldExtPlace *ext,Value *v)
 ObjectDef* SvgExportConfig::makeObjectDef()
 {
     ObjectDef *def=stylemanager.FindDef("SvgExportConfig");
-	if (def) return def;
+	if (def) {
+		def->inc_count();
+		return def;
+	}
 
     ObjectDef *exportdef=stylemanager.FindDef("ExportConfig");
     if (!exportdef) {
@@ -303,7 +306,7 @@ ObjectDef* SvgExportConfig::makeObjectDef()
             NULL);//newfunc
  
 
-	stylemanager.AddObjectDef(exportdef,0);
+	stylemanager.AddObjectDef(def,0);
 	return def;
 }
 
@@ -1508,7 +1511,7 @@ const char *SvgImportFilter::FileType(const char *first100bytes)
 ObjectDef *SvgImportFilter::GetObjectDef()
 {
 	ObjectDef *styledef;
-	styledef=stylemanager.FindDef("ImportConfig");
+	styledef=stylemanager.FindDef("SvgImportConfig");
 	if (styledef) return styledef; 
 
 	styledef=makeObjectDef();

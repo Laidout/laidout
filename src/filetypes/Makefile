@@ -19,6 +19,7 @@ objs= \
 	exportdialog.o \
 	importdialog.o \
 	image.o \
+	image-gs.o \
 	laidoutimport.o \
 	pdf.o \
 	podofoimposeplan.o \

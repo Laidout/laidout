@@ -2955,9 +2955,9 @@ page 0
 limbo Limbo 1
   id Group4143
 window
-  xywh 1 81 1124 763
+  xywh 1 81 1124 600
   pane
-    xyxy 0 0 1124 763
+    xyxy 0 0 1124 600
     window ViewWindow
       document /home/tom/other/p/github/laidout/examples/test-all-objects.laidout
       layout Pages

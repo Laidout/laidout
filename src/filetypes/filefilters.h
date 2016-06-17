@@ -103,8 +103,8 @@ class DocumentExportConfig : public Style
 	int paperrotation;
 	int rotate180; //0 or 1
 	int curpaperrotation; //set automatically, not a user variable
-	char collect_for_out;
-	char rasterize;
+	int collect_for_out;
+	bool rasterize;
 	bool textaspaths;
 	Laxkit::DoubleBBox crop;
 
@@ -129,6 +129,7 @@ class DocumentExportConfig : public Style
 	virtual int assign(FieldExtPlace *ext,Value *v);
 
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual LaxFiles::Attribute * dump_out_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 

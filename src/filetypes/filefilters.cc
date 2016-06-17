@@ -990,7 +990,7 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
  * 1 for tofiles: 1 spread (or paper slice) per file,
  * 2 for command.
  */
-/*! \var char DocumentExportConfig::collect_for_out
+/*! \var int DocumentExportConfig::collect_for_out
  * \brief Whether to gather needed extra files to one place.
  *
  * If you export to svg, for instance, there will be references to files whereever they are,
@@ -1144,6 +1144,33 @@ int DocumentExportConfig::assign(FieldExtPlace *ext,Value *v)
 	return 0;
 }
 
+LaxFiles::Attribute *DocumentExportConfig::dump_out_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+{
+	if (!att) att=new Attribute;
+
+	if (filename) att->push("tofile", filename);
+	if (tofiles) att->push("tofiles", tofiles);
+	if (filter) att->push("format", filter->VersionName());
+	if (doc && doc->imposition) {
+		att->push("imposition", doc->imposition->whattype());
+		att->push("layout", doc->imposition->LayoutName(layout));
+	}
+	att->push("start",start);
+	att->push("end",  end);
+
+	att->push("paperrotation", paperrotation);
+	att->push("rotate180", rotate180==0 ? "yes" : "no"); 
+	att->push("reverse", reverse_order ? "yes" : "no");
+	att->push("batches", batches);
+	if (evenodd==Odd) att->push("evenodd","odd");
+	else if (evenodd==Even) att->push("evenodd","even");
+	else att->push("evenodd","all");
+
+	att->push("textaspaths", textaspaths ? "yes" : "no");
+
+	return att;
+}
+
 void DocumentExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
@@ -1162,7 +1189,6 @@ void DocumentExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpCo
 		fprintf(f,"%spaperrotation 0      #0|90|180|270. Whether to rotate each exported (final) paper by that number of degrees\n",spc);
 		fprintf(f,"%srotate180 yes        #or no. Whether to rotate every other paper by 180 degrees, in addition to paperrotation\n",spc);
 
-		DBG cerr <<" *** need to implement DocumentExportConfig::paperrotation!"<<endl;
 		return;
 	}
 	if (filename) fprintf(f,"%stofile %s\n",spc,filename);

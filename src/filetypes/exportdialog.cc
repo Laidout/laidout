@@ -78,7 +78,7 @@ ConfigEventData::~ConfigEventData()
 ExportDialog::ExportDialog(unsigned long nstyle,unsigned long nowner,const char *nsend,
 						   Document *doc,
 						   Group *limbo,
-						   PaperGroup *group,
+						   PaperGroup *papergroup,
 						   ExportFilter *nfilter,
 						   const char *file, 
 						   int layout, //!< Type of layout to export
@@ -92,8 +92,31 @@ ExportDialog::ExportDialog(unsigned long nstyle,unsigned long nowner,const char 
 {
 	dialog_style=nstyle&~ANXWIN_MASK;
 
-	config=new DocumentExportConfig(doc,limbo,file,NULL,layout,pmin,pmax,group);
 	filter=nfilter;
+	if (filter) {
+		config=filter->CreateConfig(NULL);
+		config->layout = layout;
+		config->start  = pmin;
+		config->end    = pmax;
+		makestr(config->filename, file);
+
+		if (doc!=config->doc) {
+			if (config->doc) config->doc->dec_count();
+			config->doc = doc;
+			if (config->doc) config->doc->inc_count(); 
+		}
+		if (limbo!=config->limbo) {
+			if (config->limbo) config->limbo->dec_count();
+			config->limbo = limbo;
+			if (config->limbo) config->limbo->inc_count(); 
+		}
+		if (papergroup!=config->papergroup) {
+			if (config->papergroup) config->papergroup->dec_count();
+			config->papergroup = papergroup;
+			if (config->papergroup) config->papergroup->inc_count(); 
+		}
+
+	} else config=new DocumentExportConfig(doc,limbo,file,NULL,layout,pmin,pmax,papergroup);
 
 	cur=pcur;
 
@@ -133,6 +156,11 @@ int ExportDialog::preinit()
 			}
 		}
 		if (!filter) filter=laidout->exportfilters.e[0];
+
+		 //update config to new filter
+		DocumentExportConfig *nconfig=filter->CreateConfig(config);
+		if (config) config->dec_count();
+		config=nconfig;
 	}
 
 	return 0;
@@ -181,13 +209,21 @@ void ExportDialog::dump_in_atts(Attribute *att,int flag, LaxFiles::DumpContext *
 			IntAttribute(value,&win_h);
 
 		} else if (!strcmp(name,"last_format") && !isblank(value)) {
+			ExportFilter *nfilter=NULL;
 			for (int c2=0; c2<laidout->exportfilters.n; c2++) {
 				if (!strcmp(value, laidout->exportfilters.e[c2]->VersionName())) {
-					filter=laidout->exportfilters.e[c2];
+					nfilter=laidout->exportfilters.e[c2];
 					break;
 				}
 			}
 
+			 //update config to new filter
+			if (nfilter!=filter) {
+				filter=nfilter;
+				DocumentExportConfig *nconfig=filter->CreateConfig(config);
+				if (config) config->dec_count();
+				config=nconfig;
+			} 
 		}
 	}
 
@@ -711,8 +747,44 @@ void ExportDialog::updateEdits()
 				AddWin(box,1,i++); 
 				AddNull(i++);
 
+			} else if (fd->format==VALUE_String) { 
+				sprintf(scratch,"extra-%s",fd->name);
+				LineInput *box;
+				last=box=new LineInput(this,scratch,NULL,0, 
+									 0,0,0,0,0, 
+									 last,object_id,scratch,
+									 fd->Name, NULL);
+
+				Value *v=config->dereference(fd->name,strlen(fd->name));
+				StringValue *str=dynamic_cast<StringValue*>(v);
+				if (str) box->SetText(str->str);
+				v->dec_count();
+
+				AddWin(box,1,i++); 
+				AddNull(i++);
+
+			} else if (fd->format==VALUE_Int || fd->format==VALUE_Real) { 
+				sprintf(scratch,"extra-%s",fd->name);
+				LineInput *box;
+				last=box=new LineInput(this,scratch,NULL,(fd->format==VALUE_Int ? LINP_INT : LINP_FLOAT), 
+									 0,0,0,0,0, 
+									 last,object_id,scratch,
+									 fd->Name, NULL);
+
+				Value *v=config->dereference(fd->name,strlen(fd->name));
+				IntValue *ii=dynamic_cast<IntValue*>(v);
+				if (ii) box->SetText((int)ii->i);
+				else {
+					DoubleValue *ii=dynamic_cast<DoubleValue*>(v);
+					if (ii) box->SetText(ii->d);
+				}
+				v->dec_count();
+
+				AddWin(box,1,i++); 
+				AddNull(i++);
+
 			} else {
-				DBG cerr << "*** warning! uncaught field in an export config!"<<endl;
+				DBG cerr << "*** warning! uncaught field type "<<element_TypeNames(fd->format)<<"in an export config!"<<endl;
 			}
 		}
 	}

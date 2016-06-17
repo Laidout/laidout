@@ -473,11 +473,11 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 		
 		 //draw white fill or plain outline
 		if (fill || shadow) {
-			dp->NewFG(data->red>>8,data->green>>8,data->blue>>8);
+			dp->NewFG(&data->outlinecolor);
 			dp->NewBG(~0);
 			dp->drawlines(p,4,1,2);
 		} else {
-			dp->NewFG(data->red>>8,data->green>>8,data->blue>>8);
+			dp->NewFG(&data->outlinecolor);
 			dp->drawlines(p,4,1,0);
 		}
 
@@ -642,8 +642,7 @@ void PaperInterface::createMaybebox(flatpoint p)
 	}
 
 	maybebox=new PaperBoxData(box); //incs count of box
-	maybebox->red=maybebox->blue=65535;
-	maybebox->green=0;
+	maybebox->outlinecolor.rgbf(1.0, 0.0, 1.0);
 	if (boxdata) {
 		maybebox->xaxis(boxdata->xaxis());
 		maybebox->yaxis(boxdata->yaxis());
