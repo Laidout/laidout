@@ -24,7 +24,7 @@
 namespace Laidout {
 
 
-void installImageFilter();
+void installImageGsFilter();
 
 
 //------------------------------------ ImageGsExportFilter ----------------------------------
