@@ -2017,9 +2017,6 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 		return 1;
 
 	} else if (!strcmp(element->name,"path")) {
-		 //**** TODO for all path based elements, there will possible be a style attribute
-		 //  that defines line width, colors, etc.... really need a fuller implementation
-		 //  of possible svg attributes for all element types: consolidate and reduce code..
 		PathsData *paths=dynamic_cast<PathsData *>(newObject("PathsData"));
 		int d_index=-1;
 		Attribute *powerstroke=NULL;
