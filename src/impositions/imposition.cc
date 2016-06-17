@@ -700,7 +700,7 @@ int Imposition::SetPaperSize(PaperStyle *npaper)
 	if (papergroup) papergroup->dec_count();
 	papergroup=new PaperGroup;
 	papergroup->papers.push(newboxdata);
-	papergroup->OutlineColor(65535,0,0); //default to red papergroup
+	papergroup->OutlineColor(1.0,0,0); //default to red papergroup
 	newboxdata->dec_count();
 
 	return 0;

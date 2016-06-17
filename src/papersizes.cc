@@ -1,6 +1,4 @@
 //
-// $Id$
-//	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -736,8 +734,8 @@ int PaperBox::Set(PaperStyle *paper)
  */
 PaperBoxData::PaperBoxData(PaperBox *paper)
 {
-	red=green=0; //color of the outline, default is blue
-	blue=65535;
+	outlinecolor.rgbf(0,0,1.0); //color of the outline, default is blue
+	color.rgbf(1.0,1.0,1.0);
 
 	box=paper;
 	if (box) {
@@ -749,6 +747,19 @@ PaperBoxData::PaperBoxData(PaperBox *paper)
 PaperBoxData::~PaperBoxData()
 {
 	if (box) box->dec_count();
+}
+
+void PaperBoxData::FindBBox()
+{
+	minx = miny = 0;
+
+	if (box && box->paperstyle) {
+		maxx=box->paperstyle->w();
+		maxy=box->paperstyle->h();
+
+	} else {
+		maxx = maxy = -1;
+	}
 }
 
 
@@ -839,12 +850,10 @@ const double *PaperGroup::object_transform(int i)
 }
 
 //! Make the outline this color. Range [0..65535].
-int PaperGroup::OutlineColor(int r,int g,int b)
+double PaperGroup::OutlineColor(double r,double g,double b)
 {
 	for (int c=0; c<papers.n; c++) {
-		papers.e[c]->red=r;
-		papers.e[c]->green=g;
-		papers.e[c]->blue=b;
+		papers.e[c]->outlinecolor.rgbf(r,g,b);
 	}
 	return papers.n;
 }
@@ -859,6 +868,27 @@ PaperStyle *PaperGroup::GetBasePaper(int index)
 			&& papers.e[index]->box->paperstyle->width)
 		return papers.e[index]->box->paperstyle;
 	return NULL;
+}
+
+/*! Fill in the bounds required to fit all the defined papers.
+ *
+ * Return 0 for success or nonzero for invalid set of papers.
+ * -1 means there are no defined papers.
+ *
+ * box_ret must NOT be NULL.
+ */
+int PaperGroup::FindPaperBBox(Laxkit::DoubleBBox *box_ret)
+{
+	if (papers.n == 0) return -1;
+
+	for (int c=0; c<papers.n; c++) {
+		papers.e[c]->FindBBox();
+		if (!papers.e[c]->validbounds()) return 1;
+
+		box_ret->addtobounds(papers.e[c]->m(), papers.e[c]);
+	}
+
+	return 0;
 }
 
 
@@ -905,8 +935,10 @@ void PaperGroup::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *con
 		m=papers.e[c]->m();
 		fprintf(f,"%s  matrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
 			spc, m[0],m[1],m[2],m[3],m[4],m[5]);
-		fprintf(f,"%s  outlinecolor %d %d %d\n",
-			spc, papers.e[c]->red, papers.e[c]->green, papers.e[c]->blue);
+		fprintf(f,"%s  outlinecolor rgbf(%.10g, %.10g, %.10g)\n",
+			spc, papers.e[c]->outlinecolor.Red(),
+				 papers.e[c]->outlinecolor.Green(),
+				 papers.e[c]->outlinecolor.Blue());
 		papers.e[c]->box->paperstyle->dump_out(f,indent+2,0,context);
 	}
 	if (objs.n()) {
@@ -923,14 +955,17 @@ void PaperGroup::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *con
 	for (int c=0; c<att->attributes.n; c++)  {
 		nme=att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
+
 		if (!strcmp(nme,"name")) {
 			makestr(name,value);
+
 		} else if (!strcmp(nme,"Name")) {
 			makestr(Name,value);
+
 		} else if (!strcmp(nme,"marks")) {
 			objs.dump_in_atts(att->attributes.e[c],flag,context);
+
 		} else if (!strcmp(nme,"paper")) {
-			int foundcolor=0;
 			PaperStyle *paperstyle=new PaperStyle(NULL,0,0,0,0,"in");
 			paperstyle->dump_in_atts(att->attributes.e[c],flag,context);
 			PaperBox *paperbox=new PaperBox(paperstyle);
@@ -938,11 +973,13 @@ void PaperGroup::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *con
 			PaperBoxData *boxdata=new PaperBoxData(paperbox);
 			paperbox->dec_count();
 			boxdata->dump_in_atts(att->attributes.e[c],flag,context);
-			if (!foundcolor) {
-				boxdata->red=65535;
-				boxdata->green=0;
-				boxdata->blue=65535;
-			}
+
+			Attribute *foundcolor = att->attributes.e[c]->find("outlinecolor");
+			if (foundcolor) {
+				SimpleColorAttribute(foundcolor->value, NULL, &boxdata->outlinecolor, NULL);
+			} else {
+				boxdata->outlinecolor.rgbf(1.0, 0.0, 1.0);
+			} 
 			papers.push(boxdata);
 			boxdata->dec_count();
 		}
