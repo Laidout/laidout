@@ -313,7 +313,7 @@ const char *ScribusExportFilter::VersionName()
 ObjectDef *ScribusExportFilter::GetObjectDef()
 {
 	ObjectDef *styledef;
-	styledef=stylemanager.FindDef("DocumentExportConfig");
+	styledef=stylemanager.FindDef("ScribusExportConfig");
 	if (styledef) return styledef; 
 
 	styledef=makeObjectDef();
