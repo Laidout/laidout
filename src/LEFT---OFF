@@ -255,19 +255,22 @@ CharacterInterface characterinterface
   alternate glyphs
   DONE outclick needs to destroy without sending
 
-text on path:
+text on path textonpath:
   DONE baseline handles
   DONE offset handles
   rotation handle
   DONE envelope
   stretch envelope
+  position glyphs based on middle of glyph, not start of glyph
   kern handles
   offset from stroke or from path
-  multiline?
-  drag out line to define chain connection
-  option to auto expand line
   convert to path
   click for new, then save, saves a blank one! probably issue in captioninterface also
+    need to only add to the document only after there is non-null text
+  drag out line to define chain connection
+  option to auto expand line
+  multiline?
+  DONE deleting selected points when >=2 selected results in crash
 
 text (see also src/text/text.txt):
   need options per font on export to: convert to path, subset, embed
@@ -479,17 +482,17 @@ engraving tool: Engraving  engraver
 
 
 PathInterface: pathinterface
-  bug: when path is a child, width nodes are not drawn correctly
   bug: drag point, press i or I while dragging, moves all points or crashes
   compound paths, change width only changes one. no way to affect all
   needs input boxes for width nodes
   need to show hints for when new points will be placed
-  bug: line cache on a square produces inf. lines off when final+initial coincide
   bug: should not create new control points by pressing cntl, unless there is movement
   bug: shift click down then up on a point selects then deselects.. control can toggle
   bug: seems to be possible to move nodes out of order
   debug remove points affect on weight nodes
   dup path object links the path style, but save and load, it is not linked... need to sort out line/fill style inheritance/linking
+  DONE bug: when path is a child, width nodes are not drawn correctly
+  DONE bug: line cache on a square produces inf. lines off when final+initial coincide
 
   zero tips not working on mesh edit? with import test-engrave.laidout
   bug: problems for non-bez-controlled corners at endpoint. Also variable offset causes weird connections
@@ -627,7 +630,10 @@ Scribus:
   scribus import: need to read page sizes from actual page attributes, as it may well be different than in document attributes
     -> this necessitates revamp of singles to use more than one paper type
 svg:
-  dup nodes causing bad stroke approximation
+  testsvg-disappearing.svg.. many objects disapper after read in at different zoom levels. wtaf??
+  on read in width nodes are zeroed, does not correspond to actual width of line
+  text in fail
+  some other dup nodes causing bad stroke approximation in some of the stuff that magically disappears
   can't get at the weight nodes after import 
   after in: nodes right on each other produce bad vectors
   in hangs.. should NOT default to powerstroke.. the cache for complex stuff REALLY bogs down, creating NaN draws
