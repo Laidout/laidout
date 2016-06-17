@@ -714,7 +714,7 @@ int LaidoutApp::createlaidoutrc()
 					  "\n");
 
 
-			fprintf(f,"laxprofile Light #Default built in profiles are Dark and Light. You can define others in the laxconfig section.\n");
+			fprintf(f,"laxprofile Light #Default built in profiles are Dark, Light, and Gray. You can define others in the laxconfig section.\n");
 			fprintf(f,"laxconfig-sample #Remove the \"-sample\" part to redefine various default window behaviour settingss\n");
 			dump_out_rc(f,NULL,2,-1);
 			fprintf(f,"\n"
@@ -999,6 +999,7 @@ void InitOptions()
 	options.Add("backend",            'B', 1, "Either xlib or cairo (cairo very experimental).",0, NULL);
 	options.Add("impose-only",        'I', 1, "Run only as a file imposer, not full Laidout",0, NULL);
 	options.Add("list-shortcuts",     'S', 0, "Print out a list of current keyboard bindings, then exit",0,NULL);
+	options.Add("theme",              'T', 1, "Set theme. Currently, one of Light, Dark, or Gray",0,NULL);
 	options.Add("helphtml",           'H', 0, "Output an html fragment of key shortcuts.",   0, NULL);
 	options.Add("helpman",             0 , 0, "Output a man page fragment of options.",      0, NULL);
 	options.Add("version",            'v', 0, "Print out version info, then exit.",          0, NULL);
@@ -1030,6 +1031,10 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 			case 'E': { // experimental
 				experimental=1;
+			  } break; 
+
+			case 'T': { // theme
+				makestr(app_profile, o->arg());
 			  } break; 
 
 			case 't': { // load in template
@@ -1803,24 +1808,28 @@ int main(int argc,char **argv)
 	}
 
 
-	 //process help and version before anything else happens,
-	 //since laxkit spews out debugging stuff straight away
+	 //process a few things before anything else happens,
+	 //since laxkit spews out debugging stuff straight away.
+	 //laidout->parseargs() snags the rest
 	LaxOption *o=options.find("helpman",0);
 	if (o && o->parsed_present) {
 		options.HelpMan(stdout);
 		exit(0);
 	}
+
 	o=options.find("help",0);
 	if (o && o->parsed_present) {
 		options.Help(stdout); // Show usage summary
 		exit(0);
 	}
+
 	o=options.find("version",0);
 	if (o && o->parsed_present) {
 		 // Show version info, then exit
 		cout <<LaidoutVersion()<<endl;
 		exit(0);
 	}
+
 	const char *backend="cairo";
 	o=options.find("backend",0);
 	if (o && o->parsed_present) {
@@ -1828,11 +1837,18 @@ int main(int argc,char **argv)
 		else if (!strcasecmp(o->arg(),"cairo")) backend="cairo";
 	}
 
+	const char *theme=NULL;
+	o=options.find("theme",0);
+	if (o && o->parsed_present) {
+		theme = o->arg();
+	}
+
 
 	 //redefine Laxkit's default preview maker
 	generate_preview_image=laidout_preview_maker;
 
 	laidout=new LaidoutApp();
+	if (theme) laidout->Theme(theme);
 	if (backend) laidout->Backend(backend);
 	o=options.find("experimental",0);
 	if (o && o->parsed_present) laidout->experimental=1;
