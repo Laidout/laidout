@@ -52,9 +52,6 @@ cloning, jump to object in offscreen page, switches pages, but bounding box wron
 
 text window controls have difficulties
 
-Printing only goes to letter, even though page size says go full page, in image, pdf and ps out!!! *(#@*&#*(&*&$(
-print command to printer is not respecting the paper size
-
 laidout import, does not appear to scale correctly, does odd scaling, and inserts unneccesary layers
   maybe option to create new layers, or insert to existing layers?
   option to insert new pages, or merge onto existing pages
@@ -73,7 +70,7 @@ switch to None document, and units change to unreasonable
 scribus plugin: if directory of executable script is not writable, it fails! 
  -> should find one that is writable
 
-configure should check for libreadline-dev? apparently not pkg-config ready
+configure should check for libreadline-dev? apparently not pkg-config ready <- half fix of listing in package requirements
 
 "edit imposition", then escape.. removes window, but not the frame!
 
@@ -616,8 +613,8 @@ pdf PDF:
   still true? pdf export if a path has null linestyle/fillstyle it buffers until next path drawn
      instead of drawing with some default style
   needs clone deref still?
-  page labels?
   pdf out needs clone deref
+  page labels?
 Scribus:
   make sure it works for 1.5.2
   font size confusion
@@ -650,10 +647,14 @@ plan:
 ppt:
   implement paper rotation
 ps:
-  must make sure it doesn't depend on Imlib
+  implement paper rotation
   for plain postscript, there's bitmask, but no transparency. maybe optionally do simulation with dithered bitmask..
     a lot of work for a deprecated format, but could have other uses, like for PDF/X-1a
-  implement paper rotation
+  paths not filling correctly
+  engraver no out, equiv object problem?
+  DONE test ps out image patch does correct vert flippedness
+  DONE image out seems to have stopped working?? <-because it depended on images being LaxImlibImage
+  DONE must make sure it doesn't depend on Imlib
 eps:
   export seems to be rather broken
   command line export file name defaults to "output#.eps"
@@ -1499,4 +1500,6 @@ DONE Singles not loading what was saved
 DONE paper spread view, shadow is offset wrong 
 DONE bg for spread flipper not the same as the other buttons after popping up spread editor.. wtf???  
 DONE button or key down doesn't cancel tooltip once it is up 
+DONE (apparently) Printing only goes to letter, even though page size says go full page, in image(done), pdf(done) and ps(done) out!!! *(#@*&#*(&*&$(
+DONE print command to printer is not respecting the paper size
 

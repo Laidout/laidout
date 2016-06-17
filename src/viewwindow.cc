@@ -4377,8 +4377,11 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		if (doc) {
 			if (!isblank(laidout->prefs.exportfilename)) {
 				char *nfile = newstr(laidout->prefs.exportfilename);
-				file = replaceallname(nfile, "%f", isblank(doc->Saveas()) ? "untitled" : doc->Saveas());
+				char *fname = newstr(isblank(doc->Saveas()) ? "untitled" : doc->Saveas());
+				chop_extension(fname);
+				file = replaceallname(nfile, "%f", fname);
 				delete[] nfile;
+				delete[] fname;
 
 			} else {
 				file = newstr(doc->Saveas());

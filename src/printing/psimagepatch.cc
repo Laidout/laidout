@@ -14,15 +14,12 @@
 // correspondence about this software.
 //
 
-#include <X11/Xlib.h>
 #include <lax/transformmath.h>
-#include <lax/laximages-imlib.h>
+#include <lax/laximages.h>
 #include "psout.h"
 #include "psimagepatch.h"
 #include "psimage.h"
 #include "psfilters.h"
-
-#include <Imlib2.h>
 
 #include <iostream>
 using namespace std;
@@ -47,6 +44,7 @@ void psImagePatch(FILE *f,LaxInterfaces::ImagePatchData *i)
 	flatpoint ul=transform_point(psCTM(),flatpoint(i->minx,i->miny));
 	flatpoint ur=transform_point(psCTM(),flatpoint(i->maxx,i->miny));
 	flatpoint ll=transform_point(psCTM(),flatpoint(i->minx,i->maxy));
+
 	DBG flatpoint lr=transform_point(psCTM(),flatpoint(i->maxx,i->maxy));
 	DBG cerr <<"  ul: "<<ul.x<<','<<ul.y<<endl;
 	DBG cerr <<"  ur: "<<ur.x<<','<<ur.y<<endl;
@@ -58,19 +56,14 @@ void psImagePatch(FILE *f,LaxInterfaces::ImagePatchData *i)
 	width= (int)(sqrt((ul-ur)*(ul-ur))/72*psDpi());
 	height=(int)(sqrt((ul-ll)*(ul-ll))/72*psDpi());
 	
-	Imlib_Image image;
-	image=imlib_create_image(width,height);
-	imlib_context_set_image(image);
-	imlib_image_set_has_alpha(1);
-	DATA32 *buf=imlib_image_get_data();
-	memset(buf,0,width*height*4); // make whole transparent/black
-	//memset(buf,0xff,width*height*4); // makes whole non-transparent/white
-	
 	 // create an image that spans the bounding box of the patch
-	unsigned char *buffer;
-	buffer=(unsigned char *) buf;
+	LaxImage *limg = create_new_image(width,height);
+	unsigned char *buffer = limg->getImageBuffer();
+	memset(buffer, 0, width*height*4); // make whole transparent/black
+	
 	double a=(i->maxx-i->minx)/width,
 		   d=(i->miny-i->maxy)/height;
+
 	double m[6]; //takes points from i to buffer
 	m[0]=1/a;
 	m[1]=0;
@@ -80,10 +73,16 @@ void psImagePatch(FILE *f,LaxInterfaces::ImagePatchData *i)
 	m[5]=-i->maxy/d;
 
 	i->renderToBuffer(buffer,width,height, 0,8,4);
-	imlib_image_put_back_data(buf);
-	imlib_image_flip_vertical();
+	 //we need to flip vertically
+	unsigned char line[width*4];
+	for (int y=0; y<height/2; y++) {
+		memcpy(line, buffer + (y*width*4), width*4);
+		memcpy(buffer + (y*width*4), buffer + ((height-1-y)*width*4), width*4);
+		memcpy(buffer + ((height-1-y)*width*4), line, width*4);
+	}
+	limg->doneWithBuffer(buffer);
+
 	ImageData img;
-	LaxImage *limg=new LaxImlibImage(NULL,image);
 	img.SetImage(limg,NULL);
 	limg->dec_count();
 

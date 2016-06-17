@@ -251,8 +251,9 @@ class PdfPageInfo : public PdfObjInfo
 	char *pagelabel;
 	Attribute resources;
 	int rotation;
+	int landscape;
 
-	PdfPageInfo() { pagelabel=NULL; rotation=0; }
+	PdfPageInfo() { pagelabel=NULL; rotation=0; landscape=0; }
 	virtual ~PdfPageInfo();
 };
 
@@ -552,16 +553,6 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	fprintf(f,"%%\xff\xff\xff\xff\n"); //4 byte binary file indicator
 
 	
-	 //figure out paper orientation
-	 // note this is orientation for only the first paper in papergroup.
-	 // If there are more than one papers, this may not work as expected...
-	 // The ps Orientation comment determines how onscreen viewers will show 
-	 // pages. This can be overridden by the %%PageOrientation: comment
-	//double paperwidth = papergroup->papers.e[0]->box->paperstyle->width;
-	//double paperheight;
-	//int landscape = (papergroup->papers.e[0]->box->paperstyle->flags&1)?1:0;
-
-
 	 //object numbers of various dictionaries
 	int pages=-1;        //Pages dictionary
 	int outlines=-1;     //Outlines dictionary
@@ -577,7 +568,6 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	char scratch[300]; //temp buffer
 	int pgindex;  //convenience variable
 	char *desc=NULL;
-	int plandscape;
 	int paperrotate;
 	int p;
 	
@@ -590,7 +580,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 		if (spread) { delete spread; spread=NULL; }
 		if (doc) spread=doc->imposition->Layout(layout,c);
 		if (spread) desc=spread->pagesFromSpreadDesc(doc);
-		else desc=limbo->Id()?newstr(limbo->Id()):NULL;
+		else desc = limbo->Id() ? newstr(limbo->Id()) : NULL;
 
 		for (p=0; p<papergroup->papers.n; p++) {
 			if (!pageobjs) {
@@ -603,16 +593,14 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			paperrotate=config->paperrotation;
 			if (config->rotate180 && c%2==1) paperrotate+=180;
 			if (paperrotate>=360) paperrotate-=360; 
-			plandscape=(papergroup->papers.e[p]->box->paperstyle->flags&1)?1:0;
-			if (plandscape) {
-				paperrotate+=90;
-				if (paperrotate>=360) paperrotate-=360;
-			}
 			pageobj->rotation = paperrotate;
+			pageobj->landscape=papergroup->papers.e[p]->box->paperstyle->landscape();
 
 			pageobj->pagelabel=newstr(desc);//***should be specific to spread/paper
+			//not we don't need to explicitly worry about landscape: papergroup->papers.e[p]->box->paperstyle->landscape();
+			//since paper->w() and h() take it into account. paperrotate is something different
 			pageobj->bbox.setbounds(0,
-									papergroup->papers.e[p]->box->paperstyle->w(),
+									papergroup->papers.e[p]->box->paperstyle->w(), //takes in to account paper landscape
 									0,
 									papergroup->papers.e[p]->box->paperstyle->h());
 
@@ -622,13 +610,6 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 							 "72 0 0 72 0 0 cm\n"); // convert from inches
 			psConcat(72.,0.,0.,72.,0.,0.);
 
-			 //adjust for landscape
-//			if (paperrotate>0) {
-//				 // paperstyle->width 0 translate   90 rotate  
-//				psConcat(0.,1.,-1.,0., paperwidth,0.);
-//				sprintf(scratch,"0 1 -1 0 %.10f 0 cm\n",paperwidth);
-//				appendstr(stream,scratch);
-//			}
 
 			 //apply papergroup->paper transform
 			transform_invert(m,papergroup->papers.e[p]->m());
