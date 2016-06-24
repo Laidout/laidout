@@ -12,8 +12,6 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now: 
 
-cairo doesn't cache images like Imlib does, so every image is totally loaded on file open. bad, bad, bad!!!
-
 file open, click around recent, etc, crashes!!
 lost ability to define new bookmarks.. bad!!
 
@@ -22,6 +20,10 @@ don't allow reparent to a child!! or reparent as appropriate
 jump to parent seems to be broken
 object reordering frelled, strange bbox display offset, 
 object layer positioning for Home and End keys projecting out in wrong way 
+
+moving several limbo objects back to page does NOT actually move them all onto the page!! grrr!
+  move them on then off -> fail, move off then on -> fail.. problem with group bounding??
+  --> probably changing one context messes up the other contexts, each context in selection must be updated on move
 
 objectinterface/groupinterface deleteobject goes out of sync when telling viewport to delete: oi.cc:830
 loop over selected fails when object order changes.. need to update contexts of other objs in contexts
@@ -59,6 +61,8 @@ laidout import, does not appear to scale correctly, does odd scaling, and insert
 
 
 ------------ other bugs:
+
+evince on ubuntu 14.04, pdf export won't load, says Syntax Erro... Dictionary kep must be a name object
 
 ubuntu maximize window failing (but not on today's debian unstable gnome), resize seems to work now
 gnome "application" does one per window, not one per app. this is not a bad thing imnsho, but should be easy to conform to desktop application spec properly
@@ -167,7 +171,11 @@ put rss/g+ links on all menu pages.. need way to automate including menu bar stu
 
 perhaps laidout configure should call laxkit configure if it thinks laxkit is not configured yet
 
+need to implement image cache clearing on low memory, to substitute for cairo not doing it like imlib did
+
 minimum dp size is not small enough
+
+should have a "touch" startup, to run laidout with a new named file, like you might do with "vim something_new.txt"
 
 GroupInterface groupinterface ObjectInterface objectinterface:
   viewport should fully utilize Selection::CurrentObject(), keep curobj in sync
@@ -1508,4 +1516,7 @@ DONE bg for spread flipper not the same as the other buttons after popping up sp
 DONE button or key down doesn't cancel tooltip once it is up 
 DONE (apparently) Printing only goes to letter, even though page size says go full page, in image(done), pdf(done) and ps(done) out!!! *(#@*&#*(&*&$(
 DONE print command to printer is not respecting the paper size
+DONE (but still must imp cache clearing on low memory) cairo doesn't cache images like Imlib does,
+	    so every image is totally loaded on file open. bad, bad, bad!!!
+
 
