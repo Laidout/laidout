@@ -648,8 +648,19 @@ int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	int layout    =out->layout;
 	Group *limbo  =out->limbo;
 	PaperGroup *papergroup=out->papergroup;
+	char *file=NULL;
+
+	if (!filename) filename=out->filename;
 	if (!filename) filename=out->tofiles;
-	if (!filename) filename="output#.eps";
+	if (!filename) {
+		if (!doc || isblank(doc->saveas)) { 
+            log.AddMessage(_("Cannot save without a filename."),ERROR_Fail); 
+            return 3; 
+        } 
+        file=newstr(doc->saveas);
+        appendstr(file,".png");
+		filename=file;
+	}
 
 
 
@@ -664,6 +675,7 @@ int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	FILE *f;
 
 	f=open_file_for_writing(filename,0,&log);
+	delete[] file;
 	if (!f) return 1;
 	
 	setlocale(LC_ALL,"C");

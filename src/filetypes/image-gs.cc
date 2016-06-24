@@ -220,7 +220,6 @@ int ImageGsExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	int numout = (out->end-out->start+1)*(out->papergroup?out->papergroup->papers.n:1);
 	if (!filename && numout==1) filename=out->filename;
 	if (!filename) filename=out->tofiles;
-	if (!filename) filename="temp-output#.eps";
 	
 	 //we must have something to export...
 	if (!doc && !out->limbo) {
@@ -243,7 +242,7 @@ int ImageGsExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 			return 3;
 		}
 		filetemplate=newstr(doc->saveas);
-		appendstr(filetemplate,"%d.png");
+		appendstr(filetemplate,"%d-gs.png");
 	}
 	
 	 //write out the document to a temporary postscript file
@@ -253,6 +252,7 @@ int ImageGsExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	FILE *f=fopen(tmp,"w");
 	if (!f) {
 		log.AddMessage(_("Could not open temporary file for export image."),ERROR_Fail);
+		delete[] filetemplate;
 		return 4;
 	}
 	fclose(f);
@@ -266,7 +266,8 @@ int ImageGsExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	}
 
 	if (!pdfout || pdfout->Out(tmp,context,log)) {
-		log.AddMessage(_("Error exporting to image."),ERROR_Fail);
+		log.AddMessage(_("Error exporting to temporary pdf."),ERROR_Fail);
+		delete[] filetemplate;
 		return 5;
 	}
 

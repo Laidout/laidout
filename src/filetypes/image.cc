@@ -30,6 +30,7 @@
 #include "../printing/psout.h"
 #include "image.h"
 #include "../impositions/singles.h"
+#include "../drawdata.h"
 
 #include <iostream>
 #define DBG 
@@ -456,11 +457,18 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 		return 1;
 	}
 	
+	char *file=NULL;
 	if (!filename) {
 		if (!doc || isblank(doc->saveas)) {
 			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
 			return 3;
 		}
+		file=newstr(doc->saveas);
+		appendstr(file,".");
+		if (isblank(out->format)) appendstr(file,"png");
+		else appendstr(file,out->format);
+
+		filename = file;
 	}
 	
 
@@ -485,6 +493,7 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 
 	if (!bounds.validbounds()) {
 		log.AddMessage(_("Invalid output bounds! Either set crop or papergroup."),ERROR_Fail);
+		delete[] file;
 		return 4;
 	}
 
@@ -513,16 +522,21 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 	if (width==0 || height==0) {
 		if (width==0)  log.AddMessage(_( "Null width, nothing to output!"),ERROR_Fail);
 		if (height==0) log.AddMessage(_("Null height, nothing to output!"),ERROR_Fail);
+		delete[] file;
 		return 5;
 	}
 
 	 //set displayer port to the proper area.
 	 //The area in bounds must map to [0..width, 0..height]
 	dp->CreateSurface(width, height);
+	dp->PushAxes();
+	dp->defaultRighthanded(true);
+	dp->NewTransform(1,0,0,-1,0,-height);
+
 	//dp->SetSpace(0,width, 0,height);
 	dp->SetSpace(bounds.minx,bounds.maxx, bounds.miny,bounds.maxy);
 	dp->Center(bounds.minx,bounds.maxx, bounds.miny,bounds.maxy);
-
+	//dp->defaultRighthanded(false);
 
 	 //now output everything
 	if (!out->use_transparent_bg) {
@@ -530,19 +544,25 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 		 // *** this should really color papers according to their characteristics
 		 // *** and have a default for non-transparent limbo color
 		if (out->papergroup && out->papergroup->papers.n) {
-			dp->NewBG(&out->papergroup->papers.e[0]->outlinecolor);
+			dp->NewBG(&out->papergroup->papers.e[0]->color);
 		} else dp->NewBG(1.0, 1.0, 1.0);
 
 		dp->ClearWindow();
 	}
 
+	//DBG dp->NewFG(.5,.5,.5);
+	//DBG dp->drawline(bounds.minx,bounds.miny, bounds.maxx,bounds.maxy);
+	//DBG dp->drawline(bounds.minx,bounds.maxy, bounds.maxx,bounds.miny);
+
 	 //limbo objects
-	if (out->limbo) imanager->DrawData(dp, out->limbo);
+	if (out->limbo) DrawData(dp, out->limbo);
+	//if (out->limbo) imanager->DrawData(dp, out->limbo);
 	
 	 //papergroup objects
 	if (out->papergroup && out->papergroup->objs.n()) {
 		for (int c=0; c<out->papergroup->objs.n(); c++) {
-			  imanager->DrawData(dp, out->papergroup->objs.e(c));
+			  //imanager->DrawData(dp, out->papergroup->objs.e(c));
+			  DrawData(dp, out->papergroup->objs.e(c));
 		}
 	}
 
@@ -567,7 +587,6 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 
 			if (!page) { // try to look up page in doc using pagestack->index
 				if (spread->pagestack.e[c]->index>=0 && spread->pagestack.e[c]->index<doc->pages.n) {
-					pagei=spread->pagestack.e[c]->index;
 					page=spread->pagestack.e[c]->page=doc->pages.e[pagei];
 				}
 			}
@@ -597,9 +616,10 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 
 			 // Draw all the page's objects.
 			for (int c2=0; c2<page->layers.n(); c2++) {
-				DBG cerr <<"  num objs in page: "<<page->n()<<endl;
+				DBG cerr <<"  num layers in page: "<<page->n()<<", num objs:"<<page->e(c2)->n()<<endl;
 				DBG cerr <<"  Layer "<<c2<<", objs.n="<<page->e(c2)->n()<<endl;
-				imanager->DrawData(dp, page->e(c2),NULL,NULL,0);
+				//imanager->DrawData(dp, page->e(c2),NULL,NULL,0);
+				DrawData(dp, page->e(c2),NULL,NULL,0);
 			}
 			
 			if (page->pagestyle->flags&PAGE_CLIPS) {
@@ -608,11 +628,15 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 			}
 
 			dp->PopAxes(); // remove page transform
-		} //foreach in paegstack
+		} //foreach in pagestack
 	} //if spread
 
+	//DBG dp->NewFG(.2,.2,.5);
+	//DBG dp->LineWidth(.25);
+	//DBG dp->drawline(bounds.minx,bounds.miny, bounds.maxx,bounds.maxy);
+	//DBG dp->drawline(bounds.minx,bounds.maxy, bounds.maxx,bounds.miny);
 
-	dp->PopAxes();
+	dp->PopAxes(); //initial dp protection
 
 	LaxImage *img = dp->GetSurface();
 	//int err=img->Save(filename, out->format);
@@ -622,6 +646,7 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 	}
 	img->dec_count();
 
+	delete[] file;
 	if (log.Errors()) return -1;
 
 	return 0; 
