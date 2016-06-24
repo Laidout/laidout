@@ -611,8 +611,8 @@ int dumpInImages(ImportImageSettings *settings,
 
 		dpi=settings->defaultdpi;
 
-		 //first check if Imlib2 recognizes it as image (the easiest check)
-		image=load_image_with_loaders(imagefiles[c], (previewfiles ? previewfiles[c] : NULL),0,0,&pimage, 0,-1,NULL);
+		 //first check if it is recognized as image (the easiest check)
+		image=load_image_with_loaders(imagefiles[c], (previewfiles ? previewfiles[c] : NULL),0,0,&pimage, 0,-1,NULL, true);
 
 		if (image) {
 			DBG cerr << "dump image files: "<<imagefiles[c]<<endl;
