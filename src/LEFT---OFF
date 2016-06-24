@@ -60,6 +60,10 @@ laidout import, does not appear to scale correctly, does odd scaling, and insert
 
 ------------ other bugs:
 
+saving window postitions doesn't take into account window decorations, makes pos slide downward each time
+
+need to implement ObjectInterface/GroupInterface::DrawData()
+
 ubuntu maximize window failing (but not on today's debian unstable gnome), resize seems to work now
 gnome "application" does one per window, not one per app. this is not a bad thing imnsho, but should be easy to conform to desktop application spec properly
 App/window icon in window manager not showing.. 
@@ -602,10 +606,11 @@ file filters: filefilters:
   DONE remember last export type
   DONE when saving, name shouldn't be red if ok to save
 image
-  export format should be an enum. need to extract possible save formats form Laxkit
-  should really make this graphicsmagick or cairo based, not gs+pdf based
-  should color background per paper if !transparent, and use some default for limbo color
+  export format should be an enum. need to extract possible save formats from Laxkit
+  option for setting background color
   for gs, make sure temp file is removed, should probably locate in user space maybe? or make sure perms set reasonably
+  DONE should really make this graphicsmagick or cairo based, not gs+pdf based
+  DONE should color background per paper if !transparent
 laidout:
   need a Laidout out! for partial exports, or conversions between nets/papergroup lines/etc
 pdf PDF:
