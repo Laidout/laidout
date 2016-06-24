@@ -1280,6 +1280,20 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpCo
 
 		} else if (!strcmp(name,"textaspaths")) {
 			textaspaths = BooleanAttribute(value);
+
+		} else if (!strcmp(name,"crop")) {
+			if (isblank(value)) continue;
+			//char bracket=0;
+			//while (isspace(*value)) value++;
+			if (*value=='[' || *value=='(') value++;
+			double d[4];
+			int n=DoubleListAttribute(value, d, 4, NULL);
+			if (n==4) {
+				crop.minx=(d[0]<d[1] ? d[0] : d[1]);
+				crop.maxx=(d[0]>d[1] ? d[0] : d[1]);
+				crop.miny=(d[2]<d[3] ? d[2] : d[3]);
+				crop.maxy=(d[2]>d[3] ? d[2] : d[3]); 
+			}
 		}
 	}
 	if (start<0) start=0;

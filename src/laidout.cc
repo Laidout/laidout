@@ -1187,32 +1187,24 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		//*** this should probably be moved to its own function so command line pane can call it
 		//*** is this obsoleted by --command?
 
+		DBG cout << "export: "<<exprt<<endl;
+
 		 //parse the config string into a config
 		Attribute att;
 		NameValueToAttribute(&att,exprt,'=',0);
+		DBG att.dump_out(stdout,2);
 
 		 //figure out where to export from
 		const char *filename=NULL;
 		o=options.remaining();
 		if (o) filename=o->arg();
 
-		const char *format=att.findValue("format");
-		ExportFilter *filter=FindExportFilter(format,false);
-		if (!filter) {
-			cout <<_("Format not found!")<<endl;
-			exit(1);
-		}
 
-		DocumentExportConfig *config=filter->CreateConfig(NULL);
-		config->dump_in_atts(&att,0,NULL);
-
-		 
 		 //-------export
 		if (!filename) {
 			cout <<_("No file to export from specified!")<<endl;
 			exit(1);
 		}
-
 
 		 //load in document to pass with config
 		ErrorLog error;		 
@@ -1227,9 +1219,22 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			dumperrorlog(_("Warnings encountered while loading document:"),error);
 		}
 
+		const char *format=att.findValue("filter");
+		DBG cout << "Exporting with \""<<(format ? format : "unknown filter") <<"\""<<endl;
+		ExportFilter *filter = FindExportFilter(format,false);
+		if (!filter) {
+			cout <<_("Filter not found!")<<endl;
+			exit(1);
+		}
+
+		DocumentExportConfig *config=filter->CreateConfig(NULL);
+		//config->dump_in_atts(&att,0,NULL);
+		 
 		config->doc=doc;
 		config->doc->inc_count();
+		config->filter=filter;
 		config->dump_in_atts(&att,0,NULL);//second time with doc!
+
 		int err=export_document(config,error);
 		if (err>0) {
 			dumperrorlog(_("Export failed."),error);
@@ -1696,6 +1701,8 @@ int LaidoutApp::NewProject(Project *proj, ErrorLog &log)
  */
 ExportFilter *LaidoutApp::FindExportFilter(const char *name, bool exact_only)
 {
+	if (!name) return NULL;
+
 	 //search for exact format match first
 	for (int c=0; c<laidout->exportfilters.n; c++) {
 		if (!strcasecmp(laidout->exportfilters.e[c]->VersionName(),name)) {
