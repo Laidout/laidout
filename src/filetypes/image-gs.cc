@@ -246,16 +246,16 @@ int ImageGsExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	}
 	
 	 //write out the document to a temporary postscript file
-	char tmp[256];
-	cupsTempFile2(tmp,sizeof(tmp));
-	DBG cerr <<"attempting to write temp file for image out: "<<tmp<<endl;
-	FILE *f=fopen(tmp,"w");
+	char tmp[512]; tmp[0]='\0';
+	int fd = cupsTempFd(tmp,sizeof(tmp)); //opens fd for writing at the same time
+	DBG cerr <<"attempting to write temp pdf file for image export via ghostscript: "<<tmp<<(fd<0 ? " (failed)":"")<<endl;
+	FILE *f = (fd<0 ? NULL : fdopen(fd, "w"));
 	if (!f) {
 		log.AddMessage(_("Could not open temporary file for export image."),ERROR_Fail);
 		delete[] filetemplate;
 		return 4;
 	}
-	fclose(f);
+	fclose(f); //closes underlying fd
 
 	ExportFilter *pdfout=NULL;
 	for (int c=0; c<laidout->exportfilters.n; c++) {
