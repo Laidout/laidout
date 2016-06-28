@@ -18,13 +18,16 @@
 
 #include <lax/displayer.h>
 #include <lax/interfaces/somedata.h>
-
-#define DRAW_AXES (1<<0)
-#define DRAW_BOX  (1<<1)
+#include <lax/interfaces/interfacemanager.h>
 
 
 namespace Laidout {
 
+enum ViewDrawFlags {
+	DRAW_AXES  = (1<<(LaxInterfaces::InterfaceManager::DRAW_MAX+1)),
+	DRAW_BOX   = (1<<(LaxInterfaces::InterfaceManager::DRAW_MAX+2)),
+	DRAW_HIRES = (1<<(LaxInterfaces::InterfaceManager::DRAW_MAX+3)),
+};
 
 //void DrawData(Laxkit::Displayer *dp,double *m,LaxInterfaces::SomeData *data,
 				//Laxkit::anObject *a1,Laxkit::anObject *a2,unsigned int flags=0);

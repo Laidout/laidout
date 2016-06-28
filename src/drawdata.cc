@@ -207,9 +207,15 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
  * This text should be the same as is returned by the object's whattype() function.
  *
  * See src/dataobjects/datafactory.cc for currently allowed object types.
+ *
+ * This is a convenience function that just returns a dynamic_cast of
+ * somedatafactory->NewObject(thetype). If somehow a non-SomeData object is
+ * returned by somedatafactory, it is deleted and NULL returned.
  */
 SomeData *newObject(const char *thetype)
 {
+	anObject *obj = somedatafactory()->NewObject(thetype);
+	if (!dynamic_cast<SomeData*>(obj)) { obj->dec_count(); return NULL; }
 	return dynamic_cast<SomeData*>(somedatafactory()->NewObject(thetype));
 }
 
