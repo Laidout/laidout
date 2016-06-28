@@ -473,7 +473,7 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 	
 
 	InterfaceManager *imanager=InterfaceManager::GetDefault(true);
-	Displayer *dp = imanager->GetDisplayer(1);
+	Displayer *dp = imanager->GetDisplayer(DRAWS_Hires);
 	DoubleBBox bounds;
 
 	int width  = out->width;
@@ -555,14 +555,14 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 	//DBG dp->drawline(bounds.minx,bounds.maxy, bounds.maxx,bounds.miny);
 
 	 //limbo objects
-	if (out->limbo) DrawData(dp, out->limbo);
-	//if (out->limbo) imanager->DrawData(dp, out->limbo);
+	if (out->limbo) DrawData(dp, out->limbo, NULL,NULL,DRAW_HIRES);
+	//if (out->limbo) imanager->DrawData(dp, out->limbo, NULL,NULL,DRAW_HIRES);
 	
 	 //papergroup objects
 	if (out->papergroup && out->papergroup->objs.n()) {
 		for (int c=0; c<out->papergroup->objs.n(); c++) {
-			  //imanager->DrawData(dp, out->papergroup->objs.e(c));
-			  DrawData(dp, out->papergroup->objs.e(c));
+			  //imanager->DrawData(dp, out->papergroup->objs.e(c), NULL,NULL,DRAW_HIRES);
+			  DrawData(dp, out->papergroup->objs.e(c), NULL,NULL,DRAW_HIRES);
 		}
 	}
 
@@ -618,8 +618,8 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 			for (int c2=0; c2<page->layers.n(); c2++) {
 				DBG cerr <<"  num layers in page: "<<page->n()<<", num objs:"<<page->e(c2)->n()<<endl;
 				DBG cerr <<"  Layer "<<c2<<", objs.n="<<page->e(c2)->n()<<endl;
-				//imanager->DrawData(dp, page->e(c2),NULL,NULL,0);
-				DrawData(dp, page->e(c2),NULL,NULL,0);
+				//imanager->DrawData(dp, page->e(c2), NULL,NULL,DRAW_HIRES);
+				DrawData(dp, page->e(c2),NULL,NULL,DRAW_HIRES);
 			}
 			
 			if (page->pagestyle->flags&PAGE_CLIPS) {
