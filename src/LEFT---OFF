@@ -173,6 +173,13 @@ test:
   make some test scripts for command line testing
 put rss/g+ links on all menu pages.. need way to automate including menu bar stuff
 
+
+need to implement DRAW_Hires for all interfaces that default to preview renders
+  includes at least image, path, engraver
+
+really thin objects should still be selectable, need to add a slight grab area outside bounding box
+should be able to click within selection box to move all and not click right down on one of them
+
 perhaps laidout configure should call laxkit configure if it thinks laxkit is not configured yet
 
 need to implement image cache clearing on low memory, to substitute for cairo not doing it like imlib did
@@ -580,9 +587,9 @@ image graphics filters:
   node editor
   graphicsmagick
   gmic
-plugin for easy antiprism import
+plugin for easy antiprism import for net creation
 
-for purely command line execution, should be able to make totally not X dependent.
+for purely command line execution, should be able to make a binary totally not X dependent.
 
 maybe expand the page label system to have some kind of to-do markup.. this could be combined with preflight verifiers
   or other search activities as work-in-progress annotations
@@ -622,14 +629,15 @@ image
 laidout:
   need a Laidout out! for partial exports, or conversions between nets/papergroup lines/etc
 pdf PDF:
-  graphicsmagick for import? subimage and subrange of image_info passed to ReadImage
+  text out very broken.. imageout via gs complains about malformed pdf on fonts
+  fonts are not doubled up, each text object is exporting its own
   export lines has outlines in evince?
   export complex engraving is really, really slow. probably all the string reallocation?
   pdf optimize jpg dump, compress image data
   still true? pdf export if a path has null linestyle/fillstyle it buffers until next path drawn
      instead of drawing with some default style
-  needs clone deref still?
-  pdf out needs clone deref
+  pdf out needs clone deref.. needs clone deref still?
+  graphicsmagick for import? subimage and subrange of image_info passed to ReadImage
   page labels?
 Scribus:
   make sure it works for 1.5.2
@@ -685,6 +693,8 @@ laidout:
   import of resources
   import of master pages
   import of limbos
+xtg from quark?
+idml from indesign?
  
 Units:
   need something like Convert(value, units_from, units_to, &error, overrides), where overrides is 
