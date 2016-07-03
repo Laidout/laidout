@@ -144,6 +144,7 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 			flatpoint fp=dp->screentoreal(rx,ry);
 			obj->origin(fp);
 			lvp->papergroup->objs.push(obj);
+			obj->dec_count();
 			needtodraw=1;
 			return 0;
 
@@ -153,6 +154,7 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 			flatpoint fp=dp->screentoreal(rx,ry);
 			obj->origin(fp);
 			lvp->papergroup->objs.push(obj);
+			obj->dec_count();
 			needtodraw=1;
 			return 0;
 
@@ -763,19 +765,22 @@ int GroupInterface::PerformAction(int action)
 	} else if (action==GIA_Jump_To_Parent) {
 		if (selection->n()==0) return 0;
 
-		LaidoutViewport *vp=((LaidoutViewport *)viewport);
-		VObjContext oc=*dynamic_cast<VObjContext*>(selection->e(0));
+		LaidoutViewport *vp = ((LaidoutViewport *)viewport);
+		//VObjContext oc;
+		//oc = *dynamic_cast<VObjContext*>(selection->e(0));
+		VObjContext oc = *dynamic_cast<VObjContext*>(selection->e(0));
 		oc.SetObject(NULL);
 		oc.context.pop();
-		SomeData *object=dynamic_cast<SomeData*>(vp->getanObject(oc.context,0,0));
 
-		DrawableObject *pp=dynamic_cast<DrawableObject*>(object->GetParent());
-		if (pp && pp->Selectable()
-			   && !pp->IsLocked(OBJLOCK_Selectable)) {
+		DrawableObject *pp=dynamic_cast<DrawableObject*>(vp->getanObject(oc.context,0,0));
+
+		if (pp && pp->Selectable()) {
 			oc.SetObject(pp);
 			vp->ChangeObject(&oc,0);
 			FreeSelection();
 			AddToSelection(&oc);
+			((LaidoutViewport *)viewport)->clearCurobj();
+			((LaidoutViewport *)viewport)->ClearSearch();
 
 		} else {
 			PostMessage(_("Cannot select parent"));
@@ -787,7 +792,7 @@ int GroupInterface::PerformAction(int action)
 		if (selection->n()<=1) { PostMessage(_("Need at least 2 objects to do parenting")); return 0; }
 
 		DrawableObject *newparent=dynamic_cast<DrawableObject*>(selection->e(selection->n()-1)->obj);
-		DrawableObject *parent;
+		DrawableObject *oldparent;
 		ObjectContext *oc;
 		double m[6],mnewinv[6],mnew[6],mm[6];
 		viewport->transformToContext(mnew,selection->e(selection->n()-1),0,1);
@@ -795,15 +800,15 @@ int GroupInterface::PerformAction(int action)
 
 		for (int c=0; c<selection->n()-1; c++) {
 			oc=selection->e(c);
-			parent=NULL;
+			oldparent=NULL;
 
 			if (dynamic_cast<DrawableObject*>(oc->obj)) {
-				parent=dynamic_cast<DrawableObject*>(oc->obj->GetParent());
+				oldparent=dynamic_cast<DrawableObject*>(oc->obj->GetParent());
 				viewport->transformToContext(m,oc,0,1);
 
-				if (parent && parent->popp(oc->obj)) {
+				if (oldparent && oldparent->popp(oc->obj)) {
 					 //successful popping, now add to selection n-1
-					transform_mult(mm,mnewinv,m);
+					transform_mult(mm,m,mnewinv);
 					oc->obj->m(mm);
 					newparent->push(oc->obj);
 					oc->obj->dec_count(); //from the popp
@@ -811,6 +816,7 @@ int GroupInterface::PerformAction(int action)
 			}
 		}
 
+		((LaidoutViewport *)viewport)->clearCurobj();
 		FreeSelection();
 		reparent_temp.SetObject(NULL);
 		PostMessage(_("Parented."));
@@ -836,7 +842,9 @@ int GroupInterface::PerformAction(int action)
 			if (!gparent) continue;
 
 			parent->popp(obj);
-			transform_mult(m, parent->m(), obj->m());
+			//transform_invert(mm, parent->m());
+			//transform_mult(m, obj->m(), mm);
+			transform_mult(m, obj->m(), parent->m());
 			obj->m(m);
 			gparent->push(obj);
 			obj->dec_count(); //from popp
