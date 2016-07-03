@@ -39,6 +39,7 @@ class VObjContext : public LaxInterfaces::ObjectContext
   public:
 	FieldPlace context;
 	VObjContext() { obj=NULL; }
+	VObjContext(const VObjContext &oc);
 	virtual ~VObjContext();
 	virtual int isequal(const ObjectContext *oc);
 	virtual int operator==(const ObjectContext &oc) { return isequal(&oc)==3; }

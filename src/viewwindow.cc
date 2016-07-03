@@ -187,6 +187,13 @@ VObjContext::~VObjContext()
 	if (obj) { obj->dec_count(); obj=NULL; }
 }
 
+/*! Copy constructor.
+ */
+VObjContext::VObjContext(const VObjContext &oc)
+{
+	*this = oc;
+}
+
 //! Assignment operator.
 /*! Incs count of obj.
  */
@@ -422,6 +429,8 @@ LaidoutViewport::~LaidoutViewport()
 	if (doc) doc->dec_count();
 
 	if (edit_area_icon) edit_area_icon->dec_count();;
+
+	DBG ClearSearch(); //to spell it out
 }
 
 int LaidoutViewport::UseThisPaperGroup(PaperGroup *group)
