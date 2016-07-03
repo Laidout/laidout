@@ -136,17 +136,6 @@ enum BBoxAnchorTypes {
 	BBOXANCHOR_MAX
 };
 
-/*! for DrawableObject::locks */
-enum DrawableObjectLockTypes {
-	OBJLOCK_Contents   = (1<<0),
-	OBJLOCK_Position   = (1<<1),
-	OBJLOCK_Rotation   = (1<<2),
-	OBJLOCK_Scale      = (1<<3),
-	OBJLOCK_Shear      = (1<<4),
-	OBJLOCK_Kids       = (1<<5),
-	OBJLOCK_Selectable = (1<<6)
-};
-
 class DrawableObject :  virtual public ObjectContainer,
 						virtual public Laxkit::Tagged,
 						virtual public LaxInterfaces::GroupData,
@@ -155,7 +144,6 @@ class DrawableObject :  virtual public ObjectContainer,
 {
  protected:
  public:
-	DrawableObject *dparent;
 	AlignmentRule *parent_link;
 
 
