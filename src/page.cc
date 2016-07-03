@@ -584,6 +584,7 @@ Page::Page(PageStyle *npagestyle,int num)
 	g->obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return individual layers
 	layers.push(g); //incs count
 	g->dec_count();
+
 	layers.selectable=0;
 	layers.obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return layers
 	obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return this
@@ -692,6 +693,7 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext 
 			makestr(g->object_idstr,"pagelayer");
 			g->obj_flags|=OBJ_Unselectable|OBJ_Zone;
 			g->dump_in_atts(att->attributes.e[c],flag,context);
+			g->selectable=0;
 			layers.push(g);
 			g->dec_count();
 
