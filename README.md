@@ -241,7 +241,7 @@ Though you can have different versions coexist, there is not currently an
 automatic way to convert resources from older laidout versions to newer ones.
 This is on my long to-do list, but is a low priority. If this is a problem, let me know!
 
-If you build the deb package, you currently can only have only one version at a time
+If you build the deb package, you currently can only have one version at a time
 by default. To change that, you would have to tinker with debian/control. If this is
 something you need, please let me know, and I can make instructions for that.
 
