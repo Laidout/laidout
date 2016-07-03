@@ -2158,6 +2158,9 @@ LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,LaxF
 	return att;
 }
 
+/*! For dumping out Value descriptions.
+ * Fit within columns number of characters per line.
+ */
 void dump_out_desc(Attribute *att, FILE *f, int indent, int columns)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
