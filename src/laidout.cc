@@ -685,7 +685,8 @@ int LaidoutApp::createlaidoutrc()
 					  "\n"
 
 					   //units
-					  "#defaultunits inches #the default units presented to the user. Within files on disk, it is always inches.\n"
+					  " #The default units presented to the user. Within files on disk, it is currently always inches.\n"
+					  "#defaultunits inches\n"
 					  "\n"
 
 					   //colors
