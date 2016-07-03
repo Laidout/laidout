@@ -866,6 +866,24 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 		}
 
 		return 0;
+
+    } else if (!strcmp(mes,"xruler") || !strcmp(mes,"yruler")) {
+         //units change from ruler
+        const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
+        if (!s) return 0;
+        if (s->info1!=RULER_AlwaysCurrent) return ViewportWindow::Event(data,mes);
+
+		UnitManager *units=GetUnitManager();
+		char *unitname=NULL;
+		units->UnitInfoId(laidout->prefs.default_units, NULL, NULL,NULL,&unitname);
+
+		char path[strlen(laidout->config_dir)+20];
+		sprintf(path,"%s/laidoutrc",laidout->config_dir);
+		UpdatePreference("defaultunits", unitname, path);
+
+		postmessage(_("Global preference updated."));
+		return 0;
+
 	}
 
 	return ViewportWindow::Event(data,mes);
@@ -1224,12 +1242,12 @@ int LaidoutViewport::NewData(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectCon
 		curobj.context.pop();
 		curobj.SetObject(NULL);
 	}
-	Group *o=dynamic_cast<Group*>(getanObject(curobj.context,0,-1));
-	if (!o) return -1; //context had to be a Group!
+	Group *g=dynamic_cast<Group*>(getanObject(curobj.context,0,-1));
+	if (!g) return -1; //context had to be a Group!
 
 	if (clear_selection) SetSelection(NULL);
 
-	int c=o->push(d);
+	int c=g->push(d);
 	curobj.context.push(c);
 	curobj.SetObject(d);
 
@@ -1253,8 +1271,10 @@ int LaidoutViewport::SelectObject(int i)
 {
 	if (!curobj.obj) {
 		findAny();
-		if (firstobj.obj) setCurobj(&firstobj);
-		else return 0;
+		if (firstobj.obj) {
+			setCurobj(&firstobj);
+
+		} else return 0;
 		needtodraw=1;
 
 	} else if (i==-2 || i==-1) { //prev or next
@@ -1320,7 +1340,7 @@ int LaidoutViewport::ChangeObject(LaxInterfaces::ObjectContext *oc, int switchto
 	if (!oc || !oc->obj) return 0;
 
 	VObjContext *voc=dynamic_cast<VObjContext *>(oc);
-	if (voc==NULL || !validContext(voc)) return 0;
+	if (voc==NULL || !IsValidContext(voc)) return 0;
 	setCurobj(voc);
 	
 	 // makes sure curtool can take it, and makes it take it.
@@ -1656,6 +1676,7 @@ int LaidoutViewport::nextObject(VObjContext *oc,int inc)//inc=0
 int LaidoutViewport::locateObject(LaxInterfaces::SomeData *d,FieldPlace &place)
 {
 	place.flush();
+
 	 // check limbo
 	if (limbo->n()) {
 		if (limbo->contains(d,place)) {
@@ -1724,21 +1745,19 @@ void LaidoutViewport::findAny()
 
 //! Check whether oc is a valid object context.
 /*! Assumes oc->obj is what you actually want, and checks oc->context against it.
- * Object has to be in the spread or in limbo for it to be valid.
- * Note that oc->obj is a SomeData. So if the context is limbo or a spread,
- * rather than an object contained in it, it is technically an invalid context..
+ * Object has to be reachable via getanObject() to be valid.
  *
- * Return 0 if invalid,
- * otherwise return 1 if it is valid.
- *
- * \todo might be useful to check against all objects in tree, not just for
- *   selectable SomeDatas
+ * Return false if invalid,
+ * otherwise return true if it is valid.
  */
-int LaidoutViewport::validContext(VObjContext *oc)
+bool LaidoutViewport::IsValidContext(ObjectContext *oc)
 {
-	anObject *anobj=getanObject(oc->context,0,-1);
-	return anobj==oc->obj;
+	VObjContext *loc = dynamic_cast<VObjContext*>(oc);
+	if (!loc) return false;
+	anObject *anobj=getanObject(loc->context,0,-1);
+	return anobj==loc->obj;
 }
+
 
 //! Set curobj to limbo, which is always valid. This is done after page removal, for instance, to prevent crashing.
 int LaidoutViewport::wipeContext()
@@ -1796,7 +1815,9 @@ void LaidoutViewport::setCurobj(VObjContext *voc)
 	}
 }
 
-//! Strip down curobj so that it points to only a context, not an object. Calls dec_count() on the old object if any.
+/*! Strip down curobj so that it points to only a context, not an object. Calls dec_count() on the old object if any.
+ * Note that selection is not modified.
+ */
 void LaidoutViewport::clearCurobj()
 {
 	//***for nested objects, this does not quite work!! This zaps to base of current zone, whether limbo,
@@ -1895,8 +1916,13 @@ int LaidoutViewport::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
 int LaidoutViewport::ChangeContext(LaxInterfaces::ObjectContext *oc)
 {
 	DBG cerr <<"ChangeContext to supplied oc"<<endl;
+
 	VObjContext *loc=dynamic_cast<VObjContext *>(oc);
 	if (!loc) return 0;
+
+	ClearSearch();
+	clearCurobj();
+
 	if (loc->obj) {
 		 // strip down obj, we want only the plain context
 		VObjContext noc;
@@ -1905,8 +1931,6 @@ int LaidoutViewport::ChangeContext(LaxInterfaces::ObjectContext *oc)
 		noc.context.pop();
 		setCurobj(&noc);
 	} else setCurobj(loc);
-	ClearSearch(); //these must be called after setCurobj() since
-	clearCurobj(); //  oc is likely a search context
 
 	ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); 
 	if (viewer) viewer->updateContext(1);
@@ -2028,7 +2052,7 @@ LaxInterfaces::ObjectContext *LaidoutViewport::ObjectMoved(LaxInterfaces::Object
 	if (!oc || !oc->obj) return NULL;
 
 	if (oc->obj!=curobj.obj) {
-		if (!validContext(dynamic_cast<VObjContext*>(oc))) return NULL;
+		if (!IsValidContext(oc)) return NULL;
 		setCurobj(dynamic_cast<VObjContext*>(oc));
 	}
 
@@ -2162,6 +2186,18 @@ LaxInterfaces::ObjectContext *LaidoutViewport::ObjectMoved(LaxInterfaces::Object
 	DBG cerr <<"  moved "<<d->object_id<<" to: ";
 	DBG curobj.context.out(NULL);
 	needtodraw=1;
+
+	if (selection->n()) {
+		 //we might need to synchronize selection objects to the new order
+        for (int c=selection->n()-1; c>=0; c--) {
+            if (IsValidContext(selection->e(c))) continue;
+            if (locateObject(selection->e(c)->obj, dynamic_cast<VObjContext*>(selection->e(c))->context)==0) {
+				 //somehow object is no longer there, remove from selection
+				selection->Remove(c);
+			}
+        }
+
+	}
 
 	if (!modifyoc) return new VObjContext(destcontext);
 	
@@ -3620,6 +3656,9 @@ int ViewWindow::init()
 	ViewerWindow::init();
 	mesbar->tooltip("Status bar");
 	
+	if (xruler) xruler->win_style|=RULER_UNITS_MENU_ALWAYS;
+	if (yruler) yruler->win_style|=RULER_UNITS_MENU_ALWAYS;
+
 //	if (!doc) {
 //		if (laidout->project && laidout->project->docs.n) {
 //			doc=laidout->project->docs.e[0]->doc;
