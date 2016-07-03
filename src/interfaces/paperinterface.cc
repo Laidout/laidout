@@ -308,6 +308,7 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			flatpoint fp=dp->screentoreal(rx,ry);
 			obj->origin(fp);
 			papergroup->objs.push(obj);
+			obj->dec_count();
 			return 0;
 
 		} else if (i==PAPERM_GrayBars) {
@@ -316,6 +317,7 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			flatpoint fp=dp->screentoreal(rx,ry);
 			obj->origin(fp);
 			papergroup->objs.push(obj);
+			obj->dec_count();
 			return 0;
 		}
 		return 0;
