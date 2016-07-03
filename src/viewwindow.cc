@@ -1758,6 +1758,23 @@ bool LaidoutViewport::IsValidContext(ObjectContext *oc)
 	return anobj==loc->obj;
 }
 
+/*! Return the number of contexts that were updated or removed.
+ */
+int LaidoutViewport::UpdateSelection(Selection *sel)
+{
+	if (sel==NULL) sel=selection;
+
+	int n=0;
+	for (int c=sel->n()-1; c>=0; c--) {
+		if (IsValidContext(sel->e(c))) continue;
+		n++;
+		if (locateObject(selection->e(c)->obj, dynamic_cast<VObjContext*>(selection->e(c))->context)==0) {
+			sel->Remove(c);
+		}
+	}
+	return n;
+}
+
 
 //! Set curobj to limbo, which is always valid. This is done after page removal, for instance, to prevent crashing.
 int LaidoutViewport::wipeContext()
