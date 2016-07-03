@@ -14,38 +14,11 @@ Those are purged with each release.
 
 file open, click around recent, etc, crashes!!
 lost ability to define new bookmarks.. bad!!
+control click no longer toggles
 
-don't allow reparent to a child!! or reparent as appropriate 
-jump to parent seems to be broken and causes crashes
-object reordering frelled, strange bbox display offset, 
-object layer positioning for Home and End keys projecting out in wrong way 
-DONE (? can't duplicate) hang after reparent object 
-
-cloning, jump to object in offscreen page, switches pages, but bounding box wrong place
-DONE clone a child.. NOT PUTTING CORRECTLY!!!! totally wrong matrix, dropping into wrong context
-DONE clone via space bar not moving object after space.. moves bounding box, but actual objects stays put
-
-objectinterface/groupinterface deleteobject goes out of sync when telling viewport to delete: oi.cc:830
-loop over selected fails when object order changes.. need to update contexts of other objs in contexts
-DONE group/ungroup needs to update viewport selection to current selection object
-DONE group/ungroup calling TreeObjectReorder, and clearing any selection, needs to stay selected after
-DONE ungroup is not applying transform appropriately
-DONE grouping frelled.. can group, but cannot seem to select existing groups to ungroup 
-DONE group/ungroup broken
-DONE objects disappear on group <- due to SOMEDATA_LOCK_CONTENTS blocking it out.. it shouldn't though 
-
-gray bars does not have accurate bounding box initially
-memory hole: add gray bars and quit
-DONE add gray bars, displays wrong width, but save and load, width is proper. wtf?
-DONE papergroup objects are drawing beneath the white of the pages
-DONE bug: add gray marks, then '.' for next object, endless loop!
-DONE bug: add gray bars, move to a page, ^g crashes!
-
-memory hole paper interface, activate tool, lay down one paper, quit, 3 objects remain
-test-tiled-mark.laidout: delete the bars, add bars back then try to export, program stops (not a segfault)!!!! headwindow gets decremented somehow 
-DONE cut marks are too thick.. cairo problem??  grey bars export to pdf ok, but don't display correctly, outline is too thick
-
-shearing produced null axes occasionally
+object reordering (with home/end) produces outline of unrelated objects on top 
+	   
+shearing produces null axes occasionally when crossing over opposite edge
 
 text window controls have difficulties
 
@@ -56,6 +29,10 @@ laidout import, does not appear to scale correctly, does odd scaling, and insert
 
 
 ------------ other bugs:
+
+don't allow reparent to a child!! or reparent as appropriate 
+
+paper display shows shadow in wrong direction
 
 evince on ubuntu 14.04, pdf export won't load, says Syntax Error... Dictionary key must be a name object
 
@@ -89,6 +66,7 @@ create new window, defaults to no doc. should select doc of last pane
 headwindow swapping is now REALLY messed up
 pane swapping/dropto on maximized, swapping in general...
 
+memory hole paper interface, activate tool, lay down one paper, quit, 3 objects remain
 memory hole in reimpose .. reimposed 5 page booklet 
 memory hole helpwindow 
 memory hole when graphical shell activated 
@@ -101,6 +79,10 @@ click enter area of color pickers, does not install color!!!!
 svg out, EquivalentObject doesn't play nice with defs.. only accessed once.. how to upkeep clones in this case?
 	-> when equiv objects are composed of groups, what happens?
 
+svg coord numpoints==0???? numpoints doesn't really serve any purpose other than debugging, but....  
+svg to coord incomplete: arcs needs testing
+memory hole in svg in? test svg import, svg path import must be done
+
 SimpleColorAttribute() should have double rgbaf available (done)
 SimpleColorAttribute() should allow css3 stuff, like rgb(50%, 25%, .5), and hsl(), where h->[0..360)
 
@@ -110,15 +92,11 @@ lineinput not propagating escapable
 
 clones of images scale not like images
 
-svg coord numpoints==0???? numpoints doesn't really serve any purpose other than debugging, but....
-
 object tool shift-control for rotate does not allow positioning on drag bars
 
 'g' for color sample changes cursor to cancel now, and changes on border cross!!!
 
 possible modifier-pairing error with multiple mice...
-
-recent files do not appear to be most recent file opened
 
 object deleting funky, import svg images, select one, hit delete, doesn't delete!!
 place 3 images, object select, must press delete twice...!?!?!?!
@@ -134,9 +112,6 @@ shrink image lets you go immeasurably small
 fold indicator foldprogress just at crossover points incorrectly indicating affected folds
 
 pixels units should be set as per document dpi
-
-svg to coord incomplete
-memory hole in svg in? test svg import, svg path import must be done
 
 make sure all imposition types are available in interpreter
 
@@ -1193,8 +1168,6 @@ templates Templates:
   save as default, or just save as.
   partial templates, fill in non defined, like use booklet but manually define paper size
 
-importing images should default the image id to a variant of the file name
-
 ImageImport dialog: (actually, needs a total redesign) import images importimage
   should have preview for alignment options.. grab destination page to show preview
   auto bookmarks, one for examples, or save as template
@@ -1536,4 +1509,29 @@ DONE moving several limbo objects back to page does NOT actually move them all o
   move them on then off -> fail, move off then on -> fail.. problem with group bounding??
   --> changing one context messed up the other contexts, each context in selection must be updated on move
 DONE be able to change units preference via a window control rather than just editing laidoutrc by hand
+DONE objectinterface/groupinterface deleteobject goes out of sync when telling viewport to delete: oi.cc:830
+       -> loop over selected fails when object order changes.. need to update contexts of other objs in contexts
+DONE group/ungroup needs to update viewport selection to current selection object
+DONE group/ungroup calling TreeObjectReorder, and clearing any selection, needs to stay selected after
+DONE ungroup is not applying transform appropriately
+DONE grouping frelled.. can group, but cannot seem to select existing groups to ungroup 
+DONE group/ungroup broken
+DONE objects disappear on group <- due to SOMEDATA_LOCK_CONTENTS blocking it out.. it shouldn't though 
+DONE importing images should default the image id to a variant of the file name 
+DONE cloning, jump to object in offscreen page, switches pages, but bounding box wrong place
+DONE clone a child.. NOT PUTTING CORRECTLY!!!! totally wrong matrix, dropping into wrong context
+DONE clone via space bar not moving object after space.. moves bounding box, but actual objects stays put
+DONE reparent not installing correct transform
+DONE jump to parent seems to be broken and causes crashes
+DONE (? can't duplicate) object layer positioning for Home and End keys projecting out in wrong way 
+DONE (? can't duplicate) hang after reparent object 
+DONE (can't duplicate) test-tiled-mark.laidout: delete the bars, add bars back then try to export, program stops (not a segfault)!!!! headwindow gets decremented somehow 
+DONE cut marks are too thick.. cairo problem??  grey bars export to pdf ok, but don't display correctly, outline is too thick 
+DONE recent files do not appear to be most recent file opened
+DONE memory hole: add gray bars and quit. 85 objects remain!?!
+DONE gray bars does not have accurate bounding box initially
+DONE add gray bars, displays wrong width, but save and load, width is proper. wtf?
+DONE papergroup objects are drawing beneath the white of the pages
+DONE bug: add gray marks, then '.' for next object, endless loop!
+DONE bug: add gray bars, move to a page, ^g crashes!
 
