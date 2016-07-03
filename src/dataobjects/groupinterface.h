@@ -40,6 +40,24 @@ enum GroupInterfaceActions {
 	GIA_RegistrationMark,
 	GIA_GrayBars,
 	GIA_CutMarks,
+	GIA_Parent,
+	GIA_Unparent,
+
+	//popup controls
+	GIA_Link,
+	GIA_Parent_Link,
+	GIA_Constraints,
+	GIA_Zone,
+	GIA_Chains,
+
+	GIA_Jump_To_Link,
+	GIA_Sever_Link,
+
+	GIA_Parent_Align,
+	GIA_Parent_Matrix,
+	GIA_Jump_To_Parent,
+	GIA_Reparent,
+
 
 	GIA_MAX
 };
