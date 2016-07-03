@@ -21,7 +21,7 @@ VERSION 0.097
        Moving selected things in group contents does not update group bounds
        should not be able to select both group and group contents at same time
        double click on group should change selection area to group contents?
-       Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
+(done) Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
        option to specify alignment of different size signature stacks
        debug svg in
        lock down color backend.. it's currently a series of weak hacks based on 8-bit screen rgb

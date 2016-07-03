@@ -15,15 +15,15 @@ Those are purged with each release.
 file open, click around recent, etc, crashes!!
 lost ability to define new bookmarks.. bad!!
 
-hang after reparent object 
 don't allow reparent to a child!! or reparent as appropriate 
-jump to parent seems to be broken
+jump to parent seems to be broken and causes crashes
 object reordering frelled, strange bbox display offset, 
 object layer positioning for Home and End keys projecting out in wrong way 
+DONE (? can't duplicate) hang after reparent object 
 
-moving several limbo objects back to page does NOT actually move them all onto the page!! grrr!
-  move them on then off -> fail, move off then on -> fail.. problem with group bounding??
-  --> probably changing one context messes up the other contexts, each context in selection must be updated on move
+cloning, jump to object in offscreen page, switches pages, but bounding box wrong place
+DONE clone a child.. NOT PUTTING CORRECTLY!!!! totally wrong matrix, dropping into wrong context
+DONE clone via space bar not moving object after space.. moves bounding box, but actual objects stays put
 
 objectinterface/groupinterface deleteobject goes out of sync when telling viewport to delete: oi.cc:830
 loop over selected fails when object order changes.. need to update contexts of other objs in contexts
@@ -47,11 +47,6 @@ DONE cut marks are too thick.. cairo problem??  grey bars export to pdf ok, but 
 
 shearing produced null axes occasionally
 
-clone via space bar not moving object after space.. moves bounding box, but actual objects stays put
-clone a child.. NOT PUTTING CORRECTLY!!!! totally wrong matrix
-cloning, change original, not triggering bbox update in clone
-cloning, jump to object in offscreen page, switches pages, but bounding box wrong place
-
 text window controls have difficulties
 
 laidout import, does not appear to scale correctly, does odd scaling, and inserts unneccesary layers
@@ -62,11 +57,13 @@ laidout import, does not appear to scale correctly, does odd scaling, and insert
 
 ------------ other bugs:
 
-evince on ubuntu 14.04, pdf export won't load, says Syntax Erro... Dictionary key must be a name object
+evince on ubuntu 14.04, pdf export won't load, says Syntax Error... Dictionary key must be a name object
 
 saving window postitions doesn't take into account window decorations, makes pos slide downward each time
 
 need to implement ObjectInterface/GroupInterface::DrawData()
+
+cloning, change original, not triggering bbox update in clone
 
 ubuntu maximize window failing (but not on today's debian unstable gnome), resize seems to work now
 gnome "application" does one per window, not one per app. this is not a bad thing imnsho, but should be easy to conform to desktop application spec properly
@@ -198,6 +195,8 @@ ObjectIndicator objectindicator:
   show (root) at bottom of stack
   allow drag reparenting
   render text with white halo
+
+unparent from a group should remove the group if nothing left? probably not, leave that for ungroup
 
 fontdialog: FontDialog
   bookman font style names getting chopped off
@@ -1533,5 +1532,8 @@ DONE (apparently) Printing only goes to letter, even though page size says go fu
 DONE print command to printer is not respecting the paper size
 DONE (but still must imp cache clearing on low memory) cairo doesn't cache images like Imlib does,
 	    so every image is totally loaded on file open. bad, bad, bad!!!
-
+DONE moving several limbo objects back to page does NOT actually move them all onto the page!! grrr!
+  move them on then off -> fail, move off then on -> fail.. problem with group bounding??
+  --> changing one context messed up the other contexts, each context in selection must be updated on move
+DONE be able to change units preference via a window control rather than just editing laidoutrc by hand
 

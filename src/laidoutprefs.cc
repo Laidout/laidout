@@ -1,6 +1,4 @@
 //
-// $Id$
-//	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -16,6 +14,8 @@
 
 #include <lax/units.h>
 #include <lax/strmanip.h>
+#include <lax/fileutils.h>
+#include <lax/iconmanager.h>
 
 #include "laidoutprefs.h"
 #include "language.h"
@@ -23,8 +23,12 @@
 #include "stylemanager.h"
 #include "utils.h"
 
+#include <clocale>
+#include <cctype>
+#include <unistd.h>
 
 using namespace Laxkit;
+using namespace LaxFiles;
 
 namespace Laidout {
 
@@ -67,7 +71,9 @@ LaidoutPreferences::LaidoutPreferences()
     default_template=NULL;
     defaultpaper=get_system_default_paper();
     temp_dir=NULL;
-	palette_dir=newstr("/usr/share/gimp/2.0/palettes");
+	if (S_ISDIR(file_exists("/usr/share/gimp/2.0/palettes", 1, NULL)))
+		palette_dir=newstr("/usr/share/gimp/2.0/palettes");
+	else palette_dir=NULL;
 
 	preview_size=400;
 
@@ -154,7 +160,7 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 	def->push("previewsize",
 			_("Preview size"),
 			_("Pixel width or height to render cached previews of objects for on screen viewing. "),
-			"real", NULL,"5",
+			"real", NULL,"400",
 			0,
 			NULL);
 
@@ -216,7 +222,7 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 
 	def->push("autosave_path",
 			_("Autosave path"),
-			_("Where and how to save when autosaving. Relative paths are to current file, %%f is current file name."),
+			_("Where and how to save when autosaving. Relative paths are to current file, %f is current file name."),
 			"string", NULL,NULL,
 			0,
 			NULL);
@@ -254,6 +260,165 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 
 }
 
+Value *LaidoutPreferences::dereference(const char *extstring, int len)
+{
+	if (!strcmp(extstring, "defaultunits")) {
+		UnitManager *units=GetUnitManager();
+		char *name=NULL;
+		units->UnitInfoId(default_units, NULL, NULL,NULL,&name);
+		StringValue *s=new StringValue(name);
+		return s;
+	}
+
+	if (!strcmp(extstring, "splashimage")) {
+		return splash_image_file ? new StringValue(splash_image_file) : NULL;
+	}
+
+	if (!strcmp(extstring, "defaulttemplate")) {
+		return default_template ? new StringValue(default_template) : NULL;
+	}
+
+	if (!strcmp(extstring, "defaultpaper")) {
+		return defaultpaper ? new StringValue(defaultpaper) : NULL;
+	}
+
+	if (!strcmp(extstring, "pagedropshadow")) {
+		return new IntValue(pagedropshadow);
+	}
+
+	if (!strcmp(extstring, "experimental")) {
+		return new BooleanValue(experimental);
+	}
+
+	if (!strcmp(extstring, "temp_dir")) {
+		return temp_dir ? new StringValue(temp_dir) : NULL;
+	}
+
+	if (!strcmp(extstring, "autosave")) {
+		return new DoubleValue(autosave);
+	}
+
+	if (!strcmp(extstring, "autosave_path")) {
+		return autosave_path ? new StringValue(autosave_path) : NULL;
+	}
+
+	if (!strcmp(extstring, "export_file_name")) {
+		return exportfilename ? new StringValue(exportfilename) : NULL;
+	}
+
+	if (!strcmp(extstring, "palette_dir")) {
+		return palette_dir ? new StringValue(palette_dir) : NULL;
+	}
+
+	if (!strcmp(extstring, "previewsize")) {
+		return new IntValue(preview_size);
+	}
+
+	if (!strcmp(extstring, "icon_dirs")) {
+		SetValue *set = new SetValue("File");
+		IconManager *icons=IconManager::GetDefault();
+		for (int c=0; c<icons->NumPaths(); c++) {
+			set->Push(new StringValue(icons->GetPath(c)), 1);
+		}
+		return set; 
+	}
+
+
+	return NULL;
+}
+
+int LaidoutPreferences::SavePrefs(const char *file)
+{
+//	char conf[strlen(laidout->config_dir)+20];
+//
+//	if (file==NULL) {
+//		sprintf(conf,"%s/laidoutrc",config_dir);
+//		file=conf;
+//	}
+
+	if (!file) return 2;
+
+	FILE *f=fopen(file,"w");
+	if (f) {
+		setlocale(LC_ALL,"C");
+		dump_out(f,0,0,NULL);
+		fclose(f);
+		setlocale(LC_ALL,"");
+		return 0;
+	}
+
+	return 1;
+}
+
+/*! Update global preference by writing out a new laidoutrc.
+ * This only works when which/value is supposed to be on one line. value shouldn't have any newlines.
+ *
+ * The line containing which at the beginning of the line or "#which" will be entirely replaced with "which value".
+ */
+int UpdatePreference(const char *which, const char *value, const char *laidoutrc)
+{
+	FILE *f=fopen(laidoutrc,"r");
+	if (!f) return 1;
+
+	char *outfile=newstr(laidoutrc);
+	appendstr(outfile, "-TEMP");
+	while (file_exists(outfile, 1, NULL)) {
+		char *nout = increment_file(outfile);
+		delete[] outfile;
+		outfile = nout;
+	}
+
+	FILE *out=fopen(outfile, "w");
+	if (!out) {
+		fclose(f);
+		delete[] outfile;
+		return 2;
+	}
+
+	setlocale(LC_ALL,"C");
+
+	//read each line, if "^which ..." is found, replace with "which value"
+	//If not found, but there is a "^#which ...", then replace that line
+
+	char *line=NULL;
+    size_t n=0;
+	int c;
+	int found=0;
+
+	while (!feof(f)) {
+        c=getline(&line, &n, f);
+		if (!c) continue;
+
+		if (!found && strncmp(line, which, strlen(which))==0 && isspace(line[strlen(which)])) {
+			found=1;
+			fprintf(out, "%s %s\n", which, value);
+
+		} else if (!found && line[0]=='#' && strncmp(line+1, which, strlen(which))==0 && isspace(line[1+strlen(which)])) {
+			found=1;
+			fprintf(out, "%s %s\n", which, value);
+
+		} else {
+			fwrite(line, 1, strlen(line), out);
+		}
+	}
+
+	if (!found) {
+		fprintf(out, "%s %s\n\n", which, value);
+	}
+	
+	if (line) free(line);
+
+	fclose(out);
+	fclose(f);
+	setlocale(LC_ALL,"");
+
+	 //finally move temp file to real file
+	unlink(laidoutrc);
+	rename(outfile, laidoutrc);
+	delete[] outfile;
+
+	return 0;
+}
 
 } // namespace Laidout
 

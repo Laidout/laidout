@@ -1,6 +1,4 @@
 //
-// $Id$
-//	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -41,13 +39,16 @@ class LaidoutPreferences : public Value
 	Laxkit::PtrStack<char> icon_dirs;
 	bool experimental;
 
-	virtual ObjectDef *makeObjectDef();
-	virtual Value *duplicate();
-
 	LaidoutPreferences();
 	virtual ~LaidoutPreferences();
+
+	virtual ObjectDef *makeObjectDef();
+	virtual Value *duplicate();
+	virtual Value *dereference(const char *extstring, int len);
+	virtual int SavePrefs(const char *file=NULL);
 };
 
+int UpdatePreference(const char *which, const char *value, const char *laidoutrc);
 
 } //namespace Laidout
 
