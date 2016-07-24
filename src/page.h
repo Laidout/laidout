@@ -142,6 +142,8 @@ class Page : public ObjectContainer
 	virtual LaxInterfaces::ImageData *Thumbnail();
 	virtual int InstallPageStyle(PageStyle *pstyle, bool shift_within_margins);
 
+	virtual int PushLayer(const char *layername, int where=-1);
+
 	virtual int n() { return layers.n(); }
 	virtual Group *e(int i) { return dynamic_cast<Group *>(layers.e(i)); }
 	virtual Laxkit::anObject *object_e(int i) { return layers.object_e(i); }

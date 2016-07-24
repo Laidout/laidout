@@ -601,6 +601,23 @@ Page::~Page()
 	layers.flush();
 }
 
+/*! Return index of new layer.
+ * If where<0 or where>=layers.n() push at end.
+ */
+int Page::PushLayer(const char *layername, int where)
+{
+	if (where<0 || where>=layers.n()) where=layers.n();
+
+	Group *g = new Group;
+	g->Id(layername ? layername : "pagelayer");
+	g->selectable=0;
+	g->obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return individual layers
+	layers.push(g,where); //incs count
+	g->dec_count();
+
+	return where;
+}
+
 const char *Page::object_e_name(int i)
 {
 	if (i<0 || i>layers.n()) return NULL;
