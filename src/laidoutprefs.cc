@@ -379,6 +379,8 @@ int UpdatePreference(const char *which, const char *value, const char *laidoutrc
 
 	//read each line, if "^which ..." is found, replace with "which value"
 	//If not found, but there is a "^#which ...", then replace that line
+	// *** Note that if you do a lot of tinkering with the laidoutrc, this may wipe
+	//     out comments you put in on those specific lines
 
 	char *line=NULL;
     size_t n=0;
@@ -392,6 +394,10 @@ int UpdatePreference(const char *which, const char *value, const char *laidoutrc
 		if (!found && strncmp(line, which, strlen(which))==0 && isspace(line[strlen(which)])) {
 			found=1;
 			fprintf(out, "%s %s\n", which, value);
+
+		} else if (found && strncmp(line, which, strlen(which))==0 && isspace(line[strlen(which)])) {
+			 //found the option, but we already wrote out, so comment out this one
+			fprintf(out, "#%s", line);
 
 		} else if (!found && line[0]=='#' && strncmp(line+1, which, strlen(which))==0 && isspace(line[1+strlen(which)])) {
 			found=1;
