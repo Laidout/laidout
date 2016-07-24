@@ -32,7 +32,9 @@
 #include <iostream>
 using namespace std;
 
+
 using namespace Laxkit;
+using namespace LaxFiles;
 
 
 namespace Laidout {
@@ -374,6 +376,7 @@ int PlainTextWindow::init()
     //LaxFont *font=app->fontmanager->MakeFontFromStr(":spacing=100",getUniqueNumber());
     LaxFont *font=app->fontmanager->MakeFontFromStr("mono",getUniqueNumber());
     editbox->UseThisFont(font);
+	editbox->pady = editbox->padx = font->textheight()/2;
     //font->dec_count();<- causes crash... it really shouldn't!!!
 
 	AddWin(editbox,1, 100,95,2000,50,0, 100,95,20000,50,0, -1);
@@ -456,6 +459,59 @@ int PlainTextWindow::UseThis(PlainText *txt)
 
 	return 0;
 }
+
+void PlainTextWindow::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+{
+    anXWindow::dump_out(f,indent,what,context);
+}
+
+LaxFiles::Attribute *PlainTextWindow::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+{
+    return anXWindow::dump_out_atts(att,what,context);
+
+
+
+}
+
+void PlainTextWindow::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+{
+    anXWindow::dump_in_atts(att,flag,context);
+
+	char *nme,*value;
+
+    for (int c=0; c<att->attributes.n; c++)  {
+        nme  =att->attributes.e[c]->name;
+        value=att->attributes.e[c]->value;
+
+        if (!strcmp(nme,"textobject") && value) {
+			for (c=0; c<laidout->project->textobjects.n; c++) {
+				if (!strcmp(value, laidout->project->textobjects.e[c]->name)) {
+					UseThis(laidout->project->textobjects.e[c]);
+					break;
+				}
+			}
+
+        } else if (!strcmp(nme,"filename")) {
+            if (isblank(value)) continue;
+			PlainText *tobj=new PlainText;
+			if (tobj->LoadFromFile(value)!=0) {
+				tobj->dec_count();
+				tobj=NULL;
+			}
+			if (tobj) {
+				UseThis(tobj);
+				tobj->dec_count();
+			}
+
+        } else if (!strcmp(nme,"show_line_numbers")) {
+			MultiLineEdit *edit = dynamic_cast<MultiLineEdit*>(findChildWindowByName("plain-text-edit"));
+			if (edit) {
+				edit->SetStyle(TEXT_LINE_NUMBERS, BooleanAttribute(value));
+			}
+        }
+    }
+}
+
 
 } //namespace Laidout
 

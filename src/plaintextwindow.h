@@ -1,6 +1,4 @@
 //
-// $Id$
-//	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -11,7 +9,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2010 by Tom Lechner
+// Copyright (C) 2004-2012,2016 by Tom Lechner
 //
 
 
@@ -26,15 +24,17 @@
 
 namespace Laidout {
 
+
 //------------------------------ PlainTextWindow -------------------------------
 
 class PlainTextWindow : public Laxkit::RowFrame
 {
- protected:
+  protected:
 	PlainText *textobj;
 	int syncText(int filetoo);
 	void uniqueName(PlainText *obj);
- public:
+
+  public:
  	PlainTextWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
  		int xx,int yy,int ww,int hh,int brder,
 		PlainText *newtext);
@@ -45,7 +45,14 @@ class PlainTextWindow : public Laxkit::RowFrame
 	virtual int init();
 	virtual void updateControls();
 	virtual void callSaveAs();
+
+	 //for i/o
+    virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+    virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
+    virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+
 };
+
 
 } // namespace Laidout
 
