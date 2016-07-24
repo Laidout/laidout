@@ -103,16 +103,75 @@ namespace Laidout {
 #define ACTION_NewProject              3000
 #define ACTION_SaveProject             3001
 #define ACTION_ToggleSaveAsProject     3002
+
 //---------------------------
+
+//for ViewWindow shortcuts
+enum ViewActions {
+	VIEW_Save = 3500, // *** for now keep this at 3500.. need better way to organize this!
+	VIEW_SaveAs,
+	VIEW_Save_A_Copy,
+	VIEW_Save_A_Copy_Incremented,
+	VIEW_Save_As_Template,
+	VIEW_Save_As_Default_Template,
+
+	VIEW_NewDocument,
+	VIEW_Open_Document,
+
+	VIEW_Backup_Settings,
+
+	VIEW_Commit,
+	VIEW_Commit_Settings,
+	VIEW_Revert,
+
+	VIEW_NextTool,
+	VIEW_PreviousTool,
+	VIEW_NextPage,
+	VIEW_PreviousPage,
+	VIEW_ObjectTool,
+	VIEW_CommandPrompt,
+	VIEW_ObjectIndicator,
+
+	VIEW_Help,
+	VIEW_About,
+	VIEW_SpreadEditor,
+	VIEW_EditImposition,
+
+	VIEW_PathTool,
+	VIEW_ImageTool,
+	VIEW_GradientTool,
+	VIEW_MeshGradientTool,
+	VIEW_EngraverTool,
 
  //menu ids from menu to move an object or change context
-#define MOVETO_Limbo      1
-#define MOVETO_Spread     2
-#define MOVETO_Page       3
-#define MOVETO_PaperGroup 4
-#define MOVETO_OtherPage  5
+	MOVETO_Limbo,
+	MOVETO_Spread,
+	MOVETO_Page,
+	MOVETO_PaperGroup,
+	MOVETO_OtherPage,
 
-//---------------------------
+	VIEW_MAX
+};
+
+
+
+//for LaidoutViewport shortcuts
+enum LaidoutViewportActions {
+	LOV_DeselectAll=VIEWPORT_MAX,
+	LOV_CenterDrawing,
+	LOV_ZoomToPage,
+	LOV_GrabColor,
+	LOV_ToggleShowState,
+	LOV_MoveObjects,
+	LOV_ObjUp,
+	LOV_ObjDown,
+	LOV_ObjFirst,
+	LOV_ObjLast,
+	LOV_ToggleDrawFlags,
+	LOV_ObjectIndicator,
+	LOV_ForceRemap,
+	LOV_MAX
+};
 
 
 
@@ -2693,49 +2752,6 @@ void LaidoutViewport::Refresh()
 }
 
 
-enum ViewActions {
-	VIEW_Save,
-	VIEW_SaveAs,
-	VIEW_NewDocument,
-	VIEW_NextTool,
-	VIEW_PreviousTool,
-	VIEW_NextPage,
-	VIEW_PreviousPage,
-	VIEW_ObjectTool,
-	VIEW_CommandPrompt,
-	VIEW_ObjectIndicator,
-
-	VIEW_Help,
-	VIEW_About,
-	VIEW_SpreadEditor,
-	VIEW_EditImposition,
-
-	VIEW_PathTool,       
-	VIEW_ImageTool,      
-	VIEW_GradientTool,   
-	VIEW_MeshGradientTool,
-	VIEW_EngraverTool,   
-
-	VIEW_MAX
-};
-
-enum LaidoutViewportActions {
-	LOV_DeselectAll=VIEWPORT_MAX,
-	LOV_CenterDrawing,
-	LOV_ZoomToPage,
-	LOV_GrabColor,
-	LOV_ToggleShowState,
-	LOV_MoveObjects,
-	LOV_ObjUp,
-	LOV_ObjDown,
-	LOV_ObjFirst,
-	LOV_ObjLast,
-	LOV_ToggleDrawFlags,
-	LOV_ObjectIndicator,
-	LOV_ForceRemap,
-	LOV_MAX
-};
-
 Laxkit::ShortcutHandler *LaidoutViewport::GetShortcuts()
 {
 	if (sc) return sc;
@@ -3879,19 +3895,55 @@ int ViewWindow::init()
 	//}
 
 
-	last=ibut=new Button(this,"open doc",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, NULL,object_id,"openDoc",-1,
+	 //---------open
+	last=ibut=new Button(this,"open doc",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"openDoc",-1,
 						 _("Open"),NULL,laidout->icons->GetIcon("Open"),buttongap);
 	ibut->tooltip(_("Open a document from disk"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
-	last=ibut=new Button(this,"save doc",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, NULL,object_id,"saveDoc",-1,
-						 _("Save"),NULL,laidout->icons->GetIcon("Save"),buttongap);
-	ibut->tooltip(_("Save the current document"));
-	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
+//	 //---------save
+//	last=ibut=new Button(this,"save doc",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"saveDoc",-1,
+//						 _("Save"),NULL,laidout->icons->GetIcon("Save"),buttongap);
+//	ibut->tooltip(_("Save the current document"));
+//	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
+
+	 //-------save menu
+	MenuInfo *menu=new MenuInfo;
+	menu->AddItem(_("Save"),           VIEW_Save);
+	menu->AddItem(_("Save as..."),     VIEW_SaveAs);
+	menu->AddItem(_("Save a copy..."), VIEW_Save_A_Copy);
+	menu->AddItem(_("Save a copy incremented"),  VIEW_Save_A_Copy_Incremented); //from last save a copy, or from file if no last copy?
+	menu->AddItem(_("Save as template..."),      VIEW_Save_As_Template);
+	menu->AddItem(_("Save as default template"), VIEW_Save_As_Default_Template);
+	menu->AddSep();
+	menu->AddItem(_("New..."),  VIEW_NewDocument);
+	menu->AddItem(_("Open..."), VIEW_Open_Document);
+	menu->AddSep();
+	menu->AddItem(_("Setup Autosave..."), VIEW_Backup_Settings);
+		// [ ] Backup on save to: __%f~__
+		// [ ] Autosave.
+		//   Time between autosaves:___5_minute__  ...ms millisecond s sec seconds second m minute min hr hour h
+		//   Naming for autosaves: __%f-autosave____
+//	menu->AddSep();
+//	menu->AddItem(_("Commit"), VIEW_Commit);
+//	menu->AddItem(_("Commit settings..."), VIEW_Commit_Settings);
+//		// - initialize git repository in directory of document or project file
+//		// - command to commit
+//		// - command to revert
+//	menu->AddItem(_("Revert..."), VIEW_Revert);
+
+	last=menub=new MenuButton(this,"save doc",NULL,
+							MENUBUTTON_LEFT|IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"savemenu",-1,
+							 menu,1, _("Save"),
+							 NULL, laidout->icons->GetIcon("Save"),
+							 0);
+	menub->tooltip(_("Save options"));
+	AddWin(menub,1, menub->win_w,0,50,50,0, menub->win_h,0,50,50,0, -1);
+//	-------------
 
 
-
-	last=ibut=new Button(this,"help",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, NULL,object_id,"help",-1,
+	 //---------help
+	last=ibut=new Button(this,"help",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"help",-1,
 						 _("Help!"),NULL,laidout->icons->GetIcon("Help"),buttongap);
 	ibut->tooltip(_("Popup a list of shortcuts"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
@@ -3906,13 +3958,7 @@ int ViewWindow::init()
 	return 0;
 }
 
-/*! Currently accepts:\n
- * <pre>
- *  "new image"
- *  "saveAsPopup"
- *  "docTreeChange" <-- updateContext() and pass event to viewport
- * </pre>
- *
+/*!
  * \todo *** the response to saveAsPopup could largely be put elsewhere
  */
 int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
@@ -4006,6 +4052,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 			if (!is_good_filename(file)) {//***how does it know?
 				PostMessage(_("Illegal characters in file name. Not saved."));
+
 			} else {
 				 //set name in doc and headwindow
 				DBG cerr <<"*** file by this point should be absolute path name:"<<file<<endl;
@@ -4032,6 +4079,35 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 			if (dir)   delete[] dir;
 			if (file)  delete[] file;
 		}
+		return 0;
+
+	} else if (!strcmp(mes,"saveCopyPopup")) {
+		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
+		if (!s || isblank(s->str)) return 0;
+
+		Document *sdoc=doc;
+		if (!sdoc) sdoc=laidout->curdoc;
+		if (!sdoc) { PostMessage(_("Need a document to save!")); return 0; }
+
+		 //now actually save
+		char *oldname = newstr(sdoc->Saveas());
+		const char *where=s->str; 
+		sdoc->Saveas(where);
+
+		ErrorLog log;
+		if (sdoc && sdoc->Save(1,1,log)==0) {
+			char message[strlen(_("Saved copy to %s"))+strlen(lax_basename(where))+1];
+			sprintf(message, _("Saved copy to %s"), lax_basename(where));
+			PostMessage(message); 
+
+		} else {
+			if (log.Total()) {
+				PostMessage(log.MessageStr(log.Total()-1));
+			} else PostMessage(_("Problem saving. Not saved."));
+		}
+		sdoc->Saveas(oldname);
+
+		delete[] oldname;
 		return 0;
 
 	} else if (!strcmp(mes,"print config")) {
@@ -4474,42 +4550,17 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"openDoc")) { 
-		 //sends the open message to the head window... hmm...
-		app->rundialog(new FileDialog(NULL,NULL,_("Open Document"),
-					ANXWIN_REMEMBER,
-					0,0,0,0,0, win_parent->object_id,"open document",
-					FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
-					NULL,NULL,NULL,"Laidout"));
+		PerformAction(VIEW_Open_Document);
 		return 0;
 
 	} else if (!strcmp(mes,"saveDoc")) { 
-		if (!doc) return 0;
-		
-		 //user clicked save button
-		if (isblank(doc->Saveas()) || !strncasecmp(doc->Saveas(),_("untitled"), strlen(_("untitled")))) { //***or shift-click for saveas??
-			 // launch saveas!!
-			//LineInput::LineInput(anXWindow *parnt,const char *ntitle,unsigned int nstyle,
-						//int xx,int yy,int ww,int hh,int brder,
-						//anXWindow *prev,Window nowner,const char *nsend,
-						//const char *newlabel,const char *newtext,unsigned int ntstyle,
-						//int nlew,int nleh,int npadx,int npady,int npadlx,int npadly) // all after and inc newtext==0
-			app->rundialog(new FileDialog(NULL,NULL,_("Save As..."),
-						ANXWIN_REMEMBER,
-						0,0,0,0,0, object_id,"saveAsPopup",
-						FILES_FILES_ONLY|FILES_SAVE_AS,
-						doc->Saveas()));
-		} else {
-			ErrorLog log;
-			if (doc->Save(1,1,log)==0) {
-				char blah[strlen(doc->Saveas())+15];
-				sprintf(blah,"Saved to %s.",doc->Saveas());
-				PostMessage(blah);
-			} else {
-				if (log.Total()) {
-					PostMessage(log.MessageStr(log.Total()-1));
-				} else PostMessage(_("Problem saving. Not saved."));
-			}
-		}
+		PerformAction(VIEW_Save);
+		return 0;
+
+	} else if (!strcmp(mes,"savemenu")) { 
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
+		int id=s->info2;
+		if (id>0) PerformAction(id); 
 		return 0;
 
 	} else if (!strcmp(mes,"print")) { // print to output.ps
@@ -4800,17 +4851,12 @@ int ViewWindow::PerformAction(int action)
 			PostMessage(_("No document to save!"));
 			return 0;
 		}
+
 		DBG cerr <<"....viewwindow says save.."<<endl;
 		if (isblank(sdoc->Saveas()) 
 				|| strstr(sdoc->Saveas(),_("untitled"))
 				|| action==VIEW_SaveAs) {
 			 // launch saveas!!
-			//LineInput::LineInput(anXWindow *parnt,const char *ntitle,unsigned int nstyle,
-						//int xx,int yy,int ww,int hh,int brder,
-						//anXWindow *prev,Window nowner,const char *nsend,
-						//const char *newlabel,const char *newtext,unsigned int ntstyle,
-						//int nlew,int nleh,int npadx,int npady,int npadlx,int npadly) // all after and inc newtext==0
-						
 			char *where=newstr(isblank(sdoc->Saveas())?NULL:sdoc->Saveas());
 			if (!where && !isblank(laidout->project->filename)) where=lax_dirname(laidout->project->filename,0);
 
@@ -4820,13 +4866,16 @@ int ViewWindow::PerformAction(int action)
 						FILES_FILES_ONLY|FILES_SAVE_AS,
 						where));
 			if (where) delete[] where;
+
 		} else {
 			ErrorLog log;
+
 			if (sdoc->Save(1,1,log)==0) {
 				char blah[strlen(sdoc->Saveas())+15];
 				sprintf(blah,"Saved to %s.",sdoc->Saveas());
 				PostMessage(blah);
 				if (!isblank(laidout->project->filename)) laidout->project->Save(log);
+
 			} else {
 				if (log.Total()) {
 					PostMessage(log.MessageStr(log.Total()-1));
@@ -4835,8 +4884,110 @@ int ViewWindow::PerformAction(int action)
 		}
 		return 0;
 
+	} else if (action==VIEW_Save_A_Copy) {
+		Document *sdoc=doc;
+		if (!sdoc) sdoc=laidout->curdoc;
+		if (!sdoc) { PostMessage(_("Need a document to save!")); return 0; }
+
+		char *where=newstr(isblank(sdoc->Saveas()) ? "untitled" : sdoc->Saveas());
+		char *ext=strrchr(where, '.');
+		char *slash=strrchr(where, '/');
+		if (slash && ext && ext<slash) ext=NULL;
+		if (ext) {
+			slash=newstr(ext);
+			*ext='\0';
+			ext=slash;
+			appendstr(where, "-Copy");
+			appendstr(where, ext);
+		} else appendstr(where, "-Copy");
+
+		while (file_exists(where, 1, NULL)) {
+			char *where2 = increment_file(where);
+			delete[] where;
+			where=where2;
+		}
+
+		FileDialog *filed = new FileDialog(NULL,NULL,_("Save a copy..."),
+					ANXWIN_REMEMBER,
+					0,0,0,0,0, object_id,"saveCopyPopup",
+					FILES_FILES_ONLY|FILES_SAVE_AS,
+					where);
+		filed->OkButton(_("Save a copy"), NULL);
+		app->rundialog(filed);
+		delete[] where;
+
+		return 0;
+
+	} else if (action==VIEW_Save_A_Copy_Incremented) {
+		Document *sdoc=doc;
+		if (!sdoc) sdoc=laidout->curdoc;
+		if (!sdoc) { PostMessage(_("Need a document to save!")); return 0; }
+
+		char *where=newstr(isblank(sdoc->Saveas()) ? "untitled" : sdoc->Saveas());
+
+		while (file_exists(where, 1, NULL)) {
+			char *where2 = increment_file(where);
+			delete[] where;
+			where=where2;
+		}
+
+		 //now actually save
+		char *oldname = newstr(sdoc->Saveas());
+		sdoc->Saveas(where);
+		
+		ErrorLog log;
+		if (sdoc && sdoc->Save(1,1,log)==0) {
+			char message[strlen(_("Saved copy to %s"))+strlen(lax_basename(where))+1];
+			sprintf(message, _("Saved copy to %s"), lax_basename(where));
+			PostMessage(message); 
+
+		} else {
+			if (log.Total()) {
+				PostMessage(log.MessageStr(log.Total()-1));
+			} else PostMessage(_("Problem saving. Not saved."));
+		}
+		sdoc->Saveas(oldname);
+
+		delete[] oldname;
+		delete[] where; 
+		return 0;
+
+
+	} else if (action==VIEW_Save_As_Template) {
+		PostMessage("Lazy programmer! Need to implement save as template!");
+		return 0;
+
+	} else if (action==VIEW_Save_As_Default_Template) {
+		PostMessage("Lazy programmer! Need to implement save as default template!");
+		return 0;
+
+	} else if (action==VIEW_Backup_Settings) { 
+		PostMessage("Lazy programmer! Need to implement autosave config!");
+		return 0;
+
+	} else if (action==VIEW_Commit) {
+		PostMessage("Lazy programmer! Need to implement commit!");
+		return 0;
+
+	} else if (action==VIEW_Commit_Settings) {
+		PostMessage("Lazy programmer! Need to implement commit settings!");
+		return 0;
+
+	} else if (action==VIEW_Revert) {
+		PostMessage("Lazy programmer! Need to implement revert!");
+		return 0;
+
 	} else if (action==VIEW_NewDocument) {
 		app->rundialog(new NewDocWindow(NULL,NULL,"New Document",0,0,0,0,0, 0));
+		return 0;
+
+	} else if (action==VIEW_Open_Document) {
+		 //sends the open message to the head window... hmm...
+		app->rundialog(new FileDialog(NULL,NULL,_("Open Document"),
+					ANXWIN_REMEMBER,
+					0,0,0,0,0, win_parent->object_id,"open document",
+					FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
+					NULL,NULL,NULL,"Laidout"));
 		return 0;
 
 	} else if (action==VIEW_NextTool) {
