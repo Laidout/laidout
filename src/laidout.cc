@@ -524,6 +524,17 @@ int LaidoutApp::init(int argc,char **argv)
 		fclose(f);
 	}
 
+	 //add Templates dir as default bookmark
+	Attribute *att=app->AppResource("Bookmarks");
+    if (att) {
+		if (att->find(_("Templates"))==NULL) {
+			char *tdir=default_path_for_resource("templates");
+			att->push(_("Templates"), tdir);
+			delete[] tdir;
+		}
+	}
+
+
 	 //if no bases defined add freedesktop style
 	if (!preview_file_bases.n) {
 		preview_file_bases.push(newstr("~/.thumbnails/large/@"));
@@ -667,7 +678,7 @@ int LaidoutApp::createlaidoutrc()
 					  "\n"
 
 					   //drop shadow
-					  "# Customize how some things get dispalyed or entered:\n"
+					  "# Customize how some things get displayed or entered:\n"
 					  "#pagedropshadow 5    #how much to offset drop shadows around papers and pages \n"
 					  "\n"
 
@@ -1357,6 +1368,9 @@ const char *LaidoutApp::binary(const char *what)
  * directory name, a subdirectory of dir. If name is not found, then name minus
  * a final suffix is searched for. So if name is "thing", and file "thing" is not
  * found, then if "thing.laidout" is found, then that is used.
+ *
+ * If dir/name exists, and that file is readable, return the full path to it in a new char[].
+ * Otherwise return NULL.
  */
 char *LaidoutApp::full_path_for_resource(const char *name,const char *dir)//dir=NULL
 {
@@ -1365,11 +1379,12 @@ char *LaidoutApp::full_path_for_resource(const char *name,const char *dir)//dir=
 	char *fullname=newstr(name);
 
 	if (c || !strncmp(fullname,"/",1) || !strncmp(fullname,"./",2) || !strncmp(fullname,"../",3)) {
-		 // is filename
+		 // is path with filename
 		convert_to_full_path(fullname,NULL);
 		if (readable_file(fullname)) return fullname;
 		delete[] fullname;
 		return NULL;
+
 	} else {
 		 // else is a name
 		if (dir) {
@@ -1395,6 +1410,7 @@ char *LaidoutApp::default_path_for_resource(const char *resource)
 	char *path=newstr(config_dir);
 	appendstr(path,"/");
 	appendstr(path,resource);
+	simplify_path(path, 1);
 	return path;
 }
 
