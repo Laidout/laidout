@@ -211,6 +211,8 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 	Laxkit::SliderPopup *toolselector;
 	Laxkit::anXWindow *rulercornerbutton;
 
+	char *tempstring;
+
   public:
 	Project *project;
 	Document *doc;

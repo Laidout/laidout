@@ -3420,7 +3420,8 @@ void LaidoutViewport::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::D
 ViewWindow::ViewWindow(Document *newdoc)
 	: ViewerWindow(NULL,NULL,(newdoc ? newdoc->Name(1) : _("Untitled")),0,
 					0,0,500,600,1,new LaidoutViewport(newdoc))
-{ 
+{
+	tempstring=NULL;
 	viewport->dec_count(); //remove extra creation count
 	viewport->dp->defaultRighthanded(true);
 	project=NULL;
@@ -3439,6 +3440,7 @@ ViewWindow::ViewWindow(anXWindow *parnt,const char *nname,const char *ntitle,uns
 						Document *newdoc)
 	: ViewerWindow(parnt,nname,ntitle,nstyle,xx,yy,ww,hh,brder,new LaidoutViewport(newdoc))
 {
+	tempstring=NULL;
 	viewport->dec_count(); //remove extra creation count
 	viewport->dp->defaultRighthanded(true);
 	viewport->GetShortcuts();
@@ -3459,6 +3461,7 @@ ViewWindow::~ViewWindow()
 
 	if (laidout->lastview==this) laidout->lastview=NULL;
 	if (doc) doc->dec_count();
+	delete[] tempstring;
 }
 
 /*! Write out something like:
@@ -4108,6 +4111,70 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		sdoc->Saveas(oldname);
 
 		delete[] oldname;
+		return 0;
+
+    } else if (!strcmp(mes,"saveastemplate")) {
+		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
+		if (!s || isblank(s->str)) {
+			PostMessage(_("Bad template name."));
+			return 0;
+		}
+
+		Document *sdoc=doc;
+		if (!sdoc) sdoc=laidout->curdoc;
+		if (!sdoc) { PostMessage(_("Need a document to save!")); return 0; }
+
+		const char *name=s->str;
+		char *file=NULL;
+
+		ErrorLog log;
+		if (sdoc->SaveAsTemplate(name,NULL, 1,1, log, false, &file)==0) {
+			 //success!
+			PostMessage(_("Saved as template."));
+
+		} else {
+			if (file!=NULL) {
+				 //file existed! we need to confirm overwrite
+				makestr(tempstring, name);
+
+				char *dir=lax_dirname(file,1);
+				FileDialog *fd = new FileDialog(NULL,NULL,_("Save As Template"),
+						ANXWIN_REMEMBER,
+						0,0,0,0,0, object_id,"confirmSaveTemplate",
+						FILES_FILES_ONLY|FILES_SAVE_AS,
+						lax_basename(file), dir);
+				delete[] dir;
+				fd->OkButton(_("Save as template"), NULL);
+				app->rundialog(fd);
+				delete[] file;
+			}
+		}
+
+		return 0;
+
+    } else if (!strcmp(mes,"confirmSaveTemplate")) {
+		 //this is called resulting from a save as dialog to confirm where to save a template
+		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
+		if (!s || isblank(s->str)) {
+			PostMessage(_("Bad template file!"));
+			return 0;
+		}
+
+		Document *sdoc=doc;
+		if (!sdoc) sdoc=laidout->curdoc;
+		if (!sdoc) { PostMessage(_("Need a document to save!")); return 0; }
+
+		ErrorLog log;
+		if (sdoc->SaveAsTemplate(tempstring, s->str, 1,1,log, true,NULL)==0) {
+			 //success!
+			PostMessage(_("Saved as template."));
+
+		} else {
+			if (log.Total()) {
+				PostMessage(log.MessageStr(log.Total()-1));
+			} else PostMessage(_("Problem saving. Not saved."));
+		}
+
 		return 0;
 
 	} else if (!strcmp(mes,"print config")) {
@@ -4954,11 +5021,32 @@ int ViewWindow::PerformAction(int action)
 
 
 	} else if (action==VIEW_Save_As_Template) {
-		PostMessage("Lazy programmer! Need to implement save as template!");
+		Document *sdoc=doc;
+		if (!sdoc) sdoc=laidout->curdoc;
+		if (!sdoc) { PostMessage(_("Need a document to save!")); return 0; }
+
+		app->rundialog(new InputDialog(NULL, "template",_("Save as template"), ANXWIN_CENTER, 0,0,0,0,0, NULL,object_id,"saveastemplate",
+						lax_basename(sdoc->Saveas()), _("Please enter name for template:"),
+						_("Ok"),BUTTON_OK,
+						_("Cancel"),BUTTON_CANCEL));
 		return 0;
 
 	} else if (action==VIEW_Save_As_Default_Template) {
-		PostMessage("Lazy programmer! Need to implement save as default template!");
+		Document *sdoc=doc;
+		if (!sdoc) sdoc=laidout->curdoc;
+		if (!sdoc) { PostMessage(_("Need a document to save!")); return 0; }
+
+
+		ErrorLog log;
+		if (sdoc->SaveAsTemplate("default",NULL, 1,1,log, true,NULL)==0) {
+			PostMessage(_("Saved to default template.")); 
+
+		} else {
+			if (log.Total()) {
+				PostMessage(log.MessageStr(log.Total()-1));
+			} else PostMessage(_("Problem saving. Not saved."));
+		}
+
 		return 0;
 
 	} else if (action==VIEW_Backup_Settings) { 
