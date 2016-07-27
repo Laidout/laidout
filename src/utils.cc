@@ -164,6 +164,30 @@ char *roman_numeral(int i,char cap)
 	return n;
 }
 
+/*! Convert time values to milliseconds from:
+ * ms millisecond s sec seconds second m minute min hr hour h
+ */
+long time_to_ms(const char *v, const char **end_ret)
+{
+	char *endptr=NULL;
+    double t=strtod(v, &endptr);
+
+    if (endptr!=v) {
+        v=endptr;
+        while (isspace(*v)) v++;
+
+		if (*v=='m' && v[1]=='s') ; //already milliseconds
+		else if (*v=='m' && v[1]=='i' && v[2]=='l') ; //already milliseconds
+		else if (*v=='s') t*=1000;
+        else if (*v=='m') t*=60*1000;
+        else if (*v=='h') t*=60*60*1000;
+
+		while (*v && !isspace(*v)) v++;
+    }
+
+	if (end_ret) *end_ret=v;
+	return t;
+}
 
 //----------------------------------- File i/o helpers ---------------------------------------------
 
