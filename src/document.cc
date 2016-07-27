@@ -725,6 +725,119 @@ int Document::RemovePages(int start,int n)
 	return n;
 }
 
+/*! Use tname as the name of the template. This will try to use the name as the readable name as well as the file name.
+ * If it can't use it as a filename, try to use some variant of the current filename instead.
+ *
+ * Tries to save to laidout->config_dir/templates/tname.
+ *
+ * If clobber, then always overwrite. If !clobber and the constructed template file exists already,
+ * then return it as a new char[] in tfilename_attempt.
+ *
+ * Return 0 for success, or nonzero for error.
+ */
+int Document::SaveAsTemplate(const char *tname, const char *tfile,
+							 int includelimbos,int includewindows,Laxkit::ErrorLog &log,
+							 bool clobber, char **tfilename_attempt)
+{
+	char *templatefile=NULL;
+	if (!tname && tfile) tname=lax_basename(tfile);
+	
+	if (tfile) {
+		makestr(templatefile, tfile);
+
+	} else {
+		 //try to find a reasonable path and filename for the template
+		char *templatedir = laidout->default_path_for_resource("templates");
+
+		if (!file_exists(templatedir, 1, NULL)) {
+			 //dir doesn't exist for some reason, create it!
+			if (check_dirs(templatedir, true)!=-1) {
+				delete[] templatedir;
+				log.AddMessage(_("Could not access template directory."), ERROR_Fail);
+				return 1;
+			}
+		}
+
+		 //build template file path
+		templatefile=newstr(templatedir);
+		delete[] templatedir;
+
+		appendstr(templatefile, "/");
+		if (!strcmp(tname,"default") || !strcmp(tname,_("default"))) {
+			appendstr(templatefile, "default");
+
+		} else { 
+			 //try to make filename based on tname
+			char *tfile=newstr(tname);
+			sanitize_filename(tfile,0);
+			if (isblank(tfile)) {
+				 //tname doesn't translate to a filename, try using saveas
+				delete[] tfile;
+				tfile=newstr(lax_basename(Saveas()));
+			}
+
+			if (isblank(tfile)) {
+				 //still no luck with naming, fall back on:
+				delete[] tfile;
+				tfile=newstr("template");
+			}
+
+			appendstr(templatefile, tfile);
+			delete[] tfile;
+		}
+	}
+
+	simplify_path(templatefile,1);
+
+	if (!clobber && file_exists(templatefile, 1, NULL)) {
+		if (tfilename_attempt) *tfilename_attempt = newstr(templatefile);
+		delete[] templatefile;
+		return 3;
+	}
+
+	int error=0;
+	char *oldname=this->name;
+	this->name=newstr(tname);
+
+	if (SaveACopy(templatefile, 1,1,log)==0) {
+		//success!
+	} else {
+		//fail!
+		if (!log.Total()) log.AddMessage(_("Problem saving. Not saved."), ERROR_Fail);
+		error=2;
+	}
+	delete[] this->name;
+	this->name=oldname;
+
+	delete[] templatefile;
+	return error;
+}
+
+/*! Return 0 for success or nonzero for error.
+ */
+int Document::SaveACopy(const char *filename, int includelimbos,int includewindows,ErrorLog &log)
+{
+	if (isblank(filename)) {
+		log.AddMessage(_("Need a file name to save to!"),ERROR_Fail);
+		return 1;
+	}
+
+	char *oldname = newstr(Saveas());
+	Saveas(filename);
+
+	int error=0;
+	if (Save(includelimbos, includewindows, log)==0) {
+		 //success!
+
+	} else {
+		 //failure!
+		error=2;
+	}
+
+	Saveas(oldname);
+	delete[] oldname;
+	return error;
+}
 	
 //! Return 0 if saved, return nonzero if not saved.
 /*! Save as document file.
@@ -868,13 +981,16 @@ int Document::Load(const char *file,ErrorLog &log)
 	laidout->project->ClarifyRefs(log);
 	DBG cerr<<" *** Document::Load should probably have a load context storing refs that need to be sorted, to save time loading..."<<endl;
 
-	if (!strstr(file,".laidout") && !strstr(file,"/templates/")) { //***bit of a hack to not touch templates
+	if (!strstr(file,".laidout") && !strstr(file,"/templates/")) { //***bit of a hack to not make templates show up as recent files
 		touch_recently_used_xbel(saveas,"application/x-laidout-doc",
 								"Laidout","laidout", //application
 								"Laidout", //group
 								true, //visited
 								false, //modified
 								NULL); //recent file
+	} else {
+		 //we probably opened a template, so zap the save as
+		makestr(saveas, NULL);
 	}
 
 	DBG cerr <<"------ Done reading "<<file<<endl<<endl;
