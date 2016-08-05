@@ -981,7 +981,10 @@ int Document::Load(const char *file,ErrorLog &log)
 	laidout->project->ClarifyRefs(log);
 	DBG cerr<<" *** Document::Load should probably have a load context storing refs that need to be sorted, to save time loading..."<<endl;
 
-	if (!strstr(file,".laidout") && !strstr(file,"/templates/")) { //***bit of a hack to not make templates show up as recent files
+	if (!(strstr(file,"/laidout/") && strstr(file,"/templates/"))) {
+		//***bit of a hack to not make templates show up as recent files
+		//   ..file appears to be in a laidout templates config dir.. pretty poor test though!!!
+
 		touch_recently_used_xbel(saveas,"application/x-laidout-doc",
 								"Laidout","laidout", //application
 								"Laidout", //group
