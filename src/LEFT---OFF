@@ -231,20 +231,29 @@ captioninterface CaptionInterface
   DONE baseline justify
     DONE needs hint to preserve baseline align when changing font size or line spacing
 
-text on path textonpath:
-  rotation handle
-  stretch envelope
+text on path textonpath: TextOnPath
+  if textonpath has non-I m, edit path displays wrong
+  if textonpath is child, not moving with parent
+  font size handles
+  copy, paste
+  need drag handles to change position on page when path is internal
+  glyph positioning is off
   position glyphs based on middle of glyph, not start of glyph
+  convert to path
   kern handles
   offset from stroke or from path
-  convert to path
   click for new, then save, saves a blank one! probably issue in captioninterface also
-    need to only add to the document only after there is non-null text
-  option to auto expand line
+    need to only add to the document only after there is non-null text, like add_on_change flag
   ----0.098:
+  bbox should be better.. currently is a wide approximation
+  option to auto expand line
+  stretch envelope
+  rotation handle
   drag out line to define chain connection
   multiline?
 
+  DONE need cursor
+  DONE bbox is drastically wrong
   DONE baseline handles
   DONE offset handles
   DONE envelope
@@ -377,8 +386,12 @@ engraving tool: Engraving  engraver
   must implement mode based shortcuts in Laxkit. currently all mesh shortcuts are active
   stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
 
+implement LineStyle::dump_out_atts
+implement FillStyle::dump_out_atts
+FillStyle: implement i/o of all the available blend modes
 
 PathInterface: pathinterface
+  implement dump_out_atts
   bug: drag point, press i or I while dragging, moves all points or crashes
   compound paths, change width only changes one. no way to affect all
   needs input boxes for width nodes
@@ -1564,8 +1577,10 @@ DONE need infrastructure to propagate and save tool settings (..now needs implem
 DONE add menu items to rulercornermenu for reseting view orientation <-- use lower light corner menu under scrollers instead 
 DONE CharacterInterface: outclick needs to destroy without sending
 DONE when you try to open anything in ~/.laidout/*/templates, then it should open as a template 
+DONE everything loads as a template now???!!?!??!!  
 DONE SimpleColorAttribute() should allow css3 stuff, like rgb(50%, 25%, .5), and hsl(), where h->[0..360)
 DONE should be able to handle any css color attribute, whether "#fff' "#ffffff"(done) or rgb(...)(done), hsl(...)(done), hsla()(done)
 DONE SimpleColorAttribute() should have double rgbaf available
 DONE SimpleColorAttribute() should return an end_ptr 
+DONE caption data up, objectindicator up, the OI not scanning mouse position correctly 
 
