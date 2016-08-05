@@ -37,6 +37,7 @@ class ObjectIndicator : public LaxInterfaces::anInterface
   protected:
 	Laxkit::ButtonDownInfo buttondown;
 
+	Laxkit::LaxFont *font;
 	VObjContext *context;
 	DrawableObject *hover_object;
 	int last_hover;
@@ -46,6 +47,7 @@ class ObjectIndicator : public LaxInterfaces::anInterface
 	int firsttime;
 
 	virtual int scan(int x,int y);
+
   public:
 	unsigned long shape_style;//options for interface
 
