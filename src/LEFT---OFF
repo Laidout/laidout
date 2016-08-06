@@ -196,7 +196,8 @@ fontdialog: FontDialog
   fontconfig directory config options
   DONE fontmatrix import? fontmatrix uses a sqlite database.. should be straighforward to scan it
 
-captioninterface CaptionInterface
+captioninterface CaptionInterface captiondata CaptionData
+  need to implement dump_out_atts
   need option to mirror
   bug: convert to path with viewport->ChangeObject(), puts obj way off, doesn't show path decs, other weird
   bug: bitstream vera sans, "Text" convert to path puts e correct, but screen render puts it out too far. huh??
@@ -232,19 +233,19 @@ captioninterface CaptionInterface
     DONE needs hint to preserve baseline align when changing font size or line spacing
 
 text on path textonpath: TextOnPath
-  if textonpath has non-I m, edit path displays wrong
-  if textonpath is child, not moving with parent
-  font size handles
-  copy, paste
-  need drag handles to change position on page when path is internal
-  glyph positioning is off
+  bug: drag the baseline handle off to the sides, makes huge bad jumps in value
+  bug: draggin the offest handle sometimes jumps to really bad
+  mouse click to position caret
+  paste
+  glyph positioning is wrong
   position glyphs based on middle of glyph, not start of glyph
-  convert to path
+  convert to path: not respecting transform, putting upside down(done)
   kern handles
+  ----0.098:
+  copy
   offset from stroke or from path
   click for new, then save, saves a blank one! probably issue in captioninterface also
     need to only add to the document only after there is non-null text, like add_on_change flag
-  ----0.098:
   bbox should be better.. currently is a wide approximation
   option to auto expand line
   stretch envelope
@@ -252,6 +253,10 @@ text on path textonpath: TextOnPath
   drag out line to define chain connection
   multiline?
 
+  DONE font size handles
+  DONE need drag handles to change position on page when path is internal
+  DONE if textonpath is child, not moving with parent
+  DONE if textonpath has non-I m, edit path displays wrong
   DONE need cursor
   DONE bbox is drastically wrong
   DONE baseline handles
