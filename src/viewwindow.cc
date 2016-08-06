@@ -267,6 +267,16 @@ VObjContext &VObjContext::operator=(const VObjContext &oc)
 	return *this;
 }
 
+int VObjContext::Set(ObjectContext *oc)
+{
+	VObjContext *voc = dynamic_cast<VObjContext*>(oc);
+
+	if (!voc) return ObjectContext::Set(oc);
+	
+	*this=*voc;
+	return 0;
+}
+
 //! Return a new VObjContext that is a copy of this.
 LaxInterfaces::ObjectContext *VObjContext::duplicate()
 {

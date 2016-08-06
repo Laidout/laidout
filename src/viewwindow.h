@@ -44,6 +44,7 @@ class VObjContext : public LaxInterfaces::ObjectContext
 	virtual int isequal(const ObjectContext *oc);
 	virtual int operator==(const ObjectContext &oc) { return isequal(&oc)==3; }
 	virtual VObjContext &operator=(const VObjContext &oc);
+	virtual int Set(ObjectContext *oc);
 	virtual int set(LaxInterfaces::SomeData *nobj, int n, ...);
 	virtual void clear();
 	virtual void clearToPage();
