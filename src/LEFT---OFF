@@ -41,8 +41,8 @@ memory hole in reimpose .. reimposed 5 page booklet
 memory hole helpwindow 
 memory hole when graphical shell activated 
 memory hole do laidout -n letter, split a window, then quit. undeleted Objects remain!
-DONE memory hole cairo backend (can't duplicate)
-
+memory hole delauneyinterface
+DONE memory hole cairo backend (can't duplicate) 
 
 object reordering (with home/end) produces outline of unrelated objects on top 
 	   
@@ -116,6 +116,7 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 stackframe seems to be ignoring window borders on layout
 
+should probably flock in UpdatePreferences()
 
 
 ----------------0.097 ROADMAP ITEMS: features and enhancements------------------------
@@ -157,10 +158,10 @@ GroupInterface groupinterface ObjectInterface objectinterface:
 
 ObjectIndicator objectindicator:
   need ability to click on object to select that object. Rename only when already selected
-  show (root) at bottom of stack
-  allow drag reparenting
   render text with white halo
-  hover over parents to pop list of alternate children to reparent to
+  allow drag reparenting
+    hover over parents to pop list of alternate children to reparent to
+  show (root) at bottom of stack
 
 fontdialog: FontDialog
   bookman font style names getting chopped off
@@ -197,25 +198,23 @@ fontdialog: FontDialog
   DONE fontmatrix import? fontmatrix uses a sqlite database.. should be straighforward to scan it
 
 captioninterface CaptionInterface captiondata CaptionData
-  need to implement dump_out_atts
-  need option to mirror
   bug: convert to path with viewport->ChangeObject(), puts obj way off, doesn't show path decs, other weird
   bug: bitstream vera sans, "Text" convert to path puts e correct, but screen render puts it out too far. huh??
-  need handling when opening a file and the font is not found!!!!!!!  options for substitution
   implement the different layout modes: rtl ttb
   debug for rtl and vertical as returned by hb, or set explicitly with direction
   right to left (figure out how to do with harfbuzz)
   update exporters to using linespacing and glyphs
-  select, copy
-  fonts need to dump in/out by themselves
   text to path:
     option to do all one path,
 	or separate objects per character (or glyph), but clones of a resourced group of glyphs
-  opentype variations
   color fonts: consider native otf:
     Mozilla and Adobe’s svg table, microsoft's colr/cpal, Google’s PNG images (CBDT/CBLC tables), Apple’s PNG images (SBIX table)
 	freetype dev branch maybe supports colr/cpal and google's way?
   -----0.098:
+  need handy option to mirror, instead of escaping to object tool
+  need handling when opening a file and the font is not found!!!!!!!  options for substitution
+  opentype variations
+  select, copy
   for overstretched alignment, bounding box not updating correctly
   should adapt from multiline edit, since it already has cut/paste, selections, and is mostly debugged??
   control-u hack for poweruser unicode character insertion
@@ -223,6 +222,8 @@ captioninterface CaptionInterface captiondata CaptionData
   lorem ipsum
   markov ipsum
 
+  DONE fonts need to dump in(via fontmanager->dump_in_font) and out(done) by themselves
+  DONE need to implement dump_out_atts
   DONE memory hole after convert to path
   DONE FindPos needs to account for glyph/cluster coverage
   DONE (seems to be gone with switch to harfbuzz) change centering not smooth, text placement hops, font to bitmap render size snafus?
@@ -235,13 +236,14 @@ captioninterface CaptionInterface captiondata CaptionData
 text on path textonpath: TextOnPath
   bug: drag the baseline handle off to the sides, makes huge bad jumps in value
   bug: draggin the offest handle sometimes jumps to really bad
-  mouse click to position caret
+  handle to remove from current path, and possibly attach it to some other path
   paste
   glyph positioning is wrong
   position glyphs based on middle of glyph, not start of glyph
   convert to path: not respecting transform, putting upside down(done)
   kern handles
   ----0.098:
+  mouse click to position caret
   copy
   offset from stroke or from path
   click for new, then save, saves a blank one! probably issue in captioninterface also
@@ -277,17 +279,6 @@ text (see also src/text/text.txt):
   inline graphics
   css import/export
   tabs on arbitrary paths 
-
-voronoi Voronoi delauney Delauney:
-  implement as extension for delauney/voronoi interface
-  implement proper file name for in/out
-  Equivalent object to PathsData, or GroupData with delauney, voronoi, points
-  implement data tree insertion
-  intersect with page bounds? or other custom boundary?
-
-when resizing viewportwindow and a temp_input window active, make sure it stays on screen?
-
-searchable menus
 
 engraving tool: Engraving  engraver
   bug: make a LineEdit overlay for number input, then Next bdown is ignored!! l, m, or right all ignored: viewportwindow line 947
@@ -391,12 +382,11 @@ engraving tool: Engraving  engraver
   must implement mode based shortcuts in Laxkit. currently all mesh shortcuts are active
   stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
 
-implement LineStyle::dump_out_atts
-implement FillStyle::dump_out_atts
+DONE implement LineStyle::dump_out_atts
+DONE implement FillStyle::dump_out_atts
 FillStyle: implement i/o of all the available blend modes
 
 PathInterface: pathinterface
-  implement dump_out_atts
   bug: drag point, press i or I while dragging, moves all points or crashes
   compound paths, change width only changes one. no way to affect all
   needs input boxes for width nodes
@@ -406,6 +396,7 @@ PathInterface: pathinterface
   bug: seems to be possible to move nodes out of order
   debug remove points affect on weight nodes
   dup path object links the path style, but save and load, it is not linked... need to sort out line/fill style inheritance/linking
+  DONE implement dump_out_atts
   DONE bug: when path is a child, width nodes are not drawn correctly
   DONE bug: line cache on a square produces inf. lines off when final+initial coincide
 
@@ -629,47 +620,7 @@ TreeSelector:
   tree display flat option
   makeinwindow() doesn't account for columns
 
-FileDialog filedialog:
-  implement option for (or just show) directories first
-  Resizing zaps view to top, should preserve 1st in window
-  should probably have a scroll bar
-  implement icon list selector
-  need laidout only bookmarks file
-  edits color style: bg alternating isn't highlighting
-  tooltip to show full path of bookmarks
-  need drag and drop bookmarking
-  when you change directories, it should indicate if it corresponds to a bookmark
-
-  DONE need add and remove bookmarks
-  DONE sort by details 
-  DONE sort by size should sort by actual size, must interpret "5 gb" vs "3242 b"
-  DONE columns need to autosize
-
 save as should change save/import/export/current directory to that directory
-
-file button:
-   DONE Save
-   DONE Save As...
-   DONE Save a copy...
-   DONE Save a copy incremented
-   DONE Save as template... <- need to enter template name and file?
-   DONE Save as default template
-   ---
-   DONE New...
-   DONE Open...
-   --- 
-   Backup settings...
-	[ ] Backup on save to: __%f~__   ___%f#~___ <-- use '#' to signal increment save
-	[ ] Autosave.
-	  Time between autosaves:___5_minute__  ...ms millisecond s sec seconds second m minute min hr hour h
-	  Naming for autosaves: __%f-autosave#____
-      Number of different autosaves: ___1___
-
-autosave
-  need a gui
-  autorecover..
-  every X minutes
-  option to choose how many to save near original file, and how to remove old
 
 General design usability
 to be a decent editing platform, Laidout needs:
@@ -713,6 +664,42 @@ test:
   each export filter (via command line in new script in examples.. ignoring problems in eps)
   make some test scripts for command line testing
 
+
+searchable menus
+
+voronoi Voronoi delauney Delauney:
+  importing raw points or data without matrix should map so that it all appears on screen
+  intersect with page bounds? or other custom boundary?
+  implement show_points
+  implement as extension for delauney/voronoi interface
+
+FileDialog filedialog:
+  should probably have a scroll bar
+  implement icon list selector
+  implement option for (or just show) directories first
+  Resizing zaps view to top, should preserve 1st in window
+  need laidout only bookmarks file
+  edits color style: bg alternating isn't highlighting
+  tooltip to show full path of bookmarks
+  need drag and drop bookmarking
+  when you change directories, it should indicate if it corresponds to a bookmark
+
+  DONE need add and remove bookmarks
+  DONE sort by details 
+  DONE sort by size should sort by actual size, must interpret "5 gb" vs "3242 b"
+  DONE columns need to autosize
+
+when resizing viewportwindow and a temp_input window active, make sure it stays on screen?
+
+autosave
+  autorecover.. -> when an autosave is newer than the file we are opening
+  option to choose how many to save near original file, and how to remove old
+	[ ] Backup on save to: __%f~__   ___%f#~___ <-- use '#' to signal increment save
+			%f=filename, %b=basename (without extension), %e=extension, # for numbered autosave
+	[ ] Autosave.
+	  Time between autosaves:___5_minute__  ...ms millisecond s sec seconds second m minute min hr hour h
+	  Naming for autosaves: __%f-autosave#____
+      Number of different autosaves: ___1___
 
 need option for always write relative links.. now defaults to absolute
 
@@ -1588,4 +1575,23 @@ DONE should be able to handle any css color attribute, whether "#fff' "#ffffff"(
 DONE SimpleColorAttribute() should have double rgbaf available
 DONE SimpleColorAttribute() should return an end_ptr 
 DONE caption data up, objectindicator up, the OI not scanning mouse position correctly 
+DONE file button:
+   DONE Save
+   DONE Save As...
+   DONE Save a copy...
+   DONE Save a copy incremented
+   DONE Save as template... <- need to enter template name and file?
+   DONE Save as default template
+   ---
+   DONE New...
+   DONE Open...
+   --- 
+   DONE Backup settings...  
+DONE autosave
+  DONE need a gui
+  DONE every X minutes
+DONE voronoi Voronoi delauney Delauney:
+  DONE Equivalent object to PathsData, or GroupData with delauney, voronoi, points, numbers
+  DONE implement data tree insertion
+  DONE implement proper file name for import/export 
 
