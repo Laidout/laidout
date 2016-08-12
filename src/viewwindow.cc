@@ -47,6 +47,7 @@
 #include "impositions/impositioneditor.h"
 #include "helpwindow.h"
 #include "about.h"
+#include "autosavewindow.h"
 #include "spreadeditor.h"
 #include "viewwindow.h"
 #include "headwindow.h"
@@ -63,6 +64,7 @@
 #include "interfaces/paperinterface.h"
 #include "interfaces/documentuser.h"
 #include "calculator/shortcuttodef.h"
+
 
 #include <iostream>
 using namespace std;
@@ -687,6 +689,11 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 		DBG cerr << "viewwindow got prefsChange"<<endl;
 		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
 		if (!s) return 1;
+		if (s->info1==PrefsJustAutosaved) {
+			ViewerWindow *vw=dynamic_cast<ViewerWindow *>(win_parent);
+			vw->PostMessage(_("Autosaved."));
+			return 0;
+		}
 		if (s->info1!=PrefsDefaultUnits) return 1;
 		if (xruler) xruler->SetCurrentUnits(laidout->prefs.default_units);
 		if (yruler) yruler->SetCurrentUnits(laidout->prefs.default_units);
@@ -3933,10 +3940,6 @@ int ViewWindow::init()
 	menu->AddItem(_("Open..."), VIEW_Open_Document);
 	menu->AddSep();
 	menu->AddItem(_("Setup Autosave..."), VIEW_Backup_Settings);
-		// [ ] Backup on save to: __%f~__
-		// [ ] Autosave.
-		//   Time between autosaves:___5_minute__  ...ms millisecond s sec seconds second m minute min hr hour h
-		//   Naming for autosaves: __%f-autosave____
 //	menu->AddSep();
 //	menu->AddItem(_("Commit"), VIEW_Commit);
 //	menu->AddItem(_("Commit settings..."), VIEW_Commit_Settings);
@@ -5060,7 +5063,7 @@ int ViewWindow::PerformAction(int action)
 		return 0;
 
 	} else if (action==VIEW_Backup_Settings) { 
-		PostMessage("Lazy programmer! Need to implement autosave config!");
+		app->rundialog(new AutosaveWindow(NULL));
 		return 0;
 
 	} else if (action==VIEW_Commit) {

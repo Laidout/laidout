@@ -231,7 +231,7 @@ LaidoutApp::LaidoutApp()
   : anXApp(),
 	preview_file_bases(2)
 {	
-	autosaveid=0;
+	autosave_timerid=0;
 	
 	icons=IconManager::GetDefault();
 
@@ -296,9 +296,23 @@ LaidoutApp::~LaidoutApp()
 
 int LaidoutApp::Idle(int tid)
 {
-	if (tid==autosaveid) { Autosave(); return 0; }
+	if (tid==autosave_timerid) { Autosave(); return 0; }
 
 	return 1;
+}
+
+/*! Call this when autosave settings are updated.
+ * It will remove old autosave timer and add a new one. Note this starts the timer clock at 0 again.
+ */
+void LaidoutApp::UpdateAutosave()
+{
+	if (autosave_timerid) removetimer(this, autosave_timerid);
+
+	if (prefs.autosave && prefs.autosave_time>0) {
+		int ms=prefs.autosave_time*60*1000;
+		DBG cerr <<"Will autosave every "<<int(prefs.autosave_time)<<":"<<prefs.autosave_time<<" min"<<endl;
+		autosave_timerid=addtimer(this, ms,ms, -1);
+	}
 }
 
 /*! Return 0 for success, or nonzero for unable to save.
@@ -318,9 +332,9 @@ int LaidoutApp::Autosave()
 	//  saves documents only, not project at the moment
 
 	const char *bname;
+	const char *ext;
 	char *fmt;
 	char *fname;
-	const char *oldname;
 	int status;
 	Document *doc;
 	ErrorLog log;
@@ -329,17 +343,45 @@ int LaidoutApp::Autosave()
 		doc=project->docs.e[c]->doc;
 		if (!doc) continue;
 
-		bname=lax_basename(doc->Saveas());
 		fmt=newstr(prefs.autosave_path);
-		fname=replaceallname(fmt, "%f", isblank(bname)?"untitled":bname);
+
+		if (strstr(fmt, "%f")) {
+			bname=lax_basename(doc->Saveas());
+			fname=replaceallname(fmt, "%f", isblank(bname)?"untitled":bname);
+			delete[] fmt;  fmt=fname;  fname=NULL;
+		}
+
+		if (strstr(fmt, "%e")) {
+			ext=lax_extension(doc->Saveas());
+			if (!isblank(ext)) {
+				fname=replaceallname(fmt, "%e", ext);
+				delete[] fmt;  fmt=fname;  fname=NULL;
+			}
+		}
+
+		if (strstr(fmt, "%b")) {
+			char *bbname=newstr(lax_basename(doc->Saveas()));
+			ext=lax_extension(bbname);
+			if (ext) {
+				bbname[ext-bbname-1]='\0';
+			}
+
+			fname=replaceallname(fmt, "%b", bbname);
+			delete[] fmt;  fmt=fname;  fname=NULL;
+			delete[] bbname;
+		}
+
+		//if (strstr(fmt, "#")) {
+		//}
+
+		if (fname==NULL) { fname=fmt; fmt=NULL; }
 
 		//expand with dir of doc->saveas
 		//fname should be either absolute or relative to that saveas
-		oldname=newstr(doc->Saveas()); //normally this will be full path of file
 		expand_home_inplace(fname);
 		if (is_relative_path(fname)) {
 			 //need to expand to a place relative to the original file
-			char *path=lax_dirname(oldname, 1);
+			char *path=lax_dirname(doc->Saveas(), 1);
 			if (path) {
 				if (path[strlen(path)-1]!='/') appendstr(path,"/");
 				appendstr(path,fname);
@@ -348,19 +390,19 @@ int LaidoutApp::Autosave()
 				fname=path;
 			}
 		}
-		doc->Saveas(fname);
-		status=doc->Save(true,true,log);
-		doc->Saveas(oldname);
-		delete[] oldname;
+
+		status=doc->SaveACopy(fname, true,true,log);
 
 		if (status==0) {
 			cerr <<" .... autosaved to: "<<fname<<endl;
+			notifyPrefsChanged(NULL, PrefsJustAutosaved);
+
 		} else {
 			cerr <<" .... ERROR trying to autosave to: "<<fname<<endl;
 		}
 
-		delete[] fmt;
-		delete[] fname;
+		delete[] fmt;   fmt=NULL;
+		delete[] fname; fname=NULL;
 	}
 
 	//DBG cerr <<" *** need to finish implementing autosave!!"<<endl;
@@ -575,9 +617,7 @@ int LaidoutApp::init(int argc,char **argv)
 			addwindow(BrandNew());
 
 		if (prefs.autosave>0) {
-			int ms=prefs.autosave*60*1000;
-			DBG cerr <<"Will autosave every "<<int(prefs.autosave)<<":"<<int((prefs.autosave-floor(prefs.autosave))*60)<<" min"<<endl;
-			autosaveid=addtimer(this, ms,ms, -1);
+			UpdateAutosave();
 		}
 
 	} else if (runmode==RUNMODE_Impose_Only) {
@@ -684,8 +724,12 @@ int LaidoutApp::createlaidoutrc()
 
 					   //autosave
 					  " #Autosave settings\n"
-					  "autosave 0  #number of minutes (such as 1.5) between autosaves. 0 means no autosave\n"
+					  "autosave false #Whether to autosave. true or false.\n"
+					  "autosave_time 0  #number of minutes (such as 1.5) between autosaves. 0 means no autosave\n"
 					  "autosave_path ./%%f.autosave  #default location for autosave, relative to actual file\n"
+					  "                             #%%f is filename, %%f is full path, %%b is name without extension\n"
+					  "                             #%%e is extension, # or ### is autosave number (or padded number)\n"
+					  "autosave_num 0  #number of autosave files to maintain. 0 means no limit. Ignored if no '#' in autosave_path.\n"
 					  "\n"
 
 					   //default exported file name
@@ -885,25 +929,6 @@ int LaidoutApp::readinLaidoutDefaults()
 			//	make sure supplied tempdir is writable before using.
 			cout <<" *** imp temp_dir in laidoutrc"<<endl;
 
-		 //--------------preview related options:
-		} else if (!strcmp(name,"previewThreshhold")) {
-			if (value && !strcmp(value,"never")) preview_over_this_size=INT_MAX;
-			else IntAttribute(value,&preview_over_this_size);
-		
-		} else if (!strcmp(name,"permanentPreviews")) {
-			preview_transient=!BooleanAttribute(value);
-		
-		} else if (!strcmp(name,"temporaryPreviews")) {
-			preview_transient=BooleanAttribute(value);
-		
-		} else if (!strcmp(name,"previewName")) {
-			preview_file_bases.push(newstr(value));
-			DBG cerr<<"preview_file_bases local for top="<<(int)preview_file_bases.islocal[preview_file_bases.n-1]<<endl;
-		
-		} else if (!strcmp(name,"maxPreviewLength")) {
-			IntAttribute(value,&max_preview_length);
-
-		 //--------------other options:
 		} else if (!strcmp(name,"pagedropshadow")) {
 			IntAttribute(value,&prefs.pagedropshadow);
 		
@@ -925,8 +950,33 @@ int LaidoutApp::readinLaidoutDefaults()
 		} else if (!strcmp(name,"autosave_path")) {
 			if (!isblank(value)) makestr(prefs.autosave_path, value);
 
+		} else if (!strcmp(name,"autosave_time")) {
+			DoubleAttribute(value, &prefs.autosave_time, NULL);
+
+		} else if (!strcmp(name,"autosave_num")) {
+			IntAttribute(value, &prefs.autosave_num, NULL);
+
 		} else if (!strcmp(name,"autosave")) {
-			DoubleAttribute(value, &prefs.autosave, NULL);
+			prefs.autosave=BooleanAttribute(value);
+
+		 //--------------preview related options:
+		} else if (!strcmp(name,"previewThreshhold")) {
+			if (value && !strcmp(value,"never")) preview_over_this_size=INT_MAX;
+			else IntAttribute(value,&preview_over_this_size);
+		
+		} else if (!strcmp(name,"permanentPreviews")) {
+			preview_transient=!BooleanAttribute(value);
+		
+		} else if (!strcmp(name,"temporaryPreviews")) {
+			preview_transient=BooleanAttribute(value);
+		
+		} else if (!strcmp(name,"previewName")) {
+			preview_file_bases.push(newstr(value));
+			DBG cerr<<"preview_file_bases local for top="<<(int)preview_file_bases.islocal[preview_file_bases.n-1]<<endl;
+		
+		} else if (!strcmp(name,"maxPreviewLength")) {
+			IntAttribute(value,&max_preview_length);
+
 		}
 	}
 	

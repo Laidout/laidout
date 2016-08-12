@@ -68,7 +68,8 @@ class TreeChangeEvent : public Laxkit::EventData
 
 enum GlobalPrefsNotify {
 	PrefsDefaultUnits,
-	PrefsDisplayDetails
+	PrefsDisplayDetails,
+	PrefsJustAutosaved
 };
 
 //------------------------------------ LaidoutApp ----------------------------------
@@ -86,7 +87,7 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
  protected:
 	void dumpOutResources();
 
-	int autosaveid;
+	int autosave_timerid;
 	virtual int  Idle(int tid=0);
 	virtual int Autosave();
 
@@ -161,6 +162,8 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	void PushExportFilter(ExportFilter *filter);
 	ExportFilter *FindExportFilter(const char *name, bool exact_only);
 	void PushImportFilter(ImportFilter *filter);
+
+	virtual void UpdateAutosave();
 
 	 //data manipulation peacekeeper
 	void notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType change,int s,int e);

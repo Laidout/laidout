@@ -77,8 +77,10 @@ LaidoutPreferences::LaidoutPreferences()
 
 	preview_size=400;
 
-	autosave=0; //minutes
+	autosave=false;
+	autosave_time=5; //minutes
 	autosave_path=newstr("./%f.autosave");
+	autosave_num=0; //0 is no limit
 
 	experimental=false;
 
@@ -110,6 +112,8 @@ Value *LaidoutPreferences::duplicate()
 	makestr(p->defaultpaper,defaultpaper);
 	makestr(p->temp_dir,temp_dir);
 	p->autosave=autosave;
+	p->autosave_time=autosave_time;
+	p->autosave_num=autosave_num;
 	makestr(p->autosave_path,autosave_path);
 	makestr(p->exportfilename, exportfilename);
 	p->experimental=experimental;
@@ -215,15 +219,29 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 
 	def->push("autosave",
 			_("Autosave"),
-			_("How often (in minutes) to autosave for recovery (0==never). Saving to actual file still must be manually done."),
+			_("Whether to autosave"),
+			"boolean", "false",NULL,
+			0,
+			NULL);
+
+	def->push("autosave_time",
+			_("Autosave time"),
+			_("How many minutes between autosaves (0==never)."),
 			"real", "0",NULL,
+			0,
+			NULL);
+
+	def->push("autosave_num",
+			_("Number of autosaves"),
+			_("Don't have more than this number of autosave files. 0 means no limit."),
+			"int", "0",NULL,
 			0,
 			NULL);
 
 	def->push("autosave_path",
 			_("Autosave path"),
-			_("Where and how to save when autosaving. Relative paths are to current file, %f is current file name."),
-			"string", NULL,NULL,
+			_("Where and how to save when autosaving. Relative paths are to current file"),
+			"string", "./%f.autosave",NULL,
 			0,
 			NULL);
 
@@ -295,7 +313,15 @@ Value *LaidoutPreferences::dereference(const char *extstring, int len)
 	}
 
 	if (!strcmp(extstring, "autosave")) {
-		return new DoubleValue(autosave);
+		return new BooleanValue(autosave);
+	}
+
+	if (!strcmp(extstring, "autosave_time")) {
+		return new DoubleValue(autosave_time);
+	}
+
+	if (!strcmp(extstring, "autosave_num")) {
+		return new IntValue(autosave_num);
 	}
 
 	if (!strcmp(extstring, "autosave_path")) {
@@ -383,13 +409,19 @@ int UpdatePreference(const char *which, const char *value, const char *laidoutrc
 	//     out comments you put in on those specific lines
 
 	char *line=NULL;
-    size_t n=0;
+	size_t n=0;
 	int c;
 	int found=0;
 
+	char *vvalue=NULL;
+	if (strpbrk(value, "\"\'#\t\n\r")) {
+		vvalue=escape_string(value, '"', true);
+		value=vvalue;
+	}
+
 	while (!feof(f)) {
-        c=getline(&line, &n, f);
-		if (!c) continue;
+		c=getline(&line, &n, f);
+		if (c<=0) continue;
 
 		if (!found && strncmp(line, which, strlen(which))==0 && isspace(line[strlen(which)])) {
 			found=1;
@@ -409,7 +441,7 @@ int UpdatePreference(const char *which, const char *value, const char *laidoutrc
 	}
 
 	if (!found) {
-		fprintf(out, "%s %s\n\n", which, value);
+		fprintf(out, "%s %s\n", which, value);
 	}
 	
 	if (line) free(line);
@@ -422,6 +454,8 @@ int UpdatePreference(const char *which, const char *value, const char *laidoutrc
 	unlink(laidoutrc);
 	rename(outfile, laidoutrc);
 	delete[] outfile;
+
+	delete[] vvalue;
 
 	return 0;
 }
