@@ -61,6 +61,7 @@ objs= \
 	project.o \
 	guides.o \
 	interfaces.o \
+	autosavewindow.o \
 	about.o \
 	buttonbox.o \
 	commandwindow.o \
