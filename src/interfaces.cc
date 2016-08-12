@@ -27,6 +27,7 @@
 //experimental:
 #include <lax/interfaces/textstreaminterface.h>
 #include <lax/interfaces/delauneyinterface.h>
+#include <lax/interfaces/perspectiveinterface.h>
 
 
 #include "interfaces.h"
@@ -107,6 +108,12 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 
 		 //------TextStream
 		i=new TextStreamInterface(NULL,id++,NULL);
+		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+		existingpool->push(i);
+		i->dec_count();
+
+		 //------Perspective
+		i=new PerspectiveInterface(NULL,id++,NULL);
 		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 		existingpool->push(i);
 		i->dec_count();
