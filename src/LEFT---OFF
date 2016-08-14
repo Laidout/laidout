@@ -22,10 +22,6 @@ text window controls have difficulties
   doesn't handle tabs
   (see PlainTextWindow below for feature plans instead of bugs)
 
-tooltips:
-  mouse over to get rid of one tooltip, remain in window, it just pops up again shortly after. need check against last tooltip to prevent
-  DONE change desktop, tooltip remains
-
 saving window postitions doesn't take into account window decorations, makes pos slide downward each time
 
 evince on ubuntu 14.04, pdf export won't load, says Syntax Error... Dictionary key must be a name object
@@ -45,7 +41,7 @@ memory hole delauneyinterface
 DONE memory hole cairo backend (can't duplicate) 
 
 object reordering (with home/end) produces outline of unrelated objects on top 
-	   
+
 don't allow reparent to a child!! or reparent as appropriate 
 
 need to implement ObjectInterface/GroupInterface::DrawData()
@@ -116,7 +112,7 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 stackframe seems to be ignoring window borders on layout
 
-should probably flock in UpdatePreferences()
+should probably flock in UpdatePreference()
 
 
 ----------------0.097 ROADMAP ITEMS: features and enhancements------------------------
@@ -143,43 +139,34 @@ put rss/g+ links on all menu pages.. need way to automate including menu bar stu
 need to implement DRAW_Hires for all interfaces that default to preview renders. needed for proper image out
   includes at least image, path, engraver
 
-GroupInterface groupinterface ObjectInterface objectinterface:
-  viewport should fully utilize Selection::CurrentObject(), keep curobj in sync
-  double click on group should change selection area to group contents?
-    need to clarify how grouping operates. Perhaps implement sets at same time
-    clearCurobj() with skim to group for group->double click?
-  ----0.098:
-  implement move to "Some other page..." when 'm' in groupinterface
-  things to allow editing of wrap, inset, clip paths, and chains
-  maybe show flip and 90 deg rotate handles only when mouse outside the selection area?
-  control-move flip line to snap to horizontal, vertical, 45 deg, or common gravity points 
-
-  DONE Not catching mode==1 correctly.. can't zoom with just space anymore
-
-ObjectIndicator objectindicator:
-  need ability to click on object to select that object. Rename only when already selected
-  render text with white halo
-  allow drag reparenting
-    hover over parents to pop list of alternate children to reparent to
-  show (root) at bottom of stack
-
 fontdialog: FontDialog
   bookman font style names getting chopped off
   makeinwindow SOMETIMES not working, select one, puts on bottom line
   you can still scroll off when few visible items.. grrr!!
   sample block should not strictly adhere to fontsize, as it can get very big (or too small)
   sample block should be multiline
-  figure out why some color fonts are not scanned by fontconfig
   need support for svg fonts.. useful for pure svg fonts, and opentype svg, see cairo user fonts
+  font->SetFromFile() should do more fontconfig checking to grab propper file+family+style+size
+  FindFont() is faulty, as it only lookes up family/style.. should search by the unique file name
+  sometimes family+style is not unique, but has different languages.. should detect this
+    use postscriptname: "DroidSansHebrew-Bold" -->  "Droid Sans Hebrew"/"Bold"
+  pgup and down doesn't select a reasonable one
+
+  need a way to remember layered fonts, to easily activate and deactivate
+    read from standard fonts places, like .config/laidout/(version)/fonts
+  favorites: tag and column
+  user tags, not just fontmatrix tags, option to update fontmatrix?
+  should be able to access list of font favorites, and a user's preferred organization of fonts..
+  need to implement load specific file for a font
+
+  ---0.098:
+  fontconfig directory config options
+  should REALLY have a LayerFont head containing the whole list, not a stand alone list which causes too many problems
+  figure out why some color fonts are not scanned by fontconfig
   needs line spacing slider
   option to search by spacing, ie monospace, see fontconfig: FC_PROPORTIONAL, FC_DUAL, FC_MONO, FC_CHARCELL
   should really get around to implementing scrollers
-  font->SetFromFile() should do more fontconfig checking to grab propper file+family+style+size
-  FindFont() is faulty, as it only lookes up family/style.. should search by the unique file name
-  pgup and down doesn't select a reasonable one
   vague search via fontconfig matching, to find a match for something like a "sans"
-  sometimes family+style is not unique, but has different languages.. should detect this
-    use postscriptname: "DroidSansHebrew-Bold" -->  "Droid Sans Hebrew"/"Bold"
 
   font preview column in list, custom sample
   language coverage search
@@ -187,14 +174,6 @@ fontdialog: FontDialog
   select opentype features
   optional common font finishers? like centering, underline, color, highlight, fg/bg, etc
 
-  need a way to remember layered fonts, to easily activate and deactivate
-    read from standard fonts places, like .config/laidout/(version)/fonts
-  favorites: tag and column
-  user tags, not just fontmatrix tags, option to update fontmatrix?
-  should REALLY have a LayerFont head containing the whole list, not a stand alone list which causes too many problems
-  should be able to access list of font favorites, and a user's preferred organization of fonts..
-  need to implement load specific file for a font
-  fontconfig directory config options
   DONE fontmatrix import? fontmatrix uses a sqlite database.. should be straighforward to scan it
 
 captioninterface CaptionInterface captiondata CaptionData
@@ -307,7 +286,6 @@ engraving tool: Engraving  engraver
   tracing:
     seems to be grabbing spurious tracing values outside of the tracing object, and at borders of trace object
     tracing object, lines abort just inside the image, maybe should just go one off the edge?
-    DONE trace object transparency slider should actually slide transparency
 	trace object needs flip, at least h and v, not really needing the whole affine thing
     need option to export trace object in same position as the traced lines, so it can be further processed elsewhere
     custom sample of channels
@@ -316,6 +294,7 @@ engraving tool: Engraving  engraver
 	shift-drag (or drag anything not covered by trace object) should drag ANY of the meshes in selection, not just current
 	when multi objects, the traceobject is interweaved, based on draw order, only under current object, should be under all?
 	make gradient interface work in trace mode
+    DONE trace object transparency slider should actually slide transparency
 
   freehand/path:
     freehand not being interpreted correctly: non-equal smooth is adding erroneous extra mesh column
@@ -475,7 +454,7 @@ export/print dialog
 
 file filters: filefilters:
   need equirectangular out 
-  selecting out should auto select tofile | tofiles, depending on how many selected for out
+  selecting out should auto select tofile | tofiles, depending on how many spreads selected for out
   export ranges should accept "1-4, 6, 20-25" and "5-1", or by name "iii - iv"
   remember full export settings
   need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
@@ -583,12 +562,8 @@ Units:
 
 collect for out: define directory to pull all files and external resources in, including the .laidout file
 
-newdoc:
-  need to spiffify tabframe.. it is hideous
-  when change number of named paper, make it "custom"
-  open on image should create a new singles with default paper and image centered
-
-Clean up mesh/patch controls: 
+Clean up mesh/patch controls: Mesh PatchInterface 
+  perspective arrangement: approximate transform controls through perspective grid
   maybe should not be able to escape off path tool when editing as path
   reverse lookup is not very precise: need to warp back and forth ONLY when necessary, as when
     switching to different, non-point-distort mode
@@ -614,6 +589,7 @@ Clean up mesh/patch controls:
   make base path dump_out as Path, not PathsData? make it easier to read file removing the unnecessary??
 
 TreeSelector:
+  add scroller
   with text colors, mouse over highlight is off
   not showing alternate gray/white bgs
   option to use markup for labels
@@ -665,7 +641,27 @@ test:
   make some test scripts for command line testing
 
 
+newdoc:
+  when change number of named paper, make it "custom"
+  open on image should create a new singles with default paper and image centered
+
+GroupInterface groupinterface ObjectInterface objectinterface:
+  viewport should fully utilize Selection::CurrentObject(), keep curobj in sync
+  double click on group should change selection area to group contents?
+    need to clarify how grouping operates. Perhaps implement sets at same time
+    clearCurobj() with skim to group for group->double click?
+  implement move to "Some other page..." when 'm' in groupinterface
+  things to allow editing of wrap, inset, clip paths, and chains
+  maybe show flip and 90 deg rotate handles only when mouse outside the selection area?
+  control-move flip line to snap to horizontal, vertical, 45 deg, or common gravity points 
+
 searchable menus
+
+ObjectIndicator objectindicator:
+  need ability to click on object to select that object. Rename only when already selected
+  allow drag reparenting
+    hover over parents to pop list of alternate children to reparent to
+  show (root) at bottom of stack
 
 voronoi Voronoi delauney Delauney:
   importing raw points or data without matrix should map so that it all appears on screen
@@ -1594,4 +1590,10 @@ DONE voronoi Voronoi delauney Delauney:
   DONE Equivalent object to PathsData, or GroupData with delauney, voronoi, points, numbers
   DONE implement data tree insertion
   DONE implement proper file name for import/export 
+DONE tooltips:
+  DONE mouse over to get rid of one tooltip, remain in window, it just pops up again shortly after. need check against last tooltip to prevent
+  DONE change desktop, tooltip remains
+DONE ObjectIndicator: render text with white halo
+DONE GroupInterface: Not catching mode==1 correctly.. can't zoom with just space anymore
+DONE need to spiffify tabframe.. it is hideous
 
