@@ -73,6 +73,8 @@ LaidoutOpenWindow::LaidoutOpenWindow(int whichstart)
 			   0,0,500,500,0,
 			   NULL,0,NULL, 50)
 {
+	padinset=laidout->defaultlaxfont->textheight()/3;
+
 	AddWin(new NewDocWindow(this,"New Document",_("New Document"),0, 0,0,0,0, 0), 1,
 				_("New Document"),
 				NULL,
