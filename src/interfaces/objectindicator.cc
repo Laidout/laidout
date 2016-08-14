@@ -199,6 +199,7 @@ int ObjectIndicator::Refresh()
 
 		if (c==last_hover) dp->NewFG(rgbcolor(50,50,50));
 
+		 // textout: (index) element name
 		x=0;
 		str=objc->object_e_name(context->context.e(c));
 		if (!str) {
@@ -206,10 +207,10 @@ int ObjectIndicator::Refresh()
 			str=scratch;
 		} else {
 			sprintf(scratch,"(%d) ",context->context.e(c));
-			x+=dp->textout(0,y, scratch,-1, LAX_BOTTOM|LAX_LEFT);
+			x+=dp->textout_halo(1, 0,y, scratch,-1, LAX_BOTTOM|LAX_LEFT);
 		}
 
-		dp->textout(x,y, str,-1, LAX_BOTTOM|LAX_LEFT);
+		dp->textout_halo(1, x,y, str,-1, LAX_BOTTOM|LAX_LEFT);
 		y-=dp->textheight();
 
 		if (c==last_hover) dp->NewFG(rgbcolor(128,128,128));
