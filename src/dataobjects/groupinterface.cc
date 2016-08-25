@@ -770,18 +770,20 @@ int GroupInterface::PerformAction(int action)
 		if (!buttondown.any()) return 0;
 
 		 // duplicate selection as clones
-		SomeData *obj;
+		SomeData *obj, *clonefrom;
 		LSomeDataRef *lobj;
 		for (int c=0; c<selection->n(); c++) {
 			obj=NULL;
 			DBG cerr <<" - Clone "<<selection->e(c)->obj->whattype()<<":"<<selection->e(c)->obj->object_id<<endl;
 
+			clonefrom = selection->e(c)->obj;
 			lobj=new LSomeDataRef();
-			lobj->Set(selection->e(c)->obj,0);
-			lobj->parent=dynamic_cast<DrawableObject*>(selection->e(c)->obj)->parent;
+			lobj->Set(clonefrom,0);
+			lobj->m(clonefrom->m());
+			lobj->parent=dynamic_cast<DrawableObject*>(clonefrom)->parent;
 			obj=lobj;
 			viewport->ChangeContext(selection->e(c));
-			viewport->NewData(obj,NULL);
+			viewport->NewData(obj,NULL,false); //adds to top, so shouldn't have to remap objects
 			obj->dec_count();
 			PostMessage(_("Cloned."));
 		}
