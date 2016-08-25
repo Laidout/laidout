@@ -1,6 +1,4 @@
 //
-// $Id$
-//	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -34,20 +32,25 @@ class LaidoutPreferences : public Value
 	char *defaultpaper;
 	char *temp_dir;
 	char *palette_dir;
-	double autosave;
-	char *autosave_path;
+	bool   autosave;
+	double autosave_time;
+	char  *autosave_path;
+	int    autosave_num;
 	char *exportfilename;
 	//PtrStack<char> palette_dirs;
 	Laxkit::PtrStack<char> icon_dirs;
 	bool experimental;
 
-	virtual ObjectDef *makeObjectDef();
-	virtual Value *duplicate();
-
 	LaidoutPreferences();
 	virtual ~LaidoutPreferences();
+
+	virtual ObjectDef *makeObjectDef();
+	virtual Value *duplicate();
+	virtual Value *dereference(const char *extstring, int len);
+	virtual int SavePrefs(const char *file=NULL);
 };
 
+int UpdatePreference(const char *which, const char *value, const char *laidoutrc);
 
 } //namespace Laidout
 

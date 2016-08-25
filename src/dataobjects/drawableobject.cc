@@ -199,7 +199,6 @@ DrawableObject::DrawableObject()
 	alpha=1;
 	blur=0;
 
-	dparent=dynamic_cast<DrawableObject*>(parent); //supposed to always just be a cast of SomeData::parent
 	parent_link=NULL;
 
 	//Id(); //makes this->nameid (of SomeData) be something like `whattype()`12343

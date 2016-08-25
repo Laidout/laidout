@@ -47,6 +47,7 @@
 #include "impositions/impositioneditor.h"
 #include "helpwindow.h"
 #include "about.h"
+#include "autosavewindow.h"
 #include "spreadeditor.h"
 #include "viewwindow.h"
 #include "headwindow.h"
@@ -63,6 +64,7 @@
 #include "interfaces/paperinterface.h"
 #include "interfaces/documentuser.h"
 #include "calculator/shortcuttodef.h"
+
 
 #include <iostream>
 using namespace std;
@@ -103,16 +105,75 @@ namespace Laidout {
 #define ACTION_NewProject              3000
 #define ACTION_SaveProject             3001
 #define ACTION_ToggleSaveAsProject     3002
+
 //---------------------------
+
+//for ViewWindow shortcuts
+enum ViewActions {
+	VIEW_Save = 3500, // *** for now keep this at 3500.. need better way to organize this!
+	VIEW_SaveAs,
+	VIEW_Save_A_Copy,
+	VIEW_Save_A_Copy_Incremented,
+	VIEW_Save_As_Template,
+	VIEW_Save_As_Default_Template,
+
+	VIEW_NewDocument,
+	VIEW_Open_Document,
+
+	VIEW_Backup_Settings,
+
+	VIEW_Commit,
+	VIEW_Commit_Settings,
+	VIEW_Revert,
+
+	VIEW_NextTool,
+	VIEW_PreviousTool,
+	VIEW_NextPage,
+	VIEW_PreviousPage,
+	VIEW_ObjectTool,
+	VIEW_CommandPrompt,
+	VIEW_ObjectIndicator,
+
+	VIEW_Help,
+	VIEW_About,
+	VIEW_SpreadEditor,
+	VIEW_EditImposition,
+
+	VIEW_PathTool,
+	VIEW_ImageTool,
+	VIEW_GradientTool,
+	VIEW_MeshGradientTool,
+	VIEW_EngraverTool,
 
  //menu ids from menu to move an object or change context
-#define MOVETO_Limbo      1
-#define MOVETO_Spread     2
-#define MOVETO_Page       3
-#define MOVETO_PaperGroup 4
-#define MOVETO_OtherPage  5
+	MOVETO_Limbo,
+	MOVETO_Spread,
+	MOVETO_Page,
+	MOVETO_PaperGroup,
+	MOVETO_OtherPage,
 
-//---------------------------
+	VIEW_MAX
+};
+
+
+
+//for LaidoutViewport shortcuts
+enum LaidoutViewportActions {
+	LOV_DeselectAll=VIEWPORT_MAX,
+	LOV_CenterDrawing,
+	LOV_ZoomToPage,
+	LOV_GrabColor,
+	LOV_ToggleShowState,
+	LOV_MoveObjects,
+	LOV_ObjUp,
+	LOV_ObjDown,
+	LOV_ObjFirst,
+	LOV_ObjLast,
+	LOV_ToggleDrawFlags,
+	LOV_ObjectIndicator,
+	LOV_ForceRemap,
+	LOV_MAX
+};
 
 
 
@@ -187,6 +248,13 @@ VObjContext::~VObjContext()
 	if (obj) { obj->dec_count(); obj=NULL; }
 }
 
+/*! Copy constructor.
+ */
+VObjContext::VObjContext(const VObjContext &oc)
+{
+	*this = oc;
+}
+
 //! Assignment operator.
 /*! Incs count of obj.
  */
@@ -199,6 +267,16 @@ VObjContext &VObjContext::operator=(const VObjContext &oc)
 	}
 	context=oc.context;
 	return *this;
+}
+
+int VObjContext::Set(ObjectContext *oc)
+{
+	VObjContext *voc = dynamic_cast<VObjContext*>(oc);
+
+	if (!voc) return ObjectContext::Set(oc);
+	
+	*this=*voc;
+	return 0;
 }
 
 //! Return a new VObjContext that is a copy of this.
@@ -422,6 +500,8 @@ LaidoutViewport::~LaidoutViewport()
 	if (doc) doc->dec_count();
 
 	if (edit_area_icon) edit_area_icon->dec_count();;
+
+	DBG ClearSearch(); //to spell it out
 }
 
 int LaidoutViewport::UseThisPaperGroup(PaperGroup *group)
@@ -609,6 +689,11 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 		DBG cerr << "viewwindow got prefsChange"<<endl;
 		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
 		if (!s) return 1;
+		if (s->info1==PrefsJustAutosaved) {
+			ViewerWindow *vw=dynamic_cast<ViewerWindow *>(win_parent);
+			vw->PostMessage(_("Autosaved."));
+			return 0;
+		}
 		if (s->info1!=PrefsDefaultUnits) return 1;
 		if (xruler) xruler->SetCurrentUnits(laidout->prefs.default_units);
 		if (yruler) yruler->SetCurrentUnits(laidout->prefs.default_units);
@@ -866,6 +951,24 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 		}
 
 		return 0;
+
+    } else if (!strcmp(mes,"xruler") || !strcmp(mes,"yruler")) {
+         //units change from ruler
+        const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
+        if (!s) return 0;
+        if (s->info1!=RULER_AlwaysCurrent) return ViewportWindow::Event(data,mes);
+
+		UnitManager *units=GetUnitManager();
+		char *unitname=NULL;
+		units->UnitInfoId(laidout->prefs.default_units, NULL, NULL,NULL,&unitname);
+
+		char path[strlen(laidout->config_dir)+20];
+		sprintf(path,"%s/laidoutrc",laidout->config_dir);
+		UpdatePreference("defaultunits", unitname, path);
+
+		postmessage(_("Global preference updated."));
+		return 0;
+
 	}
 
 	return ViewportWindow::Event(data,mes);
@@ -1224,12 +1327,12 @@ int LaidoutViewport::NewData(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectCon
 		curobj.context.pop();
 		curobj.SetObject(NULL);
 	}
-	Group *o=dynamic_cast<Group*>(getanObject(curobj.context,0,-1));
-	if (!o) return -1; //context had to be a Group!
+	Group *g=dynamic_cast<Group*>(getanObject(curobj.context,0,-1));
+	if (!g) return -1; //context had to be a Group!
 
 	if (clear_selection) SetSelection(NULL);
 
-	int c=o->push(d);
+	int c=g->push(d);
 	curobj.context.push(c);
 	curobj.SetObject(d);
 
@@ -1253,8 +1356,10 @@ int LaidoutViewport::SelectObject(int i)
 {
 	if (!curobj.obj) {
 		findAny();
-		if (firstobj.obj) setCurobj(&firstobj);
-		else return 0;
+		if (firstobj.obj) {
+			setCurobj(&firstobj);
+
+		} else return 0;
 		needtodraw=1;
 
 	} else if (i==-2 || i==-1) { //prev or next
@@ -1320,7 +1425,7 @@ int LaidoutViewport::ChangeObject(LaxInterfaces::ObjectContext *oc, int switchto
 	if (!oc || !oc->obj) return 0;
 
 	VObjContext *voc=dynamic_cast<VObjContext *>(oc);
-	if (voc==NULL || !validContext(voc)) return 0;
+	if (voc==NULL || !IsValidContext(voc)) return 0;
 	setCurobj(voc);
 	
 	 // makes sure curtool can take it, and makes it take it.
@@ -1656,6 +1761,7 @@ int LaidoutViewport::nextObject(VObjContext *oc,int inc)//inc=0
 int LaidoutViewport::locateObject(LaxInterfaces::SomeData *d,FieldPlace &place)
 {
 	place.flush();
+
 	 // check limbo
 	if (limbo->n()) {
 		if (limbo->contains(d,place)) {
@@ -1724,21 +1830,36 @@ void LaidoutViewport::findAny()
 
 //! Check whether oc is a valid object context.
 /*! Assumes oc->obj is what you actually want, and checks oc->context against it.
- * Object has to be in the spread or in limbo for it to be valid.
- * Note that oc->obj is a SomeData. So if the context is limbo or a spread,
- * rather than an object contained in it, it is technically an invalid context..
+ * Object has to be reachable via getanObject() to be valid.
  *
- * Return 0 if invalid,
- * otherwise return 1 if it is valid.
- *
- * \todo might be useful to check against all objects in tree, not just for
- *   selectable SomeDatas
+ * Return false if invalid,
+ * otherwise return true if it is valid.
  */
-int LaidoutViewport::validContext(VObjContext *oc)
+bool LaidoutViewport::IsValidContext(ObjectContext *oc)
 {
-	anObject *anobj=getanObject(oc->context,0,-1);
-	return anobj==oc->obj;
+	VObjContext *loc = dynamic_cast<VObjContext*>(oc);
+	if (!loc) return false;
+	anObject *anobj=getanObject(loc->context,0,-1);
+	return anobj==loc->obj;
 }
+
+/*! Return the number of contexts that were updated or removed.
+ */
+int LaidoutViewport::UpdateSelection(Selection *sel)
+{
+	if (sel==NULL) sel=selection;
+
+	int n=0;
+	for (int c=sel->n()-1; c>=0; c--) {
+		if (IsValidContext(sel->e(c))) continue;
+		n++;
+		if (locateObject(selection->e(c)->obj, dynamic_cast<VObjContext*>(selection->e(c))->context)==0) {
+			sel->Remove(c);
+		}
+	}
+	return n;
+}
+
 
 //! Set curobj to limbo, which is always valid. This is done after page removal, for instance, to prevent crashing.
 int LaidoutViewport::wipeContext()
@@ -1796,7 +1917,9 @@ void LaidoutViewport::setCurobj(VObjContext *voc)
 	}
 }
 
-//! Strip down curobj so that it points to only a context, not an object. Calls dec_count() on the old object if any.
+/*! Strip down curobj so that it points to only a context, not an object. Calls dec_count() on the old object if any.
+ * Note that selection is not modified.
+ */
 void LaidoutViewport::clearCurobj()
 {
 	//***for nested objects, this does not quite work!! This zaps to base of current zone, whether limbo,
@@ -1895,8 +2018,13 @@ int LaidoutViewport::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
 int LaidoutViewport::ChangeContext(LaxInterfaces::ObjectContext *oc)
 {
 	DBG cerr <<"ChangeContext to supplied oc"<<endl;
+
 	VObjContext *loc=dynamic_cast<VObjContext *>(oc);
 	if (!loc) return 0;
+
+	ClearSearch();
+	clearCurobj();
+
 	if (loc->obj) {
 		 // strip down obj, we want only the plain context
 		VObjContext noc;
@@ -1905,8 +2033,6 @@ int LaidoutViewport::ChangeContext(LaxInterfaces::ObjectContext *oc)
 		noc.context.pop();
 		setCurobj(&noc);
 	} else setCurobj(loc);
-	ClearSearch(); //these must be called after setCurobj() since
-	clearCurobj(); //  oc is likely a search context
 
 	ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); 
 	if (viewer) viewer->updateContext(1);
@@ -2028,7 +2154,7 @@ LaxInterfaces::ObjectContext *LaidoutViewport::ObjectMoved(LaxInterfaces::Object
 	if (!oc || !oc->obj) return NULL;
 
 	if (oc->obj!=curobj.obj) {
-		if (!validContext(dynamic_cast<VObjContext*>(oc))) return NULL;
+		if (!IsValidContext(oc)) return NULL;
 		setCurobj(dynamic_cast<VObjContext*>(oc));
 	}
 
@@ -2162,6 +2288,18 @@ LaxInterfaces::ObjectContext *LaidoutViewport::ObjectMoved(LaxInterfaces::Object
 	DBG cerr <<"  moved "<<d->object_id<<" to: ";
 	DBG curobj.context.out(NULL);
 	needtodraw=1;
+
+	if (selection->n()) {
+		 //we might need to synchronize selection objects to the new order
+        for (int c=selection->n()-1; c>=0; c--) {
+            if (IsValidContext(selection->e(c))) continue;
+            if (locateObject(selection->e(c)->obj, dynamic_cast<VObjContext*>(selection->e(c))->context)==0) {
+				 //somehow object is no longer there, remove from selection
+				selection->Remove(c);
+			}
+        }
+
+	}
 
 	if (!modifyoc) return new VObjContext(destcontext);
 	
@@ -2630,49 +2768,6 @@ void LaidoutViewport::Refresh()
 	DBG cerr <<"LO viewport Transform end: "<<endl; dumpctm(dp->Getctm());
 }
 
-
-enum ViewActions {
-	VIEW_Save,
-	VIEW_SaveAs,
-	VIEW_NewDocument,
-	VIEW_NextTool,
-	VIEW_PreviousTool,
-	VIEW_NextPage,
-	VIEW_PreviousPage,
-	VIEW_ObjectTool,
-	VIEW_CommandPrompt,
-	VIEW_ObjectIndicator,
-
-	VIEW_Help,
-	VIEW_About,
-	VIEW_SpreadEditor,
-	VIEW_EditImposition,
-
-	VIEW_PathTool,       
-	VIEW_ImageTool,      
-	VIEW_GradientTool,   
-	VIEW_MeshGradientTool,
-	VIEW_EngraverTool,   
-
-	VIEW_MAX
-};
-
-enum LaidoutViewportActions {
-	LOV_DeselectAll=VIEWPORT_MAX,
-	LOV_CenterDrawing,
-	LOV_ZoomToPage,
-	LOV_GrabColor,
-	LOV_ToggleShowState,
-	LOV_MoveObjects,
-	LOV_ObjUp,
-	LOV_ObjDown,
-	LOV_ObjFirst,
-	LOV_ObjLast,
-	LOV_ToggleDrawFlags,
-	LOV_ObjectIndicator,
-	LOV_ForceRemap,
-	LOV_MAX
-};
 
 Laxkit::ShortcutHandler *LaidoutViewport::GetShortcuts()
 {
@@ -3342,7 +3437,8 @@ void LaidoutViewport::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::D
 ViewWindow::ViewWindow(Document *newdoc)
 	: ViewerWindow(NULL,NULL,(newdoc ? newdoc->Name(1) : _("Untitled")),0,
 					0,0,500,600,1,new LaidoutViewport(newdoc))
-{ 
+{
+	tempstring=NULL;
 	viewport->dec_count(); //remove extra creation count
 	viewport->dp->defaultRighthanded(true);
 	project=NULL;
@@ -3361,6 +3457,7 @@ ViewWindow::ViewWindow(anXWindow *parnt,const char *nname,const char *ntitle,uns
 						Document *newdoc)
 	: ViewerWindow(parnt,nname,ntitle,nstyle,xx,yy,ww,hh,brder,new LaidoutViewport(newdoc))
 {
+	tempstring=NULL;
 	viewport->dec_count(); //remove extra creation count
 	viewport->dp->defaultRighthanded(true);
 	viewport->GetShortcuts();
@@ -3381,6 +3478,7 @@ ViewWindow::~ViewWindow()
 
 	if (laidout->lastview==this) laidout->lastview=NULL;
 	if (doc) doc->dec_count();
+	delete[] tempstring;
 }
 
 /*! Write out something like:
@@ -3620,6 +3718,9 @@ int ViewWindow::init()
 	ViewerWindow::init();
 	mesbar->tooltip("Status bar");
 	
+	if (xruler) xruler->win_style|=RULER_UNITS_MENU_ALWAYS;
+	if (yruler) yruler->win_style|=RULER_UNITS_MENU_ALWAYS;
+
 //	if (!doc) {
 //		if (laidout->project && laidout->project->docs.n) {
 //			doc=laidout->project->docs.e[0]->doc;
@@ -3814,19 +3915,51 @@ int ViewWindow::init()
 	//}
 
 
-	last=ibut=new Button(this,"open doc",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, NULL,object_id,"openDoc",-1,
+	 //---------open
+	last=ibut=new Button(this,"open doc",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"openDoc",-1,
 						 _("Open"),NULL,laidout->icons->GetIcon("Open"),buttongap);
 	ibut->tooltip(_("Open a document from disk"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
-	last=ibut=new Button(this,"save doc",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, NULL,object_id,"saveDoc",-1,
-						 _("Save"),NULL,laidout->icons->GetIcon("Save"),buttongap);
-	ibut->tooltip(_("Save the current document"));
-	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
+//	 //---------save
+//	last=ibut=new Button(this,"save doc",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"saveDoc",-1,
+//						 _("Save"),NULL,laidout->icons->GetIcon("Save"),buttongap);
+//	ibut->tooltip(_("Save the current document"));
+//	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
+
+	 //-------save menu
+	MenuInfo *menu=new MenuInfo;
+	menu->AddItem(_("Save"),           VIEW_Save);
+	menu->AddItem(_("Save as..."),     VIEW_SaveAs);
+	menu->AddItem(_("Save a copy..."), VIEW_Save_A_Copy);
+	menu->AddItem(_("Save a copy incremented"),  VIEW_Save_A_Copy_Incremented); //from last save a copy, or from file if no last copy?
+	menu->AddItem(_("Save as template..."),      VIEW_Save_As_Template);
+	menu->AddItem(_("Save as default template"), VIEW_Save_As_Default_Template);
+	menu->AddSep();
+	menu->AddItem(_("New..."),  VIEW_NewDocument);
+	menu->AddItem(_("Open..."), VIEW_Open_Document);
+	menu->AddSep();
+	menu->AddItem(_("Setup Autosave..."), VIEW_Backup_Settings);
+//	menu->AddSep();
+//	menu->AddItem(_("Commit"), VIEW_Commit);
+//	menu->AddItem(_("Commit settings..."), VIEW_Commit_Settings);
+//		// - initialize git repository in directory of document or project file
+//		// - command to commit
+//		// - command to revert
+//	menu->AddItem(_("Revert..."), VIEW_Revert);
+
+	last=menub=new MenuButton(this,"save doc",NULL,
+							MENUBUTTON_LEFT|IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"savemenu",-1,
+							 menu,1, _("Save"),
+							 NULL, laidout->icons->GetIcon("Save"),
+							 0);
+	menub->tooltip(_("Save options"));
+	AddWin(menub,1, menub->win_w,0,50,50,0, menub->win_h,0,50,50,0, -1);
+//	-------------
 
 
-
-	last=ibut=new Button(this,"help",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, NULL,object_id,"help",-1,
+	 //---------help
+	last=ibut=new Button(this,"help",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"help",-1,
 						 _("Help!"),NULL,laidout->icons->GetIcon("Help"),buttongap);
 	ibut->tooltip(_("Popup a list of shortcuts"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
@@ -3841,13 +3974,7 @@ int ViewWindow::init()
 	return 0;
 }
 
-/*! Currently accepts:\n
- * <pre>
- *  "new image"
- *  "saveAsPopup"
- *  "docTreeChange" <-- updateContext() and pass event to viewport
- * </pre>
- *
+/*!
  * \todo *** the response to saveAsPopup could largely be put elsewhere
  */
 int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
@@ -3941,6 +4068,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 			if (!is_good_filename(file)) {//***how does it know?
 				PostMessage(_("Illegal characters in file name. Not saved."));
+
 			} else {
 				 //set name in doc and headwindow
 				DBG cerr <<"*** file by this point should be absolute path name:"<<file<<endl;
@@ -3967,6 +4095,99 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 			if (dir)   delete[] dir;
 			if (file)  delete[] file;
 		}
+		return 0;
+
+	} else if (!strcmp(mes,"saveCopyPopup")) {
+		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
+		if (!s || isblank(s->str)) return 0;
+
+		Document *sdoc=doc;
+		if (!sdoc) sdoc=laidout->curdoc;
+		if (!sdoc) { PostMessage(_("Need a document to save!")); return 0; }
+
+		 //now actually save
+		char *oldname = newstr(sdoc->Saveas());
+		const char *where=s->str; 
+		sdoc->Saveas(where);
+
+		ErrorLog log;
+		if (sdoc && sdoc->Save(1,1,log)==0) {
+			char message[strlen(_("Saved copy to %s"))+strlen(lax_basename(where))+1];
+			sprintf(message, _("Saved copy to %s"), lax_basename(where));
+			PostMessage(message); 
+
+		} else {
+			if (log.Total()) {
+				PostMessage(log.MessageStr(log.Total()-1));
+			} else PostMessage(_("Problem saving. Not saved."));
+		}
+		sdoc->Saveas(oldname);
+
+		delete[] oldname;
+		return 0;
+
+    } else if (!strcmp(mes,"saveastemplate")) {
+		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
+		if (!s || isblank(s->str)) {
+			PostMessage(_("Bad template name."));
+			return 0;
+		}
+
+		Document *sdoc=doc;
+		if (!sdoc) sdoc=laidout->curdoc;
+		if (!sdoc) { PostMessage(_("Need a document to save!")); return 0; }
+
+		const char *name=s->str;
+		char *file=NULL;
+
+		ErrorLog log;
+		if (sdoc->SaveAsTemplate(name,NULL, 1,1, log, false, &file)==0) {
+			 //success!
+			PostMessage(_("Saved as template."));
+
+		} else {
+			if (file!=NULL) {
+				 //file existed! we need to confirm overwrite
+				makestr(tempstring, name);
+
+				char *dir=lax_dirname(file,1);
+				FileDialog *fd = new FileDialog(NULL,NULL,_("Save As Template"),
+						ANXWIN_REMEMBER,
+						0,0,0,0,0, object_id,"confirmSaveTemplate",
+						FILES_FILES_ONLY|FILES_SAVE_AS,
+						lax_basename(file), dir);
+				delete[] dir;
+				fd->OkButton(_("Save as template"), NULL);
+				app->rundialog(fd);
+				delete[] file;
+			}
+		}
+
+		return 0;
+
+    } else if (!strcmp(mes,"confirmSaveTemplate")) {
+		 //this is called resulting from a save as dialog to confirm where to save a template
+		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
+		if (!s || isblank(s->str)) {
+			PostMessage(_("Bad template file!"));
+			return 0;
+		}
+
+		Document *sdoc=doc;
+		if (!sdoc) sdoc=laidout->curdoc;
+		if (!sdoc) { PostMessage(_("Need a document to save!")); return 0; }
+
+		ErrorLog log;
+		if (sdoc->SaveAsTemplate(tempstring, s->str, 1,1,log, true,NULL)==0) {
+			 //success!
+			PostMessage(_("Saved as template."));
+
+		} else {
+			if (log.Total()) {
+				PostMessage(log.MessageStr(log.Total()-1));
+			} else PostMessage(_("Problem saving. Not saved."));
+		}
+
 		return 0;
 
 	} else if (!strcmp(mes,"print config")) {
@@ -4409,42 +4630,17 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"openDoc")) { 
-		 //sends the open message to the head window... hmm...
-		app->rundialog(new FileDialog(NULL,NULL,_("Open Document"),
-					ANXWIN_REMEMBER,
-					0,0,0,0,0, win_parent->object_id,"open document",
-					FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
-					NULL,NULL,NULL,"Laidout"));
+		PerformAction(VIEW_Open_Document);
 		return 0;
 
 	} else if (!strcmp(mes,"saveDoc")) { 
-		if (!doc) return 0;
-		
-		 //user clicked save button
-		if (isblank(doc->Saveas()) || !strncasecmp(doc->Saveas(),_("untitled"), strlen(_("untitled")))) { //***or shift-click for saveas??
-			 // launch saveas!!
-			//LineInput::LineInput(anXWindow *parnt,const char *ntitle,unsigned int nstyle,
-						//int xx,int yy,int ww,int hh,int brder,
-						//anXWindow *prev,Window nowner,const char *nsend,
-						//const char *newlabel,const char *newtext,unsigned int ntstyle,
-						//int nlew,int nleh,int npadx,int npady,int npadlx,int npadly) // all after and inc newtext==0
-			app->rundialog(new FileDialog(NULL,NULL,_("Save As..."),
-						ANXWIN_REMEMBER,
-						0,0,0,0,0, object_id,"saveAsPopup",
-						FILES_FILES_ONLY|FILES_SAVE_AS,
-						doc->Saveas()));
-		} else {
-			ErrorLog log;
-			if (doc->Save(1,1,log)==0) {
-				char blah[strlen(doc->Saveas())+15];
-				sprintf(blah,"Saved to %s.",doc->Saveas());
-				PostMessage(blah);
-			} else {
-				if (log.Total()) {
-					PostMessage(log.MessageStr(log.Total()-1));
-				} else PostMessage(_("Problem saving. Not saved."));
-			}
-		}
+		PerformAction(VIEW_Save);
+		return 0;
+
+	} else if (!strcmp(mes,"savemenu")) { 
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
+		int id=s->info2;
+		if (id>0) PerformAction(id); 
 		return 0;
 
 	} else if (!strcmp(mes,"print")) { // print to output.ps
@@ -4735,17 +4931,12 @@ int ViewWindow::PerformAction(int action)
 			PostMessage(_("No document to save!"));
 			return 0;
 		}
+
 		DBG cerr <<"....viewwindow says save.."<<endl;
 		if (isblank(sdoc->Saveas()) 
 				|| strstr(sdoc->Saveas(),_("untitled"))
 				|| action==VIEW_SaveAs) {
 			 // launch saveas!!
-			//LineInput::LineInput(anXWindow *parnt,const char *ntitle,unsigned int nstyle,
-						//int xx,int yy,int ww,int hh,int brder,
-						//anXWindow *prev,Window nowner,const char *nsend,
-						//const char *newlabel,const char *newtext,unsigned int ntstyle,
-						//int nlew,int nleh,int npadx,int npady,int npadlx,int npadly) // all after and inc newtext==0
-						
 			char *where=newstr(isblank(sdoc->Saveas())?NULL:sdoc->Saveas());
 			if (!where && !isblank(laidout->project->filename)) where=lax_dirname(laidout->project->filename,0);
 
@@ -4755,13 +4946,16 @@ int ViewWindow::PerformAction(int action)
 						FILES_FILES_ONLY|FILES_SAVE_AS,
 						where));
 			if (where) delete[] where;
+
 		} else {
 			ErrorLog log;
+
 			if (sdoc->Save(1,1,log)==0) {
 				char blah[strlen(sdoc->Saveas())+15];
 				sprintf(blah,"Saved to %s.",sdoc->Saveas());
 				PostMessage(blah);
 				if (!isblank(laidout->project->filename)) laidout->project->Save(log);
+
 			} else {
 				if (log.Total()) {
 					PostMessage(log.MessageStr(log.Total()-1));
@@ -4770,8 +4964,131 @@ int ViewWindow::PerformAction(int action)
 		}
 		return 0;
 
+	} else if (action==VIEW_Save_A_Copy) {
+		Document *sdoc=doc;
+		if (!sdoc) sdoc=laidout->curdoc;
+		if (!sdoc) { PostMessage(_("Need a document to save!")); return 0; }
+
+		char *where=newstr(isblank(sdoc->Saveas()) ? "untitled" : sdoc->Saveas());
+		char *ext=strrchr(where, '.');
+		char *slash=strrchr(where, '/');
+		if (slash && ext && ext<slash) ext=NULL;
+		if (ext) {
+			slash=newstr(ext);
+			*ext='\0';
+			ext=slash;
+			appendstr(where, "-Copy");
+			appendstr(where, ext);
+		} else appendstr(where, "-Copy");
+
+		while (file_exists(where, 1, NULL)) {
+			char *where2 = increment_file(where);
+			delete[] where;
+			where=where2;
+		}
+
+		FileDialog *filed = new FileDialog(NULL,NULL,_("Save a copy..."),
+					ANXWIN_REMEMBER,
+					0,0,0,0,0, object_id,"saveCopyPopup",
+					FILES_FILES_ONLY|FILES_SAVE_AS,
+					where);
+		filed->OkButton(_("Save a copy"), NULL);
+		app->rundialog(filed);
+		delete[] where;
+
+		return 0;
+
+	} else if (action==VIEW_Save_A_Copy_Incremented) {
+		Document *sdoc=doc;
+		if (!sdoc) sdoc=laidout->curdoc;
+		if (!sdoc) { PostMessage(_("Need a document to save!")); return 0; }
+
+		char *where=newstr(isblank(sdoc->Saveas()) ? "untitled" : sdoc->Saveas());
+
+		while (file_exists(where, 1, NULL)) {
+			char *where2 = increment_file(where);
+			delete[] where;
+			where=where2;
+		}
+
+		 //now actually save
+		char *oldname = newstr(sdoc->Saveas());
+		sdoc->Saveas(where);
+		
+		ErrorLog log;
+		if (sdoc && sdoc->Save(1,1,log)==0) {
+			char message[strlen(_("Saved copy to %s"))+strlen(lax_basename(where))+1];
+			sprintf(message, _("Saved copy to %s"), lax_basename(where));
+			PostMessage(message); 
+
+		} else {
+			if (log.Total()) {
+				PostMessage(log.MessageStr(log.Total()-1));
+			} else PostMessage(_("Problem saving. Not saved."));
+		}
+		sdoc->Saveas(oldname);
+
+		delete[] oldname;
+		delete[] where; 
+		return 0;
+
+
+	} else if (action==VIEW_Save_As_Template) {
+		Document *sdoc=doc;
+		if (!sdoc) sdoc=laidout->curdoc;
+		if (!sdoc) { PostMessage(_("Need a document to save!")); return 0; }
+
+		app->rundialog(new InputDialog(NULL, "template",_("Save as template"), ANXWIN_CENTER, 0,0,0,0,0, NULL,object_id,"saveastemplate",
+						lax_basename(sdoc->Saveas()), _("Please enter name for template:"),
+						_("Ok"),BUTTON_OK,
+						_("Cancel"),BUTTON_CANCEL));
+		return 0;
+
+	} else if (action==VIEW_Save_As_Default_Template) {
+		Document *sdoc=doc;
+		if (!sdoc) sdoc=laidout->curdoc;
+		if (!sdoc) { PostMessage(_("Need a document to save!")); return 0; }
+
+
+		ErrorLog log;
+		if (sdoc->SaveAsTemplate("default",NULL, 1,1,log, true,NULL)==0) {
+			PostMessage(_("Saved to default template.")); 
+
+		} else {
+			if (log.Total()) {
+				PostMessage(log.MessageStr(log.Total()-1));
+			} else PostMessage(_("Problem saving. Not saved."));
+		}
+
+		return 0;
+
+	} else if (action==VIEW_Backup_Settings) { 
+		app->rundialog(new AutosaveWindow(NULL));
+		return 0;
+
+	} else if (action==VIEW_Commit) {
+		PostMessage("Lazy programmer! Need to implement commit!");
+		return 0;
+
+	} else if (action==VIEW_Commit_Settings) {
+		PostMessage("Lazy programmer! Need to implement commit settings!");
+		return 0;
+
+	} else if (action==VIEW_Revert) {
+		PostMessage("Lazy programmer! Need to implement revert!");
+		return 0;
+
 	} else if (action==VIEW_NewDocument) {
 		app->rundialog(new NewDocWindow(NULL,NULL,"New Document",0,0,0,0,0, 0));
+		return 0;
+
+	} else if (action==VIEW_Open_Document) {
+		 //sends the open message to the head window... hmm...
+		app->rundialog(new FileDialog(NULL,NULL,_("Open Document"),
+					ANXWIN_REMEMBER,
+					0,0,0,0,0, win_parent->object_id,"open document",
+					FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
+					NULL,NULL,NULL,"Laidout"));
 		return 0;
 
 	} else if (action==VIEW_NextTool) {

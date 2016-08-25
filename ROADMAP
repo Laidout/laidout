@@ -14,17 +14,15 @@ VERSION 0.097
 (done) engraver tool, fix non-live updates when tweaking various parameters
        engraver tool, fully test tool effects when many objects selected
 (done) Allow setting custom default exported file name (via a line in laidoutrc)
-       Tools should remember their settings
        Text on path tool
-(done) text: harfbuzz based
+(done) text objects: harfbuzz based
        layers (object tree) palette
+       Add more save options: save a copy, save incremented, save as template, autosave settings
        Moving selected things in group contents does not update group bounds
        should not be able to select both group and group contents at same time
-       double click on group should change selection area to group contents?
-       Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
-       option to specify alignment of different size signature stacks
+       double click on group should change selection area to group contents like inkscape?
+(done) Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
        debug svg in
-       lock down color backend.. it's currently a series of weak hacks based on 8-bit screen rgb
        PDF in, at least as 1 image per page, for purposes of imposition
        pdf export, unicode capable
 (done) fix tooltips
@@ -34,6 +32,8 @@ VERSION 0.097
 
 VERSION 0.098
 -------------
+       Tools should remember their settings
+       option to specify alignment of different size signature stacks
        debug line outline cache, especially for joins
        Finish implementing anchor tool. maybe gss compatibility?
        Masking, clip paths and/or softmask
@@ -44,6 +44,7 @@ VERSION 0.098
        Merge EpsData with normal images
        Import Images dialog needs total reprogramming
        In image properties dialog, be able to select from various default preview configs
+       lock down color backend.. it's currently a series of weak hacks based on 8-bit screen rgb
        Clean up patch controls
        Clean up project load/save internals and dialogs
        Object and resource tags interface

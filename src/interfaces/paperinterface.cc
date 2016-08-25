@@ -308,6 +308,7 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			flatpoint fp=dp->screentoreal(rx,ry);
 			obj->origin(fp);
 			papergroup->objs.push(obj);
+			obj->dec_count();
 			return 0;
 
 		} else if (i==PAPERM_GrayBars) {
@@ -316,6 +317,7 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			flatpoint fp=dp->screentoreal(rx,ry);
 			obj->origin(fp);
 			papergroup->objs.push(obj);
+			obj->dec_count();
 			return 0;
 		}
 		return 0;
@@ -465,7 +467,7 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 		if (shadow) {
 			dp->NewFG(0,0,0);
 			dp->PushAxes();
-			dp->ShiftScreen(sshadow,-sshadow);
+			dp->ShiftScreen(sshadow,sshadow);
 			dp->drawlines(p,4,1,1);
 			dp->PopAxes();
 			dp->LineWidthScreen(w);

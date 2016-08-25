@@ -33,6 +33,8 @@ char *make_labelbase_for_printf(const char *f,int *len);
 char *letter_numeral(int i,char cap);
 char *roman_numeral(int i,char cap);
 
+//--------------------------------- misc number helpers --------------------------
+long time_to_ms(const char *v, const char **end_ret);
 
 //----------------------------------- File i/o helpers ---------------------------------------------
 FILE *open_laidout_file_to_read(const char *file,const char *what,Laxkit::ErrorLog *log, bool warn_if_fail=true);

@@ -584,6 +584,7 @@ Page::Page(PageStyle *npagestyle,int num)
 	g->obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return individual layers
 	layers.push(g); //incs count
 	g->dec_count();
+
 	layers.selectable=0;
 	layers.obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return layers
 	obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return this
@@ -598,6 +599,23 @@ Page::~Page()
 	if (thumbnail) thumbnail->dec_count();
 	if (pagestyle) pagestyle->dec_count();
 	layers.flush();
+}
+
+/*! Return index of new layer.
+ * If where<0 or where>=layers.n() push at end.
+ */
+int Page::PushLayer(const char *layername, int where)
+{
+	if (where<0 || where>=layers.n()) where=layers.n();
+
+	Group *g = new Group;
+	g->Id(layername ? layername : "pagelayer");
+	g->selectable=0;
+	g->obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return individual layers
+	layers.push(g,where); //incs count
+	g->dec_count();
+
+	return where;
 }
 
 const char *Page::object_e_name(int i)
@@ -692,6 +710,7 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext 
 			makestr(g->object_idstr,"pagelayer");
 			g->obj_flags|=OBJ_Unselectable|OBJ_Zone;
 			g->dump_in_atts(att->attributes.e[c],flag,context);
+			g->selectable=0;
 			layers.push(g);
 			g->dec_count();
 

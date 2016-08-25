@@ -255,6 +255,12 @@ int LaidoutInFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 	ImportConfig *in=dynamic_cast<ImportConfig *>(context);
 	if (!in) return 1;
 
+	 // *** needs to be put in a custom ImportConfig:
+	bool merge_to_existing_layers = true;
+	//bool append_new_pages = false; // todo: insert new pages instead of adding to current
+	//bool scale_to_margins = true; <- use in->scaletopage
+
+
 	Document *doc=in->doc;
 
 	Document *fdoc=new Document(NULL, file);
@@ -284,11 +290,12 @@ int LaidoutInFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 	//Import pages [in->instart..in->inend] to in->topage
 	int curpage=in->topage;
 	if (curpage<0) curpage=0;
-	SomeData *contents=NULL;
+	SomeData *obj=NULL;
 	SomeData origpagedims, newpagedims;
-	DrawableObject *obj;
-	SomeData *sdata, *kid;
+	DrawableObject *layer;
+	SomeData *layerdup, *kid;
 	double tt[6];
+
 	for (int c=in->instart; c<=in->inend; c++) {
 		while (doc->pages.n<=curpage) doc->NewPages(doc->pages.n,1);
 		newpagedims.setIdentity();
@@ -299,6 +306,7 @@ int LaidoutInFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 		if (in->scaletopage) {
 			 //center and scale
 			origpagedims.fitto(NULL,&newpagedims, 50,50, in->scaletopage);
+
 		} else {
 			 //only center
 			origpagedims.origin(origpagedims.origin()
@@ -308,21 +316,35 @@ int LaidoutInFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 
 		 //copy page contents
 		for (int c2=0; c2<fdoc->pages.e[c]->layers.n(); c2++) {
-			contents=fdoc->pages.e[c]->layers.e(c2);
-			sdata=contents->duplicate(NULL);
-			obj=dynamic_cast<DrawableObject*>(sdata);
-			if (obj) {
+			obj      = fdoc->pages.e[c]->layers.e(c2);
+
+			layerdup = obj->duplicate(NULL); 
+			layer=dynamic_cast<DrawableObject*>(layerdup);
+
+			if (layer) {
 				//apply any shift to layer contents, not the layer itself
-				for (int c3=0; c3<obj->n(); c3++) {
-					kid=obj->e(c3);
+				for (int c3=0; c3<layer->n(); c3++) {
+					kid=layer->e(c3);
 					transform_mult(tt, kid->m(),origpagedims.m());
 					kid->m(tt);
 				}
 			}
 
-			doc->pages.e[curpage]->layers.push(sdata);//dup forces new ids to current doc
+			if (merge_to_existing_layers) {
+				Page *page = doc->pages.e[curpage];
+				while (page->n() < layer->n()) page->PushLayer(NULL);
+
+				for (int c3=0; c3<layer->n(); c3++) {
+					page->e(c2)->push(layer->e(c3));
+				}
+
+			} else {
+				 //insert brand new layer
+				doc->pages.e[curpage]->layers.push(layer);//dup forces new ids to current doc(?)
+			}
 			// *** tag with some meta to say where imported from?
 
+			layer->dec_count();
 		}
 		curpage++;
 	}

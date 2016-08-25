@@ -201,6 +201,13 @@ Here is a fast and easy way to get Laidout up and running from development sourc
 
 5.  Ok, now do `make install`.
 
+	A note about uninstalling. Work needs to be done on "make uninstall" to not remove 
+	things that were installed to those directories other than with "make install", such
+	as the addition of extra resources.
+	Right now, everything in prefix/share/laidout/(version) will be removed on uninstall
+	(but not anything in ~/.config/laidout). If this is causing you difficulty, please
+	let me know, and I'll try to finally fix this.
+
 6.  Running Laidout might spit out copious amounts of debugging info to stderr
     if you run from a terminal. If this is the case, you can turn this 
     off with `make hidegarbage` before doing `make` (the same goes for the 
@@ -223,26 +230,20 @@ resources that get put in prefix/share/laidout. This way, you do not risk
 clobbering or corrupting files from other versions. 
 
 You can change the version number manually by specifying it when you run
-./configure with somelike:
+./configure with something like:
 
     ./configure --version=0.096-different
 
 You should try to preserve the main version number (which is 0.096 in this
 example), or it might confuse Laidout at some point.
 
-HOWEVER, (todo) work needs to be done on "make uninstall" to not remove 
-things that were installed to those directories outside of "make install". 
-Right now, everything in prefix/share/laidout/version will be removed on uninstall
-(but not anything in ~/.config/laidout). If this is causing you difficulty, please
-let me know, and I'll try to finally fix this.
-
-In any case, if you can, it's really safer to build the deb package, which 
-automatically keeps track of such things, though with deb packages, you currently
-can have only one at a time, without tinkering with debian/control.
-
-Also, though you can have different versions coexist, there is not currently an
+Though you can have different versions coexist, there is not currently an
 automatic way to convert resources from older laidout versions to newer ones.
 This is on my long to-do list, but is a low priority. If this is a problem, let me know!
+
+If you build the deb package, you currently can only have one version at a time
+by default. To change that, you would have to tinker with debian/control. If this is
+something you need, please let me know, and I can make instructions for that.
 
 
 SOURCE CODE DOCUMENTATION and CONTRIBUTING

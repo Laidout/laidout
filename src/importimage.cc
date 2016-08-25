@@ -470,6 +470,7 @@ int dumpInImageList(ImportImageSettings *settings, Document *doc,LaxFiles::Attri
 				image=dynamic_cast<ImageData*>(LaxInterfaces::somedatafactory()->NewObject("ImageData"));
 				image->LoadImage(file,preview,0,0,0,0);
 			}
+			image->Id(lax_basename(file));
 			image->SetDescription(desc);
 			if (tags) image->InsertTags(tags,0);
 			delete[] file; file=NULL;
@@ -673,6 +674,7 @@ int dumpInImages(ImportImageSettings *settings,
 		}
 		
 		if (!imaged) continue;
+		imaged->Id(lax_basename(imagefiles[c]));
 
 		numonpage++;
 		int pg;

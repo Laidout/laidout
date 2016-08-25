@@ -39,10 +39,12 @@ class VObjContext : public LaxInterfaces::ObjectContext
   public:
 	FieldPlace context;
 	VObjContext() { obj=NULL; }
+	VObjContext(const VObjContext &oc);
 	virtual ~VObjContext();
 	virtual int isequal(const ObjectContext *oc);
 	virtual int operator==(const ObjectContext &oc) { return isequal(&oc)==3; }
 	virtual VObjContext &operator=(const VObjContext &oc);
+	virtual int Set(ObjectContext *oc);
 	virtual int set(LaxInterfaces::SomeData *nobj, int n, ...);
 	virtual void clear();
 	virtual void clearToPage();
@@ -162,7 +164,8 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	virtual LaxInterfaces::ObjectContext *ObjectMoved(LaxInterfaces::ObjectContext *oc, int modifyoc);
 	virtual int MoveObject(LaxInterfaces::ObjectContext *from, LaxInterfaces::ObjectContext *to);
 	virtual int CirculateInLayer(int dir, int i,int objOrSelection);
-	virtual int validContext(VObjContext *oc);
+	virtual bool IsValidContext(LaxInterfaces::ObjectContext *oc);
+	virtual int UpdateSelection(LaxInterfaces::Selection *sel);
 	virtual int wipeContext();
 	virtual void clearCurobj();
 	virtual int locateObject(LaxInterfaces::SomeData *d,FieldPlace &place);
@@ -208,6 +211,8 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 	Laxkit::ColorBox *colorbox;
 	Laxkit::SliderPopup *toolselector;
 	Laxkit::anXWindow *rulercornerbutton;
+
+	char *tempstring;
 
   public:
 	Project *project;

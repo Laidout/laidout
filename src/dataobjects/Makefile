@@ -31,6 +31,7 @@ objs= \
 	lengraverfilldata.o \
 	lcaptiondata.o \
 	ltextonpath.o \
+	lvoronoidata.o \
 	printermarks.o 
 
 

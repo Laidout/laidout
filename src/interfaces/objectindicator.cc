@@ -64,6 +64,7 @@ ObjectIndicator::ObjectIndicator(int nid,Displayer *ndp)
 	context=NULL;
 	hover_object=NULL;
 	last_hover=-1;
+	font=NULL;
 }
 
 ObjectIndicator::ObjectIndicator(anInterface *nowner,int nid,Displayer *ndp)
@@ -77,10 +78,12 @@ ObjectIndicator::ObjectIndicator(anInterface *nowner,int nid,Displayer *ndp)
 	context=NULL;
 	hover_object=NULL;
 	last_hover=-1;
+	font=NULL;
 }
 
 ObjectIndicator::~ObjectIndicator()
 {
+	if (font) font->dec_count();
 	DBG cerr <<"ObjectIndicator destructor.."<<endl;
 }
 
@@ -178,6 +181,8 @@ int ObjectIndicator::Refresh()
 	 //draw ui outline
 	dp->NewFG(rgbcolor(128,128,128));
 	dp->DrawScreen();
+	if (!font) { font=laidout->defaultlaxfont; font->inc_count(); }
+	dp->font(font);
 
 
 
@@ -194,6 +199,7 @@ int ObjectIndicator::Refresh()
 
 		if (c==last_hover) dp->NewFG(rgbcolor(50,50,50));
 
+		 // textout: (index) element name
 		x=0;
 		str=objc->object_e_name(context->context.e(c));
 		if (!str) {
@@ -201,10 +207,10 @@ int ObjectIndicator::Refresh()
 			str=scratch;
 		} else {
 			sprintf(scratch,"(%d) ",context->context.e(c));
-			x+=dp->textout(0,y, scratch,-1, LAX_BOTTOM|LAX_LEFT);
+			x+=dp->textout_halo(1, 0,y, scratch,-1, LAX_BOTTOM|LAX_LEFT);
 		}
 
-		dp->textout(x,y, str,-1, LAX_BOTTOM|LAX_LEFT);
+		dp->textout_halo(1, x,y, str,-1, LAX_BOTTOM|LAX_LEFT);
 		y-=dp->textheight();
 
 		if (c==last_hover) dp->NewFG(rgbcolor(128,128,128));
@@ -229,7 +235,9 @@ int ObjectIndicator::scan(int x,int y)
 {
 	if (!context) context=&dynamic_cast<LaidoutViewport*>(viewport)->curobj;
 
-	double th=dp->textheight();
+	if (!font) { font=laidout->defaultlaxfont; font->inc_count(); }
+	double th=font->textheight();
+
 	if (x<0 || x>th*7) return -1;
 
 	int i=(dp->Maxy-y)/th;
@@ -270,7 +278,9 @@ int ObjectIndicator::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse 
 		if (d && d->parent) {
 			//const char *str=objc->object_e_name(context->context.e(i));
 			const char *str=d->Id();
-			double th=dp->textheight();
+			if (!font) { font=laidout->defaultlaxfont; font->inc_count(); }
+			double th=font->textheight(); 
+
 			LineEdit *le= new LineEdit(viewport,"rename",_("Rename object"),
 										ANXWIN_OUT_CLICK_DESTROYS|LINEEDIT_DESTROY_ON_ENTER|LINEEDIT_GRAB_ON_MAP|ANXWIN_ESCAPABLE,
 										2*th,dp->Maxy-(i+3)*th, 2*dp->textextent(str,-1,NULL,NULL),1.2*th, 4,
