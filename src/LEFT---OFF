@@ -150,7 +150,6 @@ fontdialog: FontDialog
   FindFont() is faulty, as it only lookes up family/style.. should search by the unique file name
   sometimes family+style is not unique, but has different languages.. should detect this
     use postscriptname: "DroidSansHebrew-Bold" -->  "Droid Sans Hebrew"/"Bold"
-  pgup and down doesn't select a reasonable one
 
   need a way to remember layered fonts, to easily activate and deactivate
     read from standard fonts places, like .config/laidout/(version)/fonts
@@ -160,6 +159,7 @@ fontdialog: FontDialog
   need to implement load specific file for a font
 
   ---0.098:
+  pgup and down doesn't select a reasonable one
   fontconfig directory config options
   should REALLY have a LayerFont head containing the whole list, not a stand alone list which causes too many problems
   figure out why some color fonts are not scanned by fontconfig
@@ -201,6 +201,7 @@ captioninterface CaptionInterface captiondata CaptionData
   lorem ipsum
   markov ipsum
 
+  DONE Paste not triggering recache
   DONE fonts need to dump in(via fontmanager->dump_in_font) and out(done) by themselves
   DONE need to implement dump_out_atts
   DONE memory hole after convert to path
@@ -453,18 +454,19 @@ export/print dialog
   in papergroups with multiple papers and double sided impositions, need to ensure front and back are output properly for printer 
 
 file filters: filefilters:
+  remember full export settings
+  need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
+  ---0.098:
   need equirectangular out 
   selecting out should auto select tofile | tofiles, depending on how many spreads selected for out
   export ranges should accept "1-4, 6, 20-25" and "5-1", or by name "iii - iv"
-  remember full export settings
-  need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
-  for export, need way to have easy crop, especially from command line 
   perhaps switch export/import objects to new cascading Style as base..  
   standardize basic load such that non-laidout files create new document of proper size then import
   When there are errors or warnings in exporting, should be able to have the error log such that
     you can just jump to the offending bit easily. This would also be used for preflight verifiers,
     and maybe also mass edit things, like edit all images..
     - have ViewWindow::JumpToObject(&place, objectid);
+  DONE for export, need way to have easy crop, especially from command line 
   DONE remember last export type
   DONE when saving, name shouldn't be red if ok to save
 importdialog ImportDialog import dialog:
@@ -481,6 +483,13 @@ image
   DONE should color background per paper if !transparent
 laidout:
   need a Laidout out! for partial exports, or conversions between nets/papergroup lines/etc
+  implement crop
+  save option to force path data into svg d style
+  save option to not output line caches
+  partial import of page ranges
+  import of resources
+  import of master pages
+  import of limbos
 laidout import:
   pops up spurious windows
   maybe option to create new layers, or insert to existing layers?
@@ -499,6 +508,7 @@ pdf PDF:
   pdf out needs clone deref.. needs clone deref still?
   graphicsmagick for import? subimage and subrange of image_info passed to ReadImage
   page labels?
+  implement crop
 Scribus:
   make sure it works for 1.5.2
   font size confusion
@@ -512,6 +522,7 @@ Scribus:
   scribus export should show actual version export
   scribus import: need to read page sizes from actual page attributes, as it may well be different than in document attributes
     -> this necessitates revamp of singles to use more than one paper type
+  implement crop
 svg:
   testsvg-disappearing.svg.. many objects disapper after read in at different zoom levels. wtaf??
   on read in width nodes are zeroed, does not correspond to actual width of line
@@ -532,6 +543,7 @@ plan:
   need an In()
   implement paper rotation for out
 ppt:
+  implement crop
   implement paper rotation
 ps:
   implement paper rotation
@@ -539,20 +551,15 @@ ps:
     a lot of work for a deprecated format, but could have other uses, like for PDF/X-1a
   paths not filling correctly
   engraver no out, equiv object problem?
+  implement crop
   DONE test ps out image patch does correct vert flippedness
   DONE image out seems to have stopped working?? <-because it depended on images being LaxImlibImage
   DONE must make sure it doesn't depend on Imlib
 eps:
+  implement crop
   export seems to be rather broken
   command line export file name defaults to "output#.eps"
   implement paper rotation
-laidout:
-  save option to force path data into svg d style
-  save option to not output line caches
-  partial import of page ranges
-  import of resources
-  import of master pages
-  import of limbos
 xtg from quark?
 idml from indesign?
  
@@ -591,10 +598,10 @@ Clean up mesh/patch controls: Mesh PatchInterface
 TreeSelector:
   add scroller
   with text colors, mouse over highlight is off
+  makeinwindow() doesn't account for columns
   not showing alternate gray/white bgs
   option to use markup for labels
   tree display flat option
-  makeinwindow() doesn't account for columns
 
 save as should change save/import/export/current directory to that directory
 
@@ -621,7 +628,7 @@ to be a decent editing platform, Laidout needs:
 
 polish:
   page navigator should allow type in shortcuts like "end" 
-  need better render for tab frame headers
+  DONE need better render for tab frame headers
 
 
 ----------------0.098 ROADMAP ITEMS: features and enhancements------------------------
