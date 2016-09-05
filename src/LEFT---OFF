@@ -140,11 +140,11 @@ need to implement DRAW_Hires for all interfaces that default to preview renders.
   includes at least image, path, engraver
 
 fontdialog: FontDialog
-  bookman font style names getting chopped off
-  makeinwindow SOMETIMES not working, select one, puts on bottom line
-  you can still scroll off when few visible items.. grrr!!
+  bookman font style names getting chopped off (??? can't duplicate)
+
   sample block should not strictly adhere to fontsize, as it can get very big (or too small)
   sample block should be multiline
+  makeinwindow SOMETIMES not working, select one, puts on bottom line
   need support for svg fonts.. useful for pure svg fonts, and opentype svg, see cairo user fonts
   font->SetFromFile() should do more fontconfig checking to grab propper file+family+style+size
   FindFont() is faulty, as it only lookes up family/style.. should search by the unique file name
@@ -165,7 +165,6 @@ fontdialog: FontDialog
   figure out why some color fonts are not scanned by fontconfig
   needs line spacing slider
   option to search by spacing, ie monospace, see fontconfig: FC_PROPORTIONAL, FC_DUAL, FC_MONO, FC_CHARCELL
-  should really get around to implementing scrollers
   vague search via fontconfig matching, to find a match for something like a "sans"
 
   font preview column in list, custom sample
@@ -174,6 +173,8 @@ fontdialog: FontDialog
   select opentype features
   optional common font finishers? like centering, underline, color, highlight, fg/bg, etc
 
+  DONE you can still scroll off when few visible items.. grrr!!
+  DONE should really get around to implementing scrollers
   DONE fontmatrix import? fontmatrix uses a sqlite database.. should be straighforward to scan it
 
 captioninterface CaptionInterface captiondata CaptionData
@@ -563,12 +564,6 @@ eps:
 xtg from quark?
 idml from indesign?
  
-Units:
-  need something like Convert(value, units_from, units_to, &error, overrides), where overrides is 
-    something like: list of [units_id, newscaling], like for temp redefining "Em" or "px"
-
-collect for out: define directory to pull all files and external resources in, including the .laidout file
-
 Clean up mesh/patch controls: Mesh PatchInterface 
   perspective arrangement: approximate transform controls through perspective grid
   maybe should not be able to escape off path tool when editing as path
@@ -596,39 +591,13 @@ Clean up mesh/patch controls: Mesh PatchInterface
   make base path dump_out as Path, not PathsData? make it easier to read file removing the unnecessary??
 
 TreeSelector:
-  add scroller
-  with text colors, mouse over highlight is off
-  makeinwindow() doesn't account for columns
-  not showing alternate gray/white bgs
+  with text colors, mouse over highlight is off (can't dup?!?)
+  not showing alternate gray/white bgs (can't dup?!?)
+  ---0.098:
   option to use markup for labels
   tree display flat option
-
-save as should change save/import/export/current directory to that directory
-
-General design usability
-to be a decent editing platform, Laidout needs:
-  undo/redo
-  master pages with auto page number is important.. for image based page numbers, dynamic objects important!!
-  would be convenient to send to gimp for editing, update later live
-  when delete/add pages, need option to reposition to same orientation in margin area
-  snapping rotate, maybe drag handle with control?
-  more specific control over transform.. numerical specification
-  per object visibility
-  per object opacity
-  better key input edits
-  guides
-  clipping
-  text
-  Grouping:
-    select only within group zone
-	easy selection of proper group zone
-	remove 'i' from common shortcuts for all tools to let it be used for ObjectIndicator
-    DONE ungroup doesn't check if FieldPlace indices change, making ungroup and group unreliable
-  DONE better screen renderer
-
-polish:
-  page navigator should allow type in shortcuts like "end" 
-  DONE need better render for tab frame headers
+  makeinwindow() doesn't account for columns
+  DONE add scroller
 
 
 ----------------0.098 ROADMAP ITEMS: features and enhancements------------------------
@@ -651,6 +620,57 @@ test:
 newdoc:
   when change number of named paper, make it "custom"
   open on image should create a new singles with default paper and image centered
+
+save as should change save/import/export/current directory to that directory
+  -> need to test current behavior
+
+
+----------------0.098 ROADMAP ITEMS: features and enhancements------------------------
+update fileformat.txt
+check laidout.1 when time to release
+update docs to have new release number
+update translation base files
+update screenshots, sync with features
+update links page
+update help page
+update dtpcompare.html
+test:
+  each window type: about palette view spread command text
+    help: window pane does funky stuff
+  test in different window managers
+  each export filter (via command line in new script in examples.. ignoring problems in eps)
+  make some test scripts for command line testing
+
+
+Units:
+  need something like Convert(value, units_from, units_to, &error, overrides), where overrides is 
+    something like: list of [units_id, newscaling], like for temp redefining "Em" or "px"
+
+collect for out: define directory to pull all files and external resources in, including the .laidout file
+
+General design usability
+to be a decent editing platform, Laidout needs:
+  undo/redo
+  master pages with auto page number is important.. for image based page numbers, dynamic objects important!!
+  would be convenient to send to gimp for editing, update later live
+  when delete/add pages, need option to reposition to same orientation in margin area
+  snapping rotate, maybe drag handle with control?
+  drag constraints more accessible in only y or x direction
+  more specific control over transform.. numerical specification
+  per object visibility
+  per object opacity
+  better key input edits
+  guides
+  clipping
+  text
+  Grouping:
+    select only within group zone
+	easy selection of proper group zone
+	remove 'i' from common shortcuts for all tools to let it be used for ObjectIndicator
+    DONE ungroup doesn't check if FieldPlace indices change, making ungroup and group unreliable
+
+polish:
+  page navigator should allow type in shortcuts like "end" 
 
 GroupInterface groupinterface ObjectInterface objectinterface:
   viewport should fully utilize Selection::CurrentObject(), keep curobj in sync
@@ -1603,4 +1623,5 @@ DONE tooltips:
 DONE ObjectIndicator: render text with white halo
 DONE GroupInterface: Not catching mode==1 correctly.. can't zoom with just space anymore
 DONE need to spiffify tabframe.. it is hideous
+DONE need better render for tab frame headers
 
