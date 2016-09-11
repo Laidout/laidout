@@ -22,7 +22,7 @@ text window controls have difficulties
   doesn't handle tabs
   (see PlainTextWindow below for feature plans instead of bugs)
 
-saving window postitions doesn't take into account window decorations, makes pos slide downward each time
+saving window positions doesn't take into account window decorations, makes pos slide downward each time
 
 evince on ubuntu 14.04, pdf export won't load, says Syntax Error... Dictionary key must be a name object
 
@@ -137,7 +137,7 @@ put rss/g+ links on all menu pages.. need way to automate including menu bar stu
 
 
 need to implement DRAW_Hires for all interfaces that default to preview renders. needed for proper image out
-  includes at least image, path, engraver
+  includes at least image(done), path, engraver
 
 fontdialog: FontDialog
   bookman font style names getting chopped off (??? can't duplicate)
@@ -697,6 +697,7 @@ voronoi Voronoi delauney Delauney:
   implement as extension for delauney/voronoi interface
 
 FileDialog filedialog:
+  when something is not openable or saveable, buttons should be greyed out
   should probably have a scroll bar
   implement icon list selector
   implement option for (or just show) directories first
