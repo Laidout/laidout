@@ -86,7 +86,7 @@ class PaperBox :  public Laxkit::anObject
 	int which;
 	PaperStyle *paperstyle;
 	Laxkit::DoubleBBox media, printable, bleed, trim, crop, art;
-	PaperBox(PaperStyle *paper);
+	PaperBox(PaperStyle *paper, bool absorb_count);
 	virtual ~PaperBox();
 	virtual int Set(PaperStyle *paper);
 };

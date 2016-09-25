@@ -679,12 +679,13 @@ ObjectDef *PaperStyle::makeObjectDef()
  *
  * Create with media box based on paper. None of the other boxes defined.
  */
-PaperBox::PaperBox(PaperStyle *paper)
+PaperBox::PaperBox(PaperStyle *paper, bool absorb_count)
 {
 	which=0; //a mask of which boxes are defined
 	paperstyle=paper;
+
 	if (paper) {
-		paper->inc_count();
+		if (!absorb_count) paper->inc_count();
 		which=MediaBox;
 		media.minx=media.miny=0;
 		media.maxx=paper->w(); //takes into account paper orientation
@@ -795,7 +796,7 @@ PaperGroup::PaperGroup(PaperStyle *paperstyle)
 	owner=NULL;
 	obj_flags|=OBJ_Zone|OBJ_Unselectable;
 
-	PaperBox *box=new PaperBox(paperstyle);
+	PaperBox *box=new PaperBox(paperstyle, false);
 	PaperBoxData *data=new PaperBoxData(box);
 	box->dec_count();
 	papers.push(data);
@@ -968,8 +969,7 @@ void PaperGroup::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *con
 		} else if (!strcmp(nme,"paper")) {
 			PaperStyle *paperstyle=new PaperStyle(NULL,0,0,0,0,"in");
 			paperstyle->dump_in_atts(att->attributes.e[c],flag,context);
-			PaperBox *paperbox=new PaperBox(paperstyle);
-			paperstyle->dec_count();
+			PaperBox *paperbox=new PaperBox(paperstyle, true);
 			PaperBoxData *boxdata=new PaperBoxData(paperbox);
 			paperbox->dec_count();
 			boxdata->dump_in_atts(att->attributes.e[c],flag,context);
@@ -989,7 +989,7 @@ void PaperGroup::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *con
 int PaperGroup::AddPaper(const char *nme,double w,double h,const double *m)
 {
 	PaperStyle *paperstyle=new PaperStyle(nme,w,h,0,72,NULL);
-	PaperBox *box=new PaperBox(paperstyle);
+	PaperBox *box=new PaperBox(paperstyle, false);
 	paperstyle->dec_count();
 
 	PaperBoxData *boxdata=new PaperBoxData(box);
@@ -1003,7 +1003,7 @@ int PaperGroup::AddPaper(const char *nme,double w,double h,const double *m)
 int PaperGroup::AddPaper(double w,double h,double offsetx,double offsety)
 {
 	PaperStyle *paperstyle=new PaperStyle("paper",w,h,0,72,NULL);
-	PaperBox *box=new PaperBox(paperstyle);
+	PaperBox *box=new PaperBox(paperstyle, false);
 	paperstyle->dec_count();
 
 	PaperBoxData *boxdata=new PaperBoxData(box);
