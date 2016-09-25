@@ -116,6 +116,7 @@ PaperInterface::~PaperInterface()
 	DBG cerr <<"PaperInterface destructor.."<<endl;
 
 	if (maybebox) maybebox->dec_count();
+	if (curbox) { curbox->dec_count(); curbox=NULL; }
 	if (papergroup) papergroup->dec_count();
 	if (doc) doc->dec_count();
 	if (sc) sc->dec_count();
@@ -634,12 +635,10 @@ void PaperInterface::createMaybebox(flatpoint p)
 		box=papergroup->papers.e[0]->box;
 		boxdata=papergroup->papers.e[0];
 	} else if (doc) {
-		box=new PaperBox((PaperStyle *)doc->imposition->paper->paperstyle->duplicate());
-		box->paperstyle->dec_count();
+		box=new PaperBox((PaperStyle *)doc->imposition->paper->paperstyle->duplicate(), true);
 		del=1;
 	} else {
-		box=new PaperBox((PaperStyle *)laidout->papersizes.e[0]->duplicate());
-		box->paperstyle->dec_count();
+		box=new PaperBox((PaperStyle *)laidout->papersizes.e[0]->duplicate(), true);
 		del=1;
 	}
 
@@ -680,6 +679,7 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 			papergroup=new PaperGroup;
 			papergroup->Name=new_paper_group_name();
 			laidout->project->papergroups.push(papergroup);
+			//papergroup->dec_count();
 			
 			DBG fp=dp->screentoreal(x,y);
 			DBG cerr <<"4 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
