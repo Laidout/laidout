@@ -32,12 +32,12 @@ scribus plugin needs a proper dealing with temporary files
 
 configure should check for libreadline-dev? apparently not pkg-config ready <- half fix of listing in package requirements
 
-memory hole paper interface, activate tool, lay down one paper, quit, 3 objects remain
 memory hole in reimpose .. reimposed 5 page booklet 
 memory hole helpwindow 
 memory hole when graphical shell activated 
 memory hole do laidout -n letter, split a window, then quit. undeleted Objects remain!
 memory hole delauneyinterface
+DONE memory hole paper interface, activate tool, lay down one paper, quit, 3 objects remain
 DONE memory hole cairo backend (can't duplicate) 
 
 object reordering (with home/end) produces outline of unrelated objects on top 
@@ -616,6 +616,8 @@ test:
   each export filter (via command line in new script in examples.. ignoring problems in eps)
   make some test scripts for command line testing
 
+
+Remove obsolete HelpWindow code?
 
 newdoc:
   when change number of named paper, make it "custom"
