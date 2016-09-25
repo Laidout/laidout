@@ -724,7 +724,7 @@ int GroupInterface::PerformAction(int action)
 		//if (!buttondown.any()) return 0;
 
 		 // duplicate selection as clones
-		SomeData *obj, *clonefrom;
+		SomeData *obj;
 		LSomeDataRef *lobj;
 		SomeData *toclone;
 		for (int c=0; c<selection->n(); c++) {
@@ -732,7 +732,6 @@ int GroupInterface::PerformAction(int action)
 			toclone=selection->e(c)->obj;
 			DBG cerr <<" - Clone "<<toclone->whattype()<<":"<<toclone->object_id<<endl;
 
-			clonefrom = selection->e(c)->obj;
 			lobj=new LSomeDataRef();
 			lobj->Set(toclone,0);
 			lobj->m(toclone->m());
