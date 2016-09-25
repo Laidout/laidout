@@ -693,8 +693,7 @@ int Imposition::SetPaperSize(PaperStyle *npaper)
 
 	PaperStyle *newpaper=(PaperStyle *)npaper->duplicate();
 	if (paper) paper->dec_count();
-	paper=new PaperBox(newpaper);
-	newpaper->dec_count();
+	paper=new PaperBox(newpaper, true);
 	PaperBoxData *newboxdata=new PaperBoxData(paper);
 
 	if (papergroup) papergroup->dec_count();
