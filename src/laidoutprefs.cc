@@ -383,8 +383,11 @@ int LaidoutPreferences::SavePrefs(const char *file)
  */
 int UpdatePreference(const char *which, const char *value, const char *laidoutrc)
 {
-	FILE *f=fopen(laidoutrc,"r");
-	if (!f) return 1;
+	int fd=open(laidoutrc, O_RDONLY, 0);
+	if (fd<0) { return 1; }
+	flock(fd,LOCK_EX);
+	FILE *f=fdopen(fd,"w");
+	if (!f) { close(fd); return 2; }
 
 	char *outfile=newstr(laidoutrc);
 	appendstr(outfile, "-TEMP");
@@ -396,9 +399,9 @@ int UpdatePreference(const char *which, const char *value, const char *laidoutrc
 
 	FILE *out=fopen(outfile, "w");
 	if (!out) {
-		fclose(f);
+		fclose(f); //also closes fd
 		delete[] outfile;
-		return 2;
+		return 3;
 	}
 
 	setlocale(LC_ALL,"C");
@@ -447,7 +450,8 @@ int UpdatePreference(const char *which, const char *value, const char *laidoutrc
 	if (line) free(line);
 
 	fclose(out);
-	fclose(f);
+	flock(fd,LOCK_UN);
+	fclose(f); //also closes the fd	
 	setlocale(LC_ALL,"");
 
 	 //finally move temp file to real file
