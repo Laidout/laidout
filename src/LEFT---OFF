@@ -33,7 +33,7 @@ scribus plugin needs a proper dealing with temporary files
 configure should check for libreadline-dev? apparently not pkg-config ready <- half fix of listing in package requirements
 
 memory hole in reimpose .. reimposed 5 page booklet 
-memory hole helpwindow 
+memory hole helpwindow -> probably something to do with ShortcutWindow and ShortcutTreeSelector not refcounting as expected
 memory hole when graphical shell activated 
 memory hole do laidout -n letter, split a window, then quit. undeleted Objects remain!
 memory hole delauneyinterface
@@ -96,8 +96,6 @@ should not be able to group select an object and another object nested within
 
 file previewer not updating preview when using arrow keys
 
-add blank image, change description, do not change filename, makes width/height zap back to 0...
-
 shrink image lets you go immeasurably small
 
 fold indicator foldprogress just at crossover points incorrectly indicating affected folds
@@ -111,8 +109,6 @@ GradientInterface problem rendering radial when two circles separated by large d
 WATCH OUT for when preview file is OLDER than original file!!
 
 stackframe seems to be ignoring window borders on layout
-
-should probably flock in UpdatePreference()
 
 
 ----------------0.097 ROADMAP ITEMS: features and enhancements------------------------
@@ -1627,4 +1623,6 @@ DONE ObjectIndicator: render text with white halo
 DONE GroupInterface: Not catching mode==1 correctly.. can't zoom with just space anymore
 DONE need to spiffify tabframe.. it is hideous
 DONE need better render for tab frame headers
+DONE add blank image, change description, do not change filename, makes width/height zap back to 0...  
+DONE should probably flock in UpdatePreference(), even though it's just reading, another thread may mess with it 
 
