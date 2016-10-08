@@ -23,6 +23,7 @@
 #include "stylemanager.h"
 #include "utils.h"
 
+#include <sys/file.h>
 #include <clocale>
 #include <cctype>
 #include <unistd.h>
