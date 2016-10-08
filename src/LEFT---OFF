@@ -33,10 +33,10 @@ scribus plugin needs a proper dealing with temporary files
 configure should check for libreadline-dev? apparently not pkg-config ready <- half fix of listing in package requirements
 
 memory hole in reimpose .. reimposed 5 page booklet 
-memory hole helpwindow -> probably something to do with ShortcutWindow and ShortcutTreeSelector not refcounting as expected
 memory hole when graphical shell activated 
 memory hole do laidout -n letter, split a window, then quit. undeleted Objects remain!
 memory hole delauneyinterface
+memory hole helpwindow -> probably something to do with ShortcutWindow and ShortcutTreeSelector not refcounting as expected
 DONE memory hole paper interface, activate tool, lay down one paper, quit, 3 objects remain
 DONE memory hole cairo backend (can't duplicate) 
 
