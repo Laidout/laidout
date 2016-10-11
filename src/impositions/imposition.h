@@ -20,7 +20,7 @@
 #include <lax/lists.h>
 
 #include "../page.h"
-#include "../styles.h"
+#include "../calculator/values.h"
 #include "../papersizes.h"
 #include "../dataobjects/objectcontainer.h"
 
