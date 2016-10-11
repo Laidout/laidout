@@ -287,7 +287,7 @@ char *PageRange::GetLabel(int i,int altfirst,int alttype)
 }
 
 /*! \todo make labeltype be the enum names.. this ultimately means PageRange
- *    will have to make full switch to Style.
+ *    will have to make full switch to Value.
  *
  * If what==-1, write out pseudocode mockup.
  */

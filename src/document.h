@@ -17,7 +17,6 @@
 #define DOCUMENT_H
 
 class Document;
-#include "styles.h"
 #include "impositions/imposition.h"
 #include "laidoutdefs.h"
 #include "spreadview.h"
