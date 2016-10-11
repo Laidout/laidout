@@ -18,7 +18,6 @@
 #define CALCULATOR_H
 
 #include <lax/refptrstack.h>
-#include "../styles.h"
 #include "values.h"
 
 

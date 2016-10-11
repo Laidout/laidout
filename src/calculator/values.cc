@@ -16,7 +16,6 @@
 
 
 #include "values.h"
-#include "../styles.h"
 #include "../language.h"
 
 #include <lax/strmanip.h>
@@ -3561,7 +3560,6 @@ int ObjectValue::getValueStr(char *buffer,int len)
 {
 	if (!object) return Value::getValueStr(buffer,len);
 	const char *str=NULL;
-	if (dynamic_cast<Style*>(object)) str=dynamic_cast<Style*>(object)->Stylename();
 	if (!str) str=object->whattype();
 	if (!str) str="object(TODO!!)";
 
