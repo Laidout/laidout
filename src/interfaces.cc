@@ -28,6 +28,8 @@
 #include <lax/interfaces/textstreaminterface.h>
 #include <lax/interfaces/delauneyinterface.h>
 #include <lax/interfaces/perspectiveinterface.h>
+#include "interfaces/nodeinterface.h"
+#include "interfaces/anchorinterface.h"
 
 
 #include "interfaces.h"
@@ -48,7 +50,6 @@
 #include "interfaces/objectindicator.h" 
 #include "interfaces/paperinterface.h"
 #include "interfaces/graphicalshell.h"
-#include "interfaces/anchorinterface.h"
 #include "interfaces/cloneinterface.h"
 #include "interfaces/pagemarkerinterface.h"
 
@@ -126,6 +127,12 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 
 		 //------Anchor
 		i=new AnchorInterface(NULL,id++,NULL);
+		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+		existingpool->push(i);
+		i->dec_count();
+
+		 //------Nodes
+		i=new NodeInterface(NULL,id++,NULL);
 		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 		existingpool->push(i);
 		i->dec_count();

@@ -255,9 +255,22 @@ int NodeBase::Collapse(int state)
 	return collapsed;
 }
 
-int NodeBase::HasConnection(NodeProperty *prop)
+/*! Return the property index of the first property that has a connection to prop.
+ */
+int NodeBase::HasConnection(NodeProperty *prop, int *connection_ret)
 {
-	***
+	for (int c=0; c<properties.n; c++) {
+		for (int c2=0; c2<properties.e[c]->connections.n; c2++) {
+			if (properties.e[c]->connections.e[c2]->toprop  ==prop ||
+				properties.e[c]->connections.e[c2]->fromprop==prop) {
+					*connection_ret = c2;
+					return c;
+			}
+		}
+	}
+
+	*connection_ret = -1;
+	return -1;
 }
 
 
@@ -584,9 +597,10 @@ int NodeInterface::Refresh()
 	for (int c=0; c<nodes->connections.n; c++) {
 		//dp->DrawColoredPath(nodes->nodes.e[c]->connections.e[c]->path.e,
 		//					nodes->nodes.e[c]->connections.e[c]->path.n);
-		dp->drawlines(nodes->connections.e[c]->path.e,
-					  nodes->connections.e[c]->path.n,
-					  false, 0);
+		//dp->drawlines(nodes->connections.e[c]->path.e,
+		//			  nodes->connections.e[c]->path.n,
+		//			  false, 0);
+		DrawConnection(nodes->connections.e[c]);
 	}
 
 	 //---draw nodes:
@@ -703,6 +717,21 @@ int NodeInterface::Refresh()
 	dp->PopAxes();
 
 	return 0;
+}
+
+void NodeInterface::DrawConnection(NodeConnection *connection) 
+{
+	flatpoint p1,p2;
+	flatpoint last = nodes->m.transformPointInverse(lastpos);
+	if (connection->fromprop) p1=flatpoint(connection->from->x,connection->from->y)+connection->fromprop->pos; else p1=last;
+	if (connection->toprop)   p2=flatpoint(connection->to->x,  connection->to->y)  +connection->toprop->pos;   else p2=last;
+
+	dp->NewFG(&color_controls);
+	dp->moveto(p1);
+	dp->curveto(p1+flatpoint((p2.x-p1.x)/3, 0),
+				p2-flatpoint((p2.x-p1.x)/3, 0),
+				p2);
+	dp->stroke(0);
 }
 
 /*! Return the node under x,y, or -1 if no node there.
@@ -867,7 +896,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 	} else if (action == NODES_Drag_Output) {
 		//check if hovering over the input of some other node
-		// *** need to ensure there is no circular linking
+		DBG cerr << " *** need to ensure there is no circular linking for nodes!!!"<<endl;
 
 		int remove=0;
 
@@ -878,15 +907,25 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 					 //clobber any other connection going into the input. Only one input allowed.
 					toprop->connections.flush();
 				}
-				*** connect lasthover.lasthoverprop.lastconnection to toprop
+
+				 //connect lasthover.lasthoverprop.lastconnection to toprop
+				NodeConnection *connection = nodes->nodes.e[lasthover]->properties.e[lasthoverprop]->connections.e[lastconnection];
+				toprop->connections.push(connection, 0);
+				connection->to     = nodes->nodes.e[overnode];
+				connection->toprop = nodes->nodes.e[overnode]->properties.e[overproperty];
+
 			} else {
 				remove=1;
 			}
 		}
 
 		if (remove) {
-			*** remove the unconnected connection
-		}
+			 //remove the unconnected connection from what it points to as well as from nodes->connections
+			nodes->connections.remove(nodes->connections.findindex(nodes->nodes.e[lasthover]->properties.e[lasthoverprop]->connections.e[lastconnection]));
+			nodes->nodes.e[lasthover]->properties.e[lasthoverprop]->connections.remove(lastconnection);
+			lastconnection=-1;
+		} 
+
 	}
 
 	hover_action = NODES_None;

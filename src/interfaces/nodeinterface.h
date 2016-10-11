@@ -144,7 +144,7 @@ class NodeBase : public Laxkit::anObject, public Laxkit::DoubleRectangle
 	virtual int Wrap();
 	virtual int Collapse(int state); //-1 toggle, 0 open, 1 collapsed
 
-	virtual int HasConnection(NodeProperty *prop);
+	virtual int HasConnection(NodeProperty *prop, int *connection_ret);
 };
 
 
@@ -240,6 +240,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state, const Laxkit::LaxKeyboard *d);
 	virtual int KeyUp(unsigned int ch,unsigned int state, const Laxkit::LaxKeyboard *d);
 
+	virtual void DrawConnection(NodeConnection *connection);
 	virtual int scan(int x, int y, int *overproperty);
 	virtual int IsSelected(NodeBase *node);
 };

@@ -26,6 +26,7 @@ objs= \
 	animationinterface.o \
 	objecttree.o \
 	pagemarkerinterface.o \
+	nodeinterface.o \
 
 
 
