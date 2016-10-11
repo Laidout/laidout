@@ -16,7 +16,7 @@
 #ifndef OPENANDNEW_H
 #define OPENANDNEW_H
 
-#include "../styles.h"
+#include "../calculator/values.h"
 
 
 namespace Laidout {

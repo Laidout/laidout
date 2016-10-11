@@ -18,7 +18,6 @@
 
 
 #include "../calculator/values.h"
-#include "../styles.h"
 
 
 namespace Laidout {

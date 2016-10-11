@@ -19,7 +19,6 @@
 #include "../language.h"
 #include "../laidout.h"
 #include "../headwindow.h"
-#include "../styles.h"
 #include "../papersizes.h"
 
 #include <lax/fileutils.h>

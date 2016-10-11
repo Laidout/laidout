@@ -18,7 +18,7 @@
 
 #include <lax/errorlog.h>
 
-#include "../styles.h"
+#include "../calculator/values.h"
 
 
 namespace Laidout {
