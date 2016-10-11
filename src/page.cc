@@ -215,11 +215,9 @@ void PageStyle::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *cont
 }
 
 //! Creates brand new object if s==NULL. Copies over width, height, and flags.
-Style *PageStyle::duplicate(Style *s)//s=NULL
+Value *PageStyle::duplicate()
 {
-	if (s==NULL) s=new PageStyle();
-	else s=dynamic_cast<PageStyle *>(s);
-	PageStyle *ps=dynamic_cast<PageStyle *>(s);
+	PageStyle *ps=new PageStyle();
 	if (!ps) return NULL;
 
 	ps->flags=flags;
@@ -230,7 +228,7 @@ Style *PageStyle::duplicate(Style *s)//s=NULL
 	if (margin)  ps->margin  = dynamic_cast<PathsData*>(margin ->duplicate(NULL));
 	if (outline) ps->outline = dynamic_cast<PathsData*>(outline->duplicate(NULL));
 
-	return s;
+	return ps;
 }
 
 //! The newfunc for PageStyle instances.
@@ -401,17 +399,24 @@ void RectPageStyle::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *
 }
 
 //! Copy over ml,mr,mt,mb,recttype.
-Style *RectPageStyle::duplicate(Style *s)//s=NULL
+Value *RectPageStyle::duplicate()
 {
-	if (s==NULL) s=new RectPageStyle(recttype);
-	RectPageStyle *blah=dynamic_cast<RectPageStyle *>(s);
-	if (!blah) return NULL;
-	blah->recttype=recttype;
-	blah->ml=ml;
-	blah->mr=mr;
-	blah->mt=mt;
-	blah->mb=mb;
-	return PageStyle::duplicate(s);
+	RectPageStyle *ps = new RectPageStyle(recttype);
+	ps->recttype=recttype;
+	ps->ml=ml;
+	ps->mr=mr;
+	ps->mt=mt;
+	ps->mb=mb;
+
+	ps->flags=flags;
+	ps->width=width;
+	ps->height=height;
+	ps->min_x=min_x;
+	ps->min_y=min_y;
+	if (margin)  ps->margin  = dynamic_cast<PathsData*>(margin ->duplicate(NULL));
+	if (outline) ps->outline = dynamic_cast<PathsData*>(outline->duplicate(NULL));
+
+	return ps;
 }
 
 //! The newfunc for PageStyle instances.

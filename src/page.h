@@ -21,7 +21,7 @@
 #include <lax/interfaces/pathinterface.h>
 
 #include "dataobjects/group.h"
-#include "styles.h"
+#include "calculator/values.h"
 
 
 
@@ -47,7 +47,7 @@ class PageBleed
 #define PAGESTYLE_AUTONOMOUS (1<<3)
 #define DONT_SHOW_PAGE       (1<<4)
 
-class PageStyle : public Style
+class PageStyle : public Value
 {
  public:
 	unsigned int flags; // marginsclip,facingpagesbleed;
@@ -62,7 +62,7 @@ class PageStyle : public Style
 	virtual ~PageStyle();
 	virtual ObjectDef *makeObjectDef();
 	virtual const char *whattype() { return "PageStyle"; }
-	virtual Style *duplicate(Style *s=NULL);
+	virtual Value *duplicate();
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 
@@ -94,7 +94,7 @@ class RectPageStyle : public PageStyle
 	RectPageStyle(unsigned int ntype=RECTPAGE_LRTB,double l=0,double r=0,double t=0,double b=0);
 	virtual const char *whattype() { return "RectPageStyle"; }
 	virtual ObjectDef *makeObjectDef();
-	virtual Style *duplicate(Style *s=NULL);
+	virtual Value *duplicate();
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
