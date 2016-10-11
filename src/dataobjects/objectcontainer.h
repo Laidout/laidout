@@ -18,7 +18,7 @@
 
 
 #include <lax/anobject.h>
-#include "../styles.h"
+#include "../fieldplace.h"
 
 
 namespace Laidout {
