@@ -14,6 +14,9 @@
 // Copyright (C) 2004-2012 by Tom Lechner
 //
 
+***
+*** THIS FILE NO LONGER ACTIVE
+***
 
 #include <cctype>
 #include <cstdlib>

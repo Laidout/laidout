@@ -26,6 +26,9 @@
 #include "calculator/values.h"
 
 
+***
+*** THIS FILE NO LONGER ACTIVE
+***
 
 
 namespace Laidout {
