@@ -51,7 +51,6 @@ dirs= \
 objs= \
 	utils.o \
 	fieldplace.o \
-	styles.o \
 	stylemanager.o \
 	papersizes.o \
 	plaintext.o \
