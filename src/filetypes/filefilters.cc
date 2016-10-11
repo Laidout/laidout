@@ -541,7 +541,7 @@ ObjectDef* ImportConfig::makeObjectDef()
 	return makeImportConfigDef();
 }
 
-Style* ImportConfig::duplicate(Style*)
+Value* ImportConfig::duplicate()
 {
 	ImportConfig *c=new ImportConfig;
 	*c=*this; //warning, shallow copy!
@@ -1305,7 +1305,7 @@ ObjectDef *DocumentExportConfig::makeObjectDef()
 	return makeExportConfigDef();
 }
 
-Style* DocumentExportConfig::duplicate(Style*)
+Value* DocumentExportConfig::duplicate()
 {
 	DocumentExportConfig *c=new DocumentExportConfig;
 	*c=*this; //shallow copy!!

@@ -20,7 +20,7 @@
 #include <lax/anxapp.h>
 #include <lax/dump.h>
 #include "../document.h"
-#include "../styles.h"
+#include "../calculator/values.h"
 
 
 namespace Laidout {
@@ -91,7 +91,7 @@ ObjectDef *makeExportConfigDef();
 int createExportConfig(ValueHash *context, ValueHash *parameters,
 					   Value **value_ret, Laxkit::ErrorLog &log);
 
-class DocumentExportConfig : public Style
+class DocumentExportConfig : public Value
 {
  public:
 	int target;
@@ -123,7 +123,7 @@ class DocumentExportConfig : public Style
 	virtual ~DocumentExportConfig();
 
 	virtual ObjectDef* makeObjectDef();
-	virtual Style* duplicate(Style*);
+	virtual Value* duplicate();
 
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);
@@ -142,7 +142,7 @@ ObjectDef *makeImportConfigDef();
 int createImportConfig(ValueHash *context, ValueHash *parameters,
 					   Value **value_ret, Laxkit::ErrorLog &log);
 
-class ImportConfig : public Style
+class ImportConfig : public Value
 {
  public:
 	char *filename;
@@ -161,7 +161,7 @@ class ImportConfig : public Style
 	virtual ~ImportConfig();
 
 	virtual ObjectDef* makeObjectDef();
-	virtual Style* duplicate(Style*);
+	virtual Value* duplicate();
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
