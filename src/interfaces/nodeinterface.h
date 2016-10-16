@@ -23,13 +23,14 @@
 #ifndef _LAX_NODEINTERFACE_H
 #define _LAX_NODEINTERFACE_H
 
+#include <ctime>
+
 #include <lax/objectfactory.h>
 #include <lax/interfaces/aninterface.h>
 #include <lax/rectangles.h>
 #include <lax/refptrstack.h>
 
 #include "../calculator/values.h"
-
 
 
 namespace Laidout { 
@@ -70,12 +71,14 @@ class NodeProperty
 {
   public:
 	char *name;
+	std::time_t modtime;
 
 	NodeBase *owner;
 	Laxkit::anObject *data;
 	bool is_input; //or output
 	bool is_inputable; //default true for something that allows links in
 
+	double x,y,width,height;
 	Laxkit::ScreenColor color;
 	Laxkit::PtrStack<NodeConnection> connections; //input just has one
 
@@ -86,6 +89,9 @@ class NodeProperty
 	virtual ~NodeProperty();
 	virtual LaxInterfaces::anInterface *PropInterface();
 	virtual const char *Name() { return name; }
+	virtual int IsConnected();
+	virtual NodeBase *GetConnection(int connection_index, int *prop_index_ret);
+	virtual Laxkit::anObject *GetData();
 };
 
 class NodeColors : public Laxkit::anObject
@@ -102,6 +108,7 @@ class NodeColors : public Laxkit::anObject
 	Laxkit::ScreenColor bg;
 	Laxkit::ScreenColor text;
 	Laxkit::ScreenColor border;
+	Laxkit::ScreenColor error_border;
 
 	Laxkit::ScreenColor mo_border;
 	Laxkit::ScreenColor mo_bg;
@@ -144,6 +151,7 @@ class NodeBase : public Laxkit::anObject, public Laxkit::DoubleRectangle
 	virtual int Wrap();
 	virtual int Collapse(int state); //-1 toggle, 0 open, 1 collapsed
 
+	virtual int IsConnected(int propindex); //0=no, -1=prop is connected input, 1=connected output
 	virtual int HasConnection(NodeProperty *prop, int *connection_ret);
 };
 
@@ -152,12 +160,22 @@ class NodeBase : public Laxkit::anObject, public Laxkit::DoubleRectangle
  * Class to hold a collection of nodes.
  */
 
-class NodeGroup : public NodeBase
+class NodeGroup : public NodeBase, public Laxkit::DumpUtility
 {
   public:
+	NodeBase *output;
 	Laxkit::Affine m;
 	Laxkit::RefPtrStack<NodeBase> nodes; //nodes wrapped into this group
 	Laxkit::PtrStack<NodeConnection> connections;
+
+	NodeGroup();
+	virtual ~NodeGroup();
+	virtual int DesignateOutput(NodeBase *noutput);
+
+	virtual void       dump_out(FILE *f, int indent, int what, LaxFiles::DumpContext *context);
+    virtual LaxInterfaces::Attribute *dump_out_atts(LaxInterfaces::Attribute *att, int what, LaxFiles::DumpContext *context);
+    virtual void dump_in_atts(LaxInterfaces::Attribute *att, int flag, LaxFiles::DumpContext *context);
+
 };
 
 typedef NodeGroup Nodes;
@@ -173,6 +191,15 @@ enum NodeInterfaceActions {
 	NODES_Drag_Input,
 	NODES_Move_Nodes,
 	NODES_Cut_Connections,
+	NODES_Property,
+	NODES_Resize_Left,
+	NODES_Resize_Right,
+	NODES_Resize_Top,
+	NODES_Resize_Bottom,
+	NODES_Resize_Top_Left,
+	NODES_Resize_Top_Right,
+	NODES_Resize_Bottom_Left,
+	NODES_Resize_Bottom_Right,
 
 	NODES_Group_Nodes,
 	NODES_Ungroup_Nodes,
@@ -193,7 +220,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	Laxkit::RefPtrStack<NodeBase> selected;
 	Laxkit::DoubleBBox selection_rect;
 	int hover_action;
-	int lasthover, lasthoverprop, lastconnection;
+	int lasthover, lasthoverslot, lasthoverprop, lastconnection;
 	flatpoint lastpos;
 
 
@@ -241,7 +268,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual int KeyUp(unsigned int ch,unsigned int state, const Laxkit::LaxKeyboard *d);
 
 	virtual void DrawConnection(NodeConnection *connection);
-	virtual int scan(int x, int y, int *overproperty);
+	virtual void DrawProperty(NodeBase *node, NodeProperty *prop, double y);
+	virtual int scan(int x, int y, int *overpropslot, int *overproperty);
 	virtual int IsSelected(NodeBase *node);
 };
 

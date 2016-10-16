@@ -62,6 +62,7 @@ NodeColors::NodeColors()
 	bg(.8,.8,.8,1.),
 	text(0.,0.,0.,1.),
 	border(.2,.2,.2,1.),
+	error_border(.5,.0,.0,1.),
 
 	mo_border(.3,.3,.3,1.),
 	mo_bg(.7,.7,.7,1.),
@@ -128,6 +129,8 @@ NodeProperty::NodeProperty()
 	owner=NULL;
 	data=NULL;
 	name=NULL;
+	modtime=0;
+	width=height=0;
 
 	is_input=false;
 	is_inputable=false; //default true for something that allows links in
@@ -140,6 +143,7 @@ NodeProperty::NodeProperty(bool input, bool inputable, const char *nname, Laxkit
 	color.rgbf(1.,1.,1.,1.);
 
 	owner=NULL;
+	width=height=0;
 	data=ndata;
 	if (data && !absorb_count) data->inc_count();
 
@@ -162,6 +166,50 @@ anInterface *NodeProperty::PropInterface()
 	return NULL;
 }
 
+/*! 0=no, -1=prop is connected input, >0 == num of connected output
+ */
+int NodeProperty::IsConnected()
+{
+	if (is_input) return -connections.n;
+	return connections.n;
+}
+
+/*! Return the node and property index in that node of the specified connection./
+ */
+NodeBase *NodeProperty::GetConnection(int connection_index, int *prop_index_ret)
+{
+	if (connection_index<0 || connection_index>=connections.n) {
+		if (prop_index_ret) *prop_index_ret=-1;
+		return NULL;
+	}
+
+	NodeConnection *connection = connections.e[connection_index];
+	if (prop_index_ret) {
+		if (is_input) {
+			NodeBase *node = connection->from;
+			if (node) *prop_index_ret = node->properties.findindex(connection->fromprop);
+			else *prop_index_ret = -1;
+
+		} else {
+			NodeBase *node = connection->to;
+			if (node) *prop_index_ret = node->properties.findindex(connection->toprop);
+			else *prop_index_ret = -1;
+		}
+	}
+
+	if (is_input) return connection->from;
+	return connection->to;
+}
+
+/*! Return the data associated with this property.
+ * If it is a connected input, then get the corresponding output data from the connected node,
+ * or the internal data if the node is not connected.
+ */
+Laxkit::anObject *NodeProperty::GetData()
+{
+	if (is_input && connections.n && connections.e[0]->fromprop) return connections.e[0]->fromprop->data;
+	return data;
+}
 
 //-------------------------------------- NodeBase --------------------------
 
@@ -199,21 +247,48 @@ int NodeBase::InstallColors(NodeColors *newcolors, bool absorb_count)
 }
 
 /*! Return whether the node has acceptable values.
- * Default is to return 0 for success. -1 means bad inputs. 1 means needs updating.
+ * Default is to return 0 for no error and everything up to date.
+ * -1 means bad inputs and node in error state.
+ * 1 means needs updating.
+ *
+ * Default placeholder behavior is to return 1 if any output property has modtime less than
+ * any input modtime. Else return 0. Thus subclasses need only redefine to catch error states.
  */
 int NodeBase::GetStatus()
-{
+{ 
+	std::time_t t=0;
+	for (int c=0; c<properties.n; c++) {
+		if (properties.e[c]->is_input && properties.e[c]->modtime>t) t=properties.e[c]->modtime;
+	}
+	if (t==0) return 0;
+	for (int c=0; c<properties.n; c++) {
+		if (!properties.e[c]->is_input) continue;
+		if (properties.e[c]->modtime<t) return 1;
+
+	}
 	return 0;
 }
 
 /*! Call whenever any of the inputs change, update outputs.
- * Default placeolder is to do nothing.
+ * Default placeolder is to trigger update in connected outputs.
+ * Subclasses should redefine to actually update the outputs based on the inputs
+ * or any other internal state, as well as the overall preview (if any).
  *
- * Return 1 for successful update, or 0 for unable to update for some reason.
+ * Returns GetStatus().
  */
 int NodeBase::Update()
 {
-	return 1;
+	NodeProperty *prop;
+	for (int c=0; c<properties.n; c++) {
+		prop = properties.e[c];
+		if (prop->is_input) continue;
+		if (prop->connections.n==0) continue;
+		for (int c2=0; c2<prop->connections.n; c2++) {
+			if (prop->connections.e[c2]->to)
+				prop->connections.e[c2]->to->Update();
+		}
+	}
+	return GetStatus();
 }
 
 /*! Update the bounds to be just enough to encase everything.
@@ -225,22 +300,60 @@ int NodeBase::Wrap()
 	 //find overall width and height
 	double th = colors->font->textheight();
 
-	height = th*(1+.5+properties.n);
+	height = th*1.5;
 	width = colors->font->extent(Name,-1);
 
 	double w;
+	Value *v;
+	NodeProperty *prop;
 	for (int c=0; c<properties.n; c++) {
-		w=colors->font->extent(properties.e[c]->Name(),-1);
+		prop = properties.e[c];
+
+		w=colors->font->extent(prop->Name(),-1);
+
+		v=dynamic_cast<Value*>(prop->data);
+		if (v) {
+			if (v->type()==VALUE_Real || v->type()==VALUE_Int) {
+				w+=3*th;
+
+			} else if (v->type()==VALUE_Enum) {
+				EnumValue *ev = dynamic_cast<EnumValue*>(v);
+				const char *nm=NULL;
+				double ew=0, eww;
+				for (int c=0; c<ev->GetObjectDef()->getNumFields(); c++) {
+					ev->GetObjectDef()->getInfo(c, NULL, &nm);
+					if (isblank(nm)) continue;
+					eww = colors->font->extent(nm,-1);
+					if (eww>ew) ew=eww;
+				}
+				w += ew;
+			}
+
+			prop->x=0;
+			prop->width = w;
+			prop->height = 1.5*th;
+
+		} else {
+			if (prop->height==0) prop->height = 1.5*th;
+		}
+
 		if (w>width) width=w;
 	}
 
 	width += 3*th;
 
 	 //update link position
+	double y=1.5*th;
 	for (int c=0; c<properties.n; c++) {
-		properties.e[c]->pos.y = th*(1+.5+c+.5);
-		if (properties.e[c]->is_input) properties.e[c]->pos.x = 0;
-		else properties.e[c]->pos.x = width;
+		prop = properties.e[c];
+		prop->y = y;
+		prop->pos.y = y+prop->height/2;
+
+		if (prop->is_input) prop->pos.x = 0;
+		else prop->pos.x = width;
+
+		y+=prop->height;
+		height += prop->height;
 	} 
 
 	return 0;
@@ -253,6 +366,14 @@ int NodeBase::Collapse(int state)
 	if (state==-1) state = !collapsed;
 	if (state) collapsed=true; else collapsed=false;
 	return collapsed;
+}
+
+/*! 0=no, -1=prop is connected input, 1=connected output
+ */
+int NodeBase::IsConnected(int propindex)
+{
+	if (propindex<0 || propindex>=properties.n) return -1;
+	return properties.e[propindex]->IsConnected();
 }
 
 /*! Return the property index of the first property that has a connection to prop.
@@ -274,6 +395,107 @@ int NodeBase::HasConnection(NodeProperty *prop, int *connection_ret)
 }
 
 
+//-------------------------------------- NodeGroup --------------------------
+/*! \class NodeGroup
+ * Class to hold a collection of nodes, and optionally a designated output node.
+ */
+
+NodeGroup::NodeGroup()
+{
+	output=NULL;
+}
+
+NodeGroup::~NodeGroup()
+{
+	if (output) output->dec_count();
+}
+
+/*! Install noutput as the group's pinned output.
+ * Basically just dec_count the old, inc_count the new.
+ * It is assumed noutput is in the nodes stack already.
+ */
+int NodeGroup::DesignateOutput(NodeBase *noutput)
+{
+	if (output) output->dec_count();
+	output=noutput;
+	if (output) output->inc_count();
+	return 0;
+}
+
+void NodeGroup::dump_out(FILE *f,int indent,int what,DumpContext *context)
+{
+    Attribute att;
+    dump_out_atts(&att,what,context);
+    att.dump_out(f,indent);
+}
+
+Attribute *NodeGroup::dump_out_atts(Attribute *att,int what,DumpContext *context)
+{
+   if (!att) att=new Attribute();
+
+    if (what==-1) {
+        att->push("", "");
+        return att;
+    }
+
+    att->push("id", Id()); 
+
+	const double *matrix=m();
+    char s[100];
+    sprintf(s,"%.10g %.10g %.10g %.10g %.10g %.10g",
+            matrix[0],matrix[1],matrix[2],matrix[3],matrix[4],matrix[5]);
+    att->push("matrix", s);
+
+	if (output) att->push("output", output->Id());
+
+	cerr << " *** need to finish NodeGroup::dump_out_atts()!!"<<endl;
+
+	for (int c=0; c<nodes.n; c++) {
+		// ***
+	}
+
+	for (int c=0; c<connections.n; c++) {
+		// ***
+	}
+
+	return att;
+}
+
+void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
+{
+	if (!att) return;
+
+	cerr << " *** need to finish NodeGroup::dump_in_atts()!!"<<endl;
+
+    char *name,*value;
+	const char *out=NULL;
+
+    for (int c=0; c<att->attributes.n; c++) {
+        name= att->attributes.e[c]->name;
+        value=att->attributes.e[c]->value;
+
+        if (!strcmp(name,"id")) {
+            if (!isblank(value)) Id(value);
+
+        } else if (!strcmp(name,"matrix")) {
+			double m[6];
+			DoubleListAttribute(value,mm,6);
+			m(mm);
+
+        } else if (!strcmp(name,"output")) {
+			out = value;
+
+        } else if (!strcmp(name,"node")) {
+        } else if (!strcmp(name,"connection")) {
+		}
+	} 
+
+	if (out) {
+		 //find out in nodes and assign as output
+	}
+}
+
+
 //-------------------------------------- Common Node Types --------------------------
 
 
@@ -284,7 +506,7 @@ Laxkit::anObject *newDoubleNode(Laxkit::anObject *ref)
 	NodeBase *node = new NodeBase;
 	node->Id("Value");
 	makestr(node->Name, _("Value"));
-	node->properties.push(new NodeProperty(false, false, _("Value"), new DoubleValue(0), 1)); 
+	node->properties.push(new NodeProperty(false, false, _("V"), new DoubleValue(0), 1)); 
 	return node;
 }
 
@@ -294,12 +516,16 @@ Laxkit::anObject *newDoubleNode(Laxkit::anObject *ref)
 class MathNode : public NodeBase
 {
   public:
-	int operation; // + - * / %
+	static ObjectDef *mathnodedef;
+	int operation; // + - * / % power
 	double a,b,result;
 	MathNode(int op=0, double aa=0, double bb=0);
+	virtual ~MathNode();
 	virtual int Update();
 	virtual int GetStatus();
 };
+
+ObjectDef *MathNode::mathnodedef = NULL;
 
 #define OP_Add      0
 #define OP_Subtract 1
@@ -313,14 +539,48 @@ MathNode::MathNode(int op, double aa, double bb)
 	a=aa;
 	b=bb;
 	operation = op;
-	properties.push(new NodeProperty(true, false, "Op", NULL, 0));
+
+	ObjectDef *enumdef = NULL;
+	if (mathnodedef==NULL) {
+		enumdef = new ObjectDef("MathNodeDef", _("Math Node Def"), NULL,NULL,"enum", 0);
+		enumdef->pushEnumValue("Add",_("Add"),_("Add"));
+		enumdef->pushEnumValue("Subtract",_("Subtract"),_("Subtract"));
+		enumdef->pushEnumValue("Multiply",_("Multiply"),_("Multiply"));
+		enumdef->pushEnumValue("Divide",_("Divide"),_("Divide"));
+		enumdef->pushEnumValue("Mod",_("Mod"),_("Mod"));
+		enumdef->pushEnumValue("Power",_("Power"),_("Power"));
+		enumdef->pushEnumValue("GreaterThan",_("Greater than"),_("Greater than"));
+		enumdef->pushEnumValue("LessThan",_("Less than"),_("Less than"));
+		enumdef->pushEnumValue("Equals",_("Equals"),_("Equals"));
+		enumdef->inc_count();
+		mathnodedef = enumdef;
+
+	} else {
+		enumdef = mathnodedef;
+		enumdef->inc_count();
+	}
+
+
+	EnumValue *e = new EnumValue(enumdef, 0);
+	enumdef->dec_count();
+
+	properties.push(new NodeProperty(true, false, "Op", e, 1));
 	properties.push(new NodeProperty(true, true, "A", new DoubleValue(a), 1));
 	properties.push(new NodeProperty(true, true, "B", new DoubleValue(b), 1));
 	properties.push(new NodeProperty(false, true, "Result", NULL, 0));
 }
 
+MathNode::~MathNode()
+{
+	if (mathnodedef) {
+		if (mathnodedef->dec_count()<=0) mathnodedef=NULL;
+	}
+}
+
 int MathNode::GetStatus()
 {
+	b = dynamic_cast<DoubleValue*>(properties.e[2]->data)->d;
+
 	if ((operation==OP_Divide || operation==OP_Mod) && b==0) return -1;
 	if (!properties.e[3]->data) return 1;
 	return 0;
@@ -328,6 +588,9 @@ int MathNode::GetStatus()
 
 int MathNode::Update()
 {
+	a = dynamic_cast<DoubleValue*>(properties.e[1]->GetData())->d;
+	b = dynamic_cast<DoubleValue*>(properties.e[2]->GetData())->d;
+
 	if      (operation==OP_Add) result = a+b;
 	else if (operation==OP_Subtract) result = a-b;
 	else if (operation==OP_Multiply) result = a*b;
@@ -335,27 +598,39 @@ int MathNode::Update()
 		if (b!=0) result = a/b;
 		else {
 			result=0;
-			return 0;
+			return -1;
 		}
 
 	} else if (operation==OP_Mod) {
 		if (b!=0) result = a-b*int(a/b);
 		else {
 			result=0;
-			return 0;
+			return -1;
 		}
 	}
 
 	if (!properties.e[3]->data) properties.e[3]->data=new DoubleValue(result);
 	else dynamic_cast<DoubleValue*>(properties.e[3]->data)->d = result;
+	properties.e[3]->modtime = time(NULL);
 
-	return 1;
+	return 0;
 }
 
 Laxkit::anObject *newMathNode(Laxkit::anObject *ref)
 {
 	return new MathNode();
 }
+
+
+//------------ FunctionNode
+
+// sin cos tan asin acos atan sinh cosh tanh log ln abs sqrt int gint lint factor random randomint
+// pi tau e
+//
+//class FunctionNode : public NodeBase
+//{
+  //public:
+//};
 
 
 //--------------------------- SetupDefaultNodeTypes()
@@ -390,6 +665,7 @@ NodeInterface::NodeInterface(anInterface *nowner, int nid, Displayer *ndp)
 	nodes=NULL;
 
 	lasthover=-1;
+	lasthoverslot=-1;
 	lasthoverprop=-1;
 	lastconnection=-1;
 	hover_action=NODES_None;
@@ -505,6 +781,30 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 		}
 
 		return 0;
+
+	} else if (!strcmp(mes,"setpropdouble")) {
+		if (!nodes || lasthover<0 || lasthover>=nodes->nodes.n || lasthoverprop<0
+				|| lasthoverprop>=nodes->nodes.e[lasthover]->properties.n) return 0;
+
+        const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
+		if (isblank(s->str)) return  0;
+        char *endptr=NULL;
+        double d=strtod(s->str, &endptr);
+		if (endptr==s->str) {
+			PostMessage(_("Bad value."));
+			return 0;
+		}
+
+		NodeBase *node = nodes->nodes.e[lasthover];
+		NodeProperty *prop = node->properties.e[lasthoverprop];
+
+		DoubleValue *v=dynamic_cast<DoubleValue*>(prop->data);
+		v->d = d;
+		node->Update();
+		needtodraw=1;
+
+		return 0;
+
 
 	} else if (!strcmp(mes,"addnode")) {
         const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
@@ -656,7 +956,7 @@ int NodeInterface::Refresh()
 		if (node->collapsed) dp->drawthing(p.x-th/2, p.y+th/2, th/4,th/4, 1, THING_Triangle_Right);
 		else {
 			 //node is expanded, draw all the properties...
-			dp->drawthing(p.x-th, p.y+th/2, th/4,th/4, 1, THING_Triangle_Down);
+			// *** not implemented yet: *** dp->drawthing(p.x-th, p.y+th/2, th/4,th/4, 1, THING_Triangle_Down);
 
 			double y=node->y+th*1.5;
 
@@ -671,17 +971,9 @@ int NodeInterface::Refresh()
 			NodeProperty *prop;
 			for (int c2=0; c2<node->properties.n; c2++) {
 				prop = node->properties.e[c2];
-				dp->NewBG(&prop->color);
+				DrawProperty(node, prop, y);
 
-				if (prop->is_input) {
-					 dp->textout(node->x+th/2, y, prop->Name(),-1, LAX_LEFT|LAX_TOP); 
-				} else {
-					dp->textout(node->x+node->width-th/2, y, prop->Name(),-1, LAX_RIGHT|LAX_TOP);
-				}
-
-				if (!(prop->is_input && !prop->is_inputable))
-					dp->drawellipse(prop->pos+flatpoint(node->x,node->y), th*slot_radius,th*slot_radius, 0,0, 2);
-				y+=th;
+				y += prop->height;
 			}
 		}
 	}
@@ -698,7 +990,7 @@ int NodeInterface::Refresh()
 
 	} else if (hover_action==NODES_Drag_Input || hover_action==NODES_Drag_Output) {
 		NodeBase *node = nodes->nodes.e[lasthover];
-		NodeConnection *connection = node->properties.e[lasthoverprop]->connections.e[lastconnection];
+		NodeConnection *connection = node->properties.e[lasthoverslot]->connections.e[lastconnection];
 
 		flatpoint p1,p2;
 		flatpoint last = nodes->m.transformPointInverse(lastpos);
@@ -719,6 +1011,65 @@ int NodeInterface::Refresh()
 	return 0;
 }
 
+void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y)
+{
+	// todo, defaults for:
+	//   numbers
+	//   vectors
+	//   colors
+	//   enums
+	Value *v=dynamic_cast<Value*>(prop->GetData());
+	char extra[200];
+	extra[0]='\0';
+	double th = dp->textheight();
+
+	if (v && (v->type()==VALUE_Real || v->type()==VALUE_Int)) {
+		dp->drawRoundedRect(node->x+prop->x+th/2, node->y+prop->y+th/4, node->width-th, prop->height*.66,
+							th/3, false, th/3, false, 0); 
+		sprintf(extra, "%s:", prop->Name());
+		dp->textout(node->x+prop->x+th, node->y+prop->y+prop->height/2, extra, -1, LAX_LEFT|LAX_VCENTER);
+		v->getValueStr(extra, 199);
+		dp->textout(node->x+node->width-th, node->y+prop->y+prop->height/2, extra, -1, LAX_RIGHT|LAX_VCENTER);
+
+	} else if (v && v->type()==VALUE_Enum) {
+
+		 //draw name
+		double x=th/2;
+		double dx=dp->textout(node->x+x, node->y+prop->y+prop->height/2, prop->Name(),-1, LAX_LEFT|LAX_VCENTER);
+		x+=dx+th/2;
+
+		 //draw value
+		v->getValueStr(extra, 199);
+		dp->drawRoundedRect(node->x+x, node->y+prop->y+th/4, node->width-th/2-x, prop->height*.66,
+							th/3, false, th/3, false, 0); 
+		dp->textout(node->x+th*1.5+dx, node->y+prop->y+prop->height/2, extra,-1, LAX_LEFT|LAX_VCENTER);
+		dp->drawthing(node->x+node->width-th, node->y+prop->y+prop->height/2, th/4,th/4, 1, THING_Triangle_Down);
+
+	} else {
+		if (prop->is_input) {
+			 //draw on left side
+			double dx = dp->textout(node->x+th/2, y+prop->height/2, prop->Name(),-1, LAX_LEFT|LAX_VCENTER); 
+			if (!isblank(extra)) {
+				dp->textout(node->x+th+dx, y+prop->height/2, extra,-1, LAX_LEFT|LAX_VCENTER);
+				dp->drawrectangle(node->x+th/2+dx, y, node->width-(th+dx), th*1.25, 0);
+			}
+
+		} else {
+			 //draw on right side
+			double dx = dp->textout(node->x+node->width-th/2, y+prop->height/2, prop->Name(),-1, LAX_RIGHT|LAX_VCENTER);
+			if (!isblank(extra)) {
+				dp->textout(node->x+node->width-th-dx, y+prop->height/2, extra,-1, LAX_RIGHT|LAX_VCENTER);
+				dp->drawrectangle(node->x+th/2, y-th*.25, node->width-(th*1.25+dx), th*1.25, 0);
+			}
+		}
+	}
+
+	if (!(prop->is_input && !prop->is_inputable)) {
+		dp->NewBG(&prop->color);
+		dp->drawellipse(prop->pos+flatpoint(node->x,node->y), th*slot_radius,th*slot_radius, 0,0, 2);
+	} 
+}
+
 void NodeInterface::DrawConnection(NodeConnection *connection) 
 {
 	flatpoint p1,p2;
@@ -736,12 +1087,12 @@ void NodeInterface::DrawConnection(NodeConnection *connection)
 
 /*! Return the node under x,y, or -1 if no node there.
  */
-int NodeInterface::scan(int x, int y, int *overproperty) 
+int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty) 
 {
 	if (!nodes) return -1;
 
 	flatpoint p=nodes->m.transformPointInverse(flatpoint(x,y));
-	if (overproperty) *overproperty=-1;
+	if (overpropslot) *overpropslot=-1;
 
 	NodeBase *node;
 	double th = font->textheight();
@@ -750,17 +1101,22 @@ int NodeInterface::scan(int x, int y, int *overproperty)
 		node = nodes->nodes.e[c];
 
 		if (p.x >= node->x-th/2 &&  p.x <= node->x+node->width+th/2 &&  p.y >= node->y &&  p.y <= node->y+node->height) {
+			 //found a node, now see if over a property's in/out
 
 			NodeProperty *prop;
 			for (int c2=0; c2<node->properties.n; c2++) {
 				prop = node->properties.e[c2];
 
 				if (!(prop->is_input && !prop->is_inputable)) { //only if the input is not exclusively internal
-				  if (p.y >= node->y+(1.5+c2)*th && p.y < node->y+(1.5+1+c2)*th) {
+				  if (p.y >= node->y+prop->y && p.y < node->y+prop->y+prop->height) {
 					if (p.x >= node->x+prop->pos.x-th/2 && p.x <= node->x+prop->pos.x+th/2) {
-						if (overproperty) *overproperty = c2;
+						if (overpropslot) *overpropslot = c2;
 					}
 				  }
+				}
+
+				if (p.y >= node->y+prop->y && p.y < node->y+prop->y+prop->height) {
+					if (overproperty) *overproperty=c2;
 				}
 			}
 			return c; 
@@ -775,8 +1131,8 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 {
 
 	int action = NODES_None;
-	int overproperty=-1; 
-	int overnode = scan(x,y, &overproperty);
+	int overpropslot=-1, overproperty=-1; 
+	int overnode = scan(x,y, &overpropslot, &overproperty);
 
 	if (count==2 && overnode>=0 && nodes && dynamic_cast<NodeGroup*>(nodes->nodes.e[overnode])) {
 		PostMessage("Need to implement jump into group");
@@ -797,7 +1153,7 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 		selection_rect.miny=selection_rect.maxy=y;
 		needtodraw=1;
 
-	} else if (overnode>=0 && overproperty==-1) {
+	} else if (overnode>=0 && overproperty==-1 && overpropslot==-1) {
 		 //not clicking on a property, so add or remove this node to selection
 		if ((state&LAX_STATE_MASK) == ShiftMask) {
 			 //add to selection
@@ -817,11 +1173,15 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 			needtodraw=1;
 		}
 
-	} else if (overnode>=0 && overproperty>=0) {
-		 //drag out a property to connect to another node
-		NodeProperty *prop = nodes->nodes.e[overnode]->properties.e[overproperty];
+	} else if (overnode>=0 && overproperty>=0 && overpropslot==-1) {
+		 //click down on a property, but not on the slot...
+		action = NODES_Property;
 
-		if (nodes->nodes.e[overnode]->properties.e[overproperty]->is_input) {
+	} else if (overnode>=0 && overpropslot>=0) {
+		 //drag out a property to connect to another node
+		NodeProperty *prop = nodes->nodes.e[overnode]->properties.e[overpropslot];
+
+		if (nodes->nodes.e[overnode]->properties.e[overpropslot]->is_input) {
 			action = NODES_Drag_Input;
 
 			if (prop->connections.n) {
@@ -829,13 +1189,13 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 				// and drag output at the other end
 				action = NODES_Drag_Output;
 				overnode = nodes->nodes.findindex(prop->connections.e[0]->from);
-				overproperty = nodes->nodes.e[overnode]->properties.findindex(prop->connections.e[0]->fromprop);
+				overpropslot = nodes->nodes.e[overnode]->properties.findindex(prop->connections.e[0]->fromprop);
 				prop->connections.e[0]->to = NULL;
 				prop->connections.e[0]->toprop = NULL;
 
 				lastconnection = 0;
 				lasthover      = overnode;
-				lasthoverprop  = overproperty;
+				lasthoverslot  = overpropslot;
 
 			} else {
 				 //connection didn't exist, so install a half connection to current node
@@ -843,7 +1203,7 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 				nodes->connections.push(prop->connections.e[prop->connections.n-1], 1);
 				lastconnection = prop->connections.n-1;
 				lasthover      = overnode;
-				lasthoverprop  = overproperty;
+				lasthoverslot  = overpropslot;
 			}
 
 		} else {
@@ -852,7 +1212,7 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 			prop->connections.push(new NodeConnection(nodes->nodes.e[overnode],NULL, prop,NULL), 0);
 			nodes->connections.push(prop->connections.e[prop->connections.n-1], 1);
 			lastconnection = prop->connections.n-1;
-			lasthoverprop  = overproperty;
+			lasthoverslot  = overpropslot;
 			lasthover      = overnode;
 		}
 
@@ -873,26 +1233,129 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *d) 
 {
 	int action=NODES_None;
-	buttondown.up(d->id, LEFTBUTTON, &action);
+	int property=-1;
+	int dragged = buttondown.up(d->id, LEFTBUTTON, &action, &property);
 
-	int overproperty=-1; 
-	int overnode = scan(x,y, &overproperty);
+	int overpropslot=-1, overproperty=-1; 
+	int overnode = scan(x,y, &overpropslot, &overproperty);
 
-	if (action == NODES_Cut_Connections) {
+
+
+	if (action == NODES_Property) {
+		if (!nodes || overnode<0 || dragged>5) return 0;
+		NodeBase *node = nodes->nodes.e[overnode];
+		NodeProperty *prop = node->properties.e[overproperty];
+		if (!prop->is_input) return 0; //don't change outputs
+		if (prop->is_input && prop->IsConnected()) return 0; //can't change if piped in from elsewhere
+
+		Value *v=dynamic_cast<Value*>(prop->data);
+		if (!v) return 0;
+
+		char valuestr[200];
+		if (v->type()==VALUE_Real || v->type()==VALUE_Int) {
+			 //create input box..
+
+			flatpoint ul= nodes->m.transformPoint(flatpoint(node->x+prop->x, node->y+prop->y));
+			flatpoint lr= nodes->m.transformPoint(flatpoint(node->x+prop->x+prop->width, node->y+prop->y+prop->height));
+
+			DoubleBBox bounds;
+			bounds.addtobounds(ul);
+			bounds.addtobounds(lr);
+
+			v->getValueStr(valuestr, 199);
+
+			viewport->SetupInputBox(object_id, NULL, valuestr, "setpropdouble", bounds);
+			lasthover = overnode;
+			lasthoverprop = overproperty;
+
+		} else if (v->type()==VALUE_Enum) {
+			 //popup menu with enum values..
+		}
+
+		return 0; 
+
+	} else if (action == NODES_Cut_Connections) {
 		 //cut any connections that cross the line between selection_rect.min to max
 		// ***
 		PostMessage("Need to implement Cut Connections!!!");
 		needtodraw=1;
 
 	} else if (action == NODES_Selection_Rect) {
-		 //cut any connections that cross the line between selection_rect.min to max
-		// ***
-		PostMessage("Need to implement Selection Rect!!!");
+		 //select or deselect any touching selection_rect
+		if ((state&ShiftMask)==0) {
+			selected.flush();
+		}
+		if (!nodes) return 0;
+
+		NodeBase *node;
+		flatpoint p;
+		DoubleBBox box;
+
+		if (selection_rect.maxx < selection_rect.minx) {
+			double t=selection_rect.minx;
+			selection_rect.minx=selection_rect.maxx;
+			selection_rect.maxx=t;
+		}
+		if (selection_rect.maxy < selection_rect.miny) {
+			double t=selection_rect.miny;
+			selection_rect.miny=selection_rect.maxy;
+			selection_rect.maxy=t;
+		}
+
+		for (int c=0; c<nodes->nodes.n; c++) {
+			node = nodes->nodes.e[c];
+
+			box.clear();
+			box.addtobounds(nodes->m.transformPoint(flatpoint(node->x,            node->y)));
+			box.addtobounds(nodes->m.transformPoint(flatpoint(node->x+node->width,node->y)));
+			box.addtobounds(nodes->m.transformPoint(flatpoint(node->x+node->width,node->y+node->height)));
+			box.addtobounds(nodes->m.transformPoint(flatpoint(node->x,            node->y+node->height)));
+
+			if (selection_rect.intersect(&box, 0)) {
+				if (state&ControlMask) {
+					 //remove this node from selection
+					selected.remove(selected.findindex(nodes->nodes.e[c]));
+				} else {
+					selected.pushnodup(nodes->nodes.e[c]);
+				} 
+			}
+		}
 		needtodraw=1;
 
 	} else if (action == NODES_Drag_Input) {
 		//check if hovering over the output of some other node
 		// *** need to ensure there is no circular linking
+		DBG cerr << " *** need to ensure there is no circular linking for nodes!!!"<<endl;
+
+		int remove=0;
+
+		if (overnode>=0 && overpropslot>=0) {
+			 //need to connect
+			NodeProperty *toprop = nodes->nodes.e[overnode]->properties.e[overpropslot];
+			if (!toprop->is_input) {
+
+				 //connect lasthover.lasthoverslot.lastconnection to toprop
+				NodeConnection *connection = nodes->nodes.e[lasthover]->properties.e[lasthoverslot]->connections.e[lastconnection];
+				toprop->connections.push(connection, 0);
+				connection->from     = nodes->nodes.e[overnode];
+				connection->fromprop = nodes->nodes.e[overnode]->properties.e[overpropslot];
+
+			} else {
+				remove=1;
+			}
+
+		} else if (overnode<0) {
+			 //hovered over nothing
+			remove=1;
+		}
+
+		if (remove) {
+			 //remove the unconnected connection from what it points to as well as from nodes->connections
+			nodes->connections.remove(nodes->connections.findindex(nodes->nodes.e[lasthover]->properties.e[lasthoverslot]->connections.e[lastconnection]));
+			nodes->nodes.e[lasthover]->properties.e[lasthoverslot]->connections.remove(lastconnection);
+			lastconnection=-1;
+		} 
+
 
 	} else if (action == NODES_Drag_Output) {
 		//check if hovering over the input of some other node
@@ -900,56 +1363,66 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 		int remove=0;
 
-		if (overnode>=0 && overproperty>=0) {
-			NodeProperty *toprop = nodes->nodes.e[overnode]->properties.e[overproperty];
+		if (overnode>=0 && overpropslot>=0) {
+			NodeProperty *toprop = nodes->nodes.e[overnode]->properties.e[overpropslot];
 			if (toprop->is_input) {
 				if (toprop->connections.n) {
 					 //clobber any other connection going into the input. Only one input allowed.
 					toprop->connections.flush();
 				}
 
-				 //connect lasthover.lasthoverprop.lastconnection to toprop
-				NodeConnection *connection = nodes->nodes.e[lasthover]->properties.e[lasthoverprop]->connections.e[lastconnection];
+				 //connect lasthover.lasthoverslot.lastconnection to toprop
+				NodeConnection *connection = nodes->nodes.e[lasthover]->properties.e[lasthoverslot]->connections.e[lastconnection];
 				toprop->connections.push(connection, 0);
 				connection->to     = nodes->nodes.e[overnode];
-				connection->toprop = nodes->nodes.e[overnode]->properties.e[overproperty];
+				connection->toprop = nodes->nodes.e[overnode]->properties.e[overpropslot];
 
 			} else {
 				remove=1;
 			}
+
+		} else if (overnode<0) {
+			 //hovered over nothing
+			remove=1;
 		}
 
 		if (remove) {
 			 //remove the unconnected connection from what it points to as well as from nodes->connections
-			nodes->connections.remove(nodes->connections.findindex(nodes->nodes.e[lasthover]->properties.e[lasthoverprop]->connections.e[lastconnection]));
-			nodes->nodes.e[lasthover]->properties.e[lasthoverprop]->connections.remove(lastconnection);
+			nodes->connections.remove(nodes->connections.findindex(nodes->nodes.e[lasthover]->properties.e[lasthoverslot]->connections.e[lastconnection]));
+			nodes->nodes.e[lasthover]->properties.e[lasthoverslot]->connections.remove(lastconnection);
 			lastconnection=-1;
 		} 
 
 	}
 
 	hover_action = NODES_None;
+	needtodraw = 1;
 	return 0; //return 0 for absorbing event, or 1 for ignoring
 }
 
 int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMouse *mouse)
 {
+	DBG cerr <<"NodeInterface::MouseMove..."<<endl;
+
 	if (!buttondown.any()) {
 		// update any mouse over state
 		// ...
 
-		int newhoverprop=-1;
-		int newhover = scan(x,y, &newhoverprop);
+		int newhoverslot=-1, newhoverprop=-1;
+		int newhover = scan(x,y, &newhoverslot, &newhoverprop);
 		lastpos.x=x; lastpos.y=y;
+		DBG cerr << "nodes lastpos: "<<lastpos.x<<','<<lastpos.y<<endl;
 
-		if (newhover!=lasthover || newhoverprop!=lasthoverprop) {
+		if (newhover!=lasthover || newhoverslot!=lasthoverslot || newhoverprop!=lasthoverprop) {
 			needtodraw=1;
+			lasthoverslot = newhoverslot;
 			lasthoverprop = newhoverprop;
 			lasthover = newhover;
+
 			if (lasthover<0) PostMessage("");
 			else {
 				char scratch[200];
-				sprintf(scratch, "%s.%d", nodes->nodes.e[lasthover]->Name, lasthoverprop);
+				sprintf(scratch, "%s.%d.%d", nodes->nodes.e[lasthover]->Name, lasthoverprop, lasthoverslot);
 				PostMessage(scratch);
 			}
 		}
@@ -957,12 +1430,16 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 		return 1;
 	}
 
-	int lx,ly, action;
+	int lx,ly, action, property;
 	buttondown.move(mouse->id, x,y, &lx,&ly);
-	buttondown.getextrainfo(mouse->id,LEFTBUTTON, &action);
+	buttondown.getextrainfo(mouse->id,LEFTBUTTON, &action, &property);
 
 
-	if (action == NODES_Cut_Connections) {
+	if (action == NODES_Property) {
+		 //we are dragging on a property.. might have to get response from a custom interface
+		return 0;
+
+	} else if (action == NODES_Cut_Connections) {
 		 //control mouse drag over non-nodes breaks any connections
 		 //update so cut line is selection_rect min to max
 		selection_rect.maxx=x;
@@ -1006,13 +1483,25 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 }
 
 int NodeInterface::WheelUp(int x,int y,unsigned int state,int count, const Laxkit::LaxMouse *d)
-{ // ***
-	return 1; //wheel up ignored
+{
+	 //scroll nodes placement
+	if (!nodes) return 1;
+
+	if (state&ShiftMask) nodes->m.m(4, nodes->m.m(4) + .1*(dp->Maxx-dp->Minx));
+	else nodes->m.m(5, nodes->m.m(5) + .1*(dp->Maxy-dp->Miny));
+	needtodraw=1;
+	return 0;
 }
 
 int NodeInterface::WheelDown(int x,int y,unsigned int state,int count, const Laxkit::LaxMouse *d)
-{ // ***
-	return 1; //wheel down ignored
+{
+	 //scroll nodes placement
+	if (!nodes) return 1;
+
+	if (state&ShiftMask) nodes->m.m(4, nodes->m.m(4) - .1*(dp->Maxx-dp->Minx));
+	else nodes->m.m(5, nodes->m.m(5) - .1*(dp->Maxy-dp->Miny));
+	needtodraw=1;
+	return 0;
 }
 
 
