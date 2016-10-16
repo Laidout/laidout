@@ -57,33 +57,33 @@ namespace Laidout {
  */
 const char *element_TypeNames(int type)
 {
-	if (type==VALUE_Any) return "any";
-	if (type==VALUE_None) return "none";
-	if (type==VALUE_Set) return "set";
-	if (type==VALUE_Object) return "object";
-	if (type==VALUE_Int) return "int";
-	if (type==VALUE_Real) return "real";
-	if (type==VALUE_Number) return "number";
-	if (type==VALUE_String) return "string";
-	if (type==VALUE_Fields) return "fields";
-	if (type==VALUE_Flatvector) return "flatvector";
+	if (type==VALUE_Any)         return "any";
+	if (type==VALUE_None)        return "none";
+	if (type==VALUE_Set)         return "set";
+	if (type==VALUE_Object)      return "object";
+	if (type==VALUE_Int)         return "int";
+	if (type==VALUE_Real)        return "real";
+	if (type==VALUE_Number)      return "number";
+	if (type==VALUE_String)      return "string";
+	if (type==VALUE_Fields)      return "fields";
+	if (type==VALUE_Flatvector)  return "flatvector";
 	if (type==VALUE_Spacevector) return "spacevector";
-	if (type==VALUE_File) return "File"; //this one is capitalized, as it is a bit specialized
-	if (type==VALUE_Flags) return "flags";
-	if (type==VALUE_Enum) return "enum";
-	if (type==VALUE_EnumVal) return "enumval";
-	if (type==VALUE_Color) return "color";
-	if (type==VALUE_Date) return "date";
-	if (type==VALUE_Time) return "time";
-	if (type==VALUE_Boolean) return "boolean";
-	if (type==VALUE_Complex) return "complex";
+	if (type==VALUE_File)        return "File"; //this one is capitalized, as it is a bit specialized
+	if (type==VALUE_Flags)       return "flags";
+	if (type==VALUE_Enum)        return "enum";
+	if (type==VALUE_EnumVal)     return "enumval";
+	if (type==VALUE_Color)       return "color";
+	if (type==VALUE_Date)        return "date";
+	if (type==VALUE_Time)        return "time";
+	if (type==VALUE_Boolean)     return "boolean";
+	if (type==VALUE_Complex)     return "complex";
 
-	if (type==VALUE_Variable) return "variable";
-	if (type==VALUE_Operator) return "operator";
-	if (type==VALUE_Class)    return "class";
-	if (type==VALUE_Function) return "function";
-	if (type==VALUE_Namespace) return "namespace";
-	if (type==VALUE_LValue) return "lvalue";
+	if (type==VALUE_Variable)    return "variable";
+	if (type==VALUE_Operator)    return "operator";
+	if (type==VALUE_Class)       return "class";
+	if (type==VALUE_Function)    return "function";
+	if (type==VALUE_Namespace)   return "namespace";
+	if (type==VALUE_LValue)      return "lvalue";
 
 	return "";
 }
@@ -123,35 +123,35 @@ ValueTypes element_NameToType(const char *type)
 {
 	if (!type) return VALUE_Any;
 
-	if (!strcmp(type,"any")) return VALUE_Any;
-	if (!strcmp(type,"none")) return VALUE_None;
-	if (!strcmp(type,"set")) return VALUE_Set;
-	if (!strcmp(type,"object")) return VALUE_Object;
-	if (!strcmp(type,"boolean")) return VALUE_Boolean;
-	if (!strcmp(type,"int")) return VALUE_Int;
-	if (!strcmp(type,"real")) return VALUE_Real;
-	if (!strcmp(type,"number")) return VALUE_Number;
-	if (!strcmp(type,"string")) return VALUE_String;
-	if (!strcmp(type,"flatvector")) return VALUE_Flatvector;
+	if (!strcmp(type,"any"))         return VALUE_Any;
+	if (!strcmp(type,"none"))        return VALUE_None;
+	if (!strcmp(type,"set"))         return VALUE_Set;
+	if (!strcmp(type,"object"))      return VALUE_Object;
+	if (!strcmp(type,"boolean"))     return VALUE_Boolean;
+	if (!strcmp(type,"int"))         return VALUE_Int;
+	if (!strcmp(type,"real"))        return VALUE_Real;
+	if (!strcmp(type,"number"))      return VALUE_Number;
+	if (!strcmp(type,"string"))      return VALUE_String;
+	if (!strcmp(type,"flatvector"))  return VALUE_Flatvector;
 	if (!strcmp(type,"spacevector")) return VALUE_Spacevector;
-	if (!strcmp(type,"flags")) return VALUE_Flags;
-	if (!strcmp(type,"enum")) return VALUE_Enum;
-	if (!strcmp(type,"enumval")) return VALUE_EnumVal;
+	if (!strcmp(type,"flags"))       return VALUE_Flags;
+	if (!strcmp(type,"enum"))        return VALUE_Enum;
+	if (!strcmp(type,"enumval"))     return VALUE_EnumVal;
 
-	if (!strcmp(type,"color")) return VALUE_Color;
-	if (!strcmp(type,"File")) return VALUE_File;
-	if (!strcmp(type,"date")) return VALUE_Date;
-	if (!strcmp(type,"time")) return VALUE_Time;
-	if (!strcmp(type,"complex")) return VALUE_Complex;
+	if (!strcmp(type,"color"))       return VALUE_Color;
+	if (!strcmp(type,"File"))        return VALUE_File;
+	if (!strcmp(type,"date"))        return VALUE_Date;
+	if (!strcmp(type,"time"))        return VALUE_Time;
+	if (!strcmp(type,"complex"))     return VALUE_Complex;
 
-	if (!strcmp(type,"fields")) return VALUE_Fields;
+	if (!strcmp(type,"fields"))      return VALUE_Fields;
 
-	if (!strcmp(type,"variable")) return VALUE_Variable;
-	if (!strcmp(type,"operator")) return VALUE_Operator;
-	if (!strcmp(type,"class")) return VALUE_Class;
-	if (!strcmp(type,"function")) return VALUE_Function;
-	if (!strcmp(type,"namespace")) return VALUE_Namespace;
-	if (!strcmp(type,"lvalue")) return VALUE_LValue;
+	if (!strcmp(type,"variable"))    return VALUE_Variable;
+	if (!strcmp(type,"operator"))    return VALUE_Operator;
+	if (!strcmp(type,"class"))       return VALUE_Class;
+	if (!strcmp(type,"function"))    return VALUE_Function;
+	if (!strcmp(type,"namespace"))   return VALUE_Namespace;
+	if (!strcmp(type,"lvalue"))      return VALUE_LValue;
 
 	return VALUE_Fields;
 }
@@ -3509,7 +3509,6 @@ EnumValue::EnumValue(ObjectDef *baseenum, int which)
 
 EnumValue::~EnumValue()
 {
-	if (objectdef) objectdef->dec_count();
 }
 
 int EnumValue::getValueStr(char *buffer,int len)
@@ -3533,7 +3532,7 @@ Value *EnumValue::duplicate()
 //! Returns enumdef.
 ObjectDef *EnumValue::makeObjectDef()
 {
-	return enumdef;
+	return objectdef;
 }
 
 

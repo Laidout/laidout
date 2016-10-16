@@ -547,7 +547,7 @@ class EnumValue : public Value
 {
   public:
 	int value;
-	ObjectDef *enumdef;
+	//ObjectDef *enumdef;
 	EnumValue(ObjectDef *baseenum, int which);
 	virtual ~EnumValue();
 	virtual int getValueStr(char *buffer,int len);
