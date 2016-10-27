@@ -25,6 +25,7 @@
 using namespace std;
 
 using namespace LaxFiles;
+using namespace LaxInterfaces;
 
 namespace Laidout {
 
