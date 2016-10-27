@@ -135,58 +135,19 @@ put rss/g+ links on all menu pages.. need way to automate including menu bar stu
 need to implement DRAW_Hires for all interfaces that default to preview renders. needed for proper image out
   includes at least image(done), path, engraver
 
-fontdialog: FontDialog
-  bookman font style names getting chopped off (??? can't duplicate)
-
-  sample block should not strictly adhere to fontsize, as it can get very big (or too small)
-  sample block should be multiline
-  makeinwindow SOMETIMES not working, select one, puts on bottom line
-  need support for svg fonts.. useful for pure svg fonts, and opentype svg, see cairo user fonts
-  font->SetFromFile() should do more fontconfig checking to grab propper file+family+style+size
-  FindFont() is faulty, as it only lookes up family/style.. should search by the unique file name
-  sometimes family+style is not unique, but has different languages.. should detect this
-    use postscriptname: "DroidSansHebrew-Bold" -->  "Droid Sans Hebrew"/"Bold"
-
-  need a way to remember layered fonts, to easily activate and deactivate
-    read from standard fonts places, like .config/laidout/(version)/fonts
-  favorites: tag and column
-  user tags, not just fontmatrix tags, option to update fontmatrix?
-  should be able to access list of font favorites, and a user's preferred organization of fonts..
-  need to implement load specific file for a font
-
-  ---0.098:
-  pgup and down doesn't select a reasonable one
-  fontconfig directory config options
-  should REALLY have a LayerFont head containing the whole list, not a stand alone list which causes too many problems
-  figure out why some color fonts are not scanned by fontconfig
-  needs line spacing slider
-  option to search by spacing, ie monospace, see fontconfig: FC_PROPORTIONAL, FC_DUAL, FC_MONO, FC_CHARCELL
-  vague search via fontconfig matching, to find a match for something like a "sans"
-
-  font preview column in list, custom sample
-  language coverage search
-  select default language/script
-  select opentype features
-  optional common font finishers? like centering, underline, color, highlight, fg/bg, etc
-
-  DONE you can still scroll off when few visible items.. grrr!!
-  DONE should really get around to implementing scrollers
-  DONE fontmatrix import? fontmatrix uses a sqlite database.. should be straighforward to scan it
-
 captioninterface CaptionInterface captiondata CaptionData
-  bug: convert to path with viewport->ChangeObject(), puts obj way off, doesn't show path decs, other weird
   bug: bitstream vera sans, "Text" convert to path puts e correct, but screen render puts it out too far. huh??
-  implement the different layout modes: rtl ttb
-  debug for rtl and vertical as returned by hb, or set explicitly with direction
-  right to left (figure out how to do with harfbuzz)
-  update exporters to using linespacing and glyphs
-  text to path:
-    option to do all one path,
-	or separate objects per character (or glyph), but clones of a resourced group of glyphs
+  update exporters to using linespacing and glyphs: svg(mostly done, except line spacing)  scribus pdf
   color fonts: consider native otf:
     Mozilla and Adobe’s svg table, microsoft's colr/cpal, Google’s PNG images (CBDT/CBLC tables), Apple’s PNG images (SBIX table)
 	freetype dev branch maybe supports colr/cpal and google's way?
+  implement the different layout modes: rtl ttb
+  debug for rtl and vertical as returned by hb, or set explicitly with direction
+  right to left (figure out how to do with harfbuzz)
   -----0.098:
+  text to path:
+    option to do all one path,
+	or separate objects per character (or glyph), but clones of a resourced group of glyphs
   need handy option to mirror, instead of escaping to object tool
   need handling when opening a file and the font is not found!!!!!!!  options for substitution
   opentype variations
@@ -198,6 +159,7 @@ captioninterface CaptionInterface captiondata CaptionData
   lorem ipsum
   markov ipsum
 
+  DONE? cant duplicate anymore bug: convert to path with viewport->ChangeObject(), puts obj way off, doesn't show path decs, other weird
   DONE Paste not triggering recache
   DONE fonts need to dump in(via fontmanager->dump_in_font) and out(done) by themselves
   DONE need to implement dump_out_atts
@@ -219,6 +181,7 @@ text on path textonpath: TextOnPath
   position glyphs based on middle of glyph, not start of glyph
   convert to path: not respecting transform, putting upside down(done)
   kern handles
+  test exporters: svg scribus pdf
   ----0.098:
   mouse click to position caret
   copy
@@ -359,30 +322,30 @@ engraving tool: Engraving  engraver
   must implement mode based shortcuts in Laxkit. currently all mesh shortcuts are active
   stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
 
-DONE implement LineStyle::dump_out_atts
-DONE implement FillStyle::dump_out_atts
-FillStyle: implement i/o of all the available blend modes
-
 PathInterface: pathinterface
   bug: drag point, press i or I while dragging, moves all points or crashes
-  compound paths, change width only changes one. no way to affect all
-  needs input boxes for width nodes
-  need to show hints for when new points will be placed
   bug: should not create new control points by pressing cntl, unless there is movement
   bug: shift click down then up on a point selects then deselects.. control can toggle
   bug: seems to be possible to move nodes out of order
-  debug remove points affect on weight nodes
-  dup path object links the path style, but save and load, it is not linked... need to sort out line/fill style inheritance/linking
-  DONE implement dump_out_atts
-  DONE bug: when path is a child, width nodes are not drawn correctly
-  DONE bug: line cache on a square produces inf. lines off when final+initial coincide
-
-  zero tips not working on mesh edit? with import test-engrave.laidout
   bug: problems for non-bez-controlled corners at endpoint. Also variable offset causes weird connections
   bug: make new line with freehand tool, cannot move weight nodes in a rational way
   bug: applyoffset, the bez part at joins is messed up when no offset, suspect problem in FlatpointToCoordinate, mismatch with bez join next to sample points
   bug: now node scan and display works, but drag doesn't!!
   bug: delete last weight node, width is wrong
+  compound paths, change width only changes one. no way to affect all
+  needs input boxes for width nodes
+  need to show hints for when new points will be placed
+  debug remove points affect on weight nodes
+  dup path object links the path style, but save and load, it is not linked... need to sort out line/fill style inheritance/linking
+
+  DONE bug: select all in subpath (shift A) does not appear to select from proper subpath all the time
+  DONE bug: menuoption start new subpath does not start one!
+  DONE implement dump_out_atts
+  DONE bug: when path is a child, width nodes are not drawn correctly
+  DONE bug: line cache on a square produces inf. lines off when final+initial coincide 
+  DONE select nodes with rectangle broken? <- no, just drawing really thin, misplaced LineWidthScreen
+
+  zero tips not working on mesh edit? with import test-engrave.laidout
   debug cache sample point distribution, the interpolator is really bad as is
   powerstroke export requires apply offset.. else weight nodes are all messed up
   clarify export for weighted paths, use outlinecache and areacache as needed, check all filetypes exporters: svg pdf scribus image/ps/eps
@@ -430,10 +393,9 @@ PathInterface: pathinterface
     if add points, show dotted line to indicate a new segment incoming
   finish new path/pathoperator/pathsubinterface/pathinterface structure 
   have a widthtype == hairline? use width==0 as no stroke
- 
-  DONE select nodes with rectangle broken? <- no, just drawing really thin, misplaced LineWidthScreen
 
-layers palette
+layers palette Layers
+  should have document list at top, showing current doc
   key controls for navigation within menu:
     space/enter toggle open and closed submenu
   edit colors not highlighting every other
@@ -478,20 +440,20 @@ image
   for gs, make sure temp file is removed, should probably locate in user space maybe? or make sure perms set reasonably
   DONE should really make this graphicsmagick or cairo based, not gs+pdf based
   DONE should color background per paper if !transparent
-laidout:
+laidout export:
   need a Laidout out! for partial exports, or conversions between nets/papergroup lines/etc
   implement crop
   save option to force path data into svg d style
   save option to not output line caches
-  partial import of page ranges
-  import of resources
-  import of master pages
-  import of limbos
 laidout import:
   pops up spurious windows
   maybe option to create new layers, or insert to existing layers?
   option to insert new pages, or merge onto existing pages
   need to center within new margin area, as compared to previous margin area
+  partial import of page ranges
+  import of resources
+  import of master pages
+  import of limbos
   DONE inserts unneccesary layers
   DONE (can't duplicate?) does not appear to scale correctly, does odd scaling 
 pdf PDF:
@@ -535,6 +497,7 @@ svg:
   after in, does weird things with width node -> child objects not display correctly 
   in/out for meshes
   radial: transparent inner circle, patch edges
+  out: text linespacing.. unclear how Msize/linespacing maps to svg options
   DONE need in for style on paths
 plan:
   need an In()
@@ -560,6 +523,61 @@ eps:
 xtg from quark?
 idml from indesign?
  
+
+----------------0.098 ROADMAP ITEMS: features and enhancements------------------------
+update fileformat.txt
+check laidout.1 when time to release
+update docs to have new release number
+update translation base files
+update screenshots, sync with features
+update links page
+update help page
+update dtpcompare.html
+test:
+  each window type: about palette view spread command text
+    help: window pane does funky stuff
+  test in different window managers
+  each export filter (via command line in new script in examples.. ignoring problems in eps)
+  make some test scripts for command line testing
+
+
+fontdialog: FontDialog
+  need a way to remember layered fonts, to easily activate and deactivate
+    read from standard fonts places, like .config/laidout/(version)/fonts
+  favorites: tag and column
+  user tags, not just fontmatrix tags, option to update fontmatrix?
+  should be able to access list of font favorites, and a user's preferred organization of fonts..
+  need to implement load specific file for a font
+
+  makeinwindow SOMETIMES not working, select one, puts on bottom line
+  font->SetFromFile() should do more fontconfig checking to grab propper file+family+style+size
+  FindFont() is faulty, as it only lookes up family/style.. should search by the unique file name
+  sometimes family+style is not unique, but has different languages.. should detect this
+    use postscriptname: "DroidSansHebrew-Bold" -->  "Droid Sans Hebrew"/"Bold"
+
+  bookman font style names getting chopped off: due to name collision and using psname as reported by fontconfig
+    this is unreliable! need to have proper unique font naming 
+  sample block should be multiline
+  need support for svg fonts.. useful for pure svg fonts, and opentype svg, see cairo user fonts
+  pgup and down doesn't select a reasonable one
+  fontconfig directory config options
+  should REALLY have a LayerFont head containing the whole list, not a stand alone list which causes too many problems
+  figure out why some color fonts are not scanned by fontconfig
+  needs line spacing slider
+  option to search by spacing, ie monospace, see fontconfig: FC_PROPORTIONAL, FC_DUAL, FC_MONO, FC_CHARCELL
+  vague search via fontconfig matching, to find a match for something like a "sans"
+
+  font preview column in list, custom sample
+  language coverage search
+  select default language/script
+  select opentype features
+  optional common font finishers? like centering, underline, color, highlight, fg/bg, etc
+
+  DONE sample block should not strictly adhere to fontsize, as it can get very big (or too small)
+  DONE you can still scroll off when few visible items.. grrr!!
+  DONE should really get around to implementing scrollers
+  DONE fontmatrix import? fontmatrix uses a sqlite database.. should be straighforward to scan it
+
 Clean up mesh/patch controls: Mesh PatchInterface 
   perspective arrangement: approximate transform controls through perspective grid
   maybe should not be able to escape off path tool when editing as path
@@ -586,33 +604,6 @@ Clean up mesh/patch controls: Mesh PatchInterface
   circle warp needs a proper circle/ellipse interface
   make base path dump_out as Path, not PathsData? make it easier to read file removing the unnecessary??
 
-TreeSelector:
-  with text colors, mouse over highlight is off (can't dup?!?)
-  not showing alternate gray/white bgs (can't dup?!?)
-  ---0.098:
-  option to use markup for labels
-  tree display flat option
-  makeinwindow() doesn't account for columns
-  DONE add scroller
-
-
-----------------0.098 ROADMAP ITEMS: features and enhancements------------------------
-update fileformat.txt
-check laidout.1 when time to release
-update docs to have new release number
-update translation base files
-update screenshots, sync with features
-update links page
-update help page
-update dtpcompare.html
-test:
-  each window type: about palette view spread command text
-    help: window pane does funky stuff
-  test in different window managers
-  each export filter (via command line in new script in examples.. ignoring problems in eps)
-  make some test scripts for command line testing
-
-
 Remove obsolete HelpWindow code?
 
 newdoc:
@@ -622,23 +613,13 @@ newdoc:
 save as should change save/import/export/current directory to that directory
   -> need to test current behavior
 
-
-----------------0.098 ROADMAP ITEMS: features and enhancements------------------------
-update fileformat.txt
-check laidout.1 when time to release
-update docs to have new release number
-update translation base files
-update screenshots, sync with features
-update links page
-update help page
-update dtpcompare.html
-test:
-  each window type: about palette view spread command text
-    help: window pane does funky stuff
-  test in different window managers
-  each export filter (via command line in new script in examples.. ignoring problems in eps)
-  make some test scripts for command line testing
-
+TreeSelector:
+  with text colors, mouse over highlight is off (can't dup?!?)
+  not showing alternate gray/white bgs (can't dup?!?)
+  option to use markup for labels
+  tree display flat option
+  makeinwindow() doesn't account for columns
+  DONE add scroller
 
 Units:
   need something like Convert(value, units_from, units_to, &error, overrides), where overrides is 
@@ -955,6 +936,8 @@ object select, 'a' toggle select or not, select all in current selection area (i
 For objects that appear very small, the drag handles should not be operable.. shift only
 For objects that are really skinny, it is not practical to have the handles be a percentage of the skinny
   part.. should have minimum drag areas?  
+
+for blend modes, maybe place name conversion in Displayer, in case there are a ton of custom blend modes??
 
 nup:
   flowed
@@ -1625,4 +1608,8 @@ DONE need to spiffify tabframe.. it is hideous
 DONE need better render for tab frame headers
 DONE add blank image, change description, do not change filename, makes width/height zap back to 0...  
 DONE should probably flock in UpdatePreference(), even though it's just reading, another thread may mess with it 
+DONE implement LineStyle::dump_out_atts
+DONE implement FillStyle::dump_out_atts
+DONE FillStyle: implement i/o of all the available blend modes
+DONE some side handles on object tool scanning as different handles
 
