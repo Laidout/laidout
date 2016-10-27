@@ -663,11 +663,17 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 		for (LaxFont *font=caption->font; font; font=font->nextlayer) {
 			fprintf(f,"%s<text transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
 						spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
+
+			fprintf(f,"%s   id=\"%s\"\n", spc, caption->Id());
+			fprintf(f,"%s   x =\"0\"\n", spc);
+			fprintf(f,"%s   y =\"%.10g\"\n", spc, caption->font->ascent());
+
 			if (palette && layer<palette->colors.n) {
 				rr=palette->colors.e[layer]->channels[0]/(double)palette->colors.e[layer]->maxcolor;
 				gg=palette->colors.e[layer]->channels[1]/(double)palette->colors.e[layer]->maxcolor;
 				bb=palette->colors.e[layer]->channels[2]/(double)palette->colors.e[layer]->maxcolor;
 				aa=palette->colors.e[layer]->channels[3]/(double)palette->colors.e[layer]->maxcolor; 
+
 			} else {
 				rr=caption->red;
 				gg=caption->green;
@@ -677,19 +683,34 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 
 			fprintf(f,"%s   style=\"fill:#%02x%02x%02x; fill-opacity:%.10g; ",
 						spc, int(rr*255+.5), int(gg*255+.5), int(bb*255+.5), aa);
-			fprintf(f,"font-family:%s; font-style:%s; font-size:%.10g;\">\n",
-						font->Family(), font->Style(), font->Msize());
+			//if (caption->xcentering==0) fprintf(f,"text-anchor:start; ");
+			//else if (caption->xcentering==50) fprintf(f,"text-anchor:middle; ");
+			//else if (caption->xcentering==100) fprintf(f,"text-anchor:end; ");
+
+			fprintf(f,"font-family:%s; font-style:%s; font-size:%.10g; line-height:%.10g%%;\">\n",
+						font->Family(), font->Style(), font->Msize(), 100*caption->linespacing);
+
 			//double h=caption->maxy-caption->miny;
-			double x;
+			double x,y;
 			//double y=caption->origin().y - h*caption->ycentering/100 + caption->font->ascent();
 			//double y=caption->origin().y - h*caption->ycentering/100;
 
+			 //now do the lines, each line gets a tspan
 			for (int c=0; c<caption->lines.n; c++) {
 				x = -caption->xcentering/100*(caption->linelengths[c]);
+				y = -font->ascent() + c*caption->font->textheight()*caption->linespacing;
 
 				 //the sodipodi bit is necessary to make Inkscape (at least to 0.091) let you access lines beyond the first
-				fprintf(f,"%s  <tspan sodipodi:role=\"line\" dx=\"%.10g\" dy=\"%.10g\" textLength=\"%.10g\">%s</tspan>\n",
-						spc, x,caption->font->ascent(), caption->linelengths[c], caption->lines.e[c]);
+				//fprintf(f,"%s  <tspan sodipodi:role=\"line\" dx=\"%.10g\" y=\"%.10g\" textLength=\"%.10g\">%s</tspan>\n",
+				//		spc, x,caption->font->Msize()*caption->linespacing, caption->linelengths[c], caption->lines.e[c]);
+				DBG fprintf(f,"<!--  ascent:%.10g  descent:%.10g  textheight:%.10g  msize:%.10g  -->\n",
+				DBG 		caption->font->ascent(),
+				DBG 		caption->font->descent(),
+				DBG 		caption->font->textheight(),
+				DBG 		caption->font->Msize());
+				fprintf(f,"%s  <tspan sodipodi:role=\"line\" dx=\"%.10g\" y=\"%.10g\" textLength=\"%.10g\">%s</tspan>\n",
+						spc, x,y, caption->linelengths[c], caption->lines.e[c]);
+
 				//y+=caption->fontsize*caption->LineSpacing();
 			}
 			fprintf(f,"%s</text>\n", spc);
@@ -2296,6 +2317,20 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 			} else if (!strcmp(name,"transform")) {
 			} else if (!strcmp(name,"style")) {
+				Attribute att;
+				InlineCSSToAttribute(value, &att);
+
+				for (int c2=0; c2<att.attributes.n; c2++) {
+					name  = att.attributes.e[c2]->name;
+					value = att.attributes.e[c2]->value;
+
+					if (!strcmp(name, "line-height")) {
+						DoubleAttribute(value, &textobj->linespacing); // *** need to compute units!!!
+					} else if (!strcmp(name, "font-family")) {
+					} else if (!strcmp(name, "font-style")) {
+					} else if (!strcmp(name, "font-size")) {
+					}
+				}
 
 			} else if (!strcmp(name,"content:")) {
 				int nl=0,pos=0;
