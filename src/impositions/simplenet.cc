@@ -218,9 +218,9 @@ SimpleNetFace::~SimpleNetFace()
 //! Delete m, points, and facelink, set align stuff to -1.
 void SimpleNetFace::clear()
 {
-	if (points) delete[] points; points=NULL;
-	if (facelink) delete[] facelink; facelink=NULL;
-	if (m) delete[] m; m=NULL;
+	if (points) { delete[] points; points=NULL; }
+	if (facelink) { delete[] facelink; facelink=NULL; }
+	if (m) { delete[] m; m=NULL; }
 	np=0;
 	aligno=alignx=faceclass=-1;
 }
