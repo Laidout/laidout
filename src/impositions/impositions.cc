@@ -191,50 +191,51 @@ int AddToImpositionPool(PtrStack<ImpositionResource> *existingpool, const char *
 	DIR *dir=opendir(directory);
 	if (!dir) return 0;
 
-	int errorcode;
 	char *str=NULL;
-	struct dirent entry,*result;
+	struct dirent *entry;
 	char *name=NULL,*desc=NULL,*temp=NULL;
 	int numadded=0;
+
 	do {
-		errorcode=readdir_r(dir,&entry,&result);
-		if (errorcode!=0) break; //fail!
-		if (!strcmp(entry.d_name,".") || !strcmp(entry.d_name,"..")) continue;
-		if (result) {
-			if (str) delete[] str;
-			str=full_path_for_file(entry.d_name, directory);
-			FILE *f=open_laidout_file_to_read(str,"Imposition",NULL);
-			if (!f) {
-				cerr << " Warning! Non imposition file in imposition resource directory " <<endl
-					 << "   file: "<<entry.d_name<<"   directory: "<<directory<<endl;
-				continue;
-			}
+		entry = readdir(dir);
+		if (!entry) break; //all done!
 
-			DBG cerr <<"1"<<endl;
-			resource_name_and_desc(f,&name,&desc);
-			if (isblank(name)) {
-				temp=newstr(lax_basename(str));
-				if (isblank(temp)) {
-					if (temp) delete[] temp;
-					temp=make_id("imposition");
-				}
-			}
-			numadded++;
-			existingpool->push(new ImpositionResource(NULL,   //styledef name
-													  name?name:temp,//instance name
-													  str,    //filename
-													  desc,//desc
-													  NULL,0) //attribute
-							  );
-			DBG cerr <<"2"<<endl;
+		if (!strcmp(entry->d_name,".") || !strcmp(entry->d_name,"..")) continue;
 
-			if (temp) delete[] temp; temp=NULL;
-			if (name) delete[] name; name=NULL;
-			if (desc) delete[] desc; desc=NULL;
-			fclose(f);
-			DBG cerr <<"3"<<endl;
+		if (str) delete[] str;
+		str=full_path_for_file(entry->d_name, directory);
+		FILE *f=open_laidout_file_to_read(str,"Imposition",NULL);
+		if (!f) {
+			cerr << " Warning! Non imposition file in imposition resource directory " <<endl
+				 << "   file: "<<entry->d_name<<"   directory: "<<directory<<endl;
+			continue;
 		}
-	} while (result);
+
+		DBG cerr <<"1"<<endl;
+		resource_name_and_desc(f,&name,&desc);
+		if (isblank(name)) {
+			temp=newstr(lax_basename(str));
+			if (isblank(temp)) {
+				if (temp) delete[] temp;
+				temp=make_id("imposition");
+			}
+		}
+		numadded++;
+		existingpool->push(new ImpositionResource(NULL,   //styledef name
+												  name?name:temp,//instance name
+												  str,    //filename
+												  desc,//desc
+												  NULL,0) //attribute
+						  );
+		DBG cerr <<"2"<<endl;
+
+		if (temp) { delete[] temp; temp=NULL; }
+		if (name) { delete[] name; name=NULL; }
+		if (desc) { delete[] desc; desc=NULL; }
+		fclose(f);
+		DBG cerr <<"3"<<endl;
+	} while (entry);
+
 	if (str) delete[] str;
 	closedir(dir);
 	DBG cerr <<"4"<<endl;
