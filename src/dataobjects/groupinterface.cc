@@ -202,6 +202,7 @@ int GroupInterface::AlternateScan(flatpoint sp, flatpoint p, double xmag,double 
 		double dist=onepix*maxtouchlen*maxtouchlen/4;
 		flatpoint pp=flatpoint((somedata->minx+somedata->maxx)/2, somedata->miny-maxtouchlen/ymag);
 		DBG cerr <<"...alt scan: "<<p.x<<','<<p.y<< norm2(p-pp)<<endl;
+
 		if (norm2(p-pp)<dist) return GIA_Link;
 
 		if (popupcontrols==GIA_Link) {

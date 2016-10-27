@@ -75,6 +75,7 @@ class GroupInterface : public LaxInterfaces::ObjectInterface, public Value
 	virtual int AlternateScan(flatpoint sp, flatpoint p, double xmag,double ymag, double onepix);
 	virtual int GetMode();
 	virtual void DrawReparentArrows();
+
   public:
 	void TransformSelection(const double *N, int s=-1, int e=-1);// *****
 
