@@ -305,6 +305,7 @@ ObjectDef::ObjectDef()
 	islist=0; //if this element should be considered a set of such elements
 
 	uihint=NULL;
+	extrainfo=NULL;
 }
 
 //! Constructor.
@@ -350,6 +351,7 @@ ObjectDef::ObjectDef(ObjectDef *nextends, //!< Definition of a class to derive f
 	islist=0; //if this element should be considered a set of such elements
 
 	uihint=NULL;
+	extrainfo=NULL;
 
 	if (nextends) {
 		Extend(nextends);
@@ -398,7 +400,9 @@ ObjectDef::ObjectDef(const char *nname,
 	format_str=newstr(type);
 	fields=NULL;
 	islist=0; //if this element should be considered a set of such elements
+
 	uihint=NULL;
+	extrainfo=NULL;
 }
 
 //! Delete the various strings, and styledef->dec_count().
@@ -417,6 +421,7 @@ ObjectDef::~ObjectDef()
 	if (format_str)   delete[] format_str;
 	//if (fieldsdef) fieldsdef->dec_count(); <- don't do this, assume type will outlive things based on type
 	delete[] uihint;
+	if (extrainfo) extrainfo->dec_count(); 
 	
 	if (fields) {
 		DBG cerr <<"---Delete fields stack"<<endl;
@@ -1037,6 +1042,8 @@ ObjectDef *ObjectDef::getFieldOfThis(int index)
   * contain the possible enum values, but the enum as a whole acts like a single
   * number, so 1 is added, rather than fields->n. If the enum is an extension of
   * some other enum, then this styledef adds 0 to the count.
+  *
+  * If enum, then use enum specific fuctions. getNumEnumValues(), getEnumInfo().
   * 
   * Consider a ObjectDef vector(x,y,z), Now say you define a ObjectDef called zenith
   * which is a vector with x,y,z. You want the normal x,y,z definitions, but the
@@ -1059,6 +1066,23 @@ int ObjectDef::getNumFields()
 		}
 	}
 	return n; 
+}
+
+/*! Return the number of enum values defined by this and and any in extendsdef.
+ * This is needed since enums are excepted by the regular getNumFields().
+ * See also getEnumInfo().
+ */
+int ObjectDef::getNumEnumFields()
+{
+	if (format!=VALUE_Enum && format!=VALUE_EnumVal) return 0;
+
+	int n=0;
+	if (fields) n+=fields->n;
+
+	for (int c=0; c<extendsdefs.n; c++) 
+		n+=extendsdefs.e[c]->getNumEnumFields();
+
+	return n;
 }
 
 //! Return a new object of the specified type. Object def needs to have the newfunc defined.
@@ -1101,6 +1125,34 @@ ObjectDef *ObjectDef::FindDef(const char *objectdef, int len, int which)
 		}
 	}
 	return NULL;
+}
+
+/*! Return various information about particular enum values.
+ * Given the index of a desired field, this looks up which ObjectDef actually has the text
+ * and sets the pointers to point to there. Nothing is done if the particular pointer is NULL.
+ *
+ * Returns 0 success, 1 error.
+ */
+int ObjectDef::getEnumInfo(int index,
+						const char **nm,
+						const char **Nm,
+						const char **desc)
+{
+	if (!fields) return 1;
+
+	ObjectDef *def=NULL;
+
+	// *** this ignores extendsdef:
+	//index=findActualDef(index,&def);
+	if (index>=0 && index<fields->n) def=fields->e[index];
+
+	if (!def) return 1; // otherwise index should be a valid value in fields, or refer to this
+
+	if (nm) *nm=fields->e[index]->name;
+	if (Nm) *Nm=fields->e[index]->Name;
+	if (desc) *desc=fields->e[index]->description;
+
+	return 0;
 }
 
 //! Return various information about particular fields.
@@ -1182,6 +1234,7 @@ int ObjectDef::findActualDef(int index,ObjectDef **def_ret)
 		*def_ret=this;
 		return 0;
 	}
+
 	 // else there should be fields somewhere
 	int n=0;
 	if (extendsdefs.n) {
