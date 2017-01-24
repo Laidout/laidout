@@ -419,12 +419,14 @@ int main(int argc, char **argv)
 
 
 
-#ifdef POLYPTYCH_TUIO
 	if (tuio) {
+#ifndef POLYPTYCH_TUIO
+		cerr << " *** warning: compiled without tuio support"<<endl;
+#else 
 		SetupTUIOListener(tuio);
 		app.SetMaxTimeout(50000);
-	}
 #endif
+	}
 
 
 	 //Create and configure the new window
