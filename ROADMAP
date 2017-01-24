@@ -17,7 +17,7 @@ VERSION 0.097
        Text on path tool
 (done) text objects: harfbuzz based
        layers (object tree) palette
-       Add more save options: save a copy, save incremented, save as template, autosave settings
+(done) Add more save options: save a copy, save incremented, save as template, autosave settings
        Moving selected things in group contents does not update group bounds
        should not be able to select both group and group contents at same time
        double click on group should change selection area to group contents like inkscape?
@@ -181,6 +181,7 @@ Akin to animation mode, have movie/sound objects available to html export, for i
 a FlexibleImposition for html/streamed output target?
 JDF,JTAPI support?
 Saveable undo stack(?) see http://people.csail.mit.edu/sarasu/history/ for inspiration. Also Xara has this.
+Implement cross platform
 
 
 VERSION 1.0

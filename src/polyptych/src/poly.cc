@@ -528,8 +528,8 @@ Polyhedron &Polyhedron::operator=(const Polyhedron &nphed)
 //! Wipe out all the data in the polyhedron.
 void Polyhedron::clear()
 {
-	if (name) delete[] name;  name=NULL;
-	if (filename) delete[] filename;  filename=NULL;
+	if (name) { delete[] name;  name=NULL; }
+	if (filename) { delete[] filename;  filename=NULL; }
 
 	faces.flush();
 	edges.flush();

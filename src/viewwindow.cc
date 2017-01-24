@@ -735,7 +735,7 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 
         const RefCountedEventData *r=dynamic_cast<const RefCountedEventData *>(data);
         Imposition *i=dynamic_cast<Imposition *>(const_cast<RefCountedEventData*>(r)->TheObject());
-        if (!i) return 0;
+   		if (!i) return 0;
 
 		doc->ReImpose(i,r->info1);
 

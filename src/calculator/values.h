@@ -182,6 +182,7 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	Laxkit::RefPtrStack<ObjectDef> *fields;
 
 	char *uihint;
+	Laxkit::anObject *extrainfo;
 
 	ObjectDef();
 	ObjectDef(const char *nname,const char *nName, const char *ndesc, Value *newval, const char *type, unsigned int fflags);
@@ -206,10 +207,15 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	virtual ObjectDef *getFieldOfThis(int index);
 	virtual int findFieldOfThis(const char *fname,char **next);
 	virtual int getNumFields();
+	virtual int getNumEnumFields();
 	virtual int isData();
 	virtual ObjectDef *getField(int index);
 	virtual int findfield(const char *fname,char **next); // return index value of fname. assumed top level field
 	virtual int findActualDef(int index,ObjectDef **def);
+	virtual int getEnumInfo(int index,
+						const char **nm=NULL,
+						const char **Nm=NULL,
+						const char **desc=NULL);
 	virtual int getInfo(int index,
 						const char **nm=NULL,
 						const char **Nm=NULL,

@@ -37,6 +37,7 @@
 
 
 using namespace Laxkit;
+using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
@@ -320,8 +321,8 @@ int NodeBase::Wrap()
 				EnumValue *ev = dynamic_cast<EnumValue*>(v);
 				const char *nm=NULL;
 				double ew=0, eww;
-				for (int c=0; c<ev->GetObjectDef()->getNumFields(); c++) {
-					ev->GetObjectDef()->getInfo(c, NULL, &nm);
+				for (int c=0; c<ev->GetObjectDef()->getNumEnumFields(); c++) {
+					ev->GetObjectDef()->getEnumInfo(c, NULL, &nm);
 					if (isblank(nm)) continue;
 					eww = colors->font->extent(nm,-1);
 					if (eww>ew) ew=eww;
@@ -527,11 +528,19 @@ class MathNode : public NodeBase
 
 ObjectDef *MathNode::mathnodedef = NULL;
 
-#define OP_Add      0
-#define OP_Subtract 1
-#define OP_Multiply 2
-#define OP_Divide   3
-#define OP_Mod      4
+enum MathNodeOps {
+	OP_None,
+	OP_Add,
+	OP_Subtract,
+	OP_Multiply,
+	OP_Divide,
+	OP_Mod,
+	OP_Power,
+	OP_Greater_Than,
+	OP_Less_Than,
+	OP_Equals,
+	OP_MAX
+};
 
 MathNode::MathNode(int op, double aa, double bb)
 {
@@ -579,9 +588,11 @@ MathNode::~MathNode()
 
 int MathNode::GetStatus()
 {
+	a = dynamic_cast<DoubleValue*>(properties.e[1]->data)->d;
 	b = dynamic_cast<DoubleValue*>(properties.e[2]->data)->d;
 
 	if ((operation==OP_Divide || operation==OP_Mod) && b==0) return -1;
+	if (a==0 || (a<0 && fabs(b)-fabs(int(b))<1e-10)) return -1;
 	if (!properties.e[3]->data) return 1;
 	return 0;
 }
@@ -590,6 +601,24 @@ int MathNode::Update()
 {
 	a = dynamic_cast<DoubleValue*>(properties.e[1]->GetData())->d;
 	b = dynamic_cast<DoubleValue*>(properties.e[2]->GetData())->d;
+
+	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
+	ObjectDef *def = ev->GetObjectDef();
+	const char *nm = NULL;
+	def->getEnumInfo(ev->value, &nm);
+	operation=OP_None;
+
+	if (nm) {
+		if      (!strcmp(nm, "Add"        )) operation =OP_Add;
+		else if (!strcmp(nm, "Subtract"   )) operation =OP_Subtract;
+		else if (!strcmp(nm, "Multiply"   )) operation =OP_Multiply;
+		else if (!strcmp(nm, "Divide"     )) operation =OP_Divide;
+		else if (!strcmp(nm, "Mod"        )) operation =OP_Mod;
+		else if (!strcmp(nm, "Power"      )) operation =OP_Power;
+		else if (!strcmp(nm, "GreaterThan")) operation =OP_Greater_Than;
+		else if (!strcmp(nm, "LessThan"   )) operation =OP_Less_Than;
+		else if (!strcmp(nm, "Equals"     )) operation =OP_Equals;
+	}
 
 	if      (operation==OP_Add) result = a+b;
 	else if (operation==OP_Subtract) result = a-b;
@@ -607,6 +636,17 @@ int MathNode::Update()
 			result=0;
 			return -1;
 		}
+	} else if (operation==OP_Power) {
+		if (a==0 || (a<0 && fabs(b)-fabs(int(b))<1e-10)) {
+			 //0 to a power fails, as does negative numbers raised to non-integer powers
+			result=0;
+			return -1;
+		}
+		result = pow(a,b);
+
+	} else if (operation==OP_Greater_Than) { result = (a>b);
+	} else if (operation==OP_Less_Than)    { result = (a<b);
+	} else if (operation==OP_Equals)       { result = (a==b);
 	}
 
 	if (!properties.e[3]->data) properties.e[3]->data=new DoubleValue(result);
@@ -805,6 +845,33 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 
 		return 0;
 
+	} else if (!strcmp(mes,"selectenum")) {
+		if (!nodes || lasthover<0 || lasthoverprop<0) return 0;
+        const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
+
+		const char *what = s->str;
+		if (isblank(what)) return 0;
+
+		NodeBase *node = nodes->nodes.e[lasthover];
+		NodeProperty *prop = node->properties.e[lasthoverprop];
+		if (!prop->is_input) return 0; //don't change outputs
+		if (prop->is_input && prop->IsConnected()) return 0; //can't change if piped in from elsewhere
+
+		EnumValue *ev = dynamic_cast<EnumValue*>(prop->data);
+		ObjectDef *def=ev->GetObjectDef();
+
+		const char *nm;
+		for (int c=0; c<def->getNumEnumFields(); c++) {
+			def->getEnumInfo(c, NULL, &nm);
+			if (!strcmp(nm, what)) {
+				ev->value = c;
+				break;
+			}
+		}
+
+		node->Update();
+		needtodraw=1;
+		return 0;
 
 	} else if (!strcmp(mes,"addnode")) {
         const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
@@ -1245,7 +1312,8 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		if (!nodes || overnode<0 || dragged>5) return 0;
 		NodeBase *node = nodes->nodes.e[overnode];
 		NodeProperty *prop = node->properties.e[overproperty];
-		if (!prop->is_input) return 0; //don't change outputs
+
+		//if (!prop->is_input) return 0; //don't change outputs
 		if (prop->is_input && prop->IsConnected()) return 0; //can't change if piped in from elsewhere
 
 		Value *v=dynamic_cast<Value*>(prop->data);
@@ -1270,6 +1338,25 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 		} else if (v->type()==VALUE_Enum) {
 			 //popup menu with enum values..
+			EnumValue *ev = dynamic_cast<EnumValue*>(v);
+			ObjectDef *def=ev->GetObjectDef();
+
+			MenuInfo *menu = new MenuInfo();
+			const char *nm;
+			for (int c=0; c<def->getNumEnumFields(); c++) {
+				def->getEnumInfo(c, NULL, &nm);
+				menu->AddItem(nm, c);
+			}
+
+			PopupMenu *popup=new PopupMenu(NULL,_("Add node..."), 0,
+							0,0,0,0, 1,
+							object_id,"selectenum",
+							0, //mouse to position near?
+							menu,1, NULL,
+							MENUSEL_LEFT|MENUSEL_CHECK_ON_LEFT|MENUSEL_DESTROY_ON_LEAVE);
+			popup->pad=5;
+			popup->WrapToMouse(0);
+			app->rundialog(popup);
 		}
 
 		return 0; 
@@ -1339,6 +1426,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 				toprop->connections.push(connection, 0);
 				connection->from     = nodes->nodes.e[overnode];
 				connection->fromprop = nodes->nodes.e[overnode]->properties.e[overpropslot];
+				connection->to->Update();
 
 			} else {
 				remove=1;
@@ -1376,6 +1464,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 				toprop->connections.push(connection, 0);
 				connection->to     = nodes->nodes.e[overnode];
 				connection->toprop = nodes->nodes.e[overnode]->properties.e[overpropslot];
+				connection->to->Update();
 
 			} else {
 				remove=1;
