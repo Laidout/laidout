@@ -14,7 +14,6 @@
 // Copyright (C) 2011 by Tom Lechner
 //
 
-//#include <X11/Xlib.h>
 #include <iostream>
 #include <GraphicsMagick/Magick++.h>
 
