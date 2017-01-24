@@ -33,6 +33,9 @@
 #include "../calculator/values.h"
 
 
+using namespace LaxFiles;
+using namespace Laxkit;
+
 namespace Laidout { 
 
 //default node types:
@@ -160,7 +163,7 @@ class NodeBase : public Laxkit::anObject, public Laxkit::DoubleRectangle
  * Class to hold a collection of nodes.
  */
 
-class NodeGroup : public NodeBase, public Laxkit::DumpUtility
+class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 {
   public:
 	NodeBase *output;
@@ -173,8 +176,8 @@ class NodeGroup : public NodeBase, public Laxkit::DumpUtility
 	virtual int DesignateOutput(NodeBase *noutput);
 
 	virtual void       dump_out(FILE *f, int indent, int what, LaxFiles::DumpContext *context);
-    virtual LaxInterfaces::Attribute *dump_out_atts(LaxInterfaces::Attribute *att, int what, LaxFiles::DumpContext *context);
-    virtual void dump_in_atts(LaxInterfaces::Attribute *att, int flag, LaxFiles::DumpContext *context);
+    virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context);
+    virtual void dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context);
 
 };
 

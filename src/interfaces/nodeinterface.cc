@@ -440,7 +440,7 @@ Attribute *NodeGroup::dump_out_atts(Attribute *att,int what,DumpContext *context
 
     att->push("id", Id()); 
 
-	const double *matrix=m();
+	const double *matrix=m.m();
     char s[100];
     sprintf(s,"%.10g %.10g %.10g %.10g %.10g %.10g",
             matrix[0],matrix[1],matrix[2],matrix[3],matrix[4],matrix[5]);
@@ -478,9 +478,9 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
             if (!isblank(value)) Id(value);
 
         } else if (!strcmp(name,"matrix")) {
-			double m[6];
+			double mm[6];
 			DoubleListAttribute(value,mm,6);
-			m(mm);
+			m.m(mm);
 
         } else if (!strcmp(name,"output")) {
 			out = value;
