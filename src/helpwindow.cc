@@ -53,6 +53,24 @@ class HelpAbout : public Laxkit::TabFrame
 
 Laxkit::anXWindow *newHelpWindow(const char *place)
 {
+	laidout->InitializeShortcuts();
+	ShortcutManager *manager=GetDefaultShortcutManager();
+
+	if (isblank(manager->setfile)) {
+		makestr(manager->setfile,laidout->config_dir);
+		appendstr(manager->setfile,"/default.keys");
+	}
+
+	ShortcutWindow *shortcutwin=new ShortcutWindow(NULL,"Shortcuts",_("Shortcuts"),
+					ANXWIN_REMEMBER|SHORTCUTW_Show_Search|SHORTCUTW_Load_Save,
+					0,0,400,600,0,place);
+	makestr(shortcutwin->textheader,"#\n# Laidout shortcuts\n#\n");
+
+	return shortcutwin;
+}
+
+Laxkit::anXWindow *newHelpWindow2(const char *place)
+{
 	TabFrame *frame=new HelpAbout();
 
 	laidout->InitializeShortcuts();
@@ -77,6 +95,7 @@ Laxkit::anXWindow *newHelpWindow(const char *place)
 
 	return frame;
 }
+
 
 //------------------------ HelpWindow -------------------------
 //
