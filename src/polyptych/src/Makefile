@@ -6,8 +6,8 @@
 
 
 ##Comment the next 2 lines out if you don't want to include tuio capability
-POLYPTYCH_TUIO=-DPOLYPTYCH_TUIO
-TUIOLIBS=-llo
+#POLYPTYCH_TUIO=-DPOLYPTYCH_TUIO
+#TUIOLIBS=-llo
 
 
 BINDIR=$(PREFIX)/bin
