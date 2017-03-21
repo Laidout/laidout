@@ -327,12 +327,18 @@ void HeadWindow::InitializeShortcuts()
 	 //initialize window panes' shortcuts
 	ShortcutManager *manager=GetDefaultShortcutManager();
 	anXWindow *win;
+
+	//DBG int i=0;
 	for (int c=0; c<winfuncs.n; c++) {
 		if (manager->FindHandler(winfuncs.e[c]->name)) continue;
+		//DBG cerr << "init shortcuts for "<<winfuncs.e[c]->name<<endl;
+
+		//DBG i++;
+		//DBG if (i!=2) continue;
 
 		win=winfuncs.e[c]->function(NULL,"blah",winfuncs.e[c]->style,NULL);
 		win->GetShortcuts();
-		delete win;
+		win->dec_count();
 	}
 }
 

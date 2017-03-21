@@ -33,6 +33,9 @@
 #include "../calculator/values.h"
 
 
+using namespace LaxFiles;
+using namespace Laxkit;
+
 namespace Laidout { 
 
 //default node types:
