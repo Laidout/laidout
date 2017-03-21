@@ -46,9 +46,6 @@ class PluginBase : public Laxkit::anObject
 		PLUG_MAX
 	};
 
-	virtual const char *Id_str() { return object_idstr; }
-	virtual unsigned long Id() { return object_id; }
-
 	virtual const char *PluginName()  = 0;
 	virtual const char *Version()     = 0;
 	virtual const char *Description() = 0;
@@ -67,7 +64,7 @@ class PluginBase : public Laxkit::anObject
 	virtual Imposition                 **Impositions()       { return NULL; }
 	virtual DrawableObject             **ObjectInstances()   { return NULL; } //like scrapbook items
 	virtual CalculatorModule           **CalculatorModules() { return NULL; }
-	virtual Interpreter                **Interpreters()      { return NULL; } //like python. selecting "Run" of a PlainTextObject uses these
+	//virtual Interpreter                **Interpreters()      { return NULL; } //like python. selecting "Run" of a PlainTextObject uses these
 	virtual Laxkit::Resource           **ResourceInstances() { return NULL; }
 
 	//virtual ImageImportFilter        **ImageImportFilters() { return NULL; }
