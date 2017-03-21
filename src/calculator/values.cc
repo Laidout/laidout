@@ -1136,7 +1136,8 @@ ObjectDef *ObjectDef::FindDef(const char *objectdef, int len, int which)
 int ObjectDef::getEnumInfo(int index,
 						const char **nm,
 						const char **Nm,
-						const char **desc)
+						const char **desc,
+						int *id)
 {
 	if (!fields) return 1;
 
@@ -1151,6 +1152,7 @@ int ObjectDef::getEnumInfo(int index,
 	if (nm) *nm=fields->e[index]->name;
 	if (Nm) *Nm=fields->e[index]->Name;
 	if (desc) *desc=fields->e[index]->description;
+	if (id) *id = strtol(fields->e[index]->range, NULL, 10);
 
 	return 0;
 }

@@ -215,7 +215,8 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	virtual int getEnumInfo(int index,
 						const char **nm=NULL,
 						const char **Nm=NULL,
-						const char **desc=NULL);
+						const char **desc=NULL,
+						int *id=NULL);
 	virtual int getInfo(int index,
 						const char **nm=NULL,
 						const char **Nm=NULL,
