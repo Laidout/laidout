@@ -16,10 +16,10 @@
 
 
 #include <lax/interfaces/captioninterface.h>
+#include <lax/interfaces/textonpathinterface.h>
 #include <lax/interfaces/imageinterface.h>
 #include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
-#include <lax/interfaces/captioninterface.h>
 #include <lax/interfaces/svgcoord.h>
 #include <lax/interfaces/somedataref.h>
 #include <lax/transformmath.h>
@@ -688,7 +688,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			//else if (caption->xcentering==100) fprintf(f,"text-anchor:end; ");
 
 			fprintf(f,"font-family:%s; font-style:%s; font-size:%.10g; line-height:%.10g%%;\">\n",
-						font->Family(), font->Style(), font->Msize(), 100*caption->linespacing);
+						font->Family(), font->Style()?font->Style():"normal", font->Msize(), 100*caption->linespacing);
 
 			//double h=caption->maxy-caption->miny;
 			double x,y;
@@ -713,6 +713,87 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 
 				//y+=caption->fontsize*caption->LineSpacing();
 			}
+			fprintf(f,"%s</text>\n", spc);
+
+			layer++;
+		}
+
+	} else if (!strcmp(obj->whattype(),"TextOnPath")) {
+		TextOnPath *text=dynamic_cast<TextOnPath*>(obj);
+		if (!text || text->end-text->start<=0) return 0;
+		if (!text->paths) { log.AddMessage(_("Text on path object missing path, ignoring!"),ERROR_Warning); return 0; }
+
+		 //first dump out a blank path:
+		svgdumpobj(f, NULL, text->paths, warning, indent+2, log, out);
+
+		 //now dump out the text, refering to that path..
+		double rr=0,gg=0,bb=0,aa=1.0;
+		Palette *palette=dynamic_cast<Palette*>(text->font->GetColor());
+
+		int layer=0;
+		for (LaxFont *font=text->font; font; font=font->nextlayer) {
+			//fprintf(f,"%s<text transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
+			//			spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
+			fprintf(f,"%s<text\n",
+						spc);
+
+			fprintf(f,"%s   id=\"%s\"\n", spc, text->Id());
+			//fprintf(f,"%s   x =\"0\"\n", spc);
+			//fprintf(f,"%s   y =\"%.10g\"\n", spc, text->font->ascent());
+
+			if (palette && layer<palette->colors.n) {
+				rr=palette->colors.e[layer]->channels[0]/(double)palette->colors.e[layer]->maxcolor;
+				gg=palette->colors.e[layer]->channels[1]/(double)palette->colors.e[layer]->maxcolor;
+				bb=palette->colors.e[layer]->channels[2]/(double)palette->colors.e[layer]->maxcolor;
+				aa=palette->colors.e[layer]->channels[3]/(double)palette->colors.e[layer]->maxcolor; 
+
+			} else if (text->color) {
+				if (text->color->ColorSystemId()==LAX_COLOR_RGB) {
+					rr=text->color->values[0];
+					gg=text->color->values[1];
+					bb=text->color->values[2];
+					aa=text->color->values[3];
+				}
+
+			} else {
+				rr=gg=bb=0;
+				aa=1.0;
+			}
+
+			fprintf(f,"%s   style=\"fill:#%02x%02x%02x; fill-opacity:%.10g; ",
+						spc, int(rr*255+.5), int(gg*255+.5), int(bb*255+.5), aa);
+			//if (text->xcentering==0) fprintf(f,"text-anchor:start; ");
+			//else if (text->xcentering==50) fprintf(f,"text-anchor:middle; ");
+			//else if (text->xcentering==100) fprintf(f,"text-anchor:end; ");
+
+			fprintf(f,"font-family:%s; font-style:%s; font-size:%.10g; \">\n",
+						font->Family(), font->Style()?font->Style():"normal", font->Msize()/72); // *** no idea if the 72 is accurate!!! check this!!!!
+
+			//double h=text->maxy-text->miny;
+			//double x,y;
+			//double y=text->origin().y - h*text->ycentering/100 + text->font->ascent();
+			//double y=text->origin().y - h*text->ycentering/100;
+
+			 //now do the actual text in a <textPath><tspan>
+			//x = -text->xcentering/100*(text->linelengths[c]);
+			//y = -font->ascent() + c*text->font->textheight()*text->linespacing;
+
+			 //the sodipodi bit is necessary to make Inkscape (at least to 0.091) let you access lines beyond the first
+			DBG fprintf(f,"<!--  ascent:%.10g  descent:%.10g  textheight:%.10g  msize:%.10g  -->\n",
+			DBG 		text->font->ascent(),
+			DBG 		text->font->descent(),
+			DBG 		text->font->textheight(),
+			DBG 		text->font->Msize());
+
+			//fprintf(f,"%s  <textPath xlink:href=\"#%s\"><tspan dx=\"%.10g\" y=\"%.10g\" textLength=\"%.10g\">%s</tspan></textPath>\n",
+			char txt[text->end-text->start+1];
+			strncpy(txt, text->text+text->start, text->end-text->start);
+			txt[text->end - text->start] = '\0';
+			fprintf(f,"%s  <textPath xlink:href=\"#%s\" startOffset=\"%.10g\"><tspan>%s</tspan></textPath>\n",
+					spc, text->paths->Id(), text->start_offset, txt);
+
+			//y+=text->fontsize*text->LineSpacing();
+
 			fprintf(f,"%s</text>\n", spc);
 
 			layer++;
@@ -1378,6 +1459,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 		width=tt;
 	}
 
+	 //write out header, sodipodi is extra stuff for assumed use in Inkscape
 	fprintf(f,"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
 	fprintf(f,"<!-- Created with Laidout, http://www.laidout.org -->\n");
 	fprintf(f,"<svg \n"
@@ -1390,6 +1472,18 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	fprintf(f,"     width=\"%fin\"\n", width); //***inches by default?
 	fprintf(f,"     height=\"%fin\"\n", height);
 	fprintf(f,"   >\n");
+
+	 //set default units for use later in Inkscape
+	char *units=NULL;
+	GetUnitManager()->UnitInfoId(laidout->prefs.default_units, NULL, &units,NULL,NULL);
+	if (units) {
+		fprintf(f,"  <sodipodi:namedview\n"
+				  "      id=\"base\"\n"
+				  "      inkscape:document-units=\"%s\"\n"
+				  "      units=\"%s\"\n"
+				  "  />\n",
+				 units, units);
+	}
 			
 
 	 //write out global defs section
