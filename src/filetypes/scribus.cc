@@ -53,7 +53,7 @@ using namespace LaxInterfaces;
 namespace Laidout {
 
 //Export always seems to be just under what is needed, so reduce font size just slightly:
-#define TEXTHACK (1)
+#define TEXTHACK (.9)
 
 //1.5 inches and 1/4 inch
 #define CANVAS_MARGIN_X 100.
@@ -500,7 +500,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 				  "    BORDERRIGHT=\"0\" \n"	
 				  "    BORDERTOP=\"0\" \n"	
 				  "    COMMENTS=\"\" \n"
-				  "    DFONT=\"Times-Roman\" \n" //default font
+				  "    DFONT=\"Bitstream Charter Bold\" \n" //default font
 				  "    DSIZE=\"12\" \n"         //default font size
 				  //"    FIRSTLEFT \n"  //*** doublesidedsingles->isleft
 				  "    FIRSTPAGENUM=\"%d\" \n", start); //***check this is right
