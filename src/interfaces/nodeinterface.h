@@ -18,7 +18,7 @@
 //    License along with this library; if not, write to the Free Software
 //    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
-//    Copyright (C) 2016 by Tom Lechner
+//    Copyright (C) 2017 by Tom Lechner
 //
 #ifndef _LAX_NODEINTERFACE_H
 #define _LAX_NODEINTERFACE_H
@@ -74,7 +74,7 @@ class NodeProperty
 	std::time_t modtime;
 
 	NodeBase *owner;
-	Laxkit::anObject *data;
+	Value *data;
 	bool is_input; //or output
 	bool is_inputable; //default true for something that allows links in
 
@@ -85,13 +85,13 @@ class NodeProperty
 	flatpoint pos; //clickable spot relative to parent NodeBase origin
 
 	NodeProperty();
-	NodeProperty(bool input, bool inputable, const char *nname, Laxkit::anObject *ndata, int absorb_count);
+	NodeProperty(bool input, bool inputable, const char *nname, Value *ndata, int absorb_count);
 	virtual ~NodeProperty();
 	virtual LaxInterfaces::anInterface *PropInterface();
 	virtual const char *Name() { return name; }
 	virtual int IsConnected();
 	virtual NodeBase *GetConnection(int connection_index, int *prop_index_ret);
-	virtual Laxkit::anObject *GetData();
+	virtual Value *GetData();
 };
 
 class NodeColors : public Laxkit::anObject
@@ -109,6 +109,12 @@ class NodeColors : public Laxkit::anObject
 	Laxkit::ScreenColor text;
 	Laxkit::ScreenColor border;
 	Laxkit::ScreenColor error_border;
+
+	Laxkit::ScreenColor fg_edit;
+	Laxkit::ScreenColor bg_edit;
+
+	Laxkit::ScreenColor fg_menu;
+	Laxkit::ScreenColor bg_menu;
 
 	Laxkit::ScreenColor mo_border;
 	Laxkit::ScreenColor mo_bg;
@@ -162,7 +168,14 @@ class NodeBase : public Laxkit::anObject, public Laxkit::DoubleRectangle
 
 class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 {
+	static Laxkit::ObjectFactory *node_factory;
+
   public:
+	static Laxkit::ObjectFactory *NodeFactory(bool create=true);
+	static void SetNodeFactory(Laxkit::ObjectFactory *newnodefactory);
+	
+	Laxkit::ScreenColor background;
+
 	NodeBase *output;
 	Laxkit::Affine m;
 	Laxkit::RefPtrStack<NodeBase> nodes; //nodes wrapped into this group
@@ -171,6 +184,7 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	NodeGroup();
 	virtual ~NodeGroup();
 	virtual int DesignateOutput(NodeBase *noutput);
+	virtual int DeleteNodes(Laxkit::RefPtrStack<NodeBase> &selected);
 
 	virtual void       dump_out(FILE *f, int indent, int what, LaxFiles::DumpContext *context);
     virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context);
@@ -178,6 +192,7 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 
 };
 
+int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory);
 typedef NodeGroup Nodes;
 
 
@@ -204,6 +219,9 @@ enum NodeInterfaceActions {
 	NODES_Group_Nodes,
 	NODES_Ungroup_Nodes,
 	NODES_Add_Node,
+	NODES_Delete_Nodes,
+	NODES_Save_Nodes,
+	NODES_Load_Nodes,
 	NODES_MAX
 };
 
@@ -234,6 +252,9 @@ class NodeInterface : public LaxInterfaces::anInterface
 	Laxkit::ScreenColor color_node_selected;
 	Laxkit::ScreenColor color_node_default;
 	Laxkit::ScreenColor color_controls;
+	Laxkit::ScreenColor color_background;
+	Laxkit::ScreenColor color_grid;
+	double draw_grid; //pixel spacing
 
 	Laxkit::ShortcutHandler *sc;
 
@@ -262,6 +283,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual int MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMouse *d);
 	virtual int LBDown(int x,int y,unsigned int state,int count, const Laxkit::LaxMouse *d);
 	virtual int LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *d);
+	virtual int MBDown(int x,int y,unsigned int state,int count, const Laxkit::LaxMouse *d);
+	virtual int MBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *d);
 	virtual int WheelUp  (int x,int y,unsigned int state,int count, const Laxkit::LaxMouse *d);
 	virtual int WheelDown(int x,int y,unsigned int state,int count, const Laxkit::LaxMouse *d);
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state, const Laxkit::LaxKeyboard *d);

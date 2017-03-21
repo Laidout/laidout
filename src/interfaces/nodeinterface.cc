@@ -18,7 +18,7 @@
 //    License along with this library; if not, write to the Free Software
 //    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
-//    Copyright (C) 2016 by Tom Lechner
+//    Copyright (C) 2017 by Tom Lechner
 //
 
 
@@ -64,6 +64,12 @@ NodeColors::NodeColors()
 	text(0.,0.,0.,1.),
 	border(.2,.2,.2,1.),
 	error_border(.5,.0,.0,1.),
+
+	fg_edit(.2,.2,.2,1.),
+	bg_edit(.9,.9,.9,1.),
+
+	fg_menu(.2,.2,.2,1.),
+	bg_menu(.7,.7,.7,1.),
 
 	mo_border(.3,.3,.3,1.),
 	mo_bg(.7,.7,.7,1.),
@@ -139,7 +145,7 @@ NodeProperty::NodeProperty()
 
 /*! If !absorb_count, then ndata's count gets incremented.
  */
-NodeProperty::NodeProperty(bool input, bool inputable, const char *nname, Laxkit::anObject *ndata, int absorb_count)
+NodeProperty::NodeProperty(bool input, bool inputable, const char *nname, Value *ndata, int absorb_count)
 {
 	color.rgbf(1.,1.,1.,1.);
 
@@ -167,7 +173,7 @@ anInterface *NodeProperty::PropInterface()
 	return NULL;
 }
 
-/*! 0=no, -1=prop is connected input, >0 == num of connected output
+/*! 0=no, -1=prop is connected input, >0 == how many connected output
  */
 int NodeProperty::IsConnected()
 {
@@ -175,7 +181,7 @@ int NodeProperty::IsConnected()
 	return connections.n;
 }
 
-/*! Return the node and property index in that node of the specified connection./
+/*! Return the node and property index in that node of the specified connection.
  */
 NodeBase *NodeProperty::GetConnection(int connection_index, int *prop_index_ret)
 {
@@ -206,7 +212,7 @@ NodeBase *NodeProperty::GetConnection(int connection_index, int *prop_index_ret)
  * If it is a connected input, then get the corresponding output data from the connected node,
  * or the internal data if the node is not connected.
  */
-Laxkit::anObject *NodeProperty::GetData()
+Value *NodeProperty::GetData()
 {
 	if (is_input && connections.n && connections.e[0]->fromprop) return connections.e[0]->fromprop->data;
 	return data;
@@ -401,8 +407,35 @@ int NodeBase::HasConnection(NodeProperty *prop, int *connection_ret)
  * Class to hold a collection of nodes, and optionally a designated output node.
  */
 
+/*! Private singleton node factory.
+ */
+Laxkit::ObjectFactory *NodeGroup::node_factory = NULL;
+
+/*! Return the current default node factory. If the default is null, then make a new default if create==true.
+ */
+Laxkit::ObjectFactory *NodeGroup::NodeFactory(bool create)
+{
+	if (!node_factory && create) {
+		node_factory = new ObjectFactory; 
+		SetupDefaultNodeTypes(node_factory);
+	}
+
+	return node_factory;
+}
+
+/*! Install newnodefactory. If it is null, then remove the default. Else inc count on it (and install as default).
+ */
+void NodeGroup::SetNodeFactory(Laxkit::ObjectFactory *newnodefactory)
+{
+	if (newnodefactory == node_factory) return;
+	if (node_factory) node_factory->dec_count();
+	node_factory = newnodefactory;
+	if (node_factory) node_factory->inc_count();
+}
+
 NodeGroup::NodeGroup()
 {
+	background.rgbf(0,0,0,.5);
 	output=NULL;
 }
 
@@ -421,6 +454,21 @@ int NodeGroup::DesignateOutput(NodeBase *noutput)
 	output=noutput;
 	if (output) output->inc_count();
 	return 0;
+}
+
+/*! Delete any nodes and related connections of any in selected.
+ * Does not modify selected.
+ */
+int NodeGroup::DeleteNodes(Laxkit::RefPtrStack<NodeBase> &selected)
+{
+	int numdel = 0;
+	for (int c=0; c<selected.n; c++) {
+
+		for (int c2=0; c2<connections.n; c2++) {
+		}
+	}
+
+	return numdel;
 }
 
 void NodeGroup::dump_out(FILE *f,int indent,int what,DumpContext *context)
@@ -449,14 +497,50 @@ Attribute *NodeGroup::dump_out_atts(Attribute *att,int what,DumpContext *context
 
 	if (output) att->push("output", output->Id());
 
-	cerr << " *** need to finish NodeGroup::dump_out_atts()!!"<<endl;
 
+	Attribute *att2, *att3;
 	for (int c=0; c<nodes.n; c++) {
-		// ***
+		NodeBase *node = nodes.e[c];
+		
+		att2 = att->pushSubAtt("node", node->Id());
+
+		if (node->collapsed) att2->push("collapsed");
+
+		//NodeColors *colors;
+	
+		 //inputs
+		NodeProperty *prop;
+		for (int c2=0; c2<node->properties.n; c2++) { 
+			prop = node->properties.e[c2];
+			if (!prop->is_input) continue;
+			if (prop->IsConnected()) continue; //since it'll be recomputed after read in
+
+			att3 = att2->pushSubAtt("property", prop->name);
+			if (prop->GetData()) {
+				prop->GetData()->dump_out_atts(att3, what, context);
+			} else att3->push(prop->name, "arrrg! todo!");
+		} 
+
+		 //outputs
+		for (int c2=0; c2<node->properties.n; c2++) {
+			prop = node->properties.e[c2];
+			if (prop->is_input) continue;
+
+			att3 = att2->pushSubAtt("property", prop->name);
+			if (prop->GetData()) {
+				prop->GetData()->dump_out_atts(att3, what, context);
+			} else att3->push(prop->name, "arrrg! todo!");
+		} 
+
 	}
 
+	att2 = att->pushSubAtt("connections");
+	char scratch[200];
 	for (int c=0; c<connections.n; c++) {
-		// ***
+		sprintf(scratch, "%s,%s - %s,%s", 
+				connections.e[c]->from->Name,connections.e[c]->fromprop->name,
+				connections.e[c]->to->Name,connections.e[c]->toprop->name);
+		att2->push("connect", scratch);
 	}
 
 	return att;
@@ -539,6 +623,17 @@ enum MathNodeOps {
 	OP_Greater_Than,
 	OP_Less_Than,
 	OP_Equals,
+	OP_Not_Equal,
+	OP_Minimum,
+	OP_Maximum,
+	OP_Average,
+
+	OP_And,
+	OP_Or,
+	OP_Xor,
+	OP_ShiftLeft,
+	OP_ShiftRight,
+
 	OP_MAX
 };
 
@@ -552,15 +647,26 @@ MathNode::MathNode(int op, double aa, double bb)
 	ObjectDef *enumdef = NULL;
 	if (mathnodedef==NULL) {
 		enumdef = new ObjectDef("MathNodeDef", _("Math Node Def"), NULL,NULL,"enum", 0);
-		enumdef->pushEnumValue("Add",_("Add"),_("Add"));
-		enumdef->pushEnumValue("Subtract",_("Subtract"),_("Subtract"));
-		enumdef->pushEnumValue("Multiply",_("Multiply"),_("Multiply"));
-		enumdef->pushEnumValue("Divide",_("Divide"),_("Divide"));
-		enumdef->pushEnumValue("Mod",_("Mod"),_("Mod"));
-		enumdef->pushEnumValue("Power",_("Power"),_("Power"));
-		enumdef->pushEnumValue("GreaterThan",_("Greater than"),_("Greater than"));
-		enumdef->pushEnumValue("LessThan",_("Less than"),_("Less than"));
-		enumdef->pushEnumValue("Equals",_("Equals"),_("Equals"));
+
+		enumdef->pushEnumValue("Add",_("Add"),_("Add"), OP_Add);
+		enumdef->pushEnumValue("Subtract",_("Subtract"),_("Subtract"), OP_Subtract);
+		enumdef->pushEnumValue("Multiply",_("Multiply"),_("Multiply"), OP_Multiply);
+		enumdef->pushEnumValue("Divide",_("Divide"),_("Divide"), OP_Divide);
+		enumdef->pushEnumValue("Mod",_("Mod"),_("Mod"), OP_Mod);
+		enumdef->pushEnumValue("Power",_("Power"),_("Power"), OP_Power);
+		enumdef->pushEnumValue("GreaterThan",_("Greater than"),_("Greater than"), OP_Greater_Than);
+		enumdef->pushEnumValue("LessThan",_("Less than"),_("Less than"), OP_Less_Than);
+		enumdef->pushEnumValue("Equals",_("Equals"),_("Equals"), OP_Equals);
+		enumdef->pushEnumValue("NotEqual",_("Not Equal"),_("Not Equal"), OP_Not_Equal);
+		enumdef->pushEnumValue("Minimum",_("Minimum"),_("Minimum"), OP_Minimum);
+		enumdef->pushEnumValue("Maximum",_("Maximum"),_("Maximum"), OP_Maximum);
+		enumdef->pushEnumValue("Average",_("Average"),_("Average"), OP_Average);
+
+		enumdef->pushEnumValue("And"       ,_("And"       ),_("And"       ), OP_And      );
+		enumdef->pushEnumValue("Or"        ,_("Or"        ),_("Or"        ), OP_Or       );
+		enumdef->pushEnumValue("Xor"       ,_("Xor"       ),_("Xor"       ), OP_Xor      );
+		enumdef->pushEnumValue("ShiftLeft" ,_("ShiftLeft" ),_("ShiftLeft" ), OP_ShiftLeft);
+		enumdef->pushEnumValue("ShiftRight",_("ShiftRight"),_("ShiftRight"), OP_ShiftRight);
 		enumdef->inc_count();
 		mathnodedef = enumdef;
 
@@ -605,20 +711,10 @@ int MathNode::Update()
 	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
 	ObjectDef *def = ev->GetObjectDef();
 	const char *nm = NULL;
-	def->getEnumInfo(ev->value, &nm);
 	operation=OP_None;
+	def->getEnumInfo(ev->value, &nm, NULL,NULL, &operation); 
 
-	if (nm) {
-		if      (!strcmp(nm, "Add"        )) operation =OP_Add;
-		else if (!strcmp(nm, "Subtract"   )) operation =OP_Subtract;
-		else if (!strcmp(nm, "Multiply"   )) operation =OP_Multiply;
-		else if (!strcmp(nm, "Divide"     )) operation =OP_Divide;
-		else if (!strcmp(nm, "Mod"        )) operation =OP_Mod;
-		else if (!strcmp(nm, "Power"      )) operation =OP_Power;
-		else if (!strcmp(nm, "GreaterThan")) operation =OP_Greater_Than;
-		else if (!strcmp(nm, "LessThan"   )) operation =OP_Less_Than;
-		else if (!strcmp(nm, "Equals"     )) operation =OP_Equals;
-	}
+	//DBG cerr <<"MathNode::Update op: "<<operation<<" vs enum id: "<<id<<endl;
 
 	if      (operation==OP_Add) result = a+b;
 	else if (operation==OP_Subtract) result = a-b;
@@ -647,13 +743,23 @@ int MathNode::Update()
 	} else if (operation==OP_Greater_Than) { result = (a>b);
 	} else if (operation==OP_Less_Than)    { result = (a<b);
 	} else if (operation==OP_Equals)       { result = (a==b);
+	} else if (operation==OP_Not_Equal)    { result = (a!=b);
+	} else if (operation==OP_Minimum)       { result = (a<b ? a : b);
+	} else if (operation==OP_Maximum)       { result = (a>b ? a : b);
+	} else if (operation==OP_Average)       { result = (a+b)/2;
+
+	} else if (operation==OP_And       )       { result = (int(a) & int(b));
+	} else if (operation==OP_Or        )       { result = (int(a) | int(b));
+	} else if (operation==OP_Xor       )       { result = (int(a) ^ int(b));
+	} else if (operation==OP_ShiftLeft )       { result = (int(a) << int(b));
+	} else if (operation==OP_ShiftRight)       { result = (int(a) >> int(b));
 	}
 
 	if (!properties.e[3]->data) properties.e[3]->data=new DoubleValue(result);
 	else dynamic_cast<DoubleValue*>(properties.e[3]->data)->d = result;
 	properties.e[3]->modtime = time(NULL);
 
-	return 0;
+	return NodeBase::Update();
 }
 
 Laxkit::anObject *newMathNode(Laxkit::anObject *ref)
@@ -664,7 +770,8 @@ Laxkit::anObject *newMathNode(Laxkit::anObject *ref)
 
 //------------ FunctionNode
 
-// sin cos tan asin acos atan sinh cosh tanh log ln abs sqrt int gint lint factor random randomint
+// sin cos tan asin acos atan sinh cosh tanh log ln abs sqrt int floor ceil factor random randomint
+// fraction negative reciprocal clamp scale(old_range, new_range)
 // pi tau e
 //
 //class FunctionNode : public NodeBase
@@ -673,8 +780,22 @@ Laxkit::anObject *newMathNode(Laxkit::anObject *ref)
 //};
 
 
+//------------ ImageNode
+
+Laxkit::anObject *newImageNode(Laxkit::anObject *ref)
+{
+	NodeBase *node = new NodeBase;
+	node->Id("Image");
+	makestr(node->Name, _("Image"));
+	node->properties.push(new NodeProperty(true, true, _("Filename"), new FileValue("."), 1)); 
+	return node;
+}
+
+
 //--------------------------- SetupDefaultNodeTypes()
 
+/*! Install default built in node types to factory.
+ */
 int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 {
 	 //--- DoubleNode
@@ -682,6 +803,9 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 
 	 //--- MathNode
 	factory->DefineNewObject(getUniqueNumber(), "Math",  newMathNode,   NULL);
+
+	 //--- ImageNode
+	factory->DefineNewObject(getUniqueNumber(), "Image",  newImageNode,   NULL);
 
 	return 0;
 }
@@ -699,8 +823,8 @@ NodeInterface::NodeInterface(anInterface *nowner, int nid, Displayer *ndp)
 {
 	node_interface_style=0;
 
-	node_factory = new ObjectFactory;
-	SetupDefaultNodeTypes(node_factory);
+	node_factory = NodeGroup::NodeFactory(true);
+	node_factory->inc_count();
 
 	nodes=NULL;
 
@@ -716,6 +840,9 @@ NodeInterface::NodeInterface(anInterface *nowner, int nid, Displayer *ndp)
 	slot_radius=.25;
 
 	color_controls.rgbf(.7,.5,.7,1.);
+	color_background.rgbf(0,0,0,.5);
+	color_grid.rgbf(0,0,0,.7);
+	draw_grid = 50;
 
 	sc=NULL; //shortcut list, define as needed in GetShortcuts()
 }
@@ -952,15 +1079,31 @@ int NodeInterface::Refresh()
 	needtodraw=0;
 
 
-	if (!nodes) return 0;
-
 	dp->PushAxes();
+
+	ScreenColor *bg = &color_background;
+	if (nodes) bg = &nodes->background;
+	if (bg->Alpha()>0) {
+		dp->NewTransform(1,0,0,1,0,0);
+		dp->NewFG(bg);
+		dp->drawrectangle(0,0, dp->Maxx,dp->Maxy, 1);
+
+		if (draw_grid) {
+		}
+	}
+
+	if (!nodes) {
+		dp->PopAxes();
+		return 0;
+	} 
+
 	dp->NewTransform(nodes->m.m());
 	dp->font(font);
 
 	 //---draw connections
 	dp->NewFG(&nodes->colors->connection);
 
+	dp->LineWidth(3);
 	for (int c=0; c<nodes->connections.n; c++) {
 		//dp->DrawColoredPath(nodes->nodes.e[c]->connections.e[c]->path.e,
 		//					nodes->nodes.e[c]->connections.e[c]->path.n);
@@ -977,7 +1120,7 @@ int NodeInterface::Refresh()
 	 //  preview
 	 //  ins/outs
 	NodeBase *node;
-	ScreenColor *border, *bg, *fg;
+	ScreenColor *border, *fg;
 	NodeColors *colors=NULL;
 	double th = dp->textheight();
 
@@ -1010,11 +1153,13 @@ int NodeInterface::Refresh()
 		flatpoint p;
 
 		 //draw whole rect
+		dp->LineWidth(1);
 		dp->drawRoundedRect(node->x, node->y, node->width, node->height,
 							th/3, false, th/3, false, 2); 
 
 		 //draw label
-		dp->NewBG(fg);
+		dp->NewFG(fg);
+		dp->NewBG(bg);
 		dp->textout(node->x+node->width/2-th/2, node->y, node->Name, -1, LAX_TOP|LAX_HCENTER);
 
 
@@ -1053,7 +1198,12 @@ int NodeInterface::Refresh()
 	} else if (hover_action==NODES_Selection_Rect) {
 		dp->LineWidthScreen(1);
 		dp->NewFG(&color_controls);
-		dp->drawrectangle(selection_rect.minx,selection_rect.miny, selection_rect.maxx-selection_rect.minx,selection_rect.maxy-selection_rect.miny, 0);
+
+		flatpoint p1 = nodes->m.transformPointInverse(flatpoint(selection_rect.minx,selection_rect.miny));
+		flatpoint p2 = nodes->m.transformPointInverse(flatpoint(selection_rect.maxx,selection_rect.maxy));
+
+		//dp->drawrectangle(selection_rect.minx,selection_rect.miny, selection_rect.maxx-selection_rect.minx,selection_rect.maxy-selection_rect.miny, 0);
+		dp->drawrectangle(p1.x,p1.y, p2.x-p1.x,p2.y-p1.y, 0);
 
 	} else if (hover_action==NODES_Drag_Input || hover_action==NODES_Drag_Output) {
 		NodeBase *node = nodes->nodes.e[lasthover];
@@ -1085,14 +1235,16 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y)
 	//   vectors
 	//   colors
 	//   enums
-	Value *v=dynamic_cast<Value*>(prop->GetData());
+	Value *v = prop->GetData();
+
 	char extra[200];
 	extra[0]='\0';
 	double th = dp->textheight();
 
 	if (v && (v->type()==VALUE_Real || v->type()==VALUE_Int)) {
+		dp->NewBG(&nodes->colors->bg_edit);
 		dp->drawRoundedRect(node->x+prop->x+th/2, node->y+prop->y+th/4, node->width-th, prop->height*.66,
-							th/3, false, th/3, false, 0); 
+							th/3, false, th/3, false, 2); 
 		sprintf(extra, "%s:", prop->Name());
 		dp->textout(node->x+prop->x+th, node->y+prop->y+prop->height/2, extra, -1, LAX_LEFT|LAX_VCENTER);
 		v->getValueStr(extra, 199);
@@ -1107,8 +1259,9 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y)
 
 		 //draw value
 		v->getValueStr(extra, 199);
+		dp->NewBG(&nodes->colors->bg_menu);
 		dp->drawRoundedRect(node->x+x, node->y+prop->y+th/4, node->width-th/2-x, prop->height*.66,
-							th/3, false, th/3, false, 0); 
+							th/3, false, th/3, false, 2); 
 		dp->textout(node->x+th*1.5+dx, node->y+prop->y+prop->height/2, extra,-1, LAX_LEFT|LAX_VCENTER);
 		dp->drawthing(node->x+node->width-th, node->y+prop->y+prop->height/2, th/4,th/4, 1, THING_Triangle_Down);
 
@@ -1290,7 +1443,7 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 	if (action != NODES_None) {
 		buttondown.down(d->id, LEFTBUTTON, x,y, action);
 		hover_action = action;
-	}
+	} else hover_action = NODES_None;
 
 
 	return 0; //return 0 for absorbing event, or 1 for ignoring
@@ -1435,6 +1588,9 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		} else if (overnode<0) {
 			 //hovered over nothing
 			remove=1;
+
+		} else { //lbup over something else
+			remove=1;
 		}
 
 		if (remove) {
@@ -1472,6 +1628,8 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 		} else if (overnode<0) {
 			 //hovered over nothing
+			remove=1;
+		} else { //lbup over something else
 			remove=1;
 		}
 
@@ -1521,6 +1679,15 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 
 	int lx,ly, action, property;
 	buttondown.move(mouse->id, x,y, &lx,&ly);
+	
+
+	if (buttondown.isdown(mouse->id, MIDDLEBUTTON)) {
+		DBG cerr <<"node middle button move: "<<x-lx<<", "<<y-ly<<endl;
+		nodes->m.origin(nodes->m.origin() + flatpoint(x-lx, y-ly));
+		needtodraw=1;
+		return 0;
+	}
+
 	buttondown.getextrainfo(mouse->id,LEFTBUTTON, &action, &property);
 
 
@@ -1571,13 +1738,31 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 	return 0; //MouseMove is always called for all interfaces, return value doesn't inherently matter
 }
 
+int NodeInterface::MBDown(int x,int y,unsigned int state,int count, const Laxkit::LaxMouse *d)
+{
+	buttondown.down(d->id, MIDDLEBUTTON, x,y);
+	if (!nodes) return 1;
+	return 0;
+}
+
+int NodeInterface::MBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *d)
+{
+	buttondown.up(d->id, MIDDLEBUTTON);
+	if (!nodes) return 1;
+	return 0;
+}
+
 int NodeInterface::WheelUp(int x,int y,unsigned int state,int count, const Laxkit::LaxMouse *d)
 {
 	 //scroll nodes placement
 	if (!nodes) return 1;
 
-	if (state&ShiftMask) nodes->m.m(4, nodes->m.m(4) + .1*(dp->Maxx-dp->Minx));
-	else nodes->m.m(5, nodes->m.m(5) + .1*(dp->Maxy-dp->Miny));
+	nodes->m.Scale(flatpoint(x,y), 1.15);
+
+	 //translate
+	//if (state&ShiftMask) nodes->m.m(4, nodes->m.m(4) + .1*(dp->Maxx-dp->Minx));
+	//else nodes->m.m(5, nodes->m.m(5) + .1*(dp->Maxy-dp->Miny));
+
 	needtodraw=1;
 	return 0;
 }
@@ -1587,8 +1772,12 @@ int NodeInterface::WheelDown(int x,int y,unsigned int state,int count, const Lax
 	 //scroll nodes placement
 	if (!nodes) return 1;
 
-	if (state&ShiftMask) nodes->m.m(4, nodes->m.m(4) - .1*(dp->Maxx-dp->Minx));
-	else nodes->m.m(5, nodes->m.m(5) - .1*(dp->Maxy-dp->Miny));
+	nodes->m.Scale(flatpoint(x,y), .88);
+	
+	 //translate
+	//if (state&ShiftMask) nodes->m.m(4, nodes->m.m(4) - .1*(dp->Maxx-dp->Minx));
+	//else nodes->m.m(5, nodes->m.m(5) - .1*(dp->Maxy-dp->Miny));
+
 	needtodraw=1;
 	return 0;
 }
@@ -1651,6 +1840,11 @@ Laxkit::ShortcutHandler *NodeInterface::GetShortcuts()
     sc->Add(NODES_Group_Nodes,   'g',ControlMask,0, "GroupNodes"   , _("Group Nodes"  ),NULL,0);
     sc->Add(NODES_Ungroup_Nodes, 'g',ShiftMask|ControlMask,0, "UngroupNodes" , _("Ungroup Nodes"),NULL,0);
     sc->Add(NODES_Add_Node,      'A',ShiftMask,  0, "AddNode"      , _("Add Node"     ),NULL,0);
+    sc->Add(NODES_Delete_Nodes,  LAX_Bksp,0,     0, "DeleteNode"   , _("Delete Node"  ),NULL,0);
+
+
+    sc->Add(NODES_Save_Nodes,      's',0,  0, "SaveNodes"      , _("Save Nodes"     ),NULL,0);
+    sc->Add(NODES_Load_Nodes,      'l',0,  0, "LoadNodes"      , _("Load Nodes"     ),NULL,0);
 
     manager->AddArea(whattype(),sc);
     return sc;
@@ -1664,6 +1858,10 @@ int NodeInterface::PerformAction(int action)
 
 	} else if (action==NODES_Ungroup_Nodes) {
 		//***
+
+	} else if (action==NODES_Delete_Nodes) {
+		DBG cerr << "delete nodes..."<<endl;
+		return 0;
 
 	} else if (action==NODES_Add_Node) {
 		 //Pop up menu to select new node..
@@ -1691,6 +1889,30 @@ int NodeInterface::PerformAction(int action)
         popup->WrapToMouse(0);
         app->rundialog(popup);
 
+		return 0;
+
+	} else if (action==NODES_Save_Nodes) {
+		DBG cerr <<"save nodes..."<<endl;
+		if (!nodes) return 0;
+
+		const char *file = "nodes-TEMP.nodes";
+
+		FILE *f = fopen(file, "w");
+		if (f) {
+			nodes->dump_out(f, 0, 0, NULL);
+			fclose(f);
+
+			PostMessage(_("Nodes saved to nodes-TEMP.nodes"));
+			DBG cerr << _("Nodes saved to nodes-TEMP.nodes") <<endl;
+		} else {
+			PostMessage(_("Could not open nodes-TEMP.nodes!"));
+			DBG cerr <<(_("Could not open nodes-TEMP.nodes!")) << endl;
+		}
+		return 0;
+
+	} else if (action==NODES_Load_Nodes) {
+		DBG cerr <<"load nodes..."<<endl;
+		if (!nodes) return 0;
 		return 0;
 	}
 
