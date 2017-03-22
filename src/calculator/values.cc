@@ -1388,7 +1388,7 @@ int ValueHash::getValueStr(char *buffer,int len)
 {
 	int needed=3;//"{:}"
 	for (int c=0; c<values.n; c++) {
-		needed+= 1 + values.e[c]->getValueStr(NULL,0) + (keys.e[c]?strlen(keys.e[c]):0) + 4;
+		needed+= 1 + values.e[c]->getValueStr(NULL,0) + (keys.e[c] ? strlen(keys.e[c]) : 0) + 4;
 	}
 	if (!buffer || len<needed) return needed;
 
@@ -2048,7 +2048,7 @@ int Value::assign(FieldExtPlace *ext,Value *v)
  */
 int Value::getValueStr(char *buffer,int len)
 {
-	ObjectDef *def=GetObjectDef();
+	ObjectDef *def = GetObjectDef();
 	const char *defname=(def?def->name:whattype());
 
 	if (!buffer || len<(int)strlen(whattype()+1)) return strlen(defname)+1;
@@ -2068,7 +2068,7 @@ int Value::getValueStr(char *buffer,int len)
  */
 int Value::getValueStr(char **buffer,int *len, int oktoreallocate)
 {
-	int needed=getValueStr(NULL,0);
+	int needed = getValueStr(NULL,0);
 	if (*len<needed) {
 		if (!oktoreallocate) return needed;
 		if (*buffer) delete[] *buffer;
@@ -2133,14 +2133,19 @@ int Value::FieldIndex(const char *name)
 /*! Default dump out to simple name/value pairs.
  * NOTE that this does not automatically put in subattributes for values that have them.
  * It uses getValueStr() to attach a string to each FieldInfo().
+ *
+ * If this->getValueStr() has anything, then that value gets put in the first subatt with name "value".
+ *
+ * After that, one subatt gets pushed by anything that is not a function, class, or op.
  */
 LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
 {
 	if (!att) att=new Attribute;
 
+	ObjectDef *def=GetObjectDef();
+
 	if (what==-1) {
 		 //dump out part of object def
-    	ObjectDef *def=GetObjectDef();
 		if (!def) {
 			DBG cerr << "  Value::dump_out_atts(): missing ObjectDef for "<<whattype()<<endl;
 			return NULL;
@@ -2174,7 +2179,7 @@ LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,LaxF
 	}
 
 
-	ObjectDef *def;
+	ObjectDef *fdef;
 	const char *str;
 	const char *name;
 	char *buffer=NULL;
@@ -2187,24 +2192,40 @@ LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,LaxF
 	//	fprintf(f," %s\n",str);
 	//}
 
-	Value *v;
-	for (int c=0; c<getNumFields(); c++) {
-		def=FieldInfo(c); //this is the object def of a field. If it exists, then this element has subfields.
-		if (!def) continue;
+	if (def->format == VALUE_Enum) {
+		EnumValue *ev = dynamic_cast<EnumValue*>(this);
+		const char *nm = NULL;
+		def->getEnumInfo(ev->value, &nm);
+		//att->push(def->name, nm);
+		att->push("value", nm);
 
-		 //output values only, not functions
-		if (def->format==VALUE_Function) continue;
-		if (def->format==VALUE_Class) continue;
-		if (def->format==VALUE_Operator) continue;
-		
-		v=dereference(def->name,strlen(def->name));
-		if (!v) continue;
+	} else {
+		Value *v;
+		int numout = 0;
+		for (int c=0; c<getNumFields(); c++) {
+			fdef=FieldInfo(c); //this is the object fdef of a field. If it exists, then this element has subfields.
+			if (!fdef) continue;
 
-		name=FieldName(c);
-		v->getValueStr(&buffer,&len, 1);
-		str=buffer;
-		att->push(name,str);
+			 //output values only, not functions
+			if (fdef->format==VALUE_Function) continue;
+			if (fdef->format==VALUE_Class) continue;
+			if (fdef->format==VALUE_Operator) continue;
+			
+			v=dereference(fdef->name,strlen(fdef->name));
+			if (!v) continue;
 
+			name=FieldName(c);
+			v->getValueStr(&buffer,&len, 1);
+			str=buffer;
+			att->push(name,str);
+			numout++;
+		}
+
+		if (numout == 0) {
+			len = 0;
+			getValueStr(&buffer,&len, 1);
+			if (len>0) att->push("value", buffer);
+		}
 	}
 
 	if (buffer) delete[] buffer;
@@ -2855,6 +2876,9 @@ ObjectDef *IntValue::makeObjectDef()
 
 
 //--------------------------------- DoubleValue -----------------------------
+/*! \class DoubleValue 
+ * \brief Holds a real number.
+ */
 int DoubleValue::getValueStr(char *buffer,int len)
 {
 	int needed=30;
@@ -3553,12 +3577,15 @@ int FileValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash 
 
 //! Create a value corresponding to a particular enum field.
 /*! baseenum is incremented.
+ *
+ * which is an index into the fields array.
  */
 EnumValue::EnumValue(ObjectDef *baseenum, int which)
 {
 	if (objectdef) objectdef->dec_count();
 	objectdef=baseenum;
 	if (objectdef) objectdef->inc_count();
+
 	value=which;
 }
 
