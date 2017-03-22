@@ -74,10 +74,10 @@ NodeColors::NodeColors()
 	mo_border(.3,.3,.3,1.),
 	mo_bg(.7,.7,.7,1.),
 
-	selected_border(.4,.4,0.,1.),
+	selected_border(1.,.8,.1,1.),
 	selected_bg(.9,.9,.9,1.),
 
-	selected_mo_border(.35,.35,.2,1.),
+	selected_mo_border(1.,.8,.1,1.),
 	selected_mo_bg(.85,.85,.85,1.)
 {
 	state=0;
@@ -233,11 +233,16 @@ NodeBase::NodeBase()
 	colors = NULL;
 	collapsed = false;
 	deletable = true; //usually at least one node will not be deletable
+
+	type = NULL;
+	def = NULL;
 }
 
 NodeBase::~NodeBase()
 {
 	delete[] Name;
+	delete[] type;
+	if (def) def->dec_count();
 	if (colors) colors->dec_count();
 	if (total_preview) total_preview->dec_count();
 }
@@ -483,7 +488,13 @@ Attribute *NodeGroup::dump_out_atts(Attribute *att,int what,DumpContext *context
    if (!att) att=new Attribute();
 
     if (what==-1) {
-        att->push("", "");
+        att->push("id", "some_name");
+        att->push("matrix", "screen matrix to use");
+        att->push("background", "rgb(.1,.2,.3) #color of the background for this group of nodes");
+        att->push("output", "which_one #id of the node designated as non-deletable output for this group, if any");
+        att->push("nodes", "#list of individual nodes in this group");
+        att->push("connections", "#list of connections between the nodes");
+        //att->push("", "");
         return att;
     }
 
@@ -502,7 +513,8 @@ Attribute *NodeGroup::dump_out_atts(Attribute *att,int what,DumpContext *context
 	for (int c=0; c<nodes.n; c++) {
 		NodeBase *node = nodes.e[c];
 		
-		att2 = att->pushSubAtt("node", node->Id());
+		att2 = att->pushSubAtt("node", node->Type());
+		att2->push("id", node->Id());
 
 		if (node->collapsed) att2->push("collapsed");
 
@@ -515,7 +527,7 @@ Attribute *NodeGroup::dump_out_atts(Attribute *att,int what,DumpContext *context
 			if (!prop->is_input) continue;
 			if (prop->IsConnected()) continue; //since it'll be recomputed after read in
 
-			att3 = att2->pushSubAtt("property", prop->name);
+			att3 = att2->pushSubAtt("in", prop->name);
 			if (prop->GetData()) {
 				prop->GetData()->dump_out_atts(att3, what, context);
 			} else att3->push(prop->name, "arrrg! todo!");
@@ -526,7 +538,7 @@ Attribute *NodeGroup::dump_out_atts(Attribute *att,int what,DumpContext *context
 			prop = node->properties.e[c2];
 			if (prop->is_input) continue;
 
-			att3 = att2->pushSubAtt("property", prop->name);
+			att3 = att2->pushSubAtt("out", prop->name);
 			if (prop->GetData()) {
 				prop->GetData()->dump_out_atts(att3, what, context);
 			} else att3->push(prop->name, "arrrg! todo!");
@@ -589,8 +601,9 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 Laxkit::anObject *newDoubleNode(Laxkit::anObject *ref)
 {
 	NodeBase *node = new NodeBase;
-	node->Id("Value");
+	//node->Id("Value");
 	makestr(node->Name, _("Value"));
+	makestr(node->type, "Value");
 	node->properties.push(new NodeProperty(false, false, _("V"), new DoubleValue(0), 1)); 
 	return node;
 }
@@ -601,13 +614,14 @@ Laxkit::anObject *newDoubleNode(Laxkit::anObject *ref)
 class MathNode : public NodeBase
 {
   public:
-	static ObjectDef *mathnodedef;
+	static ObjectDef *mathnodedef; //the def for the op enum
 	int operation; // + - * / % power
 	double a,b,result;
 	MathNode(int op=0, double aa=0, double bb=0);
 	virtual ~MathNode();
 	virtual int Update();
 	virtual int GetStatus();
+	//virtual int GetDef() { return mathnodedef; }
 };
 
 ObjectDef *MathNode::mathnodedef = NULL;
@@ -639,7 +653,9 @@ enum MathNodeOps {
 
 MathNode::MathNode(int op, double aa, double bb)
 {
-	makestr(Name, _("Math"));
+	type = newstr("Math");
+	Name = newstr(_("Math"));
+
 	a=aa;
 	b=bb;
 	operation = op;
@@ -683,6 +699,8 @@ MathNode::MathNode(int op, double aa, double bb)
 	properties.push(new NodeProperty(true, true, "A", new DoubleValue(a), 1));
 	properties.push(new NodeProperty(true, true, "B", new DoubleValue(b), 1));
 	properties.push(new NodeProperty(false, true, "Result", NULL, 0));
+
+	Update();
 }
 
 MathNode::~MathNode()
@@ -785,7 +803,9 @@ Laxkit::anObject *newMathNode(Laxkit::anObject *ref)
 Laxkit::anObject *newImageNode(Laxkit::anObject *ref)
 {
 	NodeBase *node = new NodeBase;
-	node->Id("Image");
+	//node->Id("Image");
+	
+	makestr(node->type, "Image");
 	makestr(node->Name, _("Image"));
 	node->properties.push(new NodeProperty(true, true, _("Filename"), new FileValue("."), 1)); 
 	return node;
@@ -989,9 +1009,9 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 
 		const char *nm;
 		for (int c=0; c<def->getNumEnumFields(); c++) {
-			def->getEnumInfo(c, NULL, &nm);
+			def->getEnumInfo(c, NULL, &nm); //grabs id == name in the def
 			if (!strcmp(nm, what)) {
-				ev->value = c;
+				ev->value = c; //note: makes enum value the index of the enumval def, not the id
 				break;
 			}
 		}
@@ -1123,6 +1143,7 @@ int NodeInterface::Refresh()
 	ScreenColor *border, *fg;
 	NodeColors *colors=NULL;
 	double th = dp->textheight();
+	double borderwidth = 1;
 
 	for (int c=0; c<nodes->nodes.n; c++) {
 		node = nodes->nodes.e[c];
@@ -1131,6 +1152,7 @@ int NodeInterface::Refresh()
 		if (node->colors) colors=node->colors;
 		else colors = nodes->colors;
 
+		borderwidth = 1;
 		border = &colors->border;
 		bg = &colors->bg;
 		fg = &colors->fg;
@@ -1138,6 +1160,7 @@ int NodeInterface::Refresh()
 		if (IsSelected(node))  { 
 			border = &colors->selected_border;
 			bg     = &colors->selected_bg;
+			borderwidth = 3;
 		}
 		if (lasthover == c) { //mouse is hovering over this node
 			border = &colors->mo_border;
@@ -1152,8 +1175,8 @@ int NodeInterface::Refresh()
 		dp->NewBG(bg);
 		flatpoint p;
 
-		 //draw whole rect
-		dp->LineWidth(1);
+		 //draw whole rect, bg and border
+		dp->LineWidth(borderwidth);
 		dp->drawRoundedRect(node->x, node->y, node->width, node->height,
 							th/3, false, th/3, false, 2); 
 
@@ -1240,6 +1263,7 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y)
 	char extra[200];
 	extra[0]='\0';
 	double th = dp->textheight();
+	dp->LineWidth(1);
 
 	if (v && (v->type()==VALUE_Real || v->type()==VALUE_Int)) {
 		dp->NewBG(&nodes->colors->bg_edit);

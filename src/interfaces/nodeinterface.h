@@ -57,7 +57,7 @@ class NodeProperty;
 class NodeConnection
 {
   public:
-	Laxkit::ScreenColor color;
+	//Laxkit::ScreenColor color;
 
 	Laxkit::NumStack<flatpoint> path; //points between (and including) start and end points for custom winding,
 									  //though start and end are taken from the connected node properties
@@ -139,7 +139,9 @@ class NodeBase : public Laxkit::anObject, public Laxkit::DoubleRectangle
 {
   public:
 	 //state
-	char *Name;
+	char *Name; //displayed name
+	char *type; //non translated type, like "Value", or "Math"
+	ObjectDef *def;
 
 	bool collapsed;
 	bool deletable;
@@ -154,6 +156,8 @@ class NodeBase : public Laxkit::anObject, public Laxkit::DoubleRectangle
 	virtual const char *whattype() { return "Nodes"; }
 	virtual int InstallColors(NodeColors *newcolors, bool absorb_count);
 	virtual const char *Label() { return object_idstr; }
+	virtual const char *Type() { return type; }
+	virtual ObjectDef *GetDef() { return def; }
 
 	virtual int Update();
 	virtual int GetStatus();
