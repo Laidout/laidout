@@ -476,7 +476,8 @@ int SpreadInterface::Refresh()
 					
 					 // always setup clipping region to be the page
 					dp->PushClip(1);
-					SetClipFromPaths(dp,view->spreads.e[c]->spread->pagestack.e[c2]->outline,dp->Getctm());
+					//SetClipFromPaths(dp,view->spreads.e[c]->spread->pagestack.e[c2]->outline,dp->Getctm());
+					SetClipFromPaths(dp,view->spreads.e[c]->spread->pagestack.e[c2]->outline,NULL, true);
 					
 					//dp->PushAndNewTransform(thumb->m());
 					//dp->imageout(thumb->image, thumb->minx,thumb->maxy, thumb->maxx-thumb->minx,thumb->miny-thumb->maxy);
