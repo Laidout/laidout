@@ -57,7 +57,7 @@
 #include "drawdata.h"
 #include "helpwindow.h"
 #include "configured.h"
-#include "importimages.h"
+#include "importimagesdialog.h"
 #include "stylemanager.h"
 #include "filetypes/importdialog.h"
 #include "filetypes/exportdialog.h"
