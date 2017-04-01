@@ -319,6 +319,7 @@ class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual
   public:
 	ValueHash();
 	virtual ~ValueHash();
+	virtual const char *whattype() { return "ValueHash"; }
 	int sorted;
 
 	const char *key(int i);
@@ -372,6 +373,7 @@ class GenericValue : public Value
 
 	GenericValue(ObjectDef *def);
 	virtual ~GenericValue();
+	virtual const char *whattype() { return "GenericValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 
@@ -389,6 +391,7 @@ class SetValue : public Value, virtual public FunctionEvaluator
 
 	SetValue(const char *restricted=NULL);
 	virtual ~SetValue();
+	virtual const char *whattype() { return "SetValue"; }
 	virtual int Push(Value *v,int absorb, int where=-1);
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
@@ -414,6 +417,7 @@ class ArrayValue : public SetValue
 
 	ArrayValue(const char *elementtype=NULL, int size=0);
 	virtual ~ArrayValue();
+	virtual const char *whattype() { return "ArrayValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Array; }
@@ -428,6 +432,7 @@ class NullValue : public Value
 {
   public:
 	NullValue() {}
+	virtual const char *whattype() { return "NullValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_None; }
@@ -440,6 +445,8 @@ class BooleanValue : public Value
   public:
 	int i;
 	BooleanValue(int ii) { i=ii; }
+	BooleanValue(const char *val);
+	virtual const char *whattype() { return "BooleanValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Boolean; }
@@ -454,6 +461,7 @@ class IntValue : public Value
 	Unit units;
 	long i;
 	IntValue(long ii=0) { i=ii; }
+	virtual const char *whattype() { return "IntValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Int; }
@@ -468,6 +476,7 @@ class DoubleValue : public Value, virtual public FunctionEvaluator
 	Unit units;
 	double d;
 	DoubleValue(double dd=0) { d=dd; }
+	virtual const char *whattype() { return "DoubleValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Real; }
@@ -486,6 +495,7 @@ class FlatvectorValue : public Value, virtual public FunctionEvaluator
 	flatvector v;
 	FlatvectorValue() { }
 	FlatvectorValue(flatvector vv) { v=vv; }
+	virtual const char *whattype() { return "FlatvectorValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Flatvector; }
@@ -505,6 +515,7 @@ class SpacevectorValue : public Value, virtual public FunctionEvaluator
 	spacevector v;
 	SpacevectorValue() { }
 	SpacevectorValue(spacevector vv) { v=vv; }
+	virtual const char *whattype() { return "SpacevectorValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Spacevector; }
@@ -523,6 +534,7 @@ class StringValue : public Value, virtual public FunctionEvaluator
 	char *str;
 	StringValue(const char *s=NULL, int len=-1);
 	virtual ~StringValue() { if (str) delete[] str; }
+	virtual const char *whattype() { return "StringValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_String; }
@@ -540,6 +552,7 @@ class BytesValue : public Value, virtual public FunctionEvaluator
 	int len;
 	BytesValue(const char *s=NULL, int len=0);
 	virtual ~BytesValue();
+	virtual const char *whattype() { return "BytesValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Bytes; }
@@ -557,6 +570,7 @@ class EnumValue : public Value
 	//ObjectDef *enumdef;
 	EnumValue(ObjectDef *baseenum, int which);
 	virtual ~EnumValue();
+	virtual const char *whattype() { return "EnumValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Enum; }
@@ -572,6 +586,7 @@ class FunctionValue : public Value
 
 	FunctionValue(const char *ncode, int len);
 	virtual ~FunctionValue();
+	virtual const char *whattype() { return "FunctionValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Function; }
@@ -587,6 +602,7 @@ class FileValue : public Value, virtual public FunctionEvaluator
 	char *filename;
 	FileValue(const char *f=NULL,int len=-1);
 	virtual ~FileValue();
+	virtual const char *whattype() { return "FileValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_File; }
@@ -610,6 +626,7 @@ class ColorValue : public Value
 	ColorValue(const char *color);
 	//ColorValue(Laxkit::ColorBase &color);
 	virtual ~ColorValue();
+	virtual const char *whattype() { return "ColorValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Color; }
@@ -623,6 +640,7 @@ class ObjectValue : public Value
 	Laxkit::anObject *object;
 	ObjectValue(anObject *obj=NULL);
 	virtual ~ObjectValue();
+	virtual const char *whattype() { return "ObjectValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Object; }
@@ -635,6 +653,7 @@ double getNumberValue(Value *v, int *isnum);
 int extequal(const char *str, int len, const char *field, char **next_ret=NULL);
 int isName(const char *longstr,int len, const char *str);
 
+Value *AttributeToValue(LaxFiles::Attribute *att);
 
 
 //-------------------------- Default ObjectDefs for builtin types ---------------------

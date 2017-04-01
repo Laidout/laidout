@@ -2196,12 +2196,15 @@ LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,LaxF
 		EnumValue *ev = dynamic_cast<EnumValue*>(this);
 		const char *nm = NULL;
 		def->getEnumInfo(ev->value, &nm);
-		//att->push(def->name, nm);
-		att->push("value", nm);
+		att->push(whattype(), nm);
+		//att->push("value", nm);
 
 	} else {
 		Value *v;
 		int numout = 0;
+
+		Attribute *vatt=NULL;
+
 		for (int c=0; c<getNumFields(); c++) {
 			fdef=FieldInfo(c); //this is the object fdef of a field. If it exists, then this element has subfields.
 			if (!fdef) continue;
@@ -2217,14 +2220,16 @@ LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,LaxF
 			name=FieldName(c);
 			v->getValueStr(&buffer,&len, 1);
 			str=buffer;
-			att->push(name,str);
+
+			if (vatt == NULL) vatt = att->pushSubAtt(whattype());
+			vatt->push(name,str);
 			numout++;
 		}
 
 		if (numout == 0) {
 			len = 0;
 			getValueStr(&buffer,&len, 1);
-			if (len>0) att->push("value", buffer);
+			if (len>0) att->push(whattype(), buffer);
 		}
 	}
 
@@ -2392,6 +2397,57 @@ void Value::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext
 { //  ***
 }
 
+/*! Try to convert att into a builtin Value object. This is designed to work well
+ * with various dump_in_atts functions.
+ *
+ * For simple values, the value is in att->value.
+ * Otherwise, assume subfields.
+ */
+Value *AttributeToValue(Attribute *att)
+{
+	if (!strcmp(att->name, "DoubleValue")) {
+		double d=0;
+		if (DoubleAttribute(att->value, &d)) {
+			return new DoubleValue(d);
+		} else {
+			return NULL;
+		}
+
+	} else if (!strcmp(att->name, "IntValue")) {
+		long v=0;
+		if (LongAttribute(att->value, &v)) {
+			return new IntValue(v);
+		} else {
+			return NULL;
+		}
+
+	} else if (!strcmp(att->name, "BooleanValue")) {
+		return new BooleanValue(att->value);
+
+    } else if (!strcmp(att->name, "StringValue")) {
+		return new StringValue(att->value);
+
+    } else if (!strcmp(att->name, "BytesValue")) {
+		//encoded binary in value: "123ascii_escaped:\ff\fe\a8\03"
+		//-or- subatt[0].name == "binary[byte length]", subatt[0].value == straight binary data
+		//return new BytesValue(att->value);
+
+    } else if (!strcmp(att->name, "FlatvectorValue")) {
+    } else if (!strcmp(att->name, "SpacevectorValue")) {
+    } else if (!strcmp(att->name, "FileValue")) {
+    } else if (!strcmp(att->name, "ColorValue")) {
+    } else if (!strcmp(att->name, "EnumValue")) {
+    } else if (!strcmp(att->name, "ValueHash")) {
+    } else if (!strcmp(att->name, "GenericValue")) {
+    } else if (!strcmp(att->name, "SetValue")) {
+    } else if (!strcmp(att->name, "ArrayValue")) {
+    } else if (!strcmp(att->name, "NullValue")) {
+    } else if (!strcmp(att->name, "FunctionValue")) {
+    } else if (!strcmp(att->name, "ObjectValue")) {
+	}
+
+	return NULL;
+}
 
 ////----------------------------- GenericValue ----------------------------------
 /*! \class GenericValue
@@ -2796,6 +2852,21 @@ Value *NullValue::duplicate()
 
 
 //--------------------------------- BooleanValue -----------------------------
+
+/*! Empty string maps to 0.
+ * "1","yes","true" (caseless) all map to false.
+ * "0","no","false" (caseless) all map to false.
+ * Anything else maps to 1.
+ */
+BooleanValue::BooleanValue(const char *val)
+{
+	if (isblank(val)) i=0;
+	else if (!strcmp(val,"0") || !strcasecmp(val,"no") || !strcasecmp(val,"false")) i=0;
+	else if (!strcmp(val,"1") || !strcasecmp(val,"yes") || !strcasecmp(val,"true")) i=1;
+	else i=1;
+}
+
+
 int BooleanValue::getValueStr(char *buffer,int len)
 {
 	if (!buffer || len<6) return 6;
@@ -3578,7 +3649,7 @@ int FileValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash 
 //! Create a value corresponding to a particular enum field.
 /*! baseenum is incremented.
  *
- * which is an index into the fields array.
+ * which is an index into the fields array of baseenum.
  */
 EnumValue::EnumValue(ObjectDef *baseenum, int which)
 {
