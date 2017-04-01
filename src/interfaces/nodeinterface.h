@@ -29,6 +29,7 @@
 #include <lax/interfaces/aninterface.h>
 #include <lax/rectangles.h>
 #include <lax/refptrstack.h>
+#include <lax/singletonkeeper.h>
 
 #include "../calculator/values.h"
 
@@ -93,13 +94,19 @@ class NodeProperty
 	virtual LaxInterfaces::anInterface *PropInterface();
 	virtual const char *Name() { return name; }
 	virtual int IsConnected();
+	virtual int IsInput() { return is_input; }
+	virtual int AllowInput();
+	virtual int AllowOutput();
 	virtual NodeBase *GetConnection(int connection_index, int *prop_index_ret);
 	virtual Value *GetData();
+	virtual int SetData(Value *newdata, bool absorb);
 };
 
 class NodeColors : public Laxkit::anObject
 {
   public:
+	anObject *owner;
+
 	Laxkit::LaxFont *font;
 	unsigned int state; //normal | selected | mouseOver
 
@@ -107,6 +114,8 @@ class NodeColors : public Laxkit::anObject
 	Laxkit::ScreenColor connection;
 	Laxkit::ScreenColor sel_connection;
 
+	Laxkit::ScreenColor label_fg;
+	Laxkit::ScreenColor label_bg;
 	Laxkit::ScreenColor fg;
 	Laxkit::ScreenColor bg;
 	Laxkit::ScreenColor text;
@@ -119,14 +128,11 @@ class NodeColors : public Laxkit::anObject
 	Laxkit::ScreenColor fg_menu;
 	Laxkit::ScreenColor bg_menu;
 
-	Laxkit::ScreenColor mo_border;
-	Laxkit::ScreenColor mo_bg;
-
 	Laxkit::ScreenColor selected_border;
 	Laxkit::ScreenColor selected_bg;
 
-	Laxkit::ScreenColor selected_mo_border;
-	Laxkit::ScreenColor selected_mo_bg;
+	double mo_diff;
+
 
 	NodeColors *next; //one node per state
 
@@ -166,6 +172,10 @@ class NodeBase : public Laxkit::anObject, public Laxkit::DoubleRectangle
 
 	virtual int IsConnected(int propindex); //0=no, -1=prop is connected input, 1=connected output
 	virtual int HasConnection(NodeProperty *prop, int *connection_ret);
+
+	virtual NodeProperty *FindProperty(const char *prop);
+	virtual int SetProperty(const char *prop, Value *value, bool absorb);
+	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
 };
 
 
@@ -175,7 +185,11 @@ class NodeBase : public Laxkit::anObject, public Laxkit::DoubleRectangle
 
 class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 {
-	static Laxkit::ObjectFactory *node_factory;
+	static Laxkit::SingletonKeeper nodekeeper;
+
+  protected:
+	virtual int CheckForward(NodeBase *node, NodeConnection *connection);
+	virtual int CheckBackward(NodeBase *node, NodeConnection *connection);
 
   public:
 	static Laxkit::ObjectFactory *NodeFactory(bool create=true);
@@ -191,7 +205,11 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	NodeGroup();
 	virtual ~NodeGroup();
 	virtual int DesignateOutput(NodeBase *noutput);
+	virtual NodeBase *FindNode(const char *name);
+	NodeBase *NewNode(const char *type);
+
 	virtual int DeleteNodes(Laxkit::RefPtrStack<NodeBase> &selected);
+	virtual int Connect(NodeProperty *from, NodeProperty *to, NodeConnection *usethis);
 
 	virtual void       dump_out(FILE *f, int indent, int what, LaxFiles::DumpContext *context);
     virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context);
@@ -212,6 +230,7 @@ enum NodeInterfaceActions {
 	NODES_Drag_Output,
 	NODES_Drag_Input,
 	NODES_Move_Nodes,
+	NODES_Move_Or_Select,
 	NODES_Cut_Connections,
 	NODES_Property,
 	NODES_Resize_Left,

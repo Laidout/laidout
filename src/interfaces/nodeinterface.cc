@@ -30,6 +30,8 @@
 #include <lax/popupmenu.h>
 #include <lax/language.h>
 
+#include <string>
+
 
 //Template implementation:
 #include <lax/lists.cc>
@@ -55,10 +57,13 @@ namespace Laidout {
  */
 
 NodeColors::NodeColors()
-  : default_property(1.,1.,1.,1.),
+  : owner(NULL),
+	default_property(1.,1.,1.,1.),
 	connection(.5,.5,.5,1.),
 	sel_connection(1.,0.,1.,1.),
 
+	label_fg(.2,.2,.2,1.),
+	label_bg(.7,.7,.7,1.),
 	fg(.2,.2,.2,1.),
 	bg(.8,.8,.8,1.),
 	text(0.,0.,0.,1.),
@@ -71,14 +76,10 @@ NodeColors::NodeColors()
 	fg_menu(.2,.2,.2,1.),
 	bg_menu(.7,.7,.7,1.),
 
-	mo_border(.3,.3,.3,1.),
-	mo_bg(.7,.7,.7,1.),
-
 	selected_border(1.,.8,.1,1.),
 	selected_bg(.9,.9,.9,1.),
 
-	selected_mo_border(1.,.8,.1,1.),
-	selected_mo_bg(.85,.85,.85,1.)
+	mo_diff(.05)
 {
 	state=0;
 	font=NULL;
@@ -102,6 +103,10 @@ int NodeColors::Font(Laxkit::LaxFont *newfont, bool absorb_count)
 //-------------------------------------- NodeConnection --------------------------
 
 /*! \class NodeConnection
+ *
+ * Note connections are not reference counted.
+ * This is ok since the connections only exist in relation to the nodes, and nodes don't get stranded
+ * when a connection deletes itself, as they are in a list in a NodeGroup.
  */
 
 NodeConnection::NodeConnection()
@@ -118,8 +123,12 @@ NodeConnection::NodeConnection(NodeBase *nfrom, NodeBase *nto, NodeProperty *nfr
 	toprop=ntoprop;
 }
 
+/*! Remove connection refs from any connected props.
+ */
 NodeConnection::~NodeConnection()
 {
+	if (fromprop) fromprop->connections.remove(fromprop->connections.findindex(this));
+	if (toprop)   toprop  ->connections.remove(toprop  ->connections.findindex(this));
 }
 
 
@@ -181,6 +190,16 @@ int NodeProperty::IsConnected()
 	return connections.n;
 }
 
+int NodeProperty::AllowInput()
+{
+	return is_input && is_inputable;
+}
+
+int NodeProperty::AllowOutput()
+{
+	return !is_input;
+}
+
 /*! Return the node and property index in that node of the specified connection.
  */
 NodeBase *NodeProperty::GetConnection(int connection_index, int *prop_index_ret)
@@ -216,6 +235,17 @@ Value *NodeProperty::GetData()
 {
 	if (is_input && connections.n && connections.e[0]->fromprop) return connections.e[0]->fromprop->data;
 	return data;
+}
+
+/*! Returns 1 for successful setting, or 0 for not set (or absorbed).
+ */
+int NodeProperty::SetData(Value *newdata, bool absorb)
+{
+	if (newdata==data) return 1;
+	if (data) data->dec_count();
+	data = newdata;
+	if (data && !absorb) data->inc_count();
+	return 1;
 }
 
 //-------------------------------------- NodeBase --------------------------
@@ -270,11 +300,11 @@ int NodeBase::GetStatus()
 { 
 	std::time_t t=0;
 	for (int c=0; c<properties.n; c++) {
-		if (properties.e[c]->is_input && properties.e[c]->modtime>t) t=properties.e[c]->modtime;
+		if (properties.e[c]->IsInput() && properties.e[c]->modtime > t) t = properties.e[c]->modtime;
 	}
 	if (t==0) return 0;
 	for (int c=0; c<properties.n; c++) {
-		if (!properties.e[c]->is_input) continue;
+		if (!properties.e[c]->IsInput()) continue;
 		if (properties.e[c]->modtime<t) return 1;
 
 	}
@@ -406,22 +436,78 @@ int NodeBase::HasConnection(NodeProperty *prop, int *connection_ret)
 	return -1;
 }
 
+/*! Return the property with prop as name, or NULL if not found.
+ */
+NodeProperty *NodeBase::FindProperty(const char *prop)
+{
+	if (!prop) return NULL;
+	for (int c=0; c<properties.n; c++) {
+		if (!strcmp(prop, properties.e[c]->name)) {
+			return properties.e[c];
+		}
+	}
+	return NULL;
+}
+
+/*! Return 1 for property set, 0 for could not set.
+ */
+int NodeBase::SetProperty(const char *prop, Value *value, bool absorb)
+{
+	for (int c=0; c<properties.n; c++) {
+		if (!strcmp(prop, properties.e[c]->name)) {
+			return properties.e[c]->SetData(value, absorb);
+		}
+	}
+	return 0;
+}
+
+/*! This function aids dump_in_atts. Default will handle any builtin Value types, except enums.
+ * Subclasses should redefine to catch these.
+ *
+ * Return 1 for property set, 0 for could not set.
+ */
+int NodeBase::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
+{
+	if (att->attributes.n == 0) return 0;
+
+	NodeProperty *prop = NULL;
+	for (int c=0; c<properties.n; c++) {
+		if (!strcmp(propname, properties.e[c]->name)) {
+			prop = properties.e[c];
+			break;
+		}
+	}
+	if (!prop) return 0;
+
+	Value *val = AttributeToValue(att->attributes.e[0]);
+	if (val) {
+		if (!prop->SetData(val, true)) {
+			val->dec_count();
+			return 0;
+		}
+	}
+
+	return 1;
+}
 
 //-------------------------------------- NodeGroup --------------------------
 /*! \class NodeGroup
  * Class to hold a collection of nodes, and optionally a designated output node.
  */
 
-/*! Private singleton node factory.
+/*! Static keeper of default node factory.
  */
-Laxkit::ObjectFactory *NodeGroup::node_factory = NULL;
+Laxkit::SingletonKeeper NodeGroup::nodekeeper;
 
 /*! Return the current default node factory. If the default is null, then make a new default if create==true.
  */
 Laxkit::ObjectFactory *NodeGroup::NodeFactory(bool create)
 {
+	ObjectFactory *node_factory = dynamic_cast<ObjectFactory*>(nodekeeper.GetObject());
 	if (!node_factory && create) {
 		node_factory = new ObjectFactory; 
+		nodekeeper.SetObject(node_factory, true);
+
 		SetupDefaultNodeTypes(node_factory);
 	}
 
@@ -432,10 +518,7 @@ Laxkit::ObjectFactory *NodeGroup::NodeFactory(bool create)
  */
 void NodeGroup::SetNodeFactory(Laxkit::ObjectFactory *newnodefactory)
 {
-	if (newnodefactory == node_factory) return;
-	if (node_factory) node_factory->dec_count();
-	node_factory = newnodefactory;
-	if (node_factory) node_factory->inc_count();
+	nodekeeper.SetObject(newnodefactory, false);
 }
 
 NodeGroup::NodeGroup()
@@ -452,6 +535,8 @@ NodeGroup::~NodeGroup()
 /*! Install noutput as the group's pinned output.
  * Basically just dec_count the old, inc_count the new.
  * It is assumed noutput is in the nodes stack already.
+ *
+ * If you pass in noutput, then it is assumed you don't want a designated output.
  */
 int NodeGroup::DesignateOutput(NodeBase *noutput)
 {
@@ -467,13 +552,84 @@ int NodeGroup::DesignateOutput(NodeBase *noutput)
 int NodeGroup::DeleteNodes(Laxkit::RefPtrStack<NodeBase> &selected)
 {
 	int numdel = 0;
-	for (int c=0; c<selected.n; c++) {
+	NodeBase *node;
 
-		for (int c2=0; c2<connections.n; c2++) {
+	for (int c=selected.n-1; c>=0; c--) {
+		node = selected.e[c];
+
+		for (int c2=connections.n-1; c2>=0; c2--) {
+			if (connections.e[c2]->from == node || connections.e[c2]->to == node) {
+				connections.remove(c2);
+			}
 		}
+
+		nodes.remove(nodes.findindex(node));
+		selected.remove(c);
+		numdel++;
 	}
 
 	return numdel;
+}
+
+/*! Return 1 for success, or 0 for failure.
+ * If usethis != NULL, then use that as the connection object, overwriting any incorrect settings.
+ * Otherwise create a new one to install.
+ */
+int NodeGroup::Connect(NodeProperty *from, NodeProperty *to, NodeConnection *usethis)
+{
+	//***
+
+	return 0;
+}
+
+/*! Use when connecting forward to node via connection. Traverse forwards through connection,
+ * and node should not be found. Return 0 if not found, or 1 for found.
+ */
+int NodeGroup::CheckForward(NodeBase *node, NodeConnection *connection)
+{
+	NodeBase *check = connection->to;
+	if (!check) return 0;
+
+	NodeConnection *conn;
+	NodeProperty *prop;
+
+	if (check == node) return 1;
+	for (int c=0; c<check->properties.n; c++) {
+		prop = check->properties.e[c];
+		if (prop->IsInput()) continue;
+
+		for (int c2=0; c2<prop->connections.n; c2++) {
+			conn = prop->connections.e[c2];
+			if (CheckForward(node, conn)) return 1;
+		}
+	}
+
+	return 0;
+}
+
+/*! Use when connecting backward to node via connection. Traverse backwards through connection,
+ * and node should not be found. Return 0 if not found, or 1 for found.
+ */
+int NodeGroup::CheckBackward(NodeBase *node, NodeConnection *connection)
+{
+	NodeBase *check = connection->from;
+	if (!check) return 0;
+
+	NodeConnection *conn;
+	NodeProperty *prop;
+
+	if (check == node) return 1;
+	for (int c=0; c<check->properties.n; c++) {
+		prop = check->properties.e[c];
+		if (prop->IsInput()) continue;
+
+		for (int c2=0; c2<prop->connections.n; c2++) {
+			conn = prop->connections.e[c2];
+			if (CheckBackward(node, conn)) return 1;
+		}
+	}
+
+	return 0;
 }
 
 void NodeGroup::dump_out(FILE *f,int indent,int what,DumpContext *context)
@@ -516,6 +672,14 @@ Attribute *NodeGroup::dump_out_atts(Attribute *att,int what,DumpContext *context
 		att2 = att->pushSubAtt("node", node->Type());
 		att2->push("id", node->Id());
 
+		sprintf(s,"%.10g %.10g %.10g %.10g", node->x,node->y,node->width,node->height);
+		att2->push("xywh", s);
+		//---------
+		//att2->push("x",  node->x);
+		//att2->push("y",  node->y);
+		//att2->push("width",  node->width);
+		//att2->push("height",  node->height);
+
 		if (node->collapsed) att2->push("collapsed");
 
 		//NodeColors *colors;
@@ -547,12 +711,17 @@ Attribute *NodeGroup::dump_out_atts(Attribute *att,int what,DumpContext *context
 	}
 
 	att2 = att->pushSubAtt("connections");
-	char scratch[200];
+	//char scratch[200]; // *** crash magnet!
 	for (int c=0; c<connections.n; c++) {
-		sprintf(scratch, "%s,%s - %s,%s", 
-				connections.e[c]->from->Name,connections.e[c]->fromprop->name,
-				connections.e[c]->to->Name,connections.e[c]->toprop->name);
-		att2->push("connect", scratch);
+		 //"%s,%s - %s,%s", 
+		string str;
+		str = str + connections.e[c]->from->Id() + "," + connections.e[c]->fromprop->name
+					 + " -> " + connections.e[c]->to  ->Id() + "," + connections.e[c]->toprop  ->name;
+
+		//sprintf(scratch, "%s,%s - %s,%s", 
+				//connections.e[c]->from->Id(), connections.e[c]->fromprop->name,
+				//connections.e[c]->to  ->Id(), connections.e[c]->toprop  ->name);
+		att2->push("connect", str.c_str());
 	}
 
 	return att;
@@ -562,10 +731,9 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 {
 	if (!att) return;
 
-	cerr << " *** need to finish NodeGroup::dump_in_atts()!!"<<endl;
-
     char *name,*value;
 	const char *out=NULL;
+	Attribute *conatt=NULL;
 
     for (int c=0; c<att->attributes.n; c++) {
         name= att->attributes.e[c]->name;
@@ -583,13 +751,150 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 			out = value;
 
         } else if (!strcmp(name,"node")) {
-        } else if (!strcmp(name,"connection")) {
+			 //value is the node type
+			if (isblank(value)) continue;
+
+			NodeBase *newnode = NewNode(value);
+			if (!newnode) continue;
+
+    		for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
+				name= att->attributes.e[c]->attributes.e[c2]->name;
+				value=att->attributes.e[c]->attributes.e[c2]->value;
+
+				if (!strcmp(name,"id")) {
+					newnode->Id(value);
+
+				} else if (!strcmp(name,"xywh")) {
+					double xywh[4];
+					int l = DoubleListAttribute(value,xywh,4);
+					if (l==4) {
+						newnode->x = xywh[0];
+						newnode->y = xywh[1];
+						newnode->width  = xywh[2];
+						newnode->height = xywh[3];
+					}
+
+				} else if (!strcmp(name,"x")) {
+					DoubleAttribute(value, &newnode->x);
+
+				} else if (!strcmp(name,"y")) {
+					DoubleAttribute(value, &newnode->y);
+
+				} else if (!strcmp(name,"width")) {
+					DoubleAttribute(value, &newnode->width);
+
+				} else if (!strcmp(name,"height")) {
+					DoubleAttribute(value, &newnode->height);
+
+				} else if (!strcmp(name,"collapsed")) {
+					newnode->collapsed = BooleanAttribute(value);
+
+				} else if (!strcmp(name,"in") || !strcmp(name,"out")) {
+					Attribute *v = att->attributes.e[c]->attributes.e[c2];
+					if (!v) continue;
+					newnode->SetPropertyFromAtt(value, v); 
+					//Value *val = AttributeToValue(v);
+					//if (val) {
+					//	if (!newnode->SetProperty(value, val, true)) val->dec_count();
+					//}
+				}
+			}
+
+			if (!newnode->colors) newnode->InstallColors(colors, false);
+			newnode->Wrap();
+			nodes.push(newnode);
+			newnode->dec_count();
+
+        } else if (!strcmp(name,"connections")) {
+			conatt = att->attributes.e[c];
 		}
 	} 
 
 	if (out) {
-		 //find out in nodes and assign as output
+		//set designated output
+		NodeBase *node = FindNode(out);
+		if (node) DesignateOutput(node);
 	}
+
+	if (conatt) {
+		for (int c=0; c<conatt->attributes.n; c++) {
+			name= conatt->attributes.e[c]->name;
+			value=conatt->attributes.e[c]->value;
+
+        	if (!strcmp(name,"connect")) {
+				if (!value) continue;
+
+				const char *div = strstr(value, " -> ");
+				if (!div) continue;
+				const char *comma  = strchr(value, ',');
+				const char *comma2 = strchr(div+4, ',');
+				if (!comma || comma>div || !comma2) continue;
+
+				char *fromstr = newnstr(value, comma-value);
+				char *fpstr   = newnstr(comma+1, div-comma-1);
+				char *tostr   = newnstr(div+4,comma2-(div+4));
+				char *tpstr   = newnstr(comma2+1, value+strlen(value)-comma2);
+
+				NodeBase *from = FindNode(fromstr),
+						 *to   = FindNode(tostr);
+				NodeProperty *fromprop = from->FindProperty(fpstr),
+							 *toprop   = to  ->FindProperty(tpstr);
+
+				delete[] fromstr;
+				delete[] tostr;
+				delete[] fpstr;
+				delete[] tpstr;
+
+				if (!from || !to || !fromprop || !toprop) {
+					// *** warning!
+					DBG cerr <<" *** bad node att input!"<<endl;
+					continue;
+				}
+
+
+				NodeConnection *newcon = new NodeConnection(from, to, fromprop, toprop);
+				fromprop->connections.push(newcon, 0);//prop list does NOT delete connection
+				toprop  ->connections.push(newcon, 0);//prop list does NOT delete connection
+				connections.push(newcon, 1);//node connection list DOES delete connection
+			}
+		}
+	}
+
+}
+
+/*! Create and return a new fresh node object, unconnected to anything.
+ */
+NodeBase *NodeGroup::NewNode(const char *type)
+{
+	ObjectFactory *factory = NodeFactory();
+	ObjectFactoryNode *fnode;
+
+	for (int c=0; c < factory->types.n; c++) {
+		fnode = factory->types.e[c];
+
+		if (!strcmp(fnode->name, type)) {
+			anObject *obj = fnode->newfunc(NULL);
+			NodeBase *newnode = dynamic_cast<NodeBase*>(obj);
+
+			if (obj && !newnode) {
+				DBG cerr << " *** uh oh! factory returned bad object in NodeGroup::NewNode()!"<<endl;
+				return NULL;
+			} 
+			return newnode;
+		}
+	}
+
+	return NULL;
+}
+
+NodeBase *NodeGroup::FindNode(const char *name)
+{
+	if (!name) return NULL;
+
+	for (int c=0; c<nodes.n; c++) {
+		if (!strcmp(name, nodes.e[c]->Id())) return nodes.e[c];
+	}
+	return NULL;
 }
 
 
@@ -614,17 +919,18 @@ Laxkit::anObject *newDoubleNode(Laxkit::anObject *ref)
 class MathNode : public NodeBase
 {
   public:
-	static ObjectDef *mathnodedef; //the def for the op enum
+	static SingletonKeeper mathnodekeeper; //the def for the op enum
+	static ObjectDef *GetMathNodeDef() { return dynamic_cast<ObjectDef*>(mathnodekeeper.GetObject()); }
+
 	int operation; // + - * / % power
 	double a,b,result;
 	MathNode(int op=0, double aa=0, double bb=0);
 	virtual ~MathNode();
 	virtual int Update();
 	virtual int GetStatus();
-	//virtual int GetDef() { return mathnodedef; }
+	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
 };
 
-ObjectDef *MathNode::mathnodedef = NULL;
 
 enum MathNodeOps {
 	OP_None,
@@ -651,6 +957,38 @@ enum MathNodeOps {
 	OP_MAX
 };
 
+/*! Create and return a fresh instance of the def for a MathNode op.
+ */
+ObjectDef *DefineMathNodeDef()
+{ 
+	ObjectDef *def = new ObjectDef("MathNodeDef", _("Math Node Def"), NULL,NULL,"enum", 0);
+
+	def->pushEnumValue("Add",_("Add"),_("Add"), OP_Add);
+	def->pushEnumValue("Subtract",_("Subtract"),_("Subtract"), OP_Subtract);
+	def->pushEnumValue("Multiply",_("Multiply"),_("Multiply"), OP_Multiply);
+	def->pushEnumValue("Divide",_("Divide"),_("Divide"), OP_Divide);
+	def->pushEnumValue("Mod",_("Mod"),_("Mod"), OP_Mod);
+	def->pushEnumValue("Power",_("Power"),_("Power"), OP_Power);
+	def->pushEnumValue("GreaterThan",_("Greater than"),_("Greater than"), OP_Greater_Than);
+	def->pushEnumValue("LessThan",_("Less than"),_("Less than"), OP_Less_Than);
+	def->pushEnumValue("Equals",_("Equals"),_("Equals"), OP_Equals);
+	def->pushEnumValue("NotEqual",_("Not Equal"),_("Not Equal"), OP_Not_Equal);
+	def->pushEnumValue("Minimum",_("Minimum"),_("Minimum"), OP_Minimum);
+	def->pushEnumValue("Maximum",_("Maximum"),_("Maximum"), OP_Maximum);
+	def->pushEnumValue("Average",_("Average"),_("Average"), OP_Average);
+
+	def->pushEnumValue("And"       ,_("And"       ),_("And"       ), OP_And      );
+	def->pushEnumValue("Or"        ,_("Or"        ),_("Or"        ), OP_Or       );
+	def->pushEnumValue("Xor"       ,_("Xor"       ),_("Xor"       ), OP_Xor      );
+	def->pushEnumValue("ShiftLeft" ,_("ShiftLeft" ),_("ShiftLeft" ), OP_ShiftLeft);
+	def->pushEnumValue("ShiftRight",_("ShiftRight"),_("ShiftRight"), OP_ShiftRight);
+
+	return def;
+}
+
+SingletonKeeper MathNode::mathnodekeeper(DefineMathNodeDef(), true);
+
+
 MathNode::MathNode(int op, double aa, double bb)
 {
 	type = newstr("Math");
@@ -660,36 +998,8 @@ MathNode::MathNode(int op, double aa, double bb)
 	b=bb;
 	operation = op;
 
-	ObjectDef *enumdef = NULL;
-	if (mathnodedef==NULL) {
-		enumdef = new ObjectDef("MathNodeDef", _("Math Node Def"), NULL,NULL,"enum", 0);
-
-		enumdef->pushEnumValue("Add",_("Add"),_("Add"), OP_Add);
-		enumdef->pushEnumValue("Subtract",_("Subtract"),_("Subtract"), OP_Subtract);
-		enumdef->pushEnumValue("Multiply",_("Multiply"),_("Multiply"), OP_Multiply);
-		enumdef->pushEnumValue("Divide",_("Divide"),_("Divide"), OP_Divide);
-		enumdef->pushEnumValue("Mod",_("Mod"),_("Mod"), OP_Mod);
-		enumdef->pushEnumValue("Power",_("Power"),_("Power"), OP_Power);
-		enumdef->pushEnumValue("GreaterThan",_("Greater than"),_("Greater than"), OP_Greater_Than);
-		enumdef->pushEnumValue("LessThan",_("Less than"),_("Less than"), OP_Less_Than);
-		enumdef->pushEnumValue("Equals",_("Equals"),_("Equals"), OP_Equals);
-		enumdef->pushEnumValue("NotEqual",_("Not Equal"),_("Not Equal"), OP_Not_Equal);
-		enumdef->pushEnumValue("Minimum",_("Minimum"),_("Minimum"), OP_Minimum);
-		enumdef->pushEnumValue("Maximum",_("Maximum"),_("Maximum"), OP_Maximum);
-		enumdef->pushEnumValue("Average",_("Average"),_("Average"), OP_Average);
-
-		enumdef->pushEnumValue("And"       ,_("And"       ),_("And"       ), OP_And      );
-		enumdef->pushEnumValue("Or"        ,_("Or"        ),_("Or"        ), OP_Or       );
-		enumdef->pushEnumValue("Xor"       ,_("Xor"       ),_("Xor"       ), OP_Xor      );
-		enumdef->pushEnumValue("ShiftLeft" ,_("ShiftLeft" ),_("ShiftLeft" ), OP_ShiftLeft);
-		enumdef->pushEnumValue("ShiftRight",_("ShiftRight"),_("ShiftRight"), OP_ShiftRight);
-		enumdef->inc_count();
-		mathnodedef = enumdef;
-
-	} else {
-		enumdef = mathnodedef;
-		enumdef->inc_count();
-	}
+	ObjectDef *enumdef = GetMathNodeDef();
+	enumdef->inc_count();
 
 
 	EnumValue *e = new EnumValue(enumdef, 0);
@@ -705,9 +1015,34 @@ MathNode::MathNode(int op, double aa, double bb)
 
 MathNode::~MathNode()
 {
-	if (mathnodedef) {
-		if (mathnodedef->dec_count()<=0) mathnodedef=NULL;
+//	if (mathnodedef) {
+//		if (mathnodedef->dec_count()<=0) mathnodedef=NULL;
+//	}
+}
+
+/*! Return 1 for property set, 0 for could not set.
+ */
+int MathNode::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
+{
+	if (strcmp(propname, "Op")) return NodeBase::SetPropertyFromAtt(propname, att);
+	if (isblank(att->value)) return 0;
+
+	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
+	ObjectDef *def=ev->GetObjectDef();
+
+	if (att->attributes.n==0) return 0;
+	const char *nval = att->attributes.e[0]->value;
+	if (isblank(nval)) return 0;
+
+	const char *nm;
+	for (int c=0; c<def->getNumEnumFields(); c++) {
+		def->getEnumInfo(c, NULL, &nm); //grabs id == name in the def
+		if (!strcmp(nm, nval)) {
+			ev->value = c; //note: makes enum value the index of the enumval def, not the id
+			break;
+		}
 	}
+	return 1;
 }
 
 int MathNode::GetStatus()
@@ -805,9 +1140,16 @@ Laxkit::anObject *newImageNode(Laxkit::anObject *ref)
 	NodeBase *node = new NodeBase;
 	//node->Id("Image");
 	
-	makestr(node->type, "Image");
-	makestr(node->Name, _("Image"));
-	node->properties.push(new NodeProperty(true, true, _("Filename"), new FileValue("."), 1)); 
+	makestr(node->type, "NewImage");
+	makestr(node->Name, _("New Image"));
+	//node->properties.push(new NodeProperty(true, true, _("Filename"), new FileValue("."), 1)); 
+	node->properties.push(new NodeProperty(true, true, _("Width"), new DoubleValue(100), 1)); 
+	node->properties.push(new NodeProperty(true, true, _("Height"), new DoubleValue(100), 1)); 
+	node->properties.push(new NodeProperty(true, true, _("Channels"), new IntValue(4), 1)); 
+	node->properties.push(new NodeProperty(true, true, _("Depth"), new DoubleValue(100), 1)); 
+	//depth: 8, 16, 24, 32, 32f, 64f
+	//format: gray, graya, rgb, rgba
+	//backend: raw, default, gegl, gmic, gm, cairo
 	return node;
 }
 
@@ -1034,7 +1376,8 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 
 		ObjectFactoryNode *type;
 		for (int c=0; c<node_factory->types.n; c++) {
-			type=node_factory->types.e[c];
+			type = node_factory->types.e[c];
+
 			if (!strcmp(type->name, what)) {
 				anObject *obj = type->newfunc(NULL);
 				NodeBase *newnode = dynamic_cast<NodeBase*>(obj);
@@ -1141,6 +1484,7 @@ int NodeInterface::Refresh()
 	 //  ins/outs
 	NodeBase *node;
 	ScreenColor *border, *fg;
+	ScreenColor tfg, tbg;
 	NodeColors *colors=NULL;
 	double th = dp->textheight();
 	double borderwidth = 1;
@@ -1163,27 +1507,35 @@ int NodeInterface::Refresh()
 			borderwidth = 3;
 		}
 		if (lasthover == c) { //mouse is hovering over this node
-			border = &colors->mo_border;
-			bg     = &colors->mo_bg;
-			//fg     = &colors->mo_fg;
+			tfg = *fg;
+			tbg = *bg;
+			tfg.AddDiff(colors->mo_diff, colors->mo_diff, colors->mo_diff);
+			tbg.AddDiff(colors->mo_diff, colors->mo_diff, colors->mo_diff);
+			fg = &tfg;
+			bg = &tbg;
 		}
-		if (IsSelected(node) && lasthover == c) { //mouse is hovering over this selected node
-			border = &colors->selected_mo_border;
-			bg     = &colors->selected_mo_bg;
-		}
-		dp->NewFG(border);
-		dp->NewBG(bg);
 		flatpoint p;
 
-		 //draw whole rect, bg and border
+		 //draw whole rect, bg
+		dp->NewFG(bg);
 		dp->LineWidth(borderwidth);
 		dp->drawRoundedRect(node->x, node->y, node->width, node->height,
-							th/3, false, th/3, false, 2); 
+							th/3, false, th/3, false, 1); 
 
 		 //draw label
+		dp->NewFG(&colors->label_bg);
+		dp->drawRoundedRect(node->x, node->y, node->width, th,
+							th/3, false, th/3, false, 1, 8|4); 
+
+		 //draw whole rect border
+		dp->NewFG(border);
+		dp->drawRoundedRect(node->x, node->y, node->width, node->height,
+							th/3, false, th/3, false, 0); 
+
+		dp->NewFG(&colors->label_fg);
+		dp->textout(node->x+node->width/2-th/2, node->y, node->Name, -1, LAX_TOP|LAX_HCENTER);
 		dp->NewFG(fg);
 		dp->NewBG(bg);
-		dp->textout(node->x+node->width/2-th/2, node->y, node->Name, -1, LAX_TOP|LAX_HCENTER);
 
 
 		 //draw the properties (or not)
@@ -1264,11 +1616,15 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y)
 	extra[0]='\0';
 	double th = dp->textheight();
 	dp->LineWidth(1);
+	ScreenColor col;
 
 	if (v && (v->type()==VALUE_Real || v->type()==VALUE_Int)) {
+		dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
 		dp->NewBG(&nodes->colors->bg_edit);
 		dp->drawRoundedRect(node->x+prop->x+th/2, node->y+prop->y+th/4, node->width-th, prop->height*.66,
 							th/3, false, th/3, false, 2); 
+
+		dp->NewFG(&nodes->colors->fg_edit);
 		sprintf(extra, "%s:", prop->Name());
 		dp->textout(node->x+prop->x+th, node->y+prop->y+prop->height/2, extra, -1, LAX_LEFT|LAX_VCENTER);
 		v->getValueStr(extra, 199);
@@ -1283,9 +1639,12 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y)
 
 		 //draw value
 		v->getValueStr(extra, 199);
+		dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
 		dp->NewBG(&nodes->colors->bg_menu);
 		dp->drawRoundedRect(node->x+x, node->y+prop->y+th/4, node->width-th/2-x, prop->height*.66,
 							th/3, false, th/3, false, 2); 
+
+		dp->NewFG(&nodes->colors->fg_edit);
 		dp->textout(node->x+th*1.5+dx, node->y+prop->y+prop->height/2, extra,-1, LAX_LEFT|LAX_VCENTER);
 		dp->drawthing(node->x+node->width-th, node->y+prop->y+prop->height/2, th/4,th/4, 1, THING_Triangle_Down);
 
@@ -1392,13 +1751,14 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 		needtodraw=1;
 
 	} else if ((state&LAX_STATE_MASK) == ControlMask && overnode==-1) {
+		 //control-drag make a cut line for connections
 		action = NODES_Cut_Connections;
 		selection_rect.minx=selection_rect.maxx=x;
 		selection_rect.miny=selection_rect.maxy=y;
 		needtodraw=1;
 
 	} else if (overnode>=0 && overproperty==-1 && overpropslot==-1) {
-		 //not clicking on a property, so add or remove this node to selection
+		 //in a node, but not clicking on a property, so add or remove this node to selection
 		if ((state&LAX_STATE_MASK) == ShiftMask) {
 			 //add to selection
 			selected.pushnodup(nodes->nodes.e[overnode]);
@@ -1411,9 +1771,11 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 
 		} else {
 			 //plain click, make this node the only one selected
-			selected.flush();
-			selected.push(nodes->nodes.e[overnode]);
-			action = NODES_Move_Nodes;
+			//selected.flush();
+			//selected.push(nodes->nodes.e[overnode]);
+			//action = NODES_Move_Nodes;
+			action = NODES_Move_Or_Select;
+			lasthover = overnode;
 			needtodraw=1;
 		}
 
@@ -1425,7 +1787,7 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 		 //drag out a property to connect to another node
 		NodeProperty *prop = nodes->nodes.e[overnode]->properties.e[overpropslot];
 
-		if (nodes->nodes.e[overnode]->properties.e[overpropslot]->is_input) {
+		if (prop->is_input) {
 			action = NODES_Drag_Input;
 
 			if (prop->connections.n) {
@@ -1434,8 +1796,9 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 				action = NODES_Drag_Output;
 				overnode = nodes->nodes.findindex(prop->connections.e[0]->from);
 				overpropslot = nodes->nodes.e[overnode]->properties.findindex(prop->connections.e[0]->fromprop);
-				prop->connections.e[0]->to = NULL;
+				prop->connections.e[0]->to = NULL; // note: assumes only one input
 				prop->connections.e[0]->toprop = NULL;
+				prop->connections.remove(0);
 
 				lastconnection = 0;
 				lasthover      = overnode;
@@ -1443,8 +1806,9 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 
 			} else {
 				 //connection didn't exist, so install a half connection to current node
-				prop->connections.push(new NodeConnection(NULL, nodes->nodes.e[overnode], NULL,prop), 0);
-				nodes->connections.push(prop->connections.e[prop->connections.n-1], 1);
+				NodeConnection *newcon = new NodeConnection(NULL, nodes->nodes.e[overnode], NULL,prop);
+				prop->connections.push(newcon, 0);//prop list does NOT delete connection
+				nodes->connections.push(newcon, 1);//node connection list DOES delete connection
 				lastconnection = prop->connections.n-1;
 				lasthover      = overnode;
 				lasthoverslot  = overpropslot;
@@ -1453,8 +1817,8 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 		} else {
 			 // if dragging output, create new connection
 			action = NODES_Drag_Output;
-			prop->connections.push(new NodeConnection(nodes->nodes.e[overnode],NULL, prop,NULL), 0);
-			nodes->connections.push(prop->connections.e[prop->connections.n-1], 1);
+			prop->connections.push(new NodeConnection(nodes->nodes.e[overnode],NULL, prop,NULL), 0);//prop list does not delete connection
+			nodes->connections.push(prop->connections.e[prop->connections.n-1], 1);//node connection list DOES delete connection
 			lastconnection = prop->connections.n-1;
 			lasthoverslot  = overpropslot;
 			lasthover      = overnode;
@@ -1486,6 +1850,8 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 
 	if (action == NODES_Property) {
+		 //mouse up on a property, so do property specific actions...
+
 		if (!nodes || overnode<0 || dragged>5) return 0;
 		NodeBase *node = nodes->nodes.e[overnode];
 		NodeProperty *prop = node->properties.e[overproperty];
@@ -1537,6 +1903,15 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		}
 
 		return 0; 
+
+	} else if (action == NODES_Move_Or_Select) {
+		//to have this, we clicked down, but didn't move, so select the node..
+		if (overnode>=0) {
+			selected.flush();
+			selected.push(nodes->nodes.e[overnode]);
+			needtodraw=1;
+		}
+		return 0;
 
 	} else if (action == NODES_Cut_Connections) {
 		 //cut any connections that cross the line between selection_rect.min to max
@@ -1633,9 +2008,16 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 		if (overnode>=0 && overpropslot>=0) {
 			NodeProperty *toprop = nodes->nodes.e[overnode]->properties.e[overpropslot];
+
 			if (toprop->is_input) {
+				//nodes->Connect(
+				//---------
 				if (toprop->connections.n) {
 					 //clobber any other connection going into the input. Only one input allowed.
+					for (int c=toprop->connections.n-1; c>=0; c--) {
+						//toprop->connections.remove();
+						nodes->connections.remove(toprop->connections.e[c]);
+					}
 					toprop->connections.flush();
 				}
 
@@ -1714,6 +2096,21 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 
 	buttondown.getextrainfo(mouse->id,LEFTBUTTON, &action, &property);
 
+
+	 //special check to maybe change action
+	if (action == NODES_Move_Or_Select) {
+		action = NODES_Move_Nodes;
+		buttondown.moveinfo(mouse->id, LEFTBUTTON, action, property);
+
+		int overnode = lasthover;
+
+		if (selected.findindex(nodes->nodes.e[overnode]) < 0) {
+			 //hovered node not already selected
+
+			if ((state & ShiftMask) == 0) selected.flush();
+			selected.push(nodes->nodes.e[overnode]);
+		} //else node was already selected
+	}
 
 	if (action == NODES_Property) {
 		 //we are dragging on a property.. might have to get response from a custom interface
@@ -1865,6 +2262,7 @@ Laxkit::ShortcutHandler *NodeInterface::GetShortcuts()
     sc->Add(NODES_Ungroup_Nodes, 'g',ShiftMask|ControlMask,0, "UngroupNodes" , _("Ungroup Nodes"),NULL,0);
     sc->Add(NODES_Add_Node,      'A',ShiftMask,  0, "AddNode"      , _("Add Node"     ),NULL,0);
     sc->Add(NODES_Delete_Nodes,  LAX_Bksp,0,     0, "DeleteNode"   , _("Delete Node"  ),NULL,0);
+	sc->AddShortcut(LAX_Del,0,0, NODES_Delete_Nodes);
 
 
     sc->Add(NODES_Save_Nodes,      's',0,  0, "SaveNodes"      , _("Save Nodes"     ),NULL,0);
@@ -1885,6 +2283,11 @@ int NodeInterface::PerformAction(int action)
 
 	} else if (action==NODES_Delete_Nodes) {
 		DBG cerr << "delete nodes..."<<endl;
+		if (!nodes || selected.n == 0) return 0;
+
+		nodes->DeleteNodes(selected);
+		PostMessage(_("Deleted."));
+		needtodraw=1;
 		return 0;
 
 	} else if (action==NODES_Add_Node) {
@@ -1936,7 +2339,31 @@ int NodeInterface::PerformAction(int action)
 
 	} else if (action==NODES_Load_Nodes) {
 		DBG cerr <<"load nodes..."<<endl;
-		if (!nodes) return 0;
+
+		if (nodes) {
+			nodes->dec_count();
+			nodes = NULL;
+		}
+
+		nodes = new Nodes;
+		nodes->InstallColors(new NodeColors, true);
+		nodes->colors->Font(font, false);
+
+		const char *file = "nodes-TEMP.nodes";
+
+		FILE *f = fopen(file, "r");
+		if (f) {
+			nodes->dump_in(f, 0, 0, NULL, NULL);
+			fclose(f);
+
+			PostMessage(_("Nodes loaded from nodes-TEMP.nodes"));
+			DBG cerr << _("Nodes loaded from nodes-TEMP.nodes") <<endl;
+		} else {
+			PostMessage(_("Could not open nodes-TEMP.nodes!"));
+			DBG cerr <<(_("Could not open nodes-TEMP.nodes!")) << endl;
+		}
+
+		needtodraw=1;
 		return 0;
 	}
 
