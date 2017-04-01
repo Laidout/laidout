@@ -18,6 +18,10 @@ shearing or scaling produces null axes occasionally when crossing over opposite 
 
 ------------ other bugs:
 
+saved file, not showing up in recent
+
+sometimes crash at insert page before
+
 text window controls have difficulties
   doesn't handle tabs
   (see PlainTextWindow below for feature plans instead of bugs)
@@ -132,6 +136,16 @@ test:
 put rss/g+ links on all menu pages.. need way to automate including menu bar stuff
 
 
+from recent import:
+  large images all being loaded in, need way to ask about creating proxy images
+  need better ui for selecting templates
+  load in autosave should ask if you want to save as the original
+  spread editor needs edge dragging
+
+node editor NodeInterface:
+  color code pipes by value type
+  exec paths
+
 need to implement DRAW_Hires for all interfaces that default to preview renders. needed for proper image out
   includes at least image(done), path, engraver
 
@@ -174,6 +188,11 @@ captioninterface CaptionInterface captiondata CaptionData
     DONE needs hint to preserve baseline align when changing font size or line spacing
 
 text on path textonpath: TextOnPath
+  select font, key up/down scrolls uncomfortably
+  need to center balance on path
+  svg out bad
+  need kern control
+
   bug: drag the baseline handle off to the sides, makes huge bad jumps in value
   bug: draggin the offest handle sometimes jumps to really bad
   handle to remove from current path, and possibly attach it to some other path
@@ -698,6 +717,7 @@ FileDialog filedialog:
 when resizing viewportwindow and a temp_input window active, make sure it stays on screen?
 
 autosave
+  start fresh doc, autosaves which may be saving into confusing location. maybe save in config dir?
   autorecover.. -> when an autosave is newer than the file we are opening
   option to choose how many to save near original file, and how to remove old
 	[ ] Backup on save to: __%f~__   ___%f#~___ <-- use '#' to signal increment save
@@ -1519,6 +1539,9 @@ These can then be purged after each release...
 ===========================================================================================
 
 
+DONE space to duplicate not working (on images)
+DONE thumbnail images not showing in the spread editor view
+DONE won't let me open for new preview image in imageinfo dialog, click ok, window comes back up
 DONE inkscape bug!! zoom out, NextSpread/PreviousSpread icons stroke on side disappears, somehow handle related, adding more handles fixes
 DONE wrong git rep on website 
 DONE option to change default exported file name
