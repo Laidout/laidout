@@ -14,17 +14,6 @@
 // Copyright (C) 2013-2014 by Tom Lechner
 //
 
-
-// Todo:
-
-//  tiling along a path -- frieze patterns
-//  heesh patterns
-
-//  penrose p1: pentagons, pentagrams, rhombus, sliced pentagram
-//  penrose p2: kite and dart
-//  penrose p3: 2 rhombs
-
-
 #include "cloneinterface.h"
 #include "../laidout.h"
 #include "../drawdata.h"
@@ -569,12 +558,15 @@ Group *Tiling::Render(Group *parent_space,
 	Group *trace=NULL;
 	if (trace_cells) {
 		 //set up outlines 
-		double w=norm( basecells.e[0]->celloutline->ReferencePoint(LAX_TOP_RIGHT,true)-
-				basecells.e[0]->celloutline->ReferencePoint(LAX_BOTTOM_LEFT,true))/100;
-		LineStyle *ls=new LineStyle(65535,0,0,65535, w, LAXCAP_Round,LAXJOIN_Round,0,LAXOP_Over);
+		//double w=norm( basecells.e[0]->celloutline->ReferencePoint(LAX_TOP_RIGHT,true)-
+		//		basecells.e[0]->celloutline->ReferencePoint(LAX_BOTTOM_LEFT,true))/100;
+		double w = basecells.e[0]->celloutline->MaxDimension()/50;
+		LineStyle *ls = new LineStyle(65535,0,0,65535, w, LAXCAP_Round,LAXJOIN_Round,0,LAXOP_Over);
+		ls->Colorf(.5,.5,.5,1.);
 		trace=new Group;
 		trace->Id("base_cells");
 		PathsData *d;
+
 		for (int c=0; c<basecells.n; c++) {
 			if (basecells.e[c]->celloutline) {
 				d=dynamic_cast<PathsData*>(basecells.e[c]->celloutline->duplicate(NULL));
@@ -2318,6 +2310,8 @@ Tiling *GetBuiltinTiling(int num)
 
 enum CloneInterfaceElements {
 	CLONEI_None=0,
+
+	 //things 
 	CLONEI_Circle,
 	CLONEI_Box,
 	CLONEI_Tiling,
@@ -2326,11 +2320,7 @@ enum CloneInterfaceElements {
 	CLONEI_Source_Object,
 	CLONEI_Boundary,
 
-	CLONEI_MAX
-};
-
-enum TilingShortcutActions {
-	CLONEIA_None=0,
+	 //shortcut actions
 	CLONEIA_Edit,
 	CLONEIA_Next_Tiling,
 	CLONEIA_Previous_Tiling,
@@ -2341,13 +2331,26 @@ enum TilingShortcutActions {
 	CLONEIA_Toggle_Render,
 	CLONEIA_Toggle_Orientations,
 	CLONEIA_Select,
+	
+	 //interface modes
+	CMODE_Normal,
+	CMODE_Select,
+	CMODE_Edit,
 
-	CLONEIA_MAX
+	 //extra context menu things
+	CLONEM_Clear_Base_Objects,
+	CLONEM_Include_Lines,
+	CLONEM_Groupify,
+	CLONEM_Load,
+	CLONEM_Save,
+	CLONEM_Select_Boundary,
+	CLONEM_Select_Base,
+	CLONEM_Select_Sources,
+	CLONEM_Auto_Select_Base,
+
+	CLONEI_MAX
 };
 
-#define CMODE_Normal  0
-#define CMODE_Edit    1
-#define CMODE_Select  2
 
 CloneInterface::CloneInterface(anInterface *nowner,int nid,Laxkit::Displayer *ndp)
   : anInterface(nowner,nid,ndp),
@@ -2397,9 +2400,11 @@ CloneInterface::CloneInterface(anInterface *nowner,int nid,Laxkit::Displayer *nd
 	ScreenColor col(0.,.7,0.,1.);
 	boundary=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
 	boundary->style=PathsData::PATHS_Ignore_Weights;
-	boundary->line(-1,-1,-1,&col);
+	boundary->line(2,-1,-1,&col);
+	boundary->linestyle->widthtype = 0;
 	boundary->appendRect(0,0,4,4);
 
+	snap_to_base=true;
 	groupify_clones=true;
 	tiling=NULL;
 	preview_lines=false;
@@ -2452,8 +2457,8 @@ Laxkit::ShortcutHandler *CloneInterface::GetShortcuts()
 
 	sc=new ShortcutHandler("CloneInterface");
 
-	sc->Add(CLONEIA_Next_Tiling,        LAX_Left,0,0,  "NextTiling",        _("Select next tiling"),    NULL,0);
-	sc->Add(CLONEIA_Previous_Tiling,    LAX_Right,0,0, "PreviousTiling",    _("Select previous tiling"),NULL,0);
+	sc->Add(CLONEIA_Next_Tiling,        LAX_Right,0,0, "NextTiling",        _("Select next tiling"),    NULL,0);
+	sc->Add(CLONEIA_Previous_Tiling,    LAX_Left,0,0,  "PreviousTiling",    _("Select previous tiling"),NULL,0);
 	sc->Add(CLONEIA_Next_Basecell,      LAX_Up,0,0,    "NextBasecell",      _("Select next base cell"),    NULL,0);
 	sc->Add(CLONEIA_Previous_Basecell,  LAX_Down,0,0,  "PreviousBasecell",  _("Select previous base cell"),    NULL,0);
 	sc->Add(CLONEIA_Toggle_Lines,       'l',0,0,       "ToggleLines",       _("Toggle rendering cell lines"),NULL,0);
@@ -2501,14 +2506,17 @@ int CloneInterface::SetTiling(Tiling *newtiling)
 		o->FindBBox();
 		lstyle=new LineStyle();
 		*lstyle=preview_cell;
-		lstyle->color=ca;
+		lstyle->color = ca;
+		lstyle->widthtype = 0;
 		dynamic_cast<PathsData*>(o)->InstallLineStyle(lstyle);
 		lstyle->dec_count();
+
 		if (groupify_clones) {
 			Group *group=new Group;
 			group->push(o);
 			o->dec_count();
 			o=group;
+			o->FindBBox();
 		}
 		base_cells.push(o);
 		o->dec_count();
@@ -2525,7 +2533,9 @@ int CloneInterface::SetTiling(Tiling *newtiling)
 			o=tiling->basecells.e[c]->celloutline->duplicate(NULL);
 			o->FindBBox();
 			o->Multiply(tiling->basecells.e[c]->transforms.e[c2]->transform);
-			dynamic_cast<PathsData*>(o)->InstallLineStyle(&preview_cell2);
+			po = dynamic_cast<PathsData*>(o);
+			po->InstallLineStyle(&preview_cell2);
+			po->style=PathsData::PATHS_Ignore_Weights;
 			base_cells.push(o);
 			o->dec_count();
 
@@ -2662,23 +2672,19 @@ int CloneInterface::InterfaceOff()
 	return 0;
 }
 
-enum CloneMenuItems {
-	CLONEM_Clear_Base_Objects,
-	CLONEM_Include_Lines,
-	CLONEM_Groupify,
-	CLONEM_Load,
-	CLONEM_Save
-};
-
 Laxkit::MenuInfo *CloneInterface::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
 	if (!menu) menu=new MenuInfo(_("Clone Interface"));
 	else menu->AddSep(_("Clone"));
 
+    menu->AddItem(_("Select boundary"), CLONEM_Select_Boundary);
+    menu->AddItem(_("Select base cells"), CLONEM_Select_Base);
+    //menu->AddItem(_("Select source objects"), CLONEM_Select_Sources);
+    menu->AddSep();
     menu->AddItem(_("Clear current base objects"), CLONEM_Clear_Base_Objects);
     menu->AddSep();
-    menu->AddItem(_("Include lines"),      CLONEM_Include_Lines, LAX_ISTOGGLE|(trace_cells?LAX_CHECKED:0));
-	menu->AddItem(_("Groupify base cells"),    CLONEM_Groupify, LAX_ISTOGGLE|(groupify_clones?LAX_CHECKED:0));
+    menu->AddItem(_("Include lines"),      CLONEM_Include_Lines, LAX_ISTOGGLE|(trace_cells?LAX_CHECKED:0), -1);
+	menu->AddItem(_("Groupify base cells"),    CLONEM_Groupify, LAX_ISTOGGLE|(groupify_clones?LAX_CHECKED:0), -1);
     menu->AddSep();
     menu->AddItem(_("Load resource"), CLONEM_Load);
     menu->AddItem(_("Save as resource"), CLONEM_Save);
@@ -2696,17 +2702,26 @@ int CloneInterface::Event(const Laxkit::EventData *e,const char *mes)
         if (i==CLONEM_Clear_Base_Objects) {
 			if (current_base<0) current_base=0;
 
-			for (int c=0; c<source_proxies.n(); c++) {
+			for (int c=source_proxies.n(); c>=0; c--) {
 				if (source_proxies.e_info(c)==current_base) {
 					source_proxies.Remove(c);
 					sources.Remove(c);
-					c--;
 				}
 			}
 
 			if (child) RemoveChild();
 			if (active) ToggleActivated();
             return 0;
+
+		} else if (i==CLONEM_Select_Boundary) {
+			Mode(CMODE_Normal);
+			EditThis(boundary, _("Edit boundary"));
+			return 0;
+
+		} else if (i==CLONEM_Select_Base) {
+			Mode(CMODE_Normal);
+			EditThis(&base_cells, _("Edit base cell placement"));
+			return 0;
 
 		} else if (i==CLONEM_Groupify) {
 			groupify_clones=!groupify_clones;
@@ -2783,6 +2798,7 @@ void CloneInterface::DrawSelected()
 		bcell=source_proxies.e_info(c);
 		group=dynamic_cast<DrawableObject*>(base_cells.e(bcell));
 		bpath=dynamic_cast<PathsData*>(group);
+
 		if (!bpath) {
 			bpath=dynamic_cast<PathsData*>(group->e(0));//for groupified
 		}
@@ -2882,6 +2898,15 @@ int CloneInterface::Refresh()
 		return 0;
 	}
 
+	// 
+	// Includes:
+	//  the control box
+	//  base cells, a group of paths, where you can drag page objects into
+	//  render outline
+	//  rendered group
+	//
+
+
 	double circle_radius=INTERFACE_CIRCLE*uiscale;
 
 	if (firsttime==1) {
@@ -2890,13 +2915,13 @@ int CloneInterface::Refresh()
 		box.maxx=10+4*circle_radius*uiscale;
 		box.miny=10;
 		box.maxy=10+5*circle_radius*uiscale + 2*dp->textheight();
+
 	} else if (firsttime==2) {
 		 //remap control box size only, leave in same place
 		firsttime=0;
 		box.maxx=box.minx+4*circle_radius*uiscale;
 		box.maxy=box.miny+5*circle_radius*uiscale + 2*dp->textheight();
 	}
-
 
 
 
@@ -2927,6 +2952,9 @@ int CloneInterface::Refresh()
 		Laidout::DrawData(dp, base_cells.e(c), NULL,NULL);
 
 		if (preview_orient) {
+			 //draw arrows to indicate orientions of base cells
+			dp->LineWidthScreen(2);
+
 			DrawableObject *o=dynamic_cast<DrawableObject*>(base_cells.e(c));
 			flatpoint center=o->ReferencePoint(LAX_MIDDLE,true);
 			flatpoint v=o->ReferencePoint(LAX_TOP_MIDDLE,true)-center;
@@ -2934,7 +2962,7 @@ int CloneInterface::Refresh()
 
 			int bc=o->properties.findInt("base");
 			pd=dynamic_cast<PathsData*>(base_cells.e(bc));
-			dp->NewFG(&pd->linestyle->color);
+			if (pd && pd->linestyle) dp->NewFG(&pd->linestyle->color);
 			dp->drawline(center-v,center+v);
 			dp->drawline(center+v,center+transpose(v)/2);
 		}
@@ -2952,15 +2980,16 @@ int CloneInterface::Refresh()
 
 
 	// //draw rect stuff after clone handles, but before the control box
-	//if (rectinterface) { rectinterface->needtodraw=1; rectinterface->Refresh(); }
+	//if (rectinterface) { rectinterface.needtodraw=1; rectinterface.Refresh(); }
 
-
-	dp->DrawScreen();
 
 	 //--------draw control box------
 
+	dp->DrawScreen(); 
+
 	 //draw whole rect outline
 	dp->LineAttributes(1,LineSolid,CapButt,JoinMiter);
+	//dp->LineWidthScreen(1);
 	dp->NewBG(bg_color);
 	dp->NewFG(fg_color);
 	dp->drawrectangle(box.minx,box.miny, box.maxx-box.minx,box.maxy-box.miny, 2);
@@ -2974,7 +3003,7 @@ int CloneInterface::Refresh()
 	 //draw circle
 	flatpoint cc((box.minx+box.maxx)/2,box.maxy);
 	if (active) dp->NewFG(activate_color); else dp->NewFG(deactivate_color);
-	dp->LineAttributes(3,LineSolid, CapButt, JoinMiter);
+	dp->LineWidthScreen(3);
 	if (lastover==CLONEI_Circle) dp->NewBG(hbg_color); else dp->NewBG(bg_color);
 	dp->drawellipse(cc.x,cc.y,
 					circle_radius,circle_radius,
@@ -3096,9 +3125,38 @@ int CloneInterface::scanSelected(int x,int y)
 	return i;
 }
 
+/*! Return 1 for success and child interface added.
+ *  Return 2 for success and child already there.
+ *  else <=0 for error and could not edit boundary.
+ */
+int CloneInterface::EditThis(SomeData *object, const char *message)
+{
+	if (!object) return 0;
+
+	if (!child) {
+		//RectInterface *rect=new RectInterface(0,dp);
+		rectinterface.style|= RECT_CANTCREATE | RECT_OBJECT_SHUNT;
+		rectinterface.owner=this;
+		rectinterface.UseThis(object,0);
+		child = &rectinterface;
+		AddChild(&rectinterface,0,0);
+		//AddChild(&rectinterface,0,1); //ensures *this gets first dibs for input events
+		PostMessage(message);
+		return 1; 
+	}
+
+	if (rectinterface.somedata != object) {
+		child->UseThis(object,0);
+		return 1;
+	}
+	return 2;
+}
+
 int CloneInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
 	if (buttondown.isdown(0,LEFTBUTTON)) return 1;
+
+	DBG cerr <<"CloneInterface::LBDown()..."<<endl;
 
 	if (mode==CMODE_Select) {
 		//Mode(CMODE_Normal);
@@ -3117,60 +3175,44 @@ int CloneInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 	}
 
 	if (over==CLONEI_BaseCell) {
-		if (!child) {
-			RectInterface *rect=new RectInterface(0,dp);
-			rect->style|= RECT_CANTCREATE | RECT_OBJECT_SHUNT;
-			rect->owner=this;
-			rect->UseThis(&base_cells,0);
-			child=rect;
-			AddChild(rect,0,1);
-		} else {
-			child->UseThis(&base_cells,0);
+		int status = EditThis(&base_cells, _("Edit base cell placement"));
+		if (status == 1) {
+			 //fresh rectinterface
+			dynamic_cast<RectInterface*>(child)->FakeLBDown(x,y,state,count,d);
+			return 0;
+		} else if (status == 2) { //child existed already
 			return 1;
 		}
-		dynamic_cast<RectInterface*>(child)->FakeLBDown(x,y,state,count,d);
-		PostMessage(_("Edit base cell placements"));
-		return 0;
+		over=CLONEI_None;
 	}
 
 	if (over==CLONEI_Boundary) {
-		if (boundary) {
-			if (!child) {
-				RectInterface *rect=new RectInterface(0,dp);
-				rect->style|= RECT_CANTCREATE | RECT_OBJECT_SHUNT;
-				rect->owner=this;
-				rect->UseThis(boundary,0);
-				child=rect;
-				AddChild(rect,0,1);
-			} else {
-				child->UseThis(boundary,0);
-				return 1;
-			}
+		int status = EditThis(boundary, _("Edit boundary"));
+		if (status == 1) {
+			 //fresh rectinterface
 			dynamic_cast<RectInterface*>(child)->FakeLBDown(x,y,state,count,d);
-			PostMessage(_("Edit boundary"));
 			return 0;
+		} else if (status == 2) { //child existed already
+			return 1;
 		}
 		over=CLONEI_None;
 	}
 
 	if (over==CLONEI_Source_Object) {
 		ObjectContext *oc=source_proxies.e(i);
-		if (!child) {
-			RectInterface *rect=new RectInterface(0,dp);
-			rect->style|= RECT_CANTCREATE | RECT_OBJECT_SHUNT;
-			rect->owner=this;
-			rect->UseThis(oc->obj,0);
-			child=rect;
-			AddChild(rect,0,1);
-		} else {
-			child->UseThis(oc->obj,0);
+
+		int status = EditThis(oc->obj, _("Move source object"));
+		if (status == 1) {
+			 //fresh rectinterface
+			dynamic_cast<RectInterface*>(child)->FakeLBDown(x,y,state,count,d);
+			return 0;
+		} else if (status == 2) { //child existed already
+			return 1;
 		}
-		dynamic_cast<RectInterface*>(child)->FakeLBDown(x,y,state,count,d);
-		PostMessage(_("Move source object"));
-		return 0;
+		over=CLONEI_None;
 	}
 
-	if (over==CLONEI_None) {
+	if (over == CLONEI_None) {
 		 //maybe add or remove an object for a particular base cell
 		SomeData *obj=NULL;
 		ObjectContext *oc=NULL;
@@ -3202,20 +3244,13 @@ int CloneInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 			source_proxies.Add(noc,-1,current_base);
 			delete noc;
 
-			//if (child) RemoveChild();
-			if (!child) {
-				RectInterface *rect=new RectInterface(0,dp);
-				rect->style|= RECT_CANTCREATE | RECT_OBJECT_SHUNT;
-				rect->owner=this;
-				rect->UseThis(ref,0);
-				child=rect;
-				AddChild(rect,0,1);
-			} else {
-				child->UseThis(ref,0);
-				return 1;
+			int status = EditThis(ref, _("Move source object"));
+			if (status == 1) {
+				 //fresh rectinterface
+				dynamic_cast<RectInterface*>(child)->FakeLBDown(x,y,state,count,d);
+			} else if (status == 2) { //child existed already
 			}
 
-			dynamic_cast<RectInterface*>(child)->FakeLBDown(x,y,state,count,d);
 			if (active) Render();
 
 			needtodraw=1;
@@ -3319,7 +3354,7 @@ int CloneInterface::Render()
 
 int CloneInterface::ToggleOrientations()
 {
-	preview_orient=!preview_orient;
+	preview_orient = !preview_orient;
 	needtodraw=1;
 
 	PostMessage(preview_orient ? _("Preview cell orientation") : _("Don't preview cell orientation"));
@@ -3474,11 +3509,11 @@ int CloneInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 
 
 	 //button is down on something...
-	int lx,ly, oldover=CLONEI_None;
+	int lx,ly, oldover = CLONEI_None;
 	buttondown.move(mouse->id,x,y, &lx,&ly);
 	buttondown.getextrainfo(mouse->id,LEFTBUTTON, &oldover);
 
-	if (oldover==CLONEI_BaseCell) {
+	if (oldover == CLONEI_BaseCell) {
 		if ((state&LAX_STATE_MASK)==ControlMask) {
 			 //scale
 			int ix,iy;
@@ -3496,6 +3531,7 @@ int CloneInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 			double angle=(x-lx)*M_PI/180;
 			base_cells.Rotate(angle,op);
 		} else base_cells.origin(base_cells.origin()+dp->screentoreal(x,y)-dp->screentoreal(lx,ly));
+
 		needtodraw=1;
 		return 0;
 	}
@@ -3584,6 +3620,8 @@ int CloneInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 	DBG cerr<<" got ch:"<<ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
 	
 	if (mode==CMODE_Select) {
+		 //in the tiling box selection popup box
+
 		int found=0;
 		if (ch==LAX_Esc) {
 			Mode(CMODE_Normal);
@@ -3621,12 +3659,14 @@ int CloneInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 			if (current_selected>=NumBuiltinTilings()) current_selected=0;
 			found=1;
 		}
+
 		if (found) {
 			PostMessage(BuiltinTiling[current_selected]);
 			needtodraw=1;
 			return 0;
 		}
-		return 1;
+
+		return 0; //preempt any key propagation while the box is up
 	}
 
 	if (!sc) GetShortcuts();
@@ -3647,6 +3687,11 @@ int CloneInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 //
 //		}
 //	}
+
+	if (ch==LAX_Del || ch==LAX_Bksp) {
+		//intercept as deleting causes unexpected behavior if propagated
+		return 0;
+	}
 
 	if (ch==LAX_Esc) {
 		if (child) {

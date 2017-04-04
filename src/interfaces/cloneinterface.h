@@ -187,6 +187,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 	bool active;
 	bool preview_orient;
 	bool groupify_clones;
+	bool snap_to_base;
 
 	bool trace_cells;
 	bool preview_lines;
@@ -234,6 +235,9 @@ class CloneInterface : public LaxInterfaces::anInterface
 
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);
+
+	//virtual int EditBoundary();
+	virtual int EditThis(LaxInterfaces::SomeData *object, const char *message);
 
   public:
 	unsigned long cloner_style;//options for interface
