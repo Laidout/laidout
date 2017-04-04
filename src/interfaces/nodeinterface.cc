@@ -288,7 +288,29 @@ int NodeBase::InstallColors(NodeColors *newcolors, bool absorb_count)
 	return 0;
 }
 
-/*! Return whether the node has acceptable values.
+enum NodePropValidEnum {
+	NVALID_Min           = (1<<0),
+	NVALID_Min_Exclusive = (1<<1),
+	NVALID_Max           = (1<<2),
+	NVALID_Max_Exclusive = (1<<3),
+	NVALID_Types         = (1<<4),
+	NVALID_MAX
+};
+/*! \class NodePropValid
+ * Class to ease checking validity of property values for common situations.
+ */
+class NodePropValid
+{
+  public:
+	int type; //[], (], [), (), ..], ..), [.., (.., particular type(s)
+	double min, max;
+	PtrStack<char> types;
+	char *error;
+	NodePropValid() { error=NULL; }
+	virtual ~NodePropValid() { delete[] error; }
+};
+
+/*! Return whether the node has valid values.
  * Default is to return 0 for no error and everything up to date.
  * -1 means bad inputs and node in error state.
  * 1 means needs updating.
@@ -1135,6 +1157,29 @@ Laxkit::anObject *newMathNode(Laxkit::anObject *ref)
 
 //------------ ImageNode
 
+SingletonKeeper imageDepthKeeper;
+
+ObjectDef *GetImageDepthDef()
+{ 
+	ObjectDef *edef = dynamic_cast<ObjectDef*>(imageDepthKeeper.GetObject());
+
+	if (!edef) {
+		//ObjectDef *def = new ObjectDef("ImageNode", _("Image Node"), NULL,NULL,"class", 0);
+
+		edef = new ObjectDef("ColorDepth", _("Color depth"), NULL,NULL,"enum", 0);
+		edef->pushEnumValue("d8",_("8"),_("8"));
+		edef->pushEnumValue("d16",_("16"),_("16"));
+		edef->pushEnumValue("d24",_("24"),_("24"));
+		edef->pushEnumValue("d32",_("32"),_("32"));
+		edef->pushEnumValue("d32f",_("32f"),_("32f"));
+		edef->pushEnumValue("d64f",_("64f"),_("64f"));
+
+		imageDepthKeeper.SetObject(edef, true);
+	}
+
+	return edef;
+}
+
 Laxkit::anObject *newImageNode(Laxkit::anObject *ref)
 {
 	NodeBase *node = new NodeBase;
@@ -1146,7 +1191,13 @@ Laxkit::anObject *newImageNode(Laxkit::anObject *ref)
 	node->properties.push(new NodeProperty(true, true, _("Width"), new DoubleValue(100), 1)); 
 	node->properties.push(new NodeProperty(true, true, _("Height"), new DoubleValue(100), 1)); 
 	node->properties.push(new NodeProperty(true, true, _("Channels"), new IntValue(4), 1)); 
-	node->properties.push(new NodeProperty(true, true, _("Depth"), new DoubleValue(100), 1)); 
+
+	ObjectDef *enumdef = GetImageDepthDef();
+	EnumValue *e = new EnumValue(enumdef, 0);
+	node->properties.push(new NodeProperty(true, true, _("Depth"), e, 1)); 
+
+	node->properties.push(new NodeProperty(true, true, _("Initial Color"), new ColorValue("#ffffff"), 1)); 
+	node->properties.push(new NodeProperty(false, true, _("Color"), NULL, 1)); 
 	//depth: 8, 16, 24, 32, 32f, 64f
 	//format: gray, graya, rgb, rgba
 	//backend: raw, default, gegl, gmic, gm, cairo
@@ -1638,14 +1689,20 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y)
 		x+=dx+th/2;
 
 		 //draw value
-		v->getValueStr(extra, 199);
 		dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
 		dp->NewBG(&nodes->colors->bg_menu);
 		dp->drawRoundedRect(node->x+x, node->y+prop->y+th/4, node->width-th/2-x, prop->height*.66,
 							th/3, false, th/3, false, 2); 
 
 		dp->NewFG(&nodes->colors->fg_edit);
-		dp->textout(node->x+th*1.5+dx, node->y+prop->y+prop->height/2, extra,-1, LAX_LEFT|LAX_VCENTER);
+
+		//v->getValueStr(extra, 199);
+		//-----
+		EnumValue *ev = dynamic_cast<EnumValue*>(v);
+		const char *nm; 
+		ev->GetObjectDef()->getEnumInfo(ev->value, NULL, &nm);
+		dp->textout(node->x+th*1.5+dx, node->y+prop->y+prop->height/2, nm,-1, LAX_LEFT|LAX_VCENTER);
+		//dp->textout(node->x+th*1.5+dx, node->y+prop->y+prop->height/2, extra,-1, LAX_LEFT|LAX_VCENTER);
 		dp->drawthing(node->x+node->width-th, node->y+prop->y+prop->height/2, th/4,th/4, 1, THING_Triangle_Down);
 
 	} else {

@@ -71,6 +71,8 @@ class NodeConnection
 	virtual ~NodeConnection();
 };
 
+//typedef int (*NodePropertyValidFunc)(NodeProperty *prop, const char **error_message);
+
 class NodeProperty
 {
   public:
@@ -242,6 +244,7 @@ enum NodeInterfaceActions {
 	NODES_Resize_Bottom_Left,
 	NODES_Resize_Bottom_Right,
 
+	NODES_Duplicate,
 	NODES_Group_Nodes,
 	NODES_Ungroup_Nodes,
 	NODES_Add_Node,
