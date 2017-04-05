@@ -213,6 +213,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 	int num_rows, num_cols;
 	int selected_offset;
 	double icon_width;
+	double base_lastm[6];
 
 
 	unsigned int bg_color;
@@ -232,6 +233,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 	virtual int TogglePreview();
 	virtual int Render();
 	virtual void DrawSelected();
+	virtual Laxkit::ScreenColor *BaseCellColor(int which);
 
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);

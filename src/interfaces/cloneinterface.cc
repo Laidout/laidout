@@ -745,6 +745,7 @@ Tiling *CreateRadial(double start_angle, //!< radians
 
 	path->appendBezArc(flatpoint(0,0), -cellangle, 1);
 	path->close();
+	path->FindBBox();
 
 
 	 //set up a recursive transform limited by num_divisions
@@ -827,6 +828,7 @@ Tiling *CreateSpiral(double start_angle, //!< radians
 	path->append(ner*flatpoint(cos(a2),sin(a2)));
 
 	path->close();
+	path->FindBBox();
 
 
 	 //set up a recursive transform limited by num_divisions
@@ -2623,14 +2625,28 @@ int CloneInterface::PerformAction(int action)
 	} else if (action==CLONEIA_Next_Basecell) {
 		if (current_base<0) current_base=0; else current_base--;
 		if (current_base<0) current_base=tiling->basecells.n-1;
-		DBG cerr <<" ***** current_base: "<<current_base<<endl;
+
+		ScreenColor *col = BaseCellColor(current_base);
+		if (col) {
+			SimpleColorEventData *e=new SimpleColorEventData( 65535, col->red, col->green, col->blue, col->alpha, 0);
+			app->SendMessage(e, curwindow->win_parent->object_id, "make curcolor", object_id);
+		}
+
+		//DBG cerr <<" ***** new current_base: "<<current_base<<endl;
 		needtodraw=1;
 		return 0;
 
 	} else if (action==CLONEIA_Previous_Basecell) {
 		if (current_base<0) current_base=0; else current_base++;
 		if (current_base>=tiling->basecells.n) current_base=0;
-		DBG cerr <<" ***** current_base: "<<current_base<<endl;
+
+		ScreenColor *col = BaseCellColor(current_base);
+		if (col) {
+			SimpleColorEventData *e=new SimpleColorEventData( 65535, col->red, col->green, col->blue, col->alpha, 0);
+			app->SendMessage(e, curwindow->win_parent->object_id, "make curcolor", object_id);
+		}
+
+		//DBG cerr <<" ***** current_base: "<<current_base<<endl;
 		needtodraw=1;
 		return 0;
 
@@ -2644,6 +2660,22 @@ int CloneInterface::PerformAction(int action)
 	}
 
 	return 1;
+}
+
+Laxkit::ScreenColor *CloneInterface::BaseCellColor(int which)
+{
+	if (which<0) which = current_base;
+	if (which<0) which = 0;
+
+	Group *group=dynamic_cast<DrawableObject*>(base_cells.e(which));
+	PathsData *bpath=dynamic_cast<PathsData*>(group);
+
+	if (!bpath && group) {
+		bpath=dynamic_cast<PathsData*>(group->e(0));//for groupified
+	}
+
+	if (bpath) return &bpath->linestyle->color;
+	return NULL;
 }
 
 int CloneInterface::InterfaceOn()
@@ -2702,7 +2734,7 @@ int CloneInterface::Event(const Laxkit::EventData *e,const char *mes)
         if (i==CLONEM_Clear_Base_Objects) {
 			if (current_base<0) current_base=0;
 
-			for (int c=source_proxies.n(); c>=0; c--) {
+			for (int c=source_proxies.n()-1; c>=0; c--) {
 				if (source_proxies.e_info(c)==current_base) {
 					source_proxies.Remove(c);
 					sources.Remove(c);
@@ -2744,6 +2776,20 @@ int CloneInterface::Event(const Laxkit::EventData *e,const char *mes)
 
 		return 0;
 
+	} else if (!strcmp(mes,"RectInterface")) {
+		if (rectinterface.somedata == &base_cells && source_proxies.n()) {
+			Affine mm;
+			double m[6];
+			transform_diff(m, base_lastm, base_cells.m());
+			mm.m(m);
+			for (int c=0; c<source_proxies.n(); c++) {
+				source_proxies.e(c)->obj->Multiply(mm);
+			}
+			transform_copy(base_lastm, base_cells.m());
+			needtodraw=1;
+		}
+		return 0;
+
 	} else if (!strcmp(mes,"load")) {
         const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
 		if (isblank(s->str)) return 0;
@@ -2783,33 +2829,28 @@ int CloneInterface::UseThis(Laxkit::anObject *ndata,unsigned int mask)
 	return 0;
 }
 
+/*! Draw source objects.
+ */
 void CloneInterface::DrawSelected()
 {
 	if (!source_proxies.n()) return;
 
 	ObjectContext *toc;
 	int bcell;
-	PathsData *bpath;
 	DrawableObject *data;
-	DrawableObject *group;
 	Affine a;
 
-	for (int c=0; c<source_proxies.n(); c++) {
-		bcell=source_proxies.e_info(c);
-		group=dynamic_cast<DrawableObject*>(base_cells.e(bcell));
-		bpath=dynamic_cast<PathsData*>(group);
-
-		if (!bpath) {
-			bpath=dynamic_cast<PathsData*>(group->e(0));//for groupified
-		}
-
+	for (int c=0; c<source_proxies.n(); c++) { 
 		toc=source_proxies.e(c);
 		data=dynamic_cast<DrawableObject*>(toc->obj);
 		a=data->GetTransformToContext(false,0);
 		dp->PushAndNewTransform(a.m());
 
-		dp->NewFG(&bpath->linestyle->color);
-		dp->LineAttributes((bcell==current_base?3:1),LineSolid,LAXCAP_Round,LAXJOIN_Round);
+		 //set color of relevant base cell
+		bcell = source_proxies.e_info(c);
+		dp->NewFG(BaseCellColor(bcell));
+		dp->LineAttributes(-1, LineSolid,LAXCAP_Round,LAXJOIN_Round);
+		dp->LineWidthScreen((bcell == current_base?3:1));
 
 		 //draw corners just outside bounding box
 		double o=5/dp->Getmag(), //5 pixels outside, 15 pixels long
@@ -2967,9 +3008,14 @@ int CloneInterface::Refresh()
 			dp->drawline(center+v,center+transpose(v)/2);
 		}
 	}
-	if (current_base>=0) {
-		 //make active base cell bolder
-		PathsData *p=dynamic_cast<PathsData*>(base_cells.e(current_base));
+	if (current_base >= 0) {
+		 //make active base cell bolder 
+		SomeData *obj = base_cells.e(current_base);
+		PathsData *p=dynamic_cast<PathsData*>(obj);
+		if (!p) {
+			Group *g = dynamic_cast<Group*>(obj);
+			if (g) p = dynamic_cast<PathsData*>(g->e(0)); //probably because of groupify, so un-groupify!
+		}
 		if (p) {
 			p->linestyle->width=4;
 			Laidout::DrawData(dp, p, NULL,NULL);
@@ -3081,14 +3127,16 @@ int CloneInterface::scan(int x,int y, int *i)
 
 
 	 //check for inside base cell outlines
-	p=transform_point_inverse(base_cells.m(),fp);
-	for (int c=0; c<tiling->basecells.n; c++) {
-		DBG cerr <<" ----- base cell "<<c<<"/"<<base_cells.n()<<" bbox: "<<base_cells.e(c)->minx<<"  "<<base_cells.e(c)->miny<<"  "<<base_cells.e(c)->maxx<<"  "<<base_cells.e(c)->maxy<<endl;
-		DBG cerr <<" ----- point: "<<p.x<<','<<p.y<<endl;
-		if (!base_cells.e(c)->pointin(p,1)) continue;
-		if (i) *i=c;
-		return CLONEI_BaseCell;
-	}
+	if (base_cells.pointin(fp,1)) return CLONEI_BaseCell;
+//	----------
+//	p=transform_point_inverse(base_cells.m(),fp);
+//	for (int c=0; c<tiling->basecells.n; c++) {
+//		DBG cerr <<" ----- base cell "<<c<<"/"<<base_cells.n()<<" bbox: "<<base_cells.e(c)->minx<<"  "<<base_cells.e(c)->miny<<"  "<<base_cells.e(c)->maxx<<"  "<<base_cells.e(c)->maxy<<endl;
+//		DBG cerr <<" ----- point: "<<p.x<<','<<p.y<<endl;
+//		if (!base_cells.e(c)->pointin(p,1)) continue;
+//		if (i) *i=c;
+//		return CLONEI_BaseCell;
+//	}
 
 	 //check for inside boundary
 	if (boundary && boundary->pointin(fp,1)) return CLONEI_Boundary;
@@ -3133,6 +3181,10 @@ int CloneInterface::EditThis(SomeData *object, const char *message)
 {
 	if (!object) return 0;
 
+	if (object == &base_cells) {
+		transform_copy(base_lastm, object->m());
+	}
+
 	if (!child) {
 		//RectInterface *rect=new RectInterface(0,dp);
 		rectinterface.style|= RECT_CANTCREATE | RECT_OBJECT_SHUNT;
@@ -3170,6 +3222,10 @@ int CloneInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 
 	 //on control box
 	if (over==CLONEI_Tiling || over==CLONEI_Box) {
+		if (child) {
+			RemoveChild();
+			needtodraw=1;
+		}
 		buttondown.down(d->id,LEFTBUTTON,x,y, over,state);
 		return 0;
 	}
@@ -3689,7 +3745,21 @@ int CloneInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 //	}
 
 	if (ch==LAX_Del || ch==LAX_Bksp) {
-		//intercept as deleting causes unexpected behavior if propagated
+		//intercept as deleting causes unexpected behavior if propagated.
+		//If we are moving a source object, then remove that one
+
+		if (child && rectinterface.somedata != &base_cells && rectinterface.somedata != boundary) {
+			 //pressing delete while source object is selected
+			for (int c=0; c<sources.n(); c++) {
+				if (source_proxies.e(c)->obj == rectinterface.somedata) {
+					source_proxies.Remove(c);
+					sources.Remove(c);
+				}
+			}
+
+			RemoveChild();
+			needtodraw=1;
+		}
 		return 0;
 	}
 
