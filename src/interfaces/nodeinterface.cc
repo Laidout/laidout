@@ -578,6 +578,7 @@ int NodeGroup::DeleteNodes(Laxkit::RefPtrStack<NodeBase> &selected)
 
 	for (int c=selected.n-1; c>=0; c--) {
 		node = selected.e[c];
+		if (!node->deletable) continue;
 
 		for (int c2=connections.n-1; c2>=0; c2--) {
 			if (connections.e[c2]->from == node || connections.e[c2]->to == node) {
