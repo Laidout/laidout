@@ -76,12 +76,27 @@ class NodeConnection
 class NodeProperty
 {
   public:
+	enum PropertyTypes {
+		PROP_Unknown,
+		PROP_Input,
+		PROP_Output,
+		//PROP_Through,
+		PROP_Block, //no in or out, but still maybe settable
+		PROP_Preview,
+		PROP_Exec_In,
+		PROP_Exec_Out,
+		PROP_Exec_Through,
+		PROP_MAX
+	};
+
 	char *name;
 	std::time_t modtime;
 
 	NodeBase *owner;
 	Value *data;
-	bool is_input; //or output
+
+	PropertyTypes type;
+	//bool is_input; //or output
 	bool is_inputable; //default true for something that allows links in
 
 	double x,y,width,height;
@@ -91,12 +106,12 @@ class NodeProperty
 	flatpoint pos; //clickable spot relative to parent NodeBase origin
 
 	NodeProperty();
-	NodeProperty(bool input, bool inputable, const char *nname, Value *ndata, int absorb_count);
+	NodeProperty(PropertyTypes input, bool inputable, const char *nname, Value *ndata, int absorb_count);
 	virtual ~NodeProperty();
 	virtual LaxInterfaces::anInterface *PropInterface();
 	virtual const char *Name() { return name; }
 	virtual int IsConnected();
-	virtual int IsInput() { return is_input; }
+	virtual int IsInput() { return type==PROP_Input; }
 	virtual int AllowInput();
 	virtual int AllowOutput();
 	virtual NodeBase *GetConnection(int connection_index, int *prop_index_ret);

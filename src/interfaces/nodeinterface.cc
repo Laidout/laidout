@@ -148,13 +148,13 @@ NodeProperty::NodeProperty()
 	modtime=0;
 	width=height=0;
 
-	is_input=false;
+	type = PROP_Unknown;
 	is_inputable=false; //default true for something that allows links in
 }
 
 /*! If !absorb_count, then ndata's count gets incremented.
  */
-NodeProperty::NodeProperty(bool input, bool inputable, const char *nname, Value *ndata, int absorb_count)
+NodeProperty::NodeProperty(PropertyTypes input, bool inputable, const char *nname, Value *ndata, int absorb_count)
 {
 	color.rgbf(1.,1.,1.,1.);
 
@@ -163,7 +163,7 @@ NodeProperty::NodeProperty(bool input, bool inputable, const char *nname, Value 
 	data=ndata;
 	if (data && !absorb_count) data->inc_count();
 
-	is_input = input;
+	type = input;
 	is_inputable = inputable;
 
 	name=newstr(nname);
@@ -186,18 +186,19 @@ anInterface *NodeProperty::PropInterface()
  */
 int NodeProperty::IsConnected()
 {
-	if (is_input) return -connections.n;
+	if (IsInput()) return -connections.n;
 	return connections.n;
 }
 
 int NodeProperty::AllowInput()
 {
-	return is_input && is_inputable;
+	return IsInput() && is_inputable;
 }
 
 int NodeProperty::AllowOutput()
 {
-	return !is_input;
+	// ***
+	return !IsInput();
 }
 
 /*! Return the node and property index in that node of the specified connection.
@@ -211,7 +212,7 @@ NodeBase *NodeProperty::GetConnection(int connection_index, int *prop_index_ret)
 
 	NodeConnection *connection = connections.e[connection_index];
 	if (prop_index_ret) {
-		if (is_input) {
+		if (IsInput()) {
 			NodeBase *node = connection->from;
 			if (node) *prop_index_ret = node->properties.findindex(connection->fromprop);
 			else *prop_index_ret = -1;
@@ -223,7 +224,7 @@ NodeBase *NodeProperty::GetConnection(int connection_index, int *prop_index_ret)
 		}
 	}
 
-	if (is_input) return connection->from;
+	if (IsInput()) return connection->from;
 	return connection->to;
 }
 
@@ -233,7 +234,8 @@ NodeBase *NodeProperty::GetConnection(int connection_index, int *prop_index_ret)
  */
 Value *NodeProperty::GetData()
 {
-	if (is_input && connections.n && connections.e[0]->fromprop) return connections.e[0]->fromprop->data;
+	 //note: this assumes fromprop is a pure output, not a through
+	if (IsInput() && connections.n && connections.e[0]->fromprop) return connections.e[0]->fromprop->data;
 	return data;
 }
 
@@ -345,8 +347,10 @@ int NodeBase::Update()
 	NodeProperty *prop;
 	for (int c=0; c<properties.n; c++) {
 		prop = properties.e[c];
-		if (prop->is_input) continue;
+
+		if (prop->IsInput()) continue;
 		if (prop->connections.n==0) continue;
+
 		for (int c2=0; c2<prop->connections.n; c2++) {
 			if (prop->connections.e[c2]->to)
 				prop->connections.e[c2]->to->Update();
@@ -413,7 +417,7 @@ int NodeBase::Wrap()
 		prop->y = y;
 		prop->pos.y = y+prop->height/2;
 
-		if (prop->is_input) prop->pos.x = 0;
+		if (prop->IsInput()) prop->pos.x = 0;
 		else prop->pos.x = width;
 
 		y+=prop->height;
@@ -711,7 +715,8 @@ Attribute *NodeGroup::dump_out_atts(Attribute *att,int what,DumpContext *context
 		NodeProperty *prop;
 		for (int c2=0; c2<node->properties.n; c2++) { 
 			prop = node->properties.e[c2];
-			if (!prop->is_input) continue;
+
+			if (!prop->IsInput()) continue;
 			if (prop->IsConnected()) continue; //since it'll be recomputed after read in
 
 			att3 = att2->pushSubAtt("in", prop->name);
@@ -723,7 +728,7 @@ Attribute *NodeGroup::dump_out_atts(Attribute *att,int what,DumpContext *context
 		 //outputs
 		for (int c2=0; c2<node->properties.n; c2++) {
 			prop = node->properties.e[c2];
-			if (prop->is_input) continue;
+			if (prop->IsInput()) continue;
 
 			att3 = att2->pushSubAtt("out", prop->name);
 			if (prop->GetData()) {
@@ -932,7 +937,7 @@ Laxkit::anObject *newDoubleNode(Laxkit::anObject *ref)
 	//node->Id("Value");
 	makestr(node->Name, _("Value"));
 	makestr(node->type, "Value");
-	node->properties.push(new NodeProperty(false, false, _("V"), new DoubleValue(0), 1)); 
+	node->properties.push(new NodeProperty(NodeProperty::PROP_Output, false, _("V"), new DoubleValue(0), 1)); 
 	return node;
 }
 
@@ -1028,10 +1033,10 @@ MathNode::MathNode(int op, double aa, double bb)
 	EnumValue *e = new EnumValue(enumdef, 0);
 	enumdef->dec_count();
 
-	properties.push(new NodeProperty(true, false, "Op", e, 1));
-	properties.push(new NodeProperty(true, true, "A", new DoubleValue(a), 1));
-	properties.push(new NodeProperty(true, true, "B", new DoubleValue(b), 1));
-	properties.push(new NodeProperty(false, true, "Result", NULL, 0));
+	properties.push(new NodeProperty(NodeProperty::PROP_Input, false, "Op", e, 1));
+	properties.push(new NodeProperty(NodeProperty::PROP_Input,  true, "A", new DoubleValue(a), 1));
+	properties.push(new NodeProperty(NodeProperty::PROP_Input,  true, "B", new DoubleValue(b), 1));
+	properties.push(new NodeProperty(NodeProperty::PROP_Output, true, "Result", NULL, 0));
 
 	Update();
 }
@@ -1189,16 +1194,16 @@ Laxkit::anObject *newImageNode(Laxkit::anObject *ref)
 	makestr(node->type, "NewImage");
 	makestr(node->Name, _("New Image"));
 	//node->properties.push(new NodeProperty(true, true, _("Filename"), new FileValue("."), 1)); 
-	node->properties.push(new NodeProperty(true, true, _("Width"), new DoubleValue(100), 1)); 
-	node->properties.push(new NodeProperty(true, true, _("Height"), new DoubleValue(100), 1)); 
-	node->properties.push(new NodeProperty(true, true, _("Channels"), new IntValue(4), 1)); 
+	node->properties.push(new NodeProperty(NodeProperty::PROP_Input, true, _("Width"), new DoubleValue(100), 1)); 
+	node->properties.push(new NodeProperty(NodeProperty::PROP_Input, true, _("Height"), new DoubleValue(100), 1)); 
+	node->properties.push(new NodeProperty(NodeProperty::PROP_Input, true, _("Channels"), new IntValue(4), 1)); 
 
 	ObjectDef *enumdef = GetImageDepthDef();
 	EnumValue *e = new EnumValue(enumdef, 0);
-	node->properties.push(new NodeProperty(true, true, _("Depth"), e, 1)); 
+	node->properties.push(new NodeProperty(NodeProperty::PROP_Input, true, _("Depth"), e, 1)); 
 
-	node->properties.push(new NodeProperty(true, true, _("Initial Color"), new ColorValue("#ffffff"), 1)); 
-	node->properties.push(new NodeProperty(false, true, _("Color"), NULL, 1)); 
+	node->properties.push(new NodeProperty(NodeProperty::PROP_Input, true, _("Initial Color"), new ColorValue("#ffffff"), 1)); 
+	node->properties.push(new NodeProperty(NodeProperty::PROP_Output, true, _("Color"), NULL, 1)); 
 	//depth: 8, 16, 24, 32, 32f, 64f
 	//format: gray, graya, rgb, rgba
 	//backend: raw, default, gegl, gmic, gm, cairo
@@ -1363,7 +1368,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 
 		return 0;
 
-	} else if (!strcmp(mes,"setpropdouble")) {
+	} else if (!strcmp(mes,"setpropdouble") || !strcmp(mes,"setpropint")) {
 		if (!nodes || lasthover<0 || lasthover>=nodes->nodes.n || lasthoverprop<0
 				|| lasthoverprop>=nodes->nodes.e[lasthover]->properties.n) return 0;
 
@@ -1378,9 +1383,14 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 
 		NodeBase *node = nodes->nodes.e[lasthover];
 		NodeProperty *prop = node->properties.e[lasthoverprop];
-
-		DoubleValue *v=dynamic_cast<DoubleValue*>(prop->data);
-		v->d = d;
+		
+		if (!strcmp(mes,"setpropdouble")) {
+			DoubleValue *v=dynamic_cast<DoubleValue*>(prop->data);
+			v->d = d;
+		} else {
+			IntValue *v=dynamic_cast<IntValue*>(prop->data);
+			v->i = d;
+		}
 		node->Update();
 		needtodraw=1;
 
@@ -1395,8 +1405,8 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 
 		NodeBase *node = nodes->nodes.e[lasthover];
 		NodeProperty *prop = node->properties.e[lasthoverprop];
-		if (!prop->is_input) return 0; //don't change outputs
-		if (prop->is_input && prop->IsConnected()) return 0; //can't change if piped in from elsewhere
+		if (!prop->IsInput()) return 0; //don't change outputs
+		if (prop->IsInput() && prop->IsConnected()) return 0; //can't change if piped in from elsewhere
 
 		EnumValue *ev = dynamic_cast<EnumValue*>(prop->data);
 		ObjectDef *def=ev->GetObjectDef();
@@ -1707,7 +1717,7 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y)
 		dp->drawthing(node->x+node->width-th, node->y+prop->y+prop->height/2, th/4,th/4, 1, THING_Triangle_Down);
 
 	} else {
-		if (prop->is_input) {
+		if (prop->IsInput()) {
 			 //draw on left side
 			double dx = dp->textout(node->x+th/2, y+prop->height/2, prop->Name(),-1, LAX_LEFT|LAX_VCENTER); 
 			if (!isblank(extra)) {
@@ -1725,7 +1735,7 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y)
 		}
 	}
 
-	if (!(prop->is_input && !prop->is_inputable)) {
+	if (!(prop->IsInput() && !prop->is_inputable)) {
 		dp->NewBG(&prop->color);
 		dp->drawellipse(prop->pos+flatpoint(node->x,node->y), th*slot_radius,th*slot_radius, 0,0, 2);
 	} 
@@ -1768,7 +1778,7 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty)
 			for (int c2=0; c2<node->properties.n; c2++) {
 				prop = node->properties.e[c2];
 
-				if (!(prop->is_input && !prop->is_inputable)) { //only if the input is not exclusively internal
+				if (!(prop->IsInput() && !prop->is_inputable)) { //only if the input is not exclusively internal
 				  if (p.y >= node->y+prop->y && p.y < node->y+prop->y+prop->height) {
 					if (p.x >= node->x+prop->pos.x-th/2 && p.x <= node->x+prop->pos.x+th/2) {
 						if (overpropslot) *overpropslot = c2;
@@ -1845,7 +1855,7 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 		 //drag out a property to connect to another node
 		NodeProperty *prop = nodes->nodes.e[overnode]->properties.e[overpropslot];
 
-		if (prop->is_input) {
+		if (prop->IsInput()) {
 			action = NODES_Drag_Input;
 
 			if (prop->connections.n) {
@@ -1914,8 +1924,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		NodeBase *node = nodes->nodes.e[overnode];
 		NodeProperty *prop = node->properties.e[overproperty];
 
-		//if (!prop->is_input) return 0; //don't change outputs
-		if (prop->is_input && prop->IsConnected()) return 0; //can't change if piped in from elsewhere
+		if (prop->IsInput() && prop->IsConnected()) return 0; //can't change if piped in from elsewhere
 
 		Value *v=dynamic_cast<Value*>(prop->data);
 		if (!v) return 0;
@@ -1933,7 +1942,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 			v->getValueStr(valuestr, 199);
 
-			viewport->SetupInputBox(object_id, NULL, valuestr, "setpropdouble", bounds);
+			viewport->SetupInputBox(object_id, NULL, valuestr, v->type()==VALUE_Real ? "setpropdouble" : "setpropint", bounds);
 			lasthover = overnode;
 			lasthoverprop = overproperty;
 
@@ -2029,7 +2038,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		if (overnode>=0 && overpropslot>=0) {
 			 //need to connect
 			NodeProperty *toprop = nodes->nodes.e[overnode]->properties.e[overpropslot];
-			if (!toprop->is_input) {
+			if (!toprop->IsInput()) {
 
 				 //connect lasthover.lasthoverslot.lastconnection to toprop
 				NodeConnection *connection = nodes->nodes.e[lasthover]->properties.e[lasthoverslot]->connections.e[lastconnection];
@@ -2067,7 +2076,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		if (overnode>=0 && overpropslot>=0) {
 			NodeProperty *toprop = nodes->nodes.e[overnode]->properties.e[overpropslot];
 
-			if (toprop->is_input) {
+			if (toprop->IsInput()) {
 				//nodes->Connect(
 				//---------
 				if (toprop->connections.n) {
