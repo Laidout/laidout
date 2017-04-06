@@ -226,6 +226,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 	LaxInterfaces::RectInterface rectinterface;
 
 	virtual int scan(int x,int y, int *i);
+	virtual int scanBasecells(flatpoint fp, int *i);
 	virtual int scanSelected(int x,int y);
 
 	virtual int ToggleOrientations();
@@ -274,6 +275,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 	virtual int Mode(int newmode);
 
 	virtual int SetTiling(Tiling *newtiling);
+	virtual int SetCurrentBase(int which);
 
 	virtual int UseThis(Laxkit::anObject *ndata,unsigned int mask=0); 
 };

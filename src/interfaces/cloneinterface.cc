@@ -145,7 +145,7 @@ int TilingOp::isRecursive(int which)
  * Repeat any number of base shapes into a pattern, and optionally repeat
  * that pattern linearly in 2 dimensions (a p1 wallpaper).
  *
- * You can define your own custom "dimensions", each of which may get
+ * You can define your own custom "dimensions" (ToDO), each of which may get
  * different tiling rules.
  *
  * \todo PtrStack<CellCombineRules> cell_combine_rules; for penrose, or heesch
@@ -313,6 +313,8 @@ void Tiling::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context
 		fprintf(f,"%srepeat_y %.10g,%.10g\n",spc,v.x,v.y);
 	}
 
+	if (required_interface != "") fprintf(f, "%srequired_interface %s\n", spc, required_interface.c_str());
+
 	TilingOp *op;
 	TilingDest *dest;
 	for (int c=0; c<basecells.n; c++) {
@@ -479,8 +481,10 @@ void Tiling::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpCont
 //! Create tiled clones.
 /*! Install new objects as kids of parent_space. If NULL, create and return a new Group (else return parent_space).
  *
- * If base_objects is NULL, then create path outline objects from the transformed base cells instead.
- * If base_objects is not NULL, then
+ * If source_objects is NULL, or has no objects, then create path outline objects from the transformed base cells instead.
+ * If source_objects is not NULL and has objects, then render clones of the contents, and do NOT render base cell outlines.
+ *
+ * Install in parent_space. If parent_space==NULL, then return a new Group.
  */
 Group *Tiling::Render(Group *parent_space,
 					   LaxInterfaces::Selection *source_objects, //!< If non-null, update relevant clones connected to base object
@@ -2638,31 +2642,17 @@ int CloneInterface::PerformAction(int action)
 		return 0;
 
 	} else if (action==CLONEIA_Next_Basecell) {
-		if (current_base<0) current_base=0; else current_base--;
-		if (current_base<0) current_base=tiling->basecells.n-1;
-
-		ScreenColor *col = BaseCellColor(current_base);
-		if (col) {
-			SimpleColorEventData *e=new SimpleColorEventData( 65535, col->red, col->green, col->blue, col->alpha, 0);
-			app->SendMessage(e, curwindow->win_parent->object_id, "make curcolor", object_id);
-		}
-
-		//DBG cerr <<" ***** new current_base: "<<current_base<<endl;
-		needtodraw=1;
+		int base = current_base;
+		if (base<0) base = 0; else base--;
+		if (base<0) base = tiling->basecells.n-1;
+		SetCurrentBase(base);
 		return 0;
 
 	} else if (action==CLONEIA_Previous_Basecell) {
-		if (current_base<0) current_base=0; else current_base++;
-		if (current_base>=tiling->basecells.n) current_base=0;
-
-		ScreenColor *col = BaseCellColor(current_base);
-		if (col) {
-			SimpleColorEventData *e=new SimpleColorEventData( 65535, col->red, col->green, col->blue, col->alpha, 0);
-			app->SendMessage(e, curwindow->win_parent->object_id, "make curcolor", object_id);
-		}
-
-		//DBG cerr <<" ***** current_base: "<<current_base<<endl;
-		needtodraw=1;
+		int base = current_base;
+		if (base<0) base=0; else base++;
+		if (base>=tiling->basecells.n) base=0;
+		SetCurrentBase(base);
 		return 0;
 
 	} else if (action==CLONEIA_Edit) {
@@ -2675,6 +2665,25 @@ int CloneInterface::PerformAction(int action)
 	}
 
 	return 1;
+}
+
+/*! Return the current base afterwards. If which is not a valid base, then current_base is not changed.
+ *
+ * This just sets current_base to which, and sends message to viewport to update current color.
+ */
+int CloneInterface::SetCurrentBase(int which)
+{
+	if (which<0 || which >= tiling->basecells.n) return current_base;
+	current_base = which;
+
+	ScreenColor *col = BaseCellColor(current_base);
+	if (col) {
+		SimpleColorEventData *e=new SimpleColorEventData( 65535, col->red, col->green, col->blue, col->alpha, 0);
+		app->SendMessage(e, curwindow->win_parent->object_id, "make curcolor", object_id);
+	}
+
+	needtodraw = 1;
+	return current_base;
 }
 
 Laxkit::ScreenColor *CloneInterface::BaseCellColor(int which)
@@ -2815,6 +2824,20 @@ int CloneInterface::Event(const Laxkit::EventData *e,const char *mes)
 				    && rectinterface.somedata != boundary
 					&& source_proxies.n()) {
 			 //moving around a proxy image, need to check if we need to rebase
+			int mx,my;
+			mouseposition(0, curwindow, &mx,&my, NULL, NULL, NULL);
+			flatpoint fp=dp->screentoreal(mx,my);
+			int i = -1;
+			int on = scanBasecells(fp, &i);
+			if (on == CLONEI_BaseCell && i>=0) {
+				int which = source_proxies.ObjectIndex(rectinterface.somedata);
+				if (source_proxies.e_info(which) != i) {
+					source_proxies.e_info(which, i);
+					SetCurrentBase(i);
+					PostMessage(_("Moved to new base."));
+					needtodraw=1;
+				}
+			}
 		}
 		return 0;
 
@@ -3169,9 +3192,26 @@ int CloneInterface::scan(int x,int y, int *i)
 
 
 	 //check for inside base cell outlines
+	if (scanBasecells(fp, i) == CLONEI_BaseCell) return CLONEI_BaseCell;
+
+	 //check for inside boundary
+	if (boundary && boundary->pointin(fp,1)) return CLONEI_Boundary;
+
+
+	return CLONEI_None;
+}
+
+/*! fp is real point, such as dp->screentoreal(x,y) from a mouse event.
+ *
+ * If in a base cell, put which one in i, and return CLONEI_BaseCell.
+ * Otherwise, return CLONEI_None.
+ */
+int CloneInterface::scanBasecells(flatpoint fp, int *i)
+{
+	 //check for inside base cell outlines
 	if (base_cells.pointin(fp,1)) {
 
-		p=transform_point_inverse(base_cells.m(),fp);
+		flatpoint p=transform_point_inverse(base_cells.m(),fp);
 		int which = -1;
 
 		for (int c=0; c<tiling->basecells.n; c++) {
@@ -3187,14 +3227,11 @@ int CloneInterface::scan(int x,int y, int *i)
 		DBG cerr <<" --- over base cell: "<<which<<endl;
 		return CLONEI_BaseCell;
 	}
-
-	 //check for inside boundary
-	if (boundary && boundary->pointin(fp,1)) return CLONEI_Boundary;
-
-
 	return CLONEI_None;
 }
 
+/*! Scan for when the tiling selection panel is up.
+ */
 int CloneInterface::scanSelected(int x,int y)
 {
 	//double th=dp->textheight();
