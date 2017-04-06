@@ -2329,6 +2329,8 @@ enum CloneInterfaceElements {
 	CLONEIA_Next_Basecell,
 	CLONEIA_Previous_Basecell,
 	CLONEIA_Toggle_Lines,
+	CLONEIA_Toggle_Groupify,
+	CLONEIA_Toggle_Auto_Base,
 	CLONEIA_Toggle_Preview,
 	CLONEIA_Toggle_Render,
 	CLONEIA_Toggle_Orientations,
@@ -2348,7 +2350,7 @@ enum CloneInterfaceElements {
 	CLONEM_Select_Boundary,
 	CLONEM_Select_Base,
 	CLONEM_Select_Sources,
-	CLONEM_Auto_Select_Base,
+	CLONEM_Auto_Select_Cell,
 
 	CLONEI_MAX
 };
@@ -2600,6 +2602,19 @@ int CloneInterface::PerformAction(int action)
 		needtodraw=1;
 		return 0;
 
+	} else if (action==CLONEIA_Toggle_Auto_Base) {
+		snap_to_base = !snap_to_base;
+		PostMessage(snap_to_base ? _("Auto select base cell") : _("Don't auto select base cell"));
+		needtodraw=1;
+		return 0;
+
+	} else if (action==CLONEIA_Toggle_Groupify) {
+		groupify_clones = !groupify_clones;
+		if (active) Render();
+		PostMessage(groupify_clones ? _("Groupify clones") : _("Don't groupify clones"));
+		needtodraw=1;
+		return 0;
+
 	} else if (action==CLONEIA_Toggle_Lines) {
 		trace_cells=!trace_cells;
 		if (active) Render();
@@ -2713,10 +2728,11 @@ Laxkit::MenuInfo *CloneInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
     menu->AddItem(_("Select base cells"), CLONEM_Select_Base);
     //menu->AddItem(_("Select source objects"), CLONEM_Select_Sources);
     menu->AddSep();
-    menu->AddItem(_("Clear current base objects"), CLONEM_Clear_Base_Objects);
+    menu->AddItem(_("Clear base objects"), CLONEM_Clear_Base_Objects);
     menu->AddSep();
-    menu->AddItem(_("Include lines"),      CLONEM_Include_Lines, LAX_ISTOGGLE|(trace_cells?LAX_CHECKED:0), -1);
-	menu->AddItem(_("Groupify base cells"),    CLONEM_Groupify, LAX_ISTOGGLE|(groupify_clones?LAX_CHECKED:0), -1);
+    menu->AddItem(_("Include lines"),        CLONEM_Include_Lines,    LAX_ISTOGGLE|(trace_cells    ?LAX_CHECKED:0), -1);
+	menu->AddItem(_("Auto select base cell"),CLONEM_Auto_Select_Cell, LAX_ISTOGGLE|(snap_to_base   ?LAX_CHECKED:0), -1);
+	menu->AddItem(_("Groupify base cells"),  CLONEM_Groupify,         LAX_ISTOGGLE|(groupify_clones?LAX_CHECKED:0), -1);
     menu->AddSep();
     menu->AddItem(_("Load resource"), CLONEM_Load);
     menu->AddItem(_("Save as resource"), CLONEM_Save);
@@ -2732,13 +2748,14 @@ int CloneInterface::Event(const Laxkit::EventData *e,const char *mes)
         //int ii=s->info4; //extra id, 1 for direction
 
         if (i==CLONEM_Clear_Base_Objects) {
+			 //remove all base objects
 			if (current_base<0) current_base=0;
 
 			for (int c=source_proxies.n()-1; c>=0; c--) {
-				if (source_proxies.e_info(c)==current_base) {
+				//if (source_proxies.e_info(c)==current_base) {
 					source_proxies.Remove(c);
 					sources.Remove(c);
-				}
+				//}
 			}
 
 			if (child) RemoveChild();
@@ -2755,8 +2772,12 @@ int CloneInterface::Event(const Laxkit::EventData *e,const char *mes)
 			EditThis(&base_cells, _("Edit base cell placement"));
 			return 0;
 
+		} else if (i==CLONEM_Auto_Select_Cell) {
+			PerformAction(CLONEIA_Toggle_Auto_Base);
+			return 0;
+
 		} else if (i==CLONEM_Groupify) {
-			groupify_clones=!groupify_clones;
+			PerformAction(CLONEIA_Toggle_Groupify);
 			return 0;
 
 		} else if (i==CLONEM_Include_Lines) {
@@ -2778,6 +2799,7 @@ int CloneInterface::Event(const Laxkit::EventData *e,const char *mes)
 
 	} else if (!strcmp(mes,"RectInterface")) {
 		if (rectinterface.somedata == &base_cells && source_proxies.n()) {
+			 //moving around the base cell complex, need to reposition proxy objects..
 			Affine mm;
 			double m[6];
 			transform_diff(m, base_lastm, base_cells.m());
@@ -2787,6 +2809,12 @@ int CloneInterface::Event(const Laxkit::EventData *e,const char *mes)
 			}
 			transform_copy(base_lastm, base_cells.m());
 			needtodraw=1;
+
+		} else if (snap_to_base
+				    && rectinterface.somedata != &base_cells
+				    && rectinterface.somedata != boundary
+					&& source_proxies.n()) {
+			 //moving around a proxy image, need to check if we need to rebase
 		}
 		return 0;
 
@@ -3060,8 +3088,9 @@ int CloneInterface::Refresh()
 	if (tiling) {
 		 //draw icon
 		double pad=(box.maxx-box.minx)*.1;
+		double boxw=box.maxx-box.minx-2*pad;
+
 		if (tiling->icon) {
-			double boxw=box.maxx-box.minx-2*pad;
 			double w=boxw;
 			double h=w*tiling->icon->h()/tiling->icon->w();
 			if (h>w) {
@@ -3076,10 +3105,23 @@ int CloneInterface::Refresh()
 		 //draw tiling label
 		if (tiling->name) {
 			dp->NewFG(fg_color);
+			
+			double w = dp->textextent(tiling->name,-1,NULL,NULL);
+			double w2 = tiling->category ? dp->textextent(tiling->category,-1,NULL,NULL) : 0;
+			if (w2>w) w = w2;
+
+			double th = dp->textheight();
+			if (w>boxw) {
+				dp->fontsize(th*boxw/w);
+			}
 			dp->textout((box.minx+box.maxx)/2,box.maxy-circle_radius-pad, tiling->name,-1, LAX_HCENTER|LAX_BOTTOM);
 			if (tiling->category) 
 				dp->textout((box.minx+box.maxx)/2,box.maxy-circle_radius-pad-dp->textheight(),
 						tiling->category,-1, LAX_HCENTER|LAX_BOTTOM);
+			if (w>boxw) {
+				dp->fontsize(th);
+			}
+
 		}
 	}
 
@@ -3127,16 +3169,24 @@ int CloneInterface::scan(int x,int y, int *i)
 
 
 	 //check for inside base cell outlines
-	if (base_cells.pointin(fp,1)) return CLONEI_BaseCell;
-//	----------
-//	p=transform_point_inverse(base_cells.m(),fp);
-//	for (int c=0; c<tiling->basecells.n; c++) {
-//		DBG cerr <<" ----- base cell "<<c<<"/"<<base_cells.n()<<" bbox: "<<base_cells.e(c)->minx<<"  "<<base_cells.e(c)->miny<<"  "<<base_cells.e(c)->maxx<<"  "<<base_cells.e(c)->maxy<<endl;
-//		DBG cerr <<" ----- point: "<<p.x<<','<<p.y<<endl;
-//		if (!base_cells.e(c)->pointin(p,1)) continue;
-//		if (i) *i=c;
-//		return CLONEI_BaseCell;
-//	}
+	if (base_cells.pointin(fp,1)) {
+
+		p=transform_point_inverse(base_cells.m(),fp);
+		int which = -1;
+
+		for (int c=0; c<tiling->basecells.n; c++) {
+			DBG cerr <<" ----- base cell "<<c<<"/"<<base_cells.n()<<" bbox: "
+			DBG 	<<base_cells.e(c)->minx<<"  "<<base_cells.e(c)->miny<<"  "<<base_cells.e(c)->maxx<<"  "<<base_cells.e(c)->maxy<<endl;
+			DBG cerr <<" ----- point: "<<p.x<<','<<p.y<<endl;
+
+			if (!base_cells.e(c)->pointin(p,1)) continue;
+			which = c;
+			break;
+		}
+		if (i) *i = which;
+		DBG cerr <<" --- over base cell: "<<which<<endl;
+		return CLONEI_BaseCell;
+	}
 
 	 //check for inside boundary
 	if (boundary && boundary->pointin(fp,1)) return CLONEI_Boundary;
