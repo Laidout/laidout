@@ -143,6 +143,7 @@ from recent import:
   spread editor needs edge dragging
 
 node editor NodeInterface:
+  clear up IsInput()/IsOutput()
   color code pipes by value type
   exec paths
   finish implementing no cycle check
@@ -1362,13 +1363,13 @@ for clones, it would be easier to have a "defs" group or something, so deleting 
   if an object is without a home.
 
 tiling cloner: 
-  1m and mg do not seem to work: need a final transform to apply, NOT repeatX/YDir().. those shift without rotate
   clipping options when source images overlap in final layout
     maybe be able to modify base cell outline, use that as clip? autocorrect for overlapping?
   debug recursive, need controls to say how much to recurse
   big memory hole, maybe only after render?
   needs a tiling description dump_out
 
+  1m and mg do not seem to work: need a final transform to apply, NOT repeatX/YDir().. those shift without rotate
   bug: not showing orientation arrows correctly when outline cuts through middle of bounding box
   need to be able to delete base objects all at once
   really need undo
