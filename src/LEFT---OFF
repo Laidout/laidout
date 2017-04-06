@@ -1362,21 +1362,19 @@ for clones, it would be easier to have a "defs" group or something, so deleting 
   if an object is without a home.
 
 tiling cloner: 
-  control box should either shrink oversized text or put bigger box
   dragging source image should optionally autoselect the base cell nearest mouse
-  bug: not showing orientation arrows correctly when outline cuts through middle of bounding box
   1m and mg do not seem to work: need a final transform to apply, NOT repeatX/YDir().. those shift without rotate
-  big memory hole
   clipping options when source images overlap in final layout
     maybe be able to modify base cell outline, use that as clip? autocorrect for overlapping?
-  render is slightly offset from base cells occasionally (??? can't dup)
+  debug recursive, need controls to say how much to recurse
+  big memory hole, maybe only after render?
 
+  bug: not showing orientation arrows correctly when outline cuts through middle of bounding box
   need to be able to delete base objects all at once
   really need undo
   save color hints of base cells with Tiling object
   change color of boundary, and outline preview
   select objects, wrap base cell around it
-  debug recursive, need controls to say how much to recurse
   implement circular interface 
   need rudimentary editor
   need flag for ok for cell to shear, ok for cell to scale x/y independently, and have it apply as it should afterwards
@@ -1396,6 +1394,8 @@ tiling cloner:
   autocreate seamless tile image
   autofit source objects/images to the pattern to minimize gaps
 
+  DONE? render is slightly offset from base cells occasionally (??? can't dup)
+  DONE control box should either shrink oversized text or put bigger box
   DONE need to be able to individual base objects
   DONE transform the base cell complex should transform base objects along with it
   DONE click on base cell, update viewport color box
