@@ -4250,7 +4250,8 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 		char blah[100];
 		colorbox->SetRGB(linestyle.color.red/65535.,linestyle.color.green/65535.,linestyle.color.blue/65535.,linestyle.color.alpha/65535.);
-		sprintf(blah,_("New Color r:%.4f g:%.4f b:%.4f a:%.4f"),
+		//sprintf(blah,_("New Color r:%.4f g:%.4f b:%.4f a:%.4f"),
+		sprintf(blah,_("New Color r:%.3f g:%.3f b:%.3f a:%.3f"),
 				(float) linestyle.color.red   / 65535,
 				(float) linestyle.color.green / 65535,
 				(float) linestyle.color.blue  / 65535,
@@ -4267,10 +4268,10 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		 //update status message
 		char blah[100];
 		sprintf(blah,_("New Color r:%.4f g:%.4f b:%.4f a:%.4f"),
-				(float) colorbox->Red()   / 65535,
-				(float) colorbox->Green() / 65535,
-				(float) colorbox->Blue()  / 65535,
-				(float) colorbox->Alpha() / 65535);
+				colorbox->Red()  ,
+				colorbox->Green(),
+				colorbox->Blue() ,
+				colorbox->Alpha());
 		mesbar->SetText(blah);
 		return 0;
 
