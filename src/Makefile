@@ -74,7 +74,7 @@ objs= \
 	spreadeditor.o \
 	laidout-more.o \
 	importimage.o \
-	importimages.o \
+	importimagesdialog.o \
 	laidoutprefs.o \
 	laidout.o 
 
