@@ -99,6 +99,7 @@ AnimationInterface::AnimationInterface(anInterface *nowner,int nid,Laxkit::Displ
 	activate_color=rgbcolorf(0.,.783,0.);
 	deactivate_color=rgbcolorf(1.,.392,.392);
 
+	current_time = 0;
 }
 
 AnimationInterface::~AnimationInterface()
@@ -296,11 +297,16 @@ int AnimationInterface::Refresh()
 	dp->drawthing(h/2+(box.minx+h/2)+4*h,box.miny+h/2, h/3,h/3, 1, THING_To_Right);
 
 	 //------------draw timeline ------------
+	// *** todo: use bbox timeline instead..
 	double tstart=box.minx+6.2*h;
 	double tend=dp->Maxx-h*.2;
 	double y=(box.minx+box.maxy)/2;
 	dp->NewFG(coloravg(fg_color,bg_color));
 	dp->drawrectangle(tstart,y-h*.05, tend-tstart,h*.1, 1);
+
+	double progress = current_time/animation_length;
+	dp->drawthing(tstart+progress*(tend-tstart), y, h/3,h/3, 1, THING_To_Left);
+	//dp->drawthing(tstart+progress*(tend-tstart), y, h/3,h/3, 1, THING_Circle);
 
 	dp->DrawReal();
 
@@ -333,18 +339,6 @@ int AnimationInterface::scan(int x,int y, int *i)
 	return ANIM_None;
 }
 
-int AnimationInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
-{
-	if (buttondown.isdown(0,LEFTBUTTON)) return 1;
-
-
-	 // else click down on something for overlay
-	int over=scan(x,y,NULL);
-	buttondown.down(d->id,LEFTBUTTON,x,y, over,state);
-
-	return 0;
-}
-
 int AnimationInterface::Idle(int tid)
 {
 	currentframe++;
@@ -354,6 +348,8 @@ int AnimationInterface::Idle(int tid)
 
 bool AnimationInterface::Play(int on)
 {
+	//clock_t curtime = times(NULL);
+
 	bool play=playing;
 
 	if (on<0) play=!play;
@@ -378,24 +374,6 @@ bool AnimationInterface::Play(int on)
 	return playing;
 }
 
-
-int AnimationInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
-{
-	if (!buttondown.isdown(d->id,LEFTBUTTON)) return 1;
-
-
-	int firstover=ANIM_None;
-	//int dragged=
-	buttondown.up(d->id,LEFTBUTTON, &firstover);
-	int over=scan(x,y,NULL);
-
-	if (firstover==over && over==ANIM_Play) {
-		Play(-1);
-	}
-
-	return 0;
-}
-
 int AnimationInterface::Mode(int newmode)
 {
 	if (newmode==mode) return mode;
@@ -413,6 +391,49 @@ void AnimationInterface::UpdateHoverMessage(int hover)
 	else if (hover==ANIM_Faster) PostMessage(_("Play faster foward"));
 	else if (hover==ANIM_Backwards) PostMessage(_("Play faster backwards"));
 	else PostMessage(" ");
+}
+
+int AnimationInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
+{
+	if (buttondown.isdown(0,LEFTBUTTON)) return 1;
+
+
+	 // else click down on something for overlay
+	int over=scan(x,y,NULL);
+	buttondown.down(d->id,LEFTBUTTON,x,y, over,state);
+
+	return 0;
+}
+
+
+int AnimationInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
+{
+	if (!buttondown.isdown(d->id,LEFTBUTTON)) return 1;
+
+
+	int firstover=ANIM_None;
+	//int dragged=
+	buttondown.up(d->id,LEFTBUTTON, &firstover);
+	int over=scan(x,y,NULL);
+
+	if (firstover==over && over==ANIM_Play) {
+		Play(-1);
+
+	} else if (firstover==over && over==ANIM_Rewind) {
+		current_time = 0;
+		needtodraw=1;
+		return 0;
+
+	} else if (firstover==over && over==ANIM_To_End) {
+		current_time = animation_length;
+		needtodraw=1;
+		return 0;
+
+	} else if (firstover==over && over==ANIM_Faster) {
+	} else if (firstover==over && over==ANIM_Backwards) {
+	}
+
+	return 0;
 }
 
 int AnimationInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)

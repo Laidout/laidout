@@ -94,7 +94,7 @@ class AnimationInterface : public LaxInterfaces::anInterface
 	//ObjectTimeline *global_time;
 	double animation_length; //in seconds
 	double ui_first_time, ui_last_time;
-	double current_time;
+	double current_time; //in seconds
 	double fps; //0 means continuous
 	double current_fps; //==fps*speed
 	double speed; //1==normal
@@ -107,6 +107,7 @@ class AnimationInterface : public LaxInterfaces::anInterface
 
 	double uiscale;
 	Laxkit::DoubleBBox box;
+	Laxkit::DoubleBBox timeline;
 
 	unsigned int bg_color;
 	unsigned int hbg_color;
