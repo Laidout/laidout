@@ -78,8 +78,6 @@ void PushBuiltinPathops()
 
 //! Get the built in interfaces. NOTE: Must be called after PushBuiltinPathops().
 /*! The PathInterface requires that pathoppool be filled already.
- *
- * \todo combine with EpsInterface with ImageInterface somehow to make easily expandable..
  */
 RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existingpool) //existingpool=NULL
 {
@@ -106,6 +104,12 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 
 	if (laidout->experimental) {
 		// *************** testing:
+
+		 //------Animation
+		//i=new AnimationInterface(NULL,id++,NULL);
+		//tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+		//existingpool->push(i);
+		//i->dec_count();
 
 		 //------TextStream
 		i=new TextStreamInterface(NULL,id++,NULL);
@@ -136,12 +140,6 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 		existingpool->push(i);
 		i->dec_count();
-
-		 //------Animation
-		//i=new AnimationInterface(NULL,id++,NULL);
-		//tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
-		//existingpool->push(i);
-		//i->dec_count();
 
 		// *************** end testing
 	}
