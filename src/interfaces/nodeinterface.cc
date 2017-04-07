@@ -28,6 +28,7 @@
 #include <lax/laxutils.h>
 #include <lax/bezutils.h>
 #include <lax/popupmenu.h>
+#include <lax/colorsliders.h>
 #include <lax/language.h>
 
 #include <string>
@@ -149,12 +150,12 @@ NodeProperty::NodeProperty()
 	width=height=0;
 
 	type = PROP_Unknown;
-	is_inputable=false; //default true for something that allows links in
+	is_linkable=false; //default true for something that allows links in
 }
 
 /*! If !absorb_count, then ndata's count gets incremented.
  */
-NodeProperty::NodeProperty(PropertyTypes input, bool inputable, const char *nname, Value *ndata, int absorb_count)
+NodeProperty::NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count)
 {
 	color.rgbf(1.,1.,1.,1.);
 
@@ -164,7 +165,7 @@ NodeProperty::NodeProperty(PropertyTypes input, bool inputable, const char *nnam
 	if (data && !absorb_count) data->inc_count();
 
 	type = input;
-	is_inputable = inputable;
+	is_linkable = linkable;
 
 	name=newstr(nname);
 }
@@ -192,13 +193,12 @@ int NodeProperty::IsConnected()
 
 int NodeProperty::AllowInput()
 {
-	return IsInput() && is_inputable;
+	return IsInput() && is_linkable;
 }
 
 int NodeProperty::AllowOutput()
 {
-	// ***
-	return !IsInput();
+	return IsOutput();
 }
 
 /*! Return the node and property index in that node of the specified connection.
@@ -217,7 +217,7 @@ NodeBase *NodeProperty::GetConnection(int connection_index, int *prop_index_ret)
 			if (node) *prop_index_ret = node->properties.findindex(connection->fromprop);
 			else *prop_index_ret = -1;
 
-		} else {
+		} else if (IsOutput()) {
 			NodeBase *node = connection->to;
 			if (node) *prop_index_ret = node->properties.findindex(connection->toprop);
 			else *prop_index_ret = -1;
@@ -312,7 +312,7 @@ class NodePropValid
 	virtual ~NodePropValid() { delete[] error; }
 };
 
-/*! Return whether the node has valid values.
+/*! Return whether the node has valid values, or the outputs are older than inputs.
  * Default is to return 0 for no error and everything up to date.
  * -1 means bad inputs and node in error state.
  * 1 means needs updating.
@@ -322,15 +322,17 @@ class NodePropValid
  */
 int NodeBase::GetStatus()
 { 
+	 //find newest mod time of inputs
 	std::time_t t=0;
 	for (int c=0; c<properties.n; c++) {
-		if (properties.e[c]->IsInput() && properties.e[c]->modtime > t) t = properties.e[c]->modtime;
+		if (!properties.e[c]->IsOutput() && properties.e[c]->modtime > t) t = properties.e[c]->modtime;
 	}
-	if (t==0) return 0;
-	for (int c=0; c<properties.n; c++) {
-		if (!properties.e[c]->IsInput()) continue;
-		if (properties.e[c]->modtime<t) return 1;
+	if (t==0) return 0; //no inputs!
 
+	 //if any outputs older than newest mod, then return 1
+	for (int c=0; c<properties.n; c++) {
+		if (properties.e[c]->IsOutput()) continue;
+		if (properties.e[c]->modtime < t) return 1; 
 	}
 	return 0;
 }
@@ -382,6 +384,9 @@ int NodeBase::Wrap()
 		v=dynamic_cast<Value*>(prop->data);
 		if (v) {
 			if (v->type()==VALUE_Real || v->type()==VALUE_Int) {
+				w+=3*th;
+
+			} else if (v->type()==VALUE_Color) {
 				w+=3*th;
 
 			} else if (v->type()==VALUE_Enum) {
@@ -701,36 +706,25 @@ Attribute *NodeGroup::dump_out_atts(Attribute *att,int what,DumpContext *context
 
 		sprintf(s,"%.10g %.10g %.10g %.10g", node->x,node->y,node->width,node->height);
 		att2->push("xywh", s);
-		//---------
-		//att2->push("x",  node->x);
-		//att2->push("y",  node->y);
-		//att2->push("width",  node->width);
-		//att2->push("height",  node->height);
 
 		if (node->collapsed) att2->push("collapsed");
 
 		//NodeColors *colors;
 	
-		 //inputs
+		 //properties
 		NodeProperty *prop;
 		for (int c2=0; c2<node->properties.n; c2++) { 
-			prop = node->properties.e[c2];
+			prop = node->properties.e[c2]; 
+			att3 = NULL;
 
-			if (!prop->IsInput()) continue;
-			if (prop->IsConnected()) continue; //since it'll be recomputed after read in
+			if (prop->IsInput()) {
+				//provide for reference if connected...
+				//if (prop->IsConnected()) continue; //since it'll be recomputed after read in
+				att3 = att2->pushSubAtt("in", prop->name);
+			} else if (prop->IsOutput()) att3 = att2->pushSubAtt("out", prop->name); //just provide for reference
+			else if (prop->IsBlock()) att3 = att2->pushSubAtt("block", prop->name);
+			else continue;
 
-			att3 = att2->pushSubAtt("in", prop->name);
-			if (prop->GetData()) {
-				prop->GetData()->dump_out_atts(att3, what, context);
-			} else att3->push(prop->name, "arrrg! todo!");
-		} 
-
-		 //outputs
-		for (int c2=0; c2<node->properties.n; c2++) {
-			prop = node->properties.e[c2];
-			if (prop->IsInput()) continue;
-
-			att3 = att2->pushSubAtt("out", prop->name);
 			if (prop->GetData()) {
 				prop->GetData()->dump_out_atts(att3, what, context);
 			} else att3->push(prop->name, "arrrg! todo!");
@@ -739,16 +733,12 @@ Attribute *NodeGroup::dump_out_atts(Attribute *att,int what,DumpContext *context
 	}
 
 	att2 = att->pushSubAtt("connections");
-	//char scratch[200]; // *** crash magnet!
 	for (int c=0; c<connections.n; c++) {
-		 //"%s,%s - %s,%s", 
+		 //"%s,%s -> %s,%s", 
 		string str;
 		str = str + connections.e[c]->from->Id() + "," + connections.e[c]->fromprop->name
 					 + " -> " + connections.e[c]->to  ->Id() + "," + connections.e[c]->toprop  ->name;
 
-		//sprintf(scratch, "%s,%s - %s,%s", 
-				//connections.e[c]->from->Id(), connections.e[c]->fromprop->name,
-				//connections.e[c]->to  ->Id(), connections.e[c]->toprop  ->name);
 		att2->push("connect", str.c_str());
 	}
 
@@ -937,7 +927,26 @@ Laxkit::anObject *newDoubleNode(Laxkit::anObject *ref)
 	//node->Id("Value");
 	makestr(node->Name, _("Value"));
 	makestr(node->type, "Value");
-	node->properties.push(new NodeProperty(NodeProperty::PROP_Output, false, _("V"), new DoubleValue(0), 1)); 
+	node->properties.push(new NodeProperty(NodeProperty::PROP_Output, true, _("V"), new DoubleValue(0), 1)); 
+	return node;
+}
+
+
+//------------ ColorNode
+
+Laxkit::anObject *newColorNode(Laxkit::anObject *ref)
+{
+	NodeBase *node = new NodeBase;
+	makestr(node->Name, _("Color"));
+	makestr(node->type, "Color");
+
+	node->properties.push(new NodeProperty(NodeProperty::PROP_Output, true, _("Color"), new ColorValue("#ffffff"), 1)); 
+	//----------
+	//node->properties.push(new NodeProperty(NodeProperty::PROP_Intput, false, _("Red"), new DoubleValue(1), 1)); 
+	//node->properties.push(new NodeProperty(NodeProperty::PROP_Intput, false, _("Green"), new DoubleValue(1), 1)); 
+	//node->properties.push(new NodeProperty(NodeProperty::PROP_Intput, false, _("Blue"), new DoubleValue(1), 1)); 
+	//node->properties.push(new NodeProperty(NodeProperty::PROP_Intput, false, _("Alpha"), new DoubleValue(1), 1)); 
+	//node->properties.push(new NodeProperty(NodeProperty::PROP_Output, false, _("Out"), new ColorValue("#ffffffff"), 1)); 
 	return node;
 }
 
@@ -1217,14 +1226,17 @@ Laxkit::anObject *newImageNode(Laxkit::anObject *ref)
  */
 int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 {
-	 //--- DoubleNode
-	factory->DefineNewObject(getUniqueNumber(), "Value", newDoubleNode, NULL);
+	 //--- ColorNode
+	factory->DefineNewObject(getUniqueNumber(), "Color",  newColorNode,   NULL);
+
+	 //--- ImageNode
+	factory->DefineNewObject(getUniqueNumber(), "Image",  newImageNode,   NULL);
 
 	 //--- MathNode
 	factory->DefineNewObject(getUniqueNumber(), "Math",  newMathNode,   NULL);
 
-	 //--- ImageNode
-	factory->DefineNewObject(getUniqueNumber(), "Image",  newImageNode,   NULL);
+	 //--- DoubleNode
+	factory->DefineNewObject(getUniqueNumber(), "Value", newDoubleNode, NULL);
 
 	return 0;
 }
@@ -1396,6 +1408,30 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 
 		return 0;
 
+	} else if (!strcmp(mes,"newcolor")) {
+		if (!nodes || lasthover<0 || lasthover>=nodes->nodes.n || lasthoverprop<0
+				|| lasthoverprop>=nodes->nodes.e[lasthover]->properties.n) return 0;
+
+		const SimpleColorEventData *ce=dynamic_cast<const SimpleColorEventData *>(data);
+		if (!ce) return 0;
+		if (ce->colorsystem != LAX_COLOR_RGB) {
+			PostMessage(_("Color has to be rgb currently."));
+			return 0;
+		}
+	
+		double mx=ce->max;
+        double cc[5];
+        for (int c=0; c<5; c++) cc[c]=ce->channels[c]/mx;
+
+		NodeBase *node = nodes->nodes.e[lasthover];
+		NodeProperty *prop = node->properties.e[lasthoverprop];
+		ColorValue *color = dynamic_cast<ColorValue*>(prop->GetData()); 
+		color->color.Set(ce->colorsystem, cc[0],cc[1],cc[2],cc[3],cc[4]);
+
+		node->Update();
+		needtodraw=1;
+		return 0;
+
 	} else if (!strcmp(mes,"selectenum")) {
 		if (!nodes || lasthover<0 || lasthoverprop<0) return 0;
         const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
@@ -1405,7 +1441,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 
 		NodeBase *node = nodes->nodes.e[lasthover];
 		NodeProperty *prop = node->properties.e[lasthoverprop];
-		if (!prop->IsInput()) return 0; //don't change outputs
+		if (prop->IsOutput()) return 0; //don't change outputs
 		if (prop->IsInput() && prop->IsConnected()) return 0; //can't change if piped in from elsewhere
 
 		EnumValue *ev = dynamic_cast<EnumValue*>(prop->data);
@@ -1716,7 +1752,24 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y)
 		//dp->textout(node->x+th*1.5+dx, node->y+prop->y+prop->height/2, extra,-1, LAX_LEFT|LAX_VCENTER);
 		dp->drawthing(node->x+node->width-th, node->y+prop->y+prop->height/2, th/4,th/4, 1, THING_Triangle_Down);
 
+	} else if (v && v->type()==VALUE_Color) {
+		ColorValue *color = dynamic_cast<ColorValue*>(v);
+		double x = node->x+th/2;
+		unsigned long oldfg = dp->FG();
+		if (!(prop->IsInput() && prop->IsConnected())) {
+			 //draw color box
+			dp->NewFG(color->color.Red(),color->color.Green(),color->color.Blue(),color->color.Alpha());
+			dp->drawrectangle(x,y+prop->height/2-th/2, 2*th, th, 1);
+			dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
+			dp->drawrectangle(x,y+prop->height/2-th/2, 2*th, th, 0);
+			x += 2*th + th/2;
+		}
+		dp->NewFG(oldfg);
+		dp->textout(x,y+prop->height/2, prop->name,-1, LAX_LEFT|LAX_VCENTER);
+
 	} else {
+		//strcpy(extra, prop->name);
+
 		if (prop->IsInput()) {
 			 //draw on left side
 			double dx = dp->textout(node->x+th/2, y+prop->height/2, prop->Name(),-1, LAX_LEFT|LAX_VCENTER); 
@@ -1735,7 +1788,8 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y)
 		}
 	}
 
-	if (!(prop->IsInput() && !prop->is_inputable)) {
+	 //draw connection spot
+	if (prop->is_linkable) {
 		dp->NewBG(&prop->color);
 		dp->drawellipse(prop->pos+flatpoint(node->x,node->y), th*slot_radius,th*slot_radius, 0,0, 2);
 	} 
@@ -1778,7 +1832,7 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty)
 			for (int c2=0; c2<node->properties.n; c2++) {
 				prop = node->properties.e[c2];
 
-				if (!(prop->IsInput() && !prop->is_inputable)) { //only if the input is not exclusively internal
+				if (!(prop->IsInput() && !prop->is_linkable)) { //only if the input is not exclusively internal
 				  if (p.y >= node->y+prop->y && p.y < node->y+prop->y+prop->height) {
 					if (p.x >= node->x+prop->pos.x-th/2 && p.x <= node->x+prop->pos.x+th/2) {
 						if (overpropslot) *overpropslot = c2;
@@ -1882,7 +1936,7 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 				lasthoverslot  = overpropslot;
 			}
 
-		} else {
+		} else if (prop->IsOutput()) {
 			 // if dragging output, create new connection
 			action = NODES_Drag_Output;
 			prop->connections.push(new NodeConnection(nodes->nodes.e[overnode],NULL, prop,NULL), 0);//prop list does not delete connection
@@ -1945,6 +1999,26 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 			viewport->SetupInputBox(object_id, NULL, valuestr, v->type()==VALUE_Real ? "setpropdouble" : "setpropint", bounds);
 			lasthover = overnode;
 			lasthoverprop = overproperty;
+
+		} else if (v->type()==VALUE_Color) {
+			ColorValue *color = dynamic_cast<ColorValue*>(v); 
+
+			unsigned long extra=0;
+			anXWindow *w = new ColorSliders(NULL,"New Color","New Color",ANXWIN_ESCAPABLE|ANXWIN_REMEMBER|ANXWIN_OUT_CLICK_DESTROYS|extra,
+							0,0,200,400,0,
+						   NULL,object_id,"newcolor",
+						   LAX_COLOR_RGB, 1./255,
+						   color->color.colors[0],
+						   color->color.colors[1],
+						   color->color.colors[2],
+						   color->color.colors[3],
+						   color->color.colors[4],
+						   //cc[0],cc[1],cc[2],cc[3],cc[4],
+						   x,y);
+			if (!w) return 0;
+			app->rundialog(w);
+			return 0;
+			
 
 		} else if (v->type()==VALUE_Enum) {
 			 //popup menu with enum values..
@@ -2359,12 +2433,15 @@ int NodeInterface::PerformAction(int action)
 
 	} else if (action==NODES_Add_Node) {
 		 //Pop up menu to select new node..
-		//int mx=-1,my=-1;
-		//int status=mouseposition(0, curwindow, &mx, &my, NULL, NULL, NULL);
-		//if (mx<0 || mx>curwindow->win_w || my<0 || my>curwindow->win_h) {
-		//	mx=curwindow->win_w/2;
-		//	my=curwindow->win_h/2;
-		//}
+		if (lastpos.x == 0 && lastpos.y == 0) {
+			int mx=-1,my=-1;
+			int status=mouseposition(0, curwindow, &mx, &my, NULL, NULL, NULL);
+			if (status!=0 || mx<0 || mx>curwindow->win_w || my<0 || my>curwindow->win_h) {
+				mx=curwindow->win_w/2;
+				my=curwindow->win_h/2;
+			}
+			lastpos.set(mx,my);
+		}
 
 		MenuInfo *menu=new MenuInfo;
 		ObjectFactoryNode *type;
@@ -2373,7 +2450,8 @@ int NodeInterface::PerformAction(int action)
 			menu->AddItem(type->name, c);
 		}
 
-       PopupMenu *popup=new PopupMenu(NULL,_("Add node..."), 0,
+
+        PopupMenu *popup=new PopupMenu(NULL,_("Add node..."), 0,
                         0,0,0,0, 1,
                         object_id,"addnode",
                         0, //mouse to position near?

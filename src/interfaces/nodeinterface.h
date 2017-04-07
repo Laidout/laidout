@@ -97,7 +97,7 @@ class NodeProperty
 
 	PropertyTypes type;
 	//bool is_input; //or output
-	bool is_inputable; //default true for something that allows links in
+	bool is_linkable; //default true for something that allows links in
 
 	double x,y,width,height;
 	Laxkit::ScreenColor color;
@@ -106,12 +106,14 @@ class NodeProperty
 	flatpoint pos; //clickable spot relative to parent NodeBase origin
 
 	NodeProperty();
-	NodeProperty(PropertyTypes input, bool inputable, const char *nname, Value *ndata, int absorb_count);
+	NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count);
 	virtual ~NodeProperty();
 	virtual LaxInterfaces::anInterface *PropInterface();
 	virtual const char *Name() { return name; }
 	virtual int IsConnected();
-	virtual int IsInput() { return type==PROP_Input; }
+	virtual int IsInput()  { return type==PROP_Input;  }
+	virtual int IsOutput() { return type==PROP_Output; }
+	virtual int IsBlock()  { return type==PROP_Block; }
 	virtual int AllowInput();
 	virtual int AllowOutput();
 	virtual NodeBase *GetConnection(int connection_index, int *prop_index_ret);
