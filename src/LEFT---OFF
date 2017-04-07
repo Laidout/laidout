@@ -1365,9 +1365,6 @@ for clones, it would be easier to have a "defs" group or something, so deleting 
 tiling cloner: 
   clipping options when source images overlap in final layout
     maybe be able to modify base cell outline, use that as clip? autocorrect for overlapping?
-  debug recursive, need controls to say how much to recurse
-  big memory hole, maybe only after render?
-  needs a tiling description dump_out
 
   1m and mg do not seem to work: need a final transform to apply, NOT repeatX/YDir().. those shift without rotate
   bug: not showing orientation arrows correctly when outline cuts through middle of bounding box
@@ -1394,21 +1391,6 @@ tiling cloner:
   need progressive search when mouse over box
   autocreate seamless tile image
   autofit source objects/images to the pattern to minimize gaps
-
-  DONE dragging source image should optionally autoselect the base cell nearest mouse
-  DONE? render is slightly offset from base cells occasionally (??? can't dup)
-  DONE control box should either shrink oversized text or put bigger box
-  DONE need to be able to individual base objects
-  DONE transform the base cell complex should transform base objects along with it
-  DONE click on base cell, update viewport color box
-  DONE should have some indication which base cells source objects belong to, maybe outline with color?
-  DONE base cells click needs to check for in bounds of grey clones
-  DONE must be able to explicity say which control layer to act on: boundary, base cells, source objects, in case of bad overlap
-  DONE need to be able to use full object handles when moving source objects... the size handles are disabled
-  DONE line thickness of default render is way too thick, should be a small proportion of bounding box
-  DONE bug: can't scale base objects
-  DONE bug: spiral and rotation tilings not working again 
-  DONE? debug groupify
 
 Imposition use cases:
   for same document, have stack of impostions, each with its own page set? would make make docs with body pages
@@ -1669,4 +1651,22 @@ DONE implement LineStyle::dump_out_atts
 DONE implement FillStyle::dump_out_atts
 DONE FillStyle: implement i/o of all the available blend modes
 DONE some side handles on object tool scanning as different handles
+DONE clone tiler:
+  DONE needs a tiling description dump_out
+  DONE big memory hole, maybe only after render?
+  DONE debug recursive, need controls to say how much to recurse
+  DONE dragging source image should optionally autoselect the base cell nearest mouse
+  DONE? render is slightly offset from base cells occasionally (??? can't dup)
+  DONE control box should either shrink oversized text or put bigger box
+  DONE need to be able to individual base objects
+  DONE transform the base cell complex should transform base objects along with it
+  DONE click on base cell, update viewport color box
+  DONE should have some indication which base cells source objects belong to, maybe outline with color?
+  DONE base cells click needs to check for in bounds of grey clones
+  DONE must be able to explicity say which control layer to act on: boundary, base cells, source objects, in case of bad overlap
+  DONE need to be able to use full object handles when moving source objects... the size handles are disabled
+  DONE line thickness of default render is way too thick, should be a small proportion of bounding box
+  DONE bug: can't scale base objects
+  DONE bug: spiral and rotation tilings not working again 
+  DONE? debug groupify
 
