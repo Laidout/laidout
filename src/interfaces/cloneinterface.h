@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2013-2014 by Tom Lechner
+// Copyright (C) 2013-2015,2017 by Tom Lechner
 //
 
 #include "../calculator/values.h"
@@ -56,12 +56,12 @@ class TilingDest
 	int parent_op_id; //of containing TilingOp
 
 	bool is_progressive;
-	bool traceable;
+	bool traceable; //whether this dest should be outlined on Render(). sometimes it is just a base for further objs
 
 	 //conditions for traversal
 	unsigned int conditions; //1 use iterations, 2 use max size, 3 use min size, 4 use scripted
 	int max_iterations; // <0 for endless, use other constraints to control
-	int recurse_objects;
+	int recurse_objects; // what is supposed to recurse
 	double max_size, min_size;
 	double traversal_chance;
 	char *scripted_condition;
@@ -132,6 +132,7 @@ class Tiling : public Laxkit::anObject, public LaxFiles::DumpUtility //, public 
 
 	Tiling(const char *nname=NULL, const char *ncategory=NULL);
 	virtual ~Tiling();
+	virtual const char *whattype() { return "Tiling"; }
 
 	virtual void InstallDefaultIcon();
 	virtual void DefaultHex(double side_length);
@@ -145,6 +146,8 @@ class Tiling : public Laxkit::anObject, public LaxFiles::DumpUtility //, public 
 	virtual flatpoint repeatYDir();
 	virtual flatpoint repeatYDir(flatpoint ny);
 	virtual Laxkit::Affine finalTransform(); //transform applied after tiling to entire pattern, to squish around
+
+	virtual int HasRecursion();
 
 	virtual TilingOp *AddBase(LaxInterfaces::PathsData *outline, int absorb_count, int lock_base,
 								bool shearable=false, bool flexible_base=false);
@@ -176,7 +179,8 @@ class CloneInterface : public LaxInterfaces::anInterface
   protected:
 
 	Tiling *tiling;
-
+	int num_input_fields;
+	Laxkit::PtrStack<TilingDest> extra_input_fields;
 
 	int firsttime;
 	int lastover;

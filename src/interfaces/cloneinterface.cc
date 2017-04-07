@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2013-2014 by Tom Lechner
+// Copyright (C) 2013-2015, 2017 by Tom Lechner
 //
 
 #include "cloneinterface.h"
@@ -216,6 +216,21 @@ TilingOp *Tiling::AddBase(PathsData *outline, int absorb_count, int lock_base, b
 	return op;
 }
 
+/*! Returns how many TilingDest objects have recursion. This many things will be
+ * inputs under the normal control box.
+ */
+int Tiling::HasRecursion()
+{
+	int n=0;
+	for (int c=0; c<basecells.n; c++) {
+		for (int c2=0; c2<basecells.e[c]->transforms.n; c2++) {
+			if (basecells.e[c]->transforms.e[c2]->max_iterations > 1) n++;
+		}		
+	}
+
+	return n;
+}
+
 /*! There is some superset of basecells that makes the tiling repeatable in an evenly spaced grid.
  * Returns if it can repeat infinitely in the x axis.
  */
@@ -275,6 +290,14 @@ void Tiling::DefaultHex(double side_length)
 	
 LaxFiles::Attribute *Tiling::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
 {
+    if (what==-1) {
+		if (!att) att = new Attribute();
+
+        att->push("name",     "Blah  #optional human readable name");
+        att->push("category", "Blah  #optional human readable category name");
+		return att;
+	}
+
 	// ***
 	return NULL;
 }
@@ -292,6 +315,22 @@ void Tiling::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context
     if (what==-1) {
         fprintf(f,"%sname Blah          #optional human readable name\n",spc);
         fprintf(f,"%scategory Blah      #optional human readable category name\n",spc);
+		fprintf(f,"%srepeatable no      #or x, y, \"x y\", whether to allow repeat in overall p1\n",spc);
+		fprintf(f,"%srepeat_origin 1,1  #vector for origin of overall p1 arrangement\n",spc);
+		fprintf(f,"%srepeat_x 1,0       #vector for x axis of overall p1 arrangement\n",spc);
+		fprintf(f,"%srepeat_x 0,1       #vector for y axis of overall p1 arrangement\n",spc);
+		fprintf(f,"%sbasecell           #one or more of these, the guts of the tiling\n",spc);
+		fprintf(f,"%s  shearable        #whether to allow shearing of this cell\n",spc);
+		fprintf(f,"%s  flexible         #whether the cell can change aspect ratio without breaking things\n",spc);
+		fprintf(f,"%s  outline          #path for this cell\n",spc);
+		fprintf(f,"%s    ...\n",spc);
+		fprintf(f,"%s  transform matrix(1,0,0,1,0,0)  #simple placement of outline to a certain orientation\n",spc);
+		fprintf(f,"%s  clone            #recursive placement of outline clones\n",spc);
+		fprintf(f,"%s    transform matrix(1,0,0,1,0,0)  #matrix for this placement\n",spc);
+		fprintf(f,"%s    traceable      #Whether to render lines for this clone. Sometimes it is just a node for further cloning\n",spc);
+		fprintf(f,"%s    iterations 22  #How many times to repeat this transform with outline\n",spc);
+		fprintf(f,"%s    max_size       #(todo) Max size of clones after which repeating stops\n",spc);
+		fprintf(f,"%s    min_size       #(todo) Min size of clones below which repeating stops\n",spc);
 		return;
 	}
 
@@ -330,10 +369,12 @@ void Tiling::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context
 		for (int c2=0; c2<op->transforms.n; c2++) {
 			dest=op->transforms.e[c2];
 			if (dest->max_iterations==1) {
+				 //simple duplication
 				const double *m=dest->transform.m();
 				fprintf(f,"%s  transform matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\n",
 						spc, m[0],m[1],m[2],m[3],m[4],m[5]);
 			} else {
+				 //assume recursive
 				fprintf(f,"%s  clone\n",spc);
 				const double *m=dest->transform.m();
 				fprintf(f,"%s    transform matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\n",
@@ -2320,6 +2361,7 @@ enum CloneInterfaceElements {
 	 //things 
 	CLONEI_Circle,
 	CLONEI_Box,
+	CLONEI_Inputs,
 	CLONEI_Tiling,
 	CLONEI_Tiling_Label,
 	CLONEI_BaseCell,
@@ -2415,6 +2457,7 @@ CloneInterface::CloneInterface(anInterface *nowner,int nid,Laxkit::Displayer *nd
 	snap_to_base=true;
 	groupify_clones=true;
 	tiling=NULL;
+	num_input_fields = 0;
 	preview_lines=false;
 	trace_cells=true; // *** maybe 2 should be render outline AND install as new objects in doc?
 	//source_objs=NULL; //a pool of objects to select from, rather than clone
@@ -2492,6 +2535,16 @@ int CloneInterface::SetTiling(Tiling *newtiling)
 
 	if (tiling) tiling->dec_count();
 	tiling=newtiling;
+
+	num_input_fields = tiling->HasRecursion();
+	extra_input_fields.flush();
+	for (int c=0; c<tiling->basecells.n; c++) {
+		for (int c2=0; c2<tiling->basecells.e[c]->transforms.n; c2++) {
+			if (tiling->basecells.e[c]->transforms.e[c2]->max_iterations > 1) {
+				extra_input_fields.push(tiling->basecells.e[c]->transforms.e[c], 0);
+			}
+		}		
+	}
 
 	base_cells.Unshear(1,0);
 	base_cells.flush();
@@ -2841,6 +2894,22 @@ int CloneInterface::Event(const Laxkit::EventData *e,const char *mes)
 		}
 		return 0;
 
+	} else if (!strncmp(mes,"setrecurse",10)) {
+		int i = strtol(mes+10,NULL,10);
+		if (i<0 || i >= extra_input_fields.n) return 0;
+
+        const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
+		if (isblank(s->str)) return 0;
+
+		int itr = strtol(s->str, NULL, 10);
+		if (itr<2) {
+			PostMessage(_("Repeat must be 2 or more"));
+		} else { 
+			extra_input_fields.e[i]->max_iterations = itr;
+			if (active) Render();
+		}
+		return 0;
+
 	} else if (!strcmp(mes,"load")) {
         const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
 		if (isblank(s->str)) return 0;
@@ -2950,8 +3019,8 @@ void CloneInterface::RefreshSelectMode()
 			y+=cell_pad+icon_width;
 		}
 		i=c;
-		f=GetBuiltinIconKey(i);
-		img=laidout->icons->GetIcon(f);
+		f = GetBuiltinIconKey(i);
+		img = laidout->icons->GetIcon(f);
 		delete[] f;
 		if (!img) continue;
 
@@ -2973,6 +3042,7 @@ void CloneInterface::RefreshSelectMode()
 		}
 		flatpoint offset=flatpoint(icon_width/2-w/2, icon_width/2-h/2);
 		dp->imageout(img, x+offset.x,y+offset.y+h, w,-h);
+		img->dec_count();
 
 		x+=cell_pad+icon_width;
 	}
@@ -3096,6 +3166,26 @@ int CloneInterface::Refresh()
 		dp->drawrectangle(box.minx+pad,box.miny+pad, box.maxx-box.minx-2*pad,box.maxy-box.miny-2*pad, 1);
 	}
 
+	if (extra_input_fields.n) {
+		 //draw extra recursion inputs
+		dp->NewBG(bg_color);
+		dp->NewFG(fg_color);
+		double th=dp->textheight();
+		double pad = th*.1;
+		dp->drawrectangle(box.minx,box.maxy, box.maxx-box.minx, th/2 + 2*pad + circle_radius + (2*pad + th)*(extra_input_fields.n), 2);
+		char scratch[100];
+		double y=box.maxy + circle_radius + pad + th/2;
+		for (int c=0; c<extra_input_fields.n; c++) {
+			sprintf(scratch, _("Rep: %d"), extra_input_fields.e[c]->max_iterations);
+			if (lastover == CLONEI_Inputs && lastoveri == c) {
+				dp->NewFG(hbg_color);
+				dp->drawrectangle(box.minx+pad,y-pad, box.maxx-box.minx-2*pad, th + 2*pad, 1);
+				dp->NewFG(fg_color);
+			}
+			dp->textout((box.minx+box.maxx)/2,y, scratch,-1, LAX_HCENTER|LAX_TOP);
+			y+=th+2*pad;
+		}
+	}
 
 	 //draw circle
 	flatpoint cc((box.minx+box.maxx)/2,box.maxy);
@@ -3159,7 +3249,7 @@ int CloneInterface::Refresh()
 int CloneInterface::scan(int x,int y, int *i)
 {
 	flatpoint cc((box.minx+box.maxx)/2,box.maxy);
-	double circle_radius=INTERFACE_CIRCLE*uiscale;
+	double circle_radius = INTERFACE_CIRCLE*uiscale;
 
 	if (norm((cc-flatpoint(x,y)))<circle_radius) return CLONEI_Circle;
 
@@ -3169,6 +3259,18 @@ int CloneInterface::scan(int x,int y, int *i)
 		if (x>box.minx+pad && x<box.maxx-pad && y>box.miny+pad && y<box.maxy-pad)
 			return CLONEI_Tiling;
 		return CLONEI_Box;
+	}
+
+	if (extra_input_fields.n && x>=box.minx && x<=box.maxx && y>=box.maxy) {
+		double th=dp->textheight();
+		int yi = (y-(box.maxy + circle_radius + th/2 + th*.1))/(th*1.2);
+		DBG cerr <<" --------------------extra input scan: "<<yi<<endl;
+
+		if (yi>=0 && yi<extra_input_fields.n) {
+			if (i) *i = yi;
+			DBG cerr <<" --------------------extra input found! "<<yi<<endl;
+			return CLONEI_Inputs;
+		}
 	}
 
 
@@ -3308,12 +3410,12 @@ int CloneInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 	int over=scan(x,y,&i);
 
 	 //on control box
-	if (over==CLONEI_Tiling || over==CLONEI_Box) {
+	if (over==CLONEI_Tiling || over==CLONEI_Box || over==CLONEI_Inputs) {
 		if (child) {
 			RemoveChild();
 			needtodraw=1;
 		}
-		buttondown.down(d->id,LEFTBUTTON,x,y, over,state);
+		buttondown.down(d->id,LEFTBUTTON,x,y, over,i);
 		return 0;
 	}
 
@@ -3565,9 +3667,8 @@ int CloneInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 	}
 
 
-	int firstover=CLONEI_None;
-	//int dragged=
-	buttondown.up(d->id,LEFTBUTTON, &firstover);
+	int firstover=CLONEI_None, which=-1;
+	int dragged = buttondown.up(d->id,LEFTBUTTON, &firstover, &which);
 
 	int i=-1;
 	int over=scan(x,y,&i);
@@ -3578,6 +3679,19 @@ int CloneInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 		if (over==CLONEI_Circle) {
 			ToggleActivated();
 			needtodraw=1;
+			return 0;
+
+		} else if (over==CLONEI_Inputs) {
+			if (dragged<2) {
+				// pop up input box
+				char scratch[50], mes[20];
+				sprintf(scratch, "%d", extra_input_fields.e[which]->max_iterations);
+				sprintf(mes, "setrecurse%d", which);
+
+				double y = box.maxy + INTERFACE_CIRCLE*uiscale + dp->textheight()*.6;
+				DoubleBBox bounds(box.minx,box.maxx, y,y+dp->textheight()*1.2);
+				viewport->SetupInputBox(object_id, NULL, scratch, mes, bounds); 
+			} //else {}
 			return 0;
 
 		} else if (over==CLONEI_Tiling) {
@@ -3642,9 +3756,10 @@ int CloneInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 	DBG cerr <<"over box: "<<over<<endl;
 
 	if (!buttondown.any()) {
-		if (lastover!=over) needtodraw=1;
-		lastover=over;
-		if (lastover==CLONEI_None) PostMessage(" ");
+		if (lastover!=over || lastoveri != i) needtodraw=1;
+		lastover  = over;
+		lastoveri = i;
+		if (lastover == CLONEI_None) PostMessage(" ");
 		return 0;
 	}
 
@@ -3652,9 +3767,9 @@ int CloneInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 
 
 	 //button is down on something...
-	int lx,ly, oldover = CLONEI_None;
+	int lx,ly, oldover = CLONEI_None, oldwhich=-1;
 	buttondown.move(mouse->id,x,y, &lx,&ly);
-	buttondown.getextrainfo(mouse->id,LEFTBUTTON, &oldover);
+	buttondown.getextrainfo(mouse->id,LEFTBUTTON, &oldover, &oldwhich);
 
 	if (oldover == CLONEI_BaseCell) {
 		if ((state&LAX_STATE_MASK)==ControlMask) {
@@ -3676,6 +3791,23 @@ int CloneInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 		} else base_cells.origin(base_cells.origin()+dp->screentoreal(x,y)-dp->screentoreal(lx,ly));
 
 		needtodraw=1;
+		return 0;
+	}
+
+	if (oldover == CLONEI_Inputs) {
+		int ix,iy;
+		double step = dp->textheight()/2;
+		buttondown.getinitial(mouse->id, LEFTBUTTON, &ix,&iy);
+		int oldi = (lx-ix-step/2)/step;
+		int newi = (x-ix-step/2)/step;
+		if (newi!=oldi) {
+			int it = extra_input_fields.e[oldwhich]->max_iterations;
+			it += (newi-oldi);
+			if (it<2) it=2;
+			extra_input_fields.e[oldwhich]->max_iterations = it;
+			if (active) Render();
+			needtodraw=1;
+		}
 		return 0;
 	}
 
