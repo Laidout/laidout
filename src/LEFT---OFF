@@ -22,6 +22,8 @@ saved file, not showing up in recent
 
 sometimes crash at insert page before
 
+ColorSliders not really showing black unless you set from hex, but solid black is still sending properly
+
 text window controls have difficulties
   doesn't handle tabs
   (see PlainTextWindow below for feature plans instead of bugs)
@@ -70,9 +72,6 @@ splitwindow cursors existing in subwindows
 create new window, defaults to no doc. should select doc of last pane 
 headwindow swapping is now REALLY messed up
 pane swapping/dropto on maximized, swapping in general...
-
-Lightness slider appears black to white, but the middle is full color, needs segmented render like hue
-click enter area of color pickers, does not install color!!!!  
 
 svg out, EquivalentObject doesn't play nice with defs.. only accessed once.. how to upkeep clones in this case?
 	-> when equiv objects are composed of groups, what happens?
@@ -798,6 +797,7 @@ gradient resources
     color
 
 Colors:
+  need to update ColorSliders to use dp gradients
   color picker that previews text?
   convert to using Color objects instead of all ScreenColor:
 	gradient
@@ -1670,4 +1670,7 @@ DONE clone tiler:
   DONE bug: can't scale base objects
   DONE bug: spiral and rotation tilings not working again 
   DONE? debug groupify
+DONE color sliders input hex, it's flipping r and b 
+DONE Lightness slider appears black to white, but the middle is full color, needs segmented render like hue
+DONE click enter area of color pickers, does not install color!!!!  
 

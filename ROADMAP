@@ -7,12 +7,13 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.097
 -------------
-       debug previous version!
+(done) debug previous version at least slightly!
        engraver tool grow point mode
        engraver tool, resolution cut mode
        engraver tool, blockout needs to be more precise
 (done) engraver tool, fix non-live updates when tweaking various parameters
        engraver tool, fully test tool effects when many objects selected
+(done) Clean up symmetry clone interface, not easy to use currently
 (done) Allow setting custom default exported file name (via a line in laidoutrc)
        Text on path tool
 (done) text objects: harfbuzz based
@@ -23,15 +24,12 @@ VERSION 0.097
        double click on group should change selection area to group contents like inkscape?
 (done) Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
        debug svg in
-       PDF in, at least as 1 image per page, for purposes of imposition
-       pdf export, unicode capable
 (done) fix tooltips
-       drag-n-drop text to and from the various text edits
-       drag-n-drop with system, like drag images into viewwindow from an external file browser
 
 
 VERSION 0.098
 -------------
+       debug previous version!
        Tools should remember their settings
        option to specify alignment of different size signature stacks
        debug line outline cache, especially for joins
@@ -55,7 +53,6 @@ VERSION 0.098
        Tool scripting
        Custom line caps
        Undo/Redo
-       Clean up symmetry clone interface, not easy to use currently
        Clone Pattern Builder
        color styles, so objects can refer to a named color, just change that named to change all
        Soup up the color box so one can recall previous colors, and/or integration with palette window
@@ -65,7 +62,11 @@ VERSION 0.098
        Scribus import should try to do something appropriate with page spreads >= 2 pages wide
        Scribus import should do something meaningful with original Scribus page bleed values
        Collect for out
+       PDF in, at least as 1 image per page, for purposes of imposition
+       pdf export, unicode capable
        Optimize pdf export to rescale to target dpi, and compress image data
+       drag-n-drop text to and from the various text edits
+       drag-n-drop with system, like drag images into viewwindow from an external file browser
 
 
 VERSION 0.1 
