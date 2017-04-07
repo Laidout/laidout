@@ -155,6 +155,7 @@ class NodeColors : public Laxkit::anObject
 
 	NodeColors();
 	virtual ~NodeColors();
+	virtual const char *whattype() { return "NodeColors"; }
 	virtual int Font(Laxkit::LaxFont *newfont, bool absorb_count);
 };
 
@@ -221,6 +222,7 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 
 	NodeGroup();
 	virtual ~NodeGroup();
+	virtual const char *whattype() { return "NodeGroup"; }
 	virtual int DesignateOutput(NodeBase *noutput);
 	virtual NodeBase *FindNode(const char *name);
 	NodeBase *NewNode(const char *type);
