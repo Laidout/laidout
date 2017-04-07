@@ -137,6 +137,7 @@ put rss/g+ links on all menu pages.. need way to automate including menu bar stu
 
 
 from recent import:
+  export directory should default to last loaded file
   large images all being loaded in, need way to ask about creating proxy images
   need better ui for selecting templates
   load in autosave should ask if you want to save as the original
