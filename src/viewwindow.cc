@@ -299,6 +299,22 @@ int VObjContext::pop(int where)
 	return context.pop(where);
 }
 
+/*! Select up one, if possible. This uses SomeData->GetParent. It is assumed it is accurate,
+ * and will not go up if there is no somedata parent.
+ */
+int VObjContext::Up()
+{
+	if (!obj) return 0;
+	SomeData *parent = obj->GetParent();
+	if (!parent) return 0;
+
+	context.pop();
+	obj->dec_count();
+	obj = parent;
+	parent->inc_count();
+	return 1;
+}
+
 //! Set obj to nobj, and context to the supplied n items.
 /*! Incs count of nobj.
  */

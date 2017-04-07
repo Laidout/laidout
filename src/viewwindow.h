@@ -49,6 +49,7 @@ class VObjContext : public LaxInterfaces::ObjectContext
 	virtual void clear();
 	virtual void clearToPage();
 	virtual LaxInterfaces::ObjectContext *duplicate();
+	virtual int Up();
 
 	virtual void push(int i,int where=-1);
 	virtual int pop(int where=-1);
