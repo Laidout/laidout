@@ -2408,7 +2408,6 @@ CloneInterface::CloneInterface(anInterface *nowner,int nid,Laxkit::Displayer *nd
 {
 	mode=CMODE_Normal;
 
-	inrect=false;
 	rectinterface.style|= RECT_CANTCREATE | RECT_OBJECT_SHUNT;
 	rectinterface.owner=this;
 
@@ -3989,33 +3988,29 @@ int CloneInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 			return 0;
 		}
 
-		if (inrect) {
-			inrect=false;
-			needtodraw=1;
-			return 0;
-		}
-
 		if (source_proxies.n()) {
-			sources.Flush();
-			source_proxies.Flush();
+			//sources.Flush();
+			//source_proxies.Flush();
 
 			if (active) {
 				active=false;
-				preview->dec_count();
-				preview=new Group;
-				char *str=make_id("tiling");
-				preview->Id(str);
-				delete[] str;
+				//preview->dec_count();
+				//preview=new Group;
+				//char *str=make_id("tiling");
+				//preview->Id(str);
+				//delete[] str;
 			}
 
-			if (previewoc) {
-				delete previewoc;
-				previewoc=NULL;
-			}
+			//if (previewoc) {
+			//	delete previewoc;
+			//	previewoc=NULL;
+			//}
 
 			needtodraw=1;
 			return 0;
 		}
+
+		return 0;
 	}
 
 	return 1;

@@ -226,7 +226,6 @@ class CloneInterface : public LaxInterfaces::anInterface
 	unsigned int activate_color;
 	unsigned int deactivate_color;
 
-	bool inrect;
 	LaxInterfaces::RectInterface rectinterface;
 
 	virtual int scan(int x,int y, int *i);
