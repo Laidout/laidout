@@ -245,12 +245,12 @@ text (see also src/text/text.txt):
   tabs on arbitrary paths 
 
 engraving tool: Engraving  engraver
-  bug: make a LineEdit overlay for number input, then Next bdown is ignored!! l, m, or right all ignored: viewportwindow line 947
   bug: object rotate works fine. but then enter and leave engraver tool. Now object rotate is messed up
   bug: 'z' zaps mesh, but does not change cache border or point mapping
   cairo render NEEDS VAST IMPROVEMENT.. the clunky xlib approximation was fast, but not transferrable to cairo
   bug: change type not tracing
 
+  DONE bug: make a LineEdit overlay for number input, then Next bdown is ignored!! l, m, or right all ignored: viewportwindow line 947
   DONE bug: several update triggers failing --> due to recent switch to cached image
   DONE bug: show_points broken
   DONE bug: add group, messes up the with: and not shared lines
