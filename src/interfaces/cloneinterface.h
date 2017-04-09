@@ -118,6 +118,7 @@ class Tiling : public Laxkit::anObject, public LaxFiles::DumpUtility //, public 
 
 	Laxkit::Affine repeat_basis; //of overall p1 (before final_transform applied)
 	int repeatable; // &1 for x, &2 for y
+	int radial_divisions;
 
 	Laxkit::Affine final_transform; //a final transform to apply to whole grid
 	LaxInterfaces::PathsData *boundary;
@@ -180,7 +181,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 
 	Tiling *tiling;
 	int num_input_fields;
-	Laxkit::PtrStack<TilingDest> extra_input_fields;
+	Laxkit::PtrStack<char> extra_input_fields;
 
 	int firsttime;
 	int lastover;
@@ -238,6 +239,8 @@ class CloneInterface : public LaxInterfaces::anInterface
 	virtual int Render();
 	virtual void DrawSelected();
 	virtual Laxkit::ScreenColor *BaseCellColor(int which);
+	virtual TilingDest *GetDest(const char *str);
+	virtual int UpdateBasecells();
 
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);
@@ -292,7 +295,10 @@ class CloneInterface : public LaxInterfaces::anInterface
 Tiling *CreateWallpaper(const char *group);
 
 Tiling *CreateRadial(double start_angle, double end_angle,   double start_radius, double end_radius,  
-					 int num_divisions,  int mirrored);
+					 int num_divisions,  int mirrored, Tiling *oldtiling);
+
+Tiling *CreateSpiral(double start_angle, double end_angle,   double start_radius, double end_radius,  
+					 int num_divisions,   Tiling *oldtiling   );
 
 Tiling *CreateFrieze(const char *group);
 
