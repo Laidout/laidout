@@ -1094,6 +1094,7 @@ DocumentExportConfig::DocumentExportConfig(DocumentExportConfig *config)
 		return;
 	}
 
+	curpaperrotation=0;
     paperrotation=config->paperrotation; 
 	rotate180    =config->rotate180;
 	reverse_order=config->reverse_order;
@@ -1262,6 +1263,8 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpCo
 
 		} else if (!strcmp(name,"paperrotation")) {
 			IntAttribute(value,&paperrotation);
+			if (paperrotation != 0 && paperrotation!= 90 && paperrotation != 180 && paperrotation != 270)
+				paperrotation=0;
 
 		} else if (!strcmp(name,"rotate180")) {
 			rotate180=BooleanAttribute(value);
