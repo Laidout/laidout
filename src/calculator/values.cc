@@ -1805,6 +1805,7 @@ int ValueHash::set(int which, Value *newv)
 int ValueHash::findIndex(const char *name,int len)
 {
 	if (!name) return -1;
+	if (len<0) len = strlen(name);
 	for (int c=0; c<keys.n; c++) {
 		if (len<0 && !strcmp(name,keys.e[c])) return c;
 		if (len>0 && !strncmp(name,keys.e[c],len)) return c;
@@ -1812,6 +1813,8 @@ int ValueHash::findIndex(const char *name,int len)
 	return -1;
 }
 
+/*! Return the Value object for key==name.
+ */
 Value *ValueHash::find(const char *name)
 {
 	for (int c=0; c<keys.n; c++) {
@@ -1869,7 +1872,7 @@ long ValueHash::findInt(const char *name, int which, int *error_ret)
 /*! If which>=0 then interpret that Value and ignore name.
  * Otherwise find it with findIndex().
  *
- * If name is not found, then set *error_ret=1 if error_ret!=0.
+ * If name is not found, then set *error_ret=1 (if error_ret!=NULL).
  * If the value exists, but is not a DoubleValue, then sets *error_ret=2.
  * Otherwise set to 0.
  *
