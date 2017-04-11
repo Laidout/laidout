@@ -115,7 +115,7 @@ stackframe seems to be ignoring window borders on layout
 
 
 ----------------0.097 ROADMAP ITEMS: features and enhancements------------------------
-website: combine faq and help?
+DONE website: combine faq and help?
 website: explain a bit more how to install dev versions, and place side by side with "stable"
 
 update fileformat.txt
@@ -347,6 +347,7 @@ engraving tool: Engraving  engraver
   stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
 
 PathInterface: pathinterface
+  deleting points totally screws placement of weight nodes
   bug: should not create new control points by pressing cntl, unless there is movement
   bug: shift click down then up on a point selects then deselects.. control can toggle
   bug: seems to be possible to move nodes out of order
@@ -507,6 +508,7 @@ Scribus:
     -> this necessitates revamp of singles to use more than one paper type
   implement crop
 svg:
+  bug: only sometimes, exports at skew angle
   testsvg-disappearing.svg.. many objects disapper after read in at different zoom levels. wtaf??
   on read in width nodes are zeroed, does not correspond to actual width of line
   text in fail
@@ -1363,10 +1365,12 @@ for clones, it would be easier to have a "defs" group or something, so deleting 
   not cause problems. When deleting objects, must then take care to update parent, so it is immediately known
   if an object is without a home.
 
-tiling cloner: 
+tiling cloner:  CloneInterface
+  need to be able to remember tiling for future editing
   clipping options when source images overlap in final layout
     maybe be able to modify base cell outline, use that as clip? autocorrect for overlapping?
 
+  making new id names needs to make unique
   1m and mg do not seem to work: need a final transform to apply, NOT repeatX/YDir().. those shift without rotate
   bug: not showing orientation arrows correctly when outline cuts through middle of bounding box
   need to be able to delete base objects all at once
