@@ -107,6 +107,8 @@ class TilingOp
 class Tiling : public Laxkit::anObject, public LaxFiles::DumpUtility //, public MetaInfo
 {
   protected:
+	void InsertClone(Group *parent_space, LaxInterfaces::SomeData *object, 
+			Laxkit::Affine *sourcem, Laxkit::Affine *basecellmi, Laxkit::Affine &clonet, Laxkit::Affine *final_orient);
 
   public:
 	char *name;
@@ -118,7 +120,9 @@ class Tiling : public Laxkit::anObject, public LaxFiles::DumpUtility //, public 
 
 	Laxkit::Affine repeat_basis; //of overall p1 (before final_transform applied)
 	int repeatable; // &1 for x, &2 for y
-	int radial_divisions;
+
+	int radial_divisions; 
+	ValueHash properties; //these are hints to various contstructors for how to remap a tiling
 
 	Laxkit::Affine final_transform; //a final transform to apply to whole grid
 	LaxInterfaces::PathsData *boundary;
@@ -154,7 +158,7 @@ class Tiling : public Laxkit::anObject, public LaxFiles::DumpUtility //, public 
 								bool shearable=false, bool flexible_base=false);
 
 	virtual Group *Render(Group *parent_space,
-					   LaxInterfaces::Selection *base_objects,
+					   Group *source_objects,
 					   Laxkit::Affine *base_offsetm,
 					   int p1_minx, int p1_maxx, int p1_miny, int p1_maxy,
 					   LaxInterfaces::PathsData *boundary,
@@ -202,13 +206,12 @@ class CloneInterface : public LaxInterfaces::anInterface
 
 	LaxInterfaces::PathsData *boundary;
 
+	Group *base_cells;
+	Group *source_proxies; //points to a child in base_cells
 	int current_base;
-	Group base_cells;
 	LaxInterfaces::LineStyle preview_cell;
 	LaxInterfaces::LineStyle preview_cell2;
 
-	LaxInterfaces::Selection sources;
-	LaxInterfaces::Selection source_proxies;
 
 	double uiscale;
 	Laxkit::DoubleBBox box;
@@ -219,6 +222,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 	int selected_offset;
 	double icon_width;
 	double base_lastm[6];
+	bool preempt_clear;
 
 
 	unsigned int bg_color;
@@ -229,8 +233,8 @@ class CloneInterface : public LaxInterfaces::anInterface
 
 	LaxInterfaces::RectInterface rectinterface;
 
-	virtual int scan(int x,int y, int *i);
-	virtual int scanBasecells(flatpoint fp, int *i);
+	virtual int scan(int x,int y, int *i, int *dest);
+	virtual int scanBasecells(flatpoint fp, int *i, int *dest);
 	virtual int scanSelected(int x,int y);
 
 	virtual int ToggleOrientations();
@@ -240,6 +244,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 	virtual void DrawSelected();
 	virtual Laxkit::ScreenColor *BaseCellColor(int which);
 	virtual TilingDest *GetDest(const char *str);
+	virtual LaxInterfaces::PathsData *GetBasePath(int which=-1);
 	virtual int UpdateBasecells();
 
 	Laxkit::ShortcutHandler *sc;
