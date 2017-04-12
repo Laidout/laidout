@@ -30,6 +30,7 @@
 #include <lax/interfaces/perspectiveinterface.h>
 #include "interfaces/nodeinterface.h"
 #include "interfaces/anchorinterface.h"
+#include <lax/interfaces/ellipseinterface.h>
 
 
 #include "interfaces.h"
@@ -122,6 +123,12 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 		existingpool->push(i);
 		i->dec_count();
+
+		 //------Ellipse
+		//i=new EllipseInterface(NULL,id++,NULL);
+		//tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+		//existingpool->push(i);
+		//i->dec_count();
 
 		 //------Delauney
 		i=new DelauneyInterface(NULL,id++,NULL);
