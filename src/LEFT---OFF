@@ -1366,6 +1366,8 @@ for clones, it would be easier to have a "defs" group or something, so deleting 
   if an object is without a home.
 
 tiling cloner:  CloneInterface
+  memory hole back
+  need better context for non identity page transform for EditThis
   need to be able to remember tiling for future editing
   clipping options when source images overlap in final layout
     maybe be able to modify base cell outline, use that as clip? autocorrect for overlapping?
