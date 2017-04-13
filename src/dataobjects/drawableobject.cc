@@ -967,7 +967,9 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext 
 
 	if (properties.n()) {
 		fprintf(f, "%sproperties\n",spc);
-		properties.dump_out(f,indent+2, what,context);
+		for (int c=0; c<properties.n(); c++) {
+			properties.e(c)->dump_out(f,indent+2, what,context);
+		}
 	}
 
 	if (kids.n) {
