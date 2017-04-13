@@ -436,7 +436,7 @@ class NullValue : public Value
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_None; }
- 	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
+ 	virtual ObjectDef *makeObjectDef() { return NULL; }
 };
 
 //----------------------------- BooleanValue ----------------------------------
@@ -630,7 +630,7 @@ class ColorValue : public Value
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Color; }
- 	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
+ 	virtual ObjectDef *makeObjectDef();
 };
 
 //----------------------------- ObjectValue ----------------------------------
@@ -644,7 +644,7 @@ class ObjectValue : public Value
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Object; }
- 	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
+ 	virtual ObjectDef *makeObjectDef();
 };
 
 //------------------------------- parsing helpers ------------------------------------

@@ -1213,6 +1213,7 @@ ObjectDef *ObjectDef::getField(int index)
 	ObjectDef *def=NULL;
 	index=findActualDef(index, &def);
 	if (index<0 || !def) return NULL;;
+	if (!def->fields) return NULL; //for instance, many base types might not have fields
 	return def->fields->e[index];
 }
 
@@ -2139,7 +2140,7 @@ int Value::FieldIndex(const char *name)
  *
  * If this->getValueStr() has anything, then that value gets put in the first subatt with name "value".
  *
- * After that, one subatt gets pushed by anything that is not a function, class, or op.
+ * After that, one subatt gets pushed by anything that is not a function, class, or op, as per the value's ObjectDef.
  */
 LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
 {
@@ -2359,41 +2360,9 @@ void Value::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 		return;
 	}
 
-	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-
-	ObjectDef *def;
-	const char *str;
-	char *buffer=NULL;
-	int len=0;
-
-	////for whole Value:
-	//getValueStr(&buffer,&len, 1);
-	//str=buffer;
-	//if (str) {
-	//	fprintf(f," %s\n",str);
-	//}
-
-	Value *v;
-	for (int c=0; c<getNumFields(); c++) {
-		def=FieldInfo(c); //this is the object def of a field. If it exists, then this element has subfields.
-		if (!def) continue;
-
-		 //output values only, not functions
-		if (def->format==VALUE_Function) continue;
-		if (def->format==VALUE_Class) continue;
-		if (def->format==VALUE_Operator) continue;
-		
-		v=dereference(def->name,strlen(def->name));
-		if (!v) continue;
-
-		fprintf(f,"%s%s",spc,FieldName(c));
-		v->getValueStr(&buffer,&len, 1);
-		str=buffer;
-		if (str) {
-			fprintf(f," %s\n",str);
-		}
-
-	}
+	Attribute att;
+    dump_out_atts(&att,what,context);
+    att.dump_out(f,indent);
 }
 
 void Value::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
@@ -3569,7 +3538,7 @@ ObjectDef default_FileValue_ObjectDef(NULL,"file",_("File"),_("File"),
 
 ObjectDef *Get_FileValue_ObjectDef()
 {
-	ObjectDef *def=&default_StringValue_ObjectDef;
+	ObjectDef *def=&default_FileValue_ObjectDef;
 	if (def->fields) return def;
 
 	def->pushFunction("depth",_("Depth"),_("How many components path has"), NULL,
@@ -3729,6 +3698,31 @@ int ObjectValue::getValueStr(char *buffer,int len)
 Value *ObjectValue::duplicate()
 { return new ObjectValue(object); }
 
+ObjectDef default_ObjectValue_ObjectDef(NULL,"ObjectWrapper",_("Object Wrapper"),_("Object Wrapper"),
+							 "class",
+							 NULL, //range
+							 NULL, //default
+							 NULL, 0, //fields
+							 NULL, NULL); //funcs
+
+ObjectDef *Get_ObjectValue_ObjectDef()
+{
+	ObjectDef *def=&default_ObjectValue_ObjectDef;
+	if (def->fields) return def;
+
+	def->pushFunction("depth",_("Depth"),_("Bit depth of channels. Should return 8, 16, 24, 32, 32f, or 64f"), NULL,
+					  NULL);
+
+
+	return def;
+}
+
+ObjectDef *ObjectValue::makeObjectDef()
+{
+	Get_ObjectValue_ObjectDef()->inc_count();
+	return Get_ObjectValue_ObjectDef();
+}
+
 
 //--------------------------------- ColorValue -----------------------------
 /*! Set from a hex string.
@@ -3762,6 +3756,31 @@ Value *ColorValue::duplicate()
 	char buffer[12];
 	color.HexValue(buffer);
 	return new ColorValue(buffer);
+}
+
+ObjectDef default_ColorValue_ObjectDef(NULL,"Color",_("Color"),_("Color"),
+							 "class",
+							 NULL, //range
+							 NULL, //default
+							 NULL, 0, //fields
+							 NULL, NULL); //funcs
+
+ObjectDef *Get_ColorValue_ObjectDef()
+{
+	ObjectDef *def=&default_ColorValue_ObjectDef;
+	if (def->fields) return def;
+
+	def->pushFunction("depth",_("Depth"),_("Bit depth of channels. Should return 8, 16, 24, 32, 32f, or 64f"), NULL,
+					  NULL);
+
+
+	return def;
+}
+
+ObjectDef *ColorValue::makeObjectDef()
+{
+	Get_ColorValue_ObjectDef()->inc_count();
+	return Get_ColorValue_ObjectDef();
 }
 
 
