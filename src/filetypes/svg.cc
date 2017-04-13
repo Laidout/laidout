@@ -577,6 +577,7 @@ void svgStyleTagsDump(FILE *f, LineStyle *lstyle, FillStyle *fstyle)
 		else if (lstyle->joinstyle==LAXJOIN_Bevel) fprintf(f,"stroke-linejoin:bevel; ");
 
 		if (lstyle->width==0) fprintf(f,"stroke-width:.01; ");//hairline width not supported in svg
+		else if (lstyle->widthtype == 0) fprintf(f,"stroke-width:%.10g; ",lstyle->width/90);
 		else fprintf(f,"stroke-width:%.10g; ",lstyle->width);
 
 		 //dash or not
