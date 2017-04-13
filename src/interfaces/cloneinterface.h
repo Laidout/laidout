@@ -244,6 +244,8 @@ class CloneInterface : public LaxInterfaces::anInterface
 	virtual void DrawSelected();
 	virtual Laxkit::ScreenColor *BaseCellColor(int which);
 	virtual TilingDest *GetDest(const char *str);
+	virtual DrawableObject *GetProxy(int base, int which);
+	virtual int NumProxies();
 	virtual LaxInterfaces::PathsData *GetBasePath(int which=-1);
 	virtual int UpdateBasecells();
 
