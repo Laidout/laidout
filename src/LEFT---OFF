@@ -1366,9 +1366,9 @@ for clones, it would be easier to have a "defs" group or something, so deleting 
   if an object is without a home.
 
 tiling cloner:  CloneInterface
-  memory hole back
-  need better context for non identity page transform for EditThis
+  memory hole back, third time!!!
   need to be able to remember tiling for future editing
+  on export the base tile line width is wrong, since inkscape doesn't handle screen width
   clipping options when source images overlap in final layout
     maybe be able to modify base cell outline, use that as clip? autocorrect for overlapping?
 
@@ -1676,6 +1676,9 @@ DONE clone tiler:
   DONE bug: can't scale base objects
   DONE bug: spiral and rotation tilings not working again 
   DONE? debug groupify
+  DONE memory hole back <- this time in RectInterface!!
+  DONE need better context for non identity page transform for EditThis
+  DONE make groupify default
 DONE color sliders input hex, it's flipping r and b 
 DONE Lightness slider appears black to white, but the middle is full color, needs segmented render like hue
 DONE click enter area of color pickers, does not install color!!!!  
