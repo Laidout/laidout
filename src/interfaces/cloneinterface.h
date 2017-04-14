@@ -248,6 +248,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 	virtual int NumProxies();
 	virtual LaxInterfaces::PathsData *GetBasePath(int which=-1);
 	virtual int UpdateBasecells();
+	virtual int UpdateFromSelection();
 
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);

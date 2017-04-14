@@ -766,6 +766,7 @@ void Tiling::InsertClone(Group *parent_space,  //!< clone into here
 
 
 	parent_space->push(clone);
+	clone->FindBBox();
 	clone->dec_count();
 }
 
@@ -965,6 +966,7 @@ Tiling *CreateSpiral(double start_angle, //!< radians
 }
 
 /*! Create a tiling based on a wallpaper group.
+ * If tiling==NULL, then return a new Tiling, else update tiling.
  *
  * Note the definitions below are in some cases very brute force. It defines each transform
  * necessary to create an overall p1 cell.
@@ -2459,6 +2461,7 @@ enum CloneInterfaceElements {
 
 	 //extra context menu things
 	CLONEM_Clear_Base_Objects,
+	CLONEM_Reset,
 	CLONEM_Include_Lines,
 	CLONEM_Load,
 	CLONEM_Save,
@@ -2487,26 +2490,20 @@ CloneInterface::CloneInterface(anInterface *nowner,int nid,Laxkit::Displayer *nd
 	active = false;
 	preview_orient = false;
 
-	previewoc = NULL;
-	preview = new Group;
-	char *str = make_id("tiling");
-	preview->Id(str);
-	delete[] str;
-
 	 //structure is:
 	 //preview
 	 //  base_cells
 	 //    cell 1
 	 //    cell 2
 	 //    source_proxies
-	base_cells = new Group;
-	base_cells->Id("bases");
-	source_proxies = new Group;
-	source_proxies->Id("sources");
-	preview->push(base_cells);
-	base_cells->push(source_proxies);
+	 //      for base 1
+	 //      for base 2
+	previewoc = NULL;
+	preview = NULL; 
+	base_cells = NULL;
+	source_proxies = NULL;
 
-	str=make_id("tilinglines");
+	char *str = make_id("tilinglines");
 	lines = new Group;
 	lines->Id(str);
 	delete[] str;
@@ -2589,24 +2586,73 @@ void CloneInterface::Clear(LaxInterfaces::SomeData *d)
 	if (base_cells)     { base_cells->dec_count();     base_cells = NULL;     }
 	if (source_proxies) { source_proxies->dec_count(); source_proxies = NULL; }
 	if (lines) lines->flush();
+
+	active = false;
+}
+
+/*! Return 1 if preview found, and state updated to it. Else return 0.
+ *
+ * From viewport->Selection, look for what appears to be a preview object.
+ * This is just an object that has a "tiling" property that is a Tiling object.
+ * If there are subobjects tagged with "tiling_base" or "tiling_sources", then 
+ * use those.
+ */
+int CloneInterface::UpdateFromSelection()
+{
+	Selection *s = viewport->GetSelection();
+	if (!s || s->n()==0) return 0;
+
+	for (int c=0; c<s->n(); c++) {
+		ObjectContext *oc = s->e(c);
+		DrawableObject *obj = dynamic_cast<DrawableObject*>(oc->obj);
+
+		while (obj) { 
+			Tiling *t = dynamic_cast<Tiling*>(obj->properties.findObject("tiling"));
+			if (t) {
+				 //adjust to using obj as the preview object, and look for basecells and sources
+				if (preview) Clear(NULL);
+				active = true;
+				preview = obj;
+				preview->inc_count();
+				previewoc = dynamic_cast<VObjContext*>(oc->duplicate());
+				
+				for (int c=0; c<obj->n(); c++) {
+					DrawableObject *o = dynamic_cast<DrawableObject*>(obj->e(c));
+					if (o->HasTag("tiling_base", 1)) {
+						base_cells = o;
+						base_cells->inc_count();
+						break;
+					}
+				}
+
+				if (base_cells) for (int c=0; c<base_cells->n(); c++) {
+					DrawableObject *o = dynamic_cast<DrawableObject*>(base_cells->e(c));
+					if (o->HasTag("tiling_sources", 1)) {
+						source_proxies = o;
+						source_proxies->inc_count();
+						break;
+					}
+				}
+
+				t->inc_count();
+				SetTiling(t);
+				return 1; 
+			}
+			obj = dynamic_cast<DrawableObject*>(obj->GetParent());
+		}
+	}
+
+	return 0;
 }
 
 int CloneInterface::InterfaceOn()
 {
+	if (!preview) UpdateFromSelection();
+
 	if (!preview) {
-		preview = new Group;
-		char *str = make_id("tiling");
-		preview->Id(str);
-		delete[] str;
-
-		base_cells = new Group;
-		base_cells->Id("bases");
-		source_proxies = new Group;
-		source_proxies->Id("sources");
-		preview->push(base_cells);
-		base_cells->push(source_proxies);
-
-		UpdateBasecells();
+		if (cur_tiling<0) cur_tiling = 0;
+		Tiling *newtiling = GetBuiltinTiling(cur_tiling);
+		SetTiling(newtiling);
 	}
 
 	if (active) Render();
@@ -2627,14 +2673,12 @@ int CloneInterface::InterfaceOff()
 
 /*! Replace old tiling with newtiling. Update base_cells control objects
  * Absorbs count of newtiling.
+ *
+ * Return 0 for success, nonzero error.
  */
 int CloneInterface::SetTiling(Tiling *newtiling)
 {
 	if (!newtiling) return 1;
-
-	 //need to remove old bases
-	//if (preview) {
-	//}
 
 	Tiling *oldtiling = tiling;
 	tiling = newtiling;
@@ -2660,7 +2704,7 @@ int CloneInterface::SetTiling(Tiling *newtiling)
 
 	UpdateBasecells();
 
-	if (oldtiling) oldtiling->dec_count();
+	if (oldtiling && oldtiling != tiling) oldtiling->dec_count();
 
 	preview->properties.pushObject("tiling", tiling);
 	return 0;
@@ -2676,6 +2720,7 @@ int CloneInterface::UpdateBasecells()
 	if (!base_cells) {
 		base_cells = new Group;
 		base_cells->Id("bases");
+		base_cells->InsertTag("tiling_base", 1);
 		preview->push(base_cells);
 
 	} else {
@@ -2688,13 +2733,22 @@ int CloneInterface::UpdateBasecells()
 	base_cells->Unshear(1,0);
 	base_cells->flags |= SOMEDATA_KEEP_ASPECT;
 
+	//if (tiling->flexible_aspect) base_cells->flags &= ~SOMEDATA_KEEP_ASPECT;
+	//else base_cells->flags |= SOMEDATA_KEEP_ASPECT;
+
+	//if (tiling->shearable) base_cells->flags &= ~SOMEDATA_LOCK_SHEAR;
+	//else base_cells->flags |= SOMEDATA_LOCK_SHEAR;
+
+
 	if (source_proxies == NULL) {
 		source_proxies = new Group();
 		source_proxies->Id("sources");
+		source_proxies->InsertTag("tiling_sources", 1);
 	}
 
-	 //push (or push back)
+	 //push (or push back) sources
 	base_cells->push(source_proxies);
+
 
 	 //reassign out of bounds source objects to be cell 0
 	//int error;
@@ -2969,6 +3023,7 @@ Laxkit::MenuInfo *CloneInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
     //menu->AddItem(_("Select source objects"), CLONEM_Select_Sources);
     menu->AddSep();
     menu->AddItem(_("Clear base objects"), CLONEM_Clear_Base_Objects);
+    menu->AddItem(_("Reset all"), CLONEM_Reset);
     menu->AddSep();
     menu->AddItem(_("Include lines"),        CLONEM_Include_Lines,    LAX_ISTOGGLE|(trace_cells    ?LAX_CHECKED:0), -1);
 	menu->AddItem(_("Auto select base cell"),CLONEM_Auto_Select_Cell, LAX_ISTOGGLE|(snap_to_base   ?LAX_CHECKED:0), -1);
@@ -3018,6 +3073,15 @@ int CloneInterface::Event(const Laxkit::EventData *e,const char *mes)
 
 		} else if (i==CLONEM_Include_Lines) {
 			PerformAction(CLONEIA_Toggle_Lines);
+			return 0;
+
+		} else if (i==CLONEM_Reset) {
+			Clear(NULL);
+
+			Tiling *newtiling = GetBuiltinTiling(cur_tiling);
+			SetTiling(newtiling);
+
+			needtodraw=1;
 			return 0;
 
 		} else if (i==CLONEM_Load) {
@@ -4287,10 +4351,11 @@ int CloneInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 		return 0; //preempt any key propagation while the box is up
 	}
 
-	DBG if (ch=='d' && preview) {
+	DBG if (ch=='d') {
 	DBG 	FILE *f = fopen("tile.dump", "w");
 	DBG 	if (f) {
-	DBG 		preview->dump_out(f,0, 0, NULL);
+	DBG 		if (preview) preview->dump_out(f,0, 0, NULL);
+	DBG			else fprintf(f, "No preview!!");
 	DBG 		fclose(f);
 	DBG 	}
 	DBG }
