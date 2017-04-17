@@ -2489,6 +2489,8 @@ CloneInterface::CloneInterface(anInterface *nowner,int nid,Laxkit::Displayer *nd
 	lastoveri = -1;
 	active = false;
 	preview_orient = false;
+	snap_to_base=true;
+	show_p1 = false; 
 
 	 //structure is:
 	 //preview
@@ -2534,7 +2536,7 @@ CloneInterface::CloneInterface(anInterface *nowner,int nid,Laxkit::Displayer *nd
 	boundary->appendRect(0,0,4,4);
 
 	preempt_clear = false;
-	snap_to_base=true;
+
 	tiling=NULL;
 	preview_lines=false;
 	trace_cells=true; // *** maybe 2 should be render outline AND install as new objects in doc?

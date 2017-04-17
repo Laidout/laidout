@@ -195,8 +195,8 @@ class CloneInterface : public LaxInterfaces::anInterface
 
 	bool active;
 	bool preview_orient;
-	bool groupify_clones;
 	bool snap_to_base;
+	bool show_p1;
 
 	bool trace_cells;
 	bool preview_lines;
