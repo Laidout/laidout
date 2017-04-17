@@ -124,7 +124,6 @@ update docs to have new release number
 update translation base files
 update screenshots, sync with features
 update links page
-update help page
 update dtpcompare.html
 test:
   each window type: about palette view spread command text
@@ -132,7 +131,8 @@ test:
   test in different window managers
   each export filter (via command line in new script in examples.. ignoring problems in eps)
   make some test scripts for command line testing
-put rss/g+ links on all menu pages.. need way to automate including menu bar stuff
+DONE update help page
+DONE put rss/g+ links on all menu pages.. 
 
 
 from recent import:
@@ -147,6 +147,10 @@ node editor NodeInterface:
   color code pipes by value type
   exec paths
   finish implementing no cycle check
+  curve node
+  simplex noise node
+  gmic nodes
+  image object creation node (the proof of concept node for 0.097)
 
 need to implement DRAW_Hires for all interfaces that default to preview renders. needed for proper image out
   includes at least image(done), path, engraver
@@ -1366,15 +1370,24 @@ for clones, it would be easier to have a "defs" group or something, so deleting 
   if an object is without a home.
 
 tiling cloner:  CloneInterface
+  should use preview->basecells, rather than generate fresh with Render, so if user edits base cells it behaves as expected
+  should not assume preview has I transform
   memory hole back, third time!!!
-  need to be able to remember tiling for future editing
-  clipping options when source images overlap in final layout
-    maybe be able to modify base cell outline, use that as clip? autocorrect for overlapping?
+  radial needs wind scale input
+  hovering outside select box should not highlight a tiling
 
+  copies should be selectable, at least so you can adjust the colors: gave current_base, current_copy
+  should have z order controls for base cell stuff
+  clipping options when source images overlap in final layout
+    maybe be able to modify base cell outline, use that as clip? autocorrect for overlapping?  
+  snap sources to fit/fill in base cell areas
+  implement proper shear/aspect protection for:
+    allow shear of p1, p2
+    allow non-locked aspect of p1,p2,pm,pg,pmm,pmg,pgg,cm,cmm
+  highlighting in selection box should draw name next to the thing on hover
   making new id names needs to make unique
   1m and mg do not seem to work: need a final transform to apply, NOT repeatX/YDir().. those shift without rotate
   bug: not showing orientation arrows correctly when outline cuts through middle of bounding box
-  need to be able to delete base objects all at once
   really need undo
   save color hints of base cells with Tiling object
   change color of boundary, and outline preview
@@ -1383,20 +1396,21 @@ tiling cloner:  CloneInterface
   need rudimentary editor
   need flag for ok for cell to shear, ok for cell to scale x/y independently, and have it apply as it should afterwards
   config:
-    default line render style (if any)
-	groupify
+    default line/fill render style (if any)
 	boundary outline style
 	base cell outline styles
   should have a render preview to show actual grid coverage
   need finishing tool
   design interface for clone on path
-  penrose/heesh/net clone interface
+  Hisrchhorn Medallion
+  penrose/heesch/net clone interface
     penrose p1: pentagons, pentagrams, rhombus, sliced pentagram
     penrose p2: kite and dart
     penrose p3: 2 rhombs
   need progressive search when mouse over box
   autocreate seamless tile image
   autofit source objects/images to the pattern to minimize gaps
+  map to inkscape tiling clone on export?
 
 Imposition use cases:
   for same document, have stack of impostions, each with its own page set? would make make docs with body pages
@@ -1679,7 +1693,11 @@ DONE clone tiler:
   DONE need better context for non identity page transform for EditThis
   DONE make groupify default
   DONE on export the base tile line width is wrong, since inkscape doesn't handle screen width (now default to .01 of user unit)
+  DONE need to be able to remember tiling for future editing
+  DONE need to be able to delete base objects all at once
 DONE color sliders input hex, it's flipping r and b 
 DONE Lightness slider appears black to white, but the middle is full color, needs segmented render like hue
 DONE click enter area of color pickers, does not install color!!!!  
+DONE rectinterface with extra m not propagating transform correctly: move(done) rotate handles
+DONE rectinterface should reset down point on control press
 
