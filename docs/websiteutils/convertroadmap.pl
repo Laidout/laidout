@@ -1,17 +1,16 @@
 #!/usr/bin/perl
 
-#This program takes /home/tom/p/github/laidout/ROADMAP
-#and converts it to html in html/roadmap.html.
+#This program takes ../../ROADMAP
+#and converts it to html in ./web/roadmap.html.
 #
-#Just run it, no arguments necessary, as long as ./laidout is linked to
-#your local laidout source.
+#Just run it, no arguments necessary.
 
 
 
-$infile="laidout/ROADMAP";
+$infile="../../ROADMAP";
 open(ROADMAP,$infile)
   or die "Cannot open $infile!";
-open(ROADMAPHTML, ">html/roadmap.html");
+open(ROADMAPHTML, ">web/roadmap.html");
 
 #------write header
 print ROADMAPHTML << "END_OF_HEADER";
