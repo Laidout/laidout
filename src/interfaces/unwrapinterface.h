@@ -4,10 +4,9 @@
 #include <lax/interfaces/viewportwindow.h>
 #include <lax/interfaces/viewerwindow.h>
 #include <lax/lists.h>
-#include <Imlib2.h>
 
-#include "poly.h"
-#include "nets.h"
+#include "polyptych/src/poly.h"
+#include "polyptych/src/nets.h"
 
 
 namespace Laidout {
@@ -16,7 +15,7 @@ namespace Laidout {
 //--------------------------- UnwrapInterface ---------------------------
 class UnwrapInterface : public LaxInterfaces::anInterface
 {
- protected:
+  protected:
 	int mode;
 	flatpoint leftp;
 	int lx,ly;
@@ -29,7 +28,8 @@ class UnwrapInterface : public LaxInterfaces::anInterface
 
 	NetFace *findNewSeed();
 	//virtual void runImageDialog();
- public:
+
+  public:
 	int showdecs;
 	char showfile,showimages;
 	UnwrapInterface(Polyhedron *npoly,Net *nnet,const char *nfilebase,int nid,Laxkit::Displayer *ndp);
