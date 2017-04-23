@@ -15,7 +15,18 @@
 //
 
 
+#include <dlfcn.h>
+
 #include "plugin.h"
+
+#include <lax/strmanip.h>
+
+
+#include <iostream>
+#define DBG
+
+using namespace std;
+
 
 
 namespace Laidout {
@@ -39,24 +50,108 @@ namespace Laidout {
  */
 
 
+
+//------------------------------ Plugin load/unload ------------------------------
+
+typedef PluginBase *GetPluginFunc();
+
+/*! Return 0 for successful load.
+ * Return -1 for already loaded.
+ * Return >0 for error, and not loaded.
+ */
+//int LaidoutApp::Load(const char *path_to_plugin)
+//
+/*! You will need to dec_count the returned plugin.
+ */
+PluginBase *LoadPlugin(const char *path_to_plugin)
+{
+	PluginBase *plugin = NULL;
+	void *handle = NULL;
+
+	try {
+		//if (!IS_REG(file_exists(path_to_plugin, 1, NULL))) throw 1;
+
+		 //check for plugin already exists
+//		for (int c=0; c<plugins.n; c++) {
+//			if (!strcmp(plugins.e[c]->Path(), path_to_plugin)) return -1;
+//		}
+	
+
+		handle = dlopen(path_to_plugin, RTLD_LAZY);
+		//handle = dlopen(path_to_plugin, RTLD_NOW);
+		//handle = dlopen(path_to_plugin, RTLD_LAZY|RTLD_GLOBAL);
+
+		DBG cerr <<"dl opened..."<<endl;
+
+		if (!handle) throw 2;
+
+//		for (int c=0; c<plugins.n; c++) {
+//			if (plugins.e[c]->handle == handle) return -1;
+//		}
+
+		GetPluginFunc *GetPlugin; //dl_iterate_phdr
+		GetPlugin = (GetPluginFunc*)dlsym(handle, "GetPlugin");
+		if (!GetPlugin) throw 3;
+
+		DBG cerr <<"dl GetPlugin found..."<<endl;
+
+		plugin = GetPlugin();
+		if (!plugin) throw 4;
+
+		plugin->handle = handle;
+
+		plugin->Initialize();
+		//plugins.push(plugin);
+		//plugin->dec_count();
+
+	} catch(int error) {
+		char *err = newstr(dlerror());
+
+		if (plugin) plugin->dec_count();
+		if (handle) dlclose(handle);
+
+		if (err) {
+			cerr << "some kind of error: "<<error<<", "<<err << endl;
+			delete[] err;
+		} else {
+			cerr << "dl error: "<<error<<endl;
+		}
+		return NULL;
+	}
+
+	return plugin;
+}
+
+//int LaidoutApp::UnLoad(PluginBase *plugin)
+//{
+//	// Remove all object refs belonging to this plugin
+//	***
+//
+//	plugin->Unload();
+//}
+
+
+//------------------------------ PluginBase ------------------------------
+
 PluginBase::PluginBase()
 {
+	handle = NULL;
+	initialized = 0;
 }
 
 PluginBase::~PluginBase()
 {
+	if (handle) dlclose(handle);
 }
 
 
-/*! Return a ResourceType with "tools" and "objects" resource groups.
- * If "tools" and "objects" don't exist, then it is assumed only tools are present.
- *
- * For tools, you must specify in what window types they should appear. Do this in
- * a "usein" attribute in resource->meta.
+/*! Default just set initialized to 1.
  */
-Laxkit::ResourceType **PluginBase::Tools()
+int PluginBase::Initialize()
 {
-	return NULL;
+	if (initialized) return 0;
+	initialized = 1;
+	return 0;
 }
 
 
