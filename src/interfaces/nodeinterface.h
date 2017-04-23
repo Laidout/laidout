@@ -108,7 +108,7 @@ class NodeProperty
 	NodeProperty();
 	NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count);
 	virtual ~NodeProperty();
-	virtual LaxInterfaces::anInterface *PropInterface();
+	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface);
 	virtual const char *Name() { return name; }
 	virtual int IsConnected();
 	virtual int IsInput()  { return type==PROP_Input;  }
@@ -193,6 +193,7 @@ class NodeBase : public Laxkit::anObject, public Laxkit::DoubleRectangle
 	virtual int IsConnected(int propindex); //0=no, -1=prop is connected input, 1=connected output
 	virtual int HasConnection(NodeProperty *prop, int *connection_ret);
 
+	virtual int AddProperty(NodeProperty *newproperty);
 	virtual NodeProperty *FindProperty(const char *prop);
 	virtual int SetProperty(const char *prop, Value *value, bool absorb);
 	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
@@ -278,7 +279,7 @@ class NodeInterface : public LaxInterfaces::anInterface
   protected:
 	int showdecs;
 
-	Laxkit::ObjectFactory *node_factory;
+	Laxkit::ObjectFactory *node_factory; //usually, convenience cast to return of NodeBase::NodeFactory()
 
 	Nodes *nodes;
 

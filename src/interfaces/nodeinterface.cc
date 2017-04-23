@@ -176,9 +176,13 @@ NodeProperty::~NodeProperty()
 	if (data) data->dec_count();
 }
 
-/*! Return an interface if you want to have a custom for changing properties.
+/*! Return an interface if you want to have a custom interface for changing properties.
+ * If interface!=NULL, try to update (and return) that one. If interface is the wrong type
+ * of interface, then return NULL.
+ *
+ * Default is to return NULL, for no special interface necessary.
  */
-anInterface *NodeProperty::PropInterface()
+anInterface *NodeProperty::PropInterface(LaxInterfaces::anInterface *interface)
 { 
 	return NULL;
 }
@@ -235,7 +239,7 @@ NodeBase *NodeProperty::GetConnection(int connection_index, int *prop_index_ret)
 Value *NodeProperty::GetData()
 {
 	 //note: this assumes fromprop is a pure output, not a through
-	if (IsInput() && connections.n && connections.e[0]->fromprop) return connections.e[0]->fromprop->data;
+	if (IsInput() && connections.n && connections.e[0]->fromprop) return connections.e[0]->fromprop->GetData();
 	return data;
 }
 
@@ -465,6 +469,18 @@ int NodeBase::HasConnection(NodeProperty *prop, int *connection_ret)
 
 	*connection_ret = -1;
 	return -1;
+}
+
+/*! Push this property onto the properties stack, and make sure owner points to this.
+ * This does not check for prior existence of similar properties, always adds.
+ *
+ * Return 0 for succes, or nonzero for some kind of error.
+ */
+int NodeBase::AddProperty(NodeProperty *newproperty)
+{
+	properties.push(newproperty);
+	newproperty->owner = this;
+	return 0;
 }
 
 /*! Return the property with prop as name, or NULL if not found.
@@ -927,7 +943,7 @@ Laxkit::anObject *newDoubleNode(Laxkit::anObject *ref)
 	//node->Id("Value");
 	makestr(node->Name, _("Value"));
 	makestr(node->type, "Value");
-	node->properties.push(new NodeProperty(NodeProperty::PROP_Output, true, _("V"), new DoubleValue(0), 1)); 
+	node->AddProperties(new NodeProperty(NodeProperty::PROP_Output, true, _("V"), new DoubleValue(0), 1)); 
 	return node;
 }
 
@@ -940,13 +956,13 @@ Laxkit::anObject *newColorNode(Laxkit::anObject *ref)
 	makestr(node->Name, _("Color"));
 	makestr(node->type, "Color");
 
-	node->properties.push(new NodeProperty(NodeProperty::PROP_Output, true, _("Color"), new ColorValue("#ffffff"), 1)); 
+	node->AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("Color"), new ColorValue("#ffffff"), 1)); 
 	//----------
-	//node->properties.push(new NodeProperty(NodeProperty::PROP_Intput, false, _("Red"), new DoubleValue(1), 1)); 
-	//node->properties.push(new NodeProperty(NodeProperty::PROP_Intput, false, _("Green"), new DoubleValue(1), 1)); 
-	//node->properties.push(new NodeProperty(NodeProperty::PROP_Intput, false, _("Blue"), new DoubleValue(1), 1)); 
-	//node->properties.push(new NodeProperty(NodeProperty::PROP_Intput, false, _("Alpha"), new DoubleValue(1), 1)); 
-	//node->properties.push(new NodeProperty(NodeProperty::PROP_Output, false, _("Out"), new ColorValue("#ffffffff"), 1)); 
+	//node->AddProperty(new NodeProperty(NodeProperty::PROP_Intput, false, _("Red"), new DoubleValue(1), 1)); 
+	//node->AddProperty(new NodeProperty(NodeProperty::PROP_Intput, false, _("Green"), new DoubleValue(1), 1)); 
+	//node->AddProperty(new NodeProperty(NodeProperty::PROP_Intput, false, _("Blue"), new DoubleValue(1), 1)); 
+	//node->AddProperty(new NodeProperty(NodeProperty::PROP_Intput, false, _("Alpha"), new DoubleValue(1), 1)); 
+	//node->AddProperty(new NodeProperty(NodeProperty::PROP_Output, false, _("Out"), new ColorValue("#ffffffff"), 1)); 
 	return node;
 }
 
@@ -1042,10 +1058,10 @@ MathNode::MathNode(int op, double aa, double bb)
 	EnumValue *e = new EnumValue(enumdef, 0);
 	enumdef->dec_count();
 
-	properties.push(new NodeProperty(NodeProperty::PROP_Input, false, "Op", e, 1));
-	properties.push(new NodeProperty(NodeProperty::PROP_Input,  true, "A", new DoubleValue(a), 1));
-	properties.push(new NodeProperty(NodeProperty::PROP_Input,  true, "B", new DoubleValue(b), 1));
-	properties.push(new NodeProperty(NodeProperty::PROP_Output, true, "Result", NULL, 0));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, "Op", e, 1));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "A", new DoubleValue(a), 1));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "B", new DoubleValue(b), 1));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Result", NULL, 0));
 
 	Update();
 }
@@ -1202,17 +1218,17 @@ Laxkit::anObject *newImageNode(Laxkit::anObject *ref)
 	
 	makestr(node->type, "NewImage");
 	makestr(node->Name, _("New Image"));
-	//node->properties.push(new NodeProperty(true, true, _("Filename"), new FileValue("."), 1)); 
-	node->properties.push(new NodeProperty(NodeProperty::PROP_Input, true, _("Width"), new DoubleValue(100), 1)); 
-	node->properties.push(new NodeProperty(NodeProperty::PROP_Input, true, _("Height"), new DoubleValue(100), 1)); 
-	node->properties.push(new NodeProperty(NodeProperty::PROP_Input, true, _("Channels"), new IntValue(4), 1)); 
+	//node->AddProperty(new NodeProperty(true, true, _("Filename"), new FileValue("."), 1)); 
+	node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Width"), new DoubleValue(100), 1)); 
+	node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Height"), new DoubleValue(100), 1)); 
+	node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Channels"), new IntValue(4), 1)); 
 
 	ObjectDef *enumdef = GetImageDepthDef();
 	EnumValue *e = new EnumValue(enumdef, 0);
-	node->properties.push(new NodeProperty(NodeProperty::PROP_Input, true, _("Depth"), e, 1)); 
+	node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Depth"), e, 1)); 
 
-	node->properties.push(new NodeProperty(NodeProperty::PROP_Input, true, _("Initial Color"), new ColorValue("#ffffff"), 1)); 
-	node->properties.push(new NodeProperty(NodeProperty::PROP_Output, true, _("Color"), NULL, 1)); 
+	node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Initial Color"), new ColorValue("#ffffff"), 1)); 
+	node->AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("Color"), NULL, 1)); 
 	//depth: 8, 16, 24, 32, 32f, 64f
 	//format: gray, graya, rgb, rgba
 	//backend: raw, default, gegl, gmic, gm, cairo
