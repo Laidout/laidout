@@ -943,7 +943,7 @@ Laxkit::anObject *newDoubleNode(Laxkit::anObject *ref)
 	//node->Id("Value");
 	makestr(node->Name, _("Value"));
 	makestr(node->type, "Value");
-	node->AddProperties(new NodeProperty(NodeProperty::PROP_Output, true, _("V"), new DoubleValue(0), 1)); 
+	node->AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("V"), new DoubleValue(0), 1)); 
 	return node;
 }
 
