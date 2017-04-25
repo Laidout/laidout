@@ -18,15 +18,16 @@
 
 
 #include <lax/anobject.h>
-//#include <lax/newwindowobject.h>
-//#include "../calculator/values.h"
-//#include "../filetypes/filefilters.h"
+#include <lax/attributes.h>
+
 //#include "../laidout.h"
 
 
 namespace Laidout {
 
 
+//------------------------- PluginBase --------------------------------------
+	
 class PluginBase : public Laxkit::anObject
 {
   protected:
@@ -67,31 +68,19 @@ class PluginBase : public Laxkit::anObject
 	virtual const char *Author()      = 0;
 	virtual const char *ReleaseDate() = 0;
 	virtual const char *License()     = 0;
-	//virtual const LaxFiles::Attribute *OtherMeta() = 0;
+	virtual const LaxFiles::Attribute *OtherMeta() { return NULL; }
 
 	virtual unsigned long WhatYouGot() = 0; //or'd list of PluginBaseContents
 
 	virtual int Initialize(); //install stuff
 
-	 //return NULL terminated list
-	//virtual Laxkit::NewWindowObject    **WindowPanes()       { return NULL; }
-	//virtual ImportFilter               **ImportFilters()     { return NULL; }
-	//virtual ExportFilter               **ExportFilters()     { return NULL; }
-	//virtual Laxkit::ResourceType       **Tools();
-	//virtual Imposition                 **Impositions()       { return NULL; }
-	//virtual DrawableObject             **ObjectInstances()   { return NULL; } //like scrapbook items
-	//virtual CalculatorModule           **CalculatorModules() { return NULL; }
-	//virtual Interpreter                **Interpreters()      { return NULL; } //like python. selecting "Run" of a PlainTextObject uses these
-	//virtual Laxkit::Resource           **ResourceInstances() { return NULL; }
-
-	//virtual ImageImportFilter        **ImageImportFilters() { return NULL; }
-	//virtual LaidoutAction            **Actions() { return NULL; }//maybe scripted code actions to be available for key bindings in windows
-	//virtual Config                   **Configs() { return NULL; } //tool settings and global Laidout config
-
-
 };
 
+
+//------------------------- LoadPlugin --------------------------------------
+
 PluginBase *LoadPlugin(const char *path_to_plugin);
+
 
 } //namespace Laiodut
 

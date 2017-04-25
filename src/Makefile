@@ -10,7 +10,7 @@ LAXIDIR=$(LAXDIR)/interfaces
 
 LD=g++
 LDFLAGS= -L/usr/X11R6/lib -lXi -lXext -lX11 -lm -lpng `imlib2-config --libs` `freetype-config --libs`\
-		 `cups-config --libs` -lXft -L$(LAXIDIR) -L$(LAXDIR)
+		 `cups-config --libs` -ldl -lXft -L$(LAXIDIR) -L$(LAXDIR)
 DEBUGFLAGS= -g -gdwarf-2
 CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. `freetype-config --cflags` -I$(POLYPTYCHBASEDIR)
 

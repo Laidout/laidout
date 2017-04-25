@@ -17,7 +17,9 @@
 
 #include "plugin.h"
 
+
 extern "C" Laidout::PluginBase *GetPlugin();
+
 
 namespace ExamplePluginNS {
 

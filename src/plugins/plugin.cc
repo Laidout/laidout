@@ -133,6 +133,17 @@ PluginBase *LoadPlugin(const char *path_to_plugin)
 
 //------------------------------ PluginBase ------------------------------
 
+/*! \class PluginBase
+ *
+ * Base class for any plugins. C++ plugins are dynamically loaded, and 
+ * will define a function
+ * <tt>PluginBase *GetPlugin()</tt>
+ * that returns a PluginBase object. Once returned, its Initialize() function
+ * is called, which is supposed to set up everything it needs. This may
+ * change in the future, as this is not terribly good security wise.
+ */
+
+
 PluginBase::PluginBase()
 {
 	handle = NULL;

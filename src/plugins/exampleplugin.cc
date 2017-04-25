@@ -24,6 +24,15 @@
 using namespace std;
 
 
+/* Called by dlsym from Laidout. Return a PluginBase object.
+ */
+Laidout::PluginBase *GetPlugin()
+{
+	return new ExamplePluginNS::ExamplePlugin();
+}
+
+
+
 namespace ExamplePluginNS {
 
 /*! class ExamplePlugin
@@ -118,11 +127,5 @@ int ExamplePlugin::Initialize()
 
 
 } //namespace ExamplePluginNS
-
-Laidout::PluginBase *GetPlugin()
-{
-	return new ExamplePluginNS::ExamplePlugin();
-}
-
 
 
