@@ -160,6 +160,7 @@ class Tiling : public Laxkit::anObject, public LaxFiles::DumpUtility //, public 
 	virtual Group *Render(Group *parent_space,
 					   Group *source_objects,
 					   Laxkit::Affine *base_offsetm,
+					   Group *base_lines, //!< Optional base cells. If null, then create copies of tiling's default.
 					   int p1_minx, int p1_maxx, int p1_miny, int p1_maxy,
 					   LaxInterfaces::PathsData *boundary,
 					   Laxkit::Affine *final_orient);
@@ -196,6 +197,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 	bool active;
 	bool preview_orient;
 	bool snap_to_base;
+	bool color_to_stroke;
 	bool show_p1;
 
 	bool trace_cells;

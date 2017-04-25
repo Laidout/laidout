@@ -545,10 +545,14 @@ void Tiling::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpCont
  * If source_objects is not NULL and has objects, then render clones of the contents, and do NOT render base cell outlines.
  *
  * Install in parent_space. If parent_space==NULL, then return a new Group.
+ *
+ * If base_lines!=NULL, assume it is structured 1 group per tiling->basecells, and each of those groups contains
+ * however many tiling->basecells->transforms there are.
  */
 Group *Tiling::Render(Group *parent_space,
 					   Group *source_objects, //!< If non-null, clone these. Each->property["tilingSource"] is the source base index
 					   Affine *base_offsetm,  //!< Additional offset to place basecells from source_objects
+					   Group *base_lines, //!< Optional base cells. If null, then create copies of tiling's default.
 					   int p1_minx, int p1_maxx, int p1_miny, int p1_maxy,
 					   LaxInterfaces::PathsData *boundary, //!< only render cells approximately within this
 					   Affine *final_orient   //!< final transform to apply to clones
@@ -626,37 +630,38 @@ Group *Tiling::Render(Group *parent_space,
 	 //Note this is not the actual clones
 	Group *trace=NULL;
 	if (trace_cells) {
-		double w = basecells.e[0]->celloutline->MaxDimension()/50;
-		LineStyle *ls = new LineStyle(65535,0,0,65535, w, LAXCAP_Round,LAXJOIN_Round,0,LAXOP_Over);
-		ls->Colorf(.5,.5,.5,1.);
-		trace = new Group;
-		trace->Id("base_cells");
-		PathsData *d;
+		if (base_lines) {
+			trace = base_lines;
+			trace->inc_count();
 
-		for (int c=0; c<basecells.n; c++) {
-			if (basecells.e[c]->celloutline) {
-				d = dynamic_cast<PathsData*>(basecells.e[c]->celloutline->duplicate(NULL));
-				d->InstallLineStyle(ls);
-				d->FindBBox();
-				trace->push(d);
-				d->dec_count();
+		} else {
+			double w = basecells.e[0]->celloutline->MaxDimension()/50;
+			LineStyle *ls = new LineStyle(65535,0,0,65535, w, LAXCAP_Round,LAXJOIN_Round,0,LAXOP_Over);
+			ls->Colorf(.5,.5,.5,1.);
+			trace = new Group;
+			trace->Id("base_cells");
+			PathsData *d;
+
+			for (int c=0; c<basecells.n; c++) {
+				if (basecells.e[c]->celloutline) {
+					d = dynamic_cast<PathsData*>(basecells.e[c]->celloutline->duplicate(NULL));
+					d->InstallLineStyle(ls);
+					d->FindBBox();
+					trace->push(d);
+					d->dec_count();
+				}
 			}
+
+			trace->FindBBox();
+			if (base_offsetm) trace->m(base_offsetm->m());
+			parent_space->push(trace);
+			ls->dec_count();
 		}
-
-//		for (int c=0; c<source_objects->n(); c++) {
-//			SomeData *obj = source_objects->e(c)->obj->duplicate(NULL);
-//			trace->push(obj);
-//			obj->dec_count();
-//		}
-
-		trace->FindBBox();
-		if (base_offsetm) trace->m(base_offsetm->m());
-		parent_space->push(trace);
-		ls->dec_count();
 	}
 
 
 	//SomeDataRef *clone=NULL;
+	DrawableObject *obj;
 	Affine clonet, ttt;
 	TilingDest *dest;
 	//Affine basecellm;
@@ -688,15 +693,19 @@ Group *Tiling::Render(Group *parent_space,
 
 			// *** need real boundary check if given.. above is good 1st approximation
 			//if (boundary) {
+			//	if (boundary.pointin(pp)) continue; ***
 			//}
 
 			if (trace_cells) { //the lines only
 			  if (dest->traceable) {
-				InsertClone(parent_space, trace->e(c), NULL, NULL, clonet, final_orient);
+				obj = dynamic_cast<DrawableObject*>(trace->e(c));
+				if (base_lines == trace) {
+					obj = dynamic_cast<DrawableObject*>(obj->e(0));
+				}
+				InsertClone(parent_space, obj, NULL, NULL, clonet, final_orient);
 			  }
 
 			} else { //for each source object in current base cell...
-			  DrawableObject *obj;
 			  for (int s=0; s<source_objects->n(); s++) {
 				obj = dynamic_cast<DrawableObject*>(source_objects->e(s));
 				if (!obj || obj->properties.findInt("tilingSource") != c) continue;
@@ -711,11 +720,14 @@ Group *Tiling::Render(Group *parent_space,
 
 				if (trace_cells) {
 				  if (dest->traceable) {
-					InsertClone(parent_space, trace->e(c), NULL, NULL, clonet, final_orient);
+					obj = dynamic_cast<DrawableObject*>(trace->e(c));
+					if (base_lines == trace) {
+						obj = dynamic_cast<DrawableObject*>(obj->e(0));
+					}
+					InsertClone(parent_space, obj, NULL, NULL, clonet, final_orient);
 				  }
 
 				} else { //if source objects..
-			  	  DrawableObject *obj;
 				  for (int s=0; s<source_objects->n(); s++) {
 					obj = dynamic_cast<DrawableObject*>(source_objects->e(s));
 					if (!obj || obj->properties.findInt("tilingSource") != c) continue;
@@ -2451,6 +2463,7 @@ enum CloneInterfaceElements {
 	CLONEIA_Toggle_Render,
 	CLONEIA_Toggle_Orientations,
 	CLONEIA_Select,
+	CLONEIA_ColorFillOrStroke,
 	
 	 //interface modes
 	CMODE_Normal,
@@ -2489,7 +2502,8 @@ CloneInterface::CloneInterface(anInterface *nowner,int nid,Laxkit::Displayer *nd
 	lastoveri = -1;
 	active = false;
 	preview_orient = false;
-	snap_to_base=true;
+	snap_to_base = true;
+	color_to_stroke = true;
 	show_p1 = false; 
 
 	 //structure is:
@@ -2883,6 +2897,7 @@ Laxkit::ShortcutHandler *CloneInterface::GetShortcuts()
 	sc->Add(CLONEIA_Toggle_Orientations,'o',0,0,       "ToggleOrientations",_("Toggle preview of orientations"),NULL,0);
 	sc->Add(CLONEIA_Edit,            'e',ControlMask,0,"Edit",              _("Edit"),NULL,0);
 	sc->Add(CLONEIA_Select,             's',0,0,       "Select",            _("Select tile mode"),NULL,0);
+	sc->Add(CLONEIA_ColorFillOrStroke,  'x',0,0,       "FillOrStroke",      _("Toggle sending color to fill or stroke"),NULL,0);
 
 	//sc->AddShortcut(LAX_Del,0,0, PAPERI_Delete);
 
@@ -2932,6 +2947,11 @@ int CloneInterface::PerformAction(int action)
 		if (active) Render();
 		PostMessage(trace_cells ? _("Include cell outlines") : _("Don't include cells"));
 		needtodraw=1;
+		return 0;
+
+	} else if (action==CLONEIA_ColorFillOrStroke) {
+		color_to_stroke = !color_to_stroke;
+		PostMessage(color_to_stroke ? _("Color to stroke") : _("Color to fill"));
 		return 0;
 
 	} else if (action==CLONEIA_Toggle_Render) {
@@ -3206,7 +3226,10 @@ int CloneInterface::UseThis(Laxkit::anObject *ndata,unsigned int mask)
 
 		LineStyle *l = dynamic_cast<LineStyle*>(ndata);
 		PathsData *p = GetBasePath();
-		if (p) p->line(-1,-1,-1, &l->color);
+		if (p) {
+			if (color_to_stroke) p->line(-1,-1,-1, &l->color);
+			else p->fill(&l->color);
+		}
 		return 1;
 	}
 	return 0;
@@ -3712,11 +3735,11 @@ int CloneInterface::scanSelected(int x,int y)
 	double boxw=num_cols*(icon_width*1.2);
 	int row,col;
 
-	x-=(dp->Maxx+dp->Minx)/2-boxw/2;
-	col=x/icon_width/1.2;
+	x -= (dp->Maxx+dp->Minx)/2-boxw/2;
+	col = floor(x/icon_width/1.2);
 
-	y-=selected_offset+(dp->Miny+dp->Maxy)/2-boxh/2+icon_width*.2;
-	row=y/icon_width/1.2;
+	y -= selected_offset+(dp->Miny+dp->Maxy)/2-boxh/2+icon_width*.2;
+	row = floor(y/icon_width/1.2);
 
 	DBG cerr <<" scanSelected r,c: "<<row<<','<<col<<endl;
 
@@ -3917,7 +3940,7 @@ int CloneInterface::Render()
 	Group *ret=NULL;
 	if (trace_cells || preview_lines) {
 		lines->flush();
-		ret = tiling->Render(lines, NULL, base_cells, 0,3, 0,3, boundary, base_cells);
+		ret = tiling->Render(lines, NULL, base_cells, NULL, 0,3, 0,3, boundary, base_cells);
 		if (!ret) {
 			PostMessage(_("Could not clone!"));
 			return 0;
@@ -3944,7 +3967,7 @@ int CloneInterface::Render()
 			layer->dec_count();
 		}
 
-		ret = tiling->Render(layer, srcs, base_cells, 0,3, 0,3, boundary, base_cells);
+		ret = tiling->Render(layer, srcs, base_cells, NULL, 0,3, 0,3, boundary, base_cells);
 		if (srcs != source_proxies) srcs->dec_count();
 
 		if (!ret) {
@@ -3966,7 +3989,7 @@ int CloneInterface::Render()
 			preview->push(layer);
 			layer->dec_count();
 		}
-		ret = tiling->Render(layer, NULL, base_cells, 0,3, 0,3, boundary, base_cells);
+		ret = tiling->Render(layer, NULL, base_cells, base_cells, 0,3, 0,3, boundary, base_cells);
 		layer->FindBBox();
 		if (preview != layer) preview->FindBBox();
 	}
@@ -4147,11 +4170,14 @@ int CloneInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 			buttondown.move(mouse->id,x,y, NULL,&ly);
 			selected_offset+=y-ly;
 			needtodraw=1;
+
 		} else {
 			int i=scanSelected(x,y);
-			if (i>=0 && i!=current_selected) {
+			if (i!=current_selected) {
 				current_selected=i;
-				PostMessage(BuiltinTiling[current_selected]);
+				if (i>=0) {
+					PostMessage(BuiltinTiling[current_selected]);
+				}
 				needtodraw=1;
 			}
 		}
