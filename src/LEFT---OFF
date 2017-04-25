@@ -144,7 +144,7 @@ from recent import:
 
 node editor NodeInterface:
   clear up IsInput()/IsOutput()
-  color code pipes by value type
+  color code pipes by value type, color: yellow, number: gray, vector: purple
   exec paths
   finish implementing no cycle check
   curve node
@@ -435,12 +435,6 @@ layers palette Layers
   visible
   selectable
 
-export/print dialog
-  make print button experimental only?
-  vital to debug send to printer
-  export should have a preview of what is actually going out, flip through spreads
-  in papergroups with multiple papers and double sided impositions, need to ensure front and back are output properly for printer 
-
 file filters: filefilters:
   remember full export settings
   need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
@@ -570,6 +564,12 @@ test:
   each export filter (via command line in new script in examples.. ignoring problems in eps)
   make some test scripts for command line testing
 
+
+export/print dialog
+  make print button experimental only?
+  vital to debug send to printer
+  export should have a preview of what is actually going out, flip through spreads
+  in papergroups with multiple papers and double sided impositions, need to ensure front and back are output properly for printer 
 
 fontdialog: FontDialog
   need a way to remember layered fonts, to easily activate and deactivate
@@ -1370,11 +1370,10 @@ for clones, it would be easier to have a "defs" group or something, so deleting 
   if an object is without a home.
 
 tiling cloner:  CloneInterface
-  should use preview->basecells, rather than generate fresh with Render, so if user edits base cells it behaves as expected
+  new tiling should update viewport color per basecells
   should not assume preview has I transform
   memory hole back, third time!!!
   radial needs wind scale input
-  hovering outside select box should not highlight a tiling
 
   copies should be selectable, at least so you can adjust the colors: gave current_base, current_copy
   should have z order controls for base cell stuff
@@ -1695,6 +1694,8 @@ DONE clone tiler:
   DONE on export the base tile line width is wrong, since inkscape doesn't handle screen width (now default to .01 of user unit)
   DONE need to be able to remember tiling for future editing
   DONE need to be able to delete base objects all at once
+  DONE should use preview->basecells, rather than generate fresh with Render, so if user edits base cells it behaves as expected
+  DONE hovering outside select box should not highlight a tiling
 DONE color sliders input hex, it's flipping r and b 
 DONE Lightness slider appears black to white, but the middle is full color, needs segmented render like hue
 DONE click enter area of color pickers, does not install color!!!!  
