@@ -53,13 +53,16 @@
 #include "api/functions.h"
 #include "newdoc.h"
 
+//template implementations
 #include <lax/lists.cc>
 #include <lax/refptrstack.cc>
+
 
 #include <sys/stat.h>
 #include <cstdio>
 
 #ifdef LAX_USES_CAIRO
+//for debugging below
 #include <cairo/cairo-xlib.h>
 #endif
 
@@ -74,6 +77,7 @@ using namespace std;
 
 //! The mother of all Laidout classes.
 namespace Laidout {
+
 
 ObjectDef stylemanager(NULL,"Laidout",_("Laidout"),_("Global Laidout namespace"),"namespace",NULL,NULL);
 
@@ -91,7 +95,7 @@ const char *LaidoutVersion()
 		const char *outstr=
 						_("Laidout Version %s\n"
 						  "http://www.laidout.org\n"
-						  "by Tom Lechner, sometime between 2006 and 2014\n"
+						  "by Tom Lechner, sometime between 2006 and 2017\n"
 						  "Released under the GNU Public License, Version 2.\n"
 						  " (using Laxkit Version %s)");
 		version_str=new char[1+strlen(outstr)+strlen(LAIDOUT_VERSION)+strlen(LAXKIT_VERSION)];
