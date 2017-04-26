@@ -52,6 +52,9 @@ using namespace LaxInterfaces;
 namespace Laidout {
 
 
+double PPINCH = 96;
+//double PPINCH = 90;
+
 
 //-------forward decs for helper funcs
 int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::LineStyle *linestyle, LaxInterfaces::FillStyle *fillstyle);
@@ -97,7 +100,7 @@ int addSvgDocument(const char *file, Document *existingdoc)
 		while (isalpha(*eptr)) eptr++;
 		int units = unitm->UnitId(ptr, eptr-ptr);
 		if (units!=UNITS_None) width = unitm->Convert(width, units, UNITS_Inches, NULL);
-	} else width/=90;
+	} else width /= PPINCH;
 	if (width<=0) return 4;
 
 	 //height
@@ -116,7 +119,7 @@ int addSvgDocument(const char *file, Document *existingdoc)
 		while (isalpha(*eptr)) eptr++;
 		int units = unitm->UnitId(ptr, eptr-ptr);
 		if (units!=UNITS_None) height = unitm->Convert(height, units, UNITS_Inches, NULL);
-	} else height/=90;
+	} else height /= PPINCH;
 	if (height<=0) return 6;
 
 
@@ -577,7 +580,7 @@ void svgStyleTagsDump(FILE *f, LineStyle *lstyle, FillStyle *fstyle)
 		else if (lstyle->joinstyle==LAXJOIN_Bevel) fprintf(f,"stroke-linejoin:bevel; ");
 
 		if (lstyle->width==0) fprintf(f,"stroke-width:.01; ");//hairline width not supported in svg
-		else if (lstyle->widthtype == 0) fprintf(f,"stroke-width:%.10g; ",lstyle->width/90);
+		else if (lstyle->widthtype == 0) fprintf(f,"stroke-width:%.10g; ",lstyle->width/PPINCH);
 		else fprintf(f,"stroke-width:%.10g; ",lstyle->width);
 
 		 //dash or not
@@ -689,7 +692,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			//else if (caption->xcentering==100) fprintf(f,"text-anchor:end; ");
 
 			fprintf(f,"font-family:%s; font-style:%s; font-size:%.10g; line-height:%.10g%%;\">\n",
-						font->Family(), font->Style()?font->Style():"normal", font->Msize(), 100*caption->linespacing);
+						font->Family(), font->Style()?font->Style():"normal", font->Msize(), 100*font->textheight()/font->Msize()*caption->linespacing);
 
 			//double h=caption->maxy-caption->miny;
 			double x,y;
@@ -1524,9 +1527,8 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	
 	 // Write out objects....
 
-	 //transform to paper * conversion to left handed system, and 1/90th of an inch per unit
-	//transform_set(m,90,0,0,-90,0,height*72*1.25);
-	transform_set(m,90,0,0,-90, 0,0);
+	 //transform to paper * conversion to left handed system, and 1/96th of an inch per unit
+	transform_set(m,PPINCH,0,0,-PPINCH, 0,0);
 	if (out->curpaperrotation>0) {
 		transform_identity(mm);
 		transform_rotate(mm, out->curpaperrotation*M_PI/180.);
@@ -1534,9 +1536,9 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 		transform_copy(m,mmm);
 	}
 
-	if (out->curpaperrotation==0) { m[5]=height*90; }
-	else if (out->curpaperrotation==90) { m[4]=width*90; m[5]=height*90; }
-	else if (out->curpaperrotation==180) { m[4]=width*90; }
+	if (out->curpaperrotation==0) { m[5]=height*PPINCH; }
+	else if (out->curpaperrotation==90) { m[4]=width*PPINCH; m[5]=height*PPINCH; }
+	else if (out->curpaperrotation==180) { m[4]=width*PPINCH; }
 	else if (out->curpaperrotation==270) { }
 
 	//fprintf(f,"  <g transform=\"matrix(90,0,0,-90, 0,%f)\">\n", height*72*1.25);
@@ -1703,7 +1705,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 					int units = unitm->UnitId(ptr, endptr-ptr);
 					if (units!=UNITS_None) width = unitm->Convert(width, units, UNITS_Inches, NULL);
 
-				} else width/=90; //no specified units, assume svg pts
+				} else width /= PPINCH; //no specified units, assume svg pts
 
 			} else if (!strcmp(name,"height")) {
 				char *endptr=NULL;
@@ -1717,7 +1719,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 					int units = unitm->UnitId(ptr, endptr-ptr);
 					if (units!=UNITS_None) height = unitm->Convert(height, units, UNITS_Inches, NULL);
 
-				} else height/=90; //no specified units, assume svg pts
+				} else height /= PPINCH; //no specified units, assume svg pts
 				
 			} else if (!strcmp(name,"viewBox")) {
 				// *** also need to look out for other transform defined on base svg level, maybe nonstandard, but sometimes it's present
@@ -2068,7 +2070,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 		}
 
 		if (top) {
-			for (int c=0; c<6; c++) g->m(c,g->m(c)/90); //correct for svg scaling
+			for (int c=0; c<6; c++) g->m(c,g->m(c)/PPINCH); //correct for svg scaling
 
 			g->m(5,top-g->m(5)); //flip in page
 			g->m(2, -g->m(2));

@@ -1428,7 +1428,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 				//pocoor[c]=flatpoint(coords[c*2],coords[c*2+1]);
 				DBG cerr <<"pocoor to canvas: "<<pocoor[c].x<<','<<pocoor[c].y<<endl;
 			}
-			//note that these are raw coordinates read on input, they still have to be scaled
+			//note that these are raw page coordinates read on input, they still have to be scaled
 			// to current bounding box, which is done below
 		}
 
@@ -1444,7 +1444,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 				cocoor[c]=transform_point(ctm,coords[c*2]/72,coords[c*2+1]/72);
 				DBG cerr <<"cocoor to canvas: "<<cocoor[c].x<<','<<cocoor[c].y<<endl;
 			}
-			//note that these are raw coordinates read on input, they still have to be scaled
+			//note that these are raw page coordinates read on input, they still have to be scaled
 			// to current bounding box, which is done below
 		}
 	}
@@ -1473,33 +1473,46 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 	height=norm(transform_point(ctm,flatpoint(obj->minx,obj->miny))-transform_point(ctm,flatpoint(obj->minx,obj->maxy)));
 	DBG cerr <<"object dimensions: "<<width<<" x "<<height<<endl;
 
-	 //create a basis for the object, which has same scaling as the scratch space, but
+	 //create a basis for the object points, which has same scaling as the scratch space, but
 	 //possibly different translation and rotation
 	double m[6],mmm[6];
-	vx=vx/norm(vx);
-	vy=vy/norm(vy);
-	p=transform_point(ctm,flatpoint(obj->minx,obj->miny));
-	transform_from_basis(mmm,p,vx,vy);
+	vx = vx/norm(vx);
+	//---
+	vy = -vy/norm(vy);
+	p = transform_point(ctm,flatpoint(obj->minx,obj->maxy));
+	//---
+	//vy = vy/norm(vy);
+	//p = transform_point(ctm,flatpoint(obj->minx,obj->miny));
+	//----
+	if (ptype == PTYPE_Polygon && vy.y*vx.x-vy.x*vx.y < 0) {
+		//scribus doesn't like left handed axes on paths for some reason
+		vy=-vy;
+		//p = transform_point(ctm,flatpoint(obj->minx,obj->miny));
+	} 
+
+	transform_from_basis(mmm, p,vx,vy);
 	transform_invert(m,mmm);
+
 	DBG cerr<<"transform back to object:"; dumpctm(m);
 
 	 //pocoor and cocoor are in canvas coordinates, need to
 	 //make pocoor and cocoor coords relative to the object origin, not the canvas
 	for (int c=0; c<numpo; c++) {
 		DBG cerr <<"pocoor: "<<pocoor[c].x<<','<<pocoor[c].y;
-		if (pocoor[c].x!=999999) pocoor[c]=transform_point(m,pocoor[c]);
+		if (pocoor[c].x!=999999) pocoor[c] = transform_point(m,pocoor[c]);
 		if (fabs(pocoor[c].x)<1e-10) pocoor[c].x=0;
 		if (fabs(pocoor[c].y)<1e-10) pocoor[c].y=0;
 		DBG cerr <<" -->  "<<pocoor[c].x<<','<<pocoor[c].y<<endl;
 	}
 	for (int c=0; c<numco; c++) {
 		DBG cerr <<"cocoor: "<<cocoor[c].x<<','<<cocoor[c].y;
-		if (pocoor[c].x!=999999) cocoor[c]=transform_point(m,cocoor[c]);
+		if (pocoor[c].x!=999999) cocoor[c] = transform_point(m,cocoor[c]);
 		if (fabs(cocoor[c].x)<1e-10) cocoor[c].x=0;
 		if (fabs(cocoor[c].y)<1e-10) cocoor[c].y=0;
 		DBG cerr <<" -->  "<<cocoor[c].x<<','<<cocoor[c].y<<endl;
 	}
-	if (ptype==PTYPE_Image) { //image
+
+	if (ptype == PTYPE_Image) { //image
 		localscx=width /(img->maxx-img->minx); //assumes maxx-minx==file width
 		localscy=height/(img->maxy-img->miny);
 		if (!strcmp(obj->whattype(),"EpsData")) {
@@ -1511,7 +1524,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 
 	fprintf(f,"  <PAGEOBJECT \n");
 	int content=-1;
-	const char *pfile=(ptype==PTYPE_Image?img->filename:NULL);
+	const char *pfile = (ptype==PTYPE_Image?img->filename:NULL);
 	if (mysteryatts) {
 		char *name,*value;
 		for (int c=0; c<mysteryatts->attributes.n; c++) {
@@ -1621,6 +1634,10 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 				setlocale(LC_ALL,"C");
 				warning++;
 			}
+
+			fprintf(f, "    LINESP=\"%.10g\"\n"
+					   "    LINESPMode=\"0\"\n", 
+				text->MSize()*TEXTHACK*text->linespacing); //line break
 		}
 
 		if (tstyle) {
@@ -1815,7 +1832,8 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 					tstyle ? tstyle->color.green : 0,
 					tstyle ? tstyle->color.blue  : 0,
 					text->lines.e[c]);
-			if (c<text->lines.n-1) fprintf(f, "    <para LINESPMode=\"1\" />\n"); //line break
+			if (c<text->lines.n-1) fprintf(f, "    <para LINESP=\"%.10g\" LINESPMode=\"0\" />\n", 
+				text->MSize()*xmag*TEXTHACK*text->linespacing); //line break
 		}
 	}
 
