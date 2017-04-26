@@ -833,7 +833,10 @@ int LaidoutApp::createlaidoutrc()
 			fclose(f);
 			setlocale(LC_ALL,"");
 		}
+
 		 // create the other relevant directories
+		sprintf(path,"%s/addons",config_dir);
+		mkdir(path,0755);
 		sprintf(path,"%s/templates",config_dir);
 		mkdir(path,0755);
 		sprintf(path,"%s/impositions",config_dir);
@@ -842,7 +845,9 @@ int LaidoutApp::createlaidoutrc()
 		mkdir(path,0755);
 		sprintf(path,"%s/fonts",config_dir);
 		mkdir(path,0755);
+
 	} else return -1;
+
 	return 0;
 }
 
