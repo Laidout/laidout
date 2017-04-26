@@ -58,8 +58,8 @@ ObjectIndicator::ObjectIndicator(int nid,Displayer *ndp)
 {
 	firsttime=1;
 	showdecs=0;
-	color_arrow=rgbcolor(60,60,60);
-	color_num=rgbcolor(0,0,0);
+	color_arrow = rgbcolor(60,60,60);
+	color_num   = rgbcolor(0,0,0);
 	interface_type=INTERFACE_Overlay;
 	context=NULL;
 	hover_object=NULL;
@@ -72,8 +72,8 @@ ObjectIndicator::ObjectIndicator(anInterface *nowner,int nid,Displayer *ndp)
 {
 	firsttime=1;
 	showdecs=0;
-	color_arrow=rgbcolor(60,60,60);
-	color_num=rgbcolor(0,0,0);
+	color_arrow = rgbcolor(60,60,60);
+	color_num   = rgbcolor(0,0,0);
 	interface_type=INTERFACE_Overlay;
 	context=NULL;
 	hover_object=NULL;
@@ -158,6 +158,36 @@ void ObjectIndicator::Clear(SomeData *d)
 {
 }
 
+double ObjectIndicator::MaxWidth()
+{
+	ObjectContainer *objc=dynamic_cast<ObjectContainer*>(viewport);
+	if (!objc) return 0;
+
+	double w=0, ww;
+	char scratch[10];
+	const char *str;
+
+	for (int c=0; c<context->context.n(); c++) {
+		str = objc->object_e_name(context->context.e(c));
+		ww = 0;
+
+		if (!str) {
+			sprintf(scratch,"%d",context->context.e(c));
+			str=scratch;
+		} else {
+			sprintf(scratch,"(%d) ",context->context.e(c));
+			ww = dp->textextent(scratch,-1, NULL,NULL);
+		}
+		ww += dp->textextent(str,-1, NULL,NULL);
+
+		if (ww > w) w = ww;
+
+		objc=dynamic_cast<ObjectContainer*>(objc->object_e(context->context.e(c)));
+	}
+
+	return w;
+}
+
 /*! Draws maybebox if any, then DrawGroup() with the current papergroup.
  */
 int ObjectIndicator::Refresh()
@@ -175,16 +205,31 @@ int ObjectIndicator::Refresh()
 	DBG cerr <<"ObjectIndicator::Refresh()..."<<endl;
 
 	dp->DrawScreen();
+	dp->NewBG(1.,1.,1.);
 
 	//char buffer[30];
 
 	 //draw ui outline
-	dp->NewFG(rgbcolor(128,128,128));
 	dp->DrawScreen();
+
 	if (!font) { font=laidout->defaultlaxfont; font->inc_count(); }
 	dp->font(font);
+	double th = dp->textheight();
 
+	flatpoint origin(0,viewport->win_h);
+	if (last_hover >= 0) {
+		 //blank out rect around it
+		dp->NewFG(1.,1.,1.,.9);
+		double w = MaxWidth() + th;
+		double h = context->context.n()*th + th;
+		if (!context->obj) h += th;
+		dp->drawRoundedRect(origin.x-th/2,origin.y+th/2-h,
+				w, h,
+				th/2,false, th/2,false, 1, 15);
 
+	}
+
+	dp->NewFG(.5,.5,.5);
 
 	 //draw object place description
 	int x=0;
@@ -197,7 +242,7 @@ int ObjectIndicator::Refresh()
 	for (int c=0; c<context->context.n(); c++) {
 		if (!objc) break;
 
-		if (c==last_hover) dp->NewFG(rgbcolor(50,50,50));
+		if (c==last_hover) dp->NewFG(.2,.2,.2);
 
 		 // textout: (index) element name
 		x=0;
@@ -213,7 +258,7 @@ int ObjectIndicator::Refresh()
 		dp->textout_halo(1, x,y, str,-1, LAX_BOTTOM|LAX_LEFT);
 		y-=dp->textheight();
 
-		if (c==last_hover) dp->NewFG(rgbcolor(128,128,128));
+		if (c==last_hover) dp->NewFG(.5,.5,.5);
 
 		objc=dynamic_cast<ObjectContainer*>(objc->object_e(context->context.e(c)));
 	}
@@ -222,7 +267,6 @@ int ObjectIndicator::Refresh()
 		//curobj is just a context, not actually selected
 		dp->textout(x,y, "?",1, LAX_BOTTOM|LAX_LEFT);
 	}
-
 
 
 
@@ -238,7 +282,7 @@ int ObjectIndicator::scan(int x,int y)
 	if (!font) { font=laidout->defaultlaxfont; font->inc_count(); }
 	double th=font->textheight();
 
-	if (x<0 || x>th*7) return -1;
+	if (x<0 || x>MaxWidth()) return -1;
 
 	int i=(dp->Maxy-y)/th;
 	if (i>=context->context.n()) i=-1;

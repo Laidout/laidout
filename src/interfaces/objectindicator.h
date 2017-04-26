@@ -47,6 +47,7 @@ class ObjectIndicator : public LaxInterfaces::anInterface
 	int firsttime;
 
 	virtual int scan(int x,int y);
+	virtual double MaxWidth();
 
   public:
 	unsigned long shape_style;//options for interface
