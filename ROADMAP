@@ -17,7 +17,6 @@ VERSION 0.097
 (done) Allow setting custom default exported file name (via a line in laidoutrc)
        Text on path tool
 (done) text objects: harfbuzz based
-       layers (object tree) palette
 (done) Add more save options: save a copy, save incremented, save as template, autosave settings
        Moving selected things in group contents does not update group bounds
        should not be able to select both group and group contents at same time
@@ -29,6 +28,7 @@ VERSION 0.097
 
 VERSION 0.098
 -------------
+       layers (object tree) palette
        debug previous version!
        Tools should remember their settings
        option to specify alignment of different size signature stacks

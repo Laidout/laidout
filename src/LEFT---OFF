@@ -15,6 +15,7 @@ Those are purged with each release.
 shearing or scaling produces null axes occasionally when crossing over opposite edge, borking the display
   --> seems to be only when needing to draw images on close to parallel axes, doesn't seem do it with paths
 
+bug: page progress popup is wrong place, and mouse maps at wrong scale
 
 ------------ other bugs:
 
@@ -74,8 +75,7 @@ headwindow swapping is now REALLY messed up
 pane swapping/dropto on maximized, swapping in general...
 
 svg out, EquivalentObject doesn't play nice with defs.. only accessed once.. how to upkeep clones in this case?
-	-> when equiv objects are composed of groups, what happens?
-
+	-> when equiv objects are composed of groups, what happens?  
 svg coord numpoints==0???? numpoints doesn't really serve any purpose other than debugging, but....  
 svg to coord incomplete: arcs needs testing
 memory hole in svg in? test svg import, svg path import must be done
@@ -155,44 +155,6 @@ node editor NodeInterface:
 need to implement DRAW_Hires for all interfaces that default to preview renders. needed for proper image out
   includes at least image(done), path, engraver
 
-captioninterface CaptionInterface captiondata CaptionData
-  bug: bitstream vera sans, "Text" convert to path puts e correct, but screen render puts it out too far. huh??
-  update exporters to using linespacing and glyphs: svg(mostly done, except line spacing)  scribus(done but for line spacing) pdf
-  color fonts: consider native otf:
-    Mozilla and Adobe’s svg table, microsoft's colr/cpal, Google’s PNG images (CBDT/CBLC tables), Apple’s PNG images (SBIX table)
-	freetype dev branch maybe supports colr/cpal and google's way?
-  implement the different layout modes: rtl ttb
-  debug for rtl and vertical as returned by hb, or set explicitly with direction
-  right to left (figure out how to do with harfbuzz)
-  -----0.098:
-  need to do proper coordinate finding for mouseposition when paste into a nested group
-  text to path:
-    option to do all one path,
-	or separate objects per character (or glyph), but clones of a resourced group of glyphs
-  need handy option to mirror, instead of escaping to object tool
-  need handling when opening a file and the font is not found!!!!!!!  options for substitution
-  opentype variations
-  select, copy
-  for overstretched alignment, bounding box not updating correctly
-  should adapt from multiline edit, since it already has cut/paste, selections, and is mostly debugged??
-  control-u hack for poweruser unicode character insertion
-  use selected text as sample when popping up font dialog
-  lorem ipsum
-  markov ipsum
-
-  DONE? cant duplicate anymore bug: convert to path with viewport->ChangeObject(), puts obj way off, doesn't show path decs, other weird
-  DONE Paste not triggering recache
-  DONE fonts need to dump in(via fontmanager->dump_in_font) and out(done) by themselves
-  DONE need to implement dump_out_atts
-  DONE memory hole after convert to path
-  DONE FindPos needs to account for glyph/cluster coverage
-  DONE (seems to be gone with switch to harfbuzz) change centering not smooth, text placement hops, font to bitmap render size snafus?
-  DONE key move for caret not working for ffi
-  DONE deleting leaving excess glyphs???
-  DONE needs line spacing slider
-  DONE baseline justify
-    DONE needs hint to preserve baseline align when changing font size or line spacing
-
 text on path textonpath: TextOnPath
   select font, key up/down scrolls uncomfortably
   need to center balance on path
@@ -234,8 +196,8 @@ text on path textonpath: TextOnPath
   DONE deleting selected points when >=2 selected results in crash
 
 text (see also src/text/text.txt):
-  need standard way to have default font, apart from defaultlaxfont, as well as default color/other visual attributes
   need options per font on export to: convert to path, subset, embed
+  need standard way to have default font, apart from defaultlaxfont, as well as default color/other visual attributes
   global font list, finish implementing uniquinizing font names, need final step of some kind of file name diff
   freetype/fribidi/harfbuzz all over everything?
   interface base for utf8 based editing.. share this with window edits somehow
@@ -436,9 +398,9 @@ layers palette Layers
   selectable
 
 file filters: filefilters:
+  ---0.098:
   remember full export settings
   need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
-  ---0.098:
   need equirectangular out 
   selecting out should auto select tofile | tofiles, depending on how many spreads selected for out
   export ranges should accept "1-4, 6, 20-25" and "5-1", or by name "iii - iv"
@@ -459,7 +421,7 @@ importdialog ImportDialog import dialog:
   would be nice to show preview of what is to be imported
 image
   export format should be an enum. need to extract possible save formats from Laxkit
-  option for setting background color
+  option for setting background color, at least white|transparent
   for gs, make sure temp file is removed, should probably locate in user space maybe? or make sure perms set reasonably
   DONE should really make this graphicsmagick or cairo based, not gs+pdf based
   DONE should color background per paper if !transparent
@@ -472,6 +434,7 @@ laidout import:
   pops up spurious windows
   maybe option to create new layers, or insert to existing layers?
   option to insert new pages, or merge onto existing pages
+
   need to center within new margin area, as compared to previous margin area
   partial import of page ranges
   import of resources
@@ -505,23 +468,26 @@ Scribus:
   scribus import: need to read page sizes from actual page attributes, as it may well be different than in document attributes
     -> this necessitates revamp of singles to use more than one paper type
   implement crop
-svg:
-  bug: only sometimes, exports at skew angle
-  testsvg-disappearing.svg.. many objects disapper after read in at different zoom levels. wtaf??
-  on read in width nodes are zeroed, does not correspond to actual width of line
+  DONE caption -> path, then out, all paths are normal EXCEPT text paths, which are upside down
+  DONE paths outputting upside down
+svg: SVG
+  on out, need option to have 90/inch or the new 96/inch
+  testsvg-disappearing.svg.. many objects disappear after read in at different zoom levels. wtaf??
   text in fail
-  some other dup nodes causing bad stroke approximation in some of the stuff that magically disappears
-  can't get at the weight nodes after import 
-  after in: nodes right on each other produce bad vectors
+  in for powerstroke
+    on read in width nodes are zeroed, does not correspond to actual width of line
+    some other dup nodes causing bad stroke approximation in some of the stuff that magically disappears
+    can't get at the weight nodes after import 
+    after in: nodes right on each other produce bad vectors
+    after in, does weird things with width node -> child objects not display correctly 
   in hangs.. should NOT default to powerstroke.. the cache for complex stuff REALLY bogs down, creating NaN draws
   need to parse units
   in needs to account for viewBox
-  in for powerstroke
   in needs to parse "use" elements and other "#" refs
-  after in, does weird things with width node -> child objects not display correctly 
   in/out for meshes
   radial: transparent inner circle, patch edges
   out: text linespacing.. unclear how Msize/linespacing maps to svg options
+  DONE bug: only sometimes, exports at skew angle
   DONE need in for style on paths
 plan:
   need an In()
@@ -564,6 +530,30 @@ test:
   each export filter (via command line in new script in examples.. ignoring problems in eps)
   make some test scripts for command line testing
 
+
+captioninterface CaptionInterface captiondata CaptionData
+  bug: bitstream vera sans, "Text" convert to path puts e correct, but screen render puts it out too far. huh??
+  implement proper pdf export
+  color fonts: consider native otf:
+    Mozilla and Adobe’s svg table, microsoft's colr/cpal, Google’s PNG images (CBDT/CBLC tables), Apple’s PNG images (SBIX table)
+	freetype dev branch maybe supports colr/cpal and google's way?
+  implement the different layout modes: rtl ttb
+  debug for rtl and vertical as returned by hb, or set explicitly with direction
+  right to left (figure out how to do with harfbuzz)
+  need to do proper coordinate finding for mouseposition when paste into a nested group
+  text to path:
+    option to do all one path,
+	or separate objects per character (or glyph), but clones of a resourced group of glyphs
+  need handy option to mirror, instead of escaping to object tool
+  need handling when opening a file and the font is not found!!!!!!!  options for substitution
+  opentype variations
+  select, copy
+  for overstretched alignment, bounding box not updating correctly
+  should adapt from multiline edit, since it already has cut/paste, selections, and is mostly debugged??
+  control-u hack for poweruser unicode character insertion
+  use selected text as sample when popping up font dialog
+  lorem ipsum
+  markov ipsum
 
 export/print dialog
   make print button experimental only?
@@ -1701,4 +1691,18 @@ DONE Lightness slider appears black to white, but the middle is full color, need
 DONE click enter area of color pickers, does not install color!!!!  
 DONE rectinterface with extra m not propagating transform correctly: move(done) rotate handles
 DONE rectinterface should reset down point on control press
+DONE captioninterface
+  DONE update svg and scribus exporters to using linespacing and glyphs
+  DONE? cant duplicate anymore bug: convert to path with viewport->ChangeObject(), puts obj way off, doesn't show path decs, other weird
+  DONE Paste not triggering recache
+  DONE fonts need to dump in(via fontmanager->dump_in_font) and out(done) by themselves
+  DONE need to implement dump_out_atts
+  DONE memory hole after convert to path
+  DONE FindPos needs to account for glyph/cluster coverage
+  DONE (seems to be gone with switch to harfbuzz) change centering not smooth, text placement hops, font to bitmap render size snafus?
+  DONE key move for caret not working for ffi
+  DONE deleting leaving excess glyphs???
+  DONE needs line spacing slider
+  DONE baseline justify
+    DONE needs hint to preserve baseline align when changing font size or line spacing
 
