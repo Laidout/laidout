@@ -2988,6 +2988,7 @@ int CloneInterface::PerformAction(int action)
 		return 0;
 
 	} else if (action==CLONEIA_Select) {
+		if (child) RemoveChild();
 		Mode(CMODE_Select);
 		return 0;
 	}
