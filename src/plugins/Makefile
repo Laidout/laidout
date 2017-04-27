@@ -16,7 +16,7 @@ CPPFLAGS= -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. -I/usr/include/freetype2
 
 
 objs= \
-	#plugin.o 
+	plugin.o
 	#antiprism.o
 
 
