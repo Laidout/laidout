@@ -1201,6 +1201,7 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCont
 			Group *g=new Group;  //count=1
 			g->dump_in_atts(att->attributes.e[c],flag,context);
 			g->obj_flags|=OBJ_Unselectable|OBJ_Zone;
+			g->selectable = false;
 			if (isblank(g->id) && !isblank(value)) makestr(g->id,value);
 			laidout->project->limbos.push(g); // incs count
 			g->dec_count();   //remove extra first count
