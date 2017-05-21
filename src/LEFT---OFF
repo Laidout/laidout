@@ -15,6 +15,8 @@ Those are purged with each release.
 shearing or scaling produces null axes occasionally when crossing over opposite edge, borking the display
   --> seems to be only when needing to draw images on close to parallel axes, doesn't seem do it with paths
 
+bug: press 4, wtf?? should zoom to current object
+
 bug: page progress popup is wrong place, and mouse maps at wrong scale
 
 ------------ other bugs:
@@ -143,23 +145,24 @@ from recent import:
   spread editor needs edge dragging
 
 node editor NodeInterface:
-  clear up IsInput()/IsOutput()
-  color code pipes by value type, color: yellow, number: gray, vector: purple
-  exec paths
+  image object creation node (the proof of concept node for 0.097)
   finish implementing no cycle check
   curve node
   simplex noise node
   gmic nodes
-  image object creation node (the proof of concept node for 0.097)
+  clear up IsInput()/IsOutput()
+  color code pipes by value type, color: yellow, number: gray, vector: purple
+  exec paths
 
 need to implement DRAW_Hires for all interfaces that default to preview renders. needed for proper image out
   includes at least image(done), path, engraver
 
 text on path textonpath: TextOnPath
-  select font, key up/down scrolls uncomfortably
+  select font, key up/down scrolls uncomfortably sometimes
   need to center balance on path
   svg out bad
   need kern control
+  menu toggle items should have mouse over
 
   bug: drag the baseline handle off to the sides, makes huge bad jumps in value
   bug: draggin the offest handle sometimes jumps to really bad
@@ -672,6 +675,7 @@ polish:
   page navigator should allow type in shortcuts like "end" 
 
 GroupInterface groupinterface ObjectInterface objectinterface:
+  default hide draggable flip, but have as right click option
   viewport should fully utilize Selection::CurrentObject(), keep curobj in sync
   double click on group should change selection area to group contents?
     need to clarify how grouping operates. Perhaps implement sets at same time
@@ -1392,6 +1396,7 @@ tiling cloner:  CloneInterface
   need finishing tool
   design interface for clone on path
   Hisrchhorn Medallion
+  truchet tiling
   penrose/heesch/net clone interface
     penrose p1: pentagons, pentagrams, rhombus, sliced pentagram
     penrose p2: kite and dart
