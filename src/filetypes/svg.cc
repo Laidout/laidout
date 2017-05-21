@@ -52,8 +52,8 @@ using namespace LaxInterfaces;
 namespace Laidout {
 
 
-double PPINCH = 96;
-//double PPINCH = 90;
+double DEFAULT_PPINCH = 96;
+//double DEFAULT_PPINCH = 90;
 
 
 //-------forward decs for helper funcs
@@ -100,7 +100,7 @@ int addSvgDocument(const char *file, Document *existingdoc)
 		while (isalpha(*eptr)) eptr++;
 		int units = unitm->UnitId(ptr, eptr-ptr);
 		if (units!=UNITS_None) width = unitm->Convert(width, units, UNITS_Inches, NULL);
-	} else width /= PPINCH;
+	} else width /= DEFAULT_PPINCH;
 	if (width<=0) return 4;
 
 	 //height
@@ -119,7 +119,7 @@ int addSvgDocument(const char *file, Document *existingdoc)
 		while (isalpha(*eptr)) eptr++;
 		int units = unitm->UnitId(ptr, eptr-ptr);
 		if (units!=UNITS_None) height = unitm->Convert(height, units, UNITS_Inches, NULL);
-	} else height /= PPINCH;
+	} else height /= DEFAULT_PPINCH;
 	if (height<=0) return 6;
 
 
@@ -182,6 +182,7 @@ class SvgExportConfig : public DocumentExportConfig
   public:
 	bool use_powerstroke;
 	bool use_mesh;
+	double pixels_per_inch;
 
 	SvgExportConfig();
 	SvgExportConfig(DocumentExportConfig *config);
@@ -203,19 +204,22 @@ SvgExportConfig::SvgExportConfig(DocumentExportConfig *config)
 	if (svgconf) {
 		use_mesh       =svgconf->use_mesh;
 		use_powerstroke=svgconf->use_powerstroke;
+		pixels_per_inch=svgconf->pixels_per_inch;
 	} else {
 		use_mesh=false;
 		//use_powerstroke=false;
-		use_powerstroke=true;
+		use_powerstroke = true;
+		pixels_per_inch = DEFAULT_PPINCH;
 	}
 }
 
 //! Set the filter to the Image export filter stored in the laidout object.
 SvgExportConfig::SvgExportConfig()
 {
-	use_mesh=false;
-	use_powerstroke=true;
+	use_mesh = false;
+	use_powerstroke = true;
 	//use_powerstroke=false;
+	pixels_per_inch = DEFAULT_PPINCH;
 
 	for (int c=0; c<laidout->exportfilters.n; c++) {
 		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Image")) {
@@ -233,6 +237,9 @@ Value *SvgExportConfig::dereference(const char *extstring, int len)
 	} else if (!strncmp(extstring,"use_powerstroke",8)) {
 		return new BooleanValue(use_powerstroke);
 
+	} else if (!strncmp(extstring,"pixels_per_inch",8)) {
+		return new DoubleValue(pixels_per_inch);
+
 	}
 	return DocumentExportConfig::dereference(extstring,len);
 }
@@ -245,15 +252,22 @@ int SvgExportConfig::assign(FieldExtPlace *ext,Value *v)
         double d;
         if (str) {
             if (!strcmp(str,"use_mesh")) {
-                d=getNumberValue(v, &isnum);
+                d = getNumberValue(v, &isnum);
                 if (!isnum) return 0;
                 use_mesh=(d==0 ? false : true);
                 return 1;
 
 			} else if (!strcmp(str,"use_powerstroke")) {
-                d=getNumberValue(v, &isnum);
+                d = getNumberValue(v, &isnum);
                 if (!isnum) return 0;
                 use_powerstroke=(d==0 ? false : true);
+                return 1;
+
+			} else if (!strcmp(str,"pixels_per_inch")) {
+                d = getNumberValue(v, &isnum);
+                if (!isnum) return 0;
+				if (d==0) return 0;
+                pixels_per_inch = d;
                 return 1;
 			}
 		}
@@ -308,6 +322,15 @@ ObjectDef* SvgExportConfig::makeObjectDef()
             0,     //flags
             NULL);//newfunc
  
+    def->push("pixels_per_inch",
+            _("Pixels per inch"),
+            _("Pixels per inch"),
+            "real",
+            NULL,   //range
+            "96", //defvalue
+            0,     //flags
+            NULL);//newfunc
+ 
 
 	stylemanager.AddObjectDef(def,0);
 	return def;
@@ -320,13 +343,15 @@ void SvgExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
 	if (what==-1) {
-		fprintf(f,"%suse_mesh %s          #whether to output meshes as svg2 meshes\n",spc,use_mesh?"yes":"no");
+		fprintf(f,"%suse_mesh %s         #whether to output meshes as svg2 meshes\n",spc,use_mesh?"yes":"no");
 		fprintf(f,"%suse_powerstroke %s  #whether to use Inkscape's powerstroke LPE with paths where appropriate\n",spc,use_powerstroke?"yes":"no");
+		fprintf(f,"%spixels_per_inch %f  #Pixels per inch. Usually 96 (css's value) is a safe bet.\n",spc,pixels_per_inch);
 		return;
 	}
 
 	fprintf(f,"%suse_mesh %s\n",spc,use_mesh?"yes":"no");
 	fprintf(f,"%suse_powerstroke %s\n",spc,use_powerstroke?"yes":"no");
+	fprintf(f,"%spixels_per_inch %.10g\n",spc,pixels_per_inch);
 }
 
 void SvgExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
@@ -340,6 +365,11 @@ void SvgExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::D
 
 		if (!strcmp(name,"use_mesh")) use_mesh=BooleanAttribute(value);
 		else if (!strcmp(name,"use_powerstroke")) use_powerstroke=BooleanAttribute(value);
+		else if (!strcmp(name,"pixels_per_inch")) {
+			double d=0;
+			DoubleAttribute(value, &d);
+			if (d!=0) pixels_per_inch = d;
+		}
 	}
 }
 
@@ -580,7 +610,7 @@ void svgStyleTagsDump(FILE *f, LineStyle *lstyle, FillStyle *fstyle)
 		else if (lstyle->joinstyle==LAXJOIN_Bevel) fprintf(f,"stroke-linejoin:bevel; ");
 
 		if (lstyle->width==0) fprintf(f,"stroke-width:.01; ");//hairline width not supported in svg
-		else if (lstyle->widthtype == 0) fprintf(f,"stroke-width:%.10g; ",lstyle->width/PPINCH);
+		else if (lstyle->widthtype == 0) fprintf(f,"stroke-width:%.10g; ",lstyle->width/DEFAULT_PPINCH);
 		else fprintf(f,"stroke-width:%.10g; ",lstyle->width);
 
 		 //dash or not
@@ -1526,6 +1556,8 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			
 	
 	 // Write out objects....
+	double PPINCH = DEFAULT_PPINCH;
+	PPINCH = out->pixels_per_inch;
 
 	 //transform to paper * conversion to left handed system, and 1/96th of an inch per unit
 	transform_set(m,PPINCH,0,0,-PPINCH, 0,0);
@@ -1705,7 +1737,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 					int units = unitm->UnitId(ptr, endptr-ptr);
 					if (units!=UNITS_None) width = unitm->Convert(width, units, UNITS_Inches, NULL);
 
-				} else width /= PPINCH; //no specified units, assume svg pts
+				} else width /= DEFAULT_PPINCH; //no specified units, assume svg pts
 
 			} else if (!strcmp(name,"height")) {
 				char *endptr=NULL;
@@ -1719,7 +1751,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 					int units = unitm->UnitId(ptr, endptr-ptr);
 					if (units!=UNITS_None) height = unitm->Convert(height, units, UNITS_Inches, NULL);
 
-				} else height /= PPINCH; //no specified units, assume svg pts
+				} else height /= DEFAULT_PPINCH; //no specified units, assume svg pts
 				
 			} else if (!strcmp(name,"viewBox")) {
 				// *** also need to look out for other transform defined on base svg level, maybe nonstandard, but sometimes it's present
@@ -2070,7 +2102,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 		}
 
 		if (top) {
-			for (int c=0; c<6; c++) g->m(c,g->m(c)/PPINCH); //correct for svg scaling
+			for (int c=0; c<6; c++) g->m(c,g->m(c)/DEFAULT_PPINCH); //correct for svg scaling
 
 			g->m(5,top-g->m(5)); //flip in page
 			g->m(2, -g->m(2));
