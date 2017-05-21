@@ -178,6 +178,8 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual const char *Id();
 	virtual const char *Id(const char *newid);
 
+	virtual int Selectable();
+
 	 //sub classes MUST redefine pointin() and FindBBox() to point to the proper things.
 	 //default is point to things particular to Groups.
 	//virtual int pointin(flatpoint pp,int pin=1);

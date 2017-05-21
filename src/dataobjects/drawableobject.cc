@@ -219,6 +219,11 @@ DrawableObject::~DrawableObject()
 	if (parent_link) delete parent_link; //don't delete parent itself.. that is a one way reference
 }
 
+int DrawableObject::Selectable()
+{
+	return (!(obj_flags&OBJ_Unselectable)) | SomeData::Selectable();
+}
+
 /*! Return object primitives that represent this object.
  *
  * For objects that belong to hot new tools, it is very difficult
@@ -849,11 +854,25 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext 
 
 	fprintf(f,"%sid %s\n",spc,Id());
 
-	
-    fprintf(f,"%sminx %.10g\n",spc,minx);
-    fprintf(f,"%smaxx %.10g\n",spc,maxx);
-    fprintf(f,"%sminy %.10g\n",spc,miny);
-    fprintf(f,"%smaxy %.10g\n",spc,maxy);
+	 //for plain group objects only, dumps out matrix, visible, selectable, locks, min/max
+	if (!strcmp(whattype(),"Group")) {
+		SomeData::dump_out(f,indent,what,context);
+		//otherwise, some of the the base somedata stuff will be in the config section
+
+	} else { 
+		 //output just the locks.. most Laxkit objects dump out their own matrix. ignoring min/max for now
+		if (visible)    fprintf(f,"%svisible\n",spc);
+		if (selectable) fprintf(f,"%sselectable\n",spc);
+		fprintf(f,"%slocks ",spc);
+		if (locks & OBJLOCK_Contents  ) fprintf(f,"contents ");
+		if (locks & OBJLOCK_Position  ) fprintf(f,"position ");
+		if (locks & OBJLOCK_Rotation  ) fprintf(f,"rotation ");
+		if (locks & OBJLOCK_Scale     ) fprintf(f,"scale ");
+		if (locks & OBJLOCK_Shear     ) fprintf(f,"shear ");
+		if (locks & OBJLOCK_Kids      ) fprintf(f,"kids ");
+		if (locks & OBJLOCK_Selectable) fprintf(f,"selectable ");
+		fprintf(f,"\n");
+	}
 
 
 	 // dump notes/meta data
@@ -974,7 +993,7 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext 
 
 	if (kids.n) {
 		fprintf(f,"%skids\n",spc);
-		dump_out_group(f,indent+2,what,context);
+		dump_out_group(f,indent+2,what,context, true);
 	}
 }
 
@@ -990,6 +1009,25 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Du
 
 		if (!strcmp(name,"id")) {
 			SomeData::Id(value);
+
+		} else if (!strcmp(name,"visible")) {
+            visible = BooleanAttribute(value);
+        } else if (!strcmp(name,"selectable")) {
+            selectable = BooleanAttribute(value);
+
+        } else if (!strcmp(name,"locks")) {
+            int n=0;
+            char **strs = splitspace(value, &n);
+            for (int c=0; c<n; c++) {
+                if      (!strcmp(strs[c],"contents"  )) locks |= OBJLOCK_Contents  ;
+                else if (!strcmp(strs[c],"position"  )) locks |= OBJLOCK_Position  ;
+                else if (!strcmp(strs[c],"rotation"  )) locks |= OBJLOCK_Rotation  ;
+                else if (!strcmp(strs[c],"scale"     )) locks |= OBJLOCK_Scale     ;
+                else if (!strcmp(strs[c],"shear"     )) locks |= OBJLOCK_Shear     ;
+                else if (!strcmp(strs[c],"kids"      )) locks |= OBJLOCK_Kids      ;
+                else if (!strcmp(strs[c],"selectable")) locks |= OBJLOCK_Selectable;
+            }
+            deletestrs(strs, n);
 
 		} else if (!strcmp(name,"iohints")) {
 			if (iohints.attributes.n) iohints.clear();
@@ -1191,7 +1229,8 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Du
 			InsertTags(value,0);
 
 		} else if (!strcmp(name,"kids")) {
-			dump_in_group_atts(att->attributes.e[c], flag,context);
+			//dump_in_group_atts(att->attributes.e[c], flag,context, false);
+			dump_in_group_atts(att->attributes.e[c], flag,context, true); //for backwards compatibility
 
 		} else if (foundconfig==0 && !strcmp(name,"config")) {
 			foundconfig=1;
@@ -1200,8 +1239,8 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Du
 		}
 	}
 
-	 //is old school group
-	if (foundconfig==-1) dump_in_group_atts(att, flag,context);
+	 //is plain group, need to grab the base somedata stuff
+	if (foundconfig==-1) SomeData::dump_in_atts(att, flag,context);
 }
 
 /*! Recursively map any unmapped anchors. Assume we are on the given page.
