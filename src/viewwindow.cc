@@ -806,17 +806,20 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 			needtodraw=1;
 			return 0;
 		}
+
 		if (i<2000) {
 			if (i==ACTION_AddNewLimbo) {
 				 //add new limbo with name such as "Limbo 3"
 				if (limbo) limbo->dec_count();
 				limbo=new Group;//group with 1 count
-				limbo->obj_flags|=OBJ_Unselectable|OBJ_Zone;
+				limbo->obj_flags |= OBJ_Unselectable|OBJ_Zone;
+				limbo->selectable = false;
 				char txt[30];
 				sprintf(txt,_("Limbo %d"),laidout->project->limbos.n()+1);
 				makestr(limbo->id,txt);
 				laidout->project->limbos.push(limbo);//adds 1 count
 				return 0;
+
 			} else if (i==ACTION_RenameCurrentLimbo) {
 				 //rename current limbo
 				app->rundialog(new InputDialog(NULL,"rename limbo",NULL,ANXWIN_CENTER,
@@ -827,6 +830,7 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 								_("Rename"), 1,
 								_("Cancel"), 0));
 				return 0;
+
 			} else if (i==ACTION_DeleteCurrentLimbo) {
 				 //remove current limbo from project, and unlink it from this viewport
 				 //***other viewports might link to the limbo. In that case, each
@@ -1859,6 +1863,21 @@ bool LaidoutViewport::IsValidContext(ObjectContext *oc)
 	return anobj==loc->obj;
 }
 
+/*! Return the object at oc, if any.
+ */ 
+SomeData *LaidoutViewport::GetObject(ObjectContext *oc)
+{
+	VObjContext *loc = dynamic_cast<VObjContext*>(oc);
+	if (!loc) return NULL;
+	anObject *anobj=getanObject(loc->context,0,-1);
+	return dynamic_cast<SomeData*>(anobj);
+}
+
+LaxInterfaces::ObjectContext *LaidoutViewport::CurrentContext()
+{
+	return dynamic_cast<ObjectContext*>(&curobj);
+}
+
 /*! Return the number of contexts that were updated or removed.
  */
 int LaidoutViewport::UpdateSelection(Selection *sel)
@@ -2426,7 +2445,7 @@ void LaidoutViewport::Center(int w)
 		return;
 
 	} else if (w==3) { // center curobj
-		if (!curobj.obj) return;
+		if (!curobj.obj) { Center(1); return; }
 		double m[6];
 		transformToContext(m,curobj.context,0,curobj.context.n()-1);
 		dp->Center(m,curobj.obj);
@@ -2442,6 +2461,7 @@ int LaidoutViewport::init()
 	if (!limbo) {
 		limbo=new Group;//group with 1 count
 		limbo->obj_flags|=OBJ_Unselectable|OBJ_Zone;
+		limbo->selectable = false;
 		char txt[30];
 		sprintf(txt,_("Limbo %d"),laidout->project->limbos.n()+1);
 		makestr(limbo->id,txt);
@@ -2799,7 +2819,7 @@ Laxkit::ShortcutHandler *LaidoutViewport::GetShortcuts()
 	sc->AddShortcut(LAX_Tab,ShiftMask,0, VIEWPORT_PreviousObject); //(like inkscape)
 			 
 	sc->Add(LOV_DeselectAll,    'A',ShiftMask|ControlMask,0, _("DeselectAll"), _("Deselect all"),NULL,0);
-	sc->Add(LOV_CenterDrawing,  '4',0,0,        _("CenterDrawing"),  _("Center drawing"),NULL,0);
+	sc->Add(LOV_CenterDrawing,  '6',0,0,        _("CenterDrawing"),  _("Center drawing"),NULL,0);
 	sc->AddShortcut(' ',0,0, LOV_CenterDrawing);
 	sc->Add(VIEWPORT_Center_Object,'4',0,0,     _("CenterObject"),   _("Center on current object"),NULL,0);
 	sc->Add(LOV_ZoomToPage,     '5',0,0,        _("ZoomToPage"),     _("Zoom to the current page"),NULL,0);
