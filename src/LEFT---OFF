@@ -17,6 +17,8 @@ shearing or scaling produces null axes occasionally when crossing over opposite 
 
 bug: page progress popup is wrong place, and mouse maps at wrong scale
 
+bug: select path tool. one point. escape. delete. boom!
+
 ------------ other bugs:
 
 saved file, not showing up in recent
@@ -156,10 +158,14 @@ need to implement DRAW_Hires for all interfaces that default to preview renders.
   includes at least image(done), path, engraver
 
 text on path textonpath: TextOnPath
-  select font, key up/down scrolls uncomfortably
-  need to center balance on path
+  envelope:
+    vertical position bad
+	horizontal spacing a bit wonky
+  select font, key up/down scrolls uncomfortably SOMETIMES!!
   svg out bad
   need kern control
+  doesn't handle transforms with nested objects properly
+  dragging size handle with shift|control does not scale properly
 
   bug: drag the baseline handle off to the sides, makes huge bad jumps in value
   bug: draggin the offest handle sometimes jumps to really bad
@@ -169,6 +175,12 @@ text on path textonpath: TextOnPath
   convert to path: not respecting transform, putting upside down(done)
   kern handles
   test exporters: svg scribus pdf
+
+  DONE not remapping envelope on load in
+  DONE during path edit shouldn't show the other controls like font scale
+  DONE need to center balance on path
+  DONE click off, creates new one, click back to old, has wrong path
+
   ----0.098:
   mouse click to position caret
   need to do proper coordinate finding for mouseposition when paste into a nested group
@@ -690,10 +702,19 @@ ObjectIndicator objectindicator:
   show (root) at bottom of stack
 
 voronoi Voronoi delauney Delauney:
+  is double rendering when object is selected
   importing raw points or data without matrix should map so that it all appears on screen
-  intersect with page bounds? or other custom boundary?
+  intersect with page bounds? or other custom boundary? default bounding box + padding?
   implement show_points
   implement as extension for delauney/voronoi interface
+  right click
+    start new object
+	toggle delauney lines
+	toggle voronoi lines
+	toggle points
+  merge different voronoi objects
+  sample point color from background?
+  less than three points doesn't remap rationally, need to update extra lines to something proper
 
 FileDialog filedialog:
   when something is not openable or saveable, buttons should be greyed out

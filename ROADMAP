@@ -8,6 +8,7 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 VERSION 0.097
 -------------
 (done) debug previous version at least slightly!
+(done) experimental Delauny/voronoi lines tool
        engraver tool grow point mode
        engraver tool, resolution cut mode
        engraver tool, blockout needs to be more precise
