@@ -39,7 +39,7 @@ print HFILE << "END";
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2015 by Tom Lechner
+// Copyright (C) 2017 by Tom Lechner
 //
 //
 #ifndef $NAME_H
@@ -59,9 +59,11 @@ class $Name : public Laxkit::anObject, public LaxFiles::DumpUtility
   public:
 	$Name();
 	virtual ~$Name();
+	const char *whattype() { return "$Name"; }
 
 	 //i/o
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 
@@ -94,7 +96,7 @@ print CCFILE << "END";
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2015 by Tom Lechner
+// Copyright (C) 2017 by Tom Lechner
 //
 //
 
@@ -117,11 +119,49 @@ $Name\:\:~$Name()
 }
 
 void $Name\:\:dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
-{
+{ ***
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+
+	if (what==-1) {
+		fprintf(f,"%sAField value #comment\n",spc);
+		return;
+	}
+						
+	fprintf(f,"%sAField %d\n",spc, value);
+
+	-------- OR:  piggy back on dump_out_atts() ------------
+
+	LaxFiles::Attribute att;
+	dump_out_atts(&att,what,savecontext);
+	att.dump_out(f,indent);
+}
+
+LaxFiles::Attribute *$Name\:\:dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
+{ ***
+	if (what==-1) {
+		if (!att) att = new Attribute;
+
+		return att;
+	}
+
+	if (!att) att = new Attribute;
+
+	return att;
 }
 
 void $Name\:\:dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
-{
+{ ***
+	char *name;
+    char *value;
+
+    for (int c=0; c<att->attributes.n; c++) {
+        name= att->attributes.e[c]->name;
+        value=att->attributes.e[c]->value;
+
+        if (!strcmp(name,"AField")) {
+			*** //do stuff
+		}
+	} 
 }
 
 

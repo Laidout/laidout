@@ -53,6 +53,7 @@ class VObjContext : public LaxInterfaces::ObjectContext
 
 	virtual void push(int i,int where=-1);
 	virtual int pop(int where=-1);
+	virtual int level()  { if (obj) return context.n()-2; else return context.n()-1; }
 	
 	virtual int spread() { return context.e(0); }
 	virtual int spreadpage() { if (context.e(0)==1 && context.e(1)==0) return context.e(2); else return -1; }
@@ -60,7 +61,6 @@ class VObjContext : public LaxInterfaces::ObjectContext
 	virtual int layeri() { if (context.n()>4 && context.e(0)==1) return context.e(4); else return -1; }
 	virtual int limboi() { if (context.n()>1 && context.e(0)==0) return context.e(1); else return -1; }
 	virtual int paperi() { if (context.n()>1 && context.e(0)==2) return context.e(1); else return -1; }
-	virtual int level()  { if (obj) return context.n()-2; else return context.n()-1; }
 };
 
 //------------------------------- LaidoutViewport ---------------------------
@@ -91,10 +91,11 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	virtual void transformToContext(double *m,FieldPlace &place,int invert, int depth);
 
 	virtual int PerformAction(int action);
- public:
+
+  public:
 	 //*** maybe these should be protected?
 	char *pageviewlabel;
-	
+
 	 // these all have to refer to proper values in each other!
 	Document *doc;
 	Spread *spread;
@@ -106,7 +107,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 
 	int current_edit_area;
 	Laxkit::LaxImage *edit_area_icon;
-	
+
 	LaidoutViewport(Document *newdoc);
 	virtual ~LaidoutViewport();
 	virtual const char *whattype() { return "LaidoutViewport"; }
@@ -155,7 +156,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	virtual void ClearSearch();
 	virtual int ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc);
 	virtual int ChangeContext(LaxInterfaces::ObjectContext *oc);
-	
+
 	virtual const char *SetViewMode(int m,int page);
 	virtual int ViewMode(int *page);
 	virtual int PlopData(LaxInterfaces::SomeData *ndata,char nearmouse=0);
@@ -166,6 +167,8 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	virtual int MoveObject(LaxInterfaces::ObjectContext *from, LaxInterfaces::ObjectContext *to);
 	virtual int CirculateInLayer(int dir, int i,int objOrSelection);
 	virtual bool IsValidContext(LaxInterfaces::ObjectContext *oc);
+	virtual LaxInterfaces::SomeData *GetObject(LaxInterfaces::ObjectContext *oc);
+	virtual LaxInterfaces::ObjectContext *CurrentContext();
 	virtual int UpdateSelection(LaxInterfaces::Selection *sel);
 	virtual int wipeContext();
 	virtual void clearCurobj();

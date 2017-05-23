@@ -147,6 +147,15 @@ Value *LImageData::dereference(const char *extstring, int len)
 		return new DoubleValue(maxy);
 	}
 
+	if (extequal(extstring,len, "depth")) {
+		return new IntValue(8);
+	}
+
+	//if (extequal(extstring,len, "channels")) {
+	//if (extequal(extstring,len, "importer")) {
+	//if (extequal(extstring,len, "ColorSpace")) {
+	//if (extequal(extstring,len, "HasAlpha")) {
+
 	return NULL;
 }
 

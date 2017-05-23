@@ -24,6 +24,7 @@ VERSION 0.097
        double click on group should change selection area to group contents like inkscape?
 (done) Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
        debug svg in
+       svg out default to 96dpi
 (done) fix tooltips
 
 
