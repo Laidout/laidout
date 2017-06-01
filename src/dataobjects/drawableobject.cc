@@ -1016,6 +1016,8 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Du
             selectable = BooleanAttribute(value);
 
         } else if (!strcmp(name,"locks")) {
+			if (isblank(value)) continue;
+
             int n=0;
             char **strs = splitspace(value, &n);
             for (int c=0; c<n; c++) {
