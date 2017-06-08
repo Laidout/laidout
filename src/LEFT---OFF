@@ -34,6 +34,7 @@ text window controls have difficulties
   (see PlainTextWindow below for feature plans instead of bugs)
 
 saving window positions doesn't take into account window decorations, makes pos slide downward each time
+  _NET_FRAME_EXTENTS? _KDE_NET_WM_FRAME_STRUT?
 
 evince on ubuntu 14.04, pdf export won't load, says Syntax Error... Dictionary key must be a name object
 
@@ -327,10 +328,10 @@ engraving tool: Engraving  engraver
   stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
 
 PathInterface: pathinterface
-  deleting points totally screws placement of weight nodes
+  bug: seems to be possible to move nodes out of order
+  bug: add point before beginning not spacing weight nodes properly
   bug: should not create new control points by pressing cntl, unless there is movement
   bug: shift click down then up on a point selects then deselects.. control can toggle
-  bug: seems to be possible to move nodes out of order
   bug: problems for non-bez-controlled corners at endpoint. Also variable offset causes weird connections
   bug: make new line with freehand tool, cannot move weight nodes in a rational way
   bug: applyoffset, the bez part at joins is messed up when no offset, suspect problem in FlatpointToCoordinate, mismatch with bez join next to sample points
@@ -341,7 +342,10 @@ PathInterface: pathinterface
   need to show hints for when new points will be placed
   debug remove points affect on weight nodes
   dup path object links the path style, but save and load, it is not linked... need to sort out line/fill style inheritance/linking
+  toggle send color to fill/stroke should update the color box
 
+  DONE deleting points totally screws placement of weight nodes
+    DONE if at endpoint, need to delete any out of bounds, but also insert a new one right at the tip
   DONE bug: drag point, press i or I while dragging, moves all points or crashes
   DONE bug: select all in subpath (shift A) does not appear to select from proper subpath all the time
   DONE bug: menuoption start new subpath does not start one!
@@ -350,6 +354,12 @@ PathInterface: pathinterface
   DONE bug: line cache on a square produces inf. lines off when final+initial coincide 
   DONE select nodes with rectangle broken? <- no, just drawing really thin, misplaced LineWidthScreen
 
+  --0.098:
+  need a way to work on multiple weight nodes:
+    shift all
+	width multiply all
+	set width
+  need input boxes for weight node info
   zero tips not working on mesh edit? with import test-engrave.laidout
   debug cache sample point distribution, the interpolator is really bad as is
   powerstroke export requires apply offset.. else weight nodes are all messed up
