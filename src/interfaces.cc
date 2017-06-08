@@ -125,10 +125,10 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		i->dec_count();
 
 		 //------Ellipse
-		//i=new EllipseInterface(NULL,id++,NULL);
-		//tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
-		//existingpool->push(i);
-		//i->dec_count();
+		i=new EllipseInterface(NULL,id++,NULL);
+		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+		existingpool->push(i);
+		i->dec_count();
 
 		 //------Delauney
 		i=new DelauneyInterface(NULL,id++,NULL);
