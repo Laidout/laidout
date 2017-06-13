@@ -328,22 +328,16 @@ engraving tool: Engraving  engraver
   stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
 
 PathInterface: pathinterface
-  bug: seems to be possible to move nodes out of order
-  bug: add point before beginning not spacing weight nodes properly
-  bug: should not create new control points by pressing cntl, unless there is movement
+  bug: seems to be possible to move nodes out of order, only occassionally
   bug: shift click down then up on a point selects then deselects.. control can toggle
   bug: problems for non-bez-controlled corners at endpoint. Also variable offset causes weird connections
-  bug: make new line with freehand tool, cannot move weight nodes in a rational way
   bug: applyoffset, the bez part at joins is messed up when no offset, suspect problem in FlatpointToCoordinate, mismatch with bez join next to sample points
-  bug: now node scan and display works, but drag doesn't!!
   bug: delete last weight node, width is wrong
-  compound paths, change width only changes one. no way to affect all
-  needs input boxes for width nodes
-  need to show hints for when new points will be placed
-  debug remove points affect on weight nodes
-  dup path object links the path style, but save and load, it is not linked... need to sort out line/fill style inheritance/linking
-  toggle send color to fill/stroke should update the color box
 
+  DONE bug: now node scan and display works, but drag doesn't!!
+  DONE toggle send color to fill/stroke should update the color box
+  DONE debug remove points affect on weight nodes
+  DONE bug: add point before beginning not spacing weight nodes properly
   DONE deleting points totally screws placement of weight nodes
     DONE if at endpoint, need to delete any out of bounds, but also insert a new one right at the tip
   DONE bug: drag point, press i or I while dragging, moves all points or crashes
@@ -355,6 +349,12 @@ PathInterface: pathinterface
   DONE select nodes with rectangle broken? <- no, just drawing really thin, misplaced LineWidthScreen
 
   --0.098:
+  bug: make new line with freehand tool, cannot move weight nodes in a rational way
+  bug: should not create new control points by pressing cntl, unless there is movement
+  need to show hints for when new points will be placed
+  dup path object links the path style, but save and load, it is not linked... need to sort out line/fill style inheritance/linking
+  needs input boxes for width nodes
+  compound paths, change width only changes one. no way to affect all
   need a way to work on multiple weight nodes:
     shift all
 	width multiply all
@@ -410,7 +410,6 @@ PathInterface: pathinterface
   have a widthtype == hairline? use width==0 as no stroke
 
 layers palette Layers
-  should have document list at top, showing current doc
   key controls for navigation within menu:
     space/enter toggle open and closed submenu
   edit colors not highlighting every other
@@ -420,6 +419,8 @@ layers palette Layers
   locked
   visible
   selectable
+
+  should have document list at top, showing current doc
 
 file filters: filefilters:
   ---0.098:
@@ -730,6 +731,8 @@ voronoi Voronoi delauney Delauney:
   less than three points doesn't remap rationally, need to update extra lines to something proper
 
 FileDialog filedialog:
+  focus should start on file line
+  ^l should shift focus to file line
   when something is not openable or saveable, buttons should be greyed out
   should probably have a scroll bar
   implement icon list selector
