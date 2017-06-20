@@ -174,7 +174,7 @@ ObjectDef *ImageGsExportFilter::GetObjectDef()
 	styledef=makeObjectDef();
 	makestr(styledef->name,"ImageGsExportConfig");
 	makestr(styledef->Name,_("Image Export Configuration"));
-	makestr(styledef->description,_("Configuration to export a document to a png."));
+	makestr(styledef->description,_("Configuration to export a document to a png using Ghostscript."));
 	styledef->newfunc=newImageGsExportConfig;
 	styledef->stylefunc=createImageGsExportConfig;
 
