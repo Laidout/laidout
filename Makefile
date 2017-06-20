@@ -105,6 +105,7 @@ touchdepends:
 	touch src/printing/makedepend
 	touch src/api/makedepend
 	touch src/polyptych/src/makedepend
+	touch src/plugins/makedepend
 
 dist-clean: clean
 	rm -f Makefile-toinclude config.log src/version.h src/configured.h
