@@ -137,6 +137,10 @@ if [ xxx$FINALPREFIX == xxx ] ; then FINALPREFIX=$PREFIX; fi
 
 # do check for required libraries:
 
+ ## todo:
+ ##   to make this actually useful, sometimes need to do a version check, or override the default link.
+ ##   so, each lib needs [libname, minimum version, linking text]
+ ##
  ## The stuff in NEED can be checked with pkg-config. Not all libraries
  ## can be checked this way! (notably cups, apparently)
 NEED='x11 xext freetype2 libssl imlib2 cairo harfbuzz'
@@ -179,6 +183,15 @@ for NAME in $OPTIONAL; do
 done
 
 
+ ## readline doesn't seem to have a pkg-config entry, so do this hackier check
+echo -n Checking for readline......;
+#---attempt 3, check for existence of cups-config program:
+if [ ! -e /usr/local/include/readline/readline.h -a \
+	 ! -e /usr/include/readline/readline.h  ] ; then 
+    echo "You need to install the development package of libreadline."; 
+    NUM="";
+else echo "ok";
+fi
 
  ## cups doesn't seem to have a pkg-config entry, so do this hackier check
 echo -n Checking for cups......;
