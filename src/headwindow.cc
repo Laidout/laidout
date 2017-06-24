@@ -298,7 +298,10 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 	AddWindowType("CommandWindow","Command Prompt",0,newCommandWindowFunc,0);
 	AddWindowType("PaletteWindow","Palette",PALW_DBCLK_TO_LOAD,newPaletteWindowFunc,0);
 	AddWindowType("PlainTextWindow","Text Editor",0,newPlainTextWindowFunc,0);
-	AddWindowType("ObjectTreeWindow","Layers",0,newObjectTreeWindowFunc,0);
+
+	if (laidout->experimental) 
+		AddWindowType("ObjectTreeWindow","Layers",0,newObjectTreeWindowFunc,0);
+
 	//AddWindowType("ColorSliders","Color picker",0,newColorSlidersFunc,0);
 	//AddWindowType("HedronWindow","Polyhedron Unwrapper",0,newHedronWindowFunc,0);
 	//AddWindowType("ButtonBox","Buttons",
