@@ -17,7 +17,7 @@
 
 
 SCRIBUSUTF8NEW   #Wraps up the whole enchilada
-  Version  # "1.4"
+  Version  # "1.4.6"
   elements:
     DOCUMENT
       AUTOL         #Automatic line spacing percentage, where 100==100%
@@ -47,7 +47,7 @@ SCRIBUSUTF8NEW   #Wraps up the whole enchilada
       BORDERRIGHT   #Default right margin of a page
       BORDERTOP     #Default top margin of a page
       COMMENTS      #Comments for the Doc
-      CPICT 
+      CPICT         #Image fill color name
       currentProfile 
       DCOL          #(optional) Number of Columns in Textframes
       DFONT         #Default Font
@@ -88,14 +88,14 @@ SCRIBUSUTF8NEW   #Wraps up the whole enchilada
       DSIZE   #Default Fontsize
       FIRSTLEFT   #(optional) First page is a left page when this attribute is present
       FIRSTNUM   #(optional) First page number in the Doc
-      DPInCMYK 
-      EmbeddedPath 
+      DPInCMYK     #Default image cmyk profile
+      EmbeddedPath #Whether to use embedded paths in image filenames
       EndArrow 
       GROUPC   #(optional) Counter for Groups in the Doc
       GUIDELOCK   #(optional) Guides locked 0 = off, 1 = on
       GRAB 
-      GuideC 
-      GUIDELOCK 
+      GuideC    #Guide color name
+      GUIDELOCK #Whether to lock the guide
       GuideRad 
       GuideZ 
       HCMS   #(optional) Colormanagement available 0 = off, 1 = on
@@ -182,19 +182,20 @@ SCRIBUSUTF8NEW   #Wraps up the whole enchilada
         CheckProfile  #(one or more)
           Name               #Name of the profile
           ignoreErrors       #Whether to ignore errors
-          ignoreOffErrors
           autoCheck          #Whether automatically check as you go, not just at specific times
-          checkTransparency  #Whether to check for use of transparency
+          checkGlyphs 
+          checkOrphans 
+          checkOverflow      #whether to check for text overflowing its frames
+          checkPictures 
           checkResolution    #Whether to check for resolution
+          checkTransparency  #Whether to check for use of transparency (1 or 0)
           minResolution      #Minimum resolution
           maxResolution      #Maximum resolution
-          checkOverflow      #whether to check for text overflowing its frames
+          checkAnnotations 
           checkRasterPDF 
           checkForGIF        #Check for any GIF images
-          checkGlyphs 
-          checkAnnotations 
-          checkPictures 
-          checkOrphans 
+          ignoreOffErrors
+          checkOffConflictLayers
         COLOR      #(zero or more)
           NAME     #Name of the Colour
           CMYK     #Value as hexadecimal String, such as "#22bb77ee"
