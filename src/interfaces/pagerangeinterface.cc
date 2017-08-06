@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2011 by Tom Lechner
+// Copyright (C) 2011-2017 by Tom Lechner
 //
 
 
@@ -43,16 +43,6 @@ namespace Laidout {
 #define FUDGE 5.0
 
 
-// 0:4             4:1           6:1              doc.n-1
-// |iv,iii,ii...---|1,2,3...-----|A-1 ... A-10--|
-// ^pos
-//
-// double xscale,yscale;
-// flatpoint offset;
-
-
-
-
 
 
 //------------------------------------- PageRangeInterface --------------------------------------
@@ -75,8 +65,8 @@ namespace Laidout {
 PageRangeInterface::PageRangeInterface(int nid,Displayer *ndp,Document *ndoc)
 	: anInterface(nid,ndp) 
 {
-	xscale=1;
-	yscale=1;
+	panelwidth=1;
+	panelheight=1;
 
 	currange=0;
 	hover_part=-1;
@@ -99,8 +89,8 @@ PageRangeInterface::PageRangeInterface(int nid,Displayer *ndp,Document *ndoc)
 PageRangeInterface::PageRangeInterface(anInterface *nowner,int nid,Displayer *ndp)
 	: anInterface(nowner,nid,ndp) 
 {
-	xscale=1;
-	yscale=1;
+	panelwidth=1;
+	panelheight=1;
 
 	currange=0;
 	hover_part=-1;
@@ -176,11 +166,12 @@ char *PageRangeInterface::LabelPreview(PageRange *rangeobj,int first,int labelty
 	return str;
 }
 
+
+//menu ids
 #define RANGE_Custom_Base   10000
 #define RANGE_Reverse       10001
 #define RANGE_Delete        10002
 #define RANGE_NumberType    10003
-
 
 /*! \todo much of this here will change in future versions as more of the possible
  *    boxes are implemented.
@@ -336,8 +327,8 @@ int PageRangeInterface::InterfaceOn()
 {
 	DBG cerr <<"pagerangeinterfaceOn()"<<endl;
 
-	yscale=50;
-	xscale=dp->Maxx-dp->Minx-2*PAD;
+	panelheight=50;
+	panelwidth=dp->Maxx-dp->Minx-2*PAD;
 	//if (!doc) UseThisDocument(doc);
 
 	showdecs=2;
@@ -355,13 +346,11 @@ int PageRangeInterface::InterfaceOff()
 
 void PageRangeInterface::Clear(SomeData *d)
 {
-	//yscale=50;
-	//xscale=dp->Maxx-dp->Minx-2*PAD;
+	//panelheight=50;
+	//panelwidth=dp->Maxx-dp->Minx-2*PAD;
 	//offset=-flatpoint(dp->Minx+PAD,dp->Maxy-PAD);
 }
 
-/*! Draws maybebox if any, then DrawGroup() with the current papergroup.
- */
 int PageRangeInterface::Refresh()
 {
 	if (!needtodraw) return 0;
@@ -370,8 +359,8 @@ int PageRangeInterface::Refresh()
 
 	if (firsttime) {
 		firsttime=0;
-		yscale=50;
-		xscale=dp->Maxx-dp->Minx-2*PAD;
+		panelheight=50;
+		panelwidth=dp->Maxx-dp->Minx-2*PAD;
 		offset=-flatpoint(dp->Minx+PAD,dp->Maxy-PAD);
 	}
 
@@ -380,43 +369,43 @@ int PageRangeInterface::Refresh()
 	dp->DrawScreen();
 	dp->LineAttributes(1,LineSolid,CapButt,JoinMiter);
 
-	double h=yscale;
+	double h = panelheight;
 	flatpoint o;
-	o-=offset;
-	o.y-=h;
+	o -= offset;
+	o.y -= h;
 
 	 //draw blocks
 	for (int c=0; c<(doc->pageranges.n?doc->pageranges.n:1); c++) {
-		if (doc->pageranges.n) drawBox(doc->pageranges.e[c],(hover_range==c?1:0));
+		if (doc->pageranges.n) drawBox(doc->pageranges.e[c], (hover_range==c ? 1 : 0));
 		else {
 			PageRange r(NULL,"#",Numbers_Arabic,0,doc->pages.n-1,1,0);
 			drawBox(&r,(hover_range==c?1:0));
 		}
 	}
 
-	 //draw green position
-	if (hover_part==PART_Position) {
+	 //draw green position bar
+	if (hover_part == PART_Position) {
 		double pos=0;
 		if (buttondown.isdown(0,LEFTBUTTON)) {
-			if (temp_range_l) { drawBox(temp_range_l,0); pos=temp_range_l->end/(double)doc->pages.n; }
+			if (temp_range_l) { drawBox(temp_range_l,0); pos=temp_range_l->end  /(double)doc->pages.n; }
 			if (temp_range_r) { drawBox(temp_range_r,0); pos=temp_range_r->start/(double)doc->pages.n; }
 		} else {
 			if (doc->pageranges.n) {
 				if (hover_position<doc->pageranges.n)
-					pos=doc->pageranges.e[hover_position]->start/(double)doc->pages.n;
-				else pos=1;
-			} else if (hover_position) pos=1;
+					pos = doc->pageranges.e[hover_position]->start/(double)doc->pages.n;
+				else pos = 1;
+			} else if (hover_position) pos = 1;
 		}
 
 		dp->NewFG(0.,1.,0.);
-		o.x=-offset.x + xscale*pos;
+		o.x=-offset.x + panelwidth*pos;
 		o.y=-offset.y-h;
 		dp->drawrectangle(o.x-FUDGE/2,o.y, FUDGE,h, 1);
 	}
 
-	if (hover_part==PART_Index) {
+	if (hover_part == PART_Index) {
 		dp->NewFG(1.,0.,0.);
-		o.x=-offset.x + xscale*((double)hover_index/doc->pages.n);
+		o.x=-offset.x + panelwidth*((double)hover_index/doc->pages.n);
 		o.y=-offset.y-h;
 		dp->drawrectangle(o.x-FUDGE/2,o.y, FUDGE,h, 1);
 	}
@@ -427,30 +416,33 @@ int PageRangeInterface::Refresh()
 	return 1;
 }
 
-//! Return a number in range [0..1] corresponding to page positions [0..doc->pages.n]
-double PageRangeInterface::position(int pagenumber)
-{
-	if (!doc) return 0;
-	return pagenumber/(double)doc->pages.n;
-}
-
 //! Draw a whole box for r, outline, text, and all.
+/*! <pre>
+ *    0:4             4:1           6:1              doc.n-1
+ *   |iv,iii,ii...---|1,2,3...-----|A-1 ... A-10--|
+ *  ^pos
+ * 
+ *   --placement on screen from:
+ *  double panelwidth,panelheight;
+ *  flatpoint offset;
+ *  </pre>
+ */
 void PageRangeInterface::drawBox(PageRange *r, int includehover)
 {
 	if (!r) return;
-	double w,h=yscale;
-	flatpoint o;
-	o-=offset;
-	o.y-=h;
+	double w, h = panelheight;
+	flatpoint o(-offset.x, -offset.y-h);
+	//o -= offset;
+	//o.y -= h;
 
 	 //draw blocks
 	char *str=NULL;
 	char sstr[30];
 	int s,e,f, th=dp->textheight();
 
-	w=xscale*(double)(r->end-r->start+1)/doc->pages.n;
-	if (w==0 || r->end<r->start) return;
-	o.x+=xscale*(double)r->start/doc->pages.n;
+	w = panelwidth*(double)(r->end-r->start+1)/doc->pages.n;
+	if (w == 0 || r->end<r->start) return;
+	o.x += panelwidth*(double)r->start/doc->pages.n;
 
 	DBG cerr<<"PageRange interface drawing rect "<<o.x<<','<<o.y<<" "<<w<<"x"<<h<<"  offset:"<<offset.x<<','<<offset.y<<endl;
 
@@ -472,16 +464,19 @@ void PageRangeInterface::drawBox(PageRange *r, int includehover)
 	}
 
 	 //draw black outline around area
-	dp->NewFG((unsigned long)0);
+	//dp->NewFG(0.,0.,0.);
+	dp->NewFG(coloravg(defaultfg, defaultbg, .5));
 	dp->drawrectangle(o.x,o.y, w,h, 0);
+	//dp->drawline(o.x,o.y, o.x+w,o.y+h);
 
-	str=LabelPreview(r,-1,Numbers_Default);
+	dp->NewFG(defaultfg);
+	str = LabelPreview(r,-1,Numbers_Default);
 	dp->textout(o.x,o.y+h*3/4, str,-1, LAX_LEFT|LAX_VCENTER);
 	delete[] str;
 
-	s=r->start;
-	e=r->end;
-	f=r->first;
+	s = r->start;
+	e = r->end;
+	f = r->first;
 
 	 //draw range numbers
 	 //start - end 
@@ -492,6 +487,13 @@ void PageRangeInterface::drawBox(PageRange *r, int includehover)
 	dp->textout(o.x+w/2,o.y+h/4, sstr,-1, LAX_HCENTER|LAX_VCENTER);
 	if (s-e==0) sprintf(sstr,"%d",f); else sprintf(sstr,"%d-%d",f,f+e-s);
 	dp->textout(o.x+w/2+th/2,o.y+h/4, sstr,-1, LAX_LEFT|LAX_VCENTER);
+}
+
+//! Return a number in range [0..1] corresponding to page positions [0..doc->pages.n]
+double PageRangeInterface::position(int pagenumber)
+{
+	if (!doc) return 0;
+	return pagenumber/(double)doc->pages.n;
 }
 
 //! Return various info about the mouse position.
@@ -516,9 +518,9 @@ int PageRangeInterface::scan(int x,int y, int *position, int *range, int *part, 
 
 	flatpoint fp(x,y);
 	fp+=offset;
-	fp.x/=xscale; 
-	fp.y/=-yscale; //now fp in range 0..1
-	double fudge=FUDGE/xscale;
+	fp.x/=panelwidth; 
+	fp.y/=-panelheight; //now fp in range 0..1
+	double fudge=FUDGE/panelwidth;
 	DBG cerr <<"x,y="<<x<<","<<y<<"  pos="<<fp.x<<","<<fp.y<<"  offset="<<offset.x<<","<<offset.y<<endl;
 
 	if (fp.y<0 || fp.y>1) return 0;
@@ -688,7 +690,7 @@ int PageRangeInterface::WheelUp(int x,int y,unsigned int state,int count,const L
 {
 	if ((state&LAX_STATE_MASK)==ControlMask) {
 		if (!scan(x,y, NULL,NULL,NULL,NULL)) return 1;
-		xscale*=1.2;
+		panelwidth*=1.2;
 		offset.x=1.2*(x+offset.x)-x;
 		//offset.y=1.2*(y+offset.y)-y;
 		needtodraw=1;
@@ -725,7 +727,7 @@ int PageRangeInterface::WheelDown(int x,int y,unsigned int state,int count,const
 {
 	if ((state&LAX_STATE_MASK)==ControlMask) {
 		if (!scan(x,y, NULL,NULL,NULL,NULL)) return 1;
-		xscale/=1.2;
+		panelwidth/=1.2;
 		offset.x=1/1.2*(x+offset.x)-x;
 		//offset.y=1/1.2*(y+offset.y)-y;
 		needtodraw=1;
@@ -887,10 +889,10 @@ int PageRangeInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 	} else if (ch=='9' && (state&LAX_STATE_MASK)==0) {
 
 	} else if (ch==' ' && (state&LAX_STATE_MASK)==0) {
-		yscale=50;
-		xscale=dp->Maxx-dp->Minx-2*PAD;
-		offset=-flatpoint(dp->Minx+PAD,dp->Maxy-PAD);
-		needtodraw=1;
+		panelheight = 50;
+		panelwidth  = dp->Maxx-dp->Minx-2*PAD;
+		offset = -flatpoint(dp->Minx+PAD,dp->Maxy-PAD);
+		needtodraw = 1;
 		return 0;
 	}
 
