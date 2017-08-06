@@ -395,7 +395,7 @@ int LaidoutApp::Autosave()
 			}
 		}
 
-		status=doc->SaveACopy(fname, true,true,log);
+		status=doc->SaveACopy(fname, true,true,log, false);
 
 		if (status==0) {
 			cerr <<" .... autosaved to: "<<fname<<endl;
