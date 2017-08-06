@@ -19,8 +19,6 @@ bug: press 4, wtf?? should zoom to current object
 
 bug: page progress popup is wrong place, and mouse maps at wrong scale
 
-bug: select path tool. one point. escape. delete. boom!
-
 ------------ other bugs:
 
 saved file, not showing up in recent
@@ -140,9 +138,28 @@ DONE update help page
 DONE put rss/g+ links on all menu pages.. 
 
 
+from big import:
+  spread editor:
+    select all for current marker type
+	arrange in rows at current scale not scaling and placing correctly
+	crash during thumbnail generation if you delete pages while there are still some to render
+  should be able to save from any place
+  delete discontinous range of pages doesn't delete all sometimes
+  undo extremely necessary
+  thumbs refreshing a lot unnecessarily
+  DONE recently-used.xbel showing multiple: <bookmark:group>Laidout</bookmark:group>
+  DONE no recent in open!!
+  DONE? crash on rearrange sometimes: page range getting out of sync
+  DONE should not register autosaves as recent
+  selecting ranges
+  you can't control unclick selected directories
+  for images, need edit image feature, with watch for changes, or "reload image"
+  image dialog, select new image, hangs on imlib complain about null image
+  export to range has bad initial upper value
+
 from recent import:
   export directory should default to last loaded file
-  large images all being loaded in, need way to ask about creating proxy images
+  large images all being loaded in, need way to ask about creating proxy images. only img info is supposed to be read in until img data is actually needed
   need better ui for selecting templates
   load in autosave should ask if you want to save as the original
   spread editor needs edge dragging
@@ -1236,7 +1253,8 @@ improve split window
   debug mouse cursor change when over gap
   simplify pane customization, docking
 
-signature editor  Signature editor Signature Editor
+signature editor  Signature editor Signature Editor signaturei
+  making new paper size should try to find matching paper name for a given size
   fold replay should start showing FRONT page of stack, not back. THIS IS A BUG
     if start from whichever, should show inverse of folds to normal as necessary
   scale pages preview needs to use margin area, not page area
@@ -1740,4 +1758,6 @@ DONE captioninterface
   DONE needs line spacing slider
   DONE baseline justify
     DONE needs hint to preserve baseline align when changing font size or line spacing
+DONE page range tool in spread view not showing text
+DONE bug: select path tool. one point. escape. delete. boom!
 
