@@ -2718,6 +2718,7 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 			return 0;
 
 		} else if (onoverlay>=SP_FOLDS) {
+			 //drag on the fold stack indicator
 			if (ly-y==0) return 0; //return if not moved vertically
 
 			int startindicator,lasty;
