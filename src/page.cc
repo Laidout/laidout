@@ -824,7 +824,7 @@ void Page::Touch(clock_t at_time)
 ImageData *Page::Thumbnail()
 {
 	if (!pagestyle) return NULL;
-	if (thumbmodtime>modtime) return thumbnail;
+	if (thumbmodtime > modtime && thumbmodtime > layers.modtime) return thumbnail;
 
 	DoubleBBox bbox;
 	if (pagestyle->outline) bbox=*(pagestyle->outline);
@@ -878,7 +878,8 @@ ImageData *Page::Thumbnail()
 	//DBG save_image(img, "DBG.png", "png");
 
 	DBG cerr <<"==--- Done Page::updating thumbnail.."<<endl;
-	thumbmodtime=times(NULL);
+	thumbmodtime = times(NULL);
+
 
 	dp->EndDrawing();
 	dp->dec_count();
