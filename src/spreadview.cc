@@ -733,10 +733,14 @@ void SpreadView::ArrangeSpreads(Displayer *dp,int how)//how==-1
 		perrow=(int)(spreads.n/r);
 		if (perrow==0) perrow=1;
 		//perrow=int(sqrt((double)spreads.n)+1); //put within a square
-	} else if (towhat==Arrange1Column) perrow=1;
-	else if (towhat==ArrangeRows) {
+
+	} else if (towhat==Arrange1Column) {
+		perrow=1;
+
+	} else if (towhat==ArrangeRows) {
 		perrow=(dp->Maxx-dp->Minx)/(bbox.maxx-bbox.minx)/dp->Getmag();
 		if (perrow<1) perrow=1;
+
 	} else   if (towhat==Arrange1Row) perrow=1000000;
 	
 	
