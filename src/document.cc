@@ -561,8 +561,13 @@ void Document::UpdateLabels(int whichrange)
 	}
 
 	char *label;
-	PageRange *r=pageranges.e[whichrange];
+	PageRange *r = pageranges.e[whichrange];
 	for (int c=r->start; c<=r->end; c++) {
+		if (c >= pages.n) {
+			cerr << " *** UpdateLabel(): page index from pagerange out of range for document! dev needs to track this down!!"<<endl;
+			r->end = pages.n-1;
+			break;
+		}
 		label=r->GetLabel(c);
 		if (pages.e[c]->label) delete[] pages.e[c]->label;
 		pages.e[c]->label=label;
@@ -799,7 +804,7 @@ int Document::SaveAsTemplate(const char *tname, const char *tfile,
 	char *oldname=this->name;
 	this->name=newstr(tname);
 
-	if (SaveACopy(templatefile, 1,1,log)==0) {
+	if (SaveACopy(templatefile, 1,1,log, true)==0) {
 		//success!
 	} else {
 		//fail!
@@ -815,7 +820,7 @@ int Document::SaveAsTemplate(const char *tname, const char *tfile,
 
 /*! Return 0 for success or nonzero for error.
  */
-int Document::SaveACopy(const char *filename, int includelimbos,int includewindows,ErrorLog &log)
+int Document::SaveACopy(const char *filename, int includelimbos,int includewindows,ErrorLog &log, bool add_to_recent)
 {
 	if (isblank(filename)) {
 		log.AddMessage(_("Need a file name to save to!"),ERROR_Fail);
@@ -826,7 +831,7 @@ int Document::SaveACopy(const char *filename, int includelimbos,int includewindo
 	Saveas(filename);
 
 	int error=0;
-	if (Save(includelimbos, includewindows, log)==0) {
+	if (Save(includelimbos, includewindows, log, add_to_recent)==0) {
 		 //success!
 
 	} else {
@@ -848,7 +853,7 @@ int Document::SaveACopy(const char *filename, int includelimbos,int includewindo
  * \todo *** only checks for saveas existence, does no sanity checking on it...
  * \todo  need to work out saving Specific project/no proj but many docs/single doc
  */
-int Document::Save(int includelimbos,int includewindows,ErrorLog &log)
+int Document::Save(int includelimbos,int includewindows,ErrorLog &log, bool add_to_recent)
 {
 	FILE *f=NULL;
 	if (isblank(saveas)) {
@@ -906,7 +911,8 @@ int Document::Save(int includelimbos,int includewindows,ErrorLog &log)
 	
 	fclose(f);
 	setlocale(LC_ALL,"");
-	touch_recently_used_xbel(saveas,"application/x-laidout-doc",
+
+	if (add_to_recent) touch_recently_used_xbel(saveas,"application/x-laidout-doc",
 							"Laidout","laidout", //application
 							"Laidout", //group
 							true, //visited

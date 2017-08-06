@@ -133,8 +133,8 @@ class Document : public ObjectContainer, public Value
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 	virtual int Load(const char *file,Laxkit::ErrorLog &log);
-	virtual int Save(int includelimbos,int includewindows,Laxkit::ErrorLog &log);
-	virtual int SaveACopy(const char *filename, int includelimbos,int includewindows,Laxkit::ErrorLog &log);
+	virtual int Save(int includelimbos,int includewindows,Laxkit::ErrorLog &log, bool add_to_recent=true);
+	virtual int SaveACopy(const char *filename, int includelimbos,int includewindows,Laxkit::ErrorLog &log, bool add_to_recent);
 	virtual int SaveAsTemplate(const char *tname, const char *tfile,
 						int includelimbos,int includewindows,Laxkit::ErrorLog &log,
 						bool clobber, char **tfilename_attempt);
