@@ -43,13 +43,14 @@ def main(argv):
     
     if os.path.exists(laidoutexecutable)==False:
         laidoutexecutable="/usr/local/bin/laidout"
+
     if os.path.exists(laidoutexecutable)==False:
         print "Could not find Laidout!"
         print "Please change scribus-call-laidout-to-impose-gui.py to have a correct path!"
         #scribus.messageBox("Could not find Laidout!",
         #                   "Please change line 37 in scribus-call-laidout-to-impose-gui.py to have a correct path!")
         #laidoutexecutable=scribus.valueDialog("Laidout path","You do not appear to have Laidout installed! Please enter a valid path for running Laidout","/usr/bin/laidout")
-        laidoutexecutable=scribus.fileDialog('Please locate Laidout executable!!', defaultname='/usr/bin/laidout', issave=False)
+        laidoutexecutable = scribus.fileDialog('Please locate Laidout executable!!', defaultname='/usr/bin/laidout', issave=False)
         print "New laidout executable path: "+laidoutexecutable
 
      #fail if still not found
