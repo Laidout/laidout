@@ -78,10 +78,10 @@ void mousePressed()
     initialmousex=mouseX;
     initialmousey=mouseY;
 
-        if (interf.showsplash) {
-          interf.showsplash=false;
-          needtodraw=1;
-        }    
+	if (interf.showsplash) {
+	  interf.showsplash=false;
+	  needtodraw=1;
+	}
 
     if (mouseButton == LEFT) interf.LBDown(mouseX, mouseY, kbstate);
     //else if (mouseButton == RIGHT) interf.RBDown(mouseX, mouseY);
@@ -136,9 +136,9 @@ void CharDown(int ch)
 
 
     int action=-1;
-        Shortcut shortcut;
+    Shortcut shortcut;
     for (int c=0; c<interf.sc.size(); c++) {
-                shortcut=(Shortcut)interf.sc.get(c);
+        shortcut=(Shortcut)interf.sc.get(c);
         if (shortcut.key==ch && shortcut.state==kbstate) {
             action=shortcut.id;
             break;
@@ -294,13 +294,13 @@ void ChangePaper(int index, float w,float h, String units)
     if (index==-1) {
         index=currentPaperIndex+1;        
     } else if (index==-2) {
-                index=currentPaperIndex-1;
+        index=currentPaperIndex-1;
     }
     if (index<0) index=BuiltinPaperSizes.length/4-4;
     else if (index>BuiltinPaperSizes.length/4-4) index=0;
     //println("change paper:"+index+", "+BuiltinPaperSizes.length);
 
-        currentPaperIndex =index;
+    currentPaperIndex =index;
     currentPaper      =BuiltinPaperSizes[index*4];
     currentPaperWidth =float(BuiltinPaperSizes[index*4+1]);
     currentPaperHeight=float(BuiltinPaperSizes[index*4+2]);
@@ -337,7 +337,7 @@ class DoubleBBox
     float maxy;
 
     DoubleBBox() { minx=miny=0; maxx=maxy=-1; }
-        DoubleBBox(flatpoint p) { minx=maxx=p.x; miny=maxy=p.y; }
+    DoubleBBox(flatpoint p) { minx=maxx=p.x; miny=maxy=p.y; }
     DoubleBBox(float nminx, float nmaxx, float nminy, float nmaxy)
       { minx=nminx; miny=nminy; maxx=nmaxx; maxy=nmaxy; }
 
@@ -375,16 +375,16 @@ int LAX_CENTER    = (1<<1|1<<6);
 class flatpoint
 {
     float x,y;
-        flatpoint() { x=y=0; }
+    flatpoint() { x=y=0; }
     flatpoint (float nx,float ny) { x=nx; y=ny; }
-        flatpoint (flatpoint p) { x=p.x; y=p.y; }
-        void copy(flatpoint p) { x=p.x; y=p.y; }
+    flatpoint (flatpoint p) { x=p.x; y=p.y; }
+    void copy(flatpoint p) { x=p.x; y=p.y; }
     void add(flatpoint p) { x+=p.x; y+=p.y; }
     void subtract(flatpoint p) { x-=p.x; y-=p.y; }
     void multiply(float d) { x*=d; y*=d; }
     float dot(flatpoint p) { return x*p.x+y*p.y; }
     float norm() { return sqrt((float)(x*x+y*y)); }
-        float distanceto(flatpoint p) { return sqrt((p.x-x)*(p.x-x)+(p.y-y)*(p.y-y)); }
+    float distanceto(flatpoint p) { return sqrt((p.x-x)*(p.x-x)+(p.y-y)*(p.y-y)); }
 }
 
 flatpoint rotate(flatpoint p, float angle, boolean decimal)
@@ -437,19 +437,19 @@ class Displayer
         
     void NewFG(float r,float g,float b) {
         fg_color = color(int(r*255), int(g*255), int(b*255));
-                stroke(fg_color);
-                fill(fg_color);
+        stroke(fg_color);
+        fill(fg_color);
     }
     void NewFG(long l) {
         fg_color = color(l&0xff, l&0xff00, l&0xff0000);
-                stroke(fg_color);
-                fill(fg_color);
+        stroke(fg_color);
+        fill(fg_color);
     }
 
     void NewFG(color c) {
         fg_color = color(red(c),green(c),blue(c));
-                stroke(fg_color);
-                fill(fg_color);
+        stroke(fg_color);
+        fill(fg_color);
     }
 
     void StrokeWidth(float  width) { strokewidth=width; strokeWeight(width); }
@@ -457,7 +457,7 @@ class Displayer
     //void SetSolidLine()  { linetype=0; }
 
     float Getmag() {
-          return sqrt(ctm[0]*ctm[0]+ctm[1]*ctm[1]);
+        return sqrt(ctm[0]*ctm[0]+ctm[1]*ctm[1]);
     }
 
     void DrawReal() { drawreal=true; }
@@ -490,11 +490,11 @@ class Displayer
         ictm[3]=ctm[0]/d;
         ictm[4]=(ctm[2]*ctm[5]-ctm[4]*ctm[3])/d;
         ictm[5]=(ctm[1]*ctm[4]-ctm[0]*ctm[5])/d;
-         }
-        void dumpctm() {
-              println("ctm:  {"+ctm[0]+", "+ctm[1]+", "+ctm[2]+", "+ctm[3]+", "+ctm[4]+", "+ctm[5]+'}');
-              println("ictm: {"+ictm[0]+", "+ictm[1]+", "+ictm[2]+", "+ictm[3]+", "+ictm[4]+", "+ictm[5]+'}');          
-        }
+	}
+	void dumpctm() {
+		  println("ctm:  {"+ctm[0]+", "+ctm[1]+", "+ctm[2]+", "+ctm[3]+", "+ctm[4]+", "+ctm[5]+'}');
+		  println("ictm: {"+ictm[0]+", "+ictm[1]+", "+ictm[2]+", "+ictm[3]+", "+ictm[4]+", "+ictm[5]+'}');          
+	}
     void ShiftScreen(int dx,int dy)
     {
         ctm[4]+=dx;
@@ -513,15 +513,14 @@ class Displayer
     }
 
     void Center(float minx,float maxx,float miny,float maxy) {
-                DoubleBBox  bb=new DoubleBBox(realtoscreen(minx,miny));
-                bb.addtobounds(realtoscreen(maxx,miny));
-                bb.addtobounds(realtoscreen(maxx,maxy));
-                bb.addtobounds(realtoscreen(minx,maxy));
+		DoubleBBox  bb=new DoubleBBox(realtoscreen(minx,miny));
+		bb.addtobounds(realtoscreen(maxx,miny));
+		bb.addtobounds(realtoscreen(maxx,maxy));
+		bb.addtobounds(realtoscreen(minx,maxy));
 
-                if ((bb.maxx-bb.minx)/(bb.maxy-bb.miny)>float(DISPLAYWIDTH)/(DISPLAYHEIGHT)) Zoom((DISPLAYWIDTH)/(bb.maxx-bb.minx));
-                else Zoom((DISPLAYHEIGHT)/(bb.maxy-bb.miny));
-                CenterPoint(new flatpoint((minx+maxx)/2,(miny+maxy)/2));
-    
+		if ((bb.maxx-bb.minx)/(bb.maxy-bb.miny)>float(DISPLAYWIDTH)/(DISPLAYHEIGHT)) Zoom((DISPLAYWIDTH)/(bb.maxx-bb.minx));
+		else Zoom((DISPLAYHEIGHT)/(bb.maxy-bb.miny));
+		CenterPoint(new flatpoint((minx+maxx)/2,(miny+maxy)/2));
     }
 
 
@@ -537,7 +536,7 @@ class Displayer
     }
 
     void drawline(float x1,float y1, float x2, float y2) {
-                   if (drawreal) {
+	    if (drawreal) {
             flatpoint p=realtoscreen(x1,y1);
             x1=p.x;
             y1=p.y;
@@ -545,7 +544,6 @@ class Displayer
             x2=p.x;
             y2=p.y;
         }
-                
     
          //solid
         line(x1,y1, x2,y2);
@@ -2206,7 +2204,7 @@ class SignatureInterface
                      //draw thick line for gap
                     if (overoverlay==SP_Tile_Gap_X) {
                         dp.StrokeWidth(5);
-                		dp.NewFG(.5,0.,0.); //dark red for inset
+                        dp.NewFG(.5,0.,0.); //dark red for inset
                         for (int c2=0; c2<signature.tilex-1; c2++) {
                             d=s.insetleft+(c2+1)*(s.tilegapx+s.PatternWidth()) - s.tilegapx/2;
                             dp.drawline(d,0, d,s.totalheight);
@@ -2217,7 +2215,7 @@ class SignatureInterface
                      //draw thick line for gap
                     if (overoverlay==SP_Tile_Gap_Y) {
                         dp.StrokeWidth(5);
-                		dp.NewFG(.5,0.,0.); //dark red for inset
+                        dp.NewFG(.5,0.,0.); //dark red for inset
                         for (int c2=0; c2<signature.tiley-1; c2++) {
                             d=s.insetbottom+(c2+1)*(s.tilegapy+s.PatternHeight()) - s.tilegapy/2;
                             dp.drawline(0,d, s.totalwidth,d);
@@ -2251,7 +2249,7 @@ class SignatureInterface
             dp.NewFG(0,0,0);
             String scratch=  "Laidout Paper Folder\n"
                             +"version 0.0000000001\n"
-							+"By Tom Lechner, 2013\n"
+                            +"By Tom Lechner, 2013\n"
                             +"-- web version using Processing --\n"
                             +"This thing is adapted from\n"
                             +"Laidout, open source layout software.\n"
@@ -3316,21 +3314,21 @@ class SignatureInterface
 
             area=control(SP_Inset_Bottom);
             area.hotspot=new flatpoint(arrowscale/2,arrowscale);
-			area.tail   =new flatpoint(arrowscale/2,0);
+            area.tail   =new flatpoint(arrowscale/2,0);
             area.offset=new flatpoint(ww/2-arrowscale/2,signature.insetbottom-arrowscale);
-			area.FindBBox();
+            area.FindBBox();
 
             area=control(SP_Inset_Left);
             area.hotspot=new flatpoint(arrowscale,arrowscale/2);
-			area.tail   =new flatpoint(0,arrowscale/2);
+            area.tail   =new flatpoint(0,arrowscale/2);
             area.offset=new flatpoint(signature.insetleft-arrowscale,hh/2-arrowscale/2);
-			area.FindBBox();
+            area.FindBBox();
 
             area=control(SP_Inset_Right);
             area.hotspot=new flatpoint(0,arrowscale/2);
-			area.tail   =new flatpoint(arrowscale,arrowscale/2);
+            area.tail   =new flatpoint(arrowscale,arrowscale/2);
             area.offset=new flatpoint(ww-signature.insetright,hh/2-arrowscale/2);
-			area.FindBBox();
+            area.FindBBox();
         } //which&1
 
 
@@ -3340,25 +3338,25 @@ class SignatureInterface
             area.hidden=(foldlevel!=0);
             p=area.Points(null,4,false);
             p[0]=new flatpoint(0,0);  p[1]=new flatpoint(www*.1,hhh*.1); p[2]=new flatpoint(www*.1,hhh*.9); p[3]=new flatpoint(0,hhh);
-			area.FindBBox();
+            area.FindBBox();
 
             area=control(SP_H_Folds_right);
             area.hidden=(foldlevel!=0);
             p=area.Points(null,4,false);
             p[0]=new flatpoint(www,0);  p[1]=new flatpoint(www,hhh); p[2]=new flatpoint(www*.9,hhh*.9); p[3]=new flatpoint(www*.9,hhh*.1);
-			area.FindBBox();
+            area.FindBBox();
                         
             area=control(SP_V_Folds_top);
             area.hidden=(foldlevel!=0);
             p=area.Points(null,4,false);
             p[0]=new flatpoint(0,hhh);  p[1]=new flatpoint(www,hhh); p[2]=new flatpoint(www*.9,hhh*.9); p[3]=new flatpoint(www*.1,hhh*.9);
-			area.FindBBox();
+            area.FindBBox();
                         
             area=control(SP_V_Folds_bottom);
             area.hidden=(foldlevel!=0);
             p=area.Points(null,4,false);
             p[0]=new flatpoint(0,0);  p[1]=new flatpoint(www,0); p[2]=new flatpoint(www*.9,hhh*.1); p[3]=new flatpoint(www*.1,hhh*.1);
-			area.FindBBox();
+            area.FindBBox();
         }
 
 
