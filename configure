@@ -150,7 +150,7 @@ NUM='1'
 for NAME in $NEED; do
     echo -n Checking for $NAME......;
     if [ "`pkg-config --exists --print-errors --errors-to-stdout $NAME`"xxx != "xxx" ] ; then 
-        echo "You need to install the development package of $NAME."; 
+        echo "You may need to install the development package of $NAME."; 
         NUM="";
     else 
         echo "ok"; 
@@ -162,7 +162,7 @@ if [ $USINGGL == "yes" ]; then
 	for NAME in $NEEDGL; do
 		echo -n Checking for $NAME......;
 		if [ "`pkg-config --exists --print-errors --errors-to-stdout $NAME`"xxx != "xxx" ] ; then 
-			echo "You need to install the development package of $NAME."; 
+			echo "You may need to install the development package of $NAME."; 
 			NUM="";
 		else 
 			echo "ok"; 
@@ -182,13 +182,14 @@ for NAME in $OPTIONAL; do
     fi
 done
 
+#EXTRAINCLUDEPATHS=("/usr/local/include/" "/usr/include/")
 
  ## readline doesn't seem to have a pkg-config entry, so do this hackier check
 echo -n Checking for readline......;
 #---attempt 3, check for existence of cups-config program:
 if [ ! -e /usr/local/include/readline/readline.h -a \
 	 ! -e /usr/include/readline/readline.h  ] ; then 
-    echo "You need to install the development package of libreadline."; 
+    echo "Can't find libreadline headers."; 
     NUM="";
 else echo "ok";
 fi
@@ -197,24 +198,8 @@ fi
 echo -n Checking for cups......;
 #---attempt 3, check for existence of cups-config program:
 if [ ! `builtin type -p cups-config` ] ; then 
-    echo "You need to install the development package of Cups."; 
+    echo "Can't find Cups headers."; 
     NUM="";
-
-#---attempt 2:
-#if [ ! -d /usr/include/cups \
-#	 -a ! -d /usr/local/include/cups ] ; then 
-#    echo "You need to install the development package of Cups."; 
-#    NUM="";
-
-#---attempt 1:
-#if [ ! -e /usr/lib/libcups.so -a \
-#	 ! -e /usr/local/lib/libcups.so -a \
-#	 ! -e /usr/lib64/libcups.so -a \
-#	 ! -e /usr/local/lib64/libcups.so -a \
-#	 ! -e /usr/lib/i386-linux-gnu/libcups.so -a \
-#	 ! -e /usr/lib/x86_64-linux-gnu/libcups.so ] ; then 
-#    echo "You need to install the development package of Cups."; 
-#    NUM="";
 
 else echo "ok"; 
 fi
@@ -224,7 +209,8 @@ echo
 
 
 if [ "$NUM" != "1" -a $FORCE=="no" ]; then
-    echo "Too many problems to proceed! Use --force to override."
+    echo "Too many problems to proceed!"
+	echo "Use --force to override. You may have to adjust CPPFLAGS and LDFLAGS in Makefiles."
 	echo
 	echo "On debian based systems, you might try installing all dependencies with this:"
 	echo "    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev libcairo2-dev libharfbuzz-dev"
