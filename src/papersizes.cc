@@ -145,6 +145,29 @@ PtrStack<PaperStyle> *GetBuiltinPaperSizes(PtrStack<PaperStyle> *papers)
 	return papers;
 }
 
+/*! Try to match width and height to a named paper.
+ * orientation_ret gets 1 if match is same as returned object's orientation,
+ * or -1 if opposite.
+ *
+ * If startfrom != 0, then start the search starting from this index, instead of first paper.
+ *
+ * If epsilon==0 (the default), w and h must match exactly. Else the values must be at least that close.
+ */
+PaperStyle *GetNamedPaper(double width, double height, int *orientation_ret, int startfrom, int *index_ret, double epsilon)
+{
+	int match;
+	if (startfrom<0) startfrom=0;
+	for (int c = startfrom; laidout->papersizes.n; c++) {
+		match = laidout->papersizes.e[c]->IsMatch(width, height, epsilon);
+		if (match) {
+			if (orientation_ret) *orientation_ret = match;
+			if (index_ret) *index_ret = c;
+		}
+	}
+
+	return NULL;
+}
+
 
 //---------------------------------- PaperStyle --------------------------------
 
@@ -245,6 +268,18 @@ PaperStyle::~PaperStyle()
 }
 
 
+/*! Return 1 if the paper matches this paper as is, -1 if it matches, but in opposite orientation.
+ * 0 for no match.
+ *
+ * If epsilon==0 (the default), w and h must match exactly. Else the values must be at least that close.
+ */
+int PaperStyle::IsMatch(double ww, double hh, double epsilon)
+{
+	if (fabs(w()-ww) <= epsilon && fabs(h()-hh) <= epsilon) return 1;
+	if (fabs(h()-ww) <= epsilon && fabs(w()-hh) <= epsilon) return -1;
+	return 0;
+}
+
 /*! Set from something like "a4", "custom(5in,10in)" or "letter,portrait"
  * Must start with paper name (or "custom"). If not custom,
  * then name can be followed by either "portrait" or "landscape".
@@ -256,7 +291,7 @@ int PaperStyle::SetFromString(const char *nname)
 {
 	if (!nname) return 1;
 
-	flags&=~PAPERSTYLE_Landscape;
+	flags &= ~PAPERSTYLE_Landscape;
 	if (strncasecmp(nname,"custom",6)) {
 		nname+=6;
 		makestr(name,"Custom");

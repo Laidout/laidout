@@ -68,12 +68,14 @@ class PaperStyle : public Value
 	virtual int type();
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *dereference(const char *extstring, int len);
+	virtual int IsMatch(double w, double h, double epsilon = 0);
 
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
 };
 
+PaperStyle *GetNamedPaper(double width, double height, int *orientation_ret, int startfrom, int *index_ret, double epsilon);
 
 //----------------------------- GetBuiltInPaperSizes() --------------------------------------
 Laxkit::PtrStack<PaperStyle> *GetBuiltinPaperSizes(Laxkit::PtrStack<PaperStyle> *papers);
