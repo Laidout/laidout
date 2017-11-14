@@ -3886,7 +3886,7 @@ int ViewWindow::init()
 		
 	last=pageclips=new Button(this,"pageclips",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, NULL,object_id,"pageclips",-1,
 							  _("Page Clips"),NULL,laidout->icons->GetIcon("PageClips"),buttongap);
-	pageclips->tooltip(_("Whether pages clips its contents"));
+	pageclips->tooltip(_("Whether page clips its contents"));
 	AddWin(pageclips,1, pageclips->win_w,0,50,50,0, pageclips->win_h,0,50,50,0, -1);
 	updateContext(1);
 
@@ -3987,9 +3987,9 @@ int ViewWindow::init()
 	last=menub=new MenuButton(this,"save doc",NULL,
 							MENUBUTTON_LEFT|IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"savemenu",-1,
 							 menu,1, _("Save"),
-							 NULL, laidout->icons->GetIcon("Save"),
+							 NULL, laidout->icons->GetIcon("SaveMenu"),
 							 0);
-	menub->tooltip(_("Save options"));
+	menub->tooltip(_("Menu for save options"));
 	AddWin(menub,1, menub->win_w,0,50,50,0, menub->win_h,0,50,50,0, -1);
 //	-------------
 
