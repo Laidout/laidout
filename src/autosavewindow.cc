@@ -70,8 +70,8 @@ int AutosaveWindow::init()
 	//LineInput *linp=NULL;
 	CheckBox *check=NULL;
 	char scratch[200]; 
-	
-	 
+
+
 	 //--------------[ ] Autosave
 	last=check=new CheckBox(this,"autosave",NULL,CHECK_LEFT, 0,0,0,0,0, 
 									last,object_id,"autosave", _("Autosave"), pad,pad);
@@ -84,9 +84,9 @@ int AutosaveWindow::init()
 	sprintf(scratch, _("%.10g"), laidout->prefs.autosave_time);
 	last=new LineInput(this,"autosave_time",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
 						NULL,object_id,"autosave_time",
-			            _("Time between autosaves"), scratch,0,
+			            _("Minutes between autosaves"), scratch,0,
 			            0,0, pad,pad, lpad,lpad);
-	last->tooltip(_("Length of time between autosaves. 0 means no autosave. Default units are minutes"));
+	last->tooltip(_("0 means don't autosave"));
 	AddWin(last,1, 300,0,10000,50,0, last->win_h,0,0,50,0, -1);
 	AddNull();
 
