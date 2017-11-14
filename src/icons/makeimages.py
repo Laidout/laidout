@@ -42,7 +42,7 @@ if (len(sys.argv)>1) :
 
 print ("Make icons this many pixels wide: "+str(bitmapw))
 
-dpi=int(90.0*bitmapw/45)
+dpi = int(96.0*bitmapw/48)
 DOCUMENTHEIGHT=17
 
 #get names
@@ -71,7 +71,13 @@ class SAXtracer (xml.sax.handler.ContentHandler):
         #print "attrs="+str(attrs)
         if (name=="svg"):
            global DOCUMENTHEIGHT
-           DOCUMENTHEIGHT=int(attrs.get("height"))/90
+           height = attrs.get("height");
+           if (height.find('in')>0):
+               height = height[0:-2]
+               DOCUMENTHEIGHT=int(height)
+           else:
+               DOCUMENTHEIGHT=int(height)/96.0
+           print("found doc height: "+str(DOCUMENTHEIGHT)+" "+height)
            
         if (globals()["depth"]!=3) : return 
 
@@ -108,13 +114,15 @@ for name in names :
     W=int(float(subprocess.check_output("inkscape -I "+name+" -W icons.svg", shell=True)))
     H=int(float(subprocess.check_output("inkscape -I "+name+" -H icons.svg", shell=True)))
 
-    print (str(X)+","+str(Y)+" "+str(W)+"x"+str(H))
-    x1=int(X/45)*45
-    y1=DOCUMENTHEIGHT*90-int(Y/45)*45-45
-    renderwidth =bitmapw*(1+int(W/45))
-    renderheight=bitmapw*(1+int(H/45))
-    x2=x1+45*(1+int(W/45))
-    y2=y1+45*(1+int(H/45))
+    print ("raw inkscape coords xywh: "+str(X)+","+str(Y)+" "+str(W)+","+str(H))
+    x1 = int(X/48)*48
+    #y1 = int(Y/48)*48
+    print ('doc height: '+str(DOCUMENTHEIGHT))
+    y1 = DOCUMENTHEIGHT*96-int(Y/48)*48-48
+    renderwidth =bitmapw*(1+int(W/48))
+    renderheight=bitmapw*(1+int(H/48))
+    x2=x1+48*(1+int(W/48))
+    y2=y1+48*(1+int(H/48))
 
     print ("x1,y1:"+str(x1)+","+str(y1)+"  x2,y2:"+str(x2)+"x"+str(y2))
 
