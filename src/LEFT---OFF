@@ -60,7 +60,7 @@ cloning, change original, not triggering bbox update in clone
 
 ubuntu maximize window failing (but not on today's debian unstable gnome), resize seems to work now
 gnome "application" does one per window, not one per app. this is not a bad thing imnsho, but should be easy to conform to desktop application spec properly
-App/window icon in window manager not showing.. 
+DONE App/window icon in window manager not showing.. 
 
 select none, select doc, viewport jumps around... it should stay the same area
 switch to None document, and units change to unreasonable
@@ -139,6 +139,9 @@ DONE put rss/g+ links on all menu pages..
 
 
 from big import:
+  load in seems to wholly load images, instead of only grabbing info
+  need some kind of "loading" indication when loading in large images
+  need image path mass reassign
   spread editor:
     select all for current marker type
 	arrange in rows at current scale not scaling and placing correctly
@@ -158,6 +161,7 @@ from big import:
   export to range has bad initial upper value
 
 from recent import:
+  save as should have sample file names: from directory name with ".laidout", incremented from any *.laidout
   export directory should default to last loaded file
   large images all being loaded in, need way to ask about creating proxy images. only img info is supposed to be read in until img data is actually needed
   need better ui for selecting templates
@@ -470,7 +474,7 @@ image
 laidout export:
   need a Laidout out! for partial exports, or conversions between nets/papergroup lines/etc
   implement crop
-  save option to force path data into svg d style
+  save option to force path data into svg d style instead of default laidout style
   save option to not output line caches
 laidout import:
   pops up spurious windows
