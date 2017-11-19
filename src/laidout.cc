@@ -962,8 +962,8 @@ int LaidoutApp::readinLaidoutDefaults()
 		} else if (!strcmp(name,"autosave_time")) {
 			DoubleAttribute(value, &prefs.autosave_time, NULL);
 
-		} else if (!strcmp(name,"autosave_num")) {
-			IntAttribute(value, &prefs.autosave_num, NULL);
+		//} else if (!strcmp(name,"autosave_num")) {
+		//	IntAttribute(value, &prefs.autosave_num, NULL);
 
 		} else if (!strcmp(name,"autosave")) {
 			prefs.autosave=BooleanAttribute(value);

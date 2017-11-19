@@ -35,7 +35,7 @@ class LaidoutPreferences : public Value
 	bool   autosave;
 	double autosave_time;
 	char  *autosave_path;
-	int    autosave_num;
+	//int    autosave_num;
 	char *exportfilename;
 	//PtrStack<char> palette_dirs;
 	Laxkit::PtrStack<char> icon_dirs;

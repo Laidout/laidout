@@ -177,7 +177,7 @@ int AutosaveWindow::Event(const EventData *data,const char *mes)
 int AutosaveWindow::send()
 {
 	CheckBox *autosave = dynamic_cast<CheckBox  *>(findChildWindowByName("autosave")); 
-	LineEdit *num     = dynamic_cast<LineInput *>(findChildWindowByName("autosave_num"))->GetLineEdit();
+	//LineEdit *num     = dynamic_cast<LineInput *>(findChildWindowByName("autosave_num"))->GetLineEdit();
 	LineEdit *time    = dynamic_cast<LineInput *>(findChildWindowByName("autosave_time"))->GetLineEdit();
 	LineEdit *path    = dynamic_cast<LineInput *>(findChildWindowByName("autosave_path"))->GetLineEdit();
 
@@ -202,15 +202,15 @@ int AutosaveWindow::send()
 		modified=true;
 	}
 
-	//autosave_num
-	int n=num->GetLong(NULL);
-	if (n<0) n=0;
-	if (n!=laidout->prefs.autosave_num) {
-		laidout->prefs.autosave_num = n;
-		sprintf(scratch, "%d", laidout->prefs.autosave_num);
-		UpdatePreference("autosave_num", scratch, rcpath);
-		modified=true;
-	}
+//	//autosave_num
+//	int n=num->GetLong(NULL);
+//	if (n<0) n=0;
+//	if (n!=laidout->prefs.autosave_num) {
+//		laidout->prefs.autosave_num = n;
+//		sprintf(scratch, "%d", laidout->prefs.autosave_num);
+//		UpdatePreference("autosave_num", scratch, rcpath);
+//		modified=true;
+//	}
 
 	//autosave_time
 	double d=time->GetDouble(NULL);

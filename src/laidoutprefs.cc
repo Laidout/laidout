@@ -81,7 +81,7 @@ LaidoutPreferences::LaidoutPreferences()
 	autosave=false;
 	autosave_time=5; //minutes
 	autosave_path=newstr("./%f.autosave");
-	autosave_num=0; //0 is no limit
+	//autosave_num=0; //0 is no limit
 
 	experimental=false;
 
@@ -114,7 +114,7 @@ Value *LaidoutPreferences::duplicate()
 	makestr(p->temp_dir,temp_dir);
 	p->autosave=autosave;
 	p->autosave_time=autosave_time;
-	p->autosave_num=autosave_num;
+	//p->autosave_num=autosave_num;
 	makestr(p->autosave_path,autosave_path);
 	makestr(p->exportfilename, exportfilename);
 	p->experimental=experimental;
@@ -232,12 +232,12 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 			0,
 			NULL);
 
-	def->push("autosave_num",
-			_("Number of autosaves"),
-			_("Don't have more than this number of autosave files. 0 means no limit."),
-			"int", "0",NULL,
-			0,
-			NULL);
+//	def->push("autosave_num",
+//			_("Number of autosaves"),
+//			_("Don't have more than this number of autosave files. 0 means no limit."),
+//			"int", "0",NULL,
+//			0,
+//			NULL);
 
 	def->push("autosave_path",
 			_("Autosave path"),
@@ -321,9 +321,9 @@ Value *LaidoutPreferences::dereference(const char *extstring, int len)
 		return new DoubleValue(autosave_time);
 	}
 
-	if (!strcmp(extstring, "autosave_num")) {
-		return new IntValue(autosave_num);
-	}
+//	if (!strcmp(extstring, "autosave_num")) {
+//		return new IntValue(autosave_num);
+//	}
 
 	if (!strcmp(extstring, "autosave_path")) {
 		return autosave_path ? new StringValue(autosave_path) : NULL;
@@ -387,7 +387,7 @@ int UpdatePreference(const char *which, const char *value, const char *laidoutrc
 	int fd=open(laidoutrc, O_RDONLY, 0);
 	if (fd<0) { return 1; }
 	flock(fd,LOCK_EX);
-	FILE *f=fdopen(fd,"w");
+	FILE *f=fdopen(fd,"r");
 	if (!f) { close(fd); return 2; }
 
 	char *outfile=newstr(laidoutrc);
