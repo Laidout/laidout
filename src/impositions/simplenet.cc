@@ -952,12 +952,6 @@ void SimpleNet::pushline(SimpleNetLine &l,int where)//where=-1
 }
 
 //---------------------------- AbstractNet Functions
-/*! \todo imp me!!
- */
-int SimpleNet::Modified()
-{//****
-	return 0;
-}
 
 NetFace *SimpleNet::GetFace(int i,double scaling)
 {//***

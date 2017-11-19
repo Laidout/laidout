@@ -106,7 +106,6 @@ class SimpleNet : public Polyptych::AbstractNet,
 	 //AbstractNet functions
 	virtual const char *whattype() { return "SimpleNet"; }
 	virtual const char *Filename() { return filename; }
-	virtual int Modified();
 
 	virtual int NumFaces() { return nf; }
 	virtual Polyptych::NetFace *GetFace(int i,double scaling);
