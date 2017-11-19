@@ -121,6 +121,7 @@ class DocumentExportConfig : public Value
 	DocumentExportConfig(Document *ndoc, Group *lmbo, const char *file, const char *to,
 						 int l,int s,int e,PaperGroup *group);
 	virtual ~DocumentExportConfig();
+	void BaseDefaults();
 
 	virtual ObjectDef* makeObjectDef();
 	virtual Value* duplicate();

@@ -1015,24 +1015,29 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 
 DocumentExportConfig::DocumentExportConfig()
 {
-	curpaperrotation=0;
-	paperrotation=0;
-	rotate180=0;
-	reverse_order=0;
-	evenodd=All;
-	batches=0;
-	filter=NULL;
-	target=0;
-	filename=NULL;
-	tofiles=NULL;
-	start=end=-1;
-	layout=0;
-	doc=NULL;
-	papergroup=NULL;
-	limbo=NULL;
-	collect_for_out=COLLECT_Dont_Collect;
-	rasterize=0;
-	textaspaths=false;
+	BaseDefaults();
+}
+
+void DocumentExportConfig::BaseDefaults()
+{
+	curpaperrotation= 0;
+	paperrotation   = 0;
+	rotate180       = 0;
+	reverse_order   = 0;
+	evenodd         = All;
+	batches         = 0;
+	filter          = NULL;
+	target          = 0;
+	filename        = NULL;
+	tofiles         = NULL;
+	start     = end = -1;
+	layout          = 0;
+	doc             = NULL;
+	papergroup      = NULL;
+	limbo           = NULL;
+	collect_for_out = COLLECT_Dont_Collect;
+	rasterize       = 0;
+	textaspaths     = true; // *** change to false when text is better implemented!!
 }
 
 /*! Increments count on ndoc if it exists.
@@ -1044,82 +1049,50 @@ DocumentExportConfig::DocumentExportConfig(Document *ndoc,
 										   int l,int s,int e,
 										   PaperGroup *group)
 {
-	curpaperrotation=0;
-	paperrotation=0;
-	rotate180=0;
-	reverse_order=0;
-	evenodd=All;
-	batches=0;
+	BaseDefaults();
 
-	target=0;
-	filename=newstr(file);
-	tofiles=newstr(to);
-	start=s;
-	end=e;
-	layout=l;
-	doc=ndoc;
-	limbo=lmbo;
-	collect_for_out=COLLECT_Dont_Collect;
-
-	textaspaths=false;
-	rasterize=0;
-
-	filter=NULL;
-	if (doc) doc->inc_count();
-	if (limbo) limbo->inc_count();
-	papergroup=group;
-	if (papergroup) papergroup->inc_count();
+	filename   = newstr(file);
+	tofiles    = newstr(to);
+	start      = s;
+	end        = e;
+	layout     = l;
+	doc        = ndoc;   if (doc) doc->inc_count();
+	limbo      = lmbo;   if (limbo) limbo->inc_count();
+	papergroup = group;  if (papergroup) papergroup->inc_count();
 }
 
 DocumentExportConfig::DocumentExportConfig(DocumentExportConfig *config) 
-{ 
+{
+	BaseDefaults();
 	if (config==NULL) {
-		paperrotation=0;
-		rotate180=0;
-		reverse_order=0;
-		evenodd=All;
-		batches=0;
-		filter=NULL;
-		target=0;
-		filename=NULL;
-		tofiles=NULL;
-		start=end=-1;
-		layout=0;
-		doc=NULL;
-		papergroup=NULL;
-		limbo=NULL;
-		collect_for_out=COLLECT_Dont_Collect;
-		rasterize=0;
-		textaspaths=false;
 		return;
 	}
 
-	curpaperrotation=0;
-    paperrotation=config->paperrotation; 
-	rotate180    =config->rotate180;
-	reverse_order=config->reverse_order;
-    evenodd      =config->evenodd; 
-    batches      =config->batches; 
-    target       =config->target; 
-    start        =config->start; 
-    layout       =config->layout; 
-    collect_for_out=config->collect_for_out; 
-    rasterize    =config->rasterize; 
-	textaspaths  =config->textaspaths;
- 
-    filename=newstr(config->filename); 
-    tofiles =newstr(config->tofiles); 
- 
-    filter       =config->filter; //object, but does not get inc_counted 
- 
-    doc          =config->doc; 
-    papergroup   =config->papergroup; 
-    limbo        =config->limbo; 
- 
-    if (doc)        doc->inc_count(); 
-    if (limbo)      limbo->inc_count(); 
-    if (papergroup) papergroup->inc_count(); 
- 
+    paperrotation  = config->paperrotation;
+	rotate180      = config->rotate180;
+	reverse_order  = config->reverse_order;
+    evenodd        = config->evenodd;
+    batches        = config->batches;
+    target         = config->target;
+    start          = config->start;
+    layout         = config->layout;
+    collect_for_out= config->collect_for_out;
+    rasterize      = config->rasterize;
+	textaspaths    = config->textaspaths;
+
+    filename       = newstr(config->filename);
+    tofiles        = newstr(config->tofiles);
+
+    filter         = config->filter; //object, but does not get inc_counted
+
+    doc            = config->doc;
+    papergroup     = config->papergroup;
+    limbo          = config->limbo;
+
+    if (doc)        doc->inc_count();
+    if (limbo)      limbo->inc_count();
+    if (papergroup) papergroup->inc_count();
+
 }
 
 /*! Decrements doc if it exists.
