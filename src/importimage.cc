@@ -451,19 +451,8 @@ int dumpInImageList(ImportImageSettings *settings, Document *doc,LaxFiles::Attri
 			}
 			
 			 // ok, so we now have file, preview, desc, curdpi, xywh if useplace
-			//***HACK: check for EPS first, then imlib image, must later expand to "import filter" thing
+			//***HACK: check for EPS first, then general image, must later expand to "import filter" thing
 			if (isEpsFile(file,NULL,NULL)) image=new EpsData(file,preview,0,0,0);
-			//if (!image) {
-			//	Imlib_Image img=imlib_load_image(file);
-			//	if (!img) {
-			//		delete[] file; file=NULL;
-			//		continue;
-			//	}
-			//	imlib_context_set_image(img);
-			//	imlib_image_free(img);
-			//
-			//	image=new ImageData(file,preview,0,0,0);
-			//}
 
 			 //if not eps, then do generic image. If not openable as image, then create a broken image
 			if (!image) {
