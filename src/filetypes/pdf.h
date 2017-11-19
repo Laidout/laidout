@@ -1,6 +1,4 @@
 //
-// $Id$
-//	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
