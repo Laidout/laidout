@@ -21,9 +21,7 @@ bug: page progress popup is wrong place, and mouse maps at wrong scale
 
 ------------ other bugs:
 
-saved file, not showing up in recent
-
-sometimes crash at insert page before
+sometimes crash at insert page before (?? can't duplicate)
 
 ColorSliders not really showing black unless you set from hex, but solid black is still sending properly
 
@@ -129,14 +127,18 @@ update screenshots, sync with features
 update links page
 update dtpcompare.html
 test:
+  ./laidout ../examples/test-all-objects.laidout
+  each export filter (via command line in new script in examples.. ignoring problems in eps)
   each window type: about palette view spread command text
     help: window pane does funky stuff
   test in different window managers
-  each export filter (via command line in new script in examples.. ignoring problems in eps)
   make some test scripts for command line testing
 DONE update help page
 DONE put rss/g+ links on all menu pages.. 
 
+
+fontdialog:
+  select font inappropriately repositions view
 
 from big import:
   load in seems to wholly load images, instead of only grabbing info
@@ -146,6 +148,7 @@ from big import:
     select all for current marker type
 	arrange in rows at current scale not scaling and placing correctly
 	crash during thumbnail generation if you delete pages while there are still some to render
+	auto-arrange not consistent.. doesn't really respect the screen aspect 
   should be able to save from any place
   delete discontinous range of pages doesn't delete all sometimes
   undo extremely necessary
@@ -444,6 +447,10 @@ layers palette Layers
   should have document list at top, showing current doc
 
 file filters: filefilters:
+  out textaspaths:
+    pdf     CaptionData  TextAsPath
+    scribus CaptionData  TextAsPath
+    svg     DONE-CaptionData  TextAsPath
   ---0.098:
   remember full export settings
   need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
@@ -643,6 +650,10 @@ fontdialog: FontDialog
   DONE you can still scroll off when few visible items.. grrr!!
   DONE should really get around to implementing scrollers
   DONE fontmatrix import? fontmatrix uses a sqlite database.. should be straighforward to scan it
+
+ImagePatch:
+  use float or double for color sample
+  abstract to be a filter, with optional stand alone object
 
 Clean up mesh/patch controls: Mesh PatchInterface 
   perspective arrangement: approximate transform controls through perspective grid
@@ -1767,4 +1778,6 @@ DONE captioninterface
     DONE needs hint to preserve baseline align when changing font size or line spacing
 DONE page range tool in spread view not showing text
 DONE bug: select path tool. one point. escape. delete. boom!
+DONE saved file, not showing up in recent 
+DONE remove imlib dependency from ImagePatch
 
