@@ -645,6 +645,8 @@ void svgStyleTagsDump(FILE *f, LineStyle *lstyle, FillStyle *fstyle)
 //! Function to dump out obj as svg.
 /*! Return nonzero for fatal errors encountered, else 0.
  *
+ * Remember that connceted defs are collected in svgdumpdef().
+ *
  * \todo put in indentation
  * \todo add warning when invalid radial gradient: one circle not totally contained in another
  */
@@ -689,6 +691,13 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 	} else if (!strcmp(obj->whattype(),"CaptionData")) {
 		CaptionData *caption=dynamic_cast<CaptionData*>(obj);
 		if (!caption) return 0;
+
+		if (out->textaspaths) {
+			SomeData *path = caption->ConvertToPaths(false, NULL);
+			svgdumpobj(f,mm,path,warning,indent,log,out);
+			path->dec_count();
+			return 0;
+		}
 
 		double rr,gg,bb,aa;
 		Palette *palette=dynamic_cast<Palette*>(caption->font->GetColor());
@@ -756,6 +765,13 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 		TextOnPath *text=dynamic_cast<TextOnPath*>(obj);
 		if (!text || text->end-text->start<=0) return 0;
 		if (!text->paths) { log.AddMessage(_("Text on path object missing path, ignoring!"),ERROR_Warning); return 0; }
+
+		if (out->textaspaths) {
+			SomeData *path = text->ConvertToPaths(false, NULL);
+			svgdumpobj(f,mm,path,warning,indent,log,out);
+			path->dec_count();
+			return 0;
+		}
 
 		 //first dump out a blank path:
 		svgdumpobj(f, NULL, text->paths, warning, indent+2, log, out);
@@ -1206,11 +1222,14 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			warning++;
 		}
 	}
+
 	return 0;
 }
 
-//! Function to dump out any gradients to the defs section of an svg.
-/*! Return nonzero for fatal errors encountered, else 0.
+/*! Function to dump out any gradients to the defs section of an svg. Remember that
+ * actual object dump is svgdumpobj().
+ *
+ * Return nonzero for fatal errors encountered, else 0.
  *
  * \todo fix radial gradient output for inner circle empty
  */

@@ -1818,8 +1818,9 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 		LaxFont *font=text->font;
 		if (pageobjects.e[curobj]->index>0) font=font->Layer(pageobjects.e[curobj]->index-1);
 
+		cerr <<" *** WARNING! need to implement encoding & ' \" < > as &amp; etc for Scribus out"<<endl;
+
 		for (int c=0; c<text->lines.n; c++) {
-			cerr <<" *** WARNING! need to code processing & ' \" < > to &amp; etc for Scribus out"<<endl;
 
 			fprintf(f, "    <ITEXT FONT=\"%s %s\" FONTSIZE=\"%.10g\" FCOLOR=\"%d,%d,%d\" CH=\"%s\" />\n",
 					//text->fontfamily, text->fontstyle,
