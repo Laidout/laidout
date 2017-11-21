@@ -17,13 +17,11 @@ shearing or scaling produces null axes occasionally when crossing over opposite 
 
 bug: press 4, wtf?? should zoom to current object
 
-bug: page progress popup is wrong place, and mouse maps at wrong scale
+bug: page progress popup is wrong place, and mouse maps at wrong scale ONLY OCCASIONALLY, hard to reproduce
 
 ------------ other bugs:
 
 sometimes crash at insert page before (?? can't duplicate)
-
-ColorSliders not really showing black unless you set from hex, but solid black is still sending properly
 
 text window controls have difficulties
   doesn't handle tabs
@@ -452,6 +450,7 @@ file filters: filefilters:
     scribus CaptionData  TextAsPath
     svg     DONE-CaptionData  TextAsPath
   ---0.098:
+  open with... on export
   remember full export settings
   need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
   need equirectangular out 
@@ -507,7 +506,8 @@ pdf PDF:
   graphicsmagick for import? subimage and subrange of image_info passed to ReadImage
   page labels?
   implement crop
-Scribus:
+Scribus scribus:
+  export paths fails on compound paths. scribus has dichotomy Polyline|Polygon
   make sure it works for 1.5.2
   font size confusion
   caption export centering
@@ -1780,4 +1780,5 @@ DONE page range tool in spread view not showing text
 DONE bug: select path tool. one point. escape. delete. boom!
 DONE saved file, not showing up in recent 
 DONE remove imlib dependency from ImagePatch
+DONE (not sure why, switched to use explicit gradients) ColorSliders not really showing black unless you set from hex, but solid black is still sending properly
 
