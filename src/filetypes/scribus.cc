@@ -1,6 +1,4 @@
 //
-// $Id$
-//	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -26,9 +24,6 @@
 #include <lax/palette.h>
 #include <lax/colors.h>
 
-#include <lax/lists.cc>
-#include <lax/refptrstack.cc>
-
 #include "../language.h"
 #include "scribus.h"
 #include "../laidout.h"
@@ -39,6 +34,11 @@
 #include "../impositions/singles.h"
 #include "../dataobjects/mysterydata.h"
 #include "../drawdata.h"
+
+//template instantiation
+#include <lax/lists.cc>
+#include <lax/refptrstack.cc>
+
 
 #include <iostream>
 #define DBG 
@@ -1256,9 +1256,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 	GradientData *grad=NULL;
 	double localscx=1,localscy=1;
 	double isize=12;
-	int ptype=-1; //>0 is translatable to scribus object.
-				  //2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
-	              //-1 is not handled, -2 is laidout gradient, -3 is MysteryData
+	int ptype = PTYPE_None; //>0 is directly correspondence to a scribus object.
 	Attribute *mysteryatts=NULL;
 	int leftlink=-1, rightlink=-1, toplink=-1, bottomlink=-1; //for table grids
 	int nextitem=-1, backitem=-1; //for text object chains
@@ -1272,9 +1270,9 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 
 
 	if (!strcmp(obj->whattype(),"ImageData") || !strcmp(obj->whattype(),"EpsData")) {
-		img=dynamic_cast<ImageData *>(obj);
+		img = dynamic_cast<ImageData *>(obj);
 		if (!img || !img->filename) return;
-		ptype=PTYPE_Image;
+		ptype = PTYPE_Image;
 
 	//} else if (!strcmp(obj->whattype(),"GradientData")) {
 	//	grad=dynamic_cast<GradientData *>(obj);
@@ -1282,10 +1280,9 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 	//	ptype=PTYPE_Laidout_Gradient;
 	
 	} else if (!strcmp(obj->whattype(),"PathsData")) {
-		PathsData *pdata=dynamic_cast<PathsData *>(obj);
+		PathsData *pdata = dynamic_cast<PathsData *>(obj);
 		if (!pdata) return;
-		createrect=0;
-		ptype=PTYPE_Polygon;
+		createrect = 0;
 
 		 //build path
 		NumStack<flatpoint> pts;
@@ -1300,16 +1297,19 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 			p=pdata->paths.e[c]->path;
 			if (!p) continue;
 
-			n+=scribusaddpath(pts,p);
+			n += scribusaddpath(pts,p);
 
 			//p=transform_point(ctm,p);
 			//pts.push(p);
 
-			if (c!=pdata->paths.n-1) {
+			if (c != pdata->paths.n-1) {
 				for (int c2=0; c2<4; c2++) pts.push(flatpoint(999999,999999));//path delimiter!
 			}
 		}
 		if (!n) return; //no points to output!!
+
+		if (pdata->paths.e[0]->IsClosed()) ptype = PTYPE_Polygon;
+		else ptype = PTYPE_Polyline;
 
 		numpo=numco=pts.n;
 		pocoor=pts.extractArray();
@@ -1407,7 +1407,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 	rot=atan2(vx.y, vx.x)/M_PI*180; //rotation in degrees
 	//p=transform_point(ctm,flatpoint(0,0));
 	p=transform_point(ctm,flatpoint(obj->minx,obj->maxy)); //scribus origin is upper left
-	if (ptype==PTYPE_Text) p=transform_point(ctm,flatpoint(obj->minx,obj->miny)); //scribus origin is upper left
+	if (ptype == PTYPE_Text) p = transform_point(ctm,flatpoint(obj->minx,obj->miny)); //scribus origin is upper left
 	x=p.x;
 	y=p.y;
 
