@@ -85,6 +85,7 @@ NodeColors::NodeColors()
 	state=0;
 	font=NULL;
 	next=NULL;
+	slot_radius=.25; //portion of text height
 }
 
 NodeColors::~NodeColors()
@@ -268,6 +269,7 @@ NodeBase::NodeBase()
 	total_preview = NULL;
 	colors = NULL;
 	collapsed = false;
+	fullwidth = 0;
 	deletable = true; //usually at least one node will not be deletable
 
 	type = NULL;
@@ -283,6 +285,14 @@ NodeBase::~NodeBase()
 	if (total_preview) total_preview->dec_count();
 }
 
+
+/*! Change the label text. Returns result.
+ */
+const char *NodeBase::Label(const char *nlabel)
+{
+	makestr(Name, nlabel);
+	return Name;
+}
 
 /*! Passing in NULL will set this->colors to NULL.
  */
@@ -418,6 +428,7 @@ int NodeBase::Wrap()
 	}
 
 	width += 3*th;
+	if (fullwidth > width) width = fullwidth;
 
 	 //update link position
 	double y=1.5*th;
@@ -436,12 +447,93 @@ int NodeBase::Wrap()
 	return 0;
 }
 
+/*! Update the bounds to be the collapsed version.
+ */
+int NodeBase::WrapCollapsed()
+{
+	if (!colors) return -1;
+
+	 //find overall width and height
+	double th = colors->font->textheight();
+
+	height = th*1.5;
+	width = 3*th + colors->font->extent(Name,-1);
+
+	NodeProperty *prop;
+	int num_in = 0, num_out = 0;
+
+	for (int c=0; c<properties.n; c++) {
+		prop = properties.e[c];
+		if (prop->AllowInput())  num_in++;
+		if (prop->AllowOutput()) num_out++;
+	}
+
+	int max = num_in;
+	if (num_out > max) max = num_out;
+
+	double slot_radius = colors->slot_radius;
+	if (height < th/2 + max*th*2*slot_radius) height = th/2 + max*th*2*slot_radius;
+
+	 //update link position
+	double in_y  = height/2 - num_in *th*slot_radius;
+	double out_y = height/2 - num_out*th*slot_radius;
+
+	for (int c=0; c<properties.n; c++) {
+		prop = properties.e[c];
+
+		if (prop->AllowInput()) {
+			prop->pos.x = 0;
+			prop->pos.y = in_y+th*slot_radius;
+			in_y += 2*th*slot_radius;
+
+		} else if (prop->AllowOutput()) {
+			prop->pos.x = width;
+			prop->pos.y = out_y+th*slot_radius;
+			out_y += 2*th*slot_radius;
+		} 
+	} 
+
+	return 0;
+}
+
+/*! Call this whenever you resize a node.
+ * This will (currently) only adjust the x positions, and baselessly assumes the y are ok.
+ */
+void NodeBase::UpdateLinkPositions()
+{
+	//double y=1.5*th;
+	NodeProperty *prop;
+	for (int c=0; c<properties.n; c++) {
+		prop = properties.e[c];
+		//prop->y = y;
+		//prop->pos.y = y+prop->height/2;
+
+		if (prop->IsInput()) prop->pos.x = 0;
+		else prop->pos.x = width;
+
+		//y+=prop->height;
+		//height += prop->height;
+	} 
+}
+
 /*! -1 toggle, 0 open, 1 collapsed
  */
 int NodeBase::Collapse(int state)
 {
 	if (state==-1) state = !collapsed;
-	if (state) collapsed=true; else collapsed=false;
+
+	if (state==true && state!=collapsed) {
+		 //collapse!
+		collapsed = true;
+		fullwidth = width;
+		WrapCollapsed();
+
+	} else if (state==false && state!=collapsed) {
+		 //expand!
+		collapsed = false;
+		Wrap();
+	}
+
 	return collapsed;
 }
 
@@ -693,6 +785,7 @@ Attribute *NodeGroup::dump_out_atts(Attribute *att,int what,DumpContext *context
 
     if (what==-1) {
         att->push("id", "some_name");
+        att->push("label", "Displayed label");
         att->push("matrix", "screen matrix to use");
         att->push("background", "rgb(.1,.2,.3) #color of the background for this group of nodes");
         att->push("output", "which_one #id of the node designated as non-deletable output for this group, if any");
@@ -719,6 +812,7 @@ Attribute *NodeGroup::dump_out_atts(Attribute *att,int what,DumpContext *context
 		
 		att2 = att->pushSubAtt("node", node->Type());
 		att2->push("id", node->Id());
+		att2->push("label", node->Label());
 
 		sprintf(s,"%.10g %.10g %.10g %.10g", node->x,node->y,node->width,node->height);
 		att2->push("xywh", s);
@@ -776,6 +870,9 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
         if (!strcmp(name,"id")) {
             if (!isblank(value)) Id(value);
 
+		} else if (!strcmp(name,"label")) {
+            if (!isblank(value)) Label(value);
+
         } else if (!strcmp(name,"matrix")) {
 			double mm[6];
 			DoubleListAttribute(value,mm,6);
@@ -789,7 +886,13 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 			if (isblank(value)) continue;
 
 			NodeBase *newnode = NewNode(value);
-			if (!newnode) continue;
+			if (!newnode) {
+				char errormsg[200];
+				sprintf(errormsg,_("Unknown node type: %s"), value);
+				cerr << errormsg <<endl;
+				content->log->AddMessage(obj->object_id, obj->Id(), NULL, errormsg, ERROR_Warning);
+				continue;
+			}
 
     		for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
 				name= att->attributes.e[c]->attributes.e[c2]->name;
@@ -975,7 +1078,8 @@ class MathNode : public NodeBase
 	static SingletonKeeper mathnodekeeper; //the def for the op enum
 	static ObjectDef *GetMathNodeDef() { return dynamic_cast<ObjectDef*>(mathnodekeeper.GetObject()); }
 
-	int operation; // + - * / % power
+	int operation; //see MathNodeOps
+	int numargs;
 	double a,b,result;
 	MathNode(int op=0, double aa=0, double bb=0);
 	virtual ~MathNode();
@@ -987,6 +1091,8 @@ class MathNode : public NodeBase
 
 enum MathNodeOps {
 	OP_None,
+	 
+	 //2 arguments:
 	OP_Add,
 	OP_Subtract,
 	OP_Multiply,
@@ -1004,8 +1110,26 @@ enum MathNodeOps {
 	OP_And,
 	OP_Or,
 	OP_Xor,
+	OP_Not,
 	OP_ShiftLeft,
 	OP_ShiftRight,
+
+	 //1 argument:
+	OP_AbsoluteValue,
+	OP_Negative,
+	OP_Sqrt,
+	OP_Sin,
+	OP_Cos,
+	OP_Tan,
+	OP_Asin,
+	OP_Acos,
+	OP_Atan,
+	OP_Sinh,
+	OP_Cosh,
+	OP_Tanh,
+	OP_Asinh,
+	OP_Acosh,
+	OP_Atanh,
 
 	OP_MAX
 };
@@ -1016,19 +1140,19 @@ ObjectDef *DefineMathNodeDef()
 { 
 	ObjectDef *def = new ObjectDef("MathNodeDef", _("Math Node Def"), NULL,NULL,"enum", 0);
 
-	def->pushEnumValue("Add",_("Add"),_("Add"), OP_Add);
-	def->pushEnumValue("Subtract",_("Subtract"),_("Subtract"), OP_Subtract);
-	def->pushEnumValue("Multiply",_("Multiply"),_("Multiply"), OP_Multiply);
-	def->pushEnumValue("Divide",_("Divide"),_("Divide"), OP_Divide);
-	def->pushEnumValue("Mod",_("Mod"),_("Mod"), OP_Mod);
-	def->pushEnumValue("Power",_("Power"),_("Power"), OP_Power);
-	def->pushEnumValue("GreaterThan",_("Greater than"),_("Greater than"), OP_Greater_Than);
-	def->pushEnumValue("LessThan",_("Less than"),_("Less than"), OP_Less_Than);
-	def->pushEnumValue("Equals",_("Equals"),_("Equals"), OP_Equals);
-	def->pushEnumValue("NotEqual",_("Not Equal"),_("Not Equal"), OP_Not_Equal);
-	def->pushEnumValue("Minimum",_("Minimum"),_("Minimum"), OP_Minimum);
-	def->pushEnumValue("Maximum",_("Maximum"),_("Maximum"), OP_Maximum);
-	def->pushEnumValue("Average",_("Average"),_("Average"), OP_Average);
+	def->pushEnumValue("Add",        _("Add"),         _("Add"),         OP_Add         );
+	def->pushEnumValue("Subtract",   _("Subtract"),    _("Subtract"),    OP_Subtract    );
+	def->pushEnumValue("Multiply",   _("Multiply"),    _("Multiply"),    OP_Multiply    );
+	def->pushEnumValue("Divide",     _("Divide"),      _("Divide"),      OP_Divide      );
+	def->pushEnumValue("Mod",        _("Mod"),         _("Mod"),         OP_Mod         );
+	def->pushEnumValue("Power",      _("Power"),       _("Power"),       OP_Power       );
+	def->pushEnumValue("GreaterThan",_("Greater than"),_("Greater than"),OP_Greater_Than);
+	def->pushEnumValue("LessThan",   _("Less than"),   _("Less than"),   OP_Less_Than   );
+	def->pushEnumValue("Equals",     _("Equals"),      _("Equals"),      OP_Equals      );
+	def->pushEnumValue("NotEqual",   _("Not Equal"),   _("Not Equal"),   OP_Not_Equal   );
+	def->pushEnumValue("Minimum",    _("Minimum"),     _("Minimum"),     OP_Minimum     );
+	def->pushEnumValue("Maximum",    _("Maximum"),     _("Maximum"),     OP_Maximum     );
+	def->pushEnumValue("Average",    _("Average"),     _("Average"),     OP_Average     );
 
 	def->pushEnumValue("And"       ,_("And"       ),_("And"       ), OP_And      );
 	def->pushEnumValue("Or"        ,_("Or"        ),_("Or"        ), OP_Or       );
@@ -1050,6 +1174,7 @@ MathNode::MathNode(int op, double aa, double bb)
 	a=aa;
 	b=bb;
 	operation = op;
+	numargs = 2;
 
 	ObjectDef *enumdef = GetMathNodeDef();
 	enumdef->inc_count();
@@ -1246,7 +1371,7 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Color",  newColorNode,   NULL);
 
 	 //--- ImageNode
-	factory->DefineNewObject(getUniqueNumber(), "Image",  newImageNode,   NULL);
+	factory->DefineNewObject(getUniqueNumber(), "NewImage",  newImageNode,   NULL);
 
 	 //--- MathNode
 	factory->DefineNewObject(getUniqueNumber(), "Math",  newMathNode,   NULL);
@@ -1284,7 +1409,7 @@ NodeInterface::NodeInterface(anInterface *nowner, int nid, Displayer *ndp)
 	needtodraw=1;
 	font = app->defaultlaxfont;
 	font->inc_count();
-	slot_radius=.25;
+	defaultpreviewsize = 50; //pixels
 
 	color_controls.rgbf(.7,.5,.7,1.);
 	color_background.rgbf(0,0,0,.5);
@@ -1598,7 +1723,7 @@ int NodeInterface::Refresh()
 	 //  ins/outs
 	NodeBase *node;
 	ScreenColor *border, *fg;
-	ScreenColor tfg, tbg;
+	ScreenColor tfg, tbg, tmid;
 	NodeColors *colors=NULL;
 	double th = dp->textheight();
 	double borderwidth = 1;
@@ -1629,14 +1754,15 @@ int NodeInterface::Refresh()
 			bg = &tbg;
 		}
 		flatpoint p;
+		fg->Average(&tmid, *bg, .5); //middle color
 
 		 //draw whole rect, bg
-		dp->NewFG(bg);
+		dp->NewFG(node->collapsed ? &colors->label_bg : bg);
 		dp->LineWidth(borderwidth);
 		dp->drawRoundedRect(node->x, node->y, node->width, node->height,
 							th/3, false, th/3, false, 1); 
 
-		 //draw label
+		 //draw label area
 		dp->NewFG(&colors->label_bg);
 		dp->drawRoundedRect(node->x, node->y, node->width, th,
 							th/3, false, th/3, false, 1, 8|4); 
@@ -1646,36 +1772,46 @@ int NodeInterface::Refresh()
 		dp->drawRoundedRect(node->x, node->y, node->width, node->height,
 							th/3, false, th/3, false, 0); 
 
+		 //draw label
+		double labely = (node->collapsed ? node->y+node->height/2-th/2 : node->y);
 		dp->NewFG(&colors->label_fg);
-		dp->textout(node->x+node->width/2-th/2, node->y, node->Name, -1, LAX_TOP|LAX_HCENTER);
+		dp->textout(node->x+node->width/2+th/4, labely, node->Name, -1, LAX_TOP|LAX_HCENTER);
+
+		 //draw collapse arrow
+		dp->LineWidth(1);
+		if (node->collapsed) {
+			dp->drawthing(node->x+th,labely+th/2, th/4,th/4, lasthover==c && lasthoverslot==NHOVER_Collapse ? 0 : 1, THING_Triangle_Right);
+		} else {
+			dp->NewFG(&tmid);
+			dp->drawthing(node->x+th,labely+th/2, th/4,th/4, lasthover==c && lasthoverslot==NHOVER_Collapse ? 1 : 0, THING_Triangle_Down);
+		}
+	
+
 		dp->NewFG(fg);
 		dp->NewBG(bg);
 
 
 		 //draw the properties (or not)
 		p.set(node->x+node->width, node->y);
-		if (node->collapsed) dp->drawthing(p.x-th/2, p.y+th/2, th/4,th/4, 1, THING_Triangle_Right);
-		else {
-			 //node is expanded, draw all the properties...
-			// *** not implemented yet: *** dp->drawthing(p.x-th, p.y+th/2, th/4,th/4, 1, THING_Triangle_Down);
 
-			double y=node->y+th*1.5;
+		double y=node->y+th*1.5;
 
-			 //draw preview
+		 //draw preview
+		if (node->collapsed == 0) {
 			if (node->total_preview) {
 				double ph = (node->width-th)*node->total_preview->h()/node->total_preview->w();
 				dp->imageout(node->total_preview, node->x, node->y+th, node->width, ph);
 				y+=ph;
 			}
+		}
 
-			 //draw ins and outs
-			NodeProperty *prop;
-			for (int c2=0; c2<node->properties.n; c2++) {
-				prop = node->properties.e[c2];
-				DrawProperty(node, prop, y);
+		 //draw ins and outs
+		NodeProperty *prop;
+		for (int c2=0; c2<node->properties.n; c2++) {
+			prop = node->properties.e[c2];
+			DrawProperty(node, prop, y);
 
-				y += prop->height;
-			}
+			y += prop->height;
 		}
 	}
 
@@ -1724,90 +1860,94 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y)
 	//   vectors
 	//   colors
 	//   enums
-	Value *v = prop->GetData();
 
-	char extra[200];
-	extra[0]='\0';
 	double th = dp->textheight();
-	dp->LineWidth(1);
-	ScreenColor col;
+	if (!node->collapsed) {
+		Value *v = prop->GetData();
 
-	if (v && (v->type()==VALUE_Real || v->type()==VALUE_Int)) {
-		dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
-		dp->NewBG(&nodes->colors->bg_edit);
-		dp->drawRoundedRect(node->x+prop->x+th/2, node->y+prop->y+th/4, node->width-th, prop->height*.66,
-							th/3, false, th/3, false, 2); 
+		char extra[200];
+		extra[0]='\0';
+		dp->LineWidth(1);
+		ScreenColor col;
 
-		dp->NewFG(&nodes->colors->fg_edit);
-		sprintf(extra, "%s:", prop->Name());
-		dp->textout(node->x+prop->x+th, node->y+prop->y+prop->height/2, extra, -1, LAX_LEFT|LAX_VCENTER);
-		v->getValueStr(extra, 199);
-		dp->textout(node->x+node->width-th, node->y+prop->y+prop->height/2, extra, -1, LAX_RIGHT|LAX_VCENTER);
-
-	} else if (v && v->type()==VALUE_Enum) {
-
-		 //draw name
-		double x=th/2;
-		double dx=dp->textout(node->x+x, node->y+prop->y+prop->height/2, prop->Name(),-1, LAX_LEFT|LAX_VCENTER);
-		x+=dx+th/2;
-
-		 //draw value
-		dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
-		dp->NewBG(&nodes->colors->bg_menu);
-		dp->drawRoundedRect(node->x+x, node->y+prop->y+th/4, node->width-th/2-x, prop->height*.66,
-							th/3, false, th/3, false, 2); 
-
-		dp->NewFG(&nodes->colors->fg_edit);
-
-		//v->getValueStr(extra, 199);
-		//-----
-		EnumValue *ev = dynamic_cast<EnumValue*>(v);
-		const char *nm; 
-		ev->GetObjectDef()->getEnumInfo(ev->value, NULL, &nm);
-		dp->textout(node->x+th*1.5+dx, node->y+prop->y+prop->height/2, nm,-1, LAX_LEFT|LAX_VCENTER);
-		//dp->textout(node->x+th*1.5+dx, node->y+prop->y+prop->height/2, extra,-1, LAX_LEFT|LAX_VCENTER);
-		dp->drawthing(node->x+node->width-th, node->y+prop->y+prop->height/2, th/4,th/4, 1, THING_Triangle_Down);
-
-	} else if (v && v->type()==VALUE_Color) {
-		ColorValue *color = dynamic_cast<ColorValue*>(v);
-		double x = node->x+th/2;
-		unsigned long oldfg = dp->FG();
-		if (!(prop->IsInput() && prop->IsConnected())) {
-			 //draw color box
-			dp->NewFG(color->color.Red(),color->color.Green(),color->color.Blue(),color->color.Alpha());
-			dp->drawrectangle(x,y+prop->height/2-th/2, 2*th, th, 1);
+		if (v && (v->type()==VALUE_Real || v->type()==VALUE_Int)) {
 			dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
-			dp->drawrectangle(x,y+prop->height/2-th/2, 2*th, th, 0);
-			x += 2*th + th/2;
-		}
-		dp->NewFG(oldfg);
-		dp->textout(x,y+prop->height/2, prop->name,-1, LAX_LEFT|LAX_VCENTER);
+			dp->NewBG(&nodes->colors->bg_edit);
+			dp->drawRoundedRect(node->x+prop->x+th/2, node->y+prop->y+th/4, node->width-th, prop->height*.66,
+								th/3, false, th/3, false, 2); 
 
-	} else {
-		//strcpy(extra, prop->name);
+			dp->NewFG(&nodes->colors->fg_edit);
+			sprintf(extra, "%s:", prop->Name());
+			dp->textout(node->x+prop->x+th, node->y+prop->y+prop->height/2, extra, -1, LAX_LEFT|LAX_VCENTER);
+			v->getValueStr(extra, 199);
+			dp->textout(node->x+node->width-th, node->y+prop->y+prop->height/2, extra, -1, LAX_RIGHT|LAX_VCENTER);
 
-		if (prop->IsInput()) {
-			 //draw on left side
-			double dx = dp->textout(node->x+th/2, y+prop->height/2, prop->Name(),-1, LAX_LEFT|LAX_VCENTER); 
-			if (!isblank(extra)) {
-				dp->textout(node->x+th+dx, y+prop->height/2, extra,-1, LAX_LEFT|LAX_VCENTER);
-				dp->drawrectangle(node->x+th/2+dx, y, node->width-(th+dx), th*1.25, 0);
+		} else if (v && v->type()==VALUE_Enum) {
+
+			 //draw name
+			double x=th/2;
+			double dx=dp->textout(node->x+x, node->y+prop->y+prop->height/2, prop->Name(),-1, LAX_LEFT|LAX_VCENTER);
+			x+=dx+th/2;
+
+			 //draw value
+			dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
+			dp->NewBG(&nodes->colors->bg_menu);
+			dp->drawRoundedRect(node->x+x, node->y+prop->y+th/4, node->width-th/2-x, prop->height*.66,
+								th/3, false, th/3, false, 2); 
+
+			dp->NewFG(&nodes->colors->fg_edit);
+
+			//v->getValueStr(extra, 199);
+			//-----
+			EnumValue *ev = dynamic_cast<EnumValue*>(v);
+			const char *nm; 
+			ev->GetObjectDef()->getEnumInfo(ev->value, NULL, &nm);
+			dp->textout(node->x+th*1.5+dx, node->y+prop->y+prop->height/2, nm,-1, LAX_LEFT|LAX_VCENTER);
+			//dp->textout(node->x+th*1.5+dx, node->y+prop->y+prop->height/2, extra,-1, LAX_LEFT|LAX_VCENTER);
+			dp->drawthing(node->x+node->width-th, node->y+prop->y+prop->height/2, th/4,th/4, 1, THING_Triangle_Down);
+
+		} else if (v && v->type()==VALUE_Color) {
+			ColorValue *color = dynamic_cast<ColorValue*>(v);
+			double x = node->x+th/2;
+			unsigned long oldfg = dp->FG();
+			if (!(prop->IsInput() && prop->IsConnected())) {
+				 //draw color box
+				dp->NewFG(color->color.Red(),color->color.Green(),color->color.Blue(),color->color.Alpha());
+				dp->drawrectangle(x,y+prop->height/2-th/2, 2*th, th, 1);
+				dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
+				dp->drawrectangle(x,y+prop->height/2-th/2, 2*th, th, 0);
+				x += 2*th + th/2;
 			}
+			dp->NewFG(oldfg);
+			dp->textout(x,y+prop->height/2, prop->name,-1, LAX_LEFT|LAX_VCENTER);
 
 		} else {
-			 //draw on right side
-			double dx = dp->textout(node->x+node->width-th/2, y+prop->height/2, prop->Name(),-1, LAX_RIGHT|LAX_VCENTER);
-			if (!isblank(extra)) {
-				dp->textout(node->x+node->width-th-dx, y+prop->height/2, extra,-1, LAX_RIGHT|LAX_VCENTER);
-				dp->drawrectangle(node->x+th/2, y-th*.25, node->width-(th*1.25+dx), th*1.25, 0);
+			//strcpy(extra, prop->name);
+
+			if (prop->IsInput()) {
+				 //draw on left side
+				double dx = dp->textout(node->x+th/2, y+prop->height/2, prop->Name(),-1, LAX_LEFT|LAX_VCENTER); 
+				if (!isblank(extra)) {
+					dp->textout(node->x+th+dx, y+prop->height/2, extra,-1, LAX_LEFT|LAX_VCENTER);
+					dp->drawrectangle(node->x+th/2+dx, y, node->width-(th+dx), th*1.25, 0);
+				}
+
+			} else {
+				 //draw on right side
+				double dx = dp->textout(node->x+node->width-th/2, y+prop->height/2, prop->Name(),-1, LAX_RIGHT|LAX_VCENTER);
+				if (!isblank(extra)) {
+					dp->textout(node->x+node->width-th-dx, y+prop->height/2, extra,-1, LAX_RIGHT|LAX_VCENTER);
+					dp->drawrectangle(node->x+th/2, y-th*.25, node->width-(th*1.25+dx), th*1.25, 0);
+				}
 			}
 		}
-	}
+	} //node->collapsed
 
 	 //draw connection spot
 	if (prop->is_linkable) {
 		dp->NewBG(&prop->color);
-		dp->drawellipse(prop->pos+flatpoint(node->x,node->y), th*slot_radius,th*slot_radius, 0,0, 2);
+		//dp->drawellipse(prop->pos+flatpoint(node->x,node->y), th*slot_radius,th*slot_radius, 0,0, 2);
+		dp->drawellipse(prop->pos+flatpoint(node->x,node->y), th*node->colors->slot_radius,th*node->colors->slot_radius, 0,0, 2);
 	} 
 }
 
@@ -1827,19 +1967,30 @@ void NodeInterface::DrawConnection(NodeConnection *connection)
 }
 
 /*! Return the node under x,y, or -1 if no node there.
+ * This will scan within a buffer around edges to scan for hovering over node
+ * in/out, or edges for resizing.
+ *
+ * overpropslot is the connecting port. overproperty is the index of the property.
+ *
+ * overpropslot and overproperty must NOT be null.
  */
 int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty) 
 {
 	if (!nodes) return -1;
 
 	flatpoint p=nodes->m.transformPointInverse(flatpoint(x,y));
-	if (overpropslot) *overpropslot=-1;
+	*overpropslot=-1;
+	*overproperty=-1;
 
 	NodeBase *node;
 	double th = font->textheight();
+	double rr;
 
 	for (int c=nodes->nodes.n-1; c>=0; c--) {
 		node = nodes->nodes.e[c];
+
+		if (node->collapsed) rr = th*node->colors->slot_radius;
+		else rr = th/2;
 
 		if (p.x >= node->x-th/2 &&  p.x <= node->x+node->width+th/2 &&  p.y >= node->y &&  p.y <= node->y+node->height) {
 			 //found a node, now see if over a property's in/out
@@ -1849,16 +2000,31 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty)
 				prop = node->properties.e[c2];
 
 				if (!(prop->IsInput() && !prop->is_linkable)) { //only if the input is not exclusively internal
-				  if (p.y >= node->y+prop->y && p.y < node->y+prop->y+prop->height) {
-					if (p.x >= node->x+prop->pos.x-th/2 && p.x <= node->x+prop->pos.x+th/2) {
-						if (overpropslot) *overpropslot = c2;
+				  if (  p.y >= node->y+prop->pos.y-rr && p.y <= node->y+prop->pos.y+rr) {
+					if (p.x >= node->x+prop->pos.x-rr && p.x <= node->x+prop->pos.x+rr) {
+						*overproperty=c2;
+						*overpropslot = c2;
 					}
 				  }
 				}
 
 				if (p.y >= node->y+prop->y && p.y < node->y+prop->y+prop->height) {
-					if (overproperty) *overproperty=c2;
+					*overproperty=c2;
 				}
+			}
+
+			if (*overpropslot == -1) {
+				 //check if hovering over an edge
+				if (p.x >= node->x-th/2 && p.x <= node->x+th/2) *overpropslot = NHOVER_LeftEdge;
+				else if (p.x >= node->x+node->width-th/2 && p.x <= node->x+node->width+th/2) *overpropslot = NHOVER_RightEdge;
+
+				else if (node->collapsed || (p.y >= node->y && p.y <= node->y+th)) { //on label area
+					if (p.x >= node->x+th/2 && p.x <= node->x+3*th/2) *overpropslot = NHOVER_Collapse;
+					//else if (p.x >= node->x+node->width-th/2 && p.x <= node->x+node->width-3*th/2) *overpropslot = NHOVER_TogglePreview;
+					else *overpropslot = NHOVER_Label;
+				}
+
+				if (*overpropslot != -1) *overproperty = -1;
 			}
 			return c; 
 		}
@@ -1895,7 +2061,7 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 		selection_rect.miny=selection_rect.maxy=y;
 		needtodraw=1;
 
-	} else if (overnode>=0 && overproperty==-1 && overpropslot==-1) {
+	} else if (overnode>=0 && overproperty==-1) {
 		 //in a node, but not clicking on a property, so add or remove this node to selection
 		if ((state&LAX_STATE_MASK) == ShiftMask) {
 			 //add to selection
@@ -1905,13 +2071,11 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 
 		} else if ((state&LAX_STATE_MASK) == ControlMask) {
 			selected.remove(selected.findindex(nodes->nodes.e[overnode]));
+			action = NODES_Move_Nodes;
 			needtodraw=1;
 
 		} else {
-			 //plain click, make this node the only one selected
-			//selected.flush();
-			//selected.push(nodes->nodes.e[overnode]);
-			//action = NODES_Move_Nodes;
+			 //plain click, maybe move, but if no drag, then select on lbup
 			action = NODES_Move_Or_Select;
 			lasthover = overnode;
 			needtodraw=1;
@@ -1921,8 +2085,8 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 		 //click down on a property, but not on the slot...
 		action = NODES_Property;
 
-	} else if (overnode>=0 && overpropslot>=0) {
-		 //drag out a property to connect to another node
+	} else if (overnode>=0 && overproperty>=0 && overpropslot>=0) {
+		 //down on a socket, so drag out to connect to another node
 		NodeProperty *prop = nodes->nodes.e[overnode]->properties.e[overpropslot];
 
 		if (prop->IsInput()) {
@@ -2063,10 +2227,24 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 	} else if (action == NODES_Move_Or_Select) {
 		//to have this, we clicked down, but didn't move, so select the node..
+
 		if (overnode>=0) {
-			selected.flush();
-			selected.push(nodes->nodes.e[overnode]);
-			needtodraw=1;
+			if (selected.findindex(nodes->nodes.e[overnode]) < 0
+				 || lasthoverslot != NHOVER_Collapse) {
+				 //clicking on a node that's not in the selection
+				selected.flush();
+				selected.push(nodes->nodes.e[overnode]);
+				needtodraw=1;
+			}
+
+			if (lasthoverslot == NHOVER_Collapse) {
+				ToggleCollapsed();
+
+			//} else if (lasthoverslot == NHOVER_TogglePreview) {
+
+			//} else if (lasthoverslot == NHOVER_Label && count==2) {
+				// *** use right click menu instead??
+			}
 		}
 		return 0;
 
@@ -2256,7 +2434,13 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 
 	 //special check to maybe change action
 	if (action == NODES_Move_Or_Select) {
-		action = NODES_Move_Nodes;
+		if (lasthoverslot == NHOVER_LeftEdge) {
+			action = NODES_Resize_Left;
+		} else if (lasthoverslot == NHOVER_RightEdge) {
+			action = NODES_Resize_Right;
+		} else {
+			action = NODES_Move_Nodes;
+		}
 		buttondown.moveinfo(mouse->id, LEFTBUTTON, action, property);
 
 		int overnode = lasthover;
@@ -2299,6 +2483,28 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 		}
 		needtodraw=1;
 		return 0;
+
+	} else if (action == NODES_Resize_Left || action == NODES_Resize_Right) {	
+		if (selected.n && nodes) {
+			flatpoint d=nodes->m.transformPointInverse(flatpoint(x,y)) - nodes->m.transformPointInverse(flatpoint(lx,ly));
+
+			for (int c=0; c<selected.n; c++) {
+				if (action == NODES_Resize_Left) {
+					selected.e[c]->x += d.x;
+					selected.e[c]->width -= d.x;
+				} else {
+					selected.e[c]->width += d.x;
+				}
+
+				double th = font->textheight();
+				if (selected.e[c]->width < 2*th)  selected.e[c]->width = 2*th;
+
+				selected.e[c]->UpdateLinkPositions();
+			}
+		}
+		needtodraw=1;
+		return 0;
+
 
 	} else if (action == NODES_Drag_Input) {
 		lastpos.x=x; lastpos.y=y;
@@ -2529,6 +2735,16 @@ int NodeInterface::PerformAction(int action)
 	}
 
 	return 1;
+}
+
+int NodeInterface::ToggleCollapsed()
+{
+	for (int c=0; c<selected.n; c++) {
+		selected.e[c]->Collapse(-1);
+	}
+
+	needtodraw=1;
+	return 0;
 }
 
 } // namespace Laidout

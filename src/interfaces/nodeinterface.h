@@ -128,6 +128,7 @@ class NodeColors : public Laxkit::anObject
 
 	Laxkit::LaxFont *font;
 	unsigned int state; //normal | selected | mouseOver
+	double slot_radius; //as fraction of text size
 
 	Laxkit::ScreenColor default_property;
 	Laxkit::ScreenColor connection;
@@ -170,6 +171,8 @@ class NodeBase : public Laxkit::anObject, public Laxkit::DoubleRectangle
 	ObjectDef *def;
 
 	bool collapsed;
+	double fullwidth; //uncollapsed
+
 	bool deletable;
 	Laxkit::LaxImage *total_preview;
 
@@ -181,13 +184,17 @@ class NodeBase : public Laxkit::anObject, public Laxkit::DoubleRectangle
 	virtual ~NodeBase();
 	virtual const char *whattype() { return "Nodes"; }
 	virtual int InstallColors(NodeColors *newcolors, bool absorb_count);
-	virtual const char *Label() { return object_idstr; }
+	virtual const char *Label() { return Name; }
+	virtual const char *Label(const char *nlabel);
+	virtual const char *ScriptName() { return object_idstr; }
 	virtual const char *Type() { return type; }
 	virtual ObjectDef *GetDef() { return def; }
 
 	virtual int Update();
 	virtual int GetStatus();
 	virtual int Wrap();
+	virtual int WrapCollapsed();
+	virtual void UpdateLinkPositions();
 	virtual int Collapse(int state); //-1 toggle, 0 open, 1 collapsed
 
 	virtual int IsConnected(int propindex); //0=no, -1=prop is connected input, 1=connected output
@@ -245,6 +252,15 @@ typedef NodeGroup Nodes;
 
 //---------------------------- NodeInterface ------------------------------------
 
+enum NodeHover {
+	NHOVER_None = -1,
+	NHOVER_Label = -2,
+	NHOVER_LeftEdge = -3,
+	NHOVER_RightEdge = -4,
+	NHOVER_Collapse = -5,
+	NHOVER_TogglePreview = -6
+};
+
 enum NodeInterfaceActions {
 	NODES_None=0,
 	NODES_Normal,
@@ -267,6 +283,8 @@ enum NodeInterfaceActions {
 	NODES_Duplicate,
 	NODES_Group_Nodes,
 	NODES_Ungroup_Nodes,
+	NODES_Frame_Nodes,
+	NODES_Unframe_Nodes,
 	NODES_Add_Node,
 	NODES_Delete_Nodes,
 	NODES_Save_Nodes,
@@ -291,10 +309,11 @@ class NodeInterface : public LaxInterfaces::anInterface
 	flatpoint lastpos;
 
 
-	double slot_radius; //as fraction of text size
-	Laxkit::LaxFont *font;
-
 	Laxkit::Affine transform; //from nodes to screen coords
+
+	 //style state:
+	Laxkit::LaxFont *font;
+	double defaultpreviewsize;
 
 	Laxkit::ScreenColor color_connection;
 	Laxkit::ScreenColor color_connection_selected;
@@ -304,6 +323,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	Laxkit::ScreenColor color_background;
 	Laxkit::ScreenColor color_grid;
 	double draw_grid; //pixel spacing
+
 
 	Laxkit::ShortcutHandler *sc;
 
@@ -343,6 +363,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual void DrawProperty(NodeBase *node, NodeProperty *prop, double y);
 	virtual int scan(int x, int y, int *overpropslot, int *overproperty);
 	virtual int IsSelected(NodeBase *node);
+
+	virtual int ToggleCollapsed();
 };
 
 } // namespace Laidout
