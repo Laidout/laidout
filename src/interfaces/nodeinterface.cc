@@ -890,7 +890,7 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 				char errormsg[200];
 				sprintf(errormsg,_("Unknown node type: %s"), value);
 				cerr << errormsg <<endl;
-				content->log->AddMessage(obj->object_id, obj->Id(), NULL, errormsg, ERROR_Warning);
+				context->log->AddMessage(object_id, Id(), NULL, errormsg, ERROR_Warning);
 				continue;
 			}
 
