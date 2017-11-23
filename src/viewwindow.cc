@@ -2035,9 +2035,10 @@ int LaidoutViewport::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
 	DBG 	}
 	DBG 	cerr <<"mouse over: "<<c<<", page "<<(c>=0?spread->pagestack.e[c]->index:-1)<<endl;
 	DBG }
+
 	//DBG ObjectContext *oc=NULL;
 	//DBG int cc=FindObject(x,y,NULL,NULL,1,&oc);
-	//DBG cerr <<"============mouse move found:"<<cc;
+	//DBG cerr <<"------------mouse move found:"<<cc;
 	//DBG if (oc) dynamic_cast<VObjContext*>(oc)->context.out("  "); else cerr <<endl;
 
 	return ViewportWindow::MouseMove(x,y,state,mouse);
@@ -2314,7 +2315,7 @@ LaxInterfaces::ObjectContext *LaidoutViewport::ObjectMoved(LaxInterfaces::Object
 	//transform_mult(m,mmm,mm);
 	d->m(m);
 
-	DBG cerr <<"=========NEW MATRIX: "; dumpctm(d->m());
+	//DBG cerr <<"---------NEW MATRIX: "; dumpctm(d->m());
 	destcontext.push(i);
 	destcontext.SetObject(d);
 
@@ -2375,7 +2376,7 @@ int LaidoutViewport::MoveObject(LaxInterfaces::ObjectContext *fromoc, LaxInterfa
 	//transform_mult(m,mmm,mm);
 	d->m(m);
 
-	DBG cerr <<"=========NEW MATRIX: "; dumpctm(d->m());
+	//DBG cerr <<"---------NEW MATRIX: "; dumpctm(d->m());
 
 	DBG cerr <<"  moved "<<d->object_id<<" to: ";
 	DBG to->context.out(NULL);
@@ -2532,7 +2533,7 @@ void LaidoutViewport::Refresh()
 		lfirsttime=0; 
 		UpdateMarkers();
 	}
-	DBG cerr <<"======= Refreshing LaidoutViewport..";
+	DBG cerr <<"------ Refreshing LaidoutViewport..";
 	
 	//DBG flatpoint fp;
 	//DBG fp=dp->screentoreal(fp);
@@ -2800,7 +2801,7 @@ void LaidoutViewport::Refresh()
 	 // swap buffers
 	SwapBuffers();
 
-	DBG cerr <<"======= done refreshing LaidoutViewport.."<<endl;
+	DBG cerr <<"------- done refreshing LaidoutViewport.."<<endl;
 	DBG cerr <<"LO viewport Transform end: "<<endl; dumpctm(dp->Getctm());
 }
 
@@ -3050,7 +3051,7 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 	//DBG		int x,y;
 	//DBG 	d->paired_mouse->getInfo(this,NULL,NULL,&x,&y, NULL,NULL,NULL,NULL);
 	//DBG 	int cc=FindObject(x,y,NULL,NULL,1,&oc);
-	//DBG 	cerr <<"============mouse move found:"<<cc;
+	//DBG 	cerr <<"------------mouse move found:"<<cc;
 	//DBG 	if (oc) dynamic_cast<VObjContext*>(oc)->context.out("  "); else cerr <<endl;
 	//DBG 	return 0;
 	//DBG }
