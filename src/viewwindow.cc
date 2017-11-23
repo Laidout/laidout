@@ -2825,7 +2825,7 @@ Laxkit::ShortcutHandler *LaidoutViewport::GetShortcuts()
 	sc->Add(VIEWPORT_Center_Object,'4',0,0,     _("CenterObject"),   _("Center on current object"),NULL,0);
 	sc->Add(LOV_ZoomToPage,     '5',0,0,        _("ZoomToPage"),     _("Zoom to the current page"),NULL,0);
 	sc->AddShortcut(' ',ShiftMask,0, LOV_ZoomToPage);
-	sc->Add(LOV_GrabColor,      'g',0,0,        _("GrabColor"),      _("Grab color"),NULL,0);
+	sc->Add(LOV_GrabColor,      'G',ShiftMask|ControlMask,0,_("GrabColor"),_("Grab color"),NULL,0);
 	sc->Add(LOV_ToggleShowState,'l',ShiftMask,0,_("ToggleShow"),     _("Toggle show state"),NULL,0);
 	sc->Add(LOV_MoveObjects,    'm',0,0,        _("MoveObjs"),       _("Move objects"),NULL,0);
 	sc->Add(LOV_ObjUp,          LAX_Pgup,0,0,   _("MoveObjUp"),      _("Move object up within layer"),NULL,0);
