@@ -147,6 +147,7 @@ NodeProperty::NodeProperty()
 	owner=NULL;
 	data=NULL;
 	name=NULL;
+	label=NULL;
 	modtime=0;
 	width=height=0;
 
@@ -169,11 +170,13 @@ NodeProperty::NodeProperty(PropertyTypes input, bool linkable, const char *nname
 	is_linkable = linkable;
 
 	name=newstr(nname);
+	label=NULL;
 }
 
 NodeProperty::~NodeProperty()
 {
 	delete[] name;
+	delete[] label;
 	if (data) data->dec_count();
 }
 
@@ -1100,21 +1103,26 @@ enum MathNodeOps {
 	OP_Mod,
 	OP_Power,
 	OP_Greater_Than,
+	OP_Greater_Than_Or_Equal,
 	OP_Less_Than,
+	OP_Less_Than_Or_Equal,
 	OP_Equals,
 	OP_Not_Equal,
 	OP_Minimum,
 	OP_Maximum,
 	OP_Average,
+	OP_Atan2,
+	OP_RandomRange,    //seed, [0..max]
+	//OP_RandomRangeInt, //seed, [0..max]
 
 	OP_And,
 	OP_Or,
 	OP_Xor,
-	OP_Not,
 	OP_ShiftLeft,
 	OP_ShiftRight,
 
 	 //1 argument:
+	OP_Not,
 	OP_AbsoluteValue,
 	OP_Negative,
 	OP_Sqrt,
@@ -1140,25 +1148,29 @@ ObjectDef *DefineMathNodeDef()
 { 
 	ObjectDef *def = new ObjectDef("MathNodeDef", _("Math Node Def"), NULL,NULL,"enum", 0);
 
-	def->pushEnumValue("Add",        _("Add"),         _("Add"),         OP_Add         );
-	def->pushEnumValue("Subtract",   _("Subtract"),    _("Subtract"),    OP_Subtract    );
-	def->pushEnumValue("Multiply",   _("Multiply"),    _("Multiply"),    OP_Multiply    );
-	def->pushEnumValue("Divide",     _("Divide"),      _("Divide"),      OP_Divide      );
-	def->pushEnumValue("Mod",        _("Mod"),         _("Mod"),         OP_Mod         );
-	def->pushEnumValue("Power",      _("Power"),       _("Power"),       OP_Power       );
-	def->pushEnumValue("GreaterThan",_("Greater than"),_("Greater than"),OP_Greater_Than);
-	def->pushEnumValue("LessThan",   _("Less than"),   _("Less than"),   OP_Less_Than   );
-	def->pushEnumValue("Equals",     _("Equals"),      _("Equals"),      OP_Equals      );
-	def->pushEnumValue("NotEqual",   _("Not Equal"),   _("Not Equal"),   OP_Not_Equal   );
-	def->pushEnumValue("Minimum",    _("Minimum"),     _("Minimum"),     OP_Minimum     );
-	def->pushEnumValue("Maximum",    _("Maximum"),     _("Maximum"),     OP_Maximum     );
-	def->pushEnumValue("Average",    _("Average"),     _("Average"),     OP_Average     );
+	def->pushEnumValue("Add",        _("Add"),          _("Add"),         OP_Add         );
+	def->pushEnumValue("Subtract",   _("Subtract"),     _("Subtract"),    OP_Subtract    );
+	def->pushEnumValue("Multiply",   _("Multiply"),     _("Multiply"),    OP_Multiply    );
+	def->pushEnumValue("Divide",     _("Divide"),       _("Divide"),      OP_Divide      );
+	def->pushEnumValue("Mod",        _("Mod"),          _("Mod"),         OP_Mod         );
+	def->pushEnumValue("Power",      _("Power"),        _("Power"),       OP_Power       );
+	def->pushEnumValue("GreaterThan",_("Greater than"), _("Greater than"),OP_Greater_Than);
+	def->pushEnumValue("GreaterEqual",_("Greater or equal"),_("Greater or equal"),OP_Greater_Than_Or_Equal);
+	def->pushEnumValue("LessThan",   _("Less than"),    _("Less than"),   OP_Less_Than   );
+	def->pushEnumValue("LessEqual",  _("Less or equal"),_("Less or equal"),OP_Less_Than_Or_Equal);
+	def->pushEnumValue("Equals",     _("Equals"),       _("Equals"),      OP_Equals      );
+	def->pushEnumValue("NotEqual",   _("Not Equal"),    _("Not Equal"),   OP_Not_Equal   );
+	def->pushEnumValue("Minimum",    _("Minimum"),      _("Minimum"),     OP_Minimum     );
+	def->pushEnumValue("Maximum",    _("Maximum"),      _("Maximum"),     OP_Maximum     );
+	def->pushEnumValue("Average",    _("Average"),      _("Average"),     OP_Average     );
+	def->pushEnumValue("Atan2",      _("Atan2"),        _("Arctangent 2"),OP_Atan2       );
+	def->pushEnumValue("RandomR",    _("Random"),       _("Random(seed,max)"), OP_RandomRange );
 
-	def->pushEnumValue("And"       ,_("And"       ),_("And"       ), OP_And      );
-	def->pushEnumValue("Or"        ,_("Or"        ),_("Or"        ), OP_Or       );
-	def->pushEnumValue("Xor"       ,_("Xor"       ),_("Xor"       ), OP_Xor      );
-	def->pushEnumValue("ShiftLeft" ,_("ShiftLeft" ),_("ShiftLeft" ), OP_ShiftLeft);
-	def->pushEnumValue("ShiftRight",_("ShiftRight"),_("ShiftRight"), OP_ShiftRight);
+	def->pushEnumValue("And"        ,_("And"       ),   _("And"       ),  OP_And         );
+	def->pushEnumValue("Or"         ,_("Or"        ),   _("Or"        ),  OP_Or          );
+	def->pushEnumValue("Xor"        ,_("Xor"       ),   _("Xor"       ),  OP_Xor         );
+	def->pushEnumValue("ShiftLeft"  ,_("ShiftLeft" ),   _("ShiftLeft" ),  OP_ShiftLeft   );
+	def->pushEnumValue("ShiftRight" ,_("ShiftRight"),   _("ShiftRight"),  OP_ShiftRight  );
 
 	return def;
 }
@@ -1271,19 +1283,26 @@ int MathNode::Update()
 		}
 		result = pow(a,b);
 
-	} else if (operation==OP_Greater_Than) { result = (a>b);
-	} else if (operation==OP_Less_Than)    { result = (a<b);
-	} else if (operation==OP_Equals)       { result = (a==b);
-	} else if (operation==OP_Not_Equal)    { result = (a!=b);
-	} else if (operation==OP_Minimum)       { result = (a<b ? a : b);
-	} else if (operation==OP_Maximum)       { result = (a>b ? a : b);
-	} else if (operation==OP_Average)       { result = (a+b)/2;
+	} else if (operation==OP_Greater_Than_Or_Equal) { result = (a>=b);
+	} else if (operation==OP_Greater_Than)     { result = (a>b);
+	} else if (operation==OP_Less_Than)        { result = (a<b);
+	} else if (operation==OP_Less_Than_Or_Equal) { result = (a<=b);
+	} else if (operation==OP_Equals)           { result = (a==b);
+	} else if (operation==OP_Not_Equal)        { result = (a!=b);
+	} else if (operation==OP_Minimum)          { result = (a<b ? a : b);
+	} else if (operation==OP_Maximum)          { result = (a>b ? a : b);
+	} else if (operation==OP_Average)          { result = (a+b)/2;
+	} else if (operation==OP_Atan2)            { result = atan2(a,b);
 
 	} else if (operation==OP_And       )       { result = (int(a) & int(b));
 	} else if (operation==OP_Or        )       { result = (int(a) | int(b));
 	} else if (operation==OP_Xor       )       { result = (int(a) ^ int(b));
 	} else if (operation==OP_ShiftLeft )       { result = (int(a) << int(b));
 	} else if (operation==OP_ShiftRight)       { result = (int(a) >> int(b));
+
+	} else if (operation==OP_RandomRange)      {
+		srandom(a);
+		result = b * (double)random()/RAND_MAX;
 	}
 
 	if (!properties.e[3]->data) properties.e[3]->data=new DoubleValue(result);
@@ -1307,7 +1326,7 @@ Laxkit::anObject *newMathNode(Laxkit::anObject *ref)
 //
 //class FunctionNode : public NodeBase
 //{
-  //public:
+//  public:
 //};
 
 
@@ -1344,9 +1363,9 @@ Laxkit::anObject *newImageNode(Laxkit::anObject *ref)
 	makestr(node->type, "NewImage");
 	makestr(node->Name, _("New Image"));
 	//node->AddProperty(new NodeProperty(true, true, _("Filename"), new FileValue("."), 1)); 
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Width"), new DoubleValue(100), 1)); 
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Height"), new DoubleValue(100), 1)); 
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Channels"), new IntValue(4), 1)); 
+	node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Width"),    new IntValue(100), 1)); 
+	node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Height"),   new IntValue(100), 1)); 
+	node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Channels"), new IntValue(4),   1)); 
 
 	ObjectDef *enumdef = GetImageDepthDef();
 	EnumValue *e = new EnumValue(enumdef, 0);
@@ -1877,7 +1896,7 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y)
 								th/3, false, th/3, false, 2); 
 
 			dp->NewFG(&nodes->colors->fg_edit);
-			sprintf(extra, "%s:", prop->Name());
+			sprintf(extra, "%s:", prop->Label());
 			dp->textout(node->x+prop->x+th, node->y+prop->y+prop->height/2, extra, -1, LAX_LEFT|LAX_VCENTER);
 			v->getValueStr(extra, 199);
 			dp->textout(node->x+node->width-th, node->y+prop->y+prop->height/2, extra, -1, LAX_RIGHT|LAX_VCENTER);
@@ -1886,7 +1905,7 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y)
 
 			 //draw name
 			double x=th/2;
-			double dx=dp->textout(node->x+x, node->y+prop->y+prop->height/2, prop->Name(),-1, LAX_LEFT|LAX_VCENTER);
+			double dx=dp->textout(node->x+x, node->y+prop->y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER);
 			x+=dx+th/2;
 
 			 //draw value
@@ -1919,14 +1938,12 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y)
 				x += 2*th + th/2;
 			}
 			dp->NewFG(oldfg);
-			dp->textout(x,y+prop->height/2, prop->name,-1, LAX_LEFT|LAX_VCENTER);
+			dp->textout(x,y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER);
 
 		} else {
-			//strcpy(extra, prop->name);
-
 			if (prop->IsInput()) {
 				 //draw on left side
-				double dx = dp->textout(node->x+th/2, y+prop->height/2, prop->Name(),-1, LAX_LEFT|LAX_VCENTER); 
+				double dx = dp->textout(node->x+th/2, y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER); 
 				if (!isblank(extra)) {
 					dp->textout(node->x+th+dx, y+prop->height/2, extra,-1, LAX_LEFT|LAX_VCENTER);
 					dp->drawrectangle(node->x+th/2+dx, y, node->width-(th+dx), th*1.25, 0);
@@ -1934,7 +1951,7 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y)
 
 			} else {
 				 //draw on right side
-				double dx = dp->textout(node->x+node->width-th/2, y+prop->height/2, prop->Name(),-1, LAX_RIGHT|LAX_VCENTER);
+				double dx = dp->textout(node->x+node->width-th/2, y+prop->height/2, prop->Label(),-1, LAX_RIGHT|LAX_VCENTER);
 				if (!isblank(extra)) {
 					dp->textout(node->x+node->width-th-dx, y+prop->height/2, extra,-1, LAX_RIGHT|LAX_VCENTER);
 					dp->drawrectangle(node->x+th/2, y-th*.25, node->width-(th*1.25+dx), th*1.25, 0);

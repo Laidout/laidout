@@ -90,6 +90,7 @@ class NodeProperty
 	};
 
 	char *name;
+	char *label;
 	std::time_t modtime;
 
 	NodeBase *owner;
@@ -109,7 +110,8 @@ class NodeProperty
 	NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count);
 	virtual ~NodeProperty();
 	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface);
-	virtual const char *Name() { return name; }
+	virtual const char *Name()  { return name; }
+	virtual const char *Label() { return label ? label : name; }
 	virtual int IsConnected();
 	virtual int IsInput()  { return type==PROP_Input;  }
 	virtual int IsOutput() { return type==PROP_Output; }
