@@ -170,14 +170,55 @@ from recent import:
   spread editor needs edge dragging
 
 node editor NodeInterface:
-  image object creation node (the proof of concept node for 0.097)
+  view mode: all collapsed,  all collapsed except preview,  expanded no preview,  expanded with preview
+  image object creation node, tie node output to a custom importer (the proof of concept node for 0.097)
   finish implementing no cycle check
+  numbers need slide change
+  groups
+  rename nodes
+  node libraries
+  color code pipes by value type, color: yellow, number: gray, vector: purple
+  node magnifier for easier browsing when otherwise zoomed way out
+  auto shift on connection
+  exec paths
+
+  newly added should be selected
+  bug: shouldn't click edit output props
+
+  image from file node
   curve node
   simplex noise node
   gmic nodes
-  clear up IsInput()/IsOutput()
-  color code pipes by value type, color: yellow, number: gray, vector: purple
-  exec paths
+  graphicsmagick nodes
+  frames
+    drag out a rectangle
+	  if any nodes in rect, bind them and shrinkwrap frame 
+	  if no nodes in rect, just use dragged area for bounds
+	drag and drop nodes to insert into frame
+	shift-drag to remove from frame?
+  expression node:
+    any number of inputs
+	any number of outputs
+	inputs map to names according to property label
+	expression must result in a hash, which must map to defined output properties
+  vector node:
+    separate xyz
+	combine xyz
+	perpendicular
+	parallel to
+	norm
+  more math:
+	  ---two-arg---
+	  +    -    *    /     %     ^
+	  <    >    !=   == 
+	  min  max  avg
+	  and  or   xor  not   <<    >>
+
+	  ---one arg---
+	  abs  neg  sqrt
+	  sin  cos  tan  asin  acos  atan
+	  sinh cosh tanh asinh acosh atanh
+  DONE clear up IsInput()/IsOutput()
 
 need to implement DRAW_Hires for all interfaces that default to preview renders. needed for proper image out
   includes at least image(done), path, engraver
