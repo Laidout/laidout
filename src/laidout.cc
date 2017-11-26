@@ -53,6 +53,9 @@
 #include "api/functions.h"
 #include "newdoc.h"
 
+//DBG stuff:
+#include <lax/messagebox.h>
+
 //template implementations
 #include <lax/lists.cc>
 #include <lax/refptrstack.cc>
@@ -286,6 +289,13 @@ LaidoutApp::~LaidoutApp()
 //	impositionpool.flush();
 //	interfacepool.flush();
 //	PathInterface::basepathops.flush();
+
+	//we need special treatment of dls:
+	plugins.flush();
+	while (plugins.n) {
+		PluginBase *plugin = plugins.pop();
+		DeletePlugin(plugin);
+	}
 
 	dumpOutResources();
 
@@ -534,6 +544,10 @@ int LaidoutApp::init(int argc,char **argv)
 	delete[] curexecpath; curexecpath=NULL;
 
 
+	 //------load plugins
+	InitializePlugins();
+
+
 	 //------setup initial pools
 	 
 	DBG cerr <<"---file filters init"<<endl;
@@ -623,6 +637,9 @@ int LaidoutApp::init(int argc,char **argv)
 		if (prefs.autosave>0) {
 			UpdateAutosave();
 		}
+
+		 //let the user know of any snafus during startup
+		NotifyGeneralErrors(NULL);
 
 	} else if (runmode==RUNMODE_Impose_Only) {
 		//***
@@ -1008,6 +1025,68 @@ int LaidoutApp::readinLaidoutDefaults()
 
 	return 1;
 }
+
+int LaidoutApp::AddPlugin(const char *path)
+{
+	// *** todo!
+	return 1;
+}
+
+int LaidoutApp::RemovePlugin(const char *name)
+{
+	// *** todo!
+	return 1;
+}
+
+/*! Returns the number of plugins added.
+ */
+int LaidoutApp::InitializePlugins()
+{
+	int n=0;
+
+	DBG cerr <<"Initializing plugins..."<<endl;
+
+	const char *files[] = {
+		"plugins/exampleplugin.so",
+		"plugins/geglnodes.so",
+		NULL
+	};
+
+	for (int c=0; files[c]!=NULL; c++) {
+		PluginBase *plugin = LoadPlugin(files[c], generallog);
+		if (plugin) {
+			plugins.push(plugin);
+			plugin->dec_count();
+			n++;
+		}
+	}
+
+	return n;
+}
+
+/*! Pop up a box showing any errors in log (or generallog if log==NULL). Flushes log afterwards.
+ * This is done, for instance, at startup, to notify of any plugin load errors.
+ * If there aren't any, then do nothing.
+ */
+void LaidoutApp::NotifyGeneralErrors(ErrorLog *log)
+{
+	if (log==NULL) log = &generallog;
+
+	if (log->Total() == 0) return;
+
+	char *mes = log->FullMessageStr();
+	MessageBox *box = new MessageBox(NULL,"plugin","plugin",ANXWIN_CENTER,
+								  0,0,0,0,0,
+								  NULL,0,NULL,
+								  mes);
+	box->AddButton(BUTTON_OK);
+	box->AddButton(_("Dammit"), 0);
+	app->addwindow(box);
+	delete[] mes;
+
+	log->Clear();
+}
+
 
 /*! Calling code should increment count on returned object if they want to use it in place.
  * Ordinarily, most code is duplicating the returned object.

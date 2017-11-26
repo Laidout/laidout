@@ -1,6 +1,4 @@
 //
-// $Id$
-//	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -11,13 +9,14 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2013 by Tom Lechner
+// Copyright (C) 2013,2017 by Tom Lechner
 //
 
 
 #include <dlfcn.h>
 
 #include "plugin.h"
+#include "../language.h"
 
 #include <lax/strmanip.h>
 
@@ -55,18 +54,14 @@ namespace Laidout {
 
 typedef PluginBase *GetPluginFunc();
 
-/*! Return 0 for successful load.
- * Return -1 for already loaded.
- * Return >0 for error, and not loaded.
- */
-//int LaidoutApp::Load(const char *path_to_plugin)
-//
 /*! You will need to dec_count the returned plugin.
  */
-PluginBase *LoadPlugin(const char *path_to_plugin)
+PluginBase *LoadPlugin(const char *path_to_plugin, Laxkit::ErrorLog &log)
 {
 	PluginBase *plugin = NULL;
 	void *handle = NULL;
+
+	DBG cerr <<"loading "<<path_to_plugin<<endl;
 
 	try {
 		//if (!IS_REG(file_exists(path_to_plugin, 1, NULL))) throw 1;
@@ -112,14 +107,41 @@ PluginBase *LoadPlugin(const char *path_to_plugin)
 
 		if (err) {
 			cerr << "some kind of error: "<<error<<", "<<err << endl;
+			log.AddMessage(0, path_to_plugin,_("Plugin"), err, Laxkit::ERROR_Fail);
 			delete[] err;
 		} else {
+			if (error == 3 || error == 4) log.AddMessage(_("Malformed plugin file!"), Laxkit::ERROR_Fail);
+			else log.AddMessage("Ack! unknown dlopen error! Bad news!", Laxkit::ERROR_Fail);
+
 			cerr << "dl error: "<<error<<endl;
 		}
 		return NULL;
 	}
 
+	makestr(plugin->filepath, path_to_plugin);
+
+	DBG cerr <<"Found plugin!"<<endl;
+	DBG cerr <<"  Name:        "<< plugin->PluginName()  << endl;
+	DBG cerr <<"  Version:     "<< plugin->Version()<<endl;
+	DBG cerr <<"  Description: "<< plugin->Description() << endl;
+	DBG cerr <<"  Author:      "<< plugin->Author()      << endl;
+	DBG cerr <<"  ReleaseDate: "<< plugin->ReleaseDate() << endl;
+	DBG cerr <<"  License:     "<< plugin->License()     << endl;
+	DBG if (plugin->OtherMeta()) const_cast<LaxFiles::Attribute*>(plugin->OtherMeta())->dump_out_full(stderr, 2);
+
 	return plugin;
+}
+
+/*! Call this when you are all done with the plugin, meaning
+ * ALL references to things the plugin uses have been deallocated.
+ * delete is called on plugin, and dlclose() for it after delete completes.
+ */
+int DeletePlugin(PluginBase *plugin)
+{
+	void *handle = plugin->handle;
+	delete plugin;
+	dlclose(handle);
+	return 0;
 }
 
 //int LaidoutApp::UnLoad(PluginBase *plugin)
@@ -146,13 +168,16 @@ PluginBase *LoadPlugin(const char *path_to_plugin)
 
 PluginBase::PluginBase()
 {
+	filepath = NULL;
 	handle = NULL;
 	initialized = 0;
 }
 
 PluginBase::~PluginBase()
 {
-	if (handle) dlclose(handle);
+	DBG cerr << "destructor plugin: "<<filepath<<endl;
+	delete[] filepath;
+	//if (handle) dlclose(handle); <- note: can't do this here, since *this is allocated within the dl!
 }
 
 

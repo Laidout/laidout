@@ -30,6 +30,7 @@
 #include "impositions/imposition.h"
 #include "filetypes/filefilters.h"
 #include "calculator/values.h"
+#include "plugins/plugin.h"
 
 
 namespace Laidout {
@@ -85,6 +86,8 @@ enum RunModeType {
 class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventReceiver
 {
  protected:
+	Laxkit::ErrorLog generallog;
+
 	void dumpOutResources();
 
 	int autosave_timerid;
@@ -126,10 +129,15 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	Laxkit::PtrStack<ExportFilter> exportfilters;
 	Laxkit::PtrStack<ImportFilter>  importfilters;
 
+	Laxkit::RefPtrStack<PluginBase> plugins;
+	int AddPlugin(const char *path);
+	int RemovePlugin(const char *name);
+	int InitializePlugins();
+
 	Laxkit::PtrStack<PaperStyle> papersizes;
 	PaperStyle *defaultpaper; //could be a custom, so need to have extra field here
 	PaperStyle *GetDefaultPaper();
-	
+
 	LaidoutApp();
 	virtual ~LaidoutApp();
 	virtual const char *whattype() { return "LaidoutApp"; }
@@ -162,6 +170,7 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	void PushExportFilter(ExportFilter *filter);
 	ExportFilter *FindExportFilter(const char *name, bool exact_only);
 	void PushImportFilter(ImportFilter *filter);
+	void NotifyGeneralErrors(Laxkit::ErrorLog *log);
 
 	virtual void UpdateAutosave();
 

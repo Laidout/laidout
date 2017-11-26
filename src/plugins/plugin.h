@@ -1,6 +1,4 @@
 //
-// $Id$
-//	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -11,7 +9,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2013 by Tom Lechner
+// Copyright (C) 2013-2017 by Tom Lechner
 //
 #ifndef PLUGIN_H
 #define PLUGIN_H
@@ -19,6 +17,7 @@
 
 #include <lax/anobject.h>
 #include <lax/attributes.h>
+#include <lax/errorlog.h>
 
 //#include "../laidout.h"
 
@@ -33,6 +32,7 @@ class PluginBase : public Laxkit::anObject
   protected:
 
   public:
+	char *filepath;
 	void *handle;
 	int initialized;
 
@@ -79,10 +79,11 @@ class PluginBase : public Laxkit::anObject
 
 //------------------------- LoadPlugin --------------------------------------
 
-PluginBase *LoadPlugin(const char *path_to_plugin);
+PluginBase *LoadPlugin(const char *path_to_plugin, Laxkit::ErrorLog &log);
+int DeletePlugin(PluginBase *plugin);
 
 
-} //namespace Laiodut
+} //namespace Laidout
 
 
 #endif
