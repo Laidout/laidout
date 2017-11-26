@@ -144,12 +144,13 @@ NodeProperty::NodeProperty()
 {
 	color.rgbf(1.,1.,1.,1.);
 
-	owner=NULL;
-	data=NULL;
-	name=NULL;
-	label=NULL;
-	modtime=0;
-	width=height=0;
+	owner   = NULL;
+	data    = NULL;
+	name    = NULL;
+	label   = NULL;
+	tooltip = NULL;
+	modtime = 0;
+	width   = height = 0;
 
 	type = PROP_Unknown;
 	is_linkable=false; //default true for something that allows links in
@@ -157,7 +158,7 @@ NodeProperty::NodeProperty()
 
 /*! If !absorb_count, then ndata's count gets incremented.
  */
-NodeProperty::NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count)
+NodeProperty::NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count, const char *nlabel, const char *ntip)
 {
 	color.rgbf(1.,1.,1.,1.);
 
@@ -169,14 +170,16 @@ NodeProperty::NodeProperty(PropertyTypes input, bool linkable, const char *nname
 	type = input;
 	is_linkable = linkable;
 
-	name=newstr(nname);
-	label=NULL;
+	name    = newstr(nname);
+	label   = newstr(nlabel);
+	tooltip = newstr(ntip);
 }
 
 NodeProperty::~NodeProperty()
 {
 	delete[] name;
 	delete[] label;
+	delete[] tooltip;
 	if (data) data->dec_count();
 }
 
@@ -307,6 +310,17 @@ int NodeBase::InstallColors(NodeColors *newcolors, bool absorb_count)
 	return 0;
 }
 
+/*! Return a custom interface to use for this whole node.
+ * If this is returned, then it is assumed this interface will render ther entire
+ * node.
+ *
+ * Return NULL for default node rendering.
+ */
+LaxInterfaces::anInterface *NodeBase::PropInterface(LaxInterfaces::anInterface *interface)
+{
+	return NULL;
+}
+
 enum NodePropValidEnum {
 	NVALID_Min           = (1<<0),
 	NVALID_Min_Exclusive = (1<<1),
@@ -315,6 +329,7 @@ enum NodePropValidEnum {
 	NVALID_Types         = (1<<4),
 	NVALID_MAX
 };
+
 /*! \class NodePropValid
  * Class to ease checking validity of property values for common situations.
  */
@@ -344,7 +359,7 @@ int NodeBase::GetStatus()
 	for (int c=0; c<properties.n; c++) {
 		if (!properties.e[c]->IsOutput() && properties.e[c]->modtime > t) t = properties.e[c]->modtime;
 	}
-	if (t==0) return 0; //no inputs!
+	if (t==0) return 0; //earliest output time is beginning, or no outputs, so nothing to be done!
 
 	 //if any outputs older than newest mod, then return 1
 	for (int c=0; c<properties.n; c++) {
@@ -450,7 +465,8 @@ int NodeBase::Wrap()
 	return 0;
 }
 
-/*! Update the bounds to be the collapsed version.
+/*! Update the bounds to be the collapsed version, and set props->pos
+ * to be squashed along the edges.
  */
 int NodeBase::WrapCollapsed()
 {
@@ -499,23 +515,21 @@ int NodeBase::WrapCollapsed()
 	return 0;
 }
 
-/*! Call this whenever you resize a node.
- * This will (currently) only adjust the x positions, and baselessly assumes the y are ok.
+/*! Call this whenever you resize a node and the node is not collapsed.
+ * This will adjust the x and y positions for prop->pos.
+ * Assumes properties already has proper bounding boxes set.
+ * By default Inputs go on middle of left edge. Outputs middle of right.
  */
 void NodeBase::UpdateLinkPositions()
 {
-	//double y=1.5*th;
 	NodeProperty *prop;
 	for (int c=0; c<properties.n; c++) {
 		prop = properties.e[c];
-		//prop->y = y;
-		//prop->pos.y = y+prop->height/2;
+
+		prop->pos.y = prop->y + prop->height/2;
 
 		if (prop->IsInput()) prop->pos.x = 0;
 		else prop->pos.x = width;
-
-		//y+=prop->height;
-		//height += prop->height;
 	} 
 }
 
@@ -540,7 +554,8 @@ int NodeBase::Collapse(int state)
 	return collapsed;
 }
 
-/*! 0=no, -1=prop is connected input, 1=connected output
+/*! Check whether a specified property is connected to anything.
+ * 0=no, -1=prop is connected input, 1=connected output
  */
 int NodeBase::IsConnected(int propindex)
 {
@@ -548,7 +563,8 @@ int NodeBase::IsConnected(int propindex)
 	return properties.e[propindex]->IsConnected();
 }
 
-/*! Return the property index of the first property that has a connection to prop.
+/*! Return the property index of the first property that has a connection to 
+ * another node's property.
  */
 int NodeBase::HasConnection(NodeProperty *prop, int *connection_ret)
 {
@@ -1013,7 +1029,7 @@ NodeBase *NodeGroup::NewNode(const char *type)
 		fnode = factory->types.e[c];
 
 		if (!strcmp(fnode->name, type)) {
-			anObject *obj = fnode->newfunc(NULL);
+			anObject *obj = fnode->newfunc(fnode->parameter, NULL);
 			NodeBase *newnode = dynamic_cast<NodeBase*>(obj);
 
 			if (obj && !newnode) {
@@ -1043,7 +1059,7 @@ NodeBase *NodeGroup::FindNode(const char *name)
 
 //------------ DoubleNode
 
-Laxkit::anObject *newDoubleNode(Laxkit::anObject *ref)
+Laxkit::anObject *newDoubleNode(int p, Laxkit::anObject *ref)
 {
 	NodeBase *node = new NodeBase;
 	//node->Id("Value");
@@ -1056,7 +1072,7 @@ Laxkit::anObject *newDoubleNode(Laxkit::anObject *ref)
 
 //------------ ColorNode
 
-Laxkit::anObject *newColorNode(Laxkit::anObject *ref)
+Laxkit::anObject *newColorNode(int p, Laxkit::anObject *ref)
 {
 	NodeBase *node = new NodeBase;
 	makestr(node->Name, _("Color"));
@@ -1312,7 +1328,7 @@ int MathNode::Update()
 	return NodeBase::Update();
 }
 
-Laxkit::anObject *newMathNode(Laxkit::anObject *ref)
+Laxkit::anObject *newMathNode(int p, Laxkit::anObject *ref)
 {
 	return new MathNode();
 }
@@ -1355,7 +1371,7 @@ ObjectDef *GetImageDepthDef()
 	return edef;
 }
 
-Laxkit::anObject *newImageNode(Laxkit::anObject *ref)
+Laxkit::anObject *newImageNode(int p, Laxkit::anObject *ref)
 {
 	NodeBase *node = new NodeBase;
 	//node->Id("Image");
@@ -1387,16 +1403,16 @@ Laxkit::anObject *newImageNode(Laxkit::anObject *ref)
 int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 {
 	 //--- ColorNode
-	factory->DefineNewObject(getUniqueNumber(), "Color",  newColorNode,   NULL);
+	factory->DefineNewObject(getUniqueNumber(), "Color",    newColorNode,  NULL, 0);
 
 	 //--- ImageNode
-	factory->DefineNewObject(getUniqueNumber(), "NewImage",  newImageNode,   NULL);
+	factory->DefineNewObject(getUniqueNumber(), "NewImage", newImageNode,  NULL, 0);
 
 	 //--- MathNode
-	factory->DefineNewObject(getUniqueNumber(), "Math",  newMathNode,   NULL);
+	factory->DefineNewObject(getUniqueNumber(), "Math",     newMathNode,   NULL, 0);
 
 	 //--- DoubleNode
-	factory->DefineNewObject(getUniqueNumber(), "Value", newDoubleNode, NULL);
+	factory->DefineNewObject(getUniqueNumber(), "Value",    newDoubleNode, NULL, 0);
 
 	return 0;
 }
@@ -1637,7 +1653,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 			type = node_factory->types.e[c];
 
 			if (!strcmp(type->name, what)) {
-				anObject *obj = type->newfunc(NULL);
+				anObject *obj = type->newfunc(type->parameter, NULL);
 				NodeBase *newnode = dynamic_cast<NodeBase*>(obj);
 				flatpoint p = nodes->m.transformPointInverse(lastpos);
 				newnode->x=p.x;
@@ -1699,6 +1715,17 @@ int NodeInterface::Refresh()
 	if (needtodraw==0) return 0;
 	needtodraw=0;
 
+	int overnode=-1, overslot=-1, overprop=-1; 
+	if (buttondown.any(0,LEFTBUTTON)) {
+		int device = buttondown.whichdown(0,LEFTBUTTON);
+		int x,y;
+		buttondown.getlast(device,LEFTBUTTON, &x,&y);
+		overnode = scan(x,y, &overslot, &overprop);
+	} else {
+		overnode = lasthover;
+		overprop = lasthoverprop;
+		overslot = lasthoverslot;
+	}
 
 	dp->PushAxes();
 
@@ -1826,9 +1853,11 @@ int NodeInterface::Refresh()
 
 		 //draw ins and outs
 		NodeProperty *prop;
+
 		for (int c2=0; c2<node->properties.n; c2++) {
 			prop = node->properties.e[c2];
-			DrawProperty(node, prop, y);
+			DrawProperty(node, prop, y, overnode == c && overprop == c2,
+										overnode == c && overprop == c2 && overslot == c2);
 
 			y += prop->height;
 		}
@@ -1872,7 +1901,7 @@ int NodeInterface::Refresh()
 	return 0;
 }
 
-void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y)
+void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, int hoverprop, int hoverslot)
 {
 	// todo, defaults for:
 	//   numbers
@@ -1925,6 +1954,33 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y)
 			//dp->textout(node->x+th*1.5+dx, node->y+prop->y+prop->height/2, extra,-1, LAX_LEFT|LAX_VCENTER);
 			dp->drawthing(node->x+node->width-th, node->y+prop->y+prop->height/2, th/4,th/4, 1, THING_Triangle_Down);
 
+		} else if (v && v->type()==VALUE_Boolean) {
+			coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit);
+			dp->NewFG(&col);
+			coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit, .15);
+			dp->NewBG(hoverprop ? &col : &nodes->colors->bg_edit);
+
+			BooleanValue *vv = dynamic_cast<BooleanValue*>(v);
+
+			if (prop->IsInput()) {
+				dp->drawrectangle(node->x+prop->x+th/2, y+prop->height/2-th/2, th, th, 2);
+
+				dp->NewFG(&nodes->colors->fg_edit);
+				if (vv->i) dp->drawthing(node->x+prop->x + th,y+prop->height/2, th/2,-th/2, 1, THING_Check);
+
+				 //draw on left side
+				dp->textout(node->x+2*th, y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER); 
+
+			} else {
+				 //draw on right side
+				dp->drawrectangle(node->x+prop->x+prop->width - 3*th/2, y+prop->height/2-th/2, th, th, 2);
+
+				dp->NewFG(&nodes->colors->fg_edit);
+				if (vv->i) dp->drawthing(node->x+prop->x + prop->width - th,y+prop->height/2, th/2,-th/2, 1, THING_Check);
+
+				dp->textout(node->x+node->width-2*th, y+prop->height/2, prop->Label(),-1, LAX_RIGHT|LAX_VCENTER);
+			}
+
 		} else if (v && v->type()==VALUE_Color) {
 			ColorValue *color = dynamic_cast<ColorValue*>(v);
 			double x = node->x+th/2;
@@ -1964,7 +2020,8 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y)
 	if (prop->is_linkable) {
 		dp->NewBG(&prop->color);
 		//dp->drawellipse(prop->pos+flatpoint(node->x,node->y), th*slot_radius,th*slot_radius, 0,0, 2);
-		dp->drawellipse(prop->pos+flatpoint(node->x,node->y), th*node->colors->slot_radius,th*node->colors->slot_radius, 0,0, 2);
+		dp->drawellipse(prop->pos+flatpoint(node->x,node->y),
+				(hoverslot ? 2 : 1)*th*node->colors->slot_radius, (hoverslot ? 2 : 1)*th*node->colors->slot_radius, 0,0, 2);
 	} 
 }
 
@@ -2181,7 +2238,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		if (!v) return 0;
 
 		char valuestr[200];
-		if (v->type()==VALUE_Real || v->type()==VALUE_Int) {
+		if (v->type()==VALUE_Real || v->type()==VALUE_Int || v->type()==VALUE_String) {
 			 //create input box..
 
 			flatpoint ul= nodes->m.transformPoint(flatpoint(node->x+prop->x, node->y+prop->y));
@@ -2191,11 +2248,17 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 			bounds.addtobounds(ul);
 			bounds.addtobounds(lr);
 
-			v->getValueStr(valuestr, 199);
+			if (v->type()!=VALUE_String) v->getValueStr(valuestr, 199);
 
-			viewport->SetupInputBox(object_id, NULL, valuestr, v->type()==VALUE_Real ? "setpropdouble" : "setpropint", bounds);
+			viewport->SetupInputBox(object_id, NULL, v->type()==VALUE_String ? dynamic_cast<StringValue*>(v)->str : valuestr,
+					v->type()==VALUE_Real ? "setpropdouble" : (v->type()==VALUE_Int ? "setpropint" : "setpropstring"), bounds);
 			lasthover = overnode;
 			lasthoverprop = overproperty;
+
+		} else if (v->type()==VALUE_Boolean) {
+			BooleanValue *vv=dynamic_cast<BooleanValue*>(prop->data);
+			vv->i = !vv->i;
+			needtodraw=1;
 
 		} else if (v->type()==VALUE_Color) {
 			ColorValue *color = dynamic_cast<ColorValue*>(v); 
@@ -2685,8 +2748,8 @@ int NodeInterface::PerformAction(int action)
 		MenuInfo *menu=new MenuInfo;
 		ObjectFactoryNode *type;
 		for (int c=0; c<node_factory->types.n; c++) {
-			type=node_factory->types.e[c];
-			menu->AddItem(type->name, c);
+			type = node_factory->types.e[c];
+			menu->AddDelimited(type->name); //, '/', 0, c);
 		}
 
 
@@ -2695,7 +2758,7 @@ int NodeInterface::PerformAction(int action)
                         object_id,"addnode",
                         0, //mouse to position near?
                         menu,1, NULL,
-                        MENUSEL_LEFT|MENUSEL_CHECK_ON_LEFT|MENUSEL_DESTROY_ON_LEAVE);
+                        MENUSEL_LEFT|MENUSEL_CHECK_ON_LEFT|MENUSEL_SEND_PATH);
         popup->pad=5;
         popup->WrapToMouse(0);
         app->rundialog(popup);

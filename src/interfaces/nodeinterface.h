@@ -91,6 +91,7 @@ class NodeProperty
 
 	char *name;
 	char *label;
+	char *tooltip;
 	std::time_t modtime;
 
 	NodeBase *owner;
@@ -107,7 +108,7 @@ class NodeProperty
 	flatpoint pos; //clickable spot relative to parent NodeBase origin
 
 	NodeProperty();
-	NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count);
+	NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count, const char *nlabel=NULL, const char *ntip=NULL);
 	virtual ~NodeProperty();
 	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface);
 	virtual const char *Name()  { return name; }
@@ -168,9 +169,9 @@ class NodeBase : public Laxkit::anObject, public Laxkit::DoubleRectangle
 {
   public:
 	 //state
-	char *Name; //displayed name
+	char *Name; //displayed name (id is Id())
 	char *type; //non translated type, like "Value", or "Math"
-	ObjectDef *def;
+	ObjectDef *def; //optional
 
 	bool collapsed;
 	double fullwidth; //uncollapsed
@@ -191,6 +192,7 @@ class NodeBase : public Laxkit::anObject, public Laxkit::DoubleRectangle
 	virtual const char *ScriptName() { return object_idstr; }
 	virtual const char *Type() { return type; }
 	virtual ObjectDef *GetDef() { return def; }
+	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface);
 
 	virtual int Update();
 	virtual int GetStatus();
@@ -362,7 +364,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual int KeyUp(unsigned int ch,unsigned int state, const Laxkit::LaxKeyboard *d);
 
 	virtual void DrawConnection(NodeConnection *connection);
-	virtual void DrawProperty(NodeBase *node, NodeProperty *prop, double y);
+	virtual void DrawProperty(NodeBase *node, NodeProperty *prop, double y, int hoverprop, int hoverslot);
 	virtual int scan(int x, int y, int *overpropslot, int *overproperty);
 	virtual int IsSelected(NodeBase *node);
 
