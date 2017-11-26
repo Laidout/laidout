@@ -95,7 +95,7 @@ void Interpreter::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *sa
 //------------------------------------PythonInterpreter--------------------------------------
 class PythonInterpreter : public Interpreter
 {
-	int gil_state;
+	int gil_state; //global interpreter lock
 	int gil_init;
 
   public:
