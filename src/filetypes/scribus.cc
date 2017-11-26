@@ -35,7 +35,7 @@
 #include "../dataobjects/mysterydata.h"
 #include "../drawdata.h"
 
-//template instantiation
+//template implementation
 #include <lax/lists.cc>
 #include <lax/refptrstack.cc>
 
