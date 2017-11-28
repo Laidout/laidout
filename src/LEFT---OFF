@@ -179,6 +179,7 @@ node editor NodeInterface:
   type to search in add menu
   duplicate nodes
   numbers need slide change
+  load something already loaded makes dups of everything.. need to check for name collision!!
   groups
   rename nodes
   jump to link under mouse
@@ -187,6 +188,8 @@ node editor NodeInterface:
   node magnifier for easier browsing when otherwise zoomed way out
   auto shift on connection
   exec paths
+  make sure it doesn't go totally offscreen
+  scriptify node graph
 
   newly added should be selected
   bug: shouldn't click edit output props
@@ -226,6 +229,8 @@ node editor NodeInterface:
 	  abs  neg  sqrt
 	  sin  cos  tan  asin  acos  atan
 	  sinh cosh tanh asinh acosh atanh
+
+  DONE hover tips for props on collapsed nodes
   DONE clear up IsInput()/IsOutput()
 
 need to implement DRAW_Hires for all interfaces that default to preview renders. needed for proper image out
@@ -397,6 +402,7 @@ engraving tool: Engraving  engraver
   perhaps allow path objects to be adjusted with engrave tool for custom outlier lines not part of mesh?
   must implement mode based shortcuts in Laxkit. currently all mesh shortcuts are active
   stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
+    per stipple, adjust rotation, scale, color, morph
 
 PathInterface: pathinterface
   bug: seems to be possible to move nodes out of order, only occassionally
