@@ -9,11 +9,7 @@ VERSION 0.097
 -------------
 (done) debug previous version at least slightly!
 (done) experimental Delauny/voronoi lines tool
-       engraver tool grow point mode
-       engraver tool, resolution cut mode
-       engraver tool, blockout needs to be more precise
 (done) engraver tool, fix non-live updates when tweaking various parameters
-       engraver tool, fully test tool effects when many objects selected
 (done) Clean up symmetry clone interface, not easy to use currently
 (done) Allow setting custom default exported file name (via a line in laidoutrc)
        Text on path tool
@@ -25,13 +21,23 @@ VERSION 0.097
 (done) Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
        debug svg in
        svg out default to 96dpi
+       Make sure scribus can export to 1.5
+(done) Experimental perspective transform interface
+(done) Experimental voronoi interface
+       Experimental node interface
 (done) fix tooltips
 
 
 VERSION 0.098
 -------------
-       layers (object tree) palette
        debug previous version!
+       engraver tool grow point mode
+       engraver tool, resolution cut mode
+       engraver tool, blockout needs to be more precise
+       engraver tool, fully test tool effects when many objects selected
+       layers (object tree) palette
+       Connect node interface for use with object filters
+       Perspective transform object filter
        Tools should remember their settings
        option to specify alignment of different size signature stacks
        debug line outline cache, especially for joins
