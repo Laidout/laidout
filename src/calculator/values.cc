@@ -2047,6 +2047,8 @@ int Value::assign(FieldExtPlace *ext,Value *v)
 
 //! Output to buffer, do NOT reallocate buffer, assume it has enough space. If len is not enough, return how much is needed.
 /*! Generally, subclasses should redefine this, and not the other getValueStr().
+ * The string returned generally should be a string that can reasonably be
+ * expected to convert back to a value in the interpreter.
  *
  * Return 0 for successfully written, or the length necessary if len is not enough.
  */
@@ -2202,6 +2204,10 @@ LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,LaxF
 		def->getEnumInfo(ev->value, &nm);
 		att->push(whattype(), nm);
 		//att->push("value", nm);
+
+	} else if (!strcmp(def->name, "string")) {
+		StringValue *v = dynamic_cast<StringValue*>(this);
+		att->push(whattype(), v->str);
 
 	} else {
 		Value *v;
@@ -2404,10 +2410,12 @@ Value *AttributeToValue(Attribute *att)
 		//-or- subatt[0].name == "binary[byte length]", subatt[0].value == straight binary data
 		//return new BytesValue(att->value);
 
+    } else if (!strcmp(att->name, "ColorValue")) {
+		return new ColorValue(att->value);
+
     } else if (!strcmp(att->name, "FlatvectorValue")) {
     } else if (!strcmp(att->name, "SpacevectorValue")) {
     } else if (!strcmp(att->name, "FileValue")) {
-    } else if (!strcmp(att->name, "ColorValue")) {
     } else if (!strcmp(att->name, "EnumValue")) {
     } else if (!strcmp(att->name, "ValueHash")) {
     } else if (!strcmp(att->name, "GenericValue")) {
@@ -3242,19 +3250,22 @@ int SpacevectorValue::Evaluate(const char *func,int len, ValueHash *context, Val
 //! Create a string value with the first len characters of s.
 /*! If len<=0, then use strlen(s).
  */
+
 StringValue::StringValue(const char *s, int len)
 { str=newnstr(s,len); }
 
+/*! Warning! This quotes the string.
+ */
 int StringValue::getValueStr(char *buffer,int len)
 {
 	 //need to escape and put quotes around the string..
 
-	int needed=strlen(str)+3;
+	int needed = (str ? strlen(str) : 0) + 3;
 	for (int c=0; c<needed-3; c++) { if (str[c]=='\n' || str[c]=='\t') needed++; }
 	if (!buffer || len<needed) return needed;
 
 	buffer[0]='"';
-	int pos=1, l=strlen(str);
+	int pos=1, l = (str ? strlen(str) : 0);
 	for (int c=0; c<l; c++) {
 		if (str[c]=='\t') { buffer[pos++]='\\'; buffer[pos++]='t'; }
 		else if (str[c]=='\n') { buffer[pos++]='\\'; buffer[pos++]='n'; }
@@ -3268,6 +3279,13 @@ int StringValue::getValueStr(char *buffer,int len)
 
 Value *StringValue::duplicate()
 { return new StringValue(str); }
+
+/*! Replace current str with nstr.
+ */
+void StringValue::Set(const char *nstr)
+{
+	makestr(str,nstr);
+}
 
 
 ObjectDef default_StringValue_ObjectDef(NULL,"string",_("String"),_("String"),

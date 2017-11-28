@@ -48,6 +48,8 @@ enum ValueTypes {
 	VALUE_Flatvector, //!< two dimensional vector
 	VALUE_Spacevector,//!< three dimensional vector
 	VALUE_File,       //!< string like object refering to a file on disk
+	VALUE_FileSave,   //!< Same as VALUE_File, but hinted to be for saving a file
+	VALUE_FileLoad,   //!< Same as VALUE_File, but hinted to be for loading a file
 	VALUE_Enum,       //!< One of a list of string like labels, with associated integer value
 	VALUE_EnumVal,    //!< these do not exist independently of a VALUE_Enum's ObjectDef
 	VALUE_Boolean,    //!< Translatable as 1 for true, or 0 for false
@@ -539,6 +541,7 @@ class StringValue : public Value, virtual public FunctionEvaluator
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_String; }
  	virtual ObjectDef *makeObjectDef();
+	virtual void Set(const char *nstr);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret,
 						 Laxkit::ErrorLog *log);
