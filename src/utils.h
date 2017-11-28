@@ -19,6 +19,7 @@
 
 #include <lax/errorlog.h>
 #include <lax/attributes.h>
+#include <lax/errorlog.h>
 
 
 namespace Laidout {
@@ -59,6 +60,9 @@ int isSvgFile(const char *file);
 int isScribusFile(const char *file);
 int isJpg(const char *file);
 int is_bitmap_image(const char *file);
+
+//---------------------------- Window related things --------------------------------
+void NotifyGeneralErrors(Laxkit::ErrorLog *log);
 
 
 } // namespace Laidout

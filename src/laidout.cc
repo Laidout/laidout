@@ -53,8 +53,6 @@
 #include "api/functions.h"
 #include "newdoc.h"
 
-//DBG stuff:
-#include <lax/messagebox.h>
 
 //template implementations
 #include <lax/lists.cc>
@@ -1071,20 +1069,7 @@ int LaidoutApp::InitializePlugins()
 void LaidoutApp::NotifyGeneralErrors(ErrorLog *log)
 {
 	if (log==NULL) log = &generallog;
-
-	if (log->Total() == 0) return;
-
-	char *mes = log->FullMessageStr();
-	MessageBox *box = new MessageBox(NULL,"plugin","plugin",ANXWIN_CENTER,
-								  0,0,0,0,0,
-								  NULL,0,NULL,
-								  mes);
-	box->AddButton(BUTTON_OK);
-	box->AddButton(_("Dammit"), 0);
-	app->addwindow(box);
-	delete[] mes;
-
-	log->Clear();
+	Laidout::NotifyGeneralErrors(log);
 }
 
 

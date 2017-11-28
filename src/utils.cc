@@ -20,6 +20,7 @@
 #include <lax/fileutils.h>
 #include <lax/laximages.h>
 #include <lax/misc.h>
+#include <lax/messagebox.h>
 
 #include <lax/lists.cc>
 
@@ -808,6 +809,32 @@ int isPdfFile(const char *file,float *pdfversion)
 	}
 
 	return 0;
+}
+
+
+//---------------------------- Window related things --------------------------------
+
+/*! Pop up a box showing any errors in log (or generallog if log==NULL). Flushes log afterwards.
+ * This is done, for instance, at startup, to notify of any plugin load errors.
+ * If there aren't any, then do nothing.
+ */
+void NotifyGeneralErrors(Laxkit::ErrorLog *log)
+{
+    if (log==NULL) return;
+
+    if (log->Total() == 0) return;
+
+    char *mes = log->FullMessageStr();
+    MessageBox *box = new MessageBox(NULL,"plugin","plugin",ANXWIN_CENTER,
+                                  0,0,0,0,0,
+                                  NULL,0,NULL,
+                                  mes);
+    box->AddButton(BUTTON_OK);
+    box->AddButton(_("Dammit"), 0);
+    anXApp::app->addwindow(box);
+    delete[] mes;
+
+    log->Clear();
 }
 
 } // namespace Laidout
