@@ -96,6 +96,7 @@ class NodeProperty
 
 	NodeBase *owner;
 	Value *data;
+	int *datatypes; //optional 0 terminated list of acceptible VALUE_* types
 
 	PropertyTypes type;
 	//bool is_input; //or output
@@ -119,6 +120,7 @@ class NodeProperty
 	virtual int IsBlock()  { return type==PROP_Block; }
 	virtual int AllowInput();
 	virtual int AllowOutput();
+	virtual bool AllowType(Value *ndata);
 	virtual NodeBase *GetConnection(int connection_index, int *prop_index_ret);
 	virtual Value *GetData();
 	virtual int SetData(Value *newdata, bool absorb);

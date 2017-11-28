@@ -24,6 +24,7 @@
 
 
 #include "nodeinterface.h"
+#include "../utils.h"
 
 #include <lax/laxutils.h>
 #include <lax/bezutils.h>
@@ -136,6 +137,43 @@ NodeConnection::~NodeConnection()
 
 //-------------------------------------- NodeProperty --------------------------
 
+class ValueConstraint
+{
+  public:
+	enum Constraint {
+		PARAM_None = 0,
+
+		PARAM_No_Maximum,
+		PARAM_Less_Than,
+		PARAM_Less_Than_Or_Equal,
+		PARAM_No_Minimum,
+		PARAM_Greater_Than,
+		PARAM_Greater_Than_Or_Equal,
+
+		PARAM_Min_Loose_Clamp, //using the <, <=, >, >= should be hints, not hard clamp
+		PARAM_Max_Loose_Clamp, //using the <, <=, >, >= should be hints, not hard clamp
+		PARAM_Min_Clamp, //when numbers exceed bounds, force clamp
+		PARAM_Max_Clamp, //when numbers exceed bounds, force clamp
+
+		PARAM_Integer,
+
+		//PARAM_Nonzero,
+		PARAM_Step_Adaptive,
+		PARAM_MAX
+	};
+
+	Constraint constraints[5];
+	double step, min, max;
+	double default_value;
+
+	ValueConstraint() { constraints[0] = PARAM_None; }
+	virtual ~ValueConstraint();
+
+	virtual bool IsValid(Value *v, bool correct_if_possible);
+	virtual int SetBounds(const char *bounds); //a single range like "( .. 0]", "[0 .. 1]", "[.1 .. .9]"
+	virtual int SetBounds(double nmin, int nmin_type, double nmax, int nmax_type); //type==inf, inclusize, exclusize, hint, clamp
+};
+
 /*! \class NodeProperty
  * Base class for properties of nodes, either input or output.
  */
@@ -144,13 +182,14 @@ NodeProperty::NodeProperty()
 {
 	color.rgbf(1.,1.,1.,1.);
 
-	owner   = NULL;
-	data    = NULL;
-	name    = NULL;
-	label   = NULL;
-	tooltip = NULL;
-	modtime = 0;
-	width   = height = 0;
+	owner     = NULL;
+	data      = NULL;
+	datatypes = NULL;
+	name      = NULL;
+	label     = NULL;
+	tooltip   = NULL;
+	modtime   = 0;
+	width     = height = 0;
 
 	type = PROP_Unknown;
 	is_linkable=false; //default true for something that allows links in
@@ -162,17 +201,18 @@ NodeProperty::NodeProperty(PropertyTypes input, bool linkable, const char *nname
 {
 	color.rgbf(1.,1.,1.,1.);
 
-	owner=NULL;
-	width=height=0;
-	data=ndata;
+	owner     = NULL;
+	width     = height = 0;
+	datatypes = NULL;
+	data      = ndata;
 	if (data && !absorb_count) data->inc_count();
 
-	type = input;
+	type      = input;
 	is_linkable = linkable;
 
-	name    = newstr(nname);
-	label   = newstr(nlabel);
-	tooltip = newstr(ntip);
+	name      = newstr(nname);
+	label     = newstr(nlabel);
+	tooltip   = newstr(ntip);
 }
 
 NodeProperty::~NodeProperty()
@@ -180,6 +220,7 @@ NodeProperty::~NodeProperty()
 	delete[] name;
 	delete[] label;
 	delete[] tooltip;
+	delete[] datatypes;
 	if (data) data->dec_count();
 }
 
@@ -210,6 +251,22 @@ int NodeProperty::AllowInput()
 int NodeProperty::AllowOutput()
 {
 	return IsOutput();
+}
+
+/*! Return true if it is ok to attach ndata to this property.
+ *
+ * Default is to check ndata->type() against datatypes.
+ * If datatypes==NULL, then assume ok.
+ */
+bool NodeProperty::AllowType(Value *ndata)
+{
+	if (!ndata) return false;
+	if (!datatypes) return true;
+	int type = ndata->type();
+	for (int c=0; datatypes[c] != VALUE_None; c++) {
+		if (type == datatypes[c]) return true;
+	}
+	return false;
 }
 
 /*! Return the node and property index in that node of the specified connection.
@@ -411,7 +468,7 @@ int NodeBase::Wrap()
 	for (int c=0; c<properties.n; c++) {
 		prop = properties.e[c];
 
-		w=colors->font->extent(prop->Name(),-1);
+		w = colors->font->extent(prop->Label(),-1);
 
 		v=dynamic_cast<Value*>(prop->data);
 		if (v) {
@@ -420,6 +477,10 @@ int NodeBase::Wrap()
 
 			} else if (v->type()==VALUE_Color) {
 				w+=3*th;
+
+			} else if (v->type()==VALUE_String) {
+				StringValue *s = dynamic_cast<StringValue*>(v);
+				w += th + colors->font->extent(s->str, -1);
 
 			} else if (v->type()==VALUE_Enum) {
 				EnumValue *ev = dynamic_cast<EnumValue*>(v);
@@ -447,6 +508,7 @@ int NodeBase::Wrap()
 
 	width += 3*th;
 	if (fullwidth > width) width = fullwidth;
+	double propwidth = width; //the max prop width.. make them all the same width
 
 	 //update link position
 	double y=1.5*th;
@@ -460,6 +522,8 @@ int NodeBase::Wrap()
 
 		y+=prop->height;
 		height += prop->height;
+
+		prop->width = propwidth;
 	} 
 
 	return 0;
@@ -1129,6 +1193,8 @@ enum MathNodeOps {
 	OP_Average,
 	OP_Atan2,
 	OP_RandomRange,    //seed, [0..max]
+	OP_Clamp_Max,
+	OP_Clamp_Min,
 	//OP_RandomRangeInt, //seed, [0..max]
 
 	OP_And,
@@ -1154,6 +1220,29 @@ enum MathNodeOps {
 	OP_Asinh,
 	OP_Acosh,
 	OP_Atanh,
+	OP_Clamp_To_1, // [0..1]
+
+	 //3 args: 
+	OP_Lerp,  // r*a+(1-r)*b
+	OP_Clamp, // [min..max]
+
+	 //vector math:
+	OP_Vector_Add,
+	Op_Vector_Subtract,
+	OP_Dot,
+	OP_Cross,
+	OP_Norm,
+	OP_Perpendicular,
+	OP_Parallel,
+	OP_Angle,
+	OP_Angle2,
+	OP_Swizzle_YXZ,
+	OP_Swizzle_XZY,
+	OP_Swizzle_YZX,
+	OP_Swizzle_ZXY,
+	OP_Swizzle_ZYX,
+	OP_Flip,
+	OP_Normalize,
 
 	OP_MAX
 };
@@ -1556,15 +1645,15 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 
 		return 0;
 
-	} else if (!strcmp(mes,"setpropdouble") || !strcmp(mes,"setpropint")) {
+	} else if (!strcmp(mes,"setpropdouble") || !strcmp(mes,"setpropint") || !strcmp(mes,"setpropstring")) {
 		if (!nodes || lasthover<0 || lasthover>=nodes->nodes.n || lasthoverprop<0
 				|| lasthoverprop>=nodes->nodes.e[lasthover]->properties.n) return 0;
 
-        const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
+        const SimpleMessage *s = dynamic_cast<const SimpleMessage*>(data);
 		if (isblank(s->str)) return  0;
         char *endptr=NULL;
         double d=strtod(s->str, &endptr);
-		if (endptr==s->str) {
+		if (endptr==s->str && strcmp(mes,"setpropstring")) {
 			PostMessage(_("Bad value."));
 			return 0;
 		}
@@ -1575,6 +1664,9 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 		if (!strcmp(mes,"setpropdouble")) {
 			DoubleValue *v=dynamic_cast<DoubleValue*>(prop->data);
 			v->d = d;
+		} else if (!strcmp(mes,"setpropstring")) {
+			StringValue *v=dynamic_cast<StringValue*>(prop->data);
+			v->Set(s->str);
 		} else {
 			IntValue *v=dynamic_cast<IntValue*>(prop->data);
 			v->i = d;
@@ -1769,7 +1861,7 @@ int NodeInterface::Refresh()
 	 //  ins/outs
 	NodeBase *node;
 	ScreenColor *border, *fg;
-	ScreenColor tfg, tbg, tmid;
+	ScreenColor tfg, tbg, tmid, hprop;
 	NodeColors *colors=NULL;
 	double th = dp->textheight();
 	double borderwidth = 1;
@@ -1798,6 +1890,8 @@ int NodeInterface::Refresh()
 			tbg.AddDiff(colors->mo_diff, colors->mo_diff, colors->mo_diff);
 			fg = &tfg;
 			bg = &tbg;
+			hprop = *bg;
+			hprop.AddDiff(colors->mo_diff, colors->mo_diff, colors->mo_diff);
 		}
 		flatpoint p;
 		fg->Average(&tmid, *bg, .5); //middle color
@@ -1856,13 +1950,21 @@ int NodeInterface::Refresh()
 
 		for (int c2=0; c2<node->properties.n; c2++) {
 			prop = node->properties.e[c2];
+			if (lasthover == c && overslot == -1 && overprop == c2 && !node->collapsed) { //mouse is hovering over this property
+				dp->NewFG(&hprop);
+				dp->drawrectangle(node->x+node->properties.e[c2]->x,node->y+node->properties.e[c2]->y,
+						node->properties.e[c2]->width, node->properties.e[c2]->height, 1);
+				dp->NewFG(fg);
+			}
 			DrawProperty(node, prop, y, overnode == c && overprop == c2,
 										overnode == c && overprop == c2 && overslot == c2);
 
 			y += prop->height;
 		}
-	}
+	} //foreach node
 
+
+	 //draw mouse action decorations
 	if (hover_action==NODES_Cut_Connections) {
 		dp->LineWidthScreen(1);
 		dp->NewFG(&color_controls);
@@ -1921,7 +2023,8 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 		if (v && (v->type()==VALUE_Real || v->type()==VALUE_Int)) {
 			dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
 			dp->NewBG(&nodes->colors->bg_edit);
-			dp->drawRoundedRect(node->x+prop->x+th/2, node->y+prop->y+th/4, node->width-th, prop->height*.66,
+			if (!(prop->IsInput() && prop->IsConnected())) 
+				dp->drawRoundedRect(node->x+prop->x+th/2, node->y+prop->y+th/4, node->width-th, prop->height*.66,
 								th/3, false, th/3, false, 2); 
 
 			dp->NewFG(&nodes->colors->fg_edit);
@@ -1929,6 +2032,21 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 			dp->textout(node->x+prop->x+th, node->y+prop->y+prop->height/2, extra, -1, LAX_LEFT|LAX_VCENTER);
 			v->getValueStr(extra, 199);
 			dp->textout(node->x+node->width-th, node->y+prop->y+prop->height/2, extra, -1, LAX_RIGHT|LAX_VCENTER);
+
+		} else if (v && v->type()==VALUE_String) {
+			dp->NewFG(&nodes->colors->fg);
+
+			 //prop label
+			double dx = th/2+dp->textout(node->x+th/2, y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER); 
+
+			 //prop string
+			dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
+			dp->NewBG(&nodes->colors->bg_edit);
+			if (!prop->IsConnected()) 
+				dp->drawRoundedRect(dx+node->x+prop->x+th/2, node->y+prop->y+th/4, node->width-th-dx, prop->height*.66,
+								th/3, false, th/3, false, 2);
+			dp->NewFG(&nodes->colors->fg_edit);
+			dp->textout(dx+node->x+th, y+prop->height/2, dynamic_cast<StringValue*>(v)->str,-1, LAX_LEFT|LAX_VCENTER); 
 
 		} else if (v && v->type()==VALUE_Enum) {
 
@@ -1997,6 +2115,7 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 			dp->textout(x,y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER);
 
 		} else {
+			dp->NewFG(&nodes->colors->fg);
 			if (prop->IsInput()) {
 				 //draw on left side
 				double dx = dp->textout(node->x+th/2, y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER); 
@@ -2022,6 +2141,13 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 		//dp->drawellipse(prop->pos+flatpoint(node->x,node->y), th*slot_radius,th*slot_radius, 0,0, 2);
 		dp->drawellipse(prop->pos+flatpoint(node->x,node->y),
 				(hoverslot ? 2 : 1)*th*node->colors->slot_radius, (hoverslot ? 2 : 1)*th*node->colors->slot_radius, 0,0, 2);
+		if (node->collapsed && hoverslot) {
+			 //draw tip of name next to pos
+			flatpoint pp = prop->pos+flatpoint(node->x+th,node->y);
+			double width = th + node->colors->font->extent(prop->Label(),-1);
+			dp->drawrectangle(pp.x,pp.y-th*.75, width, 1.5*th, 2);
+			dp->textout(pp.x+th/2,pp.y, prop->Label(),-1, LAX_LEFT|LAX_VCENTER);
+		}
 	} 
 }
 
@@ -2241,8 +2367,11 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		if (v->type()==VALUE_Real || v->type()==VALUE_Int || v->type()==VALUE_String) {
 			 //create input box..
 
-			flatpoint ul= nodes->m.transformPoint(flatpoint(node->x+prop->x, node->y+prop->y));
-			flatpoint lr= nodes->m.transformPoint(flatpoint(node->x+prop->x+prop->width, node->y+prop->y+prop->height));
+			//flatpoint ul= nodes->m.transformPoint(flatpoint(node->x+prop->x, node->y+prop->y));
+			//flatpoint lr= nodes->m.transformPoint(flatpoint(node->x+prop->x+prop->width, node->y+prop->y+prop->height));
+			//----
+			flatpoint ul= nodes->m.transformPoint(flatpoint(node->x, node->y+prop->y));
+			flatpoint lr= nodes->m.transformPoint(flatpoint(node->x+node->width, node->y+prop->y+prop->height));
 
 			DoubleBBox bounds;
 			bounds.addtobounds(ul);
@@ -2250,8 +2379,9 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 			if (v->type()!=VALUE_String) v->getValueStr(valuestr, 199);
 
-			viewport->SetupInputBox(object_id, NULL, v->type()==VALUE_String ? dynamic_cast<StringValue*>(v)->str : valuestr,
-					v->type()==VALUE_Real ? "setpropdouble" : (v->type()==VALUE_Int ? "setpropint" : "setpropstring"), bounds);
+			viewport->SetupInputBox(object_id, NULL,
+					v->type()==VALUE_String ? dynamic_cast<StringValue*>(v)->str : valuestr,
+					v->type()==VALUE_String ? "setpropstring" : (v->type()==VALUE_Int ? "setpropint" : "setpropdouble"), bounds);
 			lasthover = overnode;
 			lasthoverprop = overproperty;
 
@@ -2489,9 +2619,13 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 
 			if (lasthover<0) PostMessage("");
 			else {
-				char scratch[200];
-				sprintf(scratch, "%s.%d.%d", nodes->nodes.e[lasthover]->Name, lasthoverprop, lasthoverslot);
-				PostMessage(scratch);
+				if (lasthoverprop >= 0 && nodes->nodes.e[lasthover]->properties.e[lasthoverprop]->tooltip) {
+					PostMessage(nodes->nodes.e[lasthover]->properties.e[lasthoverprop]->tooltip);
+				} else {
+					char scratch[200];
+					sprintf(scratch, "%s.%d.%d", nodes->nodes.e[lasthover]->Name, lasthoverprop, lasthoverslot);
+					PostMessage(scratch);
+				}
 			}
 		}
 
@@ -2771,9 +2905,13 @@ int NodeInterface::PerformAction(int action)
 
 		const char *file = "nodes-TEMP.nodes";
 
+		DumpContext context(NULL,1, object_id);
+		ErrorLog log;
+		context.log = &log;
+
 		FILE *f = fopen(file, "w");
 		if (f) {
-			nodes->dump_out(f, 0, 0, NULL);
+			nodes->dump_out(f, 0, 0, &context);
 			fclose(f);
 
 			PostMessage(_("Nodes saved to nodes-TEMP.nodes"));
@@ -2782,6 +2920,8 @@ int NodeInterface::PerformAction(int action)
 			PostMessage(_("Could not open nodes-TEMP.nodes!"));
 			DBG cerr <<(_("Could not open nodes-TEMP.nodes!")) << endl;
 		}
+
+		NotifyGeneralErrors(&log);
 		return 0;
 
 	} else if (action==NODES_Load_Nodes) {
@@ -2797,10 +2937,13 @@ int NodeInterface::PerformAction(int action)
 		nodes->colors->Font(font, false);
 
 		const char *file = "nodes-TEMP.nodes";
+		DumpContext context(NULL,1, object_id);
+		ErrorLog log;
+		context.log = &log;
 
 		FILE *f = fopen(file, "r");
 		if (f) {
-			nodes->dump_in(f, 0, 0, NULL, NULL);
+			nodes->dump_in(f, 0, 0, &context, NULL);
 			fclose(f);
 
 			PostMessage(_("Nodes loaded from nodes-TEMP.nodes"));
@@ -2810,6 +2953,7 @@ int NodeInterface::PerformAction(int action)
 			DBG cerr <<(_("Could not open nodes-TEMP.nodes!")) << endl;
 		}
 
+		NotifyGeneralErrors(&log);
 		needtodraw=1;
 		return 0;
 	}
