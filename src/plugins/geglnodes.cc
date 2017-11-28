@@ -48,6 +48,7 @@ class GeglLaidoutNode : public Laidout::NodeBase
 	MenuInfo *op;
 
   public:
+	static GeglNode *masternode;
 	static Laxkit::SingletonKeeper op_menu;
 
 	char *operation;
@@ -60,27 +61,30 @@ class GeglLaidoutNode : public Laidout::NodeBase
 	virtual int UpdateProperties();
 };
 
+GeglNode *GeglLaidoutNode::masternode = NULL;
+
 Laxkit::SingletonKeeper GeglLaidoutNode::op_menu;
 
 
 GeglLaidoutNode::GeglLaidoutNode(const char *oper)
 {
+	gegl      = NULL;
 	operation = NULL;
-	op = NULL; //don't delete this! it lives within op_menu
+	op        = NULL; //don't delete this! it lives within op_menu
 	SetOperation(oper);
 
-	gegl = gegl_node_new();
+	//gegl = gegl_node_new();
 }
 
 GeglLaidoutNode::~GeglLaidoutNode()
 {
 	delete[] operation;
-	g_object_unref (gegl);
+	if (gegl) g_object_unref (gegl);
 }
 
 int GeglLaidoutNode::UpdateProperties()
 {
-	//***
+	//*** gegl_node_process(gegl);
 	return 1;
 }
 
@@ -151,9 +155,20 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 	}
 
 	makestr(operation, oper);
-	makestr(type, operation);
 	makestr(Name, operation);
+	makestr  (type, "Gegl/");
+	appendstr(type, operation);
 
+	if (gegl) g_object_unref (gegl);
+	if (GeglLaidoutNode::masternode == NULL) {
+		GeglLaidoutNode::masternode = gegl_node_new();
+	}
+
+	gegl = gegl_node_new_child(GeglLaidoutNode::masternode,
+								"operation", operation,
+								NULL);
+
+	 //set up non input/output properties
 	op = opitem->GetSubmenu();
 	MenuItem *prop;
 	const char *type;
@@ -164,17 +179,84 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 		v = NULL;
 
 		if (type) {
-			if (     !strcmp(type, "gboolean"  )) v = new BooleanValue(0);
-			else if (!strcmp(type, "gint"      )) v = new IntValue();
-			else if (!strcmp(type, "gdouble"   )) v = new DoubleValue();
-			else if (!strcmp(type, "gchararray")) v = new StringValue();
-			else if (!strcmp(type, "GeglColor" )) v = new ColorValue("#000");
+			 //set default values
+			GValue gv = G_VALUE_INIT;
+			gegl_node_get_property(gegl, prop->name, &gv);
+
+            if (!strcmp(type, "gboolean")) {
+                bool boolean=0;
+                if (G_VALUE_HOLDS_BOOLEAN(&gv)) { boolean = g_value_get_boolean(&gv); }
+				v = new BooleanValue(boolean); 
+
+            } else if (!strcmp(type, "gint")) {
+                int vv=0;
+                if (G_VALUE_HOLDS_INT(&gv)) { vv = g_value_get_int(&gv); }
+				v = new IntValue(vv);
+
+            } else if (!strcmp(type, "gdouble")) {
+                double vv=0;
+                if (G_VALUE_HOLDS_DOUBLE(&gv)) { vv = g_value_get_double(&gv); }
+				v = new DoubleValue(vv);
+
+            } else if (!strcmp(type, "gchararray")) {
+                const gchar *vv = NULL;
+                if (G_VALUE_HOLDS_STRING(&gv)) { vv = g_value_get_string(&gv); }
+				new StringValue(vv);
+
+			} else if (!strcmp(type, "GeglColor" )) {
+				v = new ColorValue("#000");
+
+			//} else if (!strcmp(type, "GdkPixbuf"               )) {
+			//} else if (!strcmp(type, "GeglAbyssPolicy"         )) {
+			//} else if (!strcmp(type, "GeglAlienMapColorModel"  )) {
+			//} else if (!strcmp(type, "GeglAudioFragment"       )) {
+			//} else if (!strcmp(type, "GeglBuffer"              )) {
+			//} else if (!strcmp(type, "GeglColorRotateGrayMode" )) {
+			//} else if (!strcmp(type, "GeglComponentExtract"    )) {
+			//} else if (!strcmp(type, "GeglCurve"               )) {
+			//} else if (!strcmp(type, "GeglDTMetric"            )) {
+			//} else if (!strcmp(type, "GeglDitherMethod"        )) {
+			//} else if (!strcmp(type, "GeglGaussianBlurFilter2" )) {
+			//} else if (!strcmp(type, "GeglGaussianBlurPolicy"  )) {
+			//} else if (!strcmp(type, "GeglGblur1dFilter"       )) {
+			//} else if (!strcmp(type, "GeglGblur1dPolicy"       )) {
+			//} else if (!strcmp(type, "GeglImageGradientOutput" )) {
+			//} else if (!strcmp(type, "GeglNewsprintColorModel" )) {
+			//} else if (!strcmp(type, "GeglNewsprintPattern"    )) {
+			//} else if (!strcmp(type, "GeglNode"                )) {
+			//} else if (!strcmp(type, "GeglOrientation"         )) {
+			//} else if (!strcmp(type, "GeglPath"                )) {
+			//} else if (!strcmp(type, "GeglPixelizeNorm"        )) {
+			//} else if (!strcmp(type, "GeglRenderingIntent"     )) {
+			//} else if (!strcmp(type, "GeglSamplerType"         )) {
+			//} else if (!strcmp(type, "GeglVignetteShape"       )) {
+			//} else if (!strcmp(type, "GeglWarpBehavior"        )) {
+			//} else if (!strcmp(type, "GeglWaterpixelsFill"     )) {
+			//} else if (!strcmp(type, "gpointer"                )) {
+
+			}
 		}
+
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, prop->name, v,1, prop->GetString(2),prop->GetString(3)));
 	}
 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "In",  NULL,1, _("In") ,NULL));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out"),NULL));
+	 //set up input pads
+	gchar **pads = gegl_node_list_input_pads(gegl);
+	if (pads) {
+		for (int c=0; pads[c]!=NULL; c++) {
+			AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, pads[c],  NULL,1, pads[c] ,NULL));
+		}
+		g_strfreev(pads);
+	}
+
+	 //set up output pads
+	pads = gegl_node_list_output_pads(gegl);
+	if (pads) {
+		for (int c=0; pads[c]!=NULL; c++) {
+			AddProperty(new NodeProperty(NodeProperty::PROP_Output,  true, pads[c],  NULL,1, pads[c] ,NULL));
+		}
+		g_strfreev(pads);
+	}
 
 	return 0;
 }
@@ -248,6 +330,10 @@ GeglNodesPlugin::GeglNodesPlugin()
 
 GeglNodesPlugin::~GeglNodesPlugin()
 {
+	if (GeglLaidoutNode::masternode != NULL) {
+		g_object_unref (GeglLaidoutNode::masternode);
+		GeglLaidoutNode::masternode = NULL;
+	}
     gegl_exit ();
 }
 
