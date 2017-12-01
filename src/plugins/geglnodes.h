@@ -25,9 +25,39 @@ namespace Laidout {
 namespace GeglNodesPluginNS {
 
 
+//-------------------------------- GeglLaidoutNode --------------------------
+
+class GeglLaidoutNode : public Laidout::NodeBase
+{
+  protected:
+	Laxkit::MenuInfo *op;
+	int OkToProcess();
+
+  public:
+	static GeglNode *masternode;
+	static Laxkit::SingletonKeeper op_menu;
+
+	char *operation;
+	GeglNode *gegl;
+
+	GeglLaidoutNode(const char *oper);
+	virtual ~GeglLaidoutNode();
+
+	virtual int SetOperation(const char *oper);
+	virtual int UpdateProperties();
+	virtual int Update();
+	virtual int UpdatePreview();
+	virtual int Disconnected(NodeConnection *connection, int to_side);
+	virtual int Connected(NodeConnection *connection);
+	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
+	virtual int GetRect(Laxkit::DoubleBBox &box);
+};
+
+
+//-------------------------------- GeglNodesPlugin --------------------------
+
 class GeglNodesPlugin : public Laidout::PluginBase
 {
-
   public:
 	GeglNodesPlugin();
 	virtual ~GeglNodesPlugin();
