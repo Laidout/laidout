@@ -199,6 +199,9 @@ printing:
 plugins:
 	cd $@ && $(MAKE)
 
+addons:
+	cd plugins && $(MAKE) plugins
+
 # This changes in *.cc all occurrences of '(whitespace)DBG' to '(same ws)//DBG' and
 # '(whitespace)//DBG' to '(same ws)////DBG'
 # which is useful when assembling for a release, because it disables all the spewing
@@ -240,7 +243,7 @@ depends:
 include makedepend
 
 
-.PHONY: clean lax docs $(dirs) hidegarbage unhidegarbage polyptych polyptychgl
+.PHONY: clean lax docs $(dirs) addons hidegarbage unhidegarbage polyptych polyptychgl
 clean:
 	rm -f laidout *.o
 	for NAME in $(dirs); do $(MAKE) -C $$NAME clean; done
