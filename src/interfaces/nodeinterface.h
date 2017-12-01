@@ -69,6 +69,7 @@ class NodeConnection
 	NodeConnection();
 	NodeConnection(NodeBase *nfrom, NodeBase *nto, NodeProperty *nfromprop, NodeProperty *ntoprop);
 	virtual ~NodeConnection();
+	virtual void RemoveConnection(int which=3);
 };
 
 //typedef int (*NodePropertyValidFunc)(NodeProperty *prop, const char **error_message);
@@ -97,6 +98,7 @@ class NodeProperty
 	NodeBase *owner;
 	Value *data;
 	int *datatypes; //optional 0 terminated list of acceptible VALUE_* types
+	int custom_info;
 
 	PropertyTypes type;
 	//bool is_input; //or output
@@ -109,7 +111,8 @@ class NodeProperty
 	flatpoint pos; //clickable spot relative to parent NodeBase origin
 
 	NodeProperty();
-	NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count, const char *nlabel=NULL, const char *ntip=NULL);
+	NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count,
+					const char *nlabel=NULL, const char *ntip=NULL, int info=0);
 	virtual ~NodeProperty();
 	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface);
 	virtual const char *Name()  { return name; }
@@ -118,6 +121,7 @@ class NodeProperty
 	virtual int IsInput()  { return type==PROP_Input;  }
 	virtual int IsOutput() { return type==PROP_Output; }
 	virtual int IsBlock()  { return type==PROP_Block; }
+	virtual int IsExecution() { return type==PROP_Exec_In || type==PROP_Exec_Out || type==PROP_Exec_Through; }
 	virtual int AllowInput();
 	virtual int AllowOutput();
 	virtual bool AllowType(Value *ndata);
@@ -182,6 +186,7 @@ class NodeBase : public Laxkit::anObject, public Laxkit::DoubleRectangle
 	Laxkit::LaxImage *total_preview;
 
 	Laxkit::PtrStack<NodeProperty> properties; //includes inputs and outputs
+	std::time_t modtime; //time of last update
 
 	NodeColors *colors;
 
@@ -197,14 +202,20 @@ class NodeBase : public Laxkit::anObject, public Laxkit::DoubleRectangle
 	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface);
 
 	virtual int Update();
+	virtual int UpdatePreview();
 	virtual int GetStatus();
 	virtual int Wrap();
 	virtual int WrapCollapsed();
 	virtual void UpdateLinkPositions();
 	virtual int Collapse(int state); //-1 toggle, 0 open, 1 collapsed
+	virtual NodeBase *Duplicate();
 
 	virtual int IsConnected(int propindex); //0=no, -1=prop is connected input, 1=connected output
 	virtual int HasConnection(NodeProperty *prop, int *connection_ret);
+	//virtual int Connect(NodeProperty *srcproperty, int propertyindex);
+	//virtual int Disconnect(int propertyindex, int connectionindex);
+	virtual int Disconnected(NodeConnection *connection, int to_side);
+	virtual int Connected(NodeConnection *connection);
 
 	virtual int AddProperty(NodeProperty *newproperty);
 	virtual NodeProperty *FindProperty(const char *prop);
@@ -231,7 +242,7 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	
 	Laxkit::ScreenColor background;
 
-	NodeBase *output;
+	NodeBase *output, *input;
 	Laxkit::Affine m;
 	Laxkit::RefPtrStack<NodeBase> nodes; //nodes wrapped into this group
 	Laxkit::PtrStack<NodeConnection> connections;
@@ -240,6 +251,7 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	virtual ~NodeGroup();
 	virtual const char *whattype() { return "NodeGroup"; }
 	virtual int DesignateOutput(NodeBase *noutput);
+	virtual int DesignateInput(NodeBase *ninput);
 	virtual NodeBase *FindNode(const char *name);
 	NodeBase *NewNode(const char *type);
 
@@ -264,7 +276,18 @@ enum NodeHover {
 	NHOVER_LeftEdge = -3,
 	NHOVER_RightEdge = -4,
 	NHOVER_Collapse = -5,
-	NHOVER_TogglePreview = -6
+	NHOVER_TogglePreview = -6,
+	NODES_VP_Top = -7,
+	NODES_VP_Top_Left = -8,
+	NODES_VP_Left = -9,
+	NODES_VP_Bottom_Left = -10,
+	NODES_VP_Bottom = -11,
+	NODES_VP_Bottom_Right = -12,
+	NODES_VP_Right = -13,
+	NODES_VP_Top_Right = -14,
+	NODES_VP_Move = -15,
+	NODES_VP_Maximize = -16,
+	NODES_VP_Close = -17,
 };
 
 enum NodeInterfaceActions {
@@ -295,6 +318,7 @@ enum NodeInterfaceActions {
 	NODES_Delete_Nodes,
 	NODES_Save_Nodes,
 	NODES_Load_Nodes,
+
 	NODES_MAX
 };
 
@@ -330,6 +354,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 	Laxkit::ScreenColor color_grid;
 	double draw_grid; //pixel spacing
 
+	Laxkit::DoubleBBox viewport_bounds;
+	double vp_dragpad;
 
 	Laxkit::ShortcutHandler *sc;
 

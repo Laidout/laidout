@@ -134,6 +134,25 @@ NodeConnection::~NodeConnection()
 	if (toprop)   toprop  ->connections.remove(toprop  ->connections.findindex(this));
 }
 
+/*! If which&1, blank out the from section.
+ * If which&2, blank out the to section.
+ * This will prompt the connected properties to remove references to this connection.
+ */
+void NodeConnection::RemoveConnection(int which)
+{
+	if (which&1 && from) {
+		from = NULL;
+		fromprop = NULL;
+		fromprop->connections.remove(fromprop->connections.findindex(this));
+	}
+
+	if (which&2 && to) {
+		to = NULL;
+		toprop = NULL;
+		toprop->connections.remove(toprop->connections.findindex(this));
+	}
+}
+
 
 //-------------------------------------- NodeProperty --------------------------
 
@@ -157,12 +176,17 @@ class ValueConstraint
 
 		PARAM_Integer,
 
-		//PARAM_Nonzero,
-		PARAM_Step_Adaptive,
+		PARAM_Step_Adaptive_Mult,
+		PARAM_Step_Adaptive_Add,
+		PARAM_Step_Add,  //sliding does new = old + step, or new = old - step
+		PARAM_Step_Mult, //sliding does new = old * step, or new = old / step
+
 		PARAM_MAX
 	};
 
-	Constraint constraints[5];
+	int value_type;
+	Constraint constraints[5]; // [ min type, max type, step type ]
+	int steptype; //multiplicative
 	double step, min, max;
 	double default_value;
 
@@ -190,6 +214,7 @@ NodeProperty::NodeProperty()
 	tooltip   = NULL;
 	modtime   = 0;
 	width     = height = 0;
+	custom_info= 0;
 
 	type = PROP_Unknown;
 	is_linkable=false; //default true for something that allows links in
@@ -197,7 +222,8 @@ NodeProperty::NodeProperty()
 
 /*! If !absorb_count, then ndata's count gets incremented.
  */
-NodeProperty::NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count, const char *nlabel, const char *ntip)
+NodeProperty::NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count,
+							const char *nlabel, const char *ntip, int info)
 {
 	color.rgbf(1.,1.,1.,1.);
 
@@ -206,6 +232,7 @@ NodeProperty::NodeProperty(PropertyTypes input, bool linkable, const char *nname
 	datatypes = NULL;
 	data      = ndata;
 	if (data && !absorb_count) data->inc_count();
+	custom_info = info;
 
 	type      = input;
 	is_linkable = linkable;
@@ -299,6 +326,8 @@ NodeBase *NodeProperty::GetConnection(int connection_index, int *prop_index_ret)
 /*! Return the data associated with this property.
  * If it is a connected input, then get the corresponding output data from the connected node,
  * or the internal data if the node is not connected.
+ * The data's count is not modified, so if you want to use it for a while, you should
+ * increment its count as soon as you get it.
  */
 Value *NodeProperty::GetData()
 {
@@ -334,6 +363,7 @@ NodeBase::NodeBase()
 	collapsed = false;
 	fullwidth = 0;
 	deletable = true; //usually at least one node will not be deletable
+	modtime   = 0;
 
 	type = NULL;
 	def = NULL;
@@ -378,29 +408,6 @@ LaxInterfaces::anInterface *NodeBase::PropInterface(LaxInterfaces::anInterface *
 	return NULL;
 }
 
-enum NodePropValidEnum {
-	NVALID_Min           = (1<<0),
-	NVALID_Min_Exclusive = (1<<1),
-	NVALID_Max           = (1<<2),
-	NVALID_Max_Exclusive = (1<<3),
-	NVALID_Types         = (1<<4),
-	NVALID_MAX
-};
-
-/*! \class NodePropValid
- * Class to ease checking validity of property values for common situations.
- */
-class NodePropValid
-{
-  public:
-	int type; //[], (], [), (), ..], ..), [.., (.., particular type(s)
-	double min, max;
-	PtrStack<char> types;
-	char *error;
-	NodePropValid() { error=NULL; }
-	virtual ~NodePropValid() { delete[] error; }
-};
-
 /*! Return whether the node has valid values, or the outputs are older than inputs.
  * Default is to return 0 for no error and everything up to date.
  * -1 means bad inputs and node in error state.
@@ -436,6 +443,7 @@ int NodeBase::GetStatus()
 int NodeBase::Update()
 {
 	NodeProperty *prop;
+
 	for (int c=0; c<properties.n; c++) {
 		prop = properties.e[c];
 
@@ -443,11 +451,19 @@ int NodeBase::Update()
 		if (prop->connections.n==0) continue;
 
 		for (int c2=0; c2<prop->connections.n; c2++) {
-			if (prop->connections.e[c2]->to)
+			if (prop->connections.e[c2]->to) {
 				prop->connections.e[c2]->to->Update();
+			}
 		}
 	}
+
+	modtime = time(NULL);
 	return GetStatus();
+}
+
+int NodeBase::UpdatePreview()
+{
+	return 1;
 }
 
 /*! Update the bounds to be just enough to encase everything.
@@ -618,6 +634,33 @@ int NodeBase::Collapse(int state)
 	return collapsed;
 }
 
+/*! Return a new duplicate node not connected or owned by anything.
+ * Subclasses need to redefine this, or a plain NodeBase will be returned.
+ */
+NodeBase *NodeBase::Duplicate()
+{
+//	NodeBase *newnode = new NodeBase();
+//	NodeProperty *propery;
+//
+//	newnode->InstallColors(colors, 0);
+//	newnode->collapsed = collapsed;
+//	newnode->fullwidth = fullwidth;
+//	if (def) { newnode->def = def; def->inc_count(); }
+//	makestr(newnode->type, type);
+//	makestr(newnode->Name, Name);
+//
+//	for (int c=0; c<properties.n; c++) {
+//		property = *** ;
+//		newnode->AddProperty(property);
+//	}
+//
+//	newnode->Wrap();
+//
+//	return newnode;
+
+	return NULL;
+}
+
 /*! Check whether a specified property is connected to anything.
  * 0=no, -1=prop is connected input, 1=connected output
  */
@@ -644,6 +687,74 @@ int NodeBase::HasConnection(NodeProperty *prop, int *connection_ret)
 
 	*connection_ret = -1;
 	return -1;
+}
+
+///*! Connect src property to properties.e[propertyindex].
+// *
+// * Return 0 for success or nonzero error.
+// */
+//int NodeBase::Connect(NodeConnection *connection, NodeProperty *srcproperty, int propertyindex)
+//{
+//	if (propertyindex < 0 || propertyindex >= properties.n) return 1;
+//
+//	NodeProperty *prop = properties.e[propertyindex];
+//
+//	***
+//	return 0;
+//}
+
+//NodeConnection *NodeBase::Connect(NodeBase *from, const char *fromprop, const char *toprop)
+//{ ***
+//}
+
+/*! Remove property[propertyindex].connections[connectionindex].
+ * Note this does not 
+ * return 0 for success or nonzero error.
+ *
+ * Subclasses may redefine to have custom behavior on disconnects, but can still call
+ * this last to actually remove the connection.
+ */
+//int NodeBase::Disconnect(int propertyindex, int connectionindex)
+//{
+//	if (propertyindex < 0 || propertyindex >= properties.n) return 1;
+//	if (connectionindex < 0 || connectionindex >= properties.e[propertyindex]->connections.n) return 1;
+//	properties.e[propertyindex]->connections.remove(connectionindex);
+//	return 0;
+//}
+
+/*! A notification that this connection is being removed.
+ * Actual removal is done elsewhere. If to_side, then disconnection happens
+ * on the to_side of the connection, else on the from side.
+ *
+ * Connected() and Disconnected() calls are usually followed shortly after by a call to Update(), so
+ * these functions are for low level linkage maintenance, and Update()
+ * is the bigger trigger for updating outputs.
+ *
+ * Return 1 if something changed that needs a screen refresh. else 0.
+ */
+int NodeBase::Disconnected(NodeConnection *connection, int to_side)
+{
+//	int propertyindex = properties.findindex(connection->from == this ? connection->fromprop : connection->toprop);
+//	if (propertyindex < 0) return 0; //property not found!
+//	int connectionindex = property->connections.findindex(connection);
+//	if (connectionindex < 0) return 0; //connection not found!
+//
+//	if (to_side && connection->to == this) {
+//		properties.e[propertyindex]->connections.remove(connectionindex);
+//	}
+	return 0;
+}
+
+/*! A notification that happens right after a connection is added.
+ * Connected() and Disconnected() calls are usually followed shortly after by a call to Update(), so
+ * these functions are for low level linkage maintenance, and Update()
+ * is the bigger trigger for updating outputs.
+ *
+ * Return 1 to hint that a refresh is needed. Else 0.
+ */
+int NodeBase::Connected(NodeConnection *connection)
+{
+	return 0;
 }
 
 /*! Push this property onto the properties stack, and make sure owner points to this.
@@ -746,12 +857,14 @@ void NodeGroup::SetNodeFactory(Laxkit::ObjectFactory *newnodefactory)
 NodeGroup::NodeGroup()
 {
 	background.rgbf(0,0,0,.5);
-	output=NULL;
+	output= NULL;
+	input = NULL;
 }
 
 NodeGroup::~NodeGroup()
 {
 	if (output) output->dec_count();
+	if (input)  input ->dec_count();
 }
 
 /*! Install noutput as the group's pinned output.
@@ -765,6 +878,14 @@ int NodeGroup::DesignateOutput(NodeBase *noutput)
 	if (output) output->dec_count();
 	output=noutput;
 	if (output) output->inc_count();
+	return 0;
+}
+
+int NodeGroup::DesignateInput(NodeBase *ninput)
+{
+	if (input) input->dec_count();
+	input=ninput;
+	if (input) input->inc_count();
 	return 0;
 }
 
@@ -887,6 +1008,7 @@ Attribute *NodeGroup::dump_out_atts(Attribute *att,int what,DumpContext *context
     att->push("matrix", s);
 
 	if (output) att->push("output", output->Id());
+	if (input)  att->push("input",  input ->Id());
 
 
 	Attribute *att2, *att3;
@@ -914,15 +1036,21 @@ Attribute *NodeGroup::dump_out_atts(Attribute *att,int what,DumpContext *context
 				//provide for reference if connected...
 				//if (prop->IsConnected()) continue; //since it'll be recomputed after read in
 				att3 = att2->pushSubAtt("in", prop->name);
-			} else if (prop->IsOutput()) att3 = att2->pushSubAtt("out", prop->name); //just provide for reference
-			else if (prop->IsBlock()) att3 = att2->pushSubAtt("block", prop->name);
-			else continue;
+			} else if (prop->IsOutput()) {
+				att3 = att2->pushSubAtt("out", prop->name); //just provide for reference
+			} else if (prop->IsBlock()) {
+				att3 = att2->pushSubAtt("block", prop->name);
+			//} else if (prop->IsExecution()) att3 = att2->pushSubAtt("exec",
+			//		prop->type==PROP_Exec_Through ? "through" : (prop->type==PROP_Exec_In ? "in" : "out"));
+			} else continue;
 
-			if (prop->GetData()) {
+			if (((prop->IsInput() && !prop->IsConnected()) || (prop->IsOutput())) && prop->GetData()) {
 				prop->GetData()->dump_out_atts(att3, what, context);
-			} else att3->push(prop->name, "arrrg! todo!");
-		} 
-
+			} else {
+				DBG cerr <<" not data for node out: "<<prop->name<<endl;
+				//att3->push(prop->name, "arrrg! todo!");
+			}
+		}
 	}
 
 	att2 = att->pushSubAtt("connections");
@@ -944,6 +1072,7 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 
     char *name,*value;
 	const char *out=NULL;
+	const char *in =NULL;
 	Attribute *conatt=NULL;
 
     for (int c=0; c<att->attributes.n; c++) {
@@ -963,6 +1092,9 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 
         } else if (!strcmp(name,"output")) {
 			out = value;
+
+        } else if (!strcmp(name,"input")) {
+			in = value;
 
         } else if (!strcmp(name,"node")) {
 			 //value is the node type
@@ -1022,6 +1154,7 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 
 			if (!newnode->colors) newnode->InstallColors(colors, false);
 			newnode->Wrap();
+			newnode->Update();
 			nodes.push(newnode);
 			newnode->dec_count();
 
@@ -1036,7 +1169,15 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 		if (node) DesignateOutput(node);
 	}
 
+	if (in) {
+		//set designated output
+		NodeBase *node = FindNode(in);
+		if (node) DesignateInput(node);
+	}
+
+
 	if (conatt) {
+		 //define connections
 		for (int c=0; c<conatt->attributes.n; c++) {
 			name= conatt->attributes.e[c]->name;
 			value=conatt->attributes.e[c]->value;
@@ -1057,25 +1198,31 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 
 				NodeBase *from = FindNode(fromstr),
 						 *to   = FindNode(tostr);
-				NodeProperty *fromprop = from->FindProperty(fpstr),
-							 *toprop   = to  ->FindProperty(tpstr);
 
-				delete[] fromstr;
-				delete[] tostr;
-				delete[] fpstr;
-				delete[] tpstr;
+				if (from && to) {
+					NodeProperty *fromprop = from->FindProperty(fpstr),
+								 *toprop   = to  ->FindProperty(tpstr);
 
-				if (!from || !to || !fromprop || !toprop) {
-					// *** warning!
-					DBG cerr <<" *** bad node att input!"<<endl;
-					continue;
+					delete[] fromstr;
+					delete[] tostr;
+					delete[] fpstr;
+					delete[] tpstr;
+
+					if (!from || !to || !fromprop || !toprop) {
+						// *** warning!
+						DBG cerr <<" *** bad node att input!"<<endl;
+						continue;
+					}
+
+
+					NodeConnection *newcon = new NodeConnection(from, to, fromprop, toprop);
+					fromprop->connections.push(newcon, 0);//prop list does NOT delete connection
+					toprop  ->connections.push(newcon, 0);//prop list does NOT delete connection
+					connections.push(newcon, 1);//node connection list DOES delete connection
+					
+				} else {
+					DBG cerr <<" *** Warning! cannot connect "<<fromstr<<" to "<<tostr<<"!"<<endl;
 				}
-
-
-				NodeConnection *newcon = new NodeConnection(from, to, fromprop, toprop);
-				fromprop->connections.push(newcon, 0);//prop list does NOT delete connection
-				toprop  ->connections.push(newcon, 0);//prop list does NOT delete connection
-				connections.push(newcon, 1);//node connection list DOES delete connection
 			}
 		}
 	}
@@ -1540,6 +1687,9 @@ NodeInterface::NodeInterface(anInterface *nowner, int nid, Displayer *ndp)
 	color_grid.rgbf(0,0,0,.7);
 	draw_grid = 50;
 
+	viewport_bounds.setbounds(0.,1.,0.,1.); // viewport_bounds is always fraction of actual viewport bounds
+	vp_dragpad = 40; //screen pixels
+
 	sc=NULL; //shortcut list, define as needed in GetShortcuts()
 }
 
@@ -1803,7 +1953,6 @@ int NodeInterface::IsSelected(NodeBase *node)
 
 int NodeInterface::Refresh()
 {
-
 	if (needtodraw==0) return 0;
 	needtodraw=0;
 
@@ -1826,11 +1975,24 @@ int NodeInterface::Refresh()
 	if (bg->Alpha()>0) {
 		dp->NewTransform(1,0,0,1,0,0);
 		dp->NewFG(bg);
-		dp->drawrectangle(0,0, dp->Maxx,dp->Maxy, 1);
 
-		if (draw_grid) {
-		}
+		double vpw = dp->Maxx-dp->Minx, vph = dp->Maxy-dp->Miny;
+		dp->drawrectangle(viewport_bounds.minx*vpw, viewport_bounds.miny*vph,
+					viewport_bounds.boxwidth()*vpw, viewport_bounds.boxheight()*vph, 1);
+
+		//if (draw_grid) {
+		//}
+
+		//if (lasthover == NODES_VP_Top || lasthover == NODES_VP_Top_Left || lasthover == NODES_VP_Top_Right) {
+		//} else if (lasthover == NODES_VP_Bottom || lasthover == NODES_VP_Bottom_Left || lasthover == NODES_VP_Bottom_Right) {
+		//} else if (lasthover == NODES_VP_Left || lasthover == NODES_VP_Top_Left || lasthover == NODES_VP_Bottom_Left) {
+		//} else if (lasthover == NODES_VP_Right || lasthover == NODES_VP_Top_Right || lasthover == NODES_VP_Bottom_Right) {
+		//} else if (lasthover == NODES_VP_Move) {
+		//} else if (lasthover == NODES_VP_Maximize) {
+		//} else if (lasthover == NODES_VP_Close) {
+		//}
 	}
+
 
 	if (!nodes) {
 		dp->PopAxes();
@@ -1965,20 +2127,18 @@ int NodeInterface::Refresh()
 
 
 	 //draw mouse action decorations
-	if (hover_action==NODES_Cut_Connections) {
-		dp->LineWidthScreen(1);
-		dp->NewFG(&color_controls);
-		dp->drawline(selection_rect.minx,selection_rect.miny, selection_rect.maxx,selection_rect.maxy);
-
-	} else if (hover_action==NODES_Selection_Rect) {
+	if (hover_action==NODES_Cut_Connections || hover_action==NODES_Selection_Rect) {
 		dp->LineWidthScreen(1);
 		dp->NewFG(&color_controls);
 
 		flatpoint p1 = nodes->m.transformPointInverse(flatpoint(selection_rect.minx,selection_rect.miny));
 		flatpoint p2 = nodes->m.transformPointInverse(flatpoint(selection_rect.maxx,selection_rect.maxy));
 
-		//dp->drawrectangle(selection_rect.minx,selection_rect.miny, selection_rect.maxx-selection_rect.minx,selection_rect.maxy-selection_rect.miny, 0);
-		dp->drawrectangle(p1.x,p1.y, p2.x-p1.x,p2.y-p1.y, 0);
+		if (hover_action == NODES_Selection_Rect) {
+			dp->drawrectangle(p1.x,p1.y, p2.x-p1.x,p2.y-p1.y, 0);
+		} else {
+			dp->drawline(p1, p2);
+		}
 
 	} else if (hover_action==NODES_Drag_Input || hover_action==NODES_Drag_Output) {
 		NodeBase *node = nodes->nodes.e[lasthover];
@@ -2178,6 +2338,24 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty)
 {
 	if (!nodes) return -1;
 
+
+	 //scan for viewport bounds controls
+	//double vpw = dp->Maxx-dp->Minx, vph = dp->Maxy-dp->Miny;
+	//int t,b,l,r;
+	//t = (x>=vpw*viewport_bounds.minx && x<=vpw*viewport_bounds.maxx && y>=vph*viewport_bounds.miny && y<=vph*viewport_bounds.miny+vp_dragpad);
+	//b = (x>=vpw*viewport_bounds.minx && x<=vpw*viewport_bounds.maxx && y>=vph*viewport_bounds.maxy-vp_dragpad && y<=vph*viewport_bounds.maxy);
+	//l = (x>=vpw*viewport_bounds.minx && x<=vpw*viewport_bounds.minx && y>=vph*viewport_bounds.miny && y<=vph*viewport_bounds.maxy);
+	//r = (x>=vpw*viewport_bounds.minx && x<=vpw*viewport_bounds.maxx && y>=vph*viewport_bounds.miny && y<=vph*viewport_bounds.maxy);
+	//if (t && l) return NODES_VP_Top_Left;
+	//if (t && r) return NODES_VP_Top_Right;
+	//if (b && l) return NODES_VP_Bottom_Left;
+	//if (b && r) return NODES_VP_Bottom_Right;
+	//if (t) return NODES_VP_Top_Top;
+	//if (b) return NODES_VP_Top_Bottom;
+	//if (l) return NODES_VP_Top_Left;
+	//if (r) return NODES_VP_Top_Right;
+
+
 	flatpoint p=nodes->m.transformPointInverse(flatpoint(x,y));
 	*overpropslot=-1;
 	*overproperty=-1;
@@ -2298,8 +2476,13 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 				action = NODES_Drag_Output;
 				overnode = nodes->nodes.findindex(prop->connections.e[0]->from);
 				overpropslot = nodes->nodes.e[overnode]->properties.findindex(prop->connections.e[0]->fromprop);
-				prop->connections.e[0]->to = NULL; // note: assumes only one input
-				prop->connections.e[0]->toprop = NULL;
+				NodeConnection *connection = prop->connections.e[0];
+
+				nodes->nodes.e[overnode]->Disconnected(connection, 1);
+				connection->from->Disconnected(connection, 1);
+
+				connection->to = NULL; // note: assumes only one input
+				connection->toprop = NULL;
 				prop->connections.remove(0);
 
 				lastconnection = 0;
@@ -2462,6 +2645,11 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		 //cut any connections that cross the line between selection_rect.min to max
 		// ***
 		PostMessage("Need to implement Cut Connections!!!");
+
+		////foreach connection:
+		//nodes->nodes.e[lasthover]->Disconnect(lasthoverslot, lastconnection);
+		//nodes->connections.remove(nodes->connections.findindex(connection)); // <- this actually deletes the connection
+
 		needtodraw=1;
 
 	} else if (action == NODES_Selection_Rect) {
@@ -2514,7 +2702,8 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		int remove=0;
 
 		if (overnode>=0 && overpropslot>=0) {
-			 //need to connect
+			 //we had a temporary connection, need to fill in the blanks to finalize
+			 //need to connect  last -> over
 			NodeProperty *toprop = nodes->nodes.e[overnode]->properties.e[overpropslot];
 			if (!toprop->IsInput()) {
 
@@ -2523,6 +2712,8 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 				toprop->connections.push(connection, 0);
 				connection->from     = nodes->nodes.e[overnode];
 				connection->fromprop = nodes->nodes.e[overnode]->properties.e[overpropslot];
+				connection->from->Connected(connection);
+				connection->to  ->Connected(connection);
 				connection->to->Update();
 
 			} else {
@@ -2539,8 +2730,10 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 		if (remove) {
 			 //remove the unconnected connection from what it points to as well as from nodes->connections
-			nodes->connections.remove(nodes->connections.findindex(nodes->nodes.e[lasthover]->properties.e[lasthoverslot]->connections.e[lastconnection]));
+			//nodes->nodes.e[lasthover]->Disconnect(lasthoverslot, lastconnection);
 			nodes->nodes.e[lasthover]->properties.e[lasthoverslot]->connections.remove(lastconnection);
+			NodeConnection *connection = nodes->nodes.e[lasthover]->properties.e[lasthoverslot]->connections.e[lastconnection];
+			nodes->connections.remove(nodes->connections.findindex(connection)); // <- this actually deletes the connection
 			lastconnection=-1;
 		} 
 
@@ -2555,12 +2748,12 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 			NodeProperty *toprop = nodes->nodes.e[overnode]->properties.e[overpropslot];
 
 			if (toprop->IsInput()) {
-				//nodes->Connect(
-				//---------
 				if (toprop->connections.n) {
 					 //clobber any other connection going into the input. Only one input allowed.
 					for (int c=toprop->connections.n-1; c>=0; c--) {
-						//toprop->connections.remove();
+						toprop->connections.e[c]->to  ->Disconnected(toprop->connections.e[c], 1);
+						toprop->connections.e[c]->from->Disconnected(toprop->connections.e[c], 1);
+						//toprop->connections.e[c]->RemoveConnection();
 						nodes->connections.remove(toprop->connections.e[c]);
 					}
 					toprop->connections.flush();
@@ -2571,6 +2764,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 				toprop->connections.push(connection, 0);
 				connection->to     = nodes->nodes.e[overnode];
 				connection->toprop = nodes->nodes.e[overnode]->properties.e[overpropslot];
+				connection->to->Connected(connection);
 				connection->to->Update();
 
 			} else {
