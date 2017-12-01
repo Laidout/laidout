@@ -173,9 +173,17 @@ from recent import:
   spread editor needs edge dragging
 
 node editor NodeInterface:
+  gegl nodes:
+    process on a crop after change a value crash? need to trace
+    make sure deleting/rearranging nodes correctly removes gegl connections
+	load in graph xml
+	make sure input/outputs can translate from other data types
+	make process optional
+	undo redo
   view mode: all collapsed,  all collapsed except preview,  expanded no preview,  expanded with preview
   image object creation node, tie node output to a custom importer (the proof of concept node for 0.097)
   finish implementing no cycle check
+  nodes need preview images as necessary
   type to search in add menu
   duplicate nodes
   numbers need slide change
@@ -190,11 +198,13 @@ node editor NodeInterface:
   exec paths
   make sure it doesn't go totally offscreen
   scriptify node graph
+  deferred update when massive operations, maybe highlight nodes in yellow?
+  toggle show only selected nodes
+  inkscape filter read in
 
   newly added should be selected
   bug: shouldn't click edit output props
 
-  gegl nodes
   gmic nodes
   graphicsmagick nodes
 
@@ -212,12 +222,17 @@ node editor NodeInterface:
 	any number of outputs
 	inputs map to names according to property label
 	expression must result in a hash, which must map to defined output properties
+	scriptify nodes
+	nodify script
   vector node:
     separate xyz
 	combine xyz
 	perpendicular
 	parallel to
 	norm
+  string ops:
+    concat s1, s2
+	substr [index..index]
   more math:
 	  ---two-arg---
 	  +    -    *    /     %     ^
