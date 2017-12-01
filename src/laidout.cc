@@ -1045,7 +1045,7 @@ int LaidoutApp::InitializePlugins()
 	DBG cerr <<"Initializing plugins..."<<endl;
 
 	const char *files[] = {
-		"plugins/exampleplugin.so",
+		//"plugins/exampleplugin.so",
 		"plugins/geglnodes.so",
 		NULL
 	};
