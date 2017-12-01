@@ -23,13 +23,18 @@ CPPFLAGS= -fPIC -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. -I/usr/include/freetype2
 # If you want a plugin built by default, include in objs here.
 #
 objs= \
-	plugin.o \
-	exampleplugin.so \
+	plugin.o 
+
+plugins= \
 	geglnodes.so \
+	#exampleplugin.so \
 	#antiprism.o
 
 
-dataobjects: $(objs)
+#dataobjects: $(objs)
+dataobjects: $(objs) $(plugins)
+
+plugins: $(plugins)
 
 depends:
 	makedepend -fmakedepend -I.. -I$(LAXDIR)/.. -Y *.cc
