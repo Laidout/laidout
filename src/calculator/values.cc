@@ -2414,7 +2414,21 @@ Value *AttributeToValue(Attribute *att)
 		return new ColorValue(att->value);
 
     } else if (!strcmp(att->name, "FlatvectorValue")) {
+		flatvector v;
+		char *endptr=NULL;
+		if (FlatvectorAttribute(att->value, &v, &endptr)) {
+			return new FlatvectorValue(v);
+		}
+		return NULL; 
+
     } else if (!strcmp(att->name, "SpacevectorValue")) {
+		spacevector v;
+		char *endptr=NULL;
+		if (SpacevectorAttribute(att->value, &v, &endptr)) {
+			return new SpacevectorValue(v);
+		}
+		return NULL; 
+
     } else if (!strcmp(att->name, "FileValue")) {
     } else if (!strcmp(att->name, "EnumValue")) {
     } else if (!strcmp(att->name, "ValueHash")) {
@@ -2422,6 +2436,8 @@ Value *AttributeToValue(Attribute *att)
     } else if (!strcmp(att->name, "SetValue")) {
     } else if (!strcmp(att->name, "ArrayValue")) {
     } else if (!strcmp(att->name, "NullValue")) {
+		return new NullValue();
+
     } else if (!strcmp(att->name, "FunctionValue")) {
     } else if (!strcmp(att->name, "ObjectValue")) {
 	}
