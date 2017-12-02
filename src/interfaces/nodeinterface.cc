@@ -217,13 +217,14 @@ NodeProperty::NodeProperty()
 	custom_info= 0;
 
 	type = PROP_Unknown;
-	is_linkable=false; //default true for something that allows links in
+	is_linkable = false; //default true for something that allows links in
+	is_editable = true;
 }
 
 /*! If !absorb_count, then ndata's count gets incremented.
  */
 NodeProperty::NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count,
-							const char *nlabel, const char *ntip, int info)
+							const char *nlabel, const char *ntip, int info, bool editable)
 {
 	color.rgbf(1.,1.,1.,1.);
 
@@ -236,6 +237,7 @@ NodeProperty::NodeProperty(PropertyTypes input, bool linkable, const char *nname
 
 	type      = input;
 	is_linkable = linkable;
+	is_editable = editable;
 
 	name      = newstr(nname);
 	label     = newstr(nlabel);
@@ -1388,6 +1390,7 @@ enum MathNodeOps {
 	OP_Swizzle_YZX,
 	OP_Swizzle_ZXY,
 	OP_Swizzle_ZYX,
+	OP_Swizzle_1234, //make custom node for this?
 	OP_Flip,
 	OP_Normalize,
 
@@ -1450,7 +1453,10 @@ MathNode::MathNode(int op, double aa, double bb)
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, "Op", e, 1));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "A", new DoubleValue(a), 1));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "B", new DoubleValue(b), 1));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Result", NULL, 0));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Result", NULL, 0, NULL, NULL, 0, false));
+
+	//NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count,
+					//const char *nlabel=NULL, const char *ntip=NULL, int info=0, bool editable);
 
 	Update();
 }
@@ -1906,6 +1912,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 				nodes->nodes.push(newnode);
 				newnode->dec_count();
 
+				needtodraw=1; 
 				break;
 			}
 		}
@@ -2183,7 +2190,7 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 		if (v && (v->type()==VALUE_Real || v->type()==VALUE_Int)) {
 			dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
 			dp->NewBG(&nodes->colors->bg_edit);
-			if (!(prop->IsInput() && prop->IsConnected())) 
+			if (prop->IsEditable()) 
 				dp->drawRoundedRect(node->x+prop->x+th/2, node->y+prop->y+th/4, node->width-th, prop->height*.66,
 								th/3, false, th/3, false, 2); 
 
@@ -2202,7 +2209,7 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 			 //prop string
 			dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
 			dp->NewBG(&nodes->colors->bg_edit);
-			if (!prop->IsConnected()) 
+			if (prop->IsEditable()) 
 				dp->drawRoundedRect(dx+node->x+prop->x+th/2, node->y+prop->y+th/4, node->width-th-dx, prop->height*.66,
 								th/3, false, th/3, false, 2);
 			dp->NewFG(&nodes->colors->fg_edit);
@@ -2263,7 +2270,7 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 			ColorValue *color = dynamic_cast<ColorValue*>(v);
 			double x = node->x+th/2;
 			unsigned long oldfg = dp->FG();
-			if (!(prop->IsInput() && prop->IsConnected())) {
+			if (prop->IsEditable()) {
 				 //draw color box
 				dp->NewFG(color->color.Red(),color->color.Green(),color->color.Blue(),color->color.Alpha());
 				dp->drawrectangle(x,y+prop->height/2-th/2, 2*th, th, 1);
@@ -2275,6 +2282,7 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 			dp->textout(x,y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER);
 
 		} else {
+			 //fallback, just write out the property name
 			dp->NewFG(&nodes->colors->fg);
 			if (prop->IsInput()) {
 				 //draw on left side
@@ -2541,7 +2549,8 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		NodeBase *node = nodes->nodes.e[overnode];
 		NodeProperty *prop = node->properties.e[overproperty];
 
-		if (prop->IsInput() && prop->IsConnected()) return 0; //can't change if piped in from elsewhere
+		//if (prop->IsInput() && prop->IsConnected()) return 0; //can't change if piped in from elsewhere
+		if (!prop->IsEditable()) return 0;
 
 		Value *v=dynamic_cast<Value*>(prop->data);
 		if (!v) return 0;

@@ -103,6 +103,7 @@ class NodeProperty
 	PropertyTypes type;
 	//bool is_input; //or output
 	bool is_linkable; //default true for something that allows links in
+	bool is_editable;
 
 	double x,y,width,height;
 	Laxkit::ScreenColor color;
@@ -112,7 +113,7 @@ class NodeProperty
 
 	NodeProperty();
 	NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count,
-					const char *nlabel=NULL, const char *ntip=NULL, int info=0);
+					const char *nlabel=NULL, const char *ntip=NULL, int info=0, bool editable=true);
 	virtual ~NodeProperty();
 	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface);
 	virtual const char *Name()  { return name; }
@@ -121,6 +122,7 @@ class NodeProperty
 	virtual int IsInput()  { return type==PROP_Input;  }
 	virtual int IsOutput() { return type==PROP_Output; }
 	virtual int IsBlock()  { return type==PROP_Block; }
+	virtual int IsEditable() { return is_editable && !(IsInput() && IsConnected()); }
 	virtual int IsExecution() { return type==PROP_Exec_In || type==PROP_Exec_Out || type==PROP_Exec_Through; }
 	virtual int AllowInput();
 	virtual int AllowOutput();
