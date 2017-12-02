@@ -12,6 +12,8 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now: 
 
+back to not maximizing properly on default ubuntu
+
 shearing or scaling produces null axes occasionally when crossing over opposite edge, borking the display
   --> seems to be only when needing to draw images on close to parallel axes, doesn't seem do it with paths
 
