@@ -181,10 +181,12 @@ class NodeBase : public Laxkit::anObject, public Laxkit::DoubleRectangle
 	char *type; //non translated type, like "Value", or "Math"
 	ObjectDef *def; //optional
 
-	bool collapsed;
+	int collapsed;
 	double fullwidth; //uncollapsed
+	bool show_preview;
 
 	bool deletable;
+
 	Laxkit::LaxImage *total_preview;
 
 	Laxkit::PtrStack<NodeProperty> properties; //includes inputs and outputs
@@ -206,10 +208,12 @@ class NodeBase : public Laxkit::anObject, public Laxkit::DoubleRectangle
 	virtual int Update();
 	virtual int UpdatePreview();
 	virtual int GetStatus();
+	virtual int UsesPreview() { return total_preview!=NULL && show_preview; }
 	virtual int Wrap();
+	virtual int WrapFull();
 	virtual int WrapCollapsed();
 	virtual void UpdateLinkPositions();
-	virtual int Collapse(int state); //-1 toggle, 0 open, 1 collapsed
+	virtual int Collapse(int state); //-1 toggle, 0 open, 1 full collapsed, 2 collapsed to preview
 	virtual NodeBase *Duplicate();
 
 	virtual int IsConnected(int propindex); //0=no, -1=prop is connected input, 1=connected output
@@ -273,23 +277,23 @@ typedef NodeGroup Nodes;
 //---------------------------- NodeInterface ------------------------------------
 
 enum NodeHover {
-	NHOVER_None = -1,
-	NHOVER_Label = -2,
-	NHOVER_LeftEdge = -3,
-	NHOVER_RightEdge = -4,
-	NHOVER_Collapse = -5,
+	NHOVER_None          = -1,
+	NHOVER_Label         = -2,
+	NHOVER_LeftEdge      = -3,
+	NHOVER_RightEdge     = -4,
+	NHOVER_Collapse      = -5,
 	NHOVER_TogglePreview = -6,
-	NODES_VP_Top = -7,
-	NODES_VP_Top_Left = -8,
-	NODES_VP_Left = -9,
+	NODES_VP_Top         = -7,
+	NODES_VP_Top_Left    = -8,
+	NODES_VP_Left        = -9,
 	NODES_VP_Bottom_Left = -10,
-	NODES_VP_Bottom = -11,
-	NODES_VP_Bottom_Right = -12,
-	NODES_VP_Right = -13,
-	NODES_VP_Top_Right = -14,
-	NODES_VP_Move = -15,
-	NODES_VP_Maximize = -16,
-	NODES_VP_Close = -17,
+	NODES_VP_Bottom      = -11,
+	NODES_VP_Bottom_Right= -12,
+	NODES_VP_Right       = -13,
+	NODES_VP_Top_Right   = -14,
+	NODES_VP_Move        = -15,
+	NODES_VP_Maximize    = -16,
+	NODES_VP_Close       = -17
 };
 
 enum NodeInterfaceActions {
@@ -320,6 +324,8 @@ enum NodeInterfaceActions {
 	NODES_Delete_Nodes,
 	NODES_Save_Nodes,
 	NODES_Load_Nodes,
+	NODES_Show_Previews,
+	NODES_Hide_Previews,
 
 	NODES_MAX
 };

@@ -361,8 +361,9 @@ NodeBase::NodeBase()
 {
 	Name = NULL;
 	total_preview = NULL;
+	show_preview = true;
 	colors = NULL;
-	collapsed = false;
+	collapsed = 0;
 	fullwidth = 0;
 	deletable = true; //usually at least one node will not be deletable
 	modtime   = 0;
@@ -472,6 +473,12 @@ int NodeBase::UpdatePreview()
  */
 int NodeBase::Wrap()
 {
+	if (collapsed) return WrapCollapsed();
+	return WrapFull();
+}
+
+int NodeBase::WrapFull()
+{
 	if (!colors) return -1;
 
 	 //find overall width and height
@@ -480,6 +487,7 @@ int NodeBase::Wrap()
 	height = th*1.5;
 	width = colors->font->extent(Name,-1);
 
+	 //find wrap width
 	double w;
 	Value *v;
 	NodeProperty *prop;
@@ -528,8 +536,11 @@ int NodeBase::Wrap()
 	if (fullwidth > width) width = fullwidth;
 	double propwidth = width; //the max prop width.. make them all the same width
 
-	 //update link position
-	double y=1.5*th;
+	 //update link positions
+	height = 1.5*th;
+	if (UsesPreview()) height += total_preview->h();
+	double y = height;
+
 	for (int c=0; c<properties.n; c++) {
 		prop = properties.e[c];
 		prop->y = y;
@@ -557,8 +568,9 @@ int NodeBase::WrapCollapsed()
 	 //find overall width and height
 	double th = colors->font->textheight();
 
-	height = th*1.5;
 	width = 3*th + colors->font->extent(Name,-1);
+	height = th*1.5;
+	if (UsesPreview()) height += total_preview->h();
 
 	NodeProperty *prop;
 	int num_in = 0, num_out = 0;
@@ -1046,7 +1058,7 @@ Attribute *NodeGroup::dump_out_atts(Attribute *att,int what,DumpContext *context
 			//		prop->type==PROP_Exec_Through ? "through" : (prop->type==PROP_Exec_In ? "in" : "out"));
 			} else continue;
 
-			if (((prop->IsInput() && !prop->IsConnected()) || (prop->IsOutput())) && prop->GetData()) {
+			if ((prop->IsBlock() || (prop->IsInput() && !prop->IsConnected()) || (prop->IsOutput())) && prop->GetData()) {
 				prop->GetData()->dump_out_atts(att3, what, context);
 			} else {
 				DBG cerr <<" not data for node out: "<<prop->name<<endl;
@@ -1221,6 +1233,9 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 					fromprop->connections.push(newcon, 0);//prop list does NOT delete connection
 					toprop  ->connections.push(newcon, 0);//prop list does NOT delete connection
 					connections.push(newcon, 1);//node connection list DOES delete connection
+
+					from->Connected(newcon);
+					to  ->Connected(newcon);
 					
 				} else {
 					DBG cerr <<" *** Warning! cannot connect "<<fromstr<<" to "<<tostr<<"!"<<endl;
@@ -1785,6 +1800,10 @@ Laxkit::MenuInfo *NodeInterface::ContextMenu(int x,int y,int deviceid, Laxkit::M
 
 	menu->AddItem(_("Add node..."), NODES_Add_Node);
 
+	if (selected.n) {
+		menu->AddItem(_("Show previews"), NODES_Show_Previews);
+		menu->AddItem(_("Hide previews"), NODES_Hide_Previews);
+	}
 
 	return menu;
 }
@@ -2082,14 +2101,18 @@ int NodeInterface::Refresh()
 							th/3, false, th/3, false, 0); 
 
 		 //draw label
-		double labely = (node->collapsed ? node->y+node->height/2-th/2 : node->y);
+		double labely = node->y;
+		if (node->collapsed) {
+			if (node->UsesPreview()) labely = node->y;
+			else labely = node->y+node->height/2-th/2;
+		}
 		dp->NewFG(&colors->label_fg);
 		dp->textout(node->x+node->width/2+th/4, labely, node->Name, -1, LAX_TOP|LAX_HCENTER);
 
 		 //draw collapse arrow
 		dp->LineWidth(1);
 		if (node->collapsed) {
-			dp->drawthing(node->x+th,labely+th/2, th/4,th/4, lasthover==c && lasthoverslot==NHOVER_Collapse ? 0 : 1, THING_Triangle_Right);
+			dp->drawthing(node->x+th,labely+th/2, th/4,th/4, lasthover==c && lasthoverslot==NHOVER_Collapse ? 1 : 0, THING_Triangle_Right);
 		} else {
 			dp->NewFG(&tmid);
 			dp->drawthing(node->x+th,labely+th/2, th/4,th/4, lasthover==c && lasthoverslot==NHOVER_Collapse ? 1 : 0, THING_Triangle_Down);
@@ -2103,16 +2126,19 @@ int NodeInterface::Refresh()
 		 //draw the properties (or not)
 		p.set(node->x+node->width, node->y);
 
-		double y=node->y+th*1.5;
+		double y = node->y+th*1.5;
 
 		 //draw preview
-		if (node->collapsed == 0) {
-			if (node->total_preview) {
-				double ph = (node->width-th)*node->total_preview->h()/node->total_preview->w();
-				dp->imageout(node->total_preview, node->x, node->y+th, node->width, ph);
-				y+=ph;
+		//if (node->collapsed == 0) {
+			if (node->UsesPreview()) {
+				 //assume we want to render the preview at actual pixel size
+				//double ph = (node->width-th)*node->total_preview->h()/node->total_preview->w();
+				double ph = node->total_preview->h();
+				double pw = node->total_preview->w();
+				dp->imageout(node->total_preview, node->x+node->width/2-pw/2, node->y+th*1.15, pw, ph);
+				y += ph;
 			}
-		}
+		//}
 
 		 //draw ins and outs
 		NodeProperty *prop;
@@ -2247,7 +2273,7 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 
 			BooleanValue *vv = dynamic_cast<BooleanValue*>(v);
 
-			if (prop->IsInput()) {
+			if (!prop->IsOutput()) {
 				dp->drawrectangle(node->x+prop->x+th/2, y+prop->height/2-th/2, th, th, 2);
 
 				dp->NewFG(&nodes->colors->fg_edit);
@@ -2284,7 +2310,7 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 		} else {
 			 //fallback, just write out the property name
 			dp->NewFG(&nodes->colors->fg);
-			if (prop->IsInput()) {
+			if (!prop->IsOutput()) {
 				 //draw on left side
 				double dx = dp->textout(node->x+th/2, y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER); 
 				if (!isblank(extra)) {
@@ -3100,6 +3126,24 @@ int NodeInterface::PerformAction(int action)
         popup->WrapToMouse(0);
         app->rundialog(popup);
 
+		return 0;
+
+	} else if (action==NODES_Show_Previews) {
+		for (int c=0; c<selected.n; c++) {
+			selected.e[c]->show_preview = true;
+			if (selected.e[c]->collapsed) selected.e[c]->WrapCollapsed();
+			else selected.e[c]->Wrap();
+		}
+		needtodraw=1;
+		return 0;
+
+	} else if (action==NODES_Hide_Previews) {
+		for (int c=0; c<selected.n; c++) {
+			selected.e[c]->show_preview = false;
+			if (selected.e[c]->collapsed) selected.e[c]->WrapCollapsed();
+			else selected.e[c]->Wrap();
+		}
+		needtodraw=1;
 		return 0;
 
 	} else if (action==NODES_Save_Nodes) {

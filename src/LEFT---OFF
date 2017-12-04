@@ -176,16 +176,16 @@ from recent import:
 
 node editor NodeInterface:
   gegl nodes:
-    process on a crop after change a value crash? need to trace
     make sure deleting/rearranging nodes correctly removes gegl connections
 	load in graph xml
 	make sure input/outputs can translate from other data types
 	make process optional
 	undo redo
+    DONE process on a crop after change a value crash? need to trace
   view mode: all collapsed,  all collapsed except preview,  expanded no preview,  expanded with preview
-  image object creation node, tie node output to a custom importer (the proof of concept node for 0.097)
+  image object creation node, tie node output to a custom LaxImage importer (the proof of concept node for 0.097)
   finish implementing no cycle check
-  nodes need preview images as necessary
+  nodes need preview images as necessary: need to preview non-sinks
   type to search in add menu
   duplicate nodes
   numbers need slide change
@@ -210,6 +210,7 @@ node editor NodeInterface:
   gmic nodes
   graphicsmagick nodes
 
+  viewer node, resizable
   image from file node
   curve node
   simplex noise node

@@ -225,7 +225,7 @@ int GeglLaidoutNode::UpdateProperties()
 /*! Return 1 for saving nodes, display nodes.
  * 0 otherwise.
  */
-int GeglLaidoutNode::OkToProcess()
+int GeglLaidoutNode::IsSaveNode()
 {
 	const char *savenodes[] = {
 		"gegl:exr-save",
@@ -317,7 +317,7 @@ int GeglLaidoutNode::Update()
 
 //	if (errors == 0) {
 		 //should do this ONLY if the node is a sync
-		if (OkToProcess()) {
+		if (IsSaveNode()) {
 			DBG cerr <<"..........Attempting to process "<<operation<<endl;
 			gegl_node_process(gegl);
 			XMLOut(gegl, operation);
@@ -348,62 +348,88 @@ int GeglLaidoutNode::GetRect(Laxkit::DoubleBBox &box)
  */
 int GeglLaidoutNode::UpdatePreview()
 {
-	GeglRectangle rect = gegl_node_get_bounding_box (gegl);
-	if (rect.width <=0 || rect.height <= 0) return 0;
+	if (!IsSaveNode()) return 0; //only use processable nodes for now
 
-	double aspect = (double)rect.width / rect.height;
+
+	//connect an output proxy to whatever's at the input pad
+
+	GeglNode *prev = gegl_node_get_producer(gegl, "input", NULL);
+	if (!prev) return 0;
+
+	GeglNode *proxy = gegl_node_get_output_proxy(prev, "output");
+
+	GeglRectangle rect = gegl_node_get_bounding_box (proxy);
+	//if (rect.width <=0 || rect.height <= 0) return 0;
+	if (rect.width <=0 || rect.height <= 0) {
+		rect.width = 100;
+		rect.height = 100;
+	}
+
+
+	//double aspect = (double)rect.width / rect.height;
 	int bufw = rect.width;
 	int bufh = rect.height;
-	int maxdim = 150;
+	int maxdim = 50;
 
 	 //first determine a smallish size for the preview image, adjust total_preview if necessary.
 	int ibufw = bufw, ibufh = bufh;
-//	if (total_preview) {
-//		ibufw = total_preview->w();
-//		ibufh = total_preview->h();
-//
-//		if (ibufw != bufw 
-//	}
-//
+
 	if (ibufw > maxdim || ibufh > maxdim) {
 		if (ibufh > ibufw) {
 			double scale = (double)maxdim / ibufh;
 			ibufh = maxdim;
-			ibufw = ibufw * maxdim;
+			ibufw = ibufw * scale;
 			if (ibufw==0) ibufw = 1;
 		} else {
 			double scale = (double)maxdim / ibufw;
 			ibufw = maxdim;
-			ibufh = ibufh * maxdim;
+			ibufh = ibufh * scale;
 			if (ibufh==0) ibufh = 1;
 		}
 	} 
 
+	bool needtowrap = false;
+	if (!total_preview) needtowrap = true;
 	if (total_preview && (ibufw != total_preview->w() || ibufh != total_preview->h())) {
 		total_preview->dec_count();
 		total_preview = NULL;
 	}
 
-//	if (!total_preview) { 
-//		total_preview = create_new_image(ibufw, ibufh);
-//	}
-//
-//	unsigned char *ibuf = total_preview->getImageBuffer(); //bgra
-//
-//
-//	GeglRectangle  roi;
-//	unsigned char *buffer;
-//
-//	buffer = malloc (roi.w*roi.h*4);
-//	gegl_node_blit (gegl,
-//					1.0,
-//					&roi,
-//					babl_format("R'G'B'A u8"),
-//					buffer,
-//					GEGL_AUTO_ROWSTRIDE,
-//					GEGL_BLIT_DEFAULT);
-//
-//	total_preview->doneWithBuffer(ibuf);
+	if (!total_preview) { 
+		total_preview = create_new_image(ibufw, ibufh);
+	}
+
+	unsigned char *buffer = total_preview->getImageBuffer(); //bgra
+
+
+	GeglRectangle  orect;
+	orect.x = orect.y = 0;
+	orect.width  = ibufw;
+	orect.height = ibufh;
+
+	gegl_node_blit (proxy,
+					ibufw/(double)rect.width,
+					&orect,
+					babl_format("R'G'B'A u8"),
+					buffer,
+					GEGL_AUTO_ROWSTRIDE,
+					GEGL_BLIT_DEFAULT);
+
+	//need to flip r and b
+	int i=0;
+	unsigned char t;
+	for (int y=0; y<ibufh; y++) {
+		for (int x=0; x<ibufh; x++) {
+			t = buffer[i+2];
+			buffer[i+2] = buffer[i];
+			buffer[i] = t;
+			i += 4;
+		}
+	}
+
+	total_preview->doneWithBuffer(buffer);
+
+	if (needtowrap) Wrap();
 
 	return 1;
 }
@@ -454,6 +480,7 @@ int GeglLaidoutNode::SetPropertyFromAtt(const char *propname, LaxFiles::Attribut
 #define GEGLNODE_INPUT   (-1)
 #define GEGLNODE_OUTPUT  (-2)
 #define GEGLNODE_PREVIEW (-3)
+#define GEGLNODE_SWITCH  (-4)
 
 /*! Set to op, and grab the spec for the properties.
  *
@@ -623,6 +650,10 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 			AddProperty(new NodeProperty(NodeProperty::PROP_Output,  true, pads[c],  NULL,1, pads[c] ,NULL, GEGLNODE_OUTPUT));
 		}
 		g_strfreev(pads);
+	}
+
+	if (IsSaveNode()) {
+		AddProperty(new NodeProperty(NodeProperty::PROP_Block, false, "AutoSave",  new BooleanValue(true),1, _("Auto Save") ,NULL, GEGLNODE_SWITCH));
 	}
 
 	return 0;
