@@ -181,6 +181,7 @@ node editor NodeInterface:
 	make sure input/outputs can translate from other data types
 	make process optional
 	undo redo
+	need protection against unknown gegl ops
     DONE process on a crop after change a value crash? need to trace
   view mode: all collapsed,  all collapsed except preview,  expanded no preview,  expanded with preview
   image object creation node, tie node output to a custom LaxImage importer (the proof of concept node for 0.097)
