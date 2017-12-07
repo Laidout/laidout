@@ -171,24 +171,87 @@ int XMLToGeglNodes(const char *str, NodeGroup *parent, Laxkit::ErrorLog *log)
 	return 1;
 }
 
+GeglLaidoutNode *ReadNode(Attribute *att, Laxkit::ErrorLog *log)
+{
+	if (!att) return NULL;
+
+	const char *value, *name, *pname;
+	const char *op = NULL;
+
+	for (int c=0; c<att->attributes.n; c++) {
+		name  = att->attributes.e[c]->name;
+		value = att->attributes.e[c]->value;
+
+		if (!strcmp(name, "operation")) {
+			op = value;
+		} else {
+			//probably has properties as attributes, not subelements
+		}
+	}
+
+	if (!op) {
+		// *** one example has <gegl:fill-path> node with attributes instead of a <node>
+		if (log) log->AddMessage(_("Missing gegl operation"), ERROR_Fail);
+		return NULL;
+	}
+
+	 // *** should really have a protector to check for missing ops
+	GeglLaidoutNode *node = new GeglLaidoutNode(op);
+
+	Attribute *att2 = att->find("params");
+	if (att2) att2 = att2->find("context:");
+	if (att2) {
+		for (int c=0; c<att->attributes.n; c++) {
+			name  = att->attributes.e[c]->name;
+			value = att->attributes.e[c]->value;
+
+			if (!strcmp(name, "param")) {
+				//need to look up the type for the param, convert to a value from the string
+
+				pname = att->attributes.e[c]->findValue("name");
+				if (pname) {
+				}
+			}
+		}
+	}
+}
+
 /*! Read in a file, and pass to XMLToGeglNodes().
  */
-int XMLFileToGeglNodes(const char *file, NodeGroup *parent, Laxkit::ErrorLog *log)
+NodeGroup *XMLFileToGeglNodes(const char *file, NodeGroup *parent, Laxkit::ErrorLog *log)
 {
-//	char *contents = read_in_whole_file(file, NULL, 0);
-//	if (!contents) return 1;
-//
-//	int status = XMLToGeglNodes(contents, parent, log);
-//	delete[] contents;
-//	return status;
-//	----
-//	Attribute att;
-//	Attribute *ret = XMLFileToAttribute(&att, file, NULL);
-//	if (!ret) return 1;
-//
-//	// *** parse the att
-//
-	return 1;
+	Attribute att;
+	Attribute *ret = XMLFileToAttribute(&att, file, NULL);
+	if (!ret) return NULL;
+
+	// *** parse the att
+	const char *value, *name;
+	Attribute *att2 = att.find("gegl"), *att3;
+	if (att2) att2 = att2->find("content:");
+	if (!att2) {
+		if (log) log->AddMessage(_("Missing gegl node info"), ERROR_Fail);
+		return NULL;
+	}
+
+	NodeGroup *group = new NodeGroup();
+
+	GeglLaidoutNode *node=NULL, *last=NULL;
+
+	for (int c=0; c<att2->attributes.n; c++) {
+		name  = att2->attributes.e[c]->name;
+		value = att2->attributes.e[c]->value;
+
+		if (!strcmp(name, "node")) {
+			node = ReadNode(att2->attributes.e[c]->find("content:"), log);
+			
+			if (node && last) {
+				 //connect last->input to node->output
+
+			}
+		}
+	}
+
+	return group;
 }
 
 
@@ -318,9 +381,13 @@ int GeglLaidoutNode::Update()
 //	if (errors == 0) {
 		 //should do this ONLY if the node is a sync
 		if (IsSaveNode()) {
-			DBG cerr <<"..........Attempting to process "<<operation<<endl;
-			gegl_node_process(gegl);
-			XMLOut(gegl, operation);
+			if (AutoProcess()) {
+				DBG cerr <<"..........Attempting to process "<<operation<<endl;
+				gegl_node_process(gegl);
+				XMLOut(gegl, operation);
+			} else {
+				DBG cerr <<"....deferring gegl node process"<<endl;
+			}
 		}
 
 //	} else {
@@ -330,6 +397,19 @@ int GeglLaidoutNode::Update()
 	UpdatePreview();
 
 	return NodeBase::Update();
+}
+
+/*! Checks for true on last property if it's named "AutoProcess" and contains a BooleanValue.
+ * If no such property, assume yes.
+ */
+int GeglLaidoutNode::AutoProcess()
+{
+	if (properties.n == 0) return 1;
+	if (!strcmp(properties.e[properties.n-1]->name, "AutoProcess")) {
+		BooleanValue *b = dynamic_cast<BooleanValue*>(properties.e[properties.n-1]->GetData());
+		if (b) return b->i;
+	}
+	return 1;
 }
 
 /*! Return box.nonzerobounds().
@@ -653,7 +733,7 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 	}
 
 	if (IsSaveNode()) {
-		AddProperty(new NodeProperty(NodeProperty::PROP_Block, false, "AutoSave",  new BooleanValue(true),1, _("Auto Save") ,NULL, GEGLNODE_SWITCH));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Block, false, "AutoProcess",  new BooleanValue(true),1, _("Auto Save") ,NULL, GEGLNODE_SWITCH));
 	}
 
 	return 0;

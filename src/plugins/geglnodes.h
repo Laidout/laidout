@@ -32,6 +32,7 @@ class GeglLaidoutNode : public Laidout::NodeBase
   protected:
 	Laxkit::MenuInfo *op;
 	int IsSaveNode();
+	int AutoProcess();
 
   public:
 	static GeglNode *masternode;

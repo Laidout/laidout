@@ -55,6 +55,8 @@ namespace Laidout {
 class NodeBase;
 class NodeProperty;
 
+
+//---------------------------- NodeConnection ------------------------------------
 class NodeConnection
 {
   public:
@@ -74,6 +76,8 @@ class NodeConnection
 
 //typedef int (*NodePropertyValidFunc)(NodeProperty *prop, const char **error_message);
 
+
+//---------------------------- NodeProperty ------------------------------------
 class NodeProperty
 {
   public:
@@ -132,6 +136,7 @@ class NodeProperty
 	virtual int SetData(Value *newdata, bool absorb);
 };
 
+//---------------------------- NodeColors ------------------------------------
 class NodeColors : public Laxkit::anObject
 {
   public:
@@ -173,6 +178,8 @@ class NodeColors : public Laxkit::anObject
 	virtual int Font(Laxkit::LaxFont *newfont, bool absorb_count);
 };
 
+
+//---------------------------- NodeBase ------------------------------------
 class NodeBase : public Laxkit::anObject, public Laxkit::DoubleRectangle
 {
   public:
@@ -230,9 +237,7 @@ class NodeBase : public Laxkit::anObject, public Laxkit::DoubleRectangle
 };
 
 
-/*! \class NodeGroup
- * Class to hold a collection of nodes.
- */
+//---------------------------- NodeGroup ------------------------------------
 
 class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 {
@@ -245,7 +250,7 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
   public:
 	static Laxkit::ObjectFactory *NodeFactory(bool create=true);
 	static void SetNodeFactory(Laxkit::ObjectFactory *newnodefactory);
-	
+
 	Laxkit::ScreenColor background;
 
 	NodeBase *output, *input;
@@ -262,6 +267,7 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	NodeBase *NewNode(const char *type);
 
 	virtual int DeleteNodes(Laxkit::RefPtrStack<NodeBase> &selected);
+	virtual NodeGroup *Encapsulate(Laxkit::RefPtrStack<NodeBase> &selected);
 	virtual int Connect(NodeProperty *from, NodeProperty *to, NodeConnection *usethis);
 
 	virtual void       dump_out(FILE *f, int indent, int what, LaxFiles::DumpContext *context);
@@ -293,7 +299,9 @@ enum NodeHover {
 	NODES_VP_Top_Right   = -14,
 	NODES_VP_Move        = -15,
 	NODES_VP_Maximize    = -16,
-	NODES_VP_Close       = -17
+	NODES_VP_Close       = -17,
+	NODES_Navigator      = -18,
+	NODES_HOVER_MAX
 };
 
 enum NodeInterfaceActions {
@@ -339,7 +347,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 
 	Nodes *nodes;
 
-	Laxkit::PtrStack<NodeBase> grouptree;
+	Laxkit::PtrStack<NodeGroup> grouptree;
 	Laxkit::RefPtrStack<NodeBase> selected;
 	Laxkit::DoubleBBox selection_rect;
 	int hover_action;
@@ -347,7 +355,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	flatpoint lastpos;
 
 
-	Laxkit::Affine transform; //from nodes to screen coords
+	//Laxkit::Affine transform; //from nodes to screen coords
 
 	 //style state:
 	Laxkit::LaxFont *font;

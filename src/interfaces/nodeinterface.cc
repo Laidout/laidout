@@ -839,7 +839,7 @@ int NodeBase::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
 
 //-------------------------------------- NodeGroup --------------------------
 /*! \class NodeGroup
- * Class to hold a collection of nodes, and optionally a designated output node.
+ * Class to hold a collection of nodes.
  */
 
 /*! Static keeper of default node factory.
@@ -927,6 +927,44 @@ int NodeGroup::DeleteNodes(Laxkit::RefPtrStack<NodeBase> &selected)
 	}
 
 	return numdel;
+}
+
+/*! Takes all in selected, and puts them inside a new node that's a child of this.
+ * Connections are updated to reflect the new order.
+ * Return the newly created node.
+ * If no selected, nothing is done and NULL is returned.
+ */
+NodeGroup *NodeGroup::Encapsulate(Laxkit::RefPtrStack<NodeBase> &selected)
+{
+	//find all connected links to inputs not in group, and map to group ins
+	//find all connected links from outputs not in group, map to group outs
+	//after group creation, check that any external nodes are NOT connected to
+	//both inputs and outputs.. sever one or the other
+
+	if (selected.n==0) return NULL;
+
+	NodeGroup *group = new NodeGroup;
+	NodeBase *node, *ins, *outs;
+	//NodeConnection *connection;
+
+	ins  = new NodeBase();
+	outs = new NodeBase();
+
+	while (selected.n) {
+		node = selected.pop();
+		group->nodes.push(node);
+		node->dec_count();
+	}
+
+	for (int c=0; c<connections.n; c++) {
+	}
+
+	nodes.push(ins);
+	nodes.push(outs);
+	ins ->dec_count();
+	outs->dec_count();
+
+	return group;
 }
 
 /*! Return 1 for success, or 0 for failure.
@@ -1652,6 +1690,17 @@ Laxkit::anObject *newImageNode(int p, Laxkit::anObject *ref)
 	return node;
 }
 
+//------------ GenericNode
+
+/*! \class GenericNode
+ * Class to hold node groups ins and outs, and also other custom nodes.
+ */
+class GenericNode : public NodeBase
+{
+  public:
+	GenericNode();
+	virtual ~GenericNode();
+};
 
 //--------------------------- SetupDefaultNodeTypes()
 
@@ -1996,6 +2045,7 @@ int NodeInterface::Refresh()
 
 	dp->PushAxes();
 
+	 //draw background overlay
 	ScreenColor *bg = &color_background;
 	if (nodes) bg = &nodes->background;
 	if (bg->Alpha()>0) {
@@ -2025,6 +2075,15 @@ int NodeInterface::Refresh()
 		return 0;
 	} 
 
+	 //draw node parent list
+	double th = dp->textheight();
+	double x = th/2;
+
+	for (int c=0; c < grouptree.n; c++) {
+		x += th + dp->textout(x,th/4, grouptree.e[c]->Id(),-1, LAX_TOP|LAX_LEFT);
+	}
+
+
 	dp->NewTransform(nodes->m.m());
 	dp->font(font);
 
@@ -2051,7 +2110,6 @@ int NodeInterface::Refresh()
 	ScreenColor *border, *fg;
 	ScreenColor tfg, tbg, tmid, hprop;
 	NodeColors *colors=NULL;
-	double th = dp->textheight();
 	double borderwidth = 1;
 
 	for (int c=0; c<nodes->nodes.n; c++) {
@@ -3029,8 +3087,16 @@ int NodeInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigne
 		//deal with various modified keys...
 	}
 
-	if (ch==LAX_Esc) { //the various possible keys beyond normal ascii printable chars are defined in lax/laxdefs.h
-		if (selected.n==0) return 1;
+	if (ch==LAX_Esc) {
+		if (!nodes) return 1;
+		if (selected.n == 0) {
+			 //jump up to parent node
+			if (grouptree.n == 0) return 1;
+			nodes->dec_count();
+			nodes = grouptree.pop();
+			needtodraw=1;
+			return 0;
+		}
 		selected.flush();
 		needtodraw=1;
 		return 0;
@@ -3082,7 +3148,9 @@ Laxkit::ShortcutHandler *NodeInterface::GetShortcuts()
 int NodeInterface::PerformAction(int action)
 {
 	if (action==NODES_Group_Nodes) {
-		//***
+		//nodes->Encapsulate(selected);
+		needtodraw = 1;
+		return 0;
 
 	} else if (action==NODES_Ungroup_Nodes) {
 		//***
