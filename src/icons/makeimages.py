@@ -23,6 +23,16 @@ import xml.sax
 import types
 import locale
 
+
+#
+# If you don't have the newest Inkscape, use the "old inkscape" one below
+#
+PPU = 96.0 #new inkscape
+#PPU = 90.0 #old inkscape
+
+HALFPPU = PPU/2
+
+
 #not sure if this is necessary: seems to work for me with or without under a french locale
 locale.setlocale(locale.LC_ALL, '')
 
@@ -42,8 +52,8 @@ if (len(sys.argv)>1) :
 
 print ("Make icons this many pixels wide: "+str(bitmapw))
 
-dpi = int(96.0*bitmapw/48)
-DOCUMENTHEIGHT=17
+
+DOCUMENTHEIGHT = 17 #just a hint here, gets read in later
 
 #get names
 names=[]
@@ -76,7 +86,7 @@ class SAXtracer (xml.sax.handler.ContentHandler):
                height = height[0:-2]
                DOCUMENTHEIGHT=int(height)
            else:
-               DOCUMENTHEIGHT=int(height)/96.0
+               DOCUMENTHEIGHT=int(height)/PPU
            print("found doc height: "+str(DOCUMENTHEIGHT)+" "+height)
            
         if (globals()["depth"]!=3) : return 
@@ -115,16 +125,17 @@ for name in names :
     H=int(float(subprocess.check_output("inkscape -I "+name+" -H icons.svg", shell=True)))
 
     print ("raw inkscape coords xywh: "+str(X)+","+str(Y)+" "+str(W)+","+str(H))
-    x1 = int(X/48)*48
-    #y1 = int(Y/48)*48
+    x1 = int(X/HALFPPU)*HALFPPU
+    #y1 = int(Y/HALFPPU)*HALFPPU
     print ('doc height: '+str(DOCUMENTHEIGHT))
-    y1 = DOCUMENTHEIGHT*96-int(Y/48)*48-48
-    renderwidth =bitmapw*(1+int(W/48))
-    renderheight=bitmapw*(1+int(H/48))
-    x2=x1+48*(1+int(W/48))
-    y2=y1+48*(1+int(H/48))
+    y1 = DOCUMENTHEIGHT*PPU-int(Y/HALFPPU)*HALFPPU-HALFPPU
+    renderwidth =bitmapw*(1+int(W/HALFPPU))
+    renderheight=bitmapw*(1+int(H/HALFPPU))
+    x2=x1+HALFPPU*(1+int(W/HALFPPU))
+    y2=y1+HALFPPU*(1+int(H/HALFPPU))
 
     print ("x1,y1:"+str(x1)+","+str(y1)+"  x2,y2:"+str(x2)+"x"+str(y2))
+    print ("icon coords x1,y1:"+str(int(x1*2/PPU)) + "," + str(int(y1*2/PPU)))
 
     command="inkscape -a "+str(x1)+":"+str(y1)+":"+str(x2)+":"+str(y2)+" -w "+ \
         str(renderwidth)+" -h "+str(renderheight)+" -e "+name+".png icons.svg"
