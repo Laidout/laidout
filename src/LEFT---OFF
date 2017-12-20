@@ -58,6 +58,7 @@ cloning, change original, not triggering bbox update in clone
 
 ubuntu maximize window failing (but not on today's debian unstable gnome), resize seems to work now
 gnome "application" does one per window, not one per app. this is not a bad thing imnsho, but should be easy to conform to desktop application spec properly
+icon needs to be bigger.. is fuzzy on ubuntu alt-tab
 DONE App/window icon in window manager not showing.. 
 
 select none, select doc, viewport jumps around... it should stay the same area
@@ -174,15 +175,15 @@ from recent import:
   load in autosave should ask if you want to save as the original
   spread editor needs edge dragging
 
-node editor NodeInterface:
+node editor NodeInterface nodes:
   gegl nodes:
     make sure deleting/rearranging nodes correctly removes gegl connections
 	load in graph xml
 	make sure input/outputs can translate from other data types
 	make process optional
-	undo redo
 	need protection against unknown gegl ops
     DONE process on a crop after change a value crash? need to trace
+  undo redo
   view mode: all collapsed,  all collapsed except preview,  expanded no preview,  expanded with preview
   image object creation node, tie node output to a custom LaxImage importer (the proof of concept node for 0.097)
   finish implementing no cycle check
