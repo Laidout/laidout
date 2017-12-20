@@ -2923,9 +2923,18 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 	buttondown.move(mouse->id, x,y, &lx,&ly);
 	
 
-	if (buttondown.isdown(mouse->id, MIDDLEBUTTON)) {
-		DBG cerr <<"node middle button move: "<<x-lx<<", "<<y-ly<<endl;
-		nodes->m.origin(nodes->m.origin() + flatpoint(x-lx, y-ly));
+	if (buttondown.isdown(mouse->id, MIDDLEBUTTON) || buttondown.isdown(mouse->id, RIGHTBUTTON)) {
+		if ((state&LAX_STATE_MASK)==ControlMask && buttondown.isdown(mouse->id, RIGHTBUTTON)) {
+			 //zoom
+			double amount = 1 + (x-lx)*.1;
+			if (amount < .7) amount = .7;
+			nodes->m.Scale(flatpoint(x,y), amount);
+
+		} else {
+			 //move screen
+			DBG cerr <<"node middle button move: "<<x-lx<<", "<<y-ly<<endl;
+			nodes->m.origin(nodes->m.origin() + flatpoint(x-lx, y-ly));
+		}
 		needtodraw=1;
 		return 0;
 	}
@@ -3037,6 +3046,22 @@ int NodeInterface::MBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 	return 0;
 }
 
+/*! Intercept shift-right button to drag the scene around, if you are missing a middle button.
+ */
+int NodeInterface::RBDown(int x,int y,unsigned int state,int count, const Laxkit::LaxMouse *d)
+{
+	if (!nodes || (state&LAX_STATE_MASK)==0) return anInterface::RBDown(x,y,state,count,d);
+	buttondown.down(d->id, RIGHTBUTTON, x,y);
+	return 0;
+}
+
+int NodeInterface::RBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *d)
+{
+	if (!buttondown.isdown(d->id, RIGHTBUTTON)) return anInterface::RBUp(x,y,state,d);
+	buttondown.up(d->id, RIGHTBUTTON);
+	return 0;
+}
+
 int NodeInterface::WheelUp(int x,int y,unsigned int state,int count, const Laxkit::LaxMouse *d)
 {
 	 //scroll nodes placement
@@ -3130,11 +3155,13 @@ Laxkit::ShortcutHandler *NodeInterface::GetShortcuts()
     sc=new ShortcutHandler(whattype());
 
     //sc->Add([id number],  [key], [mod mask], [mode], [action string id], [description], [icon], [assignable]);
-    sc->Add(NODES_Group_Nodes,   'g',ControlMask,0, "GroupNodes"   , _("Group Nodes"  ),NULL,0);
-    sc->Add(NODES_Ungroup_Nodes, 'g',ShiftMask|ControlMask,0, "UngroupNodes" , _("Ungroup Nodes"),NULL,0);
-    sc->Add(NODES_Add_Node,      'A',ShiftMask,  0, "AddNode"      , _("Add Node"     ),NULL,0);
-    sc->Add(NODES_Delete_Nodes,  LAX_Bksp,0,     0, "DeleteNode"   , _("Delete Node"  ),NULL,0);
-	sc->AddShortcut(LAX_Del,0,0, NODES_Delete_Nodes);
+    sc->Add(NODES_Center,         ' ',0,          0, "Center"        , _("Center"         ),NULL,0);
+    sc->Add(NODES_Center_Selected,' ',ShiftMask,  0, "CenterSelecetd", _("Center Selected"),NULL,0);
+    sc->Add(NODES_Group_Nodes,    'g',ControlMask,0, "GroupNodes"    , _("Group Nodes"    ),NULL,0);
+    sc->Add(NODES_Ungroup_Nodes,  'g',ShiftMask|ControlMask,0, "UngroupNodes" , _("Ungroup Nodes"),NULL,0);
+    sc->Add(NODES_Add_Node,       'A',ShiftMask,  0, "AddNode"       , _("Add Node"       ),NULL,0);
+    sc->Add(NODES_Delete_Nodes,   LAX_Bksp,0,     0, "DeleteNode"    , _("Delete Node"    ),NULL,0);
+	sc->AddShortcut(LAX_Del,0,0,  NODES_Delete_Nodes);
 
 
     sc->Add(NODES_Save_Nodes,      's',0,  0, "SaveNodes"      , _("Save Nodes"     ),NULL,0);
@@ -3194,6 +3221,30 @@ int NodeInterface::PerformAction(int action)
         popup->WrapToMouse(0);
         app->rundialog(popup);
 
+		return 0;
+
+	} else if (action==NODES_Center || action==NODES_Center_Selected) {
+		if (!nodes) return 0;
+		SomeData box;
+		NodeBase *node;
+
+		Laxkit::RefPtrStack<NodeBase> *nn;
+		if (action == NODES_Center_Selected && selected.n>0) nn = &selected;
+		else nn = &nodes->nodes;
+		
+		for (int c=0; c<nn->n; c++) {
+			node = nn->e[c];
+			box.addtobounds(node->x, node->y);
+			box.addtobounds(node->x + node->width, node->y + node->height);
+		}
+
+		double w = dp->Maxx-dp->Minx, h = dp->Maxy-dp->Miny;
+		double margin = (w < h ? w*.05 : h*.05);
+
+		DoubleBBox vp(dp->Minx+margin, dp->Maxx-margin, dp->Miny+margin, dp->Maxy-margin);
+		box.fitto(NULL, &vp, 50, 50, 1);
+		nodes->m.m(box.m());
+		needtodraw=1;
 		return 0;
 
 	} else if (action==NODES_Show_Previews) {

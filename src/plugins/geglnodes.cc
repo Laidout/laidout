@@ -165,19 +165,100 @@ int ValueToProperty(Value *v, const char *gvtype, GeglNode *node, const char *pr
 	return 100;
 }
 
+/*! Convert a gegl xml string to a NodeGroup.
+ */
 int XMLToGeglNodes(const char *str, NodeGroup *parent, Laxkit::ErrorLog *log)
 {
 	// ***
 	return 1;
 }
 
+/*! Read in a node expected to be a node with a known op type.
+ */
 GeglLaidoutNode *ReadNode(Attribute *att, Laxkit::ErrorLog *log)
+{
+	if (!att) return NULL;
+
+	 //first, figure out what type of node we are.
+	const char *op = att->findValue("operation");
+	if (!op) {
+		if (log) log->AddMessage(_("Missing gegl operation"), ERROR_Fail);
+		return NULL;
+	}
+
+	GeglLaidoutNode *node = new GeglLaidoutNode(op);
+	if (node->operation == NULL) {
+		if (log) {
+			char scratch[strlen(_("Unknown gegl operation %s")) + strlen(op)+1];
+			sprintf(scratch, _("Unknown gegl operation %s"), op);
+			log->AddMessage(scratch, ERROR_Fail);
+		}
+		delete node;
+		return NULL;
+	}
+
+	 //read in any params that are contained as xml properties
+	const char *name, *pname; 
+	//const char *value, *name, *pname; 
+	for (int c=0; c<att->attributes.n; c++) {
+		name  = att->attributes.e[c]->name;
+		//value = att->attributes.e[c]->value;
+
+		if (!strcmp(name, "operation")) continue;
+
+		// ***
+	}
+
+
+	Attribute *content = att->find("content:");
+
+	for (int c=0; c<content->attributes.n; c++) {
+		name  = content->attributes.e[c]->name;
+		//value = content->attributes.e[c]->value;
+
+		if (!strcmp(name, "params")) {
+
+			Attribute *params = content->attributes.e[c];
+			for (int c2=0; c2<params->attributes.n; c2++) {
+				name  = params->attributes.e[c2]->name;
+				//value = params->attributes.e[c2]->value;
+
+				if (!strcmp(name, "param")) {
+					//need to look up the type for the param, convert to a value from the string
+
+					pname = params->attributes.e[c]->findValue("name");
+					if (pname) {
+					}
+				}
+			}
+
+		} else if (!strcmp(name, "node")) {
+			 //we have subnodes that need to connect
+			// ***
+
+		} else if (!strcmp(name, "clone")) {
+			//const char *ref = param->attributes.e[c]->findValue("ref");
+			// ***
+		}
+	}
+
+	return node;
+}
+
+/*! Construct a chain of nodes that are subatts of att.
+ * All the new nodes are placed as children of parent. If parent is NULL,
+ * then create and use a new NodeGroup as parent. Return parent on success.
+ * Returns NULL if nodes cannot be constructed or some other error.
+ */
+NodeGroup *ReadNodes(NodeGroup *parent, Attribute *att, Laxkit::ErrorLog *log)
 {
 	if (!att) return NULL;
 
 	const char *value, *name, *pname;
 	const char *op = NULL;
+	NodeGroup *group = parent;
 
+	 //first, figure out what type of node we are. Null operation means we are just a blank parent group
 	for (int c=0; c<att->attributes.n; c++) {
 		name  = att->attributes.e[c]->name;
 		value = att->attributes.e[c]->value;
@@ -185,35 +266,46 @@ GeglLaidoutNode *ReadNode(Attribute *att, Laxkit::ErrorLog *log)
 		if (!strcmp(name, "operation")) {
 			op = value;
 		} else {
-			//probably has properties as attributes, not subelements
+			 //probably has properties as attributes, not subelements
+			// ***
 		}
 	}
 
-	if (!op) {
-		// *** one example has <gegl:fill-path> node with attributes instead of a <node>
-		if (log) log->AddMessage(_("Missing gegl operation"), ERROR_Fail);
+	GeglLaidoutNode *node = new GeglLaidoutNode(op);
+	if (node->operation == NULL) {
+		if (log) {
+			char scratch[strlen(_("Unknown gegl operation %s")) + strlen(op)+1];
+			sprintf(scratch, _("Unknown gegl operation %s"), op);
+			log->AddMessage(scratch, ERROR_Fail);
+		}
+		delete node;
 		return NULL;
 	}
 
-	 // *** should really have a protector to check for missing ops
-	GeglLaidoutNode *node = new GeglLaidoutNode(op);
-
-	Attribute *att2 = att->find("params");
-	if (att2) att2 = att2->find("context:");
-	if (att2) {
-		for (int c=0; c<att->attributes.n; c++) {
-			name  = att->attributes.e[c]->name;
-			value = att->attributes.e[c]->value;
+	Attribute *params = att->find("params");
+	if (params) params = params->find("content:");
+	if (params) {
+		for (int c=0; c<params->attributes.n; c++) {
+			name  = params->attributes.e[c]->name;
+			value = params->attributes.e[c]->value;
 
 			if (!strcmp(name, "param")) {
 				//need to look up the type for the param, convert to a value from the string
 
-				pname = att->attributes.e[c]->findValue("name");
+				pname = params->attributes.e[c]->findValue("name");
 				if (pname) {
 				}
+
+			} else if (!strcmp(name, "node")) {
+				 //we have subnodes that need to connect
+
+			} else if (!strcmp(name, "clone")) {
+				//const char *ref = param->attributes.e[c]->findValue("ref");
 			}
 		}
 	}
+
+	return group;
 }
 
 /*! Read in a file, and pass to XMLToGeglNodes().
@@ -224,9 +316,8 @@ NodeGroup *XMLFileToGeglNodes(const char *file, NodeGroup *parent, Laxkit::Error
 	Attribute *ret = XMLFileToAttribute(&att, file, NULL);
 	if (!ret) return NULL;
 
-	// *** parse the att
-	const char *value, *name;
-	Attribute *att2 = att.find("gegl"), *att3;
+	//parse the att
+	Attribute *att2 = att.find("gegl");
 	if (att2) att2 = att2->find("content:");
 	if (!att2) {
 		if (log) log->AddMessage(_("Missing gegl node info"), ERROR_Fail);
@@ -234,23 +325,8 @@ NodeGroup *XMLFileToGeglNodes(const char *file, NodeGroup *parent, Laxkit::Error
 	}
 
 	NodeGroup *group = new NodeGroup();
-
-	GeglLaidoutNode *node=NULL, *last=NULL;
-
-	for (int c=0; c<att2->attributes.n; c++) {
-		name  = att2->attributes.e[c]->name;
-		value = att2->attributes.e[c]->value;
-
-		if (!strcmp(name, "node")) {
-			node = ReadNode(att2->attributes.e[c]->find("content:"), log);
-			
-			if (node && last) {
-				 //connect last->input to node->output
-
-			}
-		}
-	}
-
+	NodeGroup *group_ret = ReadNodes(group, att2, log);
+	if (!group_ret) delete group;
 	return group;
 }
 
@@ -449,30 +525,29 @@ int GeglLaidoutNode::UpdatePreview()
 	//double aspect = (double)rect.width / rect.height;
 	int bufw = rect.width;
 	int bufh = rect.height;
-	int maxdim = 50;
+	int maxwidth = width;
+	int maxheight =  (colors ? colors->font->textheight() : 50);
 
 	 //first determine a smallish size for the preview image, adjust total_preview if necessary.
+	 //fit inside a rect this->width x maxdim
 	int ibufw = bufw, ibufh = bufh;
+	double scale  = (double)maxwidth  / bufw;
+	double scaley = (double)maxheight / bufh;
+	if (scaley < scale) {
+		scaley = scale;
+	}
+	ibufw = bufw * scale;
+	ibufh = bufh * scale;
+	if (ibufw==0) ibufw = 1;
+	if (ibufh==0) ibufh = 1;
 
-	if (ibufw > maxdim || ibufh > maxdim) {
-		if (ibufh > ibufw) {
-			double scale = (double)maxdim / ibufh;
-			ibufh = maxdim;
-			ibufw = ibufw * scale;
-			if (ibufw==0) ibufw = 1;
-		} else {
-			double scale = (double)maxdim / ibufw;
-			ibufw = maxdim;
-			ibufh = ibufh * scale;
-			if (ibufh==0) ibufh = 1;
-		}
-	} 
 
 	bool needtowrap = false;
 	if (!total_preview) needtowrap = true;
 	if (total_preview && (ibufw != total_preview->w() || ibufh != total_preview->h())) {
 		total_preview->dec_count();
 		total_preview = NULL;
+		needtowrap = true;
 	}
 
 	if (!total_preview) { 
@@ -499,7 +574,7 @@ int GeglLaidoutNode::UpdatePreview()
 	int i=0;
 	unsigned char t;
 	for (int y=0; y<ibufh; y++) {
-		for (int x=0; x<ibufh; x++) {
+		for (int x=0; x<ibufw; x++) {
 			t = buffer[i+2];
 			buffer[i+2] = buffer[i];
 			buffer[i] = t;

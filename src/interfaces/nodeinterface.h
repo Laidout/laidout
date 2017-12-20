@@ -322,6 +322,8 @@ enum NodeInterfaceActions {
 	NODES_Resize_Top_Right,
 	NODES_Resize_Bottom_Left,
 	NODES_Resize_Bottom_Right,
+	NODES_Center,
+	NODES_Center_Selected,
 
 	NODES_Duplicate,
 	NODES_Group_Nodes,
@@ -402,6 +404,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual int LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *d);
 	virtual int MBDown(int x,int y,unsigned int state,int count, const Laxkit::LaxMouse *d);
 	virtual int MBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *d);
+	virtual int RBDown(int x,int y,unsigned int state,int count, const Laxkit::LaxMouse *d);
+	virtual int RBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *d);
 	virtual int WheelUp  (int x,int y,unsigned int state,int count, const Laxkit::LaxMouse *d);
 	virtual int WheelDown(int x,int y,unsigned int state,int count, const Laxkit::LaxMouse *d);
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state, const Laxkit::LaxKeyboard *d);
