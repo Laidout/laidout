@@ -138,7 +138,7 @@ DONE update help page
 DONE put rss/g+ links on all menu pages.. 
 
 
-switch to GPL v3
+switch to GPL v3?
 
 fontdialog:
   select font inappropriately repositions view
@@ -910,8 +910,14 @@ color slider popup:
   be able to choose which color sets are visible
   make color slider box be able to be a pane
   would be nice to enter number values in any color format
-  need some kind of palette tab
   need palette selection tab
+  click without dragging select color
+  click and drag shifts, but DOES not set value under mouse
+  out click on hex edit is picking color
+  optionally show clickable numbers
+  clicking anywher in the new/old should swap
+  show numbers to click on: 255, 65535, float
+  toggle sets of sliders: rgb, cmyk, alpha, cielab, hsl
   DONE should pop near the mouse 
 
 Gradient:
@@ -943,7 +949,7 @@ gradient resources
     color
 
 Colors:
-  need to update ColorSliders to use dp gradients
+  DONE need to update ColorSliders to use dp gradients
   color picker that previews text?
   convert to using Color objects instead of all ScreenColor:
 	gradient
