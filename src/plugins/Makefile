@@ -14,7 +14,7 @@ LDFLAGS= -L/usr/X11R6/lib -lXi -lXext -lX11 -lm -lpng `imlib2-config --libs` `fr
 DEBUGFLAGS= -g -gdwarf-2
 
 #               /usr/lib/x86_64-linux-gnu/glib-2.0/include/
-GEGLCPPFLAGS= -I/usr/lib/x86_64-linux-gnu/glib-2.0/include/ -I/usr/include/babl-0.1/ -I/usr/include/gegl-0.3/ -I/usr/include/glib-2.0 -L/usr/lib/x86_64-linux-gnu/
+GEGLCPPFLAGS= -I/usr/lib/x86_64-linux-gnu/glib-2.0/include/ -I/usr/include/babl-0.1/ -I/usr/include/gegl-0.3/ -I/usr/include/glib-2.0 -L/usr/lib/x86_64-linux-gnu/ -I/usr/lib64/glib-2.0/include/
 GEGLLIBS=     -lgegl-0.3 -lbabl-0.1 -lglib-2.0 -lgobject-2.0
 
 CPPFLAGS= -fPIC -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. -I/usr/include/freetype2
