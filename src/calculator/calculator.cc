@@ -745,6 +745,7 @@ Entry *BlockInfo::FindName(const char *name,int len)
 		
 		while (s<e) {
 			m=(s+e)/2;
+			if (m == s) break; //s was right next to e
 			cmp=strncmp(name,dict.e[m]->name,len);
 			nlen=strlen(dict.e[m]->name);
 			if (cmp==0 && len<nlen) cmp=-1;
