@@ -39,6 +39,7 @@ scribus plugin: if directory of executable script is not writable, it fails!
 scribus plugin needs a proper dealing with temporary files 
 
 configure should check for libreadline-dev? apparently not pkg-config ready <- half fix of listing in package requirements
+  needs to use the new extra_cppflags thing
 
 memory hole in reimpose .. reimposed 5 page booklet 
 memory hole when graphical shell activated 
@@ -179,35 +180,45 @@ node editor NodeInterface nodes:
   gegl nodes:
     make sure deleting/rearranging nodes correctly removes gegl connections
 	load in graph xml
+	save gegl graph to xml
+    inkscape filter read in
 	make sure input/outputs can translate from other data types
-	make process optional
 	need protection against unknown gegl ops
+	tooltips for operation, not just properties
+	searching via categories, not just the name. gegl ops have name, title, description, categories, license, even source!!
     DONE process on a crop after change a value crash? need to trace
+	DONE make process optional
+  rename nodes
+  numbers need slide change: specify add or zoom stepping
   undo redo
-  view mode: all collapsed,  all collapsed except preview,  expanded no preview,  expanded with preview
   image object creation node, tie node output to a custom LaxImage importer (the proof of concept node for 0.097)
   finish implementing no cycle check
+  type to search in add node menu
+  need a little triple bar triangle in lower right corner to resize preview size. change preview size on all selected
   nodes need preview images as necessary: need to preview non-sinks
-  type to search in add menu
+  view mode: all collapsed,  all collapsed except preview,  expanded no preview,  expanded with preview
   duplicate nodes
-  numbers need slide change
   load something already loaded makes dups of everything.. need to check for name collision!!
   groups
-  rename nodes
-  jump to link under mouse
-  node libraries
-  color code pipes by value type, color: yellow, number: gray, vector: purple
-  node magnifier for easier browsing when otherwise zoomed way out
   auto shift on connection
+  node libraries: nodes as resources
+  jump to link under mouse
+  node magnifier for easier browsing when otherwise zoomed way out
   exec paths
-  make sure it doesn't go totally offscreen
+  make sure entire nodes don't go totally offscreen
   scriptify node graph
   deferred update when massive operations, maybe highlight nodes in yellow?
   toggle show only selected nodes
-  inkscape filter read in
+  color code pipes by value type, color: yellow, number: gray, vector: purple
+  need better styling.. too much is hardcoded. problems later with high dpi screens
+  so many nodes, need way to classify favorites, maybe custom arrangements of menu
 
-  newly added should be selected
-  bug: shouldn't click edit output props
+  DONE node resize needs mouseover for edges
+  DONE select all/deselect with 'a'
+  DONE save, load nodes dialogs
+  DONE newly added should be selected
+  DONE hover tips for props on collapsed nodes
+  DONE clear up IsInput()/IsOutput()
 
   gmic nodes
   graphicsmagick nodes
@@ -249,9 +260,6 @@ node editor NodeInterface nodes:
 	  abs  neg  sqrt
 	  sin  cos  tan  asin  acos  atan
 	  sinh cosh tanh asinh acosh atanh
-
-  DONE hover tips for props on collapsed nodes
-  DONE clear up IsInput()/IsOutput()
 
 need to implement DRAW_Hires for all interfaces that default to preview renders. needed for proper image out
   includes at least image(done), path, engraver
@@ -961,6 +969,8 @@ Colors:
 	fillstyle
 	path
     DONE images (doesn't use color per se)
+
+in general for windows, need better styling.. too much is hardcoded. problems later with high dpi screens
 
 make drag and drop selections work
 
