@@ -3765,8 +3765,11 @@ ColorValue::ColorValue(const char *str)
   : color(LAX_COLOR_RGB,65535,0,0,0,65535)
 {
 	color.SetHexValue(str);
-	DBG cerr <<"ColorValue creation.."<<endl;
 }
+
+ColorValue::ColorValue(double r, double g, double b, double a)
+  : color(LAX_COLOR_RGB, r,g,b,a,0, 1.0)
+{}
 
 /*! Objects gets count decremented.
  */
