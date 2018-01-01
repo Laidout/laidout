@@ -180,7 +180,9 @@ class NodeColors : public Laxkit::anObject
 
 
 //---------------------------- NodeBase ------------------------------------
-class NodeBase : public Laxkit::anObject, public Laxkit::DoubleRectangle
+class NodeBase : public Laxkit::anObject,
+				 public Laxkit::DoubleRectangle,
+				 public Laxkit::Undoable
 {
   public:
 	 //state
@@ -211,6 +213,9 @@ class NodeBase : public Laxkit::anObject, public Laxkit::DoubleRectangle
 	virtual const char *Type() { return type; }
 	virtual ObjectDef *GetDef() { return def; }
 	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface);
+
+	virtual int Undo(UndoData *data);
+	virtual int Redo(UndoData *data);
 
 	virtual int Update();
 	virtual int UpdatePreview();
@@ -282,6 +287,7 @@ typedef NodeGroup Nodes;
 
 //---------------------------- NodeInterface ------------------------------------
 
+//these get tracked in lasthoverslot
 enum NodeHover {
 	NHOVER_None          = -1,
 	NHOVER_Label         = -2,
@@ -289,18 +295,19 @@ enum NodeHover {
 	NHOVER_RightEdge     = -4,
 	NHOVER_Collapse      = -5,
 	NHOVER_TogglePreview = -6,
-	NODES_VP_Top         = -7,
-	NODES_VP_Top_Left    = -8,
-	NODES_VP_Left        = -9,
-	NODES_VP_Bottom_Left = -10,
-	NODES_VP_Bottom      = -11,
-	NODES_VP_Bottom_Right= -12,
-	NODES_VP_Right       = -13,
-	NODES_VP_Top_Right   = -14,
-	NODES_VP_Move        = -15,
-	NODES_VP_Maximize    = -16,
-	NODES_VP_Close       = -17,
-	NODES_Navigator      = -18,
+	NHOVER_PreviewResize = -7,
+	NODES_VP_Top         = -8,
+	NODES_VP_Top_Left    = -9,
+	NODES_VP_Left        = -10,
+	NODES_VP_Bottom_Left = -11,
+	NODES_VP_Bottom      = -12,
+	NODES_VP_Bottom_Right= -13,
+	NODES_VP_Right       = -14,
+	NODES_VP_Top_Right   = -15,
+	NODES_VP_Move        = -16,
+	NODES_VP_Maximize    = -17,
+	NODES_VP_Close       = -18,
+	NODES_Navigator      = -19,
 	NODES_HOVER_MAX
 };
 
@@ -324,6 +331,7 @@ enum NodeInterfaceActions {
 	NODES_Resize_Bottom_Right,
 	NODES_Center,
 	NODES_Center_Selected,
+	NODES_Clear,
 
 	NODES_Duplicate,
 	NODES_Group_Nodes,
@@ -360,6 +368,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	//Laxkit::Affine transform; //from nodes to screen coords
 
 	 //style state:
+	char *lastsave;
 	Laxkit::LaxFont *font;
 	double defaultpreviewsize;
 
@@ -417,7 +426,52 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual int IsSelected(NodeBase *node);
 
 	virtual int ToggleCollapsed();
+	virtual int SaveNodes(const char *file);
+	virtual int LoadNodes(const char *file, bool append);
 };
+
+
+//--------------------------NodeLoader --------------------------------
+
+class NodeLoader
+{
+  public:
+	NodeLoader();
+	virtual ~NodeLoader();
+	virtual int CanLoad(const char *file);
+	virtual int LoadNodes(const char *file, NodeBase *parent);
+};
+
+
+//--------------------------NodeUndo --------------------------------
+class NodeUndo : public Laxkit::UndoData
+{
+  public:
+    enum NodeUndoTypes {
+        Moved,
+        Scaled,
+		Added,
+		Deleted,
+		Grouped,
+		Ungrouped,
+		Resized,
+		Connected,
+		Disconnected,
+		Framed,
+		Unframed,
+		PropertyChange,
+        MAX
+    };
+
+    int type;
+	double *m;
+	anObject *stuff;
+
+    NodeUndo(int ntype, int nisauto, double *mm, anObject *nstuff);
+	virtual ~NodeUndo();
+    virtual const char *Description();
+};
+
 
 } // namespace Laidout
 

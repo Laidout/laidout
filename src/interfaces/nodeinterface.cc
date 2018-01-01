@@ -25,11 +25,13 @@
 
 #include "nodeinterface.h"
 #include "../utils.h"
+#include "../version.h"
 
 #include <lax/laxutils.h>
 #include <lax/bezutils.h>
 #include <lax/popupmenu.h>
 #include <lax/colorsliders.h>
+#include <lax/filedialog.h>
 #include <lax/language.h>
 
 #include <string>
@@ -163,12 +165,7 @@ class ValueConstraint
 		PARAM_None = 0,
 
 		PARAM_No_Maximum,
-		PARAM_Less_Than,
-		PARAM_Less_Than_Or_Equal,
 		PARAM_No_Minimum,
-		PARAM_Greater_Than,
-		PARAM_Greater_Than_Or_Equal,
-
 		PARAM_Min_Loose_Clamp, //using the <, <=, >, >= should be hints, not hard clamp
 		PARAM_Max_Loose_Clamp, //using the <, <=, >, >= should be hints, not hard clamp
 		PARAM_Min_Clamp, //when numbers exceed bounds, force clamp
@@ -176,7 +173,7 @@ class ValueConstraint
 
 		PARAM_Integer,
 
-		PARAM_Step_Adaptive_Mult,
+		//PARAM_Step_Adaptive_Mult,
 		PARAM_Step_Adaptive_Add,
 		PARAM_Step_Add,  //sliding does new = old + step, or new = old - step
 		PARAM_Step_Mult, //sliding does new = old * step, or new = old / step
@@ -185,18 +182,57 @@ class ValueConstraint
 	};
 
 	int value_type;
-	Constraint constraints[5]; // [ min type, max type, step type ]
-	int steptype; //multiplicative
-	double step, min, max;
+	Constraint mintype, maxtype, steptype;
+	double min, max, step;
 	double default_value;
 
-	ValueConstraint() { constraints[0] = PARAM_None; }
+	ValueConstraint() {
+		value_type = PARAM_None;
+		default_value = min = max = 0;
+		step=1;
+		mintype = PARAM_No_Maximum;
+		maxtype = PARAM_No_Minimum;
+		steptype = PARAM_Step_Mult;
+	}
 	virtual ~ValueConstraint();
 
-	virtual bool IsValid(Value *v, bool correct_if_possible);
+	virtual bool IsValid(Value *v, bool correct_if_possible, Value **v_ret);
 	virtual int SetBounds(const char *bounds); //a single range like "( .. 0]", "[0 .. 1]", "[.1 .. .9]"
-	virtual int SetBounds(double nmin, int nmin_type, double nmax, int nmax_type); //type==inf, inclusize, exclusize, hint, clamp
+	virtual int SetBounds(double nmin, int nmin_type, double nmax, int nmax_type);
+	virtual int SetStep(double nstep, int nsteptype);
+
+	virtual int SlideInt(int oldvalue, double numsteps);
+	virtual double SlideInt(double oldvalue, double numsteps);
 };
+
+int ValueConstraint::SlideInt(int oldvalue, double numsteps)
+{
+	if (numsteps) {
+		if (steptype == PARAM_Step_Add) oldvalue += numsteps * step;
+		else if (steptype == PARAM_Step_Adaptive_Add) oldvalue += numsteps * step * (fabs(oldvalue)>1 ? int(log10(fabs(oldvalue)))*10+1 : 1);
+		else if (steptype == PARAM_Step_Mult) {
+			int vv = oldvalue;
+			if (oldvalue == 0) {
+				if (numsteps>0) oldvalue = step-1; else oldvalue = 1-step; //assumes step is like 1.1
+			} else {
+				if (numsteps>0) oldvalue *= numsteps * step;
+				else oldvalue /= -numsteps * step;
+			}
+			if (vv == oldvalue) {
+				 //make sure it always moves by at least one
+				if (numsteps>0) oldvalue = vv+1;
+				else oldvalue = vv-1;
+			}
+		}
+	}
+
+	if (mintype == PARAM_Min_Clamp && oldvalue < min) oldvalue = min;
+	else if (maxtype == PARAM_Max_Clamp && oldvalue > max) oldvalue = max;
+
+	return oldvalue;
+}
+
+
 
 /*! \class NodeProperty
  * Base class for properties of nodes, either input or output.
@@ -362,14 +398,14 @@ NodeBase::NodeBase()
 	Name = NULL;
 	total_preview = NULL;
 	show_preview = true;
-	colors = NULL;
+	colors    = NULL;
 	collapsed = 0;
 	fullwidth = 0;
-	deletable = true; //usually at least one node will not be deletable
+	deletable = true; //often at least one node will not be deletable, like group output/inputs
 	modtime   = 0;
 
 	type = NULL;
-	def = NULL;
+	def  = NULL;
 }
 
 NodeBase::~NodeBase()
@@ -381,6 +417,17 @@ NodeBase::~NodeBase()
 	if (total_preview) total_preview->dec_count();
 }
 
+int NodeBase::Undo(UndoData *data)
+{
+	cerr << " *** need to implement NodeBase::Undo()!!"<<endl;
+	return 1;
+}
+
+int NodeBase::Redo(UndoData *data)
+{
+	cerr << " *** need to implement NodeBase::Redo()!!"<<endl;
+	return 1;
+}
 
 /*! Change the label text. Returns result.
  */
@@ -1750,6 +1797,7 @@ NodeInterface::NodeInterface(anInterface *nowner, int nid, Displayer *ndp)
 	needtodraw=1;
 	font = app->defaultlaxfont;
 	font->inc_count();
+	lastsave = newstr("some.nodes");
 	defaultpreviewsize = 50; //pixels
 
 	color_controls.rgbf(.7,.5,.7,1.);
@@ -1980,11 +2028,35 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 				nodes->nodes.push(newnode);
 				newnode->dec_count();
 
+				selected.flush();
+				selected.push(newnode);
+
 				needtodraw=1; 
 				break;
 			}
 		}
 
+		return 0;
+
+	} else if (!strcmp(mes,"loadnodes")) {
+        const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
+		if (isblank(s->str)) return 0;
+
+		LoadNodes(s->str, false);
+		makestr(lastsave, s->str);
+		needtodraw=1;
+		return 0;
+
+	} else if (!strcmp(mes,"savenodes")) {
+		DBG cerr <<"save nodes..."<<endl;
+		if (!nodes) return 0;
+
+        const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
+		if (isblank(s->str)) return 0;
+
+		SaveNodes(s->str);
+		makestr(lastsave, s->str);
+		needtodraw=1;
 		return 0;
 	}
 
@@ -2214,6 +2286,18 @@ int NodeInterface::Refresh()
 
 			y += prop->height;
 		}
+
+		if (lasthover == c && (lasthoverslot == NHOVER_LeftEdge || lasthoverslot == NHOVER_RightEdge)) {	
+			NodeBase *node = nodes->nodes.e[lasthover];
+			flatpoint p1,p2;
+			p1.x = p2.x = node->x + (lasthoverslot == NHOVER_LeftEdge ? 0 : node->width);
+			p1.y = node->y;
+			p2.y = node->y+node->height;;
+			dp->LineWidthScreen(3);
+			dp->NewFG(&color_controls);
+			dp->drawline(p1,p2);
+		}
+
 	} //foreach node
 
 
@@ -2485,8 +2569,8 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty)
 
 			if (*overpropslot == -1) {
 				 //check if hovering over an edge
-				if (p.x >= node->x-th/2 && p.x <= node->x+th/2) *overpropslot = NHOVER_LeftEdge;
-				else if (p.x >= node->x+node->width-th/2 && p.x <= node->x+node->width+th/2) *overpropslot = NHOVER_RightEdge;
+				if (!node->collapsed && p.x >= node->x-th/2 && p.x <= node->x+th/2) *overpropslot = NHOVER_LeftEdge;
+				else if (!node->collapsed && p.x >= node->x+node->width-th/2 && p.x <= node->x+node->width+th/2) *overpropslot = NHOVER_RightEdge;
 
 				else if (node->collapsed || (p.y >= node->y && p.y <= node->y+th)) { //on label area
 					if (p.x >= node->x+th/2 && p.x <= node->x+3*th/2) *overpropslot = NHOVER_Collapse;
@@ -3125,6 +3209,19 @@ int NodeInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigne
 		selected.flush();
 		needtodraw=1;
 		return 0;
+
+	} else if (ch=='a') {
+		if (!nodes) return 0;
+
+		if (selected.n) {
+			selected.flush();
+		} else {
+			for (int c=0; c<nodes->nodes.n; c++) {
+				selected.push(nodes->nodes.e[c]);
+			}
+		}
+
+		needtodraw=1;
 	}
 
 	 //default shortcut processing 
@@ -3266,64 +3363,84 @@ int NodeInterface::PerformAction(int action)
 		return 0;
 
 	} else if (action==NODES_Save_Nodes) {
-		DBG cerr <<"save nodes..."<<endl;
 		if (!nodes) return 0;
-
-		const char *file = "nodes-TEMP.nodes";
-
-		DumpContext context(NULL,1, object_id);
-		ErrorLog log;
-		context.log = &log;
-
-		FILE *f = fopen(file, "w");
-		if (f) {
-			nodes->dump_out(f, 0, 0, &context);
-			fclose(f);
-
-			PostMessage(_("Nodes saved to nodes-TEMP.nodes"));
-			DBG cerr << _("Nodes saved to nodes-TEMP.nodes") <<endl;
-		} else {
-			PostMessage(_("Could not open nodes-TEMP.nodes!"));
-			DBG cerr <<(_("Could not open nodes-TEMP.nodes!")) << endl;
-		}
-
-		NotifyGeneralErrors(&log);
+		app->rundialog(new FileDialog(NULL,"Save nodes",_("Save nodes"),ANXWIN_REMEMBER|ANXWIN_CENTER,0,0,0,0,0,
+						                  object_id,"savenodes",FILES_SAVE, lastsave));
 		return 0;
 
 	} else if (action==NODES_Load_Nodes) {
-		DBG cerr <<"load nodes..."<<endl;
+		app->rundialog(new FileDialog(NULL,"Load nodes",_("Load Nodes"),ANXWIN_REMEMBER|ANXWIN_CENTER,0,0,0,0,0,
+	                                          object_id,"loadnodes",FILES_OPEN_ONE, lastsave));
+		return 0;
+	}
 
+	return 1;
+}
+
+/*! Completely replaces exists nodes, unless append is true.
+ */
+int NodeInterface::LoadNodes(const char *file, bool append)
+{
+	if (!append) {
 		if (nodes) {
 			nodes->dec_count();
 			nodes = NULL;
 		}
+	}
 
+	if (!nodes) {
 		nodes = new Nodes;
 		nodes->InstallColors(new NodeColors, true);
 		nodes->colors->Font(font, false);
+	}
 
-		const char *file = "nodes-TEMP.nodes";
+	FILE *f = fopen(file, "r");
+	if (f) {
 		DumpContext context(NULL,1, object_id);
 		ErrorLog log;
 		context.log = &log;
 
-		FILE *f = fopen(file, "r");
-		if (f) {
-			nodes->dump_in(f, 0, 0, &context, NULL);
-			fclose(f);
+		nodes->dump_in(f, 0, 0, &context, NULL);
+		fclose(f);
 
-			PostMessage(_("Nodes loaded from nodes-TEMP.nodes"));
-			DBG cerr << _("Nodes loaded from nodes-TEMP.nodes") <<endl;
-		} else {
-			PostMessage(_("Could not open nodes-TEMP.nodes!"));
-			DBG cerr <<(_("Could not open nodes-TEMP.nodes!")) << endl;
-		}
+		PostMessage(_("Nodes loaded from nodes-TEMP.nodes"));
+		DBG cerr << _("Nodes loaded from nodes-TEMP.nodes") <<endl;
 
 		NotifyGeneralErrors(&log);
 		needtodraw=1;
 		return 0;
 	}
 
+	 // else error!
+	PostMessage(_("Could not open nodes-TEMP.nodes!"));
+	DBG cerr <<(_("Could not open nodes-TEMP.nodes!")) << endl;
+
+	needtodraw=1;
+	return 0;
+}
+
+int NodeInterface::SaveNodes(const char *file)
+{
+	FILE *f = fopen(file, "w");
+	if (f) {
+		DumpContext context(NULL,1, object_id);
+		ErrorLog log;
+		context.log = &log;
+
+		fprintf(f,"#Laidout %s Nodes\n",LAIDOUT_VERSION);
+		nodes->dump_out(f, 0, 0, &context);
+		fclose(f);
+
+		PostMessage(_("Nodes saved to nodes-TEMP.nodes"));
+		DBG cerr << _("Nodes saved to nodes-TEMP.nodes") <<endl;
+
+		NotifyGeneralErrors(&log);
+		return 0;
+	} 
+
+	 //else error!
+	PostMessage(_("Could not open nodes-TEMP.nodes!"));
+	DBG cerr <<(_("Could not open nodes-TEMP.nodes!")) << endl;
 	return 1;
 }
 
@@ -3335,6 +3452,47 @@ int NodeInterface::ToggleCollapsed()
 
 	needtodraw=1;
 	return 0;
+}
+
+
+//--------------------------NodeUndo --------------------------------
+/*! \class NodeUndo
+ * Undo for NodeBase related changes.
+ */
+
+/*! Takes mm and nstuff. WILL delete[] mm in destructor.
+ * Does NOT increment count on nstuff, but WILL decrement in destructor.
+ */
+NodeUndo::NodeUndo(int ntype, int nisauto, double *mm, anObject *nstuff)
+ : UndoData(nisauto)
+{
+	type = ntype;
+	m = mm;
+	stuff = nstuff;
+}
+
+NodeUndo::~NodeUndo()
+{
+	delete[] m;
+	if (stuff) stuff->dec_count();
+}
+
+const char *NodeUndo::Description()
+{
+	if      (type == Moved)          return _("Moved"         );
+	else if (type == Scaled)         return _("Scaled"        );
+	else if (type == Added)          return _("Added"         );
+	else if (type == Deleted)        return _("Deleted"       );
+	else if (type == Grouped)        return _("Grouped"       );
+	else if (type == Ungrouped)      return _("Ungrouped"     );
+	else if (type == Resized)        return _("Resized"       );
+	else if (type == Connected)      return _("Connected"     );
+	else if (type == Disconnected)   return _("Disconnected"  );
+	else if (type == Framed)         return _("Framed"        );
+	else if (type == Unframed)       return _("Unframed"      );
+	else if (type == PropertyChange) return _("PropertyChange");
+
+	return NULL;
 }
 
 } // namespace Laidout
