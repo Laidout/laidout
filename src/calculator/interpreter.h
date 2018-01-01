@@ -1,6 +1,4 @@
 //
-// $Id$
-//	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -40,7 +38,7 @@ class Interpreter : public Laxkit::anObject, public LaxFiles::DumpUtility
 	virtual int InitInterpreter() = 0;
 	virtual int CloseInterpreter() = 0;
 
-	void KillScript(); //run script in separate thread, so, In would be called, then
+	virtual void KillScript(); //run script in separate thread, so, In would be called, then
 					   //laidout would continue on its way, until a message comes saying
 					   //that the script is all done. In the meantime, this function could
 					   //be called during execution to kill bad scripts
@@ -48,10 +46,10 @@ class Interpreter : public Laxkit::anObject, public LaxFiles::DumpUtility
 					   //laidout code that uses interpreters, not the interpreter itself
 
 	 //return status: 0 success, -1 success with warnings, 1 fatal error
-	int In(const char *input_text, char **result_ret, char **error_ret) = 0;
-	char *GetLastResult() = 0;
-	char *GetError(int *input_index_ret) = 0;
-	void ClearError() = 0;
+	virtual int In(const char *input_text, char **result_ret, Laxkit::ErrorLog &log) = 0;
+	virtual char *GetLastResult() = 0;
+	virtual char *GetError(int *input_index_ret) = 0;
+	virtual void ClearError() = 0;
 
     virtual void       dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
     virtual Attribute *dump_out_atts(Attribute *att,int what,LaxFiles::DumpContext *context) = 0;

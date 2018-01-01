@@ -1,6 +1,4 @@
 //
-// $Id$
-//	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -24,39 +22,54 @@
 namespace Laidout {
 
 
-LaidoutApp::AddInterpreter(Interpreter *i);
-LaidoutApp::RemoveInterpreter(Interpreter *i);
-
- //in LaidoutApp:
-...init() {
-	interpreter->InitInterpreter();
-}
-
-...close() {
-	interpreter->CloseInterpreter();
-}
-
 
 
 //----------------------------InitInterpreters()-----------------------------------------
 
 
+...LaidoutApp::close() {
+	for (int c=0; c<interpreters.n; c++) {
+		interpreters.e[c]->CloseInterpreter();
+	}
+	interpreters.flush();
+}
 
 
 //! Initialize and install built in interpreters
-int InitInterpreters()
+int LaidoutApp::InitInterpreters()
 {
-	int numadded=0;
+	int numadded = 0;
 
-	LaidoutCalculator *calc=new LaidoutCalculator();
-	laidout->AddInterpreter(calc);
-	numadded++;
+	 //add default calculator
+	LaidoutCalculator *calc = new LaidoutCalculator();
+	if (AddInterpreter(calc) == 0) numadded++;
 
-	PythonInterpreter *python=new PythonInterpreter();
-	laidout->AddInterpreter(python);
-	numadded++;
+
+	 //add Python
+	PythonInterpreter *python = new PythonInterpreter();
+	if (AddInterpreter(python) == 0) numadded++;
+
 
 	return numadded;
+}
+
+/*! Takes count of i.
+ */
+int LaidoutApp::AddInterpreter(Interpreter *i)
+{
+	if (!i) return 1;
+	interpreters.push(i);
+	i->dec_count();
+	return 0;
+}
+
+/*! Takes count of i.
+ */
+int LaidoutApp::RemoveInterpreter(Interpreter *i)
+{
+	if (!i) return 1;
+	interpreters.remove(interpreters.findindex(i));
+	return 0;
 }
 
 
@@ -103,18 +116,18 @@ class PythonInterpreter : public Interpreter
 	PythonInterpreter();
 	virtual ~PythonInterpreter();
 
-	const char *Id() { return "python"; }
-	const char *Name() { return "Python"; }
-	const char *Description() { return _("A Python interpreter. See python.org for more."); }
-	const char *Version() { return "0.1"; }
+	virtual const char *Id() { return "Python"; }
+	virtual const char *Name() { return "Python"; }
+	virtual const char *Description() { return _("A Python interpreter. See python.org for more."); }
+	virtual const char *Version() { return "0.1"; }
 
 	virtual int InitInterpreter();
 	virtual int CloseInterpreter();
 
-	int In(const char *input_text, char **result_ret, char **error_ret) = 0;
-	char *GetLastResult() = 0;
-	char *GetError(int *input_index_ret) = 0;
-	void ClearError() = 0;
+	virtual int In(const char *input_text, char **result_ret, Laxkit::ErrorLog &log) = 0;
+	virtual char *GetLastResult() = 0;
+	virtual char *GetError(int *input_index_ret) = 0;
+	virtual void ClearError() = 0;
 };
 
 PythonInterpreter::PythonInterpreter()
@@ -128,21 +141,22 @@ PythonInterpreter::~PythonInterpreter()
 }
 
 //! Return 0 for interpreter ready to go, or nonzero for invalid, and cannot run.
-int PythonInterpreter::InitInterpreter(const char *programname)
+int PythonInterpreter::InitInterpreter()
 {
 	//Py_SetProgramName(programname); //optional
+	//Py_SetProgramName("Laidout"); //optional
 	Py_Initialize();
 
 
-
-
-	**** beware threads!!! put this somewhere relevant...
+	// **** beware threads!!! put this somewhere relevant...
 	if (!gil_init) {
 		gil_init = 1;
 		PyEval_InitThreads();
 		PyEval_SaveThread();
 	}
+
 	gil_state = PyGILState_Ensure();
+
 	// Call Python/C API functions...    
 	PyGILState_Release(gil_state);
 
@@ -181,12 +195,12 @@ int PythonInterpreter::CloseInterpreter()
 
 /*! \todo *** should be able to run in sub thread, to be able to kill the script..
  */
-int PythonInterpreter::In(const char *input_text, char **result_ret, char **error_ret)
+int PythonInterpreter::In(const char *input_text, char **result_ret, Laxkit::ErrorLog &log)
 {
-	PyObject *globals, *locals; **** 
+	PyObject *globals=NULL, *locals=NULL; **** 
 
 	PyRun_SimpleString(input_text);
-	PyObject *stringresult=PyRun_Simple(input_text,0,globals,locals);
+	PyObject *stringresult = PyRun_Simple(input_text,0,globals,locals);
 }
 
 char *PythonInterpreter::GetLastResult()
@@ -200,11 +214,6 @@ char *PythonInterpreter::GetError(int *input_index_ret)
 void PythonInterpreter::ClearError()
 {
 }
-
-
-
-
-
 
 
 } // namespace Laidout
