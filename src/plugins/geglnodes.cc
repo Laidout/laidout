@@ -13,9 +13,6 @@
 //
 
 
-//#include <glib-2.0/glib.h>
-#include <gegl-0.3/gegl.h>
-
 #include "../language.h"
 #include "../interfaces/nodeinterface.h"
 #include "geglnodes.h"
@@ -167,7 +164,7 @@ int ValueToProperty(Value *v, const char *gvtype, GeglNode *node, const char *pr
 
 /*! Convert a gegl xml string to a NodeGroup.
  */
-int XMLToGeglNodes(const char *str, NodeGroup *parent, Laxkit::ErrorLog *log)
+int XMLStringToLaidoutNodes(const char *str, NodeGroup *parent, Laxkit::ErrorLog *log)
 {
 	// ***
 	return 1;
@@ -308,9 +305,9 @@ NodeGroup *ReadNodes(NodeGroup *parent, Attribute *att, Laxkit::ErrorLog *log)
 	return group;
 }
 
-/*! Read in a file, and pass to XMLToGeglNodes().
+/*! Read in a file to an Attribute, and pass to ReadNodes().
  */
-NodeGroup *XMLFileToGeglNodes(const char *file, NodeGroup *parent, Laxkit::ErrorLog *log)
+NodeGroup *XMLFileToLaidoutNodes(const char *file, NodeGroup *parent, Laxkit::ErrorLog *log)
 {
 	Attribute att;
 	Attribute *ret = XMLFileToAttribute(&att, file, NULL);
@@ -330,6 +327,49 @@ NodeGroup *XMLFileToGeglNodes(const char *file, NodeGroup *parent, Laxkit::Error
 	return group;
 }
 
+/*! Using gegl methods, parse the file to a new GeglNode.
+ * Note the returned node needs to be g_object_unref (node) when done.
+ * Use this with GeglNodesToLaidoutNodes() to fully transform to NodeBase objects.
+ */
+GeglNode *XMLFileToGeglNodes(const char *file, Laxkit::ErrorLog *log)
+{
+	GeglNode *node = NULL;
+
+	try {
+		node = gegl_node_new_from_file(file);
+	} catch (exception &e) {
+		cerr << "Gegl node read in from "<<file<<" error: "<<e.what()<<endl;
+		if (log) log->AddMessage(e.what(), ERROR_Fail);
+	}
+	return node;
+}
+
+/*! Put all from gegl into parent.
+ */
+NodeBase* GeglNodesToLaidoutNodes(GeglNode *gegl, NodeGroup *parent, Laxkit::ErrorLog *log)
+{
+	GSList *children = gegl_node_get_children(gegl);
+
+	RefPtrStack<NodeBase> nodes;
+
+	 //first, create a NodeBase to correspond to the child's op
+	for (GSList *child = children; child; child = child->next) {
+		//*** //need to translate the properties out of gegl into laidout
+		GeglLaidoutNode *newnode = new GeglLaidoutNode((GeglNode*)child->data);
+		nodes.push(newnode);
+		parent->nodes.push(newnode);
+		newnode->dec_count();
+	}
+
+	 //once we have a list of NodeBases, we need to connect them as per the actual gegl connections
+	for (GSList *child = children; child; child = child->next) {
+		//*** //we only connect forward links, so as not to duplicate effort
+	}
+
+	g_slist_free(children);
+
+	return parent;
+}
 
 //-------------------------------- GeglLaidoutNode --------------------------
 
@@ -347,6 +387,15 @@ GeglLaidoutNode::GeglLaidoutNode(const char *oper)
 	SetOperation(oper);
 
 	//gegl = gegl_node_new();
+}
+
+/*! Takes node and builds a NodeBase out of it. node should not be NULL.
+ */
+GeglLaidoutNode::GeglLaidoutNode(GeglNode *node)
+{
+	gegl = node;
+	op = NULL;
+	operation = newstr(gegl_node_get_operation(gegl));
 }
 
 GeglLaidoutNode::~GeglLaidoutNode()
@@ -638,6 +687,9 @@ int GeglLaidoutNode::SetPropertyFromAtt(const char *propname, LaxFiles::Attribut
 #define GEGLNODE_SWITCH  (-4)
 
 /*! Set to op, and grab the spec for the properties.
+ * Note this should only be called once. It currently does not properly update
+ * existing structure to a new op structure. If gegl exists already, it is assumed
+ * it was passed in with proper type and we just need to grab and construct property uis.
  *
  * Return 0 for success, or nonzero for error.
  */
@@ -653,7 +705,8 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 
 	MenuItem *opitem = menu->e(i);
 
-	if (opitem->info == -1) { 
+	if (opitem->info == -1) {
+		 //op property info hasn't been grabbed yet, so grab the property info and install in the GetGeglOps() menu
 		guint n_props = 0;
 
 		GParamSpec **specs = gegl_operation_list_properties (oper, &n_props);
@@ -670,29 +723,18 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 
 			DBG cerr << "    prop: "<<specs[c2]->name <<','<< ptype <<','<< (nick?nick:"(no nick)")<<','<< (blurb?blurb:"(no blurb)")<<endl;
 
-			//if (!strcmp(ptype, "gboolean")) ptype = "boolean";
-			//else if (!strcmp(ptype, "gint")) ptype = "int";
-			//else if (!strcmp(ptype, "gdouble")) ptype = "real";
-			//else if (!strcmp(ptype, "gchararray")) ptype = "string";
-			//else if (!strcmp(ptype, "GeglCurve")) ptype = "CurveInfo";
-			//else if (!strcmp(ptype, "GeglColor")) ptype = "";
-			//else if (!strcmp(ptype, "")) ptype = "";
-			//else if (!strcmp(ptype, "")) ptype = "";
-			//else if (!strcmp(ptype, "")) ptype = "";
-			//else {
-			//	DBG cerr <<" Warning! unknown gegl property type "<<ptype<<endl;
-			//}
+			menu->AddItem(specs[c2]->name, 0, -1);     // [0]
+			menu->AddDetail(ptype, NULL);              // [1]
+			menu->AddDetail(nick ? nick : "", NULL);   // [2]
+			menu->AddDetail(blurb ? blurb : "", NULL); // [3]
 
-			menu->AddItem(specs[c2]->name, 0, -1);
-			menu->AddDetail(ptype, NULL);
-			menu->AddDetail(nick ? nick : "", NULL);
-			menu->AddDetail(blurb ? blurb : "", NULL);
 
+			//guint nn = 0;
 			//gchar **keys = gegl_operation_list_property_keys (operations[i], specs[c2]->name, &nn);
 			//
 			//for (int c3=0; c3<nn; c3++) {
 			//	const gchar *val = gegl_param_spec_get_property_key(specs[c2], keys[c3]);
-			//	printf("      key: %s, val: %s\n", keys[c3], val);
+			//	printf("      property key: %s, val: %s\n", keys[c3], val);
 			//}
 			//
 			//g_free(keys);
@@ -708,12 +750,18 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 	makestr  (type, "Gegl/");
 	appendstr(type, operation);
 
-	if (gegl) g_object_unref (gegl);
+//	if (gegl && strcmp(operation, gegl_node_get_operation(gegl))) {
+//		 //remove if operation mismatch... not sure what changing the op through gegl does to existing properties and connections
+//		g_object_unref (gegl);
+//		gegl = NULL;
+//	}
+
 	if (GeglLaidoutNode::masternode == NULL) {
+		 //this is an arbitrary total parent to all kids
 		GeglLaidoutNode::masternode = gegl_node_new();
 	}
 
-	gegl = gegl_node_new_child(GeglLaidoutNode::masternode,
+	if (!gegl) gegl = gegl_node_new_child(GeglLaidoutNode::masternode,
 								"operation", operation,
 								NULL);
 
@@ -733,9 +781,11 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 			gegl_node_get_property(gegl, prop->name, &gv);
 
             if (!strcmp(type, "gboolean")) {
-                bool boolean=0;
+                bool boolean = 0;
                 if (G_VALUE_HOLDS_BOOLEAN(&gv)) { boolean = g_value_get_boolean(&gv); }
 				v = new BooleanValue(boolean); 
+				//---
+				//gegl_node_get(gegl, prop->name, &boolean, NULL);
 
             } else if (!strcmp(type, "gint")) {
                 int vv=0;
@@ -749,11 +799,19 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 
             } else if (!strcmp(type, "gchararray")) {
                 const gchar *vv = NULL;
-                if (G_VALUE_HOLDS_STRING(&gv)) { vv = g_value_get_string(&gv); }
-				new StringValue(vv);
+                if (G_VALUE_HOLDS_STRING(&gv)) {
+					vv = g_value_get_string(&gv);
+				}
+				v = new StringValue(vv);
 
 			} else if (!strcmp(type, "GeglColor" )) {
 				v = new ColorValue("#000");
+				//-----
+				//GeglColor *color = NULL;
+				//gegl_node_get(gegl, prop->name, &color, NULL);
+				//double r=0,g=0,b=0,a=1.0;
+				//gegl_color_get_rgba(color, &r, &g, &b, &a);
+				//v = new ColorValue(r,g,b,a);
 
 			//} else if (!strcmp(type, "GdkPixbuf"               )) {
 			//} else if (!strcmp(type, "GeglAbyssPolicy"         )) {
@@ -784,6 +842,8 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 			//} else if (!strcmp(type, "gpointer"                )) {
 
 			}
+
+			g_value_unset(&gv);
 		}
 
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, prop->name, v,1, prop->GetString(2),prop->GetString(3), c));
@@ -807,6 +867,7 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 		g_strfreev(pads);
 	}
 
+	 //add an extra toggle for auto saving, so we can optionally not have to be constantly processing as things change
 	if (IsSaveNode()) {
 		AddProperty(new NodeProperty(NodeProperty::PROP_Block, false, "AutoProcess",  new BooleanValue(true),1, _("Auto Save") ,NULL, GEGLNODE_SWITCH));
 	}
@@ -836,10 +897,41 @@ Laxkit::MenuInfo *GetGeglOps()
 	DBG cerr <<"gegl operations:"<<endl;
 
     for (unsigned int i=0; i < n_operations; i++) { 
-        DBG cerr << "  " << (operations[i]?operations[i]:"?") << endl;
+        DBG cerr << "  operator: " << (operations[i]?operations[i]:"?") << endl;
+
 		menu->AddItem(operations[i], i, -1); 
 		item = menu->e(menu->n()-1);
 		item->info = -1;
+
+		const char *compat_name = gegl_operation_get_key(operations[i], "compat-name");
+		if (compat_name) {
+			DBG cerr <<"compat-name for "<<operations[i]<<": "<<compat_name<<endl;
+
+			menu->AddItem(compat_name, i, -1); 
+			item = menu->e(menu->n()-1);
+			item->info = -1;
+		}
+
+		
+		guint nkeys = 0;
+		gchar **keys = gegl_operation_list_keys (operations[i], &nkeys);
+		for (guint c=0; c<nkeys; c++) {
+			const char *value = gegl_operation_get_key(operations[i], keys[c]);
+			if (!strcmp(keys[c], "source")) value="...code...";
+			DBG cerr <<"    operation key: "<<keys[c]<<": "<<value<<endl;
+		}
+		g_free(keys);
+
+		//GType gtype = gegl_operation_gtype_from_name(operations[i]);
+		//GeglOperationClass *opclass = g_type_class_ref (gtype);
+		//if (opclass) {
+		//	const char *compat_name = gegl_operation_class_get_key(opclass, "compat-name");
+		//	if (compat_name) {
+		//    DBG cerr <<"compat-name: "<<compat_name<<endl;
+		//	}
+        //  
+		//	g_object_unref (opclass);
+		//}
     }
 
     g_free (operations); 
@@ -887,6 +979,7 @@ GeglNodesPlugin::~GeglNodesPlugin()
 		g_object_unref (GeglLaidoutNode::masternode);
 		GeglLaidoutNode::masternode = NULL;
 	}
+
     gegl_exit ();
 }
 
@@ -956,6 +1049,9 @@ int GeglNodesPlugin::Initialize()
 	 //initialize gegl
 	gegl_init (NULL,NULL); //(&argc, &argv);
 
+	 g_object_set (gegl_config (),
+                 "application-license", "GPL3",
+			     NULL);
 
 	ObjectFactory *node_factory = Laidout::NodeGroup::NodeFactory(true);
 
@@ -963,6 +1059,24 @@ int GeglNodesPlugin::Initialize()
 
 	DBG cerr << "GeglNodesPlugin initialized!"<<endl;
 	initialized = 1;
+
+
+	//---------------TEST STUFF
+	DBG cerr <<"---start testing gegl xml"<<endl;
+	ErrorLog log;
+	GeglNode *gnode = XMLFileToGeglNodes("test-gegl.xml", &log);
+	if (gnode) {
+
+		GSList *list = gegl_node_get_children(gnode);
+		cerr << "Num nodes as children: "<<g_slist_length(list)<<endl;
+
+		g_slist_free(list);
+		g_object_unref (gnode);
+	}
+	DBG dumperrorlog("gegl read xml test log:", log);
+	DBG cerr <<"---done testing gegl xml"<<endl;
+	//---------------end TEST STUFF
+
 
 	return 0;
 }

@@ -11,9 +11,10 @@
 //
 // Copyright (C) 2017 by Tom Lechner
 //
-#ifndef GEGL_NODES_PLUGIN_H
-#define GEGL_NODES_PLUGIN_H
+#ifndef PLUGINS_GEGL_NODES_H
+#define PLUGINS_GEGL_NODES_H
 
+#include <gegl.h>
 
 #include "plugin.h"
 
@@ -42,6 +43,7 @@ class GeglLaidoutNode : public Laidout::NodeBase
 	GeglNode *gegl;
 
 	GeglLaidoutNode(const char *oper);
+	GeglLaidoutNode(GeglNode *node);
 	virtual ~GeglLaidoutNode();
 
 	virtual int SetOperation(const char *oper);
