@@ -1101,7 +1101,7 @@ Attribute *NodeGroup::dump_out_atts(Attribute *att,int what,DumpContext *context
     att->push("id", Id()); 
 
 	const double *matrix=m.m();
-    char s[100];
+    char s[200];
     sprintf(s,"%.10g %.10g %.10g %.10g %.10g %.10g",
             matrix[0],matrix[1],matrix[2],matrix[3],matrix[4],matrix[5]);
     att->push("matrix", s);
@@ -1888,6 +1888,20 @@ void NodeInterface::Clear(SomeData *d)
 	grouptree.flush();
 }
 
+/*! To aid custom node actions from plugins, for instance.
+ */
+class MenuAction
+{
+  public:
+    unsigned int id;
+
+    MenuAction();
+	virtual ~MenuAction();
+	virtual ObjectDef *Inputs() = 0;
+	virtual const char *MenuText() = 0;
+};
+
+
 Laxkit::MenuInfo *NodeInterface::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
 	//if (no menu for x,y) return NULL;
@@ -1896,6 +1910,11 @@ Laxkit::MenuInfo *NodeInterface::ContextMenu(int x,int y,int deviceid, Laxkit::M
 	if (!menu->n()) menu->AddSep(_("Nodes"));
 
 	menu->AddItem(_("Add node..."), NODES_Add_Node);
+
+	if (nodes && nodes->nodes.n) {
+		menu->AddItem(_("Save nodes..."), NODES_Save_Nodes);
+		menu->AddItem(_("Load nodes..."), NODES_Load_Nodes);
+	}
 
 	if (selected.n) {
 		menu->AddItem(_("Show previews"), NODES_Show_Previews);
@@ -1909,10 +1928,13 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 {
     if (!strcmp(mes,"menuevent")) {
         const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
-        int i =s->info2; //id of menu item
+        int action = s->info2; //id of menu item
 
-        if (i==NODES_Add_Node) {
-			PerformAction(NODES_Add_Node);
+        if (   action == NODES_Add_Node
+			|| action == NODES_Save_Nodes
+			|| action == NODES_Load_Nodes
+			) {
+			PerformAction(action);
 		}
 
 		return 0;
@@ -3403,8 +3425,8 @@ int NodeInterface::LoadNodes(const char *file, bool append)
 		nodes->dump_in(f, 0, 0, &context, NULL);
 		fclose(f);
 
-		PostMessage(_("Nodes loaded from nodes-TEMP.nodes"));
-		DBG cerr << _("Nodes loaded from nodes-TEMP.nodes") <<endl;
+		PostMessage(_("Nodes loaded"));
+		DBG cerr << _("Nodes loaded") <<endl;
 
 		NotifyGeneralErrors(&log);
 		needtodraw=1;
@@ -3412,8 +3434,8 @@ int NodeInterface::LoadNodes(const char *file, bool append)
 	}
 
 	 // else error!
-	PostMessage(_("Could not open nodes-TEMP.nodes!"));
-	DBG cerr <<(_("Could not open nodes-TEMP.nodes!")) << endl;
+	PostMessage(_("Could not open nodes file!"));
+	DBG cerr <<(_("Could not open nodes file!")) << file<<endl;
 
 	needtodraw=1;
 	return 0;
@@ -3439,8 +3461,8 @@ int NodeInterface::SaveNodes(const char *file)
 	} 
 
 	 //else error!
-	PostMessage(_("Could not open nodes-TEMP.nodes!"));
-	DBG cerr <<(_("Could not open nodes-TEMP.nodes!")) << endl;
+	PostMessage(_("Could not open nodes file!"));
+	DBG cerr <<(_("Could not open nodes file!")) << file<< endl;
 	return 1;
 }
 
