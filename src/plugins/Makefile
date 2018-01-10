@@ -18,25 +18,31 @@ CPPFLAGS= $(EXTRA_CPPFLAGS) -fPIC -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. -I/usr/incl
 
 ####--  Gegl flags  --#####
 GEGLCPPFLAGS= `pkg-config --cflags gegl-0.3`
-GEGLLIBS=     `pkg-config --libs gegl-0.3`
+GEGLLIBS= `pkg-config --libs gegl-0.3`
 
 
-#
-# If you want a plugin built by default, include in objs here.
-#
 objs= \
 	plugin.o 
 
+#
+# If you want a plugin built by default, include in plugins here.
+#
 plugins= \
 	geglnodes.so \
 	#exampleplugin.so \
-	#antiprism.o
+	#antiprism.so
 
 
 #dataobjects: $(objs)
-dataobjects: $(objs) $(plugins)
+dataobjects: lax laxinterface $(objs) $(plugins)
 
 plugins: $(plugins)
+
+lax:
+	cd $(LAXDIR) && $(MAKE)
+
+laxinterface:
+	cd $(LAXIDIR) && $(MAKE)
 
 depends:
 	makedepend -fmakedepend -I.. -I$(LAXDIR)/.. -Y *.cc
@@ -46,18 +52,17 @@ include makedepend
 test: lax laxinterface plugin.o test.o exampleplugin.so
 	g++ -rdynamic $(CPPFLAGS) plugin.o test.o -llaxkit $(LDFLAGS) -ldl -o test
 
-geglnodes.so: lax laxinterface geglnodes.cc
+geglnodes.so: geglnodes.cc
+	@echo "Compiling geglnodes with pkg-config path $(PKG_CONFIG_PATH)"
+	@echo "gegl cflags: $(GEGLCPPFLAGS)"
+	@echo "gegl libs  : $(GEGLLIBS)"
 	g++ -shared -fPIC $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) geglnodes.cc -llaxkit $(GEGLLIBS) -o geglnodes.so
+
+#	g++ -shared -fPIC $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) geglnodes.cc -llaxkit $(GEGLLIBS) -o geglnodes.so
 
 exampleplugin.so: lax laxinterface exampleplugin.o
 	g++ $(CPPFLAGS) -shared -fPIC exampleplugin.o -L$(LAXDIR) -llaxkit -o exampleplugin.so
 	#g++ $(CPPFLAGS) -shared -fPIC exampleplugin.cc -L$(LAXDIR) -o exampleplugin.so
-
-lax:
-	cd $(LAXDIR) && $(MAKE)
-
-laxinterface:
-	cd $(LAXIDIR) && $(MAKE)
 
 hidegarbage:
 	../hidegarbage *.cc
@@ -66,7 +71,7 @@ unhidegarbage:
 	../hidegarbage -0 *.cc
 
 
-.PHONY: clean printing hidegarbage unhidegarbage lax laxinterfaces
+.PHONY: clean hidegarbage unhidegarbage lax laxinterfaces dataobjects plugins depends
 clean:
 	rm -f *.o *.so test
 
