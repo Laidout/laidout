@@ -39,6 +39,7 @@ class LaidoutPreferences : public Value
 	char *exportfilename;
 	//PtrStack<char> palette_dirs;
 	Laxkit::PtrStack<char> icon_dirs;
+	Laxkit::PtrStack<char> plugin_dirs;
 	bool experimental;
 
 	LaidoutPreferences();
@@ -48,6 +49,8 @@ class LaidoutPreferences : public Value
 	virtual Value *duplicate();
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int SavePrefs(const char *file=NULL);
+
+	virtual int AddPath(const char *resource, const char *path);
 };
 
 int UpdatePreference(const char *which, const char *value, const char *laidoutrc);

@@ -28,8 +28,14 @@
 #include <cctype>
 #include <unistd.h>
 
+#include <iostream>
+#define DBG
+using namespace std;
+
+
 using namespace Laxkit;
 using namespace LaxFiles;
+
 
 namespace Laidout {
 
@@ -60,18 +66,21 @@ namespace Laidout {
 
 
 LaidoutPreferences::LaidoutPreferences()
- : icon_dirs(2)
+ : icon_dirs(2),
+   plugin_dirs(2)
 {
-	default_units=UNITS_Inches;
-	unitname=newstr("inches");
-	pagedropshadow=5;
-
-	splash_image_file=newstr(ICON_DIRECTORY);
+	splash_image_file = newstr(ICON_DIRECTORY);
 	appendstr(splash_image_file,"/laidout-splash.png");
+
+	default_units = UNITS_Inches;
+	unitname      = newstr("inches");
+
+	pagedropshadow=5;
 
     default_template=NULL;
     defaultpaper=get_system_default_paper();
     temp_dir=NULL;
+
 	if (S_ISDIR(file_exists("/usr/share/gimp/2.0/palettes", 1, NULL)))
 		palette_dir=newstr("/usr/share/gimp/2.0/palettes");
 	else palette_dir=NULL;
@@ -118,6 +127,14 @@ Value *LaidoutPreferences::duplicate()
 	makestr(p->autosave_path,autosave_path);
 	makestr(p->exportfilename, exportfilename);
 	p->experimental=experimental;
+
+	for (int c=0; c<icon_dirs.n; c++) {
+		p->icon_dirs.push(newstr(icon_dirs.e[c]), LISTS_DELETE_Array);
+	}
+
+	for (int c=0; c<plugin_dirs.n; c++) {
+		p->plugin_dirs.push(newstr(plugin_dirs.e[c]), LISTS_DELETE_Array);
+	}
 
 	return p;
 }
@@ -214,6 +231,13 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 	def->push("icon_dirs",
 			_("Icon directory"),
 			_("A list of directories to look for icons in"),
+			"set", "File",NULL,
+			OBJECTDEF_ISSET,
+			NULL);
+
+	def->push("plugin_dirs",
+			_("Plugin directory"),
+			_("A list of directories to look for plugins in"),
 			"set", "File",NULL,
 			OBJECTDEF_ISSET,
 			NULL);
@@ -350,6 +374,14 @@ Value *LaidoutPreferences::dereference(const char *extstring, int len)
 		return set; 
 	}
 
+	if (!strcmp(extstring, "plugin_dirs")) {
+		SetValue *set = new SetValue("File");
+		for (int c=0; c<plugin_dirs.n; c++) {
+			set->Push(new StringValue(plugin_dirs.e[c]), 1);
+		}
+		return set; 
+	}
+
 
 	return NULL;
 }
@@ -463,6 +495,33 @@ int UpdatePreference(const char *which, const char *value, const char *laidoutrc
 	delete[] vvalue;
 
 	return 0;
+}
+
+/*! Add path to the list of directories used by resource.
+ * Currently resource can be "icons" or "plugins".
+ *
+ * Checks if path is a valid, existing directory. Fails with 1 if not.
+ * Return 0 on success.
+ */
+int LaidoutPreferences::AddPath(const char *resource, const char *path)
+{
+	if (file_exists(path, 1, NULL) != S_IFDIR) {
+		DBG cerr << "LaidoutPreferences::AddPath("<<resource<<", "<<path<<"): not a directory!"<<endl;
+		return 1;
+	}
+
+	if (!strcmp(resource, "icons")) {
+		DBG cerr <<"Adding icon path: "<<path<<endl;
+		icon_dirs.push(newstr(path), LISTS_DELETE_Array);
+		return 0;
+
+	} else if (!strcmp(resource, "plugins")) {
+		DBG cerr <<"Adding plugin path: "<<path<<endl;
+		plugin_dirs.push(newstr(path), LISTS_DELETE_Array);
+		return 0;
+	}
+
+	return 1;
 }
 
 } // namespace Laidout

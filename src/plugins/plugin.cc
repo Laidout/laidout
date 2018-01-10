@@ -54,23 +54,17 @@ namespace Laidout {
 
 typedef PluginBase *GetPluginFunc();
 
-/*! You will need to dec_count the returned plugin.
+/*! You will need to PluginBase::Initialize() and otherwise dec_count the returned plugin.
+ * See LaidoutApp::InitializePlugins() for more.
  */
 PluginBase *LoadPlugin(const char *path_to_plugin, Laxkit::ErrorLog &log)
 {
 	PluginBase *plugin = NULL;
 	void *handle = NULL;
 
-	DBG cerr <<"loading "<<path_to_plugin<<endl;
+	DBG cerr <<"loading plugin "<<path_to_plugin<<"..."<<endl;
 
 	try {
-		//if (!IS_REG(file_exists(path_to_plugin, 1, NULL))) throw 1;
-
-		 //check for plugin already exists
-//		for (int c=0; c<plugins.n; c++) {
-//			if (!strcmp(plugins.e[c]->Path(), path_to_plugin)) return -1;
-//		}
-	
 
 		handle = dlopen(path_to_plugin, RTLD_LAZY);
 		//handle = dlopen(path_to_plugin, RTLD_NOW);
@@ -78,42 +72,44 @@ PluginBase *LoadPlugin(const char *path_to_plugin, Laxkit::ErrorLog &log)
 
 		DBG cerr <<"dl opened..."<<endl;
 
-		if (!handle) throw 2;
+		if (!handle) throw 1;
 
 //		for (int c=0; c<plugins.n; c++) {
 //			if (plugins.e[c]->handle == handle) return -1;
 //		}
 
+
 		GetPluginFunc *GetPlugin; //dl_iterate_phdr
 		GetPlugin = (GetPluginFunc*)dlsym(handle, "GetPlugin");
-		if (!GetPlugin) throw 3;
+		if (!GetPlugin) throw 4;
 
 		DBG cerr <<"dl GetPlugin found..."<<endl;
 
 		plugin = GetPlugin();
-		if (!plugin) throw 4;
+		if (!plugin) throw 5;
+
+		if (isblank(plugin->PluginName())) throw 6;
+		//.... laidout checks for plugin in same name, reject if found
 
 		plugin->handle = handle;
-
-		plugin->Initialize();
-		//plugins.push(plugin);
-		//plugin->dec_count();
 
 	} catch(int error) {
 		char *err = newstr(dlerror());
 
 		if (plugin) plugin->dec_count();
-		if (handle) dlclose(handle);
+		if (handle) { dlclose(handle); handle = NULL; }
 
 		if (err) {
-			cerr << "some kind of error: "<<error<<", "<<err << endl;
+			cerr << "some kind of dl error: "<<error<<", "<<err << endl;
 			log.AddMessage(0, path_to_plugin,_("Plugin"), err, Laxkit::ERROR_Fail);
 			delete[] err;
-		} else {
-			if (error == 3 || error == 4) log.AddMessage(_("Malformed plugin file!"), Laxkit::ERROR_Fail);
-			else log.AddMessage("Ack! unknown dlopen error! Bad news!", Laxkit::ERROR_Fail);
 
-			cerr << "dl error: "<<error<<endl;
+		} else {
+			const char *msg = _("Badly formed plugin!");
+			if (error == 1) msg = _("Could not load plugin!");
+			log.AddMessage(0, path_to_plugin, _("Plugin"), msg, Laxkit::ERROR_Fail);
+
+			cerr << "plugin loading error: "<<error<<endl;
 		}
 		return NULL;
 	}
@@ -134,7 +130,7 @@ PluginBase *LoadPlugin(const char *path_to_plugin, Laxkit::ErrorLog &log)
 
 /*! Call this when you are all done with the plugin, meaning
  * ALL references to things the plugin uses have been deallocated.
- * delete is called on plugin, and dlclose() for it after delete completes.
+ * delete is called on plugin, and dlclose() for its dl handle after delete completes.
  */
 int DeletePlugin(PluginBase *plugin)
 {
@@ -166,6 +162,9 @@ int DeletePlugin(PluginBase *plugin)
  */
 
 
+/*! Reminder: you should not initialize anything important in the constructor.
+ * Instead do that in Initialize().
+ */
 PluginBase::PluginBase()
 {
 	filepath = NULL;
@@ -188,6 +187,12 @@ int PluginBase::Initialize()
 	if (initialized) return 0;
 	initialized = 1;
 	return 0;
+}
+
+/*! This should be the reverse of Initialize().
+ */
+void PluginBase::Finalize()
+{
 }
 
 

@@ -68,6 +68,7 @@ class GeglNodesPlugin : public Laidout::PluginBase
 	virtual unsigned long WhatYouGot(); //or'd list of PluginBase::PluginBaseContents
 
 	virtual const char *PluginName();
+	virtual const char *Name();
 	virtual const char *Version();
 	virtual const char *Description();
 	virtual const char *Author();
@@ -76,7 +77,9 @@ class GeglNodesPlugin : public Laidout::PluginBase
 	//virtual const LaxFiles::Attribute *OtherMeta();
 
 	virtual int Initialize(); //install stuff
+	virtual void Finalize();
 };
+
 
 } //namespace GeglNodesPluginNS
 } //namespace Laidout

@@ -62,9 +62,10 @@ class PluginBase : public Laxkit::anObject
 	virtual ~PluginBase();
 	virtual const char *whattype() { return "PluginBase"; }
 
-	virtual const char *PluginName()  = 0;
+	virtual const char *PluginName()  = 0; //not localized
+	virtual const char *Name()        = 0; //localized
 	virtual const char *Version()     = 0;
-	virtual const char *Description() = 0; //localized
+	virtual const char *Description() = 0;
 	virtual const char *Author()      = 0;
 	virtual const char *ReleaseDate() = 0;
 	virtual const char *License()     = 0;
@@ -73,7 +74,7 @@ class PluginBase : public Laxkit::anObject
 	virtual unsigned long WhatYouGot() = 0; //or'd list of PluginBaseContents
 
 	virtual int Initialize(); //install stuff
-
+	virtual void Finalize();
 };
 
 

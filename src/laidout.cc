@@ -60,6 +60,7 @@
 
 
 #include <sys/stat.h>
+#include <glob.h>
 #include <cstdio>
 
 #ifdef LAX_USES_CAIRO
@@ -289,9 +290,9 @@ LaidoutApp::~LaidoutApp()
 //	PathInterface::basepathops.flush();
 
 	//we need special treatment of dls:
-	plugins.flush();
 	while (plugins.n) {
 		PluginBase *plugin = plugins.pop();
+		plugin->Finalize();
 		DeletePlugin(plugin);
 	}
 
@@ -542,8 +543,10 @@ int LaidoutApp::init(int argc,char **argv)
 	delete[] curexecpath; curexecpath=NULL;
 
 
-	 //------load plugins
-	InitializePlugins();
+	 //-----read in laidoutrc
+	if (!readinLaidoutDefaults()) {
+		createlaidoutrc();
+	}
 
 
 	 //------setup initial pools
@@ -563,17 +566,19 @@ int LaidoutApp::init(int argc,char **argv)
 	GetBuiltinInterfaces(&interfacepool);
 
 
-	 //read in laidoutrc
-	if (!readinLaidoutDefaults()) {
-		createlaidoutrc();
-	}
-
-	 //establish user accesible api
+	 //-----establish user accesible api
 	DBG cerr<<"---install functions"<<endl;
 	InitFunctions();
 	InitObjectDefinitions();
+
+	 //-----initialize the main calculator
+	DBG cerr<<"---init main calculator"<<endl;
+	if (!calculator) calculator=new LaidoutCalculator();
 	
-	 //read in resources
+	 //------load plugins
+	InitializePlugins();
+
+	 //-----read in resources
 	char configfile[strlen(config_dir)+20];
 	sprintf(configfile,"%s/autolaidoutrc",config_dir);
 	FILE *f;
@@ -582,7 +587,7 @@ int LaidoutApp::init(int argc,char **argv)
 		fclose(f);
 	}
 
-	 //add Templates dir as default bookmark
+	 //-----add Templates dir as default bookmark
 	Attribute *att=app->AppResource("Bookmarks");
     if (att) {
 		if (att->find(_("Templates"))==NULL) {
@@ -593,7 +598,7 @@ int LaidoutApp::init(int argc,char **argv)
 	}
 
 
-	 //if no bases defined add freedesktop style
+	 //-----if no bases defined add freedesktop style
 	if (!preview_file_bases.n) {
 		preview_file_bases.push(newstr("~/.thumbnails/large/@"));
 		preview_file_bases.push(newstr("~/.thumbnails/normal/@"));
@@ -601,17 +606,13 @@ int LaidoutApp::init(int argc,char **argv)
 		preview_file_bases.push(newstr(".laidout-%.jpg"));
 	}
 	
-	 //define default icon
+	 //-----define default icon
 	char *str=newstr(icon_dir);
 	//appendstr(str,"/Laidout-shaded-icon-48x48.png");
 	appendstr(str,"/laidout-48x48.png");
 	DefaultIcon(str);
 	delete[] str;
 
-
-	 //initialize the main calculator
-	DBG cerr<<"---init main calculator"<<endl;
-	if (!calculator) calculator=new LaidoutCalculator();
 
 	 // Note parseargs has to come after initing all the pools and whatever else
 	DBG cerr <<"---init: parse args"<<endl;
@@ -702,6 +703,7 @@ int LaidoutApp::createlaidoutrc()
 	 //   	templates/
 	 //   	templates/default
 	 //   	impositions/
+	 //   	plugins/
 	 // if no ~/.laidout/(version)/laidoutrc exists, possibly import
 	 //   from other installed laidout versions
 	 //   otherwise perhaps touch laidoutrc, and put in a much
@@ -785,6 +787,7 @@ int LaidoutApp::createlaidoutrc()
 					   //resource directories
 					  " # Some assorted directories:\n");
 			fprintf(f,"#icon_dir %s/icons\n",SHARED_DIRECTORY);
+			fprintf(f,"#plugin_dir %s/plugins #configdir/plugins, and this dir are always consulted after any dir in this config\n",SHARED_DIRECTORY);
 			fprintf(f,"#palette_dir /usr/share/gimp/2.0/palettes\n"
 					  "\n");
 
@@ -807,43 +810,43 @@ int LaidoutApp::createlaidoutrc()
 					  "\n"
 					  "\n"
 
-					   //preview generation
-					  //" # Alternately, you can specify the maximum width and height separately:\n"
-					  //"#maxPreviewWidth 200\n"
-					  //"#maxPreviewHeight 200\n"
-					  "#*** note, the following preview stuff is maybe not so accurate, code is in flux:\n"
-					  " #The size a file (unless specified, default is kilobytes) must be to trigger\n"
-					  " #the automatic creation of a smaller preview image file.\n"
-					  "#previewThreshhold 200kb\n"
-					  "#previewThreshhold never\n"
-					  "\n"
-					  " #You can have previews that are created during the program\n"
-					  " #be deleted when the program exits, or have newly created previews remain:\n"
-					  "#temporaryPreviews yes  #yes to delete new previews on exit\n"
-					  "#temporaryPreviews      #same as: temporaryPreviews yes\n"
-					  "#permanentPreviews yes  #yes to not delete new preview images on exit\n"
-					  "\n"
-					  " #When preview files are not specified, Laidout tries to find one\n"
-					  " #based on a sort of name template. Say an image is filename.tiff, then\n"
-					  " #the first line implies using a preview file called filename-s.jpg,\n"
-					  " #where the '%%' stands for the original filename minus its the final suffix.\n"
-					  " #The second looks for .laidout-previews/filename.tiff.jpg, relative to the\n"
-					  " #directory of the original file. The '*' stands for the entire original filename.\n"
-					  " #The final example is an absolute path, and will try to create all preview files\n"
-					  " #in that place, in this case, it would try ~/laidout/tmp/filename.tiff.jpg.\n"
-					  " #A '@' will expand to the freedesktop.org thumbnail management defined md5\n"
-					  " #representation of the original file. In other words, ~/.thumbnails/large/@\n"
-					  " #is a valid preview name. When you have many previewName, then all are selectable\n"
-					  " #in various dialogs, and the first one is the default.\n"
-					  "#previewName %%-s.jpg\n"
-					  "#previewName .laidout-previews/*.jpg\n"
-					  "#previewName ~/.laidout/tmp/*.jpg\n"
-					  "#previewName ~/.thumbnails/large/@    #these two cover all the current freedesktop\n"  
-					  "#previewName ~/.thumbnails/normal/@   #thumbnail locations\n"
-					  "\n"
-					  "\n# The maximum width or height for preview images\n"
-					  "#maxPreviewLength 200\n"
-					  "\n"
+//					   //preview generation
+//					  //" # Alternately, you can specify the maximum width and height separately:\n"
+//					  //"#maxPreviewWidth 200\n"
+//					  //"#maxPreviewHeight 200\n"
+//					  "#*** note, the following preview stuff is maybe not so accurate, code is in flux:\n"
+//					  " #The size a file (unless specified, default is kilobytes) must be to trigger\n"
+//					  " #the automatic creation of a smaller preview image file.\n"
+//					  "#previewThreshhold 200kb\n"
+//					  "#previewThreshhold never\n"
+//					  "\n"
+//					  " #You can have previews that are created during the program\n"
+//					  " #be deleted when the program exits, or have newly created previews remain:\n"
+//					  "#temporaryPreviews yes  #yes to delete new previews on exit\n"
+//					  "#temporaryPreviews      #same as: temporaryPreviews yes\n"
+//					  "#permanentPreviews yes  #yes to not delete new preview images on exit\n"
+//					  "\n"
+//					  " #When preview files are not specified, Laidout tries to find one\n"
+//					  " #based on a sort of name template. Say an image is filename.tiff, then\n"
+//					  " #the first line implies using a preview file called filename-s.jpg,\n"
+//					  " #where the '%%' stands for the original filename minus its the final suffix.\n"
+//					  " #The second looks for .laidout-previews/filename.tiff.jpg, relative to the\n"
+//					  " #directory of the original file. The '*' stands for the entire original filename.\n"
+//					  " #The final example is an absolute path, and will try to create all preview files\n"
+//					  " #in that place, in this case, it would try ~/laidout/tmp/filename.tiff.jpg.\n"
+//					  " #A '@' will expand to the freedesktop.org thumbnail management defined md5\n"
+//					  " #representation of the original file. In other words, ~/.thumbnails/large/@\n"
+//					  " #is a valid preview name. When you have many previewName, then all are selectable\n"
+//					  " #in various dialogs, and the first one is the default.\n"
+//					  "#previewName %%-s.jpg\n"
+//					  "#previewName .laidout-previews/*.jpg\n"
+//					  "#previewName ~/.laidout/tmp/*.jpg\n"
+//					  "#previewName ~/.thumbnails/large/@    #these two cover all the current freedesktop\n"  
+//					  "#previewName ~/.thumbnails/normal/@   #thumbnail locations\n"
+//					  "\n"
+//					  "\n# The maximum width or height for preview images\n"
+//					  "#maxPreviewLength 200\n"
+//					  "\n"
 					  "\n");
 			fclose(f);
 			setlocale(LC_ALL,"");
@@ -859,6 +862,8 @@ int LaidoutApp::createlaidoutrc()
 		sprintf(path,"%s/palettes",config_dir);
 		mkdir(path,0755);
 		sprintf(path,"%s/fonts",config_dir);
+		mkdir(path,0755);
+		sprintf(path,"%s/plugins",config_dir);
 		mkdir(path,0755);
 
 	} else return -1;
@@ -912,6 +917,9 @@ int LaidoutApp::readinLaidoutDefaults()
 			ShortcutManager *m=GetDefaultShortcutManager();
 			m->Load(value);
 
+		} else if (!strcmp(name,"experimental")) {
+			experimental = 1;
+
 		} else if (!strcmp(name,"default_template")) {
 			if (file_exists(value,1,NULL)==S_IFREG) makestr(prefs.default_template,value);
 			else {
@@ -944,8 +952,13 @@ int LaidoutApp::readinLaidoutDefaults()
 			if (file_exists(value,1,NULL)==S_IFDIR) makestr(icon_dir,value);
 			if (!isblank(icon_dir)) icons->AddPath(icon_dir);
 		
+		} else if (!strcmp(name,"plugin_dir")) {
+			if (file_exists(value,1,NULL) == S_IFDIR) {
+				prefs.AddPath("plugins", value);
+			}
+
 		} else if (!strcmp(name,"palette_dir")) {
-			if (file_exists(value,1,NULL)==S_IFDIR) makestr(prefs.palette_dir,value);
+			if (file_exists(value,1,NULL) == S_IFDIR) makestr(prefs.palette_dir,value);
 		
 		} else if (!strcmp(name,"temp_dir")) {
 			//**** default "config_dir/temp/pid/"?
@@ -981,7 +994,8 @@ int LaidoutApp::readinLaidoutDefaults()
 		//	IntAttribute(value, &prefs.autosave_num, NULL);
 
 		} else if (!strcmp(name,"autosave")) {
-			prefs.autosave=BooleanAttribute(value);
+			prefs.autosave = BooleanAttribute(value);
+
 
 		 //--------------preview related options:
 		} else if (!strcmp(name,"previewThreshhold")) {
@@ -989,10 +1003,10 @@ int LaidoutApp::readinLaidoutDefaults()
 			else IntAttribute(value,&preview_over_this_size);
 		
 		} else if (!strcmp(name,"permanentPreviews")) {
-			preview_transient=!BooleanAttribute(value);
+			preview_transient = !BooleanAttribute(value);
 		
 		} else if (!strcmp(name,"temporaryPreviews")) {
-			preview_transient=BooleanAttribute(value);
+			preview_transient = BooleanAttribute(value);
 		
 		} else if (!strcmp(name,"previewName")) {
 			preview_file_bases.push(newstr(value));
@@ -1044,20 +1058,65 @@ int LaidoutApp::InitializePlugins()
 
 	DBG cerr <<"Initializing plugins..."<<endl;
 
-	const char *files[] = {
-		//"plugins/exampleplugin.so",
-		"plugins/geglnodes.so",
-		NULL
-	};
+	 //try to load all in prefs.plugin_dirs/*.so
 
-	for (int c=0; files[c]!=NULL; c++) {
-		PluginBase *plugin = LoadPlugin(files[c], generallog);
-		if (plugin) {
-			plugins.push(plugin);
-			plugin->dec_count();
-			n++;
+	 //always add default plugin dir to end of list
+	char scratch[500];
+
+	sprintf(scratch,"%splugins",config_dir);
+	prefs.AddPath("plugins", scratch);
+
+	sprintf(scratch,"%splugins",SHARED_DIRECTORY);
+	prefs.AddPath("plugins", scratch);
+
+	glob_t globbuf;
+	char *path = NULL;
+	const char *file;
+	struct stat statbuf;
+	int status;
+
+	for (int c=0; c<prefs.plugin_dirs.n; c++) {
+
+		makestr(path, prefs.plugin_dirs.e[c]);
+		appendstr(path, "/*.so");
+
+		DBG cerr <<"scanning for plugins in "<<path<<"..."<<endl;
+
+		glob(path, GLOB_ERR, NULL, &globbuf);
+
+		for (int c2=0; c2<(int)globbuf.gl_pathc; c2++) {
+			status = stat(globbuf.gl_pathv[c2], &statbuf);
+			if (status != 0) continue;
+			if (!S_ISREG(statbuf.st_mode)) continue;
+
+			file = globbuf.gl_pathv[c2];
+
+			PluginBase *plugin = LoadPlugin(file, generallog); //loads but doesn't initialize
+			if (plugin) {
+				//need to check for plugin with same name already loaded! fail if so... do not allow same name plugins!
+				for (int c3=0; c3<plugins.n; c3++) {
+					if (!strcmp(plugins.e[c3]->PluginName(), plugin->PluginName())) {
+						char scratch[strlen(_("Plugin called \"%s\" exists already, skipping!")) + strlen(plugin->PluginName()) + 5];
+						sprintf(scratch, _("Plugin called \"%s\" exists already, skipping!"), plugin->PluginName());
+
+						generallog.AddMessage(0, NULL, file, scratch, Laxkit::ERROR_Warning);
+						DeletePlugin(plugin);
+						plugin = NULL;
+						break;
+					}
+				}
+
+				if (plugin) {
+					plugins.push(plugin);
+					plugin->dec_count();
+					plugin->Initialize();
+					n++;
+				}
+			}
 		}
+		globfree(&globbuf);
 	}
+	delete[] path;
 
 	return n;
 }
@@ -1131,7 +1190,7 @@ void InitOptions()
 	options.Add("default-units",      'u', 1, "Use the specified units.",                    0, "(in|cm|mm|m|ft|yards)");
 	options.Add("load-dir",           'l', 1, "Start in this directory.",                    0, "path");
 	options.Add("experimental",       'E', 0, "Enable any compiled in experimental features",0, NULL);
-	options.Add("backend",            'B', 1, "Either xlib or cairo (cairo very experimental).",0, NULL);
+	options.Add("backend",            'B', 1, "Either cairo or xlib (xlib very deprecated).",0, NULL);
 	options.Add("impose-only",        'I', 1, "Run only as a file imposer, not full Laidout",0, NULL);
 	options.Add("list-shortcuts",     'S', 0, "Print out a list of current keyboard bindings, then exit",0,NULL);
 	options.Add("theme",              'T', 1, "Set theme. Currently, one of Light, Dark, or Gray",0,NULL);

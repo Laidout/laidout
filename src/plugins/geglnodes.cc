@@ -975,6 +975,18 @@ GeglNodesPlugin::GeglNodesPlugin()
 
 GeglNodesPlugin::~GeglNodesPlugin()
 {
+//	if (GeglLaidoutNode::masternode != NULL) {
+//		g_object_unref (GeglLaidoutNode::masternode);
+//		GeglLaidoutNode::masternode = NULL;
+//	}
+
+    //gegl_exit ();
+}
+
+/*! Things that need to be done ONLY after Initialize(), but not a destructor.
+ */
+void GeglNodesPlugin::Finalize()
+{
 	if (GeglLaidoutNode::masternode != NULL) {
 		g_object_unref (GeglLaidoutNode::masternode);
 		GeglLaidoutNode::masternode = NULL;
@@ -1003,7 +1015,14 @@ unsigned long GeglNodesPlugin::WhatYouGot()
 	  ;
 }
 
+/*! This should be the same as non-class PluginName() function.
+ */
 const char *GeglNodesPlugin::PluginName()
+{
+	return "Gegl Nodes";
+}
+
+const char *GeglNodesPlugin::Name()
 {
 	return _("Gegl Nodes");
 }
@@ -1049,7 +1068,7 @@ int GeglNodesPlugin::Initialize()
 	 //initialize gegl
 	gegl_init (NULL,NULL); //(&argc, &argv);
 
-	 g_object_set (gegl_config (),
+	g_object_set (gegl_config (),
                  "application-license", "GPL3",
 			     NULL);
 
