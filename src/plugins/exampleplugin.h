@@ -33,7 +33,8 @@ class ExamplePlugin : public Laidout::PluginBase
 
 	virtual unsigned long WhatYouGot(); //or'd list of PluginBase::PluginBaseContents
 
-	virtual const char *PluginName();
+	virtual const char *PluginName(); //non-localized unique name
+	virtual const char *Name();       //localized name
 	virtual const char *Version();
 	virtual const char *Description();
 	virtual const char *Author();
@@ -42,6 +43,7 @@ class ExamplePlugin : public Laidout::PluginBase
 	//virtual const LaxFiles::Attribute *OtherMeta();
 
 	virtual int Initialize(); //install stuff
+	virtual void Finalize();
 };
 
 } //namespace ExamplePluginNS

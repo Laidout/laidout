@@ -42,10 +42,26 @@ namespace ExamplePluginNS {
 
 ExamplePlugin::ExamplePlugin()
 {
+	//in general, you should not initialize anything other than simple types in or really do anything in
+	//constructor, as accidentally loading or destroying the same thing twice will likely produce strange errors.
+	//Instead do important initialization in Initialize(), and destroy those things in Finalize().
 }
 
 ExamplePlugin::~ExamplePlugin()
 {
+}
+
+/*! This needs to be a unique, non-localized name of the plugin.
+ * Laidout will not load this plugin in another with the same PluginName().
+ */
+const char *ExamplePlugin::PluginName()
+{
+	return "Example Plugin";
+}
+
+const char *ExamplePlugin::Name()
+{
+	return _("Example Plugin");
 }
 
 unsigned long ExamplePlugin::WhatYouGot()
@@ -67,11 +83,6 @@ unsigned long ExamplePlugin::WhatYouGot()
 		//| PLUGIN_Nodes
 		//| PLUGIN_CalcModules
 	  ;
-}
-
-const char *ExamplePlugin::PluginName()
-{
-	return _("Example Plugin");
 }
 
 const char *ExamplePlugin::Version()
@@ -122,6 +133,12 @@ int ExamplePlugin::Initialize()
 	DBG cerr << "ExamplePlugin initializing!"<<endl;
 
 	return 0;
+}
+
+/*! Reverse of Initialize().
+ */
+void ExamplePlugin::Finalize()
+{
 }
 
 
