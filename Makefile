@@ -51,7 +51,7 @@ install:
 	$(INSTALLDIR) $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/icons
 	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/icons src/icons/*.png
 	$(INSTALLDIR) $(SHAREDIR)/applications
-	$(INSTALL) -m644 debian/laidout.desktop $(SHAREDIR)/applications
+	$(INSTALL) -m644 deb/laidout.desktop $(SHAREDIR)/applications
 	$(INSTALLDIR) $(SHAREDIR)/icons/hicolor/48x48/apps
 	$(INSTALL) -m644 src/icons/laidout-48x48.png $(SHAREDIR)/icons/hicolor/48x48/apps/laidout.png
 	$(INSTALLDIR) $(SHAREDIR)/icons/hicolor/scalable/apps
@@ -60,6 +60,8 @@ install:
 	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop/processing coop/processing/*
 	$(INSTALLDIR)       $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop/scribus
 	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop/scribus coop/scribus/*
+	$(INSTALLDIR)       $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/plugins
+	$(INSTALL) -m755 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/plugins src/plugins/*.so
 
 	rm -f $(BINDIR)/laidout
 	ln -s $(LAIDOUTNAME) $(BINDIR)/laidout
