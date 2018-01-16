@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -33,28 +32,6 @@ using namespace Laxkit;
 using namespace LaxFiles;
 
 #define DBG 
-
-const char *reserved_words=
-							"show     "
-							"unset    "
-							"var      "
-							"function "
-							"class    "
-							"operator "
-							"alias    "
-							"null     "
-							"true     "
-							"false    "
-							"import   "
-							"using    "
-							"if       "
-							"while    "
-							"for      "
-							"foreach  "
-							"break    "
-							"return   "
-							"this     "
-							;
 
 
 namespace Laidout {
