@@ -115,24 +115,6 @@ int ValueToGValue(Value *v, const char *gvtype, GValue *gv_ret, GeglNode *node, 
 			return 3;
 		}
 
-//	} else if (!strcmp(gvtype, "GeglColor")) {
-//		if (vtype == VALUE_Color) {
-//			ColorValue *col = dynamic_cast<ColorValue*>(v);
-//			GeglColor  *color = gegl_color_new ("rgba(1.0,1.0,1.0,1.0)");
-//			gegl_color_set_rgba(color, col->color.Red(), col->color.Green(), col->color.Blue(), col->color.Alpha());
-//
-//			GParamSpec *spec = gegl_node_find_property(node, property);
-//			if (!spec) {
-//				DBG cerr <<" *** missing spec for gegl property: "<<property<<endl;
-//				return 5;
-//			}
-//
-//			g_value_init (gv_ret, spec->value_type);
-//			g_value_take_object (gv_ret, color);
-//
-//			g_object_unref (color);
-//			return 0;
-//		}
 		return 4;
 
 	//} else if (!strcmp(gvtype, "")) {
@@ -336,6 +318,7 @@ GeglNode *XMLFileToGeglNodes(const char *file, Laxkit::ErrorLog *log)
 	GeglNode *node = NULL;
 
 	try {
+		DBG cerr << "test-gegl, reading in "<<file<<endl;
 		node = gegl_node_new_from_file(file);
 	} catch (exception &e) {
 		cerr << "Gegl node read in from "<<file<<" error: "<<e.what()<<endl;
@@ -344,15 +327,18 @@ GeglNode *XMLFileToGeglNodes(const char *file, Laxkit::ErrorLog *log)
 	return node;
 }
 
-/*! Put all from gegl into parent.
+/*! Put all children from gegl into parent. If parent == NULL, then return a new NodeGroup.
+ * If children_only, then if gegl is a no-op graph holder, add children of gegl only, not gegl itself.
+ * Otherwise add the whole thing under a fresh NodeGroup.
  */
-NodeBase* GeglNodesToLaidoutNodes(GeglNode *gegl, NodeGroup *parent, Laxkit::ErrorLog *log)
+NodeGroup* GeglNodesToLaidoutNodes(GeglNode *gegl, NodeGroup *parent, bool children_only, Laxkit::ErrorLog *log)
 {
 	GSList *children = gegl_node_get_children(gegl);
 
 	RefPtrStack<NodeBase> nodes;
+	if (!parent) parent = new NodeGroup;
 
-	 //first, create a NodeBase to correspond to the child's op
+	 //first, create a NodeBase to correspond to the child's operation
 	for (GSList *child = children; child; child = child->next) {
 		//*** //need to translate the properties out of gegl into laidout
 		GeglLaidoutNode *newnode = new GeglLaidoutNode((GeglNode*)child->data);
@@ -362,8 +348,51 @@ NodeBase* GeglNodesToLaidoutNodes(GeglNode *gegl, NodeGroup *parent, Laxkit::Err
 	}
 
 	 //once we have a list of NodeBases, we need to connect them as per the actual gegl connections
-	for (GSList *child = children; child; child = child->next) {
-		//*** //we only connect forward links, so as not to duplicate effort
+	GeglNode *gnode;
+	GeglLaidoutNode *glonode;
+	GeglNode **consumers;
+	const gchar **consumerpads;
+
+	for (int c=0; c<nodes.n; c++) {
+		 //we only connect forward links, so as not to duplicate effort
+		glonode = dynamic_cast<GeglLaidoutNode*>(nodes.e[c]);
+		gnode = (glonode ? glonode->gegl : NULL);
+		if (!gnode) continue;
+
+		gchar **padnames = gegl_node_list_output_pads(gnode);
+		if (padnames) {
+			for (int c2=0; padnames[c2]; c2++) {
+				gchar *padname = padnames[c2];
+				NodeProperty *fromprop = glonode->FindProperty(padname);
+				//if (!prop) {  <- let it crash if not found.. should not happen anyway
+				//	DBG cerr << " *** warning! seem to be missing a defined gegl output pad "<<padname<<" on "<<glonode->Label()<<endl;
+				//	continue;
+				//}
+
+				int num = gegl_node_get_consumers(gnode, padname, &consumers, &consumerpads);
+				if (num) {
+					for (int c3=0; c3<num; c3++) {
+						GeglLaidoutNode *to = NULL;
+						for (int c4=0; c4<nodes.n; c4++) {
+							 //we only connect forward links, so as not to duplicate effort
+							to = dynamic_cast<GeglLaidoutNode*>(nodes.e[c4]);
+							if (to && to->gegl == consumers[c3]) break;
+							to = NULL;
+						}
+						NodeProperty *toprop = (to ? to->FindProperty(consumerpads[c3]) : NULL);
+						if (toprop) parent->Connect(fromprop, toprop);
+						//if (toprop) parent->Connect(glonode, to, fromprop, toprop);
+						else {
+							DBG cerr << " *** warning! couldn't find a to property "<<consumerpads[c3]<<" on "<<glonode->Label()<<endl;
+						}
+					}
+					g_free(consumers);
+					g_free(consumerpads);
+				}
+
+			}
+			g_strfreev(padnames);
+		}
 	}
 
 	g_slist_free(children);
@@ -394,8 +423,10 @@ GeglLaidoutNode::GeglLaidoutNode(const char *oper)
 GeglLaidoutNode::GeglLaidoutNode(GeglNode *node)
 {
 	gegl = node;
+	if (gegl) g_object_ref(gegl);
 	op = NULL;
-	operation = newstr(gegl_node_get_operation(gegl));
+	operation = NULL;
+	SetOperation(gegl_node_get_operation(gegl));
 }
 
 GeglLaidoutNode::~GeglLaidoutNode()
@@ -484,15 +515,15 @@ int GeglLaidoutNode::Update()
 
 				GValue gv = G_VALUE_INIT;
 
-				if (ValueToGValue(v, ptype, &gv, gegl, prop->name) == 0) {
+				if (ValueToProperty(v, ptype, gegl, propspec->name)==0) {
+					//was possible to set directly to gegl without GValue setup
+
+				} else if (ValueToGValue(v, ptype, &gv, gegl, prop->name) == 0) {
+					 //more finicky method using GValue
 					gegl_node_set_property(gegl, prop->name, &gv);
 					num_updated++;
 
-				} else if (ValueToProperty(v, ptype, gegl, propspec->name)==0) {
-					//was possible to set directly to gegl without GValue setup
-
 				} else {
-					 //check for some thing
 					errors++;
 					DBG cerr <<" *** Warning! error setting properties on gegl node "<<operation<<endl;
 				}
@@ -504,7 +535,7 @@ int GeglLaidoutNode::Update()
 	}
 
 //	if (errors == 0) {
-		 //should do this ONLY if the node is a sync
+		 //should do this ONLY if the node is a sink
 		if (IsSaveNode()) {
 			if (AutoProcess()) {
 				DBG cerr <<"..........Attempting to process "<<operation<<endl;
@@ -537,7 +568,7 @@ int GeglLaidoutNode::AutoProcess()
 	return 1;
 }
 
-/*! Return box.nonzerobounds().
+/*! Return box.nonzerobounds(), which is true when box has _valid_ non zero bounds.
  */
 int GeglLaidoutNode::GetRect(Laxkit::DoubleBBox &box)
 {
@@ -768,78 +799,101 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 	 //set up non input/output properties
 	op = opitem->GetSubmenu();
 	MenuItem *prop;
-	const char *type;
+	const char *proptype;
 	Value *v;
+
 	for (int c=0; c<op->n(); c++) {
 		prop = op->e(c);
-		type = prop->GetString(1);
+		proptype = prop->GetString(1);
 		v = NULL;
 
-		if (type) {
+		if (proptype) {
 			 //set default values
 			GValue gv = G_VALUE_INIT;
 			gegl_node_get_property(gegl, prop->name, &gv);
 
-            if (!strcmp(type, "gboolean")) {
+            if (!strcmp(proptype, "gboolean")) {
                 bool boolean = 0;
                 if (G_VALUE_HOLDS_BOOLEAN(&gv)) { boolean = g_value_get_boolean(&gv); }
 				v = new BooleanValue(boolean); 
 				//---
 				//gegl_node_get(gegl, prop->name, &boolean, NULL);
 
-            } else if (!strcmp(type, "gint")) {
+            } else if (!strcmp(proptype, "gint")) {
                 int vv=0;
                 if (G_VALUE_HOLDS_INT(&gv)) { vv = g_value_get_int(&gv); }
 				v = new IntValue(vv);
 
-            } else if (!strcmp(type, "gdouble")) {
+            } else if (!strcmp(proptype, "gdouble")) {
                 double vv=0;
                 if (G_VALUE_HOLDS_DOUBLE(&gv)) { vv = g_value_get_double(&gv); }
 				v = new DoubleValue(vv);
 
-            } else if (!strcmp(type, "gchararray")) {
+            } else if (!strcmp(proptype, "gchararray")) {
                 const gchar *vv = NULL;
                 if (G_VALUE_HOLDS_STRING(&gv)) {
 					vv = g_value_get_string(&gv);
 				}
 				v = new StringValue(vv);
 
-			} else if (!strcmp(type, "GeglColor" )) {
-				v = new ColorValue("#000");
+			} else if (!strcmp(proptype, "GeglColor" )) {
+				//v = new ColorValue("#000");
 				//-----
-				//GeglColor *color = NULL;
-				//gegl_node_get(gegl, prop->name, &color, NULL);
-				//double r=0,g=0,b=0,a=1.0;
-				//gegl_color_get_rgba(color, &r, &g, &b, &a);
-				//v = new ColorValue(r,g,b,a);
+				GeglColor *color = NULL;
+				gegl_node_get(gegl, prop->name, &color, NULL);
+				double r=0,g=0,b=0,a=1.0;
+				gegl_color_get_rgba(color, &r, &g, &b, &a);
+				v = new ColorValue(r,g,b,a);
 
-			//} else if (!strcmp(type, "GdkPixbuf"               )) {
-			//} else if (!strcmp(type, "GeglAbyssPolicy"         )) {
-			//} else if (!strcmp(type, "GeglAlienMapColorModel"  )) {
-			//} else if (!strcmp(type, "GeglAudioFragment"       )) {
-			//} else if (!strcmp(type, "GeglBuffer"              )) {
-			//} else if (!strcmp(type, "GeglColorRotateGrayMode" )) {
-			//} else if (!strcmp(type, "GeglComponentExtract"    )) {
-			//} else if (!strcmp(type, "GeglCurve"               )) {
-			//} else if (!strcmp(type, "GeglDTMetric"            )) {
-			//} else if (!strcmp(type, "GeglDitherMethod"        )) {
-			//} else if (!strcmp(type, "GeglGaussianBlurFilter2" )) {
-			//} else if (!strcmp(type, "GeglGaussianBlurPolicy"  )) {
-			//} else if (!strcmp(type, "GeglGblur1dFilter"       )) {
-			//} else if (!strcmp(type, "GeglGblur1dPolicy"       )) {
-			//} else if (!strcmp(type, "GeglImageGradientOutput" )) {
-			//} else if (!strcmp(type, "GeglNewsprintColorModel" )) {
-			//} else if (!strcmp(type, "GeglNewsprintPattern"    )) {
-			//} else if (!strcmp(type, "GeglNode"                )) {
-			//} else if (!strcmp(type, "GeglOrientation"         )) {
-			//} else if (!strcmp(type, "GeglPath"                )) {
-			//} else if (!strcmp(type, "GeglPixelizeNorm"        )) {
-			//} else if (!strcmp(type, "GeglRenderingIntent"     )) {
-			//} else if (!strcmp(type, "GeglSamplerType"         )) {
-			//} else if (!strcmp(type, "GeglVignetteShape"       )) {
-			//} else if (!strcmp(type, "GeglWarpBehavior"        )) {
-			//} else if (!strcmp(type, "GeglWaterpixelsFill"     )) {
-			//} else if (!strcmp(type, "gpointer"                )) {
+			} else {
+//				GType gtype = G_VALUE_TYPE(&gv);
+//
+//				if (G_TYPE_IS_ENUM(gtype)) {
+//					if (G_VALUE_HOLDS_ENUM(&gv)) {
+//						DBG cerr <<"gvalue holds enum"<<endl;
+//					}
+//
+//					GEnumValue *enum_value;
+//
+//					GEnumClass *enum_class = (GEnumClass*)g_type_class_ref (gtype);
+//					//enum_value = g_enum_get_value (enum_class, MAMAN_MY_ENUM_FOO);
+//
+//					//g_print ("Name: %s\n", enum_value->value_name);
+//
+//					g_type_class_unref (enum_class);
+//				}
+
+			 //enums
+			//} else if (!strcmp(proptype, "GeglAbyssPolicy"         )) {
+
+			//} else if (!strcmp(proptype, "GeglCurve"               )) {
+			//} else if (!strcmp(proptype, "GeglPath"                )) {
+
+			//} else if (!strcmp(proptype, "GeglAlienMapColorModel"  )) {
+			//} else if (!strcmp(proptype, "GeglAudioFragment"       )) {
+			//} else if (!strcmp(proptype, "GeglColorRotateGrayMode" )) {
+			//} else if (!strcmp(proptype, "GeglComponentExtract"    )) {
+			//} else if (!strcmp(proptype, "GeglDTMetric"            )) {
+			//} else if (!strcmp(proptype, "GeglDitherMethod"        )) {
+			//} else if (!strcmp(proptype, "GeglGaussianBlurFilter2" )) {
+			//} else if (!strcmp(proptype, "GeglGaussianBlurPolicy"  )) {
+			//} else if (!strcmp(proptype, "GeglGblur1dFilter"       )) {
+			//} else if (!strcmp(proptype, "GeglGblur1dPolicy"       )) {
+			//} else if (!strcmp(proptype, "GeglImageGradientOutput" )) {
+			//} else if (!strcmp(proptype, "GeglNewsprintColorModel" )) {
+			//} else if (!strcmp(proptype, "GeglNewsprintPattern"    )) {
+			//} else if (!strcmp(proptype, "GeglOrientation"         )) {
+			//} else if (!strcmp(proptype, "GeglPixelizeNorm"        )) {
+			//} else if (!strcmp(proptype, "GeglRenderingIntent"     )) {
+			//} else if (!strcmp(proptype, "GeglSamplerType"         )) {
+			//} else if (!strcmp(proptype, "GeglVignetteShape"       )) {
+			//} else if (!strcmp(proptype, "GeglWarpBehavior"        )) {
+			//} else if (!strcmp(proptype, "GeglWaterpixelsFill"     )) {
+
+			//} else if (!strcmp(proptype, "GeglBuffer"              )) {
+			//} else if (!strcmp(proptype, "GdkPixbuf"               )) {
+			//} else if (!strcmp(proptype, "GeglNode"                )) {
+			//} else if (!strcmp(proptype, "gpointer"                )) {
 
 			}
 
@@ -868,8 +922,9 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 	}
 
 	 //add an extra toggle for auto saving, so we can optionally not have to be constantly processing as things change
+	 //default to no, since process during loading, for instance can do bad things
 	if (IsSaveNode()) {
-		AddProperty(new NodeProperty(NodeProperty::PROP_Block, false, "AutoProcess",  new BooleanValue(true),1, _("Auto Save") ,NULL, GEGLNODE_SWITCH));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Block, false, "AutoProcess",  new BooleanValue(false),1, _("Auto Save") ,NULL, GEGLNODE_SWITCH));
 	}
 
 	return 0;
@@ -918,7 +973,8 @@ Laxkit::MenuInfo *GetGeglOps()
 		for (guint c=0; c<nkeys; c++) {
 			const char *value = gegl_operation_get_key(operations[i], keys[c]);
 			if (!strcmp(keys[c], "source")) value="...code...";
-			DBG cerr <<"    operation key: "<<keys[c]<<": "<<value<<endl;
+			DBG if (!strcmp(keys[c], "cl-source")) cerr <<"    operation key: "<<keys[c]<<": "<<"(...source code...)"<<endl;
+			DBG else cerr <<"    operation key: "<<keys[c]<<": "<<value<<endl;
 		}
 		g_free(keys);
 
@@ -1083,13 +1139,21 @@ int GeglNodesPlugin::Initialize()
 	//---------------TEST STUFF
 	DBG cerr <<"---start testing gegl xml"<<endl;
 	ErrorLog log;
-	GeglNode *gnode = XMLFileToGeglNodes("test-gegl.xml", &log);
+	GeglNode *gnode = XMLFileToGeglNodes("test-gegl2.xml", &log);
 	if (gnode) {
 
-		GSList *list = gegl_node_get_children(gnode);
-		cerr << "Num nodes as children: "<<g_slist_length(list)<<endl;
+		//GSList *list = gegl_node_get_children(gnode);
+		//cerr << "Num nodes as children: "<<g_slist_length(list)<<endl;
 
-		g_slist_free(list);
+		NodeGroup *group = GeglNodesToLaidoutNodes(gnode, NULL, true, &log);
+		if (group) {
+			DBG cerr <<"xml to lo nodes:"<<endl;
+			group->dump_out(stdout, 2, 0, NULL);
+			group->dec_count();
+		}
+
+
+		//g_slist_free(list);
 		g_object_unref (gnode);
 	}
 	DBG dumperrorlog("gegl read xml test log:", log);
