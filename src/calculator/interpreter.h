@@ -26,13 +26,13 @@ namespace Laidout {
 class Interpreter : public Laxkit::anObject, public LaxFiles::DumpUtility
 {
  public:
-	Plugin *source_plugin; //if the interpreter came from a plugin
+	PluginBase *source_plugin; //if the interpreter came from a plugin
 
-	const char *Id() = 0;
-	const char *Name() = 0;
+	const char *Id()          = 0;
+	const char *Name()        = 0;
 	const char *Description() = 0;
-	const char *Version() = 0;
-	
+	const char *Version()     = 0;
+
 	Interpreter();
 	virtual ~Interpreter();
 	virtual int InitInterpreter() = 0;
@@ -46,9 +46,10 @@ class Interpreter : public Laxkit::anObject, public LaxFiles::DumpUtility
 					   //laidout code that uses interpreters, not the interpreter itself
 
 	 //return status: 0 success, -1 success with warnings, 1 fatal error
-	virtual int In(const char *input_text, char **result_ret, Laxkit::ErrorLog &log) = 0;
-	virtual char *GetLastResult() = 0;
-	virtual char *GetError(int *input_index_ret) = 0;
+	virtual int In(const char *input, char **result_ret, ValueHash *context, Laxkit::ErrorLog &log) = 0;
+	virtual int In(const char *input, int len, Value **value_ret, ValueHash *context, Laxkit::ErrorLog *log) = 0;
+	//virtual const char *GetLastResult() = 0;
+	virtual const char *GetError(int *input_index_ret) = 0;
 	virtual void ClearError() = 0;
 
     virtual void       dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);

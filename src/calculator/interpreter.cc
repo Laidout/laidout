@@ -27,6 +27,8 @@ namespace Laidout {
 //----------------------------InitInterpreters()-----------------------------------------
 
 
+RefPtrStack<LaidoutCalculator> interpreters;
+
 ...LaidoutApp::close() {
 	for (int c=0; c<interpreters.n; c++) {
 		interpreters.e[c]->CloseInterpreter();
