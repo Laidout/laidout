@@ -134,6 +134,8 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	int RemovePlugin(const char *name);
 	int InitializePlugins();
 
+	int InitInterpreters();
+
 	Laxkit::PtrStack<PaperStyle> papersizes;
 	PaperStyle *defaultpaper; //could be a custom, so need to have extra field here
 	PaperStyle *GetDefaultPaper();

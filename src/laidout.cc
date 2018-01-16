@@ -573,7 +573,7 @@ int LaidoutApp::init(int argc,char **argv)
 
 	 //-----initialize the main calculator
 	DBG cerr<<"---init main calculator"<<endl;
-	if (!calculator) calculator=new LaidoutCalculator();
+	InitInterpreters();
 	
 	 //------load plugins
 	InitializePlugins();
@@ -652,6 +652,13 @@ int LaidoutApp::init(int argc,char **argv)
 	
 	return 0;
 };
+
+//! Initialize and install built in interpreters
+int LaidoutApp::InitInterpreters()
+{
+	if (!calculator) calculator = new LaidoutCalculator();
+    return 1;
+}
 
 //! Write out resources to ~/.laidout/(version)/autolaidoutrc.
 void LaidoutApp::dumpOutResources()
