@@ -891,16 +891,16 @@ int NodeBase::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
 
 /*! Static keeper of default node factory.
  */
-Laxkit::SingletonKeeper NodeGroup::nodekeeper;
+Laxkit::SingletonKeeper NodeGroup::factorykeeper;
 
 /*! Return the current default node factory. If the default is null, then make a new default if create==true.
  */
 Laxkit::ObjectFactory *NodeGroup::NodeFactory(bool create)
 {
-	ObjectFactory *node_factory = dynamic_cast<ObjectFactory*>(nodekeeper.GetObject());
+	ObjectFactory *node_factory = dynamic_cast<ObjectFactory*>(factorykeeper.GetObject());
 	if (!node_factory && create) {
 		node_factory = new ObjectFactory; 
-		nodekeeper.SetObject(node_factory, true);
+		factorykeeper.SetObject(node_factory, true);
 
 		SetupDefaultNodeTypes(node_factory);
 	}
@@ -912,7 +912,7 @@ Laxkit::ObjectFactory *NodeGroup::NodeFactory(bool create)
  */
 void NodeGroup::SetNodeFactory(Laxkit::ObjectFactory *newnodefactory)
 {
-	nodekeeper.SetObject(newnodefactory, false);
+	factorykeeper.SetObject(newnodefactory, false);
 }
 
 NodeGroup::NodeGroup()
@@ -1014,15 +1014,59 @@ NodeGroup *NodeGroup::Encapsulate(Laxkit::RefPtrStack<NodeBase> &selected)
 	return group;
 }
 
-/*! Return 1 for success, or 0 for failure.
+/*! Return 0 for new connection success, -1 for already connected, or positive value for failure and not connected.
  * If usethis != NULL, then use that as the connection object, overwriting any incorrect settings.
  * Otherwise create a new one to install.
+ * from and to should have everything set properly.
  */
-int NodeGroup::Connect(NodeProperty *from, NodeProperty *to, NodeConnection *usethis)
+int NodeGroup::Connect(NodeProperty *fromprop, NodeProperty *toprop)
 {
-	//***
+	NodeBase *from = fromprop->owner;
+	NodeBase *to   = toprop->owner;
+
+	NodeConnection *newcon = new NodeConnection(from, to, fromprop, toprop);
+
+	fromprop->connections.push(newcon, 0);//prop list does NOT delete connection
+	toprop  ->connections.push(newcon, 0);//prop list does NOT delete connection
+	connections.push(newcon, 1);//node connection list DOES delete connection
+
+	from->Connected(newcon);
+	to  ->Connected(newcon);
 
 	return 0;
+}
+
+/*! Move things around so there is no overlap.
+ * If which==NULL then shift so no overlap anywhere.
+ * If which != NULL, then only shift so that one is not overlapped with anything else.
+ */
+int NodeGroup::NoOverlap(NodeBase *which, double gap)
+{
+	int num_adjusted = 0;
+
+	DoubleBBox box, box2;
+	NodeBase *node, *node2;
+
+	for (int c=0; c<nodes.n; c++) {
+		if (which && nodes.e[c] != which) continue;
+		node = nodes.e[c];
+		box.setbounds(*node);
+		box.ExpandBounds(gap);
+
+		for (int c2=c+1; c2<nodes.n; c2++) {
+			node2 = nodes.e[c2];
+			box2.setbounds(*node2);
+			if (!box.intersect(&box2)) continue;
+
+			 //found an overlap
+			// ***
+			cerr << " *** FINISH NodeGroup::NoOverlap()!!"<<endl;
+
+			num_adjusted++;
+		}
+	}
+
+	return num_adjusted;
 }
 
 /*! Use when connecting forward to node via connection. Traverse forwards through connection,
@@ -1302,29 +1346,30 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 					NodeProperty *fromprop = from->FindProperty(fpstr),
 								 *toprop   = to  ->FindProperty(tpstr);
 
-					delete[] fromstr;
-					delete[] tostr;
-					delete[] fpstr;
-					delete[] tpstr;
-
 					if (!from || !to || !fromprop || !toprop) {
 						// *** warning!
 						DBG cerr <<" *** bad node att input!"<<endl;
-						continue;
+						//continue;
+
+					} else {
+						 //install the connection
+						NodeConnection *newcon = new NodeConnection(from, to, fromprop, toprop);
+						fromprop->connections.push(newcon, 0);//prop list does NOT delete connection
+						toprop  ->connections.push(newcon, 0);//prop list does NOT delete connection
+						connections.push(newcon, 1);//node connection list DOES delete connection
+
+						from->Connected(newcon);
+						to  ->Connected(newcon);
 					}
-
-
-					NodeConnection *newcon = new NodeConnection(from, to, fromprop, toprop);
-					fromprop->connections.push(newcon, 0);//prop list does NOT delete connection
-					toprop  ->connections.push(newcon, 0);//prop list does NOT delete connection
-					connections.push(newcon, 1);//node connection list DOES delete connection
-
-					from->Connected(newcon);
-					to  ->Connected(newcon);
 					
 				} else {
 					DBG cerr <<" *** Warning! cannot connect "<<fromstr<<" to "<<tostr<<"!"<<endl;
 				}
+
+				delete[] fromstr;
+				delete[] tostr;
+				delete[] fpstr;
+				delete[] tpstr;
 			}
 		}
 	}

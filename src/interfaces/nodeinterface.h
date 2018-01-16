@@ -246,7 +246,7 @@ class NodeBase : public Laxkit::anObject,
 
 class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 {
-	static Laxkit::SingletonKeeper nodekeeper;
+	static Laxkit::SingletonKeeper factorykeeper;
 
   protected:
 	virtual int CheckForward(NodeBase *node, NodeConnection *connection);
@@ -269,11 +269,12 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	virtual int DesignateOutput(NodeBase *noutput);
 	virtual int DesignateInput(NodeBase *ninput);
 	virtual NodeBase *FindNode(const char *name);
-	NodeBase *NewNode(const char *type);
+	virtual NodeBase *NewNode(const char *type);
+	virtual int NoOverlap(NodeBase *which, double gap);
 
 	virtual int DeleteNodes(Laxkit::RefPtrStack<NodeBase> &selected);
 	virtual NodeGroup *Encapsulate(Laxkit::RefPtrStack<NodeBase> &selected);
-	virtual int Connect(NodeProperty *from, NodeProperty *to, NodeConnection *usethis);
+	virtual int Connect(NodeProperty *from, NodeProperty *to);
 
 	virtual void       dump_out(FILE *f, int indent, int what, LaxFiles::DumpContext *context);
     virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context);
