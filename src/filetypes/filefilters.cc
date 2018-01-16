@@ -119,8 +119,8 @@ namespace Laidout {
 
 FileFilter::FileFilter()
 {
-	plugin=NULL; 
-	flags=0;
+	plugin = NULL; 
+	flags  = 0;
 }
 
 //------------------------------------- ImportFilter -----------------------------------

@@ -1,6 +1,5 @@
 //
-// $Id$
-//	
+//
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -21,6 +20,7 @@
 #include <lax/dump.h>
 #include "../document.h"
 #include "../calculator/values.h"
+#include "../plugins/plugin.h"
 
 
 namespace Laidout {
@@ -35,12 +35,12 @@ class DocumentExportConfig;
 #define FILTER_MULTIPAGE  (1<<0)
 #define FILTER_MANY_FILES (1<<1)
 
-typedef void Plugin; //******must implement plugins!!
 class FileFilter : public Laxkit::anObject
 {
  public:
 	unsigned int flags;
-	Plugin *plugin; //***which plugin, if any, the filter came from.
+	PluginBase *plugin; //***which plugin, if any, the filter came from.
+
 	FileFilter();
 	virtual ~FileFilter() {}
 	virtual const char *Author() = 0;
