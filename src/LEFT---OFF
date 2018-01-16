@@ -139,6 +139,7 @@ test:
 DONE update help page
 DONE put rss/g+ links on all menu pages.. 
 
+color strips for full transparent should show checkers in all strips, not just the alpha strip
 
 switch to GPL v3?
 
@@ -178,6 +179,7 @@ from recent import:
 
 node editor NodeInterface nodes:
   gegl nodes:
+    some process actions bog everything down like overlay a crop with a non-cropped input.. need a check for unbounded nodes before process
     make sure deleting/rearranging nodes correctly removes gegl connections
 	load in graph xml
 	save gegl graph to xml
@@ -188,6 +190,7 @@ node editor NodeInterface nodes:
 	searching via categories, not just the name. gegl ops have name, title, description, categories, license, even source!!
     DONE process on a crop after change a value crash? need to trace
 	DONE make process optional
+  loading needs to check for name collisions
   rename nodes
   numbers need slide change: specify add or zoom stepping
   undo redo
