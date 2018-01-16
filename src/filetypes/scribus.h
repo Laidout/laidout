@@ -45,7 +45,7 @@ class ScribusExportFilter : public ExportFilter
 	
 	virtual const char *DefaultExtension() { return "sla"; }
 	virtual const char *Format() { return "Scribus"; }
-	virtual const char *Version() { return "1.4.5"; }
+	virtual const char *Version();
 	virtual const char *VersionName();
 	virtual const char *FilterClass() { return "document"; }
 	virtual ObjectDef *GetObjectDef();

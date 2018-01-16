@@ -304,7 +304,13 @@ ScribusExportFilter::ScribusExportFilter()
 //! "Scribus 1.4.5".
 const char *ScribusExportFilter::VersionName()
 {
-	return _("Scribus 1.4.5");
+	//return _("Scribus 1.4.5");
+	return _("Scribus");
+}
+
+const char *ScribusExportFilter::Version()
+{
+	return "1.4.5"; //the max version handled. import+export acts more like a pass through
 }
 
 //! Try to grab from stylemanager, and install a new one there if not found.
