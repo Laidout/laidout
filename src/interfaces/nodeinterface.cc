@@ -1059,8 +1059,30 @@ int NodeGroup::NoOverlap(NodeBase *which, double gap)
 			if (!box.intersect(&box2)) continue;
 
 			 //found an overlap
-			// ***
-			cerr << " *** FINISH NodeGroup::NoOverlap()!!"<<endl;
+
+			int dir = 0;
+			for (int c2=0; c2<node->properties.n; c2++) {
+				for (int c3=0; c3<node->properties.e[c2]->connections.n; c3++) {
+					if (node->properties.e[c2]->IsOutput() && CheckForward(node2, node->properties.e[c2]->connections.e[c3])) 
+						dir = 1;
+					else if (node->properties.e[c2]->IsInput() && CheckBackward(node2, node->properties.e[c2]->connections.e[c3]))
+						dir = 1;
+					if (dir) break;
+				}
+			}
+
+			if (!dir) {
+				 //don't seem to have direct connection, push up or down
+				if (node2->y+node2->height/2 < node->y+node->height/2) dir = 2;
+				else dir = -2;
+			}
+
+			if (dir == 1) node2->x = node->x + node->width + gap;
+			else if (dir == -1) node2->x = node->x - gap - node2->width;
+			else if (dir ==  2) node2->y = node->y - gap - node->height;
+			else if (dir == -2) node2->y = node->y + node->height + gap;
+
+			NoOverlap(node2, gap);
 
 			num_adjusted++;
 		}
@@ -1069,8 +1091,14 @@ int NodeGroup::NoOverlap(NodeBase *which, double gap)
 	return num_adjusted;
 }
 
-/*! Use when connecting forward to node via connection. Traverse forwards through connection,
- * and node should not be found. Return 0 if not found, or 1 for found.
+/*! Use when connecting forward to node via connection, to see if there are occurences of node.
+ * It is assumed that there are NO cyclic loops involving any other nodes.
+ * Also assumed that connection->from != node.
+ *
+ * If node == connection.to, then return 1. Next recurse through each property of
+ * connection.to.
+ *
+ * Return 0 if not found, or 1 for found.
  */
 int NodeGroup::CheckForward(NodeBase *node, NodeConnection *connection)
 {
@@ -1096,6 +1124,7 @@ int NodeGroup::CheckForward(NodeBase *node, NodeConnection *connection)
 
 /*! Use when connecting backward to node via connection. Traverse backwards through connection,
  * and node should not be found. Return 0 if not found, or 1 for found.
+ * The opposite of CheckForward.
  */
 int NodeGroup::CheckBackward(NodeBase *node, NodeConnection *connection)
 {
@@ -1108,7 +1137,7 @@ int NodeGroup::CheckBackward(NodeBase *node, NodeConnection *connection)
 	if (check == node) return 1;
 	for (int c=0; c<check->properties.n; c++) {
 		prop = check->properties.e[c];
-		if (prop->IsInput()) continue;
+		if (prop->IsOutput()) continue;
 
 		for (int c2=0; c2<prop->connections.n; c2++) {
 			conn = prop->connections.e[c2];

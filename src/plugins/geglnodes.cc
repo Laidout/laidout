@@ -336,12 +336,18 @@ NodeGroup* GeglNodesToLaidoutNodes(GeglNode *gegl, NodeGroup *parent, bool child
 	GSList *children = gegl_node_get_children(gegl);
 
 	RefPtrStack<NodeBase> nodes;
-	if (!parent) parent = new NodeGroup;
+	if (!parent) {
+		parent = new NodeGroup;
+		parent->InstallColors(new NodeColors(), 1);
+		parent->colors->Font(anXApp::app->defaultlaxfont, 0);
+	}
 
 	 //first, create a NodeBase to correspond to the child's operation
 	for (GSList *child = children; child; child = child->next) {
 		//*** //need to translate the properties out of gegl into laidout
 		GeglLaidoutNode *newnode = new GeglLaidoutNode((GeglNode*)child->data);
+		newnode->InstallColors(parent->colors, 0);
+		newnode->Wrap();
 		nodes.push(newnode);
 		parent->nodes.push(newnode);
 		newnode->dec_count();
@@ -383,7 +389,7 @@ NodeGroup* GeglNodesToLaidoutNodes(GeglNode *gegl, NodeGroup *parent, bool child
 						if (toprop) parent->Connect(fromprop, toprop);
 						//if (toprop) parent->Connect(glonode, to, fromprop, toprop);
 						else {
-							DBG cerr << " *** warning! couldn't find a to property "<<consumerpads[c3]<<" on "<<glonode->Label()<<endl;
+							DBG cerr << " *** warning! couldn't find a to property "<<consumerpads[c3]<<" on "<<(to?to->Label():"(none)")<<" from "<<glonode->Label()<<endl;
 						}
 					}
 					g_free(consumers);
@@ -393,6 +399,18 @@ NodeGroup* GeglNodesToLaidoutNodes(GeglNode *gegl, NodeGroup *parent, bool child
 			}
 			g_strfreev(padnames);
 		}
+	}
+
+	for (int c=0; c<nodes.n; c++) {
+//		//reparent?
+//		if (GeglLaidoutNode::masternode == NULL) {
+//			 //this is an arbitrary total parent to all kids
+//			GeglLaidoutNode::masternode = gegl_node_new();
+//		}
+//		gegl_node_add_child(masternode, nodes.e[c]->gegl);
+
+		//parent->NoOverlap(nodes.e[c], 2*parent->colors->font->textheight());
+		parent->NoOverlap(nodes.e[c], 20);
 	}
 
 	g_slist_free(children);
@@ -1139,7 +1157,7 @@ int GeglNodesPlugin::Initialize()
 	//---------------TEST STUFF
 	DBG cerr <<"---start testing gegl xml"<<endl;
 	ErrorLog log;
-	GeglNode *gnode = XMLFileToGeglNodes("test-gegl2.xml", &log);
+	GeglNode *gnode = XMLFileToGeglNodes("test-gegl.xml", &log);
 	if (gnode) {
 
 		//GSList *list = gegl_node_get_children(gnode);
@@ -1149,6 +1167,9 @@ int GeglNodesPlugin::Initialize()
 		if (group) {
 			DBG cerr <<"xml to lo nodes:"<<endl;
 			group->dump_out(stdout, 2, 0, NULL);
+			FILE *f = fopen("nodes-TEMP-gegl.nodes", "w");
+			group->dump_out(f, 2, 0, NULL);
+			fclose(f);
 			group->dec_count();
 		}
 
