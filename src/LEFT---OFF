@@ -181,40 +181,46 @@ node editor NodeInterface nodes:
   gegl nodes:
     some process actions bog everything down like overlay a crop with a non-cropped input.. need a check for unbounded nodes before process
     make sure deleting/rearranging nodes correctly removes gegl connections
-	load in graph xml
 	save gegl graph to xml
     inkscape filter read in
 	make sure input/outputs can translate from other data types
 	need protection against unknown gegl ops
-	tooltips for operation, not just properties
 	searching via categories, not just the name. gegl ops have name, title, description, categories, license, even source!!
+	DONE load in graph xml
     DONE process on a crop after change a value crash? need to trace
 	DONE make process optional
+  node browser
+	tooltips for operation, not just properties
+    in menu, so many nodes, need way to classify favorites, maybe custom arrangements of menu
+      progressive search
+  save needs to remember file name per loader, plus default file
+  no overlap needs to stack siblings as nicely as possible
   loading needs to check for name collisions
   rename nodes
   numbers need slide change: specify add or zoom stepping
   undo redo
   image object creation node, tie node output to a custom LaxImage importer (the proof of concept node for 0.097)
-  finish implementing no cycle check
-  type to search in add node menu
   need a little triple bar triangle in lower right corner to resize preview size. change preview size on all selected
   nodes need preview images as necessary: need to preview non-sinks
   view mode: all collapsed,  all collapsed except preview,  expanded no preview,  expanded with preview
   duplicate nodes
   load something already loaded makes dups of everything.. need to check for name collision!!
   groups
+    linked vs appended node groups, to allow mass changing of particular effects
+    node libraries: nodes as resources
   auto shift on connection
-  node libraries: nodes as resources
-  jump to link under mouse
-  node magnifier for easier browsing when otherwise zoomed way out
+  auto connect when dragging nodes.. needs parsing of compatible properties
+  view area things:
+    jump to link under mouse
+    node magnifier for easier browsing when otherwise zoomed way out
+    toggle show only selected nodes?
   exec paths
   make sure entire nodes don't go totally offscreen
   scriptify node graph
   deferred update when massive operations, maybe highlight nodes in yellow?
-  toggle show only selected nodes
   color code pipes by value type, color: yellow, number: gray, vector: purple
   need better styling.. too much is hardcoded. problems later with high dpi screens
-  so many nodes, need way to classify favorites, maybe custom arrangements of menu
+  finish implementing no cycle check: on load in could be a crash magnet currently if constructed with loops
 
   DONE node resize needs mouseover for edges
   DONE select all/deselect with 'a'
@@ -223,14 +229,24 @@ node editor NodeInterface nodes:
   DONE hover tips for props on collapsed nodes
   DONE clear up IsInput()/IsOutput()
 
+  svg/inkscape specific filter interface, io passthrough
   gmic nodes
   graphicsmagick nodes
+  antiprism nodes
+  examine blender for compatibility
+  examine godot for compatibility
+  examine imgflo for compatibility
+  examine Natron for compatibility
+  examine pure data for compatibility
+  any crossover with mypaint brushes or krita???
 
   viewer node, resizable
   image from file node
   curve node
   simplex noise node
+  pipe splitter node
   frames
+    have visible/togglable comment
     drag out a rectangle
 	  if any nodes in rect, bind them and shrinkwrap frame 
 	  if no nodes in rect, just use dragged area for bounds
@@ -243,6 +259,8 @@ node editor NodeInterface nodes:
 	expression must result in a hash, which must map to defined output properties
 	scriptify nodes
 	nodify script
+	use PlainText objects
+	edit text externally or in different text editor frame
   vector node:
     separate xyz
 	combine xyz
