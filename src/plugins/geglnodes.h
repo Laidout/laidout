@@ -31,7 +31,7 @@ namespace GeglNodesPluginNS {
 class GeglLaidoutNode : public Laidout::NodeBase
 {
   protected:
-	Laxkit::MenuInfo *op;
+	Laxkit::MenuItem *op;
 	int IsSaveNode();
 	int AutoProcess();
 

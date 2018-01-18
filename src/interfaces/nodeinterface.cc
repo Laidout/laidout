@@ -26,6 +26,7 @@
 #include "nodeinterface.h"
 #include "../utils.h"
 #include "../version.h"
+#include "../utils.h"
 
 #include <lax/laxutils.h>
 #include <lax/bezutils.h>
@@ -892,6 +893,24 @@ int NodeBase::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
 /*! Static keeper of default node factory.
  */
 Laxkit::SingletonKeeper NodeGroup::factorykeeper;
+
+/*! Static stack of node loaders.
+ */
+Laxkit::RefPtrStack<ObjectIO> NodeGroup::loaders;
+
+int NodeGroup::InstallLoader(ObjectIO *loader, int absorb_count)
+{
+	int status = loaders.push(loader);
+	if (absorb_count) loader->dec_count();
+	return status;
+}
+
+int NodeGroup::RemoveLoader(ObjectIO *loader)
+{
+	return loaders.remove(loaders.findindex(loader));
+}
+
+
 
 /*! Return the current default node factory. If the default is null, then make a new default if create==true.
  */
@@ -1860,18 +1879,20 @@ NodeInterface::NodeInterface(anInterface *nowner, int nid, Displayer *ndp)
 	node_factory = NodeGroup::NodeFactory(true);
 	node_factory->inc_count();
 
-	nodes=NULL;
 
-	lasthover=-1;
-	lasthoverslot=-1;
-	lasthoverprop=-1;
-	lastconnection=-1;
-	hover_action=NODES_None;
-	showdecs=1;
-	needtodraw=1;
-	font = app->defaultlaxfont;
+	nodes          = NULL;
+	node_menu      = NULL;
+	lasthover      = -1;
+	lasthoverslot  = -1;
+	lasthoverprop  = -1;
+	lastconnection = -1;
+	lastmenuindex  = -1;
+	hover_action   = NODES_None;
+	showdecs       = 1;
+	needtodraw     = 1;
+	lastsave       = newstr("some.nodes");
+	font           = app->defaultlaxfont;
 	font->inc_count();
-	lastsave = newstr("some.nodes");
 	defaultpreviewsize = 50; //pixels
 
 	color_controls.rgbf(.7,.5,.7,1.);
@@ -1882,12 +1903,13 @@ NodeInterface::NodeInterface(anInterface *nowner, int nid, Displayer *ndp)
 	viewport_bounds.setbounds(0.,1.,0.,1.); // viewport_bounds is always fraction of actual viewport bounds
 	vp_dragpad = 40; //screen pixels
 
-	sc=NULL; //shortcut list, define as needed in GetShortcuts()
+	sc = NULL; //shortcut list, define as needed in GetShortcuts()
 }
 
 NodeInterface::~NodeInterface()
 {
 	if (nodes) nodes->dec_count();
+	if (node_menu) node_menu->dec_count();
 	if (font) font->dec_count();
 	if (node_factory) node_factory->dec_count();
 	if (sc) sc->dec_count();
@@ -1985,15 +2007,34 @@ Laxkit::MenuInfo *NodeInterface::ContextMenu(int x,int y,int deviceid, Laxkit::M
 
 	menu->AddItem(_("Add node..."), NODES_Add_Node);
 
-	if (nodes && nodes->nodes.n) {
-		menu->AddItem(_("Save nodes..."), NODES_Save_Nodes);
-		menu->AddItem(_("Load nodes..."), NODES_Load_Nodes);
-	}
-
 	if (selected.n) {
 		menu->AddItem(_("Show previews"), NODES_Show_Previews);
 		menu->AddItem(_("Hide previews"), NODES_Hide_Previews);
 	}
+
+
+	menu->AddItem(_("Save nodes..."), NODES_Save_Nodes);
+	menu->AddItem(_("Load nodes..."), NODES_Load_Nodes);
+
+	if (NodeGroup::loaders.n) {
+		menu->AddSep();
+		char scratch[500];
+		for (int c=0; c<NodeGroup::loaders.n; c++) {
+			if (NodeGroup::loaders.e[c]->CanImport(NULL)) {
+				sprintf(scratch, _("Load with %s..."), NodeGroup::loaders.e[c]->VersionName());
+				menu->AddItem(scratch, NODES_Load_With_Loader, LAX_OFF, c);
+			}
+		}
+		if (nodes) {
+			for (int c=0; c<NodeGroup::loaders.n; c++) {
+				if (NodeGroup::loaders.e[c]->CanExport(NULL)) {
+					sprintf(scratch, _("Save with %s..."), NodeGroup::loaders.e[c]->VersionName());
+					menu->AddItem(scratch, NODES_Save_With_Loader, LAX_OFF, c);
+				}
+			}
+		}
+	}
+
 
 	return menu;
 }
@@ -2003,11 +2044,16 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
     if (!strcmp(mes,"menuevent")) {
         const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
         int action = s->info2; //id of menu item
+		int info   = s->info4;
 
         if (   action == NODES_Add_Node
 			|| action == NODES_Save_Nodes
 			|| action == NODES_Load_Nodes
 			) {
+			PerformAction(action);
+
+		} else if (action == NODES_Load_With_Loader || action == NODES_Save_With_Loader) {
+			lastmenuindex = info;
 			PerformAction(action);
 		}
 
@@ -2154,9 +2200,64 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 		makestr(lastsave, s->str);
 		needtodraw=1;
 		return 0;
+
+	} else if (!strcmp(mes,"loadwithloader")) {
+        const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
+		if (isblank(s->str)) return 0;
+
+		ObjectIO *loader = (lastmenuindex >=0 && lastmenuindex < NodeGroup::loaders.n ? NodeGroup::loaders.e[lastmenuindex] : NULL);
+		if (!loader) {
+			PostMessage(_("Could not find loader."));
+			return 0;
+		}
+
+		NodeGroup *group = NULL;
+		anObject *obj_ret = NULL;
+		ErrorLog log;
+		int status = loader->Import(s->str, &obj_ret, nodes, log);
+		group = dynamic_cast<NodeGroup*>(obj_ret);
+
+		if (status) {
+			 //there were errors
+			NotifyGeneralErrors(&log);
+			if (obj_ret && obj_ret != nodes) group->dec_count();
+
+		} else {
+			if (!nodes) {
+				 //group should be a brand new NodeGroup.
+				nodes = group;
+				if (!nodes->colors) {
+					nodes->InstallColors(new NodeColors, true);
+					nodes->colors->Font(font, false);
+				}
+
+			}
+			//else  should be all done!
+
+		}
+
+		makestr(lastsave, s->str);
+		needtodraw=1;
+		return 0;
+
+	} else if (!strcmp(mes,"loadwithloader")) {
+		PostMessage("*** Need to implement save with loader!!");
+		return 0;
 	}
 
 	return 1; //event not absorbed
+}
+
+void NodeInterface::RebuildNodeMenu()
+{
+	if (node_menu) node_menu->dec_count();
+	node_menu = new MenuInfo;
+
+	ObjectFactoryNode *type;
+	for (int c=0; c<node_factory->types.n; c++) {
+		type = node_factory->types.e[c];
+		node_menu->AddDelimited(type->name); //, '/', 0, c);
+	}
 }
 
 ///*! Draw an open path such that first point is BG() and last point is FG().
@@ -2355,16 +2456,18 @@ int NodeInterface::Refresh()
 		double y = node->y+th*1.5;
 
 		 //draw preview
-		//if (node->collapsed == 0) {
-			if (node->UsesPreview()) {
-				 //assume we want to render the preview at actual pixel size
-				//double ph = (node->width-th)*node->total_preview->h()/node->total_preview->w();
-				double ph = node->total_preview->h();
-				double pw = node->total_preview->w();
-				dp->imageout(node->total_preview, node->x+node->width/2-pw/2, node->y+th*1.15, pw, ph);
-				y += ph;
-			}
-		//}
+		if (node->UsesPreview()) {
+			 //assume we want to render the preview at actual pixel size
+			//double ph = (node->width-th)*node->total_preview->h()/node->total_preview->w();
+			double ph = node->total_preview->h();
+			double pw = node->total_preview->w();
+			dp->imageout(node->total_preview, node->x+node->width/2-pw/2, node->y+th*1.15+ph, pw, -ph);
+			dp->LineWidthScreen(1);
+			dp->NewFG(coloravg(fg->Pixel(),bg->Pixel(),.5));
+			dp->drawrectangle(node->x+node->width/2-pw/2, node->y+th*1.15, pw, ph, 0);
+			dp->NewFG(fg);
+			y += ph;
+		}
 
 		 //draw ins and outs
 		NodeProperty *prop;
@@ -2675,6 +2778,17 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty)
 				}
 
 				if (*overpropslot != -1) *overproperty = -1;
+			}
+
+			 //check for preview hover things
+			if (*overpropslot == -1 && node->UsesPreview()) {
+				if (   p.x >= node->x + node->width/2 + node->total_preview->w() - th
+					&& p.x <= node->x + node->width/2 + node->total_preview->w()
+					&& p.y >= node->y + th*1.15
+					&& p.y <= node->y + th*2.15) {
+				  *overpropslot = NHOVER_PreviewResize;
+				  if (*overpropslot != -1) *overproperty = -1;
+				}
 			}
 			return c; 
 		}
@@ -3355,6 +3469,8 @@ Laxkit::ShortcutHandler *NodeInterface::GetShortcuts()
     sc->Add(NODES_Add_Node,       'A',ShiftMask,  0, "AddNode"       , _("Add Node"       ),NULL,0);
     sc->Add(NODES_Delete_Nodes,   LAX_Bksp,0,     0, "DeleteNode"    , _("Delete Node"    ),NULL,0);
 	sc->AddShortcut(LAX_Del,0,0,  NODES_Delete_Nodes);
+    sc->Add(NODES_No_Overlap,     'o',0,          0, "NoOverlap"     , _("NoOverlap"      ),NULL,0);
+    sc->Add(NODES_Toggle_Collapse,'c',0,          0, "ToggleCollapse", _("ToggleCollapse" ),NULL,0);
 
 
     sc->Add(NODES_Save_Nodes,      's',0,  0, "SaveNodes"      , _("Save Nodes"     ),NULL,0);
@@ -3396,19 +3512,13 @@ int NodeInterface::PerformAction(int action)
 			lastpos.set(mx,my);
 		}
 
-		MenuInfo *menu=new MenuInfo;
-		ObjectFactoryNode *type;
-		for (int c=0; c<node_factory->types.n; c++) {
-			type = node_factory->types.e[c];
-			menu->AddDelimited(type->name); //, '/', 0, c);
-		}
-
+		if (!node_menu) RebuildNodeMenu();
 
         PopupMenu *popup=new PopupMenu(NULL,_("Add node..."), 0,
                         0,0,0,0, 1,
                         object_id,"addnode",
                         0, //mouse to position near?
-                        menu,1, NULL,
+                        node_menu,0, NULL,
                         MENUSEL_LEFT|MENUSEL_CHECK_ON_LEFT|MENUSEL_SEND_PATH);
         popup->pad=5;
         popup->WrapToMouse(0);
@@ -3440,11 +3550,24 @@ int NodeInterface::PerformAction(int action)
 		needtodraw=1;
 		return 0;
 
+	} else if (action==NODES_No_Overlap) {
+		if (!nodes) return 0;
+		for (int c=0; c<selected.n; c++) {
+			nodes->NoOverlap(selected.e[c], 1.5*nodes->colors->font->textheight());
+		}
+		needtodraw=1;
+		return 0;
+
+	} else if (action==NODES_Toggle_Collapse) {
+		ToggleCollapsed();
+		needtodraw=1;
+		return 0;
+
 	} else if (action==NODES_Show_Previews) {
 		for (int c=0; c<selected.n; c++) {
 			selected.e[c]->show_preview = true;
-			if (selected.e[c]->collapsed) selected.e[c]->WrapCollapsed();
-			else selected.e[c]->Wrap();
+			selected.e[c]->UpdatePreview();
+			selected.e[c]->Wrap();
 		}
 		needtodraw=1;
 		return 0;
@@ -3452,22 +3575,42 @@ int NodeInterface::PerformAction(int action)
 	} else if (action==NODES_Hide_Previews) {
 		for (int c=0; c<selected.n; c++) {
 			selected.e[c]->show_preview = false;
-			if (selected.e[c]->collapsed) selected.e[c]->WrapCollapsed();
-			else selected.e[c]->Wrap();
+			selected.e[c]->Wrap();
 		}
 		needtodraw=1;
 		return 0;
 
-	} else if (action==NODES_Save_Nodes) {
+	} else if (action == NODES_Save_Nodes) {
 		if (!nodes) return 0;
 		app->rundialog(new FileDialog(NULL,"Save nodes",_("Save nodes"),ANXWIN_REMEMBER|ANXWIN_CENTER,0,0,0,0,0,
 						                  object_id,"savenodes",FILES_SAVE, lastsave));
 		return 0;
 
-	} else if (action==NODES_Load_Nodes) {
+	} else if (action == NODES_Load_Nodes) {
 		app->rundialog(new FileDialog(NULL,"Load nodes",_("Load Nodes"),ANXWIN_REMEMBER|ANXWIN_CENTER,0,0,0,0,0,
 	                                          object_id,"loadnodes",FILES_OPEN_ONE, lastsave));
 		return 0;
+
+	} else if (action == NODES_Save_With_Loader || action == NODES_Load_With_Loader) {
+		ObjectIO *loader = (lastmenuindex >=0 && lastmenuindex < NodeGroup::loaders.n ? NodeGroup::loaders.e[lastmenuindex] : NULL);
+		if (!loader) {
+			PostMessage(_("Could not find loader."));
+			return 0;
+		}
+
+		char scratch[500];
+		if (action == NODES_Save_With_Loader) {
+			if (!nodes) return 0;
+			sprintf(scratch, _("Save with %s..."), loader->VersionName());
+			app->rundialog(new FileDialog(NULL,"Save nodes", scratch, ANXWIN_REMEMBER|ANXWIN_CENTER,0,0,0,0,0,
+										  object_id, "savewithloader", FILES_SAVE, lastsave));
+		} else {
+			sprintf(scratch, _("Load with %s..."), loader->VersionName());
+			app->rundialog(new FileDialog(NULL, "Load nodes", scratch, ANXWIN_REMEMBER|ANXWIN_CENTER,0,0,0,0,0,
+										  object_id, "loadwithloader", FILES_OPEN_ONE, lastsave));
+		}
+		return 0;
+
 	}
 
 	return 1;

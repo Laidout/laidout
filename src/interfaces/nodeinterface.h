@@ -32,6 +32,7 @@
 #include <lax/singletonkeeper.h>
 
 #include "../calculator/values.h"
+#include "../filetypes/objectio.h"
 
 
 using namespace LaxFiles;
@@ -186,7 +187,7 @@ class NodeBase : public Laxkit::anObject,
 {
   public:
 	 //state
-	char *Name; //displayed name (id is Id())
+	char *Name; //displayed name (see Label())
 	char *type; //non translated type, like "Value", or "Math"
 	ObjectDef *def; //optional
 
@@ -209,6 +210,7 @@ class NodeBase : public Laxkit::anObject,
 	virtual int InstallColors(NodeColors *newcolors, bool absorb_count);
 	virtual const char *Label() { return Name; }
 	virtual const char *Label(const char *nlabel);
+	virtual const char *Description() { return NULL; }
 	virtual const char *ScriptName() { return object_idstr; }
 	virtual const char *Type() { return type; }
 	virtual ObjectDef *GetDef() { return def; }
@@ -253,6 +255,9 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	virtual int CheckBackward(NodeBase *node, NodeConnection *connection);
 
   public:
+	static Laxkit::RefPtrStack<ObjectIO> loaders;
+	static int InstallLoader(ObjectIO *loader, int absorb_count);
+	static int RemoveLoader(ObjectIO *loader);
 	static Laxkit::ObjectFactory *NodeFactory(bool create=true);
 	static void SetNodeFactory(Laxkit::ObjectFactory *newnodefactory);
 
@@ -332,6 +337,10 @@ enum NodeInterfaceActions {
 	NODES_Resize_Bottom_Right,
 	NODES_Center,
 	NODES_Center_Selected,
+	NODES_No_Overlap,
+	NODES_Toggle_Collapse,
+	NODES_Save_With_Loader,
+	NODES_Load_With_Loader,
 	NODES_Clear,
 
 	NODES_Duplicate,
@@ -349,6 +358,19 @@ enum NodeInterfaceActions {
 	NODES_MAX
 };
 
+class NodeViewArea : public DoubleRectangle
+{
+  public:
+	NodeGroup *group;
+	flatpoint anchor;
+	bool is_anchored;
+	//bool is_minimized;
+	Laxkit::Affine m;
+
+	NodeViewArea();
+	virtual ~NodeViewArea();
+};
+
 class NodeInterface : public LaxInterfaces::anInterface
 {
   protected:
@@ -357,6 +379,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 	Laxkit::ObjectFactory *node_factory; //usually, convenience cast to return of NodeBase::NodeFactory()
 
 	Nodes *nodes;
+	Laxkit::MenuInfo *node_menu;
+	virtual void RebuildNodeMenu();
 
 	Laxkit::PtrStack<NodeGroup> grouptree;
 	Laxkit::RefPtrStack<NodeBase> selected;
@@ -364,6 +388,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	int hover_action;
 	int lasthover, lasthoverslot, lasthoverprop, lastconnection;
 	flatpoint lastpos;
+	int lastmenuindex;
 
 
 	//Laxkit::Affine transform; //from nodes to screen coords

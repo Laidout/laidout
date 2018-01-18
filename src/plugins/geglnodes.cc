@@ -347,11 +347,11 @@ NodeGroup* GeglNodesToLaidoutNodes(GeglNode *gegl, NodeGroup *parent, bool child
 		//*** //need to translate the properties out of gegl into laidout
 		GeglLaidoutNode *newnode = new GeglLaidoutNode((GeglNode*)child->data);
 		newnode->InstallColors(parent->colors, 0);
-		newnode->Wrap();
 		nodes.push(newnode);
 		parent->nodes.push(newnode);
 		newnode->dec_count();
 	}
+
 
 	 //once we have a list of NodeBases, we need to connect them as per the actual gegl connections
 	GeglNode *gnode;
@@ -401,6 +401,10 @@ NodeGroup* GeglNodesToLaidoutNodes(GeglNode *gegl, NodeGroup *parent, bool child
 		}
 	}
 
+	for (int c=0; c<nodes.n; c++) {
+		nodes.e[c]->UpdatePreview();
+		nodes.e[c]->Wrap();
+	}
 	for (int c=0; c<nodes.n; c++) {
 //		//reparent?
 //		if (GeglLaidoutNode::masternode == NULL) {
@@ -508,7 +512,7 @@ int GeglLaidoutNode::Update()
 		 //set it in the node
 
 		const char *ptype = NULL;
-		MenuItem *propspec = op->e(c);
+		MenuItem *propspec = op->GetSubmenu()->e(c);
 		if (!propspec) {
 			if (connection) {
 				 //is an input pad, we need to make sure it's connected
@@ -602,20 +606,23 @@ int GeglLaidoutNode::GetRect(Laxkit::DoubleBBox &box)
  */
 int GeglLaidoutNode::UpdatePreview()
 {
-	if (!IsSaveNode()) return 0; //only use processable nodes for now
+	//if (!IsSaveNode()) return 0; //only use processable nodes for now
 
 
 	//connect an output proxy to whatever's at the input pad
 
-	GeglNode *prev = gegl_node_get_producer(gegl, "input", NULL);
-	if (!prev) return 0;
+	//GeglNode *prev = gegl_node_get_producer(gegl, "input", NULL);
+	//if (!prev) return 0;
 
-	GeglNode *proxy = gegl_node_get_output_proxy(prev, "output");
+	//GeglNode *proxy = gegl_node_get_output_proxy(prev, "output");
 
-	GeglRectangle rect = gegl_node_get_bounding_box (proxy);
-	//if (rect.width <=0 || rect.height <= 0) return 0;
-	if (rect.width <=0 || rect.height <= 0) {
-		rect.width = 100;
+	GeglRectangle rect = gegl_node_get_bounding_box (gegl);
+	//GeglRectangle rect = gegl_node_get_bounding_box (proxy);
+	if (rect.width <=0 || rect.height <= 0 || rect.width > 100000 || rect.height > 100000) {
+		 //probably unbounded, arbitrarily select a little window onto the data
+		rect.x      = 0;
+		rect.y      = 0;
+		rect.width  = 100;
 		rect.height = 100;
 	}
 
@@ -623,15 +630,15 @@ int GeglLaidoutNode::UpdatePreview()
 	//double aspect = (double)rect.width / rect.height;
 	int bufw = rect.width;
 	int bufh = rect.height;
-	int maxwidth = width;
-	int maxheight =  (colors ? colors->font->textheight() : 50);
+	int maxwidth = (width > 0 ? width : 3*colors->font->textheight());
+	int maxheight = (total_preview ? total_preview->h() : (colors ? 3*colors->font->textheight() : 50));
 
 	 //first determine a smallish size for the preview image, adjust total_preview if necessary.
 	 //fit inside a rect this->width x maxdim
 	int ibufw = bufw, ibufh = bufh;
 	double scale  = (double)maxwidth  / bufw;
 	double scaley = (double)maxheight / bufh;
-	if (scaley < scale) {
+	if (scaley > scale) {
 		scaley = scale;
 	}
 	ibufw = bufw * scale;
@@ -660,7 +667,8 @@ int GeglLaidoutNode::UpdatePreview()
 	orect.width  = ibufw;
 	orect.height = ibufh;
 
-	gegl_node_blit (proxy,
+	//gegl_node_blit (proxy,
+	gegl_node_blit (gegl,
 					ibufw/(double)rect.width,
 					&orect,
 					babl_format("R'G'B'A u8"),
@@ -695,7 +703,7 @@ int GeglLaidoutNode::Disconnected(NodeConnection *connection, int to_side)
 		 //remove something connected to an input pad
 		int propindex = properties.findindex(connection->toprop);
 		if (propindex < 0) return 0; // not found!
-		if (propindex >= op->n()) {
+		if (propindex >= op->GetSubmenu()->n()) {
 			//is not a simpleproperty, but an input or output pad
 			GeglLaidoutNode *othernode = dynamic_cast<GeglLaidoutNode*>(connection->from);
 			if (!othernode) return 0; // *** for now assume it has to be a gegl connection
@@ -713,7 +721,7 @@ int GeglLaidoutNode::Connected(NodeConnection *connection)
 	if (connection->to == this) {
 		int propindex = properties.findindex(connection->toprop);
 		if (propindex < 0) return 0; // not found!
-		if (propindex >= op->n()) {
+		if (propindex >= op->GetSubmenu()->n()) {
 			//is not a simple property, but an input or output pad
 			GeglLaidoutNode *othernode = dynamic_cast<GeglLaidoutNode*>(connection->from);
 			if (!othernode) return 0; // *** for now assume it has to be a gegl connection
@@ -796,8 +804,6 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 
 	makestr(operation, oper);
 	makestr(Name, operation);
-	makestr  (type, "Gegl/");
-	appendstr(type, operation);
 
 //	if (gegl && strcmp(operation, gegl_node_get_operation(gegl))) {
 //		 //remove if operation mismatch... not sure what changing the op through gegl does to existing properties and connections
@@ -815,13 +821,25 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 								NULL);
 
 	 //set up non input/output properties
-	op = opitem->GetSubmenu();
+	op = opitem;
+	MenuInfo *opmenu = op->GetSubmenu();
 	MenuItem *prop;
 	const char *proptype;
 	Value *v;
 
-	for (int c=0; c<op->n(); c++) {
-		prop = op->e(c);
+	makestr  (type, "Gegl/");
+	const char *categories = op->GetDetail(2)->name;
+	if (!isblank(categories)) {
+		//use final category
+		const char *cat = strrchr(categories, ':');
+		if (cat) cat++; else cat = categories;
+		appendstr(type, cat);
+		appendstr(type, "/");
+	}
+	appendstr(type, operation);
+
+	for (int c=0; c<opmenu->n(); c++) {
+		prop = opmenu->e(c);
 		proptype = prop->GetString(1);
 		v = NULL;
 
@@ -965,7 +983,7 @@ Laxkit::MenuInfo *GetGeglOps()
 
     guint   n_operations;
     gchar **operations = gegl_list_operations (&n_operations);
-	MenuItem *item;
+	MenuItem *item, *item_compat;
 
 	DBG cerr <<"gegl operations:"<<endl;
 
@@ -973,27 +991,47 @@ Laxkit::MenuInfo *GetGeglOps()
         DBG cerr << "  operator: " << (operations[i]?operations[i]:"?") << endl;
 
 		menu->AddItem(operations[i], i, -1); 
-		item = menu->e(menu->n()-1);
+		item = menu->Top();
 		item->info = -1;
 
 		const char *compat_name = gegl_operation_get_key(operations[i], "compat-name");
+		item_compat = NULL;
 		if (compat_name) {
 			DBG cerr <<"compat-name for "<<operations[i]<<": "<<compat_name<<endl;
 
 			menu->AddItem(compat_name, i, -1); 
-			item = menu->e(menu->n()-1);
-			item->info = -1;
+			item_compat = menu->Top();
+			item_compat->info = -1;
 		}
 
 		
 		guint nkeys = 0;
 		gchar **keys = gegl_operation_list_keys (operations[i], &nkeys);
+		const gchar *categories = NULL;
+		const gchar *description = NULL;
 		for (guint c=0; c<nkeys; c++) {
 			const char *value = gegl_operation_get_key(operations[i], keys[c]);
+
 			if (!strcmp(keys[c], "source")) value="...code...";
 			DBG if (!strcmp(keys[c], "cl-source")) cerr <<"    operation key: "<<keys[c]<<": "<<"(...source code...)"<<endl;
 			DBG else cerr <<"    operation key: "<<keys[c]<<": "<<value<<endl;
+
+			if (!strcmp(keys[c], "categories")) {
+				categories = value;
+			} else if (!strcmp(keys[c], "description")) {
+				description = value;
+			//} else if (!strcmp(keys[c], "title")) { //localized display name?
+			}
 		}
+
+		 //add description as first detail
+		item->AddDetail(description ? description : NULL);
+		if (item_compat) item_compat->AddDetail(description ? description : NULL);
+
+		 //add categories as second detail
+		item->AddDetail(categories ? categories : NULL);
+		if (item_compat) item_compat->AddDetail(categories ? categories : NULL);
+
 		g_free(keys);
 
 		//GType gtype = gegl_operation_gtype_from_name(operations[i]);
@@ -1025,12 +1063,31 @@ Laxkit::anObject *newGeglLaidoutNode(int p, Laxkit::anObject *ref)
 
 void RegisterNodes(Laxkit::ObjectFactory *factory)
 {
-	MenuInfo *menu = GetGeglOps();
+	MenuInfo *ops = GetGeglOps();
 
 	char str[200];
-	for (int c=0; c<menu->n(); c++) {
-		sprintf(str, "Gegl/%s", menu->e(c)->name);
-		factory->DefineNewObject(getUniqueNumber(), str, newGeglLaidoutNode, NULL, c);
+	char *categories;
+	MenuItem *op;
+	for (int c=0; c<ops->n(); c++) {
+		op = ops->e(c);
+		categories = op->GetDetail(2)->name;
+
+		if (isblank(categories)) {
+			sprintf(str, "Gegl/%s", ops->e(c)->name);
+			factory->DefineNewObject(getUniqueNumber(), str, newGeglLaidoutNode, NULL, c);
+
+		} else {
+			int n = 0;
+			char **cats = split(categories, ':', &n);
+
+			for (int c2=0; c2<n; c2++) {
+				if (isblank(cats[c2])) continue;
+
+				sprintf(str, "Gegl/%s/%s", cats[c2], op->name);
+				factory->DefineNewObject(getUniqueNumber(), str, newGeglLaidoutNode, NULL, c);
+			}
+			deletestrs(cats, n);
+		}
 	}
 }
 
@@ -1055,18 +1112,6 @@ GeglNodesPlugin::~GeglNodesPlugin()
 //	}
 
     //gegl_exit ();
-}
-
-/*! Things that need to be done ONLY after Initialize(), but not a destructor.
- */
-void GeglNodesPlugin::Finalize()
-{
-	if (GeglLaidoutNode::masternode != NULL) {
-		g_object_unref (GeglLaidoutNode::masternode);
-		GeglLaidoutNode::masternode = NULL;
-	}
-
-    gegl_exit ();
 }
 
 unsigned long GeglNodesPlugin::WhatYouGot()
@@ -1128,6 +1173,55 @@ const char *GeglNodesPlugin::License()
 	return "GPL3";
 }
 
+class GeglLoader : public Laidout::ObjectIO
+{
+  public:
+	GeglLoader(GeglNodesPlugin *fromplugin) { plugin = fromplugin; }
+	virtual ~GeglLoader() {}
+
+	virtual const char *Author() { return "Laidout"; }
+    virtual const char *FilterVersion() { return "0.1"; }
+
+    virtual const char *Format() { return "xml"; }
+    virtual const char *DefaultExtension()  { return "xml"; }
+    virtual const char *Version() { return "0.1"; }
+    virtual const char *VersionName() { return "Gegl XML"; }
+    virtual ObjectDef *GetObjectDef() { return NULL; }
+
+	virtual int Serializable(int what) { return 0; }
+	virtual int CanImport(const char *file) { return true; } //if null, then return if in theory it can import
+	virtual int CanExport(anObject *object) { return true; } //if null, then return if in theory it can export
+	virtual int Import(const char *file, anObject **object_ret, anObject *context, Laxkit::ErrorLog &log);
+	virtual int Export(const char *file, anObject *object,      anObject *context, Laxkit::ErrorLog &log);
+};
+
+int GeglLoader::Import(const char *file, anObject **object_ret, anObject *context, Laxkit::ErrorLog &log)
+{
+	GeglNode *gnode = XMLFileToGeglNodes(file, &log);
+	if (gnode) {
+		NodeGroup *parent = dynamic_cast<NodeGroup*>(context);
+		NodeGroup *group = GeglNodesToLaidoutNodes(gnode, parent, true, &log);
+		*object_ret = group;
+		g_object_unref (gnode);
+	}
+	return log.Errors();
+}
+
+int GeglLoader::Export(const char *file, anObject *object, anObject *context, Laxkit::ErrorLog &log)
+{
+	NodeGroup *group = dynamic_cast<NodeGroup*>(object);
+	if (!group) {
+		log.AddMessage(_("Object not a NodeGroup in Export"), ERROR_Fail);
+		return 1;
+	}
+
+	DBG cerr << " *** need to implement GeglLoader::Export()!"<<endl;
+	log.AddMessage("need to implement GeglLoader::Export()!!", ERROR_Fail);
+	return 1;
+}
+
+GeglLoader *theloader = NULL;
+
 
 /*! Install stuff.
  */
@@ -1137,11 +1231,12 @@ int GeglNodesPlugin::Initialize()
 
 	if (initialized) return 0;
 
-	// do stuff
 
 	 //initialize gegl
 	gegl_init (NULL,NULL); //(&argc, &argv);
 
+	// WARNING!!! Gegl normally is LGPL3, but some operators are only available as
+	//   part of a GPL3 license. GPL allows about 50 more operations
 	g_object_set (gegl_config (),
                  "application-license", "GPL3",
 			     NULL);
@@ -1150,39 +1245,61 @@ int GeglNodesPlugin::Initialize()
 
 	RegisterNodes(node_factory);
 
+	 //install loader
+	theloader = new GeglLoader(this);
+	Laidout::NodeGroup::InstallLoader(theloader, 0);
+
 	DBG cerr << "GeglNodesPlugin initialized!"<<endl;
 	initialized = 1;
 
 
-	//---------------TEST STUFF
-	DBG cerr <<"---start testing gegl xml"<<endl;
-	ErrorLog log;
-	GeglNode *gnode = XMLFileToGeglNodes("test-gegl.xml", &log);
-	if (gnode) {
-
-		//GSList *list = gegl_node_get_children(gnode);
-		//cerr << "Num nodes as children: "<<g_slist_length(list)<<endl;
-
-		NodeGroup *group = GeglNodesToLaidoutNodes(gnode, NULL, true, &log);
-		if (group) {
-			DBG cerr <<"xml to lo nodes:"<<endl;
-			group->dump_out(stdout, 2, 0, NULL);
-			FILE *f = fopen("nodes-TEMP-gegl.nodes", "w");
-			group->dump_out(f, 2, 0, NULL);
-			fclose(f);
-			group->dec_count();
-		}
-
-
-		//g_slist_free(list);
-		g_object_unref (gnode);
-	}
-	DBG dumperrorlog("gegl read xml test log:", log);
-	DBG cerr <<"---done testing gegl xml"<<endl;
-	//---------------end TEST STUFF
+//	//---------------TEST STUFF
+//	DBG cerr <<"---start testing gegl xml"<<endl;
+//	ErrorLog log;
+//	GeglNode *gnode = XMLFileToGeglNodes("test-gegl.xml", &log);
+//	if (gnode) {
+//
+//		//GSList *list = gegl_node_get_children(gnode);
+//		//cerr << "Num nodes as children: "<<g_slist_length(list)<<endl;
+//
+//		NodeGroup *group = GeglNodesToLaidoutNodes(gnode, NULL, true, &log);
+//		if (group) {
+//			DBG cerr <<"xml to lo nodes:"<<endl;
+//			group->dump_out(stdout, 2, 0, NULL);
+//			FILE *f = fopen("nodes-TEMP-gegl.nodes", "w");
+//			group->dump_out(f, 2, 0, NULL);
+//			fclose(f);
+//			group->dec_count();
+//		}
+//
+//
+//		//g_slist_free(list);
+//		g_object_unref (gnode);
+//	}
+//	DBG dumperrorlog("gegl read xml test log:", log);
+//	DBG cerr <<"---done testing gegl xml"<<endl;
+//	//---------------end TEST STUFF
 
 
 	return 0;
+}
+
+/*! Things that need to be done ONLY after Initialize(), but not a destructor.
+ */
+void GeglNodesPlugin::Finalize()
+{
+	if (GeglLaidoutNode::masternode != NULL) {
+		g_object_unref (GeglLaidoutNode::masternode);
+		GeglLaidoutNode::masternode = NULL;
+	}
+
+	if (theloader) {
+		Laidout::NodeGroup::RemoveLoader(theloader);
+		theloader->dec_count();
+		theloader = NULL;
+	}
+
+    gegl_exit ();
 }
 
 
