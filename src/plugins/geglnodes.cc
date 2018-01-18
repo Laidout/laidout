@@ -606,18 +606,10 @@ int GeglLaidoutNode::GetRect(Laxkit::DoubleBBox &box)
  */
 int GeglLaidoutNode::UpdatePreview()
 {
-	//if (!IsSaveNode()) return 0; //only use processable nodes for now
 
-
-	//connect an output proxy to whatever's at the input pad
-
-	//GeglNode *prev = gegl_node_get_producer(gegl, "input", NULL);
-	//if (!prev) return 0;
-
-	//GeglNode *proxy = gegl_node_get_output_proxy(prev, "output");
+	if (preview_area_height < 0) preview_area_height = 3*colors->font->textheight();
 
 	GeglRectangle rect = gegl_node_get_bounding_box (gegl);
-	//GeglRectangle rect = gegl_node_get_bounding_box (proxy);
 	if (rect.width <=0 || rect.height <= 0 || rect.width > 100000 || rect.height > 100000) {
 		 //probably unbounded, arbitrarily select a little window onto the data
 		rect.x      = 0;
@@ -631,7 +623,7 @@ int GeglLaidoutNode::UpdatePreview()
 	int bufw = rect.width;
 	int bufh = rect.height;
 	int maxwidth = (width > 0 ? width : 3*colors->font->textheight());
-	int maxheight = (total_preview ? total_preview->h() : (colors ? 3*colors->font->textheight() : 50));
+	int maxheight = preview_area_height;
 
 	 //first determine a smallish size for the preview image, adjust total_preview if necessary.
 	 //fit inside a rect this->width x maxdim
@@ -667,7 +659,6 @@ int GeglLaidoutNode::UpdatePreview()
 	orect.width  = ibufw;
 	orect.height = ibufh;
 
-	//gegl_node_blit (proxy,
 	gegl_node_blit (gegl,
 					ibufw/(double)rect.width,
 					&orect,

@@ -193,11 +193,12 @@ class NodeBase : public Laxkit::anObject,
 
 	int collapsed;
 	double fullwidth; //uncollapsed
-	bool show_preview;
 
 	bool deletable;
 
+	bool show_preview;
 	Laxkit::LaxImage *total_preview;
+	double preview_area_height;
 
 	Laxkit::PtrStack<NodeProperty> properties; //includes inputs and outputs
 	std::time_t modtime; //time of last update
@@ -335,6 +336,7 @@ enum NodeInterfaceActions {
 	NODES_Resize_Top_Right,
 	NODES_Resize_Bottom_Left,
 	NODES_Resize_Bottom_Right,
+	NODES_Resize_Preview,
 	NODES_Center,
 	NODES_Center_Selected,
 	NODES_No_Overlap,

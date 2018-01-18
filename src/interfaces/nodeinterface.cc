@@ -398,6 +398,7 @@ NodeBase::NodeBase()
 {
 	Name = NULL;
 	total_preview = NULL;
+	preview_area_height = -1;
 	show_preview = true;
 	colors    = NULL;
 	collapsed = 0;
@@ -521,6 +522,7 @@ int NodeBase::UpdatePreview()
  */
 int NodeBase::Wrap()
 {
+	if (preview_area_height < 0 && colors) preview_area_height = 3*colors->font->textheight();
 	if (collapsed) return WrapCollapsed();
 	return WrapFull();
 }
@@ -586,7 +588,8 @@ int NodeBase::WrapFull()
 
 	 //update link positions
 	height = 1.5*th;
-	if (UsesPreview()) height += total_preview->h();
+	if (UsesPreview()) height += preview_area_height;
+	//if (UsesPreview()) height += total_preview->h();
 	double y = height;
 
 	for (int c=0; c<properties.n; c++) {
@@ -618,7 +621,12 @@ int NodeBase::WrapCollapsed()
 
 	width = 3*th + colors->font->extent(Name,-1);
 	height = th*1.5;
-	if (UsesPreview()) height += total_preview->h();
+	if (UsesPreview()) {
+		height += preview_area_height;
+		//height += total_preview->h();
+		double nw = total_preview->w() * preview_area_height/total_preview->h();
+		if (width < nw) width = nw;
+	}
 
 	NodeProperty *prop;
 	int num_in = 0, num_out = 0;
@@ -685,7 +693,7 @@ int NodeBase::Collapse(int state)
 		 //collapse!
 		collapsed = true;
 		fullwidth = width;
-		WrapCollapsed();
+		Wrap();
 
 	} else if (state==false && state!=collapsed) {
 		 //expand!
@@ -2049,6 +2057,8 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
         if (   action == NODES_Add_Node
 			|| action == NODES_Save_Nodes
 			|| action == NODES_Load_Nodes
+			|| action == NODES_Show_Previews
+			|| action == NODES_Hide_Previews
 			) {
 			PerformAction(action);
 
@@ -2064,7 +2074,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 				|| lasthoverprop>=nodes->nodes.e[lasthover]->properties.n) return 0;
 
         const SimpleMessage *s = dynamic_cast<const SimpleMessage*>(data);
-		if (isblank(s->str)) return  0;
+		if (isblank(s->str) && strcmp(mes,"setpropstring")) return  0;
         char *endptr=NULL;
         double d=strtod(s->str, &endptr);
 		if (endptr==s->str && strcmp(mes,"setpropstring")) {
@@ -2458,15 +2468,13 @@ int NodeInterface::Refresh()
 		 //draw preview
 		if (node->UsesPreview()) {
 			 //assume we want to render the preview at actual pixel size
-			//double ph = (node->width-th)*node->total_preview->h()/node->total_preview->w();
-			double ph = node->total_preview->h();
-			double pw = node->total_preview->w();
-			dp->imageout(node->total_preview, node->x+node->width/2-pw/2, node->y+th*1.15+ph, pw, -ph);
-			dp->LineWidthScreen(1);
+			DoubleRectangle box;
+			dp->imageout_within(node->total_preview, node->x,node->y+th*1.15, node->width, node->preview_area_height, &box, 1);
+			dp->LineWidthScreen(lasthover == c && lasthoverslot == NHOVER_PreviewResize ? 3 : 1);
 			dp->NewFG(coloravg(fg->Pixel(),bg->Pixel(),.5));
-			dp->drawrectangle(node->x+node->width/2-pw/2, node->y+th*1.15, pw, ph, 0);
+			dp->drawrectangle(box.x,box.y,box.width,box.height, 0);
 			dp->NewFG(fg);
-			y += ph;
+			y += node->preview_area_height;
 		}
 
 		 //draw ins and outs
@@ -2782,10 +2790,19 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty)
 
 			 //check for preview hover things
 			if (*overpropslot == -1 && node->UsesPreview()) {
-				if (   p.x >= node->x + node->width/2 + node->total_preview->w() - th
-					&& p.x <= node->x + node->width/2 + node->total_preview->w()
-					&& p.y >= node->y + th*1.15
-					&& p.y <= node->y + th*2.15) {
+				double nw = node->total_preview->w() * node->preview_area_height/node->total_preview->h();
+				if (nw > node->width) nw = node->width;
+				char str[100];
+				sprintf(str, "%f %f", nw, node->width);
+				PostMessage(str);
+
+				double nh = node->total_preview->h();
+				if (nh > node->preview_area_height) nh = node->preview_area_height;
+
+				if (   p.x >= node->x + node->width/2 + nw/2 - th
+					&& p.x <= node->x + node->width/2 + nw/2
+					&& p.y >= node->y + th*1.15 + node->preview_area_height/2 + nh/2 - th
+					&& p.y <= node->y + th*1.15 + node->preview_area_height/2 + nh/2) {
 				  *overpropslot = NHOVER_PreviewResize;
 				  if (*overpropslot != -1) *overproperty = -1;
 				}
@@ -2824,6 +2841,9 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 		selection_rect.minx=selection_rect.maxx=x;
 		selection_rect.miny=selection_rect.maxy=y;
 		needtodraw=1;
+
+	} else if (overnode>=0 && overproperty<0 && overpropslot == NHOVER_PreviewResize) {
+		action = NODES_Resize_Preview;
 
 	} else if (overnode>=0 && overproperty==-1) {
 		 //in a node, but not clicking on a property, so add or remove this node to selection
@@ -2897,6 +2917,7 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 
 		if (action==NODES_Drag_Output) PostMessage(_("Drag output..."));
 		else PostMessage(_("Drag input..."));
+
 	}
 
 	if (action != NODES_None) {
@@ -3172,6 +3193,16 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 			lastconnection=-1;
 		} 
 
+	} else if (action == NODES_Resize_Preview) {
+		NodeBase *node = nodes->nodes.e[lasthover];
+		if (selected.findindex(node) < 0) {
+			node->UpdatePreview();
+		} else {
+			for (int c=0; c<selected.n; c++) {
+				selected.e[c]->UpdatePreview();
+			}
+		}
+		needtodraw=1;
 	}
 
 	hover_action = NODES_None;
@@ -3317,6 +3348,25 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 
 	} else if (action == NODES_Drag_Output) {
 		lastpos.x=x; lastpos.y=y;
+		needtodraw=1;
+		return 0;
+
+	} else if (action == NODES_Resize_Preview) {
+		flatpoint d=nodes->m.transformPointInverse(flatpoint(x,y)) - nodes->m.transformPointInverse(flatpoint(lx,ly));
+
+		NodeBase *node = nodes->nodes.e[lasthover];
+		if (selected.findindex(node) < 0) {
+			node->preview_area_height += d.y;
+			if (node->preview_area_height < node->colors->font->textheight()) node->preview_area_height = node->colors->font->textheight();
+			node->Wrap();
+		} else {
+			for (int c=0; c<selected.n; c++) {
+				node = selected.e[c];
+				node->preview_area_height += d.y;
+				if (node->preview_area_height < node->colors->font->textheight()) node->preview_area_height = node->colors->font->textheight();
+				node->Wrap();
+			}
+		}
 		needtodraw=1;
 		return 0;
 	}
