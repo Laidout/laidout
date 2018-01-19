@@ -78,6 +78,9 @@ NodeColors::NodeColors()
 	fg_edit(.2,.2,.2,1.),
 	bg_edit(.9,.9,.9,1.),
 
+	fg_frame(.2,.2,.2,1.),
+	bg_frame(.65,.65,.65,1.),
+
 	fg_menu(.2,.2,.2,1.),
 	bg_menu(.7,.7,.7,1.),
 
@@ -86,9 +89,9 @@ NodeColors::NodeColors()
 
 	mo_diff(.05)
 {
-	state=0;
-	font=NULL;
-	next=NULL;
+	state = 0;
+	font  = NULL;
+	next  = NULL;
 	slot_radius=.25; //portion of text height
 }
 
@@ -386,6 +389,68 @@ int NodeProperty::SetData(Value *newdata, bool absorb)
 	return 1;
 }
 
+//---------------------------- NodeFrame ------------------------------------
+/*! \class NodeFrame
+ * A kind of node comment to display nodes in a bubble.
+ */
+
+NodeFrame::NodeFrame(NodeGroup *nowner, const char *nlabel, const char *ncomment)
+{
+	owner   = nowner;
+	label   = newstr(nlabel);
+	comment = newstr(ncomment);
+}
+
+NodeFrame::~NodeFrame()
+{
+	delete[] label;
+	delete[] comment;
+}
+
+const char *NodeFrame::Label(const char *nlabel)
+{
+	makestr(label, nlabel);
+	return label;
+}
+
+const char *NodeFrame::Comment(const char *ncomment)
+{
+	makestr(comment, ncomment);
+	return comment;
+}
+
+
+int NodeFrame::AddNode(NodeBase *node)
+{
+	node->AssignFrame(this);
+	return nodes.push(node);
+}
+
+int NodeFrame::RemoveNode(NodeBase *node)
+{
+	return nodes.remove(nodes.findindex(node));
+}
+
+void NodeFrame::Wrap(double gap)
+{
+	double th = (owner && owner->colors ? owner->colors->font->textheight() : 20);
+	if (gap<0) gap = th;
+
+	DoubleBBox box;
+	for (int c=0; c<nodes.n; c++) {
+		box.addtobounds(*nodes.e[c]);
+	}
+
+	double lw = (label && owner && owner->colors ? owner->colors->font->extent(label,-1) : 100);
+	if (box.boxwidth() < lw) box.maxx = box.minx + lw;
+	box.ShiftBounds(-gap,gap, -(th*1.5 + gap),gap);
+
+	x = box.minx;
+	y = box.miny;
+	width  = box.maxx - box.minx;
+	height = box.maxy - box.miny;
+}
+
 //-------------------------------------- NodeBase --------------------------
 
 /*! \class NodeBase
@@ -405,6 +470,8 @@ NodeBase::NodeBase()
 	fullwidth = 0;
 	deletable = true; //often at least one node will not be deletable, like group output/inputs
 	modtime   = 0;
+
+	frame = NULL;
 
 	type = NULL;
 	def  = NULL;
@@ -522,7 +589,7 @@ int NodeBase::UpdatePreview()
  */
 int NodeBase::Wrap()
 {
-	if (preview_area_height < 0 && colors) preview_area_height = 3*colors->font->textheight();
+	if (preview_area_height < 0 && colors && colors->font) preview_area_height = 3*colors->font->textheight();
 	if (collapsed) return WrapCollapsed();
 	return WrapFull();
 }
@@ -729,6 +796,12 @@ NodeBase *NodeBase::Duplicate()
 //	return newnode;
 
 	return NULL;
+}
+
+int NodeBase::AssignFrame(NodeFrame *nframe)
+{
+	frame = nframe;
+	return 0;
 }
 
 /*! Check whether a specified property is connected to anything.
@@ -2366,6 +2439,16 @@ int NodeInterface::Refresh()
 	dp->NewTransform(nodes->m.m());
 	dp->font(font);
 
+	dp->LineWidth(1);
+	dp->NewFG(&nodes->colors->fg_frame);
+	dp->NewBG(&nodes->colors->bg_frame);
+	for (int c=0; c<nodes->frames.n; c++) {
+		dp->drawRoundedRect(nodes->frames.e[c]->x, nodes->frames.e[c]->y, nodes->frames.e[c]->width, nodes->frames.e[c]->height,
+							th/3, false, th/3, false, 2); 
+		if (nodes->frames.e[c]->Label())
+			dp->textout(th+nodes->frames.e[c]->x, th*.5 + nodes->frames.e[c]->y, nodes->frames.e[c]->Label(), -1, LAX_LEFT|LAX_TOP);
+	}
+
 	 //---draw connections
 	dp->NewFG(&nodes->colors->connection);
 
@@ -3521,6 +3604,7 @@ Laxkit::ShortcutHandler *NodeInterface::GetShortcuts()
 	sc->AddShortcut(LAX_Del,0,0,  NODES_Delete_Nodes);
     sc->Add(NODES_No_Overlap,     'o',0,          0, "NoOverlap"     , _("NoOverlap"      ),NULL,0);
     sc->Add(NODES_Toggle_Collapse,'c',0,          0, "ToggleCollapse", _("ToggleCollapse" ),NULL,0);
+    sc->Add(NODES_Frame_Nodes,    'f',0,          0, "Frame",          _("Frame Selected" ),NULL,0);
 
 
     sc->Add(NODES_Save_Nodes,      's',0,  0, "SaveNodes"      , _("Save Nodes"     ),NULL,0);
@@ -3597,6 +3681,21 @@ int NodeInterface::PerformAction(int action)
 		DoubleBBox vp(dp->Minx+margin, dp->Maxx-margin, dp->Miny+margin, dp->Maxy-margin);
 		box.fitto(NULL, &vp, 50, 50, 1);
 		nodes->m.m(box.m());
+		needtodraw=1;
+		return 0;
+
+	} else if (action==NODES_Frame_Nodes) {
+		if (!selected.n) {
+			PostMessage(_("No nodes selected!"));
+			return 0;
+		}
+		NodeFrame *frame = new NodeFrame(nodes, _("Frame"), NULL);
+		for (int c=0; c<selected.n; c++) {
+			frame->AddNode(selected.e[c]);
+		}
+		frame->Wrap();
+		nodes->frames.push(frame);
+		frame->dec_count();
 		needtodraw=1;
 		return 0;
 

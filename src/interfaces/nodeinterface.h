@@ -53,6 +53,7 @@ namespace Laidout {
 
 //---------------------------- Nodes ------------------------------------
 
+class NodeGroup;
 class NodeBase;
 class NodeProperty;
 
@@ -162,6 +163,9 @@ class NodeColors : public Laxkit::anObject
 	Laxkit::ScreenColor fg_edit;
 	Laxkit::ScreenColor bg_edit;
 
+	Laxkit::ScreenColor fg_frame;
+	Laxkit::ScreenColor bg_frame;
+
 	Laxkit::ScreenColor fg_menu;
 	Laxkit::ScreenColor bg_menu;
 
@@ -179,6 +183,30 @@ class NodeColors : public Laxkit::anObject
 	virtual int Font(Laxkit::LaxFont *newfont, bool absorb_count);
 };
 
+
+//---------------------------- NodeFrame ------------------------------------
+class NodeFrame : public Laxkit::anObject,
+				 public Laxkit::DoubleRectangle
+{
+  public:
+	//ScreenColor bg, fg;
+
+	NodeGroup *owner;
+	char *label;
+	char *comment;
+	Laxkit::RefPtrStack<NodeBase> nodes; //nodes wrapped by this frame
+
+	NodeFrame(NodeGroup *nowner, const char *nlabel=NULL, const char *ncomment=NULL);
+	virtual ~NodeFrame();
+
+	virtual const char *Label() { return label; }
+	virtual const char *Label(const char *nlabel);
+	virtual const char *Comment() { return comment; }
+	virtual const char *Comment(const char *ncomment);
+	virtual int AddNode(NodeBase *node);
+	virtual int RemoveNode(NodeBase *node);
+	virtual void Wrap(double gap=-1);
+};
 
 //---------------------------- NodeBase ------------------------------------
 class NodeBase : public Laxkit::anObject,
@@ -203,6 +231,7 @@ class NodeBase : public Laxkit::anObject,
 	Laxkit::PtrStack<NodeProperty> properties; //includes inputs and outputs
 	std::time_t modtime; //time of last update
 
+	NodeFrame *frame;
 	NodeColors *colors;
 
 	NodeBase();
@@ -242,6 +271,9 @@ class NodeBase : public Laxkit::anObject,
 	virtual NodeProperty *FindProperty(const char *prop);
 	virtual int SetProperty(const char *prop, Value *value, bool absorb);
 	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
+	
+	virtual int AssignFrame(NodeFrame *nframe);
+	//virtual NodeColors *GetColors(); //return either this->colors, or the first defined one in owners
 };
 
 
@@ -268,6 +300,7 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	Laxkit::Affine m;
 	Laxkit::RefPtrStack<NodeBase> nodes; //nodes wrapped into this group
 	Laxkit::PtrStack<NodeConnection> connections;
+	Laxkit::RefPtrStack<NodeFrame> frames;
 
 	NodeGroup();
 	virtual ~NodeGroup();
