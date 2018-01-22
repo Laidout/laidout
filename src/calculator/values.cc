@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -21,7 +20,9 @@
 #include <lax/strmanip.h>
 #include <lax/fileutils.h>
 
+//template implementation
 #include <lax/refptrstack.cc>
+
 
 #include <cctype>
 #include <cstdlib>
