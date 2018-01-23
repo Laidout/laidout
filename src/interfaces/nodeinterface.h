@@ -135,6 +135,7 @@ class NodeProperty
 	virtual bool AllowType(Value *ndata);
 	virtual NodeBase *GetConnection(int connection_index, int *prop_index_ret);
 	virtual Value *GetData();
+	virtual NodeBase *GetDataOwner();
 	virtual int SetData(Value *newdata, bool absorb);
 };
 
@@ -262,8 +263,6 @@ class NodeBase : public Laxkit::anObject,
 
 	virtual int IsConnected(int propindex); //0=no, -1=prop is connected input, 1=connected output
 	virtual int HasConnection(NodeProperty *prop, int *connection_ret);
-	//virtual int Connect(NodeProperty *srcproperty, int propertyindex);
-	//virtual int Disconnect(int propertyindex, int connectionindex);
 	virtual int Disconnected(NodeConnection *connection, int to_side);
 	virtual int Connected(NodeConnection *connection);
 
@@ -274,6 +273,10 @@ class NodeBase : public Laxkit::anObject,
 	
 	virtual int AssignFrame(NodeFrame *nframe);
 	//virtual NodeColors *GetColors(); //return either this->colors, or the first defined one in owners
+
+	virtual void       dump_out(FILE *f, int indent, int what, LaxFiles::DumpContext *context);
+    virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context);
+    virtual void dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context);
 };
 
 
@@ -310,10 +313,13 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	virtual NodeBase *FindNode(const char *name);
 	virtual NodeBase *NewNode(const char *type);
 	virtual int NoOverlap(NodeBase *which, double gap);
+	virtual void BoundingBox(DoubleBBox &box);
 
 	virtual int DeleteNodes(Laxkit::RefPtrStack<NodeBase> &selected);
-	virtual NodeGroup *Encapsulate(Laxkit::RefPtrStack<NodeBase> &selected);
+	virtual NodeGroup *GroupNodes(Laxkit::RefPtrStack<NodeBase> &selected);
+	virtual int UngroupNodes(Laxkit::RefPtrStack<NodeBase> &selected, bool update_selected);
 	virtual int Connect(NodeProperty *from, NodeProperty *to);
+	virtual int Disconnect(NodeConnection *connection);
 
 	virtual void       dump_out(FILE *f, int indent, int what, LaxFiles::DumpContext *context);
     virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context);
@@ -361,6 +367,7 @@ enum NodeInterfaceActions {
 	NODES_Move_Or_Select,
 	NODES_Cut_Connections,
 	NODES_Property,
+	NODES_Drag_Property,
 	NODES_Resize_Left,
 	NODES_Resize_Right,
 	NODES_Resize_Top,
@@ -381,6 +388,8 @@ enum NodeInterfaceActions {
 	NODES_Duplicate,
 	NODES_Group_Nodes,
 	NODES_Ungroup_Nodes,
+	NODES_Edit_Group,
+	NODES_Leave_Group,
 	NODES_Frame_Nodes,
 	NODES_Unframe_Nodes,
 	NODES_Add_Node,
@@ -417,7 +426,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	Laxkit::MenuInfo *node_menu;
 	virtual void RebuildNodeMenu();
 
-	Laxkit::PtrStack<NodeGroup> grouptree;
+	Laxkit::RefPtrStack<NodeGroup> grouptree; //stack of nested groups we are working on
 	Laxkit::RefPtrStack<NodeBase> selected;
 	Laxkit::DoubleBBox selection_rect;
 	int hover_action;
@@ -487,6 +496,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual int IsSelected(NodeBase *node);
 
 	virtual int ToggleCollapsed();
+	virtual int EnterGroup(NodeGroup *group=NULL);
+	virtual int LeaveGroup();
 	virtual int SaveNodes(const char *file);
 	virtual int LoadNodes(const char *file, bool append);
 };
