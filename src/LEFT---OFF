@@ -178,6 +178,7 @@ from recent import:
   spread editor needs edge dragging
 
 node editor NodeInterface nodes:
+  grouping framed objects have complications
   gegl nodes:
     some process actions bog everything down like overlay a crop with a non-cropped input.. need a check for unbounded nodes before process
     make sure deleting/rearranging nodes correctly removes gegl connections
@@ -185,7 +186,9 @@ node editor NodeInterface nodes:
     inkscape filter read in
 	make sure input/outputs can translate from other data types
 	need protection against unknown gegl ops
-	searching via categories, not just the name. gegl ops have name, title, description, categories, license, even source!!
+	enums
+	babl format is passed in gegl as an otherwise undefined gpointer, need to have special check for this
+	DONE menu with categories, not just the name. gegl ops have name, title, description, categories, license, even source!!
 	DONE load in graph xml
     DONE process on a crop after change a value crash? need to trace
 	DONE make process optional
@@ -197,7 +200,6 @@ node editor NodeInterface nodes:
   no overlap needs to stack siblings as nicely as possible
   loading needs to check for name collisions
   rename nodes
-  numbers need slide change: specify add or zoom stepping
   undo redo
   image object creation node, tie node output to a custom LaxImage importer (the proof of concept node for 0.097)
   need a little triple bar triangle in lower right corner to resize preview size. change preview size on all selected
@@ -206,6 +208,7 @@ node editor NodeInterface nodes:
   duplicate nodes
   load something already loaded makes dups of everything.. need to check for name collision!!
   groups
+    need visual indication that something is a group
     linked vs appended node groups, to allow mass changing of particular effects
     node libraries: nodes as resources
   auto shift on connection
@@ -215,13 +218,18 @@ node editor NodeInterface nodes:
     node magnifier for easier browsing when otherwise zoomed way out
     toggle show only selected nodes?
   exec paths
+    may have to rewrite properties to allow multiple ins and single out. currently some places assume only one in
+	  require first to be the single out, if property is a pass through
+	thread forking for branching nodes?
   make sure entire nodes don't go totally offscreen
   scriptify node graph
   deferred update when massive operations, maybe highlight nodes in yellow?
   color code pipes by value type, color: yellow, number: gray, vector: purple
   need better styling.. too much is hardcoded. problems later with high dpi screens
   finish implementing no cycle check: on load in could be a crash magnet currently if constructed with loops
+  file nodes need browser button
 
+  DONE numbers need slide change: specify add or zoom stepping
   DONE node resize needs mouseover for edges
   DONE select all/deselect with 'a'
   DONE save, load nodes dialogs
@@ -246,12 +254,14 @@ node editor NodeInterface nodes:
   simplex noise node
   pipe splitter node
   frames
-    have visible/togglable comment
+    label font size should be adjustable
+	changeable color
     drag out a rectangle
 	  if any nodes in rect, bind them and shrinkwrap frame 
 	  if no nodes in rect, just use dragged area for bounds
 	drag and drop nodes to insert into frame
 	shift-drag to remove from frame?
+    have visible/togglable comment
   expression node:
     any number of inputs
 	any number of outputs
@@ -267,6 +277,7 @@ node editor NodeInterface nodes:
 	perpendicular
 	parallel to
 	norm
+	norm squared
   string ops:
     concat s1, s2
 	substr [index..index]
@@ -351,6 +362,7 @@ text (see also src/text/text.txt):
   tabs on arbitrary paths 
 
 engraving tool: Engraving  engraver
+  bug: trace object opacity is not working
   bug: object rotate works fine. but then enter and leave engraver tool. Now object rotate is messed up
   bug: 'z' zaps mesh, but does not change cache border or point mapping
   cairo render NEEDS VAST IMPROVEMENT.. the clunky xlib approximation was fast, but not transferrable to cairo
