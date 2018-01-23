@@ -2284,7 +2284,7 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 		if (foldlevel<signature->folds.n) {
 			 //we have tried to fold when there are already further folds, so we must remove any
 			 //after the current foldlevel.
-			while (foldlevel<signature->folds.n) signature->folds.remove();
+			while (foldlevel<signature->folds.n) signature->folds.remove(-1);
 			hasfinal=0;
 		}
 

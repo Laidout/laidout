@@ -1537,7 +1537,7 @@ int Polyhedron::dumpInObj(FILE *f,char **error_ret)
 	if (error) {
 		 // delete all added faces and vertices
 		while (vertices.n!=firstvertex) vertices.pop();
-		while (faces.n!=firstface) faces.remove();
+		while (faces.n!=firstface) faces.remove(-1);
 	}
 
 	return error;
