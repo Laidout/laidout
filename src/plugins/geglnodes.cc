@@ -42,6 +42,7 @@ namespace GeglNodesPluginNS {
 //-------------------------------- Helper funcs --------------------------
 
 Laxkit::MenuInfo *GetGeglOps();
+Laidout::ObjectDef gegl_types;
 
 
 void XMLOut(GeglNode *gegl_node, const char *nodename)
@@ -117,8 +118,6 @@ int ValueToGValue(Value *v, const char *gvtype, GValue *gv_ret, GeglNode *node, 
 
 		return 4;
 
-	//} else if (!strcmp(gvtype, "")) {
-	//	***
 	}
 
 	return 100;
@@ -139,6 +138,35 @@ int ValueToProperty(Value *v, const char *gvtype, GeglNode *node, const char *pr
 			g_object_unref (color);
 			return 0;
 		}
+
+	} else if (vtype == VALUE_EnumVal) {
+		 //incoming data as well as the gegl property must be the same enum type
+		GValue gv = G_VALUE_INIT;
+		gegl_node_get_property(node, property, &gv);
+
+		//check for existing property being some kind of enum
+		GType gtype = G_VALUE_TYPE(&gv);
+		int success = 0;
+
+		if (G_TYPE_IS_ENUM(gtype)) {
+
+			EnumValue *ev = dynamic_cast<EnumValue*>(v);
+			if (!strcmp(ev->GetObjectDef()->name, gvtype)) {
+				int e = ev->value;
+
+				g_value_set_enum(&gv, e);
+				gegl_node_set_property(node, property, &gv);
+				success = 1;
+
+			} else {
+				DBG cerr <<" WARNING! trying to set enum "<<gvtype<<" with wrong enum type "<<ev->GetObjectDef()->name<<endl;
+			}
+		}
+
+		g_value_unset(&gv);
+		if (success) return 0;
+
+	//} else if (vtype == VALUE_) {
 	}
 
 	return 100;
@@ -422,6 +450,71 @@ NodeGroup* GeglNodesToLaidoutNodes(GeglNode *gegl, NodeGroup *parent, bool child
 	return parent;
 }
 
+/*! Attempt to put full size in in_this.
+ * If gegl is unbounded, then use a 100 x 100 box.
+ * If new_if_different and in_this != NULL and dimensions differ, then return a new LaxImage.
+ */
+LaxImage *GeglToLaxImage(GeglNode *gegl, LaxImage *in_this, bool new_if_different)
+{
+	GeglRectangle rect = gegl_node_get_bounding_box (gegl);
+	if (rect.width <=0 || rect.height <= 0 || rect.width > 100000 || rect.height > 100000) {
+		 //probably unbounded, arbitrarily select a little window onto the data
+		rect.x      = 0;
+		rect.y      = 0;
+		rect.width  = 100;
+		rect.height = 100;
+	}
+
+
+	LaxImage *image = in_this;
+	double scale = 1;
+	if (new_if_different && !image && (image->w() != rect.width || image->h() != rect.height)) {
+		image = create_new_image(rect.width, rect.height);
+		scale = image->w() / (double)rect.width;
+	}
+	unsigned char *buffer = image->getImageBuffer(); //bgra
+
+	int ibufw = image->w();
+	int ibufh = image->h();
+
+	GeglRectangle  orect;
+	orect.x = orect.y = 0;
+	orect.width  = ibufw;
+	orect.height = ibufh;
+
+	gegl_node_blit (gegl,
+					scale,
+					&orect,
+					babl_format("R'G'B'A u8"),
+					buffer,
+					GEGL_AUTO_ROWSTRIDE,
+					GEGL_BLIT_DEFAULT);
+
+	//need to flip r and b
+	int i=0;
+	unsigned char t;
+	for (int y=0; y<ibufh; y++) {
+		for (int x=0; x<ibufw; x++) {
+			t = buffer[i+2];
+			buffer[i+2] = buffer[i];
+			buffer[i] = t;
+			i += 4;
+		}
+	}
+
+	image->doneWithBuffer(buffer);
+	return image;
+}
+
+GeglNode *LaxImageToGegl(LaxImage *image, GeglNode *to_this)
+{
+	GeglNode *gegl = to_this;
+
+
+	return gegl;
+}
+
+
 //-------------------------------- GeglLaidoutNode --------------------------
 
 
@@ -519,7 +612,7 @@ int GeglLaidoutNode::Update()
 				GeglNode *prevnode = NULL;
 				int pindex=-1;
 				GeglLaidoutNode *prev = dynamic_cast<GeglLaidoutNode*>(prop->GetConnection(0, &pindex));
-				if (prev) {
+				if (prev && prev->gegl) {
 					prevnode = prev->gegl;
 					gegl_node_connect_to(prevnode, connection->fromprop->Name(),
 										 gegl, prop->Name());
@@ -535,22 +628,24 @@ int GeglLaidoutNode::Update()
 			if (v) {
 				ptype = propspec->GetString(1);
 
-				GValue gv = G_VALUE_INIT;
-
 				if (ValueToProperty(v, ptype, gegl, propspec->name)==0) {
 					//was possible to set directly to gegl without GValue setup
 
-				} else if (ValueToGValue(v, ptype, &gv, gegl, prop->name) == 0) {
-					 //more finicky method using GValue
-					gegl_node_set_property(gegl, prop->name, &gv);
-					num_updated++;
-
 				} else {
-					errors++;
-					DBG cerr <<" *** Warning! error setting properties on gegl node "<<operation<<endl;
+					GValue gv = G_VALUE_INIT;
+
+					if (ValueToGValue(v, ptype, &gv, gegl, prop->name) == 0) {
+						 //more finicky method using GValue
+						gegl_node_set_property(gegl, prop->name, &gv);
+						num_updated++;
+
+					} else {
+						errors++;
+						DBG cerr <<" *** Warning! error setting property "<<propspec->name<<" on gegl node "<<operation<<endl;
+					}
+					g_value_unset(&gv);
 				}
 
-				g_value_unset(&gv);
 			}
 		}
 
@@ -583,10 +678,21 @@ int GeglLaidoutNode::Update()
 int GeglLaidoutNode::AutoProcess()
 {
 	if (properties.n == 0) return 1;
-	if (!strcmp(properties.e[properties.n-1]->name, "AutoProcess")) {
-		BooleanValue *b = dynamic_cast<BooleanValue*>(properties.e[properties.n-1]->GetData());
-		if (b) return b->i;
+	NodeProperty *autoprocess = FindProperty("AutoProcess");
+	if (autoprocess) {
+		BooleanValue *b = dynamic_cast<BooleanValue*>(autoprocess->GetData());
+		if (b) {
+			if (!b->i) return 0;
+
+			// *** need to check boundedness
+			return 1;
+		}
 	}
+//	----
+//	if (!strcmp(properties.e[properties.n-1]->name, "AutoProcess")) {
+//		BooleanValue *b = dynamic_cast<BooleanValue*>(properties.e[properties.n-1]->GetData());
+//		if (b) return b->i;
+//	}
 	return 1;
 }
 
@@ -816,6 +922,8 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 	MenuInfo *opmenu = op->GetSubmenu();
 	MenuItem *prop;
 	const char *proptype;
+	//NodeProperty::PropertyTypes propwhat;
+	bool linkable;
 	Value *v;
 
 	makestr  (type, "Gegl/");
@@ -833,6 +941,8 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 		prop = opmenu->e(c);
 		proptype = prop->GetString(1);
 		v = NULL;
+		//propwhat = NodeProperty::PROP_Input;
+		linkable = true;
 
 		if (proptype) {
 			 //set default values
@@ -873,61 +983,83 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 				v = new ColorValue(r,g,b,a);
 
 			} else {
-//				GType gtype = G_VALUE_TYPE(&gv);
-//
-//				if (G_TYPE_IS_ENUM(gtype)) {
-//					if (G_VALUE_HOLDS_ENUM(&gv)) {
-//						DBG cerr <<"gvalue holds enum"<<endl;
-//					}
-//
-//					GEnumValue *enum_value;
-//
-//					GEnumClass *enum_class = (GEnumClass*)g_type_class_ref (gtype);
-//					//enum_value = g_enum_get_value (enum_class, MAMAN_MY_ENUM_FOO);
-//
-//					//g_print ("Name: %s\n", enum_value->value_name);
-//
-//					g_type_class_unref (enum_class);
-//				}
+				//propwhat = NodeProperty::PROP_Input; //for now, block any linking to both enums and unknown types
+				linkable = false; //for now, block any linking to both enums and unknown types
 
-			 //enums
-			//} else if (!strcmp(proptype, "GeglAbyssPolicy"         )) {
+				GType gtype = G_VALUE_TYPE(&gv);
 
-			//} else if (!strcmp(proptype, "GeglCurve"               )) {
-			//} else if (!strcmp(proptype, "GeglPath"                )) {
+				if (G_TYPE_IS_ENUM(gtype)) {
+					 //gegl has a whole slew of enums that should
+					 //be caught here
+					if (G_VALUE_HOLDS_ENUM(&gv)) {
+						DBG cerr <<"gvalue holds enum"<<endl;
+					}
 
-			//} else if (!strcmp(proptype, "GeglAlienMapColorModel"  )) {
-			//} else if (!strcmp(proptype, "GeglAudioFragment"       )) {
-			//} else if (!strcmp(proptype, "GeglColorRotateGrayMode" )) {
-			//} else if (!strcmp(proptype, "GeglComponentExtract"    )) {
-			//} else if (!strcmp(proptype, "GeglDTMetric"            )) {
-			//} else if (!strcmp(proptype, "GeglDitherMethod"        )) {
-			//} else if (!strcmp(proptype, "GeglGaussianBlurFilter2" )) {
-			//} else if (!strcmp(proptype, "GeglGaussianBlurPolicy"  )) {
-			//} else if (!strcmp(proptype, "GeglGblur1dFilter"       )) {
-			//} else if (!strcmp(proptype, "GeglGblur1dPolicy"       )) {
-			//} else if (!strcmp(proptype, "GeglImageGradientOutput" )) {
-			//} else if (!strcmp(proptype, "GeglNewsprintColorModel" )) {
-			//} else if (!strcmp(proptype, "GeglNewsprintPattern"    )) {
-			//} else if (!strcmp(proptype, "GeglOrientation"         )) {
-			//} else if (!strcmp(proptype, "GeglPixelizeNorm"        )) {
-			//} else if (!strcmp(proptype, "GeglRenderingIntent"     )) {
-			//} else if (!strcmp(proptype, "GeglSamplerType"         )) {
-			//} else if (!strcmp(proptype, "GeglVignetteShape"       )) {
-			//} else if (!strcmp(proptype, "GeglWarpBehavior"        )) {
-			//} else if (!strcmp(proptype, "GeglWaterpixelsFill"     )) {
+					ObjectDef *def = gegl_types.FindDef(proptype);
+					if (!def) {
 
-			//} else if (!strcmp(proptype, "GeglBuffer"              )) {
-			//} else if (!strcmp(proptype, "GdkPixbuf"               )) {
-			//} else if (!strcmp(proptype, "GeglNode"                )) {
-			//} else if (!strcmp(proptype, "gpointer"                )) {
+						GEnumClass *enum_class = (GEnumClass*)g_type_class_ref (gtype);
+						GEnumValue *enum_value;
+
+						def = new ObjectDef(NULL, proptype, proptype, NULL, "enum", NULL,NULL);
+
+						DBG cerr << "gegl enum: "<<proptype << ", min,max: " << enum_class->minimum<< ", "<< enum_class->maximum<<endl;
+						for (unsigned int c2=0; c2<enum_class->n_values; c2++) {
+							enum_value = &enum_class->values[c2];
+							DBG cerr <<"  enum value: "<<enum_value->value<<"  "
+							DBG  <<enum_value->value_name<<"  "
+							DBG  <<enum_value->value_nick<<endl;
+
+							def->pushEnumValue(enum_value->value_name, enum_value->value_nick, NULL);
+						}
+
+						gegl_types.push(def, 1);
+
+						g_type_class_unref (enum_class);
+					}
+
+					int vv = g_value_get_enum(&gv);
+					v = new EnumValue(def, vv);
+
+				//} else if (!strcmp(proptype, "gpointer"                )) {
+				//	//this might be BablFormat. these do not appear to be distinguished exactly
+
+				//} else if (!strcmp(proptype, "GeglCurve"               )) {
+				//	GeglPath *curve = NULL;
+				//	gegl_node_get(gegl, prop->name, &curve, NULL);
+				//	CurveValue *locurve = new CurveValue;
+				//	locurve->Reset(true);
+				//	unsigned int npoints = gegl_curve_num_points(path);
+				//	double x,y;
+				//	for (int c2=0; c2<npoints; c2++) {
+				//		gegl_curve_get_point(curve, c2, &x, &y);
+				//		locurve->AddPoint(x,y);
+				//	}
+				//	v = locurve;
+                //
+				//} else if (!strcmp(proptype, "GeglPath"                )) {
+				//	GeglCurve *path = NULL;
+				//	gegl_node_get(gegl, prop->name, &path, NULL);
+				//	LPathsData *pathobject = new LPathsData;
+				//	char *pathstr = gegl_path_to_string(path);
+				//	pathobject->appendSvg(pathstr);
+				//	g_free(pathstr);
+				//	v = pathobject;
+
+				//} else if (!strcmp(proptype, "GeglAudioFragment"       )) {
+				//} else if (!strcmp(proptype, "GeglBuffer"              )) {
+				//} else if (!strcmp(proptype, "GdkPixbuf"               )) {
+				//} else if (!strcmp(proptype, "GeglNode"                )) {
+				} else {
+					DBG cerr << proptype << " in gegl is unknown type here!"<<endl;
+				}
 
 			}
 
 			g_value_unset(&gv);
 		}
 
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, prop->name, v,1, prop->GetString(2),prop->GetString(3), c));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input, linkable, prop->name, v,1, prop->GetString(2),prop->GetString(3), c));
 	}
 
 	 //set up input pads
@@ -1180,7 +1312,7 @@ class GeglLoader : public Laidout::ObjectIO
     virtual ObjectDef *GetObjectDef() { return NULL; }
 
 	virtual int Serializable(int what) { return 0; }
-	virtual int CanImport(const char *file) { return true; } //if null, then return if in theory it can import
+	virtual int CanImport(const char *file, const char *first100) { return true; } //if null, then return if in theory it can import
 	virtual int CanExport(anObject *object) { return true; } //if null, then return if in theory it can export
 	virtual int Import(const char *file, anObject **object_ret, anObject *context, Laxkit::ErrorLog &log);
 	virtual int Export(const char *file, anObject *object,      anObject *context, Laxkit::ErrorLog &log);
