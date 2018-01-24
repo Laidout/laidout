@@ -2203,8 +2203,8 @@ LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,LaxF
 		EnumValue *ev = dynamic_cast<EnumValue*>(this);
 		const char *nm = NULL;
 		def->getEnumInfo(ev->value, &nm);
-		att->push(whattype(), nm);
-		//att->push("value", nm);
+		string s = (string)"" + def->name + '.' + nm;
+		att->push(whattype(), s.c_str());
 
 	} else if (!strcmp(def->name, "string")) {
 		StringValue *v = dynamic_cast<StringValue*>(this);

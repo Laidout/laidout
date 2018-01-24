@@ -956,14 +956,37 @@ int NodeBase::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
 {
 	if (att->attributes.n == 0) return 0;
 
-	NodeProperty *prop = NULL;
-	for (int c=0; c<properties.n; c++) {
-		if (!strcmp(propname, properties.e[c]->name)) {
-			prop = properties.e[c];
-			break;
-		}
-	}
+	NodeProperty *prop = FindProperty(propname);
 	if (!prop) return 0;
+
+	 //check for EnumValue
+    if (att->attributes.n == 1 && !strcmp(att->attributes.e[0]->name,"EnumValue")) {
+		if (isblank(att->attributes.e[0]->value)) return 0; //missing actual value, corrupt file!
+
+		 //we hope current value was constructed with an EnumValue in place
+		EnumValue *ev  = dynamic_cast<EnumValue*>(prop->GetData());
+		if (ev) {
+			ObjectDef *def = ev->GetObjectDef();
+
+			 //value should be like "GeglSamplerType.Cubic"
+			const char *nval = lax_extension(att->attributes.e[0]->value);
+			if (!nval) nval = att->attributes.e[0]->value;
+			if (isblank(nval)) return 0;
+			// *** should probably check that the first part is actually the enum in def
+
+			const char *nm;
+			for (int c=0; c<def->getNumEnumFields(); c++) {
+				def->getEnumInfo(c, NULL, &nm); //grabs id == name in the def
+				if (!strcmp(nm, nval)) {
+					ev->value = c; //note: makes enum value the index of the enumval def, not the id
+					break;
+					return 1;
+				}
+			}
+		}
+		return 0; //couldn't set it!
+	}
+
 
 	Value *val = AttributeToValue(att->attributes.e[0]);
 	if (val) {
@@ -1958,7 +1981,6 @@ class MathNode : public NodeBase
 	virtual ~MathNode();
 	virtual int Update();
 	virtual int GetStatus();
-	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
 };
 
 
@@ -2116,31 +2138,6 @@ MathNode::~MathNode()
 //	if (mathnodedef) {
 //		if (mathnodedef->dec_count()<=0) mathnodedef=NULL;
 //	}
-}
-
-/*! Return 1 for property set, 0 for could not set.
- */
-int MathNode::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
-{
-	if (strcmp(propname, "Op")) return NodeBase::SetPropertyFromAtt(propname, att);
-	if (isblank(att->value)) return 0;
-
-	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
-	ObjectDef *def=ev->GetObjectDef();
-
-	if (att->attributes.n==0) return 0;
-	const char *nval = att->attributes.e[0]->value;
-	if (isblank(nval)) return 0;
-
-	const char *nm;
-	for (int c=0; c<def->getNumEnumFields(); c++) {
-		def->getEnumInfo(c, NULL, &nm); //grabs id == name in the def
-		if (!strcmp(nm, nval)) {
-			ev->value = c; //note: makes enum value the index of the enumval def, not the id
-			break;
-		}
-	}
-	return 1;
 }
 
 int MathNode::GetStatus()
