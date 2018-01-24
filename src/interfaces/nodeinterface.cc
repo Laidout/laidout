@@ -2357,7 +2357,8 @@ NodeInterface::NodeInterface(anInterface *nowner, int nid, Displayer *ndp)
 	font->inc_count();
 	defaultpreviewsize = 50; //pixels
 
-	color_controls.rgbf(.7,.5,.7,1.);
+	//color_controls.rgbf(.7,.5,.7,1.);
+	color_controls.rgbf(.8,.8,.8,1.);
 	color_background.rgbf(0,0,0,.5);
 	color_grid.rgbf(0,0,0,.7);
 	draw_grid = 50;
@@ -3186,11 +3187,15 @@ void NodeInterface::DrawConnection(NodeConnection *connection)
 	if (connection->fromprop) p1=flatpoint(connection->from->x,connection->from->y)+connection->fromprop->pos; else p1=last;
 	if (connection->toprop)   p2=flatpoint(connection->to->x,  connection->to->y)  +connection->toprop->pos;   else p2=last;
 
-	dp->NewFG(&color_controls);
+	dp->NewFG(0.,0.,0.);
 	dp->moveto(p1);
 	dp->curveto(p1+flatpoint((p2.x-p1.x)/3, 0),
 				p2-flatpoint((p2.x-p1.x)/3, 0),
 				p2);
+	dp->LineWidth(3);
+	dp->stroke(1);
+	dp->NewFG(&color_controls);
+	dp->LineWidth(2);
 	dp->stroke(0);
 }
 
