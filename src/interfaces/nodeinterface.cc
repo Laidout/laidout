@@ -545,10 +545,19 @@ int NodeBase::Wrap()
 {
 	if (preview_area_height < 0 && colors && colors->font) preview_area_height = 3*colors->font->textheight();
 	if (collapsed) return WrapCollapsed();
-	return WrapFull();
+	return WrapFull(false);
 }
 
-int NodeBase::WrapFull()
+/*! Lay out properties, but don't change the width.
+ */
+void NodeBase::UpdateLayout()
+{
+	if (preview_area_height < 0 && colors && colors->font) preview_area_height = 3*colors->font->textheight();
+	if (collapsed) WrapCollapsed();
+	else WrapFull(true);
+}
+
+int NodeBase::WrapFull(bool keep_current_width)
 {
 	if (!colors) return -1;
 
@@ -556,55 +565,67 @@ int NodeBase::WrapFull()
 	double th = colors->font->textheight();
 
 	height = th*1.5;
-	width = colors->font->extent(Name,-1);
 
-	 //find wrap width
-	double w;
-	Value *v;
+	 //make sure all properties have some height
 	NodeProperty *prop;
 	for (int c=0; c<properties.n; c++) {
 		prop = properties.e[c];
-
-		w = colors->font->extent(prop->Label(),-1);
-
-		v=dynamic_cast<Value*>(prop->data);
-		if (v) {
-			if (v->type()==VALUE_Real || v->type()==VALUE_Int) {
-				w+=3*th;
-
-			} else if (v->type()==VALUE_Color) {
-				w+=3*th;
-
-			} else if (v->type()==VALUE_String) {
-				StringValue *s = dynamic_cast<StringValue*>(v);
-				w += th + colors->font->extent(s->str, -1);
-
-			} else if (v->type()==VALUE_Enum) {
-				EnumValue *ev = dynamic_cast<EnumValue*>(v);
-				const char *nm=NULL;
-				double ew=0, eww;
-				for (int c=0; c<ev->GetObjectDef()->getNumEnumFields(); c++) {
-					ev->GetObjectDef()->getEnumInfo(c, NULL, &nm);
-					if (isblank(nm)) continue;
-					eww = colors->font->extent(nm,-1);
-					if (eww>ew) ew=eww;
-				}
-				w += ew;
-			}
-
-			prop->x=0;
-			prop->width = w;
-			prop->height = 1.5*th;
-
-		} else {
-			if (prop->height==0) prop->height = 1.5*th;
-		}
-
-		if (w>width) width=w;
+		if (prop->height == 0) prop->height = 1.5*th;
 	}
 
-	width += 3*th;
-	if (fullwidth > width) width = fullwidth;
+	if (!keep_current_width) {
+		width = colors->font->extent(Name,-1);
+
+		 //find wrap width
+		double w;
+		Value *v;
+		for (int c=0; c<properties.n; c++) {
+			prop = properties.e[c];
+
+			w = colors->font->extent(prop->Label(),-1);
+
+			v=dynamic_cast<Value*>(prop->data);
+			if (v) {
+				if (v->type()==VALUE_Real || v->type()==VALUE_Int) {
+					w+=3*th;
+
+				} else if (v->type()==VALUE_Color) {
+					w+=3*th;
+
+				} else if (v->type()==VALUE_String) {
+					StringValue *s = dynamic_cast<StringValue*>(v);
+					w += th + colors->font->extent(s->str, -1);
+
+				} else if (v->type()==VALUE_Enum) {
+					EnumValue *ev = dynamic_cast<EnumValue*>(v);
+					const char *nm=NULL;
+					double ew=0, eww;
+					for (int c=0; c<ev->GetObjectDef()->getNumEnumFields(); c++) {
+						ev->GetObjectDef()->getEnumInfo(c, NULL, &nm);
+						if (isblank(nm)) continue;
+						eww = colors->font->extent(nm,-1);
+						if (eww>ew) ew=eww;
+					}
+					w += ew;
+				}
+
+				prop->x=0;
+				prop->width = w;
+				prop->height = 1.5*th;
+
+			} else {
+				if (prop->height==0) prop->height = 1.5*th;
+			}
+
+			if (w>width) width=w;
+		}
+
+		width += 3*th;
+		if (fullwidth > width) width = fullwidth;
+
+	} else {
+		//keep width
+	}
 	double propwidth = width; //the max prop width.. make them all the same width
 
 	 //update link positions
@@ -686,8 +707,8 @@ int NodeBase::WrapCollapsed()
 	return 0;
 }
 
-/*! Call this whenever you resize a node and the node is not collapsed.
- * This will adjust the x and y positions for prop->pos.
+/*! This will adjust the x and y positions for prop->pos.
+ * Call this whenever you resize a node and the node is not collapsed.
  * Assumes properties already has proper bounding boxes set.
  * By default Inputs go on middle of left edge. Outputs middle of right.
  */
@@ -701,6 +722,7 @@ void NodeBase::UpdateLinkPositions()
 
 		if (prop->IsInput()) prop->pos.x = 0;
 		else prop->pos.x = width;
+
 	} 
 }
 
@@ -891,17 +913,18 @@ int NodeBase::SetProperty(const char *prop, Value *value, bool absorb)
 	return 0;
 }
 
-/*! This function aids dump_in_atts. Default will handle any builtin Value types, except enums.
+/*! Set an existing property from att.
+ * This function aids dump_in_atts. Default will handle any builtin Value types, except enums.
  * Subclasses should redefine to catch these.
  *
  * Return 1 for property set, 0 for could not set.
  */
 int NodeBase::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
 {
-	if (att->attributes.n == 0) return 0;
+	if (att->attributes.n == 0) return 0; //nothing to do if no data!
 
 	NodeProperty *prop = FindProperty(propname);
-	if (!prop) return 0;
+	if (!prop) return 0; //only work on existing props.
 
 	 //check for EnumValue
     if (att->attributes.n == 1 && !strcmp(att->attributes.e[0]->name,"EnumValue")) {
@@ -1049,12 +1072,16 @@ void NodeBase::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpCo
 			collapsed = BooleanAttribute(value);
 
 		} else if (!strcmp(name,"in") || !strcmp(name,"out")) {
+			NodeProperty *prop = FindProperty(value);
+			if (!prop) {
+				 //create property if not found. This happens for bare custom nodes, and ins/outs
+				// *** this is inadequate for fully custom nodes!
+				//prop = new NodeProperty(NodeProperty::PROP_Input, true, value, NULL,1, prop->label, prop->tooltip);
+				prop = new NodeProperty(!strcmp(name,"in") ? NodeProperty::PROP_Input : NodeProperty::PROP_Output, true, value, NULL,1, NULL, NULL);
+				AddProperty(prop);
+			}
+
 			SetPropertyFromAtt(value, att->attributes.e[c]); 
-			//parse link?
-			//  to    "Nodeid","propname"
-			//  from  "Nodeid2","propname"
-			//  (ValueType) ...  <- as long as no value has type "to" or "from"
-			//    ...
 		}
 	}
 }
@@ -1164,6 +1191,16 @@ int NodeGroup::DesignateOutput(NodeBase *noutput)
 	if (output) output->dec_count();
 	output=noutput;
 	if (output) output->inc_count();
+
+	// *** connect output's properties with group output properties
+	for (int c=0; c<output->properties.n; c++) {
+		NodeProperty *prop = output->properties.e[c];
+		NodeProperty *groupprop = FindProperty(prop->name);
+		if (groupprop) {
+			prop->topropproxy = groupprop;
+		}
+	}
+
 	return 0;
 }
 
@@ -1172,6 +1209,15 @@ int NodeGroup::DesignateInput(NodeBase *ninput)
 	if (input) input->dec_count();
 	input=ninput;
 	if (input) input->inc_count();
+
+	// *** connect output's properties with group output properties
+	for (int c=0; c<input->properties.n; c++) {
+		NodeProperty *prop = input->properties.e[c];
+		NodeProperty *groupprop = FindProperty(prop->name);
+		if (groupprop) {
+			prop->frompropproxy = groupprop;
+		}
+	}
 	return 0;
 }
 
@@ -1234,10 +1280,12 @@ NodeGroup *NodeGroup::GroupNodes(Laxkit::RefPtrStack<NodeBase> &selected)
 	//NodeConnection *connection;
 
 	ins  = new NodeBase();
+	makestr(ins->type, "GroupInputs");
 	ins->Label(_("Inputs"));
 	ins->deletable = false;
 	ins->InstallColors(colors, 0);
 	outs = new NodeBase();
+	makestr(outs->type, "GroupOutputs");
 	outs->Label(_("Outputs"));
 	outs->deletable = false;
 	outs->InstallColors(colors, 0);
@@ -1692,9 +1740,19 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 
         } else if (!strcmp(name,"node")) {
 			 //value is the node type
-			if (isblank(value)) continue;
+			if (isblank(value)) {
+				if (context->log) context->log->AddMessage(_("Node missing a type, skipping!"), ERROR_Warning);
+				continue;
+			}
 
-			NodeBase *newnode = NewNode(value);
+			NodeBase *newnode;
+			if (!strcmp(value, "GroupInputs") || !strcmp(value, "GroupOutputs")) {
+				newnode = new NodeBase();
+				newnode->deletable = false;
+				makestr(newnode->type, value);
+				
+			} else newnode = NewNode(value);
+
 			if (!newnode) {
 				char errormsg[200];
 				sprintf(errormsg,_("Unknown node type: %s"), value);
@@ -1705,7 +1763,7 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 
 			newnode->dump_in_atts(att->attributes.e[c], flag, context);
 
-			if (!newnode->colors) newnode->InstallColors(colors, false);
+			if (!newnode->colors && colors) newnode->InstallColors(colors, false);
 			newnode->Wrap();
 			newnode->Update();
 			nodes.push(newnode);
@@ -1817,6 +1875,24 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 		}
 	}
 
+}
+
+/*! Recursively install colors on any that doesn't have one.
+ */
+int NodeGroup::InstallColors(NodeColors *newcolors, bool absorb_count)
+{
+	NodeBase::InstallColors(newcolors, absorb_count);
+
+	for (int c=0; c<nodes.n; c++) {
+		if (!nodes.e[c]->colors) {
+			nodes.e[c]->InstallColors(newcolors, 0);
+			nodes.e[c]->UpdateLayout();
+		}
+	}
+
+	UpdateLinkPositions();
+
+	return 0;
 }
 
 /*! Create and return a new fresh node object, unconnected to anything.
@@ -4383,26 +4459,39 @@ int NodeInterface::LoadNodes(const char *file, bool append)
 	}
 
 	FILE *f = fopen(file, "r");
-	if (f) {
-		DumpContext context(NULL,1, object_id);
-		ErrorLog log;
-		context.log = &log;
 
-		nodes->dump_in(f, 0, 0, &context, NULL);
-		fclose(f);
-
-		PostMessage(_("Nodes loaded"));
-		DBG cerr << _("Nodes loaded") <<endl;
-
-		NotifyGeneralErrors(&log);
-		needtodraw=1;
+	if (!f) {
+		 //error!
+		PostMessage(_("Could not open nodes file!"));
+		DBG cerr <<(_("Could not open nodes file!")) << file<<endl;
 		return 0;
 	}
 
-	 // else error!
-	PostMessage(_("Could not open nodes file!"));
-	DBG cerr <<(_("Could not open nodes file!")) << file<<endl;
+	char first100[100];
+	int num = fread(first100,1,99, f);
+	first100[num] = '\0';
+	rewind(f);
 
+	ErrorLog log;
+	if (strstr(first100, "#Laidout") != first100 || strstr(first100, "Nodes") == NULL) {
+		 //does not appear to be a laidout node file.
+		 //try with loaders
+		PostMessage(_(" *** Not a Laidout Nodes file! need to implement type checking with loaders!!"));
+
+	} else {
+		 //normal laidout nodes file
+		DumpContext context(NULL,1, object_id);
+		context.log = &log;
+
+		nodes->dump_in(f, 0, 0, &context, NULL);
+
+		PostMessage(_("Nodes loaded"));
+		DBG cerr << _("Nodes loaded") <<endl;
+	}
+
+	fclose(f);
+
+	NotifyGeneralErrors(&log);
 	needtodraw=1;
 	return 0;
 }

@@ -256,9 +256,10 @@ class NodeBase : public Laxkit::anObject,
 	virtual int GetStatus();
 	virtual int UsesPreview() { return total_preview!=NULL && show_preview; }
 	virtual int Wrap();
-	virtual int WrapFull();
+	virtual int WrapFull(bool keep_current_width);
 	virtual int WrapCollapsed();
 	virtual void UpdateLinkPositions();
+	virtual void UpdateLayout();
 	virtual int Collapse(int state); //-1 toggle, 0 open, 1 full collapsed, 2 collapsed to preview
 	virtual NodeBase *Duplicate();
 
@@ -309,6 +310,7 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	NodeGroup();
 	virtual ~NodeGroup();
 	virtual const char *whattype() { return "NodeGroup"; }
+	virtual int InstallColors(NodeColors *newcolors, bool absorb_count);
 	virtual int DesignateOutput(NodeBase *noutput);
 	virtual int DesignateInput(NodeBase *ninput);
 	virtual NodeBase *FindNode(const char *name);
