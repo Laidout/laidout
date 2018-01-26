@@ -1099,6 +1099,13 @@ LaidoutCalculator::LaidoutCalculator()
 
 	 //things specific to Laidout:
 	InstallModule(&stylemanager,1); //autoimport name only
+
+	//DBG cerr <<"Calculator Contents: "<<endl;
+	//DBG
+	//DBG	for (int c=0; c<modules.n; c++) {
+	//DBG		cerr <<"Module:"<<endl;
+	//DBG		modules.e[c]->dump_out(stderr, 2, 0, NULL);
+	//DBG	}
 }
 
 LaidoutCalculator::~LaidoutCalculator()
