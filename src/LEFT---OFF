@@ -196,6 +196,7 @@ node editor NodeInterface nodes:
 	tooltips for operation, not just properties
     in menu, so many nodes, need way to classify favorites, maybe custom arrangements of menu
       progressive search
+  loading should check automatically for different files if load fails
   save needs to remember file name per loader, plus default file
   no overlap needs to stack siblings as nicely as possible
   loading needs to check for name collisions
@@ -207,6 +208,7 @@ node editor NodeInterface nodes:
   view mode: all collapsed,  all collapsed except preview,  expanded no preview,  expanded with preview
   duplicate nodes
   load something already loaded makes dups of everything.. need to check for name collision!!
+  load/save custom properties needs to preserve name, label, tooltip, types, custom info
   groups
     need visual indication that something is a group
     linked vs appended node groups, to allow mass changing of particular effects
@@ -699,6 +701,11 @@ test:
   each export filter (via command line in new script in examples.. ignoring problems in eps)
   make some test scripts for command line testing
 
+
+MenuInfo AddItem functions are really terrible overload nightmare, need something simpler like, with no menu combined:
+  AddItem      (const char *name, int id = 0, int info = 0, int where = -1);
+  AddIconItem  (const char *name, LaxImage *icon, int id = 0, int info = 0, int where = -1);
+  AddToggleItem(const char *name, LaxImage *icon, int id, int info, int state, int where = -1);
 
 plugins:
   figure out proper de-loading.. have to restart?
