@@ -131,6 +131,54 @@ class SimpleFunctionEvaluator : public FunctionEvaluator
 						 Laxkit::ErrorLog *log);
 };
 
+//------------------------ ValueConstraint --------------------------------
+class ValueConstraint
+{
+  public:
+	enum Constraint {
+		PARAM_None = 0,
+
+		PARAM_No_Maximum,
+		PARAM_No_Minimum,
+		PARAM_Min_Loose_Clamp, //using the <, <=, >, >= should be hints, not hard clamp
+		PARAM_Max_Loose_Clamp, //using the <, <=, >, >= should be hints, not hard clamp
+		PARAM_Min_Clamp, //when numbers exceed bounds, force clamp
+		PARAM_Max_Clamp, //when numbers exceed bounds, force clamp
+
+		PARAM_Integer,
+
+		//PARAM_Step_Adaptive_Mult,
+		PARAM_Step_Adaptive_Add,
+		PARAM_Step_Add,  //sliding does new = old + step, or new = old - step
+		PARAM_Step_Mult, //sliding does new = old * step, or new = old / step
+
+		PARAM_MAX
+	};
+
+	int value_type;
+	Constraint mintype, maxtype, steptype;
+	double min, max, step;
+	double default_value;
+
+	ValueConstraint() {
+		value_type = PARAM_None;
+		default_value = min = max = 0;
+		step=1;
+		mintype = PARAM_No_Maximum;
+		maxtype = PARAM_No_Minimum;
+		steptype = PARAM_Step_Mult;
+	}
+	virtual ~ValueConstraint();
+
+	virtual bool IsValid(Value *v, bool correct_if_possible, Value **v_ret);
+	virtual int SetBounds(const char *bounds); //a single range like "( .. 0]", "[0 .. 1]", "[.1 .. .9]", "{1..9]"
+	virtual int SetBounds(double nmin, int nmin_type, double nmax, int nmax_type);
+	virtual int SetStep(double nstep, Constraint nsteptype);
+
+	virtual int SlideInt(int oldvalue, double numsteps);
+	virtual double SlideDouble(double oldvalue, double numsteps);
+};
+
 //------------------------------ ObjectDef --------------------------------------------
 
 
