@@ -116,20 +116,23 @@ int NodeColors::Font(Laxkit::LaxFont *newfont, bool absorb_count)
  * Note connections are not reference counted.
  * This is ok since the connections only exist in relation to the nodes, and nodes don't get stranded
  * when a connection deletes itself, as they are in a list in a NodeGroup.
+ *
+ * Connections in and out of groups get special treatment with proxies. If either is not NULL, then
+ * they point to properties of the container group.
  */
 
 NodeConnection::NodeConnection()
 {
-	from=to=NULL;
-	fromprop=toprop=NULL;
+	from     = to     = NULL;
+	fromprop = toprop = NULL;
 }
 
 NodeConnection::NodeConnection(NodeBase *nfrom, NodeBase *nto, NodeProperty *nfromprop, NodeProperty *ntoprop)
 {
-	from=nfrom;
-	to=nto;
-	fromprop=nfromprop;
-	toprop=ntoprop;
+	from     = nfrom;
+	to       = nto;
+	fromprop = nfromprop;
+	toprop   = ntoprop;
 }
 
 /*! Remove connection refs from any connected props.
@@ -164,81 +167,6 @@ void NodeConnection::RemoveConnection(int which)
 
 //-------------------------------------- NodeProperty --------------------------
 
-class ValueConstraint
-{
-  public:
-	enum Constraint {
-		PARAM_None = 0,
-
-		PARAM_No_Maximum,
-		PARAM_No_Minimum,
-		PARAM_Min_Loose_Clamp, //using the <, <=, >, >= should be hints, not hard clamp
-		PARAM_Max_Loose_Clamp, //using the <, <=, >, >= should be hints, not hard clamp
-		PARAM_Min_Clamp, //when numbers exceed bounds, force clamp
-		PARAM_Max_Clamp, //when numbers exceed bounds, force clamp
-
-		PARAM_Integer,
-
-		//PARAM_Step_Adaptive_Mult,
-		PARAM_Step_Adaptive_Add,
-		PARAM_Step_Add,  //sliding does new = old + step, or new = old - step
-		PARAM_Step_Mult, //sliding does new = old * step, or new = old / step
-
-		PARAM_MAX
-	};
-
-	int value_type;
-	Constraint mintype, maxtype, steptype;
-	double min, max, step;
-	double default_value;
-
-	ValueConstraint() {
-		value_type = PARAM_None;
-		default_value = min = max = 0;
-		step=1;
-		mintype = PARAM_No_Maximum;
-		maxtype = PARAM_No_Minimum;
-		steptype = PARAM_Step_Mult;
-	}
-	virtual ~ValueConstraint();
-
-	virtual bool IsValid(Value *v, bool correct_if_possible, Value **v_ret);
-	virtual int SetBounds(const char *bounds); //a single range like "( .. 0]", "[0 .. 1]", "[.1 .. .9]"
-	virtual int SetBounds(double nmin, int nmin_type, double nmax, int nmax_type);
-	virtual int SetStep(double nstep, int nsteptype);
-
-	virtual int SlideInt(int oldvalue, double numsteps);
-	virtual double SlideInt(double oldvalue, double numsteps);
-};
-
-int ValueConstraint::SlideInt(int oldvalue, double numsteps)
-{
-	if (numsteps) {
-		if (steptype == PARAM_Step_Add) oldvalue += numsteps * step;
-		else if (steptype == PARAM_Step_Adaptive_Add) oldvalue += numsteps * step * (fabs(oldvalue)>1 ? int(log10(fabs(oldvalue)))*10+1 : 1);
-		else if (steptype == PARAM_Step_Mult) {
-			int vv = oldvalue;
-			if (oldvalue == 0) {
-				if (numsteps>0) oldvalue = step-1; else oldvalue = 1-step; //assumes step is like 1.1
-			} else {
-				if (numsteps>0) oldvalue *= numsteps * step;
-				else oldvalue /= -numsteps * step;
-			}
-			if (vv == oldvalue) {
-				 //make sure it always moves by at least one
-				if (numsteps>0) oldvalue = vv+1;
-				else oldvalue = vv-1;
-			}
-		}
-	}
-
-	if (mintype == PARAM_Min_Clamp && oldvalue < min) oldvalue = min;
-	else if (maxtype == PARAM_Max_Clamp && oldvalue > max) oldvalue = max;
-
-	return oldvalue;
-}
-
-
 
 /*! \class NodeProperty
  * Base class for properties of nodes, either input or output.
@@ -257,6 +185,8 @@ NodeProperty::NodeProperty()
 	modtime   = 0;
 	width     = height = 0;
 	custom_info= 0;
+	frompropproxy = NULL;
+	topropproxy   = NULL;
 
 	type = PROP_Unknown;
 	is_linkable = false; //default true for something that allows links in
@@ -277,6 +207,8 @@ NodeProperty::NodeProperty(PropertyTypes input, bool linkable, const char *nname
 	if (data && !absorb_count) data->inc_count();
 	custom_info = info;
 	modtime   = 0;
+	frompropproxy = NULL;
+	topropproxy   = NULL;
 
 	type      = input;
 	is_linkable = linkable;
@@ -377,7 +309,17 @@ NodeBase *NodeProperty::GetConnection(int connection_index, int *prop_index_ret)
 Value *NodeProperty::GetData()
 {
 	 //note: this assumes fromprop is a pure output, not a through
-	if (IsInput() && connections.n && connections.e[0]->fromprop) return connections.e[0]->fromprop->GetData();
+	if (IsInput()) {
+		if (connections.n && connections.e[0]->fromprop) {
+			Value *v = connections.e[0]->fromprop->GetData();
+			if (v) return v;
+			if (connections.e[0]->fromprop->frompropproxy) {
+				v = connections.e[0]->fromprop->frompropproxy->GetData();
+				if (v) return v;
+			}
+			return NULL; //missing input variable, probably an error!
+		}
+	}
 	return data;
 }
 
@@ -582,6 +524,8 @@ int NodeBase::Update()
 		for (int c2=0; c2<prop->connections.n; c2++) {
 			if (prop->connections.e[c2]->to) {
 				prop->connections.e[c2]->to->Update();
+				if (prop->connections.e[c2]->toprop->topropproxy)
+					prop->connections.e[c2]->toprop->topropproxy->owner->Update();
 			}
 		}
 	}
@@ -1106,6 +1050,11 @@ void NodeBase::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpCo
 
 		} else if (!strcmp(name,"in") || !strcmp(name,"out")) {
 			SetPropertyFromAtt(value, att->attributes.e[c]); 
+			//parse link?
+			//  to    "Nodeid","propname"
+			//  from  "Nodeid2","propname"
+			//  (ValueType) ...  <- as long as no value has type "to" or "from"
+			//    ...
 		}
 	}
 }
@@ -1173,6 +1122,36 @@ NodeGroup::~NodeGroup()
 	if (input)  input ->dec_count();
 }
 
+/*! Set up new initial nodes for input and output.
+ * Will flush all properties of this.
+ */
+void NodeGroup::InitializeBlank()
+{
+	Label(_("Group"));
+
+	NodeBase *ins  = new NodeBase();
+	ins->Label(_("Inputs"));
+	ins->deletable = false;
+	if (colors) ins->InstallColors(colors, 0);
+	NodeBase *outs = new NodeBase();
+	outs->Label(_("Outputs"));
+	outs->deletable = false;
+	if (colors) outs->InstallColors(colors, 0);
+
+	ins->Wrap();
+	outs->Wrap();
+	outs->x = ins->x + ins->width*1.1;
+	nodes.push(ins);
+	nodes.push(outs);
+
+	if (output) output->dec_count();
+	output = outs;
+	if (input) input->dec_count();
+	input  = ins;
+
+	properties.flush();
+}
+
 /*! Install noutput as the group's pinned output.
  * Basically just dec_count the old, inc_count the new.
  * It is assumed noutput is in the nodes stack already.
@@ -1181,6 +1160,7 @@ NodeGroup::~NodeGroup()
  */
 int NodeGroup::DesignateOutput(NodeBase *noutput)
 {
+	 // *** needs updating to make sure no errant connections
 	if (output) output->dec_count();
 	output=noutput;
 	if (output) output->inc_count();
@@ -1311,6 +1291,9 @@ NodeGroup *NodeGroup::GroupNodes(Laxkit::RefPtrStack<NodeBase> &selected)
 				 //set up the new connections
 				group->Connect(insprop, prop);
 				Connect(fromprop, groupprop);
+				groupprop->topropproxy = insprop;
+				insprop->frompropproxy = groupprop;
+
 
 				// **** How to set up the relay??
 
@@ -1352,6 +1335,8 @@ NodeGroup *NodeGroup::GroupNodes(Laxkit::RefPtrStack<NodeBase> &selected)
 					 //set up the new connections
 					group->Connect(prop, outsprop);
 					Connect(groupprop, toprop);
+					groupprop->frompropproxy = outsprop;
+					outsprop->frompropproxy = groupprop;
 
 					// **** How to set up the relay??
 				}
@@ -1459,12 +1444,12 @@ int NodeGroup::UngroupNodes(Laxkit::RefPtrStack<NodeBase> &selected, bool update
 	return n;
 }
 
-/*! Return 0 for new connection success, -1 for already connected, or positive value for failure and not connected.
+/*! Return the connection, or NULL for couldn't connect.
  * If usethis != NULL, then use that as the connection object, overwriting any incorrect settings.
  * Otherwise create a new one to install.
  * from and to should have everything set properly.
  */
-int NodeGroup::Connect(NodeProperty *fromprop, NodeProperty *toprop)
+NodeConnection *NodeGroup::Connect(NodeProperty *fromprop, NodeProperty *toprop)
 {
 	NodeBase *from = fromprop->owner;
 	NodeBase *to   = toprop->owner;
@@ -1478,7 +1463,7 @@ int NodeGroup::Connect(NodeProperty *fromprop, NodeProperty *toprop)
 	from->Connected(newcon);
 	to  ->Connected(newcon);
 
-	return 0;
+	return newcon;
 }
 
 int NodeGroup::Disconnect(NodeConnection *connection)
@@ -1894,20 +1879,25 @@ Laxkit::anObject *newDoubleNode(int p, Laxkit::anObject *ref)
 class VectorNode : public NodeBase
 {
   public:
-	VectorNode();
+	int dims;
+	VectorNode(int dimensions); //up to 4
 	virtual ~VectorNode();
 	virtual int Update();
 	virtual int GetStatus();
 };
 
-VectorNode::VectorNode()
+VectorNode::VectorNode(int dimensions)
 {
+	dims = dimensions;
 	//node->Id("Value");
-	Name = newstr(_("Flatvector"));
-	type = newstr("flatvector");
+	Name = newstr(dimensions==2 ? _("Vector2") : _("Vector3"));
+	type = newstr(dimensions==2 ? "flatvector" : "spacevector");
 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, _("x"), new DoubleValue(0), 1)); 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, _("y"), new DoubleValue(0), 1)); 
+	const char *names[] = { _("x"), _("y"), _("z"), _("w") };
+
+	for (int c=0; c<dims; c++) {
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, names[c], new DoubleValue(0), 1)); 
+	}
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("V"), new FlatvectorValue(), 1)); 
 }
 
@@ -1918,10 +1908,10 @@ VectorNode::~VectorNode()
 int VectorNode::GetStatus()
 {
 	int isnum = 0;
-    getNumberValue(properties.e[0]->GetData(),&isnum);
-	if (!isnum) return -1;
-    getNumberValue(properties.e[1]->GetData(),&isnum);
-	if (!isnum) return -1;
+	for (int c=0; c<dims; c++) {
+		getNumberValue(properties.e[c]->GetData(),&isnum);
+		if (!isnum) return -1;
+	}
 
 	if (!properties.e[2]->data) return 1;
 	return 0;
@@ -1930,21 +1920,34 @@ int VectorNode::GetStatus()
 int VectorNode::Update()
 {
 	int isnum;
-    double x = getNumberValue(properties.e[0]->GetData(),&isnum);
-    double y = getNumberValue(properties.e[1]->GetData(),&isnum);
+	double vs[4];
+	for (int c=0; c<dims; c++) {
+		vs[c] = getNumberValue(properties.e[c]->GetData(),&isnum);
+	}
 
-	if (!properties.e[2]->data) return 1;
+	//if (!properties.e[2]->data) return 1;
 
-	if (!properties.e[2]->data) properties.e[2]->data=new FlatvectorValue(flatvector(x,y));
-	else dynamic_cast<FlatvectorValue*>(properties.e[2]->data)->v = flatvector(x,y);
-	properties.e[2]->modtime = time(NULL);
+	if (!properties.e[dims]->data) {
+		if      (dims == 2) properties.e[2]->data=new FlatvectorValue(flatvector(vs));
+		else if (dims == 3) properties.e[3]->data=new SpacevectorValue(spacevector(vs));
+	} else {
+		//assume correct format already in prop
+		if      (dims == 2) dynamic_cast<FlatvectorValue* >(properties.e[2]->data)->v = flatvector(vs);
+        else if (dims == 3) dynamic_cast<SpacevectorValue*>(properties.e[3]->data)->v = spacevector(vs);
+	}
+	properties.e[dims]->modtime = time(NULL);
 
 	return NodeBase::Update();
 }
 
 Laxkit::anObject *newFlatvectorNode(int p, Laxkit::anObject *ref)
 {
-	return new VectorNode;
+	return new VectorNode(2);
+}
+
+Laxkit::anObject *newSpacevectorNode(int p, Laxkit::anObject *ref)
+{
+	return new VectorNode(3);
 }
 
 //------------ ColorNode
@@ -1955,7 +1958,7 @@ Laxkit::anObject *newColorNode(int p, Laxkit::anObject *ref)
 	makestr(node->Name, _("Color"));
 	makestr(node->type, "Color");
 
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("Color"), new ColorValue("#ffffff"), 1)); 
+	node->AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("Color"), new ColorValue("#ffffff"), 1));
 	//----------
 	//node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, _("Red"), new DoubleValue(1), 1)); 
 	//node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, _("Green"), new DoubleValue(1), 1)); 
@@ -1986,8 +1989,40 @@ class MathNode : public NodeBase
 
 enum MathNodeOps {
 	OP_None,
-	 
+
+	 //1 argument:
+	OP_FIRST_1_ARG,
+	OP_AbsoluteValue,
+	OP_Negative,
+	OP_Sqrt,
+	OP_Not,
+	OP_Radians_To_Degrees,
+	OP_Degrees_To_Radians,
+	OP_Sin,
+	OP_Cos,
+	OP_Tan,
+	OP_Asin,
+	OP_Acos,
+	OP_Atan,
+	OP_Sinh,
+	OP_Cosh,
+	OP_Tanh,
+	OP_Asinh,
+	OP_Acosh,
+	OP_Atanh,
+	OP_Clamp_To_1, // [0..1]
+	 //vector specific
+	OP_Norm,
+	OP_Norm2,
+	OP_Flip,
+	OP_Normalize,
+	OP_Angle,
+	OP_Angle2,
+	OP_LAST_1_ARG,
+
+
 	 //2 arguments:
+	OP_FIRST_2_ARG,
 	OP_Add,
 	OP_Subtract,
 	OP_Multiply,
@@ -2005,60 +2040,35 @@ enum MathNodeOps {
 	OP_Average,
 	OP_Atan2,
 	OP_RandomRange,    //seed, [0..max]
+	//OP_RandomRangeInt, //seed, [0..max]
 	OP_Clamp_Max,
 	OP_Clamp_Min,
-	//OP_RandomRangeInt, //seed, [0..max]
-
 	OP_And,
 	OP_Or,
 	OP_Xor,
 	OP_ShiftLeft,
 	OP_ShiftRight,
-
-	 //1 argument:
-	OP_Not,
-	OP_AbsoluteValue,
-	OP_Negative,
-	OP_Sqrt,
-	OP_Sin,
-	OP_Cos,
-	OP_Tan,
-	OP_Asin,
-	OP_Acos,
-	OP_Atan,
-	OP_Sinh,
-	OP_Cosh,
-	OP_Tanh,
-	OP_Asinh,
-	OP_Acosh,
-	OP_Atanh,
-	OP_Radians_To_Degrees,
-	OP_Degrees_To_Radians,
-	OP_Clamp_To_1, // [0..1]
-
-	 //3 args: 
-	OP_Lerp,  // r*a+(1-r)*b, do with numbers or vectors, or sets thereof
-	OP_Clamp, // [min..max]
-
-	 //other:
-	OP_Map, // (5 args) in with [min,max] to [newmin, newmax] out
-
 	 //vector math:
-	OP_Vector_Add,
-	Op_Vector_Subtract,
+	//OP_Vector_Add,     //use normal add
+	//Op_Vector_Subtract,//use normal subtract
 	OP_Dot,
 	OP_Cross,
 	OP_Perpendicular,
 	OP_Parallel,
 	OP_Angle_Between,
 	OP_Angle2_Between,
+	OP_LAST_2_ARG,
 
-	OP_Norm,
-	OP_Norm2,
-	OP_Flip,
-	OP_Normalize,
-	OP_Angle,
-	OP_Angle2,
+
+	 //3 args:
+	OP_FIRST_3_ARG,
+	OP_Lerp,  // r*a+(1-r)*b, do with numbers or vectors, or sets thereof
+	OP_Clamp, // in, [min..max]
+	OP_LAST_3_ARG,
+
+	 //other:
+	OP_Linear_Map, // (5 args) in with [min,max] to [newmin, newmax] out
+
 	OP_Swizzle_YXZ,
 	OP_Swizzle_XZY,
 	OP_Swizzle_YZX,
@@ -2072,9 +2082,10 @@ enum MathNodeOps {
 /*! Create and return a fresh instance of the def for a MathNode op.
  */
 ObjectDef *DefineMathNodeDef()
-{ 
+{
 	ObjectDef *def = new ObjectDef("MathNodeDef", _("Math Node Def"), NULL,NULL,"enum", 0);
 
+	 //2 arguments
 	def->pushEnumValue("Add",        _("Add"),          _("Add"),         OP_Add         );
 	def->pushEnumValue("Subtract",   _("Subtract"),     _("Subtract"),    OP_Subtract    );
 	def->pushEnumValue("Multiply",   _("Multiply"),     _("Multiply"),    OP_Multiply    );
@@ -2098,6 +2109,48 @@ ObjectDef *DefineMathNodeDef()
 	def->pushEnumValue("Xor"        ,_("Xor"       ),   _("Xor"       ),  OP_Xor         );
 	def->pushEnumValue("ShiftLeft"  ,_("ShiftLeft" ),   _("ShiftLeft" ),  OP_ShiftLeft   );
 	def->pushEnumValue("ShiftRight" ,_("ShiftRight"),   _("ShiftRight"),  OP_ShiftRight  );
+
+	 //vector math, 2 args
+	//def->pushEnumValue("Dot"            ,_("Dot"),            _("Dot"),            OP_Dot            );
+	//def->pushEnumValue("Cross"          ,_("Cross"),          _("Cross"),          OP_Cross          );
+	//def->pushEnumValue("Perpendicular"  ,_("Perpendicular"),  _("Perpendicular"),  OP_Perpendicular  );
+	//def->pushEnumValue("Parallel"       ,_("Parallel"),       _("Parallel"),       OP_Parallel       );
+	//def->pushEnumValue("Angle_Between"  ,_("Angle Between"),  _("Angle Between"),  OP_Angle_Between  );
+	//def->pushEnumValue("Angle2_Between" ,_("Angle2 Between"), _("Angle2 Between"), OP_Angle2_Between );
+
+
+	 //1 argument
+	//def->pushEnumValue("Clamp_To_1"         ,_("Clamp To 1"),    _("Clamp To 1"),    OP_Clamp_To_1    );
+	//def->pushEnumValue("AbsoluteValue"      ,_("AbsoluteValue"), _("AbsoluteValue"), OP_AbsoluteValue );
+	//def->pushEnumValue("Negative"           ,_("Negative"),      _("Negative"),      OP_Negative      );
+	//def->pushEnumValue("Not"                ,_("Not"),           _("Not"),           OP_Not           );
+	//def->pushEnumValue("Sqrt"               ,_("Sqrt"),          _("Sqrt"),          OP_Sqrt          );
+	//def->pushEnumValue("Radians_To_Degrees" ,_("Radians To Degrees"), _("Radians To Degrees"), OPRadians_To_Degrees );
+	//def->pushEnumValue("Degrees_To_Radians" ,_("Degrees To Radians"), _("Degrees To Radians"), OPDegrees_To_Radians );
+	//def->pushEnumValue("Sin"                ,_("Sin"),           _("Sin"),           OP_Sin           );
+	//def->pushEnumValue("Cos"                ,_("Cos"),           _("Cos"),           OP_Cos           );
+	//def->pushEnumValue("Tan"                ,_("Tan"),           _("Tan"),           OP_Tan           );
+	//def->pushEnumValue("Asin"               ,_("Asin"),          _("Asin"),          OP_Asin          );
+	//def->pushEnumValue("Acos"               ,_("Acos"),          _("Acos"),          OP_Acos          );
+	//def->pushEnumValue("Atan"               ,_("Atan"),          _("Atan"),          OP_Atan          );
+	//def->pushEnumValue("Sinh"               ,_("Sinh"),          _("Sinh"),          OP_Sinh          );
+	//def->pushEnumValue("Cosh"               ,_("Cosh"),          _("Cosh"),          OP_Cosh          );
+	//def->pushEnumValue("Tanh"               ,_("Tanh"),          _("Tanh"),          OP_Tanh          );
+	//def->pushEnumValue("Asinh"              ,_("Asinh"),         _("Asinh"),         OP_Asinh         );
+	//def->pushEnumValue("Acosh"              ,_("Acosh"),         _("Acosh"),         OP_Acosh         );
+	//def->pushEnumValue("Atanh"              ,_("Atanh"),         _("Atanh"),         OP_Atanh         );
+	 ////vector math, 1 arg
+	//def->pushEnumValue("Norm"               ,_("Norm"),          _("Norm"),          OP_Norm          );
+	//def->pushEnumValue("Norm2"              ,_("Norm2"),         _("Norm2"),         OP_Norm2         );
+	//def->pushEnumValue("Flip"               ,_("Flip"),          _("Flip"),          OP_Flip          );
+	//def->pushEnumValue("Normalize"          ,_("Normalize"),     _("Normalize"),     OP_Normalize     );
+	//def->pushEnumValue("Angle"              ,_("Angle"),         _("Angle"),         OP_Angle         );
+	//def->pushEnumValue("Angle2"             ,_("Angle2"),        _("Angle2"),        OP_Angle2        );
+
+
+	 //3 arguments
+	//def->pushEnumValue("Lerp" , _("Lerp"),  _("Lerp"),  OP_Lerp  );
+	//def->pushEnumValue("Clamp" ,_("Clamp"), _("Clamp"), OP_Clamp );
 
 	return def;
 }
@@ -2140,10 +2193,20 @@ MathNode::~MathNode()
 //	}
 }
 
+/*! Default is to return 0 for no error and everything up to date.
+ * -1 means bad inputs and node in error state.
+ * 1 means needs updating.
+ */
 int MathNode::GetStatus()
 {
-	a = dynamic_cast<DoubleValue*>(properties.e[1]->GetData())->d;
-	b = dynamic_cast<DoubleValue*>(properties.e[2]->GetData())->d;
+	Value *va = properties.e[1]->GetData();
+	Value *vb = properties.e[2]->GetData();
+
+	int isnum=0;
+	a = getNumberValue(va, &isnum);
+	if (!isnum) return -1;
+	b = getNumberValue(vb, &isnum);
+	if (!isnum) return -1;
 
 	if ((operation==OP_Divide || operation==OP_Mod) && b==0) return -1;
 	if (a==0 || (a<0 && fabs(b)-fabs(int(b))<1e-10)) return -1;
@@ -2153,14 +2216,17 @@ int MathNode::GetStatus()
 
 int MathNode::Update()
 {
-	a = dynamic_cast<DoubleValue*>(properties.e[1]->GetData())->d;
-	b = dynamic_cast<DoubleValue*>(properties.e[2]->GetData())->d;
+	Value *va = properties.e[1]->GetData();
+	Value *vb = properties.e[2]->GetData();
+	int isnum=0;
+	a = getNumberValue(va, &isnum);
+	b = getNumberValue(vb, &isnum);
 
 	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
 	ObjectDef *def = ev->GetObjectDef();
 	const char *nm = NULL;
 	operation=OP_None;
-	def->getEnumInfo(ev->value, &nm, NULL,NULL, &operation); 
+	def->getEnumInfo(ev->value, &nm, NULL,NULL, &operation);
 
 	//DBG cerr <<"MathNode::Update op: "<<operation<<" vs enum id: "<<id<<endl;
 
@@ -2286,20 +2352,76 @@ Laxkit::anObject *newImageNode(int p, Laxkit::anObject *ref)
 
 //------------ GenericNode
 
+class GenericNode;
+typedef int (*GenericNodeUpdateFunc)(GenericNode *node, anObject *data);
+typedef int (*GenericNodeStatusFunc)(GenericNode *node);
+
 /*! \class GenericNode
- * Class to hold node groups ins and outs, and also other custom nodes.
+ * Class to hold custom nodes without a lot of c++ class definition overhead.
  */
 class GenericNode : public NodeBase
 {
   public:
-	GenericNode();
+	GenericNodeStatusFunc status_func;
+	GenericNodeUpdateFunc update_func;
+	anObject *func_data;
+
+	GenericNode(ObjectDef *ndef);
 	virtual ~GenericNode();
+	virtual int Update();
+	virtual int GetStatus();
 };
+
+GenericNode::GenericNode(ObjectDef *ndef)
+{
+	update_func = NULL;
+	func_data = NULL;
+
+	def = ndef;
+	if (def) def->inc_count();
+
+	ObjectDef *field;
+	for (int c=0; c<def->getNumFields(); c++) {
+		field = def->getField(c);
+
+		if (field->format==VALUE_Function || field->format==VALUE_Class || field->format==VALUE_Operator || field->format==VALUE_Namespace) continue;
+
+		//NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count,
+		//			const char *nlabel=NULL, const char *ntip=NULL, int info=0, bool editable=true);
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, field->name, NULL,1, field->Name, NULL, 0,true));
+	}
+
+
+	Update();
+}
+
+GenericNode::~GenericNode()
+{
+	if (func_data) func_data->dec_count();
+}
+
+int GenericNode::Update()
+{
+	if (update_func) update_func(this, func_data);
+	return NodeBase::Update();
+}
+
+int GenericNode::GetStatus()
+{
+	if (status_func) return status_func(this);
+	return NodeBase::GetStatus();
+}
+
+
+//------------ blank NodeGroup creator
 
 Laxkit::anObject *newNodeGroup(int p, Laxkit::anObject *ref)
 {
-	return new NodeGroup;
+	NodeGroup *group = new NodeGroup;
+	//group->InitializeBlank();
+	return group;
 }
+
 
 //--------------------------- SetupDefaultNodeTypes()
 
@@ -2318,6 +2440,12 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 
 	 //--- DoubleNode
 	factory->DefineNewObject(getUniqueNumber(), "Value",    newDoubleNode, NULL, 0);
+
+	 //--- FlatvectorNode
+	factory->DefineNewObject(getUniqueNumber(), "Vector2", newFlatvectorNode, NULL, 0);
+
+	 //--- SpacevectorNode
+	factory->DefineNewObject(getUniqueNumber(), "Vector3", newSpacevectorNode, NULL, 0);
 
 	 //--- NodeGroup
 	factory->DefineNewObject(getUniqueNumber(), "NodeGroup",newNodeGroup,  NULL, 0);
@@ -2631,6 +2759,12 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 				newnode->y=p.y;
 				newnode->InstallColors(nodes->colors, false);
 				newnode->Wrap();
+
+				if (!strcmp(newnode->whattype(), "NodeGroup")) {
+					 //fresh group has to subnodes, ins and outs, need to install colors
+					NodeGroup *g = dynamic_cast<NodeGroup*>(newnode);
+					g->InitializeBlank();
+				}
 
 				nodes->nodes.push(newnode);
 				newnode->dec_count();
@@ -3192,10 +3326,10 @@ void NodeInterface::DrawConnection(NodeConnection *connection)
 	dp->curveto(p1+flatpoint((p2.x-p1.x)/3, 0),
 				p2-flatpoint((p2.x-p1.x)/3, 0),
 				p2);
-	dp->LineWidth(3);
+	dp->LineWidthScreen(3);
 	dp->stroke(1);
 	dp->NewFG(&color_controls);
-	dp->LineWidth(2);
+	dp->LineWidthScreen(2);
 	dp->stroke(0);
 }
 

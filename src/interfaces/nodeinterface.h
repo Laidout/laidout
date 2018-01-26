@@ -102,6 +102,7 @@ class NodeProperty
 	std::time_t modtime;
 
 	NodeBase *owner;
+	NodeProperty *frompropproxy, *topropproxy;
 	Value *data;
 	int *datatypes; //optional 0 terminated list of acceptible VALUE_* types
 	int custom_info;
@@ -314,11 +315,12 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	virtual NodeBase *NewNode(const char *type);
 	virtual int NoOverlap(NodeBase *which, double gap);
 	virtual void BoundingBox(DoubleBBox &box);
+	virtual void InitializeBlank();
 
 	virtual int DeleteNodes(Laxkit::RefPtrStack<NodeBase> &selected);
 	virtual NodeGroup *GroupNodes(Laxkit::RefPtrStack<NodeBase> &selected);
 	virtual int UngroupNodes(Laxkit::RefPtrStack<NodeBase> &selected, bool update_selected);
-	virtual int Connect(NodeProperty *from, NodeProperty *to);
+	virtual NodeConnection *Connect(NodeProperty *from, NodeProperty *to);
 	virtual int Disconnect(NodeConnection *connection);
 
 	virtual void       dump_out(FILE *f, int indent, int what, LaxFiles::DumpContext *context);
