@@ -821,6 +821,16 @@ int GeglLaidoutNode::Connected(NodeConnection *connection)
 		if (propindex >= op->GetSubmenu()->n()) {
 			//is not a simple property, but an input or output pad
 			GeglLaidoutNode *othernode = dynamic_cast<GeglLaidoutNode*>(connection->from);
+			if (!othernode) {
+				 //check for connected proxy
+				if (connection->fromprop->frompropproxy) {
+					NodeProperty *proxy = connection->fromprop->frompropproxy;
+
+					if (proxy->IsInput() && proxy->connections.n == 1) {
+						othernode = dynamic_cast<GeglLaidoutNode*>(proxy->connections.e[0]->from);
+					}
+				}
+			}
 			if (!othernode) return 0; // *** for now assume it has to be a gegl connection
 			gegl_node_connect_to(othernode->gegl, connection->fromprop->Name(), gegl, connection->toprop->Name());
 		}
