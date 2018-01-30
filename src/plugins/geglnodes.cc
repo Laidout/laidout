@@ -592,6 +592,7 @@ int GeglLaidoutNode::Update()
 
 	int num_updated = 0;
 	int errors = 0;
+	int unhandled_props = 0;
 
 	NodeProperty *prop;
 	NodeConnection *connection;
@@ -617,7 +618,7 @@ int GeglLaidoutNode::Update()
 					gegl_node_connect_to(prevnode, connection->fromprop->Name(),
 										 gegl, prop->Name());
 				} else {
-					DBG cerr <<" *** Warning! error connected gegl input pad for "<<operation<<endl;
+					DBG cerr <<" *** Warning! error connected non-gegl input pad for "<<operation<<endl;
 					errors++;
 				}
 			}
@@ -641,6 +642,7 @@ int GeglLaidoutNode::Update()
 
 					} else {
 						errors++;
+						unhandled_props++;
 						DBG cerr <<" *** Warning! error setting property "<<propspec->name<<" on gegl node "<<operation<<endl;
 					}
 					g_value_unset(&gv);
@@ -648,10 +650,9 @@ int GeglLaidoutNode::Update()
 
 			}
 		}
-
 	}
 
-//	if (errors == 0) {
+	if (errors == 0) {
 		 //should do this ONLY if the node is a sink
 		if (IsSaveNode()) {
 			if (AutoProcess()) {
@@ -663,13 +664,15 @@ int GeglLaidoutNode::Update()
 			}
 		}
 
-//	} else {
-//		DBG cerr << " *** warning! "<<errors<<" encountered in GeglLaidoutNode::Update()!"<<endl;
-//	}
+		UpdatePreview();
+		return NodeBase::Update(); //should trigger updates in outputs
 
-	UpdatePreview();
+	} 
+	//else
 
-	return NodeBase::Update();
+	DBG cerr << " *** warning! "<<errors<<" errors encountered in GeglLaidoutNode::Update()! "<<Name<<endl;
+
+	return -1;
 }
 
 /*! Checks for true on last property if it's named "AutoProcess" and contains a BooleanValue.
