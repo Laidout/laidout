@@ -518,7 +518,7 @@ int NodeBase::Update()
 	for (int c=0; c<properties.n; c++) {
 		prop = properties.e[c];
 
-		if (prop->IsInput()) continue;
+		if (!prop->IsOutput()) continue;
 		if (prop->connections.n==0) continue;
 
 		for (int c2=0; c2<prop->connections.n; c2++) {
@@ -964,6 +964,38 @@ int NodeBase::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
 	}
 
 	return 1;
+}
+
+/*! If connected, then return the number of connected inputs.
+ * Else just the number of input properties.
+ */
+int NodeBase::NumInputs(bool connected)
+{
+	int n = 0;
+	for (int c=0; c<properties.n; c++) {
+		if (properties.e[c]->IsInput()) {
+			if (connected) {
+				n += properties.e[c]->connections.n;
+			} else n++;
+		}
+	}
+	return n;
+}
+
+/*! If connected, then return the number of connected outputs.
+ * Else just the number of output properties.
+ */
+int NodeBase::NumOutputs(bool connected)
+{
+	int n = 0;
+	for (int c=0; c<properties.n; c++) {
+		if (properties.e[c]->IsOutput()) {
+			if (connected) {
+				n += properties.e[c]->connections.n;
+			} else n++;
+		}
+	}
+	return n;
 }
 
 void NodeBase::dump_out(FILE *f, int indent, int what, LaxFiles::DumpContext *context)
@@ -1990,7 +2022,8 @@ int VectorNode::GetStatus()
 	}
 
 	if (!properties.e[2]->data) return 1;
-	return 0;
+
+	return NodeBase::GetStatus(); //default checks mod times
 }
 
 int VectorNode::Update()

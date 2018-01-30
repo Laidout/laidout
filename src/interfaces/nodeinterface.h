@@ -272,6 +272,8 @@ class NodeBase : public Laxkit::anObject,
 	virtual NodeProperty *FindProperty(const char *prop);
 	virtual int SetProperty(const char *prop, Value *value, bool absorb);
 	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
+	virtual int NumInputs(bool connected);
+	virtual int NumOutputs(bool connected);
 	
 	virtual int AssignFrame(NodeFrame *nframe);
 	//virtual NodeColors *GetColors(); //return either this->colors, or the first defined one in owners
