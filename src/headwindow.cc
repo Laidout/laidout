@@ -208,7 +208,11 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
 
 	 // put a new which in it. default to view
 	if (which) head->Add(which);
-	else head->Add(new ViewWindow(doc),0,1);
+	else {
+		PaperStyle *paper = (doc && doc->imposition ? doc->imposition->GetDefaultPaper() : NULL);
+		if (!strcasecmp(paper->name, "whatever")) paper = NULL;
+		head->Add(new ViewWindow(paper ? doc : NULL),0,1);
+	}
 
 	return head;
 }
