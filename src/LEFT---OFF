@@ -229,7 +229,7 @@ node editor NodeInterface nodes:
   color code pipes by value type, color: yellow, number: gray, vector: purple
   need better styling.. too much is hardcoded. problems later with high dpi screens
   finish implementing no cycle check: on load in could be a crash magnet currently if constructed with loops
-  file nodes need browser button
+  file properties need browser button
 
   DONE numbers need slide change: specify add or zoom stepping
   DONE node resize needs mouseover for edges
