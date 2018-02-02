@@ -1,5 +1,5 @@
 //
-//	
+//
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -349,11 +349,11 @@ double ValueConstraint::SlideDouble(double oldvalue, double numsteps)
 
 //------------------------------ ObjectDef --------------------------------------------
 
-/*! \enum ValueTypes 
+/*! \enum ValueTypes
  * \ingroup stylesandstyledefs
  * \brief Says what a ObjectDef element is.
  */
-	
+
 /*! \class ObjectDef
  * \ingroup stylesandstyledefs
  * \brief The definition of the elements of a Value.
@@ -365,18 +365,18 @@ double ValueConstraint::SlideDouble(double oldvalue, double numsteps)
  *
  * \todo have dialog format hints
  * \todo should have dynamic default values...
- * 
- *  example: 
+ *
+ *  example:
  *  <pre>
- *   name        = spacevector    <-- name as it appears in an interpreter 
+ *   name        = spacevector    <-- name as it appears in an interpreter
  *   Name        = Space Vector   <-- name as it appears as a dialog label
  *   description = A three dimensional vector  <-- description for some in-program help system or tooltip
  *    3 subfields:
  *    x,y,z all real
- * 
+ *
  *   Might be displayed like this:
  *   Space Vector: x= _12__  y= __1__  z= ___0_
- * 
+ *
  *   The name would be used in some command line interpreter.
  *   The Name would be used as shown in an edit dialog.
  *   The description would be used in some sort of help system.
@@ -385,7 +385,7 @@ double ValueConstraint::SlideDouble(double oldvalue, double numsteps)
  */
 /*! \var ValueTypes ObjectDef::format
  * \brief What is the nature of *this.
- * 
+ *
  *   The format of the value of this ObjectDef. This is for any built in objects, with VALUE_Fields
  *   meaning it is some compound object, with fieldsformat being a unique identifier for that
  *   compound format which by default is (VALUE_MaxBuiltIn+object_id).
@@ -400,7 +400,7 @@ double ValueConstraint::SlideDouble(double oldvalue, double numsteps)
  */
 /*! \var Laxkit::RefPtrStack<ObjectDef> ObjectDef::extendsdefs
  *  \brief Which ObjectDef(s) this one extends.
- *  
+ *
  *	These are pointers to defs. ObjectDef looks up extends in
  *	the global or scope namespace to get the appropriate reference during the constructor.
  *	In c++ terms, all members inherited are virtual public. There is no facility to make them private or protected.
@@ -424,28 +424,28 @@ double ValueConstraint::SlideDouble(double oldvalue, double numsteps)
 //! Null creation assumes namespace.
 ObjectDef::ObjectDef()
 {
-	name=NULL;
-	Name=NULL;
-	description=NULL;
+	name         = NULL;
+	Name         = NULL;
+	description  = NULL;
 
-	parent_namespace=NULL;
-	newfunc=NULL;
-	stylefunc=NULL;
-	opevaluator=NULL;
-	evaluator=NULL;
+	parent_namespace = NULL;
+	newfunc      = NULL;
+	stylefunc    = NULL;
+	opevaluator  = NULL;
+	evaluator    = NULL;
 
-	range=defaultvalue=NULL;
-	defaultValue=NULL;
-	flags=0;
-	format=VALUE_Namespace;
-	fieldsformat=VALUE_MaxBuiltIn + object_id;
-	fieldsdef=NULL;
-	fields=NULL;
-	format_str=NULL;
-	islist=0; //if this element should be considered a set of such elements
+	range = defaultvalue = NULL;
+	defaultValue = NULL;
+	flags        = 0;
+	format       = VALUE_Namespace;
+	fieldsformat = VALUE_MaxBuiltIn + object_id;
+	fieldsdef    = NULL;
+	fields       = NULL;
+	format_str   = NULL;
+	islist       = 0; //if this element should be considered a set of such elements
 
-	uihint=NULL;
-	extrainfo=NULL;
+	uihint       = NULL;
+	extrainfo    = NULL;
 }
 
 //! Constructor.
@@ -461,7 +461,7 @@ ObjectDef::ObjectDef(ObjectDef *nextends, //!< Definition of a class to derive f
 			Laxkit::RefPtrStack<ObjectDef> *nfields, //!< ObjectDef for the subfields or enum values.
 			unsigned int fflags,       //!< New flags
 			NewObjectFunc nnewfunc,    //!< Default creation function
-			ObjectFunc    nstylefunc)  //!< Full Function 
+			ObjectFunc    nstylefunc)  //!< Full Function
   : suggestions(2)
 {
 	DBG cerr <<"..creating ObjectDef "<<nname<<endl;
@@ -480,7 +480,7 @@ ObjectDef::ObjectDef(ObjectDef *nextends, //!< Definition of a class to derive f
 	makestr(description,ndesc);
 	makestr(range,nrange);
 	makestr(defaultvalue,newdefval);
-	
+
 
 	fields=nfields;
 	fieldsformat=VALUE_MaxBuiltIn + object_id;
@@ -509,7 +509,7 @@ ObjectDef::ObjectDef(ObjectDef *nextends, //!< Definition of a class to derive f
 //			if (extendsdef) extendsdefs.pushnodup(extendsdef);
 //		}
 	}
-	
+
 }
 
 //! Create a new VALUE_Variable object def.
@@ -551,7 +551,7 @@ ObjectDef::~ObjectDef()
 	//parent_namespace->dec_count(); <- do NOT do this, we assume the module will outlive the objectdef
 
 	DBG cerr <<"--<ObjectDef \""<<(name?name:"(no name)")<<"\" destructor"<<endl;
-	
+
 	if (name)         delete[] name;
 	if (Name)         delete[] Name;
 	if (description)  delete[] description;
@@ -561,8 +561,8 @@ ObjectDef::~ObjectDef()
 	if (format_str)   delete[] format_str;
 	//if (fieldsdef) fieldsdef->dec_count(); <- don't do this, assume type will outlive things based on type
 	delete[] uihint;
-	if (extrainfo) extrainfo->dec_count(); 
-	
+	if (extrainfo) extrainfo->dec_count();
+
 	if (fields) {
 		DBG cerr <<"---Delete fields stack"<<endl;
 		delete fields;
@@ -633,12 +633,6 @@ char *appendescaped(char *&dest, const char *src, char quote)
 	return appendstr(dest,newsrc);
 }
 
-#define DEFOUT_Indented      0
-#define DEFOUT_Script        (-2)
-#define DEFOUT_HumanSummary  (-3)
-#define DEFOUT_CPP           (-4)
-#define DEFOUT_JSON          (-5)
-
 LaxFiles::Attribute *ObjectDef::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
 {
 	if (what==0 || what==-1) {
@@ -646,10 +640,10 @@ LaxFiles::Attribute *ObjectDef::dump_out_atts(LaxFiles::Attribute *att,int what,
 		if (!att) att=new LaxFiles::Attribute();
 
 		att->push("name",name);
-		att->push("Name",Name);
-		att->push("description",description);
-		att->push("flags",(long)flags,-1);
-		att->push("format",element_TypeNames(format));
+		if (Name)        att->push("Name",Name);
+		if (description) att->push("description",description);
+		if (flags)       att->push("flags",(long)flags,-1);
+		if (format)      att->push("format",element_TypeNames(format));
 		//att->push("fieldsformat",???);
 
 		if (extendsdefs.n) {
@@ -665,8 +659,14 @@ LaxFiles::Attribute *ObjectDef::dump_out_atts(LaxFiles::Attribute *att,int what,
 
 		if (fields) {
 			for (int c=0; c<fields->n; c++) {
-				att->push("field");
-				fields->e[c]->dump_out_atts(att->attributes.e[att->attributes.n-1],what,savecontext);
+				const char *fname = fields->e[c]->name;
+				const char *fformat = element_TypeNames(fields->e[c]->format);
+				if (fformat) att->push(fformat, fname);
+				else att->push("field");
+				//-----------
+				//att->push("field");
+
+				fields->e[c]->dump_out_atts(att->Top(), what, savecontext);
 			}
 		}
 		return att;
@@ -739,7 +739,7 @@ LaxFiles::Attribute *ObjectDef::dump_out_atts(LaxFiles::Attribute *att,int what,
 		if (name) { appendstr(str,"\""); appendstr(str,name); appendstr(str,"\", "); } else appendstr(str,"NULL, ");
 		if (Name) { appendstr(str,"\""); appendstr(str,Name); appendstr(str,"\", "); } else appendstr(str,"NULL, ");
 		if (description) { appendstr(str,"\""); appendstr(str,description); appendstr(str,"\", "); } else appendstr(str,"NULL, ");
-		appendstr(str,"\""); appendstr(str,valueEnumCodeName(format)); appendstr(str,"\""); 
+		appendstr(str,"\""); appendstr(str,valueEnumCodeName(format)); appendstr(str,"\"");
 		// *** defaultval
 		// *** defaultValue
 		// *** range
@@ -753,7 +753,7 @@ LaxFiles::Attribute *ObjectDef::dump_out_atts(LaxFiles::Attribute *att,int what,
 			if (ff->name) { appendstr(str,"\""); appendstr(str,ff->name); appendstr(str,"\", "); } else appendstr(str,"NULL, ");
 			if (ff->Name) { appendstr(str,"\""); appendstr(str,ff->Name); appendstr(str,"\", "); } else appendstr(str,"NULL, ");
 			if (ff->description) { appendstr(str,"\""); appendstr(str,ff->description); appendstr(str,"\", "); } else appendstr(str,"NULL, ");
-			appendstr(str,"\""); appendstr(str,valueEnumCodeName(ff->format)); appendstr(str,"\""); 
+			appendstr(str,"\""); appendstr(str,valueEnumCodeName(ff->format)); appendstr(str,"\"");
 			// *** flags
 			appendstr(str,");\n");
 		}
@@ -776,14 +776,14 @@ LaxFiles::Attribute *ObjectDef::dump_out_atts(LaxFiles::Attribute *att,int what,
 }
 
 
-//! Write out the stuff inside. 
+//! Write out the stuff inside.
 /*! If this styledef extends another, this does not write out the whole
  * def of that, only the name element of it.
  */
 void ObjectDef::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	
+
 	if (what==-1 || what==0) {
 		//output something like:
 		// fieldname example #description of field
@@ -801,7 +801,13 @@ void ObjectDef::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *cont
 
 	} else if (what == DEFOUT_CPP) {
 		 //c++ ObjectDef create code
-		fprintf(f,"%sObjectDef *def=new ObjectDef(",spc);
+
+		//ObjectDef(ObjectDef *nextends,const char *nname,const char *nName, const char *ndesc,
+		//		const char *fmt,const char *nrange, const char *newdefval,
+		//		Laxkit::RefPtrStack<ObjectDef>  *nfields=NULL,unsigned int fflags=OBJECTDEF_CAPPED,
+		//		NewObjectFunc nnewfunc=0,ObjectFunc nstylefunc=0);
+
+		fprintf(f,"%sObjectDef *%sDef = new ObjectDef(",spc, name);
 		if (extendsdefs.n) {
 			 //output list of classes extended
 			fprintf(f,"\"");
@@ -811,14 +817,92 @@ void ObjectDef::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *cont
 			}
 			fprintf(f,"\"");
 		} else fprintf(f,"NULL, ");
-		if (name) fprintf(f,   "\"%s\", ",name); else fprintf(f,"NULL, ");
-		if (name) fprintf(f,   "\"%s\", ",name); else fprintf(f,"NULL, ");
-		if (description) fprintf(f,   "\"%s\", ",description); else fprintf(f,"NULL, ");
-		fprintf(f,"\"%s\");\n", valueEnumCodeName(format));
+
+		 //name
+		if (name) fprintf(f, "\"%s\", ",name); else fprintf(f,"NULL, ");
+
+		 //Name
+		if (Name) {
+			fwrite("\"",1,1,f);
+			dump_out_escaped(f, Name, -1);
+			fwrite("\", ",1,3,f);
+		} else fprintf(f,"NULL, ");
+
+		 //description
+		if (description) {
+			fwrite("\"",1,1,f);
+			dump_out_escaped(f, description, -1);
+			fwrite("\", ",1,3,f);
+		} else fprintf(f, "NULL, ");
+
+		 //format
+		fprintf(f,"\"%s\",", element_TypeNames(format));
+
+		 //range
+		fwrite("NULL,",1,5,f); // ***
+
+		 //default value
+		fwrite("NULL",1,4,f); // ***
+
+		fwrite(");\n\n",1,4,f);
+
 
 		if (fields) for (int c=0; c<fields->n; c++) {
-			cerr <<" *** finish implementing ObjectDef code out!"<<endl;
+			ObjectDef *fdef = fields->e[c];
+
+			if (     fdef->format == VALUE_Class
+				  || fdef->format == VALUE_Variable
+				  || fdef->format == VALUE_Operator
+				  || fdef->format == VALUE_Class
+				  || fdef->format == VALUE_Function
+				  || fdef->format == VALUE_Namespace
+				  || fdef->format == VALUE_Enum
+				  ) {
+				 //not a simple value, has sub fields
+				fdef->dump_out(f, indent+2, what, context);
+				fprintf(f, "%s%sDef->push(%sDef, 1)\n\n", spc, name, fdef->name);
+
+			} else {
+				 //use push, not a separate ObjectDef
+				if (fdef->format == VALUE_EnumVal) {
+					fprintf(f, "%s%sDef->pushEnumValue(\"%s\", %s%s%s, %s%s%s);\n", spc,
+							name,
+							fdef->name,
+							fdef->Name ? "" : "",
+							fdef->Name ? fdef->Name : "NULL",
+							fdef->Name ? "" : "",
+							fdef->description ? "" : "",
+							fdef->description ? fdef->description : "NULL",
+							fdef->description ? "" : ""
+						   );
+				} else {
+					fprintf(f, "%s%sDef->push(\"%s\", %s%s%s, %s%s%s,\n"
+							   "%s            \"%s\", NULL, NULL,\n"
+							   "%s            0, NULL  );\n", spc,
+							name,
+							fdef->name,
+							fdef->Name ? "" : "",
+							fdef->Name ? fdef->Name : "NULL",
+							fdef->Name ? "" : "",
+							fdef->description ? "" : "",
+							fdef->description ? fdef->description : "NULL",
+							fdef->description ? "" : "",
+							spc,
+							element_TypeNames(fdef->format),
+							spc
+						   );
+				}
+
+	//virtual int push(const char *nname,const char *nName,const char *ndesc,
+					 //const char *fformat,const char *nrange, const char *newdefval,
+					 //unsigned int fflags,
+					 //NewObjectFunc nnewfunc,
+					 //ObjectFunc nstylefunc=NULL);
+			}
+
+			//cerr <<" *** finish implementing ObjectDef code out!"<<endl;
 		}
+
 		return;
 	}
 }
@@ -827,11 +911,62 @@ void ObjectDef::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *cont
  */
 void ObjectDef::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
-	cout<<" *** imp me! ObjectDef::dump_in_atts(Attribute *att,int flag,context)"<<endl;
-	
 	int what=0;
 	if (what==0 || what==-1) {
 		//indented
+
+		char *nname,*value;
+
+		for (int c=0; c<att->attributes.n; c++) {
+			nname= att->attributes.e[c]->name;
+			value=att->attributes.e[c]->value;
+
+			if (!strcmp(nname,"name")) {
+				makestr(name, value);
+
+			} else if (!strcmp(nname,"Name")) {
+				makestr(Name, value);
+
+			} else if (!strcmp(nname,"description")) {
+				makestr(description, value);
+
+			} else if (!strcmp(nname,"extends")) {
+				// ***
+				cerr <<" *** need to implement extends in ObjectDef::dump_in_atts()!"<<endl;
+
+			} else if (!strcmp(nname,"format")) {
+				format = element_NameToType(value);
+
+			} else if (!strcmp(nname,"flags")) {
+				UIntAttribute(value, &flags, NULL);
+
+			} else if (!strcmp(nname,"uihint")) {
+				makestr(uihint, value);
+
+			} else if (!strcmp(nname,"defaultValue")) {
+				// ***
+			} else if (!strcmp(nname,"range")) {
+				// ***
+			} else if (!strcmp(nname,"suggestions")) {
+				// ***
+
+			} else {
+				ValueTypes fformat = element_NameToType(nname);
+				if (fformat != VALUE_None) {
+				  //if (fformat == VALUE_None) {
+				  //} else {
+					ObjectDef *ndef = new ObjectDef();
+					ndef->format = fformat;
+					if (value) makestr(ndef->name, value);
+					push(ndef, 1);
+
+					ndef->dump_in_atts(att->attributes.e[c], flag, context);
+				  //}
+				}
+			}
+		}
+
+
 	} else if (what == DEFOUT_Script) {
 		//calc
 	} else if (what == DEFOUT_CPP) {
@@ -873,7 +1008,7 @@ int ObjectDef::pushEnumValue(const char *str, const char *Str, const char *dsc, 
 	if (id==-10000000) id=(fields?fields->n:0); //use number of enum values
 	char idstr[30];
 	sprintf(idstr,"%d",id);
-	return push(str,Str,dsc, 
+	return push(str,Str,dsc,
 				"enumval", NULL, idstr,
 				(unsigned int)0, NULL,NULL);
 }
@@ -896,7 +1031,7 @@ int ObjectDef::pushEnum(const char *nname,const char *nName,const char *ndesc,
 					 ...)
 {
 	ObjectDef *e=new ObjectDef(NULL,nname,nName,ndesc,
-							 "enum", NULL, newdefval, 
+							 "enum", NULL, newdefval,
 							 NULL, 0,
 							 nnewfunc, nstylefunc);
 	va_list ap;
@@ -950,7 +1085,7 @@ int ObjectDef::pushOperator(const char *op,int dir,int priority, const char *des
  * - the description of the parameter
  * - format (string)
  * - range (string)
- * - default value (string) 
+ * - default value (string)
  *
  * For instance, if you are adding 2 parameters, you must supply 12 const char * values, followed
  * by a single NULL, or all hell will break loose.
@@ -1031,7 +1166,7 @@ int ObjectDef::pushVariable(const char *name,const char *nName, const char *ndes
 		if (v && absorb) v->dec_count();
 		return -1;
 	}
-	
+
 	//else name didn't exist, so ok to push
 	def=new ObjectDef(name,nName,ndesc, v, type,fflags);
 	push(def,1);
@@ -1175,8 +1310,8 @@ ObjectDef *ObjectDef::getFieldOfThis(int index)
  /*! If this styledef is an extension of another, then the number returned is
   * the total number of fields defined in *this plus all the upper fields in
   * the extended styledef(s). Each styledef simply adds fields->n if fields
-  * exists, or 0 if fields does not exists and extendsdef exists, or 1 if neither fields 
-  * nor extendsdef exist. 
+  * exists, or 0 if fields does not exists and extendsdef exists, or 1 if neither fields
+  * nor extendsdef exist.
   *
   * A special exception is when format==VALUE_Enum. In that case, fields would
   * contain the possible enum values, but the enum as a whole acts like a single
@@ -1184,7 +1319,7 @@ ObjectDef *ObjectDef::getFieldOfThis(int index)
   * some other enum, then this styledef adds 0 to the count.
   *
   * If enum, then use enum specific fuctions. getNumEnumValues(), getEnumInfo().
-  * 
+  *
   * Consider a ObjectDef vector(x,y,z), Now say you define a ObjectDef called zenith
   * which is a vector with x,y,z. You want the normal x,y,z definitions, but the
   * head you want to now be "zenith" rather than "vector", So you extend "vector",
@@ -1198,14 +1333,14 @@ int ObjectDef::getNumFields()
 	if (format==VALUE_Enum) {
 		if (!extendsdefs.n) n++;
 	} else {
-		if (fields && fields->n) n+=fields->n; 
+		if (fields && fields->n) n+=fields->n;
 			else if (!extendsdefs.n) n++;
 		if (extendsdefs.n) {
-			for (int c=0; c<extendsdefs.n; c++) 
+			for (int c=0; c<extendsdefs.n; c++)
 				n+=extendsdefs.e[c]->getNumFields();
 		}
 	}
-	return n; 
+	return n;
 }
 
 /*! Return the number of enum values defined by this and and any in extendsdef.
@@ -1219,7 +1354,7 @@ int ObjectDef::getNumEnumFields()
 	int n=0;
 	if (fields) n+=fields->n;
 
-	for (int c=0; c<extendsdefs.n; c++) 
+	for (int c=0; c<extendsdefs.n; c++)
 		n+=extendsdefs.e[c]->getNumEnumFields();
 
 	return n;
@@ -1236,7 +1371,7 @@ Value *ObjectDef::newValue(const char *objectdef)
 
 //! Return the def with the given name.
 /*! This returns the pointer, but does NOT increase the count on it.
- *  
+ *
  * If which&1, then only look in functions.
  * If which&2, only look in objects.
  * If which&4 then only look in variables.
@@ -1247,7 +1382,7 @@ Value *ObjectDef::newValue(const char *objectdef)
  * \todo Should probably optimize this for searching.. have list of sorted field names?
  */
 ObjectDef *ObjectDef::FindDef(const char *objectdef, int len, int which)
-{   
+{
 	if (len<0) len=strlen(objectdef);
 	if (fields) for (int c=0; c<fields->n; c++) {
 		if (!strncmp(objectdef,fields->e[c]->name,len) && strlen(fields->e[c]->name)==(unsigned int)len) {
@@ -1285,14 +1420,14 @@ int ObjectDef::getEnumInfo(int index,
 
 	// *** this ignores extendsdef:
 	//index=findActualDef(index,&def);
-	if (index>=0 && index<fields->n) def=fields->e[index];
+	if (index>=0 && index<fields->n) def = fields->e[index];
 
 	if (!def) return 1; // otherwise index should be a valid value in fields, or refer to this
 
-	if (nm) *nm=fields->e[index]->name;
-	if (Nm) *Nm=fields->e[index]->Name;
-	if (desc) *desc=fields->e[index]->description;
-	if (id) *id = strtol(fields->e[index]->defaultvalue, NULL, 10);
+	if (nm)     *nm = def->name;
+	if (Nm)     *Nm = def->Name;
+	if (desc) *desc = def->description;
+	if (id) *id = strtol(def->defaultvalue, NULL, 10);
 
 	return 0;
 }
@@ -1367,11 +1502,11 @@ ObjectDef *ObjectDef::getField(int index)
  * findActualDef(4,&def_ret) will return 2 with def_ret==def2.
  *
  * On out of bounds, -1 is returned, and def_ret is set to NULL.
- */ 	
+ */
 int ObjectDef::findActualDef(int index,ObjectDef **def_ret)
 {
 	if (index<0) { *def_ret=NULL; return -1; }
-	
+
 	 // if enum, or this is single unit (not extending anything): index must be 0
 	if (index==0 && (format==VALUE_Enum || (!extendsdefs.n && (!fields || !fields->n)))) {
 		*def_ret=this;
@@ -1387,10 +1522,10 @@ int ObjectDef::findActualDef(int index,ObjectDef **def_ret)
 			n+=extendsdef->getNumFields(); //counts all fields in extensions
 			if (index<n) { // index lies in extendsdef somewhere
 				return extendsdef->findActualDef(index,def_ret);
-			} 	
+			}
 		}
 	}
-	
+
 	 // index puts it in *this.
 	index-=n;
 	 // index>=0 at this point implies that this has fields, assuming original index is valid
@@ -1407,9 +1542,9 @@ int ObjectDef::findActualDef(int index,ObjectDef **def_ret)
  *  "a.b" will find a, and next will point to "b". If there is only "a", then next
  *  will be set to NULL.
  *
- *  On success, the field index is returned (field index starting at 0). 
+ *  On success, the field index is returned (field index starting at 0).
  *  If the field string is a number (ie "34.2...") the number is parsed
- *  and returned without bounds checking (though it must be non-negative). This 
+ *  and returned without bounds checking (though it must be non-negative). This
  *  number passing is to accommodate sets with variable numbers of
  *  elements, where the number of elements is held in Object, not ObjectDef.
  *
@@ -1453,7 +1588,7 @@ int ObjectDef::findFieldOfThis(const char *fname,char **next) // next=NULL
 	 // check for number first: "34.blah.blah"
 	if (isdigit(fname[0])) {
 		char *nxt=NULL;
-		int nn=strtol(fname,&nxt,10); 
+		int nn=strtol(fname,&nxt,10);
 		if (nxt-fname==n) {
 			 //found valid number
 			if (nn>=0) {
@@ -1462,7 +1597,7 @@ int ObjectDef::findFieldOfThis(const char *fname,char **next) // next=NULL
 			}
 		}
 	}
-	
+
 	if (!fields) {
 		if (next) *next=NULL;
 		return -1;
@@ -1522,7 +1657,7 @@ Value *ValueHash::duplicate()
  *  { name: 3,
  *    name2: "string",
  *    othername: (3,5)
- *  } 
+ *  }
  * </pre>
  */
 int ValueHash::getValueStr(char *buffer,int len)
@@ -1563,7 +1698,7 @@ Value *ValueHash::dereference(int index)
 }
 
 ObjectDef default_ValueHash_ObjectDef(NULL,"Hash",_("Hash"),_("Set of name-value pairs"),
-							 "class", NULL, "{ : }", 
+							 "class", NULL, "{ : }",
 							 NULL, 0,
 							 NULL, NULL);
 
@@ -1578,9 +1713,9 @@ ObjectDef *Get_ValueHash_ObjectDef()
 // * - the parameter name,
 // * - the parameter name translated, human readable name
 // * - the description of the parameter
-// * - format 
+// * - format
 // * - range (string)
-// * - default value (string) 
+// * - default value (string)
 
 	def->pushFunction("n",_("Number of elements"),_("Number of elements"), NULL,
 					  NULL);
@@ -1687,7 +1822,7 @@ int ValueHash::Evaluate(const char *func,int len, ValueHash *context, ValueHash 
 			*value_ret=new StringValue(keys.e[pos]);
 			return 0;
 		}
-		
+
 
 		if (isName(func,len,"push")) {
 			int success;
@@ -1705,7 +1840,7 @@ int ValueHash::Evaluate(const char *func,int len, ValueHash *context, ValueHash 
 			*value_ret=NULL;
 			return 0;
 		}
-		
+
 		if (isName(func,len,"pop")) {
 			Value *v=parameters->find("key");
 			if (!v) throw 1; //missing parameter!
@@ -1724,7 +1859,7 @@ int ValueHash::Evaluate(const char *func,int len, ValueHash *context, ValueHash 
 			*value_ret=set;
 			return 0;
 		}
-		
+
 		if (isName(func,len,"swap")) {
 			int success;
 			int pos=parameters->findInt("pos",-1,&success);
@@ -1735,7 +1870,7 @@ int ValueHash::Evaluate(const char *func,int len, ValueHash *context, ValueHash 
 			swap(pos,pos2);
 			return 0;
 		}
-		
+
 		if (isName(func,len,"slide")) {
 			int success;
 			int pos=parameters->findInt("pos",-1,&success);
@@ -1758,7 +1893,7 @@ int ValueHash::Evaluate(const char *func,int len, ValueHash *context, ValueHash 
 		}
 		return 1;
 	}
-	
+
 
 	if (log) log->AddMessage(_("Unknown name!"),ERROR_Fail);
 	return 1;
@@ -1980,13 +2115,13 @@ int ValueHash::findBoolean(const char *name, int which, int *error_ret)
 
 	IntValue *i=dynamic_cast<IntValue*>(values.e[which]);
 	if (i) { if (error_ret) *error_ret=0; return i->i; }
-	
+
 	BooleanValue *b=dynamic_cast<BooleanValue*>(values.e[which]);
 	if (b) { if (error_ret) *error_ret=0; return b->i; }
-	
+
 	DoubleValue *d=dynamic_cast<DoubleValue*>(values.e[which]);
 	if (d) { if (error_ret) *error_ret=0; return d->d!=0; }
-	
+
 	if (error_ret) *error_ret=2;
 	return 0;
 }
@@ -2239,7 +2374,7 @@ ObjectDef *Value::GetObjectDef()
  *  and even what kind of fields they are in that case.
  *
  *  Returns objectdef->getNumFields(). Calls makeObjectDef() if necessary
- * 
+ *
  * Set and array values will have this redefined to return the number of objects in the set.
  */
 int Value::getNumFields()
@@ -2316,7 +2451,7 @@ LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,LaxF
 					appendstr(att->attributes.e[att->attributes.n-1]->name, def->fields->e[c]->defaultvalue);
 				}
 
-				if (subatt) subatt->push("..."); 
+				if (subatt) subatt->push("...");
 			}
 		}
 
@@ -2363,7 +2498,7 @@ LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,LaxF
 			if (fdef->format==VALUE_Function) continue;
 			if (fdef->format==VALUE_Class) continue;
 			if (fdef->format==VALUE_Operator) continue;
-			
+
 			v=dereference(fdef->name,strlen(fdef->name));
 			if (!v) continue;
 
@@ -2394,7 +2529,7 @@ LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,LaxF
 void dump_out_desc(Attribute *att, FILE *f, int indent, int columns)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	
+
 	 //determine indent for description
 	int nw=0, w;
 	for (int c=0; c<att->attributes.n; c++) {
@@ -2493,7 +2628,7 @@ void Value::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 
 			 //output values only, not functions
 			if (def->format==VALUE_Function || def->format==VALUE_Class || def->format==VALUE_Operator) continue;
-			
+
 			v=dereference(def->name,strlen(def->name));
 			if (!v) continue;
 			def=v->GetObjectDef();
@@ -2559,7 +2694,7 @@ Value *AttributeToValue(Attribute *att)
 		if (FlatvectorAttribute(att->value, &v, &endptr)) {
 			return new FlatvectorValue(v);
 		}
-		return NULL; 
+		return NULL;
 
     } else if (!strcmp(att->name, "SpacevectorValue")) {
 		spacevector v;
@@ -2567,7 +2702,7 @@ Value *AttributeToValue(Attribute *att)
 		if (SpacevectorAttribute(att->value, &v, &endptr)) {
 			return new SpacevectorValue(v);
 		}
-		return NULL; 
+		return NULL;
 
     } else if (!strcmp(att->name, "FileValue")) {
     } else if (!strcmp(att->name, "EnumValue")) {
@@ -2609,7 +2744,7 @@ GenericValue::GenericValue(ObjectDef *def)
 				&& fmt!=VALUE_Class
 				&& fmt!=VALUE_Operator
 				&& fmt!=VALUE_Namespace) {
-			
+
 			 //push only pure value elements
 			elements.push(nm,(Value*)NULL);
 		}
@@ -2752,7 +2887,7 @@ Value *SetValue::dereference(int index)
 
 
 ObjectDef default_SetValue_ObjectDef(NULL,"set",_("Set"),_("Set of values"),
-							 "class", NULL, "{}", 
+							 "class", NULL, "{}",
 							 NULL, 0,
 							 NULL, NULL);
 
@@ -2834,7 +2969,7 @@ int SetValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash *
 			*value_ret=NULL;
 			return 0;
 		}
-		
+
 		if (isName(func,len,"pop")) {
 			int success=1;
 			int pos=parameters ? parameters->findInt("pos",-1,&success) : -1;
@@ -2847,7 +2982,7 @@ int SetValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash *
 			*value_ret=values.e[pos];
 			return 0;
 		}
-		
+
 		if (isName(func,len,"swap")) {
 			int success;
 			int pos=parameters->findInt("pos",-1,&success);
@@ -2858,7 +2993,7 @@ int SetValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash *
 			values.swap(pos,pos2);
 			return 0;
 		}
-		
+
 		if (isName(func,len,"slide")) {
 			int success;
 			int pos=parameters->findInt("pos",-1,&success);
@@ -2882,7 +3017,7 @@ int SetValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash *
 		}
 		return 1;
 	}
-	
+
 
 	if (log) log->AddMessage(_("Unknown name!"),ERROR_Fail);
 	return 1;
@@ -2980,7 +3115,7 @@ int NullValue::getValueStr(char *buffer,int len)
 
 //! Return ref to this.. all null values are the same.
 Value *NullValue::duplicate()
-{ 
+{
 	inc_count();
 	return this;
 }
@@ -3027,7 +3162,7 @@ int BooleanValue::assign(FieldExtPlace *ext,Value *v)
 
 
 ObjectDef default_BooleanValue_ObjectDef(NULL,"boolean",_("Boolean"),_("Boolean, true or false"),
-							 "class", NULL, "true", 
+							 "class", NULL, "true",
 							 NULL, 0,
 							 NULL, NULL);
 
@@ -3068,7 +3203,7 @@ int IntValue::assign(FieldExtPlace *ext,Value *v)
 
 
 ObjectDef default_IntValue_ObjectDef(NULL,"int",_("Int"),_("Integers"),
-							 "class", NULL, "0", 
+							 "class", NULL, "0",
 							 NULL, 0,
 							 NULL, NULL);
 
@@ -3083,7 +3218,7 @@ ObjectDef *IntValue::makeObjectDef()
 
 
 //--------------------------------- DoubleValue -----------------------------
-/*! \class DoubleValue 
+/*! \class DoubleValue
  * \brief Holds a real number.
  */
 int DoubleValue::getValueStr(char *buffer,int len)
@@ -3112,7 +3247,7 @@ int DoubleValue::assign(FieldExtPlace *ext,Value *v)
 
 
 ObjectDef default_DoubleValue_ObjectDef(NULL,"real",_("Real"),_("Real numbers"),
-							 "class", NULL, "0.", 
+							 "class", NULL, "0.",
 							 NULL, 0,
 							 NULL, NULL);
 
@@ -3136,7 +3271,7 @@ ObjectDef *Get_DoubleValue_ObjectDef()
 ObjectDef *DoubleValue::makeObjectDef()
 {
 	Get_DoubleValue_ObjectDef()->inc_count();
-	return Get_DoubleValue_ObjectDef(); 
+	return Get_DoubleValue_ObjectDef();
 }
 
 
@@ -3215,7 +3350,7 @@ int FlatvectorValue::assign(FieldExtPlace *ext,Value *vv)
 
 
 ObjectDef default_FlatvectorValue_ObjectDef(NULL,"flatvector",_("Flatvector"),_("A two dimensional vector"),
-							 "class", NULL, "(0,0)", 
+							 "class", NULL, "(0,0)",
 							 NULL, 0,
 							 NULL, NULL);
 
@@ -3331,7 +3466,7 @@ int SpacevectorValue::assign(FieldExtPlace *ext,Value *vv)
 
 
 ObjectDef default_SpacevectorValue_ObjectDef(NULL,"spacevector",_("Spacevector"),_("A three dimensional vector"),
-							 "class", NULL, "(0,0)", 
+							 "class", NULL, "(0,0)",
 							 NULL, 0,
 							 NULL, NULL);
 
@@ -3445,7 +3580,7 @@ void StringValue::Set(const char *nstr)
 
 
 ObjectDef default_StringValue_ObjectDef(NULL,"string",_("String"),_("String"),
-							 "class", NULL, "\"\"", 
+							 "class", NULL, "\"\"",
 							 NULL, 0,
 							 NULL, NULL);
 
@@ -3612,7 +3747,7 @@ int BytesValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash
 }
 
 ObjectDef default_BytesValue_ObjectDef(NULL,"Bytes",_("Bytes"),_("Bytes"),
-							 "class", NULL, NULL, 
+							 "class", NULL, NULL,
 							 NULL, 0,
 							 NULL, NULL);
 
@@ -3706,7 +3841,7 @@ int FileValue::Exists()
 }
 
 ObjectDef default_FileValue_ObjectDef(NULL,"file",_("File"),_("File"),
-							 "class", NULL, "/", 
+							 "class", NULL, "/",
 							 NULL, 0,
 							 NULL, NULL);
 
@@ -3842,7 +3977,7 @@ ObjectDef *EnumValue::makeObjectDef()
 ObjectValue::ObjectValue(anObject *obj)
 {
 	DBG cerr <<"ObjectValue creation.."<<endl;
-	object=obj; 
+	object=obj;
 	if (object) object->inc_count();
 }
 
@@ -3978,17 +4113,17 @@ ObjectDef *ColorValue::makeObjectDef()
  *
  * On success, it will return the value of rawparams, or NULL if there is any error.
  *
- * Something like "paper=letter,imposition, 3" will be parsed 
+ * Something like "paper=letter,imposition, 3" will be parsed
  * by parse_fields into an attribute like this:
  * <pre>
  *  paper letter
  *  - imposition
- *  - 3 
+ *  - 3
  * </pre>
  *
  * Now say we have a ObjectDef something like:
  * <pre>
- *  field 
+ *  field
  *    name numpages
  *    format int
  *  field
@@ -4001,7 +4136,7 @@ ObjectDef *ColorValue::makeObjectDef()
  *
  * Now paper is the only named parameter. It will be moved to position 1 to match
  * the position in the styledef. The other 2 are not named, so we try to guess. (todo:) If
- * there is an enum field in the styledef, then the value of the parameter, "imposition" 
+ * there is an enum field in the styledef, then the value of the parameter, "imposition"
  * for instance, is searched for in the enum values. If found, it is moved to the proper
  * position, and labeled accordingly. Any remaining unclaimed parameters are mapped
  * in order to the unused styledef fields. Extra or unknown values are placed at the end.
