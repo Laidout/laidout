@@ -1345,7 +1345,7 @@ AbstractNet *Net::loadBaseNet(const char *filename,char **error_ret)
 {
 	BasicNet *net=new BasicNet;
 	Attribute att;
-	att.dump_in(filename,NULL);
+	att.dump_in(filename);
 	net->dump_in_atts(&att,0,NULL);
 	return net;
 }
