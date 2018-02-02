@@ -1,6 +1,6 @@
 //
 // $Id$
-//	
+//
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -44,7 +44,7 @@ enum ValueTypes {
 	VALUE_Number,     //!< Special tag meaning allow int or real.
 	VALUE_String,     //!< strings, utf8 based
 	VALUE_Bytes,      //!< raw data
-	VALUE_Fields,     //!< collection of subfields 
+	VALUE_Fields,     //!< collection of subfields
 	VALUE_Flatvector, //!< two dimensional vector
 	VALUE_Spacevector,//!< three dimensional vector
 	VALUE_File,       //!< string like object refering to a file on disk
@@ -182,13 +182,22 @@ class ValueConstraint
 //------------------------------ ObjectDef --------------------------------------------
 
 
- 
+
 //ObjectDef::flags:
 #define OBJECTDEF_CAPPED    (1<<0)
 #define OBJECTDEF_DUPLICATE (1<<1)
 #define OBJECTDEF_ORPHAN    (1<<2)
 #define OBJECTDEF_ISSET     (1<<3)
 #define OBJECTDEF_LIST      (1<<3)
+
+enum ObjectDefOut {
+	DEFOUT_Indented     = 0,
+	DEFOUT_Script       = (-2),
+	DEFOUT_HumanSummary = (-3),
+	DEFOUT_CPP          = (-4),
+	DEFOUT_JSON         = (-5),
+	DEFOUT_MAX
+};
 
 
 class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
@@ -251,7 +260,7 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	virtual int AddObjectDef(ObjectDef *def, int absorb);
 	virtual int SetVariable(const char *name,Value *v,int absorb);
 	virtual int pushVariable(const char *name,const char *nName, const char *ndesc, const char *type, unsigned int fflags, Value *v,int absorb);
-	
+
 	 // helpers to locate fields by name, "blah.3.x"
 	virtual int getNumFieldsOfThis();
 	virtual ObjectDef *getFieldOfThis(int index);
@@ -279,7 +288,7 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 
 
 	 //-------- ObjectDef creation helper functions ------
-	 // The following (push/pop/cap) are convenience functions 
+	 // The following (push/pop/cap) are convenience functions
 	 // to construct a styledef on the fly
 	virtual int Extend(ObjectDef *def);
 	virtual int SetType(const char *type);
