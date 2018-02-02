@@ -191,6 +191,7 @@ NodeProperty::NodeProperty()
 	type = PROP_Unknown;
 	is_linkable = false; //default true for something that allows links in
 	is_editable = true;
+	hidden      = false;
 }
 
 /*! If !absorb_count, then ndata's count gets incremented.
@@ -213,6 +214,7 @@ NodeProperty::NodeProperty(PropertyTypes input, bool linkable, const char *nname
 	type      = input;
 	is_linkable = linkable;
 	is_editable = editable;
+	hidden      = false;
 
 	name      = newstr(nname);
 	label     = newstr(nlabel);
@@ -255,6 +257,22 @@ int NodeProperty::AllowInput()
 int NodeProperty::AllowOutput()
 {
 	return IsOutput();
+}
+
+/*! Make hidden flag be true.
+ */
+int NodeProperty::Hide()
+{
+	hidden = true;
+	return hidden;
+}
+
+/*! Make hidden flag be false.
+ */
+int NodeProperty::Show()
+{
+	hidden = false;
+	return hidden;
 }
 
 /*! Return true if it is ok to attach ndata to this property.
@@ -598,12 +616,13 @@ int NodeBase::WrapFull(bool keep_current_width)
 
 				} else if (v->type()==VALUE_Enum) {
 					EnumValue *ev = dynamic_cast<EnumValue*>(v);
-					const char *nm=NULL;
+					const char *nm=NULL, *Nm=NULL;
 					double ew=0, eww;
 					for (int c=0; c<ev->GetObjectDef()->getNumEnumFields(); c++) {
-						ev->GetObjectDef()->getEnumInfo(c, NULL, &nm);
-						if (isblank(nm)) continue;
-						eww = colors->font->extent(nm,-1);
+						ev->GetObjectDef()->getEnumInfo(c, &nm, &Nm);
+						if (!Nm) Nm = nm;
+						if (isblank(Nm)) continue;
+						eww = colors->font->extent(Nm,-1);
 						if (eww>ew) ew=eww;
 					}
 					w += ew;
@@ -881,9 +900,9 @@ int NodeBase::Connected(NodeConnection *connection)
  *
  * Return 0 for succes, or nonzero for some kind of error.
  */
-int NodeBase::AddProperty(NodeProperty *newproperty)
+int NodeBase::AddProperty(NodeProperty *newproperty, int where)
 {
-	properties.push(newproperty);
+	properties.push(newproperty, where);
 	newproperty->owner = this;
 	return 0;
 }
@@ -1927,6 +1946,15 @@ int NodeGroup::InstallColors(NodeColors *newcolors, bool absorb_count)
 	return 0;
 }
 
+/*! Dec old def, install new one and inc count if !absorb_count.
+ */
+void NodeBase::InstallDef(ObjectDef *ndef, bool absorb_count)
+{
+	if (def) def->dec_count();
+	def = ndef;
+	if (!absorb_count && def) def->inc_count();
+}
+
 /*! Create and return a new fresh node object, unconnected to anything.
  */
 NodeBase *NodeGroup::NewNode(const char *type)
@@ -1956,6 +1984,14 @@ NodeBase *NodeGroup::NewNode(const char *type)
 	return NULL;
 }
 
+/*! Return node at index in nodes, or NULL if doesn't exist.
+ */
+NodeBase *NodeGroup::GetNode(int index)
+{
+	if (index < 0 || index >= nodes.n) return NULL;
+	return nodes.e[index];
+}
+
 NodeBase *NodeGroup::FindNode(const char *name)
 {
 	if (!name) return NULL;
@@ -1964,6 +2000,14 @@ NodeBase *NodeGroup::FindNode(const char *name)
 		if (!strcmp(name, nodes.e[c]->Id())) return nodes.e[c];
 	}
 	return NULL;
+}
+
+/*! Return frame at index in frame, or NULL if doesn't exist.
+ */
+NodeFrame *NodeGroup::GetFrame(int index)
+{
+	if (index < 0 || index >= frames.n) return NULL;
+	return frames.e[index];
 }
 
 
@@ -2831,10 +2875,11 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 		EnumValue *ev = dynamic_cast<EnumValue*>(prop->data);
 		ObjectDef *def=ev->GetObjectDef();
 
-		const char *nm;
+		const char *nm, *Nm;
 		for (int c=0; c<def->getNumEnumFields(); c++) {
-			def->getEnumInfo(c, NULL, &nm); //grabs id == name in the def
-			if (!strcmp(nm, what)) {
+			def->getEnumInfo(c, &nm, &Nm); //grabs id == name in the def
+			if (!Nm) Nm = nm;
+			if (Nm && !strcmp(Nm, what)) {
 				ev->value = c; //note: makes enum value the index of the enumval def, not the id
 				break;
 			}
@@ -2950,6 +2995,28 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 
 	} else if (!strcmp(mes,"loadwithloader")) {
 		PostMessage("*** Need to implement save with loader!!");
+		return 0;
+
+	} else if (!strcmp(mes, "setNodeLabel")) {
+		NodeBase *node = nodes->GetNode(lasthover);
+		if (!node) return 0;
+
+        const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
+		if (isblank(s->str)) return 0;
+		node->Label(s->str);
+
+		needtodraw=1;
+		return 0;
+
+	} else if (!strcmp(mes, "setFrameLabel")) {
+		NodeFrame *frame = nodes->GetFrame(lasthoverslot);
+		if (!frame) return 0;
+
+        const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
+		if (isblank(s->str)) return 0;
+		frame->Label(s->str);
+
+		needtodraw=1;
 		return 0;
 	}
 
@@ -3337,9 +3404,10 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 			//v->getValueStr(extra, 199);
 			//-----
 			EnumValue *ev = dynamic_cast<EnumValue*>(v);
-			const char *nm; 
-			ev->GetObjectDef()->getEnumInfo(ev->value, NULL, &nm);
-			dp->textout(node->x+th*1.5+dx, node->y+prop->y+prop->height/2, nm,-1, LAX_LEFT|LAX_VCENTER);
+			const char *nm=NULL, *Nm=NULL; 
+			ev->GetObjectDef()->getEnumInfo(ev->value, &nm, &Nm);
+			if (!Nm) Nm = nm;
+			dp->textout(node->x+th*1.5+dx, node->y+prop->y+prop->height/2, Nm,-1, LAX_LEFT|LAX_VCENTER);
 			//dp->textout(node->x+th*1.5+dx, node->y+prop->y+prop->height/2, extra,-1, LAX_LEFT|LAX_VCENTER);
 			dp->drawthing(node->x+node->width-th, node->y+prop->y+prop->height/2, th/4,th/4, 1, THING_Triangle_Down);
 
@@ -3472,7 +3540,9 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty)
 	//if (r) return NODES_VP_Top_Right;
 
 
+	 //reminder: y increased downward
 	flatpoint p=nodes->m.transformPointInverse(flatpoint(x,y));
+
 	*overpropslot=-1;
 	*overproperty=-1;
 
@@ -3480,12 +3550,14 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty)
 	double th = font->textheight();
 	double rr;
 
+	 //check node related
 	for (int c=nodes->nodes.n-1; c>=0; c--) {
 		node = nodes->nodes.e[c];
 
 		if (node->collapsed) rr = th*node->colors->slot_radius;
 		else rr = th/2;
 
+		 //check for bounds slightly bigger horizontally than actual bounds
 		if (p.x >= node->x-th/2 &&  p.x <= node->x+node->width+th/2 &&  p.y >= node->y &&  p.y <= node->y+node->height) {
 			 //found a node, now see if over a property's in/out
 
@@ -3544,10 +3616,22 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty)
 		}
 	}
 
+	 //check frame related
+	for (int c=0; c<nodes->frames.n; c++) {
+		if (nodes->frames.e[c]->pointIsIn(p.x, p.y)) {
+			*overproperty = NHOVER_Frame;
+			*overpropslot = c;
+
+			if (p.y < nodes->frames.e[c]->y + 1.5*th) {
+				*overproperty = NHOVER_Frame_Label;
+			}
+			break;
+		}
+	}
+
 	return -1;
 }
 
-//! Start a new freehand line.
 int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit::LaxMouse *d) 
 {
 
@@ -3555,27 +3639,33 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 	int overpropslot=-1, overproperty=-1; 
 	int overnode = scan(x,y, &overpropslot, &overproperty);
 
-	if (count==2 && overnode>=0 && nodes && dynamic_cast<NodeGroup*>(nodes->nodes.e[overnode])) {
-		PostMessage("Need to implement jump into group");
-		needtodraw=1;
-		return 0;
-	}
+//	if (count==2 && overnode>=0 && nodes && dynamic_cast<NodeGroup*>(nodes->nodes.e[overnode])) {
+//		PostMessage("Need to implement jump into group");
+//		needtodraw=1;
+//		return 0;
+//	}
 
-	if (((state&LAX_STATE_MASK) == 0 || (state&ShiftMask)!=0) && overnode==-1) {
+	if (count == 2 && overnode>=0 && overproperty<0 && overpropslot == NHOVER_Label) {
+		action = overpropslot;
+
+	} else if (count == 2 && overnode<0 && overproperty == NHOVER_Frame_Label) {
+		action = NHOVER_Frame_Label;
+
+	} else if (((state&LAX_STATE_MASK) == 0 || (state&ShiftMask)!=0) && overnode==-1 && overproperty==-1) {
 		 //shift drag adds, shift-control drag removes, plain drag replaces selection 
 		action = NODES_Selection_Rect;
 		selection_rect.minx=selection_rect.maxx=x;
 		selection_rect.miny=selection_rect.maxy=y;
 		needtodraw=1;
 
-	} else if ((state&LAX_STATE_MASK) == ControlMask && overnode==-1) {
+	} else if ((state&LAX_STATE_MASK) == ControlMask && overnode==-1 && overproperty==-1) {
 		 //control-drag make a cut line for connections
 		action = NODES_Cut_Connections;
 		selection_rect.minx=selection_rect.maxx=x;
 		selection_rect.miny=selection_rect.maxy=y;
 		needtodraw=1;
 
-	} else if (overnode>=0 && overproperty<0 && overpropslot == NHOVER_PreviewResize) {
+	} else if (overnode>=0 && overproperty==-1 && overpropslot == NHOVER_PreviewResize) {
 		action = NODES_Resize_Preview;
 
 	} else if (overnode>=0 && overproperty==-1) {
@@ -3740,10 +3830,11 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 			ObjectDef *def=ev->GetObjectDef();
 
 			MenuInfo *menu = new MenuInfo();
-			const char *nm;
+			const char *nm, *Nm;
 			for (int c=0; c<def->getNumEnumFields(); c++) {
-				def->getEnumInfo(c, NULL, &nm);
-				menu->AddItem(nm, c);
+				def->getEnumInfo(c, &nm, &Nm);
+				if (!Nm) Nm = nm;
+				menu->AddItem(Nm, c);
 			}
 
 			PopupMenu *popup=new PopupMenu(NULL,_("Add node..."), 0,
@@ -3777,6 +3868,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 			//} else if (lasthoverslot == NHOVER_TogglePreview) {
 
 			//} else if (lasthoverslot == NHOVER_Label && count==2) {
+			} else if (lasthoverslot == NHOVER_Label) {
 				// *** use right click menu instead??
 			}
 		}
@@ -3938,6 +4030,35 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 			}
 		}
 		needtodraw=1;
+
+	} else if (action == NHOVER_Label) {
+		NodeBase *node = nodes->nodes.e[lasthover];
+
+		double th = font->textheight();
+		flatpoint ul= nodes->m.transformPoint(flatpoint(node->x, node->y));
+		flatpoint lr= nodes->m.transformPoint(flatpoint(node->x+node->width, node->y+1.5*th));
+
+		DoubleBBox bounds;
+		bounds.addtobounds(ul);
+		bounds.addtobounds(lr);
+
+		viewport->SetupInputBox(object_id, NULL, node->Label(), "setNodeLabel", bounds);
+
+	} else if (action == NHOVER_Frame_Label) {
+		NodeFrame *frame = nodes->frames.e[lasthoverslot];
+
+		double th = font->textheight();
+		flatpoint ul= nodes->m.transformPoint(flatpoint(frame->x, frame->y));
+		flatpoint lr= nodes->m.transformPoint(flatpoint(frame->x+frame->width, frame->y+1.5*th));
+
+		DoubleBBox bounds;
+		bounds.addtobounds(ul);
+		bounds.addtobounds(lr);
+
+		viewport->SetupInputBox(object_id, NULL, frame->Label(), "setFrameLabel", bounds);
+
+	} else if (action == NHOVER_Frame_Comment) {
+		// ***
 	}
 
 	hover_action = NODES_None;
@@ -3956,7 +4077,8 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 		int newhoverslot=-1, newhoverprop=-1;
 		int newhover = scan(x,y, &newhoverslot, &newhoverprop);
 		lastpos.x=x; lastpos.y=y;
-		DBG cerr << "nodes lastpos: "<<lastpos.x<<','<<lastpos.y<<endl;
+		//DBG cerr << "nodes lastpos: "<<lastpos.x<<','<<lastpos.y<<endl;
+		DBG cerr <<"nodes scan, node,prop,slot: "<<newhover<<','<<newhoverprop<<','<<newhoverslot<<endl;
 
 		if (newhover!=lasthover || newhoverslot!=lasthoverslot || newhoverprop!=lasthoverprop) {
 			needtodraw=1;
@@ -3964,6 +4086,7 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 			lasthoverprop = newhoverprop;
 			lasthover = newhover;
 
+			//post hover message
 			if (lasthover<0) PostMessage("");
 			else {
 				if (lasthoverprop >= 0 && nodes->nodes.e[lasthover]->properties.e[lasthoverprop]->tooltip) {

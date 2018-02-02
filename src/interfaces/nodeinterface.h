@@ -111,6 +111,7 @@ class NodeProperty
 	//bool is_input; //or output
 	bool is_linkable; //default true for something that allows links in
 	bool is_editable;
+	bool hidden;
 
 	double x,y,width,height;
 	Laxkit::ScreenColor color;
@@ -131,6 +132,9 @@ class NodeProperty
 	virtual int IsBlock()  { return type==PROP_Block; }
 	virtual int IsEditable() { return is_editable && !(IsInput() && IsConnected()); }
 	virtual int IsExecution() { return type==PROP_Exec_In || type==PROP_Exec_Out || type==PROP_Exec_Through; }
+	virtual int IsHidden() { return hidden; }
+	virtual int Hide();
+	virtual int Show();
 	virtual int AllowInput();
 	virtual int AllowOutput();
 	virtual bool AllowType(Value *ndata);
@@ -246,6 +250,7 @@ class NodeBase : public Laxkit::anObject,
 	virtual const char *ScriptName() { return object_idstr; }
 	virtual const char *Type() { return type; }
 	virtual ObjectDef *GetDef() { return def; }
+	virtual void InstallDef(ObjectDef *def, bool absorb_count);
 	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface);
 
 	virtual int Undo(UndoData *data);
@@ -268,7 +273,7 @@ class NodeBase : public Laxkit::anObject,
 	virtual int Disconnected(NodeConnection *connection, int to_side);
 	virtual int Connected(NodeConnection *connection);
 
-	virtual int AddProperty(NodeProperty *newproperty);
+	virtual int AddProperty(NodeProperty *newproperty, int where=-1);
 	virtual NodeProperty *FindProperty(const char *prop);
 	virtual int SetProperty(const char *prop, Value *value, bool absorb);
 	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
@@ -316,7 +321,9 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	virtual int DesignateOutput(NodeBase *noutput);
 	virtual int DesignateInput(NodeBase *ninput);
 	virtual NodeBase *FindNode(const char *name);
+	virtual NodeBase *GetNode(int index);
 	virtual NodeBase *NewNode(const char *type);
+	virtual NodeFrame *GetFrame(int index);
 	virtual int NoOverlap(NodeBase *which, double gap);
 	virtual void BoundingBox(DoubleBBox &box);
 	virtual void InitializeBlank();
@@ -339,27 +346,32 @@ typedef NodeGroup Nodes;
 
 //---------------------------- NodeInterface ------------------------------------
 
-//these get tracked in lasthoverslot
+//these get tracked in lasthoverslot.
+//They need to be negative to not conflict with slot index numbers.
 enum NodeHover {
-	NHOVER_None          = -1,
-	NHOVER_Label         = -2,
-	NHOVER_LeftEdge      = -3,
-	NHOVER_RightEdge     = -4,
-	NHOVER_Collapse      = -5,
-	NHOVER_TogglePreview = -6,
-	NHOVER_PreviewResize = -7,
-	NODES_VP_Top         = -8,
-	NODES_VP_Top_Left    = -9,
-	NODES_VP_Left        = -10,
-	NODES_VP_Bottom_Left = -11,
-	NODES_VP_Bottom      = -12,
-	NODES_VP_Bottom_Right= -13,
-	NODES_VP_Right       = -14,
-	NODES_VP_Top_Right   = -15,
-	NODES_VP_Move        = -16,
-	NODES_VP_Maximize    = -17,
-	NODES_VP_Close       = -18,
-	NODES_Navigator      = -19,
+	NHOVER_SCAN_START = -10000, //this needs to be so negative as to make NODES_HOVER_MAX also be negative
+	NHOVER_None          ,
+	NHOVER_Label         ,
+	NHOVER_LeftEdge      ,
+	NHOVER_RightEdge     ,
+	NHOVER_Collapse      ,
+	NHOVER_TogglePreview ,
+	NHOVER_PreviewResize ,
+	NHOVER_Frame         ,
+	NHOVER_Frame_Label   ,
+	NHOVER_Frame_Comment ,
+	NODES_VP_Top         ,
+	NODES_VP_Top_Left    ,
+	NODES_VP_Left        ,
+	NODES_VP_Bottom_Left ,
+	NODES_VP_Bottom      ,
+	NODES_VP_Bottom_Right,
+	NODES_VP_Right       ,
+	NODES_VP_Top_Right   ,
+	NODES_VP_Move        ,
+	NODES_VP_Maximize    ,
+	NODES_VP_Close       ,
+	NODES_Navigator      ,
 	NODES_HOVER_MAX
 };
 
