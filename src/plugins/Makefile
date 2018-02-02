@@ -52,13 +52,18 @@ include makedepend
 test: lax laxinterface plugin.o test.o exampleplugin.so
 	g++ -rdynamic $(CPPFLAGS) plugin.o test.o -llaxkit $(LDFLAGS) -ldl -o test
 
+#geglnodes.so: geglnodes.o
 geglnodes.so: geglnodes.cc
 	@echo "Compiling geglnodes with pkg-config path $(PKG_CONFIG_PATH)"
 	@echo "gegl cflags: $(GEGLCPPFLAGS)"
 	@echo "gegl libs  : $(GEGLLIBS)"
 	g++ -shared -fPIC $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) geglnodes.cc -llaxkit $(GEGLLIBS) -o geglnodes.so
+#	g++ -shared -fPIC $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) geglnodes.o -llaxkit $(GEGLLIBS) -o geglnodes.so
 
 #	g++ -shared -fPIC $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) geglnodes.cc -llaxkit $(GEGLLIBS) -o geglnodes.so
+
+#geglnodes.o: geglnodes.cc
+#	g++ -shared -fPIC $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) geglnodes.cc -llaxkit $(GEGLLIBS) -c -o geglnodes.o
 
 exampleplugin.so: lax laxinterface exampleplugin.o
 	g++ $(CPPFLAGS) -shared -fPIC exampleplugin.o -L$(LAXDIR) -llaxkit -o exampleplugin.so
