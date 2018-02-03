@@ -346,9 +346,12 @@ int resource_name_and_desc(FILE *f,char **name, char **desc)
 	if (!name && !desc) return 0;
 	Attribute att, *patt=NULL;
 
+	IOBuffer ff;
+	ff.UseThis(f);
+
 	int ret=0;
-	while (ret!=3 && !feof(f)) {
-		att.dump_in(f,0,&patt);
+	while (ret!=3 && !ff.IsEOF()) {
+		att.dump_in(ff,0,&patt);
 		if (!patt) break; //no more in file
 		if (name && !(ret&1) && !strcmp(patt->name,"name")) {
 			*name=newstr(patt->value);
@@ -358,8 +361,10 @@ int resource_name_and_desc(FILE *f,char **name, char **desc)
 			*desc=newstr(patt->value);
 			ret|=2;
 		}
-		skip_to_next_attribute(f,0);
+		skip_to_next_attribute(ff,0);
 	}
+
+	ff.UseThis(NULL);
 	return ret;
 }
 

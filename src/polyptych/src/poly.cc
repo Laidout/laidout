@@ -1363,6 +1363,9 @@ int Polyhedron::dumpInOFF(FILE *f,char **error_ret)
 {
 	if (!f) return 1;
 
+	IOBuffer ff;
+	ff.UseThis(f);
+
 	char *line=NULL;
 	size_t n=0,c;
 	int p;
@@ -1371,8 +1374,9 @@ int Polyhedron::dumpInOFF(FILE *f,char **error_ret)
 
 
 	 //parse header line
-	c=getline_indent_nonblank(&line,&n,f,0,"#"); //skips blank and comment lines
-	p=0;
+	c = getline_indent_nonblank(&line,&n,ff,0,"#"); //skips blank and comment lines
+	p = 0;
+
 	do {
 		if (line[p]=='S' && line[p+1]=='T') { 
 			 //vertices have texture coords
@@ -1394,49 +1398,58 @@ int Polyhedron::dumpInOFF(FILE *f,char **error_ret)
 	} while (1);
 
 	if (multidim) {
-		c=getline_indent_nonblank(&line,&n,f,0,"#"); //skip higher dimensional stuff
+		c = getline_indent_nonblank(&line,&n,ff,0,"#"); //skip higher dimensional stuff
 	}
 
-	 //get number of vertices, faces, and edges
-	c=getline_indent_nonblank(&line,&n,f,0,"#");
-	if (c<=0) return 1;
-	c=sscanf(line,"%d %d %d",&nv,&nf,&ne);
-	if (c!=3) return 2;
+	try {
+		 //get number of vertices, faces, and edges
+		c = getline_indent_nonblank(&line,&n,ff,0,"#");
+		if (c<=0) throw 1;
+		c = sscanf(line,"%d %d %d",&nv,&nf,&ne);
+		if (c!=3) throw 2;
 
-	 //read in the vertices
-	double x,y,z;
-	for (int c2=0; c2<nv; c2++) {
-		c=getline_indent_nonblank(&line,&n,f,0,"#");
-		if (c<=0) return 3;
+		 //read in the vertices
+		double x,y,z;
+		for (int c2=0; c2<nv; c2++) {
+			c = getline_indent_nonblank(&line,&n,ff,0,"#");
+			if (c<=0) throw 3;
 
-		c=sscanf(line,"%lf %lf %lf",&x,&y,&z);
-		if (c<=0) return 4;
+			c = sscanf(line,"%lf %lf %lf",&x,&y,&z);
+			if (c<=0) throw 4;
 
-		vertices.push(spacepoint(x,y,z));
-	}
+			vertices.push(spacepoint(x,y,z));
+		}
 
-	 //read in the faces
-	int nfv,*i;
-	char *endptr;
-	Face *nface=NULL;
-	for (int c2=0; c2<nf; c2++) {
-		c=getline_indent_nonblank(&line,&n,f,0,"#");
-		if (c<=0) return 5;
+		 //read in the faces
+		int nfv,*i;
+		char *endptr;
+		Face *nface=NULL;
+		for (int c2=0; c2<nf; c2++) {
+			c = getline_indent_nonblank(&line,&n,ff,0,"#");
+			if (c<=0) throw 5;
 
-		nfv=strtol(line,&endptr,10);
-		if (nfv<=0) return 6;
+			nfv=strtol(line,&endptr,10);
+			if (nfv<=0) throw 6;
 
-		i=new int[nfv];
-		c=IntListAttribute(endptr,i,nfv,&endptr);
-		if ((int)c!=nfv) { delete[] i; return 7; }
+			i=new int[nfv];
+			c=IntListAttribute(endptr,i,nfv,&endptr);
+			if ((int)c!=nfv) { delete[] i; throw 7; }
 
-		nface=new Face(nfv,i);
-		delete[] i;
-		faces.push(nface,1);
+			nface=new Face(nfv,i);
+			delete[] i;
+			faces.push(nface,1);
+		}
+
+	} catch (int err) {
+		ff.UseThis(NULL);
+		if (line) ff.FreeGetLinePtr(line);
+		return err;
 	}
 
 	validate();
 	makeedges();
+	if (line) ff.FreeGetLinePtr(line);
+	ff.UseThis(NULL);
 	return 0;
 }
 
