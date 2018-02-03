@@ -1,0 +1,73 @@
+trang in.dtd out.rnc
+trang in.dtd out.rng
+
+
+<filter-function> = <blur()> | <brightness()> | <contrast()> | <drop-shadow()> |    
+<grayscale()> | <hue-rotate()> | <invert()> | <opacity()> | <sepia()> | <saturate()>
+
+
+need to search for SVG.*.content for nested elements, such as:
+ feSpecularLighting
+   feDistantLight
+   fePointLight
+   feSpotLight
+
+
+SVG.Filter.class
+SVG.FilterPrimitive.class =
+ feBlend
+ | feColorMatrix
+ | ....
+
+
+SVG.FilterPrimitive.attrib =
+  attribute x { Coordinate.datatype }?,
+  attribute y { Coordinate.datatype }?,
+  attribute width { Length.datatype }?,
+  attribute height { Length.datatype }?,
+  attribute result { text }?,
+  SVG.FilterPrimitive.extra.attrib
+
+# filter: Filter Element ............................
+SVG.filter.extra.content = notAllowed
+SVG.filter.content =
+  (SVG.Description.class
+   | animate
+   | set
+   | SVG.FilterPrimitive.class
+   | SVG.filter.extra.content)*
+filter = element filter { attlist.filter, SVG.filter.content }
+# end of SVG.filter.element
+attlist.filter &=
+  SVG.Core.attrib,
+  SVG.Style.attrib,
+  SVG.Presentation.attrib,
+  SVG.XLink.attrib,
+  SVG.External.attrib,
+  attribute x { Coordinate.datatype }?,
+  attribute y { Coordinate.datatype }?,
+  attribute width { Length.datatype }?,
+  attribute height { Length.datatype }?,
+  attribute filterRes { NumberOptionalNumber.datatype }?,
+  attribute filterUnits { "userSpaceOnUse" | "objectBoundingBox" }?,
+  attribute primitiveUnits { "userSpaceOnUse" | "objectBoundingBox" }?
+# end of SVG.filter.attlist
+
+# feBlend: Filter Effect Blend Element ..............
+SVG.feBlend.extra.content = notAllowed
+SVG.feBlend.content = (animate | set | SVG.feBlend.extra.content)*
+feBlend = element feBlend { attlist.feBlend, SVG.feBlend.content }
+# end of SVG.feBlend.element
+attlist.feBlend &=
+  SVG.Core.attrib,
+  SVG.Style.attrib,
+  SVG.Presentation.attrib,
+  SVG.FilterPrimitiveWithIn.attrib,
+  attribute in2 { text },
+  [ a:defaultValue = "normal" ]
+  attribute mode {
+    "normal" | "multiply" | "screen" | "darken" | "lighten"
+  }?
+# end of SVG.feBlend.attlist
+
+
