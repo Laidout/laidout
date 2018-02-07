@@ -3790,7 +3790,6 @@ int ViewWindow::init()
 	Button *ibut;
 	
 	 // tool section
-	 //*** clean me! sampling diff methods of tool selector
 	last=toolselector=new SliderPopup(this,"viewtoolselector",NULL,SLIDER_LEFT, 0,0,0,0,0, 
 			NULL,object_id,"viewtoolselector",
 			NULL,0);
@@ -3825,7 +3824,32 @@ int ViewWindow::init()
 	toolselector->WrapToExtent();
 	SelectTool(obji);
 	AddWin(toolselector,1,-1);
-	
+
+
+	 //------ Overlays
+//	if (numoverlays) {
+//		MenuInfo *overlays = new MenuInfo();
+//		for (c=0; c<tools.n; c++) {
+//			if (tools.e[c]->interface_type != INTERFACE_Overlay) continue;
+//
+//			img = laidout->icons->GetIcon(tools.e[c]->IconId());
+//			overlays->AddToggleItem(tools.e[c]->Name(),img, tools.e[c]->id, 0, viewport->HasInterface(tools.e[c]->id) ? true : false);
+//		}
+//
+//		last = overlayselector = new MenuButton(this,"overlays",NULL,
+//						 MENUBUTTON_CLICK_CALLS_OWNER|MENUBUTTON_ICON_ONLY|MENUBUTTON_LEFT,
+//						 0,0,0,0,0,
+//						 NULL,object_id,"overlays",
+//						 0,
+//						 NULL,0, //menu
+//						 "o", //label
+//						 NULL, laidout->icons->GetIcon("Overlays"),
+//						 buttongap);
+//		overlayselector->tooltip(_("Toggle overlays"));
+//
+//		//overlays->WrapToExtent();
+//		AddWin(overlays,1,-1);
+//	}
 
 
 	 //----- Page Flipper
