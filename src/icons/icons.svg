@@ -36,9 +36,9 @@
      inkscape:window-width="1918"
      inkscape:current-layer="layer1"
      inkscape:document-units="in"
-     inkscape:cy="853.52119"
-     inkscape:cx="849.3472"
-     inkscape:zoom="0.5490406"
+     inkscape:cy="1027.8159"
+     inkscape:cx="1246.0986"
+     inkscape:zoom="0.63974013"
      inkscape:pageshadow="2"
      inkscape:pageopacity="0.0"
      borderopacity="1.0"
@@ -1721,8 +1721,8 @@
        id="rect6757"
        width="250.5"
        height="283"
-       x="1442.47"
-       y="181.16994"
+       x="1454.5439"
+       y="152.19229"
        rx="0.025489558"
        ry="0.025489558" />
     <rect
@@ -10498,16 +10498,27 @@
          y="837.95135"
          style="font-size:12px;line-height:1">Duplicate</tspan></text>
     <text
-       id="text1543-5-1"
-       y="880.62653"
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0%;font-family:'Bitstream Vera Sans';text-align:start;writing-mode:lr-tb;text-anchor:start;display:inline;fill:#000000;fill-opacity:1;stroke:none"
        x="64.390549"
+       y="880.62653"
+       id="text2617"><tspan
+         style="font-size:12px;line-height:1"
+         sodipodi:role="line"
+         x="64.390549"
+         y="880.62653"
+         id="tspan2615">Refresh</tspan></text>
+    <text
+       id="text1543-5-1"
+       y="926.80963"
+       x="67.107201"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0%;font-family:'Bitstream Vera Sans';text-align:start;writing-mode:lr-tb;text-anchor:start;display:inline;fill:#000000;fill-opacity:1;stroke:none"
        xml:space="preserve"><tspan
          id="tspan4656"
-         y="880.62653"
-         x="64.390549"
+         y="926.80963"
+         x="67.107201"
          sodipodi:role="line"
-         style="font-size:12px;line-height:1">Refresh</tspan></text>
+         style="font-size:12px;line-height:1">Overlays</tspan></text>
     <g
        inkscape:label="#pagemarker"
        transform="translate(135.29121,361.94556)"
@@ -10951,6 +10962,38 @@
          style="display:inline;fill:#a3a3ff;fill-opacity:1;stroke:#0000d3;stroke-width:1.71000302;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
          id="path2259-4-1-7"
          transform="matrix(-0.6933187,0.7206311,-0.72243951,-0.69143413,0,0)" />
+    </g>
+    <g
+       transform="translate(-407.33787,632.63043)"
+       style="display:inline"
+       id="Overlays"
+       inkscape:label="#g5272-3">
+      <rect
+         y="275.19897"
+         x="555.94214"
+         height="18.86599"
+         width="18.4182"
+         id="rect5223-6"
+         style="color:#000000;display:inline;overflow:visible;visibility:visible;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.80000007;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate" />
+      <rect
+         style="color:#000000;display:inline;overflow:visible;visibility:visible;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.80000019;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate"
+         id="rect5225-7"
+         width="32.42028"
+         height="8.9049244"
+         x="548.76636"
+         y="297.95737" />
+    </g>
+    <g
+       inkscape:label="#g4910"
+       id="Chains-5"
+       style="display:inline"
+       transform="translate(488.37297,-539.4765)">
+      <path
+         sodipodi:nodetypes="ccccccccccccccc"
+         inkscape:connector-curvature="0"
+         id="path4912-3"
+         d="m 784.31625,373.45649 -7.0313,10.09375 7.125,10 0.036,-6.75 4.12781,0 c 3.053,3.85478 6.106,3.94699 9.159,0 l 4.12779,0 0.036,6.75 7.125,-10 -7.0313,-10.09375 -0.2546,7.03125 -4.38452,0 c -2.92579,-3.34098 -5.85158,-3.24978 -8.77737,0 l -4.00271,0 z"
+         style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.79999983;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
     </g>
   </g>
   <text
