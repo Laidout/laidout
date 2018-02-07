@@ -323,10 +323,14 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	virtual NodeBase *FindNode(const char *name);
 	virtual NodeBase *GetNode(int index);
 	virtual NodeBase *NewNode(const char *type);
+	virtual int AddNode(NodeBase *node);
 	virtual NodeFrame *GetFrame(int index);
 	virtual int NoOverlap(NodeBase *which, double gap);
 	virtual void BoundingBox(DoubleBBox &box);
+
 	virtual void InitializeBlank();
+	virtual NodeProperty *AddGroupInput(const char *pname, const char *plabel, const char *ptip);
+	virtual NodeProperty *AddGroupOutput(const char *pname, const char *plabel, const char *ptip);
 
 	virtual int DeleteNodes(Laxkit::RefPtrStack<NodeBase> &selected);
 	virtual NodeGroup *GroupNodes(Laxkit::RefPtrStack<NodeBase> &selected);

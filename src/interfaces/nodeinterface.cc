@@ -456,6 +456,15 @@ NodeBase::~NodeBase()
 	if (total_preview) total_preview->dec_count();
 }
 
+/*! Dec old def, install new one and inc count if !absorb_count.
+ */
+void NodeBase::InstallDef(ObjectDef *ndef, bool absorb_count)
+{
+	if (def) def->dec_count();
+	def = ndef;
+	if (!absorb_count && def) def->inc_count();
+}
+
 int NodeBase::Undo(UndoData *data)
 {
 	cerr << " *** need to implement NodeBase::Undo()!!"<<endl;
@@ -577,7 +586,7 @@ void NodeBase::UpdateLayout()
 
 int NodeBase::WrapFull(bool keep_current_width)
 {
-	if (!colors) return -1;
+	if (!colors || !colors->font) return -1;
 
 	 //find overall width and height
 	double th = colors->font->textheight();
@@ -647,6 +656,8 @@ int NodeBase::WrapFull(bool keep_current_width)
 	}
 	double propwidth = width; //the max prop width.. make them all the same width
 
+	if (fullwidth == 0) fullwidth = width;
+
 	 //update link positions
 	height = 1.5*th;
 	if (UsesPreview()) height += preview_area_height;
@@ -655,6 +666,7 @@ int NodeBase::WrapFull(bool keep_current_width)
 
 	for (int c=0; c<properties.n; c++) {
 		prop = properties.e[c];
+		prop->x = 0;
 		prop->y = y;
 		prop->pos.y = y+prop->height/2;
 
@@ -1230,6 +1242,42 @@ void NodeGroup::InitializeBlank()
 	properties.flush();
 }
 
+/*! Returns the new property of *this. The input's new property is prop_ret->topropproxy.
+ */
+NodeProperty *NodeGroup::AddGroupInput(const char *pname, const char *plabel, const char *ptooltip)
+{
+	if (!input) return NULL;
+
+	NodeProperty *insprop = new NodeProperty(NodeProperty::PROP_Output, true, pname, NULL,1, plabel, ptooltip);
+	input->AddProperty(insprop);
+
+	NodeProperty *groupprop = new NodeProperty(NodeProperty::PROP_Input, true, pname, NULL,1, plabel, ptooltip);
+	AddProperty(groupprop);
+
+	groupprop->topropproxy = insprop;
+	insprop->frompropproxy = groupprop;
+
+	return groupprop;
+}
+
+/*! Returns the new property of *this. The output's new property is prop_ret->frompropproxy.
+ */
+NodeProperty *NodeGroup::AddGroupOutput(const char *pname, const char *plabel, const char *ptooltip)
+{
+	if (!output) return NULL;
+
+	NodeProperty *outsprop = new NodeProperty(NodeProperty::PROP_Input, true, pname, NULL,1, plabel, ptooltip);
+	output->AddProperty(outsprop);
+
+	NodeProperty *groupprop = new NodeProperty(NodeProperty::PROP_Output, true, pname, NULL,1, plabel, ptooltip);
+	AddProperty(groupprop);
+
+	groupprop->frompropproxy = outsprop;
+	outsprop->topropproxy = groupprop;
+
+	return groupprop;
+}
+
 /*! Install noutput as the group's pinned output.
  * Basically just dec_count the old, inc_count the new.
  * It is assumed noutput is in the nodes stack already.
@@ -1300,13 +1348,13 @@ int NodeGroup::DeleteNodes(Laxkit::RefPtrStack<NodeBase> &selected)
 	return numdel;
 }
 
-class NodeGroupProperty : public NodeProperty
-{
-  public:
-	NodeGroupProperty *connected_property;
-	NodeGroupProperty() { connected_property = NULL; }
-	virtual ~NodeGroupProperty();
-};
+//class NodeGroupProperty : public NodeProperty
+//{
+//  public:
+//	NodeGroupProperty *connected_property;
+//	NodeGroupProperty() { connected_property = NULL; }
+//	virtual ~NodeGroupProperty();
+//};
 
 /*! Takes all in selected, and puts them inside a new node that's a child of this.
  * Connections are updated to reflect the new order.
@@ -1544,12 +1592,13 @@ int NodeGroup::UngroupNodes(Laxkit::RefPtrStack<NodeBase> &selected, bool update
 }
 
 /*! Return the connection, or NULL for couldn't connect.
- * If usethis != NULL, then use that as the connection object, overwriting any incorrect settings.
- * Otherwise create a new one to install.
+ * Create and install a new NodeConnection to install.
  * from and to should have everything set properly.
  */
 NodeConnection *NodeGroup::Connect(NodeProperty *fromprop, NodeProperty *toprop)
 {
+	if (!fromprop || !toprop) return NULL;
+
 	NodeBase *from = fromprop->owner;
 	NodeBase *to   = toprop->owner;
 
@@ -1937,7 +1986,8 @@ int NodeGroup::InstallColors(NodeColors *newcolors, bool absorb_count)
 	for (int c=0; c<nodes.n; c++) {
 		if (!nodes.e[c]->colors) {
 			nodes.e[c]->InstallColors(newcolors, 0);
-			nodes.e[c]->UpdateLayout();
+			if (nodes.e[c]->width <= 0) nodes.e[c]->Wrap();
+			else nodes.e[c]->UpdateLayout();
 		}
 	}
 
@@ -1946,13 +1996,11 @@ int NodeGroup::InstallColors(NodeColors *newcolors, bool absorb_count)
 	return 0;
 }
 
-/*! Dec old def, install new one and inc count if !absorb_count.
+/*! Default is to just nodes.push(node).
  */
-void NodeBase::InstallDef(ObjectDef *ndef, bool absorb_count)
+int NodeGroup::AddNode(NodeBase *node)
 {
-	if (def) def->dec_count();
-	def = ndef;
-	if (!absorb_count && def) def->inc_count();
+	return nodes.push(node);
 }
 
 /*! Create and return a new fresh node object, unconnected to anything.
@@ -2909,8 +2957,8 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 				anObject *obj = type->newfunc(type->parameter, NULL);
 				NodeBase *newnode = dynamic_cast<NodeBase*>(obj);
 				flatpoint p = nodes->m.transformPointInverse(lastpos);
-				newnode->x=p.x;
-				newnode->y=p.y;
+				newnode->x  = p.x;
+				newnode->y  = p.y;
 				newnode->InstallColors(nodes->colors, false);
 				newnode->Wrap();
 
@@ -2937,8 +2985,10 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
         const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
 		if (isblank(s->str)) return 0;
 
-		LoadNodes(s->str, false);
-		makestr(lastsave, s->str);
+		if (LoadNodes(s->str, false) == 0) {
+			 //success! select all new nodes
+			makestr(lastsave, s->str);
+		}
 		needtodraw=1;
 		return 0;
 
@@ -2964,11 +3014,18 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 			return 0;
 		}
 
-		NodeGroup *group = NULL;
+		if (!nodes) {
+			nodes = new NodeGroup;
+			nodes->InstallColors(new NodeColors, true);
+			nodes->colors->Font(font, false);
+		}
+
+		int oldn = nodes->nodes.n;
+
 		anObject *obj_ret = NULL;
 		ErrorLog log;
 		int status = loader->Import(s->str, &obj_ret, nodes, log);
-		group = dynamic_cast<NodeGroup*>(obj_ret);
+		NodeGroup *group = dynamic_cast<NodeGroup*>(obj_ret);
 
 		if (status) {
 			 //there were errors
@@ -2976,17 +3033,16 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 			if (obj_ret && obj_ret != nodes) group->dec_count();
 
 		} else {
-			if (!nodes) {
-				 //group should be a brand new NodeGroup.
-				nodes = group;
-				if (!nodes->colors) {
-					nodes->InstallColors(new NodeColors, true);
-					nodes->colors->Font(font, false);
+			for (int c=oldn; c < nodes->nodes.n; c++) {
+				if (!nodes->nodes.e[c]->colors) {
+					nodes->nodes.e[c]->InstallColors(nodes->colors, false);
 				}
 
+				if (nodes->nodes.e[c]->width <= 0) nodes->nodes.e[c]->Wrap();
 			}
 			//else  should be all done!
 
+			PostMessage(_("Loaded."));
 		}
 
 		makestr(lastsave, s->str);
@@ -3075,6 +3131,8 @@ int NodeInterface::Refresh()
 	if (needtodraw==0) return 0;
 	needtodraw=0;
 
+	DBG cerr <<" NodeInterface::Refresh()"<<endl;
+
 	int overnode=-1, overslot=-1, overprop=-1; 
 	if (buttondown.any(0,LEFTBUTTON)) {
 		int device = buttondown.whichdown(0,LEFTBUTTON);
@@ -3134,12 +3192,23 @@ int NodeInterface::Refresh()
 		x = th/2;
 		x += th + dp->textout(x,th/4, _("Root"),-1, LAX_TOP|LAX_LEFT);
 
-		for (int c=0; c < grouptree.n; c++) {
-			width = dp->textextent(grouptree.e[c]->Id(),-1, NULL,NULL);
+		//c==0 is root
+		const char *str;
+		for (int c=1; c < grouptree.n; c++) {
+			str = grouptree.e[c]->Label();
+			if (!str) str = grouptree.e[c]->Id();
+			width = dp->textextent(str,-1, NULL,NULL);
 			dp->drawRoundedRect(x-th/2,0, width+th,th*1.5, th/3, false, th/3, false, 2); 
 
-			x += th + dp->textout(x,th/4, grouptree.e[c]->Id(),-1, LAX_TOP|LAX_LEFT);
+			x += th + dp->textout(x,th/4, str,-1, LAX_TOP|LAX_LEFT);
 		}
+
+		 //write out current
+		str = nodes->Label();
+		if (!str) str = nodes->Id();
+		width = dp->textextent(str,-1, NULL,NULL);
+		dp->drawRoundedRect(x-th/2,0, width+th,th*1.5, th/3, false, th/3, false, 2); 
+		dp->textout(x,th/4, str,-1, LAX_TOP|LAX_LEFT);
 	}
 
 
@@ -3183,6 +3252,8 @@ int NodeInterface::Refresh()
 
 	for (int c=0; c<nodes->nodes.n; c++) {
 		node = nodes->nodes.e[c];
+
+		DBG cerr <<"node "<<node->Id()<<" "<<node->x<<" "<<node->y<<" "<<node->width<<" "<<node->height<<endl;
 
 		 //set up colors based on whether the node is selected or mouse overed
 		if (node->colors) colors=node->colors;
@@ -3349,6 +3420,12 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 	//   colors
 	//   enums
 
+	DBG cerr <<"Draw property "<<prop->name<<endl;
+
+	if (!strcmp(prop->name, "result")) {
+		DBG cerr <<" ";
+	}
+
 	double th = dp->textheight();
 	if (!node->collapsed) {
 		Value *v = prop->GetData();
@@ -3489,6 +3566,8 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 			dp->textout(pp.x+th/2,pp.y, prop->Label(),-1, LAX_LEFT|LAX_VCENTER);
 		}
 	} 
+
+	DBG cerr <<"end draw property "<<prop->name<<endl;
 }
 
 void NodeInterface::DrawConnection(NodeConnection *connection) 
@@ -4229,6 +4308,7 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 				double th = font->textheight();
 				if (selected.e[c]->width < 2*th)  selected.e[c]->width = 2*th;
 
+				selected.e[c]->UpdateLayout();
 				selected.e[c]->UpdateLinkPositions();
 			}
 		}
@@ -4273,8 +4353,8 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 
 int NodeInterface::MBDown(int x,int y,unsigned int state,int count, const Laxkit::LaxMouse *d)
 {
-	buttondown.down(d->id, MIDDLEBUTTON, x,y);
 	if (!nodes) return 1;
+	buttondown.down(d->id, MIDDLEBUTTON, x,y);
 	return 0;
 }
 
@@ -4534,7 +4614,7 @@ int NodeInterface::PerformAction(int action)
 	} else if (action==NODES_No_Overlap) {
 		if (!nodes) return 0;
 		for (int c=0; c<selected.n; c++) {
-			nodes->NoOverlap(selected.e[c], 1.5*nodes->colors->font->textheight());
+			nodes->NoOverlap(selected.e[c], 2*nodes->colors->font->textheight());
 		}
 		needtodraw=1;
 		return 0;
@@ -4620,19 +4700,47 @@ int NodeInterface::LoadNodes(const char *file, bool append)
 		 //error!
 		PostMessage(_("Could not open nodes file!"));
 		DBG cerr <<(_("Could not open nodes file!")) << file<<endl;
-		return 0;
+		return 1;
 	}
 
-	char first100[100];
-	int num = fread(first100,1,99, f);
-	first100[num] = '\0';
+	int oldn = nodes->nodes.n;
+	char first500[500];
+	int num = fread(first500,1,499, f);
+	first500[num] = '\0';
 	rewind(f);
 
+	bool success = false;
 	ErrorLog log;
-	if (strstr(first100, "#Laidout") != first100 || strstr(first100, "Nodes") == NULL) {
+	if (strstr(first500, "#Laidout") != first500 || strstr(first500, "Nodes") == NULL) {
 		 //does not appear to be a laidout node file.
 		 //try with loaders
-		PostMessage(_(" *** Not a Laidout Nodes file! need to implement type checking with loaders!!"));
+		//PostMessage(_(" *** Not a Laidout Nodes file! need to implement type checking with loaders!!"));
+		fclose(f);
+		f = NULL;
+
+		if (NodeGroup::loaders.n) {
+			for (int c=0; c<NodeGroup::loaders.n; c++) {
+				if (NodeGroup::loaders.e[c]->CanImport(file, first500)) {
+					anObject *obj_ret = NULL;
+					ErrorLog log;
+					int oldn = nodes->nodes.n;
+
+					int status = NodeGroup::loaders.e[c]->Import(file, &obj_ret, nodes, log);
+					if (status == 0) {
+						for (int c=oldn; c < nodes->nodes.n; c++) {
+							if (!nodes->nodes.e[c]->colors) {
+								nodes->nodes.e[c]->InstallColors(nodes->colors, false);
+							}
+
+							if (nodes->nodes.e[c]->width <= 0) nodes->nodes.e[c]->Wrap();
+						}
+
+						success = true;
+						break;
+					}
+				}
+			}
+		}
 
 	} else {
 		 //normal laidout nodes file
@@ -4640,16 +4748,35 @@ int NodeInterface::LoadNodes(const char *file, bool append)
 		context.log = &log;
 
 		nodes->dump_in(f, 0, 0, &context, NULL);
-
-		PostMessage(_("Nodes loaded"));
-		DBG cerr << _("Nodes loaded") <<endl;
+		success = true;
+		if (f) fclose(f);
 	}
 
-	fclose(f);
+	if (success) {
+		 //replace current selection, and position 
+		selected.flush();
+		DoubleBBox box;
+		for (int c=oldn; c<nodes->nodes.n; c++) {
+			selected.pushnodup(nodes->nodes.e[c]);
+			box.addtobounds(*nodes->nodes.e[c]);
+		}
+		flatpoint p = nodes->m.transformPointInverse(flatpoint((dp->Maxx+dp->Minx)/2, (dp->Maxy+dp->Miny)/2));
+		p -= box.BBoxPoint(.5,.5);
+		for (int c= oldn; c<nodes->nodes.n; c++) {
+			nodes->nodes.e[c]->x += p.x;
+			nodes->nodes.e[c]->y += p.y;
+		}
+
+		PostMessage(_("Loaded."));
+		DBG cerr << _("Loaded.") <<endl;
+
+	} else {
+		PostMessage(_("Couldn't load nodes"));
+	}
 
 	NotifyGeneralErrors(&log);
 	needtodraw=1;
-	return 0;
+	return success ? 0 : 1;
 }
 
 int NodeInterface::SaveNodes(const char *file)
