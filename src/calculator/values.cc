@@ -907,8 +907,6 @@ void ObjectDef::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *cont
 	}
 }
 
-/*! \todo *** imp me!!
- */
 void ObjectDef::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	int what=0;
@@ -931,8 +929,21 @@ void ObjectDef::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *cont
 				makestr(description, value);
 
 			} else if (!strcmp(nname,"extends")) {
-				// ***
-				cerr <<" *** need to implement extends in ObjectDef::dump_in_atts()!"<<endl;
+					// *** this only checks parent_namespace, not some broader scope
+					// should probably recursively check upward
+
+					int n=0;
+					char **extends = split(value, ',', &n);
+					ObjectDef *edef;
+					for (int c=0; c<n; c++) {
+						stripws(extends[c]);
+
+						if (parent_namespace) {
+							edef = parent_namespace->FindDef(extends[c]);
+							if (edef) extendsdefs.push(edef);
+							deletestrs(extends, n);
+						}
+					}
 
 			} else if (!strcmp(nname,"format")) {
 				format = element_NameToType(value);
@@ -953,15 +964,13 @@ void ObjectDef::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *cont
 			} else {
 				ValueTypes fformat = element_NameToType(nname);
 				if (fformat != VALUE_None) {
-				  //if (fformat == VALUE_None) {
-				  //} else {
 					ObjectDef *ndef = new ObjectDef();
+					ndef->parent_namespace = this;
 					ndef->format = fformat;
 					if (value) makestr(ndef->name, value);
 					push(ndef, 1);
 
 					ndef->dump_in_atts(att->attributes.e[c], flag, context);
-				  //}
 				}
 			}
 		}
@@ -3178,6 +3187,12 @@ ObjectDef *BooleanValue::makeObjectDef()
 
 
 //--------------------------------- IntValue -----------------------------
+
+IntValue::IntValue(const char *val, int base)
+{
+	i = (val ? strtol(val, NULL, base) : 0);
+}
+
 int IntValue::getValueStr(char *buffer,int len)
 {
 	if (!buffer || len<20) return 20;
@@ -3218,6 +3233,15 @@ ObjectDef *IntValue::makeObjectDef()
 
 
 //--------------------------------- DoubleValue -----------------------------
+
+/*! This would be a constructor, but there are too many compiler nags about
+ * ambiguous parameters.
+ */
+void DoubleValue::Set(const char *val)
+{
+	d = (val ? strtod(val, NULL) : 0);
+}
+
 /*! \class DoubleValue
  * \brief Holds a real number.
  */

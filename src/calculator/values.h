@@ -73,6 +73,9 @@ enum ValueTypes {
 
 	VALUE_LValue,     //!< A name value that you can assign things to.
 
+	 //field action hints
+	VALUE_Button,     //!< Hint for a field action
+
 	VALUE_MaxBuiltIn
 };
 
@@ -520,6 +523,7 @@ class IntValue : public Value
 	Unit units;
 	long i;
 	IntValue(long ii=0) { i=ii; }
+	IntValue(const char *val, int base);
 	virtual const char *whattype() { return "IntValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
@@ -535,6 +539,7 @@ class DoubleValue : public Value, virtual public FunctionEvaluator
 	Unit units;
 	double d;
 	DoubleValue(double dd=0) { d=dd; }
+	virtual void Set(const char *val);
 	virtual const char *whattype() { return "DoubleValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
