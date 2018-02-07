@@ -41,7 +41,7 @@ class ObjectIO : public FileFilter
 	//virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context) {}
 	virtual int Serializable(int what) = 0; //if can serialize to what format. 0 is default Laidout style
 
-	virtual int CanImport(const char *file, const char *first100) = 0; //return if in theory it can import
+	virtual int CanImport(const char *file, const char *first500) = 0; //return if in theory it can import
 	virtual int CanExport(anObject *object) = 0; //if null, then return if in theory it can export at all
 	virtual int Import(const char *file, anObject **object_ret, anObject *context, Laxkit::ErrorLog &log) = 0; //ret # of failing errors
 	virtual int Export(const char *file, anObject *object,      anObject *context, Laxkit::ErrorLog &log) = 0; //ret # of failing errors
