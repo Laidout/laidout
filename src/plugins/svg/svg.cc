@@ -1,9 +1,27 @@
+//
+// Laidout, for laying out
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
+//
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public
+// License as published by the Free Software Foundation; either
+// version 2 of the License, or (at your option) any later version.
+// For more details, consult the COPYING file in the top directory.
+//
+// Copyright (C) 2018 by Tom Lechner
+//
 
 
+#include "../../language.h"
+#include "svg.h"
+#include "../../interfaces/nodeinterface.h"
 #include <exception>
 
+#include <iostream>
+#define DBG
 
-//Read in svg filter, and convert to LaidoutGeglNodes
+using namespace std;
 
 
 //---- svg blend to gegl:
@@ -59,7 +77,7 @@ class SvgFilterNode : public Laidout::NodeBase
     //GeglNode *gegl;
 
     //SvgFilterNode(const char *filterName);
-	SvgFilterNode(const char *filterName, ValueHash *hash);
+	SvgFilterNode(const char *filterName);
     //SvgFilterNode(const char *filterName, SvgFilterNode *in, SvgFilterNode *in2);
     virtual ~SvgFilterNode();
 
@@ -72,13 +90,16 @@ class SvgFilterNode : public Laidout::NodeBase
     //virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
 
 	virtual const char *ResultName();
+	virtual int dump_in_atts(Attribute *att, NodeGroup *filter, SvgFilterNode *last, SvgFilterNode *srcnode, Laxkit::ErrorLog &log);
+	virtual NodeProperty *FindRef(const char *name, NodeGroup *filter);
+
 };
 
 
 Laxkit::SingletonKeeper SvgFilterNode::svg_def_keeper;
 
 
-///*! \class SvgFilterNode
+///*! \class SvgFilterParentNode
 // * Hold a collection of SvgFilterNode and SvgFilterNodes
 // */
 //class SvgFilterNode : public Laidout::NodeGroup
@@ -93,9 +114,10 @@ Laxkit::SingletonKeeper SvgFilterNode::svg_def_keeper;
 //};
 
 
-SvgFilterNode::SvgFilterNode(const char *filterName, ValueHash *hash)
+SvgFilterNode::SvgFilterNode(const char *filterName)
 {
 	makestr(Name, filterName);
+	makestr(type, filterName);
 
 	ObjectDef *svgdefs = GetSvgDefs();
 	ObjectDef *fdef = svgdefs->FindDef(filterName);
@@ -107,13 +129,14 @@ SvgFilterNode::SvgFilterNode(const char *filterName, ValueHash *hash)
 		//add linkable image in
 		if (issrc) AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "imageIn", NULL,1, _("In"),_("Input image"), 0, false));
 
-		Value *v = NULL;
 
 		for (int c=0; c<fdef->getNumFields(); c++) {
 			ObjectDef *d = fdef->getField(c);
 			if (!d) continue;
 
+			Value *v = NULL;
 			if (d->format == VALUE_Number) v = new DoubleValue;
+			else if (d->format == VALUE_Int) v = new IntValue;
 			else if (d->format == VALUE_String) v = new StringValue;
 			else if (d->format == VALUE_Enum) {
 				v = new EnumValue(d,0);
@@ -131,6 +154,9 @@ SvgFilterNode::SvgFilterNode(const char *filterName, ValueHash *hash)
 
 		//add linkable image out
 		if (!issrc) AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", NULL,1, _("Out"),_("The resulting image"), 0, false));
+
+	} else {
+		DBG if (filterName) cerr << " *** warning! Could not find Svg node def for "<<filterName<<endl;
 	}
 }
 
@@ -146,6 +172,104 @@ const char *SvgFilterNode::ResultName()
 {
 	NodeProperty *p = FindProperty("result");
 	return p ? p->name : NULL;
+}
+
+int SvgFilterNode::dump_in_atts(Attribute *att, NodeGroup *filter, SvgFilterNode *last, SvgFilterNode *srcnode, Laxkit::ErrorLog &log)
+{
+	//ObjectDef *svgdefs = dynamic_cast<ObjectDef*>(SvgFilterNode::svg_def_keeper.GetObject());
+	//ObjectDef *sourcedef = svgdefs->FindDef("SvgSource");
+
+	const char *name, *value;
+	NodeProperty *srcprop = NULL, *src2prop = NULL;
+
+	for (int c=0; c<att->attributes.n; c++) {
+		name  = att->attributes.e[c]->name;
+		value = att->attributes.e[c]->value;
+
+		if (!strcmp(name, "in")) {
+			srcprop = srcnode->FindProperty(value);
+
+			if (!srcprop) {
+				 //is reference
+				srcprop = FindRef(value, filter); //find "out" prop in node with "result" property equal to value
+			}
+
+		} else if (!strcmp(name, "in2")) {
+			src2prop = srcnode->FindProperty(value);
+
+			if (!src2prop) {
+				 //is reference
+				src2prop = FindRef(value, filter); //find "out" prop in node with "result" property equal to value
+			}
+
+		} else if (!strcmp(name, "content:")) {
+			//has sub elements, like feFunc*, feMergeNode, etc
+			// ***
+
+		} else {
+			//should just be a plain old value
+			ObjectDef *fdef = def->FindDef(name);
+			NodeProperty *prop = FindProperty(name);
+
+			Value *v = NULL;
+
+			if (fdef) {
+				if (fdef->format == VALUE_Number || fdef->format == VALUE_Real) {
+					DoubleValue *vv = new DoubleValue(); //clunkiness due to compiler nag workaround
+					vv->Set(value);
+					v = vv;
+
+				} else if (fdef->format == VALUE_Int) {
+					v = new IntValue(value, 10);
+
+				} else if (fdef->format == VALUE_Boolean) {
+					v = new BooleanValue(value);
+
+				} else if (fdef->format == VALUE_Enum) {
+					int i = fdef->findfield(value, NULL);
+					if (i>=0) {
+						v = new EnumValue(fdef, i);
+					}
+
+				} else {
+					//shove everything else to string...
+					v = new StringValue(value);
+				}
+			}
+
+			if (v && prop) prop->SetData(v, 1);
+		}
+	}
+
+	 //connect in, if necessary
+	if (!srcprop && last) srcprop = last->FindProperty("out");
+	if (!srcprop && !last) srcprop = srcnode->FindProperty("SourceGraphic");
+	if (srcprop) {
+		NodeProperty *inprop = FindProperty("in");
+		if (inprop) filter->Connect(srcprop, inprop);
+	}
+
+	 //connect in2, if necessary
+	if (src2prop) {
+		NodeProperty *in2prop = FindProperty("in2");
+		if (in2prop) filter->Connect(src2prop, in2prop);
+	}
+
+	return log.Errors();
+}
+
+/*! Find the "out" property of the node that has name == "result".
+ */
+NodeProperty *SvgFilterNode::FindRef(const char *name, NodeGroup *filter)
+{
+	//dup names for result is just fine, just refers to most recent
+	for (int c=filter->nodes.n-1; c>=0; c--) {
+		NodeProperty *prop = filter->nodes.e[c]->FindProperty("result");
+		if (!prop) continue;
+		StringValue *s = dynamic_cast<StringValue*>(prop->GetData());
+		if (s && s->str && !strcmp(name, s->str)) return filter->nodes.e[c]->FindProperty("out");
+	}
+	return NULL;
 }
 
 
@@ -412,6 +536,7 @@ ObjectDef *GetSvgDefs()
 //-------------------- SVG filter importing --------------------------
 
 
+// *********** DON'T USE, NOT FUNCTIONAL
 ValueHash *XMLAttToHash(ObjectDef *types, LaxFiles::Attribute *att, ValueHash *append_to_this, Laxkit::ErrorLog *log)
 {
 	ObjectDef *svgdefs = GetSvgDefs();
@@ -426,19 +551,26 @@ ValueHash *XMLAttToHash(ObjectDef *types, LaxFiles::Attribute *att, ValueHash *a
 		value = att->attributes.e[c]->value;
 
 		if (!strcmp(name, "content:")) {
-			SetValue *v = new SetValue();
-			hash->push(".content", v, 1);
+			if (att->attributes.e[c]->attributes.n || value) { 
+				SetValue *content = new SetValue();
+				hash->push(".content", content, 1);
 
-			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
-				name  = att->attributes.e[c]->attributes.e[c2]->name;
-				value = att->attributes.e[c]->attributes.e[c2]->value;
+				//if (value) content->Push("cdata", value);
+
+				for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
+
+					//if (!XMLAttToHash(types, att->attributes.e[c]->attributes.e[c2], content, log)) break;
+				}
 			}
 
 		} else {
 			ObjectDef *def = svgdefs->FindDef(name);
 			if (def) {
-				//try to convert value to a Value
+				//try to convert value/attribute to a Value
 				Value *val = NULL; // ***
+
+
+				//val = AttributeToValue(value);
 
 				if (val) hash->push(name, value);
 				else hash->push(name, value);
@@ -447,12 +579,6 @@ ValueHash *XMLAttToHash(ObjectDef *types, LaxFiles::Attribute *att, ValueHash *a
 				hash->push(name, value);
 			}
 
-			//if (!strcmp(name, "id")) {
-			//} else if (!strcmp(name, "inkscape:label")) {
-			//} else if (!strcmp(name, "inkscape:menu")) {
-			//} else if (!strcmp(name, "inkscape:menu-tooltip")) {
-			//} else if (!strcmp(name, "style")) {
-			//}
 		}
 	}
 
@@ -460,11 +586,13 @@ ValueHash *XMLAttToHash(ObjectDef *types, LaxFiles::Attribute *att, ValueHash *a
 }
 
 
-/*! Load in filters extracted from an svg file.
+/*! Load in filters extracted from an svg file. One group node per filter
  * If which_filter == NULL, then extract all. Else just that one.
  */
-int LoadSVGFilters(const char *file, const char *which_filter)
+int LoadSVGFilters(const char *file, const char *which_filter, NodeGroup *put_here, Laxkit::ErrorLog &log)
 {
+	DBG cerr <<"loading svg filters..."<<endl;
+
 	ObjectDef *svgdefs = GetSvgDefs();
 
 	Attribute *att = XMLFileToAttribute(NULL, file, NULL);
@@ -491,39 +619,174 @@ int LoadSVGFilters(const char *file, const char *which_filter)
 		Attribute *defs = att2->find("content:");
 		if (!defs) throw 4;
 
-		//ValueHash *hash = new ValueHash;
 
 		const char *name, *value;
-		for (int c=0; c<att->attributes.n; c++) {
-			name  = att->attributes.e[c]->name;
-			value = att->attributes.e[c]->value;
+		for (int c=0; c<defs->attributes.n; c++) {
+			name  = defs->attributes.e[c]->name;
+			value = defs->attributes.e[c]->value;
 
 			if (!strcmp(name, "filter")) {
-
 				if (which_filter) {
-					const char *aa = att->attributes.e[c]->findValue("id");
+					const char *aa = defs->attributes.e[c]->findValue("id");
 					if (aa && strcmp(aa, which_filter)) {
-						aa = att->attributes.e[c]->findValue("inkscape:label");
+						aa = defs->attributes.e[c]->findValue("inkscape:label");
 						if (aa && strcmp(aa, which_filter)) {
 							continue;
 						}
 					}
-
 				}
 
-				//ValueHash *h = XMLAttToHash(svgdefs, att->attributes.e[c], NULL, log);
+				NodeGroup *filter = new NodeGroup();
+				filter->InitializeBlank();
+				put_here->AddNode(filter);
+				filter->dec_count();
+				SvgFilterNode *last = NULL;
 
-				//---
-			}
+				SvgFilterNode *srcnode = new SvgFilterNode("SvgSource");
+				filter->AddNode(srcnode);
+				srcnode->dec_count();
+
+				 //add the primitives
+				Attribute *filteratt = defs->attributes.e[c];
+
+				for (int c2=0; c2<filteratt->attributes.n; c2++) {
+					name  = filteratt->attributes.e[c2]->name;
+					value = filteratt->attributes.e[c2]->value;
+
+					if (!strcmp(name, "id")) {
+						filter->Id(value);
+
+					} else if (!strcmp(name, "inkscape:label")) {
+						filter->Label(value);
+
+					//} else if (!strcmp(name, "inkscape:menu")) {
+						//***
+					//} else if (!strcmp(name, "inkscape:menu-tooltip")) {
+						//***
+					//} else if (!strcmp(name, "style")) {
+						//***
+
+					} else if (!strcmp(name, "content:")) {
+
+						//these should only be filter primitives
+
+						Attribute *primitives = filteratt->attributes.e[c2];
+						for (int c3=0; c3<primitives->attributes.n; c3++) {
+							name  = primitives->attributes.e[c3]->name;
+							value = primitives->attributes.e[c3]->value;
+
+							ObjectDef *def = svgdefs->FindDef(name);
+							if (def) {
+								SvgFilterNode *pp = new SvgFilterNode(name);
+								//pp->def should == def.. assume it is so for now
+
+								pp->dump_in_atts(primitives->attributes.e[c3], filter, last, srcnode, log);
+								filter->AddNode(pp);
+								pp->dec_count();
+								last = pp;
+
+
+							} else {
+								DBG cerr << " warning! could not find ObjectDef for "<<name<<endl;
+							}
+
+						}
+					}
+				}
+
+				 //connect in to srcnode->in
+				NodeProperty *nodeprop = filter->AddGroupInput ("in",  _("In"),  NULL);
+				filter->Connect(nodeprop->topropproxy, srcnode->FindProperty("imageIn"));
+
+				 //connect final result to out
+				nodeprop = filter->AddGroupOutput("out", _("Out"), NULL);
+
+				NodeProperty *maybeout = NULL;
+
+				for (int c2=0; c2<filter->nodes.n; c2++) {
+					if (!filter->nodes.e[c2]->type || !strcmp(filter->nodes.e[c2]->type, "SvgSource")) continue;
+					NodeProperty *mprop = filter->nodes.e[c2]->FindProperty("out");
+					if (mprop && !mprop->IsConnected()) maybeout = mprop;
+				}
+
+				if (maybeout) {
+					filter->Connect(maybeout, nodeprop->frompropproxy);
+				}
+
+
+			} //if filter
 		}
 
 
 	} catch (exception &e) {
 		DBG cerr <<" *** error parsing svg file: "<<e.what()<<endl;
-		//***
+		log.AddMessage(_("Could not load svg filters!"), ERROR_Fail);
+		return 1;
+
+	} catch (int e) {
+		DBG cerr <<" *** error parsing svg file: "<<e<<endl;
+		log.AddMessage(_("Could not load svg filters!"), ERROR_Fail);
+		return 1;
 	}
 
-	return 1;
+	return 0;
+}
+
+//-------------------------------- SvgFilterLoader --------------------------
+
+
+int SvgFilterLoader::CanImport(const char *file, const char *first500)
+{
+	if (!file && !first500) return true;
+	if (first500) {
+		if (strstr(first500, "<svg")) return true;
+		return false;
+	}
+	return true;
+}
+
+/*! if null, then return if in theory it can export
+ */
+int SvgFilterLoader::CanExport(anObject *object)
+{
+	return false;
+}
+
+/*! context needs to be a NodeGroup.
+ */
+int SvgFilterLoader::Import(const char *file, anObject **object_ret, anObject *context, Laxkit::ErrorLog &log)
+{
+	NodeGroup *parent = dynamic_cast<NodeGroup*>(context); //maybe null
+	NodeGroup *group = NULL;
+
+	if (parent) group = parent;
+	else {
+		group = new NodeGroup;
+		group->Id("svgimport");
+		group->Label(_("Svg Import"));
+
+		//log.AddMessage(_("Parent needs to be a node group"), ERROR_Fail);
+		//return 1;
+	}
+
+    LoadSVGFilters(file, NULL, group, log);
+
+	if (object_ret) *object_ret = group;
+
+    return log.Errors();
+}
+
+int SvgFilterLoader::Export(const char *file, anObject *object, anObject *context, Laxkit::ErrorLog &log)
+{
+    NodeGroup *group = dynamic_cast<NodeGroup*>(object);
+    if (!group) {
+        log.AddMessage(_("Object not a NodeGroup in Export"), ERROR_Fail);
+        return 1;
+    }
+
+    DBG cerr << " *** need to implement SvgFilterLoader::Export()!"<<endl;
+    log.AddMessage("need to implement SvgFilterLoader::Export()!!", ERROR_Fail);
+    return 1;
 }
 
 
@@ -537,7 +800,7 @@ Laxkit::anObject *newSvgFilterNode(int p, Laxkit::anObject *ref)
 	ObjectDef *def = svgdefs->getField(p);
 	if (!def) return NULL;
 
-    SvgFilterNode *node = new SvgFilterNode(def->name, NULL);
+    SvgFilterNode *node = new SvgFilterNode(def->name);
     return node;
 }
 
