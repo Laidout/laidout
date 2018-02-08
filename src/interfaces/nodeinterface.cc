@@ -4492,12 +4492,15 @@ Laxkit::ShortcutHandler *NodeInterface::GetShortcuts()
     sc->Add(NODES_Add_Node,       'A',ShiftMask,  0, "AddNode"       , _("Add Node"       ),NULL,0);
     sc->Add(NODES_Delete_Nodes,   LAX_Bksp,0,     0, "DeleteNode"    , _("Delete Node"    ),NULL,0);
 	sc->AddShortcut(LAX_Del,0,0,  NODES_Delete_Nodes);
-    sc->Add(NODES_No_Overlap,     'o',0,          0, "NoOverlap"     , _("NoOverlap"      ),NULL,0);
     sc->Add(NODES_Toggle_Collapse,'c',0,          0, "ToggleCollapse", _("ToggleCollapse" ),NULL,0);
     sc->Add(NODES_Frame_Nodes,    'f',0,          0, "Frame",          _("Frame Selected" ),NULL,0);
     sc->Add(NODES_Edit_Group,     LAX_Tab,0,      0, "EditGroup",      _("Toggle Edit Group"),NULL,0);
     sc->Add(NODES_Leave_Group,    LAX_Tab,ShiftMask,0,"LeaveGroup",    _("Leave Group")    ,NULL,0);
 
+    sc->Add(NODES_No_Overlap,     'o',0,          0, "NoOverlap"     , _("NoOverlap"          ),NULL,0);
+    sc->Add(NODES_Arrange_Grid,   'g',0,          0, "ArrangeGrid"   , _("Arrange in a grid"  ),NULL,0);
+    sc->Add(NODES_Arrange_Row,    'h',0,          0, "ArrangeRow"    , _("Arrange in a row"   ),NULL,0);
+    sc->Add(NODES_Arrange_Column, 'v',0,          0, "ArrangeCol"    , _("Arrange in a column"),NULL,0);
 
     sc->Add(NODES_Save_Nodes,      's',0,  0, "SaveNodes"      , _("Save Nodes"     ),NULL,0);
     sc->Add(NODES_Load_Nodes,      'l',0,  0, "LoadNodes"      , _("Load Nodes"     ),NULL,0);
@@ -4611,14 +4614,6 @@ int NodeInterface::PerformAction(int action)
 		needtodraw=1;
 		return 0;
 
-	} else if (action==NODES_No_Overlap) {
-		if (!nodes) return 0;
-		for (int c=0; c<selected.n; c++) {
-			nodes->NoOverlap(selected.e[c], 2*nodes->colors->font->textheight());
-		}
-		needtodraw=1;
-		return 0;
-
 	} else if (action==NODES_Toggle_Collapse) {
 		ToggleCollapsed();
 		needtodraw=1;
@@ -4638,6 +4633,80 @@ int NodeInterface::PerformAction(int action)
 			selected.e[c]->show_preview = false;
 			selected.e[c]->Wrap();
 		}
+		needtodraw=1;
+		return 0;
+
+	} else if (action==NODES_No_Overlap) {
+		if (!nodes) return 0;
+		for (int c=0; c<selected.n; c++) {
+			nodes->NoOverlap(selected.e[c], 2*nodes->colors->font->textheight());
+		}
+		needtodraw=1;
+		return 0;
+
+	} else if (action==NODES_Arrange_Grid) {
+		 //somewhat hamfistedly arrange in a grid
+		if (!selected.n) return 0;
+		int side = sqrt(selected.n);
+
+		double w=0, h=0;
+		for (int c=0; c<selected.n; c++) {
+			if (selected.e[c]->width  > w) w = selected.e[c]->width;
+			if (selected.e[c]->height > h) h = selected.e[c]->height;
+		}
+		w *= 1.1;
+		h *= 1.1;
+		double x0 = selected.e[0]->x;
+		double y0 = selected.e[0]->y;
+		double xx, yy=y0;
+		int i = 0;
+
+		for (int y=0; y<side+1; y++) {
+			xx = x0;
+			for (int x=0; x<side; x++) {
+				if (i >= selected.n) break;
+				selected.e[i]->x = xx;
+				selected.e[i]->y = yy;
+				xx += w;
+				i++;
+			}
+			yy += h;
+		}
+		
+		needtodraw=1;
+		return 0;
+
+	} else if (action==NODES_Arrange_Row) {
+		if (!selected.n) return 0;
+
+		double x0 = selected.e[0]->x;
+		double y0 = selected.e[0]->y;
+		double th = nodes->colors->font->textheight();
+
+		double xx = x0;
+		for (int c=0; c<selected.n; c++) {
+			selected.e[c]->x = xx;
+			selected.e[c]->y = y0;
+			xx += selected.e[c]->width + th;
+		}
+
+		needtodraw=1;
+		return 0;
+
+	} else if (action==NODES_Arrange_Column) {
+		if (!selected.n) return 0;
+
+		double x0 = selected.e[0]->x;
+		double y0 = selected.e[0]->y;
+		double th = nodes->colors->font->textheight();
+
+		double yy = y0;
+		for (int c=0; c<selected.n; c++) {
+			selected.e[c]->x = x0;
+			selected.e[c]->y = yy;
+			yy += selected.e[c]->height + th;
+		}
+
 		needtodraw=1;
 		return 0;
 
