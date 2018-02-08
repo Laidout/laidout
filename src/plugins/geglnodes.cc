@@ -16,6 +16,7 @@
 #include "../language.h"
 #include "../interfaces/nodeinterface.h"
 #include "geglnodes.h"
+#include "svg/svg.h"
 
 
 #include <iostream>
@@ -33,6 +34,8 @@ Laidout::PluginBase *GetPlugin()
 }
 
 
+// *** TEMPORARY INCLUDE!!!!!  TESTING ONLY!!!!!!!!
+//#include "svg/svg.cc"
 
 
 namespace Laidout {
@@ -352,6 +355,11 @@ GeglNode *XMLFileToGeglNodes(const char *file, Laxkit::ErrorLog *log)
 		cerr << "Gegl node read in from "<<file<<" error: "<<e.what()<<endl;
 		if (log) log->AddMessage(e.what(), ERROR_Fail);
 	}
+
+	if (!node) {
+		if (log) log->AddMessage(_("Could not load gegl file!"), ERROR_Fail);
+	}
+
 	return node;
 }
 
@@ -1227,6 +1235,56 @@ void RegisterNodes(Laxkit::ObjectFactory *factory)
 
 
 
+//-------------------------------- GeglLoader --------------------------
+
+class GeglLoader : public Laidout::ObjectIO
+{
+  public:
+	GeglLoader(PluginBase *fromplugin) { plugin = fromplugin; }
+	virtual ~GeglLoader() {}
+
+	virtual const char *Author() { return "Laidout"; }
+	virtual const char *FilterVersion() { return "0.1"; }
+
+	virtual const char *Format() { return "xml"; }
+	virtual const char *DefaultExtension()  { return "xml"; }
+	virtual const char *Version() { return "0.1"; }
+	virtual const char *VersionName() { return "Gegl XML"; }
+	virtual ObjectDef *GetObjectDef() { return NULL; }
+
+	virtual int Serializable(int what) { return 0; }
+	virtual int CanImport(const char *file, const char *first500) { return true; } //if null, then return if in theory it can import
+	virtual int CanExport(anObject *object) { return true; } //if null, then return if in theory it can export
+	virtual int Import(const char *file, anObject **object_ret, anObject *context, Laxkit::ErrorLog &log);
+	virtual int Export(const char *file, anObject *object,      anObject *context, Laxkit::ErrorLog &log);
+};
+
+int GeglLoader::Import(const char *file, anObject **object_ret, anObject *context, Laxkit::ErrorLog &log)
+{
+	GeglNode *gnode = XMLFileToGeglNodes(file, &log);
+	if (gnode) {
+		NodeGroup *parent = dynamic_cast<NodeGroup*>(context);
+		NodeGroup *group = GeglNodesToLaidoutNodes(gnode, parent, true, &log);
+		*object_ret = group;
+		g_object_unref (gnode);
+	}
+	return log.Errors();
+}
+
+int GeglLoader::Export(const char *file, anObject *object, anObject *context, Laxkit::ErrorLog &log)
+{
+	NodeGroup *group = dynamic_cast<NodeGroup*>(object);
+	if (!group) {
+		log.AddMessage(_("Object not a NodeGroup in Export"), ERROR_Fail);
+		return 1;
+	}
+
+	DBG cerr << " *** need to implement GeglLoader::Export()!"<<endl;
+	log.AddMessage("need to implement GeglLoader::Export()!!", ERROR_Fail);
+	return 1;
+}
+
+
 //-------------------------------- GeglNodesPlugin --------------------------
 
 /*! class GeglNodesPlugin
@@ -1307,54 +1365,9 @@ const char *GeglNodesPlugin::License()
 	return "GPL3";
 }
 
-class GeglLoader : public Laidout::ObjectIO
-{
-  public:
-	GeglLoader(GeglNodesPlugin *fromplugin) { plugin = fromplugin; }
-	virtual ~GeglLoader() {}
-
-	virtual const char *Author() { return "Laidout"; }
-    virtual const char *FilterVersion() { return "0.1"; }
-
-    virtual const char *Format() { return "xml"; }
-    virtual const char *DefaultExtension()  { return "xml"; }
-    virtual const char *Version() { return "0.1"; }
-    virtual const char *VersionName() { return "Gegl XML"; }
-    virtual ObjectDef *GetObjectDef() { return NULL; }
-
-	virtual int Serializable(int what) { return 0; }
-	virtual int CanImport(const char *file, const char *first100) { return true; } //if null, then return if in theory it can import
-	virtual int CanExport(anObject *object) { return true; } //if null, then return if in theory it can export
-	virtual int Import(const char *file, anObject **object_ret, anObject *context, Laxkit::ErrorLog &log);
-	virtual int Export(const char *file, anObject *object,      anObject *context, Laxkit::ErrorLog &log);
-};
-
-int GeglLoader::Import(const char *file, anObject **object_ret, anObject *context, Laxkit::ErrorLog &log)
-{
-	GeglNode *gnode = XMLFileToGeglNodes(file, &log);
-	if (gnode) {
-		NodeGroup *parent = dynamic_cast<NodeGroup*>(context);
-		NodeGroup *group = GeglNodesToLaidoutNodes(gnode, parent, true, &log);
-		*object_ret = group;
-		g_object_unref (gnode);
-	}
-	return log.Errors();
-}
-
-int GeglLoader::Export(const char *file, anObject *object, anObject *context, Laxkit::ErrorLog &log)
-{
-	NodeGroup *group = dynamic_cast<NodeGroup*>(object);
-	if (!group) {
-		log.AddMessage(_("Object not a NodeGroup in Export"), ERROR_Fail);
-		return 1;
-	}
-
-	DBG cerr << " *** need to implement GeglLoader::Export()!"<<endl;
-	log.AddMessage("need to implement GeglLoader::Export()!!", ERROR_Fail);
-	return 1;
-}
 
 GeglLoader *theloader = NULL;
+SvgFilterNS::SvgFilterLoader *svgloader = NULL;
 
 
 /*! Install stuff.
@@ -1377,42 +1390,19 @@ int GeglNodesPlugin::Initialize()
 
 	ObjectFactory *node_factory = Laidout::NodeGroup::NodeFactory(true);
 
-	RegisterNodes(node_factory);
-
 	 //install loader
 	theloader = new GeglLoader(this);
 	Laidout::NodeGroup::InstallLoader(theloader, 0);
 
+	 //svg nodes setup
+	RegisterNodes(node_factory);
+	SvgFilterNS::RegisterSvgNodes(node_factory);
+	svgloader = new SvgFilterNS::SvgFilterLoader(this);
+	Laidout::NodeGroup::InstallLoader(svgloader, 0);
+
+
 	DBG cerr << "GeglNodesPlugin initialized!"<<endl;
 	initialized = 1;
-
-
-//	//---------------TEST STUFF
-//	DBG cerr <<"---start testing gegl xml"<<endl;
-//	ErrorLog log;
-//	GeglNode *gnode = XMLFileToGeglNodes("test-gegl.xml", &log);
-//	if (gnode) {
-//
-//		//GSList *list = gegl_node_get_children(gnode);
-//		//cerr << "Num nodes as children: "<<g_slist_length(list)<<endl;
-//
-//		NodeGroup *group = GeglNodesToLaidoutNodes(gnode, NULL, true, &log);
-//		if (group) {
-//			DBG cerr <<"xml to lo nodes:"<<endl;
-//			group->dump_out(stdout, 2, 0, NULL);
-//			FILE *f = fopen("nodes-TEMP-gegl.nodes", "w");
-//			group->dump_out(f, 2, 0, NULL);
-//			fclose(f);
-//			group->dec_count();
-//		}
-//
-//
-//		//g_slist_free(list);
-//		g_object_unref (gnode);
-//	}
-//	DBG dumperrorlog("gegl read xml test log:", log);
-//	DBG cerr <<"---done testing gegl xml"<<endl;
-//	//---------------end TEST STUFF
 
 
 	return 0;
@@ -1422,11 +1412,13 @@ int GeglNodesPlugin::Initialize()
  */
 void GeglNodesPlugin::Finalize()
 {
+	 //gegl backend
 	if (GeglLaidoutNode::masternode != NULL) {
 		g_object_unref (GeglLaidoutNode::masternode);
 		GeglLaidoutNode::masternode = NULL;
 	}
 
+	 //node loader
 	if (theloader) {
 		Laidout::NodeGroup::RemoveLoader(theloader);
 		theloader->dec_count();
@@ -1434,6 +1426,15 @@ void GeglNodesPlugin::Finalize()
 	}
 
     gegl_exit ();
+
+
+	 //svg loader
+	if (svgloader) {
+		Laidout::NodeGroup::RemoveLoader(svgloader);
+		svgloader->dec_count();
+		svgloader = NULL;
+	}
+
 }
 
 
