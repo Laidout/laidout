@@ -180,14 +180,14 @@ from recent import:
 node editor NodeInterface nodes:
   grouping framed objects have complications
   gegl nodes:
-    some process actions bog everything down like overlay a crop with a non-cropped input.. need a check for unbounded nodes before process
     make sure deleting/rearranging nodes correctly removes gegl connections
 	save gegl graph to xml
     inkscape filter read in
 	make sure input/outputs can translate from other data types
 	need protection against unknown gegl ops
-	enums
 	babl format is passed in gegl as an otherwise undefined gpointer, need to have special check for this
+    some process actions bog everything down like overlay a crop with a non-cropped input.. need a check for unbounded nodes before process
+	DONE enums
 	DONE menu with categories, not just the name. gegl ops have name, title, description, categories, license, even source!!
 	DONE load in graph xml
     DONE process on a crop after change a value crash? need to trace
@@ -210,9 +210,9 @@ node editor NodeInterface nodes:
   load something already loaded makes dups of everything.. need to check for name collision!!
   load/save custom properties needs to preserve name, label, tooltip, types, custom info
   groups
-    need visual indication that something is a group
     linked vs appended node groups, to allow mass changing of particular effects
     node libraries: nodes as resources
+    DONE need visual indication that something is a group
   auto shift on connection
   auto connect when dragging nodes.. needs parsing of compatible properties
   view area things:
@@ -225,6 +225,7 @@ node editor NodeInterface nodes:
 	thread forking for branching nodes?
   make sure entire nodes don't go totally offscreen
   scriptify node graph
+  nodes to script and script to nodes
   deferred update when massive operations, maybe highlight nodes in yellow?
   color code pipes by value type, color: yellow, number: gray, vector: purple
   need better styling.. too much is hardcoded. problems later with high dpi screens
@@ -888,6 +889,7 @@ voronoi Voronoi delauney Delauney:
 	toggle delauney lines
 	toggle voronoi lines
 	toggle points
+  auto fill with randomized colors
   merge different voronoi objects
   sample point color from background?
   less than three points doesn't remap rationally, need to update extra lines to something proper
@@ -1703,6 +1705,7 @@ CharacterInterface characterinterface
 Spread editor: SpreadEditor spread editor spreadeditor
   should have border drag to move, not middle drag
 
+need python implementation of Attribute and class structure in/out to help file importers in other python based environments
 
 
 ===================Anything below here probably needs discussion before implementing================
