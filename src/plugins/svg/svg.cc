@@ -130,6 +130,10 @@ SvgFilterNode::SvgFilterNode(const char *filterName)
 		if (issrc) AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "imageIn", NULL,1, _("In"),_("Input image"), 0, false));
 
 
+		ObjectDef *result = NULL;
+		int resulti = -1;
+		Value *resultv = NULL;
+
 		for (int c=0; c<fdef->getNumFields(); c++) {
 			ObjectDef *d = fdef->getField(c);
 			if (!d) continue;
@@ -142,7 +146,8 @@ SvgFilterNode::SvgFilterNode(const char *filterName)
 				v = new EnumValue(d,0);
 			}
 
-			AddProperty(new NodeProperty(issrc ? NodeProperty::PROP_Output : NodeProperty::PROP_Input, true, d->name, v,1, d->Name, d->description, c));
+			if (!strcmp(d->name, "result")) { result = d; resulti = c; resultv = v; }
+			else AddProperty(new NodeProperty(issrc ? NodeProperty::PROP_Output : NodeProperty::PROP_Input, true, d->name, v,1, d->Name, d->description, c));
 		}
 
 		//add linkable image in
@@ -152,7 +157,14 @@ SvgFilterNode::SvgFilterNode(const char *filterName)
 //		if (fdef->FindDef("in2"))
 //			AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "inImg2", NULL,1, _("Image2 in"),_("Other Image input, possibly modified by in2 property"), 0, false));
 
+		//add child button for certain nodes
+		if (!strcmp(filterName, "feMerge")) {
+			AddProperty(new NodeProperty(NodeProperty::PROP_Button, false, "AddChild", NULL,1, _("Add Child"),_("Add a merge node"), 0, false));
+		}
+
+
 		//add linkable image out
+		if (result) AddProperty(new NodeProperty(NodeProperty::PROP_Block, false, result->name, resultv,1, result->Name, result->description, resulti));
 		if (!issrc) AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", NULL,1, _("Out"),_("The resulting image"), 0, false));
 
 	} else {
@@ -790,9 +802,7 @@ int SvgFilterLoader::Export(const char *file, anObject *object, anObject *contex
 }
 
 
-
 //-------------------- Node installation --------------------------
-
 
 Laxkit::anObject *newSvgFilterNode(int p, Laxkit::anObject *ref)
 {
@@ -804,8 +814,19 @@ Laxkit::anObject *newSvgFilterNode(int p, Laxkit::anObject *ref)
     return node;
 }
 
-const char *filters[] = {
+const char *svgnodelist[] = {
+		 //input source node
 		"SvgSource",
+		 //misc child elements
+		"feMergeNode",
+		"feFuncR",
+		"feFuncG",
+		"feFuncB",
+		"feFuncA",
+		"feDistantLight",
+		"fePointLight"
+		"feSpotLight"
+		 //primitives
 		"feBlend",
 		"feColorMatrix",
 		"feComponentTransfer",
@@ -813,15 +834,16 @@ const char *filters[] = {
 		"feConvolveMatrix",
 		"feDiffuseLighting",
 		"feDisplacementMap",
-		"feFlood ",
+		"feFlood",
 		"feGaussianBlur",
-		"feImage ",
-		"feMerge ",
+		"feImage",
+		"feMerge",
 		"feMorphology",
 		"feOffset",
 		"feSpecularLighting",
 		"feTile",
 		"feTurbulence",
+
 		NULL
 	};
 
@@ -834,12 +856,13 @@ void RegisterSvgNodes(Laxkit::ObjectFactory *factory)
 
     for (int c=0; c < svgdefs->getNumFields(); c++) {
         def = svgdefs->getField(c);
-		if (findInList(def->name, filters) < 0) continue;
+		if (findInList(def->name, svgnodelist) < 0) continue;
 
 		sprintf(str, "Svg Filter/%s", def->name);
 		factory->DefineNewObject(getUniqueNumber(), str, newSvgFilterNode, NULL, c);
     }
 }
+
 
 
 
