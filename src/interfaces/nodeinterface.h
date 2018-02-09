@@ -90,6 +90,7 @@ class NodeProperty
 		//PROP_Through,
 		PROP_Block, //no in or out, but still maybe settable
 		PROP_Preview,
+		PROP_Button,
 		PROP_Exec_In,
 		PROP_Exec_Out,
 		PROP_Exec_Through,

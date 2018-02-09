@@ -3427,130 +3427,142 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 	}
 
 	double th = dp->textheight();
+
 	if (!node->collapsed) {
-		Value *v = prop->GetData();
-
-		char extra[200];
-		extra[0]='\0';
-		dp->LineWidth(1);
-		ScreenColor col;
-
-		if (v && (v->type()==VALUE_Real || v->type()==VALUE_Int)) {
-			dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
-			dp->NewBG(&nodes->colors->bg_edit);
-			if (prop->IsEditable()) 
-				dp->drawRoundedRect(node->x+prop->x+th/2, node->y+prop->y+th/4, node->width-th, prop->height*.66,
-								th/3, false, th/3, false, 2); 
-
-			dp->NewFG(&nodes->colors->fg_edit);
-			sprintf(extra, "%s:", prop->Label());
-			dp->textout(node->x+prop->x+th, node->y+prop->y+prop->height/2, extra, -1, LAX_LEFT|LAX_VCENTER);
-			v->getValueStr(extra, 199);
-			dp->textout(node->x+node->width-th, node->y+prop->y+prop->height/2, extra, -1, LAX_RIGHT|LAX_VCENTER);
-
-		} else if (v && v->type()==VALUE_String) {
-			dp->NewFG(&nodes->colors->fg);
-
-			 //prop label
-			double dx = th/2+dp->textout(node->x+th/2, y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER); 
-
-			 //prop string
-			dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
-			dp->NewBG(&nodes->colors->bg_edit);
-			if (prop->IsEditable()) 
-				dp->drawRoundedRect(dx+node->x+prop->x+th/2, node->y+prop->y+th/4, node->width-th-dx, prop->height*.66,
-								th/3, false, th/3, false, 2);
-			dp->NewFG(&nodes->colors->fg_edit);
-			dp->textout(dx+node->x+th, y+prop->height/2, dynamic_cast<StringValue*>(v)->str,-1, LAX_LEFT|LAX_VCENTER); 
-
-		} else if (v && v->type()==VALUE_Enum) {
-
-			 //draw name
-			double x=th/2;
-			double dx=dp->textout(node->x+x, node->y+prop->y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER);
-			x+=dx+th/2;
-
-			 //draw value
-			dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
-			dp->NewBG(&nodes->colors->bg_menu);
-			dp->drawRoundedRect(node->x+x, node->y+prop->y+th/4, node->width-th/2-x, prop->height*.66,
-								th/3, false, th/3, false, 2); 
-
-			dp->NewFG(&nodes->colors->fg_edit);
-
-			//v->getValueStr(extra, 199);
-			//-----
-			EnumValue *ev = dynamic_cast<EnumValue*>(v);
-			const char *nm=NULL, *Nm=NULL; 
-			ev->GetObjectDef()->getEnumInfo(ev->value, &nm, &Nm);
-			if (!Nm) Nm = nm;
-			dp->textout(node->x+th*1.5+dx, node->y+prop->y+prop->height/2, Nm,-1, LAX_LEFT|LAX_VCENTER);
-			//dp->textout(node->x+th*1.5+dx, node->y+prop->y+prop->height/2, extra,-1, LAX_LEFT|LAX_VCENTER);
-			dp->drawthing(node->x+node->width-th, node->y+prop->y+prop->height/2, th/4,th/4, 1, THING_Triangle_Down);
-
-		} else if (v && v->type()==VALUE_Boolean) {
-			coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit);
-			dp->NewFG(&col);
-			coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit, .15);
-			dp->NewBG(hoverprop ? &col : &nodes->colors->bg_edit);
-
-			BooleanValue *vv = dynamic_cast<BooleanValue*>(v);
-
-			if (!prop->IsOutput()) {
-				dp->drawrectangle(node->x+prop->x+th/2, y+prop->height/2-th/2, th, th, 2);
-
-				dp->NewFG(&nodes->colors->fg_edit);
-				if (vv->i) dp->drawthing(node->x+prop->x + th,y+prop->height/2, th/2,-th/2, 1, THING_Check);
-
-				 //draw on left side
-				dp->textout(node->x+2*th, y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER); 
-
-			} else {
-				 //draw on right side
-				dp->drawrectangle(node->x+prop->x+prop->width - 3*th/2, y+prop->height/2-th/2, th, th, 2);
-
-				dp->NewFG(&nodes->colors->fg_edit);
-				if (vv->i) dp->drawthing(node->x+prop->x + prop->width - th,y+prop->height/2, th/2,-th/2, 1, THING_Check);
-
-				dp->textout(node->x+node->width-2*th, y+prop->height/2, prop->Label(),-1, LAX_RIGHT|LAX_VCENTER);
-			}
-
-		} else if (v && v->type()==VALUE_Color) {
-			ColorValue *color = dynamic_cast<ColorValue*>(v);
-			double x = node->x+th/2;
-			unsigned long oldfg = dp->FG();
-			if (prop->IsEditable()) {
-				 //draw color box
-				dp->NewFG(color->color.Red(),color->color.Green(),color->color.Blue(),color->color.Alpha());
-				dp->drawrectangle(x,y+prop->height/2-th/2, 2*th, th, 1);
-				dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
-				dp->drawrectangle(x,y+prop->height/2-th/2, 2*th, th, 0);
-				x += 2*th + th/2;
-			}
-			dp->NewFG(oldfg);
-			dp->textout(x,y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER);
+		if (prop->type == NodeProperty::PROP_Button) {
+			double w = th + dp->textextent(prop->Label(),-1, NULL,NULL);
+			ScreenColor highlight(node->colors->bg), shadow(node->colors->bg);
+			highlight.Average(&highlight, node->colors->fg, .2);
+			shadow.   Average(&highlight, node->colors->fg, .8);
+			int state = 1;
+			dp->drawBevel(th*.05, &highlight, &shadow, state, node->x+prop->x+prop->width/2-w/2, node->y+prop->y+prop->height/2-th*.6, w, th*1.2);
+			dp->textout(node->x+prop->x+prop->width/2, node->y+prop->y+prop->height/2, prop->Label(),-1, LAX_CENTER);
 
 		} else {
-			 //fallback, just write out the property name
-			dp->NewFG(&nodes->colors->fg);
-			if (!prop->IsOutput()) {
-				 //draw on left side
-				double dx = dp->textout(node->x+th/2, y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER); 
-				if (!isblank(extra)) {
-					dp->textout(node->x+th+dx, y+prop->height/2, extra,-1, LAX_LEFT|LAX_VCENTER);
-					dp->drawrectangle(node->x+th/2+dx, y, node->width-(th+dx), th*1.25, 0);
+			Value *v = prop->GetData();
+
+			char extra[200];
+			extra[0]='\0';
+			dp->LineWidth(1);
+			ScreenColor col;
+
+			if (v && (v->type()==VALUE_Real || v->type()==VALUE_Int)) {
+				dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
+				dp->NewBG(&nodes->colors->bg_edit);
+				if (prop->IsEditable()) 
+					dp->drawRoundedRect(node->x+prop->x+th/2, node->y+prop->y+th/4, node->width-th, prop->height*.66,
+									th/3, false, th/3, false, 2); 
+
+				dp->NewFG(&nodes->colors->fg_edit);
+				sprintf(extra, "%s:", prop->Label());
+				dp->textout(node->x+prop->x+th, node->y+prop->y+prop->height/2, extra, -1, LAX_LEFT|LAX_VCENTER);
+				v->getValueStr(extra, 199);
+				dp->textout(node->x+node->width-th, node->y+prop->y+prop->height/2, extra, -1, LAX_RIGHT|LAX_VCENTER);
+
+			} else if (v && v->type()==VALUE_String) {
+				dp->NewFG(&nodes->colors->fg);
+
+				 //prop label
+				double dx = th/2+dp->textout(node->x+th/2, y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER); 
+
+				 //prop string
+				dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
+				dp->NewBG(&nodes->colors->bg_edit);
+				if (prop->IsEditable()) 
+					dp->drawRoundedRect(dx+node->x+prop->x+th/2, node->y+prop->y+th/4, node->width-th-dx, prop->height*.66,
+									th/3, false, th/3, false, 2);
+				dp->NewFG(&nodes->colors->fg_edit);
+				dp->textout(dx+node->x+th, y+prop->height/2, dynamic_cast<StringValue*>(v)->str,-1, LAX_LEFT|LAX_VCENTER); 
+
+			} else if (v && v->type()==VALUE_Enum) {
+
+				 //draw name
+				double x=th/2;
+				double dx=dp->textout(node->x+x, node->y+prop->y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER);
+				x+=dx+th/2;
+
+				 //draw value
+				dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
+				dp->NewBG(&nodes->colors->bg_menu);
+				dp->drawRoundedRect(node->x+x, node->y+prop->y+th/4, node->width-th/2-x, prop->height*.66,
+									th/3, false, th/3, false, 2); 
+
+				dp->NewFG(&nodes->colors->fg_edit);
+
+				//v->getValueStr(extra, 199);
+				//-----
+				EnumValue *ev = dynamic_cast<EnumValue*>(v);
+				const char *nm=NULL, *Nm=NULL; 
+				ev->GetObjectDef()->getEnumInfo(ev->value, &nm, &Nm);
+				if (!Nm) Nm = nm;
+				dp->textout(node->x+th*1.5+dx, node->y+prop->y+prop->height/2, Nm,-1, LAX_LEFT|LAX_VCENTER);
+				//dp->textout(node->x+th*1.5+dx, node->y+prop->y+prop->height/2, extra,-1, LAX_LEFT|LAX_VCENTER);
+				dp->drawthing(node->x+node->width-th, node->y+prop->y+prop->height/2, th/4,th/4, 1, THING_Triangle_Down);
+
+			} else if (v && v->type()==VALUE_Boolean) {
+				coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit);
+				dp->NewFG(&col);
+				coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit, .15);
+				dp->NewBG(hoverprop ? &col : &nodes->colors->bg_edit);
+
+				BooleanValue *vv = dynamic_cast<BooleanValue*>(v);
+
+				if (!prop->IsOutput()) {
+					dp->drawrectangle(node->x+prop->x+th/2, y+prop->height/2-th/2, th, th, 2);
+
+					dp->NewFG(&nodes->colors->fg_edit);
+					if (vv->i) dp->drawthing(node->x+prop->x + th,y+prop->height/2, th/2,-th/2, 1, THING_Check);
+
+					 //draw on left side
+					dp->textout(node->x+2*th, y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER); 
+
+				} else {
+					 //draw on right side
+					dp->drawrectangle(node->x+prop->x+prop->width - 3*th/2, y+prop->height/2-th/2, th, th, 2);
+
+					dp->NewFG(&nodes->colors->fg_edit);
+					if (vv->i) dp->drawthing(node->x+prop->x + prop->width - th,y+prop->height/2, th/2,-th/2, 1, THING_Check);
+
+					dp->textout(node->x+node->width-2*th, y+prop->height/2, prop->Label(),-1, LAX_RIGHT|LAX_VCENTER);
 				}
 
+			} else if (v && v->type()==VALUE_Color) {
+				ColorValue *color = dynamic_cast<ColorValue*>(v);
+				double x = node->x+th/2;
+				unsigned long oldfg = dp->FG();
+				if (prop->IsEditable()) {
+					 //draw color box
+					dp->NewFG(color->color.Red(),color->color.Green(),color->color.Blue(),color->color.Alpha());
+					dp->drawrectangle(x,y+prop->height/2-th/2, 2*th, th, 1);
+					dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
+					dp->drawrectangle(x,y+prop->height/2-th/2, 2*th, th, 0);
+					x += 2*th + th/2;
+				}
+				dp->NewFG(oldfg);
+				dp->textout(x,y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER);
+
 			} else {
-				 //draw on right side
-				double dx = dp->textout(node->x+node->width-th/2, y+prop->height/2, prop->Label(),-1, LAX_RIGHT|LAX_VCENTER);
-				if (!isblank(extra)) {
-					dp->textout(node->x+node->width-th-dx, y+prop->height/2, extra,-1, LAX_RIGHT|LAX_VCENTER);
-					dp->drawrectangle(node->x+th/2, y-th*.25, node->width-(th*1.25+dx), th*1.25, 0);
+				 //fallback, just write out the property name
+				dp->NewFG(&nodes->colors->fg);
+				if (!prop->IsOutput()) {
+					 //draw on left side
+					double dx = dp->textout(node->x+th/2, y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER); 
+					if (!isblank(extra)) {
+						dp->textout(node->x+th+dx, y+prop->height/2, extra,-1, LAX_LEFT|LAX_VCENTER);
+						dp->drawrectangle(node->x+th/2+dx, y, node->width-(th+dx), th*1.25, 0);
+					}
+
+				} else {
+					 //draw on right side
+					double dx = dp->textout(node->x+node->width-th/2, y+prop->height/2, prop->Label(),-1, LAX_RIGHT|LAX_VCENTER);
+					if (!isblank(extra)) {
+						dp->textout(node->x+node->width-th-dx, y+prop->height/2, extra,-1, LAX_RIGHT|LAX_VCENTER);
+						dp->drawrectangle(node->x+th/2, y-th*.25, node->width-(th*1.25+dx), th*1.25, 0);
+					}
 				}
 			}
 		}
-	} //node->collapsed
+	} // !node->collapsed
 
 	 //draw connection spot
 	if (prop->is_linkable) {
@@ -4544,8 +4556,10 @@ int NodeInterface::PerformAction(int action)
 		DBG cerr << "delete nodes..."<<endl;
 		if (!nodes || selected.n == 0) return 0;
 
-		nodes->DeleteNodes(selected);
-		PostMessage(_("Deleted."));
+		if (nodes->DeleteNodes(selected))
+			PostMessage(_("Deleted."));
+		else
+			PostMessage(_("Can't delete."));
 		needtodraw=1;
 		return 0;
 
