@@ -16,6 +16,7 @@ CPPFLAGS= -Wall $(HIDEGARBAGE) $(DEBUGFLAGS) $(EXTRA_CPPFLAGS)  -I$(LAXDIR)/.. `
 
 objs= \
 	values.o \
+	interpreter.o \
 	calculator.o \
 	shortcuttodef.o
 

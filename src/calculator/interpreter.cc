@@ -9,76 +9,18 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2009 by Tom Lechner
+// Copyright (C) 2009-15, 2018 by Tom Lechner
 //
 
 
+#include "interpreter.h"
 
-********this file is not active yet!!!*****************
 
-
+using namespace Laxkit;
+using namespace LaxFiles;
 
 
 namespace Laidout {
-
-
-
-
-//----------------------------InitInterpreters()-----------------------------------------
-
-
-RefPtrStack<LaidoutCalculator> interpreters;
-
-...LaidoutApp::close() {
-	for (int c=0; c<interpreters.n; c++) {
-		interpreters.e[c]->CloseInterpreter();
-	}
-	interpreters.flush();
-}
-
-
-//! Initialize and install built in interpreters
-int LaidoutApp::InitInterpreters()
-{
-	int numadded = 0;
-
-	 //add default calculator
-	LaidoutCalculator *calc = new LaidoutCalculator();
-	if (AddInterpreter(calc) == 0) numadded++;
-
-
-	 //add Python
-	PythonInterpreter *python = new PythonInterpreter();
-	if (AddInterpreter(python) == 0) numadded++;
-
-
-	return numadded;
-}
-
-/*! Takes count of i.
- */
-int LaidoutApp::AddInterpreter(Interpreter *i)
-{
-	if (!i) return 1;
-	interpreters.push(i);
-	i->dec_count();
-	return 0;
-}
-
-/*! Takes count of i.
- */
-int LaidoutApp::RemoveInterpreter(Interpreter *i)
-{
-	if (!i) return 1;
-	interpreters.remove(interpreters.findindex(i));
-	return 0;
-}
-
-
-
-class LaidoutCalculator : public Interpreter
-{  .... };
-
 
 
 

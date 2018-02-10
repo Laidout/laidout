@@ -306,6 +306,11 @@ LaidoutApp::~LaidoutApp()
 	if (calculator)		    calculator->dec_count();
 }
 
+int LaidoutApp::close()
+{
+	anXApp::close();
+	return 0;
+}
 
 int LaidoutApp::Idle(int tid)
 {
@@ -653,11 +658,28 @@ int LaidoutApp::init(int argc,char **argv)
 	return 0;
 };
 
-//! Initialize and install built in interpreters
+//! Initialize and install built in interpreters. Returns number added.
 int LaidoutApp::InitInterpreters()
 {
 	if (!calculator) calculator = new LaidoutCalculator();
+	interpreters.push(calculator, LISTS_DELETE_Refcount, 0); //list should be blank, but just in case push to 0
+
     return 1;
+}
+
+int LaidoutApp::AddInterpreter(Interpreter *i, bool absorb_count)
+{
+  if (!i) return 1;
+  interpreters.push(i);
+  if (absorb_count) i->dec_count();
+  return 0;
+}
+
+int LaidoutApp::RemoveInterpreter(Interpreter *i)
+{
+  if (!i) return 1;
+  interpreters.remove(interpreters.findindex(i));
+  return 0;
 }
 
 //! Write out resources to ~/.laidout/(version)/autolaidoutrc.
@@ -2083,7 +2105,10 @@ int main(int argc,char **argv)
 
 	DBG cerr <<"---------Laidout Close--------------"<<endl;
 	 //for debugging purposes, spread out closing down various things....
+	 //..this is a lot of stuff that should probably have a better finalizing
+	 //  architecture behind it
 	laidout->close();
+
 	DBG cerr <<"---------  close interface manager..."<<endl;
 	LaxInterfaces::InterfaceManager::SetDefault(NULL,true);
 	DBG cerr <<"---------  close undo manager..."<<endl;
@@ -2098,13 +2123,16 @@ int main(int argc,char **argv)
 	Laxkit::ImageLoader::FlushLoaders();
 	DBG cerr <<"---------  close units manager..."<<endl;
 	Laxkit::SetUnitManager(NULL);
-	DBG cerr <<"---------  close laidout app..."<<endl;
+	DBG cerr <<"---------  final dec_count of laidout app..."<<endl;
 	laidout->dec_count();
-	
+
 	DBG cerr <<"---------  close stylemanager"<<endl;
 	DBG cerr <<"  stylemanager.getNumFields()="<<(stylemanager.getNumFields())<<endl;
 	//DBG cerr <<"  stylemanager.styles.n="<<(stylemanager.styles.n)<<endl;
 	stylemanager.Clear();
+
+	
+
 
 #ifdef LAX_USES_CAIRO
 	DBG cerr <<"---------  cairo_debug_reset_static_data()..."<<endl;

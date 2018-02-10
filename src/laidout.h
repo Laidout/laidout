@@ -102,8 +102,6 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	Document *curdoc;
 	Laxkit::anXWindow *lastview;
 
-	LaidoutCalculator *calculator;
-
 	 //global prefs
 	int experimental;
 	LaidoutPreferences prefs;
@@ -134,7 +132,12 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	int RemovePlugin(const char *name);
 	int InitializePlugins();
 
+	LaidoutCalculator *calculator;
+	Laxkit::RefPtrStack<Interpreter> interpreters;
+
 	int InitInterpreters();
+	int AddInterpreter(Interpreter *i, bool absorb_count);
+	int RemoveInterpreter(Interpreter *i);
 
 	Laxkit::PtrStack<PaperStyle> papersizes;
 	PaperStyle *defaultpaper; //could be a custom, so need to have extra field here
@@ -142,6 +145,7 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 
 	LaidoutApp();
 	virtual ~LaidoutApp();
+	virtual int close();
 	virtual const char *whattype() { return "LaidoutApp"; }
 	virtual int init(int argc,char **argv);
 	virtual void setupdefaultcolors();

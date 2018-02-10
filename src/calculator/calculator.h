@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -18,6 +17,7 @@
 #define CALCULATOR_H
 
 #include <lax/refptrstack.h>
+#include "interpreter.h"
 #include "values.h"
 
 
@@ -141,7 +141,9 @@ class BlockInfo
 };
 
 //---------------------------LaidoutCalculator
-class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, public FunctionEvaluator
+class LaidoutCalculator : public Interpreter,
+						  public OpFuncEvaluator,
+						  public FunctionEvaluator
 {
  private:
 	 //context state
@@ -252,10 +254,22 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	virtual char *In(const char *in, int *return_type=NULL);
 	virtual int evaluate(const char *in, int len, Value **value_ret, Laxkit::ErrorLog *log);
 
-	virtual void clearerror();
-	const char *Message();
+	virtual void ClearError();
+	virtual const char *Message();
 
 	virtual int RunShell();
+
+
+	 //interpreter functions
+	virtual const char *Id();
+    virtual const char *Name();
+    virtual const char *Description();
+    virtual const char *Version();
+	virtual int InitInterpreter();
+    virtual int CloseInterpreter();
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+
 };
 
 

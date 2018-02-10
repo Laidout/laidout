@@ -26,7 +26,10 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+
+//template implementation
 #include <lax/refptrstack.cc>
+
 
 using namespace Laxkit;
 using namespace LaxFiles;
@@ -1117,6 +1120,36 @@ LaidoutCalculator::~LaidoutCalculator()
 	if (last_answer) last_answer->dec_count();
 }
 
+const char *LaidoutCalculator::Id()          
+{ return "Laidout"; }
+
+const char *LaidoutCalculator::Name()        
+{ return _("Laidout Default"); }
+
+const char *LaidoutCalculator::Description() 
+{ return _("Default Laidout interpreter"); }
+
+const char *LaidoutCalculator::Version()     
+{ return "0.1"; }
+
+int LaidoutCalculator::InitInterpreter()
+{ return 0; }
+
+int LaidoutCalculator::CloseInterpreter()
+{ return 0; }
+
+LaxFiles::Attribute *LaidoutCalculator::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+{
+	// ***
+	return att;
+}
+
+void LaidoutCalculator::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+{
+	// ***
+}
+
+
 /*! Kind of a lightweight InstallModule(). This just adds plain names to the global namespace.
  * Any name that exists already has its value replaced.
  *
@@ -1389,9 +1422,9 @@ ObjectDef *LaidoutCalculator::GetInfo(const char *expr)
 int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, ErrorLog *log)
 {
 	int num_expr_parsed=0;
-	clearerror();
-	errorlog=log;
-	if (errorlog==NULL) errorlog=&default_errorlog;
+	ClearError();
+	errorlog = log;
+	if (errorlog == NULL) errorlog=&default_errorlog;
 
 	if (in==NULL) { calcerr(_("Blank expression")); return 1; }
 
@@ -1511,7 +1544,7 @@ int LaidoutCalculator::evaluate(const char *in, int len, ValueHash *context, Val
 
 //-------------Error parsing functions
 
-void LaidoutCalculator::clearerror()
+void LaidoutCalculator::ClearError()
 {
 	calcerror=0;
 	if (calcmes) { delete[] calcmes; calcmes=NULL; }
