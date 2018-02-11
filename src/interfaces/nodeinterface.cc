@@ -140,30 +140,27 @@ NodeConnection::NodeConnection(NodeBase *nfrom, NodeBase *nto, NodeProperty *nfr
 NodeConnection::~NodeConnection()
 {
 	DBG cerr << "NodeConnection destructor "<<(from ? from->Name : "?")<<" -> "<<(to ? to->Name : "?")<<endl;
-
-	if (fromprop) fromprop->connections.remove(fromprop->connections.findindex(this));
-	if (toprop)   toprop  ->connections.remove(toprop  ->connections.findindex(this));
 }
 
-/*! If which&1, blank out the from section.
- * If which&2, blank out the to section.
- * This will prompt the connected properties to remove references to this connection.
- */
-void NodeConnection::RemoveConnection(int which)
-{
-	if (which&1 && from) {
-		from = NULL;
-		fromprop = NULL;
-		fromprop->connections.remove(fromprop->connections.findindex(this));
-	}
-
-	if (which&2 && to) {
-		to = NULL;
-		toprop = NULL;
-		toprop->connections.remove(toprop->connections.findindex(this));
-	}
-}
-
+///*! If which&1, blank out the from section.
+// * If which&2, blank out the to section.
+// * This will prompt the connected properties to remove references to this connection.
+// */
+//void NodeConnection::RemoveConnection(int which)
+//{
+//	if (which&1 && from) {
+//		from = NULL;
+//		fromprop = NULL;
+//		fromprop->connections.remove(fromprop->connections.findindex(this));
+//	}
+//
+//	if (which&2 && to) {
+//		to = NULL;
+//		toprop = NULL;
+//		toprop->connections.remove(toprop->connections.findindex(this));
+//	}
+//}
+//
 
 //-------------------------------------- NodeProperty --------------------------
 
@@ -229,6 +226,19 @@ NodeProperty::~NodeProperty()
 	delete[] datatypes;
 	if (data) data->dec_count();
 }
+
+const char *NodeProperty::Name(const char *nname)
+{
+	makestr(name, nname);
+	return name;
+}
+
+const char *NodeProperty::Label(const char *nlabel)
+{
+	makestr(label, nlabel);
+	return label;
+}
+
 
 /*! Return an interface if you want to have a custom interface for changing properties.
  * If interface!=NULL, try to update (and return) that one. If interface is the wrong type
@@ -897,8 +907,8 @@ int NodeBase::Disconnected(NodeConnection *connection, int to_side)
 
 /*! A notification that happens right after a connection is added.
  * Connected() and Disconnected() calls are usually followed shortly after by a call to Update(), so
- * these functions are for low level linkage maintenance, and Update()
- * is the bigger trigger for updating outputs.
+ * these functions are for low level linkage maintenance (but not messing with
+ * the connection themselves), and Update() is the bigger trigger for updating outputs.
  *
  * Return 1 to hint that a refresh is needed. Else 0.
  */
@@ -1044,6 +1054,7 @@ LaxFiles::Attribute *NodeBase::dump_out_atts(LaxFiles::Attribute *att, int what,
         att->push("id", "some_name");
         att->push("label", "Displayed label");
         att->push("collapsed");
+        att->push("show_preview");
         //att->push("", "");
         return att;
     }
@@ -1051,6 +1062,7 @@ LaxFiles::Attribute *NodeBase::dump_out_atts(LaxFiles::Attribute *att, int what,
     att->push("id", Id()); 
 	att->push("label", Label());
 	if (collapsed) att->push("collapsed");
+	if (show_preview) att->push("show_preview");
 	att->push("fullwidth", fullwidth);
 
 	char s[200];
@@ -1133,6 +1145,9 @@ void NodeBase::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpCo
 
 		} else if (!strcmp(name,"collapsed")) {
 			collapsed = BooleanAttribute(value);
+
+		} else if (!strcmp(name,"show_preview")) {
+			show_preview = BooleanAttribute(value);
 
 		} else if (!strcmp(name,"in") || !strcmp(name,"out")) {
 			NodeProperty *prop = FindProperty(value);
@@ -1320,8 +1335,8 @@ int NodeGroup::DesignateInput(NodeBase *ninput)
 	return 0;
 }
 
-/*! Delete any nodes and related connections of any in selected.
- * Does not modify selected.
+/*! Delete any nodes and related connections of any in selected that are node->deletable.
+ * selected will be empty afterwards.
  */
 int NodeGroup::DeleteNodes(Laxkit::RefPtrStack<NodeBase> &selected)
 {
@@ -1332,11 +1347,9 @@ int NodeGroup::DeleteNodes(Laxkit::RefPtrStack<NodeBase> &selected)
 		node = selected.e[c];
 		if (!node->deletable) continue;
 
-		for (int c2=connections.n-1; c2>=0; c2--) {
-			if (connections.e[c2]->from == node || connections.e[c2]->to == node) {
-				connections.e[c2]->fromprop->connections.remove(connections.e[c2]);
-				connections.e[c2]->toprop  ->connections.remove(connections.e[c2]);
-				connections.remove(c2);
+		for (int c2 = 0; c2 < node->properties.n; c2++) {
+			while (node->properties.e[c2]->connections.n) {
+				Disconnect(node->properties.e[c2]->connections.e[node->properties.e[c2]->connections.n-1]);
 			}
 		}
 
@@ -1411,9 +1424,7 @@ NodeGroup *NodeGroup::GroupNodes(Laxkit::RefPtrStack<NodeBase> &selected)
 			NodeConnection *connection = prop->connections.e[0];
 
 			if (selected.findindex(connection->from) >= 0) {
-				 //another selected node is connecting to the input. Keep the connection, but remove from connections list
-				connections.popp(connection);
-				group->connections.push(connection,1);
+				 //another selected node is connecting to the input. Keep the connection, so nothing to do here
 
 			} else {
 				 //a non-selected node is connecting to an input of current node
@@ -1456,9 +1467,7 @@ NodeGroup *NodeGroup::GroupNodes(Laxkit::RefPtrStack<NodeBase> &selected)
 				NodeConnection *connection = prop->connections.e[c3];
 
 				if (selected.findindex(connection->to) >= 0) {
-					 //node connects to another selected node's input. Keep the connection, but remove from nodes
-					connections.popp(connection);
-					//group->connections.push(connection,1);  <- don't add twice! should have been caught in inputs check above
+					 //node connects to another selected node's input. Keep the connection.
 
 				} else {
 					 //node connects out to a non-selected node, we need to transfer the
@@ -1574,13 +1583,6 @@ int NodeGroup::UngroupNodes(Laxkit::RefPtrStack<NodeBase> &selected, bool update
 			}
 		}
 		
-		//now need to transfer remaining connections to main
-		NodeConnection *con;
-		while (group->connections.n) {
-			con = group->connections.pop();
-			connections.push(con, 1);
-		}
-
 		nodes.remove(nodes.findindex(group)); 
 	}
 
@@ -1591,9 +1593,10 @@ int NodeGroup::UngroupNodes(Laxkit::RefPtrStack<NodeBase> &selected, bool update
 	return n;
 }
 
-/*! Return the connection, or NULL for couldn't connect.
- * Create and install a new NodeConnection to install.
- * from and to should have everything set properly.
+/*!
+ * Create and install a new NodeConnection.
+ * Return the new connection, or NULL for couldn't connect.
+ * fromprop and toprop should have everything set properly.
  */
 NodeConnection *NodeGroup::Connect(NodeProperty *fromprop, NodeProperty *toprop)
 {
@@ -1604,23 +1607,73 @@ NodeConnection *NodeGroup::Connect(NodeProperty *fromprop, NodeProperty *toprop)
 
 	NodeConnection *newcon = new NodeConnection(from, to, fromprop, toprop);
 
-	fromprop->connections.push(newcon, 0);//prop list does NOT delete connection
-	toprop  ->connections.push(newcon, 0);//prop list does NOT delete connection
-	connections.push(newcon, 1);//node connection list DOES delete connection
+	return Connect(newcon, 1);
+//
+//	fromprop->AddConnection(newcon, 0);
+//	toprop  ->AddConnection(newcon, 1);
+//
+//	from->Connected(newcon);
+//	to  ->Connected(newcon);
+//
+//	return newcon;
+}
 
-	from->Connected(newcon);
-	to  ->Connected(newcon);
+/*! Lower level Connect() for an already constructed NodeConnection.
+ * It is assumed that newcon is already set to reasonable things,
+ * but the properties do not have the connection in their list.
+ *
+ * Calls Connected() on the nodes.
+ *
+ * Does not Update() anything.
+ */
+NodeConnection *NodeGroup::Connect(NodeConnection *newcon, int absorb)
+{
+	if (!newcon) return NULL;
+
+	newcon->fromprop->AddConnection(newcon, 0);
+	newcon->toprop  ->AddConnection(newcon, absorb);
+
+	newcon->from->Connected(newcon);
+	newcon->to  ->Connected(newcon);
 
 	return newcon;
 }
 
+
+/*! Append connection to connections list.
+ * ONLY affects *this, NOT the property on the other end.
+ * connection needs to be set properly before calling this.
+ */
+int NodeProperty::AddConnection(NodeConnection *connection, int absorb)
+{
+	connections.push(connection);
+	if (absorb) connection->dec_count();
+	return 0;
+}
+
+/*! Remove connection from connections list.
+ * ONLY affects *this, NOT the property on the other end.
+ */
+int NodeProperty::RemoveConnection(NodeConnection *connection)
+{
+	if (connection->fromprop == this) {
+		connection->from = NULL;
+		connection->fromprop = NULL;
+	}
+	connections.remove(connection);
+	return 0;
+}
+
+
+/*! Remove the connection from the associated properties.
+ * Call Disconnected() on the affected nodes.
+ */
 int NodeGroup::Disconnect(NodeConnection *connection)
 {
 	connection->to      ->Disconnected(connection, true);
 	connection->from    ->Disconnected(connection, false);
-	connection->fromprop->connections.remove(connection);
-	connection->toprop  ->connections.remove(connection);
-	connections.remove(connection);
+	connection->fromprop->RemoveConnection(connection);
+	connection->toprop  ->RemoveConnection(connection);
 	return 0;
 }
 
@@ -1785,12 +1838,20 @@ Attribute *NodeGroup::dump_out_atts(Attribute *att,int what,DumpContext *context
 	if (input)  att->push("input",  input ->Id());
 
 
+	PtrStack<NodeConnection> connections;
+
 	Attribute *att2, *att3;
 	for (int c=0; c<nodes.n; c++) {
 		NodeBase *node = nodes.e[c];
 		
 		att2 = att->pushSubAtt("node", node->Type());
 		node->dump_out_atts(att2, what, context);
+
+		for (int c2=0; c2<node->properties.n; c2++) {
+			for (int c3=0; c3<node->properties.e[c2]->connections.n; c3++) {
+				connections.pushnodup(node->properties.e[c2]->connections.e[c3], 0);
+			}
+		}
 	}
 
 	att2 = att->pushSubAtt("connections");
@@ -1925,9 +1986,8 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 					} else {
 						 //install the connection
 						NodeConnection *newcon = new NodeConnection(from, to, fromprop, toprop);
-						fromprop->connections.push(newcon, 0);//prop list does NOT delete connection
-						toprop  ->connections.push(newcon, 0);//prop list does NOT delete connection
-						connections.push(newcon, 1);//node connection list DOES delete connection
+						fromprop->AddConnection(newcon, 0);
+						toprop  ->AddConnection(newcon, 1);
 
 						from->Connected(newcon);
 						to  ->Connected(newcon);
@@ -2059,600 +2119,6 @@ NodeFrame *NodeGroup::GetFrame(int index)
 }
 
 
-//-------------------------------------- Common Node Types --------------------------
-
-
-//------------ DoubleNode
-
-Laxkit::anObject *newDoubleNode(int p, Laxkit::anObject *ref)
-{
-	NodeBase *node = new NodeBase;
-	//node->Id("Value");
-	makestr(node->Name, _("Value"));
-	makestr(node->type, "Value");
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("V"), new DoubleValue(0), 1)); 
-	return node;
-}
-
-//------------ FlatvectorNode
-
-class VectorNode : public NodeBase
-{
-  public:
-	int dims;
-	VectorNode(int dimensions); //up to 4
-	virtual ~VectorNode();
-	virtual int Update();
-	virtual int GetStatus();
-};
-
-VectorNode::VectorNode(int dimensions)
-{
-	dims = dimensions;
-	//node->Id("Value");
-	Name = newstr(dimensions==2 ? _("Vector2") : _("Vector3"));
-	type = newstr(dimensions==2 ? "flatvector" : "spacevector");
-
-	const char *names[] = { _("x"), _("y"), _("z"), _("w") };
-
-	for (int c=0; c<dims; c++) {
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, names[c], new DoubleValue(0), 1)); 
-	}
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("V"), new FlatvectorValue(), 1)); 
-}
-
-VectorNode::~VectorNode()
-{
-}
-
-int VectorNode::GetStatus()
-{
-	int isnum = 0;
-	for (int c=0; c<dims; c++) {
-		getNumberValue(properties.e[c]->GetData(),&isnum);
-		if (!isnum) return -1;
-	}
-
-	if (!properties.e[2]->data) return 1;
-
-	return NodeBase::GetStatus(); //default checks mod times
-}
-
-int VectorNode::Update()
-{
-	int isnum;
-	double vs[4];
-	for (int c=0; c<dims; c++) {
-		vs[c] = getNumberValue(properties.e[c]->GetData(),&isnum);
-	}
-
-	//if (!properties.e[2]->data) return 1;
-
-	if (!properties.e[dims]->data) {
-		if      (dims == 2) properties.e[2]->data=new FlatvectorValue(flatvector(vs));
-		else if (dims == 3) properties.e[3]->data=new SpacevectorValue(spacevector(vs));
-	} else {
-		//assume correct format already in prop
-		if      (dims == 2) dynamic_cast<FlatvectorValue* >(properties.e[2]->data)->v = flatvector(vs);
-        else if (dims == 3) dynamic_cast<SpacevectorValue*>(properties.e[3]->data)->v = spacevector(vs);
-	}
-	properties.e[dims]->modtime = time(NULL);
-
-	return NodeBase::Update();
-}
-
-Laxkit::anObject *newFlatvectorNode(int p, Laxkit::anObject *ref)
-{
-	return new VectorNode(2);
-}
-
-Laxkit::anObject *newSpacevectorNode(int p, Laxkit::anObject *ref)
-{
-	return new VectorNode(3);
-}
-
-//------------ ColorNode
-
-Laxkit::anObject *newColorNode(int p, Laxkit::anObject *ref)
-{
-	NodeBase *node = new NodeBase;
-	makestr(node->Name, _("Color"));
-	makestr(node->type, "Color");
-
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("Color"), new ColorValue("#ffffff"), 1));
-	//----------
-	//node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, _("Red"), new DoubleValue(1), 1)); 
-	//node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, _("Green"), new DoubleValue(1), 1)); 
-	//node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, _("Blue"), new DoubleValue(1), 1)); 
-	//node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, _("Alpha"), new DoubleValue(1), 1)); 
-	//node->AddProperty(new NodeProperty(NodeProperty::PROP_Output, false, _("Out"), new ColorValue("#ffffffff"), 1)); 
-	return node;
-}
-
-
-//------------ MathNode
-
-class MathNode : public NodeBase
-{
-  public:
-	static SingletonKeeper mathnodekeeper; //the def for the op enum
-	static ObjectDef *GetMathNodeDef() { return dynamic_cast<ObjectDef*>(mathnodekeeper.GetObject()); }
-
-	int operation; //see MathNodeOps
-	int numargs;
-	double a,b,result;
-	MathNode(int op=0, double aa=0, double bb=0);
-	virtual ~MathNode();
-	virtual int Update();
-	virtual int GetStatus();
-};
-
-
-enum MathNodeOps {
-	OP_None,
-
-	 //1 argument:
-	OP_FIRST_1_ARG,
-	OP_AbsoluteValue,
-	OP_Negative,
-	OP_Sqrt,
-	OP_Not,
-	OP_Radians_To_Degrees,
-	OP_Degrees_To_Radians,
-	OP_Sin,
-	OP_Cos,
-	OP_Tan,
-	OP_Asin,
-	OP_Acos,
-	OP_Atan,
-	OP_Sinh,
-	OP_Cosh,
-	OP_Tanh,
-	OP_Asinh,
-	OP_Acosh,
-	OP_Atanh,
-	OP_Clamp_To_1, // [0..1]
-	 //vector specific
-	OP_Norm,
-	OP_Norm2,
-	OP_Flip,
-	OP_Normalize,
-	OP_Angle,
-	OP_Angle2,
-	OP_LAST_1_ARG,
-
-
-	 //2 arguments:
-	OP_FIRST_2_ARG,
-	OP_Add,
-	OP_Subtract,
-	OP_Multiply,
-	OP_Divide,
-	OP_Mod,
-	OP_Power,
-	OP_Greater_Than,
-	OP_Greater_Than_Or_Equal,
-	OP_Less_Than,
-	OP_Less_Than_Or_Equal,
-	OP_Equals,
-	OP_Not_Equal,
-	OP_Minimum,
-	OP_Maximum,
-	OP_Average,
-	OP_Atan2,
-	OP_RandomRange,    //seed, [0..max]
-	//OP_RandomRangeInt, //seed, [0..max]
-	OP_Clamp_Max,
-	OP_Clamp_Min,
-	OP_And,
-	OP_Or,
-	OP_Xor,
-	OP_ShiftLeft,
-	OP_ShiftRight,
-	 //vector math:
-	//OP_Vector_Add,     //use normal add
-	//Op_Vector_Subtract,//use normal subtract
-	OP_Dot,
-	OP_Cross,
-	OP_Perpendicular,
-	OP_Parallel,
-	OP_Angle_Between,
-	OP_Angle2_Between,
-	OP_LAST_2_ARG,
-
-
-	 //3 args:
-	OP_FIRST_3_ARG,
-	OP_Lerp,  // r*a+(1-r)*b, do with numbers or vectors, or sets thereof
-	OP_Clamp, // in, [min..max]
-	OP_LAST_3_ARG,
-
-	 //other:
-	OP_Linear_Map, // (5 args) in with [min,max] to [newmin, newmax] out
-
-	OP_Swizzle_YXZ,
-	OP_Swizzle_XZY,
-	OP_Swizzle_YZX,
-	OP_Swizzle_ZXY,
-	OP_Swizzle_ZYX,
-	OP_Swizzle_1234, //make custom node for this? 1 input, 1 output, drag and drop links
-
-	OP_MAX
-};
-
-/*! Create and return a fresh instance of the def for a MathNode op.
- */
-ObjectDef *DefineMathNodeDef()
-{
-	ObjectDef *def = new ObjectDef("MathNodeDef", _("Math Node Def"), NULL,NULL,"enum", 0);
-
-	 //2 arguments
-	def->pushEnumValue("Add",        _("Add"),          _("Add"),         OP_Add         );
-	def->pushEnumValue("Subtract",   _("Subtract"),     _("Subtract"),    OP_Subtract    );
-	def->pushEnumValue("Multiply",   _("Multiply"),     _("Multiply"),    OP_Multiply    );
-	def->pushEnumValue("Divide",     _("Divide"),       _("Divide"),      OP_Divide      );
-	def->pushEnumValue("Mod",        _("Mod"),          _("Mod"),         OP_Mod         );
-	def->pushEnumValue("Power",      _("Power"),        _("Power"),       OP_Power       );
-	def->pushEnumValue("GreaterThan",_("Greater than"), _("Greater than"),OP_Greater_Than);
-	def->pushEnumValue("GreaterEqual",_("Greater or equal"),_("Greater or equal"),OP_Greater_Than_Or_Equal);
-	def->pushEnumValue("LessThan",   _("Less than"),    _("Less than"),   OP_Less_Than   );
-	def->pushEnumValue("LessEqual",  _("Less or equal"),_("Less or equal"),OP_Less_Than_Or_Equal);
-	def->pushEnumValue("Equals",     _("Equals"),       _("Equals"),      OP_Equals      );
-	def->pushEnumValue("NotEqual",   _("Not Equal"),    _("Not Equal"),   OP_Not_Equal   );
-	def->pushEnumValue("Minimum",    _("Minimum"),      _("Minimum"),     OP_Minimum     );
-	def->pushEnumValue("Maximum",    _("Maximum"),      _("Maximum"),     OP_Maximum     );
-	def->pushEnumValue("Average",    _("Average"),      _("Average"),     OP_Average     );
-	def->pushEnumValue("Atan2",      _("Atan2"),        _("Arctangent 2"),OP_Atan2       );
-	def->pushEnumValue("RandomR",    _("Random"),       _("Random(seed,max)"), OP_RandomRange );
-
-	def->pushEnumValue("And"        ,_("And"       ),   _("And"       ),  OP_And         );
-	def->pushEnumValue("Or"         ,_("Or"        ),   _("Or"        ),  OP_Or          );
-	def->pushEnumValue("Xor"        ,_("Xor"       ),   _("Xor"       ),  OP_Xor         );
-	def->pushEnumValue("ShiftLeft"  ,_("ShiftLeft" ),   _("ShiftLeft" ),  OP_ShiftLeft   );
-	def->pushEnumValue("ShiftRight" ,_("ShiftRight"),   _("ShiftRight"),  OP_ShiftRight  );
-
-	 //vector math, 2 args
-	//def->pushEnumValue("Dot"            ,_("Dot"),            _("Dot"),            OP_Dot            );
-	//def->pushEnumValue("Cross"          ,_("Cross"),          _("Cross"),          OP_Cross          );
-	//def->pushEnumValue("Perpendicular"  ,_("Perpendicular"),  _("Perpendicular"),  OP_Perpendicular  );
-	//def->pushEnumValue("Parallel"       ,_("Parallel"),       _("Parallel"),       OP_Parallel       );
-	//def->pushEnumValue("Angle_Between"  ,_("Angle Between"),  _("Angle Between"),  OP_Angle_Between  );
-	//def->pushEnumValue("Angle2_Between" ,_("Angle2 Between"), _("Angle2 Between"), OP_Angle2_Between );
-
-
-	 //1 argument
-	//def->pushEnumValue("Clamp_To_1"         ,_("Clamp To 1"),    _("Clamp To 1"),    OP_Clamp_To_1    );
-	//def->pushEnumValue("AbsoluteValue"      ,_("AbsoluteValue"), _("AbsoluteValue"), OP_AbsoluteValue );
-	//def->pushEnumValue("Negative"           ,_("Negative"),      _("Negative"),      OP_Negative      );
-	//def->pushEnumValue("Not"                ,_("Not"),           _("Not"),           OP_Not           );
-	//def->pushEnumValue("Sqrt"               ,_("Sqrt"),          _("Sqrt"),          OP_Sqrt          );
-	//def->pushEnumValue("Radians_To_Degrees" ,_("Radians To Degrees"), _("Radians To Degrees"), OPRadians_To_Degrees );
-	//def->pushEnumValue("Degrees_To_Radians" ,_("Degrees To Radians"), _("Degrees To Radians"), OPDegrees_To_Radians );
-	//def->pushEnumValue("Sin"                ,_("Sin"),           _("Sin"),           OP_Sin           );
-	//def->pushEnumValue("Cos"                ,_("Cos"),           _("Cos"),           OP_Cos           );
-	//def->pushEnumValue("Tan"                ,_("Tan"),           _("Tan"),           OP_Tan           );
-	//def->pushEnumValue("Asin"               ,_("Asin"),          _("Asin"),          OP_Asin          );
-	//def->pushEnumValue("Acos"               ,_("Acos"),          _("Acos"),          OP_Acos          );
-	//def->pushEnumValue("Atan"               ,_("Atan"),          _("Atan"),          OP_Atan          );
-	//def->pushEnumValue("Sinh"               ,_("Sinh"),          _("Sinh"),          OP_Sinh          );
-	//def->pushEnumValue("Cosh"               ,_("Cosh"),          _("Cosh"),          OP_Cosh          );
-	//def->pushEnumValue("Tanh"               ,_("Tanh"),          _("Tanh"),          OP_Tanh          );
-	//def->pushEnumValue("Asinh"              ,_("Asinh"),         _("Asinh"),         OP_Asinh         );
-	//def->pushEnumValue("Acosh"              ,_("Acosh"),         _("Acosh"),         OP_Acosh         );
-	//def->pushEnumValue("Atanh"              ,_("Atanh"),         _("Atanh"),         OP_Atanh         );
-	 ////vector math, 1 arg
-	//def->pushEnumValue("Norm"               ,_("Norm"),          _("Norm"),          OP_Norm          );
-	//def->pushEnumValue("Norm2"              ,_("Norm2"),         _("Norm2"),         OP_Norm2         );
-	//def->pushEnumValue("Flip"               ,_("Flip"),          _("Flip"),          OP_Flip          );
-	//def->pushEnumValue("Normalize"          ,_("Normalize"),     _("Normalize"),     OP_Normalize     );
-	//def->pushEnumValue("Angle"              ,_("Angle"),         _("Angle"),         OP_Angle         );
-	//def->pushEnumValue("Angle2"             ,_("Angle2"),        _("Angle2"),        OP_Angle2        );
-
-
-	 //3 arguments
-	//def->pushEnumValue("Lerp" , _("Lerp"),  _("Lerp"),  OP_Lerp  );
-	//def->pushEnumValue("Clamp" ,_("Clamp"), _("Clamp"), OP_Clamp );
-
-	return def;
-}
-
-SingletonKeeper MathNode::mathnodekeeper(DefineMathNodeDef(), true);
-
-
-MathNode::MathNode(int op, double aa, double bb)
-{
-	type = newstr("Math");
-	Name = newstr(_("Math"));
-
-	a=aa;
-	b=bb;
-	operation = op;
-	numargs = 2;
-
-	ObjectDef *enumdef = GetMathNodeDef();
-	enumdef->inc_count();
-
-
-	EnumValue *e = new EnumValue(enumdef, 0);
-	enumdef->dec_count();
-
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, "Op", e, 1));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "A", new DoubleValue(a), 1));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "B", new DoubleValue(b), 1));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Result", NULL, 0, NULL, NULL, 0, false));
-
-	//NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count,
-					//const char *nlabel=NULL, const char *ntip=NULL, int info=0, bool editable);
-
-	Update();
-}
-
-MathNode::~MathNode()
-{
-//	if (mathnodedef) {
-//		if (mathnodedef->dec_count()<=0) mathnodedef=NULL;
-//	}
-}
-
-/*! Default is to return 0 for no error and everything up to date.
- * -1 means bad inputs and node in error state.
- * 1 means needs updating.
- */
-int MathNode::GetStatus()
-{
-	Value *va = properties.e[1]->GetData();
-	Value *vb = properties.e[2]->GetData();
-
-	int isnum=0;
-	a = getNumberValue(va, &isnum);
-	if (!isnum) return -1;
-	b = getNumberValue(vb, &isnum);
-	if (!isnum) return -1;
-
-	if ((operation==OP_Divide || operation==OP_Mod) && b==0) return -1;
-	if (a==0 || (a<0 && fabs(b)-fabs(int(b))<1e-10)) return -1;
-	if (!properties.e[3]->data) return 1;
-	return 0;
-}
-
-int MathNode::Update()
-{
-	Value *va = properties.e[1]->GetData();
-	Value *vb = properties.e[2]->GetData();
-	int isnum=0;
-	a = getNumberValue(va, &isnum);
-	b = getNumberValue(vb, &isnum);
-
-	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
-	ObjectDef *def = ev->GetObjectDef();
-	const char *nm = NULL;
-	operation=OP_None;
-	def->getEnumInfo(ev->value, &nm, NULL,NULL, &operation);
-
-	//DBG cerr <<"MathNode::Update op: "<<operation<<" vs enum id: "<<id<<endl;
-
-	if      (operation==OP_Add) result = a+b;
-	else if (operation==OP_Subtract) result = a-b;
-	else if (operation==OP_Multiply) result = a*b;
-	else if (operation==OP_Divide) {
-		if (b!=0) result = a/b;
-		else {
-			result=0;
-			return -1;
-		}
-
-	} else if (operation==OP_Mod) {
-		if (b!=0) result = a-b*int(a/b);
-		else {
-			result=0;
-			return -1;
-		}
-	} else if (operation==OP_Power) {
-		if (a==0 || (a<0 && fabs(b)-fabs(int(b))<1e-10)) {
-			 //0 to a power fails, as does negative numbers raised to non-integer powers
-			result=0;
-			return -1;
-		}
-		result = pow(a,b);
-
-	} else if (operation==OP_Greater_Than_Or_Equal) { result = (a>=b);
-	} else if (operation==OP_Greater_Than)     { result = (a>b);
-	} else if (operation==OP_Less_Than)        { result = (a<b);
-	} else if (operation==OP_Less_Than_Or_Equal) { result = (a<=b);
-	} else if (operation==OP_Equals)           { result = (a==b);
-	} else if (operation==OP_Not_Equal)        { result = (a!=b);
-	} else if (operation==OP_Minimum)          { result = (a<b ? a : b);
-	} else if (operation==OP_Maximum)          { result = (a>b ? a : b);
-	} else if (operation==OP_Average)          { result = (a+b)/2;
-	} else if (operation==OP_Atan2)            { result = atan2(a,b);
-
-	} else if (operation==OP_And       )       { result = (int(a) & int(b));
-	} else if (operation==OP_Or        )       { result = (int(a) | int(b));
-	} else if (operation==OP_Xor       )       { result = (int(a) ^ int(b));
-	} else if (operation==OP_ShiftLeft )       { result = (int(a) << int(b));
-	} else if (operation==OP_ShiftRight)       { result = (int(a) >> int(b));
-
-	} else if (operation==OP_RandomRange)      {
-		srandom(a);
-		result = b * (double)random()/RAND_MAX;
-	}
-
-	if (!properties.e[3]->data) properties.e[3]->data=new DoubleValue(result);
-	else dynamic_cast<DoubleValue*>(properties.e[3]->data)->d = result;
-	properties.e[3]->modtime = time(NULL);
-
-	return NodeBase::Update();
-}
-
-Laxkit::anObject *newMathNode(int p, Laxkit::anObject *ref)
-{
-	return new MathNode();
-}
-
-
-//------------ FunctionNode
-
-// sin cos tan asin acos atan sinh cosh tanh log ln abs sqrt int floor ceil factor random randomint
-// fraction negative reciprocal clamp scale(old_range, new_range)
-// pi tau e
-//
-//class FunctionNode : public NodeBase
-//{
-//  public:
-//};
-
-
-//------------ ImageNode
-
-SingletonKeeper imageDepthKeeper;
-
-ObjectDef *GetImageDepthDef()
-{ 
-	ObjectDef *edef = dynamic_cast<ObjectDef*>(imageDepthKeeper.GetObject());
-
-	if (!edef) {
-		//ObjectDef *def = new ObjectDef("ImageNode", _("Image Node"), NULL,NULL,"class", 0);
-
-		edef = new ObjectDef("ColorDepth", _("Color depth"), NULL,NULL,"enum", 0);
-		edef->pushEnumValue("d8",_("8"),_("8"));
-		edef->pushEnumValue("d16",_("16"),_("16"));
-		edef->pushEnumValue("d24",_("24"),_("24"));
-		edef->pushEnumValue("d32",_("32"),_("32"));
-		edef->pushEnumValue("d32f",_("32f"),_("32f"));
-		edef->pushEnumValue("d64f",_("64f"),_("64f"));
-
-		imageDepthKeeper.SetObject(edef, true);
-	}
-
-	return edef;
-}
-
-Laxkit::anObject *newImageNode(int p, Laxkit::anObject *ref)
-{
-	NodeBase *node = new NodeBase;
-	//node->Id("Image");
-	
-	makestr(node->type, "NewImage");
-	makestr(node->Name, _("New Image"));
-	//node->AddProperty(new NodeProperty(true, true, _("Filename"), new FileValue("."), 1)); 
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Width"),    new IntValue(100), 1)); 
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Height"),   new IntValue(100), 1)); 
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Channels"), new IntValue(4),   1)); 
-
-	ObjectDef *enumdef = GetImageDepthDef();
-	EnumValue *e = new EnumValue(enumdef, 0);
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Depth"), e, 1)); 
-
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Initial Color"), new ColorValue("#ffffff"), 1)); 
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("Color"), NULL, 1)); 
-	//depth: 8, 16, 24, 32, 32f, 64f
-	//format: gray, graya, rgb, rgba
-	//backend: raw, default, gegl, gmic, gm, cairo
-	return node;
-}
-
-//------------ GenericNode
-
-class GenericNode;
-typedef int (*GenericNodeUpdateFunc)(GenericNode *node, anObject *data);
-typedef int (*GenericNodeStatusFunc)(GenericNode *node);
-
-/*! \class GenericNode
- * Class to hold custom nodes without a lot of c++ class definition overhead.
- */
-class GenericNode : public NodeBase
-{
-  public:
-	GenericNodeStatusFunc status_func;
-	GenericNodeUpdateFunc update_func;
-	anObject *func_data;
-
-	GenericNode(ObjectDef *ndef);
-	virtual ~GenericNode();
-	virtual int Update();
-	virtual int GetStatus();
-};
-
-GenericNode::GenericNode(ObjectDef *ndef)
-{
-	update_func = NULL;
-	func_data = NULL;
-
-	def = ndef;
-	if (def) def->inc_count();
-
-	ObjectDef *field;
-	for (int c=0; c<def->getNumFields(); c++) {
-		field = def->getField(c);
-
-		if (field->format==VALUE_Function || field->format==VALUE_Class || field->format==VALUE_Operator || field->format==VALUE_Namespace) continue;
-
-		//NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count,
-		//			const char *nlabel=NULL, const char *ntip=NULL, int info=0, bool editable=true);
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, field->name, NULL,1, field->Name, NULL, 0,true));
-	}
-
-
-	Update();
-}
-
-GenericNode::~GenericNode()
-{
-	if (func_data) func_data->dec_count();
-}
-
-int GenericNode::Update()
-{
-	if (update_func) update_func(this, func_data);
-	return NodeBase::Update();
-}
-
-int GenericNode::GetStatus()
-{
-	if (status_func) return status_func(this);
-	return NodeBase::GetStatus();
-}
-
-
-//------------ blank NodeGroup creator
-
-Laxkit::anObject *newNodeGroup(int p, Laxkit::anObject *ref)
-{
-	NodeGroup *group = new NodeGroup;
-	//group->InitializeBlank();
-	return group;
-}
-
-
-//--------------------------- SetupDefaultNodeTypes()
-
-/*! Install default built in node types to factory.
- */
-int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
-{
-	 //--- ColorNode
-	factory->DefineNewObject(getUniqueNumber(), "Color",    newColorNode,  NULL, 0);
-
-	 //--- ImageNode
-	factory->DefineNewObject(getUniqueNumber(), "NewImage", newImageNode,  NULL, 0);
-
-	 //--- MathNode
-	factory->DefineNewObject(getUniqueNumber(), "Math",     newMathNode,   NULL, 0);
-
-	 //--- DoubleNode
-	factory->DefineNewObject(getUniqueNumber(), "Value",    newDoubleNode, NULL, 0);
-
-	 //--- FlatvectorNode
-	factory->DefineNewObject(getUniqueNumber(), "Vector2", newFlatvectorNode, NULL, 0);
-
-	 //--- SpacevectorNode
-	factory->DefineNewObject(getUniqueNumber(), "Vector3", newSpacevectorNode, NULL, 0);
-
-	 //--- NodeGroup
-	factory->DefineNewObject(getUniqueNumber(), "NodeGroup",newNodeGroup,  NULL, 0);
-
-	return 0;
-}
 
 
 //-------------------------------------- NodeInterface --------------------------
@@ -2678,6 +2144,7 @@ NodeInterface::NodeInterface(anInterface *nowner, int nid, Displayer *ndp)
 	lasthoverprop  = -1;
 	lastconnection = -1;
 	lastmenuindex  = -1;
+	tempconnection = NULL;
 	hover_action   = NODES_None;
 	showdecs       = 1;
 	needtodraw     = 1;
@@ -2705,6 +2172,7 @@ NodeInterface::~NodeInterface()
 	if (font) font->dec_count();
 	if (node_factory) node_factory->dec_count();
 	if (sc) sc->dec_count();
+	if (tempconnection) tempconnection->dec_count();
 }
 
 const char *NodeInterface::whatdatatype()
@@ -3229,14 +2697,18 @@ int NodeInterface::Refresh()
 	dp->NewFG(&nodes->colors->connection);
 
 	dp->LineWidth(3);
-	for (int c=0; c<nodes->connections.n; c++) {
-		//dp->DrawColoredPath(nodes->nodes.e[c]->connections.e[c]->path.e,
-		//					nodes->nodes.e[c]->connections.e[c]->path.n);
-		//dp->drawlines(nodes->connections.e[c]->path.e,
-		//			  nodes->connections.e[c]->path.n,
-		//			  false, 0);
-		DrawConnection(nodes->connections.e[c]);
+	NodeBase *node;
+	for (int c=0; c<nodes->nodes.n; c++) {
+		node = nodes->nodes.e[c];
+		for (int c2=0; c2<node->properties.n; c2++) {
+			if (node->properties.e[c2]->IsOutput()) {
+				for (int c3=0; c3 < node->properties.e[c2]->connections.n; c3++) {
+					DrawConnection(node->properties.e[c2]->connections.e[c3]);
+				}
+			}
+		}
 	}
+
 
 	 //---draw nodes:
 	 //  box+border
@@ -3244,7 +2716,6 @@ int NodeInterface::Refresh()
 	 //  expanded arrow
 	 //  preview
 	 //  ins/outs
-	NodeBase *node;
 	ScreenColor *border, *fg;
 	ScreenColor tfg, tbg, tmid, hprop;
 	NodeColors *colors=NULL;
@@ -3390,20 +2861,22 @@ int NodeInterface::Refresh()
 		}
 
 	} else if (hover_action==NODES_Drag_Input || hover_action==NODES_Drag_Output) {
-		NodeBase *node = nodes->nodes.e[lasthover];
-		NodeConnection *connection = node->properties.e[lasthoverslot]->connections.e[lastconnection];
-
-		flatpoint p1,p2;
-		flatpoint last = nodes->m.transformPointInverse(lastpos);
-		if (connection->fromprop) p1=flatpoint(connection->from->x,connection->from->y)+connection->fromprop->pos; else p1=last;
-		if (connection->toprop)   p2=flatpoint(connection->to->x,  connection->to->y)  +connection->toprop->pos;   else p2=last;
-
-		dp->NewFG(&color_controls);
-		dp->moveto(p1);
-		dp->curveto(p1+flatpoint((p2.x-p1.x)/3, 0),
-					p2-flatpoint((p2.x-p1.x)/3, 0),
-					p2);
-		dp->stroke(0);
+		if (tempconnection) DrawConnection(tempconnection);
+//		----
+//		NodeBase *node = nodes->nodes.e[lasthover];
+//		NodeConnection *connection = node->properties.e[lasthoverslot]->connections.e[lastconnection];
+//
+//		flatpoint p1,p2;
+//		flatpoint last = nodes->m.transformPointInverse(lastpos);
+//		if (connection->fromprop) p1=flatpoint(connection->from->x,connection->from->y)+connection->fromprop->pos; else p1=last;
+//		if (connection->toprop)   p2=flatpoint(connection->to->x,  connection->to->y)  +connection->toprop->pos;   else p2=last;
+//
+//		dp->NewFG(&color_controls);
+//		dp->moveto(p1);
+//		dp->curveto(p1+flatpoint((p2.x-p1.x)/3, 0),
+//					p2-flatpoint((p2.x-p1.x)/3, 0),
+//					p2);
+//		dp->stroke(0);
 
 	}
 
@@ -3434,7 +2907,7 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 			ScreenColor highlight(node->colors->bg), shadow(node->colors->bg);
 			highlight.Average(&highlight, node->colors->fg, .2);
 			shadow.   Average(&highlight, node->colors->fg, .8);
-			int state = 1;
+			int state = 0;
 			dp->drawBevel(th*.05, &highlight, &shadow, state, node->x+prop->x+prop->width/2-w/2, node->y+prop->y+prop->height/2-th*.6, w, th*1.2);
 			dp->textout(node->x+prop->x+prop->width/2, node->y+prop->y+prop->height/2, prop->Label(),-1, LAX_CENTER);
 
@@ -3596,7 +3069,8 @@ void NodeInterface::DrawConnection(NodeConnection *connection)
 				p2);
 	dp->LineWidthScreen(3);
 	dp->stroke(1);
-	dp->NewFG(&color_controls);
+	int isselected = (selected.findindex(connection->from)>=0 || selected.findindex(connection->to)>=0);
+	dp->NewFG(isselected ? &nodes->colors->selected_border : &color_controls);
 	dp->LineWidthScreen(2);
 	dp->stroke(0);
 }
@@ -3796,14 +3270,11 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 				action = NODES_Drag_Output;
 				overnode = nodes->nodes.findindex(prop->connections.e[0]->from);
 				overpropslot = nodes->nodes.e[overnode]->properties.findindex(prop->connections.e[0]->fromprop);
-				NodeConnection *connection = prop->connections.e[0];
+				if (!tempconnection) tempconnection = new NodeConnection();
+				tempconnection->SetTo(NULL,NULL); //assumes only one input
+				tempconnection->SetFrom(prop->connections.e[0]->from, prop->connections.e[0]->fromprop);
 
-				nodes->nodes.e[overnode]->Disconnected(connection, 1);
-				connection->from->Disconnected(connection, 1);
-
-				connection->to = NULL; // note: assumes only one input
-				connection->toprop = NULL;
-				prop->connections.remove(0);
+				nodes->Disconnect(prop->connections.e[0]);
 
 				lastconnection = 0;
 				lasthover      = overnode;
@@ -3811,9 +3282,9 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 
 			} else {
 				 //connection didn't exist, so install a half connection to current node
-				NodeConnection *newcon = new NodeConnection(NULL, nodes->nodes.e[overnode], NULL,prop);
-				prop->connections.push(newcon, 0);//prop list does NOT delete connection
-				nodes->connections.push(newcon, 1);//node connection list DOES delete connection
+				if (tempconnection) tempconnection->dec_count();
+				tempconnection = new NodeConnection(NULL, nodes->nodes.e[overnode], NULL,prop);
+
 				lastconnection = prop->connections.n-1;
 				lasthover      = overnode;
 				lasthoverslot  = overpropslot;
@@ -3822,8 +3293,9 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 		} else if (prop->IsOutput()) {
 			 // if dragging output, create new connection
 			action = NODES_Drag_Output;
-			prop->connections.push(new NodeConnection(nodes->nodes.e[overnode],NULL, prop,NULL), 0);//prop list does not delete connection
-			nodes->connections.push(prop->connections.e[prop->connections.n-1], 1);//node connection list DOES delete connection
+			if (tempconnection) tempconnection->dec_count();
+			tempconnection = new NodeConnection(nodes->nodes.e[overnode],NULL, prop,NULL);
+
 			lastconnection = prop->connections.n-1;
 			lasthoverslot  = overpropslot;
 			lasthover      = overnode;
@@ -4028,17 +3500,18 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		if (overnode>=0 && overpropslot>=0) {
 			 //we had a temporary connection, need to fill in the blanks to finalize
 			 //need to connect  last -> over
-			NodeProperty *toprop = nodes->nodes.e[overnode]->properties.e[overpropslot];
-			if (!toprop->IsInput()) {
+			NodeProperty *fromprop = nodes->nodes.e[overnode]->properties.e[overpropslot];
 
-				 //connect lasthover.lasthoverslot.lastconnection to toprop
-				NodeConnection *connection = nodes->nodes.e[lasthover]->properties.e[lasthoverslot]->connections.e[lastconnection];
-				toprop->connections.push(connection, 0);
-				connection->from     = nodes->nodes.e[overnode];
-				connection->fromprop = nodes->nodes.e[overnode]->properties.e[overpropslot];
-				connection->from->Connected(connection);
-				connection->to  ->Connected(connection);
-				connection->to->Update();
+			if (fromprop->IsOutput()) {
+
+				 //connect to fromprop
+				tempconnection->from     = fromprop->owner;
+				tempconnection->fromprop = fromprop;
+
+				nodes->Connect(tempconnection, 0);
+
+				tempconnection->to->Update();
+				remove=1;
 
 			} else {
 				remove=1;
@@ -4052,13 +3525,11 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 			remove=1;
 		}
 
-		if (remove) {
-			 //remove the unconnected connection from what it points to as well as from nodes->connections
-			//nodes->nodes.e[lasthover]->Disconnect(lasthoverslot, lastconnection);
-			nodes->nodes.e[lasthover]->properties.e[lasthoverslot]->connections.remove(lastconnection);
-			NodeConnection *connection = nodes->nodes.e[lasthover]->properties.e[lasthoverslot]->connections.e[lastconnection];
-			nodes->connections.remove(nodes->connections.findindex(connection)); // <- this actually deletes the connection
-			lastconnection=-1;
+		if (remove) {   //note: currently always need to remove!
+			 //remove the unconnected connection
+			tempconnection->dec_count();
+			tempconnection = NULL;
+			lastconnection = -1;
 		} 
 
 
@@ -4074,22 +3545,19 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 			if (toprop->IsInput()) {
 				if (toprop->connections.n) {
 					 //clobber any other connection going into the input. Only one input allowed.
-					for (int c=toprop->connections.n-1; c>=0; c--) {
-						toprop->connections.e[c]->to  ->Disconnected(toprop->connections.e[c], 1);
-						toprop->connections.e[c]->from->Disconnected(toprop->connections.e[c], 1);
-						//toprop->connections.e[c]->RemoveConnection();
-						nodes->connections.remove(toprop->connections.e[c]);
+					for (int c = toprop->connections.n-1; c >= 0; c--) {
+						nodes->Disconnect(toprop->connections.e[c]);
 					}
-					toprop->connections.flush();
+					//toprop->connections.flush(); *** should be flushed already
 				}
 
 				 //connect lasthover.lasthoverslot.lastconnection to toprop
-				NodeConnection *connection = nodes->nodes.e[lasthover]->properties.e[lasthoverslot]->connections.e[lastconnection];
-				toprop->connections.push(connection, 0);
-				connection->to     = nodes->nodes.e[overnode];
-				connection->toprop = nodes->nodes.e[overnode]->properties.e[overpropslot];
-				connection->to->Connected(connection);
-				connection->to->Update();
+				tempconnection->to     = toprop->owner;
+				tempconnection->toprop = toprop;
+
+				nodes->Connect(tempconnection, 0);
+				tempconnection->to->Update();
+				remove=1;
 
 			} else {
 				remove=1;
@@ -4104,9 +3572,9 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 		if (remove) {
 			 //remove the unconnected connection from what it points to as well as from nodes->connections
-			nodes->connections.remove(nodes->connections.findindex(nodes->nodes.e[lasthover]->properties.e[lasthoverslot]->connections.e[lastconnection]));
-			nodes->nodes.e[lasthover]->properties.e[lasthoverslot]->connections.remove(lastconnection);
-			lastconnection=-1;
+			tempconnection->dec_count();
+			tempconnection = NULL;
+			lastconnection = -1;
 		} 
 
 	} else if (action == NODES_Resize_Preview) {

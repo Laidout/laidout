@@ -33,6 +33,7 @@
 
 #include "../calculator/values.h"
 #include "../filetypes/objectio.h"
+#include "nodes.h"
 
 
 using namespace LaxFiles;
@@ -59,7 +60,7 @@ class NodeProperty;
 
 
 //---------------------------- NodeConnection ------------------------------------
-class NodeConnection
+class NodeConnection : public Laxkit::RefCounted
 {
   public:
 	//Laxkit::ScreenColor color;
@@ -73,7 +74,9 @@ class NodeConnection
 	NodeConnection();
 	NodeConnection(NodeBase *nfrom, NodeBase *nto, NodeProperty *nfromprop, NodeProperty *ntoprop);
 	virtual ~NodeConnection();
-	virtual void RemoveConnection(int which=3);
+	virtual void SetFrom(NodeBase *nfrom, NodeProperty *nfprop) { from = nfrom; fromprop = nfprop; }
+	virtual void SetTo  (NodeBase *nto,   NodeProperty *nfto  ) { to   = nto;   toprop   = nfto;   }
+	//virtual void RemoveConnection(int which=3);
 };
 
 //typedef int (*NodePropertyValidFunc)(NodeProperty *prop, const char **error_message);
@@ -116,7 +119,7 @@ class NodeProperty
 
 	double x,y,width,height;
 	Laxkit::ScreenColor color;
-	Laxkit::PtrStack<NodeConnection> connections; //input just has one
+	Laxkit::RefPtrStack<NodeConnection> connections; //input just has one
 
 	flatpoint pos; //clickable spot relative to parent NodeBase origin
 
@@ -126,7 +129,11 @@ class NodeProperty
 	virtual ~NodeProperty();
 	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface);
 	virtual const char *Name()  { return name; }
+	virtual const char *Name(const char *nname);
 	virtual const char *Label() { return label ? label : name; }
+	virtual const char *Label(const char *nlabel);
+	virtual int AddConnection(NodeConnection *connection, int absorb);
+	virtual int RemoveConnection(NodeConnection *connection);
 	virtual int IsConnected();
 	virtual int IsInput()  { return type==PROP_Input;  }
 	virtual int IsOutput() { return type==PROP_Output; }
@@ -312,7 +319,6 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	NodeBase *output, *input;
 	Laxkit::Affine m;
 	Laxkit::RefPtrStack<NodeBase> nodes; //nodes wrapped into this group
-	Laxkit::PtrStack<NodeConnection> connections;
 	Laxkit::RefPtrStack<NodeFrame> frames;
 
 	NodeGroup();
@@ -337,6 +343,7 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	virtual NodeGroup *GroupNodes(Laxkit::RefPtrStack<NodeBase> &selected);
 	virtual int UngroupNodes(Laxkit::RefPtrStack<NodeBase> &selected, bool update_selected);
 	virtual NodeConnection *Connect(NodeProperty *from, NodeProperty *to);
+	virtual NodeConnection *Connect(NodeConnection *newcon, int absorb);
 	virtual int Disconnect(NodeConnection *connection);
 
 	virtual void       dump_out(FILE *f, int indent, int what, LaxFiles::DumpContext *context);
@@ -377,6 +384,8 @@ enum NodeHover {
 	NODES_VP_Maximize    ,
 	NODES_VP_Close       ,
 	NODES_Navigator      ,
+	NODES_Jump_Back      ,
+	NODES_Jump_Forward   ,
 	NODES_HOVER_MAX
 };
 
@@ -455,6 +464,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	Laxkit::RefPtrStack<NodeGroup> grouptree; //stack of nested groups we are working on
 	Laxkit::RefPtrStack<NodeBase> selected;
 	Laxkit::DoubleBBox selection_rect;
+	NodeConnection *tempconnection;
 	int hover_action;
 	int lasthover, lasthoverslot, lasthoverprop, lastconnection;
 	flatpoint lastpos;
