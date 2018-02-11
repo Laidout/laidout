@@ -8,50 +8,50 @@
 use FileHandle;
 
 
-$file     = "temp";
-$outfile  = "temp-searched";
-$out2file = "temp-parsed";
+$temp           = "temp";
+$temp_searched  = "temp-searched";
+$temp_parsed    = "temp-parsed";
 
-open(OUTFILE, ">$outfile");
-if (open (INFILE, "<$file")) {
+open(TEMPSEARCHED, ">$temp_searched");
+if (open (INFILE, "<$temp")) {
 	while ($line = <INFILE>) {
 		if ($line =~ m/^.*(anObject tracker .*)/) {
-			print OUTFILE "$1\n";
+			print TEMPSEARCHED "$1\n";
 		}
 	}
 	close(INFILE);
 }
-close(OUTFILE);
+close(TEMPSEARCHED);
 
-system("sort $outfile -o $outfile");
+system("sort $temp_searched -o $temp_searched");
 
 
-open (OUTFILE, "<$outfile")   or die "can't open $outfile";
-open (OUT2FILE, ">$out2file") or die "can't open $out2file";
+open (TEMPSEARCHED, "<$temp_searched")   or die "can't open $temp_searched";
+open (TEMPPARSED, ">$temp_parsed") or die "can't open $temp_parsed";
 
-$line=<OUTFILE>;
+$line=<TEMPSEARCHED>;
 while (defined($line)) {
 	#print "$line\n";
 	if ($line =~ /^[a-zA-Z ]*([0-9]*).*created/) {
 		$num=$1;
 		#print "num:".$num;
 		#print "  $num created";
-		if (!defined($line=<OUTFILE>)) {
+		if (!defined($line=<TEMPSEARCHED>)) {
 			 #end of file reached
 			print " $num created but NOT destroyed\n";
 			break;
 		}
 		if (!($line =~ /^.*(\d*).*destroyed/)) {
 			print " $num  created but NOT destroyed\n";
-			print OUT2FILE "$num  created but NOT destroyed\n";
+			print TEMPPARSED "$num  created but NOT destroyed\n";
 			next;
-			#if (!($line=<OUTFILE>)) { break; }
+			#if (!($line=<TEMPSEARCHED>)) { break; }
 		} else {
 			#print " and destroyed\n";
 			print " $num  created and destroyed\n";
 		}
 	} else {
-		if (!defined($line=<OUTFILE>)) { break; }
+		if (!defined($line=<TEMPSEARCHED>)) { break; }
 	}
 }
 close(INFILE);
