@@ -1,5 +1,5 @@
 #Laidout namespace
-name SvgFilterStuff
+name SvgFilters
 format class
 class FilterPrimitive
   number x
@@ -100,6 +100,7 @@ class feColorMatrix
   string values
 class feComponentTransfer
   extends FilterPrimitive
+  uihint kids(feFuncR, feFuncG, feFuncB, feFuncA)
   string in
 class feComposite
   extends FilterPrimitive
@@ -135,6 +136,7 @@ class feConvolveMatrix
   boolean preserveAlpha
 class feDiffuseLighting
   extends FilterPrimitive
+  uihint kids(feDistantLight, fePointLight, feSpotLight)
   string in
   number surfaceScale
   number diffuseConstant
@@ -168,6 +170,7 @@ class feImage
     defaultValue xMidYMid meet
 class feMerge
   extends FilterPrimitive
+  uihint kids(feMergeNode)
 class feMorphology
   extends FilterPrimitive
   string in
@@ -183,6 +186,7 @@ class feOffset
   number dy
 class feSpecularLighting
   extends FilterPrimitive
+  uihint kids(feDistantLight, fePointLight, feSpotLight)
   string in
   number surfaceScale
   number specularConstant
@@ -204,3 +208,4 @@ class feTurbulence
     defaultValue turbulence
     enumval "fractalNoise"
     enumval "turbulence"
+class SVG.FilterPrimitive.extra.class
