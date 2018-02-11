@@ -79,5 +79,5 @@ unhidegarbage:
 
 .PHONY: clean hidegarbage unhidegarbage lax laxinterfaces dataobjects plugins depends
 clean:
-	rm -f *.o *.so test
+	rm -f *.o *.so test svg/*.o
 
