@@ -84,6 +84,7 @@ objs= \
 otherobjs= \
 	calculator/values.o \
 	calculator/calculator.o \
+	calculator/interpreter.o \
 	calculator/shortcuttodef.o \
 	impositions/imposition.o \
 	impositions/impositioneditor.o \
@@ -116,6 +117,7 @@ otherobjs= \
 	interfaces/objecttree.o \
 	interfaces/pagemarkerinterface.o \
 	interfaces/nodeinterface.o \
+	interfaces/nodes.o \
 	printing/print.o \
 	printing/psfilters.o \
 	printing/pscolorpatch.o \
