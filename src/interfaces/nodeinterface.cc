@@ -358,7 +358,7 @@ NodeBase *NodeProperty::GetDataOwner()
 	return owner;
 }
 
-/*! Returns 1 for successful setting, or 0 for not set (or absorbed).
+/*! Returns 1 for successful setting, or 0 for not set. newdata not absorbed on failure.
  */
 int NodeProperty::SetData(Value *newdata, bool absorb)
 {
@@ -383,6 +383,9 @@ NodeFrame::NodeFrame(NodeGroup *nowner, const char *nlabel, const char *ncomment
 
 NodeFrame::~NodeFrame()
 {
+	for (int c=nodes.n-1; c>=0; c--) {
+		RemoveNode(nodes.e[c]);
+	}
 	delete[] label;
 	delete[] comment;
 }
@@ -402,17 +405,26 @@ const char *NodeFrame::Comment(const char *ncomment)
 
 int NodeFrame::AddNode(NodeBase *node)
 {
+	if (node->frame && node->frame != this) {
+		node->frame->RemoveNode(node);
+	}
 	node->AssignFrame(this);
 	return nodes.push(node);
 }
 
+/*! Return 0 for success, or 1 for not found.
+ */
 int NodeFrame::RemoveNode(NodeBase *node)
 {
+	if (node->frame != this) return 1;
+	node->AssignFrame(NULL);
 	return nodes.remove(nodes.findindex(node));
 }
 
 void NodeFrame::Wrap(double gap)
 {
+	if (!nodes.n) return;
+
 	double th = (owner && owner->colors ? owner->colors->font->textheight() : 20);
 	if (gap<0) gap = th;
 
@@ -815,6 +827,8 @@ NodeBase *NodeBase::Duplicate()
 	return NULL;
 }
 
+/*! Simple assigns the reference. Does not do ref upkeep in frame.
+ */
 int NodeBase::AssignFrame(NodeFrame *nframe)
 {
 	frame = nframe;
@@ -883,8 +897,9 @@ int NodeBase::HasConnection(NodeProperty *prop, int *connection_ret)
 //}
 
 /*! A notification that this connection is being removed, right before the actual removal.
- * Actual removal is done elsewhere. If to_side, then disconnection happens
- * on the to_side of the connection, else on the from side.
+ * Actual removal is done elsewhere.
+ * *_will_be_replaced are hints to not drastically restructure if the link is merely to be replaced,
+ * rather than removed.
  *
  * Connected() and Disconnected() calls are usually followed shortly after by a call to Update(), so
  * these functions are for low level linkage maintenance, and Update()
@@ -892,7 +907,7 @@ int NodeBase::HasConnection(NodeProperty *prop, int *connection_ret)
  *
  * Return 1 if something changed that needs a screen refresh. else 0.
  */
-int NodeBase::Disconnected(NodeConnection *connection, int to_side)
+int NodeBase::Disconnected(NodeConnection *connection, bool from_will_be_replaced, bool to_will_be_replaced)
 {
 //	int propertyindex = properties.findindex(connection->from == this ? connection->fromprop : connection->toprop);
 //	if (propertyindex < 0) return 0; //property not found!
@@ -924,9 +939,14 @@ int NodeBase::Connected(NodeConnection *connection)
  */
 int NodeBase::AddProperty(NodeProperty *newproperty, int where)
 {
-	properties.push(newproperty, where);
+	properties.push(newproperty, 1, where);
 	newproperty->owner = this;
 	return 0;
+}
+
+int NodeBase::RemoveProperty(NodeProperty *prop)
+{
+	return properties.remove(prop);
 }
 
 /*! Return the property with prop as name, or NULL if not found.
@@ -1349,7 +1369,7 @@ int NodeGroup::DeleteNodes(Laxkit::RefPtrStack<NodeBase> &selected)
 
 		for (int c2 = 0; c2 < node->properties.n; c2++) {
 			while (node->properties.e[c2]->connections.n) {
-				Disconnect(node->properties.e[c2]->connections.e[node->properties.e[c2]->connections.n-1]);
+				Disconnect(node->properties.e[c2]->connections.e[node->properties.e[c2]->connections.n-1], false, false);
 			}
 		}
 
@@ -1433,7 +1453,7 @@ NodeGroup *NodeGroup::GroupNodes(Laxkit::RefPtrStack<NodeBase> &selected)
 				NodeProperty *fromprop = connection->fromprop;
 
 				 //remove old connection
-				Disconnect(connection);
+				Disconnect(connection, true, true);
 
 
 				 //install new input property on group node
@@ -1476,7 +1496,7 @@ NodeGroup *NodeGroup::GroupNodes(Laxkit::RefPtrStack<NodeBase> &selected)
 					NodeProperty *toprop = connection->toprop;
 
 					 //remove old connection
-					Disconnect(connection);
+					Disconnect(connection, true, true);
 
 					 //install new output property on group node
 					propi++;
@@ -1555,12 +1575,12 @@ int NodeGroup::UngroupNodes(Laxkit::RefPtrStack<NodeBase> &selected, bool update
 			 //note: assumes there is only one input
 			NodeConnection *conmain = (propmain->connections.n > 0 ? propmain->connections.e[0] : NULL);
 			NodeProperty *mainoutprop = (conmain ? conmain->fromprop : NULL);
-			if (conmain) Disconnect(conmain);
-			
+			if (conmain) Disconnect(conmain, true, true);
+
 			for (int c3=0; c3<prop->connections.n; c3++) {
 				NodeConnection *con = prop->connections.e[c3];
 				NodeProperty *inprop = con->toprop;
-				group->Disconnect(con);
+				group->Disconnect(con, true, true);
 				if (mainoutprop) Connect(mainoutprop, inprop);
 			}
 		}
@@ -1572,13 +1592,13 @@ int NodeGroup::UngroupNodes(Laxkit::RefPtrStack<NodeBase> &selected, bool update
 			 //note: assumes there is only one input
 			NodeConnection *con     = (prop->connections.n > 0 ? prop->connections.e[0] : NULL);
 			NodeProperty *subinprop   = (con ? con->fromprop : NULL);
-			if (con) group->Disconnect(con);
+			if (con) group->Disconnect(con, true, true);
 
 			for (int c3=0; c3<propmain->connections.n; c3++) {
 				NodeConnection *conmain = propmain->connections.e[c3];
 				NodeProperty *mainoutprop = conmain->toprop;
 
-				Disconnect(conmain);
+				Disconnect(conmain, true, true);
 				if (subinprop) Connect(subinprop, mainoutprop);
 			}
 		}
@@ -1667,13 +1687,17 @@ int NodeProperty::RemoveConnection(NodeConnection *connection)
 
 /*! Remove the connection from the associated properties.
  * Call Disconnected() on the affected nodes.
+ * If will_be_replaced, then pass this hint to NodeBase::Disconnected() so
+ * that it won't try to drastically restructure if it doesn't have to.
  */
-int NodeGroup::Disconnect(NodeConnection *connection)
+int NodeGroup::Disconnect(NodeConnection *connection, bool from_will_be_replaced, bool to_will_be_replaced)
 {
-	connection->to      ->Disconnected(connection, true);
-	connection->from    ->Disconnected(connection, false);
-	connection->fromprop->RemoveConnection(connection);
-	connection->toprop  ->RemoveConnection(connection);
+	connection->to      ->Disconnected(connection, from_will_be_replaced, to_will_be_replaced);
+	connection->from    ->Disconnected(connection, from_will_be_replaced, to_will_be_replaced);
+
+	 //these might have been removed during Disconnected() above
+	if (connection->fromprop) connection->fromprop->RemoveConnection(connection);
+	if (connection->toprop)   connection->toprop  ->RemoveConnection(connection);
 	return 0;
 }
 
@@ -2153,6 +2177,11 @@ NodeInterface::NodeInterface(anInterface *nowner, int nid, Displayer *ndp)
 	font->inc_count();
 	defaultpreviewsize = 50; //pixels
 
+	pan_timer    = 0;
+	pan_duration = 2;
+	pan_current  = 0;
+	pan_tick_ms  = 1./60 * 1000; //1/60th second ticks for panning
+
 	//color_controls.rgbf(.7,.5,.7,1.);
 	color_controls.rgbf(.8,.8,.8,1.);
 	color_background.rgbf(0,0,0,.5);
@@ -2194,6 +2223,38 @@ anInterface *NodeInterface::duplicate(anInterface *dup)
 	if (dup==NULL) dup=new NodeInterface(NULL,id,NULL);
 	else if (!dynamic_cast<NodeInterface *>(dup)) return NULL;
 	return anInterface::duplicate(dup);
+}
+
+
+int NodeInterface::Idle(int tid)
+{
+	if (tid != pan_timer) return 1;
+	if (!nodes) return 1;
+
+	DBG cerr <<"NodeInterface::Idle()... cur="<<pan_current<<endl;
+
+	// advance pan
+	// pan_current += delta/duration;
+	//flatpoint oldpos = nodes->m.transformPointInverse(lastpos);
+
+	double t = .5+.5*(-cos(pan_current/pan_duration*M_PI));
+	flatpoint oldpos = bez_point(t, panpath[0], panpath[1], panpath[2], panpath[3]);
+	pan_current += pan_tick_ms/1000.;
+	t = .5+.5*(-cos(pan_current/pan_duration*M_PI));
+	flatpoint newpos = bez_point(t, panpath[0], panpath[1], panpath[2], panpath[3]);
+
+	newpos = nodes->m.transformPoint(newpos);
+	oldpos = nodes->m.transformPoint(oldpos);
+	flatpoint d = newpos - oldpos;
+	nodes->m.Translate(-d);
+
+	needtodraw=1;
+	if (pan_current >= pan_duration) {
+		pan_timer = 0;
+		return 1;
+	}
+
+	return 0;
 }
 
 /*! Normally this will accept some common things like changes to line styles, like a current color.
@@ -2606,7 +2667,7 @@ int NodeInterface::Refresh()
 		int device = buttondown.whichdown(0,LEFTBUTTON);
 		int x,y;
 		buttondown.getlast(device,LEFTBUTTON, &x,&y);
-		overnode = scan(x,y, &overslot, &overprop);
+		overnode = scan(x,y, &overslot, &overprop, 0);
 	} else {
 		overnode = lasthover;
 		overprop = lasthoverprop;
@@ -2787,10 +2848,10 @@ int NodeInterface::Refresh()
 		 //draw collapse arrow
 		dp->LineWidth(1);
 		if (node->collapsed) {
-			dp->drawthing(node->x+th,labely+th/2, th/4,th/4, lasthover==c && lasthoverslot==NHOVER_Collapse ? 1 : 0, THING_Triangle_Right);
+			dp->drawthing(node->x+th,labely+th/2, th/4,th/4, lasthover==c && lasthoverslot==NODES_Collapse ? 1 : 0, THING_Triangle_Right);
 		} else {
 			dp->NewFG(&tmid);
-			dp->drawthing(node->x+th,labely+th/2, th/4,th/4, lasthover==c && lasthoverslot==NHOVER_Collapse ? 1 : 0, THING_Triangle_Down);
+			dp->drawthing(node->x+th,labely+th/2, th/4,th/4, lasthover==c && lasthoverslot==NODES_Collapse ? 1 : 0, THING_Triangle_Down);
 		}
 	
 
@@ -2808,7 +2869,7 @@ int NodeInterface::Refresh()
 			 //assume we want to render the preview at actual pixel size
 			DoubleRectangle box;
 			dp->imageout_within(node->total_preview, node->x,node->y+th*1.15, node->width, node->preview_area_height, &box, 1);
-			dp->LineWidthScreen(lasthover == c && lasthoverslot == NHOVER_PreviewResize ? 3 : 1);
+			dp->LineWidthScreen(lasthover == c && lasthoverslot == NODES_PreviewResize ? 3 : 1);
 			dp->NewFG(coloravg(fg->Pixel(),bg->Pixel(),.5));
 			dp->drawrectangle(box.x,box.y,box.width,box.height, 0);
 			dp->NewFG(fg);
@@ -2832,10 +2893,10 @@ int NodeInterface::Refresh()
 			y += prop->height;
 		}
 
-		if (lasthover == c && (lasthoverslot == NHOVER_LeftEdge || lasthoverslot == NHOVER_RightEdge)) {	
+		if (lasthover == c && (lasthoverslot == NODES_LeftEdge || lasthoverslot == NODES_RightEdge)) {	
 			NodeBase *node = nodes->nodes.e[lasthover];
 			flatpoint p1,p2;
-			p1.x = p2.x = node->x + (lasthoverslot == NHOVER_LeftEdge ? 0 : node->width);
+			p1.x = p2.x = node->x + (lasthoverslot == NODES_LeftEdge ? 0 : node->width);
 			p1.y = node->y;
 			p2.y = node->y+node->height;;
 			dp->LineWidthScreen(3);
@@ -2893,7 +2954,7 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 	//   colors
 	//   enums
 
-	DBG cerr <<"Draw property "<<prop->name<<endl;
+	//DBG cerr <<"Draw property "<<prop->name<<endl;
 
 	if (!strcmp(prop->name, "result")) {
 		DBG cerr <<" ";
@@ -3052,7 +3113,7 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 		}
 	} 
 
-	DBG cerr <<"end draw property "<<prop->name<<endl;
+	//DBG cerr <<"end draw property "<<prop->name<<endl;
 }
 
 void NodeInterface::DrawConnection(NodeConnection *connection) 
@@ -3064,15 +3125,42 @@ void NodeInterface::DrawConnection(NodeConnection *connection)
 
 	dp->NewFG(0.,0.,0.);
 	dp->moveto(p1);
-	dp->curveto(p1+flatpoint((p2.x-p1.x)/3, 0),
-				p2-flatpoint((p2.x-p1.x)/3, 0),
-				p2);
+	if (p2.x < p1.x) {
+		dp->curveto(p1-flatpoint((p2.x-p1.x), 0),
+					p2+flatpoint((p2.x-p1.x), 0),
+					p2);
+	} else {
+		dp->curveto(p1+flatpoint((p2.x-p1.x)/3, 0),
+					p2-flatpoint((p2.x-p1.x)/3, 0),
+					p2);
+	}
 	dp->LineWidthScreen(3);
 	dp->stroke(1);
 	int isselected = (selected.findindex(connection->from)>=0 || selected.findindex(connection->to)>=0);
 	dp->NewFG(isselected ? &nodes->colors->selected_border : &color_controls);
 	dp->LineWidthScreen(2);
 	dp->stroke(0);
+}
+
+/*! Get the bezier path of the connection.
+ * For now, keep it simple to single bezier segment.
+ */
+void NodeInterface::GetConnectionBez(NodeConnection *connection, flatpoint *pts)
+{
+	flatpoint p1,p2;
+	flatpoint last = nodes->m.transformPointInverse(lastpos);
+	if (connection->fromprop) p1=flatpoint(connection->from->x,connection->from->y)+connection->fromprop->pos; else p1=last;
+	if (connection->toprop)   p2=flatpoint(connection->to->x,  connection->to->y)  +connection->toprop->pos;   else p2=last;
+
+	pts[0] = p1;
+	if (p2.x < p1.x) {
+		pts[1] = p1-flatpoint((p2.x-p1.x), 0);
+		pts[2] = p2+flatpoint((p2.x-p1.x), 0);
+	} else {
+		pts[1] = p1+flatpoint((p2.x-p1.x)/3, 0);
+		pts[2] = p2-flatpoint((p2.x-p1.x)/3, 0);
+	}
+	pts[3] = p2;
 }
 
 /*! Return the node under x,y, or -1 if no node there.
@@ -3083,7 +3171,7 @@ void NodeInterface::DrawConnection(NodeConnection *connection)
  *
  * overpropslot and overproperty must NOT be null.
  */
-int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty) 
+int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, unsigned int state) 
 {
 	if (!nodes) return -1;
 
@@ -3146,13 +3234,13 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty)
 
 			if (*overpropslot == -1) {
 				 //check if hovering over an edge
-				if (!node->collapsed && p.x >= node->x-th/2 && p.x <= node->x+th/2) *overpropslot = NHOVER_LeftEdge;
-				else if (!node->collapsed && p.x >= node->x+node->width-th/2 && p.x <= node->x+node->width+th/2) *overpropslot = NHOVER_RightEdge;
+				if (!node->collapsed && p.x >= node->x-th/2 && p.x <= node->x+th/2) *overpropslot = NODES_LeftEdge;
+				else if (!node->collapsed && p.x >= node->x+node->width-th/2 && p.x <= node->x+node->width+th/2) *overpropslot = NODES_RightEdge;
 
 				else if (node->collapsed || (p.y >= node->y && p.y <= node->y+th)) { //on label area
-					if (p.x >= node->x+th/2 && p.x <= node->x+3*th/2) *overpropslot = NHOVER_Collapse;
-					//else if (p.x >= node->x+node->width-th/2 && p.x <= node->x+node->width-3*th/2) *overpropslot = NHOVER_TogglePreview;
-					else *overpropslot = NHOVER_Label;
+					if (p.x >= node->x+th/2 && p.x <= node->x+3*th/2) *overpropslot = NODES_Collapse;
+					//else if (p.x >= node->x+node->width-th/2 && p.x <= node->x+node->width-3*th/2) *overpropslot = NODES_TogglePreview;
+					else *overpropslot = NODES_Label;
 				}
 
 				if (*overpropslot != -1) *overproperty = -1;
@@ -3173,7 +3261,7 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty)
 					&& p.x <= node->x + node->width/2 + nw/2
 					&& p.y >= node->y + th*1.15 + node->preview_area_height/2 + nh/2 - th
 					&& p.y <= node->y + th*1.15 + node->preview_area_height/2 + nh/2) {
-				  *overpropslot = NHOVER_PreviewResize;
+				  *overpropslot = NODES_PreviewResize;
 				  if (*overpropslot != -1) *overproperty = -1;
 				}
 			}
@@ -3184,15 +3272,25 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty)
 	 //check frame related
 	for (int c=0; c<nodes->frames.n; c++) {
 		if (nodes->frames.e[c]->pointIsIn(p.x, p.y)) {
-			*overproperty = NHOVER_Frame;
+			*overproperty = NODES_Frame;
 			*overpropslot = c;
 
 			if (p.y < nodes->frames.e[c]->y + 1.5*th) {
-				*overproperty = NHOVER_Frame_Label;
+				*overproperty = NODES_Frame_Label;
 			}
 			break;
 		}
 	}
+
+	 //check over pipes
+//	if (state & (ShiftMask|ControlMask)) {
+//		for (int c=nodes->nodes.n-1; c>=0; c--) {
+//			node = nodes->nodes.e[c];
+//
+//			*** shift click jumps to nearest pipe connection
+//			*** control click to add anchor node
+//		}
+//	}
 
 	return -1;
 }
@@ -3202,7 +3300,7 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 
 	int action = NODES_None;
 	int overpropslot=-1, overproperty=-1; 
-	int overnode = scan(x,y, &overpropslot, &overproperty);
+	int overnode = scan(x,y, &overpropslot, &overproperty, state);
 
 //	if (count==2 && overnode>=0 && nodes && dynamic_cast<NodeGroup*>(nodes->nodes.e[overnode])) {
 //		PostMessage("Need to implement jump into group");
@@ -3210,11 +3308,14 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 //		return 0;
 //	}
 
-	if (count == 2 && overnode>=0 && overproperty<0 && overpropslot == NHOVER_Label) {
+	if (count == 2 && overnode>=0 && overproperty<0 && overpropslot == NODES_Label) {
 		action = overpropslot;
 
-	} else if (count == 2 && overnode<0 && overproperty == NHOVER_Frame_Label) {
-		action = NHOVER_Frame_Label;
+	} else if (count == 2 && overnode<0 && overproperty == NODES_Frame_Label) {
+		action = NODES_Frame_Label;
+
+	} else if (overnode<0 && (overproperty == NODES_Frame || overproperty == NODES_Frame_Label)) {
+		action = NODES_Move_Frame;
 
 	} else if (((state&LAX_STATE_MASK) == 0 || (state&ShiftMask)!=0) && overnode==-1 && overproperty==-1) {
 		 //shift drag adds, shift-control drag removes, plain drag replaces selection 
@@ -3230,7 +3331,7 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 		selection_rect.miny=selection_rect.maxy=y;
 		needtodraw=1;
 
-	} else if (overnode>=0 && overproperty==-1 && overpropslot == NHOVER_PreviewResize) {
+	} else if (overnode>=0 && overproperty==-1 && overpropslot == NODES_PreviewResize) {
 		action = NODES_Resize_Preview;
 
 	} else if (overnode>=0 && overproperty==-1) {
@@ -3259,51 +3360,66 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 
 	} else if (overnode>=0 && overproperty>=0 && overpropslot>=0) {
 		 //down on a socket, so drag out to connect to another node
+		
 		NodeProperty *prop = nodes->nodes.e[overnode]->properties.e[overpropslot];
 
-		if (prop->IsInput()) {
-			action = NODES_Drag_Input;
+		if ((state&LAX_STATE_MASK) == ShiftMask) {
 
-			if (prop->connections.n) {
-				// if dragging input that is already connected, then disconnect from current node,
-				// and drag output at the other end
-				action = NODES_Drag_Output;
-				overnode = nodes->nodes.findindex(prop->connections.e[0]->from);
-				overpropslot = nodes->nodes.e[overnode]->properties.findindex(prop->connections.e[0]->fromprop);
-				if (!tempconnection) tempconnection = new NodeConnection();
-				tempconnection->SetTo(NULL,NULL); //assumes only one input
-				tempconnection->SetFrom(prop->connections.e[0]->from, prop->connections.e[0]->fromprop);
-
-				nodes->Disconnect(prop->connections.e[0]);
-
-				lastconnection = 0;
-				lasthover      = overnode;
-				lasthoverslot  = overpropslot;
-
+			 //jump to opposite connection
+			if (prop->connections.n > 0) {
+				if (prop->IsInput()) action = NODES_Jump_Back;
+				else if (prop->IsOutput()) action = NODES_Jump_Forward;
+				
 			} else {
-				 //connection didn't exist, so install a half connection to current node
-				if (tempconnection) tempconnection->dec_count();
-				tempconnection = new NodeConnection(NULL, nodes->nodes.e[overnode], NULL,prop);
-
-				lastconnection = prop->connections.n-1;
-				lasthover      = overnode;
-				lasthoverslot  = overpropslot;
+				PostMessage(_("Nothing to jump to!"));
+				action = NODES_None;
 			}
 
-		} else if (prop->IsOutput()) {
-			 // if dragging output, create new connection
-			action = NODES_Drag_Output;
-			if (tempconnection) tempconnection->dec_count();
-			tempconnection = new NodeConnection(nodes->nodes.e[overnode],NULL, prop,NULL);
+		} else {
 
-			lastconnection = prop->connections.n-1;
-			lasthoverslot  = overpropslot;
-			lasthover      = overnode;
+			if (prop->IsInput()) {
+				action = NODES_Drag_Input;
+
+				if (prop->connections.n) {
+					// if dragging input that is already connected, then disconnect from current node,
+					// and drag output at the other end
+					action = NODES_Drag_Output;
+					overnode = nodes->nodes.findindex(prop->connections.e[0]->from);
+					overpropslot = nodes->nodes.e[overnode]->properties.findindex(prop->connections.e[0]->fromprop);
+					if (!tempconnection) tempconnection = new NodeConnection();
+					tempconnection->SetTo(NULL,NULL); //assumes only one input
+					tempconnection->SetFrom(prop->connections.e[0]->from, prop->connections.e[0]->fromprop);
+
+					nodes->Disconnect(prop->connections.e[0], true, false);
+
+					lastconnection = 0;
+					lasthover      = overnode;
+					lasthoverslot  = overpropslot;
+
+				} else {
+					 //connection didn't exist, so install a half connection to current node
+					if (tempconnection) tempconnection->dec_count();
+					tempconnection = new NodeConnection(NULL, nodes->nodes.e[overnode], NULL,prop);
+
+					lastconnection = prop->connections.n-1;
+					lasthover      = overnode;
+					lasthoverslot  = overpropslot;
+				}
+
+			} else if (prop->IsOutput()) {
+				 // if dragging output, create new connection
+				action = NODES_Drag_Output;
+				if (tempconnection) tempconnection->dec_count();
+				tempconnection = new NodeConnection(nodes->nodes.e[overnode],NULL, prop,NULL);
+
+				lastconnection = prop->connections.n-1;
+				lasthoverslot  = overpropslot;
+				lasthover      = overnode;
+			}
+
+			if (action==NODES_Drag_Output) PostMessage(_("Drag output..."));
+			else PostMessage(_("Drag input..."));
 		}
-
-		if (action==NODES_Drag_Output) PostMessage(_("Drag output..."));
-		else PostMessage(_("Drag input..."));
-
 	}
 
 	if (action != NODES_None) {
@@ -3323,7 +3439,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 	int dragged = buttondown.up(d->id, LEFTBUTTON, &action, &property);
 
 	int overpropslot=-1, overproperty=-1; 
-	int overnode = scan(x,y, &overpropslot, &overproperty);
+	int overnode = scan(x,y, &overpropslot, &overproperty, state);
 
 
 
@@ -3418,20 +3534,20 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 		if (overnode>=0) {
 			if (selected.findindex(nodes->nodes.e[overnode]) < 0
-				 || lasthoverslot != NHOVER_Collapse) {
+				 || lasthoverslot != NODES_Collapse) {
 				 //clicking on a node that's not in the selection
 				selected.flush();
 				selected.push(nodes->nodes.e[overnode]);
 				needtodraw=1;
 			}
 
-			if (lasthoverslot == NHOVER_Collapse) {
+			if (lasthoverslot == NODES_Collapse) {
 				ToggleCollapsed();
 
-			//} else if (lasthoverslot == NHOVER_TogglePreview) {
+			//} else if (lasthoverslot == NODES_TogglePreview) {
 
-			//} else if (lasthoverslot == NHOVER_Label && count==2) {
-			} else if (lasthoverslot == NHOVER_Label) {
+			//} else if (lasthoverslot == NODES_Label && count==2) {
+			} else if (lasthoverslot == NODES_Label) {
 				// *** use right click menu instead??
 			}
 		}
@@ -3546,7 +3662,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 				if (toprop->connections.n) {
 					 //clobber any other connection going into the input. Only one input allowed.
 					for (int c = toprop->connections.n-1; c >= 0; c--) {
-						nodes->Disconnect(toprop->connections.e[c]);
+						nodes->Disconnect(toprop->connections.e[c], false, true);
 					}
 					//toprop->connections.flush(); *** should be flushed already
 				}
@@ -3590,7 +3706,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		}
 		needtodraw=1;
 
-	} else if (action == NHOVER_Label) {
+	} else if (action == NODES_Label) {
 		NodeBase *node = nodes->nodes.e[lasthover];
 
 		double th = font->textheight();
@@ -3603,7 +3719,9 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 		viewport->SetupInputBox(object_id, NULL, node->Label(), "setNodeLabel", bounds);
 
-	} else if (action == NHOVER_Frame_Label) {
+	//} else if (action == NODES_Frame_Label || (dragged==0 && action == NODES_Move_Frame)) {
+	} else if (action == NODES_Frame_Label) {
+		 //popup to change label name
 		NodeFrame *frame = nodes->frames.e[lasthoverslot];
 
 		double th = font->textheight();
@@ -3616,8 +3734,41 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 		viewport->SetupInputBox(object_id, NULL, frame->Label(), "setFrameLabel", bounds);
 
-	} else if (action == NHOVER_Frame_Comment) {
+	//} else if (action == NODES_Move_Frame) {
+		//***
+
+	} else if (action == NODES_Frame_Comment) {
 		// ***
+
+	} else if (action == NODES_Jump_Forward || action == NODES_Jump_Back) {
+		if (overnode>=0 && overpropslot>=0) {
+			NodeProperty *prop = nodes->nodes.e[overnode]->properties.e[overpropslot];
+			//NodeProperty *toprop = NULL;
+
+			//int topropi = -1;
+			NodeConnection *connection = prop->connections.e[0];
+			GetConnectionBez(connection, panpath);
+			if (connection->fromprop != prop) {
+				 //reverse path order
+				flatpoint pp = panpath[0];
+				panpath[0] = panpath[3];
+				panpath[3] = pp;
+				pp = panpath[1];
+				panpath[1] = panpath[2];
+				panpath[2] = pp;
+			}
+			//flatpoint last = nodes->m.transformPointInverse(lastpos);
+			//flatpoint offset = last - panpath[0];
+			//for (int c=0; c<4; c++) panpath[c] += offset;
+
+			//start timer
+			pan_current = 0;
+			pan_duration = bez_length(panpath, 4, false, true, 10) / (nodes->colors->font->textheight()*100);
+			if (pan_duration > 1) pan_duration = sqrt(pan_duration);
+			pan_timer = app->addtimer(this, pan_tick_ms, pan_tick_ms, pan_duration*1000);
+			DBG cerr <<"Adding Idle timer for NodeInterface connection traverse"<<endl;
+			DBG cerr <<"pan_duration = "<<pan_duration<<endl;
+		}
 	}
 
 	hover_action = NODES_None;
@@ -3634,7 +3785,7 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 		// ...
 
 		int newhoverslot=-1, newhoverprop=-1;
-		int newhover = scan(x,y, &newhoverslot, &newhoverprop);
+		int newhover = scan(x,y, &newhoverslot, &newhoverprop, state);
 		lastpos.x=x; lastpos.y=y;
 		//DBG cerr << "nodes lastpos: "<<lastpos.x<<','<<lastpos.y<<endl;
 		DBG cerr <<"nodes scan, node,prop,slot: "<<newhover<<','<<newhoverprop<<','<<newhoverslot<<endl;
@@ -3650,7 +3801,10 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 			else {
 				if (lasthoverprop >= 0 && nodes->nodes.e[lasthover]->properties.e[lasthoverprop]->tooltip) {
 					PostMessage(nodes->nodes.e[lasthover]->properties.e[lasthoverprop]->tooltip);
+				} else if ((state&LAX_STATE_MASK) == ShiftMask && lasthover>=0 && lasthoverprop>=0 && lasthoverslot>=0) {
+					PostMessage(_("Click to traverse connection"));
 				} else {
+					
 					char scratch[200];
 					sprintf(scratch, "%s.%d.%d", nodes->nodes.e[lasthover]->Name, lasthoverprop, lasthoverslot);
 					PostMessage(scratch);
@@ -3686,9 +3840,9 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 
 	 //special check to maybe change action
 	if (action == NODES_Move_Or_Select) {
-		if (lasthoverslot == NHOVER_LeftEdge) {
+		if (lasthoverslot == NODES_LeftEdge) {
 			action = NODES_Resize_Left;
-		} else if (lasthoverslot == NHOVER_RightEdge) {
+		} else if (lasthoverslot == NODES_RightEdge) {
 			action = NODES_Resize_Right;
 		} else {
 			action = NODES_Move_Nodes;
@@ -3769,6 +3923,23 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 					//if you move a node over an existing frame, then drop it into the frame
 				}
 			}
+		}
+		needtodraw=1;
+		return 0;
+
+	} else if (action == NODES_Move_Frame || action == NODES_Frame_Label) {
+		if (action == NODES_Frame_Label) {
+			action = NODES_Move_Frame;
+			buttondown.moveinfo(mouse->id, LEFTBUTTON, action, property);
+		}
+		if (lasthoverslot>=0 && lasthoverslot<nodes->frames.n) {
+			flatpoint d=nodes->m.transformPointInverse(flatpoint(x,y)) - nodes->m.transformPointInverse(flatpoint(lx,ly));
+
+			for (int c=0; c<nodes->frames.e[lasthoverslot]->nodes.n; c++) {
+				nodes->frames.e[lasthoverslot]->nodes.e[c]->x += d.x;
+				nodes->frames.e[lasthoverslot]->nodes.e[c]->y += d.y;
+			}
+			nodes->frames.e[lasthoverslot]->Wrap();
 		}
 		needtodraw=1;
 		return 0;
@@ -3974,6 +4145,7 @@ Laxkit::ShortcutHandler *NodeInterface::GetShortcuts()
 	sc->AddShortcut(LAX_Del,0,0,  NODES_Delete_Nodes);
     sc->Add(NODES_Toggle_Collapse,'c',0,          0, "ToggleCollapse", _("ToggleCollapse" ),NULL,0);
     sc->Add(NODES_Frame_Nodes,    'f',0,          0, "Frame",          _("Frame Selected" ),NULL,0);
+    sc->Add(NODES_Unframe_Nodes,  'F',ShiftMask,  0, "Unframe",        _("Remove connected frame" ),NULL,0);
     sc->Add(NODES_Edit_Group,     LAX_Tab,0,      0, "EditGroup",      _("Toggle Edit Group"),NULL,0);
     sc->Add(NODES_Leave_Group,    LAX_Tab,ShiftMask,0,"LeaveGroup",    _("Leave Group")    ,NULL,0);
 
@@ -4093,6 +4265,19 @@ int NodeInterface::PerformAction(int action)
 		frame->Wrap();
 		nodes->frames.push(frame);
 		frame->dec_count();
+		needtodraw=1;
+		return 0;
+
+	} else if (action==NODES_Unframe_Nodes) {
+		if (!selected.n) {
+			PostMessage(_("No nodes selected!"));
+			return 0;
+		}
+		for (int c=0; c<selected.n; c++) {
+			if (selected.e[c]->frame) {
+				nodes->frames.remove(selected.e[c]->frame);
+			}
+		}
 		needtodraw=1;
 		return 0;
 

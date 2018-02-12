@@ -278,10 +278,11 @@ class NodeBase : public Laxkit::anObject,
 
 	virtual int IsConnected(int propindex); //0=no, -1=prop is connected input, 1=connected output
 	virtual int HasConnection(NodeProperty *prop, int *connection_ret);
-	virtual int Disconnected(NodeConnection *connection, int to_side);
+	virtual int Disconnected(NodeConnection *connection, bool from_will_be_replaced, bool to_will_be_replaced);
 	virtual int Connected(NodeConnection *connection);
 
 	virtual int AddProperty(NodeProperty *newproperty, int where=-1);
+	virtual int RemoveProperty(NodeProperty *prop);
 	virtual NodeProperty *FindProperty(const char *prop);
 	virtual int SetProperty(const char *prop, Value *value, bool absorb);
 	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
@@ -344,7 +345,7 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	virtual int UngroupNodes(Laxkit::RefPtrStack<NodeBase> &selected, bool update_selected);
 	virtual NodeConnection *Connect(NodeProperty *from, NodeProperty *to);
 	virtual NodeConnection *Connect(NodeConnection *newcon, int absorb);
-	virtual int Disconnect(NodeConnection *connection);
+	virtual int Disconnect(NodeConnection *connection, bool from_will_be_replaced, bool to_will_be_replaced);
 
 	virtual void       dump_out(FILE *f, int indent, int what, LaxFiles::DumpContext *context);
     virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context);
@@ -361,17 +362,16 @@ typedef NodeGroup Nodes;
 //these get tracked in lasthoverslot.
 //They need to be negative to not conflict with slot index numbers.
 enum NodeHover {
-	NHOVER_SCAN_START = -10000, //this needs to be so negative as to make NODES_HOVER_MAX also be negative
-	NHOVER_None          ,
-	NHOVER_Label         ,
-	NHOVER_LeftEdge      ,
-	NHOVER_RightEdge     ,
-	NHOVER_Collapse      ,
-	NHOVER_TogglePreview ,
-	NHOVER_PreviewResize ,
-	NHOVER_Frame         ,
-	NHOVER_Frame_Label   ,
-	NHOVER_Frame_Comment ,
+	NODES_SCAN_START = -10000, //this needs to be so negative as to make NODES_HOVER_MAX also be negative
+	NODES_Label         ,
+	NODES_LeftEdge      ,
+	NODES_RightEdge     ,
+	NODES_Collapse      ,
+	NODES_TogglePreview ,
+	NODES_PreviewResize ,
+	NODES_Frame         ,
+	NODES_Frame_Label   ,
+	NODES_Frame_Comment ,
 	NODES_VP_Top         ,
 	NODES_VP_Top_Left    ,
 	NODES_VP_Left        ,
@@ -427,6 +427,7 @@ enum NodeInterfaceActions {
 	NODES_Leave_Group,
 	NODES_Frame_Nodes,
 	NODES_Unframe_Nodes,
+	NODES_Move_Frame,
 	NODES_Add_Node,
 	NODES_Delete_Nodes,
 	NODES_Save_Nodes,
@@ -452,7 +453,18 @@ class NodeViewArea : public DoubleRectangle
 
 class NodeInterface : public LaxInterfaces::anInterface
 {
+  private:
+	flatpoint bezbuf[4];
+	flatpoint panpath[4];
+	int    pan_timer;
+	double pan_current; //0..1
+	double pan_duration; //seconds
+	int    pan_tick_ms;
+
+
   protected:
+	void GetConnectionBez(NodeConnection *connection, flatpoint *pts);
+
 	int showdecs;
 
 	Laxkit::ObjectFactory *node_factory; //usually, convenience cast to return of NodeBase::NodeFactory()
@@ -504,6 +516,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	const char *Name();
 	const char *whattype() { return "NodeInterface"; }
 	const char *whatdatatype();
+	virtual int  Idle(int tid=0);
 	Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu);
 	virtual int Event(const Laxkit::EventData *data, const char *mes);
 	virtual Laxkit::ShortcutHandler *GetShortcuts();
@@ -528,7 +541,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 
 	virtual void DrawConnection(NodeConnection *connection);
 	virtual void DrawProperty(NodeBase *node, NodeProperty *prop, double y, int hoverprop, int hoverslot);
-	virtual int scan(int x, int y, int *overpropslot, int *overproperty);
+	virtual int scan(int x, int y, int *overpropslot, int *overproperty, unsigned int state);
 	virtual int IsSelected(NodeBase *node);
 
 	virtual int ToggleCollapsed();
