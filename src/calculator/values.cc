@@ -4253,6 +4253,15 @@ double getNumberValue(Value *v, int *isnum)
 	return 0;
 }
 
+/*! Like getNumberValue(), but swap order of returns.
+ */
+bool isNumberType(Value *v, double *number_ret)
+{
+	int isnum = 0;
+	*number_ret = getNumberValue(v, &isnum);
+	return isnum;
+}
+
 //! Compare nonwhitespace until period with field, return 1 for yes, 0 for no.
 /*! Return pointer to just after extension. If no match, next_ret gets NULL.
  * str can be "a.b.c.", and only "a" is checked, but field string must be "a",
