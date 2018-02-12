@@ -168,6 +168,12 @@ for my $class (@classes) {
 
 	$defaultValue = "";
 
+	if ($class eq "feFlood") {
+		#for simplicity, manually add flood-color and flood-opacity
+		print"  color flood-color\n";
+		print"  color flood-opacity\n";
+	}
+
 	for my $att (@atts) {
 #		print "    att: $att\n";
 
