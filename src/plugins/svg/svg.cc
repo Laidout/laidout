@@ -85,8 +85,8 @@ class SvgFilterNode : public Laidout::NodeBase
     //virtual int UpdateProperties();
     //virtual int Update();
     //virtual int UpdatePreview();
-    //virtual int Disconnected(NodeConnection *connection, int to_side);
-    //virtual int Connected(NodeConnection *connection);
+    virtual int Disconnected(NodeConnection *connection, bool from_will_be_replaced, bool to_will_be_replaced);
+    virtual int Connected(NodeConnection *connection);
     //virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
 
 	virtual const char *ResultName();
@@ -117,7 +117,9 @@ Laxkit::SingletonKeeper SvgFilterNode::svg_def_keeper;
 SvgFilterNode::SvgFilterNode(const char *filterName)
 {
 	makestr(Name, filterName);
-	makestr(type, filterName);
+
+	makestr  (type, "Svg Filter/");
+	appendstr(type, filterName);
 
 	ObjectDef *svgdefs = GetSvgDefs();
 	ObjectDef *fdef = svgdefs->FindDef(filterName);
@@ -126,16 +128,23 @@ SvgFilterNode::SvgFilterNode(const char *filterName)
 		InstallDef(fdef, 0);
 		int issrc = (strcmp(fdef->name, "SvgSource") == 0);
 
-		//add linkable image in
+		//add linkable image in for SvgSource node
 		if (issrc) AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "imageIn", NULL,1, _("In"),_("Input image"), 0, false));
 
 
 		ObjectDef *result = NULL;
-		int resulti = -1;
-		Value *resultv = NULL;
+		//int resulti = -1;
+		//Value *resultv = NULL;
 
-		for (int c=0; c<fdef->getNumFields(); c++) {
-			ObjectDef *d = fdef->getField(c);
+		int isprimitive = false;
+		if (fdef->extendsdefs.n && !strcmp(fdef->extendsdefs.e[0]->name, "FilterPrimitive")) {
+			isprimitive = true;
+			//add a rect
+			AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "bounds", new BBoxValue,1, _("Bounds"), _("Rectangle the filter acts in"), -1));
+		}
+
+		for (int c=0; c<fdef->getNumFieldsOfThis(); c++) {
+			ObjectDef *d = fdef->getFieldOfThis(c);
 			if (!d) continue;
 
 			Value *v = NULL;
@@ -146,25 +155,37 @@ SvgFilterNode::SvgFilterNode(const char *filterName)
 				v = new EnumValue(d,0);
 			}
 
-			if (!strcmp(d->name, "result")) { result = d; resulti = c; resultv = v; }
-			else AddProperty(new NodeProperty(issrc ? NodeProperty::PROP_Output : NodeProperty::PROP_Input, true, d->name, v,1, d->Name, d->description, c));
+			//if (!strcmp(d->name, "result")) { result = d; resulti = c; resultv = v; }
+			//else
+				AddProperty(new NodeProperty(issrc ? NodeProperty::PROP_Output : NodeProperty::PROP_Input, true, d->name, v,1, d->Name, d->description, c));
 		}
 
-		//add linkable image in
-//		if (fdef->FindDef("in"))
-//			AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "inImg", NULL,1, _("Image in"),_("Image input, possibly modified by in property"), 0, false));
-//
-//		if (fdef->FindDef("in2"))
-//			AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "inImg2", NULL,1, _("Image2 in"),_("Other Image input, possibly modified by in2 property"), 0, false));
-
-		//add child button for certain nodes
-		if (!strcmp(filterName, "feMerge")) {
-			AddProperty(new NodeProperty(NodeProperty::PROP_Button, false, "AddChild", NULL,1, _("Add Child"),_("Add a merge node"), 0, false));
+		 //add child button for certain nodes
+		if (fdef->uihint && strstr(fdef->uihint, "kids") == fdef->uihint) {
+			 //there are possible children, so add slot to insert new children
+			const char *kids = fdef->uihint + 5;
+			char *ttip = newstr(_("Possible kids: "));
+			while (*kids != ')' && *kids != 0) {
+				const char *k = kids;
+				while (isalnum(*k)) k++;
+				if (k == kids) break;
+				appendnstr(ttip, kids, k-kids);
+				appendstr(ttip, " ");
+				kids = k;
+				while (*kids==',' || *kids==' ') kids++;
+			}
+			AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "NewChild", NULL,1, _("(add child)"), ttip, 0, false));
+			delete[] ttip;
 		}
 
+		if (isprimitive) {
+			 //add result, part of FilterPrimitive, which we skipped before
+			result = fdef->FindDef("result");
+			//if (result) AddProperty(new NodeProperty(NodeProperty::PROP_Block, false, result->name, resultv,1, result->Name, result->description, resulti));
+			if (result) AddProperty(new NodeProperty(NodeProperty::PROP_Block, false, result->name, new StringValue(),1, result->Name, result->description, -2));
+		}
 
 		//add linkable image out
-		if (result) AddProperty(new NodeProperty(NodeProperty::PROP_Block, false, result->name, resultv,1, result->Name, result->description, resulti));
 		if (!issrc) AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", NULL,1, _("Out"),_("The resulting image"), 0, false));
 
 	} else {
@@ -186,6 +207,8 @@ const char *SvgFilterNode::ResultName()
 	return p ? p->name : NULL;
 }
 
+/*! Dump in an XML based Attribute presumably from an svg file.
+ */
 int SvgFilterNode::dump_in_atts(Attribute *att, NodeGroup *filter, SvgFilterNode *last, SvgFilterNode *srcnode, Laxkit::ErrorLog &log)
 {
 	//ObjectDef *svgdefs = dynamic_cast<ObjectDef*>(SvgFilterNode::svg_def_keeper.GetObject());
@@ -193,6 +216,8 @@ int SvgFilterNode::dump_in_atts(Attribute *att, NodeGroup *filter, SvgFilterNode
 
 	const char *name, *value;
 	NodeProperty *srcprop = NULL, *src2prop = NULL;
+
+	const char *xx=NULL, *yy=NULL, *ww=NULL, *hh=NULL;
 
 	for (int c=0; c<att->attributes.n; c++) {
 		name  = att->attributes.e[c]->name;
@@ -218,6 +243,39 @@ int SvgFilterNode::dump_in_atts(Attribute *att, NodeGroup *filter, SvgFilterNode
 			//has sub elements, like feFunc*, feMergeNode, etc
 			// ***
 
+			NodeProperty *newchild = FindProperty("NewChild");
+			if (newchild) {
+				ObjectDef *svgdefs = dynamic_cast<ObjectDef*>(SvgFilterNode::svg_def_keeper.GetObject());
+
+				Attribute *contents = att->attributes.e[c];
+				for (int c3=0; c3 < contents->attributes.n; c3++) {
+					name  = contents->attributes.e[c3]->name;
+					value = contents->attributes.e[c3]->value;
+
+					ObjectDef *def = svgdefs->FindDef(name);
+					if (def) {
+						SvgFilterNode *pp = new SvgFilterNode(name);
+						//pp->def should == def.. assume it is so for now
+
+						pp->dump_in_atts(contents->attributes.e[c3], filter, last, srcnode, log);
+						filter->AddNode(pp);
+						pp->dec_count();
+
+						newchild = FindProperty("NewChild");
+						NodeProperty *childout = pp->FindProperty("out");
+
+						filter->Connect(childout, newchild);
+
+
+					} else {
+						DBG cerr << " warning! could not find ObjectDef for "<<name<<endl;
+					}
+
+				}
+			} else {
+				DBG cerr <<" Warning! filter "<<(Label()?Label():"?")<<" has contents but doesn't seem to want it!"<<endl;
+			}
+
 		} else {
 			//should just be a plain old value
 			ObjectDef *fdef = def->FindDef(name);
@@ -225,31 +283,68 @@ int SvgFilterNode::dump_in_atts(Attribute *att, NodeGroup *filter, SvgFilterNode
 
 			Value *v = NULL;
 
-			if (fdef) {
-				if (fdef->format == VALUE_Number || fdef->format == VALUE_Real) {
-					DoubleValue *vv = new DoubleValue(); //clunkiness due to compiler nag workaround
-					vv->Set(value);
-					v = vv;
-
-				} else if (fdef->format == VALUE_Int) {
-					v = new IntValue(value, 10);
-
-				} else if (fdef->format == VALUE_Boolean) {
-					v = new BooleanValue(value);
-
-				} else if (fdef->format == VALUE_Enum) {
-					int i = fdef->findfield(value, NULL);
-					if (i>=0) {
-						v = new EnumValue(fdef, i);
-					}
+			if (prop && fdef) {
+				 //intercept these optional values, and construct a RectangleNode later
+				if (!strcmp(name, "x")) {
+					xx = value;
+				} else if (!strcmp(name, "y")) {
+					yy = value;
+				} else if (!strcmp(name, "width")) {
+					ww = value;
+				} else if (!strcmp(name, "height")) {
+					hh = value;
 
 				} else {
-					//shove everything else to string...
-					v = new StringValue(value);
+
+					if (fdef->format == VALUE_Number || fdef->format == VALUE_Real) {
+						DoubleValue *vv = new DoubleValue(); //clunkiness due to compiler nag workaround
+						vv->Set(value);
+						v = vv;
+
+					} else if (fdef->format == VALUE_Int) {
+						v = new IntValue(value, 10);
+
+					} else if (fdef->format == VALUE_Boolean) {
+						v = new BooleanValue(value);
+
+					} else if (fdef->format == VALUE_Enum) {
+						int i = fdef->findfield(value, NULL);
+						if (i>=0) {
+							v = new EnumValue(fdef, i);
+						}
+
+					} else {
+						//shove everything else to string...
+						v = new StringValue(value);
+					}
 				}
 			}
 
 			if (v && prop) prop->SetData(v, 1);
+		}
+	}
+
+	if (xx || yy || ww || hh) {
+		 //install a rectangle with the filter bounds
+		NodeProperty *bounds = FindProperty("bounds");
+		if (bounds) {
+			double xxx = xx ? strtof(value,NULL) : 0;
+			double yyy = yy ? strtof(value,NULL) : 0;
+			double www = ww ? strtof(value,NULL) : 0;
+			double hhh = hh ? strtof(value,NULL) : 0;
+			//bounds->SetData(new BBoxValue(xxx,xxx+www, yyy,yyy+hhh),1);
+
+			NodeBase *rect = filter->NewNode("Rectangle");
+			rect->FindProperty("x")     ->SetData(new DoubleValue(xxx), 1);
+			rect->FindProperty("y")     ->SetData(new DoubleValue(yyy), 1);
+			rect->FindProperty("width") ->SetData(new DoubleValue(www), 1);
+			rect->FindProperty("height")->SetData(new DoubleValue(hhh), 1);
+
+			filter->AddNode(rect);
+			rect->dec_count();
+			filter->Connect(rect->FindProperty("Rect"), FindProperty("bounds"));
+
+			//DBG cerr << " ****** need to install a new node for bounds"<<endl;
 		}
 	}
 
@@ -282,6 +377,48 @@ NodeProperty *SvgFilterNode::FindRef(const char *name, NodeGroup *filter)
 		if (s && s->str && !strcmp(name, s->str)) return filter->nodes.e[c]->FindProperty("out");
 	}
 	return NULL;
+}
+
+/*! If connecting a child, then add a new slot for another child.
+ */
+int SvgFilterNode::Connected(NodeConnection *connection)
+{
+	NodeProperty *prop = (connection->from == this ? connection->fromprop : connection->toprop);
+	if (!strcmp(prop->name, "NewChild")) {
+		//something was put into the slot for "new child".
+		//rename that to "Child#" and add a new "new childe" property
+
+		int where = properties.findindex(prop) + 1;
+		//int numkids = where-1;
+		//while (numkids > 0 && !strncmp(properties.e[numkids-1]->name, "Child", 5)) numkids--;
+		//numkids = where - numkids;
+
+		char str[50];
+		sprintf(str, _("Child%ld"), getUniqueNumber());
+		prop->Name(str);
+		prop->Label(_("Child"));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "NewChild", NULL,1, _("(add child)"), prop->tooltip, 0, false), where);
+
+		UpdateLayout();
+		return 1;
+	}
+
+	return 0;
+}
+
+/*! If disconnecting a child, then remove that property.
+ */
+int SvgFilterNode::Disconnected(NodeConnection *connection, bool from_will_be_replaced, bool to_will_be_replaced)
+{
+	if (connection->to == this && !to_will_be_replaced && !strncmp(connection->toprop->name, "Child", 5)) {
+		 //remove empty child link
+		RemoveProperty(connection->toprop);
+		UpdateLayout();
+		connection->toprop = NULL;
+		connection->to = NULL;
+	}
+
+	return 0;
 }
 
 
@@ -327,7 +464,7 @@ ObjectDef *GetSvgDefs()
 	 //read in rest from parsed svg spec
 	const char *svgdefstr =
 		"#Laidout namespace\n"
-		"name SvgFilterStuff\n"
+		"name SvgFilters\n"
 		"format class\n"
 		"class FilterPrimitive\n"
 		"  number x\n"
@@ -428,6 +565,7 @@ ObjectDef *GetSvgDefs()
 		"  string values\n"
 		"class feComponentTransfer\n"
 		"  extends FilterPrimitive\n"
+		"  uihint kids(feFuncR, feFuncG, feFuncB, feFuncA)\n"
 		"  string in\n"
 		"class feComposite\n"
 		"  extends FilterPrimitive\n"
@@ -463,6 +601,7 @@ ObjectDef *GetSvgDefs()
 		"  boolean preserveAlpha\n"
 		"class feDiffuseLighting\n"
 		"  extends FilterPrimitive\n"
+		"  uihint kids(feDistantLight, fePointLight, feSpotLight)\n"
 		"  string in\n"
 		"  number surfaceScale\n"
 		"  number diffuseConstant\n"
@@ -485,6 +624,8 @@ ObjectDef *GetSvgDefs()
 		"    enumval \"B\"\n"
 		"    enumval \"A\"\n"
 		"class feFlood\n"
+		"  string flood-color\n"
+		"  number flood-opacity\n"
 		"  extends FilterPrimitive\n"
 		"class feGaussianBlur\n"
 		"  extends FilterPrimitive\n"
@@ -496,6 +637,7 @@ ObjectDef *GetSvgDefs()
 		"    defaultValue xMidYMid meet\n"
 		"class feMerge\n"
 		"  extends FilterPrimitive\n"
+		"  uihint kids(feMergeNode)\n"
 		"class feMorphology\n"
 		"  extends FilterPrimitive\n"
 		"  string in\n"
@@ -511,6 +653,7 @@ ObjectDef *GetSvgDefs()
 		"  number dy\n"
 		"class feSpecularLighting\n"
 		"  extends FilterPrimitive\n"
+		"  uihint kids(feDistantLight, fePointLight, feSpotLight)\n"
 		"  string in\n"
 		"  number surfaceScale\n"
 		"  number specularConstant\n"
