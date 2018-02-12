@@ -4900,47 +4900,37 @@ int LaidoutCalculator::multiply(Value *num1,Value *num2, Value **ret)
 //		if one has units, but the other doesn't, then assume same units
 //	}
 
-	if (num1->type()==VALUE_Int && num2->type()==VALUE_Int) { //i+i
+	double v1=0, v2=0;
+
+	if (num1->type()==VALUE_Int && num2->type()==VALUE_Int) { //i*i
 		*ret=new IntValue(((IntValue *) num1)->i * ((IntValue*)num2)->i);
 
-	} else if (num1->type()==VALUE_Real && num2->type()==VALUE_Int) { //d+i
+	} else if (num1->type()==VALUE_Real && num2->type()==VALUE_Int) { //d*i
 		*ret=new DoubleValue(((DoubleValue *) num1)->d * (double)((IntValue*)num2)->i);
 
-	} else if (num1->type()==VALUE_Int && num2->type()==VALUE_Real) { //i+d
+	} else if (num1->type()==VALUE_Int && num2->type()==VALUE_Real) { //i*d
 		*ret=new DoubleValue(((DoubleValue *) num2)->d * (double)((IntValue*)num1)->i);
 
-	} else if (num1->type()==VALUE_Real && num2->type()==VALUE_Real) { //d+d
+	} else if (num1->type()==VALUE_Real && num2->type()==VALUE_Real) { //d*d
 		*ret=new DoubleValue(((DoubleValue *) num1)->d * ((DoubleValue*)num2)->d);
 
 
-	} else if ((num1->type()==VALUE_Real || num1->type()==VALUE_Int) && num2->type()==VALUE_Flatvector) { //i*v
-		*ret=new FlatvectorValue(((FlatvectorValue *) num2)->v * ((IntValue*)num1)->i);
+	} else if (isNumberType(num1, &v1) && num2->type()==VALUE_Flatvector) { //i*v, d*v
+		*ret=new FlatvectorValue(((FlatvectorValue *) num2)->v * v1);
 
-	} else if ((num1->type()==VALUE_Real || num1->type()==VALUE_Int) && num2->type()==VALUE_Flatvector) { //d*v
-		*ret=new FlatvectorValue(((FlatvectorValue *) num2)->v * ((DoubleValue*)num1)->d);
-
-	} else if ((num2->type()==VALUE_Real || num2->type()==VALUE_Int) && num1->type()==VALUE_Flatvector) { //v*i
-		*ret=new FlatvectorValue(((FlatvectorValue *) num1)->v * ((IntValue*)num2)->i);
-
-	} else if ((num2->type()==VALUE_Real || num2->type()==VALUE_Int) && num1->type()==VALUE_Flatvector) { //v*d
-		*ret=new FlatvectorValue(((FlatvectorValue *) num1)->v * ((DoubleValue*)num2)->d);
+	} else if (isNumberType(num2, &v2) && num1->type()==VALUE_Flatvector) { //v*i, v*d
+		*ret=new FlatvectorValue(((FlatvectorValue *) num1)->v * v2);
 
 	} else if (num1->type()==VALUE_Flatvector && num2->type()==VALUE_Flatvector) { //v*v 2-d
 		 //dot product
 		*ret=new DoubleValue(((FlatvectorValue *) num1)->v * ((FlatvectorValue*)num2)->v);
 
 
-	} else if ((num1->type()==VALUE_Real || num1->type()==VALUE_Int) && num2->type()==VALUE_Spacevector) { //i*v
-		*ret=new SpacevectorValue(((SpacevectorValue *) num2)->v * ((IntValue*)num1)->i);
+	} else if (isNumberType(num1, &v1) && num2->type()==VALUE_Spacevector) { //i*v, d*v
+		*ret=new SpacevectorValue(((SpacevectorValue *) num2)->v * v1);
 
-	} else if ((num1->type()==VALUE_Real || num1->type()==VALUE_Int) && num2->type()==VALUE_Spacevector) { //d*v
-		*ret=new SpacevectorValue(((SpacevectorValue *) num2)->v * ((DoubleValue*)num1)->d);
-
-	} else if ((num2->type()==VALUE_Real || num2->type()==VALUE_Int) && num1->type()==VALUE_Spacevector) { //v*i
-		*ret=new SpacevectorValue(((SpacevectorValue *) num1)->v * ((IntValue*)num2)->i);
-
-	} else if ((num2->type()==VALUE_Real || num2->type()==VALUE_Int) && num1->type()==VALUE_Spacevector) { //v*d
-		*ret=new SpacevectorValue(((SpacevectorValue *) num1)->v * ((DoubleValue*)num2)->d);
+	} else if (isNumberType(num2, &v2) && num1->type()==VALUE_Spacevector) { //v*i, v*d
+		*ret=new SpacevectorValue(((SpacevectorValue *) num1)->v * v2);
 
 	} else if (num1->type()==VALUE_Spacevector && num2->type()==VALUE_Spacevector) { //v*v 3-d
 		 //dot product
@@ -4974,6 +4964,8 @@ int LaidoutCalculator::divide(Value *num1,Value *num2, Value **ret)
 		return 1;
 	}
 
+	double v2;
+
 	if (num1->type()==VALUE_Int && num2->type()==VALUE_Int) { // i/i
 		if (((IntValue *) num1)->i % ((IntValue*)num2)->i == 0) {
 			*ret=new IntValue(((IntValue *) num1)->i / ((IntValue*)num2)->i);
@@ -4989,6 +4981,10 @@ int LaidoutCalculator::divide(Value *num1,Value *num2, Value **ret)
 
 	} else if (num1->type()==VALUE_Real && num2->type()==VALUE_Real) { // d/d
 		*ret=new DoubleValue(((DoubleValue *) num1)->d / ((DoubleValue*)num2)->d);
+
+	} else if (isNumberType(num2, &v2) && num1->type()==VALUE_Flatvector) { // v/i, v/d
+		*ret=new FlatvectorValue(((FlatvectorValue *) num1)->v / v2);
+
 	} 
 
 	if (*ret) return 0;
