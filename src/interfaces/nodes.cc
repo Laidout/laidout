@@ -16,6 +16,7 @@
 #include <lax/language.h>
 #include "nodes.h"
 #include "nodeinterface.h"
+#include "../calculator/calculator.h"
 
 
 //template implementation
@@ -60,10 +61,11 @@ VectorNode::VectorNode(int dimensions)
 	Name = newstr(dimensions==2 ? _("Vector2") : _("Vector3"));
 	type = newstr(dimensions==2 ? "flatvector" : "spacevector");
 
-	const char *names[] = { _("x"), _("y"), _("z"), _("w") };
+	const char *labels[] = { _("x"), _("y"), _("z"), _("w") };
+	const char *names[]  = {   "x" ,   "y" ,   "z" ,   "w"  };
 
 	for (int c=0; c<dims; c++) {
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, names[c], new DoubleValue(0), 1)); 
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, names[c], new DoubleValue(0), 1, labels[c])); 
 	}
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("V"), new FlatvectorValue(), 1)); 
 }
@@ -80,7 +82,7 @@ int VectorNode::GetStatus()
 		if (!isnum) return -1;
 	}
 
-	if (!properties.e[2]->data) return 1;
+	if (!properties.e[dims]->data) return 1;
 
 	return NodeBase::GetStatus(); //default checks mod times
 }
@@ -117,6 +119,78 @@ Laxkit::anObject *newSpacevectorNode(int p, Laxkit::anObject *ref)
 {
 	return new VectorNode(3);
 }
+
+
+//------------ RectangleNode
+
+class RectangleNode : public NodeBase
+{
+  public:
+	RectangleNode();
+	virtual ~RectangleNode();
+	virtual int Update();
+	virtual int GetStatus();
+};
+
+RectangleNode::RectangleNode()
+{
+	Id("Rectangle");
+	Label(_("Rectangle"));
+	makestr(type, "Rectangle");
+
+	const char *names[]  = {   "x" ,   "y" ,   "width" ,   "height"  };
+	const char *labels[] = { _("x"), _("y"), _("width"), _("height") };
+
+	for (int c=0; c<4; c++) {
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, names[c], new DoubleValue(0), 1, labels[c])); 
+	}
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Rect", new BBoxValue(), 1, _("Rect")));
+}
+
+RectangleNode::~RectangleNode()
+{
+}
+
+int RectangleNode::GetStatus()
+{
+	int isnum = 0;
+	for (int c=0; c<4; c++) {
+		getNumberValue(properties.e[c]->GetData(),&isnum);
+		if (!isnum) return -1;
+	}
+
+	if (!properties.e[4]->data) return 1; //needs updating to establish result
+
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int RectangleNode::Update()
+{
+	int isnum;
+	double vs[4];
+	for (int c=0; c<4; c++) {
+		vs[c] = getNumberValue(properties.e[c]->GetData(),&isnum);
+	}
+
+	//if (!properties.e[2]->data) return 1;
+
+	if (!properties.e[4]->data) properties.e[4]->data = new BBoxValue(vs[0], vs[0]+vs[2], vs[1], vs[1]+vs[3]);
+	else {
+		BBoxValue *v = dynamic_cast<BBoxValue*>(properties.e[4]->data);
+		v->setbounds(vs[0], vs[0]+vs[2], vs[1], vs[1]+vs[3]);
+	}
+
+	properties.e[4]->modtime = time(NULL);
+
+	return NodeBase::Update();
+}
+
+Laxkit::anObject *newRectangleNode(int p, Laxkit::anObject *ref)
+{
+	return new RectangleNode();
+}
+
 
 //------------ ColorNode
 
@@ -156,13 +230,14 @@ class MathNode : public NodeBase
 
 
 enum MathNodeOps {
-	OP_None,
+	OP_None = 0,
 
 	 //1 argument:
 	OP_FIRST_1_ARG,
 	OP_AbsoluteValue,
 	OP_Negative,
 	OP_Sqrt,
+	OP_Sgn,
 	OP_Not,
 	OP_Radians_To_Degrees,
 	OP_Degrees_To_Radians,
@@ -180,6 +255,7 @@ enum MathNodeOps {
 	OP_Atanh,
 	OP_Clamp_To_1, // [0..1]
 	 //vector specific
+	OP_VECTOR_1_ARG,
 	OP_Norm,
 	OP_Norm2,
 	OP_Flip,
@@ -219,6 +295,7 @@ enum MathNodeOps {
 	 //vector math:
 	//OP_Vector_Add,     //use normal add
 	//Op_Vector_Subtract,//use normal subtract
+	OP_VECTOR_2_ARG,
 	OP_Dot,
 	OP_Cross,
 	OP_Perpendicular,
@@ -279,12 +356,12 @@ ObjectDef *DefineMathNodeDef()
 	def->pushEnumValue("ShiftRight" ,_("ShiftRight"),   _("ShiftRight"),  OP_ShiftRight  );
 
 	 //vector math, 2 args
-	//def->pushEnumValue("Dot"            ,_("Dot"),            _("Dot"),            OP_Dot            );
-	//def->pushEnumValue("Cross"          ,_("Cross"),          _("Cross"),          OP_Cross          );
-	//def->pushEnumValue("Perpendicular"  ,_("Perpendicular"),  _("Perpendicular"),  OP_Perpendicular  );
-	//def->pushEnumValue("Parallel"       ,_("Parallel"),       _("Parallel"),       OP_Parallel       );
-	//def->pushEnumValue("Angle_Between"  ,_("Angle Between"),  _("Angle Between"),  OP_Angle_Between  );
-	//def->pushEnumValue("Angle2_Between" ,_("Angle2 Between"), _("Angle2 Between"), OP_Angle2_Between );
+	def->pushEnumValue("Dot"            ,_("Dot"),            _("Dot"),            OP_Dot            );
+	def->pushEnumValue("Cross"          ,_("Cross"),          _("Cross product"),  OP_Cross          );
+	def->pushEnumValue("Perpendicular"  ,_("Perpendicular"),  _("Part of A perpendicular to B"),OP_Perpendicular);
+	def->pushEnumValue("Parallel"       ,_("Parallel"),       _("Part of A parallel to B"), OP_Parallel);
+	def->pushEnumValue("Angle_Between"  ,_("Angle Between"),  _("Angle Between, 0..pi"),    OP_Angle_Between  );
+	def->pushEnumValue("Angle2_Between" ,_("Angle2 Between"), _("Angle2 Between, 0..2*pi"), OP_Angle2_Between );
 
 
 	 //1 argument
@@ -292,7 +369,8 @@ ObjectDef *DefineMathNodeDef()
 	//def->pushEnumValue("AbsoluteValue"      ,_("AbsoluteValue"), _("AbsoluteValue"), OP_AbsoluteValue );
 	//def->pushEnumValue("Negative"           ,_("Negative"),      _("Negative"),      OP_Negative      );
 	//def->pushEnumValue("Not"                ,_("Not"),           _("Not"),           OP_Not           );
-	//def->pushEnumValue("Sqrt"               ,_("Sqrt"),          _("Sqrt"),          OP_Sqrt          );
+	//def->pushEnumValue("Sqrt"               ,_("Square root"),   _("Square root"),   OP_Sqrt          );
+	//def->pushEnumValue("Sqn"                ,_("Sign"),          _("Sign: 1, -1 or 0"),OP_Sgn         );
 	//def->pushEnumValue("Radians_To_Degrees" ,_("Radians To Degrees"), _("Radians To Degrees"), OPRadians_To_Degrees );
 	//def->pushEnumValue("Degrees_To_Radians" ,_("Degrees To Radians"), _("Degrees To Radians"), OPDegrees_To_Radians );
 	//def->pushEnumValue("Sin"                ,_("Sin"),           _("Sin"),           OP_Sin           );
@@ -308,8 +386,8 @@ ObjectDef *DefineMathNodeDef()
 	//def->pushEnumValue("Acosh"              ,_("Acosh"),         _("Acosh"),         OP_Acosh         );
 	//def->pushEnumValue("Atanh"              ,_("Atanh"),         _("Atanh"),         OP_Atanh         );
 	 ////vector math, 1 arg
-	//def->pushEnumValue("Norm"               ,_("Norm"),          _("Norm"),          OP_Norm          );
-	//def->pushEnumValue("Norm2"              ,_("Norm2"),         _("Norm2"),         OP_Norm2         );
+	//def->pushEnumValue("Norm"               ,_("Norm"),          _("Length of vector"),OP_Norm        );
+	//def->pushEnumValue("Norm2"              ,_("Norm2"),         _("Square of length"),OP_Norm2       );
 	//def->pushEnumValue("Flip"               ,_("Flip"),          _("Flip"),          OP_Flip          );
 	//def->pushEnumValue("Normalize"          ,_("Normalize"),     _("Normalize"),     OP_Normalize     );
 	//def->pushEnumValue("Angle"              ,_("Angle"),         _("Angle"),         OP_Angle         );
@@ -361,6 +439,13 @@ MathNode::~MathNode()
 //	}
 }
 
+// OPARG_vn
+// OPARG_nv
+// OPARG_nn
+// OPARG_vv
+// OPARG_ss
+// OPARG_vs sv ns sn
+
 /*! Default is to return 0 for no error and everything up to date.
  * -1 means bad inputs and node in error state.
  * 1 means needs updating.
@@ -384,11 +469,16 @@ int MathNode::GetStatus()
 
 int MathNode::Update()
 {
-	Value *va = properties.e[1]->GetData();
-	Value *vb = properties.e[2]->GetData();
-	int isnum=0;
-	a = getNumberValue(va, &isnum);
-	b = getNumberValue(vb, &isnum);
+	Value *valuea = properties.e[1]->GetData();
+	Value *valueb = properties.e[2]->GetData();
+	int aisnum=0, bisnum=0;
+	a = getNumberValue(valuea, &aisnum);
+	b = getNumberValue(valueb, &bisnum);
+
+	//flatvector fva;
+	//spacevector sva;
+	//string
+	//if (valuea->type() == VALUE_Flatvector
 
 	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
 	ObjectDef *def = ev->GetObjectDef();
@@ -593,7 +683,7 @@ Laxkit::anObject *newNodeGroup(int p, Laxkit::anObject *ref)
 
 
 
-//--------------------------- SetupDefaultNodeTypes()
+//--------------------------- SetupDefaultNodeTypes() -----------------------------------------
 
 /*! Install default built in node types to factory.
  */
@@ -619,6 +709,9 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 
 	 //--- NodeGroup
 	factory->DefineNewObject(getUniqueNumber(), "NodeGroup",newNodeGroup,  NULL, 0);
+
+	 //--- RectangleNode
+	factory->DefineNewObject(getUniqueNumber(), "Rectangle",newRectangleNode,  NULL, 0);
 
 	return 0;
 }
