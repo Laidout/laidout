@@ -50,7 +50,7 @@ class GeglLaidoutNode : public Laidout::NodeBase
 	virtual int UpdateProperties();
 	virtual int Update();
 	virtual int UpdatePreview();
-	virtual int Disconnected(NodeConnection *connection, int to_side);
+	virtual int Disconnected(NodeConnection *connection, bool from_will_be_replaced, bool to_will_be_replaced);
 	virtual int Connected(NodeConnection *connection);
 	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
 	virtual int GetRect(Laxkit::DoubleBBox &box);

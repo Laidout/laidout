@@ -805,7 +805,7 @@ int GeglLaidoutNode::UpdatePreview()
 
 /*! Sever gegl connection if the connection is to an input pad of this.
  */
-int GeglLaidoutNode::Disconnected(NodeConnection *connection, int to_side)
+int GeglLaidoutNode::Disconnected(NodeConnection *connection, bool from_will_be_replaced, bool to_will_be_replaced)
 {
 	if (connection->to == this) {
 		 //remove something connected to an input pad
