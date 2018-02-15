@@ -80,6 +80,7 @@ class SvgFilterNode : public Laidout::NodeBase
 	SvgFilterNode(const char *filterName);
     //SvgFilterNode(const char *filterName, SvgFilterNode *in, SvgFilterNode *in2);
     virtual ~SvgFilterNode();
+	virtual NodeBase *Duplicate();
 
     //virtual int SetFilter(const char *filter);
     //virtual int UpdateProperties();
@@ -195,6 +196,27 @@ SvgFilterNode::SvgFilterNode(const char *filterName)
 
 SvgFilterNode::~SvgFilterNode()
 {
+}
+
+NodeBase *SvgFilterNode::Duplicate()
+{
+	SvgFilterNode *newnode = new SvgFilterNode(strrchr(type, '/'));
+
+	 //copy the properties' data
+	for (int c=0; c<properties.n; c++) {
+		NodeProperty *property = properties.e[c];
+		if (!(property->type == NodeProperty::PROP_Input || property->type == NodeProperty::PROP_Block)) continue;
+
+		Value *v = property->GetData();
+		if (v) {
+			v = v->duplicate();
+			NodeProperty *newprop = newnode->FindProperty(property->name);
+			newprop->SetData(v, 1);
+		}
+	}
+
+	newnode->DuplicateBase(this);
+	return newnode;
 }
 
 
