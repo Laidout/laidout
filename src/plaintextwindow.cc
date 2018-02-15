@@ -273,6 +273,16 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 		 //create the actual popup menu...
 		MenuSelector *popup;
+
+
+
+// 		PopupMenu *popup=new PopupMenu(NULL,_("Documents"), 0,
+//                        0,0,0,0, 1,
+//                        object_id,"whichtext",
+//                        0, //mouse to position near?
+//                        menu,1, NULL,
+//                        TREESEL_LEFT|TREESEL_LIVE_SEARCH|TREESEL_SUB_ON_RIGHT);
+
 		popup=new MenuSelector(NULL,NULL,_("Documents"), ANXWIN_BARE|ANXWIN_HOVER_FOCUS,
 						0,0,0,0, 1, 
 						NULL,object_id,"whichtext", 

@@ -2959,7 +2959,7 @@ int LaidoutViewport::PerformAction(int action)
 						object_id,"moveto", 
 						last_mouse, //mouse to position near?
 						menu,1, NULL,
-						MENUSEL_LEFT|MENUSEL_CHECK_ON_LEFT|MENUSEL_DESTROY_ON_LEAVE);
+						TREESEL_LEFT);
 		popup->pad=5;
 		popup->WrapToMouse(None);
 		app->rundialog(popup);
@@ -4435,17 +4435,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		DBG menuinfoDump(menu,0);
 
 		 //create the actual popup menu...
-		MenuSelector *popup;
-//		popup=new MenuSelector(NULL,_("Documents"), ANXWIN_BARE|ANXWIN_HOVER_FOCUS,
-//						0,0,0,0, 1, 
-//						NULL,viewport->object_id,"rulercornermenu", 
-//						MENUSEL_ZERO_OR_ONE|MENUSEL_CURSSELECTS
-//						 //| MENUSEL_SEND_STRINGS
-//						 | MENUSEL_FOLLOW_MOUSE|MENUSEL_SEND_ON_UP
-//						 | MENUSEL_GRAB_ON_MAP|MENUSEL_OUT_CLICK_DESTROYS
-//						 | MENUSEL_CLICK_UP_DESTROYS|MENUSEL_DESTROY_ON_FOCUS_OFF
-//						 | MENUSEL_CHECK_ON_LEFT|MENUSEL_LEFT,
-//						menu,1);
+		TreeSelector *popup;
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
 		popup=new PopupMenu(NULL,_("Documents"), 0,
 						0,0,0,0, 1, 
@@ -4453,7 +4443,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 						s->info3, //id of device that triggered the send
 						menu,1,
 						NULL,
-						MENUSEL_LEFT|MENUSEL_CHECK_ON_LEFT);
+						TREESEL_LEFT);
 		popup->pad=5;
 		popup->Select(0);
 		popup->WrapToMouse(None);

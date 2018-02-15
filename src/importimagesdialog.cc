@@ -641,6 +641,14 @@ int ImportImagesDialog::Event(const Laxkit::EventData *data,const char *mes)
 			} else prependstr(str,"  ");
 			menu->AddItem(str,c);
 		}
+//------------
+//		PopupMenu *popup=new PopupMenu(NULL,menu->title, 0,
+//                        0,0,0,0, 1,
+//                        object_id,"usethispreview",
+//                        0, //mouse to position near?
+//                        menu,1, NULL,
+//                        TREESEL_LEFT|TREESEL_SEND_STRINGS|TREESEL_LIVE_SEARCH|TREESEL_SUB_ON_RIGHT);
+//------------
 		MenuSelector *popup=new MenuSelector(NULL,NULL,menu->title, 
 						ANXWIN_BARE|ANXWIN_HOVER_FOCUS,
 						0,0,0,0, 1, 

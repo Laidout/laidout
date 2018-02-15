@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -2052,7 +2051,7 @@ int SpreadEditor::Event(const Laxkit::EventData *data,const char *mes)
 
 		 //create the actual popup menu...
 		PopupMenu *popup;
-		popup=new PopupMenu(NULL,_("Documents"), MENUSEL_CHECK_ON_LEFT|MENUSEL_LEFT,
+		popup=new PopupMenu(NULL,_("Documents"), TREESEL_LEFT,
 						0,0,0,0, 1, 
 						object_id,"rulercornermenu", 
 						0,
