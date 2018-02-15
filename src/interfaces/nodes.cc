@@ -42,36 +42,164 @@ Laxkit::anObject *newDoubleNode(int p, Laxkit::anObject *ref)
 	return node;
 }
 
-//------------ FlatvectorNode
+//------------ ExpandVectorNode
+
+class ExpandVectorNode : public NodeBase
+{
+  public:
+	int dims;
+	ExpandVectorNode(int dimensions, Value *v, int absorb); //up to 4
+	virtual ~ExpandVectorNode();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
+};
+
+ExpandVectorNode::ExpandVectorNode(int dimensions, Value *v, int absorb)
+{
+	makestr(Name, _("Expand Vector"));
+	dims = dimensions;
+	makestr(type, "ExpandVector");
+//	if (dimensions == 2) {
+//		makestr(type, "Expand2");
+//	} else if (dimensions == 3) {
+//		makestr(type, "Expand3");
+//	} else { //if (dimensions == 4) {
+//		makestr(type, "Expand4");
+//	}
+
+	const char *labels[] = { _("x"), _("y"), _("z"), _("w") };
+	const char *names[]  = {   "x" ,   "y" ,   "z" ,   "w"  };
+
+	if (!v) v = new FlatvectorValue();
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("V"), v, absorb)); 
+
+	for (int c=0; c<dims; c++) {
+		AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, names[c],
+					new DoubleValue(), 1, labels[c])); 
+	}
+}
+
+ExpandVectorNode::~ExpandVectorNode()
+{
+}
+
+NodeBase *ExpandVectorNode::Duplicate()
+{
+	Value *v = properties.e[0]->GetData();
+	if (v) {
+		int vtype = v->type();
+		if (   vtype == VALUE_Flatvector
+			|| vtype == VALUE_Spacevector
+			|| vtype == VALUE_Quaternion
+			|| vtype == VALUE_Color)
+		  v = v->duplicate();
+		else v = NULL;
+	}
+	ExpandVectorNode *newnode = new ExpandVectorNode(dims, v, 1);
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int ExpandVectorNode::GetStatus()
+{
+	Value *v = properties.e[0]->GetData();
+	if (v) {
+		int vtype = v->type();
+		if (!( vtype == VALUE_Flatvector
+			|| vtype == VALUE_Spacevector
+			|| vtype == VALUE_Quaternion
+			|| vtype == VALUE_Color))
+		  return -1;
+	} else return -1;
+
+	if (!properties.e[dims]->data) return 1;
+
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int ExpandVectorNode::Update()
+{
+	double vs[4];
+	for (int c=0; c<dims; c++) { vs[c] = 0; }
+
+	Value *v = properties.e[0]->GetData();
+	if (!v) return -1;
+
+	int vtype = v->type();
+	if      (vtype == VALUE_Flatvector)  dynamic_cast<FlatvectorValue*>(v) ->v.get(vs);
+	else if (vtype == VALUE_Spacevector) dynamic_cast<SpacevectorValue*>(v)->v.get(vs);
+	else if (vtype == VALUE_Quaternion)  dynamic_cast<QuaternionValue*>(v)->v.get(vs);
+	//else if (vtype == VALUE_Color) {
+		//dynamic_cast<QuaternionValue*>(v)->v.get(vs);
+	//}
+	else return -1;
+
+	for (int c=0; c<4; c++) {
+		dynamic_cast<DoubleValue* >(properties.e[c+1]->data)->d = vs[c];
+		properties.e[c+1]->modtime = time(NULL);
+	}
+
+	return NodeBase::Update();
+}
+
+Laxkit::anObject *newExpandVectorNode(int p, Laxkit::anObject *ref)
+{
+	return new ExpandVectorNode(4, NULL, 0);
+}
+
+//------------ FlatvectorNode, SpacevectorNode, QuaternionNode
 
 class VectorNode : public NodeBase
 {
   public:
 	int dims;
-	VectorNode(int dimensions); //up to 4
+	VectorNode(int dimensions, double *initialvalues); //up to 4
 	virtual ~VectorNode();
 	virtual int Update();
 	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
 };
 
-VectorNode::VectorNode(int dimensions)
+VectorNode::VectorNode(int dimensions, double *initialvalues)
 {
 	dims = dimensions;
-	//node->Id("Value");
-	Name = newstr(dimensions==2 ? _("Vector2") : _("Vector3"));
-	type = newstr(dimensions==2 ? "flatvector" : "spacevector");
+	if (dimensions == 2) {
+		makestr(Name, _("Vector2"));
+		makestr(type, "Vector2");
+	} else if (dimensions == 3) {
+		makestr(Name, _("Vector3"));
+		makestr(type, "Vector3");
+	} else { //if (dimensions == 4) {
+		makestr(Name, _("Quaternion"));
+		makestr(type, "Vector4");
+	}
 
 	const char *labels[] = { _("x"), _("y"), _("z"), _("w") };
 	const char *names[]  = {   "x" ,   "y" ,   "z" ,   "w"  };
 
 	for (int c=0; c<dims; c++) {
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, names[c], new DoubleValue(0), 1, labels[c])); 
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, names[c],
+					new DoubleValue(initialvalues ? initialvalues[c] : 0), 1, labels[c])); 
 	}
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("V"), new FlatvectorValue(), 1)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("V"), NULL, 1)); 
 }
 
 VectorNode::~VectorNode()
 {
+}
+
+NodeBase *VectorNode::Duplicate()
+{
+	double vals[4];
+	int isnum;
+	for (int c=0; c<dims; c++) {
+		vals[c] = getNumberValue(properties.e[c]->GetData(), &isnum);
+	}
+	VectorNode *newnode = new VectorNode(dims, vals);
+	newnode->DuplicateBase(this);
+	return newnode;
 }
 
 int VectorNode::GetStatus()
@@ -98,12 +226,14 @@ int VectorNode::Update()
 	//if (!properties.e[2]->data) return 1;
 
 	if (!properties.e[dims]->data) {
-		if      (dims == 2) properties.e[2]->data=new FlatvectorValue(flatvector(vs));
+		if      (dims == 2) properties.e[2]->data=new FlatvectorValue (flatvector (vs));
 		else if (dims == 3) properties.e[3]->data=new SpacevectorValue(spacevector(vs));
+		else if (dims == 4) properties.e[4]->data=new QuaternionValue (Quaternion (vs));
 	} else {
 		//assume correct format already in prop
-		if      (dims == 2) dynamic_cast<FlatvectorValue* >(properties.e[2]->data)->v = flatvector(vs);
+		if      (dims == 2) dynamic_cast<FlatvectorValue* >(properties.e[2]->data)->v = flatvector (vs);
         else if (dims == 3) dynamic_cast<SpacevectorValue*>(properties.e[3]->data)->v = spacevector(vs);
+        else if (dims == 4) dynamic_cast<QuaternionValue* >(properties.e[4]->data)->v = Quaternion (vs);
 	}
 	properties.e[dims]->modtime = time(NULL);
 
@@ -112,12 +242,17 @@ int VectorNode::Update()
 
 Laxkit::anObject *newFlatvectorNode(int p, Laxkit::anObject *ref)
 {
-	return new VectorNode(2);
+	return new VectorNode(2, NULL);
 }
 
 Laxkit::anObject *newSpacevectorNode(int p, Laxkit::anObject *ref)
 {
-	return new VectorNode(3);
+	return new VectorNode(3, NULL);
+}
+
+Laxkit::anObject *newQuaternionNode(int p, Laxkit::anObject *ref)
+{
+	return new VectorNode(4, NULL);
 }
 
 
@@ -130,6 +265,7 @@ class RectangleNode : public NodeBase
 	virtual ~RectangleNode();
 	virtual int Update();
 	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
 };
 
 RectangleNode::RectangleNode()
@@ -150,6 +286,18 @@ RectangleNode::RectangleNode()
 
 RectangleNode::~RectangleNode()
 {
+}
+
+NodeBase *RectangleNode::Duplicate()
+{
+	RectangleNode *newnode = new RectangleNode();
+	int isnum;
+	for (int c=0; c<4; c++) {
+		double v = getNumberValue(properties.e[c]->GetData(), &isnum);		
+		newnode->properties.e[c]->SetData(new DoubleValue(v), 1);
+	}
+	newnode->DuplicateBase(this);
+	return newnode;
 }
 
 int RectangleNode::GetStatus()
@@ -226,6 +374,7 @@ class MathNode : public NodeBase
 	virtual ~MathNode();
 	virtual int Update();
 	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
 };
 
 
@@ -439,6 +588,14 @@ MathNode::~MathNode()
 //	}
 }
 
+NodeBase *MathNode::Duplicate()
+{
+	MathNode *newnode = new MathNode;
+	cerr << " *** need to implement MathNode::Duplicate!"<<endl;
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
 // OPARG_vn
 // OPARG_nv
 // OPARG_nn
@@ -556,6 +713,7 @@ Laxkit::anObject *newMathNode(int p, Laxkit::anObject *ref)
 //class FunctionNode : public NodeBase
 //{
 //  public:
+//	virtual NodeBase *Duplicate();
 //};
 
 
@@ -628,6 +786,7 @@ class GenericNode : public NodeBase
 	virtual ~GenericNode();
 	virtual int Update();
 	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
 };
 
 GenericNode::GenericNode(ObjectDef *ndef)
@@ -656,6 +815,13 @@ GenericNode::GenericNode(ObjectDef *ndef)
 GenericNode::~GenericNode()
 {
 	if (func_data) func_data->dec_count();
+}
+
+NodeBase *GenericNode::Duplicate()
+{
+	cerr << " *** need to implement GenericNode::Duplicate!"<<endl;
+	//newnode->DuplicateBase(this);
+	return NULL;
 }
 
 int GenericNode::Update()
@@ -706,6 +872,12 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 
 	 //--- SpacevectorNode
 	factory->DefineNewObject(getUniqueNumber(), "Vector3", newSpacevectorNode, NULL, 0);
+
+	 //--- QuaternionNode
+	factory->DefineNewObject(getUniqueNumber(), "Vector4", newQuaternionNode, NULL, 0);
+
+	 //--- ExpandVectorNode
+	factory->DefineNewObject(getUniqueNumber(), "ExpandVector", newExpandVectorNode, NULL, 0);
 
 	 //--- NodeGroup
 	factory->DefineNewObject(getUniqueNumber(), "NodeGroup",newNodeGroup,  NULL, 0);
