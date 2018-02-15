@@ -180,6 +180,7 @@ from recent import:
 node editor NodeInterface nodes:
   grouping framed objects have complications
   gegl nodes:
+    scale-size has runaway render for undefined rect
     make sure deleting/rearranging nodes correctly removes gegl connections
 	save gegl graph to xml
     inkscape filter read in
@@ -187,6 +188,8 @@ node editor NodeInterface nodes:
 	need protection against unknown gegl ops
 	babl format is passed in gegl as an otherwise undefined gpointer, need to have special check for this
     some process actions bog everything down like overlay a crop with a non-cropped input.. need a check for unbounded nodes before process
+	some nodes define a particular extent, like gradients. preview should detect
+	preview area should be adjustible for sample area, instead of always default 100x100
 	DONE enums
 	DONE menu with categories, not just the name. gegl ops have name, title, description, categories, license, even source!!
 	DONE load in graph xml
@@ -196,6 +199,7 @@ node editor NodeInterface nodes:
 	tooltips for operation, not just properties
     in menu, so many nodes, need way to classify favorites, maybe custom arrangements of menu
       progressive search
+  need search
   loading should check automatically for different files if load fails
   save needs to remember file name per loader, plus default file
   no overlap needs to stack siblings as nicely as possible
@@ -216,7 +220,7 @@ node editor NodeInterface nodes:
   auto shift on connection
   auto connect when dragging nodes.. needs parsing of compatible properties
   view area things:
-    jump to link under mouse
+    jump to link under mouse: shift click over slot, or shift click over bare bez
     node magnifier for easier browsing when otherwise zoomed way out
     toggle show only selected nodes?
   exec paths
@@ -241,6 +245,8 @@ node editor NodeInterface nodes:
   DONE clear up IsInput()/IsOutput()
 
   svg/inkscape specific filter interface, io passthrough
+    need full "length" readin, not just floats, ie "100%", "15in"
+	Embossed Leather fails
   gmic nodes
   graphicsmagick nodes
   antiprism nodes
@@ -257,6 +263,8 @@ node editor NodeInterface nodes:
   simplex noise node
   pipe splitter node
   frames
+    frames need to be moveable
+	unframe
     label font size should be adjustable
 	changeable color
     drag out a rectangle
@@ -276,15 +284,18 @@ node editor NodeInterface nodes:
 	edit text externally or in different text editor frame
   vector node:
     separate xyz
-	combine xyz
-	perpendicular
-	parallel to
-	norm
-	norm squared
+	DONE combine xyz
+	math ops:
+      perpendicular
+      parallel to
+      norm
+      norm squared
   string ops:
     concat s1, s2
 	substr [index..index]
   more math:
+    interpolate with easing
+	operate on numbers, vectors as appropriate
 	  ---two-arg---
 	  +    -    *    /     %     ^
 	  <    >    !=   == 
@@ -292,7 +303,7 @@ node editor NodeInterface nodes:
 	  and  or   xor  not   <<    >>
 
 	  ---one arg---
-	  abs  neg  sqrt
+	  abs  neg  sqrt sgn
 	  sin  cos  tan  asin  acos  atan
 	  sinh cosh tanh asinh acosh atanh
 
@@ -821,7 +832,10 @@ newdoc:
 save as should change save/import/export/current directory to that directory
   -> need to test current behavior
 
+finish phasing out MenuSelector
+
 TreeSelector:
+  click open jumping current to 0
   with text colors, mouse over highlight is off (can't dup?!?)
   not showing alternate gray/white bgs (can't dup?!?)
   option to use markup for labels
