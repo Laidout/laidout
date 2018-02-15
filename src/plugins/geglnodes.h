@@ -45,6 +45,7 @@ class GeglLaidoutNode : public Laidout::NodeBase
 	GeglLaidoutNode(const char *oper);
 	GeglLaidoutNode(GeglNode *node);
 	virtual ~GeglLaidoutNode();
+	virtual NodeBase *Duplicate();
 
 	virtual int SetOperation(const char *oper);
 	virtual int UpdateProperties();

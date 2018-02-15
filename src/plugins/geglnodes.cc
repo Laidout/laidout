@@ -34,9 +34,6 @@ Laidout::PluginBase *GetPlugin()
 }
 
 
-// *** TEMPORARY INCLUDE!!!!!  TESTING ONLY!!!!!!!!
-//#include "svg/svg.cc"
-
 
 namespace Laidout {
 namespace GeglNodesPluginNS {
@@ -556,6 +553,27 @@ GeglLaidoutNode::~GeglLaidoutNode()
 {
 	delete[] operation;
 	if (gegl) g_object_unref (gegl);
+}
+
+NodeBase *GeglLaidoutNode::Duplicate()
+{
+	GeglLaidoutNode *newnode = new GeglLaidoutNode(operation);
+
+	 //copy the properties' data
+	for (int c=0; c<properties.n; c++) {
+		NodeProperty *property = properties.e[c];
+		if (!(property->type == NodeProperty::PROP_Input || property->type == NodeProperty::PROP_Block)) continue;
+
+		Value *v = property->GetData();
+		if (v) {
+			v = v->duplicate();
+			NodeProperty *newprop = newnode->FindProperty(property->name);
+			newprop->SetData(v, 1);
+		}
+	}
+
+	newnode->DuplicateBase(this);
+	return newnode;
 }
 
 int GeglLaidoutNode::UpdateProperties()
