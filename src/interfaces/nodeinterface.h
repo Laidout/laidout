@@ -188,6 +188,7 @@ class NodeColors : public Laxkit::anObject
 
 	double mo_diff;
 
+	double preview_dims;
 
 	NodeColors *next; //one node per state
 
@@ -275,6 +276,7 @@ class NodeBase : public Laxkit::anObject,
 	virtual void UpdateLayout();
 	virtual int Collapse(int state); //-1 toggle, 0 open, 1 full collapsed, 2 collapsed to preview
 	virtual NodeBase *Duplicate();
+	virtual void DuplicateBase(NodeBase *from);
 
 	virtual int IsConnected(int propindex); //0=no, -1=prop is connected input, 1=connected output
 	virtual int HasConnection(NodeProperty *prop, int *connection_ret);
@@ -335,6 +337,7 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	virtual NodeFrame *GetFrame(int index);
 	virtual int NoOverlap(NodeBase *which, double gap);
 	virtual void BoundingBox(DoubleBBox &box);
+	virtual NodeBase *Duplicate();
 
 	virtual void InitializeBlank();
 	virtual NodeProperty *AddGroupInput(const char *pname, const char *plabel, const char *ptip);
@@ -370,6 +373,7 @@ enum NodeHover {
 	NODES_TogglePreview ,
 	NODES_PreviewResize ,
 	NODES_Frame         ,
+	NODES_Connection    ,
 	NODES_Frame_Label   ,
 	NODES_Frame_Comment ,
 	NODES_VP_Top         ,
@@ -386,6 +390,7 @@ enum NodeHover {
 	NODES_Navigator      ,
 	NODES_Jump_Back      ,
 	NODES_Jump_Forward   ,
+	NODES_Jump_Nearest   ,
 	NODES_HOVER_MAX
 };
 
@@ -461,6 +466,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	double pan_duration; //seconds
 	int    pan_tick_ms;
 
+	NodeConnection *onconnection;
 
   protected:
 	void GetConnectionBez(NodeConnection *connection, flatpoint *pts);
@@ -541,12 +547,13 @@ class NodeInterface : public LaxInterfaces::anInterface
 
 	virtual void DrawConnection(NodeConnection *connection);
 	virtual void DrawProperty(NodeBase *node, NodeProperty *prop, double y, int hoverprop, int hoverslot);
-	virtual int scan(int x, int y, int *overpropslot, int *overproperty, unsigned int state);
+	virtual int scan(int x, int y, int *overpropslot, int *overproperty, int *overconnection, unsigned int state);
 	virtual int IsSelected(NodeBase *node);
 
 	virtual int ToggleCollapsed();
 	virtual int EnterGroup(NodeGroup *group=NULL);
 	virtual int LeaveGroup();
+	virtual int DuplicateNodes();
 	virtual int SaveNodes(const char *file);
 	virtual int LoadNodes(const char *file, bool append);
 };
