@@ -87,7 +87,8 @@ NodeColors::NodeColors()
 	selected_border(1.,.8,.1,1.),
 	selected_bg(.9,.9,.9,1.),
 
-	mo_diff(.05)
+	mo_diff(.05),
+	preview_dims(100)
 {
 	state = 0;
 	font  = NULL;
@@ -402,7 +403,8 @@ const char *NodeFrame::Comment(const char *ncomment)
 	return comment;
 }
 
-
+/*! incs count of node.
+ */
 int NodeFrame::AddNode(NodeBase *node)
 {
 	if (node->frame && node->frame != this) {
@@ -800,31 +802,64 @@ int NodeBase::Collapse(int state)
 	return collapsed;
 }
 
+/*! Copy over dimensions and colors.
+ */
+void NodeBase::DuplicateBase(NodeBase *from)
+{
+	x = from->x;
+	y = from->y;
+	width = from->width;
+	height = from->height;
+	collapsed = from->collapsed;
+	fullwidth = from->fullwidth;
+	show_preview = from->show_preview;
+	preview_area_height = from->preview_area_height;
+
+	if (from->colors) InstallColors(from->colors, 0);
+}
+
 /*! Return a new duplicate node not connected or owned by anything.
  * Subclasses need to redefine this, or a plain NodeBase will be returned.
+ * 
+ * Beware that the returned node here will have the same Id() name.
  */
 NodeBase *NodeBase::Duplicate()
 {
-//	NodeBase *newnode = new NodeBase();
-//	NodeProperty *propery;
-//
-//	newnode->InstallColors(colors, 0);
-//	newnode->collapsed = collapsed;
-//	newnode->fullwidth = fullwidth;
-//	if (def) { newnode->def = def; def->inc_count(); }
-//	makestr(newnode->type, type);
-//	makestr(newnode->Name, Name);
-//
-//	for (int c=0; c<properties.n; c++) {
-//		property = *** ;
-//		newnode->AddProperty(property);
-//	}
-//
-//	newnode->Wrap();
-//
-//	return newnode;
+	DBG cerr << "NodeBase::Duplicate() from id: "<<Id()<<", label: "<<Label()<<endl;
 
-	return NULL;
+	NodeBase *newnode = new NodeBase();
+
+	if (def) { newnode->def = def; def->inc_count(); }
+	makestr(newnode->type, type);
+	makestr(newnode->Name, Name);
+	newnode->Id(Id());
+	newnode->DuplicateBase(this);
+
+	for (int c=0; c<properties.n; c++) {
+		NodeProperty *property = properties.e[c];
+		Value *v = NULL;
+		//if (property->IsInput() || property->IsBlock()) {
+			v = property->GetData();
+			if (v) v = v->duplicate();
+		//}
+
+		NodeProperty *prop = new NodeProperty(
+									property->type,
+									property->is_linkable,
+									property->name,
+									v,1,
+									property->Label(),
+									property->tooltip,
+									property->custom_info,
+									property->is_editable);
+		prop->color.rgbf(property->color.Red(), property->color.Green(), property->color.Blue(), property->color.Alpha());
+		newnode->AddProperty(prop);
+	}
+
+	newnode->Wrap();
+	newnode->Update();
+
+	return newnode;
 }
 
 /*! Simple assigns the reference. Does not do ref upkeep in frame.
@@ -1245,6 +1280,34 @@ NodeGroup::~NodeGroup()
 {
 	if (output) output->dec_count();
 	if (input)  input ->dec_count();
+}
+
+/*! Returns a deep copy, but colors are linked.
+ */
+NodeBase *NodeGroup::Duplicate()
+{
+	cerr << " *** need to implement NodeGroup::Duplicate()!"<<endl;
+//	NodeBase *newnode = new NodeBase();
+//	NodeProperty *propery;
+//
+//	newnode->InstallColors(colors, 0);
+//	newnode->collapsed = collapsed;
+//	newnode->fullwidth = fullwidth;
+//	if (def) { newnode->def = def; def->inc_count(); }
+//	makestr(newnode->type, type);
+//	makestr(newnode->Name, Name);
+//
+//	for (int c=0; c<properties.n; c++) {
+//		property = *** ;
+//		newnode->AddProperty(property);
+//	}
+//
+//	newnode->Wrap();
+//
+//	newnode->DuplicateBase(this);
+//	return newnode;
+
+	return NULL;
 }
 
 /*! Set up new initial nodes for input and output.
@@ -2169,6 +2232,7 @@ NodeInterface::NodeInterface(anInterface *nowner, int nid, Displayer *ndp)
 	lastconnection = -1;
 	lastmenuindex  = -1;
 	tempconnection = NULL;
+	onconnection   = NULL;
 	hover_action   = NODES_None;
 	showdecs       = 1;
 	needtodraw     = 1;
@@ -2202,6 +2266,7 @@ NodeInterface::~NodeInterface()
 	if (node_factory) node_factory->dec_count();
 	if (sc) sc->dec_count();
 	if (tempconnection) tempconnection->dec_count();
+	if (onconnection) onconnection->dec_count();
 }
 
 const char *NodeInterface::whatdatatype()
@@ -2662,16 +2727,17 @@ int NodeInterface::Refresh()
 
 	DBG cerr <<" NodeInterface::Refresh()"<<endl;
 
-	int overnode=-1, overslot=-1, overprop=-1; 
+	int overnode=-1, overslot=-1, overprop=-1, overconn=-1; 
 	if (buttondown.any(0,LEFTBUTTON)) {
 		int device = buttondown.whichdown(0,LEFTBUTTON);
 		int x,y;
 		buttondown.getlast(device,LEFTBUTTON, &x,&y);
-		overnode = scan(x,y, &overslot, &overprop, 0);
+		overnode = scan(x,y, &overslot, &overprop, &overconn, 0);
 	} else {
 		overnode = lasthover;
 		overprop = lasthoverprop;
 		overslot = lasthoverslot;
+		overconn = lastconnection;
 	}
 
 	dp->PushAxes();
@@ -3171,7 +3237,7 @@ void NodeInterface::GetConnectionBez(NodeConnection *connection, flatpoint *pts)
  *
  * overpropslot and overproperty must NOT be null.
  */
-int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, unsigned int state) 
+int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, int *overconnection, unsigned int state) 
 {
 	if (!nodes) return -1;
 
@@ -3194,10 +3260,11 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, unsi
 
 
 	 //reminder: y increased downward
-	flatpoint p=nodes->m.transformPointInverse(flatpoint(x,y));
+	flatpoint p = nodes->m.transformPointInverse(flatpoint(x,y));
 
-	*overpropslot=-1;
-	*overproperty=-1;
+	*overpropslot  =-1;
+	*overproperty  =-1;
+	*overconnection=-1;
 
 	NodeBase *node;
 	double th = font->textheight();
@@ -3250,9 +3317,10 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, unsi
 			if (*overpropslot == -1 && node->UsesPreview()) {
 				double nw = node->total_preview->w() * node->preview_area_height/node->total_preview->h();
 				if (nw > node->width) nw = node->width;
-				char str[100];
-				sprintf(str, "%f %f", nw, node->width);
-				PostMessage(str);
+
+				//char str[100];
+				//sprintf(str, "%f %f", nw, node->width);
+				//PostMessage(str);
 
 				double nh = node->total_preview->h();
 				if (nh > node->preview_area_height) nh = node->preview_area_height;
@@ -3283,14 +3351,49 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, unsi
 	}
 
 	 //check over pipes
-//	if (state & (ShiftMask|ControlMask)) {
-//		for (int c=nodes->nodes.n-1; c>=0; c--) {
-//			node = nodes->nodes.e[c];
-//
-//			*** shift click jumps to nearest pipe connection
-//			*** control click to add anchor node
-//		}
-//	}
+	if ((state & (ShiftMask|ControlMask)) != 0) {
+		DoubleBBox box;
+		NodeProperty *prop;
+		NodeConnection *connection;
+		double d;
+		flatpoint bp;
+		double threshhold = 200 / dp->Getmag();
+
+		DBG cerr<<"scan connections "<<p.x<<','<<p.y<<"  threshhold: "<<threshhold<<endl;
+
+		for (int c=nodes->nodes.n-1; c>=0; c--) {
+			node = nodes->nodes.e[c];
+
+			//shift click jumps to nearest pipe connection
+			//control click to add anchor node
+
+			for (int c2=0; c2<node->properties.n; c2++) {
+				prop = node->properties.e[c2];
+				if (!prop->IsInput()) continue;
+
+				for (int c3=0; c3<prop->connections.n; c3++) {
+					connection = prop->connections.e[c3];
+					GetConnectionBez(connection, bezbuf);
+					box.clear();
+					box.addtobounds(bezbuf[0]);
+					box.addtobounds(bezbuf[1]);
+					box.addtobounds(bezbuf[2]);
+					box.addtobounds(bezbuf[3]);
+					if (!box.boxcontains(p.x, p.y)) continue;
+					DBG cerr <<" ----almost "<<c<<','<<c2<<','<<c3<<endl;
+
+					 //in box, now do more expensive scan for proximity
+					bez_closest_point(p, bezbuf[0], bezbuf[1], bezbuf[2], bezbuf[3], 20, &d, NULL, &bp);
+					if (d < threshhold) {
+						*overconnection = c3;
+						*overproperty = NODES_Connection;
+						*overpropslot = c2;
+						return c;
+					}
+				}
+			}
+		}
+	}
 
 	return -1;
 }
@@ -3299,8 +3402,8 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 {
 
 	int action = NODES_None;
-	int overpropslot=-1, overproperty=-1; 
-	int overnode = scan(x,y, &overpropslot, &overproperty, state);
+	int overpropslot=-1, overproperty=-1, overconnection=-1; 
+	int overnode = scan(x,y, &overpropslot, &overproperty, &overconnection, state);
 
 //	if (count==2 && overnode>=0 && nodes && dynamic_cast<NodeGroup*>(nodes->nodes.e[overnode])) {
 //		PostMessage("Need to implement jump into group");
@@ -3316,6 +3419,9 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 
 	} else if (overnode<0 && (overproperty == NODES_Frame || overproperty == NODES_Frame_Label)) {
 		action = NODES_Move_Frame;
+
+	} else if (overproperty == NODES_Connection) {
+		action = NODES_Jump_Nearest;
 
 	} else if (((state&LAX_STATE_MASK) == 0 || (state&ShiftMask)!=0) && overnode==-1 && overproperty==-1) {
 		 //shift drag adds, shift-control drag removes, plain drag replaces selection 
@@ -3438,8 +3544,8 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 	int property=-1;
 	int dragged = buttondown.up(d->id, LEFTBUTTON, &action, &property);
 
-	int overpropslot=-1, overproperty=-1; 
-	int overnode = scan(x,y, &overpropslot, &overproperty, state);
+	int overpropslot=-1, overproperty=-1, overconnection=-1; 
+	int overnode = scan(x,y, &overpropslot, &overproperty, &overconnection, state);
 
 
 
@@ -3516,12 +3622,18 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 				menu->AddItem(Nm, c);
 			}
 
-			PopupMenu *popup=new PopupMenu(NULL,_("Add node..."), 0,
+//			PopupMenu *popup=new PopupMenu(NULL,_("Select value..."), 0,
+//							0,0,0,0, 1,
+//							object_id,"selectenum",
+//							0, //mouse to position near?
+//							menu,1, NULL,
+//							MENUSEL_LEFT|MENUSEL_CHECK_ON_LEFT|MENUSEL_DESTROY_ON_LEAVE);
+			PopupMenu *popup=new PopupMenu(NULL,_("Select value..."), 0,
 							0,0,0,0, 1,
 							object_id,"selectenum",
 							0, //mouse to position near?
 							menu,1, NULL,
-							MENUSEL_LEFT|MENUSEL_CHECK_ON_LEFT|MENUSEL_DESTROY_ON_LEAVE);
+							TREESEL_LEFT|TREESEL_SEND_PATH|TREESEL_LIVE_SEARCH);
 			popup->pad=5;
 			popup->WrapToMouse(0);
 			app->rundialog(popup);
@@ -3740,7 +3852,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 	} else if (action == NODES_Frame_Comment) {
 		// ***
 
-	} else if (action == NODES_Jump_Forward || action == NODES_Jump_Back) {
+	} else if (action == NODES_Jump_Forward || action == NODES_Jump_Back || action == NODES_Jump_Nearest) {
 		if (overnode>=0 && overpropslot>=0) {
 			NodeProperty *prop = nodes->nodes.e[overnode]->properties.e[overpropslot];
 			//NodeProperty *toprop = NULL;
@@ -3748,8 +3860,15 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 			//int topropi = -1;
 			NodeConnection *connection = prop->connections.e[0];
 			GetConnectionBez(connection, panpath);
+			double t=0;
+			if (action == NODES_Jump_Nearest) {
+				flatpoint p = nodes->m.transformPointInverse(flatpoint(x,y));
+				t = bez_closest_point(p, panpath[0], panpath[1], panpath[2], panpath[3], 20, NULL, NULL, NULL);
+				if (t<.5) prop = connection->fromprop; else prop = connection->toprop;
+			}
 			if (connection->fromprop != prop) {
 				 //reverse path order
+				if (action == NODES_Jump_Nearest) t=1-t;
 				flatpoint pp = panpath[0];
 				panpath[0] = panpath[3];
 				panpath[3] = pp;
@@ -3762,8 +3881,8 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 			//for (int c=0; c<4; c++) panpath[c] += offset;
 
 			//start timer
-			pan_current = 0;
-			pan_duration = bez_length(panpath, 4, false, true, 10) / (nodes->colors->font->textheight()*100);
+			pan_duration = pan_tick_ms/1000. + bez_length(panpath, 4, false, true, 10) / (nodes->colors->font->textheight()*100);
+			pan_current = t*pan_duration;
 			if (pan_duration > 1) pan_duration = sqrt(pan_duration);
 			pan_timer = app->addtimer(this, pan_tick_ms, pan_tick_ms, pan_duration*1000);
 			DBG cerr <<"Adding Idle timer for NodeInterface connection traverse"<<endl;
@@ -3784,16 +3903,17 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 		// update any mouse over state
 		// ...
 
-		int newhoverslot=-1, newhoverprop=-1;
-		int newhover = scan(x,y, &newhoverslot, &newhoverprop, state);
+		int newhoverslot=-1, newhoverprop=-1, newconnection=-1;
+		int newhover = scan(x,y, &newhoverslot, &newhoverprop, &newconnection, state);
 		lastpos.x=x; lastpos.y=y;
 		//DBG cerr << "nodes lastpos: "<<lastpos.x<<','<<lastpos.y<<endl;
-		DBG cerr <<"nodes scan, node,prop,slot: "<<newhover<<','<<newhoverprop<<','<<newhoverslot<<endl;
+		DBG cerr <<"nodes scan, node,prop,slot: "<<newhover<<','<<newhoverprop<<','<<newhoverslot<<","<<newconnection<<endl;
 
-		if (newhover!=lasthover || newhoverslot!=lasthoverslot || newhoverprop!=lasthoverprop) {
+		if (newhover!=lasthover || newhoverslot!=lasthoverslot || newhoverprop!=lasthoverprop || newconnection!=lastconnection) {
 			needtodraw=1;
 			lasthoverslot = newhoverslot;
 			lasthoverprop = newhoverprop;
+			lastconnection = newconnection;
 			lasthover = newhover;
 
 			//post hover message
@@ -4149,6 +4269,8 @@ Laxkit::ShortcutHandler *NodeInterface::GetShortcuts()
     sc->Add(NODES_Edit_Group,     LAX_Tab,0,      0, "EditGroup",      _("Toggle Edit Group"),NULL,0);
     sc->Add(NODES_Leave_Group,    LAX_Tab,ShiftMask,0,"LeaveGroup",    _("Leave Group")    ,NULL,0);
 
+    sc->Add(NODES_Duplicate,      'D',ShiftMask,  0, "Duplicate"     , _("Duplicate")      ,NULL,0);
+
     sc->Add(NODES_No_Overlap,     'o',0,          0, "NoOverlap"     , _("NoOverlap"          ),NULL,0);
     sc->Add(NODES_Arrange_Grid,   'g',0,          0, "ArrangeGrid"   , _("Arrange in a grid"  ),NULL,0);
     sc->Add(NODES_Arrange_Row,    'h',0,          0, "ArrangeRow"    , _("Arrange in a row"   ),NULL,0);
@@ -4216,17 +4338,26 @@ int NodeInterface::PerformAction(int action)
 		}
 
 		if (!node_menu) RebuildNodeMenu();
+		//clean up from last time
+		node_menu->SetRecursively(LAX_OFF, 1);
+		node_menu->SetRecursively(LAX_ON, 0);
+		node_menu->SetRecursively(MENU_SELECTED, 0);
+		node_menu->ClearSearch();
 
         PopupMenu *popup=new PopupMenu(NULL,_("Add node..."), 0,
                         0,0,0,0, 1,
                         object_id,"addnode",
                         0, //mouse to position near?
                         node_menu,0, NULL,
-                        MENUSEL_LEFT|MENUSEL_CHECK_ON_LEFT|MENUSEL_SEND_PATH);
+                        TREESEL_LEFT|TREESEL_SEND_PATH|TREESEL_LIVE_SEARCH|TREESEL_SUB_ON_RIGHT);
         popup->pad=5;
         popup->WrapToMouse(0);
         app->rundialog(popup);
 
+		return 0;
+
+	} else if (action==NODES_Duplicate) {
+		DuplicateNodes();
 		return 0;
 
 	} else if (action==NODES_Center || action==NODES_Center_Selected) {
@@ -4582,6 +4713,44 @@ int NodeInterface::LeaveGroup()
 	lasthover = lasthoverslot = lasthoverprop = lastconnection = -1;
 	needtodraw=1;
 	return 0;
+}
+
+/*! Copy any links others in selected.
+ *  deep copy groups.
+ */
+int NodeInterface::DuplicateNodes()
+{
+	if (!selected.n) { PostMessage(_("No nodes selected!")); return 0; }
+
+	double offset = nodes->colors->font->textheight();
+
+	RefPtrStack<NodeBase> newnodes;
+	for (int c=0; c<selected.n; c++) {
+		NodeBase *newnode = selected.e[c]->Duplicate();
+		if (!newnode) {
+			cerr << " *** warning! Duplicate() not implemented for "<<selected.e[c]->Type()<<endl;
+			continue;
+		}
+
+		if (!newnode->colors) newnode->InstallColors(selected.e[c]->colors, 0);
+		newnode->Wrap();
+		newnode->x += offset;
+		newnode->y += offset;
+		newnodes.push(newnode);
+		nodes->AddNode(newnode);
+		// *** make name unique
+		newnode->dec_count();
+	}
+
+	// *** connect links
+
+	selected.flush();
+	for (int c=0; c<newnodes.n; c++) {
+		selected.push(newnodes.e[c]);
+	}
+
+	needtodraw=1;
+	return 1;
 }
 
 
