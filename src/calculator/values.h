@@ -47,6 +47,7 @@ enum ValueTypes {
 	VALUE_Fields,     //!< collection of subfields
 	VALUE_Flatvector, //!< two dimensional vector
 	VALUE_Spacevector,//!< three dimensional vector
+	VALUE_Quaternion, //!< four dimensional vector
 	VALUE_File,       //!< string like object refering to a file on disk
 	VALUE_FileSave,   //!< Same as VALUE_File, but hinted to be for saving a file
 	VALUE_FileLoad,   //!< Same as VALUE_File, but hinted to be for loading a file
@@ -583,6 +584,26 @@ class SpacevectorValue : public Value, virtual public FunctionEvaluator
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Spacevector; }
+	virtual Value *dereference(const char *extstring, int len);
+	virtual int assign(FieldExtPlace *ext,Value *v);
+ 	virtual ObjectDef *makeObjectDef();
+	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 Laxkit::ErrorLog *log);
+};
+
+//----------------------------- QuaternionValue ----------------------------------
+class QuaternionValue : public Value, virtual public FunctionEvaluator
+{
+  public:
+	Unit units;
+	Quaternion v;
+	QuaternionValue() { }
+	QuaternionValue(Quaternion vv) { v=vv; }
+	virtual const char *whattype() { return "QuaternionValue"; }
+	virtual int getValueStr(char *buffer,int len);
+	virtual Value *duplicate();
+	virtual int type() { return VALUE_Quaternion; }
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);
  	virtual ObjectDef *makeObjectDef();

@@ -2713,6 +2713,14 @@ Value *AttributeToValue(Attribute *att)
 		}
 		return NULL;
 
+    } else if (!strcmp(att->name, "QuaternionValue")) {
+		Quaternion v;
+		char *endptr=NULL;
+		if (QuaternionAttribute(att->value, &v, &endptr)) {
+			return new QuaternionValue(v);
+		}
+		return NULL;
+
     } else if (!strcmp(att->name, "FileValue")) {
     } else if (!strcmp(att->name, "EnumValue")) {
     } else if (!strcmp(att->name, "ValueHash")) {
@@ -3552,6 +3560,119 @@ int SpacevectorValue::Evaluate(const char *func,int len, ValueHash *context, Val
 
 	} else if (isName(func,len, "isnull")) {
 		*value_ret=new BooleanValue(v.x==0 && v.y==0 && v.z==0);
+		return 0;
+	}
+
+	return -1;
+}
+
+
+
+
+//--------------------------------- QuaternionValue -----------------------------
+int QuaternionValue::getValueStr(char *buffer,int len)
+{
+	int needed=120;
+	if (!buffer || len<needed) return needed;
+
+	sprintf(buffer,"(%g,%g,%g,%g)", v.x, v.y, v.z, v.w);
+	modified=0;
+	return 0;
+}
+
+Value *QuaternionValue::duplicate()
+{ return new QuaternionValue(v); }
+
+Value *QuaternionValue::dereference(const char *extstring, int len)
+{
+	if (extequal(extstring,len, "x")) return new DoubleValue(v.x);
+	if (extequal(extstring,len, "y")) return new DoubleValue(v.y);
+	if (extequal(extstring,len, "z")) return new DoubleValue(v.z);
+	if (extequal(extstring,len, "w")) return new DoubleValue(v.w);
+	return NULL;
+}
+
+int QuaternionValue::assign(FieldExtPlace *ext,Value *vv)
+{
+	if (!ext || !ext->n()) {
+		if (vv->type()!=VALUE_Quaternion) return 0;
+		v=dynamic_cast<QuaternionValue*>(vv)->v;
+		return 1;
+	}
+
+	if (ext->n()!=1) return -1;
+
+	int isnum=0;
+	double d=getNumberValue(vv,&isnum);
+	if (!isnum) return 0;
+
+	const char *str=ext->e(0);
+	if (!strcmp(str,"x"))      v.x=d;
+	else if (!strcmp(str,"y")) v.y=d;
+	else if (!strcmp(str,"z")) v.z=d;
+	else if (!strcmp(str,"w")) v.w=d;
+	else return -1;
+
+	return 1;
+}
+
+
+ObjectDef default_QuaternionValue_ObjectDef(NULL,"Quaternion",_("Quaternion"),_("Quaternion"),
+							 "class", NULL, "(0,0,0,0)",
+							 NULL, 0,
+							 NULL, NULL);
+
+ObjectDef *Get_QuaternionValue_ObjectDef()
+{
+	ObjectDef *def=&default_QuaternionValue_ObjectDef;
+	if (def->fields) return def;
+
+	def->pushFunction("length",_("Length"),_("Length"), NULL,
+					  NULL);
+
+	def->pushFunction("norm2",_("Norm2"),_("Square of the length"), NULL,
+					  NULL);
+
+	def->pushFunction("normalize",_("Normalize"),_("Make length 1, but keep current angle."), NULL,
+					  NULL);
+
+	def->pushFunction("isnull",_("Is Null"),_("True if x and y are both 0."), NULL,
+					  NULL);
+
+	return def;
+}
+
+ObjectDef *QuaternionValue::makeObjectDef()
+{
+	Get_QuaternionValue_ObjectDef()->inc_count();
+	return Get_QuaternionValue_ObjectDef();
+}
+
+
+/*! Return
+ *  0 for success, value returned.
+ * -1 for no value returned due to incompatible parameters, which aids in function overloading.
+ *  1 for parameters ok, but there was somehow an error, so no value returned.
+ */
+int QuaternionValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 ErrorLog *log)
+{
+	if (isName(func,len, "length")) {
+		*value_ret=new DoubleValue(v.norm());
+		return 0;
+
+	} else if (isName(func,len, "norm2")) {
+		*value_ret=new DoubleValue(v.norm2());
+		return 0;
+
+	} else if (isName(func,len, "normalize")) {
+		v.normalize();
+		*value_ret=NULL;
+		return 0;
+
+	} else if (isName(func,len, "isnull")) {
+		*value_ret=new BooleanValue(v.x==0 && v.y==0 && v.z==0 && v.w==0);
 		return 0;
 	}
 
