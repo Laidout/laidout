@@ -13,11 +13,14 @@
 //
 
 
+#include <lax/fileutils.h>
+
 #include "../language.h"
 #include "../interfaces/nodeinterface.h"
 #include "geglnodes.h"
 #include "svg/svg.h"
 
+#include <gegl/gegl-paramspecs.h>
 
 #include <iostream>
 #define DBG
@@ -123,7 +126,7 @@ int ValueToGValue(Value *v, const char *gvtype, GValue *gv_ret, GeglNode *node, 
 	return 100;
 }
 
-/*! Return 0 for able to set, else nonzero error.
+/*! Return 0 for able to set, else >0 for unknown, -1 for bad value.
  */
 int ValueToProperty(Value *v, const char *gvtype, GeglNode *node, const char *property)
 {
@@ -166,176 +169,187 @@ int ValueToProperty(Value *v, const char *gvtype, GeglNode *node, const char *pr
 		g_value_unset(&gv);
 		if (success) return 0;
 
+	} else if (!strcmp(gvtype, "BablFormat")) {
+		StringValue *s = dynamic_cast<StringValue*>(v);
+		if (!v) return -1;
+
+		const Babl *format = babl_format(s->str);
+		if (format) {
+			gegl_node_set(node, property, format, NULL);
+			return 0;
+		}
+		return -1;
+
 	//} else if (vtype == VALUE_) {
 	}
 
 	return 100;
 }
 
-/*! Convert a gegl xml string to a NodeGroup.
- */
-int XMLStringToLaidoutNodes(const char *str, NodeGroup *parent, Laxkit::ErrorLog *log)
-{
-	// ***
-	return 1;
-}
+///*! Convert a gegl xml string to a NodeGroup.
+// */
+//int XMLStringToLaidoutNodes(const char *str, NodeGroup *parent, Laxkit::ErrorLog *log)
+//{
+//	// ***
+//	return 1;
+//}
 
-/*! Read in a node expected to be a node with a known op type.
- */
-GeglLaidoutNode *ReadNode(Attribute *att, Laxkit::ErrorLog *log)
-{
-	if (!att) return NULL;
+///*! Read in a node expected to be a node with a known op type.
+// */
+//GeglLaidoutNode *ReadNode(Attribute *att, Laxkit::ErrorLog *log)
+//{
+//	if (!att) return NULL;
+//
+//	 //first, figure out what type of node we are.
+//	const char *op = att->findValue("operation");
+//	if (!op) {
+//		if (log) log->AddMessage(_("Missing gegl operation"), ERROR_Fail);
+//		return NULL;
+//	}
+//
+//	GeglLaidoutNode *node = new GeglLaidoutNode(op);
+//	if (node->operation == NULL) {
+//		if (log) {
+//			char scratch[strlen(_("Unknown gegl operation %s")) + strlen(op)+1];
+//			sprintf(scratch, _("Unknown gegl operation %s"), op);
+//			log->AddMessage(scratch, ERROR_Fail);
+//		}
+//		delete node;
+//		return NULL;
+//	}
+//
+//	 //read in any params that are contained as xml properties
+//	const char *name, *pname; 
+//	//const char *value, *name, *pname; 
+//	for (int c=0; c<att->attributes.n; c++) {
+//		name  = att->attributes.e[c]->name;
+//		//value = att->attributes.e[c]->value;
+//
+//		if (!strcmp(name, "operation")) continue;
+//
+//		// ***
+//	}
+//
+//
+//	Attribute *content = att->find("content:");
+//
+//	for (int c=0; c<content->attributes.n; c++) {
+//		name  = content->attributes.e[c]->name;
+//		//value = content->attributes.e[c]->value;
+//
+//		if (!strcmp(name, "params")) {
+//
+//			Attribute *params = content->attributes.e[c];
+//			for (int c2=0; c2<params->attributes.n; c2++) {
+//				name  = params->attributes.e[c2]->name;
+//				//value = params->attributes.e[c2]->value;
+//
+//				if (!strcmp(name, "param")) {
+//					//need to look up the type for the param, convert to a value from the string
+//
+//					pname = params->attributes.e[c]->findValue("name");
+//					if (pname) {
+//					}
+//				}
+//			}
+//
+//		} else if (!strcmp(name, "node")) {
+//			 //we have subnodes that need to connect
+//			// ***
+//
+//		} else if (!strcmp(name, "clone")) {
+//			//const char *ref = param->attributes.e[c]->findValue("ref");
+//			// ***
+//		}
+//	}
+//
+//	return node;
+//}
 
-	 //first, figure out what type of node we are.
-	const char *op = att->findValue("operation");
-	if (!op) {
-		if (log) log->AddMessage(_("Missing gegl operation"), ERROR_Fail);
-		return NULL;
-	}
-
-	GeglLaidoutNode *node = new GeglLaidoutNode(op);
-	if (node->operation == NULL) {
-		if (log) {
-			char scratch[strlen(_("Unknown gegl operation %s")) + strlen(op)+1];
-			sprintf(scratch, _("Unknown gegl operation %s"), op);
-			log->AddMessage(scratch, ERROR_Fail);
-		}
-		delete node;
-		return NULL;
-	}
-
-	 //read in any params that are contained as xml properties
-	const char *name, *pname; 
-	//const char *value, *name, *pname; 
-	for (int c=0; c<att->attributes.n; c++) {
-		name  = att->attributes.e[c]->name;
-		//value = att->attributes.e[c]->value;
-
-		if (!strcmp(name, "operation")) continue;
-
-		// ***
-	}
-
-
-	Attribute *content = att->find("content:");
-
-	for (int c=0; c<content->attributes.n; c++) {
-		name  = content->attributes.e[c]->name;
-		//value = content->attributes.e[c]->value;
-
-		if (!strcmp(name, "params")) {
-
-			Attribute *params = content->attributes.e[c];
-			for (int c2=0; c2<params->attributes.n; c2++) {
-				name  = params->attributes.e[c2]->name;
-				//value = params->attributes.e[c2]->value;
-
-				if (!strcmp(name, "param")) {
-					//need to look up the type for the param, convert to a value from the string
-
-					pname = params->attributes.e[c]->findValue("name");
-					if (pname) {
-					}
-				}
-			}
-
-		} else if (!strcmp(name, "node")) {
-			 //we have subnodes that need to connect
-			// ***
-
-		} else if (!strcmp(name, "clone")) {
-			//const char *ref = param->attributes.e[c]->findValue("ref");
-			// ***
-		}
-	}
-
-	return node;
-}
-
-/*! Construct a chain of nodes that are subatts of att.
- * All the new nodes are placed as children of parent. If parent is NULL,
- * then create and use a new NodeGroup as parent. Return parent on success.
- * Returns NULL if nodes cannot be constructed or some other error.
- */
-NodeGroup *ReadNodes(NodeGroup *parent, Attribute *att, Laxkit::ErrorLog *log)
-{
-	if (!att) return NULL;
-
-	const char *value, *name, *pname;
-	const char *op = NULL;
-	NodeGroup *group = parent;
-
-	 //first, figure out what type of node we are. Null operation means we are just a blank parent group
-	for (int c=0; c<att->attributes.n; c++) {
-		name  = att->attributes.e[c]->name;
-		value = att->attributes.e[c]->value;
-
-		if (!strcmp(name, "operation")) {
-			op = value;
-		} else {
-			 //probably has properties as attributes, not subelements
-			// ***
-		}
-	}
-
-	GeglLaidoutNode *node = new GeglLaidoutNode(op);
-	if (node->operation == NULL) {
-		if (log) {
-			char scratch[strlen(_("Unknown gegl operation %s")) + strlen(op)+1];
-			sprintf(scratch, _("Unknown gegl operation %s"), op);
-			log->AddMessage(scratch, ERROR_Fail);
-		}
-		delete node;
-		return NULL;
-	}
-
-	Attribute *params = att->find("params");
-	if (params) params = params->find("content:");
-	if (params) {
-		for (int c=0; c<params->attributes.n; c++) {
-			name  = params->attributes.e[c]->name;
-			value = params->attributes.e[c]->value;
-
-			if (!strcmp(name, "param")) {
-				//need to look up the type for the param, convert to a value from the string
-
-				pname = params->attributes.e[c]->findValue("name");
-				if (pname) {
-				}
-
-			} else if (!strcmp(name, "node")) {
-				 //we have subnodes that need to connect
-
-			} else if (!strcmp(name, "clone")) {
-				//const char *ref = param->attributes.e[c]->findValue("ref");
-			}
-		}
-	}
-
-	return group;
-}
-
-/*! Read in a file to an Attribute, and pass to ReadNodes().
- */
-NodeGroup *XMLFileToLaidoutNodes(const char *file, NodeGroup *parent, Laxkit::ErrorLog *log)
-{
-	Attribute att;
-	Attribute *ret = XMLFileToAttribute(&att, file, NULL);
-	if (!ret) return NULL;
-
-	//parse the att
-	Attribute *att2 = att.find("gegl");
-	if (att2) att2 = att2->find("content:");
-	if (!att2) {
-		if (log) log->AddMessage(_("Missing gegl node info"), ERROR_Fail);
-		return NULL;
-	}
-
-	NodeGroup *group = new NodeGroup();
-	NodeGroup *group_ret = ReadNodes(group, att2, log);
-	if (!group_ret) delete group;
-	return group;
-}
+///*! Construct a chain of nodes that are subatts of att.
+// * All the new nodes are placed as children of parent. If parent is NULL,
+// * then create and use a new NodeGroup as parent. Return parent on success.
+// * Returns NULL if nodes cannot be constructed or some other error.
+// */
+//NodeGroup *ReadNodes(NodeGroup *parent, Attribute *att, Laxkit::ErrorLog *log)
+//{
+//	if (!att) return NULL;
+//
+//	const char *value, *name, *pname;
+//	const char *op = NULL;
+//	NodeGroup *group = parent;
+//
+//	 //first, figure out what type of node we are. Null operation means we are just a blank parent group
+//	for (int c=0; c<att->attributes.n; c++) {
+//		name  = att->attributes.e[c]->name;
+//		value = att->attributes.e[c]->value;
+//
+//		if (!strcmp(name, "operation")) {
+//			op = value;
+//		} else {
+//			 //probably has properties as attributes, not subelements
+//			// ***
+//		}
+//	}
+//
+//	GeglLaidoutNode *node = new GeglLaidoutNode(op);
+//	if (node->operation == NULL) {
+//		if (log) {
+//			char scratch[strlen(_("Unknown gegl operation %s")) + strlen(op)+1];
+//			sprintf(scratch, _("Unknown gegl operation %s"), op);
+//			log->AddMessage(scratch, ERROR_Fail);
+//		}
+//		delete node;
+//		return NULL;
+//	}
+//
+//	Attribute *params = att->find("params");
+//	if (params) params = params->find("content:");
+//	if (params) {
+//		for (int c=0; c<params->attributes.n; c++) {
+//			name  = params->attributes.e[c]->name;
+//			value = params->attributes.e[c]->value;
+//
+//			if (!strcmp(name, "param")) {
+//				//need to look up the type for the param, convert to a value from the string
+//
+//				pname = params->attributes.e[c]->findValue("name");
+//				if (pname) {
+//				}
+//
+//			} else if (!strcmp(name, "node")) {
+//				 //we have subnodes that need to connect
+//
+//			} else if (!strcmp(name, "clone")) {
+//				//const char *ref = param->attributes.e[c]->findValue("ref");
+//			}
+//		}
+//	}
+//
+//	return group;
+//}
+//
+///*! Read in a file to an Attribute, and pass to ReadNodes().
+// */
+//NodeGroup *XMLFileToLaidoutNodes(const char *file, NodeGroup *parent, Laxkit::ErrorLog *log)
+//{
+//	Attribute att;
+//	Attribute *ret = XMLFileToAttribute(&att, file, NULL);
+//	if (!ret) return NULL;
+//
+//	//parse the att
+//	Attribute *att2 = att.find("gegl");
+//	if (att2) att2 = att2->find("content:");
+//	if (!att2) {
+//		if (log) log->AddMessage(_("Missing gegl node info"), ERROR_Fail);
+//		return NULL;
+//	}
+//
+//	NodeGroup *group = new NodeGroup();
+//	NodeGroup *group_ret = ReadNodes(group, att2, log);
+//	if (!group_ret) delete group;
+//	return group;
+//}
 
 /*! Using gegl methods, parse the file to a new GeglNode.
  * Note the returned node needs to be g_object_unref (node) when done.
@@ -438,6 +452,7 @@ NodeGroup* GeglNodesToLaidoutNodes(GeglNode *gegl, NodeGroup *parent, bool child
 		nodes.e[c]->UpdatePreview();
 		nodes.e[c]->Wrap();
 	}
+
 	for (int c=0; c<nodes.n; c++) {
 //		//reparent?
 //		if (GeglLaidoutNode::masternode == NULL) {
@@ -655,9 +670,11 @@ int GeglLaidoutNode::Update()
 			if (v) {
 				ptype = propspec->GetString(1);
 
-				if (ValueToProperty(v, ptype, gegl, propspec->name)==0) {
-					//was possible to set directly to gegl without GValue setup
+				int status = ValueToProperty(v, ptype, gegl, propspec->name);
+				if (status == -1) return -1; //bad value
 
+				if (status == 0) {
+					//was possible to set directly to gegl without GValue setup
 				} else {
 					GValue gv = G_VALUE_INIT;
 
@@ -896,11 +913,12 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 
 	MenuItem *opitem = menu->e(i);
 
+	guint n_props = 0;
+	GParamSpec **specs = NULL;
+	specs = gegl_operation_list_properties (oper, &n_props);
+
 	if (opitem->info == -1) {
 		 //op property info hasn't been grabbed yet, so grab the property info and install in the GetGeglOps() menu
-		guint n_props = 0;
-
-		GParamSpec **specs = gegl_operation_list_properties (oper, &n_props);
 
 		opitem->info = n_props;
 
@@ -914,10 +932,10 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 
 			DBG cerr << "    prop: "<<specs[c2]->name <<','<< ptype <<','<< (nick?nick:"(no nick)")<<','<< (blurb?blurb:"(no blurb)")<<endl;
 
-			menu->AddItem(specs[c2]->name, 0, -1);     // [0]
-			menu->AddDetail(ptype, NULL);              // [1]
-			menu->AddDetail(nick ? nick : "", NULL);   // [2]
-			menu->AddDetail(blurb ? blurb : "", NULL); // [3]
+			menu->AddItem(specs[c2]->name, 0, -1);     // [0] name
+			menu->AddDetail(ptype, NULL);              // [1] type
+			menu->AddDetail(nick ? nick : "", NULL);   // [2] alias
+			menu->AddDetail(blurb ? blurb : "", NULL); // [3] description
 
 
 			//guint nn = 0;
@@ -930,8 +948,6 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 			//
 			//g_free(keys);
 		}
-
-		if (specs) g_free(specs);
 
 		menu->EndSubMenu();
 	}
@@ -975,7 +991,7 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 	appendstr(type, operation);
 
 	for (int c=0; c<opmenu->n(); c++) {
-		prop = opmenu->e(c);
+		prop = opmenu->e(c); //prop = [name, type, nick, description]
 		proptype = prop->GetString(1);
 		v = NULL;
 		//propwhat = NodeProperty::PROP_Input;
@@ -986,31 +1002,31 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 			GValue gv = G_VALUE_INIT;
 			gegl_node_get_property(gegl, prop->name, &gv);
 
-            if (!strcmp(proptype, "gboolean")) {
-                bool boolean = 0;
-                if (G_VALUE_HOLDS_BOOLEAN(&gv)) { boolean = g_value_get_boolean(&gv); }
+			if (!strcmp(proptype, "gboolean")) {
+				bool boolean = 0;
+				if (G_VALUE_HOLDS_BOOLEAN(&gv)) { boolean = g_value_get_boolean(&gv); }
 				v = new BooleanValue(boolean); 
 				//---
 				//gegl_node_get(gegl, prop->name, &boolean, NULL);
 
-            } else if (!strcmp(proptype, "gint")) {
-                int vv=0;
-                if (G_VALUE_HOLDS_INT(&gv)) { vv = g_value_get_int(&gv); }
+			} else if (!strcmp(proptype, "gint")) {
+				int vv=0;
+				if (G_VALUE_HOLDS_INT(&gv)) { vv = g_value_get_int(&gv); }
 				v = new IntValue(vv);
 
-            } else if (!strcmp(proptype, "gdouble")) {
-                double vv=0;
-                if (G_VALUE_HOLDS_DOUBLE(&gv)) { vv = g_value_get_double(&gv); }
+			} else if (!strcmp(proptype, "gdouble")) {
+				double vv=0;
+				if (G_VALUE_HOLDS_DOUBLE(&gv)) { vv = g_value_get_double(&gv); }
 				v = new DoubleValue(vv);
 
-            } else if (!strcmp(proptype, "gchararray")) {
-                const gchar *vv = NULL;
-                if (G_VALUE_HOLDS_STRING(&gv)) {
+			} else if (!strcmp(proptype, "gchararray")) {
+				const gchar *vv = NULL;
+				if (G_VALUE_HOLDS_STRING(&gv)) {
 					vv = g_value_get_string(&gv);
 				}
 				v = new StringValue(vv);
 
-			} else if (!strcmp(proptype, "GeglColor" )) {
+			} else if (!strcmp(proptype, "GeglColor")) {
 				//v = new ColorValue("#000");
 				//-----
 				GeglColor *color = NULL;
@@ -1018,6 +1034,60 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 				double r=0,g=0,b=0,a=1.0;
 				gegl_color_get_rgba(color, &r, &g, &b, &a);
 				v = new ColorValue(r,g,b,a);
+
+			} else if (!strcmp(proptype, "gpointer") || !strcmp(proptype, "BablFormat")) {
+				//only the first time is it gpointer, as we change it to BablFormat here.
+
+				//gpointer might be BablFormat, but maybe not. these do not appear to be distinguished exactly.
+				//It seems that the names that include "format" and are "gpointer" are all babl_format
+
+				//if (strcasestr(prop->name, "format")) {
+				  if (GEGL_IS_PARAM_SPEC_FORMAT (specs[c])) {
+					//set type to "BablFormat"
+					MenuItem *ptype = prop->GetDetail(1);
+					makestr(ptype->name, "BablFormat");
+
+					const Babl *format;
+					gegl_node_get (gegl, specs[c]->name, &format, NULL);
+					const gchar *formatstr = (format ? babl_get_name(format) : NULL);
+
+					v = new StringValue(formatstr);
+				  } else {
+					DBG cerr << "uh oh! probably a babl format not being recognized!"<<endl;
+					v = new StringValue();
+				  }
+
+				//} else {
+				//	DBG cerr << " *** Warning! mystery gpointer property for gegl node "<<operation<<endl;
+				//	//apparently, this can be "buffer location", "source profile", "Model" or a "pixbuf"
+				//}
+
+			//} else if (!strcmp(proptype, "GeglCurve"               )) {
+			//	GeglPath *curve = NULL;
+			//	gegl_node_get(gegl, prop->name, &curve, NULL);
+			//	CurveValue *locurve = new CurveValue;
+			//	locurve->Reset(true);
+			//	unsigned int npoints = gegl_curve_num_points(path);
+			//	double x,y;
+			//	for (int c2=0; c2<npoints; c2++) {
+			//		gegl_curve_get_point(curve, c2, &x, &y);
+			//		locurve->AddPoint(x,y);
+			//	}
+			//	v = locurve;
+			//
+			//} else if (!strcmp(proptype, "GeglPath"                )) {
+			//	GeglCurve *path = NULL;
+			//	gegl_node_get(gegl, prop->name, &path, NULL);
+			//	LPathsData *pathobject = new LPathsData;
+			//	char *pathstr = gegl_path_to_string(path);
+			//	pathobject->appendSvg(pathstr);
+			//	g_free(pathstr);
+			//	v = pathobject;
+
+			//} else if (!strcmp(proptype, "GeglAudioFragment"       )) {
+			//} else if (!strcmp(proptype, "GeglBuffer"              )) {
+			//} else if (!strcmp(proptype, "GdkPixbuf"               )) {
+			//} else if (!strcmp(proptype, "GeglNode"                )) {
 
 			} else {
 				//propwhat = NodeProperty::PROP_Input; //for now, block any linking to both enums and unknown types
@@ -1058,35 +1128,6 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 					int vv = g_value_get_enum(&gv);
 					v = new EnumValue(def, vv);
 
-				//} else if (!strcmp(proptype, "gpointer"                )) {
-				//	//this might be BablFormat. these do not appear to be distinguished exactly
-
-				//} else if (!strcmp(proptype, "GeglCurve"               )) {
-				//	GeglPath *curve = NULL;
-				//	gegl_node_get(gegl, prop->name, &curve, NULL);
-				//	CurveValue *locurve = new CurveValue;
-				//	locurve->Reset(true);
-				//	unsigned int npoints = gegl_curve_num_points(path);
-				//	double x,y;
-				//	for (int c2=0; c2<npoints; c2++) {
-				//		gegl_curve_get_point(curve, c2, &x, &y);
-				//		locurve->AddPoint(x,y);
-				//	}
-				//	v = locurve;
-                //
-				//} else if (!strcmp(proptype, "GeglPath"                )) {
-				//	GeglCurve *path = NULL;
-				//	gegl_node_get(gegl, prop->name, &path, NULL);
-				//	LPathsData *pathobject = new LPathsData;
-				//	char *pathstr = gegl_path_to_string(path);
-				//	pathobject->appendSvg(pathstr);
-				//	g_free(pathstr);
-				//	v = pathobject;
-
-				//} else if (!strcmp(proptype, "GeglAudioFragment"       )) {
-				//} else if (!strcmp(proptype, "GeglBuffer"              )) {
-				//} else if (!strcmp(proptype, "GdkPixbuf"               )) {
-				//} else if (!strcmp(proptype, "GeglNode"                )) {
 				} else {
 					DBG cerr << proptype << " in gegl is unknown type here!"<<endl;
 				}
@@ -1123,6 +1164,8 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 		AddProperty(new NodeProperty(NodeProperty::PROP_Block, false, "AutoProcess",  new BooleanValue(false),1, _("Auto Save") ,NULL, GEGLNODE_SWITCH));
 	}
 
+
+	if (specs) g_free(specs);
 	return 0;
 }
 
@@ -1297,9 +1340,37 @@ int GeglLoader::Export(const char *file, anObject *object, anObject *context, La
 		return 1;
 	}
 
-	DBG cerr << " *** need to implement GeglLoader::Export()!"<<endl;
-	log.AddMessage("need to implement GeglLoader::Export()!!", ERROR_Fail);
-	return 1;
+	NodeExportContext *ncontent = dynamic_cast<NodeExportContext*>(context);
+	if (!ncontent) {
+		log.AddMessage(_("Bad context!"), ERROR_Fail);
+		return 1;
+	}
+
+	GeglLaidoutNode *node = NULL;
+	if (ncontent->selection->n == 1) node = dynamic_cast<GeglLaidoutNode*>(ncontent->selection->e[0]);
+
+	if (!node || !node->gegl) {
+		log.AddMessage(_("There needs to be a single Gegl node selected to use Gegl export."), ERROR_Fail);
+		return 1;
+	}
+
+	char *dir = lax_dirname(file, 0);
+	gchar *xml = gegl_node_to_xml(node->gegl, dir);
+	delete[] dir;
+
+	if (!xml) {
+		log.AddMessage(_("Error constructing gegl xml"), ERROR_Fail);
+		return 1;
+	}
+
+	if (LaxFiles::save_string_to_file(xml,-1, file) != 0) {
+		log.AddMessage(_("Could not open file for writing!"), ERROR_Fail);
+		return 1;
+	}
+
+	//success!
+
+	return 0;
 }
 
 
