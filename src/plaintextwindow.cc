@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -17,9 +16,8 @@
 
 #include <lax/multilineedit.h>
 #include <lax/messagebar.h>
-//#include <lax/textbutton.h>
 #include <lax/menubutton.h>
-#include <lax/menuselector.h>
+#include <lax/popupmenu.h>
 #include <lax/filedialog.h>
 #include <lax/messagebox.h>
 
@@ -272,30 +270,19 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 
 		 //create the actual popup menu...
-		MenuSelector *popup;
+		PopupMenu *popup=new PopupMenu(NULL,_("Documents"), 0,
+                        0,0,0,0, 1,
+                        object_id,"whichtext",
+                        0, //mouse to position near?
+                        menu,1, NULL,
+                        TREESEL_LEFT
+						|TREESEL_LIVE_SEARCH
+						|TREESEL_SUB_ON_RIGHT
+						|TREESEL_ZERO_OR_ONE
+					);
 
-
-
-// 		PopupMenu *popup=new PopupMenu(NULL,_("Documents"), 0,
-//                        0,0,0,0, 1,
-//                        object_id,"whichtext",
-//                        0, //mouse to position near?
-//                        menu,1, NULL,
-//                        TREESEL_LEFT|TREESEL_LIVE_SEARCH|TREESEL_SUB_ON_RIGHT);
-
-		popup=new MenuSelector(NULL,NULL,_("Documents"), ANXWIN_BARE|ANXWIN_HOVER_FOCUS,
-						0,0,0,0, 1, 
-						NULL,object_id,"whichtext", 
-						MENUSEL_ZERO_OR_ONE|MENUSEL_CURSSELECTS
-						 //| MENUSEL_SEND_STRINGS
-						 | MENUSEL_FOLLOW_MOUSE|MENUSEL_SEND_ON_UP
-						 | MENUSEL_GRAB_ON_MAP|MENUSEL_OUT_CLICK_DESTROYS
-						 | MENUSEL_CLICK_UP_DESTROYS|MENUSEL_DESTROY_ON_FOCUS_OFF
-						 | MENUSEL_CHECK_ON_LEFT|MENUSEL_LEFT,
-						menu,1);
-		popup->pad=5;
 		popup->Select(0);
-		popup->WrapToMouse(None);
+		popup->WrapToMouse(0,NULL);
 		app->rundialog(popup);
 		return 0;
 
