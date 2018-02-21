@@ -182,14 +182,15 @@ node editor NodeInterface nodes:
   gegl nodes:
     scale-size has runaway render for undefined rect
     make sure deleting/rearranging nodes correctly removes gegl connections
-	save gegl graph to xml
-    inkscape filter read in
+    inkscape filter read in, set up as gegl nodes internally
 	make sure input/outputs can translate from other data types
-	need protection against unknown gegl ops
-	babl format is passed in gegl as an otherwise undefined gpointer, need to have special check for this
+	need protection against unknown gegl ops, like when "gpl" is toggled
     some process actions bog everything down like overlay a crop with a non-cropped input.. need a check for unbounded nodes before process
 	some nodes define a particular extent, like gradients. preview should detect
 	preview area should be adjustible for sample area, instead of always default 100x100
+	do something decent with property types: GeglCurve GeglPath. ignore these for now: GeglAudioFragment GeglBuffer GdkPixbuf GeglNode
+	DONE babl format is passed in gegl as an otherwise undefined gpointer, need to have special check for this
+	DONE save gegl graph to xml
 	DONE enums
 	DONE menu with categories, not just the name. gegl ops have name, title, description, categories, license, even source!!
 	DONE load in graph xml
@@ -244,6 +245,8 @@ node editor NodeInterface nodes:
   DONE hover tips for props on collapsed nodes
   DONE clear up IsInput()/IsOutput()
 
+  css named filter: brightness(1) contrast(67%) saturate(250%) grayscale(0%) invert(0%) hue-rotate(330deg) sepia(40%) blur(0px)
+    see https://www.w3.org/TR/filter-effects-1/#grayscaleEquivalent for svg filter equivalents
   svg/inkscape specific filter interface, io passthrough
     need full "length" readin, not just floats, ie "100%", "15in"
 	Embossed Leather fails
@@ -255,6 +258,8 @@ node editor NodeInterface nodes:
   examine imgflo for compatibility
   examine Natron for compatibility
   examine pure data for compatibility
+  praxis-live?
+  proprietary import like substance or houdini?
   any crossover with mypaint brushes or krita???
 
   viewer node, resizable
