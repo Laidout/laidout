@@ -1,6 +1,4 @@
 //
-// $Id$
-//	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -21,6 +19,7 @@
 #include "utils.h"
 
 #include <lax/checkbox.h>
+#include <lax/popupmenu.h>
 #include <lax/fileutils.h>
 #include <lax/menubutton.h>
 #include <lax/tabframe.h>
@@ -269,7 +268,7 @@ int ImportImagesDialog::init()
 	last=menub=new MenuButton(this,"previewlist",NULL,MENUBUTTON_DOWNARROW|MENUBUTTON_CLICK_CALLS_OWNER, 0,0,0,0,0,
 							  linp,object_id,"previewlist",0,
 							  NULL,1,
-							  "v",NULL,NULL);
+							  "  ",NULL,NULL);
 	menub->tooltip(_("Select from possible automatic previews"));
 	AddWin(menub,1, c+1);
 	last=linp=new LineInput(this,"preview",NULL,
@@ -433,11 +432,11 @@ int ImportImagesDialog::init()
 	menub=new MenuButton(this,"PreviewBase",NULL,MENUBUTTON_DOWNARROW, 0,0,0,0,0,
 									 last,object_id,"previewbasemenu",0,
 									 menu,1,
-									 "v");
+									 " ");
 	menub->tooltip(_("Select from the available preview bases"));
 	AddWin(menub,1, -1);
 	AddWin(NULL,0, 3000,3000,0,50,0, 0,0,0,50,0, -1);//force left justify
-	
+
 	last=linp=new LineInput(this,"PreviewWidth",NULL,0, 0,0,0,0,0, last,object_id,"previewwidth",
 						_("Default max width for new previews:"),NULL,0,
 						0,0,2,2,2,2);
@@ -641,28 +640,14 @@ int ImportImagesDialog::Event(const Laxkit::EventData *data,const char *mes)
 			} else prependstr(str,"  ");
 			menu->AddItem(str,c);
 		}
-//------------
-//		PopupMenu *popup=new PopupMenu(NULL,menu->title, 0,
-//                        0,0,0,0, 1,
-//                        object_id,"usethispreview",
-//                        0, //mouse to position near?
-//                        menu,1, NULL,
-//                        TREESEL_LEFT|TREESEL_SEND_STRINGS|TREESEL_LIVE_SEARCH|TREESEL_SUB_ON_RIGHT);
-//------------
-		MenuSelector *popup=new MenuSelector(NULL,NULL,menu->title, 
-						ANXWIN_BARE|ANXWIN_HOVER_FOCUS,
-						0,0,0,0, 1, 
-						NULL,object_id,"usethispreview", 
-						MENUSEL_LEFT
-						 | MENUSEL_ZERO_OR_ONE|MENUSEL_CURSSELECTS
-						 | MENUSEL_FOLLOW_MOUSE|MENUSEL_SEND_ON_UP
-						 | MENUSEL_GRAB_ON_MAP|MENUSEL_OUT_CLICK_DESTROYS
-						 | MENUSEL_CLICK_UP_DESTROYS|MENUSEL_DESTROY_ON_FOCUS_OFF
-					 	 | MENUSEL_SEND_STRINGS,
-						menu,1);
-		popup->pad=3;
+		PopupMenu *popup=new PopupMenu(NULL,menu->title, 0,
+                        0,0,0,0, 1,
+                        object_id,"usethispreview",
+                        0, //mouse to position near?
+                        menu,1, NULL,
+                        TREESEL_LEFT|TREESEL_SEND_STRINGS|TREESEL_LIVE_SEARCH|TREESEL_SUB_ON_RIGHT);
 		popup->Select(0);
-		popup->WrapToMouse(None);
+		popup->WrapToMouse(0,NULL);
 		app->rundialog(popup);
 		if (popup->object_id) app->setfocus(popup);
 		else { app->destroywindow(popup); popup=NULL; }
