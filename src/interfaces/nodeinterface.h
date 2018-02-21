@@ -152,6 +152,22 @@ class NodeProperty
 	virtual int SetData(Value *newdata, bool absorb);
 };
 
+
+//-------------------------------------- NodeThread --------------------------
+
+class NodeThread
+{
+  public:
+	int thread_id;
+	std::time_t start_time;
+	ValueHash *data;
+	NodeProperty *current_property;
+
+	NodeThread(NodeProperty *prop, ValueHash *payload, int absorb);
+	virtual ~NodeThread();
+};
+
+
 //---------------------------- NodeColors ------------------------------------
 class NodeColors : public Laxkit::anObject
 {
@@ -360,6 +376,30 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory);
 typedef NodeGroup Nodes;
 
 
+//--------------------------- NodeExportContext ---------------------------------
+class NodeExportContext : public anObject
+{
+  public:
+	Laxkit::RefPtrStack<NodeBase> *selection;
+	NodeExportContext(Laxkit::RefPtrStack<NodeBase> *selected) { selection = selected; }
+};
+
+
+//---------------------------- NodeViewArea ------------------------------------
+
+class NodeViewArea : public DoubleRectangle
+{
+  public:
+	NodeGroup *group;
+	flatpoint anchor;
+	bool is_anchored;
+	//bool is_minimized;
+	Laxkit::Affine m;
+
+	NodeViewArea();
+	virtual ~NodeViewArea();
+};
+
 //---------------------------- NodeInterface ------------------------------------
 
 //these get tracked in lasthoverslot.
@@ -443,19 +483,6 @@ enum NodeInterfaceActions {
 	NODES_MAX
 };
 
-class NodeViewArea : public DoubleRectangle
-{
-  public:
-	NodeGroup *group;
-	flatpoint anchor;
-	bool is_anchored;
-	//bool is_minimized;
-	Laxkit::Affine m;
-
-	NodeViewArea();
-	virtual ~NodeViewArea();
-};
-
 class NodeInterface : public LaxInterfaces::anInterface
 {
   private:
@@ -470,6 +497,15 @@ class NodeInterface : public LaxInterfaces::anInterface
 
   protected:
 	void GetConnectionBez(NodeConnection *connection, flatpoint *pts);
+
+	double play_fps;
+	int playing;
+	int play_timer;
+	time_t elapsed_time, last_time;
+	virtual int IsLive(NodeConnection *con);
+	virtual int Play();
+	virtual int TogglePause();
+	virtual int Stop(); //resets threads
 
 	int showdecs;
 
@@ -488,6 +524,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	flatpoint lastpos;
 	int lastmenuindex;
 
+	PtrStack<NodeThread> threads;
 
 	//Laxkit::Affine transform; //from nodes to screen coords
 

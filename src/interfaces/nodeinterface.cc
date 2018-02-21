@@ -241,9 +241,9 @@ const char *NodeProperty::Label(const char *nlabel)
 }
 
 
-/*! Return an interface if you want to have a custom interface for changing properties.
- * If interface!=NULL, try to update (and return) that one. If interface is the wrong type
- * of interface, then return NULL.
+/*! Return an interface if you want to have a custom interface for this property.
+ * If interface!=NULL, try to update (and return) that one. If provided
+ * interface is the wrong type of interface, then return NULL.
  *
  * Default is to return NULL, for no special interface necessary.
  */
@@ -363,12 +363,44 @@ NodeBase *NodeProperty::GetDataOwner()
  */
 int NodeProperty::SetData(Value *newdata, bool absorb)
 {
-	if (newdata==data) return 1;
+	if (newdata==data) {
+		if (absorb) data->dec_count();
+		return 1;
+	}
 	if (data) data->dec_count();
 	data = newdata;
 	if (data && !absorb) data->inc_count();
 	return 1;
 }
+
+
+//-------------------------------------- NodeThread --------------------------
+/*! \class NodeThread
+ * Payload for execution connections.
+ */
+
+
+/*! If payload==NULL, then a new ValueHash is created.
+ */
+NodeThread::NodeThread(NodeProperty *prop, ValueHash *payload, int absorb)
+{
+	thread_id = getUniqueNumber();
+	start_time = time(NULL);
+	data = NULL;
+	current_property = prop;
+	data = payload;
+	if (data) {
+		if (!absorb) data->inc_count();
+	} else {
+		data = new ValueHash();
+	}
+}
+
+NodeThread::~NodeThread()
+{
+	if (data) data->dec_count();
+}
+
 
 //---------------------------- NodeFrame ------------------------------------
 /*! \class NodeFrame
@@ -520,8 +552,13 @@ int NodeBase::InstallColors(NodeColors *newcolors, bool absorb_count)
 }
 
 /*! Return a custom interface to use for this whole node.
- * If this is returned, then it is assumed this interface will render ther entire
- * node.
+ * If non-null is returned, then it is assumed that interface will render the entire
+ * node, as well as handle all mouse and key events.
+ *
+ * If interface!=NULL, then update to use *this, and return it. If it is the wrong type
+ * of interface, return NULL.
+ *
+ * If interface == NULL, then return a new instance of a proper interface.
  *
  * Return NULL for default node rendering.
  */
@@ -2246,6 +2283,13 @@ NodeInterface::NodeInterface(anInterface *nowner, int nid, Displayer *ndp)
 	pan_current  = 0;
 	pan_tick_ms  = 1./60 * 1000; //1/60th second ticks for panning
 
+	 //play settings:
+	playing      = 0;
+	play_timer   = 0;
+	play_fps     = 60;
+	elapsed_time = 0;
+	last_time    = 0;
+
 	//color_controls.rgbf(.7,.5,.7,1.);
 	color_controls.rgbf(.8,.8,.8,1.);
 	color_background.rgbf(0,0,0,.5);
@@ -2293,33 +2337,51 @@ anInterface *NodeInterface::duplicate(anInterface *dup)
 
 int NodeInterface::Idle(int tid)
 {
-	if (tid != pan_timer) return 1;
-	if (!nodes) return 1;
+	if (tid == pan_timer) {
+		if (!nodes) return 1;
 
-	DBG cerr <<"NodeInterface::Idle()... cur="<<pan_current<<endl;
+		DBG cerr <<"NodeInterface::Idle()... cur="<<pan_current<<endl;
 
-	// advance pan
-	// pan_current += delta/duration;
-	//flatpoint oldpos = nodes->m.transformPointInverse(lastpos);
+		// advance pan
+		// pan_current += delta/duration;
+		//flatpoint oldpos = nodes->m.transformPointInverse(lastpos);
 
-	double t = .5+.5*(-cos(pan_current/pan_duration*M_PI));
-	flatpoint oldpos = bez_point(t, panpath[0], panpath[1], panpath[2], panpath[3]);
-	pan_current += pan_tick_ms/1000.;
-	t = .5+.5*(-cos(pan_current/pan_duration*M_PI));
-	flatpoint newpos = bez_point(t, panpath[0], panpath[1], panpath[2], panpath[3]);
+		double t = .5+.5*(-cos(pan_current/pan_duration*M_PI));
+		flatpoint oldpos = bez_point(t, panpath[0], panpath[1], panpath[2], panpath[3]);
+		pan_current += pan_tick_ms/1000.;
+		t = .5+.5*(-cos(pan_current/pan_duration*M_PI));
+		flatpoint newpos = bez_point(t, panpath[0], panpath[1], panpath[2], panpath[3]);
 
-	newpos = nodes->m.transformPoint(newpos);
-	oldpos = nodes->m.transformPoint(oldpos);
-	flatpoint d = newpos - oldpos;
-	nodes->m.Translate(-d);
+		newpos = nodes->m.transformPoint(newpos);
+		oldpos = nodes->m.transformPoint(oldpos);
+		flatpoint d = newpos - oldpos;
+		nodes->m.Translate(-d);
 
-	needtodraw=1;
-	if (pan_current >= pan_duration) {
-		pan_timer = 0;
+		needtodraw=1;
+		if (pan_current >= pan_duration) {
+			pan_timer = 0;
+			return 1;
+		}
+
+		return 0;
+
+	} else if (tid == play_timer) {
+		// advance threads;
+		for (int c=threads.n-1; c>=0; c--) {
+			// *** advance thread
+			// *** if done, threads.remove(c);
+		}
+		if (!threads.n) {
+			PostMessage(_("Threads done!"));
+			play_timer = 0;
+			playing = 0;
+			//don't want to call stop, ...not sure if it will mess up timer stack. *** should find that out!!
+			return 0;
+		}
 		return 1;
 	}
 
-	return 0;
+	return 1;
 }
 
 /*! Normally this will accept some common things like changes to line styles, like a current color.
@@ -2596,6 +2658,26 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 		SaveNodes(s->str);
 		makestr(lastsave, s->str);
 		needtodraw=1;
+		return 0;
+
+	} else if (!strcmp(mes,"savewithloader")) {
+        const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
+		if (isblank(s->str) || !nodes) return 0;
+
+		ObjectIO *loader = (lastmenuindex >=0 && lastmenuindex < NodeGroup::loaders.n ? NodeGroup::loaders.e[lastmenuindex] : NULL);
+		if (!loader) {
+			PostMessage(_("Could not find loader."));
+			return 0;
+		}
+
+		ErrorLog log;
+		NodeExportContext context(&selected);
+		int status = loader->Export(s->str, nodes, &context, log); //ret # of failing errors
+		if (status) {
+			 //there were errors
+			NotifyGeneralErrors(&log);
+		} else PostMessage(_("Exported."));
+
 		return 0;
 
 	} else if (!strcmp(mes,"loadwithloader")) {
@@ -3184,7 +3266,7 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 
 void NodeInterface::DrawConnection(NodeConnection *connection) 
 {
-	flatpoint p1,p2;
+	flatpoint p1,c1,c2,p2;
 	flatpoint last = nodes->m.transformPointInverse(lastpos);
 	if (connection->fromprop) p1=flatpoint(connection->from->x,connection->from->y)+connection->fromprop->pos; else p1=last;
 	if (connection->toprop)   p2=flatpoint(connection->to->x,  connection->to->y)  +connection->toprop->pos;   else p2=last;
@@ -3192,13 +3274,20 @@ void NodeInterface::DrawConnection(NodeConnection *connection)
 	dp->NewFG(0.,0.,0.);
 	dp->moveto(p1);
 	if (p2.x < p1.x) {
-		dp->curveto(p1-flatpoint((p2.x-p1.x), 0),
-					p2+flatpoint((p2.x-p1.x), 0),
-					p2);
+		c1 = p1-flatpoint((p2.x-p1.x), 0);
+		c2 = p2+flatpoint((p2.x-p1.x), 0);
+		dp->curveto(c1,c2,p2);
+		//----
+		//dp->curveto(p1-flatpoint((p2.x-p1.x), 0),
+					//p2+flatpoint((p2.x-p1.x), 0),
+					//p2);
 	} else {
-		dp->curveto(p1+flatpoint((p2.x-p1.x)/3, 0),
-					p2-flatpoint((p2.x-p1.x)/3, 0),
-					p2);
+		c1 = p1+flatpoint((p2.x-p1.x)/3, 0);
+		c2 = p2-flatpoint((p2.x-p1.x)/3, 0);
+		dp->curveto(c1,c2,p2);
+		//dp->curveto(p1+flatpoint((p2.x-p1.x)/3, 0),
+					//p2-flatpoint((p2.x-p1.x)/3, 0),
+					//p2);
 	}
 	dp->LineWidthScreen(3);
 	dp->stroke(1);
@@ -3206,8 +3295,85 @@ void NodeInterface::DrawConnection(NodeConnection *connection)
 	dp->NewFG(isselected ? &nodes->colors->selected_border : &color_controls);
 	dp->LineWidthScreen(2);
 	dp->stroke(0);
+
+	if (connection->fromprop->IsExecution()) {
+		// draw little arrows to indicate flow directioon periodically on path
+		double len = 2; //seconds
+		double offset = 1.;
+		if (IsLive(connection)) {
+			 //draw arrows offset
+			len *= sysconf(_SC_CLK_TCK);
+			offset = (time(NULL) % (int)len) / len;
+		}
+
+		len = bez_segment_length(p1,c1,c2,p2, 20);
+		int n = 1 + len/(100*dp->textheight());
+		flatpoint p;
+		double t;
+		for (int c=0; c<n; c++) {
+			t = (n + offset) / (float)n;
+			p = bez_point(t, p1,c1,c2,p2);
+		}
+	}
 }
 
+/*! Return 1 or -1 for connected to a property (via from or to) listed in any node threads.
+ * Else 0.
+ */
+int NodeInterface::IsLive(NodeConnection *con)
+{
+	for (int c=0; c<threads.n; c++) {
+		NodeThread *thread = threads.e[c];
+		if (thread->current_property == con->fromprop) return -1;
+		if (thread->current_property == con->toprop) return 1;
+	}
+	return 0;
+}
+
+int NodeInterface::Play()
+{
+	if (playing) return 0; //already playing
+
+	 //find all starter nodes
+	// ***
+
+	 //start timer
+	play_timer = app->addtimer(this, 1000/play_fps, 1000/play_fps, -1);
+	playing = 1;
+	return 0;
+}
+
+/*! Toggle the play timer on and off.
+ * If !playing, then just return Play().
+ */
+int NodeInterface::TogglePause()
+{
+	if (play_timer) {
+		// just remove timer
+		app->removetimer(this, play_timer);
+		play_timer = 0;
+		return 0;
+	}
+
+	if (!playing) return Play();
+
+	//restart player
+	play_timer = app->addtimer(this, 1000/play_fps, 1000/play_fps, -1);
+	return 0;
+}
+
+/*! Flush threads and remove timers.
+ */
+int NodeInterface::Stop()
+{
+	threads.flush();
+	if (play_timer) app->removetimer(this, play_timer);
+	play_timer = 0;
+	playing = 0;
+	return 0;
+}
+
+//resets threads
 /*! Get the bezier path of the connection.
  * For now, keep it simple to single bezier segment.
  */
@@ -4673,8 +4839,10 @@ int NodeInterface::SaveNodes(const char *file)
 
 int NodeInterface::ToggleCollapsed()
 {
+	int collapsed = 1;
 	for (int c=0; c<selected.n; c++) {
-		selected.e[c]->Collapse(-1);
+		if (c==0) collapsed = selected.e[0]->collapsed;
+		selected.e[c]->Collapse(!collapsed);
 	}
 
 	needtodraw=1;
