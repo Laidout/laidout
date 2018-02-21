@@ -359,6 +359,136 @@ Laxkit::anObject *newColorNode(int p, Laxkit::anObject *ref)
 }
 
 
+//------------ AffineNode
+
+class AffineNode : public NodeBase
+{
+  public:
+	int atype; //0 == a,b,c,d,e,f, 1= posx, posy, scalex, scaley, anglex, angley_off_90, 2 = xv, yv, pv, 
+	AffineNode(int ntype, const double *values);
+	virtual ~AffineNode();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
+};
+
+AffineNode::AffineNode(int ntype, const double *values)
+{
+
+	atype = ntype;
+
+	const char **labels;
+	const char *labels1[] = { _("xx"), _("xy"), _("yx"), _("yy"), _("x0"), _("y0") };
+	const char *labels2[] = { _("X Scale"), _("Y Scale"), _("X Angle"), _("Y Angle"), _("x0"), _("y0") };
+	const char **names;
+	const char *names1[]  = {   "xx" ,   "xy" ,   "yx" ,   "yy" ,   "x0" ,   "y0"  };
+	const char *names2[]  = { "xscale", "yscale", "xangle", "yangle", "x0",  "y0"  };
+	const double v1[] = { 1,0, 0,1, 0,0 };
+	const double v2[] = { 1,1, 0,0, 0,0 };
+
+	if (atype == 0) {
+		makestr(Name, _("Affine"));
+		makestr(type,   "Affine");
+		labels = labels1;
+		names  = names1;
+		if (!values) values = v1;
+
+//	} else if (atype == 1) {
+	} else {
+		makestr(Name, _("Affine2"));
+		makestr(type,   "Affine2");
+		labels = labels2;
+		names  = names2;
+		if (!values) values = v2;
+
+//	} else {
+//		makestr(Name, _("Affine Vectors"));
+//		makestr(type,   "AffineV" );
+//		labels = { _("X"), _("Y"), _("Position"), NULL, NULL, NULL };
+	}
+
+	for (int c=0; c<6; c++) {
+		if (!labels[c]) break;
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, names[c],
+					new DoubleValue(values ? values[c] : 0), 1, labels[c])); 
+	}
+
+	Value *v = new AffineValue();
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("Affine"), v,1)); 
+
+}
+
+AffineNode::~AffineNode()
+{
+}
+
+NodeBase *AffineNode::Duplicate()
+{
+	double vs[6];
+	int isnum;
+	for (int c=0; c<6; c++) {
+		vs[c] = getNumberValue(properties.e[c]->GetData(), &isnum);
+	}
+
+	AffineNode *newnode = new AffineNode(atype, vs);
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+/*! -1 for bad values. 0 for ok, 1 for just needs update.
+ */
+int AffineNode::GetStatus()
+{
+	int isnum;
+	for (int c=0; c<6; c++) {
+		getNumberValue(properties.e[c]->GetData(), &isnum);
+		if (!isnum) return -1;
+	}
+
+	if (!properties.e[6]->data) return 1;
+
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int AffineNode::Update()
+{
+	double vs[6];
+	int isnum;
+	for (int c=0; c<6; c++) {
+		vs[c] = getNumberValue(properties.e[c]->GetData(), &isnum);
+	}
+
+	AffineValue *v = dynamic_cast<AffineValue*>(properties.e[6]->GetData());
+	if (!v) {
+		v = new AffineValue;
+	} else v->inc_count();
+
+	if (atype == 1) {
+		//convert scale, angle, pos to vectors
+		v->setBasics(vs[4], vs[5], vs[0], vs[1], vs[2]*M_PI/180, vs[3]*M_PI/180);
+	}
+
+	properties.e[6]->SetData(v, 1);
+	v->m(vs);
+
+	return NodeBase::Update();
+}
+
+Laxkit::anObject *newAffineNode(int p, Laxkit::anObject *ref)
+{
+	return new AffineNode(0, NULL);
+}
+
+Laxkit::anObject *newAffineNode2(int p, Laxkit::anObject *ref)
+{
+	return new AffineNode(1, NULL);
+}
+
+//Laxkit::anObject *newAffineNodeV(int p, Laxkit::anObject *ref)
+//{
+//	return new AffineNode(2);
+//}
+
 //------------ MathNode
 
 class MathNode : public NodeBase
@@ -884,6 +1014,10 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 
 	 //--- RectangleNode
 	factory->DefineNewObject(getUniqueNumber(), "Rectangle",newRectangleNode,  NULL, 0);
+
+	 //--- Affine nodes
+	factory->DefineNewObject(getUniqueNumber(), "Affine", newAffineNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Affine2",newAffineNode2, NULL, 0);
 
 	return 0;
 }
