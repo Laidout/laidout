@@ -4736,9 +4736,12 @@ int LaidoutCalculator::Op(const char *the_op,int len, int dir, Value *num1, Valu
 		if (len==1 && *the_op=='+') {
 			 //return unary positive
 			*value_ret=NULL;
-			if (     num1->type()==VALUE_Int        || num1->type()==VALUE_Real
-				  || num1->type()==VALUE_Flatvector || num1->type()==VALUE_Spacevector) {
-				*value_ret=num1->duplicate();
+			if (     num1->type()==VALUE_Int
+				  || num1->type()==VALUE_Real
+				  || num1->type()==VALUE_Flatvector
+				  || num1->type()==VALUE_Spacevector
+				  || num1->type()==VALUE_Quaternion) {
+				*value_ret = num1->duplicate();
 				return 0;
 			}
 			return -1; //can't positive that type
@@ -4750,6 +4753,7 @@ int LaidoutCalculator::Op(const char *the_op,int len, int dir, Value *num1, Valu
 			else if (num1->type()==VALUE_Real) *value_ret= new DoubleValue(-dynamic_cast<DoubleValue*>(num1)->d);
 			else if (num1->type()==VALUE_Flatvector) *value_ret= new FlatvectorValue(-dynamic_cast<FlatvectorValue*>(num1)->v);
 			else if (num1->type()==VALUE_Spacevector) *value_ret= new SpacevectorValue(-dynamic_cast<SpacevectorValue*>(num1)->v);
+			else if (num1->type()==VALUE_Quaternion)  *value_ret= new QuaternionValue(-dynamic_cast<QuaternionValue*>(num1)->v);
 			if (*value_ret) return 0;
 			return -1; //can't negative that type
 		}
@@ -4840,6 +4844,9 @@ int LaidoutCalculator::add(Value *num1,Value *num2, Value **ret)
 	} else if (num1->type()==VALUE_Spacevector && num2->type()==VALUE_Spacevector) { //sv+sv
 		*ret=new SpacevectorValue(((SpacevectorValue *) num1)->v+((SpacevectorValue*)num2)->v);
 
+	} else if (num1->type()==VALUE_Quaternion && num2->type()==VALUE_Quaternion) { //sv+sv
+		*ret=new QuaternionValue(((QuaternionValue *) num1)->v+((QuaternionValue*)num2)->v);
+
 	} else if (num1->type()==VALUE_String && num2->type()==VALUE_String) {
 		char str[strlen(((StringValue *)num1)->str) + strlen(((StringValue *)num1)->str) + 1];
 		strcpy(str,((StringValue *)num1)->str);
@@ -4881,6 +4888,9 @@ int LaidoutCalculator::subtract(Value *num1,Value *num2, Value **ret)
 
 	} else if (num1->type()==VALUE_Spacevector && num2->type()==VALUE_Spacevector) { //sv+sv
 		*ret=new SpacevectorValue(((SpacevectorValue *) num1)->v-((SpacevectorValue*)num2)->v);
+
+	} else if (num1->type()==VALUE_Quaternion && num2->type()==VALUE_Quaternion) { //sv+sv
+		*ret=new QuaternionValue(((QuaternionValue *) num1)->v-((QuaternionValue*)num2)->v);
 	}
 
 	if (*ret) return 0;
@@ -4935,6 +4945,16 @@ int LaidoutCalculator::multiply(Value *num1,Value *num2, Value **ret)
 	} else if (num1->type()==VALUE_Spacevector && num2->type()==VALUE_Spacevector) { //v*v 3-d
 		 //dot product
 		*ret=new DoubleValue(((SpacevectorValue *) num1)->v * ((SpacevectorValue*)num2)->v);
+
+
+	} else if (isNumberType(num1, &v1) && num2->type()==VALUE_Quaternion) { //i*v, d*v
+		*ret=new QuaternionValue(((QuaternionValue *) num2)->v * v1);
+
+	} else if (isNumberType(num2, &v2) && num1->type()==VALUE_Quaternion) { //v*i, v*d
+		*ret=new QuaternionValue(((QuaternionValue *) num1)->v * v2);
+
+	} else if (num1->type()==VALUE_Quaternion && num2->type()==VALUE_Quaternion) { //v*v (is a non-commutative quaternion, not dot)
+		*ret=new QuaternionValue(((QuaternionValue *) num1)->v * ((QuaternionValue*)num2)->v);
 	}
 
 	if (*ret) return 0;
@@ -4955,8 +4975,8 @@ int LaidoutCalculator::divide(Value *num1,Value *num2, Value **ret)
 //	}
 
 	double divisor;
-	if (num2->type()==VALUE_Int) divisor=((IntValue*)num2)->i;
-	else if (num2->type()==VALUE_Real) divisor=((DoubleValue*)num2)->d;
+	if (num2->type()==VALUE_Int)       divisor = ((IntValue*)   num2)->i;
+	else if (num2->type()==VALUE_Real) divisor = ((DoubleValue*)num2)->d;
 	else return -1; //throw _("Cannot divide with that type");
 
 	if (divisor==0) {
@@ -4985,6 +5005,11 @@ int LaidoutCalculator::divide(Value *num1,Value *num2, Value **ret)
 	} else if (isNumberType(num2, &v2) && num1->type()==VALUE_Flatvector) { // v/i, v/d
 		*ret=new FlatvectorValue(((FlatvectorValue *) num1)->v / v2);
 
+	} else if (isNumberType(num2, &v2) && num1->type()==VALUE_Spacevector) { // v/i, v/d
+		*ret=new SpacevectorValue(((SpacevectorValue *) num1)->v / v2);
+
+	} else if (isNumberType(num2, &v2) && num1->type()==VALUE_Quaternion) { // v/i, v/d
+		*ret=new QuaternionValue(((QuaternionValue *) num1)->v / v2);
 	} 
 
 	if (*ret) return 0;
@@ -5026,9 +5051,6 @@ int LaidoutCalculator::power(Value *num1,Value *num2, Value **ret)
 	if (*ret) return 0;
 	return -1; //throw _("Cannot divide those types");
 }
-
-
-
 
 
 
