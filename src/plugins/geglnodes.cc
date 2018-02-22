@@ -173,7 +173,7 @@ int ValueToProperty(Value *v, const char *gvtype, GeglNode *node, const char *pr
 		StringValue *s = dynamic_cast<StringValue*>(v);
 		if (!v) return -1;
 
-		const Babl *format = babl_format(s->str);
+		const Babl *format = (s->str ? babl_format(s->str) : NULL);
 		if (format) {
 			gegl_node_set(node, property, format, NULL);
 			return 0;
