@@ -181,6 +181,9 @@ class NodeColors : public Laxkit::anObject
 	Laxkit::ScreenColor default_property;
 	Laxkit::ScreenColor connection;
 	Laxkit::ScreenColor sel_connection;
+	Laxkit::ScreenColor number;
+	Laxkit::ScreenColor vector;
+	Laxkit::ScreenColor color; //includes image
 
 	Laxkit::ScreenColor label_fg;
 	Laxkit::ScreenColor label_bg;
@@ -189,6 +192,7 @@ class NodeColors : public Laxkit::anObject
 	Laxkit::ScreenColor text;
 	Laxkit::ScreenColor border;
 	Laxkit::ScreenColor error_border;
+	Laxkit::ScreenColor update_border;
 
 	Laxkit::ScreenColor fg_edit;
 	Laxkit::ScreenColor bg_edit;
@@ -249,6 +253,7 @@ class NodeBase : public Laxkit::anObject,
 	char *Name; //displayed name (see Label())
 	char *type; //non translated type, like "Value", or "Math"
 	ObjectDef *def; //optional
+	char *error_message;
 
 	int collapsed;
 	double fullwidth; //uncollapsed
@@ -274,6 +279,7 @@ class NodeBase : public Laxkit::anObject,
 	virtual const char *Description() { return NULL; }
 	virtual const char *ScriptName() { return object_idstr; }
 	virtual const char *Type() { return type; }
+	virtual const char *ErrorMessage() { return error_message; }
 	virtual ObjectDef *GetDef() { return def; }
 	virtual void InstallDef(ObjectDef *def, bool absorb_count);
 	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface);
@@ -284,6 +290,7 @@ class NodeBase : public Laxkit::anObject,
 	virtual int Update();
 	virtual int UpdatePreview();
 	virtual int GetStatus();
+	virtual time_t MostRecentIn(int *index);
 	virtual int UsesPreview() { return total_preview!=NULL && show_preview; }
 	virtual int Wrap();
 	virtual int WrapFull(bool keep_current_width);
