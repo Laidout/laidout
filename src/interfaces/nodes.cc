@@ -93,6 +93,7 @@ NodeBase *ExpandVectorNode::Duplicate()
 		if (   vtype == VALUE_Flatvector
 			|| vtype == VALUE_Spacevector
 			|| vtype == VALUE_Quaternion
+			|| vtype == VALUE_Real
 			|| vtype == VALUE_Color)
 		  v = v->duplicate();
 		else v = NULL;
@@ -110,6 +111,7 @@ int ExpandVectorNode::GetStatus()
 		if (!( vtype == VALUE_Flatvector
 			|| vtype == VALUE_Spacevector
 			|| vtype == VALUE_Quaternion
+			|| vtype == VALUE_Real
 			|| vtype == VALUE_Color))
 		  return -1;
 	} else return -1;
@@ -128,7 +130,8 @@ int ExpandVectorNode::Update()
 	if (!v) return -1;
 
 	int vtype = v->type();
-	if      (vtype == VALUE_Flatvector)  dynamic_cast<FlatvectorValue*>(v) ->v.get(vs);
+	if      (vtype == VALUE_Real)        vs[0] = dynamic_cast<DoubleValue*>(v)->d;
+	else if (vtype == VALUE_Flatvector)  dynamic_cast<FlatvectorValue*>(v) ->v.get(vs);
 	else if (vtype == VALUE_Spacevector) dynamic_cast<SpacevectorValue*>(v)->v.get(vs);
 	else if (vtype == VALUE_Quaternion)  dynamic_cast<QuaternionValue*>(v)->v.get(vs);
 	//else if (vtype == VALUE_Color) {
@@ -165,15 +168,22 @@ class VectorNode : public NodeBase
 VectorNode::VectorNode(int dimensions, double *initialvalues)
 {
 	dims = dimensions;
+	Value *out = NULL;
+
 	if (dimensions == 2) {
 		makestr(Name, _("Vector2"));
 		makestr(type, "Vector2");
+		out = new FlatvectorValue(initialvalues ? flatvector(initialvalues) : flatvector());
+
 	} else if (dimensions == 3) {
 		makestr(Name, _("Vector3"));
 		makestr(type, "Vector3");
+		out = new SpacevectorValue(initialvalues ? spacevector(initialvalues) : spacevector());
+
 	} else { //if (dimensions == 4) {
 		makestr(Name, _("Quaternion"));
 		makestr(type, "Vector4");
+		out = new QuaternionValue(initialvalues ? Quaternion(initialvalues) : Quaternion());
 	}
 
 	const char *labels[] = { _("x"), _("y"), _("z"), _("w") };
@@ -183,7 +193,7 @@ VectorNode::VectorNode(int dimensions, double *initialvalues)
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, names[c],
 					new DoubleValue(initialvalues ? initialvalues[c] : 0), 1, labels[c])); 
 	}
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("V"), NULL, 1)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("V"), out,1)); 
 }
 
 VectorNode::~VectorNode()
@@ -497,11 +507,15 @@ class MathNode : public NodeBase
 	static SingletonKeeper mathnodekeeper; //the def for the op enum
 	static ObjectDef *GetMathNodeDef() { return dynamic_cast<ObjectDef*>(mathnodekeeper.GetObject()); }
 
+	int last_status;
+	time_t status_time;
+
 	int operation; //see MathNodeOps
 	int numargs;
 	double a,b,result;
 	MathNode(int op=0, double aa=0, double bb=0);
 	virtual ~MathNode();
+	virtual int UpdateThisOnly();
 	virtual int Update();
 	virtual int GetStatus();
 	virtual NodeBase *Duplicate();
@@ -635,8 +649,8 @@ ObjectDef *DefineMathNodeDef()
 	def->pushEnumValue("ShiftRight" ,_("ShiftRight"),   _("ShiftRight"),  OP_ShiftRight  );
 
 	 //vector math, 2 args
-	def->pushEnumValue("Dot"            ,_("Dot"),            _("Dot"),            OP_Dot            );
-	def->pushEnumValue("Cross"          ,_("Cross"),          _("Cross product"),  OP_Cross          );
+	def->pushEnumValue("Dot"            ,_("Dot"),            _("Dot"),                     OP_Dot            );
+	def->pushEnumValue("Cross"          ,_("Cross"),          _("Cross product"),           OP_Cross          );
 	def->pushEnumValue("Perpendicular"  ,_("Perpendicular"),  _("Part of A perpendicular to B"),OP_Perpendicular);
 	def->pushEnumValue("Parallel"       ,_("Parallel"),       _("Part of A parallel to B"), OP_Parallel);
 	def->pushEnumValue("Angle_Between"  ,_("Angle Between"),  _("Angle Between, 0..pi"),    OP_Angle_Between  );
@@ -688,6 +702,9 @@ MathNode::MathNode(int op, double aa, double bb)
 	type = newstr("Math");
 	Name = newstr(_("Math"));
 
+	last_status = 1;
+	status_time = 0;
+
 	a=aa;
 	b=bb;
 	operation = op;
@@ -708,7 +725,8 @@ MathNode::MathNode(int op, double aa, double bb)
 	//NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count,
 					//const char *nlabel=NULL, const char *ntip=NULL, int info=0, bool editable);
 
-	Update();
+	last_status = Update();
+	status_time = MostRecentIn(NULL);
 }
 
 MathNode::~MathNode()
@@ -739,93 +757,283 @@ NodeBase *MathNode::Duplicate()
  */
 int MathNode::GetStatus()
 {
-	Value *va = properties.e[1]->GetData();
-	Value *vb = properties.e[2]->GetData();
-
-	int isnum=0;
-	a = getNumberValue(va, &isnum);
-	if (!isnum) return -1;
-	b = getNumberValue(vb, &isnum);
-	if (!isnum) return -1;
-
-	if ((operation==OP_Divide || operation==OP_Mod) && b==0) return -1;
-	if (a==0 || (a<0 && fabs(b)-fabs(int(b))<1e-10)) return -1;
 	if (!properties.e[3]->data) return 1;
-	return 0;
+	int status = NodeBase::GetStatus(); //checks mod times
+	if (status == 1) return 1; //just simple update
+
+	time_t proptime = MostRecentIn(NULL);
+	if (proptime > last_status) {
+		last_status = UpdateThisOnly();
+		status_time = proptime;
+	}
+	return last_status;
 }
 
 int MathNode::Update()
 {
+	int status = UpdateThisOnly();
+	if (!status) return status;
+	return NodeBase::Update();
+}
+
+int MathNode::UpdateThisOnly()
+{
+	makestr(error_message, NULL);
+
 	Value *valuea = properties.e[1]->GetData();
 	Value *valueb = properties.e[2]->GetData();
 	int aisnum=0, bisnum=0;
 	a = getNumberValue(valuea, &aisnum);
 	b = getNumberValue(valueb, &bisnum);
 
-	//flatvector fva;
-	//spacevector sva;
-	//string
-	//if (valuea->type() == VALUE_Flatvector
+	if (!aisnum && dynamic_cast<FlatvectorValue *>(valuea)) aisnum = 2;
+	if (!aisnum && dynamic_cast<SpacevectorValue*>(valuea)) aisnum = 3;
+	if (!aisnum && dynamic_cast<QuaternionValue *>(valuea)) aisnum = 4;
+	if (!bisnum && dynamic_cast<FlatvectorValue *>(valueb)) bisnum = 2;
+	if (!bisnum && dynamic_cast<SpacevectorValue*>(valueb)) bisnum = 3;
+	if (!bisnum && dynamic_cast<QuaternionValue *>(valueb)) bisnum = 4;
 
 	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
 	ObjectDef *def = ev->GetObjectDef();
 	const char *nm = NULL;
-	operation=OP_None;
+	operation = OP_None;
 	def->getEnumInfo(ev->value, &nm, NULL,NULL, &operation);
 
-	//DBG cerr <<"MathNode::Update op: "<<operation<<" vs enum id: "<<id<<endl;
 
-	if      (operation==OP_Add) result = a+b;
-	else if (operation==OP_Subtract) result = a-b;
-	else if (operation==OP_Multiply) result = a*b;
-	else if (operation==OP_Divide) {
-		if (b!=0) result = a/b;
-		else {
-			result=0;
+	if (aisnum == 1 && bisnum == 1) {
+		if      (operation==OP_Add)      result = a+b;
+		else if (operation==OP_Subtract) result = a-b;
+		else if (operation==OP_Multiply) result = a*b;
+		else if (operation==OP_Divide) {
+			if (b!=0) result = a/b;
+			else {
+				result=0;
+				makestr(error_message, _("Can't divide by 0"));
+				return -1;
+			}
+
+		} else if (operation==OP_Mod) {
+			if (b!=0) result = a-b*int(a/b);
+			else {
+				result=0;
+				makestr(error_message, _("Can't divide by 0"));
+				return -1;
+			}
+		} else if (operation==OP_Power) {
+			if (a==0 || (a<0 && fabs(b)-fabs(int(b))<1e-10)) {
+				 //0 to a power fails, as does negative numbers raised to non-integer powers
+				result=0;
+				makestr(error_message, _("Power must be positive"));
+				return -1;
+			}
+			result = pow(a,b);
+
+		} else if (operation==OP_Greater_Than_Or_Equal) { result = (a>=b);
+		} else if (operation==OP_Greater_Than)     { result = (a>b);
+		} else if (operation==OP_Less_Than)        { result = (a<b);
+		} else if (operation==OP_Less_Than_Or_Equal) { result = (a<=b);
+		} else if (operation==OP_Equals)           { result = (a==b);
+		} else if (operation==OP_Not_Equal)        { result = (a!=b);
+		} else if (operation==OP_Minimum)          { result = (a<b ? a : b);
+		} else if (operation==OP_Maximum)          { result = (a>b ? a : b);
+		} else if (operation==OP_Average)          { result = (a+b)/2;
+		} else if (operation==OP_Atan2)            { result = atan2(a,b);
+
+		} else if (operation==OP_And       )       { result = (int(a) & int(b));
+		} else if (operation==OP_Or        )       { result = (int(a) | int(b));
+		} else if (operation==OP_Xor       )       { result = (int(a) ^ int(b));
+		} else if (operation==OP_ShiftLeft )       { result = (int(a) << int(b));
+		} else if (operation==OP_ShiftRight)       { result = (int(a) >> int(b));
+
+		} else if (operation==OP_RandomRange)      {
+			srandom(a);
+			result = b * (double)random()/RAND_MAX;
+		} else {
+			makestr(error_message, _("Operation can't use those arguments"));
 			return -1;
 		}
 
-	} else if (operation==OP_Mod) {
-		if (b!=0) result = a-b*int(a/b);
-		else {
-			result=0;
-			return -1;
-		}
-	} else if (operation==OP_Power) {
-		if (a==0 || (a<0 && fabs(b)-fabs(int(b))<1e-10)) {
-			 //0 to a power fails, as does negative numbers raised to non-integer powers
-			result=0;
-			return -1;
-		}
-		result = pow(a,b);
+		if (!dynamic_cast<DoubleValue*>(properties.e[3]->data)) {
+			DoubleValue *newv = new DoubleValue(result);
+			properties.e[3]->SetData(newv, 1);
+		} else dynamic_cast<DoubleValue*>(properties.e[3]->data)->d = result;
 
-	} else if (operation==OP_Greater_Than_Or_Equal) { result = (a>=b);
-	} else if (operation==OP_Greater_Than)     { result = (a>b);
-	} else if (operation==OP_Less_Than)        { result = (a<b);
-	} else if (operation==OP_Less_Than_Or_Equal) { result = (a<=b);
-	} else if (operation==OP_Equals)           { result = (a==b);
-	} else if (operation==OP_Not_Equal)        { result = (a!=b);
-	} else if (operation==OP_Minimum)          { result = (a<b ? a : b);
-	} else if (operation==OP_Maximum)          { result = (a>b ? a : b);
-	} else if (operation==OP_Average)          { result = (a+b)/2;
-	} else if (operation==OP_Atan2)            { result = atan2(a,b);
+		properties.e[3]->modtime = time(NULL);
+		return 0;
 
-	} else if (operation==OP_And       )       { result = (int(a) & int(b));
-	} else if (operation==OP_Or        )       { result = (int(a) | int(b));
-	} else if (operation==OP_Xor       )       { result = (int(a) ^ int(b));
-	} else if (operation==OP_ShiftLeft )       { result = (int(a) << int(b));
-	} else if (operation==OP_ShiftRight)       { result = (int(a) >> int(b));
+	}
+	
+	//else involves vectors...
+	int resulttype = VALUE_None;
 
-	} else if (operation==OP_RandomRange)      {
-		srandom(a);
-		result = b * (double)random()/RAND_MAX;
+	double va[4], vb[4], rv[4], *vv;
+	for (int c=0; c<4; c++) { va[c] = vb[c] = rv[c] = 0; }
+
+	if (aisnum==2) {
+		dynamic_cast<FlatvectorValue*>(valuea)->v.get(va);
+		resulttype = VALUE_Flatvector;
+	} else if (aisnum==3) {
+		dynamic_cast<SpacevectorValue*>(valuea)->v.get(va);
+		resulttype = VALUE_Spacevector;
+	} else if (aisnum==4) {
+		dynamic_cast<SpacevectorValue*>(valuea)->v.get(va);
+		resulttype = VALUE_Quaternion;
+	}
+	
+	if (bisnum==2) {
+		dynamic_cast<FlatvectorValue*>(valueb)->v.get(vb);
+		resulttype = VALUE_Flatvector;
+	} else if (bisnum==3) {
+		dynamic_cast<SpacevectorValue*>(valueb)->v.get(vb);
+		resulttype = VALUE_Spacevector;
+	} else if (bisnum==4) {
+		dynamic_cast<SpacevectorValue*>(valueb)->v.get(vb);
+		resulttype = VALUE_Quaternion;
 	}
 
-	if (!properties.e[3]->data) properties.e[3]->data=new DoubleValue(result);
-	else dynamic_cast<DoubleValue*>(properties.e[3]->data)->d = result;
-	properties.e[3]->modtime = time(NULL);
+	if ((aisnum == 1 && bisnum > 1) || (aisnum > 1 && bisnum == 1)) {
+		 // r,v  v,r:  only multiply and maybe divide or mod
+		if (aisnum == 1) vv = vb; else vv = va;
 
-	return NodeBase::Update();
+		if (operation==OP_Multiply) {
+			if (aisnum == 1) { for (int c=0; c<4; c++) rv[c] = vv[c] * a; }
+			else { for (int c=0; c<4; c++) rv[c] = vv[c] * b; }
+
+		} else if (operation==OP_Divide || operation==OP_Mod) {
+			if (bisnum != 1) {
+				makestr(error_message, _("Bad parameters"));
+				return -1;
+			}
+			if (b == 0) {
+				makestr(error_message, _("Can't divide by 0"));
+				return -1;
+			}
+			if (operation==OP_Mod) {
+				for (int c=0; c<4; c++) rv[c] = vv[c] - b*int(vv[c]/b);
+
+			} else for (int c=0; c<4; c++) rv[c] = vv[c] / b;
+
+		} else {
+			makestr(error_message, _("Operation can't use those arguments"));
+			return -1;
+		}
+
+	} else if ( (aisnum == 3 && bisnum == 3)
+			 || (aisnum == 4 && bisnum == 4)
+			 || (aisnum == 2 && bisnum == 2)) {
+
+		resulttype = (aisnum==2 ? VALUE_Flatvector : (aisnum==3 ? VALUE_Spacevector : VALUE_Quaternion));
+
+		if      (operation==OP_Add)        { for (int c=0; c<4; c++) rv[c] = va[c] + vb[c];
+		} else if (operation==OP_Subtract) { for (int c=0; c<4; c++) rv[c] = va[c] - vb[c];
+		} else if (operation==OP_Equals)   {
+			resulttype = VALUE_Real;
+			result = 1;
+			for (int c=0; c<4; c++) if (va[c] != vb[c]) result = 0;
+
+		} else if (operation==OP_Not_Equal) {
+			resulttype = VALUE_Real;
+			result = 0;
+			for (int c=0; c<4; c++) if (va[c] != vb[c]) result = 1;
+
+		} else if (operation==OP_Average) {
+			for (int c=0; c<4; c++) rv[c] = (va[c] + vb[c])/2;
+
+		} else if (operation==OP_Dot) {
+			resulttype = VALUE_Real;
+			result = 0;
+			for (int c=0; c<4; c++) result += va[c]*vb[c];
+
+		} else if (operation==OP_Cross         ) {
+			if (aisnum == 4) resulttype = VALUE_None;
+			else {
+				resulttype = VALUE_Spacevector;
+				spacevector aa(va), bb(vb);
+				aa = aa/bb;
+				aa.get(rv);
+			}
+		} else if (operation==OP_Perpendicular ) {
+			double norm2 = vb[0]*vb[0]+vb[1]*vb[1]+vb[2]*vb[2]+vb[3]*vb[3];
+			if (norm2 == 0) {
+				makestr(error_message, _("Vector b can't be 0"));
+				return -1;
+			}
+			double dot = va[0]*vb[0]+va[1]*vb[1]+va[2]*vb[2]+va[3]*vb[3];
+			dot /= norm2;
+			for (int c=0; c<4; c++) rv[c] = va[c] - dot*vb[c];
+
+		} else if (operation==OP_Parallel      ) {
+			double norm2 = vb[0]*vb[0]+vb[1]*vb[1]+vb[2]*vb[2]+vb[3]*vb[3];
+			if (norm2 == 0) {
+				makestr(error_message, _("Vector b can't be 0"));
+				return -1;
+			}
+			double dot = va[0]*vb[0]+va[1]*vb[1]+va[2]*vb[2]+va[3]*vb[3];
+			dot /= norm2;
+			for (int c=0; c<4; c++) rv[c] = dot*vb[c];
+
+		} else if (operation==OP_Angle_Between ) {
+			if (aisnum == 4) resulttype = VALUE_None;
+			else {
+				if (aisnum == 2) {
+					result = angle(flatvector(va), flatvector(vb));
+				} else {
+					result = angle(spacevector(va), spacevector(vb));
+				}
+				resulttype = VALUE_Real;
+			}
+		} else if (operation==OP_Angle2_Between) {
+			if (aisnum == 4) resulttype = VALUE_None;
+			else {
+				if (aisnum == 2) {
+					result = angle_full(flatvector(va), flatvector(vb));
+				} else {
+					result = angle(spacevector(va), spacevector(vb));
+				}
+				resulttype = VALUE_Real;
+			}
+
+		} else {
+			resulttype = VALUE_None;
+		}
+	}
+
+	if (resulttype == VALUE_None) {
+		makestr(error_message, _("Operation can't use those arguments"));
+		return -1;
+	}
+
+	if (resulttype == VALUE_Real) {
+		if (!dynamic_cast<DoubleValue*>(properties.e[3]->data)) {
+			DoubleValue *newv = new DoubleValue(result);
+			properties.e[3]->SetData(newv, 1);
+		} else dynamic_cast<DoubleValue*>(properties.e[3]->data)->d = result;
+
+	} else if (resulttype == VALUE_Flatvector) {
+		if (!dynamic_cast<FlatvectorValue*>(properties.e[3]->data)) {
+			FlatvectorValue *newv = new FlatvectorValue(flatvector(rv));
+			properties.e[3]->SetData(newv, 1);
+		} else dynamic_cast<FlatvectorValue*>(properties.e[3]->data)->v.set(rv);
+
+	} else if (resulttype == VALUE_Spacevector) {
+		if (!dynamic_cast<SpacevectorValue*>(properties.e[3]->data)) {
+			SpacevectorValue *newv = new SpacevectorValue(spacevector(rv));
+			properties.e[3]->SetData(newv, 1);
+		} else dynamic_cast<SpacevectorValue*>(properties.e[3]->data)->v.set(rv);
+
+	} else if (resulttype == VALUE_Quaternion) {
+		if (!dynamic_cast<QuaternionValue*>(properties.e[3]->data)) {
+			QuaternionValue *newv = new QuaternionValue(Quaternion(rv));
+			properties.e[3]->SetData(newv, 1);
+		} else dynamic_cast<QuaternionValue*>(properties.e[3]->data)->v.set(rv);
+
+	} else {
+		makestr(error_message, _("Operation can't use those arguments"));
+		return -1;
+	}
+
+	properties.e[3]->modtime = time(NULL);
+	return 0;
 }
 
 Laxkit::anObject *newMathNode(int p, Laxkit::anObject *ref)
