@@ -215,6 +215,7 @@ NodeProperty::NodeProperty(PropertyTypes input, bool linkable, const char *nname
 
 	type      = input;
 	is_linkable = linkable;
+	if (type == PROP_Block) is_linkable = false;
 	is_editable = editable;
 	hidden      = false;
 
@@ -626,6 +627,7 @@ time_t NodeBase::MostRecentIn(int *index)
 int NodeBase::Update()
 {
 	NodeProperty *prop;
+	modtime = time(NULL);
 
 	for (int c=0; c<properties.n; c++) {
 		prop = properties.e[c];
@@ -642,7 +644,6 @@ int NodeBase::Update()
 		}
 	}
 
-	modtime = time(NULL);
 	return GetStatus();
 }
 
@@ -2507,6 +2508,10 @@ Laxkit::MenuInfo *NodeInterface::ContextMenu(int x,int y,int deviceid, Laxkit::M
 		}
 	}
 
+	//menu->AddSep();
+	//menu->AddItem(_("Save as resource..."), NODES_Save_As_Resource);
+	//menu->AddItem(_("Load resource..."), NODES_Load_Resource);
+
 
 	return menu;
 }
@@ -3496,7 +3501,8 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, int 
 			for (int c2=0; c2<node->properties.n; c2++) {
 				prop = node->properties.e[c2];
 
-				if (!(prop->IsInput() && !prop->is_linkable)) { //only if the input is not exclusively internal
+				//if (!(prop->IsInput() && !prop->is_linkable)) { //only if the input is not exclusively internal
+				if (prop->is_linkable && (prop->IsInput() || prop->IsOutput())) { //only if the input is not exclusively internal
 				  if (  p.y >= node->y+prop->pos.y-rr && p.y <= node->y+prop->pos.y+rr) {
 					if (p.x >= node->x+prop->pos.x-rr && p.x <= node->x+prop->pos.x+rr) {
 						*overproperty=c2;
