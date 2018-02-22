@@ -143,6 +143,8 @@ color strips for full transparent should show checkers in all strips, not just t
 
 switch to GPL v3?
 
+file live search selects wrong one.. using absolute index instead of file
+
 fontdialog:
   select font inappropriately repositions view
 
@@ -178,6 +180,7 @@ from recent import:
   spread editor needs edge dragging
 
 node editor NodeInterface nodes:
+  undo redo
   grouping framed objects have complications
   gegl nodes:
     scale-size has runaway render for undefined rect
@@ -200,30 +203,23 @@ node editor NodeInterface nodes:
 	tooltips for operation, not just properties
     in menu, so many nodes, need way to classify favorites, maybe custom arrangements of menu
       progressive search
-  need search
-  loading should check automatically for different files if load fails
+  for preview resizer, shouldn't have it when preview is too tiny, since then usually you want to move the node, not resize
   save needs to remember file name per loader, plus default file
   no overlap needs to stack siblings as nicely as possible
-  loading needs to check for name collisions
-  rename nodes
-  undo redo
   image object creation node, tie node output to a custom LaxImage importer (the proof of concept node for 0.097)
-  need a little triple bar triangle in lower right corner to resize preview size. change preview size on all selected
-  nodes need preview images as necessary: need to preview non-sinks
-  view mode: all collapsed,  all collapsed except preview,  expanded no preview,  expanded with preview
-  duplicate nodes
   load something already loaded makes dups of everything.. need to check for name collision!!
   load/save custom properties needs to preserve name, label, tooltip, types, custom info
   groups
     linked vs appended node groups, to allow mass changing of particular effects
+	  GroupRef : NodeGroup, with some sort of relay to actual group internals
     node libraries: nodes as resources
     DONE need visual indication that something is a group
   auto shift on connection
   auto connect when dragging nodes.. needs parsing of compatible properties
   view area things:
-    jump to link under mouse: shift click over slot, or shift click over bare bez
     node magnifier for easier browsing when otherwise zoomed way out
     toggle show only selected nodes?
+    DONE jump to link under mouse: shift click over slot, or shift click over bare bez
   exec paths
     may have to rewrite properties to allow multiple ins and single out. currently some places assume only one in
 	  require first to be the single out, if property is a pass through
@@ -236,7 +232,15 @@ node editor NodeInterface nodes:
   need better styling.. too much is hardcoded. problems later with high dpi screens
   finish implementing no cycle check: on load in could be a crash magnet currently if constructed with loops
   file properties need browser button
+  duplicate nodes (still need to imp group dup)
 
+  DONE cut links
+  DONE nodes need preview images as necessary: need to preview non-sinks
+  DONE view mode: all collapsed,  all collapsed except preview,  expanded no preview,  expanded with preview
+  DONE need a little triple bar triangle in lower right corner to resize preview size. change preview size on all selected
+  DONE loading should check automatically for different files if load fails
+  DONE rename nodes
+  DONE need search
   DONE numbers need slide change: specify add or zoom stepping
   DONE node resize needs mouseover for edges
   DONE select all/deselect with 'a'
@@ -253,8 +257,8 @@ node editor NodeInterface nodes:
   gmic nodes
   graphicsmagick nodes
   antiprism nodes
-  examine blender for compatibility
-  examine godot for compatibility
+  examine blender for compatibility -> animation node addon seems fuller for general data processing
+  examine godot for compatibility -> does full scripting execution
   examine imgflo for compatibility
   examine Natron for compatibility
   examine pure data for compatibility
@@ -262,6 +266,7 @@ node editor NodeInterface nodes:
   proprietary import like substance or houdini?
   any crossover with mypaint brushes or krita???
 
+  dedicated random node: seed, is_int, min,max
   viewer node, resizable
   image from file node
   curve node
@@ -287,14 +292,7 @@ node editor NodeInterface nodes:
 	nodify script
 	use PlainText objects
 	edit text externally or in different text editor frame
-  vector node:
-    separate xyz
-	DONE combine xyz
-	math ops:
-      perpendicular
-      parallel to
-      norm
-      norm squared
+  math 1 arg: norm, norm squared, etc
   string ops:
     concat s1, s2
 	substr [index..index]
@@ -311,6 +309,11 @@ node editor NodeInterface nodes:
 	  abs  neg  sqrt sgn
 	  sin  cos  tan  asin  acos  atan
 	  sinh cosh tanh asinh acosh atanh
+  DONE vector node:
+    DONE 2,3,4 dimension vectors
+    DONE separate xyz
+	DONE combine xyz
+	DONE math: perpendicular, parallel, etc
 
 need to implement DRAW_Hires for all interfaces that default to preview renders. needed for proper image out
   includes at least image(done), path, engraver

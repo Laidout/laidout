@@ -598,6 +598,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual int EnterGroup(NodeGroup *group=NULL);
 	virtual int LeaveGroup();
 	virtual int DuplicateNodes();
+	virtual int CutConnections(flatpoint p1,flatpoint p2);
 	virtual int SaveNodes(const char *file);
 	virtual int LoadNodes(const char *file, bool append);
 };

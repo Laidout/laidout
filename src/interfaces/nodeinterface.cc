@@ -2749,10 +2749,6 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 		needtodraw=1;
 		return 0;
 
-	} else if (!strcmp(mes,"loadwithloader")) {
-		PostMessage("*** Need to implement save with loader!!");
-		return 0;
-
 	} else if (!strcmp(mes, "setNodeLabel")) {
 		NodeBase *node = nodes->GetNode(lasthover);
 		if (!node) return 0;
@@ -3620,12 +3616,6 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 	int overpropslot=-1, overproperty=-1, overconnection=-1; 
 	int overnode = scan(x,y, &overpropslot, &overproperty, &overconnection, state);
 
-//	if (count==2 && overnode>=0 && nodes && dynamic_cast<NodeGroup*>(nodes->nodes.e[overnode])) {
-//		PostMessage("Need to implement jump into group");
-//		needtodraw=1;
-//		return 0;
-//	}
-
 	if (count == 2 && overnode>=0 && overproperty<0 && overpropslot == NODES_Label) {
 		action = overpropslot;
 
@@ -3882,14 +3872,12 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 	} else if (action == NODES_Cut_Connections) {
 		 //cut any connections that cross the line between selection_rect.min to max
-		// ***
-		PostMessage("Need to implement Cut Connections!!!");
-
-		////foreach connection:
-		//nodes->nodes.e[lasthover]->Disconnect(lasthoverslot, lastconnection);
-		//nodes->connections.remove(nodes->connections.findindex(connection)); // <- this actually deletes the connection
-
+		flatpoint p1 = nodes->m.transformPointInverse(flatpoint(selection_rect.minx,selection_rect.miny));
+		flatpoint p2 = nodes->m.transformPointInverse(flatpoint(selection_rect.maxx,selection_rect.maxy));
+		CutConnections(p1,p2);
+		hover_action = NODES_None;
 		needtodraw=1;
+		return 0;
 
 	} else if (action == NODES_Selection_Rect) {
 		 //select or deselect any touching selection_rect
@@ -4796,7 +4784,6 @@ int NodeInterface::LoadNodes(const char *file, bool append)
 	if (strstr(first500, "#Laidout") != first500 || strstr(first500, "Nodes") == NULL) {
 		 //does not appear to be a laidout node file.
 		 //try with loaders
-		//PostMessage(_(" *** Not a Laidout Nodes file! need to implement type checking with loaders!!"));
 		fclose(f);
 		f = NULL;
 
@@ -4930,6 +4917,45 @@ int NodeInterface::LeaveGroup()
 	lasthover = lasthoverslot = lasthoverprop = lastconnection = -1;
 	needtodraw=1;
 	return 0;
+}
+
+/*! Return number of connections cut.
+ */
+int NodeInterface::CutConnections(flatpoint p1,flatpoint p2)
+{
+	if (!nodes) return 0;
+
+	int n = 0;
+
+	NodeBase *node;
+	NodeProperty *prop;
+	NodeConnection *connection;
+	flatpoint p;
+
+	for (int c=0; c<nodes->nodes.n; c++) {
+		node = nodes->nodes.e[c];
+
+		for (int c2=0; c2<node->properties.n; c2++) {
+			prop = node->properties.e[c2];
+			if (!prop->IsInput()) continue;
+
+			for (int c3=prop->connections.n-1; c3>=0; c3--) {
+				connection = prop->connections.e[c3];
+				GetConnectionBez(connection, bezbuf);
+				//box.clear();
+				//box.addtobounds(bezbuf[0]);
+				//box.addtobounds(bezbuf[1]);
+				//box.addtobounds(bezbuf[2]);
+				//box.addtobounds(bezbuf[3]);
+
+				if (bez_intersection(p1,p2, 0, bezbuf[0],bezbuf[1],bezbuf[2],bezbuf[3], 7, &p,NULL)) {
+					nodes->Disconnect(connection, false, false);
+				}
+			}
+		}
+	}
+
+	return n;
 }
 
 /*! Copy any links others in selected.
