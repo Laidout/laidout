@@ -640,7 +640,7 @@ ObjectDef *DefineMathNodeDef()
 	def->pushEnumValue("Maximum",    _("Maximum"),      _("Maximum"),     OP_Maximum     );
 	def->pushEnumValue("Average",    _("Average"),      _("Average"),     OP_Average     );
 	def->pushEnumValue("Atan2",      _("Atan2"),        _("Arctangent 2"),OP_Atan2       );
-	def->pushEnumValue("RandomR",    _("Random"),       _("Random(seed,max)"), OP_RandomRange );
+	//def->pushEnumValue("RandomR",    _("Random"),       _("Random(seed,max)"), OP_RandomRange );
 
 	def->pushEnumValue("And"        ,_("And"       ),   _("And"       ),  OP_And         );
 	def->pushEnumValue("Or"         ,_("Or"        ),   _("Or"        ),  OP_Or          );
@@ -1185,6 +1185,102 @@ Laxkit::anObject *newNodeGroup(int p, Laxkit::anObject *ref)
 }
 
 
+//------------------------ RandomNode ------------------------
+
+/*! \class CurveNode
+ *
+ * <pre>
+ * 0. In
+ * 1. Curve
+ * 2. block to select which channel, and/or all
+ * 3. Out
+ * </pre>
+ */
+class RandomNode : public NodeBase
+{
+  public:
+	RandomNode(int seed=0, double min=0, double max=1);
+	virtual ~RandomNode();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
+};
+
+RandomNode::RandomNode(int seed, double min, double max)
+{
+	makestr(Name, _("Random"));
+	makestr(type, "Random");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Seed",    new IntValue(seed),1,      _("Seed"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Minimum", new DoubleValue(min),1,    _("Minimum"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Maximum", new DoubleValue(max),1,    _("Maximum"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Block, false,"Integer", new BooleanValue(false),1, _("Integer"))); 
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Number", new DoubleValue(),1, _("Number"))); 
+}
+
+RandomNode::~RandomNode()
+{
+}
+
+NodeBase *RandomNode::Duplicate()
+{
+	int isnum=0;
+	int   seed = getNumberValue(properties.e[0]->GetData(), &isnum);
+	double min = getNumberValue(properties.e[1]->GetData(), &isnum);
+	double max = getNumberValue(properties.e[2]->GetData(), &isnum);
+
+	RandomNode *newnode = new RandomNode(seed, min, max);
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int RandomNode::GetStatus()
+{
+	if (!isNumberType(properties.e[0]->GetData(), NULL)) return -1;
+	if (!isNumberType(properties.e[1]->GetData(), NULL)) return -1;
+	if (!isNumberType(properties.e[2]->GetData(), NULL)) return -1;
+
+	if (!properties.e[4]->data) return 1;
+
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int RandomNode::Update()
+{
+	int isnum=0;
+	int   seed = getNumberValue(properties.e[0]->GetData(), &isnum);
+	if (!isnum) return -1;
+	double min = getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+	double max = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+	bool isint = dynamic_cast<BooleanValue*>(properties.e[3]->GetData())->i;
+
+	srandom(abs(seed));
+	double num = random()/double(RAND_MAX) * (max-min) + min;
+	
+	Value *v = properties.e[4]->GetData();
+
+	if (isint) {
+		if (!dynamic_cast<IntValue*>(v)) {
+			v = new IntValue(num+.5);
+			properties.e[4]->SetData(v, 1);
+		} else dynamic_cast<IntValue*>(v)->i = num+.5;
+	} else {
+		if (!dynamic_cast<DoubleValue*>(v)) {
+			v = new DoubleValue(num);
+			properties.e[4]->SetData(v, 1);
+		} else dynamic_cast<DoubleValue*>(v)->d = num;
+	}
+
+	return NodeBase::Update();
+}
+
+Laxkit::anObject *newRandomNode(int p, Laxkit::anObject *ref)
+{
+	return new RandomNode(0, 0., 1.);
+}
 
 
 //--------------------------- SetupDefaultNodeTypes() -----------------------------------------
@@ -1226,6 +1322,9 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	 //--- Affine nodes
 	factory->DefineNewObject(getUniqueNumber(), "Affine", newAffineNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Affine2",newAffineNode2, NULL, 0);
+
+	 //--- RandomNode
+	factory->DefineNewObject(getUniqueNumber(), "Random",newRandomNode,  NULL, 0);
 
 	return 0;
 }
