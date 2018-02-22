@@ -66,6 +66,9 @@ NodeColors::NodeColors()
 	default_property(1.,1.,1.,1.),
 	connection(.5,.5,.5,1.),
 	sel_connection(1.,0.,1.,1.),
+	number(.8,.8,.8,1.),
+	vector(.9,.5,.9,1.),
+	color(1.,1.,0.,1.),
 
 	label_fg(.2,.2,.2,1.),
 	label_bg(.7,.7,.7,1.),
@@ -74,6 +77,7 @@ NodeColors::NodeColors()
 	text(0.,0.,0.,1.),
 	border(.2,.2,.2,1.),
 	error_border(.5,.0,.0,1.),
+	update_border(1.,1.,0.,1.),
 
 	fg_edit(.2,.2,.2,1.),
 	bg_edit(.9,.9,.9,1.),
@@ -501,12 +505,14 @@ NodeBase::NodeBase()
 
 	type = NULL;
 	def  = NULL;
+	error_message = NULL;
 }
 
 NodeBase::~NodeBase()
 {
 	delete[] Name;
 	delete[] type;
+	delete[] error_message;
 	if (def) def->dec_count();
 	if (colors) colors->dec_count();
 	if (total_preview) total_preview->dec_count();
@@ -590,6 +596,24 @@ int NodeBase::GetStatus()
 		if (properties.e[c]->modtime < t) return 1; 
 	}
 	return 0;
+}
+
+/*! Return the most recent modtime for input or block properties.
+ * Optionally return the index of that property.
+ */
+time_t NodeBase::MostRecentIn(int *index)
+{
+	time_t time = 0;
+	int i = -1;
+	for (int c=0; c<properties.n; c++) {
+		if (!properties.e[c]->IsInput() && !properties.e[c]->IsBlock()) continue;
+		if (properties.e[c]->modtime > time) {
+			time = properties.e[c]->modtime;
+			i = c;
+		}
+	}
+	if (index) *index = i;
+	return time;
 }
 
 /*! Call whenever any of the inputs change, update outputs.
@@ -2929,6 +2953,7 @@ int NodeInterface::Refresh()
 	ScreenColor tfg, tbg, tmid, hprop;
 	NodeColors *colors=NULL;
 	double borderwidth = 1;
+	int status;
 
 	for (int c=0; c<nodes->nodes.n; c++) {
 		node = nodes->nodes.e[c];
@@ -2949,6 +2974,20 @@ int NodeInterface::Refresh()
 			bg     = &colors->selected_bg;
 			borderwidth = 3;
 		}
+
+		 //update for error state
+		status = node->GetStatus();
+		if (status < 0 || node->ErrorMessage()) {
+			borderwidth = 3;
+			border = &colors->error_border;
+		} else if (status > 0) {
+			border = &colors->update_border;
+		}
+
+		if (node->ErrorMessage()) {
+			dp->textout(node->x+node->width/2, node->y, node->ErrorMessage(),-1, LAX_HCENTER|LAX_BOTTOM);
+		}
+
 		if (lasthover == c) { //mouse is hovering over this node
 			tfg = *fg;
 			tbg = *bg;
@@ -3109,6 +3148,7 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 	}
 
 	double th = dp->textheight();
+	ScreenColor *propcolor = &node->colors->default_property;
 
 	if (!node->collapsed) {
 		if (prop->type == NodeProperty::PROP_Button) {
@@ -3140,6 +3180,8 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 				dp->textout(node->x+prop->x+th, node->y+prop->y+prop->height/2, extra, -1, LAX_LEFT|LAX_VCENTER);
 				v->getValueStr(extra, 199);
 				dp->textout(node->x+node->width-th, node->y+prop->y+prop->height/2, extra, -1, LAX_RIGHT|LAX_VCENTER);
+
+				propcolor = &node->colors->number;
 
 			} else if (v && v->type()==VALUE_String) {
 				dp->NewFG(&nodes->colors->fg);
@@ -3223,6 +3265,8 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 				dp->NewFG(oldfg);
 				dp->textout(x,y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER);
 
+				propcolor = &node->colors->color;
+
 			} else {
 				 //fallback, just write out the property name
 				dp->NewFG(&nodes->colors->fg);
@@ -3243,12 +3287,17 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 					}
 				}
 			}
+
+			if (v && (v->type()==VALUE_Flatvector || v->type()==VALUE_Spacevector || v->type()==VALUE_Quaternion))
+				propcolor = &node->colors->vector;
 		}
 	} // !node->collapsed
 
 	 //draw connection spot
 	if (prop->is_linkable) {
-		dp->NewBG(&prop->color);
+		//dp->NewBG(&prop->color);
+		dp->NewBG(propcolor);
+
 		//dp->drawellipse(prop->pos+flatpoint(node->x,node->y), th*slot_radius,th*slot_radius, 0,0, 2);
 		dp->drawellipse(prop->pos+flatpoint(node->x,node->y),
 				(hoverslot ? 2 : 1)*th*node->colors->slot_radius, (hoverslot ? 2 : 1)*th*node->colors->slot_radius, 0,0, 2);
