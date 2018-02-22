@@ -4379,7 +4379,8 @@ double getNumberValue(Value *v, int *isnum)
 bool isNumberType(Value *v, double *number_ret)
 {
 	int isnum = 0;
-	*number_ret = getNumberValue(v, &isnum);
+	double n = getNumberValue(v, &isnum);
+	if (number_ret) *number_ret = n;
 	return isnum;
 }
 
