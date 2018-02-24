@@ -31,6 +31,7 @@
 #include "interfaces/nodeinterface.h"
 #include "interfaces/anchorinterface.h"
 #include <lax/interfaces/ellipseinterface.h>
+#include "interfaces/animationinterface.h"
 
 
 #include "interfaces.h"
@@ -54,9 +55,8 @@
 #include "interfaces/cloneinterface.h"
 #include "interfaces/pagemarkerinterface.h"
 
-#include "interfaces/animationinterface.h"
 
-
+//template implementation:
 #include <lax/lists.cc>
 
 
@@ -107,10 +107,10 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		// *************** testing:
 
 		 //------Animation
-		//i=new AnimationInterface(NULL,id++,NULL);
-		//tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
-		//existingpool->push(i);
-		//i->dec_count();
+		i=new AnimationInterface(NULL,id++,NULL);
+		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+		existingpool->push(i);
+		i->dec_count();
 
 		 //------TextStream
 		i=new TextStreamInterface(NULL,id++,NULL);
