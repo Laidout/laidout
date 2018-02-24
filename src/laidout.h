@@ -91,7 +91,7 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	void dumpOutResources();
 
 	int autosave_timerid;
-	virtual int  Idle(int tid=0);
+	virtual int  Idle(int tid, double delta);
 	virtual int Autosave();
 
  public:

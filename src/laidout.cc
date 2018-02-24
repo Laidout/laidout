@@ -312,7 +312,7 @@ int LaidoutApp::close()
 	return 0;
 }
 
-int LaidoutApp::Idle(int tid)
+int LaidoutApp::Idle(int tid, double delta)
 {
 	if (tid==autosave_timerid) { Autosave(); return 0; }
 
