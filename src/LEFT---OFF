@@ -141,9 +141,7 @@ DONE put rss/g+ links on all menu pages..
 
 color strips for full transparent should show checkers in all strips, not just the alpha strip
 
-switch to GPL v3?
-
-file live search selects wrong one.. using absolute index instead of file
+switch to GPL v3? would broaden gegl usage, some of which requires gpl3
 
 fontdialog:
   select font inappropriately repositions view
@@ -199,6 +197,7 @@ node editor NodeInterface nodes:
 	DONE load in graph xml
     DONE process on a crop after change a value crash? need to trace
 	DONE make process optional
+  for memory saving, need to determine what is a "final" node, since intermediate nodes can free data, or pass it on
   node browser
 	tooltips for operation, not just properties
     in menu, so many nodes, need way to classify favorites, maybe custom arrangements of menu
@@ -210,6 +209,7 @@ node editor NodeInterface nodes:
   load something already loaded makes dups of everything.. need to check for name collision!!
   load/save custom properties needs to preserve name, label, tooltip, types, custom info
   groups
+    duplicate nodes (still need to imp group dup)
     linked vs appended node groups, to allow mass changing of particular effects
 	  GroupRef : NodeGroup, with some sort of relay to actual group internals
     node libraries: nodes as resources
@@ -232,8 +232,8 @@ node editor NodeInterface nodes:
   need better styling.. too much is hardcoded. problems later with high dpi screens
   finish implementing no cycle check: on load in could be a crash magnet currently if constructed with loops
   file properties need browser button
-  duplicate nodes (still need to imp group dup)
 
+  DONE if you right click on a node not in selection, make that the selection instead
   DONE cut links
   DONE nodes need preview images as necessary: need to preview non-sinks
   DONE view mode: all collapsed,  all collapsed except preview,  expanded no preview,  expanded with preview
@@ -248,6 +248,7 @@ node editor NodeInterface nodes:
   DONE newly added should be selected
   DONE hover tips for props on collapsed nodes
   DONE clear up IsInput()/IsOutput()
+  DONE dedicated random node: seed, is_int, min,max
 
   css named filter: brightness(1) contrast(67%) saturate(250%) grayscale(0%) invert(0%) hue-rotate(330deg) sepia(40%) blur(0px)
     see https://www.w3.org/TR/filter-effects-1/#grayscaleEquivalent for svg filter equivalents
@@ -266,7 +267,6 @@ node editor NodeInterface nodes:
   proprietary import like substance or houdini?
   any crossover with mypaint brushes or krita???
 
-  dedicated random node: seed, is_int, min,max
   viewer node, resizable
   image from file node
   curve node
@@ -292,13 +292,12 @@ node editor NodeInterface nodes:
 	nodify script
 	use PlainText objects
 	edit text externally or in different text editor frame
-  math 1 arg: norm, norm squared, etc
   string ops:
     concat s1, s2
 	substr [index..index]
   more math:
     interpolate with easing
-	operate on numbers, vectors as appropriate
+	select from panel:
 	  ---two-arg---
 	  +    -    *    /     %     ^
 	  <    >    !=   == 
@@ -309,6 +308,8 @@ node editor NodeInterface nodes:
 	  abs  neg  sqrt sgn
 	  sin  cos  tan  asin  acos  atan
 	  sinh cosh tanh asinh acosh atanh
+  DONE math operate on numbers, vectors as appropriate
+  DONE math 1 arg: norm, norm squared, etc
   DONE vector node:
     DONE 2,3,4 dimension vectors
     DONE separate xyz
@@ -1944,4 +1945,5 @@ DONE bug: select path tool. one point. escape. delete. boom!
 DONE saved file, not showing up in recent 
 DONE remove imlib dependency from ImagePatch
 DONE (not sure why, switched to use explicit gradients) ColorSliders not really showing black unless you set from hex, but solid black is still sending properly
+DONE file live search selects wrong one.. using absolute index instead of file 
 
