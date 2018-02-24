@@ -390,7 +390,7 @@ int NodeProperty::SetData(Value *newdata, bool absorb)
 NodeThread::NodeThread(NodeProperty *prop, ValueHash *payload, int absorb)
 {
 	thread_id = getUniqueNumber();
-	start_time = time(NULL);
+	start_time = times(NULL);
 	data = NULL;
 	current_property = prop;
 	data = payload;
@@ -585,7 +585,7 @@ LaxInterfaces::anInterface *NodeBase::PropInterface(LaxInterfaces::anInterface *
 int NodeBase::GetStatus()
 { 
 	 //find newest mod time of inputs
-	std::time_t t=0;
+	std::clock_t t=0;
 	for (int c=0; c<properties.n; c++) {
 		if (!properties.e[c]->IsOutput() && properties.e[c]->modtime > t) t = properties.e[c]->modtime;
 	}
@@ -602,9 +602,9 @@ int NodeBase::GetStatus()
 /*! Return the most recent modtime for input or block properties.
  * Optionally return the index of that property.
  */
-time_t NodeBase::MostRecentIn(int *index)
+clock_t NodeBase::MostRecentIn(int *index)
 {
-	time_t time = 0;
+	clock_t time = 0;
 	int i = -1;
 	for (int c=0; c<properties.n; c++) {
 		if (!properties.e[c]->IsInput() && !properties.e[c]->IsBlock()) continue;
@@ -617,17 +617,12 @@ time_t NodeBase::MostRecentIn(int *index)
 	return time;
 }
 
-/*! Call whenever any of the inputs change, update outputs.
- * Default placeolder is to trigger update in connected outputs.
- * Subclasses should redefine to actually update the outputs based on the inputs
- * or any other internal state, as well as the overall preview (if any).
- *
- * Returns GetStatus().
+/*! Call Update() on all connected output properties.
+ * Just like Update(), but don't call GetStatus() and doesn't update this->modtime.
  */
-int NodeBase::Update()
+void NodeBase::PropagateUpdate()
 {
 	NodeProperty *prop;
-	modtime = time(NULL);
 
 	for (int c=0; c<properties.n; c++) {
 		prop = properties.e[c];
@@ -643,7 +638,19 @@ int NodeBase::Update()
 			}
 		}
 	}
+}
 
+/*! Call whenever any of the inputs change, update outputs.
+ * Default placeolder is to update modtime to now, call PropagateUpdate(), and return GetStatus().
+ * Subclasses should redefine to actually update the outputs based on the inputs
+ * or any other internal state, as well as the overall preview (if any).
+ *
+ * Returns GetStatus().
+ */
+int NodeBase::Update()
+{
+	modtime = times(NULL);
+	PropagateUpdate();
 	return GetStatus();
 }
 
@@ -2075,7 +2082,6 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 
 			if (!newnode->colors && colors) newnode->InstallColors(colors, false);
 			newnode->Wrap();
-			newnode->Update();
 			nodes.push(newnode);
 			newnode->dec_count();
 
@@ -2184,6 +2190,9 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 		}
 	}
 
+	for (int c=0; c<nodes.n; c++) {
+		nodes.e[c]->Update();
+	}
 }
 
 /*! Recursively install colors on any that doesn't have one.
@@ -2360,7 +2369,7 @@ anInterface *NodeInterface::duplicate(anInterface *dup)
 }
 
 
-int NodeInterface::Idle(int tid)
+int NodeInterface::Idle(int tid, double delta)
 {
 	if (tid == pan_timer) {
 		if (!nodes) return 1;
@@ -2486,6 +2495,7 @@ Laxkit::MenuInfo *NodeInterface::ContextMenu(int x,int y,int deviceid, Laxkit::M
 	}
 
 
+	menu->AddSep();
 	menu->AddItem(_("Save nodes..."), NODES_Save_Nodes);
 	menu->AddItem(_("Load nodes..."), NODES_Load_Nodes);
 
@@ -3353,7 +3363,7 @@ void NodeInterface::DrawConnection(NodeConnection *connection)
 		if (IsLive(connection)) {
 			 //draw arrows offset
 			len *= sysconf(_SC_CLK_TCK);
-			offset = (time(NULL) % (int)len) / len;
+			offset = (times(NULL) % (int)len) / len;
 		}
 
 		len = bez_segment_length(p1,c1,c2,p2, 20);
@@ -4349,7 +4359,19 @@ int NodeInterface::MBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
  */
 int NodeInterface::RBDown(int x,int y,unsigned int state,int count, const Laxkit::LaxMouse *d)
 {
-	if (!nodes || (state&LAX_STATE_MASK)==0) return anInterface::RBDown(x,y,state,count,d);
+	if (!nodes || (state&LAX_STATE_MASK)==0) {
+		int overnode=-1, overslot=-1, overprop=-1, overconn=-1; 
+		overnode = scan(x,y, &overslot, &overprop, &overconn, 0);
+		if (overnode >= 0) {
+			if (selected.findindex(nodes->nodes.e[overnode]) < 0) {
+				selected.flush();
+				selected.push(nodes->nodes.e[overnode]);
+				needtodraw=1;
+			}
+		}
+
+		return anInterface::RBDown(x,y,state,count,d);
+	}
 	buttondown.down(d->id, RIGHTBUTTON, x,y);
 	return 0;
 }
@@ -4440,7 +4462,7 @@ int NodeInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigne
 	 //default shortcut processing 
 	if (!sc) GetShortcuts();
 	int action=sc->FindActionNumber(ch, state&LAX_STATE_MASK, 0);
-	if (action>=0) {
+	if (action != -1) {
 		return PerformAction(action);
 	}
 
@@ -4473,6 +4495,7 @@ Laxkit::ShortcutHandler *NodeInterface::GetShortcuts()
     sc->Add(NODES_Delete_Nodes,   LAX_Bksp,0,     0, "DeleteNode"    , _("Delete Node"    ),NULL,0);
 	sc->AddShortcut(LAX_Del,0,0,  NODES_Delete_Nodes);
     sc->Add(NODES_Toggle_Collapse,'c',0,          0, "ToggleCollapse", _("ToggleCollapse" ),NULL,0);
+    sc->Add(NODES_TogglePreview,  'p',0,          0, "TogglePreview",  _("TogglePreview" ), NULL,0);
     sc->Add(NODES_Frame_Nodes,    'f',0,          0, "Frame",          _("Frame Selected" ),NULL,0);
     sc->Add(NODES_Unframe_Nodes,  'F',ShiftMask,  0, "Unframe",        _("Remove connected frame" ),NULL,0);
     sc->Add(NODES_Edit_Group,     LAX_Tab,0,      0, "EditGroup",      _("Toggle Edit Group"),NULL,0);
@@ -4625,6 +4648,11 @@ int NodeInterface::PerformAction(int action)
 		ToggleCollapsed();
 		needtodraw=1;
 		return 0;
+
+	} else if (action==NODES_TogglePreview) {
+		if (!selected.n) return 0;
+		if (selected.e[0]->show_preview) return PerformAction(NODES_Hide_Previews);
+		return PerformAction(NODES_Show_Previews);;
 
 	} else if (action==NODES_Show_Previews) {
 		for (int c=0; c<selected.n; c++) {

@@ -103,7 +103,7 @@ class NodeProperty
 	char *name;
 	char *label;
 	char *tooltip;
-	std::time_t modtime;
+	std::clock_t modtime;
 
 	NodeBase *owner;
 	NodeProperty *frompropproxy, *topropproxy;
@@ -159,7 +159,7 @@ class NodeThread
 {
   public:
 	int thread_id;
-	std::time_t start_time;
+	std::clock_t start_time;
 	ValueHash *data;
 	NodeProperty *current_property;
 
@@ -265,7 +265,7 @@ class NodeBase : public Laxkit::anObject,
 	double preview_area_height;
 
 	Laxkit::PtrStack<NodeProperty> properties; //includes inputs and outputs
-	std::time_t modtime; //time of last update
+	std::clock_t modtime; //time of last update
 
 	NodeFrame *frame;
 	NodeColors *colors;
@@ -288,9 +288,10 @@ class NodeBase : public Laxkit::anObject,
 	virtual int Redo(UndoData *data);
 
 	virtual int Update();
+	virtual void PropagateUpdate();
 	virtual int UpdatePreview();
 	virtual int GetStatus();
-	virtual time_t MostRecentIn(int *index);
+	virtual clock_t MostRecentIn(int *index);
 	virtual int UsesPreview() { return total_preview!=NULL && show_preview; }
 	virtual int Wrap();
 	virtual int WrapFull(bool keep_current_width);
@@ -508,7 +509,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	double play_fps;
 	int playing;
 	int play_timer;
-	time_t elapsed_time, last_time;
+	clock_t elapsed_time, last_time;
 	virtual int IsLive(NodeConnection *con);
 	virtual int Play();
 	virtual int TogglePause();
@@ -566,7 +567,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	const char *Name();
 	const char *whattype() { return "NodeInterface"; }
 	const char *whatdatatype();
-	virtual int  Idle(int tid=0);
+	virtual int  Idle(int tid, double delta);
 	Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu);
 	virtual int Event(const Laxkit::EventData *data, const char *mes);
 	virtual Laxkit::ShortcutHandler *GetShortcuts();
