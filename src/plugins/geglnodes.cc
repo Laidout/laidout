@@ -142,7 +142,7 @@ int ValueToProperty(Value *v, const char *gvtype, GeglNode *node, const char *pr
 			return 0;
 		}
 
-	} else if (vtype == VALUE_EnumVal) {
+	} else if (vtype == VALUE_EnumVal || vtype == VALUE_Enum) {
 		 //incoming data as well as the gegl property must be the same enum type
 		GValue gv = G_VALUE_INIT;
 		gegl_node_get_property(node, property, &gv);
@@ -171,13 +171,14 @@ int ValueToProperty(Value *v, const char *gvtype, GeglNode *node, const char *pr
 
 	} else if (!strcmp(gvtype, "BablFormat")) {
 		StringValue *s = dynamic_cast<StringValue*>(v);
-		if (!v) return -1;
+		if (!s) return -1;
 
 		const Babl *format = (s->str ? babl_format(s->str) : NULL);
 		if (format) {
 			gegl_node_set(node, property, format, NULL);
 			return 0;
 		}
+		if (isblank(s->str)) return 0;
 		return -1;
 
 	//} else if (vtype == VALUE_) {
