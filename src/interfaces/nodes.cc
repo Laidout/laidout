@@ -23,8 +23,8 @@
 #include <lax/lists.cc>
 
 
-namespace Laidout { 
-	
+namespace Laidout {
+
 
 
 //-------------------------------------- Define the built in nodes types --------------------------
@@ -38,7 +38,7 @@ Laxkit::anObject *newDoubleNode(int p, Laxkit::anObject *ref)
 	//node->Id("Value");
 	makestr(node->Name, _("Value"));
 	makestr(node->type, "Value");
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("V"), new DoubleValue(0), 1)); 
+	node->AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("V"), new DoubleValue(0), 1));
 	return node;
 }
 
@@ -610,7 +610,7 @@ enum MathNodeOps {
  */
 ObjectDef *DefineMathNode1Def()
 {
-	ObjectDef *def = new ObjectDef("MathNode2Def1", _("Math Node Def for 1 argument"), NULL,NULL,"enum", 0);
+	ObjectDef *def = new ObjectDef("MathNode1Def", _("Math Node Def for 1 argument"), NULL,NULL,"enum", 0);
 
 	 //1 argument
 	def->pushEnumValue("AbsoluteValue"  ,_("AbsoluteValue"), _("AbsoluteValue"), OP_AbsoluteValue );
@@ -649,7 +649,7 @@ ObjectDef *DefineMathNode1Def()
  */
 ObjectDef *DefineMathNode2Def()
 {
-	ObjectDef *def = new ObjectDef("MathNode2Def2", _("Math Node Def"), NULL,NULL,"enum", 0);
+	ObjectDef *def = new ObjectDef("MathNode2Def", _("Math Node Def"), NULL,NULL,"enum", 0);
 
 	 //2 arguments
 	def->pushEnumValue("Add",        _("Add"),          _("Add"),         OP_Add         );
@@ -987,7 +987,7 @@ Laxkit::anObject *newMathNode1(int p, Laxkit::anObject *ref)
 
 MathNode2::MathNode2(int op, double aa, double bb)
 {
-	type = newstr("Math22");
+	type = newstr("Math2");
 	Name = newstr(_("Math 2"));
 
 	last_status = 1;
@@ -1586,6 +1586,279 @@ Laxkit::anObject *newRandomNode(int p, Laxkit::anObject *ref)
 }
 
 
+//------------------------------ concat --------------------------------------------
+
+class ConcatNode : public NodeBase
+{
+  public:
+	ConcatNode(const char *s1, const char *s2);
+	virtual ~ConcatNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+};
+
+ConcatNode::ConcatNode(const char *s1, const char *s2)
+{
+	makestr(Name, _("Concat"));
+	makestr(type, "Concat");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "A", new StringValue(s1),1, _("A")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "B", new StringValue(s2),1, _("B")));
+
+	char ns[1 + (s1 ? strlen(s1) : 0) + (s2 ? strlen(s2) : 0)];
+	sprintf(ns, "%s%s", (s1 ? s1 : ""), (s2 ? s2 : ""));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", new StringValue(ns),1, _("Out")));
+}
+
+ConcatNode::~ConcatNode()
+{
+}
+
+NodeBase *ConcatNode::Duplicate()
+{
+	StringValue *s1 = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	StringValue *s2 = dynamic_cast<StringValue*>(properties.e[1]->GetData());
+
+	ConcatNode *newnode = new ConcatNode(s1 ? s1->str : NULL, s2 ? s2->str : NULL);
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int ConcatNode::GetStatus()
+{
+	if (!isNumberType(properties.e[0]->GetData(), NULL) && !dynamic_cast<StringValue*>(properties.e[0]->GetData())) return -1;
+	if (!isNumberType(properties.e[1]->GetData(), NULL) && !dynamic_cast<StringValue*>(properties.e[1]->GetData())) return -1;
+
+	if (!properties.e[2]->data) return 1;
+
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int ConcatNode::Update()
+{
+	char *str=NULL;
+
+	int isnum=0;
+	double d = getNumberValue(properties.e[0]->GetData(), &isnum);
+	if (isnum) {
+		str = numtostr(d);
+	} else {
+		StringValue *s = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+		if (!s) return -1;
+
+		str = newstr(s->str);
+	}
+
+	d = getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (isnum) {
+		char *ss = numtostr(d);
+		appendstr(str, ss);
+		delete[] ss;
+	} else {
+		StringValue *s = dynamic_cast<StringValue*>(properties.e[1]->GetData());
+		if (!s) return -1;
+
+		appendstr(str, s->str);
+	}
+
+	StringValue *out = dynamic_cast<StringValue*>(properties.e[2]->GetData());
+	out->Set(str);
+
+	delete[] str;
+
+	return NodeBase::Update();
+}
+
+
+Laxkit::anObject *newConcatNode(int p, Laxkit::anObject *ref)
+{
+	return new ConcatNode(NULL,NULL);
+}
+
+
+//------------------------ ThreadNode ------------------------
+
+/*! \class Starts an execution path.
+ */
+
+class ThreadNode : public NodeBase
+{
+  public:
+	ThreadNode();
+	virtual ~ThreadNode();
+
+	virtual NodeBase *Duplicate();
+	//virtual int Update();
+	//virtual int GetStatus();
+	virtual NodeBase *Execute(NodeThread *thread);
+};
+
+ThreadNode::ThreadNode()
+{
+	makestr(type, "Thread");
+	makestr(Name, _("Thread"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_Out, true, "out",  NULL,1, _("Out")));
+}
+
+ThreadNode::~ThreadNode()
+{
+}
+
+
+NodeBase *ThreadNode::Duplicate()
+{
+	ThreadNode *node = new ThreadNode();
+	return node;
+}
+
+NodeBase *ThreadNode::Execute(NodeThread *thread)
+{
+	if (!properties.e[0]->connections.n) return NULL;
+	return properties.e[0]->connections.e[0]->to;
+}
+
+
+Laxkit::anObject *newThreadNode(int p, Laxkit::anObject *ref)
+{
+	return new ThreadNode();
+}
+
+
+//------------------------ LoopNode ------------------------
+
+/*! \class For loop node.
+ */
+
+class LoopNode : public NodeBase
+{
+  public:
+	double start, end, step, current;
+	int running;
+
+	LoopNode(double nstart, double nend, double nstep);
+	virtual ~LoopNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Execute(NodeThread *thread);
+};
+
+
+LoopNode::LoopNode(double nstart, double nend, double nstep)
+{
+	start   = nstart;
+	end     = nend;
+	step    = nstep;
+	current = start;
+	running = 0;
+
+	makestr(type,   "Loop");
+	makestr(Name, _("Loop"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_In,  true, "In",    NULL,1, _("In")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_Out, true, "Done",  NULL,1, _("Done")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_Out, true, "Loop",  NULL,1, _("Loop")));
+	 // *** while in loop, run to loop.
+	 // when thread dead ends, return to this node and go out on Done
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Start", new DoubleValue(start),1,_("Start"), NULL));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "End",   new DoubleValue(end),1,  _("End"),   NULL));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Step",  new DoubleValue(step),1, _("Step"),  NULL));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Current",  new DoubleValue(current),1, _("Current"),  NULL, 0, false));
+}
+
+LoopNode::~LoopNode()
+{
+}
+
+NodeBase *LoopNode::Execute(NodeThread *thread)
+{
+	NodeProperty *done = properties.e[1];
+	NodeProperty *loop = properties.e[2];
+
+	if ((start>end && step>=0) || (start<end && step<=0)) return NULL;
+
+	NodeBase *next = NULL;
+
+	if (!running) {
+		 //initialize loop
+		running = 1;
+		current = start;
+		//if      (loop->connections.n) thread->UpdateThread(loop->connections.e[0]->to, loop->connections.e[0]);
+		//else if (done->connections.n) thread->UpdateThread(done->connections.e[0]->to, done->connections.e[0]);
+		//else thread->UpdateThread(this, NULL);
+
+		if      (loop->connections.n) next = loop->connections.e[0]->to;
+		else if (done->connections.n) next = done->connections.e[0]->to;
+		else next = this;
+
+		dynamic_cast<DoubleValue*>(properties.e[6]->GetData())->d = current;
+		properties.e[6]->Touch();
+		PropagateUpdate();
+		thread->scopes.push(this);
+		return next;
+	}
+
+	 //update current
+	if (current + step > end) {
+		 //end loop
+		running = 0;
+		if (done->connections.n) next = done->connections.e[0]->to;
+		else next = NULL;
+		thread->scopes.remove(-1);
+
+	} else {
+		 //continue loop
+		current += step;
+		if (loop->connections.n) next = loop->connections.e[0]->to;
+		else next = this;
+
+		dynamic_cast<DoubleValue*>(properties.e[6]->GetData())->d = current;
+		properties.e[6]->Touch();
+		PropagateUpdate();
+	}
+
+	return next;
+}
+
+NodeBase *LoopNode::Duplicate()
+{
+	LoopNode *node = new LoopNode(start, end, step);
+	node->DuplicateBase(this);
+	return node;
+}
+
+int LoopNode::Update()
+{
+	int isnum;
+	start = getNumberValue(properties.e[3]->GetData(), &isnum);  if (!isnum) return -1;
+	end   = getNumberValue(properties.e[4]->GetData(), &isnum);  if (!isnum) return -1;
+	step  = getNumberValue(properties.e[5]->GetData(), &isnum);  if (!isnum) return -1;
+
+	if ((start>end && step>=0) || (start<end && step<=0)) {
+		makestr(error_message, _("Bad step value"));
+		return -1;
+	}
+	return NodeBase::Update();
+}
+
+int LoopNode::GetStatus()
+{
+	//assume start, end, step all set correctly
+	if ((start>end && step>=0) || (start<end && step<=0)) return -1;
+	return 0;
+}
+
+
+Laxkit::anObject *newLoopNode(int p, Laxkit::anObject *ref)
+{
+	return new LoopNode(0,10,1);
+}
+
 //--------------------------- SetupDefaultNodeTypes() -----------------------------------------
 
 /*! Install default built in node types to factory.
@@ -1631,6 +1904,15 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 
 	 //--- RandomNode
 	factory->DefineNewObject(getUniqueNumber(), "Random",newRandomNode,  NULL, 0);
+
+	 //--- ConcatNode
+	factory->DefineNewObject(getUniqueNumber(), "Concat",newConcatNode,  NULL, 0);
+
+	 //--- ThreadNode
+	factory->DefineNewObject(getUniqueNumber(), "Thread",newThreadNode,  NULL, 0);
+
+	 //--- LoopNode
+	factory->DefineNewObject(getUniqueNumber(), "Loop",newLoopNode,  NULL, 0);
 
 	return 0;
 }

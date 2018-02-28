@@ -76,7 +76,7 @@ class NodeConnection : public Laxkit::RefCounted
 	virtual ~NodeConnection();
 	virtual void SetFrom(NodeBase *nfrom, NodeProperty *nfprop) { from = nfrom; fromprop = nfprop; }
 	virtual void SetTo  (NodeBase *nto,   NodeProperty *nfto  ) { to   = nto;   toprop   = nfto;   }
-	//virtual void RemoveConnection(int which=3);
+	virtual int IsExec();
 };
 
 //typedef int (*NodePropertyValidFunc)(NodeProperty *prop, const char **error_message);
@@ -139,7 +139,9 @@ class NodeProperty
 	virtual int IsOutput() { return type==PROP_Output; }
 	virtual int IsBlock()  { return type==PROP_Block; }
 	virtual int IsEditable() { return is_editable && !(IsInput() && IsConnected()); }
-	virtual int IsExecution() { return type==PROP_Exec_In || type==PROP_Exec_Out || type==PROP_Exec_Through; }
+	virtual int IsExec() { return type==PROP_Exec_In || type==PROP_Exec_Out || type==PROP_Exec_Through; }
+	virtual int IsExecOut() { return type==PROP_Exec_Out || type==PROP_Exec_Through; }
+	virtual int IsExecIn()  { return type==PROP_Exec_In  || type==PROP_Exec_Through; }
 	virtual int IsHidden() { return hidden; }
 	virtual int Hide();
 	virtual int Show();
@@ -150,6 +152,7 @@ class NodeProperty
 	virtual Value *GetData();
 	virtual NodeBase *GetDataOwner();
 	virtual int SetData(Value *newdata, bool absorb);
+	virtual void Touch();
 };
 
 
@@ -161,10 +164,13 @@ class NodeThread
 	int thread_id;
 	std::clock_t start_time;
 	ValueHash *data;
-	NodeProperty *current_property;
+	NodeBase *next;
+	NodeProperty *property; //property from preceding node
+	RefPtrStack<NodeBase> scopes;
 
-	NodeThread(NodeProperty *prop, ValueHash *payload, int absorb);
+	NodeThread(NodeBase *next, NodeProperty *prop, ValueHash *payload, int absorb);
 	virtual ~NodeThread();
+	virtual int UpdateThread(NodeBase *node, NodeConnection *gonext);
 };
 
 
@@ -184,6 +190,7 @@ class NodeColors : public Laxkit::anObject
 	Laxkit::ScreenColor number;
 	Laxkit::ScreenColor vector;
 	Laxkit::ScreenColor color; //includes image
+	Laxkit::ScreenColor exec;
 
 	Laxkit::ScreenColor label_fg;
 	Laxkit::ScreenColor label_bg;
@@ -243,6 +250,7 @@ class NodeFrame : public Laxkit::anObject,
 	virtual void Wrap(double gap=-1);
 };
 
+
 //---------------------------- NodeBase ------------------------------------
 class NodeBase : public Laxkit::anObject,
 				 public Laxkit::DoubleRectangle,
@@ -296,11 +304,14 @@ class NodeBase : public Laxkit::anObject,
 	virtual int Wrap();
 	virtual int WrapFull(bool keep_current_width);
 	virtual int WrapCollapsed();
+	virtual int Collapse(int state); //-1 toggle, 0 open, 1 full collapsed, 2 collapsed to preview
 	virtual void UpdateLinkPositions();
 	virtual void UpdateLayout();
-	virtual int Collapse(int state); //-1 toggle, 0 open, 1 full collapsed, 2 collapsed to preview
+	virtual NodeBase *Execute(NodeThread *thread);
+
 	virtual NodeBase *Duplicate();
 	virtual void DuplicateBase(NodeBase *from);
+	virtual void DuplicateProperties(NodeBase *from);
 
 	virtual int IsConnected(int propindex); //0=no, -1=prop is connected input, 1=connected output
 	virtual int HasConnection(NodeProperty *prop, int *connection_ret);
@@ -314,7 +325,7 @@ class NodeBase : public Laxkit::anObject,
 	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
 	virtual int NumInputs(bool connected);
 	virtual int NumOutputs(bool connected);
-	
+
 	virtual int AssignFrame(NodeFrame *nframe);
 	//virtual NodeColors *GetColors(); //return either this->colors, or the first defined one in owners
 
@@ -439,6 +450,7 @@ enum NodeHover {
 	NODES_Jump_Back      ,
 	NODES_Jump_Forward   ,
 	NODES_Jump_Nearest   ,
+	NODES_Thread_Controls,
 	NODES_HOVER_MAX
 };
 
@@ -448,6 +460,8 @@ enum NodeInterfaceActions {
 	NODES_Selection_Rect,
 	NODES_Drag_Output,
 	NODES_Drag_Input,
+	NODES_Drag_Exec_In,
+	NODES_Drag_Exec_Out,
 	NODES_Move_Nodes,
 	NODES_Move_Or_Select,
 	NODES_Cut_Connections,
@@ -514,8 +528,11 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual int Play();
 	virtual int TogglePause();
 	virtual int Stop(); //resets threads
+	virtual int FindThreads(bool flush);
+	virtual int ExecuteThreads();
+	virtual int IsThread(NodeBase *node);
 
-	int showdecs;
+	int show_threads;
 
 	Laxkit::ObjectFactory *node_factory; //usually, convenience cast to return of NodeBase::NodeFactory()
 
@@ -526,6 +543,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	Laxkit::RefPtrStack<NodeGroup> grouptree; //stack of nested groups we are working on
 	Laxkit::RefPtrStack<NodeBase> selected;
 	Laxkit::DoubleBBox selection_rect;
+	Laxkit::DoubleBBox thread_controls;
 	NodeConnection *tempconnection;
 	int hover_action;
 	int lasthover, lasthoverslot, lasthoverprop, lastconnection;
