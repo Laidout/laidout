@@ -630,7 +630,7 @@ int GeglLaidoutNode::IsSaveNode()
  */
 int GeglLaidoutNode::Update()
 {
-	DBG cerr << "GeglLaidoutNode::Update()..."<<endl;
+	DBG cerr << "GeglLaidoutNode::Update()..."<<type<<endl;
 
 	int num_updated = 0;
 	int errors = 0;
@@ -691,7 +691,6 @@ int GeglLaidoutNode::Update()
 					}
 					g_value_unset(&gv);
 				}
-
 			}
 		}
 	}
@@ -708,6 +707,7 @@ int GeglLaidoutNode::Update()
 			}
 		}
 
+		DBG cerr <<"...done with Gegl Update()"<<endl;
 		UpdatePreview();
 		return NodeBase::Update(); //should trigger updates in outputs
 
@@ -735,11 +735,6 @@ int GeglLaidoutNode::AutoProcess()
 			return 1;
 		}
 	}
-//	----
-//	if (!strcmp(properties.e[properties.n-1]->name, "AutoProcess")) {
-//		BooleanValue *b = dynamic_cast<BooleanValue*>(properties.e[properties.n-1]->GetData());
-//		if (b) return b->i;
-//	}
 	return 1;
 }
 
@@ -759,6 +754,7 @@ int GeglLaidoutNode::GetRect(Laxkit::DoubleBBox &box)
  */
 int GeglLaidoutNode::UpdatePreview()
 {
+	DBG cerr <<"GeglLaidoutNode::UpdatePreview() for "<<operation<<endl;
 
 	if (preview_area_height < 0) preview_area_height = 3*colors->font->textheight();
 
