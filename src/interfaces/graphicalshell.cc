@@ -26,6 +26,7 @@
 #include <lax/transformmath.h>
 #include <lax/colors.h>
 
+//template implementation:
 #include <lax/lists.cc>
 
 using namespace Laxkit;
@@ -663,7 +664,7 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 			Value *answer=NULL;
 			ErrorLog log;
 
-			int status=calculator.evaluate(command,-1, &answer,&log);
+			int status = calculator.Evaluate(command,-1, &answer,&log);
 			if (log.Total()) result=log.FullMessageStr();
 			if (!isblank(result) && status==0) PostMessage(result);
 

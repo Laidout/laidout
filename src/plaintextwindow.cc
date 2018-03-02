@@ -304,14 +304,21 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 			input=edit->GetCText();
 		}
 		if (!input) return 0;
-		char *output=laidout->calculator->In(input);
+		char *output = laidout->calculator->In(input, NULL);
 		DBG if (!output) cerr  << "script in: "<<input<<endl<< "script out: (none)" <<endl;
 		if (output) {
 			DBG cerr << "script in: "<<input<<endl<< "script out" << output<<endl;
-			prependstr(output,":\n");
-			prependstr(output,_("Script output"));
+			//prependstr(output,":\n");
+			//prependstr(output,_("Script output"));
 			MessageBox *mbox=new MessageBox(NULL,NULL,_("Script output"),ANXWIN_CENTER|MB_LEFT, 0,0,0,0,0,
-										NULL,0,NULL, output);
+										NULL,0,NULL, _("Script output"));
+
+			MultiLineEdit *outedit = new MultiLineEdit(this,"out-text",NULL,0, 0,0,0,0,1, NULL,0,NULL,
+							  0,output);
+			double th = app->defaultlaxfont->textheight();
+			mbox->AddWin(outedit,1, 200,0,2000, 50,50, 1.5*th,0,1000,50,50, -1);
+			mbox->AddNull();
+
 			mbox->AddButton(BUTTON_OK);
 			mbox->AddButton(_("Dammit!"),0);
 			app->rundialog(mbox);
