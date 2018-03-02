@@ -138,6 +138,7 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	int InitInterpreters();
 	int AddInterpreter(Interpreter *i, bool absorb_count);
 	int RemoveInterpreter(Interpreter *i);
+	Interpreter *FindInterpreter(const char *name);
 
 	Laxkit::PtrStack<PaperStyle> papersizes;
 	PaperStyle *defaultpaper; //could be a custom, so need to have extra field here
