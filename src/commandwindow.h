@@ -1,6 +1,4 @@
 //
-// $Id$
-//	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -18,7 +16,7 @@
 #define COMMANDWINDOW_H
 
 #include <lax/promptedit.h>
-#include "calculator/calculator.h"
+#include "calculator/interpreter.h"
 
 
 namespace Laidout {
@@ -27,8 +25,9 @@ namespace Laidout {
 class CommandWindow : public Laxkit::PromptEdit
 {
  protected:
-	LaidoutCalculator *calculator;
+	Interpreter *calculator;
 	virtual char *process(const char *in);
+
  public:
  	CommandWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
  		int xx,int yy,int ww,int hh,int brder);
