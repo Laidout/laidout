@@ -682,6 +682,14 @@ int LaidoutApp::RemoveInterpreter(Interpreter *i)
   return 0;
 }
 
+Interpreter *LaidoutApp::FindInterpreter(const char *name)
+{
+	for (int c=0; c<interpreters.n; c++) {
+		if (!strcmp(name, interpreters.e[c]->Id())) return interpreters.e[c];
+	}
+	return NULL;
+}
+
 //! Write out resources to ~/.laidout/(version)/autolaidoutrc.
 void LaidoutApp::dumpOutResources()
 {
@@ -1285,18 +1293,18 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					}
 					fread(instr,1,size,f);
 					instr[size]='\0';
-					runmode=RUNMODE_Commands;
-					char *str=calculator->In(instr);
+					runmode = RUNMODE_Commands;
+					char *str = calculator->In(instr, NULL);
 					if (str) cout <<str<<endl;
-					if (runmode!=RUNMODE_Shell) runmode=RUNMODE_Quit;
+					if (runmode != RUNMODE_Shell) runmode = RUNMODE_Quit;
 				} break;
 
 			case 'c': { // --command
 					donotusex=1;
-					runmode=RUNMODE_Commands;
-					char *str=calculator->In(o->arg());
+					runmode = RUNMODE_Commands;
+					char *str = calculator->In(o->arg(), NULL);
 					if (str) cout <<str<<endl;
-					if (runmode!=RUNMODE_Shell) runmode=RUNMODE_Quit;
+					if (runmode != RUNMODE_Shell) runmode = RUNMODE_Quit;
 				} break;
 
 			case 'n': { // --new "letter singles 3 pages blah blah blah"
