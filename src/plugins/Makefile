@@ -16,10 +16,6 @@ DEBUGFLAGS= -g -gdwarf-2
 CPPFLAGS= $(EXTRA_CPPFLAGS) -fPIC -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. -I/usr/include/freetype2
 
 
-####--  Gegl flags  --#####
-GEGLCPPFLAGS= `pkg-config --cflags gegl-0.3`
-GEGLLIBS= `pkg-config --libs gegl-0.3`
-
 
 objs= \
 	plugin.o 
@@ -33,8 +29,7 @@ plugins= \
 	#antiprism.so
 
 
-#dataobjects: $(objs)
-dataobjects: lax laxinterface $(objs) $(plugins)
+all: lax laxinterface $(objs) $(plugins)
 
 plugins: $(plugins)
 
@@ -52,6 +47,11 @@ include makedepend
 test: lax laxinterface plugin.o test.o exampleplugin.so
 	g++ -rdynamic $(CPPFLAGS) plugin.o test.o -llaxkit $(LDFLAGS) -ldl -o test
 
+
+####------------------  Gegl  --------------------#####
+GEGLCPPFLAGS= `pkg-config --cflags gegl-0.3`
+GEGLLIBS= `pkg-config --libs gegl-0.3`
+
 geglnodes.so: geglnodes.o svg.o
 #geglnodes.so: geglnodes.cc
 	@echo "Compiling geglnodes with pkg-config path $(PKG_CONFIG_PATH)"
@@ -60,15 +60,29 @@ geglnodes.so: geglnodes.o svg.o
 #	g++ -shared -fPIC $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) geglnodes.cc -llaxkit $(GEGLLIBS) -o geglnodes.so
 	g++ -shared -fPIC $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) svg.o geglnodes.o -llaxkit $(GEGLLIBS) -o geglnodes.so
 
-
 geglnodes.o: geglnodes.cc
 	g++ -shared -fPIC $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) geglnodes.cc -llaxkit $(GEGLLIBS) -c -o $@
+
 svg.o: svg/svg.cc
 	g++ -shared -fPIC $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) svg/svg.cc -llaxkit $(GEGLLIBS) -c -o $@
 
+
+####------------------  Python  --------------------#####
+PYTHONCPPFLAGS= `python3.5-config --cflags`
+PYTHONLIBS= `python3.5-config --ldflags`
+
+python.so: python.cc
+	@echo "Compiling geglnodes with pkg-config path $(PKG_CONFIG_PATH)"
+	@echo "gegl cflags: $(GEGLCPPFLAGS)"
+	@echo "gegl libs  : $(GEGLLIBS)"
+	g++ -shared -fPIC $(CPPFLAGS) $(PYTHONCPPFLAGS) -L$(LAXDIR) python.cc -llaxkit $(PYTHONLIBS) -o python.so
+
+
+####------------------  ExamplePlugin  --------------------#####
 exampleplugin.so: lax laxinterface exampleplugin.o
 	g++ $(CPPFLAGS) -shared -fPIC exampleplugin.o -L$(LAXDIR) -llaxkit -o exampleplugin.so
 	#g++ $(CPPFLAGS) -shared -fPIC exampleplugin.cc -L$(LAXDIR) -o exampleplugin.so
+
 
 hidegarbage:
 	../hidegarbage *.cc
@@ -77,7 +91,7 @@ unhidegarbage:
 	../hidegarbage -0 *.cc
 
 
-.PHONY: clean hidegarbage unhidegarbage lax laxinterfaces dataobjects plugins depends
+.PHONY: clean hidegarbage unhidegarbage lax laxinterfaces all plugins depends
 clean:
 	rm -f *.o *.so test svg/*.o
 
