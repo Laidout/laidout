@@ -1335,7 +1335,7 @@ char *LaidoutCalculator::In(const char *in, int *return_type)
 	Value *v=NULL;
 	default_errorlog.Clear();
 	errorlog=&default_errorlog;
-	int status=evaluate(in,-1, &v, errorlog);
+	int status = Evaluate(in,-1, &v, errorlog);
 
 	char *buffer=NULL;
 	int len=0;
@@ -1419,7 +1419,7 @@ ObjectDef *LaidoutCalculator::GetInfo(const char *expr)
  *  This function is called as necessary by In().
  *  The other evaluate() is used to process functions during a script, not directly by the user.
  */
-int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, ErrorLog *log)
+int LaidoutCalculator::Evaluate(const char *in, int len, Value **value_ret, ErrorLog *log)
 {
 	int num_expr_parsed=0;
 	ClearError();
@@ -1527,7 +1527,7 @@ int LaidoutCalculator::evaluate(const char *in, int len, ValueHash *context, Val
 		}
 	}
 
-	int status=evaluate(in,len, value_ret,log);
+	int status = Evaluate(in,len, value_ret,log);
 
 	if (context || parameters) popScope();
 

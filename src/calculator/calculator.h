@@ -251,8 +251,8 @@ class LaidoutCalculator : public Interpreter,
 	virtual int ImportModule(const char *name, int allnames);
 	virtual ObjectDef *GetInfo(const char *expr);
 
-	virtual char *In(const char *in, int *return_type=NULL);
-	virtual int evaluate(const char *in, int len, Value **value_ret, Laxkit::ErrorLog *log);
+	virtual char *In(const char *in, int *return_type);
+	virtual int Evaluate(const char *in, int len, Value **value_ret, Laxkit::ErrorLog *log);
 
 	virtual void ClearError();
 	virtual const char *Message();
