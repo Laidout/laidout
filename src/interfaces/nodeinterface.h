@@ -573,6 +573,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 
 	Laxkit::ShortcutHandler *sc;
 
+	virtual int EditProperty(int nodei, int propertyi);
 	virtual int send();
 
   public:

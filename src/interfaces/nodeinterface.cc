@@ -2673,23 +2673,76 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 				|| lasthoverprop>=nodes->nodes.e[lasthover]->properties.n) return 0;
 
         const SimpleMessage *s = dynamic_cast<const SimpleMessage*>(data);
-		if (isblank(s->str) && strcmp(mes,"setpropstring")) return  0;
-        char *endptr=NULL;
-        double d=strtod(s->str, &endptr);
-		if (endptr==s->str && strcmp(mes,"setpropstring")) {
-			PostMessage(_("Bad value."));
-			return 0;
-		}
 
 		NodeBase *node = nodes->nodes.e[lasthover];
 		NodeProperty *prop = node->properties.e[lasthoverprop];
+
+		const char *str = s->str;
+		char *sstr = NULL;
+		double d = 0;
+		LineEdit *e = dynamic_cast<LineEdit*>(viewport->GetInputBox());
 		
+		if (s->info1 == -1) {
+			 //was control key, either tab, up, or down.
+			if (!e) return 0;
+			int ch = s->info2;
+			int state = s->info3;
+
+			int pi = lasthoverprop;
+
+			Value *v;
+			if ((ch=='\t' && (state&ShiftMask)!=0) || ch==LAX_Up) {
+				while((pi-1)%node->properties.n != lasthoverprop) {
+					pi--;
+					if (pi<0) pi = node->properties.n-1;
+					if (node->properties.e[pi]->IsEditable()) {
+						v = node->properties.e[pi]->GetData();
+						if (v->type()!=VALUE_Real && v->type()!=VALUE_Int && v->type()!=VALUE_String) continue;
+						break;
+					}
+				}
+				
+			} else {
+				while((pi+1)%node->properties.n != lasthoverprop) {
+					pi++;
+					if (pi>=node->properties.n) pi = 0;
+					if (node->properties.e[pi]->IsEditable()) {
+						v = node->properties.e[pi]->GetData();
+						if (v->type()!=VALUE_Real && v->type()!=VALUE_Int && v->type()!=VALUE_String) continue;
+						break;
+					}
+				}
+			}
+
+			if (pi != lasthoverprop) {
+				if (e) {
+					sstr = e->GetText();
+					str = sstr;
+				}
+				lasthoverprop = pi;
+				viewport->ClearInputBox();
+				EditProperty(lasthover, lasthoverprop);
+
+			} else return 0;
+		}
+
+		 //parse the new data
+		if (isblank(str) && strcmp(mes,"setpropstring")) { delete[] sstr; return  0; }
+		char *endptr=NULL;
+		d = strtod(str, &endptr);
+		if (endptr==str && strcmp(mes,"setpropstring")) {
+			PostMessage(_("Bad value."));
+			delete[] sstr;
+			return 0;
+		}
+
+		 //update node data
 		if (!strcmp(mes,"setpropdouble")) {
 			DoubleValue *v=dynamic_cast<DoubleValue*>(prop->data);
 			v->d = d;
 		} else if (!strcmp(mes,"setpropstring")) {
 			StringValue *v=dynamic_cast<StringValue*>(prop->data);
-			v->Set(s->str);
+			v->Set(str);
 		} else {
 			IntValue *v=dynamic_cast<IntValue*>(prop->data);
 			v->i = d;
@@ -2697,6 +2750,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 		node->Update();
 		needtodraw=1;
 
+		delete[] sstr;
 		return 0;
 
 	} else if (!strcmp(mes,"newcolor")) {
@@ -3965,6 +4019,42 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 	return 0; //return 0 for absorbing event, or 1 for ignoring
 }
 
+/*! Return whether we know how to edit. 0 for success, nonzero for cannot.
+ * Default here is just numbers and strings.
+ */
+int NodeInterface::EditProperty(int nodei, int propertyi)
+{
+	lasthover = nodei;
+	lasthoverprop = propertyi;
+
+	NodeBase *node = nodes->nodes.e[nodei];
+	NodeProperty *prop = node->properties.e[propertyi];
+
+	if (!prop->IsEditable()) return 1;
+
+	Value *v=dynamic_cast<Value*>(prop->GetData());
+	if (!v) return 2;
+
+	if (v->type()!=VALUE_Real && v->type()!=VALUE_Int && v->type()!=VALUE_String) return 3;
+
+	flatpoint ul= nodes->m.transformPoint(flatpoint(node->x, node->y+prop->y));
+	flatpoint lr= nodes->m.transformPoint(flatpoint(node->x+node->width, node->y+prop->y+prop->height));
+
+	DoubleBBox bounds;
+	bounds.addtobounds(ul);
+	bounds.addtobounds(lr);
+
+	char valuestr[200];
+	if (v->type()!=VALUE_String) v->getValueStr(valuestr, 199);
+
+	viewport->SetupInputBox(object_id, NULL,
+			v->type()==VALUE_String ? dynamic_cast<StringValue*>(v)->str : valuestr,
+			v->type()==VALUE_String ? "setpropstring" : (v->type()==VALUE_Int ? "setpropint" : "setpropdouble"), bounds,
+			NULL, true);
+
+	return 10;
+}
+
 //! Finish a new freehand line by calling newData with it.
 int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *d) 
 {
@@ -3989,27 +4079,9 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		Value *v=dynamic_cast<Value*>(prop->data);
 		if (!v) return 0;
 
-		char valuestr[200];
 		if (v->type()==VALUE_Real || v->type()==VALUE_Int || v->type()==VALUE_String) {
 			 //create input box..
-
-			//flatpoint ul= nodes->m.transformPoint(flatpoint(node->x+prop->x, node->y+prop->y));
-			//flatpoint lr= nodes->m.transformPoint(flatpoint(node->x+prop->x+prop->width, node->y+prop->y+prop->height));
-			//----
-			flatpoint ul= nodes->m.transformPoint(flatpoint(node->x, node->y+prop->y));
-			flatpoint lr= nodes->m.transformPoint(flatpoint(node->x+node->width, node->y+prop->y+prop->height));
-
-			DoubleBBox bounds;
-			bounds.addtobounds(ul);
-			bounds.addtobounds(lr);
-
-			if (v->type()!=VALUE_String) v->getValueStr(valuestr, 199);
-
-			viewport->SetupInputBox(object_id, NULL,
-					v->type()==VALUE_String ? dynamic_cast<StringValue*>(v)->str : valuestr,
-					v->type()==VALUE_String ? "setpropstring" : (v->type()==VALUE_Int ? "setpropint" : "setpropdouble"), bounds);
-			lasthover = overnode;
-			lasthoverprop = overproperty;
+			EditProperty(overnode, overproperty);
 
 		} else if (v->type()==VALUE_Boolean) {
 			BooleanValue *vv=dynamic_cast<BooleanValue*>(prop->data);
