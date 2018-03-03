@@ -738,6 +738,7 @@ class ObjectValue : public Value
 ValueHash *MapParameters(ObjectDef *def,ValueHash *rawparams);
 double getNumberValue(Value *v, int *isnum);
 bool isNumberType(Value *v, double *number_ret);
+int isVectorType(Value *v, double *values);
 int extequal(const char *str, int len, const char *field, char **next_ret=NULL);
 int isName(const char *longstr,int len, const char *str);
 
