@@ -4511,7 +4511,9 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 			} else if (dynamic_cast<DoubleValue*>(v)) {
 				double dragscale = 1;
 				drag /= dragscale;
-				dynamic_cast<DoubleValue*>(v)->d += drag;
+				double d = dynamic_cast<DoubleValue*>(v)->d + drag * ((state & ShiftMask) ? .1 : 1) * ((state & ControlMask) ? .1 : 1);
+				if (fabs(d) < 1e-10) d=0;
+				dynamic_cast<DoubleValue*>(v)->d = d;
 				changed = 1;
 			}
 
