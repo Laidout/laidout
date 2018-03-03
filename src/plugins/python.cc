@@ -164,8 +164,9 @@ int PythonInterpreter::Evaluate(const char *in, int len, Value **value_ret, Laxk
 	PyObject *locals  = PyDict_New();
 	//int flags=0; //see python/code.h: CO_*
 
-	PyObject *result = PyRun_String(in, Py_eval_input, globals, locals);
-	//PyObject *result = PyRun_String(in, Py_file_input, globals, locals);
+	//PyObject *result = PyRun_String(in, Py_single_input, globals, locals); //single statement (no return value)
+	PyObject *result = PyRun_String(in, Py_eval_input, globals, locals);     //single expression
+	//PyObject *result = PyRun_String(in, Py_file_input, globals, locals);   //lines of code
 
 	if (PyErr_Occurred()) {
 		PyObject *ptype = NULL,
@@ -175,11 +176,15 @@ int PythonInterpreter::Evaluate(const char *in, int len, Value **value_ret, Laxk
 		PyErr_Fetch(&ptype, &pvalue, &ptraceback);
 
 		//Get error message
-		//char *pStrErrorMessage = PyUnicode_AsUTF8(repr);
-		char *pStrErrorMessage = PyBytes_AsString(pvalue);
+		//char *msg = PyUnicode_AsUTF8(repr);
+		//char *msg = PyBytes_AsString(pvalue);
 
-		makestr(last_message, pStrErrorMessage);
-		log->AddMessage(pStrErrorMessage, ERROR_Fail);
+
+		PyObject *repr = PyObject_Repr(pvalue);
+		const char* msg = PyUnicode_AsUTF8(repr);
+
+		makestr(last_message, msg);
+		log->AddMessage(msg, ERROR_Fail);
 
 		if (ptype)      Py_DECREF(ptype);
 		if (pvalue)     Py_DECREF(pvalue);
@@ -187,6 +192,7 @@ int PythonInterpreter::Evaluate(const char *in, int len, Value **value_ret, Laxk
 
 		PyErr_Print(); //this clears, i think
 		PyErr_Clear();
+		Py_DECREF(repr);
 
 	} else {
 		PyObject *repr = PyObject_Repr(result);
