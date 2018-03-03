@@ -60,6 +60,7 @@ char *CommandWindow::process(const char *in)
 {
 	if (!in) return NULL;
 
+	 //intercept to change the running interpreter
 	while (isspace(*in)) in++;
 	if (!strncmp(in, "ChangeInterpreter", 17) && isspace(in[17])) {
 		try {
