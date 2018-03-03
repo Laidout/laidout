@@ -534,6 +534,8 @@ enum MathNodeOps {
 	OP_Asinh,
 	OP_Acosh,
 	OP_Atanh,
+	OP_Ceiling,
+	OP_Floor,
 	OP_Clamp_To_1, // [0..1]
 	OP_Clamp_To_pm_1, // [-1..1]
 	 //vector specific
@@ -634,6 +636,8 @@ ObjectDef *DefineMathNode1Def()
 	def->pushEnumValue("Asinh"          ,_("Asinh"),         _("Asinh"),         OP_Asinh         );
 	def->pushEnumValue("Acosh"          ,_("Acosh"),         _("Acosh"),         OP_Acosh         );
 	def->pushEnumValue("Atanh"          ,_("Atanh"),         _("Atanh"),         OP_Atanh         );
+	def->pushEnumValue("Ceiling"        ,_("Ceiling"),       _("Least integer greater than"), OP_Ceiling );
+	def->pushEnumValue("Floor"          ,_("Floor"),         _("Greatest integer less than"), OP_Floor   );
 	 //vector math, 1 arg
 	def->pushEnumValue("Norm"           ,_("Norm"),          _("Length of vector"),OP_Norm        );
 	def->pushEnumValue("Norm2"          ,_("Norm2"),         _("Square of length"),OP_Norm2       );
@@ -873,6 +877,8 @@ int MathNode1::UpdateThisOnly()
 				makestr(error_message, _("Argument needs to be -1 > a > 1"));
 				return -1;
 			}
+		} else if (operation == OP_Ceiling          )  { result = ceil(a);
+		} else if (operation == OP_Floor            )  { result = floor(a);
 		} else if (operation == OP_Clamp_To_1       )  { result = a > 1 ? 1 : a < 0 ? 0 : a;
 		} else if (operation == OP_Clamp_To_pm_1    )  { result = a > 1 ? 1 : a < -1 ? -1 : a;
 		} else {
@@ -1490,14 +1496,7 @@ Laxkit::anObject *newNodeGroup(int p, Laxkit::anObject *ref)
 
 //------------------------ RandomNode ------------------------
 
-/*! \class CurveNode
- *
- * <pre>
- * 0. In
- * 1. Curve
- * 2. block to select which channel, and/or all
- * 3. Out
- * </pre>
+/*! \class RandomNode
  */
 class RandomNode : public NodeBase
 {
@@ -1859,6 +1858,237 @@ Laxkit::anObject *newLoopNode(int p, Laxkit::anObject *ref)
 	return new LoopNode(0,10,1);
 }
 
+
+//------------------------ LerpNode ------------------------
+
+/*! \class LerpNode
+ */
+class LerpNode : public NodeBase
+{
+  public:
+	LerpNode(double a=0, double b=1, double r=0);
+	virtual ~LerpNode();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
+};
+
+LerpNode::LerpNode(double a, double b, double r)
+{
+	makestr(Name, _("Lerp"));
+	makestr(type, "Lerp");
+	//makestr(description, _("Linear interpolation"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "A", new DoubleValue(a),1,    _("A"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "B", new DoubleValue(b),1,    _("B"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "r", new DoubleValue(r),1,    _("r"))); 
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", new DoubleValue(),1, _("Out"), NULL,0,false)); 
+}
+
+LerpNode::~LerpNode()
+{
+}
+
+NodeBase *LerpNode::Duplicate()
+{
+	int isnum=0;
+	double a = getNumberValue(properties.e[0]->GetData(), &isnum);
+	double b = getNumberValue(properties.e[1]->GetData(), &isnum);
+	double r = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (a==b && a==0) b=1;
+
+	LerpNode *newnode = new LerpNode(a,b,r);
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int LerpNode::GetStatus()
+{
+	if (!isNumberType(properties.e[2]->GetData(), NULL)) return -1;
+
+	int avn = isVectorType(properties.e[0]->GetData(), NULL);
+	if (!avn) return -1;
+	int bvn = !isVectorType(properties.e[1]->GetData(), NULL);
+	if (!bvn) return -1;
+	if (avn!=bvn) return -1;
+
+	if (!properties.e[3]->data) return 1;
+
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int LerpNode::Update()
+{
+	int isnum=0;
+	double r = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	double av[4], bv[4];
+	int avn = isVectorType(properties.e[0]->GetData(), av);
+	if (!avn) return -1;
+	int bvn = isVectorType(properties.e[1]->GetData(), bv);
+	if (!bvn) return -1;
+	if (avn != bvn) return -1;
+
+	for (int c=0; c<avn; c++) av[c] = av[c] + (bv[c] - av[c])*r;
+	
+	Value *v = properties.e[3]->GetData();
+
+	if (avn==1) {
+		if (!dynamic_cast<DoubleValue*>(v)) {
+			v = new DoubleValue(av[0]);
+			properties.e[3]->SetData(v, 1);
+		} else dynamic_cast<DoubleValue*>(v)->d = av[0];
+
+	} else if (avn==2) {
+		if (!dynamic_cast<FlatvectorValue*>(v)) {
+			v = new FlatvectorValue(flatvector(av));
+			properties.e[3]->SetData(v, 1);
+		} else dynamic_cast<FlatvectorValue*>(v)->v.set(av);
+
+	} else if (avn==3) {
+		if (!dynamic_cast<SpacevectorValue*>(v)) {
+			v = new SpacevectorValue(spacevector(av));
+			properties.e[3]->SetData(v, 1);
+		} else dynamic_cast<SpacevectorValue*>(v)->v.set(av);
+
+	} else if (avn==4) {
+		if (!dynamic_cast<QuaternionValue*>(v)) {
+			v = new QuaternionValue(Quaternion(av));
+			properties.e[3]->SetData(v, 1);
+		} else dynamic_cast<QuaternionValue*>(v)->v.set(av);
+	}
+
+	return NodeBase::Update();
+}
+
+Laxkit::anObject *newLerpNode(int p, Laxkit::anObject *ref)
+{
+	return new LerpNode(0., 1., 0.);
+}
+
+
+//------------------------ MapRangeNode ------------------------
+
+/*! \class MapRangeNode
+ */
+class MapRangeNode : public NodeBase
+{
+  public:
+	bool mapto;
+	MapRangeNode(bool map_to, double min, double max, bool clamp);
+	virtual ~MapRangeNode();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
+};
+
+MapRangeNode::MapRangeNode(bool map_to, double min, double max, bool clamp)
+{
+	mapto = map_to;
+
+	if (mapto) {
+		makestr(Name, _("Map to range"));
+		makestr(type, "MapToRange");
+	} else {
+		makestr(Name, _("Map from range"));
+		makestr(type, "MapFromRange");
+	}
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", new DoubleValue(0),1,    _("In"))); 
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Min", new DoubleValue(min),1,    _("Min"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Max", new DoubleValue(max),1,    _("Max"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Block, false,"Clamp", new BooleanValue(clamp),1, _("Clamp"))); 
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", new DoubleValue(),1, _("Out"), NULL,0,false)); 
+}
+
+MapRangeNode::~MapRangeNode()
+{
+}
+
+NodeBase *MapRangeNode::Duplicate()
+{
+	int isnum=0;
+	double min = getNumberValue(properties.e[1]->GetData(), &isnum);
+	double max = getNumberValue(properties.e[2]->GetData(), &isnum);
+	bool clamp = dynamic_cast<BooleanValue*>(properties.e[3]->GetData())->i;
+
+	MapRangeNode *newnode = new MapRangeNode(mapto, min,max, clamp);
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int MapRangeNode::GetStatus()
+{
+	if (!isNumberType(properties.e[0]->GetData(), NULL)) return -1;
+
+	int isnum;
+	double min = getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+	double max = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+	if (min==max) return -1;
+
+	if (!properties.e[4]->data) return 1;
+
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int MapRangeNode::Update()
+{
+	int isnum=0;
+	double in = getNumberValue(properties.e[0]->GetData(), &isnum);
+	if (!isnum) return -1;
+	double min = getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+	double max = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+	if (min==max) return -1;
+	bool clamp = dynamic_cast<BooleanValue*>(properties.e[3]->GetData())->i;
+
+	double num;
+	if (mapto) {
+		num = min + (max-min)*in;
+		if (clamp) {
+			if (max>min) {
+				if (num<min) num=min;
+				else if (num>max) num=max;
+			} else {
+				if (num<max) num=max;
+				else if (num>min) num=min;
+			}
+		}
+	} else {
+		num = (in-min) / (max-min);
+		if (clamp) {
+			if (num<0) num=0;
+			if (num>1) num=1;
+		}
+	}
+
+	Value *v = properties.e[4]->GetData();
+
+	if (!dynamic_cast<DoubleValue*>(v)) {
+		v = new DoubleValue(num);
+		properties.e[4]->SetData(v, 1);
+	} else dynamic_cast<DoubleValue*>(v)->d = num;
+
+	return NodeBase::Update();
+}
+
+Laxkit::anObject *newMapToRangeNode(int p, Laxkit::anObject *ref)
+{
+	return new MapRangeNode(true, 0,1, false);
+}
+
+Laxkit::anObject *newMapFromRangeNode(int p, Laxkit::anObject *ref)
+{
+	return new MapRangeNode(false, 0,1, false);
+}
+
 //--------------------------- SetupDefaultNodeTypes() -----------------------------------------
 
 /*! Install default built in node types to factory.
@@ -1913,6 +2143,13 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 
 	 //--- LoopNode
 	factory->DefineNewObject(getUniqueNumber(), "Loop",newLoopNode,  NULL, 0);
+
+	 //--- LerpNode
+	factory->DefineNewObject(getUniqueNumber(), "Lerp",newLerpNode,  NULL, 0);
+
+	 //--- MapRangeNodes
+	factory->DefineNewObject(getUniqueNumber(), "MapToRange",  newMapToRangeNode,    NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "MapFromRange",newMapFromRangeNode,  NULL, 0);
 
 	return 0;
 }
