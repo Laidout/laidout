@@ -146,7 +146,7 @@ while (defined($line = <ROADMAP>)) {
 	if ($bug ne "") { 
 		# $bug contains the number of the bug
 		$bugtext="<a title=\"Laidout bug number $bug\" "
-			."href=\"http://sourceforge.net/tracker/?func=detail&aid=$bug&group_id=160598&atid=816489\">bug #$bug</a>, ";
+			."href=\"http://*****">bug #$bug</a>, ";
 	} else {
 		$bug="";
 		$bugtext="";

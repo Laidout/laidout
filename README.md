@@ -15,10 +15,8 @@ Export with varying degrees of success to Svg, Scribus, Pdf, and more.
 Sometimes there are experimental tools you can activate by
 running: `laidout --experimental` or `laidout -E`
 
-Please post any complaints and other correspondence either to Laidout's
-github issue tracker: https://github.com/Laidout/laidout/issues,
-or to the Laidout general mailing list found at:
-https://lists.sourceforge.net/lists/listinfo/laidout-general
+Please post about any snags to Laidout's
+github issue tracker: https://github.com/Laidout/laidout/issues.
 
 Laidout is currently in the 'mostly works on my machine' stage of development.
 
@@ -141,7 +139,7 @@ Here is a fast and easy way to get Laidout up and running from development sourc
         git clone https://github.com/Laidout/laidout.git
 
 2. Laidout is currently built upon its own custom gui library called 
-   the Laxkit (http://laxkit.sourceforge.net).
+   the Laxkit (http://github.com/Laidout/laxkit).
 
    Enter the laidout directory and get the Laxkit source:
 

@@ -205,7 +205,7 @@ int main(int argc, char **argv)
 "self respecting desktop publishing software should have. You will note that not much\n"
 "of this is currently implemented in Laidout.<br/>\n"
 "<br/>\n"
-"THIS TABLE IS FAR FROM COMPLETE! Please send me updates, or post on the <a href=\"https://lists.sourceforge.net/lists/listinfo/laidout-general\">Laidout mailing list</a>\n"
+"THIS TABLE IS FAR FROM COMPLETE! Please send me updates, or post on the <a href=\"https://github.com/Laidout/laidout/issues\">Laidout issue tracker</a>\n"
 "if you see something that is not correct. You might also check out\n"
 " <a href=\"http://wiki.scribus.net/index.php/Export/Import_capabilities_of_Scribus%2C_OpenOffice.org%2C_Inkscape%2C_GIMP%2C_and_Krita\">this comparison</a> \n"
 " over on the Scribus site about import and export capabilities of Scribus, OpenOffice.org, Inkscape, GIMP, and Krita. Also \n"

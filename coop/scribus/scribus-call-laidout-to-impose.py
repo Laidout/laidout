@@ -20,6 +20,10 @@
 
  version: $Id$
 """
+#
+# Change this as necessary!
+#
+path_to_laidout = "/usr/bin/laidout"
 
 
 import sys
@@ -60,7 +64,7 @@ def main(argv):
 
 
     try:
-        os.system("/home/tom/p/sourceforge/laidout/src/laidout")
+        os.system(path_to_laidout)
         #os.system(thecommand)
 
     except:
