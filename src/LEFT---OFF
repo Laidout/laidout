@@ -1071,6 +1071,8 @@ ellipseinterface:
 
 command prompt window: command line
   option to record/save/load whole session of prompt window
+  up/down should traverse history
+  control-up/down, break out so you can go anywhere
 
 load document, should load images on display only(done), or create previews in background..
 
