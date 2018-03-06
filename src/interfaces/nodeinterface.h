@@ -118,6 +118,7 @@ class NodeProperty
 	NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count,
 					const char *nlabel=NULL, const char *ntip=NULL, int info=0, bool editable=true);
 	virtual ~NodeProperty();
+	virtual const char *PropInterfaceName() { return NULL; }
 	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface);
 	virtual const char *Name()  { return name; }
 	virtual const char *Name(const char *nname);
@@ -261,6 +262,7 @@ class NodeBase : public Laxkit::anObject,
 
 	bool show_preview;
 	Laxkit::LaxImage *total_preview;
+	double psamplew, psampleh;
 	double preview_area_height;
 
 	Laxkit::PtrStack<NodeProperty> properties; //includes inputs and outputs
@@ -289,6 +291,7 @@ class NodeBase : public Laxkit::anObject,
 	virtual int Update();
 	virtual void PropagateUpdate();
 	virtual int UpdatePreview();
+	virtual void PreviewSample(double w, double h, bool is_shift);
 	virtual int GetStatus();
 	virtual clock_t MostRecentIn(int *index);
 	virtual int UsesPreview() { return total_preview!=NULL && show_preview; }

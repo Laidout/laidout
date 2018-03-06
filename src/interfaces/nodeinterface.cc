@@ -495,6 +495,7 @@ NodeBase::NodeBase()
 {
 	Name = NULL;
 	total_preview = NULL;
+	psamplew = psampleh = -1; //for when no defined rectangle to sample. -1 means use default
 	preview_area_height = -1;
 	show_preview = true;
 	colors    = NULL;
@@ -667,6 +668,29 @@ int NodeBase::Update()
 int NodeBase::UpdatePreview()
 {
 	return 1;
+}
+
+/*! Change default sample size for previews.
+ * For instance, many gegl nodes are unbound by default, so we sample a specified area for previews.
+ * Only changes psamplew,h. Does not actually update preview.
+ * 
+ * If is_shift, then add to existing values, relative to displayed preview size. Clamped at 1.
+ * Otherwise, set absolutely.
+ */
+void NodeBase::PreviewSample(double w, double h, bool is_shift)
+{
+	if (is_shift) {
+		if (psamplew <=0) psamplew = colors->preview_dims;
+		if (psampleh <=0) psampleh = colors->preview_dims;
+		double scale = psampleh / preview_area_height;
+		psamplew += w * scale;
+		psampleh += h * scale;
+	} else {
+		psamplew = w;
+		psampleh = h;
+	}
+	if (psamplew < 1) psamplew = 1;
+	if (psampleh < 1) psampleh = 1;
 }
 
 /*! Update the bounds to be just enough to encase everything.
@@ -1229,6 +1253,9 @@ LaxFiles::Attribute *NodeBase::dump_out_atts(LaxFiles::Attribute *att, int what,
 	if (collapsed) att->push("collapsed");
 	if (show_preview) att->push("show_preview");
 	att->push("fullwidth", fullwidth);
+	att->push("preview_height", preview_area_height);
+	if (psamplew > 0) att->push("psamplew", psamplew);
+	if (psampleh > 0) att->push("psampleh", psampleh);
 
 	char s[200];
 	sprintf(s,"%.10g %.10g %.10g %.10g", x,y,width,height);
@@ -1313,6 +1340,15 @@ void NodeBase::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpCo
 
 		} else if (!strcmp(name,"show_preview")) {
 			show_preview = BooleanAttribute(value);
+
+		} else if (!strcmp(name,"preview_height")) {
+			DoubleAttribute(value, &preview_area_height);
+
+		} else if (!strcmp(name,"psamplew")) {
+			DoubleAttribute(value, &psamplew);
+
+		} else if (!strcmp(name,"psampleh")) {
+			DoubleAttribute(value, &psampleh);
 
 		} else if (!strcmp(name,"in") || !strcmp(name,"out")) {
 			NodeProperty *prop = FindProperty(value);
@@ -4077,6 +4113,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		} else if (v->type()==VALUE_Boolean) {
 			BooleanValue *vv=dynamic_cast<BooleanValue*>(prop->data);
 			vv->i = !vv->i;
+			node->Update();
 			needtodraw=1;
 
 		} else if (v->type()==VALUE_Color) {
@@ -4602,14 +4639,26 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 
 		NodeBase *node = nodes->nodes.e[lasthover];
 		if (selected.findindex(node) < 0) {
-			node->preview_area_height += d.y;
-			if (node->preview_area_height < node->colors->font->textheight()) node->preview_area_height = node->colors->font->textheight();
+			if (state&(ShiftMask|ControlMask)) {
+				node->PreviewSample(d.x, d.y, true);
+			} else {
+				node->preview_area_height += d.y;
+				if (node->preview_area_height < node->colors->font->textheight()) node->preview_area_height = node->colors->font->textheight();
+			}
+
+			node->UpdatePreview();
 			node->Wrap();
 		} else {
 			for (int c=0; c<selected.n; c++) {
 				node = selected.e[c];
-				node->preview_area_height += d.y;
-				if (node->preview_area_height < node->colors->font->textheight()) node->preview_area_height = node->colors->font->textheight();
+
+				if (state&(ShiftMask|ControlMask)) {
+					node->PreviewSample(d.x, d.y, true);
+				} else {
+					node->preview_area_height += d.y;
+					if (node->preview_area_height < node->colors->font->textheight()) node->preview_area_height = node->colors->font->textheight();
+				}
+				node->UpdatePreview();
 				node->Wrap();
 			}
 		}
@@ -4938,7 +4987,17 @@ int NodeInterface::PerformAction(int action)
 
 	} else if (action==NODES_TogglePreview) {
 		if (!selected.n) return 0;
-		if (selected.e[0]->show_preview) return PerformAction(NODES_Hide_Previews);
+		bool show = selected.e[0]->show_preview;
+		if (selected.e[0]->show_preview && !selected.e[0]->total_preview) {
+			 //maybe somehow preview was not initially generated
+			selected.e[0]->UpdatePreview();
+			if (selected.e[0]->total_preview) {
+				selected.e[0]->Wrap();
+				show = true;
+			}
+		}
+
+		if (show) return PerformAction(NODES_Hide_Previews);
 		return PerformAction(NODES_Show_Previews);;
 
 	} else if (action==NODES_Show_Previews) {
