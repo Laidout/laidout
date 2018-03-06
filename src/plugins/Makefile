@@ -52,19 +52,19 @@ test: lax laxinterface plugin.o test.o exampleplugin.so
 GEGLCPPFLAGS= `pkg-config --cflags gegl-0.3`
 GEGLLIBS= `pkg-config --libs gegl-0.3`
 
-geglnodes.so: geglnodes.o svg.o
+geglnodes.so: geglnodes.o svgnodes.o
 #geglnodes.so: geglnodes.cc
 	@echo "Compiling geglnodes with pkg-config path $(PKG_CONFIG_PATH)"
 	@echo "gegl cflags: $(GEGLCPPFLAGS)"
 	@echo "gegl libs  : $(GEGLLIBS)"
 #	g++ -shared -fPIC $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) geglnodes.cc -llaxkit $(GEGLLIBS) -o geglnodes.so
-	g++ -shared -fPIC $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) svg.o geglnodes.o -llaxkit $(GEGLLIBS) -o geglnodes.so
+	g++ -shared -fPIC $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) svgnodes.o geglnodes.o -llaxkit $(GEGLLIBS) -o geglnodes.so
 
 geglnodes.o: geglnodes.cc
 	g++ -shared -fPIC $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) geglnodes.cc -llaxkit $(GEGLLIBS) -c -o $@
 
-svg.o: svg/svg.cc
-	g++ -shared -fPIC $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) svg/svg.cc -llaxkit $(GEGLLIBS) -c -o $@
+svgnodes.o: svg/svgnodes.cc
+	g++ -shared -fPIC $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) svg/svgnodes.cc -llaxkit $(GEGLLIBS) -c -o $@
 
 
 ####------------------  Python  --------------------#####
