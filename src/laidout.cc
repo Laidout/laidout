@@ -1226,8 +1226,9 @@ void InitOptions()
 	options.Add("default-units",      'u', 1, "Use the specified units.",                    0, "(in|cm|mm|m|ft|yards)");
 	options.Add("load-dir",           'l', 1, "Start in this directory.",                    0, "path");
 	options.Add("experimental",       'E', 0, "Enable any compiled in experimental features",0, NULL);
-	options.Add("backend",            'B', 1, "Either cairo or xlib (xlib very deprecated).",0, NULL);
+	//options.Add("backend",            'B', 1, "Either cairo or xlib (xlib very deprecated).",0, NULL);
 	options.Add("impose-only",        'I', 1, "Run only as a file imposer, not full Laidout",0, NULL);
+	options.Add("nodes-only",         'o', 1, "Run only as a node editor on argument",       0, NULL);
 	options.Add("list-shortcuts",     'S', 0, "Print out a list of current keyboard bindings, then exit",0,NULL);
 	options.Add("theme",              'T', 1, "Set theme. Currently, one of Light, Dark, or Gray",0,NULL);
 	options.Add("helphtml",           'H', 0, "Output an html fragment of key shortcuts.",   0, NULL);
@@ -1381,11 +1382,19 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 
 			case 'I': { // impose-only
-					runmode=RUNMODE_Impose_Only;
-					anXWindow *editor=newImpositionEditor(NULL,"impedit",_("Impose..."),0,NULL,
+					runmode = RUNMODE_Impose_Only;
+					anXWindow *editor = newImpositionEditor(NULL,"impedit",_("Impose..."),0,NULL,
 														  NULL,"SignatureImposition",NULL,o->arg(),
 														  NULL);
 					addwindow(editor);
+				} break;
+
+			case 'o': {
+					runmode = RUNMODE_Nodes_Only;
+					//anXWindow *editor = newNodeEditor(NULL,"nodeedit",_("Nodes"),0,NULL, o->arg());
+					//addwindow(editor);
+					cerr << "Nodes-Only not quite implemented yet!"<<endl;
+					exit(0);
 				} break;
 
 			case 'u': { // default units

@@ -79,7 +79,8 @@ enum RunModeType {
 		RUNMODE_Commands,
 		RUNMODE_Shell,
 		RUNMODE_Quit,
-		RUNMODE_Impose_Only
+		RUNMODE_Impose_Only,
+		RUNMODE_Nodes_Only
 	};
 
 class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventReceiver
