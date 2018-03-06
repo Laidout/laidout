@@ -763,8 +763,8 @@ int GeglLaidoutNode::UpdatePreview()
 		 //probably unbounded, arbitrarily select a little window onto the data
 		rect.x      = 0;
 		rect.y      = 0;
-		rect.width  = 100;
-		rect.height = 100;
+		rect.width  = psamplew > 0 ? psamplew : 100;
+		rect.height = psampleh > 0 ? psampleh : 100;
 	}
 
 
@@ -1475,13 +1475,13 @@ int GeglNodesPlugin::Initialize()
 			     NULL);
 
 	ObjectFactory *node_factory = Laidout::NodeGroup::NodeFactory(true);
+	RegisterNodes(node_factory);
 
 	 //install loader
 	theloader = new GeglLoader(this);
 	Laidout::NodeGroup::InstallLoader(theloader, 0);
 
 	 //svg nodes setup
-	RegisterNodes(node_factory);
 	SvgFilterNS::RegisterSvgNodes(node_factory);
 	svgloader = new SvgFilterNS::SvgFilterLoader(this);
 	Laidout::NodeGroup::InstallLoader(svgloader, 0);
