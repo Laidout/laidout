@@ -18,7 +18,7 @@
 #include "../language.h"
 #include "../interfaces/nodeinterface.h"
 #include "geglnodes.h"
-#include "svg/svg.h"
+#include "svg/svgnodes.h"
 
 #include <gegl/gegl-paramspecs.h>
 
