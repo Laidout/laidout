@@ -180,6 +180,7 @@ node editor NodeInterface nodes:
   grouping framed objects have complications
   check for double linking
   gegl nodes:
+    need needtoupdate caching.. gegl with big images takes a long time
     scale-size has runaway render for undefined rect
     make sure deleting/rearranging nodes correctly removes gegl connections
     inkscape filter read in, set up as gegl nodes internally
@@ -252,6 +253,8 @@ node editor NodeInterface nodes:
   DONE clear up IsInput()/IsOutput()
   DONE dedicated random node: seed, is_int, min,max
 
+  examine imgflo for compatibility
+    imgflo lets you compile and load new operations on the fly
   css named filter: brightness(1) contrast(67%) saturate(250%) grayscale(0%) invert(0%) hue-rotate(330deg) sepia(40%) blur(0px)
     see https://www.w3.org/TR/filter-effects-1/#grayscaleEquivalent for svg filter equivalents
   svg/inkscape specific filter interface, io passthrough
@@ -263,7 +266,6 @@ node editor NodeInterface nodes:
   antiprism nodes
   examine blender for compatibility -> animation node addon seems fuller for general data processing
   examine godot for compatibility -> does full scripting execution
-  examine imgflo for compatibility
   examine Natron for compatibility
   examine pure data for compatibility
   praxis-live?
