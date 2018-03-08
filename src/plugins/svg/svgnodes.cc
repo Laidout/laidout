@@ -62,6 +62,43 @@ namespace SvgFilterNS {
 
 //---------------------- SvgFilterNode ----------------------------
 
+const char *svgprimitives[] = {
+		 //primitives
+		"feBlend",
+		"feColorMatrix",
+		"feComponentTransfer",
+		"feComposite",
+		"feConvolveMatrix",
+		"feDiffuseLighting",
+		"feDisplacementMap",
+		"feFlood",
+		"feGaussianBlur",
+		"feImage",
+		"feMerge",
+		"feMorphology",
+		"feOffset",
+		"feSpecularLighting",
+		"feTile",
+		"feTurbulence",
+
+		NULL
+	};
+
+const char *svgmisclist[] = {
+		 //input source node
+		"SvgSource",
+		 //misc child elements
+		"feMergeNode",
+		"feFuncR",
+		"feFuncG",
+		"feFuncB",
+		"feFuncA",
+		"feDistantLight",
+		"fePointLight",
+		"feSpotLight",
+		NULL
+	};
+
 
 ObjectDef *GetSvgDefs();
 
@@ -395,13 +432,36 @@ int DumpOutSvgFilter(Attribute *defs, NodeGroup *filter, Laxkit::ErrorLog &log)
 	//first check filter properties:
 	//  needs to have one input "in" and one output "out"
 	NodeProperty *prop = filter->FindProperty("in");
-	if (!prop || (prop && !prop->IsInput())) {
+	if (!prop || (prop && !prop->IsInput()) || !prop->connections.n) {
 		log.AddMessage(_("Filter needs an in!"), ERROR_Fail);
 		return 1;
 	}
+
+	 //find SvgSource node, which needs to be connected to the filter in, which is prop->topropproxy
+	prop = prop->topropproxy;
+	if (!prop->connections.n) {
+		log.AddMessage(_("Unconnected filter"), ERROR_Fail);
+		return 1;
+	}
+	SvgFilterNode *sourcein = dynamic_cast<SvgFilterNode*>(prop->connections.e[0]->to);
+	if (!sourcein || strcmp(sourcein->Type(), "SvgSource")) {
+		log.AddMessage(_("Filter in need to connect to an SvgSource node"), ERROR_Fail);
+		return 1;
+	}
+
 	prop = filter->FindProperty("out");
-	if (!prop || (prop && !prop->IsOutput())) {
+	if (!prop || (prop && !prop->IsOutput()) || !prop->connections.n) {
 		log.AddMessage(_("Filter needs an out!"), ERROR_Fail);
+		return 1;
+	}
+	prop = prop->frompropproxy;
+	if (!prop->connections.n) {
+		log.AddMessage(_("Unconnected filter"), ERROR_Fail);
+		return 1;
+	}
+	SvgFilterNode *finalout = dynamic_cast<SvgFilterNode*>(prop->connections.e[0]->from);
+	if (!finalout || findInList(finalout->Type(), svgprimitives)<0) {
+		log.AddMessage(_("Final out needs to be an Svg Filter Node"), ERROR_Fail);
 		return 1;
 	}
 
@@ -409,8 +469,8 @@ int DumpOutSvgFilter(Attribute *defs, NodeGroup *filter, Laxkit::ErrorLog &log)
 
 	SvgFilterNode *f = NULL;
 
+	Attribute *filteratt = new Attribute();
 	try {
-		Attribute *filteratt = new Attribute();
 
 		NodeProperty *newchildslot = f->FindProperty("NewChild");
 		if (newchildslot) {
@@ -443,8 +503,12 @@ int DumpOutSvgFilter(Attribute *defs, NodeGroup *filter, Laxkit::ErrorLog &log)
 		}
 	} catch (int e) {
 		// ***clean up
+		delete filteratt;
 		return 1;
 	}
+
+	defs->push(filteratt, -1);
+
 
 	return 0;
 }
@@ -1033,6 +1097,9 @@ int SvgFilterLoader::Export(const char *file, anObject *object, anObject *contex
         return 1;
     }
 
+	//Attribute *defs = ***;
+	//int status = DumpOutSvgFilter(defs, filter, log);
+
     DBG cerr << " *** need to implement SvgFilterLoader::Export()!"<<endl;
     log.AddMessage("need to implement SvgFilterLoader::Export()!!", ERROR_Fail);
     return 1;
@@ -1051,39 +1118,6 @@ Laxkit::anObject *newSvgFilterNode(int p, Laxkit::anObject *ref)
     return node;
 }
 
-const char *svgnodelist[] = {
-		 //input source node
-		"SvgSource",
-		 //misc child elements
-		"feMergeNode",
-		"feFuncR",
-		"feFuncG",
-		"feFuncB",
-		"feFuncA",
-		"feDistantLight",
-		"fePointLight",
-		"feSpotLight",
-		 //primitives
-		"feBlend",
-		"feColorMatrix",
-		"feComponentTransfer",
-		"feComposite",
-		"feConvolveMatrix",
-		"feDiffuseLighting",
-		"feDisplacementMap",
-		"feFlood",
-		"feGaussianBlur",
-		"feImage",
-		"feMerge",
-		"feMorphology",
-		"feOffset",
-		"feSpecularLighting",
-		"feTile",
-		"feTurbulence",
-
-		NULL
-	};
-
 void RegisterSvgNodes(Laxkit::ObjectFactory *factory)
 {
 	ObjectDef *svgdefs = GetSvgDefs();
@@ -1093,7 +1127,7 @@ void RegisterSvgNodes(Laxkit::ObjectFactory *factory)
 
     for (int c=0; c < svgdefs->getNumFields(); c++) {
         def = svgdefs->getField(c);
-		if (findInList(def->name, svgnodelist) < 0) continue;
+		if (findInList(def->name, svgprimitives) < 0 && findInList(def->name, svgmisclist) < 0) continue;
 
 		sprintf(str, "Svg Filter/%s", def->name);
 		factory->DefineNewObject(getUniqueNumber(), str, newSvgFilterNode, NULL, c);
