@@ -1413,6 +1413,7 @@ Laxkit::anObject *newImageNode(int p, Laxkit::anObject *ref)
 	return node;
 }
 
+
 //------------ GenericNode
 
 class GenericNode;
@@ -2099,7 +2100,7 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Color",    newColorNode,  NULL, 0);
 
 	 //--- ImageNode
-	factory->DefineNewObject(getUniqueNumber(), "NewImage", newImageNode,  NULL, 0);
+	//factory->DefineNewObject(getUniqueNumber(), "NewImage", newImageNode,  NULL, 0);
 
 	 //--- MathNode1
 	factory->DefineNewObject(getUniqueNumber(), "Math1",     newMathNode1,   NULL, 0);
