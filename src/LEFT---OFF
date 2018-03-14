@@ -12,6 +12,8 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now: 
 
+Can't import images to limbo
+
 back to not maximizing properly on default ubuntu
 
 shearing or scaling produces null axes occasionally when crossing over opposite edge, borking the display
@@ -1044,6 +1046,7 @@ Colors:
     DONE images (doesn't use color per se)
 
 in general for windows, need better styling.. too much is hardcoded. problems later with high dpi screens
+  for instance revamp interfaces' concept of single pixel lines
 
 make drag and drop selections work
 
@@ -1499,6 +1502,13 @@ global resources:
   current frame/time
   current language, for conditional text
 
+global Laidout settings:
+  color theme
+  icons
+  tooltips
+  per tool default settings
+  thin line width (default 1 pixel, but this is bad for high dpi screens)
+
 external tools:
   figure out a way to standardize verifying that tool exists and is executable
   to image renderers
@@ -1646,14 +1656,17 @@ tiling cloner:  CloneInterface
   map to inkscape tiling clone on export?
 
 Imposition use cases:
-  for same document, have stack of impostions, each with its own page set? would make make docs with body pages
+  for sig editor, need paper partitioner, then stack sections
+  for same document, have stack of impostions, each with its own page set? would make docs with body pages and
     cover easier, without having to implement full "project"
   booklet contains two threads, read one way, flip book over, read the other way
+    remember custom views, to swap rotated display, for instance
   booklet but each paper is trimmed differently, like for tabs
   moebius
   need cutting marks for posterizing for lining up different sheets
   impose only needs access to papergroups
-  may any spread setup temporarily to another imposition on export?
+  maybe any spread setup temporarily to another imposition on export?
+
 Net imposition
   create from papergroup: one papergroup used as page spreads, another used as actual paper group?
   net extra scaling non-functional
