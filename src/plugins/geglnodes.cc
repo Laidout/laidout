@@ -20,7 +20,7 @@
 #include "geglnodes.h"
 #include "svg/svgnodes.h"
 
-#include <gegl/gegl-paramspecs.h>
+#include <gegl-paramspecs.h>
 
 #include <iostream>
 #define DBG
