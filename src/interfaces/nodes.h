@@ -16,12 +16,44 @@
 
 
 #include <lax/objectfactory.h>
+#include "nodeinterface.h"
+
+#include <lax/interfaces/curvemapinterface.h>
+#include "../calculator/curvevalue.h"
 
 
 namespace Laidout { 
 
 
+//--------------------- Setup --------------------------------
 int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory);
+
+
+
+//--------------------- Misc node related objects used by other things ----------------------
+
+//--------------------- CurveProperty
+class CurveProperty : public NodeProperty
+{
+	static SingletonKeeper interfacekeeper;
+
+  public:
+	static LaxInterfaces::CurveMapInterface *GetCurveInterface();
+
+	CurveValue *curve;
+
+	CurveProperty(CurveValue *ncurve, int absorb, int isout);
+	virtual ~CurveProperty();
+
+	virtual void SetExtents(NodeColors *colors);
+	virtual bool AllowType(Value *v);
+
+	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface, Laxkit::Displayer *dp);
+	virtual const char *PropInterfaceName() { return "CurveMapInterface"; }
+	virtual bool HasInterface();
+	virtual void Draw(Laxkit::Displayer *dp, int hovered);
+};
+
 
 
 } //namespace Laidout

@@ -15,6 +15,7 @@
 
 
 #include "nodeinterface.h"
+#include "nodes.h"
 #include "../utils.h"
 #include "../version.h"
 #include "../utils.h"
@@ -165,10 +166,10 @@ NodeProperty::NodeProperty()
 	label     = NULL;
 	tooltip   = NULL;
 	modtime   = 0;
-	width     = height = 0;
 	custom_info= 0;
 	frompropproxy = NULL;
 	topropproxy   = NULL;
+	x=y=width=height = 0;
 
 	type = PROP_Unknown;
 	is_linkable = false; //default true for something that allows links in
@@ -184,7 +185,6 @@ NodeProperty::NodeProperty(PropertyTypes input, bool linkable, const char *nname
 	color.rgbf(1.,1.,1.,1.);
 
 	owner     = NULL;
-	width     = height = 0;
 	datatypes = NULL;
 	data      = ndata;
 	if (data && !absorb_count) data->inc_count();
@@ -192,6 +192,7 @@ NodeProperty::NodeProperty(PropertyTypes input, bool linkable, const char *nname
 	modtime   = 0;
 	frompropproxy = NULL;
 	topropproxy   = NULL;
+	x=y=width=height = 0;
 
 	type      = input;
 	is_linkable = linkable;
@@ -225,14 +226,59 @@ const char *NodeProperty::Label(const char *nlabel)
 	return label;
 }
 
+/*! Set default width and height for this property.
+ * Default is to get extent of label + (number | string | enum).
+ */
+void NodeProperty::SetExtents(NodeColors *colors)
+{
+	double w = colors->font->extent(Label(),-1);
+	double th = colors->font->textheight();
+
+	Value *v = dynamic_cast<Value*>(data);
+	if (v) {
+		if (v->type()==VALUE_Real || v->type()==VALUE_Int) {
+			w += 3*th;
+
+		} else if (v->type()==VALUE_Color) {
+			w += 3*th;
+
+		} else if (v->type()==VALUE_String) {
+			StringValue *s = dynamic_cast<StringValue*>(v);
+			w += th + colors->font->extent(s->str, -1);
+
+		} else if (v->type()==VALUE_Enum) {
+			EnumValue *ev = dynamic_cast<EnumValue*>(v);
+			const char *nm=NULL, *Nm=NULL;
+			double ew=0, eww;
+
+			for (int c=0; c<ev->GetObjectDef()->getNumEnumFields(); c++) {
+				ev->GetObjectDef()->getEnumInfo(c, &nm, &Nm);
+				if (!Nm) Nm = nm;
+				if (isblank(Nm)) continue;
+				eww = colors->font->extent(Nm,-1);
+				if (eww>ew) ew=eww;
+			}
+			w += ew;
+		}
+
+		x      = 0;
+		width  = w;
+		height = 1.5*th;
+
+	} else {
+		 //set a default height for assuming just writing out label
+		if (height==0) height = 1.5*th;
+	}
+}
 
 /*! Return an interface if you want to have a custom interface for this property.
  * If interface!=NULL, try to update (and return) that one. If provided
  * interface is the wrong type of interface, then return NULL.
+ * Adjust interface to use dp.
  *
  * Default is to return NULL, for no special interface necessary.
  */
-anInterface *NodeProperty::PropInterface(LaxInterfaces::anInterface *interface)
+anInterface *NodeProperty::PropInterface(LaxInterfaces::anInterface *interface, Laxkit::Displayer *dp)
 { 
 	return NULL;
 }
@@ -580,7 +626,7 @@ int NodeBase::InstallColors(NodeColors *newcolors, bool absorb_count)
  *
  * Return NULL for default node rendering.
  */
-LaxInterfaces::anInterface *NodeBase::PropInterface(LaxInterfaces::anInterface *interface)
+LaxInterfaces::anInterface *NodeBase::GetInterface(LaxInterfaces::anInterface *interface)
 {
 	return NULL;
 }
@@ -724,55 +770,18 @@ int NodeBase::WrapFull(bool keep_current_width)
 	NodeProperty *prop;
 	for (int c=0; c<properties.n; c++) {
 		prop = properties.e[c];
-		if (prop->height == 0) prop->height = 1.5*th;
+		if (prop->height == 0) prop->SetExtents(colors);
 	}
 
 	if (!keep_current_width) {
 		width = colors->font->extent(Name,-1);
 
 		 //find wrap width
-		double w;
-		Value *v;
 		for (int c=0; c<properties.n; c++) {
 			prop = properties.e[c];
 
-			w = colors->font->extent(prop->Label(),-1);
-
-			v=dynamic_cast<Value*>(prop->data);
-			if (v) {
-				if (v->type()==VALUE_Real || v->type()==VALUE_Int) {
-					w+=3*th;
-
-				} else if (v->type()==VALUE_Color) {
-					w+=3*th;
-
-				} else if (v->type()==VALUE_String) {
-					StringValue *s = dynamic_cast<StringValue*>(v);
-					w += th + colors->font->extent(s->str, -1);
-
-				} else if (v->type()==VALUE_Enum) {
-					EnumValue *ev = dynamic_cast<EnumValue*>(v);
-					const char *nm=NULL, *Nm=NULL;
-					double ew=0, eww;
-					for (int c=0; c<ev->GetObjectDef()->getNumEnumFields(); c++) {
-						ev->GetObjectDef()->getEnumInfo(c, &nm, &Nm);
-						if (!Nm) Nm = nm;
-						if (isblank(Nm)) continue;
-						eww = colors->font->extent(Nm,-1);
-						if (eww>ew) ew=eww;
-					}
-					w += ew;
-				}
-
-				prop->x=0;
-				prop->width = w;
-				prop->height = 1.5*th;
-
-			} else {
-				if (prop->height==0) prop->height = 1.5*th;
-			}
-
-			if (w>width) width=w;
+			prop->SetExtents(colors);
+			if (prop->width > width) width = prop->width;
 		}
 
 		width += 3*th;
@@ -809,6 +818,7 @@ int NodeBase::WrapFull(bool keep_current_width)
 	return 0;
 }
 
+
 /*! Update the bounds to be the collapsed version, and set props->pos
  * to be squashed along the edges.
  */
@@ -833,8 +843,8 @@ int NodeBase::WrapCollapsed()
 
 	for (int c=0; c<properties.n; c++) {
 		prop = properties.e[c];
-		if (prop->AllowInput())  num_in++;
-		if (prop->AllowOutput()) num_out++;
+		if (prop->AllowInput()  || prop->IsExecIn())  num_in++;
+		if (prop->AllowOutput() || prop->IsExecOut()) num_out++;
 	}
 
 	int max = num_in;
@@ -850,12 +860,12 @@ int NodeBase::WrapCollapsed()
 	for (int c=0; c<properties.n; c++) {
 		prop = properties.e[c];
 
-		if (prop->AllowInput()) {
+		if (prop->AllowInput() || prop->IsExecIn()) {
 			prop->pos.x = 0;
 			prop->pos.y = in_y+th*slot_radius;
 			in_y += 2*th*slot_radius;
 
-		} else if (prop->AllowOutput()) {
+		} else if (prop->AllowOutput() || prop->IsExecOut()) {
 			prop->pos.x = width;
 			prop->pos.y = out_y+th*slot_radius;
 			out_y += 2*th*slot_radius;
@@ -2426,6 +2436,7 @@ NodeInterface::NodeInterface(anInterface *nowner, int nid, Displayer *ndp)
 	playing      = 0;
 	play_timer   = 0;
 	play_fps     = 60;
+	cur_fps      = 0;
 	elapsed_time = 0;
 	last_time    = 0;
 
@@ -2508,10 +2519,12 @@ int NodeInterface::Idle(int tid, double delta)
 		// advance threads by one node;
 		ExecuteThreads();
 
+		if (delta) cur_fps = 1/delta;
+
 		if (!threads.n) {
 			PostMessage(_("Threads done!"));
 			play_timer = 0;
-			playing = 0;
+			playing = -1;
 			//don't want to call stop, ...not sure if it will mess up timer stack. *** should find that out!!
 			return 1;
 		}
@@ -2528,6 +2541,8 @@ int NodeInterface::ExecuteThreads()
 {
 	// advance threads by one node;
 	NodeThread *thread;
+
+	if (threads.n) needtodraw=1;
 
 	for (int c=threads.n-1; c>=0; c--) {
 		thread = threads.e[c];
@@ -2551,6 +2566,7 @@ int NodeInterface::ExecuteThreads()
 	if (!threads.n) {
 		return 1;
 	}
+
 	return 0;
 }
 
@@ -2608,6 +2624,12 @@ void NodeInterface::Clear(SomeData *d)
 {
 	selected.flush();
 	grouptree.flush();
+
+	if (play_timer) {
+		// just remove timer
+		app->removetimer(this, play_timer);
+		play_timer = 0;
+	}
 }
 
 /*! To aid custom node actions from plugins, for instance.
@@ -3095,18 +3117,63 @@ int NodeInterface::Refresh()
 
 
 	if (show_threads) {
-		const char *msg = playing ? _("Pause") : threads.n ? _("Next") : _("No threads");
-		double width = dp->textextent(msg,-1, NULL,NULL);
-		//if (!thread_controls.validbounds()) {
-			thread_controls.maxx = thread_controls.minx + width + 2*th;
-			thread_controls.maxy = thread_controls.miny + 2*th;
-		//}
-
 		dp->NewFG(coloravg(nodes->colors->fg.Pixel(),nodes->colors->bg.Pixel(), .25));
-		dp->NewBG(coloravg(nodes->colors->fg.Pixel(),nodes->colors->bg.Pixel(), lasthoverslot == NODES_Thread_Controls ? .65 : .75));
 
-		dp->drawrectangle(thread_controls.minx, thread_controls.miny, thread_controls.boxwidth(), thread_controls.boxheight(), 2);
-		dp->textout(thread_controls.BBoxPoint(.5,.5), msg, LAX_CENTER);
+		double width = 0;
+		thread_controls.maxy = thread_controls.miny + thread_controls.miny + 2*th;
+
+		if (playing<=0 && threads.n) {
+			 //  "Next   Run   Reset"
+			const char *msg = _("Next");
+			double x = thread_controls.minx + th;
+			dp->NewBG(coloravg(nodes->colors->fg.Pixel(),nodes->colors->bg.Pixel(), lasthoverprop == NODES_Thread_Next ? .65 : .75));
+			width = dp->textextent(msg,-1, NULL,NULL);
+			dp->drawrectangle(x-th, thread_controls.miny, 2*th + width, thread_controls.boxheight(), 2);
+			dp->textout(x + width/2, (thread_controls.miny+thread_controls.maxy)/2, msg,-1, LAX_CENTER);
+
+			msg = _("Run");
+			x += width + 2*th;
+			thread_run = x-th;
+			dp->NewBG(coloravg(nodes->colors->fg.Pixel(),nodes->colors->bg.Pixel(), lasthoverprop == NODES_Thread_Run ? .65 : .75));
+			width = dp->textextent(msg,-1, NULL,NULL);
+			dp->drawrectangle(thread_run, thread_controls.miny, 2*th + width, thread_controls.boxheight(), 2);
+			dp->textout(x + width/2, (thread_controls.miny+thread_controls.maxy)/2, msg,-1, LAX_CENTER);
+
+			msg = _("Reset");
+			x += width + 2*th;
+			thread_reset = x-th;
+			dp->NewBG(coloravg(nodes->colors->fg.Pixel(),nodes->colors->bg.Pixel(), lasthoverprop == NODES_Thread_Reset ? .65 : .75));
+			width = dp->textextent(msg,-1, NULL,NULL);
+			dp->drawrectangle(thread_reset, thread_controls.miny, 2*th + width, thread_controls.boxheight(), 2);
+			dp->textout(x + width/2, (thread_controls.miny+thread_controls.maxy)/2, msg,-1, LAX_CENTER);
+
+			thread_controls.maxx = x + width + th;
+
+		} else {
+			 //  "No threads" "Scan for threads"
+			 //  "Pause"
+			const char *msg = (playing==1) ? _("Pause")
+								: playing == -1 ? _("Done!")
+								  : lasthoverslot == NODES_Thread_Controls ? _("Scan for threads") : _("No threads");
+			if (playing == -1) playing = 0;
+			width = dp->textextent(msg,-1, NULL,NULL);
+			thread_controls.maxx = thread_controls.minx + thread_controls.minx + width + 2*th;
+			thread_controls.maxy = thread_controls.miny + thread_controls.miny + 2*th;
+
+			dp->NewBG(coloravg(nodes->colors->fg.Pixel(),nodes->colors->bg.Pixel(), lasthoverslot == NODES_Thread_Controls ? .65 : .75));
+			dp->drawrectangle(thread_controls.minx, thread_controls.miny, thread_controls.boxwidth(), thread_controls.boxheight(), 2);
+			dp->textout(thread_controls.BBoxPoint(.5,.5), msg,-1, LAX_CENTER);
+
+			thread_controls.maxx = thread_controls.minx + thread_controls.minx + width + 2*th;
+		}
+
+
+		 //show fps counter
+		if (playing) {
+			char str[50];
+			sprintf(str, "fps: %.1f", cur_fps);
+			dp->textout(thread_controls.BBoxPoint(.5,1), str,-1, LAX_TOP|LAX_HCENTER);
+		}
 	}
 
 
@@ -3187,7 +3254,7 @@ int NodeInterface::Refresh()
 	for (int c=0; c<nodes->nodes.n; c++) {
 		node = nodes->nodes.e[c];
 
-		 //make current threads show up
+		 //make current threads show up by drawing colored box behind
 		if (show_threads && threads.n && IsThread(node)) {
 			ScreenColor color_thread(.5,.5,1.,1.);
 			dp->NewFG(&color_thread);
@@ -3376,7 +3443,10 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 	ScreenColor *propcolor = &node->colors->default_property;
 
 	if (!node->collapsed) {
-		if (prop->type == NodeProperty::PROP_Button) {
+		if (prop->HasInterface()) {
+			prop->Draw(dp, hoverprop);
+
+		} else if (prop->type == NodeProperty::PROP_Button) {
 			double w = th + dp->textextent(prop->Label(),-1, NULL,NULL);
 			ScreenColor highlight(node->colors->bg), shadow(node->colors->bg);
 			highlight.Average(&highlight, node->colors->fg, .2);
@@ -3619,7 +3689,7 @@ int NodeInterface::IsLive(NodeConnection *con)
 
 int NodeInterface::Play()
 {
-	if (playing) return 0; //already playing
+	if (playing == 1) return 0; //already playing
 
 	 //start timer
 	play_timer = app->addtimer(this, 1000/play_fps, 1000/play_fps, -1);
@@ -3639,7 +3709,7 @@ int NodeInterface::TogglePause()
 		return 0;
 	}
 
-	if (!playing) return Play();
+	if (playing <= 0) return Play();
 
 	//restart player
 	play_timer = app->addtimer(this, 1000/play_fps, 1000/play_fps, -1);
@@ -3883,6 +3953,11 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, int 
 
 	if (thread_controls.boxcontains(x,y)) {
 		*overpropslot = NODES_Thread_Controls;
+		if (playing<=0 && threads.n) {
+			if (x<thread_run) *overproperty = NODES_Thread_Next;
+			else if (x<thread_reset) *overproperty = NODES_Thread_Run;
+			else *overproperty = NODES_Thread_Reset;
+		}
 		return -1;
 	}
 
@@ -3897,7 +3972,7 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 	int overnode = scan(x,y, &overpropslot, &overproperty, &overconnection, state);
 
 	if (count == 2 && overnode>=0 && overproperty<0 && overpropslot == NODES_Label) {
-		action = overpropslot;
+		action = NODES_Label;
 
 	} else if (count == 2 && overnode<0 && overproperty == NODES_Frame_Label) {
 		action = NODES_Frame_Label;
@@ -3952,8 +4027,20 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 		 //click down on a property, but not on the slot...
 		action = NODES_Property;
 
+		NodeProperty *prop = nodes->nodes.e[overnode]->properties.e[overproperty];
+		if (prop->HasInterface()) {
+			//dp->PushAxes();
+			//dp->NewTransform(nodes->m.m());
+			anInterface *interface = prop->PropInterface(NULL, dp);
+			flatpoint p = nodes->m.transformPointInverse(flatpoint(x,y));
+			//dp->PopAxes();
+			if (interface && interface->LBDown(p.x,p.y,state,count,d) == 0) {
+				action = NODES_Property_Interface;
+			}
+		}
+
 	} else if (overnode>=0 && overproperty>=0 && overpropslot>=0) {
-		 //down on a socket, so drag out to connect to another node
+		 //down on a slot, so drag out to connect to another node
 		
 		NodeProperty *prop = nodes->nodes.e[overnode]->properties.e[overpropslot];
 
@@ -4192,6 +4279,23 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		}
 		return 0;
 
+	} else if (action == NODES_Property_Interface) {
+		NodeBase *node = nodes->nodes.e[lasthover];
+		NodeProperty *prop = node->properties.e[lasthoverprop];
+
+		if (prop->HasInterface()) {
+			//dp->PushAxes();
+			//dp->NewTransform(nodes->m.m());
+			flatpoint p = nodes->m.transformPointInverse(flatpoint(x,y));
+			anInterface *interface = prop->PropInterface(NULL, dp);
+			interface->LBUp(p.x,p.y, state,d);
+			//dp->PopAxes();
+		}
+
+		hover_action = NODES_None;
+		needtodraw=1;
+		return 0;
+
 	} else if (action == NODES_Cut_Connections) {
 		 //cut any connections that cross the line between selection_rect.min to max
 		flatpoint p1 = nodes->m.transformPointInverse(flatpoint(selection_rect.minx,selection_rect.miny));
@@ -4417,11 +4521,21 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		}
 
 	} else if (action == NODES_Thread_Controls) {
-		if (!threads.n) {
-			FindThreads(false);
+		if (overproperty == NODES_Thread_Run) {
+			Play();
+
+		} else if (overproperty == NODES_Thread_Reset) {
+			FindThreads(true);
+
+		} else if (overproperty == NODES_Thread_Next) {
+			ExecuteThreads();
+
 		} else {
-			if (threads.n) ExecuteThreads();
+			if (!threads.n) {
+				FindThreads(false);
+			} else ExecuteThreads();
 		}
+
 		needtodraw=1;
 	}
 
@@ -4443,6 +4557,20 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 		lastpos.x=x; lastpos.y=y;
 		//DBG cerr << "nodes lastpos: "<<lastpos.x<<','<<lastpos.y<<endl;
 		DBG cerr <<"nodes scan, node,prop,slot: "<<newhover<<','<<newhoverprop<<','<<newhoverslot<<","<<newconnection<<endl;
+
+		if (newhover >= 0 && newhoverprop >= 0 && nodes->nodes.e[newhover]->properties.e[newhoverprop]->HasInterface()) {
+			NodeProperty *prop = nodes->nodes.e[newhover]->properties.e[newhoverprop];
+			if (prop->HasInterface()) {
+				//dp->PushAxes();
+				//dp->NewTransform(nodes->m.m());
+				anInterface *interface = prop->PropInterface(NULL, dp);
+				flatpoint p = nodes->m.transformPointInverse(flatpoint(x,y));
+				interface->MouseMove(p.x,p.y, state,mouse);
+				//interface->MouseMove(x,y, state,mouse);
+				//dp->PopAxes();
+				needtodraw |= interface->Needtodraw();
+			}
+		}
 
 		if (newhover!=lasthover || newhoverslot!=lasthoverslot || newhoverprop!=lasthoverprop || newconnection!=lastconnection) {
 			needtodraw=1;
@@ -4598,6 +4726,24 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 			}
 			nodes->frames.e[lasthoverslot]->Wrap();
 		}
+		needtodraw=1;
+		return 0;
+
+	} else if (action == NODES_Property_Interface) {
+		NodeBase *node = nodes->nodes.e[lasthover];
+		NodeProperty *prop = node->properties.e[lasthoverprop];
+
+		if (prop->HasInterface()) {
+			//dp->PushAxes();
+			//dp->NewTransform(nodes->m.m());
+			flatpoint p = nodes->m.transformPointInverse(flatpoint(x,y));
+			anInterface *interface = prop->PropInterface(NULL, dp);
+			interface->MouseMove(p.x,p.y, state,mouse);
+			//interface->MouseMove(x,y,state,mouse);
+			//dp->PopAxes();
+		}
+
+		//hover_action = NODES_None;
 		needtodraw=1;
 		return 0;
 
@@ -5323,16 +5469,11 @@ int NodeInterface::CutConnections(flatpoint p1,flatpoint p2)
 
 		for (int c2=0; c2<node->properties.n; c2++) {
 			prop = node->properties.e[c2];
-			if (!prop->IsInput()) continue;
+			if (!prop->IsInput() && !prop->IsExecOut()) continue;
 
 			for (int c3=prop->connections.n-1; c3>=0; c3--) {
 				connection = prop->connections.e[c3];
 				GetConnectionBez(connection, bezbuf);
-				//box.clear();
-				//box.addtobounds(bezbuf[0]);
-				//box.addtobounds(bezbuf[1]);
-				//box.addtobounds(bezbuf[2]);
-				//box.addtobounds(bezbuf[3]);
 
 				if (bez_intersection(p1,p2, 0, bezbuf[0],bezbuf[1],bezbuf[2],bezbuf[3], 7, &p,NULL)) {
 					nodes->Disconnect(connection, false, false);

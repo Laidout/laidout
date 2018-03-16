@@ -14,14 +14,20 @@
 
 
 #include <lax/language.h>
+#include <lax/interfaces/curvemapinterface.h>
 #include "nodes.h"
 #include "nodeinterface.h"
 #include "../calculator/calculator.h"
+#include "../calculator/curvevalue.h"
 
 
 //template implementation
 #include <lax/lists.cc>
+#include <lax/refptrstack.cc>
 
+
+using namespace Laxkit;
+using namespace LaxInterfaces;
 
 namespace Laidout {
 
@@ -1726,6 +1732,90 @@ Laxkit::anObject *newThreadNode(int p, Laxkit::anObject *ref)
 }
 
 
+//------------------------ IfNode ------------------------
+
+/*! \class For loop node.
+ */
+
+class IfNode : public NodeBase
+{
+  public:
+	IfNode(bool iftrue);
+	virtual ~IfNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Execute(NodeThread *thread);
+};
+
+
+IfNode::IfNode(bool iftrue)
+{
+	makestr(type,   "If");
+	makestr(Name, _("If"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_In,  true, "In",    NULL,1, _("In")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,    true, "If",    new BooleanValue(iftrue),1,_("if"), NULL));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_Out, true, "True",  NULL,1, _("True")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_Out, true, "False", NULL,1, _("False")));
+}
+
+IfNode::~IfNode()
+{
+}
+
+NodeBase *IfNode::Execute(NodeThread *thread)
+{
+	int isnum;
+	bool iftrue = getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return NULL;
+
+	NodeProperty *prop;
+	if (iftrue) prop = properties.e[2];
+	else prop = properties.e[3];
+
+	NodeBase *next = NULL;
+	if (prop->connections.n) next = prop->connections.e[0]->to;
+
+	modtime = times(NULL);
+	PropagateUpdate();
+
+	return next;
+}
+
+NodeBase *IfNode::Duplicate()
+{
+	int isnum;
+	bool iftrue = getNumberValue(properties.e[3]->GetData(), &isnum);
+	IfNode *node = new IfNode(iftrue);
+	node->DuplicateBase(this);
+	return node;
+}
+
+int IfNode::Update()
+{
+	int isnum;
+	getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+	return 0; //we only actually update from Execute
+}
+
+int IfNode::GetStatus()
+{
+	int isnum;
+	getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+	return 0;
+}
+
+
+Laxkit::anObject *newIfNode(int p, Laxkit::anObject *ref)
+{
+	return new IfNode(1);
+}
+
+
 //------------------------ LoopNode ------------------------
 
 /*! \class For loop node.
@@ -1834,6 +1924,8 @@ NodeBase *LoopNode::Duplicate()
 
 int LoopNode::Update()
 {
+	makestr(error_message, NULL);
+
 	int isnum;
 	start = getNumberValue(properties.e[3]->GetData(), &isnum);  if (!isnum) return -1;
 	end   = getNumberValue(properties.e[4]->GetData(), &isnum);  if (!isnum) return -1;
@@ -2090,6 +2182,219 @@ Laxkit::anObject *newMapFromRangeNode(int p, Laxkit::anObject *ref)
 	return new MapRangeNode(false, 0,1, false);
 }
 
+
+//------------------------ CurveProperty ------------------------
+
+/*! \class CurveProperty
+ * For use in CurveNode.
+ */
+
+
+SingletonKeeper CurveProperty::interfacekeeper;
+
+LaxInterfaces::CurveMapInterface *CurveProperty::GetCurveInterface()
+{
+	return dynamic_cast<CurveMapInterface*>(interfacekeeper.GetObject());
+}
+
+CurveProperty::CurveProperty(CurveValue *ncurve, int absorb, int isout)
+{
+	type = (isout ? NodeProperty::PROP_Output : NodeProperty::PROP_Block);
+	is_linkable = isout ? true : false;
+	makestr(name, "Curve");
+	makestr(label, _("Curve"));
+	//makestr(tooltip, _(""));
+
+	curve = ncurve;
+	if (curve && !absorb) curve->inc_count();
+	data = curve;
+	if (data) data->inc_count();
+
+	CurveMapInterface *interface = GetCurveInterface();
+	if (!interface) {
+		interface = new CurveMapInterface(getUniqueNumber(), NULL);
+		interface->style |= CurveMapInterface::RealSpace;
+		interfacekeeper.SetObject(interface, 1);
+	}
+
+}
+
+CurveProperty::~CurveProperty()
+{
+	if (curve) curve->dec_count();
+}
+
+void CurveProperty::SetExtents(NodeColors *colors)
+{
+	width = height = 4 * colors->font->textheight();
+}
+
+bool CurveProperty::HasInterface()
+{
+	return true;
+}
+
+/*! If interface!=NULL, then try to use it. If NULL, create and return a new appropriate interface.
+ * Also set the interface to use *this.
+ */
+LaxInterfaces::anInterface *CurveProperty::PropInterface(LaxInterfaces::anInterface *interface, Laxkit::Displayer *dp)
+{
+	CurveMapInterface *interf = NULL;
+	if (interface) {
+		if (strcmp(interface->whattype(), "CurveMapInterface")) return NULL;
+		interf = dynamic_cast<CurveMapInterface*>(interface);
+		if (!interf) return NULL; //wrong ref interface!!
+	}
+
+	if (!interf) interf = GetCurveInterface();
+	interf->Dp(dp);
+	interf->SetInfo(curve);
+	double th = owner->colors->font->textheight();
+	interf->SetupRect(owner->x + x + th/2, owner->y + y, width-th, height);
+
+	return interf;
+}
+
+void CurveProperty::Draw(Laxkit::Displayer *dp, int hovered)
+{
+	anInterface *interf = PropInterface(NULL, dp);
+	if (hovered) interf->Refresh();
+	else interf->DrawData(curve);
+}
+
+
+/*! Whether to accept link to this value type.
+ * Accepts DoubleValue, ImageValue, or ColorValue.
+ */
+bool CurveProperty::AllowType(Value *v)
+{
+	int vtype = v->type();
+	if (vtype == VALUE_Real)  return true;
+	if (vtype == VALUE_Color) return true;
+	if (vtype == VALUE_Image) return true;
+	// *** vectors, transform each value individually, or all
+	return false;
+}
+
+
+//--------------------- CurveNode ---------------------
+
+/*! \class CurveNode
+ */
+class CurveNode : public NodeBase
+{
+  public:
+	bool for_creation; //true when creating a curve, not a transforming node
+
+	ObjectDef channels;
+	Laxkit::RefPtrStack<CurveValue> curves;
+
+	int current_curve;
+	int use_max; //whether curve affects the maximum channel, like when it's an alpha channel
+
+	CurveNode(int is_for_creation, CurveValue *ncurve);
+	virtual ~CurveNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
+};
+
+/*! absorbs ncurve.
+ */
+CurveNode::CurveNode(int is_for_creation, CurveValue *ncurve)
+{
+	if (is_for_creation) {
+		makestr(Name, _("Curve"));
+		makestr(type, "Curve");
+	} else {
+		makestr(Name, _("Curve Transform"));
+		makestr(type, "CurveTransform");
+	}
+
+	for_creation = is_for_creation;
+
+	//in should accept:
+	//  doubles, assume adjust within range 0..1
+	//  image data, create one curve for all except alpha, one curve for each channel
+	//
+	//out should be same format as in
+
+	CurveValue *curve = ncurve;
+	if (!curve) curve = new CurveValue();
+	curves.push(curve);
+	if (!ncurve) curve->dec_count();
+	current_curve = 0;
+
+	if (!for_creation) AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "In", NULL, 1));
+
+	AddProperty(new CurveProperty(curve, 0, 1));
+
+	if (!for_creation) {
+		 //create selector for channel, including "all"
+		//AddProperty(new NodeProperty(NodeProperty::PROP_Block, true, "Channel", new EnumValue(0, &channels), 1));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL, 0));
+	}
+}
+
+CurveNode::~CurveNode()
+{
+}
+
+NodeBase *CurveNode::Duplicate()
+{
+	CurveValue *v = dynamic_cast<CurveProperty*>(FindProperty("Curve"))->curve;
+	v = dynamic_cast<CurveValue*>(v->duplicate());
+	CurveNode *newnode = new CurveNode(for_creation, v);
+	newnode->DuplicateBase(this);
+	newnode->Wrap();
+	return newnode;
+}
+
+/*! Return 1 for set, 0 for not set.
+ */
+int CurveNode::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
+{
+	if (!strcmp(propname, "Curve")) {
+		CurveProperty *prop = dynamic_cast<CurveProperty*>(FindProperty(propname));
+		CurveValue *curve = prop->curve;
+		curve->dump_in_atts(att,0,NULL);
+		prop->SetData(curve, 1);
+	}
+	
+	return NodeBase::SetPropertyFromAtt(propname, att);
+}
+
+int CurveNode::Update()
+{ // ***
+//	if (!properties.e[1]->IsConnected()) {
+//		 //no connected value, just use 0
+//		Value *outdata = properties.e[2]->GetData();
+//		DoubleValue *d = dynamic_cast<DoubleValue*>(outdata);
+//
+//		if (!d) {
+//			if (outdata) { outdata->dec_count(); outdata=NULL; }
+//			outdata = d = new DoubleValue();
+//		}
+//		d->d = 0;
+//		return 0;
+//	}
+
+	return NodeBase::Update();
+}
+
+int CurveNode::GetStatus()
+{
+	return NodeBase::GetStatus();
+}
+ 
+
+Laxkit::anObject *newCurveNode(int p, Laxkit::anObject *ref)
+{
+	return new CurveNode(p, NULL);
+}
+
 //--------------------------- SetupDefaultNodeTypes() -----------------------------------------
 
 /*! Install default built in node types to factory.
@@ -2145,12 +2450,19 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	 //--- LoopNode
 	factory->DefineNewObject(getUniqueNumber(), "Loop",newLoopNode,  NULL, 0);
 
+	 //--- IfNode
+	factory->DefineNewObject(getUniqueNumber(), "If",newIfNode,  NULL, 0);
+
 	 //--- LerpNode
 	factory->DefineNewObject(getUniqueNumber(), "Lerp",newLerpNode,  NULL, 0);
 
 	 //--- MapRangeNodes
 	factory->DefineNewObject(getUniqueNumber(), "MapToRange",  newMapToRangeNode,    NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "MapFromRange",newMapFromRangeNode,  NULL, 0);
+
+	 //--- CurveNodes
+	factory->DefineNewObject(getUniqueNumber(), "Curve",         newCurveNode,  NULL, 1);
+	//factory->DefineNewObject(getUniqueNumber(), "CurveTransform",newCurveNode,  NULL, 0);
 
 	return 0;
 }

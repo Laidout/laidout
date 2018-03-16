@@ -18,6 +18,7 @@ objs= \
 	values.o \
 	interpreter.o \
 	calculator.o \
+	curvevalue.o \
 	shortcuttodef.o
 
 

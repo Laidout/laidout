@@ -24,7 +24,6 @@
 
 #include "../calculator/values.h"
 #include "../filetypes/objectio.h"
-#include "nodes.h"
 
 
 using namespace LaxFiles;
@@ -32,22 +31,13 @@ using namespace Laxkit;
 
 namespace Laidout { 
 
-//default node types:
-//  string
-//  int
-//  double
-//  boolean
-//  color
-//  file
-//  date
-//  image
-
 
 //---------------------------- Nodes ------------------------------------
 
 class NodeGroup;
 class NodeBase;
 class NodeProperty;
+class NodeColors;
 
 
 //---------------------------- NodeConnection ------------------------------------
@@ -119,7 +109,10 @@ class NodeProperty
 					const char *nlabel=NULL, const char *ntip=NULL, int info=0, bool editable=true);
 	virtual ~NodeProperty();
 	virtual const char *PropInterfaceName() { return NULL; }
-	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface);
+	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface, Laxkit::Displayer *dp);
+	virtual bool HasInterface() { return false; }
+	virtual void Draw(Laxkit::Displayer *dp, int hovered) {}
+	virtual void SetExtents(NodeColors *colors);
 	virtual const char *Name()  { return name; }
 	virtual const char *Name(const char *nname);
 	virtual const char *Label() { return label ? label : name; }
@@ -283,7 +276,7 @@ class NodeBase : public Laxkit::anObject,
 	virtual const char *ErrorMessage() { return error_message; }
 	virtual ObjectDef *GetDef() { return def; }
 	virtual void InstallDef(ObjectDef *def, bool absorb_count);
-	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface);
+	virtual LaxInterfaces::anInterface *GetInterface(LaxInterfaces::anInterface *interface);
 
 	virtual int Undo(UndoData *data);
 	virtual int Redo(UndoData *data);
@@ -445,6 +438,9 @@ enum NodeHover {
 	NODES_Jump_Forward   ,
 	NODES_Jump_Nearest   ,
 	NODES_Thread_Controls,
+	NODES_Thread_Next    ,
+	NODES_Thread_Run     ,
+	NODES_Thread_Reset   ,
 	NODES_HOVER_MAX
 };
 
@@ -480,6 +476,7 @@ enum NodeInterfaceActions {
 	NODES_Save_With_Loader,
 	NODES_Load_With_Loader,
 	NODES_Clear,
+	NODES_Property_Interface,
 
 	NODES_Duplicate,
 	NODES_Group_Nodes,
@@ -514,7 +511,7 @@ class NodeInterface : public LaxInterfaces::anInterface
   protected:
 	void GetConnectionBez(NodeConnection *connection, flatpoint *pts);
 
-	double play_fps;
+	double play_fps, cur_fps;
 	int playing;
 	int play_timer;
 	clock_t elapsed_time, last_time;
@@ -538,6 +535,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	Laxkit::RefPtrStack<NodeBase> selected;
 	Laxkit::DoubleBBox selection_rect;
 	Laxkit::DoubleBBox thread_controls;
+	double thread_run, thread_reset; //offsets in thread_controls
 	NodeConnection *tempconnection;
 	int hover_action;
 	int lasthover, lasthoverslot, lasthoverprop, lastconnection;
