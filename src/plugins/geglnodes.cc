@@ -17,6 +17,8 @@
 
 #include "../language.h"
 #include "../interfaces/nodeinterface.h"
+#include "../interfaces/nodes.h"
+#include "../calculator/curvevalue.h"
 #include "geglnodes.h"
 #include "svg/svgnodes.h"
 
@@ -975,6 +977,7 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 	//NodeProperty::PropertyTypes propwhat;
 	bool linkable;
 	Value *v;
+	NodeProperty *newprop;
 
 	makestr  (type, "Gegl/");
 	const char *categories = op->GetDetail(2)->name;
@@ -993,6 +996,7 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 		v = NULL;
 		//propwhat = NodeProperty::PROP_Input;
 		linkable = true;
+		newprop = NULL;
 
 		if (proptype) {
 			 //set default values
@@ -1059,21 +1063,27 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 				//	//apparently, this can be "buffer location", "source profile", "Model" or a "pixbuf"
 				//}
 
-			//} else if (!strcmp(proptype, "GeglCurve"               )) {
-			//	GeglPath *curve = NULL;
-			//	gegl_node_get(gegl, prop->name, &curve, NULL);
-			//	CurveValue *locurve = new CurveValue;
-			//	locurve->Reset(true);
-			//	unsigned int npoints = gegl_curve_num_points(path);
-			//	double x,y;
-			//	for (int c2=0; c2<npoints; c2++) {
-			//		gegl_curve_get_point(curve, c2, &x, &y);
-			//		locurve->AddPoint(x,y);
-			//	}
-			//	v = locurve;
-			//
+			} else if (!strcmp(proptype, "GeglCurve")) {
+				GeglCurve *gcurve = NULL;
+				gegl_node_get(gegl, prop->name, &gcurve, NULL);
+				CurveValue *locurve = new CurveValue;
+				locurve->Reset(true);
+				double min_y=0, max_y=1;
+				gegl_curve_get_y_bounds (gcurve, &min_y, &max_y);
+				locurve->SetYBounds(min_y, max_y, NULL, false);
+				unsigned int npoints = gegl_curve_num_points(gcurve);
+				double x,y;
+				for (unsigned int c2=0; c2<npoints; c2++) {
+					gegl_curve_get_point(gcurve, c2, &x, &y);
+					locurve->AddPoint(x,y);
+				}
+				v = locurve;
+				g_object_unref (gcurve);
+
+				newprop = new CurveProperty(locurve, 1, 0);
+
 			//} else if (!strcmp(proptype, "GeglPath"                )) {
-			//	GeglCurve *path = NULL;
+			//	GeglPath *path = NULL;
 			//	gegl_node_get(gegl, prop->name, &path, NULL);
 			//	LPathsData *pathobject = new LPathsData;
 			//	char *pathstr = gegl_path_to_string(path);
@@ -1134,7 +1144,8 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 			g_value_unset(&gv);
 		}
 
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input, linkable, prop->name, v,1, prop->GetString(2),prop->GetString(3), c));
+		if (!newprop) newprop = new NodeProperty(NodeProperty::PROP_Input, linkable, prop->name, v,1, prop->GetString(2),prop->GetString(3), c);
+		AddProperty(newprop);
 	}
 
 	 //set up input pads
