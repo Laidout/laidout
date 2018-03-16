@@ -56,6 +56,7 @@ enum ValueTypes {
 	VALUE_Array,      //!< Mathematical matrices, or sets of fixed sizes
 	VALUE_Hash,       //!< Basically a set with named values
 
+	VALUE_Image,      //!< *** unimplemented!
 	VALUE_Flags,      //!< *** unimplemented!
 	VALUE_Color,      //!< A Color
 	VALUE_Date,       //!< *** unimplemented!
