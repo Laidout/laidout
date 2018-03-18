@@ -4105,6 +4105,11 @@ int EnumValue::getValueStr(char *buffer,int len)
 	return 0;
 }
 
+int EnumValue::EnumId()
+{
+	return strtol(objectdef->defaultvalue, NULL, 10);
+}
+
 Value *EnumValue::duplicate()
 { return new EnumValue(objectdef,value); }
 

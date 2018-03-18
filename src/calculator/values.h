@@ -559,6 +559,7 @@ class FlatvectorValue : public Value, virtual public FunctionEvaluator
 	Unit units;
 	flatvector v;
 	FlatvectorValue() { }
+	FlatvectorValue(double x, double y) { v.set(x,y); }
 	FlatvectorValue(flatvector vv) { v=vv; }
 	virtual const char *whattype() { return "FlatvectorValue"; }
 	virtual int getValueStr(char *buffer,int len);
@@ -661,6 +662,7 @@ class EnumValue : public Value
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Enum; }
  	virtual ObjectDef *makeObjectDef();
+	virtual int EnumId();
 };
 
 //----------------------------- FunctionValue ----------------------------------
