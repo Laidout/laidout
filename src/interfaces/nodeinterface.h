@@ -168,6 +168,8 @@ class NodeColors : public Laxkit::anObject
 	Laxkit::LaxFont *font;
 	unsigned int state; //normal | selected | mouseOver
 	double slot_radius; //as fraction of text size
+	double mo_diff; //amount to change color channel when mouse over
+	double preview_dims; //default preview dimension in pixels
 
 	Laxkit::ScreenColor default_property;
 	Laxkit::ScreenColor connection;
@@ -198,9 +200,6 @@ class NodeColors : public Laxkit::anObject
 	Laxkit::ScreenColor selected_border;
 	Laxkit::ScreenColor selected_bg;
 
-	double mo_diff;
-
-	double preview_dims;
 
 	NodeColors *next; //one node per state
 
@@ -266,7 +265,7 @@ class NodeBase : public Laxkit::anObject,
 
 	NodeBase();
 	virtual ~NodeBase();
-	virtual const char *whattype() { return "Nodes"; }
+	virtual const char *whattype() { return "Node"; }
 	virtual int InstallColors(NodeColors *newcolors, bool absorb_count);
 	virtual const char *Label() { return Name; }
 	virtual const char *Label(const char *nlabel);

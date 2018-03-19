@@ -55,6 +55,10 @@ namespace Laidout {
 
 NodeColors::NodeColors()
   : owner(NULL),
+
+	mo_diff(.05),
+	preview_dims(100),
+
 	default_property(1.,1.,1.,1.),
 	connection(.5,.5,.5,1.),
 	sel_connection(1.,0.,1.,1.),
@@ -82,10 +86,7 @@ NodeColors::NodeColors()
 	bg_menu(.7,.7,.7,1.),
 
 	selected_border(1.,.8,.1,1.),
-	selected_bg(.9,.9,.9,1.),
-
-	mo_diff(.05),
-	preview_dims(100)
+	selected_bg(.9,.9,.9,1.)
 {
 	state = 0;
 	font  = NULL;
@@ -632,7 +633,7 @@ LaxInterfaces::anInterface *NodeBase::GetInterface(LaxInterfaces::anInterface *i
 }
 
 /*! Return whether the node has valid values, or the outputs are older than inputs.
- * Default is to return 0 for no error and everything up to date.
+ * Return 0 for no error and everything up to date.
  * -1 means bad inputs and node in error state.
  * 1 means needs updating.
  *
