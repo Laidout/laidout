@@ -12,18 +12,14 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now: 
 
-Can't import images to limbo
-
 back to not maximizing properly on default ubuntu
+
+------------ other bugs:
 
 shearing or scaling produces null axes occasionally when crossing over opposite edge, borking the display
   --> seems to be only when needing to draw images on close to parallel axes, doesn't seem do it with paths
 
-bug: press 4, wtf?? should zoom to current object
-
 bug: page progress popup is wrong place, and mouse maps at wrong scale ONLY OCCASIONALLY, hard to reproduce
-
------------- other bugs:
 
 sometimes crash at insert page before (?? can't duplicate)
 
@@ -32,7 +28,7 @@ text window controls have difficulties
   (see PlainTextWindow below for feature plans instead of bugs)
 
 saving window positions doesn't take into account window decorations, makes pos slide downward each time
-  _NET_FRAME_EXTENTS? _KDE_NET_WM_FRAME_STRUT?
+  _NET_FRAME_EXTENTS? _KDE_NET_WM_FRAME_STRUT? how to get before mapping a window?
 
 evince on ubuntu 14.04, pdf export won't load, says Syntax Error... Dictionary key must be a name object
 
@@ -902,8 +898,6 @@ GroupInterface groupinterface ObjectInterface objectinterface:
   things to allow editing of wrap, inset, clip paths, and chains
   maybe show flip and 90 deg rotate handles only when mouse outside the selection area?
   control-move flip line to snap to horizontal, vertical, 45 deg, or common gravity points 
-
-searchable menus
 
 ObjectIndicator objectindicator:
   need ability to click on object to select that object. Rename only when already selected
@@ -1969,4 +1963,9 @@ DONE saved file, not showing up in recent
 DONE remove imlib dependency from ImagePatch
 DONE (not sure why, switched to use explicit gradients) ColorSliders not really showing black unless you set from hex, but solid black is still sending properly
 DONE file live search selects wrong one.. using absolute index instead of file 
+DONE filedialog click on directory icon, crash!
+DONE bug: press 4, wtf?? should zoom to current object
+DONE Can't actually select Recent
+DONE Can't import images to limbo
+DONE searchable menus
 
