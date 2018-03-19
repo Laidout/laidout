@@ -19,9 +19,7 @@ Please post about any snags to Laidout's
 github issue tracker: https://github.com/Laidout/laidout/issues.
 
 Laidout is currently in the 'mostly works on my machine' stage of development.
-
-Currently the only developer (and creator of Laidout) is:
-Tom Lechner (http://www.tomlechner.com)
+It was created by and developed by Tom Lechner (http://www.tomlechner.com).
 
 
 
