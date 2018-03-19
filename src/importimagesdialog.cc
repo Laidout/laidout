@@ -940,7 +940,8 @@ int ImportImagesDialog::send(int id)
 	}
 	settings->startpage =dynamic_cast<LineInput *>(findWindow("StartPage"))->GetLineEdit()->GetLong(NULL);
 	settings->defaultdpi=dynamic_cast<LineInput *>(findWindow("DPI"))->GetLineEdit()->GetDouble(NULL);
-	
+	if (toobj) { settings->destobject = toobj;  toobj->inc_count(); }
+
 	int perpage=-2; //force to 1 page
 	if (dynamic_cast<CheckBox *>(findWindow("perpageexactly"))->State()==LAX_ON)
 		perpage=dynamic_cast<LineInput *>(findWindow("NumPerPage"))->GetLineEdit()->GetLong(NULL);
