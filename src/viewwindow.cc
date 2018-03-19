@@ -35,9 +35,6 @@
 #include <cups/cups.h>
 #include <sys/stat.h>
 
-#include <lax/lists.cc>
-
-
 #include "language.h"
 #include "interfaces/objecttree.h"
 #include "interfaces/pagemarkerinterface.h"
@@ -63,6 +60,10 @@
 #include "interfaces/paperinterface.h"
 #include "interfaces/documentuser.h"
 #include "calculator/shortcuttodef.h"
+
+
+//template implementation:
+#include <lax/lists.cc>
 
 
 #include <iostream>
@@ -2447,8 +2448,10 @@ void LaidoutViewport::Center(int w)
 	} else if (w==3) { // center curobj
 		if (!curobj.obj) { Center(1); return; }
 		double m[6];
-		transformToContext(m,curobj.context,0,curobj.context.n()-1);
-		dp->Center(m,curobj.obj);
+		transformToContext(m,curobj.context,0,curobj.context.n());
+		DoubleBBox box(*curobj.obj);
+		box.ExpandBounds(box.boxwidth()*.05);
+		dp->Center(m, &box);
 		syncrulers();
 		needtodraw=1;
 	}
@@ -4596,9 +4599,11 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 			 //into that. This group object gets sent back to the viewer in an event message.
 			 //The objects are then inserted into limbo.
 			double aspect=(viewport->dp->Maxy-viewport->dp->Miny)/(float)(viewport->dp->Maxx-viewport->dp->Minx);
-			toobj=new Group;
-			toobj->maxx=1;
-			toobj->maxy=aspect;
+			toobj = ((LaidoutViewport *)viewport)->limbo;
+			if (!((LaidoutViewport *)viewport)->limbo->validbounds()) {
+				toobj->maxx = 10;
+				toobj->maxy = aspect;
+			}
 		}
 		app->rundialog(new ImportImagesDialog(NULL,"Import Images",_("Import Images"),
 					FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
@@ -4606,13 +4611,13 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 					NULL,NULL,NULL,
 					toobj,
 					doc,((LaidoutViewport *)viewport)->curobjPage(),0));
-		if (toobj) toobj->dec_count();
 		return 0;
 
 	} else if (!strcmp(mes,"import")) { 
 		if (laidout->importfilters.n==0) {
 			mesbar->SetText(_("Sorry, there are no import filters installed."));
 			return 0;
+
 		} else {
 			mesbar->SetText(_("Importing..."));
 			Group *toobj=NULL;
@@ -4620,10 +4625,12 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 				 //create a group object with the same aspect as the viewport, and dump images
 				 //into that. This group object gets sent back to the viewer in an event message.
 				 //The objects are then inserted into limbo.
-				double aspect=(viewport->dp->Maxy-viewport->dp->Miny)/(float)(viewport->dp->Maxx-viewport->dp->Minx);
-				toobj=new Group;
-				toobj->maxx=1;
-				toobj->maxy=aspect;
+				double aspect = (viewport->dp->Maxy-viewport->dp->Miny)/(float)(viewport->dp->Maxx-viewport->dp->Minx);
+				toobj = ((LaidoutViewport *)viewport)->limbo;
+				if (!((LaidoutViewport *)viewport)->limbo->validbounds()) {
+					toobj->maxx = 10;
+					toobj->maxy = aspect;
+				}
 			}
 			app->rundialog(new ImportFileDialog(NULL,NULL,_("Import File"),
 						FILES_FILES_ONLY|FILES_OPEN_ONE|FILES_PREVIEW,
@@ -4635,7 +4642,6 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 						((LaidoutViewport *)viewport)->spreadi,
 						((LaidoutViewport *)viewport)->viewmode,
 						0)); //dpi
-			if (toobj) toobj->dec_count();
 			return 0;
 		}
 		return 0;
