@@ -365,28 +365,30 @@ const NetFaceEdge &NetFaceEdge::operator=(const NetFaceEdge &e)
 
 NetFace::NetFace()
 {
-	tick=0;
-	tag=FACE_None;
-	matrix=NULL;
-	isfront=1;
-	original=-1;
+	tick     = 0;
+	tag      = FACE_None;
+	matrix   =NULL;
+	isfront  =  1;
+	original = -1;
+	binding  = -1; //edge to be considered a binding edge when stacked with other things, or -1 if none
 }
 	
+NetFace::NetFace(const NetFace &f)
+{
+	tick     = 0;
+	tag      = FACE_None;
+	matrix   = NULL;
+	isfront  = 1;
+	original = -1;
+	binding  = -1; //edge to be considered a binding edge when stacked with other things, or -1 if none
+
+	*this=f;
+}
+
 NetFace::~NetFace()
 { 
 	if (matrix) delete[] matrix;
 	//edges.flush();
-}
-
-NetFace::NetFace(const NetFace &f)
-{
-	tick=0;
-	tag=FACE_None;
-	matrix=NULL;
-	isfront=1;
-	original=-1;
-
-	*this=f;
 }
 
 //! Delete matrix, set isfront=1, original=-1, flush edges.
@@ -394,8 +396,9 @@ void NetFace::clear()
 {
 	if (matrix) { delete[] matrix; matrix=NULL; }
 	edges.flush();
-	original=-1;
-	isfront=1;
+	original = -1;
+	isfront  = 1;
+	binding  = -1;
 }
 
 //! Assignment operator, straightforward copy all.
@@ -406,8 +409,10 @@ const NetFace &NetFace::operator=(const NetFace &face)
 	if (matrix) { delete[] matrix; matrix=NULL; }
 	edges.flush();
 
-	original=face.original;
-	isfront=face.isfront;
+	original = face.original;
+	isfront  = face.isfront;
+	binding  = face.binding;
+
 	if (face.matrix) {
 		matrix=new double[6];
 		transform_copy(matrix,face.matrix);
