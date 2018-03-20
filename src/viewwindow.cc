@@ -42,6 +42,7 @@
 #include "printing/psout.h"
 #include "impositions/impositioneditor.h"
 #include "helpwindow.h"
+#include "settingswindow.h"
 #include "about.h"
 #include "autosavewindow.h"
 #include "spreadeditor.h"
@@ -4453,8 +4454,9 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"help")) {
-		anXWindow *win = newHelpWindow(CurrentTool()?CurrentTool()->whattype():"ViewWindow");
-		app->addwindow(win);
+		//anXWindow *win = newHelpWindow(CurrentTool()?CurrentTool()->whattype():"ViewWindow");
+		//app->addwindow(win);
+		app->addwindow(newSettingsWindow("keys", CurrentTool()?CurrentTool()->whattype():"LaidoutViewport"));
 		return 0;
 
 	} else if (!strcmp(mes,"contextChange")) { // curobj was changed, now maybe diff page, spread, etc.
@@ -5198,11 +5200,12 @@ int ViewWindow::PerformAction(int action)
 
 	} else if (action==VIEW_Help) {
 		//app->addwindow(new HelpWindow());
-		app->addwindow(newHelpWindow(CurrentTool()?CurrentTool()->whattype():"LaidoutViewport"));
+		app->addwindow(newSettingsWindow("keys", CurrentTool()?CurrentTool()->whattype():"LaidoutViewport"));
 		return 0;
 
 	} else if (action==VIEW_About) {
-		app->rundialog(new AboutWindow());
+		//app->rundialog(new AboutWindow());
+		app->addwindow(newSettingsWindow("about", CurrentTool()?CurrentTool()->whattype():"LaidoutViewport"));
 		return 0;
 
 	} else if (action==VIEW_SpreadEditor) {
