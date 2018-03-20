@@ -38,18 +38,6 @@ namespace Laidout {
 
 //------------------------ newHelpWindow -------------------------
 
-class HelpAbout : public Laxkit::TabFrame
-{
-  public:
-	HelpAbout()
-		: TabFrame(NULL,"Help",_("Help"),
-				   ANXWIN_REMEMBER|ANXWIN_ESCAPABLE| BOXSEL_LEFT|BOXSEL_TOP|BOXSEL_ONE_ONLY|BOXSEL_ROWS,
-				   0,0,600,600,0, NULL,0,NULL)
-		{}
-	virtual ~HelpAbout() {}
-	virtual const char *whattype() { return "Help"; }
-};
-
 Laxkit::anXWindow *newHelpWindow(const char *place)
 {
 	laidout->InitializeShortcuts();
@@ -66,33 +54,6 @@ Laxkit::anXWindow *newHelpWindow(const char *place)
 	makestr(shortcutwin->textheader,"#\n# Laidout shortcuts\n#\n");
 
 	return shortcutwin;
-}
-
-Laxkit::anXWindow *newHelpWindow2(const char *place)
-{
-	TabFrame *frame=new HelpAbout();
-
-	laidout->InitializeShortcuts();
-	ShortcutManager *manager=GetDefaultShortcutManager();
-
-	if (isblank(manager->setfile)) {
-		makestr(manager->setfile,laidout->config_dir);
-		appendstr(manager->setfile,"/default.keys");
-	}
-
-	ShortcutWindow *shortcutwin=new ShortcutWindow(frame,"Shortcuts",_("Shortcuts"),
-					ANXWIN_REMEMBER|SHORTCUTW_Show_Search|SHORTCUTW_Load_Save,
-					0,0,400,600,0,place);
-	makestr(shortcutwin->textheader,"#\n# Laidout shortcuts\n#\n");
-
-	frame->AddWin(shortcutwin, 1, _("Shortcuts"), NULL, 0);
-
-
-	AboutWindow *about=new AboutWindow(frame);
-	frame->AddWin(about, 1, _("About"), NULL, 0);
-
-
-	return frame;
 }
 
 

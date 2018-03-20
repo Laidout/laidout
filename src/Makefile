@@ -68,6 +68,7 @@ objs= \
 	plaintextwindow.o \
 	headwindow.o \
 	helpwindow.o \
+	settingswindow.o \
 	newdoc.o \
 	viewwindow.o \
 	palettes.o \
