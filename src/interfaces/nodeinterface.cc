@@ -288,7 +288,7 @@ anInterface *NodeProperty::PropInterface(LaxInterfaces::anInterface *interface, 
  */
 int NodeProperty::IsConnected()
 {
-	if (IsInput()) return -connections.n;
+	if (IsInput() || IsExecIn()) return -connections.n;
 	return connections.n;
 }
 
@@ -4355,10 +4355,10 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 		int remove=0;
 
-		if (overnode>=0 && overpropslot>=0) {
+		if (overnode>=0 && overproperty>=0) {
 			 //we had a temporary connection, need to fill in the blanks to finalize
 			 //need to connect  last -> over
-			NodeProperty *fromprop = nodes->nodes.e[overnode]->properties.e[overpropslot];
+			NodeProperty *fromprop = nodes->nodes.e[overnode]->properties.e[overproperty];
 
 			if ((fromprop->IsOutput() && action==NODES_Drag_Input)
 				|| (fromprop->IsExecOut() && action==NODES_Drag_Exec_In)) {
@@ -4398,8 +4398,8 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 		int remove=0;
 
-		if (overnode>=0 && overpropslot>=0) {
-			NodeProperty *toprop = nodes->nodes.e[overnode]->properties.e[overpropslot];
+		if (overnode>=0 && overproperty>=0) {
+			NodeProperty *toprop = nodes->nodes.e[overnode]->properties.e[overproperty];
 
 			if ((toprop->IsInput() && action==NODES_Drag_Output)
 				|| (toprop->IsExecIn() && action==NODES_Drag_Exec_Out)) {
