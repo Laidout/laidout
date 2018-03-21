@@ -49,7 +49,7 @@ GLuint sphereCallList();
 void makecube(void);
 GLuint cubeCallList();
 
-void drawaxes(double scale);
+void drawaxes(double scale, GLfloat *matrix=NULL);
 
 
 //------------------------- FTGL helper functions ----------------------------
@@ -162,9 +162,10 @@ class EyeType
 
 class Thing
 {
- protected:
+  protected:
 	void virtual setfrom(const Thing &thing);
- public:
+
+  public:
 	GLuint id; // the calllist
 	GLfloat scale[3]; // any additional scaling
 	GLfloat color[4]; // any additional color to set before calling list(?)
@@ -173,6 +174,7 @@ class Thing
 	Basis bas;
 	//textures
 	//animation, modified==1 triggers remap call list?
+
 	Thing(GLuint nid=0);
 	Thing(const Thing &thing);
 	Thing &operator=(Thing &thing);
@@ -181,11 +183,11 @@ class Thing
 	virtual void SetScale(GLfloat x,GLfloat y,GLfloat z);
 	virtual void SetColor(GLfloat r,GLfloat g,GLfloat b,GLfloat a=1.0);
 	virtual void Translate(GLfloat x,GLfloat y,GLfloat z);
-	virtual void TranslateAbs(GLfloat x,GLfloat y,GLfloat z);
-	virtual void Rotate(GLfloat angle,GLfloat x,GLfloat y,GLfloat z);
-	virtual void RotateAbs(GLfloat angle,GLfloat x,GLfloat y,GLfloat z);
-	virtual void Draw();
+	virtual void TranslateGlobal(GLfloat x,GLfloat y,GLfloat z);
+	virtual void RotateLocal(GLfloat angle,GLfloat x,GLfloat y,GLfloat z);
+	virtual void RotateGlobal(GLfloat angle,GLfloat x,GLfloat y,GLfloat z);
 	virtual void updateBasis();
+	virtual void Draw();
 };
 
 	
