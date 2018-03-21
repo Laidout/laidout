@@ -211,10 +211,12 @@ void makecube(void)
 
 
 //! Draw x (red), y (green), and z (blue) axes in gl.
-void drawaxes(double scale)
+void drawaxes(double scale, GLfloat *matrix)
 {
 	 //----  Draw Weird Line
 	glPushMatrix();
+	if (matrix) glMultMatrixf(matrix);
+
 	setmaterial(1,0,0);
 	glBegin (GL_LINES);
 		 //x
@@ -338,6 +340,8 @@ void EyeType::transformForDrawing()
 {//***
 }
 
+/*! Regenerate model and projection matrix based on what's in m.
+ */
 void EyeType::transformTo()
 {
 //	glMatrixMode(GL_MODELVIEW);
@@ -346,6 +350,7 @@ void EyeType::transformTo()
 //	gluLookAt(m.p.x,m.p.y,m.p.z, focus.x,focus.y,focus.z,  m.p.x+m.y.x, m.p.y+m.y.y, m.p.z+m.y.z);
 //	glGetFloatv(GL_MODELVIEW_MATRIX,model);
 //	glPopMatrix();
+
 	model[ 0]=m.x.x;  model[ 1]=m.x.y;  model[ 2]=m.x.z;  model[ 3]=0;
 	model[ 4]=m.y.x;  model[ 5]=m.y.y;  model[ 6]=m.y.z;  model[ 7]=0;
 	model[ 8]=m.z.x;  model[ 9]=m.z.y;  model[10]=m.z.z;  model[11]=0;
@@ -529,8 +534,8 @@ void Thing::SetColor(GLfloat r,GLfloat g,GLfloat b,GLfloat a) //a=1
 }
 
 
-//! This rotates in absolute coords.
-void Thing::RotateAbs(GLfloat angle,GLfloat x,GLfloat y,GLfloat z)
+//! This rotates in absolute coords. angle in degrees.
+void Thing::RotateGlobal(GLfloat angle,GLfloat x,GLfloat y,GLfloat z)
 {
 	glPushMatrix();
 	glLoadIdentity();
@@ -549,7 +554,7 @@ void Thing::RotateAbs(GLfloat angle,GLfloat x,GLfloat y,GLfloat z)
 }
 
 //! Rotate in thing's local coords.
-void Thing::Rotate(GLfloat angle,GLfloat x,GLfloat y,GLfloat z)
+void Thing::RotateLocal(GLfloat angle,GLfloat x,GLfloat y,GLfloat z)
 {
 	glPushMatrix();
 	glLoadMatrixf(m);
@@ -559,11 +564,11 @@ void Thing::Rotate(GLfloat angle,GLfloat x,GLfloat y,GLfloat z)
 }
 
 // this translates absolute coordinates, 
-void Thing::TranslateAbs(GLfloat x,GLfloat y,GLfloat z)
+void Thing::TranslateGlobal(GLfloat x,GLfloat y,GLfloat z)
 {
-	m[12]+=x;
-	m[13]+=y;
-	m[14]+=z;
+	m[12] += x;
+	m[13] += y;
+	m[14] += z;
 }
 
 // Translate relative to thing's orientation
@@ -603,21 +608,21 @@ void Thing::Draw()
 //! Update bas from whatever is in m.
 void Thing::updateBasis()
 {
-	bas.x.x=m[0];
-	bas.x.y=m[1];
-	bas.x.z=m[2];
+	bas.x.x = m[0];
+	bas.x.y = m[1];
+	bas.x.z = m[2];
 
-	bas.y.x=m[4];
-	bas.y.y=m[5];
-	bas.y.z=m[6];
+	bas.y.x = m[4];
+	bas.y.y = m[5];
+	bas.y.z = m[6];
 
-	bas.z.x=m[8];
-	bas.z.y=m[9];
-	bas.z.z=m[10];
+	bas.z.x = m[8];
+	bas.z.y = m[9];
+	bas.z.z = m[10];
 
-	bas.p.x=m[12];
-	bas.p.y=m[13];
-	bas.p.z=m[14];
+	bas.p.x = m[12];
+	bas.p.y = m[13];
+	bas.p.z = m[14];
 }
 
 //doxygen group gl
