@@ -57,6 +57,9 @@ spheretocube: spheretocube.o
 remapsphere: remapsphere.o
 	$(LD) $@.o -lGraphicsMagick++ -llaxkit $(LDFLAGS) -o $@
 
+skyflow: skyflow.o
+	$(LD) $@.o -lGraphicsMagick++ -llaxkit $(LDFLAGS) -o $@
+
 spheretocubemap: spheretocubemap.o
 	$(LD) spheretocubemap.o -lGraphicsMagick++ $(LAXDIR)/vectors.o -o $@
 
