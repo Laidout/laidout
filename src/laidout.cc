@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2013 by Tom Lechner
@@ -312,7 +311,7 @@ int LaidoutApp::close()
 	return 0;
 }
 
-int LaidoutApp::Idle(int tid)
+int LaidoutApp::Idle(int tid, double delta)
 {
 	if (tid==autosave_timerid) { Autosave(); return 0; }
 
@@ -680,6 +679,14 @@ int LaidoutApp::RemoveInterpreter(Interpreter *i)
   if (!i) return 1;
   interpreters.remove(interpreters.findindex(i));
   return 0;
+}
+
+Interpreter *LaidoutApp::FindInterpreter(const char *name)
+{
+	for (int c=0; c<interpreters.n; c++) {
+		if (!strcmp(name, interpreters.e[c]->Id())) return interpreters.e[c];
+	}
+	return NULL;
 }
 
 //! Write out resources to ~/.laidout/(version)/autolaidoutrc.
@@ -1219,8 +1226,9 @@ void InitOptions()
 	options.Add("default-units",      'u', 1, "Use the specified units.",                    0, "(in|cm|mm|m|ft|yards)");
 	options.Add("load-dir",           'l', 1, "Start in this directory.",                    0, "path");
 	options.Add("experimental",       'E', 0, "Enable any compiled in experimental features",0, NULL);
-	options.Add("backend",            'B', 1, "Either cairo or xlib (xlib very deprecated).",0, NULL);
+	//options.Add("backend",            'B', 1, "Either cairo or xlib (xlib very deprecated).",0, NULL);
 	options.Add("impose-only",        'I', 1, "Run only as a file imposer, not full Laidout",0, NULL);
+	options.Add("nodes-only",         'o', 1, "Run only as a node editor on argument",       0, NULL);
 	options.Add("list-shortcuts",     'S', 0, "Print out a list of current keyboard bindings, then exit",0,NULL);
 	options.Add("theme",              'T', 1, "Set theme. Currently, one of Light, Dark, or Gray",0,NULL);
 	options.Add("helphtml",           'H', 0, "Output an html fragment of key shortcuts.",   0, NULL);
@@ -1285,18 +1293,18 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					}
 					fread(instr,1,size,f);
 					instr[size]='\0';
-					runmode=RUNMODE_Commands;
-					char *str=calculator->In(instr);
+					runmode = RUNMODE_Commands;
+					char *str = calculator->In(instr, NULL);
 					if (str) cout <<str<<endl;
-					if (runmode!=RUNMODE_Shell) runmode=RUNMODE_Quit;
+					if (runmode != RUNMODE_Shell) runmode = RUNMODE_Quit;
 				} break;
 
 			case 'c': { // --command
 					donotusex=1;
-					runmode=RUNMODE_Commands;
-					char *str=calculator->In(o->arg());
+					runmode = RUNMODE_Commands;
+					char *str = calculator->In(o->arg(), NULL);
 					if (str) cout <<str<<endl;
-					if (runmode!=RUNMODE_Shell) runmode=RUNMODE_Quit;
+					if (runmode != RUNMODE_Shell) runmode = RUNMODE_Quit;
 				} break;
 
 			case 'n': { // --new "letter singles 3 pages blah blah blah"
@@ -1374,11 +1382,19 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 
 			case 'I': { // impose-only
-					runmode=RUNMODE_Impose_Only;
-					anXWindow *editor=newImpositionEditor(NULL,"impedit",_("Impose..."),0,NULL,
+					runmode = RUNMODE_Impose_Only;
+					anXWindow *editor = newImpositionEditor(NULL,"impedit",_("Impose..."),0,NULL,
 														  NULL,"SignatureImposition",NULL,o->arg(),
 														  NULL);
 					addwindow(editor);
+				} break;
+
+			case 'o': {
+					runmode = RUNMODE_Nodes_Only;
+					//anXWindow *editor = newNodeEditor(NULL,"nodeedit",_("Nodes"),0,NULL, o->arg());
+					//addwindow(editor);
+					cerr << "Nodes-Only not quite implemented yet!"<<endl;
+					exit(0);
 				} break;
 
 			case 'u': { // default units

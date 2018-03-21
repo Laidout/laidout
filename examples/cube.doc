@@ -1,5 +1,5 @@
 #Laidout 0.093.1 Document
-saveas /home/tom/other/p/sourceforge/laidout/examples/cube.doc
+saveas cube.doc
 imposition NetImposition
   numpages 6
   printnet
@@ -76,7 +76,7 @@ window
   pane
     xyxy 0 0 500 500
     window ViewWindow
-      document /home/tom/other/p/sourceforge/laidout/examples/cube.doc
+      document cube.doc
       layout Pages
       spread 0
       page 0

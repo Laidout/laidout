@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (c) 2004-2013 Tom Lechner
@@ -36,9 +35,6 @@
 #include <cups/cups.h>
 #include <sys/stat.h>
 
-#include <lax/lists.cc>
-
-
 #include "language.h"
 #include "interfaces/objecttree.h"
 #include "interfaces/pagemarkerinterface.h"
@@ -46,6 +42,7 @@
 #include "printing/psout.h"
 #include "impositions/impositioneditor.h"
 #include "helpwindow.h"
+#include "settingswindow.h"
 #include "about.h"
 #include "autosavewindow.h"
 #include "spreadeditor.h"
@@ -64,6 +61,10 @@
 #include "interfaces/paperinterface.h"
 #include "interfaces/documentuser.h"
 #include "calculator/shortcuttodef.h"
+
+
+//template implementation:
+#include <lax/lists.cc>
 
 
 #include <iostream>
@@ -2448,8 +2449,10 @@ void LaidoutViewport::Center(int w)
 	} else if (w==3) { // center curobj
 		if (!curobj.obj) { Center(1); return; }
 		double m[6];
-		transformToContext(m,curobj.context,0,curobj.context.n()-1);
-		dp->Center(m,curobj.obj);
+		transformToContext(m,curobj.context,0,curobj.context.n());
+		DoubleBBox box(*curobj.obj);
+		box.ExpandBounds(box.boxwidth()*.05);
+		dp->Center(m, &box);
 		syncrulers();
 		needtodraw=1;
 	}
@@ -4451,8 +4454,9 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"help")) {
-		anXWindow *win = newHelpWindow(CurrentTool()?CurrentTool()->whattype():"ViewWindow");
-		app->addwindow(win);
+		//anXWindow *win = newHelpWindow(CurrentTool()?CurrentTool()->whattype():"ViewWindow");
+		//app->addwindow(win);
+		app->addwindow(newSettingsWindow("keys", CurrentTool()?CurrentTool()->whattype():"LaidoutViewport"));
 		return 0;
 
 	} else if (!strcmp(mes,"contextChange")) { // curobj was changed, now maybe diff page, spread, etc.
@@ -4597,9 +4601,11 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 			 //into that. This group object gets sent back to the viewer in an event message.
 			 //The objects are then inserted into limbo.
 			double aspect=(viewport->dp->Maxy-viewport->dp->Miny)/(float)(viewport->dp->Maxx-viewport->dp->Minx);
-			toobj=new Group;
-			toobj->maxx=1;
-			toobj->maxy=aspect;
+			toobj = ((LaidoutViewport *)viewport)->limbo;
+			if (!((LaidoutViewport *)viewport)->limbo->validbounds()) {
+				toobj->maxx = 10;
+				toobj->maxy = aspect;
+			}
 		}
 		app->rundialog(new ImportImagesDialog(NULL,"Import Images",_("Import Images"),
 					FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
@@ -4607,13 +4613,13 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 					NULL,NULL,NULL,
 					toobj,
 					doc,((LaidoutViewport *)viewport)->curobjPage(),0));
-		if (toobj) toobj->dec_count();
 		return 0;
 
 	} else if (!strcmp(mes,"import")) { 
 		if (laidout->importfilters.n==0) {
 			mesbar->SetText(_("Sorry, there are no import filters installed."));
 			return 0;
+
 		} else {
 			mesbar->SetText(_("Importing..."));
 			Group *toobj=NULL;
@@ -4621,10 +4627,12 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 				 //create a group object with the same aspect as the viewport, and dump images
 				 //into that. This group object gets sent back to the viewer in an event message.
 				 //The objects are then inserted into limbo.
-				double aspect=(viewport->dp->Maxy-viewport->dp->Miny)/(float)(viewport->dp->Maxx-viewport->dp->Minx);
-				toobj=new Group;
-				toobj->maxx=1;
-				toobj->maxy=aspect;
+				double aspect = (viewport->dp->Maxy-viewport->dp->Miny)/(float)(viewport->dp->Maxx-viewport->dp->Minx);
+				toobj = ((LaidoutViewport *)viewport)->limbo;
+				if (!((LaidoutViewport *)viewport)->limbo->validbounds()) {
+					toobj->maxx = 10;
+					toobj->maxy = aspect;
+				}
 			}
 			app->rundialog(new ImportFileDialog(NULL,NULL,_("Import File"),
 						FILES_FILES_ONLY|FILES_OPEN_ONE|FILES_PREVIEW,
@@ -4636,7 +4644,6 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 						((LaidoutViewport *)viewport)->spreadi,
 						((LaidoutViewport *)viewport)->viewmode,
 						0)); //dpi
-			if (toobj) toobj->dec_count();
 			return 0;
 		}
 		return 0;
@@ -5193,11 +5200,12 @@ int ViewWindow::PerformAction(int action)
 
 	} else if (action==VIEW_Help) {
 		//app->addwindow(new HelpWindow());
-		app->addwindow(newHelpWindow(CurrentTool()?CurrentTool()->whattype():"LaidoutViewport"));
+		app->addwindow(newSettingsWindow("keys", CurrentTool()?CurrentTool()->whattype():"LaidoutViewport"));
 		return 0;
 
 	} else if (action==VIEW_About) {
-		app->rundialog(new AboutWindow());
+		//app->rundialog(new AboutWindow());
+		app->addwindow(newSettingsWindow("about", CurrentTool()?CurrentTool()->whattype():"LaidoutViewport"));
 		return 0;
 
 	} else if (action==VIEW_SpreadEditor) {

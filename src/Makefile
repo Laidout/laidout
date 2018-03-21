@@ -68,6 +68,7 @@ objs= \
 	plaintextwindow.o \
 	headwindow.o \
 	helpwindow.o \
+	settingswindow.o \
 	newdoc.o \
 	viewwindow.o \
 	palettes.o \
@@ -85,6 +86,7 @@ otherobjs= \
 	calculator/values.o \
 	calculator/calculator.o \
 	calculator/interpreter.o \
+	calculator/curvevalue.o \
 	calculator/shortcuttodef.o \
 	impositions/imposition.o \
 	impositions/impositioneditor.o \

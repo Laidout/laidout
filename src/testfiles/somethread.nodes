@@ -1,0 +1,142 @@
+#Laidout 0.096.1 Nodes
+id           NodeGroup4067
+label       
+show_preview
+fullwidth    0
+xywh         "0 0 0 0"
+node         Gegl/output/gegl:save
+  id           Nodes99736
+  label        gegl:save
+  show_preview
+  fullwidth    128
+  xywh         "1327.10473 165.5010622 206.928099 153"
+  in           path
+  in           input
+  block        AutoProcess
+    BooleanValue false
+node         Concat
+  id           Nodes100464
+  label        Concat
+  show_preview
+  fullwidth    103
+  xywh         "599.9424905 86.2184177 166.5129765 102"
+  in           A
+    StringValue pulse
+  in           B
+  out          Out
+    StringValue pulse170
+node         Concat
+  id           Nodes100465
+  label        Concat
+  show_preview
+  fullwidth    103
+  xywh         "821.6783664 88.7747033 201.5129765 102"
+  in           A
+  in           B
+    StringValue .png
+  out          Out
+    StringValue pulse170.png
+node         Gegl/gradient/gegl:radial-gradient
+  id           Nodes60336
+  label        gegl:radial-gradient
+  show_preview
+  fullwidth    200
+  xywh         "872.3406464 322.7548823 194.470348 255"
+  in           start-x
+    DoubleValue 50
+  in           start-y
+    DoubleValue 50
+  in           end-x
+  in           end-y
+    DoubleValue 50
+  in           start-color
+    ColorValue "#ff000000"
+  in           end-color
+    ColorValue "#ffffffff"
+  out          output
+node         Math2
+  id           Nodes11429
+  label        "Math 2"
+  show_preview
+  fullwidth    197
+  xywh         "392.0372463 375.2851279 178.5129765 127.5"
+  in           Op
+    EnumValue MathNode2Def.Multiply
+  in           A
+  in           B
+    DoubleValue 50
+  out          Result
+    DoubleValue 8.68241
+node         Gegl/core/gegl:crop
+  id           Nodes64351
+  label        gegl:crop
+  show_preview
+  fullwidth    152
+  xywh         "1098.314914 321.0172989 146.470348 255"
+  in           x
+    DoubleValue 0
+  in           y
+    DoubleValue 0
+  in           width
+    DoubleValue 100
+  in           height
+    DoubleValue 100
+  in           reset-origin
+    BooleanValue false
+  in           input
+  out          output
+node         Math1
+  id           Nodes13384
+  label        "Math 1"
+  show_preview
+  fullwidth    224
+  xywh         "207.6460768 376.9473498 159.6378111 102"
+  in           Op
+    EnumValue MathNode1Def.Sin
+  in           A
+  out          Result
+    DoubleValue 0.173648
+node         Math1
+  id           Nodes13385
+  label        "Math 1"
+  show_preview
+  fullwidth    224
+  xywh         "-42.0599603 372.9070065 218.470348 102"
+  in           Op
+    EnumValue MathNode1Def.Deg_To_Rad
+  in           A
+  out          Result
+    DoubleValue 2.96706
+node         Math2
+  id           Nodes11430
+  label        "Math 2"
+  show_preview
+  fullwidth    197
+  xywh         "599.5106075 376.7362821 191.470348 127.5"
+  in           Op
+    EnumValue MathNode2Def.Add
+  in           A
+  in           B
+    DoubleValue 51
+  out          Result
+    DoubleValue 59.6824
+node         Value
+  id           Nodes6186
+  label        Value
+  show_preview
+  fullwidth    112
+  xywh         "293.8286669 113.9354478 112 51"
+  out          V
+    DoubleValue 170
+connections 
+  connect "Nodes100465,Out -> Nodes99736,path"
+  connect "Nodes64351,output -> Nodes99736,input"
+  connect "Nodes6186,V -> Nodes100464,B"
+  connect "Nodes100464,Out -> Nodes100465,A"
+  connect "Nodes11430,Result -> Nodes60336,end-x"
+  connect "Nodes60336,output -> Nodes64351,input"
+  connect "Nodes13384,Result -> Nodes11429,A"
+  connect "Nodes11429,Result -> Nodes11430,A"
+  connect "Nodes13385,Result -> Nodes13384,A"
+  connect "Nodes6186,V -> Nodes13385,A"
+frames      

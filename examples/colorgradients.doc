@@ -1,5 +1,5 @@
 #Laidout 0.093.1 Document
-saveas /home/tom/other/p/sourceforge/laidout/examples/colorgradients.doc
+saveas colorgradients.doc
 imposition Singles
   marginl 0
   marginr 0
@@ -303,7 +303,7 @@ window
   pane
     xyxy 0 0 500 500
     window ViewWindow
-      document /home/tom/other/p/sourceforge/laidout/examples/colorgradients.doc
+      document colorgradients.doc
       layout Pages
       spread 0
       page 0

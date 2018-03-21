@@ -6,7 +6,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2018 by Tom Lechner
@@ -14,7 +14,7 @@
 
 
 #include "../../language.h"
-#include "svg.h"
+#include "svgnodes.h"
 #include "../../interfaces/nodeinterface.h"
 #include <exception>
 
@@ -62,6 +62,43 @@ namespace SvgFilterNS {
 
 //---------------------- SvgFilterNode ----------------------------
 
+const char *svgprimitives[] = {
+		 //primitives
+		"feBlend",
+		"feColorMatrix",
+		"feComponentTransfer",
+		"feComposite",
+		"feConvolveMatrix",
+		"feDiffuseLighting",
+		"feDisplacementMap",
+		"feFlood",
+		"feGaussianBlur",
+		"feImage",
+		"feMerge",
+		"feMorphology",
+		"feOffset",
+		"feSpecularLighting",
+		"feTile",
+		"feTurbulence",
+
+		NULL
+	};
+
+const char *svgmisclist[] = {
+		 //input source node
+		"SvgSource",
+		 //misc child elements
+		"feMergeNode",
+		"feFuncR",
+		"feFuncG",
+		"feFuncB",
+		"feFuncA",
+		"feDistantLight",
+		"fePointLight",
+		"feSpotLight",
+		NULL
+	};
+
 
 ObjectDef *GetSvgDefs();
 
@@ -92,6 +129,7 @@ class SvgFilterNode : public Laidout::NodeBase
 
 	virtual const char *ResultName();
 	virtual int dump_in_atts(Attribute *att, NodeGroup *filter, SvgFilterNode *last, SvgFilterNode *srcnode, Laxkit::ErrorLog &log);
+	//virtual int dump_out_to_svg(Attribute *defs);
 	virtual NodeProperty *FindRef(const char *name, NodeGroup *filter);
 
 };
@@ -387,6 +425,94 @@ int SvgFilterNode::dump_in_atts(Attribute *att, NodeGroup *filter, SvgFilterNode
 	return log.Errors();
 }
 
+/*! Return 0 for success, or nonzero for error.
+ */
+int DumpOutSvgFilter(Attribute *defs, NodeGroup *filter, Laxkit::ErrorLog &log)
+{
+	//first check filter properties:
+	//  needs to have one input "in" and one output "out"
+	NodeProperty *prop = filter->FindProperty("in");
+	if (!prop || (prop && !prop->IsInput()) || !prop->connections.n) {
+		log.AddMessage(_("Filter needs an in!"), ERROR_Fail);
+		return 1;
+	}
+
+	 //find SvgSource node, which needs to be connected to the filter in, which is prop->topropproxy
+	prop = prop->topropproxy;
+	if (!prop->connections.n) {
+		log.AddMessage(_("Unconnected filter"), ERROR_Fail);
+		return 1;
+	}
+	SvgFilterNode *sourcein = dynamic_cast<SvgFilterNode*>(prop->connections.e[0]->to);
+	if (!sourcein || strcmp(sourcein->Type(), "SvgSource")) {
+		log.AddMessage(_("Filter in need to connect to an SvgSource node"), ERROR_Fail);
+		return 1;
+	}
+
+	prop = filter->FindProperty("out");
+	if (!prop || (prop && !prop->IsOutput()) || !prop->connections.n) {
+		log.AddMessage(_("Filter needs an out!"), ERROR_Fail);
+		return 1;
+	}
+	prop = prop->frompropproxy;
+	if (!prop->connections.n) {
+		log.AddMessage(_("Unconnected filter"), ERROR_Fail);
+		return 1;
+	}
+	SvgFilterNode *finalout = dynamic_cast<SvgFilterNode*>(prop->connections.e[0]->from);
+	if (!finalout || findInList(finalout->Type(), svgprimitives)<0) {
+		log.AddMessage(_("Final out needs to be an Svg Filter Node"), ERROR_Fail);
+		return 1;
+	}
+
+	// the filter out connects to the final node. Work backwards from there
+
+	SvgFilterNode *f = NULL;
+
+	Attribute *filteratt = new Attribute();
+	try {
+
+		NodeProperty *newchildslot = f->FindProperty("NewChild");
+		if (newchildslot) {
+			 //there are children
+			int max = f->properties.findindex(newchildslot);
+			int child0 = max;
+			while (child0 >0 && !strncmp(f->properties.e[child0-1]->name, "Child", 5)) child0--;
+
+			Attribute *kids = filteratt->pushSubAtt("content:");
+
+			for (int c=child0; c<max; c++) {
+				//add child
+				SvgFilterNode *node = NULL;
+				if (f->properties.e[c]->connections.n) node = dynamic_cast<SvgFilterNode*>(f->properties.e[c]->connections.e[0]->from);
+				if (!node) throw 1;
+				Attribute *ch = kids->pushSubAtt(node->Id());
+
+				for (int c2=0; c2<node->properties.n; c2++) {
+					if (!node->properties.e[c2]->IsInput()) {
+						// *** make special exception for SvgSource outputs
+						continue;
+					}
+					Value *d = node->properties.e[c2]->GetData();
+					if (!d) throw 2;
+					// *** write out attribute, special catch for "in"?
+					ch->push(node->properties.e[c2]->name, "***");
+				}
+			}
+			
+		}
+	} catch (int e) {
+		// ***clean up
+		delete filteratt;
+		return 1;
+	}
+
+	defs->push(filteratt, -1);
+
+
+	return 0;
+}
+
 /*! Find the "out" property of the node that has name == "result".
  */
 NodeProperty *SvgFilterNode::FindRef(const char *name, NodeGroup *filter)
@@ -456,19 +582,19 @@ ObjectDef *GetSvgDefs()
 
 
 	//in = "SourceGraphic | SourceAlpha | BackgroundImage | BackgroundAlpha | FillPaint | StrokePaint | <filter-primitive-reference>"
-	ObjectDef *in = new ObjectDef("SvgFilterIn", _("In"), _("SVG Filter Container"), NULL, "class", 0);
-	svgdefs->push(in,1);
-
-	in->pushEnum("in", "In", NULL,  "SourceGraphic", NULL, NULL,
-					"SourceGraphic",   _("Source"),           NULL,
-					"SourceAlpha",     _("Source Alpha"),     NULL,
-					"BackgroundImage", _("Background"),       NULL,
-					"BackgroundAlpha", _("Background Alpha"), NULL,
-					"FillPaint",       _("Fill Paint"),       NULL,
-					"StrokePaint",     _("Stroke Paint"),     NULL,
-					"Reference",       _("Reference"),        NULL,
-					NULL);
-	in->push("inRef", _("Ref"), _("Used when in is Reference"), "string", NULL, NULL, 0, NULL);
+//	ObjectDef *in = new ObjectDef("SvgFilterIn", _("In"), _("SVG Filter Container"), NULL, "class", 0);
+//	svgdefs->push(in,1);
+//
+//	in->pushEnum("in", "In", NULL,  "SourceGraphic", NULL, NULL,
+//					"SourceGraphic",   _("Source"),           NULL,
+//					"SourceAlpha",     _("Source Alpha"),     NULL,
+//					"BackgroundImage", _("Background"),       NULL,
+//					"BackgroundAlpha", _("Background Alpha"), NULL,
+//					"FillPaint",       _("Fill Paint"),       NULL,
+//					"StrokePaint",     _("Stroke Paint"),     NULL,
+//					"Reference",       _("Reference"),        NULL,
+//					NULL);
+//	in->push("inRef", _("Ref"), _("Used when in is Reference"), "string", NULL, NULL, 0, NULL);
 
 
 	ObjectDef *sourcenode = new ObjectDef("SvgSource", _("Svg Source"), _("SVG Source"), NULL, "class", 0);
@@ -701,10 +827,6 @@ ObjectDef *GetSvgDefs()
 
 	svgdefs->dump_in_str(svgdefstr, 0, NULL, NULL);
 
-	// *** replace all "in" and "in2" with SvgFilterIn def
-
-	// *** try to unify feFunc*
-
 
 	return svgdefs;
 }
@@ -766,14 +888,17 @@ ValueHash *XMLAttToHash(ObjectDef *types, LaxFiles::Attribute *att, ValueHash *a
 /*! Load in filters extracted from an svg file. One group node per filter
  * If which_filter == NULL, then extract all. Else just that one.
  */
-int LoadSVGFilters(const char *file, const char *which_filter, NodeGroup *put_here, Laxkit::ErrorLog &log)
+int LoadSVGFilters(const char *file, const char *which_filter, NodeGroup *put_here, Laxkit::ErrorLog &log, Attribute **att_ret)
 {
 	DBG cerr <<"loading svg filters..."<<endl;
 
 	ObjectDef *svgdefs = GetSvgDefs();
 
 	Attribute *att = XMLFileToAttribute(NULL, file, NULL);
-	if (!att) return 1;
+	if (!att) {
+		if (att_ret) *att_ret = NULL;
+		return 1;
+	}
 
 	try {
 		Attribute *att2 = att->find("svg");
@@ -890,6 +1015,12 @@ int LoadSVGFilters(const char *file, const char *which_filter, NodeGroup *put_he
 					filter->Connect(maybeout, nodeprop->frompropproxy);
 				}
 
+				 //remove from att, in case we export again later
+				if (att_ret) {
+					defs->attributes.remove(c);
+					c--;
+				}
+
 
 			} //if filter
 		}
@@ -898,14 +1029,19 @@ int LoadSVGFilters(const char *file, const char *which_filter, NodeGroup *put_he
 	} catch (exception &e) {
 		DBG cerr <<" *** error parsing svg file: "<<e.what()<<endl;
 		log.AddMessage(_("Could not load svg filters!"), ERROR_Fail);
+		delete att;
+		if (att_ret) *att_ret = NULL;
 		return 1;
 
 	} catch (int e) {
 		DBG cerr <<" *** error parsing svg file: "<<e<<endl;
 		log.AddMessage(_("Could not load svg filters!"), ERROR_Fail);
+		delete att;
+		if (att_ret) *att_ret = NULL;
 		return 1;
 	}
 
+	if (att_ret) *att_ret = att;
 	return 0;
 }
 
@@ -946,7 +1082,7 @@ int SvgFilterLoader::Import(const char *file, anObject **object_ret, anObject *c
 		//return 1;
 	}
 
-    LoadSVGFilters(file, NULL, group, log);
+    LoadSVGFilters(file, NULL, group, log, NULL);
 
 	if (object_ret) *object_ret = group;
 
@@ -960,6 +1096,9 @@ int SvgFilterLoader::Export(const char *file, anObject *object, anObject *contex
         log.AddMessage(_("Object not a NodeGroup in Export"), ERROR_Fail);
         return 1;
     }
+
+	//Attribute *defs = ***;
+	//int status = DumpOutSvgFilter(defs, filter, log);
 
     DBG cerr << " *** need to implement SvgFilterLoader::Export()!"<<endl;
     log.AddMessage("need to implement SvgFilterLoader::Export()!!", ERROR_Fail);
@@ -979,39 +1118,6 @@ Laxkit::anObject *newSvgFilterNode(int p, Laxkit::anObject *ref)
     return node;
 }
 
-const char *svgnodelist[] = {
-		 //input source node
-		"SvgSource",
-		 //misc child elements
-		"feMergeNode",
-		"feFuncR",
-		"feFuncG",
-		"feFuncB",
-		"feFuncA",
-		"feDistantLight",
-		"fePointLight"
-		"feSpotLight"
-		 //primitives
-		"feBlend",
-		"feColorMatrix",
-		"feComponentTransfer",
-		"feComposite",
-		"feConvolveMatrix",
-		"feDiffuseLighting",
-		"feDisplacementMap",
-		"feFlood",
-		"feGaussianBlur",
-		"feImage",
-		"feMerge",
-		"feMorphology",
-		"feOffset",
-		"feSpecularLighting",
-		"feTile",
-		"feTurbulence",
-
-		NULL
-	};
-
 void RegisterSvgNodes(Laxkit::ObjectFactory *factory)
 {
 	ObjectDef *svgdefs = GetSvgDefs();
@@ -1021,7 +1127,7 @@ void RegisterSvgNodes(Laxkit::ObjectFactory *factory)
 
     for (int c=0; c < svgdefs->getNumFields(); c++) {
         def = svgdefs->getField(c);
-		if (findInList(def->name, svgnodelist) < 0) continue;
+		if (findInList(def->name, svgprimitives) < 0 && findInList(def->name, svgmisclist) < 0) continue;
 
 		sprintf(str, "Svg Filter/%s", def->name);
 		factory->DefineNewObject(getUniqueNumber(), str, newSvgFilterNode, NULL, c);

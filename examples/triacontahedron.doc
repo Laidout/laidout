@@ -1,5 +1,5 @@
 #Laidout 0.093.1 Document
-saveas /home/tom/other/p/sourceforge/laidout/examples/triacontahedron.doc
+saveas triacontahedron.doc
 imposition NetImposition
   numpages 30
   printnet
@@ -477,7 +477,7 @@ window
   pane
     xyxy 0 0 500 500
     window ViewWindow
-      document /home/tom/other/p/sourceforge/laidout/examples/triacontahedron.doc
+      document triacontahedron.doc
       layout Pages
       spread 0
       page 0

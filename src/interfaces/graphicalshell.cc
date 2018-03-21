@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2013 by Tom Lechner
@@ -26,6 +25,7 @@
 #include <lax/transformmath.h>
 #include <lax/colors.h>
 
+//template implementation:
 #include <lax/lists.cc>
 
 using namespace Laxkit;
@@ -663,7 +663,7 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 			Value *answer=NULL;
 			ErrorLog log;
 
-			int status=calculator.evaluate(command,-1, &answer,&log);
+			int status = calculator.Evaluate(command,-1, &answer,&log);
 			if (log.Total()) result=log.FullMessageStr();
 			if (!isblank(result) && status==0) PostMessage(result);
 

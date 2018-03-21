@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2010-2013 by Tom Lechner
@@ -1998,7 +1997,7 @@ SignatureInstance *SignatureInstance::InstanceFromPaper(int whichpaper,
 		sigpaper-=totalpapers;
 		if (groups) (*groups)++;
 	}
-	
+
 	 //find stack containing our spread
 	SignatureInstance *stack=this;
 	int n;
@@ -3258,39 +3257,39 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 	 //find containing siginstance
 	int mainpageoffset=0, opposite_offset=0;
 	int sigpaper;
-	SignatureInstance *sig=InstanceFromPaper(whichpaper, NULL,NULL, &sigpaper, &mainpageoffset, &opposite_offset, NULL);
+	SignatureInstance *sig = InstanceFromPaper(whichpaper, NULL,NULL, &sigpaper, &mainpageoffset, &opposite_offset, NULL);
+	int front = (1+sigpaper)%2; //whether to horizontally flip columns
 
 
 	//Create the actual Spread...
-	
-	int front=(1+whichpaper)%2; //whether to horizontally flip columns
-	int num_pages_in_insert=sig->PagesPerSignature(0,1);
-	Signature *signature=sig->pattern;
-	PaperStyle *paper=sig->partition->paper;
 
-	Spread *spread=new Spread();
-	spread->spreadtype=1;
-	spread->style=SPREAD_PAPER;
-	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
+	int num_pages_in_insert = sig->PagesPerSignature(0,1);
+	Signature *signature = sig->pattern;
+	PaperStyle *paper = sig->partition->paper;
+
+	Spread *spread = new Spread();
+	spread->spreadtype = 1;
+	spread->style = SPREAD_PAPER;
+	spread->mask = SPREAD_PATH| SPREAD_PAGES| SPREAD_MINIMUM| SPREAD_MAXIMUM;
 
 
 	spread->papergroup=new PaperGroup(paper);
 
 
 	 // define max/min points
-	spread->minimum=flatpoint(paper->w()/5,  paper->h()/2);
-	spread->maximum=flatpoint(paper->w()*4/5,paper->h()/2);
-	double paperwidth=paper->w();
+	spread->minimum = flatpoint(paper->w()/5,  paper->h()/2);
+	spread->maximum = flatpoint(paper->w()*4/5,paper->h()/2);
+	//double paperwidth = paper->w();
 
 //	if (foldinfo[0][0].finalindexfront<0) {
 //		*** signature is incomplete, should do something meaningful?
 //	}
 	
 	 //--- make the paper outline
-	PathsData *newpath=new PathsData();
+	PathsData *newpath = new PathsData();
 	//newpath->appendRect(0,0,paper->media.maxx,paper->media.maxy);
 	//newpath->FindBBox();
-	spread->path=(SomeData *)newpath;
+	spread->path = (SomeData *)newpath;
 
 
 	 //---- make the pagelocation stack
@@ -3298,50 +3297,56 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 	double xx,yy;
 	int xflip, yflip;
 
-	double patternheight=signature->PatternHeight();
-	double patternwidth =signature->PatternWidth();
-	double ew=patternwidth /(signature->numvfolds+1);//width  of a cell in a pattern
-	double eh=patternheight/(signature->numhfolds+1);//height of a cell in a pattern
-	double pw=ew-signature->trimleft-signature->trimright;//page width == cell - page trim
-	double ph=eh-signature->trimtop -signature->trimbottom;
+	double patternheight = signature->PatternHeight();
+	double patternwidth  = signature->PatternWidth();
+	double ew = patternwidth /(signature->numvfolds+1);//width  of a cell in a pattern
+	double eh = patternheight/(signature->numhfolds+1);//height of a cell in a pattern
+	double pw = ew-signature->trimleft-signature->trimright;//page width == cell - page trim
+	double ph = eh-signature->trimtop -signature->trimbottom;
 
 	 //in a signature, if there is only one sheet, each page cell can map to 2 pages,
 	 //the front and the back, whose document page indices are adjacent. When there are
 	 //more than 1 paper sheet per signature, then each cell maps to (num sheets)*2 pages.
-	int rangeofpages=sig->sheetspersignature*2;
+	int rangeofpages = sig->sheetspersignature*2;
 	int pageindex;
 	int ff,tt;
 
 	DBG cerr <<" signature pattern for paper spread "<<whichpaper<<":"<<endl;
 
 	 //for each tile:
-	x=(front?sig->partition->insetleft:sig->partition->insetright);
+	//x = sig->partition->insetleft;
+	//x = (front ? sig->partition->insetleft : sig->partition->insetright);
+	x = 0;
 	PathsData *pageoutline;
 	for (int tx=0; tx<sig->partition->tilex; tx++) {
-	  y=sig->partition->insetbottom;
+	  y = sig->partition->insetbottom;
 	  for (int ty=0; ty<sig->partition->tiley; ty++) {
 
 		 //for each cell within each tile:
 		for (int rr=0; rr<signature->numhfolds+1; rr++) {
 		  for (int cc=0; cc<signature->numvfolds+1; cc++) {
 
-			xflip=signature->foldinfo[rr][cc].finalxflip;
-			yflip=signature->foldinfo[rr][cc].finalyflip;
+			xflip = signature->foldinfo[rr][cc].finalxflip;
+			yflip = signature->foldinfo[rr][cc].finalyflip;
 
 			DBG cerr <<signature->foldinfo[rr][cc].finalindexfront<<"/"<<signature->foldinfo[rr][cc].finalindexback<<"  ";
 
-			xx=x+cc*ew;
-			yy=y+rr*eh; //coordinates of corner of page cell
+			xx = x + (front ? signature->numvfolds-cc : cc)*ew;
+			yy = y + rr*eh; //coordinates of corner of page cell
 
 			 //take in to account the final trim
-			if (xflip) xx+=signature->trimright; else xx+=signature->trimleft;
-			if (yflip) yy+=signature->trimtop;   else yy+=signature->trimbottom;
+			if (xflip) xx += signature->trimright;
+			else       xx += signature->trimleft;
+			//if (xflip) xx += (front ? signature->trimright : signature->trimleft);
+			//else       xx += (front ? signature->trimleft  : signature->trimright);
+			if (yflip) yy += signature->trimtop;   else yy += signature->trimbottom;
 
 			 //flip horizontally for odd numbered paper spreads (the backs of papers)
-			if (sigpaper%2==0) xx=paperwidth-xx-ew;
+			if (front) xx += sig->partition->insetleft;
+			else xx += sig->partition->insetright;
 
-			ff=signature->foldinfo[rr][cc].finalindexback;
-			tt=signature->foldinfo[rr][cc].finalindexfront;
+			ff = signature->foldinfo[rr][cc].finalindexback;
+			tt = signature->foldinfo[rr][cc].finalindexfront;
 			//---------
 			if (ff>tt) {
 				tt*=rangeofpages/2;
@@ -3359,13 +3364,14 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 //				pageindex= tt*rangeofpages/2 + sigpaper;
 //			}
 //			----------
-			if (pageindex>=num_pages_in_insert/2) pageindex+=opposite_offset;
-			else pageindex+=mainpageoffset;
+			if (pageindex >= num_pages_in_insert/2) pageindex += opposite_offset;
+			else pageindex += mainpageoffset;
 
 
 			pageoutline=new PathsData();//count of 1
 			pageoutline->appendRect(0,0, pw,ph); //page outline
 			pageoutline->FindBBox();
+
 			if (yflip) {
 				 //rotate 180 degrees when page is upside down
 				pageoutline->origin(flatpoint(xx+pw,yy+ph));
@@ -3381,10 +3387,10 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 		  } //cc
 		}  //rr
 
-		y+=patternheight+sig->partition->tilegapy;
+		y += patternheight+sig->partition->tilegapy;
 		DBG cerr <<endl;
 	  } //tx
-	  x+=patternwidth+sig->partition->tilegapx;
+	  x += patternwidth+sig->partition->tilegapx;
 	} //ty
 
 
@@ -3401,84 +3407,89 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 
 
 		 //loop along the left and right
-		double y,y2;
+		double y,y2, xl, xr;
 		for (int c=0; c<sig->partition->tiley+1; c++) {
-			y=sig->partition->insetbottom+c*(signature->PatternHeight()+sig->partition->tilegapy);
-			y2=-1;
-			if (c>0 && c<sig->partition->tiley && sig->partition->tilegapy) {
-				y2=y-sig->partition->tilegapy;
-			} else if (c==sig->partition->tiley) y-=sig->partition->tilegapy;
+			y = sig->partition->insetbottom+c*(signature->PatternHeight()+sig->partition->tilegapy);
+			y2 = -1;
 
-			if (sig->automarks&AUTOMARK_Margins) { //cut marks in inset region
+			if (c>0 && c<sig->partition->tiley && sig->partition->tilegapy) {
+				y2 = y-sig->partition->tilegapy;
+			} else if (c==sig->partition->tiley) y -= sig->partition->tilegapy;
+
+			if (front) { xl = sig->partition->insetleft;  xr = sig->partition->insetright; }
+			else       { xl = sig->partition->insetright; xr = sig->partition->insetleft;  }
+
+			if (sig->automarks & AUTOMARK_Margins) { //cut marks in inset region
 				if (!cut) cut=new PathsData;
-				if (sig->partition->insetleft>2*GAP || sig->partition->insetright>2*GAP)  {
-					if (sig->partition->insetleft) {
+
+				if (xl >= 2*GAP || xr >= 2*GAP)  {
+					if (xl > GAP) {
 						cut->pushEmpty();
 						cut->append(GAP, y);
-						cut->append(sig->partition->insetleft-GAP,y);
+						cut->append(xl - GAP,y);
 					}
-					if (sig->partition->insetright) {
+					if (xr > GAP) {
 						cut->pushEmpty();
-						cut->append(sig->partition->totalwidth-sig->partition->insetright+GAP,y);
-						cut->append(sig->partition->totalwidth-GAP,y);
+						cut->append(sig->partition->totalwidth - xr + GAP,y);
+						cut->append(sig->partition->totalwidth - GAP,y);
 					}
 					if (y2>0) {
-						if (sig->partition->insetleft) {
+						if (xl > GAP) {
 							cut->pushEmpty();
 							cut->append(GAP, y2);
-							cut->append(sig->partition->insetleft-GAP,y2);
+							cut->append(xl-GAP,y2);
 						}
-						if (sig->partition->insetright) {
+						if (xr > GAP) {
 							cut->pushEmpty();
-							cut->append(sig->partition->totalwidth-sig->partition->insetright+GAP,y2);
-							cut->append(sig->partition->totalwidth-GAP,y2);
+							cut->append(sig->partition->totalwidth - xr + GAP,y2);
+							cut->append(sig->partition->totalwidth - GAP,y2);
 						}
 					}
 
 					 //dotted fold lines in inset area
 					if (signature->numhfolds && c<sig->partition->tiley) {
-						if (!fold) fold=new PathsData;
+						if (!fold) fold = new PathsData;
 						double yf;
-						for (int f=1; f<=signature->numhfolds; f++) {
-							yf=y+f*signature->PageHeight(0);
+						for (int f=1; f <= signature->numhfolds; f++) {
+							yf = y+f*signature->PageHeight(0);
 
-							if (sig->partition->insetleft) {
+							if (xl) {
 								fold->pushEmpty();
 								fold->append(GAP,yf);
-								fold->append(sig->partition->insetleft-GAP,yf);
+								fold->append(xl - GAP,yf);
 							}
-							if (sig->partition->insetright) {
+							if (xr) {
 								fold->pushEmpty();
-								fold->append(sig->partition->totalwidth-sig->partition->insetright+GAP,yf);
-								fold->append(sig->partition->totalwidth-GAP,yf);
+								fold->append(sig->partition->totalwidth - xr + GAP,yf);
+								fold->append(sig->partition->totalwidth - GAP,yf);
 							}
 						}
 					}
 				}
 			}//cut marks in inset region
 
-			if (sig->automarks&AUTOMARK_InnerDot) {
+			if (sig->automarks & AUTOMARK_InnerDot) {
 				if (!dots) dots=new PathsData;
 
 				 //dots on left
 				dots->pushEmpty();
-				dots->append(sig->partition->insetleft+GAP,y);
-				dots->append(sig->partition->insetleft+GAP*1.001,y);
+				dots->append(xl + GAP,y);
+				dots->append(xl + GAP*1.001,y);
 				 //dots on right
 				dots->pushEmpty();
-				dots->append(sig->partition->totalwidth-sig->partition->insetright-GAP,y);
-				dots->append(sig->partition->totalwidth-sig->partition->insetright-GAP*1.001,y);
+				dots->append(sig->partition->totalwidth - xr - GAP,y);
+				dots->append(sig->partition->totalwidth - xr - GAP*1.001,y);
 				
 				if (y2>0) {
-					if (sig->partition->insetleft) {
+					if (xl) {
 						dots->pushEmpty();
-						dots->append(sig->partition->insetleft+GAP,y2);
-						dots->append(sig->partition->insetleft+GAP*1.001,y2);
+						dots->append(xl + GAP,y2);
+						dots->append(xl + GAP*1.001,y2);
 					}
-					if (sig->partition->insetright) {
+					if (xr) {
 						dots->pushEmpty();
-						dots->append(sig->partition->totalwidth-sig->partition->insetright-GAP,y2);
-						dots->append(sig->partition->totalwidth-sig->partition->insetright-GAP*1.001,y2);
+						dots->append(sig->partition->totalwidth - xr - GAP,y2);
+						dots->append(sig->partition->totalwidth - xr - GAP*1.001,y2);
 					}
 				}
 			}
@@ -3490,11 +3501,11 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 		if (!cut) cut=new PathsData;
 		double x,x2;
 		for (int c=0; c<sig->partition->tilex+1; c++) {
-			x=sig->partition->insetleft+c*(signature->PatternWidth()+sig->partition->tilegapx);
-			x2=-1;
+			x = (front ? sig->partition->insetleft : sig->partition->insetright) + c*(signature->PatternWidth()+sig->partition->tilegapx);
+			x2 = -1;
 			if (c>0 && c<sig->partition->tilex && sig->partition->tilegapx) {
-				x2=x-sig->partition->tilegapx;
-			} else if (c==sig->partition->tilex) x-=sig->partition->tilegapx;
+				x2 = x-sig->partition->tilegapx;
+			} else if (c==sig->partition->tilex) x -= sig->partition->tilegapx;
 
 			if ((sig->automarks & AUTOMARK_Margins)
 				  && (sig->partition->insettop>2*GAP || sig->partition->insetbottom>2*GAP))  {
@@ -3575,7 +3586,7 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 		}//loop
 
 		Group *g=NULL;
-		if (cut || fold || dots) spread->marks=g=new Group;
+		if (cut || fold || dots) spread->marks = g = new Group;
 		if (g) g->obj_flags|=OBJ_Unselectable;
 		if (cut) {
 			cut->flags|=SOMEDATA_LOCK_CONTENTS|SOMEDATA_UNSELECTABLE;

@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2013 by Tom Lechner
@@ -80,7 +79,8 @@ enum RunModeType {
 		RUNMODE_Commands,
 		RUNMODE_Shell,
 		RUNMODE_Quit,
-		RUNMODE_Impose_Only
+		RUNMODE_Impose_Only,
+		RUNMODE_Nodes_Only
 	};
 
 class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventReceiver
@@ -91,7 +91,7 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	void dumpOutResources();
 
 	int autosave_timerid;
-	virtual int  Idle(int tid=0);
+	virtual int  Idle(int tid, double delta);
 	virtual int Autosave();
 
  public:
@@ -138,6 +138,7 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	int InitInterpreters();
 	int AddInterpreter(Interpreter *i, bool absorb_count);
 	int RemoveInterpreter(Interpreter *i);
+	Interpreter *FindInterpreter(const char *name);
 
 	Laxkit::PtrStack<PaperStyle> papersizes;
 	PaperStyle *defaultpaper; //could be a custom, so need to have extra field here

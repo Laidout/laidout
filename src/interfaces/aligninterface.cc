@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2012 by Tom Lechner
@@ -279,8 +278,9 @@ void AlignInfo::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpC
 			}
 
         } else if (!strcmp(name,"path")) {
-			if (!path) path=new PathsData;
+			if (!path) path = new PathsData;
 			path->dump_in_atts(att->attributes.e[c],flag,context);
+			path->style |= PathsData::PATHS_Ignore_Weights;
 		}
 	}
 }
@@ -656,10 +656,13 @@ void AlignInterface::DrawAlignBox(flatpoint dir,
 
 	flatpoint v=transform_vector(dp->Getctm(),dir);  v/=norm(v);
 	flatpoint vt=transpose(v);
-	flatpoint p1=dp->realtoscreen(aligninfo->center+(aligninfo->path?flatpoint():aligninfo->centeroffset)) - w/2*vt - w*RADIUS*v - w*(amount/100*(BAR-2*RADIUS))*v;
+	flatpoint p1 = dp->realtoscreen(aligninfo->center+(aligninfo->path ? flatpoint() : aligninfo->centeroffset))
+					- w/2*vt - w*RADIUS*v - w*(amount/100*(BAR-2*RADIUS))*v;
 	flatpoint p2=p1+vt*w;
 	flatpoint p3=p1+w*BAR*v;
 	flatpoint p4=p3+vt*w;
+
+	dp->NewBG(1.,1.,1., hover==1 ? 1. : .5);
 
 	 //draw rectangle
 	if (aligntype==FALIGN_None) {
@@ -670,8 +673,8 @@ void AlignInterface::DrawAlignBox(flatpoint dir,
 		dp->drawline(p3+.4*w*vt,p1+.4*w*vt);
 
 	} else if (aligntype==FALIGN_Proportional) {
-		if (hover==1) dp->LineAttributes(2,LineSolid, CapButt, JoinMiter);
-		else dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+		if (hover==1) dp->LineWidthScreen(2);
+		else dp->LineWidthScreen(1);
 
 		flatpoint p[12];
 		p[ 0]=(with_rotation_handles ? p1 : p1-w/2*v+w/2*vt);
@@ -686,39 +689,38 @@ void AlignInterface::DrawAlignBox(flatpoint dir,
 		p[ 9]=p2 +w*v      ;
 		p[10]=p2 +w*v +w*vt;
 		p[11]=(with_rotation_handles ? p2 : p1-w/2*v+w/2*vt);
-		dp->drawlines(p,12,1,hover==1?2:0);
+		dp->drawlines(p,12,1, 2);
 
 	} else {//FALIGN_Align
-		if (hover==1) dp->LineAttributes(2,LineSolid, CapButt, JoinMiter);
-		else dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+		dp->LineWidthScreen(hover ? 2 : 1);
 
 		flatpoint p[4];
 		p[0]=p1;
 		p[1]=p2;
 		p[2]=p4;
 		p[3]=p3;
-		dp->drawlines(p,4,1,hover==1?2:0);
+		dp->drawlines(p,4,1, 2);
 	}
 
 	 //draw rotate handles on ends of bar
 	if (with_rotation_handles) {
-		if (hover==2) dp->LineAttributes(2,LineSolid, CapButt, JoinMiter);
-		else dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+		dp->LineWidthScreen(hover == 2 ? 2 : 1);
+		dp->NewBG(1.,1.,1., hover==2 ? 1. : .5);
 
 		flatpoint p[4];
 		p[0]=p1;
 		p[1]=p1-v*w;
 		p[2]=p1-v*w+w*vt;
 		p[3]=p2;
-		dp->drawlines(p,4,1,hover==2?2:0);
+		dp->drawlines(p,4,1, 2);
 		p[0]=p3;
 		p[1]=p3+v*w;
 		p[2]=p3+v*w+w*vt;
 		p[3]=p4;
-		dp->drawlines(p,4,1,hover==2?2:0);
+		dp->drawlines(p,4,1, 2);
 	}
 
-	dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+	dp->LineWidthScreen(1);
 }
 
 //! Fill points with 6 points describing a wub.
@@ -769,35 +771,49 @@ int AlignInterface::Refresh()
 				if (hover==ALIGN_Path) dp->LineAttributes(3,LineSolid, CapButt, JoinMiter);
 				//dp->drawline(aligninfo->center+aligninfo->leftbound*aligninfo->layout_direction, <- screen, not real
 				//			 aligninfo->center+aligninfo->rightbound*aligninfo->layout_direction);
+				dp->LineWidthScreen(hover==ALIGN_Path?4:2);
+				dp->NewFG(1.,1.,1.,1.);
 				dp->drawline(dp->realtoscreen(aligninfo->center+aligninfo->leftbound*aligninfo->layout_direction),
 							 dp->realtoscreen(aligninfo->center+aligninfo->rightbound*aligninfo->layout_direction));
-				dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+				dp->LineWidthScreen(hover==ALIGN_Path?3:1);
+				dp->NewFG(&controlcolor);
+				dp->drawline(dp->realtoscreen(aligninfo->center+aligninfo->leftbound*aligninfo->layout_direction),
+							 dp->realtoscreen(aligninfo->center+aligninfo->rightbound*aligninfo->layout_direction));
+				dp->LineWidthScreen(1);
+
 			} else {
 				 // draw the PathsData
 				LineStyle ls(*aligninfo->path->linestyle);
-				ls.width=(hover==ALIGN_Path?3:1);
+				 //draw twice, once with background color to emphasize the path
+				ls.width = (hover==ALIGN_Path?4:2);
+				ls.Colorf(1.,1.,1.,1.);
 				Laidout::DrawData(dp,aligninfo->path,&ls,NULL,0);
+				//--------
+				ls.color = aligninfo->path->linestyle->color;
+				ls.width = (hover==ALIGN_Path?3:1);
+				Laidout::DrawData(dp,aligninfo->path,&ls,NULL,0);
+
 				dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 				dp->NewFG(&controlcolor);
 				dp->DrawScreen();
 			}
 		}
 
-		dp->NewBG(1.,1.,1.);
 		if (showrotation) {
 			flatpoint cc(dp->realtoscreen(aligninfo->center+(aligninfo->path?flatpoint():aligninfo->centeroffset)));
-			double r=aligninfo->uiscale*RADIUS*ROTRADIUS;
+			double r = aligninfo->uiscale*RADIUS*ROTRADIUS;
 			flatpoint wub[6];
 			if (hover==ALIGN_Rotation) dp->LineAttributes(2,LineSolid, CapButt, JoinRound);
-			else dp->LineAttributes(1,LineSolid, CapButt, JoinRound);
+			else dp->LineWidthScreen(1);
 			WubPoints(wub, cc, r,r*1.2, M_PI/2+M_PI/4+aligninfo->extrarotation,M_PI/2+-M_PI/4+aligninfo->extrarotation);
-			dp->drawbez(wub,2,1, hover==ALIGN_Rotation?2:0);
-			dp->LineAttributes(1,LineSolid, CapButt, JoinRound);
+			dp->NewBG(1.,1.,1., hover==ALIGN_Rotation ? 1.:.5);
+			dp->drawbez(wub,2,1, 2);
+			dp->LineWidthScreen(1);
 		}
 
 		 //draw snap direction rectangle
 		DrawAlignBox(aligninfo->snap_direction, aligninfo->snapalignment,aligninfo->snap_align_type,1,
-						hover==ALIGN_MoveSnapAlign?1:(hover==ALIGN_RotateSnapAndAlign?2:0));
+						hover==ALIGN_MoveSnapAlign ? 1 : (hover==ALIGN_RotateSnapAndAlign ? 2:0));
 
 
 		 //draw layout direction rectangle, or other final layout items
@@ -828,11 +844,11 @@ int AlignInterface::Refresh()
 			pts[3]=cc + x1*v - yy*vt;
 			if (hover==ALIGN_VisualShift) {
 				 //blank out background, so we can see what we are changing
-				dp->LineAttributes(3,LineSolid, CapButt, JoinMiter);
+				dp->LineWidthScreen(3);
 				dp->NewFG(1.,1.,1.);
 				dp->drawlines(pts,4,1,1);
 				dp->NewFG(&controlcolor);
-			} else dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+			} else dp->LineWidthScreen(1);
 			dp->drawlines(pts,4,0,0);
 
 			 //right side
@@ -842,11 +858,11 @@ int AlignInterface::Refresh()
 			pts[3]=cc - x1*v - yy*vt;
 			if (hover==ALIGN_LayoutType) {
 				 //blank out background, so we can see what we are changing
-				dp->LineAttributes(3,LineSolid, CapButt, JoinMiter);
+				dp->LineWidthScreen(3);
 				dp->NewFG(1.,1.,1.);
 				dp->drawlines(pts,4,1,1);
 				dp->NewFG(&controlcolor);
-			} else dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+			} else dp->LineWidthScreen(1);
 			dp->drawlines(pts,4,0,0);
 			dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 
@@ -1089,7 +1105,7 @@ void AlignInterface::ApplyPreset(int type)
 
 		bez_circle(points,4, (data->minx+data->maxx)/2,(data->miny+data->maxy)/2, r);
 		if (aligninfo->path) aligninfo->path->dec_count();
-		aligninfo->path=new PathsData();
+		aligninfo->path = new PathsData();
 		for (int c=0; c<12; c++) {
 			if (c%3==0) aligninfo->path->append(points[c], POINT_TONEXT,NULL);
 			else if (c%3==1) aligninfo->path->append(points[c], POINT_VERTEX,NULL);
@@ -1098,6 +1114,7 @@ void AlignInterface::ApplyPreset(int type)
 		aligninfo->path->close();
 		aligninfo->path->line(1,CapButt,JoinMiter,&patheditcolor);
 		aligninfo->path->linestyle->widthtype=0;
+		aligninfo->path->style |= PathsData::PATHS_Ignore_Weights;
 		aligninfo->final_layout_type=FALIGN_Grid;
 		aligninfo->snapalignment    =50;
 		aligninfo->finalalignment   =50;
@@ -1466,7 +1483,8 @@ int AlignInterface::createPath()
 
 	path->line(1,CapButt,JoinMiter,&patheditcolor);
 	path->linestyle->widthtype=0;
-	aligninfo->path=path;
+	path->style |= PathsData::PATHS_Ignore_Weights;
+	aligninfo->path = path;
 
 	return 0;
 }

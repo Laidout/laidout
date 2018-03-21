@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,10 +7,10 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2015 by Tom Lechner
+// Copyright (C) 2004-2018 by Tom Lechner
 //
 
 #include <lax/messagebar.h>
@@ -89,7 +88,7 @@ int AboutWindow::preinit()
 	appendstr(about,LAIDOUT_VERSION);
 	appendstr(about,_(
 			"\nusing Laxkit version " LAXKIT_VERSION "\n"
-			"2004-2015\n"
+			"2004-2018\n"
 			"\n"
 			"so far coded\n"
 			"by Tom Lechner,\n"
@@ -164,8 +163,9 @@ void AboutWindow::Refresh()
  */
 int AboutWindow::CharInput(unsigned int ch,unsigned int state,const LaxKeyboard *d)
 {
-	if (ch==LAX_Esc) {
-		if (win_parent) ((HeadWindow *)win_parent)->WindowGone(this);
+	if (ch==LAX_Esc && (win_style & ANXWIN_ESCAPABLE)) {
+		if (win_parent && dynamic_cast<HeadWindow*>(win_parent))
+			dynamic_cast<HeadWindow*>(win_parent)->WindowGone(this);
 		app->destroywindow(this);
 		return 0;
 	}
@@ -174,8 +174,6 @@ int AboutWindow::CharInput(unsigned int ch,unsigned int state,const LaxKeyboard 
 
 int AboutWindow::Event(const Laxkit::EventData *e,const char *mes)
 {
-	if (win_parent && dynamic_cast<HeadWindow*>(win_parent))
-		dynamic_cast<HeadWindow*>(win_parent)->WindowGone(this);
 	return MessageBox::Event(e,mes);
 }
 

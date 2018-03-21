@@ -6,7 +6,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2018 by Tom Lechner
@@ -14,17 +14,23 @@
 
 
 #include <lax/language.h>
+#include <lax/interfaces/curvemapinterface.h>
 #include "nodes.h"
 #include "nodeinterface.h"
 #include "../calculator/calculator.h"
+#include "../calculator/curvevalue.h"
 
 
 //template implementation
 #include <lax/lists.cc>
+#include <lax/refptrstack.cc>
 
 
-namespace Laidout { 
-	
+using namespace Laxkit;
+using namespace LaxInterfaces;
+
+namespace Laidout {
+
 
 
 //-------------------------------------- Define the built in nodes types --------------------------
@@ -38,7 +44,7 @@ Laxkit::anObject *newDoubleNode(int p, Laxkit::anObject *ref)
 	//node->Id("Value");
 	makestr(node->Name, _("Value"));
 	makestr(node->type, "Value");
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("V"), new DoubleValue(0), 1)); 
+	node->AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("V"), new DoubleValue(0), 1));
 	return node;
 }
 
@@ -141,7 +147,7 @@ int ExpandVectorNode::Update()
 
 	for (int c=0; c<4; c++) {
 		dynamic_cast<DoubleValue* >(properties.e[c+1]->data)->d = vs[c];
-		properties.e[c+1]->modtime = time(NULL);
+		properties.e[c+1]->modtime = times(NULL);
 	}
 
 	return NodeBase::Update();
@@ -245,7 +251,7 @@ int VectorNode::Update()
         else if (dims == 3) dynamic_cast<SpacevectorValue*>(properties.e[3]->data)->v = spacevector(vs);
         else if (dims == 4) dynamic_cast<QuaternionValue* >(properties.e[4]->data)->v = Quaternion (vs);
 	}
-	properties.e[dims]->modtime = time(NULL);
+	properties.e[dims]->modtime = times(NULL);
 
 	return NodeBase::Update();
 }
@@ -339,7 +345,7 @@ int RectangleNode::Update()
 		v->setbounds(vs[0], vs[0]+vs[2], vs[1], vs[1]+vs[3]);
 	}
 
-	properties.e[4]->modtime = time(NULL);
+	properties.e[4]->modtime = times(NULL);
 
 	return NodeBase::Update();
 }
@@ -450,10 +456,18 @@ NodeBase *AffineNode::Duplicate()
 int AffineNode::GetStatus()
 {
 	int isnum;
+	//double v[6];
 	for (int c=0; c<6; c++) {
 		getNumberValue(properties.e[c]->GetData(), &isnum);
 		if (!isnum) return -1;
 	}
+
+	// maybe check this is invertible
+//	if (m[0]*m[3]-m[1]*m[2] == 0) {
+//		 //degenerate matrix!
+//		if (!error_message) makestr(error_message, _("Bad matrix"));
+//		return -1;
+//	} else if (error_message) makestr(error_message, NULL);
 
 	if (!properties.e[6]->data) return 1;
 
@@ -501,26 +515,6 @@ Laxkit::anObject *newAffineNode2(int p, Laxkit::anObject *ref)
 
 //------------ MathNode
 
-class MathNode : public NodeBase
-{
-  public:
-	static SingletonKeeper mathnodekeeper; //the def for the op enum
-	static ObjectDef *GetMathNodeDef() { return dynamic_cast<ObjectDef*>(mathnodekeeper.GetObject()); }
-
-	int last_status;
-	time_t status_time;
-
-	int operation; //see MathNodeOps
-	int numargs;
-	double a,b,result;
-	MathNode(int op=0, double aa=0, double bb=0);
-	virtual ~MathNode();
-	virtual int UpdateThisOnly();
-	virtual int Update();
-	virtual int GetStatus();
-	virtual NodeBase *Duplicate();
-};
-
 
 enum MathNodeOps {
 	OP_None = 0,
@@ -546,7 +540,10 @@ enum MathNodeOps {
 	OP_Asinh,
 	OP_Acosh,
 	OP_Atanh,
+	OP_Ceiling,
+	OP_Floor,
 	OP_Clamp_To_1, // [0..1]
+	OP_Clamp_To_pm_1, // [-1..1]
 	 //vector specific
 	OP_VECTOR_1_ARG,
 	OP_Norm,
@@ -617,11 +614,52 @@ enum MathNodeOps {
 	OP_MAX
 };
 
-/*! Create and return a fresh instance of the def for a MathNode op.
+/*! Create and return a fresh instance of the def for a 1 arg MathNode2 op.
  */
-ObjectDef *DefineMathNodeDef()
+ObjectDef *DefineMathNode1Def()
 {
-	ObjectDef *def = new ObjectDef("MathNodeDef", _("Math Node Def"), NULL,NULL,"enum", 0);
+	ObjectDef *def = new ObjectDef("MathNode1Def", _("Math Node Def for 1 argument"), NULL,NULL,"enum", 0);
+
+	 //1 argument
+	def->pushEnumValue("AbsoluteValue"  ,_("AbsoluteValue"), _("AbsoluteValue"), OP_AbsoluteValue );
+	def->pushEnumValue("Negative"       ,_("Negative"),      _("Negative"),      OP_Negative      );
+	def->pushEnumValue("Not"            ,_("Not"),           _("Not"),           OP_Not           );
+	def->pushEnumValue("Sqrt"           ,_("Square root"),   _("Square root"),   OP_Sqrt          );
+	def->pushEnumValue("Sqn"            ,_("Sign"),          _("Sign: 1, -1 or 0"),OP_Sgn         );
+	def->pushEnumValue("Clamp_To_1"     ,_("Clamp To 1"),    _("Clamp To 1"),    OP_Clamp_To_1    );
+	def->pushEnumValue("Clamp_To_pm_1"  ,_("Clamp To [-1,1]"),    _("Clamp To [-1,1]"),    OP_Clamp_To_pm_1      );
+	def->pushEnumValue("Rad_To_Deg"     ,_("Radians To Degrees"), _("Radians To Degrees"), OP_Radians_To_Degrees );
+	def->pushEnumValue("Deg_To_Rad"     ,_("Degrees To Radians"), _("Degrees To Radians"), OP_Degrees_To_Radians );
+	def->pushEnumValue("Sin"            ,_("Sin"),           _("Sin"),           OP_Sin           );
+	def->pushEnumValue("Cos"            ,_("Cos"),           _("Cos"),           OP_Cos           );
+	def->pushEnumValue("Tan"            ,_("Tan"),           _("Tan"),           OP_Tan           );
+	def->pushEnumValue("Asin"           ,_("Asin"),          _("Asin"),          OP_Asin          );
+	def->pushEnumValue("Acos"           ,_("Acos"),          _("Acos"),          OP_Acos          );
+	def->pushEnumValue("Atan"           ,_("Atan"),          _("Atan"),          OP_Atan          );
+	def->pushEnumValue("Sinh"           ,_("Sinh"),          _("Sinh"),          OP_Sinh          );
+	def->pushEnumValue("Cosh"           ,_("Cosh"),          _("Cosh"),          OP_Cosh          );
+	def->pushEnumValue("Tanh"           ,_("Tanh"),          _("Tanh"),          OP_Tanh          );
+	def->pushEnumValue("Asinh"          ,_("Asinh"),         _("Asinh"),         OP_Asinh         );
+	def->pushEnumValue("Acosh"          ,_("Acosh"),         _("Acosh"),         OP_Acosh         );
+	def->pushEnumValue("Atanh"          ,_("Atanh"),         _("Atanh"),         OP_Atanh         );
+	def->pushEnumValue("Ceiling"        ,_("Ceiling"),       _("Least integer greater than"), OP_Ceiling );
+	def->pushEnumValue("Floor"          ,_("Floor"),         _("Greatest integer less than"), OP_Floor   );
+	 //vector math, 1 arg
+	def->pushEnumValue("Norm"           ,_("Norm"),          _("Length of vector"),OP_Norm        );
+	def->pushEnumValue("Norm2"          ,_("Norm2"),         _("Square of length"),OP_Norm2       );
+	def->pushEnumValue("Flip"           ,_("Flip"),          _("Flip"),          OP_Flip          );
+	def->pushEnumValue("Normalize"      ,_("Normalize"),     _("Normalize"),     OP_Normalize     );
+	def->pushEnumValue("Angle"          ,_("Angle"),        _("Angle, -pi to pi. 2d only"),   OP_Angle);
+
+
+	return def;
+}
+
+/*! Create and return a fresh instance of the def for a 2 arg MathNode2 op.
+ */
+ObjectDef *DefineMathNode2Def()
+{
+	ObjectDef *def = new ObjectDef("MathNode2Def", _("Math Node Def"), NULL,NULL,"enum", 0);
 
 	 //2 arguments
 	def->pushEnumValue("Add",        _("Add"),          _("Add"),         OP_Add         );
@@ -640,7 +678,6 @@ ObjectDef *DefineMathNodeDef()
 	def->pushEnumValue("Maximum",    _("Maximum"),      _("Maximum"),     OP_Maximum     );
 	def->pushEnumValue("Average",    _("Average"),      _("Average"),     OP_Average     );
 	def->pushEnumValue("Atan2",      _("Atan2"),        _("Arctangent 2"),OP_Atan2       );
-	//def->pushEnumValue("RandomR",    _("Random"),       _("Random(seed,max)"), OP_RandomRange );
 
 	def->pushEnumValue("And"        ,_("And"       ),   _("And"       ),  OP_And         );
 	def->pushEnumValue("Or"         ,_("Or"        ),   _("Or"        ),  OP_Or          );
@@ -657,50 +694,313 @@ ObjectDef *DefineMathNodeDef()
 	def->pushEnumValue("Angle2_Between" ,_("Angle2 Between"), _("Angle2 Between, 0..2*pi"), OP_Angle2_Between );
 
 
-	 //1 argument
-	//def->pushEnumValue("Clamp_To_1"         ,_("Clamp To 1"),    _("Clamp To 1"),    OP_Clamp_To_1    );
-	//def->pushEnumValue("AbsoluteValue"      ,_("AbsoluteValue"), _("AbsoluteValue"), OP_AbsoluteValue );
-	//def->pushEnumValue("Negative"           ,_("Negative"),      _("Negative"),      OP_Negative      );
-	//def->pushEnumValue("Not"                ,_("Not"),           _("Not"),           OP_Not           );
-	//def->pushEnumValue("Sqrt"               ,_("Square root"),   _("Square root"),   OP_Sqrt          );
-	//def->pushEnumValue("Sqn"                ,_("Sign"),          _("Sign: 1, -1 or 0"),OP_Sgn         );
-	//def->pushEnumValue("Radians_To_Degrees" ,_("Radians To Degrees"), _("Radians To Degrees"), OPRadians_To_Degrees );
-	//def->pushEnumValue("Degrees_To_Radians" ,_("Degrees To Radians"), _("Degrees To Radians"), OPDegrees_To_Radians );
-	//def->pushEnumValue("Sin"                ,_("Sin"),           _("Sin"),           OP_Sin           );
-	//def->pushEnumValue("Cos"                ,_("Cos"),           _("Cos"),           OP_Cos           );
-	//def->pushEnumValue("Tan"                ,_("Tan"),           _("Tan"),           OP_Tan           );
-	//def->pushEnumValue("Asin"               ,_("Asin"),          _("Asin"),          OP_Asin          );
-	//def->pushEnumValue("Acos"               ,_("Acos"),          _("Acos"),          OP_Acos          );
-	//def->pushEnumValue("Atan"               ,_("Atan"),          _("Atan"),          OP_Atan          );
-	//def->pushEnumValue("Sinh"               ,_("Sinh"),          _("Sinh"),          OP_Sinh          );
-	//def->pushEnumValue("Cosh"               ,_("Cosh"),          _("Cosh"),          OP_Cosh          );
-	//def->pushEnumValue("Tanh"               ,_("Tanh"),          _("Tanh"),          OP_Tanh          );
-	//def->pushEnumValue("Asinh"              ,_("Asinh"),         _("Asinh"),         OP_Asinh         );
-	//def->pushEnumValue("Acosh"              ,_("Acosh"),         _("Acosh"),         OP_Acosh         );
-	//def->pushEnumValue("Atanh"              ,_("Atanh"),         _("Atanh"),         OP_Atanh         );
-	 ////vector math, 1 arg
-	//def->pushEnumValue("Norm"               ,_("Norm"),          _("Length of vector"),OP_Norm        );
-	//def->pushEnumValue("Norm2"              ,_("Norm2"),         _("Square of length"),OP_Norm2       );
-	//def->pushEnumValue("Flip"               ,_("Flip"),          _("Flip"),          OP_Flip          );
-	//def->pushEnumValue("Normalize"          ,_("Normalize"),     _("Normalize"),     OP_Normalize     );
-	//def->pushEnumValue("Angle"              ,_("Angle"),         _("Angle"),         OP_Angle         );
-	//def->pushEnumValue("Angle2"             ,_("Angle2"),        _("Angle2"),        OP_Angle2        );
-
-
-	 //3 arguments
-	//def->pushEnumValue("Lerp" , _("Lerp"),  _("Lerp"),  OP_Lerp  );
-	//def->pushEnumValue("Clamp" ,_("Clamp"), _("Clamp"), OP_Clamp );
-
 	return def;
 }
 
-SingletonKeeper MathNode::mathnodekeeper(DefineMathNodeDef(), true);
 
-
-MathNode::MathNode(int op, double aa, double bb)
+class MathNode1 : public NodeBase
 {
-	type = newstr("Math");
-	Name = newstr(_("Math"));
+  public:
+	static SingletonKeeper mathnodekeeper; //the def for the op enum
+	static ObjectDef *GetMathNode1Def() { return dynamic_cast<ObjectDef*>(mathnodekeeper.GetObject()); }
+
+	int last_status;
+	clock_t status_time;
+
+	int operation; //see MathNodeOps
+	MathNode1(int op=0, double aa=0);
+	virtual ~MathNode1();
+	virtual int UpdateThisOnly();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
+};
+
+class MathNode2 : public NodeBase
+{
+  public:
+	static SingletonKeeper mathnodekeeper; //the def for the op enum
+	static ObjectDef *GetMathNode2Def() { return dynamic_cast<ObjectDef*>(mathnodekeeper.GetObject()); }
+
+	int last_status;
+	clock_t status_time;
+
+	int operation; //see MathNode2Ops
+	int numargs;
+	double a,b,result;
+	MathNode2(int op=0, double aa=0, double bb=0);
+	virtual ~MathNode2();
+	virtual int UpdateThisOnly();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
+};
+
+SingletonKeeper MathNode1::mathnodekeeper(DefineMathNode1Def(), true);
+SingletonKeeper MathNode2::mathnodekeeper(DefineMathNode2Def(), true);
+
+//------MathNode1
+
+MathNode1::MathNode1(int op, double aa)
+{
+	type = newstr("Math1");
+	Name = newstr(_("Math 1"));
+
+	last_status = 1;
+	status_time = 0;
+
+	operation = op;
+
+	ObjectDef *enumdef = GetMathNode1Def();
+	enumdef->inc_count();
+
+
+	EnumValue *e = new EnumValue(enumdef, 0);
+	enumdef->dec_count();
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, "Op", e, 1));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "A", new DoubleValue(aa), 1));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Result", NULL,0, _("Result"), NULL, 0, false));
+
+	last_status = Update();
+	status_time = MostRecentIn(NULL);
+}
+
+MathNode1::~MathNode1()
+{
+}
+
+NodeBase *MathNode1::Duplicate()
+{
+	MathNode1 *newnode = new MathNode1;
+	Value *a = properties.e[1]->GetData();
+	if (a) {
+		a = a->duplicate();
+		newnode->properties.e[1]->SetData(a, 1);
+	}
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+/*! Default is to return 0 for no error and everything up to date.
+ * -1 means bad inputs and node in error state.
+ * 1 means needs updating.
+ */
+int MathNode1::GetStatus()
+{
+	if (!properties.e[2]->data) return 1;
+	int status = NodeBase::GetStatus(); //checks mod times
+	if (status == 1) return 1; //just simple update
+
+	clock_t proptime = MostRecentIn(NULL);
+	if (proptime > last_status) {
+		last_status = UpdateThisOnly();
+		status_time = proptime;
+	}
+	return last_status;
+}
+
+int MathNode1::Update()
+{
+	int status = UpdateThisOnly();
+	if (!status) {
+		modtime = times(NULL);
+		PropagateUpdate();
+		return status;
+	}
+	return status;
+}
+
+int MathNode1::UpdateThisOnly()
+{
+	makestr(error_message, NULL);
+
+	Value *valuea = properties.e[1]->GetData();
+	int aisnum=0;
+	double a = getNumberValue(valuea, &aisnum);
+	if (aisnum) aisnum = 1; //else ints and booleans return 2 and 3
+
+	if (!aisnum && dynamic_cast<FlatvectorValue *>(valuea)) aisnum = 2;
+	if (!aisnum && dynamic_cast<SpacevectorValue*>(valuea)) aisnum = 3;
+	if (!aisnum && dynamic_cast<QuaternionValue *>(valuea)) aisnum = 4;
+
+	if (!aisnum) {
+		makestr(error_message, _("Operation can't use that argument"));
+		return -1;
+	}
+
+	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
+	ObjectDef *def = ev->GetObjectDef();
+	const char *nm = NULL;
+	double result=0;
+	operation = OP_None;
+	def->getEnumInfo(ev->value, &nm, NULL,NULL, &operation);
+
+
+	if (aisnum == 1) {
+		if        (operation == OP_AbsoluteValue  || operation == OP_Norm) { result = fabs(a);
+		} else if (operation == OP_Norm2            ) { result = a*a;
+		} else if (operation == OP_Negative || operation == OP_Flip) { result = -a;
+		} else if (operation == OP_Sqrt             ) {
+			if (a>=0) result = sqrt(a);
+			else {
+				makestr(error_message, _("Sqrt needs nonnegative number"));
+				return -1;
+			}
+		} else if (operation == OP_Sgn              )  { result = a > 0 ? 1 : a < 0 ? -1 : 0;
+		} else if (operation == OP_Not              )  { result = !(int)a;
+		} else if (operation == OP_Radians_To_Degrees) { result = a *180/M_PI;
+		} else if (operation == OP_Degrees_To_Radians) { result = a * M_PI/180;
+		} else if (operation == OP_Sin              )  { result = sin(a);
+		} else if (operation == OP_Cos              )  { result = cos(a);
+		} else if (operation == OP_Tan              )  { result = tan(a);
+		} else if (operation == OP_Asin             )  {
+			if (a <= 1 && a >= -1) result = asin(a);
+			else {
+				makestr(error_message, _("Argument needs to be in range [-1, 1]"));
+				return -1;
+			}
+		} else if (operation == OP_Acos             )  {
+			if (a <= 1 && a >= -1) result = acos(a);
+			else {
+				makestr(error_message, _("Argument needs to be in range [-1, 1]"));
+				return -1;
+			}
+		} else if (operation == OP_Atan             )  { result = atan(a);
+		} else if (operation == OP_Sinh             )  { result = sinh(a);
+		} else if (operation == OP_Cosh             )  { result = cosh(a);
+		} else if (operation == OP_Tanh             )  { result = tanh(a);
+		} else if (operation == OP_Asinh            )  { result = asinh(a);
+		} else if (operation == OP_Acosh            )  {
+			if (a >= 1) result = acosh(a);
+			else {
+				makestr(error_message, _("Argument needs to be >= 1"));
+				return -1;
+			}
+		} else if (operation == OP_Atanh            )  {
+			if (a > -1 && a < 1) result = atanh(a);
+			else {
+				makestr(error_message, _("Argument needs to be -1 > a > 1"));
+				return -1;
+			}
+		} else if (operation == OP_Ceiling          )  { result = ceil(a);
+		} else if (operation == OP_Floor            )  { result = floor(a);
+		} else if (operation == OP_Clamp_To_1       )  { result = a > 1 ? 1 : a < 0 ? 0 : a;
+		} else if (operation == OP_Clamp_To_pm_1    )  { result = a > 1 ? 1 : a < -1 ? -1 : a;
+		} else {
+			makestr(error_message, _("Operation can't use that argument"));
+			return -1;
+		}
+
+		if (!dynamic_cast<DoubleValue*>(properties.e[2]->data)) {
+			DoubleValue *newv = new DoubleValue(result);
+			properties.e[2]->SetData(newv, 1);
+		} else dynamic_cast<DoubleValue*>(properties.e[2]->data)->d = result;
+
+		properties.e[2]->modtime = times(NULL);
+		return 0;
+
+	}
+	
+	//else involves vectors...
+	int resulttype = VALUE_None;
+
+	double va[4], rv[4];
+	for (int c=0; c<4; c++) { va[c] = rv[c] = 0; }
+
+	if (aisnum==2) {
+		dynamic_cast<FlatvectorValue*>(valuea)->v.get(va);
+		resulttype = VALUE_Flatvector;
+	} else if (aisnum==3) {
+		dynamic_cast<SpacevectorValue*>(valuea)->v.get(va);
+		resulttype = VALUE_Spacevector;
+	} else if (aisnum==4) {
+		dynamic_cast<SpacevectorValue*>(valuea)->v.get(va);
+		resulttype = VALUE_Quaternion;
+	}
+	
+
+	if (operation == OP_AbsoluteValue || operation == OP_Norm) {
+		for (int c=0; c<aisnum; c++) result += va[c]*va[c];
+		result = sqrt(result);
+		resulttype = VALUE_Real;
+
+	} else if (operation == OP_Norm2         ) {
+		for (int c=0; c<aisnum; c++) result += va[c]*va[c];
+		resulttype = VALUE_Real;
+
+	} else if (operation == OP_Negative      ) { for (int c=0; c<aisnum; c++) rv[c] = -va[c];
+	} else if (operation == OP_Clamp_To_1    ) { for (int c=0; c<aisnum; c++) rv[c] = va[c] > 1 ? 1 : va[c] <  0 ?  0 : va[c];
+	} else if (operation == OP_Clamp_To_pm_1 ) { for (int c=0; c<aisnum; c++) rv[c] = va[c] > 1 ? 1 : va[c] < -1 ? -1 : va[c];
+	} else if (operation == OP_Flip          ) { for (int c=0; c<aisnum; c++) rv[c] = -va[c];
+	} else if (operation == OP_Normalize     ) {
+		for (int c=0; c<aisnum; c++) result += va[c]*va[c];
+		result = sqrt(result);
+		if (result == 0) {
+			makestr(error_message, _("Can't normalize a null vector"));
+			return -1;
+		}
+		for (int c=0; c<aisnum; c++) rv[c] = va[c]/result;
+
+	} else if (operation == OP_Angle) {
+		if (aisnum != 2) {
+			makestr(error_message, _("Only for Vector2"));
+			return -1;
+		}
+		resulttype = VALUE_Real;
+		result = atan2(va[1], va[0]);
+
+	} else resulttype = VALUE_None;
+
+	if (resulttype == VALUE_None) {
+		makestr(error_message, _("Operation can't use that argument"));
+		return -1;
+	}
+
+	if (resulttype == VALUE_Real) {
+		if (!dynamic_cast<DoubleValue*>(properties.e[2]->data)) {
+			DoubleValue *newv = new DoubleValue(result);
+			properties.e[2]->SetData(newv, 1);
+		} else dynamic_cast<DoubleValue*>(properties.e[2]->data)->d = result;
+
+	} else if (resulttype == VALUE_Flatvector) {
+		if (!dynamic_cast<FlatvectorValue*>(properties.e[2]->data)) {
+			FlatvectorValue *newv = new FlatvectorValue(flatvector(rv));
+			properties.e[2]->SetData(newv, 1);
+		} else dynamic_cast<FlatvectorValue*>(properties.e[2]->data)->v.set(rv);
+
+	} else if (resulttype == VALUE_Spacevector) {
+		if (!dynamic_cast<SpacevectorValue*>(properties.e[2]->data)) {
+			SpacevectorValue *newv = new SpacevectorValue(spacevector(rv));
+			properties.e[2]->SetData(newv, 1);
+		} else dynamic_cast<SpacevectorValue*>(properties.e[2]->data)->v.set(rv);
+
+	} else if (resulttype == VALUE_Quaternion) {
+		if (!dynamic_cast<QuaternionValue*>(properties.e[2]->data)) {
+			QuaternionValue *newv = new QuaternionValue(Quaternion(rv));
+			properties.e[2]->SetData(newv, 1);
+		} else dynamic_cast<QuaternionValue*>(properties.e[2]->data)->v.set(rv);
+
+	}
+
+	properties.e[2]->modtime = times(NULL);
+	return 0;
+}
+
+Laxkit::anObject *newMathNode1(int p, Laxkit::anObject *ref)
+{
+	return new MathNode1();
+}
+
+
+
+
+//------MathNode2
+
+MathNode2::MathNode2(int op, double aa, double bb)
+{
+	type = newstr("Math2");
+	Name = newstr(_("Math 2"));
 
 	last_status = 1;
 	status_time = 0;
@@ -710,7 +1010,7 @@ MathNode::MathNode(int op, double aa, double bb)
 	operation = op;
 	numargs = 2;
 
-	ObjectDef *enumdef = GetMathNodeDef();
+	ObjectDef *enumdef = GetMathNode2Def();
 	enumdef->inc_count();
 
 
@@ -720,7 +1020,7 @@ MathNode::MathNode(int op, double aa, double bb)
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, "Op", e, 1));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "A", new DoubleValue(a), 1));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "B", new DoubleValue(b), 1));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Result", NULL, 0, NULL, NULL, 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Result", NULL,0, _("Result"), NULL, 0, false));
 
 	//NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count,
 					//const char *nlabel=NULL, const char *ntip=NULL, int info=0, bool editable);
@@ -729,17 +1029,26 @@ MathNode::MathNode(int op, double aa, double bb)
 	status_time = MostRecentIn(NULL);
 }
 
-MathNode::~MathNode()
+MathNode2::~MathNode2()
 {
 //	if (mathnodedef) {
 //		if (mathnodedef->dec_count()<=0) mathnodedef=NULL;
 //	}
 }
 
-NodeBase *MathNode::Duplicate()
+NodeBase *MathNode2::Duplicate()
 {
-	MathNode *newnode = new MathNode;
-	cerr << " *** need to implement MathNode::Duplicate!"<<endl;
+	MathNode2 *newnode = new MathNode2;
+	Value *a = properties.e[1]->GetData();
+	if (a) {
+		a = a->duplicate();
+		newnode->properties.e[1]->SetData(a, 1);
+	}
+	a = properties.e[2]->GetData();
+	if (a) {
+		a = a->duplicate();
+		newnode->properties.e[2]->SetData(a, 1);
+	}
 	newnode->DuplicateBase(this);
 	return newnode;
 }
@@ -755,13 +1064,13 @@ NodeBase *MathNode::Duplicate()
  * -1 means bad inputs and node in error state.
  * 1 means needs updating.
  */
-int MathNode::GetStatus()
+int MathNode2::GetStatus()
 {
 	if (!properties.e[3]->data) return 1;
 	int status = NodeBase::GetStatus(); //checks mod times
 	if (status == 1) return 1; //just simple update
 
-	time_t proptime = MostRecentIn(NULL);
+	clock_t proptime = MostRecentIn(NULL);
 	if (proptime > last_status) {
 		last_status = UpdateThisOnly();
 		status_time = proptime;
@@ -769,14 +1078,18 @@ int MathNode::GetStatus()
 	return last_status;
 }
 
-int MathNode::Update()
+int MathNode2::Update()
 {
 	int status = UpdateThisOnly();
-	if (!status) return status;
+	if (!status) {
+		modtime = times(NULL);
+		PropagateUpdate();
+		return status;
+	}
 	return NodeBase::Update();
 }
 
-int MathNode::UpdateThisOnly()
+int MathNode2::UpdateThisOnly()
 {
 	makestr(error_message, NULL);
 
@@ -785,6 +1098,8 @@ int MathNode::UpdateThisOnly()
 	int aisnum=0, bisnum=0;
 	a = getNumberValue(valuea, &aisnum);
 	b = getNumberValue(valueb, &bisnum);
+	if (aisnum) aisnum = 1; //else ints and booleans return 2 and 3
+	if (bisnum) bisnum = 1;
 
 	if (!aisnum && dynamic_cast<FlatvectorValue *>(valuea)) aisnum = 2;
 	if (!aisnum && dynamic_cast<SpacevectorValue*>(valuea)) aisnum = 3;
@@ -858,7 +1173,7 @@ int MathNode::UpdateThisOnly()
 			properties.e[3]->SetData(newv, 1);
 		} else dynamic_cast<DoubleValue*>(properties.e[3]->data)->d = result;
 
-		properties.e[3]->modtime = time(NULL);
+		properties.e[3]->modtime = times(NULL);
 		return 0;
 
 	}
@@ -1032,13 +1347,13 @@ int MathNode::UpdateThisOnly()
 		return -1;
 	}
 
-	properties.e[3]->modtime = time(NULL);
+	properties.e[3]->modtime = times(NULL);
 	return 0;
 }
 
-Laxkit::anObject *newMathNode(int p, Laxkit::anObject *ref)
+Laxkit::anObject *newMathNode2(int p, Laxkit::anObject *ref)
 {
-	return new MathNode();
+	return new MathNode2();
 }
 
 
@@ -1103,6 +1418,7 @@ Laxkit::anObject *newImageNode(int p, Laxkit::anObject *ref)
 	//backend: raw, default, gegl, gmic, gm, cairo
 	return node;
 }
+
 
 //------------ GenericNode
 
@@ -1187,14 +1503,7 @@ Laxkit::anObject *newNodeGroup(int p, Laxkit::anObject *ref)
 
 //------------------------ RandomNode ------------------------
 
-/*! \class CurveNode
- *
- * <pre>
- * 0. In
- * 1. Curve
- * 2. block to select which channel, and/or all
- * 3. Out
- * </pre>
+/*! \class RandomNode
  */
 class RandomNode : public NodeBase
 {
@@ -1283,6 +1592,809 @@ Laxkit::anObject *newRandomNode(int p, Laxkit::anObject *ref)
 }
 
 
+//------------------------------ concat --------------------------------------------
+
+class ConcatNode : public NodeBase
+{
+  public:
+	ConcatNode(const char *s1, const char *s2);
+	virtual ~ConcatNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+};
+
+ConcatNode::ConcatNode(const char *s1, const char *s2)
+{
+	makestr(Name, _("Concat"));
+	makestr(type, "Concat");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "A", new StringValue(s1),1, _("A")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "B", new StringValue(s2),1, _("B")));
+
+	char ns[1 + (s1 ? strlen(s1) : 0) + (s2 ? strlen(s2) : 0)];
+	sprintf(ns, "%s%s", (s1 ? s1 : ""), (s2 ? s2 : ""));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", new StringValue(ns),1, _("Out")));
+}
+
+ConcatNode::~ConcatNode()
+{
+}
+
+NodeBase *ConcatNode::Duplicate()
+{
+	StringValue *s1 = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	StringValue *s2 = dynamic_cast<StringValue*>(properties.e[1]->GetData());
+
+	ConcatNode *newnode = new ConcatNode(s1 ? s1->str : NULL, s2 ? s2->str : NULL);
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int ConcatNode::GetStatus()
+{
+	if (!isNumberType(properties.e[0]->GetData(), NULL) && !dynamic_cast<StringValue*>(properties.e[0]->GetData())) return -1;
+	if (!isNumberType(properties.e[1]->GetData(), NULL) && !dynamic_cast<StringValue*>(properties.e[1]->GetData())) return -1;
+
+	if (!properties.e[2]->data) return 1;
+
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int ConcatNode::Update()
+{
+	char *str=NULL;
+
+	int isnum=0;
+	double d = getNumberValue(properties.e[0]->GetData(), &isnum);
+	if (isnum) {
+		str = numtostr(d);
+	} else {
+		StringValue *s = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+		if (!s) return -1;
+
+		str = newstr(s->str);
+	}
+
+	d = getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (isnum) {
+		char *ss = numtostr(d);
+		appendstr(str, ss);
+		delete[] ss;
+	} else {
+		StringValue *s = dynamic_cast<StringValue*>(properties.e[1]->GetData());
+		if (!s) return -1;
+
+		appendstr(str, s->str);
+	}
+
+	StringValue *out = dynamic_cast<StringValue*>(properties.e[2]->GetData());
+	out->Set(str);
+
+	delete[] str;
+
+	return NodeBase::Update();
+}
+
+
+Laxkit::anObject *newConcatNode(int p, Laxkit::anObject *ref)
+{
+	return new ConcatNode(NULL,NULL);
+}
+
+
+//------------------------ ThreadNode ------------------------
+
+/*! \class Starts an execution path.
+ */
+
+class ThreadNode : public NodeBase
+{
+  public:
+	ThreadNode();
+	virtual ~ThreadNode();
+
+	virtual NodeBase *Duplicate();
+	//virtual int Update();
+	//virtual int GetStatus();
+	virtual NodeBase *Execute(NodeThread *thread);
+};
+
+ThreadNode::ThreadNode()
+{
+	makestr(type, "Thread");
+	makestr(Name, _("Thread"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_Out, true, "out",  NULL,1, _("Out")));
+}
+
+ThreadNode::~ThreadNode()
+{
+}
+
+
+NodeBase *ThreadNode::Duplicate()
+{
+	ThreadNode *node = new ThreadNode();
+	return node;
+}
+
+NodeBase *ThreadNode::Execute(NodeThread *thread)
+{
+	if (!properties.e[0]->connections.n) return NULL;
+	return properties.e[0]->connections.e[0]->to;
+}
+
+
+Laxkit::anObject *newThreadNode(int p, Laxkit::anObject *ref)
+{
+	return new ThreadNode();
+}
+
+
+//------------------------ IfNode ------------------------
+
+/*! \class For loop node.
+ */
+
+class IfNode : public NodeBase
+{
+  public:
+	IfNode(bool iftrue);
+	virtual ~IfNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Execute(NodeThread *thread);
+};
+
+
+IfNode::IfNode(bool iftrue)
+{
+	makestr(type,   "If");
+	makestr(Name, _("If"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_In,  true, "In",    NULL,1, _("In")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,    true, "If",    new BooleanValue(iftrue),1,_("if"), NULL));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_Out, true, "True",  NULL,1, _("True")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_Out, true, "False", NULL,1, _("False")));
+}
+
+IfNode::~IfNode()
+{
+}
+
+NodeBase *IfNode::Execute(NodeThread *thread)
+{
+	int isnum;
+	bool iftrue = getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return NULL;
+
+	NodeProperty *prop;
+	if (iftrue) prop = properties.e[2];
+	else prop = properties.e[3];
+
+	NodeBase *next = NULL;
+	if (prop->connections.n) next = prop->connections.e[0]->to;
+
+	modtime = times(NULL);
+	PropagateUpdate();
+
+	return next;
+}
+
+NodeBase *IfNode::Duplicate()
+{
+	int isnum;
+	bool iftrue = getNumberValue(properties.e[3]->GetData(), &isnum);
+	IfNode *node = new IfNode(iftrue);
+	node->DuplicateBase(this);
+	return node;
+}
+
+int IfNode::Update()
+{
+	int isnum;
+	getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+	return 0; //we only actually update from Execute
+}
+
+int IfNode::GetStatus()
+{
+	int isnum;
+	getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+	return 0;
+}
+
+
+Laxkit::anObject *newIfNode(int p, Laxkit::anObject *ref)
+{
+	return new IfNode(1);
+}
+
+
+//------------------------ LoopNode ------------------------
+
+/*! \class For loop node.
+ */
+
+class LoopNode : public NodeBase
+{
+  public:
+	double start, end, step, current;
+	int running;
+
+	LoopNode(double nstart, double nend, double nstep);
+	virtual ~LoopNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Execute(NodeThread *thread);
+};
+
+
+LoopNode::LoopNode(double nstart, double nend, double nstep)
+{
+	start   = nstart;
+	end     = nend;
+	step    = nstep;
+	current = start;
+	running = 0;
+
+	makestr(type,   "Loop");
+	makestr(Name, _("Loop"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_In,  true, "In",    NULL,1, _("In")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_Out, true, "Done",  NULL,1, _("Done")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_Out, true, "Loop",  NULL,1, _("Loop")));
+	 // *** while in loop, run to loop.
+	 // when thread dead ends, return to this node and go out on Done
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Start", new DoubleValue(start),1,_("Start"), NULL));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "End",   new DoubleValue(end),1,  _("End"),   NULL));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Step",  new DoubleValue(step),1, _("Step"),  NULL));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Current",  new DoubleValue(current),1, _("Current"),  NULL, 0, false));
+}
+
+LoopNode::~LoopNode()
+{
+}
+
+NodeBase *LoopNode::Execute(NodeThread *thread)
+{
+	NodeProperty *done = properties.e[1];
+	NodeProperty *loop = properties.e[2];
+
+	if ((start>end && step>=0) || (start<end && step<=0)) return NULL;
+
+	NodeBase *next = NULL;
+
+	if (!running) {
+		 //initialize loop
+		running = 1;
+		current = start;
+		//if      (loop->connections.n) thread->UpdateThread(loop->connections.e[0]->to, loop->connections.e[0]);
+		//else if (done->connections.n) thread->UpdateThread(done->connections.e[0]->to, done->connections.e[0]);
+		//else thread->UpdateThread(this, NULL);
+
+		if      (loop->connections.n) next = loop->connections.e[0]->to;
+		else if (done->connections.n) next = done->connections.e[0]->to;
+		else next = this;
+
+		dynamic_cast<DoubleValue*>(properties.e[6]->GetData())->d = current;
+		properties.e[6]->Touch();
+		PropagateUpdate();
+		thread->scopes.push(this);
+		return next;
+	}
+
+	 //update current
+	if (current + step > end) {
+		 //end loop
+		running = 0;
+		if (done->connections.n) next = done->connections.e[0]->to;
+		else next = NULL;
+		thread->scopes.remove(-1);
+
+	} else {
+		 //continue loop
+		current += step;
+		if (loop->connections.n) next = loop->connections.e[0]->to;
+		else next = this;
+
+		dynamic_cast<DoubleValue*>(properties.e[6]->GetData())->d = current;
+		properties.e[6]->Touch();
+		PropagateUpdate();
+	}
+
+	return next;
+}
+
+NodeBase *LoopNode::Duplicate()
+{
+	LoopNode *node = new LoopNode(start, end, step);
+	node->DuplicateBase(this);
+	return node;
+}
+
+int LoopNode::Update()
+{
+	makestr(error_message, NULL);
+
+	int isnum;
+	start = getNumberValue(properties.e[3]->GetData(), &isnum);  if (!isnum) return -1;
+	end   = getNumberValue(properties.e[4]->GetData(), &isnum);  if (!isnum) return -1;
+	step  = getNumberValue(properties.e[5]->GetData(), &isnum);  if (!isnum) return -1;
+
+	if ((start>end && step>=0) || (start<end && step<=0)) {
+		makestr(error_message, _("Bad step value"));
+		return -1;
+	}
+	return NodeBase::Update();
+}
+
+int LoopNode::GetStatus()
+{
+	//assume start, end, step all set correctly
+	if ((start>end && step>=0) || (start<end && step<=0)) return -1;
+	return 0;
+}
+
+
+Laxkit::anObject *newLoopNode(int p, Laxkit::anObject *ref)
+{
+	return new LoopNode(0,10,1);
+}
+
+
+//------------------------ LerpNode ------------------------
+
+/*! \class LerpNode
+ */
+class LerpNode : public NodeBase
+{
+  public:
+	LerpNode(double a=0, double b=1, double r=0);
+	virtual ~LerpNode();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
+};
+
+LerpNode::LerpNode(double a, double b, double r)
+{
+	makestr(Name, _("Lerp"));
+	makestr(type, "Lerp");
+	//makestr(description, _("Linear interpolation"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "A", new DoubleValue(a),1,    _("A"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "B", new DoubleValue(b),1,    _("B"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "r", new DoubleValue(r),1,    _("r"))); 
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", new DoubleValue(),1, _("Out"), NULL,0,false)); 
+}
+
+LerpNode::~LerpNode()
+{
+}
+
+NodeBase *LerpNode::Duplicate()
+{
+	int isnum=0;
+	double a = getNumberValue(properties.e[0]->GetData(), &isnum);
+	double b = getNumberValue(properties.e[1]->GetData(), &isnum);
+	double r = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (a==b && a==0) b=1;
+
+	LerpNode *newnode = new LerpNode(a,b,r);
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int LerpNode::GetStatus()
+{
+	if (!isNumberType(properties.e[2]->GetData(), NULL)) return -1;
+
+	int avn = isVectorType(properties.e[0]->GetData(), NULL);
+	if (!avn) return -1;
+	int bvn = !isVectorType(properties.e[1]->GetData(), NULL);
+	if (!bvn) return -1;
+	if (avn!=bvn) return -1;
+
+	if (!properties.e[3]->data) return 1;
+
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int LerpNode::Update()
+{
+	int isnum=0;
+	double r = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	double av[4], bv[4];
+	int avn = isVectorType(properties.e[0]->GetData(), av);
+	if (!avn) return -1;
+	int bvn = isVectorType(properties.e[1]->GetData(), bv);
+	if (!bvn) return -1;
+	if (avn != bvn) return -1;
+
+	for (int c=0; c<avn; c++) av[c] = av[c] + (bv[c] - av[c])*r;
+	
+	Value *v = properties.e[3]->GetData();
+
+	if (avn==1) {
+		if (!dynamic_cast<DoubleValue*>(v)) {
+			v = new DoubleValue(av[0]);
+			properties.e[3]->SetData(v, 1);
+		} else dynamic_cast<DoubleValue*>(v)->d = av[0];
+
+	} else if (avn==2) {
+		if (!dynamic_cast<FlatvectorValue*>(v)) {
+			v = new FlatvectorValue(flatvector(av));
+			properties.e[3]->SetData(v, 1);
+		} else dynamic_cast<FlatvectorValue*>(v)->v.set(av);
+
+	} else if (avn==3) {
+		if (!dynamic_cast<SpacevectorValue*>(v)) {
+			v = new SpacevectorValue(spacevector(av));
+			properties.e[3]->SetData(v, 1);
+		} else dynamic_cast<SpacevectorValue*>(v)->v.set(av);
+
+	} else if (avn==4) {
+		if (!dynamic_cast<QuaternionValue*>(v)) {
+			v = new QuaternionValue(Quaternion(av));
+			properties.e[3]->SetData(v, 1);
+		} else dynamic_cast<QuaternionValue*>(v)->v.set(av);
+	}
+
+	return NodeBase::Update();
+}
+
+Laxkit::anObject *newLerpNode(int p, Laxkit::anObject *ref)
+{
+	return new LerpNode(0., 1., 0.);
+}
+
+
+//------------------------ MapRangeNode ------------------------
+
+/*! \class MapRangeNode
+ */
+class MapRangeNode : public NodeBase
+{
+  public:
+	bool mapto;
+	MapRangeNode(bool map_to, double min, double max, bool clamp);
+	virtual ~MapRangeNode();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
+};
+
+MapRangeNode::MapRangeNode(bool map_to, double min, double max, bool clamp)
+{
+	mapto = map_to;
+
+	if (mapto) {
+		makestr(Name, _("Map to range"));
+		makestr(type, "MapToRange");
+	} else {
+		makestr(Name, _("Map from range"));
+		makestr(type, "MapFromRange");
+	}
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", new DoubleValue(0),1,    _("In"))); 
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Min", new DoubleValue(min),1,    _("Min"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Max", new DoubleValue(max),1,    _("Max"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Block, false,"Clamp", new BooleanValue(clamp),1, _("Clamp"))); 
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", new DoubleValue(),1, _("Out"), NULL,0,false)); 
+}
+
+MapRangeNode::~MapRangeNode()
+{
+}
+
+NodeBase *MapRangeNode::Duplicate()
+{
+	int isnum=0;
+	double min = getNumberValue(properties.e[1]->GetData(), &isnum);
+	double max = getNumberValue(properties.e[2]->GetData(), &isnum);
+	bool clamp = dynamic_cast<BooleanValue*>(properties.e[3]->GetData())->i;
+
+	MapRangeNode *newnode = new MapRangeNode(mapto, min,max, clamp);
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int MapRangeNode::GetStatus()
+{
+	if (!isNumberType(properties.e[0]->GetData(), NULL)) return -1;
+
+	int isnum;
+	double min = getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+	double max = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+	if (min==max) return -1;
+
+	if (!properties.e[4]->data) return 1;
+
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int MapRangeNode::Update()
+{
+	int isnum=0;
+	double in = getNumberValue(properties.e[0]->GetData(), &isnum);
+	if (!isnum) return -1;
+	double min = getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+	double max = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+	if (min==max) return -1;
+	bool clamp = dynamic_cast<BooleanValue*>(properties.e[3]->GetData())->i;
+
+	double num;
+	if (mapto) {
+		num = min + (max-min)*in;
+		if (clamp) {
+			if (max>min) {
+				if (num<min) num=min;
+				else if (num>max) num=max;
+			} else {
+				if (num<max) num=max;
+				else if (num>min) num=min;
+			}
+		}
+	} else {
+		num = (in-min) / (max-min);
+		if (clamp) {
+			if (num<0) num=0;
+			if (num>1) num=1;
+		}
+	}
+
+	Value *v = properties.e[4]->GetData();
+
+	if (!dynamic_cast<DoubleValue*>(v)) {
+		v = new DoubleValue(num);
+		properties.e[4]->SetData(v, 1);
+	} else dynamic_cast<DoubleValue*>(v)->d = num;
+
+	return NodeBase::Update();
+}
+
+Laxkit::anObject *newMapToRangeNode(int p, Laxkit::anObject *ref)
+{
+	return new MapRangeNode(true, 0,1, false);
+}
+
+Laxkit::anObject *newMapFromRangeNode(int p, Laxkit::anObject *ref)
+{
+	return new MapRangeNode(false, 0,1, false);
+}
+
+
+//------------------------ CurveProperty ------------------------
+
+/*! \class CurveProperty
+ * For use in CurveNode.
+ */
+
+
+SingletonKeeper CurveProperty::interfacekeeper;
+
+LaxInterfaces::CurveMapInterface *CurveProperty::GetCurveInterface()
+{
+	return dynamic_cast<CurveMapInterface*>(interfacekeeper.GetObject());
+}
+
+CurveProperty::CurveProperty(CurveValue *ncurve, int absorb, int isout)
+{
+	type = (isout ? NodeProperty::PROP_Output : NodeProperty::PROP_Block);
+	is_linkable = isout ? true : false;
+	makestr(name, "Curve");
+	makestr(label, _("Curve"));
+	//makestr(tooltip, _(""));
+
+	curve = ncurve;
+	if (curve && !absorb) curve->inc_count();
+	data = curve;
+	if (data) data->inc_count();
+
+	CurveMapInterface *interface = GetCurveInterface();
+	if (!interface) {
+		interface = new CurveMapInterface(getUniqueNumber(), NULL);
+		interface->style |= CurveMapInterface::RealSpace;
+		interfacekeeper.SetObject(interface, 1);
+	}
+
+}
+
+CurveProperty::~CurveProperty()
+{
+	if (curve) curve->dec_count();
+}
+
+void CurveProperty::SetExtents(NodeColors *colors)
+{
+	width = height = 4 * colors->font->textheight();
+}
+
+bool CurveProperty::HasInterface()
+{
+	return true;
+}
+
+/*! If interface!=NULL, then try to use it. If NULL, create and return a new appropriate interface.
+ * Also set the interface to use *this.
+ */
+LaxInterfaces::anInterface *CurveProperty::PropInterface(LaxInterfaces::anInterface *interface, Laxkit::Displayer *dp)
+{
+	CurveMapInterface *interf = NULL;
+	if (interface) {
+		if (strcmp(interface->whattype(), "CurveMapInterface")) return NULL;
+		interf = dynamic_cast<CurveMapInterface*>(interface);
+		if (!interf) return NULL; //wrong ref interface!!
+	}
+
+	if (!interf) interf = GetCurveInterface();
+	interf->Dp(dp);
+	interf->SetInfo(curve);
+	double th = owner->colors->font->textheight();
+	interf->SetupRect(owner->x + x + th/2, owner->y + y, width-th, height);
+
+	return interf;
+}
+
+void CurveProperty::Draw(Laxkit::Displayer *dp, int hovered)
+{
+	anInterface *interf = PropInterface(NULL, dp);
+	if (hovered) interf->Refresh();
+	else interf->DrawData(curve);
+}
+
+
+/*! Whether to accept link to this value type.
+ * Accepts DoubleValue, ImageValue, or ColorValue.
+ */
+bool CurveProperty::AllowType(Value *v)
+{
+	int vtype = v->type();
+	if (vtype == VALUE_Real)  return true;
+	if (vtype == VALUE_Color) return true;
+	if (vtype == VALUE_Image) return true;
+	// *** vectors, transform each value individually, or all
+	return false;
+}
+
+
+//--------------------- CurveNode ---------------------
+
+/*! \class CurveNode
+ */
+class CurveNode : public NodeBase
+{
+  public:
+	bool for_creation; //true when creating a curve, not a transforming node
+
+	ObjectDef channels;
+	Laxkit::RefPtrStack<CurveValue> curves;
+
+	int current_curve;
+	int use_max; //whether curve affects the maximum channel, like when it's an alpha channel
+
+	CurveNode(int is_for_creation, CurveValue *ncurve);
+	virtual ~CurveNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
+};
+
+/*! absorbs ncurve.
+ */
+CurveNode::CurveNode(int is_for_creation, CurveValue *ncurve)
+{
+	if (is_for_creation) {
+		makestr(Name, _("Curve"));
+		makestr(type, "Curve");
+	} else {
+		makestr(Name, _("Curve Transform"));
+		makestr(type, "CurveTransform");
+	}
+
+	for_creation = is_for_creation;
+
+	//in should accept:
+	//  doubles, assume adjust within range 0..1
+	//  image data, create one curve for all except alpha, one curve for each channel
+	//
+	//out should be same format as in
+
+	CurveValue *curve = ncurve;
+	if (!curve) curve = new CurveValue();
+	curves.push(curve);
+	if (!ncurve) curve->dec_count();
+	current_curve = 0;
+
+	if (!for_creation) AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "In", NULL, 1));
+
+	AddProperty(new CurveProperty(curve, 0, 1));
+
+	if (!for_creation) {
+		 //create selector for channel, including "all"
+		//AddProperty(new NodeProperty(NodeProperty::PROP_Block, true, "Channel", new EnumValue(0, &channels), 1));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL, 0));
+	}
+}
+
+CurveNode::~CurveNode()
+{
+}
+
+NodeBase *CurveNode::Duplicate()
+{
+	CurveValue *v = dynamic_cast<CurveProperty*>(FindProperty("Curve"))->curve;
+	v = dynamic_cast<CurveValue*>(v->duplicate());
+	CurveNode *newnode = new CurveNode(for_creation, v);
+	newnode->DuplicateBase(this);
+	newnode->Wrap();
+	return newnode;
+}
+
+/*! Return 1 for set, 0 for not set.
+ */
+int CurveNode::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
+{
+	if (!strcmp(propname, "Curve")) {
+		CurveProperty *prop = dynamic_cast<CurveProperty*>(FindProperty(propname));
+		CurveValue *curve = prop->curve;
+		curve->dump_in_atts(att,0,NULL);
+		prop->SetData(curve, 1);
+	}
+	
+	return NodeBase::SetPropertyFromAtt(propname, att);
+}
+
+int CurveNode::Update()
+{ // ***
+//	if (!properties.e[1]->IsConnected()) {
+//		 //no connected value, just use 0
+//		Value *outdata = properties.e[2]->GetData();
+//		DoubleValue *d = dynamic_cast<DoubleValue*>(outdata);
+//
+//		if (!d) {
+//			if (outdata) { outdata->dec_count(); outdata=NULL; }
+//			outdata = d = new DoubleValue();
+//		}
+//		d->d = 0;
+//		return 0;
+//	}
+
+	return NodeBase::Update();
+}
+
+int CurveNode::GetStatus()
+{
+	return NodeBase::GetStatus();
+}
+ 
+
+Laxkit::anObject *newCurveNode(int p, Laxkit::anObject *ref)
+{
+	return new CurveNode(p, NULL);
+}
+
 //--------------------------- SetupDefaultNodeTypes() -----------------------------------------
 
 /*! Install default built in node types to factory.
@@ -1293,10 +2405,13 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Color",    newColorNode,  NULL, 0);
 
 	 //--- ImageNode
-	factory->DefineNewObject(getUniqueNumber(), "NewImage", newImageNode,  NULL, 0);
+	//factory->DefineNewObject(getUniqueNumber(), "NewImage", newImageNode,  NULL, 0);
 
-	 //--- MathNode
-	factory->DefineNewObject(getUniqueNumber(), "Math",     newMathNode,   NULL, 0);
+	 //--- MathNode1
+	factory->DefineNewObject(getUniqueNumber(), "Math1",     newMathNode1,   NULL, 0);
+
+	 //--- MathNode2
+	factory->DefineNewObject(getUniqueNumber(), "Math2",     newMathNode2,   NULL, 0);
 
 	 //--- DoubleNode
 	factory->DefineNewObject(getUniqueNumber(), "Value",    newDoubleNode, NULL, 0);
@@ -1325,6 +2440,29 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 
 	 //--- RandomNode
 	factory->DefineNewObject(getUniqueNumber(), "Random",newRandomNode,  NULL, 0);
+
+	 //--- ConcatNode
+	factory->DefineNewObject(getUniqueNumber(), "Concat",newConcatNode,  NULL, 0);
+
+	 //--- ThreadNode
+	factory->DefineNewObject(getUniqueNumber(), "Thread",newThreadNode,  NULL, 0);
+
+	 //--- LoopNode
+	factory->DefineNewObject(getUniqueNumber(), "Loop",newLoopNode,  NULL, 0);
+
+	 //--- IfNode
+	factory->DefineNewObject(getUniqueNumber(), "If",newIfNode,  NULL, 0);
+
+	 //--- LerpNode
+	factory->DefineNewObject(getUniqueNumber(), "Lerp",newLerpNode,  NULL, 0);
+
+	 //--- MapRangeNodes
+	factory->DefineNewObject(getUniqueNumber(), "MapToRange",  newMapToRangeNode,    NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "MapFromRange",newMapFromRangeNode,  NULL, 0);
+
+	 //--- CurveNodes
+	factory->DefineNewObject(getUniqueNumber(), "Curve",         newCurveNode,  NULL, 1);
+	//factory->DefineNewObject(getUniqueNumber(), "CurveTransform",newCurveNode,  NULL, 0);
 
 	return 0;
 }

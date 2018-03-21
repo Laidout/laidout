@@ -1,24 +1,15 @@
 //
-//	
-//    The Laxkit, a windowing toolkit
-//    Please consult http://laxkit.sourceforge.net about where to send any
-//    correspondence about this software.
+// Laidout, for laying out
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
-//    This library is free software; you can redistribute it and/or
-//    modify it under the terms of the GNU Library General Public
-//    License as published by the Free Software Foundation; either
-//    version 2 of the License, or (at your option) any later version.
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public
+// License as published by the Free Software Foundation; either
+// version 3 of the License, or (at your option) any later version.
+// For more details, consult the COPYING file in the top directory.
 //
-//    This library is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-//    Library General Public License for more details.
-//
-//    You should have received a copy of the GNU Library General Public
-//    License along with this library; if not, write to the Free Software
-//    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-//
-//    Copyright (C) 2017 by Tom Lechner
+// Copyright (C) 2017-2018 by Tom Lechner
 //
 #ifndef _LAX_NODEINTERFACE_H
 #define _LAX_NODEINTERFACE_H
@@ -33,7 +24,6 @@
 
 #include "../calculator/values.h"
 #include "../filetypes/objectio.h"
-#include "nodes.h"
 
 
 using namespace LaxFiles;
@@ -41,22 +31,13 @@ using namespace Laxkit;
 
 namespace Laidout { 
 
-//default node types:
-//  string
-//  int
-//  double
-//  boolean
-//  color
-//  file
-//  date
-//  image
-
 
 //---------------------------- Nodes ------------------------------------
 
 class NodeGroup;
 class NodeBase;
 class NodeProperty;
+class NodeColors;
 
 
 //---------------------------- NodeConnection ------------------------------------
@@ -76,7 +57,7 @@ class NodeConnection : public Laxkit::RefCounted
 	virtual ~NodeConnection();
 	virtual void SetFrom(NodeBase *nfrom, NodeProperty *nfprop) { from = nfrom; fromprop = nfprop; }
 	virtual void SetTo  (NodeBase *nto,   NodeProperty *nfto  ) { to   = nto;   toprop   = nfto;   }
-	//virtual void RemoveConnection(int which=3);
+	virtual int IsExec();
 };
 
 //typedef int (*NodePropertyValidFunc)(NodeProperty *prop, const char **error_message);
@@ -103,7 +84,7 @@ class NodeProperty
 	char *name;
 	char *label;
 	char *tooltip;
-	std::time_t modtime;
+	std::clock_t modtime;
 
 	NodeBase *owner;
 	NodeProperty *frompropproxy, *topropproxy;
@@ -127,7 +108,11 @@ class NodeProperty
 	NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count,
 					const char *nlabel=NULL, const char *ntip=NULL, int info=0, bool editable=true);
 	virtual ~NodeProperty();
-	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface);
+	virtual const char *PropInterfaceName() { return NULL; }
+	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface, Laxkit::Displayer *dp);
+	virtual bool HasInterface() { return false; }
+	virtual void Draw(Laxkit::Displayer *dp, int hovered) {}
+	virtual void SetExtents(NodeColors *colors);
 	virtual const char *Name()  { return name; }
 	virtual const char *Name(const char *nname);
 	virtual const char *Label() { return label ? label : name; }
@@ -139,7 +124,9 @@ class NodeProperty
 	virtual int IsOutput() { return type==PROP_Output; }
 	virtual int IsBlock()  { return type==PROP_Block; }
 	virtual int IsEditable() { return is_editable && !(IsInput() && IsConnected()); }
-	virtual int IsExecution() { return type==PROP_Exec_In || type==PROP_Exec_Out || type==PROP_Exec_Through; }
+	virtual int IsExec() { return type==PROP_Exec_In || type==PROP_Exec_Out || type==PROP_Exec_Through; }
+	virtual int IsExecOut() { return type==PROP_Exec_Out || type==PROP_Exec_Through; }
+	virtual int IsExecIn()  { return type==PROP_Exec_In  || type==PROP_Exec_Through; }
 	virtual int IsHidden() { return hidden; }
 	virtual int Hide();
 	virtual int Show();
@@ -150,6 +137,7 @@ class NodeProperty
 	virtual Value *GetData();
 	virtual NodeBase *GetDataOwner();
 	virtual int SetData(Value *newdata, bool absorb);
+	virtual void Touch();
 };
 
 
@@ -159,12 +147,15 @@ class NodeThread
 {
   public:
 	int thread_id;
-	std::time_t start_time;
+	std::clock_t start_time;
 	ValueHash *data;
-	NodeProperty *current_property;
+	NodeBase *next;
+	NodeProperty *property; //property from preceding node
+	RefPtrStack<NodeBase> scopes;
 
-	NodeThread(NodeProperty *prop, ValueHash *payload, int absorb);
+	NodeThread(NodeBase *next, NodeProperty *prop, ValueHash *payload, int absorb);
 	virtual ~NodeThread();
+	virtual int UpdateThread(NodeBase *node, NodeConnection *gonext);
 };
 
 
@@ -177,6 +168,8 @@ class NodeColors : public Laxkit::anObject
 	Laxkit::LaxFont *font;
 	unsigned int state; //normal | selected | mouseOver
 	double slot_radius; //as fraction of text size
+	double mo_diff; //amount to change color channel when mouse over
+	double preview_dims; //default preview dimension in pixels
 
 	Laxkit::ScreenColor default_property;
 	Laxkit::ScreenColor connection;
@@ -184,6 +177,7 @@ class NodeColors : public Laxkit::anObject
 	Laxkit::ScreenColor number;
 	Laxkit::ScreenColor vector;
 	Laxkit::ScreenColor color; //includes image
+	Laxkit::ScreenColor exec;
 
 	Laxkit::ScreenColor label_fg;
 	Laxkit::ScreenColor label_bg;
@@ -206,9 +200,6 @@ class NodeColors : public Laxkit::anObject
 	Laxkit::ScreenColor selected_border;
 	Laxkit::ScreenColor selected_bg;
 
-	double mo_diff;
-
-	double preview_dims;
 
 	NodeColors *next; //one node per state
 
@@ -243,6 +234,7 @@ class NodeFrame : public Laxkit::anObject,
 	virtual void Wrap(double gap=-1);
 };
 
+
 //---------------------------- NodeBase ------------------------------------
 class NodeBase : public Laxkit::anObject,
 				 public Laxkit::DoubleRectangle,
@@ -262,17 +254,18 @@ class NodeBase : public Laxkit::anObject,
 
 	bool show_preview;
 	Laxkit::LaxImage *total_preview;
+	double psamplew, psampleh;
 	double preview_area_height;
 
 	Laxkit::PtrStack<NodeProperty> properties; //includes inputs and outputs
-	std::time_t modtime; //time of last update
+	std::clock_t modtime; //time of last update
 
 	NodeFrame *frame;
 	NodeColors *colors;
 
 	NodeBase();
 	virtual ~NodeBase();
-	virtual const char *whattype() { return "Nodes"; }
+	virtual const char *whattype() { return "Node"; }
 	virtual int InstallColors(NodeColors *newcolors, bool absorb_count);
 	virtual const char *Label() { return Name; }
 	virtual const char *Label(const char *nlabel);
@@ -282,24 +275,29 @@ class NodeBase : public Laxkit::anObject,
 	virtual const char *ErrorMessage() { return error_message; }
 	virtual ObjectDef *GetDef() { return def; }
 	virtual void InstallDef(ObjectDef *def, bool absorb_count);
-	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface);
+	virtual LaxInterfaces::anInterface *GetInterface(LaxInterfaces::anInterface *interface);
 
 	virtual int Undo(UndoData *data);
 	virtual int Redo(UndoData *data);
 
 	virtual int Update();
+	virtual void PropagateUpdate();
 	virtual int UpdatePreview();
+	virtual void PreviewSample(double w, double h, bool is_shift);
 	virtual int GetStatus();
-	virtual time_t MostRecentIn(int *index);
+	virtual clock_t MostRecentIn(int *index);
 	virtual int UsesPreview() { return total_preview!=NULL && show_preview; }
 	virtual int Wrap();
 	virtual int WrapFull(bool keep_current_width);
 	virtual int WrapCollapsed();
+	virtual int Collapse(int state); //-1 toggle, 0 open, 1 full collapsed, 2 collapsed to preview
 	virtual void UpdateLinkPositions();
 	virtual void UpdateLayout();
-	virtual int Collapse(int state); //-1 toggle, 0 open, 1 full collapsed, 2 collapsed to preview
+	virtual NodeBase *Execute(NodeThread *thread);
+
 	virtual NodeBase *Duplicate();
 	virtual void DuplicateBase(NodeBase *from);
+	virtual void DuplicateProperties(NodeBase *from);
 
 	virtual int IsConnected(int propindex); //0=no, -1=prop is connected input, 1=connected output
 	virtual int HasConnection(NodeProperty *prop, int *connection_ret);
@@ -313,7 +311,7 @@ class NodeBase : public Laxkit::anObject,
 	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
 	virtual int NumInputs(bool connected);
 	virtual int NumOutputs(bool connected);
-	
+
 	virtual int AssignFrame(NodeFrame *nframe);
 	//virtual NodeColors *GetColors(); //return either this->colors, or the first defined one in owners
 
@@ -438,6 +436,10 @@ enum NodeHover {
 	NODES_Jump_Back      ,
 	NODES_Jump_Forward   ,
 	NODES_Jump_Nearest   ,
+	NODES_Thread_Controls,
+	NODES_Thread_Next    ,
+	NODES_Thread_Run     ,
+	NODES_Thread_Reset   ,
 	NODES_HOVER_MAX
 };
 
@@ -447,6 +449,8 @@ enum NodeInterfaceActions {
 	NODES_Selection_Rect,
 	NODES_Drag_Output,
 	NODES_Drag_Input,
+	NODES_Drag_Exec_In,
+	NODES_Drag_Exec_Out,
 	NODES_Move_Nodes,
 	NODES_Move_Or_Select,
 	NODES_Cut_Connections,
@@ -471,6 +475,7 @@ enum NodeInterfaceActions {
 	NODES_Save_With_Loader,
 	NODES_Load_With_Loader,
 	NODES_Clear,
+	NODES_Property_Interface,
 
 	NODES_Duplicate,
 	NODES_Group_Nodes,
@@ -505,16 +510,19 @@ class NodeInterface : public LaxInterfaces::anInterface
   protected:
 	void GetConnectionBez(NodeConnection *connection, flatpoint *pts);
 
-	double play_fps;
+	double play_fps, cur_fps;
 	int playing;
 	int play_timer;
-	time_t elapsed_time, last_time;
+	clock_t elapsed_time, last_time;
 	virtual int IsLive(NodeConnection *con);
 	virtual int Play();
 	virtual int TogglePause();
 	virtual int Stop(); //resets threads
+	virtual int FindThreads(bool flush);
+	virtual int ExecuteThreads();
+	virtual int IsThread(NodeBase *node);
 
-	int showdecs;
+	int show_threads;
 
 	Laxkit::ObjectFactory *node_factory; //usually, convenience cast to return of NodeBase::NodeFactory()
 
@@ -525,6 +533,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 	Laxkit::RefPtrStack<NodeGroup> grouptree; //stack of nested groups we are working on
 	Laxkit::RefPtrStack<NodeBase> selected;
 	Laxkit::DoubleBBox selection_rect;
+	Laxkit::DoubleBBox thread_controls;
+	double thread_run, thread_reset; //offsets in thread_controls
 	NodeConnection *tempconnection;
 	int hover_action;
 	int lasthover, lasthoverslot, lasthoverprop, lastconnection;
@@ -554,6 +564,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 
 	Laxkit::ShortcutHandler *sc;
 
+	virtual int EditProperty(int nodei, int propertyi);
 	virtual int send();
 
   public:
@@ -566,7 +577,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	const char *Name();
 	const char *whattype() { return "NodeInterface"; }
 	const char *whatdatatype();
-	virtual int  Idle(int tid=0);
+	virtual int  Idle(int tid, double delta);
 	Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu);
 	virtual int Event(const Laxkit::EventData *data, const char *mes);
 	virtual Laxkit::ShortcutHandler *GetShortcuts();

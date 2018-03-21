@@ -1,5 +1,4 @@
 //
-// $Id$
 //
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2009-2014 by Tom Lechner
@@ -57,6 +56,7 @@ enum ValueTypes {
 	VALUE_Array,      //!< Mathematical matrices, or sets of fixed sizes
 	VALUE_Hash,       //!< Basically a set with named values
 
+	VALUE_Image,      //!< *** unimplemented!
 	VALUE_Flags,      //!< *** unimplemented!
 	VALUE_Color,      //!< A Color
 	VALUE_Date,       //!< *** unimplemented!
@@ -559,6 +559,7 @@ class FlatvectorValue : public Value, virtual public FunctionEvaluator
 	Unit units;
 	flatvector v;
 	FlatvectorValue() { }
+	FlatvectorValue(double x, double y) { v.set(x,y); }
 	FlatvectorValue(flatvector vv) { v=vv; }
 	virtual const char *whattype() { return "FlatvectorValue"; }
 	virtual int getValueStr(char *buffer,int len);
@@ -661,6 +662,7 @@ class EnumValue : public Value
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Enum; }
  	virtual ObjectDef *makeObjectDef();
+	virtual int EnumId();
 };
 
 //----------------------------- FunctionValue ----------------------------------
@@ -738,6 +740,7 @@ class ObjectValue : public Value
 ValueHash *MapParameters(ObjectDef *def,ValueHash *rawparams);
 double getNumberValue(Value *v, int *isnum);
 bool isNumberType(Value *v, double *number_ret);
+int isVectorType(Value *v, double *values);
 int extequal(const char *str, int len, const char *field, char **next_ret=NULL);
 int isName(const char *longstr,int len, const char *str);
 

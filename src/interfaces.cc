@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2005-2016 by Tom Lechner
@@ -31,6 +30,7 @@
 #include "interfaces/nodeinterface.h"
 #include "interfaces/anchorinterface.h"
 #include <lax/interfaces/ellipseinterface.h>
+#include "interfaces/animationinterface.h"
 
 
 #include "interfaces.h"
@@ -54,9 +54,8 @@
 #include "interfaces/cloneinterface.h"
 #include "interfaces/pagemarkerinterface.h"
 
-#include "interfaces/animationinterface.h"
 
-
+//template implementation:
 #include <lax/lists.cc>
 
 
@@ -107,10 +106,10 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		// *************** testing:
 
 		 //------Animation
-		//i=new AnimationInterface(NULL,id++,NULL);
-		//tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
-		//existingpool->push(i);
-		//i->dec_count();
+		i=new AnimationInterface(NULL,id++,NULL);
+		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+		existingpool->push(i);
+		i->dec_count();
 
 		 //------TextStream
 		i=new TextStreamInterface(NULL,id++,NULL);

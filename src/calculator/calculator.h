@@ -7,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2009-2013 by Tom Lechner
@@ -251,8 +251,8 @@ class LaidoutCalculator : public Interpreter,
 	virtual int ImportModule(const char *name, int allnames);
 	virtual ObjectDef *GetInfo(const char *expr);
 
-	virtual char *In(const char *in, int *return_type=NULL);
-	virtual int evaluate(const char *in, int len, Value **value_ret, Laxkit::ErrorLog *log);
+	virtual char *In(const char *in, int *return_type);
+	virtual int Evaluate(const char *in, int len, Value **value_ret, Laxkit::ErrorLog *log);
 
 	virtual void ClearError();
 	virtual const char *Message();

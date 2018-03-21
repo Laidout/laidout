@@ -6,7 +6,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2009-15, 2018 by Tom Lechner
@@ -50,8 +50,10 @@ class Interpreter : public Laxkit::anObject, public LaxFiles::DumpUtility
 	virtual void Kill();
 
 	 //return status: 0 success, -1 success with warnings, 1 fatal error
-	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
-			                         Value **value_ret, Laxkit::ErrorLog *log) = 0;
+	//virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+	//		                         Value **value_ret, Laxkit::ErrorLog *log) = 0;
+	virtual char *In(const char *in, int *return_type) = 0;
+	virtual int Evaluate(const char *in, int len, Value **value_ret, Laxkit::ErrorLog *log) = 0;
 
 	virtual const char *Message() = 0;
 	virtual void ClearError() = 0;

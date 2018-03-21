@@ -12,16 +12,27 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now: 
 
+switch to net imposition, net render lines too big
+
+asymmetric cuts are not right for front sheets on spread generation (done), also on sig editor
+
 back to not maximizing properly on default ubuntu
+
+debug registration, cut marks, trim marks
+  custom papergroup, add registration/bars/, can't move it
+  DONE can't add cut marks to signatures
+
+object indicator:
+  click on object, does not update selection
+
+booklet, use paper group tool, default paper group no longer displays
+
+------------ other bugs:
 
 shearing or scaling produces null axes occasionally when crossing over opposite edge, borking the display
   --> seems to be only when needing to draw images on close to parallel axes, doesn't seem do it with paths
 
-bug: press 4, wtf?? should zoom to current object
-
 bug: page progress popup is wrong place, and mouse maps at wrong scale ONLY OCCASIONALLY, hard to reproduce
-
------------- other bugs:
 
 sometimes crash at insert page before (?? can't duplicate)
 
@@ -30,7 +41,7 @@ text window controls have difficulties
   (see PlainTextWindow below for feature plans instead of bugs)
 
 saving window positions doesn't take into account window decorations, makes pos slide downward each time
-  _NET_FRAME_EXTENTS? _KDE_NET_WM_FRAME_STRUT?
+  _NET_FRAME_EXTENTS? _KDE_NET_WM_FRAME_STRUT? how to get before mapping a window?
 
 evince on ubuntu 14.04, pdf export won't load, says Syntax Error... Dictionary key must be a name object
 
@@ -119,8 +130,6 @@ stackframe seems to be ignoring window borders on layout
 
 ----------------0.097 ROADMAP ITEMS: features and enhancements------------------------
 DONE website: combine faq and help?
-website: explain a bit more how to install dev versions, and place side by side with "stable"
-website: need to redo screenshots section for mobile friendliness
 
 update fileformat.txt
 check laidout.1 when time to release
@@ -138,12 +147,6 @@ test:
   make some test scripts for command line testing
 DONE update help page
 DONE put rss/g+ links on all menu pages.. 
-
-color strips for full transparent should show checkers in all strips, not just the alpha strip
-
-switch to GPL v3?
-
-file live search selects wrong one.. using absolute index instead of file
 
 fontdialog:
   select font inappropriately repositions view
@@ -182,7 +185,9 @@ from recent import:
 node editor NodeInterface nodes:
   undo redo
   grouping framed objects have complications
+  check for double linking
   gegl nodes:
+    need needtoupdate caching.. gegl with big images takes a long time
     scale-size has runaway render for undefined rect
     make sure deleting/rearranging nodes correctly removes gegl connections
     inkscape filter read in, set up as gegl nodes internally
@@ -199,10 +204,12 @@ node editor NodeInterface nodes:
 	DONE load in graph xml
     DONE process on a crop after change a value crash? need to trace
 	DONE make process optional
+  for memory saving, need to determine what is a "final" node, since intermediate nodes can free data, or pass it on
   node browser
 	tooltips for operation, not just properties
     in menu, so many nodes, need way to classify favorites, maybe custom arrangements of menu
       progressive search
+  for connecting, drop onto a property at all should link, not just on slot
   for preview resizer, shouldn't have it when preview is too tiny, since then usually you want to move the node, not resize
   save needs to remember file name per loader, plus default file
   no overlap needs to stack siblings as nicely as possible
@@ -213,6 +220,7 @@ node editor NodeInterface nodes:
     linked vs appended node groups, to allow mass changing of particular effects
 	  GroupRef : NodeGroup, with some sort of relay to actual group internals
     node libraries: nodes as resources
+    DONE duplicate nodes (still need to imp group dup)
     DONE need visual indication that something is a group
   auto shift on connection
   auto connect when dragging nodes.. needs parsing of compatible properties
@@ -224,6 +232,8 @@ node editor NodeInterface nodes:
     may have to rewrite properties to allow multiple ins and single out. currently some places assume only one in
 	  require first to be the single out, if property is a pass through
 	thread forking for branching nodes?
+	if branching
+	events for ui tool construction?
   make sure entire nodes don't go totally offscreen
   scriptify node graph
   nodes to script and script to nodes
@@ -232,8 +242,8 @@ node editor NodeInterface nodes:
   need better styling.. too much is hardcoded. problems later with high dpi screens
   finish implementing no cycle check: on load in could be a crash magnet currently if constructed with loops
   file properties need browser button
-  duplicate nodes (still need to imp group dup)
 
+  DONE if you right click on a node not in selection, make that the selection instead
   DONE cut links
   DONE nodes need preview images as necessary: need to preview non-sinks
   DONE view mode: all collapsed,  all collapsed except preview,  expanded no preview,  expanded with preview
@@ -248,25 +258,27 @@ node editor NodeInterface nodes:
   DONE newly added should be selected
   DONE hover tips for props on collapsed nodes
   DONE clear up IsInput()/IsOutput()
+  DONE dedicated random node: seed, is_int, min,max
 
+  examine imgflo for compatibility
+    imgflo lets you compile and load new operations on the fly
   css named filter: brightness(1) contrast(67%) saturate(250%) grayscale(0%) invert(0%) hue-rotate(330deg) sepia(40%) blur(0px)
     see https://www.w3.org/TR/filter-effects-1/#grayscaleEquivalent for svg filter equivalents
   svg/inkscape specific filter interface, io passthrough
     need full "length" readin, not just floats, ie "100%", "15in"
 	Embossed Leather fails
+    Plastify has an orphan feFlood node
   gmic nodes
   graphicsmagick nodes
   antiprism nodes
   examine blender for compatibility -> animation node addon seems fuller for general data processing
   examine godot for compatibility -> does full scripting execution
-  examine imgflo for compatibility
   examine Natron for compatibility
   examine pure data for compatibility
   praxis-live?
   proprietary import like substance or houdini?
   any crossover with mypaint brushes or krita???
 
-  dedicated random node: seed, is_int, min,max
   viewer node, resizable
   image from file node
   curve node
@@ -292,13 +304,13 @@ node editor NodeInterface nodes:
 	nodify script
 	use PlainText objects
 	edit text externally or in different text editor frame
-  math 1 arg: norm, norm squared, etc
   string ops:
-    concat s1, s2
+    DONE concat s1, s2
+	printf
 	substr [index..index]
   more math:
     interpolate with easing
-	operate on numbers, vectors as appropriate
+	select from panel:
 	  ---two-arg---
 	  +    -    *    /     %     ^
 	  <    >    !=   == 
@@ -309,6 +321,8 @@ node editor NodeInterface nodes:
 	  abs  neg  sqrt sgn
 	  sin  cos  tan  asin  acos  atan
 	  sinh cosh tanh asinh acosh atanh
+  DONE math operate on numbers, vectors as appropriate
+  DONE math 1 arg: norm, norm squared, etc
   DONE vector node:
     DONE 2,3,4 dimension vectors
     DONE separate xyz
@@ -706,6 +720,8 @@ idml from indesign?
  
 
 ----------------0.098 ROADMAP ITEMS: features and enhancements------------------------
+website: explain a bit more how to install dev versions, and place side by side with "stable"
+website: need to redo screenshots section for mobile friendliness
 update fileformat.txt
 check laidout.1 when time to release
 update docs to have new release number
@@ -721,6 +737,8 @@ test:
   each export filter (via command line in new script in examples.. ignoring problems in eps)
   make some test scripts for command line testing
 
+
+color strips for full transparent should show checkers in all strips, not just the alpha strip
 
 MenuInfo AddItem functions are really terrible overload nightmare, need something simpler like, with no menu combined:
   AddItem      (const char *name, int id = 0, int info = 0, int where = -1);
@@ -892,8 +910,6 @@ GroupInterface groupinterface ObjectInterface objectinterface:
   maybe show flip and 90 deg rotate handles only when mouse outside the selection area?
   control-move flip line to snap to horizontal, vertical, 45 deg, or common gravity points 
 
-searchable menus
-
 ObjectIndicator objectindicator:
   need ability to click on object to select that object. Rename only when already selected
   allow drag reparenting
@@ -1035,6 +1051,7 @@ Colors:
     DONE images (doesn't use color per se)
 
 in general for windows, need better styling.. too much is hardcoded. problems later with high dpi screens
+  for instance revamp interfaces' concept of single pixel lines
 
 make drag and drop selections work
 
@@ -1064,6 +1081,8 @@ ellipseinterface:
 
 command prompt window: command line
   option to record/save/load whole session of prompt window
+  up/down should traverse history
+  control-up/down, break out so you can go anywhere
 
 load document, should load images on display only(done), or create previews in background..
 
@@ -1434,6 +1453,7 @@ improve split window
   simplify pane customization, docking
 
 signature editor  Signature editor Signature Editor signaturei
+  should be able to drag and drop stacks
   making new paper size should try to find matching paper name for a given size
   fold replay should start showing FRONT page of stack, not back. THIS IS A BUG
     if start from whichever, should show inverse of folds to normal as necessary
@@ -1453,7 +1473,7 @@ signature editor  Signature editor Signature Editor signaturei
   tab to cycle through handles for numerical input
   mouse over and drag show numbers on canvas
   export pdf or lo doc template
-  implement work and turn interface
+  implement work and turn, work and tumble interface
   should probably be some kind of tooltip to say shift for fold under.
   binding edge must be same orientation for all stacks and inserts
   need a paper size editor stand alone window, entering numbers should convert name to custom
@@ -1487,6 +1507,13 @@ in number edit boxes, wheel should allow changing numbers, change on digit mouse
 global resources:
   current frame/time
   current language, for conditional text
+
+global Laidout settings:
+  color theme
+  icons
+  tooltips
+  per tool default settings
+  thin line width (default 1 pixel, but this is bad for high dpi screens)
 
 external tools:
   figure out a way to standardize verifying that tool exists and is executable
@@ -1635,14 +1662,17 @@ tiling cloner:  CloneInterface
   map to inkscape tiling clone on export?
 
 Imposition use cases:
-  for same document, have stack of impostions, each with its own page set? would make make docs with body pages
+  for sig editor, need paper partitioner, then stack sections
+  for same document, have stack of impostions, each with its own page set? would make docs with body pages and
     cover easier, without having to implement full "project"
   booklet contains two threads, read one way, flip book over, read the other way
+    remember custom views, to swap rotated display, for instance
   booklet but each paper is trimmed differently, like for tabs
   moebius
   need cutting marks for posterizing for lining up different sheets
   impose only needs access to papergroups
-  may any spread setup temporarily to another imposition on export?
+  maybe any spread setup temporarily to another imposition on export?
+
 Net imposition
   create from papergroup: one papergroup used as page spreads, another used as actual paper group?
   net extra scaling non-functional
@@ -1944,4 +1974,11 @@ DONE bug: select path tool. one point. escape. delete. boom!
 DONE saved file, not showing up in recent 
 DONE remove imlib dependency from ImagePatch
 DONE (not sure why, switched to use explicit gradients) ColorSliders not really showing black unless you set from hex, but solid black is still sending properly
+DONE file live search selects wrong one.. using absolute index instead of file 
+DONE filedialog click on directory icon, crash!
+DONE bug: press 4, wtf?? should zoom to current object
+DONE Can't actually select Recent
+DONE Can't import images to limbo
+DONE searchable menus
+DONE switch to GPL v3? would broaden gegl usage, some of which requires gpl3
 

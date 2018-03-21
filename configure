@@ -257,7 +257,8 @@ echo
 
 if [ "$NUM" != "1" -a $FORCE=="no" ]; then
     echo "Too many problems to proceed!"
-	echo "Use --force to override. You may have to adjust CPPFLAGS and LDFLAGS in Makefiles."
+	echo "Use --force to override. You may have to adjust CPPFLAGS and LDFLAGS in Makefiles,"
+	echo "or pass in includes with --extra-cppflags."
 	echo
 	echo "On debian based systems, you might try installing all dependencies with this:"
 	echo "    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev libcairo2-dev libharfbuzz-dev"

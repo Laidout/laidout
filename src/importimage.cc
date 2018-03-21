@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2010 by Tom Lechner
@@ -57,14 +56,14 @@ namespace Laidout {
 
 ImportImageSettings::ImportImageSettings()
 {
-	settingsname=NULL;
-	filename=NULL;
-	defaultdpi=360;
-	scaleup=scaledown=0;
-	startpage=0;
-	perpage=0;
-	destination=0;
-	destobject=NULL;
+	settingsname = NULL;
+	filename     = NULL;
+	defaultdpi   = 360;
+	scaleup      = scaledown = 0;
+	startpage    = 0;
+	perpage      = 0;
+	destination  = 0;
+	destobject   = NULL;
 }
 
 ImportImageSettings::~ImportImageSettings()
@@ -78,14 +77,14 @@ ImportImageSettings *ImportImageSettings::duplicate()
 {
 	ImportImageSettings *d=new ImportImageSettings();
 	
-	d->settingsname=NULL; //do not dup the name
-	d->filename    =NULL; //do not dup the filename
-	d->defaultdpi  =defaultdpi;
-	d->scaleup     =scaleup=scaledown;
-	d->startpage   =startpage;
-	d->perpage     =perpage;
-	d->destination =destination;
-	d->destobject  =destobject;
+	d->settingsname = NULL; //do not dup the name
+	d->filename     = NULL; //do not dup the filename
+	d->defaultdpi   = defaultdpi;
+	d->scaleup      = scaleup=scaledown;
+	d->startpage    = startpage;
+	d->perpage      = perpage;
+	d->destination  = destination;
+	d->destobject   = destobject;
 
 	for (int c=0; c<alignment.n; c++) d->alignment.push(alignment.e[c]);
 
@@ -717,17 +716,18 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *im
 	if (!images) return -1;
 	if (startpage<0 && settings) startpage=settings->startpage;
 	if (startpage<0) startpage=0;
+	if (!doc && !dynamic_cast<Group*>(settings->destobject)) return -1;
 
 	ImagePlopInfo *info=images, *last=NULL, *flow, *flow2;
 	Group *g;
 	SomeData *outline=NULL;
 	SomeData *obj=NULL;
 
-	int curpage=startpage;
-	int scaleup  =settings->scaleup;
-	int scaledown=settings->scaledown;
-	double dpi=doc->imposition->GetDefaultPaper()->dpi;
-	double curdpi=dpi;
+	int curpage   = startpage;
+	int scaleup   = settings->scaleup;
+	int scaledown = settings->scaledown;
+	double dpi    = doc ? doc->imposition->GetDefaultPaper()->dpi : 300;
+	double curdpi = dpi;
 	double m[6];
 	double x,y,w,h,t,      // temp info while computing each row
 		   ww,hh,          // width and height of page
@@ -741,23 +741,23 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *im
 		nnn;       // number of images in a current page
 	n=0; // total number of images placed, nn is placed for page
 	if (settings->alignment.n) {
-		alignx=settings->alignment.e[0].x;
-		aligny=settings->alignment.e[0].y;
-	} else alignx=aligny=50;
+		alignx = settings->alignment.e[0].x;
+		aligny = settings->alignment.e[0].y;
+	} else alignx = aligny = 50;
 
 	while (info) { // one loop per page
 		//***if (progressfunc) progressfunc(progressarg, curimgi/numimgs);
 
 		nnn=0; //num images on current page
-	
+
 		 // info points to the first image on a page
-		
+
 		DBG cerr <<"  starting page "<<curpage+1<<endl;
 		if (!info->image) { info=info->next; continue; }
-		
-		if (info->page>=0) curpage=info->page;
-		
-		if (curpage>=doc->pages.n) { 
+
+		if (info->page >= 0) curpage = info->page;
+
+		if (doc && curpage >= doc->pages.n) { 
 			DBG cerr <<" adding new page..."<<endl;
 			doc->NewPages(-1,curpage-doc->pages.n+1); // add extra page(s) at end
 		}
@@ -776,18 +776,26 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *im
 		 //*** ultimately this will need to be reworked to more reasonably flow within
 		 //    non-rectangular pages
 		if (outline) { outline->dec_count(); outline=NULL; }
-		if (!outline) outline=doc->imposition->GetPageMarginOutline(curpage,0); //adds 1 count already
-		if (!outline) outline=doc->imposition->GetPageOutline(curpage,0); //adds 1 count already
-		if (!outline) { outline=doc->pages.e[curpage]->pagestyle->outline; if (outline) outline->inc_count(); }
-		ww=outline->maxx-outline->minx;
-		hh=outline->maxy-outline->miny;;
+		if (doc) {
+			if (!outline) outline = doc->imposition->GetPageMarginOutline(curpage,0); //adds 1 count already
+			if (!outline) outline = doc->imposition->GetPageOutline(curpage,0); //adds 1 count already
+			if (!outline) { outline = doc->pages.e[curpage]->pagestyle->outline; if (outline) outline->inc_count(); }
+		}
+
+		if (info->dpi > 0) curdpi = info->dpi; else curdpi = dpi;
+		s = 1./curdpi;
+		scaleup   = info->scaleflag&1;
+		scaledown = info->scaleflag&2;
+
+		if (outline) {
+			ww = outline->maxx-outline->minx;
+			hh = outline->maxy-outline->miny;
+		} else {
+			ww = (info->image->maxx - info->image->minx) / curdpi;
+			hh = (info->image->maxy - info->image->miny) / curdpi;
+		}
+
 		//DBG cerr <<": ww,hh:"<<ww<<','<<hh<<"  x,y,w,h"<<x<<','<<y<<','<<w<<','<<h<<endl;
-		
-		if (info->dpi>0) curdpi=info->dpi; else curdpi=dpi;
-		s=1./curdpi; 
-		scaleup=info->scaleflag&1;
-		scaledown=info->scaleflag&2;
-		
 		 // fit into box if necessary
 		if (info->xywh) {
 			if (s*info->image->maxx>info->xywh[2]) s=info->xywh[2]/info->image->maxx;
@@ -796,16 +804,16 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *im
 			info->image->yaxis(flatpoint(0,s));
 			info->image->origin(flatpoint(info->xywh[0],info->xywh[1]));
 			//*** should probably center within box....
-			g=doc->pages.e[curpage]->e(doc->pages.e[curpage]->layers.n()-1);
+			g = doc ? doc->pages.e[curpage]->e(doc->pages.e[curpage]->layers.n()-1) : dynamic_cast<Group*>(settings->destobject);
 			g->push(info->image); //incs the obj's count
-			info=info->next; 
+			info = info->next; 
 			continue;
 		}
-		 
+
 		 // flow onto page (into a rectangle)
 		rw=rh=rrh=rrw=0;
 		DBG int nr=0; // number of rows so far
-		
+
 		 // find maxperpage
 		int maxperpage=0;
 		int flowtype=1; //0=as will fit, 1=force fit 
@@ -815,23 +823,23 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *im
 			maxperpage++;
 			last=last->next;
 		}
-			
+
 		last=flow=info;
 		do { //one loop per row,
 			 //rows on a single page. if doesn't all fit, then break out of this loop
 			 //and advance main loop one and start on a new page
 			 //flow should be pointing to the first image for a new row
-			if (info->dpi>0) curdpi=info->dpi; else curdpi=dpi;
-			s=1./curdpi; 
+			if (info->dpi>0) curdpi = info->dpi; else curdpi = dpi;
+			s = 1./curdpi;
 		
-			nn=0;        // reset row counter
-			last=flow;   // last is used to point to first image of a row
+			nn = 0;        // reset row counter
+			last = flow;   // last is used to point to first image of a row
 			
-			rw=rh=0;
+			rw = rh = 0;
 			DBG cerr <<"  row number "<<++nr<<endl;
 			while (flow && nnn+nn<maxperpage) { 
 				 // find all for a row
-				obj=flow->image;
+				obj = flow->image;
 				obj->xaxis(flatpoint(s,0));
 				obj->yaxis(flatpoint(0,s));
 				w=(obj->maxx-obj->minx)*s;
@@ -858,8 +866,8 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *im
 			}
 
 			 // apply origin and scaling to all in [last,flow)
-			x=(ww-rw)*alignx + outline->minx;
-			y=hh-rrh-rh/2+outline->miny; // y is centerline for row
+			x = (ww-rw)*alignx + (outline ? outline->minx : 0);
+			y = hh-rrh-rh/2 + (outline ? outline->miny : 0); // y is centerline for row
 			rrh+=rh;
 			if (rw>rrw) rrw=rw;
 			for (flow2=last; flow2!=flow; ) {
@@ -876,14 +884,14 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *im
 		 // push images onto the page, adjusting their origins appropriately.
 		 // info points to the 1st image on the page, flow points to one past the last one on the page
 		DBG cerr <<"  add "<<nn<<" images to page "<<curpage<<endl;
-		flow2=info;
+		flow2 = info;
 		while (info!=flow) {
 			DBG cerr <<"   adding image ..."<<endl;
 			//while (curpage>doc->pages.n) doc->
 			info->image->origin(info->image->origin()+flatpoint(0,(rrh-hh)*aligny));
-			g=doc->pages.e[curpage]->e(doc->pages.e[curpage]->layers.n()-1);
+			g = doc ? doc->pages.e[curpage]->e(doc->pages.e[curpage]->layers.n()-1) : dynamic_cast<Group*>(settings->destobject);
 			g->push(info->image); //incs the obj's count
-			info=info->next;
+			info = info->next;
 		}
 
 		if (scaleup || scaledown) {
@@ -899,20 +907,20 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *im
 			if (scaledown && (rrw>ww || rrh>hh)) {
 				if (hh/rrh>ww/rrw) scale=ww/rrw; else scale=hh/rrh;
 			}
-			if (scale!=1) {
-				nw=rrw*scale;
-				nh=rrh*scale;
+			if (scale != 1) {
+				nw = rrw*scale;
+				nh = rrh*scale;
 				flatpoint no((ww-nw)*alignx, (hh-nh)*aligny); //origin of current images bounding box
 
-				m[0]=m[3]=scale;
+				m[0] = m[3] = scale;
 				//m[4]=no.x-o.x;
 				//m[5]=no.y-o.y;
 
-				while (flow2!=flow) {
+				while (flow2 != flow) {
 					transform_mult(mm,m,flow2->image->m());
 					flow2->image->m(mm);
 					flow2->image->origin(flow2->image->origin()+no-o);
-					flow2=flow2->next;
+					flow2 = flow2->next;
 				}
 			}
 		}

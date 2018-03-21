@@ -7,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2009-2014 by Tom Lechner
@@ -4105,6 +4105,11 @@ int EnumValue::getValueStr(char *buffer,int len)
 	return 0;
 }
 
+int EnumValue::EnumId()
+{
+	return strtol(objectdef->defaultvalue, NULL, 10);
+}
+
 Value *EnumValue::duplicate()
 { return new EnumValue(objectdef,value); }
 
@@ -4382,6 +4387,59 @@ bool isNumberType(Value *v, double *number_ret)
 	double n = getNumberValue(v, &isnum);
 	if (number_ret) *number_ret = n;
 	return isnum;
+}
+
+/*! Return number of values in vector, or 0 if not a vector.
+ * Real or int return 1. Flatvector 2, Spacevector 3, Quaternion 4.
+ * values should be a double[4].
+ */
+int isVectorType(Value *v, double *values)
+{
+	int num = 0;
+	if (values) {
+		values[0] = values[1] = values[2] = values[3] = 0;
+	}
+
+	int vtype = v->type();
+
+	if (vtype==VALUE_Real) {
+		if (values) values[0] = dynamic_cast<DoubleValue*>(v)->d;
+		return 1;
+
+	} else if (vtype==VALUE_Int) {
+		if (values) values[0] = dynamic_cast<IntValue*>(v)->i;
+		return 1;
+
+	} else if (vtype==VALUE_Boolean) {
+		if (values) values[0] = dynamic_cast<BooleanValue*>(v)->i;
+		return 1;
+
+	} else if (vtype==VALUE_Flatvector) {
+		if (values) {
+			values[0] = dynamic_cast<FlatvectorValue*>(v)->v.x;
+			values[1] = dynamic_cast<FlatvectorValue*>(v)->v.y;
+		}
+		return 2;
+		
+	} else if (vtype==VALUE_Spacevector) {
+		if (values) {
+			values[0] = dynamic_cast<SpacevectorValue*>(v)->v.x;
+			values[1] = dynamic_cast<SpacevectorValue*>(v)->v.y;
+			values[2] = dynamic_cast<SpacevectorValue*>(v)->v.z;
+		}
+		return 3;
+		
+	} else if (vtype==VALUE_Quaternion) {
+		if (values) {
+			values[0] = dynamic_cast<QuaternionValue*>(v)->v.x;
+			values[1] = dynamic_cast<QuaternionValue*>(v)->v.y;
+			values[2] = dynamic_cast<QuaternionValue*>(v)->v.z;
+			values[3] = dynamic_cast<QuaternionValue*>(v)->v.w;
+		}
+		return 4;
+	}
+
+	return num;
 }
 
 //! Compare nonwhitespace until period with field, return 1 for yes, 0 for no.

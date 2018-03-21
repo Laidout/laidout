@@ -24,7 +24,7 @@ VERSION 0.097
        Make sure scribus can export to 1.5
 (done) Experimental perspective transform interface
 (done) Experimental voronoi interface
-       Experimental node interface
+(done) Experimental node interface (done aside from large todo list)
 (done) fix tooltips
 
 
