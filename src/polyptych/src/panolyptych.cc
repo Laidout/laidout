@@ -75,8 +75,8 @@ const char *version()
 
 
 //default window size
-#define SCREENWIDTH  1000
-#define SCREENHEIGHT 800
+#define WINDOWWIDTH  1000
+#define WINDOWHEIGHT 800
 
 
 char *spherefile=NULL;
@@ -309,7 +309,8 @@ int main(int argc, char **argv)
 									 spherefile?spherefile:"Panolyptych",
 									 spherefile?spherefile:"Panolyptych",
 									 0,
-									 0,0,SCREENWIDTH,SCREENHEIGHT, 0);
+									 0,0, WINDOWWIDTH,WINDOWHEIGHT, 0);
+									 //1910-WINDOWWIDTH,0, WINDOWWIDTH,WINDOWHEIGHT, 0); //put on right side of screen
 	 //set ui stuff
 	w->FontAndSize(consolefontfile,global_fontsize);
 
