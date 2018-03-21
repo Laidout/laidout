@@ -48,7 +48,7 @@ class PanoViewWindow : public Laxkit::anXWindow
 	GLfloat movestep;
 	GLuint spheretexture, flattexture;
 	int rendermode, mode, oldmode;
-	int autorepeat, curobj;
+	int autorepeat, current_object;
 	double fovy;
 	int view;
 	double cylinderscale;
@@ -63,6 +63,7 @@ class PanoViewWindow : public Laxkit::anXWindow
 	int draw_texture;
 	int draw_overlays;
 	int draw_papers;
+	int free_rotate;
 
 	char *polyptychfile;
 	char *polyhedronfile;
@@ -105,6 +106,7 @@ class PanoViewWindow : public Laxkit::anXWindow
 	Thing camera_shape;
 	Laxkit::PtrStack<EyeType> cameras;
 	int current_camera;
+	int pano_camera;
 	Laxkit::PtrStack<Light> lights;
 	struct Material lightmaterial;
 	void setlighting(void);
@@ -163,6 +165,7 @@ class PanoViewWindow : public Laxkit::anXWindow
 							double alpha);
 	virtual void Refresh3d();
 	virtual void drawHelp();
+	virtual void CorrectTilt();
 
 	 //net building
 	virtual void remapCache(int start=-1, int end=-1);
