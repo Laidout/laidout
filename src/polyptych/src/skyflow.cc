@@ -1,6 +1,4 @@
 //
-// remapsphere.cc: rotate an equirectangular panorama, output the rotated equirectangular
-//
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -165,6 +163,91 @@ int RemapSphere(Image spheremap, Basis &basis)
 	return 0;
 }
 
+/*! Make flow such that motion is from one pole to the other.
+ * Used for a uv sphere tilted 90 degrees so poles lay on the horizon.
+ * Motion diminishes at poles, and also around horizon, which will
+ * be a great circle connecting the poles.
+ */
+int MakeFlow(const char *outfile, int width, int height, int magnitude)
+{
+	if (width<=0 || height<=0) {
+		cerr <<"Bad dimensions for outfile in MakeFlow()"<<endl;
+		return 1;
+	}
+
+	cout << "Make flowmap, "<<width<<" x "<<height<<endl;
+
+
+	 //figure out extension
+	bool tif = false, jpg = false; //, png = false;
+
+	const char *ext = strrchr(outfile, '.');
+	if (ext) ext++;
+	if (!ext) {
+		cerr <<"Missing extension on outfile! assuming tif."<<endl;
+		tif = true;
+
+	} else if (!strcasecmp(ext, "tiff") || !strcasecmp(ext, "tif")) {
+		tif = true;
+
+	} else if (!strcasecmp(ext, "jpg") || !strcasecmp(ext, "jpeg")) {
+		jpg = true;
+
+	} else {
+		cerr <<"Arg! Unknown output file type!! Aborting!"<<endl;
+		return 1;
+	}
+
+
+
+	 //create the stuff
+	Geometry geometry(width, height);
+	ColorRGB color;
+	Image outimage(geometry,color);
+
+	double theta, gamma;
+	double vpart, hpart, v;
+
+	for (int x=0; x<width; x++) {
+		// //xx and yy are parts of coordinates in xyz space, range [-1,1]
+		//for (c2=0; c2<AA; c2++) xx[c2]=((double)x+aai*(c2+.5))/defaultimagewidth*2-1;
+
+		theta = x/(double)width * 2*M_PI;
+		hpart = (cos(2*theta)+1)/2;
+
+		for (int y=0; y<height; y++) {
+			gamma = (y - height/2.0)/height*2.0;
+			vpart = sqrt(1-gamma*gamma);
+
+			v = hpart * vpart; //this is 0..1
+
+			color.red  (.5);
+			color.green(.5+v/2);
+			color.blue (.5);
+			outimage.pixelColor(x,y,color);
+		}
+	}
+
+
+
+	 //save the image somewhere..
+	if (tif) {
+		cout <<"Saving as tiff to "<<outfile<<endl;
+		outimage.magick("TIFF");
+		outimage.compressType(LZWCompression);
+		outimage.depth(8);
+		outimage.write(outfile);
+
+	} else if (jpg) {
+		cout <<"Saving as jpg to "<<outfile<<endl;
+		outimage.magick("JPG");
+		outimage.quality(75);
+		outimage.write(outfile);
+	}
+
+	return 0;
+}
+
 
 void RotateAroundX(Basis &basis, double degrees)
 {
@@ -196,6 +279,7 @@ const char *usage =
 	"Usage:\n"
 	"  remapsphere infile.jpg -x 15 -y 90 -z 0 -o outfile.jpg\n"
 	"  remapsphere -w 2048 -h 1024 -f -m 100 -o flowmap.jpg  #h defaults to half width. m is pixel magnitude of flow\n"
+	"  remapsphere infile.jpg -f -m 100 -o flowmap.jpg  #take dimensions from it\n"
   ;
 
 
@@ -248,6 +332,10 @@ int main(int argc,char **argv)
 					outfile = argv[c];
 				} else throw(4);
 
+			} else if (!strcmp(argv[c], "-f")) {
+				 //make cloud-ish flow map
+				action = 'f';
+
 			} else if (!strcmp(argv[c], "-w")) {
 				c++;
 				if (c < argc) {
@@ -298,6 +386,25 @@ int main(int argc,char **argv)
 	}
 
 
+	if (action == 'f') {
+		 //Generate a spherical flowmap suitable for clouds
+
+		if (!outfile) {
+			cerr <<"Missing output file!\n" << usage << endl;
+			exit(1);
+		}
+
+		if (infile) {
+			width = sphere.baseColumns();
+			height = sphere.baseRows();
+		}
+
+		if (width <=0 && height <=0) { width=2048; height=1024; }
+		else if (width <= 0 && height>0) { width = height*2; }
+		else if (width > 0 && height <= 0) { height = width/2; }
+
+		return MakeFlow(outfile, width,height, magnitude);
+	}
 
 
 	if (!infile) {
