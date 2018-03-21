@@ -12,7 +12,20 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now: 
 
+switch to net imposition, net render lines too big
+
+asymmetric cuts are not right for front sheets on spread generation (done), also on sig editor
+
 back to not maximizing properly on default ubuntu
+
+debug registration, cut marks, trim marks
+  custom papergroup, add registration/bars/, can't move it
+  DONE can't add cut marks to signatures
+
+object indicator:
+  click on object, does not update selection
+
+booklet, use paper group tool, default paper group no longer displays
 
 ------------ other bugs:
 
@@ -134,10 +147,6 @@ test:
   make some test scripts for command line testing
 DONE update help page
 DONE put rss/g+ links on all menu pages.. 
-
-color strips for full transparent should show checkers in all strips, not just the alpha strip
-
-switch to GPL v3? would broaden gegl usage, some of which requires gpl3
 
 fontdialog:
   select font inappropriately repositions view
@@ -728,6 +737,8 @@ test:
   each export filter (via command line in new script in examples.. ignoring problems in eps)
   make some test scripts for command line testing
 
+
+color strips for full transparent should show checkers in all strips, not just the alpha strip
 
 MenuInfo AddItem functions are really terrible overload nightmare, need something simpler like, with no menu combined:
   AddItem      (const char *name, int id = 0, int info = 0, int where = -1);
@@ -1442,6 +1453,7 @@ improve split window
   simplify pane customization, docking
 
 signature editor  Signature editor Signature Editor signaturei
+  should be able to drag and drop stacks
   making new paper size should try to find matching paper name for a given size
   fold replay should start showing FRONT page of stack, not back. THIS IS A BUG
     if start from whichever, should show inverse of folds to normal as necessary
@@ -1461,7 +1473,7 @@ signature editor  Signature editor Signature Editor signaturei
   tab to cycle through handles for numerical input
   mouse over and drag show numbers on canvas
   export pdf or lo doc template
-  implement work and turn interface
+  implement work and turn, work and tumble interface
   should probably be some kind of tooltip to say shift for fold under.
   binding edge must be same orientation for all stacks and inserts
   need a paper size editor stand alone window, entering numbers should convert name to custom
@@ -1968,4 +1980,5 @@ DONE bug: press 4, wtf?? should zoom to current object
 DONE Can't actually select Recent
 DONE Can't import images to limbo
 DONE searchable menus
+DONE switch to GPL v3? would broaden gegl usage, some of which requires gpl3
 
