@@ -255,6 +255,7 @@ HedronWindow::HedronWindow(anXWindow *parnt,const char *nname,const char *ntitle
 	draw_overlays=1;
 	draw_edges=1;
 	draw_seams=3;
+	free_rotate = false;
 
 	mouseover_overlay=-1;
 	mouseover_index=-1;
@@ -2190,7 +2191,7 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 //		if (angle) {
 //			spacepoint axis;
 //			axis=cameras.e[current_camera]->m.z;
-//			things.e[curobj]->RotateAbs(angle*180/M_PI, axis.x,axis.y,axis.z);
+//			things.e[curobj]->RotateGlobal(angle*180/M_PI, axis.x,axis.y,axis.z);
 //		}
 
 		needtodraw=1;
@@ -2337,7 +2338,7 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 		if (d.x) { //rotate thing around camera z
 			spacepoint axis;
 			axis=d.x*cameras.e[current_camera]->m.z;
-			things.e[curobj]->RotateAbs(norm(d)/5, axis.x,axis.y,axis.z);
+			things.e[curobj]->RotateGlobal(norm(d)/5, axis.x,axis.y,axis.z);
 			needtodraw=1;
 		}
 		leftb=p;
@@ -2352,16 +2353,16 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 		needtodraw=1;
 
 		//-------------------------
-		things.e[curobj]->RotateAbs(norm(d)/5, axis.x,axis.y,axis.z);
-		//things.e[curobj]->Rotate(norm(d)/5, axis.x,axis.y,axis.z);
+		things.e[curobj]->RotateGlobal(norm(d)/5, axis.x,axis.y,axis.z);
+		//things.e[curobj]->RotateLocal(norm(d)/5, axis.x,axis.y,axis.z);
 
 		//-------------------------
 		//			if (d.y) {
-		//				things.e[curobj]->Rotate(d.y/5, 0,0,1);
+		//				things.e[curobj]->RotateLocal(d.y/5, 0,0,1);
 		//				needtodraw=1;
 		//			}
 		//			if (d.x) {
-		//				things.e[curobj]->Rotate(d.x/5, 0,1,0);
+		//				things.e[curobj]->RotateLocal(d.x/5, 0,1,0);
 		//				needtodraw=1;
 		//			}
 		//-------------------------
@@ -3768,32 +3769,32 @@ int HedronWindow::PerformAction(int action)
 		return 0;
 			
 	} else if (action==HEDA_ObjectRotateX) {
-		things.e[curobj]->Rotate(5., 0., 1., 0.);
+		things.e[curobj]->RotateLocal(5., 0., 1., 0.);
 		needtodraw=1;
 		return 0;
 			
 	} else if (action==HEDA_ObjectRotateXr) {
-		things.e[curobj]->Rotate(-5., 0., 1., 0.);
+		things.e[curobj]->RotateLocal(-5., 0., 1., 0.);
 		needtodraw=1;
 		return 0;
 			
 	} else if (action==HEDA_ObjectRotateY) {
-		things.e[curobj]->Rotate(5., 0., 0., 1.);
+		things.e[curobj]->RotateLocal(5., 0., 0., 1.);
 		needtodraw=1;
 		return 0;
 			
 	} else if (action==HEDA_ObjectRotateYr) {
-		things.e[curobj]->Rotate(-5., 0., 0., 1.);
+		things.e[curobj]->RotateLocal(-5., 0., 0., 1.);
 		needtodraw=1;
 		return 0;
 			
 	} else if (action==HEDA_ObjectRotateZ) {
-		things.e[curobj]->Rotate(-5., 1., 0., 0.);
+		things.e[curobj]->RotateLocal(-5., 1., 0., 0.);
 		needtodraw=1;
 		return 0;
 			
 	} else if (action==HEDA_ObjectRotateZr) {
-		things.e[curobj]->Rotate(5., 1., 0., 0.);
+		things.e[curobj]->RotateLocal(5., 1., 0., 0.);
 		needtodraw=1;
 		return 0;
 

@@ -136,6 +136,7 @@ class HedronWindow : public Laxkit::anXWindow
 	int draw_texture;
 	int draw_overlays;
 	int draw_papers;
+	int free_rotate;
 
 	 //hedron specifics
 	GLuint spheretexture, flattexture;
