@@ -33,7 +33,7 @@ const int AA=2; //how many pixels across to antialias
  * Motion diminishes at poles, and also around horizon, which will
  * be a great circle connecting the poles.
  */
-int MakeFlow(const char *outfile, int width, int height, int magnitude)
+int MakeFlow(const char *outfile, int width, int height, int magnitude, int strategy)
 {
 	if (width<=0 || height<=0) {
 		cerr <<"Bad dimensions for outfile in MakeFlow()"<<endl;
@@ -74,24 +74,75 @@ int MakeFlow(const char *outfile, int width, int height, int magnitude)
 	double theta, gamma;
 	double vpart, hpart, v;
 
-	for (int x=0; x<width; x++) {
-		// //xx and yy are parts of coordinates in xyz space, range [-1,1]
-		//for (c2=0; c2<AA; c2++) xx[c2]=((double)x+aai*(c2+.5))/defaultimagewidth*2-1;
+	
+	if (strategy == 1) {
+		 //based on global wind speed v, compute actual displacement
 
-		theta = x/(double)width * 2*M_PI;
-		hpart = (cos(2*theta)+1)/2;
+		spacevector wind(1,0,0);
+		spacevector pos, pos2;
+		double theta2, gamma2, dtheta, dgamma;
 
-		for (int y=0; y<height; y++) {
-			gamma = 2.*y/height - 1;
-			vpart = sqrt(1-gamma*gamma);
+		for (int x=0; x<width; x++) {
+			// //xx and yy are parts of coordinates in xyz space, range [-1,1]
+			//for (c2=0; c2<AA; c2++) xx[c2]=((double)x+aai*(c2+.5))/defaultimagewidth*2-1;
 
-			v = hpart * vpart; //this is 0..1
+			theta = x/(double)width * 2*M_PI;
 
-			color.red  (.5);
-			color.green(.5+v/2);
-			color.blue (.5);
-			color.alpha(.0);
-			outimage.pixelColor(x,y,color);
+			for (int y=0; y<height; y++) {
+				gamma = (2.*y/height - 1) * M_PI/2;
+
+				pos.z = sin(gamma);
+				pos.x = cos(gamma) * cos(theta);
+				pos.y = cos(gamma) * sin(theta);
+
+				if (pos.z != 0) {
+					pos.x /= pos.z;
+					pos.y /= pos.z;
+					pos.z = 1;
+
+					pos += wind;
+					pos.normalize();
+
+				} else {
+				}
+
+				gamma2 = asin(pos.z);
+				theta2 = atan2(pos.y, pos.x);
+
+				dtheta = (theta2 - theta) / M_PI * 2;
+				if (dtheta > .5) dtheta = .5; else if (dtheta < -.5) dtheta = -.5;
+
+				dgamma = (gamma2 - gamma) / M_PI / 2;
+
+				color.red  (.5 + dtheta);
+				color.green(.5 + dgamma / M_PI * 2);
+				color.blue (.5);
+				color.alpha(.0);
+				outimage.pixelColor(x,y,color);
+			}
+		}
+
+	} else {
+		 //only pole to pole
+		for (int x=0; x<width; x++) {
+			// //xx and yy are parts of coordinates in xyz space, range [-1,1]
+			//for (c2=0; c2<AA; c2++) xx[c2]=((double)x+aai*(c2+.5))/defaultimagewidth*2-1;
+
+			theta = x/(double)width * 2*M_PI;
+			hpart = (cos(2*theta)+1)/2;
+
+			for (int y=0; y<height; y++) {
+				gamma = 2.*y/height - 1;
+				vpart = sqrt(1-gamma*gamma);
+
+				v = hpart * vpart; //this is 0..1
+
+				color.red  (.5);
+				color.green(.5+v/2);
+				color.blue (.5);
+				color.alpha(.0);
+				outimage.pixelColor(x,y,color);
+			}
 		}
 	}
 
@@ -169,6 +220,7 @@ int main(int argc,char **argv)
 	int width = 0;
 	int height = 0;
 	int magnitude = 100;
+	int strategy = 0;
 
 	try {
 		double angle;
@@ -222,6 +274,10 @@ int main(int argc,char **argv)
 					magnitude = strtol(argv[c], NULL, 10);
 				} else throw(6);
 
+			} else if (!strcmp(argv[c], "-s")) {
+				strategy = strtol(argv[c], NULL, 10);
+
+
 			} else if (argv[c][0] != '-') {
 				infile = argv[c];
 
@@ -270,7 +326,7 @@ int main(int argc,char **argv)
 	else if (width <= 0 && height>0) { width = height*2; }
 	else if (width > 0 && height <= 0) { height = width/2; }
 
-	return MakeFlow(outfile, width,height, magnitude);
+	return MakeFlow(outfile, width,height, magnitude, strategy);
 
 
 }
