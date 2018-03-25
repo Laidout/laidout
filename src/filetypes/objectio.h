@@ -42,9 +42,9 @@ class ObjectIO : public FileFilter
 	virtual int Serializable(int what) = 0; //if can serialize to what format. 0 is default Laidout style
 
 	virtual int CanImport(const char *file, const char *first500) = 0; //return if in theory it can import
-	virtual int CanExport(anObject *object) = 0; //if null, then return if in theory it can export at all
-	virtual int Import(const char *file, anObject **object_ret, anObject *context, Laxkit::ErrorLog &log) = 0; //ret # of failing errors
-	virtual int Export(const char *file, anObject *object,      anObject *context, Laxkit::ErrorLog &log) = 0; //ret # of failing errors
+	virtual int CanExport(Laxkit::anObject *object) = 0; //if null, then return if in theory it can export at all
+	virtual int Import(const char *file, Laxkit::anObject **object_ret, Laxkit::anObject *context, Laxkit::ErrorLog &log) = 0; //ret # of failing errors
+	virtual int Export(const char *file, Laxkit::anObject *object,      Laxkit::anObject *context, Laxkit::ErrorLog &log) = 0; //ret # of failing errors
 };
 
 
