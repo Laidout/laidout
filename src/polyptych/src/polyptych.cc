@@ -308,7 +308,7 @@ int main(int argc, char **argv)
 		 //load in polyptych file if and only if no polyhedron file given
 		Attribute *att=NULL;
 		Attribute polyatt;
-		polyatt.dump_in(polyptychfile,NULL);
+		polyatt.dump_in(polyptychfile, 0);
 		makestr(polyhedronfile,NULL);
 
 		touch_recently_used_xbel(polyptychfile, "application/x-polyptych-doc",
