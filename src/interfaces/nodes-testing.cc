@@ -52,81 +52,6 @@ void NodePanel::ShowAddButton()
 
 
 
-//------------------------ ObjectFilter ------------------------
-
-/*! \class ObjectFilter
- * Container for filter nodes that transform a DrawableObject.
- */
-
-class ObjectFilter : public NodeGroup
-{
-  public:
-	DrawableObject *parent; //assume parent owns *this
-
-	ObjectFilter(DrawableObject *nparent);
-	virtual ~ObjectFilter();
-
-	virtual NodeBase *Duplicate();
-	virtual int Update();
-	virtual int GetStatus();
-
-	virtual DrawableObject *FinalObject();
-	virtual int FindInterfaceNodes();
-};
-
-ObjectFilter::ObjectFilter(DrawableObject *nparent)
-{ ***
-	parent = nparent;
-}
-
-ObjectFilter::~ObjectFilter()
-{ ***
-}
-
-
-NodeBase *ObjectFilter::Duplicate()
-{ ***
-	ObjectFilter *node = new ObjectFilter(NULL);
-	node->DuplicateBase(this);
-	return node;
-}
-
-int ObjectFilter::Update()
-{ ***
-}
-
-int ObjectFilter::GetStatus()
-{ ***
-}
-
-
-DrawableObject *ObjectFilter::FinalObject()
-{
-	NodeProperty *prop = outputs->FindProperty("Out");
-	return dynamic_cast<DrawableObject*>(prop->GetData());
-}
-
-int ObjectFilter::FindInterfaceNodes(NodeBase *group)
-{
-	if (!group) {
-		interfaces.flush();
-		group = this;
-	}
-
-	NodeBase *node;
-	InterfaceNode *inode;
-	NodeGroup *gnode;
-
-	for (int c=0; c<group->nodes.n; c++) {
-		node = group->nodes.e[c]
-		inode = dynamic_cast<InterfaceNode*>(node);
-		if (inode) interfaces.push(inode);
-
-		gnode = dynamic_cast<NodeBase*>(node);
-		if (gnode) FindInterfaceNodes(gnode);
-	}
-}
-
 
 //------------------------ InterfaceNode ------------------------
 
@@ -189,6 +114,7 @@ class PerspectiveNode
 {
   public:
 	LaxInterfaces::anInterface *interface;
+
 	PerspectiveTransform *transform;
 	bool render_preview;
 	double render_dpi;
@@ -345,6 +271,61 @@ int PerspectiveNode::Update()
 //		***
 //	}
 
+}
+
+
+//------------------------ ObjectNode ------------------------
+
+/*! \class Node to output any old object.
+ */
+
+class ObjectNode
+{
+  public:
+	ObjectNode(int selectable, int isdeletable, anObject *obj, int absorb);
+	virtual ~ObjectNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual int UpdatePreview();
+};
+
+ObjectNode::ObjectNode(const char *newlabel, int selectable, int isdeletable, anObject *obj, int absorb)
+{
+	makestr(Name, newlabel);
+	deletable = isdeletable;
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output,  true, "Object", obj,absorb, _("Object"), NULL, 0, false));
+}
+
+ObjectNode::~ObjectNode()
+{
+}
+
+int ObjectNode::UpdatePreview()
+{
+	// *** copy the object's preview
+	***
+	return 1;
+}
+
+NodeBase *ObjectNode::Duplicate()
+{
+	ObjectNode *node = new PathsDataNode(NULL);
+	node->DuplicateBase(this);
+	return node;
+}
+
+int ObjectNode::Update()
+{
+	SomeData *obj = dynamic_cast<SomeData *>(FindProperty("Object")->GetData());
+	if (show_preview && obj && obj->modtime > total_preview->modtime) UpdatePreview();
+	return NodeBase::Update();
+}
+
+int ObjectNode::GetStatus()
+{
+	return NodeBase::GetStatus();
 }
 
 
