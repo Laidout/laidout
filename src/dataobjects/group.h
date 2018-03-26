@@ -23,7 +23,7 @@ namespace Laidout {
 
 //------------------------------ Group ----------------------------
 
-typedef DrawableObject Group;
+//typedef DrawableObject Group;
 
 
 } //namespace Laidout
