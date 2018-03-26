@@ -13,13 +13,14 @@
 // Copyright (C) 2007-2009,2012 by Tom Lechner
 //
 
-#include <lax/strmanip.h>
-#include <lax/fileutils.h>
-
-#include "../language.h"
 #include "filefilters.h"
+#include "../document.h"
+#include "../language.h"
 #include "../laidout.h"
 #include "../stylemanager.h"
+
+#include <lax/strmanip.h>
+#include <lax/fileutils.h>
 
 
 #define DBG

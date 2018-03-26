@@ -18,7 +18,9 @@
 #include <lax/errorlog.h>
 #include <lax/anxapp.h>
 #include <lax/dump.h>
-#include "../document.h"
+
+#include "../papersizes.h"
+#include "../dataobjects/group.h"
 #include "../calculator/values.h"
 #include "../plugins/plugin.h"
 
@@ -29,6 +31,7 @@ namespace Laidout {
 
 class Document;
 class DocumentExportConfig;
+
 
 //------------------------------------- FileFilter -----------------------------------
 
