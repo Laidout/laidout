@@ -22,7 +22,6 @@
 #include <lax/interfaces/groupdata.h>
 #include <lax/interfaces/pathinterface.h>
 #include "objectcontainer.h"
-#include "objectfilter.h"
 #include "../guides.h"
 #include "../calculator/values.h"
 //#include "objectfilter.h"
@@ -37,6 +36,7 @@ class DrawableObject;
 class PointAnchor;
 class Document;
 class Page;
+//class ObjectFilter;
 
 
 //---------------------------------- DrawObjectChain ---------------------------------
@@ -158,9 +158,11 @@ class DrawableObject :  virtual public ObjectContainer,
 	//Laxkit::RefPtrStack<ObjectStream> path_streams; //applied to areapath outline
 	//Laxkit::RefPtrStack<ObjectStream> area_streams; //applied into areapath area
 
-	//Laxkit::RefPtrStack<ObjectFilter> filters;
+	//--filters:
 	double alpha; //object alpha applied to anything drawn by this and kids
 	double blur; //one built in filter?
+	Laxkit::anObject *filter; // *** can't declare as ObjectFilter directly due to absurd filefilter.h definitions.. need to fix this!
+	DrawableObject *FinalObject();
 
 	//Laxkit::RefPtrStack<anObject *> refs; //what other resources this objects depends on?
 
@@ -236,6 +238,8 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 	                     Value **value_ret, Laxkit::ErrorLog *log);
 };
+
+typedef DrawableObject Group;
 
 
 //------------------------------------ AffineValue ------------------------------------------------

@@ -20,6 +20,7 @@
 #include "../drawdata.h"
 #include "../language.h"
 #include "../stylemanager.h"
+#include "objectfilter.h"
 
 #include <lax/refptrstack.cc>
 
@@ -191,12 +192,13 @@ DrawObjectChain::~DrawObjectChain()
 
 DrawableObject::DrawableObject()
 {
-	clip=NULL;
-	clip_path=wrap_path=inset_path=NULL;
-	autowrap=autoinset=0;
+	clip = NULL;
+	clip_path = wrap_path = inset_path=NULL;
+	autowrap = autoinset = 0;
 
-	alpha=1;
-	blur=0;
+	alpha  = 1;
+	blur   = 0;
+	filter = NULL;
 
 	parent_link=NULL;
 
@@ -208,12 +210,13 @@ DrawableObject::DrawableObject()
  */
 DrawableObject::~DrawableObject()
 {
-	if (clip) clip->dec_count();
-	if (clip_path) clip_path->dec_count();
-	if (wrap_path) wrap_path->dec_count();
+	if (clip)       clip      ->dec_count();
+	if (clip_path)  clip_path ->dec_count();
+	if (wrap_path)  wrap_path ->dec_count();
 	if (inset_path) inset_path->dec_count();
+	if (filter)     filter    ->dec_count();
 
-	if (chains.n) chains.flush();
+	if (chains.n)   chains.flush();
 
 	if (parent_link) delete parent_link; //don't delete parent itself.. that is a one way reference
 }
@@ -235,6 +238,21 @@ int DrawableObject::Selectable()
  */
 LaxInterfaces::SomeData *DrawableObject::EquivalentObject()
 { return NULL; }
+
+/*! Return an object representing *this transformed by filter.
+ * If no filter, return this.
+ */
+DrawableObject *DrawableObject::FinalObject()
+{
+	if (!filter)return this;
+
+	ObjectFilter *ofilter = dynamic_cast<ObjectFilter*>(filter);
+	DrawableObject *fobj = (ofilter ? dynamic_cast<DrawableObject*>(ofilter->FinalObject()) : NULL);
+	if (fobj) return fobj;
+
+	DBG cerr << " *** Warning! filter did not return a valid object for "<<Id()<<"!"<<endl;
+	return this;
+}
 
 /*! If index out or range, remove top.
  * Return 0 for success, nonzero error.
@@ -456,9 +474,13 @@ LaxInterfaces::SomeData *DrawableObject::duplicate(LaxInterfaces::SomeData *dup)
 	//meta? and tags
 	//iohints
 
-	 //filters
-	d->alpha=alpha;
-	d->blur=blur;
+	 //filter
+	d->alpha = alpha;
+	d->blur  = blur;
+	if (filter) {
+		ObjectFilter *ofilter = dynamic_cast<ObjectFilter*>(filter);
+		d->filter = ofilter->Duplicate();
+	}
 
 	 //kids
 	SomeData *obj;
@@ -843,7 +865,7 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext 
 		fprintf(f,"%siohints ...       #(optional) object level i/o leftovers from importing\n",spc);
 		fprintf(f,"%smetadata ...      #(optional) object level metadata\n",spc);
 		fprintf(f,"%stags tag1 \"tag 2\" #(optional) list of string tags\n",spc);
-		fprintf(f,"%sfilters           #(optional) list of filters\n",spc);
+		fprintf(f,"%sfilter            #(optional) Nodes defining filter transformationss\n",spc);
 		fprintf(f,"%salignmentrule align (a1x,a1y) (a2x,a2y)  #(optional) if different than simple matrix\n",spc);
 		fprintf(f,"%s  ...\n",spc);
 		fprintf(f,"%skids          #child object list...\n",spc);
@@ -892,13 +914,11 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext 
 		delete[] str;
 	}
 
-//	if (filters.n) {
-//		fprintf(f,"%sfilters\n",spc);
-//		for (int c=0; c<filters.n; c++) {
-//			fprintf(f,"%s  filter\n",spc);
-//			filters.e[c]->dump_out(f,indent+4,what,context);
-//		}
-//	}
+	if (filter) {
+		ObjectFilter *ofilter = dynamic_cast<ObjectFilter*>(filter);
+		fprintf(f,"%sfilter\n",spc);
+		ofilter->dump_out(f, indent+4,what,context);
+	}
 
 	if (anchors.n) {
 		PointAnchor *a;
@@ -1236,7 +1256,9 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Du
 		} else if (foundconfig==0 && !strcmp(name,"config")) {
 			foundconfig=1;
 
-		//} else if (!strcmp(name,"filters")) {
+		} else if (!strcmp(name,"filter")) {
+			ObjectFilter *ofilter = new ObjectFilter(this);
+			ofilter->dump_in_atts(att->attributes.e[c], 0, context);
 		}
 	}
 
