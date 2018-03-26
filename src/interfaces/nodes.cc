@@ -707,8 +707,7 @@ class MathNode1 : public NodeBase
 	int last_status;
 	clock_t status_time;
 
-	int operation; //see MathNodeOps
-	MathNode1(int op=0, double aa=0);
+	MathNode1(int op=0, double aa=0); //see MathNodeOps for op
 	virtual ~MathNode1();
 	virtual int UpdateThisOnly();
 	virtual int Update();
@@ -725,10 +724,9 @@ class MathNode2 : public NodeBase
 	int last_status;
 	clock_t status_time;
 
-	int operation; //see MathNode2Ops
 	int numargs;
 	double a,b,result;
-	MathNode2(int op=0, double aa=0, double bb=0);
+	MathNode2(int op=0, double aa=0, double bb=0); //see 2 arg MathNodeOps for op
 	virtual ~MathNode2();
 	virtual int UpdateThisOnly();
 	virtual int Update();
@@ -749,14 +747,14 @@ MathNode1::MathNode1(int op, double aa)
 	last_status = 1;
 	status_time = 0;
 
-	operation = op;
-
 	ObjectDef *enumdef = GetMathNode1Def();
 	enumdef->inc_count();
 
-
 	EnumValue *e = new EnumValue(enumdef, 0);
+	e->SetFromId(op);
 	enumdef->dec_count();
+	const char *Nm = e->EnumLabel();
+	if (Nm) makestr(Name, Nm);
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, "Op", e, 1));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "A", new DoubleValue(aa), 1));
@@ -772,7 +770,13 @@ MathNode1::~MathNode1()
 
 NodeBase *MathNode1::Duplicate()
 {
-	MathNode1 *newnode = new MathNode1;
+	int operation = -1;
+	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
+	ObjectDef *edef = ev->GetObjectDef();
+	edef->getEnumInfo(ev->value, NULL,NULL,NULL, &operation);
+
+	MathNode1 *newnode = new MathNode1(operation);
+
 	Value *a = properties.e[1]->GetData();
 	if (a) {
 		a = a->duplicate();
@@ -831,10 +835,11 @@ int MathNode1::UpdateThisOnly()
 
 	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
 	ObjectDef *def = ev->GetObjectDef();
-	const char *nm = NULL;
+	const char *nm = NULL, *Nm = NULL;
 	double result=0;
-	operation = OP_None;
-	def->getEnumInfo(ev->value, &nm, NULL,NULL, &operation);
+	int operation = OP_None;
+	def->getEnumInfo(ev->value, &nm, &Nm, NULL, &operation);
+	makestr(Name, Nm);
 
 
 	if (aisnum == 1) {
@@ -1007,7 +1012,6 @@ MathNode2::MathNode2(int op, double aa, double bb)
 
 	a=aa;
 	b=bb;
-	operation = op;
 	numargs = 2;
 
 	ObjectDef *enumdef = GetMathNode2Def();
@@ -1015,6 +1019,7 @@ MathNode2::MathNode2(int op, double aa, double bb)
 
 
 	EnumValue *e = new EnumValue(enumdef, 0);
+	e->SetFromId(op);
 	enumdef->dec_count();
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, "Op", e, 1));
@@ -1038,7 +1043,12 @@ MathNode2::~MathNode2()
 
 NodeBase *MathNode2::Duplicate()
 {
-	MathNode2 *newnode = new MathNode2;
+	int operation = -1;
+	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
+	ObjectDef *edef = ev->GetObjectDef();
+	edef->getEnumInfo(ev->value, NULL,NULL,NULL, &operation);
+
+	MathNode2 *newnode = new MathNode2(operation);
 	Value *a = properties.e[1]->GetData();
 	if (a) {
 		a = a->duplicate();
@@ -1110,9 +1120,10 @@ int MathNode2::UpdateThisOnly()
 
 	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
 	ObjectDef *def = ev->GetObjectDef();
-	const char *nm = NULL;
-	operation = OP_None;
-	def->getEnumInfo(ev->value, &nm, NULL,NULL, &operation);
+	const char *nm = NULL, *Nm = NULL;
+	int operation = OP_None;
+	def->getEnumInfo(ev->value, &nm, &Nm, NULL, &operation);
+	makestr(Name, Nm);
 
 
 	if (aisnum == 1 && bisnum == 1) {
