@@ -14,6 +14,7 @@
 //
 
 #include "objectfilter.h"
+#include "drawableobject.h"
 
 #include <lax/refptrstack.cc>
 
@@ -21,10 +22,14 @@
 namespace Laidout {
 
 
+//------------------------ ObjectFilter ------------------------
 
-//----------------------------- ObjectFilter ---------------------------------
 /*! \class ObjectFilter
- * \brief Class that modifies any DrawableObject somehow.
+ * Container for filter nodes that transform a DrawableObject.
+ * These are meant to be owned by either a DrawableObject or a Resource (via parent variable).
+ * If neither of these, it is a free, local object.
+ * ObjectFilter is implemented as a NodeGroup, with a few convenience functions
+ * specific to operating on parent objects.
  *
  * This could be blur, contrast, saturation, distort, etc. 
  *
@@ -33,24 +38,75 @@ namespace Laidout {
  * representing the current frame, that might
  * adjust an object's matrix based on keyframes, for instance.
  *
- * Every object can have any number of filters applied to it. Filters behave in
- * a manner similar to svg filters. They can specify the input source(s), and output target,
- * which can then be the input of another filter.
- *
- * \todo it would be nice to support all the built in svg filters, and additionally
- *   image warping as a filter.
  */
 
 
-ObjectFilter::ObjectFilter()
+ObjectFilter::ObjectFilter(anObject *nparent)
 {
-	filtername=NULL;
+	parent = nparent;
 }
 
 ObjectFilter::~ObjectFilter()
 {
-	if (filtername) delete[] filtername;
+}
+
+anObject *ObjectFilter::ObjectOwner()
+{
+	return parent;
+}
+
+NodeBase *ObjectFilter::Duplicate()
+{
+	return NodeGroup::Duplicate();
+	//ObjectFilter *node = new ObjectFilter(NULL);
+	//node->DuplicateBase(this);
+	//return node;
+}
+
+/*! Nothing really to do, as updates should happen automatically as things change.
+ */
+int ObjectFilter::Update()
+{
+	return GetStatus();
+}
+
+int ObjectFilter::GetStatus()
+{
+	return NodeBase::GetStatus();
+}
+
+Laxkit::anObject *ObjectFilter::FinalObject()
+{
+	NodeProperty *prop = output->FindProperty("Out");
+	return dynamic_cast<DrawableObject*>(prop->GetData());
+}
+
+/*! Call FindInterfaceNodes(NULL) to find all. Recursively calls any nested ObjectFilters.
+ */
+int ObjectFilter::FindInterfaceNodes(NodeGroup *group)
+{
+//	if (!group) {
+//		interfacenodes.flush();
+//		group = this;
+//	}
+//
+//	NodeBase *node;
+//	InterfaceNode *inode;
+//	NodeGroup *gnode;
+//
+//	for (int c=0; c<group->nodes.n; c++) {
+//		node = group->nodes.e[c]
+//		inode = dynamic_cast<InterfaceNode*>(node);
+//		if (inode) interfacenodes.push(inode);
+//
+//		gnode = dynamic_cast<NodeBase*>(node);
+//		if (gnode) FindInterfaceNodes(gnode);
+//	}
+
+	int n=0;
+	return n;
 }
 
 
 } //namespace Laidout
+

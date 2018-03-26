@@ -17,28 +17,34 @@
 
 
 
-#include <lax/interfaces/aninterface.h>
 #include <lax/refptrstack.h>
+#include "../interfaces/nodeinterface.h"
 
 
 namespace Laidout {
 
 //----------------------------- ObjectFilter ---------------------------------
-class ObjectFilter : virtual public Laxkit::anObject
+
+class ObjectFilter : public NodeGroup
 {
- public:
-	char *filtername;
+  public:
+	anObject *parent; //assume parent owns *this
 
-	Laxkit::PtrStack<ObjectFilter> inputs;
-	Laxkit::PtrStack<ObjectFilter> outputs; 
-	Laxkit::RefPtrStack<Laxkit::anObject> dependencies; //other resources, not filters in filter tree
+	//RefPtrStack<NodeBase> interfacenodes;
 
-	virtual int RequiresRasterization() = 0; //whether object contents readonly while filter is on
-	virtual double *FilterTransform() = 0; //additional affine transform to apply to object's transform
-	virtual LaxInterfaces::anInterface *Interface() = 0; //optional editing interface
+	//char *filtername;
+	//Laxkit::RefPtrStack<Laxkit::anObject> dependencies; //other resources, not filters in filter tree
 
-	ObjectFilter();
+	ObjectFilter(Laxkit::anObject *nparent);
 	virtual ~ObjectFilter();
+	virtual anObject *ObjectOwner();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+
+	virtual Laxkit::anObject *FinalObject();
+	virtual int FindInterfaceNodes(NodeGroup *group);
 };
 
 
