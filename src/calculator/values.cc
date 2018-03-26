@@ -4107,7 +4107,31 @@ int EnumValue::getValueStr(char *buffer,int len)
 
 int EnumValue::EnumId()
 {
-	return strtol(objectdef->defaultvalue, NULL, 10);
+	int id=-1;
+	objectdef->getEnumInfo(value, NULL,NULL,NULL, &id);
+	return id;
+}
+
+const char *EnumValue::EnumLabel()
+{
+	const char *Nm = NULL;
+	objectdef->getEnumInfo(value, NULL, &Nm);
+	return Nm;
+}
+
+/*! Set value to the corresponding index. Also return it.
+ */
+int EnumValue::SetFromId(int id)
+{
+	if (!objectdef->fields) return -1;
+	for (int c=0; c<objectdef->fields->n; c++) {
+		if (objectdef->fields->e[c]->defaultvalue
+				&& id == strtol(objectdef->fields->e[c]->defaultvalue, NULL, 10)) {
+			value = c;
+			return c;
+		}
+	}
+	return -1;
 }
 
 Value *EnumValue::duplicate()
