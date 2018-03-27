@@ -491,6 +491,8 @@ enum NodeInterfaceActions {
 	NODES_Load_Nodes,
 	NODES_Show_Previews,
 	NODES_Hide_Previews,
+	NODES_Find,
+	NODES_Find_Next,
 
 	NODES_MAX
 };
@@ -540,6 +542,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 	int lasthover, lasthoverslot, lasthoverprop, lastconnection;
 	flatpoint lastpos;
 	int lastmenuindex;
+	char *search_term;
+	int last_search_index;
 
 	PtrStack<NodeThread> threads;
 
@@ -564,6 +568,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 
 	Laxkit::ShortcutHandler *sc;
 
+	virtual int FreshNodes(bool asresource);
 	virtual int EditProperty(int nodei, int propertyi);
 	virtual int send();
 
@@ -583,7 +588,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual Laxkit::ShortcutHandler *GetShortcuts();
 	virtual int PerformAction(int action);
 
-	virtual int UseThis(Laxkit::anObject *nlinestyle,unsigned int mask=0);
+	virtual int InitializeResources();
+	virtual int UseThis(Laxkit::anObject *nobj, unsigned int mask=0);
 	virtual int InterfaceOn();
 	virtual int InterfaceOff();
 	virtual void Clear(LaxInterfaces::SomeData *d);
@@ -612,6 +618,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual int CutConnections(flatpoint p1,flatpoint p2);
 	virtual int SaveNodes(const char *file);
 	virtual int LoadNodes(const char *file, bool append);
+	virtual int FindNext();
+	virtual int Find(const char *what);
 };
 
 

@@ -20,6 +20,7 @@
 #include "../version.h"
 #include "../utils.h"
 
+#include <lax/interfaces/interfacemanager.h>
 #include <lax/laxutils.h>
 #include <lax/bezutils.h>
 #include <lax/popupmenu.h>
@@ -2319,9 +2320,10 @@ int NodeGroup::InstallColors(NodeColors *newcolors, bool absorb_count)
 
 	for (int c=0; c<nodes.n; c++) {
 		if (!nodes.e[c]->colors) {
-			nodes.e[c]->InstallColors(newcolors, 0);
+			nodes.e[c]->InstallColors(newcolors, false);
 			if (nodes.e[c]->width <= 0) nodes.e[c]->Wrap();
 			else nodes.e[c]->UpdateLayout();
+			nodes.e[c]->UpdateLinkPositions();
 		}
 	}
 
@@ -2427,6 +2429,12 @@ NodeInterface::NodeInterface(anInterface *nowner, int nid, Displayer *ndp)
 	font           = app->defaultlaxfont;
 	font->inc_count();
 	defaultpreviewsize = 50; //pixels
+
+	search_term   = NULL;
+	last_search_index = -1;
+	//search group contents
+	//search: labels, var names
+	//regex search
 
 	pan_timer    = 0;
 	pan_duration = 2;
@@ -2634,6 +2642,7 @@ void NodeInterface::Clear(SomeData *d)
 }
 
 /*! To aid custom node actions from plugins, for instance.
+ * *** put this somewhere responsible if used!!!
  */
 class MenuAction
 {
@@ -2646,6 +2655,18 @@ class MenuAction
 	virtual const char *MenuText() = 0;
 };
 
+int NodeInterface::InitializeResources()
+{
+	InterfaceManager *imanager = InterfaceManager::GetDefault(true);
+
+	ResourceManager *rmanager = imanager->GetResourceManager();
+	rmanager->AddResourceType("Nodes", _("Nodes"), NULL, NULL);
+
+	ObjectFactory *factory = imanager->GetObjectFactory();
+	factory->DefineNewObject(getUniqueNumber(), "NodeGroup", newNodeGroup, NULL, 0);
+
+	return 0;
+}
 
 Laxkit::MenuInfo *NodeInterface::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
@@ -2685,6 +2706,16 @@ Laxkit::MenuInfo *NodeInterface::ContextMenu(int x,int y,int deviceid, Laxkit::M
 		}
 	}
 
+	//-------- get list of available node resources
+	ResourceManager *manager = InterfaceManager::GetDefault(true)->GetResourceManager();
+	if (manager->NumResources("Nodes")) {
+		menu->AddSep();
+		menu->AddItem(_("Resources"));
+		menu->SubMenu(_("Saved Nodes"));
+		manager->ResourceMenu("Nodes", true, menu);
+		menu->EndSubMenu();
+	}
+
 	//menu->AddSep();
 	//menu->AddItem(_("Save as resource..."), NODES_Save_As_Resource);
 	//menu->AddItem(_("Load resource..."), NODES_Load_Resource);
@@ -2714,6 +2745,25 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 		} else if (action == NODES_Load_With_Loader || action == NODES_Save_With_Loader) {
 			lastmenuindex = info;
 			PerformAction(action);
+
+		} else {
+			 //maybe a resource
+			ResourceManager *manager = InterfaceManager::GetDefault(true)->GetResourceManager();
+			NodeGroup *group = dynamic_cast<NodeGroup*>(manager->FindResource(s->str, "Nodes"));
+			if (group) {
+				if (nodes) nodes->dec_count();
+				selected.flush();
+				grouptree.flush();
+				nodes = group;
+				nodes->inc_count();
+				if (!nodes->colors) {
+					NodeColors *colors = new NodeColors;
+					colors->Font(font, false);
+					nodes->InstallColors(colors, true);
+				}
+				lasthover = lasthoverslot = lasthoverprop = lastconnection = -1;
+				needtodraw=1;
+			}
 		}
 
 		return 0;
@@ -2862,11 +2912,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 		const char *what = s->str;
 		if (isblank(what)) return 0;
 
-		if (!nodes) {
-			nodes = new Nodes;
-			nodes->InstallColors(new NodeColors, true);
-			nodes->colors->Font(font, false);
-		}
+		if (!nodes) FreshNodes(true);
 
 		ObjectFactoryNode *type;
 		for (int c=0; c<node_factory->types.n; c++) {
@@ -2923,6 +2969,13 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 		needtodraw=1;
 		return 0;
 
+	} else if (!strcmp(mes,"search")) {
+        const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
+		if (isblank(s->str)) return 0;
+
+		Find(s->str);
+		return 0;
+
 	} else if (!strcmp(mes,"savewithloader")) {
         const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
 		if (isblank(s->str) || !nodes) return 0;
@@ -2953,11 +3006,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 			return 0;
 		}
 
-		if (!nodes) {
-			nodes = new NodeGroup;
-			nodes->InstallColors(new NodeColors, true);
-			nodes->colors->Font(font, false);
-		}
+		if (!nodes) FreshNodes(true);
 
 		int oldn = nodes->nodes.n;
 
@@ -3012,6 +3061,50 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 	}
 
 	return 1; //event not absorbed
+}
+
+int NodeInterface::Find(const char *what)
+{
+	if (isblank(what)) return -1;
+	makestr(search_term, what);
+	last_search_index = -1;
+	return FindNext();
+}
+
+/*! Search from last_search_index + 1, wrap around at end if no match.
+ * Centers on found node.
+ * Return node index of found, or -1.
+ */
+int NodeInterface::FindNext()
+{
+	if (isblank(search_term)) return -1;
+
+	if (last_search_index >= nodes->nodes.n) last_search_index = -1;
+
+	for (int c=last_search_index+1; c<nodes->nodes.n; c++) {
+		if (strcasestr(nodes->nodes.e[c]->Label(), search_term)) {
+			//found!
+			selected.flush();
+			selected.push(nodes->nodes.e[c]);
+			PerformAction(NODES_Center_Selected);
+			last_search_index = c;
+			return c;
+		}
+	}
+
+	 //wrap around
+	for (int c=0; c<last_search_index; c++) {
+		if (strcasestr(nodes->nodes.e[c]->Label(), search_term)) {
+			//found!
+			selected.flush();
+			selected.push(nodes->nodes.e[c]);
+			PerformAction(NODES_Center_Selected);
+			last_search_index = c;
+			return c;
+		}
+	}
+
+	return -1;
 }
 
 void NodeInterface::RebuildNodeMenu()
@@ -4977,7 +5070,9 @@ Laxkit::ShortcutHandler *NodeInterface::GetShortcuts()
     sc->Add(NODES_Unframe_Nodes,  'F',ShiftMask,  0, "Unframe",        _("Remove connected frame" ),NULL,0);
     sc->Add(NODES_Edit_Group,     LAX_Tab,0,      0, "EditGroup",      _("Toggle Edit Group"),NULL,0);
     sc->Add(NODES_Leave_Group,    LAX_Tab,ShiftMask,0,"LeaveGroup",    _("Leave Group")    ,NULL,0);
-    sc->Add(NODES_Thread_Controls,'e',0,          0,"ThreadControls",  _("Thread controls"),NULL,0);
+    sc->Add(NODES_Thread_Controls,'e',0,          0, "ThreadControls", _("Thread controls"),NULL,0);
+    sc->Add(NODES_Find,           'f',ControlMask,0, "Find",           _("Find a node"),NULL,0);
+    sc->Add(NODES_Find_Next,      'f',ShiftMask|ControlMask,0, "FindNext", _("Find next node"),NULL,0);
 
     sc->Add(NODES_Duplicate,      'D',ShiftMask,  0, "Duplicate"     , _("Duplicate")      ,NULL,0);
 
@@ -5097,6 +5192,24 @@ int NodeInterface::PerformAction(int action)
 		box.fitto(NULL, &vp, 50, 50, 1);
 		nodes->m.m(box.m());
 		needtodraw=1;
+		return 0;
+
+	} else if (action==NODES_Find) {
+		DoubleBBox bounds;
+		double th = dp->textheight();
+		double w = th * 20;
+		bounds.addtobounds(dp->Maxx/2 - w/2, dp->Maxy/2 - th*.6);
+		bounds.addtobounds(dp->Maxx/2 + w/2, dp->Maxy/2 + th*.6);
+
+		viewport->SetupInputBox(object_id, _("Find node"),
+				search_term,
+				"search",
+				bounds,
+				NULL, false);
+		return 0;
+
+	} else if (action==NODES_Find_Next) {
+		FindNext();
 		return 0;
 
 	} else if (action==NODES_Frame_Nodes) {
@@ -5278,6 +5391,26 @@ int NodeInterface::PerformAction(int action)
 	return 1;
 }
 
+int NodeInterface::FreshNodes(bool asresource)
+{
+	selected.flush();
+	grouptree.flush();
+	lasthover = lasthoverslot = lasthoverprop = lastconnection = -1;
+
+	if (nodes) nodes->dec_count();
+
+	nodes = new Nodes;
+	nodes->InstallColors(new NodeColors, true);
+	nodes->colors->Font(font, false);
+
+	if (asresource) {
+		ResourceManager *manager = InterfaceManager::GetDefault(true)->GetResourceManager();
+		manager->AddResource("Nodes", nodes, NULL, nodes->Id(), nodes->Label(), NULL, NULL, NULL);
+	}
+
+	return 0;
+}
+
 /*! Completely replaces exists nodes, unless append is true.
  */
 int NodeInterface::LoadNodes(const char *file, bool append)
@@ -5289,11 +5422,7 @@ int NodeInterface::LoadNodes(const char *file, bool append)
 		}
 	}
 
-	if (!nodes) {
-		nodes = new Nodes;
-		nodes->InstallColors(new NodeColors, true);
-		nodes->colors->Font(font, false);
-	}
+	if (!nodes) FreshNodes(true);
 
 	FILE *f = fopen(file, "r");
 
