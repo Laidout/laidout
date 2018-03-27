@@ -500,7 +500,7 @@ ObjectDef *PptinFilter::GetObjectDef()
  * \todo *** if first_page_num exists, then must set up page labels
  * \todo *** implement dump into group, rather than doc
  */
-int PptinFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log)
+int PptinFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log, const char *filecontents,int contentslen)
 {
 	ImportConfig *in=dynamic_cast<ImportConfig *>(context);
 	if (!in) return 1;

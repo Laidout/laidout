@@ -121,7 +121,7 @@ int addScribusDocument(const char *file, Document *existingdoc)
 	config.keepmystery=2;
 	config.filter=&filter;
 	ErrorLog log;
-	filter.In(file,&config,log);
+	filter.In(file,&config,log, NULL,0);
 
 	newdoc->dec_count();
 
@@ -1929,7 +1929,7 @@ ObjectDef *ScribusImportFilter::GetObjectDef()
  *
  * \todo COLOR, master pages, ensure text sizes ok upon scaling, scale to fit existing pages
  */
-int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log)
+int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log, const char *filecontents,int contentslen)
 {
 	DBG cerr <<"-----Scribus import start-------"<<endl;
 
