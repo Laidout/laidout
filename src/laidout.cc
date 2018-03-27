@@ -625,7 +625,7 @@ int LaidoutApp::init(int argc,char **argv)
 	 // Define default project if necessary, and Pop something up if there hasn't been anything yet
 	if (!project) project=new Project();
 
-	if (runmode==RUNMODE_Normal) {
+	if (runmode == RUNMODE_Normal) {
 		 //try to load the default template if no windows are up
 		if (topwindows.n==0 && prefs.default_template) {
 			ErrorLog log;
@@ -644,10 +644,13 @@ int LaidoutApp::init(int argc,char **argv)
 		 //let the user know of any snafus during startup
 		NotifyGeneralErrors(NULL);
 
-	} else if (runmode==RUNMODE_Impose_Only) {
+	} else if (runmode == RUNMODE_Impose_Only) {
 		//***
 
-	} else if (runmode==RUNMODE_Shell) {
+	} else if (runmode == RUNMODE_Nodes_Only) {
+		//***
+
+	} else if (runmode == RUNMODE_Shell) {
 		calculator->RunShell();
 		return 0;
 	}
@@ -1229,6 +1232,7 @@ void InitOptions()
 	//options.Add("backend",            'B', 1, "Either cairo or xlib (xlib very deprecated).",0, NULL);
 	options.Add("impose-only",        'I', 1, "Run only as a file imposer, not full Laidout",0, NULL);
 	options.Add("nodes-only",         'o', 1, "Run only as a node editor on argument",       0, NULL);
+	options.Add("pipein",             'p', 1, "Start with a document piped in on stdin",     0, "default");
 	options.Add("list-shortcuts",     'S', 0, "Print out a list of current keyboard bindings, then exit",0,NULL);
 	options.Add("theme",              'T', 1, "Set theme. Currently, one of Light, Dark, or Gray",0,NULL);
 	options.Add("helphtml",           'H', 0, "Output an html fragment of key shortcuts.",   0, NULL);
@@ -1247,7 +1251,9 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	//InitOptions(); <- this is done in main()
 	//c=options.Parse(argc,argv, &index); <- now down in main also
 	
-	char *exprt=NULL;
+	char *exprt = NULL;
+	bool pipein = false;
+	const char *pipearg = NULL;
 
 
 	LaxOption *o;
@@ -1389,13 +1395,18 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					addwindow(editor);
 				} break;
 
-			case 'o': {
+			case 'o': { // nodes-only
 					runmode = RUNMODE_Nodes_Only;
 					//anXWindow *editor = newNodeEditor(NULL,"nodeedit",_("Nodes"),0,NULL, o->arg());
 					//addwindow(editor);
 					cerr << "Nodes-Only not quite implemented yet!"<<endl;
-					exit(0);
+					exit(1);
 				} break;
+
+			case 'p': { //pipein
+					pipein = true;
+					pipearg = o->arg();
+			    } break;
 
 			case 'u': { // default units
 					UnitManager *units=GetUnitManager();
@@ -1501,16 +1512,83 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	int index=topwindows.n;
 	if (!project) project=new Project;
 	ErrorLog log;
+
 	for (o=options.remaining(); o; o=options.next()) {
 		DBG cerr <<"----Read in:  "<<o->arg()<<endl;
 		doc=NULL;
 		if (Load(o->arg(),log)==0) doc=curdoc;
-		if (topwindows.n==index) {
-			if (!doc && project->docs.n) doc=project->docs.e[0]->doc;
+		if (topwindows.n == index) {
+			if (!doc && project->docs.n) doc = project->docs.e[0]->doc;
 			if (doc && runmode==RUNMODE_Normal) addwindow(newHeadWindow(doc));
 		}
 	}
-	
+
+	if (pipein) {
+		char *data = NULL;
+		char *buf = NULL;
+		int c;
+		int n = 0, max = 0;
+
+		DBG cerr << "Piping in..."<<endl;
+
+		data = new char[1024];
+		buf = data;
+		max = 1024;
+
+		while (!feof(stdin)) {
+			buf = data;
+			c = fread(buf,1,1024,stdin);
+			n += c;
+
+			if (c == 0) {
+				if (feof(stdin)) {
+					DBG cerr << "--eof, read "<< n <<" bytes--" << endl;
+					break;
+				} else if (ferror(stdin)) {
+					DBG cerr << "--error--" << endl;
+					break;
+				}
+			}
+
+			 //realloc
+			if (!feof(stdin)) {
+				char *ndata = new char[max+1024];
+				memcpy(ndata, data, max);
+				delete[] data;
+				data = ndata;
+				buf = data + max;
+				max += 1024;
+			}
+		}
+
+		//*** //load from string data
+		cerr << " *** need to finish implementing pipein!!"<<endl;
+		if (!strcasecmp(pipearg, "default")) {
+			 //assume is laidout file
+
+//			if (Load(NULL, log, data) == 0) doc = curdoc;
+//			if (topwindows.n == index) {
+//				if (!doc && project->docs.n) doc = project->docs.e[0]->doc;
+//				if (doc && runmode == RUNMODE_Normal) addwindow(newHeadWindow(doc));
+//			}
+		} else {
+			 //parse import settings
+			Attribute att;
+			NameValueToAttribute(&att, pipearg, '=', ',');
+
+			ImportConfig config;
+			config.dump_in_atts(&att, 0, NULL);
+
+			//ErrorLog log;
+			import_document(&config, generallog, data,n);
+
+			NotifyGeneralErrors(NULL);
+		}
+
+		delete[] data;
+
+	} //end pipein
+
 	DBG cerr <<"---------end options"<<endl;
 }
 
@@ -1709,7 +1787,7 @@ int LaidoutApp::Load(const char *filename, ErrorLog &log)
 		if (curdoc) curdoc->inc_count();
 		return 0;
 	}
-	
+
 	FILE *f=open_laidout_file_to_read(fullname,"Project",&log, false);
 	if (f) {
 		fclose(f);
@@ -1721,7 +1799,7 @@ int LaidoutApp::Load(const char *filename, ErrorLog &log)
 		delete[] fullname;
 		return -1;
 	}
-	
+
 
 	doc=new Document(NULL,fullname);
 	if (!project) project=new Project;
@@ -1773,12 +1851,12 @@ int LaidoutApp::NewDocument(const char *spec)
 	if (!spec) return 1;
 	if (!strcmp(spec,"default")) spec="letter, portrait, singles";
 	DBG cerr <<"------create new doc from \""<<spec<<"\""<<endl;
-	
+
 	char *saveas=NULL;
 	Imposition *imp=NULL;
 	PaperStyle *paper=NULL;
 	int numpages=1;
-	
+
 	//Attribute *spec_parameters=parse_fields(NULL,spec,NULL);
 
 
