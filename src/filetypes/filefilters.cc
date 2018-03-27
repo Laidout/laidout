@@ -132,10 +132,11 @@ FileFilter::FileFilter()
 /*! \fn const char *ImportFilter::FileType(const char *first100bytes)
  * \brief Return the version of the filter's format that the file seems to be, or NULL if not recognized.
  */
-/*! \fn int ImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log)
+/*! \fn int ImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log, const char *filecontents, int contentslen)
  * \brief The function that outputs the stuff.
  *
- * If file!=NULL, then output to that single file, and ignore the files in context.
+ * If file!=NULL, then input from that single file, and ignore the files in context.
+ * If file==NULL and filecontents!=NULL, then assume filecontents is a string containing file data of contentslen bytes.
  *
  * context must be a configuration object that the filter understands. For instance, this
  * might be a DocumentExportConfig object, or perhaps a parameter list from the scripter.
@@ -559,13 +560,13 @@ Value* ImportConfig::duplicate()
 //! Import a vector based file based on config.
 /*! Return 0 for success, greater than zero for fatal error, less than zero for success with warnings.
  */
-int import_document(ImportConfig *config, Laxkit::ErrorLog &log)
+int import_document(ImportConfig *config, Laxkit::ErrorLog &log, const char *filecontents,int contentslen)
 {
 	if (!config || !config->filename || !config->filter || !(config->doc || config->toobj)) {
 		log.AddMessage(_("Bad import configuration"),ERROR_Fail);
 		return 1;
 	}
-	return config->filter->In(config->filename,config,log);
+	return config->filter->In(config->filename,config,log, filecontents,contentslen);
 }
 
 
