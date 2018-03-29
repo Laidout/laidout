@@ -1113,7 +1113,7 @@ int HistogramNode::Update()
 
 //------------------------------ GradientStripProperty --------------------------------------------
 
-SingletonKeeper CurveNode::interfacekeeper;
+SingletonKeeper GradientStripProperty::interfacekeeper;
 class GradientStripProperty : public NodeProperty
 {
   public:
@@ -1236,7 +1236,7 @@ class ForeachNode : public NodeBase
 	virtual NodeBase *Duplicate();
 	virtual int GetStatus();
 	virtual int Update();
-	virtual NodeBase *Execute(NodeThread *thread);
+	virtual NodeBase *Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks);
 };
 
 
@@ -1245,7 +1245,7 @@ ForeachNode::ForeachNode(double nstart, double nend, double nstep)
 	current = -1;
 	running = 0;
 
-	makestr(type,   "Foreach");
+	makestr(type,   "Threads/Foreach");
 	makestr(Name, _("Foreach"));
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_In,  true, "In",    NULL,1, _("In")));
@@ -1276,7 +1276,7 @@ int ForeachNode::GetStatus()
 	return 0;
 }
 
-NodeBase *ForeachNode::Execute(NodeThread *thread)
+NodeBase *ForeachNode::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks)
 {
 	NodeProperty *done = properties.e[1];
 	NodeProperty *loop = properties.e[2];
@@ -1349,6 +1349,46 @@ int ForeachNode::Update()
 Laxkit::anObject *newForeachNode(int p, Laxkit::anObject *ref)
 {
 	return new ForeachNode(0,10,1);
+}
+
+
+//------------------------------ SwizzleNode --------------------------------------------
+
+/*! \class SwizzleNode
+ * Map arrays to other arrays using a special Swizzle interface.
+ */
+
+class SwizzleNode : public NodeBase
+{
+  public:
+	SwizzleNode();
+	virtual ~SwizzleNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+};
+
+SwizzleNode::SwizzleNode()
+{ ***
+}
+
+SwizzleNode::~SwizzleNode()
+{ ***
+}
+
+NodeBase *SwizzleNode::Duplicate()
+{ ***
+	SwizzleNode *node = new SwizzleNode(start, end, step);
+	node->DuplicateBase(this);
+	return node;
+}
+
+int SwizzleNode::Update()
+{ ***
+}
+
+int SwizzleNode::GetStatus()
+{ ***
 }
 
 
