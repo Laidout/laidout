@@ -249,6 +249,7 @@ class AffineValue : virtual public Value, virtual public Laxkit::Affine, virtual
   public:
 	AffineValue();
 	AffineValue(const double *m);
+    virtual const char *whattype() { return "AffineValue"; }
 	virtual ObjectDef *makeObjectDef();
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
@@ -266,6 +267,7 @@ class BBoxValue : virtual public Value, virtual public Laxkit::DoubleBBox, virtu
   public:
 	BBoxValue();
 	BBoxValue(double mix,double max,double miy,double may);
+    virtual const char *whattype() { return "BBoxValue"; }
 	virtual ObjectDef *makeObjectDef();
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
