@@ -293,7 +293,7 @@ class NodeBase : public Laxkit::anObject,
 	virtual int Collapse(int state); //-1 toggle, 0 open, 1 full collapsed, 2 collapsed to preview
 	virtual void UpdateLinkPositions();
 	virtual void UpdateLayout();
-	virtual NodeBase *Execute(NodeThread *thread);
+	virtual NodeBase *Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks);
 
 	virtual NodeBase *Duplicate();
 	virtual void DuplicateBase(NodeBase *from);
@@ -476,6 +476,7 @@ enum NodeInterfaceActions {
 	NODES_Load_With_Loader,
 	NODES_Clear,
 	NODES_Property_Interface,
+	NODES_New_Nodes,
 
 	NODES_Duplicate,
 	NODES_Group_Nodes,
@@ -506,6 +507,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 	double pan_current; //0..1
 	double pan_duration; //seconds
 	int    pan_tick_ms;
+
+	PtrStack<NodeThread> forks; //used each Execute tick
 
 	NodeConnection *onconnection;
 

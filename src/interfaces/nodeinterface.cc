@@ -573,7 +573,7 @@ NodeBase::~NodeBase()
  * Return 1 for done with thread.
  * 0 for successful run.
  */
-NodeBase *NodeBase::Execute(NodeThread *thread)
+NodeBase *NodeBase::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks)
 {
 	return NULL;
 }
@@ -1568,17 +1568,17 @@ NodeProperty *NodeGroup::AddGroupOutput(const char *pname, const char *plabel, c
  */
 int NodeGroup::DesignateOutput(NodeBase *noutput)
 {
-	 // *** needs updating to make sure no errant connections
 	if (output) output->dec_count();
 	output=noutput;
 	if (output) output->inc_count();
 
-	// *** connect output's properties with group output properties
+	 //connect output's properties with group output properties
 	for (int c=0; c<output->properties.n; c++) {
 		NodeProperty *prop = output->properties.e[c];
 		NodeProperty *groupprop = FindProperty(prop->name);
 		if (groupprop) {
 			prop->topropproxy = groupprop;
+			groupprop->frompropproxy = prop;
 		}
 	}
 
@@ -1591,12 +1591,13 @@ int NodeGroup::DesignateInput(NodeBase *ninput)
 	input=ninput;
 	if (input) input->inc_count();
 
-	// *** connect output's properties with group output properties
+	 //connect output's properties with group output properties
 	for (int c=0; c<input->properties.n; c++) {
 		NodeProperty *prop = input->properties.e[c];
 		NodeProperty *groupprop = FindProperty(prop->name);
 		if (groupprop) {
 			prop->frompropproxy = groupprop;
+			groupprop->topropproxy = prop;
 		}
 	}
 	return 0;
@@ -2174,13 +2175,15 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 
         } else if (!strcmp(name,"node")) {
 			 //value is the node type
-			if (isblank(value)) {
-				if (context->log) context->log->AddMessage(_("Node missing a type, skipping!"), ERROR_Warning);
-				continue;
-			}
+//			if (isblank(value)) {
+//				if (context->log) context->log->AddMessage(_("Node missing a type, skipping!"), ERROR_Warning);
+//				continue;
+//			}
 
 			NodeBase *newnode;
-			if (!strcmp(value, "GroupInputs") || !strcmp(value, "GroupOutputs")) {
+			//if (!strcmp(value, "GroupInputs") || !strcmp(value, "GroupOutputs")) {
+			if (!value) {
+				 //no type listed, is probably an input or output
 				newnode = new NodeBase();
 				newnode->deletable = false;
 				makestr(newnode->type, value);
@@ -2189,7 +2192,7 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 
 			if (!newnode) {
 				char errormsg[200];
-				sprintf(errormsg,_("Unknown node type: %s"), value);
+				sprintf(errormsg,_("Unknown node type: %s"), value ? value : "(missing type)");
 				cerr << errormsg <<endl;
 				context->log->AddMessage(object_id, Id(), NULL, errormsg, ERROR_Warning);
 				continue;
@@ -2556,7 +2559,7 @@ int NodeInterface::ExecuteThreads()
 	for (int c=threads.n-1; c>=0; c--) {
 		thread = threads.e[c];
 
-		NodeBase *next = thread->next->Execute(thread);
+		NodeBase *next = thread->next->Execute(thread, forks);
 		if (next) {
 			//node has given us somewhere to go to
 			thread->UpdateThread(next, NULL);
@@ -2568,6 +2571,13 @@ int NodeInterface::ExecuteThreads()
 				thread->scopes.remove(-1);
 			} else {
 				threads.remove(c);
+			}
+		}
+
+		if (forks.n) {
+			while (forks.n) {
+				threads.push(forks.e[forks.n-1]);
+				forks.pop(forks.n-1);
 			}
 		}
 	}
@@ -2710,6 +2720,7 @@ Laxkit::MenuInfo *NodeInterface::ContextMenu(int x,int y,int deviceid, Laxkit::M
 	ResourceManager *manager = InterfaceManager::GetDefault(true)->GetResourceManager();
 	if (manager->NumResources("Nodes")) {
 		menu->AddSep();
+		menu->AddItem(_("New nodes"), NODES_New_Nodes);
 		menu->AddItem(_("Resources"));
 		menu->SubMenu(_("Saved Nodes"));
 		manager->ResourceMenu("Nodes", true, menu);
@@ -2739,6 +2750,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 			|| action == NODES_Show_Previews
 			|| action == NODES_Hide_Previews
 			|| action == NODES_Thread_Controls
+			|| action == NODES_New_Nodes
 			) {
 			PerformAction(action);
 
@@ -3278,14 +3290,17 @@ int NodeInterface::Refresh()
 		dp->NewFG(coloravg(nodes->colors->fg.Pixel(),nodes->colors->bg.Pixel(), .25));
 		dp->NewBG(coloravg(nodes->colors->fg.Pixel(),nodes->colors->bg.Pixel(), .75));
 
-		double width = dp->textextent(_("Root"),-1, NULL,NULL);
-		dp->drawRoundedRect(x,0, width+th,th*1.5, th/3, false, th/3, false, 2); 
+		//double width = dp->textextent(_("Root"),-1, NULL,NULL);
+		//dp->drawRoundedRect(x,0, width+th,th*1.5, th/3, false, th/3, false, 2); 
+		//x = th/2;
+		//x += th + dp->textout(x,th/4, _("Root"),-1, LAX_TOP|LAX_LEFT);
+
+		double width =0;
 		x = th/2;
-		x += th + dp->textout(x,th/4, _("Root"),-1, LAX_TOP|LAX_LEFT);
 
 		//c==0 is root
 		const char *str;
-		for (int c=1; c < grouptree.n; c++) {
+		for (int c=0; c < grouptree.n; c++) {
 			str = grouptree.e[c]->Label();
 			if (!str) str = grouptree.e[c]->Id();
 			width = dp->textextent(str,-1, NULL,NULL);
@@ -4064,6 +4079,11 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 	int action = NODES_None;
 	int overpropslot=-1, overproperty=-1, overconnection=-1; 
 	int overnode = scan(x,y, &overpropslot, &overproperty, &overconnection, state);
+
+	if (overnode >= 0 && overpropslot==-1 && (state&ShiftMask)!=0) {
+		 //intercept so shift drag moves current nodes
+		overpropslot = overproperty = -1;
+	}
 
 	if (count == 2 && overnode>=0 && overproperty<0 && overpropslot == NODES_Label) {
 		action = NODES_Label;
@@ -5269,6 +5289,10 @@ int NodeInterface::PerformAction(int action)
 		needtodraw=1;
 		return 0;
 
+	} else if (action==NODES_New_Nodes) {
+		FreshNodes(true);
+		return 0;
+
 	} else if (action==NODES_Hide_Previews) {
 		for (int c=0; c<selected.n; c++) {
 			selected.e[c]->show_preview = false;
@@ -5408,6 +5432,7 @@ int NodeInterface::FreshNodes(bool asresource)
 		manager->AddResource("Nodes", nodes, NULL, nodes->Id(), nodes->Label(), NULL, NULL, NULL);
 	}
 
+	needtodraw=1;
 	return 0;
 }
 
