@@ -4034,7 +4034,7 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, int 
 
 			for (int c2=0; c2<node->properties.n; c2++) {
 				prop = node->properties.e[c2];
-				if (!prop->IsInput()) continue;
+				if (!prop->IsInput() && !prop->IsExecIn()) continue;
 
 				for (int c3=0; c3<prop->connections.n; c3++) {
 					connection = prop->connections.e[c3];
@@ -4162,8 +4162,8 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 
 			 //jump to opposite connection
 			if (prop->connections.n > 0) {
-				if (prop->IsInput()) action = NODES_Jump_Back;
-				else if (prop->IsOutput()) action = NODES_Jump_Forward;
+				if (prop->IsInput() || prop->IsExecIn()) action = NODES_Jump_Back;
+				else if (prop->IsOutput() || prop->IsExecOut()) action = NODES_Jump_Forward;
 				
 			} else {
 				PostMessage(_("Nothing to jump to!"));
@@ -4476,6 +4476,13 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 			if ((fromprop->IsOutput() && action==NODES_Drag_Input)
 				|| (fromprop->IsExecOut() && action==NODES_Drag_Exec_In)) {
 
+				if (action==NODES_Drag_Exec_In && fromprop->connections.n) {
+					 //clobber any other connection going from the input. Only one output allowed.
+					for (int c = fromprop->connections.n-1; c >= 0; c--) {
+						nodes->Disconnect(fromprop->connections.e[c], false, true);
+					}
+				}
+
 				 //connect to fromprop
 				tempconnection->from     = fromprop->owner;
 				tempconnection->fromprop = fromprop;
@@ -4517,7 +4524,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 			if ((toprop->IsInput() && action==NODES_Drag_Output)
 				|| (toprop->IsExecIn() && action==NODES_Drag_Exec_Out)) {
 
-				if (toprop->connections.n) {
+				if (action!=NODES_Drag_Exec_Out && toprop->connections.n) {
 					 //clobber any other connection going into the input. Only one input allowed.
 					for (int c = toprop->connections.n-1; c >= 0; c--) {
 						nodes->Disconnect(toprop->connections.e[c], false, true);
