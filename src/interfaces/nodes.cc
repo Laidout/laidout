@@ -1708,12 +1708,12 @@ class ThreadNode : public NodeBase
 	virtual NodeBase *Duplicate();
 	//virtual int Update();
 	//virtual int GetStatus();
-	virtual NodeBase *Execute(NodeThread *thread);
+	virtual NodeBase *Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks);
 };
 
 ThreadNode::ThreadNode()
 {
-	makestr(type, "Thread");
+	makestr(type, "Threads/Thread");
 	makestr(Name, _("Thread"));
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_Out, true, "out",  NULL,1, _("Out")));
@@ -1730,7 +1730,7 @@ NodeBase *ThreadNode::Duplicate()
 	return node;
 }
 
-NodeBase *ThreadNode::Execute(NodeThread *thread)
+NodeBase *ThreadNode::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks)
 {
 	if (!properties.e[0]->connections.n) return NULL;
 	return properties.e[0]->connections.e[0]->to;
@@ -1745,7 +1745,8 @@ Laxkit::anObject *newThreadNode(int p, Laxkit::anObject *ref)
 
 //------------------------ IfNode ------------------------
 
-/*! \class For loop node.
+/*! \class IfNode
+ * For loop node.
  */
 
 class IfNode : public NodeBase
@@ -1757,13 +1758,13 @@ class IfNode : public NodeBase
 	virtual NodeBase *Duplicate();
 	virtual int Update();
 	virtual int GetStatus();
-	virtual NodeBase *Execute(NodeThread *thread);
+	virtual NodeBase *Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks);
 };
 
 
 IfNode::IfNode(bool iftrue)
 {
-	makestr(type,   "If");
+	makestr(type,   "Threads/If");
 	makestr(Name, _("If"));
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_In,  true, "In",    NULL,1, _("In")));
@@ -1776,7 +1777,7 @@ IfNode::~IfNode()
 {
 }
 
-NodeBase *IfNode::Execute(NodeThread *thread)
+NodeBase *IfNode::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks)
 {
 	int isnum;
 	bool iftrue = getNumberValue(properties.e[1]->GetData(), &isnum);
@@ -1844,7 +1845,7 @@ class LoopNode : public NodeBase
 	virtual NodeBase *Duplicate();
 	virtual int Update();
 	virtual int GetStatus();
-	virtual NodeBase *Execute(NodeThread *thread);
+	virtual NodeBase *Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks);
 };
 
 
@@ -1856,7 +1857,7 @@ LoopNode::LoopNode(double nstart, double nend, double nstep)
 	current = start;
 	running = 0;
 
-	makestr(type,   "Loop");
+	makestr(type,   "Threads/Loop");
 	makestr(Name, _("Loop"));
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_In,  true, "In",    NULL,1, _("In")));
@@ -1876,7 +1877,7 @@ LoopNode::~LoopNode()
 {
 }
 
-NodeBase *LoopNode::Execute(NodeThread *thread)
+NodeBase *LoopNode::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks)
 {
 	NodeProperty *done = properties.e[1];
 	NodeProperty *loop = properties.e[2];
@@ -1962,6 +1963,83 @@ Laxkit::anObject *newLoopNode(int p, Laxkit::anObject *ref)
 	return new LoopNode(0,10,1);
 }
 
+
+//------------------------ ForkNode ------------------------
+
+/*! \class ForkNode
+ * Input one thread, output two.
+ * The second one does NOT inherit the input scopes.
+ */
+
+class ForkNode : public NodeBase
+{
+  public:
+	ForkNode();
+	virtual ~ForkNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks);
+};
+
+
+ForkNode::ForkNode()
+{
+	makestr(type,   "Threads/Fork");
+	makestr(Name, _("Fork"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_In,  true, "In",    NULL,1, _("In")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_Out, true, "Out",  NULL,1, _("Out")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_Out, true, "Out2", NULL,1, _("Out2"), _("Does not inherit in's scope")));
+}
+
+ForkNode::~ForkNode()
+{
+}
+
+NodeBase *ForkNode::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks)
+{
+	NodeBase *next = NULL, *next2 = NULL;
+	NodeProperty *prop;
+
+	prop = properties.e[1];
+	if (prop->connections.n) next = prop->connections.e[0]->to;
+
+	NodeProperty *prop2 = properties.e[2];
+	if (prop2->connections.n) {
+		next2 = prop2->connections.e[0]->to;
+		forks.push(new NodeThread(next2, prop2, NULL,0));
+	}
+
+	modtime = times(NULL);
+	//PropagateUpdate();
+
+	return next;
+}
+
+NodeBase *ForkNode::Duplicate()
+{
+	ForkNode *node = new ForkNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int ForkNode::Update()
+{
+	return 0; //we only actually update from Execute
+}
+
+int ForkNode::GetStatus()
+{
+	return 0;
+}
+
+
+Laxkit::anObject *newForkNode(int p, Laxkit::anObject *ref)
+{
+	return new ForkNode();
+}
 
 //------------------------ LerpNode ------------------------
 
@@ -2455,15 +2533,6 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	 //--- ConcatNode
 	factory->DefineNewObject(getUniqueNumber(), "Concat",newConcatNode,  NULL, 0);
 
-	 //--- ThreadNode
-	factory->DefineNewObject(getUniqueNumber(), "Thread",newThreadNode,  NULL, 0);
-
-	 //--- LoopNode
-	factory->DefineNewObject(getUniqueNumber(), "Loop",newLoopNode,  NULL, 0);
-
-	 //--- IfNode
-	factory->DefineNewObject(getUniqueNumber(), "If",newIfNode,  NULL, 0);
-
 	 //--- LerpNode
 	factory->DefineNewObject(getUniqueNumber(), "Lerp",newLerpNode,  NULL, 0);
 
@@ -2474,6 +2543,22 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	 //--- CurveNodes
 	factory->DefineNewObject(getUniqueNumber(), "Curve",         newCurveNode,  NULL, 1);
 	//factory->DefineNewObject(getUniqueNumber(), "CurveTransform",newCurveNode,  NULL, 0);
+
+
+	 //--------------------THREADS
+
+	 //--- ThreadNode
+	factory->DefineNewObject(getUniqueNumber(), "Threads/Thread",newThreadNode,  NULL, 0);
+
+	 //--- LoopNode
+	factory->DefineNewObject(getUniqueNumber(), "Threads/Loop",newLoopNode,  NULL, 0);
+
+	 //--- IfNode
+	factory->DefineNewObject(getUniqueNumber(), "Threads/If",newIfNode,  NULL, 0);
+
+	 //--- ForkNode
+	factory->DefineNewObject(getUniqueNumber(), "Threads/Fork",newForkNode,  NULL, 0);
+
 
 	return 0;
 }
