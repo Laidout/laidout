@@ -26,13 +26,31 @@ using namespace Magick;
 #define DBG
 
 
-const int AA=2; //how many pixels across to antialias
-//const char *filesuf="021354";
-const char *filesuf="012345";
-char which[10];
+const int AA=1; //how many pixels across to antialias
 
-int RemapSphere(Image spheremap, Basis &basis)
+
+int RemapSphere(const char *outfile, Image spheremap, Basis &basis)
 {
+	 //figure out extension
+	bool tif = false, jpg = false; //, png = false;
+
+	const char *ext = strrchr(outfile, '.');
+	if (ext) ext++;
+	if (!ext) {
+		cerr <<"Missing extension on outfile! assuming tif."<<endl;
+		tif = true;
+
+	} else if (!strcasecmp(ext, "tiff") || !strcasecmp(ext, "tif")) {
+		tif = true;
+
+	} else if (!strcasecmp(ext, "jpg") || !strcasecmp(ext, "jpeg")) {
+		jpg = true;
+
+	} else {
+		cerr <<"Arg! Unknown output file type!! Aborting!"<<endl;
+		return 1;
+	}
+
 
 	int spherewidth  = spheremap.columns();
 	int sphereheight = spheremap.rows();
@@ -47,118 +65,117 @@ int RemapSphere(Image spheremap, Basis &basis)
 
 	spacepoint p;
 	//double theta,gamma;
-	int c,x,y,sx,sy,c2,cx,cy;
+	int x,y,sx,sy,cx,cy;
 	double aai=1./AA;
-	double xx[AA],yy[AA],r;
-	char filename[500],filenametiff[500];
+	double xxa, yya;
+	double AA2 = AA*AA;
 
 	//unsigned int rq,gq,bq;
-	double rq,gq,bq;
+	double rq,gq,bq,aq;
+	double theta, theta2,  gamma, gamma2;
 
-	if (!strchr(which,filesuf[c])) {
-		cout <<"Skipping number "<<filesuf[c]<<endl;
-		continue;
-	}
-
-
-	sprintf(filename,"%s%c.jpg",filebase,filesuf[c]);
-	sprintf(filenametiff,"%s%c.tiff",filebase,filesuf[c]);
-	cout <<"Working on "<<filename<<"..."<<endl;
 
 	 // loop over width and height of target image for face
 	for (x=0; x < spherewidth; x++) {
 		 //xx and yy are parts of coordinates in xyz space, range [-1,1]
 		//for (c2=0; c2<AA; c2++) xx[c2]=((double)x+aai*(c2+.5))/defaultimagewidth*2-1;
 
+		xxa = x;
+
 		for (y=0; y < sphereheight; y++) {
 			//for (c2=0; c2<AA; c2++) yy[c2]=((double)y+aai*(c2+.5))/defaultimagewidth*2-1;
-			rq=gq=bq=0;
+			rq = gq = bq = aq = 0;
 
 			 //oversample to get pixel color
 			for (cx=0; cx<AA; cx++) {
-			  for (cy=0; cy<AA; cy++) {
+			  xxa = x + cx*aai;
+			  theta = xxa/(double)spherewidth * 2*M_PI;
 
-				 //transform (xx,yy) -> (x,y,z)
-				 //const char *filesuf="021354";
-				switch (c) {
-					case 0: p=spacepoint(      1, xx[cx], yy[cy]); break;
-					case 2: p=spacepoint(     -1,-xx[cx], yy[cy]); break;
-					case 1: p=spacepoint(-xx[cy],      1, yy[cy]); break;
-					case 3: p=spacepoint( xx[cy],     -1, yy[cy]); break;
-					case 5: p=spacepoint(-yy[cy], xx[cy],      1); break;
-					case 4: p=spacepoint( yy[cy], xx[cy],     -1); break;
-				}
+			  for (cy=0; cy<AA; cy++) {
+			    yya = y + cy*aai;
+				gamma = (2.*yya/sphereheight - 1) * M_PI/2;
+
+				p.z = sin(gamma);
+				p.x = cos(gamma) * cos(theta);
+				p.y = cos(gamma) * sin(theta);
 
 				transform(p,basis);
 
 				 //transform (x,y,z) -> (sx,sy)
-				r  = sqrt(p.x*p.x+p.y*p.y);
-				sx = (int)((atan2(p.y,p.x)/M_PI+1)/2*spherewidth);
-				sy = (int)((atan(p.z/r)/M_PI+.5)*sphereheight);
+				gamma2 = asin(p.z);
+				theta2 = atan2(p.y, p.x);
+				
+				sy = gamma2/M_PI*2 + .5;
+				sx = theta2/2/M_PI;
 
-				if (sx<0) sx=0;
-				else if (sx>=spherewidth) sx=spherewidth-1;
-				if (sy<0) sy=0;
-				else if (sy>=sphereheight) sy=sphereheight-1;
+				if (sx >= spherewidth) sx -= spherewidth;
+				else if (sx<0) sx += spherewidth;
 
-				//cout <<"p="<<p.x<<','<<p.y<<','<<p.z<<"  -->  "<<sx<<","<<sy<<endl;
-				//cout <<x<<','<<y<<"  -->  "<<sx<<","<<sy<<endl;
+				if (sy >= sphereheight) sy=sphereheight;
+				else if (sy <= 0) sy = 0;
+
 
 				//--------------------------------
 				try { //using ColorRGB
 					//cout <<".";
-					color=spheremap.pixelColor(sx,sy);
+					color = spheremap.pixelColor(sx,sy);
 					//cerr <<"alpha: "<<color.alpha()<<" ";
-					if (color.alpha()>0) { //defaults to jpeg file, can't have alpha...
-						rq=gq=bq=0;
-						color.alpha(0);
-						break;
-					}
 
-					rq+=color.red();
-					gq+=color.green();
-					bq+=color.blue();
+					rq += color.red();
+					gq += color.green();
+					bq += color.blue();
+					aq += color.alpha();
+
 				} catch (Exception &error_ ) {
 					color.red(0);
 					color.green(0);
 					color.blue(0);
+					color.alpha(0);
 					cout <<"*";
+
 				} catch (exception &error) {
 					color.red(0);
 					color.green(0);
 					color.blue(0);
+					color.alpha(0);
 					cout <<"%";
 				}
-			  }
+			  } //cy
+			} //cx
+
+			if (AA2 > 1) {
+				rq /= AA2;
+				gq /= AA2;
+				bq /= AA2;
+				aq /= AA2;
 			}
 
-			//rq /= AA*AA;
-			//gq /= AA*AA;
-			//bq /= AA*AA;
-
-			//cerr <<"r:"<<rq<<" g:"<<gq<<" b:"<<bq<<endl;
-			//color.redQuantum(rq);
-			//color.greenQuantum(gq);
-			//color.blueQuantum(bq);
 			color.red(rq);
 			color.green(gq);
 			color.blue(bq);
+			color.alpha(aq);
+
 			newimage.pixelColor(x,y,color);
 
 		}
 	}
 
 	 //save the image somewhere..
-	faceimage.magick("TIFF");
-	faceimage.compressType(LZWCompression);
-	faceimage.depth(8);
-	faceimage.write(filenametiff);
+	 //save the image somewhere..
+	if (tif) {
+		cout <<"Saving as tiff to "<<outfile<<endl;
 
-	//faceimage.magick("JPG");
-	//faceimage.quality(75);
-	//faceimage.write(filename);
+		newimage.magick("TIFF");
+		newimage.compressType(LZWCompression);
+		newimage.depth(8);
+		newimage.write(outfile);
 
-	//cout <<"done with image"<<endl;
+	} else if (jpg) {
+		cout <<"Saving as jpg to "<<outfile<<endl;
+		newimage.magick("JPG");
+		newimage.quality(95);
+		newimage.write(outfile);
+	}
 
 
 	cout <<"All done!"<<endl;
@@ -213,10 +230,7 @@ int main(int argc,char **argv)
 	const char *outfile = NULL;
 
 	Basis basis;
-	char action = 0;
-	int width = 0;
-	int height = 0;
-	int magnitude = 100;
+	//int width, height;
 
 	try {
 		double angle;
@@ -248,23 +262,17 @@ int main(int argc,char **argv)
 					outfile = argv[c];
 				} else throw(4);
 
-			} else if (!strcmp(argv[c], "-w")) {
-				c++;
-				if (c < argc) {
-					width = strtol(argv[c], NULL, 10);
-				} else throw(3);
-
-			} else if (!strcmp(argv[c], "-h")) {
-				c++;
-				if (c < argc) {
-					height = strtol(argv[c], NULL, 10);
-				} else throw(3);
-
-			} else if (!strcmp(argv[c], "-m")) {
-				c++;
-				if (c < argc) {
-					magnitude = strtol(argv[c], NULL, 10);
-				} else throw(6);
+//			} else if (!strcmp(argv[c], "-w")) {
+//				c++;
+//				if (c < argc) {
+//					width = strtol(argv[c], NULL, 10);
+//				} else throw(3);
+//
+//			} else if (!strcmp(argv[c], "-h")) {
+//				c++;
+//				if (c < argc) {
+//					height = strtol(argv[c], NULL, 10);
+//				} else throw(3);
 
 			} else if (argv[c][0] != '-') {
 				infile = argv[c];
@@ -312,6 +320,6 @@ int main(int argc,char **argv)
 	cout <<"    height: " << sphere.baseRows()    << endl;
 
 
-	return RemapSphere(sphere, basis);
+	return RemapSphere(outfile, sphere, basis);
 
 }
