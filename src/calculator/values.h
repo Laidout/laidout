@@ -663,6 +663,8 @@ class EnumValue : public Value
 	virtual int type() { return VALUE_Enum; }
  	virtual ObjectDef *makeObjectDef();
 	virtual int EnumId();
+	virtual const char *EnumLabel();
+	virtual int SetFromId(int id);
 };
 
 //----------------------------- FunctionValue ----------------------------------

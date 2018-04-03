@@ -249,7 +249,7 @@ ObjectDef *LaidoutInFilter::GetObjectDef()
  * \todo one could implement dissected long document support by importing laidout data as mystery
  *   data, and final processing is activated as a render process, that proceeds incrementally
  */
-int LaidoutInFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log)
+int LaidoutInFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log, const char *filecontents,int contentslen)
 {
 	ImportConfig *in=dynamic_cast<ImportConfig *>(context);
 	if (!in) return 1;

@@ -150,7 +150,7 @@ int addSvgDocument(const char *file, Document *existingdoc)
 	config.keepmystery=0;
 	config.filter=&filter;
 	ErrorLog log;
-	filter.In(file,&config,log);
+	filter.In(file,&config,log, NULL,0);
 
 	newdoc->dec_count();
 
@@ -1700,7 +1700,7 @@ ObjectDef *SvgImportFilter::GetObjectDef()
 int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribute> &powerstrokes, ErrorLog &log);
 GradientData *svgDumpInGradientDef(Attribute *att, Attribute *defs, int type, GradientData *gradient);
 
-int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log)
+int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log, const char *filecontents,int contentslen)
 {
 	ImportConfig *in=dynamic_cast<ImportConfig *>(context);
 	if (!in) return 1;

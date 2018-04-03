@@ -75,7 +75,7 @@ class ScribusImportFilter : public ImportFilter
 	
 	
 	virtual const char *FileType(const char *first100bytes);
-	virtual int In(const char *file, Laxkit::anObject *context, Laxkit::ErrorLog &log);
+	virtual int In(const char *file, Laxkit::anObject *context, Laxkit::ErrorLog &log, const char *filecontents,int contentslen);
 };
 
 

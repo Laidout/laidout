@@ -293,7 +293,7 @@ class NodeBase : public Laxkit::anObject,
 	virtual int Collapse(int state); //-1 toggle, 0 open, 1 full collapsed, 2 collapsed to preview
 	virtual void UpdateLinkPositions();
 	virtual void UpdateLayout();
-	virtual NodeBase *Execute(NodeThread *thread);
+	virtual NodeBase *Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks);
 
 	virtual NodeBase *Duplicate();
 	virtual void DuplicateBase(NodeBase *from);
@@ -476,6 +476,7 @@ enum NodeInterfaceActions {
 	NODES_Load_With_Loader,
 	NODES_Clear,
 	NODES_Property_Interface,
+	NODES_New_Nodes,
 
 	NODES_Duplicate,
 	NODES_Group_Nodes,
@@ -491,6 +492,8 @@ enum NodeInterfaceActions {
 	NODES_Load_Nodes,
 	NODES_Show_Previews,
 	NODES_Hide_Previews,
+	NODES_Find,
+	NODES_Find_Next,
 
 	NODES_MAX
 };
@@ -504,6 +507,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 	double pan_current; //0..1
 	double pan_duration; //seconds
 	int    pan_tick_ms;
+
+	PtrStack<NodeThread> forks; //used each Execute tick
 
 	NodeConnection *onconnection;
 
@@ -540,6 +545,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 	int lasthover, lasthoverslot, lasthoverprop, lastconnection;
 	flatpoint lastpos;
 	int lastmenuindex;
+	char *search_term;
+	int last_search_index;
 
 	PtrStack<NodeThread> threads;
 
@@ -564,6 +571,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 
 	Laxkit::ShortcutHandler *sc;
 
+	virtual int FreshNodes(bool asresource);
 	virtual int EditProperty(int nodei, int propertyi);
 	virtual int send();
 
@@ -583,7 +591,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual Laxkit::ShortcutHandler *GetShortcuts();
 	virtual int PerformAction(int action);
 
-	virtual int UseThis(Laxkit::anObject *nlinestyle,unsigned int mask=0);
+	virtual int InitializeResources();
+	virtual int UseThis(Laxkit::anObject *nobj, unsigned int mask=0);
 	virtual int InterfaceOn();
 	virtual int InterfaceOff();
 	virtual void Clear(LaxInterfaces::SomeData *d);
@@ -612,6 +621,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual int CutConnections(flatpoint p1,flatpoint p2);
 	virtual int SaveNodes(const char *file);
 	virtual int LoadNodes(const char *file, bool append);
+	virtual int FindNext();
+	virtual int Find(const char *what);
 };
 
 

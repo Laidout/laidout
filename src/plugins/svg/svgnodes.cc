@@ -18,8 +18,13 @@
 #include "../../interfaces/nodeinterface.h"
 #include <exception>
 
+//template implementation:
+#include <lax/lists.cc>
+
+
 #include <iostream>
 #define DBG
+
 
 using namespace std;
 
@@ -186,17 +191,20 @@ SvgFilterNode::SvgFilterNode(const char *filterName)
 			ObjectDef *d = fdef->getFieldOfThis(c);
 			if (!d) continue;
 
+			int isenum = false;
 			Value *v = NULL;
 			if (d->format == VALUE_Number) v = new DoubleValue;
 			else if (d->format == VALUE_Int) v = new IntValue;
 			else if (d->format == VALUE_String) v = new StringValue;
 			else if (d->format == VALUE_Enum) {
 				v = new EnumValue(d,0);
+				isenum = true;
 			}
 
 			//if (!strcmp(d->name, "result")) { result = d; resulti = c; resultv = v; }
 			//else
-				AddProperty(new NodeProperty(issrc ? NodeProperty::PROP_Output : NodeProperty::PROP_Input, true, d->name, v,1, d->Name, d->description, c));
+				AddProperty(new NodeProperty(issrc ? NodeProperty::PROP_Output : isenum ? NodeProperty::PROP_Block : NodeProperty::PROP_Input,
+											 isenum ? false : true, d->name, v,1, d->Name, d->description, c));
 		}
 
 		 //add child button for certain nodes
@@ -425,14 +433,203 @@ int SvgFilterNode::dump_in_atts(Attribute *att, NodeGroup *filter, SvgFilterNode
 	return log.Errors();
 }
 
+bool IsSvgFilterPrimitive(SvgFilterNode *node)
+{
+	if (!node) return false;
+	const char *fname = strrchr(node->Type(), '/');
+	if (!fname) return false;
+	return node && findInList(fname+1, svgprimitives) >= 0;
+}
+
+//-----------------------dump out filter
+
+/*! If boundsnode, also write out a "laidout:bounsdXYWH" hint for that bounds node placement.
+ */
+void DumpSvgBounds(DoubleBBox *bounds, Attribute *att, NodeBase *boundsnode)
+{
+	att->push("x", bounds->minx);
+	att->push("y", bounds->miny);
+	att->push("width", bounds->maxx - bounds->minx);
+	att->push("height", bounds->maxy - bounds->miny);
+
+	if (boundsnode) {
+		 //output the location of the bounds child object
+		char scratch[200];
+		sprintf(scratch, "%f,%f,%f,%f", boundsnode->x,boundsnode->y,boundsnode->width,boundsnode->height);
+		att->push("laidout:boundsXYWH", scratch);
+	}
+}
+
+/*! Write out "laidout:*" for node location hints.
+ */
+void DumpSvgNodeBounds(Attribute *att, NodeBase *node)
+{
+	att->push("laidout:x", node->x);
+	att->push("laidout:y", node->y);
+	att->push("laidout:width",  node->width);
+	att->push("laidout:height", node->height);
+}
+
+
+/*! From an "in" prop, grab either the "result" string from a connected node,
+ * or one of the SvgSource enums.
+ */
+const char *GetInString(NodeProperty *prop, int *issrc_ret)
+{
+	if (!prop || !prop->IsInput() || !prop->connections.n) return NULL;
+	*issrc_ret = 0;
+
+	NodeBase *from = prop->connections.e[0]->from;
+	SvgFilterNode *snode = dynamic_cast<SvgFilterNode*>(from);
+
+	if (!snode) return NULL;
+	if (!strcmp(snode->Type(), "Svg Filter/SvgSource")) {
+		*issrc_ret = 1;
+		return prop->connections.e[0]->fromprop->name;
+	}
+
+	NodeProperty *result = snode->FindProperty("result");
+	if (!result) return NULL;
+	StringValue *s = dynamic_cast<StringValue*>(result->GetData());
+	if (s) return s->str;
+	return NULL;
+}
+
+/*! For each filter primitive SvgFilterNode...
+ */
+int DumpSvgNodesBackwards(Attribute *att, SvgFilterNode *node, NodeGroup *filter, Laxkit::ErrorLog &log, PtrStack<SvgFilterNode> &uppernodes)
+{
+	const char *nodetype = strrchr(node->Type(), '/') + 1;
+	Attribute *nodeatt = new Attribute(nodetype, NULL);
+	DumpSvgNodeBounds(nodeatt, node);
+
+	try {
+		Attribute *contents = NULL;
+
+		for (int c=0; c<node->properties.n; c++) {
+			NodeProperty *prop = node->properties.e[c];
+			if (!prop->IsInput() && !prop->IsBlock()) continue;
+
+			if (!strcmp(prop->Name(), "NewChild")) {
+					continue;
+
+			} else if (!strcmp(prop->Name(), "bounds")) {
+				if (prop->IsConnected()) {
+					 //write out filter bounds
+					BBoxValue *bounds = dynamic_cast<BBoxValue*>(prop->GetData());
+					if (!bounds || !bounds->validbounds()) throw _("Bad bounds property");
+					DumpSvgBounds(bounds, nodeatt, NULL);
+				}
+
+			} else if (!strcmp(prop->name, "in") || !strcmp(prop->name, "in2")) {
+				//grab either "result" string, or SvgSource name
+				// if connected....
+				int issrc = 0;
+				const char *in = GetInString(prop, &issrc);
+				nodeatt->push(prop->name, in);
+
+				SvgFilterNode *sn = dynamic_cast<SvgFilterNode*>(prop->GetConnection(0,NULL));
+				if (IsSvgFilterPrimitive(sn)) uppernodes.pushnodup(sn, 0);
+
+			} else if (!strncmp(prop->name, "Child", 5)) {
+				if (!contents) contents = nodeatt->pushSubAtt("content:");
+
+				//only ones that have kids are feMerge, feComponentTransfer, feDiffuseLighting, feSpecularLighting
+
+				 //svg filter nodes can only have basically one node deep. Exception is feMergeNode, but for that we
+				 //just want the "result" attribute
+
+				//NodeBase *cnode = NULL;
+				SvgFilterNode *childnode = NULL;
+				if (prop->connections.n) childnode = dynamic_cast<SvgFilterNode*>(prop->connections.e[0]->from);
+				if (!childnode) throw _("Expected an svg child node!");
+
+				Attribute *ch = contents->pushSubAtt(strrchr(childnode->Type(),'/') + 1);
+				DumpSvgNodeBounds(ch, childnode);
+
+				for (int c2=0; c2<childnode->properties.n; c2++) {
+					NodeProperty *prop2 = childnode->properties.e[c2];
+					if (!prop2->IsInput() && !prop2->IsBlock()) {
+						// *** make special exception for SvgSource outputs
+						continue;
+					}
+
+					//special catch for "in"
+					const char *cstr = NULL;
+					char *str = NULL;
+					if (!strcmp(prop2->name, "in")) {
+						 //this should only happen for feMerge
+						int issrc = 0;
+						cstr = GetInString(prop2, &issrc);
+
+						SvgFilterNode *sn = dynamic_cast<SvgFilterNode*>(prop2->GetConnection(0,NULL));
+						if (IsSvgFilterPrimitive(sn)) uppernodes.pushnodup(sn, 0);
+						//if (cstr) uppernodes.pushnodup(childnode, 0);
+
+					} else {
+						Value *d = prop2->GetData();
+						if (!d) throw 2;
+
+						if (d->type() == VALUE_String) {
+							cstr = dynamic_cast<StringValue*>(d)->str;
+							if (!cstr) cstr = "";
+						} else {
+							int n = d->getValueStr(NULL,0);
+							str = new char[n+1];
+							d->getValueStr(str, n+1);
+						}
+					}
+
+					ch->push(childnode->properties.e[c2]->name, cstr ? cstr : str);
+					delete[] str;
+				}
+
+
+			} else {
+				 //simple dump out property
+				int n=0;
+				Value *d = prop->GetData();
+				if (d->type() == VALUE_String) {
+					const char *str = dynamic_cast<StringValue*>(d)->str;
+					nodeatt->push(prop->name, str ? str : "");
+				} else {
+					n = d->getValueStr(NULL,0);
+					char *str = new char[n+1];
+					d->getValueStr(str, n+1);
+					nodeatt->push(prop->name, str);
+					delete[] str;
+				}
+			}
+
+		}
+
+	} catch (int e) {
+		// ***clean up
+		delete nodeatt;
+		return 1;
+
+	} catch (const char *error_mes) {
+		// ***clean up
+		log.AddMessage(error_mes, ERROR_Fail);
+		delete nodeatt;
+		return 1;
+	}
+
+	att->push(nodeatt, 0);
+
+
+	return 0;
+}
+
 /*! Return 0 for success, or nonzero for error.
  */
 int DumpOutSvgFilter(Attribute *defs, NodeGroup *filter, Laxkit::ErrorLog &log)
 {
+
 	//first check filter properties:
 	//  needs to have one input "in" and one output "out"
 	NodeProperty *prop = filter->FindProperty("in");
-	if (!prop || (prop && !prop->IsInput()) || !prop->connections.n) {
+	if (!prop || (prop && !prop->IsInput())) {
 		log.AddMessage(_("Filter needs an in!"), ERROR_Fail);
 		return 1;
 	}
@@ -443,75 +640,90 @@ int DumpOutSvgFilter(Attribute *defs, NodeGroup *filter, Laxkit::ErrorLog &log)
 		log.AddMessage(_("Unconnected filter"), ERROR_Fail);
 		return 1;
 	}
+
 	SvgFilterNode *sourcein = dynamic_cast<SvgFilterNode*>(prop->connections.e[0]->to);
-	if (!sourcein || strcmp(sourcein->Type(), "SvgSource")) {
-		log.AddMessage(_("Filter in need to connect to an SvgSource node"), ERROR_Fail);
+	if (!sourcein || strcmp(sourcein->Type(), "Svg Filter/SvgSource")) {
+		log.AddMessage(_("Filter in needs to connect to an SvgSource node"), ERROR_Fail);
 		return 1;
 	}
 
 	prop = filter->FindProperty("out");
-	if (!prop || (prop && !prop->IsOutput()) || !prop->connections.n) {
+	if (!prop || (prop && !prop->IsOutput())) {
 		log.AddMessage(_("Filter needs an out!"), ERROR_Fail);
 		return 1;
 	}
+
 	prop = prop->frompropproxy;
 	if (!prop->connections.n) {
 		log.AddMessage(_("Unconnected filter"), ERROR_Fail);
 		return 1;
 	}
 	SvgFilterNode *finalout = dynamic_cast<SvgFilterNode*>(prop->connections.e[0]->from);
-	if (!finalout || findInList(finalout->Type(), svgprimitives)<0) {
+	if (!IsSvgFilterPrimitive(finalout)) {
 		log.AddMessage(_("Final out needs to be an Svg Filter Node"), ERROR_Fail);
 		return 1;
 	}
 
-	// the filter out connects to the final node. Work backwards from there
 
-	SvgFilterNode *f = NULL;
+	 //first go through all nodes and make sure that there are no repeat "result" strings.
+	 //this makes it easier to code later on
+	NumStack<const char *> results;
+	for (int c=0; c<filter->nodes.n; c++) {
+		SvgFilterNode *node = dynamic_cast<SvgFilterNode*>(filter->nodes.e[c]);
+		if (!node) continue;
+		NodeProperty *prop = node->FindProperty("result");
+		if (!prop) continue;
+		StringValue *v = dynamic_cast<StringValue*>(prop->GetData());
+		if (!v) continue;
 
-	Attribute *filteratt = new Attribute();
-	try {
-
-		NodeProperty *newchildslot = f->FindProperty("NewChild");
-		if (newchildslot) {
-			 //there are children
-			int max = f->properties.findindex(newchildslot);
-			int child0 = max;
-			while (child0 >0 && !strncmp(f->properties.e[child0-1]->name, "Child", 5)) child0--;
-
-			Attribute *kids = filteratt->pushSubAtt("content:");
-
-			for (int c=child0; c<max; c++) {
-				//add child
-				SvgFilterNode *node = NULL;
-				if (f->properties.e[c]->connections.n) node = dynamic_cast<SvgFilterNode*>(f->properties.e[c]->connections.e[0]->from);
-				if (!node) throw 1;
-				Attribute *ch = kids->pushSubAtt(node->Id());
-
-				for (int c2=0; c2<node->properties.n; c2++) {
-					if (!node->properties.e[c2]->IsInput()) {
-						// *** make special exception for SvgSource outputs
-						continue;
-					}
-					Value *d = node->properties.e[c2]->GetData();
-					if (!d) throw 2;
-					// *** write out attribute, special catch for "in"?
-					ch->push(node->properties.e[c2]->name, "***");
+		int c2 = (v->str ? findInList(v->str, results.e, results.n) : -2);
+		if (c2 == -1) {
+			 //was unique
+			results.push(v->str);
+		} else {
+			 //already taken, so make a new unique result name
+			char *str = newstr(v->str ? v->str : "result");
+			while(1) {
+				char *str2 = increment_file(str);
+				c2 = findInList(str2, results.e, results.n);
+				if (c2==-1) {
+					 //ok to use
+					v->Set(str2);
+					results.push(v->str);
+					delete[] str2;
+					break;
 				}
+				delete[] str;
+				str = str2;
 			}
-			
+			delete[] str;
 		}
-	} catch (int e) {
-		// ***clean up
-		delete filteratt;
-		return 1;
 	}
 
-	defs->push(filteratt, -1);
 
+	// the finalout connects to the final node. Work backwards from there
 
-	return 0;
+	Attribute *filteratt = new Attribute("filter", NULL);
+	filteratt->push("id", filter->Id());
+	filteratt->push("inkscape:label", filter->Label());
+	Attribute *contents = filteratt->pushSubAtt("content:");
+
+	PtrStack<SvgFilterNode> uppernodes;
+	int status = DumpSvgNodesBackwards(contents, finalout, filter, log, uppernodes);
+	for (int c=0; c<uppernodes.n; c++) {
+		status |= DumpSvgNodesBackwards(contents, uppernodes.e[c], filter, log, uppernodes);
+		if (status != 0) break;
+	}
+
+	if (status == 1) delete filteratt;
+	else defs->push(filteratt, -1);
+
+	return status;
 }
+
+
+//----------------------- end dump out filter
+
 
 /*! Find the "out" property of the node that has name == "result".
  */
@@ -581,26 +793,10 @@ ObjectDef *GetSvgDefs()
 	SvgFilterNode::svg_def_keeper.SetObject(svgdefs, 1);
 
 
-	//in = "SourceGraphic | SourceAlpha | BackgroundImage | BackgroundAlpha | FillPaint | StrokePaint | <filter-primitive-reference>"
-//	ObjectDef *in = new ObjectDef("SvgFilterIn", _("In"), _("SVG Filter Container"), NULL, "class", 0);
-//	svgdefs->push(in,1);
-//
-//	in->pushEnum("in", "In", NULL,  "SourceGraphic", NULL, NULL,
-//					"SourceGraphic",   _("Source"),           NULL,
-//					"SourceAlpha",     _("Source Alpha"),     NULL,
-//					"BackgroundImage", _("Background"),       NULL,
-//					"BackgroundAlpha", _("Background Alpha"), NULL,
-//					"FillPaint",       _("Fill Paint"),       NULL,
-//					"StrokePaint",     _("Stroke Paint"),     NULL,
-//					"Reference",       _("Reference"),        NULL,
-//					NULL);
-//	in->push("inRef", _("Ref"), _("Used when in is Reference"), "string", NULL, NULL, 0, NULL);
-
-
 	ObjectDef *sourcenode = new ObjectDef("SvgSource", _("Svg Source"), _("SVG Source"), NULL, "class", 0);
 	svgdefs->push(sourcenode,1);
 
-	sourcenode->push("SourceGraphic",   _("Source"),           NULL, NULL, NULL, NULL, 0, NULL);
+	sourcenode->push("SourceGraphic",   _("Source Graphic"),   NULL, NULL, NULL, NULL, 0, NULL);
 	sourcenode->push("SourceAlpha",     _("Source Alpha"),     NULL, NULL, NULL, NULL, 0, NULL);
 	sourcenode->push("BackgroundImage", _("Background"),       NULL, NULL, NULL, NULL, 0, NULL);
 	sourcenode->push("BackgroundAlpha", _("Background Alpha"), NULL, NULL, NULL, NULL, 0, NULL);
@@ -812,7 +1008,7 @@ ObjectDef *GetSvgDefs()
 		"  string in\n"
 		"class feTurbulence\n"
 		"  extends FilterPrimitive\n"
-		"  number baseFrequency\n"
+		"  string baseFrequency\n" //this is one OR two numbers, punt and use strings for now
 		"  int numOctaves\n"
 		"  number seed\n"
 		"  enum stitchTiles\n"
@@ -850,7 +1046,7 @@ ValueHash *XMLAttToHash(ObjectDef *types, LaxFiles::Attribute *att, ValueHash *a
 		value = att->attributes.e[c]->value;
 
 		if (!strcmp(name, "content:")) {
-			if (att->attributes.e[c]->attributes.n || value) { 
+			if (att->attributes.e[c]->attributes.n || value) {
 				SetValue *content = new SetValue();
 				hash->push(".content", content, 1);
 
@@ -904,7 +1100,7 @@ int LoadSVGFilters(const char *file, const char *which_filter, NodeGroup *put_he
 		Attribute *att2 = att->find("svg");
 		if (!att2) throw 1;
 
-		//if (att2) { 
+		//if (att2) {
 		//  att2 = att2->find("content:);
 		//  if (att2) {
 		//    att2 = att2->find("defs");
@@ -967,6 +1163,15 @@ int LoadSVGFilters(const char *file, const char *which_filter, NodeGroup *put_he
 						//***
 					//} else if (!strcmp(name, "style")) {
 						//***
+
+					} else if (!strcmp(name, "laidout:x")) {
+						DoubleAttribute(value, &filter->x, NULL);
+					} else if (!strcmp(name, "laidout:y")) {
+						DoubleAttribute(value, &filter->y, NULL);
+					} else if (!strcmp(name, "laidout:width")) {
+						DoubleAttribute(value, &filter->width, NULL);
+					} else if (!strcmp(name, "laidout:height")) {
+						DoubleAttribute(value, &filter->height, NULL);
 
 					} else if (!strcmp(name, "content:")) {
 
@@ -1062,7 +1267,7 @@ int SvgFilterLoader::CanImport(const char *file, const char *first500)
  */
 int SvgFilterLoader::CanExport(anObject *object)
 {
-	return false;
+	return true;
 }
 
 /*! context needs to be a NodeGroup.
@@ -1091,18 +1296,48 @@ int SvgFilterLoader::Import(const char *file, anObject **object_ret, anObject *c
 
 int SvgFilterLoader::Export(const char *file, anObject *object, anObject *context, Laxkit::ErrorLog &log)
 {
-    NodeGroup *group = dynamic_cast<NodeGroup*>(object);
-    if (!group) {
-        log.AddMessage(_("Object not a NodeGroup in Export"), ERROR_Fail);
-        return 1;
-    }
+	NodeGroup *group = dynamic_cast<NodeGroup*>(object);
+	if (!group) {
+		log.AddMessage(_("Object not a NodeGroup in Export"), ERROR_Fail);
+		return 1;
+	}
 
-	//Attribute *defs = ***;
-	//int status = DumpOutSvgFilter(defs, filter, log);
+	NodeExportContext *ncontent = dynamic_cast<NodeExportContext*>(context);
+	if (!ncontent) {
+		log.AddError(_("Bad context!"));
+		return 1;
+	}
 
-    DBG cerr << " *** need to implement SvgFilterLoader::Export()!"<<endl;
-    log.AddMessage("need to implement SvgFilterLoader::Export()!!", ERROR_Fail);
-    return 1;
+
+	Attribute defs;
+	NodeGroup *g;
+	int status = 0;
+	for (int c=0; c<group->nodes.n; c++) {
+		g = dynamic_cast<NodeGroup*>(group->nodes.e[c]);
+		if (!g) continue;
+		status = DumpOutSvgFilter(&defs, g, log);
+		if (status != 0) break;
+	}
+
+	if (status != 0) return 1;
+	if (!defs.attributes.n) {
+		log.AddError(_("Didn't find any filters to export!"));
+		return 1;
+	}
+
+	FILE *f = fopen(file, "w");
+	if (!f) {
+		log.AddError(_("Could not open file"));
+		return 1;
+	}
+
+	AttributeToXMLFile(f, &defs, 0);
+	//defs.dump_out(f, 0);
+
+	fclose(f);
+
+    DBG cerr << " done with SvgFilterLoader::Export()!"<<endl;
+    return 0;
 }
 
 

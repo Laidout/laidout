@@ -82,7 +82,7 @@ const char *PdfImportFilter::FileType(const char *first100bytes)
 	return NULL;
 }
 
-int PdfImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log)
+int PdfImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log, const char *filecontents,int contentslen)
 {
 	// ***
 	// find number of pages

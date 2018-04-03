@@ -373,6 +373,22 @@ GeglNode *LaxImageToGegl(LaxImage *image, GeglNode *to_this)
 }
 
 
+//-------------------------------- GeglUser --------------------------
+
+/*! \class GeglUser
+ * Convenience class to allow other sources to define a gegl based node that
+ * can interact with main gegl nodes.
+ */
+
+class GeglUser
+{
+  public:
+	GeglUser() {}
+	virtual ~GeglUser() {};
+	virtual GeglNode *GetGeglNode() = 0;
+};
+
+
 //-------------------------------- GeglLaidoutNode --------------------------
 
 

@@ -186,6 +186,13 @@ node editor NodeInterface nodes:
   undo redo
   grouping framed objects have complications
   check for double linking
+  center on selected doesn't actually
+  find:
+    by label, name, or type
+    search node or property name, or data contents
+	regex
+	stack of last searches
+	search in child groups
   gegl nodes:
     need needtoupdate caching.. gegl with big images takes a long time
     scale-size has runaway render for undefined rect
@@ -204,6 +211,14 @@ node editor NodeInterface nodes:
 	DONE load in graph xml
     DONE process on a crop after change a value crash? need to trace
 	DONE make process optional
+  svg/inkscape specific filter interface, io passthrough
+    need full "length" readin, not just floats, ie "100%", "15in"
+    handle child groups
+	handle chaining full filter group nodes
+	Embossed Leather fails
+    Plastify has an orphan feFlood node
+	nodes with children, loading in puts the properties at the end
+	loading: don't have input and output nodes!!
   for memory saving, need to determine what is a "final" node, since intermediate nodes can free data, or pass it on
   node browser
 	tooltips for operation, not just properties
@@ -242,6 +257,8 @@ node editor NodeInterface nodes:
   need better styling.. too much is hardcoded. problems later with high dpi screens
   finish implementing no cycle check: on load in could be a crash magnet currently if constructed with loops
   file properties need browser button
+  object filters:
+    a filter to respond to a global frame value, this have minimal animation control
 
   DONE if you right click on a node not in selection, make that the selection instead
   DONE cut links
@@ -264,10 +281,6 @@ node editor NodeInterface nodes:
     imgflo lets you compile and load new operations on the fly
   css named filter: brightness(1) contrast(67%) saturate(250%) grayscale(0%) invert(0%) hue-rotate(330deg) sepia(40%) blur(0px)
     see https://www.w3.org/TR/filter-effects-1/#grayscaleEquivalent for svg filter equivalents
-  svg/inkscape specific filter interface, io passthrough
-    need full "length" readin, not just floats, ie "100%", "15in"
-	Embossed Leather fails
-    Plastify has an orphan feFlood node
   gmic nodes
   graphicsmagick nodes
   antiprism nodes
@@ -328,6 +341,9 @@ node editor NodeInterface nodes:
     DONE separate xyz
 	DONE combine xyz
 	DONE math: perpendicular, parallel, etc
+
+resource manager needs to store unknown objects as Attribute trees, so they can still be preserved
+  for future processing. for instance, be able to recover from when a plugin is missing
 
 need to implement DRAW_Hires for all interfaces that default to preview renders. needed for proper image out
   includes at least image(done), path, engraver
@@ -778,6 +794,8 @@ export/print dialog
   vital to debug send to printer
   export should have a preview of what is actually going out, flip through spreads
   in papergroups with multiple papers and double sided impositions, need to ensure front and back are output properly for printer 
+
+clean up filefilter.h definition to allow explicit declaration of ObjectFilter in DrawableObject
 
 fontdialog: FontDialog
   need a way to remember layered fonts, to easily activate and deactivate
@@ -1618,12 +1636,13 @@ for clones, it would be easier to have a "defs" group or something, so deleting 
   not cause problems. When deleting objects, must then take care to update parent, so it is immediately known
   if an object is without a home.
 
-tiling cloner:  CloneInterface
+tiling cloner: clone tiler  CloneInterface
   new tiling should update viewport color per basecells
   should not assume preview has I transform
   memory hole back, third time!!!
   radial needs wind scale input
 
+  need more distinction between what is a base object, and grabbing a copy of existing object.. too easy to confuse the two!
   copies should be selectable, at least so you can adjust the colors: gave current_base, current_copy
   should have z order controls for base cell stuff
   clipping options when source images overlap in final layout

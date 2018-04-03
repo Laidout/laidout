@@ -18,7 +18,9 @@
 #include <lax/errorlog.h>
 #include <lax/anxapp.h>
 #include <lax/dump.h>
-#include "../document.h"
+
+#include "../papersizes.h"
+#include "../dataobjects/group.h"
 #include "../calculator/values.h"
 #include "../plugins/plugin.h"
 
@@ -29,6 +31,7 @@ namespace Laidout {
 
 class Document;
 class DocumentExportConfig;
+
 
 //------------------------------------- FileFilter -----------------------------------
 
@@ -63,7 +66,7 @@ class ImportFilter : public FileFilter
  public:
 	virtual const char *whattype() { return "FileInputFilter"; }
 	virtual const char *FileType(const char *first100bytes) = 0;
-	virtual int In(const char *file, Laxkit::anObject *context, Laxkit::ErrorLog &log) = 0;
+	virtual int In(const char *file, Laxkit::anObject *context, Laxkit::ErrorLog &log, const char *filecontents,int contentslen) = 0;
 	virtual ObjectDef *makeObjectDef();
 };
 
@@ -169,7 +172,7 @@ class ImportConfig : public Value
 
 //------------------------------- import_document() ----------------------------------
 
-int import_document(ImportConfig *config, Laxkit::ErrorLog &log);
+int import_document(ImportConfig *config, Laxkit::ErrorLog &log, const char *filecontents,int contentslen);
 
 
 } // namespace Laidout

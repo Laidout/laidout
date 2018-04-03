@@ -4933,7 +4933,7 @@ Laxkit::ShortcutHandler *ViewWindow::GetShortcuts()
 	sc->Add(VIEW_MeshGradientTool,LAX_F8,0,0,        _("MeshGradientTool"),_("Change to mesh gradient tool"),NULL,0);
 	sc->Add(VIEW_EngraverTool,    LAX_F9,0,0,        _("EngraverTool"),    _("Change to engraver fill tool"),NULL,0);
 
-	sc->Add(VIEW_CommandPrompt,  '/',0,0,           _("Prompt"),        _("Popup a the graphical shell"),NULL,0);
+	sc->Add(VIEW_CommandPrompt,  '/',0,0,           _("Prompt"),        _("Popup the graphical shell"),NULL,0);
 
 	manager->AddArea("ViewWindow",sc);
 	return sc;

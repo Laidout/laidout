@@ -590,7 +590,7 @@ void setFromPolyptych(const char *polyptychfile, char *&imagefile, char *&polyhe
 {
 	if (!polyptychfile) return;
 	Attribute att;
-	if (att.dump_in(polyptychfile,NULL)) return;
+	if (att.dump_in(polyptychfile, 0)) return;
 	char *name,*value;
 	for (int c=0; c<att.attributes.n; c++) {
 		name=att.attributes.e[c]->name;

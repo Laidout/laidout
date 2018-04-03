@@ -158,7 +158,7 @@ int ImportFunction(ValueHash *context,
 		if (err==0 && value->type()==VALUE_Object) config=dynamic_cast<ImportConfig*>(((ObjectValue*)value)->object);
 
 		 //run the filter
-		if (config) err=filter->In(filename,config,log);
+		if (config) err=filter->In(filename,config,log, NULL,0);
 		if (value) value->dec_count();
 
 	} catch (const char *str) {

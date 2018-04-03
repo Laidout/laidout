@@ -414,7 +414,7 @@ int ImportFileDialog::send(int id)
 
 
 	ErrorLog log;
-	int err=import_document(config,log);
+	int err = import_document(config,log, NULL,0);
 
 	if (log.Total()) {
 		dumperrorlog("ImportFile error return:",log);

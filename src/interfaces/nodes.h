@@ -29,6 +29,9 @@ namespace Laidout {
 int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory);
 
 
+//------------ blank NodeGroup creator, used by resource manager, as well as node manager
+Laxkit::anObject *newNodeGroup(int p, Laxkit::anObject *ref);
+
 
 //--------------------- Misc node related objects used by other things ----------------------
 
