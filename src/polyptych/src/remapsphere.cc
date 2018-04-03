@@ -26,13 +26,15 @@ using namespace Magick;
 #define DBG
 
 
-const int AA=1; //how many pixels across to antialias
 
 
-int RemapSphere(const char *outfile, Image spheremap, Basis &basis)
+int RemapSphere(const char *outfile, Image spheremap, Basis &basis, int antialias)
 {
 	 //figure out extension
 	bool tif = false, jpg = false; //, png = false;
+
+	int AA = antialias; //how many pixels across to antialias
+	if (AA<1) AA = 1;
 
 	const char *ext = strrchr(outfile, '.');
 	if (ext) ext++;
@@ -105,14 +107,14 @@ int RemapSphere(const char *outfile, Image spheremap, Basis &basis)
 				gamma2 = asin(p.z);
 				theta2 = atan2(p.y, p.x);
 				
-				sy = gamma2/M_PI*2 + .5;
-				sx = theta2/2/M_PI;
+				sy = (gamma2/(M_PI/2) + 1)/2 * sphereheight;
+				sx = theta2/(2*M_PI) * spherewidth;
 
 				if (sx >= spherewidth) sx -= spherewidth;
 				else if (sx<0) sx += spherewidth;
 
-				if (sy >= sphereheight) sy=sphereheight;
-				else if (sy <= 0) sy = 0;
+				if (sy >= sphereheight) sy -= sphereheight;
+				else if (sy < 0) sy += sphereheight;
 
 
 				//--------------------------------
@@ -230,6 +232,7 @@ int main(int argc,char **argv)
 	const char *outfile = NULL;
 
 	Basis basis;
+	int antialias = 1;
 	//int width, height;
 
 	try {
@@ -254,6 +257,13 @@ int main(int argc,char **argv)
 				if (c < argc) {
 					angle = strtod(argv[c], NULL);
 					if (angle != 0) RotateAroundZ(basis, angle);
+				} else throw(3);
+
+			} else if (!strcmp(argv[c], "-A")) {
+				c++;
+				if (c < argc) {
+					antialias = strtol(argv[c], NULL, 10);
+					if (antialias < 1) antialias = 1;
 				} else throw(3);
 
 			} else if (!strcmp(argv[c], "-o")) {
@@ -320,6 +330,6 @@ int main(int argc,char **argv)
 	cout <<"    height: " << sphere.baseRows()    << endl;
 
 
-	return RemapSphere(outfile, sphere, basis);
+	return RemapSphere(outfile, sphere, basis, antialias);
 
 }
