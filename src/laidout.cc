@@ -42,6 +42,7 @@
 #include "impositions/singles.h"
 #include "impositions/netimposition.h"
 #include "impositions/impositioneditor.h"
+#include "interfaces/nodeeditor.h"
 #include "headwindow.h"
 #include "version.h"
 #include "stylemanager.h"
@@ -275,6 +276,9 @@ LaidoutApp::LaidoutApp()
 	GetUnitManager()->PixelSize(1./72,UNITS_Inches);
 
 	resources.SetAppName("laidout",LAIDOUT_VERSION);
+
+	pipeout = false;
+	pipeoutarg = NULL;
 }
 
 //! Destructor, only have to delete project!
@@ -303,6 +307,7 @@ LaidoutApp::~LaidoutApp()
 	if (config_dir)         delete[] config_dir;
 	if (ghostscript_binary) delete[] ghostscript_binary;
 	if (calculator)		    calculator->dec_count();
+	delete[] pipeoutarg;
 }
 
 int LaidoutApp::close()
@@ -1224,7 +1229,7 @@ void InitOptions()
 	options.Add("new",                'n', 1, "Create new document",                         0, "\"letter,portrait,3pgs\"");
 	options.Add("file-format",        'F', 0, "Print out a pseudocode mockup of the file format, then exit",0,NULL);
 	options.Add("command",            'c', 1, "Run one or more commands without the gui",    0, "\"newdoc net\"");
-	options.Add("script",             's', 1, "Like --command, but the commands are in the given file",     0, "/some/file");
+	options.Add("script",             'C', 1, "Like --command, but the commands are in the given file",     0, "/some/file");
 	options.Add("shell",              'P', 0, "Enter a command line shell. Can be used with --command and --script.", 0, NULL);
 	options.Add("default-units",      'u', 1, "Use the specified units.",                    0, "(in|cm|mm|m|ft|yards)");
 	options.Add("load-dir",           'l', 1, "Start in this directory.",                    0, "path");
@@ -1233,6 +1238,7 @@ void InitOptions()
 	options.Add("impose-only",        'I', 1, "Run only as a file imposer, not full Laidout",0, NULL);
 	options.Add("nodes-only",         'o', 1, "Run only as a node editor on argument",       0, NULL);
 	options.Add("pipein",             'p', 1, "Start with a document piped in on stdin",     0, "default");
+	options.Add("pipeout",            'P', 1, "On exit, export document[0] to stdout",       0, "default");
 	options.Add("list-shortcuts",     'S', 0, "Print out a list of current keyboard bindings, then exit",0,NULL);
 	options.Add("theme",              'T', 1, "Set theme. Currently, one of Light, Dark, or Gray",0,NULL);
 	options.Add("helphtml",           'H', 0, "Output an html fragment of key shortcuts.",   0, NULL);
@@ -1253,7 +1259,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	
 	char *exprt = NULL;
 	bool pipein = false;
-	const char *pipearg = NULL;
+	const char *pipeinarg = NULL;
 
 
 	LaxOption *o;
@@ -1279,7 +1285,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					LoadTemplate(o->arg(),log);
 				} break;
 
-			case 'P': { // --shell
+			case 'C': { // --shell
 					donotusex=2;
 					runmode=RUNMODE_Shell;
 				} break;
@@ -1397,15 +1403,18 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 			case 'o': { // nodes-only
 					runmode = RUNMODE_Nodes_Only;
-					//anXWindow *editor = newNodeEditor(NULL,"nodeedit",_("Nodes"),0,NULL, o->arg());
-					//addwindow(editor);
-					cerr << "Nodes-Only not quite implemented yet!"<<endl;
-					exit(1);
+					anXWindow *editor = newNodeEditor(NULL,"nodeedit",_("Nodes"), 0,NULL, NULL,0, o->arg());
+					addwindow(editor);
 				} break;
 
 			case 'p': { //pipein
 					pipein = true;
-					pipearg = o->arg();
+					pipeinarg = o->arg();
+			    } break;
+
+			case 'P': { //pipeout
+					pipeout = true;
+					makestr(pipeoutarg, o->arg());
 			    } break;
 
 			case 'u': { // default units
@@ -1524,46 +1533,13 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	}
 
 	if (pipein) {
-		char *data = NULL;
-		char *buf = NULL;
-		int c;
-		int n = 0, max = 0;
-
+		int n=0;
 		DBG cerr << "Piping in..."<<endl;
-
-		data = new char[1024];
-		buf = data;
-		max = 1024;
-
-		while (!feof(stdin)) {
-			buf = data;
-			c = fread(buf,1,1024,stdin);
-			n += c;
-
-			if (c == 0) {
-				if (feof(stdin)) {
-					DBG cerr << "--eof, read "<< n <<" bytes--" << endl;
-					break;
-				} else if (ferror(stdin)) {
-					DBG cerr << "--error--" << endl;
-					break;
-				}
-			}
-
-			 //realloc
-			if (!feof(stdin)) {
-				char *ndata = new char[max+1024];
-				memcpy(ndata, data, max);
-				delete[] data;
-				data = ndata;
-				buf = data + max;
-				max += 1024;
-			}
-		}
+		char *data = pipe_in_whole_file(stdin, &n);
 
 		//*** //load from string data
 		cerr << " *** need to finish implementing pipein!!"<<endl;
-		if (!strcasecmp(pipearg, "default")) {
+		if (!strcasecmp(pipeinarg, "default")) {
 			 //assume is laidout file
 
 //			if (Load(NULL, log, data) == 0) doc = curdoc;
@@ -1574,7 +1550,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		} else {
 			 //parse import settings
 			Attribute att;
-			NameValueToAttribute(&att, pipearg, '=', ',');
+			NameValueToAttribute(&att, pipeinarg, '=', ',');
 
 			ImportConfig config;
 			config.dump_in_atts(&att, 0, NULL);
@@ -2233,7 +2209,7 @@ int main(int argc,char **argv)
 	DBG cairo_debug_reset_static_data();
 #endif
 
-	cout <<"-----------------------------Bye!--------------------------"<<endl;
+	DBG cerr <<"-----------------------------Bye!--------------------------"<<endl;
 	DBG cerr <<"------------end of code, default destructors follow--------"<<endl;
 
 	return 0;

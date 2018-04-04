@@ -88,11 +88,14 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
  protected:
 	Laxkit::ErrorLog generallog;
 
-	void dumpOutResources();
+	bool pipeout;
+	char *pipeoutarg;
 
 	int autosave_timerid;
 	virtual int  Idle(int tid, double delta);
 	virtual int Autosave();
+
+	void dumpOutResources();
 
  public:
 	RunModeType runmode;
