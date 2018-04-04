@@ -643,9 +643,7 @@ int isSvgFile(const char *file)
 	first[c]='\0';
 	c=-1;
 
-	 //check for the various OFF starts
-	 //should have something like <SCRIBUSUTF8NEW Version="..."
-	const char *p=strstr(first,"<svg");
+	const char *p = strstr(first,"<svg");
 
 	int foundsvg=0;
 	if (p) { //extract version...
