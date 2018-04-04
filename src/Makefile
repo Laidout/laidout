@@ -119,6 +119,7 @@ otherobjs= \
 	interfaces/objecttree.o \
 	interfaces/pagemarkerinterface.o \
 	interfaces/nodeinterface.o \
+	interfaces/nodeeditor.o \
 	interfaces/nodes.o \
 	printing/print.o \
 	printing/psfilters.o \

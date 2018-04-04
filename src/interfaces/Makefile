@@ -27,6 +27,7 @@ objs= \
 	objecttree.o \
 	pagemarkerinterface.o \
 	nodeinterface.o \
+	nodeeditor.o \
 	nodes.o \
 
 
