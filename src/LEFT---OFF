@@ -12,6 +12,10 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now: 
 
+laxkit/examples/laxhello.cc: messagebar, resize window, dragging around smears. Also can't double buffer
+
+filedialog: something wrong with bookmarks.. pressed add, and they all went away
+
 switch to net imposition, net render lines too big
 
 asymmetric cuts are not right for front sheets on spread generation (done), also on sig editor
@@ -138,6 +142,7 @@ update translation base files
 update screenshots, sync with features
 update links page
 update dtpcompare.html
+comment out cairo_debug_reset_static_data before release, since it usually means crash, interferes with pipeout
 test:
   ./laidout ../examples/test-all-objects.laidout
   each export filter (via command line in new script in examples.. ignoring problems in eps)
@@ -187,12 +192,14 @@ node editor NodeInterface nodes:
   grouping framed objects have complications
   check for double linking
   center on selected doesn't actually
+  bug: sometimes crash when tabbing across property values
   find:
     by label, name, or type
     search node or property name, or data contents
 	regex
 	stack of last searches
 	search in child groups
+	find all
   gegl nodes:
     need needtoupdate caching.. gegl with big images takes a long time
     scale-size has runaway render for undefined rect
@@ -202,8 +209,8 @@ node editor NodeInterface nodes:
 	need protection against unknown gegl ops, like when "gpl" is toggled
     some process actions bog everything down like overlay a crop with a non-cropped input.. need a check for unbounded nodes before process
 	some nodes define a particular extent, like gradients. preview should detect
-	preview area should be adjustible for sample area, instead of always default 100x100
 	do something decent with property types: GeglCurve GeglPath. ignore these for now: GeglAudioFragment GeglBuffer GdkPixbuf GeglNode
+	DONE preview area should be adjustible for sample area, instead of always default 100x100
 	DONE babl format is passed in gegl as an otherwise undefined gpointer, need to have special check for this
 	DONE save gegl graph to xml
 	DONE enums
@@ -212,13 +219,15 @@ node editor NodeInterface nodes:
     DONE process on a crop after change a value crash? need to trace
 	DONE make process optional
   svg/inkscape specific filter interface, io passthrough
+    svg color properties are strings, but there should be button for color select
     need full "length" readin, not just floats, ie "100%", "15in"
+	feTurbulence->baseFrequency is TWO numbers, not one, need data[] support
     handle child groups
 	handle chaining full filter group nodes
 	Embossed Leather fails
     Plastify has an orphan feFlood node
-	nodes with children, loading in puts the properties at the end
-	loading: don't have input and output nodes!!
+	nodes with children, loading in puts the child properties at the end
+	DONE loading: don't have input and output nodes!!
   for memory saving, need to determine what is a "final" node, since intermediate nodes can free data, or pass it on
   node browser
 	tooltips for operation, not just properties
@@ -232,6 +241,8 @@ node editor NodeInterface nodes:
   load something already loaded makes dups of everything.. need to check for name collision!!
   load/save custom properties needs to preserve name, label, tooltip, types, custom info
   groups
+    allow editable labels for input props
+	add dummy prop on in/out to hot link data (only from within group)
     linked vs appended node groups, to allow mass changing of particular effects
 	  GroupRef : NodeGroup, with some sort of relay to actual group internals
     node libraries: nodes as resources
@@ -244,11 +255,11 @@ node editor NodeInterface nodes:
     toggle show only selected nodes?
     DONE jump to link under mouse: shift click over slot, or shift click over bare bez
   exec paths
-    may have to rewrite properties to allow multiple ins and single out. currently some places assume only one in
-	  require first to be the single out, if property is a pass through
-	thread forking for branching nodes?
-	if branching
 	events for ui tool construction?
+	exec tick speed control for debugging
+    DONE update to use IsExecIn/Out
+	DONE thread forking for branching nodes?
+	DONE if branching
   make sure entire nodes don't go totally offscreen
   scriptify node graph
   nodes to script and script to nodes
@@ -258,7 +269,13 @@ node editor NodeInterface nodes:
   finish implementing no cycle check: on load in could be a crash magnet currently if constructed with loops
   file properties need browser button
   object filters:
-    a filter to respond to a global frame value, this have minimal animation control
+    a filter to respond to a global frame value, thus have minimal animation control
+  list nodes
+    set range [start,end] = value
+	subset [start, end], neg nums for from end
+	element [index]
+	create list  [type, number]
+	foreach thread processor
 
   DONE if you right click on a node not in selection, make that the selection instead
   DONE cut links
