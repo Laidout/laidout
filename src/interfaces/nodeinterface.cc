@@ -49,6 +49,52 @@ using namespace std;
 namespace Laidout {
 
 
+//-------------------------------------- NodeExportContext --------------------------
+
+
+NodeExportContext::NodeExportContext()
+{
+	selection   = NULL;
+	pipe        = false;
+	passthrough = NULL;
+	group       = NULL;
+	top         = NULL;
+	colors      = NULL;
+}
+
+NodeExportContext::NodeExportContext(Laxkit::RefPtrStack<NodeBase> *selected, Attribute *passth,
+		NodeGroup *ngroup, NodeGroup *ntop, NodeColors *ncolors, bool npipe)
+{
+	selection   = selected;
+	pipe        = npipe;
+	passthrough = passth;
+	group       = ngroup;
+	top         = ntop;
+	colors      = ncolors;
+
+	if (group ) group ->inc_count();
+	if (top   ) top   ->inc_count();
+	if (colors) colors->inc_count();
+}
+
+NodeExportContext::~NodeExportContext()
+{
+	if (passthrough) delete passthrough;
+	if (group)  group->dec_count();
+	if (top)    top  ->dec_count();
+	if (colors) colors->dec_count();
+}
+
+void NodeExportContext::SetTop(NodeGroup *ntop)
+{
+	if (top) top->dec_count();
+	top = ntop;
+	if (top) top->inc_count();
+}
+
+
+
+
 //-------------------------------------- NodeColors --------------------------
 /*! \class NodeColors
  * Holds NodeInterface styling.
@@ -1426,6 +1472,25 @@ void NodeGroup::SetNodeFactory(Laxkit::ObjectFactory *newnodefactory)
 	factorykeeper.SetObject(newnodefactory, false);
 }
 
+/*! Export with loader corresponding to format. If format==NULL, then assume Laidout node format.
+ * If file_is_string_data > 0, then file is a string of that many bytes, not a filename.
+ */
+NodeGroup *NodeGroup::Import(const char *format, const char *file, int file_is_string_data, NodeGroup *append_in_this)
+{
+	cerr << " *** need to implement NodeGroup::Import()!"<<endl;
+	return NULL;
+}
+
+int NodeGroup::Export(NodeGroup *group, const char *format, const char *file)
+{
+	cerr << " *** need to implement NodeGroup::Export()!"<<endl;
+	return 1;
+}
+
+
+
+//--------------NodeGroup funcs
+
 NodeGroup::NodeGroup()
 {
 	background.rgbf(0,0,0,.5);
@@ -2432,6 +2497,8 @@ NodeInterface::NodeInterface(anInterface *nowner, int nid, Displayer *ndp)
 	font           = app->defaultlaxfont;
 	font->inc_count();
 	defaultpreviewsize = 50; //pixels
+	passthrough    = NULL;
+	default_colors = NULL;
 
 	search_term   = NULL;
 	last_search_index = -1;
@@ -2473,6 +2540,8 @@ NodeInterface::~NodeInterface()
 	if (sc) sc->dec_count();
 	if (tempconnection) tempconnection->dec_count();
 	if (onconnection) onconnection->dec_count();
+	if (default_colors) default_colors->dec_count();
+	if (passthrough) delete passthrough;
 }
 
 const char *NodeInterface::whatdatatype()
@@ -2599,11 +2668,24 @@ int NodeInterface::IsThread(NodeBase *node)
 	return 0;
 }
 
-/*! Normally this will accept some common things like changes to line styles, like a current color.
+/*! Normally this will accept some common things like NodeGroup.
+ * If a NodeGroup, it will inc_count.
  */
 int NodeInterface::UseThis(anObject *nobj, unsigned int mask)
 {
 	if (!nobj) return 1;
+
+	if (dynamic_cast<NodeGroup*>(nobj)) {
+		NodeGroup *group = dynamic_cast<NodeGroup*>(nobj);
+
+		selected.flush();
+		grouptree.flush();
+		nodes = group;
+		nodes->inc_count();
+		needtodraw=1;
+		return 0;
+	}
+
 //	LineStyle *ls=dynamic_cast<LineStyle *>(nobj);
 //	if (ls!=NULL) {
 //		if (mask&GCForeground) { 
@@ -2962,7 +3044,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
         const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
 		if (isblank(s->str)) return 0;
 
-		if (LoadNodes(s->str, false) == 0) {
+		if (LoadNodes(s->str, false, 0, false) == 0) {
 			 //success! select all new nodes
 			makestr(lastsave, s->str);
 		}
@@ -2999,7 +3081,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 		}
 
 		ErrorLog log;
-		NodeExportContext context(&selected);
+		NodeExportContext context(&selected, NULL, NULL, (grouptree.n ? grouptree.e[0] : nodes), nodes->colors, false);
 		int status = loader->Export(s->str, nodes, &context, log); //ret # of failing errors
 		if (status) {
 			 //there were errors
@@ -3024,15 +3106,16 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 
 		anObject *obj_ret = NULL;
 		ErrorLog log;
-		int status = loader->Import(s->str, &obj_ret, nodes, log);
-		NodeGroup *group = dynamic_cast<NodeGroup*>(obj_ret);
+		NodeExportContext context(NULL, NULL, nodes, (grouptree.n ? grouptree.e[0] : nodes), (nodes ? nodes->colors : NULL), false);
+		int status = loader->Import(s->str,0, &obj_ret, &context, log);
 
 		if (status) {
 			 //there were errors
 			NotifyGeneralErrors(&log);
-			if (obj_ret && obj_ret != nodes) group->dec_count();
+			if (obj_ret && obj_ret != nodes) obj_ret->dec_count();
 
 		} else {
+			//NodeGroup *group = dynamic_cast<NodeGroup*>(obj_ret);
 			for (int c=oldn; c < nodes->nodes.n; c++) {
 				if (!nodes->nodes.e[c]->colors) {
 					nodes->nodes.e[c]->InstallColors(nodes->colors, false);
@@ -3286,7 +3369,7 @@ int NodeInterface::Refresh()
 	 //draw node parent list
 	double x = 0;
 
-	if (grouptree.n) {
+	//if (grouptree.n) {
 		dp->NewFG(coloravg(nodes->colors->fg.Pixel(),nodes->colors->bg.Pixel(), .25));
 		dp->NewBG(coloravg(nodes->colors->fg.Pixel(),nodes->colors->bg.Pixel(), .75));
 
@@ -3315,7 +3398,7 @@ int NodeInterface::Refresh()
 		width = dp->textextent(str,-1, NULL,NULL);
 		dp->drawRoundedRect(x-th/2,0, width+th,th*1.5, th/3, false, th/3, false, 2); 
 		dp->textout(x,th/4, str,-1, LAX_TOP|LAX_LEFT);
-	}
+	//}
 
 
 	dp->NewTransform(nodes->m.m());
@@ -5444,8 +5527,11 @@ int NodeInterface::FreshNodes(bool asresource)
 }
 
 /*! Completely replaces exists nodes, unless append is true.
+ *
+ * If file_is_string_data > 0, then there are that many bytes in file to be considered data,
+ * and file is not actually a filename.
  */
-int NodeInterface::LoadNodes(const char *file, bool append)
+int NodeInterface::LoadNodes(const char *file, bool append, int file_is_string_data, bool keep_passthrough)
 {
 	if (!append) {
 		if (nodes) {
@@ -5456,37 +5542,55 @@ int NodeInterface::LoadNodes(const char *file, bool append)
 
 	if (!nodes) FreshNodes(true);
 
-	FILE *f = fopen(file, "r");
+	char first500[500];
+	string filename = "";
 
-	if (!f) {
-		 //error!
-		PostMessage(_("Could not open nodes file!"));
-		DBG cerr <<(_("Could not open nodes file!")) << file<<endl;
-		return 1;
+	if (file_is_string_data) {
+		int nn = 499;
+		if (file_is_string_data < nn) nn = file_is_string_data;
+		memcpy(first500, file, nn);
+		first500[nn] = '\0';
+
+	} else {
+		filename = file;
+		FILE *f = fopen(file, "r");
+
+		if (!f) {
+			 //error!
+			PostMessage(_("Could not open nodes file!"));
+			DBG cerr <<(_("Could not open nodes file!")) << file<<endl;
+			return 1;
+		}
+
+		int num = fread(first500,1,499, f);
+		first500[num] = '\0';
+		fclose(f);
 	}
 
 	int oldn = nodes->nodes.n;
-	char first500[500];
-	int num = fread(first500,1,499, f);
-	first500[num] = '\0';
-	rewind(f);
 
 	bool success = false;
 	ErrorLog log;
+
 	if (strstr(first500, "#Laidout") != first500 || strstr(first500, "Nodes") == NULL) {
 		 //does not appear to be a laidout node file.
 		 //try with loaders
-		fclose(f);
-		f = NULL;
 
 		if (NodeGroup::loaders.n) {
+			NodeExportContext context(NULL, NULL, nodes, (grouptree.n ? grouptree.e[0] : nodes), (nodes ? nodes->colors : NULL), false);
+
+			if (keep_passthrough) {
+				context.passthrough = new Attribute("passthrough",NULL);
+				if (passthrough) { delete passthrough; passthrough = NULL; } //remove tool's old one
+			}
+
 			for (int c=0; c<NodeGroup::loaders.n; c++) {
-				if (NodeGroup::loaders.e[c]->CanImport(file, first500)) {
+				if (NodeGroup::loaders.e[c]->CanImport(file_is_string_data ? NULL : file, first500)) {
 					anObject *obj_ret = NULL;
 					ErrorLog log;
 					int oldn = nodes->nodes.n;
 
-					int status = NodeGroup::loaders.e[c]->Import(file, &obj_ret, nodes, log);
+					int status = NodeGroup::loaders.e[c]->Import(file, file_is_string_data, &obj_ret, &context, log);
 					if (status == 0) {
 						for (int c=oldn; c < nodes->nodes.n; c++) {
 							if (!nodes->nodes.e[c]->colors) {
@@ -5496,6 +5600,7 @@ int NodeInterface::LoadNodes(const char *file, bool append)
 							if (nodes->nodes.e[c]->width <= 0) nodes->nodes.e[c]->Wrap();
 						}
 
+						if (context.passthrough) { passthrough = context.passthrough; context.passthrough = NULL; }
 						success = true;
 						break;
 					}
@@ -5508,9 +5613,16 @@ int NodeInterface::LoadNodes(const char *file, bool append)
 		DumpContext context(NULL,1, object_id);
 		context.log = &log;
 
-		nodes->dump_in(f, 0, 0, &context, NULL);
-		success = true;
-		if (f) fclose(f);
+		if (file_is_string_data) {
+			nodes->dump_in_str(file, 0, &context, NULL);
+			success = (log.Errors() == 0);
+
+		} else {
+			FILE *f = fopen(file, "r");
+			nodes->dump_in(f, 0, 0, &context, NULL);
+			success = (log.Errors() == 0);
+			fclose(f);
+		}
 	}
 
 	if (success) {
@@ -5529,6 +5641,7 @@ int NodeInterface::LoadNodes(const char *file, bool append)
 		}
 
 		FindThreads(true);
+		PerformAction(NODES_Center_Selected);
 
 		PostMessage(_("Loaded."));
 		DBG cerr << _("Loaded.") <<endl;
@@ -5542,6 +5655,8 @@ int NodeInterface::LoadNodes(const char *file, bool append)
 	return success ? 0 : 1;
 }
 
+/*! Save to laidout nodes format.
+ */
 int NodeInterface::SaveNodes(const char *file)
 {
 	FILE *f = fopen(file, "w");
@@ -5562,9 +5677,54 @@ int NodeInterface::SaveNodes(const char *file)
 	} 
 
 	 //else error!
-	PostMessage(_("Could not open nodes file!"));
-	DBG cerr <<(_("Could not open nodes file!")) << file<< endl;
+	PostMessage(_("Could not open file to save!"));
+	DBG cerr <<(_("Could not open file to save!")) << file<< endl;
 	return 1;
+}
+
+/*! If file == "pipe", then save to stdout.
+ */
+int NodeInterface::ExportNodes(const char *file, const char *format)
+{
+    if (!format || !strcasecmp(format, "default") || !strcasecmp(format, "laidout")) return SaveNodes(file);
+
+	if (!nodes) return 1;
+
+	ObjectIO *loader = NULL;
+	for (int c=0; c<NodeGroup::loaders.n; c++) {
+		if (!strcasecmp(format, NodeGroup::loaders.e[c]->Format())) {
+			loader = NodeGroup::loaders.e[c];
+			break;
+		}
+	}
+
+	if (!loader) {
+		PostMessage(_("Could not find loader."));
+		return 0;
+	}
+
+	ErrorLog log;
+	NodeExportContext context(&selected, NULL,NULL,(grouptree.n ? grouptree.e[0] : nodes), (nodes ? nodes->colors : NULL), false);
+		
+	if (passthrough) { 
+		context.passthrough = passthrough->duplicate();
+	}
+
+	if (!file || !strcmp(file, "pipe")) {
+		context.pipe = true;
+		file = NULL;
+	}
+
+	int status = loader->Export(file, nodes, &context, log); //ret # of failing errors
+	if (status) {
+		 //there were errors
+		NotifyGeneralErrors(&log);
+
+	} else PostMessage(_("Exported."));
+
+	DBG loader->Export("TEMP.nodes", nodes, &context, log); //ret # of failing errors
+
+	return 0;
 }
 
 int NodeInterface::ToggleCollapsed()

@@ -1083,19 +1083,36 @@ ValueHash *XMLAttToHash(ObjectDef *types, LaxFiles::Attribute *att, ValueHash *a
 
 /*! Load in filters extracted from an svg file. One group node per filter
  * If which_filter == NULL, then extract all. Else just that one.
+ * If you want the read in file returned, provide att_ret.
+ *
+ * If file_is_data > 0, then there are that many bytes in file to be considered raw string data of an svg file.
  */
-int LoadSVGFilters(const char *file, const char *which_filter, NodeGroup *put_here, Laxkit::ErrorLog &log, Attribute **att_ret)
+int LoadSVGFilters(const char *file, int file_is_data, const char *which_filter, NodeGroup *put_here, Laxkit::ErrorLog &log, Attribute *att_ret)
 {
 	DBG cerr <<"loading svg filters..."<<endl;
 
 	ObjectDef *svgdefs = GetSvgDefs();
 
-	Attribute *att = XMLFileToAttribute(NULL, file, NULL);
+	DBG cerr <<"1"<<endl;
+
+	Attribute *att;
+	if (att_ret) att = att_ret;
+
+	if (file_is_data) {
+		DBG cerr <<"2"<<endl;
+		att = XMLChunkToAttribute(att, file,file_is_data, NULL,NULL,NULL);
+
+	} else {
+		DBG cerr <<"3"<<endl;
+		att = XMLFileToAttribute(att, file, NULL);
+	}
+
+	DBG cerr <<"4"<<endl;
 	if (!att) {
-		if (att_ret) *att_ret = NULL;
 		return 1;
 	}
 
+	DBG cerr <<"5"<<endl;
 	try {
 		Attribute *att2 = att->find("svg");
 		if (!att2) throw 1;
@@ -1117,6 +1134,7 @@ int LoadSVGFilters(const char *file, const char *which_filter, NodeGroup *put_he
 		Attribute *defs = att2->find("content:");
 		if (!defs) throw 4;
 
+		DBG cerr <<"6"<<endl;
 
 		const char *name, *value;
 		for (int c=0; c<defs->attributes.n; c++) {
@@ -1230,23 +1248,25 @@ int LoadSVGFilters(const char *file, const char *which_filter, NodeGroup *put_he
 			} //if filter
 		}
 
+		DBG cerr <<"7"<<endl;
 
 	} catch (exception &e) {
+		DBG cerr <<"8"<<endl;
+
 		DBG cerr <<" *** error parsing svg file: "<<e.what()<<endl;
 		log.AddMessage(_("Could not load svg filters!"), ERROR_Fail);
-		delete att;
-		if (att_ret) *att_ret = NULL;
+		if (att != att_ret) delete att; else att->clear();
 		return 1;
 
 	} catch (int e) {
 		DBG cerr <<" *** error parsing svg file: "<<e<<endl;
 		log.AddMessage(_("Could not load svg filters!"), ERROR_Fail);
-		delete att;
-		if (att_ret) *att_ret = NULL;
+		if (att != att_ret) delete att; else att->clear();
 		return 1;
 	}
 
-	if (att_ret) *att_ret = att;
+	DBG cerr <<"9"<<endl;
+	if (att != att_ret) delete att; //else att->clear();
 	return 0;
 }
 
@@ -1272,9 +1292,15 @@ int SvgFilterLoader::CanExport(anObject *object)
 
 /*! context needs to be a NodeGroup.
  */
-int SvgFilterLoader::Import(const char *file, anObject **object_ret, anObject *context, Laxkit::ErrorLog &log)
+int SvgFilterLoader::Import(const char *file, int file_is_data, anObject **object_ret, anObject *context, Laxkit::ErrorLog &log)
 {
-	NodeGroup *parent = dynamic_cast<NodeGroup*>(context); //maybe null
+	NodeExportContext *ncontext = dynamic_cast<NodeExportContext *>(context);
+	if (!ncontext) {
+		log.AddError(_("Bad import context!"));
+		return 1;
+	}
+
+	NodeGroup *parent = ncontext->group; //ok to be null
 	NodeGroup *group = NULL;
 
 	if (parent) group = parent;
@@ -1287,7 +1313,12 @@ int SvgFilterLoader::Import(const char *file, anObject **object_ret, anObject *c
 		//return 1;
 	}
 
-    LoadSVGFilters(file, NULL, group, log, NULL);
+    LoadSVGFilters(file, file_is_data, NULL, group, log, ncontext->passthrough);
+
+	//cout  << "------Passthrough context:"<<endl;
+	//if (ncontext->passthrough) ncontext->passthrough->dump_out(stdout, 2);
+	//cout  << "------end Passthrough context"<<endl;
+
 
 	if (object_ret) *object_ret = group;
 
@@ -1302,12 +1333,13 @@ int SvgFilterLoader::Export(const char *file, anObject *object, anObject *contex
 		return 1;
 	}
 
-	NodeExportContext *ncontent = dynamic_cast<NodeExportContext*>(context);
-	if (!ncontent) {
+	NodeExportContext *ncontext = dynamic_cast<NodeExportContext*>(context);
+	if (!ncontext) {
 		log.AddError(_("Bad context!"));
 		return 1;
 	}
 
+	if (ncontext->top) group = ncontext->top;
 
 	Attribute defs;
 	NodeGroup *g;
@@ -1325,16 +1357,41 @@ int SvgFilterLoader::Export(const char *file, anObject *object, anObject *contex
 		return 1;
 	}
 
-	FILE *f = fopen(file, "w");
+	FILE *f;
+	if (ncontext->pipe) f = stdout;
+	else f = fopen(file, "w");
+
 	if (!f) {
 		log.AddError(_("Could not open file"));
 		return 1;
 	}
 
-	AttributeToXMLFile(f, &defs, 0);
-	//defs.dump_out(f, 0);
+	if (ncontext->passthrough) {
+		//remove any "filter" things from "defs" of passthrough, and install defs instead
+		Attribute *att = ncontext->passthrough->find("svg");
+		if (att) {
+			att = att->find("content:");
+			if (att) {
+				att = att->find("defs");
+				if (att) att = att->find("content:");
+			}
+			if (att) {
+				for (int c = att->attributes.n-1; c>=0; c--) {
+					if (!strcmp(att->attributes.e[c]->name, "filter")) att->attributes.remove(c);
+				}
+				for (int c = 0; c<defs.attributes.n; c++) {
+					att->push(defs.attributes.e[c]->duplicate(),-1);
+				}
+			}
+		}
 
-	fclose(f);
+		AttributeToXMLFile(f, ncontext->passthrough, 0);
+
+	} else {
+		AttributeToXMLFile(f, &defs, 0);
+	}
+
+	if (!ncontext->pipe) fclose(f);
 
     DBG cerr << " done with SvgFilterLoader::Export()!"<<endl;
     return 0;
@@ -1374,7 +1431,5 @@ void RegisterSvgNodes(Laxkit::ObjectFactory *factory)
 
 } //namespace SvgFilterNS
 } //namespace Laidout
-
-
 
 

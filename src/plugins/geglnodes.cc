@@ -193,13 +193,15 @@ int ValueToProperty(Value *v, const char *gvtype, GeglNode *node, const char *pr
  * Note the returned node needs to be g_object_unref (node) when done.
  * Use this with GeglNodesToLaidoutNodes() to fully transform to NodeBase objects.
  */
-GeglNode *XMLFileToGeglNodes(const char *file, Laxkit::ErrorLog *log)
+GeglNode *XMLFileToGeglNodes(const char *file, int file_is_data, Laxkit::ErrorLog *log)
 {
 	GeglNode *node = NULL;
 
 	try {
 		DBG cerr << "test-gegl, reading in "<<file<<endl;
-		node = gegl_node_new_from_file(file);
+		if (file_is_data) node = gegl_node_new_from_xml(file, NULL);
+		else node = gegl_node_new_from_file(file);
+
 	} catch (exception &e) {
 		cerr << "Gegl node read in from "<<file<<" error: "<<e.what()<<endl;
 		if (log) log->AddMessage(e.what(), ERROR_Fail);
@@ -1249,17 +1251,30 @@ class GeglLoader : public Laidout::ObjectIO
 	virtual ObjectDef *GetObjectDef() { return NULL; }
 
 	virtual int Serializable(int what) { return 0; }
-	virtual int CanImport(const char *file, const char *first500) { return true; } //if null, then return if in theory it can import
+	virtual int CanImport(const char *file, const char *first500);
 	virtual int CanExport(anObject *object) { return true; } //if null, then return if in theory it can export
-	virtual int Import(const char *file, anObject **object_ret, anObject *context, Laxkit::ErrorLog &log);
-	virtual int Export(const char *file, anObject *object,      anObject *context, Laxkit::ErrorLog &log);
+	virtual int Import(const char *file, int file_is_data, anObject **object_ret, anObject *context, Laxkit::ErrorLog &log);
+	virtual int Export(const char *file, anObject *object, anObject *context, Laxkit::ErrorLog &log);
 };
 
-int GeglLoader::Import(const char *file, anObject **object_ret, anObject *context, Laxkit::ErrorLog &log)
+//if null, then return if in theory it can import
+int GeglLoader::CanImport(const char *file, const char *first500)
 {
-	GeglNode *gnode = XMLFileToGeglNodes(file, &log);
+	return false;
+}
+
+int GeglLoader::Import(const char *file, int file_is_data, anObject **object_ret, anObject *context, Laxkit::ErrorLog &log)
+{
+	NodeExportContext *ncontext = dynamic_cast<NodeExportContext *>(context);
+	if (!ncontext) {
+		log.AddError(_("Bad import context!"));
+		return 1;
+	}
+
+	GeglNode *gnode = XMLFileToGeglNodes(file, file_is_data, &log);
+
 	if (gnode) {
-		NodeGroup *parent = dynamic_cast<NodeGroup*>(context);
+		NodeGroup *parent = ncontext->group;
 		NodeGroup *group = GeglNodesToLaidoutNodes(gnode, parent, true, &log);
 		*object_ret = group;
 		g_object_unref (gnode);
@@ -1275,14 +1290,14 @@ int GeglLoader::Export(const char *file, anObject *object, anObject *context, La
 		return 1;
 	}
 
-	NodeExportContext *ncontent = dynamic_cast<NodeExportContext*>(context);
-	if (!ncontent) {
+	NodeExportContext *ncontext = dynamic_cast<NodeExportContext*>(context);
+	if (!ncontext) {
 		log.AddMessage(_("Bad context!"), ERROR_Fail);
 		return 1;
 	}
 
 	GeglLaidoutNode *node = NULL;
-	if (ncontent->selection->n == 1) node = dynamic_cast<GeglLaidoutNode*>(ncontent->selection->e[0]);
+	if (ncontext->selection->n == 1) node = dynamic_cast<GeglLaidoutNode*>(ncontext->selection->e[0]);
 
 	if (!node || !node->gegl) {
 		log.AddMessage(_("There needs to be a single Gegl node selected to use Gegl export."), ERROR_Fail);
@@ -1298,10 +1313,17 @@ int GeglLoader::Export(const char *file, anObject *object, anObject *context, La
 		return 1;
 	}
 
-	if (LaxFiles::save_string_to_file(xml,-1, file) != 0) {
-		log.AddMessage(_("Could not open file for writing!"), ERROR_Fail);
-		return 1;
+	if (ncontext->pipe) {
+		cout << xml <<endl;
+
+	} else {
+		if (LaxFiles::save_string_to_file(xml,-1, file) != 0) {
+			log.AddMessage(_("Could not open file for writing!"), ERROR_Fail);
+			return 1;
+		}
 	}
+
+	g_free(xml);
 
 	//success!
 

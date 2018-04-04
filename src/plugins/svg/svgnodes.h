@@ -49,7 +49,7 @@ class SvgFilterLoader : public Laidout::ObjectIO
     virtual int Serializable(int what) { return 0; }
     virtual int CanImport(const char *file, const char *first500);
     virtual int CanExport(anObject *object);
-    virtual int Import(const char *file, anObject **object_ret, anObject *context, Laxkit::ErrorLog &log);
+    virtual int Import(const char *file, int file_is_data, anObject **object_ret, anObject *context, Laxkit::ErrorLog &log);
     virtual int Export(const char *file, anObject *object,      anObject *context, Laxkit::ErrorLog &log);
 };
 

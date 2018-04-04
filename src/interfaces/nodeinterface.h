@@ -78,6 +78,8 @@ class NodeProperty
 		PROP_Exec_In,
 		PROP_Exec_Out,
 		PROP_Exec_Through,
+		PROP_New_In,
+		PROP_New_Out,
 		PROP_MAX
 	};
 
@@ -337,6 +339,8 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	static int RemoveLoader(ObjectIO *loader);
 	static Laxkit::ObjectFactory *NodeFactory(bool create=true);
 	static void SetNodeFactory(Laxkit::ObjectFactory *newnodefactory);
+	static NodeGroup *Import(const char *format, const char *file, int file_is_string_data, NodeGroup *append_in_this);
+	static int Export(NodeGroup *group, const char *format, const char *file);
 
 	Laxkit::ScreenColor background;
 
@@ -385,8 +389,18 @@ typedef NodeGroup Nodes;
 class NodeExportContext : public anObject
 {
   public:
+	bool pipe;
+	Attribute *passthrough;
+	NodeGroup *group;
+	NodeGroup *top;
+	NodeColors *colors;
 	Laxkit::RefPtrStack<NodeBase> *selection;
-	NodeExportContext(Laxkit::RefPtrStack<NodeBase> *selected) { selection = selected; }
+
+	NodeExportContext();
+	NodeExportContext(Laxkit::RefPtrStack<NodeBase> *selected, Attribute *passth,
+			NodeGroup *ngroup, NodeGroup *top, NodeColors *ncolors, bool npipe);
+	virtual ~NodeExportContext();
+	virtual void SetTop(NodeGroup *ntop);
 };
 
 
@@ -510,6 +524,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 
 	PtrStack<NodeThread> forks; //used each Execute tick
 
+	Attribute *passthrough;
 	NodeConnection *onconnection;
 
   protected:
@@ -532,6 +547,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 	Laxkit::ObjectFactory *node_factory; //usually, convenience cast to return of NodeBase::NodeFactory()
 
 	Nodes *nodes;
+	NodeColors *default_colors;
+
 	Laxkit::MenuInfo *node_menu;
 	virtual void RebuildNodeMenu();
 
@@ -620,9 +637,11 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual int DuplicateNodes();
 	virtual int CutConnections(flatpoint p1,flatpoint p2);
 	virtual int SaveNodes(const char *file);
-	virtual int LoadNodes(const char *file, bool append);
+	virtual int ExportNodes(const char *file, const char *format);
+	virtual int LoadNodes(const char *file, bool append, int file_is_string_data, bool keep_passthrough);
 	virtual int FindNext();
 	virtual int Find(const char *what);
+	virtual NodeGroup *GetCurrent() { return nodes; }
 };
 
 
