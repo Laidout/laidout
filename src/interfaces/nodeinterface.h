@@ -82,6 +82,13 @@ class NodeProperty
 		PROP_New_Out,
 		PROP_MAX
 	};
+	enum PropertyFlags {
+		PROPF_New_In   = (1<<0),
+		PROPF_List_In  = (1<<1),
+		PROPF_New_Out  = (1<<2),
+		PROPF_List_Out = (1<<3),
+		PROPF_MAX
+	};
 
 	char *name;
 	char *label;
@@ -99,6 +106,7 @@ class NodeProperty
 	bool is_linkable; //default true for something that allows links in
 	bool is_editable;
 	bool hidden;
+	unsigned int flags;
 
 	double x,y,width,height;
 	Laxkit::ScreenColor color;
@@ -119,6 +127,8 @@ class NodeProperty
 	virtual const char *Name(const char *nname);
 	virtual const char *Label() { return label ? label : name; }
 	virtual const char *Label(const char *nlabel);
+	virtual const char *Tooltip() { return tooltip; }
+	virtual const char *Tooltip(const char *nttip);
 	virtual int AddConnection(NodeConnection *connection, int absorb);
 	virtual int RemoveConnection(NodeConnection *connection);
 	virtual int IsConnected();
@@ -129,7 +139,11 @@ class NodeProperty
 	virtual int IsExec() { return type==PROP_Exec_In || type==PROP_Exec_Out || type==PROP_Exec_Through; }
 	virtual int IsExecOut() { return type==PROP_Exec_Out || type==PROP_Exec_Through; }
 	virtual int IsExecIn()  { return type==PROP_Exec_In  || type==PROP_Exec_Through; }
+	virtual int IsExecThrough()  { return type==PROP_Exec_Through; }
+	virtual int IsNewInput() { return flags & PROPF_New_In;  }
+	virtual int IsNewOutput() { return flags & PROPF_New_Out;  }
 	virtual int IsHidden() { return hidden; }
+	virtual void SetFlag(unsigned int which, bool on);
 	virtual int Hide();
 	virtual int Show();
 	virtual int AllowInput();
@@ -272,8 +286,8 @@ class NodeBase : public Laxkit::anObject,
 	virtual const char *Label() { return Name; }
 	virtual const char *Label(const char *nlabel);
 	virtual const char *Description() { return NULL; }
-	virtual const char *ScriptName() { return object_idstr; }
-	virtual const char *Type() { return type; }
+	virtual const char *ScriptName() { return object_idstr; } //not localized
+	virtual const char *Type() { return type; } //not localized
 	virtual const char *ErrorMessage() { return error_message; }
 	virtual ObjectDef *GetDef() { return def; }
 	virtual void InstallDef(ObjectDef *def, bool absorb_count);
@@ -307,6 +321,8 @@ class NodeBase : public Laxkit::anObject,
 	virtual int Connected(NodeConnection *connection);
 
 	virtual int AddProperty(NodeProperty *newproperty, int where=-1);
+	virtual NodeProperty *AddNewIn (int is_for_list, const char *nname, const char *nlabel, const char *ttip, int where=-1);
+	virtual NodeProperty *AddNewOut(int is_for_list, const char *nname, const char *nlabel, const char *ttip, int where=-1);
 	virtual int RemoveProperty(NodeProperty *prop);
 	virtual NodeProperty *FindProperty(const char *prop);
 	virtual int SetProperty(const char *prop, Value *value, bool absorb);

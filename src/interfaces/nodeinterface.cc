@@ -274,6 +274,12 @@ const char *NodeProperty::Label(const char *nlabel)
 	return label;
 }
 
+const char *NodeProperty::Tooltip(const char *nttip)
+{
+	makestr(tooltip, nttip);
+	return tooltip;
+}
+
 /*! Set default width and height for this property.
  * Default is to get extent of label + (number | string | enum).
  */
@@ -337,6 +343,12 @@ int NodeProperty::IsConnected()
 {
 	if (IsInput() || IsExecIn()) return -connections.n;
 	return connections.n;
+}
+
+void NodeProperty::SetFlag(unsigned int which, bool on)
+{
+	if (on) flags |= which;
+	else flags &= ~which;
 }
 
 int NodeProperty::AllowInput()
@@ -1132,18 +1144,12 @@ int NodeBase::HasConnection(NodeProperty *prop, int *connection_ret)
  * these functions are for low level linkage maintenance, and Update()
  * is the bigger trigger for updating outputs.
  *
+ * Default here does nothing.
+ *
  * Return 1 if something changed that needs a screen refresh. else 0.
  */
 int NodeBase::Disconnected(NodeConnection *connection, bool from_will_be_replaced, bool to_will_be_replaced)
 {
-//	int propertyindex = properties.findindex(connection->from == this ? connection->fromprop : connection->toprop);
-//	if (propertyindex < 0) return 0; //property not found!
-//	int connectionindex = property->connections.findindex(connection);
-//	if (connectionindex < 0) return 0; //connection not found!
-//
-//	if (to_side && connection->to == this) {
-//		properties.e[propertyindex]->connections.remove(connectionindex);
-//	}
 	return 0;
 }
 
@@ -1152,10 +1158,35 @@ int NodeBase::Disconnected(NodeConnection *connection, bool from_will_be_replace
  * these functions are for low level linkage maintenance (but not messing with
  * the connection themselves), and Update() is the bigger trigger for updating outputs.
  *
+ * Default here is to handle new connections to a PROPF_New_In or PROPF_New_Out by changing the property
+ * name, removing PROPF_New_* flag and adding a new property to be a PROPF_New_In/Out.
+ *
  * Return 1 to hint that a refresh is needed. Else 0.
  */
 int NodeBase::Connected(NodeConnection *connection)
 {
+	if (this == connection->to) {
+		if (connection->toprop->flags & NodeProperty::PROPF_New_In) {
+			NodeProperty *prop = connection->toprop;
+			AddNewIn(prop->flags & NodeProperty::PROPF_List_In, prop->Name(), prop->Label(), prop->Tooltip(), properties.findindex(prop)+1);
+			prop->SetFlag(NodeProperty::PROPF_New_In, false);
+			prop->SetFlag(NodeProperty::PROPF_List_In, false);
+			prop->Label(connection->fromprop->Label());
+
+			return 1;
+		}
+
+	} else {
+		if (connection->fromprop->flags & NodeProperty::PROPF_New_Out) {
+			NodeProperty *prop = connection->fromprop;
+			AddNewIn(prop->flags & NodeProperty::PROPF_List_Out, prop->Name(), prop->Label(), prop->Tooltip(), properties.findindex(prop)+1);
+			prop->SetFlag(NodeProperty::PROPF_New_Out, false);
+			prop->SetFlag(NodeProperty::PROPF_List_Out, false);
+			prop->Label(connection->fromprop->Label());
+
+			return 1;
+		}
+	}
 	return 0;
 }
 
@@ -1170,6 +1201,31 @@ int NodeBase::AddProperty(NodeProperty *newproperty, int where)
 	newproperty->owner = this;
 	return 0;
 }
+
+/*! Add a slot that creates a new PROP_Input property whenever you connect something to it.
+ * Return the property for success, or NULL for could not do.
+ */
+NodeProperty *NodeBase::AddNewIn(int is_for_list, const char *nname, const char *nlabel, const char *ttip, int where)
+{
+	//NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count,
+					//const char *nlabel=NULL, const char *ntip=NULL, int info=0, bool editable=true);
+	NodeProperty *prop = new NodeProperty(NodeProperty::PROP_Input, true, nname, NULL,0, nlabel, ttip, is_for_list, true);
+	prop->SetFlag(NodeProperty::PROPF_New_In, true);
+	AddProperty(prop);
+	return prop;
+}
+
+/*! Add a slot that creates a new PROP_Output property whenever you connect something to it.
+ * Return 0 for success, nonzero for could not do.
+ */
+NodeProperty *NodeBase::AddNewOut(int is_for_list, const char *nname, const char *nlabel, const char *ttip, int where)
+{
+	NodeProperty *prop = new NodeProperty(NodeProperty::PROP_Output, true, nname, NULL,0, nlabel, ttip, is_for_list, true);
+	prop->SetFlag(NodeProperty::PROPF_New_Out, true);
+	AddProperty(prop);
+	return prop;
+}
+
 
 int NodeBase::RemoveProperty(NodeProperty *prop)
 {
@@ -1333,16 +1389,25 @@ LaxFiles::Attribute *NodeBase::dump_out_atts(LaxFiles::Attribute *att, int what,
 			//provide for reference if connected...
 			//if (prop->IsConnected()) continue; //since it'll be recomputed after read in
 			att2 = att->pushSubAtt("in", prop->name);
+
 		} else if (prop->IsOutput()) {
 			att2 = att->pushSubAtt("out", prop->name); //just provide for reference
+
 		} else if (prop->IsBlock()) {
 			att2 = att->pushSubAtt("block", prop->name);
-		//} else if (prop->IsExec()) att2 = att->pushSubAtt("exec",
-		//		prop->type==PROP_Exec_Through ? "through" : (prop->type==PROP_Exec_In ? "in" : "out"));
+
+		} else if (prop->IsExec()) {
+			if      (prop->IsExecThrough()) att2 = att->pushSubAtt("exec_through", prop->name);
+			else if (prop->IsExecIn())      att2 = att->pushSubAtt("exec_in",      prop->name);
+			else if (prop->IsExecOut())     att2 = att->pushSubAtt("exec_out",     prop->name);
+
 		} else continue;
 
-		if ((prop->IsBlock() || (prop->IsInput() && !prop->IsConnected()) || (prop->IsOutput())) && prop->GetData()) {
+		if (    (prop->IsBlock()
+			 || (prop->IsInput() && !prop->IsConnected()) 
+			 || (prop->IsOutput())) && prop->GetData())  {
 			prop->GetData()->dump_out_atts(att2, what, context);
+
 		} else {
 			DBG cerr <<" not data for node out: "<<prop->name<<endl;
 			//att2->push(prop->name, "arrrg! todo!");
@@ -1408,13 +1473,23 @@ void NodeBase::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpCo
 		} else if (!strcmp(name,"psampleh")) {
 			DoubleAttribute(value, &psampleh);
 
-		} else if (!strcmp(name,"in") || !strcmp(name,"out")) {
+		} else {
+			 //various properties... (type) (prop name)
+			NodeProperty::PropertyTypes ptype = NodeProperty::PROP_Unknown;
+
+			if      (!strcmp(name,"in"))  ptype = NodeProperty::PROP_Input;
+			else if (!strcmp(name,"out")) ptype = NodeProperty::PROP_Output;
+			else if (!strcmp(name,"block")) ptype = NodeProperty::PROP_Block;
+			else if (!strcmp(name,"exec_in")) ptype = NodeProperty::PROP_Exec_In;
+			else if (!strcmp(name,"exec_out")) ptype = NodeProperty::PROP_Exec_Out;
+			else if (!strcmp(name,"exec_through")) ptype = NodeProperty::PROP_Exec_Through;
+
 			NodeProperty *prop = FindProperty(value);
 			if (!prop) {
 				 //create property if not found. This happens for bare custom nodes, and ins/outs
 				// *** this is inadequate for fully custom nodes!
 				//prop = new NodeProperty(NodeProperty::PROP_Input, true, value, NULL,1, prop->label, prop->tooltip);
-				prop = new NodeProperty(!strcmp(name,"in") ? NodeProperty::PROP_Input : NodeProperty::PROP_Output, true, value, NULL,1, NULL, NULL);
+				prop = new NodeProperty(ptype, true, value, NULL,1, NULL, NULL);
 				AddProperty(prop);
 			}
 
@@ -1730,12 +1805,16 @@ NodeGroup *NodeGroup::GroupNodes(Laxkit::RefPtrStack<NodeBase> &selected)
 	ins->Label(_("Inputs"));
 	ins->deletable = false;
 	ins->InstallColors(colors, 0);
+	ins->AddNewOut(0, "NewIn", _("(new in)"), NULL);
+
 	outs = new NodeBase();
 	makestr(outs->type, "GroupOutputs");
 	outs->Id("Outputs");
 	outs->Label(_("Outputs"));
 	outs->deletable = false;
 	outs->InstallColors(colors, 0);
+	outs->AddNewIn(0, "NewOut", _("(new out)"), NULL);
+
 	group->nodes.push(ins);
 	group->nodes.push(outs);
 	group->output = outs;
