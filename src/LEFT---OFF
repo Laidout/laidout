@@ -193,6 +193,8 @@ node editor NodeInterface nodes:
   check for double linking
   center on selected doesn't actually
   bug: sometimes crash when tabbing across property values
+  idea seen in anim nodes: collapsing math shows expression as label
+  should probably bring forward any selected
   find:
     by label, name, or type
     search node or property name, or data contents
