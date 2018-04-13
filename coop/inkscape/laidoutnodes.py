@@ -56,6 +56,7 @@ class LaidoutNodes ():
     def DoLaidoutStuff(self):
         stream = sys.stdin
 
+		 #Inkscape calls with a filename in argv
         args=sys.argv[1:]
         filename = None
         if len(args) > 0:
