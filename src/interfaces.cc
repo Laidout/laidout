@@ -141,13 +141,6 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		existingpool->push(i);
 		i->dec_count();
 
-		 //------Nodes
-		i=new NodeInterface(NULL,id++,NULL);
-		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
-		existingpool->push(i);
-		i->InitializeResources();
-		i->dec_count();
-
 		// *************** end testing
 	}
 
@@ -228,6 +221,13 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	i=new PaperInterface(id++,NULL);
 	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 	existingpool->push(i);
+	i->dec_count();
+
+	 //------Nodes
+	i=new NodeInterface(NULL,id++,NULL);
+	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+	existingpool->push(i);
+	i->InitializeResources();
 	i->dec_count();
 
 
