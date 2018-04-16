@@ -35,7 +35,7 @@ Laxkit::anObject *newNodeGroup(int p, Laxkit::anObject *ref);
 
 //--------------------- Misc node related objects used by other things ----------------------
 
-//--------------------- CurveProperty
+//--------------------- CurveProperty ---------------------------------
 class CurveProperty : public NodeProperty
 {
 	static SingletonKeeper interfacekeeper;
@@ -55,6 +55,22 @@ class CurveProperty : public NodeProperty
 	virtual const char *PropInterfaceName() { return "CurveMapInterface"; }
 	virtual bool HasInterface();
 	virtual void Draw(Laxkit::Displayer *dp, int hovered);
+};
+
+
+//-------------------------- class ObjectNode ---------------------------------
+class ObjectNode : public NodeBase
+{
+  public:
+	int is_out;
+
+	DrawableObject *obj;
+
+	ObjectNode(int for_out, DrawableObject *nobj, int absorb);
+	virtual ~ObjectNode();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
 };
 
 

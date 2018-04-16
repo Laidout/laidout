@@ -2484,6 +2484,62 @@ Laxkit::anObject *newCurveNode(int p, Laxkit::anObject *ref)
 	return new CurveNode(p, NULL);
 }
 
+
+//------------ ObjectNode
+
+/*! \class ObjectNode
+ * Holds a DrawableObject as a source or output.
+ */
+
+ObjectNode::ObjectNode(int for_out, DrawableObject *nobj, int absorb)
+{
+	is_out = for_out;
+
+	makestr(Name, _("Object"));
+	makestr(type, is_out ? "ObjectOut" : "ObjectIn");
+
+	if (is_out) {
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "out", nobj, absorb, NULL, NULL, 0, false)); 
+	} else {
+		AddProperty(new NodeProperty(NodeProperty::PROP_Output,true, "out", NULL,0, NULL, 0, false)); 
+	}
+}
+
+ObjectNode::~ObjectNode()
+{
+}
+
+NodeBase *ObjectNode::Duplicate()
+{
+	ObjectNode *newnode = new ObjectNode(is_out, dynamic_cast<DrawableObject*>(properties.e[0]->GetData()), 0);
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int ObjectNode::GetStatus()
+{
+	Value *obj = properties.e[0]->GetData();
+	if (!dynamic_cast<DrawableObject*>(obj)) return 1;
+
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int ObjectNode::Update()
+{
+	return NodeBase::Update();
+}
+
+Laxkit::anObject *newObjectInNode(int p, Laxkit::anObject *ref)
+{
+	return new ObjectNode(0, NULL,0);
+}
+
+Laxkit::anObject *newObjectOutNode(int p, Laxkit::anObject *ref)
+{
+	return new ObjectNode(1, NULL,0);
+}
+
+
 //--------------------------- SetupDefaultNodeTypes() -----------------------------------------
 
 /*! Install default built in node types to factory.
@@ -2543,6 +2599,10 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	 //--- CurveNodes
 	factory->DefineNewObject(getUniqueNumber(), "Curve",         newCurveNode,  NULL, 1);
 	//factory->DefineNewObject(getUniqueNumber(), "CurveTransform",newCurveNode,  NULL, 0);
+
+	 //--- ObjectNodes
+	factory->DefineNewObject(getUniqueNumber(), "Object In", newObjectInNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Object Out",newObjectOutNode, NULL, 0);
 
 
 	 //--------------------THREADS
