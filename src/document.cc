@@ -19,8 +19,6 @@
 #include <lax/freedesktop.h>
 #include <lax/interfaces/interfacemanager.h>
 
-#include <lax/refptrstack.cc>
-
 #include "document.h"
 #include "filetypes/scribus.h"
 #include "filetypes/svg.h"
@@ -30,6 +28,10 @@
 #include "headwindow.h"
 #include "utils.h"
 #include "language.h"
+
+
+//template implementation:
+#include <lax/refptrstack.cc>
 
 
 using namespace Laxkit;
@@ -955,6 +957,7 @@ int Document::Load(const char *file,ErrorLog &log)
 
 	char *dir=lax_dirname(file,0);
 	DumpContext context(dir,1, object_id);
+	context.log = &log;
 	if (dir) delete[] dir;
 
 	clear();
