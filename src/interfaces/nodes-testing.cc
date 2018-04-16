@@ -8,6 +8,7 @@
  * individual properties of nodes in one much simpler panel.
  */
 
+
 class NodePanel : public NodeBase
 {
   public:
@@ -26,9 +27,12 @@ class NodePanel : public NodeBase
 	PtrStack<NodePanelRef> props;
 
 	NodePanel();
+	NodePanel(NodeGroup *nowner, const char *nname=NULL, const char *nlabel=NULL, const char *ncomment=NULL);
 	virtual ~NodePanel();
 	virtual void HideAddButton();
 	virtual void ShowAddButton();
+
+	virtual int LinkProperty(NodeProperty *prop);
 
 	// *** just another node? only with no in or out, all blocks, and changes relayed to refd props
 
@@ -332,13 +336,14 @@ int ObjectNode::GetStatus()
 
 //------------------------ PathsDataNode ------------------------
 
-/*! \class Creator node for paths.
+/*! \class Node for paths.
  */
 
 class PathsDataNode
 {
   public:
-	PathsData *pathsdata;
+	LPathsData *pathsdata;
+
 	PathsDataNode(LPathsData *path);
 	virtual ~PathsDataNode();
 
@@ -347,7 +352,7 @@ class PathsDataNode
 	virtual int GetStatus();
 };
 
-PathsDataNode::PathsDataNode(PathsData *path, int absorb)
+PathsDataNode::PathsDataNode(LPathsData *path, int absorb)
 {
 	pathsdata = path;
 	if (pathsdata && !absorb) pathsdata->inc_count();
@@ -360,7 +365,7 @@ PathsDataNode::~PathsDataNode()
 
 NodeBase *PathsDataNode::Duplicate()
 {
-	PathsDataNode *node = new PathsDataNode(NULL);
+	PathsDataNode *node = new PathsDataNode(pathsdata);
 	node->DuplicateBase(this);
 	return node;
 }
@@ -368,6 +373,7 @@ NodeBase *PathsDataNode::Duplicate()
 int PathsDataNode::Update()
 {
 	***
+	return NodeBase::Update();
 }
 
 int PathsDataNode::GetStatus()
@@ -1116,20 +1122,26 @@ int HistogramNode::Update()
 SingletonKeeper GradientStripProperty::interfacekeeper;
 class GradientStripProperty : public NodeProperty
 {
+	static SingletonKeeper interfacekeeper;
+
   public:
+	static LaxInterfaces::GradientInterface *GetGradientInterface();
+
+
 	GradientStrip *gradient;
+	GradientData *gdata;
 
 	GradientStripProperty(GradientStrip *ngradient, int absorb);
 	virtual ~GradientStripProperty();
 
-	virtual bool AllowType(Value *v);
+	//virtual bool AllowType(Value *v);
 
 	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface, Laxkit::Displayer *dp);
-	virtual const char *PropInterfaceName() { return "CurveMapInterface"; }
+	virtual const char *PropInterfaceName() { return "GradientInterface"; }
 	virtual bool HasInterface();
 };
 
-GradientStripProperty::GradientStripProperty(CurveValue *ncurve, int absorb)
+GradientStripProperty::GradientStripProperty(GradientStripValue *ngradient, int absorb)
 {
 	type = NodeProperty::PROP_Block;
 	is_linkable = false;
@@ -1151,6 +1163,17 @@ bool GradientStripProperty::HasInterface()
 	return true;
 }
 
+LaxInterfaces::GradientInterface *GradientStripProperty::GetGradientInterface()
+{
+	GradientInterface *interf = dynamic_cast<GradientInterface*>(interfacekeeper.GetObject());
+	if (!interf) {
+		interf = new GradientInterface(getUniqueNumber(), NULL);
+		//interface->style |= CurveMapInterface::RealSpace;
+		interfacekeeper.SetObject(interf, 1);
+	}
+	return interf;
+}
+
 /*! If interface!=NULL, then try to use it. If NULL, create and return a new appropriate interface.
  * Also set the interface to use *this.
  */
@@ -1163,9 +1186,10 @@ LaxInterfaces::anInterface *GradientStripProperty::PropInterface(LaxInterfaces::
 		if (!interf) return NULL; //wrong ref interface!!
 	}
 
-	if (!interf) interf = CurveNode::GetCurveInterface();
+	if (!interf) interf = GetGradientInterface();
+
 	interf->Dp(dp);
-	interf->UseThis(cowner->curves.e[cowner->current_curve]);
+	interf->UseThis(gradient);
 	interf->SetupRect(cowner->x + x, cowner->y + y, width, height);
 
 	return interf;
