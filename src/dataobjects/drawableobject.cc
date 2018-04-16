@@ -254,6 +254,17 @@ DrawableObject *DrawableObject::FinalObject()
 	return this;
 }
 
+int DrawableObject::SetFilter(Laxkit::anObject *nfilter, int absorb)
+{
+	if (filter != nfilter) {
+		if (filter) filter->dec_count();
+		filter = nfilter;
+		if (filter && !absorb) filter->inc_count();
+	} else if (absorb) nfilter->dec_count();
+	return 0;
+}
+
+
 /*! If index out or range, remove top.
  * Return 0 for success, nonzero error.
  */
@@ -1257,8 +1268,15 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Du
 			foundconfig=1;
 
 		} else if (!strcmp(name,"filter")) {
-			ObjectFilter *ofilter = new ObjectFilter(this);
+			ObjectFilter *ofilter = new ObjectFilter(this, 0);
 			ofilter->dump_in_atts(att->attributes.e[c], 0, context);
+			if (filter) filter->dec_count();
+            NodeProperty *in = ofilter->FindProperty("in");
+			in->SetData(this, 0);
+			in->SetFlag(NodeProperty::PROPF_Label_From_Data, 1);
+			in->topropproxy->SetFlag(NodeProperty::PROPF_Label_From_Data, 1);
+
+			filter = ofilter;
 		}
 	}
 

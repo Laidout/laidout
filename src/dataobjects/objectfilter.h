@@ -35,7 +35,7 @@ class ObjectFilter : public NodeGroup
 	//char *filtername;
 	//Laxkit::RefPtrStack<Laxkit::anObject> dependencies; //other resources, not filters in filter tree
 
-	ObjectFilter(Laxkit::anObject *nparent);
+	ObjectFilter(Laxkit::anObject *nparent, int make_in_outs);
 	virtual ~ObjectFilter();
 	virtual anObject *ObjectOwner();
 
@@ -45,6 +45,9 @@ class ObjectFilter : public NodeGroup
 
 	virtual Laxkit::anObject *FinalObject();
 	virtual int FindInterfaceNodes(NodeGroup *group);
+
+    virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context);
+
 };
 
 

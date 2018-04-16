@@ -27,6 +27,7 @@
 #include "../language.h"
 #include "../stylemanager.h"
 #include "../calculator/shortcuttodef.h"
+#include "objectfilter.h"
 
 #include <iostream>
 using namespace std;
@@ -106,14 +107,24 @@ int GroupInterface::UseThis(anObject *newdata,unsigned int)
 
 Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
-	if (child) return menu;
+	if (child) return child->ContextMenu(x,y,deviceid, menu);
+	//if (child) return menu;
 
 	rx=x,ry=y;
 
-	if (!menu) menu=new MenuInfo(_("Group Interface"));
-	menu->AddItem(_("Align..."), GIA_Align);
-	menu->AddItem(_("Distribute..."), GIA_Distribute);
-	
+	if (selection->n() > 1) {
+		if (!menu) menu=new MenuInfo(_("Group Interface"));
+		menu->AddItem(_("Align..."), GIA_Align);
+		menu->AddItem(_("Distribute..."), GIA_Distribute);
+
+	} else if (selection->n() == 1) {
+		DrawableObject *obj = dynamic_cast<DrawableObject*>(selection->e(0)->obj);
+		if (obj) {
+			if (!menu) menu=new MenuInfo(_("Group Interface"));
+			menu->AddItem(_("Edit filters..."), GIA_Edit_Filters);
+		}
+	}
+
 
 	LaidoutViewport *lvp=dynamic_cast<LaidoutViewport*>(viewport);
 	if (lvp->papergroup) {
@@ -132,6 +143,8 @@ Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 {
 	if (!strcmp(mes,"menuevent")) {
+		if (child) return child->Event(e,mes);
+
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
 		int i=s->info2; //id of menu item
 
@@ -157,7 +170,10 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 			needtodraw=1;
 			return 0;
 
-		} else if (i==GIA_Align || i==GIA_Distribute) {
+		} else if (i==GIA_Align
+				|| i==GIA_Distribute
+				|| i==GIA_Edit_Filters
+				) {
 			PerformAction(i);
 			return 0;
 		}
@@ -720,6 +736,30 @@ int GroupInterface::PerformAction(int action)
 		FreeSelection();
 		return 0;
 
+	} else if (action == GIA_Edit_Filters) {
+		if (selection->n() != 1) return 0;
+
+		DrawableObject *obj = dynamic_cast<DrawableObject*>(selection->e(0)->obj);
+		if (!obj) return 0;
+
+		ObjectFilter *filter = dynamic_cast<ObjectFilter*>(obj->filter);
+		if (filter) filter->inc_count();
+		else {
+			filter = new ObjectFilter(obj, 1);
+			filter->Id(obj->Id());
+			obj->SetFilter(filter, 0);
+		}
+
+		NodeInterface *i = new NodeInterface(NULL,10002,dp);
+		i->UseThis(filter);
+		filter->dec_count();
+		i->owner = this;
+		child = i;
+		viewport->Push(i,-1,0);
+		PostMessage(_("Edit filter nodes"));
+
+		return 0;
+
 	} else if (action==GIA_Clone || action==GIA_CloneB) {
 		//if (!buttondown.any()) return 0;
 
@@ -873,6 +913,12 @@ int GroupInterface::PerformAction(int action)
 int GroupInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
 	DBG cerr <<" ****************GroupInterface::CharInput"<<endl;
+
+	if (ch == LAX_Esc && child) {
+		RemoveChild();
+		needtodraw=1;
+		return 0;
+	}
 
 	return ObjectInterface::CharInput(ch,buffer,len,state,d);
 }

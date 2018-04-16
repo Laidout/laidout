@@ -162,7 +162,9 @@ class DrawableObject :  virtual public ObjectContainer,
 	double alpha; //object alpha applied to anything drawn by this and kids
 	double blur; //one built in filter?
 	Laxkit::anObject *filter; // *** can't declare as ObjectFilter directly due to absurd filefilter.h definitions.. need to fix this!
-	DrawableObject *FinalObject();
+	virtual DrawableObject *FinalObject();
+	virtual int SetFilter(Laxkit::anObject *nfilter, int absorb);
+
 
 	//Laxkit::RefPtrStack<anObject *> refs; //what other resources this objects depends on?
 

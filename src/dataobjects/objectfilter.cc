@@ -14,8 +14,13 @@
 //
 
 #include "objectfilter.h"
+#include "../interfaces/nodes.h"
 #include "drawableobject.h"
+#include "../language.h"
 
+#include <lax/anxapp.h>
+
+//template implementation:
 #include <lax/refptrstack.cc>
 
 
@@ -41,9 +46,39 @@ namespace Laidout {
  */
 
 
-ObjectFilter::ObjectFilter(anObject *nparent)
+ObjectFilter::ObjectFilter(anObject *nparent, int make_in_outs)
 {
 	parent = nparent;
+
+	NodeColors *cols = new NodeColors;
+	cols->Font(anXApp::app->defaultlaxfont, false);
+	InstallColors(cols, 1);
+
+	if (make_in_outs) {
+
+		 //set up barebones filter nodes
+		DrawableObject *dobj = dynamic_cast<DrawableObject*>(parent);
+		if (dobj) {
+			NodeProperty *in  = AddGroupInput ("in",  NULL, NULL);
+			NodeProperty *out = AddGroupOutput("out", NULL, NULL);
+
+			in->SetFlag(NodeProperty::PROPF_Label_From_Data, 1);
+			in->topropproxy->SetFlag(NodeProperty::PROPF_Label_From_Data, 1);
+			in->SetData(dobj, 0);
+			out->Label(_("Out"));
+
+			Connect(in->topropproxy, out->frompropproxy);
+
+			NodeBase *from = in ->topropproxy  ->owner;
+			NodeBase *to   = out->frompropproxy->owner;
+
+			from->Wrap();
+			to  ->Wrap();
+
+			to->x = from->x + from->width*2;
+
+		}
+	}
 }
 
 ObjectFilter::~ObjectFilter()
@@ -105,6 +140,15 @@ int ObjectFilter::FindInterfaceNodes(NodeGroup *group)
 
 	int n=0;
 	return n;
+}
+
+LaxFiles::Attribute *ObjectFilter::dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context)
+{
+	NodeProperty *in = FindProperty("in");
+	in->SetData(NULL,0);
+	Attribute *attt = NodeGroup::dump_out_atts(att, what, context);
+	in->SetData(dynamic_cast<DrawableObject*>(parent), 0);
+	return attt;
 }
 
 
