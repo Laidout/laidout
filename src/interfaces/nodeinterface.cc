@@ -268,6 +268,15 @@ const char *NodeProperty::Name(const char *nname)
 	return name;
 }
 
+const char *NodeProperty::Label()
+{
+	if (flags & PROPF_Label_From_Data) {
+		Value *v = GetData();
+		if (v) return v->Id();
+	}
+	return label ? label : name;
+}
+
 const char *NodeProperty::Label(const char *nlabel)
 {
 	makestr(label, nlabel);
@@ -439,6 +448,11 @@ Value *NodeProperty::GetData()
 			}
 			return NULL; //missing input variable, probably an error!
 		}
+
+	}
+
+	if (frompropproxy) {
+		return frompropproxy->GetData();
 	}
 	return data;
 }
@@ -1668,7 +1682,17 @@ void NodeGroup::InitializeBlank()
  */
 NodeProperty *NodeGroup::AddGroupInput(const char *pname, const char *plabel, const char *ptooltip)
 {
-	if (!input) return NULL;
+	if (!input) {
+		input = new NodeBase();
+		makestr(input->type, "GroupInputs");
+		input->Id("Inputs");
+		input->Label(_("Inputs"));
+		input->deletable = false;
+		input->InstallColors(colors, 0);
+		input->Wrap();
+		nodes.push(input);
+		//ins->AddNewOut(0, "NewIn", _("(new in)"), NULL);
+	}
 
 	NodeProperty *insprop = new NodeProperty(NodeProperty::PROP_Output, true, pname, NULL,1, plabel, ptooltip);
 	input->AddProperty(insprop);
@@ -1686,7 +1710,17 @@ NodeProperty *NodeGroup::AddGroupInput(const char *pname, const char *plabel, co
  */
 NodeProperty *NodeGroup::AddGroupOutput(const char *pname, const char *plabel, const char *ptooltip)
 {
-	if (!output) return NULL;
+	if (!output) {
+		output = new NodeBase();
+		makestr(output->type, "GroupOutputs");
+		output->Id("Outputs");
+		output->Label(_("Outputs"));
+		output->deletable = false;
+		output->InstallColors(colors, 0);
+		output->Wrap();
+		//output->AddNewIn(0, "NewOut", _("(new out)"), NULL);
+		nodes.push(output);
+	}
 
 	NodeProperty *outsprop = new NodeProperty(NodeProperty::PROP_Input, true, pname, NULL,1, plabel, ptooltip);
 	output->AddProperty(outsprop);
@@ -2326,8 +2360,9 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 
 			NodeBase *newnode;
 			//if (!strcmp(value, "GroupInputs") || !strcmp(value, "GroupOutputs")) {
-			if (!value) {
-				 //no type listed, is probably an input or output
+			if (!value || (value && (!strcmp(value, "GroupInputs") || !strcmp(value, "GroupOutputs")))) {
+
+				 //no type listed, or is an input or output
 				newnode = new NodeBase();
 				newnode->deletable = false;
 				makestr(newnode->type, value);
@@ -3442,7 +3477,7 @@ int NodeInterface::Refresh()
 			sprintf(str, "fps: %.1f", cur_fps);
 			dp->textout(thread_controls.BBoxPoint(.5,1), str,-1, LAX_TOP|LAX_HCENTER);
 		}
-	}
+	} //show threads
 
 
 	 //draw node parent list
@@ -3520,7 +3555,9 @@ int NodeInterface::Refresh()
 	ScreenColor tfg, tbg, tmid, hprop;
 	NodeColors *colors=NULL;
 	double borderwidth = 1;
+	flatpoint cliprect[4];
 	int status;
+	NodeProperty *prop;
 
 	for (int c=0; c<nodes->nodes.n; c++) {
 		node = nodes->nodes.e[c];
@@ -3587,7 +3624,7 @@ int NodeInterface::Refresh()
 			dp->drawRoundedRect(node->x-th/4, node->y-th/4, node->width+th/2, node->height+th/2,
 								th/3, false, th/3, false, 0); 
 		}
-
+		
 		 //draw label area
 		dp->NewFG(&colors->label_bg);
 		dp->drawRoundedRect(node->x, node->y, node->width, th,
@@ -3597,6 +3634,13 @@ int NodeInterface::Refresh()
 		dp->NewFG(border);
 		dp->drawRoundedRect(node->x, node->y, node->width, node->height,
 							th/3, false, th/3, false, 0); 
+
+		cliprect[0].x = cliprect[3].x = node->x;
+		cliprect[1].x = cliprect[2].x = node->x + node->width;
+		cliprect[0].y = cliprect[1].y = node->y;
+		cliprect[3].y = cliprect[2].y = node->y + node->height;
+		dp->PushClip(0);
+		dp->Clip(cliprect, 4, 1);
 
 		 //draw label
 		double labely = node->y;
@@ -3632,15 +3676,15 @@ int NodeInterface::Refresh()
 			DoubleRectangle box;
 			dp->imageout_within(node->total_preview, node->x,node->y+th*1.15, node->width, node->preview_area_height, &box, 1);
 			dp->LineWidthScreen(lasthover == c && lasthoverslot == NODES_PreviewResize ? 3 : 1);
-			dp->NewFG(coloravg(fg->Pixel(),bg->Pixel(),.5));
+			if (lasthoverslot == NODES_PreviewResize) dp->NewFG(rgbcolorf(.5,.5,1.));
+			else dp->NewFG(coloravg(fg->Pixel(),bg->Pixel(),.5));
 			dp->drawrectangle(box.x,box.y,box.width,box.height, 0);
 			dp->NewFG(fg);
 			y += node->preview_area_height;
+			dp->LineWidthScreen(1);
 		}
 
 		 //draw ins and outs
-		NodeProperty *prop;
-
 		for (int c2=0; c2<node->properties.n; c2++) {
 			prop = node->properties.e[c2];
 			if (lasthover == c && overslot == -1 && overprop == c2 && !node->collapsed) { //mouse is hovering over this property
@@ -3666,8 +3710,28 @@ int NodeInterface::Refresh()
 			dp->drawline(p1,p2);
 		}
 
+		dp->PopClip();
+
+		dp->LineWidth(1);
+		dp->NewFG(fg);
+		for (int c2=0; c2<node->properties.n; c2++) {
+			prop = node->properties.e[c2];
+			DrawPropertySlot(node, prop, overnode == c && overprop == c2, overnode == c && overprop == c2 && overslot == c2);
+		}
+
 	} //foreach node
 
+	 //draw property slots.. separated from above property drawing so as to not be clipped
+//	dp->LineWidth(1);
+//	dp->NewFG(fg);
+//	for (int c=0; c<nodes->nodes.n; c++) {
+//		node = nodes->nodes.e[c];
+//
+//		for (int c2=0; c2<node->properties.n; c2++) {
+//			prop = node->properties.e[c2];
+//			DrawPropertySlot(node, prop, overnode == c && overprop == c2, overnode == c && overprop == c2 && overslot == c2);
+//		}
+//	}
 
 	 //draw mouse action decorations
 	if (hover_action==NODES_Cut_Connections || hover_action==NODES_Selection_Rect) {
@@ -3711,7 +3775,6 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 	}
 
 	double th = dp->textheight();
-	ScreenColor *propcolor = &node->colors->default_property;
 
 	if (!node->collapsed) {
 		if (prop->HasInterface()) {
@@ -3746,8 +3809,6 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 				dp->textout(node->x+prop->x+th, node->y+prop->y+prop->height/2, extra, -1, LAX_LEFT|LAX_VCENTER);
 				v->getValueStr(extra, 199);
 				dp->textout(node->x+node->width-th, node->y+prop->y+prop->height/2, extra, -1, LAX_RIGHT|LAX_VCENTER);
-
-				propcolor = &node->colors->number;
 
 			} else if (v && v->type()==VALUE_String) {
 				dp->NewFG(&nodes->colors->fg);
@@ -3831,8 +3892,6 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 				dp->NewFG(oldfg);
 				dp->textout(x,y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER);
 
-				propcolor = &node->colors->color;
-
 			} else {
 				 //fallback, just write out the property name
 				dp->NewFG(&nodes->colors->fg);
@@ -3854,37 +3913,65 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 				}
 			}
 
-			if (v && (v->type()==VALUE_Flatvector || v->type()==VALUE_Spacevector || v->type()==VALUE_Quaternion))
-				propcolor = &node->colors->vector;
 		}
 	} // !node->collapsed
 
-	if (prop->IsExec()) propcolor = &node->colors->exec;
 
-	 //draw connection spot
-	if (prop->is_linkable) {
-		//dp->NewBG(&prop->color);
-		dp->NewBG(propcolor);
-
-		if (prop->IsExec()) {
-			//dp->drawthing(node->x+th,labely+th/2, th/4,th/4, lasthover==c && lasthoverslot==NODES_Collapse ? 1 : 0, THING_Triangle_Right);
-			dp->drawthing(prop->pos+flatpoint(node->x,node->y),
-				(hoverslot ? 2 : 1)*th*node->colors->slot_radius,
-				(hoverslot ? 2 : 1)*th*node->colors->slot_radius, 2, THING_Triangle_Right);
-		} else {
-			dp->drawellipse(prop->pos+flatpoint(node->x,node->y),
-				(hoverslot ? 2 : 1)*th*node->colors->slot_radius, (hoverslot ? 2 : 1)*th*node->colors->slot_radius, 0,0, 2);
-		}
-		if (node->collapsed && hoverslot) {
-			 //draw tip of name next to pos
-			flatpoint pp = prop->pos+flatpoint(node->x+th,node->y);
-			double width = th + node->colors->font->extent(prop->Label(),-1);
-			dp->drawrectangle(pp.x,pp.y-th*.75, width, 1.5*th, 2);
-			dp->textout(pp.x+th/2,pp.y, prop->Label(),-1, LAX_LEFT|LAX_VCENTER);
-		}
-	} 
 
 	//DBG cerr <<"end draw property "<<prop->name<<endl;
+}
+
+/*! Draw connection spot.
+ */
+void NodeInterface::DrawPropertySlot(NodeBase *node, NodeProperty *prop, int hoverprop, int hoverslot)
+{
+	if (!prop->is_linkable) return;
+
+	double th = dp->textheight();
+	ScreenColor *propcolor = &node->colors->default_property;
+
+	if (prop->IsExec()) {
+		propcolor = &node->colors->exec;
+
+	} else {
+		Value *v = prop->GetData();
+		if (v) {
+			int vtype = v->type();
+
+			if (vtype == VALUE_Real || vtype == VALUE_Int) {
+				propcolor = &node->colors->number;
+
+			//} else if (vtype == VALUE_String) {
+			//	propcolor = &node->colors->stringcol;
+
+			} else if (vtype == VALUE_Color) {
+				propcolor = &node->colors->color;
+
+			} else if (vtype == VALUE_Flatvector || vtype == VALUE_Spacevector || vtype == VALUE_Quaternion) {
+				propcolor = &node->colors->vector;
+			}
+		}
+	}
+
+	dp->NewBG(propcolor);
+
+	if (prop->IsExec()) {
+		dp->drawthing(prop->pos+flatpoint(node->x,node->y),
+			(hoverslot ? 2 : 1)*th*node->colors->slot_radius,
+			(hoverslot ? 2 : 1)*th*node->colors->slot_radius, 2, THING_Triangle_Right);
+
+	} else {
+		dp->drawellipse(prop->pos+flatpoint(node->x,node->y),
+			(hoverslot ? 2 : 1)*th*node->colors->slot_radius, (hoverslot ? 2 : 1)*th*node->colors->slot_radius, 0,0, 2);
+	}
+
+	if (node->collapsed && hoverslot) {
+		 //draw tip of name next to pos
+		flatpoint pp = prop->pos+flatpoint(node->x+th,node->y);
+		double width = th + node->colors->font->extent(prop->Label(),-1);
+		dp->drawrectangle(pp.x,pp.y-th*.75, width, 1.5*th, 2);
+		dp->textout(pp.x+th/2,pp.y, prop->Label(),-1, LAX_LEFT|LAX_VCENTER);
+	} 
 }
 
 void NodeInterface::DrawConnection(NodeConnection *connection) 
@@ -4128,10 +4215,12 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, int 
 
 			if (*overpropslot == -1) {
 				 //check if hovering over an edge
-				if (!node->collapsed && p.x >= node->x-th/2 && p.x <= node->x+th/2) *overpropslot = NODES_LeftEdge;
-				else if (!node->collapsed && p.x >= node->x+node->width-th/2 && p.x <= node->x+node->width+th/2) *overpropslot = NODES_RightEdge;
+				if (!node->collapsed) {
+					if (p.x >= node->x-th/2 && p.x <= node->x+th/2) *overpropslot = NODES_LeftEdge;
+					else if (p.x >= node->x+node->width-th/2 && p.x <= node->x+node->width+th/2) *overpropslot = NODES_RightEdge;
+				}
 
-				else if (node->collapsed || (p.y >= node->y && p.y <= node->y+th)) { //on label area
+				if (*overpropslot == -1 && (node->collapsed || (p.y >= node->y && p.y <= node->y+th))) { //on label area
 					if (p.x >= node->x+th/2 && p.x <= node->x+3*th/2) *overpropslot = NODES_Collapse;
 					//else if (p.x >= node->x+node->width-th/2 && p.x <= node->x+node->width-3*th/2) *overpropslot = NODES_TogglePreview;
 					else *overpropslot = NODES_Label;
@@ -4141,13 +4230,13 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, int 
 			}
 
 			 //check for preview hover things
-			if (*overpropslot == -1 && node->UsesPreview()) {
+			char str[100];
+			sprintf(str, "check slot:%d, usep: %d", *overpropslot, node->UsesPreview());
+			PostMessage(str);
+
+			if ((*overpropslot == -1 || node->collapsed) && node->UsesPreview()) {
 				double nw = node->total_preview->w() * node->preview_area_height/node->total_preview->h();
 				if (nw > node->width) nw = node->width;
-
-				//char str[100];
-				//sprintf(str, "%f %f", nw, node->width);
-				//PostMessage(str);
 
 				double nh = node->total_preview->h();
 				if (nh > node->preview_area_height) nh = node->preview_area_height;

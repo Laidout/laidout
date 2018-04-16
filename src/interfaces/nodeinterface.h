@@ -64,7 +64,7 @@ class NodeConnection : public Laxkit::RefCounted
 
 
 //---------------------------- NodeProperty ------------------------------------
-class NodeProperty
+class NodeProperty : public Laxkit::RefCounted
 {
   public:
 	enum PropertyTypes {
@@ -87,6 +87,7 @@ class NodeProperty
 		PROPF_List_In  = (1<<1),
 		PROPF_New_Out  = (1<<2),
 		PROPF_List_Out = (1<<3),
+		PROPF_Label_From_Data = (1<<4),
 		PROPF_MAX
 	};
 
@@ -125,7 +126,7 @@ class NodeProperty
 	virtual void SetExtents(NodeColors *colors);
 	virtual const char *Name()  { return name; }
 	virtual const char *Name(const char *nname);
-	virtual const char *Label() { return label ? label : name; }
+	virtual const char *Label();
 	virtual const char *Label(const char *nlabel);
 	virtual const char *Tooltip() { return tooltip; }
 	virtual const char *Tooltip(const char *nttip);
@@ -643,6 +644,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual int KeyUp(unsigned int ch,unsigned int state, const Laxkit::LaxKeyboard *d);
 
 	virtual void DrawConnection(NodeConnection *connection);
+	virtual void DrawPropertySlot(NodeBase *node, NodeProperty *prop, int hoverprop, int hoverslot);
 	virtual void DrawProperty(NodeBase *node, NodeProperty *prop, double y, int hoverprop, int hoverslot);
 	virtual int scan(int x, int y, int *overpropslot, int *overproperty, int *overconnection, unsigned int state);
 	virtual int IsSelected(NodeBase *node);
