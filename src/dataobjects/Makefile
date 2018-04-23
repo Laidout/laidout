@@ -29,6 +29,7 @@ objs= \
 	mysterydata.o \
 	lsomedataref.o \
 	lengraverfilldata.o \
+	lperspectiveinterface.o \
 	lcaptiondata.o \
 	ltextonpath.o \
 	lvoronoidata.o \

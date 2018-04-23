@@ -16,15 +16,56 @@
 #include "objectfilter.h"
 #include "../interfaces/nodes.h"
 #include "drawableobject.h"
+#include "lpathsdata.h"
+#include "lperspectiveinterface.h"
 #include "../language.h"
 
+#include <lax/interfaces/somedatafactory.h>
 #include <lax/anxapp.h>
 
 //template implementation:
 #include <lax/refptrstack.cc>
 
 
+using namespace LaxInterfaces;
+
+
 namespace Laidout {
+
+//------------------------ ObjectFilterNode ------------------------
+
+/*! \class ObjectFilterNode
+ * Class for a component of an ObjectFilter that has an interface usable in main viewport.
+ *
+ * Derived classes need to act like a passthrough when IsMuted() in their Update() function.
+ */
+
+ObjectFilterNode::ObjectFilterNode()
+{
+	muted = 0;
+}
+
+ObjectFilterNode::~ObjectFilterNode()
+{
+}
+
+/*! Defualt just return muted.
+ */
+int ObjectFilterNode::IsMuted()
+{
+	return muted;
+}
+
+/*! Change muted state. If change, derived classes MUST implement the passthrough.
+ */
+int ObjectFilterNode::Mute(bool yes)
+{
+	int oldmuted = muted;
+	muted = yes;
+	if (muted != oldmuted) Update();
+	return muted;
+}
+
 
 
 //------------------------ ObjectFilter ------------------------
@@ -112,14 +153,16 @@ int ObjectFilter::GetStatus()
 
 Laxkit::anObject *ObjectFilter::FinalObject()
 {
-	NodeProperty *prop = output->FindProperty("Out");
-	return dynamic_cast<DrawableObject*>(prop->GetData());
+	NodeProperty *prop = output->FindProperty("out");
+	if (prop) return dynamic_cast<DrawableObject*>(prop->GetData());
+	return NULL;
 }
 
-/*! Call FindInterfaceNodes(NULL) to find all. Recursively calls any nested ObjectFilters.
+/*! Call FindInterfaceNodes(NULL) to find all. Recursively finds any nested ObjectFilters.
  */
 int ObjectFilter::FindInterfaceNodes(NodeGroup *group)
 {
+//   ------brute force search of all nodes, maybe not what we want
 //	if (!group) {
 //		interfacenodes.flush();
 //		group = this;
@@ -142,6 +185,43 @@ int ObjectFilter::FindInterfaceNodes(NodeGroup *group)
 	return n;
 }
 
+/*! Get all object filter nodes that contribute to start_here.
+ * Return number of filters found.
+ */
+int ObjectFilter::FindInterfaceNodes(Laxkit::RefPtrStack<ObjectFilterNode> &filternodes, NodeProperty *start_here)
+{
+	if (start_here == NULL) {
+		 //starting from final out of filter
+		start_here = FindProperty("out");
+		if (!start_here) return 0;
+		if (start_here->frompropproxy) start_here = start_here->frompropproxy;
+	}
+
+	int n=0;
+
+	 //check owner node
+	if (dynamic_cast<ObjectFilterNode*>(start_here->owner)) filternodes.pushnodup(dynamic_cast<ObjectFilterNode*>(start_here->owner));
+
+
+	 //traverse backward
+	if (start_here->connections.n) {
+		NodeBase *from = start_here->connections.e[0]->from;
+
+		for (int c=0; c<from->properties.n; c++) {
+			NodeProperty *prop = from->properties.e[c];
+			if (prop->frompropproxy) prop = prop->frompropproxy;
+			if (!prop->IsInput()) continue;
+
+			n += FindInterfaceNodes(filternodes, prop);
+		}
+	}
+
+
+
+	return n;
+}
+
+
 LaxFiles::Attribute *ObjectFilter::dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context)
 {
 	NodeProperty *in = FindProperty("in");
@@ -150,6 +230,49 @@ LaxFiles::Attribute *ObjectFilter::dump_out_atts(LaxFiles::Attribute *att, int w
 	in->SetData(dynamic_cast<DrawableObject*>(parent), 0);
 	return attt;
 }
+
+
+//------------------------ ObjectFilterNode ------------------------
+
+Laxkit::anObject *newPerspectiveNode(int p, Laxkit::anObject *ref)
+{
+    return new PerspectiveNode();
+}
+
+int RegisterFilterNodes(Laxkit::ObjectFactory *factory)
+{
+     //--- PerspectiveNode
+    factory->DefineNewObject(getUniqueNumber(), "PerspectiveFilter",    newPerspectiveNode,  NULL, 0);
+
+
+	return 0;
+}
+ 
+
+//----------------------------- ObjectFilterInfo ---------------------------------
+
+/*! \class ObjectFilterInfo
+ * Class to pass on to interfaces from ObjectFilterInterface for viewport editing.
+ */
+
+
+ObjectFilterInfo::ObjectFilterInfo(LaxInterfaces::ObjectContext *noc, DrawableObject *nfobj, ObjectFilterNode *nnode)
+{
+	oc = (noc ? noc->duplicate() : NULL);
+
+	filtered_object = nfobj;
+	if (filtered_object) filtered_object->inc_count();
+	node = nnode;
+	if (node) node->inc_count();
+}
+
+ObjectFilterInfo::~ObjectFilterInfo()
+{
+	if (oc) delete oc;
+	if (filtered_object) filtered_object->dec_count();
+	if (node) node->dec_count();
+}
+
 
 
 } //namespace Laidout

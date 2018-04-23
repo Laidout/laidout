@@ -23,6 +23,30 @@
 
 namespace Laidout {
 
+
+//------------------------ RegisterFilterNodes ------------------------
+
+int RegisterFilterNodes(Laxkit::ObjectFactory *factory);
+
+
+//------------------------ ObjectFilterNode ------------------------
+
+class ObjectFilterNode : public NodeBase
+{
+  protected:
+	int muted;
+
+  public:
+    ObjectFilterNode();
+    virtual ~ObjectFilterNode();
+
+    virtual LaxInterfaces::anInterface *ObjectFilterInterface() = 0;
+    virtual DrawableObject *ObjectFilterData() = 0;
+	virtual int IsMuted();
+	virtual int Mute(bool yes=true);
+};
+
+
 //----------------------------- ObjectFilter ---------------------------------
 
 class ObjectFilter : public NodeGroup
@@ -45,9 +69,25 @@ class ObjectFilter : public NodeGroup
 
 	virtual Laxkit::anObject *FinalObject();
 	virtual int FindInterfaceNodes(NodeGroup *group);
+	virtual int FindInterfaceNodes(Laxkit::RefPtrStack<ObjectFilterNode> &filternodes, NodeProperty *start_here=NULL);
 
     virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context);
 
+};
+
+
+//----------------------------- ObjectFilterInfo ---------------------------------
+
+class ObjectFilterInfo : public NodeGroup
+{
+  public:
+	//DrawableObject *object; //object that owns the filter
+	DrawableObject *filtered_object;
+	LaxInterfaces::ObjectContext *oc;
+	ObjectFilterNode *node;	//node home to filtered_object
+
+	ObjectFilterInfo(LaxInterfaces::ObjectContext *noc, DrawableObject *nfobj, ObjectFilterNode *nnode);
+	virtual ~ObjectFilterInfo();
 };
 
 

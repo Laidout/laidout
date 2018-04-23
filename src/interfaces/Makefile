@@ -29,6 +29,7 @@ objs= \
 	nodeinterface.o \
 	nodeeditor.o \
 	nodes.o \
+	objectfilterinterface.o \
 
 
 

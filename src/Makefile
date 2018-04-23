@@ -24,7 +24,7 @@ endif
 #---polyptych related:
 ifeq ($(LAIDOUT_USING_GL), yes)
 #---if gl:
-POLYPTYCHLIBS= -lGraphicsMagick++ -lGL -lGLU -lftgl 
+POLYPTYCHLIBS= -lGraphicsMagick++ -ltiff -lGL -lGLU -lftgl 
 POLYPTYCH_GL_OBJS=polyptych/src/hedronwindow.o  polyptych/src/glbase.o  polyptych/src/gloverlay.o  polyptych/src/polyrender.o
 POLYPTYCHFORLAIDOUT=polyptychgl
 
@@ -121,6 +121,7 @@ otherobjs= \
 	interfaces/nodeinterface.o \
 	interfaces/nodeeditor.o \
 	interfaces/nodes.o \
+	interfaces/objectfilterinterface.o \
 	printing/print.o \
 	printing/psfilters.o \
 	printing/pscolorpatch.o \
@@ -155,6 +156,7 @@ otherobjs= \
 	dataobjects/limagedata.o \
 	dataobjects/limageinterface.o \
 	dataobjects/lgradientdata.o \
+	dataobjects/lperspectiveinterface.o \
 	dataobjects/lpathsdata.o \
 	dataobjects/mysterydata.o \
 	dataobjects/lsomedataref.o \
