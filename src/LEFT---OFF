@@ -195,8 +195,9 @@ node editor NodeInterface nodes:
   bug: sometimes crash when tabbing across property values
   idea seen in anim nodes: collapsing math shows expression as label
   should probably bring forward any selected
+  control drag on slot to reconnect all connections
   find:
-    by label, name, or type
+    by label(done), name, or type
     search node or property name, or data contents
 	regex
 	stack of last searches
@@ -235,6 +236,7 @@ node editor NodeInterface nodes:
 	tooltips for operation, not just properties
     in menu, so many nodes, need way to classify favorites, maybe custom arrangements of menu
       progressive search
+  need a way to collect custom property types, so they can be added to custom nodes
   for connecting, drop onto a property at all should link, not just on slot
   for preview resizer, shouldn't have it when preview is too tiny, since then usually you want to move the node, not resize
   save needs to remember file name per loader, plus default file
@@ -772,6 +774,8 @@ test:
   each export filter (via command line in new script in examples.. ignoring problems in eps)
   make some test scripts for command line testing
 
+
+mousemove decorations shouldn't change when an interface absorbs one
 
 color strips for full transparent should show checkers in all strips, not just the alpha strip
 
