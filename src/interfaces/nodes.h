@@ -71,6 +71,7 @@ class ObjectNode : public NodeBase
 	virtual int Update();
 	virtual int GetStatus();
 	virtual NodeBase *Duplicate();
+	virtual int UpdatePreview();
 };
 
 

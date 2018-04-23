@@ -19,6 +19,8 @@
 #include "nodeinterface.h"
 #include "../calculator/calculator.h"
 #include "../calculator/curvevalue.h"
+#include "../dataobjects/lsomedataref.h"
+#include "../dataobjects/objectfilter.h"
 
 
 //template implementation
@@ -713,6 +715,7 @@ class MathNode1 : public NodeBase
 	virtual int Update();
 	virtual int GetStatus();
 	virtual NodeBase *Duplicate();
+	virtual const char *Label();
 };
 
 class MathNode2 : public NodeBase
@@ -732,6 +735,7 @@ class MathNode2 : public NodeBase
 	virtual int Update();
 	virtual int GetStatus();
 	virtual NodeBase *Duplicate();
+	//virtual const char *Label();
 };
 
 SingletonKeeper MathNode1::mathnodekeeper(DefineMathNode1Def(), true);
@@ -742,7 +746,7 @@ SingletonKeeper MathNode2::mathnodekeeper(DefineMathNode2Def(), true);
 MathNode1::MathNode1(int op, double aa)
 {
 	type = newstr("Math1");
-	Name = newstr(_("Math 1"));
+	//Name = newstr(_("Math 1"));
 
 	last_status = 1;
 	status_time = 0;
@@ -753,8 +757,8 @@ MathNode1::MathNode1(int op, double aa)
 	EnumValue *e = new EnumValue(enumdef, 0);
 	e->SetFromId(op);
 	enumdef->dec_count();
-	const char *Nm = e->EnumLabel();
-	if (Nm) makestr(Name, Nm);
+	//const char *Nm = e->EnumLabel();
+	//if (Nm) makestr(Name, Nm);
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, "Op", e, 1));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "A", new DoubleValue(aa), 1));
@@ -766,6 +770,16 @@ MathNode1::MathNode1(int op, double aa)
 
 MathNode1::~MathNode1()
 {
+}
+
+const char *MathNode1::Label()
+{
+	if (Name) return Name;
+
+	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
+	const char *Nm = ev->EnumLabel();
+
+	return Nm;
 }
 
 NodeBase *MathNode1::Duplicate()
@@ -839,7 +853,7 @@ int MathNode1::UpdateThisOnly()
 	double result=0;
 	int operation = OP_None;
 	def->getEnumInfo(ev->value, &nm, &Nm, NULL, &operation);
-	makestr(Name, Nm);
+	//makestr(Name, Nm);
 
 
 	if (aisnum == 1) {
@@ -2518,8 +2532,8 @@ NodeBase *ObjectNode::Duplicate()
 
 int ObjectNode::GetStatus()
 {
-	Value *obj = properties.e[0]->GetData();
-	if (!dynamic_cast<DrawableObject*>(obj)) return 1;
+	//Value *obj = properties.e[0]->GetData();
+	//if (!dynamic_cast<DrawableObject*>(obj)) return 1;
 
 	return NodeBase::GetStatus(); //default checks mod times
 }
@@ -2537,6 +2551,140 @@ Laxkit::anObject *newObjectInNode(int p, Laxkit::anObject *ref)
 Laxkit::anObject *newObjectOutNode(int p, Laxkit::anObject *ref)
 {
 	return new ObjectNode(1, NULL,0);
+}
+
+int ObjectNode::UpdatePreview()
+{
+	// *** copy the object's preview
+	//***
+	return 1;
+}
+
+
+
+
+//------------ TransformAffineNode
+
+class TransformAffineNode : public NodeBase
+{
+  public:
+	TransformAffineNode();
+	virtual ~TransformAffineNode();
+	virtual NodeBase *Duplicate();
+	virtual int GetStatus();
+	virtual int Update();
+};
+
+TransformAffineNode::TransformAffineNode()
+{
+	makestr(Name, _("Transform"));
+	makestr(type, "TransformAffine");
+
+	Value *v = new AffineValue();
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", NULL,0, _("In"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Affine", v,1, _("Affine"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", NULL,0, _("Out"))); 
+}
+
+TransformAffineNode::~TransformAffineNode()
+{
+}
+
+NodeBase *TransformAffineNode::Duplicate()
+{
+	TransformAffineNode *newnode = new TransformAffineNode();
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+/*! -1 for bad values. 0 for ok, 1 for just needs update.
+ */
+int TransformAffineNode::GetStatus()
+{
+	AffineValue *affine  = dynamic_cast<AffineValue*>(properties.e[1]->GetData());
+	if (!affine) return -1;
+
+	Value *v = properties.e[0]->GetData();
+	if (v) {
+		int vtype = v->type();
+		if (   vtype != AffineValue::TypeNumber()
+			&& vtype != VALUE_Flatvector
+			&& !dynamic_cast<DrawableObject*>(v)
+		   ) return -1;
+	}
+
+	if (v && !properties.e[2]->data) return 1;
+
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int TransformAffineNode::Update()
+{
+	Value *nv = NULL;
+	Value *v = properties.e[0]->GetData();
+
+	AffineValue *affine  = dynamic_cast<AffineValue*>(properties.e[1]->GetData());
+	if (!affine) return -1;
+	if (!affine->IsInvertible()) return -1;
+
+	if (!v) {
+		 //clear output when there is no input
+		if (properties.e[2]->GetData()) properties.e[2]->SetData(NULL,0);
+
+	} else {
+		int vtype = v->type();
+		if (vtype == VALUE_Flatvector) {
+			FlatvectorValue *fv  = dynamic_cast<FlatvectorValue*>(v);
+			FlatvectorValue *nnv = dynamic_cast<FlatvectorValue*>(properties.e[2]->GetData());
+			if (!nnv) nnv = new FlatvectorValue(affine->transformPoint(fv->v));
+			else {
+				nnv->v = affine->transformPoint(fv->v);
+				nnv->inc_count();
+			}
+			nv = nnv;
+
+		} else if (dynamic_cast<DrawableObject*>(v)) {
+			// ***** refs cause unending render loops
+//			DrawableObject *d = dynamic_cast<DrawableObject*>(v);
+//			LSomeDataRef *ref = dynamic_cast<LSomeDataRef*>(properties.e[2]->GetData());
+//			if (!ref) ref = new LSomeDataRef(d);
+//			else {
+//				ref->Set(d, 0);
+//				ref->inc_count();
+//			}
+//			ref->Multiply(*affine);
+//			nv = ref;
+			//---------------------
+			DrawableObject *d = dynamic_cast<DrawableObject*>(v);
+			anObject *filter = d->filter;
+			d->filter = NULL;
+			DrawableObject *copy = dynamic_cast<DrawableObject*>(d->duplicate());
+			d->filter = filter;
+			copy->Multiply(*affine);
+			nv = copy;
+
+		} else if (vtype == AffineValue::TypeNumber()) {
+			AffineValue *fv  = dynamic_cast<AffineValue*>(v);
+			AffineValue *nnv = dynamic_cast<AffineValue*>(properties.e[2]->GetData());
+			if (!nnv) nnv = new AffineValue(fv->m());
+			else {
+				nnv->m(fv->m());
+				nnv->inc_count();
+			}
+			nnv->Multiply(*affine);
+			nv = nnv;
+		}
+
+	}
+
+	properties.e[2]->SetData(nv, 1);
+
+	return NodeBase::Update();
+}
+
+Laxkit::anObject *newTransformAffineNode(int p, Laxkit::anObject *ref)
+{
+	return new TransformAffineNode();
 }
 
 
@@ -2604,6 +2752,9 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Object In", newObjectInNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Object Out",newObjectOutNode, NULL, 0);
 
+	 //--- TransformAffineNodes
+	factory->DefineNewObject(getUniqueNumber(), "TransformAffine", newTransformAffineNode,  NULL, 0);
+
 
 	 //--------------------THREADS
 
@@ -2618,6 +2769,9 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 
 	 //--- ForkNode
 	factory->DefineNewObject(getUniqueNumber(), "Threads/Fork",newForkNode,  NULL, 0);
+
+
+	RegisterFilterNodes(factory);
 
 
 	return 0;
