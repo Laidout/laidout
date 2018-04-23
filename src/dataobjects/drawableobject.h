@@ -249,8 +249,11 @@ ObjectDef *makeAffineObjectDef();
 class AffineValue : virtual public Value, virtual public Laxkit::Affine, virtual public FunctionEvaluator
 {
   public:
+	static int TypeNumber();
+
 	AffineValue();
 	AffineValue(const double *m);
+	virtual int type();
     virtual const char *whattype() { return "AffineValue"; }
 	virtual ObjectDef *makeObjectDef();
 	virtual int getValueStr(char *buffer,int len);

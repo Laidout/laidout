@@ -244,7 +244,7 @@ LaxInterfaces::SomeData *DrawableObject::EquivalentObject()
  */
 DrawableObject *DrawableObject::FinalObject()
 {
-	if (!filter)return this;
+	if (!filter) return this;
 
 	ObjectFilter *ofilter = dynamic_cast<ObjectFilter*>(filter);
 	DrawableObject *fobj = (ofilter ? dynamic_cast<DrawableObject*>(ofilter->FinalObject()) : NULL);
@@ -472,8 +472,8 @@ LaxInterfaces::SomeData *DrawableObject::duplicate(LaxInterfaces::SomeData *dup)
 	DrawableObject *d=dynamic_cast<DrawableObject*>(dup);
 	if (dup && !d) return NULL; //not a drawableobject!
 	if (!dup) {
-		dup=newObject("Group");
-		d=dynamic_cast<DrawableObject*>(dup);
+		dup = newObject("Group");
+		d = dynamic_cast<DrawableObject*>(dup);
 	}
 
 	//assign new id
@@ -484,6 +484,8 @@ LaxInterfaces::SomeData *DrawableObject::duplicate(LaxInterfaces::SomeData *dup)
 	//ignore chains
 	//meta? and tags
 	//iohints
+
+	d->m(m());
 
 	 //filter
 	d->alpha = alpha;
@@ -1030,7 +1032,8 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext 
 void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	char *name,*value;
-	int foundconfig=0;
+	int foundconfig = 0;
+	int foundfilter = -1;
 	if (!strcmp(whattype(),"Group")) foundconfig=-1;
 
 	for (int c=0; c<att->attributes.n; c++) {
@@ -1268,20 +1271,28 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Du
 			foundconfig=1;
 
 		} else if (!strcmp(name,"filter")) {
-			ObjectFilter *ofilter = new ObjectFilter(this, 0);
-			ofilter->dump_in_atts(att->attributes.e[c], 0, context);
-			if (filter) filter->dec_count();
-            NodeProperty *in = ofilter->FindProperty("in");
-			in->SetData(this, 0);
-			in->SetFlag(NodeProperty::PROPF_Label_From_Data, 1);
-			in->topropproxy->SetFlag(NodeProperty::PROPF_Label_From_Data, 1);
-
-			filter = ofilter;
+			foundfilter = c;
 		}
 	}
 
 	 //is plain group, need to grab the base somedata stuff
 	if (foundconfig==-1) SomeData::dump_in_atts(att, flag,context);
+
+
+	if (foundfilter >= 0) {
+		 //note: transform and possibly other important data not set yet!
+		ObjectFilter *ofilter = new ObjectFilter(this, 0);
+		ofilter->dump_in_atts(att->attributes.e[foundfilter], 0, context);
+		if (filter) filter->dec_count();
+		NodeProperty *in = ofilter->FindProperty("in");
+		in->SetData(this, 0);
+		in->SetFlag(NodeProperty::PROPF_Label_From_Data, 1);
+		in->topropproxy->SetFlag(NodeProperty::PROPF_Label_From_Data, 1);
+		//ofilter->Update();
+		//in->topropproxy->owner->Update();
+
+		filter = ofilter;
+	}
 }
 
 /*! Recursively map any unmapped anchors. Assume we are on the given page.
@@ -1411,7 +1422,6 @@ int DrawableObject::Evaluate(const char *func,int len, ValueHash *context, Value
 
 //--------------------------------------- AffineValue ---------------------------------------
 
-
 /* \class AffineValue
  * \brief Adds scripting functions for a Laxkit::Affine object.
  */
@@ -1422,6 +1432,17 @@ AffineValue::AffineValue()
 AffineValue::AffineValue(const double *m)
   : Affine(m)
 {}
+
+int AffineValue::TypeNumber()
+{
+	static int v = VALUE_MaxBuiltIn + getUniqueNumber();
+	return v;
+}
+
+int AffineValue::type()
+{
+	return TypeNumber();
+}
 
 Value *AffineValue::dereference(int index)
 {
