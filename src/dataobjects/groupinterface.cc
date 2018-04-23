@@ -21,6 +21,7 @@
 #include "../interfaces/anchorinterface.h"
 #include "../interfaces/aligninterface.h"
 #include "../interfaces/nupinterface.h"
+#include "../interfaces/objectfilterinterface.h"
 #include "printermarks.h"
 #include "../project.h"
 #include "../viewwindow.h"
@@ -121,7 +122,12 @@ Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 		DrawableObject *obj = dynamic_cast<DrawableObject*>(selection->e(0)->obj);
 		if (obj) {
 			if (!menu) menu=new MenuInfo(_("Group Interface"));
-			menu->AddItem(_("Edit filters..."), GIA_Edit_Filters);
+			menu->AddItem(_("Edit filter nodes..."), GIA_Edit_Filter_Nodes);
+			if (obj->filter) {
+				menu->AddItem(_("Interactive filters..."), GIA_Filter_Editor);
+				menu->AddItem(_("Remove filter"), GIA_Remove_Filter);
+				menu->AddItem(_("Update filter"), GIA_Refresh_Filter);
+			}
 		}
 	}
 
@@ -172,7 +178,10 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 
 		} else if (i==GIA_Align
 				|| i==GIA_Distribute
-				|| i==GIA_Edit_Filters
+				|| i==GIA_Edit_Filter_Nodes
+				|| i==GIA_Filter_Editor
+				|| i==GIA_Remove_Filter
+				|| i==GIA_Refresh_Filter
 				) {
 			PerformAction(i);
 			return 0;
@@ -410,7 +419,12 @@ int GroupInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 		return 0;
 	}
 
-	return ObjectInterface::LBUp(x,y,state,d);
+	int status = ObjectInterface::LBUp(x,y,state,d);
+
+	 //update filters as needed
+	PerformAction(GIA_Refresh_Filter);
+
+	return status;
 }
 
 int GroupInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
@@ -736,7 +750,8 @@ int GroupInterface::PerformAction(int action)
 		FreeSelection();
 		return 0;
 
-	} else if (action == GIA_Edit_Filters) {
+	} else if (action == GIA_Edit_Filter_Nodes) {
+		 //bring up node editor for obj->filter
 		if (selection->n() != 1) return 0;
 
 		DrawableObject *obj = dynamic_cast<DrawableObject*>(selection->e(0)->obj);
@@ -758,6 +773,44 @@ int GroupInterface::PerformAction(int action)
 		viewport->Push(i,-1,0);
 		PostMessage(_("Edit filter nodes"));
 
+		return 0;
+
+	} else if (action == GIA_Filter_Editor) {
+		 //bring up node editor for obj->filter
+		if (selection->n() != 1) return 0;
+
+		DrawableObject *obj = dynamic_cast<DrawableObject*>(selection->e(0)->obj);
+		if (!obj) return 0;
+
+		ObjectFilterInterface *i = new ObjectFilterInterface(NULL,10003,dp);
+		i->UseThisObject(selection->e(0));
+		i->owner = this;
+		child = i;
+		viewport->Push(i,-1,0);
+		PostMessage(_("Edit filters"));
+
+		return 0;
+
+	} else if (action == GIA_Remove_Filter) {
+		DrawableObject *obj = dynamic_cast<DrawableObject*>(selection->e(0)->obj);
+		if (!obj || !obj->filter) return 0;
+		obj->SetFilter(NULL,0);
+		PostMessage(_("Filter removed."));
+		needtodraw=1;
+		return 0;
+
+	} else if (action == GIA_Refresh_Filter) {
+		if (!selection->n()) return 0;
+
+		for (int c=0; c<selection->n(); c++) {
+			DrawableObject *obj = dynamic_cast<DrawableObject*>(selection->e(c)->obj);
+			if (!obj || !obj->filter) continue;;
+			ObjectFilter *filter = dynamic_cast<ObjectFilter*>(obj->filter);
+			filter->FindProperty("in")->topropproxy->owner->Update();
+		}
+
+		PostMessage(_("Filter refresh."));
+		needtodraw=1;
 		return 0;
 
 	} else if (action==GIA_Clone || action==GIA_CloneB) {
