@@ -22,15 +22,16 @@
 #include <lax/interfaces/engraverfillinterface.h>
 #include <lax/interfaces/freehandinterface.h>
 #include <lax/interfaces/textonpathinterface.h>
+#include "interfaces/nodeinterface.h"
 
 //experimental:
 #include <lax/interfaces/textstreaminterface.h>
 #include <lax/interfaces/delauneyinterface.h>
 #include <lax/interfaces/perspectiveinterface.h>
-#include "interfaces/nodeinterface.h"
 #include "interfaces/anchorinterface.h"
 #include <lax/interfaces/ellipseinterface.h>
 #include "interfaces/animationinterface.h"
+#include "interfaces/objectfilterinterface.h"
 
 
 #include "interfaces.h"
@@ -137,6 +138,12 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 
 		 //------Anchor
 		i=new AnchorInterface(NULL,id++,NULL);
+		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+		existingpool->push(i);
+		i->dec_count();
+
+		 //------ObjectFilters
+		i=new ObjectFilterInterface(NULL,id++,NULL);
 		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 		existingpool->push(i);
 		i->dec_count();
