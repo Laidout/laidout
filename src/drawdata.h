@@ -26,6 +26,7 @@ enum ViewDrawFlags {
 	DRAW_AXES  = (1<<(LaxInterfaces::InterfaceManager::DRAW_MAX+1)),
 	DRAW_BOX   = (1<<(LaxInterfaces::InterfaceManager::DRAW_MAX+2)),
 	DRAW_HIRES = (1<<(LaxInterfaces::InterfaceManager::DRAW_MAX+3)),
+	DRAW_NO_FILTER = (1<<(LaxInterfaces::InterfaceManager::DRAW_MAX+4)),
 };
 
 //void DrawData(Laxkit::Displayer *dp,double *m,LaxInterfaces::SomeData *data,

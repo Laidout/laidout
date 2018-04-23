@@ -53,17 +53,6 @@ using namespace std;
 
 namespace Laidout {
 
-//! Push axes and transform by m, draw data, pop axes.
-/*! \ingroup objects
- * *** uh, this is unnecessary? the other one does this already....
- * should it not??
- */
-//void DrawData(Displayer *dp,double *m,SomeData *data,anObject *a1,anObject *a2,unsigned int flags)
-//{
-//	dp->PushAndNewTransform(m);
-//	DrawData(dp,data,a1,a2,flags);
-//	dp->PopAxes();
-//}
 
 //! Just like DrawData(), but don't push data matrix.
 void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned int flags)
@@ -71,6 +60,7 @@ void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,uns
 	DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(dp);
     DBG if (ddp && ddp->GetCairo()) cerr <<" DrawDataStraight for "<<data->Id()<<", cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
+	DrawableObject *ddata = dynamic_cast<DrawableObject*>(data);
 
 	if (flags&DRAW_AXES) dp->drawaxes();
 	if (flags&DRAW_BOX && data->validbounds()) {
@@ -82,9 +72,8 @@ void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,uns
 		dp->drawline(flatpoint(data->minx,data->maxy),flatpoint(data->minx,data->miny));
 	}
 
-	if (dynamic_cast<DrawableObject*>(data) && dynamic_cast<DrawableObject*>(data)->n()) {
-		DrawableObject *g=dynamic_cast<DrawableObject *>(data);
-		for (int c=0; c<g->n(); c++) DrawData(dp,g->e(c),a1,a2,flags);
+	if (ddata && ddata->n()) {
+		for (int c=0; c<ddata->n(); c++) DrawData(dp,ddata->e(c),a1,a2,flags);
 
 		if (!strcmp(data->whattype(),"Group")) {
 			// Is explicitly a layer or a group, so we are done drawing!
@@ -196,6 +185,13 @@ void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,uns
  */
 void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned int flags)
 {
+	DrawableObject *ddata = dynamic_cast<DrawableObject*>(data);
+	if (ddata && ddata->filter && (flags & DRAW_NO_FILTER)==0) {
+		data = ddata->FinalObject();
+		DrawData(dp, data, a1, a2, flags|DRAW_NO_FILTER);
+		return;
+	}
+
 	dp->PushAndNewTransform(data->m()); // insert transform first
 	DrawDataStraight(dp,data,a1,a2,flags);
 	dp->PopAxes();
