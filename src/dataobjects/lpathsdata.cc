@@ -18,6 +18,7 @@
 #include "../stylemanager.h"
 #include "../language.h"
 #include "../calculator/shortcuttodef.h"
+#include "objectfilter.h"
 
 
 
@@ -81,6 +82,11 @@ void LPathsData::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCo
 		}
 	}
 	if (!foundconfig) PathsData::dump_in_atts(att,flag,context);
+
+	if (filter) {
+		ObjectFilter *of = dynamic_cast<ObjectFilter*>(filter);
+		of->FindProperty("in")->topropproxy->owner->Update();
+	}
 }
 
 LaxInterfaces::SomeData *LPathsData::duplicate(LaxInterfaces::SomeData *dup)
