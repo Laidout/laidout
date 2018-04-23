@@ -185,7 +185,7 @@ NodeConnection::NodeConnection(NodeBase *nfrom, NodeBase *nto, NodeProperty *nfr
  */
 NodeConnection::~NodeConnection()
 {
-	DBG cerr << "NodeConnection destructor "<<(from ? from->Name : "?")<<" -> "<<(to ? to->Name : "?")<<endl;
+	DBG cerr << "NodeConnection destructor "<<(from ? from->Label() : "?")<<" -> "<<(to ? to->Label() : "?")<<endl;
 }
 
 int NodeConnection::IsExec()
@@ -214,6 +214,7 @@ NodeProperty::NodeProperty()
 	label     = NULL;
 	tooltip   = NULL;
 	modtime   = 0;
+	flags     = 0;
 	custom_info= 0;
 	frompropproxy = NULL;
 	topropproxy   = NULL;
@@ -238,6 +239,7 @@ NodeProperty::NodeProperty(PropertyTypes input, bool linkable, const char *nname
 	if (data && !absorb_count) data->inc_count();
 	custom_info = info;
 	modtime   = 0;
+	flags     = 0;
 	frompropproxy = NULL;
 	topropproxy   = NULL;
 	x=y=width=height = 0;
@@ -272,7 +274,7 @@ const char *NodeProperty::Label()
 {
 	if (flags & PROPF_Label_From_Data) {
 		Value *v = GetData();
-		if (v) return v->Id();
+		if (v && !isblank(v->Id())) return v->Id();
 	}
 	return label ? label : name;
 }
@@ -469,7 +471,7 @@ NodeBase *NodeProperty::GetDataOwner()
 int NodeProperty::SetData(Value *newdata, bool absorb)
 {
 	if (newdata==data) {
-		if (absorb) data->dec_count();
+		if (data && absorb) data->dec_count();
 		return 1;
 	}
 	if (data) data->dec_count();
@@ -621,6 +623,7 @@ NodeBase::NodeBase()
 	colors    = NULL;
 	collapsed = 0;
 	fullwidth = 0;
+	collapsedwidth = 0;
 	deletable = true; //often at least one node will not be deletable, like group output/inputs
 	modtime   = 0;
 
@@ -1498,13 +1501,15 @@ void NodeBase::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpCo
 			else if (!strcmp(name,"exec_out")) ptype = NodeProperty::PROP_Exec_Out;
 			else if (!strcmp(name,"exec_through")) ptype = NodeProperty::PROP_Exec_Through;
 
-			NodeProperty *prop = FindProperty(value);
-			if (!prop) {
-				 //create property if not found. This happens for bare custom nodes, and ins/outs
-				// *** this is inadequate for fully custom nodes!
-				//prop = new NodeProperty(NodeProperty::PROP_Input, true, value, NULL,1, prop->label, prop->tooltip);
-				prop = new NodeProperty(ptype, true, value, NULL,1, NULL, NULL);
-				AddProperty(prop);
+			if (ptype != NodeProperty::PROP_Unknown) {
+				NodeProperty *prop = FindProperty(value);
+				if (!prop) {
+					 //create property if not found. This happens for bare custom nodes, and ins/outs
+					// *** this is inadequate for fully custom nodes!
+					//prop = new NodeProperty(NodeProperty::PROP_Input, true, value, NULL,1, prop->label, prop->tooltip);
+					prop = new NodeProperty(ptype, true, value, NULL,1, NULL, NULL);
+					AddProperty(prop);
+				}
 			}
 
 			SetPropertyFromAtt(value, att->attributes.e[c]); 
@@ -2558,6 +2563,8 @@ NodeBase *NodeGroup::GetNode(int index)
 	return nodes.e[index];
 }
 
+/*! Find nome with given name.
+ */
 NodeBase *NodeGroup::FindNode(const char *name)
 {
 	if (!name) return NULL;
@@ -3423,7 +3430,8 @@ int NodeInterface::Refresh()
 		dp->NewFG(coloravg(nodes->colors->fg.Pixel(),nodes->colors->bg.Pixel(), .25));
 
 		double width = 0;
-		thread_controls.maxy = thread_controls.miny + thread_controls.miny + 2*th;
+		thread_controls.miny = 1.5*th;
+		thread_controls.maxy = thread_controls.miny + 2*th;
 
 		if (playing<=0 && threads.n) {
 			 //  "Next   Run   Reset"
@@ -3461,7 +3469,7 @@ int NodeInterface::Refresh()
 			if (playing == -1) playing = 0;
 			width = dp->textextent(msg,-1, NULL,NULL);
 			thread_controls.maxx = thread_controls.minx + thread_controls.minx + width + 2*th;
-			thread_controls.maxy = thread_controls.miny + thread_controls.miny + 2*th;
+			thread_controls.maxy = thread_controls.miny + 2*th;
 
 			dp->NewBG(coloravg(nodes->colors->fg.Pixel(),nodes->colors->bg.Pixel(), lasthoverslot == NODES_Thread_Controls ? .65 : .75));
 			dp->drawrectangle(thread_controls.minx, thread_controls.miny, thread_controls.boxwidth(), thread_controls.boxheight(), 2);
@@ -3624,7 +3632,7 @@ int NodeInterface::Refresh()
 			dp->drawRoundedRect(node->x-th/4, node->y-th/4, node->width+th/2, node->height+th/2,
 								th/3, false, th/3, false, 0); 
 		}
-		
+
 		 //draw label area
 		dp->NewFG(&colors->label_bg);
 		dp->drawRoundedRect(node->x, node->y, node->width, th,
@@ -3649,7 +3657,7 @@ int NodeInterface::Refresh()
 			else labely = node->y+node->height/2-th/2;
 		}
 		dp->NewFG(&colors->label_fg);
-		dp->textout(node->x+node->width/2+th/4, labely, node->Name, -1, LAX_TOP|LAX_HCENTER);
+		dp->textout(node->x+node->width/2+th/4, labely, node->Label(), -1, LAX_TOP|LAX_HCENTER);
 
 		 //draw collapse arrow
 		dp->LineWidth(1);
@@ -4961,7 +4969,7 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 				} else {
 					
 					char scratch[200];
-					sprintf(scratch, "%s.%d.%d", nodes->nodes.e[lasthover]->Name, lasthoverprop, lasthoverslot);
+					sprintf(scratch, "%s.%d.%d", nodes->nodes.e[lasthover]->Label(), lasthoverprop, lasthoverslot);
 					PostMessage(scratch);
 				}
 			}

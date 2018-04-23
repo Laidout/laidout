@@ -266,6 +266,7 @@ class NodeBase : public Laxkit::anObject,
 
 	int collapsed;
 	double fullwidth; //uncollapsed
+	double collapsedwidth;
 
 	bool deletable;
 
