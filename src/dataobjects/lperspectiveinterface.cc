@@ -10,7 +10,7 @@
 // version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2012 by Tom Lechner
+// Copyright (C) 2018 by Tom Lechner
 //
 
 #include <lax/interfaces/somedatafactory.h>
@@ -19,6 +19,10 @@
 #include "../language.h"
 #include "objectfilter.h"
 #include "lpathsdata.h"
+
+
+#include <iostream>
+#define DBG
 
 
 using namespace Laxkit;
@@ -38,7 +42,7 @@ namespace Laidout {
 
 
 LPerspectiveInterface::LPerspectiveInterface(anInterface *nowner, int nid,Laxkit::Displayer *ndp)
-  : PerspectiveInterface(owner,nid,ndp)
+  : PerspectiveInterface(nowner,nid,ndp)
 {
 }
 
@@ -48,12 +52,14 @@ LaxInterfaces::anInterface *LPerspectiveInterface::duplicate(LaxInterfaces::anIn
 	if (dup==NULL) dup=dynamic_cast<anInterface *>(new LPerspectiveInterface(NULL,id,NULL));
 	else if (!dynamic_cast<LPerspectiveInterface *>(dup)) return NULL;
 
-	return LPerspectiveInterface::duplicate(dup);
+	return PerspectiveInterface::duplicate(dup);
 }
 
 int LPerspectiveInterface::UseThis(Laxkit::anObject *nobj,unsigned int mask)
 {
 	if (dynamic_cast<ObjectFilterInfo*>(nobj)) {
+		dont_update_transform = true;
+
 		ObjectFilterInfo *info = dynamic_cast<ObjectFilterInfo*>(nobj);
 		PerspectiveNode *node = dynamic_cast<PerspectiveNode*>(info->node);
 		if (!node) return 1;
@@ -61,11 +67,18 @@ int LPerspectiveInterface::UseThis(Laxkit::anObject *nobj,unsigned int mask)
 		UseThisObject(info->oc);
 		NodeProperty *out = info->node->FindProperty("out");
 		DrawableObject *obj = dynamic_cast<DrawableObject*>(out->GetData());
+		if (!obj) info->node->Update();
+		if (!obj) {
+			DBG cerr << " Warning! no data for out of perspectivenode!"<<endl;
+			return 0;
+		}
 
 		 //replace actual data with the filtered data
 		if (data) { data->dec_count(); data=NULL; }
 		data = obj;
 		data->inc_count();
+
+		dont_update_transform = false;
 
 		if (transform) transform->dec_count();
 		transform = node->transform;
@@ -74,7 +87,7 @@ int LPerspectiveInterface::UseThis(Laxkit::anObject *nobj,unsigned int mask)
 		return 0;
 	}
 
-	return LPerspectiveInterface::UseThis(nobj, mask);
+	return PerspectiveInterface::UseThis(nobj, mask);
 }
 
 
@@ -95,7 +108,7 @@ LaxInterfaces::PerspectiveInterface *PerspectiveNode::GetPerspectiveInterface()
 {
 	PerspectiveInterface *interf = dynamic_cast<PerspectiveInterface*>(keeper.GetObject());
 	if (!interf) {
-		interf = new PerspectiveInterface(NULL, getUniqueNumber(), NULL);
+		interf = new LPerspectiveInterface(NULL, getUniqueNumber(), NULL);
 		keeper.SetObject(interf, 1);
 	}
 	return interf;

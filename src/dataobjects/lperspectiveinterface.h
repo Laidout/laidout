@@ -10,10 +10,10 @@
 // version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2012 by Tom Lechner
+// Copyright (C) 2018 by Tom Lechner
 //
-#ifndef LGRADIENTDATA_H
-#define LGRADIENTDATA_H
+#ifndef LPERSPECTIVEINTERFACE_H
+#define LPERSPECTIVEINTERFACE_H
 
 #include <lax/interfaces/perspectiveinterface.h>
 #include <lax/singletonkeeper.h>

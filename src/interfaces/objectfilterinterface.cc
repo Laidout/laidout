@@ -217,7 +217,28 @@ int ObjectFilterInterface::Event(const Laxkit::EventData *data, const char *mes)
 		//int info = s->info4; //info of menu item
 
 		if (i == OFI_Edit_Nodes) {
+
 			//...make child a NodeInterface with filter, with current node selected
+
+			if (!dataoc || !dataoc->obj) return 0;
+			DrawableObject *obj = dynamic_cast<DrawableObject*>(dataoc->obj);
+
+			ObjectFilter *filter = dynamic_cast<ObjectFilter*>(obj->filter);
+			if (filter) filter->inc_count();
+			else {
+				filter = new ObjectFilter(obj, 1);
+				filter->Id(obj->Id());
+				obj->SetFilter(filter, 0);
+			}
+
+			NodeInterface *i = new NodeInterface(NULL,10002,dp);
+			i->UseThis(filter);
+			filter->dec_count();
+			i->owner = this;
+			child = i;
+			viewport->Push(i,-1,0);
+			PostMessage(_("Edit filter nodes"));
+
 			return 0;
 		}
 
@@ -283,6 +304,9 @@ int ObjectFilterInterface::Refresh()
 		//draw one block for each filter
 		double w, x=0;
 		for (int c=0; c<filternodes.n; c++) {
+			dp->NewFG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg, .25));
+			dp->NewBG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg, .75));
+
 			 //draw:
 			 //   Name
 			 //   [eyeball] [remove]
@@ -361,6 +385,9 @@ int ObjectFilterInterface::scan(int x, int y, unsigned int state, int *nhoverind
 			}
 			return OFI_On_Block;
 		}
+
+		xx += width;
+
 	}
 
 
@@ -388,6 +415,8 @@ int ObjectFilterInterface::ActivateTool(int index)
 
 	current = index;
 
+	if (child) RemoveChild();
+
 	ObjectFilterNode *fnode = filternodes.e[index];
 	anInterface *i = fnode->ObjectFilterInterface()->duplicate(NULL);
 	//NodeProperty *in = fnode->FindProperty("in");
@@ -406,6 +435,7 @@ int ObjectFilterInterface::ActivateTool(int index)
 	
 	PostMessage(str);
 
+	needtodraw=1;
 	return 0;
 }
 
@@ -499,6 +529,19 @@ int ObjectFilterInterface::send()
 int ObjectFilterInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state, const Laxkit::LaxKeyboard *d)
 {
 	 //default shortcut processing
+
+    if (ch == LAX_Esc && child) {
+        RemoveChild();
+
+		ObjectFilter *f = dynamic_cast<ObjectFilter *>(data->filter);
+		filternodes.flush();
+		f->FindInterfaceNodes(filternodes);
+		current = -1;
+
+        needtodraw=1;
+        return 0;
+    }
+
 
 	if (!sc) GetShortcuts();
 	int action=sc->FindActionNumber(ch,state&LAX_STATE_MASK,0);
