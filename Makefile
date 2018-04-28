@@ -85,6 +85,7 @@ uninstall:
 #link debian to deb if not there.. Debian guidelines say don't put 
 #a "debian" directory in upstream sources by default.
 deb: touchdepends
+	touch Makefile-toinclude
 	if [ ! -e debian ] ; then ln -s deb debian; fi
 	dpkg-buildpackage -rfakeroot
 
