@@ -1260,6 +1260,7 @@ class GeglLoader : public Laidout::ObjectIO
 //if null, then return if in theory it can import
 int GeglLoader::CanImport(const char *file, const char *first500)
 {
+	if (first500 && strstr(first500, "<gegl")) return true;
 	return false;
 }
 
