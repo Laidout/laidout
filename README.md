@@ -123,6 +123,10 @@ If the magic does NOT work, and you fail with this error:
 then you need to change: `dh_shlibdeps` in debian/rules to: `dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info`
 Maybe something to do with non-packaged NVidia drivers?
 
+If you do run into problems and have to run make deb again, you might want to run with `-nc` option,
+so you don't have rebuild everything again.:
+
+	dpkg-buildpackage -rfakeroot -nc
 
 
 COMPILING FROM DEVELOPMENT GIT
