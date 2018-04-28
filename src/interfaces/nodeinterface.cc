@@ -262,6 +262,7 @@ NodeProperty::~NodeProperty()
 	delete[] tooltip;
 	delete[] datatypes;
 	if (data) data->dec_count();
+	connections.flush();
 }
 
 const char *NodeProperty::Name(const char *nname)
@@ -642,6 +643,7 @@ NodeBase::~NodeBase()
 	if (def) def->dec_count();
 	if (colors) colors->dec_count();
 	if (total_preview) total_preview->dec_count();
+	properties.flush(); //explicit here for debugging purposes
 }
 
 /*! An execution path leads here.
@@ -866,6 +868,7 @@ int NodeBase::WrapFull(bool keep_current_width)
 
 	} else {
 		//keep width
+		width = fullwidth;
 	}
 	double propwidth = width; //the max prop width.. make them all the same width
 
@@ -906,7 +909,8 @@ int NodeBase::WrapCollapsed()
 	 //find overall width and height
 	double th = colors->font->textheight();
 
-	width = 3*th + colors->font->extent(Name,-1);
+	if (collapsedwidth > 0) width = collapsedwidth;
+	else width = 3*th + colors->font->extent(Label(),-1);
 	height = th*1.5;
 	if (UsesPreview()) {
 		height += preview_area_height;
@@ -949,6 +953,7 @@ int NodeBase::WrapCollapsed()
 		} 
 	} 
 
+	if (collapsedwidth == 0) collapsedwidth = width;
 	return 0;
 }
 
@@ -977,7 +982,7 @@ int NodeBase::Collapse(int state)
 {
 	if (state==-1) state = !collapsed;
 
-	if (state==true && state!=collapsed) {
+	if (state==true && state != collapsed) {
 		 //collapse!
 		collapsed = true;
 		fullwidth = width;
@@ -4223,10 +4228,10 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, int 
 
 			if (*overpropslot == -1) {
 				 //check if hovering over an edge
-				if (!node->collapsed) {
+				//if (!node->collapsed) {
 					if (p.x >= node->x-th/2 && p.x <= node->x+th/2) *overpropslot = NODES_LeftEdge;
 					else if (p.x >= node->x+node->width-th/2 && p.x <= node->x+node->width+th/2) *overpropslot = NODES_RightEdge;
-				}
+				//}
 
 				if (*overpropslot == -1 && (node->collapsed || (p.y >= node->y && p.y <= node->y+th))) { //on label area
 					if (p.x >= node->x+th/2 && p.x <= node->x+3*th/2) *overpropslot = NODES_Collapse;
@@ -5133,17 +5138,24 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 
 			for (int c=0; c<selected.n; c++) {
 				if (action == NODES_Resize_Left) {
-					selected.e[c]->x += d.x;
-					selected.e[c]->width -= d.x;
+					if (selected.e[c]->width - d.x > 0) {
+						selected.e[c]->x += d.x;
+						selected.e[c]->width -= d.x;
+					}
+
 				} else {
-					selected.e[c]->width += d.x;
+					if (selected.e[c]->width + d.x > 0) selected.e[c]->width += d.x;
+
 				}
 
 				double th = font->textheight();
 				if (selected.e[c]->width < 2*th)  selected.e[c]->width = 2*th;
 
+				if (selected.e[c]->collapsed) selected.e[c]->collapsedwidth = selected.e[c]->width;
+				else selected.e[c]->fullwidth = selected.e[c]->width;
+
 				selected.e[c]->UpdateLayout();
-				selected.e[c]->UpdateLinkPositions();
+				if (!selected.e[c]->collapsed) selected.e[c]->UpdateLinkPositions();
 			}
 		}
 		needtodraw=1;
