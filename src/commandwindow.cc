@@ -62,6 +62,7 @@ char *CommandWindow::process(const char *in)
 
 	 //intercept to change the running interpreter
 	while (isspace(*in)) in++;
+
 	if (!strncmp(in, "ChangeInterpreter", 17) && isspace(in[17])) {
 		try {
 			in += 18;
