@@ -19,6 +19,11 @@ LAXDIR="`pwd`/laxkit/lax"
 
 GS="/usr/bin/gs"
 
+ # for some plugins:
+GEGLVERSION='gegl-0.3'
+PYTHONVERSION='python3.6'
+
+
 LAIDOUT_NOGL=""
 USINGGL="yes"
 USESQLITE="yes"
@@ -34,7 +39,7 @@ EXTRA_PKG=
  ##
 while true ; do
   ARG=$1;
-  echo "arg: $ARG"
+#  echo "arg: $ARG"
 
   if [ x$ARG == x ] ; then break; fi
   
@@ -44,8 +49,8 @@ while true ; do
   fi
   
   optarg=`expr "x$ARG" : 'x[^=]*=\(.*\)'`;
-  echo "option=$option,   optarg=$optarg"
-  echo
+#  echo "option=$option,   optarg=$optarg"
+#  echo
 
   case "$option" in
     -h | --help) 
@@ -73,6 +78,8 @@ while true ; do
 		echo " --pkg-config-path            Any directories to tack onto environment PKG_CONFIG_PATH,"
 		echo "                                for configuring convenience. Should be a colon separated list."
         echo " --disable-sqlite             Optional. Used to get font tags in Fontmatrix database (if it exists)"
+        echo " --gegl-version               Default is gegl-3.0"
+#       echo " --python-version             Default is python3.6"
 		echo " --nogl                       Do not compile with gl based features"
 		echo " --force                      Try to compile even if libraries are not detected"
         echo ""
@@ -104,12 +111,30 @@ while true ; do
           shift
         fi
 		EXTRA_PKG=$optarg
-		echo "extra_pkg = $EXTRA_PKG"
+        #echo "extra_pkg = $EXTRA_PKG"
 		shift ;;
 
 	--disable-sqlite)
 		unset USESQLITE
 		shift;;
+
+    --gegl-version)  
+        if [ -z $optarg ] ; then 
+          optarg=$2
+          shift
+        fi
+		GEGLVERSION="$optarg"
+        #echo gegl version $optarg ;
+        shift ;;
+
+    --python-version)  
+        if [ -z $optarg ] ; then 
+          optarg=$2
+          shift
+        fi
+		PYTHONVERSION="$optarg"
+        #echo gegl version $optarg ;
+        shift ;;
 
     --finalprefix)  
         if [ -z $optarg ] ; then 
@@ -190,7 +215,7 @@ fi
  ##
  ## The stuff in NEED can be checked with pkg-config. Not all libraries
  ## can be checked this way! (notably cups, apparently)
-NEED='x11 xext freetype2 libssl imlib2 cairo harfbuzz'
+NEED="x11 xext freetype2 libssl imlib2 cairo harfbuzz $GEGLVERSION"
 NEEDGL='ftgl GraphicsMagick++'
 NUM='1'
 
@@ -331,6 +356,9 @@ echo "EXTRA_CPPFLAGS=$EXTRA_CPPFLAGS"       >> Makefile-toinclude
 echo "EXTRA_LDFLAGS=$EXTRA_LDFLAGS"         >> Makefile-toinclude
 echo "EXTRA_PKG=$EXTRA_PKG"                 >> Makefile-toinclude
 echo ""                                     >> Makefile-toinclude
+echo "GEGLVERSION=$GEGLVERSION"             >> Makefile-toinclude
+#echo "PYTHONVERSION=$PYTHONVERSION"         >> Makefile-toinclude
+echo ""                                     >> Makefile-toinclude
 echo 'ifeq ($(PKG_CONFIG_PATH)xxx, xxx)'    >> Makefile-toinclude
 echo 'export PKG_CONFIG_PATH=$(EXTRA_PKG)'  >> Makefile-toinclude
 echo "else"                                 >> Makefile-toinclude
@@ -363,6 +391,8 @@ echo "          Sqlite:  $USESQLITE"              >> config.log
 echo "  Extra cppflags:  $EXTRA_CPPFLAGS"         >> config.log
 echo "   Extra ldflags:  $EXTRA_LDFLAGS"          >> config.log
 echo "  Pkgconfig path:  $EXTRA_PKG"              >> config.log
+echo "    Gegl version:  $GEGLVERSION"            >> config.log
+#echo "  Python version:  $PYTHONVERSION"          >> config.log
 
 
 echo 
@@ -378,6 +408,8 @@ echo "          Sqlite:  $USESQLITE"
 echo "  Extra cppflags:  $EXTRA_CPPFLAGS"
 echo "   Extra ldflags:  $EXTRA_LDFLAGS"
 echo "  Pkgconfig path:  $EXTRA_PKG"
+echo "    Gegl version:  $GEGLVERSION"
+#echo "  Python version:  $PYTHONVERSION"
 echo
 echo "If compiling from git, please follow \"COMPILING FROM SOURCE\" in README.md.";
 echo
