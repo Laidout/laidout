@@ -647,12 +647,19 @@ NodeBase::~NodeBase()
 }
 
 /*! An execution path leads here.
- * Return 1 for done with thread.
- * 0 for successful run.
+ * Return the next node that the thread should pass to,
+ * or NULL for no next.
  */
 NodeBase *NodeBase::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks)
 {
 	return NULL;
+}
+
+/*! If a thread is interrupted, this can reset the node.
+ * By default, nothing is done.
+ */
+void NodeBase::ExecuteReset()
+{
 }
 
 /*! Dec old def, install new one and inc count if !absorb_count.
@@ -2763,7 +2770,7 @@ int NodeInterface::ExecuteThreads()
 			//done!
 			if (thread->scopes.n) {
 				thread->UpdateThread(thread->scopes.e[thread->scopes.n-1], NULL);
-				thread->scopes.remove(-1);
+				//thread->scopes.remove(-1);
 			} else {
 				threads.remove(c);
 			}
@@ -4112,6 +4119,8 @@ int NodeInterface::FindThreads(bool flush)
 
 	for (int c=0; c<nodes->nodes.n; c++) {
 		node = nodes->nodes.e[c];
+		node->ExecuteReset();
+
 		for (int c2=0; c2<node->properties.n; c2++) {
 			prop = node->properties.e[c2];
 			if (prop->IsExecIn()) break;
@@ -4119,14 +4128,6 @@ int NodeInterface::FindThreads(bool flush)
 
 			threads.push(new NodeThread(node, prop, NULL,0));
 
-//			 //to count, out needs to be connected
-//			for (int c3=0; c3<prop->connections.n; c3++) {
-//				con = prop->connections.e[c3];
-//				if (con->from == node) {
-//					out++;
-//					threads.push(new NodeThread(con, prop, NULL, 0));
-//				}
-//			}
 		}
 	}
 
@@ -4243,9 +4244,9 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, int 
 			}
 
 			 //check for preview hover things
-			char str[100];
-			sprintf(str, "check slot:%d, usep: %d", *overpropslot, node->UsesPreview());
-			PostMessage(str);
+			//char str[100];
+			//sprintf(str, "check slot:%d, usep: %d", *overpropslot, node->UsesPreview());
+			//PostMessage(str);
 
 			if ((*overpropslot == -1 || node->collapsed) && node->UsesPreview()) {
 				double nw = node->total_preview->w() * node->preview_area_height/node->total_preview->h();

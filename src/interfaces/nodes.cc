@@ -22,6 +22,7 @@
 #include "../dataobjects/lsomedataref.h"
 #include "../dataobjects/objectfilter.h"
 
+#include <unistd.h>
 
 //template implementation
 #include <lax/lists.cc>
@@ -56,8 +57,8 @@ DoubleNode::DoubleNode(double d)
 	makestr(Name, _("Value"));
 	makestr(type, "Value");
 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("In"), new DoubleValue(d), 1));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("V"), NULL, 1, NULL,NULL,0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", new DoubleValue(d), 1, _("In")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "V", NULL, 1, _("V"),NULL,0, false));
 	properties.e[1]->SetData(properties.e[0]->GetData(), 0);
 }
 
@@ -1900,6 +1901,7 @@ class LoopNode : public NodeBase
 	virtual int Update();
 	virtual int GetStatus();
 	virtual NodeBase *Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks);
+	virtual void ExecuteReset();
 };
 
 
@@ -1931,6 +1933,11 @@ LoopNode::~LoopNode()
 {
 }
 
+void LoopNode::ExecuteReset()
+{
+	running = 0;
+}
+
 NodeBase *LoopNode::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks)
 {
 	NodeProperty *done = properties.e[1];
@@ -1941,7 +1948,7 @@ NodeBase *LoopNode::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &fo
 	NodeBase *next = NULL;
 
 	if (!running) {
-		 //initialize loop
+		 //initialize loop, add as scope to the thread
 		running = 1;
 		current = start;
 		//if      (loop->connections.n) thread->UpdateThread(loop->connections.e[0]->to, loop->connections.e[0]);
@@ -2094,6 +2101,99 @@ Laxkit::anObject *newForkNode(int p, Laxkit::anObject *ref)
 {
 	return new ForkNode();
 }
+
+
+//------------------------------ DelayNode --------------------------------------------
+
+/*! \class DelayNode
+ * Map arrays to other arrays using a special Delay interface.
+ */
+
+class DelayNode : public NodeBase
+{
+  public:
+	std::clock_t wait_until;
+	bool is_waiting;
+
+	DelayNode(double seconds);
+	virtual ~DelayNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	//virtual int GetStatus();
+	virtual NodeBase *Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks);
+};
+
+DelayNode::DelayNode(double seconds)
+{
+	makestr(type, "Threads/Delay");
+	makestr(Name, _("Delay"));
+
+	wait_until = 0;
+	is_waiting = false;
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_In,  true, "in",    NULL, 1, _("In"),NULL,0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_Out, true, "out",   NULL, 1, _("Out"),NULL,0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,    true, "Delay", new DoubleValue(seconds), 1, _("Delay"), _("In seconds")));
+}
+
+DelayNode::~DelayNode()
+{
+}
+
+NodeBase *DelayNode::Duplicate()
+{
+	int isnum;
+	double secs = getNumberValue(properties.e[2]->GetData(), &isnum);
+
+	DelayNode *node = new DelayNode(secs);
+	node->DuplicateBase(this);
+	return node;
+}
+
+NodeBase *DelayNode::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks)
+{
+	if (!is_waiting) {
+		is_waiting = true;
+		Update(); //updates wait_until
+		return this;
+	}
+
+	clock_t curtime = times(NULL);
+	if (wait_until > curtime) {
+		//still waiting
+		return this;
+	}
+	
+	//else we've waited long enough.. continue!
+
+	is_waiting = false;
+
+	if (!properties.e[1]->connections.n) {
+		return NULL;
+	}
+
+	return properties.e[1]->connections.e[0]->to;
+}
+
+int DelayNode::Update()
+{
+	//maybe delay value was changed
+	int isnum = 0;
+	double secs = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (isnum && secs>0) {
+		clock_t curtime = times(NULL);
+		wait_until = curtime + secs * sysconf(_SC_CLK_TCK);
+	}
+
+	return 0;
+}
+
+
+Laxkit::anObject *newDelayNode(int p, Laxkit::anObject *ref)
+{
+	return new DelayNode(1);
+}
+
 
 //------------------------ LerpNode ------------------------
 
@@ -2809,6 +2909,9 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 
 	 //--- ForkNode
 	factory->DefineNewObject(getUniqueNumber(), "Threads/Fork",newForkNode,  NULL, 0);
+
+	 //--- DelayNode
+	factory->DefineNewObject(getUniqueNumber(), "Threads/Delay",newDelayNode,  NULL, 0);
 
 
 	RegisterFilterNodes(factory);

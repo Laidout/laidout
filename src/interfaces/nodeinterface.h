@@ -312,6 +312,7 @@ class NodeBase : public Laxkit::anObject,
 	virtual void UpdateLinkPositions();
 	virtual void UpdateLayout();
 	virtual NodeBase *Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks);
+	virtual void ExecuteReset();
 
 	virtual NodeBase *Duplicate();
 	virtual void DuplicateBase(NodeBase *from);

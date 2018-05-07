@@ -1117,6 +1117,8 @@ class SwizzleNode : public NodeBase
 
 SwizzleNode::SwizzleNode()
 { ***
+	makestr(type, "Swizzle");
+	makestr(Name, NULL);
 }
 
 SwizzleNode::~SwizzleNode()
@@ -1138,4 +1140,23 @@ int SwizzleNode::GetStatus()
 { ***
 }
 
+Laxkit::anObject *newSwizzle(int p, Laxkit::anObject *ref)
+{
+	return new ForkNode();
+}
+
+
+//------------------------------ ActionNode --------------------------------------------
+
+/*! \class ActionNode
+ * Thread class to perform some action.
+ *
+ * ----Action---
+ * o  In
+ *       Out o
+ * [o] New through
+ * [o] New In
+ * str: Expression
+ *     New Out [o]
+ */
 
