@@ -54,25 +54,19 @@ to compile Laidout. Running ./configure does a simple check for these,
 but the check is so simple, that it may miss them or otherwise get confused.
 
 For everything, you will need the header files for at least:
-  Imlib2, harfbuzz, freetype2, fontconfig, cairo, x11, ssl, cups, sqlite3, 
+  Imlib2, harfbuzz, gegl, freetype2, fontconfig, cairo, x11, ssl, cups, sqlite3, 
   graphicsmagick++, ftgl, opengl 
 
 If you are on a debian based system, you can probably install these with this command:
 
-    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libcairo2-dev libharfbuzz-dev libsqlite3-dev libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev zlib1g-dev
+    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libcairo2-dev libharfbuzz-dev libsqlite3-dev libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev zlib1g-dev libgegl-dev
 
 On Fedora, this list is more like this:
 
-    sudo dnf install -y cairo-devel cups-devel fontconfig-devel ftgl-devel glibc-headers harfbuzz-devel imlib2-devel lcms-devel libpng-devel libX11-devel libXext-devel libXft-devel libXi-devel mesa-libGL-devel mesa-libGLU-devel openssl-devel readline-devel sqlite-devel xorg-x11-proto-devel zlib-devel GraphicsMagick-c++-devel libstdc++-devel freetype-devel imake
+    sudo dnf install -y gegl-devel cairo-devel cups-devel fontconfig-devel ftgl-devel glibc-headers harfbuzz-devel imlib2-devel lcms-devel libpng-devel libX11-devel libXext-devel libXft-devel libXi-devel mesa-libGL-devel mesa-libGLU-devel openssl-devel readline-devel sqlite-devel xorg-x11-proto-devel zlib-devel GraphicsMagick-c++-devel libstdc++-devel freetype-devel imake
 
 
-For only the bare minimum, without the polyhedron unwrapper (requires opengl),
-and without the ability to grab Fontmatrix font tags (requires sqlite), you 
-only need the following. Note that you will also need to pass 
-in "--nogl" and "--disable-sqlite" to ./configure below if you are not
-compiling everything:
-
-    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libcairo2-dev libharfbuzz-dev zlib1g-dev
+Some of the above packages are technically optional. See 'Optional Dependencies' section below for more about that.
 
 
 
@@ -127,6 +121,16 @@ If you do run into problems and have to run make deb again, you might want to ru
 so you don't have rebuild everything again.:
 
 	dpkg-buildpackage -rfakeroot -nc
+
+
+OPTIONAL DEPENDENCIES
+----------------------
+If you get in a bind about dependencies, from `./configure` you can disable certain libraries to aid in compiling.
+
+Specifically:
+ - OpenGL: If you don't need the opengl polyhedron unwrapper, use `--nogl`
+ - Sqlite: If you don't care about Fontmatrix font tags, use `--disable-sqlite`
+ - Gegl: If you don't want to mess around with gegl, it's trickier, but just comment out geglnodes.so in src/plugins/Makefile
 
 
 COMPILING FROM DEVELOPMENT GIT
