@@ -21,12 +21,16 @@ objs= \
 	plugin.o 
 
 #
-# If you want a plugin built by default, include in plugins here.
+# If you want a plugin built by default, uncomment or add here.
 #
 plugins= \
 	geglnodes.so \
+	#python.so \
 	#exampleplugin.so \
-	#antiprism.so
+
+	#gmicnodes.so           #ToDO!
+	#graphicsmagicknodes.so #ToDO!
+	#antiprism.so           #ToDO!
 
 
 all: lax laxinterface $(objs) $(plugins)
@@ -49,8 +53,9 @@ test: lax laxinterface plugin.o test.o exampleplugin.so
 
 
 ####------------------  Gegl  --------------------#####
-GEGLCPPFLAGS= `pkg-config --cflags gegl-0.3`
-GEGLLIBS= `pkg-config --libs gegl-0.3`
+GEGLVERSION='gegl-0.3'
+GEGLCPPFLAGS= `pkg-config --cflags ${GEGLVERSION}`
+GEGLLIBS=     `pkg-config --libs   ${GEGLVERSION}`
 
 geglnodes.so: geglnodes.o svgnodes.o
 #geglnodes.so: geglnodes.cc
@@ -68,20 +73,20 @@ svgnodes.o: svg/svgnodes.cc
 
 
 ####------------------  Python  --------------------#####
-PYTHONCPPFLAGS= `python3.5-config --cflags`
-PYTHONLIBS= `python3.5-config --ldflags`
+PYTHONVERSION='python3.6'
+PYTHONCPPFLAGS= `${PYTHONVERSION}-config --cflags`
+PYTHONLIBS=     `${PYTHONVERSION}-config --ldflags`
 
 python.so: python.cc
-	@echo "Compiling geglnodes with pkg-config path $(PKG_CONFIG_PATH)"
-	@echo "gegl cflags: $(GEGLCPPFLAGS)"
-	@echo "gegl libs  : $(GEGLLIBS)"
+	@echo "Compiling python plugin with pkg-config path $(PKG_CONFIG_PATH)"
+	@echo "  python cflags: $(PYTHONCPPFLAGS)"
+	@echo "  python libs  : $(PYTHONLIBS)"
 	g++ -shared -fPIC $(CPPFLAGS) $(PYTHONCPPFLAGS) -L$(LAXDIR) python.cc -llaxkit $(PYTHONLIBS) -o python.so
 
 
 ####------------------  ExamplePlugin  --------------------#####
 exampleplugin.so: lax laxinterface exampleplugin.o
 	g++ $(CPPFLAGS) -shared -fPIC exampleplugin.o -L$(LAXDIR) -llaxkit -o exampleplugin.so
-	#g++ $(CPPFLAGS) -shared -fPIC exampleplugin.cc -L$(LAXDIR) -o exampleplugin.so
 
 
 hidegarbage:
