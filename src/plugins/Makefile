@@ -53,7 +53,6 @@ test: lax laxinterface plugin.o test.o exampleplugin.so
 
 
 ####------------------  Gegl  --------------------#####
-GEGLVERSION='gegl-0.3'
 GEGLCPPFLAGS= `pkg-config --cflags ${GEGLVERSION}`
 GEGLLIBS=     `pkg-config --libs   ${GEGLVERSION}`
 
@@ -73,7 +72,6 @@ svgnodes.o: svg/svgnodes.cc
 
 
 ####------------------  Python  --------------------#####
-PYTHONVERSION='python3.6'
 PYTHONCPPFLAGS= `${PYTHONVERSION}-config --cflags`
 PYTHONLIBS=     `${PYTHONVERSION}-config --ldflags`
 
