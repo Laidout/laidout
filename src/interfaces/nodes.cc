@@ -40,15 +40,55 @@ namespace Laidout {
 
 //------------ DoubleNode
 
+class DoubleNode : public NodeBase
+{
+  public:
+	DoubleNode(double d);
+	virtual ~DoubleNode();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
+};
+
+
+DoubleNode::DoubleNode(double d)
+{
+	makestr(Name, _("Value"));
+	makestr(type, "Value");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("In"), new DoubleValue(d), 1));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("V"), NULL, 1, NULL,NULL,0, false));
+	properties.e[1]->SetData(properties.e[0]->GetData(), 0);
+}
+
+DoubleNode::~DoubleNode()
+{
+}
+
+int DoubleNode::Update()
+{
+	 //just copy reference to out
+	properties.e[1]->SetData(properties.e[0]->GetData(), 0);
+	return NodeBase::Update();
+}
+
+int DoubleNode::GetStatus()
+{
+	return NodeBase::GetStatus();
+}
+
+NodeBase *DoubleNode::Duplicate()
+{
+	int isnum;
+	double d = getNumberValue(properties.e[0]->GetData(), &isnum);
+	return new DoubleNode(d);
+}
+
 Laxkit::anObject *newDoubleNode(int p, Laxkit::anObject *ref)
 {
-	NodeBase *node = new NodeBase;
-	//node->Id("Value");
-	makestr(node->Name, _("Value"));
-	makestr(node->type, "Value");
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("V"), new DoubleValue(0), 1));
-	return node;
+	return new DoubleNode(0);
 }
+
 
 //------------ ExpandVectorNode
 
