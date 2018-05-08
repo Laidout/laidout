@@ -3479,6 +3479,7 @@ ViewWindow::ViewWindow(Document *newdoc)
 					0,0,500,600,1,new LaidoutViewport(newdoc))
 {
 	tempstring=NULL;
+	initial_tool = -1;
 	viewport->dec_count(); //remove extra creation count
 	viewport->dp->defaultRighthanded(true);
 	project=NULL;
@@ -3498,6 +3499,7 @@ ViewWindow::ViewWindow(anXWindow *parnt,const char *nname,const char *ntitle,uns
 	: ViewerWindow(parnt,nname,ntitle,nstyle,xx,yy,ww,hh,brder,new LaidoutViewport(newdoc))
 {
 	tempstring=NULL;
+	initial_tool = -1;
 	viewport->dec_count(); //remove extra creation count
 	viewport->dp->defaultRighthanded(true);
 	viewport->GetShortcuts();
@@ -3592,6 +3594,11 @@ void ViewWindow::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *con
 			vp->limbo->e(c)->dump_out(f,indent+4,what,context);
 		}
 	}
+
+	if (curtool) {
+		fprintf(f, "%sactive_tool %s\n", spc, curtool->whattype());
+		curtool->dump_out(f, indent+2, what, context);
+	}
 }
 
 LaxFiles::Attribute *ViewWindow::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
@@ -3611,34 +3618,47 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *con
 	double m[6],x1=0,x2=0,y1=0,y2=0;
 	int n=0;
 	const char *layouttype=NULL;
+	Attribute *usetool = NULL;
 	if (doc) doc->dec_count();
 	doc=NULL;
+
 	for (int c=0; c<att->attributes.n; c++) {
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
+
 		if (!strcmp(name,"matrix")) {
 			n=DoubleListAttribute(value,m,6);
+
 		} else if (!strcmp(name,"xbounds")) {
 			if (DoubleAttribute(value,&x1,&value))
 				DoubleAttribute(value,&x2,NULL);
+
 		} else if (!strcmp(name,"ybounds")) {
 			if (DoubleAttribute(value,&y1,&value))
 				DoubleAttribute(value,&y2,NULL);
+
 		} else if (!strcmp(name,"pagelayout")) {
 			vm=PAGELAYOUT;
+
 		} else if (!strcmp(name,"paperlayout")) {
 			vm=PAPERLAYOUT;
+
 		} else if (!strcmp(name,"singlelayout")) {
 			vm=SINGLELAYOUT;
+
 		} else if (!strcmp(name,"layout")) {
 			layouttype=value;
+
 		} else if (!strcmp(name,"spread")) {
 			IntAttribute(value,&spr);
+
 		} else if (!strcmp(name,"page")) {
 			IntAttribute(value,&pn);
+
 		} else if (!strcmp(name,"document")) {
 			doc=laidout->findDocument(value);
 			if (doc) doc->inc_count();
+
 		} else if (!strcmp(name,"limbo")) {
 			LaidoutViewport *vp=(LaidoutViewport *)viewport;
 			Group *g;
@@ -3652,8 +3672,12 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *con
 				}
 			} 
 			if (vp->limbo) vp->limbo->dump_in_atts(att->attributes.e[c],0,context);
+
+		} else if (!strcmp(name,"active_tool")) {
+			usetool = att->attributes.e[c];
 		}
 	}
+
 	//*** there should be error checking on x,y
 	viewport->dp->SetSpace(x1,x2,y1,y2);
 	viewport->dp->syncPanner();
@@ -3668,6 +3692,18 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *con
 		viewport->dp->NewTransform(m);
 		if (((LaidoutViewport *)viewport)->lfirsttime) ((LaidoutViewport *)viewport)->lfirsttime++;
 		if (((LaidoutViewport *)viewport)->firsttime)  ((LaidoutViewport *)viewport)->firsttime++;
+	}
+
+	if (usetool && usetool->value) {
+		for (int c=0; c<laidout->interfacepool.n; c++) {
+			if (!strcmp(laidout->interfacepool.e[c]->whattype(), usetool->value)) {
+				SelectTool(laidout->interfacepool.e[c]->id);
+				curtool->dump_in_atts(usetool, flag, context);
+				initial_tool = curtool->id;
+
+				break;
+			}
+		}
 	}
 }
 
@@ -3807,7 +3843,7 @@ int ViewWindow::init()
 			numoverlays++;
 			continue;
 		}
-		if (!strcmp(tools.e[c]->whattype(),"ObjectInterface")) obji=tools.e[c]->id;
+		if (!strcmp(tools.e[c]->whattype(),"ObjectInterface")) obji = tools.e[c]->id;
 		
 		img=laidout->icons->GetIcon(tools.e[c]->IconId());
 		
@@ -3825,7 +3861,7 @@ int ViewWindow::init()
 	}
 
 	toolselector->WrapToExtent();
-	SelectTool(obji);
+	SelectTool(initial_tool > 0 ? initial_tool : obji);
 	AddWin(toolselector,1,-1);
 
 

@@ -216,6 +216,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 	Laxkit::anXWindow *rulercornerbutton;
 
 	char *tempstring;
+	int initial_tool;
 
   public:
 	Project *project;
