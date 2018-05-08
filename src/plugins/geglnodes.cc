@@ -611,6 +611,11 @@ int GeglLaidoutNode::UpdatePreview()
 {
 	DBG cerr <<"GeglLaidoutNode::UpdatePreview() for "<<operation<<endl;
 
+	if (IsSaveNode()) {
+		DBG cerr <<"  skipping preview for save nodes, because they don't behave well for blitting"<<endl;
+		return 1;
+	}
+
 	if (preview_area_height < 0) preview_area_height = 3*colors->font->textheight();
 
 	GeglRectangle rect = gegl_node_get_bounding_box (gegl);
@@ -874,6 +879,8 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 				v = new DoubleValue(vv);
 
 			} else if (!strcmp(proptype, "gchararray")) {
+				 //*** need special check for "path" so we can add a browser button for file in and out
+
 				const gchar *vv = NULL;
 				if (G_VALUE_HOLDS_STRING(&gv)) {
 					vv = g_value_get_string(&gv);
@@ -1022,7 +1029,8 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 	 //add an extra toggle for auto saving, so we can optionally not have to be constantly processing as things change
 	 //default to no, since process during loading, for instance can do bad things
 	if (IsSaveNode()) {
-		AddProperty(new NodeProperty(NodeProperty::PROP_Block, false, "AutoProcess",  new BooleanValue(false),1, _("Auto Save") ,NULL, GEGLNODE_SWITCH));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Block, false, "AutoProcess",  new BooleanValue(false),1,
+					_("Auto Save"), _("Whether every change to a property or input triggers actual saving"), GEGLNODE_SWITCH));
 	}
 
 
