@@ -629,6 +629,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 
 	virtual int InitializeResources();
 	virtual int UseThis(Laxkit::anObject *nobj, unsigned int mask=0);
+	virtual int UseResource(const char *id);
 	virtual int InterfaceOn();
 	virtual int InterfaceOff();
 	virtual void Clear(LaxInterfaces::SomeData *d);
@@ -662,6 +663,9 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual int FindNext();
 	virtual int Find(const char *what);
 	virtual NodeGroup *GetCurrent() { return nodes; }
+
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *savecontext);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *loadcontext);
 };
 
 

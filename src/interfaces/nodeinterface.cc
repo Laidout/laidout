@@ -167,6 +167,7 @@ int NodeColors::Font(Laxkit::LaxFont *newfont, bool absorb_count)
  * they point to properties of the container group.
  */
 
+
 NodeConnection::NodeConnection()
 {
 	from     = to     = NULL;
@@ -185,7 +186,8 @@ NodeConnection::NodeConnection(NodeBase *nfrom, NodeBase *nto, NodeProperty *nfr
  */
 NodeConnection::~NodeConnection()
 {
-	DBG cerr << "NodeConnection destructor "<<(from ? from->Label() : "?")<<" -> "<<(to ? to->Label() : "?")<<endl;
+	//DBG cerr << "NodeConnection destructor "<<(from ? from->Label() : "?")<<" -> "<<(to ? to->Label() : "?")<<endl;
+	DBG cerr << "NodeConnection destructor "<<endl;
 }
 
 int NodeConnection::IsExec()
@@ -2952,6 +2954,31 @@ Laxkit::MenuInfo *NodeInterface::ContextMenu(int x,int y,int deviceid, Laxkit::M
 	return menu;
 }
 
+/*! Install the given resource. If not found return 1. Else 0 for success.
+ */
+int NodeInterface::UseResource(const char *id)
+{
+	ResourceManager *manager = InterfaceManager::GetDefault(true)->GetResourceManager();
+	NodeGroup *group = dynamic_cast<NodeGroup*>(manager->FindResource(id, "Nodes"));
+
+	if (!group) return 1;
+
+	if (nodes) nodes->dec_count();
+	selected.flush();
+	grouptree.flush();
+	nodes = group;
+	nodes->inc_count();
+	if (!nodes->colors) {
+		NodeColors *colors = new NodeColors;
+		colors->Font(font, false);
+		nodes->InstallColors(colors, true);
+	}
+	lasthover = lasthoverslot = lasthoverprop = lastconnection = -1;
+	needtodraw=1;
+
+	return 0;
+}
+
 int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 {
     if (!strcmp(mes,"menuevent")) {
@@ -2975,22 +3002,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 
 		} else {
 			 //maybe a resource
-			ResourceManager *manager = InterfaceManager::GetDefault(true)->GetResourceManager();
-			NodeGroup *group = dynamic_cast<NodeGroup*>(manager->FindResource(s->str, "Nodes"));
-			if (group) {
-				if (nodes) nodes->dec_count();
-				selected.flush();
-				grouptree.flush();
-				nodes = group;
-				nodes->inc_count();
-				if (!nodes->colors) {
-					NodeColors *colors = new NodeColors;
-					colors->Font(font, false);
-					nodes->InstallColors(colors, true);
-				}
-				lasthover = lasthoverslot = lasthoverprop = lastconnection = -1;
-				needtodraw=1;
-			}
+			UseResource(s->str);
 		}
 
 		return 0;
@@ -6043,6 +6055,34 @@ int NodeInterface::DuplicateNodes()
 
 	needtodraw=1;
 	return 1;
+}
+
+void NodeInterface::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *savecontext)
+{
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+
+	NodeGroup *cur = grouptree.n ? grouptree.e[9] : nodes;
+	if (!cur) return;
+
+	fprintf(f, "%snodes %s\n", spc, cur->Id());
+}
+
+void NodeInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *loadcontext)
+{
+    char *name,*value;
+
+    for (int c=0; c<att->attributes.n; c++) {
+        name= att->attributes.e[c]->name;
+        value=att->attributes.e[c]->value;
+
+		if (!strcmp(name, "nodes")) {
+			 //try to find and install this resource
+			if (isblank(value)) continue;
+
+			DBG cerr << "trying to install resource nodes "<< value<<endl;
+			UseResource(value);
+		}
+	}
 }
 
 
