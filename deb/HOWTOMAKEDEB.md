@@ -5,6 +5,9 @@ note to self:
  Most of these notes are to help the developer(s) package Laidout for releases.
  If you just want to make a deb package yourself, skip down to "build the package".
 
+ There are probably a number of problems and inefficiencies with this process.
+ Please submit patches to streamline!
+
 
 MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 ------------------------------------------
