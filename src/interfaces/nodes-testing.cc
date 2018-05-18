@@ -984,6 +984,7 @@ class ForeachNode : public NodeBase
 	virtual int GetStatus();
 	virtual int Update();
 	virtual NodeBase *Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks);
+	virtual void ExecuteReset();
 };
 
 
@@ -998,10 +999,6 @@ ForeachNode::ForeachNode(double nstart, double nend, double nstep)
 	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_In,  true, "In",    NULL,1, _("In")));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_Out, true, "Done",  NULL,1, _("Done")));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_Out, true, "Foreach",  NULL,1, _("Foreach")));
-	 // *** while in loop, run to loop.
-	 // when thread dead ends, return to this node and go out on Done
-
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Data", new DoubleValue(start),1,_("Start"), NULL));
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Index",   new IntValue(current),1, _("Index"),   NULL, 0, false));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Element", NULL,1, _("Element"), NULL, 0, false));
@@ -1023,6 +1020,13 @@ int ForeachNode::GetStatus()
 	return 0;
 }
 
+void ForeachNode::ExecuteReset()
+{
+	current = -1;
+	running = 0;
+	//dynamic_cast<IntValue*>(FindProperty("Index")->GetData())->i = current;
+}
+
 NodeBase *ForeachNode::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks)
 {
 	NodeProperty *done = properties.e[1];
@@ -1034,7 +1038,11 @@ NodeBase *ForeachNode::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> 
 	Value *vin = properties.e[3]->GetData();
 
 	if (vin->type() == VALUE_Hash) {
+		max = dynamic_cast<ValueHash*>(vin)->n();
+
 	} else if (vin->type() == VALUE_Set) {
+		max = dynamic_cast<SetValue*>(vin)->getNumFields();
+
 	} //else vectors? each point in a path?
 
 
@@ -1159,4 +1167,6 @@ Laxkit::anObject *newSwizzle(int p, Laxkit::anObject *ref)
  * str: Expression
  *     New Out [o]
  */
+
+
 

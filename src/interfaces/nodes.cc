@@ -1658,6 +1658,79 @@ Laxkit::anObject *newRandomNode(int p, Laxkit::anObject *ref)
 }
 
 
+//------------------------------ StringNode --------------------------------------------
+
+class StringNode : public NodeBase
+{
+  public:
+	StringNode(const char *s1);
+	virtual ~StringNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+};
+
+StringNode::StringNode(const char *s1)
+{
+	makestr(Name, _("String"));
+	makestr(type, "String");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "S", new StringValue(s1),1, _("S")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", new StringValue(s1),1, _("Out"), NULL,0,false));
+}
+
+StringNode::~StringNode()
+{
+}
+
+NodeBase *StringNode::Duplicate()
+{
+	StringValue *s1 = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+
+	StringNode *newnode = new StringNode(s1 ? s1->str : NULL);
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int StringNode::GetStatus()
+{
+	if (!isNumberType(properties.e[0]->GetData(), NULL) && !dynamic_cast<StringValue*>(properties.e[0]->GetData())) return -1;
+
+	if (!properties.e[1]->data) return 1;
+
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int StringNode::Update()
+{
+	char *str=NULL;
+
+	int isnum=0;
+	double d = getNumberValue(properties.e[0]->GetData(), &isnum);
+	if (isnum) {
+		str = numtostr(d);
+	} else {
+		StringValue *s = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+		if (!s) return -1;
+
+		str = newstr(s->str);
+	}
+
+	StringValue *out = dynamic_cast<StringValue*>(properties.e[1]->GetData());
+	out->Set(str);
+
+	delete[] str;
+
+	return NodeBase::Update();
+}
+
+
+Laxkit::anObject *newStringNode(int p, Laxkit::anObject *ref)
+{
+	return new StringNode(NULL);
+}
+
+
 //------------------------------ concat --------------------------------------------
 
 class ConcatNode : public NodeBase
@@ -2102,6 +2175,177 @@ Laxkit::anObject *newForkNode(int p, Laxkit::anObject *ref)
 	return new ForkNode();
 }
 
+
+//------------------------------ SetVariableNode --------------------------------------------
+
+/*! \class SetVariableNode
+ * Map arrays to other arrays using a special SetVariable interface.
+ */
+
+class SetVariableNode : public NodeBase
+{
+  public:
+	SetVariableNode();
+	virtual ~SetVariableNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+
+	virtual NodeBase *Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks);
+};
+
+SetVariableNode::SetVariableNode()
+{
+	makestr(type, "Threads/SetVariable");
+	makestr(Name, _("Set Variable"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_In,  true, "in",   NULL,1, _("In")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_Out, true, "out",  NULL,1, _("Out")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "name",   new StringValue("v"),1, _("Name")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "value",  NULL,1,                 _("Value")));
+}
+
+SetVariableNode::~SetVariableNode()
+{
+}
+
+NodeBase *SetVariableNode::Duplicate()
+{
+	SetVariableNode *node = new SetVariableNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int SetVariableNode::Update()
+{
+	return 0; //do nothing here!
+}
+
+int SetVariableNode::GetStatus()
+{
+	NodeProperty *nameprop  = properties.e[2];
+	StringValue *s = dynamic_cast<StringValue*>(nameprop->GetData());
+	if (!s || isblank(s->str)) return -1;
+	return 0;
+}
+
+//void SetVariableNode::ExecuteReset()
+//{
+//}
+
+NodeBase *SetVariableNode::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks)
+{
+	NodeProperty *nameprop  = properties.e[2];
+	NodeProperty *valueprop = properties.e[3];
+
+	StringValue *s = dynamic_cast<StringValue*>(nameprop->GetData());
+	if (!s || isblank(s->str)) return NULL;
+
+	Value *value = valueprop->GetData();
+
+	thread->data->push(s->str, value);
+
+	NodeProperty *out = properties.e[1];
+	if (out->connections.n) return out->connections.e[0]->to;
+
+	PropagateUpdate();
+	return NULL;
+}
+
+
+
+Laxkit::anObject *newSetVariableNode(int p, Laxkit::anObject *ref)
+{
+	return new SetVariableNode();
+}
+
+
+//------------------------------ GetVariableNode --------------------------------------------
+
+/*! \class GetVariableNode
+ * Map arrays to other arrays using a special GetVariable interface.
+ */
+
+class GetVariableNode : public NodeBase
+{
+  public:
+	GetVariableNode();
+	virtual ~GetVariableNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+
+	virtual NodeBase *Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks);
+	virtual void ExecuteReset();
+};
+
+GetVariableNode::GetVariableNode()
+{
+	makestr(type, "Threads/GetVariable");
+	makestr(Name, _("Get Variable"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_In,  true, "in",   NULL,1, _("In")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_Out, true, "out",  NULL,1, _("Out")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "name",   new StringValue("v"),1, _("Name")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "value",  NULL,1,                 _("Value"), NULL, 0, false));
+}
+
+GetVariableNode::~GetVariableNode()
+{
+}
+
+NodeBase *GetVariableNode::Duplicate()
+{
+	GetVariableNode *node = new GetVariableNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int GetVariableNode::Update()
+{
+	return 0; //do nothing here! Things happen in Execute()
+}
+
+int GetVariableNode::GetStatus()
+{
+	NodeProperty *nameprop  = properties.e[2];
+	StringValue *s = dynamic_cast<StringValue*>(nameprop->GetData());
+	if (!s || isblank(s->str)) return -1;
+	return 0;
+}
+
+void GetVariableNode::ExecuteReset()
+{
+	properties.e[3]->SetData(NULL,0);
+}
+
+NodeBase *GetVariableNode::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks)
+{
+	NodeProperty *nameprop  = properties.e[2];
+
+	StringValue *s = dynamic_cast<StringValue*>(nameprop->GetData());
+	if (!s || isblank(s->str)) {
+		properties.e[3]->SetData(NULL,0);
+	} else {
+		Value *value = thread->data->find(s->str);
+		properties.e[3]->SetData(value,0);
+	}
+
+	NodeProperty *out = properties.e[1];
+	if (out->connections.n) return out->connections.e[0]->to;
+
+	PropagateUpdate();
+	return NULL;
+}
+
+
+
+Laxkit::anObject *newGetVariableNode(int p, Laxkit::anObject *ref)
+{
+	return new GetVariableNode();
+}
 
 //------------------------------ DelayNode --------------------------------------------
 
@@ -2877,6 +3121,9 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	 //--- ConcatNode
 	factory->DefineNewObject(getUniqueNumber(), "Concat",newConcatNode,  NULL, 0);
 
+	 //--- StringNode
+	factory->DefineNewObject(getUniqueNumber(), "String",newStringNode,  NULL, 0);
+
 	 //--- LerpNode
 	factory->DefineNewObject(getUniqueNumber(), "Lerp",newLerpNode,  NULL, 0);
 
@@ -2912,6 +3159,12 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 
 	 //--- DelayNode
 	factory->DefineNewObject(getUniqueNumber(), "Threads/Delay",newDelayNode,  NULL, 0);
+
+	 //--- SetVariableNode
+	factory->DefineNewObject(getUniqueNumber(), "Threads/SetVariable",newSetVariableNode,  NULL, 0);
+
+	 //--- GetVariableNode
+	factory->DefineNewObject(getUniqueNumber(), "Threads/GetVariable",newGetVariableNode,  NULL, 0);
 
 
 	RegisterFilterNodes(factory);
