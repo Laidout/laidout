@@ -302,7 +302,7 @@ class NodeBase : public Laxkit::anObject,
 	virtual void PropagateUpdate();
 	virtual int UpdatePreview();
 	virtual void PreviewSample(double w, double h, bool is_shift);
-	virtual int GetStatus();
+	virtual int GetStatus(); //0 ok, -1 bad ins, 1 just needs updating
 	virtual clock_t MostRecentIn(int *index);
 	virtual int UsesPreview() { return total_preview!=NULL && show_preview; }
 	virtual int Wrap();
