@@ -232,7 +232,7 @@ class NodeFrame : public Laxkit::anObject,
 				 public Laxkit::DoubleRectangle
 {
   public:
-	//ScreenColor bg, fg;
+	//ScreenColor bg, fg, label_fg, label_bg;
 
 	NodeGroup *owner;
 	char *label;
@@ -249,6 +249,8 @@ class NodeFrame : public Laxkit::anObject,
 	virtual int AddNode(NodeBase *node);
 	virtual int RemoveNode(NodeBase *node);
 	virtual void Wrap(double gap=-1);
+
+    virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context);
 };
 
 

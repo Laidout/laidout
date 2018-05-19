@@ -608,6 +608,28 @@ void NodeFrame::Wrap(double gap)
 	height = box.maxy - box.miny;
 }
 
+LaxFiles::Attribute *NodeFrame::dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context)
+{
+	if (what == -1) {
+		if (!att) att = new Attribute();
+		att->push("label", "Some label");
+		att->push("comment", "Some comment");
+		att->push("node", "node1_Id", "Any number of nodes that are part of this frame");
+		att->push("node", "node2_Id");
+		return att;
+	}
+
+	if (!att) att = new Attribute();
+	if (label) att->push("label", label);
+	if (comment) att->push("comment", comment);
+
+	for (int c=0; c<nodes.n; c++) {
+		att->push("node", nodes.e[c]->Id());
+	}
+
+	return att;
+}
+
 //-------------------------------------- NodeBase --------------------------
 
 /*! \class NodeBase
@@ -1387,9 +1409,22 @@ LaxFiles::Attribute *NodeBase::dump_out_atts(LaxFiles::Attribute *att, int what,
     if (what==-1) {
         att->push("id", "some_name");
         att->push("label", "Displayed label");
-        att->push("collapsed");
-        att->push("show_preview");
-        //att->push("", "");
+        att->push("collapsed", "true");
+        att->push("show_preview", NULL, "If present, show node preview if possible");
+        att->push("fullwidth", "100", "Full uncollapsed width");
+        att->push("preview_height", "50", "Height of preview area");
+        att->push("psamplew", "100", "Sampling width for previews");
+        att->push("psampleh", "100", "Sampling height for previews");
+        att->push("xywh", "10 10 100 50", "Position and dimensions");
+		Attribute *att2 = att->pushSubAtt("in", "some_name");
+		att2->Comment("An input property");
+		  att2->push("IntValue", "1", "If given for any property type, this data is installed onto the property.");
+		att->push("out", "some_name", "An output property");
+		att->push("block", "some_name", "A block property");
+		att->push("exec_in", "some_name", "An input execution property");
+		att->push("exec_out", "some_name", "An output execution property");
+		//att->push("exec_through", "some_name", "A through execution property");
+
         return att;
     }
 
@@ -2280,29 +2315,38 @@ void NodeGroup::dump_out(FILE *f,int indent,int what,DumpContext *context)
 
 Attribute *NodeGroup::dump_out_atts(Attribute *att,int what,DumpContext *context)
 {
-   if (!att) att=new Attribute();
+	if (!att) att=new Attribute();
 
+	NodeBase::dump_out_atts(att,what,context);
     if (what==-1) {
-        att->push("id", "some_name");
-        att->push("label", "Displayed label");
-        att->push("matrix", "screen matrix to use");
-        att->push("background", "rgb(.1,.2,.3) #color of the background for this group of nodes");
-        att->push("output", "which_one #id of the node designated as non-deletable output for this group, if any");
-        att->push("nodes", "#list of individual nodes in this group");
-        att->push("connections", "#list of connections between the nodes");
+        att->push("matrix", "1 0 0 1 0 0", "Screen matrix to use");
+        att->push("background", "rgb(.1,.2,.3)", "Color of the background for this group of nodes");
+        att->push("input",  "InNodeId",  "Id of the node designated as input for this group, if any");
+        att->push("output", "OutNodeId", "Id of the node designated as output for this group, if any");
+
+        Attribute *att2 = att->pushSubAtt("nodes", "");
+		att2->Comment("List of individual nodes in this group");
+		att2 = att2->pushSubAtt("node", "NodeType");
+		NodeBase::dump_out_atts(att2, -1, context);
+		att2->push("...","","further details dependent on specific node");
+
+        att2 = att->pushSubAtt("connections", NULL);
+		att2->Comment("List of connections between the nodes");
+		att2->push("connect", "FromNodeId,fromPropertyName -> ToNodeId,toPropertyName");
+		
+        att2 = att->pushSubAtt("frames", "");
+		att2->Comment("List of frames");
+        att2 = att2->pushSubAtt("frame");
+		NodeFrame frame(NULL);
+		frame.dump_out_atts(att2, -1, context);
+
         //att->push("", "");
         return att;
     }
 
-	NodeBase::dump_out_atts(att,what,context);
-//	att->push("id", Id()); 
-//	att2->push("label", Label());
-//
-//	const double *matrix=m.m();
-//	char s[200];
-//	sprintf(s,"%.10g %.10g %.10g %.10g %.10g %.10g",
-//            matrix[0],matrix[1],matrix[2],matrix[3],matrix[4],matrix[5]);
-//	att->push("matrix", s);
+	const double *matrix=m.m();
+	att->pushStr("matrix", -1, "%.10g %.10g %.10g %.10g %.10g %.10g",
+            matrix[0],matrix[1],matrix[2],matrix[3],matrix[4],matrix[5]);
 
 
 	if (output) att->push("output", output->Id());
@@ -2337,12 +2381,8 @@ Attribute *NodeGroup::dump_out_atts(Attribute *att,int what,DumpContext *context
 
 	att2 = att->pushSubAtt("frames");
 	for (int c=0; c<frames.n; c++) {
-		att3 = att2->pushSubAtt("frame", frames.e[c]->Label());
-		if (frames.e[c]->comment) att3->push("comment", frames.e[c]->comment);
-		for (int c2=0; c2<frames.e[c]->nodes.n; c2++) {
-			att3->push("node", frames.e[c]->nodes.e[c2]->Id());
-		}
-
+		att3 = att2->pushSubAtt("frame");
+		frames.e[c]->dump_out_atts(att3, what, context);
 	}
 
 	return att;
@@ -2369,6 +2409,10 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 
         } else if (!strcmp(name,"input")) {
 			in = value;
+
+        } else if (!strcmp(name,"matrix")) {
+			double mm[6];
+			if (DoubleListAttribute(value, mm, 6) == 6) m.m(mm);
 
         } else if (!strcmp(name,"node")) {
 			 //value is the node type
