@@ -12,10 +12,6 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now:
 
-filedialog: something wrong with bookmarks.. pressed add, and they all went away
-
-switch to net imposition, net render lines too big
-
 asymmetric cuts are not right for front sheets on spread generation (done), also on sig editor
 
 back to not maximizing properly on default ubuntu
@@ -168,7 +164,7 @@ node editor NodeInterface nodes:
   should probably bring forward any selected
   debug inkscape node extension
   load/save custom properties needs to preserve name, label, tooltip, types, custom info
-  finish file format description
+  DONE finish file format description
 
 text on path textonpath: TextOnPath
   envelope:
@@ -2052,3 +2048,5 @@ DONE image
 DONE laidout import:
   DONE inserts unneccesary layers
   DONE (can't duplicate?) does not appear to scale correctly, does odd scaling
+DONE filedialog: something wrong with bookmarks.. pressed add, and they all went away
+DONE switch to net imposition, net render lines too big
