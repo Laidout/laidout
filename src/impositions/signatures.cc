@@ -2184,6 +2184,7 @@ void SignatureInstance::setPageStyles(int force_new)
 LaxInterfaces::SomeData *SignatureInstance::GetPageOutline()
 {
 	PathsData *newpath=new PathsData();//count==1
+	newpath->style |= PathsData::PATHS_Ignore_Weights;
 
 	double pw=pattern->PageWidth(1),
 		   ph=pattern->PageHeight(1);
@@ -2209,6 +2210,7 @@ LaxInterfaces::SomeData *SignatureInstance::GetPageMarginOutline(int pagenum)
 		   ph=pattern->PageHeight(1);//trim box height
 
 	PathsData *newpath=new PathsData();//count==1
+	newpath->style |= PathsData::PATHS_Ignore_Weights;
 
 	if (pattern->binding=='l') {
 		if (oddpage) newpath->appendRect(pw-w-box.minx,box.miny, w,h);
@@ -3167,12 +3169,14 @@ Spread *SignatureImposition::PageLayout(int whichspread)
 	if (page2>=numpages) page2=-1;
 
 	PathsData *newpath=new PathsData(); //newpath has all the paths used to draw the whole spread
+	newpath->style |= PathsData::PATHS_Ignore_Weights;
+
 	if (binding=='l' || binding=='r') {
 		double o=0, w=pw;
 		if (page1>=0 && page2>=0) w+=pw;
-		if (page1<0) o+=pw;
+		if (page1<0) o += pw;
 
-		spread->path=(SomeData *)newpath;
+		spread->path = (SomeData *)newpath;
 		newpath->appendRect(o,0, w,ph);
 		if (page1>=0 && page2>=0) {
 			newpath->pushEmpty();
@@ -3182,11 +3186,10 @@ Spread *SignatureImposition::PageLayout(int whichspread)
 
 	} else {
 		double o=0, h=ph;
-		if (page1>=0 && page2>=0) h+=ph;
-		if (page1<0) o+=ph;
+		if (page1>=0 && page2>=0) h += ph;
+		if (page1<0) o += ph;
 
-		PathsData *newpath=new PathsData(); //newpath has all the paths used to draw the whole spread
-		spread->path=(SomeData *)newpath;
+		spread->path = (SomeData *)newpath;
 		newpath->appendRect(0,o, pw,h);
 		if (page1>=0 && page2>=0) {
 			newpath->pushEmpty();
