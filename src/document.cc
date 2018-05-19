@@ -27,6 +27,7 @@
 #include "laidout.h"
 #include "headwindow.h"
 #include "utils.h"
+#include "interfaces/nodeinterface.h"
 #include "language.h"
 
 
@@ -1302,6 +1303,15 @@ void Document::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *conte
 		 //resources
 		fprintf(f,"%sresources                     #a list of resource objects used in the document, grouped by type\n",spc);
 		fprintf(f,"%s  ...\n",spc);
+		fprintf(f,"%s  type Nodes\n",spc);
+		fprintf(f,"%s    name Nodes\n",spc);
+		fprintf(f,"%s    resource\n",spc);
+		fprintf(f,"%s      name SomeNodeResourceName\n",spc);
+		//fprintf(f,"%s      favorite 0 #whether this resource is a favorite\n",spc);
+		fprintf(f,"%s      object NodeGroup\n",spc);
+		NodeGroup node;
+		node.dump_out(f, indent+8, -1, context);
+		fprintf(f,"%s\n", spc);
 		
 		 //imposition
 		fprintf(f,"%s#A document has only 1 imposition. It can be one of any imposition resources\n",spc);
