@@ -1822,6 +1822,126 @@ Laxkit::anObject *newConcatNode(int p, Laxkit::anObject *ref)
 }
 
 
+//------------------------------ SliceNode --------------------------------------------
+
+class SliceNode : public NodeBase
+{
+	char sliceLabel[90];
+  public:
+	SliceNode(const char *s1, int from, int to);
+	virtual ~SliceNode();
+	virtual const char *Label();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+};
+
+SliceNode::SliceNode(const char *s1, int from, int to)
+{
+	sliceLabel[0] = '\0';
+	//makestr(Name, _("Slice"));
+	makestr(type, "Slice");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "s",    new StringValue(s1),1, _("s")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "from", new IntValue(from),1,  _("From"), _("Negative values are from end of string")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "to",   new IntValue(to),1,    _("To"), _("Negative values are from end of string")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out")));
+}
+
+SliceNode::~SliceNode()
+{
+}
+
+NodeBase *SliceNode::Duplicate()
+{
+	StringValue *s1 = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+
+	int isnum=0;
+	int from = getNumberValue(properties.e[1]->GetData(), &isnum);
+	int to   = getNumberValue(properties.e[2]->GetData(), &isnum);
+
+	SliceNode *newnode = new SliceNode(s1 ? s1->str : NULL, from, to);
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int SliceNode::GetStatus()
+{
+	if (!isNumberType(properties.e[0]->GetData(), NULL) && !dynamic_cast<StringValue*>(properties.e[0]->GetData())) return -1;
+	if (!isNumberType(properties.e[1]->GetData(), NULL)) return -1;
+	if (!isNumberType(properties.e[2]->GetData(), NULL)) return -1;
+
+	if (!properties.e[3]->data) return 1;
+
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+const char *SliceNode::Label()
+{
+	if (!isblank(Name)) return Name;
+	return sliceLabel;
+}
+
+int SliceNode::Update()
+{
+	char *str=NULL;
+
+	int isnum=0;
+	double d = getNumberValue(properties.e[0]->GetData(), &isnum);
+	if (isnum) {
+		str = numtostr(d);
+	} else {
+		StringValue *s = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+		if (!s) return -1;
+
+		str = newstr(s->str ? s->str : "");
+	}
+
+	int from = getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	int to = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	StringValue *out = dynamic_cast<StringValue*>(properties.e[3]->GetData());
+	if (!out) {
+		out = new StringValue();
+		properties.e[3]->SetData(out, 1);
+	}
+
+	int slen = strlen(str);
+	if (from > slen) from = slen;
+	else if (from < -slen) from = -slen;
+
+	if (to > slen) to = slen;
+	else if (to < -slen) to = -slen;
+	sprintf(sliceLabel, _("Slice %d:%d"), from,to);
+
+	if (from<0) from += slen;
+	if (to<0)   to   += slen;
+
+
+	if (to<from) {
+		slen = from;
+		from = to;
+		to = slen;
+	}
+
+	out->Set(str+from, to-from+1);
+
+	delete[] str;
+
+	return NodeBase::Update();
+}
+
+
+Laxkit::anObject *newSliceNode(int p, Laxkit::anObject *ref)
+{
+	return new SliceNode(NULL,0,0);
+}
+
+
 //------------------------ ThreadNode ------------------------
 
 /*! \class Starts an execution path.
@@ -3123,6 +3243,9 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 
 	 //--- StringNode
 	factory->DefineNewObject(getUniqueNumber(), "String",newStringNode,  NULL, 0);
+
+	 //--- SliceNode
+	factory->DefineNewObject(getUniqueNumber(), "Slice",newSliceNode,  NULL, 0);
 
 	 //--- LerpNode
 	factory->DefineNewObject(getUniqueNumber(), "Lerp",newLerpNode,  NULL, 0);
