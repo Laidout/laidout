@@ -3718,9 +3718,17 @@ Value *StringValue::duplicate()
 
 /*! Replace current str with nstr.
  */
-void StringValue::Set(const char *nstr)
+void StringValue::Set(const char *nstr, int n)
 {
-	makestr(str,nstr);
+	if (!nstr) {
+		makestr(str, NULL);
+
+	} else {
+		int slen = strlen(nstr);
+		if (n<0) n = slen;
+		else if (n>slen) n = slen;
+		makenstr(str,nstr, n);
+	}
 }
 
 

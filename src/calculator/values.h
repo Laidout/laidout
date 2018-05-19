@@ -625,7 +625,7 @@ class StringValue : public Value, virtual public FunctionEvaluator
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_String; }
  	virtual ObjectDef *makeObjectDef();
-	virtual void Set(const char *nstr);
+	virtual void Set(const char *nstr, int n=-1);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret,
 						 Laxkit::ErrorLog *log);
