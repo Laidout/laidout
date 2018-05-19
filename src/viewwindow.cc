@@ -2601,25 +2601,20 @@ void LaidoutViewport::Refresh()
 			 //draw shadow if papergroup does not exist
 			FillStyle fs(0,0,0,0xffff, WindingRule,FillSolid,LAXOP_Over);
 			LineStyle ls(0xffff,0,0,0xffff, 1, LAXCAP_Round,LAXJOIN_Miter,0,LAXOP_Over);
-			ls.widthtype=0;
-			ls.function=LAXOP_None;
+			ls.widthtype = 0;
+			ls.function = LAXOP_None;
 
 			if (!(papergroup && papergroup->papers.n)) {
-			//if (!pgrp && !(papergroup && papergroup->papers.n)) { ***
 				dp->NewFG(0,0,0);
 				dp->PushAxes();
 				dp->ShiftScreen(laidout->prefs.pagedropshadow,laidout->prefs.pagedropshadow);
-				if (dynamic_cast<PathsData*>(spread->path)) {
-					dynamic_cast<PathsData*>(spread->path)->style|=PathsData::PATHS_Ignore_Weights;
-				}
 				DrawData(dp,spread->path, &ls,&fs,drawflags);
 				dp->PopAxes();
 			}
 
 			 // draw outline *** must draw filled with paper color
 			fs.Color(0xffff,0xffff,0xffff,0xffff);
-			ls.function=LAXOP_Over;
-			//DrawData(dp,spread->path->m(),spread->path,NULL,&fs,drawflags);
+			ls.function = LAXOP_Over;
 			DrawData(dp,spread->path, &ls,&fs,drawflags);
 		}
 
