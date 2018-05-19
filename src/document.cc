@@ -1302,7 +1302,6 @@ void Document::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *conte
 
 		 //resources
 		fprintf(f,"%sresources                     #a list of resource objects used in the document, grouped by type\n",spc);
-		fprintf(f,"%s  ...\n",spc);
 		fprintf(f,"%s  type Nodes\n",spc);
 		fprintf(f,"%s    name Nodes\n",spc);
 		fprintf(f,"%s    resource\n",spc);
