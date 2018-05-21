@@ -97,8 +97,8 @@ const char *LaidoutVersion()
 		const char *outstr=
 						_("Laidout Version %s\n"
 						  "http://www.laidout.org\n"
-						  "by Tom Lechner, sometime between 2006 and 2017\n"
-						  "Released under the GNU Public License, Version 2.\n"
+						  "by Tom Lechner, sometime between 2006 and 2018\n"
+						  "Released under the GNU Public License, Version 3.\n"
 						  " (using Laxkit Version %s)");
 		version_str=new char[1+strlen(outstr)+strlen(LAIDOUT_VERSION)+strlen(LAXKIT_VERSION)];
 		sprintf(version_str,outstr,LAIDOUT_VERSION,LAXKIT_VERSION);
