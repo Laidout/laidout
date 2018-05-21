@@ -10,7 +10,7 @@
 // version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2010-2013 by Tom Lechner
+// Copyright (C) 2010-2018 by Tom Lechner
 //
 #ifndef INTERFACES_SIGNATUREINTERFACE_H
 #define INTERFACES_SIGNATUREINTERFACE_H

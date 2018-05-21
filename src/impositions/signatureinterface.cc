@@ -10,7 +10,7 @@
 // version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2010-2013 by Tom Lechner
+// Copyright (C) 2010-2018 by Tom Lechner
 //
 
 
@@ -937,8 +937,13 @@ int SignatureInterface::Refresh()
 	
 	 //----------------draw inset
 	dp->NewFG(color_inset); //dark red for inset
-	if (siginstance->partition->insetleft)   dp->drawline(siginstance->partition->insetleft,0,    siginstance->partition->insetleft, h);
-	if (siginstance->partition->insetright)  dp->drawline(w-siginstance->partition->insetright,0, w-siginstance->partition->insetright, h);
+	if (OnBack()) {
+		if (siginstance->partition->insetleft)   dp->drawline(siginstance->partition->insetleft,0,    siginstance->partition->insetleft, h);
+		if (siginstance->partition->insetright)  dp->drawline(w-siginstance->partition->insetright,0, w-siginstance->partition->insetright, h);
+	} else {
+		if (siginstance->partition->insetleft)   dp->drawline(siginstance->partition->insetright,0,    siginstance->partition->insetright, h);
+		if (siginstance->partition->insetright)  dp->drawline(w-siginstance->partition->insetleft,0, w-siginstance->partition->insetleft, h);
+	}
 	if (siginstance->partition->insettop)    dp->drawline(0,h-siginstance->partition->insettop,   w, h-siginstance->partition->insettop);
 	if (siginstance->partition->insetbottom) dp->drawline(0,siginstance->partition->insetbottom,  w, siginstance->partition->insetbottom);
 
@@ -963,29 +968,31 @@ int SignatureInterface::Refresh()
 	int i=-1;
 	ImageData *thumb;
 
-	DBG dumpfoldinfo(foldinfo, signature->numhfolds, signature->numvfolds);
+	//DBG dumpfoldinfo(foldinfo, signature->numhfolds, signature->numvfolds);
 
-	int rangeofpapers=2*siginstance->sheetspersignature;
-	int npageshalf=siginstance->PagesPerSignature(0,1)/2;
+	int rangeofpapers = 2*siginstance->sheetspersignature;
+	int npageshalf = siginstance->PagesPerSignature(0,1)/2;
+	double apparentleft = OnBack() ? siginstance->partition->insetleft : siginstance->partition->insetright; 
 
-	x=siginstance->partition->insetleft;
+	x = apparentleft;
 	for (int tx=0; tx<siginstance->partition->tilex; tx++) {
-	  y=siginstance->partition->insetbottom;
+	  y = siginstance->partition->insetbottom;
+
 	  for (int ty=0; ty<siginstance->partition->tiley; ty++) {
 
 		 //fill in light gray for elements with no current faces
 		 //or draw orientation arrow and number for existing faces
 		for (int rr=0; rr<signature->numhfolds+1; rr++) {
 		  for (int cc=0; cc<signature->numvfolds+1; cc++) {
-			hasface=foldinfo[rr][cc].pages.n;
+			hasface = foldinfo[rr][cc].pages.n;
 
 			 //when on back page, flip horizontal placements
 			if (foldlevel==0 && OnBack()) {
-				urr=rr;
-				ucc=signature->numvfolds-cc;
+				urr = rr;
+				ucc = signature->numvfolds-cc;
 			} else {
-				urr=rr;
-				ucc=cc;
+				urr = rr;
+				ucc = cc;
 			}
 
 			 //first draw filled face, grayed if no current faces
@@ -1356,7 +1363,7 @@ int SignatureInterface::Refresh()
 			if (overoverlay==SP_Tile_Gap_X) {
 				dp->LineWidthScreen(5);
 				for (int c2=0; c2<siginstance->partition->tilex-1; c2++) {
-					d=pp->insetleft+(c2+1)*(pp->tilegapx+s->PatternWidth()) - pp->tilegapx/2;
+					d = (OnBack() ? pp->insetleft : pp->insetright) + (c2+1)*(pp->tilegapx+s->PatternWidth()) - pp->tilegapx/2;
 					dp->drawline(d,0, d,totalheight);
 				}
 			}
@@ -1403,8 +1410,8 @@ int SignatureInterface::Refresh()
 			dp->LineWidthScreen(1);
 			dv.x=dv.y=0;
 			if (area->category==2) { //page specific
-				dv.x=pp->insetleft  +activetilex*(s->PatternWidth() +pp->tilegapx) + finalc*s->PageWidth(0);
-				dv.y=pp->insetbottom+activetiley*(s->PatternHeight()+pp->tilegapy) + finalr*s->PageHeight(0);
+				dv.x = (OnBack() ? pp->insetleft : pp->insetright)  +activetilex*(s->PatternWidth() +pp->tilegapx) + finalc*s->PageWidth(0);
+				dv.y = pp->insetbottom+activetiley*(s->PatternHeight()+pp->tilegapy) + finalr*s->PageHeight(0);
 			}
 			drawHandle(area,dv);
 		}
@@ -1580,6 +1587,8 @@ void SignatureInterface::drawHandle(ActionArea *area, flatpoint offset)
 	dp->NewFG(area->color);
 	dp->PushAxes();
 
+	if (!OnBack()) dp->ShiftReal(siginstance->partition->insetright - siginstance->partition->insetleft, 0);
+
 	if (area->real==1) dp->DrawReal(); else dp->DrawScreen();
 	dp->LineWidthScreen(1);
 
@@ -1746,6 +1755,9 @@ int SignatureInterface::scanHandle(int x,int y, int *i1, int *i2)
 		}
 	}
 
+	double insetleft = OnBack() ? pp->insetleft  : pp->insetright;
+	double insetright= OnBack() ? pp->insetright : pp->insetleft;
+
 	for (int c=0; c<controls.n; c++) {
 		if (controls.e[c]->hidden) continue;
 
@@ -1765,7 +1777,7 @@ int SignatureInterface::scanHandle(int x,int y, int *i1, int *i2)
 			 //fold lines, in the pattern area
 			for (int x=0; x<siginstance->partition->tilex; x++) {
 			  for (int y=0; y<siginstance->partition->tiley; y++) {
-				tp=fp-flatpoint(pp->insetleft,pp->insetbottom);
+				tp=fp-flatpoint(insetleft,pp->insetbottom);
 				tp-=flatpoint(x*(pp->tilegapx+s->PatternWidth()), y*(pp->tilegapy+s->PatternHeight()));
 
 				if (controls.e[c]->PointIn(tp.x,tp.y)) return controls.e[c]->action;
@@ -1776,7 +1788,7 @@ int SignatureInterface::scanHandle(int x,int y, int *i1, int *i2)
 			 //in a final page area
 			double w=s->PageWidth(0);
 			double h=s->PageHeight(0);
-			tp.x=fp.x-(pp->insetleft  +activetilex*(s->PatternWidth() +pp->tilegapx) + finalc*w);
+			tp.x=fp.x-(insetleft  +activetilex*(s->PatternWidth() +pp->tilegapx) + finalc*w);
 			tp.y=fp.y-(pp->insetbottom+activetiley*(s->PatternHeight()+pp->tilegapy) + finalr*h);
 
 			ffp=tp-controls.e[c]->offset;
@@ -1804,7 +1816,7 @@ int SignatureInterface::scanHandle(int x,int y, int *i1, int *i2)
 			if (controls.e[c]->action==SP_Tile_Gap_X) {
 				for (int c=0; c<siginstance->partition->tilex-1; c++) {
 					 //first check for inside gap itself
-					d=pp->insetleft+(c+1)*(pp->tilegapx+s->PatternWidth())-pp->tilegapx/2;
+					d=insetleft+(c+1)*(pp->tilegapx+s->PatternWidth())-pp->tilegapx/2;
 					if (pp->tilegapx>zone) zone=pp->tilegapx;
 					if (fp.y>0 && fp.y<totalheight && fp.x<=d+zone/2 && fp.x>=d-zone/2) return SP_Tile_Gap_X;
 				}
@@ -1821,13 +1833,13 @@ int SignatureInterface::scanHandle(int x,int y, int *i1, int *i2)
 	}
 
 	 //check for gross areas for insets 
-	if (fp.x>0 && fp.x<siginstance->partition->totalwidth) {
-		if (fp.y>0 && fp.y<siginstance->partition->insetbottom) return SP_Inset_Bottom;
+	if (fp.x>0 && fp.x<pp->totalwidth) {
+		if (fp.y>0 && fp.y<pp->insetbottom) return SP_Inset_Bottom;
 		if (fp.y>totalheight-pp->insettop && fp.y<totalheight) return SP_Inset_Top;
 	}
-	if (fp.y>0 && fp.y<siginstance->partition->totalheight) {
-		if (fp.x>0 && fp.x<siginstance->partition->insetleft) return SP_Inset_Left;
-		if (fp.x>totalwidth-pp->insetright && fp.x<totalwidth) return SP_Inset_Right;
+	if (fp.y>0 && fp.y<pp->totalheight) {
+		if (fp.x>0 && fp.x<insetleft) return SP_Inset_Left;
+		if (fp.x>totalwidth-insetright && fp.x<totalwidth) return SP_Inset_Right;
 	}
 
 
