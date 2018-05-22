@@ -15,7 +15,7 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 
 
 1.	Double check that these are current:
-	debian/laidout.1
+	debian/laidout.1  (use laidout --helpman to aid updating)
 	README.md  <-  must have updated dependency list
 	the laidoutrc description dump out in laidout.cc
 
