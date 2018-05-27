@@ -123,11 +123,11 @@ void $Name\:\:dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *contex
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
 	if (what==-1) {
-		fprintf(f,"%sAField value #comment\n",spc);
+		fprintf(f,"%sAField value #comment\\n",spc);
 		return;
 	}
 						
-	fprintf(f,"%sAField %d\n",spc, value);
+	fprintf(f,"%sAField %d\\n",spc, value);
 
 	-------- OR:  piggy back on dump_out_atts() ------------
 
