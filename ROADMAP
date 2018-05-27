@@ -26,6 +26,7 @@ VERSION 0.097
 (done) Experimental voronoi interface
 (done) Experimental node interface (done aside from large todo list)
 (done) fix tooltips
+(done) Connect node interface for use with object filters
 
 
 VERSION 0.098
@@ -37,7 +38,6 @@ VERSION 0.098
        engraver tool, fully test tool effects when many objects selected
        double click on group should change selection area to group contents like inkscape?
        layers (object tree) palette
-       Connect node interface for use with object filters
        Perspective transform object filter
        Tools should remember their settings
        option to specify alignment of different size signature stacks
