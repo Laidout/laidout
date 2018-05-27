@@ -202,6 +202,9 @@ DrawableObject::DrawableObject()
 
 	parent_link=NULL;
 
+	importer = NULL;
+	importer_data = NULL;
+
 	//Id(); //makes this->nameid (of SomeData) be something like `whattype()`12343
 }
 
@@ -215,6 +218,9 @@ DrawableObject::~DrawableObject()
 	if (wrap_path)  wrap_path ->dec_count();
 	if (inset_path) inset_path->dec_count();
 	if (filter)     filter    ->dec_count();
+
+	if (importer)      importer     ->dec_count();
+	if (importer_data) importer_data->dec_count();
 
 	if (chains.n)   chains.flush();
 
@@ -930,7 +936,7 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext 
 	if (filter) {
 		ObjectFilter *ofilter = dynamic_cast<ObjectFilter*>(filter);
 		fprintf(f,"%sfilter\n",spc);
-		ofilter->dump_out(f, indent+4,what,context);
+		ofilter->dump_out(f, indent+2,what,context);
 	}
 
 	if (anchors.n) {

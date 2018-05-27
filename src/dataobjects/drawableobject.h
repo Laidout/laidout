@@ -22,6 +22,7 @@
 #include <lax/interfaces/groupdata.h>
 #include <lax/interfaces/pathinterface.h>
 #include "objectcontainer.h"
+//#include "../filetypes/objectio.h"
 #include "../guides.h"
 #include "../calculator/values.h"
 //#include "objectfilter.h"
@@ -36,6 +37,7 @@ class DrawableObject;
 class PointAnchor;
 class Document;
 class Page;
+class ObjectIO;
 //class ObjectFilter;
 
 
@@ -145,6 +147,8 @@ class DrawableObject :  virtual public ObjectContainer,
  public:
 	AlignmentRule *parent_link;
 
+	ObjectIO *importer;
+	Laxkit::anObject *importer_data;
 
 	SomeData *clip; //If not a PathsData, then is an object for a softmask
 	LaxInterfaces::PathsData *clip_path;
