@@ -117,6 +117,29 @@ void ImportImageSettings::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFile
 
 void ImportImageSettings::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
+    char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+
+	if (settingsname) fprintf(f, "%sname %s\n", spc, settingsname);
+	if (filename) fprintf(f, "%spath %s\n", spc, filename);
+	fprintf(f, "%sdpi %.10g\n", spc, defaultdpi);
+
+	if (perpage == -1) fprintf(f, "%sperPage fit\n", spc);
+	else if (perpage == -2) fprintf(f, "%sperPage all\n", spc);
+
+	fprintf(f, "%sscaleUpToFit %s\n", spc, scaleup ? "yes" : "no");
+	fprintf(f, "%sscaleDownToFit %s\n", spc, scaledown ? "yes" : "no");
+
+	//fprintf(f, "%sdestination %d\n", spc, destination);
+
+	fprintf(f, "%sstartpage %d\n", spc, startpage);
+
+	if (alignment.n) {
+		fprintf(f, "%salignment\n", spc);
+		for (int c=0; c<alignment.n; c++) {
+			// ***doesn't have actual impostion names here:
+			fprintf(f, "%s  %d %.10g %.10g\n", spc, c, alignment.e[c].x, alignment.e[c].y);
+		}
+	}
 }
 
 
@@ -601,7 +624,7 @@ int dumpInImages(ImportImageSettings *settings,
 		dpi=settings->defaultdpi;
 
 		 //first check if it is recognized as image (the easiest check)
-		image=load_image_with_loaders(imagefiles[c], (previewfiles ? previewfiles[c] : NULL),0,0,&pimage, 0,-1,NULL, true);
+		image = load_image_with_loaders(imagefiles[c], (previewfiles ? previewfiles[c] : NULL),0,0,&pimage, 0,-1,NULL, true, 0);
 
 		if (image) {
 			DBG cerr << "dump image files: "<<imagefiles[c]<<endl;
@@ -932,6 +955,70 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *im
 	DBG cerr <<"-----------------end dump images[]----------------"<<endl;
 	if (outline) { outline->dec_count(); outline=NULL; }
 	return curpage-1;
+}
+
+/*! Return number of images output.
+ */
+int dumpOutImageList(FILE *f, int indent, ImportImageSettings *settings, ImagePlopInfo *images)
+{
+    char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	int n = 0;
+
+	fprintf(f,"%s#Laidout %s Image List\n\n",spc, LAIDOUT_VERSION);
+	if (settings) settings->dump_out(f,indent, 0, NULL);
+
+	ImagePlopInfo *image = images;
+	for ( ; image; image = image->next) {
+		//LaxInterfaces::ImageData *image; //if image==NULL, then is settings object
+		//int scaleflag; //0=scale by dpi, 3=scale to fit always, 1=scale up if necessary 2=scale down to fit if necessary
+		//double alignx; //0=full left, 100=full right
+		//double aligny; //0=full top, 100=full bottom
+		//Laxkit::NumStack<flatpoint> *alignment; //one per imposition page type
+		//int error;
+		//double dpi;
+		//int page;
+		//double *xywh;
+
+
+	}
+
+	return n;
+}
+
+ImagePlopInfo *GatherImages(ImagePlopInfo *&images, ImagePlopInfo *&image, DrawableObject *group, int currentpage)
+{
+	if (!group) return image;
+
+	if (dynamic_cast<ImageData*>(group)) {
+		if (!images) {
+			images = image = new ImagePlopInfo(dynamic_cast<ImageData*>(group), -1,currentpage,0,NULL);
+		} else {
+			image->next = new ImagePlopInfo(dynamic_cast<ImageData*>(group), -1,currentpage,0,NULL);
+			image = image->next;
+		}
+	}
+
+	for (int c=0; c<group->n(); c++) {
+		GatherImages(images, image, dynamic_cast<DrawableObject*>(group->e(c)), currentpage);
+	}
+
+	return image;
+}
+
+/*! Search document for all ImageData objects.
+ */
+ImagePlopInfo *GatherImages(Document *doc, int startpage, int endpage)
+{
+	ImagePlopInfo *images = NULL, *image = NULL;
+
+	if (endpage < startpage) return NULL;
+	for (int c=startpage; c<endpage; c++) {
+		for (int c2=0; c2<doc->pages.n; c2++) {
+			GatherImages(images, image, &doc->pages.e[c]->layers, c);
+		}
+	}
+
+	return images;
 }
 
 

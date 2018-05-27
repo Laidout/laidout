@@ -35,10 +35,11 @@ class ImagePlopInfo
 	double dpi;
 	int page;
 	double *xywh;
+
 	ImagePlopInfo *next;
 	ImagePlopInfo(LaxInterfaces::ImageData *img, double ndpi, int npage, int sflag, double *d);
-	~ImagePlopInfo();
-	void add(LaxInterfaces::ImageData *img, double ndpi, int npage, int sflag, double *d);
+	virtual ~ImagePlopInfo();
+	virtual void add(LaxInterfaces::ImageData *img, double ndpi, int npage, int sflag, double *d);
 };
 
 
@@ -79,6 +80,8 @@ int dumpInImages(ImportImageSettings *settings, Document *doc,
 
 int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *images, int startpage);
 
+int dumpOutImageList(FILE *f, ImportImageSettings *settings, ImagePlopInfo *images);
+ImagePlopInfo *GatherImages(Document *doc, int startpage, int endpage);
 
 } // namespace Laidout
 
