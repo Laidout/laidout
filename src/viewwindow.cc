@@ -118,6 +118,9 @@ enum ViewActions {
 	VIEW_Save_As_Template,
 	VIEW_Save_As_Default_Template,
 
+	VIEW_Config_Addons,
+	VIEW_Extension,
+
 	VIEW_NewDocument,
 	VIEW_Open_Document,
 
@@ -4053,16 +4056,34 @@ int ViewWindow::init()
 //	-------------
 
 
+	 //--------extensions
+	if (laidout->experimental) {
+		menu = new MenuInfo;
+	//	if (laidout->extensions.n) {
+	//		for (int c=0; c<laidout->extensions.n; c++) {
+	//			AddonAction *action = laidout->extensions.e[c];
+	//			menu->AddItem(action->Name(), VIEW_Extension, 0, c);
+	//		}
+	//	}
+		if (menu->n()) menu->AddSep();
+		menu->AddItem(_("Configure addons..."), VIEW_Config_Addons);
+
+		last = menub = new MenuButton(this,"extensions",NULL,
+								MENUBUTTON_LEFT|IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"extbutton",-1,
+								 menu,1, _("Extensions"),
+								 NULL, laidout->icons->GetIcon("List"),
+								 0);
+		menub->tooltip(_("Miscellaneous actions"));
+		AddWin(menub,1, menub->win_w,0,50,50,0, menub->win_h,0,50,50,0, -1);
+	}
+
+
 	 //---------help
 	last=ibut=new Button(this,"help",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"help",-1,
 						 _("Help!"),NULL,laidout->icons->GetIcon("Help"),buttongap);
 	ibut->tooltip(_("Popup a list of shortcuts"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
-	//**** add screen x,y
-	//		   real x,y
-	//         page x,y
-	//         object x,y
 	
 	updateContext(1);
 	Sync(1);	
