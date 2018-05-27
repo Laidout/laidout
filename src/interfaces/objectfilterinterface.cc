@@ -196,6 +196,11 @@ void ObjectFilterInterface::ViewportResized()
  */
 Laxkit::MenuInfo *ObjectFilterInterface::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
+	if (child) {
+		menu = child->ContextMenu(x,y,deviceid, menu);
+		if (menu) return menu;
+	}
+
 	if (!menu) menu=new MenuInfo;
 	//if (!menu->n()) menu->AddSep(_("Some new menu header"));
 
@@ -211,6 +216,8 @@ Laxkit::MenuInfo *ObjectFilterInterface::ContextMenu(int x,int y,int deviceid, L
 int ObjectFilterInterface::Event(const Laxkit::EventData *data, const char *mes)
 {
 	if (!strcmp(mes,"menuevent")) {
+		if (child) return child->Event(data, mes);
+
 		 //these are sent by the ContextMenu popup
 		const SimpleMessage *s = dynamic_cast<const SimpleMessage*>(data);
 		int i	= s->info2; //id of menu item
@@ -466,7 +473,7 @@ int ObjectFilterInterface::LBUp(int x,int y,unsigned int state, const Laxkit::La
 		if (!dragged) {
 			current = hoveredindex;
 			if (current >= 0) {
-				filternodes.e[current]->Mute(filternodes.e[current]->IsMuted());
+				filternodes.e[current]->Mute(!filternodes.e[current]->IsMuted());
 				needtodraw=1;
 			}
 		}
@@ -540,6 +547,11 @@ int ObjectFilterInterface::CharInput(unsigned int ch, const char *buffer,int len
 
         needtodraw=1;
         return 0;
+
+	} else if (ch == LAX_Esc && current >= 0) {
+		current = -1;
+		needtodraw=1;
+		return 0;
     }
 
 
@@ -562,10 +574,8 @@ Laxkit::ShortcutHandler *ObjectFilterInterface::GetShortcuts()
     sc=new ShortcutHandler(whattype());
 
 	//sc->Add([id number],  [key], [mod mask], [mode], [action string id], [description], [icon], [assignable]);
-    //sc->Add(OBJECTFILTER_Something,  'B',ShiftMask|ControlMask,0, "BaselineJustify", _("Baseline Justify"),NULL,0);
-    //sc->Add(OBJECTFILTER_Something2, 'b',ControlMask,0, "BottomJustify"  , _("Bottom Justify"  ),NULL,0);
-    //sc->Add(OBJECTFILTER_Something3, 'd',ControlMask,0, "Decorations"    , _("Toggle Decorations"),NULL,0);
-	//sc->Add(OBJECTFILTER_Something4, '+',ShiftMask,0,   "ZoomIn"         , _("Zoom in"),NULL,0);
+    sc->Add(OFI_Refresh,  'r',0,0, "Refresh", _("Force a refresh"),NULL,0);
+
 	//sc->AddShortcut('=',0,0, OBJECTFILTER_Something); //add key to existing action
 
     manager->AddArea(whattype(),sc);
@@ -576,8 +586,11 @@ Laxkit::ShortcutHandler *ObjectFilterInterface::GetShortcuts()
  */
 int ObjectFilterInterface::PerformAction(int action)
 {
-	//if (action == ***) {
-	//}
+	if (action == OFI_Refresh) {
+
+		return 0;
+	}
+
 	return 1;
 }
 
