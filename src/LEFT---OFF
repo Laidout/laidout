@@ -12,9 +12,7 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now:
 
-asymmetric cuts are not right for front sheets on spread generation (done), also on sig editor
-
-back to not maximizing properly on default ubuntu
+space duplicate object with filter, keeps duping until crash
 
 debug registration, cut marks, trim marks
   custom papergroup, add registration/bars/, can't move it
@@ -23,11 +21,15 @@ debug registration, cut marks, trim marks
 object indicator:
   click on object, does not update selection
 
-booklet, use paper group tool, default paper group no longer displays
+back to not maximizing properly on default ubuntu. Seems to work fine on every other window manager I've tried.
+
+in shortcut list, backspace won't let me delete chars from search
 
 ------------ other bugs:
 
 packaging woes: update deb/control to have more of the dependencies
+
+booklet, use paper group tool, default paper group no longer displays
 
 shearing or scaling produces null axes occasionally when crossing over opposite edge, borking the display
   --> seems to be only when needing to draw images on close to parallel axes, doesn't seem do it with paths
@@ -132,12 +134,12 @@ stackframe seems to be ignoring window borders on layout
 DONE website: combine faq and help?
 
 update fileformat.txt
-check laidout.1 when time to release
+DONE check laidout.1 when time to release
 update docs to have new release number
 update translation base files
 update screenshots, sync with features
-update links page
-update dtpcompare.html
+DONE update links page
+DONE update dtpcompare.html
 comment out cairo_debug_reset_static_data before release, since it usually means crash, interferes with pipeout
 test:
   ./laidout ../examples/test-all-objects.laidout
@@ -159,11 +161,11 @@ from big import:
   export to range has bad initial upper value
 
 node editor NodeInterface nodes:
-  finish perspective transform node proof of concept
   center on selected doesn't actually
   should probably bring forward any selected
   debug inkscape node extension
   load/save custom properties needs to preserve name, label, tooltip, types, custom info
+  DONE finish perspective transform node proof of concept
   DONE finish file format description
 
 text on path textonpath: TextOnPath
@@ -296,6 +298,8 @@ test:
   each export filter (via command line in new script in examples.. ignoring problems in eps)
   make some test scripts for command line testing
 
+
+have an actual splash image shown
 
 file filters: filefilters:
   open with... on export
@@ -602,6 +606,11 @@ from big import:
   DONE should not register autosaves as recent
 
 
+Perspective perspective:
+  finish debugging update path object without reallocating each time
+  optimize the image mapping
+  filtering paths needs to detect big distortions and add points, as simply transforming bez points is not enough
+
 node editor NodeInterface nodes:
   undo redo
   grouping framed objects have complications
@@ -872,9 +881,6 @@ fontdialog: FontDialog
 ImagePatch:
   use float or double for color sample
   abstract to be a filter, with optional stand alone object
-
-Perspective perspective:
-  optimize the image mapping
 
 Clean up mesh/patch controls: Mesh PatchInterface
   perspective arrangement: approximate transform controls through perspective grid
@@ -2050,3 +2056,4 @@ DONE laidout import:
   DONE (can't duplicate?) does not appear to scale correctly, does odd scaling
 DONE filedialog: something wrong with bookmarks.. pressed add, and they all went away
 DONE switch to net imposition, net render lines too big
+DONE asymmetric cuts are not right for front sheets on spread generation (done), also on sig editor
