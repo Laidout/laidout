@@ -119,6 +119,7 @@ anObject *ObjectFilter::ObjectOwner()
 NodeBase *ObjectFilter::Duplicate()
 {
 	ObjectFilter *newgroup = new ObjectFilter(NULL, 0);
+	newgroup->InstallColors(colors, 0);
 	DuplicateGroup(newgroup);
 
 //	//set designated output
