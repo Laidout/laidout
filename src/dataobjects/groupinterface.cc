@@ -809,7 +809,7 @@ int GroupInterface::PerformAction(int action)
 			filter->FindProperty("in")->topropproxy->owner->Update();
 		}
 
-		PostMessage(_("Filter refresh."));
+		//PostMessage(_("Filter refresh."));
 		needtodraw=1;
 		return 0;
 
