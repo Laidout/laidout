@@ -82,7 +82,9 @@ NodeBase *DoubleNode::Duplicate()
 {
 	int isnum;
 	double d = getNumberValue(properties.e[0]->GetData(), &isnum);
-	return new DoubleNode(d);
+	DoubleNode *newnode = new DoubleNode(d);
+	newnode->DuplicateBase(this);
+	return newnode;
 }
 
 Laxkit::anObject *newDoubleNode(int p, Laxkit::anObject *ref)
@@ -1975,6 +1977,7 @@ ThreadNode::~ThreadNode()
 NodeBase *ThreadNode::Duplicate()
 {
 	ThreadNode *node = new ThreadNode();
+	node->DuplicateBase(this);
 	return node;
 }
 
