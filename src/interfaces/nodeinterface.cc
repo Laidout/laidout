@@ -507,6 +507,9 @@ NodeThread::NodeThread(NodeBase *node, NodeProperty *prop, ValueHash *payload, i
 {
 	thread_id = getUniqueNumber();
 	start_time = times(NULL);
+	process_time = 0;
+	last_tick_end_time = 0;
+	tick = 0;
 	data = NULL;
 	property = prop;
 	next = node;
@@ -1097,12 +1100,13 @@ void NodeBase::DuplicateProperties(NodeBase *from)
 									property->custom_info,
 									property->is_editable);
 			prop->data_is_linked = property->data_is_linked;
+			AddProperty(prop);
+
 		} else {
 			prop->SetData(v,1);
 		}
 
 		prop->color = property->color;
-		AddProperty(prop);
 	}
 }
 
@@ -1680,6 +1684,7 @@ NodeBase *NodeGroup::DuplicateGroup(NodeGroup *newgroup)
 	 //copy child nodes
 	for (int c=0; c<nodes.n; c++) {
 		NodeBase *nnode = nodes.e[c]->Duplicate();
+		if (!nnode->colors) nnode->InstallColors(colors,0);
 		nnode->Wrap();
 		newgroup->nodes.push(nnode);
 		if (nodes.e[c] == input)  newgroup->DesignateInput (nnode);
@@ -2727,12 +2732,14 @@ NodeInterface::NodeInterface(anInterface *nowner, int nid, Displayer *ndp)
 	pan_tick_ms  = 1./60 * 1000; //1/60th second ticks for panning
 
 	 //play settings:
-	playing      = 0;
+	playing      = 0; //-1 when threads finished and not reset
 	play_timer   = 0;
-	play_fps     = 60;
+	play_fps     = 1000; //hope for the best
 	cur_fps      = 0;
 	elapsed_time = 0;
-	last_time    = 0;
+	elapsed_wall_time = 0;
+	run_start_time = 0;
+	time_at_pause= 0;
 
 	//color_controls.rgbf(.7,.5,.7,1.);
 	color_controls.rgbf(.8,.8,.8,1.);
@@ -2828,59 +2835,6 @@ int NodeInterface::Idle(int tid, double delta)
 	}
 
 	return 1;
-}
-
-/*! Do one iteration of thread execution.
- * Return 1 for threads done, or 0 for still things to do.
- */
-int NodeInterface::ExecuteThreads()
-{
-	// advance threads by one node;
-	NodeThread *thread;
-
-	if (threads.n) needtodraw=1;
-
-	for (int c=threads.n-1; c>=0; c--) {
-		thread = threads.e[c];
-
-		NodeBase *next = thread->next->Execute(thread, forks);
-		if (next) {
-			//node has given us somewhere to go to
-			thread->UpdateThread(next, NULL);
-
-		} else {
-			//done!
-			if (thread->scopes.n) {
-				thread->UpdateThread(thread->scopes.e[thread->scopes.n-1], NULL);
-				//thread->scopes.remove(-1);
-			} else {
-				threads.remove(c);
-			}
-		}
-
-		if (forks.n) {
-			while (forks.n) {
-				threads.push(forks.e[forks.n-1]);
-				forks.pop(forks.n-1);
-			}
-		}
-	}
-
-	if (!threads.n) {
-		return 1;
-	}
-
-	return 0;
-}
-
-/*! Return whether node is a current node in a thread.
- */
-int NodeInterface::IsThread(NodeBase *node)
-{
-	for (int c=0; c<threads.n; c++) {
-		if (threads.e[c]->next == node) return c+1;
-	}
-	return 0;
 }
 
 /*! Normally this will accept some common things like NodeGroup.
@@ -3922,6 +3876,21 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 				v->getValueStr(extra, 199);
 				dp->textout(node->x+node->width-th, node->y+prop->y+prop->height/2, extra, -1, LAX_RIGHT|LAX_VCENTER);
 
+			} else if (v && (v->type()==VALUE_Flatvector || v->type()==VALUE_Spacevector || v->type()==VALUE_Quaternion)) {
+				 //for now just text out the v
+				dp->NewFG(&nodes->colors->fg);
+				if (v->type()==VALUE_Flatvector) {
+					FlatvectorValue *vv = dynamic_cast<FlatvectorValue*>(v);
+					sprintf(extra, "%s: (%.2g, %.2g)", prop->Label(), vv->v.x, vv->v.y);
+				} else if (v->type()==VALUE_Spacevector) {
+					SpacevectorValue *vv = dynamic_cast<SpacevectorValue*>(v);
+					sprintf(extra, "%s: (%.2g, %.2g, %.2g)", prop->Label(), vv->v.x, vv->v.y, vv->v.z);
+				} else if (v->type()==VALUE_Quaternion) {
+					QuaternionValue *vv = dynamic_cast<QuaternionValue*>(v);
+					sprintf(extra, "%s: (%.2g, %.2g, %.2g, %.2g)", prop->Label(), vv->v.x, vv->v.y, vv->v.z, vv->v.w);
+				}
+				dp->textout(node->x+prop->x+th, node->y+prop->y+prop->height/2, extra, -1, LAX_LEFT|LAX_VCENTER);
+
 			} else if (v && v->type()==VALUE_String) {
 				dp->NewFG(&nodes->colors->fg);
 
@@ -4162,6 +4131,12 @@ int NodeInterface::Play()
 	if (playing == 1) return 0; //already playing
 
 	 //start timer
+	if (run_start_time == 0) { //starting from beginning
+		elapsed_wall_time = 0;
+		elapsed_time = 0;
+		time_at_pause = 0;
+		run_start_time = times(NULL);
+	}
 	play_timer = app->addtimer(this, 1000/play_fps, 1000/play_fps, -1);
 	playing = 1;
 	return 0;
@@ -4173,9 +4148,10 @@ int NodeInterface::Play()
 int NodeInterface::TogglePause()
 {
 	if (play_timer) {
-		// just remove timer
+		// just remove timer, but playing still == 1
 		app->removetimer(this, play_timer);
 		play_timer = 0;
+		time_at_pause = times(NULL);
 		return 0;
 	}
 
@@ -4201,6 +4177,7 @@ int NodeInterface::Stop()
  */
 int NodeInterface::FindThreads(bool flush)
 {
+	run_start_time = elapsed_time = elapsed_wall_time =  0;
 	if (flush) threads.flush();
 	if (!nodes) return 0;
 
@@ -4224,6 +4201,72 @@ int NodeInterface::FindThreads(bool flush)
 	}
 
 	return out;
+}
+
+/*! Return whether node is a current node in a thread.
+ */
+int NodeInterface::IsThread(NodeBase *node)
+{
+	for (int c=0; c<threads.n; c++) {
+		if (threads.e[c]->next == node) return c+1;
+	}
+	return 0;
+}
+
+/*! Do one iteration of thread execution.
+ * Return 1 for threads done, or 0 for still things to do.
+ */
+int NodeInterface::ExecuteThreads()
+{
+	// advance threads by one node;
+	NodeThread *thread;
+	std::clock_t t, t2, ts;
+
+	if (threads.n) needtodraw=1;
+
+	ts = times(NULL);
+
+	for (int c=threads.n-1; c>=0; c--) {
+		thread = threads.e[c];
+
+		NodeBase *next = thread->next->Execute(thread, forks);
+		if (next) {
+			//node has given us somewhere to go to
+			t = times(NULL);
+			thread->UpdateThread(next, NULL);
+			thread->tick++;
+			t2 = times(NULL);
+			thread->process_time += t - t2;
+			thread->last_tick_end_time = t;
+
+		} else {
+			//done!
+			if (thread->scopes.n) {
+				thread->UpdateThread(thread->scopes.e[thread->scopes.n-1], NULL);
+				//thread->scopes.remove(-1);
+			} else {
+				threads.remove(c);
+			}
+		}
+
+		if (forks.n) {
+			while (forks.n) {
+				threads.push(forks.e[forks.n-1]);
+				forks.pop(forks.n-1);
+			}
+		}
+	}
+
+	elapsed_time += times(NULL) - ts;
+
+	if (!threads.n) {
+		elapsed_wall_time = times(NULL) - run_start_time;
+		DBG cerr <<"Threads done! took: elapsed:"<< (elapsed_time / (double)sysconf(_SC_CLK_TCK)) <<
+		DBG           "  elapsed wall:"<< (elapsed_wall_time / (double)sysconf(_SC_CLK_TCK)) <<endl;
+		return 1;
+	}
+
+	return 0;
 }
 
 /*! Get the bezier path of the connection.
@@ -5004,11 +5047,15 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 		} else if (overproperty == NODES_Thread_Reset) {
 			FindThreads(true);
+			elapsed_time = 0;
+			elapsed_wall_time = 0;
+			time_at_pause = 0;
+			run_start_time = 0;
 
 		} else if (overproperty == NODES_Thread_Next) {
 			ExecuteThreads();
 
-		} else {
+		} else { //should just be find threads
 			if (!threads.n) {
 				FindThreads(false);
 			} else ExecuteThreads();
@@ -6112,11 +6159,11 @@ int NodeInterface::DuplicateNodes()
 		newnode->y += offset;
 		newnodes.push(newnode);
 		nodes->AddNode(newnode);
-		// *** make name unique
+		// *** todo: make name unique
 		newnode->dec_count();
 	}
 
-	// *** connect links
+	// *** todo: connect links
 
 	selected.flush();
 	for (int c=0; c<newnodes.n; c++) {

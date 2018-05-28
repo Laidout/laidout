@@ -167,6 +167,9 @@ class NodeThread
   public:
 	int thread_id;
 	std::clock_t start_time;
+	std::clock_t process_time;
+	std::clock_t last_tick_end_time;
+	int tick;
 	ValueHash *data;
 	NodeBase *next;
 	NodeProperty *property; //property from preceding node
@@ -484,6 +487,7 @@ enum NodeHover {
 	NODES_Thread_Next    ,
 	NODES_Thread_Run     ,
 	NODES_Thread_Reset   ,
+	NODES_Thread_Break   ,
 	NODES_HOVER_MAX
 };
 
@@ -563,7 +567,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	double play_fps, cur_fps;
 	int playing;
 	int play_timer;
-	clock_t elapsed_time, last_time;
+	clock_t elapsed_time, elapsed_wall_time, run_start_time, time_at_pause;
 	virtual int IsLive(NodeConnection *con);
 	virtual int Play();
 	virtual int TogglePause();
