@@ -172,7 +172,7 @@ LaxInterfaces::PerspectiveInterface *PerspectiveNode::GetPerspectiveInterface()
 PerspectiveNode::PerspectiveNode()
 {
 	makestr(Name, _("Perspective Filter"));
-	makestr(type, "PerspectiveFilter");
+	makestr(type, "Filters/PerspectiveFilter");
 
 	render_preview = true;
 	render_dpi = 300;
@@ -280,7 +280,11 @@ int PerspectiveNode::Update()
 
 	clock_t recent = MostRecentIn(NULL);
 	if (out && recent <= out->modtime) {
-		if (out != orig) return 0; //already up to date
+		if (out != orig) {
+			//already up to date, just make sure object transform is good
+			out->set(*orig);
+			return 0;
+		}
 		outprop->SetData(NULL, 0); //else propbably just unmuted, so reset output prop
 		out = NULL;
 	}
