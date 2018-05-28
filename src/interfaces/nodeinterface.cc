@@ -211,12 +211,14 @@ NodeProperty::NodeProperty()
 
 	owner     = NULL;
 	data      = NULL;
+	data_is_linked = false;
 	datatypes = NULL;
 	name      = NULL;
 	label     = NULL;
 	tooltip   = NULL;
 	modtime   = 0;
 	flags     = 0;
+	mute_to   = NULL;
 	custom_info= 0;
 	frompropproxy = NULL;
 	topropproxy   = NULL;
@@ -239,9 +241,11 @@ NodeProperty::NodeProperty(PropertyTypes input, bool linkable, const char *nname
 	datatypes = NULL;
 	data      = ndata;
 	if (data && !absorb_count) data->inc_count();
+	data_is_linked = false;
 	custom_info = info;
 	modtime   = 0;
 	flags     = 0;
+	mute_to   = NULL;
 	frompropproxy = NULL;
 	topropproxy   = NULL;
 	x=y=width=height = 0;
@@ -651,6 +655,7 @@ NodeBase::NodeBase()
 	collapsedwidth = 0;
 	deletable = true; //often at least one node will not be deletable, like group output/inputs
 	modtime   = 0;
+	muted     = 0;
 
 	frame = NULL;
 
@@ -668,6 +673,24 @@ NodeBase::~NodeBase()
 	if (colors) colors->dec_count();
 	if (total_preview) total_preview->dec_count();
 	properties.flush(); //explicit here for debugging purposes
+}
+
+
+/*! Defualt just return muted.
+ */
+int NodeBase::IsMuted()
+{
+	return muted;
+}
+
+/*! Change muted state. If change, derived classes MUST implement the passthrough.
+ */
+int NodeBase::Mute(bool yes)
+{
+	int oldmuted = muted;
+    muted = yes;
+    if (muted != oldmuted) Update();
+    return muted;
 }
 
 /*! An execution path leads here.
@@ -1055,11 +1078,16 @@ void NodeBase::DuplicateProperties(NodeBase *from)
 		NodeProperty *property = from->properties.e[c];
 		Value *v = NULL;
 
-		 //always dup data, just in case
-		v = property->GetData();
-		if (v) v = v->duplicate();
+		 //sometimes dup data, just in case
+		if (property->IsBlock() || (property->IsInput() && property->connections.n == 0)) {
+			v = property->GetData();
+			if (v && property->data_is_linked) v->inc_count();
+			else if (v) v = v->duplicate();
+		}
 
-		NodeProperty *prop = new NodeProperty(
+		NodeProperty *prop = FindProperty(property->name);
+		if (!prop) {
+			prop = new NodeProperty(
 									property->type,
 									property->is_linkable,
 									property->name,
@@ -1068,9 +1096,12 @@ void NodeBase::DuplicateProperties(NodeBase *from)
 									property->tooltip,
 									property->custom_info,
 									property->is_editable);
+			prop->data_is_linked = property->data_is_linked;
+		} else {
+			prop->SetData(v,1);
+		}
 
 		prop->color = property->color;
-		//prop->color.rgbf(property->color.Red(), property->color.Green(), property->color.Blue(), property->color.Alpha());
 		AddProperty(prop);
 	}
 }
@@ -1091,28 +1122,7 @@ NodeBase *NodeBase::Duplicate()
 	makestr(newnode->Name, Name);
 	newnode->Id(Id());
 	newnode->DuplicateBase(this);
-
-	for (int c=0; c<properties.n; c++) {
-		NodeProperty *property = properties.e[c];
-		Value *v = NULL;
-		//if (property->IsInput() || property->IsBlock()) {
-			v = property->GetData();
-			if (v) v = v->duplicate();
-		//}
-
-		NodeProperty *prop = new NodeProperty(
-									property->type,
-									property->is_linkable,
-									property->name,
-									v,1,
-									property->Label(),
-									property->tooltip,
-									property->custom_info,
-									property->is_editable);
-		prop->color.rgbf(property->color.Red(), property->color.Green(), property->color.Blue(), property->color.Alpha());
-		newnode->AddProperty(prop);
-	}
-
+	newnode->DuplicateProperties(this);
 	newnode->Wrap();
 	newnode->Update();
 
@@ -1653,6 +1663,14 @@ NodeGroup::~NodeGroup()
 NodeBase *NodeGroup::Duplicate()
 {
 	NodeGroup *newgroup = new NodeGroup();
+	DuplicateGroup(newgroup);
+	return newgroup;
+}
+
+/*! Copy over group guts to newgroup.
+ */
+NodeBase *NodeGroup::DuplicateGroup(NodeGroup *newgroup)
+{
 	makestr(newgroup->type, type);
 	makestr(newgroup->Name, Name);
 
@@ -2421,9 +2439,11 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 //				continue;
 //			}
 
-			NodeBase *newnode;
-			//if (!strcmp(value, "GroupInputs") || !strcmp(value, "GroupOutputs")) {
-			if (!value || (value && (!strcmp(value, "GroupInputs") || !strcmp(value, "GroupOutputs")))) {
+			NodeBase *newnode = NULL;
+			if (value && (!strcmp(value, "GroupInputs") || !strcmp(value, "GroupOutputs"))) {
+				newnode = FindNodeByType(value, 0);
+			}
+			if (!newnode && (!value || (value && (!strcmp(value, "GroupInputs") || !strcmp(value, "GroupOutputs"))))) {
 
 				 //no type listed, or is an input or output
 				newnode = new NodeBase();
@@ -2629,6 +2649,22 @@ NodeBase *NodeGroup::FindNode(const char *name)
 
 	for (int c=0; c<nodes.n; c++) {
 		if (!strcmp(name, nodes.e[c]->Id())) return nodes.e[c];
+	}
+	return NULL;
+}
+
+/*! Find nome with given type. Start searching at given index.
+ * Wrap around if start_index>0.
+ */
+NodeBase *NodeGroup::FindNodeByType(const char *type, int start_index)
+{
+	if (!type) return NULL;
+
+	for (int c=start_index; c<nodes.n; c++) {
+		if (!strcmp(type, nodes.e[c]->Type())) return nodes.e[c];
+	}
+	for (int c=0; c<start_index && c<nodes.n; c++) {
+		if (!strcmp(type, nodes.e[c]->Type())) return nodes.e[c];
 	}
 	return NULL;
 }

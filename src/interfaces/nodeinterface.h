@@ -98,7 +98,9 @@ class NodeProperty : public Laxkit::RefCounted
 
 	NodeBase *owner;
 	NodeProperty *frompropproxy, *topropproxy;
+	NodeProperty *mute_to;
 	Value *data;
+	bool data_is_linked;
 	int *datatypes; //optional 0 terminated list of acceptible VALUE_* types
 	int custom_info;
 
@@ -265,6 +267,7 @@ class NodeBase : public Laxkit::anObject,
 	char *type; //non translated type, like "Value", or "Math"
 	ObjectDef *def; //optional
 	char *error_message;
+	int muted;
 
 	int collapsed;
 	double fullwidth; //uncollapsed
@@ -335,6 +338,10 @@ class NodeBase : public Laxkit::anObject,
 	virtual int NumInputs(bool connected);
 	virtual int NumOutputs(bool connected);
 
+	virtual int IsMuted();
+    virtual int Mute(bool yes=true);
+
+
 	virtual int AssignFrame(NodeFrame *nframe);
 	//virtual NodeColors *GetColors(); //return either this->colors, or the first defined one in owners
 
@@ -377,6 +384,7 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	virtual int DesignateOutput(NodeBase *noutput);
 	virtual int DesignateInput(NodeBase *ninput);
 	virtual NodeBase *FindNode(const char *name);
+	virtual NodeBase *FindNodeByType(const char *type, int start_index);
 	virtual NodeBase *GetNode(int index);
 	virtual NodeBase *NewNode(const char *type);
 	virtual int AddNode(NodeBase *node);
@@ -384,6 +392,7 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	virtual int NoOverlap(NodeBase *which, double gap);
 	virtual void BoundingBox(DoubleBBox &box);
 	virtual NodeBase *Duplicate();
+	virtual NodeBase *DuplicateGroup(NodeGroup *newgroup);
 
 	virtual void InitializeBlank();
 	virtual NodeProperty *AddGroupInput(const char *pname, const char *plabel, const char *ptip);

@@ -42,28 +42,10 @@ namespace Laidout {
 
 ObjectFilterNode::ObjectFilterNode()
 {
-	muted = 0;
 }
 
 ObjectFilterNode::~ObjectFilterNode()
 {
-}
-
-/*! Defualt just return muted.
- */
-int ObjectFilterNode::IsMuted()
-{
-	return muted;
-}
-
-/*! Change muted state. If change, derived classes MUST implement the passthrough.
- */
-int ObjectFilterNode::Mute(bool yes)
-{
-	int oldmuted = muted;
-	muted = yes;
-	if (muted != oldmuted) Update();
-	return muted;
 }
 
 
@@ -87,6 +69,10 @@ int ObjectFilterNode::Mute(bool yes)
  */
 
 
+/*! make_in_outs==0 when DrawableObject::dump_in_atts().
+ * In that case, we need a stripped down version, and relevant in/out nodes
+ * get put in after constructor.
+ */
 ObjectFilter::ObjectFilter(anObject *nparent, int make_in_outs)
 {
 	parent = nparent;
@@ -95,30 +81,29 @@ ObjectFilter::ObjectFilter(anObject *nparent, int make_in_outs)
 	cols->Font(anXApp::app->defaultlaxfont, false);
 	InstallColors(cols, 1);
 
+	 //set up barebones filter nodes
 	if (make_in_outs) {
 
-		 //set up barebones filter nodes
+		NodeProperty *in  = AddGroupInput ("in",  NULL, NULL);
+		NodeProperty *out = AddGroupOutput("out", NULL, NULL);
+
+		in->SetFlag(NodeProperty::PROPF_Label_From_Data, 1);
+		in->topropproxy->SetFlag(NodeProperty::PROPF_Label_From_Data, 1);
+		in->data_is_linked = true; //this is so node->dup doesn't get stuff in endless loop
+		out->Label(_("Out"));
+
+		Connect(in->topropproxy, out->frompropproxy);
+
+		NodeBase *from = in ->topropproxy  ->owner;
+		NodeBase *to   = out->frompropproxy->owner;
+
+		from->Wrap();
+		to  ->Wrap();
+
+		to->x = from->x + from->width*2;
+
 		DrawableObject *dobj = dynamic_cast<DrawableObject*>(parent);
-		if (dobj) {
-			NodeProperty *in  = AddGroupInput ("in",  NULL, NULL);
-			NodeProperty *out = AddGroupOutput("out", NULL, NULL);
-
-			in->SetFlag(NodeProperty::PROPF_Label_From_Data, 1);
-			in->topropproxy->SetFlag(NodeProperty::PROPF_Label_From_Data, 1);
-			in->SetData(dobj, 0);
-			out->Label(_("Out"));
-
-			Connect(in->topropproxy, out->frompropproxy);
-
-			NodeBase *from = in ->topropproxy  ->owner;
-			NodeBase *to   = out->frompropproxy->owner;
-
-			from->Wrap();
-			to  ->Wrap();
-
-			to->x = from->x + from->width*2;
-
-		}
+		if (dobj) in->SetData(dobj, 0);
 	}
 }
 
@@ -133,10 +118,28 @@ anObject *ObjectFilter::ObjectOwner()
 
 NodeBase *ObjectFilter::Duplicate()
 {
-	return NodeGroup::Duplicate();
-	//ObjectFilter *node = new ObjectFilter(NULL);
-	//node->DuplicateBase(this);
-	//return node;
+	ObjectFilter *newgroup = new ObjectFilter(NULL, 0);
+	DuplicateGroup(newgroup);
+
+//	//set designated output
+//	NodeBase *node = FindNodeByType("GroupOutputs", 0);
+//	if (node) DesignateOutput(node);
+//
+//	//set designated output
+//	node = FindNodeByType("GroupInputs", 0);
+//	if (node) DesignateInput(node);
+
+
+    return newgroup;
+}
+
+int ObjectFilter::SetParent(anObject *newparent)
+{
+	if (parent == newparent) return 0;
+	NodeProperty *in = FindProperty("in");
+	in->SetData(dynamic_cast<DrawableObject*>(newparent), 0);
+	parent = newparent;
+	return 0;
 }
 
 /*! Nothing really to do, as updates should happen automatically as things change.
@@ -242,7 +245,7 @@ Laxkit::anObject *newPerspectiveNode(int p, Laxkit::anObject *ref)
 int RegisterFilterNodes(Laxkit::ObjectFactory *factory)
 {
      //--- PerspectiveNode
-    factory->DefineNewObject(getUniqueNumber(), "PerspectiveFilter",    newPerspectiveNode,  NULL, 0);
+    factory->DefineNewObject(getUniqueNumber(), "Filters/PerspectiveFilter",    newPerspectiveNode,  NULL, 0);
 
 
 	return 0;

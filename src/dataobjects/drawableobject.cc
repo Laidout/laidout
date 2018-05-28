@@ -498,7 +498,9 @@ LaxInterfaces::SomeData *DrawableObject::duplicate(LaxInterfaces::SomeData *dup)
 	d->blur  = blur;
 	if (filter) {
 		ObjectFilter *ofilter = dynamic_cast<ObjectFilter*>(filter);
-		d->filter = ofilter->Duplicate();
+		ObjectFilter *nfilter = dynamic_cast<ObjectFilter*>(ofilter->Duplicate());
+		d->filter = nfilter;
+		nfilter->SetParent(d);
 	}
 
 	 //kids
@@ -1289,6 +1291,7 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Du
 		 //note: transform and possibly other important data not set yet!
 		ObjectFilter *ofilter = new ObjectFilter(this, 0);
 		ofilter->dump_in_atts(att->attributes.e[foundfilter], 0, context);
+		ofilter->FindProperty("in")->data_is_linked = true;
 		if (filter) filter->dec_count();
 		NodeProperty *in = ofilter->FindProperty("in");
 		in->SetData(this, 0);
