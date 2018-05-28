@@ -4635,7 +4635,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
 		DBG cerr <<"***** viewtoolselector change to id:"<<s->info1<<endl;
 
-		SelectTool(s->info1);
+		SelectTool(s->info2);
 		return 0;
 
 	} else if (!strcmp(mes,"newViewType")) {
