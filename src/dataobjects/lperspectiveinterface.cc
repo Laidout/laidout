@@ -55,8 +55,12 @@ LPerspectiveInterface::~LPerspectiveInterface()
 
 LaxInterfaces::anInterface *LPerspectiveInterface::duplicate(LaxInterfaces::anInterface *dup)
 {
-	if (dup==NULL) dup=dynamic_cast<anInterface *>(new LPerspectiveInterface(NULL,id,NULL));
-	else if (!dynamic_cast<LPerspectiveInterface *>(dup)) return NULL;
+	if (dup==NULL) {
+		PerspectiveInterface *p = new LPerspectiveInterface(NULL,id,NULL);
+		dup = p;
+		p->interface_flags = interface_flags;
+
+    } else if (!dynamic_cast<LPerspectiveInterface *>(dup)) return NULL;
 
 	return PerspectiveInterface::duplicate(dup);
 }
