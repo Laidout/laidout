@@ -1524,8 +1524,12 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 	for (o=options.remaining(); o; o=options.next()) {
 		DBG cerr <<"----Read in:  "<<o->arg()<<endl;
-		doc=NULL;
-		if (Load(o->arg(),log)==0) doc=curdoc;
+		doc = NULL;
+		if (Load(o->arg(),log)==0) doc = curdoc;
+		else {
+			generallog.AddError(0,0,0, _("Could not load %s!"), o->arg());
+		}
+
 		if (topwindows.n == index) {
 			if (!doc && project->docs.n) doc = project->docs.e[0]->doc;
 			if (doc && runmode==RUNMODE_Normal) addwindow(newHeadWindow(doc));
