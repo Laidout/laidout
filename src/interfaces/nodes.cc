@@ -3082,7 +3082,7 @@ class TransformAffineNode : public NodeBase
 TransformAffineNode::TransformAffineNode()
 {
 	makestr(Name, _("Transform"));
-	makestr(type, "TransformAffine");
+	makestr(type, "Filters/TransformAffine");
 
 	Value *v = new AffineValue();
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", NULL,0, _("In"))); 
@@ -3262,8 +3262,10 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Object In", newObjectInNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Object Out",newObjectOutNode, NULL, 0);
 
+	 //--------------------FILTERS
+
 	 //--- TransformAffineNodes
-	factory->DefineNewObject(getUniqueNumber(), "TransformAffine", newTransformAffineNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Filters/TransformAffine", newTransformAffineNode,  NULL, 0);
 
 
 	 //--------------------THREADS
