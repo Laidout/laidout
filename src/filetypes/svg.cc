@@ -305,7 +305,7 @@ ObjectDef* SvgExportConfig::makeObjectDef()
      //define parameters
     def->push("use_mesh",
             _("Use Mesh"),
-            _("Export color meshes using SVG 2's draft of meshes."),
+            _("Export color meshes using Coons Patchs, as structured in SVG 2's draft of meshes. These are used in Inkscape."),
             "boolean",
             NULL,    //range
             "false", //defvalue
@@ -640,6 +640,25 @@ void svgStyleTagsDump(FILE *f, LineStyle *lstyle, FillStyle *fstyle)
 	} else fprintf(f,"fill:none; ");
 }
 
+static void svgMeshPathOut(FILE *f, const char *spc, ColorPatchData *patch, int ci, int i1, int i2, int i3)
+{
+	if (ci >= 0) fprintf(f, "%s          <stop path=\"C %.10g %.10g %.10g %.10g %.10g %.10g\" "
+								 "stop-color=\"rgb(%d,%d,%d)\" stop-opacity=\"%.10g\" />\n",
+						spc,
+						patch->points[i1].x,patch->points[i1].y,
+						patch->points[i2].x,patch->points[i2].y,
+						patch->points[i3].x,patch->points[i3].y,
+						(int)(patch->colors[ci].Red()*255),
+						(int)(patch->colors[ci].Green()*255),
+						(int)(patch->colors[ci].Blue()*255),
+						patch->colors[ci].Alpha()
+						);
+	else fprintf(f, "%s          <stop path=\"C %.10g %.10g %.10g %.10g %.10g %.10g \" />\n",
+						spc,
+						patch->points[i1].x,patch->points[i1].y,
+						patch->points[i2].x,patch->points[i2].y,
+						patch->points[i3].x,patch->points[i3].y);
+}
 
 //! Function to dump out obj as svg.
 /*! Return nonzero for fatal errors encountered, else 0.
@@ -880,13 +899,12 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 		fprintf(f,"%s  />\n",spc);
 		
 	} else if (!strcmp(obj->whattype(),"ColorPatchData")) {
-		setlocale(LC_ALL,"");
-		log.AddMessage(obj->object_id,NULL,NULL,_("Warning: interpolating a color patch object\n"),ERROR_Warning);
-		setlocale(LC_ALL,"C");
-		warning++;
-		//---------
-		//if (***config allows it) {
-		if (1) {
+		if (!out->use_mesh) {
+			setlocale(LC_ALL,"");
+			log.AddMessage(obj->object_id,NULL,NULL,_("Warning: interpolating a color patch object\n"),ERROR_Warning);
+			setlocale(LC_ALL,"C");
+			warning++;
+
 			 //approximate gradient with svg elements.
 			 //in Inkscape, its blur slider is 1 to 100, with 100 corresponding to a blurring
 			 //radius (standard deviation of Gaussian function) of 1/8 of the
@@ -1040,8 +1058,50 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			    }		
 			  }
 			}
+		
 
 			fprintf(f,"%s</g>\n",spc);
+
+		} else { //use_mesh
+			ColorPatchData *patch=dynamic_cast<ColorPatchData *>(obj);
+			if (!patch) return 0;
+
+			fprintf(f, "%s  <mesh transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n",
+				     spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
+			fprintf(f, "%s    <meshgradient x=\"%.10g\" y=\"%.10g\">\n", spc, patch->points[0].x, patch->points[0].y); 
+
+			int xsize = patch->xsize;
+			int i, ci;
+			for (int y=0; y<patch->ysize-1; y+=3) {
+				fprintf(f, "%s      <meshrow>\n", spc);
+
+				for (int x=0; x<patch->xsize-1; x+=3) {
+					fprintf(f, "%s        <meshpatch>\n", spc);
+					i = y*patch->xsize + x;
+					ci = (y/3)*(patch->xsize/3 + 1) + (x/3);
+
+					 //top curve
+					if (y==0 && x==0) svgMeshPathOut(f, spc, patch, ci, i+1, i+2, i+3);
+					else if (y==0)    svgMeshPathOut(f, spc, patch, -1, i+1, i+2, i+3);
+
+					 //right curve
+					if (y==0) svgMeshPathOut(f, spc, patch, ci+1, i+3+xsize, i+3+2*xsize, i+3+3*xsize);
+					else      svgMeshPathOut(f, spc, patch, -1,   i+3+xsize, i+3+2*xsize, i+3+3*xsize);
+
+					 //bottom curve
+					if (y==0 && x==0) svgMeshPathOut(f, spc, patch, ci+1+(xsize/3+1), i+2+xsize, i+1+2*xsize, i+3*xsize);
+					else              svgMeshPathOut(f, spc, patch, -1,               i+2+xsize, i+1+2*xsize, i+3*xsize);
+
+					 //left curve
+					if (x==0) svgMeshPathOut(f, spc, patch, ci+(xsize/3+1), i+2*xsize, i+xsize, i);
+
+					fprintf(f, "%s        </meshpatch>\n", spc);
+				}
+				fprintf(f, "%s      </meshrow>\n", spc);
+			}
+
+			fprintf(f, "%s    </meshgradient>\n", spc);
+			fprintf(f, "%s  </mesh>\n", spc);
 		}
 		
 
@@ -1383,8 +1443,7 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgE
 		}
 
 	} else if (!strcmp(obj->whattype(),"ColorPatchData")) {
-		//if (***config allows it) {
-		if (1) {
+		if (!out->use_mesh) {
 			 //insert mask for patch
 			ColorPatchData *patch=dynamic_cast<ColorPatchData *>(obj);
 			if (!patch) return 0;
@@ -1711,6 +1770,7 @@ ObjectDef *SvgImportFilter::GetObjectDef()
 //forward declaration:
 int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribute> &powerstrokes, ErrorLog &log);
 GradientData *svgDumpInGradientDef(Attribute *att, Attribute *defs, int type, GradientData *gradient);
+ColorPatchData *svgDumpInMeshGradientDef(Attribute *att, Attribute *defs);
 
 int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log, const char *filecontents,int contentslen)
 {
@@ -1788,7 +1848,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 			}
 		}
 
-		svgdoc=svgdoc->find("content:");
+		svgdoc = svgdoc->find("content:");
 		if (!svgdoc) {
 			log.AddMessage(_("Empty svg tag!\n"),ERROR_Fail); 
 			throw 4;
@@ -1884,7 +1944,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 
 			} else if (!strcmp(name,"defs")) {
 				 //need to read in gradient and filter data...
-				Attribute *defsatt=svgdoc->find("content:");
+				Attribute *defsatt = svgdoc->attributes.e[c]->find("content:");
 				Attribute *def;
 				if (!defsatt || !defsatt->attributes.n) continue;
 
@@ -1894,14 +1954,21 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 					value=def->value;
 
 					if (!strcmp(name,"linearGradient")) {
-						GradientData *gradient=svgDumpInGradientDef(def, defsatt, GRADIENT_LINEAR, NULL);
+						GradientData *gradient = svgDumpInGradientDef(def, defsatt, GRADIENT_LINEAR, NULL);
 						gradients.push(gradient);
 						gradient->dec_count();
 
 					} else if (!strcmp(name,"radialGradient")) {
-						GradientData *gradient=svgDumpInGradientDef(def, defsatt, GRADIENT_RADIAL, NULL);
+						GradientData *gradient = svgDumpInGradientDef(def, defsatt, GRADIENT_RADIAL, NULL);
 						gradients.push(gradient);
 						gradient->dec_count();
+
+					} else if (!strcmp(name,"meshgradient")) {
+						ColorPatchData *mesh = svgDumpInMeshGradientDef(def, defsatt);
+						if (mesh) {
+							gradients.push(mesh);
+							mesh->dec_count();
+						}
 
 					} else if (!strcmp(name,"inkscape:path-effect")) {
 						Attribute *power=def->find("effect");
@@ -2101,6 +2168,262 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 	}
 	
 	return gradient;
+}
+
+#define TOP    0
+#define RIGHT  1
+#define BOTTOM 2
+#define LEFT   3
+
+ColorPatchData *svgDumpInMeshGradientDef(Attribute *def, Attribute *defs)
+{
+	ColorPatchData *mesh = dynamic_cast<ColorPatchData *>(newObject("ColorPatchData"));
+	mesh->Set(0,0,1,1,1,1,PATCH_SMOOTH);
+
+	flatpoint p1,p2;
+	if (!def) return NULL;
+	char *name, *value;
+	//int units=0;//0 is user space, 1 is bounding box
+	double gm[6];
+	transform_identity(gm);
+
+	flatpoint initial;
+
+	try {
+	  for (int c=0; c<def->attributes.n; c++) {
+		name =def->attributes.e[c]->name;
+		value=def->attributes.e[c]->value;
+
+		if (!strcmp(name,"id")) {
+			if (!isblank(value)) mesh->Id(value);
+
+		} else if (!strcmp(name,"gradientUnits")) {
+			 //gradientUnits = "userSpaceOnUse | objectBoundingBox"
+			//if (!strcmp(value,"userSpaceOnUse")) units=0;
+			//else if (!strcmp(value,"objectBoundingBox")) units=1;
+			DBG cerr <<" warning: ignoring gradientUnits on svg gradient in"<<endl;
+
+		} else if (!strcmp(name,"gradientTransform")) {
+			svgtransform(value,gm);
+
+		} else if (!strcmp(name,"x")) {
+			DoubleAttribute(value,&initial.x,NULL);
+
+		} else if (!strcmp(name,"y")) {
+			DoubleAttribute(value,&initial.y,NULL);
+
+		} else if (!strcmp(name,"content:")) {
+			Attribute *rows = def->attributes.e[c];
+
+			char command = 0;
+			ScreenColor color;
+			double pts[6];
+			int rowi = 0, coli = 0, xsize = 4;
+			Affine tr;
+			flatpoint v, lastp;
+
+			for (int c2=0; c2<rows->attributes.n; c2++) {
+				name  = rows->attributes.e[c2]->name;
+				value = rows->attributes.e[c2]->value;
+
+				if (!strcmp(name,"meshrow")) {
+					Attribute *row = rows->attributes.e[c2]->find("content:");
+
+					if (rowi >= mesh->ysize/3) mesh->grow(3, tr.m());
+
+					if (row) for (int c3=0; c3<row->attributes.n; c3++) {
+						name  = row->attributes.e[c3]->name;
+						value = row->attributes.e[c3]->value;
+
+						if (!strcmp(name,"meshpatch")) {
+							Attribute *patch = row->attributes.e[c3]->find("content:");
+							int edge = TOP;
+							
+							if (coli >= mesh->xsize/3) {
+								mesh->grow(2, tr.m());
+								xsize = mesh->xsize;
+							}
+							if (rowi == 0 && coli == 0) mesh->points[0] = initial;
+
+							int pi = 3 * rowi * mesh->xsize + 3 * coli;
+							int ci = rowi * (mesh->xsize/3) + coli;
+							lastp = mesh->points[pi];
+
+							if (patch) for (int c4=0; c4<patch->attributes.n; c4++) {
+								name  = patch->attributes.e[c4]->name;
+								value = patch->attributes.e[c4]->value;
+
+								if (strcmp(name, "stop")) continue;
+								if (rowi>0) edge++;
+
+								Attribute *stop = patch->attributes.e[c4];;
+
+								for (int c5=0; c5<stop->attributes.n; c5++) {
+									name  = stop->attributes.e[c5]->name;
+									value = stop->attributes.e[c5]->value;
+
+									if (!strcmp(name,"path")) {
+										//paths that are "l x y" "L x y" "c x y x y x y" "C x y x y"(last one can ignore final)
+										if (!value || !*value) continue;
+										while (isspace(*value)) value++;
+										command = value[0];
+										value++;
+										int n = DoubleListAttribute(value, pts, 6);
+
+										if (edge == TOP ) {
+											if (command == 'l' || command == 'L') { //relative line
+												if (n!=2) throw(1);
+
+												if (command == 'l') v = flatpoint(pts[0],pts[1])/3;
+												else v = (flatpoint(pts[0],pts[1]) - lastp)/3;
+
+												mesh->points[pi+1] = lastp + v;
+												mesh->points[pi+2] = lastp + 2*v;
+												mesh->points[pi+3] = lastp + 3*v;
+
+											} else if (command == 'c') {
+												if (n != 6) throw(2);
+												mesh->points[pi+1].set(pts[0]+lastp.x, pts[1]+lastp.y); lastp = mesh->points[pi+1];
+												mesh->points[pi+2].set(pts[2]+lastp.x, pts[3]+lastp.y); lastp = mesh->points[pi+2];
+												mesh->points[pi+3].set(pts[4]+lastp.x, pts[5]+lastp.y);
+
+											} else if (command == 'C') {
+												if (n != 6) throw(3);
+												mesh->points[pi+1].set(pts[0], pts[1]);
+												mesh->points[pi+2].set(pts[2], pts[3]);
+												mesh->points[pi+3].set(pts[4], pts[5]);
+											}
+
+											lastp = mesh->points[pi+3];
+
+										} else if (edge == RIGHT) {
+											if (command == 'l' || command == 'L') { //relative line
+												if (n!=2) throw(1);
+
+												if (command == 'l') v = flatpoint(pts[0],pts[1])/3;
+												else v = (flatpoint(pts[0],pts[1]) - lastp)/3;
+
+												mesh->points[pi+3+  xsize] = lastp + v;
+												mesh->points[pi+3+2*xsize] = lastp + 2*v;
+												mesh->points[pi+3+3*xsize] = lastp + 3*v;
+
+											} else if (command == 'c') {
+												if (n != 6) throw(2);
+												mesh->points[pi+3+  xsize].set(pts[0]+lastp.x, pts[1]+lastp.y); lastp = mesh->points[pi+3+  xsize];
+												mesh->points[pi+3+2*xsize].set(pts[2]+lastp.x, pts[3]+lastp.y); lastp = mesh->points[pi+3+2*xsize];
+												mesh->points[pi+3+3*xsize].set(pts[4]+lastp.x, pts[5]+lastp.y);
+
+											} else if (command == 'C') {
+												if (n != 6) throw(3);
+												mesh->points[pi+3+  xsize].set(pts[0], pts[1]);
+												mesh->points[pi+3+2*xsize].set(pts[2], pts[3]);
+												mesh->points[pi+3+3*xsize].set(pts[4], pts[5]);
+											}
+
+											lastp = mesh->points[pi+3+3*xsize];
+
+										} else if (edge == BOTTOM) {
+											if (command == 'l' || command == 'L') { //relative line
+												if (n!=2) throw(1);
+
+												if (command == 'l') v = flatpoint(pts[0],pts[1])/3;
+												else v = (flatpoint(pts[0],pts[1]) - lastp)/3;
+
+												mesh->points[pi+2+3*xsize] = lastp + v;
+												mesh->points[pi+1+3*xsize] = lastp + 2*v;
+												mesh->points[pi+  3*xsize] = lastp + 3*v;
+
+											} else if (command == 'c') {
+												if (n != 6 && n != 4) throw(2);
+												mesh->points[pi+2+3*xsize].set(pts[0]+lastp.x, pts[1]+lastp.y); lastp = mesh->points[pi+2+3*xsize];
+												mesh->points[pi+1+3*xsize].set(pts[2]+lastp.x, pts[3]+lastp.y); lastp = mesh->points[pi+1+3*xsize];
+												if (n==6) mesh->points[pi+  3*xsize].set(pts[4]+lastp.x, pts[5]+lastp.y);
+
+											} else if (command == 'C') {
+												if (n != 6 && n != 4) throw(3);
+												mesh->points[pi+2+3*xsize].set(pts[0], pts[1]);
+												mesh->points[pi+1+3*xsize].set(pts[2], pts[3]);
+												if (n==6) mesh->points[pi+  3*xsize].set(pts[4], pts[5]);
+											}
+
+											lastp = mesh->points[pi+3*xsize];
+
+										} else { //left
+											if (command == 'l' || command == 'L') { //relative line
+												if (n!=2) throw(1);
+
+												if (command == 'l') v = flatpoint(pts[0],pts[1])/3;
+												else v = (flatpoint(pts[0],pts[1]) - lastp)/3;
+
+												mesh->points[pi+2*xsize] = lastp + v;
+												mesh->points[pi+1*xsize] = lastp + 2*v;
+												mesh->points[pi        ] = lastp + 3*v;
+
+											} else if (command == 'c') {
+												if (n != 6 && n != 4) throw(2);
+												mesh->points[pi+2*xsize].set(pts[0]+lastp.x, pts[1]+lastp.y); lastp = mesh->points[pi+2*xsize];
+												mesh->points[pi+1*xsize].set(pts[2]+lastp.x, pts[3]+lastp.y); lastp = mesh->points[pi+1*xsize];
+												if (n==6) mesh->points[pi].set(pts[4]+lastp.x, pts[5]+lastp.y);
+
+											} else if (command == 'C') {
+												if (n != 6 && n != 4) throw(3);
+												mesh->points[pi+2*xsize].set(pts[0], pts[1]);
+												mesh->points[pi+1*xsize].set(pts[2], pts[3]);
+												if (n==6) mesh->points[pi].set(pts[4], pts[5]);
+											}
+
+											lastp = mesh->points[pi];
+
+										}
+
+									} else if (!strcmp(name,"stop-color")) {
+										SimpleColorAttribute(value, NULL, &mesh->colors[ci], NULL);
+
+									} else if (!strcmp(name,"stop-opacity")) {
+										double a;
+										DoubleAttribute(value,&a,NULL);
+										mesh->colors[ci].alpha = a*65535;
+
+									} else if (!strcmp(name,"style")) {
+										// *** parse the style string
+										Attribute satt;
+										NameValueToAttribute(&satt, value, '=', ';');
+
+										for (int c6=0; c6<satt.attributes.n; c6++) {
+											name  = satt.attributes.e[c6]->name;
+											value = satt.attributes.e[c6]->value;
+
+											if (!strcmp(name, "stop-color")) {
+												SimpleColorAttribute(value, NULL, &mesh->colors[ci], NULL);
+
+											} else if (!strcmp(name, "stop-opacity")) {
+												double a;
+												DoubleAttribute(value,&a,NULL);
+												mesh->colors[ci].alpha = a*65535;
+											}
+										}
+									}
+								}
+							}
+
+							coli++;
+						}
+
+						rowi++;
+					}
+				}
+			}
+		}
+	  }	
+
+	} catch (int error) {
+		  DBG cerr <<"Caught error parsing meshgradient! "<<error<<endl;
+		  mesh->dec_count();
+		  return NULL;
+	}
+
+	mesh->InterpolateControls(Patch_Coons);
+	return mesh;
 }
 
 //! Return 1 for attribute used, else 0.
