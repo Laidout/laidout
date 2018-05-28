@@ -309,9 +309,17 @@ void pdfdumpobj(FILE *f,
 				LaxInterfaces::SomeData *object,
 				ErrorLog &log,
 				int &warning,
-				DocumentExportConfig *config)
+				DocumentExportConfig *config,
+				bool ignore_filter = false)
 {
 	if (!obj) return;
+
+	Group *g = dynamic_cast<Group *>(object);
+    if (g && g->filter && !ignore_filter) {
+        pdfdumpobj(f,objs,obj,stream,objectcount,resources, g->FinalObject(), log,warning,config, true);
+        return; // *** this fails when children exist!!
+    }
+
 	
 	 // push axes
 	psPushCtm();
@@ -323,7 +331,6 @@ void pdfdumpobj(FILE *f,
 	appendstr(stream,scratch);
 	
 	if (!strcmp(object->whattype(),"Group")) {
-		Group *g=dynamic_cast<Group *>(object);
 		for (int c=0; c<g->n(); c++) 
 			pdfdumpobj(f,objs,obj,stream,objectcount,resources,g->e(c),log,warning,config);
 

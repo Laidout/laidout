@@ -198,8 +198,8 @@ PageObject::~PageObject()
 }
 
 
-static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects,double *mm,SomeData *obj,ErrorLog &log,int &warning);
-static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &palette, SomeData *obj, int index=0);
+static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects,double *mm,SomeData *obj,ErrorLog &log,int &warning, bool ignore_filter=false);
+static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &palette, SomeData *obj, int index=0, bool ignore_filter=false);
 static int findobj(PtrStack<PageObject> &pageobjects, int nativeid, int what);
 static int findobjnumber(Attribute *att, const char *what);
 
@@ -1020,9 +1020,17 @@ int addColor(Palette &palette, ScreenColor *color)
 //! Internal function to find object to pageobject mapping.
 /*! This adds one entry per object that will actually be dumped out is scribusdumpobj().
  */
-static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &palette, SomeData *obj, int index) //::appendobjfordumping
+static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &palette, SomeData *obj, int index, bool ignore_filter) //::appendobjfordumping
 {
 	//WARNING! This function must mirror scribusdumpobj() for what objects actually get output..
+
+	Group *g = dynamic_cast<Group *>(obj);
+    if (g && g->filter && !ignore_filter) {
+        obj = g->FinalObject();
+        if (obj) appendobjfordumping(pageobjects, palette, obj, index, true);
+        return;
+    }
+
 
 	//GradientData *grad=NULL;
 	int ptype=PTYPE_None; //>0 is translatable to scribus object.
@@ -1094,8 +1102,6 @@ static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &pale
 	
 	} else if (!strcmp(obj->whattype(),"Group")) {
 		 //must propogate transform...
-		Group *g;
-		g=dynamic_cast<Group *>(obj);
 		if (!g) return;
 
 		 // objects have GROUPS list for what groups they belong to, 
@@ -1249,11 +1255,19 @@ static int scribusaddpath(NumStack<flatpoint> &pts, Coordinate *path)
  *   rasterized, and a new dir with all relevant files is created.
  */
 static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects,double *mm,SomeData *obj,
-							ErrorLog &log,int &warning)
+							ErrorLog &log,int &warning, bool ignore_filter)
 {
 	//possibly set: ANNAME NUMGROUP GROUPS NUMPO POCOOR PTYPE ROT WIDTH HEIGHT XPOS YPOS
 	//	gradients: GRTYP GRSTARTX GRENDX GRSTARTY GRENDY
 	//	images: LOCALSCX LOCALSCY PFILE
+
+	Group *g = dynamic_cast<Group *>(obj);
+    if (g && g->filter && !ignore_filter) {
+        obj = g->FinalObject();
+        if (obj) scribusdumpobj(f,curobj,pageobjects, mm,obj,log,warning, true);
+        return;
+    }
+
 
 	psPushCtm();
 	psConcat(obj->m());

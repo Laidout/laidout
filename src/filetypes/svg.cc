@@ -649,8 +649,15 @@ void svgStyleTagsDump(FILE *f, LineStyle *lstyle, FillStyle *fstyle)
  * \todo put in indentation
  * \todo add warning when invalid radial gradient: one circle not totally contained in another
  */
-int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorLog &log, SvgExportConfig *out)
+int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorLog &log, SvgExportConfig *out, bool ignore_filter = false)
 {
+	Group *g=dynamic_cast<Group *>(obj);
+	if (g && g->filter && !ignore_filter) {
+		obj = g->FinalObject();
+		if (obj) return svgdumpobj(f,mm,obj,warning,indent,log,out, true);
+		return 0;
+	}
+
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0'; 
 
 	if (!strcmp(obj->whattype(),"Group")) {
@@ -1232,11 +1239,16 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
  *
  * \todo fix radial gradient output for inner circle empty
  */
-int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgExportConfig *out)
+int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgExportConfig *out, bool ignore_filter=false)
 {
+	Group *g=dynamic_cast<Group *>(obj);
+	if (g && g->filter && !ignore_filter) {
+		obj = g->FinalObject();
+		if (obj) return svgdumpdef(f,mm,obj,warning,log,out, true);
+		return 0;
+	}
 
 	if (!strcmp(obj->whattype(),"Group")) {
-		Group *g=dynamic_cast<Group *>(obj);
 		for (int c=0; c<g->n(); c++) 
 			svgdumpdef(f,NULL,g->e(c),warning,log, out); 
 
