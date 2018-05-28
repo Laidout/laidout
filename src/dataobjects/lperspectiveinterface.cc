@@ -217,6 +217,7 @@ NodeBase *PerspectiveNode::Duplicate()
 {
 	PerspectiveNode *node = new PerspectiveNode();
 	node->DuplicateBase(this);
+	node->DuplicateProperties(this);
 	return node;
 }
 
