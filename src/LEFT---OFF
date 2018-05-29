@@ -12,7 +12,7 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now:
 
-space duplicate object with filter, keeps duping until crash
+finish debugging mesh svg 2.0 out/in
 
 debug registration, cut marks, trim marks
   custom papergroup, add registration/bars/, can't move it
@@ -155,16 +155,9 @@ DONE put rss/g+ links on all menu pages..
 fontdialog:
   select font inappropriately repositions view
 
-from big import:
-  load in seems to wholly load images, instead of only grabbing info
-  you can't control unclick selected directories
-  export to range has bad initial upper value
-
 node editor NodeInterface nodes:
   center on selected doesn't actually
-  should probably bring forward any selected
   debug inkscape node extension
-  load/save custom properties needs to preserve name, label, tooltip, types, custom info
   DONE finish perspective transform node proof of concept
   DONE finish file format description
 
@@ -236,24 +229,12 @@ PathInterface: pathinterface
   DONE bug: line cache on a square produces inf. lines off when final+initial coincide
   DONE select nodes with rectangle broken? <- no, just drawing really thin, misplaced LineWidthScreen
 
-layers palette Layers
-  key controls for navigation within menu:
-    space/enter toggle open and closed submenu
-  edit colors not highlighting every other
-  move
-  rename in place
-  implement buttons
-  locked
-  visible
-  selectable
-
-  should have document list at top, showing current doc
-
 file filters: filefilters:
   out textaspaths:
-    pdf     CaptionData  TextAsPath
-    scribus CaptionData  TextAsPath
-    svg     DONE-CaptionData  TextAsPath
+    pdf     CaptionData  TextOnPath
+    scribus CaptionData  TextOnPath
+    svg     DONE-CaptionData  TextOnPath
+  DONE out using FinalObject: DONE pdf     DONE scribus DONE image DONE svg 
   DONE for export, need way to have easy crop, especially from command line
   DONE remember last export type
   DONE when saving, name shouldn't be red if ok to save
@@ -299,9 +280,25 @@ test:
   make some test scripts for command line testing
 
 
+layers palette Layers
+  key controls for navigation within menu:
+    space/enter toggle open and closed submenu
+  edit colors not highlighting every other
+  move
+  rename in place
+  implement buttons
+  locked
+  visible
+  selectable
+
+  should have document list at top, showing current doc
+
 have an actual splash image shown
 
+you can't control unclick selected directories
+
 file filters: filefilters:
+  fix when filtered object has children.. currently skips children
   open with... on export
   remember full export settings
   need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
@@ -579,6 +576,7 @@ text on path textonpath: TextOnPath
   multiline?
 
 from big import:
+  load in seems to wholly load images, instead of only grabbing info
   need some kind of "loading" indication when loading in large images
   need image path mass reassign
   spread editor:
@@ -611,12 +609,15 @@ Perspective perspective:
   optimize the image mapping
   filtering paths needs to detect big distortions and add points, as simply transforming bez points is not enough
 
-node editor NodeInterface nodes:
+node editor NodeInterface nodes node interface:
+  should probably bring forward any selected
+  load/save custom properties needs to preserve name, label, tooltip, types, custom info
   undo redo
   grouping framed objects have complications
   check for double linking
   idea seen in anim nodes: collapsing math shows expression as label
   control drag on slot to reconnect all connections
+  duplicate linked nodes needs to preserve connections
   find:
     by label(done), name, or type
     search node or property name, or data contents
@@ -2057,3 +2058,8 @@ DONE laidout import:
 DONE filedialog: something wrong with bookmarks.. pressed add, and they all went away
 DONE switch to net imposition, net render lines too big
 DONE asymmetric cuts are not right for front sheets on spread generation (done), also on sig editor
+DONE bug: export to range has bad initial upper value ?? can't reproduce, starts with -1, which is fine
+DONE select filter editor tool through menu does not use current object
+DONE can still click down on other objects while perspective for filter edit
+DONE space duplicate object with filter, keeps duping until crash
+
