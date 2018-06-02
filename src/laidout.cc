@@ -1017,7 +1017,7 @@ int LaidoutApp::readinLaidoutDefaults()
 			if (value) {
 				int id=0;
 				UnitManager *units=GetUnitManager();
-				if (units->UnitInfo(value,&id,NULL,NULL,NULL,NULL)==0) {
+				if (units->UnitInfo(value,&id,NULL,NULL,NULL,NULL,NULL)==0) {
 					makestr(prefs.unitname,value);
 					prefs.default_units=id;
 					units->DefaultUnits(value);
@@ -1420,7 +1420,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			case 'u': { // default units
 					UnitManager *units=GetUnitManager();
 					int id=0;
-					if (units->UnitInfo(o->arg(),&id,NULL,NULL,NULL,NULL)==0) {
+					if (units->UnitInfo(o->arg(),&id,NULL,NULL,NULL,NULL,NULL)==0) {
 						makestr(prefs.unitname,o->arg());
 						prefs.default_units=id;
 						units->DefaultUnits(prefs.unitname);
