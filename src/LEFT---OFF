@@ -252,9 +252,10 @@ Scribus scribus:
   DONE caption -> path, then out, all paths are normal EXCEPT text paths, which are upside down
   DONE paths outputting upside down
 svg: SVG
-  in/out for meshes
+  in/(done)out for meshes
   text in fail: in hangs.. should NOT default to powerstroke.. the cache for complex stuff REALLY bogs down, creating NaN draws
   testsvg-disappearing.svg.. many objects disappear after read in at different zoom levels. wtaf??
+  need clone ref check when finished reading file
 
   DONE on out, need option to have 90/inch or the new 96/inch
   DONE bug: only sometimes, exports at skew angle
@@ -356,6 +357,7 @@ Scribus scribus:
     -> this necessitates revamp of singles to use more than one paper type
   implement crop
 svg: SVG
+  dump_in filter to nodes optionally
   need to parse units
   in needs to account for viewBox
   in needs to parse "use" elements and other "#" refs
