@@ -984,7 +984,7 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 
 		UnitManager *units=GetUnitManager();
 		char *unitname=NULL;
-		units->UnitInfoId(laidout->prefs.default_units, NULL, NULL,NULL,&unitname);
+		units->UnitInfoId(laidout->prefs.default_units, NULL, NULL,NULL,&unitname,NULL);
 
 		char path[strlen(laidout->config_dir)+20];
 		sprintf(path,"%s/laidoutrc",laidout->config_dir);

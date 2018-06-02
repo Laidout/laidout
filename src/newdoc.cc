@@ -337,9 +337,9 @@ int NewDocWindow::init()
 	char *tmp;
 	c2=0;
 	int uniti=-1,tid;
-	units->UnitInfo(laidout->prefs.unitname,&uniti,NULL,NULL,NULL,NULL);
+	units->UnitInfo(laidout->prefs.unitname,&uniti,NULL,NULL,NULL,NULL,NULL);
 	for (int c=0; c<units->NumberOfUnits(); c++) {
-		units->UnitInfoIndex(c,&tid,NULL,NULL,NULL,&tmp);
+		units->UnitInfoIndex(c,&tid,NULL,NULL,NULL,&tmp,NULL);
 		if (uniti==tid) c2=c;
 		popup->AddItem(tmp,c);
 	}
@@ -651,7 +651,7 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		UnitManager *units=GetUnitManager();
 		int id;
 		char *name;
-		units->UnitInfoIndex(i,&id, NULL,NULL,NULL,&name);
+		units->UnitInfoIndex(i,&id, NULL,NULL,NULL,&name,NULL);
 		paperx->SetText(units->Convert(paperx->GetDouble(), laidout->prefs.default_units,id,NULL));
 		papery->SetText(units->Convert(papery->GetDouble(), laidout->prefs.default_units,id,NULL));
 		laidout->prefs.default_units=id;

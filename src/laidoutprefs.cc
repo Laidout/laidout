@@ -308,7 +308,7 @@ Value *LaidoutPreferences::dereference(const char *extstring, int len)
 	if (!strcmp(extstring, "defaultunits")) {
 		UnitManager *units=GetUnitManager();
 		char *name=NULL;
-		units->UnitInfoId(default_units, NULL, NULL,NULL,&name);
+		units->UnitInfoId(default_units, NULL, NULL,NULL,&name,NULL);
 		StringValue *s=new StringValue(name);
 		return s;
 	}
