@@ -150,15 +150,23 @@ void PathGuide::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCon
 
 
 
-//------------------------------------- Grid -----------------------------------------------------
+//------------------------------------- GridGuide -----------------------------------------------------
 
-/*! \class Grid
+/*! \class GridGuide
  * Info about a grid guide.
  */
-class Grid : public LaxFiles::DumpUtility
+class GridGuide : public LaxFiles::DumpUtility
 {
   public:
-	int gridtype; //0=rect, 1=triangles, 2=hex?, others?
+	enum GridType {
+		Grid,
+		Horizontal,
+		Vertical,
+		Triangles,
+		Hex,
+		MAX
+	};
+	int gridtype;
 	char enabled, visible;
 	flatpoint offset;
 	flatvector majordir, minordir;
@@ -166,39 +174,48 @@ class Grid : public LaxFiles::DumpUtility
 	double xspacing, yspacing;
 	Laxkit::ScreenColor color, majorcolor;
 	int majorinterval; //draw thick every this number
+	bool snaponlytovisible;
 
-	Grid();
-	virtual ~Grid();
-	virtual const char *whattype() { return "Grid"; }
+	GridGuide();
+	virtual ~GridGuide();
+	virtual const char *whattype() { return "GridGuide"; }
+	virtual flatpoint Snap(flatpoint p);
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 
-Grid::Grid()
+GridGuide::GridGuide()
   : majordir(1,0), minordir(0,1)
 {
-	gridtype=0;
-	enabled=visible=1;
-	xspacing=yspacing=.5;
-	spacingunits=UNITS_Inches;
+	gridtype = Grid;
+	enabled = visible = 1;
+	xspacing = yspacing = .5;
+	spacingunits = UNITS_Inches;
+	snaponlytovisible = true;
 
 	color.rgb(0.,0.,1.);
 	majorcolor.rgb(0.,0.,.8);
-	majorinterval=5;
+	majorinterval = 5;
 }
 
-Grid::~Grid()
+GridGuide::~GridGuide()
 {}
 
-
-void Grid::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+flatpoint GridGuide::Snap(flatpoint p)
 {
-	cerr <<" *** need to implement Grid::dump_out"<<endl;
+	if (!visible && snaponlytovisible) return p;
+
+	return p; // ***
 }
 
-void Grid::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void GridGuide::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
-	cerr <<" *** need to implement Grid::dump_in_atts"<<endl;
+	cerr <<" *** need to implement GridGuide::dump_out"<<endl;
+}
+
+void GridGuide::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+{
+	cerr <<" *** need to implement GridGuide::dump_in_atts"<<endl;
 }
 
 
