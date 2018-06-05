@@ -1229,8 +1229,8 @@ void InitOptions()
 	options.Add("new",                'n', 1, "Create new document",                         0, "\"letter,portrait,3pgs\"");
 	options.Add("file-format",        'F', 0, "Print out a pseudocode mockup of the file format, then exit",0,NULL);
 	options.Add("command",            'c', 1, "Run one or more commands without the gui",    0, "\"newdoc net\"");
-	options.Add("script",             'C', 1, "Like --command, but the commands are in the given file",     0, "/some/file");
-	options.Add("shell",              'P', 0, "Enter a command line shell. Can be used with --command and --script.", 0, NULL);
+	options.Add("script",             's', 1, "Like --command, but the commands are in the given file",     0, "/some/file");
+	options.Add("shell",              'L', 0, "Enter a command line shell. Can be used with --command and --script.", 0, NULL);
 	options.Add("default-units",      'u', 1, "Use the specified units.",                    0, "(in|cm|mm|m|ft|yards)");
 	options.Add("load-dir",           'l', 1, "Start in this directory.",                    0, "path");
 	options.Add("experimental",       'E', 0, "Enable any compiled in experimental features",0, NULL);
@@ -1285,7 +1285,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					LoadTemplate(o->arg(),log);
 				} break;
 
-			case 'C': { // --shell
+			case 'L': { // --shell
 					donotusex=2;
 					runmode=RUNMODE_Shell;
 				} break;
