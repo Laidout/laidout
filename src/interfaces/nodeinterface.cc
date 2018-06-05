@@ -3065,11 +3065,12 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 
 			Value *v;
 			if ((ch=='\t' && (state&ShiftMask)!=0) || ch==LAX_Up) {
-				while((pi-1)%node->properties.n != lasthoverprop) {
+				while((pi+node->properties.n-1)%node->properties.n != lasthoverprop) {
 					pi--;
 					if (pi<0) pi = node->properties.n-1;
 					if (node->properties.e[pi]->IsEditable()) {
 						v = node->properties.e[pi]->GetData();
+						if (!v) continue;
 						if (v->type()!=VALUE_Real && v->type()!=VALUE_Int && v->type()!=VALUE_String) continue;
 						break;
 					}
@@ -3081,6 +3082,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 					if (pi>=node->properties.n) pi = 0;
 					if (node->properties.e[pi]->IsEditable()) {
 						v = node->properties.e[pi]->GetData();
+						if (!v) continue;
 						if (v->type()!=VALUE_Real && v->type()!=VALUE_Int && v->type()!=VALUE_String) continue;
 						break;
 					}
@@ -4667,6 +4669,12 @@ int NodeInterface::EditProperty(int nodei, int propertyi)
 
 	flatpoint ul= nodes->m.transformPoint(flatpoint(node->x, node->y+prop->y));
 	flatpoint lr= nodes->m.transformPoint(flatpoint(node->x+node->width, node->y+prop->y+prop->height));
+	flatpoint mid = (ul+lr)/2;
+	double th = font->textheight();
+	double w = fabs(ul.x - lr.x);
+	if (w < 10*th) w = 10*th;
+	ul = mid-flatpoint(w/2, th*.75);
+	lr = mid+flatpoint(w/2, th*.75);
 
 	DoubleBBox bounds;
 	bounds.addtobounds(ul);
@@ -5611,6 +5619,7 @@ int NodeInterface::PerformAction(int action)
 	} else if (action==NODES_Center || action==NODES_Center_Selected) {
 		if (!nodes) return 0;
 		SomeData box;
+		box.clear();
 		NodeBase *node;
 
 		Laxkit::RefPtrStack<NodeBase> *nn;
