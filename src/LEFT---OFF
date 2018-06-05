@@ -156,8 +156,8 @@ fontdialog:
   select font inappropriately repositions view
 
 node editor NodeInterface nodes:
-  center on selected doesn't actually
   debug inkscape node extension
+  DONE center on selected doesn't actually
   DONE finish perspective transform node proof of concept
   DONE finish file format description
 
@@ -195,11 +195,12 @@ text on path textonpath: TextOnPath
   DONE deleting selected points when >=2 selected results in crash
 
 engraving tool: Engraving  engraver
-  bug: trace object opacity is not working
-  bug: object rotate works fine. but then enter and leave engraver tool. Now object rotate is messed up
+  bug: trace object opacity is not working for non-image trace objects.. stroke and fill needs mask integration!!
   bug: 'z' zaps mesh, but does not change cache border or point mapping
   bug: change type not tracing
 
+  DONE For trace, click on "..." when no trace object should bring up trace object menu
+  DONE (can't duplicate) bug: object rotate works fine. but then enter and leave engraver tool. Now object rotate is messed up
   DONE bug: make a LineEdit overlay for number input, then Next bdown is ignored!! l, m, or right all ignored: viewportwindow line 947
   DONE bug: several update triggers failing --> due to recent switch to cached image
   DONE bug: show_points broken
@@ -252,11 +253,14 @@ Scribus scribus:
   DONE caption -> path, then out, all paths are normal EXCEPT text paths, which are upside down
   DONE paths outputting upside down
 svg: SVG
-  in/(done)out for meshes
-  text in fail: in hangs.. should NOT default to powerstroke.. the cache for complex stuff REALLY bogs down, creating NaN draws
-  testsvg-disappearing.svg.. many objects disappear after read in at different zoom levels. wtaf??
-  need clone ref check when finished reading file
+  rudimntary mesh in.. try to scale and place as separate object (without proper clipping)
 
+  DONE debug initial scaling/viewBox issues
+  DONE out for meshes
+  DONE should NOT default to powerstroke.. the cache for complex stuff REALLY bogs down, creating NaN draws
+  DONE need clone ref check when finished reading file
+  DONE text in fail: in hangs..
+  DONE testsvg-disappearing.svg.. many objects disappear after read in at different zoom levels. wtaf??
   DONE on out, need option to have 90/inch or the new 96/inch
   DONE bug: only sometimes, exports at skew angle
   DONE need in for style on paths
@@ -280,6 +284,8 @@ test:
   each export filter (via command line in new script in examples.. ignoring problems in eps)
   make some test scripts for command line testing
 
+
+in menus, click down, then drag, will return what is under mouse.. should default to not do anything but stay in menu
 
 layers palette Layers
   key controls for navigation within menu:

@@ -75,15 +75,17 @@ int addSvgDocument(const char *file, Document *existingdoc)
 	FILE *f=fopen(file,"r");
 	if (!f) return 1;
 	char chunk[2000];
-	size_t c=fread(chunk,1,1999,f);
+	size_t c=fread(chunk,1,1999,f); //note this is not a guarantee of finding width/height/viewbox!!
 	chunk[c]='\0';
 	fclose(f);
 
 	 //find default page width and height
 	double width,height;
+	double scalex = 1, scaley = 1;
 	UnitManager *unitm = GetUnitManager();
 
 	 //width
+	bool needtoscale = false;
 	char *endptr;
 	const char *ptr=strstr(chunk,"width");
 	if (!ptr) return 2;
@@ -99,16 +101,22 @@ int addSvgDocument(const char *file, Document *existingdoc)
 		const char *eptr=ptr;
 		while (isalpha(*eptr)) eptr++;
 		int units = unitm->UnitId(ptr, eptr-ptr);
-		if (units!=UNITS_None) width = unitm->Convert(width, units, UNITS_Inches, NULL);
-	} else width /= DEFAULT_PPINCH;
+		if (units!=UNITS_None) {
+			width = unitm->Convert(width, units, UNITS_Inches, NULL);
+			needtoscale = false;
+		}
+	} else {
+		width /= DEFAULT_PPINCH;
+		scalex = 1./DEFAULT_PPINCH;
+	}
 	if (width<=0) return 4;
 
 	 //height
 	ptr=strstr(chunk,"height");
-	if (!ptr) return 2;
+	if (!ptr) return 5;
 	ptr+=6;
 	while (isspace(*ptr) || *ptr=='=') ptr++;
-	if (*ptr!='\"') return 5;
+	if (*ptr!='\"') return 6;
 	ptr++;
 	height=strtod(ptr,&endptr);
 	ptr=endptr;
@@ -118,10 +126,28 @@ int addSvgDocument(const char *file, Document *existingdoc)
 		const char *eptr=ptr;
 		while (isalpha(*eptr)) eptr++;
 		int units = unitm->UnitId(ptr, eptr-ptr);
-		if (units!=UNITS_None) height = unitm->Convert(height, units, UNITS_Inches, NULL);
-	} else height /= DEFAULT_PPINCH;
-	if (height<=0) return 6;
+		if (units!=UNITS_None) {
+			height = unitm->Convert(height, units, UNITS_Inches, NULL);
+			needtoscale = false;
+		}
+	} else {
+		height /= DEFAULT_PPINCH;
+		scaley = 1./DEFAULT_PPINCH;
+	}
+	if (height<=0) return 7;
 
+	ptr = strstr(chunk,"viewBox"); // viewBox="0 0 1530 1530", map this rectangle to 0,0 -> width,height
+	if (ptr) {
+		ptr+=7;
+		while (isspace(*ptr) || *ptr=='=' || *ptr=='"') ptr++;
+		double l[4];
+		int n = DoubleListAttribute(ptr, l, 4, NULL);
+		if (n==4) {
+			scalex = width  / l[2];
+			scaley = height / l[3];
+			needtoscale = true;
+		}
+	}
 
 	PaperStyle paper("custom",width,height, 0,300, "in");
 	
@@ -154,12 +180,14 @@ int addSvgDocument(const char *file, Document *existingdoc)
 	filter.In(file,&config,log, NULL,0);
 
 	 //scale down
-	Group *group = dynamic_cast<Group*>(newdoc->pages.e[0]->layers.e(0));
-	group->maxx = width;
-	group->maxy = height;
-	for (int c=0; c<group->n(); c++) {
-		group->e(c)->Scale(flatpoint(0,0), 1./DEFAULT_PPINCH);
-	}
+//	if (needtoscale && (scalex != 1 || scaley != 1)) {
+//		Group *group = dynamic_cast<Group*>(newdoc->pages.e[0]->layers.e(0));
+//		group->maxx = width;
+//		group->maxy = height;
+//		for (int c=0; c<group->n(); c++) {
+//			group->e(c)->Scale(flatpoint(0,0), scalex, scaley);
+//		}
+//	}
 
 	newdoc->dec_count();
 
@@ -213,10 +241,11 @@ SvgExportConfig::SvgExportConfig(DocumentExportConfig *config)
 		use_mesh       =svgconf->use_mesh;
 		use_powerstroke=svgconf->use_powerstroke;
 		pixels_per_inch=svgconf->pixels_per_inch;
+
 	} else {
 		use_mesh=false;
-		//use_powerstroke=false;
-		use_powerstroke = true;
+		use_powerstroke=false;
+		//use_powerstroke = true;
 		pixels_per_inch = DEFAULT_PPINCH;
 	}
 }
@@ -225,8 +254,8 @@ SvgExportConfig::SvgExportConfig(DocumentExportConfig *config)
 SvgExportConfig::SvgExportConfig()
 {
 	use_mesh = false;
-	use_powerstroke = true;
-	//use_powerstroke=false;
+	//use_powerstroke = true;
+	use_powerstroke=false;
 	pixels_per_inch = DEFAULT_PPINCH;
 
 	for (int c=0; c<laidout->exportfilters.n; c++) {
@@ -1806,6 +1835,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 	Attribute *svghints=NULL,
 			  *svg=NULL; //points to the "svg" section of svghints. Do not delete!!
 	//if (in->keepmystery) svghints=new Attribute(VersionName(),file);  ***disable svghints for now
+
 	try {
 
 		 //add xml preamble, and anything not under "svg" to hints if it exists...
@@ -1821,6 +1851,8 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 		int c;
 		char *name,*value;
 		double width=0, height=0;
+		double scalex = 1, scaley = 1;
+
 		Attribute *svgdoc=att->find("svg");
 		if (!svgdoc) {
 			log.AddMessage(_("Could not find svg tag.\n"),ERROR_Fail);
@@ -1847,7 +1879,10 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 					int units = unitm->UnitId(ptr, endptr-ptr);
 					if (units!=UNITS_None) width = unitm->Convert(width, units, UNITS_Inches, NULL);
 
-				} else width /= DEFAULT_PPINCH; //no specified units, assume svg pts
+				} else {
+					width /= DEFAULT_PPINCH; //no specified units, assume svg pts
+					scalex = 1./DEFAULT_PPINCH;
+				}
 
 			} else if (!strcmp(name,"height")) {
 				char *endptr=NULL;
@@ -1861,10 +1896,21 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 					int units = unitm->UnitId(ptr, endptr-ptr);
 					if (units!=UNITS_None) height = unitm->Convert(height, units, UNITS_Inches, NULL);
 
-				} else height /= DEFAULT_PPINCH; //no specified units, assume svg pts
+				} else {
+					height /= DEFAULT_PPINCH; //no specified units, assume svg pts
+					scaley = 1./DEFAULT_PPINCH;
+				}
 				
 			} else if (!strcmp(name,"viewBox")) {
 				// *** also need to look out for other transform defined on base svg level, maybe nonstandard, but sometimes it's present
+
+				// viewBox="0 0 1530 1530", map this rectangle to 0,0 -> width,height
+				double l[4];
+				int n = DoubleListAttribute(value, l, 4, NULL);
+				if (n==4) {
+					scalex = width  / l[2];
+					scaley = height / l[3];
+				}
 			}
 		}
 
@@ -1948,18 +1994,56 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 		RefPtrStack<anObject> gradients;
 		PtrStack<Attribute> powerstrokes;
 
+		 //first check for document level things like gradients in defs or metadata.
+		 //then check for drawable things
+		 //then push any other stuff unchanged
 		for (c=0; c<svgdoc->attributes.n; c++) {
 			name =svgdoc->attributes.e[c]->name;
 			value=svgdoc->attributes.e[c]->value;
-			 //first check for document level things like gradients in defs or metadata,
-			 //then check for drawable things
-			 //then push any other stuff unchanged
+
 			if (!strcmp(name,"metadata")
 				     || !strcmp(name,"sodipodi:namedview")) {
 				 //just copy over "metadata" and "sodipodi:namedview" to svghints
 				if (svghints) {
 					svg->push(svgdoc->attributes.e[c]->duplicate(),-1);
 				}
+
+				//if (!strcmp(name,"sodipodi:namedview")) {
+					//extract inkscape:grid, a child of namedview
+					//} else if (!strcmp(name,"inkscape:grid")) {
+						//} else if !strcmp(name,"id") {
+							//grid->Id(value);
+
+						//} else if !strcmp(name,"type") {
+							//"xygrid"
+						//} else if !strcmp(name,"originx") {
+							//DoubleAttribute(value, &grid->originx, NULL);
+						//} else if !strcmp(name,"originy") {
+							//DoubleAttribute(value, &grid->originy, NULL);
+						//} else if !strcmp(name,"spacingx") {
+							//DoubleAttribute(value, &grid->spacingx, NULL);
+						//} else if !strcmp(name,"spacingy") {
+							//DoubleAttribute(value, &grid->spacingy, NULL);
+						//} else if !strcmp(name,"color") {
+							//SimpleColorAttribute(value, &grid->color);
+						//} else if !strcmp(name,"opacity") {
+							//DoubleAttribute(value, &grid->color->alpha, NULL);
+						//} else if !strcmp(name,"empcolor") {
+							//SimpleColorAttribute(value, &grid->color2);
+						//} else if !strcmp(name,"empopacity") {
+							//DoubleAttribute(value, &grid->color2->alpha, NULL);
+						//} else if !strcmp(name,"empspacing") {
+							//DoubleAttribute(value, &grid->lineheavyspacing, NULL);
+						//} else if !strcmp(name,"units") {
+							//grid->SetUnits(value);
+						//} else if !strcmp(name,"visible") {
+							//grid->visible = BooleanAttribute(value);
+						//} else if !strcmp(name,"enabled") {
+							//grid->active = BooleanAttribute(value);
+						//} else if !strcmp(name,"snapvisiblegridlinesonly") {
+							//"true" ???
+
+				//}
 				continue;
 
 			} else if (!strcmp(name,"defs")) {
@@ -2022,7 +2106,22 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 
 			} 
 			
-			if (svgDumpInObjects(height,group,svgdoc->attributes.e[c],powerstrokes,gradients,log)) continue;
+			int oldn = group->n();
+			if (svgDumpInObjects(1,group,svgdoc->attributes.e[c],powerstrokes,gradients,log)) {
+				DrawableObject *obj;
+				if (scalex != 1 || scaley != 1) {
+					for (int c=oldn; c < group->n(); c++) {
+						obj = dynamic_cast<DrawableObject*>(group->e(c));
+						//obj->Scale(flatpoint(0,0), 1./DEFAULT_PPINCH);
+						obj->Scale(scalex, scaley);
+
+						obj->m(5, height-obj->m(5)); //flip in page
+						obj->m(2, -obj->m(2));
+						obj->m(3, -obj->m(3));
+					}
+				}
+				continue;
+			}
 
 			 //push any other blocks into svghints.. not expected, but you never know
 			if (svghints) {
@@ -2050,6 +2149,8 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 			laidout->project->Push(doc);
 			laidout->app->addwindow(newHeadWindow(doc));
 		}
+
+		laidout->project->ClarifyRefs(log);
 	
 	} catch (int error) {
 		if (svghints) delete svghints;
@@ -2061,7 +2162,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 
 GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, GradientData *gradient)
 {
-	if (!gradient) gradient=dynamic_cast<GradientData *>(newObject("GradientData"));
+	if (!gradient) gradient = dynamic_cast<GradientData *>(newObject("GradientData"));
 
 	double cx,cy,fx,fy,r;
 	flatpoint p1,p2;
@@ -2077,23 +2178,26 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 		value=def->attributes.e[c3]->value;
 
 		if (!strcmp(name,"xlink:href")) {
-			 // might be color spots, need to scan in the ref
-			if (!value || value[0]!='#') continue;
+			 // the link might contain the color spots, need to scan in the ref for them.
+			 // For instance, radialGradient often links to a linearGradient in inkscape docs
+
+			if (!value || value[0]!='#') continue; //only check for "#name" attributes
 			char *xlinkid=value+1;
 			Attribute *xlink=NULL;
 
 			for (int c=0; c<defs->attributes.n; c++) {
-				name =def->attributes.e[c]->name;
-				value=def->attributes.e[c]->value;
+				name  = defs->attributes.e[c]->name;
+				value = defs->attributes.e[c]->value;
+
 				if (!strcmp(name,"linearGradient") || !strcmp(name,"radialGradient")) {
-					Attribute *g=def->attributes.e[c]->find("id");
+					Attribute *g = defs->attributes.e[c]->find("id");
 					if (!strcmp(g->value,xlinkid)) {
-						xlink=def->attributes.e[c];
+						xlink = defs->attributes.e[c];
 						break;
 					}
 				}
 			}
-			if (xlink) svgDumpInGradientDef(xlink, defs, type, gradient);
+			if (xlink) svgDumpInGradientDef(xlink, defs, type, gradient); //this should read  from xlink into gradient
 
 		} else if (!strcmp(name,"id")) {
 			if (!isblank(value)) gradient->Id(value);
@@ -2508,13 +2612,13 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 			}
 		}
 
-		if (top) {
-			for (int c=0; c<6; c++) g->m(c,g->m(c)/DEFAULT_PPINCH); //correct for svg scaling
-
-			g->m(5,top-g->m(5)); //flip in page
-			g->m(2, -g->m(2));
-			g->m(3, -g->m(3));
-		}
+		//if (top) {
+		//	for (int c=0; c<6; c++) g->m(c,g->m(c)/DEFAULT_PPINCH); //correct for svg scaling
+        //
+		//	g->m(5,top-g->m(5)); //flip in page
+		//	g->m(2, -g->m(2));
+		//	g->m(3, -g->m(3));
+		//}
 
 		 //do not add empty groups
 		if (g->n()!=0) {
@@ -2875,15 +2979,18 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 
 	} else if (!strcmp(element->name,"text")) {
-		//SomeData *data = SvgTextIn(element);
-		//group->push(data);
-		//data->dec_count();
-		//----
+
 		CaptionData *textobj=dynamic_cast<CaptionData *>(newObject("CaptionData"));
 
 		char *name;
 		char *value;
 		double x=0, y=0;
+		double m[6];
+		double font_size = -1;
+		const char *font_family = NULL, *font_style = NULL;
+		Attribute styleatt;
+		transform_identity(m);
+
 		for (int c=0; c<element->attributes.n; c++) {
 			name  = element->attributes.e[c]->name;
 			value = element->attributes.e[c]->value;
@@ -2898,19 +3005,31 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 				DoubleAttribute(value, &y);
 
 			} else if (!strcmp(name,"transform")) {
-			} else if (!strcmp(name,"style")) {
-				Attribute att;
-				InlineCSSToAttribute(value, &att);
+				svgtransform(value,m);
+				textobj->m(m);
 
-				for (int c2=0; c2<att.attributes.n; c2++) {
-					name  = att.attributes.e[c2]->name;
-					value = att.attributes.e[c2]->value;
+			} else if (!strcmp(name,"style")) {
+				InlineCSSToAttribute(value, &styleatt);
+
+				for (int c2=0; c2<styleatt.attributes.n; c2++) {
+					name  = styleatt.attributes.e[c2]->name;
+					value = styleatt.attributes.e[c2]->value;
 
 					if (!strcmp(name, "line-height")) {
 						DoubleAttribute(value, &textobj->linespacing); // *** need to compute units!!!
+
 					} else if (!strcmp(name, "font-family")) {
+						font_family = value;
+
 					} else if (!strcmp(name, "font-style")) {
+						font_style = value;
+
+					} else if (!strcmp(name, "font-variant")) {
+						//font_variant = value;
+
 					} else if (!strcmp(name, "font-size")) {
+						//font-size:medium|xx-small|x-small|small|large|x-large|xx-large|smaller|larger|length|initial|inherit;
+						DoubleAttribute(value, &font_size);
 					}
 				}
 
@@ -2938,11 +3057,15 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 			DBG cerr <<"ignoring blank text object "<<(textobj->Id()?textobj->Id():"unnamed")<<endl;
 
 		} else {
+			if (font_size == -1) font_size = 12; //arbitrary number to play nice with CaptionData.
+			if (font_family) textobj->Font(NULL, font_family, font_style, font_size);
+			else if (font_size != -1) textobj->Size(font_size);
 			textobj->origin(flatpoint(x,y));
 			group->push(textobj);
+			textobj->dec_count();
 		}
 
-		cout <<"***need to finish implementing svg in:  text"<<endl;
+		DBG cerr <<" *** need to finish implementing svg in:  text"<<endl;
 		return 1;
 
 	} else if (!strcmp(element->name,"use")) {
@@ -3081,7 +3204,8 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 			if (DoubleAttribute(value, &d)) strokecolor[3]=d;
 			if (foundstroke==0) foundstroke=2;
 
-		} else if (!strcmp(name,"fill")) { //fill color #ff0000
+		} else if (!strcmp(name,"fill") || !strcmp(name,"solid-color")) {
+			//fill color #ff0000. solid-color is svg2-ish def element
 			if (value && !strncmp(value, "url(#", 5)) {
 				//"url(#someDefId)"! contains gradients and meshgradient
 				char *id = newstr(value+5);
@@ -3113,7 +3237,7 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 				foundfill=1;
 			}
 
-		} else if (!strcmp(name,"fill-opacity")) { //0..1
+		} else if (!strcmp(name,"fill-opacity") || !strcmp(name,"solid-opacity")) { //1
 			if (DoubleAttribute(value, &d)) fillcolor[3]=d;
 			if (foundfill==0) foundfill=2;
 
@@ -3155,8 +3279,6 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 		//} else if (!strcmp(name,"mix-blend-mode")) { //normal
 		//} else if (!strcmp(name,"color-interpolation")) { //sRGB
 		//} else if (!strcmp(name,"color-interpolation-filters")) { //linearRGB
-		//} else if (!strcmp(name,"solid-color")) { //#000000  <- svg2-ish def element
-		//} else if (!strcmp(name,"solid-opacity")) { //1
 		//} else if (!strcmp(name,"marker")) { //none
 		//} else if (!strcmp(name,"color-rendering")) { //auto
 		//} else if (!strcmp(name,"image-rendering")) { //auto
