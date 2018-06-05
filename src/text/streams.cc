@@ -902,10 +902,10 @@ Style *ProcessCSSBlock(Style *style, const char *cssvalue)
 		} else if (!strcmp(name, "font-weight")) {
 			//normal | bold | bolder | lighter | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | inherit
 			const char *endptr;
-			weight=CSSFontWeight(value, endptr);
-			value=endptr;
+			weight = CSSFontWeight(value, endptr);
+			value = endptr;
 
-			if (weight>0) style->pushInteger("font-weight", w);
+			if (weight > 0) style->pushInteger("font-weight", w);
 
 		} else if (!strcmp(name, "font-size")) {
 			 //  font-size: 	<absolute-size> | <relative-size> | <length> | <percentage> | inherit
@@ -919,11 +919,11 @@ Style *ProcessCSSBlock(Style *style, const char *cssvalue)
 
 			 //named absolute sizes, these are relative to some platform specific table of numbers:
 			else if (!strcmp(value,"xx-small")) v=.5;
-			else if (!strcmp(value,"x-small")) v=.75;
-			else if (!strcmp(value,"small")) v=.8;
-			else if (!strcmp(value,"medium")) v=1;
-			else if (!strcmp(value,"large")) v=1.2;
-			else if (!strcmp(value,"x-large")) v=1.4;
+			else if (!strcmp(value,"x-small" )) v=.75;
+			else if (!strcmp(value,"small"   )) v=.8;
+			else if (!strcmp(value,"medium"  )) v=1;
+			else if (!strcmp(value,"large"   )) v=1.2;
+			else if (!strcmp(value,"x-large" )) v=1.4;
 			else if (!strcmp(value,"xx-large")) v=1.7;
 
 		   	 //for relative size
@@ -1080,13 +1080,13 @@ Value *ParseLengthOrPercent(const char *value, const char *relative_to, const ch
 int CSSFontWeight(const char *value, const char *&endptr)
 {
 	int weight=-1;
-	if (!strncmp(value,"inherit",7))       { endptr=value+7; } //do nothing special
-	else if (!strncmp(value,"normal",6))   { endptr=value+6; weight=400; }
-	else if (!strncmp(value,"bold",4))     { endptr=value+4; weight=700; }
-	else if (!strncmp(value,"bolder", 6))  { endptr=value+6; weight=900; } //120% ?
-	else if (!strncmp(value,"lighter", 7)) { endptr=value+7; weight=300; } //80% ? 
+	if (!strncmp(value,"inherit",7))       { endptr = value+7; } //do nothing special
+	else if (!strncmp(value,"normal",6))   { endptr = value+6; weight=400; }
+	else if (!strncmp(value,"bold",4))     { endptr = value+4; weight=700; }
+	else if (!strncmp(value,"bolder", 6))  { endptr = value+6; weight=900; } //120% ?
+	else if (!strncmp(value,"lighter", 7)) { endptr = value+7; weight=300; } //80% ? 
 	else if (value[0]>='1' && value[0]<='9') { //scan in any integer... not really css compliant, but what the hay
-		weight=strtol(value,10,&endptr);
+		weight = strtol(value,10,&endptr);
 	} else endptr=value;
 
 	return weight;
