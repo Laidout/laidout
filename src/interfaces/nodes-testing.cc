@@ -1154,6 +1154,87 @@ Laxkit::anObject *newSwizzle(int p, Laxkit::anObject *ref)
 }
 
 
+//------------------------------ PathBooleanNode --------------------------------------------
+
+/*! \class PathBooleanNode
+ * Map arrays to other arrays using a special Boolean interface.
+ */
+
+class PathBooleanNode : public NodeBase
+{
+  public:
+	static SingletonKeeper defkeeper; //the def for the op enum
+	static ObjectDef *GetDef() { return dynamic_cast<ObjectDef*>(defkeeper.GetObject()); }
+
+	PathBooleanNode();
+	virtual ~PathBooleanNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+};
+
+static SingletonKeeper PathBooleanNode::defkeeper;
+
+static ObjectDef *PathBooleanNode::GetDef()
+{
+	ObjectDef *def = dynamic_cast<ObjectDef*>(defkeeper.GetObject());
+	if (def) return def;
+
+	def = new ObjectDef("PathBooleanDef", _("Path Boolean Def"), NULL,NULL,"enum", 0);
+
+	def->pushEnumValue("Union",        _("Union"),         _("Union"),         BOOL_Union         );
+	def->pushEnumValue("Intersection", _("Intersection"),  _("Intersection"),  BOOL_Intersection  );
+	def->pushEnumValue("NotInSecond",  _("Not In Second"), _("Not In Second"), BOOL_NotInSecond   );
+	def->pushEnumValue("NotInFirst",   _("Not In First"),  _("Not In First"),  BOOL_NotInFirst    );
+
+	defkeeper.SetObject(def,1);
+	return def;
+}
+
+PathBooleanNode::PathBooleanNode()
+{
+	makestr(type, "Filters/Path Boolean");
+	makestr(Name, _("Path Boolean"));
+
+	ObjectDef *enumdef = GetDef();
+
+	EnumValue *e = new EnumValue(enumdef, 0);
+	e->SetFromId(op);
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in",  NULL,1, _("In")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in2", NULL,1, _("In2")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Block, true, "op", e,1, _("Op"),NULL,0, false));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output,true, "out", NULL,0, NULL, 0, false)); 
+}
+
+PathBooleanNode::~PathBooleanNode()
+{
+}
+
+NodeBase *PathBooleanNode::Duplicate()
+{ ***
+	PathBooleanNode *node = new PathBooleanNode(op);
+	node->DuplicateBase(this);
+    node->DuplicateProperties(this);
+	return node;
+}
+
+int PathBooleanNode::Update()
+{ ***
+}
+
+int PathBooleanNode::GetStatus()
+{ ***
+}
+
+Laxkit::anObject *newPathBoolean(int p, Laxkit::anObject *ref)
+{
+	return new PathBooleanNode();
+}
+
+
 //------------------------------ ActionNode --------------------------------------------
 
 /*! \class ActionNode
