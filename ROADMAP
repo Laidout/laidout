@@ -15,8 +15,6 @@ VERSION 0.097
        Text on path tool
 (done) text objects: harfbuzz based
 (done) Add more save options: save a copy, save incremented, save as template, autosave settings
-       Moving selected things in group contents does not update group bounds
-       should not be able to select both group and group contents at same time
 (done) Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
        debug svg in
 (done) svg out default to 96dpi
@@ -31,6 +29,8 @@ VERSION 0.097
 
 VERSION 0.098
 -------------
+       Moving selected things in group contents does not update group bounds
+       should not be able to select both group and group contents at same time
        debug previous version!
        engraver tool grow point mode
        engraver tool, resolution cut mode
