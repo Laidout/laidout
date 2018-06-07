@@ -413,39 +413,12 @@ void VObjContext::clearToPage()
  * \brief  Return 2 if spread exists, or 1 for just limbo.
  */
 /*! \var int LaidoutViewport::searchmode
- * <pre>
- *  Search_None    0
- *  Search_Find    1
- *  Search_Select  2
- * </pre>
+ *  LaxInterfaces::SearchFlags::SEARCH_Find or SEARCH_Select.
  */
 /*! \var int LaidoutViewport::searchcriteria
- * <pre>
- *  Search_Any         0 <-- any held by the viewport
- *  Search_Visible     1 <-- any visible on screen
- *  Search_UnderMouse  2 <-- any under the mouse 
- *  Search_WhereMask   3
- *   -- or with:--
- *  Search_SameLevel        (0<<4) <-- object and its siblings only
- *  Search_SameOrUnderLevel (1<<4) <-- all descendents of object's parent
- *  Search_HowMask          (12)
- * </pre>
- * \todo *** implement these
+ * See LaxInterfaces::SearchFlags.
+ * \todo *** implement this
  */
-//searchmode
-#define Search_None    0
-#define Search_Find    1
-#define Search_Select  2
-
-//searchcriteria
-#define Search_Any              0
-#define Search_Visible          1
-#define Search_UnderMouse       2 
-#define Search_WhereMask        3
-
-#define Search_SameLevel        (0<<4)
-#define Search_SameOrUnderLevel (1<<4)
-#define Search_HowMask          (12)
 
 
 #define VIEW_NORMAL      0
@@ -480,8 +453,8 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 	curpage=NULL;
 	pageviewlabel=NULL;
 
-	searchmode=Search_None;
-	searchcriteria=Search_Any;
+	searchmode=SEARCH_None;
+	searchcriteria=SEARCH_Any;
 	
 	limbo=NULL; //start out as NULL in case we are loading from something. If still NULL in init(), then add new limbo
 	
@@ -1390,23 +1363,29 @@ int LaidoutViewport::SelectObject(int i)
 		VObjContext o;
 		o=curobj;
 		DBG curobj.context.out("Finding Object, curobj:");
-		if (searchmode!=Search_Select) {
+		if (searchmode!=SEARCH_Select) {
 			ClearSearch();
 			firstobj=curobj;
-			searchmode=Search_Select;
+			searchmode=SEARCH_Select;
 		}
 		DBG o.context.out("Finding Object adjacent to :");
 		if (nextObject(&o,i==-2?0:1)!=1) {
 			firstobj=curobj;
 			o=curobj;
-			if (nextObject(&o,i==-2?0:1)!=1) { searchmode=Search_None; return 0; }
+			if (nextObject(&o,i==-2?0:1)!=1) { searchmode=SEARCH_None; return 0; }
 		}
 		setCurobj(&o);
 
 	} else return 0;
 	
 	ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); // always returns non-null
-	viewer->SelectToolFor(curobj.obj->whattype(),&curobj);
+	anInterface *otool = viewer->GetObjectTool();
+	viewer->SelectTool(otool->id);
+	viewer->CurrentTool()->UseThisObject(&curobj);
+
+
+	//viewer->SelectToolFor(curobj.obj->whattype(),&curobj);
+	//viewer->ChangeObject(
 	//viewer->updateContext(1);
 
 //	if (!viewer->CurrentTool()->draws(curobj.obj->whattype())) {
@@ -1431,13 +1410,13 @@ int LaidoutViewport::SelectObject(int i)
 	return 1;
 }
 
-//! Change the current object to be d.
+//! Change the current object to be oc.
 /*! Item must be in the tree already. You may not push objects from here. For
  * that, use NewData().
  *
- * If d!=NULL, then try to make that object the current object. It must be within
- * the current spread somewhere. If d==NULL, then the same goes for where oc points to.
- * The first interface to report being able to handle d->whattype() will be activated.
+ * If oc->obj!=NULL, then try to make that object the current object. It must be within
+ * the current spread somewhere. If oc->obj==NULL, then the same goes for where oc points to.
+ * The first interface to report being able to handle oc->obj->whattype() will be activated.
  *
  * Returns 1 for current object changed, otherwise 0 for not changed or d not found.
  *
@@ -1492,13 +1471,14 @@ int LaidoutViewport::FindObject(int x,int y,
 										const char *dtype,
 										LaxInterfaces::SomeData *exclude,
 										int start,
-										LaxInterfaces::ObjectContext **oc)
+										LaxInterfaces::ObjectContext **oc,
+										int searcharea)
 {
 	DBG cerr <<"lov.FindObject START: "<<endl;
 
 	 //init the search, if necessary
 	VObjContext nextindex;
-	if (searchmode!=Search_Find || start || x!=searchx || y!=searchy) { //init search
+	if (searchmode!=SEARCH_Find || start || x!=searchx || y!=searchy) { //init search
 		foundobj.clear();
 		firstobj.clear();
 
@@ -1521,7 +1501,7 @@ int LaidoutViewport::FindObject(int x,int y,
 		searchtype=NULL;
 		if (start==2 || start==0) exclude=NULL;
 		start=1;
-		searchmode=Search_Find;
+		searchmode=SEARCH_Find;
 		
 		if (exclude && nextindex.obj==exclude) nextObject(&nextindex);
 	} else {
@@ -1536,7 +1516,7 @@ int LaidoutViewport::FindObject(int x,int y,
 	 // nextindex now points to the next object to consider.
 	 
 	flatpoint p,pp;
-	p=dp->screentoreal(x,y); // so this is in viewer coordinates
+	p = dp->screentoreal(x,y); // so this is in viewer coordinates
 	DBG cerr <<"lov.FindObject: "<<p.x<<','<<p.y<<endl;
 
 	double m[6];
@@ -1612,7 +1592,7 @@ int LaidoutViewport::FindObjects(Laxkit::DoubleBBox *box, char real, char ascuro
 	if (!firstobj.obj) return 0;
 	nextindex=firstobj;
 	
-	searchmode=Search_Find;
+	searchmode=SEARCH_Find;
 	
 	foundtypeobj.clear(); // this one is always reset?
 	if (!firstobj.obj) return 0;
@@ -1913,9 +1893,9 @@ void LaidoutViewport::ClearSearch()
 	firstobj.clear();
 	foundobj.clear();
 	foundtypeobj.clear();
-	searchx=searchy=-1;
-	searchtype=NULL;
-	searchmode=Search_None;
+	searchx = searchy = -1;
+	searchtype = NULL;
+	searchmode = SEARCH_None;
 }
 
 //! Update ectm. If voc!=NULL, then make curobj point to the same thing that voc points to.
@@ -4989,6 +4969,16 @@ Laxkit::ShortcutHandler *ViewWindow::GetShortcuts()
 
 	manager->AddArea("ViewWindow",sc);
 	return sc;
+}
+
+LaxInterfaces::anInterface *ViewWindow::GetObjectTool()
+{
+	for (int c=0; c<tools.n; c++) {
+		if (!strcmp(tools.e[c]->whattype(),"ObjectInterface")) {
+			return tools.e[c];
+		}
+	}
+	return NULL;
 }
 
 int ViewWindow::PerformAction(int action)

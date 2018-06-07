@@ -149,7 +149,8 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	virtual int SelectObject(int i);
 	virtual int FindObject(int x,int y, const char *dtype, 
 					LaxInterfaces::SomeData *exclude, int start,
-					LaxInterfaces::ObjectContext **oc);
+					LaxInterfaces::ObjectContext **oc,
+					int searcharea=0);
 	virtual int FindObjects(Laxkit::DoubleBBox *box, char real, char ascurobj,
 							LaxInterfaces::SomeData ***data_ret, LaxInterfaces::ObjectContext ***c_ret);
 	virtual void ClearSearch();
@@ -234,6 +235,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 	virtual int FocusOn(const Laxkit::FocusChangeData *e);
 
+	virtual LaxInterfaces::anInterface *GetObjectTool();
 	virtual int PerformAction(int action);
 	virtual int SelectTool(int id);
 	virtual int SelectToolFor(const char *datatype,LaxInterfaces::ObjectContext *oc=NULL);
