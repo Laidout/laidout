@@ -302,7 +302,20 @@ int GroupInterface::AlternateScan(flatpoint sp, flatpoint p, double xmag,double 
 int GroupInterface::LBDown(int x, int y,unsigned int state, int count,const Laxkit::LaxMouse *mouse)
 {
 	DBG cerr <<"GroupInterface::LBDown..."<<endl;
-	int c=ObjectInterface::LBDown(x,y,state,count,mouse);
+
+	if (count == 2 && selection->n() == 1 && !strcmp(selection->e(0)->obj->whattype(), "Group")) {
+		//enter group and clear selection
+		ObjectContext *oc = selection->e(0)->duplicate();
+		FreeSelection();
+		oc->SetObject(NULL);
+		((LaidoutViewport *)viewport)->ChangeContext(oc);
+		delete oc;
+		needtodraw=1;
+
+		return 0;
+	}
+
+	int c = ObjectInterface::LBDown(x,y,state,count,mouse);
 
 	int curpoint;
 	buttondown.getextrainfo(mouse->id,LEFTBUTTON,&curpoint);
@@ -540,9 +553,13 @@ int GroupInterface::GroupObjects()
 		AddToSelection(&context);
 
 		DBG place.out(".....group position after grouping: ");
+
+		((LaidoutViewport *)viewport)->ChangeObject(&context, 0);
+
+	} else {
+		((LaidoutViewport *)viewport)->clearCurobj();
 	}
 
-	((LaidoutViewport *)viewport)->clearCurobj();
 
 	return 1;
 }
