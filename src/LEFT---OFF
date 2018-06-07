@@ -132,7 +132,6 @@ stackframe seems to be ignoring window borders on layout
 
 ----------------0.097 ROADMAP ITEMS: features and enhancements------------------------
 DONE website: combine faq and help?
-
 update fileformat.txt
 DONE check laidout.1 when time to release
 update docs to have new release number
@@ -160,6 +159,52 @@ node editor NodeInterface nodes:
   DONE center on selected doesn't actually
   DONE finish perspective transform node proof of concept
   DONE finish file format description
+  DONE gegl:
+    DONE gegl:*-save except gegl:save is disregarding autosave on blitting -> just disabling preview for these
+	DONE preview area should be adjustible for sample area, instead of always default 100x100
+	DONE babl format is passed in gegl as an otherwise undefined gpointer, need to have special check for this
+	DONE save gegl graph to xml
+	DONE enums
+	DONE menu with categories, not just the name. gegl ops have name, title, description, categories, license, even source!!
+	DONE load in graph xml
+    DONE process on a crop after change a value crash? need to trace
+	DONE make process optional
+  DONE update to use IsExecIn/Out
+  DONE thread forking for branching nodes?
+  DONE if branching
+  DONE jump to link under mouse: shift click over slot, or shift click over bare bez
+  DONE duplicate nodes (still need to imp group dup)
+  DONE need visual indication that something is a group
+  DONE concat s1, s2
+  DONE string primitive
+  DONE substr [index..index]
+  DONE curve node
+  DONE pipe splitter node (forknode)
+  DONE math operate on numbers, vectors as appropriate
+  DONE math 1 arg: norm, norm squared, etc
+  DONE vector node:
+    DONE 2,3,4 dimension vectors
+    DONE separate xyz
+	DONE combine xyz
+	DONE math: perpendicular, parallel, etc
+  DONE bug: sometimes crash when tabbing across property values
+  DONE need accumulation mechanism to bundle up results of loops: AddVariable(name, type|set of type), GetVariable(name).out
+  DONE if you right click on a node not in selection, make that the selection instead
+  DONE cut links
+  DONE nodes need preview images as necessary: need to preview non-sinks
+  DONE view mode: all collapsed,  all collapsed except preview,  expanded no preview,  expanded with preview
+  DONE need a little triple bar triangle in lower right corner to resize preview size. change preview size on all selected
+  DONE loading should check automatically for different files if load fails
+  DONE rename nodes
+  DONE need search
+  DONE numbers need slide change: specify add or zoom stepping
+  DONE node resize needs mouseover for edges
+  DONE select all/deselect with 'a'
+  DONE save, load nodes dialogs
+  DONE newly added should be selected
+  DONE hover tips for props on collapsed nodes
+  DONE clear up IsInput()/IsOutput()
+  DONE dedicated random node: seed, is_int, min,max
 
 text on path textonpath: TextOnPath
   envelope:
@@ -253,7 +298,7 @@ Scribus scribus:
   DONE caption -> path, then out, all paths are normal EXCEPT text paths, which are upside down
   DONE paths outputting upside down
 svg: SVG
-  rudimntary mesh in.. try to scale and place as separate object (without proper clipping)
+  rudimentary mesh in.. try to scale and place as separate object (without proper clipping)
 
   DONE debug initial scaling/viewBox issues
   DONE out for meshes
@@ -483,7 +528,6 @@ engraving tool: Engraving  engraver
 	shift-drag (or drag anything not covered by trace object) should drag ANY of the meshes in selection, not just current
 	when multi objects, the traceobject is interweaved, based on draw order, only under current object, should be under all?
 	make gradient interface work in trace mode
-    DONE trace object transparency slider should actually slide transparency
 
   freehand/path:
     freehand not being interpreted correctly: non-equal smooth is adding erroneous extra mesh column
@@ -606,12 +650,6 @@ from big import:
   load in autosave should ask if you want to save as the original
   spread editor needs edge dragging
 
-  DONE recently-used.xbel showing multiple: <bookmark:group>Laidout</bookmark:group>
-  DONE no recent in open!!
-  DONE? crash on rearrange sometimes: page range getting out of sync
-  DONE should not register autosaves as recent
-
-
 Perspective perspective:
   finish debugging update path object without reallocating each time
   optimize the image mapping
@@ -645,15 +683,6 @@ node editor NodeInterface nodes node interface:
 	some nodes define a particular extent, like gradients. preview should detect
 	need a gegl <-> Value converter to allow interacting with Get/SetVariableNode
 	do something decent with property types: GeglCurve GeglPath. ignore these for now: GeglAudioFragment GeglBuffer GdkPixbuf GeglNode
-    DONE gegl:*-save except gegl:save is disregarding autosave on blitting -> just disabling preview for these
-	DONE preview area should be adjustible for sample area, instead of always default 100x100
-	DONE babl format is passed in gegl as an otherwise undefined gpointer, need to have special check for this
-	DONE save gegl graph to xml
-	DONE enums
-	DONE menu with categories, not just the name. gegl ops have name, title, description, categories, license, even source!!
-	DONE load in graph xml
-    DONE process on a crop after change a value crash? need to trace
-	DONE make process optional
   svg/inkscape specific filter interface, io passthrough
     svg color properties are strings, but there should be button for color select
     need full "length" readin, not just floats, ie "100%", "15in"
@@ -663,7 +692,6 @@ node editor NodeInterface nodes node interface:
 	Embossed Leather fails
     Plastify has an orphan feFlood node
 	nodes with children, loading in puts the child properties at the end
-	DONE loading: don't have input and output nodes!!
   for memory saving, need to determine what is a "final" node, since intermediate nodes can free data, or pass it on
   node browser
 	tooltips for operation, not just properties
@@ -683,20 +711,14 @@ node editor NodeInterface nodes node interface:
     linked vs appended node groups, to allow mass changing of particular effects
 	  GroupRef : NodeGroup, with some sort of relay to actual group internals
     node libraries: nodes as resources
-    DONE duplicate nodes (still need to imp group dup)
-    DONE need visual indication that something is a group
   auto shift on connection
   auto connect when dragging nodes.. needs parsing of compatible properties
   view area things:
     node magnifier for easier browsing when otherwise zoomed way out
     toggle show only selected nodes?
-    DONE jump to link under mouse: shift click over slot, or shift click over bare bez
   exec paths
 	events for ui tool construction?
 	exec tick speed control for debugging
-    DONE update to use IsExecIn/Out
-	DONE thread forking for branching nodes?
-	DONE if branching
   make sure entire nodes don't go totally offscreen
   scriptify node graph
   nodes to script and script to nodes
@@ -767,36 +789,6 @@ node editor NodeInterface nodes node interface:
 	  abs  neg  sqrt sgn
 	  sin  cos  tan  asin  acos  atan
 	  sinh cosh tanh asinh acosh atanh
-  DONE concat s1, s2
-  DONE string primitive
-  DONE substr [index..index]
-  DONE curve node
-  DONE pipe splitter node (forknode)
-  DONE math operate on numbers, vectors as appropriate
-  DONE math 1 arg: norm, norm squared, etc
-  DONE vector node:
-    DONE 2,3,4 dimension vectors
-    DONE separate xyz
-	DONE combine xyz
-	DONE math: perpendicular, parallel, etc
-  DONE bug: sometimes crash when tabbing across property values
-  DONE need accumulation mechanism to bundle up results of loops: AddVariable(name, type|set of type), GetVariable(name).out
-  DONE if you right click on a node not in selection, make that the selection instead
-  DONE cut links
-  DONE nodes need preview images as necessary: need to preview non-sinks
-  DONE view mode: all collapsed,  all collapsed except preview,  expanded no preview,  expanded with preview
-  DONE need a little triple bar triangle in lower right corner to resize preview size. change preview size on all selected
-  DONE loading should check automatically for different files if load fails
-  DONE rename nodes
-  DONE need search
-  DONE numbers need slide change: specify add or zoom stepping
-  DONE node resize needs mouseover for edges
-  DONE select all/deselect with 'a'
-  DONE save, load nodes dialogs
-  DONE newly added should be selected
-  DONE hover tips for props on collapsed nodes
-  DONE clear up IsInput()/IsOutput()
-  DONE dedicated random node: seed, is_int, min,max
 
 
 resource manager needs to store unknown objects as Attribute trees, so they can still be preserved
@@ -882,11 +874,6 @@ fontdialog: FontDialog
   select opentype features
   optional common font finishers? like centering, underline, color, highlight, fg/bg, etc
 
-  DONE sample block should not strictly adhere to fontsize, as it can get very big (or too small)
-  DONE you can still scroll off when few visible items.. grrr!!
-  DONE should really get around to implementing scrollers
-  DONE fontmatrix import? fontmatrix uses a sqlite database.. should be straighforward to scan it
-
 ImagePatch:
   use float or double for color sample
   abstract to be a filter, with optional stand alone object
@@ -935,7 +922,6 @@ TreeSelector:
   option to use markup for labels
   tree display flat option
   makeinwindow() doesn't account for columns
-  DONE add scroller
 
 Units:
   need something like Convert(value, units_from, units_to, &error, overrides), where overrides is
@@ -954,7 +940,7 @@ to be a decent editing platform, Laidout needs:
   more specific control over transform.. numerical specification
   per object visibility
   per object opacity
-  better key input edits
+  better key input edits, right click on menu items to ch key
   guides
   clipping
   text
@@ -962,7 +948,6 @@ to be a decent editing platform, Laidout needs:
     select only within group zone
 	easy selection of proper group zone
 	remove 'i' from common shortcuts for all tools to let it be used for ObjectIndicator
-    DONE ungroup doesn't check if FieldPlace indices change, making ungroup and group unreliable
 
 polish:
   page navigator should allow type in shortcuts like "end"
@@ -1014,11 +999,6 @@ FileDialog filedialog:
   need drag and drop bookmarking
   when you change directories, it should indicate if it corresponds to a bookmark
 
-  DONE need add and remove bookmarks
-  DONE sort by details
-  DONE sort by size should sort by actual size, must interpret "5 gb" vs "3242 b"
-  DONE columns need to autosize
-
 when resizing viewportwindow and a temp_input window active, make sure it stays on screen?
 
 autosave
@@ -1055,8 +1035,6 @@ need to implement image cache clearing on low memory, to substitute for cairo no
 
 minimum dp size is not small enough
 
-unparent from a group should remove the group if nothing left? probably not, leave that for ungroup
-
 anInterface::PreRefresh(), for instance to get engraver trace object to render below all selected objects
 
 need to clarify what happens when you open and close documents. open already open pops new window, not sure if it should
@@ -1075,7 +1053,6 @@ color slider popup:
   clicking anywher in the new/old should swap
   show numbers to click on: 255, 65535, float
   toggle sets of sliders: rgb, cmyk, alpha, cielab, hsl
-  DONE should pop near the mouse
 
 Gradient:
   resize inner circle, make small past a threshhold makes circle go away
@@ -1106,7 +1083,6 @@ gradient resources
     color
 
 Colors:
-  DONE need to update ColorSliders to use dp gradients
   color picker that previews text?
   convert to using Color objects instead of all ScreenColor:
 	gradient
@@ -1563,9 +1539,6 @@ signature editor  Signature editor Signature Editor signaturei
   be able to specify single sided.. allows bound accordian foldings?
   implement creep
 
-  DONE stacks should display below squared bounding box of pages? currently rotate canvas, the text is messed up
-  		-> have text rotate with it, more clearly shows where "bottom" is
-
 Make extension to be able to use Inkscape live path effects (lpe)!! The run on svg snippets, so should be somewhat
   straightforward to call externally.. BUT have optional tool overlay. Figure out how to reverse implement to also
   run within Inkscape.
@@ -1785,7 +1758,6 @@ hedron window:
   file open, preview hedra
   file open, preview equirects
   need to implement more options for polyhedron connections, to allow mobius strips...
-
   DONE proper units for papers
 
 implement undo.. ideally use same code for both undo and recordable/assignable actions
@@ -1824,7 +1796,6 @@ PlainTextWindow plaintextwindow PlainText plain text window:
   indent/unindent
   move selected lines up/down
   regex searching
-  DONE need control-'.' or something to jump to last mod point
 
 pixels units should be set as per document dpi
 
@@ -1892,7 +1863,7 @@ food for thought:
 
 ======================================DONE=================================================
 When releasing new version, combine these with ROADMAP items for release notes.
-These can then be purged after each release...
+These must be moved to the DONE file at each release.
 ===========================================================================================
 
 
@@ -2070,4 +2041,26 @@ DONE bug: export to range has bad initial upper value ?? can't reproduce, starts
 DONE select filter editor tool through menu does not use current object
 DONE can still click down on other objects while perspective for filter edit
 DONE space duplicate object with filter, keeps duping until crash
+DONE unparent from a group should remove the group if nothing left? no, empties have uses
+DONE group: double click to enter group area
+DONE group: ungroup doesn't check if FieldPlace indices change, making ungroup and group unreliable
+DONE fontdialog:
+  DONE sample block should not strictly adhere to fontsize, as it can get very big (or too small)
+  DONE you can still scroll off when few visible items.. grrr!!
+  DONE should really get around to implementing scrollers
+  DONE fontmatrix import? fontmatrix uses a sqlite database.. should be straighforward to scan it
+DONE plaintext editor: need control-'.' or something to jump to last mod point
+DONE sig editor: stacks should display below squared bounding box of pages?  -> have text rotate with it, more clearly shows where "bottom" is
+DONE recently-used.xbel showing multiple: <bookmark:group>Laidout</bookmark:group>
+DONE no recent in open!!
+DONE? crash on rearrange sometimes: page range getting out of sync
+DONE should not register autosaves as recent
+DONE filedialog:
+  DONE need add and remove bookmarks
+  DONE sort by details
+  DONE sort by size should sort by actual size, must interpret "5 gb" vs "3242 b"
+  DONE columns need to autosize
+  DONE add scroller to treeselector
+DONE color slider popup: should pop near the mouse
+DONE need to update ColorSliders to use dp gradients
 
