@@ -81,11 +81,11 @@ int addSvgDocument(const char *file, Document *existingdoc)
 
 	 //find default page width and height
 	double width,height;
-	double scalex = 1, scaley = 1;
+	//double scalex = 1, scaley = 1;
+	//bool needtoscale = false;
 	UnitManager *unitm = GetUnitManager();
 
 	 //width
-	bool needtoscale = false;
 	char *endptr;
 	const char *ptr=strstr(chunk,"width");
 	if (!ptr) return 2;
@@ -103,11 +103,11 @@ int addSvgDocument(const char *file, Document *existingdoc)
 		int units = unitm->UnitId(ptr, eptr-ptr);
 		if (units!=UNITS_None) {
 			width = unitm->Convert(width, units, UNITS_Inches, NULL);
-			needtoscale = false;
+			//needtoscale = false;
 		}
 	} else {
 		width /= DEFAULT_PPINCH;
-		scalex = 1./DEFAULT_PPINCH;
+		//scalex = 1./DEFAULT_PPINCH;
 	}
 	if (width<=0) return 4;
 
@@ -128,11 +128,11 @@ int addSvgDocument(const char *file, Document *existingdoc)
 		int units = unitm->UnitId(ptr, eptr-ptr);
 		if (units!=UNITS_None) {
 			height = unitm->Convert(height, units, UNITS_Inches, NULL);
-			needtoscale = false;
+			//needtoscale = false;
 		}
 	} else {
 		height /= DEFAULT_PPINCH;
-		scaley = 1./DEFAULT_PPINCH;
+		//scaley = 1./DEFAULT_PPINCH;
 	}
 	if (height<=0) return 7;
 
@@ -143,9 +143,9 @@ int addSvgDocument(const char *file, Document *existingdoc)
 		double l[4];
 		int n = DoubleListAttribute(ptr, l, 4, NULL);
 		if (n==4) {
-			scalex = width  / l[2];
-			scaley = height / l[3];
-			needtoscale = true;
+			//scalex = width  / l[2];
+			//scaley = height / l[3];
+			//needtoscale = true;
 		}
 	}
 
