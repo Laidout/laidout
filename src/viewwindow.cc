@@ -413,11 +413,14 @@ void VObjContext::clearToPage()
  * \brief  Return 2 if spread exists, or 1 for just limbo.
  */
 /*! \var int LaidoutViewport::searchmode
- *  LaxInterfaces::SearchFlags::SEARCH_Find or SEARCH_Select.
+ *  LaxInterfaces::SearchFlags::SEARCH_Find, SEARCH_Select, or SEARCH_None.
+ *  Describes the current state of searching.
+ *  Select is for tabbing to next/prev objects.
+ *  Find is for more general searching at arbitrary entry points.
+ *  None is not involved in any search currently.
  */
 /*! \var int LaidoutViewport::searchcriteria
  * See LaxInterfaces::SearchFlags.
- * \todo *** implement this
  */
 
 
@@ -453,8 +456,8 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 	curpage=NULL;
 	pageviewlabel=NULL;
 
-	searchmode=SEARCH_None;
-	searchcriteria=SEARCH_Any;
+	searchmode = SEARCH_None;
+	searchcriteria = SEARCH_Any;
 	
 	limbo=NULL; //start out as NULL in case we are loading from something. If still NULL in init(), then add new limbo
 	
@@ -1363,22 +1366,26 @@ int LaidoutViewport::SelectObject(int i)
 		VObjContext o;
 		o=curobj;
 		DBG curobj.context.out("Finding Object, curobj:");
-		if (searchmode!=SEARCH_Select) {
+
+		if (searchmode != SEARCH_Select) {
 			ClearSearch();
-			firstobj=curobj;
-			searchmode=SEARCH_Select;
+			firstobj = curobj;
+			searchmode = SEARCH_Select;
+			searchcriteria = SEARCH_Any;
 		}
 		DBG o.context.out("Finding Object adjacent to :");
 		if (nextObject(&o,i==-2?0:1)!=1) {
-			firstobj=curobj;
-			o=curobj;
-			if (nextObject(&o,i==-2?0:1)!=1) { searchmode=SEARCH_None; return 0; }
+			firstobj = curobj;
+			o = curobj;
+			if (nextObject(&o, i==-2?0:1)!=1) { searchmode = SEARCH_None; return 0; }
 		}
 		setCurobj(&o);
 
 	} else return 0;
 	
 	ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); // always returns non-null
+
+	 //always change to object tool when switching object
 	anInterface *otool = viewer->GetObjectTool();
 	viewer->SelectTool(otool->id);
 	viewer->CurrentTool()->UseThisObject(&curobj);
@@ -1443,6 +1450,36 @@ int LaidoutViewport::ChangeObject(LaxInterfaces::ObjectContext *oc, int switchto
 	return 1;
 }
 
+/*! ToDO: Can be used for normal object searching, as well as aiding preflight verifiers.
+ */
+class SearchSettings
+{
+  public:
+	enum SearchEnum {
+		Nothing = 0,
+		Id    = (1<<0),
+		Type  = (1<<1),
+		Meta  = (1<<2),
+		Regex = (1<<3),
+		MAX
+	};
+
+	unsigned int what;
+	char *pattern;
+
+	SearchSettings();
+	~SearchSettings();
+};
+
+/*! Return if data matches some kind of pattern.
+ */
+int SearchFunction(LaxInterfaces::SomeData *data, int searcharea, int searchmode, SearchSettings *search)
+{
+	if (!data->Id()) return 0;
+	if (search->pattern && !strstr(data->Id(), search->pattern)) return true;
+	return false;
+}
+
 //! Find object in current spread underneath screen coordinate x,y.
 /*! If an interfaces receives a lbdown outside of their object, then it would
  * call viewport->FindObject, which will possibly return an object that the 
@@ -1476,9 +1513,12 @@ int LaidoutViewport::FindObject(int x,int y,
 {
 	DBG cerr <<"lov.FindObject START: "<<endl;
 
+	if (searcharea == 0) searcharea = SEARCH_Any;
+	searchcriteria = searcharea;
+
 	 //init the search, if necessary
 	VObjContext nextindex;
-	if (searchmode!=SEARCH_Find || start || x!=searchx || y!=searchy) { //init search
+	if (searchmode != SEARCH_Find || start || x!=searchx || y!=searchy) { //init search
 		foundobj.clear();
 		firstobj.clear();
 
@@ -1492,48 +1532,50 @@ int LaidoutViewport::FindObject(int x,int y,
 		} else {
 			firstobj=curobj; //***need validation check
 		}
-		if (!firstobj.obj) findAny();
+		if (!firstobj.obj) findAny(searchcriteria);
+		if (!firstobj.obj) findAny(SEARCH_Any);
 		if (!firstobj.obj) return 0;
 		nextindex=firstobj;
-		
+
 		searchx=x;
 		searchy=y;
 		searchtype=NULL;
 		if (start==2 || start==0) exclude=NULL;
 		start=1;
 		searchmode=SEARCH_Find;
-		
+
 		if (exclude && nextindex.obj==exclude) nextObject(&nextindex);
 	} else {
 		nextindex=foundtypeobj;
 	}
+
 	foundtypeobj.clear(); // this one is always reset?
 	if (!firstobj.obj) return 0; //no first object was found. give up!
-	if (dtype) searchtype=dtype;
+	if (dtype) searchtype = dtype;
 
 	if (!start) nextObject(&nextindex);
 
 	 // nextindex now points to the next object to consider.
-	 
+
 	flatpoint p,pp;
 	p = dp->screentoreal(x,y); // so this is in viewer coordinates
 	DBG cerr <<"lov.FindObject: "<<p.x<<','<<p.y<<endl;
 
 	double m[6];
 	DBG firstobj.context.out("firstobj");
-	
-	int nob=1; //is there a next object
-	while (nob==1) {
-		if (start) start=0;
-		if (nextindex.obj==exclude) {
-			nob=nextObject(&nextindex);
+
+	int nob = 1; //is there a next object
+	while (nob == 1) {
+		if (start) start = 0;
+		if (nextindex.obj == exclude) {
+			nob = nextObject(&nextindex);
 			continue;
 		}
-		
+
 		 //transform point to be in nextindex coords
 		transformToContext(m,nextindex.context,1,nextindex.context.n()-1);
 
-		pp=transform_point(m,p);
+		pp = transform_point(m,p);
 		DBG cerr <<"lov.FindObject oc: "; nextindex.context.out("");
 		DBG cerr <<"lov.FindObject pp: "<<pp.x<<','<<pp.y<<"  check on "
 		DBG		<<nextindex.obj->object_id<<" ("<<nextindex.obj->whattype()<<") "<<endl;
@@ -1545,13 +1587,14 @@ int LaidoutViewport::FindObject(int x,int y,
 				nob=nextObject(&nextindex);
 				continue;
 			}
+
 			 // matching object found!
 			foundtypeobj=nextindex;
 			if (oc) *oc=&foundtypeobj;
 			DBG foundtypeobj.context.out("  foundtype");//for debugging
 			return 1;
 		}
-		DBG cerr <<" -- point not found in "<<nextindex.obj->object_id<<endl;
+		DBG cerr <<" -- point not found in "<<nextindex.obj->object_id<<": "<<nextindex.obj->Id()<<endl;
 		nob=nextObject(&nextindex);
 	}
 	 
@@ -1713,7 +1756,11 @@ int LaidoutViewport::nextObject(VObjContext *oc,int inc)//inc=0
 	do {
 		DBG cerr <<"LaidoutViewport->nextObject count="<<cn++<<endl;
 
-		c=ObjectContainer::nextObject(oc->context, 0, Next_SkipLockedKids|(inc?Next_Increment:Next_Decrement), &d);
+		c = ObjectContainer::nextObject(oc->context, 0,
+				(searchcriteria == SEARCH_SameLevel ? Next_PlaceLevelOnly : 0)
+				 | Next_SkipLockedKids|(inc?Next_Increment:Next_Decrement),
+				&d);
+
 		oc->SetObject(dynamic_cast<SomeData *>(d));
 		if (c==Next_Error) return 0; //error finding a next
 
@@ -1723,7 +1770,7 @@ int LaidoutViewport::nextObject(VObjContext *oc,int inc)//inc=0
 			DBG cerr <<"search hit first, aborting with nothing!"<<endl;
 			return 0; //wrapped around to first
 		}
-		
+
 		 //if is Unselectable, then continue. Else return the found object.
 		if (!(oc->obj)) {
 			DBG cerr <<"no obj in found oc, continuing search!"<<endl;
@@ -1750,12 +1797,6 @@ int LaidoutViewport::nextObject(VObjContext *oc,int inc)//inc=0
 	
 	return 0;
 }
-
-// ****replace the other locateObject with this one:
-// return the object at place(offset).place(offset+1)...place(offset+n-1)
-// If n==0, then use the rest of place from offset.
-//LaxInterfaces::SomeData *LaidoutViewport::locateObject(FieldPlace &place,int offset,int n)
-//{***}
 
 //! Return place.n if d is found in the displayed pages or in limbo somewhere, and put location in place.
 /*! Flushes place whether or not the object is found, it does not append to an existing spot.
@@ -1796,10 +1837,26 @@ int LaidoutViewport::locateObject(LaxInterfaces::SomeData *d,FieldPlace &place)
 }
 
 //! Initialize firstobj to the first object the viewport can find.
-void LaidoutViewport::findAny()
+void LaidoutViewport::findAny(int searcharea)
 {
+	if (searcharea == 0) searcharea = SEARCH_Any;
+
 	int c,c2;
 	SomeData *obj=NULL;
+
+	if (searcharea == SEARCH_SameLevel) {
+		firstobj = curobj;
+		if (firstobj.obj) return;
+
+		Group *tosearch = dynamic_cast<Group*>(GetObject(&curobj));
+		if (tosearch->n()) {
+			firstobj.context.push(0);
+			firstobj.SetObject(tosearch->e(0));
+		}
+
+		return;
+	}
+
 	firstobj.clear();
 
 	if (spread) {
@@ -4838,9 +4895,15 @@ void ViewWindow::updateContext(int messagetoo)
 	}
 
 	if (messagetoo) {
-		int cplen=20,curpageindex=lviewport->curobjPage();
+		int cplen = 10+strlen(_("(page %s)")), curpageindex = lviewport->curobjPage();
 
-		char blah[cplen+lviewport->curobj.context.n()*20+50]; //*** warning! crash magnet when field names are long!
+		if (curpageindex>=0 && doc->pages.e[curpageindex]->label) cplen += strlen(doc->pages.e[curpageindex]->label);
+		if (lviewport->curobj.obj) {
+			cplen += strlen(lviewport->curobj.obj->whattype());
+			cplen += 2+strlen(lviewport->curobj.obj->Id());
+		}
+
+		char blah[cplen];
 		blah[0]='\0';
 
 		if (curpageindex>=0 && doc->pages.e[curpageindex]->label) {
@@ -4853,9 +4916,6 @@ void ViewWindow::updateContext(int messagetoo)
 			strcat(blah,lviewport->curobj.obj->Id());
 		} else strcat(blah,"none");
 		if (mesbar) mesbar->SetText(blah);
-
-		//PageFlipper *pageflipper=dynamic_cast<PageFlipper*>(findChildWindowByName("page number"));
-		//if (pageflipper) makestr(pageflipper->currentcontext,blah);
 	}
 
 

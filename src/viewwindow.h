@@ -85,7 +85,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	virtual void setupthings(int tospread=-1,int topage=-1);
 	virtual void UpdateMarkers();
 	virtual void setCurobj(VObjContext *voc);
-	virtual void findAny();
+	virtual void findAny(int searcharea=0);
 	virtual int nextObject(VObjContext *oc,int inc=0);
 	virtual void transformToContext(double *m,FieldPlace &place,int invert, int depth);
 
