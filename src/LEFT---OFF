@@ -151,9 +151,6 @@ DONE update help page
 DONE put rss/g+ links on all menu pages..
 
 
-fontdialog:
-  select font inappropriately repositions view
-
 node editor NodeInterface nodes:
   debug inkscape node extension
   DONE center on selected doesn't actually
@@ -212,6 +209,7 @@ text on path textonpath: TextOnPath
 	horizontal spacing a bit wonky
   select font, key up/down scrolls uncomfortably SOMETIMES!!
   svg out bad
+  convert to path rendering to wrong place and orientation
   doesn't handle transforms with nested objects properly
   dragging size handle with shift|control does not scale properly
 
@@ -238,19 +236,6 @@ text on path textonpath: TextOnPath
   DONE offset handles
   DONE envelope
   DONE deleting selected points when >=2 selected results in crash
-
-engraving tool: Engraving  engraver
-  bug: trace object opacity is not working for non-image trace objects.. stroke and fill needs mask integration!!
-  bug: 'z' zaps mesh, but does not change cache border or point mapping
-  bug: change type not tracing
-
-  DONE For trace, click on "..." when no trace object should bring up trace object menu
-  DONE (can't duplicate) bug: object rotate works fine. but then enter and leave engraver tool. Now object rotate is messed up
-  DONE bug: make a LineEdit overlay for number input, then Next bdown is ignored!! l, m, or right all ignored: viewportwindow line 947
-  DONE bug: several update triggers failing --> due to recent switch to cached image
-  DONE bug: show_points broken
-  DONE bug: add group, messes up the with: and not shared lines
-  DONE bug: Remane a resource, not updating name in resource list
 
 PathInterface: pathinterface
   bug: seems to be possible to move nodes out of order, only occassionally
@@ -279,7 +264,7 @@ file filters: filefilters:
   out textaspaths:
     pdf     CaptionData  TextOnPath
     scribus CaptionData  TextOnPath
-    svg     DONE-CaptionData  TextOnPath
+    svg     DONE-CaptionData  DONE-TextOnPath
   DONE out using FinalObject: DONE pdf     DONE scribus DONE image DONE svg 
   DONE for export, need way to have easy crop, especially from command line
   DONE remember last export type
@@ -295,6 +280,7 @@ Scribus scribus:
   make sure it works for 1.5.2
   check for updates in file format for 1.5
   export color meshes, for recent versions of Scribus
+  DONE encode < > ' " & \ as entities
   DONE caption -> path, then out, all paths are normal EXCEPT text paths, which are upside down
   DONE paths outputting upside down
 svg: SVG
@@ -329,6 +315,11 @@ test:
   each export filter (via command line in new script in examples.. ignoring problems in eps)
   make some test scripts for command line testing
 
+
+Find interface:
+  search by name and/or type, description, other meta, broken images, other preflight things, etc.
+  find next or find all, all shows selection of thumbs
+  mass operations on found objects
 
 in menus, click down, then drag, will return what is under mouse.. should default to not do anything but stay in menu
 
@@ -503,6 +494,9 @@ PathInterface: pathinterface
   have a widthtype == hairline? use width==0 as no stroke
 
 engraving tool: Engraving  engraver
+  bug: trace object opacity is not working for non-image trace objects.. stroke and fill needs mask integration!!
+  bug: 'z' zaps mesh, but does not change cache border or point mapping
+
   cairo render NEEDS VAST IMPROVEMENT.. the clunky xlib approximation was fast, but not transferrable to cairo
 
   multiobject:
@@ -2063,4 +2057,12 @@ DONE filedialog:
   DONE add scroller to treeselector
 DONE color slider popup: should pop near the mouse
 DONE need to update ColorSliders to use dp gradients
-
+DONE engraver tool:
+  DONE bug: change type not tracing, same for selecting new trace object
+  DONE For trace, click on "..." when no trace object should bring up trace object menu
+  DONE (can't duplicate) bug: object rotate works fine. but then enter and leave engraver tool. Now object rotate is messed up
+  DONE bug: make a LineEdit overlay for number input, then Next bdown is ignored!! l, m, or right all ignored: viewportwindow line 947
+  DONE bug: several update triggers failing --> due to recent switch to cached image
+  DONE bug: show_points broken
+  DONE bug: add group, messes up the with: and not shared lines
+  DONE bug: Remane a resource, not updating name in resource list
