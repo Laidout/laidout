@@ -328,7 +328,6 @@ int GroupInterface::LBDown(int x, int y,unsigned int state, int count,const Laxk
 		popupcontrols=GIA_Parent_Link;
 		PostMessage(" ");
 		return 0;
-
 	}
 
 	//if (count==2 && selection->n()==1 && strcmp(selection->e(0)->obj->whattype(),"Group")) {
