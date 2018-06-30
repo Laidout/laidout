@@ -18,6 +18,7 @@
 #include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
 #include <lax/interfaces/captioninterface.h>
+#include <lax/interfaces/textonpathinterface.h>
 #include <lax/transformmath.h>
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
@@ -1027,7 +1028,7 @@ int addColor(Palette &palette, ScreenColor *color)
 	return 1;
 }
 
-//! Internal function to find object to pageobject mapping.
+//! Internal function to find object to pageobject mapping, and add to color palette if necessary.
 /*! This adds one entry per object that will actually be dumped out is scribusdumpobj().
  */
 static void appendobjfordumping(ScribusExportConfig *config, PtrStack<PageObject> &pageobjects, Palette &palette, SomeData *obj, int index, bool ignore_filter) //::appendobjfordumping
@@ -1093,7 +1094,7 @@ static void appendobjfordumping(ScribusExportConfig *config, PtrStack<PageObject
 							addColor(palette, &color);
 						}
 						appendobjfordumping(config, pageobjects,palette, caption, 1+layer);
-						layer++;	
+						layer++;
 					}
 					return;
 
@@ -1105,6 +1106,44 @@ static void appendobjfordumping(ScribusExportConfig *config, PtrStack<PageObject
 				ScreenColor color(caption->red, caption->green, caption->blue, caption->alpha);
 				addColor(palette, &color);
 				ptype = PTYPE_Text;
+			}
+		}
+
+	} else if (!strcmp(obj->whattype(),"TextOnPath")) {
+		TextOnPath *textonpath=dynamic_cast<TextOnPath *>(obj);
+		if (!textonpath) return;
+
+		if (config->textaspaths) {
+			proxy = textonpath->ConvertToPaths(false, NULL);
+			ptype = PTYPE_Polygon;
+
+			 //register colors
+			if (textonpath->font->Layers()>1) {
+				if (index==0) {
+					int layer=0;
+					Palette *fpalette=dynamic_cast<Palette*>(textonpath->font->GetColor());
+					ScreenColor color;
+
+					for (LaxFont *font=textonpath->font; font; font=font->nextlayer) {
+						if (fpalette && layer<fpalette->colors.n) {
+							color.rgbf(fpalette->colors.e[layer]->channels[0]/(double)fpalette->colors.e[layer]->maxcolor,
+									   fpalette->colors.e[layer]->channels[1]/(double)fpalette->colors.e[layer]->maxcolor,
+									   fpalette->colors.e[layer]->channels[2]/(double)fpalette->colors.e[layer]->maxcolor,
+									   fpalette->colors.e[layer]->channels[3]/(double)fpalette->colors.e[layer]->maxcolor
+									);
+							addColor(palette, &color);
+						}
+						layer++;	
+					}
+				}
+
+			} else {
+				//ScreenColor color(textonpath->color->ChannelValue0to1(0),
+								  //textonpath->color->ChannelValue0to1(1),
+								  //textonpath->color->ChannelValue0to1(2),
+								  //textonpath->color->Alpha());
+				//addColor(palette, &color);
+				addColor(palette, &textonpath->color->screen);
 			}
 		}
 
