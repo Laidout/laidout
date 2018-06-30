@@ -355,7 +355,7 @@ void pdfdumpobj(FILE *f,
 		if (config->textaspaths) {
 			CaptionData *text = dynamic_cast<CaptionData*>(object);
 			SomeData *path = text->ConvertToPaths(false, NULL);
-			pdfPaths(f,objs,obj,stream,objectcount,resources, dynamic_cast<PathsData *>(object), log,warning,config);
+			pdfPaths(f,objs,obj,stream,objectcount,resources, dynamic_cast<PathsData *>(path), log,warning,config);
             path->dec_count();
 		} else {
 			pdfCaption(f,objs,obj,stream,objectcount,resources,dynamic_cast<CaptionData *>(object), log,warning,config);
@@ -365,7 +365,7 @@ void pdfdumpobj(FILE *f,
 		if (config->textaspaths) {
 			TextOnPath *text = dynamic_cast<TextOnPath*>(object);
 			SomeData *path = text->ConvertToPaths(false, NULL);
-			pdfPaths(f,objs,obj,stream,objectcount,resources, dynamic_cast<PathsData *>(object), log,warning,config);
+			pdfPaths(f,objs,obj,stream,objectcount,resources, dynamic_cast<PathsData *>(path), log,warning,config);
             path->dec_count();
 		} else {
 			pdfTextOnPath(f,objs,obj,stream,objectcount,resources,dynamic_cast<TextOnPath*>(object), log,warning,config);
