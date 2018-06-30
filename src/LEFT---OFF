@@ -23,13 +23,35 @@ object indicator:
 
 back to not maximizing properly on default ubuntu. Seems to work fine on every other window manager I've tried.
 
-in shortcut list, backspace won't let me delete chars from search
-
 ------------ other bugs:
 
 packaging woes: update deb/control to have more of the dependencies
 
 booklet, use paper group tool, default paper group no longer displays
+
+evince on ubuntu 14.04, pdf export won't load, says Syntax Error... Dictionary key must be a name object
+
+configure should check for libreadline-dev? apparently not pkg-config ready <- half fix of listing in package requirements
+  needs to use the new extra_cppflags thing
+
+memory hole in reimpose .. reimposed 5 page booklet
+memory hole when graphical shell activated
+memory hole do laidout -n letter, split a window, then quit. undeleted Objects remain!
+memory hole delauneyinterface
+memory hole helpwindow -> probably something to do with ShortcutWindow and ShortcutTreeSelector not refcounting as expected
+DONE memory hole paper interface, activate tool, lay down one paper, quit, 3 objects remain
+DONE memory hole cairo backend (can't duplicate)
+
+"edit imposition", then escape.. removes window, but not the frame!
+
+lineinput not propagating escapable
+
+clones of images scale not like images.. should also snap aspect to start of drag, not when control key pressed
+
+select none, select doc, viewport jumps around... it should stay the same area
+switch to None document, and units change to unreasonable
+
+
 
 shearing or scaling produces null axes occasionally when crossing over opposite edge, borking the display
   --> seems to be only when needing to draw images on close to parallel axes, doesn't seem do it with paths
@@ -45,22 +67,9 @@ text window controls have difficulties
 saving window positions doesn't take into account window decorations, makes pos slide downward each time
   _NET_FRAME_EXTENTS? _KDE_NET_WM_FRAME_STRUT? how to get before mapping a window?
 
-evince on ubuntu 14.04, pdf export won't load, says Syntax Error... Dictionary key must be a name object
-
 scribus plugin: if directory of executable script is not writable, it fails!
  -> should find one that is writable
 scribus plugin needs a proper dealing with temporary files
-
-configure should check for libreadline-dev? apparently not pkg-config ready <- half fix of listing in package requirements
-  needs to use the new extra_cppflags thing
-
-memory hole in reimpose .. reimposed 5 page booklet
-memory hole when graphical shell activated
-memory hole do laidout -n letter, split a window, then quit. undeleted Objects remain!
-memory hole delauneyinterface
-memory hole helpwindow -> probably something to do with ShortcutWindow and ShortcutTreeSelector not refcounting as expected
-DONE memory hole paper interface, activate tool, lay down one paper, quit, 3 objects remain
-DONE memory hole cairo backend (can't duplicate)
 
 object reordering (with home/end) produces outline of unrelated objects on top
 
@@ -74,11 +83,6 @@ ubuntu maximize window failing (but not on today's debian unstable gnome), resiz
 gnome "application" does one per window, not one per app. this is not a bad thing imnsho, but should be easy to conform to desktop application spec properly
 icon needs to be bigger.. is fuzzy on ubuntu alt-tab
 DONE App/window icon in window manager not showing..
-
-select none, select doc, viewport jumps around... it should stay the same area
-switch to None document, and units change to unreasonable
-
-"edit imposition", then escape.. removes window, but not the frame!
 
 DONE??? need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)
 
@@ -97,10 +101,6 @@ svg to coord incomplete: arcs needs testing
 memory hole in svg in? test svg import, svg path import must be done
 
 sigimp fail for multiple stacks with no folds!!
-
-lineinput not propagating escapable
-
-clones of images scale not like images
 
 object tool shift-control for rotate does not allow positioning on drag bars
 
@@ -204,22 +204,22 @@ node editor NodeInterface nodes:
   DONE dedicated random node: seed, is_int, min,max
 
 text on path textonpath: TextOnPath
-  envelope:
-    vertical position bad
-	horizontal spacing a bit wonky
   select font, key up/down scrolls uncomfortably SOMETIMES!!
-  svg out bad
+  svg out bad (check non path conversion)
   convert to path rendering to wrong place and orientation
   doesn't handle transforms with nested objects properly
   dragging size handle with shift|control does not scale properly
+  convert to path: not respecting transform, putting upside down(done)
+  test exporters: svg scribus pdf
 
+  envelope:
+    vertical position bad
+	horizontal spacing a bit wonky
   bug: drag the baseline handle off to the sides, makes huge bad jumps in value
   bug: dragging the offest handle sometimes jumps to really bad
   handle to remove from current path, and possibly attach it to some other path
   glyph positioning is wrong
   position glyphs based on middle of glyph, not start of glyph
-  convert to path: not respecting transform, putting upside down(done)
-  test exporters: svg scribus pdf
 
   DONE not remapping envelope on load in
   DONE during path edit shouldn't show the other controls like font scale
@@ -242,9 +242,10 @@ PathInterface: pathinterface
   bug: shift click down then up on a point selects then deselects.. control can toggle
   bug: problems for non-bez-controlled corners at endpoint. Also variable offset causes weird connections
   bug: applyoffset, the bez part at joins is messed up when no offset, suspect problem in FlatpointToCoordinate, mismatch with bez join next to sample points
-  bug: delete last weight node, width is wrong
-  bug: make new line with freehand tool, cannot move weight nodes in a rational way
+
   bug: should not create new control points by pressing cntl, unless there is movement
+  bug: delete last weight node, sometimes width is wrong
+  bug: make new line with freehand tool, cannot move weight nodes in a rational way
 
   DONE bug: now node scan and display works, but drag doesn't!!
   DONE toggle send color to fill/stroke should update the color box
@@ -260,41 +261,7 @@ PathInterface: pathinterface
   DONE bug: line cache on a square produces inf. lines off when final+initial coincide
   DONE select nodes with rectangle broken? <- no, just drawing really thin, misplaced LineWidthScreen
 
-file filters: filefilters:
-  out textaspaths:
-    pdf     CaptionData  TextOnPath
-    scribus CaptionData  TextOnPath
-    svg     DONE-CaptionData  DONE-TextOnPath
-  DONE out using FinalObject: DONE pdf     DONE scribus DONE image DONE svg 
-  DONE for export, need way to have easy crop, especially from command line
-  DONE remember last export type
-  DONE when saving, name shouldn't be red if ok to save
-pdf PDF:
-  text out very broken.. imageout via gs complains about malformed pdf on fonts
-  fonts are not doubled up, each text object is exporting its own
-  export lines has outlines in evince?
-Scribus scribus:
-  caption export centering
-  export paths fails on compound paths. scribus has dichotomy Polyline|Polygon
-  scribus export should show actual version export
-  make sure it works for 1.5.2
-  check for updates in file format for 1.5
-  export color meshes, for recent versions of Scribus
-  DONE encode < > ' " & \ as entities
-  DONE caption -> path, then out, all paths are normal EXCEPT text paths, which are upside down
-  DONE paths outputting upside down
-svg: SVG
-  rudimentary mesh in.. try to scale and place as separate object (without proper clipping)
-
-  DONE debug initial scaling/viewBox issues
-  DONE out for meshes
-  DONE should NOT default to powerstroke.. the cache for complex stuff REALLY bogs down, creating NaN draws
-  DONE need clone ref check when finished reading file
-  DONE text in fail: in hangs..
-  DONE testsvg-disappearing.svg.. many objects disappear after read in at different zoom levels. wtaf??
-  DONE on out, need option to have 90/inch or the new 96/inch
-  DONE bug: only sometimes, exports at skew angle
-  DONE need in for style on paths
+pdf export lines has outlines in evince?
 
 
 ----------------0.098 ROADMAP ITEMS: features and enhancements------------------------
@@ -314,6 +281,7 @@ test:
   test in different window managers
   each export filter (via command line in new script in examples.. ignoring problems in eps)
   make some test scripts for command line testing
+
 
 
 Find interface:
@@ -339,6 +307,8 @@ layers palette Layers
 have an actual splash image shown
 
 you can't control unclick selected directories
+
+rework ui to be programmable. Perhaps an ui builder
 
 file filters: filefilters:
   fix when filtered object has children.. currently skips children
@@ -380,6 +350,9 @@ laidout import:
     import of master pages
     import of limbos
 pdf PDF:
+  text out very broken.. imageout via gs complains about malformed pdf on fonts
+  fonts are not doubled up, each text object is exporting its own
+
   export complex engraving is really, really slow. probably all the string reallocation?
   pdf optimize jpg dump, compress image data
   still true? pdf export if a path has null linestyle/fillstyle it buffers until next path drawn
@@ -389,6 +362,15 @@ pdf PDF:
   page labels?
   implement crop
 Scribus scribus:
+  caption as path flips
+  implement equivalent object
+  caption export centering
+  export paths fails on compound paths. scribus has dichotomy Polyline|Polygon
+  scribus export should show actual version export
+  make sure it works for 1.5.2
+  check for updates in file format for 1.5
+  export color meshes, for recent versions of Scribus
+
   import/export color meshes, for recent versions of Scribus
   font size confusion
   import/export linear and radial gradients
@@ -399,6 +381,7 @@ Scribus scribus:
     -> this necessitates revamp of singles to use more than one paper type
   implement crop
 svg: SVG
+  rudimentary mesh in.. try to scale and place as separate object (without proper clipping)
   dump_in filter to nodes optionally
   need to parse units
   in needs to account for viewBox
@@ -2066,3 +2049,23 @@ DONE engraver tool:
   DONE bug: show_points broken
   DONE bug: add group, messes up the with: and not shared lines
   DONE bug: Remane a resource, not updating name in resource list
+DONE in shortcut list, backspace won't let me delete chars from search
+DONE svg filter:
+  DONE debug initial scaling/viewBox issues
+  DONE out for meshes
+  DONE should NOT default to powerstroke.. the cache for complex stuff REALLY bogs down, creating NaN draws
+  DONE need clone ref check when finished reading file
+  DONE text in fail: in hangs..
+  DONE testsvg-disappearing.svg.. many objects disappear after read in at different zoom levels. wtaf??
+  DONE on out, need option to have 90/inch or the new 96/inch
+  DONE bug: only sometimes, exports at skew angle
+  DONE need in for style on paths
+DONE scribus:
+  DONE encode < > ' " & \ as entities
+  DONE caption -> path, then out, all paths are normal EXCEPT text paths, which are upside down
+  DONE paths outputting upside down
+  DONE out using FinalObject: DONE pdf     DONE scribus DONE image DONE svg 
+  DONE for export, need way to have easy crop, especially from command line
+  DONE remember last export type
+  DONE when saving, name shouldn't be red if ok to save
+DONE out textaspaths: textonpath: pdf, scribus, svg,  caption: pdf, scribus(sort of), svg
