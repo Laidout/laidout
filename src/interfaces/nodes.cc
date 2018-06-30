@@ -2823,7 +2823,7 @@ CurveProperty::CurveProperty(CurveValue *ncurve, int absorb, int isout)
 	CurveMapInterface *interface = GetCurveInterface();
 	if (!interface) {
 		interface = new CurveMapInterface(getUniqueNumber(), NULL);
-		interface->style |= CurveMapInterface::RealSpace;
+		interface->style |= CurveMapInterface::RealSpace | CurveMapInterface::Expandable;
 		interfacekeeper.SetObject(interface, 1);
 	}
 
