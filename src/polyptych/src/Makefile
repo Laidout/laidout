@@ -64,7 +64,7 @@ skyflow: skyflow.o
 	$(LD) $@.o -lGraphicsMagick++ -llaxkit $(LDFLAGS) -o $@
 
 spheretocubemap: spheretocubemap.o
-	$(LD) spheretocubemap.o -lGraphicsMagick++ $(LAXDIR)/vectors.o -o $@
+	$(LD) spheretocubemap.o -lGraphicsMagick++ -llaxkit $(LDFLAGS) -o $@
 
 lax:
 	cd $(LAXDIR) && $(MAKE)
