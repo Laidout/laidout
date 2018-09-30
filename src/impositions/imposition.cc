@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2012 by Tom Lechner
@@ -693,14 +692,13 @@ int Imposition::SetPaperSize(PaperStyle *npaper)
 
 	PaperStyle *newpaper=(PaperStyle *)npaper->duplicate();
 	if (paper) paper->dec_count();
-	paper=new PaperBox(newpaper);
-	newpaper->dec_count();
+	paper=new PaperBox(newpaper, true);
 	PaperBoxData *newboxdata=new PaperBoxData(paper);
 
 	if (papergroup) papergroup->dec_count();
 	papergroup=new PaperGroup;
 	papergroup->papers.push(newboxdata);
-	papergroup->OutlineColor(65535,0,0); //default to red papergroup
+	papergroup->OutlineColor(1.0,0,0); //default to red papergroup
 	newboxdata->dec_count();
 
 	return 0;

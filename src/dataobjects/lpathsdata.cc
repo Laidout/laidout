@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2013 by Tom Lechner
@@ -19,6 +18,7 @@
 #include "../stylemanager.h"
 #include "../language.h"
 #include "../calculator/shortcuttodef.h"
+#include "objectfilter.h"
 
 
 
@@ -82,6 +82,11 @@ void LPathsData::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCo
 		}
 	}
 	if (!foundconfig) PathsData::dump_in_atts(att,flag,context);
+
+	if (filter) {
+		ObjectFilter *of = dynamic_cast<ObjectFilter*>(filter);
+		of->FindProperty("in")->topropproxy->owner->Update();
+	}
 }
 
 LaxInterfaces::SomeData *LPathsData::duplicate(LaxInterfaces::SomeData *dup)

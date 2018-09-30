@@ -1,6 +1,4 @@
 //
-// $Id$
-//	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -8,7 +6,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2007-2015 by Tom Lechner
@@ -20,6 +18,7 @@
 #include <lax/interfaces/pathinterface.h>
 #include <lax/interfaces/somedataref.h>
 #include <lax/interfaces/captioninterface.h>
+#include <lax/interfaces/textonpathinterface.h>
 #include <lax/transformmath.h>
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
@@ -83,7 +82,7 @@ const char *PdfImportFilter::FileType(const char *first100bytes)
 	return NULL;
 }
 
-int PdfImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log)
+int PdfImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log, const char *filecontents,int contentslen)
 {
 	// ***
 	// find number of pages
@@ -201,6 +200,8 @@ ObjectDef *PdfExportFilter::GetObjectDef()
 //---------------------------- PdfObjInfo
 static int o=1;//***DBG
 
+double current_dpi = 300;
+
 /*! \class PdfObjInfo
  * \brief Temporary class to hold info about pdf objects during export.
  */
@@ -249,8 +250,9 @@ class PdfPageInfo : public PdfObjInfo
 	char *pagelabel;
 	Attribute resources;
 	int rotation;
+	int landscape;
 
-	PdfPageInfo() { pagelabel=NULL; rotation=0; }
+	PdfPageInfo() { pagelabel=NULL; rotation=0; landscape=0; }
 	virtual ~PdfPageInfo();
 };
 
@@ -263,17 +265,19 @@ PdfPageInfo::~PdfPageInfo()
 //----------------forward declarations
 
 static void pdfColorPatch(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount,
-				  Attribute &resources, ColorPatchData *g);
+				  Attribute &resources, ColorPatchData *g, ErrorLog &log,int &warning, DocumentExportConfig *config);
 static void pdfImage(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
-					 LaxInterfaces::ImageData *img, ErrorLog &log,int &warning);
+					 LaxInterfaces::ImageData *img, ErrorLog &log,int &warning, DocumentExportConfig *config);
 static void pdfImagePatch(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
-					 LaxInterfaces::ImagePatchData *img, ErrorLog &log,int &warning);
+					 LaxInterfaces::ImagePatchData *img, ErrorLog &log,int &warning, DocumentExportConfig *config);
 static void pdfGradient(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
-						LaxInterfaces::GradientData *g, ErrorLog &log,int &warning);
+						LaxInterfaces::GradientData *g, ErrorLog &log,int &warning, DocumentExportConfig *config);
 static void pdfPaths(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
-						LaxInterfaces::PathsData *g, ErrorLog &log,int &warning);
+						LaxInterfaces::PathsData *g, ErrorLog &log,int &warning, DocumentExportConfig *config);
 static void pdfCaption(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
-						LaxInterfaces::CaptionData *g, ErrorLog &log,int &warning);
+						LaxInterfaces::CaptionData *g, ErrorLog &log,int &warning, DocumentExportConfig *config);
+static void pdfTextOnPath(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
+						LaxInterfaces::TextOnPath *g, ErrorLog &log,int &warning, DocumentExportConfig *config);
 
 
 //-------------------------------- pdfdumpobj
@@ -304,9 +308,18 @@ void pdfdumpobj(FILE *f,
 				Attribute &resources,
 				LaxInterfaces::SomeData *object,
 				ErrorLog &log,
-				int &warning)
+				int &warning,
+				DocumentExportConfig *config,
+				bool ignore_filter = false)
 {
 	if (!obj) return;
+
+	Group *g = dynamic_cast<Group *>(object);
+    if (g && g->filter && !ignore_filter) {
+        pdfdumpobj(f,objs,obj,stream,objectcount,resources, g->FinalObject(), log,warning,config, true);
+        return; // *** this fails when children exist!!
+    }
+
 	
 	 // push axes
 	psPushCtm();
@@ -318,29 +331,45 @@ void pdfdumpobj(FILE *f,
 	appendstr(stream,scratch);
 	
 	if (!strcmp(object->whattype(),"Group")) {
-		Group *g=dynamic_cast<Group *>(object);
 		for (int c=0; c<g->n(); c++) 
-			pdfdumpobj(f,objs,obj,stream,objectcount,resources,g->e(c),log,warning);
+			pdfdumpobj(f,objs,obj,stream,objectcount,resources,g->e(c),log,warning,config);
 
 	} else if (!strcmp(object->whattype(),"PathsData")) {
 		pdfPaths(f,objs,obj,stream,objectcount,resources,
-				dynamic_cast<PathsData *>(object), log,warning);
+				dynamic_cast<PathsData *>(object), log,warning,config);
 
 	} else if (!strcmp(object->whattype(),"ImagePatchData")) {
 		pdfImagePatch(f,objs,obj,stream,objectcount,resources,
-				dynamic_cast<ImagePatchData *>(object), log,warning);
+				dynamic_cast<ImagePatchData *>(object), log,warning,config);
 
 	} else if (!strcmp(object->whattype(),"ImageData")) {
-		pdfImage(f,objs,obj,stream,objectcount,resources,dynamic_cast<ImageData *>(object), log,warning);
+		pdfImage(f,objs,obj,stream,objectcount,resources,dynamic_cast<ImageData *>(object), log,warning,config);
 
 	} else if (!strcmp(object->whattype(),"ColorPatchData")) {
-		pdfColorPatch(f,objs,obj,stream,objectcount,resources,dynamic_cast<ColorPatchData *>(object));
+		pdfColorPatch(f,objs,obj,stream,objectcount,resources,dynamic_cast<ColorPatchData *>(object), log,warning,config);
 
 	} else if (!strcmp(object->whattype(),"GradientData")) {
-		pdfGradient(f,objs,obj,stream,objectcount,resources,dynamic_cast<GradientData *>(object), log,warning);
+		pdfGradient(f,objs,obj,stream,objectcount,resources,dynamic_cast<GradientData *>(object), log,warning,config);
 
 	} else if (!strcmp(object->whattype(),"CaptionData")) {
-		pdfCaption(f,objs,obj,stream,objectcount,resources,dynamic_cast<CaptionData *>(object), log,warning);
+		if (config->textaspaths) {
+			CaptionData *text = dynamic_cast<CaptionData*>(object);
+			SomeData *path = text->ConvertToPaths(false, NULL);
+			pdfPaths(f,objs,obj,stream,objectcount,resources, dynamic_cast<PathsData *>(path), log,warning,config);
+            path->dec_count();
+		} else {
+			pdfCaption(f,objs,obj,stream,objectcount,resources,dynamic_cast<CaptionData *>(object), log,warning,config);
+		}
+
+	} else if (!strcmp(object->whattype(),"TextOnPath")) {
+		if (config->textaspaths) {
+			TextOnPath *text = dynamic_cast<TextOnPath*>(object);
+			SomeData *path = text->ConvertToPaths(false, NULL);
+			pdfPaths(f,objs,obj,stream,objectcount,resources, dynamic_cast<PathsData *>(path), log,warning,config);
+            path->dec_count();
+		} else {
+			pdfTextOnPath(f,objs,obj,stream,objectcount,resources,dynamic_cast<TextOnPath*>(object), log,warning,config);
+		}
 
 	} else {
 		DrawableObject *dobj=dynamic_cast<DrawableObject*>(object);
@@ -352,7 +381,7 @@ void pdfdumpobj(FILE *f,
 
 			appendstr(stream,"Q\n");
 			psPopCtm(); 
-            pdfdumpobj(f,objs,obj,stream,objectcount,resources,dobje,log,warning);
+            pdfdumpobj(f,objs,obj,stream,objectcount,resources,dobje,log,warning,config);
 
             dobje->dec_count();
 
@@ -550,16 +579,6 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	fprintf(f,"%%\xff\xff\xff\xff\n"); //4 byte binary file indicator
 
 	
-	 //figure out paper orientation
-	 // note this is orientation for only the first paper in papergroup.
-	 // If there are more than one papers, this may not work as expected...
-	 // The ps Orientation comment determines how onscreen viewers will show 
-	 // pages. This can be overridden by the %%PageOrientation: comment
-	//double paperwidth = papergroup->papers.e[0]->box->paperstyle->width;
-	//double paperheight;
-	//int landscape = (papergroup->papers.e[0]->box->paperstyle->flags&1)?1:0;
-
-
 	 //object numbers of various dictionaries
 	int pages=-1;        //Pages dictionary
 	int outlines=-1;     //Outlines dictionary
@@ -575,7 +594,6 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	char scratch[300]; //temp buffer
 	int pgindex;  //convenience variable
 	char *desc=NULL;
-	int plandscape;
 	int paperrotate;
 	int p;
 	
@@ -588,7 +606,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 		if (spread) { delete spread; spread=NULL; }
 		if (doc) spread=doc->imposition->Layout(layout,c);
 		if (spread) desc=spread->pagesFromSpreadDesc(doc);
-		else desc=limbo->Id()?newstr(limbo->Id()):NULL;
+		else desc = limbo->Id() ? newstr(limbo->Id()) : NULL;
 
 		for (p=0; p<papergroup->papers.n; p++) {
 			if (!pageobjs) {
@@ -601,16 +619,14 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			paperrotate=config->paperrotation;
 			if (config->rotate180 && c%2==1) paperrotate+=180;
 			if (paperrotate>=360) paperrotate-=360; 
-			plandscape=(papergroup->papers.e[p]->box->paperstyle->flags&1)?1:0;
-			if (plandscape) {
-				paperrotate+=90;
-				if (paperrotate>=360) paperrotate-=360;
-			}
 			pageobj->rotation = paperrotate;
+			pageobj->landscape=papergroup->papers.e[p]->box->paperstyle->landscape();
 
 			pageobj->pagelabel=newstr(desc);//***should be specific to spread/paper
+			//not we don't need to explicitly worry about landscape: papergroup->papers.e[p]->box->paperstyle->landscape();
+			//since paper->w() and h() take it into account. paperrotate is something different
 			pageobj->bbox.setbounds(0,
-									papergroup->papers.e[p]->box->paperstyle->w(),
+									papergroup->papers.e[p]->box->paperstyle->w(), //takes in to account paper landscape
 									0,
 									papergroup->papers.e[p]->box->paperstyle->h());
 
@@ -620,13 +636,6 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 							 "72 0 0 72 0 0 cm\n"); // convert from inches
 			psConcat(72.,0.,0.,72.,0.,0.);
 
-			 //adjust for landscape
-//			if (paperrotate>0) {
-//				 // paperstyle->width 0 translate   90 rotate  
-//				psConcat(0.,1.,-1.,0., paperwidth,0.);
-//				sprintf(scratch,"0 1 -1 0 %.10f 0 cm\n",paperwidth);
-//				appendstr(stream,scratch);
-//			}
 
 			 //apply papergroup->paper transform
 			transform_invert(m,papergroup->papers.e[p]->m());
@@ -637,24 +646,25 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			
 			 //write out limbo object if any
 			if (limbo && limbo->n()) {
-				pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,limbo,log,warning);
+				pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,limbo,log,warning,config);
 			}
 
 			 //write out any papergroup objects
 			if (papergroup->objs.n()) {
-				pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,&papergroup->objs,log,warning);
+				pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,&papergroup->objs,log,warning,config);
 			}
 
 			if (spread) {
 				 // print out printer marks
 				 // *** later maybe this will be more like pdf printer mark annotations
 				if ((spread->mask&SPREAD_PRINTERMARKS) && spread->marks) {
-					pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,spread->marks,log,warning);
+					pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,spread->marks,log,warning,config);
 				}
 				
 				 // for each paper in paper layout..
 				for (c2=0; c2<spread->pagestack.n(); c2++) {
-					psDpi(doc->imposition->paper->paperstyle->dpi);
+					PaperStyle *defaultpaper=doc->imposition->GetDefaultPaper();
+					psDpi(defaultpaper->dpi);
 					
 					pgindex=spread->pagestack.e[c2]->index;
 					if (pgindex<0 || pgindex>=doc->pages.n) continue;
@@ -677,7 +687,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 						
 					 // for each layer on the page..
 					for (l=0; l<page->layers.n(); l++) {
-						pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,page->layers.e(l),log,warning);
+						pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,page->layers.e(l),log,warning,config);
 					}
 
 					appendstr(stream,"Q\n"); //pop ctm, page transform
@@ -1059,7 +1069,8 @@ static void pdfColorPatch(FILE *f,
 				  char *&stream,
 				  int &objectcount,
 				  Attribute &resources,
-				  ColorPatchData *g)
+				  ColorPatchData *g,
+				  ErrorLog &log,int &warning, DocumentExportConfig *config)
 {
 	//---------generate shading source stream
 	int r,c,          // row and column of a patch, not of the coords, which are *3
@@ -1230,7 +1241,7 @@ static void pdfImage(FILE *f,
 					 int &objectcount,
 					 Attribute &resources,
 					 LaxInterfaces::ImageData *img,
-					 ErrorLog &log,int &warning)
+					 ErrorLog &log,int &warning, DocumentExportConfig *config)
 {
 	 // the image gets put in a postscript box with sides 1x1, and the matrix
 	 // in the image is ??? so must set
@@ -1389,7 +1400,7 @@ static void pdfImagePatch(FILE *f,
 						  int &objectcount,
 						  Attribute &resources,
 						  LaxInterfaces::ImagePatchData *i,
-						  ErrorLog &log,int &warning)
+						  ErrorLog &log,int &warning, DocumentExportConfig *config)
 {
 	 // make an ImageData covering the bounding box
 
@@ -1446,11 +1457,31 @@ static void pdfImagePatch(FILE *f,
 				img.m(0), img.m(1), img.m(2), img.m(3), img.m(4), img.m(5)); 
 	appendstr(stream,scratch);
 	
-	pdfImage(f,objs,obj,stream,objectcount,resources,&img, log,warning);
+	pdfImage(f,objs,obj,stream,objectcount,resources,&img, log,warning,config);
 
 	 // pop axes
 	appendstr(stream,"Q\n");
 	psPopCtm();
+}
+
+//--------------------------------------- pdfCaption() ----------------------------------------
+
+//! Output pdf for a CaptionData. 
+static void pdfTextOnPath(FILE *f,
+					 	PdfObjInfo *objs, 
+						PdfObjInfo *&obj,
+						char *&stream,
+						int &objectcount,
+						Attribute &resources,
+						LaxInterfaces::TextOnPath *text,
+						ErrorLog &log,int &warning, DocumentExportConfig *config)
+{
+	if (!text) return;
+
+	setlocale(LC_ALL,"");
+	log.AddMessage(text->object_id, text->Id(), NULL, _("Unimplemented pdf textonpath out!"), ERROR_Warning);
+	setlocale(LC_ALL,"C");
+	warning++;
 }
 
 //--------------------------------------- pdfCaption() ----------------------------------------
@@ -1463,7 +1494,7 @@ static void pdfCaption(FILE *f,
 						int &objectcount,
 						Attribute &resources,
 						LaxInterfaces::CaptionData *caption,
-						ErrorLog &log,int &warning)
+						ErrorLog &log,int &warning, DocumentExportConfig *config)
 {
 	if (!caption) return;
 
@@ -1544,9 +1575,9 @@ static void pdfCaption(FILE *f,
 			FontManager *fontmanager=GetDefaultFontManager();
 			FontDialogFont *fontinfo=fontmanager->FindFontFromFile(file);
 			if (fontinfo) {
-				if (!strcmp(fontinfo->format, "Type 1")) fonttype="Type1";
-				else if (!strcmp(fontinfo->format, "TrueType")) fonttype="TrueType";
-				else if (!strcmp(fontinfo->format, "CFF")) fonttype="TrueType"; // *** big assumption!!
+				if (     !strcmp(fontmanager->GetTagName(fontinfo->format),"Type 1")) fonttype="Type1";
+				else if (!strcmp(fontmanager->GetTagName(fontinfo->format),"TrueType")) fonttype="TrueType";
+				else if (!strcmp(fontmanager->GetTagName(fontinfo->format),"CFF")) fonttype="TrueType"; // *** big assumption!!
 			}
 
 			fprintf(f,"%ld 0 obj\n",obj->number);
@@ -1722,7 +1753,7 @@ static void pdfGradient(FILE *f,
 						int &objectcount,
 						Attribute &resources,
 						LaxInterfaces::GradientData *g,
-						ErrorLog &log,int &warning)
+						ErrorLog &log,int &warning, DocumentExportConfig *config)
 {
 	if (!g) return;
 
@@ -1869,7 +1900,7 @@ static void pdfPaths(FILE *f,
 					 int &objectcount,
 					 Attribute &resources,
 					 LaxInterfaces::PathsData *pdata,
-					 ErrorLog &log,int &warning)
+					 ErrorLog &log,int &warning, DocumentExportConfig *config)
 {
 	if (!pdata) return;
 

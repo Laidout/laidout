@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2012 by Tom Lechner
@@ -24,8 +23,11 @@
 #include "lsomedataref.h"
 #include "lengraverfilldata.h"
 #include "lcaptiondata.h"
+#include "ltextonpath.h"
+#include "lvoronoidata.h"
 
 #include <lax/interfaces/interfacemanager.h>
+
 #include <lax/lists.cc>
 
 #include <iostream>
@@ -43,7 +45,7 @@ namespace Laidout {
 //---------------------------- Group --------------------------------
 
 //! For somedatafactory.
-Laxkit::anObject *createGroup(Laxkit::anObject *refobj)
+Laxkit::anObject *createGroup(int p, Laxkit::anObject *refobj)
 {
 	return new DrawableObject();
 }
@@ -52,7 +54,7 @@ Laxkit::anObject *createGroup(Laxkit::anObject *refobj)
 //---------------------------- MysteryData --------------------------------
 
 //! For somedatafactory.
-Laxkit::anObject *createMysteryData(Laxkit::anObject *refobj)
+Laxkit::anObject *createMysteryData(int p, Laxkit::anObject *refobj)
 {
 	return new MysteryData();
 }
@@ -61,7 +63,7 @@ Laxkit::anObject *createMysteryData(Laxkit::anObject *refobj)
 //---------------------------- LImageData --------------------------------
 
 //! For somedatafactory.
-Laxkit::anObject *createLImageData(Laxkit::anObject *refobj)
+Laxkit::anObject *createLImageData(int p, Laxkit::anObject *refobj)
 {
 	return new LImageData();
 }
@@ -70,7 +72,7 @@ Laxkit::anObject *createLImageData(Laxkit::anObject *refobj)
 //---------------------------- LPathsData --------------------------------
 
 //! For somedatafactory.
-Laxkit::anObject *createLPathsData(Laxkit::anObject *refobj)
+Laxkit::anObject *createLPathsData(int p, Laxkit::anObject *refobj)
 {
 	return new LPathsData();
 }
@@ -79,7 +81,7 @@ Laxkit::anObject *createLPathsData(Laxkit::anObject *refobj)
 ////---------------------------- LGradientData --------------------------------
 
 //! For somedatafactory.
-Laxkit::anObject *createLGradientData(Laxkit::anObject *refobj)
+Laxkit::anObject *createLGradientData(int p, Laxkit::anObject *refobj)
 {
 	return new LGradientData();
 }
@@ -89,7 +91,7 @@ Laxkit::anObject *createLGradientData(Laxkit::anObject *refobj)
 //---------------------------- LImagePatchData --------------------------------
 
 //! For somedatafactory.
-Laxkit::anObject *createLImagePatchData(Laxkit::anObject *refobj)
+Laxkit::anObject *createLImagePatchData(int p, Laxkit::anObject *refobj)
 {
 	return new LImagePatchData();
 }
@@ -98,7 +100,7 @@ Laxkit::anObject *createLImagePatchData(Laxkit::anObject *refobj)
 //---------------------------- LColorPatchData --------------------------------
 
 //! For somedatafactory.
-Laxkit::anObject *createLColorPatchData(Laxkit::anObject *refobj)
+Laxkit::anObject *createLColorPatchData(int p, Laxkit::anObject *refobj)
 {
 	return new LColorPatchData();
 }
@@ -107,7 +109,7 @@ Laxkit::anObject *createLColorPatchData(Laxkit::anObject *refobj)
 //---------------------------- LSomeDataRef --------------------------------
 
 //! For somedatafactory.
-Laxkit::anObject *createLSomeDataRef(Laxkit::anObject *refobj)
+Laxkit::anObject *createLSomeDataRef(int p, Laxkit::anObject *refobj)
 {
 	return new LSomeDataRef();
 }
@@ -115,7 +117,7 @@ Laxkit::anObject *createLSomeDataRef(Laxkit::anObject *refobj)
 //---------------------------- LEngraverFillData --------------------------------
 
 //! For somedatafactory.
-Laxkit::anObject *createLEngraverFillData(Laxkit::anObject *refobj)
+Laxkit::anObject *createLEngraverFillData(int p, Laxkit::anObject *refobj)
 {
 	return new LEngraverFillData();
 }
@@ -124,9 +126,27 @@ Laxkit::anObject *createLEngraverFillData(Laxkit::anObject *refobj)
 //---------------------------- LCaptionData --------------------------------
 
 //! For somedatafactory.
-Laxkit::anObject *createLCaptionData(Laxkit::anObject *refobj)
+Laxkit::anObject *createLCaptionData(int p, Laxkit::anObject *refobj)
 {
 	return new LCaptionData();
+}
+
+
+//---------------------------- LTextOnPath --------------------------------
+
+//! For somedatafactory.
+Laxkit::anObject *createLTextOnPath(int p, Laxkit::anObject *refobj)
+{
+	return new LTextOnPath();
+}
+
+
+//---------------------------- VoronoiData --------------------------------
+
+//! For somedatafactory.
+Laxkit::anObject *createVoronoiData(int p, Laxkit::anObject *refobj)
+{
+	return new LVoronoiData();
 }
 
 
@@ -138,16 +158,20 @@ void InitializeDataFactory()
 	InterfaceManager *imanager=InterfaceManager::GetDefault(true);
 	ObjectFactory *lobjectfactory = imanager->GetObjectFactory();
 
-	lobjectfactory->DefineNewObject(LO_GROUP,            "Group",           createGroup,            NULL);
-	lobjectfactory->DefineNewObject(LO_MYSTERYDATA,      "MysteryData",     createMysteryData,      NULL);
-	lobjectfactory->DefineNewObject(LAX_IMAGEDATA,       "ImageData",       createLImageData,       NULL);
-	lobjectfactory->DefineNewObject(LAX_PATHSDATA,       "PathsData",       createLPathsData,       NULL);
-	lobjectfactory->DefineNewObject(LAX_GRADIENTDATA,    "GradientData",    createLGradientData,    NULL);
-	lobjectfactory->DefineNewObject(LAX_IMAGEPATCHDATA,  "ImagePatchData",  createLImagePatchData,  NULL);
-	lobjectfactory->DefineNewObject(LAX_COLORPATCHDATA,  "ColorPatchData",  createLColorPatchData,  NULL);
-	lobjectfactory->DefineNewObject(LAX_SOMEDATAREF,     "SomeDataRef",     createLSomeDataRef,     NULL);
-	lobjectfactory->DefineNewObject(LAX_ENGRAVERFILLDATA,"EngraverFillData",createLEngraverFillData,NULL);
-	lobjectfactory->DefineNewObject(LAX_CAPTIONDATA,     "CaptionData",     createLCaptionData,     NULL);
+	lobjectfactory->DefineNewObject(LAX_GROUPDATA,       "Group",           createGroup,            NULL, 0);
+	lobjectfactory->DefineNewObject(LO_MYSTERYDATA,      "MysteryData",     createMysteryData,      NULL, 0);
+	lobjectfactory->DefineNewObject(LAX_IMAGEDATA,       "ImageData",       createLImageData,       NULL, 0);
+	lobjectfactory->DefineNewObject(LAX_PATHSDATA,       "PathsData",       createLPathsData,       NULL, 0);
+	lobjectfactory->DefineNewObject(LAX_GRADIENTDATA,    "GradientData",    createLGradientData,    NULL, 0);
+	lobjectfactory->DefineNewObject(LAX_IMAGEPATCHDATA,  "ImagePatchData",  createLImagePatchData,  NULL, 0);
+	lobjectfactory->DefineNewObject(LAX_COLORPATCHDATA,  "ColorPatchData",  createLColorPatchData,  NULL, 0);
+	lobjectfactory->DefineNewObject(LAX_SOMEDATAREF,     "SomeDataRef",     createLSomeDataRef,     NULL, 0);
+	lobjectfactory->DefineNewObject(LAX_ENGRAVERFILLDATA,"EngraverFillData",createLEngraverFillData,NULL, 0);
+	lobjectfactory->DefineNewObject(LAX_CAPTIONDATA,     "CaptionData",     createLCaptionData,     NULL, 0);
+	lobjectfactory->DefineNewObject(LAX_TEXTONPATH,      "TextOnPath",      createLTextOnPath,      NULL, 0);
+
+	 //experimental:
+	lobjectfactory->DefineNewObject(LAX_VORONOIDATA,     "VoronoiData",     createVoronoiData,      NULL, 0);
 
 	//DBG lobjectfactory->dump_out(stderr,0);
 }

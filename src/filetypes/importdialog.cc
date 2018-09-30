@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (c) 2008-2009 Tom Lechner
@@ -21,6 +20,7 @@
 #include <lax/checkbox.h>
 #include <lax/fileutils.h>
 #include <lax/menubutton.h>
+#include <lax/sliderpopup.h>
 
 #include <lax/lists.cc>
 
@@ -157,7 +157,6 @@ int ImportFileDialog::init()
 	int textheight=app->defaultlaxfont->textheight();
 	int linpheight=textheight+4;
 	char *str=NULL;
-	const char *cstr=NULL;
 	
 	anXWindow *last=NULL;
 	LineInput *linp=NULL;
@@ -205,15 +204,24 @@ int ImportFileDialog::init()
 
 
 	 //---------------------- scale to page ---------------------------
-	if (config->scaletopage==0) cstr=_("no");
-	else if (config->scaletopage==1) cstr=_("down");
-	else if (config->scaletopage==2) cstr=_("yes");
-	last=linp=new LineInput(this,"ScaleToPage",NULL,0, 0,0,0,0,0, 
-						last,object_id,"scaletopage",
-						_("Scale to page:"),cstr,0,
-						0,0,2,2,2,2);
-	linp->tooltip(_("yes, no, or down (scale down to fit, but not up)"));
-	AddWin(linp,1, 200,100,1000,50,0, linp->win_h,0,0,50,0, -1);
+
+	MessageBar *mbar = new MessageBar(this,"scalelabel",NULL,MB_MOVE, 0,0, 0,0, 0, _("Scale To Page:"));
+	AddWin(mbar,1, mbar->win_w,0,mbar->win_w/3,50,0, linpheight,0,0,50,0, -1);
+
+    SliderPopup *p;
+	last=p=new SliderPopup(this,"ScaleToPage",NULL,0, 0,0,0,0,0, NULL,object_id,"scaletopage");
+	p->AddItem(_("No"),1);
+	p->AddItem(_("Yes"),2);
+	p->AddItem(_("Down"),3);
+    
+	if (config->scaletopage==0) p->Select(1);
+	else if (config->scaletopage==1) p->Select(3);
+	else if (config->scaletopage==2) p->Select(2);
+
+    p->WrapToExtent();
+    p->tooltip(_("no,\nyes (scale up or down to fit),\ndown (scale down to fit, but not up)"));
+    AddWin(p,1, p->win_w,0,50,50,0, p->win_h,0,50,50,0, -1);
+	AddHSpacer(0,0,6000,0);
 	AddNull();
 
 	
@@ -251,7 +259,7 @@ int ImportFileDialog::init()
 }
 
 int ImportFileDialog::Event(const EventData *e,const char *mes)
-{//***
+{
 	if (!strcmp(mes,"new file") || !strcmp(mes,"files")) {
 		 //when a new file name is typed or selected
 		FileDialog::Event(e,mes);
@@ -343,6 +351,7 @@ int ImportFileDialog::Event(const EventData *e,const char *mes)
 		}
 		return 0;
 
+	} else if (!strcmp(mes,"scaletopage")) {
 	}
 
 	return FileDialog::Event(e,mes);
@@ -371,6 +380,7 @@ int ImportFileDialog::send(int id)
 	if (!strcasecmp(range,_("all"))) {
 		config->instart=0;
 		config->inend=-1;
+
 	} else {
 		char *tmp;
 		int s,e;
@@ -396,15 +406,15 @@ int ImportFileDialog::send(int id)
 	else config->topage=config->doc->FindPageIndexFromLabel(linp->GetCText());
 	if (config->topage<0) config->topage=0;
 
-	linp=dynamic_cast<LineInput*>(findChildWindowByName("ScaleToPage"));
-	config->scaletopage=2;
-	if (!strcasecmp(linp->GetCText(),"no")) config->scaletopage=0;
-	else if (!strcasecmp(linp->GetCText(),"down")) config->scaletopage=1;
-	else config->scaletopage=2;
+	SliderPopup *spop = dynamic_cast<SliderPopup*>(findChildWindowByName("ScaleToPage"));
+	int pid=spop->GetCurrentItemId();
+	if (pid==1) config->scaletopage=0;
+	else if (pid==2) config->scaletopage=1;
+	else if (pid==3) config->scaletopage=2;
 
 
 	ErrorLog log;
-	int err=import_document(config,log);
+	int err = import_document(config,log, NULL,0);
 
 	if (log.Total()) {
 		dumperrorlog("ImportFile error return:",log);

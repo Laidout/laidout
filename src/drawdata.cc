@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (c) 2004-2011 Tom Lechner
@@ -54,17 +53,6 @@ using namespace std;
 
 namespace Laidout {
 
-//! Push axes and transform by m, draw data, pop axes.
-/*! \ingroup objects
- * *** uh, this is unnecessary? the other one does this already....
- * should it not??
- */
-//void DrawData(Displayer *dp,double *m,SomeData *data,anObject *a1,anObject *a2,unsigned int flags)
-//{
-//	dp->PushAndNewTransform(m);
-//	DrawData(dp,data,a1,a2,flags);
-//	dp->PopAxes();
-//}
 
 //! Just like DrawData(), but don't push data matrix.
 void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned int flags)
@@ -72,6 +60,7 @@ void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,uns
 	//DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(dp);
     //DBG if (ddp && ddp->GetCairo()) cerr <<" DrawDataStraight for "<<data->Id()<<", cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
+	DrawableObject *ddata = dynamic_cast<DrawableObject*>(data);
 
 	if (flags&DRAW_AXES) dp->drawaxes();
 	if (flags&DRAW_BOX && data->validbounds()) {
@@ -83,9 +72,8 @@ void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,uns
 		dp->drawline(flatpoint(data->minx,data->maxy),flatpoint(data->minx,data->miny));
 	}
 
-	if (dynamic_cast<DrawableObject*>(data) && dynamic_cast<DrawableObject*>(data)->n()) {
-		DrawableObject *g=dynamic_cast<DrawableObject *>(data);
-		for (int c=0; c<g->n(); c++) DrawData(dp,g->e(c),a1,a2,flags);
+	if (ddata && ddata->n()) {
+		for (int c=0; c<ddata->n(); c++) DrawData(dp,ddata->e(c),a1,a2,flags);
 
 		if (!strcmp(data->whattype(),"Group")) {
 			// Is explicitly a layer or a group, so we are done drawing!
@@ -197,6 +185,13 @@ void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,uns
  */
 void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned int flags)
 {
+	DrawableObject *ddata = dynamic_cast<DrawableObject*>(data);
+	if (ddata && ddata->filter && (flags & DRAW_NO_FILTER)==0) {
+		data = ddata->FinalObject();
+		DrawData(dp, data, a1, a2, flags|DRAW_NO_FILTER);
+		return;
+	}
+
 	dp->PushAndNewTransform(data->m()); // insert transform first
 	DrawDataStraight(dp,data,a1,a2,flags);
 	dp->PopAxes();
@@ -207,9 +202,15 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
  * This text should be the same as is returned by the object's whattype() function.
  *
  * See src/dataobjects/datafactory.cc for currently allowed object types.
+ *
+ * This is a convenience function that just returns a dynamic_cast of
+ * somedatafactory->NewObject(thetype). If somehow a non-SomeData object is
+ * returned by somedatafactory, it is deleted and NULL returned.
  */
 SomeData *newObject(const char *thetype)
 {
+	anObject *obj = somedatafactory()->NewObject(thetype);
+	if (!dynamic_cast<SomeData*>(obj)) { obj->dec_count(); return NULL; }
 	return dynamic_cast<SomeData*>(somedatafactory()->NewObject(thetype));
 }
 
@@ -227,102 +228,6 @@ int boxisin(flatpoint *points, int n,DoubleBBox *bbox)
 	return 1;
 }
 
-
-//! Append clipping paths to dp.
-/*! \ingroup objects
- * Converts a a group of PathsData, a SomeDataRef to a PathsData, 
- * or a single PathsData to a clipping path. The final region is just 
- * the union of all the paths there.
- *
- * Non-PathsData elements in a group does not break the finding.
- * Those extra objects are just ignored.
- *
- * Returns the number of single paths interpreted, or negative number for error.
- *
- * \todo *** currently, uses all points (vertex and control points)
- *   in the paths as a polyline, not as the full curvy business 
- *   that PathsData are capable of. when ps output of paths is 
- *   actually more implemented, this will change..
- * \todo this would be good to transplant into laxkit
- */
-int SetClipFromPaths(Laxkit::Displayer *dp,LaxInterfaces::SomeData *outline, const double *extra_m)
-{
-	PathsData *path=dynamic_cast<PathsData *>(outline);
-
-	 //If is not a path, but is a reference to a path
-	if (!path && dynamic_cast<SomeDataRef *>(outline)) {
-		SomeDataRef *ref;
-		 // skip all nested SomeDataRefs
-		do {
-			ref=dynamic_cast<SomeDataRef *>(outline);
-			if (ref) outline=ref->thedata;
-		} while (ref);
-		if (outline) path=dynamic_cast<PathsData *>(outline);
-	}
-
-	int n=0; //the number of objects interpreted and that have non-empty paths
-	
-	 // If is not a path, and is not a ref to a path, but is a group,
-	 // then check its elements 
-	if (!path && dynamic_cast<Group *>(outline)) {
-		Group *g=dynamic_cast<Group *>(outline);
-		SomeData *d;
-		double m[6];
-		for (int c=0; c<g->n(); c++) {
-			d=g->e(c);
-
-			 //add transform of group element
-			if (extra_m) transform_mult(m,d->m(),extra_m);
-			else transform_copy(m,d->m());
-
-			n+=SetClipFromPaths(dp,d,m);
-		}
-	}
-	
-	if (!path) {
-		return n;
-	}
-	
-	 // finally append to clip path
-	Coordinate *start,*p;
-	int np,maxp=0;
-	flatpoint *points=NULL;
-	flatpoint pp;
-	int c,c2;
-	for (c=0; c<path->paths.n; c++) {
-		np=0;
-		start=p=path->paths.e[c]->path;
-		if (!p) continue;
-
-		do { p=p->next; np++; } while (p && p!=start);
-		if (p==start) { // only include closed paths
-			if (np>maxp) {
-				if (points) delete[] points; 
-				maxp=np;
-				points=new flatpoint[maxp];
-			}
-			n++;
-			c2=0;
-			do {
-				if (extra_m) pp=transform_point(extra_m,p->p());
-					else pp=p->p();
-				points[c2].x=(int)pp.x;
-				points[c2].y=(int)pp.y;
-
-				p=p->next;	
-				c2++;
-			} while (p && p!=start);
-
-			dp->DrawScreen();
-			dp->Clip(points,np,1);
-			dp->DrawReal();
-			n++;
-		}
-	}
-	if (points) delete[] points;
-	
-	return n;
-}
 
 
 

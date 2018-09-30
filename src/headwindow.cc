@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2006,2010 by Tom Lechner
@@ -208,7 +207,11 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
 
 	 // put a new which in it. default to view
 	if (which) head->Add(which);
-	else head->Add(new ViewWindow(doc),0,1);
+	else {
+		PaperStyle *paper = (doc && doc->imposition ? doc->imposition->GetDefaultPaper() : NULL);
+		if (!strcasecmp(paper->name, "whatever")) paper = NULL;
+		head->Add(new ViewWindow(paper ? doc : NULL),0,1);
+	}
 
 	return head;
 }
@@ -298,7 +301,10 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 	AddWindowType("CommandWindow","Command Prompt",0,newCommandWindowFunc,0);
 	AddWindowType("PaletteWindow","Palette",PALW_DBCLK_TO_LOAD,newPaletteWindowFunc,0);
 	AddWindowType("PlainTextWindow","Text Editor",0,newPlainTextWindowFunc,0);
-	AddWindowType("ObjectTreeWindow","Layers",0,newObjectTreeWindowFunc,0);
+
+	if (laidout->experimental) 
+		AddWindowType("ObjectTreeWindow","Layers",0,newObjectTreeWindowFunc,0);
+
 	//AddWindowType("ColorSliders","Color picker",0,newColorSlidersFunc,0);
 	//AddWindowType("HedronWindow","Polyhedron Unwrapper",0,newHedronWindowFunc,0);
 	//AddWindowType("ButtonBox","Buttons",
@@ -327,12 +333,18 @@ void HeadWindow::InitializeShortcuts()
 	 //initialize window panes' shortcuts
 	ShortcutManager *manager=GetDefaultShortcutManager();
 	anXWindow *win;
+
+	//DBG int i=0;
 	for (int c=0; c<winfuncs.n; c++) {
 		if (manager->FindHandler(winfuncs.e[c]->name)) continue;
+		//DBG cerr << "init shortcuts for "<<winfuncs.e[c]->name<<endl;
+
+		//DBG i++;
+		//DBG if (i!=2) continue;
 
 		win=winfuncs.e[c]->function(NULL,"blah",winfuncs.e[c]->style,NULL);
 		win->GetShortcuts();
-		delete win;
+		win->dec_count();
 	}
 }
 

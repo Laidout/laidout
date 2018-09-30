@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2010,2012-2013 by Tom Lechner
@@ -20,8 +19,10 @@
 #include <lax/tagged.h>
 #include <lax/refptrstack.h>
 #include <lax/interfaces/somedata.h>
+#include <lax/interfaces/groupdata.h>
 #include <lax/interfaces/pathinterface.h>
 #include "objectcontainer.h"
+//#include "../filetypes/objectio.h"
 #include "../guides.h"
 #include "../calculator/values.h"
 //#include "objectfilter.h"
@@ -36,6 +37,8 @@ class DrawableObject;
 class PointAnchor;
 class Document;
 class Page;
+class ObjectIO;
+//class ObjectFilter;
 
 
 //---------------------------------- DrawObjectChain ---------------------------------
@@ -134,30 +137,18 @@ enum BBoxAnchorTypes {
 	BBOXANCHOR_MAX
 };
 
-/*! for DrawableObject::locks */
-enum DrawableObjectLockTypes {
-	OBJLOCK_Contents   = (1<<0),
-	OBJLOCK_Position   = (1<<1),
-	OBJLOCK_Rotation   = (1<<2),
-	OBJLOCK_Scale      = (1<<3),
-	OBJLOCK_Shear      = (1<<4),
-	OBJLOCK_Kids       = (1<<5),
-	OBJLOCK_Selectable = (1<<6)
-};
-
 class DrawableObject :  virtual public ObjectContainer,
 						virtual public Laxkit::Tagged,
-						virtual public LaxInterfaces::SomeData,
+						virtual public LaxInterfaces::GroupData,
 					    virtual public FunctionEvaluator,
 					    virtual public Value
 {
  protected:
  public:
-	DrawableObject *parent;
 	AlignmentRule *parent_link;
 
-	int locks; //lock object contents|matrix|rotation|shear|scale|kids|selectable
-	char locked, visible, prints, selectable;
+	ObjectIO *importer;
+	Laxkit::anObject *importer_data;
 
 	SomeData *clip; //If not a PathsData, then is an object for a softmask
 	LaxInterfaces::PathsData *clip_path;
@@ -171,9 +162,13 @@ class DrawableObject :  virtual public ObjectContainer,
 	//Laxkit::RefPtrStack<ObjectStream> path_streams; //applied to areapath outline
 	//Laxkit::RefPtrStack<ObjectStream> area_streams; //applied into areapath area
 
-	//Laxkit::RefPtrStack<ObjectFilter> filters;
+	//--filters:
 	double alpha; //object alpha applied to anything drawn by this and kids
 	double blur; //one built in filter?
+	Laxkit::anObject *filter; // *** can't declare as ObjectFilter directly due to absurd filefilter.h definitions.. need to fix this!
+	virtual DrawableObject *FinalObject();
+	virtual int SetFilter(Laxkit::anObject *nfilter, int absorb);
+
 
 	//Laxkit::RefPtrStack<anObject *> refs; //what other resources this objects depends on?
 
@@ -190,26 +185,21 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual const char *Id();
 	virtual const char *Id(const char *newid);
 
+	virtual int Selectable();
+
 	 //sub classes MUST redefine pointin() and FindBBox() to point to the proper things.
 	 //default is point to things particular to Groups.
-	virtual int pointin(flatpoint pp,int pin=1);
+	//virtual int pointin(flatpoint pp,int pin=1);
 	virtual void FindBBox();
 	virtual int AddAlignmentRule(AlignmentRule *newlink, bool replace=false, int where=-1);
 	virtual int RemoveAlignmentRule(int index);
 	virtual void UpdateFromRules();
-	virtual LaxInterfaces::SomeData *GetParent();
-	virtual Laxkit::Affine GetTransformToContext(bool invert, int partial);
-
-	virtual int Selectable();
-	virtual int Visible();
-	virtual int IsLocked(int which);
-	virtual void Lock(int which);
-	virtual void Unlock(int which);
+	//virtual Laxkit::Affine GetTransformToContext(bool invert, int partial);
 
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_out_group(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
-	virtual void dump_in_group_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	//virtual void dump_out_group(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	//virtual void dump_in_group_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 	
 	 //new functions for DrawableObject
 	virtual LaxInterfaces::SomeData *EquivalentObject();
@@ -231,24 +221,11 @@ class DrawableObject :  virtual public ObjectContainer,
 
 
 	 //Group specific functions:
-	Laxkit::RefPtrStack<LaxInterfaces::SomeData> kids;
-	virtual LaxInterfaces::SomeData *FindChild(const char *id);
-	virtual LaxInterfaces::SomeData *findobj(LaxInterfaces::SomeData *d,int *n=NULL);
-	virtual int findindex(LaxInterfaces::SomeData *d) { return kids.findindex(d); }
-	virtual int push(LaxInterfaces::SomeData *obj);
-	virtual int pushnodup(LaxInterfaces::SomeData *obj);
-	virtual int remove(int i);
-	virtual LaxInterfaces::SomeData *pop(int which);
-	virtual int popp(LaxInterfaces::SomeData *d);
-	virtual void flush();
-	virtual void swap(int i1,int i2) { kids.swap(i1,i2); }
-	virtual int slide(int i1,int i2);
-
 	//virtual int contains(SomeData *d,FieldPlace &place);
 	//virtual LaxInterfaces::SomeData *getObject(FieldPlace &place,int offset=0);
 	//virtual int nextObject(FieldPlace &place, FieldPlace &first, int curlevel, LaxInterfaces::SomeData **d=NULL);
 
-	virtual int GroupObjs(int n, int *which);
+	virtual int GroupObjs(int n, int *which, int *newgroupindex);
 	virtual int UnGroup(int which);
 	virtual int UnGroup(int n,const int *which);
 	
@@ -268,14 +245,20 @@ class DrawableObject :  virtual public ObjectContainer,
 	                     Value **value_ret, Laxkit::ErrorLog *log);
 };
 
+typedef DrawableObject Group;
+
 
 //------------------------------------ AffineValue ------------------------------------------------
 ObjectDef *makeAffineObjectDef();
 class AffineValue : virtual public Value, virtual public Laxkit::Affine, virtual public FunctionEvaluator
 {
   public:
+	static int TypeNumber();
+
 	AffineValue();
 	AffineValue(const double *m);
+	virtual int type();
+    virtual const char *whattype() { return "AffineValue"; }
 	virtual ObjectDef *makeObjectDef();
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
@@ -293,6 +276,7 @@ class BBoxValue : virtual public Value, virtual public Laxkit::DoubleBBox, virtu
   public:
 	BBoxValue();
 	BBoxValue(double mix,double max,double miy,double may);
+    virtual const char *whattype() { return "BBoxValue"; }
 	virtual ObjectDef *makeObjectDef();
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();

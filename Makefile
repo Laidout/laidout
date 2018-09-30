@@ -25,11 +25,14 @@ INSTALLDIR=install -d
 
 LAIDOUTNAME=laidout-$(LAIDOUTVERSION)
 
-laidout: 
+laidout: touchdepends
 	cd src && $(MAKE)
 	cd src/po && $(MAKE)
 
 all: laidout docs
+
+icons:
+	cd src/icons && make
 
 docs:
 	cd docs && doxygen
@@ -48,7 +51,7 @@ install:
 	$(INSTALLDIR) $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/icons
 	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/icons src/icons/*.png
 	$(INSTALLDIR) $(SHAREDIR)/applications
-	$(INSTALL) -m644 debian/laidout.desktop $(SHAREDIR)/applications
+	$(INSTALL) -m644 deb/laidout.desktop $(SHAREDIR)/applications
 	$(INSTALLDIR) $(SHAREDIR)/icons/hicolor/48x48/apps
 	$(INSTALL) -m644 src/icons/laidout-48x48.png $(SHAREDIR)/icons/hicolor/48x48/apps/laidout.png
 	$(INSTALLDIR) $(SHAREDIR)/icons/hicolor/scalable/apps
@@ -57,6 +60,8 @@ install:
 	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop/processing coop/processing/*
 	$(INSTALLDIR)       $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop/scribus
 	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop/scribus coop/scribus/*
+	$(INSTALLDIR)       $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/plugins
+	$(INSTALL) -m755 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/plugins src/plugins/*.so
 
 	rm -f $(BINDIR)/laidout
 	ln -s $(LAIDOUTNAME) $(BINDIR)/laidout
@@ -77,10 +82,11 @@ uninstall:
 	rm -f  $(BINDIR)/$(LAIDOUTNAME)
 	cd src/po && $(MAKE) uninstall
 
-#link debian to debian-lo if not there.. Debian guidelines say don't put 
+#link debian to deb if not there.. Debian guidelines say don't put 
 #a "debian" directory in upstream sources by default.
-deb:
-	if [ ! -e debian ] ; then ln -s debian-lo debian; fi
+deb: touchdepends
+	touch Makefile-toinclude
+	if [ ! -e debian ] ; then ln -s deb debian; fi
 	dpkg-buildpackage -rfakeroot
 
 hidegarbage: touchdepends
@@ -102,8 +108,23 @@ touchdepends:
 	touch src/printing/makedepend
 	touch src/api/makedepend
 	touch src/polyptych/src/makedepend
+	touch src/plugins/makedepend
 
-.PHONY: all laidout clean docs install uninstall hidegarbage unhidegarbage depends touchdepends
+dist-clean: clean
+	rm -f Makefile-toinclude config.log src/version.h src/configured.h
+	rm -f src/makedepend               src/makedepend.bak
+	rm -f src/calculator/makedepend    src/calculator/makedepend.bak
+	rm -f src/dataobjects/makedepend   src/dataobjects/makedepend.bak
+	rm -f src/filetypes/makedepend     src/filetypes/makedepend.bak
+	rm -f src/impositions/makedepend   src/impositions/makedepend.bak
+	rm -f src/interfaces/makedepend    src/interfaces/makedepend.bak
+	rm -f src/printing/makedepend      src/printing/makedepend.bak
+	rm -f src/api/makedepend           src/api/makedepend.bak
+	rm -f src/polyptych/src/makedepend src/polyptych/src/makedepend.bak
+	rm -f src/po/*.mo
+
+.PHONY: all icons laidout dist-clean clean docs install uninstall hidegarbage unhidegarbage depends touchdepends deb
 clean:
 	cd src && $(MAKE) clean
-	
+	cd src/polyptych && $(MAKE) clean
+

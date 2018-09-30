@@ -3,8 +3,10 @@
 # --help
 # --prefix=/blah/blah
 
+CONFIGCOMMAND="./configure $@"
 
-LAIDOUTVERSION=0.096
+
+LAIDOUTVERSION=0.096.1
 
  # finalprefix is where things eventually get installed. For deb packaging, this is different than prefix
 FINALPREFIX=""
@@ -17,17 +19,28 @@ LAXDIR="`pwd`/laxkit/lax"
 
 GS="/usr/bin/gs"
 
+ # for some plugins:
+GEGLVERSION='gegl-0.3'
+PYTHONVERSION='python3.6'
+
+
 LAIDOUT_NOGL=""
 USINGGL="yes"
 USESQLITE="yes"
 ONAMAC="no"
 FORCE="no"
 
+EXTRA_CPPFLAGS=""
+EXTRA_LDFLAGS=""
+EXTRA_PKG=
+
  ##
  ## Parse options
  ##
 while true ; do
   ARG=$1;
+#  echo "arg: $ARG"
+
   if [ x$ARG == x ] ; then break; fi
   
   option=`expr "x$ARG" : 'x\([^=]*\)=.*'`;
@@ -36,7 +49,8 @@ while true ; do
   fi
   
   optarg=`expr "x$ARG" : 'x[^=]*=\(.*\)'`;
-  #echo "option=$option,   optarg=$optarg"
+#  echo "option=$option,   optarg=$optarg"
+#  echo
 
   case "$option" in
     -h | --help) 
@@ -57,7 +71,15 @@ while true ; do
 		echo " --language=path/to/langs     The path where translation files should be installed."
 		echo "                                This will normally be 'share/locale', and the files"
 		echo "                                themselves then get put in prefix/share/locale/*."
+		echo " --extra-cppflags             Any extra compile flags, such as location of includes not"
+		echo "                                otherwise detected"
+		echo " --extra-ldflags              Any extra linking flags, such as  -I/usr/lib64/glib-2.0/include/"
+		echo "                                for Fedora includes"
+		echo " --pkg-config-path            Any directories to tack onto environment PKG_CONFIG_PATH,"
+		echo "                                for configuring convenience. Should be a colon separated list."
         echo " --disable-sqlite             Optional. Used to get font tags in Fontmatrix database (if it exists)"
+        echo " --gegl-version               Default is gegl-3.0"
+#       echo " --python-version             Default is python3.6"
 		echo " --nogl                       Do not compile with gl based features"
 		echo " --force                      Try to compile even if libraries are not detected"
         echo ""
@@ -67,9 +89,52 @@ while true ; do
 		FORCE="yes";
 		shift ;;
 
+	--extra-cppflags)
+        if [ -z $optarg ] ; then 
+          optarg=$2
+          shift
+        fi
+		EXTRA_CPPFLAGS=$optarg
+		shift ;;
+
+	--extra-ldflags)
+        if [ -z $optarg ] ; then 
+          optarg=$2
+          shift
+        fi
+		EXTRA_LDFLAGS=$optarg
+		shift ;;
+
+	--pkg-config-path)
+        if [ -z $optarg ] ; then 
+          optarg=$2
+          shift
+        fi
+		EXTRA_PKG=$optarg
+        #echo "extra_pkg = $EXTRA_PKG"
+		shift ;;
+
 	--disable-sqlite)
 		unset USESQLITE
 		shift;;
+
+    --gegl-version)  
+        if [ -z $optarg ] ; then 
+          optarg=$2
+          shift
+        fi
+		GEGLVERSION="$optarg"
+        #echo gegl version $optarg ;
+        shift ;;
+
+    --python-version)  
+        if [ -z $optarg ] ; then 
+          optarg=$2
+          shift
+        fi
+		PYTHONVERSION="$optarg"
+        #echo gegl version $optarg ;
+        shift ;;
 
     --finalprefix)  
         if [ -z $optarg ] ; then 
@@ -109,7 +174,7 @@ while true ; do
           shift
         fi
 		LAXDIR="$optarg"
-		echo laxkit $optarg; 
+		#echo laxkit $optarg; 
 		shift ;;
     --language)
         if [ -z $optarg ] ; then 
@@ -133,18 +198,31 @@ done
 if [ xxx$FINALPREFIX == xxx ] ; then FINALPREFIX=$PREFIX; fi
 
 
+if [ xxx$EXTRA_PKG != xxx ] ; then
+#	if [ xxx$PKG_CONFIG_PATH != xxx ] ; then
+#		export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$EXTRA_PKG;
+#	else 
+		export PKG_CONFIG_PATH=$EXTRA_PKG;
+#	fi
+fi
+
+
 # do check for required libraries:
 
+ ## todo:
+ ##   to make this actually useful, sometimes need to do a version check, or override the default link.
+ ##   so, each lib needs [libname, minimum version, linking text]
+ ##
  ## The stuff in NEED can be checked with pkg-config. Not all libraries
  ## can be checked this way! (notably cups, apparently)
-NEED='x11 xext freetype2 imlib2 libssl cairo'
-NEEDGL='ftgl'
+NEED="x11 xext freetype2 libssl imlib2 cairo harfbuzz $GEGLVERSION"
+NEEDGL='ftgl GraphicsMagick++'
 NUM='1'
 
 for NAME in $NEED; do
     echo -n Checking for $NAME......;
     if [ "`pkg-config --exists --print-errors --errors-to-stdout $NAME`"xxx != "xxx" ] ; then 
-        echo "You need to install the development package of $NAME."; 
+        echo "You may need to install the development package of $NAME."; 
         NUM="";
     else 
         echo "ok"; 
@@ -156,7 +234,7 @@ if [ $USINGGL == "yes" ]; then
 	for NAME in $NEEDGL; do
 		echo -n Checking for $NAME......;
 		if [ "`pkg-config --exists --print-errors --errors-to-stdout $NAME`"xxx != "xxx" ] ; then 
-			echo "You need to install the development package of $NAME."; 
+			echo "You may need to install the development package of $NAME."; 
 			NUM="";
 		else 
 			echo "ok"; 
@@ -176,30 +254,24 @@ for NAME in $OPTIONAL; do
     fi
 done
 
+#EXTRAINCLUDEPATHS=("/usr/local/include/" "/usr/include/")
 
+ ## readline doesn't seem to have a pkg-config entry, so do this hackier check
+echo -n Checking for readline......;
+#---attempt 3, check for existence of cups-config program:
+if [ ! -e /usr/local/include/readline/readline.h -a \
+	 ! -e /usr/include/readline/readline.h  ] ; then 
+    echo "Can't find libreadline headers."; 
+    NUM="";
+else echo "ok";
+fi
 
  ## cups doesn't seem to have a pkg-config entry, so do this hackier check
 echo -n Checking for cups......;
 #---attempt 3, check for existence of cups-config program:
 if [ ! `builtin type -p cups-config` ] ; then 
-    echo "You need to install the development package of Cups."; 
+    echo "Can't find Cups headers."; 
     NUM="";
-
-#---attempt 2:
-#if [ ! -d /usr/include/cups \
-#	 -a ! -d /usr/local/include/cups ] ; then 
-#    echo "You need to install the development package of Cups."; 
-#    NUM="";
-
-#---attempt 1:
-#if [ ! -e /usr/lib/libcups.so -a \
-#	 ! -e /usr/local/lib/libcups.so -a \
-#	 ! -e /usr/lib64/libcups.so -a \
-#	 ! -e /usr/local/lib64/libcups.so -a \
-#	 ! -e /usr/lib/i386-linux-gnu/libcups.so -a \
-#	 ! -e /usr/lib/x86_64-linux-gnu/libcups.so ] ; then 
-#    echo "You need to install the development package of Cups."; 
-#    NUM="";
 
 else echo "ok"; 
 fi
@@ -209,10 +281,12 @@ echo
 
 
 if [ "$NUM" != "1" -a $FORCE=="no" ]; then
-    echo "Too many problems to proceed! Use --force to override."
+    echo "Too many problems to proceed!"
+	echo "Use --force to override. You may have to adjust CPPFLAGS and LDFLAGS in Makefiles,"
+	echo "or pass in includes with --extra-cppflags."
 	echo
 	echo "On debian based systems, you might try installing all dependencies with this:"
-	echo "    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev libcairo2-dev"
+	echo "    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev libcairo2-dev libharfbuzz-dev"
 	exit 1
 fi
 
@@ -269,15 +343,29 @@ echo "Generating ./Makefile-toinclude..."
 
 echo " # ---- THIS FILE IS AUTOMATICALLY GENERATED -----" > Makefile-toinclude
 echo " # ----          BY ../configure             -----" >> Makefile-toinclude
-echo "" >> Makefile-toinclude
-echo "PREFIX=$PREFIX"                 >> Makefile-toinclude
-echo "LAIDOUTVERSION=$LAIDOUTVERSION" >> Makefile-toinclude
-echo "LAXDIR=$LAXDIR"                 >> Makefile-toinclude
-echo "LAXIDIR=$LAXDIR/interfaces"     >> Makefile-toinclude
-echo "LANGUAGE_PATH=$PREFIX/$LANGUAGE_PATH"   >> Makefile-toinclude
-echo "POLYPTYCHBASEDIR="`pwd`"/src"     >> Makefile-toinclude
-echo "LAIDOUT_USING_GL=$USINGGL"        >> Makefile-toinclude
+echo ""                                     >> Makefile-toinclude
+echo "PREFIX=$PREFIX"                       >> Makefile-toinclude
+echo "LAIDOUTVERSION=$LAIDOUTVERSION"       >> Makefile-toinclude
+echo "LAXDIR=$LAXDIR"                       >> Makefile-toinclude
+echo "LAXIDIR=$LAXDIR/interfaces"           >> Makefile-toinclude
+echo "LANGUAGE_PATH=$PREFIX/$LANGUAGE_PATH" >> Makefile-toinclude
+echo "POLYPTYCHBASEDIR="`pwd`"/src"         >> Makefile-toinclude
+echo "LAIDOUT_USING_GL=$USINGGL"            >> Makefile-toinclude
 if [ x$USESQLITE  != x ] ; then echo "LAIDOUT_USES_SQLITE=yes" >> Makefile-toinclude; fi
+echo "EXTRA_CPPFLAGS=$EXTRA_CPPFLAGS"       >> Makefile-toinclude
+echo "EXTRA_LDFLAGS=$EXTRA_LDFLAGS"         >> Makefile-toinclude
+echo "EXTRA_PKG=$EXTRA_PKG"                 >> Makefile-toinclude
+echo ""                                     >> Makefile-toinclude
+echo "GEGLVERSION=$GEGLVERSION"             >> Makefile-toinclude
+#echo "PYTHONVERSION=$PYTHONVERSION"         >> Makefile-toinclude
+echo ""                                     >> Makefile-toinclude
+echo 'ifeq ($(PKG_CONFIG_PATH)xxx, xxx)'    >> Makefile-toinclude
+echo 'export PKG_CONFIG_PATH=$(EXTRA_PKG)'  >> Makefile-toinclude
+echo "else"                                 >> Makefile-toinclude
+echo 'PKG_CONFIG_PATH+=:$(EXTRA_PKG)'       >> Makefile-toinclude
+echo 'export PKG_CONFIG_PATH'               >> Makefile-toinclude
+echo "endif"                                >> Makefile-toinclude
+
 echo "" >> Makefile-toinclude
 
 
@@ -287,7 +375,9 @@ if [ x$USESQLITE  != x ] ; then USESQLITE="yes"; else USESQLITE="no"; fi
  ##
  ## generate config.log
  ##
-echo "       Configuration Summary"                > config.log
+echo "$CONFIGCOMMAND"                              > config.log
+echo                                              >> config.log
+echo "       Configuration Summary"               >> config.log
 echo "      generated by ./configure"             >> config.log
 echo "----`date`---"                              >> config.log
 echo "-----------------------------------"        >> config.log
@@ -298,6 +388,11 @@ echo "  Laxkit headers:  $LAXDIR"                 >> config.log
 echo "     Ghostscript:  $GS"                     >> config.log
 echo "       Enable GL:  $USINGGL"                >> config.log
 echo "          Sqlite:  $USESQLITE"              >> config.log
+echo "  Extra cppflags:  $EXTRA_CPPFLAGS"         >> config.log
+echo "   Extra ldflags:  $EXTRA_LDFLAGS"          >> config.log
+echo "  Pkgconfig path:  $EXTRA_PKG"              >> config.log
+echo "    Gegl version:  $GEGLVERSION"            >> config.log
+#echo "  Python version:  $PYTHONVERSION"          >> config.log
 
 
 echo 
@@ -310,8 +405,13 @@ echo "  Laxkit headers:  $LAXDIR"
 echo "     Ghostscript:  $GS"
 echo "       Enable GL:  $USINGGL"
 echo "          Sqlite:  $USESQLITE"             
+echo "  Extra cppflags:  $EXTRA_CPPFLAGS"
+echo "   Extra ldflags:  $EXTRA_LDFLAGS"
+echo "  Pkgconfig path:  $EXTRA_PKG"
+echo "    Gegl version:  $GEGLVERSION"
+#echo "  Python version:  $PYTHONVERSION"
 echo
-echo "If compiling from svn, please follow \"COMPILING FROM SOURCE\" in README.md.";
+echo "If compiling from git, please follow \"COMPILING FROM SOURCE\" in README.md.";
 echo
 echo "Otherwise, now type make to build.";
 

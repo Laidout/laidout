@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2007,2011 by Tom Lechner
@@ -116,6 +115,7 @@ PaperInterface::~PaperInterface()
 	//DBG cerr <<"PaperInterface destructor.."<<endl;
 
 	if (maybebox) maybebox->dec_count();
+	if (curbox) { curbox->dec_count(); curbox=NULL; }
 	if (papergroup) papergroup->dec_count();
 	if (doc) doc->dec_count();
 	if (sc) sc->dec_count();
@@ -308,6 +308,7 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			flatpoint fp=dp->screentoreal(rx,ry);
 			obj->origin(fp);
 			papergroup->objs.push(obj);
+			obj->dec_count();
 			return 0;
 
 		} else if (i==PAPERM_GrayBars) {
@@ -316,6 +317,7 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			flatpoint fp=dp->screentoreal(rx,ry);
 			obj->origin(fp);
 			papergroup->objs.push(obj);
+			obj->dec_count();
 			return 0;
 		}
 		return 0;
@@ -444,7 +446,9 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 	dp->LineAttributes(-1,LineSolid,CapButt,JoinMiter);
 	dp->LineWidthScreen(w);
 	//dp->PushAndNewTransform(data->m());
-	double sshadow = shadow/dp->Getmag();
+
+	//double sshadow = shadow*dp->Getmag(); <- this one scales properly
+	double sshadow = shadow;
 
 	PaperBox *box=data->box;
 	flatpoint p[4];
@@ -463,7 +467,7 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 		if (shadow) {
 			dp->NewFG(0,0,0);
 			dp->PushAxes();
-			dp->ShiftScreen(sshadow,-sshadow);
+			dp->ShiftScreen(sshadow,sshadow);
 			dp->drawlines(p,4,1,1);
 			dp->PopAxes();
 			dp->LineWidthScreen(w);
@@ -471,11 +475,11 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 		
 		 //draw white fill or plain outline
 		if (fill || shadow) {
-			dp->NewFG(data->red>>8,data->green>>8,data->blue>>8);
+			dp->NewFG(&data->outlinecolor);
 			dp->NewBG(~0);
 			dp->drawlines(p,4,1,2);
 		} else {
-			dp->NewFG(data->red>>8,data->green>>8,data->blue>>8);
+			dp->NewFG(&data->outlinecolor);
 			dp->drawlines(p,4,1,0);
 		}
 
@@ -533,25 +537,34 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 	//dp->PopAxes(); //spread axes
 }
 
-void PaperInterface::DrawGroup(PaperGroup *group,char shadow,char fill,char arrow)
+/*! If which&1 draw paper outline. If which&2, draw paper objects.
+ */
+void PaperInterface::DrawGroup(PaperGroup *group, char shadow, char fill, char arrow, int which)
 {
-	 //draw shadow under whole group
-	if (shadow) {
+	if (which&1) {
+		 //draw shadow under whole group
+		if (shadow) {
+			for (int c=0; c<group->papers.n; c++) {
+				dp->PushAndNewTransform(group->papers.e[c]->m());
+				DrawPaper(group->papers.e[c],MediaBox, fill,laidout->prefs.pagedropshadow,0);
+				dp->PopAxes(); 
+			}
+		}
+
+		 //draw paper
 		for (int c=0; c<group->papers.n; c++) {
 			dp->PushAndNewTransform(group->papers.e[c]->m());
-			DrawPaper(group->papers.e[c],MediaBox, fill,laidout->prefs.pagedropshadow,0);
+			DrawPaper(group->papers.e[c],drawwhat, fill,0,arrow);
 			dp->PopAxes(); 
 		}
 	}
-	for (int c=0; c<group->papers.n; c++) {
-		dp->PushAndNewTransform(group->papers.e[c]->m());
-		DrawPaper(group->papers.e[c],drawwhat, fill,0,arrow);
-		dp->PopAxes(); 
-	}
 
-	if (group->objs.n()) {
-		for (int c=0; c<group->objs.n(); c++) {
-			Laidout::DrawData(dp,group->objs.e(c),NULL,NULL,0);
+	 //draw papergroup objects
+	if (which&2) {
+		if (group->objs.n()) {
+			for (int c=0; c<group->objs.n(); c++) {
+				Laidout::DrawData(dp,group->objs.e(c),NULL,NULL,0);
+			}
 		}
 	}
 }
@@ -621,18 +634,15 @@ void PaperInterface::createMaybebox(flatpoint p)
 		box=papergroup->papers.e[0]->box;
 		boxdata=papergroup->papers.e[0];
 	} else if (doc) {
-		box=new PaperBox((PaperStyle *)doc->imposition->paper->paperstyle->duplicate());
-		box->paperstyle->dec_count();
+		box=new PaperBox((PaperStyle *)doc->imposition->paper->paperstyle->duplicate(), true);
 		del=1;
 	} else {
-		box=new PaperBox((PaperStyle *)laidout->papersizes.e[0]->duplicate());
-		box->paperstyle->dec_count();
+		box=new PaperBox((PaperStyle *)laidout->papersizes.e[0]->duplicate(), true);
 		del=1;
 	}
 
 	maybebox=new PaperBoxData(box); //incs count of box
-	maybebox->red=maybebox->blue=65535;
-	maybebox->green=0;
+	maybebox->outlinecolor.rgbf(1.0, 0.0, 1.0);
 	if (boxdata) {
 		maybebox->xaxis(boxdata->xaxis());
 		maybebox->yaxis(boxdata->yaxis());
@@ -668,6 +678,7 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 			papergroup=new PaperGroup;
 			papergroup->Name=new_paper_group_name();
 			laidout->project->papergroups.push(papergroup);
+			//papergroup->dec_count();
 			
 			//DBG fp=dp->screentoreal(x,y);
 			//DBG cerr <<"4 *****ARG**** "<<fp.x<<","<<fp.y<<endl;

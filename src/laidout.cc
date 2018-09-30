@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2013 by Tom Lechner
@@ -43,6 +42,7 @@
 #include "impositions/singles.h"
 #include "impositions/netimposition.h"
 #include "impositions/impositioneditor.h"
+#include "interfaces/nodeeditor.h"
 #include "headwindow.h"
 #include "version.h"
 #include "stylemanager.h"
@@ -53,13 +53,18 @@
 #include "api/functions.h"
 #include "newdoc.h"
 
+
+//template implementations
 #include <lax/lists.cc>
 #include <lax/refptrstack.cc>
 
+
 #include <sys/stat.h>
+#include <glob.h>
 #include <cstdio>
 
 #ifdef LAX_USES_CAIRO
+//for debugging below
 #include <cairo/cairo-xlib.h>
 #endif
 
@@ -74,6 +79,7 @@ using namespace std;
 
 //! The mother of all Laidout classes.
 namespace Laidout {
+
 
 ObjectDef stylemanager(NULL,"Laidout",_("Laidout"),_("Global Laidout namespace"),"namespace",NULL,NULL);
 
@@ -91,8 +97,8 @@ const char *LaidoutVersion()
 		const char *outstr=
 						_("Laidout Version %s\n"
 						  "http://www.laidout.org\n"
-						  "by Tom Lechner, sometime between 2006 and 2014\n"
-						  "Released under the GNU Public License, Version 2.\n"
+						  "by Tom Lechner, sometime between 2006 and 2018\n"
+						  "Released under the GNU Public License, Version 3.\n"
 						  " (using Laxkit Version %s)");
 		version_str=new char[1+strlen(outstr)+strlen(LAIDOUT_VERSION)+strlen(LAXKIT_VERSION)];
 		sprintf(version_str,outstr,LAIDOUT_VERSION,LAXKIT_VERSION);
@@ -231,7 +237,7 @@ LaidoutApp::LaidoutApp()
   : anXApp(),
 	preview_file_bases(2)
 {	
-	autosaveid=0;
+	autosave_timerid=0;
 	
 	icons=IconManager::GetDefault();
 
@@ -270,6 +276,9 @@ LaidoutApp::LaidoutApp()
 	GetUnitManager()->PixelSize(1./72,UNITS_Inches);
 
 	resources.SetAppName("laidout",LAIDOUT_VERSION);
+
+	pipeout = false;
+	pipeoutarg = NULL;
 }
 
 //! Destructor, only have to delete project!
@@ -283,6 +292,13 @@ LaidoutApp::~LaidoutApp()
 //	interfacepool.flush();
 //	PathInterface::basepathops.flush();
 
+	//we need special treatment of dls:
+	while (plugins.n) {
+		PluginBase *plugin = plugins.pop();
+		plugin->Finalize();
+		DeletePlugin(plugin);
+	}
+
 	dumpOutResources();
 
 	if (defaultpaper)       defaultpaper->dec_count();
@@ -291,14 +307,34 @@ LaidoutApp::~LaidoutApp()
 	if (config_dir)         delete[] config_dir;
 	if (ghostscript_binary) delete[] ghostscript_binary;
 	if (calculator)		    calculator->dec_count();
+	delete[] pipeoutarg;
 }
 
-
-int LaidoutApp::Idle(int tid)
+int LaidoutApp::close()
 {
-	if (tid==autosaveid) { Autosave(); return 0; }
+	anXApp::close();
+	return 0;
+}
+
+int LaidoutApp::Idle(int tid, double delta)
+{
+	if (tid==autosave_timerid) { Autosave(); return 0; }
 
 	return 1;
+}
+
+/*! Call this when autosave settings are updated.
+ * It will remove old autosave timer and add a new one. Note this starts the timer clock at 0 again.
+ */
+void LaidoutApp::UpdateAutosave()
+{
+	if (autosave_timerid) removetimer(this, autosave_timerid);
+
+	if (prefs.autosave && prefs.autosave_time>0) {
+		int ms=prefs.autosave_time*60*1000;
+		DBG cerr <<"Will autosave every "<<int(prefs.autosave_time)<<":"<<prefs.autosave_time<<" min"<<endl;
+		autosave_timerid=addtimer(this, ms,ms, -1);
+	}
 }
 
 /*! Return 0 for success, or nonzero for unable to save.
@@ -318,9 +354,9 @@ int LaidoutApp::Autosave()
 	//  saves documents only, not project at the moment
 
 	const char *bname;
+	const char *ext;
 	char *fmt;
 	char *fname;
-	const char *oldname;
 	int status;
 	Document *doc;
 	ErrorLog log;
@@ -329,17 +365,45 @@ int LaidoutApp::Autosave()
 		doc=project->docs.e[c]->doc;
 		if (!doc) continue;
 
-		bname=lax_basename(doc->Saveas());
 		fmt=newstr(prefs.autosave_path);
-		fname=replaceallname(fmt, "%f", isblank(bname)?"untitled":bname);
+
+		if (strstr(fmt, "%f")) {
+			bname=lax_basename(doc->Saveas());
+			fname=replaceallname(fmt, "%f", isblank(bname)?"untitled":bname);
+			delete[] fmt;  fmt=fname;  fname=NULL;
+		}
+
+		if (strstr(fmt, "%e")) {
+			ext=lax_extension(doc->Saveas());
+			if (!isblank(ext)) {
+				fname=replaceallname(fmt, "%e", ext);
+				delete[] fmt;  fmt=fname;  fname=NULL;
+			}
+		}
+
+		if (strstr(fmt, "%b")) {
+			char *bbname=newstr(lax_basename(doc->Saveas()));
+			ext=lax_extension(bbname);
+			if (ext) {
+				bbname[ext-bbname-1]='\0';
+			}
+
+			fname=replaceallname(fmt, "%b", bbname);
+			delete[] fmt;  fmt=fname;  fname=NULL;
+			delete[] bbname;
+		}
+
+		//if (strstr(fmt, "#")) {
+		//}
+
+		if (fname==NULL) { fname=fmt; fmt=NULL; }
 
 		//expand with dir of doc->saveas
 		//fname should be either absolute or relative to that saveas
-		oldname=newstr(doc->Saveas()); //normally this will be full path of file
 		expand_home_inplace(fname);
 		if (is_relative_path(fname)) {
 			 //need to expand to a place relative to the original file
-			char *path=lax_dirname(oldname, 1);
+			char *path=lax_dirname(doc->Saveas(), 1);
 			if (path) {
 				if (path[strlen(path)-1]!='/') appendstr(path,"/");
 				appendstr(path,fname);
@@ -348,19 +412,19 @@ int LaidoutApp::Autosave()
 				fname=path;
 			}
 		}
-		doc->Saveas(fname);
-		status=doc->Save(true,true,log);
-		doc->Saveas(oldname);
-		delete[] oldname;
+
+		status=doc->SaveACopy(fname, true,true,log, false);
 
 		if (status==0) {
 			cerr <<" .... autosaved to: "<<fname<<endl;
+			notifyPrefsChanged(NULL, PrefsJustAutosaved);
+
 		} else {
 			cerr <<" .... ERROR trying to autosave to: "<<fname<<endl;
 		}
 
-		delete[] fmt;
-		delete[] fname;
+		delete[] fmt;   fmt=NULL;
+		delete[] fname; fname=NULL;
 	}
 
 	////DBG cerr <<" *** need to finish implementing autosave!!"<<endl;
@@ -488,6 +552,12 @@ int LaidoutApp::init(int argc,char **argv)
 	delete[] curexecpath; curexecpath=NULL;
 
 
+	 //-----read in laidoutrc
+	if (!readinLaidoutDefaults()) {
+		createlaidoutrc();
+	}
+
+
 	 //------setup initial pools
 	 
 	//DBG cerr <<"---file filters init"<<endl;
@@ -505,17 +575,19 @@ int LaidoutApp::init(int argc,char **argv)
 	GetBuiltinInterfaces(&interfacepool);
 
 
-	 //read in laidoutrc
-	if (!readinLaidoutDefaults()) {
-		createlaidoutrc();
-	}
-
-	 //establish user accesible api
-	//DBG cerr<<"---install functions"<<endl;
+	 //-----establish user accesible api
+	DBG cerr<<"---install functions"<<endl;
 	InitFunctions();
 	InitObjectDefinitions();
+
+	 //-----initialize the main calculator
+	DBG cerr<<"---init main calculator"<<endl;
+	InitInterpreters();
 	
-	 //read in resources
+	 //------load plugins
+	InitializePlugins();
+
+	 //-----read in resources
 	char configfile[strlen(config_dir)+20];
 	sprintf(configfile,"%s/autolaidoutrc",config_dir);
 	FILE *f;
@@ -524,7 +596,18 @@ int LaidoutApp::init(int argc,char **argv)
 		fclose(f);
 	}
 
-	 //if no bases defined add freedesktop style
+	 //-----add Templates dir as default bookmark
+	Attribute *att=app->AppResource("Bookmarks");
+    if (att) {
+		if (att->find(_("Templates"))==NULL) {
+			char *tdir=default_path_for_resource("templates");
+			att->push(_("Templates"), tdir);
+			delete[] tdir;
+		}
+	}
+
+
+	 //-----if no bases defined add freedesktop style
 	if (!preview_file_bases.n) {
 		preview_file_bases.push(newstr("~/.thumbnails/large/@"));
 		preview_file_bases.push(newstr("~/.thumbnails/normal/@"));
@@ -532,17 +615,13 @@ int LaidoutApp::init(int argc,char **argv)
 		preview_file_bases.push(newstr(".laidout-%.jpg"));
 	}
 	
-	 //define default icon
+	 //-----define default icon
 	char *str=newstr(icon_dir);
 	//appendstr(str,"/Laidout-shaded-icon-48x48.png");
 	appendstr(str,"/laidout-48x48.png");
 	DefaultIcon(str);
 	delete[] str;
 
-
-	 //initialize the main calculator
-	//DBG cerr<<"---init main calculator"<<endl;
-	if (!calculator) calculator=new LaidoutCalculator();
 
 	 // Note parseargs has to come after initing all the pools and whatever else
 	//DBG cerr <<"---init: parse args"<<endl;
@@ -551,7 +630,7 @@ int LaidoutApp::init(int argc,char **argv)
 	 // Define default project if necessary, and Pop something up if there hasn't been anything yet
 	if (!project) project=new Project();
 
-	if (runmode==RUNMODE_Normal) {
+	if (runmode == RUNMODE_Normal) {
 		 //try to load the default template if no windows are up
 		if (topwindows.n==0 && prefs.default_template) {
 			ErrorLog log;
@@ -564,15 +643,19 @@ int LaidoutApp::init(int argc,char **argv)
 			addwindow(BrandNew());
 
 		if (prefs.autosave>0) {
-			int ms=prefs.autosave*60*1000;
-			//DBG cerr <<"Will autosave every "<<int(prefs.autosave)<<":"<<int((prefs.autosave-floor(prefs.autosave))*60)<<" min"<<endl;
-			autosaveid=addtimer(this, ms,ms, -1);
+			UpdateAutosave();
 		}
 
-	} else if (runmode==RUNMODE_Impose_Only) {
+		 //let the user know of any snafus during startup
+		NotifyGeneralErrors(NULL);
+
+	} else if (runmode == RUNMODE_Impose_Only) {
 		//***
 
-	} else if (runmode==RUNMODE_Shell) {
+	} else if (runmode == RUNMODE_Nodes_Only) {
+		//***
+
+	} else if (runmode == RUNMODE_Shell) {
 		calculator->RunShell();
 		return 0;
 	}
@@ -581,6 +664,38 @@ int LaidoutApp::init(int argc,char **argv)
 	
 	return 0;
 };
+
+//! Initialize and install built in interpreters. Returns number added.
+int LaidoutApp::InitInterpreters()
+{
+	if (!calculator) calculator = new LaidoutCalculator();
+	interpreters.push(calculator, LISTS_DELETE_Refcount, 0); //list should be blank, but just in case push to 0
+
+    return 1;
+}
+
+int LaidoutApp::AddInterpreter(Interpreter *i, bool absorb_count)
+{
+  if (!i) return 1;
+  interpreters.push(i);
+  if (absorb_count) i->dec_count();
+  return 0;
+}
+
+int LaidoutApp::RemoveInterpreter(Interpreter *i)
+{
+  if (!i) return 1;
+  interpreters.remove(interpreters.findindex(i));
+  return 0;
+}
+
+Interpreter *LaidoutApp::FindInterpreter(const char *name)
+{
+	for (int c=0; c<interpreters.n; c++) {
+		if (!strcmp(name, interpreters.e[c]->Id())) return interpreters.e[c];
+	}
+	return NULL;
+}
 
 //! Write out resources to ~/.laidout/(version)/autolaidoutrc.
 void LaidoutApp::dumpOutResources()
@@ -632,6 +747,7 @@ int LaidoutApp::createlaidoutrc()
 	 //   	templates/
 	 //   	templates/default
 	 //   	impositions/
+	 //   	plugins/
 	 // if no ~/.laidout/(version)/laidoutrc exists, possibly import
 	 //   from other installed laidout versions
 	 //   otherwise perhaps touch laidoutrc, and put in a much
@@ -667,17 +783,30 @@ int LaidoutApp::createlaidoutrc()
 					  "\n"
 
 					   //drop shadow
-					  "# Customize how some things get dispalyed or entered:\n"
+					  "# Customize how some things get displayed or entered:\n"
 					  "#pagedropshadow 5    #how much to offset drop shadows around papers and pages \n"
+					  "\n"
 
 					   //autosave
 					  " #Autosave settings\n"
-					  "autosave 0  #number of minutes (such as 1.5) between autosaves\n"
+					  "autosave false #Whether to autosave. true or false.\n"
+					  "autosave_time 0  #number of minutes (such as 1.5) between autosaves. 0 means no autosave\n"
 					  "autosave_path ./%%f.autosave  #default location for autosave, relative to actual file\n"
+					  "                             #%%f is filename, %%f is full path, %%b is name without extension\n"
+					  "                             #%%e is extension, # or ### is autosave number (or padded number)\n"
+					  "autosave_num 0  #number of autosave files to maintain. 0 means no limit. Ignored if no '#' in autosave_path.\n"
+					  "\n"
+
+					   //default exported file name
+					  " #Default export file name base. An extension is added automatically by the exporter.\n"
+					  " #Use \"%%f\" to substitute document file name. Everything here after a '.' till the \n"
+					  " #end of the string is replaced when the file extension is changed.\n"
+					  "#export_file_name %%f-exported\n"
 					  "\n"
 
 					   //units
-					  "#defaultunits inches #the default units presented to the user. Within files on disk, it is always inches.\n"
+					  " #The default units presented to the user. Within files on disk, it is currently always inches.\n"
+					  "#defaultunits inches\n"
 					  "\n"
 
 					   //colors
@@ -688,6 +817,7 @@ int LaidoutApp::createlaidoutrc()
 
 					   //default paper
 					  "#defaultpapersize letter #Name of default paper to use\n"
+					  "\n"
 
 					   //default template
 					  " #if the following is commented out, then running \"laidout\" will\n"
@@ -701,11 +831,12 @@ int LaidoutApp::createlaidoutrc()
 					   //resource directories
 					  " # Some assorted directories:\n");
 			fprintf(f,"#icon_dir %s/icons\n",SHARED_DIRECTORY);
+			fprintf(f,"#plugin_dir %s/plugins #configdir/plugins, and this dir are always consulted after any dir in this config\n",SHARED_DIRECTORY);
 			fprintf(f,"#palette_dir /usr/share/gimp/2.0/palettes\n"
 					  "\n");
 
 
-			fprintf(f,"laxprofile Light #Default built in profiles are Dark and Light. You can define others in the laxconfig section.\n");
+			fprintf(f,"laxprofile Light #Default built in profiles are Dark, Light, and Gray. You can define others in the laxconfig section.\n");
 			fprintf(f,"laxconfig-sample #Remove the \"-sample\" part to redefine various default window behaviour settingss\n");
 			dump_out_rc(f,NULL,2,-1);
 			fprintf(f,"\n"
@@ -723,55 +854,64 @@ int LaidoutApp::createlaidoutrc()
 					  "\n"
 					  "\n"
 
-					   //preview generation
-					  //" # Alternately, you can specify the maximum width and height separately:\n"
-					  //"#maxPreviewWidth 200\n"
-					  //"#maxPreviewHeight 200\n"
-					  "#*** note, the following preview stuff is maybe not so accurate, code is in flux:\n"
-					  " #The size a file (unless specified, default is kilobytes) must be to trigger\n"
-					  " #the automatic creation of a smaller preview image file.\n"
-					  "#previewThreshhold 200kb\n"
-					  "#previewThreshhold never\n"
-					  "\n"
-					  " #You can have previews that are created during the program\n"
-					  " #be deleted when the program exits, or have newly created previews remain:\n"
-					  "#temporaryPreviews yes  #yes to delete new previews on exit\n"
-					  "#temporaryPreviews      #same as: temporaryPreviews yes\n"
-					  "#permanentPreviews yes  #yes to not delete new preview images on exit\n"
-					  "\n"
-					  " #When preview files are not specified, Laidout tries to find one\n"
-					  " #based on a sort of name template. Say an image is filename.tiff, then\n"
-					  " #the first line implies using a preview file called filename-s.jpg,\n"
-					  " #where the '%%' stands for the original filename minus its the final suffix.\n"
-					  " #The second looks for .laidout-previews/filename.tiff.jpg, relative to the\n"
-					  " #directory of the original file. The '*' stands for the entire original filename.\n"
-					  " #The final example is an absolute path, and will try to create all preview files\n"
-					  " #in that place, in this case, it would try ~/laidout/tmp/filename.tiff.jpg.\n"
-					  " #A '@' will expand to the freedesktop.org thumbnail management defined md5\n"
-					  " #representation of the original file. In other words, ~/.thumbnails/large/@\n"
-					  " #is a valid preview name. When you have many previewName, then all are selectable\n"
-					  " #in various dialogs, and the first one is the default.\n"
-					  "#previewName %%-s.jpg\n"
-					  "#previewName .laidout-previews/*.jpg\n"
-					  "#previewName ~/.laidout/tmp/*.jpg\n"
-					  "#previewName ~/.thumbnails/large/@    #these two cover all the current freedesktop\n"  
-					  "#previewName ~/.thumbnails/normal/@   #thumbnail locations\n"
-					  "\n"
-					  "\n# The maximum width or height for preview images\n"
-					  "#maxPreviewLength 200\n"
-					  "\n"
+//					   //preview generation
+//					  //" # Alternately, you can specify the maximum width and height separately:\n"
+//					  //"#maxPreviewWidth 200\n"
+//					  //"#maxPreviewHeight 200\n"
+//					  "#*** note, the following preview stuff is maybe not so accurate, code is in flux:\n"
+//					  " #The size a file (unless specified, default is kilobytes) must be to trigger\n"
+//					  " #the automatic creation of a smaller preview image file.\n"
+//					  "#previewThreshhold 200kb\n"
+//					  "#previewThreshhold never\n"
+//					  "\n"
+//					  " #You can have previews that are created during the program\n"
+//					  " #be deleted when the program exits, or have newly created previews remain:\n"
+//					  "#temporaryPreviews yes  #yes to delete new previews on exit\n"
+//					  "#temporaryPreviews      #same as: temporaryPreviews yes\n"
+//					  "#permanentPreviews yes  #yes to not delete new preview images on exit\n"
+//					  "\n"
+//					  " #When preview files are not specified, Laidout tries to find one\n"
+//					  " #based on a sort of name template. Say an image is filename.tiff, then\n"
+//					  " #the first line implies using a preview file called filename-s.jpg,\n"
+//					  " #where the '%%' stands for the original filename minus its the final suffix.\n"
+//					  " #The second looks for .laidout-previews/filename.tiff.jpg, relative to the\n"
+//					  " #directory of the original file. The '*' stands for the entire original filename.\n"
+//					  " #The final example is an absolute path, and will try to create all preview files\n"
+//					  " #in that place, in this case, it would try ~/laidout/tmp/filename.tiff.jpg.\n"
+//					  " #A '@' will expand to the freedesktop.org thumbnail management defined md5\n"
+//					  " #representation of the original file. In other words, ~/.thumbnails/large/@\n"
+//					  " #is a valid preview name. When you have many previewName, then all are selectable\n"
+//					  " #in various dialogs, and the first one is the default.\n"
+//					  "#previewName %%-s.jpg\n"
+//					  "#previewName .laidout-previews/*.jpg\n"
+//					  "#previewName ~/.laidout/tmp/*.jpg\n"
+//					  "#previewName ~/.thumbnails/large/@    #these two cover all the current freedesktop\n"  
+//					  "#previewName ~/.thumbnails/normal/@   #thumbnail locations\n"
+//					  "\n"
+//					  "\n# The maximum width or height for preview images\n"
+//					  "#maxPreviewLength 200\n"
+//					  "\n"
 					  "\n");
 			fclose(f);
 			setlocale(LC_ALL,"");
 		}
+
 		 // create the other relevant directories
+		sprintf(path,"%s/addons",config_dir);
+		mkdir(path,0755);
 		sprintf(path,"%s/templates",config_dir);
 		mkdir(path,0755);
 		sprintf(path,"%s/impositions",config_dir);
 		mkdir(path,0755);
 		sprintf(path,"%s/palettes",config_dir);
 		mkdir(path,0755);
+		sprintf(path,"%s/fonts",config_dir);
+		mkdir(path,0755);
+		sprintf(path,"%s/plugins",config_dir);
+		mkdir(path,0755);
+
 	} else return -1;
+
 	return 0;
 }
 
@@ -821,6 +961,9 @@ int LaidoutApp::readinLaidoutDefaults()
 			ShortcutManager *m=GetDefaultShortcutManager();
 			m->Load(value);
 
+		} else if (!strcmp(name,"experimental")) {
+			experimental = 1;
+
 		} else if (!strcmp(name,"default_template")) {
 			if (file_exists(value,1,NULL)==S_IFREG) makestr(prefs.default_template,value);
 			else {
@@ -853,8 +996,13 @@ int LaidoutApp::readinLaidoutDefaults()
 			if (file_exists(value,1,NULL)==S_IFDIR) makestr(icon_dir,value);
 			if (!isblank(icon_dir)) icons->AddPath(icon_dir);
 		
+		} else if (!strcmp(name,"plugin_dir")) {
+			if (file_exists(value,1,NULL) == S_IFDIR) {
+				prefs.AddPath("plugins", value);
+			}
+
 		} else if (!strcmp(name,"palette_dir")) {
-			if (file_exists(value,1,NULL)==S_IFDIR) makestr(prefs.palette_dir,value);
+			if (file_exists(value,1,NULL) == S_IFDIR) makestr(prefs.palette_dir,value);
 		
 		} else if (!strcmp(name,"temp_dir")) {
 			//**** default "config_dir/temp/pid/"?
@@ -862,33 +1010,14 @@ int LaidoutApp::readinLaidoutDefaults()
 			//	make sure supplied tempdir is writable before using.
 			cout <<" *** imp temp_dir in laidoutrc"<<endl;
 
-		 //--------------preview related options:
-		} else if (!strcmp(name,"previewThreshhold")) {
-			if (value && !strcmp(value,"never")) preview_over_this_size=INT_MAX;
-			else IntAttribute(value,&preview_over_this_size);
-		
-		} else if (!strcmp(name,"permanentPreviews")) {
-			preview_transient=!BooleanAttribute(value);
-		
-		} else if (!strcmp(name,"temporaryPreviews")) {
-			preview_transient=BooleanAttribute(value);
-		
-		} else if (!strcmp(name,"previewName")) {
-			preview_file_bases.push(newstr(value));
-			//DBG cerr<<"preview_file_bases local for top="<<(int)preview_file_bases.islocal[preview_file_bases.n-1]<<endl;
-		
-		} else if (!strcmp(name,"maxPreviewLength")) {
-			IntAttribute(value,&max_preview_length);
-
-		 //--------------other options:
 		} else if (!strcmp(name,"pagedropshadow")) {
 			IntAttribute(value,&prefs.pagedropshadow);
 		
 		} else if (!strcmp(name,"defaultunits")) {
 			if (value) {
 				int id=0;
-				SimpleUnit *units=GetUnitManager();
-				if (units->UnitInfo(value,&id,NULL,NULL,NULL,NULL)==0) {
+				UnitManager *units=GetUnitManager();
+				if (units->UnitInfo(value,&id,NULL,NULL,NULL,NULL,NULL)==0) {
 					makestr(prefs.unitname,value);
 					prefs.default_units=id;
 					units->DefaultUnits(value);
@@ -896,11 +1025,40 @@ int LaidoutApp::readinLaidoutDefaults()
 				}
 			}
 
+		} else if (!strcmp(name,"export_file_name")) {
+			if (!isblank(value)) makestr(prefs.exportfilename, value);
+
 		} else if (!strcmp(name,"autosave_path")) {
 			if (!isblank(value)) makestr(prefs.autosave_path, value);
 
+		} else if (!strcmp(name,"autosave_time")) {
+			DoubleAttribute(value, &prefs.autosave_time, NULL);
+
+		//} else if (!strcmp(name,"autosave_num")) {
+		//	IntAttribute(value, &prefs.autosave_num, NULL);
+
 		} else if (!strcmp(name,"autosave")) {
-			DoubleAttribute(value, &prefs.autosave, NULL);
+			prefs.autosave = BooleanAttribute(value);
+
+
+		 //--------------preview related options:
+		} else if (!strcmp(name,"previewThreshhold")) {
+			if (value && !strcmp(value,"never")) preview_over_this_size=INT_MAX;
+			else IntAttribute(value,&preview_over_this_size);
+		
+		} else if (!strcmp(name,"permanentPreviews")) {
+			preview_transient = !BooleanAttribute(value);
+		
+		} else if (!strcmp(name,"temporaryPreviews")) {
+			preview_transient = BooleanAttribute(value);
+		
+		} else if (!strcmp(name,"previewName")) {
+			preview_file_bases.push(newstr(value));
+			DBG cerr<<"preview_file_bases local for top="<<(int)preview_file_bases.islocal[preview_file_bases.n-1]<<endl;
+		
+		} else if (!strcmp(name,"maxPreviewLength")) {
+			IntAttribute(value,&max_preview_length);
+
 		}
 	}
 	
@@ -923,6 +1081,100 @@ int LaidoutApp::readinLaidoutDefaults()
 
 	return 1;
 }
+
+int LaidoutApp::AddPlugin(const char *path)
+{
+	// *** todo!
+	return 1;
+}
+
+int LaidoutApp::RemovePlugin(const char *name)
+{
+	// *** todo!
+	return 1;
+}
+
+/*! Returns the number of plugins added.
+ */
+int LaidoutApp::InitializePlugins()
+{
+	int n=0;
+
+	DBG cerr <<"Initializing plugins..."<<endl;
+
+	 //try to load all in prefs.plugin_dirs/*.so
+
+	 //always add default plugin dir to end of list
+	char scratch[500];
+
+	sprintf(scratch,"%splugins",config_dir);
+	prefs.AddPath("plugins", scratch);
+
+	sprintf(scratch,"%splugins",SHARED_DIRECTORY);
+	prefs.AddPath("plugins", scratch);
+
+	glob_t globbuf;
+	char *path = NULL;
+	const char *file;
+	struct stat statbuf;
+	int status;
+
+	for (int c=0; c<prefs.plugin_dirs.n; c++) {
+
+		makestr(path, prefs.plugin_dirs.e[c]);
+		appendstr(path, "/*.so");
+
+		DBG cerr <<"scanning for plugins in "<<path<<"..."<<endl;
+
+		glob(path, GLOB_ERR, NULL, &globbuf);
+
+		for (int c2=0; c2<(int)globbuf.gl_pathc; c2++) {
+			status = stat(globbuf.gl_pathv[c2], &statbuf);
+			if (status != 0) continue;
+			if (!S_ISREG(statbuf.st_mode)) continue;
+
+			file = globbuf.gl_pathv[c2];
+
+			PluginBase *plugin = LoadPlugin(file, generallog); //loads but doesn't initialize
+			if (plugin) {
+				//need to check for plugin with same name already loaded! fail if so... do not allow same name plugins!
+				for (int c3=0; c3<plugins.n; c3++) {
+					if (!strcmp(plugins.e[c3]->PluginName(), plugin->PluginName())) {
+						char scratch[strlen(_("Plugin called \"%s\" exists already, skipping!")) + strlen(plugin->PluginName()) + 5];
+						sprintf(scratch, _("Plugin called \"%s\" exists already, skipping!"), plugin->PluginName());
+
+						generallog.AddMessage(0, NULL, file, scratch, Laxkit::ERROR_Warning);
+						DeletePlugin(plugin);
+						plugin = NULL;
+						break;
+					}
+				}
+
+				if (plugin) {
+					plugins.push(plugin);
+					plugin->dec_count();
+					plugin->Initialize();
+					n++;
+				}
+			}
+		}
+		globfree(&globbuf);
+	}
+	delete[] path;
+
+	return n;
+}
+
+/*! Pop up a box showing any errors in log (or generallog if log==NULL). Flushes log afterwards.
+ * This is done, for instance, at startup, to notify of any plugin load errors.
+ * If there aren't any, then do nothing.
+ */
+void LaidoutApp::NotifyGeneralErrors(ErrorLog *log)
+{
+	if (log==NULL) log = &generallog;
+	Laidout::NotifyGeneralErrors(log);
+}
+
 
 /*! Calling code should increment count on returned object if they want to use it in place.
  * Ordinarily, most code is duplicating the returned object.
@@ -978,13 +1230,17 @@ void InitOptions()
 	options.Add("file-format",        'F', 0, "Print out a pseudocode mockup of the file format, then exit",0,NULL);
 	options.Add("command",            'c', 1, "Run one or more commands without the gui",    0, "\"newdoc net\"");
 	options.Add("script",             's', 1, "Like --command, but the commands are in the given file",     0, "/some/file");
-	options.Add("shell",              'P', 0, "Enter a command line shell. Can be used with --command and --script.", 0, NULL);
+	options.Add("shell",              'L', 0, "Enter a command line shell. Can be used with --command and --script.", 0, NULL);
 	options.Add("default-units",      'u', 1, "Use the specified units.",                    0, "(in|cm|mm|m|ft|yards)");
 	options.Add("load-dir",           'l', 1, "Start in this directory.",                    0, "path");
 	options.Add("experimental",       'E', 0, "Enable any compiled in experimental features",0, NULL);
-	options.Add("backend",            'B', 1, "Either xlib or cairo (cairo very experimental).",0, NULL);
+	//options.Add("backend",            'B', 1, "Either cairo or xlib (xlib very deprecated).",0, NULL);
 	options.Add("impose-only",        'I', 1, "Run only as a file imposer, not full Laidout",0, NULL);
+	options.Add("nodes-only",         'o', 1, "Run only as a node editor on argument",       0, NULL);
+	options.Add("pipein",             'p', 1, "Start with a document piped in on stdin",     0, "default");
+	options.Add("pipeout",            'P', 1, "On exit, export document[0] to stdout",       0, "default");
 	options.Add("list-shortcuts",     'S', 0, "Print out a list of current keyboard bindings, then exit",0,NULL);
+	options.Add("theme",              'T', 1, "Set theme. Currently, one of Light, Dark, or Gray",0,NULL);
 	options.Add("helphtml",           'H', 0, "Output an html fragment of key shortcuts.",   0, NULL);
 	options.Add("helpman",             0 , 0, "Output a man page fragment of options.",      0, NULL);
 	options.Add("version",            'v', 0, "Print out version info, then exit.",          0, NULL);
@@ -1001,7 +1257,9 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	//InitOptions(); <- this is done in main()
 	//c=options.Parse(argc,argv, &index); <- now down in main also
 	
-	char *exprt=NULL;
+	char *exprt = NULL;
+	bool pipein = false;
+	const char *pipeinarg = NULL;
 
 
 	LaxOption *o;
@@ -1018,12 +1276,16 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				experimental=1;
 			  } break; 
 
+			case 'T': { // theme
+				makestr(app_profile, o->arg());
+			  } break; 
+
 			case 't': { // load in template
 					ErrorLog log;
 					LoadTemplate(o->arg(),log);
 				} break;
 
-			case 'P': { // --shell
+			case 'L': { // --shell
 					donotusex=2;
 					runmode=RUNMODE_Shell;
 				} break;
@@ -1043,18 +1305,18 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					}
 					fread(instr,1,size,f);
 					instr[size]='\0';
-					runmode=RUNMODE_Commands;
-					char *str=calculator->In(instr);
+					runmode = RUNMODE_Commands;
+					char *str = calculator->In(instr, NULL);
 					if (str) cout <<str<<endl;
-					if (runmode!=RUNMODE_Shell) runmode=RUNMODE_Quit;
+					if (runmode != RUNMODE_Shell) runmode = RUNMODE_Quit;
 				} break;
 
 			case 'c': { // --command
 					donotusex=1;
-					runmode=RUNMODE_Commands;
-					char *str=calculator->In(o->arg());
+					runmode = RUNMODE_Commands;
+					char *str = calculator->In(o->arg(), NULL);
 					if (str) cout <<str<<endl;
-					if (runmode!=RUNMODE_Shell) runmode=RUNMODE_Quit;
+					if (runmode != RUNMODE_Shell) runmode = RUNMODE_Quit;
 				} break;
 
 			case 'n': { // --new "letter singles 3 pages blah blah blah"
@@ -1132,17 +1394,33 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 
 			case 'I': { // impose-only
-					runmode=RUNMODE_Impose_Only;
-					anXWindow *editor=newImpositionEditor(NULL,"impedit",_("Impose..."),0,NULL,
+					runmode = RUNMODE_Impose_Only;
+					anXWindow *editor = newImpositionEditor(NULL,"impedit",_("Impose..."),0,NULL,
 														  NULL,"SignatureImposition",NULL,o->arg(),
 														  NULL);
 					addwindow(editor);
 				} break;
 
+			case 'o': { // nodes-only
+					runmode = RUNMODE_Nodes_Only;
+					anXWindow *editor = newNodeEditor(NULL,"nodeedit",_("Nodes"), 0,NULL, NULL,0, o->arg());
+					addwindow(editor);
+				} break;
+
+			case 'p': { //pipein
+					pipein = true;
+					pipeinarg = o->arg();
+			    } break;
+
+			case 'P': { //pipeout
+					pipeout = true;
+					makestr(pipeoutarg, o->arg());
+			    } break;
+
 			case 'u': { // default units
-					SimpleUnit *units=GetUnitManager();
+					UnitManager *units=GetUnitManager();
 					int id=0;
-					if (units->UnitInfo(o->arg(),&id,NULL,NULL,NULL,NULL)==0) {
+					if (units->UnitInfo(o->arg(),&id,NULL,NULL,NULL,NULL,NULL)==0) {
 						makestr(prefs.unitname,o->arg());
 						prefs.default_units=id;
 						units->DefaultUnits(prefs.unitname);
@@ -1168,32 +1446,24 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		//*** this should probably be moved to its own function so command line pane can call it
 		//*** is this obsoleted by --command?
 
+		DBG cout << "export: "<<exprt<<endl;
+
 		 //parse the config string into a config
 		Attribute att;
 		NameValueToAttribute(&att,exprt,'=',0);
+		DBG att.dump_out(stdout,2);
 
 		 //figure out where to export from
 		const char *filename=NULL;
 		o=options.remaining();
 		if (o) filename=o->arg();
 
-		const char *format=att.findValue("format");
-		ExportFilter *filter=FindExportFilter(format,false);
-		if (!filter) {
-			cout <<_("Format not found!")<<endl;
-			exit(1);
-		}
 
-		DocumentExportConfig *config=filter->CreateConfig(NULL);
-		config->dump_in_atts(&att,0,NULL);
-
-		 
 		 //-------export
 		if (!filename) {
 			cout <<_("No file to export from specified!")<<endl;
 			exit(1);
 		}
-
 
 		 //load in document to pass with config
 		ErrorLog error;		 
@@ -1208,9 +1478,22 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			dumperrorlog(_("Warnings encountered while loading document:"),error);
 		}
 
+		const char *format=att.findValue("filter");
+		DBG cout << "Exporting with \""<<(format ? format : "unknown filter") <<"\""<<endl;
+		ExportFilter *filter = FindExportFilter(format,false);
+		if (!filter) {
+			cout <<_("Filter not found!")<<endl;
+			exit(1);
+		}
+
+		DocumentExportConfig *config=filter->CreateConfig(NULL);
+		//config->dump_in_atts(&att,0,NULL);
+		 
 		config->doc=doc;
 		config->doc->inc_count();
+		config->filter=filter;
 		config->dump_in_atts(&att,0,NULL);//second time with doc!
+
 		int err=export_document(config,error);
 		if (err>0) {
 			dumperrorlog(_("Export failed."),error);
@@ -1238,17 +1521,55 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	int index=topwindows.n;
 	if (!project) project=new Project;
 	ErrorLog log;
+
 	for (o=options.remaining(); o; o=options.next()) {
-		//DBG cerr <<"----Read in:  "<<o->arg()<<endl;
-		doc=NULL;
-		if (Load(o->arg(),log)==0) doc=curdoc;
-		if (topwindows.n==index) {
-			if (!doc && project->docs.n) doc=project->docs.e[0]->doc;
+		DBG cerr <<"----Read in:  "<<o->arg()<<endl;
+		doc = NULL;
+		if (Load(o->arg(),log)==0) doc = curdoc;
+		else {
+			generallog.AddError(0,0,0, _("Could not load %s!"), o->arg());
+		}
+
+		if (topwindows.n == index) {
+			if (!doc && project->docs.n) doc = project->docs.e[0]->doc;
 			if (doc && runmode==RUNMODE_Normal) addwindow(newHeadWindow(doc));
 		}
 	}
-	
-	//DBG cerr <<"---------end options"<<endl;
+
+	if (pipein) {
+		int n=0;
+		DBG cerr << "Piping in..."<<endl;
+		char *data = pipe_in_whole_file(stdin, &n);
+
+		//*** //load from string data
+		cerr << " *** need to finish implementing pipein!!"<<endl;
+		if (!strcasecmp(pipeinarg, "default")) {
+			 //assume is laidout file
+
+//			if (Load(NULL, log, data) == 0) doc = curdoc;
+//			if (topwindows.n == index) {
+//				if (!doc && project->docs.n) doc = project->docs.e[0]->doc;
+//				if (doc && runmode == RUNMODE_Normal) addwindow(newHeadWindow(doc));
+//			}
+		} else {
+			 //parse import settings
+			Attribute att;
+			NameValueToAttribute(&att, pipeinarg, '=', ',');
+
+			ImportConfig config;
+			config.dump_in_atts(&att, 0, NULL);
+
+			//ErrorLog log;
+			import_document(&config, generallog, data,n);
+
+			NotifyGeneralErrors(NULL);
+		}
+
+		delete[] data;
+
+	} //end pipein
+
+	DBG cerr <<"---------end options"<<endl;
 }
 
 //! Return whether win is in topwindows.
@@ -1332,6 +1653,9 @@ const char *LaidoutApp::binary(const char *what)
  * directory name, a subdirectory of dir. If name is not found, then name minus
  * a final suffix is searched for. So if name is "thing", and file "thing" is not
  * found, then if "thing.laidout" is found, then that is used.
+ *
+ * If dir/name exists, and that file is readable, return the full path to it in a new char[].
+ * Otherwise return NULL.
  */
 char *LaidoutApp::full_path_for_resource(const char *name,const char *dir)//dir=NULL
 {
@@ -1340,11 +1664,12 @@ char *LaidoutApp::full_path_for_resource(const char *name,const char *dir)//dir=
 	char *fullname=newstr(name);
 
 	if (c || !strncmp(fullname,"/",1) || !strncmp(fullname,"./",2) || !strncmp(fullname,"../",3)) {
-		 // is filename
+		 // is path with filename
 		convert_to_full_path(fullname,NULL);
 		if (readable_file(fullname)) return fullname;
 		delete[] fullname;
 		return NULL;
+
 	} else {
 		 // else is a name
 		if (dir) {
@@ -1370,6 +1695,7 @@ char *LaidoutApp::default_path_for_resource(const char *resource)
 	char *path=newstr(config_dir);
 	appendstr(path,"/");
 	appendstr(path,resource);
+	simplify_path(path, 1);
 	return path;
 }
 
@@ -1441,7 +1767,7 @@ int LaidoutApp::Load(const char *filename, ErrorLog &log)
 		if (curdoc) curdoc->inc_count();
 		return 0;
 	}
-	
+
 	FILE *f=open_laidout_file_to_read(fullname,"Project",&log, false);
 	if (f) {
 		fclose(f);
@@ -1453,7 +1779,7 @@ int LaidoutApp::Load(const char *filename, ErrorLog &log)
 		delete[] fullname;
 		return -1;
 	}
-	
+
 
 	doc=new Document(NULL,fullname);
 	if (!project) project=new Project;
@@ -1504,13 +1830,13 @@ int LaidoutApp::NewDocument(const char *spec)
 {
 	if (!spec) return 1;
 	if (!strcmp(spec,"default")) spec="letter, portrait, singles";
-	//DBG cerr <<"------create new doc from \""<<spec<<"\""<<endl;
-	
+	DBG cerr <<"------create new doc from \""<<spec<<"\""<<endl;
+
 	char *saveas=NULL;
 	Imposition *imp=NULL;
 	PaperStyle *paper=NULL;
 	int numpages=1;
-	
+
 	//Attribute *spec_parameters=parse_fields(NULL,spec,NULL);
 
 
@@ -1677,9 +2003,11 @@ int LaidoutApp::NewProject(Project *proj, ErrorLog &log)
  */
 ExportFilter *LaidoutApp::FindExportFilter(const char *name, bool exact_only)
 {
+	if (!name) return NULL;
+
 	 //search for exact format match first
 	for (int c=0; c<laidout->exportfilters.n; c++) {
-		if (!strcmp(laidout->exportfilters.e[c]->VersionName(),name)) {
+		if (!strcasecmp(laidout->exportfilters.e[c]->VersionName(),name)) {
 			return laidout->exportfilters.e[c];
 		}
 	}
@@ -1789,24 +2117,28 @@ int main(int argc,char **argv)
 	}
 
 
-	 //process help and version before anything else happens,
-	 //since laxkit spews out debugging stuff straight away
+	 //process a few things before anything else happens,
+	 //since laxkit spews out debugging stuff straight away.
+	 //laidout->parseargs() snags the rest
 	LaxOption *o=options.find("helpman",0);
 	if (o && o->parsed_present) {
 		options.HelpMan(stdout);
 		exit(0);
 	}
+
 	o=options.find("help",0);
 	if (o && o->parsed_present) {
 		options.Help(stdout); // Show usage summary
 		exit(0);
 	}
+
 	o=options.find("version",0);
 	if (o && o->parsed_present) {
 		 // Show version info, then exit
 		cout <<LaidoutVersion()<<endl;
 		exit(0);
 	}
+
 	const char *backend="cairo";
 	o=options.find("backend",0);
 	if (o && o->parsed_present) {
@@ -1814,11 +2146,18 @@ int main(int argc,char **argv)
 		else if (!strcasecmp(o->arg(),"cairo")) backend="cairo";
 	}
 
+	const char *theme=NULL;
+	o=options.find("theme",0);
+	if (o && o->parsed_present) {
+		theme = o->arg();
+	}
+
 
 	 //redefine Laxkit's default preview maker
 	generate_preview_image=laidout_preview_maker;
 
 	laidout=new LaidoutApp();
+	if (theme) laidout->Theme(theme);
 	if (backend) laidout->Backend(backend);
 	o=options.find("experimental",0);
 	if (o && o->parsed_present) laidout->experimental=1;
@@ -1840,26 +2179,42 @@ int main(int argc,char **argv)
 
 	//DBG cerr <<"---------Laidout Close--------------"<<endl;
 	 //for debugging purposes, spread out closing down various things....
+	 //..this is a lot of stuff that should probably have a better finalizing
+	 //  architecture behind it
 	laidout->close();
+
+	DBG cerr <<"---------  close interface manager..."<<endl;
 	LaxInterfaces::InterfaceManager::SetDefault(NULL,true);
+	DBG cerr <<"---------  close undo manager..."<<endl;
 	Laxkit::SetUndoManager(NULL);
+	DBG cerr <<"---------  close shortcut manager..."<<endl;
 	Laxkit::InstallShortcutManager(NULL); //forces deletion of shortcut lists in Laxkit
+	DBG cerr <<"---------  close icon manager..."<<endl;
 	Laxkit::IconManager::SetDefault(NULL);
+	DBG cerr <<"---------  close image processor..."<<endl;
 	Laxkit::ImageProcessor::SetDefault(NULL);
+	DBG cerr <<"---------  close image loaders manager..."<<endl;
 	Laxkit::ImageLoader::FlushLoaders();
+	DBG cerr <<"---------  close units manager..."<<endl;
+	Laxkit::SetUnitManager(NULL);
+	DBG cerr <<"---------  final dec_count of laidout app..."<<endl;
 	laidout->dec_count();
-	
-	//DBG cerr <<"---------------stylemanager-----------------"<<endl;
-	//DBG cerr <<"  stylemanager.getNumFields()="<<(stylemanager.getNumFields())<<endl;
-	////DBG cerr <<"  stylemanager.styles.n="<<(stylemanager.styles.n)<<endl;
+
+	DBG cerr <<"---------  close stylemanager"<<endl;
+	DBG cerr <<"  stylemanager.getNumFields()="<<(stylemanager.getNumFields())<<endl;
+	//DBG cerr <<"  stylemanager.styles.n="<<(stylemanager.styles.n)<<endl;
 	stylemanager.Clear();
 
+	
+
+
 #ifdef LAX_USES_CAIRO
-	//DBG cairo_debug_reset_static_data();
+	DBG cerr <<"---------  cairo_debug_reset_static_data()..."<<endl;
+	DBG cairo_debug_reset_static_data();
 #endif
 
-	cout <<"-----------------------------Bye!--------------------------"<<endl;
-	//DBG cerr <<"------------end of code, default destructors follow--------"<<endl;
+	DBG cerr <<"-----------------------------Bye!--------------------------"<<endl;
+	DBG cerr <<"------------end of code, default destructors follow--------"<<endl;
 
 	return 0;
 }

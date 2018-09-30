@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2007,2010 by Tom Lechner
@@ -20,6 +19,7 @@
 #include <lax/fileutils.h>
 #include <lax/laximages.h>
 #include <lax/misc.h>
+#include <lax/messagebox.h>
 
 #include <lax/lists.cc>
 
@@ -164,6 +164,30 @@ char *roman_numeral(int i,char cap)
 	return n;
 }
 
+/*! Convert time values to milliseconds from:
+ * ms millisecond s sec seconds second m minute min hr hour h
+ */
+long time_to_ms(const char *v, const char **end_ret)
+{
+	char *endptr=NULL;
+    double t=strtod(v, &endptr);
+
+    if (endptr!=v) {
+        v=endptr;
+        while (isspace(*v)) v++;
+
+		if (*v=='m' && v[1]=='s') ; //already milliseconds
+		else if (*v=='m' && v[1]=='i' && v[2]=='l') ; //already milliseconds
+		else if (*v=='s') t*=1000;
+        else if (*v=='m') t*=60*1000;
+        else if (*v=='h') t*=60*60*1000;
+
+		while (*v && !isspace(*v)) v++;
+    }
+
+	if (end_ret) *end_ret=v;
+	return t;
+}
 
 //----------------------------------- File i/o helpers ---------------------------------------------
 
@@ -321,9 +345,12 @@ int resource_name_and_desc(FILE *f,char **name, char **desc)
 	if (!name && !desc) return 0;
 	Attribute att, *patt=NULL;
 
+	IOBuffer ff;
+	ff.UseThis(f);
+
 	int ret=0;
-	while (ret!=3 && !feof(f)) {
-		att.dump_in(f,0,&patt);
+	while (ret!=3 && !ff.IsEOF()) {
+		att.dump_in(ff,0,&patt);
 		if (!patt) break; //no more in file
 		if (name && !(ret&1) && !strcmp(patt->name,"name")) {
 			*name=newstr(patt->value);
@@ -333,8 +360,10 @@ int resource_name_and_desc(FILE *f,char **name, char **desc)
 			*desc=newstr(patt->value);
 			ret|=2;
 		}
-		skip_to_next_attribute(f,0);
+		skip_to_next_attribute(ff,0);
 	}
+
+	ff.UseThis(NULL);
 	return ret;
 }
 
@@ -563,7 +592,7 @@ int laidout_version_check(const char *version, const char *minversion, const cha
 //! Return string identifying the type of file.
 /*! \ingroup misc
  *
- * Currently, this checks for EPS, OFF, and Laidout files.
+ * Currently, this checks for EPS, OFF, Scribus, SVG, and Laidout files.
  *
  * EPS files return "EPS", with version1==postscript version, version2=eps version.
  *
@@ -591,12 +620,46 @@ const char *IdentifyFile(const char *file, char **version1, char **version2)
 
 	if (laidout_file_type(file, NULL, NULL, version1, NULL, version2)) return "Laidout";
 
+	if (isSvgFile(file)) return "SVG";
+
+	if (isScribusFile(file)) return "Scribus";
+
 	if (isPdfFile(file,&v1)) {
 		if (version1) *version1=numtostr(v1);
 		return "PDF";
 	}
 
 	return NULL;
+}
+
+//! Return whether file is an SVG document.
+int isSvgFile(const char *file)
+{
+	FILE *f=fopen(file,"r");
+	if (!f) return 0;
+
+	char first[1001];
+	int c=fread(first,1,1000,f);
+	first[c]='\0';
+	c=-1;
+
+	const char *p = strstr(first,"<svg");
+
+	int foundsvg=0;
+	if (p) { //extract version...
+		foundsvg=1;
+		//p=strstr(first,"version");
+		//if (p) {
+		//	while (*p && *p!="\"") p++;
+		//	if (*p) {
+		//		const char *v=p;
+		//		while (*p && *p!="\"") p++;
+		//	}
+		//}
+	}
+
+	fclose(f);
+	return foundsvg;
 }
 
 //! Return whether file is a Scribus document.
@@ -610,7 +673,6 @@ int isScribusFile(const char *file)
 	first100[c]='\0';
 	c=-1;
 
-	 //check for the various OFF starts
 	 //should have something like <SCRIBUSUTF8NEW Version="..."
 	const char *p=strstr(first100,"SCRIBUSUTF8NEW");
 	int foundscribus=0;
@@ -749,6 +811,32 @@ int isPdfFile(const char *file,float *pdfversion)
 	}
 
 	return 0;
+}
+
+
+//---------------------------- Window related things --------------------------------
+
+/*! Pop up a box showing any errors in log (or generallog if log==NULL). Flushes log afterwards.
+ * This is done, for instance, at startup, to notify of any plugin load errors.
+ * If there aren't any, then do nothing.
+ */
+void NotifyGeneralErrors(Laxkit::ErrorLog *log)
+{
+    if (log==NULL) return;
+
+    if (log->Total() == 0) return;
+
+    char *mes = log->FullMessageStr();
+    MessageBox *box = new MessageBox(NULL,"plugin","plugin",ANXWIN_CENTER,
+                                  0,0,0,0,0,
+                                  NULL,0,NULL,
+                                  mes);
+    box->AddButton(BUTTON_OK);
+    box->AddButton(_("Dammit"), 0);
+    anXApp::app->addwindow(box);
+    delete[] mes;
+
+    log->Clear();
 }
 
 } // namespace Laidout

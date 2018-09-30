@@ -1,0 +1,795 @@
+#dtpcomparison.txt
+program Laidout
+    website http://www.laidout.org
+    platform linux
+
+program Scribus
+    website http://www.scribus.net
+    platform linux, mac, windows
+
+program InDesign
+    website http://www.adobe.com/products/indesign/
+    platform mac, windows
+
+program Quark
+    website  http://quark.com
+    title    officials might refer to it as QuarkXPress
+    platform mac, windows
+program Inkscape
+    website  http://www.inkscape.org
+    platform mac, windows, linux
+program Xara
+    website http://www.xara.com
+    platform windows
+program Illustrator
+    website http://www.adobe.com/products/illustrator/
+    platform linux, windows, mac
+
+
+
+
+section Infrastructure Features
+
+item Impositioning
+    Laidout      yes, .01
+    Scribus      no
+        note \
+            You can use use Laidout in limited circumstances to impose Scribus documents. This is done with
+            a Scribus script that calls Laidout. See <a href="http://laidout.org/scribus">here</a> for more info.
+            A different <a href="http://wiki.scribus.net/index.php/Imposition_Plugin_Discussion">plugin</a>
+            was being developed during Google Summer of Code 2007, but it seems to have never been
+            completed. Other relevant links include
+            <a href="http://wiki.scribus.net/index.php/How_can_I_make_a_booklet_using_Scribus%3F">making booklets
+            from Scribus</a>, and
+            the <a href="http://bugs.scribus.net/view.php?id=83">imposition bug report</a>,
+            in which there is much discussion.
+            Other info <a href="http://wiki.scribus.net/index.php/Imposition_Plugin_Discussion">here</a>
+            and <a href="http://wiki.scribus.net/index.php/Imposition">here</a>.
+
+    InDesign     partial
+        note \
+            It seems the built in impositioning of InDesign is quite limited. It can do left/right booklets, and
+            fold out style imposing, which is simply several pages placed side by side. You need to get plugins
+            for more thorough imposing.
+    Quark        no, and I ask you, why the hell not??
+    Inkscape     no
+    Xara         no
+    Illustrator  no
+
+item  "Folding signature based impositioning"
+    Laidout      "yes, .091"
+    Scribus      no
+    InDesign     partial, booklets only without a plugin
+    Quark        no
+    Inkscape     no
+    Xara         no
+    Illustrator  no
+
+item  "Mobius strip impositioning"
+    Laidout      "planned, .098"
+    Scribus      no
+    InDesign     no
+    Quark        no
+    Inkscape     no
+    Xara         no
+    Illustrator  no
+
+item  "impositioning involving non-rectangular pages"
+    Laidout      "yes, .01"
+    Scribus      no
+    InDesign     no
+    Quark        no
+    Inkscape     no
+    Xara         no
+    Illustrator  no
+
+item  "Spreading page contents over several pieces of paper, so you can print out a really big layout from your small printer"
+    Laidout      "yes, .08, click for tutorial!"
+        url   http://www.youtube.com/watch?v=N79bFZmlKLU
+    Scribus      "partial, something to do with PageSets maybe"
+        note  \
+              Scribus is set up to handle several papers right next to each other in a grid.
+              In the file, there are PageSet sections. You can copy that and insert new
+              PageSets. This allows spreading objects across many papers, but suffers from
+              each page having to touch each other
+              exactly, which leaves you with gaps if your printer cannot print to the edge
+              of the paper. As of 1.3.5svn, There does not appear to be a way to edit these page sets
+              in the gui. You have to edit the file manually.
+    InDesign   yes, like Illustrator, in a grid with specified overlap value.
+    Quark      partial, limited to spanning normal page spreads
+    Inkscape    no
+    Xara
+    Illustrator yes, in a grid with specified overlap value. Overlap since 2008-ish?
+        note  \
+              Appears to be auto laid in a grid with one overlap value, accessed from the Print dialog.
+
+item  "Math calculations in input boxes"
+    Laidout     planned, for .1
+    Scribus     yes
+    InDesign    yes
+    Quark       yes
+    Inkscape    yes
+    Xara
+    Illustrator
+item  "Plugins or scripting"
+    Laidout     planned, for .1
+        note \
+            Since Version .09, there is a very rudimentary command interpreter. It can process simple
+            math and a few commands like Open(), Reimpose(), and Export(). Future versions will have variables,
+            looping, and much more access to objects.
+    Scribus     yes
+    InDesign    yes
+    Quark       yes
+    Inkscape    yes
+    Xara
+    Illustrator
+item  "Edge feathering (as seen in Xara), or equivalent blurring"
+    Laidout
+    Scribus
+    InDesign
+    Quark       yes
+    Inkscape    yes
+    Xara        yes
+    Illustrator
+item  Metafont-y erase brush, aka a knockout "color" or knockout groups
+    Laidout
+    Scribus
+    InDesign
+    Quark
+    Inkscape
+    Xara
+    Illustrator
+item  "Fill applied to stroke"
+    Laidout      
+    Scribus      
+    InDesign     
+    Quark       
+    Inkscape   yes 
+    Xara        
+    Illustrator 
+item  "Editable textwrap path, independent from the actual object"
+    Laidout      
+    Scribus      yes
+    InDesign     yes
+    Quark        yes
+    Inkscape    
+    Xara         yes
+    Illustrator  yes
+item  "Editable clip path"
+    Laidout      
+    Scribus      yes
+    InDesign     yes
+    Quark        yes
+    Inkscape     yes
+    Xara         yes
+    Illustrator  yes
+item  "Use objects as mask (softmask in pdf speak)"
+    Laidout      
+    Scribus     yes, 1.5 has a new Transparency tab, where you can use patterns as a mask
+    InDesign     
+    Quark       no
+    Inkscape    
+    Xara        
+    Illustrator 
+item  "Color separations"
+    Laidout      
+    Scribus     yes 
+    InDesign     
+    Quark       yes
+    Inkscape    
+    Xara        
+    Illustrator 
+item  Color system capabilities flexible enough for any number of inks (think "deviceN", not just RGB, CMYK, CcMmYK, etc)
+    Laidout     planned, .1
+    Scribus      
+    InDesign     
+    Quark       yes
+    Inkscape    
+    Xara        
+    Illustrator 
+item  "ICC color profiles"
+    Laidout     planned, .1
+    Scribus     yes
+    InDesign    yes
+    Quark       yes
+    Inkscape    
+    Xara        
+    Illustrator 
+item  "Autotrace images"
+    Laidout      
+    Scribus      
+    InDesign     
+    Quark       no
+    Inkscape    yes
+    Xara        
+    Illustrator 
+item  "Spread editor"
+    Laidout      yes, much improved as of version 0.095
+    Scribus      partial
+    InDesign     partial
+    Quark       
+    Inkscape    
+    Xara        
+    Illustrator 
+item  "overprinting/trapping on per object basis"
+    Laidout      
+    Scribus      
+    InDesign     
+    Quark       yes
+    Inkscape    
+    Xara        
+    Illustrator 
+item  "UCR, BG"
+    Laidout      
+    Scribus      
+    InDesign     
+    Quark       
+    Inkscape    
+    Xara        
+    Illustrator 
+item  "Rotate whole page view on screen by arbitrary degrees, not just portrait/landscape"
+    Laidout     yes, .01
+    Scribus     no
+    InDesign    no
+    Quark       no
+    Inkscape    planned, active development 2016ish
+    Xara        no
+    Illustrator no
+item  "Preflight verifier"
+    Laidout     planned, .1 
+    Scribus     yes
+    InDesign     
+    Quark       yes
+    Inkscape    
+    Xara        
+    Illustrator 
+item  "Collect for out"                            
+    Laidout     planned, .098
+    Scribus     yes
+    InDesign     
+    Quark       yes
+    Inkscape    
+    Xara        
+    Illustrator 
+item  "Record macros, like Pagestream, Vim, or Openoffice!"                            
+    Laidout      
+    Scribus     planned, In Scribus 1.3.x Roadmap Extras marked as in progress
+    InDesign     
+    Quark       no
+    Inkscape    
+    Xara        
+    Illustrator 
+item  "Non-destructive Bezier patch transforms on any object"                            
+    Laidout      
+    Scribus      
+    InDesign     
+    Quark       
+    Inkscape    
+    Xara        
+    Illustrator 
+item  "Arbitrary f(s,t) transforms, and f(s) or f(t) transforms for paths"                            
+    Laidout      
+    Scribus      
+    InDesign     
+    Quark       
+    Inkscape    
+    Xara        
+    Illustrator 
+item  "Guides that are arbitrary paths, not just vertical and horizontal lines. "                            
+    Laidout     planned, for .1 or .2 
+    Scribus     no
+    InDesign    no
+    Quark       no
+    Inkscape    yes, Version 0.46, via snap to path, and rotatable straight guides
+    Xara        no
+    Illustrator no
+item  "Aligning groups of points, text, and/or objects to paths"                            
+    Laidout      
+    Scribus      
+    InDesign     
+    Quark       
+    Inkscape    
+    Xara        
+    Illustrator 
+item  "Tablet support, stylus, eraser, mouse allowed different functions"                            
+    Laidout      planned, for .1
+    Scribus      
+    InDesign     
+    Quark       
+    Inkscape     partial, pressure support, but each input is same tool
+    Xara        
+    Illustrator 
+item  "Ability to use odd control surfaces like midi controllers, a la the Gimp"                            
+    Laidout      planned, for .1
+    Scribus      
+    InDesign     
+    Quark       
+    Inkscape    
+    Xara        
+    Illustrator 
+item  "<a href=\"http://www.nuigroup.com/\">Multi-touch</a> support, or support for the <a href=\"http://www.x.org/wiki/XI2\">poor person's version</a> using 2 mice and XInput2"
+    Laidout      partial, 0.091
+        note \
+            Only the object tool has this (the poor person's version) in .091. More of that sort of thing
+            will be built into future versions.
+    Scribus      
+    InDesign     
+    Quark       
+    Inkscape    
+    Xara        
+    Illustrator 
+
+
+
+
+section    Non-text Tool Features
+item  Images                            
+    Laidout      yes, .01
+    Scribus      yes
+    InDesign     yes
+    Quark        yes
+    Inkscape     yes
+    Xara         yes
+    Illustrator  yes
+item  "Linear, and circle color gradients"                            
+    Laidout      yes, .02
+    Scribus      yes
+    InDesign     yes
+    Quark        yes
+    Inkscape     yes
+    Xara         yes
+    Illustrator  yes
+item  "On canvas gradient color spot editing"                            
+    Laidout      yes, .02
+    Scribus      no
+    InDesign     
+    Quark       
+    Inkscape     yes, .46
+    Xara         no
+    Illustrator  
+item  "Patch gradients (aka mesh gradients)"                            
+    Laidout      yes, .01
+    Scribus      yes, 1.5svn, colors->gradient->mesh, only 12 point mesh, not full 16
+    InDesign     no
+    Quark        no
+    Inkscape     yes, dev version since 2015ish, awaiting new SVG spec to make standard
+    Xara         no
+    Illustrator  yes
+item  "Image mesh distortions"                            
+    Laidout      yes, .03
+    Scribus      no
+    InDesign     no
+    Quark        no
+    Inkscape     no
+    Xara         no
+    Illustrator  no
+item  "Lines/polygons"
+    Laidout      yes, 0.093
+    Scribus      yes
+    InDesign     yes
+    Quark        yes
+    Inkscape     yes
+    Xara         yes
+    Illustrator  yes
+item  "Engraver fill"
+    Laidout      yes, 0.094
+       note See <a href="https://www.youtube.com/embed/zgIkkDaj-HA">this</a>, for instance 
+    Scribus      no
+    InDesign     
+    Quark        
+    Inkscape     partial
+        note \
+          There are several ways to make a series of hatchings in Inkscape. One is the nearness guide, where nearby lines are detected
+          and when you draw a new line, it is drawn at a certain distance away. Another way is the
+          <a href="https://inkscape.org/en/doc/tutorials/interpolate/tutorial-interpolate.en.html">Interpolate</a> extension, which interpolates
+          between two different lines, creating a field like effect.  
+    Xara         
+	Illustrator  plugin, Widthscribe from Astute Graphics looks nice.
+item  "Ellipses, arcs, chords"                            
+    Laidout      yes, .093, via '0' to lay bezier points along a circle, then scale to ellipse
+    Scribus      yes
+    InDesign     yes
+    Quark        yes
+    Inkscape     yes
+    Xara         yes
+    Illustrator  yes
+item  "Paths composed of different types, such as a circular arc to a bezier segment to a straight segment, and still allow specialized editing of such shapes"
+    Laidout      planned, for .1
+    Scribus      
+    InDesign     
+    Quark        
+    Inkscape    
+    Xara        
+    Illustrator 
+item  "Beginning/end/middle arrows and such"                            
+    Laidout      
+    Scribus     yes
+    InDesign    
+    Quark       yes
+    Inkscape    yes
+    Xara        
+    Illustrator 
+item  "Repeater tool along path"                            
+    Laidout      
+    Scribus     partial, only works with paths, Path Tools->Path along Path 
+    InDesign     
+    Quark       
+    Inkscape    yes
+    Xara        
+    Illustrator 
+item  "Cloning objects, optionally with link backs to original objects"                            
+    Laidout     yes, 0.094
+    Scribus     partial, Duplicates yes, but referenced clones not yet (see scribus bug 1704)
+    InDesign     
+    Quark       
+    Inkscape    yes
+    Xara        
+    Illustrator 
+
+
+
+section   Text Features
+item  "Text. Any text at all. I mean, come on!"
+    Laidout     yes, 0.096. Simple unlinked, unflowed caption boxes. Each box has to be a single font, orientation, size, and color.
+    Scribus     yes
+    InDesign    yes
+    Quark       yes
+    Inkscape    yes
+    Xara        yes
+    Illustrator yes
+item  "Text on a line"                            
+    Laidout      
+    Scribus      yes
+    InDesign     yes
+    Quark        yes
+    Inkscape     yes
+    Xara         yes
+    Illustrator  yes
+item  "Text flowed across linked boxes"                            
+    Laidout      
+    Scribus      yes
+    InDesign     yes
+    Quark        yes
+    Inkscape     yes
+    Xara         yes
+    Illustrator  yes
+item  "Manual layered color fonts (one file per layer), text editable as if it were a single font"
+    Laidout      yes, 0.096
+    Scribus      
+    InDesign     
+    Quark       
+    Inkscape    
+    Xara        
+    Illustrator 
+item  "Opentype color fonts"
+    Laidout      
+    Scribus      
+    InDesign     
+    Quark       
+    Inkscape    
+    Xara        
+    Illustrator 
+item  "Opentype feature support"
+    Laidout      
+    Scribus      
+    InDesign     
+    Quark       
+    Inkscape    
+    Xara        
+    Illustrator 
+item  "Mixed right to left, left to right"
+    Laidout
+    Scribus    planned, for 1.6, the text engine retwritten from scratch
+    InDesign   yes
+      note \
+        Complicated history, but looks like CC supports this. Non-cc from CS4 can use the 
+        World Ready Composer, if you can find it.
+    Quark
+    Inkscape
+    Xara
+    Illustrator
+item  "Vertical text"
+    Laidout
+    Scribus
+    InDesign
+    Quark
+    Inkscape     yes
+    Xara
+    Illustrator
+item  "Text streams in separate files, comparable to images not being embedded"
+    Laidout      
+    Scribus      
+    InDesign     
+    Quark        
+    Inkscape     
+    Xara         
+    Illustrator  
+item  "Convert Text to editable path"                            
+    Laidout      
+    Scribus      yes
+    InDesign     yes
+    Quark        yes
+    Inkscape     yes
+    Xara         
+    Illustrator  yes
+item  "Math equations support"
+    Laidout     
+    Scribus     partial, 1.3.5 via Render frames and LaTeX
+       note \
+           As of 1.3.5 anyway, you can render formulas in Scribus Render Frames, then copy the frame, then paste
+           the frame while inside a text stream, from within a text frame. Pasting while in story editor will
+           paste a bunch of xml data
+           that is used as text rather than as an image. Suffice it to say inline graphics needs a bit of work.
+    InDesign    plugin, MathMagic, for instance
+    Quark       
+    Inkscape    
+    Xara        
+    Illustrator 
+item  "Story Editor"                            
+    Laidout      
+    Scribus     yes 
+    InDesign    yes 
+    Quark       no
+    Inkscape    
+    Xara        
+    Illustrator 
+item  "Tabstops that lie on arbitrary paths, not just vertical and horizontal lines. Someday will be gone the days of rigidly defined and poorly accessed tabstops!"
+    Laidout      
+    Scribus      no
+    InDesign     no
+    Quark        no
+    Inkscape     no
+    Xara         no
+    Illustrator  no
+item "Tables"
+    Laidout      
+    Scribus      planned
+    InDesign     
+    Quark        yes
+    Inkscape    
+    Xara        
+    Illustrator 
+item  "Automatic Hyphenation and justification"                            
+    Laidout      
+    Scribus      yes
+    InDesign     
+    Quark        yes
+    Inkscape    
+    Xara        
+    Illustrator 
+item  "Insert sample gibberish text!! Yeah!"                            
+    Laidout      
+    Scribus      yes
+    InDesign     yes
+    Quark        yes
+    Inkscape     yes
+    Xara        
+    Illustrator 
+item  "Numbered and unnumbered lists"
+    Laidout      
+    Scribus      
+    InDesign     
+    Quark        
+    Inkscape     
+    Xara        
+    Illustrator 
+item  "Generated pages, for instance for tables of contents, bibliography, index"
+    Laidout      
+    Scribus      
+    InDesign     
+    Quark        
+    Inkscape     
+    Xara        
+    Illustrator 
+#item  "The power of <a href=\"http://www.tug.org\">TeX</a>"
+#    Laidout      
+#    Scribus     no
+#    InDesign     
+#    Quark       no
+#    Inkscape    no
+#    Xara        no
+#    Illustrator no
+
+
+
+
+section  Export
+item  "To image"                            
+    Laidout      yes, .08, requires Ghostscript
+    Scribus      yes, can mass export each page to separate image files
+    InDesign     
+    Quark        yes
+    Inkscape     yes
+    Xara         yes
+    Illustrator  yes
+item  EPS/Postscript                            
+    Laidout      yes, ps in .01, eps in .03
+    Scribus      yes
+    InDesign     
+    Quark        yes
+    Inkscape     yes, by printing to a file
+    Xara         yes
+    Illustrator 
+item  Html
+    Laidout      
+    Scribus     
+    InDesign     
+    Quark        yes
+    Inkscape    
+    Xara         no
+    Illustrator 
+item  PDF                            
+    Laidout      partial, .08, but not EPS objects
+    Scribus      yes
+    InDesign     yes
+    Quark        yes
+    Inkscape     yes
+    Xara         yes
+    Illustrator  yes
+item  Scribus                            
+    Laidout      partial, .08, images and groups only
+    Scribus      yes
+    InDesign     no
+    Quark        no
+    Inkscape     no
+    Xara         no
+    Illustrator  no
+item  SVG/Inkscape                            
+    Laidout      partial, 0.08, no image warps, not some radial gradients
+    Scribus      yes
+    InDesign     
+    Quark       
+    Inkscape     yes
+    Xara         yes
+    Illustrator 
+item  "Openoffice.org Draw"                            
+    Laidout      
+    Scribus      
+    InDesign     
+    Quark       
+    Inkscape     yes
+    Xara        
+    Illustrator 
+item  Passepartout
+    Laidout      partial, 0.07, groups and images only
+    Scribus      no
+    InDesign     no
+    Quark        no
+    Inkscape     no
+    Xara         no
+    Illustrator  no
+item  Laidout
+    Laidout      yes
+    Scribus      no
+    InDesign     no
+    Quark        no
+    Inkscape     no
+    Xara         no
+    Illustrator  no
+item  TeX/LaTeX                            
+    Laidout      no
+    Scribus      no
+    InDesign     no
+    Quark        no
+    Inkscape     partial, you can save as LaTeX with pstricks
+    Xara         no
+    Illustrator  no
+    
+
+
+section  Importing
+item  "Multiple images at the same time"  
+    Laidout      yes, .05
+    Scribus      plugin
+        note  \
+            <a href="http://wiki.scribus.net/index.php/Automatic_import_of_images:_Versions_not_requiring_Tkinter">These
+            plugins</a> allows you to dump in images potentially to multiple pages, but you are restricted to
+            a grid of 4, 6, or 12 images per page. If python programming doesn't scare you off, you could modify
+            it to be more adaptible.
+    InDesign     yes, in CS3, what a clever Place tool!
+    Quark        partial, by dragging and dropping from a file browser
+    Inkscape     partial, by dragging and dropping from a file browser
+    Xara         no
+    Illustrator  no
+item  EPS                            
+    Laidout      yes, as a whole, .06
+    Scribus      yes, can break down the eps into its parts, has trouble with masked images and patch gradients
+    InDesign     
+    Quark        yes
+    Inkscape    
+    Xara        
+    Illustrator 
+item  Html                            
+    Laidout      
+    Scribus     partial
+        note \
+            Using the "Get Text" option in a text frame. 
+            CSS not supported yet. Text is pulled from the body element, and you can use these tags:
+            div, a, p, br, h1, h2, h3, h4, ol, ul, li, pre, code, b, u, i, em, strong, sub, sup, del, u.
+    InDesign     
+    Quark       partial
+    Inkscape    
+    Xara        
+    Illustrator 
+item  PDF                            
+    Laidout      
+    Scribus     partial, pretty sure it's done through importing rasterized pages
+    InDesign     
+    Quark       yes
+    Inkscape    
+    Xara        
+    Illustrator 
+item  Scribus                            
+    Laidout      partial, .09, very partial
+      note \
+          Scribus import works with mixed results. 
+          As of .092, master pages and text variables are importable.
+          As of .091, linked text and table frames stay linked, even in tiled impositions.
+          The best way to use the importer is for reimposing. For this, import all data as mystery
+          data, and all that data (other than master pages) will be passed through on export.
+          If you do not import all as mystery data, please beware that images whose frames do
+          not match exactly with their image
+          boundaries are not handled correctly. This will hopefully be handled in .094.
+    Scribus      yes
+    InDesign     
+    Quark       
+    Inkscape    
+    Xara        
+    Illustrator 
+item  SVG/Inkscape                            
+    Laidout      partial, .09, images and groups only
+    Scribus      partial
+    InDesign     
+    Quark       
+    Inkscape     yes
+    Xara        
+    Illustrator 
+item  "Openoffice.org Draw"                            
+    Laidout      
+    Scribus      yes
+    InDesign     
+    Quark       
+    Inkscape    
+    Xara        
+    Illustrator 
+item  Passepartout
+    Laidout      partial, 0.09, text boxes are imported as mystery data
+    Scribus      no
+    InDesign     no
+    Quark        no
+    Inkscape     no
+    Xara         no
+    Illustrator  no
+item  TeX/LaTeX                            
+    Laidout      
+    Scribus      partial, 1.3.5, via Render frames, rasterized and imported
+        note \
+            <a href="http://wiki.scribus.net/index.php/Embedding_other_external_tools_into_a_TeX_frame">Scribus
+            render frames</a>, in addition to TeX/LaTeX, 
+            also allow importing many other formats, like gnuplot, lilypond, mathml, as long
+            as you have a renderer installed somewhere that can convert those things to an image format
+            or PDF that Scribus can import. You can edit the source text within Scribus,
+            then have the render frame re-render. The TeX input has a fancy symbol selector, which is convenient.
+    InDesign     
+    Quark       
+    Inkscape    
+    Xara        
+    Illustrator 
+item  Laidout
+    Laidout      yes, in the sense that you open a document, but no partial import
+    Scribus      no
+    InDesign     no
+    Quark        no
+    Inkscape     no
+    Xara         no
+    Illustrator  no
+item Externally rendered formats (for instance, <a href="http://wiki.scribus.net/index.php/Embedding_other_external_tools_into_a_TeX_frame">Scribus render frames</a>)
+    Laidout      planned, for .094
+    Scribus      yes, Render Frames
+    InDesign     
+    Quark        
+    Inkscape     
+    Xara         
+    Illustrator  
+
+

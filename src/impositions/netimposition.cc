@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2013 by Tom Lechner
@@ -353,20 +352,7 @@ Value *NewNetImposition()
 	return n;
 }
 
-//! Return a new EnumStyle instance that has Dodecahedron listed.
-/*! \todo this has to be automated....
- */
-Style *CreateNetListEnum(ObjectDef *sd)
-{
-	EnumStyle *e=new EnumStyle;
-	e->add("Dodecahedron",0);
-	e->add("Box",1);
-	return e;
-}
-
 //! Make an instance of the NetImposition objectdef.
-/* ...
- */
 ObjectDef *makeNetImpositionObjectDef()
 {
 	ObjectDef *sd=new ObjectDef(NULL,
@@ -561,6 +547,7 @@ LaxInterfaces::SomeData *NetImposition::GetPageOutline(int pagenum,int local)
 	}
 
 	PathsData *newpath=new PathsData(); //count==1
+	newpath->style |= PathsData::PATHS_Ignore_Weights;
 	unsigned long flag=(isbez==2 ? POINT_TONEXT : POINT_VERTEX);
 	for (int c=0; c<n; c++) {
 		newpath->append(pts[c].x,pts[c].y,flag);
@@ -653,16 +640,18 @@ Spread *NetImposition::GenerateSpread(Spread *spread, //!< If not null, append t
 	//DBG net->dump_out(stderr,0,0,NULL);
 	//DBG cerr <<"-- end net dump"<<endl;
 
-	if (!spread) spread=new Spread();
-	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
+	if (!spread) spread = new Spread();
+	spread->mask = SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
 
 	 // fill pagestack
-	PathsData *spreadpath=dynamic_cast<PathsData *>(spread->path);
-	//DBG if (!spreadpath && spread->path) cerr <<"**** error!!! wrong type for net spread path!"<<endl;
+	PathsData *spreadpath = dynamic_cast<PathsData *>(spread->path);
+	DBG if (!spreadpath && spread->path) cerr <<"**** error!!! wrong type for net spread path!"<<endl;
 	if (!spreadpath) { 
-		spreadpath=new PathsData;
-		spread->path=spreadpath;
+		spreadpath = new PathsData;
+		spread->path = spreadpath;
 	}
+
+	spreadpath->style |= PathsData::PATHS_Ignore_Weights;
 
 	 // build lines...
 	NetLine *l=NULL;
@@ -803,7 +792,7 @@ Spread *NetImposition::PaperLayout(int whichpaper)
 	Spread *spread=PageLayout(whichpaper);
 	spread->style=SPREAD_PAPER;
 
-	PathsData *path=dynamic_cast<PathsData *>(spread->path);//this was a non-local PathsData obj
+	PathsData *path = dynamic_cast<PathsData *>(spread->path);//this was a non-local PathsData obj
 
 	 // put a reference to the outline in marks if printnet
 	if (printnet) {

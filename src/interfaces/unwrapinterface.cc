@@ -6,8 +6,10 @@
 #include <lax/transformmath.h>
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
+
+
+//template implementation:
 #include <lax/lists.cc>
-#include "nets.h"
 
 
 

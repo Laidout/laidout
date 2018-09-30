@@ -10,7 +10,7 @@ LAXOBJDIR=$(LAXDIR)
 LD=g++
 LDFLAGS= -L/usr/X11R6/lib -lX11 -lm -lpng `imlib2-config --libs` -L$(LAXDIR) -L$(LAXIDIR)
 DEBUGFLAGS= -g -gdwarf-2
-CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) -I. -I.. -I$(LAXDIR)/.. -I/usr/include/freetype2
+CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. -I/usr/include/freetype2
 
 
 objs= \
@@ -26,6 +26,10 @@ objs= \
 	animationinterface.o \
 	objecttree.o \
 	pagemarkerinterface.o \
+	nodeinterface.o \
+	nodeeditor.o \
+	nodes.o \
+	objectfilterinterface.o \
 
 
 
@@ -46,4 +50,4 @@ unhidegarbage:
 .PHONY: clean interfaces hidegarbage unhidegarbage
 clean:
 	rm -f *.o
-	
+

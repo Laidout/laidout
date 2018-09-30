@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2012 by Tom Lechner
@@ -366,28 +365,30 @@ const NetFaceEdge &NetFaceEdge::operator=(const NetFaceEdge &e)
 
 NetFace::NetFace()
 {
-	tick=0;
-	tag=FACE_None;
-	matrix=NULL;
-	isfront=1;
-	original=-1;
+	tick     = 0;
+	tag      = FACE_None;
+	matrix   =NULL;
+	isfront  =  1;
+	original = -1;
+	binding  = -1; //edge to be considered a binding edge when stacked with other things, or -1 if none
 }
 	
+NetFace::NetFace(const NetFace &f)
+{
+	tick     = 0;
+	tag      = FACE_None;
+	matrix   = NULL;
+	isfront  = 1;
+	original = -1;
+	binding  = -1; //edge to be considered a binding edge when stacked with other things, or -1 if none
+
+	*this=f;
+}
+
 NetFace::~NetFace()
 { 
 	if (matrix) delete[] matrix;
 	//edges.flush();
-}
-
-NetFace::NetFace(const NetFace &f)
-{
-	tick=0;
-	tag=FACE_None;
-	matrix=NULL;
-	isfront=1;
-	original=-1;
-
-	*this=f;
 }
 
 //! Delete matrix, set isfront=1, original=-1, flush edges.
@@ -395,8 +396,9 @@ void NetFace::clear()
 {
 	if (matrix) { delete[] matrix; matrix=NULL; }
 	edges.flush();
-	original=-1;
-	isfront=1;
+	original = -1;
+	isfront  = 1;
+	binding  = -1;
 }
 
 //! Assignment operator, straightforward copy all.
@@ -407,8 +409,10 @@ const NetFace &NetFace::operator=(const NetFace &face)
 	if (matrix) { delete[] matrix; matrix=NULL; }
 	edges.flush();
 
-	original=face.original;
-	isfront=face.isfront;
+	original = face.original;
+	isfront  = face.isfront;
+	binding  = face.binding;
+
 	if (face.matrix) {
 		matrix=new double[6];
 		transform_copy(matrix,face.matrix);
@@ -1345,7 +1349,7 @@ AbstractNet *Net::loadBaseNet(const char *filename,char **error_ret)
 {
 	BasicNet *net=new BasicNet;
 	Attribute att;
-	att.dump_in(filename,NULL);
+	att.dump_in(filename);
 	net->dump_in_atts(&att,0,NULL);
 	return net;
 }

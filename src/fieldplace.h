@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2013 by Tom Lechner
@@ -63,8 +62,7 @@ class FieldPlace : protected Laxkit::NumStack<int>
 	FieldPlace(const FieldPlace &place);
 	virtual ~FieldPlace() {}
 	virtual int n() const { return Laxkit::NumStack<int>::n; }
-	virtual int e(int i) const { if (i>=0 && i<Laxkit::NumStack<int>::n) 
-		return Laxkit::NumStack<int>::e[i];  return -1; }
+	virtual int e(int i) const { if (i>=0 && i<Laxkit::NumStack<int>::n) { return Laxkit::NumStack<int>::e[i]; }  return -1; }
 	virtual int e(int i,int val) { if (i>=0 && i<Laxkit::NumStack<int>::n) 
 		{ return Laxkit::NumStack<int>::e[i]=val; }  return -1; }
 	virtual int operator==(const FieldPlace &place) const;

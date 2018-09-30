@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,10 +7,10 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2010-2013 by Tom Lechner
+// Copyright (C) 2010-2018 by Tom Lechner
 //
 
 
@@ -550,11 +549,12 @@ void SignatureInterface::createHandles()
 	c =color_h;
 	c2=color_text;
 	controls.push(new ActionArea(SP_Paper_Name       , AREA_H_Slider, siginstance->partition->paper->name, ("Paper to use"),0,1,c,0,c2));
-	controls.push(new ActionArea(SP_Paper_Width      , AREA_H_Slider, siginstance->partition->paper->name, ("Paper width"),0,1,c,0,c2));
+	controls.push(new ActionArea(SP_Paper_Width      , AREA_H_Slider, siginstance->partition->paper->name, ("Paper width"), 0,1,c,0,c2));
 	controls.push(new ActionArea(SP_Paper_Height     , AREA_H_Slider, siginstance->partition->paper->name, ("Paper height"),0,1,c,0,c2));
-	controls.push(new ActionArea(SP_Paper_Orient     , AREA_H_Slider, "--", ("Paper orientation"),0,1,c,0,c2));
-	controls.push(new ActionArea(SP_Current_Sheet    , AREA_H_Slider, "Sheet", ("Current sheet"),0,1,c,0,c2));
-	controls.push(new ActionArea(SP_Num_Pages        , AREA_H_Slider, "Pages",  _("Wheel or drag changes number of pages"),0,1,c,0,c2));
+	controls.push(new ActionArea(SP_Paper_Orient     , AREA_H_Slider, "--",        _("Paper orientation"),0,1,c,0,c2));
+	controls.push(new ActionArea(SP_Current_Sheet    , AREA_H_Slider, "Sheet",     _("Current sheet"),    0,1,c,0,c2));
+	controls.push(new ActionArea(SP_Num_Pages        , AREA_H_Slider, "Pages",     _("Wheel or drag changes number of pages"),      0,1,c,0,c2));
+	controls.push(new ActionArea(SP_Automarks        , AREA_H_Slider, "Automarks", _("Wheel or click to select auto printer marks"),0,1,c,0,c2));
 
 	c=color_inset;
 	controls.push(new ActionArea(SP_Inset_Top        , AREA_Handle, NULL, _("Inset top"),   2,1,c,0));
@@ -599,8 +599,6 @@ void SignatureInterface::createHandles()
 	controls.push(new ActionArea(SP_New_Insert       , AREA_Button, NULL,    _("New insert"),1,0,0,0));
 	controls.push(new ActionArea(SP_Delete_Stack     , AREA_Button, NULL,    _("Delete this one"),1,0,0,0));
 	//controls.push(new ActionArea(SP_Sheets_Per_Sig   , AREA_Slider, NULL, _("Wheel or drag changes"),1,1,0,0));
-
-	controls.push(new ActionArea(SP_Automarks        , AREA_Slider, "Automarks", _("Wheel or click to select auto printer marks"),1,0,0,0));
 }
 
 ActionArea *SignatureInterface::control(int what)
@@ -644,25 +642,16 @@ void SignatureInterface::remapHandles(int which)
 
 	 //----- sheets and pages, and other general settings
 	if (which==0 || which&1) {
-		// Final page size: ....     Current paper
-		// Letter | Portrait           num pages
+		// Final page size: ....                      [Current paper]
+		// [Letter] [width] [height] [Portrait]           [num pages]
+		// [automarks]
 
-
-		 // *** not sure what to really do with this:
-		area=control(SP_Automarks);
-		p=area->Points(NULL,4,0);
-		p[0]=flatpoint(0,-hh*.3);  p[1]=flatpoint(ww,-hh*.3); p[2]=flatpoint(ww,-hh*.4); p[3]=flatpoint(0,-hh*.4);
-		area->FindBBox();
-		if (siginstance->automarks==0) makestr(area->text,"No automarks");
-		else if (siginstance->automarks==AUTOMARK_Margins) makestr(area->text,"Automarks outside");
-		else if (siginstance->automarks==AUTOMARK_InnerDot) makestr(area->text,"Automarks inside");
-		else if (siginstance->automarks==(AUTOMARK_InnerDot|AUTOMARK_Margins)) makestr(area->text,"Automarks inside and outside");
-		area->hidden=1;
 
 		char buffer[100];
-		double hhhh=dp->textheight()*1.4;
+		double hhhh = dp->textheight()*1.4;
 		double wwww;
 
+		//----------left side
 		 //SP_Paper_Name
 		area=control(SP_Paper_Name);
 		makestr(area->text,siginstance->partition->paper->name);
@@ -693,6 +682,17 @@ void SignatureInterface::remapHandles(int which)
 		wwww=dp->textextent(area->text,-1, NULL,NULL)+hhhh;
 		area->SetRect(xxxx,hhhh, wwww,hhhh);
 
+		 //SP_Automarks
+		area = control(SP_Automarks);
+		if (siginstance->automarks==0) makestr(area->text, _("No automarks"));
+		else if (siginstance->automarks==AUTOMARK_Margins)  makestr(area->text, _("Automarks outside"));
+		else if (siginstance->automarks==AUTOMARK_InnerDot) makestr(area->text, _("Automarks inside"));
+		else if (siginstance->automarks==(AUTOMARK_InnerDot|AUTOMARK_Margins)) makestr(area->text,_("Automarks in and out"));
+		wwww = dp->textextent(area->text,-1, NULL,NULL)+hhhh;
+		area->SetRect(0,2*hhhh, wwww,hhhh);
+
+
+		//----------right side
 		 //SP_Current_Sheet
 		area=control(SP_Current_Sheet);
 		sprintf(buffer,"Sheet %d/%d, %s",(int(currentPaperSpread/2)+1),
@@ -921,6 +921,10 @@ int SignatureInterface::Refresh()
 	double x,y,w,h;
 	static char str[150];
 
+	//int front = OnBack();
+	//double xl = (front ? siginstance->partition->insetleft  : siginstance->partition->insetright);
+	//double xr = (front ? siginstance->partition->insetright : siginstance->partition->insetleft);
+
 	 //----------------draw whole outline
 	dp->NewFG(1.,0.,1.); //purple for paper outline, like custom papergroup border color
 	GetDimensions(w,h);
@@ -933,10 +937,15 @@ int SignatureInterface::Refresh()
 	
 	 //----------------draw inset
 	dp->NewFG(color_inset); //dark red for inset
-	if (siginstance->partition->insetleft)   dp->drawline(siginstance->partition->insetleft,0, siginstance->partition->insetleft,h);
-	if (siginstance->partition->insetright)  dp->drawline(w-siginstance->partition->insetright,0, w-siginstance->partition->insetright,h);
-	if (siginstance->partition->insettop)    dp->drawline(0,h-siginstance->partition->insettop, w,h-siginstance->partition->insettop);
-	if (siginstance->partition->insetbottom) dp->drawline(0,siginstance->partition->insetbottom, w,siginstance->partition->insetbottom);
+	if (OnBack()) {
+		if (siginstance->partition->insetleft)   dp->drawline(siginstance->partition->insetleft,0,    siginstance->partition->insetleft, h);
+		if (siginstance->partition->insetright)  dp->drawline(w-siginstance->partition->insetright,0, w-siginstance->partition->insetright, h);
+	} else {
+		if (siginstance->partition->insetleft)   dp->drawline(siginstance->partition->insetright,0,    siginstance->partition->insetright, h);
+		if (siginstance->partition->insetright)  dp->drawline(w-siginstance->partition->insetleft,0, w-siginstance->partition->insetleft, h);
+	}
+	if (siginstance->partition->insettop)    dp->drawline(0,h-siginstance->partition->insettop,   w, h-siginstance->partition->insettop);
+	if (siginstance->partition->insetbottom) dp->drawline(0,siginstance->partition->insetbottom,  w, siginstance->partition->insetbottom);
 
 
 	//DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh draw pattern, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
@@ -961,27 +970,29 @@ int SignatureInterface::Refresh()
 
 	//DBG dumpfoldinfo(foldinfo, signature->numhfolds, signature->numvfolds);
 
-	int rangeofpapers=2*siginstance->sheetspersignature;
-	int npageshalf=siginstance->PagesPerSignature(0,1)/2;
+	int rangeofpapers = 2*siginstance->sheetspersignature;
+	int npageshalf = siginstance->PagesPerSignature(0,1)/2;
+	double apparentleft = OnBack() ? siginstance->partition->insetleft : siginstance->partition->insetright; 
 
-	x=siginstance->partition->insetleft;
+	x = apparentleft;
 	for (int tx=0; tx<siginstance->partition->tilex; tx++) {
-	  y=siginstance->partition->insetbottom;
+	  y = siginstance->partition->insetbottom;
+
 	  for (int ty=0; ty<siginstance->partition->tiley; ty++) {
 
 		 //fill in light gray for elements with no current faces
 		 //or draw orientation arrow and number for existing faces
 		for (int rr=0; rr<signature->numhfolds+1; rr++) {
 		  for (int cc=0; cc<signature->numvfolds+1; cc++) {
-			hasface=foldinfo[rr][cc].pages.n;
+			hasface = foldinfo[rr][cc].pages.n;
 
 			 //when on back page, flip horizontal placements
 			if (foldlevel==0 && OnBack()) {
-				urr=rr;
-				ucc=signature->numvfolds-cc;
+				urr = rr;
+				ucc = signature->numvfolds-cc;
 			} else {
-				urr=rr;
-				ucc=cc;
+				urr = rr;
+				ucc = cc;
 			}
 
 			 //first draw filled face, grayed if no current faces
@@ -1337,21 +1348,22 @@ int SignatureInterface::Refresh()
 		area=controls.e[c];
 		if (area->hidden) continue;
 
-		if (area->action==SP_Automarks) {
-			if (!area->hidden) {
-				dp->NewFG(color_inset);
-				dv=flatpoint((area->minx+area->maxx)/2,(area->miny+area->maxy)/2);
-				dv=dp->realtoscreen(dv);
-				dp->DrawScreen();
-				dp->textout(dv.x,dv.y,area->text,-1,LAX_CENTER);
-				dp->DrawReal();
-			}
-
-		} else if (area->action==SP_Tile_Gap_X) {
+//		if (area->action==SP_Automarks) {
+//			if (!area->hidden) {
+//				dp->NewFG(color_inset);
+//				dv=flatpoint((area->minx+area->maxx)/2,(area->miny+area->maxy)/2);
+//				dv=dp->realtoscreen(dv);
+//				dp->DrawScreen();
+//				dp->textout(dv.x,dv.y,area->text,-1,LAX_CENTER);
+//				dp->DrawReal();
+//			}
+//
+//		} else
+		if (area->action==SP_Tile_Gap_X) {
 			if (overoverlay==SP_Tile_Gap_X) {
 				dp->LineWidthScreen(5);
 				for (int c2=0; c2<siginstance->partition->tilex-1; c2++) {
-					d=pp->insetleft+(c2+1)*(pp->tilegapx+s->PatternWidth()) - pp->tilegapx/2;
+					d = (OnBack() ? pp->insetleft : pp->insetright) + (c2+1)*(pp->tilegapx+s->PatternWidth()) - pp->tilegapx/2;
 					dp->drawline(d,0, d,totalheight);
 				}
 			}
@@ -1398,8 +1410,8 @@ int SignatureInterface::Refresh()
 			dp->LineWidthScreen(1);
 			dv.x=dv.y=0;
 			if (area->category==2) { //page specific
-				dv.x=pp->insetleft  +activetilex*(s->PatternWidth() +pp->tilegapx) + finalc*s->PageWidth(0);
-				dv.y=pp->insetbottom+activetiley*(s->PatternHeight()+pp->tilegapy) + finalr*s->PageHeight(0);
+				dv.x = (OnBack() ? pp->insetleft : pp->insetright)  +activetilex*(s->PatternWidth() +pp->tilegapx) + finalc*s->PageWidth(0);
+				dv.y = pp->insetbottom+activetiley*(s->PatternHeight()+pp->tilegapy) + finalr*s->PageHeight(0);
 			}
 			drawHandle(area,dv);
 		}
@@ -1575,6 +1587,8 @@ void SignatureInterface::drawHandle(ActionArea *area, flatpoint offset)
 	dp->NewFG(area->color);
 	dp->PushAxes();
 
+	if (!OnBack()) dp->ShiftReal(siginstance->partition->insetright - siginstance->partition->insetleft, 0);
+
 	if (area->real==1) dp->DrawReal(); else dp->DrawScreen();
 	dp->LineWidthScreen(1);
 
@@ -1741,6 +1755,9 @@ int SignatureInterface::scanHandle(int x,int y, int *i1, int *i2)
 		}
 	}
 
+	double insetleft = OnBack() ? pp->insetleft  : pp->insetright;
+	double insetright= OnBack() ? pp->insetright : pp->insetleft;
+
 	for (int c=0; c<controls.n; c++) {
 		if (controls.e[c]->hidden) continue;
 
@@ -1760,7 +1777,7 @@ int SignatureInterface::scanHandle(int x,int y, int *i1, int *i2)
 			 //fold lines, in the pattern area
 			for (int x=0; x<siginstance->partition->tilex; x++) {
 			  for (int y=0; y<siginstance->partition->tiley; y++) {
-				tp=fp-flatpoint(pp->insetleft,pp->insetbottom);
+				tp=fp-flatpoint(insetleft,pp->insetbottom);
 				tp-=flatpoint(x*(pp->tilegapx+s->PatternWidth()), y*(pp->tilegapy+s->PatternHeight()));
 
 				if (controls.e[c]->PointIn(tp.x,tp.y)) return controls.e[c]->action;
@@ -1771,7 +1788,7 @@ int SignatureInterface::scanHandle(int x,int y, int *i1, int *i2)
 			 //in a final page area
 			double w=s->PageWidth(0);
 			double h=s->PageHeight(0);
-			tp.x=fp.x-(pp->insetleft  +activetilex*(s->PatternWidth() +pp->tilegapx) + finalc*w);
+			tp.x=fp.x-(insetleft  +activetilex*(s->PatternWidth() +pp->tilegapx) + finalc*w);
 			tp.y=fp.y-(pp->insetbottom+activetiley*(s->PatternHeight()+pp->tilegapy) + finalr*h);
 
 			ffp=tp-controls.e[c]->offset;
@@ -1799,7 +1816,7 @@ int SignatureInterface::scanHandle(int x,int y, int *i1, int *i2)
 			if (controls.e[c]->action==SP_Tile_Gap_X) {
 				for (int c=0; c<siginstance->partition->tilex-1; c++) {
 					 //first check for inside gap itself
-					d=pp->insetleft+(c+1)*(pp->tilegapx+s->PatternWidth())-pp->tilegapx/2;
+					d=insetleft+(c+1)*(pp->tilegapx+s->PatternWidth())-pp->tilegapx/2;
 					if (pp->tilegapx>zone) zone=pp->tilegapx;
 					if (fp.y>0 && fp.y<totalheight && fp.x<=d+zone/2 && fp.x>=d-zone/2) return SP_Tile_Gap_X;
 				}
@@ -1816,13 +1833,13 @@ int SignatureInterface::scanHandle(int x,int y, int *i1, int *i2)
 	}
 
 	 //check for gross areas for insets 
-	if (fp.x>0 && fp.x<siginstance->partition->totalwidth) {
-		if (fp.y>0 && fp.y<siginstance->partition->insetbottom) return SP_Inset_Bottom;
+	if (fp.x>0 && fp.x<pp->totalwidth) {
+		if (fp.y>0 && fp.y<pp->insetbottom) return SP_Inset_Bottom;
 		if (fp.y>totalheight-pp->insettop && fp.y<totalheight) return SP_Inset_Top;
 	}
-	if (fp.y>0 && fp.y<siginstance->partition->totalheight) {
-		if (fp.x>0 && fp.x<siginstance->partition->insetleft) return SP_Inset_Left;
-		if (fp.x>totalwidth-pp->insetright && fp.x<totalwidth) return SP_Inset_Right;
+	if (fp.y>0 && fp.y<pp->totalheight) {
+		if (fp.x>0 && fp.x<insetleft) return SP_Inset_Left;
+		if (fp.x>totalwidth-insetright && fp.x<totalwidth) return SP_Inset_Right;
 	}
 
 
@@ -2019,14 +2036,15 @@ int SignatureInterface::adjustControl(int handle, int dir)
 			else if (siginstance->automarks==AUTOMARK_InnerDot) siginstance->automarks=AUTOMARK_Margins;
 			else siginstance->automarks=0;
 		}
-		ActionArea *area=control(SP_Automarks);
+		ActionArea *area = control(SP_Automarks);
 		if (siginstance->automarks==0) makestr(area->text,"No automarks");
 		else if (siginstance->automarks==AUTOMARK_Margins) makestr(area->text,"Automarks outside");
 		else if (siginstance->automarks==AUTOMARK_InnerDot) makestr(area->text,"Automarks inside");
 		else if (siginstance->automarks==(AUTOMARK_InnerDot|AUTOMARK_Margins)) makestr(area->text,"Automarks inside and outside");
+		remapHandles(1);
 		needtodraw=1;
 		return 0;
-		
+
 	} else if (handle==SP_Num_Pages) {
 		if (dir==1) {
 			int dp=sigimp->numdocpages;
@@ -2284,7 +2302,7 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 		if (foldlevel<signature->folds.n) {
 			 //we have tried to fold when there are already further folds, so we must remove any
 			 //after the current foldlevel.
-			while (foldlevel<signature->folds.n) signature->folds.remove();
+			while (foldlevel<signature->folds.n) signature->folds.remove(-1);
 			hasfinal=0;
 		}
 
@@ -2718,6 +2736,7 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 			return 0;
 
 		} else if (onoverlay>=SP_FOLDS) {
+			 //drag on the fold stack indicator
 			if (ly-y==0) return 0; //return if not moved vertically
 
 			int startindicator,lasty;

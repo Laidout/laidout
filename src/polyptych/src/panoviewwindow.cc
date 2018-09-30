@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2012 by Tom Lechner
@@ -115,6 +114,7 @@ enum PanoViewWindowAction {
 	HEDA_ZoomIn,
 	HEDA_ZoomOut,
 	HEDA_ResetView,
+	HEDA_ToggleFreeRotate,
 	HEDA_MAX
 };
 
@@ -204,6 +204,7 @@ PanoViewWindow::PanoViewWindow(anXWindow *parnt,const char *nname,const char *nt
 	draw_info=1;
 	draw_overlays=1;
 	draw_edges=1;
+	free_rotate = 0;
 
 	mouseover_overlay=-1;
 	mouseover_index=-1;
@@ -234,14 +235,15 @@ PanoViewWindow::PanoViewWindow(anXWindow *parnt,const char *nname,const char *nt
 	consolefont=NULL;
 	movestep=.5;
 	autorepeat=1;
-	curobj=0;
+	current_object=0;
 	view=0;
 	firsttime=1;
 	currentface=-1;
 	currentpotential=-1;
 
-	fovy=50*M_PI/180;
-	current_camera=-1;
+	fovy = 50*M_PI/180;
+	current_camera = -1;
+	pano_camera = -1;
 	
 	sc=NULL;
 }
@@ -306,7 +308,7 @@ int PanoViewWindow::Save(const char *saveto)
 		   );
 
 	fclose(f);
-	touch_recently_used(saveto, "application/x-polyptych-doc", "Polyptych", NULL);
+	touch_recently_used_xbel(saveto, "application/x-polyptych-doc", "Polyptych", "polyptych", "Polyptych", true, true, NULL);
 	return 0;
 }
 
@@ -574,8 +576,9 @@ void PanoViewWindow::makecameras(void)
 	camera_shape.id=ACAMERA;
 	camera_shape.SetScale(3.,3.,7.);
 
-	current_camera=0;
-	EyeType *eye=new EyeType();
+	current_camera = 0;
+	pano_camera = 0;
+	EyeType *eye = new EyeType();
 
 
 	eye=new EyeType();
@@ -1028,13 +1031,18 @@ void PanoViewWindow::Refresh3d()
 	glLoadIdentity();
 	if (current_camera<0) return;
 	EyeType *b=cameras.e[current_camera];
+	 
+	 //look in -z direction, y is up
 	gluLookAt(b->m.p.x,b->m.p.y,b->m.p.z, 
 			  //b->focus.x,b->focus.y,b->focus.z,
 			  b->m.p.x-b->m.z.x, b->m.p.y-b->m.z.y, b->m.p.z-b->m.z.z,
 			  b->m.y.x, b->m.y.y, b->m.y.z);
 	
 	
-	if (draw_axes) drawaxes(10);
+	if (draw_axes) {
+		drawaxes(5, things.e[current_object]->m);
+		drawaxes(10);
+	}
 	
 	glColor3f (0, 1.0, 0);
 
@@ -1424,32 +1432,90 @@ int PanoViewWindow::event(XEvent *e)
 int PanoViewWindow::Idle(int tid)
 {
 	int x,y, lx,ly;
-	int m=buttondown.whichdown(0);
+	int m = buttondown.whichdown(0);
 	
-	int state=0;
+	int state = 0;
 	buttondown.getextrainfo(m,LEFTBUTTON, NULL,&state);
 	buttondown.getinitial(m,LEFTBUTTON, &lx,&ly);
 	buttondown.getcurrent(m,LEFTBUTTON, &x,&y);
 
-	flatpoint d,p=flatpoint(x,y);
-	d=p-flatpoint(lx,ly);
-	d/=10; //scale down a little
+	flatpoint d, p = flatpoint(x,y);
+	d = p-flatpoint(lx,ly);
+	d /= 10; //scale down a little
 
 	if (active_action==ACTION_Roll) {
+		DBG cerr <<"******************************* ACTION_Roll"<<endl;
 		spacepoint axis;
-		axis=d.y*cameras.e[current_camera]->m.x + d.x*cameras.e[current_camera]->m.y;
-		things.e[curobj]->RotateAbs(norm(d)/5, axis.x,axis.y,axis.z);
+		axis = d.y*cameras.e[pano_camera]->m.x + d.x*cameras.e[pano_camera]->m.y;
+		things.e[current_object]->RotateGlobal(norm(d)/5, axis.x,axis.y,axis.z);
+
+		if (!free_rotate) {
+			CorrectTilt();
+		}
+
 		needtodraw=1;
 
-	} else if (active_action==ACTION_Rotate) {
+	} else if (active_action == ACTION_Rotate) {
 		if (d.x) { //rotate thing around camera z
 			spacepoint axis;
-			axis=d.x*cameras.e[current_camera]->m.z;
-			things.e[curobj]->RotateAbs(norm(d)/5, axis.x,axis.y,axis.z);
+			axis = d.x*cameras.e[current_camera]->m.z;
+			things.e[current_object]->RotateGlobal(norm(d)/5, axis.x,axis.y,axis.z);
 			needtodraw=1;
 		}
 	}
 	return 0;
+}
+
+void PanoViewWindow::CorrectTilt()
+{
+	 //make view always be upright..
+	EyeType *camera = cameras.e[pano_camera];
+	Thing *thing = things.e[current_object];
+	thing->updateBasis();
+
+	DBG dumpMatrix4(thing->m, "Object");
+	DBG dumpMatrix4(camera->projection, "Camera projection");
+	DBG dumpMatrix4(camera->model, "Camera model");
+
+	//--------
+	double tx = thing->bas.z*camera->m.z/norm(camera->m.z);
+	double ty = thing->bas.z*camera->m.y/norm(camera->m.y);
+	DBG cerr <<"tx,ty: "<<tx<<", "<<ty<<endl;
+	if (tx==0) return;
+
+	double theta = atan(ty/tx);
+	spacevector oldz = thing->bas.z;
+	spacevector newz = rotate(oldz, camera->m.y, theta);
+
+	oldz.normalize();
+	newz.normalize();
+
+	DBG cerr << "oldz: "<<oldz.x<<", "<<oldz.y<<", "<<oldz.z<<endl;
+	DBG cerr << "newz: "<<newz.x<<", "<<newz.y<<", "<<newz.z<<endl;
+
+	spacevector axis = oldz / newz;
+	theta = acos(oldz*newz);
+
+	//--------
+	//double tx = thing->bas.z*camera->m.z/norm(camera->m.z);
+	//double ty = thing->bas.z*camera->m.y/norm(camera->m.y);
+	//double theta = atan(ty/tx);
+	//spacevector axis = -camera->m.y;
+	//DBG cerr <<"tx,ty: "<<tx<<", "<<ty<<endl;
+	//if (tx==0) return;
+	//--------
+	//spacevector n = camera->m.x / camera->m.z;
+	//spacevector oa = thing->bas.y; 
+	//double theta = asin(n*oa/(n.norm()*oa.norm()));
+	//spacevector axis = n / oa;
+	//axis.normalize();
+	//---------
+
+
+	theta *= 180./M_PI;
+	DBG cerr <<"  theta: "<<theta<<"  axis: "<<axis.x<<','<<axis.y<<","<<axis.z<<endl;
+
+	thing->RotateGlobal(theta, axis.x,axis.y,axis.z);
 }
 
 int PanoViewWindow::LBDown(int x,int y,unsigned int state,int count,const LaxMouse *mouse)
@@ -1464,8 +1530,8 @@ int PanoViewWindow::LBDown(int x,int y,unsigned int state,int count,const LaxMou
 	Overlay *overlay=scanOverlays(x,y, NULL,NULL,&group);
 	int index=(overlay?overlay->id:-1);
 
-	if (group==OGROUP_None) index=state;
-	if (!buttondown.any()) timerid=app->addtimer(this, 30, 30, -1);
+	if (group==OGROUP_None) index = state;
+	if (!buttondown.any()) timerid = app->addtimer(this, 30, 30, -1);
 
 	buttondown.down(mouse->id,LEFTBUTTON,x,y, group,index);
 
@@ -1599,13 +1665,13 @@ int PanoViewWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mou
 	sx=(x-win_w/2.)*sz/d;
 	sy=(y-win_h/2.)*sz/d;
 
-	tracker=cameras.e[current_camera]->m.p
-		+ sx*cameras.e[current_camera]->m.x
-		- sy*cameras.e[current_camera]->m.y
-		- sz*cameras.e[current_camera]->m.z;
+	tracker = cameras.e[current_camera]->m.p
+		 + sx*cameras.e[current_camera]->m.x
+		 - sy*cameras.e[current_camera]->m.y
+		 - sz*cameras.e[current_camera]->m.z;
 
-	pointer.p=cameras.e[current_camera]->m.p;
-	pointer.v=tracker-pointer.p;
+	pointer.p = cameras.e[current_camera]->m.p;
+	pointer.v = tracker-pointer.p;
 	
 
 	 //no buttons pressed
@@ -1620,7 +1686,7 @@ int PanoViewWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mou
 
 
 	int lx,ly;
-	int bgroup=OGROUP_None,bindex=-1;
+	int bgroup = OGROUP_None,bindex=-1;
 	buttondown.move(mouse->id, x,y, &lx,&ly);
 	buttondown.getextrainfo(mouse->id,LEFTBUTTON, &bgroup,&bindex);
 
@@ -1671,7 +1737,7 @@ int PanoViewWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mou
 //		if (angle) {
 //			spacepoint axis;
 //			axis=cameras.e[current_camera]->m.z;
-//			things.e[curobj]->RotateAbs(angle*180/M_PI, axis.x,axis.y,axis.z);
+//			things.e[current_object]->RotateGlobal(angle*180/M_PI, axis.x,axis.y,axis.z);
 //		}
 
 		needtodraw=1;
@@ -1680,13 +1746,15 @@ int PanoViewWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mou
 
 
 
-	if (!buttondown.isdown(mouse->id,LEFTBUTTON) && !buttondown.isdown(mouse->id,RIGHTBUTTON) && !buttondown.isdown(mouse->id,RIGHTBUTTON))
+	if (!buttondown.isdown(mouse->id,LEFTBUTTON)
+		 && !buttondown.isdown(mouse->id,MIDDLEBUTTON)
+		 && !buttondown.isdown(mouse->id,RIGHTBUTTON))
 		return 0;
 
 
-	ActionType current_action=active_action;
-	if (buttondown.isdown(0,MIDDLEBUTTON)) current_action=ACTION_Unwrap_Angle;
-	else if (buttondown.isdown(0,RIGHTBUTTON)) current_action=ACTION_Unwrap;
+	ActionType current_action = active_action;
+	//if (buttondown.isdown(0,MIDDLEBUTTON)) current_action = ACTION_Unwrap_Angle;
+	//else if (buttondown.isdown(0,RIGHTBUTTON)) current_action = ACTION_Unwrap;
 
 	if (current_action==ACTION_Zoom) {
 		 //zoom
@@ -1700,8 +1768,8 @@ int PanoViewWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mou
 
 
 	if (active_action==ACTION_None || active_action==ACTION_Roll || active_action==ACTION_Rotate) {
-		if       ((state&LAX_STATE_MASK)== 0)                      active_action=ACTION_Roll;
-		else if  ((state&LAX_STATE_MASK)== ShiftMask)              active_action=ACTION_Rotate;
+		if       ((state&LAX_STATE_MASK)== 0)            active_action = ACTION_Roll;
+		else if  ((state&LAX_STATE_MASK)== ShiftMask)    active_action = ACTION_Rotate;
 	}
 
 
@@ -1883,17 +1951,23 @@ void PanoViewWindow::UseGenericImageData(double fg_r, double fg_g, double fg_b, 
 	 //draw longitude
 	for (float x=0; x<spheremap_width; x+=((float)spheremap_width/36)) {
 		for (int y=0; y<spheremap_height; y++) {
-			spheremap_data[3*((int)x+y*spheremap_width)  ]=fb;
-			spheremap_data[3*((int)x+y*spheremap_width)+1]=fg;
-			spheremap_data[3*((int)x+y*spheremap_width)+2]=fr;
+			double r = x/(double)spheremap_width;
+			spheremap_data[3*((int)x+y*spheremap_width)  ] = fb * r;
+			spheremap_data[3*((int)x+y*spheremap_width)+1] = fg * r;
+			spheremap_data[3*((int)x+y*spheremap_width)+2] = fr * r;
 		}
 	}
 	 //draw latitude
+	double rrr,ggg,bbb;
 	for (int y=0; y<spheremap_height; y+=(int)((double)spheremap_height/18)) {
 		for (int x=0; x<spheremap_width; x++) {
-			spheremap_data[3*(x+y*spheremap_width)  ]=fb;
-			spheremap_data[3*(x+y*spheremap_width)+1]=fg;
-			spheremap_data[3*(x+y*spheremap_width)+2]=fr;
+			double r = 1 - y/(double)spheremap_height;
+			rrr = r*fr; ggg = r*fg; bbb = r*fb;
+			if (fabs(r-.5)<.01) { rrr = 255; ggg = 255; bbb = 255; }
+
+			spheremap_data[3*(x+y*spheremap_width)  ] = bbb;
+			spheremap_data[3*(x+y*spheremap_width)+1] = ggg;
+			spheremap_data[3*(x+y*spheremap_width)+2] = rrr;
 		}
 	}
 }
@@ -1962,6 +2036,7 @@ Laxkit::ShortcutHandler *PanoViewWindow::GetShortcuts()
 	sc->Add(HEDA_ZoomIn,         '=',0,0,        _("ZoomIn"),     _("Narrow field of view"),NULL,0);
 	sc->Add(HEDA_ScaleDown,      '-',0,0,        _("ZoomOut"),   _("Widen field of view"),NULL,0);
 	sc->Add(HEDA_ResetView,      ' ',0,0,        _("ResetView"),   _("Make camera point at object from a reasonable distance"),NULL,0);
+	sc->Add(HEDA_ToggleFreeRotate,'n',0,0,        _("ToggleFreeRotate"), _("Toggle making camera always be upright"),NULL,0);
 
 	manager->AddArea(whattype(),sc);
 	return sc;
@@ -2033,6 +2108,10 @@ int PanoViewWindow::PerformAction(int action)
 		}
 
 		delete[] file;
+		return 0;
+
+	} else if (action==HEDA_ToggleFreeRotate) {
+		free_rotate = !free_rotate;
 		return 0;
 
 	} else if (action==HEDA_ToggleTexture) {

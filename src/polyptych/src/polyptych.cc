@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2011 by Tom Lechner
@@ -35,7 +34,7 @@
 #include <lax/freedesktop.h>
 #include <lax/laxoptions.h>
 
-#include </usr/include/GraphicsMagick/Magick++.h>
+#include <GraphicsMagick/Magick++.h>
 
 //#define POLYPTYCH_TUIO
 #ifdef POLYPTYCH_TUIO
@@ -232,7 +231,7 @@ int main(int argc, char **argv)
 	anXApp app;
 	app.Theme("Dark");
 	app.init(argc,argv);
-	InitLaxImlib();
+	InitLaxImlib(1000, true); // *** this should be configurable or autocompute based on available ram!!
 	Magick::InitializeMagick(*argv);
 	const char *tuio=NULL;
 
@@ -309,10 +308,15 @@ int main(int argc, char **argv)
 		 //load in polyptych file if and only if no polyhedron file given
 		Attribute *att=NULL;
 		Attribute polyatt;
-		polyatt.dump_in(polyptychfile,NULL);
+		polyatt.dump_in(polyptychfile, 0);
 		makestr(polyhedronfile,NULL);
 
-		touch_recently_used(polyptychfile, "application/x-polyptych-doc", "Polyptych", NULL);
+		touch_recently_used_xbel(polyptychfile, "application/x-polyptych-doc",
+								"Polyptych", "polyptych",
+								"Polyptych",
+								true, //visited
+								false,//modified
+								NULL);
 
 		char *name, *value;
 		for (int c=0; c<polyatt.attributes.n; c++) {
@@ -363,7 +367,9 @@ int main(int argc, char **argv)
 			if (error) cerr <<" with error: "<<error<<endl;
 			exit(1);
 		}
-		if (polyhedronfile) touch_recently_used(polyhedronfile, "application/x-polyhedron-doc", "Polyhedron", NULL);
+		if (polyhedronfile) {
+			touch_recently_used_xbel(polyhedronfile, "application/x-polyhedron-doc", "Polyhedron", "polyptych", "Polyhedron", true, false, NULL);
+		}
 		if (!poly.faces.n) defineCube();
 
 		poly.BuildExtra();
@@ -412,12 +418,14 @@ int main(int argc, char **argv)
 
 
 
-#ifdef POLYPTYCH_TUIO
 	if (tuio) {
+#ifndef POLYPTYCH_TUIO
+		cerr << " *** warning: compiled without tuio support"<<endl;
+#else 
 		SetupTUIOListener(tuio);
 		app.SetMaxTimeout(50000);
-	}
 #endif
+	}
 
 
 	 //Create and configure the new window

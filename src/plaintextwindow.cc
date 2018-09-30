@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2010 by Tom Lechner
@@ -17,9 +16,8 @@
 
 #include <lax/multilineedit.h>
 #include <lax/messagebar.h>
-//#include <lax/textbutton.h>
 #include <lax/menubutton.h>
-#include <lax/menuselector.h>
+#include <lax/popupmenu.h>
 #include <lax/filedialog.h>
 #include <lax/messagebox.h>
 
@@ -32,7 +30,9 @@
 #include <iostream>
 using namespace std;
 
+
 using namespace Laxkit;
+using namespace LaxFiles;
 
 
 namespace Laidout {
@@ -270,20 +270,19 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 
 		 //create the actual popup menu...
-		MenuSelector *popup;
-		popup=new MenuSelector(NULL,NULL,_("Documents"), ANXWIN_BARE|ANXWIN_HOVER_FOCUS,
-						0,0,0,0, 1, 
-						NULL,object_id,"whichtext", 
-						MENUSEL_ZERO_OR_ONE|MENUSEL_CURSSELECTS
-						 //| MENUSEL_SEND_STRINGS
-						 | MENUSEL_FOLLOW_MOUSE|MENUSEL_SEND_ON_UP
-						 | MENUSEL_GRAB_ON_MAP|MENUSEL_OUT_CLICK_DESTROYS
-						 | MENUSEL_CLICK_UP_DESTROYS|MENUSEL_DESTROY_ON_FOCUS_OFF
-						 | MENUSEL_CHECK_ON_LEFT|MENUSEL_LEFT,
-						menu,1);
-		popup->pad=5;
+		PopupMenu *popup=new PopupMenu(NULL,_("Documents"), 0,
+                        0,0,0,0, 1,
+                        object_id,"whichtext",
+                        0, //mouse to position near?
+                        menu,1, NULL,
+                        TREESEL_LEFT
+						|TREESEL_LIVE_SEARCH
+						|TREESEL_SUB_ON_RIGHT
+						|TREESEL_ZERO_OR_ONE
+					);
+
 		popup->Select(0);
-		popup->WrapToMouse(None);
+		popup->WrapToMouse(0,NULL);
 		app->rundialog(popup);
 		return 0;
 
@@ -305,14 +304,21 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 			input=edit->GetCText();
 		}
 		if (!input) return 0;
-		char *output=laidout->calculator->In(input);
-		//DBG if (!output) cerr  << "script in: "<<input<<endl<< "script out: (none)" <<endl;
+		char *output = laidout->calculator->In(input, NULL);
+		DBG if (!output) cerr  << "script in: "<<input<<endl<< "script out: (none)" <<endl;
 		if (output) {
-			//DBG cerr << "script in: "<<input<<endl<< "script out" << output<<endl;
-			prependstr(output,":\n");
-			prependstr(output,_("Script output"));
+			DBG cerr << "script in: "<<input<<endl<< "script out" << output<<endl;
+			//prependstr(output,":\n");
+			//prependstr(output,_("Script output"));
 			MessageBox *mbox=new MessageBox(NULL,NULL,_("Script output"),ANXWIN_CENTER|MB_LEFT, 0,0,0,0,0,
-										NULL,0,NULL, output);
+										NULL,0,NULL, _("Script output"));
+
+			MultiLineEdit *outedit = new MultiLineEdit(this,"out-text",NULL,0, 0,0,0,0,1, NULL,0,NULL,
+							  0,output);
+			double th = app->defaultlaxfont->textheight();
+			mbox->AddWin(outedit,1, 200,0,2000, 50,50, 1.5*th,0,1000,50,50, -1);
+			mbox->AddNull();
+
 			mbox->AddButton(BUTTON_OK);
 			mbox->AddButton(_("Dammit!"),0);
 			app->rundialog(mbox);
@@ -374,6 +380,7 @@ int PlainTextWindow::init()
     //LaxFont *font=app->fontmanager->MakeFontFromStr(":spacing=100",getUniqueNumber());
     LaxFont *font=app->fontmanager->MakeFontFromStr("mono",getUniqueNumber());
     editbox->UseThisFont(font);
+	editbox->pady = editbox->padx = font->textheight()/2;
     //font->dec_count();<- causes crash... it really shouldn't!!!
 
 	AddWin(editbox,1, 100,95,2000,50,0, 100,95,20000,50,0, -1);
@@ -456,6 +463,59 @@ int PlainTextWindow::UseThis(PlainText *txt)
 
 	return 0;
 }
+
+void PlainTextWindow::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+{
+    anXWindow::dump_out(f,indent,what,context);
+}
+
+LaxFiles::Attribute *PlainTextWindow::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+{
+    return anXWindow::dump_out_atts(att,what,context);
+
+
+
+}
+
+void PlainTextWindow::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+{
+    anXWindow::dump_in_atts(att,flag,context);
+
+	char *nme,*value;
+
+    for (int c=0; c<att->attributes.n; c++)  {
+        nme  =att->attributes.e[c]->name;
+        value=att->attributes.e[c]->value;
+
+        if (!strcmp(nme,"textobject") && value) {
+			for (c=0; c<laidout->project->textobjects.n; c++) {
+				if (!strcmp(value, laidout->project->textobjects.e[c]->name)) {
+					UseThis(laidout->project->textobjects.e[c]);
+					break;
+				}
+			}
+
+        } else if (!strcmp(nme,"filename")) {
+            if (isblank(value)) continue;
+			PlainText *tobj=new PlainText;
+			if (tobj->LoadFromFile(value)!=0) {
+				tobj->dec_count();
+				tobj=NULL;
+			}
+			if (tobj) {
+				UseThis(tobj);
+				tobj->dec_count();
+			}
+
+        } else if (!strcmp(nme,"show_line_numbers")) {
+			MultiLineEdit *edit = dynamic_cast<MultiLineEdit*>(findChildWindowByName("plain-text-edit"));
+			if (edit) {
+				edit->SetStyle(TEXT_LINE_NUMBERS, BooleanAttribute(value));
+			}
+        }
+    }
+}
+
 
 } //namespace Laidout
 

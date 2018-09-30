@@ -7,15 +7,20 @@ Here are a few notes about the general layout of the Laidout code.
 
 <pre>
 
-calculator    The guts of the internal interpreter
 api           Various functions and classes that can be used in the interpreter
+calculator    The guts of the internal interpreter
 dataobjects   Data objects used in Laidout
+extras        Extra plugins and such, not to be considered part of core functionality
 impositions   All things impositions
 interfaces    Extra interfaces
 filetypes     Export and import code
+plugins       C++ plugin mechanism implemented here
 printing      Code for printing, and postscript export
-extras        Extra plugins and such, not to be considered part of core functionality
 
 </pre>
+
+If you add more source files and thus other object files that must be linked in,
+you must modify ./Makefile -> otherobjs to include the new object files, as well
+as (the dir)/Makefile -> objs of where you are putting the file in.
 
 */

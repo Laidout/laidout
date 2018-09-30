@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2007,2010 by Tom Lechner
@@ -19,6 +18,7 @@
 
 #include <lax/errorlog.h>
 #include <lax/attributes.h>
+#include <lax/errorlog.h>
 
 
 namespace Laidout {
@@ -33,6 +33,8 @@ char *make_labelbase_for_printf(const char *f,int *len);
 char *letter_numeral(int i,char cap);
 char *roman_numeral(int i,char cap);
 
+//--------------------------------- misc number helpers --------------------------
+long time_to_ms(const char *v, const char **end_ret);
 
 //----------------------------------- File i/o helpers ---------------------------------------------
 FILE *open_laidout_file_to_read(const char *file,const char *what,Laxkit::ErrorLog *log, bool warn_if_fail=true);
@@ -53,9 +55,13 @@ const char *IdentifyFile(const char *file, char **version1, char **version2);
 int isOffFile(const char *file);
 int isPdfFile(const char *file,float *pdfversion);
 int isEpsFile(const char *file,float *psversion, float *epsversion);
+int isSvgFile(const char *file);
 int isScribusFile(const char *file);
 int isJpg(const char *file);
 int is_bitmap_image(const char *file);
+
+//---------------------------- Window related things --------------------------------
+void NotifyGeneralErrors(Laxkit::ErrorLog *log);
 
 
 } // namespace Laidout

@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2007 by Tom Lechner
@@ -25,6 +24,7 @@
 #include "laidout.h"
 #include "language.h"
 
+//template implementation:
 #include <lax/lists.cc>
 
 #include <iostream>
@@ -158,7 +158,7 @@ int Project::Pop(Document *doc)
 {
 	if (!doc) {
 		if (docs.n) {
-			docs.remove();
+			docs.remove(-1);
 			laidout->notifyDocTreeChanged(NULL,TreeDocGone,0,0);
 			return 0;
 		}
@@ -312,6 +312,7 @@ void Project::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpConte
 			Group *g=new Group;  //count=1
 			g->dump_in_atts(att->attributes.e[c],flag,context);
 			g->obj_flags|=OBJ_Unselectable|OBJ_Zone;
+			g->selectable = false;
 			if (isblank(g->id) && !isblank(value)) makestr(g->id,value);
 			limbos.push(g); // incs count
 			g->dec_count();   //remove extra first count

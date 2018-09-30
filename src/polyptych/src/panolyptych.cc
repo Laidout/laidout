@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2011 by Tom Lechner
@@ -35,7 +34,7 @@
 #include <lax/freedesktop.h>
 #include <lax/laxoptions.h>
 
-#include </usr/include/GraphicsMagick/Magick++.h>
+#include <GraphicsMagick/Magick++.h>
 
 //#define POLYPTYCH_TUIO
 #ifdef POLYPTYCH_TUIO
@@ -75,8 +74,8 @@ const char *version()
 
 
 //default window size
-#define SCREENWIDTH  1000
-#define SCREENHEIGHT 800
+#define WINDOWWIDTH  1000
+#define WINDOWHEIGHT 800
 
 
 char *spherefile=NULL;
@@ -226,7 +225,7 @@ int main(int argc, char **argv)
 	anXApp app;
 	app.Theme("Dark");
 	app.init(argc,argv);
-	InitLaxImlib();
+	InitLaxImlib(1000, true);
 	Magick::InitializeMagick(*argv);
 	const char *tuio=NULL;
 
@@ -309,7 +308,8 @@ int main(int argc, char **argv)
 									 spherefile?spherefile:"Panolyptych",
 									 spherefile?spherefile:"Panolyptych",
 									 0,
-									 0,0,SCREENWIDTH,SCREENHEIGHT, 0);
+									 0,0, WINDOWWIDTH,WINDOWHEIGHT, 0);
+									 //1910-WINDOWWIDTH,0, WINDOWWIDTH,WINDOWHEIGHT, 0); //put on right side of screen
 	 //set ui stuff
 	w->FontAndSize(consolefontfile,global_fontsize);
 

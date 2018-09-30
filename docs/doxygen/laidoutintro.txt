@@ -11,7 +11,7 @@
 /*! \mainpage
 
 \section     Laidout  
--- Version 0.096 --\n
+-- Version 0.096.1 --\n
 Currently in the "A bit of a hack, but mostly works on my machine" stage of development.
 
 If you want to hack away at Laidout, you've come to the right place. Please be
@@ -20,8 +20,8 @@ advised that any part of Laidout code may completely change without notice.
 This is my sprawling desktop publishing software that I've been making on and off for the last
 several years, which is many years longer than I really expected to want to be doing.
 Most of that wasted excess time has been spent developing the 
-<a href="http://laxkit.sourceforge.net">Laxkit</a>, my brand new 
-X window toolkit. Only late November of 2005, 3.5 years in, was I able to get something
+<a href="https://github.com/Laidout/laxkit">Laxkit</a>, 
+an X window toolkit. Only late November of 2005, 3.5 years in, was I able to get something
 onto the screen!
 
 Something that will eventually be found in this program, and not in any other desktop publishing software in the world

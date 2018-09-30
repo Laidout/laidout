@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2007,2010-2012 by Tom Lechner
@@ -45,7 +44,7 @@ class ScribusExportFilter : public ExportFilter
 	
 	virtual const char *DefaultExtension() { return "sla"; }
 	virtual const char *Format() { return "Scribus"; }
-	virtual const char *Version() { return "1.4.5"; }
+	virtual const char *Version();
 	virtual const char *VersionName();
 	virtual const char *FilterClass() { return "document"; }
 	virtual ObjectDef *GetObjectDef();
@@ -76,7 +75,7 @@ class ScribusImportFilter : public ImportFilter
 	
 	
 	virtual const char *FileType(const char *first100bytes);
-	virtual int In(const char *file, Laxkit::anObject *context, Laxkit::ErrorLog &log);
+	virtual int In(const char *file, Laxkit::anObject *context, Laxkit::ErrorLog &log, const char *filecontents,int contentslen);
 };
 
 

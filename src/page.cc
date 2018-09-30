@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2010 by Tom Lechner
@@ -215,11 +214,9 @@ void PageStyle::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *cont
 }
 
 //! Creates brand new object if s==NULL. Copies over width, height, and flags.
-Style *PageStyle::duplicate(Style *s)//s=NULL
+Value *PageStyle::duplicate()
 {
-	if (s==NULL) s=new PageStyle();
-	else s=dynamic_cast<PageStyle *>(s);
-	PageStyle *ps=dynamic_cast<PageStyle *>(s);
+	PageStyle *ps=new PageStyle();
 	if (!ps) return NULL;
 
 	ps->flags=flags;
@@ -230,7 +227,7 @@ Style *PageStyle::duplicate(Style *s)//s=NULL
 	if (margin)  ps->margin  = dynamic_cast<PathsData*>(margin ->duplicate(NULL));
 	if (outline) ps->outline = dynamic_cast<PathsData*>(outline->duplicate(NULL));
 
-	return s;
+	return ps;
 }
 
 //! The newfunc for PageStyle instances.
@@ -401,17 +398,24 @@ void RectPageStyle::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *
 }
 
 //! Copy over ml,mr,mt,mb,recttype.
-Style *RectPageStyle::duplicate(Style *s)//s=NULL
+Value *RectPageStyle::duplicate()
 {
-	if (s==NULL) s=new RectPageStyle(recttype);
-	RectPageStyle *blah=dynamic_cast<RectPageStyle *>(s);
-	if (!blah) return NULL;
-	blah->recttype=recttype;
-	blah->ml=ml;
-	blah->mr=mr;
-	blah->mt=mt;
-	blah->mb=mb;
-	return PageStyle::duplicate(s);
+	RectPageStyle *ps = new RectPageStyle(recttype);
+	ps->recttype=recttype;
+	ps->ml=ml;
+	ps->mr=mr;
+	ps->mt=mt;
+	ps->mb=mb;
+
+	ps->flags=flags;
+	ps->width=width;
+	ps->height=height;
+	ps->min_x=min_x;
+	ps->min_y=min_y;
+	if (margin)  ps->margin  = dynamic_cast<PathsData*>(margin ->duplicate(NULL));
+	if (outline) ps->outline = dynamic_cast<PathsData*>(outline->duplicate(NULL));
+
+	return ps;
 }
 
 //! The newfunc for PageStyle instances.
@@ -584,6 +588,7 @@ Page::Page(PageStyle *npagestyle,int num)
 	g->obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return individual layers
 	layers.push(g); //incs count
 	g->dec_count();
+
 	layers.selectable=0;
 	layers.obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return layers
 	obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return this
@@ -598,6 +603,23 @@ Page::~Page()
 	if (thumbnail) thumbnail->dec_count();
 	if (pagestyle) pagestyle->dec_count();
 	layers.flush();
+}
+
+/*! Return index of new layer.
+ * If where<0 or where>=layers.n() push at end.
+ */
+int Page::PushLayer(const char *layername, int where)
+{
+	if (where<0 || where>=layers.n()) where=layers.n();
+
+	Group *g = new Group;
+	g->Id(layername ? layername : "pagelayer");
+	g->selectable=0;
+	g->obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return individual layers
+	layers.push(g,where); //incs count
+	g->dec_count();
+
+	return where;
 }
 
 const char *Page::object_e_name(int i)
@@ -692,6 +714,7 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext 
 			makestr(g->object_idstr,"pagelayer");
 			g->obj_flags|=OBJ_Unselectable|OBJ_Zone;
 			g->dump_in_atts(att->attributes.e[c],flag,context);
+			g->selectable=0;
 			layers.push(g);
 			g->dec_count();
 
@@ -800,7 +823,7 @@ void Page::Touch(clock_t at_time)
 ImageData *Page::Thumbnail()
 {
 	if (!pagestyle) return NULL;
-	if (thumbmodtime>modtime) return thumbnail;
+	if (thumbmodtime > modtime && thumbmodtime > layers.modtime) return thumbnail;
 
 	DoubleBBox bbox;
 	if (pagestyle->outline) bbox=*(pagestyle->outline);
@@ -845,16 +868,17 @@ ImageData *Page::Thumbnail()
 		img->dec_count();
 	}
 	
-	//DBG cerr <<"Thumbnail dump_out:"<<endl;
-	//DBG thumbnail->dump_out(stderr,2,0,NULL);
-	//DBG cerr <<"  minx "<<thumbnail->minx<<endl;
-	//DBG cerr <<"  maxx "<<thumbnail->maxx<<endl;
-	//DBG cerr <<"  miny "<<thumbnail->miny<<endl;
-	//DBG cerr <<"  maxy "<<thumbnail->maxy<<endl;
-	////DBG save_image(img, "DBG.png", "png");
+	DBG cerr <<"Thumbnail dump_out:"<<endl;
+	DBG thumbnail->dump_out(stderr,2,0,NULL);
+	DBG cerr <<"  minx "<<thumbnail->minx<<endl;
+	DBG cerr <<"  maxx "<<thumbnail->maxx<<endl;
+	DBG cerr <<"  miny "<<thumbnail->miny<<endl;
+	DBG cerr <<"  maxy "<<thumbnail->maxy<<endl;
+	//DBG save_image(img, "DBG.png", "png");
 
-	//DBG cerr <<"==--- Done Page::updating thumbnail.."<<endl;
-	thumbmodtime=times(NULL);
+	DBG cerr <<"==--- Done Page::updating thumbnail.."<<endl;
+	thumbmodtime = times(NULL);
+
 
 	dp->EndDrawing();
 	dp->dec_count();

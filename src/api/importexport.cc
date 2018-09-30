@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2009 by Tom Lechner
@@ -159,7 +158,7 @@ int ImportFunction(ValueHash *context,
 		if (err==0 && value->type()==VALUE_Object) config=dynamic_cast<ImportConfig*>(((ObjectValue*)value)->object);
 
 		 //run the filter
-		if (config) err=filter->In(filename,config,log);
+		if (config) err=filter->In(filename,config,log, NULL,0);
 		if (value) value->dec_count();
 
 	} catch (const char *str) {

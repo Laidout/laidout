@@ -1,6 +1,5 @@
 //
-// $Id$
-//	
+//
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2007-2009,2012 by Tom Lechner
@@ -19,8 +18,11 @@
 #include <lax/errorlog.h>
 #include <lax/anxapp.h>
 #include <lax/dump.h>
-#include "../document.h"
-#include "../styles.h"
+
+#include "../papersizes.h"
+#include "../dataobjects/group.h"
+#include "../calculator/values.h"
+#include "../plugins/plugin.h"
 
 
 namespace Laidout {
@@ -30,17 +32,18 @@ namespace Laidout {
 class Document;
 class DocumentExportConfig;
 
+
 //------------------------------------- FileFilter -----------------------------------
 
 #define FILTER_MULTIPAGE  (1<<0)
 #define FILTER_MANY_FILES (1<<1)
 
-typedef void Plugin; //******must implement plugins!!
 class FileFilter : public Laxkit::anObject
 {
  public:
 	unsigned int flags;
-	Plugin *plugin; //***which plugin, if any, the filter came from.
+	PluginBase *plugin; //***which plugin, if any, the filter came from.
+
 	FileFilter();
 	virtual ~FileFilter() {}
 	virtual const char *Author() = 0;
@@ -63,7 +66,7 @@ class ImportFilter : public FileFilter
  public:
 	virtual const char *whattype() { return "FileInputFilter"; }
 	virtual const char *FileType(const char *first100bytes) = 0;
-	virtual int In(const char *file, Laxkit::anObject *context, Laxkit::ErrorLog &log) = 0;
+	virtual int In(const char *file, Laxkit::anObject *context, Laxkit::ErrorLog &log, const char *filecontents,int contentslen) = 0;
 	virtual ObjectDef *makeObjectDef();
 };
 
@@ -91,7 +94,7 @@ ObjectDef *makeExportConfigDef();
 int createExportConfig(ValueHash *context, ValueHash *parameters,
 					   Value **value_ret, Laxkit::ErrorLog &log);
 
-class DocumentExportConfig : public Style
+class DocumentExportConfig : public Value
 {
  public:
 	int target;
@@ -103,8 +106,10 @@ class DocumentExportConfig : public Style
 	int paperrotation;
 	int rotate180; //0 or 1
 	int curpaperrotation; //set automatically, not a user variable
-	char collect_for_out;
-	char rasterize;
+	int collect_for_out;
+	bool rasterize;
+	bool textaspaths;
+	Laxkit::DoubleBBox crop;
 
 	Document *doc;
 	Group *limbo;
@@ -119,14 +124,16 @@ class DocumentExportConfig : public Style
 	DocumentExportConfig(Document *ndoc, Group *lmbo, const char *file, const char *to,
 						 int l,int s,int e,PaperGroup *group);
 	virtual ~DocumentExportConfig();
+	void BaseDefaults();
 
 	virtual ObjectDef* makeObjectDef();
-	virtual Style* duplicate(Style*);
+	virtual Value* duplicate();
 
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);
 
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual LaxFiles::Attribute * dump_out_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 
@@ -139,7 +146,7 @@ ObjectDef *makeImportConfigDef();
 int createImportConfig(ValueHash *context, ValueHash *parameters,
 					   Value **value_ret, Laxkit::ErrorLog &log);
 
-class ImportConfig : public Style
+class ImportConfig : public Value
 {
  public:
 	char *filename;
@@ -158,14 +165,14 @@ class ImportConfig : public Style
 	virtual ~ImportConfig();
 
 	virtual ObjectDef* makeObjectDef();
-	virtual Style* duplicate(Style*);
+	virtual Value* duplicate();
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 
 //------------------------------- import_document() ----------------------------------
 
-int import_document(ImportConfig *config, Laxkit::ErrorLog &log);
+int import_document(ImportConfig *config, Laxkit::ErrorLog &log, const char *filecontents,int contentslen);
 
 
 } // namespace Laidout

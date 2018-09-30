@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,10 +7,10 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2011 by Tom Lechner
+// Copyright (C) 2011-2017 by Tom Lechner
 //
 #ifndef INTERFACES_PAGERANGE_H
 #define INTERFACES_PAGERANGE_H
@@ -33,14 +32,14 @@ class PageRangeInterface : public LaxInterfaces::anInterface, public DocumentUse
   protected:
 	Document *doc;
 	Laxkit::ButtonDownInfo buttondown;
-	double xscale,yscale;
+	double panelwidth, panelheight;
 	flatpoint offset;
 	int InstallDefaultRange();
 	char *LabelPreview(int range,int first,int labeltype);
 	char *LabelPreview(PageRange *rangeobj,int first,int labeltype);
 	PageRange *findRangeWith(int i);
 
-	unsigned long defaultfg,defaultbg;
+	unsigned long defaultfg, defaultbg;
 
 	int currange;
 	int hover_part;
@@ -54,6 +53,7 @@ class PageRangeInterface : public LaxInterfaces::anInterface, public DocumentUse
 	virtual int scan(int x,int y, int *position, int *range, int *part, int *index);
 	virtual double position(int pagenumber);
 	virtual void drawBox(PageRange *r, int includehover);
+
   public:
 	PageRangeInterface(int nid=0,Laxkit::Displayer *ndp=NULL,Document *ndoc=NULL);
 	PageRangeInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);

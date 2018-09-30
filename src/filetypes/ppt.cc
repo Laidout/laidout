@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2007 by Tom Lechner
@@ -501,7 +500,7 @@ ObjectDef *PptinFilter::GetObjectDef()
  * \todo *** if first_page_num exists, then must set up page labels
  * \todo *** implement dump into group, rather than doc
  */
-int PptinFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log)
+int PptinFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log, const char *filecontents,int contentslen)
 {
 	ImportConfig *in=dynamic_cast<ImportConfig *>(context);
 	if (!in) return 1;

@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2012 by Tom Lechner
@@ -58,12 +57,13 @@ ObjectIndicator::ObjectIndicator(int nid,Displayer *ndp)
 {
 	firsttime=1;
 	showdecs=0;
-	color_arrow=rgbcolor(60,60,60);
-	color_num=rgbcolor(0,0,0);
+	color_arrow = rgbcolor(60,60,60);
+	color_num   = rgbcolor(0,0,0);
 	interface_type=INTERFACE_Overlay;
 	context=NULL;
 	hover_object=NULL;
 	last_hover=-1;
+	font=NULL;
 }
 
 ObjectIndicator::ObjectIndicator(anInterface *nowner,int nid,Displayer *ndp)
@@ -71,17 +71,19 @@ ObjectIndicator::ObjectIndicator(anInterface *nowner,int nid,Displayer *ndp)
 {
 	firsttime=1;
 	showdecs=0;
-	color_arrow=rgbcolor(60,60,60);
-	color_num=rgbcolor(0,0,0);
+	color_arrow = rgbcolor(60,60,60);
+	color_num   = rgbcolor(0,0,0);
 	interface_type=INTERFACE_Overlay;
 	context=NULL;
 	hover_object=NULL;
 	last_hover=-1;
+	font=NULL;
 }
 
 ObjectIndicator::~ObjectIndicator()
 {
-	//DBG cerr <<"ObjectIndicator destructor.."<<endl;
+	if (font) font->dec_count();
+	DBG cerr <<"ObjectIndicator destructor.."<<endl;
 }
 
 
@@ -155,6 +157,76 @@ void ObjectIndicator::Clear(SomeData *d)
 {
 }
 
+double ObjectIndicator::MaxWidth()
+{
+	ObjectContainer *objc=dynamic_cast<ObjectContainer*>(viewport);
+	if (!objc) return 0;
+
+	double w=0, ww;
+	char scratch[10];
+	const char *str;
+
+	for (int c=0; objc && c<context->context.n(); c++) {
+		str = objc->object_e_name(context->context.e(c));
+		ww = 0;
+
+		if (!str) {
+			sprintf(scratch,"%d",context->context.e(c));
+			str=scratch;
+		} else {
+			sprintf(scratch,"(%d) ",context->context.e(c));
+			ww = dp->textextent(scratch,-1, NULL,NULL);
+		}
+		ww += dp->textextent(str,-1, NULL,NULL);
+
+		if (ww > w) w = ww;
+
+		objc=dynamic_cast<ObjectContainer*>(objc->object_e(context->context.e(c)));
+	}
+
+	return w;
+}
+
+/*! Return 0 for could not determine, either null selection, or no elements in selection. 
+ * Return 1 for all elements at same level.
+ * Return 2 for elements at mixed levels.
+ *
+ * Updates oc, but does not set oc->obj.
+ */
+int CommonAnscestor(Selection *selection, VObjContext *oc)
+{
+	oc->clear();
+	if (!selection) return 0;
+	if (selection->n() == 0) return 0;
+
+	VObjContext *ooc;
+	int i, level=0, done=0;
+
+	while(1) {
+		i=-1;
+		for (int c=0; c<selection->n(); c++) {
+			ooc = dynamic_cast<VObjContext*>(selection->e(c));
+			if (ooc->context.n() == level) { done=1; break; }
+
+			if (c==0) i = ooc->context.e(level);
+			else {
+				if (i != ooc->context.e(level)) { done=1; break; }
+			}
+		}
+
+		if (done) break;
+		oc->push(i);
+		level++;
+	}
+
+	i = dynamic_cast<VObjContext*>(selection->e(0))->context.n();
+	for (int c=1; c<selection->n(); c++) {
+		if (dynamic_cast<VObjContext*>(selection->e(c))->context.n() != i) return 2;
+	}
+	return 1;
+}
+
+
 /*! Draws maybebox if any, then DrawGroup() with the current papergroup.
  */
 int ObjectIndicator::Refresh()
@@ -172,14 +244,31 @@ int ObjectIndicator::Refresh()
 	//DBG cerr <<"ObjectIndicator::Refresh()..."<<endl;
 
 	dp->DrawScreen();
+	dp->NewBG(1.,1.,1.);
 
 	//char buffer[30];
 
 	 //draw ui outline
-	dp->NewFG(rgbcolor(128,128,128));
 	dp->DrawScreen();
 
+	if (!font) { font=laidout->defaultlaxfont; font->inc_count(); }
+	dp->font(font);
+	double th = dp->textheight();
 
+	flatpoint origin(0,viewport->win_h);
+	if (last_hover >= 0) {
+		 //blank out rect around it
+		dp->NewFG(1.,1.,1.,.9);
+		double w = MaxWidth() + th;
+		double h = context->context.n()*th + th;
+		if (!context->obj) h += th;
+		dp->drawRoundedRect(origin.x-th/2,origin.y+th/2-h,
+				w, h,
+				th/2,false, th/2,false, 1, 15);
+
+	}
+
+	dp->NewFG(.5,.5,.5);
 
 	 //draw object place description
 	int x=0;
@@ -189,11 +278,12 @@ int ObjectIndicator::Refresh()
 	const char *str;
 	dp->NewFG(coloravg(viewport->win_colors->fg, viewport->win_colors->bg));
 
-	for (int c=0; c<context->context.n(); c++) {
+	for (int c=0; objc && c<context->context.n(); c++) {
 		if (!objc) break;
 
-		if (c==last_hover) dp->NewFG(rgbcolor(50,50,50));
+		if (c==last_hover) dp->NewFG(.2,.2,.2);
 
+		 // textout: (index) element name
 		x=0;
 		str=objc->object_e_name(context->context.e(c));
 		if (!str) {
@@ -201,13 +291,13 @@ int ObjectIndicator::Refresh()
 			str=scratch;
 		} else {
 			sprintf(scratch,"(%d) ",context->context.e(c));
-			x+=dp->textout(0,y, scratch,-1, LAX_BOTTOM|LAX_LEFT);
+			x+=dp->textout_halo(1, 0,y, scratch,-1, LAX_BOTTOM|LAX_LEFT);
 		}
 
-		dp->textout(x,y, str,-1, LAX_BOTTOM|LAX_LEFT);
+		dp->textout_halo(1, x,y, str,-1, LAX_BOTTOM|LAX_LEFT);
 		y-=dp->textheight();
 
-		if (c==last_hover) dp->NewFG(rgbcolor(128,128,128));
+		if (c==last_hover) dp->NewFG(.5,.5,.5);
 
 		objc=dynamic_cast<ObjectContainer*>(objc->object_e(context->context.e(c)));
 	}
@@ -216,7 +306,6 @@ int ObjectIndicator::Refresh()
 		//curobj is just a context, not actually selected
 		dp->textout(x,y, "?",1, LAX_BOTTOM|LAX_LEFT);
 	}
-
 
 
 
@@ -229,8 +318,10 @@ int ObjectIndicator::scan(int x,int y)
 {
 	if (!context) context=&dynamic_cast<LaidoutViewport*>(viewport)->curobj;
 
-	double th=dp->textheight();
-	if (x<0 || x>th*7) return -1;
+	if (!font) { font=laidout->defaultlaxfont; font->inc_count(); }
+	double th=font->textheight();
+
+	if (x<0 || x>MaxWidth()) return -1;
 
 	int i=(dp->Maxy-y)/th;
 	if (i>=context->context.n()) i=-1;
@@ -267,19 +358,31 @@ int ObjectIndicator::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse 
 
 		anObject *o=objc->object_e(context->context.e(i));
 		DrawableObject *d=dynamic_cast<DrawableObject*>(o);
-		if (d && d->parent) {
-			//const char *str=objc->object_e_name(context->context.e(i));
-			const char *str=d->Id();
-			double th=dp->textheight();
-			LineEdit *le= new LineEdit(viewport,"rename",_("Rename object"),
-										LINEEDIT_DESTROY_ON_ENTER|LINEEDIT_GRAB_ON_MAP|ANXWIN_ESCAPABLE,
-										2*th,dp->Maxy-(i+3)*th, 2*dp->textextent(str,-1,NULL,NULL),1.2*th, 4,
-										   NULL,object_id,"renameobj",
-										   str);
-			hover_object=d;
-			le->padx=le->pady=th*.1;
-			le->SetCurpos(-1);
-			app->addwindow(le);
+
+		if (d && d->parent && d->Selectable()) {
+			if (i == context->context.n()-1 && context->obj) {
+				 //rename top object
+				//const char *str=objc->object_e_name(context->context.e(i));
+				const char *str=d->Id();
+				if (!font) { font=laidout->defaultlaxfont; font->inc_count(); }
+				double th=font->textheight(); 
+
+				LineEdit *le= new LineEdit(viewport,"rename",_("Rename object"),
+											ANXWIN_OUT_CLICK_DESTROYS|LINEEDIT_DESTROY_ON_ENTER|LINEEDIT_GRAB_ON_MAP|ANXWIN_ESCAPABLE,
+											2*th,dp->Maxy-(i+3)*th, 2*dp->textextent(str,-1,NULL,NULL),1.2*th, 4,
+											   NULL,object_id,"renameobj",
+											   str);
+				hover_object=d;
+				le->padx=le->pady=th*.1;
+				le->SetCurpos(-1);
+				app->addwindow(le);
+
+			} else {
+				 //select this object
+				while (context->context.n()-1 != i) context->pop(); 
+				context->SetObject(d);
+				needtodraw=1;
+			}
 		}
 	}
 

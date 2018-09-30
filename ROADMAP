@@ -5,66 +5,65 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 
 
-VERSION 0.096
--------------
-(done) Finish Implementing cairo renderer, make meshes finally render faster, plus general rendering niceness
-(done) Text for god's sake!! It's been what, 10 years!? 
-(done) text: layered color fonts, each layer has to be a separate font file
-(done) Caption text tool
-(done) Caption tool, export svg: done, but due to svg, problem specifying colorfont fonts
-(done) Caption tool, scribus -> done-ish, font naming problem for color fonts, and a sizing discrepancy
-(done) Caption tool, pdf -> done sort of, fails for text outside latin-1, because fonts in pdf are a terrible headache.
-(done) reprogram file dialog to have adequate presentation of recent and bookmarks
-(done) fix viewport zoom and rotate wigging out on right click mouse move
-(done) make window maximize work in gnome (magically seems to work again in recent gnome, resize also seems to work again in recent gnome)
-(done) autosave for autorecover -> done, but you have to set manually in ~/.config/laidout/(version)/laidoutrc
-(done) test new export even/odd, batches, and paper rotation for major exporters: svg image pdf scribus, not done: ps eps plan ppt 
-(done) export option alternate each paper 180 deg
-(done) export option rotate every paper by increments of 90
-(done) export option, put out in reverse order
-(done) Infrastructure for resource sharing between objects
-(done) engraver tool, fix blockout! how did it break?!
-(done) engraver, allow work on multiple objects at once, including tracing
-(done) Re-fix cut and paste from system clipboard
-(done) Re-Re-fix paste from system clipboard. I swear it was working.
-
-
 VERSION 0.097
 -------------
+(done) debug previous version at least slightly!
+(done) experimental Delauny/voronoi lines tool
+(done) engraver tool, fix non-live updates when tweaking various parameters
+(done) Clean up symmetry clone interface, not easy to use currently
+(done) Allow setting custom default exported file name (via a line in laidoutrc)
+       Text on path tool
+(done) text objects: harfbuzz based
+(done) Add more save options: save a copy, save incremented, save as template, autosave settings
+(done) Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
+       debug svg in
+(done) svg out default to 96dpi
+       Make sure scribus can export to 1.5
+(done) Implement c++ plugin infrastructure
+(done) Experimental perspective transform interface
+(done) Experimental voronoi interface
+(done) Experimental node interface (done aside from large todo list)
+(done) fix tooltips
+(done) Connect node interface for use with object filters
+
+
+VERSION 0.098
+-------------
+       Moving selected things in group contents does not update group bounds
+       should not be able to select both group and group contents at same time
        debug previous version!
-       debug line outline cache, especially for joins
        engraver tool grow point mode
        engraver tool, resolution cut mode
        engraver tool, blockout needs to be more precise
-       Tools should remember their settings
-       Finish implementing anchor tool. maybe gss compatibility?
+       engraver tool, fully test tool effects when many objects selected
+       double click on group should change selection area to group contents like inkscape?
        layers (object tree) palette
-       Moving selected things in group contents does not update group bounds
-       should not be able to select both group and group contents at same time
-       double click on group should change selection area to group contents?
+       Perspective transform object filter
+       Tools should remember their settings
+       option to specify alignment of different size signature stacks
+       debug line outline cache, especially for joins
+       Finish implementing anchor tool. maybe gss compatibility?
        Masking, clip paths and/or softmask
        Fix object bleeding across pages for signatures and nets
        export preview
-       Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
        Externally rendered objects, similar to Scribus render frames
        Custom alignments to parents, not just affine transform to parent
        Merge EpsData with normal images
        Import Images dialog needs total reprogramming
        In image properties dialog, be able to select from various default preview configs
+       lock down color backend.. it's currently a series of weak hacks based on 8-bit screen rgb
        Clean up patch controls
        Clean up project load/save internals and dialogs
        Object and resource tags interface
        Finish implementing double sided net impositions
        allow inserting net impositions as foldouts in regular Signature Imposition stacks
-       Net imposition interactive unwrapper, via optional opengl Polyptych
+       debug Net imposition interactive unwrapper, via optional opengl Polyptych
        Net imposition build net interface
-       option to specify alignment of different size signature stacks
        Tool scripting
+       Scripted plugin interface
        Custom line caps
        Undo/Redo
-       Clean up symmetry clone interface, not easy to use currently
        Clone Pattern Builder
-       lock down color backend.. it's currently a series of weak hacks based on 8-bit screen rgb
        color styles, so objects can refer to a named color, just change that named to change all
        Soup up the color box so one can recall previous colors, and/or integration with palette window
        make PathInterface extrapolate line join work
@@ -76,8 +75,7 @@ VERSION 0.097
        PDF in, at least as 1 image per page, for purposes of imposition
        pdf export, unicode capable
        Optimize pdf export to rescale to target dpi, and compress image data
-       fix tooltips
-       drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
+       drag-n-drop text to and from the various text edits
        drag-n-drop with system, like drag images into viewwindow from an external file browser
 
 
@@ -85,7 +83,7 @@ VERSION 0.1
 -----------
        First and foremost, need copious testing by people who are not me.
        implement command line language tag
-       Full internationalization support in window controls for input and output, including rtl/mixed text?  
+       Full internationalization support (via harfbuzz) in window controls for input and output, including rtl/mixed text?  
        SpreadEditor: be able to eject a page into limbo, for creation threads, connect, then insert as a group
        When importing from an image list file, should be able to say if and when to auto-make previews
        pick and choose export range, not single "from:start to:end", but like "1-3,5,19-20"
@@ -136,7 +134,7 @@ VERSION 0.2
 -----------
 Flowed text tool
 text: Opentype feature support (other than multicolor stuff)
-text: Opentype color font support
+text: Opentype color font support: COLR/CPAL, SVG
 text: Mixed left/right/vertical text in text streams
 text: Numbered lists
 text: Tables 
@@ -147,6 +145,7 @@ text: Footnotes
 text: auto track chapter/section
 text: Automatic, yet overrideable hyphenation
 text: layout inside anything that provides an 'area' and runaround facility.  
+text: math mode
 Full multi-contact, blob and pressure sensitive touch with tuio,touchlib(?). See www.nuigroup.com/touchlib for diy surfaces
 partial Laidout export
 implement export even/odd, batches, and paper rotation for other exporters: ps eps plan ppt 
@@ -179,6 +178,7 @@ Super import place tool, including recursive placement
 The other Postscript/Pdf gradients?: Triangle strip and Triangle Mesh
 fore edge printing
 fore edge sculpting
+hdr color support
 Vx support?
 Verse support?
 Content version control?
@@ -192,6 +192,7 @@ Akin to animation mode, have movie/sound objects available to html export, for i
 a FlexibleImposition for html/streamed output target?
 JDF,JTAPI support?
 Saveable undo stack(?) see http://people.csail.mit.edu/sarasu/history/ for inspiration. Also Xara has this.
+Implement cross platform
 
 
 VERSION 1.0
@@ -208,6 +209,30 @@ While i'm at it, I'd like a pony.
             ---------------- 
 ------------- OLD RELEASES -----------------
             ----------------
+
+VERSION 0.096  --  released 18 December 2015!
+-------------
+(done) Finish Implementing cairo renderer, make meshes finally render faster, plus general rendering niceness
+(done) Text for god's sake!! It's been what, 10 years!? 
+(done) text: layered color fonts, each layer has to be a separate font file
+(done) Caption text tool
+(done) Caption tool, export svg: done, but due to svg, problem specifying colorfont fonts
+(done) Caption tool, scribus -> done-ish, font naming problem for color fonts, and a sizing discrepancy
+(done) Caption tool, pdf -> done sort of, fails for text outside latin-1, because fonts in pdf are a terrible headache.
+(done) reprogram file dialog to have adequate presentation of recent and bookmarks
+(done) fix viewport zoom and rotate wigging out on right click mouse move
+(done) make window maximize work in gnome (magically seems to work again in recent gnome, resize also seems to work again in recent gnome)
+(done) autosave for autorecover -> done, but you have to set manually in ~/.config/laidout/(version)/laidoutrc
+(done) test new export even/odd, batches, and paper rotation for major exporters: svg image pdf scribus, not done: ps eps plan ppt 
+(done) export option alternate each paper 180 deg
+(done) export option rotate every paper by increments of 90
+(done) export option, put out in reverse order
+(done) Infrastructure for resource sharing between objects
+(done) engraver tool, fix blockout! how did it break?!
+(done) engraver, allow work on multiple objects at once, including tracing
+(done) Re-fix cut and paste from system clipboard
+(done) Re-Re-fix paste from system clipboard. I swear it was working.
+
 
 VERSION 0.095  --  released 23 April 2015!
 -------------

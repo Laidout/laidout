@@ -1,6 +1,4 @@
 //
-// $Id$
-//	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -8,7 +6,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2007,2010 by Tom Lechner
@@ -147,6 +145,29 @@ PtrStack<PaperStyle> *GetBuiltinPaperSizes(PtrStack<PaperStyle> *papers)
 	return papers;
 }
 
+/*! Try to match width and height to a named paper.
+ * orientation_ret gets 1 if match is same as returned object's orientation,
+ * or -1 if opposite.
+ *
+ * If startfrom != 0, then start the search starting from this index, instead of first paper.
+ *
+ * If epsilon==0 (the default), w and h must match exactly. Else the values must be at least that close.
+ */
+PaperStyle *GetNamedPaper(double width, double height, int *orientation_ret, int startfrom, int *index_ret, double epsilon)
+{
+	int match;
+	if (startfrom<0) startfrom=0;
+	for (int c = startfrom; laidout->papersizes.n; c++) {
+		match = laidout->papersizes.e[c]->IsMatch(width, height, epsilon);
+		if (match) {
+			if (orientation_ret) *orientation_ret = match;
+			if (index_ret) *index_ret = c;
+		}
+	}
+
+	return NULL;
+}
+
 
 //---------------------------------- PaperStyle --------------------------------
 
@@ -233,6 +254,7 @@ PaperStyle::PaperStyle(const char *nname,double w,double h,unsigned int nflags,d
 	if (!strcmp(defaultunits,"mm")) { width/=25.4; height/=25.4; }
 	else if (!strcmp(defaultunits,"cm")) { width/=2.54; height/=2.54; }
 	else if (!strcmp(defaultunits,"pt")) { width/=72; height/=72; }
+	else if (!strcmp(defaultunits,"svgpt")) { width/=90; height/=90; }
 
 	//DBG cerr <<"PaperStyle created, obj "<<object_id<<endl;
 }
@@ -246,6 +268,18 @@ PaperStyle::~PaperStyle()
 }
 
 
+/*! Return 1 if the paper matches this paper as is, -1 if it matches, but in opposite orientation.
+ * 0 for no match.
+ *
+ * If epsilon==0 (the default), w and h must match exactly. Else the values must be at least that close.
+ */
+int PaperStyle::IsMatch(double ww, double hh, double epsilon)
+{
+	if (fabs(w()-ww) <= epsilon && fabs(h()-hh) <= epsilon) return 1;
+	if (fabs(h()-ww) <= epsilon && fabs(w()-hh) <= epsilon) return -1;
+	return 0;
+}
+
 /*! Set from something like "a4", "custom(5in,10in)" or "letter,portrait"
  * Must start with paper name (or "custom"). If not custom,
  * then name can be followed by either "portrait" or "landscape".
@@ -257,7 +291,7 @@ int PaperStyle::SetFromString(const char *nname)
 {
 	if (!nname) return 1;
 
-	flags&=~PAPERSTYLE_Landscape;
+	flags &= ~PAPERSTYLE_Landscape;
 	if (strncasecmp(nname,"custom",6)) {
 		nname+=6;
 		makestr(name,"Custom");
@@ -279,7 +313,7 @@ int PaperStyle::SetFromString(const char *nname)
 		while (isspace(*nname)) nname++;
 
 		int units=UNITS_None;
-		SimpleUnit *unitmanager=GetUnitManager();
+		UnitManager *unitmanager=GetUnitManager();
 		if (isalpha(*nname)) {
 			//read units
 			const char *cendptr=nname;
@@ -680,12 +714,13 @@ ObjectDef *PaperStyle::makeObjectDef()
  *
  * Create with media box based on paper. None of the other boxes defined.
  */
-PaperBox::PaperBox(PaperStyle *paper)
+PaperBox::PaperBox(PaperStyle *paper, bool absorb_count)
 {
 	which=0; //a mask of which boxes are defined
 	paperstyle=paper;
+
 	if (paper) {
-		paper->inc_count();
+		if (!absorb_count) paper->inc_count();
 		which=MediaBox;
 		media.minx=media.miny=0;
 		media.maxx=paper->w(); //takes into account paper orientation
@@ -735,8 +770,8 @@ int PaperBox::Set(PaperStyle *paper)
  */
 PaperBoxData::PaperBoxData(PaperBox *paper)
 {
-	red=green=0; //color of the outline, default is blue
-	blue=65535;
+	outlinecolor.rgbf(0,0,1.0); //color of the outline, default is blue
+	color.rgbf(1.0,1.0,1.0);
 
 	box=paper;
 	if (box) {
@@ -748,6 +783,19 @@ PaperBoxData::PaperBoxData(PaperBox *paper)
 PaperBoxData::~PaperBoxData()
 {
 	if (box) box->dec_count();
+}
+
+void PaperBoxData::FindBBox()
+{
+	minx = miny = 0;
+
+	if (box && box->paperstyle) {
+		maxx=box->paperstyle->w();
+		maxy=box->paperstyle->h();
+
+	} else {
+		maxx = maxy = -1;
+	}
 }
 
 
@@ -783,7 +831,7 @@ PaperGroup::PaperGroup(PaperStyle *paperstyle)
 	owner=NULL;
 	obj_flags|=OBJ_Zone|OBJ_Unselectable;
 
-	PaperBox *box=new PaperBox(paperstyle);
+	PaperBox *box=new PaperBox(paperstyle, false);
 	PaperBoxData *data=new PaperBoxData(box);
 	box->dec_count();
 	papers.push(data);
@@ -825,9 +873,11 @@ Laxkit::anObject *PaperGroup::object_e(int i)
 	return NULL;
 }
 
-//! Objects have no special names, so return NULL.
 const char *PaperGroup::object_e_name(int i)
-{ return NULL; }
+{
+	if (i>=0 && i<objs.n()) return objs.e(i)->Id();
+	return NULL;
+}
 
 const double *PaperGroup::object_transform(int i)
 {
@@ -836,12 +886,10 @@ const double *PaperGroup::object_transform(int i)
 }
 
 //! Make the outline this color. Range [0..65535].
-int PaperGroup::OutlineColor(int r,int g,int b)
+double PaperGroup::OutlineColor(double r,double g,double b)
 {
 	for (int c=0; c<papers.n; c++) {
-		papers.e[c]->red=r;
-		papers.e[c]->green=g;
-		papers.e[c]->blue=b;
+		papers.e[c]->outlinecolor.rgbf(r,g,b);
 	}
 	return papers.n;
 }
@@ -856,6 +904,27 @@ PaperStyle *PaperGroup::GetBasePaper(int index)
 			&& papers.e[index]->box->paperstyle->width)
 		return papers.e[index]->box->paperstyle;
 	return NULL;
+}
+
+/*! Fill in the bounds required to fit all the defined papers.
+ *
+ * Return 0 for success or nonzero for invalid set of papers.
+ * -1 means there are no defined papers.
+ *
+ * box_ret must NOT be NULL.
+ */
+int PaperGroup::FindPaperBBox(Laxkit::DoubleBBox *box_ret)
+{
+	if (papers.n == 0) return -1;
+
+	for (int c=0; c<papers.n; c++) {
+		papers.e[c]->FindBBox();
+		if (!papers.e[c]->validbounds()) return 1;
+
+		box_ret->addtobounds(papers.e[c]->m(), papers.e[c]);
+	}
+
+	return 0;
 }
 
 
@@ -902,8 +971,10 @@ void PaperGroup::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *con
 		m=papers.e[c]->m();
 		fprintf(f,"%s  matrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
 			spc, m[0],m[1],m[2],m[3],m[4],m[5]);
-		fprintf(f,"%s  outlinecolor %d %d %d\n",
-			spc, papers.e[c]->red, papers.e[c]->green, papers.e[c]->blue);
+		fprintf(f,"%s  outlinecolor rgbf(%.10g, %.10g, %.10g)\n",
+			spc, papers.e[c]->outlinecolor.Red(),
+				 papers.e[c]->outlinecolor.Green(),
+				 papers.e[c]->outlinecolor.Blue());
 		papers.e[c]->box->paperstyle->dump_out(f,indent+2,0,context);
 	}
 	if (objs.n()) {
@@ -920,26 +991,30 @@ void PaperGroup::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *con
 	for (int c=0; c<att->attributes.n; c++)  {
 		nme=att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
+
 		if (!strcmp(nme,"name")) {
 			makestr(name,value);
+
 		} else if (!strcmp(nme,"Name")) {
 			makestr(Name,value);
+
 		} else if (!strcmp(nme,"marks")) {
 			objs.dump_in_atts(att->attributes.e[c],flag,context);
+
 		} else if (!strcmp(nme,"paper")) {
-			int foundcolor=0;
 			PaperStyle *paperstyle=new PaperStyle(NULL,0,0,0,0,"in");
 			paperstyle->dump_in_atts(att->attributes.e[c],flag,context);
-			PaperBox *paperbox=new PaperBox(paperstyle);
-			paperstyle->dec_count();
+			PaperBox *paperbox=new PaperBox(paperstyle, true);
 			PaperBoxData *boxdata=new PaperBoxData(paperbox);
 			paperbox->dec_count();
 			boxdata->dump_in_atts(att->attributes.e[c],flag,context);
-			if (!foundcolor) {
-				boxdata->red=65535;
-				boxdata->green=0;
-				boxdata->blue=65535;
-			}
+
+			Attribute *foundcolor = att->attributes.e[c]->find("outlinecolor");
+			if (foundcolor) {
+				SimpleColorAttribute(foundcolor->value, NULL, &boxdata->outlinecolor, NULL);
+			} else {
+				boxdata->outlinecolor.rgbf(1.0, 0.0, 1.0);
+			} 
 			papers.push(boxdata);
 			boxdata->dec_count();
 		}
@@ -949,7 +1024,7 @@ void PaperGroup::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *con
 int PaperGroup::AddPaper(const char *nme,double w,double h,const double *m)
 {
 	PaperStyle *paperstyle=new PaperStyle(nme,w,h,0,72,NULL);
-	PaperBox *box=new PaperBox(paperstyle);
+	PaperBox *box=new PaperBox(paperstyle, false);
 	paperstyle->dec_count();
 
 	PaperBoxData *boxdata=new PaperBoxData(box);
@@ -963,7 +1038,7 @@ int PaperGroup::AddPaper(const char *nme,double w,double h,const double *m)
 int PaperGroup::AddPaper(double w,double h,double offsetx,double offsety)
 {
 	PaperStyle *paperstyle=new PaperStyle("paper",w,h,0,72,NULL);
-	PaperBox *box=new PaperBox(paperstyle);
+	PaperBox *box=new PaperBox(paperstyle, false);
 	paperstyle->dec_count();
 
 	PaperBoxData *boxdata=new PaperBoxData(box);

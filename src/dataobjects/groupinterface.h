@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2005-2007,2009-2013 by Tom Lechner
@@ -30,6 +29,44 @@ namespace Laidout {
 
 //----------------------------- GroupInterface -----------------------
 
+enum GroupInterfaceActions {
+	GIA_Align = LaxInterfaces::OIA_MAX,
+	GIA_Distribute,
+	GIA_Edit_Filter_Nodes,
+	GIA_Filter_Editor,
+	GIA_Remove_Filter,
+	GIA_Refresh_Filter,
+
+	GIA_Clone,
+	GIA_CloneB,
+	GIA_Duplicate,
+	GIA_DuplicateB,
+	GIA_RegistrationMark,
+	GIA_GrayBars,
+	GIA_CutMarks,
+	GIA_Parent,
+	GIA_Unparent,
+
+	//popup controls
+	GIA_Link,
+	GIA_Parent_Link,
+	GIA_Constraints,
+	GIA_Zone,
+	GIA_Chains,
+
+	GIA_Jump_To_Link,
+	GIA_Sever_Link,
+
+	GIA_Parent_Align,
+	GIA_Parent_Matrix,
+	GIA_Jump_To_Parent,
+	GIA_Reparent,
+
+
+	GIA_MAX
+};
+
+
 class GroupInterface : public LaxInterfaces::ObjectInterface, public Value
 {
   protected:
@@ -42,6 +79,7 @@ class GroupInterface : public LaxInterfaces::ObjectInterface, public Value
 	virtual int AlternateScan(flatpoint sp, flatpoint p, double xmag,double ymag, double onepix);
 	virtual int GetMode();
 	virtual void DrawReparentArrows();
+
   public:
 	void TransformSelection(const double *N, int s=-1, int e=-1);// *****
 
@@ -63,6 +101,8 @@ class GroupInterface : public LaxInterfaces::ObjectInterface, public Value
 	virtual int MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
 	virtual int GrabSelection(unsigned int state);
 	virtual int ToggleGroup();
+	virtual int GroupObjects();
+    virtual int UngroupObjects();
 
 	//from value
 	virtual int type() { return VALUE_Fields; }

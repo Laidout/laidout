@@ -1,6 +1,4 @@
 //
-// $Id$
-//	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -8,16 +6,17 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2007 by Tom Lechner
+// Copyright (C) 2016 by Tom Lechner
 //
 
 
 #include <cups/cups.h>
 #include <sys/wait.h>
 
+#include <lax/interfaces/interfacemanager.h>
 #include <lax/interfaces/imageinterface.h>
 #include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
@@ -31,6 +30,7 @@
 #include "../printing/psout.h"
 #include "image.h"
 #include "../impositions/singles.h"
+#include "../drawdata.h"
 
 #include <iostream>
 #define DBG 
@@ -66,16 +66,29 @@ void installImageFilter()
 class ImageExportConfig : public DocumentExportConfig
 {
  public:
-	//char *imagetype;
-	//int use_transparent_bkgd;
+	char *format;
+	int use_transparent_bg;
+	int width, height;
+
 	ImageExportConfig();
+	ImageExportConfig(DocumentExportConfig *config);
+	virtual ~ImageExportConfig();
+	virtual const char *whattype() { return "ImageExportConfig"; }
+	virtual ObjectDef* makeObjectDef();
+	virtual Value *dereference(const char *extstring, int len);
+	virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual LaxFiles::Attribute * dump_out_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 
 //! Set the filter to the Image export filter stored in the laidout object.
 ImageExportConfig::ImageExportConfig()
 {
+	format=newstr("png");
+	use_transparent_bg=true;
+	width=height=0;
+
 	for (int c=0; c<laidout->exportfilters.n; c++) {
 		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Image")) {
 			filter=laidout->exportfilters.e[c];
@@ -84,23 +97,214 @@ ImageExportConfig::ImageExportConfig()
 	}
 }
 
+ImageExportConfig::ImageExportConfig(DocumentExportConfig *config)
+  : DocumentExportConfig(config)
+{
+	ImageExportConfig *conf = dynamic_cast<ImageExportConfig*>(config);
+	if (conf) {
+		format = newstr(conf->format);
+		use_transparent_bg = conf->use_transparent_bg;
+		width=conf->width;
+		height=conf->height;
+
+	} else {
+		format=newstr("png");
+		use_transparent_bg=true;
+		width=height=0;
+	}
+}
+
+
+ImageExportConfig::~ImageExportConfig()
+{
+	delete[] format;
+}
+
 void ImageExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+
+	if (what==-1) {
+		DocumentExportConfig::dump_out(f,indent,-1,context);
+		fprintf(f,"%stransparent  #use a transparent background, not a renedered color.\n",spc);
+		fprintf(f,"%sformat  png  #file format to use. Default is png\n",spc);
+		fprintf(f,"%swidth  0  #width of resulting image. 0 means auto calculate from dpi.\n",spc);
+		fprintf(f,"%sheight 0  #height of resulting image. 0 means auto calculate from dpi.\n",spc);
+		return;
+	}
+
 	DocumentExportConfig::dump_out(f,indent,what,context);
+	if (use_transparent_bg) fprintf(f,"%stransparent\n",spc);
+	fprintf(f,"%sformat  %s\n",spc,format);
+	fprintf(f,"%swidth  %d\n",spc, width);
+	fprintf(f,"%sheight %d\n",spc, height);
+}
+
+LaxFiles::Attribute *ImageExportConfig::dump_out_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+{
+	att=DocumentExportConfig::dump_out_atts(att,flag,context);
+	att->push("transparent", use_transparent_bg ? "yes" : "no");
+	att->push("format", format);
+	att->push("width", width);
+	att->push("height", height);
+	return att;
 }
 
 void ImageExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	DocumentExportConfig::dump_in_atts(att,flag,context);
+
+	char *value, *name;
+	for (int c=0; c<att->attributes.n; c++) {
+		name=att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+
+		if (!strcmp(name, "transparent")) {
+			use_transparent_bg = BooleanAttribute(value);
+
+		} else if (!strcmp(name, "format")) {
+			makestr(format, value);
+
+		} else if (!strcmp(name, "width")) {
+			IntAttribute(value, &width, NULL);
+
+		} else if (!strcmp(name, "height")) {
+			IntAttribute(value, &height, NULL);
+
+		}
+	}
+}
+
+ObjectDef *ImageExportConfig::makeObjectDef()
+{
+    ObjectDef *def=stylemanager.FindDef("ImageExportConfig");
+	if (def) {
+		def->inc_count();
+		return def;
+	}
+
+    ObjectDef *exportdef=stylemanager.FindDef("ExportConfig");
+    if (!exportdef) {
+        exportdef=makeExportConfigDef();
+		stylemanager.AddObjectDef(exportdef,1);
+		exportdef->inc_count(); // *** this saves a crash, but why?!?!?
+    }
+
+ 
+	def=new ObjectDef(exportdef,"ImageExportConfig",
+            _("Image Export Configuration"),
+            _("Settings to export a document to image files."),
+            "class",
+            NULL,NULL,
+            NULL,
+            0, //new flags
+            NULL,
+            NULL);
+
+
+     //define parameters
+    def->push("transparent",
+            _("Transparent"),
+            _("Render background as transparent, not as paper color."),
+            "boolean",
+            NULL,    //range
+            "true", //defvalue
+            0,      //flags
+            NULL); //newfunc
+
+    def->push("format",
+            _("File format"),
+            _("What file format to export as."),
+            "string",
+            NULL,   //range
+            "png", //defvalue
+            0,     //flags
+            NULL);//newfunc
+ 
+    def->push("width",
+            _("Width"),
+            _("Pixel width of resulting image. 0 means autocalculate"),
+            "int",
+            NULL,   //range
+            "0", //defvalue
+            0,     //flags
+            NULL);//newfunc
+
+    def->push("height",
+            _("Height"),
+            _("Pixel height of resulting image. 0 means autocalculate"),
+            "int",
+            NULL,   //range
+            "0", //defvalue
+            0,     //flags
+            NULL);//newfunc
+
+	stylemanager.AddObjectDef(def,0);
+	return def;
+}
+
+Value *ImageExportConfig::dereference(const char *extstring, int len)
+{
+	if (len<0) len=strlen(extstring);
+
+	if (!strncmp(extstring,"transparent",8)) {
+		return new BooleanValue(use_transparent_bg);
+
+	} else if (!strncmp(extstring,"format",8)) {
+		return new StringValue(format);
+
+	} else if (!strncmp(extstring,"width",8)) {
+		return new IntValue(width);
+
+	} else if (!strncmp(extstring,"height",8)) {
+		return new IntValue(height);
+
+	}
+	return DocumentExportConfig::dereference(extstring,len);
+}
+
+int ImageExportConfig::assign(FieldExtPlace *ext,Value *v)
+{
+	if (ext && ext->n()==1) {
+        const char *str=ext->e(0);
+        int isnum;
+        double d;
+        if (str) {
+            if (!strcmp(str,"transparent")) {
+                d=getNumberValue(v, &isnum);
+                if (!isnum) return 0;
+                use_transparent_bg = (d==0 ? false : true);
+                return 1;
+
+			} else if (!strcmp(str,"format")) {
+				StringValue *str=dynamic_cast<StringValue*>(v);
+				if (!str) return 0;
+				makestr(format, str->str);
+                return 1;
+
+			} else if (!strcmp(str,"width")) {
+				int w=getNumberValue(v, &isnum);
+                if (!isnum) return 0;
+				width=w;
+                return 1;
+
+			} else if (!strcmp(str,"height")) {
+				int h=getNumberValue(v, &isnum);
+                if (!isnum) return 0;
+				height=h;
+                return 1;
+			}
+		}
+	}
+
+	return DocumentExportConfig::assign(ext,v);
 }
 
 
 //------------------------------------ ImageExportFilter ----------------------------------
 	
 /*! \class ImageExportFilter
- * \brief Filter for exporting pages to images via ghostscript.
- *
- * Right now, just exports through pngalpha with ghostscript.
+ * \brief Filter for exporting pages to images via a Displayer.
  *
  * Uses ImageExportConfig.
  */
@@ -108,7 +312,7 @@ void ImageExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles:
 
 ImageExportFilter::ImageExportFilter()
 {
-	flags=FILTER_MANY_FILES;
+	//flags=FILTER_MANY_FILES;
 }
 
 /*! \todo if other image formats get implemented, then this would return
@@ -135,31 +339,75 @@ Value *newImageExportConfig()
 
 /*! \todo *** this needs a going over for safety's sake!! track down ref counting
  */
-int createImageExportConfig(ValueHash *context,ValueHash *parameters,Value **v_ret,ErrorLog &log)
+int createImageExportConfig(ValueHash *context,ValueHash *parameters,Value **value_ret,ErrorLog &log)
 {
-	ImageExportConfig *d=new ImageExportConfig;
+	ImageExportConfig *config=new ImageExportConfig;
 
 	ValueHash *pp=parameters;
 	if (pp==NULL) pp=new ValueHash;
 
 	Value *vv=NULL, *v=NULL;
-	vv=new ObjectValue(d);
+	vv=new ObjectValue(config);
 	pp->push("exportconfig",vv);
 
-	int status=createExportConfig(context,pp,&v,log);
-	if (status==0 && v && v->type()==VALUE_Object) d=dynamic_cast<ImageExportConfig *>(((ObjectValue *)v)->object);
+	int status=createExportConfig(context,pp, &v, log);
+	if (status==0 && v && v->type()==VALUE_Object) config=dynamic_cast<ImageExportConfig *>(((ObjectValue *)v)->object);
 
-	if (d) for (int c=0; c<laidout->exportfilters.n; c++) {
+	 //assign proper base filter
+	if (config) for (int c=0; c<laidout->exportfilters.n; c++) {
 		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Image")) {
-			d->filter=laidout->exportfilters.e[c];
+			config->filter=laidout->exportfilters.e[c];
 			break;
 		}
 	}
-	*v_ret=v;
+
+	char error[100];
+	int err=0;
+	try {
+		int i, e;
+
+		 //---format
+		const char *str=parameters->findString("format",-1,&e);
+		if (e==0) { if (str) makestr(config->format, str); }
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"format"); throw error; }
+
+		 //---use_transparent_bg
+		i=parameters->findInt("transparent",-1,&e);
+		if (e==0) config->use_transparent_bg=i;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"transparent"); throw error; }
+
+		 //---width
+		double d=parameters->findIntOrDouble("width",-1,&e);
+		if (e==0) config->width=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"width"); throw error; }
+
+		 //---height
+		d = parameters->findIntOrDouble("height",-1,&e);
+		if (e==0) config->height=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"height"); throw error; }
+
+	} catch (const char *str) {
+		log.AddMessage(str,ERROR_Fail);
+		err=1;
+	}
+	//if (error) delete[] error;
+
+	if (value_ret && err==0) {
+		if (config) {
+			*value_ret=new ObjectValue(config);
+		} else *value_ret=NULL;
+	}
+	if (config) config->dec_count();
+
 
 	if (pp!=parameters) delete pp;
 
 	return 0;
+}
+
+DocumentExportConfig *ImageExportFilter::CreateConfig(DocumentExportConfig *fromconfig)
+{
+	return new ImageExportConfig(fromconfig);
 }
 
 //! Try to grab from stylemanager, and install a new one there if not found.
@@ -173,19 +421,8 @@ ObjectDef *ImageExportFilter::GetObjectDef()
 	styledef=stylemanager.FindDef("ImageExportConfig");
 	if (styledef) return styledef; 
 
-	styledef=makeObjectDef();
-	makestr(styledef->name,"ImageExportConfig");
-	makestr(styledef->Name,_("Image Export Configuration"));
-	makestr(styledef->description,_("Configuration to export a document to a png."));
-	styledef->newfunc=newImageExportConfig;
-	styledef->stylefunc=createImageExportConfig;
-
-	// *** push any other settings:
-	// *** image format
-	// *** background color
-
-	stylemanager.AddObjectDef(styledef,0);
-	styledef->dec_count();
+	ImageExportConfig config;
+	styledef = config.GetObjectDef();
 
 	return styledef;
 }
@@ -193,34 +430,25 @@ ObjectDef *ImageExportFilter::GetObjectDef()
 
 
 
-//! Save the document as png files with transparency.
-/*! This currently uses the postscript filter to make a temporary postscript file,
- * then uses ghostscript to translate that to images.
- *
- * Return 0 for success, or nonzero error. Possible errors are error and nothing written,
- * and corrupted file possibly written.
+/*! Save the document as image files with optional transparency.
  * 
- * Currently uses a DocumentExportConfig for context, but ultimately should use 
- * an ImageExportConfig.
- *
- * \todo must figure out if gs can directly process pdf 1.4 with transparency. If it can, then
- *   when full transparency is implemented, that will be the preferred method, that is until
- *   laidout buffer rendering is capable enough in its own right.
- * \todo output file names messed up when papergroup has more than one paper, plus starting number
- *   not accurate...
+ * Return 0 for success, or nonzero error.
+ * 
+ * Currently uses an ImageExportConfig.
  */
 int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 {
-	//ImageExportConfig *iout=dynamic_cast<ImageExportConfig *>(context);
-	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
-	if (!out) return 1;
+	ImageExportConfig *out=dynamic_cast<ImageExportConfig *>(context);
+	if (!out) {
+		log.AddMessage(_("Wrong type of output config!"),ERROR_Fail);
+		return 1;
+	}
 
 	Document *doc =out->doc;
 	//int start     =out->start;
 	//int end       =out->end;
 	//int layout    =out->layout;
-	if (!filename) filename=out->tofiles;
-	if (!filename) filename="temp-output#.eps";
+	if (!filename) filename=out->filename;
 	
 	 //we must have something to export...
 	if (!doc && !out->limbo) {
@@ -229,116 +457,199 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 		return 1;
 	}
 	
-	const char *gspath=laidout->binary("gs");
-	if (!gspath) {
-		log.AddMessage(_("Currently need Ghostscript to output to image files."),ERROR_Fail);
-		return 2;
-	} 
-
-	char *filetemplate=NULL;
+	char *file=NULL;
 	if (!filename) {
 		if (!doc || isblank(doc->saveas)) {
-			//DBG cerr <<"**** cannot save, doc->saveas is null."<<endl;
 			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
 			return 3;
 		}
-		filetemplate=newstr(doc->saveas);
-		appendstr(filetemplate,"%d.png");
+		file=newstr(doc->saveas);
+		appendstr(file,".");
+		if (isblank(out->format)) appendstr(file,"png");
+		else appendstr(file,out->format);
+
+		filename = file;
 	}
 	
-	 //write out the document to a temporary postscript file
-	char tmp[256];
-	cupsTempFile2(tmp,sizeof(tmp));
-	//DBG cerr <<"attempting to write temp file for image out: "<<tmp<<endl;
-	FILE *f=fopen(tmp,"w");
-	if (!f) {
-		log.AddMessage(_("Could not open temporary file for export image."),ERROR_Fail);
+
+	InterfaceManager *imanager=InterfaceManager::GetDefault(true);
+	Displayer *dp = imanager->GetDisplayer(DRAWS_Hires);
+	DoubleBBox bounds;
+
+	int width  = out->width;
+	int height = out->height;
+
+	if (out->crop.validbounds()) {
+		 //use crop to override any bounds derived from PaperGroup
+		bounds.setbounds(&out->crop);
+
+	} else	if (out->papergroup) {
+		out->papergroup->FindPaperBBox(&bounds);
+	}
+
+	if (!bounds.validbounds() && out->limbo) {
+		bounds.setbounds(out->limbo);
+	}
+
+	if (!bounds.validbounds()) {
+		log.AddMessage(_("Invalid output bounds! Either set crop or papergroup."),ERROR_Fail);
+		delete[] file;
 		return 4;
 	}
-	fclose(f);
 
-	ExportFilter *pdfout=NULL;
-	for (int c=0; c<laidout->exportfilters.n; c++) {
-		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Pdf")) {
-			pdfout=laidout->exportfilters.e[c];
-			break;
-		}
+	//now bounds is the real bounds on a papergroup/view space.
+	//We need to figure out how big an image to use
+	if (width>0 && out->height>0) {
+		//nothing to do, dimensions already specified
+
+	} else if (width == 0 && out->height == 0) {
+		 //both zero means use dpi to compute
+		double dpi=300; // *** maybe make this an option??
+		if (out->papergroup) dpi=out->papergroup->GetBasePaper(0)->dpi;
+		width =bounds.boxwidth ()*dpi;
+		height=bounds.boxheight()*dpi;
+
+	} else if (width == 0) {
+		 //compute based on height, which must be zonzero
+		width = height/bounds.boxheight()*bounds.boxwidth();
+
+	} else { //if (height == 0) {
+		 //compute based on width, which must be zonzero
+		height = width/bounds.boxwidth()*bounds.boxheight();
+
 	}
 
-	if (!pdfout || pdfout->Out(tmp,context,log)) {
-		log.AddMessage(_("Error exporting to image."),ERROR_Fail);
+	if (width==0 || height==0) {
+		if (width==0)  log.AddMessage(_( "Null width, nothing to output!"),ERROR_Fail);
+		if (height==0) log.AddMessage(_("Null height, nothing to output!"),ERROR_Fail);
+		delete[] file;
 		return 5;
 	}
 
+	 //set displayer port to the proper area.
+	 //The area in bounds must map to [0..width, 0..height]
+	dp->CreateSurface(width, height);
+	dp->PushAxes();
+	dp->defaultRighthanded(true);
+	dp->NewTransform(1,0,0,-1,0,-height);
 
-	 //---------run a gs shell command
-	
-	 //figure out decent preview size. If maxw and/or maxh are greater than 0, then
-	 //generate preview via:
- 	 //* gs -dNOPAUSE -sDEVICE=pngalpha -sOutputFile=temp%02d.png
-	 //     -dBATCH -r(resolution) whatever.ps
-	//cout <<"*** fix export image dpi!!"<<endl;
-	double dpi;
-	//dpi=maxw ? maxw*72./epsw : 200;
-	//t  =maxh*72./epsh;
-	//if (maxh && t && t<dpi) dpi=t;
-	//dpi=150;//***
-	dpi=doc->imposition->paper->paperstyle->dpi;
-	
-	char const * arglist[10];
-	char str1[20];
-	arglist[0]=const_cast<char *>(gspath);
-	arglist[1]="-dNOPAUSE";
-	arglist[2]="-dBATCH";
-	arglist[3]="-dEPSCrop";
-	arglist[4]="-sDEVICE=pngalpha";
+	//dp->SetSpace(0,width, 0,height);
+	dp->SetSpace(bounds.minx,bounds.maxx, bounds.miny,bounds.maxy);
+	dp->Center(bounds.minx,bounds.maxx, bounds.miny,bounds.maxy);
+	//dp->defaultRighthanded(false);
 
-	sprintf(str1,"-r%f",dpi);
-	arglist[5]=str1;
+	 //now output everything
+	if (!out->use_transparent_bg) {
+		 //fill output with an appropriate background color
+		 // *** this should really color papers according to their characteristics
+		 // *** and have a default for non-transparent limbo color
+		if (out->papergroup && out->papergroup->papers.n) {
+			dp->NewBG(&out->papergroup->papers.e[0]->color);
+		} else dp->NewBG(1.0, 1.0, 1.0);
 
-	if (!filetemplate) filetemplate=LaxFiles::make_filename_base(filename);
-	prependstr(filetemplate,"-sOutputFile=");
-	arglist[6]=filetemplate;
-
-	arglist[7]=tmp; //input file
-	arglist[8]=NULL;
-		 
-	//DBG cerr <<"Exporting images via:    "<<gspath<<' ';
-	//DBG for (int c=1; c<8; c++) cerr <<arglist[c]<<' ';
-	//DBG cerr <<endl;
-	
-	char *error=NULL;
-	pid_t child=fork();
-	if (child==0) { // is child
-		execv(gspath,(char * const *)arglist);
-		cout <<"*** error running exec:"<<endl;
-		for (int c=0; c<8; c++) cout <<arglist[c]<<" ";
-		cout <<endl;
-		//error=newstr("Error trying to run Ghostscript.");//this has no effect
-		exit(1);//exit child thread
-	} 
-	 //continuing in parent thread
-	int status;
-	waitpid(child,&status,0);
-	if (!WIFEXITED(status)) {
-		//DBG cerr <<"*** error in child process, not returned normally!"<<endl;
-		error=newstr(_("Ghostscript interrupted from making image."));
-	} else if (WEXITSTATUS(status)!=0) {
-		//DBG cerr <<"*** ghostscript returned error while trying to make preview"<<endl;
-		error=newstr(_("Ghostscript had error while making image."));
+		dp->ClearWindow();
 	}
 
-	delete[] filetemplate;
-	unlink(tmp);
+	//DBG dp->NewFG(.5,.5,.5);
+	//DBG dp->drawline(bounds.minx,bounds.miny, bounds.maxx,bounds.maxy);
+	//DBG dp->drawline(bounds.minx,bounds.maxy, bounds.maxx,bounds.miny);
 
-	if (error) {
-		log.AddMessage(error,ERROR_Fail);
-		delete[] error;
-		return -3;
+	 //limbo objects
+	if (out->limbo) DrawData(dp, out->limbo, NULL,NULL,DRAW_HIRES);
+	//if (out->limbo) imanager->DrawData(dp, out->limbo, NULL,NULL,DRAW_HIRES);
+	
+	 //papergroup objects
+	if (out->papergroup && out->papergroup->objs.n()) {
+		for (int c=0; c<out->papergroup->objs.n(); c++) {
+			  //imanager->DrawData(dp, out->papergroup->objs.e(c), NULL,NULL,DRAW_HIRES);
+			  DrawData(dp, out->papergroup->objs.e(c), NULL,NULL,DRAW_HIRES);
+		}
 	}
 
-	return 0;
+	 //spread objects
+	Spread *spread = NULL;
+	if (doc) {
+		spread = doc->imposition->Layout(out->layout, out->start);
+	}
+
+	if (spread) {
+		dp->BlendMode(LAXOP_Over);
+
+		 // draw the page's objects and margins
+		Page *page=NULL;
+		int pagei=-1;
+		flatpoint p;
+		SomeData *sd=NULL;
+		for (int c=0; c<spread->pagestack.n(); c++) {
+			DBG cerr <<" drawing from pagestack.e["<<c<<"], which has page "<<spread->pagestack.e[c]->index<<endl;
+			page=spread->pagestack.e[c]->page;
+			pagei=spread->pagestack.e[c]->index;
+
+			if (!page) { // try to look up page in doc using pagestack->index
+				if (spread->pagestack.e[c]->index>=0 && spread->pagestack.e[c]->index<doc->pages.n) {
+					page=spread->pagestack.e[c]->page=doc->pages.e[pagei];
+				}
+			}
+
+			//if (spread->pagestack.e[c]->index<0) {
+			if (!page) continue;
+
+			 //else we have a page, so draw it all
+			sd=spread->pagestack.e[c]->outline;
+			dp->PushAndNewTransform(sd->m()); // transform to page coords
+			
+			if (page->pagestyle->flags&PAGE_CLIPS) {
+				 // setup clipping region to be the page
+				dp->PushClip(1);
+				SetClipFromPaths(dp,sd,dp->Getctm());
+			}
+			
+			 //*** debuggging: draw X over whole page...
+	//		DBG dp->NewFG(255,0,0);
+	//		DBG dp->drawrline(flatpoint(sd->minx,sd->miny), flatpoint(sd->maxx,sd->miny));
+	//		DBG dp->drawrline(flatpoint(sd->maxx,sd->miny), flatpoint(sd->maxx,sd->maxy));
+	//		DBG dp->drawrline(flatpoint(sd->maxx,sd->maxy), flatpoint(sd->minx,sd->maxy));
+	//		DBG dp->drawrline(flatpoint(sd->minx,sd->maxy), flatpoint(sd->minx,sd->miny));
+	//		DBG dp->drawrline(flatpoint(sd->minx,sd->miny), flatpoint(sd->maxx,sd->maxy));
+	//		DBG dp->drawrline(flatpoint(sd->maxx,sd->miny), flatpoint(sd->minx,sd->maxy));
 	
+
+			 // Draw all the page's objects.
+			for (int c2=0; c2<page->layers.n(); c2++) {
+				DBG cerr <<"  num layers in page: "<<page->n()<<", num objs:"<<page->e(c2)->n()<<endl;
+				DBG cerr <<"  Layer "<<c2<<", objs.n="<<page->e(c2)->n()<<endl;
+				//imanager->DrawData(dp, page->e(c2), NULL,NULL,DRAW_HIRES);
+				DrawData(dp, page->e(c2),NULL,NULL,DRAW_HIRES);
+			}
+			
+			if (page->pagestyle->flags&PAGE_CLIPS) {
+				 //remove clipping region
+				dp->PopClip();
+			}
+
+			dp->PopAxes(); // remove page transform
+		} //foreach in pagestack
+	} //if spread
+
+	//DBG dp->NewFG(.2,.2,.5);
+	//DBG dp->LineWidth(.25);
+	//DBG dp->drawline(bounds.minx,bounds.miny, bounds.maxx,bounds.maxy);
+	//DBG dp->drawline(bounds.minx,bounds.maxy, bounds.maxx,bounds.miny);
+
+	dp->PopAxes(); //initial dp protection
+
+	LaxImage *img = dp->GetSurface();
+	//int err=img->Save(filename, out->format);
+	int err = save_image(img, filename, out->format);
+	if (err) {
+		log.AddMessage(_("Could not save the image"), ERROR_Fail);
+	}
+	img->dec_count();
+
+	delete[] file;
+	if (log.Errors()) return -1;
+
+	return 0; 
 }
 
 

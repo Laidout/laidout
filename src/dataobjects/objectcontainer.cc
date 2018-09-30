@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2007,2010-2013 by Tom Lechner
@@ -101,32 +100,24 @@ int ObjectContainer::nextObject(FieldPlace &place,
 	anObject *anobj=NULL;
 	ObjectContainer *oc=NULL;
 	int i,nn;
+	FieldPlace orig = place;
 	
-//	if (place.n()==0 ) {
-//		if (d) *d=this;
-//		DBG place.out("ObjectContainer::nextObject found: ");
-//		return Next_Success;
-//	}
 
-	anobj=getanObject(place,offset); //retrieve the object pointed to by place
-	oc=dynamic_cast<ObjectContainer *>(anobj);
+	anobj = getanObject(place,offset); //retrieve the object pointed to by place
+	oc = dynamic_cast<ObjectContainer *>(anobj);
 
-//	if (!anobj) {
-//		if (d) *d=NULL;
-//		DBG place.out("ObjectContainer::nextObject found: ");
-//		return Next_Error; //starting object not found!
-//	}
 
 	if (flags&Next_Increment) {
-		if (oc) { //find number of kids to consider
-			if ((flags&Next_SkipLockedKids) && (oc->object_flags()&OBJ_IgnoreKids)) nn=0;
+		if (oc && !(flags & Next_PlaceLevelOnly)) { //find number of kids to consider
+			if ((flags & Next_SkipLockedKids) && (oc->object_flags() & OBJ_IgnoreKids)) nn=0;
 			else nn=oc->n();
 		} else nn=0;
+
 		if (oc && nn) {
 			 //object has kids, return the first kid
 			place.push(0);
 			if (d) *d=oc->object_e(0);
-			//DBG place.out("ObjectContainer::nextObject found: ");
+			DBG place.out("ObjectContainer::nextObject returning: ");
 			return Next_Success;
 		}
 
@@ -135,7 +126,7 @@ int ObjectContainer::nextObject(FieldPlace &place,
 		while (1) {
 			if (place.n()==offset) {
 				if (d) *d=anobj;
-				//DBG place.out("ObjectContainer::nextObject found: ");
+				DBG place.out("ObjectContainer::nextObject returning: ");
 				return Next_Success;
 			}
 			i=place.pop(); //old child index
@@ -152,7 +143,7 @@ int ObjectContainer::nextObject(FieldPlace &place,
 				place.push(i);
 				anobj=getanObject(place,offset); //retrieve the object pointed to by place
 				if (d) *d=anobj;
-				//DBG place.out("ObjectContainer::nextObject found: ");
+				DBG place.out("ObjectContainer::nextObject returning: ");
 				return Next_Success;
 			}
 			
@@ -165,17 +156,22 @@ int ObjectContainer::nextObject(FieldPlace &place,
 			if (i==0) {
 				anobj=getanObject(place,offset); //retrieve the object pointed to by place
 				if (d) *d=anobj;
-				//DBG place.out("ObjectContainer::nextObject found: ");
+				DBG place.out("ObjectContainer::nextObject returning: ");
 				return Next_Success;
 			}
+
 			 //switch to rightmost leaf of earlier sibling
 			place.push(i-1);
 			anobj=getanObject(place,offset); //retrieve the object pointed to by place
 			oc=dynamic_cast<ObjectContainer *>(anobj);
+
+			//if (oc && !(flags & Next_PlaceLevelOnly)) { //find number of kids to consider
 			if (oc) { //find number of kids to consider
 				if ((flags&Next_SkipLockedKids) && (oc->object_flags()&OBJ_IgnoreKids)) nn=0;
 				else nn=oc->n();
 			} else nn=0;
+
+			 //select the bottom most, forward most child
 			while (oc && nn) {
 				place.push(nn-1);
 				anobj=getanObject(place,offset); //retrieve the object pointed to by place
@@ -206,7 +202,7 @@ int ObjectContainer::nextObject(FieldPlace &place,
 				} else nn=0;
 			}
 			if (d) *d=anobj;
-			//DBG place.out("ObjectContainer::nextObject found: ");
+			DBG place.out("ObjectContainer::nextObject returning: ");
 			return Next_Success;
 		}
 	}

@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2013 by Tom Lechner
@@ -30,6 +29,7 @@
 #include "impositions/imposition.h"
 #include "filetypes/filefilters.h"
 #include "calculator/values.h"
+#include "plugins/plugin.h"
 
 
 namespace Laidout {
@@ -46,7 +46,8 @@ enum TreeChangeType {
 		TreeObjectReorder,
 		TreeObjectDiffPage,
 		TreeObjectDeleted,
-		TreeObjectAdded
+		TreeObjectAdded,
+		TreeMAX
 	};
 
 
@@ -67,7 +68,8 @@ class TreeChangeEvent : public Laxkit::EventData
 
 enum GlobalPrefsNotify {
 	PrefsDefaultUnits,
-	PrefsDisplayDetails
+	PrefsDisplayDetails,
+	PrefsJustAutosaved
 };
 
 //------------------------------------ LaidoutApp ----------------------------------
@@ -77,17 +79,23 @@ enum RunModeType {
 		RUNMODE_Commands,
 		RUNMODE_Shell,
 		RUNMODE_Quit,
-		RUNMODE_Impose_Only
+		RUNMODE_Impose_Only,
+		RUNMODE_Nodes_Only
 	};
 
 class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventReceiver
 {
  protected:
-	void dumpOutResources();
+	Laxkit::ErrorLog generallog;
 
-	int autosaveid;
-	virtual int  Idle(int tid=0);
+	bool pipeout;
+	char *pipeoutarg;
+
+	int autosave_timerid;
+	virtual int  Idle(int tid, double delta);
 	virtual int Autosave();
+
+	void dumpOutResources();
 
  public:
 	RunModeType runmode;
@@ -96,8 +104,6 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	Project *project;
 	Document *curdoc;
 	Laxkit::anXWindow *lastview;
-
-	LaidoutCalculator *calculator;
 
 	 //global prefs
 	int experimental;
@@ -124,12 +130,26 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	Laxkit::PtrStack<ExportFilter> exportfilters;
 	Laxkit::PtrStack<ImportFilter>  importfilters;
 
+	Laxkit::RefPtrStack<PluginBase> plugins;
+	int AddPlugin(const char *path);
+	int RemovePlugin(const char *name);
+	int InitializePlugins();
+
+	LaidoutCalculator *calculator;
+	Laxkit::RefPtrStack<Interpreter> interpreters;
+
+	int InitInterpreters();
+	int AddInterpreter(Interpreter *i, bool absorb_count);
+	int RemoveInterpreter(Interpreter *i);
+	Interpreter *FindInterpreter(const char *name);
+
 	Laxkit::PtrStack<PaperStyle> papersizes;
 	PaperStyle *defaultpaper; //could be a custom, so need to have extra field here
 	PaperStyle *GetDefaultPaper();
-	
+
 	LaidoutApp();
 	virtual ~LaidoutApp();
+	virtual int close();
 	virtual const char *whattype() { return "LaidoutApp"; }
 	virtual int init(int argc,char **argv);
 	virtual void setupdefaultcolors();
@@ -160,6 +180,9 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	void PushExportFilter(ExportFilter *filter);
 	ExportFilter *FindExportFilter(const char *name, bool exact_only);
 	void PushImportFilter(ImportFilter *filter);
+	void NotifyGeneralErrors(Laxkit::ErrorLog *log);
+
+	virtual void UpdateAutosave();
 
 	 //data manipulation peacekeeper
 	void notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType change,int s,int e);

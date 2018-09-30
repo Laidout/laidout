@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Copyright (C) 2004-2012 by Tom Lechner
@@ -7,7 +6,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Please consult http://www.laidout.org about where to send any
@@ -78,7 +77,7 @@ ConfigEventData::~ConfigEventData()
 ExportDialog::ExportDialog(unsigned long nstyle,unsigned long nowner,const char *nsend,
 						   Document *doc,
 						   Group *limbo,
-						   PaperGroup *group,
+						   PaperGroup *papergroup,
 						   ExportFilter *nfilter,
 						   const char *file, 
 						   int layout, //!< Type of layout to export
@@ -92,17 +91,31 @@ ExportDialog::ExportDialog(unsigned long nstyle,unsigned long nowner,const char 
 {
 	dialog_style=nstyle&~ANXWIN_MASK;
 
-	config=new DocumentExportConfig(doc,limbo,file,NULL,layout,pmin,pmax,group);
 	filter=nfilter;
-	if (!filter && laidout->exportfilters.n) {
-		for (int c=0; c<laidout->exportfilters.n; c++) {
-			if (!strcmp(laidout->exportfilters.e[c]->Format(),"Pdf")) {
-				filter=laidout->exportfilters.e[c];
-				break;
-			}
+	if (filter) {
+		config=filter->CreateConfig(NULL);
+		config->layout = layout;
+		config->start  = pmin;
+		config->end    = pmax;
+		makestr(config->filename, file);
+
+		if (doc!=config->doc) {
+			if (config->doc) config->doc->dec_count();
+			config->doc = doc;
+			if (config->doc) config->doc->inc_count(); 
 		}
-		if (!filter) filter=laidout->exportfilters.e[0];
-	}
+		if (limbo!=config->limbo) {
+			if (config->limbo) config->limbo->dec_count();
+			config->limbo = limbo;
+			if (config->limbo) config->limbo->inc_count(); 
+		}
+		if (papergroup!=config->papergroup) {
+			if (config->papergroup) config->papergroup->dec_count();
+			config->papergroup = papergroup;
+			if (config->papergroup) config->papergroup->inc_count(); 
+		}
+
+	} else config=new DocumentExportConfig(doc,limbo,file,NULL,layout,pmin,pmax,papergroup);
 
 	cur=pcur;
 
@@ -131,14 +144,30 @@ int ExportDialog::preinit()
 	if (win_w==0) win_w=500;
 	if (win_h==0) {
 		int textheight=app->defaultlaxfont->textheight();
-		win_h=15*(textheight+7)+20;
+		win_h=20*(textheight+7)+20;
 	}
+
+	if (!filter && laidout->exportfilters.n) {
+		for (int c=0; c<laidout->exportfilters.n; c++) {
+			if (!strcmp(laidout->exportfilters.e[c]->Format(),"Pdf")) {
+				filter=laidout->exportfilters.e[c];
+				break;
+			}
+		}
+		if (!filter) filter=laidout->exportfilters.e[0];
+
+		 //update config to new filter
+		DocumentExportConfig *nconfig=filter->CreateConfig(config);
+		if (config) config->dec_count();
+		config=nconfig;
+	}
+
 	return 0;
 }
 
 /*! Append to att if att!=NULL, else return new att.
  */
-Attribute *ExportDialog::dump_out_atts(Attribute *att,int what)
+Attribute *ExportDialog::dump_out_atts(Attribute *att,int what, LaxFiles::DumpContext *context)
 {
 	if (!att) att=new Attribute(whattype(),NULL);
 	char scratch[100];
@@ -155,12 +184,15 @@ Attribute *ExportDialog::dump_out_atts(Attribute *att,int what)
 	sprintf(scratch,"%d",win_h);
 	att->push("win_h",scratch);
 
+	Attribute *att2 = att->pushSubAtt("last_format", filter->VersionName());
+	config->dump_out_atts(att2, what, context);
+
 	return att;
 }
 
 /*! \todo  *** ensure that the dimensions read in are in part on screen...
  */
-void ExportDialog::dump_in_atts(Attribute *att,int flag)
+void ExportDialog::dump_in_atts(Attribute *att,int flag, LaxFiles::DumpContext *context)
 {
 	char *name,*value;
 	for (int c=0; c<att->attributes.n; c++) {
@@ -174,8 +206,26 @@ void ExportDialog::dump_in_atts(Attribute *att,int flag)
 			IntAttribute(value,&win_w);
 		} else if (!strcmp(name,"win_h")) {
 			IntAttribute(value,&win_h);
+
+		} else if (!strcmp(name,"last_format") && !isblank(value)) {
+			ExportFilter *nfilter=NULL;
+			for (int c2=0; c2<laidout->exportfilters.n; c2++) {
+				if (!strcmp(value, laidout->exportfilters.e[c2]->VersionName())) {
+					nfilter=laidout->exportfilters.e[c2];
+					break;
+				}
+			}
+
+			 //update config to new filter
+			if (nfilter!=filter) {
+				filter=nfilter;
+				DocumentExportConfig *nconfig=filter->CreateConfig(config);
+				if (config) config->dec_count();
+				config=nconfig;
+			} 
 		}
 	}
+
 }
 
 //! Based on config->layout, set min and max accordingly.
@@ -204,7 +254,11 @@ int ExportDialog::init()
 		config->filename=newstr("output");
 		appendstr(config->filename,".");
 		appendstr(config->filename,filter->DefaultExtension());
+	} else {
+		 //make sure template has extension
+		if (!strrchr(config->filename,'.')) appendstr(config->filename,".huh");
 	}
+
 	if (!config->tofiles) {
 		makestr(config->tofiles,config->filename);
 		char *p=strrchr(config->tofiles,'.'),
@@ -507,6 +561,16 @@ int ExportDialog::init()
 	AddWin(rotatealternate,1, rotatealternate->win_w,0,1000,50,0, rotatealternate->win_h,0,0,50,0, -1);
 	AddNull();
 
+	 //textaspaths
+	last=textaspaths=new CheckBox(this,"textaspaths",NULL,CHECK_CIRCLE|CHECK_LEFT,
+						 0,0,0,0,0, 
+						 last,object_id,"textaspaths",
+						 _("Text as paths"), CHECKGAP,5);
+	textaspaths->State(config->textaspaths ? LAX_ON : LAX_OFF);
+	textaspaths->tooltip(_("Export all text as paths"));
+	AddWin(textaspaths,1,-1);
+	AddNull();
+
 
 	//-------------------------- Extra settings per export type ------------------------------------
 	AddWin(NULL,0, 0,0,9999,50,0, 12,0,0,50,0, -1);
@@ -682,8 +746,44 @@ void ExportDialog::updateEdits()
 				AddWin(box,1,i++); 
 				AddNull(i++);
 
+			} else if (fd->format==VALUE_String) { 
+				sprintf(scratch,"extra-%s",fd->name);
+				LineInput *box;
+				last=box=new LineInput(this,scratch,NULL,0, 
+									 0,0,0,0,0, 
+									 last,object_id,scratch,
+									 fd->Name, NULL);
+
+				Value *v=config->dereference(fd->name,strlen(fd->name));
+				StringValue *str=dynamic_cast<StringValue*>(v);
+				if (str) box->SetText(str->str);
+				v->dec_count();
+
+				AddWin(box,1,i++); 
+				AddNull(i++);
+
+			} else if (fd->format==VALUE_Int || fd->format==VALUE_Real) { 
+				sprintf(scratch,"extra-%s",fd->name);
+				LineInput *box;
+				last=box=new LineInput(this,scratch,NULL,(fd->format==VALUE_Int ? LINP_INT : LINP_FLOAT), 
+									 0,0,0,0,0, 
+									 last,object_id,scratch,
+									 fd->Name, NULL);
+
+				Value *v=config->dereference(fd->name,strlen(fd->name));
+				IntValue *ii=dynamic_cast<IntValue*>(v);
+				if (ii) box->SetText((int)ii->i);
+				else {
+					DoubleValue *ii=dynamic_cast<DoubleValue*>(v);
+					if (ii) box->SetText(ii->d);
+				}
+				v->dec_count();
+
+				AddWin(box,1,i++); 
+				AddNull(i++);
+
 			} else {
-				//DBG cerr << "*** warning! uncaught field in an export config!"<<endl;
+				DBG cerr << "*** warning! uncaught field type "<<element_TypeNames(fd->format)<<"in an export config!"<<endl;
 			}
 		}
 	}
@@ -713,6 +813,13 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 			config->assign(&ff, &v);
 		}
 
+		return 0;
+
+	} else if (!strcmp(mes,"textaspaths")) {
+		if (!e) return 1;
+		int s=reverse->State();
+		if (s==LAX_ON) config->textaspaths=1;
+		else config->textaspaths=0;
 		return 0;
 
 	} else if (!strcmp(mes,"get new file")) {

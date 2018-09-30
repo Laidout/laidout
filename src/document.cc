@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2013 by Tom Lechner
@@ -20,16 +19,20 @@
 #include <lax/freedesktop.h>
 #include <lax/interfaces/interfacemanager.h>
 
-#include <lax/refptrstack.cc>
-
 #include "document.h"
 #include "filetypes/scribus.h"
+#include "filetypes/svg.h"
 #include "printing/psout.h"
 #include "version.h"
 #include "laidout.h"
 #include "headwindow.h"
 #include "utils.h"
+#include "interfaces/nodeinterface.h"
 #include "language.h"
+
+
+//template implementation:
+#include <lax/refptrstack.cc>
 
 
 using namespace Laxkit;
@@ -91,8 +94,6 @@ const char *pageLabelTypeName(PageLabelType t)
  * \brief Holds info about page labels.
  *
  * Labels are 1,2,3... or i,ii,iii...
- * 
- * \todo *** this might be better off as a doubly linked list
  */
 /*! \var char *PageRange::name
  * \brief An id for this range.
@@ -288,11 +289,9 @@ char *PageRange::GetLabel(int i,int altfirst,int alttype)
 }
 
 /*! \todo make labeltype be the enum names.. this ultimately means PageRange
- *    will have to make full switch to Style.
+ *    will have to make full switch to Value.
  *
  * If what==-1, write out pseudocode mockup.
- *
- * \todo *** finish what==-1
  */
 void PageRange::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
@@ -332,8 +331,6 @@ void PageRange::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *cont
 	fprintf(f,"\n");
 }
 
-/*! \todo ultimately PageRange will have to make full switch to Style.
- */
 void PageRange::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	if (!att) return;
@@ -387,8 +384,6 @@ void PageRange::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCon
  * type of paper. Thus, a book with a larger cover, for instance, is most likely
  * two documents: the body pages, and the cover page, which together might
  * constitute a Project.
- *
- * \todo Do a scribus out/in, and a passepartout in.
  */
 /*! \var int Document::curpage
  * \brief The index into pages of the current page.
@@ -522,9 +517,6 @@ Spread *Document::GetLayout(int type, int index)
 	
 //! Add n new blank pages starting before page index starting, or at end if starting==-1.
 /*! Returns number of pages added, or negative for error.
- *
- * \todo *** figure out how to handle upkeep of page range and labels
- * \todo *** if np<0 insert before index starting, else after
  */
 int Document::NewPages(int starting,int np)
 {
@@ -571,8 +563,13 @@ void Document::UpdateLabels(int whichrange)
 	}
 
 	char *label;
-	PageRange *r=pageranges.e[whichrange];
+	PageRange *r = pageranges.e[whichrange];
 	for (int c=r->start; c<=r->end; c++) {
+		if (c >= pages.n) {
+			cerr << " *** UpdateLabel(): page index from pagerange out of range for document! dev needs to track this down!!"<<endl;
+			r->end = pages.n-1;
+			break;
+		}
 		label=r->GetLabel(c);
 		if (pages.e[c]->label) delete[] pages.e[c]->label;
 		pages.e[c]->label=label;
@@ -720,10 +717,6 @@ int Document::ApplyPageRange(const char *name, int type, const char *base, int s
 /*! Return the number of pages removed, or negative for error.
  *
  * Return -1 for start out of range, -2 for not enough pages to allow deleting.
- * 
- * \todo *** figure out how to handle upkeep of page range and labels
- * \todo *** this is slightly broken.. does not reorient pagestyles
- *   properly.
  */
 int Document::RemovePages(int start,int n)
 {
@@ -731,9 +724,7 @@ int Document::RemovePages(int start,int n)
 	if (start<0 || start>=pages.n) return -1;
 	if (start+n>pages.n) n=pages.n-start;
 	for (int c=0; c<n; c++) {
-		//DBG cerr << "---page id:"<<pages.e[start]->object_id<<"... "<<endl;
 		pages.remove(start);
-		//DBG cerr << "---  Done removing page "<<start+c<<endl;
 	}
 	imposition->NumPages(pages.n);
 	SyncPages(start,-1, true);
@@ -741,6 +732,119 @@ int Document::RemovePages(int start,int n)
 	return n;
 }
 
+/*! Use tname as the name of the template. This will try to use the name as the readable name as well as the file name.
+ * If it can't use it as a filename, try to use some variant of the current filename instead.
+ *
+ * Tries to save to laidout->config_dir/templates/tname.
+ *
+ * If clobber, then always overwrite. If !clobber and the constructed template file exists already,
+ * then return it as a new char[] in tfilename_attempt.
+ *
+ * Return 0 for success, or nonzero for error.
+ */
+int Document::SaveAsTemplate(const char *tname, const char *tfile,
+							 int includelimbos,int includewindows,Laxkit::ErrorLog &log,
+							 bool clobber, char **tfilename_attempt)
+{
+	char *templatefile=NULL;
+	if (!tname && tfile) tname=lax_basename(tfile);
+	
+	if (tfile) {
+		makestr(templatefile, tfile);
+
+	} else {
+		 //try to find a reasonable path and filename for the template
+		char *templatedir = laidout->default_path_for_resource("templates");
+
+		if (!file_exists(templatedir, 1, NULL)) {
+			 //dir doesn't exist for some reason, create it!
+			if (check_dirs(templatedir, true)!=-1) {
+				delete[] templatedir;
+				log.AddMessage(_("Could not access template directory."), ERROR_Fail);
+				return 1;
+			}
+		}
+
+		 //build template file path
+		templatefile=newstr(templatedir);
+		delete[] templatedir;
+
+		appendstr(templatefile, "/");
+		if (!strcmp(tname,"default") || !strcmp(tname,_("default"))) {
+			appendstr(templatefile, "default");
+
+		} else { 
+			 //try to make filename based on tname
+			char *tfile=newstr(tname);
+			sanitize_filename(tfile,0);
+			if (isblank(tfile)) {
+				 //tname doesn't translate to a filename, try using saveas
+				delete[] tfile;
+				tfile=newstr(lax_basename(Saveas()));
+			}
+
+			if (isblank(tfile)) {
+				 //still no luck with naming, fall back on:
+				delete[] tfile;
+				tfile=newstr("template");
+			}
+
+			appendstr(templatefile, tfile);
+			delete[] tfile;
+		}
+	}
+
+	simplify_path(templatefile,1);
+
+	if (!clobber && file_exists(templatefile, 1, NULL)) {
+		if (tfilename_attempt) *tfilename_attempt = newstr(templatefile);
+		delete[] templatefile;
+		return 3;
+	}
+
+	int error=0;
+	char *oldname=this->name;
+	this->name=newstr(tname);
+
+	if (SaveACopy(templatefile, 1,1,log, true)==0) {
+		//success!
+	} else {
+		//fail!
+		if (!log.Total()) log.AddMessage(_("Problem saving. Not saved."), ERROR_Fail);
+		error=2;
+	}
+	delete[] this->name;
+	this->name=oldname;
+
+	delete[] templatefile;
+	return error;
+}
+
+/*! Return 0 for success or nonzero for error.
+ */
+int Document::SaveACopy(const char *filename, int includelimbos,int includewindows,ErrorLog &log, bool add_to_recent)
+{
+	if (isblank(filename)) {
+		log.AddMessage(_("Need a file name to save to!"),ERROR_Fail);
+		return 1;
+	}
+
+	char *oldname = newstr(Saveas());
+	Saveas(filename);
+
+	int error=0;
+	if (Save(includelimbos, includewindows, log, add_to_recent)==0) {
+		 //success!
+
+	} else {
+		 //failure!
+		error=2;
+	}
+
+	Saveas(oldname);
+	delete[] oldname;
+	return error;
+}
 	
 //! Return 0 if saved, return nonzero if not saved.
 /*! Save as document file.
@@ -750,9 +854,8 @@ int Document::RemovePages(int start,int n)
  *
  * \todo *** only checks for saveas existence, does no sanity checking on it...
  * \todo  need to work out saving Specific project/no proj but many docs/single doc
- * \todo *** implement dump context
  */
-int Document::Save(int includelimbos,int includewindows,ErrorLog &log)
+int Document::Save(int includelimbos,int includewindows,ErrorLog &log, bool add_to_recent)
 {
 	FILE *f=NULL;
 	if (isblank(saveas)) {
@@ -810,7 +913,8 @@ int Document::Save(int includelimbos,int includewindows,ErrorLog &log)
 	
 	fclose(f);
 	setlocale(LC_ALL,"");
-	touch_recently_used_xbel(saveas,"application/x-laidout-doc",
+
+	if (add_to_recent) touch_recently_used_xbel(saveas,"application/x-laidout-doc",
 							"Laidout","laidout", //application
 							"Laidout", //group
 							true, //visited
@@ -827,14 +931,9 @@ int Document::Save(int includelimbos,int includewindows,ErrorLog &log)
  * here unless there is a window attribute in the file. (should probably separate
  * window creation from base Document class).
  *
- * \todo *** for file, check that it is in fact a Laidout file! Maybe there should
- *   be a similar function as a standalone so if the file can
- *   be interpreted as another importable file, then loading should be delegated
- *   to the appropriate function....
  * \todo window attributes are found when document is saved independent of a project.
  *   must have mechanism to pass those back to LaidoutApp? right now, that is in
  *   dump_in_atts(), and it shouldn't be there....
- * \todo *** implement dump context
  */
 int Document::Load(const char *file,ErrorLog &log)
 {
@@ -843,9 +942,15 @@ int Document::Load(const char *file,ErrorLog &log)
 	
 	FILE *f=open_laidout_file_to_read(file,"Document",&log);
 	if (!f) {
-		if (!isScribusFile(file)) return 0;
-		int c=addScribusDocument(file,this); //0 success, 1 failure
-		if (c==0) return 1;
+		if (isScribusFile(file)) {
+			int c=addScribusDocument(file,this); //0 success, 1 failure
+			if (c==0) return 1;
+		}
+
+		if (isSvgFile(file)) {
+			int c=addSvgDocument(file,this); //0 success, 1 failure
+			if (c==0) return 1;
+		}
 		return 0;
 	}
 	
@@ -853,6 +958,7 @@ int Document::Load(const char *file,ErrorLog &log)
 
 	char *dir=lax_dirname(file,0);
 	DumpContext context(dir,1, object_id);
+	context.log = &log;
 	if (dir) delete[] dir;
 
 	clear();
@@ -884,13 +990,19 @@ int Document::Load(const char *file,ErrorLog &log)
 	laidout->project->ClarifyRefs(log);
 	//DBG cerr<<" *** Document::Load should probably have a load context storing refs that need to be sorted, to save time loading..."<<endl;
 
-	if (!strstr(file,".laidout") && !strstr(file,"/templates/")) { //***bit of a hack to not touch templates
+	if (!(strstr(file,"/laidout/") && strstr(file,"/templates/"))) {
+		//***bit of a hack to not make templates show up as recent files
+		//   ..file appears to be in a laidout templates config dir.. pretty poor test though!!!
+
 		touch_recently_used_xbel(saveas,"application/x-laidout-doc",
 								"Laidout","laidout", //application
 								"Laidout", //group
 								true, //visited
 								false, //modified
 								NULL); //recent file
+	} else {
+		 //we probably opened a template, so zap the save as
+		makestr(saveas, NULL);
 	}
 
 	//DBG cerr <<"------ Done reading "<<file<<endl<<endl;
@@ -946,7 +1058,6 @@ int Document::SyncPages(int start,int n, bool shift_within_margins)
  * something in that imposition instance, and pages merely need to be synced
  * (and possibly resized).
  *
- * \todo need to scale one margin area to another, not just page to page
  * \todo when master pages are implemented, will need to ensure they are scaled properly
  * \todo rescaling assumes rectangular pages, but maybe it shouldn't.
  */
@@ -1099,6 +1210,7 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCont
 			Group *g=new Group;  //count=1
 			g->dump_in_atts(att->attributes.e[c],flag,context);
 			g->obj_flags|=OBJ_Unselectable|OBJ_Zone;
+			g->selectable = false;
 			if (isblank(g->id) && !isblank(value)) makestr(g->id,value);
 			laidout->project->limbos.push(g); // incs count
 			g->dec_count();   //remove extra first count
@@ -1190,7 +1302,15 @@ void Document::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *conte
 
 		 //resources
 		fprintf(f,"%sresources                     #a list of resource objects used in the document, grouped by type\n",spc);
-		fprintf(f,"%s  ...\n",spc);
+		fprintf(f,"%s  type Nodes\n",spc);
+		fprintf(f,"%s    name Nodes\n",spc);
+		fprintf(f,"%s    resource\n",spc);
+		fprintf(f,"%s      name SomeNodeResourceName\n",spc);
+		//fprintf(f,"%s      favorite 0 #whether this resource is a favorite\n",spc);
+		fprintf(f,"%s      object NodeGroup\n",spc);
+		NodeGroup node;
+		node.dump_out(f, indent+8, -1, context);
+		fprintf(f,"%s\n", spc);
 		
 		 //imposition
 		fprintf(f,"%s#A document has only 1 imposition. It can be one of any imposition resources\n",spc);

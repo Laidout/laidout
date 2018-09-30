@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2010 by Tom Lechner
@@ -224,21 +223,21 @@ void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpConte
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
 
-		if (!strcmp(name,"insetleft")) {
+		if (!strcmp(name,"insetleft") || !strcmp(name,"insetl")) {
 			DoubleAttribute(value,&insetleft);
-		} else if (!strcmp(name,"insetright")) {
+		} else if (!strcmp(name,"insetright") || !strcmp(name,"insetr")) {
 			DoubleAttribute(value,&insetright);
-		} else if (!strcmp(name,"insettop")) {
+		} else if (!strcmp(name,"insettop") || !strcmp(name,"insett")) {
 			DoubleAttribute(value,&insettop);
-		} else if (!strcmp(name,"insetbottom")) {
+		} else if (!strcmp(name,"insetbottom") || !strcmp(name,"insetb")) {
 			DoubleAttribute(value,&insetbottom);
-		} else if (!strcmp(name,"marginleft")) {
+		} else if (!strcmp(name,"marginleft") || !strcmp(name,"marginl")) {
 			DoubleAttribute(value,&marginleft);
-		} else if (!strcmp(name,"marginright")) {
+		} else if (!strcmp(name,"marginright") || !strcmp(name,"marginr")) {
 			DoubleAttribute(value,&marginright);
-		} else if (!strcmp(name,"margintop")) {
+		} else if (!strcmp(name,"margintop") || !strcmp(name,"margint")) {
 			DoubleAttribute(value,&margintop);
-		} else if (!strcmp(name,"marginbottom")) {
+		} else if (!strcmp(name,"marginbottom") || !strcmp(name,"marginb")) {
 			DoubleAttribute(value,&marginbottom);
 		} else if (!strcmp(name,"gapx")) {
 			DoubleAttribute(value,&gapx);
@@ -303,18 +302,18 @@ void Singles::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *contex
 		fprintf(f,"%sdescription  Single sheets  #Some description beyond just a name.\n",spc);
 		fprintf(f,"%s                            #name and description are used by the imposition resource mechanism\n",spc);
 		fprintf(f,"%s#insets are regions of a paper not taken up by the page\n",spc);
-		fprintf(f,"%sinsetl 0   #The left inset from the side of a paper\n",spc);
-		fprintf(f,"%sinsetr 0   #The right inset from the side of a paper\n",spc);
-		fprintf(f,"%sinsett 0   #The top inset from the side of a paper\n",spc);
-		fprintf(f,"%sinsetb 0   #The bottom inset from the side of a paper\n",spc);
+		fprintf(f,"%sinsetleft   0   #The left inset from the side of a paper\n",spc);
+		fprintf(f,"%sinsetright  0   #The right inset from the side of a paper\n",spc);
+		fprintf(f,"%sinsettop    0   #The top inset from the side of a paper\n",spc);
+		fprintf(f,"%sinsetbottom 0   #The bottom inset from the side of a paper\n",spc);
 		fprintf(f,"%sgapx 0     #Gap between tiles horizontally\n",spc);
 		fprintf(f,"%sgapy 0     #Gap between tiles vertically\n",spc);
 		fprintf(f,"%stilex 1    #number of times to tile the page horizontally\n",spc);
 		fprintf(f,"%stiley 1    #number of times to tile the page vertically\n",spc);
-		fprintf(f,"%smarginl 0   #The default left page margin\n",spc);
-		fprintf(f,"%smarginr 0   #The default right page margin\n",spc);
-		fprintf(f,"%smargint 0   #The default top page margin\n",spc);
-		fprintf(f,"%smarginb 0   #The default bottom page margin\n",spc);
+		fprintf(f,"%smarginlleft  0   #The default left page margin\n",spc);
+		fprintf(f,"%smarginright  0   #The default right page margin\n",spc);
+		fprintf(f,"%smargintop    0   #The default top page margin\n",spc);
+		fprintf(f,"%smarginbottom 0   #The default bottom page margin\n",spc);
 		fprintf(f,"%snumpages 3 #number of pages in the document. This is ignored on readin\n",spc);
 		fprintf(f,"%sdefaultpapers #default paper group\n",spc);
 		papergroup->dump_out(f,indent+2,-1,NULL);
@@ -322,16 +321,17 @@ void Singles::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *contex
 		pagestyle->dump_out(f,indent+2,-1,NULL);
 		return;
 	}
-	fprintf(f,"%smarginl %.10g\n",spc,marginleft);
-	fprintf(f,"%smarginr %.10g\n",spc,marginright);
-	fprintf(f,"%smargint %.10g\n",spc,margintop);
-	fprintf(f,"%smarginb %.10g\n",spc,marginbottom);
-	fprintf(f,"%sinsetl %.10g\n",spc,insetleft);
-	fprintf(f,"%sinsetr %.10g\n",spc,insetright);
-	fprintf(f,"%sinsett %.10g\n",spc,insettop);
-	fprintf(f,"%sinsetb %.10g\n",spc,insetbottom);
+	fprintf(f,"%smarginleft   %.10g\n",spc,marginleft);
+	fprintf(f,"%smarginright  %.10g\n",spc,marginright);
+	fprintf(f,"%smargintop    %.10g\n",spc,margintop);
+	fprintf(f,"%smarginbottom %.10g\n",spc,marginbottom);
+	fprintf(f,"%sinsetleft    %.10g\n",spc,insetleft);
+	fprintf(f,"%sinsetright   %.10g\n",spc,insetright);
+	fprintf(f,"%sinsettop     %.10g\n",spc,insettop);
+	fprintf(f,"%sinsetbottom  %.10g\n",spc,insetbottom);
 	fprintf(f,"%stilex %d\n",spc,tilex);
 	fprintf(f,"%stiley %d\n",spc,tiley);
+
 	if (numpages) fprintf(f,"%snumpages %d\n",spc,numpages);
 	if (pagestyle) {
 		fprintf(f,"%sdefaultpagestyle\n",spc);
@@ -617,6 +617,8 @@ Page **Singles::CreatePages(int npages)
 SomeData *Singles::GetPageOutline(int pagenum,int local)
 {
 	PathsData *newpath=new PathsData();//count==1
+	newpath->style |= PathsData::PATHS_Ignore_Weights;
+
 	newpath->appendRect(0,0,pagestyle->w(),pagestyle->h());
 	newpath->maxx=pagestyle->w();
 	newpath->maxy=pagestyle->h();
@@ -716,7 +718,11 @@ Spread *Singles::PaperLayout(int whichpaper)
 	if (insetright>0 || insetleft>0 || insettop>0 || insetbottom>0) {
 		spread->mask|=SPREAD_PRINTERMARKS;
 		PathsData *marks=new PathsData();
-		marks->flags|=SOMEDATA_LOCK_CONTENTS;
+		ScreenColor color(0.,0.,0.,1.);
+		marks->line(2./72, -1, -1, &color);
+		marks->Id(_("Cut marks"));
+		marks->flags |= SOMEDATA_LOCK_CONTENTS|SOMEDATA_UNSELECTABLE;
+
 		if (insetleft>0) {
 			marks->pushEmpty();
 			marks->append(0,        paper->media.maxy-insettop);
@@ -749,6 +755,8 @@ Spread *Singles::PaperLayout(int whichpaper)
 			marks->append(paper->media.maxx-insetright,paper->media.maxy);
 			marks->append(paper->media.maxx-insetright,paper->media.maxy-.9*insettop);
 		}
+
+		marks->FindBBox();
 		spread->marks=marks;
 	}
 

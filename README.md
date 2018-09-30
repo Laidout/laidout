@@ -1,116 +1,227 @@
-LAIDOUT Version 0.096
+LAIDOUT Version 0.096.1
 =======================
 http://laidout.org
 
 
-Please post any complaints and other correspondence to the Laidout
-general mailing list found at:
-https://lists.sourceforge.net/lists/listinfo/laidout-general
-
-Currently the only developer (and creator of Laidout) is also a client:
-Tom Lechner (http://www.tomlechner.com)
-
-
 WHAT IT CAN DO RIGHT NOW
 ------------------------
+Laidout is desktop publishing software built from the ground up with
+imposition in mind. Currently one may arrange pages into various 
+impositions, such as a booklet, or even a dodecahedron. You can fill
+pages with images, gradients (linear, radial, and mesh), mesh 
+transformed images, engraving-like fill objects, and some basic text.
+Export with varying degrees of success to Svg, Scribus, Pdf, and more.
+
+Sometimes there are experimental tools you can activate by
+running: `laidout --experimental` or `laidout -E`
+
+Please post about any snags to Laidout's
+github issue tracker: https://github.com/Laidout/laidout/issues.
+
 Laidout is currently in the 'mostly works on my machine' stage of development.
+It was created by and developed by Tom Lechner (http://www.tomlechner.com).
 
-Laidout currently can arrange pages into various impositions,
-such as a booklet, or even a dodecahedron. You can manipulate images
-and gradients (linear, radial, and mesh). Also, 
-you can make a type of image that can be stretched around. The very 
-basics to get my cartoon books done, in other words. Many more features
-are planned, like such non-essentials (to me anyway) as streamed text!
-Who needs text when a picture is worth a thousand words?
 
-Laidout is built upon the Laxkit (http://laxkit.sourceforge.net).
+
+SYSTEM REQUIREMENTS
+-------------------
+Currently, Laidout only runs in variations of Linux. It is being developed
+on a Debian Unstable system, thus that one is the most hassle free to setup.
+
+Ubuntu 14.04 needs a more recent harfbuzz than is included, but more
+recent Ubuntu should work well.
+
+Laidout does not run out of the box on Macs, but it should not be difficult
+to run under X11 with a few (currently undone) changes. I have no Mac to
+test on. Donations of the newest, most expensive and lightest Macs are welcome!
+
+Laidout will not currently run on Windows. Feel free to subsidize a port
+by showering the developer with money.
+
+Please see http://www.laidout.org/faq.html for some extra help. Let me
+know if you get stuck trying to install. It is supposed to be easy!
 
 
 COMPILING RELEASES
 ------------------
 
-If you are compiling from development source, not from a release, please see
-'Compiling from source' below.
+If you are compiling from development git, not from a release, please see
+'Compiling from development git' below.
+
 
 You will need a few extra development libraries on your computer in order
 to compile Laidout. Running ./configure does a simple check for these,
 but the check is so simple, that it may miss them or otherwise get confused.
-You will need the header files for Imlib2, freetype2, fontconfig, cairo, x11, xft
-ssl, and cups.
+
+For everything, you will need the header files for at least:
+  Imlib2, harfbuzz, gegl, freetype2, fontconfig, cairo, x11, ssl, cups, sqlite3, 
+  graphicsmagick++, ftgl, opengl 
 
 If you are on a debian based system, you can probably install these with this command:
 
-    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libcairo2-dev
+    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libcairo2-dev libharfbuzz-dev libsqlite3-dev libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev zlib1g-dev libgegl-dev
 
-If you want to use the optional Opengl based unwrapper, you should also do this:
+On Fedora, this list is more like this:
 
-    apt-get install libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev
+    sudo dnf install -y gegl-devel cairo-devel cups-devel fontconfig-devel ftgl-devel glibc-headers harfbuzz-devel imlib2-devel lcms-devel libpng-devel libX11-devel libXext-devel libXft-devel libXi-devel mesa-libGL-devel mesa-libGLU-devel openssl-devel readline-devel sqlite-devel xorg-x11-proto-devel zlib-devel GraphicsMagick-c++-devel libstdc++-devel freetype-devel imake
 
 
-Ensure that you have the Laxkit (http://laxkit.sourceforge.net)
-available. If you have downloaded a release, then the Laxkit 
-is included.
+Some of the above packages are technically optional. See 'Optional Dependencies' section below for more about that.
 
-Here are the current "./configure" options. They are all optional:
 
-     --help                       Show the options you can pass to ./configure
-     --prefix=/where/to/install   Default /usr/local
-     --gs=/path/to/gs             Where is your ghostscript executable? This is quite
-                                   optional, and is used at the moment only to
-                                   generate a preview image of EPS files.
-     --laxkit=/laxkit/headers     Default in releases is ./laxkit/lax, since the Laxkit
-                                   is currently included in release download
-     --version=OtherVersionNum    You may force Laidout to compile with a different
-                                   version string. This will make ~/.config/laidout/(version)
-                                   and the executable becomes laidout-(version), and will
-                                   save system stuff in prefix/share/laidout-(version).
-     --language=/path/to/langs    The path where translation files should be installed.
-                                   This will normally be prefix/share, and the files
-                                   themselves get put in prefix/share/locale/*.
 
 To compile and install Laidout, just run these three easy steps:
 
     ./configure
     make
     make install
+    (or sudo make install)
 
 Note that if your computer has, say, 8 processors, you can compile much faster
 using `make -j 8` instead of plain make.
 
+Run `./configure --help` for a full list of configuration options.
+
 `make install` will put
 laidout-(whatever version) in (usually) /usr/local/bin, and make a
-symbolic link /usr/local/bin/laidout point to it.
+symbolic link /usr/local/bin/laidout point to it. To install elsewhere,
+do: `./configure --prefix=/path/to/somewhere/else`
 
-After successfully making, the program `laidout` in the src
-directory is the thing you want. It does not really depend on any other
-files currently (except icons, but they are not needed to actually run),
-thus it can be run from wherever it is located, but you might need to
-set an alternate icon directory, since Laidout will expect icons in
-the install destination.
-
-You can do that or perhaps try out other icon sets (if you have any) by modifying
-the file `~/.config/laidout/(version)/laidoutrc`. This will have been created
-the first time you run Laidout. Open this file, and if the magic worked, simply
-uncomment the line for `icon_dir` and set to the directory you want. For the 
-uninstalled icons, this would be (this directory)/src/icons.
+You do not need to `make install` in order to run. Simply run `src/laidout`.
+Laidout does not really depend on any other files, but you may be missing
+icons. If you do this , you can set a specific place or places to search
+for icons by modifying the file `~/.config/laidout/(version)/laidoutrc`. This 
+will have been created the first time you run Laidout. Open this file, and if
+the magic worked, simply uncomment the line for `icon_dir` and set to the 
+directory you want. For the uninstalled icons, this would 
+be (this directory)/src/icons.
 
 
 MAKING A DEB PACKAGE
 --------------------
 If you want to create a deb package of Laidout, make sure you have the fakeroot,
 dpkg-dev, and debhelper packages installed, and have all the other packages listed 
-from the COMPILING section above, and do this from the top laidout directory:
+from the COMPILING RELEASES section above, and do this from the top laidout directory:
 
-    dpkg-buildpackage -rfakeroot
+    make deb
+
+This makes sure there is a "debian" directory, then calls `dpkg-buildpackage -rfakeroot`.
 
 If the magic works, you will find installable packages in the directory directly
 above the Laidout directory. If it does not work, please let me know so I can fix it!
 
-If you fail with this error:
-  dpkg-shlibdeps: error: no dependency information found for /usr/lib/libGL.so.1
+If the magic does NOT work, and you fail with this error:
+
+    dpkg-shlibdeps: error: no dependency information found for /usr/lib/libGL.so.1
+
 then you need to change: `dh_shlibdeps` in debian/rules to: `dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info`
 Maybe something to do with non-packaged NVidia drivers?
 
+If you do run into problems and have to run make deb again, you might want to run with `-nc` option,
+so you don't have rebuild everything again.:
+
+	dpkg-buildpackage -rfakeroot -nc
+
+
+OPTIONAL DEPENDENCIES
+----------------------
+If you get in a bind about dependencies, from `./configure` you can disable certain libraries to aid in compiling.
+
+Specifically:
+ - OpenGL: If you don't need the opengl polyhedron unwrapper, use `--nogl`
+ - Sqlite: If you don't care about Fontmatrix font tags, use `--disable-sqlite`
+ - Gegl: If you don't want to mess around with gegl, it's trickier, but just comment out geglnodes.so in src/plugins/Makefile
+
+
+COMPILING FROM DEVELOPMENT GIT
+------------------------------
+Compiling from git source requires a few more steps than compiling releases.
+Be advised that the dev version may be rather buggy compared to "stable" versions!
+
+Here is a fast and easy way to get Laidout up and running from development source:
+
+1. Grab Laidout source from github (make sure the git package is installed):
+
+        git clone https://github.com/Laidout/laidout.git
+
+2. Laidout is currently built upon its own custom gui library called 
+   the Laxkit (http://github.com/Laidout/laxkit).
+
+   Enter the laidout directory and get the Laxkit source:
+
+        cd laidout
+        git clone http://github.com/Laidout/laxkit.git laxkit
+
+3. Compile the goods. Make sure you have all the packages from the Compiling Releases section 
+   above, then do this:
+
+        cd laxkit
+        ./configure
+        make
+        cd ..
+        ./configure --laxkit=`pwd`/laxkit/lax
+        make
+
+    Or all this in one command:
+
+        cd laxkit  && ./configure  && make  && cd ..  && ./configure --laxkit=`pwd`/laxkit/lax  && make
+
+    Do NOT `make install` yet.
+    Also note that if your computer has, say, 8 processors, you can compile much faster
+    using `make -j 8` instead of plain make.
+
+4.  Icons.
+    Steps 1-3 have (ideally) compiled everything. You can run Laidout (at src/laidout)
+    without icons and also without installing it anywhere.
+
+    When downloading development source code, the icons have not yet been generated. 
+    Making the icons requires Inkscape (http://www.inkscape.org) to generate icons 
+    from src/icons/icons.svg, and in laxkit/lax/icons/icons.svg. A python script there 
+    calls Inkscape. cd to src/icons and run "make". Do the same for laxkit/lax/icons/:
+
+        cd src/icons
+        make
+        cd ../../laxkit/lax/icons
+        make
+        cd ../../..
+
+    The laxkit icons need to be put in the laidout icon area. do this with:
+
+        cp laxkit/lax/icons/*png src/icons
+
+    All this in one step:
+
+        cd laxkit/lax/icons && make && cp *png ../../../src/icons && cd ../../../src/icons && make
+
+    The current system can take a long time, depending on the speed of your computer, since
+    the script has to start Inkscape separately for each icon. Some day, the icons will be
+    generated directly from the base icons file by Laidout, for a large speed improvement, but
+    much work needs to be done on the SVG importer before that can happen.
+
+    You can use src/icons/makeimages.py to regenerate all icons, or single icons if you
+    like. The master icon file is src/icons.svg. Each top level object in that file
+    with ids that start with a capital letter will have an icon generated of the same
+    name by running makeimages.py ThatName.
+
+5.  Ok, now do `make install`.
+
+	A note about uninstalling. Work needs to be done on "make uninstall" to not remove 
+	things that were installed to those directories other than with "make install", such
+	as the addition of extra resources.
+	Right now, everything in prefix/share/laidout/(version) will be removed on uninstall
+	(but not anything in ~/.config/laidout). If this is causing you difficulty, please
+	let me know, and I'll try to finally fix this.
+
+6.  Running Laidout might spit out copious amounts of debugging info to stderr
+    if you run from a terminal. If this is the case, you can turn this 
+    off with `make hidegarbage` before doing `make` (the same goes for the 
+    Laxkit). Be advised that this requires Perl to be installed. Or, you 
+    can just run Laidout like this:
+
+        laidout 2> /dev/null
+    
+    Also, if you make any changes to the include lines of source files, make sure
+    to run `make depends`. This will update dependencies for the next time you compile.
 
 
 INSTALLING DIFFERENT VERSIONS AT THE SAME TIME
@@ -123,99 +234,20 @@ resources that get put in prefix/share/laidout. This way, you do not risk
 clobbering or corrupting files from other versions. 
 
 You can change the version number manually by specifying it when you run
-./configure with somelike:
+./configure with something like:
 
     ./configure --version=0.096-different
 
-You should try to preserve the main version number (which is 0.092 in this
+You should try to preserve the main version number (which is 0.096 in this
 example), or it might confuse Laidout at some point.
 
-HOWEVER, (todo) work needs to be done on "make uninstall" to not remove 
-things that were installed to those directories outside of "make install". 
-Right now, everything in prefix/share/laidout/version will be removed on uninstall
-(but not anything in ~/.laidout). If this is causing you difficulty, please
-let me know, and I'll try to finally fix this.
-
-In any case, if you can, it's really safer to build the deb package, which 
-automatically keeps track of such things, though with deb packages, you currently
-can have only one at a time, without tinkering with debian/control.
-
-Also, though you can have different versions coexist, there is not currently an
+Though you can have different versions coexist, there is not currently an
 automatic way to convert resources from older laidout versions to newer ones.
-Again, if this is a problem, let me know!
+This is on my long to-do list, but is a low priority. If this is a problem, let me know!
 
-
-COMPILING FROM SOURCE
----------------------
-For the Laidout development version, you will need the Laxkit development 
-version from the same date, give or take 10 minutes or so. Be advised that
-the dev version may be rather buggy compared to "stable" versions!
-
-Here is a fast and easy way to get Laidout up and running from development source:
-
-1. Grab Laidout source from github (make sure the git package is installed):
-        git clone https://github.com/Laidout/laidout.git
-
-2. Grab Laxkit git:
-   Enter the laidout directory and get the Laxkit source:
-
-        cd laidout
-        git clone http://github.com/tomlechner/laxkit.git laxkit
-
-   In laidout/configure, make sure the LAXDIR lines look like this:
-        #LAXDIR="/usr/local/include/lax"
-        LAXDIR="`pwd`/laxkit/lax"
-
-3. Compile the goods, by doing this:
-
-        cd laxkit
-        ./configure
-        make depends
-        cd ..
-        ./configure --laxkit=`pwd`/laxkit/lax
-        make depends
-        make
-
-    Note that the Makefiles in git are for the development source, which
-    also tries to do `make` of the Laxkit, since Laxkit and Laidout are 
-    being developed basically side by side. Just remove those parts of the Makefiles
-    if you want to compile only Laidout.
-
-    Also note that if your computer has, say, 8 processors, you can compile much faster
-    using `make -j 8` instead of plain make.
-
-4.  Icons.
-    Steps 1-3 have (ideally) compiled everything. You can run Laidout (at src/laidout)
-    without icons and also without installing it anywhere.
-
-    When downloading development source code, the icons have not yet been generated. 
-    Making the icons requires Inkscape (http://www.inkscape.org) to generate icons 
-    from src/icons/icons.svg, and in laxkit/lax/icons/icons.svg. A python script there 
-    calls Inkscape. cd to src/icons and run "make". Do the same for laxkit/lax/icons/.
-
-    The laxkit icons need to be put in the laidout icon area. do this with:
-
-        cp laxkit/lax/icons/*png src/icons
-
-    All this in one step:
-
-        cd laxkit/lax/icons; make; cp *png ../../../src/icons; cd ../../../src/icons; make
-
-    Some day, the icons will themselves be stored in a Laidout file, and Laidout itself
-    will generate the icons (maybe!). The current system is a bit cumbersome.
-
-    You can use src/icons/makeimages.py to regenerate all icons, or single icons if you
-    like. The master icon file is src/icons.svg. Each top level object in that file
-    with ids that start with a capital letter will have an icon generated of the same
-    name by running makeimages.py ThatName.
-
-5.  Running Laidout might spit out copious amounts of debugging info to stderr
-    if you run from a terminal. If this is the case, you can turn this 
-    off with `make hidegarbage` before doing `make` (the same goes for the 
-    Laxkit). Be advised that this requires Perl to be installed. Or, you 
-    can just run Laidout like this:
-
-        ./laidout 2> /dev/null
+If you build the deb package, you currently can only have one version at a time
+by default. To change that, you would have to tinker with debian/control. If this is
+something you need, please let me know, and I can make instructions for that.
 
 
 SOURCE CODE DOCUMENTATION and CONTRIBUTING
@@ -258,7 +290,7 @@ Compiling on Mac OS X
 ---------------------
 For the adventurous, you can help make Laidout work on OS X.
 Straight from downloading, it will not compile all the way on OS X.
-You'll still need x11, xft, Imlib2, freetype2, fontconfig, ssl, and cups.
+You'll still need all the libraries listed above.
 I'm just guessing, since I don't have access to an OS X or other BSD
 based machine, but it shouldn't be too hard to make Laidout work on them.
 There are a few places where I use GNU-only functions, like getline(),

@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2012-2013 by Tom Lechner
@@ -146,6 +145,15 @@ Value *LImageData::dereference(const char *extstring, int len)
 	if (extequal(extstring,len, "height")) {
 		return new DoubleValue(maxy);
 	}
+
+	if (extequal(extstring,len, "depth")) {
+		return new IntValue(8);
+	}
+
+	//if (extequal(extstring,len, "channels")) {
+	//if (extequal(extstring,len, "importer")) {
+	//if (extequal(extstring,len, "ColorSpace")) {
+	//if (extequal(extstring,len, "HasAlpha")) {
 
 	return NULL;
 }

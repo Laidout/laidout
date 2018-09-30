@@ -1,6 +1,5 @@
 //
-// $Id$
-//	
+//
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2009-2014 by Tom Lechner
@@ -44,16 +43,20 @@ enum ValueTypes {
 	VALUE_Number,     //!< Special tag meaning allow int or real.
 	VALUE_String,     //!< strings, utf8 based
 	VALUE_Bytes,      //!< raw data
-	VALUE_Fields,     //!< collection of subfields 
+	VALUE_Fields,     //!< collection of subfields
 	VALUE_Flatvector, //!< two dimensional vector
 	VALUE_Spacevector,//!< three dimensional vector
+	VALUE_Quaternion, //!< four dimensional vector
 	VALUE_File,       //!< string like object refering to a file on disk
+	VALUE_FileSave,   //!< Same as VALUE_File, but hinted to be for saving a file
+	VALUE_FileLoad,   //!< Same as VALUE_File, but hinted to be for loading a file
 	VALUE_Enum,       //!< One of a list of string like labels, with associated integer value
 	VALUE_EnumVal,    //!< these do not exist independently of a VALUE_Enum's ObjectDef
 	VALUE_Boolean,    //!< Translatable as 1 for true, or 0 for false
 	VALUE_Array,      //!< Mathematical matrices, or sets of fixed sizes
 	VALUE_Hash,       //!< Basically a set with named values
 
+	VALUE_Image,      //!< *** unimplemented!
 	VALUE_Flags,      //!< *** unimplemented!
 	VALUE_Color,      //!< A Color
 	VALUE_Date,       //!< *** unimplemented!
@@ -70,6 +73,9 @@ enum ValueTypes {
 	VALUE_Overloaded, //!< For Entry, stores names that happen to be overloaded
 
 	VALUE_LValue,     //!< A name value that you can assign things to.
+
+	 //field action hints
+	VALUE_Button,     //!< Hint for a field action
 
 	VALUE_MaxBuiltIn
 };
@@ -129,16 +135,73 @@ class SimpleFunctionEvaluator : public FunctionEvaluator
 						 Laxkit::ErrorLog *log);
 };
 
+//------------------------ ValueConstraint --------------------------------
+class ValueConstraint
+{
+  public:
+	enum Constraint {
+		PARAM_None = 0,
+
+		PARAM_No_Maximum,
+		PARAM_No_Minimum,
+		PARAM_Min_Loose_Clamp, //using the <, <=, >, >= should be hints, not hard clamp
+		PARAM_Max_Loose_Clamp, //using the <, <=, >, >= should be hints, not hard clamp
+		PARAM_Min_Clamp, //when numbers exceed bounds, force clamp
+		PARAM_Max_Clamp, //when numbers exceed bounds, force clamp
+
+		PARAM_Integer,
+
+		//PARAM_Step_Adaptive_Mult,
+		PARAM_Step_Adaptive_Add,
+		PARAM_Step_Add,  //sliding does new = old + step, or new = old - step
+		PARAM_Step_Mult, //sliding does new = old * step, or new = old / step
+
+		PARAM_MAX
+	};
+
+	int value_type;
+	Constraint mintype, maxtype, steptype;
+	double min, max, step;
+	double default_value;
+
+	ValueConstraint() {
+		value_type = PARAM_None;
+		default_value = min = max = 0;
+		step=1;
+		mintype = PARAM_No_Maximum;
+		maxtype = PARAM_No_Minimum;
+		steptype = PARAM_Step_Mult;
+	}
+	virtual ~ValueConstraint();
+
+	virtual bool IsValid(Value *v, bool correct_if_possible, Value **v_ret);
+	virtual int SetBounds(const char *bounds); //a single range like "( .. 0]", "[0 .. 1]", "[.1 .. .9]", "{1..9]"
+	virtual int SetBounds(double nmin, int nmin_type, double nmax, int nmax_type);
+	virtual int SetStep(double nstep, Constraint nsteptype);
+
+	virtual int SlideInt(int oldvalue, double numsteps);
+	virtual double SlideDouble(double oldvalue, double numsteps);
+};
+
 //------------------------------ ObjectDef --------------------------------------------
 
 
- 
+
 //ObjectDef::flags:
 #define OBJECTDEF_CAPPED    (1<<0)
 #define OBJECTDEF_DUPLICATE (1<<1)
 #define OBJECTDEF_ORPHAN    (1<<2)
 #define OBJECTDEF_ISSET     (1<<3)
 #define OBJECTDEF_LIST      (1<<3)
+
+enum ObjectDefOut {
+	DEFOUT_Indented     = 0,
+	DEFOUT_Script       = (-2),
+	DEFOUT_HumanSummary = (-3),
+	DEFOUT_CPP          = (-4),
+	DEFOUT_JSON         = (-5),
+	DEFOUT_MAX
+};
 
 
 class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
@@ -182,6 +245,7 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	Laxkit::RefPtrStack<ObjectDef> *fields;
 
 	char *uihint;
+	Laxkit::anObject *extrainfo;
 
 	ObjectDef();
 	ObjectDef(const char *nname,const char *nName, const char *ndesc, Value *newval, const char *type, unsigned int fflags);
@@ -200,16 +264,22 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	virtual int AddObjectDef(ObjectDef *def, int absorb);
 	virtual int SetVariable(const char *name,Value *v,int absorb);
 	virtual int pushVariable(const char *name,const char *nName, const char *ndesc, const char *type, unsigned int fflags, Value *v,int absorb);
-	
+
 	 // helpers to locate fields by name, "blah.3.x"
 	virtual int getNumFieldsOfThis();
 	virtual ObjectDef *getFieldOfThis(int index);
 	virtual int findFieldOfThis(const char *fname,char **next);
 	virtual int getNumFields();
+	virtual int getNumEnumFields();
 	virtual int isData();
 	virtual ObjectDef *getField(int index);
 	virtual int findfield(const char *fname,char **next); // return index value of fname. assumed top level field
 	virtual int findActualDef(int index,ObjectDef **def);
+	virtual int getEnumInfo(int index,
+						const char **nm=NULL,
+						const char **Nm=NULL,
+						const char **desc=NULL,
+						int *id=NULL);
 	virtual int getInfo(int index,
 						const char **nm=NULL,
 						const char **Nm=NULL,
@@ -222,7 +292,7 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 
 
 	 //-------- ObjectDef creation helper functions ------
-	 // The following (push/pop/cap) are convenience functions 
+	 // The following (push/pop/cap) are convenience functions
 	 // to construct a styledef on the fly
 	virtual int Extend(ObjectDef *def);
 	virtual int SetType(const char *type);
@@ -312,6 +382,7 @@ class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual
   public:
 	ValueHash();
 	virtual ~ValueHash();
+	virtual const char *whattype() { return "ValueHash"; }
 	int sorted;
 
 	const char *key(int i);
@@ -333,13 +404,13 @@ class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual
 	int n();
 	Value *e(int i);
 	Value *find(const char *name);
-	int findIndex(const char *name,int len=-1);
-	long findInt(const char *name, int which=-1, int *error_ret=NULL);
-	int findBoolean(const char *name, int which=-1, int *error_ret=NULL);
-	double findDouble(const char *name, int which=-1, int *error_ret=NULL);
-	double findIntOrDouble(const char *name, int which=-1, int *error_ret=NULL);
+	int         findIndex(const char *name,int len=-1);
+	long        findInt(const char *name, int which=-1, int *error_ret=NULL);
+	int         findBoolean(const char *name, int which=-1, int *error_ret=NULL);
+	double      findDouble(const char *name, int which=-1, int *error_ret=NULL);
+	double      findIntOrDouble(const char *name, int which=-1, int *error_ret=NULL);
 	const char *findString(const char *name, int which=-1, int *error_ret=NULL);
-	flatvector findFlatvector(const char *name, int which, int *error_ret=NULL);
+	flatvector  findFlatvector(const char *name, int which, int *error_ret=NULL);
 	Laxkit::anObject *findObject(const char *name, int which=-1, int *error_ret=NULL);
 
 	 //from Value:
@@ -365,6 +436,7 @@ class GenericValue : public Value
 
 	GenericValue(ObjectDef *def);
 	virtual ~GenericValue();
+	virtual const char *whattype() { return "GenericValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 
@@ -382,6 +454,7 @@ class SetValue : public Value, virtual public FunctionEvaluator
 
 	SetValue(const char *restricted=NULL);
 	virtual ~SetValue();
+	virtual const char *whattype() { return "SetValue"; }
 	virtual int Push(Value *v,int absorb, int where=-1);
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
@@ -407,6 +480,7 @@ class ArrayValue : public SetValue
 
 	ArrayValue(const char *elementtype=NULL, int size=0);
 	virtual ~ArrayValue();
+	virtual const char *whattype() { return "ArrayValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Array; }
@@ -421,10 +495,11 @@ class NullValue : public Value
 {
   public:
 	NullValue() {}
+	virtual const char *whattype() { return "NullValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_None; }
- 	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
+ 	virtual ObjectDef *makeObjectDef() { return NULL; }
 };
 
 //----------------------------- BooleanValue ----------------------------------
@@ -433,6 +508,8 @@ class BooleanValue : public Value
   public:
 	int i;
 	BooleanValue(int ii) { i=ii; }
+	BooleanValue(const char *val);
+	virtual const char *whattype() { return "BooleanValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Boolean; }
@@ -447,6 +524,8 @@ class IntValue : public Value
 	Unit units;
 	long i;
 	IntValue(long ii=0) { i=ii; }
+	IntValue(const char *val, int base);
+	virtual const char *whattype() { return "IntValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Int; }
@@ -461,6 +540,8 @@ class DoubleValue : public Value, virtual public FunctionEvaluator
 	Unit units;
 	double d;
 	DoubleValue(double dd=0) { d=dd; }
+	virtual void Set(const char *val);
+	virtual const char *whattype() { return "DoubleValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Real; }
@@ -478,7 +559,9 @@ class FlatvectorValue : public Value, virtual public FunctionEvaluator
 	Unit units;
 	flatvector v;
 	FlatvectorValue() { }
+	FlatvectorValue(double x, double y) { v.set(x,y); }
 	FlatvectorValue(flatvector vv) { v=vv; }
+	virtual const char *whattype() { return "FlatvectorValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Flatvector; }
@@ -498,9 +581,30 @@ class SpacevectorValue : public Value, virtual public FunctionEvaluator
 	spacevector v;
 	SpacevectorValue() { }
 	SpacevectorValue(spacevector vv) { v=vv; }
+	virtual const char *whattype() { return "SpacevectorValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Spacevector; }
+	virtual Value *dereference(const char *extstring, int len);
+	virtual int assign(FieldExtPlace *ext,Value *v);
+ 	virtual ObjectDef *makeObjectDef();
+	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 Laxkit::ErrorLog *log);
+};
+
+//----------------------------- QuaternionValue ----------------------------------
+class QuaternionValue : public Value, virtual public FunctionEvaluator
+{
+  public:
+	Unit units;
+	Quaternion v;
+	QuaternionValue() { }
+	QuaternionValue(Quaternion vv) { v=vv; }
+	virtual const char *whattype() { return "QuaternionValue"; }
+	virtual int getValueStr(char *buffer,int len);
+	virtual Value *duplicate();
+	virtual int type() { return VALUE_Quaternion; }
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);
  	virtual ObjectDef *makeObjectDef();
@@ -516,10 +620,12 @@ class StringValue : public Value, virtual public FunctionEvaluator
 	char *str;
 	StringValue(const char *s=NULL, int len=-1);
 	virtual ~StringValue() { if (str) delete[] str; }
+	virtual const char *whattype() { return "StringValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_String; }
  	virtual ObjectDef *makeObjectDef();
+	virtual void Set(const char *nstr, int n=-1);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret,
 						 Laxkit::ErrorLog *log);
@@ -533,6 +639,7 @@ class BytesValue : public Value, virtual public FunctionEvaluator
 	int len;
 	BytesValue(const char *s=NULL, int len=0);
 	virtual ~BytesValue();
+	virtual const char *whattype() { return "BytesValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Bytes; }
@@ -547,13 +654,17 @@ class EnumValue : public Value
 {
   public:
 	int value;
-	ObjectDef *enumdef;
+	//ObjectDef *enumdef;
 	EnumValue(ObjectDef *baseenum, int which);
 	virtual ~EnumValue();
+	virtual const char *whattype() { return "EnumValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Enum; }
  	virtual ObjectDef *makeObjectDef();
+	virtual int EnumId();
+	virtual const char *EnumLabel();
+	virtual int SetFromId(int id);
 };
 
 //----------------------------- FunctionValue ----------------------------------
@@ -565,6 +676,7 @@ class FunctionValue : public Value
 
 	FunctionValue(const char *ncode, int len);
 	virtual ~FunctionValue();
+	virtual const char *whattype() { return "FunctionValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Function; }
@@ -580,6 +692,7 @@ class FileValue : public Value, virtual public FunctionEvaluator
 	char *filename;
 	FileValue(const char *f=NULL,int len=-1);
 	virtual ~FileValue();
+	virtual const char *whattype() { return "FileValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_File; }
@@ -601,12 +714,14 @@ class ColorValue : public Value
   public:
 	Laxkit::ColorBase color;
 	ColorValue(const char *color);
+	ColorValue(double r, double g, double b, double a);
 	//ColorValue(Laxkit::ColorBase &color);
 	virtual ~ColorValue();
+	virtual const char *whattype() { return "ColorValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Color; }
- 	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
+ 	virtual ObjectDef *makeObjectDef();
 };
 
 //----------------------------- ObjectValue ----------------------------------
@@ -616,18 +731,22 @@ class ObjectValue : public Value
 	Laxkit::anObject *object;
 	ObjectValue(anObject *obj=NULL);
 	virtual ~ObjectValue();
+	virtual const char *whattype() { return "ObjectValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Object; }
- 	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
+ 	virtual ObjectDef *makeObjectDef();
 };
 
 //------------------------------- parsing helpers ------------------------------------
 ValueHash *MapParameters(ObjectDef *def,ValueHash *rawparams);
 double getNumberValue(Value *v, int *isnum);
+bool isNumberType(Value *v, double *number_ret);
+int isVectorType(Value *v, double *values);
 int extequal(const char *str, int len, const char *field, char **next_ret=NULL);
 int isName(const char *longstr,int len, const char *str);
 
+Value *AttributeToValue(LaxFiles::Attribute *att);
 
 
 //-------------------------- Default ObjectDefs for builtin types ---------------------

@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2014 by Tom Lechner
@@ -50,8 +49,8 @@ ObjectTree::ObjectTree(anXWindow *parnt,const char *nname,const char *ntitle,
                 0,NULL)
 {
 	tree_column=1;
-	AddColumn("Flags", NULL, 2*GetDefaultDisplayer()->textheight(),    TreeSelector::ColumnInfo::ColumnFlags,  1);
-	AddColumn("Object",NULL, 400-2*GetDefaultDisplayer()->textheight(),TreeSelector::ColumnInfo::ColumnString, 0);
+	AddColumn("Flags", NULL, 2*GetDefaultDisplayer()->textheight(),0,    TreeSelector::ColumnInfo::ColumnFlags,  1);
+	AddColumn("Object",NULL, 400-2*GetDefaultDisplayer()->textheight(),0,TreeSelector::ColumnInfo::ColumnString, 0);
 }
 
 

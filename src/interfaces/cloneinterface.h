@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,10 +7,10 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2013-2014 by Tom Lechner
+// Copyright (C) 2013-2015,2017 by Tom Lechner
 //
 
 #include "../calculator/values.h"
@@ -56,12 +55,12 @@ class TilingDest
 	int parent_op_id; //of containing TilingOp
 
 	bool is_progressive;
-	bool traceable;
+	bool traceable; //whether this dest should be outlined on Render(). sometimes it is just a base for further objs
 
 	 //conditions for traversal
 	unsigned int conditions; //1 use iterations, 2 use max size, 3 use min size, 4 use scripted
 	int max_iterations; // <0 for endless, use other constraints to control
-	int recurse_objects;
+	int recurse_objects; // what is supposed to recurse
 	double max_size, min_size;
 	double traversal_chance;
 	char *scripted_condition;
@@ -107,6 +106,8 @@ class TilingOp
 class Tiling : public Laxkit::anObject, public LaxFiles::DumpUtility //, public MetaInfo
 {
   protected:
+	void InsertClone(Group *parent_space, LaxInterfaces::SomeData *object, 
+			Laxkit::Affine *sourcem, Laxkit::Affine *basecellmi, Laxkit::Affine &clonet, Laxkit::Affine *final_orient);
 
   public:
 	char *name;
@@ -118,6 +119,9 @@ class Tiling : public Laxkit::anObject, public LaxFiles::DumpUtility //, public 
 
 	Laxkit::Affine repeat_basis; //of overall p1 (before final_transform applied)
 	int repeatable; // &1 for x, &2 for y
+
+	int radial_divisions; 
+	ValueHash properties; //these are hints to various contstructors for how to remap a tiling
 
 	Laxkit::Affine final_transform; //a final transform to apply to whole grid
 	LaxInterfaces::PathsData *boundary;
@@ -132,6 +136,7 @@ class Tiling : public Laxkit::anObject, public LaxFiles::DumpUtility //, public 
 
 	Tiling(const char *nname=NULL, const char *ncategory=NULL);
 	virtual ~Tiling();
+	virtual const char *whattype() { return "Tiling"; }
 
 	virtual void InstallDefaultIcon();
 	virtual void DefaultHex(double side_length);
@@ -146,12 +151,15 @@ class Tiling : public Laxkit::anObject, public LaxFiles::DumpUtility //, public 
 	virtual flatpoint repeatYDir(flatpoint ny);
 	virtual Laxkit::Affine finalTransform(); //transform applied after tiling to entire pattern, to squish around
 
+	virtual int HasRecursion();
+
 	virtual TilingOp *AddBase(LaxInterfaces::PathsData *outline, int absorb_count, int lock_base,
 								bool shearable=false, bool flexible_base=false);
 
 	virtual Group *Render(Group *parent_space,
-					   LaxInterfaces::Selection *base_objects,
+					   Group *source_objects,
 					   Laxkit::Affine *base_offsetm,
+					   Group *base_lines, //!< Optional base cells. If null, then create copies of tiling's default.
 					   int p1_minx, int p1_maxx, int p1_miny, int p1_maxy,
 					   LaxInterfaces::PathsData *boundary,
 					   Laxkit::Affine *final_orient);
@@ -176,7 +184,8 @@ class CloneInterface : public LaxInterfaces::anInterface
   protected:
 
 	Tiling *tiling;
-
+	int num_input_fields;
+	Laxkit::PtrStack<char> extra_input_fields;
 
 	int firsttime;
 	int lastover;
@@ -186,7 +195,9 @@ class CloneInterface : public LaxInterfaces::anInterface
 
 	bool active;
 	bool preview_orient;
-	bool groupify_clones;
+	bool snap_to_base;
+	bool color_to_stroke;
+	bool show_p1;
 
 	bool trace_cells;
 	bool preview_lines;
@@ -196,13 +207,12 @@ class CloneInterface : public LaxInterfaces::anInterface
 
 	LaxInterfaces::PathsData *boundary;
 
+	Group *base_cells;
+	Group *source_proxies; //points to a child in base_cells
 	int current_base;
-	Group base_cells;
 	LaxInterfaces::LineStyle preview_cell;
 	LaxInterfaces::LineStyle preview_cell2;
 
-	LaxInterfaces::Selection sources;
-	LaxInterfaces::Selection source_proxies;
 
 	double uiscale;
 	Laxkit::DoubleBBox box;
@@ -212,6 +222,8 @@ class CloneInterface : public LaxInterfaces::anInterface
 	int num_rows, num_cols;
 	int selected_offset;
 	double icon_width;
+	double base_lastm[6];
+	bool preempt_clear;
 
 
 	unsigned int bg_color;
@@ -220,10 +232,10 @@ class CloneInterface : public LaxInterfaces::anInterface
 	unsigned int activate_color;
 	unsigned int deactivate_color;
 
-	bool inrect;
 	LaxInterfaces::RectInterface rectinterface;
 
-	virtual int scan(int x,int y, int *i);
+	virtual int scan(int x,int y, int *i, int *dest);
+	virtual int scanBasecells(flatpoint fp, int *i, int *dest);
 	virtual int scanSelected(int x,int y);
 
 	virtual int ToggleOrientations();
@@ -231,9 +243,19 @@ class CloneInterface : public LaxInterfaces::anInterface
 	virtual int TogglePreview();
 	virtual int Render();
 	virtual void DrawSelected();
+	virtual Laxkit::ScreenColor *BaseCellColor(int which);
+	virtual TilingDest *GetDest(const char *str);
+	virtual DrawableObject *GetProxy(int base, int which);
+	virtual int NumProxies();
+	virtual LaxInterfaces::PathsData *GetBasePath(int which=-1);
+	virtual int UpdateBasecells();
+	virtual int UpdateFromSelection();
 
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);
+
+	//virtual int EditBoundary();
+	virtual int EditThis(LaxInterfaces::SomeData *object, const char *message);
 
   public:
 	unsigned long cloner_style;//options for interface
@@ -268,6 +290,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 	virtual int Mode(int newmode);
 
 	virtual int SetTiling(Tiling *newtiling);
+	virtual int SetCurrentBase(int which);
 
 	virtual int UseThis(Laxkit::anObject *ndata,unsigned int mask=0); 
 };
@@ -281,7 +304,10 @@ class CloneInterface : public LaxInterfaces::anInterface
 Tiling *CreateWallpaper(const char *group);
 
 Tiling *CreateRadial(double start_angle, double end_angle,   double start_radius, double end_radius,  
-					 int num_divisions,  int mirrored);
+					 int num_divisions,  int mirrored, Tiling *oldtiling);
+
+Tiling *CreateSpiral(double start_angle, double end_angle,   double start_radius, double end_radius,  
+					 int num_divisions,   Tiling *oldtiling   );
 
 Tiling *CreateFrieze(const char *group);
 

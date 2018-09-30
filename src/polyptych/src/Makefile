@@ -6,8 +6,8 @@
 
 
 ##Comment the next 2 lines out if you don't want to include tuio capability
-POLYPTYCH_TUIO=-DPOLYPTYCH_TUIO
-TUIOLIBS=-llo
+#POLYPTYCH_TUIO=-DPOLYPTYCH_TUIO
+#TUIOLIBS=-llo
 
 
 BINDIR=$(PREFIX)/bin
@@ -16,8 +16,8 @@ include ../../../Makefile-toinclude
 
 LD=g++
 DEBUGFLAGS= -g -gdwarf-2
-CPPFLAGS= -Wall $(DEBUGFLAGS) -I. -I.. -I$(LAXDIR)/.. -I$(LAXIDIR) -I/usr/include/freetype2 -I/usr/include/GraphicsMagick/
-LDFLAGS= -L/usr/X11R6/lib -lGraphicsMagick++ -lX11 -lftgl -lfontconfig -lm -lpng -lcairo -lcrypto `imlib2-config --libs` -L$(LAXDIR) -L$(LAXIDIR) -lXft -lXi
+CPPFLAGS= -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. -I$(LAXIDIR) `freetype-config --cflags` `pkg-config GraphicsMagick++ --cflags`
+LDFLAGS= -L/usr/X11R6/lib -lsqlite3 -lXft -lXi -lXext -lX11 -lftgl -lfontconfig -lm -lpng -lcairo -lcrypto `pkg-config GraphicsMagick++ --libs` `freetype-config --libs` `imlib2-config --libs` -L$(LAXDIR) -L$(LAXIDIR)
 
 
 pobjs= glbase.o gloverlay.o poly.o nets.o polyrender.o
@@ -52,10 +52,19 @@ spheretopoly: lax spheretopoly-gm.o nets.o poly.o
 	$(LD) spheretopoly-gm.o nets.o poly.o -llaxinterfaces -llaxkit $(LDFLAGS) -lGraphicsMagick++ -o $@
 
 spheretocube: spheretocube.o
-	$(LD) spheretocube.o -lGraphicsMagick++ $(LAXDIR)/vectors.o -o $@
+	$(LD) spheretocube.o -lGraphicsMagick++ -llaxkit $(LDFLAGS) -o $@
+
+remapsphere: remapsphere.o
+	$(LD) $@.o -lGraphicsMagick++ -llaxkit $(LDFLAGS) -o $@
+
+panoramanoise: panoramanoise.o
+	$(LD) $@.o -lGraphicsMagick++ -llaxkit $(LDFLAGS) -o $@
+
+skyflow: skyflow.o
+	$(LD) $@.o -lGraphicsMagick++ -llaxkit $(LDFLAGS) -o $@
 
 spheretocubemap: spheretocubemap.o
-	$(LD) spheretocubemap.o -lGraphicsMagick++ $(LAXDIR)/vectors.o -o $@
+	$(LD) spheretocubemap.o -lGraphicsMagick++ -llaxkit $(LDFLAGS) -o $@
 
 lax:
 	cd $(LAXDIR) && $(MAKE)

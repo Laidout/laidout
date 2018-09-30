@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2010 by Tom Lechner
@@ -21,7 +20,7 @@
 #include <lax/interfaces/pathinterface.h>
 
 #include "dataobjects/group.h"
-#include "styles.h"
+#include "calculator/values.h"
 
 
 
@@ -47,7 +46,7 @@ class PageBleed
 #define PAGESTYLE_AUTONOMOUS (1<<3)
 #define DONT_SHOW_PAGE       (1<<4)
 
-class PageStyle : public Style
+class PageStyle : public Value
 {
  public:
 	unsigned int flags; // marginsclip,facingpagesbleed;
@@ -62,7 +61,7 @@ class PageStyle : public Style
 	virtual ~PageStyle();
 	virtual ObjectDef *makeObjectDef();
 	virtual const char *whattype() { return "PageStyle"; }
-	virtual Style *duplicate(Style *s=NULL);
+	virtual Value *duplicate();
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 
@@ -94,7 +93,7 @@ class RectPageStyle : public PageStyle
 	RectPageStyle(unsigned int ntype=RECTPAGE_LRTB,double l=0,double r=0,double t=0,double b=0);
 	virtual const char *whattype() { return "RectPageStyle"; }
 	virtual ObjectDef *makeObjectDef();
-	virtual Style *duplicate(Style *s=NULL);
+	virtual Value *duplicate();
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
@@ -131,6 +130,9 @@ class Page : public ObjectContainer
 	Group layers;
 	Laxkit::PtrStack<PageBleed> pagebleeds;
 
+	//char *external_page_file;
+	//int page_loaded; //-1 for not applicable, 0 for no, 1 for yes
+
 	Page(PageStyle *npagestyle=NULL,int num=-1); 
 	virtual ~Page(); 
 	virtual const char *whattype() { return "Page"; }
@@ -138,6 +140,8 @@ class Page : public ObjectContainer
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 	virtual LaxInterfaces::ImageData *Thumbnail();
 	virtual int InstallPageStyle(PageStyle *pstyle, bool shift_within_margins);
+
+	virtual int PushLayer(const char *layername, int where=-1);
 
 	virtual int n() { return layers.n(); }
 	virtual Group *e(int i) { return dynamic_cast<Group *>(layers.e(i)); }

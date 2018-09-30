@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2007,2011 by Tom Lechner
@@ -77,7 +76,7 @@ class PaperInterface : public LaxInterfaces::anInterface
 	virtual int KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int Refresh();
 	virtual void DrawPaper(PaperBoxData *data,int what,char fill,int shadow,char arrow);
-	virtual void DrawGroup(PaperGroup *group,char shadow,char fill,char arrow);
+	virtual void DrawGroup(PaperGroup *group,char shadow,char fill,char arrow, int which=3);
 	virtual int DrawDataDp(Laxkit::Displayer *tdp,LaxInterfaces::SomeData *tdata,
 					Laxkit::anObject *a1=NULL,Laxkit::anObject *a2=NULL,int info=1);
 

@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2011 by Tom Lechner
@@ -29,7 +28,7 @@
 // ./spheretopoly --point-at 120.1,45.555,10,10.55
 //
 
-#include </usr/include/GraphicsMagick/Magick++.h>
+#include <GraphicsMagick/Magick++.h>
 #include <getopt.h>
 #include <lax/strmanip.h>
 #include <lax/interfaces/coordinate.h>
@@ -591,7 +590,7 @@ void setFromPolyptych(const char *polyptychfile, char *&imagefile, char *&polyhe
 {
 	if (!polyptychfile) return;
 	Attribute att;
-	if (att.dump_in(polyptychfile,NULL)) return;
+	if (att.dump_in(polyptychfile, 0)) return;
 	char *name,*value;
 	for (int c=0; c<att.attributes.n; c++) {
 		name=att.attributes.e[c]->name;

@@ -10,7 +10,7 @@ LAXOBJDIR=$(LAXDIR)
 LD=g++
 LDFLAGS= -L/usr/X11R6/lib -lX11 -lm -lpng `imlib2-config --libs` -L$(LAXDIR) -L$(LAXIDIR)
 DEBUGFLAGS= -g -gdwarf-2
-CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) -I. -I.. -I$(LAXDIR)/.. -I/usr/include/freetype2 -I$(POLYPTYCHBASEDIR) -I/usr/include/GraphicsMagick/
+CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. -I/usr/include/freetype2 -I$(POLYPTYCHBASEDIR) -I/usr/include/GraphicsMagick/
 
 
 objs= \
@@ -55,4 +55,4 @@ unhidegarbage:
 .PHONY: clean impositions hidegarbage unhidegarbage
 clean:
 	rm -f *.o
-	
+

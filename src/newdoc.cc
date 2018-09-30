@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2013 by Tom Lechner
@@ -73,6 +72,8 @@ LaidoutOpenWindow::LaidoutOpenWindow(int whichstart)
 			   0,0,500,500,0,
 			   NULL,0,NULL, 50)
 {
+	padinset=laidout->defaultlaxfont->textheight()/3;
+
 	AddWin(new NewDocWindow(this,"New Document",_("New Document"),0, 0,0,0,0, 0), 1,
 				_("New Document"),
 				NULL,
@@ -312,8 +313,9 @@ int NewDocWindow::init()
 	char blah[100],blah2[100];
 	o=papertype->landscape();
 	curorientation=o;
+
 	 // -----Paper Size X
-	SimpleUnit *units=GetUnitManager();
+	UnitManager *units=GetUnitManager();
 	sprintf(blah,"%.10g", units->Convert(papertype->w(),UNITS_Inches,laidout->prefs.default_units,NULL));
 	sprintf(blah2,"%.10g",units->Convert(papertype->h(),UNITS_Inches,laidout->prefs.default_units,NULL));
 	last=paperx=new LineInput(this,"paper x",NULL,LINP_ONLEFT|LINP_FLOAT, 0,0,0,0, 0, 
@@ -335,9 +337,9 @@ int NewDocWindow::init()
 	char *tmp;
 	c2=0;
 	int uniti=-1,tid;
-	units->UnitInfo(laidout->prefs.unitname,&uniti,NULL,NULL,NULL,NULL);
+	units->UnitInfo(laidout->prefs.unitname,&uniti,NULL,NULL,NULL,NULL,NULL);
 	for (int c=0; c<units->NumberOfUnits(); c++) {
-		units->UnitInfoIndex(c,&tid,NULL,NULL,NULL,&tmp);
+		units->UnitInfoIndex(c,&tid,NULL,NULL,NULL,&tmp,NULL);
 		if (uniti==tid) c2=c;
 		popup->AddItem(tmp,c);
 	}
@@ -603,7 +605,7 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		if (!strcmp(papertype->name,"custom")) return 0;
 		papertype->landscape(curorientation);
 		char num[30];
-		SimpleUnit *units=GetUnitManager();
+		UnitManager *units=GetUnitManager();
 		numtostr(num,30,units->Convert(papertype->w(),UNITS_Inches,laidout->prefs.default_units,NULL),0);
 		paperx->SetText(num);
 		numtostr(num,30,units->Convert(papertype->h(),UNITS_Inches,laidout->prefs.default_units,NULL),0);
@@ -646,10 +648,10 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
 
 		int i=s->info1;
-		SimpleUnit *units=GetUnitManager();
+		UnitManager *units=GetUnitManager();
 		int id;
 		char *name;
-		units->UnitInfoIndex(i,&id, NULL,NULL,NULL,&name);
+		units->UnitInfoIndex(i,&id, NULL,NULL,NULL,&name,NULL);
 		paperx->SetText(units->Convert(paperx->GetDouble(), laidout->prefs.default_units,id,NULL));
 		papery->SetText(units->Convert(papery->GetDouble(), laidout->prefs.default_units,id,NULL));
 		laidout->prefs.default_units=id;
@@ -798,7 +800,7 @@ void NewDocWindow::UpdatePaper(int dialogtoimp)
 
 		 //update dimensions
 		char num[30];
-		SimpleUnit *units=GetUnitManager();
+		UnitManager *units=GetUnitManager();
 		numtostr(num,30,units->Convert(papertype->w(),UNITS_Inches,laidout->prefs.default_units,NULL),0);
 		paperx->SetText(num);
 		numtostr(num,30,units->Convert(papertype->h(),UNITS_Inches,laidout->prefs.default_units,NULL),0);

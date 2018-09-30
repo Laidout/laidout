@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,10 +7,10 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2011 by Tom Lechner
+// Copyright (C) 2011,2012,2015,2016 by Tom Lechner
 //
 
 
@@ -19,6 +18,7 @@
 #include "group.h"
 #include "lpathsdata.h"
 #include "datafactory.h"
+#include "../language.h"
 
 #include <lax/bezutils.h>
 #include <lax/colors.h>
@@ -39,11 +39,11 @@ namespace Laidout {
 //! Return a registration mark centered at the origin, and pointsize along the edge.
 DrawableObject *RegistrationMark(double pointsize, double linewidthinpoints)
 {
-	double d=pointsize/72/2;
+	double d=pointsize/72/2; //radius of circle
 
 	LPathsData *paths=dynamic_cast<LPathsData*>(somedatafactory()->NewObject(LAX_PATHSDATA));
 
-	paths->flags|=SOMEDATA_LOCK_CONTENTS;
+	//paths->flags|=SOMEDATA_LOCK_CONTENTS;
 	ScreenColor color(0,0,0,65535);
 	paths->line(d/10,CapButt,JoinRound,&color);
 
@@ -64,6 +64,7 @@ DrawableObject *RegistrationMark(double pointsize, double linewidthinpoints)
 	paths->append(0, d);
 
 	paths->FindBBox();
+	paths->Id(_("Registration"));
 	return paths;
 }
 
@@ -76,13 +77,15 @@ DrawableObject *BWColorBars(double pointsize, int colorsystem)
 {
 	double s=pointsize/72;
 
-	Group *g=new Group;
-	g->flags|=SOMEDATA_LOCK_KIDS|SOMEDATA_KEEP_ASPECT;
-	g->obj_flags|=OBJ_IgnoreKids;
+	Group *g = dynamic_cast<Group*>(somedatafactory()->NewObject(LAX_GROUPDATA));
+	//g->flags|=SOMEDATA_LOCK_KIDS|SOMEDATA_KEEP_ASPECT;
+	g->flags|=SOMEDATA_KEEP_ASPECT;
+	//g->obj_flags|=OBJ_IgnoreKids;
 	LPathsData *b;
 
 	 //add fills
 	ScreenColor color;
+	char name[100];
 	for (int c=0; c<11; c++) {
 		b=dynamic_cast<LPathsData*>(somedatafactory()->NewObject(LAX_PATHSDATA));
 		b->appendRect(c*s,0,s,s);
@@ -90,8 +93,11 @@ DrawableObject *BWColorBars(double pointsize, int colorsystem)
 		else if (colorsystem==LAX_COLOR_RGB) { color.rgbf((10-c)/10.,(10-c)/10.,(10-c)/10.);  b->fill(&color); }
 		else if (colorsystem==LAX_COLOR_CMYK) { color.cmykf(0.,0.,0.,(10-c)/10.);  b->fill(&color); }
 
+		sprintf(name, _("Gray %d%%"), c*10);
+		b->Id(name);
+
 		color.rgbf(0,0,0);//black outline
-		b->line(s/72,CapButt,JoinMiter,&color);
+		b->line(0,CapButt,JoinMiter,&color);
 		b->FindBBox();
 		g->push(b);
 		b->dec_count();
@@ -99,14 +105,16 @@ DrawableObject *BWColorBars(double pointsize, int colorsystem)
 
 	 //create outline of whole
 	b=dynamic_cast<LPathsData*>(somedatafactory()->NewObject(LAX_PATHSDATA));
+	b->Id(_("Greybar outline"));
 	color.rgbf(0,0,0);//black outline
-	b->line(s/72,CapButt,JoinMiter,&color);
 	b->appendRect(0,0,11*s,s);
-	for (int c=1; c<=10; c++) { b->pushEmpty(); b->append(c*s,0); b->append(c*s,s); }
+	//for (int c=1; c<=10; c++) { b->pushEmpty(); b->append(c*s,0); b->append(c*s,s); }
+	b->line(s/36,CapButt,JoinMiter,&color);
 	b->FindBBox();
 	g->push(b);
 	b->dec_count();
 
+	g->Id(_("Greybars"));
 	g->FindBBox();
 	return g;
 }
@@ -123,13 +131,14 @@ DrawableObject *ColorBars(double pointsize, Palette *palette, int numrows, int n
 
 	double s=pointsize/72;
 
-	Group *g=new Group;
+	Group *g = dynamic_cast<Group*>(somedatafactory()->NewObject(LAX_GROUPDATA));
 	LPathsData *b=dynamic_cast<LPathsData*>(somedatafactory()->NewObject(LAX_PATHSDATA));
 
 	 //create outline
 	b->appendRect(0,0,numcols*s,numrows*s);
 	for (int c=1; c<=numcols; c++) { b->append(c*s,0); b->append(c*s,numrows*s); b->pushEmpty(); }
 	for (int r=1; r<=numrows; r++) { b->append(0,r*s); b->append(numcols*s,r*s); b->pushEmpty(); }
+	b->line(s/72);
 	g->push(b);
 	b->dec_count();
 
@@ -144,10 +153,14 @@ DrawableObject *ColorBars(double pointsize, Palette *palette, int numrows, int n
 					  palette->colors.e[c]->channels[2],
 					  65535);
 			b->fill(&color);
+			b->line(0);
+			b->FindBBox();
 			g->push(b);
 		}
 	}
 
+	g->Id(_("Colorbars"));
+	g->FindBBox();
 	return g;
 }
 

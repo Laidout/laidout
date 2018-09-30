@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (c) 2004-2013 Tom Lechner
@@ -36,9 +35,6 @@
 #include <cups/cups.h>
 #include <sys/stat.h>
 
-#include <lax/lists.cc>
-
-
 #include "language.h"
 #include "interfaces/objecttree.h"
 #include "interfaces/pagemarkerinterface.h"
@@ -46,7 +42,9 @@
 #include "printing/psout.h"
 #include "impositions/impositioneditor.h"
 #include "helpwindow.h"
+#include "settingswindow.h"
 #include "about.h"
+#include "autosavewindow.h"
 #include "spreadeditor.h"
 #include "viewwindow.h"
 #include "headwindow.h"
@@ -56,13 +54,18 @@
 #include "drawdata.h"
 #include "helpwindow.h"
 #include "configured.h"
-#include "importimages.h"
+#include "importimagesdialog.h"
 #include "stylemanager.h"
 #include "filetypes/importdialog.h"
 #include "filetypes/exportdialog.h"
 #include "interfaces/paperinterface.h"
 #include "interfaces/documentuser.h"
 #include "calculator/shortcuttodef.h"
+
+
+//template implementation:
+#include <lax/lists.cc>
+
 
 #include <iostream>
 using namespace std;
@@ -103,16 +106,78 @@ namespace Laidout {
 #define ACTION_NewProject              3000
 #define ACTION_SaveProject             3001
 #define ACTION_ToggleSaveAsProject     3002
+
 //---------------------------
+
+//for ViewWindow shortcuts
+enum ViewActions {
+	VIEW_Save = 3500, // *** for now keep this at 3500.. need better way to organize this!
+	VIEW_SaveAs,
+	VIEW_Save_A_Copy,
+	VIEW_Save_A_Copy_Incremented,
+	VIEW_Save_As_Template,
+	VIEW_Save_As_Default_Template,
+
+	VIEW_Config_Addons,
+	VIEW_Extension,
+
+	VIEW_NewDocument,
+	VIEW_Open_Document,
+
+	VIEW_Backup_Settings,
+
+	VIEW_Commit,
+	VIEW_Commit_Settings,
+	VIEW_Revert,
+
+	VIEW_NextTool,
+	VIEW_PreviousTool,
+	VIEW_NextPage,
+	VIEW_PreviousPage,
+	VIEW_ObjectTool,
+	VIEW_CommandPrompt,
+	VIEW_ObjectIndicator,
+
+	VIEW_Help,
+	VIEW_About,
+	VIEW_SpreadEditor,
+	VIEW_EditImposition,
+
+	VIEW_PathTool,
+	VIEW_ImageTool,
+	VIEW_GradientTool,
+	VIEW_MeshGradientTool,
+	VIEW_EngraverTool,
 
  //menu ids from menu to move an object or change context
-#define MOVETO_Limbo      1
-#define MOVETO_Spread     2
-#define MOVETO_Page       3
-#define MOVETO_PaperGroup 4
-#define MOVETO_OtherPage  5
+	MOVETO_Limbo,
+	MOVETO_Spread,
+	MOVETO_Page,
+	MOVETO_PaperGroup,
+	MOVETO_OtherPage,
 
-//---------------------------
+	VIEW_MAX
+};
+
+
+
+//for LaidoutViewport shortcuts
+enum LaidoutViewportActions {
+	LOV_DeselectAll=VIEWPORT_MAX,
+	LOV_CenterDrawing,
+	LOV_ZoomToPage,
+	LOV_GrabColor,
+	LOV_ToggleShowState,
+	LOV_MoveObjects,
+	LOV_ObjUp,
+	LOV_ObjDown,
+	LOV_ObjFirst,
+	LOV_ObjLast,
+	LOV_ToggleDrawFlags,
+	LOV_ObjectIndicator,
+	LOV_ForceRemap,
+	LOV_MAX
+};
 
 
 
@@ -187,6 +252,13 @@ VObjContext::~VObjContext()
 	if (obj) { obj->dec_count(); obj=NULL; }
 }
 
+/*! Copy constructor.
+ */
+VObjContext::VObjContext(const VObjContext &oc)
+{
+	*this = oc;
+}
+
 //! Assignment operator.
 /*! Incs count of obj.
  */
@@ -199,6 +271,16 @@ VObjContext &VObjContext::operator=(const VObjContext &oc)
 	}
 	context=oc.context;
 	return *this;
+}
+
+int VObjContext::Set(ObjectContext *oc)
+{
+	VObjContext *voc = dynamic_cast<VObjContext*>(oc);
+
+	if (!voc) return ObjectContext::Set(oc);
+	
+	*this=*voc;
+	return 0;
 }
 
 //! Return a new VObjContext that is a copy of this.
@@ -219,6 +301,22 @@ void VObjContext::push(int i,int where)
 int VObjContext::pop(int where)
 {
 	return context.pop(where);
+}
+
+/*! Select up one, if possible. This uses SomeData->GetParent. It is assumed it is accurate,
+ * and will not go up if there is no somedata parent.
+ */
+int VObjContext::Up()
+{
+	if (!obj) return 0;
+	SomeData *parent = obj->GetParent();
+	if (!parent) return 0;
+
+	context.pop();
+	obj->dec_count();
+	obj = parent;
+	parent->inc_count();
+	return 1;
 }
 
 //! Set obj to nobj, and context to the supplied n items.
@@ -274,21 +372,13 @@ void VObjContext::clearToPage()
  * \brief General viewport to pass to the ViewerWindow base class of ViewWindow
  *
  * Creates different type of ObjectContext so that curobj,
- * firstobj, and foundobj are all VObjContext instances which shadow the ViewportWindow
- * variables of the same names.
+ * firstobj, and foundobj are all VObjContext instances.
  * 
  * \todo *** need to check through that all the searching stuff, and cur obj/page/layer stuff
  *   are reset where appropriate.. 
  * \todo *** need to be able to work only on current zone or only on current layer...
  *   a zone would be: limbo, imposition specific zones (like printer marks), page outline,
  *   the spread itself, the current page only.. the zone could be the objcontext->spread()?,
- *   *** might be useful to have more things potentially represented in curobj.spread()..
- *   possibilities: limbo, main spread, printer marks, --Other Spreads--...
- * \todo *** in paper spread view, perhaps that is where a spread()==printer marks is useful..
- *   also, depending on the imposition, there might be other operations permitted in paper spread..
- *   like in a postering imposition, the page data stays stationary, but multiple paper outlines can latch
- *   on to different parts of it...(or perhaps the page moves around, not paper)
- * \todo please note that LaidoutViewport has 2 anObject base classes.. really it shouldn't..
  */
 /*! \var Page *LaidoutViewport::curpage
  * \brief Pointer to the current page.
@@ -323,37 +413,15 @@ void VObjContext::clearToPage()
  * \brief  Return 2 if spread exists, or 1 for just limbo.
  */
 /*! \var int LaidoutViewport::searchmode
- * <pre>
- *  Search_None    0
- *  Search_Find    1
- *  Search_Select  2
- * </pre>
+ *  LaxInterfaces::SearchFlags::SEARCH_Find, SEARCH_Select, or SEARCH_None.
+ *  Describes the current state of searching.
+ *  Select is for tabbing to next/prev objects.
+ *  Find is for more general searching at arbitrary entry points.
+ *  None is not involved in any search currently.
  */
 /*! \var int LaidoutViewport::searchcriteria
- * <pre>
- *  Search_Any         0 <-- any held by the viewport
- *  Search_Visible     1 <-- any visible on screen
- *  Search_UnderMouse  2 <-- any under the mouse 
- *  Search_WhereMask   3
- *   -- or with:--
- *  Search_SameLevel        (0<<4) <-- object and its siblings only
- *  Search_SameOrUnderLevel (1<<4) <-- all descendents of object's parent
- *  Search_HowMask          (12)
- * </pre>
- * \todo *** implement these
+ * See LaxInterfaces::SearchFlags.
  */
-#define Search_None    0
-#define Search_Find    1
-#define Search_Select  2
-
-#define Search_Any              0
-#define Search_Visible          1
-#define Search_UnderMouse       2 
-#define Search_WhereMask        3
-
-#define Search_SameLevel        (0<<4)
-#define Search_SameOrUnderLevel (1<<4)
-#define Search_HowMask          (12)
 
 
 #define VIEW_NORMAL      0
@@ -388,8 +456,8 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 	curpage=NULL;
 	pageviewlabel=NULL;
 
-	searchmode=Search_None;
-	searchcriteria=Search_Any;
+	searchmode = SEARCH_None;
+	searchcriteria = SEARCH_Any;
 	
 	limbo=NULL; //start out as NULL in case we are loading from something. If still NULL in init(), then add new limbo
 	
@@ -428,6 +496,8 @@ LaidoutViewport::~LaidoutViewport()
 	if (doc) doc->dec_count();
 
 	if (edit_area_icon) edit_area_icon->dec_count();;
+
+	DBG ClearSearch(); //to spell it out
 }
 
 int LaidoutViewport::UseThisPaperGroup(PaperGroup *group)
@@ -565,7 +635,12 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 		} else if (te->changetype==TreeObjectReorder ||
 				te->changetype==TreeObjectDiffPage ||
 				te->changetype==TreeObjectDeleted ||
-				te->changetype==TreeObjectAdded || 
+				te->changetype==TreeObjectAdded) {
+
+			 //for object only changes, just tell current interfaces to validate their refs.
+			 //Interfaces must intercept these messages in their Event() function.
+
+		} else if (
 				te->changetype==TreePagesAdded ||
 				te->changetype==TreePagesDeleted ||
 				te->changetype==TreePagesMoved) {
@@ -610,6 +685,11 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 		//DBG cerr << "viewwindow got prefsChange"<<endl;
 		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
 		if (!s) return 1;
+		if (s->info1==PrefsJustAutosaved) {
+			ViewerWindow *vw=dynamic_cast<ViewerWindow *>(win_parent);
+			vw->PostMessage(_("Autosaved."));
+			return 0;
+		}
 		if (s->info1!=PrefsDefaultUnits) return 1;
 		if (xruler) xruler->SetCurrentUnits(laidout->prefs.default_units);
 		if (yruler) yruler->SetCurrentUnits(laidout->prefs.default_units);
@@ -651,7 +731,7 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 
         const RefCountedEventData *r=dynamic_cast<const RefCountedEventData *>(data);
         Imposition *i=dynamic_cast<Imposition *>(const_cast<RefCountedEventData*>(r)->TheObject());
-        if (!i) return 0;
+   		if (!i) return 0;
 
 		doc->ReImpose(i,r->info1);
 
@@ -706,17 +786,20 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 			needtodraw=1;
 			return 0;
 		}
+
 		if (i<2000) {
 			if (i==ACTION_AddNewLimbo) {
 				 //add new limbo with name such as "Limbo 3"
 				if (limbo) limbo->dec_count();
 				limbo=new Group;//group with 1 count
-				limbo->obj_flags|=OBJ_Unselectable|OBJ_Zone;
+				limbo->obj_flags |= OBJ_Unselectable|OBJ_Zone;
+				limbo->selectable = false;
 				char txt[30];
 				sprintf(txt,_("Limbo %d"),laidout->project->limbos.n()+1);
 				makestr(limbo->id,txt);
 				laidout->project->limbos.push(limbo);//adds 1 count
 				return 0;
+
 			} else if (i==ACTION_RenameCurrentLimbo) {
 				 //rename current limbo
 				app->rundialog(new InputDialog(NULL,"rename limbo",NULL,ANXWIN_CENTER,
@@ -727,6 +810,7 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 								_("Rename"), 1,
 								_("Cancel"), 0));
 				return 0;
+
 			} else if (i==ACTION_DeleteCurrentLimbo) {
 				 //remove current limbo from project, and unlink it from this viewport
 				 //***other viewports might link to the limbo. In that case, each
@@ -867,6 +951,24 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 		}
 
 		return 0;
+
+    } else if (!strcmp(mes,"xruler") || !strcmp(mes,"yruler")) {
+         //units change from ruler
+        const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
+        if (!s) return 0;
+        if (s->info1!=RULER_AlwaysCurrent) return ViewportWindow::Event(data,mes);
+
+		UnitManager *units=GetUnitManager();
+		char *unitname=NULL;
+		units->UnitInfoId(laidout->prefs.default_units, NULL, NULL,NULL,&unitname,NULL);
+
+		char path[strlen(laidout->config_dir)+20];
+		sprintf(path,"%s/laidoutrc",laidout->config_dir);
+		UpdatePreference("defaultunits", unitname, path);
+
+		postmessage(_("Global preference updated."));
+		return 0;
+
 	}
 
 	return ViewportWindow::Event(data,mes);
@@ -968,8 +1070,6 @@ const char *LaidoutViewport::SetViewMode(int m,int sprd)
 //! Update and return pageviewlabel.
 /*! This is a label that says what pages are in the current spread, 
  * and also which is the current page.
- *
- * \todo how to internationalize this?
  */
 const char *LaidoutViewport::Pageviewlabel()
 {
@@ -1227,12 +1327,12 @@ int LaidoutViewport::NewData(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectCon
 		curobj.context.pop();
 		curobj.SetObject(NULL);
 	}
-	Group *o=dynamic_cast<Group*>(getanObject(curobj.context,0,-1));
-	if (!o) return -1; //context had to be a Group!
+	Group *g=dynamic_cast<Group*>(getanObject(curobj.context,0,-1));
+	if (!g) return -1; //context had to be a Group!
 
 	if (clear_selection) SetSelection(NULL);
 
-	int c=o->push(d);
+	int c=g->push(d);
 	curobj.context.push(c);
 	curobj.SetObject(d);
 
@@ -1256,43 +1356,74 @@ int LaidoutViewport::SelectObject(int i)
 {
 	if (!curobj.obj) {
 		findAny();
-		if (firstobj.obj) setCurobj(&firstobj);
-		else return 0;
+		if (firstobj.obj) {
+			setCurobj(&firstobj);
+
+		} else return 0;
+		needtodraw=1;
 
 	} else if (i==-2 || i==-1) { //prev or next
 		VObjContext o;
 		o=curobj;
-		//DBG curobj.context.out("Finding Object, curobj:");
-		if (searchmode!=Search_Select) {
+		DBG curobj.context.out("Finding Object, curobj:");
+
+		if (searchmode != SEARCH_Select) {
 			ClearSearch();
-			firstobj=curobj;
-			searchmode=Search_Select;
+			firstobj = curobj;
+			searchmode = SEARCH_Select;
+			searchcriteria = SEARCH_Any;
 		}
 		//DBG o.context.out("Finding Object adjacent to :");
 		if (nextObject(&o,i==-2?0:1)!=1) {
-			firstobj=curobj;
-			o=curobj;
-			if (nextObject(&o,i==-2?0:1)!=1) { searchmode=Search_None; return 0; }
+			firstobj = curobj;
+			o = curobj;
+			if (nextObject(&o, i==-2?0:1)!=1) { searchmode = SEARCH_None; return 0; }
 		}
 		setCurobj(&o);
 
 	} else return 0;
 	
 	ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); // always returns non-null
-	if (viewer) {
-		viewer->SelectToolFor(curobj.obj->whattype(),&curobj);
-		viewer->updateContext(1);
-	}
+
+	 //always change to object tool when switching object
+	anInterface *otool = viewer->GetObjectTool();
+	viewer->SelectTool(otool->id);
+	viewer->CurrentTool()->UseThisObject(&curobj);
+
+
+	//viewer->SelectToolFor(curobj.obj->whattype(),&curobj);
+	//viewer->ChangeObject(
+	//viewer->updateContext(1);
+
+//	if (!viewer->CurrentTool()->draws(curobj.obj->whattype())) {
+//		 //current tool can't handle current object, switch to object tool
+//		for (c=0; c<tools.n; c++) {
+//			if (!strcmp(tools.e[c]->whattype(),"ObjectInterface")) {
+//				***
+//				SelectTool(tools.e[c]->object_id);
+//				((ObjectInterface*)tools.e[c])->FreeSelection();
+//				((ObjectInterface*)tools.e[c])->AddToSelection(oc);
+//				break;
+//			}
+//		}
+//
+//	} else {
+//		 //set obj of current tool
+//		viewer->CurrentTool()->UseThisObject(&curobj);
+//	}
+
+	viewer->updateContext(1);
+	needtodraw=1;
 	return 1;
 }
 
-//! Change the current object to be d.
+//! Change the current object to be oc.
 /*! Item must be in the tree already. You may not push objects from here. For
  * that, use NewData().
  *
- * If d!=NULL, then try to make that object the current object. It must be within
- * the current spread somewhere. If d==NULL, then the same goes for where oc points to.
- * The first interface to report being able to handle d->whattype() will be activated.
+ * If oc->obj!=NULL, then try to make that object the current object. It must be within
+ * the current spread somewhere. If oc->obj==NULL, then the same goes for where oc points to.
+ * The first interface to report being able to handle oc->obj->whattype() will be activated.
  *
  * Returns 1 for current object changed, otherwise 0 for not changed or d not found.
  *
@@ -1304,7 +1435,7 @@ int LaidoutViewport::ChangeObject(LaxInterfaces::ObjectContext *oc, int switchto
 	if (!oc || !oc->obj) return 0;
 
 	VObjContext *voc=dynamic_cast<VObjContext *>(oc);
-	if (voc==NULL || !validContext(voc)) return 0;
+	if (voc==NULL || !IsValidContext(voc)) return 0;
 	setCurobj(voc);
 	
 	 // makes sure curtool can take it, and makes it take it.
@@ -1317,6 +1448,36 @@ int LaidoutViewport::ChangeObject(LaxInterfaces::ObjectContext *oc, int switchto
 	}
 
 	return 1;
+}
+
+/*! ToDO: Can be used for normal object searching, as well as aiding preflight verifiers.
+ */
+class SearchSettings
+{
+  public:
+	enum SearchEnum {
+		Nothing = 0,
+		Id    = (1<<0),
+		Type  = (1<<1),
+		Meta  = (1<<2),
+		Regex = (1<<3),
+		MAX
+	};
+
+	unsigned int what;
+	char *pattern;
+
+	SearchSettings();
+	~SearchSettings();
+};
+
+/*! Return if data matches some kind of pattern.
+ */
+int SearchFunction(LaxInterfaces::SomeData *data, int searcharea, int searchmode, SearchSettings *search)
+{
+	if (!data->Id()) return 0;
+	if (search->pattern && !strstr(data->Id(), search->pattern)) return true;
+	return false;
 }
 
 //! Find object in current spread underneath screen coordinate x,y.
@@ -1347,15 +1508,20 @@ int LaidoutViewport::FindObject(int x,int y,
 										const char *dtype,
 										LaxInterfaces::SomeData *exclude,
 										int start,
-										LaxInterfaces::ObjectContext **oc)
+										LaxInterfaces::ObjectContext **oc,
+										int searcharea)
 {
-	
+	DBG cerr <<"lov.FindObject START: "<<endl;
+
+	if (searcharea == 0) searcharea = SEARCH_Any;
+	searchcriteria = searcharea;
+
 	 //init the search, if necessary
 	VObjContext nextindex;
-	if (searchmode!=Search_Find || start || x!=searchx || y!=searchy) { //init search
+	if (searchmode != SEARCH_Find || start || x!=searchx || y!=searchy) { //init search
 		foundobj.clear();
 		firstobj.clear();
-		 
+
 		 // Set up firstobj
 		FieldPlace context;
 		if (exclude) {
@@ -1366,67 +1532,69 @@ int LaidoutViewport::FindObject(int x,int y,
 		} else {
 			firstobj=curobj; //***need validation check
 		}
-		if (!firstobj.obj) findAny();
+		if (!firstobj.obj) findAny(searchcriteria);
+		if (!firstobj.obj) findAny(SEARCH_Any);
 		if (!firstobj.obj) return 0;
 		nextindex=firstobj;
-		
+
 		searchx=x;
 		searchy=y;
 		searchtype=NULL;
 		if (start==2 || start==0) exclude=NULL;
 		start=1;
-		searchmode=Search_Find;
-		
+		searchmode=SEARCH_Find;
+
 		if (exclude && nextindex.obj==exclude) nextObject(&nextindex);
 	} else {
 		nextindex=foundtypeobj;
 	}
+
 	foundtypeobj.clear(); // this one is always reset?
-	if (!firstobj.obj) return 0;
-	if (dtype) searchtype=dtype;
+	if (!firstobj.obj) return 0; //no first object was found. give up!
+	if (dtype) searchtype = dtype;
 
 	if (!start) nextObject(&nextindex);
 
 	 // nextindex now points to the next object to consider.
-	 
+
 	flatpoint p,pp;
-	p=dp->screentoreal(x,y); // so this is in viewer coordinates
-	//DBG cerr <<"lov.FindObject: "<<p.x<<','<<p.y<<endl;
+	p = dp->screentoreal(x,y); // so this is in viewer coordinates
+	DBG cerr <<"lov.FindObject: "<<p.x<<','<<p.y<<endl;
 
 	double m[6];
-	//DBG firstobj.context.out("firstobj");
-	
-	//while (start || (!start && !(nextindex==firstobj))) {
-	int nob=1; //is there a next object
-	while (nob==1) {
-		if (start) start=0;
-		if (nextindex.obj==exclude) {
-			nob=nextObject(&nextindex);
+	DBG firstobj.context.out("firstobj");
+
+	int nob = 1; //is there a next object
+	while (nob == 1) {
+		if (start) start = 0;
+		if (nextindex.obj == exclude) {
+			nob = nextObject(&nextindex);
 			continue;
 		}
-		
+
 		 //transform point to be in nextindex coords
 		transformToContext(m,nextindex.context,1,nextindex.context.n()-1);
 
-		pp=transform_point(m,p);
-		//DBG cerr <<"lov.FindObject oc: "; nextindex.context.out("");
-		//DBG cerr <<"lov.FindObject pp: "<<pp.x<<','<<pp.y<<"  check on "
-		//DBG		<<nextindex.obj->object_id<<" ("<<nextindex.obj->whattype()<<") "<<endl;
+		pp = transform_point(m,p);
+		DBG cerr <<"lov.FindObject oc: "; nextindex.context.out("");
+		DBG cerr <<"lov.FindObject pp: "<<pp.x<<','<<pp.y<<"  check on "
+		DBG		<<nextindex.obj->object_id<<" ("<<nextindex.obj->whattype()<<") "<<endl;
 
 		if (nextindex.obj->pointin(pp)) {
-			//DBG cerr <<" -- found"<<endl;
+			DBG cerr <<" -- found point in object"<<endl;
 			if (!foundobj.obj) foundobj=nextindex;
 			if (searchtype && strcmp(nextindex.obj->whattype(),searchtype)) {
 				nob=nextObject(&nextindex);
 				continue;
 			}
+
 			 // matching object found!
 			foundtypeobj=nextindex;
 			if (oc) *oc=&foundtypeobj;
 			//DBG foundtypeobj.context.out("  foundtype");//for debugging
 			return 1;
 		}
-		//DBG cerr <<" -- not found in "<<nextindex.obj->object_id<<endl;
+		DBG cerr <<" -- point not found in "<<nextindex.obj->object_id<<": "<<nextindex.obj->Id()<<endl;
 		nob=nextObject(&nextindex);
 	}
 	 
@@ -1467,7 +1635,7 @@ int LaidoutViewport::FindObjects(Laxkit::DoubleBBox *box, char real, char ascuro
 	if (!firstobj.obj) return 0;
 	nextindex=firstobj;
 	
-	searchmode=Search_Find;
+	searchmode=SEARCH_Find;
 	
 	foundtypeobj.clear(); // this one is always reset?
 	if (!firstobj.obj) return 0;
@@ -1581,40 +1749,54 @@ int LaidoutViewport::nextObject(VObjContext *oc,int inc)//inc=0
 {
 	int c;
 	anObject *d=NULL;
-	//DBG int cn=1;
+
+	DBG int cn=1;
+	DBG firstobj.context.out("lov::nextObject() firstobj:");
+
 	do {
 		//DBG cerr <<"LaidoutViewport->nextObject count="<<cn++<<endl;
 
-		c=ObjectContainer::nextObject(oc->context,0,Next_SkipLockedKids|(inc?Next_Increment:Next_Decrement),&d);
+		c = ObjectContainer::nextObject(oc->context, 0,
+				(searchcriteria == SEARCH_SameLevel ? Next_PlaceLevelOnly : 0)
+				 | Next_SkipLockedKids|(inc?Next_Increment:Next_Decrement),
+				&d);
+
 		oc->SetObject(dynamic_cast<SomeData *>(d));
 		if (c==Next_Error) return 0; //error finding a next
 
 		 //at this point oc/d might be a somedata, or it might be a container
 		 //like this, or a spread..
-		if (*oc==firstobj) return 0; //wrapped around to first
-		
+		if (*oc==firstobj) {
+			DBG cerr <<"search hit first, aborting with nothing!"<<endl;
+			return 0; //wrapped around to first
+		}
+
 		 //if is Unselectable, then continue. Else return the found object.
-		if (!(oc->obj)) continue;
-		if (dynamic_cast<ObjectContainer*>(oc->obj) 
-			  && (dynamic_cast<ObjectContainer*>(oc->obj)->object_flags() & OBJ_Unselectable)) {
+		if (!(oc->obj)) {
+			DBG cerr <<"no obj in found oc, continuing search!"<<endl;
 			continue;
 		}
+
+		if (dynamic_cast<ObjectContainer*>(oc->obj) 
+			  && (dynamic_cast<ObjectContainer*>(oc->obj)->object_flags() & OBJ_Unselectable)) {
+			DBG cerr <<"found objectcontainer is unselectable, continuing search!"<<endl;
+			continue;
+		}
+
 		if (dynamic_cast<SomeData*>(oc->obj)) {
-			if (dynamic_cast<SomeData*>(oc->obj)->flags&SOMEDATA_UNSELECTABLE) continue;
+			if (dynamic_cast<SomeData*>(oc->obj)->flags&SOMEDATA_UNSELECTABLE) {
+				DBG cerr <<"found somedata is unselectable, continuing search!"<<endl;
+				continue;
+			}
 
 		}
 
+		DBG cerr <<"lov::nextObject Found an object to return!"<<endl;
 		return 1;
 	} while (1);
 	
 	return 0;
 }
-
-// ****replace the other locateObject with this one:
-// return the object at place(offset).place(offset+1)...place(offset+n-1)
-// If n==0, then use the rest of place from offset.
-//LaxInterfaces::SomeData *LaidoutViewport::locateObject(FieldPlace &place,int offset,int n)
-//{***}
 
 //! Return place.n if d is found in the displayed pages or in limbo somewhere, and put location in place.
 /*! Flushes place whether or not the object is found, it does not append to an existing spot.
@@ -1624,6 +1806,7 @@ int LaidoutViewport::nextObject(VObjContext *oc,int inc)//inc=0
 int LaidoutViewport::locateObject(LaxInterfaces::SomeData *d,FieldPlace &place)
 {
 	place.flush();
+
 	 // check limbo
 	if (limbo->n()) {
 		if (limbo->contains(d,place)) {
@@ -1654,13 +1837,30 @@ int LaidoutViewport::locateObject(LaxInterfaces::SomeData *d,FieldPlace &place)
 }
 
 //! Initialize firstobj to the first object the viewport can find.
-void LaidoutViewport::findAny()
+void LaidoutViewport::findAny(int searcharea)
 {
+	if (searcharea == 0) searcharea = SEARCH_Any;
+
 	int c,c2;
 	SomeData *obj=NULL;
+
+	if (searcharea == SEARCH_SameLevel) {
+		firstobj = curobj;
+		if (firstobj.obj) return;
+
+		Group *tosearch = dynamic_cast<Group*>(GetObject(&curobj));
+		if (tosearch->n()) {
+			firstobj.context.push(0);
+			firstobj.SetObject(tosearch->e(0));
+		}
+
+		return;
+	}
+
 	firstobj.clear();
-	Page *page;
+
 	if (spread) {
+		Page *page;
 		for (c=0; c<spread->pagestack.n(); c++) {
 			page=dynamic_cast<Page *>(spread->pagestack.object_e(c));
 			if (!page) continue;
@@ -1673,6 +1873,7 @@ void LaidoutViewport::findAny()
 			}
 		}
 	}
+
 	if (!obj) {
 		if (limbo->n()) {
 			firstobj.set(limbo->e(0),2,0,0);
@@ -1680,6 +1881,7 @@ void LaidoutViewport::findAny()
 			return;
 		}	
 	}
+
 	if (!obj && papergroup && papergroup->n()) {
 		firstobj.set(dynamic_cast<SomeData*>(papergroup->object_e(0)), 2, 2,0);
 		//DBG firstobj.context.out(" findAny found: ");
@@ -1689,21 +1891,51 @@ void LaidoutViewport::findAny()
 
 //! Check whether oc is a valid object context.
 /*! Assumes oc->obj is what you actually want, and checks oc->context against it.
- * Object has to be in the spread or in limbo for it to be valid.
- * Note that oc->obj is a SomeData. So if the context is limbo or a spread,
- * rather than an object contained in it, it is technically an invalid context..
+ * Object has to be reachable via getanObject() to be valid.
  *
- * Return 0 if invalid,
- * otherwise return 1 if it is valid.
- *
- * \todo might be useful to check against all objects in tree, not just for
- *   selectable SomeDatas
+ * Return false if invalid,
+ * otherwise return true if it is valid.
  */
-int LaidoutViewport::validContext(VObjContext *oc)
+bool LaidoutViewport::IsValidContext(ObjectContext *oc)
 {
-	anObject *anobj=getanObject(oc->context,0,-1);
-	return anobj==oc->obj;
+	VObjContext *loc = dynamic_cast<VObjContext*>(oc);
+	if (!loc) return false;
+	anObject *anobj=getanObject(loc->context,0,-1);
+	return anobj==loc->obj;
 }
+
+/*! Return the object at oc, if any.
+ */ 
+SomeData *LaidoutViewport::GetObject(ObjectContext *oc)
+{
+	VObjContext *loc = dynamic_cast<VObjContext*>(oc);
+	if (!loc) return NULL;
+	anObject *anobj=getanObject(loc->context,0,-1);
+	return dynamic_cast<SomeData*>(anobj);
+}
+
+LaxInterfaces::ObjectContext *LaidoutViewport::CurrentContext()
+{
+	return dynamic_cast<ObjectContext*>(&curobj);
+}
+
+/*! Return the number of contexts that were updated or removed.
+ */
+int LaidoutViewport::UpdateSelection(Selection *sel)
+{
+	if (sel==NULL) sel=selection;
+
+	int n=0;
+	for (int c=sel->n()-1; c>=0; c--) {
+		if (IsValidContext(sel->e(c))) continue;
+		n++;
+		if (locateObject(selection->e(c)->obj, dynamic_cast<VObjContext*>(selection->e(c))->context)==0) {
+			sel->Remove(c);
+		}
+	}
+	return n;
+}
+
 
 //! Set curobj to limbo, which is always valid. This is done after page removal, for instance, to prevent crashing.
 int LaidoutViewport::wipeContext()
@@ -1718,9 +1950,9 @@ void LaidoutViewport::ClearSearch()
 	firstobj.clear();
 	foundobj.clear();
 	foundtypeobj.clear();
-	searchx=searchy=-1;
-	searchtype=NULL;
-	searchmode=Search_None;
+	searchx = searchy = -1;
+	searchtype = NULL;
+	searchmode = SEARCH_None;
 }
 
 //! Update ectm. If voc!=NULL, then make curobj point to the same thing that voc points to.
@@ -1761,7 +1993,9 @@ void LaidoutViewport::setCurobj(VObjContext *voc)
 	}
 }
 
-//! Strip down curobj so that it points to only a context, not an object. Calls dec_count() on the old object if any.
+/*! Strip down curobj so that it points to only a context, not an object. Calls dec_count() on the old object if any.
+ * Note that selection is not modified.
+ */
 void LaidoutViewport::clearCurobj()
 {
 	//***for nested objects, this does not quite work!! This zaps to base of current zone, whether limbo,
@@ -1830,22 +2064,23 @@ int LaidoutViewport::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
 		return 0;
 	}
 
-	//DBG if (!buttondown.any()) {
-	//DBG 	int c=-1;
-	//DBG 	flatpoint p=dp->screentoreal(x,y);//viewer coordinates
-	//DBG 	cerr <<" realp:"<<p.x<<","<<p.y<<"  ";
-	//DBG 	if (spread) {
-	//DBG 		for (c=0; c<spread->pagestack.n(); c++) {
-	//DBG 			if (spread->pagestack.e[c]->outline->pointin(p)) break;
-	//DBG 		}
-	//DBG 		if (c==spread->pagestack.n()) c=-1;
-	//DBG 	}
-	//DBG 	cerr <<"mouse over: "<<c<<", page "<<(c>=0?spread->pagestack.e[c]->index:-1)<<endl;
-	//DBG }
-	////DBG ObjectContext *oc=NULL;
-	////DBG int cc=FindObject(x,y,NULL,NULL,1,&oc);
-	////DBG cerr <<"============mouse move found:"<<cc;
-	////DBG if (oc) dynamic_cast<VObjContext*>(oc)->context.out("  "); else cerr <<endl;
+	DBG if (!buttondown.any()) {
+	DBG 	int c=-1;
+	DBG 	flatpoint p=dp->screentoreal(x,y);//viewer coordinates
+	DBG 	cerr <<" realp:"<<p.x<<","<<p.y<<"  ";
+	DBG 	if (spread) {
+	DBG 		for (c=0; c<spread->pagestack.n(); c++) {
+	DBG 			if (spread->pagestack.e[c]->outline->pointin(p)) break;
+	DBG 		}
+	DBG 		if (c==spread->pagestack.n()) c=-1;
+	DBG 	}
+	DBG 	cerr <<"mouse over: "<<c<<", page "<<(c>=0?spread->pagestack.e[c]->index:-1)<<endl;
+	DBG }
+
+	//DBG ObjectContext *oc=NULL;
+	//DBG int cc=FindObject(x,y,NULL,NULL,1,&oc);
+	//DBG cerr <<"------------mouse move found:"<<cc;
+	//DBG if (oc) dynamic_cast<VObjContext*>(oc)->context.out("  "); else cerr <<endl;
 
 	return ViewportWindow::MouseMove(x,y,state,mouse);
 }
@@ -1859,9 +2094,14 @@ int LaidoutViewport::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
  */
 int LaidoutViewport::ChangeContext(LaxInterfaces::ObjectContext *oc)
 {
-	//DBG cerr <<"ChangeContext to supplied oc"<<endl;
+	DBG cerr <<"ChangeContext to supplied oc"<<endl;
+
 	VObjContext *loc=dynamic_cast<VObjContext *>(oc);
 	if (!loc) return 0;
+
+	ClearSearch();
+	clearCurobj();
+
 	if (loc->obj) {
 		 // strip down obj, we want only the plain context
 		VObjContext noc;
@@ -1870,8 +2110,6 @@ int LaidoutViewport::ChangeContext(LaxInterfaces::ObjectContext *oc)
 		noc.context.pop();
 		setCurobj(&noc);
 	} else setCurobj(loc);
-	ClearSearch(); //these must be called after setCurobj() since
-	clearCurobj(); //  oc is likely a search context
 
 	ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); 
 	if (viewer) viewer->updateContext(1);
@@ -1993,7 +2231,7 @@ LaxInterfaces::ObjectContext *LaidoutViewport::ObjectMoved(LaxInterfaces::Object
 	if (!oc || !oc->obj) return NULL;
 
 	if (oc->obj!=curobj.obj) {
-		if (!validContext(dynamic_cast<VObjContext*>(oc))) return NULL;
+		if (!IsValidContext(oc)) return NULL;
 		setCurobj(dynamic_cast<VObjContext*>(oc));
 	}
 
@@ -2118,7 +2356,7 @@ LaxInterfaces::ObjectContext *LaidoutViewport::ObjectMoved(LaxInterfaces::Object
 	//transform_mult(m,mmm,mm);
 	d->m(m);
 
-	//DBG cerr <<"=========NEW MATRIX: "; dumpctm(d->m());
+	//DBG cerr <<"---------NEW MATRIX: "; dumpctm(d->m());
 	destcontext.push(i);
 	destcontext.SetObject(d);
 
@@ -2127,6 +2365,18 @@ LaxInterfaces::ObjectContext *LaidoutViewport::ObjectMoved(LaxInterfaces::Object
 	//DBG cerr <<"  moved "<<d->object_id<<" to: ";
 	//DBG curobj.context.out(NULL);
 	needtodraw=1;
+
+	if (selection->n()) {
+		 //we might need to synchronize selection objects to the new order
+        for (int c=selection->n()-1; c>=0; c--) {
+            if (IsValidContext(selection->e(c))) continue;
+            if (locateObject(selection->e(c)->obj, dynamic_cast<VObjContext*>(selection->e(c))->context)==0) {
+				 //somehow object is no longer there, remove from selection
+				selection->Remove(c);
+			}
+        }
+
+	}
 
 	if (!modifyoc) return new VObjContext(destcontext);
 	
@@ -2167,7 +2417,7 @@ int LaidoutViewport::MoveObject(LaxInterfaces::ObjectContext *fromoc, LaxInterfa
 	//transform_mult(m,mmm,mm);
 	d->m(m);
 
-	//DBG cerr <<"=========NEW MATRIX: "; dumpctm(d->m());
+	//DBG cerr <<"---------NEW MATRIX: "; dumpctm(d->m());
 
 	//DBG cerr <<"  moved "<<d->object_id<<" to: ";
 	//DBG to->context.out(NULL);
@@ -2206,6 +2456,7 @@ void LaidoutViewport::Center(int w)
 		//dp->Center(m,spread->pagestack.e[c]->outline);
 		syncrulers();
 		needtodraw=1;
+		return;
 
 	} else if (w==1) { // center spread
 		DoubleBBox box,box2;
@@ -2233,12 +2484,17 @@ void LaidoutViewport::Center(int w)
 
 		syncrulers();
 		needtodraw=1;
+		return;
 
 	} else if (w==3) { // center curobj
-		if (!curobj.obj) return;
+		if (!curobj.obj) { Center(1); return; }
 		double m[6];
-		transformToContext(m,curobj.context,0,curobj.context.n()-1);
-		dp->Center(m,curobj.obj);
+		transformToContext(m,curobj.context,0,curobj.context.n());
+		DoubleBBox box(*curobj.obj);
+		box.ExpandBounds(box.boxwidth()*.05);
+		dp->Center(m, &box);
+		syncrulers();
+		needtodraw=1;
 	}
 }
 
@@ -2249,6 +2505,7 @@ int LaidoutViewport::init()
 	if (!limbo) {
 		limbo=new Group;//group with 1 count
 		limbo->obj_flags|=OBJ_Unselectable|OBJ_Zone;
+		limbo->selectable = false;
 		char txt[30];
 		sprintf(txt,_("Limbo %d"),laidout->project->limbos.n()+1);
 		makestr(limbo->id,txt);
@@ -2319,7 +2576,7 @@ void LaidoutViewport::Refresh()
 		lfirsttime=0; 
 		UpdateMarkers();
 	}
-	//DBG cerr <<"======= Refreshing LaidoutViewport..";
+	DBG cerr <<"------ Refreshing LaidoutViewport..";
 	
 	////DBG flatpoint fp;
 	////DBG fp=dp->screentoreal(fp);
@@ -2363,9 +2620,10 @@ void LaidoutViewport::Refresh()
 	 //draw papergroup
 	//DBG cerr <<"drawing viewport->papergroup.."<<endl;
 	if (papergroup) {
+		 //draw paper outlines
 		ViewerWindow *vw=dynamic_cast<ViewerWindow *>(win_parent);
 		PaperInterface *pi=dynamic_cast<PaperInterface *>(vw->FindInterface("PaperInterface"));
-		if (pi) pi->DrawGroup(papergroup,1,1,0);
+		if (pi) pi->DrawGroup(papergroup,1,1,0, 1);
 	}
 
 	
@@ -2383,25 +2641,20 @@ void LaidoutViewport::Refresh()
 			 //draw shadow if papergroup does not exist
 			FillStyle fs(0,0,0,0xffff, WindingRule,FillSolid,LAXOP_Over);
 			LineStyle ls(0xffff,0,0,0xffff, 1, LAXCAP_Round,LAXJOIN_Miter,0,LAXOP_Over);
-			ls.widthtype=0;
-			ls.function=LAXOP_None;
+			ls.widthtype = 0;
+			ls.function = LAXOP_None;
 
 			if (!(papergroup && papergroup->papers.n)) {
-			//if (!pgrp && !(papergroup && papergroup->papers.n)) { ***
 				dp->NewFG(0,0,0);
 				dp->PushAxes();
 				dp->ShiftScreen(laidout->prefs.pagedropshadow,laidout->prefs.pagedropshadow);
-				if (dynamic_cast<PathsData*>(spread->path)) {
-					dynamic_cast<PathsData*>(spread->path)->style|=PathsData::PATHS_Ignore_Weights;
-				}
 				DrawData(dp,spread->path, &ls,&fs,drawflags);
 				dp->PopAxes();
 			}
 
 			 // draw outline *** must draw filled with paper color
 			fs.Color(0xffff,0xffff,0xffff,0xffff);
-			ls.function=LAXOP_Over;
-			//DrawData(dp,spread->path->m(),spread->path,NULL,&fs,drawflags);
+			ls.function = LAXOP_Over;
 			DrawData(dp,spread->path, &ls,&fs,drawflags);
 		}
 
@@ -2409,7 +2662,7 @@ void LaidoutViewport::Refresh()
 		 
 		//DBGCAIROSTATUS(" LO viewport after spread, cairo status:  ")
 
-		 // draw the pages
+		 // draw the page's objects and margins
 		Page *page=NULL;
 		int pagei=-1;
 		flatpoint p;
@@ -2503,7 +2756,14 @@ void LaidoutViewport::Refresh()
 		}
 	}
 	
-	//DBGCAIROSTATUS(" LO viewport after pages, cairo status:  ")
+	if (papergroup) {
+		 //draw paper objects
+		ViewerWindow *vw=dynamic_cast<ViewerWindow *>(win_parent);
+		PaperInterface *pi=dynamic_cast<PaperInterface *>(vw->FindInterface("PaperInterface"));
+		if (pi) pi->DrawGroup(papergroup,1,1,0, 2);
+	}
+
+	DBGCAIROSTATUS(" LO viewport after pages, cairo status:  ")
 
 	
 	 // Call Refresh for each interface that needs it, ignoring clipping region
@@ -2579,53 +2839,10 @@ void LaidoutViewport::Refresh()
 	 // swap buffers
 	SwapBuffers();
 
-	//DBG cerr <<"======= done refreshing LaidoutViewport.."<<endl;
-	//DBG cerr <<"LO viewport Transform end: "<<endl; dumpctm(dp->Getctm());
+	DBG cerr <<"------- done refreshing LaidoutViewport.."<<endl;
+	DBG cerr <<"LO viewport Transform end: "<<endl; dumpctm(dp->Getctm());
 }
 
-
-enum ViewActions {
-	VIEW_Save,
-	VIEW_SaveAs,
-	VIEW_NewDocument,
-	VIEW_NextTool,
-	VIEW_PreviousTool,
-	VIEW_NextPage,
-	VIEW_PreviousPage,
-	VIEW_ObjectTool,
-	VIEW_CommandPrompt,
-	VIEW_ObjectIndicator,
-
-	VIEW_Help,
-	VIEW_About,
-	VIEW_SpreadEditor,
-	VIEW_EditImposition,
-
-	VIEW_PathTool,       
-	VIEW_ImageTool,      
-	VIEW_GradientTool,   
-	VIEW_MeshGradientTool,
-	VIEW_EngraverTool,   
-
-	VIEW_MAX
-};
-
-enum LaidoutViewportActions {
-	LOV_DeselectAll=VIEWPORT_MAX,
-	LOV_CenterDrawing,
-	LOV_ZoomToPage,
-	LOV_GrabColor,
-	LOV_ToggleShowState,
-	LOV_MoveObjects,
-	LOV_ObjUp,
-	LOV_ObjDown,
-	LOV_ObjFirst,
-	LOV_ObjLast,
-	LOV_ToggleDrawFlags,
-	LOV_ObjectIndicator,
-	LOV_ForceRemap,
-	LOV_MAX
-};
 
 Laxkit::ShortcutHandler *LaidoutViewport::GetShortcuts()
 {
@@ -2641,11 +2858,12 @@ Laxkit::ShortcutHandler *LaidoutViewport::GetShortcuts()
 	sc->AddShortcut(LAX_Tab,ShiftMask,0, VIEWPORT_PreviousObject); //(like inkscape)
 			 
 	sc->Add(LOV_DeselectAll,    'A',ShiftMask|ControlMask,0, _("DeselectAll"), _("Deselect all"),NULL,0);
-	sc->Add(LOV_CenterDrawing,  '4',0,0,        _("CenterDrawing"),  _("Center drawing"),NULL,0);
+	sc->Add(LOV_CenterDrawing,  '6',0,0,        _("CenterDrawing"),  _("Center drawing"),NULL,0);
 	sc->AddShortcut(' ',0,0, LOV_CenterDrawing);
+	sc->Add(VIEWPORT_Center_Object,'4',0,0,     _("CenterObject"),   _("Center on current object"),NULL,0);
 	sc->Add(LOV_ZoomToPage,     '5',0,0,        _("ZoomToPage"),     _("Zoom to the current page"),NULL,0);
 	sc->AddShortcut(' ',ShiftMask,0, LOV_ZoomToPage);
-	sc->Add(LOV_GrabColor,      'g',0,0,        _("GrabColor"),      _("Grab color"),NULL,0);
+	sc->Add(LOV_GrabColor,      'G',ShiftMask|ControlMask,0,_("GrabColor"),_("Grab color"),NULL,0);
 	sc->Add(LOV_ToggleShowState,'l',ShiftMask,0,_("ToggleShow"),     _("Toggle show state"),NULL,0);
 	sc->Add(LOV_MoveObjects,    'm',0,0,        _("MoveObjs"),       _("Move objects"),NULL,0);
 	sc->Add(LOV_ObjUp,          LAX_Pgup,0,0,   _("MoveObjUp"),      _("Move object up within layer"),NULL,0);
@@ -2683,6 +2901,11 @@ int LaidoutViewport::PerformAction(int action)
 		ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); // always returns non-null
 		viewer->PerformAction(VIEW_ObjectIndicator);
 		needtodraw=1;
+		return 0;
+
+	} else if (action==VIEWPORT_Center_Object || action==VIEWPORT_Zoom_To_Object) {
+		if (!curobj.obj) { Center(1); return 0; }
+		Center(3); 
 		return 0;
 
 	} else if (action==LOV_CenterDrawing || action==VIEWPORT_Center_View) {
@@ -2774,7 +2997,7 @@ int LaidoutViewport::PerformAction(int action)
 						object_id,"moveto", 
 						last_mouse, //mouse to position near?
 						menu,1, NULL,
-						MENUSEL_LEFT|MENUSEL_CHECK_ON_LEFT|MENUSEL_DESTROY_ON_LEAVE);
+						TREESEL_LEFT);
 		popup->pad=5;
 		popup->WrapToMouse(None);
 		app->rundialog(popup);
@@ -2860,16 +3083,16 @@ int LaidoutViewport::PerformAction(int action)
  */
 int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	////DBG  //show object mouse is over:
-	////DBG if (ch=='f') { //note that these preempt the Laxkit::ViewportWindow reset view. these are dealt separately below
-	////DBG 	ObjectContext *oc=NULL;
-	////DBG		int x,y;
-	////DBG 	d->paired_mouse->getInfo(this,NULL,NULL,&x,&y, NULL,NULL,NULL,NULL);
-	////DBG 	int cc=FindObject(x,y,NULL,NULL,1,&oc);
-	////DBG 	cerr <<"============mouse move found:"<<cc;
-	////DBG 	if (oc) dynamic_cast<VObjContext*>(oc)->context.out("  "); else cerr <<endl;
-	////DBG 	return 0;
-	////DBG }
+	//DBG  //show object mouse is over:
+	//DBG if (ch=='f') { //note that these preempt the Laxkit::ViewportWindow reset view. these are dealt separately below
+	//DBG 	ObjectContext *oc=NULL;
+	//DBG		int x,y;
+	//DBG 	d->paired_mouse->getInfo(this,NULL,NULL,&x,&y, NULL,NULL,NULL,NULL);
+	//DBG 	int cc=FindObject(x,y,NULL,NULL,1,&oc);
+	//DBG 	cerr <<"------------mouse move found:"<<cc;
+	//DBG 	if (oc) dynamic_cast<VObjContext*>(oc)->context.out("  "); else cerr <<endl;
+	//DBG 	return 0;
+	//DBG }
 
 	if (ch==LAX_Esc && (state&LAX_STATE_MASK)==0 && viewportmode==VIEW_GRAB_COLOR) {
 		 //escape out of grabbing color
@@ -3289,7 +3512,9 @@ void LaidoutViewport::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::D
 ViewWindow::ViewWindow(Document *newdoc)
 	: ViewerWindow(NULL,NULL,(newdoc ? newdoc->Name(1) : _("Untitled")),0,
 					0,0,500,600,1,new LaidoutViewport(newdoc))
-{ 
+{
+	tempstring=NULL;
+	initial_tool = -1;
 	viewport->dec_count(); //remove extra creation count
 	viewport->dp->defaultRighthanded(true);
 	project=NULL;
@@ -3308,6 +3533,8 @@ ViewWindow::ViewWindow(anXWindow *parnt,const char *nname,const char *ntitle,uns
 						Document *newdoc)
 	: ViewerWindow(parnt,nname,ntitle,nstyle,xx,yy,ww,hh,brder,new LaidoutViewport(newdoc))
 {
+	tempstring=NULL;
+	initial_tool = -1;
 	viewport->dec_count(); //remove extra creation count
 	viewport->dp->defaultRighthanded(true);
 	viewport->GetShortcuts();
@@ -3328,6 +3555,7 @@ ViewWindow::~ViewWindow()
 
 	if (laidout->lastview==this) laidout->lastview=NULL;
 	if (doc) doc->dec_count();
+	delete[] tempstring;
 }
 
 /*! Write out something like:
@@ -3401,6 +3629,11 @@ void ViewWindow::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *con
 			vp->limbo->e(c)->dump_out(f,indent+4,what,context);
 		}
 	}
+
+	if (curtool) {
+		fprintf(f, "%sactive_tool %s\n", spc, curtool->whattype());
+		curtool->dump_out(f, indent+2, what, context);
+	}
 }
 
 LaxFiles::Attribute *ViewWindow::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
@@ -3420,34 +3653,47 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *con
 	double m[6],x1=0,x2=0,y1=0,y2=0;
 	int n=0;
 	const char *layouttype=NULL;
+	Attribute *usetool = NULL;
 	if (doc) doc->dec_count();
 	doc=NULL;
+
 	for (int c=0; c<att->attributes.n; c++) {
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
+
 		if (!strcmp(name,"matrix")) {
 			n=DoubleListAttribute(value,m,6);
+
 		} else if (!strcmp(name,"xbounds")) {
 			if (DoubleAttribute(value,&x1,&value))
 				DoubleAttribute(value,&x2,NULL);
+
 		} else if (!strcmp(name,"ybounds")) {
 			if (DoubleAttribute(value,&y1,&value))
 				DoubleAttribute(value,&y2,NULL);
+
 		} else if (!strcmp(name,"pagelayout")) {
 			vm=PAGELAYOUT;
+
 		} else if (!strcmp(name,"paperlayout")) {
 			vm=PAPERLAYOUT;
+
 		} else if (!strcmp(name,"singlelayout")) {
 			vm=SINGLELAYOUT;
+
 		} else if (!strcmp(name,"layout")) {
 			layouttype=value;
+
 		} else if (!strcmp(name,"spread")) {
 			IntAttribute(value,&spr);
+
 		} else if (!strcmp(name,"page")) {
 			IntAttribute(value,&pn);
+
 		} else if (!strcmp(name,"document")) {
 			doc=laidout->findDocument(value);
 			if (doc) doc->inc_count();
+
 		} else if (!strcmp(name,"limbo")) {
 			LaidoutViewport *vp=(LaidoutViewport *)viewport;
 			Group *g;
@@ -3461,8 +3707,12 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *con
 				}
 			} 
 			if (vp->limbo) vp->limbo->dump_in_atts(att->attributes.e[c],0,context);
+
+		} else if (!strcmp(name,"active_tool")) {
+			usetool = att->attributes.e[c];
 		}
 	}
+
 	//*** there should be error checking on x,y
 	viewport->dp->SetSpace(x1,x2,y1,y2);
 	viewport->dp->syncPanner();
@@ -3477,6 +3727,18 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *con
 		viewport->dp->NewTransform(m);
 		if (((LaidoutViewport *)viewport)->lfirsttime) ((LaidoutViewport *)viewport)->lfirsttime++;
 		if (((LaidoutViewport *)viewport)->firsttime)  ((LaidoutViewport *)viewport)->firsttime++;
+	}
+
+	if (usetool && usetool->value) {
+		for (int c=0; c<laidout->interfacepool.n; c++) {
+			if (!strcmp(laidout->interfacepool.e[c]->whattype(), usetool->value)) {
+				SelectTool(laidout->interfacepool.e[c]->id);
+				curtool->dump_in_atts(usetool, flag, context);
+				initial_tool = curtool->id;
+
+				break;
+			}
+		}
 	}
 }
 
@@ -3513,7 +3775,7 @@ class PageFlipper : public NumSlider
 	PageFlipper(Document *ndoc,anXWindow *parnt,const char *ntitle,
 				anXWindow *prev,unsigned long nowner,const char *nsendthis,const char *nlabel);
 	virtual ~PageFlipper();
-	virtual void Refresh();
+	//virtual void Refresh();
 	virtual const char *tooltip(int mouseid=0);
 };
 
@@ -3543,42 +3805,6 @@ const char *PageFlipper::tooltip(int mouseid)
 	return currentcontext;
 }
 
-void PageFlipper::Refresh()
-{
-	NumSlider::Refresh();
-//	if (!win_on || !needtodraw) return;
-//	background_color(win_colors->bg);
-//	clear_window(this);
-//
-//	int x,y;
-//	unsigned int state;
-//	if (buttondown) {
-//		mouseposition(buttondowndevice,this,&x,&y,&state,NULL);
-//		if ((x>=0 && x<win_w && y>0 && y<win_h)) {
-//			if (x<win_w/2) {
-//				 // draw left arrow
-//				foreground_color(coloravg(win_colors->bg,win_colors->fg,.1));
-//				draw_thing(this, win_w/4,win_h/2, win_w/4,win_h/2,1, THING_Triangle_Left);
-//			} else {
-//				 // draw right arrow
-//				foreground_color(coloravg(win_colors->bg,win_colors->fg,.1));
-//				draw_thing(this, win_w*3/4,win_h/2, win_w/4,win_h/2,1, THING_Triangle_Right);
-//			}
-//		}
-//	}
-//
-//	foreground_color(win_colors->fg);
-//	
-//	char *str=newstr(label);
-//	if (doc && curitem>=0 && curitem<doc->pages.n) appendstr(str,doc->pages.e[curitem]->label);
-//	else appendstr(str,"limbo");
-//
-//	textout(this, str,-1,win_w/2,win_h/2,LAX_CENTER);
-//	delete[] str;
-//
-//	needtodraw=0;
-}
-
 //-------------end PageFlipper
 
 
@@ -3603,6 +3829,9 @@ int ViewWindow::init()
 	ViewerWindow::init();
 	mesbar->tooltip("Status bar");
 	
+	if (xruler) xruler->win_style|=RULER_UNITS_MENU_ALWAYS;
+	if (yruler) yruler->win_style|=RULER_UNITS_MENU_ALWAYS;
+
 //	if (!doc) {
 //		if (laidout->project && laidout->project->docs.n) {
 //			doc=laidout->project->docs.e[0]->doc;
@@ -3635,7 +3864,6 @@ int ViewWindow::init()
 	Button *ibut;
 	
 	 // tool section
-	 //*** clean me! sampling diff methods of tool selector
 	last=toolselector=new SliderPopup(this,"viewtoolselector",NULL,SLIDER_LEFT, 0,0,0,0,0, 
 			NULL,object_id,"viewtoolselector",
 			NULL,0);
@@ -3650,7 +3878,7 @@ int ViewWindow::init()
 			numoverlays++;
 			continue;
 		}
-		if (!strcmp(tools.e[c]->whattype(),"ObjectInterface")) obji=tools.e[c]->id;
+		if (!strcmp(tools.e[c]->whattype(),"ObjectInterface")) obji = tools.e[c]->id;
 		
 		img=laidout->icons->GetIcon(tools.e[c]->IconId());
 		
@@ -3668,9 +3896,34 @@ int ViewWindow::init()
 	}
 
 	toolselector->WrapToExtent();
-	SelectTool(obji);
+	SelectTool(initial_tool > 0 ? initial_tool : obji);
 	AddWin(toolselector,1,-1);
-	
+
+
+	 //------ Overlays
+//	if (numoverlays) {
+//		MenuInfo *overlays = new MenuInfo();
+//		for (c=0; c<tools.n; c++) {
+//			if (tools.e[c]->interface_type != INTERFACE_Overlay) continue;
+//
+//			img = laidout->icons->GetIcon(tools.e[c]->IconId());
+//			overlays->AddToggleItem(tools.e[c]->Name(),img, tools.e[c]->id, 0, viewport->HasInterface(tools.e[c]->id) ? true : false);
+//		}
+//
+//		last = overlayselector = new MenuButton(this,"overlays",NULL,
+//						 MENUBUTTON_CLICK_CALLS_OWNER|MENUBUTTON_ICON_ONLY|MENUBUTTON_LEFT,
+//						 0,0,0,0,0,
+//						 NULL,object_id,"overlays",
+//						 0,
+//						 NULL,0, //menu
+//						 "o", //label
+//						 NULL, laidout->icons->GetIcon("Overlays"),
+//						 buttongap);
+//		overlayselector->tooltip(_("Toggle overlays"));
+//
+//		//overlays->WrapToExtent();
+//		AddWin(overlays,1,-1);
+//	}
 
 
 	 //----- Page Flipper
@@ -3718,6 +3971,7 @@ int ViewWindow::init()
 	}
 	p->Select(vm);
 	p->WrapToExtent();
+	p->tooltip(_("Spread view type"));
 	AddWin(p,1, p->win_w,0,50,50,0, p->win_h,0,50,50,0, -1);
 
 	last=colorbox=new ColorBox(this,"colorbox",NULL,
@@ -3731,7 +3985,7 @@ int ViewWindow::init()
 		
 	last=pageclips=new Button(this,"pageclips",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, NULL,object_id,"pageclips",-1,
 							  _("Page Clips"),NULL,laidout->icons->GetIcon("PageClips"),buttongap);
-	pageclips->tooltip(_("Whether pages clips its contents"));
+	pageclips->tooltip(_("Whether page clips its contents"));
 	AddWin(pageclips,1, pageclips->win_w,0,50,50,0, pageclips->win_h,0,50,50,0, -1);
 	updateContext(1);
 
@@ -3796,40 +4050,84 @@ int ViewWindow::init()
 	//}
 
 
-	last=ibut=new Button(this,"open doc",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, NULL,object_id,"openDoc",-1,
+	 //---------open
+	last=ibut=new Button(this,"open doc",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"openDoc",-1,
 						 _("Open"),NULL,laidout->icons->GetIcon("Open"),buttongap);
 	ibut->tooltip(_("Open a document from disk"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
-	last=ibut=new Button(this,"save doc",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, NULL,object_id,"saveDoc",-1,
-						 _("Save"),NULL,laidout->icons->GetIcon("Save"),buttongap);
-	ibut->tooltip(_("Save the current document"));
-	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
+//	 //---------save
+//	last=ibut=new Button(this,"save doc",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"saveDoc",-1,
+//						 _("Save"),NULL,laidout->icons->GetIcon("Save"),buttongap);
+//	ibut->tooltip(_("Save the current document"));
+//	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
+
+	 //-------save menu
+	MenuInfo *menu=new MenuInfo;
+	menu->AddItem(_("Save"),           VIEW_Save);
+	menu->AddItem(_("Save as..."),     VIEW_SaveAs);
+	menu->AddItem(_("Save a copy..."), VIEW_Save_A_Copy);
+	menu->AddItem(_("Save a copy incremented"),  VIEW_Save_A_Copy_Incremented); //from last save a copy, or from file if no last copy?
+	menu->AddItem(_("Save as template..."),      VIEW_Save_As_Template);
+	menu->AddItem(_("Save as default template"), VIEW_Save_As_Default_Template);
+	menu->AddSep();
+	menu->AddItem(_("New..."),  VIEW_NewDocument);
+	menu->AddItem(_("Open..."), VIEW_Open_Document);
+	menu->AddSep();
+	menu->AddItem(_("Setup Autosave..."), VIEW_Backup_Settings);
+//	menu->AddSep();
+//	menu->AddItem(_("Commit"), VIEW_Commit);
+//	menu->AddItem(_("Commit settings..."), VIEW_Commit_Settings);
+//		// - initialize git repository in directory of document or project file
+//		// - command to commit
+//		// - command to revert
+//	menu->AddItem(_("Revert..."), VIEW_Revert);
+
+	last=menub=new MenuButton(this,"save doc",NULL,
+							MENUBUTTON_LEFT|IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"savemenu",-1,
+							 menu,1, _("Save"),
+							 NULL, laidout->icons->GetIcon("SaveMenu"),
+							 0);
+	menub->tooltip(_("Menu for save options"));
+	AddWin(menub,1, menub->win_w,0,50,50,0, menub->win_h,0,50,50,0, -1);
+//	-------------
 
 
+	 //--------extensions
+	if (laidout->experimental) {
+		menu = new MenuInfo;
+	//	if (laidout->extensions.n) {
+	//		for (int c=0; c<laidout->extensions.n; c++) {
+	//			AddonAction *action = laidout->extensions.e[c];
+	//			menu->AddItem(action->Name(), VIEW_Extension, 0, c);
+	//		}
+	//	}
+		if (menu->n()) menu->AddSep();
+		menu->AddItem(_("Configure addons..."), VIEW_Config_Addons);
 
-	last=ibut=new Button(this,"help",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, NULL,object_id,"help",-1,
+		last = menub = new MenuButton(this,"extensions",NULL,
+								MENUBUTTON_LEFT|IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"extbutton",-1,
+								 menu,1, _("Extensions"),
+								 NULL, laidout->icons->GetIcon("List"),
+								 0);
+		menub->tooltip(_("Miscellaneous actions"));
+		AddWin(menub,1, menub->win_w,0,50,50,0, menub->win_h,0,50,50,0, -1);
+	}
+
+
+	 //---------help
+	last=ibut=new Button(this,"help",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"help",-1,
 						 _("Help!"),NULL,laidout->icons->GetIcon("Help"),buttongap);
 	ibut->tooltip(_("Popup a list of shortcuts"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
-	//**** add screen x,y
-	//		   real x,y
-	//         page x,y
-	//         object x,y
 	
 	updateContext(1);
 	Sync(1);	
 	return 0;
 }
 
-/*! Currently accepts:\n
- * <pre>
- *  "new image"
- *  "saveAsPopup"
- *  "docTreeChange" <-- updateContext() and pass event to viewport
- * </pre>
- *
+/*!
  * \todo *** the response to saveAsPopup could largely be put elsewhere
  */
 int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
@@ -3923,6 +4221,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 			if (!is_good_filename(file)) {//***how does it know?
 				PostMessage(_("Illegal characters in file name. Not saved."));
+
 			} else {
 				 //set name in doc and headwindow
 				//DBG cerr <<"*** file by this point should be absolute path name:"<<file<<endl;
@@ -3949,6 +4248,99 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 			if (dir)   delete[] dir;
 			if (file)  delete[] file;
 		}
+		return 0;
+
+	} else if (!strcmp(mes,"saveCopyPopup")) {
+		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
+		if (!s || isblank(s->str)) return 0;
+
+		Document *sdoc=doc;
+		if (!sdoc) sdoc=laidout->curdoc;
+		if (!sdoc) { PostMessage(_("Need a document to save!")); return 0; }
+
+		 //now actually save
+		char *oldname = newstr(sdoc->Saveas());
+		const char *where=s->str; 
+		sdoc->Saveas(where);
+
+		ErrorLog log;
+		if (sdoc && sdoc->Save(1,1,log)==0) {
+			char message[strlen(_("Saved copy to %s"))+strlen(lax_basename(where))+1];
+			sprintf(message, _("Saved copy to %s"), lax_basename(where));
+			PostMessage(message); 
+
+		} else {
+			if (log.Total()) {
+				PostMessage(log.MessageStr(log.Total()-1));
+			} else PostMessage(_("Problem saving. Not saved."));
+		}
+		sdoc->Saveas(oldname);
+
+		delete[] oldname;
+		return 0;
+
+    } else if (!strcmp(mes,"saveastemplate")) {
+		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
+		if (!s || isblank(s->str)) {
+			PostMessage(_("Bad template name."));
+			return 0;
+		}
+
+		Document *sdoc=doc;
+		if (!sdoc) sdoc=laidout->curdoc;
+		if (!sdoc) { PostMessage(_("Need a document to save!")); return 0; }
+
+		const char *name=s->str;
+		char *file=NULL;
+
+		ErrorLog log;
+		if (sdoc->SaveAsTemplate(name,NULL, 1,1, log, false, &file)==0) {
+			 //success!
+			PostMessage(_("Saved as template."));
+
+		} else {
+			if (file!=NULL) {
+				 //file existed! we need to confirm overwrite
+				makestr(tempstring, name);
+
+				char *dir=lax_dirname(file,1);
+				FileDialog *fd = new FileDialog(NULL,NULL,_("Save As Template"),
+						ANXWIN_REMEMBER,
+						0,0,0,0,0, object_id,"confirmSaveTemplate",
+						FILES_FILES_ONLY|FILES_SAVE_AS,
+						lax_basename(file), dir);
+				delete[] dir;
+				fd->OkButton(_("Save as template"), NULL);
+				app->rundialog(fd);
+				delete[] file;
+			}
+		}
+
+		return 0;
+
+    } else if (!strcmp(mes,"confirmSaveTemplate")) {
+		 //this is called resulting from a save as dialog to confirm where to save a template
+		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
+		if (!s || isblank(s->str)) {
+			PostMessage(_("Bad template file!"));
+			return 0;
+		}
+
+		Document *sdoc=doc;
+		if (!sdoc) sdoc=laidout->curdoc;
+		if (!sdoc) { PostMessage(_("Need a document to save!")); return 0; }
+
+		ErrorLog log;
+		if (sdoc->SaveAsTemplate(tempstring, s->str, 1,1,log, true,NULL)==0) {
+			 //success!
+			PostMessage(_("Saved as template."));
+
+		} else {
+			if (log.Total()) {
+				PostMessage(log.MessageStr(log.Total()-1));
+			} else PostMessage(_("Problem saving. Not saved."));
+		}
+
 		return 0;
 
 	} else if (!strcmp(mes,"print config")) {
@@ -4011,7 +4403,8 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 		char blah[100];
 		colorbox->SetRGB(linestyle.color.red/65535.,linestyle.color.green/65535.,linestyle.color.blue/65535.,linestyle.color.alpha/65535.);
-		sprintf(blah,_("New Color r:%.4f g:%.4f b:%.4f a:%.4f"),
+		//sprintf(blah,_("New Color r:%.4f g:%.4f b:%.4f a:%.4f"),
+		sprintf(blah,_("New Color r:%.3f g:%.3f b:%.3f a:%.3f"),
 				(float) linestyle.color.red   / 65535,
 				(float) linestyle.color.green / 65535,
 				(float) linestyle.color.blue  / 65535,
@@ -4028,10 +4421,10 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		 //update status message
 		char blah[100];
 		sprintf(blah,_("New Color r:%.4f g:%.4f b:%.4f a:%.4f"),
-				(float) colorbox->Red()   / 65535,
-				(float) colorbox->Green() / 65535,
-				(float) colorbox->Blue()  / 65535,
-				(float) colorbox->Alpha() / 65535);
+				colorbox->Red()  ,
+				colorbox->Green(),
+				colorbox->Blue() ,
+				colorbox->Alpha());
 		mesbar->SetText(blah);
 		return 0;
 
@@ -4134,17 +4527,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		//DBG menuinfoDump(menu,0);
 
 		 //create the actual popup menu...
-		MenuSelector *popup;
-//		popup=new MenuSelector(NULL,_("Documents"), ANXWIN_BARE|ANXWIN_HOVER_FOCUS,
-//						0,0,0,0, 1, 
-//						NULL,viewport->object_id,"rulercornermenu", 
-//						MENUSEL_ZERO_OR_ONE|MENUSEL_CURSSELECTS
-//						 //| MENUSEL_SEND_STRINGS
-//						 | MENUSEL_FOLLOW_MOUSE|MENUSEL_SEND_ON_UP
-//						 | MENUSEL_GRAB_ON_MAP|MENUSEL_OUT_CLICK_DESTROYS
-//						 | MENUSEL_CLICK_UP_DESTROYS|MENUSEL_DESTROY_ON_FOCUS_OFF
-//						 | MENUSEL_CHECK_ON_LEFT|MENUSEL_LEFT,
-//						menu,1);
+		TreeSelector *popup;
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
 		popup=new PopupMenu(NULL,_("Documents"), 0,
 						0,0,0,0, 1, 
@@ -4152,7 +4535,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 						s->info3, //id of device that triggered the send
 						menu,1,
 						NULL,
-						MENUSEL_LEFT|MENUSEL_CHECK_ON_LEFT);
+						TREESEL_LEFT);
 		popup->pad=5;
 		popup->Select(0);
 		popup->WrapToMouse(None);
@@ -4160,8 +4543,9 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"help")) {
-		anXWindow *win = newHelpWindow(CurrentTool()?CurrentTool()->whattype():"ViewWindow");
-		app->addwindow(win);
+		//anXWindow *win = newHelpWindow(CurrentTool()?CurrentTool()->whattype():"ViewWindow");
+		//app->addwindow(win);
+		app->addwindow(newSettingsWindow("keys", CurrentTool()?CurrentTool()->whattype():"LaidoutViewport"));
 		return 0;
 
 	} else if (!strcmp(mes,"contextChange")) { // curobj was changed, now maybe diff page, spread, etc.
@@ -4288,7 +4672,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
 		//DBG cerr <<"***** viewtoolselector change to id:"<<s->info1<<endl;
 
-		SelectTool(s->info1);
+		SelectTool(s->info2);
 		return 0;
 
 	} else if (!strcmp(mes,"newViewType")) {
@@ -4306,9 +4690,11 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 			 //into that. This group object gets sent back to the viewer in an event message.
 			 //The objects are then inserted into limbo.
 			double aspect=(viewport->dp->Maxy-viewport->dp->Miny)/(float)(viewport->dp->Maxx-viewport->dp->Minx);
-			toobj=new Group;
-			toobj->maxx=1;
-			toobj->maxy=aspect;
+			toobj = ((LaidoutViewport *)viewport)->limbo;
+			if (!((LaidoutViewport *)viewport)->limbo->validbounds()) {
+				toobj->maxx = 10;
+				toobj->maxy = aspect;
+			}
 		}
 		app->rundialog(new ImportImagesDialog(NULL,"Import Images",_("Import Images"),
 					FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
@@ -4316,13 +4702,13 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 					NULL,NULL,NULL,
 					toobj,
 					doc,((LaidoutViewport *)viewport)->curobjPage(),0));
-		if (toobj) toobj->dec_count();
 		return 0;
 
 	} else if (!strcmp(mes,"import")) { 
 		if (laidout->importfilters.n==0) {
 			mesbar->SetText(_("Sorry, there are no import filters installed."));
 			return 0;
+
 		} else {
 			mesbar->SetText(_("Importing..."));
 			Group *toobj=NULL;
@@ -4330,10 +4716,12 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 				 //create a group object with the same aspect as the viewport, and dump images
 				 //into that. This group object gets sent back to the viewer in an event message.
 				 //The objects are then inserted into limbo.
-				double aspect=(viewport->dp->Maxy-viewport->dp->Miny)/(float)(viewport->dp->Maxx-viewport->dp->Minx);
-				toobj=new Group;
-				toobj->maxx=1;
-				toobj->maxy=aspect;
+				double aspect = (viewport->dp->Maxy-viewport->dp->Miny)/(float)(viewport->dp->Maxx-viewport->dp->Minx);
+				toobj = ((LaidoutViewport *)viewport)->limbo;
+				if (!((LaidoutViewport *)viewport)->limbo->validbounds()) {
+					toobj->maxx = 10;
+					toobj->maxy = aspect;
+				}
 			}
 			app->rundialog(new ImportFileDialog(NULL,NULL,_("Import File"),
 						FILES_FILES_ONLY|FILES_OPEN_ONE|FILES_PREVIEW,
@@ -4345,7 +4733,6 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 						((LaidoutViewport *)viewport)->spreadi,
 						((LaidoutViewport *)viewport)->viewmode,
 						0)); //dpi
-			if (toobj) toobj->dec_count();
 			return 0;
 		}
 		return 0;
@@ -4357,9 +4744,21 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		if (!pg || !pg->papers.n) l=NULL; else l=((LaidoutViewport *)viewport)->limbo;
 		char *file=NULL;
 		if (doc) {
-			file=lax_dirname(doc->Saveas(),1);
+			if (!isblank(laidout->prefs.exportfilename)) {
+				char *nfile = newstr(laidout->prefs.exportfilename);
+				char *fname = newstr(isblank(doc->Saveas()) ? "untitled" : doc->Saveas());
+				chop_extension(fname);
+				file = replaceallname(nfile, "%f", fname);
+				delete[] nfile;
+				delete[] fname;
+
+			} else {
+				file = newstr(doc->Saveas());
+				chop_extension(file);
+				appendstr(file, "-exported.huh");
+			}
+
 			convert_to_full_path(file,NULL);
-			appendstr(file,"exported-file.huh");
 		} else {
 			file=full_path_for_file("exported-file.huh",NULL);
 		}
@@ -4379,42 +4778,17 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"openDoc")) { 
-		 //sends the open message to the head window... hmm...
-		app->rundialog(new FileDialog(NULL,NULL,_("Open Document"),
-					ANXWIN_REMEMBER,
-					0,0,0,0,0, win_parent->object_id,"open document",
-					FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
-					NULL,NULL,NULL,"Laidout"));
+		PerformAction(VIEW_Open_Document);
 		return 0;
 
 	} else if (!strcmp(mes,"saveDoc")) { 
-		if (!doc) return 0;
-		
-		 //user clicked save button
-		if (isblank(doc->Saveas()) || !strncasecmp(doc->Saveas(),_("untitled"), strlen(_("untitled")))) { //***or shift-click for saveas??
-			 // launch saveas!!
-			//LineInput::LineInput(anXWindow *parnt,const char *ntitle,unsigned int nstyle,
-						//int xx,int yy,int ww,int hh,int brder,
-						//anXWindow *prev,Window nowner,const char *nsend,
-						//const char *newlabel,const char *newtext,unsigned int ntstyle,
-						//int nlew,int nleh,int npadx,int npady,int npadlx,int npadly) // all after and inc newtext==0
-			app->rundialog(new FileDialog(NULL,NULL,_("Save As..."),
-						ANXWIN_REMEMBER,
-						0,0,0,0,0, object_id,"saveAsPopup",
-						FILES_FILES_ONLY|FILES_SAVE_AS,
-						doc->Saveas()));
-		} else {
-			ErrorLog log;
-			if (doc->Save(1,1,log)==0) {
-				char blah[strlen(doc->Saveas())+15];
-				sprintf(blah,"Saved to %s.",doc->Saveas());
-				PostMessage(blah);
-			} else {
-				if (log.Total()) {
-					PostMessage(log.MessageStr(log.Total()-1));
-				} else PostMessage(_("Problem saving. Not saved."));
-			}
-		}
+		PerformAction(VIEW_Save);
+		return 0;
+
+	} else if (!strcmp(mes,"savemenu")) { 
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
+		int id=s->info2;
+		if (id>0) PerformAction(id); 
 		return 0;
 
 	} else if (!strcmp(mes,"print")) { // print to output.ps
@@ -4521,9 +4895,15 @@ void ViewWindow::updateContext(int messagetoo)
 	}
 
 	if (messagetoo) {
-		int cplen=20,curpageindex=lviewport->curobjPage();
+		int cplen = 10+strlen(_("(page %s)")), curpageindex = lviewport->curobjPage();
 
-		char blah[cplen+lviewport->curobj.context.n()*20+50]; //*** warning! crash magnet when field names are long!
+		if (curpageindex>=0 && doc->pages.e[curpageindex]->label) cplen += strlen(doc->pages.e[curpageindex]->label);
+		if (lviewport->curobj.obj) {
+			cplen += strlen(lviewport->curobj.obj->whattype());
+			cplen += 2+strlen(lviewport->curobj.obj->Id());
+		}
+
+		char blah[cplen];
 		blah[0]='\0';
 
 		if (curpageindex>=0 && doc->pages.e[curpageindex]->label) {
@@ -4536,9 +4916,6 @@ void ViewWindow::updateContext(int messagetoo)
 			strcat(blah,lviewport->curobj.obj->Id());
 		} else strcat(blah,"none");
 		if (mesbar) mesbar->SetText(blah);
-
-		//PageFlipper *pageflipper=dynamic_cast<PageFlipper*>(findChildWindowByName("page number"));
-		//if (pageflipper) makestr(pageflipper->currentcontext,blah);
 	}
 
 
@@ -4648,10 +5025,20 @@ Laxkit::ShortcutHandler *ViewWindow::GetShortcuts()
 	sc->Add(VIEW_MeshGradientTool,LAX_F8,0,0,        _("MeshGradientTool"),_("Change to mesh gradient tool"),NULL,0);
 	sc->Add(VIEW_EngraverTool,    LAX_F9,0,0,        _("EngraverTool"),    _("Change to engraver fill tool"),NULL,0);
 
-	sc->Add(VIEW_CommandPrompt,  '/',0,0,           _("Prompt"),        _("Popup a the graphical shell"),NULL,0);
+	sc->Add(VIEW_CommandPrompt,  '/',0,0,           _("Prompt"),        _("Popup the graphical shell"),NULL,0);
 
 	manager->AddArea("ViewWindow",sc);
 	return sc;
+}
+
+LaxInterfaces::anInterface *ViewWindow::GetObjectTool()
+{
+	for (int c=0; c<tools.n; c++) {
+		if (!strcmp(tools.e[c]->whattype(),"ObjectInterface")) {
+			return tools.e[c];
+		}
+	}
+	return NULL;
 }
 
 int ViewWindow::PerformAction(int action)
@@ -4705,17 +5092,12 @@ int ViewWindow::PerformAction(int action)
 			PostMessage(_("No document to save!"));
 			return 0;
 		}
-		//DBG cerr <<"....viewwindow says save.."<<endl;
+
+		DBG cerr <<"....viewwindow says save.."<<endl;
 		if (isblank(sdoc->Saveas()) 
 				|| strstr(sdoc->Saveas(),_("untitled"))
 				|| action==VIEW_SaveAs) {
 			 // launch saveas!!
-			//LineInput::LineInput(anXWindow *parnt,const char *ntitle,unsigned int nstyle,
-						//int xx,int yy,int ww,int hh,int brder,
-						//anXWindow *prev,Window nowner,const char *nsend,
-						//const char *newlabel,const char *newtext,unsigned int ntstyle,
-						//int nlew,int nleh,int npadx,int npady,int npadlx,int npadly) // all after and inc newtext==0
-						
 			char *where=newstr(isblank(sdoc->Saveas())?NULL:sdoc->Saveas());
 			if (!where && !isblank(laidout->project->filename)) where=lax_dirname(laidout->project->filename,0);
 
@@ -4725,13 +5107,16 @@ int ViewWindow::PerformAction(int action)
 						FILES_FILES_ONLY|FILES_SAVE_AS,
 						where));
 			if (where) delete[] where;
+
 		} else {
 			ErrorLog log;
+
 			if (sdoc->Save(1,1,log)==0) {
 				char blah[strlen(sdoc->Saveas())+15];
 				sprintf(blah,"Saved to %s.",sdoc->Saveas());
 				PostMessage(blah);
 				if (!isblank(laidout->project->filename)) laidout->project->Save(log);
+
 			} else {
 				if (log.Total()) {
 					PostMessage(log.MessageStr(log.Total()-1));
@@ -4740,8 +5125,131 @@ int ViewWindow::PerformAction(int action)
 		}
 		return 0;
 
+	} else if (action==VIEW_Save_A_Copy) {
+		Document *sdoc=doc;
+		if (!sdoc) sdoc=laidout->curdoc;
+		if (!sdoc) { PostMessage(_("Need a document to save!")); return 0; }
+
+		char *where=newstr(isblank(sdoc->Saveas()) ? "untitled" : sdoc->Saveas());
+		char *ext=strrchr(where, '.');
+		char *slash=strrchr(where, '/');
+		if (slash && ext && ext<slash) ext=NULL;
+		if (ext) {
+			slash=newstr(ext);
+			*ext='\0';
+			ext=slash;
+			appendstr(where, "-Copy");
+			appendstr(where, ext);
+		} else appendstr(where, "-Copy");
+
+		while (file_exists(where, 1, NULL)) {
+			char *where2 = increment_file(where);
+			delete[] where;
+			where=where2;
+		}
+
+		FileDialog *filed = new FileDialog(NULL,NULL,_("Save a copy..."),
+					ANXWIN_REMEMBER,
+					0,0,0,0,0, object_id,"saveCopyPopup",
+					FILES_FILES_ONLY|FILES_SAVE_AS,
+					where);
+		filed->OkButton(_("Save a copy"), NULL);
+		app->rundialog(filed);
+		delete[] where;
+
+		return 0;
+
+	} else if (action==VIEW_Save_A_Copy_Incremented) {
+		Document *sdoc=doc;
+		if (!sdoc) sdoc=laidout->curdoc;
+		if (!sdoc) { PostMessage(_("Need a document to save!")); return 0; }
+
+		char *where=newstr(isblank(sdoc->Saveas()) ? "untitled" : sdoc->Saveas());
+
+		while (file_exists(where, 1, NULL)) {
+			char *where2 = increment_file(where);
+			delete[] where;
+			where=where2;
+		}
+
+		 //now actually save
+		char *oldname = newstr(sdoc->Saveas());
+		sdoc->Saveas(where);
+		
+		ErrorLog log;
+		if (sdoc && sdoc->Save(1,1,log)==0) {
+			char message[strlen(_("Saved copy to %s"))+strlen(lax_basename(where))+1];
+			sprintf(message, _("Saved copy to %s"), lax_basename(where));
+			PostMessage(message); 
+
+		} else {
+			if (log.Total()) {
+				PostMessage(log.MessageStr(log.Total()-1));
+			} else PostMessage(_("Problem saving. Not saved."));
+		}
+		sdoc->Saveas(oldname);
+
+		delete[] oldname;
+		delete[] where; 
+		return 0;
+
+
+	} else if (action==VIEW_Save_As_Template) {
+		Document *sdoc=doc;
+		if (!sdoc) sdoc=laidout->curdoc;
+		if (!sdoc) { PostMessage(_("Need a document to save!")); return 0; }
+
+		app->rundialog(new InputDialog(NULL, "template",_("Save as template"), ANXWIN_CENTER, 0,0,0,0,0, NULL,object_id,"saveastemplate",
+						lax_basename(sdoc->Saveas()), _("Please enter name for template:"),
+						_("Ok"),BUTTON_OK,
+						_("Cancel"),BUTTON_CANCEL));
+		return 0;
+
+	} else if (action==VIEW_Save_As_Default_Template) {
+		Document *sdoc=doc;
+		if (!sdoc) sdoc=laidout->curdoc;
+		if (!sdoc) { PostMessage(_("Need a document to save!")); return 0; }
+
+
+		ErrorLog log;
+		if (sdoc->SaveAsTemplate("default",NULL, 1,1,log, true,NULL)==0) {
+			PostMessage(_("Saved to default template.")); 
+
+		} else {
+			if (log.Total()) {
+				PostMessage(log.MessageStr(log.Total()-1));
+			} else PostMessage(_("Problem saving. Not saved."));
+		}
+
+		return 0;
+
+	} else if (action==VIEW_Backup_Settings) { 
+		app->rundialog(new AutosaveWindow(NULL));
+		return 0;
+
+	} else if (action==VIEW_Commit) {
+		PostMessage("Lazy programmer! Need to implement commit!");
+		return 0;
+
+	} else if (action==VIEW_Commit_Settings) {
+		PostMessage("Lazy programmer! Need to implement commit settings!");
+		return 0;
+
+	} else if (action==VIEW_Revert) {
+		PostMessage("Lazy programmer! Need to implement revert!");
+		return 0;
+
 	} else if (action==VIEW_NewDocument) {
 		app->rundialog(new NewDocWindow(NULL,NULL,"New Document",0,0,0,0,0, 0));
+		return 0;
+
+	} else if (action==VIEW_Open_Document) {
+		 //sends the open message to the head window... hmm...
+		app->rundialog(new FileDialog(NULL,NULL,_("Open Document"),
+					ANXWIN_REMEMBER,
+					0,0,0,0,0, win_parent->object_id,"open document",
+					FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
+					NULL,NULL,NULL,"Laidout"));
 		return 0;
 
 	} else if (action==VIEW_NextTool) {
@@ -4794,11 +5302,12 @@ int ViewWindow::PerformAction(int action)
 
 	} else if (action==VIEW_Help) {
 		//app->addwindow(new HelpWindow());
-		app->addwindow(newHelpWindow(CurrentTool()?CurrentTool()->whattype():"LaidoutViewport"));
+		app->addwindow(newSettingsWindow("keys", CurrentTool()?CurrentTool()->whattype():"LaidoutViewport"));
 		return 0;
 
 	} else if (action==VIEW_About) {
-		app->rundialog(new AboutWindow());
+		//app->rundialog(new AboutWindow());
+		app->addwindow(newSettingsWindow("about", CurrentTool()?CurrentTool()->whattype():"LaidoutViewport"));
 		return 0;
 
 	} else if (action==VIEW_SpreadEditor) {

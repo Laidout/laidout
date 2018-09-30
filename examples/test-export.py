@@ -2,7 +2,8 @@
 
 import subprocess
 
-formats=subprocess.check_output(["laidout", "-X"])
+formats=subprocess.check_output(["laidout", "-X"]).splitlines();
 
 for format in formats:
-    subprocess.call(["../src/laidout", "test-all-objects.laidout", "-e", "format="+format])
+	#print("do something with: "+format);
+    subprocess.call(["../src/laidout", "test-all-objects.laidout", "-e", "filter='"+format+"'"])

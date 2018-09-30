@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2010-2013 by Tom Lechner
@@ -21,6 +20,7 @@
 #include "../drawdata.h"
 #include "../language.h"
 #include "../stylemanager.h"
+#include "objectfilter.h"
 
 #include <lax/refptrstack.cc>
 
@@ -146,52 +146,6 @@ AlignmentRule::~AlignmentRule()
 }
 
 
-//----------------------------- ObjectFilter ---------------------------------
-/*! \class ObjectFilter
- * \brief Class that modifies any DrawableObject somehow.
- *
- * This could be blur, contrast, saturation, etc. 
- *
- * This could also be a adapted to be a dynamic
- * filter that depends on some resource, such as a global integer resource
- * representing the current frame, that might
- * adjust an object's matrix based on keyframes, for instance.
- *
- * Every object can have any number of filters applied to it. Filters behave in
- * a manner similar to svg filters. They can specify the input source(s), and output target,
- * which can then be the input of another filter.
- *
- * \todo it would be nice to support all the built in svg filters, and additionally
- *   image warping as a filter.
- */
-class ObjectFilter : virtual public Laxkit::anObject
-{
- public:
-	char *filtername;
-
-	PtrStack<ObjectFilter> inputs;
-	ObjectFilter *output;
-
-	RefPtrStack<Laxkit::anObject> dependencies; //other resources, not filters in filter tree
-	virtual int RequiresRasterization() = 0; //whether object contents readonly while filter is on
-	virtual double *FilterTransform() = 0; //additional affine transform to apply to object's transform
-	virtual LaxInterfaces::anInterface *Interface() = 0; //optional editing interface
-
-	ObjectFilter();
-	virtual ~ObjectFilter();
-};
-
-ObjectFilter::ObjectFilter()
-{
-	filtername=NULL;
-}
-
-ObjectFilter::~ObjectFilter()
-{
-	if (filtername) delete[] filtername;
-}
-
-
 //---------------------------------- DrawObjectChain ---------------------------------
 /*! \class DrawObjectChain
  * \brief Class to link objects together.
@@ -238,21 +192,18 @@ DrawObjectChain::~DrawObjectChain()
 
 DrawableObject::DrawableObject()
 {
-	clip=NULL;
-	clip_path=wrap_path=inset_path=NULL;
-	autowrap=autoinset=0;
+	clip = NULL;
+	clip_path = wrap_path = inset_path=NULL;
+	autowrap = autoinset = 0;
 
-	locks=0; 
-	locked=0;
-	visible=1;
-	prints=1;
-	selectable=1;
+	alpha  = 1;
+	blur   = 0;
+	filter = NULL;
 
-	alpha=1;
-	blur=0;
-
-	parent=NULL;
 	parent_link=NULL;
+
+	importer = NULL;
+	importer_data = NULL;
 
 	//Id(); //makes this->nameid (of SomeData) be something like `whattype()`12343
 }
@@ -262,44 +213,24 @@ DrawableObject::DrawableObject()
  */
 DrawableObject::~DrawableObject()
 {
-	if (clip) clip->dec_count();
-	if (clip_path) clip_path->dec_count();
-	if (wrap_path) wrap_path->dec_count();
+	if (clip)       clip      ->dec_count();
+	if (clip_path)  clip_path ->dec_count();
+	if (wrap_path)  wrap_path ->dec_count();
 	if (inset_path) inset_path->dec_count();
+	if (filter)     filter    ->dec_count();
 
-	if (chains.n) chains.flush();
+	if (importer)      importer     ->dec_count();
+	if (importer_data) importer_data->dec_count();
+
+	if (chains.n)   chains.flush();
 
 	if (parent_link) delete parent_link; //don't delete parent itself.. that is a one way reference
 }
 
-//! Simply return this->parent.
-LaxInterfaces::SomeData *DrawableObject::GetParent()
-{ return parent; }
-
 int DrawableObject::Selectable()
-{ return selectable; }
-
-int DrawableObject::Visible()
-{ return visible; }
-
-/*! If which==0, default to OBJLOCK_Selectable.
- */
-int DrawableObject::IsLocked(int which)
 {
-	if (which==0) which=OBJLOCK_Selectable;
-	return (locks&which);
+	return (!(obj_flags&OBJ_Unselectable)) | SomeData::Selectable();
 }
-
-/*! or which into locks. 
- */
-void DrawableObject::Lock(int which)
-{ locks|=which; }
-
-/*! Remove which from locks.
- */
-void DrawableObject::Unlock(int which)
-{ locks&=~which; }
-
 
 /*! Return object primitives that represent this object.
  *
@@ -313,6 +244,32 @@ void DrawableObject::Unlock(int which)
  */
 LaxInterfaces::SomeData *DrawableObject::EquivalentObject()
 { return NULL; }
+
+/*! Return an object representing *this transformed by filter.
+ * If no filter, return this.
+ */
+DrawableObject *DrawableObject::FinalObject()
+{
+	if (!filter) return this;
+
+	ObjectFilter *ofilter = dynamic_cast<ObjectFilter*>(filter);
+	DrawableObject *fobj = (ofilter ? dynamic_cast<DrawableObject*>(ofilter->FinalObject()) : NULL);
+	if (fobj) return fobj;
+
+	DBG cerr << " *** Warning! filter did not return a valid object for "<<Id()<<"!"<<endl;
+	return this;
+}
+
+int DrawableObject::SetFilter(Laxkit::anObject *nfilter, int absorb)
+{
+	if (filter != nfilter) {
+		if (filter) filter->dec_count();
+		filter = nfilter;
+		if (filter && !absorb) filter->inc_count();
+	} else if (absorb) nfilter->dec_count();
+	return 0;
+}
+
 
 /*! If index out or range, remove top.
  * Return 0 for success, nonzero error.
@@ -422,13 +379,15 @@ void DrawableObject::UpdateFromRules()
 					if (page->pagestyle->outline) np=page->pagestyle->outline->BBoxPoint(np.x,np.y, false);
 				}
 			} else {
-				DrawableObject *d=dynamic_cast<DrawableObject*>(link->target->owner);
+				GroupData *d=dynamic_cast<GroupData*>(link->target->owner);
+
 				if (d && link->target->anchor_type==PANCHOR_BBox) {
 					np=d->BBoxPoint(np.x,np.y,false);
 				}
+
 				while (d) {
 					np=d->transformPoint(np);
-					d=d->parent;
+					d=dynamic_cast<GroupData*>(d->parent);
 				}
 			}
 			Affine a=GetTransformToContext(true,1); //invert, and get transform to parent context
@@ -491,34 +450,36 @@ void DrawableObject::UpdateFromRules()
 	}
 }
 
-/*! Return concatenation of parent transforms.
- * Note this is not valid beyond containing page.
- *
- * If partial>0, then do not use that many upper transforms. For instance, partial==1
- * means get the transform to the parent space, not the object space.
+///*! Return concatenation of parent transforms.
+// * Note this is not valid beyond containing page.
+// *
+// * If partial>0, then do not use that many upper transforms. For instance, partial==1
+// * means get the transform to the parent space, not the object space.
+// */
+//Laxkit::Affine DrawableObject::GetTransformToContext(bool invert, int partial)
+//{
+//	DrawableObject *d=this;
+//	while (d && partial>0) { d=d->parent; partial--; }
+//
+//	Affine a;
+//	while (d) { 
+//		a.Multiply(*dynamic_cast<Affine*>(d));
+//		d=d->parent;
+//	}
+//
+//	if (invert) a.Invert();
+//	return a;
+//}
+
+/*! Returns copy with copies of kids.
  */
-Laxkit::Affine DrawableObject::GetTransformToContext(bool invert, int partial)
-{
-	DrawableObject *d=this;
-	while (d && partial>0) { d=d->parent; partial--; }
-
-	Affine a;
-	while (d) { 
-		a.Multiply(*dynamic_cast<Affine*>(d));
-		d=d->parent;
-	}
-
-	if (invert) a.Invert();
-	return a;
-}
-
 LaxInterfaces::SomeData *DrawableObject::duplicate(LaxInterfaces::SomeData *dup)
 {
 	DrawableObject *d=dynamic_cast<DrawableObject*>(dup);
 	if (dup && !d) return NULL; //not a drawableobject!
 	if (!dup) {
-		dup=newObject("Group");
-		d=dynamic_cast<DrawableObject*>(dup);
+		dup = newObject("Group");
+		d = dynamic_cast<DrawableObject*>(dup);
 	}
 
 	//assign new id
@@ -530,9 +491,17 @@ LaxInterfaces::SomeData *DrawableObject::duplicate(LaxInterfaces::SomeData *dup)
 	//meta? and tags
 	//iohints
 
-	 //filters
-	d->alpha=alpha;
-	d->blur=blur;
+	d->m(m());
+
+	 //filter
+	d->alpha = alpha;
+	d->blur  = blur;
+	if (filter) {
+		ObjectFilter *ofilter = dynamic_cast<ObjectFilter*>(filter);
+		ObjectFilter *nfilter = dynamic_cast<ObjectFilter*>(ofilter->Duplicate());
+		d->filter = nfilter;
+		nfilter->SetParent(d);
+	}
 
 	 //kids
 	SomeData *obj;
@@ -790,77 +759,15 @@ int DrawableObject::GetAnchor(int anchor_id, PointAnchor **anchor)
 	return 1;
 }
 
-//! Push obj onto the stack. It's count will be incremented. (new objects only!)
-/*! 
- * No previous existence
- * check is done here. For that, use pushnodup().
- */
-int DrawableObject::push(LaxInterfaces::SomeData *obj)
-{
-	if (!obj) return -1;
-	if (dynamic_cast<DrawableObject*>(obj)) dynamic_cast<DrawableObject*>(obj)->parent=this;
-	return kids.push(obj);
-}
-
-//! Push obj onto the stack only if it is not already there.
-/*! If the item is already on the stack, then its count is not
- * incremented.
- */
-int DrawableObject::pushnodup(LaxInterfaces::SomeData *obj)
-{
-	if (!obj) return -1;
-	if (dynamic_cast<DrawableObject*>(obj)) dynamic_cast<DrawableObject*>(obj)->parent=this;
-	int c=kids.pushnodup(obj,-1);
-	return c;
-}
-
-//! Pop d, but do not decrement its count.
-/*! Returns 1 for item popped, 0 for not.
- */
-int DrawableObject::popp(LaxInterfaces::SomeData *d)
-{
-	return kids.popp(d);
-}
-
-//! Return the popped item. Does not change its count.
-LaxInterfaces::SomeData *DrawableObject::pop(int which)
-{
-	return kids.pop(which);
-}
-
-//! Remove item with index i. Return 1 for item removed, 0 for not.
-int DrawableObject::remove(int i)
-{
-	return kids.remove(i);
-}
-
-//! Pops item i1, then pushes it so that it is in position i2. 
-/*! Return 1 for slide happened, else 0.
- *
- * Does not tinker with the object's count.
- */
-int DrawableObject::slide(int i1,int i2)
-{
-	if (i1<0 || i1>=kids.n || i2<0 || i2>=kids.n) return 0;
-	LaxInterfaces::SomeData *obj;
-	kids.pop(obj,i1); //does nothing to count 
-	kids.push(obj,-1,i2); //incs count
-	obj->dec_count(); //remove the additional count
-	return 1;
-}
-
-//! Decrements all objects in kids vie kids.flush().
-void DrawableObject::flush()
-{
-	kids.flush();
-}
-
-
 //! Append all the bboxes of the objects.
 void DrawableObject::FindBBox()
 {
-	maxx=minx-1; maxy=miny-1;
+	//if (flags&DRAWABLEOBJ_Fixed_Bounds) return;
+
+	maxx=minx-1;
+	maxy=miny-1;
 	if (!kids.n) return;
+
 	DrawableObject *o;
 	for (int c=0; c<kids.n; c++) {
 		o=dynamic_cast<DrawableObject*>(kids.e[c]);
@@ -869,23 +776,23 @@ void DrawableObject::FindBBox()
 	}
 }
 
-//! Check the point against all objs.
-/*! \todo *** this is broken! ignores the obj transform
- */
-int DrawableObject::pointin(flatpoint pp,int pin)
-{ 
-	if (!kids.n) return 0;
-	if (!selectable) return 0;
-	flatpoint p(((pp-origin())*xaxis())/(xaxis()*xaxis()), 
-		        ((pp-origin())*yaxis())/(yaxis()*yaxis()));
-	for (int c=0; c<kids.n; c++) {
-		if (kids.e[c]->pointin(p,pin)) return 1;
-	}
-	return 0;
-}
+////! Check the point against all objs.
+///*! \todo *** this is broken! ignores the obj transform
+// */
+//int DrawableObject::pointin(flatpoint pp,int pin)
+//{ 
+//	if (!kids.n) return 0;
+//	if (!selectable) return 0;
+//	flatpoint p(((pp-origin())*xaxis())/(xaxis()*xaxis()), 
+//		        ((pp-origin())*yaxis())/(yaxis()*yaxis()));
+//	for (int c=0; c<kids.n; c++) {
+//		if (kids.e[c]->pointin(p,pin)) return 1;
+//	}
+//	return 0;
+//}
 
 
-//! Normally return kids.n, but return 0 if the object has locked kids.
+//! Normally return kids.n, but return 0 if the object has locked kids(???).
 int DrawableObject::n()
 {
 	//if (SomeData::flags&(SOMEDATA_LOCK_KIDS|SOMEDATA_LOCK_CONTENTS)) return 0;
@@ -920,71 +827,16 @@ const double *DrawableObject::object_transform(int i)
 	return kids.e[i]->m();
 }
 
-//! Find d somewhere within this (it can be kids also). Searches in kids too.
-/*! if n!=NULL, then increment n each time findobj is called. So say an object
- * is in group->group->group->kids, then n gets incremented 3 times. If object
- * is in this group, then do not increment n at all.
- *
- * Return the object if it is found, otherwise NULL.
- */
-LaxInterfaces::SomeData *DrawableObject::findobj(LaxInterfaces::SomeData *d,int *n)
-{
-	if (d==this) return d;
-	int c;
-	for (c=0; c<kids.n; c++) {
-		if (kids.e[c]==d) return d;
-	}
-	SomeData *s;
-	DrawableObject *g;
-	for (c=0; c<kids.n; c++) {
-		s=kids.e[c];
-		g=dynamic_cast<DrawableObject*>(s);
-		if (!g) continue;
-		if (n) (*n)++;
-		if (g->findobj(d,n)) {
-			return d;
-		}
-		if (n) (*n)--;
-	}
-	return NULL;
-}
-
 //! Take all the elements in the list which, and put them in a new group at the smallest index.
 /*! If any of which are not in kids, then nothing is changed. If ne<=0 then the which list
  * is assumed to be terminated by a -1.
  *
  * Return 0 for success, or nonzero error.
  */
-int DrawableObject::GroupObjs(int ne, int *which)
+int DrawableObject::GroupObjs(int ne, int *which, int *newgroupindex)
 {
-	if (ne<0) {
-		ne=0;
-		while (which[ne]>=0) ne++;
-	}
-	
-	 // first verify that all in which are in kids
-	int c;
-	for (c=0; c<ne; c++) if (which[c]<0 || which[c]>=n()) return 1;
-	
-	DrawableObject *g=new DrawableObject;
-	g->flags|=SOMEDATA_LOCK_CONTENTS;//***
-	int where,w[ne];
-	memcpy(w,which,ne*sizeof(int));
-	where=w[0];
-	for (int c=1; c<ne; c++) if (where>w[c]) where=w[c]; //select lowest index
-	LaxInterfaces::SomeData *d;
-	while (ne) {
-		d=pop(w[ne-1]); //doesn't change count
-		g->push(d); //incs count
-		d->dec_count();  //remove extra count
-		ne--;
-		for (int c2=0; c2<ne; c2++)
-			if (w[c2]>w[ne]) w[c2]--;
-	}
-	g->FindBBox();
-	kids.push(g,-1,where); //incs g
-	g->dec_count(); //remove initial count
-	FindBBox();
+	int status = GroupData::GroupObjs(ne,which,newgroupindex);
+	if (status!=0) return status;
 	laidout->notifyDocTreeChanged(NULL,TreeObjectReorder,0,0);
 	return 0;
 }
@@ -994,24 +846,8 @@ int DrawableObject::GroupObjs(int ne, int *which)
  */
 int DrawableObject::UnGroup(int which)
 {
-	if (which<0 || which>=n()) return 1;
-	if (strcmp(object_e(which)->whattype(),"Group")) return 1;
-
-	DrawableObject *g=dynamic_cast<DrawableObject*>(kids.pop(which)); //assumes "Group" is a DrawableObject here. does not change count of g
-	if (!g) return 1;
-	
-	SomeData *d;
-	double mm[6];
-	while (g->n()) {
-		d=g->pop(0); //count stays same on d
-		transform_mult(mm,g->m(),d->m());
-		d->m(mm);
-		if (dynamic_cast<DrawableObject*>(d)) dynamic_cast<DrawableObject*>(d)->parent=this;
-		kids.push(d,-1,which++); //incs d
-		d->dec_count(); //remove extra count
-	}
-	g->dec_count(); //dec count of now empty group
-	FindBBox();
+	int status = GroupData::UnGroup(which);
+	if (status!=0) return status;
 	laidout->notifyDocTreeChanged(NULL,TreeObjectReorder,0,0);
 	return 0;
 }
@@ -1028,29 +864,8 @@ int DrawableObject::UnGroup(int which)
  */
 int DrawableObject::UnGroup(int n,const int *which)
 {
-	if (n<=0) {
-		n=0;
-		while (which[n]!=-1) n++;
-	}
-	if (n==0) return 1;
-	if (*which<0 || *which>=kids.n) return 2;
-
-	SomeData *d=kids.e[*which];
-	DrawableObject *g=dynamic_cast<DrawableObject*>(d);
-	if (!g) return 3;
-
-	if (n>1) return g->UnGroup(n-1,which+1);
-	
-	double mm[6];
-	while (d=g->pop(0), d) {
-		transform_mult(mm,d->m(),g->m());
-		d->m(mm);
-		if (dynamic_cast<DrawableObject*>(d)) dynamic_cast<DrawableObject*>(d)->parent=this;
-		kids.push(d,-1,*which+1);
-		d->dec_count();
-	}
-	remove(*which);
-	FindBBox();
+	int status = GroupData::UnGroup(n,which);
+	if (status!=0) return status;
 	laidout->notifyDocTreeChanged(NULL,TreeObjectReorder,0,0);
 	return 0;
 }
@@ -1071,7 +886,7 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext 
 		fprintf(f,"%siohints ...       #(optional) object level i/o leftovers from importing\n",spc);
 		fprintf(f,"%smetadata ...      #(optional) object level metadata\n",spc);
 		fprintf(f,"%stags tag1 \"tag 2\" #(optional) list of string tags\n",spc);
-		fprintf(f,"%sfilters           #(optional) list of filters\n",spc);
+		fprintf(f,"%sfilter            #(optional) Nodes defining filter transformationss\n",spc);
 		fprintf(f,"%salignmentrule align (a1x,a1y) (a2x,a2y)  #(optional) if different than simple matrix\n",spc);
 		fprintf(f,"%s  ...\n",spc);
 		fprintf(f,"%skids          #child object list...\n",spc);
@@ -1080,6 +895,27 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext 
 	}
 
 	fprintf(f,"%sid %s\n",spc,Id());
+
+	 //for plain group objects only, dumps out matrix, visible, selectable, locks, min/max
+	if (!strcmp(whattype(),"Group")) {
+		SomeData::dump_out(f,indent,what,context);
+		//otherwise, some of the the base somedata stuff will be in the config section
+
+	} else { 
+		 //output just the locks.. most Laxkit objects dump out their own matrix. ignoring min/max for now
+		if (visible)    fprintf(f,"%svisible\n",spc);
+		if (selectable) fprintf(f,"%sselectable\n",spc);
+		fprintf(f,"%slocks ",spc);
+		if (locks & OBJLOCK_Contents  ) fprintf(f,"contents ");
+		if (locks & OBJLOCK_Position  ) fprintf(f,"position ");
+		if (locks & OBJLOCK_Rotation  ) fprintf(f,"rotation ");
+		if (locks & OBJLOCK_Scale     ) fprintf(f,"scale ");
+		if (locks & OBJLOCK_Shear     ) fprintf(f,"shear ");
+		if (locks & OBJLOCK_Kids      ) fprintf(f,"kids ");
+		if (locks & OBJLOCK_Selectable) fprintf(f,"selectable ");
+		fprintf(f,"\n");
+	}
+
 
 	 // dump notes/meta data
 	if (metadata.attributes.n) {
@@ -1099,13 +935,11 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext 
 		delete[] str;
 	}
 
-//	if (filters.n) {
-//		fprintf(f,"%sfilters\n",spc);
-//		for (int c=0; c<filters.n; c++) {
-//			fprintf(f,"%s  filter\n",spc);
-//			filters.e[c]->dump_out(f,indent+4,what,context);
-//		}
-//	}
+	if (filter) {
+		ObjectFilter *ofilter = dynamic_cast<ObjectFilter*>(filter);
+		fprintf(f,"%sfilter\n",spc);
+		ofilter->dump_out(f, indent+2,what,context);
+	}
 
 	if (anchors.n) {
 		PointAnchor *a;
@@ -1190,16 +1024,24 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext 
 		}
 	}
 
+	if (properties.n()) {
+		fprintf(f, "%sproperties\n",spc);
+		for (int c=0; c<properties.n(); c++) {
+			properties.e(c)->dump_out(f,indent+2, what,context);
+		}
+	}
+
 	if (kids.n) {
 		fprintf(f,"%skids\n",spc);
-		dump_out_group(f,indent+2,what,context);
+		dump_out_group(f,indent+2,what,context, true);
 	}
 }
 
 void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	char *name,*value;
-	int foundconfig=0;
+	int foundconfig = 0;
+	int foundfilter = -1;
 	if (!strcmp(whattype(),"Group")) foundconfig=-1;
 
 	for (int c=0; c<att->attributes.n; c++) {
@@ -1208,6 +1050,27 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Du
 
 		if (!strcmp(name,"id")) {
 			SomeData::Id(value);
+
+		} else if (!strcmp(name,"visible")) {
+            visible = BooleanAttribute(value);
+        } else if (!strcmp(name,"selectable")) {
+            selectable = BooleanAttribute(value);
+
+        } else if (!strcmp(name,"locks")) {
+			if (isblank(value)) continue;
+
+            int n=0;
+            char **strs = splitspace(value, &n);
+            for (int c=0; c<n; c++) {
+                if      (!strcmp(strs[c],"contents"  )) locks |= OBJLOCK_Contents  ;
+                else if (!strcmp(strs[c],"position"  )) locks |= OBJLOCK_Position  ;
+                else if (!strcmp(strs[c],"rotation"  )) locks |= OBJLOCK_Rotation  ;
+                else if (!strcmp(strs[c],"scale"     )) locks |= OBJLOCK_Scale     ;
+                else if (!strcmp(strs[c],"shear"     )) locks |= OBJLOCK_Shear     ;
+                else if (!strcmp(strs[c],"kids"      )) locks |= OBJLOCK_Kids      ;
+                else if (!strcmp(strs[c],"selectable")) locks |= OBJLOCK_Selectable;
+            }
+            deletestrs(strs, n);
 
 		} else if (!strcmp(name,"iohints")) {
 			if (iohints.attributes.n) iohints.clear();
@@ -1255,6 +1118,7 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Du
 
 			} else if (!strcmp(value,"edgemagnet")) {
 				cerr << " *** WARNING! alignment rule edgemagnet load not implemented!"<<endl;
+
 			} else if (!strcmp(value,"code")) {
 				cerr << " *** WARNING! alignment rule code load not implemented!"<<endl;
 
@@ -1367,8 +1231,10 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Du
 				PointAnchor *target=NULL;
 				if (!error) {
 					if (target_location==AlignmentRule::PARENT) {
-						int target_id=parent->FindAnchorId(target_anchor_name,NULL);
-						if (target_id>=0) parent->GetAnchor(target_id, &target);
+						DrawableObject *d = dynamic_cast<DrawableObject*>(parent);
+
+						int target_id = d->FindAnchorId(target_anchor_name,NULL);
+						if (target_id>=0) d->GetAnchor(target_id, &target);
 						if (target==NULL) error=1;
 						else {
 							delete[] target_anchor_name;
@@ -1406,17 +1272,36 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Du
 			InsertTags(value,0);
 
 		} else if (!strcmp(name,"kids")) {
-			dump_in_group_atts(att->attributes.e[c], flag,context);
+			//dump_in_group_atts(att->attributes.e[c], flag,context, false);
+			dump_in_group_atts(att->attributes.e[c], flag,context, true); //for backwards compatibility
 
 		} else if (foundconfig==0 && !strcmp(name,"config")) {
 			foundconfig=1;
 
-		//} else if (!strcmp(name,"filters")) {
+		} else if (!strcmp(name,"filter")) {
+			foundfilter = c;
 		}
 	}
 
-	 //is old school group
-	if (foundconfig==-1) dump_in_group_atts(att, flag,context);
+	 //is plain group, need to grab the base somedata stuff
+	if (foundconfig==-1) SomeData::dump_in_atts(att, flag,context);
+
+
+	if (foundfilter >= 0) {
+		 //note: transform and possibly other important data not set yet!
+		ObjectFilter *ofilter = new ObjectFilter(this, 0);
+		ofilter->dump_in_atts(att->attributes.e[foundfilter], 0, context);
+		ofilter->FindProperty("in")->data_is_linked = true;
+		if (filter) filter->dec_count();
+		NodeProperty *in = ofilter->FindProperty("in");
+		in->SetData(this, 0);
+		in->SetFlag(NodeProperty::PROPF_Label_From_Data, 1);
+		in->topropproxy->SetFlag(NodeProperty::PROPF_Label_From_Data, 1);
+		//ofilter->Update();
+		//in->topropproxy->owner->Update();
+
+		filter = ofilter;
+	}
 }
 
 /*! Recursively map any unmapped anchors. Assume we are on the given page.
@@ -1450,7 +1335,7 @@ int DrawableObject::ResolveAnchorRefs(Document *doc, Page *page, Group *g, Laxki
     
                     DrawableObject *ooo=NULL;
                     if (rule->target_location==AlignmentRule::PARENT) {
-                        ooo=oo->parent;
+                        ooo=dynamic_cast<DrawableObject*>(oo->parent);
 						own=ooo;
                     } else if (rule->target_location==AlignmentRule::OTHER_OBJECT) {
                         ooo=dynamic_cast<DrawableObject*>(FindChild(rule->target_object));
@@ -1492,132 +1377,6 @@ int DrawableObject::ResolveAnchorRefs(Document *doc, Page *page, Group *g, Laxki
 	return adjusted;
 }
 
-LaxInterfaces::SomeData *DrawableObject::FindChild(const char *id)
-{
-	DrawableObject *o;
-	SomeData *s;
-	for (int c=0; c<n(); c++) {
-		s=e(c);
-		if (!strcmp(s->Id(),id)) return s;
-
-		o=dynamic_cast<DrawableObject*>(e(c));
-		if (!o) continue;
-
-		if (o->kids.n) {
-			s=o->FindChild(id);
-			if (s) return s;
-		}
-	}
-	return NULL;
-}
-
-
-/*! Recognizes locked, visible, prints, then tries to parse elements...
- * Discards all else.
- * The kids should have been flushed before coming here.
- */
-void DrawableObject::dump_in_group_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
-{
-	int nlocked=-1, nvisible=-1, nprints=-1;
-	char *name,*value;
-	for (int c=0; c<att->attributes.n; c++)  {
-		name=att->attributes.e[c]->name;
-		value=att->attributes.e[c]->value;
-
-		if (!strcmp(name,"locked")) {
-			locked=BooleanAttribute(value);
-
-		} else if (!strcmp(name,"visible")) {
-			visible=BooleanAttribute(value);
-
-		} else if (!strcmp(name,"prints")) {
-			prints=BooleanAttribute(value);
-
-		} else if (!strcmp(name,"matrix")) {
-			double mm[6];
-			if (DoubleListAttribute(value,mm,6)==6) m(mm);
-
-		} else if (!strcmp(name,"object")) {
-			int n;
-			char **strs=splitspace(value,&n);
-			if (strs) {
-				// could use the number as some sort of object id?
-				// currently out put was like: "object 2 ImageData"
-				//***strs[0]==that id
-				SomeData *data=newObject(n>1?strs[1]:(n==1?strs[0]:NULL));//objs have 1 count
-				if (data) {
-					push(data);
-					data->dump_in_atts(att->attributes[c],flag,context);
-					//DBG if (!dynamic_cast<DrawableObject*>(data)) cerr <<" --- WARNING! newObject returned a non-DrawableObject"<<endl;
-					data->dec_count();
-				}
-				deletestrs(strs,n);
-			} else {
-				//DBG cerr <<"*** readin blank object for Group..."<<endl;
-			}
-		} else { 
-			//DBG cerr <<"Group dump_in:*** unknown attribute!!"<<endl;
-		}
-	}
-	if (nlocked>0)  locked=nlocked;
-	if (nvisible>0) visible=nvisible;
-	if (nprints>0)  prints=nprints;
-
-	FindBBox();
-}
-
-//! Write out the objects.
-/*! If what==-1, dump out pseudocode of file format for a group.
- *
- * \todo automate object management, necessary here for what==-1
- */
-void DrawableObject::dump_out_group(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
-{
-	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	if (what==-1) {
-		fprintf(f,"%sid      #the name of a group. There can be no whitespace in the id\n",spc);
-		fprintf(f,"%slocked  #indicates that this group cannot be modified\n",spc);
-		fprintf(f,"%svisible #no indicates that this group cannot be seen on screen nor printed out\n",spc);
-		fprintf(f,"%sprints  #no indicates that this group can be seen on screen, but cannot be printed\n",spc);
-		fprintf(f,"%smatrix 1 0 0 1 0 0  #affine transform to apply to the whole group\n",spc);
-		fprintf(f,"\n%s#Groups contain any number of drawable objects. Here are all the possible such\n",spc);
-		fprintf(f,"%s#objects currently installed:\n",spc);
-		fprintf(f,"\n%sobject 1 Group\n%s  #...a subgroup...\n",spc,spc);
-		SomeData *obj;
-		
-		//*** hack until auto obj. type insertion done
-		const char *objecttypelist[]={
-				"Group",
-				"ImageData",
-				"ImagePatchData",
-				"PathsData",
-				"GradientData",
-				"ColorPatchData",
-				"EpsData",
-				"MysteryData",
-				NULL
-			};
-
-		for (int c=0; objecttypelist[c]; c++) {
-			if (!strcmp(objecttypelist[c],"Group")) continue;
-			fprintf(f,"\n%sobject %s\n",spc,objecttypelist[c]);
-			obj=newObject(objecttypelist[c]);
-			obj->dump_out(f,indent+2,-1,NULL);
-			delete obj;
-		}
-		return;
-	}
-	fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",spc,
-				m(0),m(1),m(2),m(3),m(4),m(5));
-	fprintf(f,"%sid %s\n",spc,Id());
-	if (locked) fprintf(f,"%slocked\n",spc);
-	if (visible) fprintf(f,"%svisible\n",spc);
-	if (prints) fprintf(f,"%sprints\n",spc);
-	for (int c=0; c<kids.n; c++) {
-		fprintf(f,"%sobject %d %s\n",spc,c,kids.e[c]->whattype());
-		kids.e[c]->dump_out(f,indent+2,0,context);
-	}
-}
 
 
 //-------------- Value functions:
@@ -1672,7 +1431,6 @@ int DrawableObject::Evaluate(const char *func,int len, ValueHash *context, Value
 
 //--------------------------------------- AffineValue ---------------------------------------
 
-
 /* \class AffineValue
  * \brief Adds scripting functions for a Laxkit::Affine object.
  */
@@ -1683,6 +1441,17 @@ AffineValue::AffineValue()
 AffineValue::AffineValue(const double *m)
   : Affine(m)
 {}
+
+int AffineValue::TypeNumber()
+{
+	static int v = VALUE_MaxBuiltIn + getUniqueNumber();
+	return v;
+}
+
+int AffineValue::type()
+{
+	return TypeNumber();
+}
 
 Value *AffineValue::dereference(int index)
 {

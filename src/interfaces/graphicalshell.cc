@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2013 by Tom Lechner
@@ -26,6 +25,7 @@
 #include <lax/transformmath.h>
 #include <lax/colors.h>
 
+//template implementation:
 #include <lax/lists.cc>
 
 using namespace Laxkit;
@@ -283,9 +283,12 @@ void GraphicalShell::ClearError()
 int GraphicalShell::Setup()
 {
 	if (!le) {
+		LaxFont *font = app->defaultlaxfont->duplicate();
 		double width=dp->Maxx-dp->Minx-2*pad;
-		double height=dp->textheight()*1.5;
+		double height=font->textheight()*1.5;
 		le=new GraphicalShellEdit(viewport, this, dp->Minx+pad,dp->Maxy-height-pad,width,height);
+		le->UseThisFont(font);
+		font->dec_count();
 		box.minx=le->win_x-pad;
 		box.maxx=le->win_x+le->win_w+pad;
 		box.miny=le->win_y-pad;
@@ -307,7 +310,7 @@ int GraphicalShell::Setup()
 	app->mapwindow(le);
 	InitAreas();
 
-	int hh=(dp->Maxy-dp->Miny-(box.maxy-box.miny))/dp->textheight()+1;
+	int hh=(dp->Maxy-dp->Miny-(box.maxy-box.miny))/le->GetFont()->textheight()+1;
 	if (num_lines_above<0 || num_lines_above>=hh) num_lines_above=hh-1;
 
 	return 0;
@@ -368,7 +371,7 @@ void GraphicalShell::ViewportResized()
 {
 	if (placement_gravity==LAX_BOTTOM) {
 		double width=dp->Maxx-dp->Minx-2*pad;
-		double height=dp->textheight()*1.5;
+		double height=le->GetFont()->textheight()*1.5;
 		le->MoveResize(dp->Minx+pad,dp->Maxy-height-pad, width,height);
 		box.minx=le->win_x-pad;
 		box.maxx=le->win_x+le->win_w+pad;
@@ -377,7 +380,7 @@ void GraphicalShell::ViewportResized()
 
 	} else if (placement_gravity==LAX_TOP) {
 		double width=dp->Maxx-dp->Minx-2*pad;
-		double height=dp->textheight()*1.5;
+		double height=le->GetFont()->textheight()*1.5;
 		le->MoveResize(dp->Minx+pad,dp->Miny+pad, width,height);
 		box.minx=le->win_x-pad;
 		box.maxx=le->win_x+le->win_w+pad;
@@ -660,7 +663,7 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 			Value *answer=NULL;
 			ErrorLog log;
 
-			int status=calculator.evaluate(command,-1, &answer,&log);
+			int status = calculator.Evaluate(command,-1, &answer,&log);
 			if (log.Total()) result=log.FullMessageStr();
 			if (!isblank(result) && status==0) PostMessage(result);
 
@@ -912,6 +915,7 @@ int GraphicalShell::Refresh()
 	needtodraw=0;
 
 	dp->DrawScreen();
+	dp->font(le->GetFont());
 
 	
 	 //remap columns if necessary
@@ -963,7 +967,7 @@ int GraphicalShell::Refresh()
 	} else {
 
 		 //draw num lines above indicator
-		double th=dp->textheight();
+		double th=le->GetFont()->textheight();
 		int max=(hover_item==GSHELL_Num_Lines ? 10 : 0);
 		double ss=.4;
 		for (int c=0; c<max; c++) {
@@ -1008,7 +1012,7 @@ int GraphicalShell::Refresh()
 		int numlines=0;
 		char *nl=error_message, *ls=error_message;
 		double max_width=0, w;
-		double textheight=dp->textheight();
+		double textheight=le->GetFont()->textheight();
 
 		do {
 			ls=nl;
@@ -1056,7 +1060,7 @@ void GraphicalShell::RefreshTree(MenuInfo *menu, int x,int &y, int col,int &item
 				DrawName(mii,xx,y);
 				if (col==hover_column && item==hover_item) dp->NewFG(.5,.5,.5);
 
-				y-=dp->textheight();
+				y-=le->GetFont()->textheight();
 			}
 			item++;
 		}
@@ -1089,7 +1093,7 @@ int GraphicalShell::scan(int x,int y, int *column, int *item)
 
 	if (!showcompletion) return GSHELL_None;
 
-	double textheight=dp->textheight();
+	double textheight=le->GetFont()->textheight();
 
 	if (column) *column=-1;
 	if (item) *item=-1;
@@ -1249,8 +1253,8 @@ int GraphicalShell::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 	
 	if (item==GSHELL_Num_Lines) {
 		int nl;
-		if (placement_gravity==LAX_TOP) nl=(y-box.maxy)/dp->textheight()+1;
-		else nl=(box.miny-y)/dp->textheight()+1;
+		if (placement_gravity==LAX_TOP) nl=(y-box.maxy)/le->GetFont()->textheight()+1;
+		else nl=(box.miny-y)/le->GetFont()->textheight()+1;
 
 		//DBG cerr << " **********new nl:"<<nl<<"  old: "<<num_lines_above<<endl;
 

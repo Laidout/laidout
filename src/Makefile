@@ -9,10 +9,10 @@ LAXIDIR=$(LAXDIR)/interfaces
 
 
 LD=g++
-LDFLAGS= -L/usr/X11R6/lib -lXi -lXext -lX11 -lm -lpng `imlib2-config --libs` \
-		 `cups-config --libs` -lXft -L$(LAXIDIR) -L$(LAXDIR)
+LDFLAGS= $(EXTRA_LDFLAGS) -L/usr/local/lib -L/usr/X11R6/lib -rdynamic -lXi -lXext -lX11 -lm -lpng `imlib2-config --libs` `freetype-config --libs`\
+		 `cups-config --libs` -ldl -lXft
 DEBUGFLAGS= -g -gdwarf-2
-CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) -I. -I.. -I../.. -I$(LAXDIR)/.. -I/usr/include/freetype2 -I$(POLYPTYCHBASEDIR)
+CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) $(EXTRA_CPPFLAGS)  -I$(LAXDIR)/.. `freetype-config --cflags` -I$(POLYPTYCHBASEDIR)
 
 
 #---optional libs:
@@ -24,7 +24,7 @@ endif
 #---polyptych related:
 ifeq ($(LAIDOUT_USING_GL), yes)
 #---if gl:
-POLYPTYCHLIBS= -lGraphicsMagick++ -lGL -lGLU -lftgl 
+POLYPTYCHLIBS= -lGraphicsMagick++ -ltiff -lGL -lGLU -lftgl 
 POLYPTYCH_GL_OBJS=polyptych/src/hedronwindow.o  polyptych/src/glbase.o  polyptych/src/gloverlay.o  polyptych/src/polyrender.o
 POLYPTYCHFORLAIDOUT=polyptychgl
 
@@ -40,18 +40,18 @@ POLYPTYCHOBJS=polyptych/src/nets.o polyptych/src/poly.o
 
 
 dirs= \
-	calculator \
 	api \
+	calculator \
 	dataobjects \
+	filetypes \
 	impositions \
 	interfaces \
-	filetypes \
+	plugins \
 	printing
 
 objs= \
 	utils.o \
 	fieldplace.o \
-	styles.o \
 	stylemanager.o \
 	papersizes.o \
 	plaintext.o \
@@ -61,12 +61,14 @@ objs= \
 	project.o \
 	guides.o \
 	interfaces.o \
+	autosavewindow.o \
 	about.o \
 	buttonbox.o \
 	commandwindow.o \
 	plaintextwindow.o \
 	headwindow.o \
 	helpwindow.o \
+	settingswindow.o \
 	newdoc.o \
 	viewwindow.o \
 	palettes.o \
@@ -74,14 +76,101 @@ objs= \
 	spreadeditor.o \
 	laidout-more.o \
 	importimage.o \
-	importimages.o \
+	importimagesdialog.o \
 	laidoutprefs.o \
 	laidout.o 
+
+#object files from other directories. Listing them all explicitly to prevent
+#spurious inclusion of temporary testing stuff.
+otherobjs= \
+	calculator/values.o \
+	calculator/calculator.o \
+	calculator/interpreter.o \
+	calculator/curvevalue.o \
+	calculator/shortcuttodef.o \
+	impositions/imposition.o \
+	impositions/impositioneditor.o \
+	impositions/singles.o \
+	impositions/impositions.o \
+	impositions/dodecahedron.o \
+	impositions/box.o \
+	impositions/netimposition.o \
+	impositions/simplenet.o \
+	impositions/signatures.o \
+	impositions/signatureinterface.o \
+	impositions/netdialog.o \
+	impositions/polyptychwindow.o \
+	impositions/singleseditor.o \
+	plugins/plugin.o \
+	api/reimpose.o \
+	api/openandnew.o \
+	api/importexport.o \
+	api/functions.o \
+	interfaces/actionarea.o \
+	interfaces/nupinterface.o \
+	interfaces/aligninterface.o \
+	interfaces/anchorinterface.o \
+	interfaces/pagerangeinterface.o \
+	interfaces/graphicalshell.o \
+	interfaces/objectindicator.o \
+	interfaces/paperinterface.o \
+	interfaces/cloneinterface.o \
+	interfaces/animationinterface.o \
+	interfaces/objecttree.o \
+	interfaces/pagemarkerinterface.o \
+	interfaces/nodeinterface.o \
+	interfaces/nodeeditor.o \
+	interfaces/nodes.o \
+	interfaces/objectfilterinterface.o \
+	printing/print.o \
+	printing/psfilters.o \
+	printing/pscolorpatch.o \
+	printing/psgradient.o \
+	printing/psimage.o \
+	printing/psimagepatch.o \
+	printing/pspathsdata.o \
+	printing/pseps.o \
+	printing/epsutils.o \
+	printing/psout.o \
+	filetypes/filefilters.o \
+	filetypes/filters.o \
+	filetypes/exportdialog.o \
+	filetypes/importdialog.o \
+	filetypes/image.o \
+	filetypes/image-gs.o \
+	filetypes/laidoutimport.o \
+	filetypes/pdf.o \
+	filetypes/podofoimposeplan.o \
+	filetypes/postscript.o \
+	filetypes/ppt.o \
+	filetypes/scribus.o \
+	filetypes/svg.o \
+	dataobjects/group.o \
+	dataobjects/objectcontainer.o \
+	dataobjects/objectfilter.o \
+	dataobjects/drawableobject.o \
+	dataobjects/datafactory.o \
+	dataobjects/groupinterface.o \
+	dataobjects/epsdata.o \
+	dataobjects/limagepatch.o \
+	dataobjects/limagedata.o \
+	dataobjects/limageinterface.o \
+	dataobjects/lgradientdata.o \
+	dataobjects/lperspectiveinterface.o \
+	dataobjects/lpathsdata.o \
+	dataobjects/mysterydata.o \
+	dataobjects/lsomedataref.o \
+	dataobjects/lengraverfilldata.o \
+	dataobjects/lcaptiondata.o \
+	dataobjects/ltextonpath.o \
+	dataobjects/lvoronoidata.o \
+	dataobjects/printermarks.o \
+
 
 all: laidout
 
 laidout: lax laxinterface $(dirs) $(objs) $(POLYPTYCHFORLAIDOUT)
-	$(LD) $(objs) [a-z]*/*.o $(POLYPTYCH_GL_OBJS) $(POLYPTYCHOBJS) -llaxinterfaces -llaxkit -lcairo -lfreetype -lfontconfig $(LDFLAGS) $(OPTIONALLIBS) -lreadline -lcrypto $(POLYPTYCHLIBS) -o $@
+	$(LD) $(otherobjs) $(objs) $(POLYPTYCH_GL_OBJS) $(POLYPTYCHOBJS) -L$(LAXIDIR) -L$(LAXDIR) -llaxinterfaces -llaxkit -lharfbuzz -lcairo -lfontconfig $(LDFLAGS) $(OPTIONALLIBS) -lreadline -lcrypto $(POLYPTYCHLIBS) -o $@
 
 icons:
 	cd src/icons && $(MAKE)
@@ -113,6 +202,12 @@ filetypes:
 
 printing:
 	cd printing && $(MAKE)
+
+plugins:
+	cd $@ && $(MAKE)
+
+addons:
+	cd plugins && $(MAKE) plugins
 
 # This changes in *.cc all occurrences of '(whitespace)DBG' to '(same ws)//DBG' and
 # '(whitespace)//DBG' to '(same ws)////DBG'
@@ -155,8 +250,8 @@ depends:
 include makedepend
 
 
-.PHONY: clean lax docs $(dirs) hidegarbage unhidegarbage polyptych polyptychgl
+.PHONY: clean lax docs $(dirs) addons hidegarbage unhidegarbage polyptych polyptychgl
 clean:
 	rm -f laidout *.o
 	for NAME in $(dirs); do $(MAKE) -C $$NAME clean; done
-	
+

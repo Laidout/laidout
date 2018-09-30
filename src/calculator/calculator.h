@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2009-2013 by Tom Lechner
@@ -18,7 +17,7 @@
 #define CALCULATOR_H
 
 #include <lax/refptrstack.h>
-#include "../styles.h"
+#include "interpreter.h"
 #include "values.h"
 
 
@@ -142,7 +141,9 @@ class BlockInfo
 };
 
 //---------------------------LaidoutCalculator
-class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, public FunctionEvaluator
+class LaidoutCalculator : public Interpreter,
+						  public OpFuncEvaluator,
+						  public FunctionEvaluator
 {
  private:
 	 //context state
@@ -250,13 +251,25 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	virtual int ImportModule(const char *name, int allnames);
 	virtual ObjectDef *GetInfo(const char *expr);
 
-	virtual char *In(const char *in, int *return_type=NULL);
-	virtual int evaluate(const char *in, int len, Value **value_ret, Laxkit::ErrorLog *log);
+	virtual char *In(const char *in, int *return_type);
+	virtual int Evaluate(const char *in, int len, Value **value_ret, Laxkit::ErrorLog *log);
 
-	virtual void clearerror();
-	const char *Message();
+	virtual void ClearError();
+	virtual const char *Message();
 
 	virtual int RunShell();
+
+
+	 //interpreter functions
+	virtual const char *Id();
+    virtual const char *Name();
+    virtual const char *Description();
+    virtual const char *Version();
+	virtual int InitInterpreter();
+    virtual int CloseInterpreter();
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+
 };
 
 

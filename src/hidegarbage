@@ -46,26 +46,9 @@ foreach $file (@ARGV) {
 		}
 		close(INFILE);
 		close(OUTFILE);
+
+		rename "$file-hidden", $file;
 	}
-	system("mv -f $file-hidden $file");
 }
 
 
-#--------
-#echo $1;
-#
-#if [ x$1 == x ] ; then
-#	echo hiding...;
-#	for NAME in `ls *.cc`; do
-#		echo $NAME ;
-#		sed -e 's/^\(\s*\)\/\/DBG/\1\/\/\/\/DBG/ ; 	s/^\(\s*\)DBG/\1\/\/DBG/' $NAME > $NAME-hidden; 
-#		mv -f $NAME-hidden $NAME
-#	done
-#else
-#	echo unhiding...;
-#	for NAME in `ls *.cc`; do
-#		echo $NAME ;
-#		sed -e 's/^\(\s*\)\(\/*\)\/\/DBG/\1\2DBG/' $NAME > $NAME-hidden; 
-#		mv -f $NAME-hidden $NAME
-#	done
-#fi

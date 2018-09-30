@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2013 by Tom Lechner
@@ -218,9 +217,9 @@ SimpleNetFace::~SimpleNetFace()
 //! Delete m, points, and facelink, set align stuff to -1.
 void SimpleNetFace::clear()
 {
-	if (points) delete[] points; points=NULL;
-	if (facelink) delete[] facelink; facelink=NULL;
-	if (m) delete[] m; m=NULL;
+	if (points) { delete[] points; points=NULL; }
+	if (facelink) { delete[] facelink; facelink=NULL; }
+	if (m) { delete[] m; m=NULL; }
 	np=0;
 	aligno=alignx=faceclass=-1;
 }
@@ -952,12 +951,6 @@ void SimpleNet::pushline(SimpleNetLine &l,int where)//where=-1
 }
 
 //---------------------------- AbstractNet Functions
-/*! \todo imp me!!
- */
-int SimpleNet::Modified()
-{//****
-	return 0;
-}
 
 NetFace *SimpleNet::GetFace(int i,double scaling)
 {//***

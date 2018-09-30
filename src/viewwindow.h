@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (c) 2004-2013 Tom Lechner
@@ -39,17 +38,21 @@ class VObjContext : public LaxInterfaces::ObjectContext
   public:
 	FieldPlace context;
 	VObjContext() { obj=NULL; }
+	VObjContext(const VObjContext &oc);
 	virtual ~VObjContext();
 	virtual int isequal(const ObjectContext *oc);
 	virtual int operator==(const ObjectContext &oc) { return isequal(&oc)==3; }
 	virtual VObjContext &operator=(const VObjContext &oc);
+	virtual int Set(ObjectContext *oc);
 	virtual int set(LaxInterfaces::SomeData *nobj, int n, ...);
 	virtual void clear();
 	virtual void clearToPage();
 	virtual LaxInterfaces::ObjectContext *duplicate();
+	virtual int Up();
 
 	virtual void push(int i,int where=-1);
 	virtual int pop(int where=-1);
+	virtual int level()  { if (obj) return context.n()-2; else return context.n()-1; }
 	
 	virtual int spread() { return context.e(0); }
 	virtual int spreadpage() { if (context.e(0)==1 && context.e(1)==0) return context.e(2); else return -1; }
@@ -57,7 +60,6 @@ class VObjContext : public LaxInterfaces::ObjectContext
 	virtual int layeri() { if (context.n()>4 && context.e(0)==1) return context.e(4); else return -1; }
 	virtual int limboi() { if (context.n()>1 && context.e(0)==0) return context.e(1); else return -1; }
 	virtual int paperi() { if (context.n()>1 && context.e(0)==2) return context.e(1); else return -1; }
-	virtual int level()  { if (obj) return context.n()-2; else return context.n()-1; }
 };
 
 //------------------------------- LaidoutViewport ---------------------------
@@ -83,15 +85,16 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	virtual void setupthings(int tospread=-1,int topage=-1);
 	virtual void UpdateMarkers();
 	virtual void setCurobj(VObjContext *voc);
-	virtual void findAny();
+	virtual void findAny(int searcharea=0);
 	virtual int nextObject(VObjContext *oc,int inc=0);
 	virtual void transformToContext(double *m,FieldPlace &place,int invert, int depth);
 
 	virtual int PerformAction(int action);
- public:
+
+  public:
 	 //*** maybe these should be protected?
 	char *pageviewlabel;
-	
+
 	 // these all have to refer to proper values in each other!
 	Document *doc;
 	Spread *spread;
@@ -103,7 +106,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 
 	int current_edit_area;
 	Laxkit::LaxImage *edit_area_icon;
-	
+
 	LaidoutViewport(Document *newdoc);
 	virtual ~LaidoutViewport();
 	virtual const char *whattype() { return "LaidoutViewport"; }
@@ -146,13 +149,14 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	virtual int SelectObject(int i);
 	virtual int FindObject(int x,int y, const char *dtype, 
 					LaxInterfaces::SomeData *exclude, int start,
-					LaxInterfaces::ObjectContext **oc);
+					LaxInterfaces::ObjectContext **oc,
+					int searcharea=0);
 	virtual int FindObjects(Laxkit::DoubleBBox *box, char real, char ascurobj,
 							LaxInterfaces::SomeData ***data_ret, LaxInterfaces::ObjectContext ***c_ret);
 	virtual void ClearSearch();
 	virtual int ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc);
 	virtual int ChangeContext(LaxInterfaces::ObjectContext *oc);
-	
+
 	virtual const char *SetViewMode(int m,int page);
 	virtual int ViewMode(int *page);
 	virtual int PlopData(LaxInterfaces::SomeData *ndata,char nearmouse=0);
@@ -162,7 +166,10 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	virtual LaxInterfaces::ObjectContext *ObjectMoved(LaxInterfaces::ObjectContext *oc, int modifyoc);
 	virtual int MoveObject(LaxInterfaces::ObjectContext *from, LaxInterfaces::ObjectContext *to);
 	virtual int CirculateInLayer(int dir, int i,int objOrSelection);
-	virtual int validContext(VObjContext *oc);
+	virtual bool IsValidContext(LaxInterfaces::ObjectContext *oc);
+	virtual LaxInterfaces::SomeData *GetObject(LaxInterfaces::ObjectContext *oc);
+	virtual LaxInterfaces::ObjectContext *CurrentContext();
+	virtual int UpdateSelection(LaxInterfaces::Selection *sel);
 	virtual int wipeContext();
 	virtual void clearCurobj();
 	virtual int locateObject(LaxInterfaces::SomeData *d,FieldPlace &place);
@@ -209,6 +216,9 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 	Laxkit::SliderPopup *toolselector;
 	Laxkit::anXWindow *rulercornerbutton;
 
+	char *tempstring;
+	int initial_tool;
+
   public:
 	Project *project;
 	Document *doc;
@@ -225,6 +235,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 	virtual int FocusOn(const Laxkit::FocusChangeData *e);
 
+	virtual LaxInterfaces::anInterface *GetObjectTool();
 	virtual int PerformAction(int action);
 	virtual int SelectTool(int id);
 	virtual int SelectToolFor(const char *datatype,LaxInterfaces::ObjectContext *oc=NULL);

@@ -20,14 +20,19 @@
 
 LAIDOUT=../src/laidout
 
+$LAIDOUT -X | while read -r line ; do
+	echo "do something with: $line";
+	$LAIDOUT -e filter='"'$line'"' test-all-objects.laidout
+done
 
-$LAIDOUT -e 'format=pdf' test-all-objects.laidout
-$LAIDOUT -e 'format=scribus' test-all-objects.laidout
-$LAIDOUT -e 'format=svg' test-all-objects.laidout 
-$LAIDOUT -e 'format=image' test-all-objects.laidout
-$LAIDOUT -e 'format=podofo' test-all-objects.laidout
-$LAIDOUT -e 'format=passepartout' test-all-objects.laidout
-$LAIDOUT -e 'format=postscript' test-all-objects.laidout
-$LAIDOUT -e 'format=eps' test-all-objects.laidout
+#$LAIDOUT -e 'filter=pdf'          test-all-objects.laidout
+#$LAIDOUT -e 'filter=scribus'      test-all-objects.laidout
+#$LAIDOUT -e 'filter=svg'          test-all-objects.laidout 
+#$LAIDOUT -e 'filter=image'        test-all-objects.laidout
+#$LAIDOUT -e 'filter="image via ghostscript"' test-all-objects.laidout
+#$LAIDOUT -e 'filter=podofo'       test-all-objects.laidout
+#$LAIDOUT -e 'filter=passepartout' test-all-objects.laidout
+#$LAIDOUT -e 'filter=postscript'   test-all-objects.laidout
+#$LAIDOUT -e 'filter=eps'          test-all-objects.laidout
 
 

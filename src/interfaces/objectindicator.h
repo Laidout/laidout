@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2012 by Tom Lechner
@@ -20,7 +19,7 @@
 #include <lax/refptrstack.h>
 
 #include "../laidout.h"
-#include "viewwindow.h"
+#include "../viewwindow.h"
 
 
 namespace Laidout {
@@ -37,6 +36,7 @@ class ObjectIndicator : public LaxInterfaces::anInterface
   protected:
 	Laxkit::ButtonDownInfo buttondown;
 
+	Laxkit::LaxFont *font;
 	VObjContext *context;
 	DrawableObject *hover_object;
 	int last_hover;
@@ -46,6 +46,8 @@ class ObjectIndicator : public LaxInterfaces::anInterface
 	int firsttime;
 
 	virtual int scan(int x,int y);
+	virtual double MaxWidth();
+
   public:
 	unsigned long shape_style;//options for interface
 

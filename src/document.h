@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2013 by Tom Lechner
@@ -17,7 +16,6 @@
 #define DOCUMENT_H
 
 class Document;
-#include "styles.h"
 #include "impositions/imposition.h"
 #include "laidoutdefs.h"
 #include "spreadview.h"
@@ -134,7 +132,11 @@ class Document : public ObjectContainer, public Value
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 	virtual int Load(const char *file,Laxkit::ErrorLog &log);
-	virtual int Save(int includelimbos,int includewindows,Laxkit::ErrorLog &log);
+	virtual int Save(int includelimbos,int includewindows,Laxkit::ErrorLog &log, bool add_to_recent=true);
+	virtual int SaveACopy(const char *filename, int includelimbos,int includewindows,Laxkit::ErrorLog &log, bool add_to_recent);
+	virtual int SaveAsTemplate(const char *tname, const char *tfile,
+						int includelimbos,int includewindows,Laxkit::ErrorLog &log,
+						bool clobber, char **tfilename_attempt);
 	
 	
 	 //object content

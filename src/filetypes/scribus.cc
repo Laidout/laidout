@@ -1,6 +1,4 @@
 //
-// $Id$
-//	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -8,7 +6,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2007,2010-2012 by Tom Lechner
@@ -20,14 +18,12 @@
 #include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
 #include <lax/interfaces/captioninterface.h>
+#include <lax/interfaces/textonpathinterface.h>
 #include <lax/transformmath.h>
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
 #include <lax/palette.h>
 #include <lax/colors.h>
-
-#include <lax/lists.cc>
-#include <lax/refptrstack.cc>
 
 #include "../language.h"
 #include "scribus.h"
@@ -39,6 +35,11 @@
 #include "../impositions/singles.h"
 #include "../dataobjects/mysterydata.h"
 #include "../drawdata.h"
+
+//template implementation
+#include <lax/lists.cc>
+#include <lax/refptrstack.cc>
+
 
 #include <iostream>
 #define DBG 
@@ -52,8 +53,12 @@ using namespace LaxInterfaces;
 
 namespace Laidout {
 
-//need to figure out font sizing 
-#define TEXTHACK (.75)
+
+typedef DocumentExportConfig ScribusExportConfig; //in case we change later...
+
+
+//Export always seems to be just under what is needed, so reduce font size just slightly:
+#define TEXTHACK (.9)
 
 //1.5 inches and 1/4 inch
 #define CANVAS_MARGIN_X 100.
@@ -121,7 +126,7 @@ int addScribusDocument(const char *file, Document *existingdoc)
 	config.keepmystery=2;
 	config.filter=&filter;
 	ErrorLog log;
-	filter.In(file,&config,log);
+	filter.In(file,&config,log, NULL,0);
 
 	newdoc->dec_count();
 
@@ -164,13 +169,15 @@ class PageObject
 {
   public:
 	LaxInterfaces::SomeData *data;
+	LaxInterfaces::SomeData *proxy;
+
 	int count;
 	int cur;
 	int links;
 	int l,r,t,b, next,prev;
 	int nativeid;
 	int index;
-	PageObject(LaxInterfaces::SomeData *d, int native,int ll,int rr,int tt,int bb,int nn,int pp, int ii);
+	PageObject(LaxInterfaces::SomeData *d, int native,int ll,int rr,int tt,int bb,int nn,int pp, int ii, LaxInterfaces::SomeData *proxydata);
 	~PageObject();
 };
 
@@ -181,7 +188,7 @@ class PageObject
 #define LINK_Next    16
 #define LINK_Prev    32
 
-PageObject::PageObject(SomeData *d, int native,int ll,int rr,int tt,int bb,int nn,int pp, int ii)
+PageObject::PageObject(SomeData *d, int native,int ll,int rr,int tt,int bb,int nn,int pp, int ii, LaxInterfaces::SomeData *proxydata)
 {
 	index=ii;
 	nativeid=native;
@@ -190,16 +197,19 @@ PageObject::PageObject(SomeData *d, int native,int ll,int rr,int tt,int bb,int n
 	data=d;
 	if (d) d->inc_count();
 	count=cur=0;
+	proxy = proxydata;
+	if (proxy) proxy->inc_count();
 }
 
 PageObject::~PageObject()
 {
 	if (data) data->dec_count();
+	if (proxy) proxy->dec_count();
 }
 
 
-static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects,double *mm,SomeData *obj,ErrorLog &log,int &warning);
-static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &palette, SomeData *obj, int index=0);
+static void scribusdumpobj(ScribusExportConfig *config, FILE *f,int &curobj,PtrStack<PageObject> &pageobjects,double *mm,SomeData *obj,ErrorLog &log,int &warning, bool ignore_filter=false);
+static void appendobjfordumping(ScribusExportConfig *config, PtrStack<PageObject> &pageobjects, Palette &palette, SomeData *obj, int index=0, bool ignore_filter=false);
 static int findobj(PtrStack<PageObject> &pageobjects, int nativeid, int what);
 static int findobjnumber(Attribute *att, const char *what);
 
@@ -304,7 +314,13 @@ ScribusExportFilter::ScribusExportFilter()
 //! "Scribus 1.4.5".
 const char *ScribusExportFilter::VersionName()
 {
-	return _("Scribus 1.4.5");
+	//return _("Scribus 1.4.5");
+	return _("Scribus");
+}
+
+const char *ScribusExportFilter::Version()
+{
+	return "1.4.5"; //the max version handled. import+export acts more like a pass through
 }
 
 //! Try to grab from stylemanager, and install a new one there if not found.
@@ -313,7 +329,7 @@ const char *ScribusExportFilter::VersionName()
 ObjectDef *ScribusExportFilter::GetObjectDef()
 {
 	ObjectDef *styledef;
-	styledef=stylemanager.FindDef("DocumentExportConfig");
+	styledef=stylemanager.FindDef("ScribusExportConfig");
 	if (styledef) return styledef; 
 
 	styledef=makeObjectDef();
@@ -500,7 +516,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 				  "    BORDERRIGHT=\"0\" \n"	
 				  "    BORDERTOP=\"0\" \n"	
 				  "    COMMENTS=\"\" \n"
-				  "    DFONT=\"Times-Roman\" \n" //default font
+				  "    DFONT=\"Bitstream Charter Bold\" \n" //default font
 				  "    DSIZE=\"12\" \n"         //default font size
 				  //"    FIRSTLEFT \n"  //*** doublesidedsingles->isleft
 				  "    FIRSTPAGENUM=\"%d\" \n", start); //***check this is right
@@ -675,16 +691,16 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 		for (p=0; p<papergroup->papers.n; p++) { //for each paper
 					
 			if (papergroup->objs.n()) {
-				appendobjfordumping(pageobjects,palette,&papergroup->objs);
+				appendobjfordumping(config, pageobjects,palette,&papergroup->objs);
 			}
 
 			//if (limbo && limbo->n()) {
-			//	appendobjfordumping(pageobjects,palette,limbo);
+			//	appendobjfordumping(config, pageobjects,palette,limbo);
 			//}
 
 			if (spread) {
 				if (spread->marks) {
-					appendobjfordumping(pageobjects,palette,spread->marks);
+					appendobjfordumping(config, pageobjects,palette,spread->marks);
 				}
 
 				 // for each page in spread layout..
@@ -697,7 +713,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 						 // for each object in layer
 						g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
 						for (c3=0; c3<g->n(); c3++) {
-							appendobjfordumping(pageobjects,palette,g->e(c3));
+							appendobjfordumping(config, pageobjects,palette,g->e(c3));
 						}
 					}
 				}
@@ -936,17 +952,17 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 					  "   />\n", plandscape);
 
 			//if (limbo && limbo->n()) {
-			//	scribusdumpobj(f,curobj,pageobjects,NULL,limbo,log,warning);
+			//	scribusdumpobj(config, f,curobj,pageobjects,NULL,limbo,log,warning);
 			//}
 
 			if (papergroup->objs.n()) {
-				scribusdumpobj(f,curobj,pageobjects,NULL,&papergroup->objs,log,warning);
+				scribusdumpobj(config, f,curobj,pageobjects,NULL,&papergroup->objs,log,warning);
 			}
 
 
 			if (spread) {
 				if (spread->marks) {
-					scribusdumpobj(f,curobj,pageobjects,NULL,spread->marks,log,warning);
+					scribusdumpobj(config, f,curobj,pageobjects,NULL,spread->marks,log,warning);
 				}
 
 				 // for each page in spread layout..
@@ -958,11 +974,12 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 					 // for each layer on the page..
 					transform_copy(m,spread->pagestack.e[c2]->outline->m());
 					psConcat(m); //transform to page in spread
+
 					for (l=0; l<doc->pages[pg]->layers.n(); l++) {
 						 // for each object in layer
 						g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
 						for (c3=0; c3<g->n(); c3++) {
-							scribusdumpobj(f,curobj,pageobjects,NULL,g->e(c3),log,warning);
+							scribusdumpobj(config, f,curobj,pageobjects,NULL,g->e(c3),log,warning);
 						}
 					}
 					psPopCtm();
@@ -1011,20 +1028,30 @@ int addColor(Palette &palette, ScreenColor *color)
 	return 1;
 }
 
-//! Internal function to find object to pageobject mapping.
+//! Internal function to find object to pageobject mapping, and add to color palette if necessary.
 /*! This adds one entry per object that will actually be dumped out is scribusdumpobj().
  */
-static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &palette, SomeData *obj, int index) //::appendobjfordumping
+static void appendobjfordumping(ScribusExportConfig *config, PtrStack<PageObject> &pageobjects, Palette &palette, SomeData *obj, int index, bool ignore_filter) //::appendobjfordumping
 {
 	//WARNING! This function must mirror scribusdumpobj() for what objects actually get output..
+
+	Group *g = dynamic_cast<Group *>(obj);
+    if (g && g->filter && !ignore_filter) {
+        obj = g->FinalObject();
+        if (obj) appendobjfordumping(config, pageobjects, palette, obj, index, true);
+        return;
+    }
+
 
 	//GradientData *grad=NULL;
 	int ptype=PTYPE_None; //>0 is translatable to scribus object.
 				  		 //2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
 	             		//-1 is not handled, -2 is laidout gradient, -3 is MysteryData
 
+	SomeData *proxy = NULL;
 	int l=-1,r=-1,t=-1,b=-1, next=-1,prev=-1;
 	int nativeid=-1;
+
 
 	if (!strcmp(obj->whattype(),"ImageData") || !strcmp(obj->whattype(),"EpsData")) {
 		ImageData *img=dynamic_cast<ImageData *>(obj);
@@ -1045,33 +1072,79 @@ static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &pale
 		CaptionData *caption=dynamic_cast<CaptionData *>(obj);
 		if (!caption) return;
 
-		if (caption->font->Layers()>1) {
-			if (index==0) {
-				int layer=0;
-				Palette *fpalette=dynamic_cast<Palette*>(caption->font->GetColor());
-				ScreenColor color;
+		if (config->textaspaths) {
+			proxy = caption->ConvertToPaths(false, NULL);
+			ptype = PTYPE_Polygon;
 
-				for (LaxFont *font=caption->font; font; font=font->nextlayer) {
-					if (fpalette && layer<fpalette->colors.n) {
-						color.rgbf(fpalette->colors.e[layer]->channels[0]/(double)fpalette->colors.e[layer]->maxcolor,
-								   fpalette->colors.e[layer]->channels[1]/(double)fpalette->colors.e[layer]->maxcolor,
-								   fpalette->colors.e[layer]->channels[2]/(double)fpalette->colors.e[layer]->maxcolor,
-								   fpalette->colors.e[layer]->channels[3]/(double)fpalette->colors.e[layer]->maxcolor
-								);
-						addColor(palette, &color);
+		} else {
+			 //register colors
+			if (caption->font->Layers()>1) {
+				if (index==0) {
+					int layer=0;
+					Palette *fpalette=dynamic_cast<Palette*>(caption->font->GetColor());
+					ScreenColor color;
+
+					for (LaxFont *font=caption->font; font; font=font->nextlayer) {
+						if (fpalette && layer<fpalette->colors.n) {
+							color.rgbf(fpalette->colors.e[layer]->channels[0]/(double)fpalette->colors.e[layer]->maxcolor,
+									   fpalette->colors.e[layer]->channels[1]/(double)fpalette->colors.e[layer]->maxcolor,
+									   fpalette->colors.e[layer]->channels[2]/(double)fpalette->colors.e[layer]->maxcolor,
+									   fpalette->colors.e[layer]->channels[3]/(double)fpalette->colors.e[layer]->maxcolor
+									);
+							addColor(palette, &color);
+						}
+						appendobjfordumping(config, pageobjects,palette, caption, 1+layer);
+						layer++;
 					}
-					appendobjfordumping(pageobjects,palette, caption, 1+layer);
-					layer++;	
+					return;
+
+				} else {
+					ptype = PTYPE_Text;
 				}
-				return;
 
 			} else {
-				ptype=PTYPE_Text;
+				ScreenColor color(caption->red, caption->green, caption->blue, caption->alpha);
+				addColor(palette, &color);
+				ptype = PTYPE_Text;
 			}
-		} else {
-			ptype=PTYPE_Text;
-			ScreenColor color(caption->red, caption->green, caption->blue, caption->alpha);
-			addColor(palette, &color);
+		}
+
+	} else if (!strcmp(obj->whattype(),"TextOnPath")) {
+		TextOnPath *textonpath=dynamic_cast<TextOnPath *>(obj);
+		if (!textonpath) return;
+
+		if (config->textaspaths) {
+			proxy = textonpath->ConvertToPaths(false, NULL);
+			ptype = PTYPE_Polygon;
+
+			 //register colors
+			if (textonpath->font->Layers()>1) {
+				if (index==0) {
+					int layer=0;
+					Palette *fpalette=dynamic_cast<Palette*>(textonpath->font->GetColor());
+					ScreenColor color;
+
+					for (LaxFont *font=textonpath->font; font; font=font->nextlayer) {
+						if (fpalette && layer<fpalette->colors.n) {
+							color.rgbf(fpalette->colors.e[layer]->channels[0]/(double)fpalette->colors.e[layer]->maxcolor,
+									   fpalette->colors.e[layer]->channels[1]/(double)fpalette->colors.e[layer]->maxcolor,
+									   fpalette->colors.e[layer]->channels[2]/(double)fpalette->colors.e[layer]->maxcolor,
+									   fpalette->colors.e[layer]->channels[3]/(double)fpalette->colors.e[layer]->maxcolor
+									);
+							addColor(palette, &color);
+						}
+						layer++;	
+					}
+				}
+
+			} else {
+				//ScreenColor color(textonpath->color->ChannelValue0to1(0),
+								  //textonpath->color->ChannelValue0to1(1),
+								  //textonpath->color->ChannelValue0to1(2),
+								  //textonpath->color->Alpha());
+				//addColor(palette, &color);
+				addColor(palette, &textonpath->color->screen);
+			}
 		}
 
 	//} else if (!strcmp(obj->whattype(),"GradientData")) {
@@ -1085,11 +1158,9 @@ static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &pale
 	//	if (!grad) return;
 	//	ptype=PTYPE_Laidout_Gradient;
 	//	*** attach colors, create mesh shading
-	
+
 	} else if (!strcmp(obj->whattype(),"Group")) {
-		 //must propogate transform...
-		Group *g;
-		g=dynamic_cast<Group *>(obj);
+		 //must propagate transform...
 		if (!g) return;
 
 		 // objects have GROUPS list for what groups they belong to, 
@@ -1098,7 +1169,7 @@ static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &pale
 		 // global var groupc is a counter for how many distinct groups have been found,
 		 // which has been found already
 
-		for (int c=0; c<g->n(); c++) appendobjfordumping(pageobjects,palette,g->e(c));
+		for (int c=0; c<g->n(); c++) appendobjfordumping(config, pageobjects,palette,g->e(c));
 		return;
 
 	} else if (!strcmp(obj->whattype(),"MysteryData")) {
@@ -1113,7 +1184,10 @@ static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &pale
 			b   =findobjnumber(mdata->attributes,"BottomLINK");
 			nativeid=mdata->nativeid;
 		} //else is someone else's mystery data
-	} 
+
+	} else {
+		 // *** try EquivalentObject()
+	}
 
 	if (ptype==PTYPE_None) return;
 
@@ -1130,8 +1204,9 @@ static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &pale
 	}
 
 	 //add new reference
-	PageObject *o=new PageObject(obj, nativeid,l,r,t,b,next,prev, index);
+	PageObject *o=new PageObject(obj, nativeid,l,r,t,b,next,prev, index, proxy);
 	o->count=count;
+	if (proxy) proxy->dec_count();
 	pageobjects.push(o,1);
 }
 
@@ -1188,7 +1263,6 @@ static int scribusaddpath(NumStack<flatpoint> &pts, Coordinate *path)
 	start=p;
 	int n=1; //number of points seen
 
-	//pts.push(transform_point(ctm,start->p())); <-- points are all added below!!
 
 	do { //one loop per vertex point
 		p2=p->next; //p points to a vertex
@@ -1237,17 +1311,27 @@ static int scribusaddpath(NumStack<flatpoint> &pts, Coordinate *path)
 }
 
 //! Internal function to dump out the obj.
-/*! Can be Group, ImageData, PathsData, or CaptionData.
- *
- * \todo could have special mode where every non-recognizable object gets
+/*! \todo could have special mode where every non-recognizable object gets
  *   rasterized, and a new dir with all relevant files is created.
  */
-static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects,double *mm,SomeData *obj,
-							ErrorLog &log,int &warning)
+static void scribusdumpobj(ScribusExportConfig *config, FILE *f,int &curobj,PtrStack<PageObject> &pageobjects,double *mm,SomeData *obj,
+							ErrorLog &log,int &warning, bool ignore_filter)
 {
 	//possibly set: ANNAME NUMGROUP GROUPS NUMPO POCOOR PTYPE ROT WIDTH HEIGHT XPOS YPOS
 	//	gradients: GRTYP GRSTARTX GRENDX GRSTARTY GRENDY
 	//	images: LOCALSCX LOCALSCY PFILE
+
+	Group *g = dynamic_cast<Group *>(obj);
+    if (g && g->filter && !ignore_filter) {
+        obj = g->FinalObject();
+        if (obj) scribusdumpobj(config, f,curobj,pageobjects, mm,obj,log,warning, true);
+        return;
+    }
+
+	if (curobj < pageobjects.n && pageobjects.e[curobj]->data != obj) return;
+	if (curobj >= pageobjects.n) return;
+	if (pageobjects.e[curobj]->proxy) obj = pageobjects.e[curobj]->proxy;
+
 
 	psPushCtm();
 	psConcat(obj->m());
@@ -1256,9 +1340,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 	GradientData *grad=NULL;
 	double localscx=1,localscy=1;
 	double isize=12;
-	int ptype=-1; //>0 is translatable to scribus object.
-				  //2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
-	              //-1 is not handled, -2 is laidout gradient, -3 is MysteryData
+	int ptype = PTYPE_None; //>0 is directly correspondence to a scribus object.
 	Attribute *mysteryatts=NULL;
 	int leftlink=-1, rightlink=-1, toplink=-1, bottomlink=-1; //for table grids
 	int nextitem=-1, backitem=-1; //for text object chains
@@ -1272,9 +1354,9 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 
 
 	if (!strcmp(obj->whattype(),"ImageData") || !strcmp(obj->whattype(),"EpsData")) {
-		img=dynamic_cast<ImageData *>(obj);
+		img = dynamic_cast<ImageData *>(obj);
 		if (!img || !img->filename) return;
-		ptype=PTYPE_Image;
+		ptype = PTYPE_Image;
 
 	//} else if (!strcmp(obj->whattype(),"GradientData")) {
 	//	grad=dynamic_cast<GradientData *>(obj);
@@ -1282,10 +1364,9 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 	//	ptype=PTYPE_Laidout_Gradient;
 	
 	} else if (!strcmp(obj->whattype(),"PathsData")) {
-		PathsData *pdata=dynamic_cast<PathsData *>(obj);
+		PathsData *pdata = dynamic_cast<PathsData *>(obj);
 		if (!pdata) return;
-		createrect=0;
-		ptype=PTYPE_Polygon;
+		createrect = 0;
 
 		 //build path
 		NumStack<flatpoint> pts;
@@ -1300,16 +1381,19 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 			p=pdata->paths.e[c]->path;
 			if (!p) continue;
 
-			n+=scribusaddpath(pts,p);
+			n += scribusaddpath(pts,p);
 
 			//p=transform_point(ctm,p);
 			//pts.push(p);
 
-			if (c!=pdata->paths.n-1) {
+			if (c != pdata->paths.n-1) {
 				for (int c2=0; c2<4; c2++) pts.push(flatpoint(999999,999999));//path delimiter!
 			}
 		}
 		if (!n) return; //no points to output!!
+
+		if (pdata->paths.e[0]->IsClosed()) ptype = PTYPE_Polygon;
+		else ptype = PTYPE_Polyline;
 
 		numpo=numco=pts.n;
 		pocoor=pts.extractArray();
@@ -1318,7 +1402,11 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 
 	
 	} else if (!strcmp(obj->whattype(),"CaptionData")) {
+
 		text=dynamic_cast<CaptionData *>(obj);
+
+		if (config->textaspaths) return; //hopefully this was caught by pageobject->proxy above
+
 		Palette *palette=dynamic_cast<Palette*>(text->font->GetColor());
 
 		int i=pageobjects.e[curobj]->index-1;
@@ -1334,11 +1422,11 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 							 LAXFILL_EvenOdd, FillSolid, LAXOP_Over);
 		}
 
-		isize=text->Size()*TEXTHACK; // *** arbitrary size reduction to make it fit in scribus boxes
+		isize=text->MSize()*TEXTHACK;
 		ptype=PTYPE_Text;
 
 	} else if (!strcmp(obj->whattype(),"Group")) {
-		 //must propogate transform...
+		 //must propagate transform...
 		Group *g;
 		g=dynamic_cast<Group *>(obj);
 		if (!g) return;
@@ -1352,7 +1440,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 		ongroup++;
 		groups.push(ongroup);
 		for (int c=0; c<g->n(); c++) 
-			scribusdumpobj(f,curobj,pageobjects,NULL,g->e(c),log,warning);
+			scribusdumpobj(config, f,curobj,pageobjects,NULL,g->e(c),log,warning);
 		groups.pop();
 		psPopCtm();
 		return;
@@ -1407,7 +1495,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 	rot=atan2(vx.y, vx.x)/M_PI*180; //rotation in degrees
 	//p=transform_point(ctm,flatpoint(0,0));
 	p=transform_point(ctm,flatpoint(obj->minx,obj->maxy)); //scribus origin is upper left
-	if (ptype==PTYPE_Text) p=transform_point(ctm,flatpoint(obj->minx,obj->miny)); //scribus origin is upper left
+	if (ptype == PTYPE_Text) p = transform_point(ctm,flatpoint(obj->minx,obj->miny)); //scribus origin is upper left
 	x=p.x;
 	y=p.y;
 
@@ -1428,7 +1516,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 				//pocoor[c]=flatpoint(coords[c*2],coords[c*2+1]);
 				//DBG cerr <<"pocoor to canvas: "<<pocoor[c].x<<','<<pocoor[c].y<<endl;
 			}
-			//note that these are raw coordinates read on input, they still have to be scaled
+			//note that these are raw page coordinates read on input, they still have to be scaled
 			// to current bounding box, which is done below
 		}
 
@@ -1444,7 +1532,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 				cocoor[c]=transform_point(ctm,coords[c*2]/72,coords[c*2+1]/72);
 				//DBG cerr <<"cocoor to canvas: "<<cocoor[c].x<<','<<cocoor[c].y<<endl;
 			}
-			//note that these are raw coordinates read on input, they still have to be scaled
+			//note that these are raw page coordinates read on input, they still have to be scaled
 			// to current bounding box, which is done below
 		}
 	}
@@ -1473,33 +1561,46 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 	height=norm(transform_point(ctm,flatpoint(obj->minx,obj->miny))-transform_point(ctm,flatpoint(obj->minx,obj->maxy)));
 	//DBG cerr <<"object dimensions: "<<width<<" x "<<height<<endl;
 
-	 //create a basis for the object, which has same scaling as the scratch space, but
+	 //create a basis for the object points, which has same scaling as the scratch space, but
 	 //possibly different translation and rotation
 	double m[6],mmm[6];
-	vx=vx/norm(vx);
-	vy=vy/norm(vy);
-	p=transform_point(ctm,flatpoint(obj->minx,obj->miny));
-	transform_from_basis(mmm,p,vx,vy);
+	vx = vx/norm(vx);
+	//---
+	vy = -vy/norm(vy);
+	p = transform_point(ctm,flatpoint(obj->minx,obj->maxy));
+	//---
+	//vy = vy/norm(vy);
+	//p = transform_point(ctm,flatpoint(obj->minx,obj->miny));
+	//----
+	if (ptype == PTYPE_Polygon && vy.y*vx.x-vy.x*vx.y < 0) {
+		//scribus doesn't like left handed axes on paths for some reason
+		vy=-vy;
+		//p = transform_point(ctm,flatpoint(obj->minx,obj->miny));
+	} 
+
+	transform_from_basis(mmm, p,vx,vy);
 	transform_invert(m,mmm);
-	//DBG cerr<<"transform back to object:"; dumpctm(m);
+
+	DBG cerr<<"transform back to object:"; dumpctm(m);
 
 	 //pocoor and cocoor are in canvas coordinates, need to
 	 //make pocoor and cocoor coords relative to the object origin, not the canvas
 	for (int c=0; c<numpo; c++) {
-		//DBG cerr <<"pocoor: "<<pocoor[c].x<<','<<pocoor[c].y;
-		if (pocoor[c].x!=999999) pocoor[c]=transform_point(m,pocoor[c]);
+		DBG cerr <<"pocoor: "<<pocoor[c].x<<','<<pocoor[c].y;
+		if (pocoor[c].x!=999999) pocoor[c] = transform_point(m,pocoor[c]);
 		if (fabs(pocoor[c].x)<1e-10) pocoor[c].x=0;
 		if (fabs(pocoor[c].y)<1e-10) pocoor[c].y=0;
 		//DBG cerr <<" -->  "<<pocoor[c].x<<','<<pocoor[c].y<<endl;
 	}
 	for (int c=0; c<numco; c++) {
-		//DBG cerr <<"cocoor: "<<cocoor[c].x<<','<<cocoor[c].y;
-		if (pocoor[c].x!=999999) cocoor[c]=transform_point(m,cocoor[c]);
+		DBG cerr <<"cocoor: "<<cocoor[c].x<<','<<cocoor[c].y;
+		if (pocoor[c].x!=999999) cocoor[c] = transform_point(m,cocoor[c]);
 		if (fabs(cocoor[c].x)<1e-10) cocoor[c].x=0;
 		if (fabs(cocoor[c].y)<1e-10) cocoor[c].y=0;
 		//DBG cerr <<" -->  "<<cocoor[c].x<<','<<cocoor[c].y<<endl;
 	}
-	if (ptype==PTYPE_Image) { //image
+
+	if (ptype == PTYPE_Image) { //image
 		localscx=width /(img->maxx-img->minx); //assumes maxx-minx==file width
 		localscy=height/(img->maxy-img->miny);
 		if (!strcmp(obj->whattype(),"EpsData")) {
@@ -1511,7 +1612,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 
 	fprintf(f,"  <PAGEOBJECT \n");
 	int content=-1;
-	const char *pfile=(ptype==PTYPE_Image?img->filename:NULL);
+	const char *pfile = (ptype==PTYPE_Image?img->filename:NULL);
 	if (mysteryatts) {
 		char *name,*value;
 		for (int c=0; c<mysteryatts->attributes.n; c++) {
@@ -1621,6 +1722,10 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 				setlocale(LC_ALL,"C");
 				warning++;
 			}
+
+			fprintf(f, "    LINESP=\"%.10g\"\n"
+					   "    LINESPMode=\"0\"\n", 
+				text->MSize()*TEXTHACK*text->linespacing); //line break
 		}
 
 		if (tstyle) {
@@ -1801,8 +1906,16 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 		LaxFont *font=text->font;
 		if (pageobjects.e[curobj]->index>0) font=font->Layer(pageobjects.e[curobj]->index-1);
 
+		const char *str;
+		char *buffer = NULL;
+
 		for (int c=0; c<text->lines.n; c++) {
-			cerr <<" *** WARNING! need to code processing & ' \" < > to &amp; etc for Scribus out"<<endl;
+			str = text->lines.e[c];
+			if (strpbrk(text->lines.e[c], "\"'&<>")) {
+				if (buffer) delete[] buffer;
+				buffer = htmlchars_encode(str, NULL,0, NULL);
+				str = buffer;
+			}
 
 			fprintf(f, "    <ITEXT FONT=\"%s %s\" FONTSIZE=\"%.10g\" FCOLOR=\"%d,%d,%d\" CH=\"%s\" />\n",
 					//text->fontfamily, text->fontstyle,
@@ -1810,13 +1923,15 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 			//----
 			//fprintf(f, "    <ITEXT FONT=\"%s %s\" FONTSIZE=\"%.10g\" FCOLOR=\"%d,%d,%d\" CH=\"%s\" />\n",
 					//font->PostscriptName(),
-					text->fontsize*xmag*TEXTHACK,
+					text->MSize()*xmag*TEXTHACK,
 					tstyle ? tstyle->color.red   : 0,
 					tstyle ? tstyle->color.green : 0,
 					tstyle ? tstyle->color.blue  : 0,
-					text->lines.e[c]);
-			if (c<text->lines.n-1) fprintf(f, "    <para LINESPMode=\"1\" />\n"); //line break
+					str);
+			if (c<text->lines.n-1) fprintf(f, "    <para LINESP=\"%.10g\" LINESPMode=\"0\" />\n", 
+				text->MSize()*xmag*TEXTHACK*text->linespacing); //line break
 		}
+		if (buffer) delete[] buffer;
 	}
 
 	fprintf(f,"  </PAGEOBJECT>\n");  //end of PAGEOBJECT
@@ -1832,7 +1947,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 			&& pageobjects.e[curobj-1]->data==pageobjects.e[curobj]->data) {
 
 		 //deal with font layers..
-		scribusdumpobj(f, curobj, pageobjects, mm, obj, log, warning);
+		scribusdumpobj(config, f, curobj, pageobjects, mm, obj, log, warning);
 	}
 }
 
@@ -1904,7 +2019,7 @@ ObjectDef *ScribusImportFilter::GetObjectDef()
  *
  * \todo COLOR, master pages, ensure text sizes ok upon scaling, scale to fit existing pages
  */
-int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log)
+int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log, const char *filecontents,int contentslen)
 {
 	//DBG cerr <<"-----Scribus import start-------"<<endl;
 

@@ -1,6 +1,4 @@
 //
-// $Id$
-//	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -8,7 +6,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2004-2007,2010-2011 by Tom Lechner
@@ -57,8 +55,8 @@ class PaperStyle : public Value
 	PaperStyle(const char *nname=NULL);
 	PaperStyle(const char *nname,double ww,double hh,unsigned int nflags,double ndpi,const char *defunits);
 	virtual ~PaperStyle();
-	virtual double w() { if (flags&1) return height; else return width; }
-	virtual double h() { if (flags&1) return width; else return height; }
+	virtual double w() { if (landscape()) return height; else return width; }
+	virtual double h() { if (landscape()) return width; else return height; }
 	virtual int landscape() { return flags&PAPERSTYLE_Landscape; }
 	virtual int landscape(int l)
 		{ if (l) flags|=PAPERSTYLE_Landscape; else flags&=~PAPERSTYLE_Landscape; return flags&PAPERSTYLE_Landscape; }
@@ -70,12 +68,14 @@ class PaperStyle : public Value
 	virtual int type();
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *dereference(const char *extstring, int len);
+	virtual int IsMatch(double w, double h, double epsilon = 0);
 
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
 };
 
+PaperStyle *GetNamedPaper(double width, double height, int *orientation_ret, int startfrom, int *index_ret, double epsilon);
 
 //----------------------------- GetBuiltInPaperSizes() --------------------------------------
 Laxkit::PtrStack<PaperStyle> *GetBuiltinPaperSizes(Laxkit::PtrStack<PaperStyle> *papers);
@@ -88,7 +88,7 @@ class PaperBox :  public Laxkit::anObject
 	int which;
 	PaperStyle *paperstyle;
 	Laxkit::DoubleBBox media, printable, bleed, trim, crop, art;
-	PaperBox(PaperStyle *paper);
+	PaperBox(PaperStyle *paper, bool absorb_count);
 	virtual ~PaperBox();
 	virtual int Set(PaperStyle *paper);
 };
@@ -98,13 +98,14 @@ class PaperBox :  public Laxkit::anObject
 class PaperBoxData : public LaxInterfaces::SomeData
 {
  public:
-	int red,green,blue;
+	Laxkit::ScreenColor color, outlinecolor;
 	PaperBox *box;
 	int index;
 	unsigned int which;
 	PaperBoxData(PaperBox *paper);
 	virtual ~PaperBoxData();
 	virtual const char *whattype() { return "PaperBoxData"; }
+	virtual void FindBBox();
 };
 
 
@@ -130,8 +131,9 @@ class PaperGroup : public ObjectContainer, public LaxFiles::DumpUtility
 
 	virtual int AddPaper(double w,double h,double offsetx,double offsety);
 	virtual int AddPaper(const char *nme,double w,double h,const double *m);
-	virtual int OutlineColor(int r,int g,int b);
+	virtual double OutlineColor(double r,double g,double b);
 	virtual PaperStyle *GetBasePaper(int index);
+	virtual int FindPaperBBox(Laxkit::DoubleBBox *box_ret);
 
 	virtual int n();
 	virtual Laxkit::anObject *object_e(int i);

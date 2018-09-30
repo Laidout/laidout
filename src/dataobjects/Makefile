@@ -10,12 +10,13 @@ LAXOBJDIR=$(LAXDIR)
 LD=g++
 LDFLAGS= -L/usr/X11R6/lib -lX11 -lm -lpng `imlib2-config --libs` -L$(LAXDIR) -L$(LAXIDIR)
 DEBUGFLAGS= -g -gdwarf-2
-CPPFLAGS= -Wall $(DEBUGFLAGS) -I. -I.. -I$(LAXDIR)/.. -I/usr/include/freetype2
+CPPFLAGS= -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. -I/usr/include/freetype2
 
 
 objs= \
 	group.o \
 	objectcontainer.o \
+	objectfilter.o \
 	drawableobject.o \
 	datafactory.o \
 	groupinterface.o \
@@ -28,7 +29,10 @@ objs= \
 	mysterydata.o \
 	lsomedataref.o \
 	lengraverfilldata.o \
+	lperspectiveinterface.o \
 	lcaptiondata.o \
+	ltextonpath.o \
+	lvoronoidata.o \
 	printermarks.o 
 
 
@@ -50,4 +54,4 @@ unhidegarbage:
 .PHONY: clean printing hidegarbage unhidegarbage
 clean:
 	rm -f *.o
-	
+

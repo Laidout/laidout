@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,19 +7,20 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2007-2009,2012 by Tom Lechner
 //
 
-#include <lax/strmanip.h>
-#include <lax/fileutils.h>
-
-#include "../language.h"
 #include "filefilters.h"
+#include "../document.h"
+#include "../language.h"
 #include "../laidout.h"
 #include "../stylemanager.h"
+
+#include <lax/strmanip.h>
+#include <lax/fileutils.h>
 
 
 #define DBG
@@ -119,8 +119,8 @@ namespace Laidout {
 
 FileFilter::FileFilter()
 {
-	plugin=NULL; 
-	flags=0;
+	plugin = NULL; 
+	flags  = 0;
 }
 
 //------------------------------------- ImportFilter -----------------------------------
@@ -132,10 +132,11 @@ FileFilter::FileFilter()
 /*! \fn const char *ImportFilter::FileType(const char *first100bytes)
  * \brief Return the version of the filter's format that the file seems to be, or NULL if not recognized.
  */
-/*! \fn int ImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log)
+/*! \fn int ImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log, const char *filecontents, int contentslen)
  * \brief The function that outputs the stuff.
  *
- * If file!=NULL, then output to that single file, and ignore the files in context.
+ * If file!=NULL, then input from that single file, and ignore the files in context.
+ * If file==NULL and filecontents!=NULL, then assume filecontents is a string containing file data of contentslen bytes.
  *
  * context must be a configuration object that the filter understands. For instance, this
  * might be a DocumentExportConfig object, or perhaps a parameter list from the scripter.
@@ -541,7 +542,7 @@ ObjectDef* ImportConfig::makeObjectDef()
 	return makeImportConfigDef();
 }
 
-Style* ImportConfig::duplicate(Style*)
+Value* ImportConfig::duplicate()
 {
 	ImportConfig *c=new ImportConfig;
 	*c=*this; //warning, shallow copy!
@@ -559,13 +560,13 @@ Style* ImportConfig::duplicate(Style*)
 //! Import a vector based file based on config.
 /*! Return 0 for success, greater than zero for fatal error, less than zero for success with warnings.
  */
-int import_document(ImportConfig *config, Laxkit::ErrorLog &log)
+int import_document(ImportConfig *config, Laxkit::ErrorLog &log, const char *filecontents,int contentslen)
 {
 	if (!config || !config->filename || !config->filter || !(config->doc || config->toobj)) {
 		log.AddMessage(_("Bad import configuration"),ERROR_Fail);
 		return 1;
 	}
-	return config->filter->In(config->filename,config,log);
+	return config->filter->In(config->filename,config,log, filecontents,contentslen);
 }
 
 
@@ -735,6 +736,14 @@ ObjectDef *makeExportConfigDef()
 			NULL,  //defvalue
 			0,    //flags
 			NULL);//newfunc
+	sd->push("textaspaths",
+			_("Text as paths"),
+			_("Whether to export any text based objects as path objects, instead of text."),
+			"boolean",
+			NULL, //range
+			"false",  //defvalue
+			0,    //flags
+			NULL);//newfunc
 	sd->push("rasterize",
 			_("Rasterize"),
 			_("Whether to rasterize objects that cannot be otherwise dealt with natively in the target format."),
@@ -755,6 +764,14 @@ ObjectDef *makeExportConfigDef()
 			_("Paper group"),
 			_("The paper group to export onto. Do not include if you want to use the default paper group."),
 			"any",
+			NULL, //range
+			NULL,  //defvalue
+			0,    //flags
+			NULL);//newfunc
+	sd->push("crop",
+			_("Crop"),
+			_("Cropping boundary, applied per spread."),
+			"BBox",
 			NULL, //range
 			NULL,  //defvalue
 			0,    //flags
@@ -801,6 +818,11 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 		if (e==0) { if (str) makestr(config->filename,str); }
 		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"file"); throw error; }
 
+		 //---textaspaths
+		i=parameters->findInt("textaspaths",-1,&e);
+		if (e==0) config->textaspaths=i;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"textaspaths"); throw error; }
+
 		 //---rasterize
 		i=parameters->findInt("rasterize",-1,&e);
 		if (e==0) config->rasterize=i;
@@ -845,7 +867,7 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 		 //---paperrotation
 		i=parameters->findInt("paperrotation",-1,&e);
 		if (e==0) config->paperrotation=i;
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"batches"); throw error; }
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"paperrotation"); throw error; }
 
 		 //---reverse
 		i=parameters->findInt("reverse",-1,&e);
@@ -857,7 +879,15 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 		if (e==0) {
 			if (i!=0 && i!=1) throw _("Invalid target value!");
 			config->target=i;
-		} else if (e==2) { sprintf(error, _("Invalid format for %s!"),"end"); throw error; }
+		} else if (e==2) { sprintf(error, _("Invalid format for %s!"),"target"); throw error; }
+
+		 //---crop
+		BBoxValue *crop=dynamic_cast<BBoxValue*>(parameters->findObject("crop",-1,&e));
+		if (e==0) {
+			if (i!=0 && i!=1) throw _("Invalid crop value!");
+			config->target=i;
+			config->crop=*crop;
+		} else if (e==2) { sprintf(error, _("Invalid format for %s!"),"crop"); throw error; }
 
 		 //---group
 		Laxkit::anObject *r=parameters->findObject("group",-1,&e);
@@ -961,7 +991,7 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
  * 1 for tofiles: 1 spread (or paper slice) per file,
  * 2 for command.
  */
-/*! \var char DocumentExportConfig::collect_for_out
+/*! \var int DocumentExportConfig::collect_for_out
  * \brief Whether to gather needed extra files to one place.
  *
  * If you export to svg, for instance, there will be references to files whereever they are,
@@ -986,23 +1016,29 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 
 DocumentExportConfig::DocumentExportConfig()
 {
-	curpaperrotation=0;
-	paperrotation=0;
-	rotate180=0;
-	reverse_order=0;
-	evenodd=All;
-	batches=0;
-	filter=NULL;
-	target=0;
-	filename=NULL;
-	tofiles=NULL;
-	start=end=-1;
-	layout=0;
-	doc=NULL;
-	papergroup=NULL;
-	limbo=NULL;
-	collect_for_out=COLLECT_Dont_Collect;
-	rasterize=0;
+	BaseDefaults();
+}
+
+void DocumentExportConfig::BaseDefaults()
+{
+	curpaperrotation= 0;
+	paperrotation   = 0;
+	rotate180       = 0;
+	reverse_order   = 0;
+	evenodd         = All;
+	batches         = 0;
+	filter          = NULL;
+	target          = 0;
+	filename        = NULL;
+	tofiles         = NULL;
+	start     = end = -1;
+	layout          = 0;
+	doc             = NULL;
+	papergroup      = NULL;
+	limbo           = NULL;
+	collect_for_out = COLLECT_Dont_Collect;
+	rasterize       = 0;
+	textaspaths     = true; // *** change to false when text is better implemented!!
 }
 
 /*! Increments count on ndoc if it exists.
@@ -1014,76 +1050,50 @@ DocumentExportConfig::DocumentExportConfig(Document *ndoc,
 										   int l,int s,int e,
 										   PaperGroup *group)
 {
-	curpaperrotation=0;
-	paperrotation=0;
-	rotate180=0;
-	reverse_order=0;
-	evenodd=All;
-	batches=0;
+	BaseDefaults();
 
-	target=0;
-	filename=newstr(file);
-	tofiles=newstr(to);
-	start=s;
-	end=e;
-	layout=l;
-	doc=ndoc;
-	limbo=lmbo;
-	collect_for_out=COLLECT_Dont_Collect;
-
-	filter=NULL;
-	if (doc) doc->inc_count();
-	if (limbo) limbo->inc_count();
-	papergroup=group;
-	if (papergroup) papergroup->inc_count();
+	filename   = newstr(file);
+	tofiles    = newstr(to);
+	start      = s;
+	end        = e;
+	layout     = l;
+	doc        = ndoc;   if (doc) doc->inc_count();
+	limbo      = lmbo;   if (limbo) limbo->inc_count();
+	papergroup = group;  if (papergroup) papergroup->inc_count();
 }
 
 DocumentExportConfig::DocumentExportConfig(DocumentExportConfig *config) 
-{ 
+{
+	BaseDefaults();
 	if (config==NULL) {
-		paperrotation=0;
-		rotate180=0;
-		reverse_order=0;
-		evenodd=All;
-		batches=0;
-		filter=NULL;
-		target=0;
-		filename=NULL;
-		tofiles=NULL;
-		start=end=-1;
-		layout=0;
-		doc=NULL;
-		papergroup=NULL;
-		limbo=NULL;
-		collect_for_out=COLLECT_Dont_Collect;
-		rasterize=0;
 		return;
 	}
 
-    paperrotation=config->paperrotation; 
-	rotate180    =config->rotate180;
-	reverse_order=config->reverse_order;
-    evenodd      =config->evenodd; 
-    batches      =config->batches; 
-    target       =config->target; 
-    start        =config->start; 
-    layout       =config->layout; 
-    collect_for_out=config->collect_for_out; 
-    rasterize    =config->rasterize; 
- 
-    filename=newstr(config->filename); 
-    tofiles =newstr(config->tofiles); 
- 
-    filter       =config->filter; //object, but does not get inc_counted 
- 
-    doc          =config->doc; 
-    papergroup   =config->papergroup; 
-    limbo        =config->limbo; 
- 
-    if (doc)        doc->inc_count(); 
-    if (limbo)      limbo->inc_count(); 
-    if (papergroup) papergroup->inc_count(); 
- 
+    paperrotation  = config->paperrotation;
+	rotate180      = config->rotate180;
+	reverse_order  = config->reverse_order;
+    evenodd        = config->evenodd;
+    batches        = config->batches;
+    target         = config->target;
+    start          = config->start;
+    layout         = config->layout;
+    collect_for_out= config->collect_for_out;
+    rasterize      = config->rasterize;
+	textaspaths    = config->textaspaths;
+
+    filename       = newstr(config->filename);
+    tofiles        = newstr(config->tofiles);
+
+    filter         = config->filter; //object, but does not get inc_counted
+
+    doc            = config->doc;
+    papergroup     = config->papergroup;
+    limbo          = config->limbo;
+
+    if (doc)        doc->inc_count();
+    if (limbo)      limbo->inc_count();
+    if (papergroup) papergroup->inc_count();
+
 }
 
 /*! Decrements doc if it exists.
@@ -1109,6 +1119,33 @@ int DocumentExportConfig::assign(FieldExtPlace *ext,Value *v)
 	return 0;
 }
 
+LaxFiles::Attribute *DocumentExportConfig::dump_out_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+{
+	if (!att) att=new Attribute;
+
+	if (filename) att->push("tofile", filename);
+	if (tofiles) att->push("tofiles", tofiles);
+	if (filter) att->push("format", filter->VersionName());
+	if (doc && doc->imposition) {
+		att->push("imposition", doc->imposition->whattype());
+		att->push("layout", doc->imposition->LayoutName(layout));
+	}
+	att->push("start",start);
+	att->push("end",  end);
+
+	att->push("paperrotation", paperrotation);
+	att->push("rotate180", rotate180==0 ? "yes" : "no"); 
+	att->push("reverse", reverse_order ? "yes" : "no");
+	att->push("batches", batches);
+	if (evenodd==Odd) att->push("evenodd","odd");
+	else if (evenodd==Even) att->push("evenodd","even");
+	else att->push("evenodd","all");
+
+	att->push("textaspaths", textaspaths ? "yes" : "no");
+
+	return att;
+}
+
 void DocumentExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
@@ -1127,7 +1164,6 @@ void DocumentExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpCo
 		fprintf(f,"%spaperrotation 0      #0|90|180|270. Whether to rotate each exported (final) paper by that number of degrees\n",spc);
 		fprintf(f,"%srotate180 yes        #or no. Whether to rotate every other paper by 180 degrees, in addition to paperrotation\n",spc);
 
-		//DBG cerr <<" *** need to implement DocumentExportConfig::paperrotation!"<<endl;
 		return;
 	}
 	if (filename) fprintf(f,"%stofile %s\n",spc,filename);
@@ -1148,6 +1184,8 @@ void DocumentExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpCo
 	if (evenodd==Odd) fprintf(f,"%sevenodd odd\n",spc);
 	else if (evenodd==Even) fprintf(f,"%sevenodd even\n",spc);
 	else fprintf(f,"%sevenodd all\n",spc);
+
+	fprintf(f,"%stextaspaths %s\n",spc,textaspaths ? "yes" : "no");
 
 }
 
@@ -1199,6 +1237,8 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpCo
 
 		} else if (!strcmp(name,"paperrotation")) {
 			IntAttribute(value,&paperrotation);
+			if (paperrotation != 0 && paperrotation!= 90 && paperrotation != 180 && paperrotation != 270)
+				paperrotation=0;
 
 		} else if (!strcmp(name,"rotate180")) {
 			rotate180=BooleanAttribute(value);
@@ -1214,6 +1254,23 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpCo
 			else if (strcmp(value,"odd")) evenodd=Odd;
 			else if (strcmp(value,"even")) evenodd=Even;
 			else evenodd=All;
+
+		} else if (!strcmp(name,"textaspaths")) {
+			textaspaths = BooleanAttribute(value);
+
+		} else if (!strcmp(name,"crop")) {
+			if (isblank(value)) continue;
+			//char bracket=0;
+			//while (isspace(*value)) value++;
+			if (*value=='[' || *value=='(') value++;
+			double d[4];
+			int n=DoubleListAttribute(value, d, 4, NULL);
+			if (n==4) {
+				crop.minx=(d[0]<d[1] ? d[0] : d[1]);
+				crop.maxx=(d[0]>d[1] ? d[0] : d[1]);
+				crop.miny=(d[2]<d[3] ? d[2] : d[3]);
+				crop.maxy=(d[2]>d[3] ? d[2] : d[3]); 
+			}
 		}
 	}
 	if (start<0) start=0;
@@ -1225,7 +1282,7 @@ ObjectDef *DocumentExportConfig::makeObjectDef()
 	return makeExportConfigDef();
 }
 
-Style* DocumentExportConfig::duplicate(Style*)
+Value* DocumentExportConfig::duplicate()
 {
 	DocumentExportConfig *c=new DocumentExportConfig;
 	*c=*this; //shallow copy!!

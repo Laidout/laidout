@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2014 by Tom Lechner
@@ -35,6 +34,19 @@ namespace Laidout {
 
 
 //--------------------- ObjectTimeline ---------------------------------------
+
+class ClipInfo : public Laxkit::anObject
+{
+  public:
+	char *name;
+	double length;
+	double start, end; //within 0..length
+	double current;
+
+	ClipInfo(const char *nname, double len, double in, double out);
+	virtual ~ClipInfo();
+};
+
 
 class KeyFrame
 {
@@ -72,13 +84,6 @@ class ObjectTimeline : public Laxkit::anObject
 	Laxkit::PtrStack<KeyFrame> keyframes;
 };
 
-class SceneInfo : public Laxkit::anObject
-{
-  public:
-	char *name;
-	double length_seconds;
-	double offset_start;
-};
 
 //------------------------------------- AnimationInterface --------------------------------------
 
@@ -91,22 +96,25 @@ class AnimationInterface : public LaxInterfaces::anInterface
 	int hoveri;
 	int mode;
 
+	struct timespec last_time, cur_timespec; //use this because timers use times(), which is not real world time elapsed
+
 	//ObjectTimeline *global_time;
 	double animation_length; //in seconds
-	double ui_first_time, ui_last_time;
-	double current_time;
+	double start_time, end_time;
+	double current_time; //in seconds
 	double fps; //0 means continuous
 	double current_fps; //==fps*speed
 	double speed; //1==normal
 	int timerid;
-	int currentframe;
+	int current_frame;
 	bool playing;
-	bool showdecs;
+	bool show_fps;
 
 	LaxInterfaces::Selection *selection;
 
 	double uiscale;
-	Laxkit::DoubleBBox box;
+	Laxkit::DoubleBBox controlbox;
+	Laxkit::DoubleBBox timeline;
 
 	unsigned int bg_color;
 	unsigned int hbg_color;
@@ -143,7 +151,7 @@ class AnimationInterface : public LaxInterfaces::anInterface
 	virtual int InterfaceOff(); 
 	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu);
 	virtual int Event(const Laxkit::EventData *e,const char *mes);
-	virtual int  Idle(int tid=0);
+	virtual int  Idle(int tid, double delta);
 
 	
 	 // return 0 if interface absorbs event, MouseMove never absorbs: must return 1;

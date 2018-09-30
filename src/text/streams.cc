@@ -1,5 +1,4 @@
 //
-// $Id$
 //	
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
@@ -8,7 +7,7 @@
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
+// version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
 // Copyright (C) 2013 by Tom Lechner
@@ -903,10 +902,10 @@ Style *ProcessCSSBlock(Style *style, const char *cssvalue)
 		} else if (!strcmp(name, "font-weight")) {
 			//normal | bold | bolder | lighter | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | inherit
 			const char *endptr;
-			weight=CSSFontWeight(value, endptr);
-			value=endptr;
+			weight = CSSFontWeight(value, endptr);
+			value = endptr;
 
-			if (weight>0) style->pushInteger("font-weight", w);
+			if (weight > 0) style->pushInteger("font-weight", w);
 
 		} else if (!strcmp(name, "font-size")) {
 			 //  font-size: 	<absolute-size> | <relative-size> | <length> | <percentage> | inherit
@@ -920,11 +919,11 @@ Style *ProcessCSSBlock(Style *style, const char *cssvalue)
 
 			 //named absolute sizes, these are relative to some platform specific table of numbers:
 			else if (!strcmp(value,"xx-small")) v=.5;
-			else if (!strcmp(value,"x-small")) v=.75;
-			else if (!strcmp(value,"small")) v=.8;
-			else if (!strcmp(value,"medium")) v=1;
-			else if (!strcmp(value,"large")) v=1.2;
-			else if (!strcmp(value,"x-large")) v=1.4;
+			else if (!strcmp(value,"x-small" )) v=.75;
+			else if (!strcmp(value,"small"   )) v=.8;
+			else if (!strcmp(value,"medium"  )) v=1;
+			else if (!strcmp(value,"large"   )) v=1.2;
+			else if (!strcmp(value,"x-large" )) v=1.4;
 			else if (!strcmp(value,"xx-large")) v=1.7;
 
 		   	 //for relative size
@@ -1081,13 +1080,13 @@ Value *ParseLengthOrPercent(const char *value, const char *relative_to, const ch
 int CSSFontWeight(const char *value, const char *&endptr)
 {
 	int weight=-1;
-	if (!strncmp(value,"inherit",7))       { endptr=value+7; } //do nothing special
-	else if (!strncmp(value,"normal",6))   { endptr=value+6; weight=400; }
-	else if (!strncmp(value,"bold",4))     { endptr=value+4; weight=700; }
-	else if (!strncmp(value,"bolder", 6))  { endptr=value+6; weight=900; } //120% ?
-	else if (!strncmp(value,"lighter", 7)) { endptr=value+7; weight=300; } //80% ? 
+	if (!strncmp(value,"inherit",7))       { endptr = value+7; } //do nothing special
+	else if (!strncmp(value,"normal",6))   { endptr = value+6; weight=400; }
+	else if (!strncmp(value,"bold",4))     { endptr = value+4; weight=700; }
+	else if (!strncmp(value,"bolder", 6))  { endptr = value+6; weight=900; } //120% ?
+	else if (!strncmp(value,"lighter", 7)) { endptr = value+7; weight=300; } //80% ? 
 	else if (value[0]>='1' && value[0]<='9') { //scan in any integer... not really css compliant, but what the hay
-		weight=strtol(value,10,&endptr);
+		weight = strtol(value,10,&endptr);
 	} else endptr=value;
 
 	return weight;
@@ -1123,6 +1122,7 @@ LFont *MatchCSSFont(const char *font_family, int italic, const char *variant, in
  */
 Color *CSSColorValue(const char *value, int *ret_type)
 {
+	//css3 has 147 named colors
 	//css3 has rgba, and hsl/hsla
 	//  not implemented: x11 colors
 	//  not implemented: system colors: see http://www.w3.org/TR/CSS2/ui.html#system-colors
@@ -1136,7 +1136,9 @@ Color *CSSColorValue(const char *value, int *ret_type)
 	int r=-1,g=-1,b=-1, a=0xff;
 
 	 //css named colors
-	if      (!strcmp(value,"maroon"))  { r=0x80; g=0x00; b=0x00; }
+	if      (!strcmp(value,"white"))   { r=0xff; g=0xff; b=0xff; }
+	else if (!strcmp(value,"black"))   { r=0x00; g=0x00; b=0x00; }
+	else if (!strcmp(value,"maroon"))  { r=0x80; g=0x00; b=0x00; }
 	else if (!strcmp(value,"red"))     { r=0xff; g=0x00; b=0x00; }
 	else if (!strcmp(value,"orange"))  { r=0xff; g=0xA5; b=0x00; }
 	else if (!strcmp(value,"yellow"))  { r=0xff; g=0xff; b=0x00; }
