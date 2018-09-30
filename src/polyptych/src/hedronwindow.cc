@@ -2900,9 +2900,12 @@ int HedronWindow::unwrapTo(int from,int to)
 		}
 
 		int fromi,toi;
-		int status=netf->findOriginalFace(from,1,0,&fromi);
+		DBG int status =
+		netf->findOriginalFace(from,1,0,&fromi);
 		DBG cerr <<"from: find orig "<<from<<":"<<fromi<<", status="<<status<<endl;
-		status=nett->findOriginalFace(to,1,0,&toi);
+
+		DBG status = 
+		nett->findOriginalFace(to,1,0,&toi);
 		DBG cerr <<"  to: find orig "<<to<<":"<<toi<<", status="<<status<<endl;
 
 		netf->resetTick(0);
