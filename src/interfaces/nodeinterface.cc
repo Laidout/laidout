@@ -767,6 +767,16 @@ LaxInterfaces::anInterface *NodeBase::GetInterface(LaxInterfaces::anInterface *i
 	return NULL;
 }
 
+/*! This is called in response to a custom interface event.
+ * If the interface is from the node, prop is NULL. Otherwise the interface was
+ * generated from prop. 
+ * Return 0 for event absorbed or 1 for not.
+ */
+int NodeBase::InterfaceEvent(NodeProperty *prop, LaxInterfaces::anInterface *interf, const Laxkit::EventData *data, const char *mes)
+{
+	return 1;
+}
+
 /*! Return whether the node has valid values, or the outputs are older than inputs.
  * Return 0 for no error and everything up to date.
  * -1 means bad inputs and node in error state.
