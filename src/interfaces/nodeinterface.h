@@ -302,6 +302,7 @@ class NodeBase : public Laxkit::anObject,
 	virtual ObjectDef *GetDef() { return def; }
 	virtual void InstallDef(ObjectDef *def, bool absorb_count);
 	virtual LaxInterfaces::anInterface *GetInterface(LaxInterfaces::anInterface *interface);
+	virtual int InterfaceEvent(NodeProperty *prop, LaxInterfaces::anInterface *interf, const Laxkit::EventData *data, const char *mes);
 
 	virtual int Undo(UndoData *data);
 	virtual int Redo(UndoData *data);
