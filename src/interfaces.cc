@@ -118,20 +118,8 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		existingpool->push(i);
 		i->dec_count();
 
-		 //------Perspective
-		i=new PerspectiveInterface(NULL,id++,NULL);
-		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
-		existingpool->push(i);
-		i->dec_count();
-
 		 //------Ellipse
 		i=new EllipseInterface(NULL,id++,NULL);
-		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
-		existingpool->push(i);
-		i->dec_count();
-
-		 //------Delauney
-		i=new DelauneyInterface(NULL,id++,NULL);
 		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 		existingpool->push(i);
 		i->dec_count();
@@ -142,8 +130,8 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		existingpool->push(i);
 		i->dec_count();
 
-		 //------ObjectFilters
-		i=new ObjectFilterInterface(NULL,id++,NULL);
+		 //------Perspective
+		i=new PerspectiveInterface(NULL,id++,NULL);
 		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 		existingpool->push(i);
 		i->dec_count();
@@ -236,6 +224,19 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	existingpool->push(i);
 	i->InitializeResources();
 	i->dec_count();
+
+	 //------Delauney
+	i=new DelauneyInterface(NULL,id++,NULL);
+	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+	existingpool->push(i);
+	i->dec_count();
+
+	 //------ObjectFilters
+	i=new ObjectFilterInterface(NULL,id++,NULL);
+	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+	existingpool->push(i);
+	i->dec_count();
+
 
 
 	//------------------------Overlays---------------
