@@ -6,7 +6,7 @@
 CONFIGCOMMAND="./configure $@"
 
 
-LAIDOUTVERSION=0.096.1
+LAIDOUTVERSION=0.097
 
  # finalprefix is where things eventually get installed. For deb packaging, this is different than prefix
 FINALPREFIX=""

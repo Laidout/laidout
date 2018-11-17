@@ -1,4 +1,4 @@
-LAIDOUT Version 0.096.1
+LAIDOUT Version 0.097
 =======================
 http://laidout.org
 
@@ -236,9 +236,9 @@ clobbering or corrupting files from other versions.
 You can change the version number manually by specifying it when you run
 ./configure with something like:
 
-    ./configure --version=0.096-different
+    ./configure --version=0.097-different
 
-You should try to preserve the main version number (which is 0.096 in this
+You should try to preserve the main version number (which is 0.097 in this
 example), or it might confuse Laidout at some point.
 
 Though you can have different versions coexist, there is not currently an
