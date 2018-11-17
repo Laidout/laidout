@@ -1,104 +1,593 @@
-.TH REPLACEWITHPROGRAMNAME SECTION "November 13, 2012"
-.SH NAME
-Laidout Version 0.096.1
-http://www.laidout.org
-by Tom Lechner, sometime between 2006 and 2018
-Released under the GNU Public License, Version 3.
- (using Laxkit Version 0.0.8.1)
- laidout [options] [file1] [file2] ...
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+<title>Laidout 0.097 Shortcuts</title>
 
-Options:
-.SH OPTIONS
+<style type="text/css">
+body { background-color: #eee; color: #000; }
+.cntlkey, .metakey, .altkey, .shiftkey {
+	border: 1px solid #bbb;
+	background-color: #ddd;
+	color: #444;
+	padding: .25em;
+	margin: .1em;
+	border-radius: .4em;
+	-moz-border-radius: .4em;
+	font-family: sans-serif, courier;
+	font-size: 85%;
+	display: inline-block;
+   box-shadow: 0px .1em .15em #555;
+}
 
+.cntlkey::before  { content: "control"; }
+.altkey::before   { content: "alt"; }
+.metakey::before  { content: "meta"; }
+.shiftkey::before { content: "shift"; }
 
-.TP
-.B \-X, \-\-export\-formats
-List all the available export formats
+.keystyle {
+   border: 1px solid #bbb;
+   padding: .25em .25em .15em .25em;
+   margin: .1em;
+   border-radius: .4em;
+	font-size: 90%;
+	font-weight: bold;
+   display: inline-block;
+   box-shadow: 0px .1em .2em #555;
+}
 
-.TP
-.B \-O, \-\-list\-export\-options format
-List all the options for the given format
+table.formattable {
+	border-width: 1px 1px 1px 1px;
+	border-spacing: 0px;
+	border-style: outset outset outset outset;
+	border-color: #888;
+	border-collapse: collapse;
+}
+table.formattable th {
+	border-width: 1px 1px 1px 1px;
+	padding: 1px 1px 1px 1px;
+	border-style: inset inset inset inset;
+	border-color: #ccc;
+	-moz-border-radius: 0px;
+}
+table.formattable td {
+	border-style: inset inset inset inset;
+	border-color: #ccc;
+	padding: .2em .6em .2em .6em;
+	-moz-border-radius: 0px;
+}
+td.area { background-color: #cccccc; border-width: 1px 1px 1px 1px; }
+td.key { background-color: #ffffff; text-align: right; border-width: 1px 0px 1px 1px; }
+td.id { background-color: #dddddd; border-width: 1px 1px 1px 1px; }
+td.description { background-color: #ffffff; border-width: 1px 1px 1px 0px; }
+</style>
 
-.TP
-.B \-e, \-\-export 'format=EPS start=3'
-Export a document based on the given options
+</head>
+<body>
 
-.TP
-.B \-t, \-\-template templatename
-Start laidout from this template in ~/.laidout/(version)/templates
-
-.TP
-.B \-N, \-\-no\-template
-Do not use a default template
-
-.TP
-.B \-n, \-\-new 'letter,portrait,3pgs'
-Create new document
-
-.TP
-.B \-F, \-\-file\-format
-Print out a pseudocode mockup of the file format, then exit
-
-.TP
-.B \-c, \-\-command 'newdoc net'
-Run one or more commands without the gui
-
-.TP
-.B \-s, \-\-script /some/file
-Like --command, but the commands are in the given file
-
-.TP
-.B \-L, \-\-shell
-Enter a command line shell. Can be used with --command and --script.
-
-.TP
-.B \-u, \-\-default\-units (in|cm|mm|m|ft|yards)
-Use the specified units.
-
-.TP
-.B \-l, \-\-load\-dir path
-Start in this directory.
-
-.TP
-.B \-E, \-\-experimental
-Enable any compiled in experimental features
-
-.TP
-.B \-I, \-\-impose\-only arg
-Run only as a file imposer, not full Laidout
-
-.TP
-.B \-o, \-\-nodes\-only arg
-Run only as a node editor on argument
-
-.TP
-.B \-p, \-\-pipein default
-Start with a document piped in on stdin
-
-.TP
-.B \-P, \-\-pipeout default
-On exit, export document[0] to stdout
-
-.TP
-.B \-S, \-\-list\-shortcuts
-Print out a list of current keyboard bindings, then exit
-
-.TP
-.B \-T, \-\-theme arg
-Set theme. Currently, one of Light, Dark, or Gray
-
-.TP
-.B \-H, \-\-helphtml
-Output an html fragment of key shortcuts.
-
-.TP
-.B \-\-helpman
-Output a man page fragment of options.
-
-.TP
-.B \-v, \-\-version
-Print out version info, then exit.
-
-.TP
-.B \-h, \-\-help
-Show this summary and exit.
+<h1>Laidout 0.097 Shortcuts</h1>
+<table class="formattable">
+<tr><td colspan="3" class="area">HeadWindow</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">q</span></td><td class="description">Quit Laidout</td><td class="id">Quit</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">o</span></td><td class="description">Open a document</td><td class="id">OpenDoc</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">K</span></td><td class="description">Open shortcut key editor</td><td class="id">OpenKeys</td></tr>
+<tr><td colspan="3" class="area">LaidoutViewport</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">+</span></td><td class="description">Zoom in</td><td class="id">ZoomIn</td></tr>
+  <tr><td class="key"><span class="keystyle">=</span></td><td class="description">Zoom in</td><td class="id">ZoomIn</td></tr>
+  <tr><td class="key"><span class="keystyle">-</span></td><td class="description">Zoom out</td><td class="id">ZoomOut</td></tr>
+  <tr><td class="key"><span class="keystyle">space</span></td><td class="description">Center drawing</td><td class="id">CenterDrawing</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">space</span></td><td class="description">Reset the view, center and align axes</td><td class="id">ResetView</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">space</span></td><td class="description">Reset the view, center and align axes</td><td class="id">ResetView</td></tr>
+  <tr><td class="key"><span class="keystyle">.</span></td><td class="description">Select next object</td><td class="id">NextObject</td></tr>
+  <tr><td class="key"><span class="keystyle">,</span></td><td class="description">Select previous object</td><td class="id">PreviousObject</td></tr>
+  <tr><td class="key"><span class="keystyle">Bksp</span></td><td class="description">Delete current object</td><td class="id">DeleteObject</td></tr>
+  <tr><td class="key"><span class="keystyle">Del</span></td><td class="description">Delete current object</td><td class="id">DeleteObject</td></tr>
+  <tr><td class="key"><span class="keystyle">j</span></td><td class="description">Shift view left</td><td class="id">ShiftLeft</td></tr>
+  <tr><td class="key"><span class="keystyle">l</span></td><td class="description">Shift view right</td><td class="id">ShiftRight</td></tr>
+  <tr><td class="key"><span class="keystyle">i</span></td><td class="description">Toggle showing object information</td><td class="id">ObjectInfo</td></tr>
+  <tr><td class="key"><span class="keystyle">k</span></td><td class="description">Shift view Down</td><td class="id">ShiftDown</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">[</span></td><td class="description">Increase view shift amount</td><td class="id">IncShift</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">]</span></td><td class="description">Decrease view shift amount</td><td class="id">DecShift</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">z</span></td><td class="description">Undo</td><td class="id">Undo</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">y</span></td><td class="description">Redo</td><td class="id">Redo</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">Z</span></td><td class="description">Redo</td><td class="id">Redo</td></tr>
+  <tr><td class="key"><span class="keystyle">Tab</span></td><td class="description">Select next object</td><td class="id">NextObject</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">Tab</span></td><td class="description">Select previous object</td><td class="id">PreviousObject</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">A</span></td><td class="description">Deselect all</td><td class="id">DeselectAll</td></tr>
+  <tr><td class="key"><span class="keystyle">6</span></td><td class="description">Center drawing</td><td class="id">CenterDrawing</td></tr>
+  <tr><td class="key"><span class="keystyle">4</span></td><td class="description">Center on current object</td><td class="id">CenterObject</td></tr>
+  <tr><td class="key"><span class="keystyle">5</span></td><td class="description">Zoom to the current page</td><td class="id">ZoomToPage</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">space</span></td><td class="description">Zoom to the current page</td><td class="id">ZoomToPage</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">G</span></td><td class="description">Grab color</td><td class="id">GrabColor</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">l</span></td><td class="description">Toggle show state</td><td class="id">ToggleShow</td></tr>
+  <tr><td class="key"><span class="keystyle">m</span></td><td class="description">Move objects</td><td class="id">MoveObjs</td></tr>
+  <tr><td class="key"><span class="keystyle">PageUp</span></td><td class="description">Move object up within layer</td><td class="id">MoveObjUp</td></tr>
+  <tr><td class="key"><span class="keystyle">PageDown</span></td><td class="description">Move object down within layer</td><td class="id">MoveObjDown</td></tr>
+  <tr><td class="key"><span class="keystyle">Home</span></td><td class="description">Move object to first in layer</td><td class="id">MoveObjFirst</td></tr>
+  <tr><td class="key"><span class="keystyle">End</span></td><td class="description">Move object to last in layer</td><td class="id">MoveObjLast</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">D</span></td><td class="description">Toggle drawing flags</td><td class="id">ToggleDrawFlags</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">r</span></td><td class="description">Force reapplication of any alignment rules of objects in current spread</td><td class="id">ForceRemap</td></tr>
+  <tr><td class="key">none</td><td class="description">Center the real origin in the viewport<td class="id">CenterReal</td></tr>
+  <tr><td class="key">none</td><td class="description">Shift view Up<td class="id">ShiftUp</td></tr>
+<tr><td colspan="3" class="area">ViewWindow</td></tr>
+  <tr><td class="key"><span class="keystyle">Esc</span></td><td class="description">Switch to object tool</td><td class="id">ObjectTool</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">s</span></td><td class="description">Save document</td><td class="id">Save</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">S</span></td><td class="description">Save as</td><td class="id">SaveAs</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">n</span></td><td class="description">New document</td><td class="id">NewDoc</td></tr>
+  <tr><td class="key"><span class="keystyle">t</span></td><td class="description">Next tool</td><td class="id">NextTool</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">T</span></td><td class="description">Previous tool</td><td class="id">PreviousTool</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">></span></td><td class="description">Next page</td><td class="id">NextPage</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle"><</span></td><td class="description">Previous page</td><td class="id">PreviousPage</td></tr>
+  <tr><td class="key"><span class="keystyle">F1</span></td><td class="description">Help</td><td class="id">Help</td></tr>
+  <tr><td class="key"><span class="keystyle">F2</span></td><td class="description">About Laidout</td><td class="id">About</td></tr>
+  <tr><td class="key"><span class="keystyle">F3</span></td><td class="description">Popup a spread editor</td><td class="id">SpreadEditor</td></tr>
+  <tr><td class="key"><span class="keystyle">F4</span></td><td class="description">Edit current imposition</td><td class="id">EditImposition</td></tr>
+  <tr><td class="key"><span class="keystyle">F5</span></td><td class="description">Change to path tool</td><td class="id">PathTool</td></tr>
+  <tr><td class="key"><span class="keystyle">F6</span></td><td class="description">Change to image tool</td><td class="id">ImageTool</td></tr>
+  <tr><td class="key"><span class="keystyle">F7</span></td><td class="description">Change to gradient tool</td><td class="id">GradientTool</td></tr>
+  <tr><td class="key"><span class="keystyle">F8</span></td><td class="description">Change to mesh gradient tool</td><td class="id">MeshGradientTool</td></tr>
+  <tr><td class="key"><span class="keystyle">F9</span></td><td class="description">Change to engraver fill tool</td><td class="id">EngraverTool</td></tr>
+  <tr><td class="key"><span class="keystyle">/</span></td><td class="description">Popup the graphical shell</td><td class="id">Prompt</td></tr>
+<tr><td colspan="3" class="area">SpreadInterface</td></tr>
+  <tr><td class="key"><span class="keystyle">a</span></td><td class="description">Select all or none</td><td class="id">ToggleSelect</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">m</span></td><td class="description">Select all pages with the same kind of markers</td><td class="id">SelectSimilar</td></tr>
+  <tr><td class="key"><span class="keystyle">space</span></td><td class="description">Center</td><td class="id">Center</td></tr>
+  <tr><td class="key"><span class="keystyle">l</span></td><td class="description">Move label position</td><td class="id">LabelPos</td></tr>
+  <tr><td class="key"><span class="keystyle">c</span></td><td class="description">Toggle color among defined colors</td><td class="id">ToggleColor</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">C</span></td><td class="description">Toggle color among defined colors</td><td class="id">ToggleColorR</td></tr>
+  <tr><td class="key"><span class="keystyle">m</span></td><td class="description">Toggle mark type</td><td class="id">ToggleMark</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">M</span></td><td class="description">Toggle mark type</td><td class="id">ToggleMarkR</td></tr>
+  <tr><td class="key"><span class="keystyle">t</span></td><td class="description">Toggle showing thumbnails</td><td class="id">Thumbs</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">A</span></td><td class="description">Toggle arrangement type</td><td class="id">Arrange</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">A</span></td><td class="description">Refresh with current arrangement type</td><td class="id">RefreshArrange</td></tr>
+  <tr><td class="key"><span class="keystyle">p</span></td><td class="description">Add a page after current</td><td class="id">AddPage</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">P</span></td><td class="description">Add a page before current</td><td class="id">AddPageBefore</td></tr>
+  <tr><td class="key"><span class="keystyle">Del</span></td><td class="description">Delete pages</td><td class="id">Deletepages</td></tr>
+  <tr><td class="key"><span class="keystyle">Bksp</span></td><td class="description">Delete pages</td><td class="id">Deletepages</td></tr>
+  <tr><td class="key"><span class="keystyle">h</span></td><td class="description">Toggle hiding of pages</td><td class="id">Hidepages</td></tr>
+<tr><td colspan="3" class="area">SpreadEditor</td></tr>
+  <tr><td class="key"><span class="keystyle">t</span></td><td class="description">Next tool</td><td class="id">NextTool</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">T</span></td><td class="description">Previous tool</td><td class="id">PreviousTool</td></tr>
+<tr><td colspan="3" class="area">SignatureInterface</td></tr>
+  <tr><td class="key"><span class="keystyle">d</span></td><td class="description">Toggle decorations</td><td class="id">Decorations</td></tr>
+  <tr><td class="key"><span class="keystyle">p</span></td><td class="description">Toggle showing of page thumbnails</td><td class="id">Thumbs</td></tr>
+  <tr><td class="key"><span class="keystyle">space</span></td><td class="description">Center view</td><td class="id">Center</td></tr>
+  <tr><td class="key"><span class="keystyle">Up</span></td><td class="description">Center view</td><td class="id">Center</td></tr>
+  <tr><td class="key"><span class="keystyle">Down</span></td><td class="description">Center on stack arrangement area</td><td class="id">CenterStacks</td></tr>
+  <tr><td class="key"><span class="keystyle">Left</span></td><td class="description">Select next fold</td><td class="id">NextFold</td></tr>
+  <tr><td class="key"><span class="keystyle">Right</span></td><td class="description">Select previous fold</td><td class="id">PreviousFold</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">i</span></td><td class="description">Toggle which inset to change</td><td class="id">InsetMask</td></tr>
+  <tr><td class="key"><span class="keystyle">i</span></td><td class="description">Increment inset</td><td class="id">InsetInc</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">I</span></td><td class="description">Decrement inset</td><td class="id">InsetDec</td></tr>
+  <tr><td class="key"><span class="keystyle">g</span></td><td class="description">Increment gap</td><td class="id">GapInc</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">G</span></td><td class="description">Decrement gap</td><td class="id">GapDec</td></tr>
+  <tr><td class="key"><span class="keystyle">x</span></td><td class="description">Increase number of tiles horizontally</td><td class="id">TileXInc</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">X</span></td><td class="description">Decrease number of tiles horizontally</td><td class="id">TileXDec</td></tr>
+  <tr><td class="key"><span class="keystyle">y</span></td><td class="description">Increase number of tiles vertically</td><td class="id">TileYInc</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">Y</span></td><td class="description">Decrease number of tiles vertically</td><td class="id">TileYDec</td></tr>
+  <tr><td class="key"><span class="keystyle">v</span></td><td class="description">Increase number of vertical folds</td><td class="id">NumFoldsVInc</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">V</span></td><td class="description">Decrease number of vertical folds</td><td class="id">NumFoldsVDec</td></tr>
+  <tr><td class="key"><span class="keystyle">h</span></td><td class="description">Increase number of horizontal folds</td><td class="id">NumFoldsHInc</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">H</span></td><td class="description">Decrease number of horizontal folds</td><td class="id">NumFoldsHDec</td></tr>
+  <tr><td class="key"><span class="keystyle">b</span></td><td class="description">Next binding edge</td><td class="id">BindingEdge</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">B</span></td><td class="description">Previous binding edge</td><td class="id">BindingEdgeR</td></tr>
+  <tr><td class="key"><span class="keystyle">u</span></td><td class="description">Change page orientation</td><td class="id">PageOrientation</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">t</span></td><td class="description">Toggle which trim to change</td><td class="id">TrimMask</td></tr>
+  <tr><td class="key"><span class="keystyle">t</span></td><td class="description">Increase trim value</td><td class="id">TrimInc</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">T</span></td><td class="description">Decrease trim value</td><td class="id">TrimDec</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">m</span></td><td class="description">Toggle which margin to change</td><td class="id">MarginMask</td></tr>
+  <tr><td class="key"><span class="keystyle">m</span></td><td class="description">Increase margin value</td><td class="id">MarginInc</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">M</span></td><td class="description">Decrease margin value</td><td class="id">MarginDec</td></tr>
+<tr><td colspan="3" class="area">HedronWindow</td></tr>
+  <tr><td class="key"><span class="keystyle">h</span></td><td class="description">Display help</td><td class="id">Help</td></tr>
+  <tr><td class="key"><span class="keystyle">F1</span></td><td class="description">Display help</td><td class="id">Help</td></tr>
+  <tr><td class="key"><span class="keystyle">p</span></td><td class="description">Toggle paper overlay</td><td class="id">TogglePapers</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">p</span></td><td class="description">Load new polyhedron</td><td class="id">Hedron</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">i</span></td><td class="description">Load image</td><td class="id">Image</td></tr>
+  <tr><td class="key"><span class="keystyle">`</span></td><td class="description">Toggle between net and solid modes</td><td class="id">Toggle mode</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">r</span></td><td class="description">Render</td><td class="id">Render</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">s</span></td><td class="description">Save</td><td class="id">Save</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">S</span></td><td class="description">Save as</td><td class="id">SaveAs</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">D</span></td><td class="description">Delete all defined nets</td><td class="id">ResetNets</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">A</span></td><td class="description">Totally unwrap</td><td class="id">TotalUnwrap</td></tr>
+  <tr><td class="key"><span class="keystyle">[</span></td><td class="description">Thicken seam and path indicators</td><td class="id">ThickenLines</td></tr>
+  <tr><td class="key"><span class="keystyle">]</span></td><td class="description">Thin seam and path indicators</td><td class="id">ThinLines</td></tr>
+  <tr><td class="key"><span class="keystyle">n</span></td><td class="description">Toggle drawing seams</td><td class="id">DrawSeams</td></tr>
+  <tr><td class="key"><span class="keystyle">t</span></td><td class="description">Toggle using texture</td><td class="id">ToggleTexture</td></tr>
+  <tr><td class="key"><span class="keystyle">l</span></td><td class="description">Toggle drawing edges</td><td class="id">DrawEdges</td></tr>
+  <tr><td class="key"><span class="keystyle">m</span></td><td class="description">Toggle render mode</td><td class="id">RenderMode</td></tr>
+  <tr><td class="key"><span class="keystyle">c</span></td><td class="description">Select next camera</td><td class="id">Camera</td></tr>
+  <tr><td class="key"><span class="keystyle">Left</span></td><td class="description">Pan camera left</td><td class="id">PanLeft</td></tr>
+  <tr><td class="key"><span class="keystyle">Right</span></td><td class="description">Pan camera right</td><td class="id">PanRight</td></tr>
+  <tr><td class="key"><span class="keystyle">Up</span></td><td class="description">Pan camera up</td><td class="id">PanUp</td></tr>
+  <tr><td class="key"><span class="keystyle">Down</span></td><td class="description">Pan camera down</td><td class="id">PanDown</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">Left</span></td><td class="description">Move camera left</td><td class="id">CameraLeft</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">Right</span></td><td class="description">Move camera right</td><td class="id">CameraRight</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">Up</span></td><td class="description">Move camera up</td><td class="id">CameraUp</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">Down</span></td><td class="description">Move camera down</td><td class="id">CameraDown</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">Up</span></td><td class="description">Move camera forward</td><td class="id">CameraForward</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">Down</span></td><td class="description">Move camera back</td><td class="id">CameraBack</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">Left</span></td><td class="description">Rotate camera clockwise</td><td class="id">CameraRotate</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">Right</span></td><td class="description">Rotate camera counterclockwise</td><td class="id">CameraRotateCC</td></tr>
+  <tr><td class="key"><span class="keystyle">w</span></td><td class="description">Select next face</td><td class="id">NextFace</td></tr>
+  <tr><td class="key"><span class="keystyle">v</span></td><td class="description">Select previous face</td><td class="id">PrevFace</td></tr>
+  <tr><td class="key"><span class="keystyle">=</span></td><td class="description">Select next object</td><td class="id">NextObject</td></tr>
+  <tr><td class="key"><span class="keystyle">x</span></td><td class="description">Move object in its positive x direction</td><td class="id">ObjectPlusX</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">X</span></td><td class="description">Move object in its negative x direction</td><td class="id">ObjectMinusX</td></tr>
+  <tr><td class="key"><span class="keystyle">y</span></td><td class="description">Move object in its positive y direction</td><td class="id">ObjectPlusY</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">Y</span></td><td class="description">Move object in its negative y direction</td><td class="id">ObjectMinusY</td></tr>
+  <tr><td class="key"><span class="keystyle">z</span></td><td class="description">Move object in its positive z direction</td><td class="id">ObjectPlusZ</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">Z</span></td><td class="description">Move object in its negative z direction</td><td class="id">ObjectMinusZ</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">x</span></td><td class="description">Rotate object around x axis</td><td class="id">ObjectRotateX</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">X</span></td><td class="description">Rotate object around x axis the other way</td><td class="id">ObjectRotateXr</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">y</span></td><td class="description">Rotate object around y axis</td><td class="id">ObjectRotateY</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">Y</span></td><td class="description">Rotate object around y axis the other way</td><td class="id">ObjectRotateYr</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">z</span></td><td class="description">Rotate object around z axis</td><td class="id">ObjectRotateZ</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">Z</span></td><td class="description">Rotate object around z axis the other way</td><td class="id">ObjectRotateZr</td></tr>
+  <tr><td class="key"><span class="keystyle">0</span></td><td class="description">Scale object up</td><td class="id">ScaleUp</td></tr>
+  <tr><td class="key"><span class="keystyle">9</span></td><td class="description">Scale object down</td><td class="id">ScaleDown</td></tr>
+  <tr><td class="key"><span class="keystyle">space</span></td><td class="description">Make camera point at object from a reasonable distance</td><td class="id">ResetView</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">e</span></td><td class="description">Toggle viewing in crosseye stereo, straight stereo, or no stereo</td><td class="id">ToggleStereo</td></tr>
+<tr><td colspan="3" class="area">AnimationInterface</td></tr>
+  <tr><td class="key"><span class="keystyle">k</span></td><td class="description">Add keyframe for selected objects</td><td class="id">AddKeyframe</td></tr>
+<tr><td colspan="3" class="area">PerspectiveInterface</td></tr>
+  <tr><td class="key"><span class="keystyle">z</span></td><td class="description">Reset transform</td><td class="id">Reset</td></tr>
+  <tr><td class="key"><span class="keystyle">g</span></td><td class="description">Toggle grid</td><td class="id">Grid</td></tr>
+  <tr><td class="key"><span class="keystyle">p</span></td><td class="description">Toggle preview image</td><td class="id">Preview</td></tr>
+<tr><td colspan="3" class="area">EllipseInterface</td></tr>
+  <tr><td class="key"><span class="keystyle">d</span></td><td class="description">Toggle decorations</td><td class="id">ToggleDecs</td></tr>
+  <tr><td class="key"><span class="keystyle">c</span></td><td class="description">Toggle editing as a circle</td><td class="id">ToggleCircle</td></tr>
+<tr><td colspan="3" class="area">DelauneyInterface</td></tr>
+  <tr><td class="key"><span class="keystyle">n</span></td><td class="description">Toggle numbers</td><td class="id">ToggleNumbers</td></tr>
+  <tr><td class="key"><span class="keystyle">a</span></td><td class="description">Toggle arrows</td><td class="id">ToggleArrows</td></tr>
+  <tr><td class="key"><span class="keystyle">l</span></td><td class="description">Toggle lines</td><td class="id">ToggleLines</td></tr>
+  <tr><td class="key"><span class="keystyle">c</span></td><td class="description">Change target for color and line width changes</td><td class="id">StyleTarget</td></tr>
+  <tr><td class="key"><span class="keystyle">w</span></td><td class="description">Thicken style target</td><td class="id">Thicken</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">W</span></td><td class="description">Thin style target</td><td class="id">Thin</td></tr>
+  <tr><td class="key"><span class="keystyle">f</span></td><td class="description">Export this point set to a file</td><td class="id">FileOut</td></tr>
+  <tr><td class="key"><span class="keystyle">i</span></td><td class="description">Import a point set from a file</td><td class="id">FileIn</td></tr>
+<tr><td colspan="3" class="area">AnchorInterface</td></tr>
+  <tr><td class="key"><span class="keystyle">d</span></td><td class="description">Toggle region menu</td><td class="id">ToggleRegions</td></tr>
+  <tr><td class="key"><span class="keystyle">Right</span></td><td class="description">Use next link type</td><td class="id">NextType</td></tr>
+  <tr><td class="key"><span class="keystyle">Left</span></td><td class="description">Use previous link type</td><td class="id">PreviousType</td></tr>
+  <tr><td class="key"><span class="keystyle">Up</span></td><td class="description">Edit next rule</td><td class="id">NextRule</td></tr>
+  <tr><td class="key"><span class="keystyle">Down</span></td><td class="description">Edit previous rule</td><td class="id">PreviousRule</td></tr>
+  <tr><td class="key"><span class="keystyle">x</span></td><td class="description">Delete current or last rule if no current</td><td class="id">DeleteRule</td></tr>
+<tr><td colspan="3" class="area">ObjectFilterInterface</td></tr>
+  <tr><td class="key"><span class="keystyle">r</span></td><td class="description">Force a refresh</td><td class="id">Refresh</td></tr>
+<tr><td colspan="3" class="area">ObjectInterface</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">D</span></td><td class="description">Toggle decorations</td><td class="id">Decorations</td></tr>
+  <tr><td class="key"><span class="keystyle">n</span></td><td class="description">Distribute selected objects in rows and columns</td><td class="id">Nup</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">N</span></td><td class="description">Normalize scale, clear skew and rotation</td><td class="id">Rectify</td></tr>
+  <tr><td class="key"><span class="keystyle">c</span></td><td class="description">Toggle drag constraint</td><td class="id">Constrain</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">></span></td><td class="description">Expand handle size</td><td class="id">ExpandHandle</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle"><</span></td><td class="description">Contract handle size</td><td class="id">ContractHandle</td></tr>
+  <tr><td class="key"><span class="keystyle">r</span></td><td class="description">Rotate clockwise</td><td class="id">RotateCW</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">R</span></td><td class="description">Rotate counter clockwise</td><td class="id">RotateCCW</td></tr>
+  <tr><td class="key"><span class="keystyle">h</span></td><td class="description">Flip horizontally</td><td class="id">FlipH</td></tr>
+  <tr><td class="key"><span class="keystyle">v</span></td><td class="description">Flip vertically</td><td class="id">FlipV</td></tr>
+  <tr><td class="key"><span class="keystyle">f</span></td><td class="description">Toggle showing flip controls</td><td class="id">FlipToggleShow</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="altkey"></span><span class="keystyle">G</span></td><td class="description">Group any, even if only one selected</td><td class="id">Group</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">g</span></td><td class="description">Group if many selected, or ungroup if only one group selected</td><td class="id">ToggleGroup</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">G</span></td><td class="description">Ungroup any selected that are groups</td><td class="id">Ungroup</td></tr>
+  <tr><td class="key"><span class="keystyle">a</span></td><td class="description">Align selected objects</td><td class="id">Align</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">space</span></td><td class="description">Clone objects, if button down</td><td class="id">CloneB</td></tr>
+  <tr><td class="key"><span class="keystyle">space</span></td><td class="description">Duplicate objects, if button down</td><td class="id">DuplicateB</td></tr>
+  <tr><td class="key"><span class="altkey"></span><span class="keystyle">p</span></td><td class="description">Parent selected objects to last selected</td><td class="id">Parent</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="altkey"></span><span class="keystyle">P</span></td><td class="description">Unparent selected objects from their immediate parents</td><td class="id">Unparent</td></tr>
+  <tr><td class="key">none</td><td class="description">Normalize scale, clear skew<td class="id">Normalize</td></tr>
+  <tr><td class="key">none</td><td class="description">Move rotation center to common points<td class="id">MoveCenter</td></tr>
+  <tr><td class="key">none</td><td class="description">Clone objects<td class="id">Clone</td></tr>
+  <tr><td class="key">none</td><td class="description">Duplicate objects<td class="id">Duplicate</td></tr>
+<tr><td colspan="3" class="area">NUpInterface</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">D</span></td><td class="description">Toggle decorations</td><td class="id">Decorations</td></tr>
+  <tr><td class="key"><span class="keystyle">n</span></td><td class="description">Normalize scale, clear skew</td><td class="id">Normalize</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">N</span></td><td class="description">Normalize scale, clear skew and rotation</td><td class="id">Rectify</td></tr>
+  <tr><td class="key"><span class="keystyle">c</span></td><td class="description">Toggle drag constraint</td><td class="id">Constrain</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">></span></td><td class="description">Expand handle size</td><td class="id">ExpandHandle</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle"><</span></td><td class="description">Contract handle size</td><td class="id">ContractHandle</td></tr>
+  <tr><td class="key"><span class="keystyle">r</span></td><td class="description">Rotate clockwise</td><td class="id">RotateCW</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">R</span></td><td class="description">Rotate counter clockwise</td><td class="id">RotateCCW</td></tr>
+  <tr><td class="key"><span class="keystyle">h</span></td><td class="description">Flip horizontally</td><td class="id">FlipH</td></tr>
+  <tr><td class="key"><span class="keystyle">v</span></td><td class="description">Flip vertically</td><td class="id">FlipV</td></tr>
+  <tr><td class="key"><span class="keystyle">f</span></td><td class="description">Toggle showing flip controls</td><td class="id">FlipToggleShow</td></tr>
+  <tr><td class="key"><span class="keystyle">Enter</span></td><td class="description">Toggle apply</td><td class="id">ToggleApply</td></tr>
+  <tr><td class="key"><span class="keystyle">Left</span></td><td class="description">Next direction type</td><td class="id">NextDir</td></tr>
+  <tr><td class="key"><span class="keystyle">Right</span></td><td class="description">Previous direction type</td><td class="id">PrevDir</td></tr>
+  <tr><td class="key">none</td><td class="description">Move rotation center to common points<td class="id">MoveCenter</td></tr>
+  <tr><td class="key">none</td><td class="description">Next layout type<td class="id">NextLayoutType</td></tr>
+  <tr><td class="key">none</td><td class="description">Previous layout type<td class="id">PrevLayoutType</td></tr>
+<tr><td colspan="3" class="area">AlignInterface</td></tr>
+  <tr><td class="key"><span class="keystyle">Enter</span></td><td class="description">Toggle applying alignment</td><td class="id">ToggleApply</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">C</span></td><td class="description">Align centers vertically</td><td class="id">CenterV</td></tr>
+  <tr><td class="key"><span class="keystyle">c</span></td><td class="description">Align centers horizontally</td><td class="id">CenterH</td></tr>
+  <tr><td class="key"><span class="keystyle">x</span></td><td class="description">Make snap vertical, layout horizontal</td><td class="id">VSnap</td></tr>
+  <tr><td class="key"><span class="keystyle">y</span></td><td class="description">Make snap horizontal, layout vertical</td><td class="id">HSnap</td></tr>
+  <tr><td class="key"><span class="keystyle">r</span></td><td class="description">Align right edges horizontally</td><td class="id">Right</td></tr>
+  <tr><td class="key"><span class="keystyle">l</span></td><td class="description">Align left edges horizontally</td><td class="id">Left</td></tr>
+  <tr><td class="key"><span class="keystyle">t</span></td><td class="description">Align top edges vertically</td><td class="id">Top</td></tr>
+  <tr><td class="key"><span class="keystyle">b</span></td><td class="description">Align bottom edges vertically</td><td class="id">Bottom</td></tr>
+  <tr><td class="key"><span class="keystyle">0</span></td><td class="description">Clamp boundaries to fill path</td><td class="id">ClampBoundaries</td></tr>
+  <tr><td class="key"><span class="keystyle">[</span></td><td class="description">Move left bound left</td><td class="id">LeftBoundLess</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">[</span></td><td class="description">Move left bound right</td><td class="id">LeftBoundMore</td></tr>
+  <tr><td class="key"><span class="keystyle">]</span></td><td class="description">Move right bound left</td><td class="id">RightBoundLess</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">]</span></td><td class="description">Move right bound right</td><td class="id">RightBoundMore</td></tr>
+  <tr><td class="key"><span class="keystyle">{</span></td><td class="description">Scale down the key step</td><td class="id">LessStep</td></tr>
+  <tr><td class="key"><span class="keystyle">}</span></td><td class="description">Scale up the key step</td><td class="id">MoreStep</td></tr>
+  <tr><td class="key"><span class="keystyle">p</span></td><td class="description">Edit the path</td><td class="id">EditPath</td></tr>
+  <tr><td class="key"><span class="keystyle">Up</span></td><td class="description">Shift final alignment by 10</td><td class="id">FinalUp10</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">Up</span></td><td class="description">Shift final alignment by 1</td><td class="id">FinalUp1</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">Up</span></td><td class="description">Shift final alignment by .1</td><td class="id">FinalUp_1</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">Up</span></td><td class="description">Shift final alignment by .01</td><td class="id">FinalUp_01</td></tr>
+  <tr><td class="key"><span class="keystyle">Down</span></td><td class="description">Shift final alignment by -10</td><td class="id">FinalDown10</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">Down</span></td><td class="description">Shift final alignment by -1</td><td class="id">FinalDown1</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">Down</span></td><td class="description">Shift final alignment by -.1</td><td class="id">FinalDown_1</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">Down</span></td><td class="description">Shift final alignment by -.01</td><td class="id">FinalDown_01</td></tr>
+  <tr><td class="key"><span class="keystyle">Right</span></td><td class="description">Shift snap alignment by 10</td><td class="id">AlignUp10</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">Right</span></td><td class="description">Shift snap alignment by 1</td><td class="id">AlignUp1</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">Right</span></td><td class="description">Shift snap alignment by .1</td><td class="id">AlignUp_1</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">Right</span></td><td class="description">Shift snap alignment by .01</td><td class="id">AlignUp_01</td></tr>
+  <tr><td class="key"><span class="keystyle">Left</span></td><td class="description">Shift snap alignment by -10</td><td class="id">AlignDown10</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">Left</span></td><td class="description">Shift snap alignment by -1</td><td class="id">AlignDown1</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">Left</span></td><td class="description">Shift snap alignment by -.1</td><td class="id">AlignDown_1</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">Left</span></td><td class="description">Shift snap alignment by -.01</td><td class="id">AlignDown_01</td></tr>
+  <tr><td class="key"><span class="keystyle">f</span></td><td class="description">Change the final layout type</td><td class="id">ToggleFinal</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">F</span></td><td class="description">Change the final layout type</td><td class="id">ToggleFinalR</td></tr>
+  <tr><td class="key"><span class="keystyle">a</span></td><td class="description">Change the snap layout type</td><td class="id">ToggleAlign</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">A</span></td><td class="description">Change the snap layout type</td><td class="id">ToggleAlignR</td></tr>
+  <tr><td class="key"><span class="keystyle">m</span></td><td class="description">Change the shift type</td><td class="id">ToggleShift</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">M</span></td><td class="description">Change the shift type</td><td class="id">ToggleShiftR</td></tr>
+<tr><td colspan="3" class="area">ImageInterface</td></tr>
+  <tr><td class="key"><span class="keystyle">n</span></td><td class="description">Normalize</td><td class="id">Normalize</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">N</span></td><td class="description">Clear aspect and rotation</td><td class="id">Rectify</td></tr>
+  <tr><td class="key"><span class="keystyle">d</span></td><td class="description">Toggle decorations</td><td class="id">Decorations</td></tr>
+  <tr><td class="key"><span class="keystyle">f</span></td><td class="description">Toggle labels</td><td class="id">Labels</td></tr>
+  <tr><td class="key"><span class="keystyle">h</span></td><td class="description">Flip horizontally</td><td class="id">FlipHorizontal</td></tr>
+  <tr><td class="key"><span class="keystyle">v</span></td><td class="description">Flip vertically</td><td class="id">FlipVertical</td></tr>
+  <tr><td class="key"><span class="keystyle">Enter</span></td><td class="description">Edit image info</td><td class="id">ImageInfo</td></tr>
+<tr><td colspan="3" class="area">GradientInterface</td></tr>
+  <tr><td class="key"><span class="keystyle">Left</span></td><td class="description">Select next</td><td class="id">SelectNext</td></tr>
+  <tr><td class="key"><span class="keystyle">Right</span></td><td class="description">Select previous</td><td class="id">SelectPrev</td></tr>
+  <tr><td class="key"><span class="keystyle">d</span></td><td class="description">Toggle decorations</td><td class="id">Decorations</td></tr>
+  <tr><td class="key"><span class="keystyle">f</span></td><td class="description">Flip order of colors</td><td class="id">FlipColors</td></tr>
+  <tr><td class="key"><span class="keystyle">l</span></td><td class="description">Convert to linear gradient</td><td class="id">Linear</td></tr>
+  <tr><td class="key"><span class="keystyle">r</span></td><td class="description">Convert to Radial gradient</td><td class="id">Radial</td></tr>
+  <tr><td class="key"><span class="keystyle">a</span></td><td class="description">Select all, or deselect</td><td class="id">Select</td></tr>
+  <tr><td class="key"><span class="keystyle">Del</span></td><td class="description">Delete</td><td class="id">Delete</td></tr>
+  <tr><td class="key"><span class="keystyle">Bksp</span></td><td class="description">Delete</td><td class="id">Delete</td></tr>
+<tr><td colspan="3" class="area">PathInterface</td></tr>
+  <tr><td class="key"><span class="keystyle">Up</span></td><td class="description">Switch between handle and vertex</td><td class="id">HandlePoint</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">Up</span></td><td class="description">Switch between handle and vertex</td><td class="id">HandlePointR</td></tr>
+  <tr><td class="key"><span class="keystyle">o</span></td><td class="description">Change path operator</td><td class="id">Pathop</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">^</span></td><td class="description">Toggle absolute angles in subpaths</td><td class="id">ToggleAbsAngle</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">F</span></td><td class="description">Toggle fill rule</td><td class="id">ToggleFillRule</td></tr>
+  <tr><td class="key"><span class="keystyle">f</span></td><td class="description">Toggle fill</td><td class="id">ToggleFill</td></tr>
+  <tr><td class="key"><span class="keystyle">s</span></td><td class="description">Toggle showing stroke</td><td class="id">ToggleStroke</td></tr>
+  <tr><td class="key"><span class="keystyle">x</span></td><td class="description">Send colors to fill or to stroke</td><td class="id">ColorDest</td></tr>
+  <tr><td class="key"><span class="keystyle">Right</span></td><td class="description">Select next points</td><td class="id">RollNext</td></tr>
+  <tr><td class="key"><span class="keystyle">Left</span></td><td class="description">Select previous points</td><td class="id">RollPrev</td></tr>
+  <tr><td class="key"><span class="keystyle">n</span></td><td class="description">Toggle add after</td><td class="id">AddAfter</td></tr>
+  <tr><td class="key"><span class="keystyle">p</span></td><td class="description">Change point type</td><td class="id">PointType</td></tr>
+  <tr><td class="key"><span class="keystyle">a</span></td><td class="description">Select all or deselect</td><td class="id">Select</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">A</span></td><td class="description">Select all in path or deselect</td><td class="id">SelectInPath</td></tr>
+  <tr><td class="key"><span class="keystyle">c</span></td><td class="description">Toggle closed</td><td class="id">ToggleClosed</td></tr>
+  <tr><td class="key"><span class="keystyle">d</span></td><td class="description">Toggle decorations</td><td class="id">Decorations</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">B</span></td><td class="description">Start a totally new path object</td><td class="id">NewPath</td></tr>
+  <tr><td class="key"><span class="keystyle">b</span></td><td class="description">Start a new subpath</td><td class="id">NewSubpath</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">_</span></td><td class="description">Toggle indicating outlines (DEBUGGING)</td><td class="id">ToggleOutline</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">|</span></td><td class="description">Toggle indicating base line references</td><td class="id">ToggleBaseline</td></tr>
+  <tr><td class="key"><span class="keystyle">w</span></td><td class="description">Toggle editing of weights along lines</td><td class="id">ToggleWeights</td></tr>
+  <tr><td class="key"><span class="keystyle">l</span></td><td class="description">Thicken the line</td><td class="id">Wider</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">L</span></td><td class="description">Thin the line</td><td class="id">Thinner</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">l</span></td><td class="description">Change how much change for width changes</td><td class="id">WidthStep</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">L</span></td><td class="description">Change how much change for width changes</td><td class="id">WidthStepR</td></tr>
+  <tr><td class="key"><span class="keystyle">0</span></td><td class="description">Arrange points in a circle</td><td class="id">Circle</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">R</span></td><td class="description">Arrange points in a rectangle</td><td class="id">Rect</td></tr>
+  <tr><td class="key"><span class="keystyle">r</span></td><td class="description">Reverse direction of current path</td><td class="id">Reverse</td></tr>
+  <tr><td class="key"><span class="keystyle">Del</span></td><td class="description">Delete selected points</td><td class="id">Delete</td></tr>
+  <tr><td class="key"><span class="keystyle">Bksp</span></td><td class="description">Delete selected points</td><td class="id">Delete</td></tr>
+  <tr><td class="key"><span class="keystyle">v</span></td><td class="description">Flip selected points vertically</td><td class="id">FlipVertically</td></tr>
+  <tr><td class="key"><span class="keystyle">h</span></td><td class="description">Flip selected points horizontally</td><td class="id">FlipHorizontally</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">_</span></td><td class="description">Apply offset to current paths</td><td class="id">ApplyOffset</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">|</span></td><td class="description">Make offset values (if any) be 0 of current paths</td><td class="id">ResetOffset</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">\</span></td><td class="description">Make segments of current points be straight</td><td class="id">MakeStraight</td></tr>
+  <tr><td class="key"><span class="keystyle">\</span></td><td class="description">Make segments of current points be straight with bezier handles</td><td class="id">MakeBezStraight</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle"><</span></td><td class="description">Make weight angles be zero, and set to not absolute angles</td><td class="id">ResetAngle</td></tr>
+<tr><td colspan="3" class="area">CaptionInterface</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">c</span></td><td class="description">Copy</td><td class="id">Copy</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">v</span></td><td class="description">Paste</td><td class="id">Paste</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">l</span></td><td class="description">Left Justify</td><td class="id">LeftJustify</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">e</span></td><td class="description">Center Justify</td><td class="id">CenterJustify</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">r</span></td><td class="description">Right Justify</td><td class="id">RightJustify</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">t</span></td><td class="description">Top Justify</td><td class="id">TopJustify</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">m</span></td><td class="description">Middle Justify</td><td class="id">MiddleJustify</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">B</span></td><td class="description">Baseline Justify</td><td class="id">BaselineJustify</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">b</span></td><td class="description">Bottom Justify</td><td class="id">BottomJustify</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">D</span></td><td class="description">Show Baselines</td><td class="id">ShowBaselines</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">d</span></td><td class="description">Toggle Decorations</td><td class="id">Decorations</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">i</span></td><td class="description">Insert Character</td><td class="id">InsertChar</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">j</span></td><td class="description">Join Characters if possible</td><td class="id">CombineChars</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">P</span></td><td class="description">Convert to path object, but keep the old object</td><td class="id">ConvertToPaths</td></tr>
+  <tr><td class="key">none</td><td class="description">Toggle Direction<td class="id">Direction</td></tr>
+<tr><td colspan="3" class="area">TextOnPathInterface</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">k</span></td><td class="description">Decrease kern</td><td class="id">Kern</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">K</span></td><td class="description">Increase kern</td><td class="id">KernR</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">b</span></td><td class="description">Move baseline up</td><td class="id">BaselineUp</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">B</span></td><td class="description">Move baseline up</td><td class="id">BaselineDown</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">l</span></td><td class="description">Move line start forward</td><td class="id">OffsetInc</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">L</span></td><td class="description">Move line start backward</td><td class="id">OffsetDec</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">p</span></td><td class="description">Edit the path</td><td class="id">EditPath</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">P</span></td><td class="description">Convert to path object</td><td class="id">ConvertToPath</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">D</span></td><td class="description">Toggle basic direction of text</td><td class="id">ToggleDirection</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">v</span></td><td class="description">Paste text</td><td class="id">Paste</td></tr>
+<tr><td colspan="3" class="area">ColorPatchInterface</td></tr>
+  <tr><td class="key"><span class="keystyle">m</span></td><td class="description">Render mode</td><td class="id">RenderMode</td></tr>
+  <tr><td class="key"><span class="keystyle">o</span></td><td class="description">Increment screen recursion</td><td class="id">RecurseInc</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">O</span></td><td class="description">Decrement screen recursion</td><td class="id">RecurseDec</td></tr>
+  <tr><td class="key"><span class="keystyle">j</span></td><td class="description">Toggle smooth editing</td><td class="id">SmoothEdit</td></tr>
+  <tr><td class="key"><span class="keystyle">b</span></td><td class="description">Toggle mesh type</td><td class="id">MeshType</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">B</span></td><td class="description">Toggle mesh type in reverse</td><td class="id">MeshTypeR,</td></tr>
+  <tr><td class="key"><span class="keystyle">a</span></td><td class="description">Select all or deselect</td><td class="id">Select</td></tr>
+  <tr><td class="key"><span class="keystyle">y</span></td><td class="description">Constrain to vertical movements</td><td class="id">ConstrainY</td></tr>
+  <tr><td class="key"><span class="keystyle">x</span></td><td class="description">Constrain to horizontal movements</td><td class="id">ConstrainX</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">R</span></td><td class="description">Increment row subdivisions</td><td class="id">RowDivInc</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">r</span></td><td class="description">Decrement row subdivisions</td><td class="id">RowDicDec</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">C</span></td><td class="description">Increment row subdivisions</td><td class="id">ColDivInc</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">c</span></td><td class="description">Decrement row subdivisions</td><td class="id">ColDivDec</td></tr>
+  <tr><td class="key"><span class="keystyle">s</span></td><td class="description">Subdivide</td><td class="id">Subdivide</td></tr>
+  <tr><td class="key"><span class="keystyle">r</span></td><td class="description">Subdivide rows</td><td class="id">SubdivideRows</td></tr>
+  <tr><td class="key"><span class="keystyle">c</span></td><td class="description">Subdivide columns</td><td class="id">SubdivideCols</td></tr>
+  <tr><td class="key"><span class="keystyle">z</span></td><td class="description">Zap back to a rectangle</td><td class="id">Rectify</td></tr>
+  <tr><td class="key"><span class="keystyle">d</span></td><td class="description">Toggle decorations</td><td class="id">Decorations</td></tr>
+  <tr><td class="key"><span class="keystyle">w</span></td><td class="description">Make circle</td><td class="id">CircleWarp</td></tr>
+  <tr><td class="key"><span class="keystyle">1</span></td><td class="description">Select corners</td><td class="id">SelectCorners</td></tr>
+  <tr><td class="key"><span class="keystyle">2</span></td><td class="description">Select middle controls</td><td class="id">SelectMids</td></tr>
+  <tr><td class="key"><span class="keystyle">3</span></td><td class="description">Select edge controls</td><td class="id">SelectEdgeMids</td></tr>
+  <tr><td class="key"><span class="keystyle">4</span></td><td class="description">Select vertical edge controls</td><td class="id">SelectVerticalEdgeMids</td></tr>
+  <tr><td class="key"><span class="keystyle">5</span></td><td class="description">Select horizontal edge controls</td><td class="id">SelectHorizontalEdgeMids</td></tr>
+  <tr><td class="key"><span class="keystyle">6</span></td><td class="description">Select points around current points</td><td class="id">SelectAround</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">V</span></td><td class="description">Select all vertically</td><td class="id">SelectAllVertically</td></tr>
+  <tr><td class="key"><span class="keystyle">v</span></td><td class="description">Select next points vertically</td><td class="id">SelectMoreVertically</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">H</span></td><td class="description">Select all horizontally</td><td class="id">SelectAllHorizontally</td></tr>
+  <tr><td class="key"><span class="keystyle">h</span></td><td class="description">Select next points horizontally</td><td class="id">SelectMoreHorizontally</td></tr>
+<tr><td colspan="3" class="area">ImagePatchInterface</td></tr>
+  <tr><td class="key"><span class="keystyle">m</span></td><td class="description">Render mode</td><td class="id">RenderMode</td></tr>
+  <tr><td class="key"><span class="keystyle">o</span></td><td class="description">Increment screen recursion</td><td class="id">RecurseInc</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">O</span></td><td class="description">Decrement screen recursion</td><td class="id">RecurseDec</td></tr>
+  <tr><td class="key"><span class="keystyle">j</span></td><td class="description">Toggle smooth editing</td><td class="id">SmoothEdit</td></tr>
+  <tr><td class="key"><span class="keystyle">b</span></td><td class="description">Toggle mesh type</td><td class="id">MeshType</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">B</span></td><td class="description">Toggle mesh type in reverse</td><td class="id">MeshTypeR,</td></tr>
+  <tr><td class="key"><span class="keystyle">a</span></td><td class="description">Select all or deselect</td><td class="id">Select</td></tr>
+  <tr><td class="key"><span class="keystyle">y</span></td><td class="description">Constrain to vertical movements</td><td class="id">ConstrainY</td></tr>
+  <tr><td class="key"><span class="keystyle">x</span></td><td class="description">Constrain to horizontal movements</td><td class="id">ConstrainX</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">R</span></td><td class="description">Increment row subdivisions</td><td class="id">RowDivInc</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">r</span></td><td class="description">Decrement row subdivisions</td><td class="id">RowDicDec</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">C</span></td><td class="description">Increment row subdivisions</td><td class="id">ColDivInc</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">c</span></td><td class="description">Decrement row subdivisions</td><td class="id">ColDivDec</td></tr>
+  <tr><td class="key"><span class="keystyle">s</span></td><td class="description">Subdivide</td><td class="id">Subdivide</td></tr>
+  <tr><td class="key"><span class="keystyle">r</span></td><td class="description">Subdivide rows</td><td class="id">SubdivideRows</td></tr>
+  <tr><td class="key"><span class="keystyle">c</span></td><td class="description">Subdivide columns</td><td class="id">SubdivideCols</td></tr>
+  <tr><td class="key"><span class="keystyle">z</span></td><td class="description">Zap back to a rectangle</td><td class="id">Rectify</td></tr>
+  <tr><td class="key"><span class="keystyle">d</span></td><td class="description">Toggle decorations</td><td class="id">Decorations</td></tr>
+  <tr><td class="key"><span class="keystyle">w</span></td><td class="description">Make circle</td><td class="id">CircleWarp</td></tr>
+  <tr><td class="key"><span class="keystyle">1</span></td><td class="description">Select corners</td><td class="id">SelectCorners</td></tr>
+  <tr><td class="key"><span class="keystyle">2</span></td><td class="description">Select middle controls</td><td class="id">SelectMids</td></tr>
+  <tr><td class="key"><span class="keystyle">3</span></td><td class="description">Select edge controls</td><td class="id">SelectEdgeMids</td></tr>
+  <tr><td class="key"><span class="keystyle">4</span></td><td class="description">Select vertical edge controls</td><td class="id">SelectVerticalEdgeMids</td></tr>
+  <tr><td class="key"><span class="keystyle">5</span></td><td class="description">Select horizontal edge controls</td><td class="id">SelectHorizontalEdgeMids</td></tr>
+  <tr><td class="key"><span class="keystyle">6</span></td><td class="description">Select points around current points</td><td class="id">SelectAround</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">V</span></td><td class="description">Select all vertically</td><td class="id">SelectAllVertically</td></tr>
+  <tr><td class="key"><span class="keystyle">v</span></td><td class="description">Select next points vertically</td><td class="id">SelectMoreVertically</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">H</span></td><td class="description">Select all horizontally</td><td class="id">SelectAllHorizontally</td></tr>
+  <tr><td class="key"><span class="keystyle">h</span></td><td class="description">Select next points horizontally</td><td class="id">SelectMoreHorizontally</td></tr>
+<tr><td colspan="3" class="area">EngraverFillInterface</td></tr>
+  <tr><td class="key"><span class="keystyle">m</span></td><td class="description">Render mode</td><td class="id">RenderMode</td></tr>
+  <tr><td class="key"><span class="keystyle">o</span></td><td class="description">Increment screen recursion</td><td class="id">RecurseInc</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">O</span></td><td class="description">Decrement screen recursion</td><td class="id">RecurseDec</td></tr>
+  <tr><td class="key"><span class="keystyle">j</span></td><td class="description">Toggle smooth editing</td><td class="id">SmoothEdit</td></tr>
+  <tr><td class="key"><span class="keystyle">b</span></td><td class="description">Toggle mesh type</td><td class="id">MeshType</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">B</span></td><td class="description">Toggle mesh type in reverse</td><td class="id">MeshTypeR,</td></tr>
+  <tr><td class="key"><span class="keystyle">a</span></td><td class="description">Select all or deselect</td><td class="id">Select</td></tr>
+  <tr><td class="key"><span class="keystyle">y</span></td><td class="description">Constrain to vertical movements</td><td class="id">ConstrainY</td></tr>
+  <tr><td class="key"><span class="keystyle">x</span></td><td class="description">Constrain to horizontal movements</td><td class="id">ConstrainX</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">R</span></td><td class="description">Increment row subdivisions</td><td class="id">RowDivInc</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">r</span></td><td class="description">Decrement row subdivisions</td><td class="id">RowDicDec</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">C</span></td><td class="description">Increment row subdivisions</td><td class="id">ColDivInc</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">c</span></td><td class="description">Decrement row subdivisions</td><td class="id">ColDivDec</td></tr>
+  <tr><td class="key"><span class="keystyle">s</span></td><td class="description">Subdivide</td><td class="id">Subdivide</td></tr>
+  <tr><td class="key"><span class="keystyle">r</span></td><td class="description">Subdivide rows</td><td class="id">SubdivideRows</td></tr>
+  <tr><td class="key"><span class="keystyle">c</span></td><td class="description">Subdivide columns</td><td class="id">SubdivideCols</td></tr>
+  <tr><td class="key"><span class="keystyle">z</span></td><td class="description">Zap back to a rectangle</td><td class="id">Rectify</td></tr>
+  <tr><td class="key"><span class="keystyle">d</span></td><td class="description">Toggle decorations</td><td class="id">Decorations</td></tr>
+  <tr><td class="key"><span class="keystyle">w</span></td><td class="description">Make circle</td><td class="id">CircleWarp</td></tr>
+  <tr><td class="key"><span class="keystyle">1</span></td><td class="description">Select corners</td><td class="id">SelectCorners</td></tr>
+  <tr><td class="key"><span class="keystyle">2</span></td><td class="description">Select middle controls</td><td class="id">SelectMids</td></tr>
+  <tr><td class="key"><span class="keystyle">3</span></td><td class="description">Select edge controls</td><td class="id">SelectEdgeMids</td></tr>
+  <tr><td class="key"><span class="keystyle">4</span></td><td class="description">Select vertical edge controls</td><td class="id">SelectVerticalEdgeMids</td></tr>
+  <tr><td class="key"><span class="keystyle">5</span></td><td class="description">Select horizontal edge controls</td><td class="id">SelectHorizontalEdgeMids</td></tr>
+  <tr><td class="key"><span class="keystyle">6</span></td><td class="description">Select points around current points</td><td class="id">SelectAround</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">V</span></td><td class="description">Select all vertically</td><td class="id">SelectAllVertically</td></tr>
+  <tr><td class="key"><span class="keystyle">v</span></td><td class="description">Select next points vertically</td><td class="id">SelectMoreVertically</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">H</span></td><td class="description">Select all horizontally</td><td class="id">SelectAllHorizontally</td></tr>
+  <tr><td class="key"><span class="keystyle">h</span></td><td class="description">Select next points horizontally</td><td class="id">SelectMoreHorizontally</td></tr>
+  <tr><td class="key"><span class="keystyle">m</span></td><td class="description">Switch edit mode</td><td class="id">SwitchMode</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">M</span></td><td class="description">Switch to previous edit mode</td><td class="id">SwitchModeR</td></tr>
+  <tr><td class="key"><span class="keystyle">f</span></td><td class="description">Export Svg</td><td class="id">ExportSvg</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">F</span></td><td class="description">Export snapshot</td><td class="id">ExportSnapshot</td></tr>
+  <tr><td class="key"><span class="keystyle">r</span></td><td class="description">Rotate default line direction</td><td class="id">RotateDir</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">R</span></td><td class="description">Rotate default line direction</td><td class="id">RotateDirR</td></tr>
+  <tr><td class="key"><span class="keystyle">s</span></td><td class="description">Increase default spacing</td><td class="id">SpacingInc</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">S</span></td><td class="description">Decrease default spacing</td><td class="id">SpacingDec</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">r</span></td><td class="description">Increase default resolution</td><td class="id">ResolutionInc</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">R</span></td><td class="description">Decrease default resolution</td><td class="id">ResolutionDec</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">:</span></td><td class="description">Subdivide all lines to have more sample points</td><td class="id">MorePoints</td></tr>
+  <tr><td class="key"><span class="keystyle">p</span></td><td class="description">Toggle showing sample points</td><td class="id">ShowPoints</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">P</span></td><td class="description">Toggle showing sample point numbers</td><td class="id">ShowPointsN</td></tr>
+  <tr><td class="key"><span class="keystyle">c</span></td><td class="description">Toggle showing control panel</td><td class="id">TogglePanel</td></tr>
+  <tr><td class="key"><span class="keystyle">g</span></td><td class="description">Toggle grow mode</td><td class="id">ToggleGrow</td></tr>
+  <tr><td class="key"><span class="keystyle">w</span></td><td class="description">Toggle warping when modifying mesh</td><td class="id">ToggleWarp</td></tr>
+  <tr><td class="key"><span class="keystyle">]</span></td><td class="description">Toggle showing the trace object</td><td class="id">ToggleShowTrace</td></tr>
+  <tr><td class="key"><span class="keystyle">d</span></td><td class="description">Toggle showing direction map</td><td class="id">ToggleDir</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">d</span></td><td class="description">Load a normal map for direction</td><td class="id">LoadDir</td></tr>
+  <tr><td class="key"><span class="keystyle">PageDown</span></td><td class="description">Next group</td><td class="id">NextGroup</td></tr>
+  <tr><td class="key"><span class="keystyle">PageUp</span></td><td class="description">Previous group</td><td class="id">PreviousGroup</td></tr>
+  <tr><td class="key"><span class="keystyle">Left</span></td><td class="description">Switch to next fill type</td><td class="id">NextFillType</td></tr>
+  <tr><td class="key"><span class="keystyle">Right</span></td><td class="description">Switch to previous fill type</td><td class="id">PreviousFillType</td></tr>
+  <tr><td class="key"><span class="keystyle">1</span></td><td class="description">Toggle trace panel</td><td class="id">ToggleTracePanel</td></tr>
+  <tr><td class="key"><span class="keystyle">2</span></td><td class="description">Toggle dash panel</td><td class="id">ToggleDashPanel</td></tr>
+  <tr><td class="key"><span class="keystyle">3</span></td><td class="description">Toggle direction panel</td><td class="id">ToggleDirPanel</td></tr>
+  <tr><td class="key"><span class="keystyle">4</span></td><td class="description">Toggle spacing panel</td><td class="id">ToggleSpacingPanel</td></tr>
+  <tr><td class="key"><span class="keystyle">l</span></td><td class="description">Toggle if all are linked or unlinked</td><td class="id">ToggleLinked</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">L</span></td><td class="description">Toggle if all in group are linked or not</td><td class="id">ToggleGroupLinked</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">l</span></td><td class="description">Toggle current group being linked</td><td class="id">ToggleCurLinked</td></tr>
+<tr><td colspan="3" class="area">CloneInterface</td></tr>
+  <tr><td class="key"><span class="keystyle">Right</span></td><td class="description">Select next tiling</td><td class="id">NextTiling</td></tr>
+  <tr><td class="key"><span class="keystyle">Left</span></td><td class="description">Select previous tiling</td><td class="id">PreviousTiling</td></tr>
+  <tr><td class="key"><span class="keystyle">Up</span></td><td class="description">Select next base cell</td><td class="id">NextBasecell</td></tr>
+  <tr><td class="key"><span class="keystyle">Down</span></td><td class="description">Select previous base cell</td><td class="id">PreviousBasecell</td></tr>
+  <tr><td class="key"><span class="keystyle">l</span></td><td class="description">Toggle rendering cell lines</td><td class="id">ToggleLines</td></tr>
+  <tr><td class="key"><span class="keystyle">Enter</span></td><td class="description">Toggle rendering</td><td class="id">ToggleRender</td></tr>
+  <tr><td class="key"><span class="keystyle">p</span></td><td class="description">Toggle preview of lines</td><td class="id">TogglePreview</td></tr>
+  <tr><td class="key"><span class="keystyle">o</span></td><td class="description">Toggle preview of orientations</td><td class="id">ToggleOrientations</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">e</span></td><td class="description">Edit</td><td class="id">Edit</td></tr>
+  <tr><td class="key"><span class="keystyle">s</span></td><td class="description">Select tile mode</td><td class="id">Select</td></tr>
+  <tr><td class="key"><span class="keystyle">x</span></td><td class="description">Toggle sending color to fill or stroke</td><td class="id">FillOrStroke</td></tr>
+<tr><td colspan="3" class="area">PaperInterface</td></tr>
+  <tr><td class="key"><span class="keystyle">a</span></td><td class="description">Select or deselect all</td><td class="id">Select</td></tr>
+  <tr><td class="key"><span class="keystyle">d</span></td><td class="description">Toggle decorations</td><td class="id">Decs</td></tr>
+  <tr><td class="key"><span class="keystyle">Bksp</span></td><td class="description">Delete selected</td><td class="id">Delete</td></tr>
+  <tr><td class="key"><span class="keystyle">Del</span></td><td class="description">Delete selected</td><td class="id">Delete</td></tr>
+  <tr><td class="key"><span class="keystyle">o</span></td><td class="description">Make the axes horizontal and vertical</td><td class="id">Rectify</td></tr>
+  <tr><td class="key"><span class="keystyle">r</span></td><td class="description">Rotate selected by 90 degrees</td><td class="id">Rotate</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">R</span></td><td class="description">Rotate selected by 90 degrees in the other direction</td><td class="id">RotateCC</td></tr>
+<tr><td colspan="3" class="area">NodeInterface</td></tr>
+  <tr><td class="key"><span class="keystyle">space</span></td><td class="description">Center</td><td class="id">Center</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">space</span></td><td class="description">Center Selected</td><td class="id">CenterSelecetd</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">g</span></td><td class="description">Group Nodes</td><td class="id">GroupNodes</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">G</span></td><td class="description">Ungroup Nodes</td><td class="id">UngroupNodes</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">A</span></td><td class="description">Add Node</td><td class="id">AddNode</td></tr>
+  <tr><td class="key"><span class="keystyle">Bksp</span></td><td class="description">Delete Node</td><td class="id">DeleteNode</td></tr>
+  <tr><td class="key"><span class="keystyle">Del</span></td><td class="description">Delete Node</td><td class="id">DeleteNode</td></tr>
+  <tr><td class="key"><span class="keystyle">c</span></td><td class="description">ToggleCollapse</td><td class="id">ToggleCollapse</td></tr>
+  <tr><td class="key"><span class="keystyle">p</span></td><td class="description">TogglePreview</td><td class="id">TogglePreview</td></tr>
+  <tr><td class="key"><span class="keystyle">f</span></td><td class="description">Frame Selected</td><td class="id">Frame</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">F</span></td><td class="description">Remove connected frame</td><td class="id">Unframe</td></tr>
+  <tr><td class="key"><span class="keystyle">Tab</span></td><td class="description">Toggle Edit Group</td><td class="id">EditGroup</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">Tab</span></td><td class="description">Leave Group</td><td class="id">LeaveGroup</td></tr>
+  <tr><td class="key"><span class="keystyle">e</span></td><td class="description">Thread controls</td><td class="id">ThreadControls</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">f</span></td><td class="description">Find a node</td><td class="id">Find</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">f</span></td><td class="description">Find next node</td><td class="id">FindNext</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">D</span></td><td class="description">Duplicate</td><td class="id">Duplicate</td></tr>
+  <tr><td class="key"><span class="keystyle">o</span></td><td class="description">NoOverlap</td><td class="id">NoOverlap</td></tr>
+  <tr><td class="key"><span class="keystyle">g</span></td><td class="description">Arrange in a grid</td><td class="id">ArrangeGrid</td></tr>
+  <tr><td class="key"><span class="keystyle">h</span></td><td class="description">Arrange in a row</td><td class="id">ArrangeRow</td></tr>
+  <tr><td class="key"><span class="keystyle">v</span></td><td class="description">Arrange in a column</td><td class="id">ArrangeCol</td></tr>
+  <tr><td class="key"><span class="keystyle">s</span></td><td class="description">Save Nodes</td><td class="id">SaveNodes</td></tr>
+  <tr><td class="key"><span class="keystyle">l</span></td><td class="description">Load Nodes</td><td class="id">LoadNodes</td></tr>
+<tr><td colspan="3" class="area">GraphicalShell</td></tr>
+  <tr><td class="key"><span class="keystyle">/</span></td><td class="description">Turn on the prompt, if it was off.</td><td class="id">Activate</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">Up</span></td><td class="description">Toggle placement of input bar, top or bottom</td><td class="id">ToggleGravity</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">Down</span></td><td class="description">Toggle placement of input bar, top or bottom</td><td class="id">ToggleGravity</td></tr>
+</table>
+</body>
