@@ -21,15 +21,12 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 
 	make sure all the examples work.
 
+
 2.  -----update release branch from current master in github-----
 	WORK IN PROGRESS!!
 		git clone https://github.com/Laidout/laidout.git
 		git checkout release
-		git merge master --no-ff ????????????????????/
-	
-	other commands to remember:
-		git tag -l    #<-- list all available tags
-		git branch    #<-- list all available branches, use -a for more than all
+		git merge master
 
 
 3.  ----modify source---
@@ -48,7 +45,7 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 
 	make sure the Quick Key References in QUICKREF.html are current (make quickref).
 	
-	make sure configure defaults to 'prefix=/usr/local/'. This is what should be in a source tarball
+	make sure configure defaults to 'prefix=/usr/local/' (this should already be default). This is what should be in a source tarball.
 	
 	Make sure all examples have the correct version number, and actually load correctly
 
