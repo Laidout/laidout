@@ -109,8 +109,8 @@ NodeEditor::NodeEditor(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 	viewport->dp->NewBG(200,200,200);
 
 
-	DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(viewport->dp);
-	DBG if (ddp->GetCairo()) cerr <<" NodeEditor initialized, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+	//DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(viewport->dp);
+	//DBG if (ddp->GetCairo()) cerr <<" NodeEditor initialized, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 
 	needtodraw=1;
@@ -129,7 +129,7 @@ NodeEditor::NodeEditor(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 
 
 	AddTool(tool,1,1); // local, and select it
-	DBG if (ddp->GetCairo()) cerr <<" NodeEditor initialized, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+	//DBG if (ddp->GetCairo()) cerr <<" NodeEditor initialized, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 
 
@@ -142,7 +142,7 @@ NodeEditor::NodeEditor(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 	int in_n = 0;
 
 
-	DBG cerr <<"parse editor_arg in NodeEditor()..."<<endl;
+	//DBG cerr <<"parse editor_arg in NodeEditor()..."<<endl;
 	if (editor_arg) {
 		//need to load a new document, which may be a non-laidout document.
 		//If non-laidout, then create new singles, and import
@@ -155,10 +155,10 @@ NodeEditor::NodeEditor(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 
 		const char *name,*value;
 
-		//DBG ofstream of;
-		//DBG of.open("PIPEDIN.svg");
-		//DBG char buffer[1000];
-		//DBG of << getcwd(buffer,1000) <<endl;
+		////DBG ofstream of;
+		////DBG of.open("PIPEDIN.svg");
+		////DBG char buffer[1000];
+		////DBG of << getcwd(buffer,1000) <<endl;
 
 		for (int c=0; c<att.attributes.n; c++) {
 			name =att.attributes.e[c]->name;
@@ -176,23 +176,23 @@ NodeEditor::NodeEditor(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 			} else if (!strcmp(name,"pipein")) {
 				if (indata) { delete[] indata; indata = NULL; in_n = 0; }
 
-				//DBG of << "piping..."<<endl;
+				////DBG of << "piping..."<<endl;
 
 				indata = pipe_in_whole_file(stdin, &in_n);
 				//indata = read_in_whole_file("svg-filter-test.svg", &in_n, 0);
 				
-				//DBG app->addwindow(new MessageBar(NULL, "mes","mes",0, 100,100,200,50,0, indata));
+				////DBG app->addwindow(new MessageBar(NULL, "mes","mes",0, 100,100,200,50,0, indata));
 
-				//DBG of << "---------Pipedin for nodes: "<<endl;
-				//DBG of << (indata? indata : "") <<endl;
-				//DBG of << "---------end Pipedin for nodes "<<endl;
+				////DBG of << "---------Pipedin for nodes: "<<endl;
+				////DBG of << (indata? indata : "") <<endl;
+				////DBG of << "---------end Pipedin for nodes "<<endl;
 
 			} else if (!strcmp(name,"pipeout")) {
 				pipeout = true;
 			}
 		}
 
-		//DBG of.close();
+		////DBG of.close();
 
 		if (indata) {
 			tool->LoadNodes(indata, false, in_n, true);
@@ -203,10 +203,10 @@ NodeEditor::NodeEditor(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 		}
 
 
-		DBG cerr <<"Nodes-only from "<<(filein ? filein : "data:\n")<<(indata ? indata : "")<<" to "<< (outformat ? outformat : "?") <<endl;
+		//DBG cerr <<"Nodes-only from "<<(filein ? filein : "data:\n")<<(indata ? indata : "")<<" to "<< (outformat ? outformat : "?") <<endl;
 	}
 
-	DBG if (ddp->GetCairo()) cerr <<" NodeEditor initialized, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+	//DBG if (ddp->GetCairo()) cerr <<" NodeEditor initialized, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 }
 
@@ -270,8 +270,8 @@ int NodeEditor::init()
 	viewport->postmessage(" ");
 
 
-	DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(viewport->dp);
-	DBG if (ddp->GetCairo()) cerr <<" NodeEditor initialized, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+	//DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(viewport->dp);
+	//DBG if (ddp->GetCairo()) cerr <<" NodeEditor initialized, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 	return 0;
 }
@@ -301,7 +301,7 @@ void NodeEditor::send()
 
 int NodeEditor::Event(const Laxkit::EventData *data,const char *mes)
 {
-	DBG cerr <<"NodeEditor got message: "<<(mes?mes:"?")<<endl;
+	//DBG cerr <<"NodeEditor got message: "<<(mes?mes:"?")<<endl;
 
 	if (!strcmp(mes,"ok")) {
 		send();

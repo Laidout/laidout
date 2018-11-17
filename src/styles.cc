@@ -180,7 +180,7 @@ Style::Style(ObjectDef *sdef,Style *bsdon,const char *nstn)
  */
 Style::~Style()
 {
-	////DBG cerr <<"Style \""<<stylename<<"\" destructor"<<endl;
+	//////DBG cerr <<"Style \""<<stylename<<"\" destructor"<<endl;
 	if (stylename) delete[] stylename;
 	if (styledef) styledef->dec_count();
 }

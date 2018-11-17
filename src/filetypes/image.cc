@@ -550,9 +550,9 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 		dp->ClearWindow();
 	}
 
-	//DBG dp->NewFG(.5,.5,.5);
-	//DBG dp->drawline(bounds.minx,bounds.miny, bounds.maxx,bounds.maxy);
-	//DBG dp->drawline(bounds.minx,bounds.maxy, bounds.maxx,bounds.miny);
+	////DBG dp->NewFG(.5,.5,.5);
+	////DBG dp->drawline(bounds.minx,bounds.miny, bounds.maxx,bounds.maxy);
+	////DBG dp->drawline(bounds.minx,bounds.maxy, bounds.maxx,bounds.miny);
 
 	 //limbo objects
 	if (out->limbo) DrawData(dp, out->limbo, NULL,NULL,DRAW_HIRES);
@@ -581,7 +581,7 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 		flatpoint p;
 		SomeData *sd=NULL;
 		for (int c=0; c<spread->pagestack.n(); c++) {
-			DBG cerr <<" drawing from pagestack.e["<<c<<"], which has page "<<spread->pagestack.e[c]->index<<endl;
+			//DBG cerr <<" drawing from pagestack.e["<<c<<"], which has page "<<spread->pagestack.e[c]->index<<endl;
 			page=spread->pagestack.e[c]->page;
 			pagei=spread->pagestack.e[c]->index;
 
@@ -616,8 +616,8 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 
 			 // Draw all the page's objects.
 			for (int c2=0; c2<page->layers.n(); c2++) {
-				DBG cerr <<"  num layers in page: "<<page->n()<<", num objs:"<<page->e(c2)->n()<<endl;
-				DBG cerr <<"  Layer "<<c2<<", objs.n="<<page->e(c2)->n()<<endl;
+				//DBG cerr <<"  num layers in page: "<<page->n()<<", num objs:"<<page->e(c2)->n()<<endl;
+				//DBG cerr <<"  Layer "<<c2<<", objs.n="<<page->e(c2)->n()<<endl;
 				//imanager->DrawData(dp, page->e(c2), NULL,NULL,DRAW_HIRES);
 				DrawData(dp, page->e(c2),NULL,NULL,DRAW_HIRES);
 			}
@@ -631,10 +631,10 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 		} //foreach in pagestack
 	} //if spread
 
-	//DBG dp->NewFG(.2,.2,.5);
-	//DBG dp->LineWidth(.25);
-	//DBG dp->drawline(bounds.minx,bounds.miny, bounds.maxx,bounds.maxy);
-	//DBG dp->drawline(bounds.minx,bounds.maxy, bounds.maxx,bounds.miny);
+	////DBG dp->NewFG(.2,.2,.5);
+	////DBG dp->LineWidth(.25);
+	////DBG dp->drawline(bounds.minx,bounds.miny, bounds.maxx,bounds.maxy);
+	////DBG dp->drawline(bounds.minx,bounds.maxy, bounds.maxx,bounds.miny);
 
 	dp->PopAxes(); //initial dp protection
 

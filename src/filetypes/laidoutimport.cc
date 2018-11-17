@@ -161,7 +161,7 @@ int LaidoutOutFilter::Out(const char *filename, Laxkit::anObject *context, Error
 	char *file=NULL;
 	if (!filename) {
 		if (isblank(doc->saveas)) {
-			//DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
+			////DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
 			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
 			return 2;

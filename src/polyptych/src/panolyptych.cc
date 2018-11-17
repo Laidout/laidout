@@ -194,7 +194,7 @@ void defineCube()
 	poly.faces.push(new Face("4 5 6 7",""));
 	poly.connectFaces();
 	poly.makeedges();
-	//DBG poly.dump_out(stdout, 0, 0, NULL);
+	////DBG poly.dump_out(stdout, 0, 0, NULL);
 	poly.BuildExtra();
 }
 
@@ -328,13 +328,13 @@ int main(int argc, char **argv)
 	//XSync(app.dpy,True); // must sync so the autorepeat takes effect!!
 	app.close();
 
-	DBG cerr <<"-----------------program done, cleanup follows--------------------"<<endl;
-	DBG FinalizeShortcutManager();
+	//DBG cerr <<"-----------------program done, cleanup follows--------------------"<<endl;
+	//DBG FinalizeShortcutManager();
 
-	//DBG cerr << "extra_basis:"<<endl
-	//DBG	 << extra_basis.p.x << ',' <<extra_basis.p.y << ',' <<extra_basis.p.z << " \\" <<endl
-	//DBG	 << extra_basis.x.x << ',' <<extra_basis.x.y << ',' <<extra_basis.x.z << " \\" <<endl
-	//DBG	 << extra_basis.y.x << ',' <<extra_basis.y.y << ',' <<extra_basis.y.z << " \\" <<endl
-	//DBG	 << extra_basis.z.x << ',' <<extra_basis.z.y << ',' <<extra_basis.z.z << endl;
+	////DBG cerr << "extra_basis:"<<endl
+	////DBG	 << extra_basis.p.x << ',' <<extra_basis.p.y << ',' <<extra_basis.p.z << " \\" <<endl
+	////DBG	 << extra_basis.x.x << ',' <<extra_basis.x.y << ',' <<extra_basis.x.z << " \\" <<endl
+	////DBG	 << extra_basis.y.x << ',' <<extra_basis.y.y << ',' <<extra_basis.y.z << " \\" <<endl
+	////DBG	 << extra_basis.z.x << ',' <<extra_basis.z.y << ',' <<extra_basis.z.z << endl;
 }
 

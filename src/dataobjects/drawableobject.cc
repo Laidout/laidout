@@ -256,7 +256,7 @@ DrawableObject *DrawableObject::FinalObject()
 	DrawableObject *fobj = (ofilter ? dynamic_cast<DrawableObject*>(ofilter->FinalObject()) : NULL);
 	if (fobj) return fobj;
 
-	DBG cerr << " *** Warning! filter did not return a valid object for "<<Id()<<"!"<<endl;
+	//DBG cerr << " *** Warning! filter did not return a valid object for "<<Id()<<"!"<<endl;
 	return this;
 }
 
@@ -346,9 +346,9 @@ void DrawableObject::UpdateFromRules()
 			//a do nothing rule
 
 		} else if (link->type==ALIGNMENTRULE_EdgeMagnet) {
-			//DBG cerr <<" *** need to implement ALIGNMENTRULE_EdgeMagnet"<<endl;
+			////DBG cerr <<" *** need to implement ALIGNMENTRULE_EdgeMagnet"<<endl;
 		} else if (link->type==ALIGNMENTRULE_Code) {
-			//DBG cerr <<" *** need to implement ALIGNMENTRULE_Code"<<endl;
+			////DBG cerr <<" *** need to implement ALIGNMENTRULE_Code"<<endl;
 
 		} else if (link->type==ALIGNMENTRULE_Align) {
 			 // Align particular bounding box point to particular parent bounding box point
@@ -367,7 +367,7 @@ void DrawableObject::UpdateFromRules()
 
 		} else {
 			if (!link->target) {
-				//DBG cerr << " warning: null rule link->target, skipping for now"<<endl;
+				////DBG cerr << " warning: null rule link->target, skipping for now"<<endl;
 				break;
 			}
 

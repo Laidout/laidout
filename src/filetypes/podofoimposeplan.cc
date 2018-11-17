@@ -150,7 +150,7 @@ int PodofooutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	char *file=NULL;
 	if (!filename) {
 		if (isblank(doc->saveas)) {
-			//DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
+			////DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
 			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
 			return 2;
@@ -161,7 +161,7 @@ int PodofooutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 
 	f=open_file_for_writing(file,0,&log);
 	if (!f) {
-		//DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
+		////DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
 		log.AddMessage(_("Cannot open file for writing."),ERROR_Fail);
 		delete[] file;
 		return 3;

@@ -73,13 +73,13 @@ Singles::Singles() : Imposition(_("Singles"))
 		 // 1 count, and the stylemanager should remove the other
 	}
 	
-	//DBG cerr <<"imposition singles init"<<endl;
+	////DBG cerr <<"imposition singles init"<<endl;
 }
 
 //! Calls pagestyle->dec_count().
 Singles::~Singles()
 {
-	//DBG cerr <<"--Singles destructor object "<<object_id<<endl;
+	////DBG cerr <<"--Singles destructor object "<<object_id<<endl;
 	pagestyle->dec_count();
 }
 
@@ -88,13 +88,13 @@ Singles::~Singles()
 // ***********TEMP!!!
 int Singles::inc_count()
 {
-    //DBG cerr <<"document "<<object_id<<" inc_count to "<<_count+1<<endl;
+    ////DBG cerr <<"document "<<object_id<<" inc_count to "<<_count+1<<endl;
     return anObject::inc_count();
 }
 
 int Singles::dec_count()
 {
-    //DBG cerr <<"document "<<object_id<<" dec_count to "<<_count-1<<endl;
+    ////DBG cerr <<"document "<<object_id<<" dec_count to "<<_count-1<<endl;
     return anObject::dec_count();
 }
 // ***********end TEMP!!!

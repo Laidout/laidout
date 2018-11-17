@@ -73,7 +73,7 @@ int LPerspectiveInterface::UseThis(Laxkit::anObject *nobj,unsigned int mask)
 		ObjectFilterInfo *info = dynamic_cast<ObjectFilterInfo*>(nobj);
 		PerspectiveNode *node = dynamic_cast<PerspectiveNode*>(info->node);
 		if (!node) {
-			DBG cerr << " Warning! no data coming into perspectivenode!"<<endl;
+			//DBG cerr << " Warning! no data coming into perspectivenode!"<<endl;
 			return 1;
 		}
 
@@ -93,7 +93,7 @@ int LPerspectiveInterface::UseThis(Laxkit::anObject *nobj,unsigned int mask)
 		//if (!obj) info->node->Update();
 		//obj = dynamic_cast<DrawableObject*>(out->GetData());
 		if (!obj) {
-			DBG cerr << " Warning! no data coming into perspectivenode!"<<endl;
+			//DBG cerr << " Warning! no data coming into perspectivenode!"<<endl;
 			return 0;
 		}
 
@@ -406,10 +406,10 @@ int PerspectiveNode::Update()
 		out->modtime = recent;
 		pathout->touchContents();
 
-		DBG cerr << "filter out:"<<endl;
-		DBG pathout->dump_out(stderr, 10, 0, NULL);
-		DBG cerr << "perspective transform:"<<endl;
-		DBG transform->dump_out(stderr, 10, 0, NULL);
+		//DBG cerr << "filter out:"<<endl;
+		//DBG pathout->dump_out(stderr, 10, 0, NULL);
+		//DBG cerr << "perspective transform:"<<endl;
+		//DBG transform->dump_out(stderr, 10, 0, NULL);
 
 		return NodeBase::Update();
 

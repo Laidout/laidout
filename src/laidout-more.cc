@@ -92,7 +92,7 @@ TreeChangeEvent::TreeChangeEvent(const TreeChangeEvent &te)
  */
 void LaidoutApp::notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType change,int s,int e)
 {
-	//DBG cerr<<"notifyDocTreeChanged sending.."<<endl;
+	////DBG cerr<<"notifyDocTreeChanged sending.."<<endl;
 	HeadWindow *h;
 	PlainWinBox *pwb;
 	ViewWindow *view;
@@ -129,21 +129,21 @@ void LaidoutApp::notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType
 
 				app->SendMessage(edata,w->object_id,"docTreeChange");
 
-				//DBG cerr <<"---(notifyDocTreeChanged) sending docTreeChange to "<<
-				//DBG 	(w->WindowTitle())<< "("<<w->whattype()<<")"<<endl;
+				////DBG cerr <<"---(notifyDocTreeChanged) sending docTreeChange to "<<
+				////DBG 	(w->WindowTitle())<< "("<<w->whattype()<<")"<<endl;
 				yes=0;
 			}
 		}
 	}
 	delete te; //delete template object
-	//DBG cerr <<"eo notifyDocTreeChanged"<<endl;
+	////DBG cerr <<"eo notifyDocTreeChanged"<<endl;
 	return;
 }
 
 //! Make sure various windows respond to a change in global preferences, like default units change.
 void LaidoutApp::notifyPrefsChanged(Laxkit::anXWindow *callfrom,int what)
 {
-	//DBG cerr<<"notifyPrefsChanged sending.."<<endl;
+	////DBG cerr<<"notifyPrefsChanged sending.."<<endl;
 	HeadWindow *h;
 	PlainWinBox *pwb;
 	anXWindow *w;
@@ -170,12 +170,12 @@ void LaidoutApp::notifyPrefsChanged(Laxkit::anXWindow *callfrom,int what)
 
 				app->SendMessage(edata,w->object_id,"prefsChange");
 
-				//DBG cerr <<"---(notifyPrefsChanged) sending prefsChange to "<<
-				//DBG 	(w->WindowTitle())<< "("<<w->whattype()<<")"<<endl;
+				////DBG cerr <<"---(notifyPrefsChanged) sending prefsChange to "<<
+				////DBG 	(w->WindowTitle())<< "("<<w->whattype()<<")"<<endl;
 			}
 		}
 	}
-	//DBG cerr <<"eo notifyPrefsChanged"<<endl;
+	////DBG cerr <<"eo notifyPrefsChanged"<<endl;
 	return;
 }
 

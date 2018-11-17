@@ -489,13 +489,13 @@ int ObjectFilterInterface::LBUp(int x,int y,unsigned int state, const Laxkit::La
 
 int ObjectFilterInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMouse *d)
 {
-	DBG cerr << " **********************ofi "<< buttondown.any() << endl;
+	//DBG cerr << " **********************ofi "<< buttondown.any() << endl;
 
 	if (!buttondown.any()) {
 		// update any mouse over state
 		int nhoverindex = -1;
 		int nhover = scan(x,y,state, &nhoverindex);
-		DBG cerr <<" ObjectFilterInterface::MouseMove: "<<nhover<<"  "<<nhoverindex<<endl;
+		//DBG cerr <<" ObjectFilterInterface::MouseMove: "<<nhover<<"  "<<nhoverindex<<endl;
 
 		if (nhover != hover || nhoverindex != hoverindex) {
 			hover = nhover;

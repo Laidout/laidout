@@ -175,7 +175,7 @@ void PageStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCon
 			DoubleAttribute(value,&height);
 
 		} else { 
-			//DBG cerr <<"PageStyle dump_in:*** unknown attribute!!"<<endl;
+			////DBG cerr <<"PageStyle dump_in:*** unknown attribute!!"<<endl;
 		}
 	}
 }
@@ -351,7 +351,7 @@ void RectPageStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Dum
 		} else if (!strcmp(name,"lrio")) {
 			recttype=(recttype&~(RECTPAGE_LRTB|RECTPAGE_IOTB|RECTPAGE_LRIO))|RECTPAGE_LRIO;
 		} else { 
-			//DBG cerr <<"PageStyle dump_in:*** unknown attribute!!"<<endl;
+			////DBG cerr <<"PageStyle dump_in:*** unknown attribute!!"<<endl;
 		}
 	}
 }
@@ -598,7 +598,7 @@ Page::Page(PageStyle *npagestyle,int num)
 //! Destructor, destroys the thumbnail, and dec_counts pagestyle.
 Page::~Page()
 {
-	//DBG cerr <<"  Page destructor"<<endl;
+	////DBG cerr <<"  Page destructor"<<endl;
 	if (label) delete[] label;
 	if (thumbnail) thumbnail->dec_count();
 	if (pagestyle) pagestyle->dec_count();
@@ -732,7 +732,7 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext 
 			SimpleColorAttribute(value,NULL,&labelcolor, NULL);
 
 		} else { 
-			//DBG cerr <<"Page dump_in:*** unknown attribute "<<(name?name:"(noname)")<<"!!"<<endl;
+			////DBG cerr <<"Page dump_in:*** unknown attribute "<<(name?name:"(noname)")<<"!!"<<endl;
 		}
 	}
 }
@@ -834,8 +834,8 @@ ImageData *Page::Thumbnail()
 		   h=bbox.maxy-bbox.miny;
 	h=h*200./w;
 	w=200.;
-	//DBG cerr <<"..----making thumbnail "<<w<<" x "<<h<<"  pgW,H:"<<pagestyle->w()<<','<<pagestyle->h()
-	//DBG 	<<"  bbox:"<<bbox.minx<<','<<bbox.maxx<<' '<<bbox.miny<<','<<bbox.maxy<<endl;
+	////DBG cerr <<"..----making thumbnail "<<w<<" x "<<h<<"  pgW,H:"<<pagestyle->w()<<','<<pagestyle->h()
+	////DBG 	<<"  bbox:"<<bbox.minx<<','<<bbox.maxx<<' '<<bbox.miny<<','<<bbox.maxy<<endl;
 
 	if (!thumbnail) thumbnail=new ImageData(); 
 	thumbnail->xaxis(flatpoint((bbox.maxx-bbox.minx)/w,0));
@@ -868,15 +868,15 @@ ImageData *Page::Thumbnail()
 		img->dec_count();
 	}
 	
-	DBG cerr <<"Thumbnail dump_out:"<<endl;
-	DBG thumbnail->dump_out(stderr,2,0,NULL);
-	DBG cerr <<"  minx "<<thumbnail->minx<<endl;
-	DBG cerr <<"  maxx "<<thumbnail->maxx<<endl;
-	DBG cerr <<"  miny "<<thumbnail->miny<<endl;
-	DBG cerr <<"  maxy "<<thumbnail->maxy<<endl;
-	//DBG save_image(img, "DBG.png", "png");
+	//DBG cerr <<"Thumbnail dump_out:"<<endl;
+	//DBG thumbnail->dump_out(stderr,2,0,NULL);
+	//DBG cerr <<"  minx "<<thumbnail->minx<<endl;
+	//DBG cerr <<"  maxx "<<thumbnail->maxx<<endl;
+	//DBG cerr <<"  miny "<<thumbnail->miny<<endl;
+	//DBG cerr <<"  maxy "<<thumbnail->maxy<<endl;
+	////DBG save_image(img, "DBG.png", "png");
 
-	DBG cerr <<"==--- Done Page::updating thumbnail.."<<endl;
+	//DBG cerr <<"==--- Done Page::updating thumbnail.."<<endl;
 	thumbmodtime = times(NULL);
 
 

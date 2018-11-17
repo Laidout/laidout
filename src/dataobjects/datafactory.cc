@@ -173,7 +173,7 @@ void InitializeDataFactory()
 	 //experimental:
 	lobjectfactory->DefineNewObject(LAX_VORONOIDATA,     "VoronoiData",     createVoronoiData,      NULL, 0);
 
-	//DBG lobjectfactory->dump_out(stderr,0);
+	////DBG lobjectfactory->dump_out(stderr,0);
 }
 
 

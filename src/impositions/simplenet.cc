@@ -735,9 +735,9 @@ void SimpleNet::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCon
 	//***sanity check on all point references..
 	FindBBox();
 
-	////DBG cerr <<"----------------this was set in SimpleNet:-------------"<<endl;
-	////DBG dump_out(stderr,0,0);
-	////DBG cerr <<"----------------end SimpleNet dump:-------------"<<endl;
+	//////DBG cerr <<"----------------this was set in SimpleNet:-------------"<<endl;
+	//////DBG dump_out(stderr,0,0);
+	//////DBG cerr <<"----------------end SimpleNet dump:-------------"<<endl;
 }
 
 //! Add a 3-d point to vertices at the end.
@@ -775,13 +775,13 @@ double *SimpleNet::basisOfFace(int which,double *mm,int total)//mm=NULL, total=0
 	if (!mm) mm=new double[6];
 	transform_identity(mm);
 
-	////DBG //*** for debugging	
-	////DBG  cerr <<"basisOfFace "<<which<<":\n";
+	//////DBG //*** for debugging	
+	//////DBG  cerr <<"basisOfFace "<<which<<":\n";
 	flatpoint p;
-	////DBG for (int c=0; c<faces[which].np; c++) {
-	////DBG 	p=points[faces[which].points[c]];
-	////DBG 	cerr <<" p"<<c<<": "<<p.x<<" "<<p.y<<endl;
-	////DBG }
+	//////DBG for (int c=0; c<faces[which].np; c++) {
+	//////DBG 	p=points[faces[which].points[c]];
+	//////DBG 	cerr <<" p"<<c<<": "<<p.x<<" "<<p.y<<endl;
+	//////DBG }
 	
 	int o=faces[which].aligno,x=faces[which].alignx;
 	if (o<0) o=0;
@@ -797,14 +797,14 @@ double *SimpleNet::basisOfFace(int which,double *mm,int total)//mm=NULL, total=0
 	if (total) transform_mult(mm,s.m(),m());
 		else transform_copy(mm,s.m());
 
-	////DBG //*** for debugging	
-	////DBG cerr <<"--transformed face "<<which<<":"<<endl;
-	////DBG transform_invert(s.m(),mm);
-	////DBG double slen=norm(points[faces[which].points[0]]-points[faces[which].points[1]]);
-	////DBG p=transform_point(mm,flatpoint(0,0));
-	////DBG cerr <<"  origin:"<<p.x<<" "<<p.y<<endl;
-	////DBG p=transform_point(mm,flatpoint(slen,0));
-	////DBG cerr <<"  point 1:"<<p.x<<" "<<p.y<<endl;
+	//////DBG //*** for debugging	
+	//////DBG cerr <<"--transformed face "<<which<<":"<<endl;
+	//////DBG transform_invert(s.m(),mm);
+	//////DBG double slen=norm(points[faces[which].points[0]]-points[faces[which].points[1]]);
+	//////DBG p=transform_point(mm,flatpoint(0,0));
+	//////DBG cerr <<"  origin:"<<p.x<<" "<<p.y<<endl;
+	//////DBG p=transform_point(mm,flatpoint(slen,0));
+	//////DBG cerr <<"  point 1:"<<p.x<<" "<<p.y<<endl;
 
 	
 	return mm;

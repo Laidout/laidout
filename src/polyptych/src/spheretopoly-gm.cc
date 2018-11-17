@@ -137,7 +137,7 @@ int Net2::SaveSvgWithImages(const char *filename, const char *filebase, flatpoin
 	 //In SVG, 1in = 90px = 72pt
 	double linewidth=.01; //inches, where 1 inch == 1 paper unit
 	double scaling=1/sqrt(M[0]*M[0]+M[1]*M[1]); //supposed to scale to within the M group
-	DBG cout <<"******--- Scaling="<<scaling<<endl;
+	//DBG cout <<"******--- Scaling="<<scaling<<endl;
 
 	 //define some repeating header stuff
 	char pathheader[400];
@@ -171,7 +171,7 @@ int Net2::SaveSvgWithImages(const char *filename, const char *filebase, flatpoin
 			svg << pathheader << "d=\"";
 			char *d=CoordinateToSvg(line->points);
 
-			//DBG cerr <<"--output line: "<<d<<endl;
+			////DBG cerr <<"--output line: "<<d<<endl;
 
 			if (d) {
 				svg <<d<<"\""<< pathclose <<endl;
@@ -428,7 +428,7 @@ int SphereToPoly(Image spheremap,
 				faceimage.pixelColor(x,y,color);
 			//}
 		  }
-		  //DBG cout <<"\\\n";
+		  ////DBG cout <<"\\\n";
 		}
 
 
@@ -885,7 +885,7 @@ int main(int argc,char **argv)
 	cout <<"-----------end Net--------------\n";
 
 	if (figure_pointat) {
-		DBG cerr<<"figure pointat: "<<figure_pointat<<"="<<(figure_pointat==2?"to pix":"to angle")<<endl;
+		//DBG cerr<<"figure pointat: "<<figure_pointat<<"="<<(figure_pointat==2?"to pix":"to angle")<<endl;
 
 		if (pointat_face>=poly.faces.n) {
 			cerr<<"Out of range face number for point-at option!"<<endl;
@@ -921,18 +921,18 @@ int main(int argc,char **argv)
 					 sin(pointat.x)*cos(pointat.y),
 					 sin(pointat.y));
 
-		DBG cerr<<"-----point-at info---------"<<endl;
-		DBG cerr<<"face number: "<<pointat_face<<endl;
-		DBG cerr<<"face center: "<<facecenter.x<<','<<facecenter.y<<','<<facecenter.z<<endl<<endl;
-		DBG cerr<<"face  theta,gamma rad: "<<facetheta         <<", "<<facegamma         <<endl;
-		DBG cerr<<"face  theta,gamma deg: "<<facetheta/M_PI*180<<", "<<facegamma/M_PI*180<<endl<<endl;
-		DBG cerr<<"point theta,gamma rad: "<<pointat.x<<", "<<pointat.y<<endl;
-		DBG cerr<<"point theta,gamma deg: "<<pointat.x/M_PI*180<<", "<<pointat.y/M_PI*180<<endl;
-		DBG cerr<<"point pix: "<<pixx<<", "<<pixy<<endl;
-		DBG cerr<<"point: "<<p.x<<','<<p.y<<','<<p.z<<endl<<endl;
-		DBG cerr<<"point rotate: "<<pointat_rotation<<",  ("<<(pointat_rotation)/M_PI*180<<" deg)"<<endl;
-		DBG cerr<<"rotate theta: "<<facetheta-pointat.x<<",  ("<<(facetheta-pointat.x)/M_PI*180<<" deg)"<<endl;
-		DBG cerr<<"rotate gamma: "<<facegamma-pointat.y<<",  ("<<(facegamma-pointat.y)/M_PI*180<<" deg)"<<endl;
+		//DBG cerr<<"-----point-at info---------"<<endl;
+		//DBG cerr<<"face number: "<<pointat_face<<endl;
+		//DBG cerr<<"face center: "<<facecenter.x<<','<<facecenter.y<<','<<facecenter.z<<endl<<endl;
+		//DBG cerr<<"face  theta,gamma rad: "<<facetheta         <<", "<<facegamma         <<endl;
+		//DBG cerr<<"face  theta,gamma deg: "<<facetheta/M_PI*180<<", "<<facegamma/M_PI*180<<endl<<endl;
+		//DBG cerr<<"point theta,gamma rad: "<<pointat.x<<", "<<pointat.y<<endl;
+		//DBG cerr<<"point theta,gamma deg: "<<pointat.x/M_PI*180<<", "<<pointat.y/M_PI*180<<endl;
+		//DBG cerr<<"point pix: "<<pixx<<", "<<pixy<<endl;
+		//DBG cerr<<"point: "<<p.x<<','<<p.y<<','<<p.z<<endl<<endl;
+		//DBG cerr<<"point rotate: "<<pointat_rotation<<",  ("<<(pointat_rotation)/M_PI*180<<" deg)"<<endl;
+		//DBG cerr<<"rotate theta: "<<facetheta-pointat.x<<",  ("<<(facetheta-pointat.x)/M_PI*180<<" deg)"<<endl;
+		//DBG cerr<<"rotate gamma: "<<facegamma-pointat.y<<",  ("<<(facegamma-pointat.y)/M_PI*180<<" deg)"<<endl;
 
 		 //line up point
 		if (rotatetheta) {
@@ -944,7 +944,7 @@ int main(int argc,char **argv)
 			if (norm(gammaaxis)<1e-10) {
 				gammaaxis=-spacepoint(0,0,1)/p;
 			}
-			DBG cerr<<"gamma axis: "<<gammaaxis.x<<", "<<gammaaxis.y<<", "<<gammaaxis.z<<endl;
+			//DBG cerr<<"gamma axis: "<<gammaaxis.x<<", "<<gammaaxis.y<<", "<<gammaaxis.z<<endl;
 			rotate(*extra_basis, gammaaxis, rotategamma);
 		}
 		 
@@ -957,37 +957,37 @@ int main(int argc,char **argv)
 //		axis=p/facecenter;
 //		------------
 
-		//DBG cout <<"--before"<<endl;
-		//DBG cout <<"x*y "<<(extra_basis->x)*(extra_basis->y)<<endl;
-		//DBG cout <<"y*z "<<(extra_basis->y)*(extra_basis->z)<<endl;
-		//DBG cout <<"x*z "<<(extra_basis->x)*(extra_basis->z)<<endl;
-		//DBG cout <<"angles x: "<<angle(extra_basis->x,facecenter,1)<<endl;
-		//DBG cout <<"angles y: "<<angle(extra_basis->y,facecenter,1)<<endl;
-		//DBG cout <<"angles z: "<<angle(extra_basis->z,facecenter,1)<<endl;
-		//DBG cout <<"angles x-y: "<<angle(extra_basis->x,extra_basis->y,1)<<endl;
-		//DBG cout <<"angles y-z: "<<angle(extra_basis->y,extra_basis->z,1)<<endl;
-		//DBG cout <<"angles z-y: "<<angle(extra_basis->z,extra_basis->x,1)<<endl;
+		////DBG cout <<"--before"<<endl;
+		////DBG cout <<"x*y "<<(extra_basis->x)*(extra_basis->y)<<endl;
+		////DBG cout <<"y*z "<<(extra_basis->y)*(extra_basis->z)<<endl;
+		////DBG cout <<"x*z "<<(extra_basis->x)*(extra_basis->z)<<endl;
+		////DBG cout <<"angles x: "<<angle(extra_basis->x,facecenter,1)<<endl;
+		////DBG cout <<"angles y: "<<angle(extra_basis->y,facecenter,1)<<endl;
+		////DBG cout <<"angles z: "<<angle(extra_basis->z,facecenter,1)<<endl;
+		////DBG cout <<"angles x-y: "<<angle(extra_basis->x,extra_basis->y,1)<<endl;
+		////DBG cout <<"angles y-z: "<<angle(extra_basis->y,extra_basis->z,1)<<endl;
+		////DBG cout <<"angles z-y: "<<angle(extra_basis->z,extra_basis->x,1)<<endl;
 
 		 //extra rotation
 		if (pointat_rotation) rotate(*extra_basis, facecenter, pointat_rotation);
-		//DBG cout <<"--after"<<endl;
-		//DBG cout <<"x*y "<<(extra_basis->x)*(extra_basis->y)<<endl;
-		//DBG cout <<"y*z "<<(extra_basis->y)*(extra_basis->z)<<endl;
-		//DBG cout <<"x*z "<<(extra_basis->x)*(extra_basis->z)<<endl;
-		//DBG extra_basis->x=extra_basis->y/extra_basis->z;
-		//DBG extra_basis->y=-extra_basis->y;
-		//DBG extra_basis->z=-extra_basis->z;
-		//DBG cout <<"--after2"<<endl;
-		//DBG cout <<"x*y "<<(extra_basis->x)*(extra_basis->y)<<endl;
-		//DBG cout <<"y*z "<<(extra_basis->y)*(extra_basis->z)<<endl;
-		//DBG cout <<"x*z "<<(extra_basis->x)*(extra_basis->z)<<endl;
-		//DBG cout <<"angles x: "<<angle(extra_basis->x,facecenter,1)<<endl;
-		//DBG cout <<"angles y: "<<angle(extra_basis->y,facecenter,1)<<endl;
-		//DBG cout <<"angles z: "<<angle(extra_basis->z,facecenter,1)<<endl;
+		////DBG cout <<"--after"<<endl;
+		////DBG cout <<"x*y "<<(extra_basis->x)*(extra_basis->y)<<endl;
+		////DBG cout <<"y*z "<<(extra_basis->y)*(extra_basis->z)<<endl;
+		////DBG cout <<"x*z "<<(extra_basis->x)*(extra_basis->z)<<endl;
+		////DBG extra_basis->x=extra_basis->y/extra_basis->z;
+		////DBG extra_basis->y=-extra_basis->y;
+		////DBG extra_basis->z=-extra_basis->z;
+		////DBG cout <<"--after2"<<endl;
+		////DBG cout <<"x*y "<<(extra_basis->x)*(extra_basis->y)<<endl;
+		////DBG cout <<"y*z "<<(extra_basis->y)*(extra_basis->z)<<endl;
+		////DBG cout <<"x*z "<<(extra_basis->x)*(extra_basis->z)<<endl;
+		////DBG cout <<"angles x: "<<angle(extra_basis->x,facecenter,1)<<endl;
+		////DBG cout <<"angles y: "<<angle(extra_basis->y,facecenter,1)<<endl;
+		////DBG cout <<"angles z: "<<angle(extra_basis->z,facecenter,1)<<endl;
 
-		//DBG cout <<"angles x-y: "<<angle(extra_basis->x,extra_basis->y,1)<<endl;
-		//DBG cout <<"angles y-z: "<<angle(extra_basis->y,extra_basis->z,1)<<endl;
-		//DBG cout <<"angles z-y: "<<angle(extra_basis->z,extra_basis->x,1)<<endl;
+		////DBG cout <<"angles x-y: "<<angle(extra_basis->x,extra_basis->y,1)<<endl;
+		////DBG cout <<"angles y-z: "<<angle(extra_basis->y,extra_basis->z,1)<<endl;
+		////DBG cout <<"angles z-y: "<<angle(extra_basis->z,extra_basis->x,1)<<endl;
 
 	}
 

@@ -256,7 +256,7 @@ int GenericValueDialog::Event(const EventData *e,const char *mes)
 
 int GenericValueDialog::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	//DBG cerr <<"..generic value charinput.."<<endl;
+	////DBG cerr <<"..generic value charinput.."<<endl;
 	//if (ch==LAX_Esc) app->destroywindow(this);
 
 

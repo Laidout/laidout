@@ -57,9 +57,7 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 4.  ---hide the debugging garbage and commit to the release branch---
 	touch Makefile-toinclude; make touchdepends;
 	make hidegarbage 
-	cd src/polyptych/src
-	make hidegarbage
-	cd ../../..
+	src/hidegarbage src/polyptych/src/*cc
 	git commit --all -m'Hid debugging garbage'
 
 	git push

@@ -512,7 +512,7 @@ int dumpInImageList(ImportImageSettings *settings, Document *doc,LaxFiles::Attri
 			preview=desc=NULL;
 
 		} else {
-			//DBG cerr <<" *** potential error in list, found unknown attribute: "<<(name?name:"(no name)")<<endl;
+			////DBG cerr <<" *** potential error in list, found unknown attribute: "<<(name?name:"(no name)")<<endl;
 		}
 		
 		if (flush>0) {
@@ -627,7 +627,7 @@ int dumpInImages(ImportImageSettings *settings,
 		image = load_image_with_loaders(imagefiles[c], (previewfiles ? previewfiles[c] : NULL),0,0,&pimage, 0,-1,NULL, true, 0);
 
 		if (image) {
-			//DBG cerr << "dump image files: "<<imagefiles[c]<<endl;
+			////DBG cerr << "dump image files: "<<imagefiles[c]<<endl;
 
 			imaged=dynamic_cast<ImageData*>(LaxInterfaces::somedatafactory()->NewObject("ImageData"));
 			imaged->SetImage(image,NULL);//incs count of image
@@ -663,7 +663,7 @@ int dumpInImages(ImportImageSettings *settings,
 						float psversion,epsversion;
 						n=sscanf(data,"%%!PS-Adobe-%f EPSF-%f",&psversion,&epsversion);
 						if (n==2) {
-							//DBG cerr <<"--found EPS, ps:"<<psversion<<", eps:"<<epsversion<<endl;
+							////DBG cerr <<"--found EPS, ps:"<<psversion<<", eps:"<<epsversion<<endl;
 							 //create new EpsData, which has bounding box pulled from
 							 //the eps file, kept in postscript units (1 inch == 72 units)
 							//*******
@@ -735,7 +735,7 @@ int dumpInImages(ImportImageSettings *settings,
  */
 int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *images, int startpage)
 {
-	//DBG cerr<<"---dump in images from ImagePlopInfo list..."<<endl;
+	////DBG cerr<<"---dump in images from ImagePlopInfo list..."<<endl;
 	if (!images) return -1;
 	if (startpage<0 && settings) startpage=settings->startpage;
 	if (startpage<0) startpage=0;
@@ -775,13 +775,13 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *im
 
 		 // info points to the first image on a page
 
-		DBG cerr <<"  starting page "<<curpage+1<<endl;
+		//DBG cerr <<"  starting page "<<curpage+1<<endl;
 		if (!info->image) { info=info->next; continue; }
 
 		if (info->page >= 0) curpage = info->page;
 
 		if (doc && curpage >= doc->pages.n) { 
-			DBG cerr <<" adding new page..."<<endl;
+			//DBG cerr <<" adding new page..."<<endl;
 			doc->NewPages(-1,curpage-doc->pages.n+1); // add extra page(s) at end
 		}
 
@@ -818,7 +818,7 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *im
 			hh = (info->image->maxy - info->image->miny) / curdpi;
 		}
 
-		//DBG cerr <<": ww,hh:"<<ww<<','<<hh<<"  x,y,w,h"<<x<<','<<y<<','<<w<<','<<h<<endl;
+		////DBG cerr <<": ww,hh:"<<ww<<','<<hh<<"  x,y,w,h"<<x<<','<<y<<','<<w<<','<<h<<endl;
 		 // fit into box if necessary
 		if (info->xywh) {
 			if (s*info->image->maxx>info->xywh[2]) s=info->xywh[2]/info->image->maxx;
@@ -835,7 +835,7 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *im
 
 		 // flow onto page (into a rectangle)
 		rw=rh=rrh=rrw=0;
-		DBG int nr=0; // number of rows so far
+		//DBG int nr=0; // number of rows so far
 
 		 // find maxperpage
 		int maxperpage=0;
@@ -859,7 +859,7 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *im
 			last = flow;   // last is used to point to first image of a row
 			
 			rw = rh = 0;
-			DBG cerr <<"  row number "<<++nr<<endl;
+			//DBG cerr <<"  row number "<<++nr<<endl;
 			while (flow && nnn+nn<maxperpage) { 
 				 // find all for a row
 				obj = flow->image;
@@ -906,10 +906,10 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *im
 		 // now do final vertical arranging of nnn images in range [info,flow)
 		 // push images onto the page, adjusting their origins appropriately.
 		 // info points to the 1st image on the page, flow points to one past the last one on the page
-		DBG cerr <<"  add "<<nn<<" images to page "<<curpage<<endl;
+		//DBG cerr <<"  add "<<nn<<" images to page "<<curpage<<endl;
 		flow2 = info;
 		while (info!=flow) {
-			//DBG cerr <<"   adding image ..."<<endl;
+			////DBG cerr <<"   adding image ..."<<endl;
 			//while (curpage>doc->pages.n) doc->
 			info->image->origin(info->image->origin()+flatpoint(0,(rrh-hh)*aligny));
 			g = doc ? doc->pages.e[curpage]->e(doc->pages.e[curpage]->layers.n()-1) : dynamic_cast<Group*>(settings->destobject);
@@ -952,7 +952,7 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *im
 		curpage++;
 	} // end loop block for page
 
-	//DBG cerr <<"-----------------end dump images[]----------------"<<endl;
+	////DBG cerr <<"-----------------end dump images[]----------------"<<endl;
 	if (outline) { outline->dec_count(); outline=NULL; }
 	return curpage-1;
 }

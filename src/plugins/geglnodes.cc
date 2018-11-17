@@ -164,7 +164,7 @@ int ValueToProperty(Value *v, const char *gvtype, GeglNode *node, const char *pr
 				success = 1;
 
 			} else {
-				DBG cerr <<" WARNING! trying to set enum "<<gvtype<<" with wrong enum type "<<ev->GetObjectDef()->name<<endl;
+				//DBG cerr <<" WARNING! trying to set enum "<<gvtype<<" with wrong enum type "<<ev->GetObjectDef()->name<<endl;
 			}
 		}
 
@@ -198,7 +198,7 @@ GeglNode *XMLFileToGeglNodes(const char *file, int file_is_data, Laxkit::ErrorLo
 	GeglNode *node = NULL;
 
 	try {
-		DBG cerr << "test-gegl, reading in "<<file<<endl;
+		//DBG cerr << "test-gegl, reading in "<<file<<endl;
 		if (file_is_data) node = gegl_node_new_from_xml(file, NULL);
 		else node = gegl_node_new_from_file(file);
 
@@ -276,7 +276,7 @@ NodeGroup* GeglNodesToLaidoutNodes(GeglNode *gegl, NodeGroup *parent, bool child
 						if (toprop) parent->Connect(fromprop, toprop);
 						//if (toprop) parent->Connect(glonode, to, fromprop, toprop);
 						else {
-							DBG cerr << " *** warning! couldn't find a to property "<<consumerpads[c3]<<" on "<<(to?to->Label():"(none)")<<" from "<<glonode->Label()<<endl;
+							//DBG cerr << " *** warning! couldn't find a to property "<<consumerpads[c3]<<" on "<<(to?to->Label():"(none)")<<" from "<<glonode->Label()<<endl;
 						}
 					}
 					g_free(consumers);
@@ -485,7 +485,7 @@ int GeglLaidoutNode::IsSaveNode()
  */
 int GeglLaidoutNode::Update()
 {
-	DBG cerr << "GeglLaidoutNode::Update()..."<<type<<endl;
+	//DBG cerr << "GeglLaidoutNode::Update()..."<<type<<endl;
 
 	int num_updated = 0;
 	int errors = 0;
@@ -515,7 +515,7 @@ int GeglLaidoutNode::Update()
 					gegl_node_connect_to(prevnode, connection->fromprop->Name(),
 										 gegl, prop->Name());
 				} else {
-					DBG cerr <<" *** Warning! error connected non-gegl input pad for "<<operation<<endl;
+					//DBG cerr <<" *** Warning! error connected non-gegl input pad for "<<operation<<endl;
 					errors++;
 				}
 			}
@@ -542,7 +542,7 @@ int GeglLaidoutNode::Update()
 					} else {
 						errors++;
 						unhandled_props++;
-						DBG cerr <<" *** Warning! error setting property "<<propspec->name<<" on gegl node "<<operation<<endl;
+						//DBG cerr <<" *** Warning! error setting property "<<propspec->name<<" on gegl node "<<operation<<endl;
 					}
 					g_value_unset(&gv);
 				}
@@ -554,22 +554,22 @@ int GeglLaidoutNode::Update()
 		 //should do this ONLY if the node is a sink
 		if (IsSaveNode()) {
 			if (AutoProcess()) {
-				DBG cerr <<"..........Attempting to process "<<operation<<endl;
+				//DBG cerr <<"..........Attempting to process "<<operation<<endl;
 				gegl_node_process(gegl);
 				XMLOut(gegl, operation);
 			} else {
-				DBG cerr <<"....deferring gegl node process"<<endl;
+				//DBG cerr <<"....deferring gegl node process"<<endl;
 			}
 		}
 
-		DBG cerr <<"...done with Gegl Update()"<<endl;
+		//DBG cerr <<"...done with Gegl Update()"<<endl;
 		UpdatePreview();
 		return NodeBase::Update(); //should trigger updates in outputs
 
 	} 
 	//else
 
-	DBG cerr << " *** warning! "<<errors<<" errors encountered in GeglLaidoutNode::Update()! "<<Name<<endl;
+	//DBG cerr << " *** warning! "<<errors<<" errors encountered in GeglLaidoutNode::Update()! "<<Name<<endl;
 
 	return -1;
 }
@@ -609,10 +609,10 @@ int GeglLaidoutNode::GetRect(Laxkit::DoubleBBox &box)
  */
 int GeglLaidoutNode::UpdatePreview()
 {
-	DBG cerr <<"GeglLaidoutNode::UpdatePreview() for "<<operation<<endl;
+	//DBG cerr <<"GeglLaidoutNode::UpdatePreview() for "<<operation<<endl;
 
 	if (IsSaveNode()) {
-		DBG cerr <<"  skipping preview for save nodes, because they don't behave well for blitting"<<endl;
+		//DBG cerr <<"  skipping preview for save nodes, because they don't behave well for blitting"<<endl;
 		return 1;
 	}
 
@@ -787,7 +787,7 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 			const gchar *blurb = g_param_spec_get_blurb (specs[c2]);
 			const gchar *ptype = g_type_name(specs[c2]->value_type);
 
-			DBG cerr << "    prop: "<<specs[c2]->name <<','<< ptype <<','<< (nick?nick:"(no nick)")<<','<< (blurb?blurb:"(no blurb)")<<endl;
+			//DBG cerr << "    prop: "<<specs[c2]->name <<','<< ptype <<','<< (nick?nick:"(no nick)")<<','<< (blurb?blurb:"(no blurb)")<<endl;
 
 			menu->AddItem(specs[c2]->name, 0, -1);     // [0] name
 			menu->AddDetail(ptype, NULL);              // [1] type
@@ -914,7 +914,7 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 
 					v = new StringValue(formatstr);
 				  } else {
-					DBG cerr << "uh oh! probably a babl format not being recognized!"<<endl;
+					//DBG cerr << "uh oh! probably a babl format not being recognized!"<<endl;
 					v = new StringValue();
 				  }
 
@@ -966,7 +966,7 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 					 //gegl has a whole slew of enums that should
 					 //be caught here
 					if (G_VALUE_HOLDS_ENUM(&gv)) {
-						DBG cerr <<"gvalue holds enum"<<endl;
+						//DBG cerr <<"gvalue holds enum"<<endl;
 					}
 
 					ObjectDef *def = gegl_types.FindDef(proptype);
@@ -977,12 +977,12 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 
 						def = new ObjectDef(NULL, proptype, proptype, NULL, "enum", NULL,NULL);
 
-						DBG cerr << "gegl enum: "<<proptype << ", min,max: " << enum_class->minimum<< ", "<< enum_class->maximum<<endl;
+						//DBG cerr << "gegl enum: "<<proptype << ", min,max: " << enum_class->minimum<< ", "<< enum_class->maximum<<endl;
 						for (unsigned int c2=0; c2<enum_class->n_values; c2++) {
 							enum_value = &enum_class->values[c2];
-							DBG cerr <<"  enum value: "<<enum_value->value<<"  "
-							DBG  <<enum_value->value_name<<"  "
-							DBG  <<enum_value->value_nick<<endl;
+							//DBG cerr <<"  enum value: "<<enum_value->value<<"  "
+							//DBG  <<enum_value->value_name<<"  "
+							//DBG  <<enum_value->value_nick<<endl;
 
 							def->pushEnumValue(enum_value->value_name, enum_value->value_nick, NULL);
 						}
@@ -996,7 +996,7 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 					v = new EnumValue(def, vv);
 
 				} else {
-					DBG cerr << proptype << " in gegl is unknown type here!"<<endl;
+					//DBG cerr << proptype << " in gegl is unknown type here!"<<endl;
 				}
 
 			}
@@ -1131,10 +1131,10 @@ Laxkit::MenuInfo *GetGeglOps()
     gchar **operations = gegl_list_operations (&n_operations);
 	MenuItem *item, *item_compat;
 
-	DBG cerr <<"gegl operations:"<<endl;
+	//DBG cerr <<"gegl operations:"<<endl;
 
     for (unsigned int i=0; i < n_operations; i++) { 
-        DBG cerr << "  operator: " << (operations[i]?operations[i]:"?") << endl;
+        //DBG cerr << "  operator: " << (operations[i]?operations[i]:"?") << endl;
 
 		menu->AddItem(operations[i], i, -1); 
 		item = menu->Top();
@@ -1143,7 +1143,7 @@ Laxkit::MenuInfo *GetGeglOps()
 		const char *compat_name = gegl_operation_get_key(operations[i], "compat-name");
 		item_compat = NULL;
 		if (compat_name) {
-			DBG cerr <<"compat-name for "<<operations[i]<<": "<<compat_name<<endl;
+			//DBG cerr <<"compat-name for "<<operations[i]<<": "<<compat_name<<endl;
 
 			menu->AddItem(compat_name, i, -1); 
 			item_compat = menu->Top();
@@ -1159,8 +1159,8 @@ Laxkit::MenuInfo *GetGeglOps()
 			const char *value = gegl_operation_get_key(operations[i], keys[c]);
 
 			if (!strcmp(keys[c], "source")) value="...code...";
-			DBG if (!strcmp(keys[c], "cl-source")) cerr <<"    operation key: "<<keys[c]<<": "<<"(...source code...)"<<endl;
-			DBG else cerr <<"    operation key: "<<keys[c]<<": "<<value<<endl;
+			//DBG if (!strcmp(keys[c], "cl-source")) cerr <<"    operation key: "<<keys[c]<<": "<<"(...source code...)"<<endl;
+			//DBG else cerr <<"    operation key: "<<keys[c]<<": "<<value<<endl;
 
 			if (!strcmp(keys[c], "categories")) {
 				categories = value;
@@ -1348,7 +1348,7 @@ int GeglLoader::Export(const char *file, anObject *object, anObject *context, La
 
 GeglNodesPlugin::GeglNodesPlugin()
 {
-	DBG cerr <<"GeglNodesPlugin constructor"<<endl;
+	//DBG cerr <<"GeglNodesPlugin constructor"<<endl;
 }
 
 GeglNodesPlugin::~GeglNodesPlugin()
@@ -1429,7 +1429,7 @@ SvgFilterNS::SvgFilterLoader *svgloader = NULL;
  */
 int GeglNodesPlugin::Initialize()
 {
-	DBG cerr << "GeglNodesPlugin initializing..."<<endl;
+	//DBG cerr << "GeglNodesPlugin initializing..."<<endl;
 
 	if (initialized) return 0;
 
@@ -1456,7 +1456,7 @@ int GeglNodesPlugin::Initialize()
 	Laidout::NodeGroup::InstallLoader(svgloader, 0);
 
 
-	DBG cerr << "GeglNodesPlugin initialized!"<<endl;
+	//DBG cerr << "GeglNodesPlugin initialized!"<<endl;
 	initialized = 1;
 
 

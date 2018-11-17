@@ -809,11 +809,11 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 				 //the sodipodi bit is necessary to make Inkscape (at least to 0.091) let you access lines beyond the first
 				//fprintf(f,"%s  <tspan sodipodi:role=\"line\" dx=\"%.10g\" y=\"%.10g\" textLength=\"%.10g\">%s</tspan>\n",
 				//		spc, x,caption->font->Msize()*caption->linespacing, caption->linelengths[c], caption->lines.e[c]);
-				DBG fprintf(f,"<!--  ascent:%.10g  descent:%.10g  textheight:%.10g  msize:%.10g  -->\n",
-				DBG 		caption->font->ascent(),
-				DBG 		caption->font->descent(),
-				DBG 		caption->font->textheight(),
-				DBG 		caption->font->Msize());
+				//DBG fprintf(f,"<!--  ascent:%.10g  descent:%.10g  textheight:%.10g  msize:%.10g  -->\n",
+				//DBG 		caption->font->ascent(),
+				//DBG 		caption->font->descent(),
+				//DBG 		caption->font->textheight(),
+				//DBG 		caption->font->Msize());
 				fprintf(f,"%s  <tspan sodipodi:role=\"line\" dx=\"%.10g\" y=\"%.10g\" textLength=\"%.10g\">%s</tspan>\n",
 						spc, x,y, caption->linelengths[c], caption->lines.e[c]);
 
@@ -892,11 +892,11 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			//y = -font->ascent() + c*text->font->textheight()*text->linespacing;
 
 			 //the sodipodi bit is necessary to make Inkscape (at least to 0.091) let you access lines beyond the first
-			DBG fprintf(f,"<!--  ascent:%.10g  descent:%.10g  textheight:%.10g  msize:%.10g  -->\n",
-			DBG 		text->font->ascent(),
-			DBG 		text->font->descent(),
-			DBG 		text->font->textheight(),
-			DBG 		text->font->Msize());
+			//DBG fprintf(f,"<!--  ascent:%.10g  descent:%.10g  textheight:%.10g  msize:%.10g  -->\n",
+			//DBG 		text->font->ascent(),
+			//DBG 		text->font->descent(),
+			//DBG 		text->font->textheight(),
+			//DBG 		text->font->Msize());
 
 			//fprintf(f,"%s  <textPath xlink:href=\"#%s\"><tspan dx=\"%.10g\" y=\"%.10g\" textLength=\"%.10g\">%s</tspan></textPath>\n",
 			char txt[text->end-text->start+1];
@@ -1069,7 +1069,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			      for (cc=0; cc<numdiv; cc++) {
 					s=(c+(float)cc/numdiv)/(patch->xsize/3);
 					t=(r+(float)rr/numdiv)/(patch->ysize/3);
-					//DBG cerr <<" point s,t:"<<s<<','<<t<<endl;
+					////DBG cerr <<" point s,t:"<<s<<','<<t<<endl;
 
 				     //get color for point (r+rr,c+cc)
 					tt=t/(1-dt);
@@ -1264,7 +1264,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 	} else if (!strcmp(obj->whattype(),"SomeDataRef")) {
 		SomeDataRef *ref=dynamic_cast<SomeDataRef*>(obj);
 		if (!ref->thedata) {
-			//DBG cerr <<" WARNING! missing thedata in a somedataref id:"<<ref->object_id<<endl;
+			////DBG cerr <<" WARNING! missing thedata in a somedataref id:"<<ref->object_id<<endl;
 		} else {
 			double m[6],m2[6];
 			transform_invert(m,ref->thedata->m());
@@ -1586,7 +1586,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	char *file=NULL;
 	if (!filename) {
 		if (isblank(doc->saveas)) {
-			//DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
+			////DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
 			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
 			out->dec_count();
@@ -1598,7 +1598,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 
 	f=open_file_for_writing(file,0,&log);//appends any error string
 	if (!f) {
-		//DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
+		////DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
 		delete[] file;
 		out->dec_count();
 		return 3;
@@ -2206,7 +2206,7 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 			 //gradientUnits = "userSpaceOnUse | objectBoundingBox"
 			//if (!strcmp(value,"userSpaceOnUse")) units=0;
 			//else if (!strcmp(value,"objectBoundingBox")) units=1;
-			//DBG cerr <<" warning: ignoring gradientUnits on svg gradient in"<<endl;
+			////DBG cerr <<" warning: ignoring gradientUnits on svg gradient in"<<endl;
 
 		} else if (!strcmp(name,"gradientTransform")) {
 			svgtransform(value,gm);
@@ -2556,7 +2556,7 @@ ColorPatchData *svgDumpInMeshGradientDef(Attribute *def, Attribute *defs)
 	  }	
 
 	} catch (int error) {
-		  DBG cerr <<"Caught error parsing meshgradient! "<<error<<endl;
+		  //DBG cerr <<"Caught error parsing meshgradient! "<<error<<endl;
 		  mesh->dec_count();
 		  return NULL;
 	}
@@ -3054,7 +3054,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 		if (textobj->IsBlank()) {
 			textobj->dec_count();
-			DBG cerr <<"ignoring blank text object "<<(textobj->Id()?textobj->Id():"unnamed")<<endl;
+			//DBG cerr <<"ignoring blank text object "<<(textobj->Id()?textobj->Id():"unnamed")<<endl;
 
 		} else {
 			if (font_size == -1) font_size = 12; //arbitrary number to play nice with CaptionData.
@@ -3065,7 +3065,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 			textobj->dec_count();
 		}
 
-		DBG cerr <<" *** need to finish implementing svg in:  text"<<endl;
+		//DBG cerr <<" *** need to finish implementing svg in:  text"<<endl;
 		return 1;
 
 	} else if (!strcmp(element->name,"use")) {

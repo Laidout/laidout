@@ -3636,11 +3636,11 @@ int CloneInterface::scan(int x,int y, int *i, int *dest)
 	if (extra_input_fields.n && x>=box.minx && x<=box.maxx && y>=box.maxy) {
 		double th=dp->textheight();
 		int yi = (y-(box.maxy + circle_radius + th/2 + th*.1))/(th*1.2);
-		DBG cerr <<" --------------------extra input scan: "<<yi<<endl;
+		//DBG cerr <<" --------------------extra input scan: "<<yi<<endl;
 
 		if (yi>=0 && yi<extra_input_fields.n) {
 			if (i) *i = yi;
-			DBG cerr <<" --------------------extra input found! "<<yi<<endl;
+			//DBG cerr <<" --------------------extra input found! "<<yi<<endl;
 			return CLONEI_Inputs;
 		}
 	}
@@ -3653,7 +3653,7 @@ int CloneInterface::scan(int x,int y, int *i, int *dest)
 		flatpoint pp = base_cells->transformPointInverse(fp);
 
 		SomeData *obj;
-		DBG cerr <<" ----- fpoint: "<<pp.x<<','<<pp.y<<endl;
+		//DBG cerr <<" ----- fpoint: "<<pp.x<<','<<pp.y<<endl;
 
 		for (int c=0; c<source_proxies->NumKids(); c++) {
 		  Group *g = dynamic_cast<Group*>(source_proxies->e(c));
@@ -3661,10 +3661,10 @@ int CloneInterface::scan(int x,int y, int *i, int *dest)
 		  for (int c2=0; c2<g->n(); c2++) {
 			obj = g->e(c2);
 
-			//DBG cerr <<" ----- source "<<c<<"/"<<source_proxies->n()<<" bbox: "<<obj->minx<<"  "<<obj->miny
-			//DBG 	 <<"  "<<obj->maxx<<"  "<<obj->maxy<<endl;
-			//DBG flatpoint p=transform_point_inverse(obj->m(), pp);
-			//DBG cerr <<" ----- point: "<<p.x<<','<<p.y<<endl;
+			////DBG cerr <<" ----- source "<<c<<"/"<<source_proxies->n()<<" bbox: "<<obj->minx<<"  "<<obj->miny
+			////DBG 	 <<"  "<<obj->maxx<<"  "<<obj->maxy<<endl;
+			////DBG flatpoint p=transform_point_inverse(obj->m(), pp);
+			////DBG cerr <<" ----- point: "<<p.x<<','<<p.y<<endl;
 
 			if (obj->pointin(pp,1)) {
 				if (i) *i = c;
@@ -3704,9 +3704,9 @@ int CloneInterface::scanBasecells(flatpoint fp, int *i, int *dest)
 	for (int c=0; c<tiling->basecells.n; c++) {
 		base = dynamic_cast<Group*>(base_cells->e(c));
 
-		DBG cerr <<" ----- base cell "<<c<<"/"<<base_cells->n()<<" bbox: "
-		DBG 	<<base_cells->e(c)->minx<<"  "<<base_cells->e(c)->miny<<"  "<<base_cells->e(c)->maxx<<"  "<<base_cells->e(c)->maxy<<endl;
-		DBG cerr <<" ----- point: "<<p.x<<','<<p.y<<endl;
+		//DBG cerr <<" ----- base cell "<<c<<"/"<<base_cells->n()<<" bbox: "
+		//DBG 	<<base_cells->e(c)->minx<<"  "<<base_cells->e(c)->miny<<"  "<<base_cells->e(c)->maxx<<"  "<<base_cells->e(c)->maxy<<endl;
+		//DBG cerr <<" ----- point: "<<p.x<<','<<p.y<<endl;
 
 		for (int c2=0; c2<base->NumKids(); c2++) {
 			if (!base->e(c2)->pointin(p,1)) continue;
@@ -3720,7 +3720,7 @@ int CloneInterface::scanBasecells(flatpoint fp, int *i, int *dest)
 	if (i) *i = which;
 	if (dest) *dest = whichdest;
 
-	DBG cerr <<" --- over base cell: "<<which<<", "<<whichdest<<endl;
+	//DBG cerr <<" --- over base cell: "<<which<<", "<<whichdest<<endl;
 	if (which>=0) return CLONEI_BaseCell;
 	return CLONEI_None;
 }
@@ -3741,12 +3741,12 @@ int CloneInterface::scanSelected(int x,int y)
 	y -= selected_offset+(dp->Miny+dp->Maxy)/2-boxh/2+icon_width*.2;
 	row = floor(y/icon_width/1.2);
 
-	//DBG cerr <<" scanSelected r,c: "<<row<<','<<col<<endl;
+	////DBG cerr <<" scanSelected r,c: "<<row<<','<<col<<endl;
 
 	int i=-1;
 	if (col>=0 && col<num_cols && row>=0 && row<num_rows) {
 		i=col+row*num_cols;
-		//DBG cerr <<"   i="<<i<<endl;
+		////DBG cerr <<"   i="<<i<<endl;
 		if  (i>=0 && i<NumBuiltinTilings()) {
 			//found one
 		} else i=-1;
@@ -3803,7 +3803,7 @@ int CloneInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 {
 	if (buttondown.isdown(0,LEFTBUTTON)) return 1;
 
-	DBG cerr <<"CloneInterface::LBDown()..."<<endl;
+	//DBG cerr <<"CloneInterface::LBDown()..."<<endl;
 
 	if (mode==CMODE_Select) {
 		//Mode(CMODE_Normal);
@@ -4099,7 +4099,7 @@ int CloneInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 	int i=-1,dest=-1;
 	int over=scan(x,y,&i,&dest);
 
-	////DBG flatpoint fp=dp->screentoreal(x,y);
+	//////DBG flatpoint fp=dp->screentoreal(x,y);
 
 	if (over==firstover) {
 		if (over==CLONEI_Circle) {
@@ -4189,7 +4189,7 @@ int CloneInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 
 	int i=-1, dest=-1;
 	int over = scan(x,y,&i,&dest);
-	DBG cerr <<"over box: "<<over<<endl;
+	//DBG cerr <<"over box: "<<over<<endl;
 
 	if (!buttondown.any()) {
 		if (lastover!=over || lastoveri != i) needtodraw=1;
@@ -4278,7 +4278,7 @@ int CloneInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxki
 
 
 	int over=scan(x,y,NULL,NULL);
-	DBG cerr <<"wheel up clone interface: "<<over<<endl;
+	//DBG cerr <<"wheel up clone interface: "<<over<<endl;
 
 	if (over==CLONEI_Tiling) {
 		PerformAction(CLONEIA_Previous_Tiling);
@@ -4309,7 +4309,7 @@ int CloneInterface::WheelDown(int x,int y,unsigned int state,int count,const Lax
 
 
 	int over = scan(x,y,NULL,NULL);
-	DBG cerr <<"wheel down clone interface: "<<over<<endl;
+	//DBG cerr <<"wheel down clone interface: "<<over<<endl;
 
 	if (over==CLONEI_Tiling) {
 		PerformAction(CLONEIA_Next_Tiling);
@@ -4327,7 +4327,7 @@ int CloneInterface::WheelDown(int x,int y,unsigned int state,int count,const Lax
 
 int CloneInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	//DBG cerr<<" got ch:"<<ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
+	////DBG cerr<<" got ch:"<<ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
 	
 	if (mode==CMODE_Select) {
 		 //in the tiling box selection popup box
@@ -4379,14 +4379,14 @@ int CloneInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 		return 0; //preempt any key propagation while the box is up
 	}
 
-	DBG if (ch=='d') {
-	DBG 	FILE *f = fopen("tile.dump", "w");
-	DBG 	if (f) {
-	DBG 		if (preview) preview->dump_out(f,0, 0, NULL);
-	DBG			else fprintf(f, "No preview!!");
-	DBG 		fclose(f);
-	DBG 	}
-	DBG }
+	//DBG if (ch=='d') {
+	//DBG 	FILE *f = fopen("tile.dump", "w");
+	//DBG 	if (f) {
+	//DBG 		if (preview) preview->dump_out(f,0, 0, NULL);
+	//DBG			else fprintf(f, "No preview!!");
+	//DBG 		fclose(f);
+	//DBG 	}
+	//DBG }
 
 	if (!sc) GetShortcuts();
 	int action=sc->FindActionNumber(ch,state&LAX_STATE_MASK,0);

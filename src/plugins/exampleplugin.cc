@@ -130,7 +130,7 @@ int ExamplePlugin::Initialize()
 
 	initialized = 1;
 	// do stuff
-	DBG cerr << "ExamplePlugin initializing!"<<endl;
+	//DBG cerr << "ExamplePlugin initializing!"<<endl;
 
 	return 0;
 }

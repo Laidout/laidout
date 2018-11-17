@@ -506,17 +506,17 @@ int UpdatePreference(const char *which, const char *value, const char *laidoutrc
 int LaidoutPreferences::AddPath(const char *resource, const char *path)
 {
 	if (file_exists(path, 1, NULL) != S_IFDIR) {
-		DBG cerr << "LaidoutPreferences::AddPath("<<resource<<", "<<path<<"): not a directory!"<<endl;
+		//DBG cerr << "LaidoutPreferences::AddPath("<<resource<<", "<<path<<"): not a directory!"<<endl;
 		return 1;
 	}
 
 	if (!strcmp(resource, "icons")) {
-		DBG cerr <<"Adding icon path: "<<path<<endl;
+		//DBG cerr <<"Adding icon path: "<<path<<endl;
 		icon_dirs.push(newstr(path), LISTS_DELETE_Array);
 		return 0;
 
 	} else if (!strcmp(resource, "plugins")) {
-		DBG cerr <<"Adding plugin path: "<<path<<endl;
+		//DBG cerr <<"Adding plugin path: "<<path<<endl;
 		plugin_dirs.push(newstr(path), LISTS_DELETE_Array);
 		return 0;
 	}

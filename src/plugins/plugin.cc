@@ -62,7 +62,7 @@ PluginBase *LoadPlugin(const char *path_to_plugin, Laxkit::ErrorLog &log)
 	PluginBase *plugin = NULL;
 	void *handle = NULL;
 
-	DBG cerr <<"loading plugin "<<path_to_plugin<<"..."<<endl;
+	//DBG cerr <<"loading plugin "<<path_to_plugin<<"..."<<endl;
 
 	try {
 
@@ -70,7 +70,7 @@ PluginBase *LoadPlugin(const char *path_to_plugin, Laxkit::ErrorLog &log)
 		//handle = dlopen(path_to_plugin, RTLD_NOW);
 		//handle = dlopen(path_to_plugin, RTLD_LAZY|RTLD_GLOBAL);
 
-		DBG cerr <<"dl opened..."<<endl;
+		//DBG cerr <<"dl opened..."<<endl;
 
 		if (!handle) throw 1;
 
@@ -83,7 +83,7 @@ PluginBase *LoadPlugin(const char *path_to_plugin, Laxkit::ErrorLog &log)
 		GetPlugin = (GetPluginFunc*)dlsym(handle, "GetPlugin");
 		if (!GetPlugin) throw 4;
 
-		DBG cerr <<"dl GetPlugin found..."<<endl;
+		//DBG cerr <<"dl GetPlugin found..."<<endl;
 
 		plugin = GetPlugin();
 		if (!plugin) throw 5;
@@ -116,14 +116,14 @@ PluginBase *LoadPlugin(const char *path_to_plugin, Laxkit::ErrorLog &log)
 
 	makestr(plugin->filepath, path_to_plugin);
 
-	DBG cerr <<"Found plugin!"<<endl;
-	DBG cerr <<"  Name:        "<< plugin->PluginName()  << endl;
-	DBG cerr <<"  Version:     "<< plugin->Version()<<endl;
-	DBG cerr <<"  Description: "<< plugin->Description() << endl;
-	DBG cerr <<"  Author:      "<< plugin->Author()      << endl;
-	DBG cerr <<"  ReleaseDate: "<< plugin->ReleaseDate() << endl;
-	DBG cerr <<"  License:     "<< plugin->License()     << endl;
-	DBG if (plugin->OtherMeta()) const_cast<LaxFiles::Attribute*>(plugin->OtherMeta())->dump_out_full(stderr, 2);
+	//DBG cerr <<"Found plugin!"<<endl;
+	//DBG cerr <<"  Name:        "<< plugin->PluginName()  << endl;
+	//DBG cerr <<"  Version:     "<< plugin->Version()<<endl;
+	//DBG cerr <<"  Description: "<< plugin->Description() << endl;
+	//DBG cerr <<"  Author:      "<< plugin->Author()      << endl;
+	//DBG cerr <<"  ReleaseDate: "<< plugin->ReleaseDate() << endl;
+	//DBG cerr <<"  License:     "<< plugin->License()     << endl;
+	//DBG if (plugin->OtherMeta()) const_cast<LaxFiles::Attribute*>(plugin->OtherMeta())->dump_out_full(stderr, 2);
 
 	return plugin;
 }
@@ -174,7 +174,7 @@ PluginBase::PluginBase()
 
 PluginBase::~PluginBase()
 {
-	DBG cerr << "destructor plugin: "<<filepath<<endl;
+	//DBG cerr << "destructor plugin: "<<filepath<<endl;
 	delete[] filepath;
 	//if (handle) dlclose(handle); <- note: can't do this here, since *this is allocated within the dl!
 }

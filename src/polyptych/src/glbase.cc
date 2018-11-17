@@ -31,7 +31,7 @@ namespace Polyptych {
 
 void dumpMatrix4(GLfloat *m,const char *str)
 {
-	DBG cerr <<(str?str:"matrix")<<":"<<endl;
+	//DBG cerr <<(str?str:"matrix")<<":"<<endl;
 	int i,j;
 	for (i=0; i<4; i++) {
 	  cerr <<"  ";
@@ -249,7 +249,7 @@ FTFont *setupfont(const char *fontfile, double facesize)
 
 	// If something went wrong, bail out.
 	if(font->Error()) {
-		DBG cerr <<"*** Cannot load font "<<fontfile<<"!"<<endl;
+		//DBG cerr <<"*** Cannot load font "<<fontfile<<"!"<<endl;
 		exit(1);
 	}
 
@@ -380,7 +380,7 @@ void EyeType::Set(spacepoint atpoint, spacepoint nfocus, spacepoint up)
 	makestereo();
 	transformTo();
 
-	DBG dumpMatrix4(model,"eye");
+	//DBG dumpMatrix4(model,"eye");
 }
 
 /*--------------------- Light and Material structures ------------------------*/

@@ -413,7 +413,7 @@ int AnimationInterface::Idle(int tid, double delta)
 	current_frame++;
 	needtodraw=1;
 
-	DBG cerr << "(note: not actual frame, this is event tick) Frame #"<<current_frame<<",  fps: "<<current_fps<<endl;
+	//DBG cerr << "(note: not actual frame, this is event tick) Frame #"<<current_frame<<",  fps: "<<current_fps<<endl;
 	return 0;
 }
 
@@ -529,7 +529,7 @@ int AnimationInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 
 	int i=-1;
 	int over=scan(x,y,&i);
-	//DBG cerr <<"over box: "<<over<<endl;
+	////DBG cerr <<"over box: "<<over<<endl;
 
 	if (!buttondown.any()) {
 		if (hover!=over) {
@@ -585,14 +585,14 @@ int AnimationInterface::WheelUp(int x,int y,unsigned int state,int count,const L
 int AnimationInterface::WheelDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
 	//int over=scan(x,y,NULL);
-	////DBG cerr <<"wheel down clone interface: "<<over<<endl;
+	//////DBG cerr <<"wheel down clone interface: "<<over<<endl;
 
 	return 1;
 }
 
 int AnimationInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	//DBG cerr<<" got ch:"<<ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
+	////DBG cerr<<" got ch:"<<ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
 	
 
 	if (!sc) GetShortcuts();

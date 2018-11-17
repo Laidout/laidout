@@ -1109,13 +1109,13 @@ DocumentExportConfig::~DocumentExportConfig()
 
 Value *DocumentExportConfig::dereference(const char *extstring, int len)
 {
-	//DBG cerr <<" *** Need to implement DocumentExportConfig::dereference()!!"<<endl;
+	////DBG cerr <<" *** Need to implement DocumentExportConfig::dereference()!!"<<endl;
 	return NULL;
 }
 
 int DocumentExportConfig::assign(FieldExtPlace *ext,Value *v)
 {
-	//DBG cerr <<" *** Need to implement DocumentExportConfig::assign()!!"<<endl;
+	////DBG cerr <<" *** Need to implement DocumentExportConfig::assign()!!"<<endl;
 	return 0;
 }
 
@@ -1332,7 +1332,7 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 		return 1;
 	}
 
-	//DBG cerr << "export_document begin to \""<<config->filter->VersionName()<<"\"......."<<endl;
+	////DBG cerr << "export_document begin to \""<<config->filter->VersionName()<<"\"......."<<endl;
 
 	 //figure out what paper arrangement to print out on
 	PaperGroup *papergroup=config->papergroup;
@@ -1483,7 +1483,7 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 		} else err=config->filter->Out(NULL,config,log); //send all pages at once to filter
 	}
 	
-	//DBG cerr << "export_document end."<<endl;
+	////DBG cerr << "export_document end."<<endl;
 
 	if (err>0) {
 		log.AddMessage(_("Export failed."),ERROR_Fail);

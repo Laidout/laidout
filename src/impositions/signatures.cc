@@ -759,17 +759,17 @@ int Signature::locatePaperFromPage(int pagenumber, int *row, int *col, int num_s
 	 //
 	 //To do this, we find where it is in the pattern...
 
-	//DBG int front;  //Whether sigindex is on top or bottom of unfolded pattern
+	////DBG int front;  //Whether sigindex is on top or bottom of unfolded pattern
 	int countdir; //Whether a pattern cell has a higher page number on top (1) or not (0).
 	int rr=-1, cc=-1;
 	for (rr=0; rr<numhfolds+1; rr++) {
 	  for (cc=0; cc<numvfolds+1; cc++) {
 		if (sigindex==foldinfo[rr][cc].finalindexfront) {
-			//DBG front=1;
+			////DBG front=1;
 			countdir=(foldinfo[rr][cc].finalindexfront>foldinfo[rr][cc].finalindexback);
 			break;
 		} else if (sigindex==foldinfo[rr][cc].finalindexback) {
-			//DBG front=0;
+			////DBG front=0;
 			countdir=(foldinfo[rr][cc].finalindexfront>foldinfo[rr][cc].finalindexback);
 			break;
 		}
@@ -777,11 +777,11 @@ int Signature::locatePaperFromPage(int pagenumber, int *row, int *col, int num_s
 	  if (cc!=numvfolds+1) break;
 	}  //rr
 
-	//DBG if (rr==numhfolds+1) { 
-	//DBG 	cerr << " *** could not find place "<<sigindex<<" in rr,cc"<<endl;
-	//DBG 	exit(0);
-	//DBG }
-	//DBG cerr <<"front:"<<front<<endl;
+	////DBG if (rr==numhfolds+1) { 
+	////DBG 	cerr << " *** could not find place "<<sigindex<<" in rr,cc"<<endl;
+	////DBG 	exit(0);
+	////DBG }
+	////DBG cerr <<"front:"<<front<<endl;
 
 	 //now rr,cc is the cell that contains sigindex.
 	 //We must figure out how it maps to pieces of paper
@@ -2522,8 +2522,8 @@ ImpositionResource **SignatureImposition::getDefaultResources()
 	satt->push("numvfolds","1");
 	satt->push("binding","left");
 
-	//DBG cerr <<"-----** Booklet att resource:"<<endl;
-	//DBG att->dump_out(stderr, 0);
+	////DBG cerr <<"-----** Booklet att resource:"<<endl;
+	////DBG att->dump_out(stderr, 0);
 
 	r[1]=new ImpositionResource("SignatureImposition",
 								  _("Booklet"),
@@ -2588,7 +2588,7 @@ int SignatureImposition::NumStacks(int which)
  */
 int SignatureImposition::Creep(int which,double d)
 {
-	//DBG cerr <<" *** need to implement SignatureImposition::Creep()!"<<endl;
+	////DBG cerr <<" *** need to implement SignatureImposition::Creep()!"<<endl;
 	return 1;
 }
 
@@ -3314,7 +3314,7 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 	int pageindex;
 	int ff,tt;
 
-	//DBG cerr <<" signature pattern for paper spread "<<whichpaper<<":"<<endl;
+	////DBG cerr <<" signature pattern for paper spread "<<whichpaper<<":"<<endl;
 
 	 //for each tile:
 	//x = sig->partition->insetleft;
@@ -3332,7 +3332,7 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 			xflip = signature->foldinfo[rr][cc].finalxflip;
 			yflip = signature->foldinfo[rr][cc].finalyflip;
 
-			//DBG cerr <<signature->foldinfo[rr][cc].finalindexfront<<"/"<<signature->foldinfo[rr][cc].finalindexback<<"  ";
+			////DBG cerr <<signature->foldinfo[rr][cc].finalindexfront<<"/"<<signature->foldinfo[rr][cc].finalindexback<<"  ";
 
 			xx = x + (front ? signature->numvfolds-cc : cc)*ew;
 			yy = y + rr*eh; //coordinates of corner of page cell
@@ -3391,7 +3391,7 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 		}  //rr
 
 		y += patternheight+sig->partition->tilegapy;
-		DBG cerr <<endl;
+		//DBG cerr <<endl;
 	  } //tx
 	  x += patternwidth+sig->partition->tilegapx;
 	} //ty

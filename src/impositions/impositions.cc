@@ -210,7 +210,7 @@ int AddToImpositionPool(PtrStack<ImpositionResource> *existingpool, const char *
 			continue;
 		}
 
-		DBG cerr <<"1"<<endl;
+		//DBG cerr <<"1"<<endl;
 		resource_name_and_desc(f,&name,&desc);
 		if (isblank(name)) {
 			temp=newstr(lax_basename(str));
@@ -226,18 +226,18 @@ int AddToImpositionPool(PtrStack<ImpositionResource> *existingpool, const char *
 												  desc,//desc
 												  NULL,0) //attribute
 						  );
-		DBG cerr <<"2"<<endl;
+		//DBG cerr <<"2"<<endl;
 
 		if (temp) { delete[] temp; temp=NULL; }
 		if (name) { delete[] name; name=NULL; }
 		if (desc) { delete[] desc; desc=NULL; }
 		fclose(f);
-		DBG cerr <<"3"<<endl;
+		//DBG cerr <<"3"<<endl;
 	} while (entry);
 
 	if (str) delete[] str;
 	closedir(dir);
-	//DBG cerr <<"4"<<endl;
+	////DBG cerr <<"4"<<endl;
 
 	return numadded;
 }

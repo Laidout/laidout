@@ -194,13 +194,13 @@ int FieldExtPlace::remove(int which)
 //! For debugging, dumps to stdout.
 void FieldExtPlace::out(const char *str)
 {
-	//DBG if (str) cerr <<str<<": "; else cerr <<"FieldExtPlace: ";
-	//DBG for (int c=0; c<ext.n; c++) {
-	//DBG 	if (ext.e[c]->ext) cerr <<ext.e[c]->ext;
-	//DBG 	else cerr <<ext.e[c]->exti;
-	//DBG 	cerr<<".";
-	//DBG }
-	//DBG cerr <<endl;
+	////DBG if (str) cerr <<str<<": "; else cerr <<"FieldExtPlace: ";
+	////DBG for (int c=0; c<ext.n; c++) {
+	////DBG 	if (ext.e[c]->ext) cerr <<ext.e[c]->ext;
+	////DBG 	else cerr <<ext.e[c]->exti;
+	////DBG 	cerr<<".";
+	////DBG }
+	////DBG cerr <<endl;
 }
 
 
@@ -231,9 +231,9 @@ FieldPlace::FieldPlace(const FieldPlace &place)
 //! For debugging, dumps to stdout.
 void FieldPlace::out(const char *str)
 {
-	//DBG if (str) cerr <<str<<": "; else cerr <<"FieldPlace: ";
-	//DBG for (int c=0; c<NumStack<int>::n; c++) cerr <<NumStack<int>::e[c]<<", ";
-	//DBG cerr <<endl;
+	////DBG if (str) cerr <<str<<": "; else cerr <<"FieldPlace: ";
+	////DBG for (int c=0; c<NumStack<int>::n; c++) cerr <<NumStack<int>::e[c]<<", ";
+	////DBG cerr <<endl;
 }
 
 //! Return whether place specifies the same location as this.
@@ -292,7 +292,7 @@ FieldMask::FieldMask(const char *ext)
 		fp=new FieldPlace;
 		fe=chartoint(start,&end);
 		if (*end!=',' && *end!='\0') {
-			//DBG cerr << "ext had invalid characters!"<<endl;
+			////DBG cerr << "ext had invalid characters!"<<endl;
 			if (fe) delete[] fe;
 			if (fp) delete fp;
 			return;

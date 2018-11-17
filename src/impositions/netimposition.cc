@@ -133,7 +133,7 @@ NetImposition::NetImposition(Net *newnet)
 	Imposition::SetPaperSize(paperstyle);
 	paperstyle->dec_count();
 
-	//DBG cerr <<"   net 1"<<endl;
+	////DBG cerr <<"   net 1"<<endl;
 	
 	
 	//***can objectdef exist already? possible made by a superclass?
@@ -155,7 +155,7 @@ NetImposition::NetImposition(Net *newnet)
 //	}
 
 	
-	//DBG cerr <<"imposition netimposition init"<<endl;
+	////DBG cerr <<"imposition netimposition init"<<endl;
 }
  
 NetImposition::~NetImposition()
@@ -329,19 +329,19 @@ void NetImposition::setPage()
 		nets.e[c]->FitToData(&page,page.maxx*.05, 1);
 		scalefromnet=norm(nets.e[c]->xaxis());
 
-		//DBG cerr <<"new scalefromnet: "<<scalefromnet<<endl;
+		////DBG cerr <<"new scalefromnet: "<<scalefromnet<<endl;
 
-		//DBG cerr <<"net "<<c<<" matrix: "<<nets.e[c]->m(0)<<", "
-		//DBG 	<<nets.e[c]->m(1)<<", "
-		//DBG 	<<nets.e[c]->m(2)<<", "
-		//DBG 	<<nets.e[c]->m(3)<<", "
-		//DBG 	<<nets.e[c]->m(4)<<", "
-		//DBG 	<<nets.e[c]->m(5)<<endl;
-		//DBG cerr <<"net "<<c<<" bounds xx-yy: "
-		//DBG 	<<nets.e[c]->minx<<", "
-		//DBG 	<<nets.e[c]->maxx<<", "
-		//DBG 	<<nets.e[c]->miny<<", "
-		//DBG 	<<nets.e[c]->maxy<<endl;
+		////DBG cerr <<"net "<<c<<" matrix: "<<nets.e[c]->m(0)<<", "
+		////DBG 	<<nets.e[c]->m(1)<<", "
+		////DBG 	<<nets.e[c]->m(2)<<", "
+		////DBG 	<<nets.e[c]->m(3)<<", "
+		////DBG 	<<nets.e[c]->m(4)<<", "
+		////DBG 	<<nets.e[c]->m(5)<<endl;
+		////DBG cerr <<"net "<<c<<" bounds xx-yy: "
+		////DBG 	<<nets.e[c]->minx<<", "
+		////DBG 	<<nets.e[c]->maxx<<", "
+		////DBG 	<<nets.e[c]->miny<<", "
+		////DBG 	<<nets.e[c]->maxy<<endl;
 	}
 }
 
@@ -374,7 +374,7 @@ ObjectDef *makeNetImpositionObjectDef()
 			"enum",
 			NULL, "0",
 			0,NULL); // *** 0,0,CreateNetListEnum);
-	//DBG cerr << " *** need to make enum list work again in makeNetImpositionObjectDef()"<<endl;
+	////DBG cerr << " *** need to make enum list work again in makeNetImpositionObjectDef()"<<endl;
 	return sd;
 }
 
@@ -528,7 +528,7 @@ LaxInterfaces::SomeData *NetImposition::GetPageOutline(int pagenum,int local)
 				netfacei-=nets.e[neti]->faces.n;
 			}
 		}
-		//DBG if (neti==nets.n) cerr <<"*** Bad news: page index not mapped to any net face"<<endl;
+		////DBG if (neti==nets.n) cerr <<"*** Bad news: page index not mapped to any net face"<<endl;
 
 		face=*nets.e[neti]->faces.e[netfacei];
 		
@@ -635,17 +635,17 @@ Spread *NetImposition::GenerateSpread(Spread *spread, //!< If not null, append t
 									Net *net,
 									int pageoffset) //!< Add this to any page indices in the new spread pages
 {
-	//DBG cerr <<"-- NetImposition::GenerateSpread--"<<endl;
-	//DBG cerr <<"   net dump:"<<endl;
-	//DBG net->dump_out(stderr,0,0,NULL);
-	//DBG cerr <<"-- end net dump"<<endl;
+	////DBG cerr <<"-- NetImposition::GenerateSpread--"<<endl;
+	////DBG cerr <<"   net dump:"<<endl;
+	////DBG net->dump_out(stderr,0,0,NULL);
+	////DBG cerr <<"-- end net dump"<<endl;
 
 	if (!spread) spread = new Spread();
 	spread->mask = SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
 
 	 // fill pagestack
 	PathsData *spreadpath = dynamic_cast<PathsData *>(spread->path);
-	DBG if (!spreadpath && spread->path) cerr <<"**** error!!! wrong type for net spread path!"<<endl;
+	//DBG if (!spreadpath && spread->path) cerr <<"**** error!!! wrong type for net spread path!"<<endl;
 	if (!spreadpath) { 
 		spreadpath = new PathsData;
 		spread->path = spreadpath;
@@ -734,9 +734,9 @@ Spread *NetImposition::GenerateSpread(Spread *spread, //!< If not null, append t
 		newpath->origin(origin);
 		delete[] p;
 
-		////DBG Path *ppp=newpath->paths.e[0]->duplicate();
-		////DBG spreadpath->paths.push(ppp);
-		////DBG spreadpath->FindBBox();
+		//////DBG Path *ppp=newpath->paths.e[0]->duplicate();
+		//////DBG spreadpath->paths.push(ppp);
+		//////DBG spreadpath->FindBBox();
 
 		spread->pagestack.push(new PageLocation(page,NULL,newpath)); //incs newpath count
 		newpath->dec_count();//remove extra count
@@ -891,7 +891,7 @@ int NetImposition::GetPapersNeeded(int npages)
 {
 	int n=numActiveFaces();
 	if (n==0) {
-		//DBG cerr <<"*****warning: no active faces in net!!"<<endl;
+		////DBG cerr <<"*****warning: no active faces in net!!"<<endl;
 		return 0;
 	}
 	return (npages-1)/n+1;

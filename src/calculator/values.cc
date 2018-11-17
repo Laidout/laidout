@@ -464,7 +464,7 @@ ObjectDef::ObjectDef(ObjectDef *nextends, //!< Definition of a class to derive f
 			ObjectFunc    nstylefunc)  //!< Full Function
   : suggestions(2)
 {
-	//DBG cerr <<"..creating ObjectDef "<<nname<<endl;
+	////DBG cerr <<"..creating ObjectDef "<<nname<<endl;
 
 	parent_namespace=NULL;
 
@@ -519,7 +519,7 @@ ObjectDef::ObjectDef(const char *nname,
 					 Value *newval,
 					 const char *type, unsigned int fflags)
 {
-	//DBG cerr <<"..creating ObjectDef "<<nname<<endl;
+	////DBG cerr <<"..creating ObjectDef "<<nname<<endl;
 
 	name=newstr(nname);
 	Name=newstr(nName);
@@ -550,7 +550,7 @@ ObjectDef::~ObjectDef()
 {
 	//parent_namespace->dec_count(); <- do NOT do this, we assume the module will outlive the objectdef
 
-	DBG cerr <<"--<ObjectDef \""<<(name?name:"(no name)")<<"\" destructor"<<endl;
+	//DBG cerr <<"--<ObjectDef \""<<(name?name:"(no name)")<<"\" destructor"<<endl;
 
 	if (name)         delete[] name;
 	if (Name)         delete[] Name;
@@ -564,7 +564,7 @@ ObjectDef::~ObjectDef()
 	if (extrainfo) extrainfo->dec_count();
 
 	if (fields) {
-		//DBG cerr <<"---Delete fields stack"<<endl;
+		////DBG cerr <<"---Delete fields stack"<<endl;
 		delete fields;
 		fields=NULL;
 	}
@@ -1641,7 +1641,7 @@ ValueHash::ValueHash()
 
 ValueHash::~ValueHash()
 {
-	//DBG values.flush(); //this should happen automatically anyway
+	////DBG values.flush(); //this should happen automatically anyway
 }
 
 int ValueHash::type()
@@ -1961,7 +1961,7 @@ int ValueHash::push(const char *name,const char *value,int where)
 /*! Increments obj count. */
 int ValueHash::pushObject(const char *name,Laxkit::anObject *obj,int where)
 {
-	//DBG cerr <<"pushObject: "<<(obj?obj->whattype():"null")<<endl;
+	////DBG cerr <<"pushObject: "<<(obj?obj->whattype():"null")<<endl;
 	if (dynamic_cast<Value*>(obj)) return push(name,dynamic_cast<Value*>(obj));
 
 	Value *v=new ObjectValue(obj);
@@ -2437,7 +2437,7 @@ LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,LaxF
 	if (what==-1) {
 		 //dump out part of object def
 		if (!def) {
-			//DBG cerr << "  Value::dump_out_atts(): missing ObjectDef for "<<whattype()<<endl;
+			////DBG cerr << "  Value::dump_out_atts(): missing ObjectDef for "<<whattype()<<endl;
 			return NULL;
 		}
 
@@ -2627,7 +2627,7 @@ void Value::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 	}
 
 	if (what==DEFOUT_JSON) {
-		//DBG cerr <<" *** value out to json, todo!!"<<endl;
+		////DBG cerr <<" *** value out to json, todo!!"<<endl;
 
 		Value *v;
 		ObjectDef *def;
@@ -2815,7 +2815,7 @@ int GenericValue::assign(FieldExtPlace *ext,Value *v)
 	int index=elements.findIndex(str);
 	if (index>=0) {
 		//elements.assign(ext,v);
-		//DBG if (ext->n()>1) cerr <<"*** need to implement ValueHash->assign()!!"<<endl;
+		////DBG if (ext->n()>1) cerr <<"*** need to implement ValueHash->assign()!!"<<endl;
 		elements.set(index,v);
 	} else return 1;
 	return 1;
@@ -4158,7 +4158,7 @@ ObjectDef *EnumValue::makeObjectDef()
  */
 ObjectValue::ObjectValue(anObject *obj)
 {
-	DBG cerr <<"ObjectValue creation.."<<endl;
+	//DBG cerr <<"ObjectValue creation.."<<endl;
 	object=obj;
 	if (object) object->inc_count();
 }
@@ -4167,7 +4167,7 @@ ObjectValue::ObjectValue(anObject *obj)
  */
 ObjectValue::~ObjectValue()
 {
-	//DBG cerr <<"ObjectValue destructor.."<<endl;
+	////DBG cerr <<"ObjectValue destructor.."<<endl;
 	if (object) object->dec_count();
 }
 
@@ -4232,7 +4232,7 @@ ColorValue::ColorValue(double r, double g, double b, double a)
  */
 ColorValue::~ColorValue()
 {
-	//DBG cerr <<"ColorValue destructor.."<<endl;
+	////DBG cerr <<"ColorValue destructor.."<<endl;
 }
 
 int ColorValue::getValueStr(char *buffer,int len)

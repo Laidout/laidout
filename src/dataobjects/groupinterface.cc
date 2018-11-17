@@ -57,7 +57,7 @@ GroupInterface::GroupInterface(int nid,Laxkit::Displayer *ndp)
 
 GroupInterface::~GroupInterface()
 {
-	//DBG cerr <<"---- in GroupInterface destructor"<<endl;
+	////DBG cerr <<"---- in GroupInterface destructor"<<endl;
 }
 
 anInterface *GroupInterface::duplicate(anInterface *dup)
@@ -73,7 +73,7 @@ anInterface *GroupInterface::duplicate(anInterface *dup)
 void GroupInterface::TransformSelection(const double *N, int s, int e) 
 {
 	for (int c=0; c<selection->n(); c++) {
-		//DBG cerr<<"-------ObjectInterfaceTransformSelection on "; ((VObjContext *)selection->e(c))->context.out(":");
+		////DBG cerr<<"-------ObjectInterfaceTransformSelection on "; ((VObjContext *)selection->e(c))->context.out(":");
 	}
 	ObjectInterface::TransformSelection(N,s,e);
 }
@@ -225,7 +225,7 @@ int GroupInterface::AlternateScan(flatpoint sp, flatpoint p, double xmag,double 
 	if (selection->n()==1 && !strcmp(selection->e(0)->obj->whattype(),"SomeDataRef")) {
 		double dist=onepix*maxtouchlen*maxtouchlen/4;
 		flatpoint pp=flatpoint((somedata->minx+somedata->maxx)/2, somedata->miny-maxtouchlen/ymag);
-		DBG cerr <<"...alt scan: "<<p.x<<','<<p.y<< norm2(p-pp)<<endl;
+		//DBG cerr <<"...alt scan: "<<p.x<<','<<p.y<< norm2(p-pp)<<endl;
 
 		if (norm2(p-pp)<dist) return GIA_Link;
 
@@ -261,7 +261,7 @@ int GroupInterface::AlternateScan(flatpoint sp, flatpoint p, double xmag,double 
 		v.normalize();
 		pp=p2+v*maxtouchlen*1.5;
 
-		//DBG cerr <<"...alt scan: "<<p.x<<','<<p.y<<"  "<< norm2(p-pp)<<endl;
+		////DBG cerr <<"...alt scan: "<<p.x<<','<<p.y<<"  "<< norm2(p-pp)<<endl;
 
 		//double dist=onepix*maxtouchlen*maxtouchlen/4;
 		double dist=maxtouchlen*maxtouchlen/4;
@@ -301,7 +301,7 @@ int GroupInterface::AlternateScan(flatpoint sp, flatpoint p, double xmag,double 
 
 int GroupInterface::LBDown(int x, int y,unsigned int state, int count,const Laxkit::LaxMouse *mouse)
 {
-	DBG cerr <<"GroupInterface::LBDown..."<<endl;
+	//DBG cerr <<"GroupInterface::LBDown..."<<endl;
 
 	if (count == 2 && selection->n() == 1 && !strcmp(selection->e(0)->obj->whattype(), "Group")) {
 		//enter group and clear selection
@@ -442,7 +442,7 @@ int GroupInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 int GroupInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {
 	if (popupcontrols==GIA_Link) {
-		DBG cerr <<"checking for GIA_Link..."<<endl;
+		//DBG cerr <<"checking for GIA_Link..."<<endl;
 		int newhover=scan(x,y);
 		if (newhover!=hover) {
 			hover=newhover;
@@ -453,7 +453,7 @@ int GroupInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 		return 0;
 
 	} else if (popupcontrols==GIA_Parent_Link) {
-		DBG cerr <<"checking for GIA_Parent_Link..."<<endl;
+		//DBG cerr <<"checking for GIA_Parent_Link..."<<endl;
 		int newhover=scan(x,y);
 		int oldhover=hover;
 
@@ -500,7 +500,7 @@ int GroupInterface::GroupObjects()
 		return 0;
 	} 
 
-	//DBG place.out("toggle group point: ");
+	////DBG place.out("toggle group point: ");
 
 	base = dynamic_cast<Group*>(selection->e(0)->obj->GetParent());
 	if (!base) {
@@ -551,7 +551,7 @@ int GroupInterface::GroupObjects()
 		context.context = place;
 		AddToSelection(&context);
 
-		DBG place.out(".....group position after grouping: ");
+		//DBG place.out(".....group position after grouping: ");
 
 		((LaidoutViewport *)viewport)->ChangeObject(&context, 0);
 
@@ -666,23 +666,23 @@ int GroupInterface::GrabSelection(unsigned int state)
 	DoubleBBox bbox;
 	bbox.addtobounds(data->m(),data);
 	
-	//DBG cerr <<"grab from: "<<bbox.minx<<','<<bbox.miny<<endl;
-	//DBG cerr <<"grab to:   "<<bbox.maxx<<','<<bbox.maxy<<endl;
+	////DBG cerr <<"grab from: "<<bbox.minx<<','<<bbox.miny<<endl;
+	////DBG cerr <<"grab to:   "<<bbox.maxx<<','<<bbox.maxy<<endl;
 	
 	int n=0;
 	VObjContext **objs=NULL;
 	n=viewport->FindObjects(&bbox,0,0,NULL,(ObjectContext ***)(&objs));
 
-	//DBG if (n && !objs) cerr <<"*******ERROR! says found objects, but no objects returned."<<endl;
-	//DBG else {
-	//DBG 	cerr <<"find in box: "<<data->minx<<","<<data->miny<<" -> "<<data->maxx<<","<<data->maxy<<endl;
-	//DBG 	cerr <<"Found objects: "<<n<<endl;
-	//DBG }
+	////DBG if (n && !objs) cerr <<"*******ERROR! says found objects, but no objects returned."<<endl;
+	////DBG else {
+	////DBG 	cerr <<"find in box: "<<data->minx<<","<<data->miny<<" -> "<<data->maxx<<","<<data->maxy<<endl;
+	////DBG 	cerr <<"Found objects: "<<n<<endl;
+	////DBG }
 
 	 //add
 	for (int c=0; c<n; c++) {
-		//DBG cerr << "  ";
-		//DBG if (objs[c]) objs[c]->context.out("");
+		////DBG cerr << "  ";
+		////DBG if (objs[c]) objs[c]->context.out("");
 
 		AddToSelection(objs[c]);
 		delete objs[c];
@@ -839,7 +839,7 @@ int GroupInterface::PerformAction(int action)
 		for (int c=0; c<selection->n(); c++) {
 			obj=NULL;
 			toclone=selection->e(c)->obj;
-			DBG cerr <<" - Clone "<<toclone->whattype()<<":"<<toclone->object_id<<endl;
+			//DBG cerr <<" - Clone "<<toclone->whattype()<<":"<<toclone->object_id<<endl;
 
 			lobj=new LSomeDataRef();
 			lobj->Set(toclone,0);
@@ -858,7 +858,7 @@ int GroupInterface::PerformAction(int action)
 		SomeData *obj;
 		for (int c=0; c<selection->n(); c++) {
 			obj=NULL;
-			//DBG cerr <<" - Duplicate "<<selection->e(c)->obj->whattype()<<":"<<selection->e(c)->obj->object_id<<endl;
+			////DBG cerr <<" - Duplicate "<<selection->e(c)->obj->whattype()<<":"<<selection->e(c)->obj->object_id<<endl;
 
 			obj=selection->e(c)->obj->duplicate(NULL);
 			obj->FindBBox();
@@ -981,7 +981,7 @@ int GroupInterface::PerformAction(int action)
 
 int GroupInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	//DBG cerr <<" ****************GroupInterface::CharInput"<<endl;
+	////DBG cerr <<" ****************GroupInterface::CharInput"<<endl;
 
 	if (ch == LAX_Esc && child) {
 		RemoveChild();

@@ -390,18 +390,18 @@ void PanoViewWindow::triangulate(spacepoint p1 ,spacepoint p2 ,spacepoint p3,
  */
 void PanoViewWindow::mapPolyhedronTexture(Thing *thing)
 {
-	//DBG cerr <<"mapping hedron texture..."<<endl;
+	////DBG cerr <<"mapping hedron texture..."<<endl;
 	spacepoint center,centero,normal,point;
 	spacepoint p1,p2, p1o,p2o;
 	int c,c2;
 
 	glNewList(thing->id,GL_COMPILE);
 	for (c=0; c<poly->faces.n; c++) {
-		//DBG if (c!=poly->faces.n-3) continue;
+		////DBG if (c!=poly->faces.n-3) continue;
 		if (poly->faces.e[c]->pn) {
 			center =poly->CenterOfFace(c,1);
 			centero=poly->CenterOfFace(c,0);
-			//DBG cerr <<"--center: "<<center.x<<","<<center.y<<","<<center.z<<endl;
+			////DBG cerr <<"--center: "<<center.x<<","<<center.y<<","<<center.z<<endl;
 
 			//-----------------------------
 			for (c2=0; c2<=poly->faces.e[c]->pn; c2++) {
@@ -410,10 +410,10 @@ void PanoViewWindow::mapPolyhedronTexture(Thing *thing)
 				p2 =poly->VertexOfFace(c, c2%poly->faces.e[c]->pn, 1);
 				p2o=poly->VertexOfFace(c, c2%poly->faces.e[c]->pn, 0);
 
-				//DBG cerr <<"--p1: "<<p1.x<<","<<p1.y<<","<<p1.z<<endl;
-				//DBG cerr <<"--p2: "<<p2.x<<","<<p2.y<<","<<p2.z<<endl;
-				//DBG cerr <<"--p1o: "<<p1o.x<<","<<p1o.y<<","<<p1o.z<<endl;
-				//DBG cerr <<"--p2o: "<<p2o.x<<","<<p2o.y<<","<<p2o.z<<endl;
+				////DBG cerr <<"--p1: "<<p1.x<<","<<p1.y<<","<<p1.z<<endl;
+				////DBG cerr <<"--p2: "<<p2.x<<","<<p2.y<<","<<p2.z<<endl;
+				////DBG cerr <<"--p1o: "<<p1o.x<<","<<p1o.y<<","<<p1o.z<<endl;
+				////DBG cerr <<"--p2o: "<<p2o.x<<","<<p2o.y<<","<<p2o.z<<endl;
 
 				triangulate(center ,p1, p2,
 							centero,p1o,p2o,
@@ -537,8 +537,8 @@ Thing *PanoViewWindow::makeGLPolyhedron()
 	thing->SetColor(1., 1., 1., 1.0);
 	thing->SetPos(0,0,0);
 
-	//DBG cerr <<"New hedron call list id = "<<hedronlist<<endl;
-	//DBG dumpMatrix4(thing->m,"hedron initial matrix");
+	////DBG cerr <<"New hedron call list id = "<<hedronlist<<endl;
+	////DBG dumpMatrix4(thing->m,"hedron initial matrix");
 	return thing;
 }
 
@@ -699,7 +699,7 @@ Polyhedron *PanoViewWindow::defineCube()
 	newpoly->faces.push(new Face("4 5 6 7",""));
 	newpoly->connectFaces();
 	newpoly->makeedges();
-	//DBG newpoly->dump_out(stdout, 0, 0, NULL);
+	////DBG newpoly->dump_out(stdout, 0, 0, NULL);
 	newpoly->BuildExtra();
 
 	return newpoly;
@@ -783,10 +783,10 @@ void PanoViewWindow::installSpheremapTexture(int definetid)
 
 
 	 //check if texture is resident
-	DBG GLint yes;
-	DBG glGetTexParameteriv(spheretexture,GL_TEXTURE_RESIDENT,&yes);
-	DBG if (yes) cerr <<"----------------texture is resident"<<endl;
-	DBG else cerr <<"----------------texture is NOT resident"<<endl;
+	//DBG GLint yes;
+	//DBG glGetTexParameteriv(spheretexture,GL_TEXTURE_RESIDENT,&yes);
+	//DBG if (yes) cerr <<"----------------texture is resident"<<endl;
+	//DBG else cerr <<"----------------texture is NOT resident"<<endl;
 }
 
 void PanoViewWindow::installOverlays()
@@ -1098,7 +1098,7 @@ void PanoViewWindow::Refresh3d()
 
 	 //---- draw things
 	if (draw_texture) {
-		DBG cerr <<"draw texture: "<<(spheremap_data?"yes ":"no ")<<" w="<<spheremap_width<<" h="<<spheremap_height<<endl;
+		//DBG cerr <<"draw texture: "<<(spheremap_data?"yes ":"no ")<<" w="<<spheremap_width<<" h="<<spheremap_height<<endl;
 		
 		//glPushMatrix();
 		//glMultMatrixf(hedron->m);
@@ -1125,7 +1125,7 @@ void PanoViewWindow::Refresh3d()
 	}
 
 	for (c=0; c<things.n; c++) {
-		//DBG cerr <<"drawing thing number "<<c<<endl;
+		////DBG cerr <<"drawing thing number "<<c<<endl;
 		things.e[c]->Draw();
 	}
 
@@ -1157,7 +1157,7 @@ void PanoViewWindow::Refresh3d()
 			glVertex3f(p1.x,p1.y,p1.z);
 			glVertex3f(p2.x,p2.y,p2.z);
 
-			//DBG cerr <<"edge: "<<p1.x<<','<<p1.y<<','<<p1.z<<" to "<<p2.x<<','<<p2.y<<','<<p2.z<<endl;
+			////DBG cerr <<"edge: "<<p1.x<<','<<p1.y<<','<<p1.z<<" to "<<p2.x<<','<<p2.y<<','<<p2.z<<endl;
 //				glPushMatrix();
 //				q=gluNewQuadric();
 //				glTranslatef(p1.x,p1.y,p1.z);
@@ -1302,7 +1302,7 @@ void PanoViewWindow::drawRect(DoubleBBox &box,
 							double line_r, double line_g, double line_b,
 							double alpha)
 {
-	//DBG cerr << "draw box ("<<box.minx<<','<<box.miny<<") -> ("<<box.maxx<<","<<box.maxy<<")"<<endl;
+	////DBG cerr << "draw box ("<<box.minx<<','<<box.miny<<") -> ("<<box.maxx<<","<<box.maxy<<")"<<endl;
 
 
 	glMatrixMode (GL_MODELVIEW);
@@ -1369,7 +1369,7 @@ void PanoViewWindow::transparentFace(int face, double r, double g, double b, dou
 	for (int c2=0; c2<=poly->faces.e[face]->pn; c2++) {
 		if (c2==poly->faces.e[face]->pn) point=poly->VertexOfFace(face,0,1);
 		else point=poly->VertexOfFace(face, c2, 1);
-		//DBG cerr <<"point: "<<point.x<<","<<point.y<<","<<point.z<<endl;
+		////DBG cerr <<"point: "<<point.x<<","<<point.y<<","<<point.z<<endl;
 		point=1.001*point;
 		normal=point/norm(point);
 		glNormal3f(normal.x,normal.y,normal.z);
@@ -1444,7 +1444,7 @@ int PanoViewWindow::Idle(int tid)
 	d /= 10; //scale down a little
 
 	if (active_action==ACTION_Roll) {
-		DBG cerr <<"******************************* ACTION_Roll"<<endl;
+		//DBG cerr <<"******************************* ACTION_Roll"<<endl;
 		spacepoint axis;
 		axis = d.y*cameras.e[pano_camera]->m.x + d.x*cameras.e[pano_camera]->m.y;
 		things.e[current_object]->RotateGlobal(norm(d)/5, axis.x,axis.y,axis.z);
@@ -1473,14 +1473,14 @@ void PanoViewWindow::CorrectTilt()
 	Thing *thing = things.e[current_object];
 	thing->updateBasis();
 
-	DBG dumpMatrix4(thing->m, "Object");
-	DBG dumpMatrix4(camera->projection, "Camera projection");
-	DBG dumpMatrix4(camera->model, "Camera model");
+	//DBG dumpMatrix4(thing->m, "Object");
+	//DBG dumpMatrix4(camera->projection, "Camera projection");
+	//DBG dumpMatrix4(camera->model, "Camera model");
 
 	//--------
 	double tx = thing->bas.z*camera->m.z/norm(camera->m.z);
 	double ty = thing->bas.z*camera->m.y/norm(camera->m.y);
-	DBG cerr <<"tx,ty: "<<tx<<", "<<ty<<endl;
+	//DBG cerr <<"tx,ty: "<<tx<<", "<<ty<<endl;
 	if (tx==0) return;
 
 	double theta = atan(ty/tx);
@@ -1490,8 +1490,8 @@ void PanoViewWindow::CorrectTilt()
 	oldz.normalize();
 	newz.normalize();
 
-	DBG cerr << "oldz: "<<oldz.x<<", "<<oldz.y<<", "<<oldz.z<<endl;
-	DBG cerr << "newz: "<<newz.x<<", "<<newz.y<<", "<<newz.z<<endl;
+	//DBG cerr << "oldz: "<<oldz.x<<", "<<oldz.y<<", "<<oldz.z<<endl;
+	//DBG cerr << "newz: "<<newz.x<<", "<<newz.y<<", "<<newz.z<<endl;
 
 	spacevector axis = oldz / newz;
 	theta = acos(oldz*newz);
@@ -1501,7 +1501,7 @@ void PanoViewWindow::CorrectTilt()
 	//double ty = thing->bas.z*camera->m.y/norm(camera->m.y);
 	//double theta = atan(ty/tx);
 	//spacevector axis = -camera->m.y;
-	//DBG cerr <<"tx,ty: "<<tx<<", "<<ty<<endl;
+	////DBG cerr <<"tx,ty: "<<tx<<", "<<ty<<endl;
 	//if (tx==0) return;
 	//--------
 	//spacevector n = camera->m.x / camera->m.z;
@@ -1513,7 +1513,7 @@ void PanoViewWindow::CorrectTilt()
 
 
 	theta *= 180./M_PI;
-	DBG cerr <<"  theta: "<<theta<<"  axis: "<<axis.x<<','<<axis.y<<","<<axis.z<<endl;
+	//DBG cerr <<"  theta: "<<theta<<"  axis: "<<axis.x<<','<<axis.y<<","<<axis.z<<endl;
 
 	thing->RotateGlobal(theta, axis.x,axis.y,axis.z);
 }
@@ -1598,7 +1598,7 @@ int PanoViewWindow::RBDown(int x,int y,unsigned int state,int count,const LaxMou
 
 int PanoViewWindow::RBUp(int x,int y,unsigned int state,const LaxMouse *mouse)
 {
-	DBG cerr <<"PanoViewWindow::RBUp: rbdown=="<<rbdown<<"  currentface=="<<currentface<<endl;
+	//DBG cerr <<"PanoViewWindow::RBUp: rbdown=="<<rbdown<<"  currentface=="<<currentface<<endl;
 
 	if (!(buttondown.isdown(mouse->id,RIGHTBUTTON))) return 0;
 
@@ -1649,7 +1649,7 @@ int PanoViewWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mou
 		mouseover_group=group;
 		mouseover_overlay=action;
 		mouseover_index=index;
-		DBG cerr <<"move group:"<<group<<" action:"<<action<<" index:"<<index<<endl;
+		//DBG cerr <<"move group:"<<group<<" action:"<<action<<" index:"<<index<<endl;
 		needtodraw=1;
 	}
 	if (in) return 0;
@@ -1708,7 +1708,7 @@ int PanoViewWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mou
 
 		 //apply zoom
 		double amount=10;
-		//DBG cerr <<" ZZZZZZOOM d1:"<<device1<<" d2:"<<device2<<"    "<<amount<<"  z:"<<zoom<<endl;
+		////DBG cerr <<" ZZZZZZOOM d1:"<<device1<<" d2:"<<device2<<"    "<<amount<<"  z:"<<zoom<<endl;
 		if (zoom>1) amount=-amount*(zoom-1);
 		else amount=amount*(1/zoom-1);
 
@@ -1848,7 +1848,7 @@ Overlay *PanoViewWindow::scanOverlays(int x,int y, int *action,int *index,int *g
  */
 int PanoViewWindow::installImage(const char *file)
 {
-	DBG cerr <<"attempting to install image at "<<file<<endl;
+	//DBG cerr <<"attempting to install image at "<<file<<endl;
 
 	const char *error=NULL;
 	Imlib_Image image,
@@ -1904,10 +1904,10 @@ int PanoViewWindow::installImage(const char *file)
 	if (error) app->postmessage(e);
 	//else remapCache();
 
-	DBG cerr <<"\n"
-	DBG	 <<"Using sphere file:"<<spherefile<<endl
-	DBG	 <<" scaled width: "<<spheremap_width<<endl
-	DBG	 <<"       height: "<<spheremap_height<<endl;
+	//DBG cerr <<"\n"
+	//DBG	 <<"Using sphere file:"<<spherefile<<endl
+	//DBG	 <<" scaled width: "<<spheremap_width<<endl
+	//DBG	 <<"       height: "<<spheremap_height<<endl;
 
 	return error?1:0;
 }
@@ -2050,7 +2050,7 @@ int PanoViewWindow::PerformAction(int action)
 		oldmode=mode;
 		mode=MODE_Help;
 		needtodraw=1;
-		DBG cerr <<"--switching to help mode"<<endl;
+		//DBG cerr <<"--switching to help mode"<<endl;
 		return 0;
 
 	} else if (action==HEDA_LoadImage) {
@@ -2102,7 +2102,7 @@ int PanoViewWindow::PerformAction(int action)
 							file));
 		} else {
 			 //normal save
-			DBG cerr<<"Saving to "<<file<<endl;
+			//DBG cerr<<"Saving to "<<file<<endl;
 			if (Save(file)==0) textout(this,"...Saved",-1,0,2*app->defaultlaxfont->textheight(),LAX_LEFT|LAX_TOP);
 			else textout(this,"...ERROR!!! Not saved",-1,0,2*app->defaultlaxfont->textheight(),LAX_LEFT|LAX_TOP);
 		}
@@ -2139,7 +2139,7 @@ int PanoViewWindow::PerformAction(int action)
 		 // change camera
 		current_camera++;
 		if (current_camera>=cameras.n) current_camera=0;
-		DBG cerr<<"----new camera: "<<current_camera<<endl;
+		//DBG cerr<<"----new camera: "<<current_camera<<endl;
 		//eyem=cameras.e[current_camera]->model;
 		needtodraw=1;
 		return 0;

@@ -110,7 +110,7 @@ PageRangeInterface::PageRangeInterface(anInterface *nowner,int nid,Displayer *nd
 
 PageRangeInterface::~PageRangeInterface()
 {
-	//DBG cerr <<"PageRangeInterface destructor.."<<endl;
+	////DBG cerr <<"PageRangeInterface destructor.."<<endl;
 
 	if (doc) doc->dec_count();
 }
@@ -324,7 +324,7 @@ anInterface *PageRangeInterface::duplicate(anInterface *dup)//dup=NULL
 
 int PageRangeInterface::InterfaceOn()
 {
-	//DBG cerr <<"pagerangeinterfaceOn()"<<endl;
+	////DBG cerr <<"pagerangeinterfaceOn()"<<endl;
 
 	panelheight=50;
 	panelwidth=dp->Maxx-dp->Minx-2*PAD;
@@ -363,7 +363,7 @@ int PageRangeInterface::Refresh()
 		offset=-flatpoint(dp->Minx+PAD,dp->Maxy-PAD);
 	}
 
-	//DBG cerr <<"PageRangeInterface::Refresh()..."<<doc->pageranges.n<<endl;
+	////DBG cerr <<"PageRangeInterface::Refresh()..."<<doc->pageranges.n<<endl;
 
 	dp->DrawScreen();
 	dp->LineAttributes(1,LineSolid,CapButt,JoinMiter);
@@ -443,7 +443,7 @@ void PageRangeInterface::drawBox(PageRange *r, int includehover)
 	if (w == 0 || r->end<r->start) return;
 	o.x += panelwidth*(double)r->start/doc->pages.n;
 
-	//DBG cerr<<"PageRange interface drawing rect "<<o.x<<','<<o.y<<" "<<w<<"x"<<h<<"  offset:"<<offset.x<<','<<offset.y<<endl;
+	////DBG cerr<<"PageRange interface drawing rect "<<o.x<<','<<o.y<<" "<<w<<"x"<<h<<"  offset:"<<offset.x<<','<<offset.y<<endl;
 
 	 //draw background color
 	dp->NewFG(&r->color);
@@ -520,7 +520,7 @@ int PageRangeInterface::scan(int x,int y, int *position, int *range, int *part, 
 	fp.x/=panelwidth; 
 	fp.y/=-panelheight; //now fp in range 0..1
 	double fudge=FUDGE/panelwidth;
-	DBG cerr <<"x,y="<<x<<","<<y<<"  pos="<<fp.x<<","<<fp.y<<"  offset="<<offset.x<<","<<offset.y<<endl;
+	//DBG cerr <<"x,y="<<x<<","<<y<<"  pos="<<fp.x<<","<<fp.y<<"  offset="<<offset.x<<","<<offset.y<<endl;
 
 	if (fp.y<0 || fp.y>1) return 0;
 
@@ -770,7 +770,7 @@ int PageRangeInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 	int over=-1;
 	scan(x,y, &over,&range,&part, &index);
 
-	//DBG cerr <<"over pos:"<<over<<"  range: "<<range<<"  part:"<<part<<"  index:"<<index<<endl;
+	////DBG cerr <<"over pos:"<<over<<"  range: "<<range<<"  part:"<<part<<"  index:"<<index<<endl;
 
 	int lx,ly;
 
@@ -808,7 +808,7 @@ int PageRangeInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 	if (!hover_part) return 0;
 
 	buttondown.move(mouse->id,x,y, &lx,&ly);
-	//DBG cerr <<"pr last m:"<<lx<<','<<ly<<endl;
+	////DBG cerr <<"pr last m:"<<lx<<','<<ly<<endl;
 
 	if (buttondown.isdown(mouse->id,LEFTBUTTON)) {
 		if (hover_part==PART_Position) {
@@ -876,7 +876,7 @@ PageRange *PageRangeInterface::findRangeWith(int i)
  */
 int PageRangeInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	//DBG cerr<<" got ch:"<<ch<<"  "<<(state&LAX_STATE_MASK)<<endl;
+	////DBG cerr<<" got ch:"<<ch<<"  "<<(state&LAX_STATE_MASK)<<endl;
 
 	if (ch==LAX_Esc) {
 

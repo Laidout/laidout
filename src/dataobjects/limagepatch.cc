@@ -353,7 +353,7 @@ anInterface *LImagePatchInterface::duplicate(anInterface *dup)
 
 int LImagePatchInterface::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *k)
 {
-	////DBG cerr <<"*****************in LImagePatchInterface::CharInput"<<endl;
+	//////DBG cerr <<"*****************in LImagePatchInterface::CharInput"<<endl;
 	int r=recurse,m=rendermode;
 	int cc=ImagePatchInterface::CharInput(ch,buffer,len,state,k);
 	if (recurse!=r || m!=rendermode) {
@@ -469,7 +469,7 @@ anInterface *LColorPatchInterface::duplicate(anInterface *dup)
 
 int LColorPatchInterface::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *k)
 {
-	////DBG cerr <<"*****************in LColorPatchInterface::CharInput"<<endl;
+	//////DBG cerr <<"*****************in LColorPatchInterface::CharInput"<<endl;
 	int r=recurse,m=rendermode;
 	int cc=ColorPatchInterface::CharInput(ch,buffer,len,state,k);
 	if (recurse!=r || m!=rendermode) {

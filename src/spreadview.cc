@@ -791,7 +791,7 @@ void SpreadView::ArrangeSpreads(Displayer *dp,int how)//how==-1
 	maxx=X+W;
 	maxy=Y+H;
 
-	//DBG cerr <<"spreadview bounds: p1:"<<X<<','<<Y<<" p2:"<<X+W<<','<<Y+H<<endl;
+	////DBG cerr <<"spreadview bounds: p1:"<<X<<','<<Y<<" p2:"<<X+W<<','<<Y+H<<endl;
 }
 
 //! For an already arranged view, set bounds properly.
@@ -966,7 +966,7 @@ int SpreadView::ApplyChanges()
 	//int thread=-1, spreadi=-1, psi=-1;
 	for (int c=0; c<n; c++) {
 		pg=temppagemap[c]; //doc page index
-		//DBG cerr <<" --move page "<<pg<<" to page "<<c<<endl;
+		////DBG cerr <<" --move page "<<pg<<" to page "<<c<<endl;
 		
 		 //map Document pages
 		newpages[c]=oldpages[pg];

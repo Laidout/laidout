@@ -186,8 +186,8 @@ NodeConnection::NodeConnection(NodeBase *nfrom, NodeBase *nto, NodeProperty *nfr
  */
 NodeConnection::~NodeConnection()
 {
-	//DBG cerr << "NodeConnection destructor "<<(from ? from->Label() : "?")<<" -> "<<(to ? to->Label() : "?")<<endl;
-	DBG cerr << "NodeConnection destructor "<<endl;
+	////DBG cerr << "NodeConnection destructor "<<(from ? from->Label() : "?")<<" -> "<<(to ? to->Label() : "?")<<endl;
+	//DBG cerr << "NodeConnection destructor "<<endl;
 }
 
 int NodeConnection::IsExec()
@@ -1127,7 +1127,7 @@ void NodeBase::DuplicateProperties(NodeBase *from)
  */
 NodeBase *NodeBase::Duplicate()
 {
-	DBG cerr << "NodeBase::Duplicate() from id: "<<Id()<<", label: "<<Label()<<endl;
+	//DBG cerr << "NodeBase::Duplicate() from id: "<<Id()<<", label: "<<Label()<<endl;
 
 	NodeBase *newnode = new NodeBase();
 
@@ -1499,7 +1499,7 @@ LaxFiles::Attribute *NodeBase::dump_out_atts(LaxFiles::Attribute *att, int what,
 			prop->GetData()->dump_out_atts(att2, what, context);
 
 		} else {
-			DBG cerr <<" not data for node out: "<<prop->name<<endl;
+			//DBG cerr <<" not data for node out: "<<prop->name<<endl;
 			//att2->push(prop->name, "arrrg! todo!");
 		}
 	}
@@ -2532,7 +2532,7 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 
 					if (!from || !to || !fromprop || !toprop) {
 						// *** warning!
-						DBG cerr <<" *** bad node att input!"<<endl;
+						//DBG cerr <<" *** bad node att input!"<<endl;
 						//continue;
 
 					} else {
@@ -2546,7 +2546,7 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 					}
 					
 				} else {
-					DBG cerr <<" *** Warning! cannot connect "<<fromstr<<" to "<<tostr<<"!"<<endl;
+					//DBG cerr <<" *** Warning! cannot connect "<<fromstr<<" to "<<tostr<<"!"<<endl;
 				}
 
 				delete[] fromstr;
@@ -2638,7 +2638,7 @@ NodeBase *NodeGroup::NewNode(const char *type)
 			NodeBase *newnode = dynamic_cast<NodeBase*>(obj);
 
 			if (obj && !newnode) {
-				DBG cerr << " *** uh oh! factory returned bad object in NodeGroup::NewNode()!"<<endl;
+				//DBG cerr << " *** uh oh! factory returned bad object in NodeGroup::NewNode()!"<<endl;
 				return NULL;
 			} 
 			return newnode;
@@ -2803,7 +2803,7 @@ int NodeInterface::Idle(int tid, double delta)
 	if (tid == pan_timer) {
 		if (!nodes) return 1;
 
-		DBG cerr <<"NodeInterface::Idle()... cur="<<pan_current<<endl;
+		//DBG cerr <<"NodeInterface::Idle()... cur="<<pan_current<<endl;
 
 		// advance pan
 		// pan_current += delta/duration;
@@ -3243,7 +3243,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"savenodes")) {
-		DBG cerr <<"save nodes..."<<endl;
+		//DBG cerr <<"save nodes..."<<endl;
 		if (!nodes) return 0;
 
         const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
@@ -3445,7 +3445,7 @@ int NodeInterface::Refresh()
 	if (needtodraw==0) return 0;
 	needtodraw=0;
 
-	DBG cerr <<" NodeInterface::Refresh()"<<endl;
+	//DBG cerr <<" NodeInterface::Refresh()"<<endl;
 
 	int overnode=-1, overslot=-1, overprop=-1, overconn=-1; 
 	if (buttondown.any(0,LEFTBUTTON)) {
@@ -3648,7 +3648,7 @@ int NodeInterface::Refresh()
 		}
 
 
-		DBG cerr <<"node "<<node->Id()<<" "<<node->x<<" "<<node->y<<" "<<node->width<<" "<<node->height<<endl;
+		//DBG cerr <<"node "<<node->Id()<<" "<<node->x<<" "<<node->y<<" "<<node->width<<" "<<node->height<<endl;
 
 		 //set up colors based on whether the node is selected or mouse overed
 		if (node->colors) colors=node->colors;
@@ -3846,10 +3846,10 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 	//   colors
 	//   enums
 
-	//DBG cerr <<"Draw property "<<prop->name<<endl;
+	////DBG cerr <<"Draw property "<<prop->name<<endl;
 
 	if (!strcmp(prop->name, "result")) {
-		DBG cerr <<" ";
+		//DBG cerr <<" ";
 	}
 
 	double th = dp->textheight();
@@ -4011,7 +4011,7 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 
 
 
-	//DBG cerr <<"end draw property "<<prop->name<<endl;
+	////DBG cerr <<"end draw property "<<prop->name<<endl;
 }
 
 /*! Draw connection spot.
@@ -4273,8 +4273,8 @@ int NodeInterface::ExecuteThreads()
 
 	if (!threads.n) {
 		elapsed_wall_time = times(NULL) - run_start_time;
-		DBG cerr <<"Threads done! took: elapsed:"<< (elapsed_time / (double)sysconf(_SC_CLK_TCK)) <<
-		DBG           "  elapsed wall:"<< (elapsed_wall_time / (double)sysconf(_SC_CLK_TCK)) <<endl;
+		//DBG cerr <<"Threads done! took: elapsed:"<< (elapsed_time / (double)sysconf(_SC_CLK_TCK)) <<
+		//DBG           "  elapsed wall:"<< (elapsed_wall_time / (double)sysconf(_SC_CLK_TCK)) <<endl;
 		return 1;
 	}
 
@@ -4436,7 +4436,7 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, int 
 		flatpoint bp;
 		double threshhold = 200 / dp->Getmag();
 
-		DBG cerr<<"scan connections "<<p.x<<','<<p.y<<"  threshhold: "<<threshhold<<endl;
+		//DBG cerr<<"scan connections "<<p.x<<','<<p.y<<"  threshhold: "<<threshhold<<endl;
 
 		for (int c=nodes->nodes.n-1; c>=0; c--) {
 			node = nodes->nodes.e[c];
@@ -4457,7 +4457,7 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, int 
 					box.addtobounds(bezbuf[2]);
 					box.addtobounds(bezbuf[3]);
 					if (!box.boxcontains(p.x, p.y)) continue;
-					DBG cerr <<" ----almost "<<c<<','<<c2<<','<<c3<<endl;
+					//DBG cerr <<" ----almost "<<c<<','<<c2<<','<<c3<<endl;
 
 					 //in box, now do more expensive scan for proximity
 					bez_closest_point(p, bezbuf[0], bezbuf[1], bezbuf[2], bezbuf[3], 20, &d, NULL, &bp);
@@ -4882,7 +4882,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 	} else if (action == NODES_Drag_Input || action == NODES_Drag_Exec_In) {
 		//check if hovering over the output of some other node
 		// *** need to ensure there is no circular linking
-		DBG cerr << " *** need to ensure there is no circular linking for nodes!!!"<<endl;
+		//DBG cerr << " *** need to ensure there is no circular linking for nodes!!!"<<endl;
 
 		int remove=0;
 
@@ -4932,7 +4932,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 	} else if (action == NODES_Drag_Output || action == NODES_Drag_Exec_Out) {
 		//check if hovering over the input of some other node
-		DBG cerr << " *** need to ensure there is no circular linking for nodes!!!"<<endl;
+		//DBG cerr << " *** need to ensure there is no circular linking for nodes!!!"<<endl;
 
 		int remove=0;
 
@@ -5055,8 +5055,8 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 			pan_current = t*pan_duration;
 			if (pan_duration > 1) pan_duration = sqrt(pan_duration);
 			pan_timer = app->addtimer(this, pan_tick_ms, pan_tick_ms, pan_duration*1000);
-			DBG cerr <<"Adding Idle timer for NodeInterface connection traverse"<<endl;
-			DBG cerr <<"pan_duration = "<<pan_duration<<endl;
+			//DBG cerr <<"Adding Idle timer for NodeInterface connection traverse"<<endl;
+			//DBG cerr <<"pan_duration = "<<pan_duration<<endl;
 		}
 
 	} else if (action == NODES_Thread_Controls) {
@@ -5089,7 +5089,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMouse *mouse)
 {
-	DBG cerr <<"NodeInterface::MouseMove..."<<endl;
+	//DBG cerr <<"NodeInterface::MouseMove..."<<endl;
 
 	if (!buttondown.any()) {
 		// update any mouse over state
@@ -5098,8 +5098,8 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 		int newhoverslot=-1, newhoverprop=-1, newconnection=-1;
 		int newhover = scan(x,y, &newhoverslot, &newhoverprop, &newconnection, state);
 		lastpos.x=x; lastpos.y=y;
-		//DBG cerr << "nodes lastpos: "<<lastpos.x<<','<<lastpos.y<<endl;
-		DBG cerr <<"nodes scan, node,prop,slot: "<<newhover<<','<<newhoverprop<<','<<newhoverslot<<","<<newconnection<<endl;
+		////DBG cerr << "nodes lastpos: "<<lastpos.x<<','<<lastpos.y<<endl;
+		//DBG cerr <<"nodes scan, node,prop,slot: "<<newhover<<','<<newhoverprop<<','<<newhoverslot<<","<<newconnection<<endl;
 
 		if (newhover >= 0 && newhoverprop >= 0 && nodes->nodes.e[newhover]->properties.e[newhoverprop]->HasInterface()) {
 			NodeProperty *prop = nodes->nodes.e[newhover]->properties.e[newhoverprop];
@@ -5154,7 +5154,7 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 
 		} else {
 			 //move screen
-			DBG cerr <<"node middle button move: "<<x-lx<<", "<<y-ly<<endl;
+			//DBG cerr <<"node middle button move: "<<x-lx<<", "<<y-ly<<endl;
 			nodes->m.origin(nodes->m.origin() + flatpoint(x-lx, y-ly));
 		}
 		needtodraw=1;
@@ -5576,7 +5576,7 @@ int NodeInterface::PerformAction(int action)
 		return 0;
 
 	} else if (action==NODES_Delete_Nodes) {
-		DBG cerr << "delete nodes..."<<endl;
+		//DBG cerr << "delete nodes..."<<endl;
 		if (!nodes || selected.n == 0) return 0;
 
 		for (int c=0; c<selected.n; c++) {
@@ -5905,7 +5905,7 @@ int NodeInterface::LoadNodes(const char *file, bool append, int file_is_string_d
 		if (!f) {
 			 //error!
 			PostMessage(_("Could not open nodes file!"));
-			DBG cerr <<(_("Could not open nodes file!")) << file<<endl;
+			//DBG cerr <<(_("Could not open nodes file!")) << file<<endl;
 			return 1;
 		}
 
@@ -5991,7 +5991,7 @@ int NodeInterface::LoadNodes(const char *file, bool append, int file_is_string_d
 		PerformAction(NODES_Center_Selected);
 
 		PostMessage(_("Loaded."));
-		DBG cerr << _("Loaded.") <<endl;
+		//DBG cerr << _("Loaded.") <<endl;
 
 	} else {
 		PostMessage(_("Couldn't load nodes"));
@@ -6017,7 +6017,7 @@ int NodeInterface::SaveNodes(const char *file)
 		fclose(f);
 
 		PostMessage2(_("Nodes saved to %s."), file);
-		DBG cerr << _("Nodes saved.") <<endl;
+		//DBG cerr << _("Nodes saved.") <<endl;
 
 		NotifyGeneralErrors(&log);
 		return 0;
@@ -6025,7 +6025,7 @@ int NodeInterface::SaveNodes(const char *file)
 
 	 //else error!
 	PostMessage(_("Could not open file to save!"));
-	DBG cerr <<(_("Could not open file to save!")) << file<< endl;
+	//DBG cerr <<(_("Could not open file to save!")) << file<< endl;
 	return 1;
 }
 
@@ -6069,7 +6069,7 @@ int NodeInterface::ExportNodes(const char *file, const char *format)
 
 	} else PostMessage(_("Exported."));
 
-	DBG loader->Export("TEMP.nodes", nodes, &context, log); //ret # of failing errors
+	//DBG loader->Export("TEMP.nodes", nodes, &context, log); //ret # of failing errors
 
 	return 0;
 }
@@ -6225,7 +6225,7 @@ void NodeInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Dum
 			 //try to find and install this resource
 			if (isblank(value)) continue;
 
-			DBG cerr << "trying to install resource nodes "<< value<<endl;
+			//DBG cerr << "trying to install resource nodes "<< value<<endl;
 			UseResource(value);
 		}
 	}
