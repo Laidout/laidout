@@ -112,6 +112,17 @@ PageStyle::~PageStyle()
 	if (margin)  margin->dec_count();
 }
 
+bool PageStyle::Flag(unsigned int which)
+{
+	return (flags & which) != 0;
+}
+
+void PageStyle::Flag(unsigned int which, bool state)
+{
+	if ((which&(MARGINS_CLIP|PAGE_CLIPS|FACING_PAGES_BLEED)) == 0) return;
+	flags = (flags & ~(MARGINS_CLIP|PAGE_CLIPS|FACING_PAGES_BLEED)) | which;
+}
+
 //! Toggle a flag (-1) or set on (1) or off (0).
 /*! Return the flag if it is set afterwards.*** beware int vs. uint
  */

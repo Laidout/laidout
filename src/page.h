@@ -70,6 +70,8 @@ class PageStyle : public Value
 	virtual double w() { return width; }
 	virtual double h() { return height; }
 	virtual int set(const char *flag, int newstate);
+	virtual bool Flag(unsigned int which);
+	virtual void Flag(unsigned int which, bool state);
 };
 
 //---------------------------- RectPageStyle ---------------------------------
