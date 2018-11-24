@@ -203,6 +203,12 @@ Here is a fast and easy way to get Laidout up and running from development sourc
     with ids that start with a capital letter will have an icon generated of the same
     name by running makeimages.py ThatName.
 
+	If for some reason you cannot see any icons after you run Laidout, even after you have 
+	generated them, you can tell Laidout to search particular directories for icons by adding
+	a line like the following to `~/.config/laidout/(version)/laidoutrc`:
+
+	    icon_dir /path/to/icon/directory
+
 5.  Ok, now do `make install`.
 
 	A note about uninstalling. Work needs to be done on "make uninstall" to not remove 
