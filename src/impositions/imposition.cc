@@ -35,6 +35,17 @@ using namespace std;
 namespace Laidout {
 
 
+//------------------------- PageLocationStack --------------------------------------
+/* \class PageLocationStack
+ * Hold a stack of PageLocation objects for an impostion Spread.
+ */
+
+const char *PageLocationStack::object_e_name(int i)
+{ 
+	if (i < 0 || i >= Laxkit::PtrStack<PageLocation>::n || e[i]->page == NULL || e[i]->page->label == NULL) return "page";
+	return e[i]->page->label;
+}
+
 
 //------------------------- PageLocation --------------------------------------
 
