@@ -68,15 +68,13 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 5. ---Export a fresh copy of the new tag and make a tarball.---
   a) Clone the new release, and delete the git dir.
 
-  	   git clone -b release https://github.com/Laidout/laidout.git laidout-(version)
+  	   git clone https://github.com/Laidout/laidout.git laidout-(version)
 	   cd laidout-(version)
-	   git branch release
-	   rm -rf .git
+	   git checkout release
 
 	 If Laxkit is to be included, you should export that to the top laidout dir: 
 
 	  git clone http://github.com/Laidout/laxkit.git laxkit
-	  cd laxkit; rm -rf .git;
 
 	  make sure in laidout/configure: LAXDIR=`pwd`/laxkit/lax
 
@@ -95,18 +93,22 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 	  cp *png ../../../src/icons    # <- copy the laxkit icons to the Laidout icon dir
       cd ../../../src/icons; make   # <- this will then overwrite any icons from Laidout supercede Laxkit
 
-  f) cd to dir above laidout, and do:
-      tar cjv (the dir) > laidout-version.tar.bz2 
+  f) Remove git directories:
+	   rm -rf .git
+	   rm -rf laxkit/.git
+
+     cd to dir above laidout, and create tarball:
+       tar cjv (the dir) > laidout-version.tar.bz2 
 
      This should be the distributed tarball, unpack in some other dir and do a test compile:
-	  mkdir test-build
-	  cd test-build
-	  tar xjvf ../laidout-version.tar.bz2
-	  cd laidout-version
-	  ./configure --prefix=`pwd`/../test-install
-	  make -j 8
-	  make install
-	  ../test-install/bin/laidout
+	   mkdir test-build
+	   cd test-build
+	   tar xjvf ../laidout-version.tar.bz2
+	   cd laidout-version
+	   ./configure --prefix=`pwd`/../test-install
+	   make -j 8
+	   make install
+	   ../test-install/bin/laidout
 
 
 6. ---build a deb package---
