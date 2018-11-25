@@ -156,8 +156,7 @@ last minute catches:
   DONE object indicator should show actual page label in it's description
 
 Page Clip:
-  clip in viewer
-  pdf
+  DONE clip in viewer
   svg?? set group to page outline with mask?
   scribus??
 
@@ -317,7 +316,8 @@ laidout import:
     import of resources
     import of master pages
     import of limbos
-pdf PDF:
+pdf: PDF:
+  export clones adds extra ref in resources section
   text out very broken.. imageout via gs complains about malformed pdf on fonts
   fonts are not doubled up, each text object is exporting its own
 
@@ -2091,4 +2091,4 @@ DONE node editor NodeInterface nodes:
   DONE hover tips for props on collapsed nodes
   DONE clear up IsInput()/IsOutput()
   DONE dedicated random node: seed, is_int, min,max
-
+DONE pdf export clones
