@@ -226,7 +226,7 @@ class PdfObjInfo
 PdfObjInfo::PdfObjInfo()
 	 : byteoffset(0), inuse('n'), number(0), generation(0), next(NULL), data(NULL), len(0)
 {
-	i=o++; 
+	i = o++; 
 	lo_object_id=0;
 	lo_object=NULL;
 	////DBG cerr<<"creating PdfObjInfo "<<i<<"..."<<endl;
@@ -251,8 +251,9 @@ class PdfPageInfo : public PdfObjInfo
 	Attribute resources;
 	int rotation;
 	int landscape;
+	bool clip;
 
-	PdfPageInfo() { pagelabel=NULL; rotation=0; landscape=0; }
+	PdfPageInfo() { pagelabel=NULL; rotation=0; landscape=0; clip = false; }
 	virtual ~PdfPageInfo();
 };
 
@@ -310,7 +311,8 @@ void pdfdumpobj(FILE *f,
 				ErrorLog &log,
 				int &warning,
 				DocumentExportConfig *config,
-				bool ignore_filter = false)
+				bool ignore_filter = false,
+				bool use_transform = true)
 {
 	if (!obj) return;
 
@@ -322,13 +324,15 @@ void pdfdumpobj(FILE *f,
 
 	
 	 // push axes
-	psPushCtm();
-	psConcat(object->m());
 	char scratch[100];
-	sprintf(scratch,"q\n"
-			  "%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
-				object->m(0), object->m(1), object->m(2), object->m(3), object->m(4), object->m(5)); 
-	appendstr(stream,scratch);
+	if (use_transform) {
+		psPushCtm();
+		psConcat(object->m());
+		sprintf(scratch,"q\n"
+				  "%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
+					object->m(0), object->m(1), object->m(2), object->m(3), object->m(4), object->m(5)); 
+		appendstr(stream,scratch);
+	}
 	
 	if (!strcmp(object->whattype(),"Group")) {
 		for (int c=0; c<g->n(); c++) 
@@ -371,6 +375,14 @@ void pdfdumpobj(FILE *f,
 			pdfTextOnPath(f,objs,obj,stream,objectcount,resources,dynamic_cast<TextOnPath*>(object), log,warning,config);
 		}
 
+	} else if (!strcmp(object->whattype(),"SomeDataRef")) {
+		//this can link to any object, in or out of the current page, but pdf pages are supposed to be self contained. vexing!
+		SomeDataRef *ref = dynamic_cast<SomeDataRef*>(object);
+		SomeData *refed = ref->GetFinalObject();
+		if (refed != NULL) {
+			pdfdumpobj(f, objs, obj, stream, objectcount, resources, refed, log, warning, config, false, false);
+		}
+
 	} else {
 		DrawableObject *dobj=dynamic_cast<DrawableObject*>(object);
         SomeData *dobje=NULL;
@@ -400,8 +412,10 @@ void pdfdumpobj(FILE *f,
 	}
 	
 	 // pop axes
-	appendstr(stream,"Q\n");
-	psPopCtm();
+	if (use_transform) {
+		appendstr(stream,"Q\n");
+		psPopCtm();
+	}
 }
 
 //! Output a pdf clipping path from outline.
@@ -495,6 +509,8 @@ int pdfSetClipToPath(char *&stream,LaxInterfaces::SomeData *outline,int iscontin
  *
  * Return 0 for success, 1 for error and nothing written, 2 for error, and corrupted file possibly written.
  * 2 is mainly for debugging purposes, and will be perhaps be removed in the future.
+ *
+ * Document tree is parsed to create a list of objects. Then the whole list is output at once.
  */
 int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 {
@@ -547,6 +563,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	////DBG      <<papergroup->papers.n<<" ====================\n";
 
 	 // initialize outside accessible ctm
+	//AxesStack transforms;
 	psCtmInit();
 	psFlushCtms();
 
@@ -634,6 +651,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			//transform_set(m,1,0,0,1,0,0);
 			appendstr(stream,"q\n"
 							 "72 0 0 72 0 0 cm\n"); // convert from inches
+			//transforms.Multiply(Affine(72.,0.,0.,72.,0.,0.));
 			psConcat(72.,0.,0.,72.,0.,0.);
 
 
@@ -642,6 +660,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
 					m[0], m[1], m[2], m[3], m[4], m[5]); 
 			appendstr(stream,scratch);
+			//transforms.Multiply(m);
 			psConcat(m);
 			
 			 //write out limbo object if any
@@ -672,11 +691,13 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 					
 					 // transform to page
 					appendstr(stream,"q\n"); //save ctm
+					//transforms.PushAxes();
 					psPushCtm();
 					transform_copy(m,spread->pagestack.e[c2]->outline->m());
 					sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
 							m[0], m[1], m[2], m[3], m[4], m[5]); 
 					appendstr(stream,scratch);
+					//transforms.Multiply(m);
 					psConcat(m);
 
 					 // set clipping region
@@ -691,18 +712,21 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 					}
 
 					appendstr(stream,"Q\n"); //pop ctm, page transform
+					//transforms.PopAxes();
 					psPopCtm();
 				}
 			}
 
 			 // print out paper footer
 			appendstr(stream,"Q\n"); //pop papergroup transform
+			//transforms.PopAxes();
 			psPopCtm();
 //			if (paperrotate>0) {
 //				appendstr(stream,"Q\n"); //pop paper rotation transform
 //				psPopCtm();
 //			}
 			//appendstr(stream,"Q\n"); //pop  pt to inches conversion (not really necessary
+			//transforms.PopAxes();
 			//psPopCtm();
 
 

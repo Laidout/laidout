@@ -23,15 +23,15 @@
 #include <lax/interfaces/freehandinterface.h>
 #include <lax/interfaces/textonpathinterface.h>
 #include "interfaces/nodeinterface.h"
+#include <lax/interfaces/delauneyinterface.h>
+#include "interfaces/objectfilterinterface.h"
 
 //experimental:
-#include <lax/interfaces/textstreaminterface.h>
-#include <lax/interfaces/delauneyinterface.h>
 #include <lax/interfaces/perspectiveinterface.h>
+#include <lax/interfaces/textstreaminterface.h>
 #include "interfaces/anchorinterface.h"
 #include <lax/interfaces/ellipseinterface.h>
 #include "interfaces/animationinterface.h"
-#include "interfaces/objectfilterinterface.h"
 
 
 #include "interfaces.h"
@@ -225,18 +225,17 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	i->InitializeResources();
 	i->dec_count();
 
-	 //------Delauney
-	i=new DelauneyInterface(NULL,id++,NULL);
-	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
-	existingpool->push(i);
-	i->dec_count();
-
 	 //------ObjectFilters
 	i=new ObjectFilterInterface(NULL,id++,NULL);
 	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 	existingpool->push(i);
 	i->dec_count();
 
+	 //------Delauney
+	i=new DelauneyInterface(NULL,id++,NULL);
+	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+	existingpool->push(i);
+	i->dec_count();
 
 
 	//------------------------Overlays---------------

@@ -151,66 +151,25 @@ DONE update help page
 DONE put rss/g+ links on all menu pages..
 
 
-node editor NodeInterface nodes:
-  debug inkscape node extension
-  DONE center on selected doesn't actually
-  DONE finish perspective transform node proof of concept
-  DONE finish file format description
-  DONE gegl:
-    DONE gegl:*-save except gegl:save is disregarding autosave on blitting -> just disabling preview for these
-	DONE preview area should be adjustible for sample area, instead of always default 100x100
-	DONE babl format is passed in gegl as an otherwise undefined gpointer, need to have special check for this
-	DONE save gegl graph to xml
-	DONE enums
-	DONE menu with categories, not just the name. gegl ops have name, title, description, categories, license, even source!!
-	DONE load in graph xml
-    DONE process on a crop after change a value crash? need to trace
-	DONE make process optional
-  DONE update to use IsExecIn/Out
-  DONE thread forking for branching nodes?
-  DONE if branching
-  DONE jump to link under mouse: shift click over slot, or shift click over bare bez
-  DONE duplicate nodes (still need to imp group dup)
-  DONE need visual indication that something is a group
-  DONE concat s1, s2
-  DONE string primitive
-  DONE substr [index..index]
-  DONE curve node
-  DONE pipe splitter node (forknode)
-  DONE math operate on numbers, vectors as appropriate
-  DONE math 1 arg: norm, norm squared, etc
-  DONE vector node:
-    DONE 2,3,4 dimension vectors
-    DONE separate xyz
-	DONE combine xyz
-	DONE math: perpendicular, parallel, etc
-  DONE bug: sometimes crash when tabbing across property values
-  DONE need accumulation mechanism to bundle up results of loops: AddVariable(name, type|set of type), GetVariable(name).out
-  DONE if you right click on a node not in selection, make that the selection instead
-  DONE cut links
-  DONE nodes need preview images as necessary: need to preview non-sinks
-  DONE view mode: all collapsed,  all collapsed except preview,  expanded no preview,  expanded with preview
-  DONE need a little triple bar triangle in lower right corner to resize preview size. change preview size on all selected
-  DONE loading should check automatically for different files if load fails
-  DONE rename nodes
-  DONE need search
-  DONE numbers need slide change: specify add or zoom stepping
-  DONE node resize needs mouseover for edges
-  DONE select all/deselect with 'a'
-  DONE save, load nodes dialogs
-  DONE newly added should be selected
-  DONE hover tips for props on collapsed nodes
-  DONE clear up IsInput()/IsOutput()
-  DONE dedicated random node: seed, is_int, min,max
+last minute catches:
+  cannot import images directly from recents
+  DONE object indicator should show actual page label in it's description
+
+Page Clip:
+  DONE clip in viewer
+  svg?? set group to page outline with mask?
+  scribus??
+
+pdf export lines has outlines in evince?
+
+debug inkscape node extension
 
 text on path textonpath: TextOnPath
-  select font, key up/down scrolls uncomfortably SOMETIMES!!
-  svg out bad (check non path conversion)
   convert to path rendering to wrong place and orientation
   doesn't handle transforms with nested objects properly
   dragging size handle with shift|control does not scale properly
   convert to path: not respecting transform, putting upside down(done)
-  test exporters: svg scribus pdf
+  select font, key up/down scrolls uncomfortably SOMETIMES!!
 
   envelope:
     vertical position bad
@@ -221,6 +180,7 @@ text on path textonpath: TextOnPath
   glyph positioning is wrong
   position glyphs based on middle of glyph, not start of glyph
 
+  DONE test exporters: svg scribus pdf
   DONE not remapping envelope on load in
   DONE during path edit shouldn't show the other controls like font scale
   DONE need to center balance on path
@@ -261,7 +221,6 @@ PathInterface: pathinterface
   DONE bug: line cache on a square produces inf. lines off when final+initial coincide
   DONE select nodes with rectangle broken? <- no, just drawing really thin, misplaced LineWidthScreen
 
-pdf export lines has outlines in evince?
 
 
 ----------------0.098 ROADMAP ITEMS: features and enhancements------------------------
@@ -282,6 +241,14 @@ test:
   each export filter (via command line in new script in examples.. ignoring problems in eps)
   make some test scripts for command line testing
 
+
+
+ux:
+  should be able to mass disconnect clones
+
+dual monitors:
+  open in same screen as mouse
+  Menus should respect actual screen borders, not just full virtual screen
 
 
 Find interface:
@@ -349,7 +316,8 @@ laidout import:
     import of resources
     import of master pages
     import of limbos
-pdf PDF:
+pdf: PDF:
+  export clones adds extra ref in resources section
   text out very broken.. imageout via gs complains about malformed pdf on fonts
   fonts are not doubled up, each text object is exporting its own
 
@@ -380,7 +348,10 @@ Scribus scribus:
   scribus import: need to read page sizes from actual page attributes, as it may well be different than in document attributes
     -> this necessitates revamp of singles to use more than one paper type
   implement crop
+  page clipping
 svg: SVG
+  page clipping
+  text on path without path conversion
   rudimentary mesh in.. try to scale and place as separate object (without proper clipping)
   dump_in filter to nodes optionally
   need to parse units
@@ -1462,6 +1433,7 @@ pagerangeinterface:
 for range on import/export, should have a range parser that accepts unconnected ranges, ie "2,4, 5-10"
 
 shortcut dialog:
+  need mode column
   general window arrangement is really bad
   area heads need to have human titles, _("Image Tool") instead of "ImageInterface"
   mode for shortcut check not quite working, such as ' ' with button to duplicate
@@ -2069,3 +2041,54 @@ DONE scribus:
   DONE remember last export type
   DONE when saving, name shouldn't be red if ok to save
 DONE out textaspaths: textonpath: pdf, scribus, svg,  caption: pdf, scribus(sort of), svg
+DONE node editor NodeInterface nodes:
+  DONE center on selected doesn't actually
+  DONE finish perspective transform node proof of concept
+  DONE finish file format description
+  DONE gegl:
+    DONE gegl:*-save except gegl:save is disregarding autosave on blitting -> just disabling preview for these
+	DONE preview area should be adjustible for sample area, instead of always default 100x100
+	DONE babl format is passed in gegl as an otherwise undefined gpointer, need to have special check for this
+	DONE save gegl graph to xml
+	DONE enums
+	DONE menu with categories, not just the name. gegl ops have name, title, description, categories, license, even source!!
+	DONE load in graph xml
+    DONE process on a crop after change a value crash? need to trace
+	DONE make process optional
+  DONE update to use IsExecIn/Out
+  DONE thread forking for branching nodes?
+  DONE if branching
+  DONE jump to link under mouse: shift click over slot, or shift click over bare bez
+  DONE duplicate nodes (still need to imp group dup)
+  DONE need visual indication that something is a group
+  DONE concat s1, s2
+  DONE string primitive
+  DONE substr [index..index]
+  DONE curve node
+  DONE pipe splitter node (forknode)
+  DONE math operate on numbers, vectors as appropriate
+  DONE math 1 arg: norm, norm squared, etc
+  DONE vector node:
+    DONE 2,3,4 dimension vectors
+    DONE separate xyz
+	DONE combine xyz
+	DONE math: perpendicular, parallel, etc
+  DONE bug: sometimes crash when tabbing across property values
+  DONE need accumulation mechanism to bundle up results of loops: AddVariable(name, type|set of type), GetVariable(name).out
+  DONE if you right click on a node not in selection, make that the selection instead
+  DONE cut links
+  DONE nodes need preview images as necessary: need to preview non-sinks
+  DONE view mode: all collapsed,  all collapsed except preview,  expanded no preview,  expanded with preview
+  DONE need a little triple bar triangle in lower right corner to resize preview size. change preview size on all selected
+  DONE loading should check automatically for different files if load fails
+  DONE rename nodes
+  DONE need search
+  DONE numbers need slide change: specify add or zoom stepping
+  DONE node resize needs mouseover for edges
+  DONE select all/deselect with 'a'
+  DONE save, load nodes dialogs
+  DONE newly added should be selected
+  DONE hover tips for props on collapsed nodes
+  DONE clear up IsInput()/IsOutput()
+  DONE dedicated random node: seed, is_int, min,max
+DONE pdf export clones

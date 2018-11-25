@@ -2712,7 +2712,8 @@ void LaidoutViewport::Refresh()
 			if (page->pagestyle->flags&PAGE_CLIPS) {
 				 // setup clipping region to be the page
 				dp->PushClip(1);
-				SetClipFromPaths(dp,sd,dp->Getctm());
+				//SetClipFromPaths(dp,sd,dp->Getctm());
+				SetClipFromPaths(dp,sd,NULL);
 			}
 			
 			 //*** debuggging: draw X over whole page...

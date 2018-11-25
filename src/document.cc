@@ -1492,6 +1492,13 @@ Page *Document::Curpage()
 	return pages.e[curpage];
 }
 
+
+const char *Document::object_e_name(int i)
+{
+	if (i<0 || i>= pages.n) return NULL;
+	return pages.e[i]->label;
+}
+
 //! Put the -1 terminated list of items at whatlevel in their own group.
 int Document::GroupItems(FieldPlace whatlevel, int *items)
 {

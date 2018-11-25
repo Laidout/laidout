@@ -143,7 +143,7 @@ class Document : public ObjectContainer, public Value
 	virtual int n() { return pages.n; }
 	virtual Laxkit::anObject *object_e(int i) 
 		{ if (i>=0 && i<pages.n) return (anObject *)(pages.e[i]); return NULL; }
-	virtual const char *object_e_name(int i) { return NULL; }
+	virtual const char *object_e_name(int i);
 	virtual const double *object_transform(int i) { return NULL; }
 	virtual int GroupItems(FieldPlace whatlevel, int *items);
 	virtual int UnGroup(FieldPlace which);
