@@ -20,7 +20,7 @@ LAXDIR="`pwd`/laxkit/lax"
 GS="/usr/bin/gs"
 
  # for some plugins:
-GEGLVERSION='gegl-0.3'
+GEGLVERSION='gegl-0.4'
 PYTHONVERSION='python3.6'
 
 
