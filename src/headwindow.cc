@@ -971,7 +971,7 @@ int HeadWindow::PerformAction(int action)
 
 	} else if (action==HEAD_Quit) {
 		app->quit();
-		cout <<"Quit!\n";
+		DBG cout <<"Quit!\n";
 		return 0; 
 	}
 

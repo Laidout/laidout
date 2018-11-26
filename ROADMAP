@@ -5,30 +5,12 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 
 
-VERSION 0.097
--------------
-(done) debug previous version at least slightly!
-(done) experimental Delauny/voronoi lines tool
-(done) engraver tool, fix non-live updates when tweaking various parameters
-(done) Clean up symmetry clone interface, not easy to use currently
-(done) Allow setting custom default exported file name (via a line in laidoutrc)
-       Text on path tool
-(done) text objects: harfbuzz based
-(done) Add more save options: save a copy, save incremented, save as template, autosave settings
-(done) Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
-       debug svg in
-(done) svg out default to 96dpi
-       Make sure scribus can export to 1.5
-(done) Implement c++ plugin infrastructure
-(done) Experimental perspective transform interface
-(done) Experimental voronoi interface
-(done) Experimental node interface (done aside from large todo list)
-(done) fix tooltips
-(done) Connect node interface for use with object filters
-
-
 VERSION 0.098
 -------------
+       Text on path tool
+	   make laidout twitterable with an image card
+       debug svg in
+       Make sure scribus can export to 1.5
        Moving selected things in group contents does not update group bounds
        should not be able to select both group and group contents at same time
        debug previous version!
@@ -209,6 +191,25 @@ While i'm at it, I'd like a pony.
             ---------------- 
 ------------- OLD RELEASES -----------------
             ----------------
+
+VERSION 0.097
+-------------
+(done) debug previous version at least slightly!
+(done) experimental Delauny/voronoi lines tool
+(done) engraver tool, fix non-live updates when tweaking various parameters
+(done) Clean up symmetry clone interface, not easy to use currently
+(done) Allow setting custom default exported file name (via a line in laidoutrc)
+(done) text objects: harfbuzz based
+(done) Add more save options: save a copy, save incremented, save as template, autosave settings
+(done) Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
+(done) svg out default to 96dpi
+(done) Implement c++ plugin infrastructure
+(done) Experimental perspective transform interface
+(done) Experimental voronoi interface
+(done) Experimental node interface (done aside from large todo list)
+(done) fix tooltips
+(done) Connect node interface for use with object filters
+
 
 VERSION 0.096  --  released 18 December 2015!
 -------------

@@ -1,4 +1,4 @@
-LAIDOUT Version 0.096.1
+LAIDOUT Version 0.097.1
 =======================
 http://laidout.org
 
@@ -103,6 +103,7 @@ If you want to create a deb package of Laidout, make sure you have the fakeroot,
 dpkg-dev, and debhelper packages installed, and have all the other packages listed 
 from the COMPILING RELEASES section above, and do this from the top laidout directory:
 
+    touch Makefile-toinclude
     make deb
 
 This makes sure there is a "debian" directory, then calls `dpkg-buildpackage -rfakeroot`.

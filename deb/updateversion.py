@@ -13,8 +13,8 @@ import os
 
 
 #debian/changelog debian/laidout.1 docs/doxygen/laidoutintro.txt docs/Doxyfile docs/Doxyfile-with-laxkit configure README.md
-previousversion = "0.096.1"
-newversion = "0.097"
+previousversion = "0.097"
+newversion = "0.097.1"
 
 
 basedir="../"

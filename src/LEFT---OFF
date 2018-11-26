@@ -130,15 +130,17 @@ WATCH OUT for when preview file is OLDER than original file!!
 stackframe seems to be ignoring window borders on layout
 
 
-----------------0.097 ROADMAP ITEMS: features and enhancements------------------------
-DONE website: combine faq and help?
+----------------0.098 ROADMAP ITEMS: features and enhancements------------------------
+website: explain a bit more how to install dev versions, and place side by side with "stable"
+website: need to redo screenshots section for mobile friendliness
 update fileformat.txt
-DONE check laidout.1 when time to release
+check laidout.1 when time to release
 update docs to have new release number
 update translation base files
 update screenshots, sync with features
-DONE update links page
-DONE update dtpcompare.html
+update links page
+update help page
+update dtpcompare.html
 comment out cairo_debug_reset_static_data before release, since it usually means crash, interferes with pipeout
 test:
   ./laidout ../examples/test-all-objects.laidout
@@ -147,8 +149,6 @@ test:
     help: window pane does funky stuff
   test in different window managers
   make some test scripts for command line testing
-DONE update help page
-DONE put rss/g+ links on all menu pages..
 
 
 last minute catches:
@@ -180,23 +180,6 @@ text on path textonpath: TextOnPath
   glyph positioning is wrong
   position glyphs based on middle of glyph, not start of glyph
 
-  DONE test exporters: svg scribus pdf
-  DONE not remapping envelope on load in
-  DONE during path edit shouldn't show the other controls like font scale
-  DONE need to center balance on path
-  DONE click off, creates new one, click back to old, has wrong path
-  DONE paste
-  DONE font size handles
-  DONE need drag handles to change position on page when path is internal
-  DONE if textonpath is child, not moving with parent
-  DONE if textonpath has non-I m, edit path displays wrong
-  DONE need cursor
-  DONE bbox is drastically wrong
-  DONE baseline handles
-  DONE offset handles
-  DONE envelope
-  DONE deleting selected points when >=2 selected results in crash
-
 PathInterface: pathinterface
   bug: seems to be possible to move nodes out of order, only occassionally
   bug: shift click down then up on a point selects then deselects.. control can toggle
@@ -207,44 +190,11 @@ PathInterface: pathinterface
   bug: delete last weight node, sometimes width is wrong
   bug: make new line with freehand tool, cannot move weight nodes in a rational way
 
-  DONE bug: now node scan and display works, but drag doesn't!!
-  DONE toggle send color to fill/stroke should update the color box
-  DONE debug remove points affect on weight nodes
-  DONE bug: add point before beginning not spacing weight nodes properly
-  DONE deleting points totally screws placement of weight nodes
-    DONE if at endpoint, need to delete any out of bounds, but also insert a new one right at the tip
-  DONE bug: drag point, press i or I while dragging, moves all points or crashes
-  DONE bug: select all in subpath (shift A) does not appear to select from proper subpath all the time
-  DONE bug: menuoption start new subpath does not start one!
-  DONE implement dump_out_atts
-  DONE bug: when path is a child, width nodes are not drawn correctly
-  DONE bug: line cache on a square produces inf. lines off when final+initial coincide
-  DONE select nodes with rectangle broken? <- no, just drawing really thin, misplaced LineWidthScreen
-
-
-
-----------------0.098 ROADMAP ITEMS: features and enhancements------------------------
-website: explain a bit more how to install dev versions, and place side by side with "stable"
-website: need to redo screenshots section for mobile friendliness
-update fileformat.txt
-check laidout.1 when time to release
-update docs to have new release number
-update translation base files
-update screenshots, sync with features
-update links page
-update help page
-update dtpcompare.html
-test:
-  each window type: about palette view spread command text
-    help: window pane does funky stuff
-  test in different window managers
-  each export filter (via command line in new script in examples.. ignoring problems in eps)
-  make some test scripts for command line testing
-
 
 
 ux:
   should be able to mass disconnect clones
+  current page should be highlighted
 
 dual monitors:
   open in same screen as mouse
@@ -1816,279 +1766,3 @@ These must be moved to the DONE file at each release.
 ===========================================================================================
 
 
-DONE space to duplicate not working (on images)
-DONE thumbnail images not showing in the spread editor view
-DONE won't let me open for new preview image in imageinfo dialog, click ok, window comes back up
-DONE inkscape bug!! zoom out, NextSpread/PreviousSpread icons stroke on side disappears, somehow handle related, adding more handles fixes
-DONE wrong git rep on website
-DONE option to change default exported file name
-DONE make saveas file edit color code right: red for can't save, yellow for overwrite
-DONE tooltips and event timers seem to be frelled
-DONE for objectindicator, more than one input window allowed.. should block, and turn off when mouse out click
-DONE crash on ungroup
-DONE update touch_recent for Laidout files in the newer xbel type
-DONE shell broken sometimes.. bad font??
-DONE Singles not loading what was saved
-DONE paper spread view, shadow is offset wrong
-DONE bg for spread flipper not the same as the other buttons after popping up spread editor.. wtf???
-DONE button or key down doesn't cancel tooltip once it is up
-DONE (apparently) Printing only goes to letter, even though page size says go full page, in image(done), pdf(done) and ps(done) out!!! *(#@*&#*(&*&$(
-DONE print command to printer is not respecting the paper size
-DONE (but still must imp cache clearing on low memory) cairo doesn't cache images like Imlib does,
-	    so every image is totally loaded on file open. bad, bad, bad!!!
-DONE moving several limbo objects back to page does NOT actually move them all onto the page!! grrr!
-  move them on then off -> fail, move off then on -> fail.. problem with group bounding??
-  --> changing one context messed up the other contexts, each context in selection must be updated on move
-DONE be able to change units preference via a window control rather than just editing laidoutrc by hand
-DONE objectinterface/groupinterface deleteobject goes out of sync when telling viewport to delete: oi.cc:830
-       -> loop over selected fails when object order changes.. need to update contexts of other objs in contexts
-DONE group/ungroup needs to update viewport selection to current selection object
-DONE group/ungroup calling TreeObjectReorder, and clearing any selection, needs to stay selected after
-DONE ungroup is not applying transform appropriately
-DONE grouping frelled.. can group, but cannot seem to select existing groups to ungroup
-DONE group/ungroup broken
-DONE objects disappear on group <- due to SOMEDATA_LOCK_CONTENTS blocking it out.. it shouldn't though
-DONE importing images should default the image id to a variant of the file name
-DONE cloning, jump to object in offscreen page, switches pages, but bounding box wrong place
-DONE clone a child.. NOT PUTTING CORRECTLY!!!! totally wrong matrix, dropping into wrong context
-DONE clone via space bar not moving object after space.. moves bounding box, but actual objects stays put
-DONE reparent not installing correct transform
-DONE jump to parent seems to be broken and causes crashes
-DONE (? can't duplicate) object layer positioning for Home and End keys projecting out in wrong way
-DONE (? can't duplicate) hang after reparent object
-DONE (can't duplicate) test-tiled-mark.laidout: delete the bars, add bars back then try to export, program stops (not a segfault)!!!! headwindow gets decremented somehow
-DONE cut marks are too thick.. cairo problem??  grey bars export to pdf ok, but don't display correctly, outline is too thick
-DONE recent files do not appear to be most recent file opened
-DONE memory hole: add gray bars and quit. 85 objects remain!?!
-DONE gray bars does not have accurate bounding box initially
-DONE add gray bars, displays wrong width, but save and load, width is proper. wtf?
-DONE papergroup objects are drawing beneath the white of the pages
-DONE bug: add gray marks, then '.' for next object, endless loop!
-DONE bug: add gray bars, move to a page, ^g crashes!
-DONE paper display shows shadow in wrong direction
-DONE (can't duplicate anymore) file open, click around recent, etc, crashes!!
-DONE filedialog: lost ability to define new bookmarks.. bad!!
-DONE filedialog: control click no longer toggles
-DONE should have a "touch" startup, to run laidout with a new named file, like you might do with "vim something_new.txt"
-		-->already there! -n 'saveas file.laidout, landscape, ...'
-DONE transfer group behavior to GroupData. would greatly simplify some things
-DONE ungroup should have ungrouped objects selected after ungrouping
-DONE need infrastructure to propagate and save tool settings (..now needs implementing per tool)
-DONE add menu items to rulercornermenu for reseting view orientation <-- use lower light corner menu under scrollers instead
-DONE CharacterInterface: outclick needs to destroy without sending
-DONE when you try to open anything in ~/.laidout/*/templates, then it should open as a template
-DONE everything loads as a template now???!!?!??!!
-DONE SimpleColorAttribute() should allow css3 stuff, like rgb(50%, 25%, .5), and hsl(), where h->[0..360)
-DONE should be able to handle any css color attribute, whether "#fff' "#ffffff"(done) or rgb(...)(done), hsl(...)(done), hsla()(done)
-DONE SimpleColorAttribute() should have double rgbaf available
-DONE SimpleColorAttribute() should return an end_ptr
-DONE caption data up, objectindicator up, the OI not scanning mouse position correctly
-DONE file button:
-   DONE Save
-   DONE Save As...
-   DONE Save a copy...
-   DONE Save a copy incremented
-   DONE Save as template... <- need to enter template name and file?
-   DONE Save as default template
-   ---
-   DONE New...
-   DONE Open...
-   ---
-   DONE Backup settings...
-DONE autosave
-  DONE need a gui
-  DONE every X minutes
-DONE voronoi Voronoi delauney Delauney:
-  DONE Equivalent object to PathsData, or GroupData with delauney, voronoi, points, numbers
-  DONE implement data tree insertion
-  DONE implement proper file name for import/export
-DONE tooltips:
-  DONE mouse over to get rid of one tooltip, remain in window, it just pops up again shortly after. need check against last tooltip to prevent
-  DONE change desktop, tooltip remains
-DONE ObjectIndicator: render text with white halo
-DONE GroupInterface: Not catching mode==1 correctly.. can't zoom with just space anymore
-DONE need to spiffify tabframe.. it is hideous
-DONE need better render for tab frame headers
-DONE add blank image, change description, do not change filename, makes width/height zap back to 0...
-DONE should probably flock in UpdatePreference(), even though it's just reading, another thread may mess with it
-DONE implement LineStyle::dump_out_atts
-DONE implement FillStyle::dump_out_atts
-DONE FillStyle: implement i/o of all the available blend modes
-DONE some side handles on object tool scanning as different handles
-DONE clone tiler:
-  DONE needs a tiling description dump_out
-  DONE big memory hole, maybe only after render?
-  DONE debug recursive, need controls to say how much to recurse
-  DONE dragging source image should optionally autoselect the base cell nearest mouse
-  DONE? render is slightly offset from base cells occasionally (??? can't dup)
-  DONE control box should either shrink oversized text or put bigger box
-  DONE need to be able to individual base objects
-  DONE transform the base cell complex should transform base objects along with it
-  DONE click on base cell, update viewport color box
-  DONE should have some indication which base cells source objects belong to, maybe outline with color?
-  DONE base cells click needs to check for in bounds of grey clones
-  DONE must be able to explicity say which control layer to act on: boundary, base cells, source objects, in case of bad overlap
-  DONE need to be able to use full object handles when moving source objects... the size handles are disabled
-  DONE line thickness of default render is way too thick, should be a small proportion of bounding box
-  DONE bug: can't scale base objects
-  DONE bug: spiral and rotation tilings not working again
-  DONE? debug groupify
-  DONE memory hole back <- this time in RectInterface!!
-  DONE need better context for non identity page transform for EditThis
-  DONE make groupify default
-  DONE on export the base tile line width is wrong, since inkscape doesn't handle screen width (now default to .01 of user unit)
-  DONE need to be able to remember tiling for future editing
-  DONE need to be able to delete base objects all at once
-  DONE should use preview->basecells, rather than generate fresh with Render, so if user edits base cells it behaves as expected
-  DONE hovering outside select box should not highlight a tiling
-DONE color sliders input hex, it's flipping r and b
-DONE Lightness slider appears black to white, but the middle is full color, needs segmented render like hue
-DONE click enter area of color pickers, does not install color!!!!
-DONE rectinterface with extra m not propagating transform correctly: move(done) rotate handles
-DONE rectinterface should reset down point on control press
-DONE captioninterface
-  DONE update svg and scribus exporters to using linespacing and glyphs
-  DONE? cant duplicate anymore bug: convert to path with viewport->ChangeObject(), puts obj way off, doesn't show path decs, other weird
-  DONE Paste not triggering recache
-  DONE fonts need to dump in(via fontmanager->dump_in_font) and out(done) by themselves
-  DONE need to implement dump_out_atts
-  DONE memory hole after convert to path
-  DONE FindPos needs to account for glyph/cluster coverage
-  DONE (seems to be gone with switch to harfbuzz) change centering not smooth, text placement hops, font to bitmap render size snafus?
-  DONE key move for caret not working for ffi
-  DONE deleting leaving excess glyphs???
-  DONE needs line spacing slider
-  DONE baseline justify
-    DONE needs hint to preserve baseline align when changing font size or line spacing
-DONE page range tool in spread view not showing text
-DONE bug: select path tool. one point. escape. delete. boom!
-DONE saved file, not showing up in recent
-DONE remove imlib dependency from ImagePatch
-DONE (not sure why, switched to use explicit gradients) ColorSliders not really showing black unless you set from hex, but solid black is still sending properly
-DONE file live search selects wrong one.. using absolute index instead of file
-DONE filedialog click on directory icon, crash!
-DONE bug: press 4, wtf?? should zoom to current object
-DONE Can't actually select Recent
-DONE Can't import images to limbo
-DONE searchable menus
-DONE switch to GPL v3? would broaden gegl usage, some of which requires gpl3
-DONE laxkit/examples/laxhello.cc: messagebar, resize window, dragging around smears. laxhello: Also can't double buffer
-DONE ps:
-  DONE test ps out image patch does correct vert flippedness
-  DONE image out seems to have stopped working?? <-because it depended on images being LaxImlibImage
-  DONE must make sure it doesn't depend on Imlib
-DONE image
-  DONE should really make this graphicsmagick or cairo based, not gs+pdf based
-  DONE should color background per paper if !transparent
-DONE laidout import:
-  DONE inserts unneccesary layers
-  DONE (can't duplicate?) does not appear to scale correctly, does odd scaling
-DONE filedialog: something wrong with bookmarks.. pressed add, and they all went away
-DONE switch to net imposition, net render lines too big
-DONE asymmetric cuts are not right for front sheets on spread generation (done), also on sig editor
-DONE bug: export to range has bad initial upper value ?? can't reproduce, starts with -1, which is fine
-DONE select filter editor tool through menu does not use current object
-DONE can still click down on other objects while perspective for filter edit
-DONE space duplicate object with filter, keeps duping until crash
-DONE unparent from a group should remove the group if nothing left? no, empties have uses
-DONE group: double click to enter group area
-DONE group: ungroup doesn't check if FieldPlace indices change, making ungroup and group unreliable
-DONE fontdialog:
-  DONE sample block should not strictly adhere to fontsize, as it can get very big (or too small)
-  DONE you can still scroll off when few visible items.. grrr!!
-  DONE should really get around to implementing scrollers
-  DONE fontmatrix import? fontmatrix uses a sqlite database.. should be straighforward to scan it
-DONE plaintext editor: need control-'.' or something to jump to last mod point
-DONE sig editor: stacks should display below squared bounding box of pages?  -> have text rotate with it, more clearly shows where "bottom" is
-DONE recently-used.xbel showing multiple: <bookmark:group>Laidout</bookmark:group>
-DONE no recent in open!!
-DONE? crash on rearrange sometimes: page range getting out of sync
-DONE should not register autosaves as recent
-DONE filedialog:
-  DONE need add and remove bookmarks
-  DONE sort by details
-  DONE sort by size should sort by actual size, must interpret "5 gb" vs "3242 b"
-  DONE columns need to autosize
-  DONE add scroller to treeselector
-DONE color slider popup: should pop near the mouse
-DONE need to update ColorSliders to use dp gradients
-DONE engraver tool:
-  DONE bug: change type not tracing, same for selecting new trace object
-  DONE For trace, click on "..." when no trace object should bring up trace object menu
-  DONE (can't duplicate) bug: object rotate works fine. but then enter and leave engraver tool. Now object rotate is messed up
-  DONE bug: make a LineEdit overlay for number input, then Next bdown is ignored!! l, m, or right all ignored: viewportwindow line 947
-  DONE bug: several update triggers failing --> due to recent switch to cached image
-  DONE bug: show_points broken
-  DONE bug: add group, messes up the with: and not shared lines
-  DONE bug: Remane a resource, not updating name in resource list
-DONE in shortcut list, backspace won't let me delete chars from search
-DONE svg filter:
-  DONE debug initial scaling/viewBox issues
-  DONE out for meshes
-  DONE should NOT default to powerstroke.. the cache for complex stuff REALLY bogs down, creating NaN draws
-  DONE need clone ref check when finished reading file
-  DONE text in fail: in hangs..
-  DONE testsvg-disappearing.svg.. many objects disappear after read in at different zoom levels. wtaf??
-  DONE on out, need option to have 90/inch or the new 96/inch
-  DONE bug: only sometimes, exports at skew angle
-  DONE need in for style on paths
-DONE scribus:
-  DONE encode < > ' " & \ as entities
-  DONE caption -> path, then out, all paths are normal EXCEPT text paths, which are upside down
-  DONE paths outputting upside down
-  DONE out using FinalObject: DONE pdf     DONE scribus DONE image DONE svg 
-  DONE for export, need way to have easy crop, especially from command line
-  DONE remember last export type
-  DONE when saving, name shouldn't be red if ok to save
-DONE out textaspaths: textonpath: pdf, scribus, svg,  caption: pdf, scribus(sort of), svg
-DONE node editor NodeInterface nodes:
-  DONE center on selected doesn't actually
-  DONE finish perspective transform node proof of concept
-  DONE finish file format description
-  DONE gegl:
-    DONE gegl:*-save except gegl:save is disregarding autosave on blitting -> just disabling preview for these
-	DONE preview area should be adjustible for sample area, instead of always default 100x100
-	DONE babl format is passed in gegl as an otherwise undefined gpointer, need to have special check for this
-	DONE save gegl graph to xml
-	DONE enums
-	DONE menu with categories, not just the name. gegl ops have name, title, description, categories, license, even source!!
-	DONE load in graph xml
-    DONE process on a crop after change a value crash? need to trace
-	DONE make process optional
-  DONE update to use IsExecIn/Out
-  DONE thread forking for branching nodes?
-  DONE if branching
-  DONE jump to link under mouse: shift click over slot, or shift click over bare bez
-  DONE duplicate nodes (still need to imp group dup)
-  DONE need visual indication that something is a group
-  DONE concat s1, s2
-  DONE string primitive
-  DONE substr [index..index]
-  DONE curve node
-  DONE pipe splitter node (forknode)
-  DONE math operate on numbers, vectors as appropriate
-  DONE math 1 arg: norm, norm squared, etc
-  DONE vector node:
-    DONE 2,3,4 dimension vectors
-    DONE separate xyz
-	DONE combine xyz
-	DONE math: perpendicular, parallel, etc
-  DONE bug: sometimes crash when tabbing across property values
-  DONE need accumulation mechanism to bundle up results of loops: AddVariable(name, type|set of type), GetVariable(name).out
-  DONE if you right click on a node not in selection, make that the selection instead
-  DONE cut links
-  DONE nodes need preview images as necessary: need to preview non-sinks
-  DONE view mode: all collapsed,  all collapsed except preview,  expanded no preview,  expanded with preview
-  DONE need a little triple bar triangle in lower right corner to resize preview size. change preview size on all selected
-  DONE loading should check automatically for different files if load fails
-  DONE rename nodes
-  DONE need search
-  DONE numbers need slide change: specify add or zoom stepping
-  DONE node resize needs mouseover for edges
-  DONE select all/deselect with 'a'
-  DONE save, load nodes dialogs
-  DONE newly added should be selected
-  DONE hover tips for props on collapsed nodes
-  DONE clear up IsInput()/IsOutput()
-  DONE dedicated random node: seed, is_int, min,max
-DONE pdf export clones

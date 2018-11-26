@@ -6,7 +6,7 @@
 CONFIGCOMMAND="./configure $@"
 
 
-LAIDOUTVERSION=0.096.1
+LAIDOUTVERSION=0.097.1
 
  # finalprefix is where things eventually get installed. For deb packaging, this is different than prefix
 FINALPREFIX=""
@@ -20,7 +20,7 @@ LAXDIR="`pwd`/laxkit/lax"
 GS="/usr/bin/gs"
 
  # for some plugins:
-GEGLVERSION='gegl-0.3'
+GEGLVERSION='gegl-0.4'
 PYTHONVERSION='python3.6'
 
 

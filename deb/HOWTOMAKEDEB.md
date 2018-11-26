@@ -1,12 +1,11 @@
 RELEASES
 ========
 
-note to self:
- Most of these notes are to help the developer(s) package Laidout for releases.
- If you just want to make a deb package yourself, skip down to "build the package".
+This file contains notes to help the developer(s) package Laidout for releases.
+If you just want to make a deb package yourself, skip down to "build the package".
 
- There are probably a number of problems and inefficiencies with this process.
- Please submit patches to streamline!
+There are probably a number of problems and inefficiencies with this process.
+Please submit patches to streamline!
 
 
 MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
@@ -14,12 +13,15 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 (if anyone has a better way of doing this, let me know)
 
 
-1.    Double check that these are current:
+1. Double check that these are current:
     debian/laidout.1  (use laidout --helpman to aid updating)
     README.md  <-  must have updated dependency list
     the laidoutrc description dump out in laidout.cc
+    features.md
+    QUICKREF.html (make quickref).
 
     make sure all the examples work.
+
 
 2.  -----update release branch from current master in github-----
     WORK IN PROGRESS!!
@@ -27,19 +29,15 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
         git checkout release
         git merge -X theirs master
 
-    other commands to remember:
-        git tag -l    #<-- list all available tags
-        git branch    #<-- list all available branches, use -a for more than all
-
 
 3.  ----modify source---
     make sure any references to the current date are accurate, currently:
         deb/laidout.1
 
     make sure version number is correct. Use updateversion.py for mostly auto updating.
-      Currently these files are:
+    Currently these files are:
         deb/changelog
-        deb/laidout.1              :Version ****, for laying out books
+        deb/laidout.1                 :Version ****, for laying out books
         docs/doxygen/laidoutintro.txt :-- Version ***** --\n
         docs/Doxyfile                 :PROJECT_NUMBER         = *****
         docs/Doxyfile-with-laxkit     :PROJECT_NUMBER         = *****
@@ -47,8 +45,6 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
         README.md                     :LAIDOUT Version *****
         all the example docs
         --> vi debian/changelog debian/laidout.1 docs/doxygen/laidoutintro.txt docs/Doxyfile docs/Doxyfile-with-laxkit configure README.md
-
-    make sure the Quick Key References in QUICKREF.html are current (make quickref).
 
     make sure configure defaults to 'prefix=/usr/local/'. This is what should be in a source tarball
 
@@ -73,7 +69,7 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 5. ---Export a fresh copy of the new tag and make a tarball.---
   a) Clone the new release, and delete the git dir.
 
-         git clone https://github.com/Laidout/laidout.git laidout-(version)
+       git clone https://github.com/Laidout/laidout.git laidout-(version)
        cd laidout-(version)
        git checkout release
 
@@ -89,21 +85,26 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
        make touchdepends
        make clean
 
-  c) make hidegarbage if you haven't already, in src AND in laxkit
+  c) make hidegarbage if you haven't already, in src AND in laxkit.
+     For laxkit:
 
-  d) in laidout top dir: rm src/configured.h Makefile-toinclude config.log
+	     cd laxkit
+		 ./configure
+		 make hidegarbage
 
-  e) make icons  (we make before packaging for convenience, in case people don't have inkscape installed):
+  d) make icons  (we make before packaging for convenience, in case people don't have inkscape installed):
       cd laxkit/lax/icons; make;    # these use Inkscape to render from svg files to png
       cp *png ../../../src/icons    # <- copy the laxkit icons to the Laidout icon dir
       cd ../../../src/icons; make   # <- this will then overwrite any icons from Laidout supercede Laxkit
+
+  e) in laidout top dir: rm src/configured.h Makefile-toinclude config.log
 
   f) cd to dir above laidout.
      Remove git directories:
        rm -rf .git
        rm -rf laxkit/.git
 
-     Create final tarball:
+     Create tarball:
        tar cjv (the dir) > laidout-version.tar.bz2
 
      This should be the distributed tarball, unpack in some other dir and do a test compile:
@@ -151,4 +152,16 @@ Maybe something to do with non-packaged NVidia drivers?
      - update the coop section to have links to current scripts
      - update the laidout rss feed
      - announce on the laidout mailing list, main website/rss, and g+
+
+
+    git commands to remember:
+        git tag -l    #<-- list all available tags
+        git branch    #<-- list all available branches, use -a for more than all
+
+
+9. --- Update version number in master ---
+
+Change version number in deb/updateversion.py and run it.
+
+Move DONE things from LEFT---OFF to the DONE file, don't look back and head for the hills.
 
