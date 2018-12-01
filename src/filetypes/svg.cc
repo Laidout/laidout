@@ -503,6 +503,8 @@ ObjectDef *SvgOutputFilter::GetObjectDef()
 	return styledef;
 }
 
+/*! Output the svg "d" data.
+ */
 static int svgaddpath(FILE *f,Coordinate *path)
 {
 	Coordinate *p,*p2,*start;
@@ -1536,7 +1538,17 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgE
 	return 0;
 }
 
-
+/*! Use this during svgdumpdef to output a particular clipping path.
+ */
+void DumpClipPath(FILE *f, const char *clipid, PathsData *obj,int &warning,ErrorLog &log, SvgExportConfig *out)
+{
+	fprintf(f,"    <clipPath clipPathUnits=\"userSpaceOnUse\" id=\"%s\" >\n", clipid);
+	fprintf(f,"      <path d=\"");
+	for (int c=0; c<obj->paths.n; c++) {
+		svgaddpath(f, obj->paths.e[c]->path);
+	}
+	fprintf(f," \"/>\n    </clipPath>\n");
+}
 
 
 DocumentExportConfig *SvgOutputFilter::CreateConfig(DocumentExportConfig *fromconfig)
@@ -1658,7 +1670,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	}
 			
 
-	 //write out global defs section
+	 //----write out global defs section
 	 //   ..gradients and such
 	fprintf(f,"  <defs>\n");
 
@@ -1679,6 +1691,16 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 		for (c2=0; c2<spread->pagestack.n(); c2++) {
 			pg=spread->pagestack.e[c2]->index;
 			if (pg<0 || pg>=doc->pages.n) continue;
+
+			if (doc->pages[pg]->pagestyle->Flag(PAGE_CLIPS)) {
+				PathsData *clippath = dynamic_cast<PathsData*>(spread->pagestack.e[c2]->outline);
+				if (clippath) {
+					char clipstr[100];
+					sprintf(clipstr, "pageClip%lu", doc->pages[pg]->object_id);
+					DumpClipPath(f, clipstr, clippath, warning, log, out);
+				}
+			}
+
 			 // for each layer on the page..
 			for (l=0; l<doc->pages[pg]->layers.n(); l++) {
 				 // for each object in layer
@@ -1693,7 +1715,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	fprintf(f,"  </defs>\n");
 			
 	
-	 // Write out objects....
+	 //----Write out objects....
 	double PPINCH = DEFAULT_PPINCH;
 	PPINCH = out->pixels_per_inch;
 
@@ -1714,10 +1736,6 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	//fprintf(f,"  <g transform=\"matrix(90,0,0,-90, 0,%f)\">\n", height*72*1.25);
 	fprintf(f,"    <g transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
 					m[0], m[1], m[2], m[3], m[4], m[5]); 
-
-	// *** need to adjust for multipaper...
-	//transform_invert(mmm,papergroup->papers.e[0]->m());
-	//transform_mult(mm, m,mmm);
 
 
 
@@ -1740,16 +1758,26 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 		if (spread->marks) svgdumpobj(f,m,spread->marks,warning,4,log, out);
 
 		 // for each page in spread..
+		char clipstr[100];
 		for (c2=0; c2<spread->pagestack.n(); c2++) {
 			pg=spread->pagestack.e[c2]->index;
 			if (pg<0 || pg>=doc->pages.n) continue;
+
+			//set up page clipping if necessary
+			if (doc->pages[pg]->pagestyle->Flag(PAGE_CLIPS)) {
+				sprintf(clipstr, "clip-path=\"url(#pageClip%lu)\"", doc->pages[pg]->object_id);
+			} else {
+				clipstr[0] = '\0';
+			}
+
 			 // for each layer on the page..
 			for (l=0; l<doc->pages[pg]->layers.n(); l++) {
 				 // for each object in layer
-				g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
+				g = dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
 				transform_copy(mm,spread->pagestack.e[c2]->outline->m());
-				fprintf(f,"    <g transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
-					mm[0], mm[1], mm[2], mm[3], mm[4], mm[5]); 
+				fprintf(f,"    <g %s transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
+					clipstr, mm[0], mm[1], mm[2], mm[3], mm[4], mm[5]); 
+
 				for (c3=0; c3<g->n(); c3++) {
 					svgdumpobj(f,NULL,g->e(c3),warning,6,log, out);
 				}
