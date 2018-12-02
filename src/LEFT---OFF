@@ -151,14 +151,15 @@ test:
   make some test scripts for command line testing
 
 
-last minute catches:
-  cannot import images directly from recents
-  DONE object indicator should show actual page label in it's description
+instead of _LAX_PLATFORM_MAC, do relevant check with _LAX_ON_NON_GNU instead? currently only place this is necessary is where getline is used
 
-Page Clip:
-  DONE clip in viewer
-  svg?? set group to page outline with mask?
-  scribus??
+remove imlib/"xlib" font, image, and render backends, replace with GraphicsMagick and cairo
+
+dual monitors:
+  open in same screen as mouse
+  DONE Menus should respect actual screen borders, not just full virtual screen
+
+cannot import images directly from recents
 
 pdf export lines has outlines in evince?
 
@@ -195,10 +196,6 @@ PathInterface: pathinterface
 ux:
   should be able to mass disconnect clones
   current page should be highlighted
-
-dual monitors:
-  open in same screen as mouse
-  Menus should respect actual screen borders, not just full virtual screen
 
 
 Find interface:
@@ -289,6 +286,7 @@ Scribus scribus:
   check for updates in file format for 1.5
   export color meshes, for recent versions of Scribus
 
+  page clipping
   import/export color meshes, for recent versions of Scribus
   font size confusion
   import/export linear and radial gradients
@@ -1765,4 +1763,9 @@ When releasing new version, combine these with ROADMAP items for release notes.
 These must be moved to the DONE file at each release.
 ===========================================================================================
 
+
+DONE freetype-config is deprecated
+DONE object indicator should show actual page label in it's description
+DONE Page Clip: clip in viewer
+DONE Page Clip: svg .. set clip-path on each page layer to page outline
 
