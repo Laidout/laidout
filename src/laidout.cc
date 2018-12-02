@@ -1681,7 +1681,7 @@ char *LaidoutApp::full_path_for_resource(const char *name,const char *dir)//dir=
 		convert_to_full_path(fullname,NULL);
 		if (readable_file(fullname)) return fullname;
 
-		cout <<" *** need to implement full_path_for_resource() name search!"<<endl;
+		DBG cerr <<" *** need to fully implement full_path_for_resource() name search!"<<endl;
 	}
 	delete[] fullname;//***
 	fullname=NULL;//***
