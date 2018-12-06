@@ -52,7 +52,7 @@ namespace Laidout {
 GroupInterface::GroupInterface(int nid,Laxkit::Displayer *ndp)
 	: ObjectInterface(nid,ndp)
 {
-	popupcontrols=0;
+	popupcontrols = GIA_No_Popup;
 }
 
 GroupInterface::~GroupInterface()
@@ -113,12 +113,38 @@ Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 
 	rx=x,ry=y;
 
-	if (selection->n() > 1) {
+	if (selection->n() > 1)
+	{
 		if (!menu) menu=new MenuInfo(_("Group Interface"));
 		menu->AddItem(_("Align..."), GIA_Align);
 		menu->AddItem(_("Distribute..."), GIA_Distribute);
 
-	} else if (selection->n() == 1) {
+		if (selection->n() == 2) {
+			
+			ObjectContext *o1 = selection->e(0);
+			ObjectContext *o2 = selection->e(1);
+			if (dynamic_cast<PathsData*>(o1->obj) || dynamic_cast<PathsData*>(o2->obj))
+			{
+				//maybe apply a clip mask
+				bool first  = (dynamic_cast<PathsData*>(o1->obj) != NULL);
+				bool second = (dynamic_cast<PathsData*>(o2->obj) != NULL);
+				int n = strlen(o1->obj->Id()) + strlen(o2->obj->Id());
+				char scratch[strlen(_("Clip %s with %s")) + n + 1];
+
+				if (first) {
+					sprintf(scratch, _("Clip %s with %s"), o2->obj->Id(), o1->obj->Id());
+					menu->AddItem(scratch, GIA_Clip_First_On_Second);
+				}
+
+				if (second) {
+					sprintf(scratch, _("Clip %s with %s"), o1->obj->Id(), o2->obj->Id());
+					menu->AddItem(scratch, GIA_Clip_Second_On_First);
+				}
+			}
+		}
+	}
+	else if (selection->n() == 1)
+	{
 		DrawableObject *obj = dynamic_cast<DrawableObject*>(selection->e(0)->obj);
 		if (obj) {
 			if (!menu) menu=new MenuInfo(_("Group Interface"));
@@ -127,6 +153,11 @@ Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 				menu->AddItem(_("Interactive filters..."), GIA_Filter_Editor);
 				menu->AddItem(_("Remove filter"), GIA_Remove_Filter);
 				menu->AddItem(_("Update filter"), GIA_Refresh_Filter);
+			}
+			if (obj->clip_path) {
+				if (menu->n()) menu->AddSep();
+				menu->AddItem(_("Remove clip path"), GIA_Remove_Clip);
+				menu->AddItem(_("Extract clip path"), GIA_Extract_Clip);
 			}
 		}
 	}
@@ -156,7 +187,7 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 
 		LaidoutViewport *lvp=dynamic_cast<LaidoutViewport*>(viewport);
 
-		if (i==GIA_RegistrationMark) {
+		if (i == GIA_RegistrationMark) {
 			if (!lvp->papergroup) return 0;
 			DrawableObject *obj= RegistrationMark(18,1);
 			flatpoint fp=dp->screentoreal(rx,ry);
@@ -166,7 +197,7 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 			needtodraw=1;
 			return 0;
 
-		} else if (i==GIA_GrayBars) {
+		} else if (i == GIA_GrayBars) {
 			if (!lvp->papergroup) return 0;
 			DrawableObject *obj= BWColorBars(18,LAX_COLOR_GRAY);
 			flatpoint fp=dp->screentoreal(rx,ry);
@@ -176,15 +207,20 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 			needtodraw=1;
 			return 0;
 
-		} else if (i==GIA_Align
-				|| i==GIA_Distribute
-				|| i==GIA_Edit_Filter_Nodes
-				|| i==GIA_Filter_Editor
-				|| i==GIA_Remove_Filter
-				|| i==GIA_Refresh_Filter
+		} else if (i == GIA_Align
+				|| i == GIA_Distribute
+				|| i == GIA_Edit_Filter_Nodes
+				|| i == GIA_Filter_Editor
+				|| i == GIA_Remove_Filter
+				|| i == GIA_Refresh_Filter
+				|| i == GIA_Remove_Clip
+				|| i == GIA_Extract_Clip
+				|| i == GIA_Clip_First_On_Second
+				|| i == GIA_Clip_Second_On_First
 				) {
 			PerformAction(i);
 			return 0;
+
 		}
 
 	} else if (!strcmp(mes,"docTreeChange")) {
@@ -205,8 +241,8 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 
 const char *GroupInterface::hoverMessage(int p)
 {
-	if (p==GIA_Link) return _("Clone options");
-	if (p==GIA_Parent_Link) return _("Parent alignment options");
+	if (p == GIA_Link) return _("Clone options");
+	if (p == GIA_Parent_Link) return _("Parent alignment options");
 	return RectInterface::hoverMessage(p);
 }
 
@@ -229,7 +265,7 @@ int GroupInterface::AlternateScan(flatpoint sp, flatpoint p, double xmag,double 
 
 		if (norm2(p-pp)<dist) return GIA_Link;
 
-		if (popupcontrols==GIA_Link) {
+		if (popupcontrols == GIA_Link) {
 			double th=dp->textheight();
 			double w=dp->textextent(_("Jump to parent"),-1,NULL,NULL)*1.5;
 		
@@ -268,7 +304,7 @@ int GroupInterface::AlternateScan(flatpoint sp, flatpoint p, double xmag,double 
 		if (norm2(sp-pp)<dist) return GIA_Parent_Link;
 
 		 //check for popup menu for parent link
-		if (popupcontrols==GIA_Parent_Link) {
+		if (popupcontrols == GIA_Parent_Link) {
 			double th=dp->textheight();
 			double w=dp->textextent(_("Jump to parent"),-1,NULL,NULL)*1.5;
 			pp+=v*maxtouchlen*.5;
@@ -315,17 +351,17 @@ int GroupInterface::LBDown(int x, int y,unsigned int state, int count,const Laxk
 		return 0;
 	}
 
-	int c = ObjectInterface::LBDown(x,y,state,count,mouse);
+	int c = ObjectInterface::LBDown(x,y,state,count,mouse); //ultimately uses AlternateScan() to update buttondown extra info
 
 	int curpoint;
 	buttondown.getextrainfo(mouse->id,LEFTBUTTON,&curpoint);
-	if (curpoint==GIA_Link) {
-		popupcontrols=GIA_Link;
+	if (curpoint == GIA_Link) {
+		popupcontrols = GIA_Link;
 		PostMessage(" ");
 		return 0;
 
-	} else if (curpoint==GIA_Parent_Link) {
-		popupcontrols=GIA_Parent_Link;
+	} else if (curpoint == GIA_Parent_Link) {
+		popupcontrols = GIA_Parent_Link;
 		PostMessage(" ");
 		return 0;
 	}
@@ -343,7 +379,7 @@ int GroupInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 {
 	//int curpoint;
 	//buttondown.getextrainfo(d->id,LEFTBUTTON,&curpoint);
-	if (popupcontrols==GIA_Link) {
+	if (popupcontrols == GIA_Link) {
 		buttondown.up(d->id,LEFTBUTTON);
 
 		if (hover==GIA_Sever_Link) {
@@ -390,12 +426,12 @@ int GroupInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 
 		}
 
-		popupcontrols=0;
+		popupcontrols = GIA_No_Popup;
 		hover=0;
 		needtodraw=1;
 		return 0;
 
-	} else if (popupcontrols==GIA_Parent_Link) {
+	} else if (popupcontrols == GIA_Parent_Link) {
 		buttondown.up(d->id,LEFTBUTTON);
 		DrawableObject *obj=dynamic_cast<DrawableObject*>(selection->e(0)->obj);
 
@@ -425,7 +461,7 @@ int GroupInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 			}
 		}
 
-		popupcontrols=0;
+		popupcontrols = GIA_No_Popup;
 		hover=0;
 		needtodraw=1;
 		return 0;
@@ -441,7 +477,7 @@ int GroupInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 
 int GroupInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {
-	if (popupcontrols==GIA_Link) {
+	if (popupcontrols == GIA_Link) {
 		DBG cerr <<"checking for GIA_Link..."<<endl;
 		int newhover=scan(x,y);
 		if (newhover!=hover) {
@@ -452,7 +488,7 @@ int GroupInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 		}
 		return 0;
 
-	} else if (popupcontrols==GIA_Parent_Link) {
+	} else if (popupcontrols == GIA_Parent_Link) {
 		DBG cerr <<"checking for GIA_Parent_Link..."<<endl;
 		int newhover=scan(x,y);
 		int oldhover=hover;
@@ -766,8 +802,71 @@ int GroupInterface::PerformAction(int action)
 		FreeSelection();
 		return 0;
 
+	} else if (action == GIA_Clip_First_On_Second || action == GIA_Clip_Second_On_First) {
+		if (selection->n() != 2) return 0;
+		int toremove = 0; 
+		ObjectContext *o1 = selection->e(0);
+		ObjectContext *o2 = selection->e(1);
+		if (action == GIA_Clip_Second_On_First) {
+			ObjectContext *o = o1;
+			o1 = o2;
+			o2 = o;
+			toremove = 1;
+		}
+		PathsData *paths = dynamic_cast<PathsData*>(o1->obj);
+		DrawableObject *dobj = dynamic_cast<DrawableObject*>(o2->obj);
+		if (dobj && paths) {
+			// remove paths from tree
+			viewport->ChangeObject(selection->e(toremove),0); 
+            viewport->DeleteObject(); 
+            selection->Remove(toremove);
+			viewport->ChangeObject(selection->e(0),0); 
+
+			//adjust paths transform
+			paths->Multiply(dobj->Inversion());
+			paths->style |= PathsData::PATHS_Ignore_Weights;
+			paths->fill(NULL);
+
+			if (dobj->InstallClip(paths) == 0) PostMessage(_("Clip path installed"));
+			else PostMessage(_("Could not install clip path!"));
+		} else PostMessage(_("Can't clip without a path!"));
+
+		return 0;
+
+	} else if (action == GIA_Remove_Clip) {
+		for (int c=0; c<selection->n(); c++) {
+			DrawableObject *obj = dynamic_cast<DrawableObject*>(selection->e(c)->obj);
+			if (obj && obj->clip_path) {
+				obj->InstallClip(NULL);
+			}
+		}
+		PostMessage("Clipping removed.");
+		return 0;
+
+	} else if (action == GIA_Extract_Clip) {
+		//put clip path next to object it was on
+		for (int c=0; c<selection->n(); c++) {
+			ObjectContext *oc = selection->e(c);
+			DrawableObject *obj = dynamic_cast<DrawableObject*>(oc->obj);
+			if (obj && obj->clip_path) {
+				DrawableObject *o = dynamic_cast<DrawableObject*>(obj->clip_path);
+				if (o) {
+					o->inc_count();
+					o->Multiply(obj->m());
+					ObjectContext *noc = NULL;
+					viewport->ChangeContext(oc);
+					viewport->NewData(o, &noc, false);
+					selection->Add(noc, -1, 0);
+				}
+				obj->InstallClip(NULL);
+
+			}
+		}
+		PostMessage("*** need to implement GIA_Extract_Clip");
+		return 0;
+
 	} else if (action == GIA_Edit_Filter_Nodes) {
-		 //bring up node editor for obj->filter
+		//bring up node editor for obj->filter
 		if (selection->n() != 1) return 0;
 
 		DrawableObject *obj = dynamic_cast<DrawableObject*>(selection->e(0)->obj);
@@ -1030,7 +1129,7 @@ int GroupInterface::Refresh()
 		//dp->PushAndNewTransform(m);
 		//dp->PopAxes();
 
-		if (popupcontrols==GIA_Link) {
+		if (popupcontrols == GIA_Link) {
 			double th=dp->textheight();
 			double w=dp->textextent(_("Original"),-1,NULL,NULL)*1.5;
 			p.y+=2*th;
@@ -1077,7 +1176,7 @@ int GroupInterface::Refresh()
 		dp->closed();
 		if (hover==GIA_Parent_Link) dp->fill(0); else dp->stroke(0);
 
-		if (popupcontrols==GIA_Parent_Link) {
+		if (popupcontrols == GIA_Parent_Link) {
 			double th=dp->textheight();
 			double w=dp->textextent(_("Jump to parent"),-1,NULL,NULL)*1.5;
 

@@ -106,7 +106,16 @@ void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,uns
 	}
 	if (interf) {
 		 // draw it
+		if (ddata && ddata->clip_path) {
+			//we have a clip path
+			dp->PushClip(0);
+			SetClipFromPaths(dp, ddata->clip_path, ddata->clip_path->m(), true);
+		}
 		interf->DrawDataDp(dp,data,a1,a2);
+		if (ddata && ddata->clip_path) {
+			//remove clip path
+			dp->PopClip();
+		}
 		
 	} else {
 		 //mystery data! might be actual MysteryData, or might be some data for which

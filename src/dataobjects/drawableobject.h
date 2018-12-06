@@ -150,12 +150,23 @@ class DrawableObject :  virtual public ObjectContainer,
 	ObjectIO *importer;
 	Laxkit::anObject *importer_data;
 
-	SomeData *clip; //If not a PathsData, then is an object for a softmask
-	LaxInterfaces::PathsData *clip_path;
+	SomeData *soft_mask; //If not a PathsData or collection of PathsData, then is an object for a softmask
+	LaxInterfaces::PathsData *clip_path; //its m is from main object coordinate space
 	LaxInterfaces::PathsData *wrap_path;
 	LaxInterfaces::PathsData *inset_path;
 	double autowrap, autoinset; //distance away from default to put the paths when auto generated
-	int wraptype;
+
+	enum WrapType {
+		NoWrap,
+		BlockLeft,
+		BlockRight,
+		BlockAround,
+		Bounds,
+		VisualBounds, //page level aligned bounds
+		Offset,
+		Custom
+	};
+	WrapType wraptype, wrapblock;
 
 	Laxkit::RefPtrStack<DrawObjectChain> chains; //for linked objects
 
@@ -168,7 +179,6 @@ class DrawableObject :  virtual public ObjectContainer,
 	Laxkit::anObject *filter; // *** can't declare as ObjectFilter directly due to absurd filefilter.h definitions.. need to fix this!
 	virtual DrawableObject *FinalObject();
 	virtual int SetFilter(Laxkit::anObject *nfilter, int absorb);
-
 
 	//Laxkit::RefPtrStack<anObject *> refs; //what other resources this objects depends on?
 
@@ -218,6 +228,8 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual int RemoveAnchor(int anchor_id);
 	virtual int RemoveAnchorI(int index);
 	virtual int ResolveAnchorRefs(Document *doc, Page *page, DrawableObject *g, Laxkit::ErrorLog &log);
+
+	virtual int InstallClip(LaxInterfaces::PathsData *pathsdata);
 
 
 	 //Group specific functions:

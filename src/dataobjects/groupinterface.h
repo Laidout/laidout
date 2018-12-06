@@ -48,11 +48,17 @@ enum GroupInterfaceActions {
 	GIA_Unparent,
 
 	//popup controls
+	GIA_No_Popup,
 	GIA_Link,
 	GIA_Parent_Link,
 	GIA_Constraints,
 	GIA_Zone,
 	GIA_Chains,
+
+	GIA_Clip_First_On_Second,
+	GIA_Clip_Second_On_First,
+	GIA_Extract_Clip,
+	GIA_Remove_Clip,
 
 	GIA_Jump_To_Link,
 	GIA_Sever_Link,
@@ -71,7 +77,7 @@ class GroupInterface : public LaxInterfaces::ObjectInterface, public Value
 {
   protected:
 	int rx,ry;
-	int popupcontrols;
+	GroupInterfaceActions popupcontrols;
 	VObjContext reparent_temp;
 
 	virtual int PerformAction(int action);

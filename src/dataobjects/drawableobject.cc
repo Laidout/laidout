@@ -22,6 +22,9 @@
 #include "../stylemanager.h"
 #include "objectfilter.h"
 
+#include "lpathsdata.h"
+
+//template instantiation:
 #include <lax/refptrstack.cc>
 
 #include <iostream>
@@ -192,7 +195,7 @@ DrawObjectChain::~DrawObjectChain()
 
 DrawableObject::DrawableObject()
 {
-	clip = NULL;
+	soft_mask = NULL;
 	clip_path = wrap_path = inset_path=NULL;
 	autowrap = autoinset = 0;
 
@@ -213,7 +216,7 @@ DrawableObject::DrawableObject()
  */
 DrawableObject::~DrawableObject()
 {
-	if (clip)       clip      ->dec_count();
+	if (soft_mask)  soft_mask ->dec_count();
 	if (clip_path)  clip_path ->dec_count();
 	if (wrap_path)  wrap_path ->dec_count();
 	if (inset_path) inset_path->dec_count();
@@ -517,16 +520,36 @@ LaxInterfaces::SomeData *DrawableObject::duplicate(LaxInterfaces::SomeData *dup)
 	return dup;
 }
 
+
+/*! Install pathsdata as clip_path. Replaces any that exist already.
+ * It is assumed that pathsdata's transform is relative to our own.
+ *
+ * Return 0 for success, non zero error.
+ */
+int DrawableObject::InstallClip(LaxInterfaces::PathsData *pathsdata)
+{
+	if (pathsdata) pathsdata->inc_count();
+	if (clip_path) clip_path->dec_count();
+	clip_path = pathsdata;
+//	if (pathsdata) {
+//		// *** update transform
+//		cerr <<" *** need to implement transform adjust in InstallClip()"<<endl;
+//	}
+	return 0;
+}
+
+
 /*! Default is to return clip_path if it exists, or a bounding box path.
  */
 LaxInterfaces::PathsData *DrawableObject::GetAreaPath()
 {
 	if (clip_path) return clip_path;
 
-	 //contsruct bounding box path
-	clip_path=new PathsData;
-	clip_path->appendRect(minx,miny, maxx-minx,maxy-miny);
-	return clip_path;
+//	 //contsruct bounding box path
+//	clip_path=new PathsData;
+//	clip_path->appendRect(minx,miny, maxx-minx,maxy-miny);
+//	return clip_path;
+	return NULL;
 }
 
 /*! Return an inset path, may or may not be inset_path, where streams are laid into.
@@ -889,6 +912,8 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext 
 		fprintf(f,"%sfilter            #(optional) Nodes defining filter transformationss\n",spc);
 		fprintf(f,"%salignmentrule align (a1x,a1y) (a2x,a2y)  #(optional) if different than simple matrix\n",spc);
 		fprintf(f,"%s  ...\n",spc);
+		fprintf(f,"%sclip_path         #(optional) a path object\n",spc);
+		fprintf(f,"%s  ...\n",spc);
 		fprintf(f,"%skids          #child object list...\n",spc);
 		//fprintf(f,"%s    ...\n",spc);
 		return;
@@ -1024,6 +1049,22 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext 
 		}
 	}
 
+	if (clip_path) {
+		fprintf(f,"%sclip_path\n", spc);
+		clip_path->dump_out(f, indent+2, what, context);
+	}
+
+	if (wrap_path) {
+		fprintf(f,"%swrap_path\n", spc);
+		wrap_path->dump_out(f, indent+2, what, context);
+	}
+
+	if (inset_path) {
+		fprintf(f,"%sinset_path\n", spc);
+		inset_path->dump_out(f, indent+2, what, context);
+	}
+
+
 	if (properties.n()) {
 		fprintf(f, "%sproperties\n",spc);
 		for (int c=0; c<properties.n(); c++) {
@@ -1099,6 +1140,24 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Du
 
 			delete[] name;
 			delete[] type;
+
+		} else if (!strcmp(name,"clip_path")) {
+			LPathsData *path = new LPathsData();
+			path->dump_in_atts(att->attributes.e[c], flag, context);
+			if (clip_path) clip_path->dec_count();
+			clip_path = path;
+
+		} else if (!strcmp(name,"wrap_path")) {
+			LPathsData *path = new LPathsData();
+			path->dump_in_atts(att->attributes.e[c], flag, context);
+			if (wrap_path) wrap_path->dec_count();
+			wrap_path = path;
+
+		} else if (!strcmp(name,"inset_path")) {
+			LPathsData *path = new LPathsData();
+			path->dump_in_atts(att->attributes.e[c], flag, context);
+			if (inset_path) inset_path->dec_count();
+			inset_path = path;
 
 		} else if (!strcmp(name,"alignmentrule")) {
 			if (!strncmp(value,"matrix",6)) continue; //we assume matrix anyway

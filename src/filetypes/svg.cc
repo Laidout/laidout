@@ -717,11 +717,16 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 		return 0;
 	}
 
+	DrawableObject *dobj = dynamic_cast<DrawableObject*>(obj);
+	char clipid[100];
+	clipid[0] = '\0';
+	if (dobj->clip_path) sprintf(clipid, "clip-path=\"url(#clipPath%lu)\"", dobj->clip_path->object_id);
+
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0'; 
 
 	if (!strcmp(obj->whattype(),"Group")) {
-		fprintf(f,"%s<g id=\"%s\" transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
-					spc, obj->Id(), obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5)); 
+		fprintf(f,"%s<g id=\"%s\" %s transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
+					spc, obj->Id(), clipid, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5)); 
 		Group *g=dynamic_cast<Group *>(obj);
 		for (int c=0; c<g->n(); c++) 
 			svgdumpobj(f,NULL,g->e(c),warning,indent+2,log, out); 
@@ -735,7 +740,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 		if (grad->style&GRADIENT_RADIAL) {
 			fprintf(f,"%s<circle  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
 						 spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
-			fprintf(f,"%s    id=\"%s\"\n", spc,grad->Id());
+			fprintf(f,"%s    id=\"%s\" %s\n", spc,grad->Id(), clipid);
 			fprintf(f,"%s    fill=\"url(#radialGradient%ld)\"\n", spc,grad->object_id);
 			fprintf(f,"%s    cx=\"%f\"\n",spc, fabs(grad->r1)>fabs(grad->r2)?grad->p1:grad->p2);
 			fprintf(f,"%s    cy=\"0\"\n",spc);
@@ -744,7 +749,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 		} else {
 			fprintf(f,"%s<rect  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
 						 spc,obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
-			fprintf(f,"%s    id=\"%s\"\n", spc,grad->Id());
+			fprintf(f,"%s    id=\"%s\" %s\n", spc,grad->Id(), clipid);
 			fprintf(f,"%s    fill=\"url(#linearGradient%ld)\"\n", spc,grad->object_id);
 			fprintf(f,"%s    x=\"%f\"\n", spc,grad->minx);
 			fprintf(f,"%s    y=\"%f\"\n", spc,grad->miny);
@@ -772,7 +777,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			fprintf(f,"%s<text transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
 						spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
 
-			fprintf(f,"%s   id=\"%s\"\n", spc, caption->Id());
+			fprintf(f,"%s   id=\"%s\" %s\n", spc, caption->Id(), clipid);
 			fprintf(f,"%s   x =\"0\"\n", spc);
 			fprintf(f,"%s   y =\"%.10g\"\n", spc, caption->font->ascent());
 
@@ -930,7 +935,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 		
 		fprintf(f,"%s<image  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
 				     spc, obj->m(0), obj->m(1), -obj->m(2), -obj->m(3), o.x, o.y);
-		fprintf(f,"%s    id=\"%s\"\n", spc,img->Id());
+		fprintf(f,"%s    id=\"%s\" %s\n", spc,img->Id(), clipid);
 		fprintf(f,"%s    xlink:href=\"%s\" \n", spc,img->filename);
 		fprintf(f,"%s    x=\"%f\"\n", spc,img->minx);
 		fprintf(f,"%s    y=\"%f\"\n", spc,img->miny);
@@ -1149,7 +1154,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 
 			fprintf(f,"%s<path  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
 						 spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
-			fprintf(f,"%s       id=\"%s\"\n", spc,obj->Id());
+			fprintf(f,"%s       id=\"%s\" %s\n", spc,obj->Id(), clipid);
 
 			fprintf(f,"%s       d=\"",spc);
 
@@ -1178,7 +1183,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			if (fstyle && fstyle->hasFill() && !open) {
 				fprintf(f,"%s<path  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
 							 spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
-				fprintf(f,"%s       id=\"%s-fill\"\n", spc,obj->Id());
+				fprintf(f,"%s       id=\"%s-fill\" %s\n", spc,obj->Id(), clipid);
 
 				 //---write style for fill within centercache.. no stroke to that, as we apply artificial stroke
 				fprintf(f,"%s       style=\"",spc);
@@ -1204,7 +1209,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 				 //second "stroke" path to be filled, or to be set up as powerstroke base
 				fprintf(f,"%s<path  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
 							 spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
-				fprintf(f,"%s       id=\"%s\"\n", spc,obj->Id());
+				fprintf(f,"%s       id=\"%s\" %s\n", spc,obj->Id(), clipid);
 
 				 //---write style: no linestyle, but fill style is based on linestyle
 				fprintf(f,"%s       style=\"",spc);
@@ -1275,7 +1280,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 						 spc, m2[0], m2[1], m2[2], m2[3], m2[4], m2[5]);
 
 			 //write path
-			fprintf(f,"%s   id=\"%s\"\n", spc,obj->Id());
+			fprintf(f,"%s   id=\"%s\" %s\n", spc,obj->Id(), clipid);
 			fprintf(f,"%s   xlink:href=\"#%s\"\n", spc,ref->thedata->Id());
 			fprintf(f,"%s />\n",spc);//end of clone!
 		}
@@ -1305,6 +1310,23 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 	return 0;
 }
 
+/*! Use this during svgdumpdef to output a particular clipping path.
+ */
+void DumpClipPath(FILE *f, const char *clipid, PathsData *obj, const double *extra_m, int &warning,ErrorLog &log, SvgExportConfig *out)
+{
+	fprintf(f,"    <clipPath clipPathUnits=\"userSpaceOnUse\" id=\"%s\" >\n", clipid);
+	fprintf(f,"      <path ");
+	if (extra_m) {
+		fprintf(f,"transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" ",
+					extra_m[0], extra_m[1], extra_m[2], extra_m[3], extra_m[4], extra_m[5]); 
+	}
+	fprintf(f," d=\"");
+	for (int c=0; c<obj->paths.n; c++) {
+		svgaddpath(f, obj->paths.e[c]->path);
+	}
+	fprintf(f," \"/>\n    </clipPath>\n");
+}
+
 /*! Function to dump out any gradients to the defs section of an svg. Remember that
  * actual object dump is svgdumpobj().
  *
@@ -1314,6 +1336,18 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
  */
 int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgExportConfig *out, bool ignore_filter=false)
 {
+	DrawableObject *dobj = dynamic_cast<DrawableObject*>(obj);
+	if (dobj->clip_path) {
+		 //not really sure why, but clip path has to be flipped vertically relative to the clipped object.
+		char clipid[100];
+		sprintf(clipid, "clipPath%lu", dobj->clip_path->object_id);
+		Affine a(dobj->clip_path->m());
+		flatpoint f1 = dobj->BBoxPoint(0,.5, false);
+		flatpoint f2 = dobj->BBoxPoint(1,.5, false);
+		a.Flip(f1,f2);
+		DumpClipPath(f, clipid, dobj->clip_path, a.m(), warning, log, out);
+	}
+
 	Group *g=dynamic_cast<Group *>(obj);
 	if (g && g->filter && !ignore_filter) {
 		obj = g->FinalObject();
@@ -1538,18 +1572,6 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgE
 	return 0;
 }
 
-/*! Use this during svgdumpdef to output a particular clipping path.
- */
-void DumpClipPath(FILE *f, const char *clipid, PathsData *obj,int &warning,ErrorLog &log, SvgExportConfig *out)
-{
-	fprintf(f,"    <clipPath clipPathUnits=\"userSpaceOnUse\" id=\"%s\" >\n", clipid);
-	fprintf(f,"      <path d=\"");
-	for (int c=0; c<obj->paths.n; c++) {
-		svgaddpath(f, obj->paths.e[c]->path);
-	}
-	fprintf(f," \"/>\n    </clipPath>\n");
-}
-
 
 DocumentExportConfig *SvgOutputFilter::CreateConfig(DocumentExportConfig *fromconfig)
 {
@@ -1697,7 +1719,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 				if (clippath) {
 					char clipstr[100];
 					sprintf(clipstr, "pageClip%lu", doc->pages[pg]->object_id);
-					DumpClipPath(f, clipstr, clippath, warning, log, out);
+					DumpClipPath(f, clipstr, clippath, NULL, warning, log, out);
 				}
 			}
 
