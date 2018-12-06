@@ -2157,7 +2157,7 @@ int main(int argc,char **argv)
 	generate_preview_image=laidout_preview_maker;
 
 	laidout=new LaidoutApp();
-	if (theme) laidout->Theme(theme);
+	if (theme) laidout->SetTheme(theme);
 	if (backend) laidout->Backend(backend);
 	o=options.find("experimental",0);
 	if (o && o->parsed_present) laidout->experimental=1;
