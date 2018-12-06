@@ -126,7 +126,7 @@ void ImageExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpConte
 
 	if (what==-1) {
 		DocumentExportConfig::dump_out(f,indent,-1,context);
-		fprintf(f,"%stransparent  #use a transparent background, not a renedered color.\n",spc);
+		fprintf(f,"%stransparent  #use a transparent background, not a rendered color.\n",spc);
 		fprintf(f,"%sformat  png  #file format to use. Default is png\n",spc);
 		fprintf(f,"%swidth  0  #width of resulting image. 0 means auto calculate from dpi.\n",spc);
 		fprintf(f,"%sheight 0  #height of resulting image. 0 means auto calculate from dpi.\n",spc);
