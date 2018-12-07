@@ -948,13 +948,24 @@ int LaidoutApp::readinLaidoutDefaults()
 			dump_in_rc(att.attributes.e[c],NULL);
 
 		} else if (!strcmp(name,"laxprofile")) {
-			makestr(app_profile,value);
-			if (!strcmp(value,"Dark")) setupdefaultcolors();
+			if (value) {
+				makestr(app_profile,value);
+				if (!strcmp(value,"Dark") || !strcmp(value,"Gray") || !strcmp(value,"Light"))
+					setupdefaultcolors();
+			}
 			
-		} else if (!strcmp(name,"laxcolors")) {
-			//*** this, or force use of laxconfig?
-			dump_in_colors(att.attributes.e[c]);
+		//} else if (!strcmp(name,"laxcolors")) {
+		//	//*** this, or force use of laxconfig?
+		//	dump_in_colors(att.attributes.e[c]);
 			
+		} else if (!strcmp(name,"theme")) {
+			if (isblank(app_profile) || (!isblank(app_profile) && value && !strcmp(app_profile, value))) {
+				Theme *thme = new Theme(app_profile);
+				thme->dump_in_atts(att.attributes.e[c], 0, NULL);
+				if (theme) theme->dec_count();
+				theme = thme;
+			}
+
 		} else if (!strcmp(name,"shortcuts")) {
 			foundkeys=1;
 			InitializeShortcuts();

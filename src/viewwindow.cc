@@ -436,7 +436,7 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 
 	dp->displayer_style|=DISPLAYER_NO_SHEAR;
 	papergroup=NULL;
-	win_colors->bg=rgbcolor(255,255,255);
+	win_themestyle->bg=rgbcolor(255,255,255);
 
 	viewportmode=VIEW_NORMAL;
 	showstate=1;
@@ -2513,7 +2513,7 @@ int LaidoutViewport::init()
 	}
 
 	//int e=ViewportWindow::init();
-	dp->NewBG(win_colors->bg);
+	dp->NewBG(win_themestyle->bg);
 	return 0;
 }
 
@@ -2822,8 +2822,8 @@ void LaidoutViewport::Refresh()
 
     if (temp_input && temp_input_label) {
 		dp->DrawScreen();
-		dp->NewBG(temp_input->win_colors->bg);
-		dp->NewFG(temp_input->win_colors->fg);
+		dp->NewBG(temp_input->win_themestyle->bg);
+		dp->NewFG(temp_input->win_themestyle->fg);
 		int th=dp->textheight();
 		dp->drawRoundedRect(temp_input->win_x-5,temp_input->win_y-1.2*th-5, 
 							temp_input->win_w+temp_input->win_border*2+10, 1.2*th+temp_input->win_h+temp_input->win_border*2,

@@ -452,7 +452,7 @@ int SpreadInterface::Refresh()
 				// ***temp way to hide some pages' thumbnails......
 				SomeData *outline=view->spreads.e[c]->spread->pagestack.e[c2]->outline;
 
-				dp->NewFG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg));
+				dp->NewFG(coloravg(curwindow->win_themestyle->fg,curwindow->win_themestyle->bg));
 				flatpoint center=(flatpoint(outline->minx,outline->miny)+flatpoint(outline->maxx,outline->maxy))/2;
 				center=outline->transformPoint(center);
 				dp->textout(center.x,center.y, "...",3,LAX_CENTER);
@@ -1760,10 +1760,10 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *nname,const char
 									ANXWIN_HOVER_FOCUS|VIEWPORT_RIGHT_HANDED|VIEWPORT_BACK_BUFFER|VIEWPORT_ROTATABLE,
 									0,0,0,0,0,NULL,spreadtool); 
 	viewport=sed;
-	WindowColors *col = win_colors->duplicate();
-	installColors(col);
-	viewport->installColors(col);
-	win_colors->bg=rgbcolor(200,200,200);
+	WindowStyle *col = win_themestyle->duplicate();
+	InstallColors(col);
+	viewport->InstallColors(col);
+	win_themestyle->bg.rgb8(200,200,200);
 	col->dec_count();
 	viewport->dp->NewBG(255,255,255); 
 	viewer_style |= VIEWPORT_NO_XRULER|VIEWPORT_NO_YRULER;

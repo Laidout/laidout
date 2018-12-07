@@ -292,10 +292,10 @@ int ObjectFilterInterface::Refresh()
 	dp->DrawScreen();
 
 	dp->LineAttributes(1,LineSolid,LAXCAP_Round,LAXJOIN_Round);
-	dp->NewFG(curwindow->win_colors->fg);
+	dp->NewFG(curwindow->win_themestyle->fg);
 
-	dp->NewFG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg, .25));
-    dp->NewBG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg, .75));
+	dp->NewFG(coloravg(curwindow->win_themestyle->fg,curwindow->win_themestyle->bg, .25));
+    dp->NewBG(coloravg(curwindow->win_themestyle->fg,curwindow->win_themestyle->bg, .75));
 
 
 	double th = dp->textheight();
@@ -311,8 +311,8 @@ int ObjectFilterInterface::Refresh()
 		//draw one block for each filter
 		double w, x=0;
 		for (int c=0; c<filternodes.n; c++) {
-			dp->NewFG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg, .25));
-			dp->NewBG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg, .75));
+			dp->NewFG(coloravg(curwindow->win_themestyle->fg,curwindow->win_themestyle->bg, .25));
+			dp->NewBG(coloravg(curwindow->win_themestyle->fg,curwindow->win_themestyle->bg, .75));
 
 			 //draw:
 			 //   Name
@@ -322,7 +322,7 @@ int ObjectFilterInterface::Refresh()
 			if (w > width) width = w;
 			width += th;
 
-			dp->NewFG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg, .25));
+			dp->NewFG(coloravg(curwindow->win_themestyle->fg,curwindow->win_themestyle->bg, .25));
 
 			 //draw box
 			dp->LineWidthScreen(current == c ? 3 : 1);
@@ -333,7 +333,7 @@ int ObjectFilterInterface::Refresh()
 			dp->textout(x+width/2,th/4, filternodes.e[c]->Label(),-1, LAX_TOP|LAX_HCENTER);
 
 			 //eyeball
-			dp->NewFG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg, .25));
+			dp->NewFG(coloravg(curwindow->win_themestyle->fg,curwindow->win_themestyle->bg, .25));
 			dp->NewBG(1.,1.,1.);
 			dp->LineWidthScreen(hover == OFI_Mute && hoverindex == c ? 2 : 1);
 			dp->drawthing(x+th, th*1.75, th/2,-th/2, 2, filternodes.e[c]->IsMuted() ? THING_Closed_Eye : THING_Open_Eye);
@@ -345,7 +345,7 @@ int ObjectFilterInterface::Refresh()
 				dp->drawcircle(x + width-th, th*1.75, th/2, 1);
 				dp->NewFG(1.,1.,1.);
 
-			} else dp->NewFG(curwindow->win_colors->fg);
+			} else dp->NewFG(curwindow->win_themestyle->fg);
 
 			dp->drawthing(x+width - th, th*1.75, th/3,th/3, 0, THING_X);
 

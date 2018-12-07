@@ -280,10 +280,9 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 	//  ArrangementEditor
 	//  ObjectTreeEditor
 
-	WindowColors *newcolors=new WindowColors(*win_colors);
-	installColors(newcolors);
-	newcolors->dec_count();
-	win_colors->bg=coloravg(win_colors->bg,0,.33);
+	WindowStyle *newcolors = win_themestyle->duplicate();
+	InstallColors(newcolors);
+	win_themestyle->bg.Set(coloravg(win_themestyle->bg.Pixel(),0,.33));
 	space=4;
 
 	tooltip("With mouse in the gutter:\n"

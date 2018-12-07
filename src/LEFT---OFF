@@ -151,6 +151,20 @@ test:
   make some test scripts for command line testing
 
 
+export current appears to be broken
+
+object clipping:
+  clip export: pdf, image, svg(done), scribus
+  in place editing
+  object content selector menu
+  DONE apply, remove, extract clip path
+
+save as needs to use current save path, not current directory
+
+ux:
+  should be able to mass disconnect clones
+  current page should be highlighted
+
 instead of _LAX_PLATFORM_MAC, do relevant check with _LAX_ON_NON_GNU instead? currently only place this is necessary is where getline is used
 
 remove imlib/"xlib" font, image, and render backends, replace with GraphicsMagick and cairo
@@ -191,11 +205,6 @@ PathInterface: pathinterface
   bug: delete last weight node, sometimes width is wrong
   bug: make new line with freehand tool, cannot move weight nodes in a rational way
 
-
-
-ux:
-  should be able to mass disconnect clones
-  current page should be highlighted
 
 
 Find interface:
@@ -296,9 +305,8 @@ Scribus scribus:
   scribus import: need to read page sizes from actual page attributes, as it may well be different than in document attributes
     -> this necessitates revamp of singles to use more than one paper type
   implement crop
-  page clipping
 svg: SVG
-  page clipping
+  export papers current not going to correct paper
   text on path without path conversion
   rudimentary mesh in.. try to scale and place as separate object (without proper clipping)
   dump_in filter to nodes optionally

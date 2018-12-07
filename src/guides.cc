@@ -158,6 +158,8 @@ void PathGuide::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCon
 class GridGuide : public LaxFiles::DumpUtility
 {
   public:
+	Laxkit::anObject *owner;
+
 	enum GridType {
 		Grid,
 		Horizontal,
@@ -166,15 +168,16 @@ class GridGuide : public LaxFiles::DumpUtility
 		Hex,
 		MAX
 	};
-	int gridtype;
+	GridType gridtype;
 	char enabled, visible;
 	flatpoint offset;
 	flatvector majordir, minordir;
 	int spacingunits;
 	double xspacing, yspacing;
-	Laxkit::ScreenColor color, majorcolor;
+	Laxkit::ScreenColor minorcolor, majorcolor;
 	int majorinterval; //draw thick every this number
 	bool snaponlytovisible;
+
 
 	GridGuide();
 	virtual ~GridGuide();
@@ -187,13 +190,15 @@ class GridGuide : public LaxFiles::DumpUtility
 GridGuide::GridGuide()
   : majordir(1,0), minordir(0,1)
 {
+	owner = NULL;
+
 	gridtype = Grid;
 	enabled = visible = 1;
 	xspacing = yspacing = .5;
 	spacingunits = UNITS_Inches;
 	snaponlytovisible = true;
 
-	color.rgb(0.,0.,1.);
+	minorcolor.rgb(0.,0.,1.);
 	majorcolor.rgb(0.,0.,.8);
 	majorinterval = 5;
 }

@@ -105,7 +105,9 @@ NodeEditor::NodeEditor(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 		viewport->dec_count();
 	}
 
-	win_colors->bg=rgbcolor(200,200,200);
+	WindowStyle *style = win_themestyle->duplicate();
+	InstallColors(style);
+    win_themestyle->bg.rgbf(200/255.,200/255.,200/255.);
 	viewport->dp->NewBG(200,200,200);
 
 

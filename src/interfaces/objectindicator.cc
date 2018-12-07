@@ -276,7 +276,7 @@ int ObjectIndicator::Refresh()
 	ObjectContainer *objc = dynamic_cast<ObjectContainer*>(viewport);
 	char scratch[10];
 	const char *str;
-	dp->NewFG(coloravg(viewport->win_colors->fg, viewport->win_colors->bg));
+	dp->NewFG(coloravg(viewport->win_themestyle->fg, viewport->win_themestyle->bg));
 
 	for (int c=0; objc && c<context->context.n(); c++) {
 		if (!objc) break;
