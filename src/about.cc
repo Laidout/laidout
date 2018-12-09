@@ -153,8 +153,10 @@ int AboutWindow::init()
 
 void AboutWindow::Refresh()
 {
+	Displayer *dp = MakeCurrent();
+
 	if (splash) {
-		image_out(splash,this, wholelist.e[0]->x(),wholelist.e[0]->y()); // *** needs to scale
+		dp->imageout(splash, wholelist.e[0]->x(),wholelist.e[0]->y()); // *** needs to scale
 	}
 	needtodraw=0;
 }

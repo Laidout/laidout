@@ -143,7 +143,7 @@ int ExportDialog::preinit()
 	anXWindow::preinit();
 	if (win_w==0) win_w=500;
 	if (win_h==0) {
-		int textheight=app->defaultlaxfont->textheight();
+		int textheight = win_themestyle->normal->textheight();
 		win_h=20*(textheight+7)+20;
 	}
 
@@ -244,8 +244,8 @@ int ExportDialog::init()
 	anXWindow *last=NULL;
 	Button *tbut=NULL;
 	int c;
-	int linpheight=app->defaultlaxfont->textheight();
-	double textheight=text_height();
+	int linpheight = win_themestyle->normal->textheight();
+	double textheight = win_themestyle->normal->textheight();
 	double CHECKGAP = textheight/4;
 
 	padinset = linpheight/2;
@@ -736,7 +736,7 @@ void ExportDialog::updateEdits()
 				last=box=new CheckBox(this,scratch,NULL,CHECK_CIRCLE|CHECK_LEFT, 
 									 0,0,0,0,0, 
 									 last,object_id,scratch,
-									 fd->Name, app->defaultlaxfont->textheight()/5,5);
+									 fd->Name, win_themestyle->normal->textheight()/5,5);
 
 				Value *v=config->dereference(fd->name,strlen(fd->name));
 				//if (config->findBoolean(fd->name)) box->State(LAX_ON);

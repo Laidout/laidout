@@ -303,7 +303,7 @@ const char *NodeProperty::Tooltip(const char *nttip)
  */
 void NodeProperty::SetExtents(NodeColors *colors)
 {
-	double w = colors->font->extent(Label(),-1);
+	double w = colors->font->Extent(Label(),-1);
 	double th = colors->font->textheight();
 
 	Value *v = dynamic_cast<Value*>(data);
@@ -316,7 +316,7 @@ void NodeProperty::SetExtents(NodeColors *colors)
 
 		} else if (v->type()==VALUE_String) {
 			StringValue *s = dynamic_cast<StringValue*>(v);
-			w += th + colors->font->extent(s->str, -1);
+			w += th + colors->font->Extent(s->str, -1);
 
 		} else if (v->type()==VALUE_Enum) {
 			EnumValue *ev = dynamic_cast<EnumValue*>(v);
@@ -327,7 +327,7 @@ void NodeProperty::SetExtents(NodeColors *colors)
 				ev->GetObjectDef()->getEnumInfo(c, &nm, &Nm);
 				if (!Nm) Nm = nm;
 				if (isblank(Nm)) continue;
-				eww = colors->font->extent(Nm,-1);
+				eww = colors->font->Extent(Nm,-1);
 				if (eww>ew) ew=eww;
 			}
 			w += ew;
@@ -605,7 +605,7 @@ void NodeFrame::Wrap(double gap)
 		box.addtobounds(*nodes.e[c]);
 	}
 
-	double lw = (label && owner && owner->colors ? owner->colors->font->extent(label,-1) : 100);
+	double lw = (label && owner && owner->colors ? owner->colors->font->Extent(label,-1) : 100);
 	if (box.boxwidth() < lw) box.maxx = box.minx + lw;
 	box.ShiftBounds(-gap,gap, -(th*1.5 + gap),gap);
 
@@ -920,7 +920,7 @@ int NodeBase::WrapFull(bool keep_current_width)
 	}
 
 	if (!keep_current_width) {
-		width = colors->font->extent(Name,-1);
+		width = colors->font->Extent(Name,-1);
 
 		 //find wrap width
 		for (int c=0; c<properties.n; c++) {
@@ -977,7 +977,7 @@ int NodeBase::WrapCollapsed()
 	double th = colors->font->textheight();
 
 	if (collapsedwidth > 0) width = collapsedwidth;
-	else width = 3*th + colors->font->extent(Label(),-1);
+	else width = 3*th + colors->font->Extent(Label(),-1);
 	height = th*1.5;
 	if (UsesPreview()) {
 		height += preview_area_height;
@@ -4061,7 +4061,7 @@ void NodeInterface::DrawPropertySlot(NodeBase *node, NodeProperty *prop, int hov
 	if (node->collapsed && hoverslot) {
 		 //draw tip of name next to pos
 		flatpoint pp = prop->pos+flatpoint(node->x+th,node->y);
-		double width = th + node->colors->font->extent(prop->Label(),-1);
+		double width = th + node->colors->font->Extent(prop->Label(),-1);
 		dp->drawrectangle(pp.x,pp.y-th*.75, width, 1.5*th, 2);
 		dp->textout(pp.x+th/2,pp.y, prop->Label(),-1, LAX_LEFT|LAX_VCENTER);
 	} 

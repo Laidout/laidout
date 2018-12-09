@@ -3472,8 +3472,9 @@ int HedronWindow::PerformAction(int action)
 			appendstr(file,".polyptych");
 		} else makestr(file,polyptychfile);
 
-		foreground_color(rgbcolor(255,255,255));
-		textout(this,file,-1,0,app->defaultlaxfont->textheight(),LAX_LEFT|LAX_TOP);
+		Displayer *dp = MakeCurrent();
+		dp->NewFG(rgbcolor(255,255,255));
+		dp->textout(0,app->defaultlaxfont->textheight(), file,-1, LAX_LEFT|LAX_TOP);
 
 		if (saveas) {
 			 //saveas
@@ -3485,8 +3486,8 @@ int HedronWindow::PerformAction(int action)
 		} else {
 			 //normal save
 			DBG cerr<<"Saving to "<<file<<endl;
-			if (Save(file)==0) textout(this,"...Saved",-1,0,2*app->defaultlaxfont->textheight(),LAX_LEFT|LAX_TOP);
-			else textout(this,"...ERROR!!! Not saved",-1,0,2*app->defaultlaxfont->textheight(),LAX_LEFT|LAX_TOP);
+			if (Save(file)==0) dp->textout(0,2*app->defaultlaxfont->textheight(), "...Saved",-1, LAX_LEFT|LAX_TOP);
+			else dp->textout(0,2*app->defaultlaxfont->textheight(), "...ERROR!!! Not saved",-1, LAX_LEFT|LAX_TOP);
 		}
 
 		delete[] file;
