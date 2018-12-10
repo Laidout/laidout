@@ -15,7 +15,7 @@ VERSION 0.098
        Replace ancient Imlib image loading with GraphicsMagick
 
        Debug Text on path tool
-       make laidout.org twitterable with an image card
+(done) make laidout.org twitterable with an image card
        lock down color backend.. it's currently a series of weak hacks based on 8-bit screen rgb
 
        Moving selected things in group contents does not update group bounds
