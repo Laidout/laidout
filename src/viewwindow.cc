@@ -2704,11 +2704,57 @@ void LaidoutViewport::Refresh()
 				continue;
 			}
 
+
 			 //else we have a page, so draw it all
 			sd=spread->pagestack.e[c]->outline;
 			dp->PushAndNewTransform(sd->m()); // transform to page coords
 			if (drawflags&DRAW_AXES) dp->drawaxes();
 			
+			bool show_page_bleeds = true;
+			if (show_page_bleeds && page->pagebleeds.n && (viewmode == PAPERLAYOUT || viewmode == SINGLELAYOUT)) {
+				 //assume PAGELAYOUT already renders bleeds properly
+				//char scratch[100];
+				//flatpoint page_center = page->pagestyle->outline->BBoxPoint(.5,.5, false);
+				//dp->NewFG(0.,0.,1.0);
+				//dp->textout(page_center, "Center");
+				//dp->drawrectangle(1,1,2,2, 1);;
+				dp->NewFG(0.,0.,1.0);
+
+				if (viewmode == PAPERLAYOUT) {
+					//only paper view clip
+					dp->PushClip(1);
+					SetClipFromPaths(dp,sd,NULL);
+				}
+
+				for (int pb=0; pb<page->pagebleeds.n; pb++) {
+					PageBleed *bleed = page->pagebleeds[pb];
+					Page *otherpage = doc->pages[bleed->index];
+					
+					dp->PushAndNewTransform(bleed->matrix);
+
+					for (c2 = 0; c2 < otherpage->layers.n(); c2++) {
+						DrawData(dp,otherpage->e(c2),NULL,NULL,drawflags);
+					}
+
+					dp->PopAxes();
+				
+					//flatpoint other_center = otherpage->pagestyle->outline->BBoxPoint(.5,.5, false);
+					//other_center = transform_point(bleed->matrix, other_center);
+					////other_center = transform_point(otherpage->pagestyle->outline->m(), other_center);
+					//
+					//dp->drawarrow(page_center, other_center-page_center, 0, 1, 2, 3);
+					//
+					////sprintf(scratch, "bleed from %d", page->pagebleeds[pb]->index);
+					////dp->drawnum("bleed", other_center.x, other_center.y);
+					//dp->DrawScreen();
+					//other_center = realtoscreen(other_center);
+					//dp->drawnum(other_center.x, other_center.y, bleed->index);
+					//dp->DrawReal();
+				}
+
+				if (viewmode == PAPERLAYOUT) dp->PopClip();
+			}
+
 			if (page->pagestyle->flags&PAGE_CLIPS) {
 				 // setup clipping region to be the page
 				dp->PushClip(1);
