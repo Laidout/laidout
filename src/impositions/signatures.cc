@@ -3014,24 +3014,24 @@ void SignatureImposition::fixPageBleeds(int index, //!< Document page index
 	double pw=signatures->pattern->PageWidth(1);
 	double ph=signatures->pattern->PageHeight(1);
 
-	char binding=signatures->pattern->binding;
-	if (binding=='l') { if (odd) { dir='r'; adjacent=index+1; } else { dir='l'; adjacent=index-1; } }
+	char binding = signatures->pattern->binding;
+	if      (binding=='l') { if (odd) { dir='r'; adjacent=index+1; } else { dir='l'; adjacent=index-1; } }
 	else if (binding=='r') { if (odd) { dir='l'; adjacent=index+1; } else { dir='r'; adjacent=index-1; } }
 	else if (binding=='t') { if (odd) { dir='b'; adjacent=index+1; } else { dir='t'; adjacent=index-1; } }
-	else { if (odd) { dir='t'; adjacent=index+1; } else { dir='b'; adjacent=index-1; } } //botom binding
+	else {                   if (odd) { dir='t'; adjacent=index+1; } else { dir='b'; adjacent=index-1; } } //botom binding
 
 	m[4]=m[5]=0;
-	if (dir=='l') { m[4]=pw; }
-	else if (dir=='r') { m[4]=-pw; }
-	else if (dir=='t') { m[5]=-ph; }
-	else { m[5]=ph; } //botom binding
+	if      (dir=='l') { m[4] = -pw; }
+	else if (dir=='r') { m[4] = pw; }
+	else if (dir=='t') { m[5] = -ph; }
+	else               { m[5] = ph; } //botom binding
 
 	if (adjacent<0 && showwholecover) {
-		adjacent=numpages-1;
-	} else if (adjacent==numpages && showwholecover) {
-		adjacent=0;
+		adjacent = numpages-1;
+	} else if (adjacent == numpages && showwholecover) {
+		adjacent = 0;
 	}
-	if (adjacent>=0) page->pagebleeds.push(new PageBleed(adjacent,m));
+	if (adjacent>=0 && adjacent < numpages) page->pagebleeds.push(new PageBleed(adjacent,m));
 }
 
 //! Ensure that each page has a proper pagestyle and bleed information.

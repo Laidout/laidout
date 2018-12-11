@@ -46,9 +46,9 @@ namespace Laidout {
  * that page are transformed to the current page.
  */
 
-PageBleed::PageBleed(int i, const double *m)
+PageBleed::PageBleed(int doc_page_index, const double *m)
 {
-	index=i;
+	index = doc_page_index;
 	transform_copy(matrix,m);
 	hasbleeds=0;
 }
