@@ -35,7 +35,7 @@ class PageBleed
 	int index;
 	int hasbleeds;
 	double matrix[6];
-	PageBleed(int i, const double *m);
+	PageBleed(int doc_page_index, const double *m);
 };
 
 //---------------------------- PageStyle ---------------------------------
