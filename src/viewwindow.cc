@@ -2712,13 +2712,9 @@ void LaidoutViewport::Refresh()
 			
 			bool show_page_bleeds = true;
 			if (show_page_bleeds && page->pagebleeds.n && (viewmode == PAPERLAYOUT || viewmode == SINGLELAYOUT)) {
-				 //assume PAGELAYOUT already renders bleeds properly
+				 //assume PAGELAYOUT already renders bleeds properly, since that's where the bleed objects come from
 				//char scratch[100];
 				//flatpoint page_center = page->pagestyle->outline->BBoxPoint(.5,.5, false);
-				//dp->NewFG(0.,0.,1.0);
-				//dp->textout(page_center, "Center");
-				//dp->drawrectangle(1,1,2,2, 1);;
-				dp->NewFG(0.,0.,1.0);
 
 				if (viewmode == PAPERLAYOUT) {
 					//only paper view clip
@@ -2726,6 +2722,7 @@ void LaidoutViewport::Refresh()
 					SetClipFromPaths(dp,sd,NULL);
 				}
 
+				//dp->setSourceAlpha(.5);
 				for (int pb=0; pb<page->pagebleeds.n; pb++) {
 					PageBleed *bleed = page->pagebleeds[pb];
 					Page *otherpage = doc->pages[bleed->index];
@@ -2738,12 +2735,15 @@ void LaidoutViewport::Refresh()
 
 					dp->PopAxes();
 				
+					// //draw arrow to and label page that connects to this one
 					//flatpoint other_center = otherpage->pagestyle->outline->BBoxPoint(.5,.5, false);
 					//other_center = transform_point(bleed->matrix, other_center);
 					////other_center = transform_point(otherpage->pagestyle->outline->m(), other_center);
 					//
+					//dp->NewFG(0.,0.,1.0);
 					//dp->drawarrow(page_center, other_center-page_center, 0, 1, 2, 3);
 					//
+					//dp->NewFG(0.,0.,0.0);
 					////sprintf(scratch, "bleed from %d", page->pagebleeds[pb]->index);
 					////dp->drawnum("bleed", other_center.x, other_center.y);
 					//dp->DrawScreen();
@@ -2751,11 +2751,12 @@ void LaidoutViewport::Refresh()
 					//dp->drawnum(other_center.x, other_center.y, bleed->index);
 					//dp->DrawReal();
 				}
+				//dp->setSourceAlpha(1);
 
 				if (viewmode == PAPERLAYOUT) dp->PopClip();
 			}
 
-			if (page->pagestyle->flags&PAGE_CLIPS) {
+			if ((page->pagestyle->flags&PAGE_CLIPS) || viewmode == PAPERLAYOUT) {
 				 // setup clipping region to be the page
 				dp->PushClip(1);
 				//SetClipFromPaths(dp,sd,dp->Getctm());
