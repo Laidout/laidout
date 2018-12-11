@@ -151,6 +151,8 @@ test:
   make some test scripts for command line testing
 
 
+in singles view, spread number in box should be page label instead of spread number
+
 export current appears to be broken
 
 object clipping:
