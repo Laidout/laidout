@@ -100,11 +100,20 @@ svg coord numpoints==0???? numpoints doesn't really serve any purpose other than
 svg to coord incomplete: arcs needs testing
 memory hole in svg in? test svg import, svg path import must be done
 
+
 sigimp fail for multiple stacks with no folds!!
+
+make sure all imposition types are available in interpreter
+
+resource impositions not showing description when selected
+
+fold indicator foldprogress just at crossover points incorrectly indicating affected folds
+
 
 object tool shift-control for rotate does not allow positioning on drag bars
 
 'g' for color sample changes cursor to cancel now, and changes on border cross!!!
+Need better mouse shape support
 
 possible modifier-pairing error with multiple mice...
 
@@ -117,12 +126,6 @@ file previewer not updating preview when using arrow keys
 
 shrink image lets you go immeasurably small
 
-fold indicator foldprogress just at crossover points incorrectly indicating affected folds
-
-make sure all imposition types are available in interpreter
-
-resource impositions not showing description when selected
-
 GradientInterface problem rendering radial when two circles separated by large distance
 
 WATCH OUT for when preview file is OLDER than original file!!
@@ -133,6 +136,7 @@ stackframe seems to be ignoring window borders on layout
 ----------------0.098 ROADMAP ITEMS: features and enhancements------------------------
 website: explain a bit more how to install dev versions, and place side by side with "stable"
 website: need to redo screenshots section for mobile friendliness
+website: make twitterable
 update fileformat.txt
 check laidout.1 when time to release
 update docs to have new release number
@@ -1776,4 +1780,5 @@ DONE freetype-config is deprecated
 DONE object indicator should show actual page label in it's description
 DONE Page Clip: clip in viewer
 DONE Page Clip: svg .. set clip-path on each page layer to page outline
+DONE Remove old laxutils based drawing calls in favor of Displayer based drawing.
 
