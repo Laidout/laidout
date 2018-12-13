@@ -812,8 +812,8 @@ int GroupInterface::PerformAction(int action)
 		if (!obj || !obj->clip_path) return 0;
 
 		PathInterface *pathi = new PathInterface(getUniqueNumber(), dp);
-		pathi->pathi_style = PATHI_No_Weights|PATHI_One_Path_Only|PATHI_Esc_Off_Sub|PATHI_Two_Point_Minimum; //|PATHI_Path_Is_M_Real;
-		//pathi->Setting(PATHI_No_Weights, 0);
+		pathi->pathi_style = PATHI_One_Path_Only|PATHI_Esc_Off_Sub|PATHI_Two_Point_Minimum; //|PATHI_Path_Is_M_Real;
+		pathi->Setting(PATHI_No_Weights, 1);
 		pathi->primary = 1;
 
 		double m[6];
@@ -825,7 +825,7 @@ int GroupInterface::PerformAction(int action)
 		child = pathi;
 		viewport->Push(pathi,-1,0);
 		PostMessage(_("Editing clip path"));
-		FreeSelection();
+		//FreeSelection();
 		return 0;
 
 	} else if (action == GIA_Clip_First_On_Second || action == GIA_Clip_Second_On_First) {
@@ -1120,6 +1120,7 @@ int GroupInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 int GroupInterface::Refresh()
 {
 	if (!needtodraw) return 0;
+	if (child) { needtodraw=0; return 0; }
 
 
 	ObjectInterface::Refresh();
