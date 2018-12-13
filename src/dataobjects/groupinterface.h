@@ -59,6 +59,7 @@ enum GroupInterfaceActions {
 	GIA_Clip_Second_On_First,
 	GIA_Extract_Clip,
 	GIA_Remove_Clip,
+	GIA_Edit_Clip,
 
 	GIA_Jump_To_Link,
 	GIA_Sever_Link,

@@ -158,6 +158,7 @@ Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 				if (menu->n()) menu->AddSep();
 				menu->AddItem(_("Remove clip path"), GIA_Remove_Clip);
 				menu->AddItem(_("Extract clip path"), GIA_Extract_Clip);
+				menu->AddItem(_("Edit clip path"), GIA_Edit_Clip);
 			}
 		}
 	}
@@ -215,6 +216,7 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 				|| i == GIA_Refresh_Filter
 				|| i == GIA_Remove_Clip
 				|| i == GIA_Extract_Clip
+				|| i == GIA_Edit_Clip
 				|| i == GIA_Clip_First_On_Second
 				|| i == GIA_Clip_Second_On_First
 				) {
@@ -799,6 +801,30 @@ int GroupInterface::PerformAction(int action)
 		child=nup;
 		viewport->Push(nup,-1,0);
 		PostMessage(_("Flow objects"));
+		FreeSelection();
+		return 0;
+
+	} else if (action == GIA_Edit_Clip) {
+		if (selection->n()!=1) return 0;
+
+		ObjectContext *oc = selection->e(0);
+		DrawableObject *obj = dynamic_cast<DrawableObject*>(oc->obj);
+		if (!obj || !obj->clip_path) return 0;
+
+		PathInterface *pathi = new PathInterface(getUniqueNumber(), dp);
+		pathi->pathi_style = PATHI_No_Weights|PATHI_One_Path_Only|PATHI_Esc_Off_Sub|PATHI_Two_Point_Minimum; //|PATHI_Path_Is_M_Real;
+		//pathi->Setting(PATHI_No_Weights, 0);
+		pathi->primary = 1;
+
+		double m[6];
+		viewport->transformToContext(m,oc,0,1);
+		obj->clip_path->style |= PathsData::PATHS_Ignore_Weights;
+		pathi->UseThisObject(obj->clip_path, m);//copies voc
+
+		pathi->owner = this;
+		child = pathi;
+		viewport->Push(pathi,-1,0);
+		PostMessage(_("Editing clip path"));
 		FreeSelection();
 		return 0;
 
