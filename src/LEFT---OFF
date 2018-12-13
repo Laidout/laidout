@@ -23,7 +23,11 @@ object indicator:
 
 back to not maximizing properly on default ubuntu. Seems to work fine on every other window manager I've tried.
 
+
 ------------ other bugs:
+
+drag off page, space to duplicate, copy is not in limbo!
+duplicate does not duplicate clip_path
 
 packaging woes: update deb/control to have more of the dependencies
 
@@ -136,7 +140,6 @@ stackframe seems to be ignoring window borders on layout
 ----------------0.098 ROADMAP ITEMS: features and enhancements------------------------
 website: explain a bit more how to install dev versions, and place side by side with "stable"
 website: need to redo screenshots section for mobile friendliness
-website: make twitterable
 update fileformat.txt
 check laidout.1 when time to release
 update docs to have new release number
@@ -159,10 +162,11 @@ in singles view, spread number in box should be page label instead of spread num
 
 export current appears to be broken
 
+object content selector menu
+
 object clipping:
   clip export: pdf, image, svg(done), scribus
-  in place editing
-  object content selector menu
+  DONE in place editing
   DONE apply, remove, extract clip path
 
 save as needs to use current save path, not current directory
@@ -1783,4 +1787,4 @@ DONE object indicator should show actual page label in it's description
 DONE Page Clip: clip in viewer
 DONE Page Clip: svg .. set clip-path on each page layer to page outline
 DONE Remove old laxutils based drawing calls in favor of Displayer based drawing.
-
+DONE website: make twitterable

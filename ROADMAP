@@ -9,7 +9,7 @@ VERSION 0.098
 -------------
        debug previous version a bit
 (done) Clip paths
-       Clip path in place editing
+(done) Clip path in place editing
 (done) Convert backend to using Theme objects for easier adjusting in the future
        Fix object bleeding across pages for signatures and nets (issue #12)
        Replace ancient Imlib image loading with GraphicsMagick
