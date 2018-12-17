@@ -1713,20 +1713,26 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 		for (c2=0; c2<spread->pagestack.n(); c2++) {
 			pg=spread->pagestack.e[c2]->index;
 			if (pg<0 || pg>=doc->pages.n) continue;
+			Page *page = doc->pages.e[pg];
 
-			if (doc->pages[pg]->pagestyle->Flag(PAGE_CLIPS)) {
+			if (page->pagestyle->Flag(PAGE_CLIPS) || layout == PAPERLAYOUT) {
 				PathsData *clippath = dynamic_cast<PathsData*>(spread->pagestack.e[c2]->outline);
 				if (clippath) {
 					char clipstr[100];
-					sprintf(clipstr, "pageClip%lu", doc->pages[pg]->object_id);
+					sprintf(clipstr, "pageClip%lu", page->object_id);
 					DumpClipPath(f, clipstr, clippath, NULL, warning, log, out);
 				}
 			}
 
+			if (page->pagebleeds.n && (layout == PAPERLAYOUT || layout == SINGLELAYOUT)) {
+				for (int c3=0; c3<page->pagebleeds.n; c3++) {
+				}
+			}
+
 			 // for each layer on the page..
-			for (l=0; l<doc->pages[pg]->layers.n(); l++) {
+			for (l=0; l<page->layers.n(); l++) {
 				 // for each object in layer
-				g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
+				g=dynamic_cast<Group *>(page->layers.e(l));
 				for (c3=0; c3<g->n(); c3++) {
 					transform_copy(m,spread->pagestack.e[c2]->outline->m());
 					svgdumpdef(f,m,g->e(c3),warning,log, out);
