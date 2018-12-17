@@ -984,13 +984,15 @@ int SpreadView::ApplyChanges()
 
 	for (int c=0; c<spreads.n; c++) {
 		for (int c2=0; c2<spreads.e[c]->spread->pagestack.n(); c2++) {
-			pg=spreads.e[c]->spread->pagestack.e[c2]->index;
-			if (pg<0) continue;
-			spreads.e[c]->spread->pagestack.e[c2]->index=reversemap(pg);
+			pg = spreads.e[c]->spread->pagestack.e[c2]->index;
+			if (pg < 0) continue;
+			int newpg = reversemap(pg);
+			if (newpg >=0 && newpg < doc->pages.n) doc->pages.e[newpg]->thumbmodtime = 0;
+			spreads.e[c]->spread->pagestack.e[c2]->index = newpg;
 		}
 	}
 
-	for (int c=0; c<n; c++) temppagemap[c]=c;
+	for (int c=0; c<n; c++) temppagemap[c] = c;
 
 	doc->pages.insertArrays(newpages,newlocal,n);
 	delete[] oldlocal;
