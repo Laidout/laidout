@@ -23,6 +23,12 @@ namespace Laidout {
 
 
 //------------------------------- LImageInterface --------------------------------
+
+enum LImageActions {
+	LIMG_New_Node_Image = LaxInterfaces::II_MAX+1,
+	LIMG_MAX
+};
+
 class LImageInterface : public LaxInterfaces::ImageInterface,
 						public Value
 {

@@ -329,7 +329,7 @@ LaxImage *GeglToLaxImage(GeglNode *gegl, LaxImage *in_this, bool new_if_differen
 	LaxImage *image = in_this;
 	double scale = 1;
 	if (new_if_different && !image && (image->w() != rect.width || image->h() != rect.height)) {
-		image = create_new_image(rect.width, rect.height);
+		image = ImageLoader::NewImage(rect.width, rect.height);
 		scale = image->w() / (double)rect.width;
 	}
 	unsigned char *buffer = image->getImageBuffer(); //bgra
@@ -657,7 +657,7 @@ int GeglLaidoutNode::UpdatePreview()
 	}
 
 	if (!total_preview) { 
-		total_preview = create_new_image(ibufw, ibufh);
+		total_preview = ImageLoader::NewImage(ibufw, ibufh);
 	}
 
 	unsigned char *buffer = total_preview->getImageBuffer(); //bgra

@@ -640,7 +640,7 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 
 	LaxImage *img = dp->GetSurface();
 	//int err=img->Save(filename, out->format);
-	int err = save_image(img, filename, out->format);
+	int err = img->Save(filename, out->format);
 	if (err) {
 		log.AddMessage(_("Could not save the image"), ERROR_Fail);
 	}

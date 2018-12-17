@@ -56,7 +56,7 @@ void psImagePatch(FILE *f,LaxInterfaces::ImagePatchData *i)
 	height=(int)(sqrt((ul-ll)*(ul-ll))/72*psDpi());
 	
 	 // create an image that spans the bounding box of the patch
-	LaxImage *limg = create_new_image(width,height);
+	LaxImage *limg = ImageLoader::NewImage(width,height);
 	unsigned char *buffer = limg->getImageBuffer();
 	memset(buffer, 0, width*height*4); // make whole transparent/black
 	

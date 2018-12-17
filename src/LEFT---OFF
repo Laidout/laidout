@@ -166,8 +166,12 @@ object content selector menu
 
 object clipping:
   clip export: pdf, image, svg(done), scribus
+  DONE page previewer in spread editor doesn't use bleeds.. need to refresh thumbs if has bleeds
   DONE in place editing
   DONE apply, remove, extract clip path
+
+need a better file preview system
+  need to wrap laidout_preview_maker(), which previews EPS with the help of gs
 
 save as needs to use current save path, not current directory
 

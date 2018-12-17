@@ -122,7 +122,8 @@ const char *LaidoutVersion()
  */
 int laidout_preview_maker(const char *original, const char *preview, const char *format, int width, int height, int fit)
 {
-	if (!generate_preview_image(original,preview,format,width,height,fit)) return 0;
+	// *** need to wrap eps handling into something else...
+	if (!GeneratePreviewFile(original,preview,format,width,height,fit)) return 0;
 
 	 //normal preview maker didn't work, so try something else...
 	DoubleBBox bbox;
@@ -2165,7 +2166,7 @@ int main(int argc,char **argv)
 
 
 	 //redefine Laxkit's default preview maker
-	generate_preview_image=laidout_preview_maker;
+	//generate_preview_image = laidout_preview_maker;
 
 	laidout=new LaidoutApp();
 	if (theme) laidout->SetTheme(theme);

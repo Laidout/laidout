@@ -47,7 +47,7 @@ AboutWindow::AboutWindow(Laxkit::anXWindow *parent)
 
 	splash=NULL;
 	if (laidout->prefs.splash_image_file) {
-		splash=load_image_with_loaders(laidout->prefs.splash_image_file,
+		splash = ImageLoader::LoadImage(laidout->prefs.splash_image_file,
 									   NULL,0,0,NULL,
 									   0,-1,NULL, false, 0);
 	} else splash=NULL;

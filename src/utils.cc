@@ -784,7 +784,7 @@ int is_bitmap_image(const char *file)
 	if (isEpsFile(file,NULL,NULL)) return 2;
 
 	Laxkit::LaxImage *img=NULL;
-	img=Laxkit::load_image(file);
+	img = Laxkit::ImageLoader::LoadImage(file);
 	if (!img) return 0;
 	
 	delete img;

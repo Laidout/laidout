@@ -46,11 +46,12 @@ namespace Laidout {
  * that page are transformed to the current page.
  */
 
-PageBleed::PageBleed(int doc_page_index, const double *m)
+PageBleed::PageBleed(int doc_page_index, const double *m, Page *docpage)
 {
 	index = doc_page_index;
+	page = docpage;
 	transform_copy(matrix,m);
-	hasbleeds=0;
+	hasbleeds = 0;
 }
 
 //----------------------------------- PageStyles ----------------------------------------
@@ -852,20 +853,35 @@ ImageData *Page::Thumbnail()
 	thumbnail->xaxis(flatpoint((bbox.maxx-bbox.minx)/w,0));
 	thumbnail->yaxis(flatpoint(0,(bbox.maxx-bbox.minx)/w));
 	thumbnail->origin(flatpoint(bbox.minx,bbox.miny));
-	
+
 	Displayer *dp=newDisplayer(NULL);
 	dp->defaultRighthanded(true);
 	dp->CreateSurface((int)w,(int)h);
-	
+
 	 // setup dp to have proper scaling...
 	dp->NewTransform(1.,0.,0.,-1.,0.,0.);
 	//dp->NewTransform(1.,0.,0.,1.,0.,0.);
 	dp->SetSpace(bbox.minx,bbox.maxx, bbox.miny,bbox.maxy);
 	dp->Center  (bbox.minx,bbox.maxx, bbox.miny,bbox.maxy);
-		
+
 	dp->NewBG(255,255,255); // *** this should be the paper color for paper the page is on...
 	dp->NewFG(0,0,0,255);
 	dp->ClearWindow();
+
+	for (int c=0; c<pagebleeds.n; c++) {
+		PageBleed *bleed = pagebleeds[c];
+        //Page *otherpage = doc->pages[bleed->index];
+        Page *otherpage = bleed->page;
+		if (!otherpage) continue;
+
+        dp->PushAndNewTransform(bleed->matrix);
+
+        for (int c2 = 0; c2 < otherpage->layers.n(); c2++) {
+            DrawData(dp,otherpage->e(c2),NULL,NULL,0);
+        }
+
+        dp->PopAxes();
+	}
 
 	for (int c=0; c<layers.n(); c++) {
 		//dp->PushAndNewTransform(layers.e[c]->m());

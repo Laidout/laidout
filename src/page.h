@@ -29,13 +29,16 @@ namespace Laidout {
 
 //---------------------------- PageBleed ---------------------------------
 
+class Page;
+
 class PageBleed
 {
  public:
 	int index;
+	Page *page;
 	int hasbleeds;
 	double matrix[6];
-	PageBleed(int doc_page_index, const double *m);
+	PageBleed(int doc_page_index, const double *m, Page *docpage);
 };
 
 //---------------------------- PageStyle ---------------------------------

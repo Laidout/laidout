@@ -636,7 +636,7 @@ int PptinFilter::pptDumpInGroup(Attribute *att, Group *group)
 		if (!t) continue; //missing a type
 
 		if (!strcmp(t->value,"raster")) {
-			img=load_image(a->value);
+			img = ImageLoader::LoadImage(a->value);
 			if (img) {
 				image=new ImageData;
 				if (n) image->SetDescription(n->value);

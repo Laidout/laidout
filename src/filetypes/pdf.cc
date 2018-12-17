@@ -1442,7 +1442,7 @@ static void pdfImagePatch(FILE *f,
 	width= (int)(sqrt((ul-ur)*(ul-ur))/72*psDpi());
 	height=(int)(sqrt((ul-ll)*(ul-ll))/72*psDpi());
 	
-	LaxImage *image = create_new_image(width,height);
+	LaxImage *image = ImageLoader::NewImage(width,height);
 	unsigned char *buffer=image->getImageBuffer();
 	memset(buffer,0,width*height*4); // make whole transparent/black
 	//memset(buf,0xff,width*height*4); // makes whole non-transparent/white

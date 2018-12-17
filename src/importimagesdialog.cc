@@ -633,7 +633,7 @@ int ImportImagesDialog::Event(const Laxkit::EventData *data,const char *mes)
 		full=fullFilePath(NULL);
 		for (int c=0; c<laidout->preview_file_bases.n; c++) {
 			str=previewFileName(full,laidout->preview_file_bases.e[c]);
-			img=load_image(str);
+			img = ImageLoader::LoadImage(str);
 			if (img) {
 				prependstr(str,"* ");
 				img->dec_count();
@@ -928,7 +928,7 @@ int ImportImagesDialog::send(int id)
 					DBG cerr <<"-=-=-=--=-==-==-=-==-- Generate preview at: "<<previewfiles[c]<<endl;
 					si=dynamic_cast<LineInput *>(findWindow("PreviewWidth"))->GetLineEdit()->GetLong(NULL);
 					if (si<10) si=128;
-					if (generate_preview_image(imagefiles[c],previewfiles[c],"jpg",si,si,1)) {
+					if (GeneratePreviewFile(imagefiles[c],previewfiles[c],"jpg",si,si,1)) {
 						DBG cerr <<"              ***generate preview failed....."<<endl;
 					}
 				}
