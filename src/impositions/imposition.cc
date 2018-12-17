@@ -649,6 +649,7 @@ int Imposition::SyncPageStyles(Document *doc,int start,int n, bool shift_within_
 		temppagestyle=GetPageStyle(c,0); //the default style with increased count
 
 		if (doc->pages.e[c]->pagestyle!=temppagestyle) {
+			doc->pages.e[c]->pagebleeds.flush();
 			if (doc->pages.e[c]->pagestyle) {
 				oldflags=doc->pages.e[c]->pagestyle->flags;
 				if (oldflags!=temppagestyle->flags) {

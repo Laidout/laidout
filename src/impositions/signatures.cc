@@ -2993,8 +2993,8 @@ Page **SignatureImposition::CreatePages(int npages)
  * \todo assumption is that each signature has the same final page size.. maybe this isn't necessary?
  */
 void SignatureImposition::fixPageBleeds(int index, //!< Document page index
-										Page *page,
-										bool update_pagestyle)//!< Actual document page
+										Page *page, //!< Actual document page
+										bool update_pagestyle)
 {
 	 //fix pagestyle
 	if (!signatures) signatures=new SignatureInstance();
@@ -3031,7 +3031,7 @@ void SignatureImposition::fixPageBleeds(int index, //!< Document page index
 	} else if (adjacent == numpages && showwholecover) {
 		adjacent = 0;
 	}
-	if (adjacent>=0 && adjacent < numpages) page->pagebleeds.push(new PageBleed(adjacent,m));
+	if (adjacent>=0 && adjacent < numpages) page->pagebleeds.push(new PageBleed(adjacent,m, doc && adjacent>=0 && adjacent<doc->pages.n ? doc->pages[adjacent] : nullptr));
 }
 
 //! Ensure that each page has a proper pagestyle and bleed information.
@@ -3044,6 +3044,7 @@ int SignatureImposition::SyncPageStyles(Document *doc,int start,int n, bool shif
 
 	int status=Imposition::SyncPageStyles(doc,start,n, shift_within_margins);
 
+	this->doc = doc;
 	for (int c=start; c<doc->pages.n; c++) {
 		fixPageBleeds(c,doc->pages.e[c],false);
 	}
