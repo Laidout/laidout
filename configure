@@ -78,7 +78,7 @@ while true ; do
 		echo " --pkg-config-path            Any directories to tack onto environment PKG_CONFIG_PATH,"
 		echo "                                for configuring convenience. Should be a colon separated list."
         echo " --disable-sqlite             Optional. Used to get font tags in Fontmatrix database (if it exists)"
-        echo " --gegl-version               Default is gegl-3.0"
+        echo " --gegl-version               Default is $GEGLVERSION"
 #       echo " --python-version             Default is python3.6"
 		echo " --nogl                       Do not compile with gl based features"
 		echo " --force                      Try to compile even if libraries are not detected"
