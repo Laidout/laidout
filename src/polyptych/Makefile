@@ -26,7 +26,7 @@ BINDIR=$(PREFIX)/bin
 
 LD=g++
 DEBUGFLAGS= -g -gdwarf-2
-CPPFLAGS= -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. -I$(LAXIDIR) -I`pkg-config --cflags freetype2` -I/usr/include/GraphicsMagick/
+CPPFLAGS= -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. -I$(LAXIDIR) `pkg-config --cflags freetype2` -I/usr/include/GraphicsMagick/
 LDFLAGS= -L/usr/X11R6/lib -lX11 -lftgl -lm -lpng -lcrypto -lGraphicsMagick++ `imlib2-config --libs` -L$(LAXDIR) -L$(LAXIDIR) -lXft -lXi
 
 
