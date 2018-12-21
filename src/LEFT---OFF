@@ -158,6 +158,8 @@ test:
   make some test scripts for command line testing
 
 
+make sure gegl points to 0.4, and no freetype-config
+
 in singles view, spread number in box should be page label instead of spread number
 
 export current appears to be broken
@@ -166,6 +168,7 @@ object content selector menu
 
 object clipping:
   clip export: pdf, image, svg(done), scribus
+  page object bleed export: pdf, image, svg, scribus
   DONE page previewer in spread editor doesn't use bleeds.. need to refresh thumbs if has bleeds
   DONE in place editing
   DONE apply, remove, extract clip path
