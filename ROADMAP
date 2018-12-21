@@ -12,11 +12,11 @@ VERSION 0.098
 (done) Clip path in place editing
 (done) Convert backend to using Theme objects for easier adjusting in the future
        Fix object bleeding across pages for signatures and nets (issue #12)
-       Replace ancient Imlib image loading with GraphicsMagick
+       Replace ancient Imlib2 image loading with GraphicsMagick
+       lock down color backend.. it's currently a series of weak hacks based on 8-bit screen rgb
 
        Debug Text on path tool
 (done) make laidout.org twitterable with an image card
-       lock down color backend.. it's currently a series of weak hacks based on 8-bit screen rgb
 
        Moving selected things in group contents does not update group bounds
        should not be able to select both group and group contents at same time
