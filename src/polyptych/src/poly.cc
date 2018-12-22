@@ -506,7 +506,8 @@ Polyhedron &Polyhedron::operator=(const Polyhedron &nphed)
 		n=nphed.vertices.n;
 		spacepoint *t;
 		t=new spacepoint[nphed.vertices.n];
-		memcpy(t,nphed.vertices.e,sizeof(spacepoint));
+		//memcpy(t,nphed.vertices.e,sizeof(spacepoint));
+		for (int c=0; c<nphed.vertices.n; c++) t[c] = nphed.vertices.e[c];
 		vertices.insertArray(t,n);
 	}
 	if (nphed.edges.n) {

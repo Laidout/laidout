@@ -161,7 +161,8 @@ LaxInterfaces::SomeData *MysteryData::duplicate(LaxInterfaces::SomeData *dup)
 		mdata->numpoints=numpoints;
 		if (numpoints) {
 			mdata->outline=new flatpoint[numpoints];
-			memcpy(mdata->outline,outline,numpoints*sizeof(flatpoint));
+			//memcpy(mdata->outline,outline,numpoints*sizeof(flatpoint));
+			for (int c=0; c<numpoints; c++) mdata->outline[c] = outline[c];
 		} else {
 			if (mdata->outline) delete[] mdata->outline;
 			mdata->outline=NULL;

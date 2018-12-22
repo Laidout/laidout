@@ -1398,7 +1398,8 @@ static void scribusdumpobj(ScribusExportConfig *config, FILE *f,int &curobj,PtrS
 		numpo=numco=pts.n;
 		pocoor=pts.extractArray();
 		cocoor=new flatpoint[numco];
-		memcpy(cocoor,pocoor,sizeof(flatpoint)*numpo);
+		//memcpy(cocoor,pocoor,sizeof(flatpoint)*numpo);
+		for (int c=0; c<numpo; c++) cocoor[c] = pocoor[c];
 
 	
 	} else if (!strcmp(obj->whattype(),"CaptionData")) {

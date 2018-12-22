@@ -345,7 +345,7 @@ int dumpInImageList(ImportImageSettings *settings, Document *doc,const char *fil
  * \todo allow specifying Arrangements
  * \todo allow overriding the preview base name
  * \todo *** must be expanded somehow to allow a more general object importing mechanism, right now
- *   only imlib2 recognized images, EPS, and Laidout image lists are recognized, but would be much
+ *   only laxkit recognized images, EPS, and Laidout image lists are recognized, but would be much
  *   easier to have easily added import "filters"... This would also mean have a file type mask
  *   to limit only to images, say, or only TIFFS, EPS, etc..
  * \todo implement dumping in Images for page numbers at defined positions (arrangements)
@@ -588,7 +588,7 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, const char *patht
  *   this entails slightly rewriting said dumpInImageList() function, and adding a flag for
  *   to signal a page break, maybe page==-3 and no image?
  * \todo *** must be expanded somehow to allow a more general object importing mechanism, right now
- *   only imlib2 recognized images, EPS, and Laidout image lists are recognized, but would be much
+ *   only laxkit recognized images, EPS, and Laidout image lists are recognized, but would be much
  *   easier to have easily added import "filters"... This would also mean have a file type mask
  *   to limit only to images, say, or only TIFFS, EPS, etc..
  * \todo might have locale trouble here

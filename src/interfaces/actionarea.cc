@@ -156,7 +156,8 @@ flatpoint *ActionArea::Points(flatpoint *pts, int n, int takethem)
 	} else {
 		if (n>npoints && outline) { delete[] outline; outline=NULL; }
 		outline=new flatpoint[n];
-		memcpy(outline,pts,sizeof(flatpoint));
+		//memcpy(outline,pts,n*sizeof(flatpoint));
+		for (int c=0; c<n; c++) outline[c] = pts[c];
 	}
 
 	npoints=n;
