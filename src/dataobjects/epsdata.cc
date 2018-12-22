@@ -13,10 +13,9 @@
 // Copyright (C) 2004-2010 by Tom Lechner
 //
 
-#include <X11/Xlib.h>
 #include <lax/fileutils.h>
 #include <lax/strmanip.h>
-#include <lax/laximages-imlib.h>
+#include <lax/laximages.h>
 #include "epsdata.h"
 #include "../printing/epsutils.h"
 #include "../configured.h"
@@ -185,11 +184,10 @@ void EpsData::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *contex
  * \todo in general must figure out a decent way to deal with errors while loading images,
  *    for instance.
  * \todo del is ignored
- * \todo ***rework so as not to depend on imlib
  */
 int EpsData::LoadImage(const char *fname, const char *npreview, int maxpw, int maxph, char del)
 {
-	FILE *f=fopen(fname,"r");
+	FILE *f = fopen(fname,"r");
 	if (!f) return -1;
 	
 	char *preview=NULL;
@@ -200,24 +198,25 @@ int EpsData::LoadImage(const char *fname, const char *npreview, int maxpw, int m
 
 	 // puts the eps BoundingBox into this::DoubleBBox
 	setlocale(LC_ALL,"C");
-	c=scaninEPS(f,this,&title,&creationdate,&preview,&depth,&width,&height);
+	c = scaninEPS(f,this,&title,&creationdate,&preview,&depth,&width,&height);
 	fclose(f);
 	setlocale(LC_ALL,"");
 	
-	if (c!=0) return -2;
+	if (c != 0) return -2;
 	
 	 // set up the preview if any
-	if (image) { image->dec_count(); image=NULL; }
-	
-	Imlib_Image imlibimage=NULL;
+	if (image) { image->dec_count(); image=NULL; } //clear main image in any
+
+	LaxImage *eimage = NULL;
 	if (file_exists(npreview,1,NULL)) {
 		// do nothing if preview file already exists..
 		//*** perhaps optionally regenerate?
+
 	} else if (strcmp("",GHOSTSCRIPT_BIN)) {
 		 // call ghostscript from command line, save preview ***where?
 		char *error=NULL;
 		
-		c=WriteEpsPreviewAsPng(GHOSTSCRIPT_BIN,
+		c = WriteEpsPreviewAsPng(GHOSTSCRIPT_BIN,
 						 fname, width, height,
 						 npreview, maxpw, maxph,
 						 &error);
@@ -226,17 +225,17 @@ int EpsData::LoadImage(const char *fname, const char *npreview, int maxpw, int m
 			if (error) delete[] error;
 			return -3;
 		}
+
 	} else if (preview) {
 		 // install preview image from EPSI data
-		imlibimage=imlib_create_image(width,height);
-		DATA32 *data=imlib_image_get_data();
-		EpsPreviewToARGB((unsigned char *)data,preview,width,height,depth);
-		imlib_image_put_back_data(data);
-		//if (imlibimage) { use this as preview image for eps, set up below.... }
+		eimage = ImageLoader::NewImage(width,height);
+		unsigned char *data = eimage->getImageBuffer();
+		EpsPreviewToARGB((unsigned char *)data, preview, width,height, depth);
+		eimage->doneWithBuffer(data);
 	}
 
 	 // now set this->image to have the generated preview as the main image
-	image=new LaxImlibImage(npreview,imlibimage);
+	image = eimage;
 	
 	return 0;
 }
