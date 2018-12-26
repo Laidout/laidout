@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 	}
 
 	//InitLaxImlib(900);
-	create_new_image=create_new_imlib_image;
+	//create_new_image = ImageLoader::NewImage;
 
 	int i=1;
 	const char *infile=NULL, *outfile=NULL, *informat=NULL, *outformat=NULL;

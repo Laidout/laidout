@@ -18,7 +18,7 @@ LD=g++
 DEBUGFLAGS= -g -gdwarf-2
 
 CPPFLAGS= -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. -I$(LAXIDIR) `pkg-config --cflags freetype2` `pkg-config GraphicsMagick++ --cflags`
-LDFLAGS= -L/usr/X11R6/lib -lsqlite3 -lXft -lXi -lXext -lX11 -lftgl -lfontconfig -lm -lpng -lcairo -lcrypto `pkg-config GraphicsMagick++ --libs` `pkg-config --cflags freetype2` `imlib2-config --libs` -L$(LAXDIR) -L$(LAXIDIR)
+LDFLAGS= -L/usr/X11R6/lib -lsqlite3 -lXft -lXi -lXext -lX11 -lXrandr -lftgl -lfontconfig -lm -lpng -lcairo -lcrypto `pkg-config GraphicsMagick++ --libs` `pkg-config --libs freetype2` `imlib2-config --libs` -L$(LAXDIR) -L$(LAXIDIR)
 
 
 pobjs= glbase.o gloverlay.o poly.o nets.o polyrender.o
