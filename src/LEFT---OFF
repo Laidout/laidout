@@ -1665,6 +1665,9 @@ Net imposition
   load save nets from: 1.net files or 2.OFF files(done)
 
 
+polyptych:
+  can't seem to save new bookmarks or use old ones in polyptych, but it's ok in Laidout
+
 hedron window:
   send imp
   receive imp
