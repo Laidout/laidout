@@ -190,6 +190,8 @@ dual monitors:
   open in same screen as mouse
   DONE Menus should respect actual screen borders, not just full virtual screen
 
+cairo: cairo image save should use importer to do actual saving if available?
+
 cannot import images directly from recents
 
 pdf export lines has outlines in evince?
@@ -756,6 +758,7 @@ captioninterface CaptionInterface captiondata CaptionData
   markov ipsum
 
 export/print dialog
+  need better print dialog.. old ppd cups stuff is deprecated
   make print button experimental only?
   vital to debug send to printer
   export should have a preview of what is actually going out, flip through spreads
@@ -1469,6 +1472,8 @@ printer mark rendering default to a single color? editing of net outline allowed
 then changes not stored
 
 probably should decide how to handle making windows based on interfaces.. it is a more productive route than window dominant
+
+make a laxkit.pc from laxkit configure
 
 pagemarkerinterface:
   option to lock label size to real space? make export contact sheets a little prettier in some cases
