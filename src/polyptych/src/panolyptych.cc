@@ -223,7 +223,7 @@ int main(int argc, char **argv)
 {
 	//anXXApp app;
 	anXApp app;
-	app.Theme("Dark");
+	app.SetTheme("Dark");
 	app.init(argc,argv);
 	InitLaxImlib(1000, true);
 	Magick::InitializeMagick(*argv);
