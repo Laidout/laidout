@@ -1458,7 +1458,6 @@ static void pdfImagePatch(FILE *f,
 	m[4]=-i->minx/a;
 	m[5]=-i->maxy/d;
 	i->renderToBuffer(buffer,width,height, 0,8,4);
-	//imlib_image_flip_vertical();
 	image->doneWithBuffer(buffer);
 	ImageData img;
 	img.SetImage(image, NULL);
