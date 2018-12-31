@@ -24,7 +24,7 @@ endif
 #---polyptych related:
 ifeq ($(LAIDOUT_USING_GL), yes)
 #---if gl:
-POLYPTYCHLIBS= -lGraphicsMagick++ -ltiff -lGL -lGLU -lftgl 
+POLYPTYCHLIBS= `pkg-config --libs GraphicsMagick++` -ltiff -lGL -lGLU -lftgl
 POLYPTYCH_GL_OBJS=polyptych/src/hedronwindow.o  polyptych/src/glbase.o  polyptych/src/gloverlay.o  polyptych/src/polyrender.o
 POLYPTYCHFORLAIDOUT=polyptychgl
 
