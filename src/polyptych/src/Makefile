@@ -50,22 +50,22 @@ convertahedron: poly.o nets.o convertahedron.cc
 	g++ convertahedron.cc  poly.o nets.o -llaxinterfaces -llaxkit $(LDFLAGS)  $(CPPFLAGS) -o $@
 
 spheretopoly: lax spheretopoly-gm.o nets.o poly.o 
-	$(LD) spheretopoly-gm.o nets.o poly.o -llaxinterfaces -llaxkit $(LDFLAGS) -lGraphicsMagick++ -o $@
+	$(LD) spheretopoly-gm.o nets.o poly.o -llaxinterfaces -llaxkit $(LDFLAGS)  -o $@
 
 spheretocube: spheretocube.o
-	$(LD) spheretocube.o -lGraphicsMagick++ -llaxkit $(LDFLAGS) -o $@
+	$(LD) spheretocube.o -llaxkit $(LDFLAGS) -o $@
 
 remapsphere: remapsphere.o
-	$(LD) $@.o -lGraphicsMagick++ -llaxkit $(LDFLAGS) -o $@
+	$(LD) $@.o -llaxkit $(LDFLAGS) -o $@
 
 panoramanoise: panoramanoise.o
-	$(LD) $@.o -lGraphicsMagick++ -llaxkit $(LDFLAGS) -o $@
+	$(LD) $@.o -llaxkit $(LDFLAGS) -o $@
 
 skyflow: skyflow.o
-	$(LD) $@.o -lGraphicsMagick++ -llaxkit $(LDFLAGS) -o $@
+	$(LD) $@.o -llaxkit $(LDFLAGS) -o $@
 
 spheretocubemap: spheretocubemap.o
-	$(LD) spheretocubemap.o -lGraphicsMagick++ -llaxkit $(LDFLAGS) -o $@
+	$(LD) spheretocubemap.o -llaxkit $(LDFLAGS) -o $@
 
 lax:
 	cd $(LAXDIR) && $(MAKE)
