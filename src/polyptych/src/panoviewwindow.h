@@ -127,7 +127,7 @@ class PanoViewWindow : public Laxkit::anXWindow
 	virtual double getExtent(const char *str,int len, double *width,double *height);
 
 	virtual void Refresh();
-	virtual int Idle(int tid=0);
+	virtual int Idle(int tid, double delta);
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *kb);
 	virtual int LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *mouse);
 	virtual int LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse);
