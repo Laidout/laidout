@@ -86,6 +86,11 @@ ExtraFace::~ExtraFace()
 /*! \var int *Face::p
  * \brief Vertex indices, index of point in Polyhedron::p.
  */
+/*! \var int *Face::facegroupid
+ * Any faces with the same facegroupid should be considered to be the same face
+ * in a user interface. Thus a curved surface that has been broken down into flat sides
+ * can be "grouped" to retain it's definition as a single surface.
+ */
 
 
 DBG void dumpface(Face *face,int facenum)
@@ -950,6 +955,18 @@ int Polyhedron::AddFace(const char *str)
 	faces.push(f,1);
 	return 0;
 }
+
+/*! Search all existing faces to find a unique number for use as a new facegroupid.
+ */
+int Polyhedron::FindUniqueFaceId()
+{
+	int num = -1;
+	for (int c=0; c<faces.n; c++) {
+		if (faces.e[c]->facegroupid > num) num = faces.e[c]->facegroupid+1;
+	}
+	return num;
+}
+
 
 //---------------------------------- dump functions:
 
