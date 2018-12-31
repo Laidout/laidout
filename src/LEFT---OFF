@@ -12,6 +12,8 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now:
 
+ftgl problem in polyptych... font not rendering
+
 finish debugging mesh svg 2.0 out/in
 
 debug registration, cut marks, trim marks
@@ -184,13 +186,19 @@ ux:
 
 instead of _LAX_PLATFORM_MAC, do relevant check with _LAX_ON_NON_GNU instead? currently only place this is necessary is where getline is used
 
-remove imlib/"xlib" font, image, and render backends, replace with GraphicsMagick and cairo
+remove imlib/"xlib" font, image, and render backends, replace with GraphicsMagick and cairo, keep imlib loader but load to cairo image only
+  remove displayer-xlib
+  remove fontmanager-xlib
+
+image loaders:
+  implement loader priorities
+  some way to priortize image saving
 
 dual monitors:
   open in same screen as mouse
   DONE Menus should respect actual screen borders, not just full virtual screen
 
-cairo: cairo image save should use importer to do actual saving if available?
+cairo: cairo image save should use importer to do non-file creation?
 
 cannot import images directly from recents
 
