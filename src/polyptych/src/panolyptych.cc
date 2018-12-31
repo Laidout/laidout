@@ -23,11 +23,9 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cmath>
-#include <Imlib2.h>
 
 #include <getopt.h>
 #include <lax/anxapp.h>
-#include <lax/laximlib.h>
 #include <lax/vectors.h>
 #include <lax/strmanip.h>
 #include <lax/fileutils.h>
@@ -103,9 +101,6 @@ const char *consolefontfile="/usr/share/fonts/truetype/freefont/FreeSans.ttf";
  *
  * like anXApp::makeReadyForDrawing(int subsystem, anXWindow *win)
  * and have stack of callbacks function[subsystem](win); ?
- *
- * Such subsystems could be used also to initialize/update Imlib2, freetype
- * rotated text cache, SDL surfaces, etc...
  */
 class anXXApp : public anXApp
 {
@@ -225,7 +220,6 @@ int main(int argc, char **argv)
 	anXApp app;
 	app.SetTheme("Dark");
 	app.init(argc,argv);
-	InitLaxImlib(1000, true);
 	Magick::InitializeMagick(*argv);
 	const char *tuio=NULL;
 
@@ -277,15 +271,10 @@ int main(int argc, char **argv)
 	if (spherefile) {
 
 		 //test for loadability only, hedron window does actual loading
-		Imlib_Image image;
-		image=imlib_load_image(spherefile);
-		if (!image) {
-			cerr <<"Could not load "<<spherefile<<"!"<<endl;
+		if (ImageLoader::Ping(spherefile, NULL,NULL,NULL,NULL) != 0) {
+			cerr << "Can't load sphere file "<<spherefile<<"!"<<endl;
 			exit(1);
 		}
-		
-		imlib_context_set_image(image);
-		imlib_free_image();
 
 	} else {
 		 //generate globe latitude+longitude image

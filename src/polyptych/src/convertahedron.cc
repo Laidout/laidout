@@ -14,8 +14,6 @@
 
 
 #include <lax/fileutils.h>
-#include <lax/laximlib.h>
-#include <lax/laximages-imlib.h>
 #include "poly.h"
 
 using namespace LaxFiles;
@@ -53,9 +51,6 @@ int main(int argc, char **argv)
 		usage();
 		exit(0);
 	}
-
-	//InitLaxImlib(900);
-	//create_new_image = ImageLoader::NewImage;
 
 	int i=1;
 	const char *infile=NULL, *outfile=NULL, *informat=NULL, *outformat=NULL;
