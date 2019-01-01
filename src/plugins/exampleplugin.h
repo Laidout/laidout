@@ -9,7 +9,7 @@
 // version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2017 by Tom Lechner
+// Copyright (C) 2019 by Your Name Here
 //
 #ifndef EXAMPLE_PLUGIN_H
 #define EXAMPLE_PLUGIN_H
