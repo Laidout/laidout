@@ -40,7 +40,6 @@
 
 #include "dataobjects/datafactory.h"
 #include "dataobjects/groupinterface.h"
-#include "dataobjects/epsdata.h"
 #include "dataobjects/mysterydata.h"
 #include "dataobjects/limageinterface.h"
 #include "dataobjects/lgradientdata.h"
