@@ -26,7 +26,6 @@
 #include "../utils.h"
 #include "../drawdata.h"
 #include "../printing/psout.h"
-#include "../dataobjects/epsdata.h"
 #include "../dataobjects/mysterydata.h"
 #include "laidoutimport.h"
 
