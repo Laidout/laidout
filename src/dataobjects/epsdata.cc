@@ -56,16 +56,6 @@ EpsData::~EpsData()
 	if (creationdate) delete[] creationdate;
 }
 
-//! Return new EpsInterface.
-/*! If dup!=NULL and it cannot be cast to EpsInterface, then return NULL.
- */
-LaxInterfaces::anInterface *EpsInterface::duplicate(LaxInterfaces::anInterface *dup)
-{
-	if (dup==NULL) dup=new EpsInterface(id,NULL);
-	else if (!dynamic_cast<EpsInterface *>(dup)) return NULL;
-	return ImageInterface::duplicate(dup);
-}
-
 /*! 
  * Default dump for an EpsData. The bounding box is saved, but beware that the actual
  * bounding box in the eps may have different values. This helps compensate
@@ -119,7 +109,7 @@ void EpsData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *contex
 		dump_out_value(f,indent+2,description);
 	}
 }
-	
+
 /*! When the image listed in the attribute cannot be loaded,
  * image is set to NULL, and the width and height attributes
  * are used if present. If the image can be loaded, then width and
@@ -241,61 +231,6 @@ int EpsData::LoadImage(const char *fname, const char *npreview, int maxpw, int m
 }
 
 
-//-------------------------------- EpsInterface ----------------------------------
-/*! \class EpsInterface
- * \brief Interface to manipulate placement of eps files.
- *
- * If there is an epsi style preview in the eps, then that is what is put
- * on screen. Otherwise, the title/file/date are put on.
- */
-
-
-EpsInterface::EpsInterface(int nid,Laxkit::Displayer *ndp)
-	: ImageInterface(nid,ndp)
-{
-}
-
-const char *EpsInterface::Name()
-{ return _("EPS Tool"); }
-
-//! Return whether this interface can draw the given type of object.
-/*! \todo should redo this to be more easily expandable for other
- *    image types. Each spunky new image type might have many idiosyncracies (like EPS),
- *    so each added image type would need to define:
- *     an import filter, returning an ImageData pointer,
- *     output functions for various types: bitmap, ps, etc.,
- *     Refresh() extras,
- *     additional controls if any including extra StyleDef elements.
- *   could have an interface shell, whose purpose is to have one tool icon, but
- *   several sub tools that it dispatches events to...
- *   
- */
-int EpsInterface::draws(const char *what)
-{
-	//if (!strcmp(what,"ImageData") || !strcmp("EpsData")) return 1;
-	if (!strcmp(what,"EpsData")) return 1;
-	return 0;		
-}
-
-//! Redefine ImageInterface::newData() to never create a random new eps. These can only be imported.
-LaxInterfaces::ImageData *EpsInterface::newData()
-{
-	return NULL;
-}
-
-//! Draw title or filename if no preview data.
-int EpsInterface::Refresh()
-{
-	int c=ImageInterface::Refresh();
-	if (c!=0) return c;
-
-	 // draw title or filename...
-	if (!data->image && data->filename) {
-		flatpoint fp=dp->realtoscreen(flatpoint((data->maxx+data->minx)/2,(data->maxy+data->miny)));
-		dp->textout((int)fp.x,(int)fp.y,data->filename,0);
-	}
-	return 0;
-}
 
 } //namespace Laidout
 

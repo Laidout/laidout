@@ -36,20 +36,6 @@ class EpsData : public LaxInterfaces::ImageData
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 
-//-------------------------------- EpsInterface ----------------------------------
-class EpsInterface : public LaxInterfaces::ImageInterface
-{
- public:
-	EpsInterface(int nid,Laxkit::Displayer *ndp);
-	LaxInterfaces::anInterface *duplicate(anInterface *dup);
-	virtual const char *IconId() { return "Eps"; }
-	virtual const char *Name();
-	virtual const char *whattype() { return "EpsInterface"; }
-	virtual const char *whatdatatype() { return "EpsData"; }
-	virtual int draws(const char *what);
-	virtual LaxInterfaces::ImageData *newData();
-	virtual int Refresh();
-};
 
 } //namespace Laidout
 
