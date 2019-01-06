@@ -137,6 +137,14 @@ enum BBoxAnchorTypes {
 	BBOXANCHOR_MAX
 };
 
+enum ClipTypes {
+	CLIP_None,
+	CLIP_From_Parent_Area,
+	CLIP_Custom_Path,
+	CLIP_Custom_Softmask,
+	CLIP_MAX
+};
+
 class DrawableObject :  virtual public ObjectContainer,
 						virtual public Laxkit::Tagged,
 						virtual public LaxInterfaces::GroupData,
@@ -150,9 +158,11 @@ class DrawableObject :  virtual public ObjectContainer,
 	ObjectIO *importer;
 	Laxkit::anObject *importer_data;
 
-	SomeData *soft_mask; //If not a PathsData or collection of PathsData, then is an object for a softmask
+	ClipTypes clip_type;
+	SomeData *soft_mask; //whatever it is, take copy to use as alpha
 	LaxInterfaces::PathsData *clip_path; //its m is from main object coordinate space
-	LaxInterfaces::PathsData *wrap_path;
+
+	LaxInterfaces::PathsData *wrap_path; //area path + offset, or custom
 	LaxInterfaces::PathsData *inset_path;
 	double autowrap, autoinset; //distance away from default to put the paths when auto generated
 
