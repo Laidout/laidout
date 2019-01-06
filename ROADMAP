@@ -12,7 +12,7 @@ VERSION 0.098
 (done) Clip path in place editing
 (done) Convert backend to using Theme objects for easier adjusting in the future
        Fix object bleeding across pages for signatures and nets (issue #12)
-       Replace ancient Imlib2 image loading with GraphicsMagick
+(done) Make Imlib2 dependency optional, prepare replacement image loading with GraphicsMagick
        lock down color backend.. it's currently a series of weak hacks based on 8-bit screen rgb
 
        Debug Text on path tool
@@ -39,7 +39,6 @@ VERSION 0.098
        Perspective transform object filter
        Node based image "importer"
 
-       Merge EpsData with normal images
        Clean up patch controls
        Clean up project load/save internals and dialogs
        Object and resource tags interface
@@ -85,6 +84,8 @@ VERSION 0.099
        Softmask
        GraphicsMagick nodes
        Gmic nodes plugin
+       Merge EpsData with normal images, since they can be previewed with gm now
+       Make a laxkit.pc
 
 
 VERSION 0.1 
