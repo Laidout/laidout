@@ -1814,6 +1814,12 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 				clipstr[0] = '\0';
 			}
 
+
+			//page transform
+			transform_copy(mm,spread->pagestack.e[c2]->outline->m());
+			fprintf(f,"    <g %s transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
+				clipstr, mm[0], mm[1], mm[2], mm[3], mm[4], mm[5]); 
+
 			//include copies of objects bleeding from other adjacent pages
 			if (page->pagebleeds.n && (layout == PAPERLAYOUT || layout == SINGLELAYOUT)) {
 				for (int pb=0; pb<page->pagebleeds.n; pb++) {
@@ -1821,7 +1827,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 					Page *otherpage = doc->pages[bleed->index];
 					if (!otherpage->HasObjects()) continue;
 
-					fprintf(f,"    <g transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
+					fprintf(f,"    <g transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\"><!--page object bleed-->\n ",
 						bleed->matrix[0], bleed->matrix[1], bleed->matrix[2], bleed->matrix[3], bleed->matrix[4], bleed->matrix[5]); 
 
 					// *** bleeds should be optimized to only have to deal with acually bleeding objects, not all objs
@@ -1842,15 +1848,14 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			for (int l=0; l<page->layers.n(); l++) {
 				 // for each object in layer
 				g = dynamic_cast<Group *>(page->layers.e(l));
-				transform_copy(mm,spread->pagestack.e[c2]->outline->m());
-				fprintf(f,"    <g %s transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
-					clipstr, mm[0], mm[1], mm[2], mm[3], mm[4], mm[5]); 
 
 				for (c3=0; c3<g->n(); c3++) {
 					svgdumpobj(f,NULL,g->e(c3),warning,6,log, out);
 				}
-				fprintf(f,"    </g>\n ");
 			}
+
+			 //end page transform
+			fprintf(f,"    </g>\n ");
 		}
 
 		delete spread;
