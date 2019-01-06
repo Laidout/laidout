@@ -167,10 +167,12 @@ export current appears to be broken
 object content selector menu
 
 object clipping:
-  clip export: pdf, image, svg(done), scribus
-  page object bleed export: pdf, image, (done)svg, scribus
-    would be nice to standardize viewport display so each exporter doesn't have to implement everything themselves
-	  like define an iterator to walk over the view
+  clip-path export: pdf, image(done), svg(done), scribus
+  page object bleed export:
+    pdf
+	DONE image
+	DONE svg
+	scribus
   DONE page previewer in spread editor doesn't use bleeds.. need to refresh thumbs if has bleeds
   DONE in place editing
   DONE apply, remove, extract clip path
@@ -261,6 +263,8 @@ you can't control unclick selected directories
 rework ui to be programmable. Perhaps an ui builder
 
 file filters: filefilters:
+  would be nice to standardize viewport display so each exporter doesn't have to implement everything themselves
+    like define an iterator to walk over the view
   fix when filtered object has children.. currently skips children
   open with... on export
   remember full export settings
