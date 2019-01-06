@@ -156,6 +156,7 @@ class Page : public ObjectContainer
 
 	virtual void Touch(clock_t at_time=0);
 	virtual void UpdateAnchored(Group *g);
+	virtual int HasObjects();
 };
 
 } // namespace Laidout

@@ -1645,7 +1645,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	Group *g=NULL;
 	double m[6],mm[6],mmm[6];
 	//int c;
-	int c2,l,pg,c3;
+	int c2,pg,c3;
 	transform_set(m,1,0,0,1,0,0);
 
 	if (doc) spread=doc->imposition->Layout(layout,start);
@@ -1724,13 +1724,28 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 				}
 			}
 
+			//include copies of objects bleeding from other adjacent pages
 			if (page->pagebleeds.n && (layout == PAPERLAYOUT || layout == SINGLELAYOUT)) {
-				for (int c3=0; c3<page->pagebleeds.n; c3++) {
+				for (int pb=0; pb<page->pagebleeds.n; pb++) {
+					PageBleed *bleed = page->pagebleeds[pb];
+					Page *otherpage = doc->pages[bleed->index];
+
+					// *** bleeds should be optimized to only have to deal with acually bleeding objects, not all objs
+					 // for each layer on the page..
+					for (int l=0; l<otherpage->layers.n(); l++) {
+						 // for each object in layer
+						g=dynamic_cast<Group *>(otherpage->layers.e(l));
+						for (c3=0; c3<g->n(); c3++) {
+							transform_copy(m,spread->pagestack.e[c2]->outline->m());
+							transform_mult(mm, bleed->matrix, m);
+							svgdumpdef(f,mm,g->e(c3),warning,log, out);
+						}
+					}
 				}
 			}
 
 			 // for each layer on the page..
-			for (l=0; l<page->layers.n(); l++) {
+			for (int l=0; l<page->layers.n(); l++) {
 				 // for each object in layer
 				g=dynamic_cast<Group *>(page->layers.e(l));
 				for (c3=0; c3<g->n(); c3++) {
@@ -1790,18 +1805,43 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 		for (c2=0; c2<spread->pagestack.n(); c2++) {
 			pg=spread->pagestack.e[c2]->index;
 			if (pg<0 || pg>=doc->pages.n) continue;
+			Page *page = doc->pages.e[pg];
 
 			//set up page clipping if necessary
-			if (doc->pages[pg]->pagestyle->Flag(PAGE_CLIPS)) {
-				sprintf(clipstr, "clip-path=\"url(#pageClip%lu)\"", doc->pages[pg]->object_id);
+			if (page->pagestyle->Flag(PAGE_CLIPS) || out->layout == PAPERLAYOUT) {
+				sprintf(clipstr, "clip-path=\"url(#pageClip%lu)\"", page->object_id);
 			} else {
 				clipstr[0] = '\0';
 			}
 
+			//include copies of objects bleeding from other adjacent pages
+			if (page->pagebleeds.n && (layout == PAPERLAYOUT || layout == SINGLELAYOUT)) {
+				for (int pb=0; pb<page->pagebleeds.n; pb++) {
+					PageBleed *bleed = page->pagebleeds[pb];
+					Page *otherpage = doc->pages[bleed->index];
+					if (!otherpage->HasObjects()) continue;
+
+					fprintf(f,"    <g transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
+						bleed->matrix[0], bleed->matrix[1], bleed->matrix[2], bleed->matrix[3], bleed->matrix[4], bleed->matrix[5]); 
+
+					// *** bleeds should be optimized to only have to deal with acually bleeding objects, not all objs
+					 // for each layer on the page..
+					for (int l=0; l<otherpage->layers.n(); l++) {
+						 // for each object in layer
+						g=dynamic_cast<Group *>(otherpage->layers.e(l));
+						for (c3=0; c3<g->n(); c3++) {
+							svgdumpobj(f,NULL,g->e(c3),warning, 8,log, out);
+						}
+					}
+
+					fprintf(f,"    </g>\n ");
+				}
+			}
+
 			 // for each layer on the page..
-			for (l=0; l<doc->pages[pg]->layers.n(); l++) {
+			for (int l=0; l<page->layers.n(); l++) {
 				 // for each object in layer
-				g = dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
+				g = dynamic_cast<Group *>(page->layers.e(l));
 				transform_copy(mm,spread->pagestack.e[c2]->outline->m());
 				fprintf(f,"    <g %s transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
 					clipstr, mm[0], mm[1], mm[2], mm[3], mm[4], mm[5]); 

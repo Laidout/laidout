@@ -160,8 +160,6 @@ test:
   make some test scripts for command line testing
 
 
-make sure gegl points to 0.4, and no freetype-config
-
 in singles view, spread number in box should be page label instead of spread number
 
 export current appears to be broken
@@ -170,7 +168,9 @@ object content selector menu
 
 object clipping:
   clip export: pdf, image, svg(done), scribus
-  page object bleed export: pdf, image, svg, scribus
+  page object bleed export: pdf, image, (done)svg, scribus
+    would be nice to standardize viewport display so each exporter doesn't have to implement everything themselves
+	  like define an iterator to walk over the view
   DONE page previewer in spread editor doesn't use bleeds.. need to refresh thumbs if has bleeds
   DONE in place editing
   DONE apply, remove, extract clip path
@@ -192,7 +192,7 @@ remove imlib/"xlib" font, image, and render backends, replace with GraphicsMagic
 
 image loaders:
   implement loader priorities
-  some way to priortize image saving
+  some way to prioritize image saving
 
 dual monitors:
   open in same screen as mouse
@@ -1748,7 +1748,9 @@ CharacterInterface characterinterface
 Spread editor: SpreadEditor spread editor spreadeditor
   should have border drag to move, not middle drag
 
-need python implementation of Attribute and class structure in/out to help file importers in other python based environments
+python plugin:
+  need python implementation of Attribute and class structure in/out to help file importers in other python based environments
+  need headless, no-x compile option to allow minimal usage as python plugins for Scribus
 
 limbo transform should be obeyed. It can be moved, scaled, etc,
 page layers should be simplified, each layer behaves according to its transform, and more controls inserted to handle layer maneuvering
@@ -1811,3 +1813,4 @@ DONE Page Clip: clip in viewer
 DONE Page Clip: svg .. set clip-path on each page layer to page outline
 DONE Remove old laxutils based drawing calls in favor of Displayer based drawing.
 DONE website: make twitterable
+DONE make sure gegl points to 0.4, and no freetype-config

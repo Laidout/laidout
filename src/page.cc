@@ -617,6 +617,15 @@ Page::~Page()
 	layers.flush();
 }
 
+/*! Return number of immediate children page's layers contain.
+ */
+int Page::HasObjects()
+{
+	int n=0;
+	for (int c=0; c<layers.n(); c++) n += dynamic_cast<Group*>(layers.e(c))->n();
+	return n;
+}
+
 /*! Return index of new layer.
  * If where<0 or where>=layers.n() push at end.
  */
