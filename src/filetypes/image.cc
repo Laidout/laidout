@@ -580,6 +580,7 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 		int pagei=-1;
 		flatpoint p;
 		SomeData *sd=NULL;
+
 		for (int c=0; c<spread->pagestack.n(); c++) {
 			DBG cerr <<" drawing from pagestack.e["<<c<<"], which has page "<<spread->pagestack.e[c]->index<<endl;
 			page=spread->pagestack.e[c]->page;
@@ -587,23 +588,50 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 
 			if (!page) { // try to look up page in doc using pagestack->index
 				if (spread->pagestack.e[c]->index>=0 && spread->pagestack.e[c]->index<doc->pages.n) {
-					page=spread->pagestack.e[c]->page=doc->pages.e[pagei];
+					page = spread->pagestack.e[c]->page = doc->pages.e[pagei];
 				}
 			}
 
-			//if (spread->pagestack.e[c]->index<0) {
 			if (!page) continue;
 
 			 //else we have a page, so draw it all
 			sd=spread->pagestack.e[c]->outline;
 			dp->PushAndNewTransform(sd->m()); // transform to page coords
 			
-			if (page->pagestyle->flags&PAGE_CLIPS) {
+
+			if ((page->pagestyle->flags&PAGE_CLIPS) || out->layout == PAPERLAYOUT) {
 				 // setup clipping region to be the page
 				dp->PushClip(1);
-				SetClipFromPaths(dp,sd,dp->Getctm());
+				//SetClipFromPaths(dp,sd,dp->Getctm());
+				SetClipFromPaths(dp,sd,NULL);
 			}
+
+            if (page->pagebleeds.n && (out->layout == PAPERLAYOUT || out->layout == SINGLELAYOUT)) {
+                 //assume PAGELAYOUT already renders bleeds properly, since that's where the bleed objects come from
+
+                //if (out->layout == PAPERLAYOUT) {
+                //    //only clip in paper view
+                //    dp->PushClip(1);
+                //    SetClipFromPaths(dp,sd,NULL);
+                //}
+
+                for (int pb=0; pb<page->pagebleeds.n; pb++) {
+                    PageBleed *bleed = page->pagebleeds[pb];
+                    Page *otherpage = doc->pages[bleed->index];
+
+                    dp->PushAndNewTransform(bleed->matrix);
+
+                    for (int c2 = 0; c2 < otherpage->layers.n(); c2++) {
+                        DrawData(dp,otherpage->e(c2),NULL,NULL,0);
+                    }
+
+                    dp->PopAxes();
+                }
+
+                //if (out->layout == PAPERLAYOUT) dp->PopClip();
+            }
 			
+
 			 //*** debuggging: draw X over whole page...
 	//		DBG dp->NewFG(255,0,0);
 	//		DBG dp->drawrline(flatpoint(sd->minx,sd->miny), flatpoint(sd->maxx,sd->miny));
@@ -631,13 +659,11 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 		} //foreach in pagestack
 	} //if spread
 
-	//DBG dp->NewFG(.2,.2,.5);
-	//DBG dp->LineWidth(.25);
-	//DBG dp->drawline(bounds.minx,bounds.miny, bounds.maxx,bounds.maxy);
-	//DBG dp->drawline(bounds.minx,bounds.maxy, bounds.maxx,bounds.miny);
 
 	dp->PopAxes(); //initial dp protection
 
+
+	 //Now save the page
 	LaxImage *img = dp->GetSurface();
 	//int err=img->Save(filename, out->format);
 	int err = img->Save(filename, out->format);
