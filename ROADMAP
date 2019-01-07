@@ -11,17 +11,16 @@ VERSION 0.098
 (done) Clip paths
 (done) Clip path in place editing
 (done) Convert backend to using Theme objects for easier adjusting in the future
-       Fix object bleeding across pages for signatures and nets (issue #12)
+(done) Fix object bleeding across pages for signatures and nets (issue #12)
 (done) Make Imlib2 dependency optional, prepare replacement image loading with GraphicsMagick
        lock down color backend.. it's currently a series of weak hacks based on 8-bit screen rgb
 
        Debug Text on path tool
 (done) make laidout.org twitterable with an image card
 
-       Moving selected things in group contents does not update group bounds
-       should not be able to select both group and group contents at same time
-       fix object transform handles for really small objects (handles should still be accessible)
-       double click on group should change selection area to group contents like inkscape?
+       Perspective transform object filter
+       Node based image "importer"
+       Empty objects that can be parents, or whose contents are defined by nodes
 
        layers (object tree) palette
        Tools should remember their settings
@@ -29,15 +28,17 @@ VERSION 0.098
        In image properties dialog, be able to select from various default preview configs
        Undo/Redo
 
+       Moving selected things in group contents does not update group bounds
+       should not be able to select both group and group contents at same time
+       fix object transform handles for really small objects (handles should still be accessible)
+       double click on group should change selection area to group contents like inkscape?
+
        engraver tool grow point mode
        engraver tool, resolution cut mode
        engraver tool, blockout needs to be more precise
        engraver tool, fully test tool effects when many objects selected
        debug line outline cache, especially for joins
        make PathInterface extrapolate line join work
-
-       Perspective transform object filter
-       Node based image "importer"
 
        Clean up patch controls
        Clean up project load/save internals and dialogs
@@ -58,7 +59,7 @@ VERSION 0.098
        debug svg in
        Collect for out
        export preview
-       Make sure scribus can export to 1.5
+       Make sure scribus can export to 1.5, and can handle new clipping features
        Scribus import should try to do something appropriate with page spreads >= 2 pages wide
        Scribus import should do something meaningful with original Scribus page bleed values
 

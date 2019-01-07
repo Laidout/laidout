@@ -25,6 +25,8 @@ object indicator:
 
 back to not maximizing properly on default ubuntu. Seems to work fine on every other window manager I've tried.
 
+svg out, select to files, often the first time goes to file, not files
+
 
 ------------ other bugs:
 
@@ -167,12 +169,8 @@ export current appears to be broken
 object content selector menu
 
 object clipping:
-  clip-path export: pdf, image(done), svg(done), scribus
-  page object bleed export:
-    pdf
-	DONE image
-	DONE svg
-	scribus
+  clip-path export: pdf(done), image(done), svg(done), scribus
+  page object bleed export: DONE pdf, DONE image, DONE svg, scribus
   DONE page previewer in spread editor doesn't use bleeds.. need to refresh thumbs if has bleeds
   DONE in place editing
   DONE apply, remove, extract clip path
@@ -1158,8 +1156,6 @@ in laxkit, key and mouse state should already be filtered to only contain laxkit
 reserve names for CommandMask (macs), and a few other custom masks for other weird keyboards
 
 mass image edit, need to remap dirs for old files!!
-
-bleeding mechanism should be functional
 
 option to use different go/don't go colors
 
