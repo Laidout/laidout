@@ -59,7 +59,7 @@ VERSION 0.098
        debug svg in
        Collect for out
        export preview
-       Make sure scribus can export to 1.5, and can handle new clipping features
+       Make sure scribus export works with 1.5, and can handle new clipping features
        Scribus import should try to do something appropriate with page spreads >= 2 pages wide
        Scribus import should do something meaningful with original Scribus page bleed values
 
