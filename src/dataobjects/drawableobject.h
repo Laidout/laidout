@@ -161,6 +161,7 @@ class DrawableObject :  virtual public ObjectContainer,
 	ClipTypes clip_type;
 	SomeData *soft_mask; //whatever it is, take copy to use as alpha
 	LaxInterfaces::PathsData *clip_path; //its m is from main object coordinate space
+	virtual LaxInterfaces::PathsData *ClipPath(const double **extra_m);
 
 	LaxInterfaces::PathsData *wrap_path; //area path + offset, or custom
 	LaxInterfaces::PathsData *inset_path;
@@ -227,6 +228,8 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual LaxInterfaces::PathsData *GetInsetPath(); //return an inset path, may or may not be inset_path, where streams are laid into
 	virtual LaxInterfaces::PathsData *GetWrapPath(); //path inside which external streams can't go
 
+	virtual int InstallClip(LaxInterfaces::PathsData *pathsdata);
+
 	Laxkit::RefPtrStack<PointAnchor> anchors;
 	virtual int NumAnchors();
 	virtual int GetAnchorInfoI(int anchor_index, int *id, const char **name, flatpoint *p, int *anchor_type, bool transform_to_parent);
@@ -238,8 +241,6 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual int RemoveAnchor(int anchor_id);
 	virtual int RemoveAnchorI(int index);
 	virtual int ResolveAnchorRefs(Document *doc, Page *page, DrawableObject *g, Laxkit::ErrorLog &log);
-
-	virtual int InstallClip(LaxInterfaces::PathsData *pathsdata);
 
 
 	 //Group specific functions:

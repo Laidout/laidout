@@ -572,6 +572,22 @@ LaxInterfaces::PathsData *DrawableObject::GetWrapPath()
 	return NULL;
 }
 
+LaxInterfaces::PathsData *DrawableObject::ClipPath(const double **extra_m)
+{
+	*extra_m = nullptr;
+
+	if (clip_type == CLIP_None) return nullptr;
+	if (clip_type == CLIP_From_Parent_Area) {
+		// ***
+	}
+	if (clip_type == CLIP_Custom_Path) {
+		*extra_m = clip_path->m();
+		return clip_path;
+	}
+
+	return nullptr;
+}
+
 
 /*! Default is just the 9 points of corners, midpoints, and the middle of bounding boxes.
  * There will always be at least 9 anchors. These are read only. Any more are
