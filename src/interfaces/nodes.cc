@@ -3198,6 +3198,7 @@ Laxkit::anObject *newTransformAffineNode(int p, Laxkit::anObject *ref)
 //--------------------------- SetupDefaultNodeTypes() -----------------------------------------
 
 /*! Install default built in node types to factory.
+ * This is called when the NodeGroup::NodeFactory singleton is created.
  */
 int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 {
@@ -3295,6 +3296,7 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Threads/GetVariable",newGetVariableNode,  NULL, 0);
 
 
+	//Register nodes for DrawableObject filters:
 	RegisterFilterNodes(factory);
 
 
