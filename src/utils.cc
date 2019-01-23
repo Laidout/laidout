@@ -15,6 +15,7 @@
 
 #include "language.h"
 #include "utils.h"
+#include "version.h"
 #include <lax/strmanip.h>
 #include <lax/fileutils.h>
 #include <lax/laximages.h>
@@ -190,6 +191,25 @@ long time_to_ms(const char *v, const char **end_ret)
 }
 
 //----------------------------------- File i/o helpers ---------------------------------------------
+
+
+/*! Return a new char[] with the config dir.
+ * Default will be something equivalent to "~/.config/laidout/(version)/".
+ * If what != null, then tack that on to the end, along with a final "/".
+ * No sanity check or existence check is done with the returned file.
+ */
+char *ConfigDir(const char *what)
+{
+	char *config_dir = newstr(getenv("HOME"));
+	appendstr(config_dir,"/.config/laidout/");
+	appendstr(config_dir,LAIDOUT_VERSION);
+	appendstr(config_dir,"/");
+	if (what) {
+		appendstr(config_dir,what);
+		appendstr(config_dir,"/");
+	}
+	return config_dir;
+}
 
 //! Simplify opening any sort of file for writing, does basic error checking, such as for existence, and writability.
 /*! \ingroup misc

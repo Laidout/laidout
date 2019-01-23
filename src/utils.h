@@ -37,6 +37,7 @@ char *roman_numeral(int i,char cap);
 long time_to_ms(const char *v, const char **end_ret);
 
 //----------------------------------- File i/o helpers ---------------------------------------------
+char *ConfigDir(const char *what = nullptr);
 FILE *open_laidout_file_to_read(const char *file,const char *what,Laxkit::ErrorLog *log, bool warn_if_fail=true);
 FILE *open_file_for_reading(const char *file,Laxkit::ErrorLog *log);
 FILE *open_file_for_writing(const char *file,int nooverwrite,Laxkit::ErrorLog *log);
