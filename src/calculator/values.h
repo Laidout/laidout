@@ -736,6 +736,7 @@ class ObjectValue : public Value
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Object; }
  	virtual ObjectDef *makeObjectDef();
+	virtual void SetObject(anObject *nobj, bool absorb_count);
 };
 
 //------------------------------- parsing helpers ------------------------------------

@@ -4214,6 +4214,16 @@ ObjectDef *ObjectValue::makeObjectDef()
 	return Get_ObjectValue_ObjectDef();
 }
 
+void ObjectValue::SetObject(anObject *nobj, bool absorb_count)
+{
+	if (!absorb_count && nobj) nobj->inc_count();
+	if (nobj != object) {
+		if (object) object->dec_count();
+		object = nobj;
+		if (object) object->inc_count();
+	}
+}
+
 
 //--------------------------------- ColorValue -----------------------------
 /*! Set from a hex string.
