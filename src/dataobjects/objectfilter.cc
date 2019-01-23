@@ -243,6 +243,9 @@ Laxkit::anObject *newPerspectiveNode(int p, Laxkit::anObject *ref)
     return new PerspectiveNode();
 }
 
+/*! Register nodes for DrawableObject filters.
+ * This is called from SetupDefaultNodeTypes().
+ */
 int RegisterFilterNodes(Laxkit::ObjectFactory *factory)
 {
      //--- PerspectiveNode
