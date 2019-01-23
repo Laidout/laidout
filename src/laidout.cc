@@ -244,10 +244,7 @@ LaidoutApp::LaidoutApp()
 
 	runmode=RUNMODE_Normal;
 
-	config_dir=newstr(getenv("HOME"));
-	appendstr(config_dir,"/.config/laidout/");
-	appendstr(config_dir,LAIDOUT_VERSION);
-	appendstr(config_dir,"/");
+	config_dir = ConfigDir();
 
 	makestr(controlfontstr,"sans-15");
 
