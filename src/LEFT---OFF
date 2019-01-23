@@ -12,6 +12,8 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now:
 
+bug: input edit cursor placement is wrong now
+
 ftgl problem in polyptych... font not rendering
 
 finish debugging mesh svg 2.0 out/in
@@ -169,6 +171,7 @@ export current appears to be broken
 object content selector menu
 
 object clipping:
+  generate default clip path for editing from area path or bounding box
   clip-path export: pdf(done), image(done), svg(done), scribus
   page object bleed export: DONE pdf, DONE image, DONE svg, scribus
   DONE page previewer in spread editor doesn't use bleeds.. need to refresh thumbs if has bleeds
@@ -200,7 +203,11 @@ dual monitors:
 
 cairo: cairo image save should use importer to do non-file creation?
 
-cannot import images directly from recents
+importing: image import:
+  need drag and drop from system for multi-image import
+  cannot import images directly from recents
+  need thumbnail preview of images in directories
+  when you have a filter, should still show directories(?)
 
 pdf export lines has outlines in evince?
 
@@ -565,6 +572,8 @@ from big import:
   need some kind of "loading" indication when loading in large images
   need image path mass reassign
   spread editor:
+    need a force thumb refresh, or actually make modified propagation work
+    there should be a paper view for previewing purposes
     select all for current marker type
 	arrange in rows at current scale not scaling and placing correctly
 	crash during thumbnail generation if you delete pages while there are still some to render
