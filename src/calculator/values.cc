@@ -4423,7 +4423,7 @@ double getNumberValue(Value *v, int *isnum)
 
 /*! Like getNumberValue(), but swap order of returns.
  */
-bool isNumberType(Value *v, double *number_ret)
+int isNumberType(Value *v, double *number_ret)
 {
 	int isnum = 0;
 	double n = getNumberValue(v, &isnum);
