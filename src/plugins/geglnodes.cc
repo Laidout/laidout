@@ -313,11 +313,12 @@ NodeGroup* GeglNodesToLaidoutNodes(GeglNode *gegl, NodeGroup *parent, bool child
 /*! Attempt to put full size in in_this.
  * If gegl is unbounded, then use a 100 x 100 box.
  * If new_if_different and in_this != NULL and dimensions differ, then return a new LaxImage.
+ * Assume 20000 px wide or tall means the gegl input is unbounded and use 100x100.
  */
 LaxImage *GeglToLaxImage(GeglNode *gegl, LaxImage *in_this, bool new_if_different)
 {
 	GeglRectangle rect = gegl_node_get_bounding_box (gegl);
-	if (rect.width <=0 || rect.height <= 0 || rect.width > 100000 || rect.height > 100000) {
+	if (rect.width <=0 || rect.height <= 0 || rect.width > 20000 || rect.height > 20000) {
 		 //probably unbounded, arbitrarily select a little window onto the data
 		rect.x      = 0;
 		rect.y      = 0;
@@ -328,7 +329,7 @@ LaxImage *GeglToLaxImage(GeglNode *gegl, LaxImage *in_this, bool new_if_differen
 
 	LaxImage *image = in_this;
 	double scale = 1;
-	if (new_if_different && !image && (image->w() != rect.width || image->h() != rect.height)) {
+	if (!image || (new_if_different && image && (image->w() != rect.width || image->h() != rect.height))) {
 		image = ImageLoader::NewImage(rect.width, rect.height);
 		scale = image->w() / (double)rect.width;
 	}
@@ -378,7 +379,7 @@ GeglNode *LaxImageToGegl(LaxImage *image, GeglNode *to_this)
 //-------------------------------- GeglUser --------------------------
 
 /*! \class GeglUser
- * Convenience class to allow other sources to define a gegl based node that
+ * Convenience class to any sources to define a gegl based node that
  * can interact with main gegl nodes.
  */
 
@@ -393,6 +394,11 @@ class GeglUser
 
 //-------------------------------- GeglLaidoutNode --------------------------
 
+
+
+/*! \class GeglLaidoutNode
+ * Base class for nodes based on existing Gegl operations.
+ */
 
 GeglNode *GeglLaidoutNode::masternode = NULL;
 
@@ -716,6 +722,8 @@ int GeglLaidoutNode::Disconnected(NodeConnection *connection, bool from_will_be_
 	return 0;
 }
 
+/*! Make sure gegl connection sets up.
+ */
 int GeglLaidoutNode::Connected(NodeConnection *connection)
 {
 	if (connection->to == this) {
@@ -1114,6 +1122,184 @@ Laxkit::anObject *newGeglRectNode(int p, Laxkit::anObject *ref)
 
 
 
+//------------------------------- Gegl to LaxImage ----------------------------
+
+/*! \class GeglToLaxImageNode
+ * Class to convert a gegl based node to a LaxImage.
+ */
+
+class GeglToLaxImageNode : public NodeBase
+{
+  public:
+    GeglToLaxImageNode();
+    virtual ~GeglToLaxImageNode();
+
+    virtual NodeBase *Duplicate();
+    virtual int Update();
+    virtual int GetStatus();
+};
+
+GeglToLaxImageNode::GeglToLaxImageNode()
+{
+	makestr(Name, _("Gegl To Image"));
+	makestr(type, "Gegl/GeglToImage");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "In", NULL,1, _("In"),_("Gegl node"), 0, false));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output,true, "width",  new DoubleValue(100),1, _("Width")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output,true, "height", new DoubleValue(100),1, _("Height")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output,true, "image",  NULL,1, _("Image")));
+}
+
+GeglToLaxImageNode::~GeglToLaxImageNode()
+{}
+
+
+NodeBase *GeglToLaxImageNode::Duplicate()
+{
+    GeglToLaxImageNode *node = new GeglToLaxImageNode();
+    node->DuplicateBase(this);
+    return node;
+}
+
+int GeglToLaxImageNode::GetStatus()
+{
+	return NodeBase::GetStatus();
+}
+
+int GeglToLaxImageNode::Update()
+{
+	if (properties.e[0]->IsConnected()) {
+		GeglLaidoutNode *node = dynamic_cast<GeglLaidoutNode*>(properties.e[0]->connections.e[0]->from);
+		GeglNode *gegl = node->gegl;
+
+		if (gegl) {
+			GeglRectangle rect = gegl_node_get_bounding_box (gegl);
+
+			dynamic_cast<DoubleValue*>(properties.e[1]->GetData())->d = rect.width;
+			dynamic_cast<DoubleValue*>(properties.e[2]->GetData())->d = rect.height;
+			ObjectValue *v = dynamic_cast<ObjectValue*>(properties.e[3]->GetData());
+			if (!v) {
+				v = new ObjectValue();
+				properties.e[3]->SetData(v, 1);
+			}
+			LaxImage *img = dynamic_cast<LaxImage*>(v->object);
+			if (img) img->inc_count();
+			LaxImage *nimg = GeglToLaxImage(gegl, img, true);
+			v->SetObject(nimg, true);
+
+			for (int c=1; c<properties.n; c++) properties.e[c]->modtime = times(NULL);
+		}
+	}
+
+	return NodeBase::Update();
+}
+
+Laxkit::anObject *newGeglToImageNode(int p, Laxkit::anObject *ref)
+{
+	GeglToLaxImageNode *node = new GeglToLaxImageNode();
+	return node;
+}
+
+
+
+//------------------------------- LaxImage to Gegl ----------------------------
+
+/*! \class LaxImageToGeglNode
+ * Class to convert a LaxImage to a gegl based node.
+ */
+
+class LaxImageToGeglNode : public NodeBase, public GeglUser
+{
+  public:
+	GeglNode *gegl;
+    LaxImageToGeglNode();
+    virtual ~LaxImageToGeglNode();
+
+    virtual NodeBase *Duplicate();
+    virtual int Update();
+    virtual int GetStatus();
+	virtual GeglNode *GetGeglNode() { return gegl; }
+};
+
+LaxImageToGeglNode::LaxImageToGeglNode()
+{
+	gegl = nullptr;
+
+	makestr(Name, _("Image To Gegl"));
+	makestr(type, "Gegl/ImageToGegl");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "In", NULL,1, _("In"),_("Image"), 0, false));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output,true, "gegl",  NULL,1, _("Gegl Image")));
+}
+
+LaxImageToGeglNode::~LaxImageToGeglNode()
+{
+	if (gegl) g_object_unref (gegl);
+}
+
+
+NodeBase *LaxImageToGeglNode::Duplicate()
+{
+    LaxImageToGeglNode *node = new LaxImageToGeglNode();
+    node->DuplicateBase(this);
+    return node;
+}
+
+int LaxImageToGeglNode::GetStatus()
+{
+	if (properties.e[0]->IsConnected()) {
+		ObjectValue *v = dynamic_cast<ObjectValue*>(properties.e[0]->GetData());
+		if (!v) return -1;
+		LaxImage *img = dynamic_cast<LaxImage*>(v->object);
+		if (!img) return -1;
+	}
+	return NodeBase::GetStatus();
+}
+
+int LaxImageToGeglNode::Update()
+{
+	if (properties.e[0]->IsConnected()) {
+		 //first verify we have an image connecting
+		ObjectValue *v = dynamic_cast<ObjectValue*>(properties.e[0]->GetData());
+		if (!v) return -1;
+		LaxImage *img = dynamic_cast<LaxImage*>(v->object);
+		if (!img) return -1;
+
+		 //now update or correct our gegl node with the image data
+		GeglRectangle  orect;
+		orect.x = orect.y = 0;
+		orect.width  = img->w();
+		orect.height = img->h();
+		// *** which node accepts an image buffer ??? format???
+		 
+		 //finally make sure all connected outputs are connected to that gegl node.
+		for (int c=0; c<properties.e[1]->connections.n; c++) {
+			GeglUser *to_node = dynamic_cast<GeglUser*>(properties.e[1]->connections.e[c]->to);
+			if (!to_node) continue;
+			
+			GeglNode *to_gegl = to_node->GetGeglNode();
+			if (!to_gegl) continue;
+
+			//gegl_node_connect_to(gegl, "output",
+								 //to_gegl, to_prop->Name());
+
+		}
+	}
+
+	return NodeBase::Update();
+}
+
+Laxkit::anObject *newImageToGeglNode(int p, Laxkit::anObject *ref)
+{
+	LaxImageToGeglNode *node = new LaxImageToGeglNode();
+	return node;
+}
+
+
+
+
 //------------------------------- Gegl funcs ----------------------------
 
 /*! Query what gegl ops are available. Properties are not scanned here, only operations.
@@ -1237,6 +1423,7 @@ void RegisterGeglNodes(Laxkit::ObjectFactory *factory)
 	}
 
 	factory->DefineNewObject(getUniqueNumber(), "Gegl/GeglBounds", newGeglRectNode, NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Gegl/GeglToImage", newGeglToImageNode, NULL, 0);
 }
 
 
