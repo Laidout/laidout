@@ -88,6 +88,7 @@ class NodeProperty : public Laxkit::RefCounted
 		PROPF_New_Out  = (1<<2),
 		PROPF_List_Out = (1<<3),
 		PROPF_Label_From_Data = (1<<4),
+		PROPF_Y_Resizeable = (1<<5),
 		PROPF_MAX
 	};
 
@@ -147,6 +148,7 @@ class NodeProperty : public Laxkit::RefCounted
 	virtual int IsNewOutput() { return flags & PROPF_New_Out;  }
 	virtual int IsHidden() { return hidden; }
 	virtual void SetFlag(unsigned int which, bool on);
+	virtual bool HasFlag(unsigned int which);
 	virtual int Hide();
 	virtual int Show();
 	virtual int AllowInput();
@@ -459,6 +461,7 @@ class NodeViewArea : public DoubleRectangle
 //They need to be negative to not conflict with slot index numbers.
 enum NodeHover {
 	NODES_SCAN_START = -10000, //this needs to be so negative as to make NODES_HOVER_MAX also be negative
+	NODES_PropResize    ,
 	NODES_Label         ,
 	NODES_LeftEdge      ,
 	NODES_RightEdge     ,
@@ -514,6 +517,7 @@ enum NodeInterfaceActions {
 	NODES_Resize_Bottom_Left,
 	NODES_Resize_Bottom_Right,
 	NODES_Resize_Preview,
+	NODES_Resize_Property,
 	NODES_Center,
 	NODES_Center_Selected,
 	NODES_No_Overlap,

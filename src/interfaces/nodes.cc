@@ -2814,6 +2814,7 @@ CurveProperty::CurveProperty(CurveValue *ncurve, int absorb, int isout)
 	makestr(name, "Curve");
 	makestr(label, _("Curve"));
 	//makestr(tooltip, _(""));
+	SetFlag(NODES_PropResize, true);
 
 	curve = ncurve;
 	if (curve && !absorb) curve->inc_count();
@@ -3260,7 +3261,7 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 
 	 //--- CurveNodes
 	factory->DefineNewObject(getUniqueNumber(), "Curve",         newCurveNode,  NULL, 1);
-	//factory->DefineNewObject(getUniqueNumber(), "CurveTransform",newCurveNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "CurveTransform",newCurveNode,  NULL, 0);
 
 	 //--- ObjectNodes
 	factory->DefineNewObject(getUniqueNumber(), "Object In", newObjectInNode,  NULL, 0);

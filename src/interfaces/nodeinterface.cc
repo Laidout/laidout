@@ -369,6 +369,11 @@ void NodeProperty::SetFlag(unsigned int which, bool on)
 	else flags &= ~which;
 }
 
+bool NodeProperty::HasFlag(unsigned int which)
+{
+	return ((flags & which) == which);
+}
+
 int NodeProperty::AllowInput()
 {
 	return IsInput() && is_linkable;
@@ -3440,6 +3445,19 @@ int NodeInterface::IsSelected(NodeBase *node)
 	return selected.findindex(node) >= 0;
 }
 
+/*! Draw 3 diagonal lines in lower triangle.
+ */
+void DrawResizeMark(Displayer *dp, double x, double y, double w, double h)
+{
+	x += w * .9;
+	y += h * .9;
+	w *= .8;
+	h *= .8;
+	dp->drawline(x, y+h, x+w, y);
+	dp->drawline(x+w/3, y+h, x+w, y+h/3);
+	dp->drawline(x+w*2/3, y+h, x+w, y+h*2/3);
+}
+
 int NodeInterface::Refresh()
 {
 	if (needtodraw==0) return 0;
@@ -3623,7 +3641,7 @@ int NodeInterface::Refresh()
 	}
 
 
-	 //---draw nodes:
+	 //-------draw nodes:
 	 //  box+border
 	 //  label
 	 //  expanded arrow
@@ -3762,7 +3780,7 @@ int NodeInterface::Refresh()
 			dp->LineWidthScreen(1);
 		}
 
-		 //draw ins and outs
+		 //draw properties
 		for (int c2=0; c2<node->properties.n; c2++) {
 			prop = node->properties.e[c2];
 			if (lasthover == c && overslot == -1 && overprop == c2 && !node->collapsed) { //mouse is hovering over this property
@@ -3773,6 +3791,16 @@ int NodeInterface::Refresh()
 			}
 			DrawProperty(node, prop, y, overnode == c && overprop == c2,
 										overnode == c && overprop == c2 && overslot == c2);
+
+			if (prop->HasFlag(NodeProperty::PROPF_Y_Resizeable)) {
+				if (overslot == NODES_PropResize) {
+					//*** set hover color
+					dp->NewFG(&nodes->colors->fg);
+				} else 
+					dp->NewFG(coloravg(nodes->colors->fg.Pixel(),nodes->colors->bg.Pixel()));
+
+				DrawResizeMark(dp, node->x + prop->x + prop->width - 2*th, node->y + prop->y + prop->height - 2*th, th, th);
+			}
 
 			y += prop->height;
 		}
@@ -4007,6 +4035,7 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 			}
 
 		}
+
 	} // !node->collapsed
 
 
@@ -4363,14 +4392,23 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, int 
 				if (prop->is_linkable && !prop->IsBlock()) { //only if the input is not exclusively internal
 				  if (  p.y >= node->y+prop->pos.y-rr && p.y <= node->y+prop->pos.y+rr) {
 					if (p.x >= node->x+prop->pos.x-rr && p.x <= node->x+prop->pos.x+rr) {
-						*overproperty=c2;
+						//over a property in/out
+						*overproperty = c2;
 						*overpropslot = c2;
 					}
 				  }
 				}
 
-				if (p.y >= node->y+prop->y && p.y < node->y+prop->y+prop->height) {
-					*overproperty=c2;
+				if (p.y >= node->y+prop->y && p.y < node->y+prop->y+prop->height)
+				{
+					//over property, but not over property slots
+					if (prop->HasFlag(NodeProperty::PROPF_Y_Resizeable)) {
+						if (p.x > node->x + prop->x + prop->width - th && p.y > node->y + prop->y + prop->height - th) {
+							//over prop resize thing
+							*overpropslot = NODES_PropResize;
+						}
+					}
+					*overproperty = c2;
 				}
 			}
 
@@ -4526,8 +4564,11 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 		selection_rect.miny=selection_rect.maxy=y;
 		needtodraw=1;
 
-	} else if (overnode>=0 && overproperty==-1 && overpropslot == NODES_PreviewResize) {
+	} else if (overnode>=0 && overproperty>=0 && overpropslot == NODES_PreviewResize) {
 		action = NODES_Resize_Preview;
+
+	} else if (overnode>=0 && overproperty>=0 && overpropslot == NODES_PropResize) {
+		action = NODES_Resize_Property;
 
 	} else if (overnode>=0 && overproperty==-1) {
 		 //in a node, but not clicking on a property, so add or remove this node to selection
@@ -5358,6 +5399,23 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 				node->Wrap();
 			}
 		}
+		needtodraw=1;
+		return 0;
+
+	} else if (action == NODES_Resize_Property) {
+		flatpoint d = nodes->m.transformPointInverse(flatpoint(x,y)) - nodes->m.transformPointInverse(flatpoint(lx,ly));
+		NodeBase *node = nodes->nodes.e[lasthover];
+		NodeProperty *prop = node->properties.e[lasthoverprop];
+
+		double th = dp->textheight();
+		prop->height += d.y;
+		if (prop->height < th) prop->height = th;
+		if (d.x != 0 && node->width + d.x > th) {
+			node->fullwidth += d.x;
+			node->width += d.x;
+		}
+		node->UpdateLayout();
+
 		needtodraw=1;
 		return 0;
 	}
