@@ -105,6 +105,7 @@ touchdepends:
 	touch src/filetypes/makedepend
 	touch src/impositions/makedepend
 	touch src/interfaces/makedepend
+	touch src/nodes/makedepend
 	touch src/printing/makedepend
 	touch src/api/makedepend
 	touch src/polyptych/src/makedepend
@@ -118,6 +119,7 @@ dist-clean: clean
 	rm -f src/filetypes/makedepend     src/filetypes/makedepend.bak
 	rm -f src/impositions/makedepend   src/impositions/makedepend.bak
 	rm -f src/interfaces/makedepend    src/interfaces/makedepend.bak
+	rm -f src/nodes/makedepend         src/nodes/makedepend.bak
 	rm -f src/printing/makedepend      src/printing/makedepend.bak
 	rm -f src/api/makedepend           src/api/makedepend.bak
 	rm -f src/polyptych/src/makedepend src/polyptych/src/makedepend.bak
