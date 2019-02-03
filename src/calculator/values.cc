@@ -4421,6 +4421,29 @@ double getNumberValue(Value *v, int *isnum)
 	return 0;
 }
 
+/*! Get integer value from bool, int, or real.
+ * Return actual type in isnum, 0 for unknown, 1 for real, 2 for int, 3 for bool.
+ */
+int getIntValue(Value *v, int *isnum)
+{
+	if (!v) {
+		*isnum=0; //it is a null!
+		return 0;
+	}
+	if (v->type() == VALUE_Real) {
+		*isnum=1;
+		return dynamic_cast<DoubleValue*>(v)->d + .5;
+	} else if (v->type() == VALUE_Int) {
+		*isnum=2;
+		return dynamic_cast<IntValue*>(v)->i;
+	} else if (v->type() == VALUE_Boolean) {
+		*isnum=3;
+		return dynamic_cast<BooleanValue*>(v)->i;
+	}
+	*isnum=0;
+	return 0;
+}
+
 /*! Like getNumberValue(), but swap order of returns.
  */
 int isNumberType(Value *v, double *number_ret)

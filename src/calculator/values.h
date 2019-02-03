@@ -742,6 +742,7 @@ class ObjectValue : public Value
 //------------------------------- parsing helpers ------------------------------------
 ValueHash *MapParameters(ObjectDef *def,ValueHash *rawparams);
 double getNumberValue(Value *v, int *isnum);
+int getIntValue(Value *v, int *isnum);
 int isNumberType(Value *v, double *number_ret);
 int isVectorType(Value *v, double *values);
 int extequal(const char *str, int len, const char *field, char **next_ret=NULL);
