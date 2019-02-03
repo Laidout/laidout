@@ -27,7 +27,7 @@
 #include "laidout.h"
 #include "headwindow.h"
 #include "utils.h"
-#include "interfaces/nodeinterface.h"
+#include "nodes/nodeinterface.h"
 #include "language.h"
 
 
