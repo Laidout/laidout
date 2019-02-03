@@ -2052,6 +2052,140 @@ int BBoxValue::Evaluate(const char *function,int len, ValueHash *context, ValueH
 }
 
 
+//--------------------------------------- ImageValue ---------------------------------------
+
+/* \class ImageValue
+ * \brief Adds scripting functions for a Laxkit::Image object.
+ */
+
+ImageValue::ImageValue()
+{
+	image = nullptr;
+}
+
+//ImageValue::ImageValue(int width, int height)
+//{
+//	image = nullptr;
+//}
+
+int ImageValue::TypeNumber()
+{
+	static int v = VALUE_MaxBuiltIn + getUniqueNumber();
+	return v;
+}
+
+int ImageValue::type()
+{
+	return TypeNumber();
+}
+
+Value *ImageValue::dereference(int index)
+{
+	if (image == nullptr) return nullptr;
+	if (index == 0) return new IntValue(image->w());
+	if (index == 1) return new IntValue(image->h());
+	if (index == 2) return new StringValue(image->filename);
+	return nullptr;
+}
+
+int ImageValue::getValueStr(char *buffer,int len)
+{
+	if (!image) {
+		int needed = 7;
+		if (!buffer || len<needed) return needed;
+		sprintf(buffer,"Image()");
+		return 0;
+	}
+
+    int needed = 30 + 20 + 20 + (image->filename ? strlen(image->filename) : 0);
+    if (!buffer || len<needed) return needed;
+
+	sprintf(buffer,"Image(width=%d, height=%d, filename=\"%s\")", image->w(),image->h(), image->filename ? image->filename : "");
+    modified=0;
+    return 0;
+}
+
+Value *ImageValue::duplicate()
+{
+	ImageValue *dup = new ImageValue();
+	return dup;
+}
+
+ObjectDef *ImageValue::makeObjectDef()
+{
+	objectdef = stylemanager.FindDef("Image");
+	if (objectdef) objectdef->inc_count();
+	else {
+		objectdef = makeImageValueDef();
+		if (objectdef) stylemanager.AddObjectDef(objectdef,0);
+	}
+	return objectdef;
+}
+
+/*! Return 0 success, -1 incompatible values, 1 for error.
+ */
+int ImageValue::Evaluate(const char *function,int len, ValueHash *context, ValueHash *pp, CalcSettings *settings,
+			             Value **value_ret, ErrorLog *log)
+{
+	if (len == 5 && !strncmp(function,"width",6)) {
+		if (value_ret) *value_ret = new IntValue(image->w());
+		return 0;
+
+	} else if (len == 6 && !strncmp(function,"height",6)) {
+		if (value_ret) *value_ret = new IntValue(image->h());
+		return 0;
+
+	} else if (len == 5 && !strncmp(function,"index",5)) {
+		if (value_ret) *value_ret = new IntValue(image->index);
+		return 0;
+
+	} else if (len == 8 && !strncmp(function,"filename",8)) {
+		if (value_ret) *value_ret = new StringValue(image->filename);
+		return 0;
+	}
+
+	return 1;
+}
+
+//! Contructor for ImageValue objects.
+int NewImageObject(ValueHash *context, ValueHash *parameters, Value **value_ret, ErrorLog &log)
+{
+	Value *v=new ImageValue();
+	*value_ret=v;
+
+	if (!parameters || !parameters->n()) return 0;
+
+//	Value *matrix=parameters->find("matrix");
+//	if (matrix) {
+//		SetValue *set=dynamic_cast<SetValue*>(matrix);
+//		if (set && set->GetNumFields()==6) {
+//		}
+//	}
+
+	return 0;
+}
+
+//! Create a new ObjectDef with Image characteristics. Always creates new one, does not search for Image globally.
+ObjectDef *makeImageValueDef()
+{
+	ObjectDef *sd = new ObjectDef(NULL,"Image",
+			_("Image"),
+			_("Image buffer"),
+			"class",
+			NULL,NULL, //range, default value
+			NULL,0, //fields, flags
+			NULL,NewImageObject);
+
+
+	sd->pushFunction("width",    _("Width"),    _("Width"), NULL, NULL);
+	sd->pushFunction("height",   _("Height"),   _("Height"), NULL, NULL);
+	sd->pushFunction("filename", _("Filename"), _("Filename"), NULL, NULL);
+	sd->pushFunction("index",    _("Index"),    _("Index, if file contains more than one image"), NULL, NULL);
+
+	return sd;
+}
+
+
 
 } //namespace Laidout
 
