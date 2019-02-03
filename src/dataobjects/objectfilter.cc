@@ -14,7 +14,7 @@
 //
 
 #include "objectfilter.h"
-#include "../interfaces/nodes.h"
+#include "../nodes/nodes.h"
 #include "drawableobject.h"
 #include "lpathsdata.h"
 #include "lperspectiveinterface.h"

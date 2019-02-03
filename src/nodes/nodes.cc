@@ -17,6 +17,7 @@
 #include <lax/interfaces/curvemapinterface.h>
 #include "nodes.h"
 #include "nodeinterface.h"
+#include "nodes-dataobjects.h"
 #include "../calculator/calculator.h"
 #include "../calculator/curvevalue.h"
 #include "../dataobjects/lsomedataref.h"
@@ -1440,6 +1441,110 @@ Laxkit::anObject *newMathNode2(int p, Laxkit::anObject *ref)
 
 //------------ ImageNode
 
+class ImageNode : public NodeBase
+{
+  public:
+	int atype; //0 == a,b,c,d,e,f, 1= posx, posy, scalex, scaley, anglex, angley_off_90, 2 = xv, yv, pv, 
+	ImageNode(int width, int height);
+	virtual ~ImageNode();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
+	virtual int UpdatePreview();
+};
+
+ImageNode::ImageNode(int width, int height)
+{
+
+	makestr(type, "Image");
+	makestr(Name, _("Image"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Width"),    new IntValue(width), 1)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Height"),   new IntValue(height), 1)); 
+
+	//ObjectDef *enumdef = GetImageDepthDef();
+	//EnumValue *e = new EnumValue(enumdef, 0);
+	//AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Depth"), e, 1)); 
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Initial Color"), new ColorValue("#ffffff"), 1)); 
+
+	//depth: 8, 16, 24, 32, 32f, 64f
+	//format: gray, graya, rgb, rgba
+	//backend: raw, default, gegl, gmic, gm, cairo
+
+	ImageValue *v = new ImageValue();
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("Image"), v,1)); 
+}
+
+ImageNode::~ImageNode()
+{
+}
+
+int ImageNode::UpdatePreview()
+{
+	if (!show_preview) return 1;
+
+	// *** should probably scale down
+	if (!total_preview) {
+		ImageValue *img = dynamic_cast<ImageValue*>(properties.e[3]->GetData());
+		total_preview = img->image;
+	}
+
+	return 0;
+}
+
+NodeBase *ImageNode::Duplicate()
+{
+	int isnum;
+	int width  = getNumberValue(properties.e[0]->GetData(), &isnum);
+	int height = getNumberValue(properties.e[1]->GetData(), &isnum);
+
+	ImageNode *newnode = new ImageNode(width, height);
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+/*! -1 for bad values. 0 for ok, 1 for just needs update.
+ */
+int ImageNode::GetStatus()
+{
+	int isnum;
+	int width = getIntValue(properties.e[0]->GetData(), &isnum);
+	if (!isnum || width <= 0) return -1;
+	int height = getIntValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum || height <= 0) return -1;
+	if (!dynamic_cast<ColorValue*>(properties.e[2]->GetData())) return -1;
+
+	if (!properties.e[3]->data) return 1;
+
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int ImageNode::Update()
+{
+	int isnum = 0;
+	int width = getIntValue(properties.e[0]->GetData(), &isnum);
+	if (!isnum || width <= 0 || width > 20000) return -1;
+	int height = getIntValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum || height <=0 || height > 20000) return -1;
+	ColorValue *color = dynamic_cast<ColorValue*>(properties.e[2]->GetData());
+	if (!color) return -1;
+
+	ImageValue *v = dynamic_cast<ImageValue*>(properties.e[3]->GetData());
+	if (!v) {
+		v = new ImageValue;
+		if (!v->image) {
+			v->image = ImageLoader::NewImage(width, height);
+		}
+		properties.e[3]->SetData(v, 1);
+	}
+
+	UpdatePreview();
+
+	return NodeBase::Update();
+}
+
+
 SingletonKeeper imageDepthKeeper;
 
 ObjectDef *GetImageDepthDef()
@@ -1465,26 +1570,7 @@ ObjectDef *GetImageDepthDef()
 
 Laxkit::anObject *newImageNode(int p, Laxkit::anObject *ref)
 {
-	NodeBase *node = new NodeBase;
-	//node->Id("Image");
-	
-	makestr(node->type, "NewImage");
-	makestr(node->Name, _("New Image"));
-	//node->AddProperty(new NodeProperty(true, true, _("Filename"), new FileValue("."), 1)); 
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Width"),    new IntValue(100), 1)); 
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Height"),   new IntValue(100), 1)); 
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Channels"), new IntValue(4),   1)); 
-
-	ObjectDef *enumdef = GetImageDepthDef();
-	EnumValue *e = new EnumValue(enumdef, 0);
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Depth"), e, 1)); 
-
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Initial Color"), new ColorValue("#ffffff"), 1)); 
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("Color"), NULL, 1)); 
-	//depth: 8, 16, 24, 32, 32f, 64f
-	//format: gray, graya, rgb, rgba
-	//backend: raw, default, gegl, gmic, gm, cairo
-	return node;
+	return new ImageNode(100, 100);
 }
 
 
@@ -3207,7 +3293,7 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Color",    newColorNode,  NULL, 0);
 
 	 //--- ImageNode
-	//factory->DefineNewObject(getUniqueNumber(), "NewImage", newImageNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Image", newImageNode,  NULL, 0);
 
 	 //--- MathNode1
 	factory->DefineNewObject(getUniqueNumber(), "Math1",     newMathNode1,   NULL, 0);
@@ -3300,6 +3386,9 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	//Register nodes for DrawableObject filters:
 	RegisterFilterNodes(factory);
 
+	//Register DrawableObject nodes:
+	SetupDataObjectNodes(factory);
+	
 
 	return 0;
 }

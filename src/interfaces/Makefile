@@ -26,9 +26,6 @@ objs= \
 	animationinterface.o \
 	objecttree.o \
 	pagemarkerinterface.o \
-	nodeinterface.o \
-	nodeeditor.o \
-	nodes.o \
 	objectfilterinterface.o \
 
 

@@ -42,7 +42,7 @@
 #include "impositions/singles.h"
 #include "impositions/netimposition.h"
 #include "impositions/impositioneditor.h"
-#include "interfaces/nodeeditor.h"
+#include "nodes/nodeeditor.h"
 #include "headwindow.h"
 #include "version.h"
 #include "stylemanager.h"

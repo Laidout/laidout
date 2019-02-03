@@ -46,6 +46,7 @@ dirs= \
 	filetypes \
 	impositions \
 	interfaces \
+	nodes \
 	plugins \
 	printing
 
@@ -118,10 +119,11 @@ otherobjs= \
 	interfaces/animationinterface.o \
 	interfaces/objecttree.o \
 	interfaces/pagemarkerinterface.o \
-	interfaces/nodeinterface.o \
-	interfaces/nodeeditor.o \
-	interfaces/nodes.o \
 	interfaces/objectfilterinterface.o \
+	nodes/nodeinterface.o \
+	nodes/nodeeditor.o \
+	nodes/nodes-dataobjects.o \
+	nodes/nodes.o \
 	printing/print.o \
 	printing/psfilters.o \
 	printing/pscolorpatch.o \
@@ -199,6 +201,9 @@ interfaces:
 
 filetypes:
 	cd filetypes && $(MAKE)
+
+nodes:
+	cd nodes && $(MAKE)
 
 printing:
 	cd printing && $(MAKE)

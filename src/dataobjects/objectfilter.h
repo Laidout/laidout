@@ -18,7 +18,7 @@
 
 
 #include <lax/refptrstack.h>
-#include "../interfaces/nodeinterface.h"
+#include "../nodes/nodeinterface.h"
 
 
 namespace Laidout {

@@ -1347,10 +1347,15 @@ int NodeBase::SetProperty(const char *prop, Value *value, bool absorb)
  */
 int NodeBase::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
 {
-	if (att->attributes.n == 0) return 0; //nothing to do if no data!
-
 	NodeProperty *prop = FindProperty(propname);
 	if (!prop) return 0; //only work on existing props.
+
+	Attribute *h_resized = att->find("h_resized");
+	if (h_resized) {
+		prop->height = strtod(h_resized->value,NULL);
+	}
+
+	if (att->attributes.n == 0) return 0; //nothing to do if no data!
 
 	 //check for EnumValue
     if (att->attributes.n == 1 && !strcmp(att->attributes.e[0]->name,"EnumValue")) {
@@ -1452,6 +1457,7 @@ LaxFiles::Attribute *NodeBase::dump_out_atts(LaxFiles::Attribute *att, int what,
 		att->push("block", "some_name", "A block property");
 		att->push("exec_in", "some_name", "An input execution property");
 		att->push("exec_out", "some_name", "An output execution property");
+		att->push("h_resized", "14", "Property height, if the property is resizeable");
 		//att->push("exec_through", "some_name", "A through execution property");
 
         return att;
@@ -1497,6 +1503,9 @@ LaxFiles::Attribute *NodeBase::dump_out_atts(LaxFiles::Attribute *att, int what,
 			else if (prop->IsExecOut())     att2 = att->pushSubAtt("exec_out",     prop->name);
 
 		} else continue;
+
+		if (prop->HasFlag(NodeProperty::PROPF_Y_Resizeable))
+			att2->push("h_resized", prop->height);
 
 		if (    (prop->IsBlock()
 			 || (prop->IsInput() && !prop->IsConnected()) 
@@ -4445,7 +4454,7 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, int 
 					&& p.y >= node->y + th*1.15 + node->preview_area_height/2 + nh/2 - th
 					&& p.y <= node->y + th*1.15 + node->preview_area_height/2 + nh/2) {
 				  *overpropslot = NODES_PreviewResize;
-				  if (*overpropslot != -1) *overproperty = -1;
+				  if (*overproperty != -1) *overproperty = -1;
 				}
 			}
 			return c; 
@@ -4564,7 +4573,7 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 		selection_rect.miny=selection_rect.maxy=y;
 		needtodraw=1;
 
-	} else if (overnode>=0 && overproperty>=0 && overpropslot == NODES_PreviewResize) {
+	} else if (overnode>=0 && overproperty<0 && overpropslot == NODES_PreviewResize) {
 		action = NODES_Resize_Preview;
 
 	} else if (overnode>=0 && overproperty>=0 && overpropslot == NODES_PropResize) {
@@ -4692,6 +4701,7 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 	}
 
 	if (action != NODES_None) {
+		DBG cerr << "Node LBDown with action: "<<action<<endl;
 		buttondown.down(d->id, LEFTBUTTON, x,y, action);
 		hover_action = action;
 	} else hover_action = NODES_None;
@@ -5017,6 +5027,8 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		} 
 
 	} else if (action == NODES_Resize_Preview) {
+		DBG cerr << "Resize preview..."<<endl;
+
 		NodeBase *node = nodes->nodes.e[lasthover];
 		if (selected.findindex(node) < 0) {
 			node->UpdatePreview();
@@ -5230,6 +5242,8 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 		action = NODES_Drag_Property;
 		buttondown.moveinfo(mouse->id, LEFTBUTTON, action, property);
 	}
+
+	DBG cerr << "MouseMove nodes action: "<<action<<endl;
 
 	if (action == NODES_Drag_Property) {
 		 //we are dragging on a property.. might have to get response from a custom interface

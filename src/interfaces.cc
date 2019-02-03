@@ -22,15 +22,16 @@
 #include <lax/interfaces/engraverfillinterface.h>
 #include <lax/interfaces/freehandinterface.h>
 #include <lax/interfaces/textonpathinterface.h>
-#include "interfaces/nodeinterface.h"
 #include <lax/interfaces/delauneyinterface.h>
+
+#include "nodes/nodeinterface.h"
 #include "interfaces/objectfilterinterface.h"
 
 //experimental:
 #include <lax/interfaces/perspectiveinterface.h>
 #include <lax/interfaces/textstreaminterface.h>
-#include "interfaces/anchorinterface.h"
 #include <lax/interfaces/ellipseinterface.h>
+#include "interfaces/anchorinterface.h"
 #include "interfaces/animationinterface.h"
 
 

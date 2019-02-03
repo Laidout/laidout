@@ -115,11 +115,13 @@ class PathGeneratorNode
 		Square,
 		Circle,     //num points, is bez, start, end
 		Polygon, // vertices, winds
+		Svgd, // svg style d string
 		Function, //y=f(x), x range, step
 		FunctionT, //p=(x(t), y(t)), t range, step
 		MAX
 	};
 	PathTypes pathtype;
+	LPathsData *path;
 
 	PathGeneratorNode(PathTypes ntype);
 	virtual ~PathGeneratorNode();
@@ -170,9 +172,15 @@ PathGeneratorNode::PathGeneratorNode(PathTypes ntype)
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Mint", new DoubleValue(0),1,  _("Min t"), NULL));
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Maxt", new DoubleValue(1),1,  _("Max t"), NULL));
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Step", new DoubleValue(.1),1, _("Step"), NULL));
+
+	} else if (pathtype == Svgd) {
+		makestr(type, "Path/Svgd");
+		makestr(Name, _("Svg d");
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "d",      new StringValue(""),1, _("d"), _("Svg style d path string")));
 	}
 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", new LPathsData(),1, _("Out"), NULL,0, false));
+	path = new LPathsData();
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", path,1, _("Out"), NULL,0, false));
 }
 
 PathGeneratorNode::~PathGeneratorNode()
@@ -191,15 +199,45 @@ NodeBase *PathGeneratorNode::Duplicate()
 	return newnode;
 }
 
+//0 ok, -1 bad ins, 1 just needs updating
 int PathGeneratorNode::GetStatus()
 {
-	***
+	char types[5];
+	const char *stype;
+	const char sig = "     nnn  nnn  snnn ssnnns    ";
+
+	for (int c=0; c<properties.n-1; c++) {
+		stype = properties.e[c]->GetData()->whattype();
+		if (isNumberType(properties.e[c]->GetData()) types[c] = 'n';
+		else if (!strcmp(stype, "StringValue")) types[c] = 's';
+		else types[c] = ' ';
+	}
+
+	if (pathtype == Square) {
+		//always ok
+
+	} else if (pathtype == Circle) {
+		if (strcmp(sig+5, "nnn", 3) return -1;
+
+	} else if (pathtype == Polygon) {
+		if (strcmp(sig+10, "nnn", 3) return -1;
+
+	} else if (pathtype == Function) {
+		if (strcmp(sig+15, "snnn", 3) return -1;
+
+	} else if (pathtype == FunctionT) {
+		if (strcmp(sig+15, "ssnnn", 3) return -1;
+
+	} else if (pathtype == Svgd) {
+		if (strcmp(sig+15, "s", 1) return -1;
+	}
 	return NodeBase::GetStatus();
 }
 
 int PathGeneratorNode::Update()
 {
 	makestr(error_message, NULL);
+	if (GetStatus() == -1) return -1;
 
 	PathsData *path = dynamic_cast<PathsData>(properties.e[properties.n-1]->GetData());
 	if (!path) {
@@ -207,15 +245,13 @@ int PathGeneratorNode::Update()
 		properties.e[properties.n-1]->SetData(path, 1);
 	}
 
-	if (pathtype == Rectangle) {
+	if (pathtype == Square) {
 		path->appendRect(0,0,1,1);
 
 	} else if (pathtype == Circle) {
 		path->clear();
-		***
-		for (int c=0; c<n; c++) {
-			path.append();
-		}
+		int i =
+		path->appendEllipse(flatpoint(), 1,1, 360, i, true);
 
 	} else if (pathtype == Polygon) {
 		path->clear();
@@ -287,6 +323,11 @@ int PathGeneratorNode::Update()
 				pointsadded++;
 			}
 		}
+
+	} else if (pathtype == Svgd) {
+		StringValue v = dynamic_cast<StringValue*>(properties.GetData(0));
+		path->clear();
+		path->appendsvg(v->str);
 	}
 
 	return NodeBase::Update();
@@ -366,6 +407,37 @@ int GridPoints(
 /*! Cube centered at center.
  */
 int Cube( double xwidth, double ywidth, double zwidth, spacevector center, Polyhedron *poly)
+{
+}
+
+
+//----------------------- ExtrudeNode ------------------------
+
+/*! \class ExtrudeNode
+ *
+ * Extrude a path or a Polyhedron, outputting a new Polyhedron.
+ */
+class ExtrudeNode : public NodeBase
+{
+  public:
+	EtxrudeNode();
+	virtual ~ExtrudeNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+};
+
+EtxrudeNode::EtxrudeNode()
+{
+	makestr(type, "Models/Extrude");
+	makestr(Name, _("Extrude");
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,     _("Input"), _("A path or model")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "dir",   new SpacevectorValue(0,0,1),1,  _("Vector"),  _("Direction of extrusion")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out"), NULL,0, false));
+}
+
+EtxrudeNode::~ExtrudeNode()
 {
 }
 
@@ -540,14 +612,14 @@ Laxkit::anObject *newNumToStringNode(int p, Laxkit::anObject *ref)
 
 //------------------------------ MathConstantsNode --------------------------------------------
 
-class MathContstantNode : public NodeBase
+class MathConstantNode : public NodeBase
 {
 	static SingletonKeeper defkeeper; //the def for the op enum
 	static ObjectDef *GetDef() { return dynamic_cast<ObjectDef*>(defkeeper.GetObject()); }
 
   public:
-	MathContstantNode(int which);
-	virtual ~MathContstantNode();
+	MathConstantNode(int which);
+	virtual ~MathConstantNode();
 	virtual NodeBase *Duplicate();
 	virtual int Update();
 	virtual int GetStatus() { return 0; }
@@ -570,7 +642,7 @@ ObjectDef *DefineMathConstants()
 
 SingletonKeeper MathConstantNode::defkeeper(DefineMathConstants(), true);
 
-MathContstantNode::MathContstantNode(int which)
+MathConstantNode::MathConstantNode(int which)
 {
 	ObjectDef *enumdef = GetDef();
 	EnumValue *e = new EnumValue(enumdef, 0);
@@ -579,19 +651,19 @@ MathContstantNode::MathContstantNode(int which)
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", new DoubleValue(0),1, _("Out")));
 }
 
-MathContstantNode::~MathContstantNode()
+MathConstantNode::~MathConstantNode()
 {
 }
 
-NodeBase *MathContstantNode::Duplicate()
+NodeBase *MathConstantNode::Duplicate()
 {
 	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
-	MathContstantNode *newnode = new MathContstantNode(ev->value);
+	MathConstantNode *newnode = new MathConstantNode(ev->value);
 	newnode->DuplicateBase(this);
 	return newnode;
 }
 
-int MathContstantNode::Update()
+int MathConstantNode::Update()
 {
 	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
 	ObjectDef *def = ev->GetObjectDef();
@@ -868,8 +940,8 @@ GradientStripProperty::GradientStripProperty(GradientStripValue *ngradient, int 
 {
 	type = NodeProperty::PROP_Block;
 	is_linkable = false;
-	makestr(name, "Curve");
-	makestr(label, _("Curve"));
+	makestr(name, "Gradient");
+	makestr(label, _("Gradient"));
 	//makestr(tooltip, _(""));
 
 	gradient = ngradient;
@@ -1248,6 +1320,8 @@ Laxkit::anObject *newPathBoolean(int p, Laxkit::anObject *ref)
  * str: Expression
  *     New Out [o]
  */
+
+
 
 
 
