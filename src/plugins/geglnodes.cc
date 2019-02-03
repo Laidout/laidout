@@ -16,8 +16,8 @@
 #include <lax/fileutils.h>
 
 #include "../language.h"
-#include "../interfaces/nodeinterface.h"
-#include "../interfaces/nodes.h"
+#include "../nodes/nodeinterface.h"
+#include "../nodes/nodes.h"
 #include "../calculator/curvevalue.h"
 #include "geglnodes.h"
 #include "svg/svgnodes.h"

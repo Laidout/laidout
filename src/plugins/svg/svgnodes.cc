@@ -15,7 +15,7 @@
 
 #include "../../language.h"
 #include "svgnodes.h"
-#include "../../interfaces/nodeinterface.h"
+#include "../../nodes/nodeinterface.h"
 #include <exception>
 
 //template implementation:
