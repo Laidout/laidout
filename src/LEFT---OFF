@@ -14,6 +14,8 @@ Those are purged with each release.
 
 bug: input edit cursor placement is wrong now
 
+bug: curve is terrible approximation at end points
+
 ftgl problem in polyptych... font not rendering
 
 finish debugging mesh svg 2.0 out/in
@@ -163,6 +165,8 @@ test:
   test in different window managers
   make some test scripts for command line testing
 
+
+need ability to show "reprocessing.." or "progress.." indicator in different thread to what is actually processing
 
 in singles view, spread number in box should be page label instead of spread number
 
@@ -598,6 +602,13 @@ Perspective perspective:
   filtering paths needs to detect big distortions and add points, as simply transforming bez points is not enough
 
 node editor NodeInterface nodes node interface:
+  DONE resize preview broken
+
+  height of resizable property not saved
+  group nodes, connect to (new in) or (new out):
+	should take names from props. 
+	doesn't update the parent props
+  curve node needs y expand ability
   should probably bring forward any selected
   load/save custom properties needs to preserve name, label, tooltip, types, custom info
   undo redo
@@ -614,6 +625,9 @@ node editor NodeInterface nodes node interface:
 	search in child groups
 	find all
   gegl nodes:
+	maybe have gegl node preview gen be in different thread, as they can be quite lengthy
+	not responding to curve updates
+	reload file, load node out of sync or something, not showing preview after file load in
     need browser buttons on "path" properties of IsSaveNode()s
     need needtoupdate caching or force work on small proxy images.. gegl with big images takes a long time
     scale-size has runaway render for undefined rect
@@ -663,7 +677,7 @@ node editor NodeInterface nodes node interface:
 	exec tick speed control for debugging
   make sure entire nodes don't go totally offscreen
   scriptify node graph
-  nodes to script and script to nodes
+  expression node: nodes to script and script to nodes
   deferred update when massive operations, maybe highlight nodes in yellow?
   color code pipes by value type, color: yellow, number: gray, vector: purple
   need better styling.. too much is hardcoded. problems later with high dpi screens
