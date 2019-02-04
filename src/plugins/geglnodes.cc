@@ -171,6 +171,20 @@ int ValueToProperty(Value *v, const char *gvtype, GeglNode *node, const char *pr
 		g_value_unset(&gv);
 		if (success) return 0;
 
+	} else if (!strcmp(gvtype, "GeglCurve")) {
+		CurveValue *curvev = dynamic_cast<CurveValue*>(v);
+		if (!v) return -1;
+
+		GeglCurve *gcurve = gegl_curve_new(0,1);
+		//gegl_node_get(gegl, prop->name, &gcurve, NULL);
+		//gegl_curve_get_y_bounds (gcurve, &min_y, &max_y);
+
+		for (int c=0; c<curvev->points.n; c++) {
+			gegl_curve_add_point(gcurve, curvev->points.e[c].x, curvev->points.e[c].y);
+		}
+		gegl_node_set(node, property, gcurve, NULL);
+		g_object_unref (gcurve);
+
 	} else if (!strcmp(gvtype, "BablFormat")) {
 		StringValue *s = dynamic_cast<StringValue*>(v);
 		if (!s) return -1;
@@ -310,15 +324,17 @@ NodeGroup* GeglNodesToLaidoutNodes(GeglNode *gegl, NodeGroup *parent, bool child
 	return parent;
 }
 
+#define DIM_UNBOUND 20000
+
 /*! Attempt to put full size in in_this.
  * If gegl is unbounded, then use a 100 x 100 box.
  * If new_if_different and in_this != NULL and dimensions differ, then return a new LaxImage.
- * Assume 20000 px wide or tall means the gegl input is unbounded and use 100x100.
+ * Assume DIM_UNBOUND px wide or tall means the gegl input is unbounded and use 100x100.
  */
 LaxImage *GeglToLaxImage(GeglNode *gegl, LaxImage *in_this, bool new_if_different)
 {
 	GeglRectangle rect = gegl_node_get_bounding_box (gegl);
-	if (rect.width <=0 || rect.height <= 0 || rect.width > 20000 || rect.height > 20000) {
+	if (rect.width <=0 || rect.height <= 0 || rect.width > DIM_UNBOUND || rect.height > DIM_UNBOUND) {
 		 //probably unbounded, arbitrarily select a little window onto the data
 		rect.x      = 0;
 		rect.y      = 0;
@@ -932,13 +948,16 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 				//}
 
 			} else if (!strcmp(proptype, "GeglCurve")) {
+				//Set default 0..1 curve
+				double min_y=0, max_y=1;
 				GeglCurve *gcurve = NULL;
 				gegl_node_get(gegl, prop->name, &gcurve, NULL);
+				gegl_curve_get_y_bounds (gcurve, &min_y, &max_y);
+
 				CurveValue *locurve = new CurveValue;
 				locurve->Reset(true);
-				double min_y=0, max_y=1;
-				gegl_curve_get_y_bounds (gcurve, &min_y, &max_y);
 				locurve->SetYBounds(min_y, max_y, NULL, false);
+
 				unsigned int npoints = gegl_curve_num_points(gcurve);
 				double x,y;
 				for (unsigned int c2=0; c2<npoints; c2++) {
@@ -1178,15 +1197,31 @@ int GeglToLaxImageNode::Update()
 
 			dynamic_cast<DoubleValue*>(properties.e[1]->GetData())->d = rect.width;
 			dynamic_cast<DoubleValue*>(properties.e[2]->GetData())->d = rect.height;
-			ObjectValue *v = dynamic_cast<ObjectValue*>(properties.e[3]->GetData());
+			ImageValue *v = dynamic_cast<ImageValue*>(properties.e[3]->GetData());
 			if (!v) {
-				v = new ObjectValue();
+				v = new ImageValue();
 				properties.e[3]->SetData(v, 1);
 			}
-			LaxImage *img = dynamic_cast<LaxImage*>(v->object);
-			if (img) img->inc_count();
-			LaxImage *nimg = GeglToLaxImage(gegl, img, true);
-			v->SetObject(nimg, true);
+			LaxImage *img = v->image;
+			if (img && (img->w() != rect.width || img->h() != rect.height)) {
+				img->dec_count();
+				img = nullptr;
+			}
+			if (!img) {
+				if (rect.width > DIM_UNBOUND || rect.height > DIM_UNBOUND) {
+					rect.width = rect.height = 100;
+				}
+				v->image = img = ImageLoader::NewImage(rect.width, rect.height);
+			}
+			GeglToLaxImage(gegl, img, false);
+			if (total_preview != img) {
+				bool layout = false;
+				if (total_preview) total_preview->dec_count();
+				else layout = true;
+				total_preview = img;
+				total_preview->inc_count();
+				if (layout) UpdateLayout();
+			}
 
 			for (int c=1; c<properties.n; c++) properties.e[c]->modtime = times(NULL);
 		}
