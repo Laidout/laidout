@@ -1533,11 +1533,17 @@ int ImageNode::Update()
 	ImageValue *v = dynamic_cast<ImageValue*>(properties.e[3]->GetData());
 	if (!v) {
 		v = new ImageValue;
-		if (!v->image) {
-			v->image = ImageLoader::NewImage(width, height);
-		}
 		properties.e[3]->SetData(v, 1);
 	}
+	if (v->image && (v->image->w() != width || v->image->h() != height)) {
+		v->image->dec_count();
+		v->image = nullptr;
+	}
+	if (!v->image) {
+		v->image = ImageLoader::NewImage(width, height);
+	}
+
+	v->image->Set(color->color.Red(), color->color.Green(), color->color.Blue(), color->color.Alpha());
 
 	UpdatePreview();
 
@@ -2910,6 +2916,7 @@ CurveProperty::CurveProperty(CurveValue *ncurve, int absorb, int isout)
 	CurveMapInterface *interface = GetCurveInterface();
 	if (!interface) {
 		interface = new CurveMapInterface(getUniqueNumber(), NULL);
+		makestr(interface->owner_message, "CurveChange");
 		interface->style |= CurveMapInterface::RealSpace | CurveMapInterface::Expandable;
 		interfacekeeper.SetObject(interface, 1);
 	}
