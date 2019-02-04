@@ -44,10 +44,15 @@ class LImageDataNode : public NodeBase
 	virtual NodeBase *Duplicate();
 	virtual int Update();
 	virtual int GetStatus();
+	virtual int UpdatePreview();
 };
+
 
 LImageDataNode::LImageDataNode()
 {
+	makestr(Name, _("Image Data"));
+	makestr(type, "Drawable/ImageData");
+
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "transform",  new AffineValue(),1, _("Transform")));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "image", new ColorValue(1.,1.,1.,1.),1, _("Image")));
 
@@ -77,6 +82,7 @@ int LImageDataNode::Update()
 
 	//if (col) imagedata->SetImageAsColor(col->color.Red(), col->color.Green(), col->color.Blue(), col->color.Alpha());
 	//else
+	imagedata->m(a->m());
 	imagedata->SetImage(image->image, nullptr);
 
 	return NodeBase::Update();
@@ -92,10 +98,97 @@ int LImageDataNode::GetStatus()
 	return NodeBase::GetStatus();
 }
 
+int LImageDataNode::UpdatePreview()
+{
+	LaxImage *img = imagedata->GetPreview();
+	if (img) {
+		img->inc_count();
+		if (total_preview) total_preview->dec_count();
+		total_preview = img;
+		total_preview->inc_count();
+	}
+	return 1;
+}
+
 
 Laxkit::anObject *newLImageDataNode(int p, Laxkit::anObject *ref)
 {
 	return new LImageDataNode();
+}
+
+
+//------------------------ ObjectInfoNode ------------------------
+
+/*! \class Node for ObjectInfo.
+ */
+
+class ObjectInfoNode : public NodeBase
+{
+  public:
+	ObjectInfoNode();
+	virtual ~ObjectInfoNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+};
+
+
+ObjectInfoNode::ObjectInfoNode()
+{
+	makestr(Name, _("Object Info"));
+	makestr(type, "Drawable/ObjectInfo");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in",  NULL,1, _("In")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "name",      new StringValue(),1, _("Name"),     nullptr, 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "transform", new AffineValue(),1, _("Transform"),nullptr, 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "bounds",    new BBoxValue(),1,   _("Bounds"),   nullptr, 0, false));
+	//AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "clippath", nullptr,1, _("ClipPath"), nullptr,0,false));
+}
+
+ObjectInfoNode::~ObjectInfoNode()
+{
+}
+
+NodeBase *ObjectInfoNode::Duplicate()
+{
+	ObjectInfoNode *node = new ObjectInfoNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int ObjectInfoNode::Update()
+{
+	DrawableObject *dr = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
+	if (!dr) return -1;
+
+	StringValue *s = dynamic_cast<StringValue*>(properties.e[1]->GetData());
+	AffineValue *a = dynamic_cast<AffineValue*>(properties.e[2]->GetData());
+	BBoxValue *b = dynamic_cast<BBoxValue*>(properties.e[3]->GetData());
+
+	s->Set(dr->Id());
+	a->m(dr->m());
+	b->setbounds(dr);
+
+	properties.e[1]->modtime = properties.e[2]->modtime = properties.e[3]->modtime = times(NULL);
+
+	return NodeBase::Update();
+}
+
+int ObjectInfoNode::GetStatus()
+{
+	DrawableObject *dr = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
+	if (!dr) return -1;
+
+	return NodeBase::GetStatus();
+}
+
+
+
+Laxkit::anObject *newObjectInfoNode(int p, Laxkit::anObject *ref)
+{
+	return new ObjectInfoNode();
 }
 
 
@@ -108,6 +201,9 @@ int SetupDataObjectNodes(Laxkit::ObjectFactory *factory)
 {
 	 //--- LImageDataNode
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/ImageData",  newLImageDataNode,  NULL, 0);
+
+	 //--- ObjectInfoNode
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/ObjectInfo",  newObjectInfoNode,  NULL, 0);
 
 
 	return 0;
