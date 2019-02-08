@@ -263,6 +263,8 @@ NodeProperty::NodeProperty(PropertyTypes input, bool linkable, const char *nname
 
 NodeProperty::~NodeProperty()
 {
+	DBG cerr << "..delete property "<<(name ? name : "(no name)")<<endl;
+
 	delete[] name;
 	delete[] label;
 	delete[] tooltip;
@@ -674,6 +676,8 @@ NodeBase::NodeBase()
 
 NodeBase::~NodeBase()
 {
+	DBG cerr << "delete node "<<(Name ? Name : "(no name)")<<endl;
+
 	delete[] Name;
 	delete[] type;
 	delete[] error_message;
@@ -4872,6 +4876,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 			flatpoint p = nodes->m.transformPointInverse(flatpoint(x,y));
 			anInterface *interface = prop->PropInterface(NULL, dp);
 			interface->LBUp(p.x,p.y, state,d);
+			node->Update();
 			//dp->PopAxes();
 		}
 
@@ -5337,6 +5342,7 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 			flatpoint p = nodes->m.transformPointInverse(flatpoint(x,y));
 			anInterface *interface = prop->PropInterface(NULL, dp);
 			interface->MouseMove(p.x,p.y, state,mouse);
+			//node->Update();
 			//interface->MouseMove(x,y,state,mouse);
 			//dp->PopAxes();
 		}
