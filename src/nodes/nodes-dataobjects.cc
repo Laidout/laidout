@@ -101,11 +101,13 @@ int LImageDataNode::GetStatus()
 int LImageDataNode::UpdatePreview()
 {
 	LaxImage *img = imagedata->GetPreview();
+	if (img == nullptr) img = imagedata->image;
 	if (img) {
-		img->inc_count();
-		if (total_preview) total_preview->dec_count();
-		total_preview = img;
-		total_preview->inc_count();
+		if (img != total_preview) {
+			if (total_preview) total_preview->dec_count();
+			total_preview = img;
+			total_preview->inc_count();
+		}
 	}
 	return 1;
 }
@@ -114,6 +116,103 @@ int LImageDataNode::UpdatePreview()
 Laxkit::anObject *newLImageDataNode(int p, Laxkit::anObject *ref)
 {
 	return new LImageDataNode();
+}
+
+
+//------------------------ LImageDataInfoNode ------------------------
+
+/*! \class Node for LImageDataInfo.
+ */
+
+class LImageDataInfoNode : public NodeBase
+{
+  public:
+	LImageDataInfoNode();
+	virtual ~LImageDataInfoNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual int UpdatePreview();
+};
+
+
+LImageDataInfoNode::LImageDataInfoNode()
+{
+	makestr(Name, _("Image Data Info"));
+	makestr(type, "Drawable/ImageDataInfo");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,true, "out", nullptr,1, NULL, 0, false)); 
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "transform",  new AffineValue(),1, _("Transform"),nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "image", new ImageValue(),1, _("Image"),nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "file", new StringValue(""),1, _("File"), nullptr,0,false)); 
+
+}
+
+LImageDataInfoNode::~LImageDataInfoNode()
+{
+}
+
+NodeBase *LImageDataInfoNode::Duplicate()
+{
+	LImageDataInfoNode *node = new LImageDataInfoNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int LImageDataInfoNode::Update()
+{
+	LImageData *imgdata = dynamic_cast<LImageData*>(properties.e[0]->GetData());
+	if (!imgdata) return -1;
+
+	AffineValue *a = dynamic_cast<AffineValue*>(properties.e[1]->GetData());
+	a->set(imgdata->m());
+
+	ImageValue *image = dynamic_cast<ImageValue*>(properties.e[2]->GetData());
+	if (image->image != imgdata->image) {
+		if (image->image) image->image->dec_count();
+		image->image = imgdata->image;
+		if (image->image) image->image->inc_count();
+	}
+
+	dynamic_cast<StringValue*>(properties.e[3]->GetData())->Set(imgdata->filename ? imgdata->filename : "");
+
+	UpdatePreview();
+	Wrap();
+
+	return NodeBase::Update();
+}
+
+int LImageDataInfoNode::GetStatus()
+{
+	LImageData *imgdata = dynamic_cast<LImageData*>(properties.e[0]->GetData());
+	if (!imgdata) return -1;
+	return NodeBase::GetStatus();
+}
+
+int LImageDataInfoNode::UpdatePreview()
+{
+	LImageData *imagedata = dynamic_cast<LImageData*>(properties.e[0]->GetData());
+	LaxImage *img = imagedata ? imagedata->GetPreview() : nullptr;
+	if (img == nullptr) img = imagedata->image;
+	if (img) {
+		if (img != total_preview) {
+			if (total_preview) total_preview->dec_count();
+			total_preview = img;
+			total_preview->inc_count();
+		}
+	} else {
+		if (total_preview) total_preview->dec_count();
+		total_preview = nullptr;
+	}
+	return 1;
+}
+
+
+Laxkit::anObject *newLImageDataInfoNode(int p, Laxkit::anObject *ref)
+{
+	return new LImageDataInfoNode();
 }
 
 
@@ -142,7 +241,9 @@ ObjectInfoNode::ObjectInfoNode()
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in",  NULL,1, _("In")));
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "name",      new StringValue(),1, _("Name"),     nullptr, 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "parent",    nullptr,1, _("Parent"),     nullptr, 0, false));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "transform", new AffineValue(),1, _("Transform"),nullptr, 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "fulltransform", new AffineValue(),1, _("Full Transform"),nullptr, 0, false));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "bounds",    new BBoxValue(),1,   _("Bounds"),   nullptr, 0, false));
 	//AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "clippath", nullptr,1, _("ClipPath"), nullptr,0,false));
 }
@@ -164,14 +265,20 @@ int ObjectInfoNode::Update()
 	if (!dr) return -1;
 
 	StringValue *s = dynamic_cast<StringValue*>(properties.e[1]->GetData());
-	AffineValue *a = dynamic_cast<AffineValue*>(properties.e[2]->GetData());
-	BBoxValue *b = dynamic_cast<BBoxValue*>(properties.e[3]->GetData());
+	DrawableObject *parent = dynamic_cast<DrawableObject*>(dr->GetParent());
+	//if (dr && !dr->Selectable()) dr = nullptr;
+	properties.e[2]->SetData(parent, 0);
+	AffineValue *a = dynamic_cast<AffineValue*>(properties.e[3]->GetData());
+	AffineValue *f = dynamic_cast<AffineValue*>(properties.e[4]->GetData());
+	BBoxValue *b = dynamic_cast<BBoxValue*>(properties.e[5]->GetData());
 
 	s->Set(dr->Id());
 	a->m(dr->m());
+	Affine ff = dr->GetTransformToContext(false, 0);
+	f->set(ff);
 	b->setbounds(dr);
 
-	properties.e[1]->modtime = properties.e[2]->modtime = properties.e[3]->modtime = times(NULL);
+	for (int c=1; c<properties.n; c++) properties.e[c]->modtime = times(NULL);
 
 	return NodeBase::Update();
 }
@@ -201,6 +308,9 @@ int SetupDataObjectNodes(Laxkit::ObjectFactory *factory)
 {
 	 //--- LImageDataNode
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/ImageData",  newLImageDataNode,  NULL, 0);
+
+	 //--- LImageDataInfoNode
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/ImageDataInfo",  newLImageDataInfoNode,  NULL, 0);
 
 	 //--- ObjectInfoNode
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/ObjectInfo",  newObjectInfoNode,  NULL, 0);
