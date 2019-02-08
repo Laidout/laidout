@@ -399,14 +399,96 @@ GeglNode *LaxImageToGegl(LaxImage *image, GeglNode *to_this)
  * can interact with main gegl nodes.
  */
 
-class GeglUser
-{
-  public:
-	GeglUser() {}
-	virtual ~GeglUser() {};
-	virtual GeglNode *GetGeglNode() = 0;
-};
 
+/*! Return 0 for nothing done, or 1 for preview updated.
+ */
+int GeglUser::UpdatePreview()
+{
+
+//	if (IsSaveNode()) {
+//		DBG cerr <<"  skipping preview for save nodes, because they don't behave well for blitting"<<endl;
+//		return 1;
+//	}
+
+	if (preview_area_height < 0) preview_area_height = 3*colors->font->textheight();
+
+	GeglNode *gegl = GetGeglNode();
+	GeglRectangle rect = gegl_node_get_bounding_box (gegl);
+	if (rect.width <=0 || rect.height <= 0 || rect.width > 100000 || rect.height > 100000) {
+		 //probably unbounded, arbitrarily select a little window onto the data
+		rect.x      = 0;
+		rect.y      = 0;
+		rect.width  = psamplew > 0 ? psamplew : 100;
+		rect.height = psampleh > 0 ? psampleh : 100;
+	}
+
+
+	//double aspect = (double)rect.width / rect.height;
+	int bufw = rect.width;
+	int bufh = rect.height;
+	int maxwidth = (width > 0 ? width : 3*colors->font->textheight());
+	int maxheight = preview_area_height;
+
+	 //first determine a smallish size for the preview image, adjust total_preview if necessary.
+	 //fit inside a rect this->width x maxdim
+	int ibufw = bufw, ibufh = bufh;
+	double scale  = (double)maxwidth  / bufw;
+	double scaley = (double)maxheight / bufh;
+	if (scaley > scale) {
+		scaley = scale;
+	}
+	ibufw = bufw * scale;
+	ibufh = bufh * scale;
+	if (ibufw==0) ibufw = 1;
+	if (ibufh==0) ibufh = 1;
+
+
+	bool needtowrap = false;
+	if (!total_preview) needtowrap = true;
+	if (total_preview && (ibufw != total_preview->w() || ibufh != total_preview->h())) {
+		total_preview->dec_count();
+		total_preview = NULL;
+		needtowrap = true;
+	}
+
+	if (!total_preview) { 
+		total_preview = ImageLoader::NewImage(ibufw, ibufh);
+	}
+
+	unsigned char *buffer = total_preview->getImageBuffer(); //bgra
+
+
+	GeglRectangle  orect;
+	orect.x = orect.y = 0;
+	orect.width  = ibufw;
+	orect.height = ibufh;
+
+	gegl_node_blit (gegl,
+					ibufw/(double)rect.width,
+					&orect,
+					babl_format("R'G'B'A u8"),
+					buffer,
+					GEGL_AUTO_ROWSTRIDE,
+					GEGL_BLIT_DEFAULT);
+
+	//need to flip r and b
+	int i=0;
+	unsigned char t;
+	for (int y=0; y<ibufh; y++) {
+		for (int x=0; x<ibufw; x++) {
+			t = buffer[i+2];
+			buffer[i+2] = buffer[i];
+			buffer[i] = t;
+			i += 4;
+		}
+	}
+
+	total_preview->doneWithBuffer(buffer);
+
+	if (needtowrap) Wrap();
+
+	return 1;
+}
 
 //-------------------------------- GeglLaidoutNode --------------------------
 
@@ -446,6 +528,11 @@ GeglLaidoutNode::~GeglLaidoutNode()
 {
 	delete[] operation;
 	if (gegl) g_object_unref (gegl);
+}
+
+GeglNode *GeglLaidoutNode::GetGeglNode()
+{
+	return gegl;
 }
 
 NodeBase *GeglLaidoutNode::Duplicate()
@@ -531,9 +618,15 @@ int GeglLaidoutNode::Update()
 				 //is an input pad, we need to make sure it's connected
 				GeglNode *prevnode = NULL;
 				int pindex=-1;
-				GeglLaidoutNode *prev = dynamic_cast<GeglLaidoutNode*>(prop->GetConnection(0, &pindex));
-				if (prev && prev->gegl) {
-					prevnode = prev->gegl;
+				GeglUser *prevgegl = dynamic_cast<GeglUser*>(prop->GetConnection(0, &pindex));
+				if (prevgegl) prevnode = prevgegl->GetGeglNode();
+				//---
+				//GeglLaidoutNode *prev = dynamic_cast<GeglLaidoutNode*>(prop->GetConnection(0, &pindex));
+				//if (prev && prev->gegl) {
+				//	prevnode = prev->gegl;
+				//}
+
+				if (prevnode) {
 					gegl_node_connect_to(prevnode, connection->fromprop->Name(),
 										 gegl, prop->Name());
 				} else {
@@ -638,83 +731,7 @@ int GeglLaidoutNode::UpdatePreview()
 		return 1;
 	}
 
-	if (preview_area_height < 0) preview_area_height = 3*colors->font->textheight();
-
-	GeglRectangle rect = gegl_node_get_bounding_box (gegl);
-	if (rect.width <=0 || rect.height <= 0 || rect.width > 100000 || rect.height > 100000) {
-		 //probably unbounded, arbitrarily select a little window onto the data
-		rect.x      = 0;
-		rect.y      = 0;
-		rect.width  = psamplew > 0 ? psamplew : 100;
-		rect.height = psampleh > 0 ? psampleh : 100;
-	}
-
-
-	//double aspect = (double)rect.width / rect.height;
-	int bufw = rect.width;
-	int bufh = rect.height;
-	int maxwidth = (width > 0 ? width : 3*colors->font->textheight());
-	int maxheight = preview_area_height;
-
-	 //first determine a smallish size for the preview image, adjust total_preview if necessary.
-	 //fit inside a rect this->width x maxdim
-	int ibufw = bufw, ibufh = bufh;
-	double scale  = (double)maxwidth  / bufw;
-	double scaley = (double)maxheight / bufh;
-	if (scaley > scale) {
-		scaley = scale;
-	}
-	ibufw = bufw * scale;
-	ibufh = bufh * scale;
-	if (ibufw==0) ibufw = 1;
-	if (ibufh==0) ibufh = 1;
-
-
-	bool needtowrap = false;
-	if (!total_preview) needtowrap = true;
-	if (total_preview && (ibufw != total_preview->w() || ibufh != total_preview->h())) {
-		total_preview->dec_count();
-		total_preview = NULL;
-		needtowrap = true;
-	}
-
-	if (!total_preview) { 
-		total_preview = ImageLoader::NewImage(ibufw, ibufh);
-	}
-
-	unsigned char *buffer = total_preview->getImageBuffer(); //bgra
-
-
-	GeglRectangle  orect;
-	orect.x = orect.y = 0;
-	orect.width  = ibufw;
-	orect.height = ibufh;
-
-	gegl_node_blit (gegl,
-					ibufw/(double)rect.width,
-					&orect,
-					babl_format("R'G'B'A u8"),
-					buffer,
-					GEGL_AUTO_ROWSTRIDE,
-					GEGL_BLIT_DEFAULT);
-
-	//need to flip r and b
-	int i=0;
-	unsigned char t;
-	for (int y=0; y<ibufh; y++) {
-		for (int x=0; x<ibufw; x++) {
-			t = buffer[i+2];
-			buffer[i+2] = buffer[i];
-			buffer[i] = t;
-			i += 4;
-		}
-	}
-
-	total_preview->doneWithBuffer(buffer);
-
-	if (needtowrap) Wrap();
-
-	return 1;
+	return GeglUser::UpdatePreview();
 }
 
 /*! Sever gegl connection if the connection is to an input pad of this.
@@ -1115,8 +1132,9 @@ int GeglRectNode::GetStatus()
 int GeglRectNode::Update()
 {
 	if (properties.e[0]->IsConnected()) {
-		GeglLaidoutNode *node = dynamic_cast<GeglLaidoutNode*>(properties.e[0]->connections.e[0]->from);
-		GeglNode *gegl = node->gegl;
+		GeglUser *node = dynamic_cast<GeglUser*>(properties.e[0]->connections.e[0]->from);
+		if (!node) return -1;
+		GeglNode *gegl = node->GetGeglNode();
 
 		if (gegl) {
 			GeglRectangle rect = gegl_node_get_bounding_box (gegl);
@@ -1244,10 +1262,13 @@ Laxkit::anObject *newGeglToImageNode(int p, Laxkit::anObject *ref)
  * Class to convert a LaxImage to a gegl based node.
  */
 
-class LaxImageToGeglNode : public NodeBase, public GeglUser
+class LaxImageToGeglNode : public GeglUser
 {
   public:
 	GeglNode *gegl;
+	GeglBuffer *buffer; 
+	GeglRectangle rect;
+
     LaxImageToGeglNode();
     virtual ~LaxImageToGeglNode();
 
@@ -1259,19 +1280,28 @@ class LaxImageToGeglNode : public NodeBase, public GeglUser
 
 LaxImageToGeglNode::LaxImageToGeglNode()
 {
-	gegl = nullptr;
-
 	makestr(Name, _("Image To Gegl"));
 	makestr(type, "Gegl/ImageToGegl");
 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "In", NULL,1, _("In"),_("Image"), 0, false));
+	if (GeglLaidoutNode::masternode == NULL) {
+		 //this is an arbitrary total parent to all kids
+		GeglLaidoutNode::masternode = gegl_node_new();
+	}
 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output,true, "gegl",  NULL,1, _("Gegl Image")));
+	buffer = nullptr;
+	gegl = gegl_node_new_child(GeglLaidoutNode::masternode,
+								"operation", "buffer-source",
+								NULL);
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", NULL,1, _("In"),_("Image"), 0, false));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output,true, "output",  NULL,1, _("Gegl Image")));
 }
 
 LaxImageToGeglNode::~LaxImageToGeglNode()
 {
 	if (gegl) g_object_unref (gegl);
+	if (buffer) g_object_unref(buffer);
 }
 
 
@@ -1285,9 +1315,13 @@ NodeBase *LaxImageToGeglNode::Duplicate()
 int LaxImageToGeglNode::GetStatus()
 {
 	if (properties.e[0]->IsConnected()) {
-		ObjectValue *v = dynamic_cast<ObjectValue*>(properties.e[0]->GetData());
-		if (!v) return -1;
-		LaxImage *img = dynamic_cast<LaxImage*>(v->object);
+		LaxImage *img = nullptr;
+		ImageValue *iv = dynamic_cast<ImageValue*>(properties.e[0]->GetData());
+		if (iv) img = iv->image;
+		else {
+			ObjectValue *v = dynamic_cast<ObjectValue*>(properties.e[0]->GetData());
+			if (v) img = dynamic_cast<LaxImage*>(v->object);
+		}
 		if (!img) return -1;
 	}
 	return NodeBase::GetStatus();
@@ -1297,30 +1331,60 @@ int LaxImageToGeglNode::Update()
 {
 	if (properties.e[0]->IsConnected()) {
 		 //first verify we have an image connecting
-		ObjectValue *v = dynamic_cast<ObjectValue*>(properties.e[0]->GetData());
-		if (!v) return -1;
-		LaxImage *img = dynamic_cast<LaxImage*>(v->object);
+		LaxImage *img = nullptr;
+		ImageValue *iv = dynamic_cast<ImageValue*>(properties.e[0]->GetData());
+		if (iv) img = iv->image;
+		else {
+			ObjectValue *v = dynamic_cast<ObjectValue*>(properties.e[0]->GetData());
+			if (v) img = dynamic_cast<LaxImage*>(v->object);
+		}
 		if (!img) return -1;
 
 		 //now update or correct our gegl node with the image data
-		GeglRectangle  orect;
-		orect.x = orect.y = 0;
-		orect.width  = img->w();
-		orect.height = img->h();
-		// *** which node accepts an image buffer ??? format???
-		 
-		 //finally make sure all connected outputs are connected to that gegl node.
-		for (int c=0; c<properties.e[1]->connections.n; c++) {
-			GeglUser *to_node = dynamic_cast<GeglUser*>(properties.e[1]->connections.e[c]->to);
-			if (!to_node) continue;
-			
-			GeglNode *to_gegl = to_node->GetGeglNode();
-			if (!to_gegl) continue;
-
-			//gegl_node_connect_to(gegl, "output",
-								 //to_gegl, to_prop->Name());
-
+		if (buffer != nullptr && (rect.width != img->w() || rect.height != img->h())) {
+			//different size of old buffer
+			//g_object_unref(buffer);
+			//buffer = nullptr;
+			gegl_buffer_set_extent(buffer, &rect);
 		}
+
+		rect.x = rect.y = 0;
+		rect.width  = img->w();
+		rect.height = img->h();
+
+		if (buffer == nullptr) {
+			buffer = gegl_buffer_new(&rect, babl_format("R'G'B'A u8"));
+		}
+		
+		//update buffer data
+		unsigned char *imgbuffer = img->getImageBuffer(); //bgra
+		
+		gegl_buffer_set(buffer,
+						&rect,
+						0, //mipmap level, 0 == 1:1 default
+						babl_format("R'G'B'A u8"),
+						imgbuffer,
+						rect.width * 4
+				); 
+
+		gegl_node_set(gegl, "buffer", buffer, NULL);
+		img->doneWithBuffer(imgbuffer);
+
+
+		//---- we don't actually have to do this, as in other gegl nodes, we check during their Update() for previous gegls
+//		 //finally make sure all connected outputs are connected to that gegl node.
+//		for (int c=0; c<properties.e[1]->connections.n; c++) {
+//			GeglUser *to_node = dynamic_cast<GeglUser*>(properties.e[1]->connections.e[c]->to);
+//			if (!to_node) continue;
+//			
+//			GeglNode *to_gegl = to_node->GetGeglNode();
+//			if (!to_gegl) continue;
+//
+//			NodeProperty *to_prop = properties.e[1]->connections.e[c]->toprop;
+//			gegl_node_connect_to(gegl, "output",
+//								 to_gegl, to_prop->Name());
+//
+//		}
 	}
 
 	return NodeBase::Update();
@@ -1459,6 +1523,7 @@ void RegisterGeglNodes(Laxkit::ObjectFactory *factory)
 
 	factory->DefineNewObject(getUniqueNumber(), "Gegl/GeglBounds", newGeglRectNode, NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Gegl/GeglToImage", newGeglToImageNode, NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Gegl/ImageToGegl", newImageToGeglNode, NULL, 0);
 }
 
 
