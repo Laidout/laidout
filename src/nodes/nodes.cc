@@ -30,6 +30,11 @@
 #include <lax/refptrstack.cc>
 
 
+#define DBG
+#include <iostream>
+using namespace std;
+
+
 using namespace Laxkit;
 using namespace LaxInterfaces;
 
@@ -426,17 +431,19 @@ Laxkit::anObject *newColorNode(int p, Laxkit::anObject *ref)
 class AffineNode : public NodeBase
 {
   public:
-	int atype; //0 == a,b,c,d,e,f, 1= posx, posy, scalex, scaley, anglex, angley_off_90, 2 = xv, yv, pv, 
-	AffineNode(int ntype, const double *values);
+	enum NodeType { Abcdef, XYSxyAxy, Expand };
+	NodeType atype;
+	//int atype; //0 == a,b,c,d,e,f, 1= posx, posy, scalex, scaley, anglex, angley_off_90, 2 = xv, yv, pv, 
+
+	AffineNode(NodeType ntype, const double *values);
 	virtual ~AffineNode();
 	virtual int Update();
 	virtual int GetStatus();
 	virtual NodeBase *Duplicate();
 };
 
-AffineNode::AffineNode(int ntype, const double *values)
+AffineNode::AffineNode(AffineNode::NodeType ntype, const double *values)
 {
-
 	atype = ntype;
 
 	const char **labels;
@@ -448,20 +455,30 @@ AffineNode::AffineNode(int ntype, const double *values)
 	const double v1[] = { 1,0, 0,1, 0,0 };
 	const double v2[] = { 1,1, 0,0, 0,0 };
 
-	if (atype == 0) {
+	bool isinput = false;
+	if (atype == Abcdef) {
 		makestr(Name, _("Affine"));
-		makestr(type,   "Affine");
+		makestr(type,   "Math/Affine");
 		labels = labels1;
 		names  = names1;
 		if (!values) values = v1;
 
-//	} else if (atype == 1) {
-	} else {
+	} else if (atype == XYSxyAxy) {
 		makestr(Name, _("Affine2"));
-		makestr(type,   "Affine2");
+		makestr(type,   "Math/Affine2");
 		labels = labels2;
 		names  = names2;
 		if (!values) values = v2;
+
+	} else if (atype == Expand) {
+		isinput = true;
+		makestr(Name, _("Affine Expand"));
+		makestr(type,   "Math/AffineExpand");
+		labels = labels1;
+		names  = names1;
+		if (!values) values = v1;
+
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Affine", new AffineValue(),1, _("Affine"))); 
 
 //	} else {
 //		makestr(Name, _("Affine Vectors"));
@@ -471,12 +488,17 @@ AffineNode::AffineNode(int ntype, const double *values)
 
 	for (int c=0; c<6; c++) {
 		if (!labels[c]) break;
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, names[c],
-					new DoubleValue(values ? values[c] : 0), 1, labels[c])); 
+		AddProperty(new NodeProperty(isinput ? NodeProperty::PROP_Output : NodeProperty::PROP_Input,
+									 true,
+									 names[c],
+									 new DoubleValue(values ? values[c] : 0), 1, 
+									 labels[c],
+									 nullptr, 0,
+									 isinput ? false : true)); 
 	}
 
 	Value *v = new AffineValue();
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("Affine"), v,1)); 
+	if (!isinput) AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("Affine"), v,1)); 
 
 }
 
@@ -488,11 +510,13 @@ NodeBase *AffineNode::Duplicate()
 {
 	double vs[6];
 	int isnum;
-	for (int c=0; c<6; c++) {
-		vs[c] = getNumberValue(properties.e[c]->GetData(), &isnum);
+	if (atype != Expand) {
+		for (int c=0; c<6; c++) {
+			vs[c] = getNumberValue(properties.e[c]->GetData(), &isnum);
+		}
 	}
 
-	AffineNode *newnode = new AffineNode(atype, vs);
+	AffineNode *newnode = new AffineNode(atype, atype == Expand ? nullptr : vs);
 	newnode->DuplicateBase(this);
 	return newnode;
 }
@@ -501,11 +525,18 @@ NodeBase *AffineNode::Duplicate()
  */
 int AffineNode::GetStatus()
 {
-	int isnum;
-	//double v[6];
-	for (int c=0; c<6; c++) {
-		getNumberValue(properties.e[c]->GetData(), &isnum);
-		if (!isnum) return -1;
+	if (atype == Expand) {
+		if (!dynamic_cast<Affine*>(properties.e[0]->GetData())) return -1;
+
+	} else {
+
+		int isnum;
+		//double v[6];
+		for (int c=0; c<6; c++) {
+			getNumberValue(properties.e[c]->GetData(), &isnum);
+			if (!isnum) return -1;
+		}
+		if (!properties.e[6]->data) return 1;
 	}
 
 	// maybe check this is invertible
@@ -515,49 +546,58 @@ int AffineNode::GetStatus()
 //		return -1;
 //	} else if (error_message) makestr(error_message, NULL);
 
-	if (!properties.e[6]->data) return 1;
-
 	return NodeBase::GetStatus(); //default checks mod times
 }
 
 int AffineNode::Update()
 {
 	double vs[6];
-	int isnum;
-	for (int c=0; c<6; c++) {
-		vs[c] = getNumberValue(properties.e[c]->GetData(), &isnum);
+
+	if (atype == Expand) {
+		Affine *affine = dynamic_cast<Affine*>(properties.e[0]->GetData());
+		if (!affine) return -1;
+		for (int c=0; c<6; c++) {
+			dynamic_cast<DoubleValue*>(properties.e[c+1]->GetData())->d = affine->m(c);
+			properties.e[c+1]->modtime = times(NULL);
+		}
+
+	} else {
+		int isnum;
+		for (int c=0; c<6; c++) {
+			vs[c] = getNumberValue(properties.e[c]->GetData(), &isnum);
+		}
+
+		AffineValue *v = dynamic_cast<AffineValue*>(properties.e[6]->GetData());
+		if (!v) {
+			v = new AffineValue;
+		} else v->inc_count();
+
+		if (atype == XYSxyAxy) {
+			//convert scale, angle, pos to vectors
+			v->setBasics(vs[4], vs[5], vs[0], vs[1], vs[2]*M_PI/180, vs[3]*M_PI/180);
+
+		} else v->m(vs);
+
+		properties.e[6]->SetData(v, 1);
 	}
-
-	AffineValue *v = dynamic_cast<AffineValue*>(properties.e[6]->GetData());
-	if (!v) {
-		v = new AffineValue;
-	} else v->inc_count();
-
-	if (atype == 1) {
-		//convert scale, angle, pos to vectors
-		v->setBasics(vs[4], vs[5], vs[0], vs[1], vs[2]*M_PI/180, vs[3]*M_PI/180);
-	}
-
-	properties.e[6]->SetData(v, 1);
-	v->m(vs);
 
 	return NodeBase::Update();
 }
 
 Laxkit::anObject *newAffineNode(int p, Laxkit::anObject *ref)
 {
-	return new AffineNode(0, NULL);
+	return new AffineNode(AffineNode::Abcdef, NULL);
 }
 
 Laxkit::anObject *newAffineNode2(int p, Laxkit::anObject *ref)
 {
-	return new AffineNode(1, NULL);
+	return new AffineNode(AffineNode::XYSxyAxy, NULL);
 }
 
-//Laxkit::anObject *newAffineNodeV(int p, Laxkit::anObject *ref)
-//{
-//	return new AffineNode(2);
-//}
+Laxkit::anObject *newAffineExpandNode(int p, Laxkit::anObject *ref)
+{
+	return new AffineNode(AffineNode::Expand, NULL);
+}
 
 //------------ MathNode
 
@@ -1426,25 +1466,16 @@ Laxkit::anObject *newMathNode2(int p, Laxkit::anObject *ref)
 }
 
 
-//------------ FunctionNode
-
-// sin cos tan asin acos atan sinh cosh tanh log ln abs sqrt int floor ceil factor random randomint
-// fraction negative reciprocal clamp scale(old_range, new_range)
-// pi tau e
-//
-//class FunctionNode : public NodeBase
-//{
-//  public:
-//	virtual NodeBase *Duplicate();
-//};
-
-
 //------------ ImageNode
+
+/*! \class ImageNode
+ * Create a new LaxImage from a width, height, and color.
+ */
 
 class ImageNode : public NodeBase
 {
   public:
-	int atype; //0 == a,b,c,d,e,f, 1= posx, posy, scalex, scaley, anglex, angley_off_90, 2 = xv, yv, pv, 
+	int for_info;
 	ImageNode(int width, int height);
 	virtual ~ImageNode();
 	virtual int Update();
@@ -1455,12 +1486,11 @@ class ImageNode : public NodeBase
 
 ImageNode::ImageNode(int width, int height)
 {
-
 	makestr(type, "Image");
 	makestr(Name, _("Image"));
 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Width"),    new IntValue(width), 1)); 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, _("Height"),   new IntValue(height), 1)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "width",  new IntValue(width),1 , _("Width")  )); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "height", new IntValue(height),1, _("Height") )); 
 
 	//ObjectDef *enumdef = GetImageDepthDef();
 	//EnumValue *e = new EnumValue(enumdef, 0);
@@ -1546,6 +1576,7 @@ int ImageNode::Update()
 	v->image->Set(color->color.Red(), color->color.Green(), color->color.Blue(), color->color.Alpha());
 
 	UpdatePreview();
+	Wrap();
 
 	return NodeBase::Update();
 }
@@ -1577,6 +1608,96 @@ ObjectDef *GetImageDepthDef()
 Laxkit::anObject *newImageNode(int p, Laxkit::anObject *ref)
 {
 	return new ImageNode(100, 100);
+}
+
+
+//------------ ImageInfoNode ----------------------
+
+/*! \class ImageInfoNode
+ * Expose information about the attached image..
+ */
+
+class ImageInfoNode : public NodeBase
+{
+  public:
+	ImageInfoNode();
+	virtual ~ImageInfoNode();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
+	virtual int UpdatePreview();
+};
+
+ImageInfoNode::ImageInfoNode()
+{
+	makestr(type, "ImageInfo");
+	makestr(Name, _("Image Info"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in",    nullptr,1, _("Image"))); 
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "width",  new IntValue(width),1 , _("Width") ,nullptr,0,false )); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "height", new IntValue(height),1, _("Height"),nullptr,0,false )); 
+
+	//ObjectDef *enumdef = GetImageDepthDef();
+	//EnumValue *e = new EnumValue(enumdef, 0);
+	//AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("Depth"), e, 1)); 
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "file", new StringValue(""),1, _("Filename"),nullptr,0,false)); 
+}
+
+ImageInfoNode::~ImageInfoNode()
+{
+}
+
+int ImageInfoNode::UpdatePreview()
+{
+	if (!show_preview) return 1;
+
+	// *** should probably scale down
+	if (!total_preview) {
+		ImageValue *img = dynamic_cast<ImageValue*>(properties.e[0]->GetData());
+		total_preview = img->image;
+	}
+
+	return 0;
+}
+
+NodeBase *ImageInfoNode::Duplicate()
+{
+	ImageInfoNode *newnode = new ImageInfoNode();
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+/*! -1 for bad values. 0 for ok, 1 for just needs update.
+ */
+int ImageInfoNode::GetStatus()
+{
+	ImageValue *v = dynamic_cast<ImageValue*>(properties.e[0]->GetData());
+	if (!v || !v->image) return -1;
+
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int ImageInfoNode::Update()
+{
+	ImageValue *v = dynamic_cast<ImageValue*>(properties.e[0]->GetData());
+	if (!v || !v->image) return -1;
+
+	dynamic_cast<IntValue*>(properties.e[1]->GetData())->i = v->image->w();
+	dynamic_cast<IntValue*>(properties.e[2]->GetData())->i = v->image->h();
+	dynamic_cast<StringValue*>(properties.e[3]->GetData())->Set(v->image->filename ? v->image->filename : "");
+
+	UpdatePreview();
+	Wrap();
+
+	return NodeBase::Update();
+}
+
+
+Laxkit::anObject *newImageInfoNode(int p, Laxkit::anObject *ref)
+{
+	return new ImageInfoNode();
 }
 
 
@@ -2925,6 +3046,7 @@ CurveProperty::CurveProperty(CurveValue *ncurve, int absorb, int isout)
 
 CurveProperty::~CurveProperty()
 {
+	DBG cerr <<"...deleting curve prop data"<<endl;
 	if (curve) curve->dec_count();
 }
 
@@ -3033,7 +3155,7 @@ CurveNode::CurveNode(int is_for_creation, CurveValue *ncurve)
 
 	if (!for_creation) AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "In", NULL, 1));
 
-	AddProperty(new CurveProperty(curve, 0, 1));
+	AddProperty(new CurveProperty(curve,0, 1));
 
 	if (!for_creation) {
 		 //create selector for channel, including "all"
@@ -3064,7 +3186,7 @@ int CurveNode::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att
 		CurveProperty *prop = dynamic_cast<CurveProperty*>(FindProperty(propname));
 		CurveValue *curve = prop->curve;
 		curve->dump_in_atts(att,0,NULL);
-		prop->SetData(curve, 1);
+		prop->SetData(curve, 0);
 	}
 	
 	return NodeBase::SetPropertyFromAtt(propname, att);
@@ -3302,6 +3424,9 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	 //--- ImageNode
 	factory->DefineNewObject(getUniqueNumber(), "Image", newImageNode,  NULL, 0);
 
+	 //--- ImageInfoNode
+	factory->DefineNewObject(getUniqueNumber(), "ImageInfo", newImageInfoNode,  NULL, 0);
+
 	 //--- MathNode1
 	factory->DefineNewObject(getUniqueNumber(), "Math1",     newMathNode1,   NULL, 0);
 
@@ -3330,8 +3455,9 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Rectangle",newRectangleNode,  NULL, 0);
 
 	 //--- Affine nodes
-	factory->DefineNewObject(getUniqueNumber(), "Affine", newAffineNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Affine2",newAffineNode2, NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/Affine", newAffineNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/Affine2",newAffineNode2, NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/AffineExpand",newAffineExpandNode, NULL, 0);
 
 	 //--- RandomNode
 	factory->DefineNewObject(getUniqueNumber(), "Random",newRandomNode,  NULL, 0);
