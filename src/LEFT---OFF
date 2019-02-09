@@ -604,6 +604,8 @@ Perspective perspective:
 node editor NodeInterface nodes node interface:
   DONE resize preview broken
 
+  bug: traverse path only goes about 80%
+  bug: transform object isn't copying images in an ImageData
   height of resizable property not saved
   group nodes, connect to (new in) or (new out):
 	should take names from props. 
@@ -639,6 +641,8 @@ node editor NodeInterface nodes node interface:
 	some nodes define a particular extent, like gradients. preview should detect
 	need a gegl <-> Value converter to allow interacting with Get/SetVariableNode
 	do something decent with property types: GeglCurve GeglPath. ignore these for now: GeglAudioFragment GeglBuffer GdkPixbuf GeglNode
+	DONE Gegl to LaxImage
+	DONE LaxImage to Gegl
   svg/inkscape specific filter interface, io passthrough
     svg color properties are strings, but there should be button for color select
     need full "length" readin, not just floats, ie "100%", "15in"

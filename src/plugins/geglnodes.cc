@@ -1290,7 +1290,7 @@ LaxImageToGeglNode::LaxImageToGeglNode()
 
 	buffer = nullptr;
 	gegl = gegl_node_new_child(GeglLaidoutNode::masternode,
-								"operation", "buffer-source",
+								"operation", "gegl:buffer-source",
 								NULL);
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", NULL,1, _("In"),_("Image"), 0, false));
@@ -1329,63 +1329,82 @@ int LaxImageToGeglNode::GetStatus()
 
 int LaxImageToGeglNode::Update()
 {
-	if (properties.e[0]->IsConnected()) {
-		 //first verify we have an image connecting
-		LaxImage *img = nullptr;
-		ImageValue *iv = dynamic_cast<ImageValue*>(properties.e[0]->GetData());
-		if (iv) img = iv->image;
-		else {
-			ObjectValue *v = dynamic_cast<ObjectValue*>(properties.e[0]->GetData());
-			if (v) img = dynamic_cast<LaxImage*>(v->object);
-		}
-		if (!img) return -1;
-
-		 //now update or correct our gegl node with the image data
-		if (buffer != nullptr && (rect.width != img->w() || rect.height != img->h())) {
-			//different size of old buffer
-			//g_object_unref(buffer);
-			//buffer = nullptr;
-			gegl_buffer_set_extent(buffer, &rect);
-		}
-
-		rect.x = rect.y = 0;
-		rect.width  = img->w();
-		rect.height = img->h();
-
-		if (buffer == nullptr) {
-			buffer = gegl_buffer_new(&rect, babl_format("R'G'B'A u8"));
-		}
-		
-		//update buffer data
-		unsigned char *imgbuffer = img->getImageBuffer(); //bgra
-		
-		gegl_buffer_set(buffer,
-						&rect,
-						0, //mipmap level, 0 == 1:1 default
-						babl_format("R'G'B'A u8"),
-						imgbuffer,
-						rect.width * 4
-				); 
-
-		gegl_node_set(gegl, "buffer", buffer, NULL);
-		img->doneWithBuffer(imgbuffer);
-
-
-		//---- we don't actually have to do this, as in other gegl nodes, we check during their Update() for previous gegls
-//		 //finally make sure all connected outputs are connected to that gegl node.
-//		for (int c=0; c<properties.e[1]->connections.n; c++) {
-//			GeglUser *to_node = dynamic_cast<GeglUser*>(properties.e[1]->connections.e[c]->to);
-//			if (!to_node) continue;
-//			
-//			GeglNode *to_gegl = to_node->GetGeglNode();
-//			if (!to_gegl) continue;
-//
-//			NodeProperty *to_prop = properties.e[1]->connections.e[c]->toprop;
-//			gegl_node_connect_to(gegl, "output",
-//								 to_gegl, to_prop->Name());
-//
-//		}
+	 //first verify we have an image connecting
+	LaxImage *img = nullptr;
+	ImageValue *iv = dynamic_cast<ImageValue*>(properties.e[0]->GetData());
+	if (iv) img = iv->image;
+	else {
+		ObjectValue *v = dynamic_cast<ObjectValue*>(properties.e[0]->GetData());
+		if (v) img = dynamic_cast<LaxImage*>(v->object);
 	}
+	if (!img) return -1;
+
+	 //now update or correct our gegl node with the image data
+//	if (buffer != nullptr && (rect.width != img->w() || rect.height != img->h())) {
+//		//different size of old buffer
+//		//g_object_unref(buffer);
+//		//buffer = nullptr;
+//		rect.x = rect.y = 0;
+//		rect.width  = img->w();
+//		rect.height = img->h();
+//		gegl_buffer_set_extent(buffer, &rect);
+//
+//	}
+	rect.x = rect.y = 0;
+	rect.width  = img->w();
+	rect.height = img->h();
+
+	if (buffer != nullptr) {
+		DBG cerr <<"gegl_buffer_set_extent result: "<<
+		gegl_buffer_set_extent(buffer, &rect);
+	}
+
+	if (buffer == nullptr) {
+		buffer = gegl_buffer_new(&rect, babl_format("R'G'B'A u8"));
+	}
+	
+	//update buffer data
+	unsigned char *imgbuffer = img->getImageBuffer(); //bgra
+	
+	//need to flip r and b
+	int i=0;
+	unsigned char t;
+	for (int y=0; y<rect.height; y++) {
+		for (int x=0; x<rect.width; x++) {
+			t = imgbuffer[i+2];
+			imgbuffer[i+2] = imgbuffer[i];
+			imgbuffer[i] = t;
+			i += 4;
+		}
+	}
+
+	gegl_buffer_set(buffer,
+					&rect,
+					0, //mipmap level, 0 == 1:1 default
+					babl_format("R'G'B'A u8"),
+					imgbuffer,
+					rect.width * 4
+			); 
+
+	gegl_node_set(gegl, "buffer", buffer, NULL);
+
+	//now flip r and b back
+	i = 0;
+	for (int y=0; y<rect.height; y++) {
+		for (int x=0; x<rect.width; x++) {
+			t = imgbuffer[i+2];
+			imgbuffer[i+2] = imgbuffer[i];
+			imgbuffer[i] = t;
+			i += 4;
+		}
+	}
+	img->doneWithBuffer(imgbuffer);
+
+	UpdatePreview();
+
+
+	//---- note we don't have to do check forward connections to ensure that the gegl node is connected,
+	//     since in other gegl nodes, we check during their Update() for previous gegls
 
 	return NodeBase::Update();
 }
