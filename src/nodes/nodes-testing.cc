@@ -1,4 +1,5 @@
 
+//*********** WORKS IN PROGRESS ****************
 
 
 //------------------------ NodePanel ------------------------
@@ -59,7 +60,7 @@ void NodePanel::ShowAddButton()
 
 //------------------------ PathsDataNode ------------------------
 
-/*! \class Node for paths.
+/*! \class Node for constructing PathsData objects..
  */
 
 class PathsDataNode
@@ -360,17 +361,31 @@ Laxkit::anObject *newPathFunctionTNode(int p, Laxkit::anObject *ref)
 }
 
 
-	factory->DefineNewObject(getUniqueNumber(), "Circle",newCircleNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "RectanglePath",newRectangleNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Polygon",newPolygonNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "PathFunctionX",newPathFunctionNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "PathFunctionT",newPathFunctionTNode, NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/Circle",newCircleNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/RectanglePath",newRectangleNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/Polygon",newPolygonNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/PathFunctionX",newPathFunctionNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/PathFunctionT",newPathFunctionTNode, NULL, 0);
+
 
 
 //------------------------ Path Effects ------------------------
 
 // Input one or more paths. Do something to it. Output results
 
+
+//------------------------ Model3D Hedron ------------------------
+
+//Polyhedron class based:
+//  name
+//  vertices
+//  edges
+//  faces
+//  uv(s)?
+//  normals?
+//
+//Unwrap node:
+//  click to pop up the unwrap window
 
 //------------------------ Generators for 3d ------------------------
 
@@ -534,7 +549,7 @@ class NumToStringNode : public NodeBase
 NumToStringNode::NumToStringNode(double d, int isint)
 {
 	makestr(Name, _("NumToString"));
-	makestr(type, "NumToString");
+	makestr(type, "Strings/NumToString");
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "N", isint ? new IntValue(d) : new DoubleValue(d),1, _("N"))); 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Padding", new StringValue(""),1, _("Padding"))); 
@@ -609,77 +624,6 @@ Laxkit::anObject *newNumToStringNode(int p, Laxkit::anObject *ref)
 }
 
 
-
-//------------------------------ MathConstantsNode --------------------------------------------
-
-class MathConstantNode : public NodeBase
-{
-	static SingletonKeeper defkeeper; //the def for the op enum
-	static ObjectDef *GetDef() { return dynamic_cast<ObjectDef*>(defkeeper.GetObject()); }
-
-  public:
-	MathConstantNode(int which);
-	virtual ~MathConstantNode();
-	virtual NodeBase *Duplicate();
-	virtual int Update();
-	virtual int GetStatus() { return 0; }
-};
-
-ObjectDef *DefineMathConstants()
-{
-	ObjectDef *def = new ObjectDef("MathConstants", _("Various constants"), NULL,NULL,"enum", 0);
-
-	 //1 argument
-	def->pushEnumValue("pi"   ,_("pi"),   _("3.1415"), CONST_Pi        );
-	def->pushEnumValue("pi_2" ,_("pi/2"), _("1.5708"), CONST_Pi_Over_2 );
-	def->pushEnumValue("pi2"  ,_("2*pi"), _("6.2832"), CONST_2_Pi      );
-	def->pushEnumValue("e"    ,_("e"),    _("2.7182"), CONST_E         );
-	def->pushEnumValue("tau"  ,_("tau"),  _("1.6180"), CONST_Tau       );
-	def->pushEnumValue("taui" ,_("1/tau"),_("0.6180"), CONST_1_Over_Tau);
-
-	return def;
-}
-
-SingletonKeeper MathConstantNode::defkeeper(DefineMathConstants(), true);
-
-MathConstantNode::MathConstantNode(int which)
-{
-	ObjectDef *enumdef = GetDef();
-	EnumValue *e = new EnumValue(enumdef, 0);
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Block, false, "C", e, 1, "")); 
-
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", new DoubleValue(0),1, _("Out")));
-}
-
-MathConstantNode::~MathConstantNode()
-{
-}
-
-NodeBase *MathConstantNode::Duplicate()
-{
-	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
-	MathConstantNode *newnode = new MathConstantNode(ev->value);
-	newnode->DuplicateBase(this);
-	return newnode;
-}
-
-int MathConstantNode::Update()
-{
-	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
-	ObjectDef *def = ev->GetObjectDef();
-
-	DoubleValue *v = dynamic_cast<DoubleValue*>(properties.e[1]->GetData());
-	int id = def->EnumId();
-
-	if      (id == CONST_Pi        ) v->d = M_PI;
-	else if (id == CONST_Pi_Over_2 ) v->d = M_PI/2;
-	else if (id == CONST_2_Pi      ) v->d = 2*M_PI;
-	else if (id == CONST_E         ) v->d = M_E;
-	else if (id == CONST_Tau       ) v->d = (1+sqrt(5))/2;
-	else if (id == CONST_1_Over_Tau) v->d = 2/(1+sqrt(5));
-
-	return NodeBase::Update();
-}
 
 
 //------------------------------ ConvertNumberNode --------------------------------------------

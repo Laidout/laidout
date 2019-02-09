@@ -1466,6 +1466,106 @@ Laxkit::anObject *newMathNode2(int p, Laxkit::anObject *ref)
 }
 
 
+//------------------------------ MathConstantsNode --------------------------------------------
+
+class MathConstantNode : public NodeBase
+{
+	static SingletonKeeper defkeeper; //the def for the op enum
+
+  public:
+	MathConstantNode(int which);
+	virtual ~MathConstantNode();
+	ObjectDef *GetDef() { return dynamic_cast<ObjectDef*>(defkeeper.GetObject()); }
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus() { return 0; }
+	virtual const char *Label();
+};
+
+enum MathConstant {
+	CONST_Pi,
+	CONST_Pi_Over_2,
+	CONST_2_Pi,
+	CONST_E,
+	CONST_Tau,
+	CONST_1_Over_Tau
+};
+
+ObjectDef *DefineMathConstants()
+{
+	ObjectDef *def = new ObjectDef("MathConstants", _("Various constants"), NULL,NULL,"enum", 0);
+
+	 //1 argument
+	def->pushEnumValue("pi"   ,_("pi"),   _("3.1415"), CONST_Pi        );
+	def->pushEnumValue("pi_2" ,_("pi/2"), _("1.5708"), CONST_Pi_Over_2 );
+	def->pushEnumValue("pi2"  ,_("2*pi"), _("6.2832"), CONST_2_Pi      );
+	def->pushEnumValue("e"    ,_("e"),    _("2.7182"), CONST_E         );
+	def->pushEnumValue("tau"  ,_("tau"),  _("1.6180"), CONST_Tau       );
+	def->pushEnumValue("taui" ,_("1/tau"),_("0.6180"), CONST_1_Over_Tau);
+
+	return def;
+}
+
+SingletonKeeper MathConstantNode::defkeeper(DefineMathConstants(), true);
+
+MathConstantNode::MathConstantNode(int which)
+{
+	//makestr(Name, _("Math Constant"));
+	makestr(type, "Math/Constant");
+
+	ObjectDef *enumdef = GetDef();
+	EnumValue *e = new EnumValue(enumdef, 0);
+	AddProperty(new NodeProperty(NodeProperty::PROP_Block, false, "which", e,1, "")); 
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", new DoubleValue(0),1, _("Out"),nullptr,0,false));
+}
+
+MathConstantNode::~MathConstantNode()
+{
+}
+
+const char *MathConstantNode::Label()
+{
+	if (Name) return Name;
+
+	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
+	const char *Nm = ev->EnumLabel();
+
+	return Nm;
+}
+
+NodeBase *MathConstantNode::Duplicate()
+{
+	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
+	MathConstantNode *newnode = new MathConstantNode(ev->value);
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int MathConstantNode::Update()
+{
+	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
+	//ObjectDef *def = ev->GetObjectDef();
+
+	DoubleValue *v = dynamic_cast<DoubleValue*>(properties.e[1]->GetData());
+	int id = ev->value;
+
+	if      (id == CONST_Pi        ) v->d = M_PI;
+	else if (id == CONST_Pi_Over_2 ) v->d = M_PI/2;
+	else if (id == CONST_2_Pi      ) v->d = 2*M_PI;
+	else if (id == CONST_E         ) v->d = M_E;
+	else if (id == CONST_Tau       ) v->d = (1+sqrt(5))/2;
+	else if (id == CONST_1_Over_Tau) v->d = 2/(1+sqrt(5));
+
+	return NodeBase::Update();
+}
+
+Laxkit::anObject *newMathConstants(int p, Laxkit::anObject *ref)
+{
+	return new MathConstantNode(0);
+}
+
+
 //------------ ImageNode
 
 /*! \class ImageNode
@@ -3418,6 +3518,9 @@ Laxkit::anObject *newTransformAffineNode(int p, Laxkit::anObject *ref)
  */
 int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 {
+
+	//------------------ Misc value types -------------
+
 	 //--- ColorNode
 	factory->DefineNewObject(getUniqueNumber(), "Color",    newColorNode,  NULL, 0);
 
@@ -3426,6 +3529,17 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 
 	 //--- ImageInfoNode
 	factory->DefineNewObject(getUniqueNumber(), "ImageInfo", newImageInfoNode,  NULL, 0);
+
+	 //--- CurveNodes
+	factory->DefineNewObject(getUniqueNumber(), "Curve",         newCurveNode,  NULL, 1);
+	factory->DefineNewObject(getUniqueNumber(), "CurveTransform",newCurveNode,  NULL, 0);
+
+	 //--- ObjectNodes
+	factory->DefineNewObject(getUniqueNumber(), "Object In", newObjectInNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Object Out",newObjectOutNode, NULL, 0);
+
+
+	//------------------ Math -------------
 
 	 //--- MathNode1
 	factory->DefineNewObject(getUniqueNumber(), "Math1",     newMathNode1,   NULL, 0);
@@ -3462,6 +3576,18 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	 //--- RandomNode
 	factory->DefineNewObject(getUniqueNumber(), "Random",newRandomNode,  NULL, 0);
 
+	 //--- LerpNode
+	factory->DefineNewObject(getUniqueNumber(), "Lerp",newLerpNode,  NULL, 0);
+
+	 //--- MapRangeNodes
+	factory->DefineNewObject(getUniqueNumber(), "MapToRange",  newMapToRangeNode,    NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "MapFromRange",newMapFromRangeNode,  NULL, 0);
+
+	 //--- MathContantNode
+	factory->DefineNewObject(getUniqueNumber(), "Math/Constant",newMathConstants,  NULL, 0);
+
+	//------------------ String -------------
+
 	 //--- ConcatNode
 	factory->DefineNewObject(getUniqueNumber(), "Concat",newConcatNode,  NULL, 0);
 
@@ -3471,28 +3597,14 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	 //--- SliceNode
 	factory->DefineNewObject(getUniqueNumber(), "Slice",newSliceNode,  NULL, 0);
 
-	 //--- LerpNode
-	factory->DefineNewObject(getUniqueNumber(), "Lerp",newLerpNode,  NULL, 0);
 
-	 //--- MapRangeNodes
-	factory->DefineNewObject(getUniqueNumber(), "MapToRange",  newMapToRangeNode,    NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "MapFromRange",newMapFromRangeNode,  NULL, 0);
-
-	 //--- CurveNodes
-	factory->DefineNewObject(getUniqueNumber(), "Curve",         newCurveNode,  NULL, 1);
-	factory->DefineNewObject(getUniqueNumber(), "CurveTransform",newCurveNode,  NULL, 0);
-
-	 //--- ObjectNodes
-	factory->DefineNewObject(getUniqueNumber(), "Object In", newObjectInNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Object Out",newObjectOutNode, NULL, 0);
-
-	 //--------------------FILTERS
+	 //-------------------- FILTERS -------------
 
 	 //--- TransformAffineNodes
 	factory->DefineNewObject(getUniqueNumber(), "Filters/TransformAffine", newTransformAffineNode,  NULL, 0);
 
 
-	 //--------------------THREADS
+	 //-------------------- THREADS -------------
 
 	 //--- ThreadNode
 	factory->DefineNewObject(getUniqueNumber(), "Threads/Thread",newThreadNode,  NULL, 0);
@@ -3514,6 +3626,7 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 
 	 //--- GetVariableNode
 	factory->DefineNewObject(getUniqueNumber(), "Threads/GetVariable",newGetVariableNode,  NULL, 0);
+
 
 
 	//Register nodes for DrawableObject filters:
