@@ -37,10 +37,10 @@ void psGradient(FILE *f,GradientData *g)
 	 // And shading dict type 3 vs. 2
 	 
 	int c;
-	double clen=g->colors[g->colors.n-1]->t-g->colors[0]->t;
+	double clen = g->strip->colors[g->strip->colors.n-1]->t - g->strip->colors[0]->t;
 	fprintf(f,"\n\n");
 	 //individual functions
-	for (c=1; c<g->colors.n; c++) {
+	for (c=1; c<g->strip->colors.n; c++) {
 		fprintf(f,"/gradientf%d <<\n"
 				  "  /FunctionType 2\n"
 				  "  /Domain [0 1]\n"
@@ -49,12 +49,12 @@ void psGradient(FILE *f,GradientData *g)
 				  "  /N 1\n"
 				  ">> def\n\n",
 					c, 
-					g->colors.e[c-1]->color.red/65535.0, 
-					g->colors.e[c-1]->color.green/65535.0,
-					g->colors.e[c-1]->color.blue/65535.0, 
-					g->colors.e[c  ]->color.red/65535.0,
-					g->colors.e[c  ]->color.green/65535.0, 
-					g->colors.e[c  ]->color.blue/65535.0
+					g->strip->colors.e[c-1]->color->screen.red/65535.0, 
+					g->strip->colors.e[c-1]->color->screen.green/65535.0,
+					g->strip->colors.e[c-1]->color->screen.blue/65535.0, 
+					g->strip->colors.e[c  ]->color->screen.red/65535.0,
+					g->strip->colors.e[c  ]->color->screen.green/65535.0, 
+					g->strip->colors.e[c  ]->color->screen.blue/65535.0
 				);
 	}
 
@@ -63,12 +63,13 @@ void psGradient(FILE *f,GradientData *g)
 			"<<\n"
 			"    /ShadingType  %d\n"
 			"    /ColorSpace  /DeviceRGB\n",
-			  (g->style&GRADIENT_RADIAL)?3:2);
-	if (g->style&GRADIENT_RADIAL) fprintf(f,"    /Coords [ %.10g 0 %.10g %.10g 0 %.10g ]\n",
-			  g->p1, fabs(g->r1), //x0, r0
-			  g->p2, fabs(g->r2)); //x1, r1
-	else fprintf(f,"    /Coords [ %.10g 0 %.10g 0]\n",
-			  g->p1, g->p2);
+			  (g->IsRadial())?3:2);
+	if (g->IsRadial()) fprintf(f,"    /Coords [ %.10g %.10g %.10g %.10g %.10g %.10g ]\n",
+			  g->strip->p1.x,g->strip->p1.y, fabs(g->strip->r1), //x0, r0
+			  g->strip->p2.x,g->strip->p2.y, fabs(g->strip->r2)); //x1, r1
+	else fprintf(f,"    /Coords [ %.10g %.10g %.10g %.10g ]\n",
+			  g->strip->p1.x,g->strip->p1.y,
+              g->strip->p2.x,g->strip->p2.y);
 
 	fprintf(f,
 			"    /BBox   [ %.10g %.10g %.10g %.10g ]\n",//[l b r t]
@@ -77,16 +78,16 @@ void psGradient(FILE *f,GradientData *g)
 			"    /Function <<\n"
 			"      /FunctionType 3\n"
 			"      /Functions [");
-	for (c=1; c<g->colors.n; c++) fprintf(f,"gradientf%d ",c);
+	for (c=1; c<g->strip->colors.n; c++) fprintf(f,"gradientf%d ",c);
 	fprintf(f,
 			"]\n"
 			"      /Domain [0 1]\n"
 			"      /Bounds [");
-	for (c=1; c<g->colors.n-1; c++) fprintf(f,"%.10g ", (g->colors.e[c]->t-g->colors.e[0]->t)/clen);
+	for (c=1; c<g->strip->colors.n-1; c++) fprintf(f,"%.10g ", (g->strip->colors.e[c]->t - g->strip->colors.e[0]->t)/clen);
 	fprintf(f,
 			"]\n"
 			"      /Encode [");
-	for (c=1; c<g->colors.n; c++) fprintf(f,"0 1 ");
+	for (c=1; c<g->strip->colors.n; c++) fprintf(f,"0 1 ");
 	fprintf(f,
 			"]\n"
 			"    >>\n"
