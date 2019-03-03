@@ -157,6 +157,7 @@ update links page
 update help page
 update dtpcompare.html
 comment out cairo_debug_reset_static_data before release, since it usually means crash, interferes with pipeout
+run through "valgrind --leak-check=full --error-limit=no ./laidout" and fix anything that can be nailed down to laidout
 test:
   ./laidout ../examples/test-all-objects.laidout
   each export filter (via command line in new script in examples.. ignoring problems in eps)
@@ -601,9 +602,18 @@ Perspective perspective:
   optimize the image mapping
   filtering paths needs to detect big distortions and add points, as simply transforming bez points is not enough
 
+GradientInterface: gradients
+  radial controls not quite working
+  gradient rework to make it easier to use as a direct fill
+  
 node editor NodeInterface nodes node interface:
   DONE resize preview broken
 
+  data node types:
+    gradient
+	paths
+	engraving
+	text
   bug: traverse path only goes about 80%
   bug: transform object isn't copying images in an ImageData
   height of resizable property not saved
@@ -714,6 +724,7 @@ node editor NodeInterface nodes node interface:
   viewer node, resizable
   image from file node
   simplex noise node
+  voronoise
   frames
     frames need to be moveable
 	unframe
