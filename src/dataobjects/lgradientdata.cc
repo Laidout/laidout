@@ -26,12 +26,38 @@ using namespace Laxkit;
 namespace Laidout {
 
 
+//------------------------------- GradientStrip ---------------------------------------
 
+/*! \class GradientValue
+ */
+
+
+GradientValue::GradientValue()
+{
+	Id();
+}
+
+void GradientValue::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+{
+	GradientStrip::dump_out(f,indent,what,context);
+}
+
+void GradientValue::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+{
+	GradientStrip::dump_in_atts(att,flag,context);
+}
+
+LaxFiles::Attribute *GradientValue::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+{
+	return GradientStrip::dump_out_atts(att,what,context);
+}
+
+
+//------------------------------- LGradientData ---------------------------------------
 
 /*! \class LGradientData 
  * \brief Subclassing LaxInterfaces::GradientData
  */
-
 
 
 LGradientData::LGradientData(LaxInterfaces::SomeData *refobj)
@@ -137,19 +163,19 @@ ObjectDef *LGradientData::makeObjectDef()
 Value *LGradientData::dereference(const char *extstring, int len)
 {
 	if (extequal(extstring,len, "p1")) {
-		return new DoubleValue(p1);
+		return new FlatvectorValue(strip->p1);
 	}
 
 	if (extequal(extstring,len, "p2")) {
-		return new DoubleValue(p2);
+		return new FlatvectorValue(strip->p2);
 	}
 
 	if (extequal(extstring,len, "r1")) {
-		return new DoubleValue(r1);
+		return new DoubleValue(strip->r1);
 	}
 
 	if (extequal(extstring,len, "r2")) {
-		return new DoubleValue(r2);
+		return new DoubleValue(strip->r2);
 	}
 
 //	if (extequal(extstring,len, "colors")) {
@@ -167,30 +193,30 @@ int LGradientData::assign(FieldExtPlace *ext,Value *v)
 		double d;
 		if (str) {
 			if (!strcmp(str,"p1")) {
-				d=getNumberValue(v, &isnum);
-				if (!isnum) return 0;
-				p1=d;
+				FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(v);
+				if (!fv) return 0;
+				strip->p1 = fv->v;
 				FindBBox();
 				return 1;
 
 			} else if (!strcmp(str,"p2")) {
-				d=getNumberValue(v, &isnum);
-				if (!isnum) return 0;
-				p2=d;
+				FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(v);
+				if (!fv) return 0;
+				strip->p2 = fv->v;
 				FindBBox();
 				return 1;
 
 			} else if (!strcmp(str,"r1")) {
 				d=getNumberValue(v, &isnum);
 				if (!isnum) return 0;
-				r1=d;
+				strip->r1 = d;
 				FindBBox();
 				return 1;
 
 			} else if (!strcmp(str,"r2")) {
 				d=getNumberValue(v, &isnum);
 				if (!isnum) return 0;
-				r2=d;
+				strip->r2 = d;
 				FindBBox();
 				return 1;
 

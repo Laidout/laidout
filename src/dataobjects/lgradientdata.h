@@ -23,6 +23,19 @@
 namespace Laidout {
 
 
+//------------------------------- GradientValue ---------------------------------------
+
+class GradientValue : public Value,
+					  public Laxkit::GradientStrip
+{
+  public:
+	GradientValue();
+	virtual const char *whattype() { return GradientStrip::whattype(); }
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+    virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
+};
+
 
 //------------------------------- LGradientData ---------------------------------------
 
