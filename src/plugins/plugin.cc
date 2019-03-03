@@ -70,8 +70,8 @@ PluginBase *LoadPlugin(const char *path_to_plugin, Laxkit::ErrorLog &log)
 		handle = dlopen(path_to_plugin, RTLD_LAZY);
 		//handle = dlopen(path_to_plugin, RTLD_NOW);
 		//handle = dlopen(path_to_plugin, RTLD_LAZY|RTLD_GLOBAL);
-
-		DBG cerr <<"dl opened..."<<endl;
+		
+		DBG cerr <<"dl opened... dlerror: "<<(dlerror() ? dlerror() : "no error")<<endl;
 
 		if (!handle) throw 1;
 
