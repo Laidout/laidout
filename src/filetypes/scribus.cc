@@ -1814,7 +1814,7 @@ static void scribusdumpobj(ScribusExportConfig *config, FILE *f,int &curobj,PtrS
 			//---------gradient tags:
 		if (ptype==PTYPE_Laidout_Gradient) { //is a gradient
 			fprintf(f,"    GRTYP=\"%d\" \n",          // 	Type of the gradient fill
-					(grad->style&GRADIENT_RADIAL)?7:6);	//  0 = No gradient fill,       1 = Horizontal gradient
+					(grad->IsRadial())?7:6);    //  0 = No gradient fill,       1 = Horizontal gradient
 												//  2 = Vertical gradient,      3 = Diagonal gradient
 												//  4 = Cross diagonal gradient 5 = Radial gradient
 												//  6 = Free linear gradient    7 = Free radial gradient

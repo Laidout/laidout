@@ -737,14 +737,14 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 		grad=dynamic_cast<GradientData *>(obj);
 		if (!grad) return 0;
 
-		if (grad->style&GRADIENT_RADIAL) {
+		if (grad->IsRadial()) {
 			fprintf(f,"%s<circle  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
 						 spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
 			fprintf(f,"%s    id=\"%s\" %s\n", spc,grad->Id(), clipid);
 			fprintf(f,"%s    fill=\"url(#radialGradient%ld)\"\n", spc,grad->object_id);
-			fprintf(f,"%s    cx=\"%f\"\n",spc, fabs(grad->r1)>fabs(grad->r2)?grad->p1:grad->p2);
-			fprintf(f,"%s    cy=\"0\"\n",spc);
-			fprintf(f,"%s    r=\"%f\"\n",spc,fabs(grad->r1)>fabs(grad->r2)?fabs(grad->r1):fabs(grad->r2));
+			fprintf(f,"%s    cx=\"%f\"\n",spc, fabs(grad->strip->r1) > fabs(grad->strip->r2) ? grad->strip->p1.x : grad->strip->p2.x);
+			fprintf(f,"%s    cy=\"%f\"\n",spc, fabs(grad->strip->r1) > fabs(grad->strip->r2) ? grad->strip->p1.y : grad->strip->p2.y);
+			fprintf(f,"%s    r=\"%f\"\n",spc,  fabs(grad->strip->r1) > fabs(grad->strip->r2) ? fabs(grad->strip->r1) : fabs(grad->strip->r2));
 			fprintf(f,"%s  />\n",spc);
 		} else {
 			fprintf(f,"%s<rect  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
@@ -1407,84 +1407,97 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgE
 		grad=dynamic_cast<GradientData *>(obj);
 		if (!grad) return 0;
 
-		if (grad->style&GRADIENT_RADIAL) {
-			double r1,r2,p1,p2;
+		if (grad->IsRadial()) {
+			double r1,r2;
+			double p1,p2;
 			int rr;
-			if (fabs(grad->r1)>fabs(grad->r2)) { 
-				p2=grad->p1;
-				p1=grad->p2;
-				r2=fabs(grad->r1);
-				r1=fabs(grad->r2);
+			double mm[6];
+			grad->GradientTransform(mm, false);
+			//pp = transform_point_inverse(mm, pp);
+			flatpoint pp1 = transform_point_inverse(mm, grad->strip->p1); //pp1.x should be 0
+			flatpoint pp2 = transform_point_inverse(mm, grad->strip->p2);
+			flatpoint opp1, opp2;
+
+			if (fabs(grad->strip->r1) > fabs(grad->strip->r2)) { 
+				opp1 = grad->strip->p2;
+				opp2 = grad->strip->p1;
+				p2 = pp1.x;
+				p1 = pp2.x;
+				r2 = fabs(grad->strip->r1);
+				r1 = fabs(grad->strip->r2);
 				rr=1; 
 			} else {
-				p1=grad->p1;
-				p2=grad->p2;
-				r1=fabs(grad->r1);
-				r2=fabs(grad->r2); 
+				opp1 = grad->strip->p1;
+				opp2 = grad->strip->p2;
+				p1 = pp1.x;
+				p2 = pp2.x;
+				r1 = fabs(grad->strip->r1);
+				r2 = fabs(grad->strip->r2); 
 				rr=0; 
 			}
 
+
 			 // now figure out the color spots
-			double clen=grad->colors.e[grad->colors.n-1]->t-grad->colors.e[0]->t,
-				   plen=MAX((p2-r2)-(p1-r1),(p2+r2)-(p1+r1)),
+			double clen = grad->strip->colors.e[grad->strip->colors.n-1]->t - grad->strip->colors.e[0]->t,
+				   plen = MAX((p2-r2)-(p1-r1), (p2+r2)-(p1+r1)),
 				   chunk,
-				   c0=grad->colors.e[(rr?grad->colors.n-1:0)]->t,
+				   c0 = grad->strip->colors.e[(rr ? grad->strip->colors.n-1 : 0)]->t,
 				   c1;
 
 			int cc;
-			if (r1!=0) {
+			if (r1 != 0) {
 				 // need extra 2 stops for transparent inner circle
-				chunk=r1/plen;
-				c1=grad->colors.e[(rr?grad->colors.n-1:0)]->t;
+				chunk = r1/plen;
+				c1 = grad->strip->colors.e[(rr ? grad->strip->colors.n-1 : 0)]->t;
 				if (rr) {
-					c1+=1e-4;
-					c0=c1+clen*chunk;
-					clen+=clen*chunk;
+					c1 += 1e-4;
+					c0 = c1+clen*chunk;
+					clen += clen*chunk;
 				} else {
-					c1+=1e-4;
-					c0=c1-clen*chunk;
-					clen+=clen*chunk;
+					c1 += 1e-4;
+					c0 = c1-clen*chunk;
+					clen += clen*chunk;
 				}
 			}
 
 			fprintf(f,"    <radialGradient  id=\"radialGradient%ld\"\n", grad->object_id);
-			fprintf(f,"        cx=\"%f\"\n", p2);
-			fprintf(f,"        cy=\"0\"\n");
-			fprintf(f,"        fx=\"%f\"\n", p1); //**** wrong!!
+			fprintf(f,"        cx=\"%f\"\n", opp2.x);
+			fprintf(f,"        cy=\"%f\"\n", opp2.y);
+			fprintf(f,"        fx=\"%f\"\n", opp1.x); //**** wrong!!
 			if (r1!=0) cout <<"*** need to fix placement of fx in svg out for radial gradients"<<endl;
-			fprintf(f,"        fy=\"0\"\n");
+			fprintf(f,"        fy=\"%f\"\n", opp1.y);
 			fprintf(f,"        r=\"%f\"\n", r2);
 			fprintf(f,"        gradientUnits=\"userSpaceOnUse\">\n");
 
-			for (int c=(r1==0?0:-2); c<grad->colors.n; c++) {
-				if (rr && c>=0) cc=grad->colors.n-1-c; else cc=c;
+			for (int c=(r1==0?0:-2); c<grad->strip->colors.n; c++) {
+				if (rr && c>=0) cc=grad->strip->colors.n-1-c; else cc=c;
 				if (cc==-2) fprintf(f,"      <stop offset=\"0\" stop-color=\"#ffffff\" stop-opacity=\"0\" />\n");
 				else if (cc==-1) fprintf(f,"      <stop offset=\"%f\" stop-color=\"#ffffff\" stop-opacity=\"0\" />\n",
 											fabs(c1-c0)/clen); //offset
 				else fprintf(f,"      <stop offset=\"%f\" stop-color=\"#%02x%02x%02x\" stop-opacity=\"%f\" />\n",
-								fabs(grad->colors.e[cc]->t - c0)/clen, //offset
-								grad->colors.e[cc]->color.red>>8, //color
-								grad->colors.e[cc]->color.green>>8, 
-								grad->colors.e[cc]->color.blue>>8, 
-								grad->colors.e[cc]->color.alpha/65535.); //opacity
+								fabs(grad->strip->colors.e[cc]->t - c0)/clen, //offset
+								grad->strip->colors.e[cc]->color->screen.red>>8, //color
+								grad->strip->colors.e[cc]->color->screen.green>>8, 
+								grad->strip->colors.e[cc]->color->screen.blue>>8, 
+								grad->strip->colors.e[cc]->color->screen.alpha/65535.); //opacity
 			}
 			fprintf(f,"    </radialGradient>\n");
 
 		} else {
 			fprintf(f,"    <linearGradient  id=\"linearGradient%ld\"\n", grad->object_id);
-			fprintf(f,"        x1=\"%f\"\n", grad->p1);
-			fprintf(f,"        y1=\"0\"\n");
-			fprintf(f,"        x2=\"%f\"\n", grad->p2);
-			fprintf(f,"        y2=\"0\"\n");
+			fprintf(f,"        x1=\"%f\"\n", grad->strip->p1.x);
+			fprintf(f,"        y1=\"%f\"\n", grad->strip->p1.y);
+			fprintf(f,"        x2=\"%f\"\n", grad->strip->p2.x);
+			fprintf(f,"        y2=\"%f\"\n", grad->strip->p2.y);
 			fprintf(f,"        gradientUnits=\"userSpaceOnUse\">\n");
-			double clen=grad->colors.e[grad->colors.n-1]->t-grad->colors.e[0]->t;
-			for (int c=0; c<grad->colors.n; c++) {
+			double clen=grad->strip->colors.e[grad->strip->colors.n-1]->t-grad->strip->colors.e[0]->t;
+			for (int c=0; c<grad->strip->colors.n; c++) {
 				fprintf(f,"      <stop offset=\"%f\" stop-color=\"#%02x%02x%02x\" stop-opacity=\"%f\" />\n",
-								(grad->colors.e[c]->t-grad->colors.e[0]->t)/clen, //offset
-								grad->colors.e[c]->color.red>>8, //color
-								grad->colors.e[c]->color.green>>8, 
-								grad->colors.e[c]->color.blue>>8, 
-								grad->colors.e[c]->color.alpha/65535.); //opacity
+								(grad->strip->colors.e[c]->t-grad->strip->colors.e[0]->t)/clen, //offset
+								grad->strip->colors.e[c]->color->screen.red>>8, //color
+								grad->strip->colors.e[c]->color->screen.green>>8, 
+								grad->strip->colors.e[c]->color->screen.blue>>8, 
+								grad->strip->colors.e[c]->color->screen.alpha/65535.); //opacity
 			}
 			fprintf(f,"    </linearGradient>\n");
 		}
@@ -2159,12 +2172,12 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 					value=def->value;
 
 					if (!strcmp(name,"linearGradient")) {
-						GradientData *gradient = svgDumpInGradientDef(def, defsatt, GRADIENT_LINEAR, NULL);
+						GradientData *gradient = svgDumpInGradientDef(def, defsatt, GradientData::GRADIENT_LINEAR, NULL);
 						gradients.push(gradient);
 						gradient->dec_count();
 
 					} else if (!strcmp(name,"radialGradient")) {
-						GradientData *gradient = svgDumpInGradientDef(def, defsatt, GRADIENT_RADIAL, NULL);
+						GradientData *gradient = svgDumpInGradientDef(def, defsatt, GradientData::GRADIENT_RADIAL, NULL);
 						gradients.push(gradient);
 						gradient->dec_count();
 
@@ -2386,12 +2399,12 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 		}
 	}
 
-	if (type==GRADIENT_RADIAL) {
+	if (type == GradientData::GRADIENT_RADIAL) {
 		p1=transform_point(gm,flatpoint(cx,cy));
 		p2=(foundf ? transform_point(gm,flatpoint(fx,fy)) : p1);
-		gradient->Set(p1,p2, r,0, NULL,NULL, GRADIENT_RADIAL);
+		gradient->SetRadial(p1,p2, r,0, NULL,NULL);
 	} else {
-		gradient->Set(p1,p2, 1,-1, NULL,NULL, GRADIENT_LINEAR);
+		gradient->SetLinear(p1,p2, 1,-1, NULL,NULL);
 	}
 	
 	return gradient;

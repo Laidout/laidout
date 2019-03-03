@@ -1898,7 +1898,7 @@ static void pdfGradient(FILE *f,
 	 // >>
 
 	int c;
-	double clen=g->colors[g->colors.n-1]->t-g->colors[0]->t;
+	double clen = g->strip->colors[g->strip->colors.n-1]->t - g->strip->colors[0]->t;
 	char scratch[100];
 
 	 // shading dict object
@@ -1909,17 +1909,17 @@ static void pdfGradient(FILE *f,
 	int shadedict=obj->number;
 	fprintf(f,"%ld 0 obj\n",obj->number);
 	fprintf(f,"<<\n"
-			  "  /ShadingType %d\n",(g->style&GRADIENT_RADIAL)?3:2);
+			  "  /ShadingType %d\n",(g->IsRadial())?3:2);
 	fprintf(f,"  /ColorSpace /DeviceRGB\n"
 			  "    /BBox   [ %.10f %.10f %.10f %.10f ]\n", //[l b r t]
 				g->minx, g->miny, g->maxx, g->maxy);
 	fprintf(f,"  /Domain [0 1]\n");
 
 	 //Coords of shading dict
-	if (g->style&GRADIENT_RADIAL) fprintf(f,"  /Coords [ %.10f 0 %.10f %.10f 0 %.10f ]\n",
-			  g->p1, fabs(g->r1), //x0, r0
-			  g->p2, fabs(g->r2)); //x1, r1
-	else fprintf(f,"  /Coords [ %.10f 0 %.10f 0]\n", g->p1, g->p2);
+	if (g->IsRadial()) fprintf(f,"  /Coords [ %.10f %.10f %.10f %.10f %.10f %.10f ]\n",
+			  g->strip->p1.x,g->strip->p1.y, fabs(g->strip->r1), //x0, r0
+			  g->strip->p2.x,g->strip->p2.y, fabs(g->strip->r2)); //x1, r1
+	else fprintf(f,"  /Coords [ %.10f %.10f %.10f %.10f]\n", g->strip->p1.x,g->strip->p1.y, g->strip->p2.x,g->strip->p2.y);
 	fprintf(f,"  /Function %d 0 R\n"
 			  ">>\n"
 			  "endobj\n", objectcount); //end shading dict
@@ -1935,21 +1935,21 @@ static void pdfGradient(FILE *f,
 			  "  /FunctionType 3\n"
 			  "  /Domain [0 1]\n"
 			  "  /Encode [");
-	for (c=1; c<g->colors.n; c++) fprintf(f,"0 1 ");
+	for (c=1; c<g->strip->colors.n; c++) fprintf(f,"0 1 ");
 	fprintf(f,"]\n"
 			  "  /Bounds [");
-	for (c=1; c<g->colors.n-1; c++) fprintf(f,"%.10f ", (g->colors.e[c]->t-g->colors.e[0]->t)/clen);
+	for (c=1; c<g->strip->colors.n-1; c++) fprintf(f,"%.10f ", (g->strip->colors.e[c]->t - g->strip->colors.e[0]->t)/clen);
 	fprintf(f,
 			"]\n");
 	fprintf(f,"  /Functions [");
-	for (c=0; c<g->colors.n-1; c++) fprintf(f,"%d 0 R  ",objectcount+c);
+	for (c=0; c<g->strip->colors.n-1; c++) fprintf(f,"%d 0 R  ",objectcount+c);
 	fprintf(f,"]\n"
 			  ">>\n"
 			  "endobj\n");
 
 
 	 //individual function objects
-	for (c=1; c<g->colors.n; c++) {
+	for (c=1; c<g->strip->colors.n; c++) {
 		obj->next=new PdfObjInfo;
 		obj=obj->next;
 		obj->byteoffset=ftell(f);
@@ -1964,12 +1964,12 @@ static void pdfGradient(FILE *f,
 				  ">>\n"
 				  "endobj\n",
 					obj->number, 
-					g->colors.e[c-1]->color.red/65535.0, 
-					g->colors.e[c-1]->color.green/65535.0,
-					g->colors.e[c-1]->color.blue/65535.0, 
-					g->colors.e[c  ]->color.red/65535.0,
-					g->colors.e[c  ]->color.green/65535.0, 
-					g->colors.e[c  ]->color.blue/65535.0
+					g->strip->colors.e[c-1]->color->screen.Red(), 
+					g->strip->colors.e[c-1]->color->screen.Green(),
+					g->strip->colors.e[c-1]->color->screen.Blue(), 
+					g->strip->colors.e[c  ]->color->screen.Red(),
+					g->strip->colors.e[c  ]->color->screen.Green(), 
+					g->strip->colors.e[c  ]->color->screen.Blue()
 				);
 	}
 
