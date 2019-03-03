@@ -187,6 +187,8 @@ class Polyhedron :
 	virtual int dumpOutOFF(FILE *f,char **error_ret);
 	virtual int dumpOutObj(FILE *f,char **error_ret);
 	virtual int dumpOutVrml(FILE *f,char **error_ret);
+	virtual int dumpOutGlb(FILE *f,char **error_ret);
+	virtual int dumpOutGltfJson(FILE *f,char **error_ret, long binlength, const char *binfile);
 
 	 //Abstract net functions
 	virtual NetFace *GetFace(int i,double scaling);
