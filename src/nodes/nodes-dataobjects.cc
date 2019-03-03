@@ -218,7 +218,7 @@ Laxkit::anObject *newLImageDataInfoNode(int p, Laxkit::anObject *ref)
 
 //------------------------ ObjectInfoNode ------------------------
 
-/*! \class Node for ObjectInfo.
+/*! \class Node for basic DrawableObject information, like name, parent, transform, and bounds..
  */
 
 class ObjectInfoNode : public NodeBase
