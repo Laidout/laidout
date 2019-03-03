@@ -3061,6 +3061,7 @@ const char *SetValue::FieldName(int i)
 
 //----------------------------- ArrayValue ----------------------------------
 /*! \class ArrayValue
+ * Just a set with optional element type.
  */
 
 ArrayValue::ArrayValue(const char *elementtype, int size)
