@@ -57,6 +57,47 @@ void NodePanel::ShowAddButton()
 
 
 
+//----------------------------- SimpleArrayValue ----------------------------------
+template <class T>
+class StackValue : public Value
+{
+  public:
+	NumStack<T> stack;
+
+    SimpleArrayValue();
+    virtual ~SimpleArrayValue();
+    virtual const char *whattype() { return "SimpleArrayValue"; }
+    virtual int getValueStr(char *buffer,int len);
+    virtual Value *duplicate();
+    virtual int type() { return VALUE_SimpleArray; }
+    virtual ObjectDef *makeObjectDef();
+};
+
+
+typedef StackValue<int> IntStackValue;
+typedef StackValue<double> DoubleStackValue;
+typedef StackValue<flatvector> Vector2StackValue;
+typedef StackValue<spacevector> Vector3StackValue;
+typedef StackValue<Quaternion> QuaternionStackValue;
+
+typedef PtrStackValue<anObject> ObjectStackValue;
+
+
+class Vector2StackValue : public Value
+{
+  public:
+	NumStack<flatvector> stack;
+
+    Vector2StackValue();
+    virtual ~SimpleArrayValue();
+    virtual const char *whattype() { return "Vector2StackValue"; }
+    virtual int getValueStr(char *buffer,int len);
+    virtual Value *duplicate();
+    virtual int type() { return VALUE_Vector2Stack; }
+    virtual ObjectDef *makeObjectDef();
+};
+
+
 
 //------------------------ PathsDataNode ------------------------
 
@@ -203,7 +244,7 @@ NodeBase *PathGeneratorNode::Duplicate()
 //0 ok, -1 bad ins, 1 just needs updating
 int PathGeneratorNode::GetStatus()
 {
-	char types[5];
+	char types[6];
 	const char *stype;
 	const char sig = "     nnn  nnn  snnn ssnnns    ";
 
@@ -213,25 +254,35 @@ int PathGeneratorNode::GetStatus()
 		else if (!strcmp(stype, "StringValue")) types[c] = 's';
 		else types[c] = ' ';
 	}
+	for (int c=properties.n-1; c<5; c++) types[c] = ' ';
+	types[5] = '\0';
+
+#define OFFSQUARE     0
+#define OFFCIRCLE     5
+#define OFFPOLYGON    10
+#define OFFFUNCTION   15
+#define OFFFUNCTIONT  20
+#define OFFSVGD       25
 
 	if (pathtype == Square) {
 		//always ok
 
 	} else if (pathtype == Circle) {
-		if (strcmp(sig+5, "nnn", 3) return -1;
+		if (strcmp(sig+OFFCIRCLE, "nnn", 3) return -1;
 
 	} else if (pathtype == Polygon) {
-		if (strcmp(sig+10, "nnn", 3) return -1;
+		if (strcmp(sig+OFFPOLYGON, "nnn", 3) return -1;
 
 	} else if (pathtype == Function) {
-		if (strcmp(sig+15, "snnn", 3) return -1;
+		if (strcmp(sig+OFFFUNCTION, "snnn", 4) return -1;
 
 	} else if (pathtype == FunctionT) {
-		if (strcmp(sig+15, "ssnnn", 3) return -1;
+		if (strcmp(sig+OFFFUNCTIONT, "ssnnn", 5) return -1;
 
 	} else if (pathtype == Svgd) {
-		if (strcmp(sig+15, "s", 1) return -1;
+		if (strcmp(sig+OFFSVGD, "s", 1) return -1;
 	}
+
 	return NodeBase::GetStatus();
 }
 
