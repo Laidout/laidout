@@ -3106,6 +3106,104 @@ Laxkit::anObject *newMapFromRangeNode(int p, Laxkit::anObject *ref)
 }
 
 
+//------------------------ GradientProperty ------------------------
+
+/*! \class GradientProperty
+ */
+
+
+SingletonKeeper GradientProperty::interfacekeeper;
+
+LaxInterfaces::GradientInterface *GradientProperty::GetGradientInterface()
+{
+	return dynamic_cast<GradientInterface*>(interfacekeeper.GetObject());
+}
+
+GradientProperty::GradientProperty(GradientValue *ngradient, int absorb, int isout)
+{
+	type = (isout ? NodeProperty::PROP_Output : NodeProperty::PROP_Block);
+	is_linkable = isout ? true : false;
+	makestr(name, "gradient");
+	makestr(label, _("gradient"));
+	//makestr(tooltip, _(""));
+	SetFlag(NODES_PropResize, true);
+
+	gradient = ngradient;
+	if (gradient && !absorb) gradient->inc_count();
+	data = dynamic_cast<Value*>(gradient);
+	if (data) data->inc_count();
+
+	GradientInterface *interface = GetGradientInterface();
+	if (!interface) {
+		interface = new GradientInterface(getUniqueNumber(), NULL);
+		makestr(interface->owner_message, "GradientChange");
+		//interface->style |= gradientMapInterface::RealSpace | gradientMapInterface::Expandable;
+		interfacekeeper.SetObject(interface, 1);
+	}
+
+}
+
+GradientProperty::~GradientProperty()
+{
+	DBG cerr <<"...deleting gradient prop data"<<endl;
+	if (gradient) gradient->dec_count();
+}
+
+/*! Set a default width and height based on colors->font->textheight().
+ */
+void GradientProperty::SetExtents(NodeColors *colors)
+{
+	width = height = 4 * colors->font->textheight();
+}
+
+bool GradientProperty::HasInterface()
+{
+	return true;
+}
+
+/*! If interface!=NULL, then try to use it. If NULL, create and return a new appropriate interface.
+ * Also set the interface to use *this.
+ */
+LaxInterfaces::anInterface *GradientProperty::PropInterface(LaxInterfaces::anInterface *interface, Laxkit::Displayer *dp)
+{
+	GradientInterface *interf = NULL;
+	if (interface) {
+		if (strcmp(interface->whattype(), "GradientInterface")) return NULL;
+		interf = dynamic_cast<GradientInterface*>(interface);
+		if (!interf) return NULL; //wrong ref interface!!
+	}
+
+	if (!interf) interf = GetGradientInterface();
+	interf->Dp(dp);
+	interf->UseThisObject(gradient);
+	double th = owner->colors->font->textheight();
+	interf->SetupRect(owner->x + x + th/2, owner->y + y, width-th, height);
+
+	return interf;
+}
+
+void GradientProperty::Draw(Laxkit::Displayer *dp, int hovered)
+{
+	anInterface *interf = PropInterface(NULL, dp);
+	if (hovered) interf->Refresh();
+	else interf->DrawData(gradient);
+}
+
+
+/*! Whether to accept link to this value type.
+ * Accepts DoubleValue, ImageValue, or ColorValue.
+ */
+bool GradientProperty::AllowType(Value *v)
+{
+	int vtype = v->type();
+	if (vtype == VALUE_Real)  return true;
+	if (vtype == VALUE_Color) return true;
+	if (vtype == VALUE_Image) return true;
+	// *** vectors, transform each value individually, or all
+	return false;
+}
+
+
 //------------------------ CurveProperty ------------------------
 
 /*! \class CurveProperty
@@ -3150,6 +3248,8 @@ CurveProperty::~CurveProperty()
 	if (curve) curve->dec_count();
 }
 
+/*! Set a default width and height based on colors->font->textheight().
+ */
 void CurveProperty::SetExtents(NodeColors *colors)
 {
 	width = height = 4 * colors->font->textheight();

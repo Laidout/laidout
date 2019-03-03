@@ -19,6 +19,7 @@
 #include "nodeinterface.h"
 
 #include <lax/interfaces/curvemapinterface.h>
+#include "../dataobjects/lgradientdata.h"
 #include "../calculator/curvevalue.h"
 
 
@@ -53,6 +54,29 @@ class CurveProperty : public NodeProperty
 
 	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface, Laxkit::Displayer *dp);
 	virtual const char *PropInterfaceName() { return "CurveMapInterface"; }
+	virtual bool HasInterface();
+	virtual void Draw(Laxkit::Displayer *dp, int hovered);
+};
+
+
+//--------------------- GradientProperty ---------------------------------
+class GradientProperty : public NodeProperty
+{
+	static SingletonKeeper interfacekeeper;
+
+  public:
+	static LaxInterfaces::GradientInterface *GetGradientInterface();
+
+	GradientStrip *gradient;
+
+	GradientProperty(GradientValue *ncurve, int absorb, int isout);
+	virtual ~GradientProperty();
+
+	virtual void SetExtents(NodeColors *colors);
+	virtual bool AllowType(Value *v);
+
+	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface, Laxkit::Displayer *dp);
+	virtual const char *PropInterfaceName() { return "GradientInterface"; }
 	virtual bool HasInterface();
 	virtual void Draw(Laxkit::Displayer *dp, int hovered);
 };
