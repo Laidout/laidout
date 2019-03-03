@@ -230,6 +230,7 @@ int laidout_preview_maker(const char *original, const char *preview, const char 
  * \brief The file size in kilobytes over which preview images should be used where possible.
  */
 
+ColorManager *colorManager = nullptr;
 
 //! Laidout constructor, just inits a few variables to 0.
 /*! 
@@ -238,6 +239,12 @@ LaidoutApp::LaidoutApp()
   : anXApp(),
 	preview_file_bases(2)
 {	
+	colorManager = new ColorManager();
+	colorManager->AddSystem(Create_sRGB_System(true), true);
+	ColorManager::SetDefault(colorManager);
+	//colorManager->dec_count();
+
+
 	autosave_timerid=0;
 	
 	icons=IconManager::GetDefault();
@@ -1165,6 +1172,10 @@ int LaidoutApp::InitializePlugins()
 					plugin->Initialize();
 					n++;
 				}
+			}
+			if (ColorManager::GetDefault(false) == nullptr) {
+				cerr << " *** ColorManager wiped after dlopen!! This shouldn't happen!!!!! Aaaaaaagh!!"<<endl;
+				ColorManager::SetDefault(colorManager);
 			}
 		}
 		globfree(&globbuf);
