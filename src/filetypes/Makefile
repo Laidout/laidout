@@ -17,6 +17,7 @@ objs= \
 	filefilters.o \
 	filters.o \
 	exportdialog.o \
+	htmlgallery.o \
 	importdialog.o \
 	image.o \
 	image-gs.o \
