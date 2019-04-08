@@ -122,6 +122,7 @@ class HtmlGalleryExportConfig : public DocumentExportConfig
 	int use_transparent_bg;
 	int width, height;
 	int img_max_width, img_max_height;
+	bool make_thumbs;
 
 	LaxFiles::Attribute template_vars;
 
@@ -144,6 +145,7 @@ HtmlGalleryExportConfig::HtmlGalleryExportConfig()
 	use_transparent_bg = false;
 	width = height = 0;
 	html_template_file = nullptr;
+	make_thumbs = true;
 
 	for (int c=0; c<laidout->exportfilters.n; c++) {
 		if (!strcmp(laidout->exportfilters.e[c]->Format(),"HtmlGallery")) {
@@ -189,6 +191,7 @@ void HtmlGalleryExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::Dum
 		fprintf(f,"%stransparent  #use a transparent background, not a rendered color.\n",spc);
 		fprintf(f,"%swidth  0  #width of resulting image. 0 means auto calculate from dpi.\n",spc);
 		fprintf(f,"%sheight 0  #height of resulting image. 0 means auto calculate from dpi.\n",spc);
+		fprintf(f,"%smake_thumbs true  #Generate thumbnails during output.\n",spc);
 		return;
 	}
 
@@ -197,6 +200,7 @@ void HtmlGalleryExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::Dum
 	if (use_transparent_bg) fprintf(f,"%stransparent\n",spc);
 	fprintf(f,"%swidth  %d\n",spc, width);
 	fprintf(f,"%sheight %d\n",spc, height);
+	fprintf(f,"%smake_thumbs %s\n",spc, make_thumbs ? "yes" : "no");
 	if (html_template_file) fprintf(f,"%shtml_template_file %s\n",spc, html_template_file);
 }
 
@@ -207,6 +211,7 @@ LaxFiles::Attribute *HtmlGalleryExportConfig::dump_out_atts(LaxFiles::Attribute 
 	att->push("transparent", use_transparent_bg ? "yes" : "no");
 	att->push("width", width);
 	att->push("height", height);
+	att->push("make_thumbs", make_thumbs ? "yes" : "no");
 	if (html_template_file) att->push("html_template_file", html_template_file);
 	return att;
 }
@@ -235,6 +240,8 @@ void HtmlGalleryExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,Lax
 		} else if (!strcmp(name, "height")) {
 			IntAttribute(value, &height, NULL);
 
+		} else if (!strcmp(name, "make_thumbs")) {
+			make_thumbs = BooleanAttribute(value);
 		}
 	}
 }
@@ -270,6 +277,15 @@ ObjectDef *HtmlGalleryExportConfig::makeObjectDef()
     def->push("transparent",
             _("Transparent"),
             _("Render background as transparent, not as paper color."),
+            "boolean",
+            NULL,    //range
+            "true", //defvalue
+            0,      //flags
+            NULL); //newfunc
+
+    def->push("make_thumbs",
+            _("Make Thumbnails"),
+            _("Save thumbnails of images alongside the output images."),
             "boolean",
             NULL,    //range
             "true", //defvalue
@@ -332,6 +348,9 @@ Value *HtmlGalleryExportConfig::dereference(const char *extstring, int len)
 	} else if (!strncmp(extstring,"height",8)) {
 		return new IntValue(height);
 
+	} else if (!strncmp(extstring,"make_thumbs",11)) {
+		return new BooleanValue(make_thumbs);
+
 	} else if (!strncmp(extstring,"html_template_file",8)) {
 		return new StringValue(html_template_file);
 
@@ -356,6 +375,12 @@ int HtmlGalleryExportConfig::assign(FieldExtPlace *ext,Value *v)
                 d=getNumberValue(v, &isnum);
                 if (!isnum) return 0;
                 use_transparent_bg = (d==0 ? false : true);
+                return 1;
+
+			} else if (!strcmp(str,"make_thumbs")) {
+                d=getNumberValue(v, &isnum);
+                if (!isnum) return 0;
+                make_thumbs = (d==0 ? false : true);
                 return 1;
 
 			} else if (!strcmp(str,"width")) {
@@ -460,6 +485,11 @@ int createHtmlGalleryExportConfig(ValueHash *context,ValueHash *parameters,Value
 		i=parameters->findInt("transparent",-1,&e);
 		if (e==0) config->use_transparent_bg=i;
 		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"transparent"); throw error; }
+
+		 //---make_thumbs
+		i=parameters->findInt("make_thumbs",-1,&e);
+		if (e==0) config->make_thumbs = i;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"make_thumbs"); throw error; }
 
 		 //---width
 		double d=parameters->findIntOrDouble("width",-1,&e);
@@ -581,6 +611,7 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 	Displayer *dp = imanager->GetDisplayer(DRAWS_Hires);
 	DoubleBBox bounds;
 
+	//open up file for html
 	scratch.Sprintf("%s/index.html", filename);
 	FILE *htmlout = fopen(scratch.c_str(), "w");
 	if (!htmlout) {
@@ -590,6 +621,33 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 
 	fprintf(htmlout, "<html>\n<head>\n<title>%s</title>\n</head>\n<body>\n", filename);
 
+
+	//open up file for json list
+	scratch.Sprintf("%s/imagelist.json", filename);
+	FILE *jsonout = fopen(scratch.c_str(), "w");
+	if (!jsonout) {
+		log.AddError("Could not open imagelist.json for writing!");
+		fclose(htmlout);
+		return 5;
+	}
+
+	fprintf(jsonout, 
+		"{\n"
+		" \"info\": {\n"
+		"   \"metaTitle\":\"%s\",\n"
+		"   \"metaDescription\":\"\",\n"
+		"   \"metaKeywords\":\"\",\n"
+		"   \"title\":\"\",\n"
+		"   \"byline\":\"\",\n"
+		"   \"date\":\"\",\n"
+		"   \"blurb\":\"\"\n"
+		" },\n"
+		" \"images\":[\n",
+		out->doc ? out->doc->name : "Spreads"
+		);
+
+
+	Spread *spread = nullptr;
 	try {
 
 		int start = out->start;
@@ -598,7 +656,8 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 		for (int sc = start; sc <= end; sc++) {
 
 			 //spread objects
-			Spread *spread = NULL;
+			if (spread) spread->dec_count();
+			spread = nullptr;
 			if (doc) {
 				spread = doc->imposition->Layout(out->layout, sc);
 			}
@@ -626,6 +685,11 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 			//We need to figure out how big an image to use
 			if (width>0 && height>0) {
 				//nothing to do, dimensions already specified
+				double aspect = bounds.boxwidth() / bounds.boxheight();
+				if (width/height > aspect)
+					width = height * aspect;
+				else
+					height = width / aspect;
 
 			} else if (width == 0 && height == 0) {
 				 //both zero means use dpi to compute
@@ -760,23 +824,58 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 			scratch.Sprintf("%s/images/%03d.%s", filename, sc, out->image_format);
 			int err = img->Save(scratch.c_str(), out->image_format);
 			if (err) {
-				log.AddError(_("Could not save the image"));
+				img->dec_count();
+				throw _("Could not save image");
 			}
-			img->dec_count();
 
-			fprintf(htmlout, "<img src=\"images/%s\">\n", lax_basename(scratch.c_str()));
+			if (out->make_thumbs) {
+				LaxImage *thumb = GeneratePreview(img, 200, 200, 1);
+				scratch.Sprintf("%s/images/%03d-s.png", filename, sc);
+				err = thumb->Save(scratch.c_str(), "png");
+				if (err) {
+					thumb->dec_count();
+					throw _("Could not save thumbnail");
+				}
+
+				fprintf(jsonout, 
+						"    {\"file\":\"images/%03d.%s\", \"w\":%d, \"h\":%d, \"thumb\":\"images/%03d-s.png\", \"pw\":%d, \"ph\":%d }%s\n",
+						sc,out->image_format, img->w(), img->h(),
+						sc, thumb->w(), thumb->h(),
+						sc == end ? "" : ","
+					   );
+				fprintf(htmlout, "<a href=\"images/%03d.%s\"><img src=\"images/%03d-s.png\"></a>\n", sc,out->image_format, sc);
+				thumb->dec_count();
+			}
+			else {
+				fprintf(jsonout, 
+						"    {\"file\":\"images/%03d.%s\", \"w\":%d, \"h\":%d }%s\n",
+						sc,out->image_format, img->w(), img->h(),
+						sc == end ? "" : ","
+					   );
+				fprintf(htmlout, "<img src=\"images/%s\">\n", lax_basename(scratch.c_str()));
+			}
+
+			img->dec_count();
 
 		} //each spread
 
 	} catch(const char *err) {
 		log.AddError(err);
 		fclose(htmlout);
+		if (spread) spread->dec_count();
+		dp->EndDrawing();
 		return 2;
 	}
 
+	//finish html
 	fprintf(htmlout, "</body>\n</html>");
 	fclose(htmlout);
 
+	//finish json
+	fprintf(jsonout, "  ]\n}");
+	fclose(jsonout);
+
+	dp->EndDrawing();
 	if (log.Errors()) return -1;
 
 	return 0; 

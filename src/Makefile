@@ -141,6 +141,7 @@ otherobjs= \
 	filetypes/image.o \
 	filetypes/image-gs.o \
 	filetypes/laidoutimport.o \
+	filetypes/htmlgallery.o \
 	filetypes/pdf.o \
 	filetypes/podofoimposeplan.o \
 	filetypes/postscript.o \
