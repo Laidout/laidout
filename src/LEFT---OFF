@@ -12,7 +12,9 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now:
 
-bug: input edit cursor placement is wrong now
+bug: text selection and highlighting is really out of whack.. int/float troubles?
+
+bug: window sizes seem to all be off a few pixels
 
 bug: curve is terrible approximation at end points
 
@@ -167,6 +169,8 @@ test:
   make some test scripts for command line testing
 
 
+need something like laximages->Save(file, format, native_save_only), in case object doesn't know how to save to that format.. maybe default to something like static ImageLoader::Save
+
 need ability to show "reprocessing.." or "progress.." indicator in different thread to what is actually processing
 
 in singles view, spread number in box should be page label instead of spread number
@@ -273,6 +277,8 @@ you can't control unclick selected directories
 rework ui to be programmable. Perhaps an ui builder
 
 file filters: filefilters:
+  need to ensure that when bouncing around filters, Export All sets range properly
+  need to preserve last settings per filter
   would be nice to standardize viewport display so each exporter doesn't have to implement everything themselves
     like define an iterator to walk over the view
   fix when filtered object has children.. currently skips children
@@ -294,6 +300,9 @@ importdialog ImportDialog import dialog:
   importing should not spawn new windows
   importing should sort out duplicate names
   would be nice to show preview of what is to be imported
+html
+  standardize save to directory or file, not just assume file
+  figure out template scheme
 image
   export format should be an enum. need to extract possible save formats from Laxkit
   option for setting background color, at least white|transparent
@@ -1852,3 +1861,4 @@ DONE Page Clip: svg .. set clip-path on each page layer to page outline
 DONE Remove old laxutils based drawing calls in favor of Displayer based drawing.
 DONE website: make twitterable
 DONE make sure gegl points to 0.4, and no freetype-config
+DONE bug: input edit cursor placement is wrong now
