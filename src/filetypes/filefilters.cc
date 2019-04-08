@@ -123,6 +123,19 @@ FileFilter::FileFilter()
 	flags  = 0;
 }
 
+FileFilter::~FileFilter()
+{
+	DBG cerr << "FileFilter destructor " <<endl;
+}
+
+/*! Return whether the filter is based on import or export from whole directories, rather than files.
+ * Default is to return false.
+ */
+bool FileFilter::DirectoryBased()
+{
+	return false;
+}
+
 //------------------------------------- ImportFilter -----------------------------------
 /*! \class ImportFilter
  * \brief Abstract base class of file import filters.

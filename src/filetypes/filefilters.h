@@ -37,6 +37,7 @@ class DocumentExportConfig;
 
 #define FILTER_MULTIPAGE  (1<<0)
 #define FILTER_MANY_FILES (1<<1)
+#define FILTER_DIR_BASED  (1<<2)
 
 class FileFilter : public Laxkit::anObject
 {
@@ -45,7 +46,7 @@ class FileFilter : public Laxkit::anObject
 	PluginBase *plugin; //***which plugin, if any, the filter came from.
 
 	FileFilter();
-	virtual ~FileFilter() {}
+	virtual ~FileFilter();
 	virtual const char *Author() = 0;
 	virtual const char *FilterVersion() = 0;
 	
@@ -55,6 +56,7 @@ class FileFilter : public Laxkit::anObject
 	virtual const char *VersionName() = 0;
 	virtual const char *FilterClass() = 0;
 	virtual ObjectDef *GetObjectDef() = 0;
+	virtual bool DirectoryBased();
 
 	virtual Laxkit::anXWindow *ConfigDialog() { return NULL; }
 };
