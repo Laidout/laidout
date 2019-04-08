@@ -3149,6 +3149,7 @@ Value *NullValue::duplicate()
  */
 BooleanValue::BooleanValue(const char *val)
 {
+	i = 0;
 	if (isblank(val)) i=0;
 	else if (!strcmp(val,"0") || !strcasecmp(val,"no") || !strcasecmp(val,"false")) i=0;
 	else if (!strcmp(val,"1") || !strcasecmp(val,"yes") || !strcasecmp(val,"true")) i=1;
