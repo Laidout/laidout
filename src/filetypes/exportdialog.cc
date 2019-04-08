@@ -217,15 +217,16 @@ void ExportDialog::dump_in_atts(Attribute *att,int flag, LaxFiles::DumpContext *
 			}
 
 			 //update config to new filter
-			if (nfilter!=filter) {
-				filter=nfilter;
-				DocumentExportConfig *nconfig=filter->CreateConfig(config);
+			if (nfilter != filter) {
+				filter = nfilter;
+				DocumentExportConfig *nconfig = filter->CreateConfig(config);
 				if (config) config->dec_count();
-				config=nconfig;
+				config = nconfig;
 			} 
+
+			config->dump_in_atts(att->attributes.e[c], flag, context);
 		}
 	}
-
 }
 
 //! Based on config->layout, set min and max accordingly.
@@ -310,9 +311,9 @@ int ExportDialog::init()
 	last=filecheck=new CheckBox(this,"tofile-check",NULL,CHECK_CIRCLE|CHECK_LEFT, 
 						 0,0,0,0,0, 
 	 					 last,object_id,"tofile-check",
-						 _("To File: "), CHECKGAP,5);
+						 filter->DirectoryBased() ? _("To Dir: ") : _("To File: "), CHECKGAP,5);
 	filecheck->State(LAX_ON);
-	filecheck->tooltip(_("Export to this file"));
+	filecheck->tooltip(_("Export to this path"));
 	AddWin(filecheck,1,-1);
 
 //	 ***** have: [!] _filename_   <-- meaning file exists, tooltip to say what it means
@@ -340,9 +341,9 @@ int ExportDialog::init()
 	last=filescheck=new CheckBox(this,"tofiles",NULL,CHECK_CIRCLE|CHECK_LEFT, 
 						 0,0,0,0,0, 
 	 					 last,object_id,"tofiles-check",
-						 _("To Files: "), CHECKGAP,5);
+						 filter->DirectoryBased() ? _("To Dirs: ") : _("To Files: "), CHECKGAP,5);
 	filescheck->State(LAX_OFF);
-	filescheck->tooltip(_("Export to these files. A '#' is replaced with\n"
+	filescheck->tooltip(_("Export to these paths. A '#' is replaced with\n"
 						  "the spread index. A \"###\" for an index like 3\n"
 						  "will get replaced with \"003\"."));
 	AddWin(filescheck,1,-1);
@@ -353,7 +354,7 @@ int ExportDialog::init()
 						 last,object_id,"tofiles",
 						 config->tofiles,0);
 	filesedit->padx=5;
-	filesedit->tooltip(_("Export to these files. A '#' is replaced with\n"
+	filesedit->tooltip(_("Export to these paths. A '#' is replaced with\n"
 						  "the spread index. A \"###\" for an index like 3\n"
 						  "will get replaced with \"003\"."));
 	fileedit->SetCurpos(-1);
@@ -395,7 +396,9 @@ int ExportDialog::init()
 	 //------------------------Range----------
 
 	 //-------------[ ] All
-	 //             [ ] From _____ to ______  <-- need to know their ranges!! and use labels for pages
+	 //             [ ] Current
+	 //             [ ] From _____ to ______  <-- need to know their ranges!!
+	 //             ...todo: and use labels for pages   __"A1"_-_"Z8"_  __0 - 10, 15-2, 22__   _all_
 
 	last=printall=new CheckBox(this,"ps-printall",NULL,CHECK_CIRCLE|CHECK_LEFT,
 						 0,0,0,0,0, 
@@ -441,6 +444,8 @@ int ExportDialog::init()
 	printend->tooltip(_("The ending index"));
 	AddWin(printend,1, printend->win_w,0,1000,50,0, printend->win_h,0,0,50,0, -1);
 	AddNull();
+
+	//printend->tooltip(_("Range of pages to use.\nRange is indices starting from 0, or quote for page labels."));
 
 	AddWin(NULL,0, 0,0,9999,50,0, 12,0,0,50,0, -1);
 	AddNull();
@@ -669,53 +674,65 @@ int ExportDialog::end()
 int ExportDialog::updateExt()
 {
 	 //do file
-	char *s=fileedit->GetText();
-	char *p=strrchr(s,'.'), *b=strrchr(s,'/');
-	if (p) {
-		if (!b || (b && p>b)) {
-			*p='\0';
-			appendstr(s,".");
-			appendstr(s,filter->DefaultExtension());
-			fileedit->SetText(s);
-			makestr(config->filename,s);
-			delete[] s;
-		}
+	char *s = fileedit->GetText();
+	char *p = strrchr(s,'.'),
+		 *b = strrchr(s,'/');
+	if (p && ((b && p > b) || !b)) *p = '\0'; //removes extension
+	if (!filter->DirectoryBased()) {
+		appendstr(s,".");
+		appendstr(s,filter->DefaultExtension());
 	}
-	 //do files
-	s=filesedit->GetText();
-	p=strrchr(s,'.');
-	b=strrchr(s,'/');
-	if (p) {
-		if (!b || (b && p>b)) {
-			*p='\0';
-			appendstr(s,".");
-			appendstr(s,filter->DefaultExtension());
-			filesedit->SetText(s);
-			makestr(config->tofiles,s);
-			delete[] s;
-		}
-	}
+	fileedit->SetText(s);
+	makestr(config->filename,s);
+	delete[] s;
 
+	 //do files
+	s = filesedit->GetText();
+	p = strrchr(s,'.');
+	b = strrchr(s,'/');
+	if (p && ((b && p > b) || !b)) *p = '\0'; //removes extension
+	if (!filter->DirectoryBased()) {
+		appendstr(s,".");
+		appendstr(s,filter->DefaultExtension());
+	}
+	filesedit->SetText(s);
+	makestr(config->tofiles,s);
+	delete[] s;
+
+	//if (filter->DirectoryBased()) {
+	//	fileedit->SetType();
+	//}
 	fileedit->SetCurpos(-1); //these seem to need the window to be inited already, so do this here
 	filesedit->SetCurpos(-1);
 
 	return 0;
 }
 
-/*! Make sure the available edits correspond to config.
+/*! Make sure the available edit controls correspond to config.
  */
 void ExportDialog::updateEdits()
 {
 	WinFrameBox *box;
+	const char *str;
+
+	//first the easy part, labels on edits that exist for all filters:
+	filecheck ->Label(filter->DirectoryBased() ? _("To Dir: ") : _("To File: "));
+	filescheck->Label(filter->DirectoryBased() ? _("To Dirs: ") : _("To Files: "));
+
+
+	//now modify panel to have the correct custom edits
 	for (int c=wholelist.n-1; c>=0; c--) {
 		box=dynamic_cast<WinFrameBox*>(wholelist.e[c]);
 		if (!box || !box->win()) continue;
-		if (strncmp(box->win()->win_name,"extra-",6)) continue;
+		str = box->win()->win_name;
+		if (strncmp(str,"extra-",6)) {
+			continue;
+		}
 
 		Pop(c);
 	}
 
-	ObjectDef *def=config->GetObjectDef();
+	ObjectDef *def = config->GetObjectDef();
 	if (strcmp(def->name,"ExportConfig")) {
 		 //only do this section for non-default export configs.
 		 // *** Note this will add any fields returned by def->getFieldOfThis(),
@@ -749,7 +766,7 @@ void ExportDialog::updateEdits()
 			} else if (fd->format==VALUE_String) { 
 				sprintf(scratch,"extra-%s",fd->name);
 				LineInput *box;
-				last=box=new LineInput(this,scratch,NULL,0, 
+				last=box=new LineInput(this,scratch,NULL, LINP_SEND_ANY, 
 									 0,0,0,0,0, 
 									 last,object_id,scratch,
 									 fd->Name, NULL);
@@ -765,7 +782,8 @@ void ExportDialog::updateEdits()
 			} else if (fd->format==VALUE_Int || fd->format==VALUE_Real) { 
 				sprintf(scratch,"extra-%s",fd->name);
 				LineInput *box;
-				last=box=new LineInput(this,scratch,NULL,(fd->format==VALUE_Int ? LINP_INT : LINP_FLOAT), 
+				last=box=new LineInput(this,scratch,NULL,
+									(fd->format==VALUE_Int ? LINP_INT : LINP_FLOAT) | LINP_SEND_ANY, 
 									 0,0,0,0,0, 
 									 last,object_id,scratch,
 									 fd->Name, NULL);
@@ -801,15 +819,23 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 
 	if (!strncmp(mes,"extra-",6)) {
 		 //for events outside the default DocumentExportConfig
-		const char *field=mes+6;
-		ObjectDef *def=config->GetObjectDef();
-		ObjectDef *fd=def->FindDef(field,strlen(field),0);
+		const char *field = mes+6;
+		ObjectDef *def = config->GetObjectDef();
+		ObjectDef *fd = def->FindDef(field,strlen(field),0);
 		if (!fd) return 0;
 
+		const SimpleMessage *eee=dynamic_cast<const SimpleMessage*>(ee);
+		FieldExtPlace ff(field);
 		if (fd->format==VALUE_Boolean) {
-			const SimpleMessage *eee=dynamic_cast<const SimpleMessage*>(ee);
-			FieldExtPlace ff(field);
 			BooleanValue v(eee->info1==LAX_ON ? true : false);
+			config->assign(&ff, &v);
+
+		} else if (fd->format==VALUE_String) {
+			StringValue v(eee->str);
+			config->assign(&ff, &v);
+
+		} else if (fd->format==VALUE_Int || fd->format==VALUE_Real) {
+			DoubleValue v(strtod(eee->str,NULL));
 			config->assign(&ff, &v);
 		}
 
@@ -1051,16 +1077,19 @@ void ExportDialog::overwriteCheck()
 	int valid,err;
 	unsigned long color=rgbcolor(255,255,255);
 
-	if (filecheck->State()==LAX_ON) {
-		 //else check file
-		if (isblank(fileedit->GetCText())) valid=1;
-		else valid=file_exists(fileedit->GetCText(),1,&err);
+	int isdir = filter->DirectoryBased();
+
+	if (filecheck->State() == LAX_ON) {
+		 //check file
+		if (isblank(fileedit->GetCText())) valid = -1;
+		else valid = file_exists(fileedit->GetCText(),1,&err);
+
 		if (valid) {
-			if (valid!=S_IFREG) { // exists, but is not regular file
+			if ((isdir && valid != S_IFDIR) || (!isdir && valid != S_IFREG)) { // exists, but is not proper type
 				if (valid!=1) color=rgbcolor(255,100,100);
-				fileedit->tooltip(_("Cannot overwrite this kind of file!"));
+				fileedit->tooltip(_("Cannot overwrite this!"));
 				findChildWindowByName("export")->Grayed(1);
-			} else { // was existing regular file
+			} else { // was proper type
 				color=rgbcolor(255,255,0);
 				fileedit->tooltip(_("WARNING: This file will be overwritten on export!"));
 				findChildWindowByName("export")->Grayed(0);
@@ -1070,7 +1099,8 @@ void ExportDialog::overwriteCheck()
 			findChildWindowByName("export")->Grayed(0);
 		}
 		fileedit->Valid(!valid,color);
-	} else if (filescheck->State()==LAX_ON) {
+
+	} else if (filescheck->State() == LAX_ON) {
 		if (isblank(filesedit->GetCText())) {
 			filesedit->tooltip(_("Cannot write to nothing!"));
 			findChildWindowByName("export")->Grayed(1);
@@ -1085,11 +1115,11 @@ void ExportDialog::overwriteCheck()
 		for (int c=config->start; c<=config->end; c++) {
 			sprintf(file,filebase,c);
 
-			valid=file_exists(file,1,&err);
+			valid = file_exists(file,1,&err);
 			if (valid) {
-				if (valid!=S_IFREG) { // exists, but is not regular file
+				if ((isdir && valid != S_IFDIR) || (!isdir && valid != S_IFREG)) { // exists, but is wrong type
 					e++;
-				} else { // was existing regular file
+				} else { // was proper type
 					w++;
 				}
 			}
@@ -1180,6 +1210,12 @@ int ExportDialog::send()
 {
 	if (findChildWindowByName("export")->Grayed()) return 0;
 
+	//a little sanity checking...
+	if (printall->State() == LAX_ON) {
+		config->start = 0;
+		config->end = max;
+	}
+
 	config->filter=filter;
 	if (commandcheck && commandcheck->State()==LAX_ON) {
 		//----------**** clean this up or move it back to ViewWindow!!
@@ -1194,10 +1230,6 @@ int ExportDialog::send()
 		FILE *f=fopen(tmp,"w");
 		if (f) {
 			fclose(f);
-
-			//mesbar->SetText(_("Printing, please wait...."));
-			//mesbar->Refresh();
-			//XSync(app->dpy,False);
 
 			ErrorLog log;
 			if (filter->Out(tmp,config,log)==0) {
