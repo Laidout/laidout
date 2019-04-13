@@ -87,7 +87,7 @@ class Document : public ObjectContainer, public Value
 	
 	Imposition *imposition;
 
-	LaxFiles::Attribute metadata;
+	LaxFiles::AttributeObject *metadata;
 	LaxFiles::Attribute iohints;
 
 	int curpage;
@@ -111,6 +111,7 @@ class Document : public ObjectContainer, public Value
 	virtual const char *Name(int withsaveas);
 	virtual int Name(const char *nname);
 	virtual void clear();
+	virtual void InitMeta();
 
 	 //style functions
 	virtual Value *duplicate();

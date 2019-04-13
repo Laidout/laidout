@@ -391,7 +391,7 @@ void PageRange::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCon
 /*! \var char Document::saveas
  * \brief The full absolute path to the document.
  */
-/*! \var LaxFiles::Attribute Document::metadata
+/*! \var LaxFiles::AttributeObject *Document::metadata
  * \brief Extra descriptive metadata attached to the document.
  */
 /*! \var LaxFiles::Attribute Document::iohints
@@ -413,6 +413,7 @@ Document::Document(const char *filename)
 	modtime=times(NULL);
 	curpage=-1;
 	imposition=NULL;
+	metadata = nullptr;
 	
 	ErrorLog log;
 	Load(filename,log);
@@ -433,6 +434,7 @@ Document::Document(Imposition *imp,const char *filename)//stuff=NULL
 	curpage=-1;
 	saveas=newstr(filename);
 	name=NULL;
+	metadata = nullptr;
 	
 	imposition=imp;
 	if (imposition) imposition->inc_count();
@@ -472,6 +474,7 @@ Document::~Document()
 	if (saveas) delete[] saveas;
 	if (name) delete[] name;
 	if (imposition) imposition->dec_count();
+	if (metadata) metadata->dec_count();
 }
 
 //! Remove everything from the document.
@@ -1236,9 +1239,10 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCont
 				iohints.push(att->attributes.e[c]->attributes.e[c2]->duplicate(),-1);
 
 		} else if (!strcmp(nme,"metadata")) {
-			if (metadata.attributes.n) metadata.clear();
+			if (!metadata) metadata = new AttributeObject;
+			if (metadata->attributes.n) metadata->clear();
 			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) 
-				metadata.push(att->attributes.e[c]->attributes.e[c2]->duplicate(),-1);
+				metadata->push(att->attributes.e[c]->attributes.e[c2]->duplicate(),-1);
 
 		} else if (!strcmp(nme,"view")) {
 			SpreadView *v=new SpreadView;
@@ -1406,9 +1410,9 @@ void Document::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *conte
 	}
 
 	 // dump notes/meta data
-	if (metadata.attributes.n) {
+	if (metadata && metadata->attributes.n) {
 		fprintf(f,"%smetadata\n",spc);
-		metadata.dump_out(f,indent+2);
+		metadata->dump_out(f,indent+2);
 	}
 	
 	 // dump iohints if any
@@ -1443,7 +1447,22 @@ int Document::Name(const char *nname)
 		name=newstr(Untitled_name());
 	}
 	makestr(name,nname);
+
+	if (!metadata) metadata = new AttributeObject();
+	Attribute *att = metadata->find("Name");
+	if (!att) metadata->push("Name", name);
+	else makestr(att->value, name);
+
 	return 1;
+}
+
+void Document::InitMeta()
+{
+	if (!metadata) metadata = new AttributeObject();
+	Attribute *att = metadata->find("Name");
+	if (!att) metadata->push("Name", name);
+	else makestr(att->value, name);
+	
 }
 
 //! Returns basename part of saveas if it exists, else "untitled"
