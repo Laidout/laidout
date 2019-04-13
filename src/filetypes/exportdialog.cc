@@ -25,6 +25,7 @@
 
 #include "../laidout.h"
 #include "../language.h"
+#include "../interfaces/metawindow.h"
 #include "exportdialog.h"
 
 
@@ -85,7 +86,7 @@ ExportDialog::ExportDialog(unsigned long nstyle,unsigned long nowner,const char 
 						   int pmax, //!< The maximum of the range
 						   int pcur) //!< The current element of the range
 	: RowFrame(NULL,NULL,_("Export"),
-			   (nstyle&ANXWIN_MASK)|ROWFRAME_ROWS|ROWFRAME_TOP|ANXWIN_REMEMBER,
+			   (nstyle&ANXWIN_MASK)|ROWFRAME_ROWS|ROWFRAME_TOP|ANXWIN_REMEMBER|ANXWIN_ESCAPABLE,
 			   0,0,0,0,0,
 			   NULL,nowner,nsend, 5)
 {
@@ -128,6 +129,8 @@ ExportDialog::ExportDialog(unsigned long nstyle,unsigned long nowner,const char 
 	everyspread=evenonly=oddonly=NULL;
 
 	firstextra=-1;
+
+	last_meta_dir = nullptr;
 }
 
 /*! Decs count of config.
@@ -135,6 +138,7 @@ ExportDialog::ExportDialog(unsigned long nstyle,unsigned long nowner,const char 
 ExportDialog::~ExportDialog()
 {
 	if (config) config->dec_count();
+	delete[] last_meta_dir;
 }
 
 //! Set win_w and win_h to sane values if necessary.
@@ -187,6 +191,8 @@ Attribute *ExportDialog::dump_out_atts(Attribute *att,int what, LaxFiles::DumpCo
 	Attribute *att2 = att->pushSubAtt("last_format", filter->VersionName());
 	config->dump_out_atts(att2, what, context);
 
+	if (last_meta_dir) att->push("last_meta_dir", last_meta_dir);
+
 	return att;
 }
 
@@ -225,6 +231,9 @@ void ExportDialog::dump_in_atts(Attribute *att,int flag, LaxFiles::DumpContext *
 			} 
 
 			config->dump_in_atts(att->attributes.e[c], flag, context);
+
+		} else if (!strcmp(name,"last_meta_dir")) {
+			makestr(last_meta_dir, value);
 		}
 	}
 }
@@ -245,7 +254,7 @@ int ExportDialog::init()
 	anXWindow *last=NULL;
 	Button *tbut=NULL;
 	int c;
-	int linpheight = win_themestyle->normal->textheight();
+	double linpheight = 1.2 * win_themestyle->normal->textheight();
 	double textheight = win_themestyle->normal->textheight();
 	double CHECKGAP = textheight/4;
 
@@ -284,7 +293,7 @@ int ExportDialog::init()
 	if (c2>=0) format->Select(c2);
 	format->WrapToExtent();
 	format->tooltip(_("The file format to export into"));
-	AddWin(format,1, format->win_w,0,50,50,0, format->win_h,0,0,50,0, -1);
+	AddWin(format,1, format->win_w,0,50,50,0, 2*textheight,0,0,50,0, -1);
 	AddNull();
 
 	 //--------- to command
@@ -303,7 +312,7 @@ int ExportDialog::init()
 							 "lp",0);
 		command->padx=5;
 		command->tooltip(_("Run this command on a single exported file"));
-		AddWin(command,1, command->win_w,0,1000,50,0, command->win_h,0,0,50,0, -1);
+		AddWin(command,1, command->win_w,0,1000,50,0, linpheight,0,0,50,0, -1);
 		AddNull();
 	}
 	
@@ -321,13 +330,13 @@ int ExportDialog::init()
 //				 [ ]              <-- meaning does not exist, ok to write to
 	last=fileedit=new LineEdit(this,"tofile",NULL,
 						 LINEEDIT_SEND_FOCUS_ON|LINEEDIT_SEND_FOCUS_OFF|LINEEDIT_SEND_ANY_CHANGE, 
-						 0,0,100,20, 1,
+						 0,0,100,linpheight, 1,
 						 last,object_id,"tofile",
 						 config->filename,0);
 	fileedit->padx=5;
 	fileedit->tooltip(_("Export to this file"));
 	fileedit->SetCurpos(-1);
-	AddWin(fileedit,1, fileedit->win_w,0,1000,50,0, fileedit->win_h,0,0,50,0, -1);
+	AddWin(fileedit,1, fileedit->win_w,0,1000,50,0, linpheight,0,0,50,0, -1);
 	last=tbut=new Button(this,"filesaveas",NULL,0,
 						0,0,0,0, 1, 
 						last,object_id,"filesaveas",
@@ -400,20 +409,22 @@ int ExportDialog::init()
 	 //             [ ] From _____ to ______  <-- need to know their ranges!!
 	 //             ...todo: and use labels for pages   __"A1"_-_"Z8"_  __0 - 10, 15-2, 22__   _all_
 
-	last=printall=new CheckBox(this,"ps-printall",NULL,CHECK_CIRCLE|CHECK_LEFT,
+	last = printall = new CheckBox(this,"ps-printall",NULL,CHECK_CIRCLE|CHECK_LEFT,
 						 0,0,0,0,0, 
 						 last,object_id,"ps-printall",
 						 _("Export All"), CHECKGAP,5);
 	printall->State(LAX_ON);
-	AddWin(printall,1, win_w,0,2000,0,0, printall->win_h,0,0,50,0, -1);
+	//AddWin(printall,1, win_w,0,2000,0,0, printall->win_h,0,0,50,0, -1);
+	AddWin(printall,1, -1);
 	AddNull();
 
-	last=printcurrent=new CheckBox(this,"ps-printcurrent",NULL,CHECK_CIRCLE|CHECK_LEFT,
+	last = printcurrent = new CheckBox(this,"ps-printcurrent",NULL,CHECK_CIRCLE|CHECK_LEFT,
 						 0,0,0,0,0, 
 						 last,object_id,"ps-printcurrent",
 						 _("Export Current"), CHECKGAP,5);
 	printcurrent->State(LAX_OFF);
-	AddWin(printcurrent,1, win_w,0,2000,0,0, last->win_h,0,0,50,0, -1);
+	//AddWin(printcurrent,1, win_w,0,2000,0,0, linpheight,0,0,50,0, -1);
+	AddWin(printcurrent,1, -1);
 	AddNull();
 
 	last=printrange=new CheckBox(this,"ps-printrange",NULL,CHECK_CIRCLE|CHECK_LEFT,
@@ -489,7 +500,7 @@ int ExportDialog::init()
 
 
 	//----export all/even/odd
-	AddWin(new MessageBar(this,"end",NULL,0, 0,0,0,0,0, _("Which: ")),1,-1);
+	AddWin(new MessageBar(this,"end",NULL,0, 0,0,0,linpheight,0, _("Which: ")),1,-1);
 
 	last=everyspread=new CheckBox(this,"everyspread",NULL,CHECK_CIRCLE|CHECK_LEFT,
 						 0,0,0,0,0, 
@@ -586,6 +597,8 @@ int ExportDialog::init()
 
 	//-------------------------- Final OK ------------------------------------
 
+	AddVSpacer(textheight,0,0,50, -1);
+	AddNull();
 	AddWin(NULL,0, 0,0,1000,50,0, 0,0,0,50,0, -1);
 	last=tbut=new Button(this,"export",NULL,0, 0,0,0,0, 1, 
 						last,object_id,"export",
@@ -715,6 +728,9 @@ void ExportDialog::updateEdits()
 	WinFrameBox *box;
 	const char *str;
 
+	double linpheight = 2 * win_themestyle->normal->textheight();
+	//double textheight = win_themestyle->normal->textheight();
+
 	//first the easy part, labels on edits that exist for all filters:
 	filecheck ->Label(filter->DirectoryBased() ? _("To Dir: ") : _("To File: "));
 	filescheck->Label(filter->DirectoryBased() ? _("To Dirs: ") : _("To Files: "));
@@ -763,20 +779,26 @@ void ExportDialog::updateEdits()
 				AddWin(box,1,i++); 
 				AddNull(i++);
 
-			} else if (fd->format==VALUE_String) { 
+			} else if (fd->format == VALUE_String || fd->format == VALUE_File) { 
 				sprintf(scratch,"extra-%s",fd->name);
 				LineInput *box;
-				last=box=new LineInput(this,scratch,NULL, LINP_SEND_ANY, 
+				last = box = new LineInput(this,scratch,NULL, LINP_SEND_ANY | (fd->format == VALUE_File ? LINP_FILE : 0), 
 									 0,0,0,0,0, 
 									 last,object_id,scratch,
 									 fd->Name, NULL);
 
 				Value *v=config->dereference(fd->name,strlen(fd->name));
-				StringValue *str=dynamic_cast<StringValue*>(v);
-				if (str) box->SetText(str->str);
+				if (fd->format == VALUE_File) {
+					FileValue *str = dynamic_cast<FileValue*>(v);
+					if (str) box->SetText(str->filename);
+				} else {
+					StringValue *str=dynamic_cast<StringValue*>(v);
+					if (str) box->SetText(str->str);
+				}
 				v->dec_count();
 
-				AddWin(box,1,i++); 
+				AddWin(box,1, box->win_w,0,10000,50,0, linpheight,0,0,50,0, i++); 
+				//AddWin(box,1,i++); 
 				AddNull(i++);
 
 			} else if (fd->format==VALUE_Int || fd->format==VALUE_Real) { 
@@ -799,6 +821,37 @@ void ExportDialog::updateEdits()
 
 				AddWin(box,1,i++); 
 				AddNull(i++);
+
+			} else if (fd->format == VALUE_Object) {
+				Value *v=config->dereference(fd->name,strlen(fd->name));
+				ObjectValue *ov = dynamic_cast<ObjectValue*>(v);
+				AttributeObject *ao = dynamic_cast<AttributeObject*>(ov->object);
+				if (ao) { //assume this is a meta object
+					//label [edit]
+					AddWin(new MessageBar(this,"meta",NULL,0, 0,0,0,0,0, fd->Name),1, i++);
+					Button *tbut;
+					sprintf(scratch,"=extra-%s",fd->name);
+					tbut = new Button(this,"metaedit",NULL,0,
+										0,0,0,0, 1, 
+										last,object_id,scratch,
+										0,_("Edit meta"),NULL,NULL,3,3);
+					AddWin(tbut,1,i++);
+
+					sprintf(scratch,"+extra-%s",fd->name);
+					tbut = new Button(this,"metaload",NULL,0,
+										0,0,0,0, 1, 
+										last,object_id,scratch,
+										0,_("Load meta"),NULL,NULL,3,3);
+					AddWin(tbut,1,i++);
+
+					sprintf(scratch,"-extra-%s",fd->name);
+					tbut = new Button(this,"metasave",NULL,0,
+										0,0,0,0, 1, 
+										last,object_id,scratch,
+										0,_("Save meta"),NULL,NULL,3,3);
+					AddWin(tbut,1,i++);
+					AddNull(i++);
+				}
 
 			} else {
 				DBG cerr << "*** warning! uncaught field type "<<element_TypeNames(fd->format)<<"in an export config!"<<endl;
@@ -832,6 +885,10 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 
 		} else if (fd->format==VALUE_String) {
 			StringValue v(eee->str);
+			config->assign(&ff, &v);
+
+		} else if (fd->format==VALUE_File) {
+			FileValue v(eee->str);
 			config->assign(&ff, &v);
 
 		} else if (fd->format==VALUE_Int || fd->format==VALUE_Real) {
@@ -1064,6 +1121,49 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 									  0,0,0,0,0,object_id,"get new files",
 									  FILES_OPEN_ONE,
 									  filesedit->GetCText()));
+		return 0;
+
+	} else if (mes[0] == '=') {
+		//edit meta
+		Value *v = config->dereference(mes+7, strlen(mes+7));
+		ObjectDef *fd = v->GetObjectDef();
+		if (fd) {
+			ObjectValue *ov = dynamic_cast<ObjectValue*>(v);
+			if (ov) {
+				AttributeObject *ao = dynamic_cast<AttributeObject*>(ov->object);
+				if (ao) app->rundialog(new MetaWindow(NULL,"meta",_("Filter Meta"),0, object_id,"docMeta", ao));
+			}
+		}
+		return 0;
+
+	} else if (mes[0] == '+') {
+		//load meta: get a file name
+		char scratch[strlen(mes)+2];
+		sprintf(scratch, "<%s", mes);
+		FileDialog *fd = new FileDialog(NULL,"LoadMeta",_("Load meta..."),ANXWIN_REMEMBER,
+						  0,0,0,0,0,object_id,scratch,
+						  FILES_OPEN_ONE,
+						  last_meta_dir);
+		app->rundialog(fd);
+		return 0;
+
+	} else if (mes[0] == '-') {
+		//save meta: get a file name
+		char scratch[strlen(mes)+2];
+		sprintf(scratch, ">%s", mes);
+		FileDialog *fd = new FileDialog(NULL,"SaveMeta",_("Save meta..."),ANXWIN_REMEMBER,
+						  0,0,0,0,0,object_id,scratch,
+						  FILES_SAVE | FILES_ASK_TO_OVERWRITE,
+						  last_meta_dir);
+		app->rundialog(fd);
+		return 0;
+
+	} else if (mes[0] == '>') {
+		//save meta now
+		return 0;
+
+	} else if (mes[0] == '<') {
+		//load meta now
 		return 0;
 	}
 
