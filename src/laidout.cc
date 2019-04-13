@@ -814,12 +814,6 @@ int LaidoutApp::createlaidoutrc()
 					  "#defaultunits inches\n"
 					  "\n"
 
-					   //colors
-					  "#colors (***TODO)\n"
-					  "#  activate   rgbf  0 .78  0    #Some controls have green/red to indicate go/no-go. Redefine here\n"
-					  "#  deactivate rgbf  1 .39 .39   # for instance, to compensate for red/green color blindness.\n"
-					  "\n"
-
 					   //default paper
 					  "#defaultpapersize letter #Name of default paper to use\n"
 					  "\n"
@@ -840,6 +834,12 @@ int LaidoutApp::createlaidoutrc()
 			fprintf(f,"#palette_dir /usr/share/gimp/2.0/palettes\n"
 					  "\n");
 
+
+					   ////colors
+					  //"#colors (***ToDO)\n"
+					  //"#  activate   rgbf  0 .78  0    #Some controls have green/red to indicate go/no-go. Redefine here\n"
+					  //"#  deactivate rgbf  1 .39 .39   # for instance, to compensate for red/green color blindness.\n"
+					  //"\n"
 
 			fprintf(f,"laxprofile Light #Default built in profiles are Dark, Light, and Gray. You can define others in the laxconfig section.\n");
 			fprintf(f,"laxconfig-sample #Remove the \"-sample\" part to redefine various default window behaviour settingss\n");
