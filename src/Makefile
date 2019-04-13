@@ -108,6 +108,7 @@ otherobjs= \
 	api/importexport.o \
 	api/functions.o \
 	interfaces/actionarea.o \
+	interfaces/metawindow.o \
 	interfaces/nupinterface.o \
 	interfaces/aligninterface.o \
 	interfaces/anchorinterface.o \
