@@ -1224,7 +1224,7 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpCo
 
 		} else if (!strcmp(name,"imposition")) {
 			//***
-			cout <<"Need to implement export with alternate imposition.."<<endl;
+			cerr <<"Need to implement export with alternate imposition.."<<endl;
 
 		} else if (!strcmp(name,"layout")) {
 			if (!doc || isblank(value)) { layout=0; continue; }
