@@ -61,6 +61,7 @@
 #include "interfaces/paperinterface.h"
 #include "interfaces/documentuser.h"
 #include "calculator/shortcuttodef.h"
+#include "interfaces/metawindow.h"
 
 
 //template implementation:
@@ -89,6 +90,7 @@ namespace Laidout {
 //---------------------------
  //***standard action ids for corner button menu
  //0..996 are current documents and "none" document
+#define ACTION_EditDocMeta             996
 #define ACTION_EditImposition          997
 #define ACTION_RemoveCurrentDocument   998
 #define ACTION_AddNewDocument          999
@@ -769,6 +771,15 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 		} else if (i==ACTION_EditImposition) {
 			app->addwindow(newImpositionEditor(NULL,"impose",_("Impose..."),this->object_id,"newimposition",
 						                        NULL, NULL, doc?doc->imposition:NULL, NULL, doc));
+			return 0;
+
+		} else if (i == ACTION_EditDocMeta) {
+			if (doc) {
+				if (!doc->metadata || doc->metadata->NumAtts() == 0) doc->InitMeta();
+				app->addwindow(new MetaWindow(NULL,"meta",_("Document Meta"),0, object_id,"docMeta", doc->metadata));
+			} else {
+				postmessage(_("Missing doc!"));
+			}
 			return 0;
 		}
 
@@ -4504,6 +4515,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		menu->AddItem(_("Add new document"),ACTION_AddNewDocument);
 		if (doc) {
 			menu->AddItem(_("Remove current document"),ACTION_RemoveCurrentDocument);
+			menu->AddItem(_("Edit document meta"),ACTION_EditDocMeta);
 		}
 
 		 //----add limbo list, numbers starting at 1000...
