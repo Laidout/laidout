@@ -124,7 +124,7 @@ class HtmlGalleryExportConfig : public DocumentExportConfig
 	int img_max_width, img_max_height;
 	bool make_thumbs;
 
-	LaxFiles::Attribute template_vars;
+	LaxFiles::AttributeObject *templatevars;
 
 	HtmlGalleryExportConfig();
 	HtmlGalleryExportConfig(DocumentExportConfig *config);
@@ -135,7 +135,9 @@ class HtmlGalleryExportConfig : public DocumentExportConfig
 	virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
-	virtual LaxFiles::Attribute * dump_out_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void DefaultTemplateVars();
+	virtual void UpdateTemplateVarsToDoc();
 };
 
 //! Set the filter to the Html export filter stored in the laidout object.
@@ -146,6 +148,8 @@ HtmlGalleryExportConfig::HtmlGalleryExportConfig()
 	width = height = 0;
 	html_template_file = nullptr;
 	make_thumbs = true;
+	templatevars = new AttributeObject("templatevars", nullptr);
+	DefaultTemplateVars();
 
 	for (int c=0; c<laidout->exportfilters.n; c++) {
 		if (!strcmp(laidout->exportfilters.e[c]->Format(),"HtmlGallery")) {
@@ -158,13 +162,16 @@ HtmlGalleryExportConfig::HtmlGalleryExportConfig()
 HtmlGalleryExportConfig::HtmlGalleryExportConfig(DocumentExportConfig *config)
   : DocumentExportConfig(config)
 {
+	templatevars = new AttributeObject("templatevars", nullptr);
+	DefaultTemplateVars();
 	HtmlGalleryExportConfig *conf = dynamic_cast<HtmlGalleryExportConfig*>(config);
+
 	if (conf) {
 		image_format = newstr(conf->image_format);
 		use_transparent_bg = conf->use_transparent_bg;
 		width = conf->width;
 		height = conf->height;
-		makestr(html_template_file, conf->html_template_file);
+		html_template_file = newstr(conf->html_template_file);
 
 	} else {
 		html_template_file = nullptr;
@@ -177,8 +184,58 @@ HtmlGalleryExportConfig::HtmlGalleryExportConfig(DocumentExportConfig *config)
 
 HtmlGalleryExportConfig::~HtmlGalleryExportConfig()
 {
+	templatevars->dec_count();
 	delete[] image_format;
 	delete[] html_template_file;
+}
+
+void HtmlGalleryExportConfig::DefaultTemplateVars()
+{
+	time_t t=time(NULL);
+	const char *tt = ctime(&t); //note: not threadsafe, but this shouldn't really change hardly anyway
+	templatevars->push("<!--TODAY-->" , tt);
+	stripws(templatevars->attributes.e[0]->value);
+
+	templatevars->push("<!--PATH-TO-HOME-->" , "");
+
+	templatevars->push("<!--TITLE-->" , "");
+	templatevars->push("<!--AUTHOR-->" , "");
+	templatevars->push("<!--BYLINE-->", "");
+	templatevars->push("<!--DATE-->"  , "");
+	templatevars->push("<!--BLURB-->" , "");
+
+	templatevars->push("<!--META-TITLE-->" , "");
+	templatevars->push("<!--META-DESCRIPTION-->" , "");
+	templatevars->push("<!--META-KEYWORDS-->" , "");
+	templatevars->push("<!--META-IMAGE-->" , "");
+	templatevars->push("<!--META-URL-->" , "");
+	templatevars->push("<!--FONTS-->" , "<link href=\"https://fonts.googleapis.com/css?family=Cantarell|Vollkorn\" rel=\"stylesheet\">");
+	templatevars->push("<!--ICON-->" , "<link rel=\"icon\" href=\"icon.png\" type=\"image/png\">");
+	templatevars->push("<!--STYLE-->" , "<link rel=\"stylesheet\" href=\"style.css\" type=\"text/css\">");
+	templatevars->push("<!--JQUERY-->" , "<script src=\"js/jquery-3.0.0.min.js\"></script>");
+	templatevars->push("<!--UTILS-->" , "");
+}
+
+/*! Sets title, description from those in doc->metadata.
+ */
+void HtmlGalleryExportConfig::UpdateTemplateVarsToDoc()
+{
+	if (!doc || !doc->metadata) return;
+
+	Attribute *att = doc->metadata->find("Name");
+	Attribute *att2;
+	if (att) {
+		att2 = templatevars->find("<!--TITLE-->");
+		if (att2) makestr(att2->value, att->value);
+		else templatevars->push("<!--TITLE-->", att->value);
+	}
+
+	att = doc->metadata->find("description");
+	if (att) {
+		att2 = templatevars->find("<!--META-DESCRIPTION-->");
+		if (att2) makestr(att2->value, att->value);
+		else templatevars->push("<!--META-DESCRIPTION-->", att->value);
+	}
 }
 
 void HtmlGalleryExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
@@ -192,6 +249,7 @@ void HtmlGalleryExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::Dum
 		fprintf(f,"%swidth  0  #width of resulting image. 0 means auto calculate from dpi.\n",spc);
 		fprintf(f,"%sheight 0  #height of resulting image. 0 means auto calculate from dpi.\n",spc);
 		fprintf(f,"%smake_thumbs true  #Generate thumbnails during output.\n",spc);
+		fprintf(f,"%stemplatevars #List of any template vars.\n",spc);
 		return;
 	}
 
@@ -213,6 +271,7 @@ LaxFiles::Attribute *HtmlGalleryExportConfig::dump_out_atts(LaxFiles::Attribute 
 	att->push("height", height);
 	att->push("make_thumbs", make_thumbs ? "yes" : "no");
 	if (html_template_file) att->push("html_template_file", html_template_file);
+	if (templatevars) att->push(templatevars->duplicate(), -1);
 	return att;
 }
 
@@ -242,6 +301,14 @@ void HtmlGalleryExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,Lax
 
 		} else if (!strcmp(name, "make_thumbs")) {
 			make_thumbs = BooleanAttribute(value);
+
+		} else if (!strcmp(name, "templatevars")) {
+			if (templatevars) templatevars->dec_count();
+			templatevars = new AttributeObject(name, value);
+			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
+				if (!att->attributes.e[c]->attributes.e[c2]) continue; //tweak to ignore NULL attributes
+				templatevars->push(att->attributes.e[c]->attributes.e[c2]->duplicate(),-1);
+			}
 		}
 	}
 }
@@ -322,7 +389,16 @@ ObjectDef *HtmlGalleryExportConfig::makeObjectDef()
     def->push("html_template_file",
             _("Index template file"),
             _("Index template file"),
-            "string",
+            "File",
+            NULL,   //range
+            NULL, //defvalue
+            0,     //flags
+            NULL);//newfunc
+
+    def->push("templatevars",
+            _("Template vars"),
+            _("Template vars"),
+            "object",
             NULL,   //range
             NULL, //defvalue
             0,     //flags
@@ -336,24 +412,26 @@ Value *HtmlGalleryExportConfig::dereference(const char *extstring, int len)
 {
 	if (len<0) len=strlen(extstring);
 
-	if (!strncmp(extstring,"image_format",8)) {
+	if (!strncmp(extstring,"image_format",12)) {
 		return new StringValue(image_format);
 
-	} else if (!strncmp(extstring,"transparent",8)) {
+	} else if (!strncmp(extstring,"transparent",11)) {
 		return new BooleanValue(use_transparent_bg);
 
-	} else if (!strncmp(extstring,"width",8)) {
+	} else if (!strncmp(extstring,"width",5)) {
 		return new IntValue(width);
 
-	} else if (!strncmp(extstring,"height",8)) {
+	} else if (!strncmp(extstring,"height",6)) {
 		return new IntValue(height);
 
 	} else if (!strncmp(extstring,"make_thumbs",11)) {
 		return new BooleanValue(make_thumbs);
 
-	} else if (!strncmp(extstring,"html_template_file",8)) {
-		return new StringValue(html_template_file);
+	} else if (!strncmp(extstring,"html_template_file",18)) {
+		return new FileValue(html_template_file);
 
+	} else if (!strncmp(extstring,"templatevars",12)) {
+		return new ObjectValue(templatevars);
 	}
 	return DocumentExportConfig::dereference(extstring,len);
 }
@@ -397,10 +475,16 @@ int HtmlGalleryExportConfig::assign(FieldExtPlace *ext,Value *v)
 
 			} else if (!strcmp(str,"html_template_file")) {
 				StringValue *str = dynamic_cast<StringValue*>(v);
-				if (!str) return 0;
-				makestr(html_template_file, str->str);
-                return 1;
-
+				if (str) {
+					makestr(html_template_file, str->str);
+					return 1;
+				}
+				FileValue *fv = dynamic_cast<FileValue*>(v);
+				if (fv) {
+					makestr(html_template_file, fv->filename);
+					return 1;
+				}
+				return 0;
 			}
 		}
 	}
@@ -543,6 +627,54 @@ ObjectDef *HtmlGalleryExportFilter::GetObjectDef()
 }
 
 
+class HtmlOutImage
+{
+  public:
+	int index;
+	Utf8String file;
+	Utf8String thumb;
+	int w,h;
+	int pw,ph;
+	Attribute meta;
+	HtmlOutImage *next;
+	HtmlOutImage(int i, HtmlOutImage *prev, const char *nfile, int ww,int hh, const char *nthumb, int pww,int phh);
+	~HtmlOutImage();
+	HtmlOutImage *Add(int i, const char *file, int ww,int hh, const char *nthumb,int pww,int phh);
+	void Thumb(const char *thumb, int pww,int phh);
+};
+
+HtmlOutImage::HtmlOutImage(int i, HtmlOutImage *prev, const char *nfile, int ww,int hh,const char *nthumb, int pww,int phh)
+{
+	index = i;
+	file = nfile;
+	w = ww;
+	h = hh;
+	thumb = nthumb;
+	pw = pww;
+	ph = phh;
+	next = nullptr;
+	if (prev) prev->next = this;
+}
+
+HtmlOutImage::~HtmlOutImage()
+{
+	if (next) delete next;
+}
+
+//! Add at next. returns the added.
+HtmlOutImage *HtmlOutImage::Add(int i, const char *nfile, int ww,int hh, const char *nthumb, int pww,int phh)
+{
+	next = new HtmlOutImage(i, this, nfile,ww,hh,nthumb,pww,phh);
+	return next;
+}
+
+void HtmlOutImage::Thumb(const char *nthumb, int pww,int phh)
+{
+	thumb = nthumb;
+	pw = pww;
+	ph = phh;
+}
+
 
 
 /*! Save the document as html viewer with image files with optional transparency:
@@ -611,23 +743,12 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 	Displayer *dp = imanager->GetDisplayer(DRAWS_Hires);
 	DoubleBBox bounds;
 
-	//open up file for html
-	scratch.Sprintf("%s/index.html", filename);
-	FILE *htmlout = fopen(scratch.c_str(), "w");
-	if (!htmlout) {
-		log.AddError("Could not open index.html for writing!");
-		return 5;
-	}
-
-	fprintf(htmlout, "<html>\n<head>\n<title>%s</title>\n</head>\n<body>\n", filename);
-
 
 	//open up file for json list
 	scratch.Sprintf("%s/imagelist.json", filename);
 	FILE *jsonout = fopen(scratch.c_str(), "w");
 	if (!jsonout) {
 		log.AddError("Could not open imagelist.json for writing!");
-		fclose(htmlout);
 		return 5;
 	}
 
@@ -646,6 +767,8 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 		out->doc ? out->doc->name : "Spreads"
 		);
 
+	HtmlOutImage *images = nullptr;
+	HtmlOutImage *curimage = nullptr;
 
 	Spread *spread = nullptr;
 	try {
@@ -828,6 +951,10 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 				throw _("Could not save image");
 			}
 
+			scratch.Sprintf("images/%03d.%s", sc, out->image_format);
+			if (curimage) curimage = curimage->Add(sc, scratch.c_str(), img->w(), img->h(), nullptr,0,0);
+			else curimage = images = new HtmlOutImage(sc, nullptr, scratch.c_str(), img->w(), img->h(), nullptr,0,0);
+
 			if (out->make_thumbs) {
 				LaxImage *thumb = GeneratePreview(img, 200, 200, 1);
 				scratch.Sprintf("%s/images/%03d-s.png", filename, sc);
@@ -843,16 +970,17 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 						sc, thumb->w(), thumb->h(),
 						sc == end ? "" : ","
 					   );
-				fprintf(htmlout, "<a href=\"images/%03d.%s\"><img src=\"images/%03d-s.png\"></a>\n", sc,out->image_format, sc);
+				scratch.Sprintf("images/%03d-s.%s", sc, out->image_format);
+				curimage->Thumb(scratch.c_str(), thumb->w(), thumb->h());
 				thumb->dec_count();
 			}
-			else {
+			else
+			{
 				fprintf(jsonout, 
 						"    {\"file\":\"images/%03d.%s\", \"w\":%d, \"h\":%d }%s\n",
 						sc,out->image_format, img->w(), img->h(),
 						sc == end ? "" : ","
 					   );
-				fprintf(htmlout, "<img src=\"images/%s\">\n", lax_basename(scratch.c_str()));
 			}
 
 			img->dec_count();
@@ -861,21 +989,77 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 
 	} catch(const char *err) {
 		log.AddError(err);
-		fclose(htmlout);
 		if (spread) spread->dec_count();
 		dp->EndDrawing();
+		if (images) delete images;
 		return 2;
 	}
 
-	//finish html
-	fprintf(htmlout, "</body>\n</html>");
-	fclose(htmlout);
 
-	//finish json
+	//----finish json
 	fprintf(jsonout, "  ]\n}");
 	fclose(jsonout);
 
+
+	//-----html out
+
+	//open up file for html
+	scratch.Sprintf("%s/index.html", filename);
+	FILE *htmlout = fopen(scratch.c_str(), "w");
+	if (!htmlout) {
+		log.AddError("Could not open index.html for writing!");
+		if (images) delete images;
+		return 5;
+	}
+
+	if (isblank(out->html_template_file)) {
+		//default fallback for no template
+		fprintf(htmlout, "<html>\n<head>\n<title>%s</title>\n<style>\n body { background-color: #555; }\n</style>\n</head>\n<body>\n", filename);
+		HtmlOutImage *img = images;
+
+		while (img) {
+			if (out->make_thumbs) {
+				fprintf(htmlout, "<a href=\"images/%03d.%s\"><img src=\"images/%03d-s.png\"></a>\n",
+						img->index, out->image_format, img->index);
+			} else {
+				fprintf(htmlout, "<img src=\"images/%03d.%s\">\n", img->index, out->image_format);
+			}
+			img = img->next;
+		}
+
+		fprintf(htmlout, "</body>\n</html>");
+	}
+	else 
+	{
+		FILE *templ = fopen(out->html_template_file, "r");
+		if (!templ) {
+			log.AddError("Could not open template file for reading!");
+		} else {
+
+			char *line = nullptr;
+			size_t nn = 0;
+			int c;
+			Utf8String str;
+			while (1) {
+				c = getline(&line,&nn,templ);
+				if (c<=0) break;
+				str = line;
+				for (int tc=0; tc<out->templatevars->attributes.n; tc++) {
+					str.Replace(out->templatevars->attributes.e[tc]->value, out->templatevars->attributes.e[tc]->name, true);
+				}
+				fwrite(str.c_str(), 1, str.Bytes(), htmlout);
+			}
+
+			fclose(templ);
+		}
+	}
+
+	fclose(htmlout);
+
+
+
 	dp->EndDrawing();
+	if (images) delete images;
 	if (log.Errors()) return -1;
 
 	return 0; 
