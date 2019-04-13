@@ -300,9 +300,11 @@ importdialog ImportDialog import dialog:
   importing should not spawn new windows
   importing should sort out duplicate names
   would be nice to show preview of what is to be imported
-html
-  standardize save to directory or file, not just assume file
-  figure out template scheme
+html: htmlgallery: html out htmlout:
+  implement save and load template vars
+  specify image file name, also preview file name "###-s.png"
+  DONE figure out template scheme
+  DONE standardize save to directory or file, not just assume file
 image
   export format should be an enum. need to extract possible save formats from Laxkit
   option for setting background color, at least white|transparent
@@ -1862,3 +1864,6 @@ DONE Remove old laxutils based drawing calls in favor of Displayer based drawing
 DONE website: make twitterable
 DONE make sure gegl points to 0.4, and no freetype-config
 DONE bug: input edit cursor placement is wrong now
+DONE Meta window for doc meta
+DONE Meta window for html out
+DONE html out
