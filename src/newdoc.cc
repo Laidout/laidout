@@ -333,7 +333,7 @@ int NewDocWindow::init()
 
 	 // -----Default Units
     SliderPopup *popup;
-	last=popup=new SliderPopup(this,"units",NULL,0, 0,0, 0,0, 1, last,object_id,"units");
+	last=popup=new SliderPopup(this,"units",NULL,SLIDER_POP_ONLY, 0,0, 0,0, 1, last,object_id,"units");
 	char *tmp;
 	c2=0;
 	int uniti=-1,tid;
@@ -349,7 +349,7 @@ int NewDocWindow::init()
 
 	
 	 // -----Paper Name
-	last=popup=new SliderPopup(this,"paperName",NULL,0, 0,0, 0,0, 1, last,object_id,"paper name");
+	last=popup=new SliderPopup(this,"paperName",NULL,SLIDER_POP_ONLY, 0,0, 0,0, 1, last,object_id,"paper name");
 	for (int c=0; c<papersizes->n; c++) {
 		if (!strcmp(papersizes->e[c]->name,papertype->name)) c2=c;
 		popup->AddItem(papersizes->e[c]->name,c);
@@ -438,7 +438,7 @@ int NewDocWindow::init()
 	
 	mesbar=new MessageBar(this,"mesbar 1.1",NULL,MB_MOVE, 0,0, 0,0, 0, _("Imposition:"));
 	AddWin(mesbar,1, mesbar->win_w,0,0,50,0, mesbar->win_h,0,0,50,0, -1);
-	last=impsel=new SliderPopup(this,"Imposition",NULL,SLIDER_LEFT, 0,0,0,0, 1, 
+	last=impsel=new SliderPopup(this,"Imposition",NULL,SLIDER_POP_ONLY|SLIDER_LEFT, 0,0,0,0, 1, 
 						last,object_id,"imposition");
 	int whichimp=-1,singles=-1;
 	if (doc) {
