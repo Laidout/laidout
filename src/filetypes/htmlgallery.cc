@@ -209,6 +209,8 @@ void HtmlGalleryExportConfig::DefaultTemplateVars()
 	templatevars->push("<!--META-KEYWORDS-->" , "");
 	templatevars->push("<!--META-IMAGE-->" , "");
 	templatevars->push("<!--META-URL-->" , "");
+	templatevars->push("<!--SITE-NAME-->" , "");
+	templatevars->push("<!--HANDLE-->" , "");
 	templatevars->push("<!--FONTS-->" , "<link href=\"https://fonts.googleapis.com/css?family=Cantarell|Vollkorn\" rel=\"stylesheet\">");
 	templatevars->push("<!--ICON-->" , "<link rel=\"icon\" href=\"icon.png\" type=\"image/png\">");
 	templatevars->push("<!--STYLE-->" , "<link rel=\"stylesheet\" href=\"style.css\" type=\"text/css\">");
