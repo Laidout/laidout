@@ -42,7 +42,7 @@ namespace Laidout {
  */
 MetaWindow::MetaWindow(anXWindow *prnt, const char *nname,const char *ntitle,unsigned long nstyle, unsigned long nowner, const char *msg,
 					  LaxFiles::AttributeObject *nMeta)
-  : RowFrame(prnt, nname, ntitle, ROWFRAME_ROWS | ROWFRAME_STRETCH_IN_COL | ROWFRAME_LEFT | ANXWIN_REMEMBER | ANXWIN_ESCAPABLE, 0,0,600,500,0, NULL,0,NULL)
+  : RowFrame(prnt, nname, ntitle, ROWFRAME_ROWS | ROWFRAME_STRETCH_IN_COL | ROWFRAME_LEFT | ANXWIN_REMEMBER | ANXWIN_ESCAPABLE, 0,0,600,500,0, NULL,nowner,msg)
 {
 	addpoint = 0;
 	meta = nMeta;
@@ -145,7 +145,10 @@ void MetaWindow::AddVariable(const char *name, const char *value, bool syncToo)
 
 void MetaWindow::Send()
 {
-	DBG cerr << "MetaWindow::Send()"<<endl;
+	DBG cerr << "MetaWindow::Send() "<<(win_sendthis ? win_sendthis : "null message")<<endl;
+
+	SimpleMessage *ievent = new SimpleMessage;
+    app->SendMessage(ievent,win_owner,win_sendthis,object_id);
 }
 
 int MetaWindow::Event(const EventData *e,const char *mes)

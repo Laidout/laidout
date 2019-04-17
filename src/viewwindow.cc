@@ -776,7 +776,7 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 		} else if (i == ACTION_EditDocMeta) {
 			if (doc) {
 				if (!doc->metadata || doc->metadata->NumAtts() == 0) doc->InitMeta();
-				app->addwindow(new MetaWindow(NULL,"meta",_("Document Meta"),0, object_id,"docMeta", doc->metadata));
+				app->addwindow(new MetaWindow(NULL,"meta",_("Document Meta"),0, win_parent->object_id,"docMeta", doc->metadata));
 			} else {
 				postmessage(_("Missing doc!"));
 			}
@@ -4897,6 +4897,16 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 										mesbar);     //progress window
 		pg->dec_count();
 		app->rundialog(p);
+		return 0;
+
+	} else if (!strcmp(mes,"docMeta")) {
+		if (!doc) return 0;
+
+		if (doc->metadata) {
+			const char *v = doc->metadata->findValue("Name");
+			if (v) doc->Name(v);
+		}
+		SetParentTitle((doc && doc->Name(1)) ? doc->Name(1) :_("(no doc)"));
 		return 0;
 
 	} else if (data->type==LAX_onUnmapped) { // print to output.ps
