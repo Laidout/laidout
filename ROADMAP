@@ -13,6 +13,7 @@ VERSION 0.098
 (done) Convert backend to using Theme objects for easier adjusting in the future
 (done) Fix object bleeding across pages for signatures and nets (issue #12)
 (done) Make Imlib2 dependency optional, prepare replacement image loading with GraphicsMagick
+(done) Html gallery output with optional template
        lock down color backend.. it's currently a series of weak hacks based on 8-bit screen rgb
 
        Debug Text on path tool

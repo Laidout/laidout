@@ -12,8 +12,6 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now:
 
-bug: text selection and highlighting is really out of whack.. int/float troubles?
-
 bug: window sizes seem to all be off a few pixels
 
 bug: curve is terrible approximation at end points
@@ -35,6 +33,8 @@ svg out, select to files, often the first time goes to file, not files
 
 
 ------------ other bugs:
+
+Reconfigure text edits. Need something that works in interface land, with harfbuzz
 
 drag off page, space to duplicate, copy is not in limbo!
 duplicate does not duplicate clip_path
@@ -180,6 +180,8 @@ export current appears to be broken
 object content selector menu
 
 object clipping:
+  applying clip path should not destroy path's style settings
+  clip path shouldn't have to be a path.. be able to be text, or whatever provides an Area path
   generate default clip path for editing from area path or bounding box
   clip-path export: pdf(done), image(done), svg(done), scribus
   page object bleed export: DONE pdf, DONE image, DONE svg, scribus
@@ -301,6 +303,7 @@ importdialog ImportDialog import dialog:
   importing should sort out duplicate names
   would be nice to show preview of what is to be imported
 html: htmlgallery: html out htmlout:
+  include scrim in coop/html
   implement save and load template vars
   specify image file name, also preview file name "###-s.png"
   DONE figure out template scheme
@@ -1867,3 +1870,4 @@ DONE bug: input edit cursor placement is wrong now
 DONE Meta window for doc meta
 DONE Meta window for html out
 DONE html out
+DONE bug: text selection and highlighting is really out of whack.. int/float troubles?  <-- dp->textextent is NOT returning same as font->Extent!!
