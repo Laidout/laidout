@@ -3923,7 +3923,7 @@ int ViewWindow::init()
 	Button *ibut;
 	
 	 // tool section
-	last=toolselector=new SliderPopup(this,"viewtoolselector",NULL,SLIDER_LEFT, 0,0,0,0,0, 
+	last=toolselector=new SliderPopup(this,"viewtoolselector",NULL,SLIDER_LEFT|SLIDER_POP_ONLY, 0,0,0,0,0, 
 			NULL,object_id,"viewtoolselector",
 			NULL,0);
 	toolselector->tooltip(_("The current tool"));
@@ -4012,7 +4012,7 @@ int ViewWindow::init()
 //	num->tooltip(_("Sorry, layer control not well\nimplemented yet"));
 //	AddWin(num,num->win_w,0,50,50,0, num->win_h,0,50,50,0);
 	
-	SliderPopup *p=new SliderPopup(this,"view type",NULL,0, 0,0,0,0,0, NULL,object_id,"newViewType");
+	SliderPopup *p=new SliderPopup(this,"view type",NULL,SLIDER_POP_ONLY, 0,0,0,0,0, NULL,object_id,"newViewType");
 	int vm=((LaidoutViewport *)viewport)->ViewMode(NULL);
 	//*****this needs dynamic adjustment for imposition layout options....
 	//****update layout type
