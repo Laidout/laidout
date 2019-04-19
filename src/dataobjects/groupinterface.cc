@@ -23,10 +23,10 @@
 #include "../interfaces/nupinterface.h"
 #include "../interfaces/objectfilterinterface.h"
 #include "printermarks.h"
-#include "../project.h"
-#include "../viewwindow.h"
+#include "../core/project.h"
+#include "../ui/viewwindow.h"
 #include "../language.h"
-#include "../stylemanager.h"
+#include "../core/stylemanager.h"
 #include "../calculator/shortcuttodef.h"
 #include "objectfilter.h"
 

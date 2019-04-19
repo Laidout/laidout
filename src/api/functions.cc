@@ -15,13 +15,13 @@
 
 #include "functions.h"
 
-#include "../stylemanager.h"
 #include "reimpose.h"
 #include "openandnew.h"
 #include "importexport.h"
 
-#include "../papersizes.h"
-#include "../page.h"
+#include "../core/stylemanager.h"
+#include "../core/papersizes.h"
+#include "../core/page.h"
 
 #include "../language.h"
 #include "../laidout.h"

@@ -19,8 +19,8 @@
 
 #include "../laidout.h"
 #include "singles.h"
-#include "stylemanager.h"
-#include "language.h"
+#include "../core/stylemanager.h"
+#include "../language.h"
 
 using namespace Laxkit;
 using namespace LaxInterfaces;

@@ -17,8 +17,8 @@
 #include "openandnew.h"
 #include "../language.h"
 #include "../laidout.h"
-#include "../headwindow.h"
-#include "../papersizes.h"
+#include "../ui/headwindow.h"
+#include "../core/papersizes.h"
 
 #include <lax/fileutils.h>
 #include <unistd.h>

@@ -17,7 +17,7 @@
 #include "importexport.h"
 #include "../language.h"
 #include "../laidout.h"
-#include "../headwindow.h"
+#include "../ui/headwindow.h"
 
 #include <lax/fileutils.h>
 

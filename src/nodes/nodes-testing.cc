@@ -59,7 +59,7 @@ void NodePanel::ShowAddButton()
 
 //----------------------------- SimpleArrayValue ----------------------------------
 template <class T>
-class StackValue : public Value
+class SimpleArrayValue : public Value
 {
   public:
 	NumStack<T> stack;

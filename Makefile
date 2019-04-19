@@ -60,6 +60,8 @@ install:
 	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop/processing coop/processing/*
 	$(INSTALLDIR)       $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop/scribus
 	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop/scribus coop/scribus/*
+	$(INSTALLDIR)       $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop/html
+	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop/html coop/html/*
 	$(INSTALLDIR)       $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/plugins
 	$(INSTALL) -m755 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/plugins src/plugins/*.so
 
@@ -110,6 +112,8 @@ touchdepends:
 	touch src/api/makedepend
 	touch src/polyptych/src/makedepend
 	touch src/plugins/makedepend
+	touch src/core/makedepend
+	touch src/ui/makedepend
 
 dist-clean: clean
 	rm -f Makefile-toinclude config.log src/version.h src/configured.h
@@ -122,6 +126,8 @@ dist-clean: clean
 	rm -f src/nodes/makedepend         src/nodes/makedepend.bak
 	rm -f src/printing/makedepend      src/printing/makedepend.bak
 	rm -f src/api/makedepend           src/api/makedepend.bak
+	rm -f src/core/makedepend          src/core/makedepend.bak
+	rm -f src/ui/makedepend            src/ui/makedepend.bak
 	rm -f src/polyptych/src/makedepend src/polyptych/src/makedepend.bak
 	rm -f src/po/*.mo
 

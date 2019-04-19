@@ -18,10 +18,10 @@
 #include <lax/filedialog.h>
 
 #include "../language.h"
-#include "../utils.h"
+#include "../core/utils.h"
 #include "../filetypes/scribus.h"
-#include "../viewwindow.h"
-#include "../headwindow.h"
+#include "../ui/viewwindow.h"
+#include "../ui/headwindow.h"
 #include "impositioneditor.h"
 #include "signatureinterface.h"
 //#include "polyptych/src/poly.h"

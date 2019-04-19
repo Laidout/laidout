@@ -24,7 +24,7 @@
 
 #include <lax/shortcuts.h>
 
-#include "../fieldplace.h"
+#include "../core/fieldplace.h"
 
 namespace Laidout {
 

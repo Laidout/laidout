@@ -15,12 +15,14 @@
 
 #include "signatures.h"
 #include "signatureinterface.h"
-#include "stylemanager.h"
+#include "../core/stylemanager.h"
 #include "../language.h"
 
 #include <lax/interfaces/pathinterface.h>
 #include <lax/attributes.h>
 #include <lax/transformmath.h>
+
+//template implementation:
 #include <lax/lists.cc>
 
 

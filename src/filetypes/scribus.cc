@@ -28,13 +28,13 @@
 #include "../language.h"
 #include "scribus.h"
 #include "../laidout.h"
-#include "../stylemanager.h"
+#include "../core/stylemanager.h"
 #include "../printing/psout.h"
-#include "../utils.h"
-#include "../headwindow.h"
+#include "../core/utils.h"
+#include "../ui/headwindow.h"
 #include "../impositions/singles.h"
 #include "../dataobjects/mysterydata.h"
-#include "../drawdata.h"
+#include "../core/drawdata.h"
 
 //template implementation
 #include <lax/lists.cc>

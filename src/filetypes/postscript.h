@@ -17,7 +17,7 @@
 
 #include <lax/interfaces/somedata.h>
 #include "../version.h"
-#include "../document.h"
+#include "../core/document.h"
 #include "filefilters.h"
 #include "../printing/psout.h"
 

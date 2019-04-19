@@ -28,25 +28,26 @@
 
 
 #include "../laidout.h"
-#include "utils.h"
-#include "configured.h"
+#include "../core/utils.h"
+#include "../core/stylemanager.h"
+#include "../configured.h"
 
-#include "../stylemanager.h"
 #include "imposition.h"
 #include "singles.h"
 #include "netimposition.h"
 #include "signatures.h"
 
 #include <lax/fileutils.h>
-#include <lax/lists.cc>
 #include <dirent.h>
-
-#include <lax/lists.cc>
 
 
 #define DBG
 #include <iostream>
 using namespace std;
+
+//template implentation:
+#include <lax/lists.cc>
+
 
 using namespace Laxkit;
 using namespace LaxFiles;

@@ -26,11 +26,11 @@
 
 #include "../language.h"
 #include "../laidout.h"
-#include "../stylemanager.h"
+#include "../core/stylemanager.h"
 #include "../printing/psout.h"
 #include "image.h"
 #include "../impositions/singles.h"
-#include "../drawdata.h"
+#include "../core/drawdata.h"
 
 #include <iostream>
 #define DBG 

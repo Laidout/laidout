@@ -14,10 +14,10 @@
 //
 
 #include "cloneinterface.h"
-#include "../laidout.h"
-#include "../drawdata.h"
-#include "../viewwindow.h"
 #include "../version.h"
+#include "../laidout.h"
+#include "../core/drawdata.h"
+#include "../ui/viewwindow.h"
 
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
@@ -26,6 +26,7 @@
 #include <lax/interfaces/somedatafactory.h>
 #include <lax/interfaces/rectinterface.h>
 
+//template implementation:
 #include <lax/lists.cc>
 #include <lax/refptrstack.cc>
 

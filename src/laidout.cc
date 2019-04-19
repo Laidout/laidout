@@ -36,22 +36,22 @@
 #include <sys/file.h>
 
 #define LAIDOUT_CC
-#include "language.h"
-#include "laidout.h"
-#include "viewwindow.h"
-#include "impositions/singles.h"
-#include "impositions/netimposition.h"
-#include "impositions/impositioneditor.h"
-#include "nodes/nodeeditor.h"
-#include "headwindow.h"
-#include "version.h"
-#include "stylemanager.h"
-#include "configured.h"
-#include "printing/epsutils.h"
-#include "filetypes/filters.h"
-#include "utils.h"
 #include "api/functions.h"
-#include "newdoc.h"
+#include "configured.h"
+#include "core/stylemanager.h"
+#include "core/utils.h"
+#include "filetypes/filters.h"
+#include "impositions/impositioneditor.h"
+#include "impositions/netimposition.h"
+#include "impositions/singles.h"
+#include "nodes/nodeeditor.h"
+#include "printing/epsutils.h"
+#include "ui/headwindow.h"
+#include "ui/newdoc.h"
+#include "ui/viewwindow.h"
+#include "version.h"
+#include "laidout.h"
+#include "language.h"
 
 
 //template implementations

@@ -18,12 +18,12 @@
 #include <lax/checkbox.h>
 
 #include "../language.h"
-#include "../headwindow.h"
+#include "../ui/headwindow.h"
+#include "../core/utils.h"
 #include "netdialog.h"
 #include "netimposition.h"
 #include "polyptychwindow.h"
-#include "utils.h"
-#include "polyptych/src/poly.h"
+#include "../polyptych/src/poly.h"
 	
 #include <iostream>
 using namespace std;

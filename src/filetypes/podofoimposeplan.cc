@@ -17,8 +17,8 @@
 #include "podofoimposeplan.h"
 #include "../language.h"
 #include "../laidout.h"
-#include "../stylemanager.h"
-#include "../utils.h"
+#include "../core/stylemanager.h"
+#include "../core/utils.h"
 
 #include <lax/transformmath.h>
 

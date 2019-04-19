@@ -16,12 +16,13 @@
 #include "importdialog.h"
 #include "../language.h"
 #include "../laidout.h"
-#include "../utils.h"
+#include "../core/utils.h"
 #include <lax/checkbox.h>
 #include <lax/fileutils.h>
 #include <lax/menubutton.h>
 #include <lax/sliderpopup.h>
 
+//template implementation:
 #include <lax/lists.cc>
 
 #include <iostream>

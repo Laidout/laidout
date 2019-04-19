@@ -15,7 +15,7 @@
 #ifndef PSOUT_H
 #define PSOUT_H
 
-#include "../document.h"
+#include "../core/document.h"
 #include <cstdio>
 
 

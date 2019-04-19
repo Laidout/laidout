@@ -19,7 +19,7 @@
 #include <lax/anxapp.h>
 #include <lax/dump.h>
 
-#include "../papersizes.h"
+#include "../core/papersizes.h"
 #include "../dataobjects/group.h"
 #include "../calculator/values.h"
 #include "../plugins/plugin.h"

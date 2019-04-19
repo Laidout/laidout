@@ -16,9 +16,9 @@
 
 #include "../language.h"
 #include "signatureinterface.h"
-#include "../utils.h"
+#include "../core/utils.h"
 #include "../version.h"
-#include "../drawdata.h"
+#include "../core/drawdata.h"
 
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
@@ -29,6 +29,7 @@
 // DBG !!!!!
 #include <lax/displayer-cairo.h>
 
+//template implementation:
 #include <lax/lists.cc>
 
 using namespace Laxkit;

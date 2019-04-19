@@ -17,7 +17,7 @@
 
 #include "plugin.h"
 #include "../language.h"
-#include "../utils.h"
+#include "../core/utils.h"
 
 #include <lax/strmanip.h>
 

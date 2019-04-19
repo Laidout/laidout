@@ -16,7 +16,7 @@
 
 #include "../language.h"
 #include "imposition.h"
-#include "utils.h"
+#include "../core/utils.h"
 
 #include <lax/misc.h>
 #include <lax/lists.cc>

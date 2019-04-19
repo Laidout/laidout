@@ -23,7 +23,7 @@
 #include <lax/interfaces/pathinterface.h>
 #include "objectcontainer.h"
 //#include "../filetypes/objectio.h"
-#include "../guides.h"
+#include "../core/guides.h"
 #include "../calculator/values.h"
 //#include "objectfilter.h"
 

@@ -15,7 +15,7 @@
 #define FILETYPES_HTML_H
 
 #include "../version.h"
-#include "../document.h"
+#include "../core/document.h"
 #include "filefilters.h"
 
 

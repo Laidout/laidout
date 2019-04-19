@@ -16,8 +16,8 @@
 
 #include "../language.h"
 #include "aligninterface.h"
-#include "../viewwindow.h"
-#include "../drawdata.h"
+#include "../ui/viewwindow.h"
+#include "../core/drawdata.h"
 
 //#include "viewwindow.h"
 #include <lax/strmanip.h>
@@ -26,6 +26,7 @@
 #include <lax/bezutils.h>
 #include <lax/interfaces/rectpointdefs.h>
 
+//template implementation:
 #include <lax/refptrstack.cc>
 #include <lax/lists.cc>
 

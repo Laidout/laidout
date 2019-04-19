@@ -15,7 +15,7 @@
 
 #include "lgradientdata.h"
 #include "datafactory.h"
-#include "../stylemanager.h"
+#include "../core/stylemanager.h"
 #include "../language.h"
 #include "../calculator/shortcuttodef.h"
 

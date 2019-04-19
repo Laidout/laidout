@@ -18,12 +18,12 @@
 #include <lax/interfaces/somedata.h>
 #include <lax/lists.h>
 
-#include "../page.h"
+#include "../core/page.h"
 #include "../calculator/values.h"
-#include "../papersizes.h"
+#include "../core/papersizes.h"
 #include "../dataobjects/objectcontainer.h"
 
-#include "../document.h"
+#include "../core/document.h"
 
 
 

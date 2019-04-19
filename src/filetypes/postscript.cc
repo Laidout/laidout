@@ -20,8 +20,8 @@
 
 #include "../language.h"
 #include "../laidout.h"
-#include "../stylemanager.h"
-#include "../headwindow.h"
+#include "../core/stylemanager.h"
+#include "../ui/headwindow.h"
 #include "../impositions/singles.h"
 #include "postscript.h"
 #include "../printing/psout.h"

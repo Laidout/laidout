@@ -17,9 +17,9 @@
 #include <lax/transformmath.h>
 #include "drawableobject.h"
 #include "../laidout.h"
-#include "../drawdata.h"
+#include "../core/drawdata.h"
 #include "../language.h"
-#include "../stylemanager.h"
+#include "../core/stylemanager.h"
 #include "objectfilter.h"
 
 #include "lpathsdata.h"

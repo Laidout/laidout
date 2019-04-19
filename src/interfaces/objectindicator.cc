@@ -21,7 +21,7 @@
 #include <lax/transformmath.h>
 #include <lax/lineedit.h>
 
-
+//template implementation:
 #include <lax/refptrstack.cc>
 
 using namespace Laxkit;

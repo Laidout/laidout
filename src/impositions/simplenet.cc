@@ -19,10 +19,11 @@
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
 
-#include <lax/lists.cc>
-
 #include "../language.h"
 #include "simplenet.h"
+
+//template implementation:
+#include <lax/lists.cc>
 
 using namespace LaxFiles;
 using namespace Laxkit;

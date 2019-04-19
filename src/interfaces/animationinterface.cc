@@ -25,6 +25,7 @@
 #include <lax/interfaces/somedataref.h>
 #include <lax/interfaces/rectinterface.h>
 
+//template implementation:
 #include <lax/lists.cc>
 #include <lax/refptrstack.cc>
 

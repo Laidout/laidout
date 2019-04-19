@@ -19,7 +19,7 @@
 #include <lax/rowframe.h>
 #include <lax/lineinput.h>
 #include <lax/checkbox.h>
-#include "../papersizes.h"
+#include "../core/papersizes.h"
 #include "netimposition.h"
 
 

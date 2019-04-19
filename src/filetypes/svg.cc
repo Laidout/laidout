@@ -30,13 +30,13 @@
 
 #include "../language.h"
 #include "../laidout.h"
-#include "../stylemanager.h"
+#include "../core/stylemanager.h"
 #include "../dataobjects/mysterydata.h"
 #include "svg.h"
-#include "../headwindow.h"
+#include "../ui/headwindow.h"
 #include "../impositions/singles.h"
-#include "../utils.h"
-#include "../drawdata.h"
+#include "../core/utils.h"
+#include "../core/drawdata.h"
 
 #include <iostream>
 #define DBG 

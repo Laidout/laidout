@@ -14,7 +14,7 @@
 //
 
 #include "../language.h"
-#include "../headwindow.h"
+#include "../ui/headwindow.h"
 #include "polyptychwindow.h"
 #include "polyptych/src/hedronwindow.h"
 #include "../laidout.h"

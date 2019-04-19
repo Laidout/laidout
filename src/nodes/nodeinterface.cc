@@ -16,9 +16,9 @@
 
 #include "nodeinterface.h"
 #include "nodes.h"
-#include "../utils.h"
+#include "../core/utils.h"
+#include "../core/utils.h"
 #include "../version.h"
-#include "../utils.h"
 
 #include <lax/interfaces/interfacemanager.h>
 #include <lax/laxutils.h>

@@ -19,7 +19,7 @@
 #include <lax/interfaces/objectinterface.h>
 #include <lax/interfaces/somedata.h>
 #include "../calculator/values.h"
-#include "../viewwindow.h"
+#include "../ui/viewwindow.h"
 
 
 

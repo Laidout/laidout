@@ -42,48 +42,36 @@ POLYPTYCHOBJS=polyptych/src/nets.o polyptych/src/poly.o
 dirs= \
 	api \
 	calculator \
+	core \
 	dataobjects \
 	filetypes \
 	impositions \
 	interfaces \
 	nodes \
 	plugins \
-	printing
+	printing \
+	ui
 
 objs= \
-	utils.o \
-	fieldplace.o \
-	stylemanager.o \
-	papersizes.o \
-	plaintext.o \
-	page.o \
-	spreadview.o \
-	document.o \
-	project.o \
-	guides.o \
-	interfaces.o \
-	autosavewindow.o \
-	about.o \
-	buttonbox.o \
-	commandwindow.o \
-	plaintextwindow.o \
-	headwindow.o \
-	helpwindow.o \
-	settingswindow.o \
-	newdoc.o \
-	viewwindow.o \
-	palettes.o \
-	drawdata.o \
-	spreadeditor.o \
 	laidout-more.o \
-	importimage.o \
-	importimagesdialog.o \
-	laidoutprefs.o \
 	laidout.o 
 
 #object files from other directories. Listing them all explicitly to prevent
 #spurious inclusion of temporary testing stuff.
 otherobjs= \
+	core/document.o \
+	core/drawdata.o \
+	core/fieldplace.o \
+	core/guides.o \
+	core/importimage.o \
+	core/laidoutprefs.o \
+	core/page.o \
+	core/papersizes.o \
+	core/plaintext.o \
+	core/project.o \
+	core/spreadview.o \
+	core/stylemanager.o \
+	core/utils.o \
 	calculator/values.o \
 	calculator/calculator.o \
 	calculator/interpreter.o \
@@ -169,11 +157,25 @@ otherobjs= \
 	dataobjects/ltextonpath.o \
 	dataobjects/lvoronoidata.o \
 	dataobjects/printermarks.o \
+	ui/about.o \
+	ui/autosavewindow.o \
+	ui/buttonbox.o \
+	ui/commandwindow.o \
+	ui/headwindow.o \
+	ui/helpwindow.o \
+	ui/importimagesdialog.o \
+	ui/newdoc.o \
+	ui/palettes.o \
+	ui/plaintextwindow.o \
+	ui/settingswindow.o \
+	ui/spreadeditor.o \
+	ui/viewwindow.o \
+	ui/interfaces.o \
 
 
 all: laidout
 
-laidout: lax laxinterface $(dirs) $(objs) $(POLYPTYCHFORLAIDOUT)
+laidout: lax laxinterface alldirs $(objs) $(POLYPTYCHFORLAIDOUT)
 	$(LD) $(otherobjs) $(objs) $(POLYPTYCH_GL_OBJS) $(POLYPTYCHOBJS) -L$(LAXIDIR) -L$(LAXDIR) -llaxinterfaces -llaxkit -lharfbuzz -lcairo -lfontconfig $(LDFLAGS) $(OPTIONALLIBS) -lreadline -lcrypto $(POLYPTYCHLIBS) -o $@
 
 icons:
@@ -186,35 +188,8 @@ polyptych:
 polyptychgl:
 	cd $(POLYPTYCHBASEDIR)/polyptych/src && $(MAKE) forlaidoutgl
 
-api:
-	cd api && $(MAKE)
-
-calculator:
-	cd calculator && $(MAKE)
-
-dataobjects:
-	cd dataobjects && $(MAKE)
-
-impositions:
-	cd impositions && $(MAKE)
-
-interfaces:
-	cd interfaces && $(MAKE)
-
-filetypes:
-	cd filetypes && $(MAKE)
-
-nodes:
-	cd nodes && $(MAKE)
-
-printing:
-	cd printing && $(MAKE)
-
-plugins:
-	cd $@ && $(MAKE)
-
-addons:
-	cd plugins && $(MAKE) plugins
+alldirs:
+	for NAME in $(dirs); do $(MAKE) -C $$NAME ; done
 
 # This changes in *.cc all occurrences of '(whitespace)DBG' to '(same ws)//DBG' and
 # '(whitespace)//DBG' to '(same ws)////DBG'

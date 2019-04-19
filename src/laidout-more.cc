@@ -18,11 +18,11 @@
 // or initial window creation.
 
 #include "laidout.h"
-#include "viewwindow.h"
-#include "spreadeditor.h"
-#include "headwindow.h"
+#include "ui/viewwindow.h"
+#include "ui/spreadeditor.h"
+#include "ui/headwindow.h"
 #include "version.h"
-#include "importimage.h"
+#include "core/importimage.h"
 
 #ifndef LAIDOUT_NOGL
 #include "impositions/polyptychwindow.h"

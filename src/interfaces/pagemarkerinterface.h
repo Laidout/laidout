@@ -16,7 +16,7 @@
 #define _LAX_PAGEMARKERINTERFACE_H
 
 #include <lax/interfaces/aninterface.h>
-#include "../page.h"
+#include "../core/page.h"
 
 namespace Laidout { 
 

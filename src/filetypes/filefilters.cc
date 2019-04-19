@@ -14,10 +14,10 @@
 //
 
 #include "filefilters.h"
-#include "../document.h"
+#include "../core/document.h"
 #include "../language.h"
 #include "../laidout.h"
-#include "../stylemanager.h"
+#include "../core/stylemanager.h"
 
 #include <lax/strmanip.h>
 #include <lax/fileutils.h>

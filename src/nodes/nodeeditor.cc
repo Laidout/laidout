@@ -19,10 +19,10 @@
 #include <lax/fileutils.h>
 
 #include "../language.h"
-#include "../utils.h"
-#include "../viewwindow.h"
-#include "../headwindow.h"
-#include "../settingswindow.h"
+#include "../core/utils.h"
+#include "../ui/viewwindow.h"
+#include "../ui/headwindow.h"
+#include "../ui/settingswindow.h"
 
 
 #include "nodeeditor.h"

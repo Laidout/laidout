@@ -18,15 +18,17 @@
 #include "netimposition.h"
 #include "simplenet.h"
 #include "box.h"
-#include "stylemanager.h"
+#include "../core/stylemanager.h"
 #include <lax/interfaces/pathinterface.h>
 #include <lax/transformmath.h>
-#include <lax/refptrstack.cc>
 
  //built in nets:
  /*! \todo this should have a much more automated mechanism... */
 #include "dodecahedron.h"
 #include "box.h"
+
+//template implementation:
+#include <lax/refptrstack.cc>
 
 using namespace Laxkit;
 using namespace LaxInterfaces;
