@@ -97,7 +97,7 @@ const char *LaidoutVersion()
 		const char *outstr=
 						_("Laidout Version %s\n"
 						  "http://www.laidout.org\n"
-						  "by Tom Lechner, sometime between 2006 and 2018\n"
+						  "by Tom Lechner, sometime between 2006 and 2019\n"
 						  "Released under the GNU Public License, Version 3.\n"
 						  " (using Laxkit Version %s)");
 		version_str=new char[1+strlen(outstr)+strlen(LAIDOUT_VERSION)+strlen(LAXKIT_VERSION)];
@@ -142,18 +142,6 @@ int laidout_preview_maker(const char *original, const char *preview, const char 
 						 NULL);
 }
 
-
-
-
-
-//----------------------- Main Control Panel: an unmapped window until further notice? -------------------------------
-
-//class ControlPanel : public Laxkit::anXWindow
-//{
-// public:
-//	virtual int DataEvent(EventData *data,const char *mes); 
-//	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
-//};
 
 
 
