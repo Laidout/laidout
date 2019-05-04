@@ -175,7 +175,8 @@ otherobjs= \
 
 all: laidout
 
-laidout: lax laxinterface alldirs $(objs) $(POLYPTYCHFORLAIDOUT)
+laidout: lax laxinterface $(objs) $(POLYPTYCHFORLAIDOUT)
+	for NAME in $(dirs); do $(MAKE) -C $$NAME || exit ; done
 	$(LD) $(otherobjs) $(objs) $(POLYPTYCH_GL_OBJS) $(POLYPTYCHOBJS) -L$(LAXIDIR) -L$(LAXDIR) -llaxinterfaces -llaxkit -lharfbuzz -lcairo -lfontconfig $(LDFLAGS) $(OPTIONALLIBS) -lreadline -lcrypto $(POLYPTYCHLIBS) -o $@
 
 icons:
@@ -232,7 +233,7 @@ depends:
 include makedepend
 
 
-.PHONY: clean lax docs $(dirs) addons hidegarbage unhidegarbage polyptych polyptychgl
+.PHONY: clean lax docs $(dirs) alldirs addons hidegarbage unhidegarbage polyptych polyptychgl
 clean:
 	rm -f laidout *.o
 	for NAME in $(dirs); do $(MAKE) -C $$NAME clean; done
