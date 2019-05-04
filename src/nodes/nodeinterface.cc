@@ -786,31 +786,6 @@ int NodeBase::InterfaceEvent(NodeProperty *prop, LaxInterfaces::anInterface *int
 	return 1;
 }
 
-/*! Return whether the node has valid values, or the outputs are older than inputs.
- * Return 0 for no error and everything up to date.
- * -1 means bad inputs and node in error state.
- * 1 means needs updating.
- *
- * Default placeholder behavior is to return 1 if any output property has modtime less than
- * any input modtime. Else return 0. Thus subclasses need only redefine to catch error states.
- */
-int NodeBase::GetStatus()
-{ 
-	 //find newest mod time of inputs
-	std::clock_t t=0;
-	for (int c=0; c<properties.n; c++) {
-		if (!properties.e[c]->IsOutput() && properties.e[c]->modtime > t) t = properties.e[c]->modtime;
-	}
-	if (t==0) return 0; //earliest output time is beginning, or no outputs, so nothing to be done!
-
-	 //if any outputs older than newest mod, then return 1
-	for (int c=0; c<properties.n; c++) {
-		if (properties.e[c]->IsOutput()) continue;
-		if (properties.e[c]->modtime < t) return 1; 
-	}
-	return 0;
-}
-
 /*! Return the most recent modtime for input or block properties.
  * Optionally return the index of that property.
  */
@@ -850,6 +825,31 @@ void NodeBase::PropagateUpdate()
 			}
 		}
 	}
+}
+
+/*! Return whether the node has valid values, or the outputs are older than inputs.
+ * Return 0 for no error and everything up to date.
+ * -1 means bad inputs and node in error state.
+ * 1 means needs updating.
+ *
+ * Default placeholder behavior is to return 1 if any output property has modtime less than
+ * any input modtime. Else return 0. Thus subclasses need only redefine to catch error states.
+ */
+int NodeBase::GetStatus()
+{ 
+	 //find newest mod time of inputs
+	std::clock_t t=0;
+	for (int c=0; c<properties.n; c++) {
+		if (!properties.e[c]->IsOutput() && properties.e[c]->modtime > t) t = properties.e[c]->modtime;
+	}
+	if (t==0) return 0; //earliest output time is beginning, or no outputs, so nothing to be done!
+
+	 //if any outputs older than newest mod, then return 1
+	for (int c=0; c<properties.n; c++) {
+		if (properties.e[c]->IsOutput()) continue;
+		if (properties.e[c]->modtime < t) return 1; 
+	}
+	return 0;
 }
 
 /*! Call whenever any of the inputs change, update outputs.
@@ -3748,8 +3748,8 @@ int NodeInterface::Refresh()
 		cliprect[1].x = cliprect[2].x = node->x + node->width;
 		cliprect[0].y = cliprect[1].y = node->y;
 		cliprect[3].y = cliprect[2].y = node->y + node->height;
-		dp->PushClip(0);
-		dp->Clip(cliprect, 4, 1);
+		//dp->PushClip(0);
+		//dp->Clip(cliprect, 4, 1);
 
 		 //draw label
 		double labely = node->y;
@@ -3829,7 +3829,7 @@ int NodeInterface::Refresh()
 			dp->drawline(p1,p2);
 		}
 
-		dp->PopClip();
+		//dp->PopClip();
 
 		dp->LineWidth(1);
 		dp->NewFG(fg);
@@ -4609,14 +4609,25 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 
 		NodeProperty *prop = nodes->nodes.e[overnode]->properties.e[overproperty];
 		if (prop->HasInterface()) {
-			//dp->PushAxes();
-			//dp->NewTransform(nodes->m.m());
+			//-------------
+			dp->PushAxes();
+			dp->NewTransform(nodes->m.m());
 			anInterface *interface = prop->PropInterface(NULL, dp);
-			flatpoint p = nodes->m.transformPointInverse(flatpoint(x,y));
-			//dp->PopAxes();
-			if (interface && interface->LBDown(p.x,p.y,state,count,d) == 0) {
+			if (interface && interface->LBDown(x,y,state,count,d) == 0) {
 				action = NODES_Property_Interface;
 			}
+			dp->PopAxes();
+			lasthover = overnode;
+			lasthoverprop = overproperty;
+//			-----------
+//			//dp->PushAxes();
+//			//dp->NewTransform(nodes->m.m());
+//			anInterface *interface = prop->PropInterface(NULL, dp);
+//			flatpoint p = nodes->m.transformPointInverse(flatpoint(x,y));
+//			//dp->PopAxes();
+//			if (interface && interface->LBDown(p.x,p.y,state,count,d) == 0) {
+//				action = NODES_Property_Interface;
+//			}
 		}
 
 	} else if (overnode>=0 && overproperty>=0 && overpropslot>=0) {
@@ -4871,13 +4882,20 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		NodeProperty *prop = node->properties.e[lasthoverprop];
 
 		if (prop->HasInterface()) {
-			//dp->PushAxes();
-			//dp->NewTransform(nodes->m.m());
-			flatpoint p = nodes->m.transformPointInverse(flatpoint(x,y));
+			//----------
+			dp->PushAxes();
+			dp->NewTransform(nodes->m.m());
 			anInterface *interface = prop->PropInterface(NULL, dp);
-			interface->LBUp(p.x,p.y, state,d);
-			node->Update();
-			//dp->PopAxes();
+			interface->LBUp(x,y, state,d);
+			dp->PopAxes();
+//			--------
+//			//dp->PushAxes();
+//			//dp->NewTransform(nodes->m.m());
+//			flatpoint p = nodes->m.transformPointInverse(flatpoint(x,y));
+//			anInterface *interface = prop->PropInterface(NULL, dp);
+//			interface->LBUp(p.x,p.y, state,d);
+//			node->Update();
+//			//dp->PopAxes();
 		}
 
 		hover_action = NODES_None;
@@ -5162,13 +5180,23 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 		if (newhover >= 0 && newhoverprop >= 0 && nodes->nodes.e[newhover]->properties.e[newhoverprop]->HasInterface()) {
 			NodeProperty *prop = nodes->nodes.e[newhover]->properties.e[newhoverprop];
 			if (prop->HasInterface()) {
-				//dp->PushAxes();
-				//dp->NewTransform(nodes->m.m());
 				anInterface *interface = prop->PropInterface(NULL, dp);
-				flatpoint p = nodes->m.transformPointInverse(flatpoint(x,y));
-				interface->MouseMove(p.x,p.y, state,mouse);
-				//interface->MouseMove(x,y, state,mouse);
-				//dp->PopAxes();
+
+				dp->PushAxes();
+				dp->NewTransform(nodes->m.m());
+				interface->MouseMove(x,y, state,mouse);
+				dp->PopAxes();
+
+//				------
+//				//dp->PushAxes();
+//				//dp->NewTransform(nodes->m.m());
+//				anInterface *interface = prop->PropInterface(NULL, dp);
+//				flatpoint p = nodes->m.transformPointInverse(flatpoint(x,y));
+//				interface->MouseMove(p.x,p.y, state,mouse);
+//				//interface->MouseMove(x,y, state,mouse);
+//				//dp->PopAxes();
+//
+//				------
 				needtodraw |= interface->Needtodraw();
 			}
 		}
@@ -5337,14 +5365,21 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 		NodeProperty *prop = node->properties.e[lasthoverprop];
 
 		if (prop->HasInterface()) {
-			//dp->PushAxes();
-			//dp->NewTransform(nodes->m.m());
-			flatpoint p = nodes->m.transformPointInverse(flatpoint(x,y));
+			//------------
+			dp->PushAxes();
+			dp->NewTransform(nodes->m.m());
 			anInterface *interface = prop->PropInterface(NULL, dp);
-			interface->MouseMove(p.x,p.y, state,mouse);
-			//node->Update();
-			//interface->MouseMove(x,y,state,mouse);
-			//dp->PopAxes();
+			interface->MouseMove(x,y, state,mouse);
+			dp->PopAxes();
+//			//---------------
+//			//dp->PushAxes();
+//			//dp->NewTransform(nodes->m.m());
+//			flatpoint p = nodes->m.transformPointInverse(flatpoint(x,y));
+//			anInterface *interface = prop->PropInterface(NULL, dp);
+//			interface->MouseMove(p.x,p.y, state,mouse);
+//			//node->Update();
+//			//interface->MouseMove(x,y,state,mouse);
+//			//dp->PopAxes();
 		}
 
 		//hover_action = NODES_None;
