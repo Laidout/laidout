@@ -341,6 +341,7 @@ pdf: PDF:
   page labels?
   implement crop
 Scribus scribus:
+  outputting with settings that result in 0 pages result in scribus crash
   caption as path flips
   implement equivalent object
   caption export centering
@@ -620,14 +621,24 @@ GradientInterface: gradients
   radial controls not quite working
   gradient rework to make it easier to use as a direct fill
   
-node editor NodeInterface nodes node interface:
+node editor NodeInterface nodes: node: interface:
   DONE resize preview broken
 
   data node types:
+    generic Value in/out. Run off an ObjectDef.
     gradient
+	  DONE double click to call up color box
+	  receive color messages from viewport color box
 	paths
 	engraving
-	text
+	  dashes
+	  spacing
+	  tracing
+	mesh
+	  color
+	  transform
+	caption text
+    text on a path
   bug: traverse path only goes about 80%
   bug: transform object isn't copying images in an ImageData
   height of resizable property not saved
