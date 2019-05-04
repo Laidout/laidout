@@ -2236,9 +2236,9 @@ int LaidoutViewport::isDefaultPapergroup(int yes_if_in_project)
  */
 LaxInterfaces::ObjectContext *LaidoutViewport::ObjectMoved(LaxInterfaces::ObjectContext *oc, int modifyoc)
 {
-	DBG cerr <<"ObjectMoved "<<oc->obj->object_id<<": ";
+	DBG cerr <<"ObjectMoved "<<(oc != nullptr && oc->obj != nullptr ? oc->obj->object_id : 0) <<": ";
 	DBG curobj.context.out(NULL);
-	
+
 	if (!oc || !oc->obj) return NULL;
 
 	if (oc->obj!=curobj.obj) {
