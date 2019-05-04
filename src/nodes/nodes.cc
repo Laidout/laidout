@@ -15,6 +15,7 @@
 
 #include <lax/language.h>
 #include <lax/interfaces/curvemapinterface.h>
+#include <lax/interfaces/gradientinterface.h>
 #include "nodes.h"
 #include "nodeinterface.h"
 #include "nodes-dataobjects.h"
@@ -3106,101 +3107,192 @@ Laxkit::anObject *newMapFromRangeNode(int p, Laxkit::anObject *ref)
 }
 
 
-//------------------------ GradientProperty ------------------------
+//------------ ObjectNode
 
-/*! \class GradientProperty
+/*! \class ObjectNode
+ * Holds a DrawableObject as a source or output.
  */
 
-
-SingletonKeeper GradientProperty::interfacekeeper;
-
-LaxInterfaces::GradientInterface *GradientProperty::GetGradientInterface()
+ObjectNode::ObjectNode(int for_out, DrawableObject *nobj, int absorb)
 {
-	return dynamic_cast<GradientInterface*>(interfacekeeper.GetObject());
+	is_out = for_out;
+
+	makestr(Name, _("Object"));
+	makestr(type, is_out ? "ObjectOut" : "ObjectIn");
+
+	if (is_out) {
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "out", nobj, absorb, NULL, NULL, 0, false)); 
+	} else {
+		AddProperty(new NodeProperty(NodeProperty::PROP_Output,true, "out", NULL,0, NULL, 0, false)); 
+	}
 }
 
-GradientProperty::GradientProperty(GradientValue *ngradient, int absorb, int isout)
+ObjectNode::~ObjectNode()
 {
-	type = (isout ? NodeProperty::PROP_Output : NodeProperty::PROP_Block);
-	is_linkable = isout ? true : false;
-	makestr(name, "gradient");
-	makestr(label, _("gradient"));
-	//makestr(tooltip, _(""));
-	SetFlag(NODES_PropResize, true);
+}
 
-	gradient = ngradient;
-	if (gradient && !absorb) gradient->inc_count();
-	data = dynamic_cast<Value*>(gradient);
-	if (data) data->inc_count();
+NodeBase *ObjectNode::Duplicate()
+{
+	ObjectNode *newnode = new ObjectNode(is_out, dynamic_cast<DrawableObject*>(properties.e[0]->GetData()), 0);
+	newnode->DuplicateBase(this);
+	return newnode;
+}
 
-	GradientInterface *interface = GetGradientInterface();
-	if (!interface) {
-		interface = new GradientInterface(getUniqueNumber(), NULL);
-		makestr(interface->owner_message, "GradientChange");
-		//interface->style |= gradientMapInterface::RealSpace | gradientMapInterface::Expandable;
-		interfacekeeper.SetObject(interface, 1);
+int ObjectNode::GetStatus()
+{
+	//Value *obj = properties.e[0]->GetData();
+	//if (!dynamic_cast<DrawableObject*>(obj)) return 1;
+
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int ObjectNode::Update()
+{
+	return NodeBase::Update();
+}
+
+Laxkit::anObject *newObjectInNode(int p, Laxkit::anObject *ref)
+{
+	return new ObjectNode(0, NULL,0);
+}
+
+Laxkit::anObject *newObjectOutNode(int p, Laxkit::anObject *ref)
+{
+	return new ObjectNode(1, NULL,0);
+}
+
+int ObjectNode::UpdatePreview()
+{
+	// *** copy the object's preview
+	//***
+	return 1;
+}
+
+
+
+
+//------------ TransformAffineNode
+
+class TransformAffineNode : public NodeBase
+{
+  public:
+	TransformAffineNode();
+	virtual ~TransformAffineNode();
+	virtual NodeBase *Duplicate();
+	virtual int GetStatus();
+	virtual int Update();
+};
+
+TransformAffineNode::TransformAffineNode()
+{
+	makestr(Name, _("Transform"));
+	makestr(type, "Filters/TransformAffine");
+
+	Value *v = new AffineValue();
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", NULL,0, _("In"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Affine", v,1, _("Affine"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", NULL,0, _("Out"))); 
+}
+
+TransformAffineNode::~TransformAffineNode()
+{
+}
+
+NodeBase *TransformAffineNode::Duplicate()
+{
+	TransformAffineNode *newnode = new TransformAffineNode();
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+/*! -1 for bad values. 0 for ok, 1 for just needs update.
+ */
+int TransformAffineNode::GetStatus()
+{
+	AffineValue *affine  = dynamic_cast<AffineValue*>(properties.e[1]->GetData());
+	if (!affine) return -1;
+
+	Value *v = properties.e[0]->GetData();
+	if (v) {
+		int vtype = v->type();
+		if (   vtype != AffineValue::TypeNumber()
+			&& vtype != VALUE_Flatvector
+			&& !dynamic_cast<DrawableObject*>(v)
+		   ) return -1;
 	}
 
+	if (v && !properties.e[2]->data) return 1;
+
+	return NodeBase::GetStatus(); //default checks mod times
 }
 
-GradientProperty::~GradientProperty()
+int TransformAffineNode::Update()
 {
-	DBG cerr <<"...deleting gradient prop data"<<endl;
-	if (gradient) gradient->dec_count();
-}
+	Value *nv = NULL;
+	Value *v = properties.e[0]->GetData();
 
-/*! Set a default width and height based on colors->font->textheight().
- */
-void GradientProperty::SetExtents(NodeColors *colors)
-{
-	width = height = 4 * colors->font->textheight();
-}
+	AffineValue *affine  = dynamic_cast<AffineValue*>(properties.e[1]->GetData());
+	if (!affine) return -1;
+	if (!affine->IsInvertible()) return -1;
 
-bool GradientProperty::HasInterface()
-{
-	return true;
-}
+	if (!v) {
+		 //clear output when there is no input
+		if (properties.e[2]->GetData()) properties.e[2]->SetData(NULL,0);
 
-/*! If interface!=NULL, then try to use it. If NULL, create and return a new appropriate interface.
- * Also set the interface to use *this.
- */
-LaxInterfaces::anInterface *GradientProperty::PropInterface(LaxInterfaces::anInterface *interface, Laxkit::Displayer *dp)
-{
-	GradientInterface *interf = NULL;
-	if (interface) {
-		if (strcmp(interface->whattype(), "GradientInterface")) return NULL;
-		interf = dynamic_cast<GradientInterface*>(interface);
-		if (!interf) return NULL; //wrong ref interface!!
+	} else {
+		int vtype = v->type();
+		if (vtype == VALUE_Flatvector) {
+			FlatvectorValue *fv  = dynamic_cast<FlatvectorValue*>(v);
+			FlatvectorValue *nnv = dynamic_cast<FlatvectorValue*>(properties.e[2]->GetData());
+			if (!nnv) nnv = new FlatvectorValue(affine->transformPoint(fv->v));
+			else {
+				nnv->v = affine->transformPoint(fv->v);
+				nnv->inc_count();
+			}
+			nv = nnv;
+
+		} else if (dynamic_cast<DrawableObject*>(v)) {
+			// ***** refs cause unending render loops
+//			DrawableObject *d = dynamic_cast<DrawableObject*>(v);
+//			LSomeDataRef *ref = dynamic_cast<LSomeDataRef*>(properties.e[2]->GetData());
+//			if (!ref) ref = new LSomeDataRef(d);
+//			else {
+//				ref->Set(d, 0);
+//				ref->inc_count();
+//			}
+//			ref->Multiply(*affine);
+//			nv = ref;
+			//---------------------
+			DrawableObject *d = dynamic_cast<DrawableObject*>(v);
+			anObject *filter = d->filter;
+			d->filter = NULL;
+			DrawableObject *copy = dynamic_cast<DrawableObject*>(d->duplicate());
+			d->filter = filter;
+			copy->Multiply(*affine);
+			nv = copy;
+
+		} else if (vtype == AffineValue::TypeNumber()) {
+			AffineValue *fv  = dynamic_cast<AffineValue*>(v);
+			AffineValue *nnv = dynamic_cast<AffineValue*>(properties.e[2]->GetData());
+			if (!nnv) nnv = new AffineValue(fv->m());
+			else {
+				nnv->m(fv->m());
+				nnv->inc_count();
+			}
+			nnv->Multiply(*affine);
+			nv = nnv;
+		}
+
 	}
 
-	if (!interf) interf = GetGradientInterface();
-	interf->Dp(dp);
-	interf->UseThisObject(gradient);
-	double th = owner->colors->font->textheight();
-	interf->SetupRect(owner->x + x + th/2, owner->y + y, width-th, height);
+	properties.e[2]->SetData(nv, 1);
 
-	return interf;
+	return NodeBase::Update();
 }
 
-void GradientProperty::Draw(Laxkit::Displayer *dp, int hovered)
+Laxkit::anObject *newTransformAffineNode(int p, Laxkit::anObject *ref)
 {
-	anInterface *interf = PropInterface(NULL, dp);
-	if (hovered) interf->Refresh();
-	else interf->DrawData(gradient);
-}
-
-
-/*! Whether to accept link to this value type.
- * Accepts DoubleValue, ImageValue, or ColorValue.
- */
-bool GradientProperty::AllowType(Value *v)
-{
-	int vtype = v->type();
-	if (vtype == VALUE_Real)  return true;
-	if (vtype == VALUE_Color) return true;
-	if (vtype == VALUE_Image) return true;
-	// *** vectors, transform each value individually, or all
-	return false;
+	return new TransformAffineNode();
 }
 
 
@@ -3422,192 +3514,246 @@ Laxkit::anObject *newCurveNode(int p, Laxkit::anObject *ref)
 }
 
 
-//------------ ObjectNode
+//------------------------ GradientProperty ------------------------
 
-/*! \class ObjectNode
- * Holds a DrawableObject as a source or output.
+/*! \class GradientProperty
  */
 
-ObjectNode::ObjectNode(int for_out, DrawableObject *nobj, int absorb)
+
+SingletonKeeper GradientProperty::interfacekeeper;
+
+GradientProperty::GradientProperty(GradientValue *ngradient, int absorb, int isout)
 {
-	is_out = for_out;
+	type = (isout ? NodeProperty::PROP_Output : NodeProperty::PROP_Block);
+	is_linkable = isout ? true : false;
+	makestr(name, "gradient");
+	makestr(label, _("Gradient"));
+	//makestr(tooltip, _(""));
+	SetFlag(NODES_PropResize, true);
 
-	makestr(Name, _("Object"));
-	makestr(type, is_out ? "ObjectOut" : "ObjectIn");
+	gradient = ngradient;
+	if (gradient && !absorb) gradient->inc_count();
+	data = dynamic_cast<Value*>(gradient);
+	if (data) data->inc_count();
+}
 
-	if (is_out) {
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "out", nobj, absorb, NULL, NULL, 0, false)); 
-	} else {
-		AddProperty(new NodeProperty(NodeProperty::PROP_Output,true, "out", NULL,0, NULL, 0, false)); 
+GradientProperty::~GradientProperty()
+{
+	DBG cerr <<"...deleting gradient prop data"<<endl;
+	if (gradient) gradient->dec_count();
+}
+
+/*! Set a default width and height based on colors->font->textheight().
+ */
+void GradientProperty::SetExtents(NodeColors *colors)
+{
+	width = height = 4 * colors->font->textheight();
+}
+
+bool GradientProperty::HasInterface()
+{
+	return true;
+}
+
+/*! Static function to get an approprate interface for GradientProperty.
+ */
+LaxInterfaces::GradientInterface *GradientProperty::GetGradientInterface()
+{
+	GradientInterface *interf = dynamic_cast<GradientInterface*>(interfacekeeper.GetObject());
+	if (!interf) {
+		interf = new GradientInterface(getUniqueNumber(), NULL);
+		makestr(interf->owner_message, "GradientChange");
+		interf->style |= GradientInterface::RealSpace | GradientInterface::RealSpaceMouse | GradientInterface::Expandable | GradientInterface::EditStrip;
+		interfacekeeper.SetObject(interf, 1);
 	}
+	return interf;
 }
 
-ObjectNode::~ObjectNode()
+/*! If interface!=NULL, then try to use it. If NULL, create and return a new appropriate interface.
+ * Also set the interface to use *this.
+ * If supplied interface is the wrong type, return null.
+ */
+LaxInterfaces::anInterface *GradientProperty::PropInterface(LaxInterfaces::anInterface *interface, Laxkit::Displayer *dp)
 {
+	GradientInterface *interf = NULL;
+	if (interface) {
+		if (strcmp(interface->whattype(), "GradientInterface")) return NULL;
+		interf = dynamic_cast<GradientInterface*>(interface);
+		if (!interf) return NULL; //wrong ref interface!!
+	}
+
+	if (!interf) interf = GetGradientInterface();
+
+	interf->Dp(dp);
+	interf->UseThisObject(gradient);
+	double th = owner->colors->font->textheight();
+	interf->SetupRect(owner->x + x + th, owner->y + y, width-2*th, height);
+
+	return interf;
 }
 
-NodeBase *ObjectNode::Duplicate()
+void GradientProperty::Draw(Laxkit::Displayer *dp, int hovered)
 {
-	ObjectNode *newnode = new ObjectNode(is_out, dynamic_cast<DrawableObject*>(properties.e[0]->GetData()), 0);
-	newnode->DuplicateBase(this);
-	return newnode;
-}
-
-int ObjectNode::GetStatus()
-{
-	//Value *obj = properties.e[0]->GetData();
-	//if (!dynamic_cast<DrawableObject*>(obj)) return 1;
-
-	return NodeBase::GetStatus(); //default checks mod times
-}
-
-int ObjectNode::Update()
-{
-	return NodeBase::Update();
-}
-
-Laxkit::anObject *newObjectInNode(int p, Laxkit::anObject *ref)
-{
-	return new ObjectNode(0, NULL,0);
-}
-
-Laxkit::anObject *newObjectOutNode(int p, Laxkit::anObject *ref)
-{
-	return new ObjectNode(1, NULL,0);
-}
-
-int ObjectNode::UpdatePreview()
-{
-	// *** copy the object's preview
-	//***
-	return 1;
+	anInterface *interf = PropInterface(NULL, dp);
+	if (hovered) interf->Refresh();
+	else interf->Refresh();
+	//else interf->DrawData(gradient);
 }
 
 
+///*! Whether to accept link to this value type.
+// * Accepts DoubleValue, ImageValue, or ColorValue.
+// */
+//bool GradientProperty::AllowType(Value *v)
+//{
+//	int vtype = v->type();
+//	if (vtype == VALUE_Real)  return true;
+//	if (vtype == VALUE_Color) return true;
+//	if (vtype == VALUE_Image) return true;
+//	// *** vectors, transform each value individually, or all
+//	return false;
+//}
 
 
-//------------ TransformAffineNode
 
-class TransformAffineNode : public NodeBase
+//--------------------- GradientNode ---------------------
+
+/*! \class GradientNode
+ */
+class GradientNode : public NodeBase
 {
   public:
-	TransformAffineNode();
-	virtual ~TransformAffineNode();
+	bool for_creation; //true when creating a curve, not a transforming node
+
+	GradientNode(int is_for_creation, GradientValue *ngradient);
+	virtual ~GradientNode();
+
 	virtual NodeBase *Duplicate();
-	virtual int GetStatus();
 	virtual int Update();
+	virtual int GetStatus();
+	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
 };
 
-TransformAffineNode::TransformAffineNode()
+/*! absorbs ngradient.
+ */
+GradientNode::GradientNode(int is_for_creation, GradientValue *ngradient)
 {
-	makestr(Name, _("Transform"));
-	makestr(type, "Filters/TransformAffine");
+	if (is_for_creation) {
+		makestr(Name, _("Gradient"));
+		makestr(type, "Gradient");
+	} else {
+		makestr(Name, _("Gradient Transform"));
+		makestr(type, "GradientTransform");
+	}
 
-	Value *v = new AffineValue();
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", NULL,0, _("In"))); 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Affine", v,1, _("Affine"))); 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", NULL,0, _("Out"))); 
+	for_creation = is_for_creation;
+
+	//in should accept:
+	//  doubles, assume adjust within range 0..1
+	//  image data, create one curve for all except alpha, one curve for each channel
+	//
+	//out should be same format as in
+
+	GradientValue *gradient = ngradient;
+	if (!gradient) gradient = new GradientValue();
+
+	if (!for_creation) AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "In", new DoubleValue(0), 1));
+
+	AddProperty(new GradientProperty(gradient,0, for_creation));
+	if (!ngradient) gradient->dec_count();
+
+	if (!for_creation) {
+		 //create selector for channel, including "all"
+		//AddProperty(new NodeProperty(NodeProperty::PROP_Block, true, "Channel", new EnumValue(0, &channels), 1));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL, 0));
+	}
 }
 
-TransformAffineNode::~TransformAffineNode()
+GradientNode::~GradientNode()
 {
 }
 
-NodeBase *TransformAffineNode::Duplicate()
+NodeBase *GradientNode::Duplicate()
 {
-	TransformAffineNode *newnode = new TransformAffineNode();
+	GradientValue *v = dynamic_cast<GradientProperty*>(FindProperty("Gradient"))->gradient;
+	v = dynamic_cast<GradientValue*>(v->duplicate());
+	GradientNode *newnode = new GradientNode(for_creation, v);
 	newnode->DuplicateBase(this);
+	newnode->Wrap();
 	return newnode;
 }
 
-/*! -1 for bad values. 0 for ok, 1 for just needs update.
+/*! Return 1 for set, 0 for not set.
  */
-int TransformAffineNode::GetStatus()
+int GradientNode::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
 {
-	AffineValue *affine  = dynamic_cast<AffineValue*>(properties.e[1]->GetData());
-	if (!affine) return -1;
-
-	Value *v = properties.e[0]->GetData();
-	if (v) {
-		int vtype = v->type();
-		if (   vtype != AffineValue::TypeNumber()
-			&& vtype != VALUE_Flatvector
-			&& !dynamic_cast<DrawableObject*>(v)
-		   ) return -1;
+	if (!strcmp(propname, "gradient")) {
+		GradientProperty *prop = dynamic_cast<GradientProperty*>(FindProperty(propname));
+		GradientValue *gradient = prop->gradient;
+		gradient->dump_in_atts(att,0,NULL);
+		prop->SetData(gradient, 0);
+		return 1;
 	}
-
-	if (v && !properties.e[2]->data) return 1;
-
-	return NodeBase::GetStatus(); //default checks mod times
+	
+	return NodeBase::SetPropertyFromAtt(propname, att);
 }
 
-int TransformAffineNode::Update()
+/*! Return 0 for no error and everything up to date.
+ * -1 means bad inputs and node in error state.
+ * 1 means needs updating.
+ */
+int GradientNode::Update()
 {
-	Value *nv = NULL;
-	Value *v = properties.e[0]->GetData();
+	if (for_creation) return NodeBase::Update();
 
-	AffineValue *affine  = dynamic_cast<AffineValue*>(properties.e[1]->GetData());
-	if (!affine) return -1;
-	if (!affine->IsInvertible()) return -1;
-
-	if (!v) {
-		 //clear output when there is no input
-		if (properties.e[2]->GetData()) properties.e[2]->SetData(NULL,0);
-
-	} else {
-		int vtype = v->type();
-		if (vtype == VALUE_Flatvector) {
-			FlatvectorValue *fv  = dynamic_cast<FlatvectorValue*>(v);
-			FlatvectorValue *nnv = dynamic_cast<FlatvectorValue*>(properties.e[2]->GetData());
-			if (!nnv) nnv = new FlatvectorValue(affine->transformPoint(fv->v));
-			else {
-				nnv->v = affine->transformPoint(fv->v);
-				nnv->inc_count();
-			}
-			nv = nnv;
-
-		} else if (dynamic_cast<DrawableObject*>(v)) {
-			// ***** refs cause unending render loops
-//			DrawableObject *d = dynamic_cast<DrawableObject*>(v);
-//			LSomeDataRef *ref = dynamic_cast<LSomeDataRef*>(properties.e[2]->GetData());
-//			if (!ref) ref = new LSomeDataRef(d);
-//			else {
-//				ref->Set(d, 0);
-//				ref->inc_count();
-//			}
-//			ref->Multiply(*affine);
-//			nv = ref;
-			//---------------------
-			DrawableObject *d = dynamic_cast<DrawableObject*>(v);
-			anObject *filter = d->filter;
-			d->filter = NULL;
-			DrawableObject *copy = dynamic_cast<DrawableObject*>(d->duplicate());
-			d->filter = filter;
-			copy->Multiply(*affine);
-			nv = copy;
-
-		} else if (vtype == AffineValue::TypeNumber()) {
-			AffineValue *fv  = dynamic_cast<AffineValue*>(v);
-			AffineValue *nnv = dynamic_cast<AffineValue*>(properties.e[2]->GetData());
-			if (!nnv) nnv = new AffineValue(fv->m());
-			else {
-				nnv->m(fv->m());
-				nnv->inc_count();
-			}
-			nnv->Multiply(*affine);
-			nv = nnv;
-		}
-
+	//float -> color
+	//color -> grayscale -> color
+	//image -> grayscale -> new image
+	
+	GradientValue *gv = dynamic_cast<GradientValue*>(properties.e[1]->GetData());
+	Value *in = properties.e[0]->GetData();
+	double d;
+	bool isnum = false;
+	if (isNumberType(in, &d)) isnum = true;
+	else if (dynamic_cast<ColorValue*>(in)) {
+		ColorValue *cv = dynamic_cast<ColorValue*>(in);
+		d = simple_rgb_to_grayf(cv->color.Red(), cv->color.Green(), cv->color.Blue());
+		isnum = true;
 	}
 
-	properties.e[2]->SetData(nv, 1);
+	if (isnum) {
+		ColorValue *cv = dynamic_cast<ColorValue*>(properties.e[2]->GetData());
+		if (!cv) cv = new ColorValue();
+		else cv->inc_count();
+		ScreenColor col;
+		gv->WhatColor(d, &col, true);
+		cv->color.SetRGB(col.Red(), col.Green(), col.Blue());
+		properties.e[2]->SetData(cv,1);
+	}
+	else {
+		// ***
+		return -1;
+	}
 
 	return NodeBase::Update();
 }
 
-Laxkit::anObject *newTransformAffineNode(int p, Laxkit::anObject *ref)
+int GradientNode::GetStatus()
 {
-	return new TransformAffineNode();
+	return NodeBase::GetStatus();
+}
+ 
+
+
+
+Laxkit::anObject *newGradientNode(int p, Laxkit::anObject *ref)
+{
+	return new GradientNode(1, nullptr);
+}
+
+Laxkit::anObject *newGradientTransformNode(int p, Laxkit::anObject *ref)
+{
+	return new GradientNode(0, nullptr);
 }
 
 
@@ -3623,6 +3769,11 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 
 	 //--- ColorNode
 	factory->DefineNewObject(getUniqueNumber(), "Color",    newColorNode,  NULL, 0);
+
+	 //--- GradientStrip
+	factory->DefineNewObject(getUniqueNumber(), "Gradient", newGradientNode,  NULL, 0);
+	 //--- GradientTransform
+	factory->DefineNewObject(getUniqueNumber(), "GradientTransform", newGradientTransformNode,  NULL, 0);
 
 	 //--- ImageNode
 	factory->DefineNewObject(getUniqueNumber(), "Image", newImageNode,  NULL, 0);
@@ -3685,6 +3836,7 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 
 	 //--- MathContantNode
 	factory->DefineNewObject(getUniqueNumber(), "Math/Constant",newMathConstants,  NULL, 0);
+
 
 	//------------------ String -------------
 
