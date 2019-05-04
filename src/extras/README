@@ -6,11 +6,6 @@
  *
  * Currently:
  * 
- * dumpInImages() plops down a whole lot of images into the document. Specify the start page,
- * how many per page, and either a list of image files, a directory that contains the images,
- * or a list of ImageData objects.
+ * Actually, nothing at the moment.
  *
- * \todo *** must figure out how to integrate extras into menus, and incorporate callbacks?
- *   Have a class Extra that holds everything about it?
- * \todo Still must work out good mechanism for being able to add on any extras via plugins...
  */
