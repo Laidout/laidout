@@ -713,6 +713,7 @@ class ColorValue : public Value
 {
   public:
 	Laxkit::ColorBase color;
+	ColorValue();
 	ColorValue(const char *color);
 	ColorValue(double r, double g, double b, double a);
 	//ColorValue(Laxkit::ColorBase &color);

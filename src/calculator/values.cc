@@ -4228,6 +4228,11 @@ void ObjectValue::SetObject(anObject *nobj, bool absorb_count)
 
 
 //--------------------------------- ColorValue -----------------------------
+
+ColorValue::ColorValue()
+{
+}
+
 /*! Set from a hex string.
  */
 ColorValue::ColorValue(const char *str)
