@@ -14,8 +14,9 @@
 //
 
 
-// This file is for LaidoutApp functions that are not really involved in basic application functioning,
-// or initial window creation.
+// This file is for TreeChangeEvent implementation, and some LaidoutApp functions that 
+// are here for poorly defined reasons.
+
 
 #include "laidout.h"
 #include "ui/viewwindow.h"
