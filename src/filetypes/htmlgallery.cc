@@ -1014,21 +1014,26 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 		return 5;
 	}
 
-	if (isblank(out->html_template_file)) {
+	Utf8String imageliststr;
+	HtmlOutImage *img = images;
+	while (img) {
+		if (out->make_thumbs) {
+			scratch.Sprintf("<a href=\"images/%03d.%s\"><img src=\"images/%03d-s.png\"></a>\n",
+					img->index, out->image_format, img->index);
+			imageliststr.Append(scratch);
+
+		} else {
+			scratch.Sprintf("<img src=\"images/%03d.%s\">\n", img->index, out->image_format);
+			imageliststr.Append(scratch);
+		}
+		img = img->next;
+	}
+
+	if (isblank(out->html_template_file))
+	{
 		//default fallback for no template
 		fprintf(htmlout, "<html>\n<head>\n<title>%s</title>\n<style>\n body { background-color: #555; }\n</style>\n</head>\n<body>\n", filename);
-		HtmlOutImage *img = images;
-
-		while (img) {
-			if (out->make_thumbs) {
-				fprintf(htmlout, "<a href=\"images/%03d.%s\"><img src=\"images/%03d-s.png\"></a>\n",
-						img->index, out->image_format, img->index);
-			} else {
-				fprintf(htmlout, "<img src=\"images/%03d.%s\">\n", img->index, out->image_format);
-			}
-			img = img->next;
-		}
-
+		fprintf(htmlout, imageliststr.c_str());
 		fprintf(htmlout, "</body>\n</html>");
 	}
 	else 
@@ -1049,6 +1054,7 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 				for (int tc=0; tc<out->templatevars->attributes.n; tc++) {
 					str.Replace(out->templatevars->attributes.e[tc]->value, out->templatevars->attributes.e[tc]->name, true);
 				}
+				if (str.Find("<!--IMAGE-LIST-->",0,0) >= 0) str.Replace("<!--IMAGE-LIST-->", imageliststr.c_str(), true);
 				fwrite(str.c_str(), 1, str.Bytes(), htmlout);
 			}
 
