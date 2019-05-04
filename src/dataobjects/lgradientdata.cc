@@ -33,6 +33,7 @@ namespace Laidout {
 
 
 GradientValue::GradientValue()
+  : GradientStrip(1)
 {
 	Id();
 }
@@ -51,6 +52,73 @@ LaxFiles::Attribute *GradientValue::dump_out_atts(LaxFiles::Attribute *att,int w
 {
 	return GradientStrip::dump_out_atts(att,what,context);
 }
+
+GradientStrip *GradientValue::newGradientStrip()
+{
+	return new GradientValue();
+}
+
+Value *GradientValue::duplicate()
+{
+	GradientValue *dup = new GradientValue();
+
+	GradientStrip::duplicate(dynamic_cast<anObject*>(this));
+
+	return dup;
+}
+
+ObjectDef *GradientValue::makeObjectDef()
+{
+    ObjectDef *sd=stylemanager.FindDef("GradientStrip");
+    if (sd) {
+        sd->inc_count();
+        return sd;
+    }
+
+    sd = new ObjectDef(nullptr,
+            "GradientStrip",
+            _("Gradient"),
+            _("A simple gradient definition"),
+            "class",
+            NULL,NULL);
+
+//    sd->pushFunction("LoadFile",_("Load File"),_("Load a gradient file"),
+//                     NULL,
+//                     "file",NULL,_("File name to load"),"string", NULL, NULL,
+//                     NULL);
+//    sd->pushFunction("SaveFile",_("Save File"),_("Save a gradient file"),
+//                     NULL,
+//                     "file",NULL,_("File name to load"),"string", NULL, NULL,
+//                     NULL);
+
+    //sd->pushVariable("file",  _("File"),  _("File name"),    "string",0, NULL,0);
+    //sd->pushVariable("width", _("Width"), _("Pixel width"),  "real",0,   NULL,0);
+    //sd->pushVariable("height",_("Height"),_("Pixel height"), "real",0,   NULL,0);
+
+    sd->pushVariable("colors",  _("Colors"),  _("List of colors"),    "array of GradientColor",0, NULL,0);
+
+    return sd;
+}
+
+Value *GradientValue::dereference(const char *extstring, int len)
+{
+	//***
+	return nullptr;
+}
+
+/*! Return 1 for success, 2 for success, but other contents changed too, -1 for unknown
+ */
+int GradientValue::assign(FieldExtPlace *ext,Value *v)
+{
+	//***
+	return -1;
+}
+
+//int GradientValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+//                         Value **value_ret, Laxkit::ErrorLog *log)
+//{
+//	***
+//}
 
 
 //------------------------------- LGradientData ---------------------------------------
