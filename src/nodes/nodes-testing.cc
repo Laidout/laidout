@@ -2,6 +2,37 @@
 //*********** WORKS IN PROGRESS ****************
 
 
+
+//------------------------ ResourceProperty ---------------------------------
+
+/*! \class ResourceProperty
+ * Node property that lets you select a Laidout resource.
+ */
+
+// [Resource (editable name)] [create new / create new from current] [remove ref to resource]
+class ResourceProperty : public NodeProperty
+{
+  public:
+
+	char *resource_type;
+	Laxkit::Resource *resource;
+
+	ResourceProperty(Resource *nresource, int absorb);
+	virtual ~ResourceProperty();
+};
+
+ResourceProperty::ResourceProperty(Resource *nresource, int absorb)
+{
+	resource_type = nullptr;
+}
+
+ResourceProperty::~ResourceProperty()
+{
+	delete[] resource_type;
+	if (resource) resource->dec_count();
+}
+
+
 //------------------------ NodePanel ------------------------
 
 /*! \class NodePanel
@@ -102,6 +133,12 @@ class Vector2StackValue : public Value
 //------------------------ PathsDataNode ------------------------
 
 /*! \class Node for constructing PathsData objects..
+ *
+ * todo:
+ *   points
+ *   weight nodes
+ *   fillstyle
+ *   linestyle
  */
 
 class PathsDataNode
@@ -117,15 +154,18 @@ class PathsDataNode
 	virtual int GetStatus();
 };
 
+
 PathsDataNode::PathsDataNode(LPathsData *path, int absorb)
 {
 	pathsdata = path;
 	if (pathsdata && !absorb) pathsdata->inc_count();
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Path", pathsdata,1, _("Path"), NULL,0, false));
 }
 
 PathsDataNode::~PathsDataNode()
 {
-	if (pathsdata) pathsdata->dec_count();
+	//if (pathsdata) pathsdata->dec_count();
 }
 
 NodeBase *PathsDataNode::Duplicate()
@@ -137,13 +177,11 @@ NodeBase *PathsDataNode::Duplicate()
 
 int PathsDataNode::Update()
 {
-	***
 	return NodeBase::Update();
 }
 
 int PathsDataNode::GetStatus()
 {
-
 	return NodeBase::GetStatus();
 }
 
@@ -602,9 +640,10 @@ NumToStringNode::NumToStringNode(double d, int isint)
 	makestr(Name, _("NumToString"));
 	makestr(type, "Strings/NumToString");
 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "N", isint ? new IntValue(d) : new DoubleValue(d),1, _("N"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Num", isint ? new IntValue(d) : new DoubleValue(d),1, _("Num"))); 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Padding", new StringValue(""),1, _("Padding"))); 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Decimals", new StringValue(""),1, _("Decimals"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Base", new IntValue(10),1, _("Base")));
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out"))); 
 }
@@ -904,85 +943,6 @@ int HistogramNode::Update()
 	else return -1;
 
 	return 0;
-}
-
-
-//------------------------------ GradientStripProperty --------------------------------------------
-
-SingletonKeeper GradientStripProperty::interfacekeeper;
-class GradientStripProperty : public NodeProperty
-{
-	static SingletonKeeper interfacekeeper;
-
-  public:
-	static LaxInterfaces::GradientInterface *GetGradientInterface();
-
-
-	GradientStrip *gradient;
-	GradientData *gdata;
-
-	GradientStripProperty(GradientStrip *ngradient, int absorb);
-	virtual ~GradientStripProperty();
-
-	//virtual bool AllowType(Value *v);
-
-	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface, Laxkit::Displayer *dp);
-	virtual const char *PropInterfaceName() { return "GradientInterface"; }
-	virtual bool HasInterface();
-};
-
-GradientStripProperty::GradientStripProperty(GradientStripValue *ngradient, int absorb)
-{
-	type = NodeProperty::PROP_Block;
-	is_linkable = false;
-	makestr(name, "Gradient");
-	makestr(label, _("Gradient"));
-	//makestr(tooltip, _(""));
-
-	gradient = ngradient;
-	if (gradient && !absorb) gradient->inc_count();
-}
-
-GradientStripProperty::~GradientStripProperty()
-{
-	if (gradient) gradient->dec_count();
-}
-
-bool GradientStripProperty::HasInterface()
-{
-	return true;
-}
-
-LaxInterfaces::GradientInterface *GradientStripProperty::GetGradientInterface()
-{
-	GradientInterface *interf = dynamic_cast<GradientInterface*>(interfacekeeper.GetObject());
-	if (!interf) {
-		interf = new GradientInterface(getUniqueNumber(), NULL);
-		//interface->style |= CurveMapInterface::RealSpace;
-		interfacekeeper.SetObject(interf, 1);
-	}
-	return interf;
-}
-
-/*! If interface!=NULL, then try to use it. If NULL, create and return a new appropriate interface.
- * Also set the interface to use *this.
- */
-LaxInterfaces::anInterface *GradientStripProperty::PropInterface(LaxInterfaces::anInterface *interface, Laxkit::Displayer *dp)
-{
-	GradinteInterface *interf = NULL;
-	if (interface) {
-		if (strcmp(interface->whattype(), "GradinteInterface")) return NULL;
-		interf = dynamic_cast<GradinteInterface*>(interface);
-		if (!interf) return NULL; //wrong ref interface!!
-	}
-
-	if (!interf) interf = GetGradientInterface();
-
-	interf->Dp(dp);
-	interf->UseThis(gradient);
-	interf->SetupRect(cowner->x + x, cowner->y + y, width, height);
-
-	return interf;
 }
 
 
