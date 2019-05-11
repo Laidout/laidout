@@ -119,10 +119,12 @@ class HtmlGalleryExportConfig : public DocumentExportConfig
  public:
 	char *image_format;
 	char *html_template_file;
+	char *image_template_file;
 	int use_transparent_bg;
 	int width, height;
 	int img_max_width, img_max_height;
 	bool make_thumbs;
+	bool render_each_page;
 
 	LaxFiles::AttributeObject *templatevars;
 
@@ -147,7 +149,9 @@ HtmlGalleryExportConfig::HtmlGalleryExportConfig()
 	use_transparent_bg = false;
 	width = height = 0;
 	html_template_file = nullptr;
+	image_template_file = nullptr;
 	make_thumbs = true;
+	render_each_page = false;
 	templatevars = new AttributeObject("templatevars", nullptr);
 	DefaultTemplateVars();
 
@@ -172,12 +176,16 @@ HtmlGalleryExportConfig::HtmlGalleryExportConfig(DocumentExportConfig *config)
 		width = conf->width;
 		height = conf->height;
 		html_template_file = newstr(conf->html_template_file);
+		image_template_file = newstr(conf->image_template_file);
+		render_each_page = conf->render_each_page;
 
 	} else {
 		html_template_file = nullptr;
+		image_template_file = nullptr;
 		image_format = newstr("jpg");
 		use_transparent_bg = false;
 		width = height = 0;
+		render_each_page = false;
 	}
 }
 
@@ -187,6 +195,7 @@ HtmlGalleryExportConfig::~HtmlGalleryExportConfig()
 	templatevars->dec_count();
 	delete[] image_format;
 	delete[] html_template_file;
+	delete[] image_template_file;
 }
 
 void HtmlGalleryExportConfig::DefaultTemplateVars()
@@ -216,6 +225,16 @@ void HtmlGalleryExportConfig::DefaultTemplateVars()
 	templatevars->push("<!--STYLE-->" , "<link rel=\"stylesheet\" href=\"style.css\" type=\"text/css\">");
 	templatevars->push("<!--JQUERY-->" , "<script src=\"js/jquery-3.0.0.min.js\"></script>");
 	templatevars->push("<!--UTILS-->" , "");
+
+	//templatevars->push("<!--IMAGE-INDEX-->" , "(automatic)");
+	//templatevars->push("<!--IMAGE-COUNT-->" , "(automatic)");
+	//templatevars->push("<!--IMAGE-WIDTH-->" , "(automatic)");
+	//templatevars->push("<!--IMAGE-FILE-->" , "(automatic)");
+	//templatevars->push("<!--IMAGE-HEIGHT-->" , "(automatic)");
+	//templatevars->push("<!--THUMB-WIDTH-->" , "(automatic)");
+	//templatevars->push("<!--THUMB-HEIGHT-->" , "(automatic)");
+	//templatevars->push("<!--THUMB-FILE-->" , "(automatic)");
+	//templatevars->push("<!--IMAGE-META-*-->" , "(automatic)");
 }
 
 /*! Sets title, description from those in doc->metadata.
@@ -230,6 +249,10 @@ void HtmlGalleryExportConfig::UpdateTemplateVarsToDoc()
 		att2 = templatevars->find("<!--TITLE-->");
 		if (att2) makestr(att2->value, att->value);
 		else templatevars->push("<!--TITLE-->", att->value);
+	} else {
+		att2 = templatevars->find("<!--TITLE-->");
+		if (att2) makestr(att2->value, doc->Name(false));
+		else templatevars->push("<!--TITLE-->", doc->Name(false));
 	}
 
 	att = doc->metadata->find("description");
@@ -251,7 +274,10 @@ void HtmlGalleryExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::Dum
 		fprintf(f,"%swidth  0  #width of resulting image. 0 means auto calculate from dpi.\n",spc);
 		fprintf(f,"%sheight 0  #height of resulting image. 0 means auto calculate from dpi.\n",spc);
 		fprintf(f,"%smake_thumbs true  #Generate thumbnails during output.\n",spc);
+		fprintf(f,"%srender_each_page true  #One html page per spread, and objects are rendered to individual images.\n",spc);
 		fprintf(f,"%stemplatevars #List of any template vars.\n",spc);
+		fprintf(f,"%shtml_template_file /path #File containing main html template.\n",spc);
+		fprintf(f,"%simage_template_file /path #File containing html template snippet for individual images.\n",spc);
 		return;
 	}
 
@@ -261,7 +287,9 @@ void HtmlGalleryExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::Dum
 	fprintf(f,"%swidth  %d\n",spc, width);
 	fprintf(f,"%sheight %d\n",spc, height);
 	fprintf(f,"%smake_thumbs %s\n",spc, make_thumbs ? "yes" : "no");
+	fprintf(f,"%srender_each_page %s\n",spc, render_each_page ? "yes" : "no");
 	if (html_template_file) fprintf(f,"%shtml_template_file %s\n",spc, html_template_file);
+	if (image_template_file) fprintf(f,"%simage_template_file %s\n",spc, image_template_file);
 }
 
 LaxFiles::Attribute *HtmlGalleryExportConfig::dump_out_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
@@ -272,7 +300,9 @@ LaxFiles::Attribute *HtmlGalleryExportConfig::dump_out_atts(LaxFiles::Attribute 
 	att->push("width", width);
 	att->push("height", height);
 	att->push("make_thumbs", make_thumbs ? "yes" : "no");
+	att->push("render_each_page", make_thumbs ? "yes" : "no");
 	if (html_template_file) att->push("html_template_file", html_template_file);
+	if (image_template_file) att->push("image_template_file", image_template_file);
 	if (templatevars) att->push(templatevars->duplicate(), -1);
 	return att;
 }
@@ -291,6 +321,12 @@ void HtmlGalleryExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,Lax
 
 		} else if (!strcmp(name, "html_template_file")) {
 			makestr(html_template_file, value);
+
+		} else if (!strcmp(name, "image_template_file")) {
+			makestr(image_template_file, value);
+
+		} else if (!strcmp(name, "render_each_page")) {
+			render_each_page = BooleanAttribute(value);
 
 		} else if (!strcmp(name, "transparent")) {
 			use_transparent_bg = BooleanAttribute(value);
@@ -397,6 +433,15 @@ ObjectDef *HtmlGalleryExportConfig::makeObjectDef()
             0,     //flags
             NULL);//newfunc
 
+    def->push("image_template_file",
+            _("Image template file"),
+            _("Image template file, for html bits unique for each image"),
+            "File",
+            NULL,   //range
+            NULL, //defvalue
+            0,     //flags
+            NULL);//newfunc
+
     def->push("templatevars",
             _("Template vars"),
             _("Template vars"),
@@ -431,6 +476,9 @@ Value *HtmlGalleryExportConfig::dereference(const char *extstring, int len)
 
 	} else if (!strncmp(extstring,"html_template_file",18)) {
 		return new FileValue(html_template_file);
+
+	} else if (!strncmp(extstring,"image_template_file",18)) {
+		return new FileValue(image_template_file);
 
 	} else if (!strncmp(extstring,"templatevars",12)) {
 		return new ObjectValue(templatevars);
@@ -484,6 +532,19 @@ int HtmlGalleryExportConfig::assign(FieldExtPlace *ext,Value *v)
 				FileValue *fv = dynamic_cast<FileValue*>(v);
 				if (fv) {
 					makestr(html_template_file, fv->filename);
+					return 1;
+				}
+				return 0;
+
+			} else if (!strcmp(str,"image_template_file")) {
+				StringValue *str = dynamic_cast<StringValue*>(v);
+				if (str) {
+					makestr(image_template_file, str->str);
+					return 1;
+				}
+				FileValue *fv = dynamic_cast<FileValue*>(v);
+				if (fv) {
+					makestr(image_template_file, fv->filename);
 					return 1;
 				}
 				return 0;
@@ -772,6 +833,7 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 	HtmlOutImage *images = nullptr;
 	HtmlOutImage *curimage = nullptr;
 
+	int num_images = 0;
 	Spread *spread = nullptr;
 	try {
 
@@ -952,6 +1014,7 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 				img->dec_count();
 				throw _("Could not save image");
 			}
+			num_images++;
 
 			scratch.Sprintf("images/%03d.%s", sc, out->image_format);
 			if (curimage) curimage = curimage->Add(sc, scratch.c_str(), img->w(), img->h(), nullptr,0,0);
@@ -1016,17 +1079,56 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 
 	Utf8String imageliststr;
 	HtmlOutImage *img = images;
+	Utf8String imgtemplate;
+	if (!isblank(out->image_template_file)) {
+		int n = 0;
+		char *templ = read_in_whole_file(out->image_template_file, &n, -1);
+		if (!templ) {
+			log.AddError("Could not read image template file for reading!");
+			if (images) delete images;
+			return 6;
+		}
+		imgtemplate.InsertBytes(templ,-1);
+	}
+
+	int i=0;
 	while (img) {
-		if (out->make_thumbs) {
-			scratch.Sprintf("<a href=\"images/%03d.%s\"><img src=\"images/%03d-s.png\"></a>\n",
-					img->index, out->image_format, img->index);
-			imageliststr.Append(scratch);
+		if (!isblank(out->image_template_file)) {
+			Utf8String str = imgtemplate;
+			scratch.Sprintf("%d", i);
+			str.Replace("<!--IMAGE-INDEX-->", scratch.c_str(), true);
+			scratch.Sprintf("%d", num_images);
+			str.Replace("<!--IMAGE-COUNT-->", scratch.c_str(), true);
+			scratch.Sprintf("%d", img->w);
+			str.Replace("<!--IMAGE-WIDTH-->", scratch.c_str(), true);
+			scratch.Sprintf("%d", img->h);
+			str.Replace("<!--IMAGE-HEIGHT-->", scratch.c_str(), true);
+			str.Replace("<!--IMAGE-FILE-->", img->file.c_str(), true);
+			scratch.Sprintf("%d", img->pw);
+			str.Replace("<!--THUMB-WIDTH-->", scratch.c_str(), true);
+			scratch.Sprintf("%d", img->ph);
+			str.Replace("<!--THUMB-HEIGHT-->", scratch.c_str(), true);
+			if (img->thumb.Bytes() != 0) str.Replace("<!--THUMB-FILE-->", scratch.c_str(), true);
+
+			 //out: Attribute meta; .. each meta gets its own IMAGE-META-** ?
+			//str.Replace("<!--IMAGE-META-*-->", scratch, true);
+
+			imageliststr.Append(str.c_str());
 
 		} else {
-			scratch.Sprintf("<img src=\"images/%03d.%s\">\n", img->index, out->image_format);
-			imageliststr.Append(scratch);
+			//default IMAGE-LIST
+			if (out->make_thumbs) {
+				scratch.Sprintf("<a href=\"images/%03d.%s\"><img src=\"images/%03d-s.png\"></a>\n",
+						img->index, out->image_format, img->index);
+				imageliststr.Append(scratch);
+
+			} else {
+				scratch.Sprintf("<img src=\"images/%03d.%s\">\n", img->index, out->image_format);
+				imageliststr.Append(scratch);
+			}
 		}
 		img = img->next;
+		i++;
 	}
 
 	if (isblank(out->html_template_file))
