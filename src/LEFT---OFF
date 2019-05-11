@@ -787,6 +787,8 @@ node editor NodeInterface nodes: node: interface:
 	  sinh cosh tanh asinh acosh atanh
 
 
+Whenever there's a byte read in, like with read_in_whole_file to string, really should do some minimal string validation before using it?
+
 resource manager needs to store unknown objects as Attribute trees, so they can still be preserved
   for future processing. for instance, be able to recover from when a plugin is missing
 
