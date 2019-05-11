@@ -25,6 +25,7 @@
 #include "printermarks.h"
 #include "../core/project.h"
 #include "../ui/viewwindow.h"
+#include "../ui/metawindow.h"
 #include "../language.h"
 #include "../core/stylemanager.h"
 #include "../calculator/shortcuttodef.h"
@@ -160,9 +161,18 @@ Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 				menu->AddItem(_("Extract clip path"), GIA_Extract_Clip);
 				menu->AddItem(_("Edit clip path"), GIA_Edit_Clip);
 			}
+
+			if (menu->n()) menu->AddSep();
+			menu->AddItem(_("Edit meta"), GIA_Edit_Object_Meta);
 		}
 	}
 
+	// *** for when multiobject meta edit available:
+	//if (selection->n()) {
+	//	if (!menu) menu=new MenuInfo(_("Group Interface"));
+	//	if (menu->n()) menu->AddSep();
+	//	menu->AddItem(_("Edit meta"), GIA_Edit_Object_Meta);
+	//}
 
 	LaidoutViewport *lvp=dynamic_cast<LaidoutViewport*>(viewport);
 	if (lvp->papergroup) {
@@ -219,6 +229,7 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 				|| i == GIA_Edit_Clip
 				|| i == GIA_Clip_First_On_Second
 				|| i == GIA_Clip_Second_On_First
+				|| i == GIA_Edit_Object_Meta
 				) {
 			PerformAction(i);
 			return 0;
@@ -236,6 +247,25 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 		RemapBounds();
 		needtodraw=1;
 		return 0;
+
+	} else if (!strcmp(mes,"objectMeta")) {
+		if (!selection->n()) return 0;
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
+		if (!s || !s->object) return 0;
+		AttributeObject *meta = dynamic_cast<AttributeObject*>(s->object);
+		if (!meta) return 0;
+
+		ObjectContext *oc = selection->e(0);
+		DrawableObject *obj = dynamic_cast<DrawableObject*>(oc->obj);
+		if (obj->metadata != meta) {
+			if (obj->metadata) obj->metadata->dec_count();
+			obj->metadata = meta;
+			obj->metadata->inc_count();
+		}
+
+		needtodraw=1;
+		return 0;
+
 	}
 
 	return 1;
@@ -1097,6 +1127,20 @@ int GroupInterface::PerformAction(int action)
 		//FreeSelection();
 		if (n) PostMessage(_("Unparented."));
 		else   PostMessage(_("Could not unparent."));
+		return 0;
+
+	} else if (action == GIA_Edit_Object_Meta) {
+		if (!selection->n()) return 0;
+
+		AttributeObject *meta = nullptr;
+		if (selection->n() == 1) {
+			ObjectContext *oc = selection->e(0);
+			DrawableObject *obj = dynamic_cast<DrawableObject*>(oc->obj);
+			meta = obj->metadata;
+		
+			app->addwindow(new MetaWindow(NULL,"meta",_("Object Meta"),0, object_id,"objectMeta", meta));
+		}
+		
 		return 0;
 	}
 

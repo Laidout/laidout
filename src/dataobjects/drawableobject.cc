@@ -208,6 +208,8 @@ DrawableObject::DrawableObject()
 	importer = NULL;
 	importer_data = NULL;
 
+	metadata = nullptr;
+
 	//Id(); //makes this->nameid (of SomeData) be something like `whattype()`12343
 }
 
@@ -221,6 +223,7 @@ DrawableObject::~DrawableObject()
 	if (wrap_path)  wrap_path ->dec_count();
 	if (inset_path) inset_path->dec_count();
 	if (filter)     filter    ->dec_count();
+	if (metadata)   metadata  ->dec_count();
 
 	if (importer)      importer     ->dec_count();
 	if (importer_data) importer_data->dec_count();
@@ -959,9 +962,9 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext 
 
 
 	 // dump notes/meta data
-	if (metadata.attributes.n) {
+	if (metadata && metadata->attributes.n) {
 		fprintf(f,"%smetadata\n",spc);
-		metadata.dump_out(f,indent+2);
+		metadata->dump_out(f,indent+2);
 	}
 	
 	 // dump iohints if any
@@ -1135,9 +1138,10 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Du
 				iohints.push(att->attributes.e[c]->attributes.e[c2]->duplicate(),-1);
 
 		} else if (!strcmp(name,"metadata")) {
-			if (metadata.attributes.n) metadata.clear();
+			if (!metadata) metadata = new AttributeObject();
+			if (metadata->attributes.n) metadata->clear();
 			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) 
-				metadata.push(att->attributes.e[c]->attributes.e[c2]->duplicate(),-1);
+				metadata->push(att->attributes.e[c]->attributes.e[c2]->duplicate(),-1);
 
 		} else if (!strcmp(name,"anchor")) {
 			 //anchor value will be something like: "name" bbox 1.5,3.5

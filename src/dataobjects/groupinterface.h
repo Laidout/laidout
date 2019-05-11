@@ -32,6 +32,7 @@ namespace Laidout {
 enum GroupInterfaceActions {
 	GIA_Align = LaxInterfaces::OIA_MAX,
 	GIA_Distribute,
+	GIA_Edit_Object_Meta,
 	GIA_Edit_Filter_Nodes,
 	GIA_Filter_Editor,
 	GIA_Remove_Filter,
