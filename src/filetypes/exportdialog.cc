@@ -25,7 +25,7 @@
 
 #include "../laidout.h"
 #include "../language.h"
-#include "../interfaces/metawindow.h"
+#include "../ui/metawindow.h"
 #include "exportdialog.h"
 
 
@@ -285,7 +285,7 @@ int ExportDialog::init()
 	 //--------- format
 	int c2=-1;
 	SliderPopup *format;
-	last=format=new SliderPopup(this, "format",NULL,SLIDER_LEFT, 0,0,0,0,1, last, object_id, "format",NULL,0);
+	last=format=new SliderPopup(this, "format",NULL,SLIDER_LEFT|SLIDER_POP_ONLY, 0,0,0,0,1, last, object_id, "format",NULL,0);
 	for (c=0; c<laidout->exportfilters.n; c++) {
 		format->AddItem(laidout->exportfilters.e[c]->VersionName(),c);
 		if (filter==laidout->exportfilters.e[c]) c2=c;
@@ -771,6 +771,7 @@ void ExportDialog::updateEdits()
 									 last,object_id,scratch,
 									 fd->Name, win_themestyle->normal->textheight()/5,5);
 
+				if (!isblank(fd->description)) box->tooltip(fd->description);
 				Value *v=config->dereference(fd->name,strlen(fd->name));
 				//if (config->findBoolean(fd->name)) box->State(LAX_ON);
 				if (dynamic_cast<BooleanValue*>(v)->i) box->State(LAX_ON);
@@ -787,6 +788,7 @@ void ExportDialog::updateEdits()
 									 last,object_id,scratch,
 									 fd->Name, NULL);
 
+				if (!isblank(fd->description)) box->tooltip(fd->description);
 				Value *v=config->dereference(fd->name,strlen(fd->name));
 				if (fd->format == VALUE_File) {
 					FileValue *str = dynamic_cast<FileValue*>(v);
@@ -810,6 +812,7 @@ void ExportDialog::updateEdits()
 									 last,object_id,scratch,
 									 fd->Name, NULL);
 
+				if (!isblank(fd->description)) box->tooltip(fd->description);
 				Value *v=config->dereference(fd->name,strlen(fd->name));
 				IntValue *ii=dynamic_cast<IntValue*>(v);
 				if (ii) box->SetText((int)ii->i);
