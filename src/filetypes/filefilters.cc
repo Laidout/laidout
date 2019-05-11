@@ -1264,8 +1264,8 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpCo
 
 		} else if (!strcmp(name,"evenodd")) {
 			if (isblank(value)) evenodd=All;
-			else if (strcmp(value,"odd")) evenodd=Odd;
-			else if (strcmp(value,"even")) evenodd=Even;
+			else if (!strcmp(value,"odd")) evenodd=Odd;
+			else if (!strcmp(value,"even")) evenodd=Even;
 			else evenodd=All;
 
 		} else if (!strcmp(name,"textaspaths")) {
