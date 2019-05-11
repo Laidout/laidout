@@ -15,7 +15,6 @@ CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. `pkg-config --cflags
 
 objs= \
 	actionarea.o \
-	metawindow.o \
 	nupinterface.o \
 	aligninterface.o \
 	anchorinterface.o \

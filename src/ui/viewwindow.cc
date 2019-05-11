@@ -61,7 +61,7 @@
 #include "../interfaces/paperinterface.h"
 #include "../interfaces/documentuser.h"
 #include "../calculator/shortcuttodef.h"
-#include "../interfaces/metawindow.h"
+#include "../ui/metawindow.h"
 
 
 //template implementation:

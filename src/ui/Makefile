@@ -20,6 +20,7 @@ objs= \
 	commandwindow.o \
 	headwindow.o \
 	helpwindow.o \
+	metawindow.o \
 	importimagesdialog.o \
 	newdoc.o \
 	palettes.o \

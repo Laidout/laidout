@@ -96,7 +96,6 @@ otherobjs= \
 	api/importexport.o \
 	api/functions.o \
 	interfaces/actionarea.o \
-	interfaces/metawindow.o \
 	interfaces/nupinterface.o \
 	interfaces/aligninterface.o \
 	interfaces/anchorinterface.o \
@@ -163,6 +162,7 @@ otherobjs= \
 	ui/commandwindow.o \
 	ui/headwindow.o \
 	ui/helpwindow.o \
+	ui/metawindow.o \
 	ui/importimagesdialog.o \
 	ui/newdoc.o \
 	ui/palettes.o \

@@ -147,7 +147,7 @@ void MetaWindow::Send()
 {
 	DBG cerr << "MetaWindow::Send() "<<(win_sendthis ? win_sendthis : "null message")<<endl;
 
-	SimpleMessage *ievent = new SimpleMessage;
+	SimpleMessage *ievent = new SimpleMessage(meta);
     app->SendMessage(ievent,win_owner,win_sendthis,object_id);
 }
 
