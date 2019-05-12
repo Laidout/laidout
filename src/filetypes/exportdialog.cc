@@ -23,6 +23,7 @@
 #include <lax/fileutils.h>
 #include <lax/laxutils.h>
 
+#include "../version.h"
 #include "../laidout.h"
 #include "../language.h"
 #include "../ui/metawindow.h"
@@ -386,7 +387,7 @@ int ExportDialog::init()
 	if (config->doc) {
 		//****doc->imposition->Layouts()
 		SliderPopup *layouts;
-		last=layouts=new SliderPopup(this, "layouts",NULL,0, 0,0,0,0,1, last, object_id, "layout",NULL,0);
+		last=layouts=new SliderPopup(this, "layouts",NULL,SLIDER_POP_ONLY, 0,0,0,0,1, last, object_id, "layout",NULL,0);
 	//	for (c=0; c<config->doc->imposition->NumLayouts(); c++) {
 	//		layouts->AddItem(config->doc->imposition->LayoutName(c),c);
 	//		if (filter==laidout->exportfilters.e[c]) c2=c;
@@ -1139,10 +1140,10 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 		}
 		return 0;
 
-	} else if (mes[0] == '+') {
+	} else if (mes[0] == '+') { //+extra-*
 		//load meta: get a file name
 		char scratch[strlen(mes)+2];
-		sprintf(scratch, "<%s", mes);
+		sprintf(scratch, "<%s", mes+1);
 		FileDialog *fd = new FileDialog(NULL,"LoadMeta",_("Load meta..."),ANXWIN_REMEMBER,
 						  0,0,0,0,0,object_id,scratch,
 						  FILES_OPEN_ONE,
@@ -1150,10 +1151,10 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 		app->rundialog(fd);
 		return 0;
 
-	} else if (mes[0] == '-') {
+	} else if (mes[0] == '-') { //-extra-*
 		//save meta: get a file name
 		char scratch[strlen(mes)+2];
-		sprintf(scratch, ">%s", mes);
+		sprintf(scratch, ">%s", mes+1);
 		FileDialog *fd = new FileDialog(NULL,"SaveMeta",_("Save meta..."),ANXWIN_REMEMBER,
 						  0,0,0,0,0,object_id,scratch,
 						  FILES_SAVE | FILES_ASK_TO_OVERWRITE,
@@ -1161,12 +1162,43 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 		app->rundialog(fd);
 		return 0;
 
-	} else if (mes[0] == '>') {
+	} else if (mes[0] == '>') { //>extra-*
 		//save meta now
+		Value *v = config->dereference(mes+7, strlen(mes+7));
+		if (!v) return 0;
+		ObjectValue *ov = dynamic_cast<ObjectValue*>(v);
+		if (!ov) return 0;
+		AttributeObject *ao = dynamic_cast<AttributeObject*>(ov->object);
+		if (!ao) return 0;
+
+		const char *file = e->str;
+		if (isblank(file)) return 0;
+		FILE *f = fopen(file, "w");
+		if (!f) {
+			DBG cerr << "Could not open file for saving meta"<<endl;
+			return 0;
+		}
+		fprintf(f, "#Laidout %s Metadata\n", LAIDOUT_VERSION);
+		ao->dump_out(f, 0);
+		fclose(f);
 		return 0;
 
-	} else if (mes[0] == '<') {
+	} else if (mes[0] == '<') { //<extra-*
 		//load meta now
+		const char *file = e->str;
+		if (isblank(file)) return 0;
+		FILE *f = fopen(file, "r");
+		if (!f) {
+			return 0;
+		}
+		AttributeObject *ao = new AttributeObject;
+		ao->dump_in(f, 0);
+		fclose(f);
+		ObjectValue *ov = new ObjectValue(ao);
+		ao->dec_count();
+		FieldExtPlace ff(mes+7);
+		config->assign(&ff, ov);
+		ov->dec_count();
 		return 0;
 	}
 

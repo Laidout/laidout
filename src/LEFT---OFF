@@ -279,6 +279,7 @@ you can't control unclick selected directories
 rework ui to be programmable. Perhaps an ui builder
 
 file filters: filefilters:
+  config resource load/save
   need to ensure that when bouncing around filters, Export All sets range properly
   need to preserve last settings per filter
   would be nice to standardize viewport display so each exporter doesn't have to implement everything themselves
@@ -303,12 +304,16 @@ importdialog ImportDialog import dialog:
   importing should sort out duplicate names
   would be nice to show preview of what is to be imported
 html: htmlgallery: html out htmlout:
-  include scrim in coop/html
-  implement save and load template vars
+  parallax:
+    control over parallax point
+	autoplay repeating parallax elements
   specify image file name, also preview file name "###-s.png"
+  DONE implement save and load template vars
+  DONE include scrim in coop/html
   DONE figure out template scheme
   DONE standardize save to directory or file, not just assume file
 image
+  export depth map based on metadata z
   export format should be an enum. need to extract possible save formats from Laxkit
   option for setting background color, at least white|transparent
   for gs, make sure temp file is removed, should probably locate in user space maybe? or make sure perms set reasonably

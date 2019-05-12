@@ -548,6 +548,18 @@ int HtmlGalleryExportConfig::assign(FieldExtPlace *ext,Value *v)
 					return 1;
 				}
 				return 0;
+
+			} else if (!strncmp(str,"templatevars",12)) {
+				ObjectValue *ov = dynamic_cast<ObjectValue*>(v);
+				if (!ov) {
+					return 0;
+				}
+				AttributeObject *ao = dynamic_cast<AttributeObject*>(ov->object);
+				if (!ao) return 0;
+				ao->inc_count();
+				if (templatevars) templatevars->dec_count();
+				templatevars = ao;
+				return 1;
 			}
 		}
 	}
