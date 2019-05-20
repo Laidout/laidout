@@ -1130,12 +1130,12 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 		} else {
 			//default IMAGE-LIST
 			if (out->make_thumbs) {
-				scratch.Sprintf("<a href=\"images/%03d.%s\"><img src=\"images/%03d-s.png\"></a>\n",
+				scratch.Sprintf("<a class=\"laidoutPage\" href=\"images/%03d.%s\"><img src=\"images/%03d-s.png\"></a>\n",
 						img->index, out->image_format, img->index);
 				imageliststr.Append(scratch);
 
 			} else {
-				scratch.Sprintf("<img src=\"images/%03d.%s\">\n", img->index, out->image_format);
+				scratch.Sprintf("<img class=\"laidoutPage\" src=\"images/%03d.%s\">\n", img->index, out->image_format);
 				imageliststr.Append(scratch);
 			}
 		}
