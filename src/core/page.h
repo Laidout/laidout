@@ -125,6 +125,7 @@ class Page : public ObjectContainer
 	char *label;
 	int pagenumber;
 	PageStyle *pagestyle;
+	ValueHash *properties;
 
 	 //page preview thumbnail
 	LaxInterfaces::ImageData *thumbnail;
