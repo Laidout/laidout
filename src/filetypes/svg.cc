@@ -375,7 +375,7 @@ ObjectDef* SvgExportConfig::makeObjectDef()
  
     def->push("data_meta",
             _("Meta to data-*"),
-            _("Convert any object metadata to data-* attributes in elements. Note letters are forced to lower case."),
+            _("Convert any object metadata starting with \"data-\" to data-* attributes in elements. Also class is used as the class attribute. Note letters for data are forced to lower case."),
             "boolean",
             NULL,   //range
             "true", //defvalue
@@ -753,6 +753,14 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			Utf8String str;
 			int ch;
 			for (int c=0; c<obj_meta->attributes.n; c++) {
+				if (strncmp(obj_meta->attributes.e[c]->name, "data-", 5)) {
+					if (!strcmp(obj_meta->attributes.e[c]->name, "class")) {
+						datameta.Append("class=\"");
+						datameta.Append(obj_meta->attributes.e[c]->value);
+						datameta.Append("\"");
+					}
+					continue;
+				}
 				str = obj_meta->attributes.e[c]->name;
 				str.Replace("_"," ",true);
 				for (int c2=0; c2<str.Bytes(); c2++) {
@@ -1794,7 +1802,10 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			if (page->pagebleeds.n && (layout == PAPERLAYOUT || layout == SINGLELAYOUT)) {
 				for (int pb=0; pb<page->pagebleeds.n; pb++) {
 					PageBleed *bleed = page->pagebleeds[pb];
+					if (bleed->index < 0 || bleed->index >= doc->pages.n) continue;
 					Page *otherpage = doc->pages[bleed->index];
+					if (!otherpage || !otherpage->HasObjects()) continue;
+
 
 					// *** bleeds should be optimized to only have to deal with acually bleeding objects, not all objs
 					 // for each layer on the page..
