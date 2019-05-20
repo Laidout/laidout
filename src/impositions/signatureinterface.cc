@@ -377,8 +377,8 @@ Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid, Lax
 		paper=siginstance->partition->paper->name;
 	}
 
-	menu->AddItem(_("Portrait"),  SIGM_Portrait,  LAX_ISTOGGLE|(landscape?0:LAX_CHECKED));
-	menu->AddItem(_("Landscape"), SIGM_Landscape, LAX_ISTOGGLE|(landscape?LAX_CHECKED:0));
+	menu->AddToggleItem(_("Portrait"),nullptr,  SIGM_Portrait,  0, !landscape);
+	menu->AddToggleItem(_("Landscape"),nullptr, SIGM_Landscape, 0, landscape);
 	menu->AddSep(_("Paper"));
 
 	menu->AddItem(_("Paper Size"),999);
@@ -387,9 +387,10 @@ Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid, Lax
 		//if (!strcmp(laidout->papersizes.e[c]->name,"Custom")) continue; // *** 
 		if (!strcmp(laidout->papersizes.e[c]->name,"Whatever")) continue;
 
-		menu->AddItem(laidout->papersizes.e[c]->name,c,
-				LAX_ISTOGGLE
-				| (!strcmp(paper,laidout->papersizes.e[c]->name) ? LAX_CHECKED : 0));
+		menu->AddToggleItem(laidout->papersizes.e[c]->name, nullptr, c, 0, (!strcasecmp(paper,laidout->papersizes.e[c]->name)));
+		//menu->AddItem(laidout->papersizes.e[c]->name,c,
+		//		LAX_ISTOGGLE
+		//		| (!strcmp(paper,laidout->papersizes.e[c]->name) ? LAX_CHECKED : 0));
 	}
 	menu->EndSubMenu();
 	//menu->AddItem(_("Custom paper size"),SIGM_CustomPaper);
@@ -401,8 +402,12 @@ Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid, Lax
 	}
 
 	menu->AddSep();
-	menu->AddItem(_("Show page images"), SIGM_Thumbs, LAX_ISTOGGLE|(showthumbs?LAX_CHECKED:0));
-	menu->AddItem(_("Scale pages when reimposing"), SIGM_Rescale_Pages, LAX_ISTOGGLE|(rescale_pages?LAX_CHECKED:0));
+
+	menu->AddToggleItem(_("Show page images"), nullptr, SIGM_Thumbs, 0, showthumbs);
+	//menu->AddItem(_("Show page images"), SIGM_Thumbs, LAX_ISTOGGLE|(showthumbs?LAX_CHECKED:0));
+
+	menu->AddToggleItem(_("Scale pages when reimposing"),nullptr, SIGM_Rescale_Pages, 0, rescale_pages);
+	//menu->AddItem(_("Scale pages when reimposing"), SIGM_Rescale_Pages, LAX_ISTOGGLE|(rescale_pages?LAX_CHECKED:0));
 	return menu;
 }
 
