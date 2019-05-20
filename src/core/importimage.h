@@ -51,8 +51,10 @@ class ImportImageSettings : public Laxkit::anObject, public LaxFiles::DumpUtilit
 	double defaultdpi; //overrideable per image
 	int scaleup, scaledown; //overrideable per image
 	Laxkit::NumStack<flatpoint> alignment; //one per imposition page type
+	bool expand_gifs;
 
 	int perpage; //number per page, or as will fit (-1), or all in 1 page (-2)
+	int every_nth; //if > 1, skip every_nth-1 pages before adding
 
 	//PtrStack<ImageAlternateSpec> alternatesettings; //overrides laidout default settings
 

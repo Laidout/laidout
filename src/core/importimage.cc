@@ -17,6 +17,7 @@
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
 #include <lax/transformmath.h>
+#include <lax/utf8string.h>
 #include <lax/interfaces/somedatafactory.h>
 #include <dirent.h>
 #include <unistd.h>
@@ -64,8 +65,10 @@ ImportImageSettings::ImportImageSettings()
 	scaleup      = scaledown = 0;
 	startpage    = 0;
 	perpage      = 0;
+	every_nth    = 1;
 	destination  = 0;
 	destobject   = NULL;
+	expand_gifs  = true;
 }
 
 ImportImageSettings::~ImportImageSettings()
@@ -85,8 +88,10 @@ ImportImageSettings *ImportImageSettings::duplicate()
 	d->scaleup      = scaleup=scaledown;
 	d->startpage    = startpage;
 	d->perpage      = perpage;
+	d->every_nth    = every_nth;
 	d->destination  = destination;
 	d->destobject   = destobject;
+	d->expand_gifs  = expand_gifs;
 
 	for (int c=0; c<alignment.n; c++) d->alignment.push(alignment.e[c]);
 
@@ -112,6 +117,34 @@ void ImportImageSettings::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFile
 			else if (!strcmp(value,"fit")) perpage=-1;
 			else if (IntAttribute(value,&perpage)) ;
 			else perpage=-1;
+
+		} else if (!strcmp(name,"every_nth")) {
+			IntAttribute(value, &every_nth);
+
+		} else if (!strcmp(name,"scaleUpToFit")) {
+			scaleup = BooleanAttribute(value);
+
+		} else if (!strcmp(name,"scaleDownToFit")) {
+			scaledown = BooleanAttribute(value);
+
+		} else if (!strcmp(name,"expand_gifs")) {
+			expand_gifs = BooleanAttribute(value);
+
+		} else if (!strcmp(name,"startpage")) {
+			IntAttribute(value, &startpage);
+
+		} else if (!strcmp(name,"alignment")) {
+			//snag 1 per, should be "(number) x y"
+			double v[2];
+			alignment.flush();
+			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
+				name= att->attributes.e[c]->attributes.e[c2]->name;
+				value=att->attributes.e[c]->attributes.e[c2]->value;
+
+				if (DoubleListAttribute(value, v, 2) == 2) {
+					alignment.push(flatpoint(v[0],v[1]));
+				}
+			}
 		}
 
 	}
@@ -128,12 +161,16 @@ void ImportImageSettings::dump_out(FILE *f,int indent,int what,LaxFiles::DumpCon
 	if (perpage == -1) fprintf(f, "%sperPage fit\n", spc);
 	else if (perpage == -2) fprintf(f, "%sperPage all\n", spc);
 
+	fprintf(f, "%severy_nth %d\n", spc, every_nth);
+
 	fprintf(f, "%sscaleUpToFit %s\n", spc, scaleup ? "yes" : "no");
 	fprintf(f, "%sscaleDownToFit %s\n", spc, scaledown ? "yes" : "no");
 
 	//fprintf(f, "%sdestination %d\n", spc, destination);
 
 	fprintf(f, "%sstartpage %d\n", spc, startpage);
+
+	fprintf(f, "%sexpand_gifs %s\n", spc, expand_gifs ? "yes" : "no");
 
 	if (alignment.n) {
 		fprintf(f, "%salignment\n", spc);
@@ -607,12 +644,15 @@ int dumpInImages(ImportImageSettings *settings,
 	LaxImage *pimage=NULL;
 	ImageData *imaged=NULL;
 
-	int curpage=settings->startpage;
+	int curpage = settings->startpage;
 	double dpi;
-	int scaleup=settings->scaleup;
-	int scaledown=settings->scaledown;
-	int scaleflag=(scaleup?1:0)|(scaledown?2:0);
-	double *xywh=NULL;
+	int scaleup   = settings->scaleup;
+	int scaledown = settings->scaledown;
+	int scaleflag = (scaleup?1:0)|(scaledown?2:0);
+	double *xywh  = NULL;
+	int width, height, subimages;
+	long filesize;
+	Utf8String str;
 
 	FILE *f;
 	char data[50],*p;
@@ -620,10 +660,51 @@ int dumpInImages(ImportImageSettings *settings,
 	for (c=0; c<nfiles; c++) {
 		if (!imagefiles[c] || !strcmp(imagefiles[c],".") || !strcmp(imagefiles[c],"..")) continue;
 		
-		imaged=NULL;
-		image=pimage=NULL;
+		imaged = NULL;
+		image = pimage = NULL;
 
-		dpi=settings->defaultdpi;
+		dpi = settings->defaultdpi;
+
+		if (settings->expand_gifs) {
+			if (ImageLoader::Ping(imagefiles[c], &width, &height, &filesize, &subimages) == 0) {
+				if (subimages > 1) {
+					for (int c2=0; c2<subimages; c2++) {
+						image = ImageLoader::LoadImage(imagefiles[c], (previewfiles ? previewfiles[c] : NULL),0,0,&pimage, 0,-1,NULL, true, c2);
+						if (!image) continue;
+
+						DBG cerr << "dump image files subfile "<<c2<<": "<<imagefiles[c]<<endl;
+
+						imaged = dynamic_cast<ImageData*>(LaxInterfaces::somedatafactory()->NewObject("ImageData"));
+						imaged->SetImage(image,NULL);//incs count of image
+						image->dec_count();
+
+						str.Sprintf("%s (%d)", lax_basename(imagefiles[c]), c2);
+						imaged->Id(str.c_str());
+
+						numonpage++;
+						int pg;
+						if (settings->perpage == -1) pg = -1;
+						else if (settings->perpage == -2) pg = curpage;
+						else {
+							pg = curpage;
+							if (numonpage == settings->perpage) {
+								numonpage=0;
+							}
+						}
+						if (!images) images = new ImagePlopInfo(imaged,dpi,pg,scaleflag,xywh);
+						else images->add(imaged,dpi,pg,scaleflag,xywh);
+						if (xywh) { delete[] xywh; xywh = NULL; }
+						if (numonpage == 0) {
+							if (settings->every_nth > 1) curpage += settings->every_nth;
+							else curpage++;
+						}
+
+					}
+					continue;
+				}
+			}
+		}
+
 
 		 //first check if it is recognized as image (the easiest check)
 		image = ImageLoader::LoadImage(imagefiles[c], (previewfiles ? previewfiles[c] : NULL),0,0,&pimage, 0,-1,NULL, true, 0);
@@ -631,25 +712,25 @@ int dumpInImages(ImportImageSettings *settings,
 		if (image) {
 			DBG cerr << "dump image files: "<<imagefiles[c]<<endl;
 
-			imaged=dynamic_cast<ImageData*>(LaxInterfaces::somedatafactory()->NewObject("ImageData"));
+			imaged = dynamic_cast<ImageData*>(LaxInterfaces::somedatafactory()->NewObject("ImageData"));
 			imaged->SetImage(image,NULL);//incs count of image
 			image->dec_count();
 
 		} else {
 			 // check to see if it is an image list or EPS based on first chars of file.
 			 // Otherwise ignore
-			imaged=NULL;
+			imaged = NULL;
 
-			f=fopen(imagefiles[c],"r");
+			f = fopen(imagefiles[c],"r");
 			if (f) {
 				int n=0;
-				n=fread(data,1,50,f);
+				n = fread(data,1,50,f);
 				fclose(f);
 				if (n) {
 					data[n]='\0';
 					 //---check if is image list
 					if (!strncasecmp(data,"#Laidout ",9)) {
-						p=data+9;
+						p = data+9;
 						//**** should parse in the version of the image list,
 						//**** right now just assumes it is an image list
 						//**** if that string appears in the first 50 chars..
@@ -691,22 +772,25 @@ int dumpInImages(ImportImageSettings *settings,
 
 		numonpage++;
 		int pg;
-		if (settings->perpage==-1) pg=-1;
-		else if (settings->perpage==-2) pg=curpage;
+		if (settings->perpage == -1) pg = -1;
+		else if (settings->perpage == -2) pg = curpage;
 		else {
-			pg=curpage;
-			if (numonpage==settings->perpage) {
+			pg = curpage;
+			if (numonpage == settings->perpage) {
 				numonpage=0;
 			}
 		}
-		if (!images) images=new ImagePlopInfo(imaged,dpi,pg,scaleflag,xywh);
+		if (!images) images = new ImagePlopInfo(imaged,dpi,pg,scaleflag,xywh);
 		else images->add(imaged,dpi,pg,scaleflag,xywh);
-		if (xywh) { delete[] xywh; xywh=NULL; }
-		if (numonpage==0) curpage++;
+		if (xywh) { delete[] xywh; xywh = NULL; }
+		if (numonpage == 0) {
+			if (settings->every_nth > 1) curpage += settings->every_nth;
+			curpage++;
+		}
 	}
 
 	if (images) {
-		c=dumpInImages(settings, doc,images,settings->startpage);
+		c = dumpInImages(settings, doc,images,settings->startpage);
 		delete images;
 	}
 	return c;
