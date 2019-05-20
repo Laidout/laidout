@@ -205,10 +205,12 @@ ObjectDef *PdfExportFilter::GetObjectDef()
 
 //-------------------------------------- pdf out -------------------------------------------
 
+AffineStack transforms;
+double current_dpi = 300;
+
 //---------------------------- PdfObjInfo
 static int o=1;//***DBG
 
-double current_dpi = 300;
 
 /*! \class PdfObjInfo
  * \brief Temporary class to hold info about pdf objects during export.
@@ -561,6 +563,7 @@ int pdfSetClipToPath(char *&stream,LaxInterfaces::SomeData *outline,int iscontin
 
 //--------------------------------------- PDF Out ------------------------------------
 
+
 //! Save the document as PDF.
 /*! This does not export EpsData.
  * Files are not checked for existence. They are clobbered if they already exist, and are writable.
@@ -621,7 +624,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	DBG      <<papergroup->papers.n<<" ====================\n";
 
 	 // initialize outside accessible ctm
-	//AxesStack transforms;
+	transforms.ClearAxes();
 	psCtmInit();
 	psFlushCtms();
 
@@ -634,7 +637,6 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	
 	int warning=0;
 	Spread *spread=NULL;
-	int c2,l;
 
 	 // Start the list of objects with the head of free objects, which
 	 // has generation number of 65535. Its number is the object number of
@@ -711,6 +713,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 							 "72 0 0 72 0 0 cm\n"); // convert from inches
 			//transforms.Multiply(Affine(72.,0.,0.,72.,0.,0.));
 			psConcat(72.,0.,0.,72.,0.,0.);
+			transforms.PushAndNewAxes(72.,0.,0.,72.,0.,0.);
 
 
 			 //apply papergroup->paper transform
@@ -720,6 +723,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			appendstr(stream,scratch);
 			//transforms.Multiply(m);
 			psConcat(m);
+			transforms.PushAndNewAxes(m);
 			
 			 //write out limbo object if any
 			if (limbo && limbo->n()) {
@@ -739,23 +743,25 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 				}
 				
 				 // for each paper in paper layout..
-				for (c2=0; c2<spread->pagestack.n(); c2++) {
+				for (int c2=0; c2<spread->pagestack.n(); c2++) {
 					PaperStyle *defaultpaper=doc->imposition->GetDefaultPaper();
 					psDpi(defaultpaper->dpi);
+					current_dpi = defaultpaper->dpi;
 					
-					pgindex=spread->pagestack.e[c2]->index;
-					if (pgindex<0 || pgindex>=doc->pages.n) continue;
-					page=doc->pages.e[pgindex];
+					pgindex = spread->pagestack.e[c2]->index;
+					if (pgindex < 0 || pgindex >= doc->pages.n) continue;
+					page = doc->pages.e[pgindex];
 					
 					 // transform to page
 					appendstr(stream,"q\n"); //save ctm
 					//transforms.PushAxes();
 					psPushCtm();
+					transforms.PushAxes();
 					transform_copy(m,spread->pagestack.e[c2]->outline->m());
 					sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
 							m[0], m[1], m[2], m[3], m[4], m[5]); 
 					appendstr(stream,scratch);
-					//transforms.Multiply(m);
+					transforms.Multiply(m);
 					psConcat(m);
 
 					 // set clipping region
@@ -771,38 +777,43 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 
 						for (int pb=0; pb<page->pagebleeds.n; pb++) {
 							PageBleed *bleed = page->pagebleeds[pb];
+							if (bleed->index < 0 || bleed->index >= doc->pages.n) continue;
 							Page *otherpage = doc->pages[bleed->index];
-							if (!otherpage->HasObjects()) continue;
+							if (!otherpage || !otherpage->HasObjects()) continue;
 
 							sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
 									bleed->matrix[0], bleed->matrix[1], bleed->matrix[2], bleed->matrix[3], bleed->matrix[4], bleed->matrix[5]); 
+							appendstr(stream,"q\n"); //save ctm
 							appendstr(stream,scratch);
-							psConcat(m);
+							transforms.PushAndNewAxes(bleed->matrix);
+							psPushCtm();
+							psConcat(bleed->matrix);
 
-							for (int l = 0; l < otherpage->layers.n(); l++) {
-								pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,otherpage->layers.e(l),log,warning,config);
-							}
+							//for (int l = 0; l < otherpage->layers.n(); l++) {
+								//pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,otherpage->layers.e(l),log,warning,config);
+							//}
 
-							appendstr(stream,"Q\n"); //pop ctm, page transform
+							appendstr(stream,"Q\n"); //pop ctm, bleed transform
+							transforms.PopAxes();
 							psPopCtm();
 						}
 		            }
 
 						
 					 // for each layer on the page..
-					for (l=0; l<page->layers.n(); l++) {
+					for (int l=0; l<page->layers.n(); l++) {
 						pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,page->layers.e(l),log,warning,config);
 					}
 
 					appendstr(stream,"Q\n"); //pop ctm, page transform
-					//transforms.PopAxes();
+					transforms.PopAxes();
 					psPopCtm();
 				}
 			}
 
 			 // print out paper footer
 			appendstr(stream,"Q\n"); //pop papergroup transform
-			//transforms.PopAxes();
+			transforms.PopAxes();
 			psPopCtm();
 //			if (paperrotate>0) {
 //				appendstr(stream,"Q\n"); //pop paper rotation transform
