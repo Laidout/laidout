@@ -796,7 +796,7 @@ int isJpg(const char *file)
 	return 0;
 }
 
-//! Return whether it is an EPS (returns 2) , or can be opened by Imlib2 (returns 1).
+//! Return whether it is an EPS (returns 2) , or can be opened by laxkit (returns 1).
 /*! \ingroup misc
  *
  * \todo this should probably be removed in favor of a more robust ImportImageFilter system
@@ -805,11 +805,10 @@ int is_bitmap_image(const char *file)
 {
 	if (isEpsFile(file,NULL,NULL)) return 2;
 
-	Laxkit::LaxImage *img=NULL;
-	img = Laxkit::ImageLoader::LoadImage(file);
-	if (!img) return 0;
+	int width,height,subfiles;
+	long fsize;
+	return !Laxkit::ImageLoader::Ping(file, &width,&height, &fsize, &subfiles);
 	
-	delete img;
 	return 1;
 }
 
