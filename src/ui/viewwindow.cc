@@ -2674,19 +2674,19 @@ void LaidoutViewport::Refresh()
 		DBGCAIROSTATUS(" LO viewport after spread, cairo status:  ")
 
 		 // draw the page's objects and margins
-		Page *page=NULL;
-		int pagei=-1;
-		flatpoint p;
-		SomeData *sd=NULL;
+		Page *page = NULL;
+		int pagei = -1;
+		flatpoint p,p2;
+		SomeData *sd = NULL;
 		for (c=0; c<spread->pagestack.n(); c++) {
 			DBG cerr <<" drawing from pagestack.e["<<c<<"], which has page "<<spread->pagestack.e[c]->index<<endl;
-			page=spread->pagestack.e[c]->page;
-			pagei=spread->pagestack.e[c]->index;
+			page  = spread->pagestack.e[c]->page;
+			pagei = spread->pagestack.e[c]->index;
 
 			if (!page) { // try to look up page in doc using pagestack->index
 				if (spread->pagestack.e[c]->index>=0 && spread->pagestack.e[c]->index<doc->pages.n) {
-					pagei=spread->pagestack.e[c]->index;
-					page=spread->pagestack.e[c]->page=doc->pages.e[pagei];
+					pagei = spread->pagestack.e[c]->index;
+					page  = spread->pagestack.e[c]->page=doc->pages.e[pagei];
 				}
 			}
 
@@ -2694,30 +2694,32 @@ void LaidoutViewport::Refresh()
 			if (!page) {
 				 //if no page, then draw an x through the page stack outline
 				if (!spread->pagestack.e[c]->outline) continue;
-				PathsData *paths=dynamic_cast<PathsData *>(spread->pagestack.e[c]->outline);
+				PathsData *paths = dynamic_cast<PathsData *>(spread->pagestack.e[c]->outline);
 				if (!paths || !paths->paths.n) continue;
-				Coordinate *p=paths->paths.e[0]->path;
+				Coordinate *p = paths->paths.e[0]->path;
 				if (!p) continue;
 
-				flatpoint center=flatpoint((paths->minx+paths->maxx)/2,(paths->miny+paths->maxy)/2);
-				p=p->firstPoint(1);
-				Coordinate *tp=p;
+				flatpoint center = flatpoint((paths->minx+paths->maxx)/2,(paths->miny+paths->maxy)/2);
+				p = p->firstPoint(1);
+				Coordinate *tp = p;
+				dp->PushAndNewTransform(paths->m()); // transform to page coords
 				dp->LineAttributes(0,LineSolid, CapButt, JoinMiter);
 				dp->LineWidthScreen(1);
 				dp->NewFG(0,0,0);
 				do {
-					if (tp->flags&POINT_VERTEX) 
-						dp->drawline(transform_point(paths->m(),center), transform_point(paths->m(),tp->fp));
-					tp=tp->next;
+					if (tp->flags&POINT_VERTEX) {
+						dp->drawline(center, tp->fp);
+					}
+					tp = tp->next;
 				} while (tp!=p);
-
+				dp->PopAxes();
 
 				continue;
 			}
 
 
 			 //else we have a page, so draw it all
-			sd=spread->pagestack.e[c]->outline;
+			sd = spread->pagestack.e[c]->outline;
 			dp->PushAndNewTransform(sd->m()); // transform to page coords
 			if (drawflags&DRAW_AXES) dp->drawaxes();
 			
@@ -2736,7 +2738,9 @@ void LaidoutViewport::Refresh()
 				//dp->setSourceAlpha(.5);
 				for (int pb=0; pb<page->pagebleeds.n; pb++) {
 					PageBleed *bleed = page->pagebleeds[pb];
+					if (bleed->index < 0 || bleed->index >= doc->pages.n) continue;
 					Page *otherpage = doc->pages[bleed->index];
+					if (!otherpage) continue;
 					
 					dp->PushAndNewTransform(bleed->matrix);
 
