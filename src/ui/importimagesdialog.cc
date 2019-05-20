@@ -125,11 +125,26 @@ Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what,LaxFiles::D
 	 //------------export settings
 	double dpi      =dynamic_cast<LineInput *>(findWindow("DPI"))->GetLineEdit()->GetDouble(NULL);
 
-	int perpage=-2; //force to 1 page
-	if (dynamic_cast<CheckBox *>(findWindow("perpageexactly"))->State()==LAX_ON)
-		perpage=dynamic_cast<LineInput *>(findWindow("NumPerPage"))->GetLineEdit()->GetLong(NULL);
-	else if (dynamic_cast<CheckBox *>(findWindow("perpagefit"))->State()==LAX_ON)
-		perpage=-1; //as will fit to page
+	int perpage = -2; //force to 1 page
+	if (dynamic_cast<CheckBox *>(findWindow("perpageexactly"))->State()==LAX_ON) {
+		const char *str = dynamic_cast<LineInput *>(findWindow("NumPerPage"))->GetLineEdit()->GetCText();
+		if (str) {
+			int left, right;
+			if (ParseIntFraction(str, &left, &right)) {
+				perpage = left;
+				if (right >= 1) att->push("every_nth", right);
+			}
+			else perpage = 1;
+		}
+
+	} else if (dynamic_cast<CheckBox *>(findWindow("perpagefit"))->State()==LAX_ON) {
+		perpage = -1; //as will fit to page
+	}
+
+	 //perPage
+	if (perpage==-2) att->push("perPage","all");
+	else if (perpage==-1) att->push("perPage","fit");
+	else att->push("perPage",perpage,-1);
 
 	 //dpi
 	sprintf(scratch,"%.10g",dpi);
@@ -138,11 +153,6 @@ Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what,LaxFiles::D
 	 //autopreview
 	att->push("autopreview",
 				(dynamic_cast<CheckBox *>(findWindow("autopreview"))->State()==LAX_ON)?"yes":"no");
-
-	 //perPage
-	if (perpage==-2) att->push("perPage","all");
-	else if (perpage==-1) att->push("perPage","fit");
-	else att->push("perPage",perpage,-1);
 
 	 //maxPreviewWidth 200
 	int w=dynamic_cast<LineInput *>(findWindow("PreviewWidth"))->GetLineEdit()->GetLong(NULL);
@@ -359,13 +369,13 @@ int ImportImagesDialog::init()
 						0,0,2,2,2,2);
 	AddWin(linp,1, linp->win_w+linpheight*8,10,100,50,0, linp->win_h,0,0,50,0, -1);
 	
-	last=check=new CheckBox(this,"scaleup",NULL,CHECK_LEFT, 0,0,0,0,1, 
+	last=check=new CheckBox(this,"scaleup",NULL,CHECK_LEFT, 0,0,0,0,0, 
 						last,object_id,"scaleup", _("Scale up"),5,5);
 	if (settings->scaleup) check->State(LAX_ON); else check->State(LAX_OFF);
 	check->tooltip(_("If necessary, scale up images to just fit within the target area"));
 	AddWin(check,1,  check->win_w,0,0,50,0, check->win_h,0,0,50,0, -1);
 
-	last=check=new CheckBox(this,"scaledown",NULL,CHECK_LEFT, 0,0,0,0,1, 
+	last=check=new CheckBox(this,"scaledown",NULL,CHECK_LEFT, 0,0,0,0,0, 
 						last,object_id,"scaledown", _("Scale down"),5,5);
 	if (settings->scaledown) check->State(LAX_ON); else check->State(LAX_OFF);
 	check->tooltip(_("If necessary, scale down images to just fit within the target area"));
@@ -383,7 +393,7 @@ int ImportImagesDialog::init()
 	AddNull();
 	
 	AddSpacer(linpheight,0,0,50, linpheight,0,0,50);
-	last=check=new CheckBox(this,"perpageexactly",NULL,CHECK_LEFT, 0,0,0,0,1, 
+	last=check=new CheckBox(this,"perpageexactly",NULL,CHECK_LEFT, 0,0,0,0,0, 
 						last,object_id,"perpageexactly", _("Exactly this many:"),5,5);
 	if (settings->perpage>=0) {
 		check->State(LAX_ON); 
@@ -394,8 +404,9 @@ int ImportImagesDialog::init()
 	}
 	AddWin(check,1, check->win_w,1,0,50,0, check->win_h,0,0,50,0, -1);
 
-	sprintf(str,"%d",settings->perpage>0?settings->perpage:1);
-	last=linp=new LineInput(this,"NumPerPage",NULL,0, 0,0,0,0,0, last,object_id,"perpageexactlyn",
+	if (settings->every_nth > 1) sprintf(str,"%d/%d", settings->perpage>0?settings->perpage:1, settings->every_nth);
+	else sprintf(str,"%d",settings->perpage>0?settings->perpage:1);
+	last = linp = new LineInput(this,"NumPerPage",NULL,0, 0,0,0,0,0, last,object_id,"perpageexactlyn",
 						NULL,str,0,
 						textheight*10,textheight+4,2,2,2,2);
 	linp->GetLineEdit()->setWinStyle(LINEEDIT_SEND_FOCUS_ON,1);
@@ -404,7 +415,7 @@ int ImportImagesDialog::init()
 	AddNull();
 
 	AddSpacer(linpheight,0,0,50, linpheight,0,0,50);
-	last=check=new CheckBox(this,"perpagefit",NULL,CHECK_LEFT, 0,0,0,0,1, 
+	last=check=new CheckBox(this,"perpagefit",NULL,CHECK_LEFT, 0,0,0,0,0, 
 						last,object_id,"perpagefit", _("As many as will fit per page"),5,5);
 	if (settings->perpage==-1) check->State(LAX_ON); else check->State(LAX_OFF);
 	AddWin(check,1, check->win_w,0,0,50,0, check->win_h,0,0,50,0, -1);
@@ -412,9 +423,17 @@ int ImportImagesDialog::init()
 	AddNull();
 
 	AddSpacer(linpheight,0,0,50, linpheight,0,0,50);
-	last=check=new CheckBox(this,"perpageall",NULL,CHECK_LEFT, 0,0,0,0,1, 
+	last=check=new CheckBox(this,"perpageall",NULL,CHECK_LEFT, 0,0,0,0,0, 
 						last,object_id,"perpageall", _("All on one page"),5,5);
 	if (settings->perpage==-2) check->State(LAX_ON); else check->State(LAX_OFF);
+	AddWin(check,1, check->win_w,1,0,50,0, check->win_h,0,0,50,0, -1);
+	AddWin(NULL,0, 2001,2000,0,50,0, 0,0,0,50,0, -1);
+
+
+	 //------------------------ preview options ----------------------
+	last = check = new CheckBox(this,"expandgifs",NULL,CHECK_LEFT, 0,0,0,0,0, 
+						last,object_id,"expandgifs", _("Expand animated gifs"),5,5);
+	if (settings->expand_gifs) check->State(LAX_ON); else check->State(LAX_OFF);
 	AddWin(check,1, check->win_w,1,0,50,0, check->win_h,0,0,50,0, -1);
 	AddWin(NULL,0, 2001,2000,0,50,0, 0,0,0,50,0, -1);
 
@@ -607,6 +626,12 @@ int ImportImagesDialog::Event(const Laxkit::EventData *data,const char *mes)
 		check=dynamic_cast<CheckBox *>(findWindow("perpageall"));
 		check->State(LAX_OFF);
 
+		return 0;
+
+	} else if (!strcmp(mes,"expandgifs")) {
+		CheckBox *check;
+		check = dynamic_cast<CheckBox *>(findWindow("expandgifs"));
+		settings->expand_gifs = (check->State() == LAX_ON);
 		return 0;
 
 	} else if (!strcmp(mes,"dpi")) {
@@ -834,6 +859,29 @@ Laxkit::ImageInfo *ImportImagesDialog::findImageInfo(const char *fullfile,int *i
 	return NULL;
 }
 
+/*! Turn a string like "234/656" to the two numbers. If no second number return 0 for it.
+ * Return true on success.
+ */
+bool ImportImagesDialog::ParseIntFraction(const char *str, int *left, int *right)
+{
+	char *endptr = nullptr;
+	int i = strtol(str, &endptr, 10);
+	if (endptr == str) return false;
+	str = endptr;
+	while (isspace(*str) || *str == '/') str++;
+	if (!*str) {
+		*left = i;
+		*right = 0;
+		return true;
+	}
+
+	int i2 = strtol(str, &endptr, 10);
+	if (endptr == str) return false;
+	*left = i;
+	*right = i2;
+	return true;
+}
+
 //! Instead of sending the file name(s) to owner, call dump_images directly.
 /*! Returns 0 if nothing done. Else nonzero.
  *  
@@ -862,17 +910,18 @@ int ImportImagesDialog::send(int id)
 		
 		const MenuItem *item;
 		for (int c=0; c<filelist->NumSelected(); c++) {
-			imagefiles[n]=previewfiles[n]=NULL;
-			item=filelist->GetSelected(c);
+			imagefiles[n] = previewfiles[n] = NULL;
+			item = filelist->GetSelected(c);
 
 			if (item) {
-				imagefiles[n]=path->GetText();
+				imagefiles[n] = path->GetText();
 				if (imagefiles[n][strlen(imagefiles[n])-1]!='/') appendstr(imagefiles[n],"/");
 				appendstr(imagefiles[n],item->name);
 				if (is_bitmap_image(imagefiles[n])) {
 					n++;
 				} else {
 					delete[] imagefiles[n];
+					imagefiles[n] = nullptr;
 				}
 			}
 		}
@@ -884,14 +933,14 @@ int ImportImagesDialog::send(int id)
 	} else { 
 		 //nothing currently selected in the item list...
 		 // so just use the single file in file input
-		char *blah=path->GetText();
+		char *blah = path->GetText();
 		if (blah[strlen(blah)]!='/') appendstr(blah,"/");
 		appendstr(blah,file->GetCText());
 		if (isblank(blah)) {
 			delete[] blah;
 		} else {
 			if (is_bitmap_image(blah)) {
-				n=1;
+				n = 1;
 				imagefiles  =new char*[n];
 				previewfiles=new char*[n];
 				imagefiles[0]=blah;
@@ -901,10 +950,10 @@ int ImportImagesDialog::send(int id)
 				n=0;
 			}
 		}
-
 	}
+
 	if (!n) {
-		cout <<"***need to implement importimagedialog send message to viewport or message saying no go."<<endl;
+		//cout <<"***need to implement importimagedialog send message to viewport or message saying no go."<<endl;
 		return 0;
 	}
 
@@ -913,14 +962,15 @@ int ImportImagesDialog::send(int id)
 	ImageInfo *info;
 	for (int c=0; c<n; c++) {
 		if (!imagefiles[c]) continue;
-		if (file_exists(imagefiles[c],1,NULL)!=S_IFREG) {
+		if (file_exists(imagefiles[c],1,NULL) != S_IFREG) {
 			delete[] imagefiles[c];
-			imagefiles[c]=NULL;
+			imagefiles[c] = NULL;
 			continue;
 		}
-		info=findImageInfo(imagefiles[c]);
-		if (info) previewfiles[c]=newstr(info->previewfile);
-			else  previewfiles[c]=getPreviewFileName(imagefiles[c]);
+		info = findImageInfo(imagefiles[c]);
+		if (info) previewfiles[c] = newstr(info->previewfile);
+			else  previewfiles[c] = getPreviewFileName(imagefiles[c]);
+
 		if (!file_exists(previewfiles[c],1,NULL)) {
 			if (dynamic_cast<CheckBox *>(findWindow("autopreview"))->State()==LAX_ON) {
 
@@ -947,13 +997,23 @@ int ImportImagesDialog::send(int id)
 	if (toobj) { settings->destobject = toobj;  toobj->inc_count(); }
 
 	int perpage=-2; //force to 1 page
-	if (dynamic_cast<CheckBox *>(findWindow("perpageexactly"))->State()==LAX_ON)
-		perpage=dynamic_cast<LineInput *>(findWindow("NumPerPage"))->GetLineEdit()->GetLong(NULL);
-	else if (dynamic_cast<CheckBox *>(findWindow("perpagefit"))->State()==LAX_ON)
+	if (dynamic_cast<CheckBox *>(findWindow("perpageexactly"))->State()==LAX_ON) {
+		const char *str = dynamic_cast<LineInput *>(findWindow("NumPerPage"))->GetLineEdit()->GetCText();
+		if (str) {
+			int left, right;
+			if (ParseIntFraction(str, &left, &right)) {
+				perpage = left;
+				settings->every_nth = right >= 1 ? right : 1;
+			}
+			else perpage = 1;
+		}
+
+	} else if (dynamic_cast<CheckBox *>(findWindow("perpagefit"))->State()==LAX_ON) {
 		perpage=-1; //as will fit to page
+	}
 	if (perpage==0 || perpage<-2) perpage=-1;
 	settings->perpage=perpage;
-		
+
 	dumpInImages(settings, doc, (const char **)imagefiles,(const char **)previewfiles,n);
 	deletestrs(imagefiles,n);
 	deletestrs(previewfiles,n);

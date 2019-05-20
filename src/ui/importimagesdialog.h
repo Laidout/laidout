@@ -31,6 +31,8 @@ namespace Laidout {
 
 class ImportImagesDialog : public Laxkit::FileDialog
 {
+	bool ParseIntFraction(const char *str, int *left, int *right);
+
  protected:
 	int curitem;
 	Laxkit::PtrStack<Laxkit::ImageInfo> images;
