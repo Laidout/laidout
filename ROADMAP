@@ -8,6 +8,7 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 VERSION 0.098
 -------------
        debug previous version a bit
+(done) Animated gif import
 (done) Clip paths
 (done) Clip path in place editing
 (done) Convert backend to using Theme objects for easier adjusting in the future

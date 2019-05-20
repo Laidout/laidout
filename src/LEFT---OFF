@@ -169,6 +169,17 @@ test:
   make some test scripts for command line testing
 
 
+alternate packaging:
+  snapcraft
+  flatpak
+  appimage
+  debian
+
+gif flipbooks:
+  for one offs, need to implement progressive repeat imposing
+  auto format partition so final page size has same aspect as image
+  sig editor needs number input
+
 need something like laximages->Save(file, format, native_save_only), in case object doesn't know how to save to that format.. maybe default to something like static ImageLoader::Save
 
 need ability to show "reprocessing.." or "progress.." indicator in different thread to what is actually processing
@@ -180,6 +191,7 @@ export current appears to be broken
 object content selector menu
 
 object clipping:
+  menu should bold the object names.. hard to read as is
   applying clip path should not destroy path's style settings
   clip path shouldn't have to be a path.. be able to be text, or whatever provides an Area path
   generate default clip path for editing from area path or bounding box
@@ -305,6 +317,7 @@ importdialog ImportDialog import dialog:
   would be nice to show preview of what is to be imported
 html: htmlgallery: html out htmlout:
   parallax:
+    auto gyrate
     control over parallax point
 	autoplay repeating parallax elements
   specify image file name, also preview file name "###-s.png"
@@ -629,6 +642,7 @@ GradientInterface: gradients
 node editor NodeInterface nodes: node: interface:
   DONE resize preview broken
 
+  need solution for shared interface getting messages for different nodes
   data node types:
     generic Value in/out. Run off an ObjectDef.
     gradient
@@ -1889,3 +1903,5 @@ DONE Meta window for doc meta
 DONE Meta window for html out
 DONE html out
 DONE bug: text selection and highlighting is really out of whack.. int/float troubles?  <-- dp->textextent is NOT returning same as font->Extent!!
+DONE skip pages (at regular intervals) on multi-image import.
+DONE animated gif import
