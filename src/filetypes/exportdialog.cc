@@ -551,7 +551,7 @@ int ExportDialog::init()
 	rotate90->tooltip(_("Rotate each paper by 90 degrees"));
 	AddWin(rotate90,1,-1);
 
-	last=rotate180=new CheckBox(this,"rotate180",NULL,CHECK_CIRCLE|CHECK_LEFT,
+	last = rotate180 = new CheckBox(this,"rotate180",NULL,CHECK_CIRCLE|CHECK_LEFT,
 						 0,0,0,0,0, 
 						 last,object_id,"rotate180",
 						 _("180"), CHECKGAP,5);
@@ -742,11 +742,9 @@ void ExportDialog::updateEdits()
 		box=dynamic_cast<WinFrameBox*>(wholelist.e[c]);
 		if (!box || !box->win()) continue;
 		str = box->win()->win_name;
-		if (strncmp(str,"extra-",6)) {
-			continue;
+		if (!strncmp(str,"extra-",6) || !strncmp(str+1, "extra",5)) {
+			Pop(c);
 		}
-
-		Pop(c);
 	}
 
 	ObjectDef *def = config->GetObjectDef();
@@ -939,15 +937,15 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"command-check")) {
-		changeTofile(3);
+		changeTofile(DocumentExportConfig::TARGET_Command);
 		return 0;
 
 	} else if (!strcmp(mes,"tofile-check")) {
-		changeTofile(1);
+		changeTofile(DocumentExportConfig::TARGET_Single);
 		return 0;
 
 	} else if (!strcmp(mes,"tofiles-check")) {
-		changeTofile(2);
+		changeTofile(DocumentExportConfig::TARGET_Multi);
 		return 0;
 
 	} else if (!strcmp(mes,"everyspread")) {
@@ -967,7 +965,7 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 		int s=batches->State();
 		if (s==LAX_ON) {
 			//now on, need to force using files, not file
-			changeTofile(2);
+			changeTofile(DocumentExportConfig::TARGET_Multi);
 		}
 		return 0;
 
@@ -983,14 +981,14 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 		} else {
 			batches->State(LAX_ON);
 			config->batches=n;
-			changeTofile(2);
+			changeTofile(DocumentExportConfig::TARGET_Multi);
 		}
 		return 0;
 
 	} else if (!strcmp(mes,"rotatealternate")) {
-		int s=rotatealternate->State();
-		if (s==LAX_ON) config->rotate180=1;
-		else config->rotate180=0;
+		int s = rotatealternate->State();
+		if (s == LAX_ON) config->rotate180 = 1;
+		else config->rotate180 = 0;
 		return 0;
 
 	} else if (!strcmp(mes,"rotate0")) {
@@ -1059,7 +1057,7 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 			return 0;
 		} else if (e->info1==2) {
 			 //focus on
-			changeTofile(2);
+			changeTofile(DocumentExportConfig::TARGET_Multi);
 			return 0;
 		} else if (e->info1==3) {
 			 //focus off
@@ -1079,7 +1077,7 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 			return 0;
 		} else if (e->info1==2) {
 			 //focus on
-			changeTofile(1);
+			changeTofile(DocumentExportConfig::TARGET_Single);
 			return 0;
 		} else if (e->info1==3) {
 			 //focus off
@@ -1098,7 +1096,7 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 			return 0; 
 		} else if (e->info1==2) {
 			 //focus on
-			changeTofile(3);
+			changeTofile(DocumentExportConfig::TARGET_Command);
 			return 0;
 		}
 		return 0;
@@ -1292,21 +1290,20 @@ void ExportDialog::paperRotation(int rotation)
 //! This allows special things to happen when a different printing target is selected.
 /*! Updates the target checkboxes.
  *
- * 1=to file,
- * 2=to files,
- * 3=by command.
+ * Uses DocumentExportConfig::TARGET_*
  *
  * \todo maybe check against range, and whether the filter supports multipage
  */
 void ExportDialog::changeTofile(int t)
 {
-	tofile=t;
-	config->target=t-1;
+	tofile = t;
+	config->target = t;
 
-	if (t==1) batches->State(LAX_OFF);
-	filecheck-> State(tofile==1?LAX_ON:LAX_OFF);
-	filescheck->State(tofile==2?LAX_ON:LAX_OFF);
-	if (commandcheck) commandcheck->State(tofile==3?LAX_ON:LAX_OFF);
+	
+	if (t == DocumentExportConfig::TARGET_Single) batches->State(LAX_OFF);
+	filecheck-> State(tofile == DocumentExportConfig::TARGET_Single ? LAX_ON : LAX_OFF);
+	filescheck->State(tofile == DocumentExportConfig::TARGET_Multi ? LAX_ON : LAX_OFF);
+	if (commandcheck) commandcheck->State(tofile == DocumentExportConfig::TARGET_Command ? LAX_ON : LAX_OFF);
 
 	overwriteCheck();
 }
