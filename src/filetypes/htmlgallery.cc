@@ -274,7 +274,7 @@ void HtmlGalleryExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::Dum
 		fprintf(f,"%swidth  0  #width of resulting image. 0 means auto calculate from dpi.\n",spc);
 		fprintf(f,"%sheight 0  #height of resulting image. 0 means auto calculate from dpi.\n",spc);
 		fprintf(f,"%smake_thumbs true  #Generate thumbnails during output.\n",spc);
-		fprintf(f,"%srender_each_page true  #One html page per spread, and objects are rendered to individual images.\n",spc);
+		fprintf(f,"%srender_each_page true  #One html page per spread, and the page itself is rendered as embedded svg.\n",spc);
 		fprintf(f,"%stemplatevars #List of any template vars.\n",spc);
 		fprintf(f,"%shtml_template_file /path #File containing main html template.\n",spc);
 		fprintf(f,"%simage_template_file /path #File containing html template snippet for individual images.\n",spc);
@@ -300,7 +300,7 @@ LaxFiles::Attribute *HtmlGalleryExportConfig::dump_out_atts(LaxFiles::Attribute 
 	att->push("width", width);
 	att->push("height", height);
 	att->push("make_thumbs", make_thumbs ? "yes" : "no");
-	att->push("render_each_page", make_thumbs ? "yes" : "no");
+	att->push("render_each_page", render_each_page ? "yes" : "no");
 	if (html_template_file) att->push("html_template_file", html_template_file);
 	if (image_template_file) att->push("image_template_file", image_template_file);
 	if (templatevars) att->push(templatevars->duplicate(), -1);
@@ -424,6 +424,15 @@ ObjectDef *HtmlGalleryExportConfig::makeObjectDef()
             0,     //flags
             NULL);//newfunc
 
+    def->push("render_each_page",
+            _("Export Pages"),
+            _("Save each page as embedded svg."),
+            "boolean",
+            NULL,    //range
+            "false", //defvalue
+            0,      //flags
+            NULL); //newfunc
+
     def->push("html_template_file",
             _("Index template file"),
             _("Index template file"),
@@ -474,6 +483,9 @@ Value *HtmlGalleryExportConfig::dereference(const char *extstring, int len)
 	} else if (!strncmp(extstring,"make_thumbs",11)) {
 		return new BooleanValue(make_thumbs);
 
+	} else if (!strncmp(extstring,"render_each_page",11)) {
+		return new BooleanValue(render_each_page);
+
 	} else if (!strncmp(extstring,"html_template_file",18)) {
 		return new FileValue(html_template_file);
 
@@ -509,6 +521,12 @@ int HtmlGalleryExportConfig::assign(FieldExtPlace *ext,Value *v)
                 d=getNumberValue(v, &isnum);
                 if (!isnum) return 0;
                 make_thumbs = (d==0 ? false : true);
+                return 1;
+
+			} else if (!strcmp(str,"render_each_page")) {
+                d=getNumberValue(v, &isnum);
+                if (!isnum) return 0;
+                render_each_page = (d==0 ? false : true);
                 return 1;
 
 			} else if (!strcmp(str,"width")) {
