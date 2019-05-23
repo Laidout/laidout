@@ -768,7 +768,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 					if (ch >= 'A' && ch <= 'Z') ch = tolower(ch);
 					if (!isalnum(ch) && ch != '-' && ch != '_') str.byte(c2, '-');
 				}
-				datameta.Append("data-");
+				//datameta.Append("data-");
 				datameta.Append(str+"=\""+obj_meta->attributes.e[c]->value+"\" "); // *** really need to do some sanity checking on value as well
 			}
 		}
