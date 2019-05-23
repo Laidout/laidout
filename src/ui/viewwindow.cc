@@ -119,6 +119,7 @@ enum ViewActions {
 	VIEW_Save_A_Copy_Incremented,
 	VIEW_Save_As_Template,
 	VIEW_Save_As_Default_Template,
+	VIEW_Revert_To_Save,
 
 	VIEW_Config_Addons,
 	VIEW_Extension,
@@ -130,7 +131,7 @@ enum ViewActions {
 
 	VIEW_Commit,
 	VIEW_Commit_Settings,
-	VIEW_Revert,
+	VIEW_Revert_Commit,
 
 	VIEW_NextTool,
 	VIEW_PreviousTool,
@@ -4134,6 +4135,8 @@ int ViewWindow::init()
 	menu->AddItem(_("Save as template..."),      VIEW_Save_As_Template);
 	menu->AddItem(_("Save as default template"), VIEW_Save_As_Default_Template);
 	menu->AddSep();
+	//menu->AddItem(_("Revert to last save"), VIEW_Revert_To_Save);
+	//menu->AddSep();
 	menu->AddItem(_("New..."),  VIEW_NewDocument);
 	menu->AddItem(_("Open..."), VIEW_Open_Document);
 	menu->AddSep();
@@ -4144,7 +4147,7 @@ int ViewWindow::init()
 //		// - initialize git repository in directory of document or project file
 //		// - command to commit
 //		// - command to revert
-//	menu->AddItem(_("Revert..."), VIEW_Revert);
+//	menu->AddItem(_("Revert..."), VIEW_Revert_Commit);
 
 	last=menub=new MenuButton(this,"save doc",NULL,
 							MENUBUTTON_LEFT|IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"savemenu",-1,
@@ -5297,6 +5300,12 @@ int ViewWindow::PerformAction(int action)
 
 		return 0;
 
+	} else if (action == VIEW_Revert_To_Save) {
+		// flush current document
+		// reload current document
+		// if new document, then just restart
+		return 0;
+
 	} else if (action==VIEW_Backup_Settings) { 
 		app->rundialog(new AutosaveWindow(NULL));
 		return 0;
@@ -5309,7 +5318,7 @@ int ViewWindow::PerformAction(int action)
 		PostMessage("Lazy programmer! Need to implement commit settings!");
 		return 0;
 
-	} else if (action==VIEW_Revert) {
+	} else if (action==VIEW_Revert_Commit) {
 		PostMessage("Lazy programmer! Need to implement revert!");
 		return 0;
 
