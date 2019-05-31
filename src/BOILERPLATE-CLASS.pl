@@ -39,7 +39,7 @@ print HFILE << "END";
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2018 by Tom Lechner
+// Copyright (C) 2019 by Tom Lechner
 //
 //
 #ifndef $NAME_H
@@ -96,7 +96,7 @@ print CCFILE << "END";
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2018 by Tom Lechner
+// Copyright (C) 2019 by Tom Lechner
 //
 //
 
