@@ -19,11 +19,8 @@
 #include <lax/lineedit.h>
 #include <lax/lineinput.h>
 #include <lax/checkbox.h>
-#include <lax/menuselector.h>
 #include <lax/sliderpopup.h>
-#include <lax/button.h>
 #include <lax/messagebar.h>
-#include <lax/colorbox.h>
 
 #include "../laidout.h"
 #include "../core/papersizes.h"

@@ -17,6 +17,8 @@
 #include <lax/filedialog.h>
 #include <lax/fileutils.h>
 #include <lax/tabframe.h>
+#include <lax/button.h>
+#include <lax/colorbox.h>
 #include <lax/units.h>
 
 #include "../language.h"
