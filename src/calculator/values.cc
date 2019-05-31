@@ -3962,6 +3962,11 @@ const char *FileValue::Part(int i)
 	return parts.e[i];
 }
 
+void FileValue::Set(const char *nstr)
+{
+	makestr(filename, nstr);
+}
+
 int FileValue::getValueStr(char *buffer,int len)
 {
 	int needed=strlen(filename)+1;
