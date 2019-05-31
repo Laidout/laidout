@@ -762,6 +762,11 @@ int LaidoutApp::createlaidoutrc()
 					  "\n"
 					  "\n"
 
+					   //enable experimental
+					  "## Uncomment to enable any features that are experimental.\n"
+					  "#experimental\n"
+					  "\n"
+
 					   //shortcuts
 					  " #By default when you modify shortcuts in Laidout, they are saved in ./shortcuts.\n"
 					  " #Listing another file here will load keys from that file first, THEN the ./shortcuts will\n"
