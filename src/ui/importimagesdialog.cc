@@ -71,7 +71,7 @@ ImportImagesDialog::ImportImagesDialog(anXWindow *parnt,const char *nname,const 
 	if (doc) doc->inc_count();
 	curitem=-1;
 
-	reviewlist=NULL;
+	//reviewlist=NULL;
 
 	settings=new ImportImageSettings;
 	settings->startpage=startpg;
