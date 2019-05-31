@@ -10,7 +10,7 @@
 // version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2010-2018 by Tom Lechner
+// Copyright (C) 2010-2019 by Tom Lechner
 //
 
 
@@ -46,19 +46,12 @@ using namespace std;
 namespace Laidout {
 
 
-Laxkit::anXWindow *NewLengthInputWindow(LaxInterfaces::anInterface *owner, const char *name, int x,int y,int w,int h, int border,
-										const char *message, double startvalue)
+void SignatureInterface::NewLengthInputWindow(const char *name, ActionArea *area, const char *message, double startvalue)
 {
-	char buf[30];
-	sprintf(buf,"%g",startvalue);
-	LineEdit *win=new LineEdit(owner->curwindow, "lengthinput",name,
-				 ANXWIN_HOVER_FOCUS|ANXWIN_OUT_CLICK_DESTROYS|ANXWIN_ESCAPABLE|LINEEDIT_DESTROY_ON_ENTER|LINEEDIT_GRAB_ON_MAP,
-				 x,y,w,h, border,
-				 NULL,owner->object_id,message,
-				 buf);
-	win->SetSelection(0,-1);
-
-	return win;
+	DoubleBBox bounds(area->minx,area->maxx+area->boxwidth(), area->miny,area->maxy);
+	char scratch[30];
+	sprintf(scratch, "%g", startvalue);
+	viewport->SetupInputBox(object_id, name, scratch, message, bounds);
 }
 
 
@@ -87,60 +80,115 @@ void dumpfoldinfo(FoldedPageInfo **finfo, int numhfolds, int numvfolds)
 #define INDICATOR_SIZE 10
 
 
+enum SignatureInterfaceAreas {
+	SP_None = 0,
 
-#define SP_None              0
+	SP_Tile_X_top,
+	SP_Tile_X_bottom,
+	SP_Tile_Y_left,
+	SP_Tile_Y_right,
+	SP_Tile_Gap_X,
+	SP_Tile_Gap_Y,
 
-#define SP_Tile_X_top        1
-#define SP_Tile_X_bottom     2
-#define SP_Tile_Y_left       3
-#define SP_Tile_Y_right      4
-#define SP_Tile_Gap_X        5
-#define SP_Tile_Gap_Y        6
+	SP_Inset_Top,
+	SP_Inset_Bottom,
+	SP_Inset_Left,
+	SP_Inset_Right,
 
-#define SP_Inset_Top         7
-#define SP_Inset_Bottom      8
-#define SP_Inset_Left        9
-#define SP_Inset_Right       10
+	SP_H_Folds_left,
+	SP_H_Folds_right,
+	SP_V_Folds_top,
+	SP_V_Folds_bottom,
 
-#define SP_H_Folds_left      11
-#define SP_H_Folds_right     12
-#define SP_V_Folds_top       13
-#define SP_V_Folds_bottom    14
+	SP_Trim_Top,
+	SP_Trim_Bottom,
+	SP_Trim_Left,
+	SP_Trim_Right,
 
-#define SP_Trim_Top          15
-#define SP_Trim_Bottom       16
-#define SP_Trim_Left         17
-#define SP_Trim_Right        18
+	SP_Margin_Top,
+	SP_Margin_Bottom,
+	SP_Margin_Left,
+	SP_Margin_Right,
 
-#define SP_Margin_Top        19
-#define SP_Margin_Bottom     20
-#define SP_Margin_Left       21
-#define SP_Margin_Right      22
+	SP_Binding,
 
-#define SP_Binding           23
+	SP_Sheets_Per_Sig,
+	SP_Num_Pages,
+	SP_Paper_Name,
+	SP_Paper_Width,
+	SP_Paper_Height,
+	SP_Paper_Orient,
+	SP_Current_Sheet,
 
-#define SP_Sheets_Per_Sig    24
-#define SP_Num_Pages         25
-#define SP_Paper_Name        26
-#define SP_Paper_Width       27
-#define SP_Paper_Height      28
-#define SP_Paper_Orient      29
-#define SP_Current_Sheet     30
+	SP_Automarks,
 
-#define SP_Automarks         31
+	 //these three currently ignored:
+	SP_Up,
+	SP_X,
+	SP_Y,
 
- //these three currently ignored:
-#define SP_Up                32
-#define SP_X                 33
-#define SP_Y                 34
+	SP_On_Stack,
+	SP_New_First_Stack,
+	SP_New_Last_Stack,
+	SP_New_Insert,
+	SP_Delete_Stack,
 
-#define SP_On_Stack          35
-#define SP_New_First_Stack   36
-#define SP_New_Last_Stack    37
-#define SP_New_Insert        38
-#define SP_Delete_Stack      39
+	SP_FOLDS = 100
+};
 
-#define SP_FOLDS             100
+//#define SP_None              0
+//
+//#define SP_Tile_X_top        1
+//#define SP_Tile_X_bottom     2
+//#define SP_Tile_Y_left       3
+//#define SP_Tile_Y_right      4
+//#define SP_Tile_Gap_X        5
+//#define SP_Tile_Gap_Y        6
+//
+//#define SP_Inset_Top         7
+//#define SP_Inset_Bottom      8
+//#define SP_Inset_Left        9
+//#define SP_Inset_Right       10
+//
+//#define SP_H_Folds_left      11
+//#define SP_H_Folds_right     12
+//#define SP_V_Folds_top       13
+//#define SP_V_Folds_bottom    14
+//
+//#define SP_Trim_Top          15
+//#define SP_Trim_Bottom       16
+//#define SP_Trim_Left         17
+//#define SP_Trim_Right        18
+//
+//#define SP_Margin_Top        19
+//#define SP_Margin_Bottom     20
+//#define SP_Margin_Left       21
+//#define SP_Margin_Right      22
+//
+//#define SP_Binding           23
+//
+//#define SP_Sheets_Per_Sig    24
+//#define SP_Num_Pages         25
+//#define SP_Paper_Name        26
+//#define SP_Paper_Width       27
+//#define SP_Paper_Height      28
+//#define SP_Paper_Orient      29
+//#define SP_Current_Sheet     30
+//
+//#define SP_Automarks         31
+//
+ ////these three currently ignored:
+//#define SP_Up                32
+//#define SP_X                 33
+//#define SP_Y                 34
+//
+//#define SP_On_Stack          35
+//#define SP_New_First_Stack   36
+//#define SP_New_Last_Stack    37
+//#define SP_New_Insert        38
+//#define SP_Delete_Stack      39
+//
+//#define SP_FOLDS             100
 
 
 enum SignatureInterfaceActions {
@@ -2244,24 +2292,16 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 			SetPaperFromInstance(siginstance);
 			needtodraw=1;			
 
-		} else if (onoverlay==curhandle && onoverlay==SP_Paper_Width) {
+		} else if (onoverlay == curhandle && onoverlay == SP_Paper_Width) {
 			 //create input edit
-			ActionArea *area=control(SP_Paper_Width);
-			anXWindow *w=viewport->findChildWindowByName("lengthinput");
-			if (w) app->destroywindow(w);
-			w=NewLengthInputWindow(this, _("Paper Width"), area->minx,area->miny, 2*(area->maxx-area->minx),area->maxy-area->miny,3,
-											  "paperwidth",siginstance->partition->paper->w());
-			app->addwindow(w);
+			ActionArea *area = control(SP_Paper_Width);
+			NewLengthInputWindow(_("Paper Width"), area, "paperwidth",siginstance->partition->paper->w());
 			return 0;
 
-		} else if (onoverlay==curhandle && onoverlay==SP_Paper_Height) {
+		} else if (onoverlay == curhandle && onoverlay == SP_Paper_Height) {
 			 //create input edit
-			ActionArea *area=control(SP_Paper_Height);
-			anXWindow *w=viewport->findChildWindowByName("lengthinput");
-			if (w) app->destroywindow(w);
-			w=NewLengthInputWindow(this, _("Paper Height"), area->minx,area->miny, 2*(area->maxx-area->minx),area->maxy-area->miny,3,
-											  "paperheight",siginstance->partition->paper->h());
-			app->addwindow(w);
+			ActionArea *area = control(SP_Paper_Height);
+			NewLengthInputWindow(_("Paper Height"), area, "paperheight",siginstance->partition->paper->h());
 			return 0;
 
 
@@ -2288,11 +2328,14 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 			needtodraw=1;
 
 		} else if (!dragged) {
-			ActionArea *area=control(onoverlay);
-			if (area->visible && (area->type==AREA_H_Slider || area->type==AREA_Slider)) {
-				flatpoint d=flatpoint(x,y)-area->Center();
+			ActionArea *area = control(onoverlay);
+			if (area->visible && (area->type == AREA_H_Slider || area->type == AREA_Slider)) {
+				flatpoint d = flatpoint(x,y) - area->Center();
 				if (d.x>0) adjustControl(onoverlay,1);
-				else if (d.x<0) adjustControl(onoverlay,-1);
+				else if (d.x < 0) adjustControl(onoverlay,-1);
+
+			} else {
+				// *** check for tap on controls
 			}
 		
 		}
