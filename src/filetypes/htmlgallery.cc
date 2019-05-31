@@ -119,6 +119,7 @@ class HtmlGalleryExportConfig : public DocumentExportConfig
  public:
 	char *image_format;
 	char *html_template_file;
+	char *page_template_file;
 	char *image_template_file;
 	int use_transparent_bg;
 	int width, height;
@@ -149,6 +150,7 @@ HtmlGalleryExportConfig::HtmlGalleryExportConfig()
 	use_transparent_bg = false;
 	width = height = 0;
 	html_template_file = nullptr;
+	page_template_file = nullptr;
 	image_template_file = nullptr;
 	make_thumbs = true;
 	render_each_page = false;
@@ -176,11 +178,13 @@ HtmlGalleryExportConfig::HtmlGalleryExportConfig(DocumentExportConfig *config)
 		width = conf->width;
 		height = conf->height;
 		html_template_file = newstr(conf->html_template_file);
+		page_template_file = newstr(conf->page_template_file);
 		image_template_file = newstr(conf->image_template_file);
 		render_each_page = conf->render_each_page;
 
 	} else {
 		html_template_file = nullptr;
+		page_template_file = nullptr;
 		image_template_file = nullptr;
 		image_format = newstr("jpg");
 		use_transparent_bg = false;
@@ -195,6 +199,7 @@ HtmlGalleryExportConfig::~HtmlGalleryExportConfig()
 	templatevars->dec_count();
 	delete[] image_format;
 	delete[] html_template_file;
+	delete[] page_template_file;
 	delete[] image_template_file;
 }
 
@@ -289,6 +294,7 @@ void HtmlGalleryExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::Dum
 	fprintf(f,"%smake_thumbs %s\n",spc, make_thumbs ? "yes" : "no");
 	fprintf(f,"%srender_each_page %s\n",spc, render_each_page ? "yes" : "no");
 	if (html_template_file) fprintf(f,"%shtml_template_file %s\n",spc, html_template_file);
+	if (page_template_file) fprintf(f,"%spage_template_file %s\n",spc, page_template_file);
 	if (image_template_file) fprintf(f,"%simage_template_file %s\n",spc, image_template_file);
 }
 
@@ -302,6 +308,7 @@ LaxFiles::Attribute *HtmlGalleryExportConfig::dump_out_atts(LaxFiles::Attribute 
 	att->push("make_thumbs", make_thumbs ? "yes" : "no");
 	att->push("render_each_page", make_thumbs ? "yes" : "no");
 	if (html_template_file) att->push("html_template_file", html_template_file);
+	if (page_template_file) att->push("page_template_file", page_template_file);
 	if (image_template_file) att->push("image_template_file", image_template_file);
 	if (templatevars) att->push(templatevars->duplicate(), -1);
 	return att;
@@ -321,6 +328,9 @@ void HtmlGalleryExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,Lax
 
 		} else if (!strcmp(name, "html_template_file")) {
 			makestr(html_template_file, value);
+
+		} else if (!strcmp(name, "page_template_file")) {
+			makestr(page_template_file, value);
 
 		} else if (!strcmp(name, "image_template_file")) {
 			makestr(image_template_file, value);
@@ -1178,6 +1188,10 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 
 	fclose(htmlout);
 
+	if (out->render_each_page) {
+		//create page##.html with embedded svg of the pages.
+		//The svg is normal svg export, with particular config, then prepended and appended with html header and footer.
+	}
 
 
 	dp->EndDrawing();
