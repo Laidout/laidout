@@ -172,13 +172,11 @@ void GenericValueDialog::MakeControls(const char *startext,ObjectDef *ndef)
 					AddWin(box,box->win_w,0,0,50,0, box->win_h,0,0,50,0);
 				} break;
 
-			 // ??? 3 field checkbox menuselector?
 			case VALUE_Date: {
 					AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: Date"));
 					//***
 				} break;
 								
-			 // one only checkbox menuselector
 			case VALUE_Enum: {
 					AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: enum"));
 					//***add sliderpopup with the field's enum names
