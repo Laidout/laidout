@@ -169,11 +169,25 @@ test:
   make some test scripts for command line testing
 
 
+lgm feedback:
+  method to fix all broken images at once
+    option: do just this one, or fix all
+	old path: _____     new path: _____
+  method to collect all used resources of a doc for distribution
+  ensure backwards compatibility of files still works
+  some kind of graphicsmagick LoadToMemory bug
+  laidout settings option to always load last file on startup
+  out clicking from a dialog should probably destroy that dialog.. too easy to get buried confusedly in windows
+  automate default laxkit detection, or git download of laxkit if missing
+  mageia:
+    makedepend trouble?
+
+
 alternate packaging:
-  snapcraft
-  flatpak
   appimage
-  debian
+  flatpak
+  snapcraft
+  debian (get in to main repository)
 
 gif flipbooks:
   for one offs, need to implement progressive repeat imposing
@@ -288,6 +302,10 @@ have an actual splash image shown
 
 you can't control unclick selected directories
 
+build: building:
+  in config.log should show actual configure line for easy duplicating
+  should update faq with details about graphicsmagick, harfbuzz, and gegl versioning
+
 rework ui to be programmable. Perhaps an ui builder
 
 file filters: filefilters:
@@ -316,10 +334,18 @@ importdialog ImportDialog import dialog:
   importing should sort out duplicate names
   would be nice to show preview of what is to be imported
 html: htmlgallery: html out htmlout:
-  parallax:
-    auto gyrate
-    control over parallax point
-	autoplay repeating parallax elements
+  webcomic features:
+    parallax
+      auto gyrate
+      control over parallax point
+ 	  autoplay repeating parallax elements
+    follow mouse
+    video objects as mystery data?
+    path follow
+    scrolling object: speed direction
+    shake
+    clip paths
+    css 3d transforms
   specify image file name, also preview file name "###-s.png"
   DONE implement save and load template vars
   DONE include scrim in coop/html
@@ -1526,6 +1552,9 @@ improve split window
   simplify pane customization, docking
 
 signature editor  Signature editor Signature Editor signaturei
+  number input for everything
+  symmetric trim
+  be able to enter final size, and adjust trim to match
   should be able to drag and drop stacks
   making new paper size should try to find matching paper name for a given size
   fold replay should start showing FRONT page of stack, not back. THIS IS A BUG
