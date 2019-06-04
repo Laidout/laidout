@@ -21,19 +21,6 @@
 namespace Laidout {
 
 
-class HelpWindow : public Laxkit::MessageBox
-{
-	int s;
- public:
- 	HelpWindow(int style=0);
-	virtual ~HelpWindow() {}
-	virtual int Event(const Laxkit::EventData *e,const char *mes);
- 	virtual const char *whattype() { return "HelpWindow"; }
-	virtual int preinit();
-	virtual int init();
-	virtual int CharInput(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
-};
-
 Laxkit::anXWindow *newHelpWindow(const char *place);
 
 
