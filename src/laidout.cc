@@ -32,6 +32,7 @@
 #include <lax/laxoptions.h>
 #include <lax/units.h>
 #include <lax/bitmaputils.h>
+#include <lax/freedesktop.h>
 #include <lax/interfaces/interfacemanager.h>
 #include <sys/file.h>
 
@@ -52,6 +53,9 @@
 #include "version.h"
 #include "laidout.h"
 #include "language.h"
+
+// *** FOR DEBUGGING:
+#include "ui/valuewindow.h"
 
 
 //template implementations
@@ -233,11 +237,12 @@ LaidoutApp::LaidoutApp()
 	//colorManager->dec_count();
 
 
-	autosave_timerid=0;
-	
+	autosave_timerid = 0;
+	force_new_dialog = false;
+
 	icons=IconManager::GetDefault();
 
-	runmode=RUNMODE_Normal;
+	runmode = RUNMODE_Normal;
 
 	config_dir = ConfigDir();
 
@@ -625,6 +630,28 @@ int LaidoutApp::init(int argc,char **argv)
 
 	if (runmode == RUNMODE_Normal) {
 		 //try to load the default template if no windows are up
+		if (topwindows.n == 0 && !force_new_dialog && prefs.start_with_last) {
+			MenuInfo recent;
+	        recently_used(NULL, NULL, "Laidout", 0, &recent);
+			if (recent.n()) {
+				const char *file_to_load = recent.e(0)->name;
+				if (!isblank(file_to_load)) {
+					Document *doc = NULL;
+					int index = topwindows.n;
+
+					if (Load(file_to_load, generallog) == 0) doc = curdoc;
+					else {
+						generallog.AddError(0,0,0, _("Could not load %s!"), file_to_load);
+					}
+
+					if (doc != nullptr && topwindows.n == index) {
+						if (!doc && project->docs.n) doc = project->docs.e[0]->doc;
+						if (doc) addwindow(newHeadWindow(doc));
+					}
+				}
+			}
+		}
+
 		if (topwindows.n==0 && prefs.default_template) {
 			ErrorLog log;
 			LoadTemplate(prefs.default_template,log);
@@ -952,10 +979,6 @@ int LaidoutApp::readinLaidoutDefaults()
 					setupdefaultcolors();
 			}
 			
-		//} else if (!strcmp(name,"laxcolors")) {
-		//	//*** this, or force use of laxconfig?
-		//	dump_in_colors(att.attributes.e[c]);
-			
 		} else if (!strcmp(name,"theme")) {
 			if (isblank(app_profile) || (!isblank(app_profile) && value && !strcmp(app_profile, value))) {
 				Theme *thme = new Theme(app_profile);
@@ -972,6 +995,9 @@ int LaidoutApp::readinLaidoutDefaults()
 
 		} else if (!strcmp(name,"experimental")) {
 			experimental = 1;
+
+		} else if (!strcmp(name,"start_with_last")) {
+			prefs.start_with_last = 1;
 
 		} else if (!strcmp(name,"default_template")) {
 			if (file_exists(value,1,NULL)==S_IFREG) makestr(prefs.default_template,value);
@@ -1238,7 +1264,7 @@ void InitOptions()
 	options.Add("list-export-options",'O', 1, "List all the options for the given format",   0, "format");
 	options.Add("export"             ,'e', 1, "Export a document based on the given options",0, "\"format=EPS start=3\"");
 	options.Add("template",           't', 1, "Start laidout from this template in ~/.laidout/(version)/templates",0,"templatename");
-	options.Add("no-template",        'N', 0, "Do not use a default template",               0, NULL);
+	options.Add("no-template",        'N', 0, "Do not use a default template or load from last", 0, NULL);
 	options.Add("new",                'n', 1, "Create new document",                         0, "\"letter,portrait,3pgs\"");
 	options.Add("file-format",        'F', 0, "Print out a pseudocode mockup of the file format, then exit",0,NULL);
 	options.Add("command",            'c', 1, "Run one or more commands without the gui",    0, "\"newdoc net\"");
@@ -1345,7 +1371,8 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 
 			case 'N': { // do not use a default template
-					if (prefs.default_template) { delete[] prefs.default_template; prefs.default_template=NULL; }
+					//if (prefs.default_template) { delete[] prefs.default_template; prefs.default_template=NULL; }
+					force_new_dialog = true;
 				} break;
 
 			case 'F': { // dump out file format
@@ -2221,10 +2248,10 @@ int main(int argc,char **argv)
 	
 
 
-#ifdef LAX_USES_CAIRO
-	DBG cerr <<"---------  cairo_debug_reset_static_data()..."<<endl;
-	DBG cairo_debug_reset_static_data();
-#endif
+//#ifdef LAX_USES_CAIRO
+//	DBG cerr <<"---------  cairo_debug_reset_static_data()..."<<endl;
+//	DBG cairo_debug_reset_static_data();
+//#endif
 
 	DBG cerr <<"-----------------------------Bye!--------------------------"<<endl;
 	DBG cerr <<"------------end of code, default destructors follow--------"<<endl;
