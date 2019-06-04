@@ -98,13 +98,13 @@ page 0
             joinstyle miter
             miterlimit 100
             dotdash 0
-            function 2
+            function Over
             width 0.1092306793
           fillstyle
             color 0 0 65535 65535
             fillrule even
             fillstyle solid
-            function 0
+            function Over
           style 0
           path 0
             closed

@@ -28,6 +28,7 @@ objs= \
 	settingswindow.o \
 	spreadeditor.o \
 	viewwindow.o \
+	valuewindow.o \
 	interfaces.o 
 
 

@@ -72,29 +72,30 @@ LaidoutPreferences::LaidoutPreferences()
 	splash_image_file = newstr(ICON_DIRECTORY);
 	appendstr(splash_image_file,"/laidout-splash.png");
 
-	default_units = UNITS_Inches;
-	unitname      = newstr("inches");
+	default_units  = UNITS_Inches;
+	unitname       = newstr("inches");
+	uiscale        = 1;
+	pagedropshadow = 5;
 
-	pagedropshadow=5;
-
-    default_template=NULL;
-    defaultpaper=get_system_default_paper();
-    temp_dir=NULL;
+    default_template = NULL;
+    defaultpaper = get_system_default_paper();
+    temp_dir = NULL;
+	start_with_last = false;
 
 	if (S_ISDIR(file_exists("/usr/share/gimp/2.0/palettes", 1, NULL)))
 		palette_dir=newstr("/usr/share/gimp/2.0/palettes");
-	else palette_dir=NULL;
+	else palette_dir = NULL;
 
-	preview_size=400;
+	preview_size = 400;
 
-	autosave=false;
-	autosave_time=5; //minutes
-	autosave_path=newstr("./%f.autosave");
+	autosave      = false;
+	autosave_time = 5; //minutes
+	autosave_path = newstr("./%f.autosave");
 	//autosave_num=0; //0 is no limit
 
-	experimental=false;
+	experimental = false;
 
-	exportfilename=newstr("%f-exported.whatever");
+	exportfilename = newstr("%f-exported.whatever");
 }
 
 LaidoutPreferences::~LaidoutPreferences()
@@ -113,20 +114,22 @@ Value *LaidoutPreferences::duplicate()
 {
 	LaidoutPreferences *p=new LaidoutPreferences;
 
-	p->preview_size=preview_size;
-	p->default_units=default_units;
+	p->preview_size  = preview_size;
+	p->default_units = default_units;
 	makestr(p->unitname,unitname);
-	p->pagedropshadow=pagedropshadow;
+	p->pagedropshadow= pagedropshadow;
 	makestr(p->splash_image_file,splash_image_file);
 	makestr(p->default_template,default_template);
 	makestr(p->defaultpaper,defaultpaper);
 	makestr(p->temp_dir,temp_dir);
-	p->autosave=autosave;
-	p->autosave_time=autosave_time;
-	//p->autosave_num=autosave_num;
+	p->autosave = autosave;
+	p->autosave_time = autosave_time;
+	//p->autosave_num = autosave_num;
 	makestr(p->autosave_path,autosave_path);
 	makestr(p->exportfilename, exportfilename);
-	p->experimental=experimental;
+	p->start_with_last = start_with_last;
+	p->experimental = experimental;
+	p->uiscale = uiscale;
 
 	for (int c=0; c<icon_dirs.n; c++) {
 		p->icon_dirs.push(newstr(icon_dirs.e[c]), LISTS_DELETE_Array);
@@ -179,6 +182,13 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 			0,
 			NULL);
 
+	def->push("start_with_last",
+			_("Start With Last"),
+			_("Start with last document used."),
+			"boolean", NULL,NULL,
+			0,
+			NULL);
+
 	def->push("previewsize",
 			_("Preview size"),
 			_("Pixel width or height to render cached previews of objects for on screen viewing. "),
@@ -190,6 +200,13 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 			_("Page drop shadow"),
 			_("How much to offset drop shadows around papers and pages"),
 			"real", NULL,"5",
+			0,
+			NULL);
+
+	def->push("uiscale",
+			_("UI Scale"),
+			_("UI Scale"),
+			"real", NULL,"1",
 			0,
 			NULL);
 
@@ -329,8 +346,16 @@ Value *LaidoutPreferences::dereference(const char *extstring, int len)
 		return new IntValue(pagedropshadow);
 	}
 
+	if (!strcmp(extstring, "uiscale")) {
+		return new DoubleValue(uiscale);
+	}
+
 	if (!strcmp(extstring, "experimental")) {
 		return new BooleanValue(experimental);
+	}
+
+	if (!strcmp(extstring, "start_with_last")) {
+		return new BooleanValue(start_with_last);
 	}
 
 	if (!strcmp(extstring, "temp_dir")) {

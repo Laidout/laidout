@@ -34,6 +34,8 @@ class ImpositionEditor;
 
 class SignatureInterface : public ImpositionInterface
 {
+	void NewLengthInputWindow(const char *name, ActionArea *area, const char *message, double startvalue);
+
  protected:
 	Document *document;
 	SignatureImposition *sigimp;

@@ -17,6 +17,8 @@
 #include <lax/filedialog.h>
 #include <lax/fileutils.h>
 #include <lax/tabframe.h>
+#include <lax/button.h>
+#include <lax/colorbox.h>
 #include <lax/units.h>
 
 #include "../language.h"
@@ -372,7 +374,7 @@ int NewDocWindow::init()
 						last,object_id,"numpages",
 			            _("Number of pages:"),NULL,0, // *** must do auto set papersize
 			            100,0,1,1,3,3);
-	numpages->GetLineEdit()->setWinStyle(LINEEDIT_SEND_FOCUS_OFF,1);
+	numpages->GetLineEdit()->SetWinStyle(LINEEDIT_SEND_FOCUS_OFF,1);
 	numpages->SetText(npages);
 	numpages->tooltip(_("The number of pages with which to start a document."));
 	AddWin(numpages,1, numpages->win_w,0,50,50,0, linpheight,0,0,50,0, -1);

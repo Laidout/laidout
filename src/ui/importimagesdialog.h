@@ -16,7 +16,6 @@
 #define IMPORTIMAGES_H
 
 #include <lax/filedialog.h>
-#include <lax/menuselector.h>
 #include <lax/imageinfo.h>
 #include <lax/lists.h>
 #include <lax/dump.h>
@@ -45,7 +44,6 @@ class ImportImagesDialog : public Laxkit::FileDialog
 	ImportImageSettings *settings;
 	Document *doc;
 	Group *toobj;
-	Laxkit::MenuSelector *reviewlist;
 
 	ImportImagesDialog(anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 			int xx,int yy,int ww,int hh,int brder, 

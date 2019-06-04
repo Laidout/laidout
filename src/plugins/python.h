@@ -9,7 +9,7 @@
 // version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2018 by Tom Lechner
+// Copyright (C) 2019 by Tom Lechner
 //
 #ifndef LAIDOUT_PLUGIN_PYTHON_H
 #define LAIDOUT_PLUGIN_PYTHON_H

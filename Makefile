@@ -60,8 +60,10 @@ install:
 	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop/processing coop/processing/*
 	$(INSTALLDIR)       $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop/scribus
 	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop/scribus coop/scribus/*
-	$(INSTALLDIR)       $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop/html
-	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop/html coop/html/*
+	$(INSTALLDIR)       $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop/html/scrim
+	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop/html/scrim coop/html/scrim/*
+	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop/html/ coop/html/*html coop/html/*md
+	#$(INSTALL) -m644 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop/ coop/*
 	$(INSTALLDIR)       $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/plugins
 	$(INSTALL) -m755 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/plugins src/plugins/*.so
 

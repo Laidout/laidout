@@ -90,6 +90,7 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 
 	bool pipeout;
 	char *pipeoutarg;
+	bool force_new_dialog;
 
 	int autosave_timerid;
 	virtual int  Idle(int tid, double delta);

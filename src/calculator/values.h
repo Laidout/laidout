@@ -703,6 +703,7 @@ class FileValue : public Value, virtual public FunctionEvaluator
 	virtual int Exists();
 	virtual int Depth();
 	virtual const char *Part(int i);
+	virtual void Set(const char *nstr);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret,
 						 Laxkit::ErrorLog *log);

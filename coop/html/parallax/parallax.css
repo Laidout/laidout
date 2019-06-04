@@ -1,0 +1,42 @@
+/* parallaxBG must be on a background rectangle in an svg parallax panel.
+ * The top frame object of an svg parallax panel must have class parallaxSvg */
+.parallaxBG {
+	cursor: none;
+}
+/* In an svg parallax panel, elements that respond to parallax must have class parallaxSvgElement,
+ * and also a data-z attribute with a float to describe parallax amount. */
+.parallaxSvgElement {
+	pointer-events: none;
+	cursor: none;
+}
+
+/*! svgComicsPanel is a non-essential class just for styling of the container panel. */
+.svgComicsPanel {
+	border: 3px solid gray;
+}
+
+.images_title {
+	font-size: 125%;
+	font-weight: bold;
+}
+
+/* comicsContainer can be used for non-svg elements */
+.comicsContainer {
+	margin: 1em;
+	border-width: 5px;
+	border-color: #00f;
+	border-style: solid;
+	padding: 10px;
+	background-color: #999;
+	position: relative;
+	display: inline-block;
+	width: 50vw;
+	height: 20vw;
+	overflow: hidden;
+	cursor: none;
+}
+.parallax2 {
+	pointer-events: none;
+	position: absolute;
+}
+
