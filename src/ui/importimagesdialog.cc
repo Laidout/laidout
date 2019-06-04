@@ -347,7 +347,7 @@ int ImportImagesDialog::init()
 	last=linp=new LineInput(this,"alignx",NULL,0, 0,0,0,0,0, last,object_id,"alignx",
 						_("Align X:"),str,0,
 						0,0,2,2,2,2);
-	linp->GetLineEdit()->setWinStyle(LINEEDIT_SEND_ANY_CHANGE,1);
+	linp->GetLineEdit()->SetWinStyle(LINEEDIT_SEND_ANY_CHANGE,1);
 	linp->tooltip(_("0 means align left, 50 center, 100 right, etc."));
 	AddWin(linp,1, 200,100,1000,50,0, linp->win_h,0,0,50,0, -1);
 
@@ -356,7 +356,7 @@ int ImportImagesDialog::init()
 	last=linp=new LineInput(this,"aligny",NULL,0, 0,0,0,0,0, last,object_id,"aligny",
 						_("Align Y:"),str,0,
 						0,0,2,2,2,2);
-	linp->GetLineEdit()->setWinStyle(LINEEDIT_SEND_ANY_CHANGE,1);
+	linp->GetLineEdit()->SetWinStyle(LINEEDIT_SEND_ANY_CHANGE,1);
 	linp->tooltip(_("0 means align top, 50 center, 100 bottom, etc."));
 	AddWin(linp,1, 200,100,1000,50,0, linp->win_h,0,0,50,0, -1);
 	AddNull();
@@ -409,7 +409,7 @@ int ImportImagesDialog::init()
 	last = linp = new LineInput(this,"NumPerPage",NULL,0, 0,0,0,0,0, last,object_id,"perpageexactlyn",
 						NULL,str,0,
 						textheight*10,textheight+4,2,2,2,2);
-	linp->GetLineEdit()->setWinStyle(LINEEDIT_SEND_FOCUS_ON,1);
+	linp->GetLineEdit()->SetWinStyle(LINEEDIT_SEND_FOCUS_ON,1);
 	AddWin(linp,1, -1);
 	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,50,0, -1);
 	AddNull();

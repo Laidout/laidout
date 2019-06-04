@@ -1931,7 +1931,7 @@ int SpreadEditor::init()
 	SpreadInterface *interf=(SpreadInterface*)tools.e[0];
 	LineEdit *linp=new LineEdit(this,"name",NULL, 0, 0,0,0,0,1, NULL,object_id,"newname",
 								  interf->view->viewname,0);
-	linp->setWinStyle(LINEEDIT_SEND_ANY_CHANGE,1);
+	linp->SetWinStyle(LINEEDIT_SEND_ANY_CHANGE,1);
 	linp->tooltip(_("Name of the current view"));
 	AddWin(linp,1, linp->win_w,0,2000,50,0, linp->win_h,0,50,50,0, -1);
 
