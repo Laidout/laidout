@@ -25,6 +25,7 @@
 #include "headwindow.h"
 #include "helpwindow.h"
 #include "../laidout.h"
+#include "valuewindow.h"
 
 #include <iostream>
 using namespace std;
@@ -53,7 +54,7 @@ class HelpAbout : public Laxkit::TabFrame
 
 Laxkit::anXWindow *newSettingsWindow(const char *which, const char *place)
 {
-	TabFrame *frame=new HelpAbout();
+	TabFrame *frame = new HelpAbout();
 
 	 //shortcuts tab
 	laidout->InitializeShortcuts();
@@ -67,21 +68,24 @@ Laxkit::anXWindow *newSettingsWindow(const char *which, const char *place)
 	ShortcutWindow *shortcutwin=new ShortcutWindow(frame,"Shortcuts",_("Shortcuts"),
 					ANXWIN_REMEMBER|SHORTCUTW_Show_Search|SHORTCUTW_Load_Save,
 					0,0,400,600,0,place);
-	shortcutwin->setWinStyle(ANXWIN_ESCAPABLE, 0);
+	shortcutwin->SetWinStyle(ANXWIN_ESCAPABLE, 0);
 	makestr(shortcutwin->textheader,"#\n# Laidout shortcuts\n#\n");
 
 	frame->AddWin(shortcutwin, 1, _("Shortcuts"), NULL, 0);
 
 
 	 //settings tab
-	// ***
-	frame->AddWin(new MessageBar(frame, "Settings", _("Settings"), MB_CENTER, 0,0,0,0,0, "TODO!"),1,
+	ValueWindow *settings = new ValueWindow(nullptr, "Settings", _("Settings"), frame->object_id, "settings", &laidout->prefs);
+	settings->Initialize();
+	frame->AddWin(settings,1,
 				   _("Settings"), NULL, 0);
+	//frame->AddWin(new MessageBar(frame, "Settings", _("Settings"), MB_CENTER, 0,0,0,0,0, "TODO!"),1,
+	//			   _("Settings"), NULL, 0);
 
 
 	 //about tab
 	AboutWindow *about=new AboutWindow(frame);
-	about->setWinStyle(ANXWIN_ESCAPABLE, 0);
+	about->SetWinStyle(ANXWIN_ESCAPABLE, 0);
 	frame->AddWin(about, 1, _("About"), NULL, 0);
 
 
