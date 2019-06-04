@@ -20,7 +20,7 @@ LAXDIR="`pwd`/laxkit/lax"
 GS="/usr/bin/gs"
 
  # for some plugins:
-GEGLVERSION='gegl-0.4'
+GEGLVERSION='gegl-0.3'
 PYTHONVERSION='python3.6'
 
 
@@ -204,6 +204,15 @@ if [ xxx$EXTRA_PKG != xxx ] ; then
 #	else 
 		export PKG_CONFIG_PATH=$EXTRA_PKG;
 #	fi
+fi
+
+
+##
+## Configure Laxkit if necessary, and pass in relevant flags
+##
+if [ ! -e $(LAXDIR)/configured.h ] ; then
+	echo "Laxkit not configured, configuring with defaults...";
+	cd $(LAXDIR)/.. && ./configure
 fi
 
 
