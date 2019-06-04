@@ -1713,7 +1713,7 @@ ObjectDef default_ValueHash_ObjectDef(NULL,"Hash",_("Hash"),_("Set of name-value
 
 ObjectDef *Get_ValueHash_ObjectDef()
 {
-	ObjectDef *def=&default_ValueHash_ObjectDef;
+	ObjectDef *def = &default_ValueHash_ObjectDef;
 	if (def->fields) return def;
 
 //	virtual int pushFunction(const char *nname,const char *nName,const char *ndesc,
