@@ -175,7 +175,23 @@ alternate packaging:
   appimage
   debian
 
+panel editing:
+  svg not exporting images when they are children of other non-group objects
+  selecting objects really sucks
+  data-data-
+  bulk assign meta
+  meta edit:
+    should allow both name+value for new
+  parenting and unparenting really sucks
+    options should be:
+	  Jump to parent --hover to show what is the parent
+	  Unparent
+	  Parent under first --hover to show potential parent 
+	  Parent under last --hover to show potential parent 
+
 gif flipbooks:
+  mod to center trims in sig editor
+  need a revert to last save option
   for one offs, need to implement progressive repeat imposing
   auto format partition so final page size has same aspect as image
   sig editor needs number input
