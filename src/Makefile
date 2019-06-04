@@ -170,6 +170,7 @@ otherobjs= \
 	ui/settingswindow.o \
 	ui/spreadeditor.o \
 	ui/viewwindow.o \
+	ui/valuewindow.o \
 	ui/interfaces.o \
 
 
@@ -216,8 +217,9 @@ laxinterface:
 test2: lax laxinterface interfaces test2.o papersizes.o
 	$(LD) test2.o styles.o dataobjects/group.o dataobjects/objectcontainer.o papersizes.o interfaces/paperinterface.o $(LDFLAGS)  -llaxinterfaces -llaxkit -o $@
 
-test: lax laxinterface stylewindow.o  styles.o stylemanager.o test.o
-	$(LD) test.o stylewindow.o styles.o stylemanager.o $(LDFLAGS) -llaxinterfaces -llaxkit -o $@
+test: lax laxinterface $(objs) $(POLYPTYCHFORLAIDOUT)
+	for NAME in $(dirs); do $(MAKE) -C $$NAME || exit ; done
+	$(LD) $(CPPFLAGS) $(otherobjs) test.cc $(POLYPTYCH_GL_OBJS) $(POLYPTYCHOBJS) -L$(LAXIDIR) -L$(LAXDIR) -llaxinterfaces -llaxkit -lharfbuzz -lcairo -lfontconfig $(LDFLAGS) $(OPTIONALLIBS) -lreadline -lcrypto $(POLYPTYCHLIBS) -o $@
 
 docs:
 	cd ../docs && doxygen 
