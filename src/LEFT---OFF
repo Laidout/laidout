@@ -169,18 +169,26 @@ test:
   make some test scripts for command line testing
 
 
-lgm feedback:
+lgm 2019 feedback and ideas:
+  configure still sucks.. laidout configure needs to drive laxkit configure.
+  path tool:
+    hard to see helper graphics, needs haloing
+	should have space to dup weight node
+  be able to load old docs
   method to fix all broken images at once
     option: do just this one, or fix all
 	old path: _____     new path: _____
   method to collect all used resources of a doc for distribution
-  ensure backwards compatibility of files still works
-  some kind of graphicsmagick LoadToMemory bug
-  laidout settings option to always load last file on startup
+  from here on out, ensure backwards compatibility of files still works
+    enhance mystery data to work with laidout data too?
+  some kind of graphicsmagick LoadToMemory bug.. could be only on loading old file, bad config translation?
   out clicking from a dialog should probably destroy that dialog.. too easy to get buried confusedly in windows
   automate default laxkit detection, or git download of laxkit if missing
   mageia:
-    makedepend trouble?
+    makedepend trouble? replace with custom script to get rid of x11-dev dependency?
+  make connecting to information easy: click to open web browser
+  diffusion curves
+  "local mod" mesh manipulation
 
 
 alternate packaging:
@@ -197,6 +205,7 @@ gif flipbooks:
 need something like laximages->Save(file, format, native_save_only), in case object doesn't know how to save to that format.. maybe default to something like static ImageLoader::Save
 
 need ability to show "reprocessing.." or "progress.." indicator in different thread to what is actually processing
+  must multithread long operations
 
 in singles view, spread number in box should be page label instead of spread number
 
@@ -221,6 +230,8 @@ need a better file preview system
 save as needs to use current save path, not current directory
 
 ux:
+  when you save, also save a preview?
+  resizeable ui
   should be able to mass disconnect clones
   current page should be highlighted
 
@@ -236,9 +247,13 @@ image loaders:
 
 dual monitors:
   open in same screen as mouse
+  when you open a new window, ensure that it is always on screen
   DONE Menus should respect actual screen borders, not just full virtual screen
 
-cairo: cairo image save should use importer to do non-file creation?
+cairo:
+  cairo image save should use importer to do non-file creation?
+  cairo render has color problems with gradients
+  cairo development is dead? investigate alternatives
 
 importing: image import:
   need drag and drop from system for multi-image import
@@ -443,6 +458,7 @@ xtg from quark?
 idml from indesign?
 
 PathInterface: pathinterface
+  that hot new spiro curve
   boolean ops
   mirror, array, with join (akin to blender modifiers)
   need to show hints for when new points will be placed
@@ -632,8 +648,9 @@ text on path textonpath: TextOnPath
   multiline?
 
 from big import:
-  load in seems to wholly load images, instead of only grabbing info
+  load in seems to wholely load images, instead of only grabbing info
   need some kind of "loading" indication when loading in large images
+  load in of many images needs threaded load
   need image path mass reassign
   spread editor:
     need a force thumb refresh, or actually make modified propagation work
@@ -948,7 +965,7 @@ Clean up mesh/patch controls: Mesh PatchInterface
   circle warp needs a proper circle/ellipse interface
   make base path dump_out as Path, not PathsData? make it easier to read file removing the unnecessary??
 
-Remove obsolete HelpWindow code?
+raster paint layers, mypaint?
 
 newdoc:
   when change number of named paper, make it "custom"
@@ -956,8 +973,6 @@ newdoc:
 
 save as should change save/import/export/current directory to that directory
   -> need to test current behavior
-
-finish phasing out MenuSelector
 
 TreeSelector:
   click open jumping current to 0
@@ -986,12 +1001,12 @@ to be a decent editing platform, Laidout needs:
   per object opacity
   better key input edits, right click on menu items to ch key
   guides
-  clipping
   text
   Grouping:
     select only within group zone
 	easy selection of proper group zone
 	remove 'i' from common shortcuts for all tools to let it be used for ObjectIndicator
+  DONE clipping
 
 polish:
   page navigator should allow type in shortcuts like "end"
@@ -1008,6 +1023,7 @@ GroupInterface groupinterface ObjectInterface objectinterface:
   control-move flip line to snap to horizontal, vertical, 45 deg, or common gravity points
 
 ObjectIndicator objectindicator:
+  current should be bold
   need ability to click on object to select that object. Rename only when already selected
   allow drag reparenting
     hover over parents to pop list of alternate children to reparent to
@@ -1083,6 +1099,9 @@ anInterface::PreRefresh(), for instance to get engraver trace object to render b
 
 need to clarify what happens when you open and close documents. open already open pops new window, not sure if it should
   also record ownership of limbos, open and close docs always leaves limbos behind
+
+colorbox color box:
+  hsv slide, configurable clicks
 
 color slider popup:
   have a "Done"/"Dismiss" button
@@ -1179,7 +1198,7 @@ guides:
   snap guides to objects
   snap objects edges to various things
 
-align tool: aligninterface AlignInterface
+align tool: aligninterface AlignInterface align:
   needs polishing, the lines and indicators get a bit lost
   context menu seems to be the group interface menu
   need way to specify center of rotation per object
@@ -1475,6 +1494,21 @@ ImageImport dialog: (actually, needs a total redesign) import images importimage
   autogenerate should do special check for ~/.thumbnails to conform to freedesktop spec size and type...
   importimages-> eps --> they are fit into boxes!! they should maybe be inserted into a stream..
 
+external tools:
+  figure out a way to standardize verifying that tool exists and is executable
+  to image renderers
+  to object renderers
+  Image editor (gimp, krita)
+  plain text editor (gvim, console vim, command, etc)
+  associate (object type) <-> (external editor)
+
+  binary_path
+  doc_website
+  expected_file_ext
+  function to verify file
+  extra config
+  command structure "command %f --stuff {extra1} {extra2} {extra3}"
+
 dynamic objects (generated images, dynamic images, rendered images)
     eps objects to pdf: export as image, plant in PDF as image
     group objects with laidout elements, updateable with script
@@ -1615,14 +1649,6 @@ global Laidout settings:
   tooltips
   per tool default settings
   thin line width (default 1 pixel, but this is bad for high dpi screens)
-
-external tools:
-  figure out a way to standardize verifying that tool exists and is executable
-  to image renderers
-  to object renderers
-  Image editor (gimp, krita)
-  plain text editor (gvim, console vim, command, etc)
-  associate (object type) <-> (external editor)
 
 > laidout blah.laidout...     <-- if starting like this, if blah.laidout does not exist, then abort
 > laidout 1.laidout 2.laidout <-- if starting like this, if either exist, then start up, but have
@@ -1874,6 +1900,9 @@ dump OUT an image list? Scribus has "review images" feature.. can jump to locati
 
 repeater tool on path: could be adapted to help animation tweening
 
+animation:
+  animation interface can set laidout->globals.frame, but how best to add callbacks when a Value is modified?
+
 
 ===================Anything below here probably needs discussion before implementing================
 ---------------------------------- other enhancements ----------------------------------
@@ -1934,3 +1963,6 @@ DONE html out
 DONE bug: text selection and highlighting is really out of whack.. int/float troubles?  <-- dp->textextent is NOT returning same as font->Extent!!
 DONE skip pages (at regular intervals) on multi-image import.
 DONE animated gif import
+DONE Remove obsolete HelpWindow code?
+DONE finish phasing out MenuSelector
+DONE laidout settings option to always load last file on startup
