@@ -1660,6 +1660,7 @@ global resources:
   current language, for conditional text
 
 global Laidout settings:
+  settings dialog
   color theme
   icons
   tooltips

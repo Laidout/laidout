@@ -15,6 +15,7 @@ VERSION 0.098
 (done) Fix object bleeding across pages for signatures and nets (issue #12)
 (done) Make Imlib2 dependency optional, prepare replacement image loading with GraphicsMagick
 (done) Html gallery output with optional template
+       Way to export svg embedded into html
        lock down color backend.. it's currently a series of weak hacks based on 8-bit screen rgb
 
        Debug Text on path tool
