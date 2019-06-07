@@ -228,7 +228,7 @@ alldocs:
 	cd ../docs && doxygen Doxyfile-with-laxkit
 
 depends:
-	makedepend -fmakedepend -I$(LAXDIR)/.. -Y *.cc
+	utils/makedependencies -fmakedepend -I$(LAXDIR)/.. *.cc
 	for NAME in $(dirs); do $(MAKE) -C $$NAME depends; done
 	cd $(POLYPTYCHBASEDIR)/polyptych/src && $(MAKE) depends
 

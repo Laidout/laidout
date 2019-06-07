@@ -40,7 +40,7 @@ impositions: $(objs)
 #	g++ $(CPPFLAGS) -c ../polyptych/poly.cc -o poly.o
 
 depends:
-	makedepend -fmakedepend -I.. -I$(LAXDIR)/.. -Y *.cc
+	../utils/makedependencies -fmakedepend -I$(LAXDIR)/.. -I$(POLYPTYCHBASEDIR) *.cc
 
 include makedepend
 

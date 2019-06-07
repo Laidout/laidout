@@ -24,7 +24,7 @@ objs= \
 interfaces: $(objs)
 
 depends:
-	makedepend -fmakedepend -I.. -I$(LAXDIR)/.. -Y *.cc
+	../utils/makedependencies -fmakedepend -I$(LAXDIR)/.. *.cc
 
 include makedepend
 
