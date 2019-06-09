@@ -210,9 +210,9 @@ fi
 ##
 ## Configure Laxkit if necessary, and pass in relevant flags
 ##
-if [ ! -e $(LAXDIR)/configured.h ] ; then
+if [ ! -e $LAXDIR/configured.h ] ; then
 	echo "Laxkit not configured, configuring with defaults...";
-	cd $(LAXDIR)/.. && ./configure
+	cd $LAXDIR/.. && ./configure
 fi
 
 
