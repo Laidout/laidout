@@ -58,6 +58,8 @@ while true ; do
 		echo ""
         echo " --help                       Show this stuff"
         echo " --prefix=/where/to/install   Default /usr/local"
+        echo " --finalprefix=/really/where  Optional, final install destination, when prefix is just a"
+        echo "                                temporary staging area, before actual installation."
         echo " --gs=/path/to/gs             Where is your ghostscript executable? This is quite"
         echo "                                optional, and is currently used only to generate"
         echo "                                previews of EPS files, and to render files it understands"
@@ -142,7 +144,7 @@ while true ; do
           shift
         fi
 		FINALPREFIX="$optarg"
-        #echo prefix $optarg ;
+        #echo finalprefix $optarg ;
         shift ;;
     -p | --prefix)  
         if [ -z $optarg ] ; then 
@@ -197,6 +199,7 @@ done
 
 if [ xxx$FINALPREFIX == xxx ] ; then FINALPREFIX=$PREFIX; fi
 
+echo "Done parsing options.";
 
 if [ xxx$EXTRA_PKG != xxx ] ; then
 #	if [ xxx$PKG_CONFIG_PATH != xxx ] ; then
@@ -295,7 +298,7 @@ if [ "$NUM" != "1" -a $FORCE=="no" ]; then
 	echo "or pass in includes with --extra-cppflags."
 	echo
 	echo "On debian based systems, you might try installing all dependencies with this:"
-	echo "    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev libcairo2-dev libharfbuzz-dev"
+	echo "    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev libcairo2-dev libharfbuzz-dev"
 	exit 1
 fi
 
