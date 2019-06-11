@@ -13,6 +13,8 @@
 // Copyright (C) 2012 by Tom Lechner
 //
 
+#ifndef LAIDOUT_NOGL
+
 #include "../language.h"
 #include "../ui/headwindow.h"
 #include "polyptychwindow.h"
@@ -21,8 +23,6 @@
 
 #include <lax/button.h>
 #include <lax/units.h>
-
-#ifndef LAIDOUT_NOGL
 
 using namespace Laxkit;
 using namespace Polyptych;
@@ -248,8 +248,8 @@ int PolyptychWindow::sendNewImposition()
 }
 
 
-#endif //LAIDOUT_NOGL
-
 
 } // namespace Laidout
+
+#endif //if !LAIDOUT_NOGL
 
