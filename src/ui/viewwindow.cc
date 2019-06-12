@@ -4184,7 +4184,7 @@ int ViewWindow::init()
 	 //---------help
 	last=ibut=new Button(this,"help",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"help",-1,
 						 _("Help!"),NULL,laidout->icons->GetIcon("Help"),buttongap);
-	ibut->tooltip(_("Popup a list of shortcuts"));
+	ibut->tooltip(_("Shortcuts, Settings, and About"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	
