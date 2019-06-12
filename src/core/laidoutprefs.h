@@ -28,6 +28,7 @@ class LaidoutPreferences : public Value
 	int pagedropshadow;
 	int preview_size;
 	bool start_with_last;
+	char *shortcuts_file;
 	char *splash_image_file;
 	char *default_template;
 	char *defaultpaper;

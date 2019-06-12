@@ -652,7 +652,7 @@ int LaidoutApp::init(int argc,char **argv)
 			}
 		}
 
-		if (topwindows.n==0 && prefs.default_template) {
+		if (topwindows.n==0 && !force_new_dialog && prefs.default_template) {
 			ErrorLog log;
 			LoadTemplate(prefs.default_template,log);
 		}

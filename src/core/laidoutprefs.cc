@@ -163,12 +163,19 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 
 	def->push("experimental",
 			_("Experimental"),
-			_("Whether to activate experimental features."),
+			_("Whether to activate experimental features. Requires restart."),
 			"boolean", NULL,"false",
 			0,
 			NULL);
 
-	def->push("shortcutsfile",
+	def->push("uiscale",
+			_("UI Scale"),
+			_("UI Scale"),
+			"real", NULL,"1",
+			0,
+			NULL);
+
+	def->push("shortcuts_file",
 			_("Shortcuts file"),
 			_("File for shortcuts"),
 			"File", NULL,NULL,
@@ -179,13 +186,6 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 			_("Splash image file"),
 			_("Splash image file"),
 			"File", NULL,NULL,
-			0,
-			NULL);
-
-	def->push("start_with_last",
-			_("Start With Last"),
-			_("Start with last document used."),
-			"boolean", NULL,NULL,
 			0,
 			NULL);
 
@@ -203,17 +203,17 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 			0,
 			NULL);
 
-	def->push("uiscale",
-			_("UI Scale"),
-			_("UI Scale"),
-			"real", NULL,"1",
+	def->push("start_with_last",
+			_("Start With Last"),
+			_("Start with last document used."),
+			"boolean", NULL,NULL,
 			0,
 			NULL);
 
 	def->push("defaulttemplate",
 			_("Default template"),
 			_("Default template to create new blank documents from"),
-			"string", NULL,NULL,
+			"File", NULL,NULL,
 			0,
 			NULL);
 
@@ -231,29 +231,29 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 			0,
 			NULL);
 
-	def->push("activate_color",
-			_("Activate color"),
-			_("Activate color, usually a green"),
-			"Color", NULL,"rgbf(0,.78,0)",
-			0,
-			NULL);
-
-	def->push("deactivate_color",
-			_("Deactivate color"),
-			_("Deactivate color, usually a red"),
-			"Color", NULL,"rgbf(1,.39,.39)",
-			0,
-			NULL);
+//	def->push("activate_color",
+//			_("Activate color"),
+//			_("Activate color, usually a green"),
+//			"Color", NULL,"rgbf(0,.78,0)",
+//			0,
+//			NULL);
+//
+//	def->push("deactivate_color",
+//			_("Deactivate color"),
+//			_("Deactivate color, usually a red"),
+//			"Color", NULL,"rgbf(1,.39,.39)",
+//			0,
+//			NULL);
 
 	def->push("icon_dirs",
-			_("Icon directory"),
+			_("Icon directories"),
 			_("A list of directories to look for icons in"),
 			"set", "File",NULL,
 			OBJECTDEF_ISSET,
 			NULL);
 
 	def->push("plugin_dirs",
-			_("Plugin directory"),
+			_("Plugin directories"),
 			_("A list of directories to look for plugins in"),
 			"set", "File",NULL,
 			OBJECTDEF_ISSET,
@@ -330,12 +330,16 @@ Value *LaidoutPreferences::dereference(const char *extstring, int len)
 		return s;
 	}
 
+	if (!strcmp(extstring, "shortcuts_file")) {
+		return shortcuts_file ? new FileValue(shortcuts_file) : NULL;
+	}
+
 	if (!strcmp(extstring, "splashimage")) {
-		return splash_image_file ? new StringValue(splash_image_file) : NULL;
+		return splash_image_file ? new FileValue(splash_image_file) : NULL;
 	}
 
 	if (!strcmp(extstring, "defaulttemplate")) {
-		return default_template ? new StringValue(default_template) : NULL;
+		return default_template ? new FileValue(default_template) : NULL;
 	}
 
 	if (!strcmp(extstring, "defaultpaper")) {
@@ -394,7 +398,7 @@ Value *LaidoutPreferences::dereference(const char *extstring, int len)
 		SetValue *set = new SetValue("File");
 		IconManager *icons=IconManager::GetDefault();
 		for (int c=0; c<icons->NumPaths(); c++) {
-			set->Push(new StringValue(icons->GetPath(c)), 1);
+			set->Push(new FileValue(icons->GetPath(c)), 1);
 		}
 		return set; 
 	}
@@ -402,7 +406,7 @@ Value *LaidoutPreferences::dereference(const char *extstring, int len)
 	if (!strcmp(extstring, "plugin_dirs")) {
 		SetValue *set = new SetValue("File");
 		for (int c=0; c<plugin_dirs.n; c++) {
-			set->Push(new StringValue(plugin_dirs.e[c]), 1);
+			set->Push(new FileValue(plugin_dirs.e[c]), 1);
 		}
 		return set; 
 	}
