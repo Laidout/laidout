@@ -10,17 +10,16 @@
 // version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2012 by Tom Lechner
+// Copyright (C) 2012-2019 by Tom Lechner
 //
 #ifndef INTERFACES_ALIGNINTERFACE_H
 #define INTERFACES_ALIGNINTERFACE_H
 
 #include <lax/interfaces/objectinterface.h>
+#include <lax/interfaces/pathinterface.h>
 #include <lax/refptrstack.h>
 #include <lax/shortcuts.h>
 #include <lax/attributes.h>
-
-#include "../laidout.h"
 
 
 namespace Laidout {
@@ -54,13 +53,13 @@ class AlignInfo : public Laxkit::anObject, public LaxFiles::DumpUtility
 	LaxInterfaces::SomeData *custom_icon;
 
 	int snap_align_type;//can be FALIGN_None, FALIGN_Align, or FALIGN_Proportional
-	int visual_align;  //how to rotate objects to lay on lines
+	int visual_align;  //how to rotate objects to lay on lines: FALIGN_Visual, FALIGN_VisualRotate, FALIGN_ObjectRotate
 	flatvector snap_direction;
 	double snapalignment;
 
-	int final_layout_type;//FALIGN_*, none, flow+gap, random, even placement, aligned, other
+	int final_layout_type; //FALIGN_*, none, flow+gap, random, even placement, aligned, other
 	flatvector layout_direction;
-	double finalalignment;//for when not flow and gap based
+	double finalalignment; //for when not flow and gap based
 	double leftbound, rightbound; //line parameter for path, dist between vertices is 1
 	double extrarotation;
 
@@ -71,7 +70,7 @@ class AlignInfo : public Laxkit::anObject, public LaxFiles::DumpUtility
 
 	double uiscale; //width of main alignment bar
 	flatpoint center;
-	flatpoint centeroffset; //used only when path==NULL
+	flatpoint centeroffset; //used only when path==nullptr
 	LaxInterfaces::PathsData *path; //custom alignment path
 
 	AlignInfo();
@@ -79,6 +78,21 @@ class AlignInfo : public Laxkit::anObject, public LaxFiles::DumpUtility
 
 	virtual void dump_out(FILE*, int, int, LaxFiles::DumpContext*);
 	virtual void dump_in_atts(LaxFiles::Attribute*, int, LaxFiles::DumpContext*);
+};
+
+
+//------------------------------------- AlignInterface --------------------------------------
+
+class AlignToolSettings : Laxkit::Resourceable
+{
+  public:
+	Laxkit::ScreenColor bgDefault;
+	Laxkit::ScreenColor bgHover;
+	Laxkit::ScreenColor fgDefault;
+	Laxkit::ScreenColor fgHover;
+
+	AlignToolSettings();
+	virtual ~AlignToolSettings() {}
 };
 
 
@@ -140,6 +154,7 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	int firsttime;
 	int active; //whether to continuously apply changes
 	int needtoresetlayout;
+	bool show_presets;
 
 	int hover, hoverindex;
 	flatpoint hoverpoint;
@@ -158,14 +173,19 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	virtual void postHoverMessage();
 	virtual void postAlignMessage(int a);
 	virtual void DrawAlignBox(flatpoint dir, double amount, int aligntype, int with_rotation_handles, int hover);
-	virtual void showPresets();
-	virtual void setPreset(int which);
+	virtual void ShowPresets();
+	virtual void SetPreset(int which);
 	virtual int createPath();
 
 	void base_init();
+
   public:
 	int snapto_lrc_amount;//pixel snap distance for common l/r/c points
 	double boundstep;
+
+	Laxkit::ScreenColor bgDefault;
+	Laxkit::ScreenColor bgHover;
+	Laxkit::ScreenColor bgStandout;
 	Laxkit::ScreenColor controlcolor;
 	Laxkit::ScreenColor patheditcolor;
 
@@ -175,16 +195,15 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 
 	int aligni_style;
 
-	AlignInterface(int nid=0,Laxkit::Displayer *ndp=NULL,Document *ndoc=NULL);
-	AlignInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
+	AlignInterface(anInterface *nowner, int nid=0, Laxkit::Displayer *ndp=nullptr);
 	virtual ~AlignInterface();
-	virtual anInterface *duplicate(anInterface *dup=NULL);
+	virtual anInterface *duplicate(anInterface *dup=nullptr);
 	virtual Laxkit::ShortcutHandler *GetShortcuts();
 
 	virtual const char *IconId() { return "Align"; }
 	virtual const char *Name();
 	virtual const char *whattype() { return "AlignInterface"; }
-	virtual const char *whatdatatype() { return NULL; }
+	virtual const char *whatdatatype() { return nullptr; }
 	virtual int draws(const char *atype);
 
 	virtual int InterfaceOn();
@@ -209,7 +228,6 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	virtual int FreeSelection();
 	virtual int AddToSelection(Laxkit::PtrStack<LaxInterfaces::ObjectContext> &objs);
 	virtual int AddToSelection(LaxInterfaces::Selection *objs);
-	//virtual int AddToSelection(Laxkit::PtrStack<ObjectContext> &objs);
 
 	virtual void ApplyPreset(int type);
 	virtual int ApplyAlignment(int updateorig);
