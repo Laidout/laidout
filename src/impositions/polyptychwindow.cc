@@ -13,6 +13,8 @@
 // Copyright (C) 2012 by Tom Lechner
 //
 
+#include "../configured.h"
+
 #ifndef LAIDOUT_NOGL
 
 #include "../language.h"
