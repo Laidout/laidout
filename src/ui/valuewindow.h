@@ -33,7 +33,7 @@ class ValueWindow : public Laxkit::ScrolledWindow, public Laxkit::SquishyBox
 	Laxkit::RowFrame *rowframe;
 	bool initialized;
 
-	virtual void Initialize(const char *prevpath, Value *val);
+	virtual void Initialize(const char *prevpath, Value *val, ObjectDef *mainDef, const char *pathOverride);
 	void Send();
 
   public:
@@ -48,6 +48,7 @@ class ValueWindow : public Laxkit::ScrolledWindow, public Laxkit::SquishyBox
 	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 
+	virtual void syncWindows();
 	virtual void Initialize();
 };
 

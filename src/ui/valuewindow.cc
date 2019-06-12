@@ -63,7 +63,7 @@ class ValueGUI
  */
 
 ValueWindow::ValueWindow(Laxkit::anXWindow *prnt, const char *nname, const char *ntitle, unsigned long nowner, const char *mes, Value *nvalue)
-  : ScrolledWindow(prnt, nname ? nname : (nvalue ? nvalue->Id() : nullptr), ntitle, SW_MOVE_WINDOW | SW_RIGHT | SW_BOTTOM,
+  : ScrolledWindow(prnt, nname ? nname : (nvalue ? nvalue->Id() : nullptr), ntitle, SW_MOVE_WINDOW | SW_RIGHT /*| SW_BOTTOM*/,
 		  0,0,600,600,0, nullptr,nowner,mes)
 {
 	rowframe = nullptr;
@@ -82,27 +82,33 @@ ValueWindow::~ValueWindow()
 
 int ValueWindow::init()
 {
-	if (!initialized) Initialize(nullptr, value);
+	if (!initialized) Initialize();
 	return ScrolledWindow::init();
 }
 
 
 void ValueWindow::Initialize()
 {
-	Initialize(nullptr, value);
+	Initialize(nullptr, value, value ? value->GetObjectDef() : nullptr, nullptr);
+	rowframe->WrapToExtent();
 	initialized = true;
 }
 
-void ValueWindow::Initialize(const char *prevpath, Value *val)
+void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDef, const char *pathOverride)
 {
 	if (!val) val = value;
 	if (!val) return;
 
 
-	if (rowframe == nullptr) {
-		rowframe = new RowFrame(this, val->Id(), val->Id(), ROWFRAME_ROWS,
-				0,0,0,0,0, nullptr,0,nullptr);
+	double th = win_themestyle->normal->textheight();
+	double HMULT = 1.5;
 
+	if (rowframe == nullptr) {
+		const char *id = val->Id();
+		if (!id) id = val->whattype();
+		rowframe = new RowFrame(this, id, id, ROWFRAME_ROWS | ROWFRAME_STRETCH_IN_ROW | ROWFRAME_STRETCH_IN_COL,
+				0,0,0,0,1, nullptr,0,nullptr, th*.25);
+		//rowframe->flags |= BOX_WRAP_TO_EXTENT;
 	}
 
 	if (thewindow != rowframe) {
@@ -114,10 +120,18 @@ void ValueWindow::Initialize(const char *prevpath, Value *val)
 	ObjectDef *def = val->GetObjectDef();
 	if (!def) {
 		DBG cerr << " *** WARNING! Missing object def for "<< val->Id()<<endl;
+		//exit(1);
 		return;
 	}
 
-	double th = win_themestyle->normal->textheight();
+	const char *fieldName = pathOverride;
+	if (!fieldName && mainDef) fieldName = mainDef->Name;
+	if (!fieldName) fieldName = "";
+
+	const char *fieldTooltip = nullptr;
+	if (mainDef) fieldTooltip = mainDef->description;
+	if (!fieldTooltip) fieldTooltip = "";
+
 	int type = val->type();
 	Utf8String scratch;
 	Utf8String mes;
@@ -138,8 +152,9 @@ void ValueWindow::Initialize(const char *prevpath, Value *val)
 		last = box = new LineInput(this, def->name,def->Name, LINP_INT,
 							 0,0,0,0,0,
 							 last,object_id, mes.c_str(),
-							 def->Name, scratch.c_str());
-		rowframe->AddWin(box,1, box->win_w,0,10000,50,0, th*1.2,0,0,50,0, -1);
+							 fieldName, scratch.c_str());
+		if (fieldTooltip) last->tooltip(fieldTooltip);
+		rowframe->AddWin(box,1, box->win_w,0,10000,50,0, th*HMULT,0,0,50,0, -1);
 		rowframe->AddNull();
 
 	} else if (type == VALUE_Real || type == VALUE_Number) {
@@ -151,8 +166,9 @@ void ValueWindow::Initialize(const char *prevpath, Value *val)
 		last = box = new LineInput(this, def->name,def->Name, LINP_FLOAT,
 							 0,0,0,0,0,
 							 last,object_id, mes.c_str(),
-							 def->Name, scratch.c_str());
-		rowframe->AddWin(box,1, box->win_w,0,10000,50,0, th*1.2,0,0,50,0, -1);
+							 fieldName, scratch.c_str());
+		if (fieldTooltip) last->tooltip(fieldTooltip);
+		rowframe->AddWin(box,1, box->win_w,0,10000,50,0, th*HMULT,0,0,50,0, -1);
 		rowframe->AddNull();
 
 
@@ -162,9 +178,9 @@ void ValueWindow::Initialize(const char *prevpath, Value *val)
 		last = check = new CheckBox(this, def->name, def->Name, CHECK_CIRCLE|CHECK_LEFT,
                              0,0,0,0,0,
                              last,object_id,mes.c_str(),
-                             _("By Command: "), th/2,th/2);
+                             fieldName, th/2,th/2);
+		if (fieldTooltip) last->tooltip(fieldTooltip);
         check->Checked(v->i);
-		if (def->description) check->tooltip(def->description);
 		rowframe->AddWin(check,1, -1);
 		rowframe->AddNull();
 
@@ -174,8 +190,9 @@ void ValueWindow::Initialize(const char *prevpath, Value *val)
 		last = box = new LineInput(this, def->name,def->Name, 0,
 							 0,0,0,0,0,
 							 last,object_id, mes.c_str(),
-							 def->Name, sv->str);
-		rowframe->AddWin(box,1, box->win_w,0,10000,50,0, th*1.2,0,0,50,0, -1);
+							 fieldName, sv->str);
+		if (fieldTooltip) last->tooltip(fieldTooltip);
+		rowframe->AddWin(box,1, box->win_w,0,10000,50,0, th*HMULT,0,0,50,0, -1);
 		rowframe->AddNull();
 
 	} else if (type == VALUE_Flatvector || type == VALUE_Spacevector || type == VALUE_Quaternion) {
@@ -192,6 +209,10 @@ void ValueWindow::Initialize(const char *prevpath, Value *val)
 			sv = v->v;
 		}
 
+		MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,0,0,1, fieldName);
+		if (fieldTooltip) bar->tooltip(fieldTooltip);
+		rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
+
 		LineInput *box;
 		Utf8String path2 = path + ".x";
 		scratch = sv.x;
@@ -199,7 +220,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val)
 							 0,0,0,0,0,
 							 last,object_id, path2.c_str(),
 							 _("x"), scratch.c_str());
-		rowframe->AddWin(box,1, box->win_w,0,10000,50,0, th*1.2,0,0,50,0, -1);
+		rowframe->AddWin(box,1, box->win_w,0,10000,50,0, th*HMULT,0,0,50,0, -1);
 
 		path2 = path + ".y";
 		scratch = sv.y;
@@ -207,7 +228,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val)
 							 0,0,0,0,0,
 							 last,object_id, path2.c_str(),
 							 _("y"), scratch.c_str());
-		rowframe->AddWin(box,1, box->win_w,0,10000,50,0, th*1.2,0,0,50,0, -1);
+		rowframe->AddWin(box,1, box->win_w,0,10000,50,0, th*HMULT,0,0,50,0, -1);
 
 		if (type == VALUE_Spacevector || type == VALUE_Quaternion) {
 			path2 = path + ".z";
@@ -216,7 +237,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val)
 								 0,0,0,0,0,
 								 last,object_id, path2.c_str(),
 								 _("z"), scratch.c_str());
-			rowframe->AddWin(box,1, box->win_w,0,10000,50,0, th*1.2,0,0,50,0, -1);
+			rowframe->AddWin(box,1, box->win_w,0,10000,50,0, th*HMULT,0,0,50,0, -1);
 		}
 
 		if (type == VALUE_Quaternion) {
@@ -226,26 +247,27 @@ void ValueWindow::Initialize(const char *prevpath, Value *val)
 								 0,0,0,0,0,
 								 last,object_id, path2.c_str(),
 								 _("w"), scratch.c_str());
-			rowframe->AddWin(box,1, box->win_w,0,10000,50,0, th*1.2,0,0,50,0, -1);
+			rowframe->AddWin(box,1, box->win_w,0,10000,50,0, th*HMULT,0,0,50,0, -1);
 		}
 
 		rowframe->AddNull();
 
 	} else if (type == VALUE_File) {
-		FileValue *v = dynamic_cast<FileValue*>(value);
+		FileValue *v = dynamic_cast<FileValue*>(val);
 		LineInput *box;
 		last = box = new LineInput(this, def->name,def->Name, LINP_SEND_ANY | LINP_FILE,
 							 0,0,0,0,0,
 							 last,object_id, mes.c_str(),
-							 def->Name, v->filename);
-		rowframe->AddWin(box,1, box->win_w,0,10000,50,0, th*1.2,0,0,50,0, -1);
+							 fieldName, v->filename);
+		if (fieldTooltip) last->tooltip(fieldTooltip);
+		rowframe->AddWin(box,1, box->win_w,0,10000,50,0, th*HMULT,0,0,50,0, -1);
 		rowframe->AddNull();
 
 	} else if (type == VALUE_Enum) { //} else if (type == VALUE_EnumVal) {
 		EnumValue *ev = dynamic_cast<EnumValue*>(val);
 		const char *nm=NULL, *Nm=NULL;
 
-		MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,0,0,1, def->Name); 
+		MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,0,0,1, fieldName);
 		rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
 
 		SliderPopup *popup;
@@ -253,13 +275,14 @@ void ValueWindow::Initialize(const char *prevpath, Value *val)
 									   last,object_id, mes.c_str(),
 									   nullptr,1
 									   );
+		if (fieldTooltip) last->tooltip(fieldTooltip);
 		for (int c=0; c < ev->GetObjectDef()->getNumEnumFields(); c++) {
 			ev->GetObjectDef()->getEnumInfo(c, &nm, &Nm);
 			if (!Nm) Nm = nm;
 			if (isblank(Nm)) continue;
 			popup->AddItem(Nm,c);
 		}
-		rowframe->AddWin(popup,1, popup->win_w,0,10000,50,0, th*1.2,0,0,50,0, -1);
+		rowframe->AddWin(popup,1, popup->win_w,0,10000,50,0, th*HMULT,0,0,50,0, -1);
 
 		rowframe->AddNull();
 
@@ -272,12 +295,14 @@ void ValueWindow::Initialize(const char *prevpath, Value *val)
 								   LAX_COLOR_RGB,
 								   .01,
 								   1.,0.,0.,1.);
+		if (fieldTooltip) last->tooltip(fieldTooltip);
 		rowframe->AddWin(colorbox,1, 50,0,50,50,0, colorbox->win_h,0,50,50,0, -1);
 
 	} else if (type == VALUE_Object) {
 		ObjectValue *v = dynamic_cast<ObjectValue*>(val);
 
-		MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,0,0,1, def->Name); 
+		MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,0,0,1, fieldName); 
+		if (fieldTooltip) bar->tooltip(fieldTooltip);
 		rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
 		if (v) {
 			bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,0,0,1, v->Id());
@@ -294,11 +319,46 @@ void ValueWindow::Initialize(const char *prevpath, Value *val)
 	} else if (type == VALUE_Fields) {
 		do_kids = true;
 
-	//} else if (type == VALUE_Class) {
-		//do_kids = true;
+	} else if (type == VALUE_Class) {
+		do_kids = true;
 
-	} else if (type == VALUE_Array) {
+	//} else if (type == VALUE_Array) {
+
 	} else if (type == VALUE_Set) {
+		SetValue *v = dynamic_cast<SetValue*>(val);
+
+		MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,0,0,0, fieldName); 
+		if (fieldTooltip) bar->tooltip(fieldTooltip);
+		rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, HMULT * bar->win_h,0,0,50,0, -1);
+		rowframe->AddNull();
+
+		Utf8String path2;
+		ObjectDef *fdef;
+
+		for (int c=0; c<v->values.n; c++) {
+			Value *vv = v->values.e[c];
+			fdef = vv->GetObjectDef();
+
+			rowframe->AddHSpacer(th,0,0,0);
+			//rowframe->AddWin(new MoveElementHandle(***));
+
+			path2 = c;
+			Initialize(prevpath, vv, fdef, path2.c_str());
+
+			//bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,0,0,1, vv->whattype());
+			//rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
+			//rowframe->AddNull();
+		}
+
+		Button *tbut;
+		path2 = "+";
+		path2 += path;
+		last = tbut = new Button(this,path2.c_str(),NULL,0, 0,0,0,0, 1,
+            last, object_id, path2.c_str(),
+            -1,
+            " + ");
+
+
 
 //	} else if (type == VALUE_Date) {
 //		cerr << " *** MUST IMPLEMENT VALUE_Date for ValueWindow!!!"<<endl;
@@ -327,26 +387,43 @@ void ValueWindow::Initialize(const char *prevpath, Value *val)
 		const char *nm;
 		//ValueTypes tp; *** should make sure it's data, not function that we are querying
 		Utf8String path2;
+		ObjectDef *fdef;
 
 		for (int c=0; c<def->getNumFields(); c++) {
-			def->getInfo(c, &nm);
-			if (!nm) continue;
+			fdef = def->getField(c);
+			//def->getInfo(c, &nm);
+			//if (!nm) continue;
 
+			nm = fdef->name;
 			Value *v = val->dereference(nm, -1);
 			if (!v) continue;
 			path2 = path + "." + nm;
-			Initialize(path2.c_str(), v);
+			Initialize(path2.c_str(), v, fdef, nullptr);
 		}
 	}
 }
 
+//void ValueWindow::AddIntValue(RowFrame *rowframe, IntValue *val)
+//{
+//}
+
+void ValueWindow::syncWindows()
+{
+	if (rowframe != nullptr && rowframe->win_w < win_w - scrollwidth) {
+		rowframe->pw(win_w - scrollwidth);
+	}
+	ScrolledWindow::syncWindows();
+}
+
 int ValueWindow::Event(const EventData *data,const char *mes)
 {
+	if (!strcmp(mes, "pan change")) return ScrolledWindow::Event(data,mes);
+
 	if (!isalnum(mes[0])) {
-		return 1;
+		return ScrolledWindow::Event(data,mes);
 	}
 
-	if (!value) return 1;
+	if (!value) return ScrolledWindow::Event(data,mes);
 	Value *val = value;
 
 	int type = value->type();
@@ -420,7 +497,7 @@ int ValueWindow::Event(const EventData *data,const char *mes)
 	if (type == VALUE_Color) {
 		ColorValue *v = dynamic_cast<ColorValue*>(val);
 		const SimpleColorEventData *ce = dynamic_cast<const SimpleColorEventData *>(data);
-        if (!ce) return 1;
+        if (!ce) return ScrolledWindow::Event(data,mes);
 
 		//if (ce->colorsystem = LAX_COLOR_RGB) v->color...
 		v->color.Set(ce->colorsystem, ce->Valuef(0), ce->Valuef(1), ce->Valuef(2), ce->Valuef(3), ce->Valuef(4));
@@ -449,7 +526,7 @@ int ValueWindow::Event(const EventData *data,const char *mes)
 //	} else if (type == VALUE_Any) {
 //	}
 
-	return 1;
+	return ScrolledWindow::Event(data,mes);
 }
 
 void ValueWindow::Send()
