@@ -498,12 +498,12 @@ Laxkit::MenuInfo *NUpInterface::ContextMenu(int x,int y,int deviceid, Laxkit::Me
 
 	menu->AddSep();
 
-	menu->AddItem(_("Grid"),      NUP_Grid      );
-	menu->AddItem(_("Sized Grid"),NUP_Sized_Grid);
-	menu->AddItem(_("Flowed"),    NUP_Flowed    );
-	menu->AddItem(_("Random"),    NUP_Random    );
-	menu->AddItem(_("Unclump"),   NUP_Unclump   );
-	menu->AddItem(_("Unoverlap"), NUP_Unoverlap );
+	menu->AddToggleItem(_("Grid"),      nullptr, NUP_Grid      , 0, nupinfo->flowtype == NUP_Grid      );
+	menu->AddToggleItem(_("Sized Grid"),nullptr, NUP_Sized_Grid, 0, nupinfo->flowtype == NUP_Sized_Grid);
+	menu->AddToggleItem(_("Flowed"),    nullptr, NUP_Flowed    , 0, nupinfo->flowtype == NUP_Flowed    );
+	menu->AddToggleItem(_("Random"),    nullptr, NUP_Random    , 0, nupinfo->flowtype == NUP_Random    );
+	menu->AddToggleItem(_("Unclump"),   nullptr, NUP_Unclump   , 0, nupinfo->flowtype == NUP_Unclump   );
+	menu->AddToggleItem(_("Unoverlap"), nullptr, NUP_Unoverlap , 0, nupinfo->flowtype == NUP_Unoverlap );
 
 	return menu;
 }
