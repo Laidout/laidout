@@ -12,6 +12,8 @@ pages with images, gradients (linear, radial, and mesh), mesh
 transformed images, engraving-like fill objects, and some basic text.
 Export with varying degrees of success to Svg, Scribus, Pdf, and more.
 
+See it in action here: https://www.youtube.com/playlist?list=PL22F7148142927C13
+
 Sometimes there are experimental tools you can activate by
 running: `laidout --experimental` or `laidout -E`
 
