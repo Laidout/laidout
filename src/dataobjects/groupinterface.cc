@@ -793,7 +793,7 @@ Laxkit::ShortcutHandler *GroupInterface::GetShortcuts()
 	// *** initialize nup and align shortcuts.. there should be a better way to do this!!
 	NUpInterface nup((int)0);
 	nup.GetShortcuts();
-	AlignInterface align((int)0);
+	AlignInterface align(nullptr);
 	align.GetShortcuts();
 
 	return sc;
