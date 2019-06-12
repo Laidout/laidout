@@ -61,8 +61,8 @@ NetDialog::NetDialog(Laxkit::anXWindow *parnt,const char *nname,const char *ntit
 
 	doc=NULL;
 
-	if (paper) paperstyle=(PaperStyle*)paper->duplicate();
-	else paper=new PaperStyle;
+	if (paper) paperstyle = dynamic_cast<PaperStyle*>(paper->duplicate());
+	else paperstyle = new PaperStyle;
 
 	//doc=ndoc;
 	//if (doc) doc->inc_count();
