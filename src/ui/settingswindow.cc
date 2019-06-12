@@ -66,7 +66,7 @@ Laxkit::anXWindow *newSettingsWindow(const char *which, const char *place)
 	}
 
 	ShortcutWindow *shortcutwin=new ShortcutWindow(frame,"Shortcuts",_("Shortcuts"),
-					ANXWIN_REMEMBER|SHORTCUTW_Show_Search|SHORTCUTW_Load_Save,
+					ANXWIN_REMEMBER | SHORTCUTW_Show_Search | SHORTCUTW_Load_Save,
 					0,0,400,600,0,place);
 	shortcutwin->SetWinStyle(ANXWIN_ESCAPABLE, 0);
 	makestr(shortcutwin->textheader,"#\n# Laidout shortcuts\n#\n");
@@ -79,8 +79,6 @@ Laxkit::anXWindow *newSettingsWindow(const char *which, const char *place)
 	settings->Initialize();
 	frame->AddWin(settings,1,
 				   _("Settings"), NULL, 0);
-	//frame->AddWin(new MessageBar(frame, "Settings", _("Settings"), MB_CENTER, 0,0,0,0,0, "TODO!"),1,
-	//			   _("Settings"), NULL, 0);
 
 
 	 //about tab
