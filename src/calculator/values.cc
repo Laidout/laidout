@@ -2722,6 +2722,8 @@ Value *AttributeToValue(Attribute *att)
 		return NULL;
 
     } else if (!strcmp(att->name, "FileValue")) {
+		return new FileValue(att->value);
+
     } else if (!strcmp(att->name, "EnumValue")) {
     } else if (!strcmp(att->name, "ValueHash")) {
     } else if (!strcmp(att->name, "GenericValue")) {
