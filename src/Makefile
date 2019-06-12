@@ -10,7 +10,7 @@ LAXIDIR=$(LAXDIR)/interfaces
 
 LD=g++
 LDFLAGS= $(EXTRA_LDFLAGS) -L/usr/local/lib -L/usr/X11R6/lib -rdynamic -lXi -lXext -lX11 -lm -lpng `imlib2-config --libs` `pkg-config --libs freetype2`\
-		 `cups-config --libs` -ldl -lXft -lXrandr
+		 `pkg-config --libs GraphicsMagick++` `cups-config --libs` -ldl -lXft -lXrandr
 DEBUGFLAGS= -g -gdwarf-2
 CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) $(EXTRA_CPPFLAGS)  -I$(LAXDIR)/.. `pkg-config --cflags freetype2` -I$(POLYPTYCHBASEDIR)
 
@@ -24,7 +24,7 @@ endif
 #---polyptych related:
 ifeq ($(LAIDOUT_USING_GL), yes)
 #---if gl:
-POLYPTYCHLIBS= `pkg-config --libs GraphicsMagick++` -ltiff -lGL -lGLU -lftgl
+POLYPTYCHLIBS=  -ltiff -lGL -lGLU -lftgl
 POLYPTYCH_GL_OBJS=polyptych/src/hedronwindow.o  polyptych/src/glbase.o  polyptych/src/gloverlay.o  polyptych/src/polyrender.o
 POLYPTYCHFORLAIDOUT=polyptychgl
 
