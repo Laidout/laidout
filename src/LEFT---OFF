@@ -48,6 +48,8 @@ evince on ubuntu 14.04, pdf export won't load, says Syntax Error... Dictionary k
 configure should check for libreadline-dev? apparently not pkg-config ready <- half fix of listing in package requirements
   needs to use the new extra_cppflags thing
 
+scroll bar zoom handles don't appear to work
+
 memory hole in reimpose .. reimposed 5 page booklet
 memory hole when graphical shell activated
 memory hole do laidout -n letter, split a window, then quit. undeleted Objects remain!
@@ -170,7 +172,9 @@ test:
 
 
 lgm 2019 feedback and ideas:
-  configure still sucks.. laidout configure needs to drive laxkit configure.
+  configure still sucks.. 
+    laidout configure needs to drive laxkit configure more thoroughly.
+    shouldn't need the '='
   path tool:
     hard to see helper graphics, needs haloing
 	should have space to dup weight node
@@ -244,6 +248,24 @@ need a better file preview system
   need to wrap laidout_preview_maker(), which previews EPS with the help of gs
 
 save as needs to use current save path, not current directory
+
+valuewindow:
+  ui hints:
+    DoubleRectangle      [maxy]
+	                 [minx]  [maxx]
+					     [miny]
+    AffineValue:  [xx] [xy] {scale x} {rotation} 
+	              [yx] [yy] {scale y} {shear}
+				  [x0] [y0]
+  setvalue
+  arrayvalue
+  ValueHash
+  rearrange
+  delete elements of list
+  scrolledwindow:
+    errant scroller visible, pops on and off
+	when scroller visible, not adjusting thewindow size properly
+  when you quit, does not remember from open windows
 
 ux:
   when you save, also save a preview?
@@ -340,6 +362,7 @@ build: building:
 rework ui to be programmable. Perhaps an ui builder
 
 file filters: filefilters:
+  multiple export targets, including per object export settings
   config resource load/save
   need to ensure that when bouncing around filters, Export All sets range properly
   need to preserve last settings per filter
@@ -1334,6 +1357,9 @@ For objects that are really skinny, it is not practical to have the handles be a
 for blend modes, maybe place name conversion in Displayer, in case there are a ton of custom blend modes??
 
 nup:
+  fill in box
+  bug: not showing highlight on rectangle
+  doesn't appear to update random target area when you resize area
   flowed
   unclump
   unoverlap -> define strategy, either shift H, Vert, along v, or shift on axes between objects
@@ -1373,6 +1399,8 @@ when importing, have MysteryData, which has special attributes "@file-pos" which
  in: convert file to attributes, or provide method to tailor to an output format (eps, pdf objs, raster image),
          and provide a preview image or object to stand in for the file..
 
+viewport:
+  allow multiple, positionable spread views visible on same viewport
 
 resources:
   should have a way to narrow down what resources are saved when you save a single document.. right now, if you
