@@ -13,7 +13,7 @@ LD=g++
 LDFLAGS= $(EXTRA_LDFLAGS) -L/usr/X11R6/lib -lXi -lXext -lX11 -lm -lpng `imlib2-config --libs` `pkg-config --libs freetype2`\
 		 `cups-config --libs` -lXft -L$(LAXIDIR) -L$(LAXDIR)
 DEBUGFLAGS= -g -gdwarf-2
-CPPFLAGS= $(EXTRA_CPPFLAGS) -fPIC -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. `pkg-config --cflags freetype2`
+CPPFLAGS= $(EXTRA_CPPFLAGS) -std=c++11 -fPIC -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. `pkg-config --cflags freetype2`
 
 
 
