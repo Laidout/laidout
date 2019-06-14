@@ -117,34 +117,34 @@ const char *LaidoutVersion()
  * is perhaps a little more meaningful or something...
  */
 
-//! Redefinition of the default Laxkit preview generator.
-/*! \ingroup misc
- *
- * This can create previews of eps files..
- *
- * Return 0 for success.
- */
-int laidout_preview_maker(const char *original, const char *preview, const char *format, int width, int height, int fit)
-{
-	// *** need to wrap eps handling into something else...
-	if (!GeneratePreviewFile(original,preview,format,width,height,fit)) return 0;
-
-	 //normal preview maker didn't work, so try something else...
-	DoubleBBox bbox;
-	char *title,*date;
-	int depth,w,h;
-	FILE *f=fopen(original,"r");
-	if (!f) return 1;
-	setlocale(LC_ALL,"C");
-	int c=scaninEPS(f,&bbox,&title,&date,NULL,&depth,&w,&h);
-	setlocale(LC_ALL,"");
-	fclose(f);
-	if (c) return 1; //not eps probably
-	return WriteEpsPreviewAsPng(GHOSTSCRIPT_BIN,
-						 original,w,h,
-						 preview,width,height,
-						 NULL);
-}
+////! Redefinition of the default Laxkit preview generator.
+///*! \ingroup misc
+// *
+// * This can create previews of eps files..
+// *
+// * Return 0 for success.
+// */
+//int laidout_preview_maker(const char *original, const char *preview, const char *format, int width, int height, int fit)
+//{
+//	// *** need to wrap eps handling into something else...
+//	if (!GeneratePreviewFile(original,preview,format,width,height,fit)) return 0;
+//
+//	 //normal preview maker didn't work, so try something else...
+//	DoubleBBox bbox;
+//	char *title,*date;
+//	int depth,w,h;
+//	FILE *f=fopen(original,"r");
+//	if (!f) return 1;
+//	setlocale(LC_ALL,"C");
+//	int c=scaninEPS(f,&bbox,&title,&date,NULL,&depth,&w,&h);
+//	setlocale(LC_ALL,"");
+//	fclose(f);
+//	if (c) return 1; //not eps probably
+//	return WriteEpsPreviewAsPng(GHOSTSCRIPT_BIN,
+//						 original,w,h,
+//						 preview,width,height,
+//						 NULL);
+//}
 
 
 
@@ -267,7 +267,9 @@ LaidoutApp::LaidoutApp()
 
 	defaultpaper=NULL;
 
-	ghostscript_binary=newstr(GHOSTSCRIPT_BIN);
+	//ghostscript_binary=newstr(GHOSTSCRIPT_BIN);
+	if (file_exists("/usr/bin/gs", 0, nullptr) == S_IFREG) ghostscript_binary = newstr("/usr/bin/gs");
+	else ghostscript_binary = nullptr;
 
 	calculator=NULL;
 	GetUnitManager()->DefaultUnits(prefs.unitname);

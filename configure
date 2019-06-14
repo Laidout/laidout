@@ -17,7 +17,6 @@ PREFIX="/usr/local"
 #LAXDIR="/usr/local/include/lax"
 LAXDIR="`pwd`/laxkit/lax"
 
-GS="/usr/bin/gs"
 
  # for some plugins:
 GEGLVERSION='gegl-0.3'
@@ -60,10 +59,6 @@ while true ; do
         echo " --prefix=/where/to/install   Default /usr/local"
         echo " --finalprefix=/really/where  Optional, final install destination, when prefix is just a"
         echo "                                temporary staging area, before actual installation."
-        echo " --gs=/path/to/gs             Where is your ghostscript executable? This is quite"
-        echo "                                optional, and is currently used only to generate"
-        echo "                                previews of EPS files, and to render files it understands"
-        echo "                                to image files that Laidout understands."
         echo " --laxkit=/laxkit/headers     Default in releases is ./laxkit, since the Laxkit"
         echo "                                is currently included in release downloads"
 		echo " --version=OtherVersionNum    You may force Laidout to compile with a different"
@@ -162,14 +157,6 @@ while true ; do
 		LAIDOUTVERSION="$optarg"
         #echo version $optarg ;
         shift ;;
-    --gs) 
-        if [ -z $optarg ] ; then 
-          optarg=$2
-          shift
-        fi
-		GS="$optarg"
-		echo gs $optarg; 
-		shift ;;
     --laxkit)
         if [ -z $optarg ] ; then 
           optarg=$2
@@ -340,7 +327,6 @@ echo "#define BIN_PATH         \"$FINALPREFIX/bin/laidout\"" >> src/configured.h
 echo "#define SHARED_DIRECTORY \"$FINALPREFIX/share/laidout/$LAIDOUTVERSION/\"" >> src/configured.h
 echo "#define ICON_DIRECTORY   \"$FINALPREFIX/share/laidout/$LAIDOUTVERSION/icons\"" >> src/configured.h
 echo "#define LANGUAGE_PATH    \"$FINALPREFIX/$LANGUAGE_PATH\"" >> src/configured.h
-echo "#define GHOSTSCRIPT_BIN  \"$GS\"" >> src/configured.h 
 echo $LAIDOUT_NOGL >> src/configured.h
 echo "" >> src/configured.h
 echo "#endif" >> src/configured.h
@@ -397,7 +383,6 @@ echo " Laidout version:  $LAIDOUTVERSION"         >> config.log
 echo "    Install here:  $PREFIX"                 >> config.log
 echo "   Language Path:  $PREFIX/$LANGUAGE_PATH"  >> config.log
 echo "  Laxkit headers:  $LAXDIR"                 >> config.log
-echo "     Ghostscript:  $GS"                     >> config.log
 echo "       Enable GL:  $USINGGL"                >> config.log
 echo "          Sqlite:  $USESQLITE"              >> config.log
 echo "  Extra cppflags:  $EXTRA_CPPFLAGS"         >> config.log
@@ -414,7 +399,6 @@ echo " Laidout version:  $LAIDOUTVERSION"
 echo "    Install here:  $PREFIX"
 echo "   Language Path:  $PREFIX/$LANGUAGE_PATH"
 echo "  Laxkit headers:  $LAXDIR"
-echo "     Ghostscript:  $GS"
 echo "       Enable GL:  $USINGGL"
 echo "          Sqlite:  $USESQLITE"             
 echo "  Extra cppflags:  $EXTRA_CPPFLAGS"

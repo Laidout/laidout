@@ -980,12 +980,6 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			layer++;
 		}
 
-	} else if (!strcmp(obj->whattype(),"EpsData")) {
-		setlocale(LC_ALL,"");
-		log.AddMessage(_("Cannot export Eps objects into svg.\n"),ERROR_Warning);
-		setlocale(LC_ALL,"C");
-		warning++;
-		
 	} else if (!strcmp(obj->whattype(),"ImageData")) {
 		ImageData *img;
 		img=dynamic_cast<ImageData *>(obj);

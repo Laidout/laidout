@@ -17,6 +17,7 @@
 #include <lax/strmanip.h>
 #include <lax/laximages.h>
 #include "epsdata.h"
+#include "../laidout.h"
 #include "../printing/epsutils.h"
 #include "../configured.h"
 #include "../language.h"
@@ -202,11 +203,11 @@ int EpsData::LoadImage(const char *fname, const char *npreview, int maxpw, int m
 		// do nothing if preview file already exists..
 		//*** perhaps optionally regenerate?
 
-	} else if (strcmp("",GHOSTSCRIPT_BIN)) {
+	} else if (laidout->binary("gs") != nullptr) {
 		 // call ghostscript from command line, save preview ***where?
-		char *error=NULL;
+		char *error = nullptr;
 		
-		c = WriteEpsPreviewAsPng(GHOSTSCRIPT_BIN,
+		c = WriteEpsPreviewAsPng(laidout->binary("gs"),
 						 fname, width, height,
 						 npreview, maxpw, maxph,
 						 &error);

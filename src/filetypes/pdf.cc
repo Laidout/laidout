@@ -565,8 +565,7 @@ int pdfSetClipToPath(char *&stream,LaxInterfaces::SomeData *outline,int iscontin
 
 
 //! Save the document as PDF.
-/*! This does not export EpsData.
- * Files are not checked for existence. They are clobbered if they already exist, and are writable.
+/*! Files are not checked for existence. They are clobbered if they already exist, and are writable.
  *
  * Return 0 for success, 1 for error and nothing written, 2 for error, and corrupted file possibly written.
  * 2 is mainly for debugging purposes, and will be perhaps be removed in the future.

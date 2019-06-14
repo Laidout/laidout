@@ -26,7 +26,6 @@
 #include "../core/utils.h"
 #include "../core/drawdata.h"
 #include "../printing/psout.h"
-#include "../dataobjects/epsdata.h"
 #include "../dataobjects/mysterydata.h"
 #include "ppt.h"
 
@@ -128,7 +127,6 @@ ObjectDef *PptoutFilter::GetObjectDef()
 
 //! Internal function to dump out the obj if it is an ImageData.
 /*! \todo deal with SomeDataRef
- * \todo *** test EpsData out
  */
 static void pptdumpobj(FILE *f,double *mm,SomeData *obj,int indent,ErrorLog &log)
 {
@@ -168,23 +166,23 @@ static void pptdumpobj(FILE *f,double *mm,SomeData *obj,int indent,ErrorLog &log
 				img->filename);
 		return;
 
-	} else if (!strcmp(obj->whattype(),"EpsData")) {
-		 // just like ImageData, but outputs as type="Image"
-		EpsData *eps;
-		eps=dynamic_cast<EpsData *>(obj);
-		if (!eps || !eps->filename) return;
-
-		double m[6];
-		if (mm) transform_mult(m,eps->m(),mm);
-		else transform_copy(m,eps->m());
-		
-		char *bname=basename(eps->filename); // Warning! This assumes the GNU basename, which does
-											 // not modify the string.
-		fprintf(f,"%s<frame name=\"Image %s\" matrix=\"%.10g %.10g %.10g %.10g %.10g %.10g\" ",
-				spc, bname, m[0], m[1], m[2], m[3], m[4], m[5]);
-		fprintf(f,"lock=\"false\" flowaround=\"false\" obstaclemargin=\"0\" type=\"image\" file=\"%s\" />\n",
-				eps->filename);
-		return;
+//	} else if (!strcmp(obj->whattype(),"EpsData")) {
+//		 // just like ImageData, but outputs as type="Image"
+//		EpsData *eps;
+//		eps=dynamic_cast<EpsData *>(obj);
+//		if (!eps || !eps->filename) return;
+//
+//		double m[6];
+//		if (mm) transform_mult(m,eps->m(),mm);
+//		else transform_copy(m,eps->m());
+//		
+//		char *bname=basename(eps->filename); // Warning! This assumes the GNU basename, which does
+//											 // not modify the string.
+//		fprintf(f,"%s<frame name=\"Image %s\" matrix=\"%.10g %.10g %.10g %.10g %.10g %.10g\" ",
+//				spc, bname, m[0], m[1], m[2], m[3], m[4], m[5]);
+//		fprintf(f,"lock=\"false\" flowaround=\"false\" obstaclemargin=\"0\" type=\"image\" file=\"%s\" />\n",
+//				eps->filename);
+//		return;
 
 	} else if (!strcmp(obj->whattype(),"MysteryData")) {
 		MysteryData *mdata=dynamic_cast<MysteryData *>(obj);

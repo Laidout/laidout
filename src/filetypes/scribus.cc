@@ -1053,7 +1053,8 @@ static void appendobjfordumping(ScribusExportConfig *config, PtrStack<PageObject
 	int nativeid=-1;
 
 
-	if (!strcmp(obj->whattype(),"ImageData") || !strcmp(obj->whattype(),"EpsData")) {
+	//if (!strcmp(obj->whattype(),"ImageData") || !strcmp(obj->whattype(),"EpsData")) {
+	if (!strcmp(obj->whattype(),"ImageData")) {
 		ImageData *img=dynamic_cast<ImageData *>(obj);
 		if (!img || !img->filename) return;
 		ptype=PTYPE_Image;
@@ -1353,7 +1354,8 @@ static void scribusdumpobj(ScribusExportConfig *config, FILE *f,int &curobj,PtrS
 	CaptionData *text=NULL;
 
 
-	if (!strcmp(obj->whattype(),"ImageData") || !strcmp(obj->whattype(),"EpsData")) {
+	//if (!strcmp(obj->whattype(),"ImageData") || !strcmp(obj->whattype(),"EpsData")) {
+	if (!strcmp(obj->whattype(),"ImageData")) {
 		img = dynamic_cast<ImageData *>(obj);
 		if (!img || !img->filename) return;
 		ptype = PTYPE_Image;
