@@ -102,6 +102,7 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	RunModeType runmode;
 
 	char *config_dir;
+	char *shared_dir;
 	Project *project;
 	Document *curdoc;
 	Laxkit::anXWindow *lastview;
@@ -110,7 +111,6 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	int experimental;
 	LaidoutPreferences prefs;
 
-	char *icon_dir;
 	Laxkit::IconManager *icons;
 
 	ValueHash globals;

@@ -34,6 +34,7 @@
 #include <lax/bitmaputils.h>
 #include <lax/freedesktop.h>
 #include <lax/interfaces/interfacemanager.h>
+#include <lax/utf8string.h>
 #include <sys/file.h>
 
 #define LAIDOUT_CC
@@ -246,6 +247,15 @@ LaidoutApp::LaidoutApp()
 
 	config_dir = ConfigDir();
 
+	if (!strncmp(SHARED_DIRECTORY, "..", 2)) { 
+		shared_dir = ExecutablePath();
+		appendstr(shared_dir, "/../");
+		appendstr(shared_dir, SHARED_DIRECTORY);
+		simplify_path(shared_dir, 1);
+		if (shared_dir[strlen(shared_dir)-1] != '/')
+			appendstr(shared_dir, "/");
+	} else shared_dir = newstr(SHARED_DIRECTORY);
+
 	makestr(controlfontstr,"sans-15");
 
 	curcolor=0;
@@ -258,8 +268,6 @@ LaidoutApp::LaidoutApp()
 	experimental=0;
 
 	 // laidoutrc defaults
-	icon_dir=NULL;
-	
 	preview_over_this_size=250; 
 	max_preview_length=200;
 	max_preview_width=max_preview_height=-1;
@@ -521,35 +529,35 @@ int LaidoutApp::init(int argc,char **argv)
 	 //             when running before installing
  
 	 // find the current executable path
-	 //****** this is wrong!!
-	 //could use /proc/(pid)/exe, which is link to actual executable
-	char *curexecpath=NULL;
-	if (argv[0][0]!='/') {
-		//char *d=get_current_dir_name();
-		char *d=getcwd(NULL,0);
-		curexecpath=newstr(d);
-		free(d);
-		appendstr(curexecpath,"/");
-		appendstr(curexecpath,argv[0]);
-		simplify_path(curexecpath,1);
-	} else curexecpath=newstr(argv[0]);
-	
-	 // add either configured icon_dir to icons 
-	 // or ./icons if the installed executable path is not the same as current executable path
-	 //*******this doesn't work, curexecpath resolves to $curdir/laidout when you run. CRAP!!
-//	if (strcmp(BIN_PATH,curexecpath)) {
-//		char *iconpath=lax_dirname(curexecpath,0);
-//		appendstr(iconpath,"/icons");
-//		icons->AddPath(iconpath);
-//		DBG cerr <<"Added uninstalled icon dir "<<iconpath<<" to icon path"<<endl;
-//		delete[] iconpath;
-//	} else {
-		DBG cerr <<"Added installed icon dir "<<ICON_DIRECTORY<<" to icon path"<<endl;
-		if (icon_dir) icons->AddPath(icon_dir);
-		icons->AddPath(ICON_DIRECTORY);
-		if (!icon_dir) makestr(icon_dir,ICON_DIRECTORY);
-//	}
-	delete[] curexecpath; curexecpath=NULL;
+	Utf8String execdir(ExecutablePath(), -1, true);
+	execdir = lax_dirname(execdir.c_str(),0);
+
+	 // Check executabledir/icons first
+	Utf8String iconpath = execdir;
+	iconpath.Append("/icons");
+	if (file_exists(iconpath.c_str(), 1, nullptr) == S_IFDIR) {
+		icons->AddPath(iconpath.c_str());
+		DBG cerr <<"Added uninstalled icon dir "<<iconpath<<" to icon path"<<endl;
+	}
+
+	if (!strncmp(ICON_DIRECTORY, "..", 2)) {
+		//configured dir is relative to executable
+		iconpath = execdir;
+		iconpath.Append("/");
+		iconpath.Append(ICON_DIRECTORY);
+		char *path = simplify_path(iconpath.c_str());
+		if (file_exists(path, 1, nullptr) == S_IFDIR) {
+			icons->AddPath(path);
+			DBG cerr <<"Added relocatabale icon dir "<<path<<" to icon path"<<endl;
+		}
+		delete[] path;
+
+	} else {
+		if (file_exists(ICON_DIRECTORY, 1, nullptr) == S_IFDIR) {
+			icons->AddPath(ICON_DIRECTORY);
+			DBG cerr <<"Added installed icon dir "<<ICON_DIRECTORY<<" to icon path"<<endl;
+		}
+	}
 
 
 	 //-----read in laidoutrc
@@ -616,11 +624,14 @@ int LaidoutApp::init(int argc,char **argv)
 	}
 	
 	 //-----define default icon
-	char *str=newstr(icon_dir);
-	//appendstr(str,"/Laidout-shaded-icon-48x48.png");
-	appendstr(str,"/laidout-48x48.png");
-	DefaultIcon(str);
-	delete[] str;
+	for (int c=0; c<icons->NumPaths(); c++) {
+		Utf8String path = newstr(icons->GetPath(c));
+		path.Append("/laidout-48x48.png");
+		if (file_exists(path.c_str(), 1, nullptr) == S_IFREG) {
+			DefaultIcon(path.c_str());
+			break;
+		}
+	}
 
 
 	 // Note parseargs has to come after initing all the pools and whatever else
@@ -851,8 +862,8 @@ int LaidoutApp::createlaidoutrc()
 
 					   //resource directories
 					  " # Some assorted directories:\n");
-			fprintf(f,"#icon_dir %s/icons\n",SHARED_DIRECTORY);
-			fprintf(f,"#plugin_dir %s/plugins #configdir/plugins, and this dir are always consulted after any dir in this config\n",SHARED_DIRECTORY);
+			fprintf(f,"#icon_dir %s/icons\n", shared_dir);
+			fprintf(f,"#plugin_dir %s/plugins #configdir/plugins, and this dir are always consulted after any dir in this config\n", shared_dir);
 			fprintf(f,"#palette_dir /usr/share/gimp/2.0/palettes\n"
 					  "\n");
 
@@ -1030,8 +1041,9 @@ int LaidoutApp::readinLaidoutDefaults()
 			if (file_exists(value,1,NULL)==S_IFREG) makestr(ghostscript_binary,value);
 
 		} else if (!strcmp(name,"icon_dir")) {
-			if (file_exists(value,1,NULL)==S_IFDIR) makestr(icon_dir,value);
-			if (!isblank(icon_dir)) icons->AddPath(icon_dir);
+			if (file_exists(value,1,NULL) == S_IFDIR) {
+				icons->AddPath(value);
+			}
 		
 		} else if (!strcmp(name,"plugin_dir")) {
 			if (file_exists(value,1,NULL) == S_IFDIR) {
@@ -1142,12 +1154,12 @@ int LaidoutApp::InitializePlugins()
 	 //try to load all in prefs.plugin_dirs/*.so
 
 	 //always add default plugin dir to end of list
-	char scratch[500];
+	char scratch[PATH_MAX];
 
 	sprintf(scratch,"%splugins",config_dir);
 	prefs.AddPath("plugins", scratch);
 
-	sprintf(scratch,"%splugins",SHARED_DIRECTORY);
+	sprintf(scratch,"%splugins", shared_dir);
 	prefs.AddPath("plugins", scratch);
 
 	glob_t globbuf;
@@ -2134,12 +2146,19 @@ int main(int argc,char **argv)
 	char scratch[100];
 	sprintf(scratch,"laidout-%s",LAIDOUT_VERSION);
 	setlocale(LC_ALL,"");
-	bindtextdomain(scratch,LANGUAGE_PATH);
+	if (!strncmp(LANGUAGE_PATH, "..", 2)) {
+		char *path = ExecutablePath();
+		appendstr(path, "/../"); //since path points to binary file, assume it's */bin/laidout
+		appendstr(path, LANGUAGE_PATH);
+		simplify_path(path, 1);
+		bindtextdomain(scratch,path);
+		delete[] path;
+	} else bindtextdomain(scratch,LANGUAGE_PATH);
 	textdomain(scratch);
 
 	DBG cerr<<"---------Intl settings----------"<<endl;
 	DBG cerr<<"Text domain: "<<textdomain(NULL)<<endl;
-	DBG cerr<<"Domain dir:  "<<bindtextdomain("laidout",NULL)<<endl;
+	DBG cerr<<"Domain dir:  "<<bindtextdomain(scratch,NULL)<<endl;
 	DBG cerr<<"Locale:      "<<setlocale(LC_MESSAGES,NULL)<<endl;
 	DBG cerr<<"--------------------------------"<<endl;
 
@@ -2147,7 +2166,7 @@ int main(int argc,char **argv)
 	InitOptions();
 
 	int c,index;
-	c=options.Parse(argc,argv, &index); //parses into arguments, but does not process
+	c = options.Parse(argc,argv, &index); //parses into arguments, but does not process
 
 	if (c==-2) {
 		cerr <<"Missing parameter for "<<argv[index]<<"!!"<<endl;
@@ -2201,16 +2220,10 @@ int main(int argc,char **argv)
 	laidout=new LaidoutApp();
 	if (theme) laidout->SetTheme(theme);
 	if (backend) laidout->Backend(backend);
-	o=options.find("experimental",0);
-	if (o && o->parsed_present) laidout->experimental=1;
+	o = options.find("experimental",0);
+	if (o && o->parsed_present) laidout->experimental = 1;
 
 
-	DBG cerr <<" *** Warning! Undo is VERY VERY experimental, and not uniformly implemented!! use at your own risk!!!"<<endl;
-	//if (!laidout->experimental) EnableUndo(false);
-	//EnableUndo(true);
-
-	// *** LaxInterfaces::InterfaceManager::SetDefault(new LInterfaceManager(),true);
-	
 	laidout->init(argc,argv);
 
 	//DBG cerr <<"------------ stylemanager->dump --------------------"<<endl;

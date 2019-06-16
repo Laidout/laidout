@@ -142,11 +142,11 @@ PtrStack<ImpositionResource> *GetBuiltinImpositionPool(PtrStack<ImpositionResour
 
 	 //read in imposition resources from specified directory, and add to stack
 
-	if (!existingpool) existingpool=new PtrStack<ImpositionResource>;
+	if (!existingpool) existingpool = new PtrStack<ImpositionResource>;
 	
-	char *globalresourcedir=newstr(SHARED_DIRECTORY);
-	char *localresourcedir=newstr(laidout->config_dir);
-	char *projectresourcedir=newstr(laidout->project->dir);
+	char *globalresourcedir  = newstr(laidout->shared_dir);
+	char *localresourcedir   = newstr(laidout->config_dir);
+	char *projectresourcedir = newstr(laidout->project->dir);
 
 	appendstr(localresourcedir,"impositions/");
 	appendstr(globalresourcedir,"impositions/");

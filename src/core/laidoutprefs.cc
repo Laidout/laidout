@@ -69,8 +69,7 @@ LaidoutPreferences::LaidoutPreferences()
  : icon_dirs(2),
    plugin_dirs(2)
 {
-	splash_image_file = newstr(ICON_DIRECTORY);
-	appendstr(splash_image_file,"/laidout-splash.png");
+	splash_image_file = newstr("./laidout-splash.png");
 
 	default_units  = UNITS_Inches;
 	unitname       = newstr("inches");
