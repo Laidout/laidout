@@ -8,9 +8,10 @@ CONFIGCOMMAND="./configure $@"
 
 LAIDOUTVERSION=0.097.1
 
- # finalprefix is where things eventually get installed. For deb packaging, this is different than prefix
-FINALPREFIX=""
+ # finalprefix is where things eventually get installed. For deb packaging, this is different than prefix.
+ # To be relocatable, set to "".
 PREFIX="/usr/local"
+FINALPREFIX=""
 
 ##Use the first if you are using an installed LAXKIT.
 ##Use the second if laxkit is located in same dir as this file, which is true for releases.
@@ -28,6 +29,7 @@ USINGGL="yes"
 USESQLITE="yes"
 ONAMAC="no"
 FORCE="no"
+RELOCATABLE="no"
 
 EXTRA_CPPFLAGS=""
 EXTRA_LDFLAGS=""
@@ -74,6 +76,8 @@ while true ; do
 		echo "                                for Fedora includes"
 		echo " --pkg-config-path            Any directories to tack onto environment PKG_CONFIG_PATH,"
 		echo "                                for configuring convenience. Should be a colon separated list."
+		echo " --relocatable                If present, do not configure with hardcoded paths. All resource paths"
+		echo "                                will be determined at runtime relative to the executable."
         echo " --disable-sqlite             Optional. Used to get font tags in Fontmatrix database (if it exists)"
         echo " --gegl-version               Default is $GEGLVERSION"
 #       echo " --python-version             Default is python3.6"
@@ -84,6 +88,10 @@ while true ; do
 
     --force)  
 		FORCE="yes";
+		shift ;;
+
+    --relocatable)  
+		RELOCATABLE="yes";
 		shift ;;
 
 	--extra-cppflags)
@@ -184,9 +192,12 @@ while true ; do
   esac
 done
 
-if [ xxx$FINALPREFIX == xxx ] ; then FINALPREFIX=$PREFIX; fi
-
-echo "Done parsing options.";
+#if [ xxx$FINALPREFIX == xxx ] ; then FINALPREFIX=$PREFIX; fi
+if [ $RELOCATABLE == "yes" ] ; then
+	FINALPREFIX="";
+else
+	if [ x$FINALPREFIX = x ] ; then FINALPREFIX=$PREFIX; fi
+fi
 
 if [ xxx$EXTRA_PKG != xxx ] ; then
 #	if [ xxx$PKG_CONFIG_PATH != xxx ] ; then
@@ -196,11 +207,16 @@ if [ xxx$EXTRA_PKG != xxx ] ; then
 #	fi
 fi
 
+echo "Done parsing options.";
+
 
 ##
 ## Configure Laxkit if necessary, and pass in relevant flags
 ##
 if [ ! -e $LAXDIR/configured.h ] ; then
+	LAXTRAS=""
+	if [ $USESQLITE == "no" ] ; then LAXTRAS="$LAXTRAS --disable-sqlite"; fi
+	if [ $RELOCATABLE == "yes" ] ; then LAXTRAS="$LAXTRAS --relocatable"; fi
 	echo "Laxkit not configured, configuring with defaults...";
 	cd $LAXDIR/.. && ./configure
 fi
@@ -310,6 +326,7 @@ echo "#endif" >> src/version.h
 echo "" >> src/version.h
 
 
+if [ x$FINALPREFIX == x ] ; then FINALPREFIX=".."; fi #relative to the binary at runtime
 
  ##
  ## generate src/configured.h by putting install_prefix where the code can access it!
@@ -321,11 +338,9 @@ echo " // ----          BY ../configure             -----" >> src/configured.h
 echo "#ifndef CONFIGURED_H" >> src/configured.h
 echo "#define CONFIGURED_H" >> src/configured.h
 echo "" >> src/configured.h
-echo "#define INSTALL_PREFIX   \"$FINALPREFIX\"" >> src/configured.h
-echo "#define BIN_DIRECTORY    \"$FINALPREFIX/bin\"" >> src/configured.h
-echo "#define BIN_PATH         \"$FINALPREFIX/bin/laidout\"" >> src/configured.h
+echo "#define INSTALL_PREFIX   \"$FINALPREFIX/\"" >> src/configured.h
 echo "#define SHARED_DIRECTORY \"$FINALPREFIX/share/laidout/$LAIDOUTVERSION/\"" >> src/configured.h
-echo "#define ICON_DIRECTORY   \"$FINALPREFIX/share/laidout/$LAIDOUTVERSION/icons\"" >> src/configured.h
+echo "#define ICON_DIRECTORY   \"$FINALPREFIX/share/laidout/$LAIDOUTVERSION/icons/\"" >> src/configured.h
 echo "#define LANGUAGE_PATH    \"$FINALPREFIX/$LANGUAGE_PATH\"" >> src/configured.h
 echo $LAIDOUT_NOGL >> src/configured.h
 echo "" >> src/configured.h
@@ -381,6 +396,7 @@ echo "----`date`---"                              >> config.log
 echo "-----------------------------------"        >> config.log
 echo " Laidout version:  $LAIDOUTVERSION"         >> config.log
 echo "    Install here:  $PREFIX"                 >> config.log
+echo "  Runtime prefix:  $FINALPREFIX"            >> config.log
 echo "   Language Path:  $PREFIX/$LANGUAGE_PATH"  >> config.log
 echo "  Laxkit headers:  $LAXDIR"                 >> config.log
 echo "       Enable GL:  $USINGGL"                >> config.log
@@ -389,6 +405,7 @@ echo "  Extra cppflags:  $EXTRA_CPPFLAGS"         >> config.log
 echo "   Extra ldflags:  $EXTRA_LDFLAGS"          >> config.log
 echo "  Pkgconfig path:  $EXTRA_PKG"              >> config.log
 echo "    Gegl version:  $GEGLVERSION"            >> config.log
+echo "     Relocatable:  $RELOCATABLE"            >> config.log
 #echo "  Python version:  $PYTHONVERSION"          >> config.log
 
 
@@ -397,6 +414,7 @@ echo "       Configuration Summary"
 echo "----------------------------------"
 echo " Laidout version:  $LAIDOUTVERSION"
 echo "    Install here:  $PREFIX"
+echo "  Runtime prefix:  $FINALPREFIX"           
 echo "   Language Path:  $PREFIX/$LANGUAGE_PATH"
 echo "  Laxkit headers:  $LAXDIR"
 echo "       Enable GL:  $USINGGL"
@@ -405,6 +423,7 @@ echo "  Extra cppflags:  $EXTRA_CPPFLAGS"
 echo "   Extra ldflags:  $EXTRA_LDFLAGS"
 echo "  Pkgconfig path:  $EXTRA_PKG"
 echo "    Gegl version:  $GEGLVERSION"
+echo "     Relocatable:  $RELOCATABLE"
 #echo "  Python version:  $PYTHONVERSION"
 echo
 echo "If compiling from git, please follow \"COMPILING FROM SOURCE\" in README.md.";

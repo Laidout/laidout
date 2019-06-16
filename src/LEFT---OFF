@@ -171,6 +171,8 @@ test:
   make some test scripts for command line testing
 
 
+get splash image working
+
 lgm 2019 feedback and ideas:
   configure still sucks.. 
     laidout configure needs to drive laxkit configure more thoroughly.
