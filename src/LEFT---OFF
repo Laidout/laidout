@@ -176,7 +176,6 @@ get splash image working
 lgm 2019 feedback and ideas:
   configure still sucks.. 
     laidout configure needs to drive laxkit configure more thoroughly.
-    shouldn't need the '='
   path tool:
     hard to see helper graphics, needs haloing
 	should have space to dup weight node
@@ -462,13 +461,23 @@ Scribus scribus:
     -> this necessitates revamp of singles to use more than one paper type
   implement crop
 svg: SVG
+  text:
+    multiline
+	direction
+	spans
+	DONE color
+  arcs
   export papers current not going to correct paper
   text on path without path conversion
   rudimentary mesh in.. try to scale and place as separate object (without proper clipping)
   dump_in filter to nodes optionally
   need to parse units
-  in needs to account for viewBox
+  DONE in needs to account for viewBox
   in needs to parse "use" elements and other "#" refs
+  in:
+    linear gradients
+	radial gradients
+	mesh gradients
   in for powerstroke
     on read in width nodes are zeroed, does not correspond to actual width of line
     some other dup nodes causing bad stroke approximation in some of the stuff that magically disappears
