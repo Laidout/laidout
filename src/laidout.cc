@@ -255,6 +255,7 @@ LaidoutApp::LaidoutApp()
 		if (shared_dir[strlen(shared_dir)-1] != '/')
 			appendstr(shared_dir, "/");
 	} else shared_dir = newstr(SHARED_DIRECTORY);
+	DBG cerr << "Shared directory: "<<shared_dir<<endl;
 
 	makestr(controlfontstr,"sans-15");
 
@@ -877,20 +878,20 @@ int LaidoutApp::createlaidoutrc()
 			fprintf(f,"laxprofile Light #Default built in profiles are Dark, Light, and Gray. You can define others in the laxconfig section.\n");
 			fprintf(f,"laxconfig-sample #Remove the \"-sample\" part to redefine various default window behaviour settingss\n");
 			dump_out_rc(f,NULL,2,-1);
-			fprintf(f,"\n"
-					  "#laxcolors  #To set only the colors of laxconfig, use this\n"
-					  "#  panel\n"
-					  "#    ...\n"
-					  "#  menu\n"
-					  "#    ...\n"
-					  "#  edits\n"
-					  "#    ...\n"
-					  "#  buttons\n"
-					  "#    ...\n");
-
-			fprintf(f,"\n"
-					  "\n"
-					  "\n"
+//			fprintf(f,"\n"
+//					  "#laxcolors  #To set only the colors of laxconfig, use this\n"
+//					  "#  panel\n"
+//					  "#    ...\n"
+//					  "#  menu\n"
+//					  "#    ...\n"
+//					  "#  edits\n"
+//					  "#    ...\n"
+//					  "#  buttons\n"
+//					  "#    ...\n");
+//
+//			fprintf(f,"\n"
+//					  "\n"
+//					  "\n"
 
 //					   //preview generation
 //					  //" # Alternately, you can specify the maximum width and height separately:\n"
@@ -929,7 +930,8 @@ int LaidoutApp::createlaidoutrc()
 //					  "\n# The maximum width or height for preview images\n"
 //					  "#maxPreviewLength 200\n"
 //					  "\n"
-					  "\n");
+//					  "\n");
+
 			fclose(f);
 			setlocale(LC_ALL,"");
 		}
@@ -2148,8 +2150,8 @@ int main(int argc,char **argv)
 	setlocale(LC_ALL,"");
 	if (!strncmp(LANGUAGE_PATH, "..", 2)) {
 		char *path = ExecutablePath();
-		appendstr(path, "/../"); //since path points to binary file, assume it's */bin/laidout
-		appendstr(path, LANGUAGE_PATH);
+		appendstr(path, "/../"); //since path points to binary file, assume it's */bin/laidout. this takes off the "laidout"
+		appendstr(path, LANGUAGE_PATH); //then this takes off the bin
 		simplify_path(path, 1);
 		bindtextdomain(scratch,path);
 		delete[] path;
