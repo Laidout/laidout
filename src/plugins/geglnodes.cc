@@ -19,6 +19,7 @@
 #include "../nodes/nodeinterface.h"
 #include "../nodes/nodes.h"
 #include "../calculator/curvevalue.h"
+#include "../configured.h"
 #include "geglnodes.h"
 #include "svg/svgnodes.h"
 
@@ -1435,7 +1436,7 @@ Laxkit::MenuInfo *GetGeglOps()
     gchar **operations = gegl_list_operations (&n_operations);
 	MenuItem *item, *item_compat;
 
-	DBG cerr <<"gegl operations:"<<endl;
+	DBG cerr <<"gegl operations: "<<n_operations<<endl;
 
     for (unsigned int i=0; i < n_operations; i++) { 
         DBG cerr << "  operator: " << (operations[i]?operations[i]:"?") << endl;
@@ -1735,9 +1736,32 @@ SvgFilterNS::SvgFilterLoader *svgloader = NULL;
  */
 int GeglNodesPlugin::Initialize()
 {
+	if (initialized) return 0;
+
 	DBG cerr << "GeglNodesPlugin initializing..."<<endl;
 
-	if (initialized) return 0;
+	//disable this when we don't need it anymore:
+	char *BABL_DIR = getenv("BABL_DIR");
+	DBG cerr << (BABL_DIR ? BABL_DIR : "no BABL_DIR") <<endl;
+	char *GEGL_DIR = getenv("GEGL_DIR");
+	DBG cerr << (GEGL_DIR ? GEGL_DIR : "no GEGL_DIR") <<endl;
+
+//	//a TEMPORARY, altogether inadequate hack for testing purposes to set environment variables for gegl and babl when Laidout is relocatable:
+//	if (!strncmp(INSTALL_PREFIX, "..", 2)) {
+//        char *gegl_dir = LaxFiles::ExecutablePath();
+//        appendstr(gegl_dir, "/../../"); //since path points to binary file, assume it's */bin/laidout
+//        appendstr(gegl_dir, "lib/x86_64-linux-gnu/gegl-0.3");
+//        simplify_path(gegl_dir, 1);
+//		if (file_exists(gegl_dir, 1, nullptr)) setenv("GEGL_PATH", gegl_dir, true);
+//		else {
+//			gegl_dir[strlen(gegl_dir)-1] = '4';
+//			if (file_exists(gegl_dir, 1, nullptr)) setenv("GEGL_PATH", gegl_dir, true);
+//		}
+//		delete[] gegl_dir;
+//
+//		//setenv("BABL_PATH", babl_dir, true);
+//		//delete[] babl_dir;
+//	}
 
 
 	 //initialize gegl
