@@ -38,6 +38,7 @@
 #include "../impositions/singles.h"
 #include "../core/utils.h"
 #include "../core/drawdata.h"
+#include "../text/cssutils.h"
 
 #include <iostream>
 #define DBG 
@@ -58,7 +59,8 @@ double DEFAULT_PPINCH = 96;
 
 //-------forward decs for helper funcs
 static int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
-		RefPtrStack<anObject> &gradients, SomeData **fillobj_ret);
+		RefPtrStack<anObject> &gradients, SomeData **fillobj_ret,
+		ValueHash *extra = nullptr);
 
 
 
@@ -2039,7 +2041,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 			if (svghints) svg->push(svgdoc->attributes.e[c]->duplicate(),-1);
 			 
 			 //find the width and height of the document
-			if (!strcmp(name,"width")) { // *** warning!!!! could be named units here!!!
+			if (!strcmp(name,"width")) {
 				char *endptr=NULL;
 				DoubleAttribute(value,&width, &endptr);
 				if (*endptr) {
@@ -2855,8 +2857,8 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 	} else if (!strcmp(element->name,"path")) {
 		PathsData *paths=dynamic_cast<PathsData *>(newObject("PathsData"));
 		int d_index=-1;
-		Attribute *powerstroke=NULL;
-		SomeData *fillobj = NULL;
+		Attribute *powerstroke = nullptr;
+		SomeData *fillobj = nullptr;
 
 		for (int c=0; c<element->attributes.n; c++) {
 			name =element->attributes.e[c]->name;
@@ -3152,7 +3154,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 	} else if (!strcmp(element->name,"text")) {
 
-		CaptionData *textobj=dynamic_cast<CaptionData *>(newObject("CaptionData"));
+		CaptionData *textobj = dynamic_cast<CaptionData *>(newObject("CaptionData"));
 
 		char *name;
 		char *value;
@@ -3182,6 +3184,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 			} else if (!strcmp(name,"style")) {
 				InlineCSSToAttribute(value, &styleatt);
+				//int foundfill = 0;
 
 				for (int c2=0; c2<styleatt.attributes.n; c2++) {
 					name  = styleatt.attributes.e[c2]->name;
@@ -3202,6 +3205,35 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 					} else if (!strcmp(name, "font-size")) {
 						//font-size:medium|xx-small|x-small|small|large|x-large|xx-large|smaller|larger|length|initial|inherit;
 						DoubleAttribute(value, &font_size);
+
+					} else if (!strcmp(name, "text-align")) {
+						//left | right | center | justify | inherit
+						if (!strcasecmp(value, "left")) textobj->xcentering = 0;
+						else if (!strcasecmp(value, "center")) textobj->xcentering = 50;
+						else if (!strcasecmp(value, "right")) textobj->xcentering = 100;
+						else if (!strcasecmp(value, "start")) textobj->xcentering = 0;
+						else if (!strcasecmp(value, "end")) textobj->xcentering = 100;
+
+					} else if (!strcmp(name, "fill-opacity")) {
+						double a;
+						if (DoubleAttribute(value, &a)) {
+							textobj->alpha = a;
+						}
+
+					} else if (!strcmp(name, "fill")) {
+						double fillcolor[4];
+						if (value && !strcmp(value,"none")) {
+							//foundfill = -1;
+
+						} else {
+							//d = fillcolor[3];
+							SimpleColorAttribute(value, fillcolor, NULL);
+							//if (foundfill==2) fillcolor[3]=d; //opacity was found first, but SCA overwrites
+							//foundfill=1;
+							textobj->red   = fillcolor[0];
+							textobj->green = fillcolor[1];
+							textobj->blue  = fillcolor[2];
+						}
 					}
 				}
 
@@ -3215,6 +3247,27 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 					if (!strcmp(name, "tspan")) {
 						Attribute *att = element->attributes.e[c]->attributes.e[c2]->find("content:");
 						if (att && !isblank(att->value)) textobj->InsertString(att->value,-1, 0, -1, &nl,&pos);
+
+						for (int c3=0; c3<element->attributes.e[c]->attributes.e[c2]->attributes.n; c3++) {
+							name  = element->attributes.e[c]->attributes.e[c2]->attributes.e[c3]->name;
+							value = element->attributes.e[c]->attributes.e[c2]->attributes.e[c3]->value;
+
+							if (!strcmp(name, "style")) {
+								Attribute spanstyle;
+								ValueHash extra;
+								InlineCSSToAttribute(value, &spanstyle);
+
+								for (int c4=0; c4<spanstyle.attributes.n; c4++) {
+									name  = spanstyle.attributes.e[c4]->name;
+									value = spanstyle.attributes.e[c4]->value;
+
+									if (!strcmp(name, "font-size")) {
+										DoubleAttribute(value, &font_size); // *** note this is wrong, ignores keywords and units
+										if (font_size == 0) font_size = -1;
+									}
+								}
+							}
+						}
 
 					} else if (!strcmp(name, "cdata:")) {
 						if (!isblank(value)) textobj->InsertString(value,-1, 0, -1, &nl,&pos);
@@ -3315,7 +3368,8 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
  * linestyle and fillstyle must not be NULL.
  */
 int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
-		RefPtrStack<anObject> &gradients, SomeData **fillobj_ret)
+		RefPtrStack<anObject> &gradients, SomeData **fillobj_ret,
+		ValueHash *extra)
 {
 	LineStyle *linestyle = paths->linestyle;
 	FillStyle *fillstyle = paths->fillstyle;
@@ -3439,24 +3493,92 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 			// *** todo!!
 		} else if (!strcmp(name,"stroke-dashoffset")) { //0
 			// *** todo!!
-		}
+			
+		} else if (extra) {
 
-		 //other stuff found in inkscape svgs:
-		//} else if (!strcmp(name,"opacity")) { //1
-		//} else if (!strcmp(name,"clip-rule")) { //nonzero
-		//} else if (!strcmp(name,"display")) { //inline
-		//} else if (!strcmp(name,"overflow")) { //visible
-		//} else if (!strcmp(name,"visibility")) { //visible
-		//} else if (!strcmp(name,"isolation")) { //auto
-		//} else if (!strcmp(name,"mix-blend-mode")) { //normal
-		//} else if (!strcmp(name,"color-interpolation")) { //sRGB
-		//} else if (!strcmp(name,"color-interpolation-filters")) { //linearRGB
-		//} else if (!strcmp(name,"marker")) { //none
-		//} else if (!strcmp(name,"color-rendering")) { //auto
-		//} else if (!strcmp(name,"image-rendering")) { //auto
-		//} else if (!strcmp(name,"shape-rendering")) { //auto
-		//} else if (!strcmp(name,"text-rendering")) { //auto
-		//} else if (!strcmp(name,"enable-background")) { //accumulate"
+			 //TODo: other stuff found in inkscape svgs:
+			//} else if (!strcmp(name,"opacity")) { //1
+			//} else if (!strcmp(name,"clip-rule")) { //nonzero
+			//} else if (!strcmp(name,"display")) { //inline
+			//} else if (!strcmp(name,"overflow")) { //visible
+			//} else if (!strcmp(name,"visibility")) { //visible
+			//} else if (!strcmp(name,"isolation")) { //auto
+			//} else if (!strcmp(name,"mix-blend-mode")) { //normal
+			//} else if (!strcmp(name,"color-interpolation")) { //sRGB
+			//} else if (!strcmp(name,"color-interpolation-filters")) { //linearRGB
+			//} else if (!strcmp(name,"marker")) { //none
+			//} else if (!strcmp(name,"color-rendering")) { //auto
+			//} else if (!strcmp(name,"image-rendering")) { //auto
+			//} else if (!strcmp(name,"shape-rendering")) { //auto
+			//} else if (!strcmp(name,"text-rendering")) { //auto
+			//} else if (!strcmp(name,"enable-background")) { //accumulate"
+
+			if (!strcmp(name,"font-style")) {
+				extra->push(name, new StringValue(value)); //normal italic oblique
+
+			} else if (!strcmp(name,"font-variant")) { // normal | small-caps | inherit
+				extra->push(name, new StringValue(value));
+
+			} else if (!strcmp(name,"font-weight")) { // normal | bold | bolder | lighter | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | inherit
+				bool relative = false;
+				const char *endptr = nullptr;
+				int weight = CSSFontWeight(value, endptr, &relative);
+				extra->push(name, new IntValue(weight));
+
+			} else if (!strcmp(name,"font-stretch")) {
+				// normal = 100% | ultra-condensed 50% | extra-condensed 62.5% | condensed 75% | semi-condensed 87.5% | semi-expanded 112.5% | expanded 125% | extra-expanded 150% | ultra-expanded 200%
+				// CSS4 also allows percentages >= 0
+				// Only works if font family has width-variant faces
+				double stretch = 100;
+				if      (!strcmp(value, "normal"))          stretch = 100;
+				else if (!strcmp(value, "ultra-condensed")) stretch = 50; 
+				else if (!strcmp(value, "extra-condensed")) stretch = 62.5; 
+				else if (!strcmp(value, "condensed"))       stretch = 75; 
+				else if (!strcmp(value, "semi-condensed"))  stretch = 87.5; 
+				else if (!strcmp(value, "semi-expanded"))   stretch = 112.5; 
+				else if (!strcmp(value, "expanded"))        stretch = 125; 
+				else if (!strcmp(value, "extra-expanded"))  stretch = 150; 
+				else if (!strcmp(value, "ultra-expanded"))  stretch = 200;
+				extra->push(name, new DoubleValue(stretch));
+
+			} else if (!strcmp(name,"line-height")) {
+				//number, length, percentage, or "normal"==1.2
+				double ems = 1.2;
+				if (!strcmp(value, "normal")) ems = 1.2;
+				else {
+					char *endptr = nullptr;
+					if (DoubleAttribute(value, &ems, &endptr)) {
+						char *v = endptr;
+						while (isspace(*v)) v++;
+						if (*v == '%') {
+							ems /= 100;
+						} else if (*v && !isspace(*v)) {
+							 //parse units
+							UnitManager *unitm = GetUnitManager();
+							int units = unitm->UnitId(v);
+							if (units != UNITS_None && units != UNITS_Em) {
+								ems = unitm->Convert(ems, units, UNITS_Em, NULL);
+							}
+						}
+					}
+				}
+				extra->push(name, new DoubleValue(ems));
+
+			//ToDO:
+			//} else if (!strcmp(name, "text-indent")) {
+			//} else if (!strcmp(name, "text-align")) {
+			//} else if (!strcmp(name, "text-decoration")) {
+			//} else if (!strcmp(name, "text-decoration-line")) {
+			//} else if (!strcmp(name, "letter-spacing")) {
+			//} else if (!strcmp(name, "word-spacing")) {
+			//} else if (!strcmp(name, "text-transform")) {
+			//} else if (!strcmp(name, "writing-mode")) {
+			//} else if (!strcmp(name, "direction")) {
+			//} else if (!strcmp(name, "baseline-shift")) {
+			//} else if (!strcmp(name, "text-anchor")) {
+
+			}
+		}
 	}
 
 	if (founddefcol) {
