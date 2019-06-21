@@ -29,7 +29,7 @@ void installSvgFilter();
 
 
 //------------------------ Svg in/reimpose/out helpers -------------------------------------
-int addSvgDocument(const char *file, Document *existingdoc=NULL);
+int addSvgDocument(const char *file, Document *existingdoc = nullptr);
 
 
 //------------------------------------ SvgOutputFilter ----------------------------------
@@ -53,7 +53,7 @@ class SvgOutputFilter : public ExportFilter
 	virtual int Out(const char *filename, Laxkit::anObject *context, Laxkit::ErrorLog &log);
 	virtual DocumentExportConfig *CreateConfig(DocumentExportConfig *fromconfig);
 
-	//virtual Laxkit::anXWindow *ConfigDialog() { return NULL; }
+	//virtual Laxkit::anXWindow *ConfigDialog() { return nullptr; }
 	//virtual int Verify(Laxkit::anObject *context); //preflight checker
 };
 
@@ -73,7 +73,7 @@ class SvgImportFilter : public ImportFilter
 	virtual const char *FilterClass() { return "document"; }
 	virtual ObjectDef *GetObjectDef();
 
-	virtual Laxkit::anXWindow *ConfigDialog() { return NULL; }
+	virtual Laxkit::anXWindow *ConfigDialog() { return nullptr; }
 	
 	
 	virtual const char *FileType(const char *first100bytes);

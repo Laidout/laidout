@@ -69,7 +69,7 @@ static int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData 
 //! Creates a Laidout Document from a Svg file, and adds to laidout->project.
 /*! Return 0 for success or nonzero for error.
  *
- * If existingdoc!=NULL, then insert the file to that Document. In this case, it is not
+ * If existingdoc!=nullptr, then insert the file to that Document. In this case, it is not
  * pushed onto the project, as it is assumed it is elsewhere. Note that this will
  * basically wipe the existing document, and replace with the Svg document.
  */
@@ -105,7 +105,7 @@ int addSvgDocument(const char *file, Document *existingdoc)
 		while (isalpha(*eptr)) eptr++;
 		int units = unitm->UnitId(ptr, eptr-ptr);
 		if (units!=UNITS_None) {
-			width = unitm->Convert(width, units, UNITS_Inches, NULL);
+			width = unitm->Convert(width, units, UNITS_Inches, nullptr);
 			//needtoscale = false;
 		}
 	} else {
@@ -130,7 +130,7 @@ int addSvgDocument(const char *file, Document *existingdoc)
 		while (isalpha(*eptr)) eptr++;
 		int units = unitm->UnitId(ptr, eptr-ptr);
 		if (units!=UNITS_None) {
-			height = unitm->Convert(height, units, UNITS_Inches, NULL);
+			height = unitm->Convert(height, units, UNITS_Inches, nullptr);
 			//needtoscale = false;
 		}
 	} else {
@@ -144,7 +144,7 @@ int addSvgDocument(const char *file, Document *existingdoc)
 		ptr+=7;
 		while (isspace(*ptr) || *ptr=='=' || *ptr=='"') ptr++;
 		double l[4];
-		int n = DoubleListAttribute(ptr, l, 4, NULL);
+		int n = DoubleListAttribute(ptr, l, 4, nullptr);
 		if (n==4) {
 			//scalex = width  / l[2];
 			//scaley = height / l[3];
@@ -160,12 +160,12 @@ int addSvgDocument(const char *file, Document *existingdoc)
 
 	Document *newdoc=existingdoc;
 	if (newdoc) {
-		makestr(newdoc->saveas,NULL); //force rename later
+		makestr(newdoc->saveas,nullptr); //force rename later
 		if (newdoc->imposition) newdoc->imposition->dec_count();
 		newdoc->imposition=imp;
 		imp->inc_count();
 	} else {
-		newdoc=new Document(imp,NULL);//null file name to force rename on save
+		newdoc=new Document(imp,nullptr);//null file name to force rename on save
 	}
 
 	makestr(newdoc->name,"From ");
@@ -176,11 +176,11 @@ int addSvgDocument(const char *file, Document *existingdoc)
 	else newdoc->inc_count();
 
 	SvgImportFilter filter;
-	ImportConfig config(file,300, 0,-1, 0,-1,-1, newdoc,NULL);
+	ImportConfig config(file,300, 0,-1, 0,-1,-1, newdoc,nullptr);
 	config.keepmystery=0;
 	config.filter=&filter;
 	ErrorLog log;
-	filter.In(file,&config,log, NULL,0);
+	filter.In(file,&config,log, nullptr,0);
 
 	 //scale down
 //	if (needtoscale && (scalex != 1 || scaley != 1)) {
@@ -349,11 +349,11 @@ ObjectDef* SvgExportConfig::makeObjectDef()
             _("Svg Export Configuration"),
             _("Settings for an SVG filter that exports a document."),
             "class",
-            NULL,NULL,
-            NULL,
+            nullptr,nullptr,
+            nullptr,
             0, //new flags
-            NULL,
-            NULL);
+            nullptr,
+            nullptr);
 
 
      //define parameters
@@ -361,37 +361,37 @@ ObjectDef* SvgExportConfig::makeObjectDef()
             _("Use Mesh"),
             _("Export color meshes using Coons Patchs, as structured in SVG 2's draft of meshes. These are used in Inkscape."),
             "boolean",
-            NULL,    //range
+            nullptr,    //range
             "false", //defvalue
             0,      //flags
-            NULL); //newfunc
+            nullptr); //newfunc
 
     def->push("use_powerstroke",
             _("Use powerstroke"),
             _("Export weighted paths using Inkscape's Powerstroke live path effects."),
             "boolean",
-            NULL,   //range
+            nullptr,   //range
             "true", //defvalue
             0,     //flags
-            NULL);//newfunc
+            nullptr);//newfunc
  
     def->push("data_meta",
             _("Meta to data-*"),
             _("Convert any object metadata starting with \"data-\" to data-* attributes in elements. Also class is used as the class attribute. Note letters for data are forced to lower case."),
             "boolean",
-            NULL,   //range
+            nullptr,   //range
             "true", //defvalue
             0,     //flags
-            NULL);//newfunc
+            nullptr);//newfunc
  
     def->push("pixels_per_inch",
             _("Pixels per inch"),
             _("Pixels per inch"),
             "real",
-            NULL,   //range
+            nullptr,   //range
             "96", //defvalue
             0,     //flags
-            NULL);//newfunc
+            nullptr);//newfunc
  
 
 	stylemanager.AddObjectDef(def,0);
@@ -509,19 +509,19 @@ ObjectDef *SvgOutputFilter::GetObjectDef()
 //            _("Use Mesh"),
 //            _("Use the format for the mesh branch of Inkscape for mesh gradients."),
 //            "boolean",
-//            NULL, //range
+//            nullptr, //range
 //            "false",  //defvalue
 //            0,    //flags
-//            NULL);//newfunc
+//            nullptr);//newfunc
 //
 //    styledef->push("usepowerstroke",
 //            _("Use Powerstroke"),
 //            _("Use the format for the powerstroke path effect features of Inkscape."),
 //            "boolean",
-//            NULL, //range
+//            nullptr, //range
 //            "true",  //defvalue
 //            0,    //flags
-//            NULL);//newfunc
+//            nullptr);//newfunc
 
 
 
@@ -789,7 +789,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 					obj->Id(), clipid, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5)); 
 		Group *g=dynamic_cast<Group *>(obj);
 		for (int c=0; c<g->n(); c++) 
-			svgdumpobj(f,NULL,g->e(c),warning,indent+2,log, out, false, data_meta); 
+			svgdumpobj(f,nullptr,g->e(c),warning,indent+2,log, out, false, data_meta); 
 		fprintf(f,"    </g>\n");
 
 	} else if (!strcmp(obj->whattype(),"GradientData")) {
@@ -826,7 +826,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 		if (!caption) return 0;
 
 		if (out->textaspaths) {
-			SomeData *path = caption->ConvertToPaths(false, NULL);
+			SomeData *path = caption->ConvertToPaths(false, nullptr);
 			svgdumpobj(f,mm,path,warning,indent,log,out, false,data_meta);
 			path->dec_count();
 			return 0;
@@ -900,14 +900,14 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 		if (!text->paths) { log.AddMessage(_("Text on path object missing path, ignoring!"),ERROR_Warning); return 0; }
 
 		if (out->textaspaths) {
-			SomeData *path = text->ConvertToPaths(false, NULL);
+			SomeData *path = text->ConvertToPaths(false, nullptr);
 			svgdumpobj(f,mm,path,warning,indent,log,out);
 			path->dec_count();
 			return 0;
 		}
 
 		 //first dump out a blank path:
-		svgdumpobj(f, NULL, text->paths, warning, indent+2, log, out);
+		svgdumpobj(f, nullptr, text->paths, warning, indent+2, log, out);
 
 		 //now dump out the text, refering to that path..
 		double rr=0,gg=0,bb=0,aa=1.0;
@@ -1003,7 +1003,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 	} else if (!strcmp(obj->whattype(),"ColorPatchData")) {
 		if (!out->use_mesh) {
 			setlocale(LC_ALL,"");
-			log.AddMessage(obj->object_id,NULL,NULL,_("Warning: interpolating a color patch object\n"),ERROR_Warning);
+			log.AddMessage(obj->object_id,nullptr,nullptr,_("Warning: interpolating a color patch object\n"),ERROR_Warning);
 			setlocale(LC_ALL,"C");
 			warning++;
 
@@ -1192,9 +1192,9 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 		if (pdata->paths.n==0) return 0; //ignore empty path objects
 
 		LineStyle *lstyle=pdata->linestyle;
-		if (lstyle && lstyle->hasStroke()==0) lstyle=NULL;
+		if (lstyle && lstyle->hasStroke()==0) lstyle=nullptr;
 		FillStyle *fstyle=pdata->fillstyle;
-		if (fstyle && fstyle->hasFill()==0) fstyle=NULL;
+		if (fstyle && fstyle->hasFill()==0) fstyle=nullptr;
 		if (!lstyle && !fstyle) return 0;
 
 
@@ -1244,7 +1244,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 
 				 //---write style for fill within centercache.. no stroke to that, as we apply artificial stroke
 				fprintf(f,"%s       style=\"",spc);
-				svgStyleTagsDump(f, NULL, fstyle);
+				svgStyleTagsDump(f, nullptr, fstyle);
 				fprintf(f,"\"\n");//end of "style"
 
 				fprintf(f,"%s       d=\"",spc);
@@ -1272,7 +1272,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 				fprintf(f,"%s       style=\"",spc);
 				FillStyle fillstyle;
 				fillstyle.color=lstyle->color;
-				svgStyleTagsDump(f, NULL, &fillstyle);
+				svgStyleTagsDump(f, nullptr, &fillstyle);
 				fprintf(f,"\"\n");//end of "style"
 
 
@@ -1345,7 +1345,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 
 	} else {
 		DrawableObject *dobj=dynamic_cast<DrawableObject*>(obj);
-		SomeData *dobje=NULL;
+		SomeData *dobje=nullptr;
 		if (dobj) dobje=dobj->EquivalentObject();
 
 		if (dobje) {
@@ -1358,7 +1358,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			setlocale(LC_ALL,"");
 			char buffer[strlen(_("Cannot export %s objects into svg."))+strlen(obj->whattype())+1];
 			sprintf(buffer,_("Cannot export %s objects into svg."),obj->whattype());
-			log.AddMessage(obj->object_id,obj->nameid,NULL, buffer,ERROR_Warning);
+			log.AddMessage(obj->object_id,obj->nameid,nullptr, buffer,ERROR_Warning);
 			setlocale(LC_ALL,"C");
 			warning++;
 		}
@@ -1414,7 +1414,7 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgE
 
 	if (!strcmp(obj->whattype(),"Group")) {
 		for (int c=0; c<g->n(); c++) 
-			svgdumpdef(f,NULL,g->e(c),warning,log, out); 
+			svgdumpdef(f,nullptr,g->e(c),warning,log, out); 
 
 	} else if (!strcmp(obj->whattype(),"PathsData")) {
 		 //write out a powerstroke def section. When there is an offset,
@@ -1686,8 +1686,8 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	}
 	
 	 //we must be able to open the export file location...
-	FILE *f=NULL;
-	char *file=NULL;
+	FILE *f=nullptr;
+	char *file=nullptr;
 	if (!filename) {
 		if (isblank(doc->saveas)) {
 			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
@@ -1711,8 +1711,8 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	setlocale(LC_ALL,"C");
 
 	int warning=0;
-	Spread *spread=NULL;
-	Group *g=NULL;
+	Spread *spread=nullptr;
+	Group *g=nullptr;
 	double m[6],mm[6],mmm[6];
 	//int c;
 	int c2,pg,c3;
@@ -1750,8 +1750,8 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	fprintf(f,"   >\n");
 
 	 //set default units for use later in Inkscape
-	char *units=NULL;
-	GetUnitManager()->UnitInfoId(laidout->prefs.default_units, NULL, &units,NULL,NULL,NULL);
+	char *units=nullptr;
+	GetUnitManager()->UnitInfoId(laidout->prefs.default_units, nullptr, &units,nullptr,nullptr,nullptr);
 	if (units) {
 		fprintf(f,"  <sodipodi:namedview\n"
 				  "      id=\"base\"\n"
@@ -1790,7 +1790,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 				if (clippath) {
 					char clipstr[100];
 					sprintf(clipstr, "pageClip%lu", page->object_id);
-					DumpClipPath(f, clipstr, clippath, NULL, warning, log, out);
+					DumpClipPath(f, clipstr, clippath, nullptr, warning, log, out);
 				}
 			}
 
@@ -1909,7 +1909,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 						 // for each object in layer
 						g=dynamic_cast<Group *>(otherpage->layers.e(l));
 						for (c3=0; c3<g->n(); c3++) {
-							svgdumpobj(f,NULL,g->e(c3),warning, 8,log, out, false, out->data_meta);
+							svgdumpobj(f,nullptr,g->e(c3),warning, 8,log, out, false, out->data_meta);
 						}
 					}
 
@@ -1923,7 +1923,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 				g = dynamic_cast<Group *>(page->layers.e(l));
 
 				for (c3=0; c3<g->n(); c3++) {
-					svgdumpobj(f,NULL,g->e(c3),warning,6,log, out, false, out->data_meta);
+					svgdumpobj(f,nullptr,g->e(c3),warning,6,log, out, false, out->data_meta);
 				}
 			}
 
@@ -1960,7 +1960,7 @@ const char *SvgImportFilter::VersionName()
 
 const char *SvgImportFilter::FileType(const char *first100bytes)
 {
-	if (!strstr(first100bytes,"<svg")) return NULL;
+	if (!strstr(first100bytes,"<svg")) return nullptr;
 	return "1.1";
 
 	//*** inkscape has inkscape:version tag
@@ -2002,12 +2002,12 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 
 	Document *doc=in->doc;
 
-	Attribute *att=XMLFileToAttribute(NULL,file,NULL);
+	Attribute *att=XMLFileToAttribute(nullptr,file,nullptr);
 	if (!att) return 2;
 	
 	 //create repository for hints if necessary
-	Attribute *svghints=NULL,
-			  *svg=NULL; //points to the "svg" section of svghints. Do not delete!!
+	Attribute *svghints=nullptr,
+			  *svg=nullptr; //points to the "svg" section of svghints. Do not delete!!
 	//if (in->keepmystery) svghints=new Attribute(VersionName(),file);  ***disable svghints for now
 
 	try {
@@ -2018,7 +2018,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 				if (!strcmp(att->attributes.e[c]->name,"svg")) continue;
 				svghints->push(att->attributes.e[c]->duplicate(),-1);
 			}
-			svg=new Attribute("svg",NULL);
+			svg=new Attribute("svg",nullptr);
 			svghints->push(svg,-1);
 		}
 
@@ -2042,7 +2042,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 			 
 			 //find the width and height of the document
 			if (!strcmp(name,"width")) {
-				char *endptr=NULL;
+				char *endptr=nullptr;
 				DoubleAttribute(value,&width, &endptr);
 				if (*endptr) {
 					 //parse units 
@@ -2051,7 +2051,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 					const char *ptr=endptr;
 					while (isalpha(*endptr)) endptr++;
 					int units = unitm->UnitId(ptr, endptr-ptr);
-					if (units!=UNITS_None) width = unitm->Convert(width, units, UNITS_Inches, NULL);
+					if (units!=UNITS_None) width = unitm->Convert(width, units, UNITS_Inches, nullptr);
 
 				} else {
 					width /= DEFAULT_PPINCH; //no specified units, assume svg pts
@@ -2059,7 +2059,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 				}
 
 			} else if (!strcmp(name,"height")) {
-				char *endptr=NULL;
+				char *endptr=nullptr;
 				DoubleAttribute(value,&height, &endptr);
 				if (*endptr) {
 					 //parse units 
@@ -2068,7 +2068,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 					const char *ptr=endptr;
 					while (isalpha(*endptr)) endptr++;
 					int units = unitm->UnitId(ptr, endptr-ptr);
-					if (units!=UNITS_None) height = unitm->Convert(height, units, UNITS_Inches, NULL);
+					if (units!=UNITS_None) height = unitm->Convert(height, units, UNITS_Inches, nullptr);
 
 				} else {
 					height /= DEFAULT_PPINCH; //no specified units, assume svg pts
@@ -2080,7 +2080,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 
 				// viewBox="0 0 1530 1530", map this rectangle to 0,0 -> width,height
 				double l[4];
-				int n = DoubleListAttribute(value, l, 4, NULL);
+				int n = DoubleListAttribute(value, l, 4, nullptr);
 				if (n==4) {
 					scalex = width  / l[2];
 					scaley = height / l[3];
@@ -2106,7 +2106,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 			}
 
 			 //figure out the paper size, orientation
-			PaperStyle *paper=NULL;
+			PaperStyle *paper=nullptr;
 			int landscape=0;
 
 			 //svg/inkscape uses width and height, but not paper names as far as I can see
@@ -2191,23 +2191,23 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 						//} else if !strcmp(name,"type") {
 							//"xygrid"
 						//} else if !strcmp(name,"originx") {
-							//DoubleAttribute(value, &grid->originx, NULL);
+							//DoubleAttribute(value, &grid->originx, nullptr);
 						//} else if !strcmp(name,"originy") {
-							//DoubleAttribute(value, &grid->originy, NULL);
+							//DoubleAttribute(value, &grid->originy, nullptr);
 						//} else if !strcmp(name,"spacingx") {
-							//DoubleAttribute(value, &grid->spacingx, NULL);
+							//DoubleAttribute(value, &grid->spacingx, nullptr);
 						//} else if !strcmp(name,"spacingy") {
-							//DoubleAttribute(value, &grid->spacingy, NULL);
+							//DoubleAttribute(value, &grid->spacingy, nullptr);
 						//} else if !strcmp(name,"color") {
 							//SimpleColorAttribute(value, &grid->color);
 						//} else if !strcmp(name,"opacity") {
-							//DoubleAttribute(value, &grid->color->alpha, NULL);
+							//DoubleAttribute(value, &grid->color->alpha, nullptr);
 						//} else if !strcmp(name,"empcolor") {
 							//SimpleColorAttribute(value, &grid->color2);
 						//} else if !strcmp(name,"empopacity") {
-							//DoubleAttribute(value, &grid->color2->alpha, NULL);
+							//DoubleAttribute(value, &grid->color2->alpha, nullptr);
 						//} else if !strcmp(name,"empspacing") {
-							//DoubleAttribute(value, &grid->lineheavyspacing, NULL);
+							//DoubleAttribute(value, &grid->lineheavyspacing, nullptr);
 						//} else if !strcmp(name,"units") {
 							//grid->SetUnits(value);
 						//} else if !strcmp(name,"visible") {
@@ -2232,12 +2232,12 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 					value=def->value;
 
 					if (!strcmp(name,"linearGradient")) {
-						GradientData *gradient = svgDumpInGradientDef(def, defsatt, GradientData::GRADIENT_LINEAR, NULL);
+						GradientData *gradient = svgDumpInGradientDef(def, defsatt, GradientData::GRADIENT_LINEAR, nullptr);
 						gradients.push(gradient);
 						gradient->dec_count();
 
 					} else if (!strcmp(name,"radialGradient")) {
-						GradientData *gradient = svgDumpInGradientDef(def, defsatt, GradientData::GRADIENT_RADIAL, NULL);
+						GradientData *gradient = svgDumpInGradientDef(def, defsatt, GradientData::GRADIENT_RADIAL, nullptr);
 						gradients.push(gradient);
 						gradient->dec_count();
 
@@ -2299,7 +2299,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 
 			 //push any other blocks into svghints.. not expected, but you never know
 			if (svghints) {
-				Attribute *more=new Attribute("docContent",NULL);
+				Attribute *more=new Attribute("docContent",nullptr);
 				more->push(svgdoc->attributes.e[c]->duplicate(),-1);
 				svghints->push(more,-1);
 			}
@@ -2336,12 +2336,12 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 
 GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, GradientData *gradient)
 {
+	if (!def) return nullptr;
 	if (!gradient) gradient = dynamic_cast<GradientData *>(newObject("GradientData"));
 
 	double cx,cy,fx,fy,r;
 	flatpoint p1,p2;
 	int foundf=0;
-	if (!def) return NULL;
 	char *name, *value;
 	//int units=0;//0 is user space, 1 is bounding box
 	double gm[6];
@@ -2357,7 +2357,7 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 
 			if (!value || value[0]!='#') continue; //only check for "#name" attributes
 			char *xlinkid=value+1;
-			Attribute *xlink=NULL;
+			Attribute *xlink=nullptr;
 
 			for (int c=0; c<defs->attributes.n; c++) {
 				name  = defs->attributes.e[c]->name;
@@ -2386,33 +2386,33 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 			svgtransform(value,gm);
 
 		} else if (!strcmp(name,"cx")) {
-			DoubleAttribute(value,&cx,NULL);
+			DoubleAttribute(value,&cx,nullptr);
 
 		} else if (!strcmp(name,"cy")) {
-			DoubleAttribute(value,&cy,NULL);
+			DoubleAttribute(value,&cy,nullptr);
 
 		} else if (!strcmp(name,"fx")) {
-			DoubleAttribute(value,&fx,NULL);
+			DoubleAttribute(value,&fx,nullptr);
 			foundf=1;
 
 		} else if (!strcmp(name,"fy")) {
-			DoubleAttribute(value,&fy,NULL);
+			DoubleAttribute(value,&fy,nullptr);
 			foundf=1;
 
 		} else if (!strcmp(name,"r")) {
-			DoubleAttribute(value,&r,NULL);
+			DoubleAttribute(value,&r,nullptr);
 
 		} else if (!strcmp(name,"x1")) {
-			DoubleAttribute(value,&p1.x,NULL);
+			DoubleAttribute(value,&p1.x,nullptr);
 
 		} else if (!strcmp(name,"y1")) {
-			DoubleAttribute(value,&p1.y,NULL);
+			DoubleAttribute(value,&p1.y,nullptr);
 
 		} else if (!strcmp(name,"x2")) {
-			DoubleAttribute(value,&p2.x,NULL);
+			DoubleAttribute(value,&p2.x,nullptr);
 
 		} else if (!strcmp(name,"y2")) {
-			DoubleAttribute(value,&p2.y,NULL);
+			DoubleAttribute(value,&p2.y,nullptr);
 
 		} else if (!strcmp(name,"content:")) {
 			Attribute *spot=def->attributes.e[c3];
@@ -2432,22 +2432,22 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 							char *str=strstr(value,"stop-color:");
 							if (str) {
 								str+=11;
-								HexColorAttributeRGB(str,&color,NULL);
+								HexColorAttributeRGB(str,&color,nullptr);
 							}
 							str=strstr(value,"stop-opacity:");
 							if (str) {
 								str+=13;
-								DoubleAttribute(str,&alpha,NULL);
+								DoubleAttribute(str,&alpha,nullptr);
 							}
 
 						} else if (!strcmp(name,"offset")) {
-							DoubleAttribute(value,&offset,NULL);
+							DoubleAttribute(value,&offset,nullptr);
 
 						} else if (!strcmp(name,"stop-color")) {
-							HexColorAttributeRGB(value,&color,NULL);
+							HexColorAttributeRGB(value,&color,nullptr);
 
 						} else if (!strcmp(name,"stop-opacity")) {
-							DoubleAttribute(value,&alpha,NULL);
+							DoubleAttribute(value,&alpha,nullptr);
 
 						} else if (!strcmp(name,"id")) {
 							//ignore stop id
@@ -2462,9 +2462,9 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 	if (type == GradientData::GRADIENT_RADIAL) {
 		p1=transform_point(gm,flatpoint(cx,cy));
 		p2=(foundf ? transform_point(gm,flatpoint(fx,fy)) : p1);
-		gradient->SetRadial(p1,p2, r,0, NULL,NULL);
+		gradient->SetRadial(p1,p2, r,0, nullptr,nullptr);
 	} else {
-		gradient->SetLinear(p1,p2, 1,-1, NULL,NULL);
+		gradient->SetLinear(p1,p2, 1,-1, nullptr,nullptr);
 	}
 	
 	return gradient;
@@ -2481,7 +2481,7 @@ ColorPatchData *svgDumpInMeshGradientDef(Attribute *def, Attribute *defs)
 	mesh->Set(0,0,1,1,1,1,PATCH_SMOOTH);
 
 	flatpoint p1,p2;
-	if (!def) return NULL;
+	if (!def) return nullptr;
 	char *name, *value;
 	//int units=0;//0 is user space, 1 is bounding box
 	double gm[6];
@@ -2506,10 +2506,10 @@ ColorPatchData *svgDumpInMeshGradientDef(Attribute *def, Attribute *defs)
 			svgtransform(value,gm);
 
 		} else if (!strcmp(name,"x")) {
-			DoubleAttribute(value,&initial.x,NULL);
+			DoubleAttribute(value,&initial.x,nullptr);
 
 		} else if (!strcmp(name,"y")) {
-			DoubleAttribute(value,&initial.y,NULL);
+			DoubleAttribute(value,&initial.y,nullptr);
 
 		} else if (!strcmp(name,"content:")) {
 			Attribute *rows = def->attributes.e[c];
@@ -2695,11 +2695,11 @@ ColorPatchData *svgDumpInMeshGradientDef(Attribute *def, Attribute *defs)
 									}
 
 								} else if (!strcmp(name,"stop-color")) {
-									SimpleColorAttribute(value, NULL, &mesh->colors[cic], NULL);
+									SimpleColorAttribute(value, nullptr, &mesh->colors[cic], nullptr);
 
 								} else if (!strcmp(name,"stop-opacity")) {
 									double a;
-									DoubleAttribute(value,&a,NULL);
+									DoubleAttribute(value,&a,nullptr);
 									mesh->colors[cic].alpha = a*65535;
 
 								} else if (!strcmp(name,"style")) {
@@ -2712,11 +2712,11 @@ ColorPatchData *svgDumpInMeshGradientDef(Attribute *def, Attribute *defs)
 										value = satt.attributes.e[c6]->value;
 
 										if (!strcmp(name, "stop-color")) {
-											SimpleColorAttribute(value, NULL, &mesh->colors[cic], NULL);
+											SimpleColorAttribute(value, nullptr, &mesh->colors[cic], nullptr);
 
 										} else if (!strcmp(name, "stop-opacity")) {
 											double a;
-											DoubleAttribute(value,&a,NULL);
+											DoubleAttribute(value,&a,nullptr);
 											mesh->colors[cic].alpha = a*65535;
 										}
 									}
@@ -2732,7 +2732,7 @@ ColorPatchData *svgDumpInMeshGradientDef(Attribute *def, Attribute *defs)
 	} catch (int error) {
 		  DBG cerr <<"Caught error parsing meshgradient! "<<error<<endl;
 		  mesh->dec_count();
-		  return NULL;
+		  return nullptr;
 	}
 
 	mesh->InterpolateControls(Patch_Coons);
@@ -2817,19 +2817,19 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 			} else if (!strcmp(name,"x")) {
 				foundcoord|=1;
-				DoubleAttribute(value,&x,NULL);
+				DoubleAttribute(value,&x,nullptr);
 
 			} else if (!strcmp(name,"y")) {
 				foundcoord|=2;
-				DoubleAttribute(value,&y,NULL);
+				DoubleAttribute(value,&y,nullptr);
 
 			} else if (!strcmp(name,"width")) {
 				foundcoord|=4;
-				DoubleAttribute(value,&w,NULL);
+				DoubleAttribute(value,&w,nullptr);
 
 			} else if (!strcmp(name,"height")) {
 				foundcoord|=8;
-				DoubleAttribute(value,&h,NULL);
+				DoubleAttribute(value,&h,nullptr);
 
 			} else if (!strcmp(name,"xlink:href")) {
 				err=image->LoadImage(value);
@@ -2845,7 +2845,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 		if (err==0) {
 			DoubleBBox bbox(x,x+w, y,y+h);
-			image->fitto(NULL, &bbox, 50, 50);
+			image->fitto(nullptr, &bbox, 50, 50);
 
 			image->Flip(0);
 			group->push(image);
@@ -2907,7 +2907,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 		}
 
 		if (d_index>=0) {
-			SvgToPathsData(paths, element->attributes.e[d_index]->value, NULL, powerstroke);
+			SvgToPathsData(paths, element->attributes.e[d_index]->value, nullptr, powerstroke);
 		}
 
 		if (paths->paths.n) {
@@ -2923,7 +2923,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 		double x=0,y=0,w=0,h=0;
 		double rx=-1, ry=-1;
 		PathsData *paths=dynamic_cast<PathsData *>(newObject("PathsData"));
-		SomeData *fillobj = NULL;
+		SomeData *fillobj = nullptr;
 
 		for (int c=0; c<element->attributes.n; c++) {
 			name =element->attributes.e[c]->name;
@@ -2932,17 +2932,17 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 			if (!strcmp(name,"id")) {
 				if (!isblank(value)) paths->Id(value);
 			} else if (!strcmp(name,"rx")) {
-				DoubleAttribute(value,&rx,NULL);
+				DoubleAttribute(value,&rx,nullptr);
 			} else if (!strcmp(name,"ry")) {
-				DoubleAttribute(value,&ry,NULL);
+				DoubleAttribute(value,&ry,nullptr);
 			} else if (!strcmp(name,"x")) {
-				DoubleAttribute(value,&x,NULL);
+				DoubleAttribute(value,&x,nullptr);
 			} else if (!strcmp(name,"y")) {
-				DoubleAttribute(value,&y,NULL);
+				DoubleAttribute(value,&y,nullptr);
 			} else if (!strcmp(name,"width")) {
-				DoubleAttribute(value,&w,NULL);
+				DoubleAttribute(value,&w,nullptr);
 			} else if (!strcmp(name,"height")) {
-				DoubleAttribute(value,&h,NULL);
+				DoubleAttribute(value,&h,nullptr);
 
 			} else if (!strcmp(name,"transform")) {
 				double m[6];
@@ -3006,7 +3006,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 		double cx=0,cy=0,r=-1,rx=-1, ry=-1;
 		PathsData *paths=dynamic_cast<PathsData *>(newObject("PathsData"));
-		SomeData *fillobj = NULL;
+		SomeData *fillobj = nullptr;
 
 		for (int c=0; c<element->attributes.n; c++) {
 			name =element->attributes.e[c]->name;
@@ -3015,15 +3015,15 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 			if (!strcmp(name,"id")) {
 				if (!isblank(value)) paths->Id(value);
 			} else if (!strcmp(name,"rx")) { //present in ellipses
-				DoubleAttribute(value,&rx,NULL);
+				DoubleAttribute(value,&rx,nullptr);
 			} else if (!strcmp(name,"ry")) { //present in ellipses 
-				DoubleAttribute(value,&ry,NULL);
+				DoubleAttribute(value,&ry,nullptr);
 			} else if (!strcmp(name,"r")) { //present in circles
-				DoubleAttribute(value,&r,NULL);
+				DoubleAttribute(value,&r,nullptr);
 			} else if (!strcmp(name,"cx")) {
-				DoubleAttribute(value,&cx,NULL);
+				DoubleAttribute(value,&cx,nullptr);
 			} else if (!strcmp(name,"cy")) {
-				DoubleAttribute(value,&cy,NULL);
+				DoubleAttribute(value,&cy,nullptr);
 
 			} else if (!strcmp(name,"transform")) {
 				double m[6];
@@ -3068,7 +3068,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 	} else if (!strcmp(element->name,"line")) {
 		double x1=0,y1=0, x2=0,y2=0;
 		PathsData *paths=dynamic_cast<PathsData *>(newObject("PathsData"));
-		SomeData *fillobj = NULL;
+		SomeData *fillobj = nullptr;
 
 		for (int c=0; c<element->attributes.n; c++) {
 			name =element->attributes.e[c]->name;
@@ -3078,16 +3078,16 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 				if (!isblank(value)) paths->Id(value);
 
 			} else if (!strcmp(name,"x1")) {
-				DoubleAttribute(value,&x1,NULL);
+				DoubleAttribute(value,&x1,nullptr);
 
 			} else if (!strcmp(name,"x2")) {
-				DoubleAttribute(value,&x2,NULL);
+				DoubleAttribute(value,&x2,nullptr);
 
 			} else if (!strcmp(name,"y1")) {
-				DoubleAttribute(value,&y1,NULL);
+				DoubleAttribute(value,&y1,nullptr);
 
 			} else if (!strcmp(name,"y2")) {
-				DoubleAttribute(value,&y2,NULL);
+				DoubleAttribute(value,&y2,nullptr);
 
 			} else if (!strcmp(name,"transform")) {
 				double m[6];
@@ -3113,7 +3113,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 	} else if (!strcmp(element->name,"polyline") || !strcmp(element->name,"polygon")) {
 		PathsData *paths=dynamic_cast<PathsData *>(newObject("PathsData"));
-		SomeData *fillobj = NULL;
+		SomeData *fillobj = nullptr;
 
 		for (int c=0; c<element->attributes.n; c++) {
 			name =element->attributes.e[c]->name;
@@ -3124,7 +3124,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 			} else if (!strcmp(name,"points")) {
 				int n = 0;
-				double *pts = NULL;
+				double *pts = nullptr;
 				if (DoubleListAttribute(value, &pts, &n)) {
 					for (int c=0; c<n-1; c+=2) {
 						paths->append(pts[c],pts[c+1]);
@@ -3161,7 +3161,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 		double x=0, y=0;
 		double m[6];
 		double font_size = -1;
-		const char *font_family = NULL, *font_style = NULL;
+		const char *font_family = nullptr, *font_style = nullptr;
 		Attribute styleatt;
 		transform_identity(m);
 
@@ -3227,7 +3227,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 						} else {
 							//d = fillcolor[3];
-							SimpleColorAttribute(value, fillcolor, NULL);
+							SimpleColorAttribute(value, fillcolor, nullptr);
 							//if (foundfill==2) fillcolor[3]=d; //opacity was found first, but SCA overwrites
 							//foundfill=1;
 							textobj->red   = fillcolor[0];
@@ -3283,7 +3283,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 		} else {
 			if (font_size == -1) font_size = 12; //arbitrary number to play nice with CaptionData.
-			if (font_family) textobj->Font(NULL, font_family, font_style, font_size);
+			if (font_family) textobj->Font(nullptr, font_family, font_style, font_size);
 			else if (font_size != -1) textobj->Size(font_size);
 			textobj->origin(flatpoint(x,y));
 			group->push(textobj);
@@ -3298,8 +3298,8 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 		double x=0,y=0,w=1,h=1;
 		int hasx=0, hasy=0, hasw=0, hash=0;
-		const char *link = NULL;
-		const char *id = NULL;
+		const char *link = nullptr;
+		const char *id = nullptr;
 		double m[6];
 
 		for (int c=0; c<element->attributes.n; c++) {
@@ -3310,16 +3310,16 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 				if (!isblank(value)) id = value;
 
 			} else if (!strcmp(name,"x")) {
-				hasx = DoubleAttribute(value,&x,NULL);
+				hasx = DoubleAttribute(value,&x,nullptr);
 
 			} else if (!strcmp(name,"y")) {
-				hasy = DoubleAttribute(value,&y,NULL);
+				hasy = DoubleAttribute(value,&y,nullptr);
 
 			} else if (!strcmp(name,"width")) {
-				hasw = DoubleAttribute(value,&w,NULL); // *** could be like "100%"
+				hasw = DoubleAttribute(value,&w,nullptr); // *** could be like "100%"
 
 			} else if (!strcmp(name,"height")) {
-				hash = DoubleAttribute(value,&h,NULL);
+				hash = DoubleAttribute(value,&h,nullptr);
 
 			} else if (!strcmp(name,"transform")) {
 				svgtransform(value,m);
@@ -3365,7 +3365,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
  *
  * It is NOT full css.
  *
- * linestyle and fillstyle must not be NULL.
+ * linestyle and fillstyle must not be nullptr.
  */
 int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 		RefPtrStack<anObject> &gradients, SomeData **fillobj_ret,
@@ -3409,7 +3409,7 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 			if (value && !strcmp(value,"none")) {
 				founddefcol=-1;
 			} else {
-				SimpleColorAttribute(value, defaultcolor, NULL);
+				SimpleColorAttribute(value, defaultcolor, nullptr);
 				founddefcol=1;
 			}
 
@@ -3418,7 +3418,7 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 				foundstroke=-1;
 			} else {
 				d=strokecolor[3];
-				SimpleColorAttribute(value, strokecolor, NULL);
+				SimpleColorAttribute(value, strokecolor, nullptr);
 				if (foundstroke==2) strokecolor[3]=d;
 				foundstroke=1;
 			}
@@ -3437,12 +3437,12 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 				char *id = newstr(value+5);
 				if (id[strlen(id)-1] == ')') id[strlen(id)-1] = '\0';
 
-				SomeData *fillobj = NULL;
+				SomeData *fillobj = nullptr;
 				for (int c=0; c<gradients.n; c++) {
 					if (!strcmp(gradients.e[c]->Id(), id)) {
 						fillobj = dynamic_cast<SomeData*>(gradients.e[c]);
 						if (fillobj) {
-							fillobj = fillobj->duplicate(NULL);
+							fillobj = fillobj->duplicate(nullptr);
 							fillobj->FindBBox();
 						}
 						break;
@@ -3458,7 +3458,7 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 
 			} else {
 				d=fillcolor[3];
-				SimpleColorAttribute(value, fillcolor, NULL);
+				SimpleColorAttribute(value, fillcolor, nullptr);
 				if (foundfill==2) fillcolor[3]=d; //opacity was found first, but SCA overwrites
 				foundfill=1;
 			}
@@ -3557,7 +3557,7 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 							UnitManager *unitm = GetUnitManager();
 							int units = unitm->UnitId(v);
 							if (units != UNITS_None && units != UNITS_Em) {
-								ems = unitm->Convert(ems, units, UNITS_Em, NULL);
+								ems = unitm->Convert(ems, units, UNITS_Em, nullptr);
 							}
 						}
 					}
