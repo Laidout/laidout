@@ -920,6 +920,7 @@ Style *ProcessCSSFontFace(Style *style, Attribute *att, Laxkit::ErrorLog *log)
 				//Value: 	normal | ultra-condensed | extra-condensed | condensed | semi-condensed | semi-expanded | expanded | extra-expanded | ultra-expanded
 				//Initial: 	normal
 
+                // Only works if font family has width-variant faces.
 				//stretch refers to physically stretching the letters
 				//CSS4 allows percentages >= 0.
 				style->push(value); //always just a string
@@ -970,7 +971,9 @@ Style *ProcessCSSBlock(Style *style, const char *cssvalue)
 		//     relative-size == larger | smaller
 		//  font: 	[ [ <'font-style'> || <'font-variant'> || <'font-weight'> ]? <'font-size'> [ / <'line-height'> ]? <'font-family'> ] | caption | icon | menu | message-box | small-caption | status-bar | inherit
 		//  text-indent: 5%  <-  % of containing block, or abs
-		//  text-align:  left | right | center | justify | inherit
+		//  text-align: left | right | center | justify | justify-all | start | end | match-parent inherit | initial | unset    //start and end are relative to text direction
+		//               //char-based alignment in a table column
+		//              "." | "." center
 		//  text-decoration:  	none | [ underline || overline || line-through || blink ] | inherit
 		//  letter-spacing:  normal | <length> | inherit
 		//  word-spacing:  normal | <length> | inherit  <- space in addition to default space
@@ -1221,34 +1224,6 @@ Value *ParseLengthOrPercent(const char *value, const char *relative_to, const ch
 	}
 }
 
-
-/*! Return integer weight.
- *
- * <pre>
- *  normal | bold | bolder | lighter | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | inherit
- *  </pre>
- *
- *  "bolder" and "lighter" are here arbitrarily mapped to 700 and 200 respectively and relative_ret is set to true.
- */
-int CSSFontWeight(const char *value, const char *&endptr, bool *relative_ret)
-{
-	int weight=-1;
-	if (relative_ret) *relative_ret = false;
-
-	if (!strncmp(value,"inherit",7))       { endptr = value+7; } //do nothing special
-	else if (!strncmp(value,"normal",6))   { endptr = value+6; weight=400; }
-	else if (!strncmp(value,"bold",4))     { endptr = value+4; weight=700; }
-	else if (!strncmp(value,"bolder", 6))  { endptr = value+6; weight=700; if (relative_ret) *relative_ret = true; } //120% ?
-	else if (!strncmp(value,"lighter", 7)) { endptr = value+7; weight=200; if (relative_ret) *relative_ret = true; } //80% ? 
-	else if (value[0] >= '1' && value[0] <= '9' &&
-			 value[1] >= '0' && value[1] <= '9' &&
-			 value[2] >= '0' && value[2] <= '9') {
-		//scan in any 3 digit integer between 100 and 999 inclusive... not really css compliant, but what the hay
-		weight = strtol(value,10,&endptr);
-	} else endptr = value;
-
-	return weight;
-}
 
 LFont *MatchCSSFont(const char *font_family, int italic, const char *variant, int weight)
 {

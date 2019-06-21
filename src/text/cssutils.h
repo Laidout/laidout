@@ -21,7 +21,7 @@
 #include <lax/screencolor.h>
 
 
-namespace Laxkit {
+namespace Laidout {
 
 
 enum CSSName {
@@ -45,9 +45,10 @@ enum CSSName {
 
 int CssNamedColor(const char *value, Laxkit::ScreenColor *scolor);
 int CssFontSize(const char *value, double *value_ret, CSSName *relative_ret, int *units_ret, const char **end_ptr);
+int CSSFontWeight(const char *value, const char *&endptr, bool *relative_ret);
 
 
-} //namespace Laxkit
+} //namespace Laidout
 
 #endif
 

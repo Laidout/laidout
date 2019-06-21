@@ -26,6 +26,9 @@ using namespace Laxkit;
 using namespace LaxFiles;
 
 
+namespace Laidout {
+
+
 static int num_css_colors = -1;
 
 struct CssColorSpec {
@@ -181,9 +184,12 @@ static const CssColorSpec css_colors[] = {
 	{"whitesmoke", "#f5f5f5"},
 	{"yellow", "#ffff00"},
 	{"yellowgreen", "#9acd32"},
-	{NULL,NULL}
+	{nullptr, nullptr}
 };
 
+/*! Check against the 147 common css named colors.
+ * Return nonzero for found, else 0 for not found.
+ */
 int CssNamedColor(const char *value, Laxkit::ScreenColor *scolor)
 {
 	if (num_css_colors == 0) {
@@ -215,7 +221,7 @@ int CssNamedColor(const char *value, Laxkit::ScreenColor *scolor)
 
 	if (match == -1) return 0;
 
-	return HexColorAttributeRGB(css_colors[match].color, scolor, NULL);
+	return HexColorAttributeRGB(css_colors[match].color, scolor, nullptr);
 }
 
 
@@ -224,7 +230,7 @@ int CssNamedColor(const char *value, Laxkit::ScreenColor *scolor)
  * applies to things like "100%", "larger" and "smaller".
  *
  * If there are units, then value is converted to css pixels (96 per inch),
- * EXCEPT when units_ret != NULL. Then, don't convert, and return the units there.
+ * EXCEPT when units_ret != nullptr. Then, don't convert, and return the units there.
  *
  * Returns 1 for success or 0 for parse error.
  */
@@ -254,7 +260,7 @@ int CssFontSize(const char *value, double *value_ret, CSSName *relative_ret, int
 
 	 //percentage, named relative units, or absolute length with units
 	else {
-		char *endptr = NULL;
+		char *endptr = nullptr;
 		DoubleAttribute(value,&v,&endptr); //relative size
 
 		if (endptr && endptr != value) { //parse units
@@ -276,7 +282,7 @@ int CssFontSize(const char *value, double *value_ret, CSSName *relative_ret, int
 				while (isalnum(*endptr)) endptr++;
 				units = unitm->UnitId(value, endptr - value);
 				if (units != UNITS_None && !units_ret) {
-					v = unitm->Convert(v, units, UNITS_CSSPoints, NULL);
+					v = unitm->Convert(v, units, UNITS_CSSPoints, nullptr);
 				}
 				value = endptr;
 			}
@@ -291,5 +297,40 @@ int CssFontSize(const char *value, double *value_ret, CSSName *relative_ret, int
 	return 1;
 }
 
+
+/*! Return integer weight, or -1 for error.
+ *
+ * <pre>
+ *  normal | bold | bolder | lighter | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | inherit
+ * </pre>
+ *
+ * "bolder" and "lighter" are here arbitrarily mapped to 700 and 200 respectively and relative_ret is set to true.
+ * Otherwise relative_ret is set to false.
+ *
+ */
+int CSSFontWeight(const char *value, const char *&endptr, bool *relative_ret)
+{
+	int weight=-1;
+	if (relative_ret) *relative_ret = false;
+
+	if (!strncmp(value,"inherit",7))       { endptr = value+7; } //do nothing special
+	else if (!strncmp(value,"normal",6))   { endptr = value+6; weight=400; }
+	else if (!strncmp(value,"bold",4))     { endptr = value+4; weight=700; }
+	else if (!strncmp(value,"bolder", 6))  { endptr = value+6; weight=700; if (relative_ret) *relative_ret = true; } //120% ?
+	else if (!strncmp(value,"lighter", 7)) { endptr = value+7; weight=200; if (relative_ret) *relative_ret = true; } //80% ? 
+	else if (value[0] >= '1' && value[0] <= '9' &&
+			 value[1] >= '0' && value[1] <= '9' &&
+			 value[2] >= '0' && value[2] <= '9') {
+		//scan in any 3 digit integer between 100 and 999 inclusive... not really css compliant, but what the hay
+		char *end_ptr;
+		weight = strtol(value,&end_ptr,10);
+		endptr = end_ptr;
+	} else endptr = value;
+
+	return weight;
+}
+
+
+} //namespace Laidout
 
 
