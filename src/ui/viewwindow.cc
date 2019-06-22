@@ -62,6 +62,7 @@
 #include "../interfaces/documentuser.h"
 #include "../calculator/shortcuttodef.h"
 #include "../ui/metawindow.h"
+#include "../ui/pluginwindow.h"
 
 
 //template implementation:
@@ -4169,7 +4170,8 @@ int ViewWindow::init()
 	//		}
 	//	}
 		if (menu->n()) menu->AddSep();
-		menu->AddItem(_("Configure addons..."), VIEW_Config_Addons);
+		//menu->AddItem(_("Configure addons..."), VIEW_Config_Addons);
+		menu->AddItem(_("Plugin information..."), VIEW_Config_Addons);
 
 		last = menub = new MenuButton(this,"extensions",NULL,
 								MENUBUTTON_LEFT|IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"extbutton",-1,
@@ -4914,6 +4916,11 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 			if (v) doc->Name(v);
 		}
 		SetParentTitle((doc && doc->Name(1)) ? doc->Name(1) :_("(no doc)"));
+		return 0;
+
+	} else if (!strcmp(mes,"extbutton")) {
+		PluginWindow *plugins = new PluginWindow(nullptr);
+		app->rundialog(plugins);
 		return 0;
 
 	} else if (data->type==LAX_onUnmapped) { // print to output.ps

@@ -25,6 +25,7 @@ objs= \
 	newdoc.o \
 	palettes.o \
 	plaintextwindow.o \
+	pluginwindow.o \
 	settingswindow.o \
 	spreadeditor.o \
 	viewwindow.o \

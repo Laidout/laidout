@@ -169,6 +169,7 @@ otherobjs= \
 	ui/newdoc.o \
 	ui/palettes.o \
 	ui/plaintextwindow.o \
+	ui/pluginwindow.o \
 	ui/settingswindow.o \
 	ui/spreadeditor.o \
 	ui/viewwindow.o \

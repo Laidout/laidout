@@ -34,6 +34,8 @@ svg out, select to files, often the first time goes to file, not files
 
 ------------ other bugs:
 
+Overwrite dialog box and other centering boxes should center over calling window, or current screen if no specified owner
+
 Reconfigure text edits. Need something that works in interface land, with harfbuzz
 
 drag off page, space to duplicate, copy is not in limbo!
@@ -917,6 +919,8 @@ MenuInfo AddItem functions are really terrible overload nightmare, need somethin
   AddToggleItem(const char *name, LaxImage *icon, int id, int info, int state, int where = -1);
 
 plugins:
+  beef up the config window, to allow toggling plugins.
+  mechanism for plugin config files
   figure out proper de-loading.. have to restart?
   check for already loaded
 
@@ -2022,3 +2026,4 @@ DONE animated gif import
 DONE Remove obsolete HelpWindow code?
 DONE finish phasing out MenuSelector
 DONE laidout settings option to always load last file on startup
+DONE added rudimentary plugin list window
