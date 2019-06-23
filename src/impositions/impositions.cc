@@ -155,6 +155,9 @@ PtrStack<ImpositionResource> *GetBuiltinImpositionPool(PtrStack<ImpositionResour
 	AddToImpositionPool(existingpool,globalresourcedir);
 	AddToImpositionPool(existingpool,localresourcedir);
 	if (projectresourcedir) AddToImpositionPool(existingpool,projectresourcedir);
+	delete[] localresourcedir;
+	delete[] globalresourcedir;
+	delete[] projectresourcedir;
 
 	ImpositionResource **rr;
 	//if (!existingpool->n) {
