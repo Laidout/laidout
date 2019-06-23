@@ -119,7 +119,7 @@ PluginBase *LoadPlugin(const char *path_to_plugin, Laxkit::ErrorLog &log)
 
 	DBG cerr <<"Found plugin!"<<endl;
 	DBG cerr <<"  Name:        "<< plugin->PluginName()  << endl;
-	DBG cerr <<"  Version:     "<< plugin->Version()<<endl;
+	DBG cerr <<"  Version:     "<< plugin->Version()     << endl;
 	DBG cerr <<"  Description: "<< plugin->Description() << endl;
 	DBG cerr <<"  Author:      "<< plugin->Author()      << endl;
 	DBG cerr <<"  ReleaseDate: "<< plugin->ReleaseDate() << endl;
