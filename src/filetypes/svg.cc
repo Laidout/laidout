@@ -1992,18 +1992,18 @@ ObjectDef *SvgImportFilter::GetObjectDef()
 
 //forward declaration:
 int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribute> &powerstrokes, RefPtrStack<anObject> &gradients, ErrorLog &log);
-GradientData *svgDumpInGradientDef(Attribute *att, Attribute *defs, int type, GradientData *gradient);
+GradientData *svgDumpInGradientDef(Attribute *att, Attribute *defs, int type, GradientData *gradient, RefPtrStack<anObject> &gradients);
 ColorPatchData *svgDumpInMeshGradientDef(Attribute *att, Attribute *defs);
 
 int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log, const char *filecontents,int contentslen)
 {
-	ImportConfig *in=dynamic_cast<ImportConfig *>(context);
+	ImportConfig *in = dynamic_cast<ImportConfig *>(context);
 	if (!in) return 1;
 
-	Document *doc=in->doc;
+	Document *doc = in->doc;
 
-	Attribute *att=XMLFileToAttribute(nullptr,file,nullptr);
-	if (!att) return 2;
+	Attribute att;
+	if (!XMLFileToAttribute(&att,file,nullptr)) return 2;
 	
 	 //create repository for hints if necessary
 	Attribute *svghints=nullptr,
@@ -2014,9 +2014,9 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 
 		 //add xml preamble, and anything not under "svg" to hints if it exists...
 		if (svghints) {
-			for (int c=0; c<att->attributes.n; c++) {
-				if (!strcmp(att->attributes.e[c]->name,"svg")) continue;
-				svghints->push(att->attributes.e[c]->duplicate(),-1);
+			for (int c=0; c<att.attributes.n; c++) {
+				if (!strcmp(att.attributes.e[c]->name,"svg")) continue;
+				svghints->push(att.attributes.e[c]->duplicate(),-1);
 			}
 			svg=new Attribute("svg",nullptr);
 			svghints->push(svg,-1);
@@ -2027,7 +2027,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 		double width=0, height=0;
 		double scalex = 1, scaley = 1;
 
-		Attribute *svgdoc=att->find("svg");
+		Attribute *svgdoc = att.find("svg");
 		if (!svgdoc) {
 			log.AddMessage(_("Could not find svg tag.\n"),ERROR_Fail);
 			throw 3;
@@ -2232,12 +2232,12 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 					value=def->value;
 
 					if (!strcmp(name,"linearGradient")) {
-						GradientData *gradient = svgDumpInGradientDef(def, defsatt, GradientData::GRADIENT_LINEAR, nullptr);
+						GradientData *gradient = svgDumpInGradientDef(def, defsatt, GradientData::GRADIENT_LINEAR, nullptr, gradients);
 						gradients.push(gradient);
 						gradient->dec_count();
 
 					} else if (!strcmp(name,"radialGradient")) {
-						GradientData *gradient = svgDumpInGradientDef(def, defsatt, GradientData::GRADIENT_RADIAL, nullptr);
+						GradientData *gradient = svgDumpInGradientDef(def, defsatt, GradientData::GRADIENT_RADIAL, nullptr, gradients);
 						gradients.push(gradient);
 						gradient->dec_count();
 
@@ -2328,24 +2328,26 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 	
 	} catch (int error) {
 		if (svghints) delete svghints;
-		delete att;
 		return 1;
 	}
 	return 0;
 }
 
-GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, GradientData *gradient)
+GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, GradientData *gradient, RefPtrStack<anObject> &gradients)
 {
 	if (!def) return nullptr;
-	if (!gradient) gradient = dynamic_cast<GradientData *>(newObject("GradientData"));
 
 	double cx,cy,fx,fy,r;
 	flatpoint p1,p2;
-	int foundf=0;
+	const char *id = nullptr;
+	bool foundf = false;
+	//bool foundp1 = false;
+	bool foundp2 = false;
 	char *name, *value;
 	//int units=0;//0 is user space, 1 is bounding box
 	double gm[6];
 	transform_identity(gm);
+	GradientStrip *strip = nullptr;
 
 	for (int c3=0; c3<def->attributes.n; c3++) {
 		name =def->attributes.e[c3]->name;
@@ -2356,25 +2358,24 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 			 // For instance, radialGradient often links to a linearGradient in inkscape docs
 
 			if (!value || value[0]!='#') continue; //only check for "#name" attributes
-			char *xlinkid=value+1;
-			Attribute *xlink=nullptr;
+			char *xlinkid = value+1;
 
-			for (int c=0; c<defs->attributes.n; c++) {
-				name  = defs->attributes.e[c]->name;
-				value = defs->attributes.e[c]->value;
-
-				if (!strcmp(name,"linearGradient") || !strcmp(name,"radialGradient")) {
-					Attribute *g = defs->attributes.e[c]->find("id");
-					if (!strcmp(g->value,xlinkid)) {
-						xlink = defs->attributes.e[c];
-						break;
+			for (int c=0; c<gradients.n; c++) {
+				if (!strcmp(gradients.e[c]->Id(), xlinkid)) {
+					GradientData *grad = dynamic_cast<GradientData*>(gradients.e[c]);
+					if (grad) {
+						if (grad->strip) {
+							if (strip) strip->dec_count();
+							strip = dynamic_cast<GradientStrip*>(grad->strip->duplicate(nullptr));
+							DBG cerr << " svg dup strip:"<<endl;
+							DBG strip->dump_out(stderr, 2, 0, nullptr);
+						}
 					}
 				}
 			}
-			if (xlink) svgDumpInGradientDef(xlink, defs, type, gradient); //this should read  from xlink into gradient
 
 		} else if (!strcmp(name,"id")) {
-			if (!isblank(value)) gradient->Id(value);
+			id = value;
 
 		} else if (!strcmp(name,"gradientUnits")) {
 			 //gradientUnits = "userSpaceOnUse | objectBoundingBox"
@@ -2385,11 +2386,22 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 		} else if (!strcmp(name,"gradientTransform")) {
 			svgtransform(value,gm);
 
+		} else if (!strcmp(name,"spreadMethod")) {
+			//pad | repeat | reflect
+			//todo!
+			
+			//if (!strcmp(value, "pad")) {
+			//} else if (!strcmp(value, "repeat")) {
+			//} else if (!strcmp(value, "reflect")) {
+			//}
+
 		} else if (!strcmp(name,"cx")) {
 			DoubleAttribute(value,&cx,nullptr);
+			//foundp1 = true;
 
 		} else if (!strcmp(name,"cy")) {
 			DoubleAttribute(value,&cy,nullptr);
+			//foundp1 = true;
 
 		} else if (!strcmp(name,"fx")) {
 			DoubleAttribute(value,&fx,nullptr);
@@ -2404,20 +2416,25 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 
 		} else if (!strcmp(name,"x1")) {
 			DoubleAttribute(value,&p1.x,nullptr);
+			//foundp1 = true;
 
 		} else if (!strcmp(name,"y1")) {
 			DoubleAttribute(value,&p1.y,nullptr);
+			//foundp1 = true;
 
 		} else if (!strcmp(name,"x2")) {
 			DoubleAttribute(value,&p2.x,nullptr);
+			foundp2 = true;
 
 		} else if (!strcmp(name,"y2")) {
 			DoubleAttribute(value,&p2.y,nullptr);
+			foundp2 = true;
 
 		} else if (!strcmp(name,"content:")) {
 			Attribute *spot=def->attributes.e[c3];
 			double offset=0,alpha=0;
 			ScreenColor color;
+
 			for (int c4=0; c4<spot->attributes.n; c4++) {
 				name =spot->attributes.e[c4]->name;
 				value=spot->attributes.e[c4]->value;
@@ -2429,15 +2446,16 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 
 						if (!strcmp(name,"style")) {
 							 //style="stop-color:#ffffff;stop-opacity:1;"
-							char *str=strstr(value,"stop-color:");
+							char *str = strstr(value,"stop-color:");
 							if (str) {
-								str+=11;
+								str += 11;
 								HexColorAttributeRGB(str,&color,nullptr);
 							}
 							str=strstr(value,"stop-opacity:");
 							if (str) {
-								str+=13;
+								str += 13;
 								DoubleAttribute(str,&alpha,nullptr);
+								color.Alpha(1-alpha);
 							}
 
 						} else if (!strcmp(name,"offset")) {
@@ -2448,25 +2466,37 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 
 						} else if (!strcmp(name,"stop-opacity")) {
 							DoubleAttribute(value,&alpha,nullptr);
+							color.Alpha(1-alpha);
 
 						} else if (!strcmp(name,"id")) {
 							//ignore stop id
 						}
 					}
-					gradient->AddColor(offset,&color);
+
+					if (!strip) strip = new GradientStrip();
+					strip->AddColor(offset,&color);
 				}
 			}
 		}
 	}
+
+	if (!gradient) gradient = dynamic_cast<GradientData *>(newObject("GradientData"));
 
 	if (type == GradientData::GRADIENT_RADIAL) {
 		p1=transform_point(gm,flatpoint(cx,cy));
 		p2=(foundf ? transform_point(gm,flatpoint(fx,fy)) : p1);
 		gradient->SetRadial(p1,p2, r,0, nullptr,nullptr);
 	} else {
+		if (!foundp2) p2 = p1;
 		gradient->SetLinear(p1,p2, 1,-1, nullptr,nullptr);
 	}
+	gradient->m(gm);
+	gradient->Set(strip, 1, true);
+	if (!isblank(id)) gradient->Id(id);
 	
+	DBG cerr << "svg gradient def: "<<endl;
+	DBG gradient->dump_out(stderr, 2, 0, nullptr);
+
 	return gradient;
 }
 
