@@ -151,6 +151,7 @@ WATCH OUT for when preview file is OLDER than original file!!
 stackframe seems to be ignoring window borders on layout
 
 
+
 ----------------0.098 ROADMAP ITEMS: features and enhancements------------------------
 website: explain a bit more how to install dev versions, and place side by side with "stable"
 website: need to redo screenshots section for mobile friendliness
@@ -164,6 +165,7 @@ update help page
 update dtpcompare.html
 comment out cairo_debug_reset_static_data before release, since it usually means crash, interferes with pipeout
 run through "valgrind --leak-check=full --error-limit=no ./laidout" and fix anything that can be nailed down to laidout
+  DONE XIQueryPointer?     buttons->mask  = malloc(buttons->mask_len); needs freeing
 test:
   ./laidout ../examples/test-all-objects.laidout
   each export filter (via command line in new script in examples.. ignoring problems in eps)
@@ -176,8 +178,9 @@ test:
 get splash image working
 
 lgm 2019 feedback and ideas:
-  configure still sucks.. 
+  configure still sucks:
     laidout configure needs to drive laxkit configure more thoroughly.
+    automate default laxkit detection, or git download of laxkit if missing
   path tool:
     hard to see helper graphics, needs haloing
 	should have space to dup weight node
@@ -190,16 +193,12 @@ lgm 2019 feedback and ideas:
     enhance mystery data to work with laidout data too?
   some kind of graphicsmagick LoadToMemory bug.. could be only on loading old file, bad config translation?
   out clicking from a dialog should probably destroy that dialog.. too easy to get buried confusedly in windows
-  automate default laxkit detection, or git download of laxkit if missing
-  mageia:
-    makedepend trouble? replace with custom script to get rid of x11-dev dependency?
-  make connecting to information easy: click to open web browser
-  diffusion curves
-  "local mod" mesh manipulation
-
+  make connecting to online information easy: click to open web browser, xdg-open?
+  from talk: diffusion curves, "local mod" mesh manipulation
+  DONE mageia: makedepend trouble? replace with custom script to get rid of x11-dev dependency?
 
 alternate packaging:
-  appimage
+  appimage, see: https://github.com/Laidout/laidout/issues/10
   flatpak
   snapcraft
   debian (get in to main repository)
@@ -271,7 +270,7 @@ valuewindow:
   when you quit, does not remember from open windows
 
 ux:
-  when you save, also save a preview?
+  when you save, also save a preview of current spread?
   resizeable ui
   should be able to mass disconnect clones
   current page should be highlighted
@@ -2027,3 +2026,4 @@ DONE Remove obsolete HelpWindow code?
 DONE finish phasing out MenuSelector
 DONE laidout settings option to always load last file on startup
 DONE added rudimentary plugin list window
+DONE when using static SingletonKeeper in ColorManager, dlopen would wipe its object. wuuuuh? <-- something about dlopen process wipes some non-statics in some files
