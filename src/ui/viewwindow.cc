@@ -458,7 +458,7 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 	spread=NULL;
 	spreadi=-1;
 	curpage=NULL;
-	pageviewlabel=NULL;
+	pageviewlabel = nullptr;
 
 	searchmode = SEARCH_None;
 	searchcriteria = SEARCH_Any;
@@ -492,6 +492,8 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 LaidoutViewport::~LaidoutViewport()
 {
 	DBG cerr <<"in LaidoutViewport destructor, obj "<<object_id<<endl;
+
+	delete[] pageviewlabel;
 
 	if (spread) delete spread;
 	if (papergroup) papergroup->dec_count();

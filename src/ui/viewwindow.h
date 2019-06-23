@@ -82,6 +82,8 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	double ectm[6];
 	Group *limbo;
 
+	char *pageviewlabel;
+
 	virtual void setupthings(int tospread=-1,int topage=-1);
 	virtual void UpdateMarkers();
 	virtual void setCurobj(VObjContext *voc);
@@ -92,9 +94,6 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	virtual int PerformAction(int action);
 
   public:
-	 //*** maybe these should be protected?
-	char *pageviewlabel;
-
 	 // these all have to refer to proper values in each other!
 	Document *doc;
 	Spread *spread;
