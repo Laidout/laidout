@@ -282,8 +282,9 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 
 	WindowStyle *newcolors = win_themestyle->duplicate();
 	InstallColors(newcolors);
+	newcolors->dec_count();
 	win_themestyle->bg.Set(coloravg(win_themestyle->bg.Pixel(),0,.33));
-	space=4;
+	space = 4;
 
 	tooltip("With mouse in the gutter:\n"
 			"  control-left click Splits\n"
