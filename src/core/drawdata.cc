@@ -233,8 +233,8 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
 SomeData *newObject(const char *thetype)
 {
 	anObject *obj = somedatafactory()->NewObject(thetype);
-	if (!dynamic_cast<SomeData*>(obj)) { obj->dec_count(); return NULL; }
-	return dynamic_cast<SomeData*>(somedatafactory()->NewObject(thetype));
+	if (!dynamic_cast<SomeData*>(obj)) { obj->dec_count(); return nullptr; }
+	return dynamic_cast<SomeData*>(obj);
 }
 
 //! Return whether all corners of bbox have nonzero winding numbers for points.
