@@ -132,6 +132,7 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	Laxkit::PtrStack<ExportFilter> exportfilters;
 	Laxkit::PtrStack<ImportFilter>  importfilters;
 
+	Laxkit::PtrStack<char> disabled_plugins;
 	Laxkit::RefPtrStack<PluginBase> plugins;
 	int AddPlugin(const char *path);
 	int RemovePlugin(const char *name);

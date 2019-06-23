@@ -230,12 +230,13 @@ ColorManager *colorManager = nullptr;
  */
 LaidoutApp::LaidoutApp()
   : anXApp(),
-	preview_file_bases(2)
+	preview_file_bases(LISTS_DELETE_Array),
+	disabled_plugins(LISTS_DELETE_Array)
 {	
 	colorManager = new ColorManager();
 	colorManager->AddSystem(Create_sRGB_System(true), true);
 	ColorManager::SetDefault(colorManager);
-	//colorManager->dec_count();
+	colorManager->dec_count();
 
 
 	autosave_timerid = 0;
@@ -313,10 +314,11 @@ LaidoutApp::~LaidoutApp()
 	if (defaultpaper)       defaultpaper->dec_count();
 	if (curdoc)             curdoc->dec_count();
 	if (project)            delete project;
-	if (config_dir)         delete[] config_dir;
 	if (ghostscript_binary) delete[] ghostscript_binary;
 	if (calculator)		    calculator->dec_count();
 	delete[] pipeoutarg;
+	delete[] shared_dir;
+	delete[] config_dir;
 }
 
 int LaidoutApp::close()
@@ -531,7 +533,7 @@ int LaidoutApp::init(int argc,char **argv)
  
 	 // find the current executable path
 	Utf8String execdir(ExecutablePath(), -1, true);
-	execdir = lax_dirname(execdir.c_str(),0);
+	execdir.InsertBytes(lax_dirname(execdir.c_str(),0), -1);
 
 	 // Check executabledir/icons first
 	Utf8String iconpath = execdir;
@@ -1052,6 +1054,10 @@ int LaidoutApp::readinLaidoutDefaults()
 				prefs.AddPath("plugins", value);
 			}
 
+		} else if (!strcmp(name,"disable_plugin")) {
+			// *** don't load any plugins with the given basename
+			if (!isblank(value)) disabled_plugins.push(newstr(value));
+			
 		} else if (!strcmp(name,"palette_dir")) {
 			if (file_exists(value,1,NULL) == S_IFDIR) makestr(prefs.palette_dir,value);
 		
@@ -1185,6 +1191,15 @@ int LaidoutApp::InitializePlugins()
 			if (!S_ISREG(statbuf.st_mode)) continue;
 
 			file = globbuf.gl_pathv[c2];
+
+			if (disabled_plugins.n) {
+				const char *fname = lax_basename(file);
+				bool banned = false;
+				for (int c2=0; c2<disabled_plugins.n; c2++) {
+					if (!strcmp(fname, disabled_plugins.e[c2])) { banned = true; break; }
+				}
+				if (banned) continue;
+			}
 
 			PluginBase *plugin = LoadPlugin(file, generallog); //loads but doesn't initialize
 			if (plugin) {
