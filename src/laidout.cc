@@ -628,7 +628,7 @@ int LaidoutApp::init(int argc,char **argv)
 	
 	 //-----define default icon
 	for (int c=0; c<icons->NumPaths(); c++) {
-		Utf8String path = newstr(icons->GetPath(c));
+		Utf8String path(newstr(icons->GetPath(c)), -1, true);
 		path.Append("/laidout-48x48.png");
 		if (file_exists(path.c_str(), 1, nullptr) == S_IFREG) {
 			DefaultIcon(path.c_str());
