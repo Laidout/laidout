@@ -2792,6 +2792,8 @@ NodeInterface::~NodeInterface()
 	if (onconnection) onconnection->dec_count();
 	if (default_colors) default_colors->dec_count();
 	if (passthrough) delete passthrough;
+
+	delete[] lastsave;
 }
 
 const char *NodeInterface::whatdatatype()
