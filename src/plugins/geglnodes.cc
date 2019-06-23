@@ -24,6 +24,7 @@
 #include "svg/svgnodes.h"
 
 #include <gegl-paramspecs.h>
+#include <gegl-version.h>
 
 #include <iostream>
 #define DBG
@@ -1660,12 +1661,7 @@ GeglNodesPlugin::GeglNodesPlugin()
 
 GeglNodesPlugin::~GeglNodesPlugin()
 {
-//	if (GeglLaidoutNode::masternode != NULL) {
-//		g_object_unref (GeglLaidoutNode::masternode);
-//		GeglLaidoutNode::masternode = NULL;
-//	}
-
-    //gegl_exit ();
+	//see Finalize(), which is called before this actual destructor
 }
 
 unsigned long GeglNodesPlugin::WhatYouGot()
@@ -1705,11 +1701,18 @@ const char *GeglNodesPlugin::Version()
 	return "0.1";
 }
 
+static char *full_description = nullptr;
+
 /*! Return localized description.
  */
 const char *GeglNodesPlugin::Description()
 {
-	return _("Provides gegl image functionality to nodes.");
+	if (!full_description) {
+		static const char *desc = _("  Provides gegl image functionality to nodes.\n  Using gegl version %d.%d.%d");
+		full_description = new char[strlen(desc) + 20];
+		sprintf(full_description, desc, GEGL_MAJOR_VERSION, GEGL_MINOR_VERSION, GEGL_MICRO_VERSION);
+	}
+	return full_description;
 }
 
 const char *GeglNodesPlugin::Author()
@@ -1739,6 +1742,11 @@ int GeglNodesPlugin::Initialize()
 	if (initialized) return 0;
 
 	DBG cerr << "GeglNodesPlugin initializing..."<<endl;
+
+	//DBG int v1,v2,v3;
+	//DBG gegl_get_version(&v1, &v2, &v3);
+	//DBG cerr << "Using gegl version "<<v1<<'.'<<v2<<'.'<<v3<<endl;
+	DBG cerr << "Using gegl version "<<GEGL_MAJOR_VERSION<<'.'<<GEGL_MINOR_VERSION<<'.'<<GEGL_MICRO_VERSION<<endl;
 
 	//disable this when we don't need it anymore:
 	char *BABL_DIR = getenv("BABL_DIR");
@@ -1797,6 +1805,11 @@ int GeglNodesPlugin::Initialize()
  */
 void GeglNodesPlugin::Finalize()
 {
+	if (full_description) {
+		delete[] full_description;
+		full_description = nullptr;
+	}
+
 	 //gegl backend
 	if (GeglLaidoutNode::masternode != NULL) {
 		g_object_unref (GeglLaidoutNode::masternode);
