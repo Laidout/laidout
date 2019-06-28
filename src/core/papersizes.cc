@@ -20,17 +20,19 @@
 
 #include <iostream>
 #define DBG 
-using namespace std;
 
 #include <lax/strmanip.h>
 #include <lax/units.h>
-#include <lax/refptrstack.cc>
 
 #include "papersizes.h"
 #include "stylemanager.h"
 #include "../language.h"
 #include "../laidout.h"
 
+//template implementation:
+#include <lax/refptrstack.cc>
+
+using namespace std;
 using namespace LaxFiles;
 using namespace Laxkit;
 

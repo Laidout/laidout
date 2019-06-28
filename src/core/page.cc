@@ -29,13 +29,13 @@
 #include <lax/lists.cc>
 
 
-using namespace LaxFiles;
-using namespace LaxInterfaces;
-using namespace Laxkit;
-
 #include <iostream>
 using namespace std;
 #define DBG 
+
+using namespace LaxFiles;
+using namespace LaxInterfaces;
+using namespace Laxkit;
 
 
 namespace Laidout {

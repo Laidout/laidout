@@ -34,20 +34,12 @@
 
 #include <GraphicsMagick/Magick++.h>
 
-//#define POLYPTYCH_TUIO
-#ifdef POLYPTYCH_TUIO
-#include <lax/laxtuio.h>
-#include <lax/laxtuio.cc> //it's not in laxkit proper yet
-#endif
+////#define POLYPTYCH_TUIO
+//#ifdef POLYPTYCH_TUIO
+//#include <lax/laxtuio.h>
+//#include <lax/laxtuio.cc> //it's not in laxkit proper yet
+//#endif
 
-//#include <lax/lists.cc>
-//#include <lax/refptrstack.cc>
-
-
-#include <iostream>
-using namespace std;
-using namespace Laxkit;
-using namespace LaxFiles;
 
 #include "../language.h"
 #include "glbase.h"
@@ -56,9 +48,22 @@ using namespace LaxFiles;
 #include "polyrender.h"
 #include "panoviewwindow.h"
 
+
+#include <iostream>
+
+
+////template implementation:
+//#include <lax/lists.cc>
+//#include <lax/refptrstack.cc>
+
+
+using namespace std;
+using namespace Laxkit;
+using namespace LaxFiles;
+using namespace Polyptych;
+
 #define DBG
 
-using namespace Polyptych;
 
 
 //-------------------------- version() -------------------------------------

@@ -13,10 +13,11 @@
 // Copyright (C) 2004-2007 by Tom Lechner
 //
 
+#include <iostream>
+
 #include <lax/interfaces/somedataref.h>
 #include <lax/interfaces/engraverfillinterface.h>
 #include <lax/fileutils.h>
-#include <lax/refptrstack.cc>
 #include "project.h"
 #include "utils.h"
 #include "../version.h"
@@ -26,8 +27,8 @@
 
 //template implementation:
 #include <lax/lists.cc>
+#include <lax/refptrstack.cc>
 
-#include <iostream>
 using namespace std;
 #define DBG 
 

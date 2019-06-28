@@ -26,13 +26,12 @@
 //template implementation:
 #include <lax/lists.cc>
 
-using namespace Laxkit;
-using namespace LaxInterfaces;
-
 
 #include <iostream>
 using namespace std;
 #define DBG 
+using namespace Laxkit;
+using namespace LaxInterfaces;
 
 
 namespace Laidout {

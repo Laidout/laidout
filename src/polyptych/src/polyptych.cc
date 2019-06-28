@@ -34,12 +34,13 @@
 
 #include <GraphicsMagick/Magick++.h>
 
-//#define POLYPTYCH_TUIO
-#ifdef POLYPTYCH_TUIO
-#include <lax/laxtuio.h>
-#include <lax/laxtuio.cc> //it's not in laxkit proper yet
-#endif
+////#define POLYPTYCH_TUIO
+//#ifdef POLYPTYCH_TUIO
+//#include <lax/laxtuio.h>
+//#include <lax/laxtuio.cc> //it's not in laxkit proper yet
+//#endif
 
+////template implementation:
 //#include <lax/lists.cc>
 //#include <lax/refptrstack.cc>
 

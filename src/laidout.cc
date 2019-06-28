@@ -59,10 +59,6 @@
 #include "ui/valuewindow.h"
 
 
-//template implementations
-#include <lax/lists.cc>
-#include <lax/refptrstack.cc>
-
 
 #include <sys/stat.h>
 #include <glob.h>
@@ -72,6 +68,10 @@
 //for debugging below
 #include <cairo/cairo-xlib.h>
 #endif
+
+//template implementations
+#include <lax/lists.cc>
+#include <lax/refptrstack.cc>
 
 
 using namespace Laxkit;

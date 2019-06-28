@@ -30,16 +30,16 @@
 //template implementation:
 #include <lax/refptrstack.cc>
 
-using namespace Laxkit;
-using namespace LaxInterfaces;
-using namespace LaxFiles;
-using namespace Polyptych;
- 
 #include <iostream>
 using namespace std;
 #define DBG 
 
 
+using namespace Laxkit;
+using namespace LaxInterfaces;
+using namespace LaxFiles;
+using namespace Polyptych;
+ 
 
 
 namespace Laidout {

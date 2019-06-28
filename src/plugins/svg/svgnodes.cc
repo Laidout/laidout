@@ -18,12 +18,12 @@
 #include "../../nodes/nodeinterface.h"
 #include <exception>
 
-//template implementation:
-#include <lax/lists.cc>
-
 
 #include <iostream>
 #define DBG
+
+//template implementation:
+#include <lax/lists.cc>
 
 
 using namespace std;

@@ -20,9 +20,6 @@
 #include <lax/strmanip.h>
 #include <lax/fileutils.h>
 
-//template implementation
-#include <lax/refptrstack.cc>
-
 
 #include <cctype>
 #include <cstdlib>
@@ -30,9 +27,12 @@
 #include <cstdio>
 #include <iostream>
 
-#define DBG
-using namespace std;
+//template implementation
+#include <lax/refptrstack.cc>
 
+
+using namespace std;
+#define DBG
 
 using namespace Laxkit;
 using namespace LaxFiles;

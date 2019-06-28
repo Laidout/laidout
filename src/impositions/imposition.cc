@@ -19,17 +19,18 @@
 #include "../core/utils.h"
 
 #include <lax/misc.h>
-#include <lax/lists.cc>
 #include <lax/interfaces/pathinterface.h>
 #include <lax/transformmath.h>
 
-using namespace Laxkit;
-using namespace LaxInterfaces;
+//template implementation:
+#include <lax/lists.cc>
+
 
 #include <iostream>
 using namespace std;
 #define DBG 
-
+using namespace Laxkit;
+using namespace LaxInterfaces;
 
 
 namespace Laidout {

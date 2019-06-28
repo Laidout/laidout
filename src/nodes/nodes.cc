@@ -25,17 +25,14 @@
 #include "../dataobjects/objectfilter.h"
 
 #include <unistd.h>
+#include <iostream>
 
 //template implementation
 #include <lax/lists.cc>
 #include <lax/refptrstack.cc>
 
-
-#define DBG
-#include <iostream>
 using namespace std;
-
-
+#define DBG
 using namespace Laxkit;
 using namespace LaxInterfaces;
 

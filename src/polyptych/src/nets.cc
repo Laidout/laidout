@@ -22,19 +22,19 @@
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
 
-#include <lax/lists.cc>
-
 #include "../language.h"
 
-using namespace LaxFiles;
-using namespace Laxkit;
-using namespace LaxInterfaces;
+//template implementation:
+#include <lax/lists.cc>
 
 #include <fstream>
 
 #include <iostream>
 using namespace std;
 #define DBG 
+using namespace LaxFiles;
+using namespace Laxkit;
+using namespace LaxInterfaces;
 
 
 namespace Polyptych {

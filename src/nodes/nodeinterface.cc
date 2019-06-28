@@ -36,14 +36,13 @@
 #include <lax/refptrstack.cc>
 
 
-using namespace Laxkit;
-using namespace LaxFiles;
-using namespace LaxInterfaces;
-
-
 #include <iostream>
 using namespace std;
 #define DBG 
+
+using namespace Laxkit;
+using namespace LaxFiles;
+using namespace LaxInterfaces;
 
 
 namespace Laidout {

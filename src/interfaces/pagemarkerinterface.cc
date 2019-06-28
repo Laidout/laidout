@@ -22,7 +22,7 @@
 #include <lax/language.h>
 
 
-//You need this if you use any of the Laxkit stack templates in lax/lists.h
+//template implementation:
 #include <lax/lists.cc>
 
 

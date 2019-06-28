@@ -14,24 +14,23 @@
 //
 
 
-#include "../language.h"
-#include "nupinterface.h"
-//#include "viewwindow.h"
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
 #include <lax/transformmath.h>
+#include "../language.h"
+#include "nupinterface.h"
 
 
+//template implementation:
 #include <lax/refptrstack.cc>
-
-using namespace Laxkit;
-using namespace LaxFiles;
-using namespace LaxInterfaces;
-
 
 #include <iostream>
 using namespace std;
 #define DBG 
+
+using namespace Laxkit;
+using namespace LaxFiles;
+using namespace LaxInterfaces;
 
 
 namespace Laidout {

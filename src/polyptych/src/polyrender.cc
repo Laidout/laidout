@@ -28,13 +28,14 @@
 #include "nets.h"
 #include "polyrender.h"
 
-#include <lax/lists.cc>
-#include <lax/refptrstack.cc>
-
 #include <fstream>
 
 #include <iostream>
 #define DBG 
+
+//template implementation:
+#include <lax/lists.cc>
+#include <lax/refptrstack.cc>
 
 
 using namespace std;

@@ -16,6 +16,7 @@
 //#include <cctype>
 #include <cstdlib>
 #include <cstdarg>
+#include <iostream>
 #include "fieldplace.h"
 
 #include <lax/strmanip.h>
@@ -24,13 +25,9 @@
 #include <lax/lists.cc>
 
 using namespace Laxkit;
-
-#include <iostream>
 using namespace std;
 #define DBG
 
-
-using namespace Laxkit;
 
 namespace Laidout {
 

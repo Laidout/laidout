@@ -23,8 +23,6 @@
 #include <lax/lineinput.h>
 #include <lax/shortcutwindow.h>
 
-#include <lax/lists.cc>
-
 #include "../language.h"
 #include "spreadeditor.h"
 #include "../laidout.h"
@@ -37,14 +35,18 @@
 #include "../interfaces/pagemarkerinterface.h"
 #include "../interfaces/paperinterface.h"
 
-using namespace Laxkit;
-using namespace LaxFiles;
-using namespace LaxInterfaces;
+
+//template implementation:
+#include <lax/lists.cc>
 
 #include <iostream>
 using namespace std;
 #define DBG 
 
+
+using namespace Laxkit;
+using namespace LaxFiles;
+using namespace LaxInterfaces;
 
 
 namespace Laidout {

@@ -13,6 +13,8 @@
 // Copyright (C) 2004-2013 by Tom Lechner
 //
 
+#include <iostream>
+
 #include <lax/strmanip.h>
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
@@ -34,14 +36,12 @@
 //template implementation:
 #include <lax/refptrstack.cc>
 
+#define DBG 
 
+using namespace std;
 using namespace Laxkit;
 using namespace LaxFiles;
 using namespace LaxInterfaces;
-
-#include <iostream>
-using namespace std;
-#define DBG 
 
 
 

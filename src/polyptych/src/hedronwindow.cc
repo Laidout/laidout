@@ -25,16 +25,18 @@
 #include <lax/fileutils.h>
 #include <lax/filedialog.h>
 
+
+#include <iostream>
+#define DBG
+
+//template implementation:
 #include <lax/lists.cc>
 #include <lax/refptrstack.cc>
 
 
-#include <iostream>
 using namespace std;
 using namespace Laxkit;
 using namespace LaxFiles;
-
-#define DBG
 
 
 //! Namespace for various polyhedron 3-d stuff.

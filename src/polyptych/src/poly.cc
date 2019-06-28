@@ -22,8 +22,9 @@
 #include <lax/strmanip.h>
 #include <lax/fileutils.h>
 #include "poly.h"
+
+//template implementation:
 #include <lax/lists.cc>
-//#include <lax/attributes.h>
 
 #define DBG 
 

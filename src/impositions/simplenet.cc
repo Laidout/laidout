@@ -25,17 +25,13 @@
 //template implementation:
 #include <lax/lists.cc>
 
+#include <iostream>
+using namespace std;
+#define DBG 
 using namespace LaxFiles;
 using namespace Laxkit;
 using namespace LaxInterfaces;
 using namespace Polyptych;
-
-
-#include <iostream>
-using namespace std;
-#define DBG 
-
-
 
 
 namespace Laidout {

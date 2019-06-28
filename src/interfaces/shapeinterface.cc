@@ -22,15 +22,16 @@
 #include <lax/transformmath.h>
 
 
+//template implementation:
 #include <lax/refptrstack.cc>
-
-using namespace Laxkit;
-using namespace LaxInterfaces;
-
 
 #include <iostream>
 using namespace std;
 #define DBG 
+using namespace Laxkit;
+using namespace LaxInterfaces;
+
+
 
 
 namespace Laidout {
