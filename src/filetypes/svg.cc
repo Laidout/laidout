@@ -26,9 +26,6 @@
 #include <lax/attributes.h>
 #include <lax/utf8string.h>
 
-//for some reason compilation fails on some systems without:
-#include <lax/refptrstack.cc>
-
 #include "../language.h"
 #include "../laidout.h"
 #include "../core/stylemanager.h"
@@ -39,6 +36,9 @@
 #include "../core/utils.h"
 #include "../core/drawdata.h"
 #include "../text/cssutils.h"
+
+//template implementation:
+#include <lax/refptrstack.cc>
 
 #include <iostream>
 #define DBG 
@@ -2369,6 +2369,7 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 							strip = dynamic_cast<GradientStrip*>(grad->strip->duplicate(nullptr));
 							DBG cerr << " svg dup strip:"<<endl;
 							DBG strip->dump_out(stderr, 2, 0, nullptr);
+							break;
 						}
 					}
 				}
@@ -2432,7 +2433,8 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 
 		} else if (!strcmp(name,"content:")) {
 			Attribute *spot=def->attributes.e[c3];
-			double offset=0,alpha=0;
+			double offset = 0, opacity = 0;
+			bool found_opacity = false;
 			ScreenColor color;
 
 			for (int c4=0; c4<spot->attributes.n; c4++) {
@@ -2454,25 +2456,30 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 							str=strstr(value,"stop-opacity:");
 							if (str) {
 								str += 13;
-								DoubleAttribute(str,&alpha,nullptr);
-								color.Alpha(1-alpha);
+								DoubleAttribute(str, &opacity, nullptr);
+								found_opacity = true;
 							}
 
 						} else if (!strcmp(name,"offset")) {
-							DoubleAttribute(value,&offset,nullptr);
+							char *endptr = nullptr;
+							if (DoubleAttribute(value,&offset,&endptr)) {
+								if (endptr && *endptr == '%') offset /= 100;
+								offset = 1-offset;
+							}
 
 						} else if (!strcmp(name,"stop-color")) {
 							HexColorAttributeRGB(value,&color,nullptr);
 
 						} else if (!strcmp(name,"stop-opacity")) {
-							DoubleAttribute(value,&alpha,nullptr);
-							color.Alpha(1-alpha);
+							DoubleAttribute(value,&opacity,nullptr);
+							found_opacity = true;
 
 						} else if (!strcmp(name,"id")) {
 							//ignore stop id
 						}
 					}
 
+					if (found_opacity) color.Alpha(opacity);
 					if (!strip) strip = new GradientStrip();
 					strip->AddColor(offset,&color);
 				}
