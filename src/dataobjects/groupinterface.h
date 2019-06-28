@@ -88,6 +88,8 @@ class GroupInterface : public LaxInterfaces::ObjectInterface, public Value
 	virtual int GetMode();
 	virtual void DrawReparentArrows();
 
+	virtual void PopupParentOptions(double x,double y,unsigned int state,const Laxkit::LaxMouse *mouse);
+
   public:
 	void TransformSelection(const double *N, int s=-1, int e=-1);// *****
 

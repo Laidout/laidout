@@ -16,6 +16,8 @@
 #include <lax/transformmath.h>
 #include <lax/interfaces/rectpointdefs.h>
 #include <lax/colors.h>
+#include <lax/popupmenu.h>
+
 #include "lsomedataref.h"
 #include "groupinterface.h"
 #include "../interfaces/anchorinterface.h"
@@ -236,6 +238,18 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 
 		}
 
+	} else if (!strcmp(mes,"parentOptions")) {
+		const SimpleMessage *s = dynamic_cast<const SimpleMessage*>(e);
+		int i = s->info2; //id of menu item
+
+		if (i == GIA_Jump_To_Parent
+				|| i == GIA_Parent 
+				|| i == GIA_Unparent) {
+			PerformAction(i);
+		}
+
+		return 0;
+
 	} else if (!strcmp(mes,"docTreeChange")) {
 		 //valid all refs in selection
 		for (int c=selection->n()-1; c>=0; c--) {
@@ -393,8 +407,7 @@ int GroupInterface::LBDown(int x, int y,unsigned int state, int count,const Laxk
 		return 0;
 
 	} else if (curpoint == GIA_Parent_Link) {
-		popupcontrols = GIA_Parent_Link;
-		PostMessage(" ");
+		PopupParentOptions(x,y,state,mouse);
 		return 0;
 	}
 
@@ -405,6 +418,27 @@ int GroupInterface::LBDown(int x, int y,unsigned int state, int count,const Laxk
 		buttondown.clear();
 	}
 	return c;
+}
+
+void GroupInterface::PopupParentOptions(double x,double y,unsigned int state,const Laxkit::LaxMouse *mouse)
+{
+	//popupcontrols = GIA_Parent_Link;
+	//PostMessage(" ");
+
+	MenuInfo *menu = new MenuInfo(_("Parent options"));
+
+	menu->AddItem(_("Jump to parent"), GIA_Jump_To_Parent);
+	menu->AddItem(_("Reparent..."),    GIA_Parent);
+	menu->AddItem(_("Unparent"),       GIA_Unparent);
+
+	PopupMenu *popup = new PopupMenu(NULL,_("Parent options"), 0,
+                        0,0,0,0, 1,
+                        object_id,"parentOptions",
+                        mouse->id, //mouse to position near?
+                        menu,1, NULL,
+                        TREESEL_LEFT);
+	popup->WrapToMouse(None);
+	app->rundialog(popup);
 }
 
 int GroupInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
