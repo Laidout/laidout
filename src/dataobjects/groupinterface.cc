@@ -145,6 +145,11 @@ Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 				}
 			}
 		}
+
+		menu->AddSep(_("Parenting"));
+		menu->AddItem(_("Jump to parent"), GIA_Jump_To_Parent);
+		menu->AddItem(_("Reparent..."),    GIA_Reparent);
+		menu->AddItem(_("Unparent"),       GIA_Unparent);
 	}
 	else if (selection->n() == 1)
 	{
@@ -232,6 +237,9 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 				|| i == GIA_Clip_First_On_Second
 				|| i == GIA_Clip_Second_On_First
 				|| i == GIA_Edit_Object_Meta
+				|| i == GIA_Jump_To_Parent
+				|| i == GIA_Reparent 
+				|| i == GIA_Unparent
 				) {
 			PerformAction(i);
 			return 0;
@@ -243,11 +251,34 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 		int i = s->info2; //id of menu item
 
 		if (i == GIA_Jump_To_Parent
-				|| i == GIA_Parent 
+				|| i == GIA_Reparent 
 				|| i == GIA_Unparent) {
-			PerformAction(i);
+			if (s->info3) {
+				//hovered only, do special indicator hover
+				hover = i;
+				PostMessage(hoverMessage(hover));
+
+				if (hover == GIA_Reparent) {
+					if (selection->n() > 1) {
+						if (reparent_temp.obj != selection->e(selection->n()-1)->obj)
+							reparent_temp = *dynamic_cast<VObjContext*>(selection->e(selection->n()-1));
+					}
+				//} else if (hover == GIA_Jump_To_Parent) {
+				} else {
+					reparent_temp.SetObject(nullptr);
+				}
+				needtodraw = 1;
+			} else PerformAction(i);
 		}
 
+		return 0;
+
+	} else if (!strcmp(mes,"cloneOptions")) {
+		const SimpleMessage *s = dynamic_cast<const SimpleMessage*>(e);
+		int i = s->info2; //id of menu item
+
+		PostMessage(hoverMessage(i));
+		if (i == GIA_Jump_To_Link || i == GIA_Sever_Link) PerformAction(i);
 		return 0;
 
 	} else if (!strcmp(mes,"docTreeChange")) {
@@ -288,8 +319,16 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 const char *GroupInterface::hoverMessage(int p)
 {
 	if (p == GIA_Link) return _("Clone options");
+	if (p == GIA_Jump_To_Link) return _("Jump to original");
+	if (p == GIA_Sever_Link) return _("Sever link");
 	if (p == GIA_Parent_Link) return _("Parent alignment options");
-	return RectInterface::hoverMessage(p);
+	if (p == GIA_Reparent) return _("Parent to");
+	if (p == GIA_Unparent) return _("Remove parent of each selected");
+	if (p == GIA_Jump_To_Parent) return _("Select parent");
+	const char *mes = RectInterface::hoverMessage(p);
+	static char msg[20];
+	if (mes == nullptr) { sprintf(msg, "%d", p); mes = msg; }
+	return mes;
 }
 
 /*! Called by RectInterface::scan(), for easier adaption to custom object controls.
@@ -402,8 +441,7 @@ int GroupInterface::LBDown(int x, int y,unsigned int state, int count,const Laxk
 	int curpoint;
 	buttondown.getextrainfo(mouse->id,LEFTBUTTON,&curpoint);
 	if (curpoint == GIA_Link) {
-		popupcontrols = GIA_Link;
-		PostMessage(" ");
+		PopupCloneOptions(mouse);
 		return 0;
 
 	} else if (curpoint == GIA_Parent_Link) {
@@ -428,7 +466,7 @@ void GroupInterface::PopupParentOptions(double x,double y,unsigned int state,con
 	MenuInfo *menu = new MenuInfo(_("Parent options"));
 
 	menu->AddItem(_("Jump to parent"), GIA_Jump_To_Parent);
-	menu->AddItem(_("Reparent..."),    GIA_Parent);
+	menu->AddItem(_("Reparent..."),    GIA_Reparent);
 	menu->AddItem(_("Unparent"),       GIA_Unparent);
 
 	PopupMenu *popup = new PopupMenu(NULL,_("Parent options"), 0,
@@ -436,7 +474,26 @@ void GroupInterface::PopupParentOptions(double x,double y,unsigned int state,con
                         object_id,"parentOptions",
                         mouse->id, //mouse to position near?
                         menu,1, NULL,
-                        TREESEL_LEFT);
+                        TREESEL_LEFT | TREESEL_SEND_HOVERED);
+	popup->WrapToMouse(None);
+	app->rundialog(popup);
+}
+
+void GroupInterface::PopupCloneOptions(const Laxkit::LaxMouse *mouse)
+{
+	//popupcontrols = GIA_Link;
+
+	MenuInfo *menu = new MenuInfo(_("Clone options"));
+
+	menu->AddItem(_("Jump to original"), GIA_Jump_To_Link);
+	menu->AddItem(_("Sever clone link"), GIA_Sever_Link);
+
+	PopupMenu *popup = new PopupMenu(NULL,_("Clone options"), 0,
+                        0,0,0,0, 1,
+                        object_id,"cloneOptions",
+                        mouse->id, //mouse to position near?
+                        menu,1, NULL,
+                        TREESEL_LEFT /*| TREESEL_SEND_HOVERED*/);
 	popup->WrapToMouse(None);
 	app->rundialog(popup);
 }
@@ -448,47 +505,11 @@ int GroupInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 	if (popupcontrols == GIA_Link) {
 		buttondown.up(d->id,LEFTBUTTON);
 
-		if (hover==GIA_Sever_Link) {
-			LaidoutViewport *vp=((LaidoutViewport *)viewport);
-			LSomeDataRef *ref=dynamic_cast<LSomeDataRef*>(selection->e(0)->obj);
-			SomeData *obj=ref->thedata->duplicate(NULL);
-			obj->m(ref->m());
-			obj->FindBBox();
-			selection->e(0)->SetObject(obj);
-			vp->DeleteObject();
-			vp->NewData(obj,NULL);
+		if (hover == GIA_Sever_Link) {
+			PerformAction(GIA_Sever_Link);
 
-		} else if (hover==GIA_Jump_To_Link) {
-			LaidoutViewport *vp=((LaidoutViewport *)viewport);
-
-			LSomeDataRef *ref=dynamic_cast<LSomeDataRef*>(selection->e(0)->obj);
-			SomeData *obj=ref->thedata;
-			VObjContext context;
-			context.SetObject(obj);
-			if (vp->locateObject(obj,context.context)) {
-				//update viewport to view that object, it was found in current spread
-				vp->ChangeObject(&context,0);
-				FreeSelection();
-				AddToSelection(&context);
-			} else {
-				//object was not found in current spread, so search in all limbos and docs
-				int found=laidout->project->FindObject(obj,context.context);
-				if (found && context.context.e(0)==0) {
-					//object was found in a limbo
-				} else if (found) {
-					//object was found in a document page
-					//place 0 is doc, 1 is page number
-					vp->SelectPage(context.context.e(1));
-				} else found=0;
-
-				if (found && vp->locateObject(obj,context.context)) {
-					FreeSelection();
-					AddToSelection(&context);
-				} else {
-					//FreeSelection();
-					PostMessage(_("Can't jump to object"));
-				}
-			}
+		} else if (hover == GIA_Jump_To_Link) {
+			PerformAction(GIA_Jump_To_Link);
 
 		}
 
@@ -523,7 +544,7 @@ int GroupInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 		} else if (hover==GIA_Reparent) {
 			 //reparent
 			if (reparent_temp.obj) {
-				PerformAction(GIA_Parent);
+				PerformAction(GIA_Reparent);
 			}
 		}
 
@@ -566,7 +587,7 @@ int GroupInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
             PostMessage(mes?mes:" ");
 		}
 
-		if (hover==GIA_Reparent) {
+		if (hover == GIA_Reparent) {
 			//highlight object to parent to, use last object if more than one selection
 			//check is mousemove if selection->n()==1, then grab from viewport search
 			if (selection->n()>1) {
@@ -818,7 +839,7 @@ Laxkit::ShortcutHandler *GroupInterface::GetShortcuts()
 	sc->AddAction(GIA_Duplicate, "Duplicate", _("Duplicate objects"),NULL,0, 1);
 	sc->Add(GIA_DuplicateB,' ',0,1,    "DuplicateB",  _("Duplicate objects, if button down"),NULL,0);
 
-	sc->Add(GIA_Parent,    'p',AltMask,0,          "Parent",  _("Parent selected objects to last selected"),NULL,0);
+	sc->Add(GIA_Reparent,  'p',AltMask,0,          "Parent",  _("Parent selected objects to last selected"),NULL,0);
 	sc->Add(GIA_Unparent,  'P',AltMask|ShiftMask,0,"Unparent",_("Unparent selected objects from their immediate parents"),NULL,0);
 
 	//...shortcuts to switch to other tools are handled in ViewWindow
@@ -1060,6 +1081,63 @@ int GroupInterface::PerformAction(int action)
 		}
 		return 0;
 
+	} else if (action == GIA_Jump_To_Link) {
+		LaidoutViewport *vp = ((LaidoutViewport *)viewport);
+
+		LSomeDataRef *ref = dynamic_cast<LSomeDataRef*>(selection->e(0)->obj);
+		if (!ref || !ref->thedata) {
+			PostMessage(_("Can't jump to object"));
+			return 0;
+		}
+		SomeData *obj = ref->thedata;
+		VObjContext context;
+		context.SetObject(obj);
+		if (vp->locateObject(obj,context.context)) {
+			//update viewport to view that object, it was found in current spread
+			vp->ChangeObject(&context,0);
+			FreeSelection();
+			AddToSelection(&context);
+		} else {
+			//object was not found in current spread, so search in all limbos and docs
+			int found=laidout->project->FindObject(obj,context.context);
+			if (found && context.context.e(0)==0) {
+				//object was found in a limbo
+			} else if (found) {
+				//object was found in a document page
+				//place 0 is doc, 1 is page number
+				vp->SelectPage(context.context.e(1));
+			} else found=0;
+
+			if (found && vp->locateObject(obj,context.context)) {
+				FreeSelection();
+				AddToSelection(&context);
+			} else {
+				//FreeSelection();
+				PostMessage(_("Can't jump to object"));
+			}
+		}
+		hover=0;
+		needtodraw=1;
+		return 0;
+
+	} else if (action == GIA_Sever_Link) {
+		LaidoutViewport *vp = ((LaidoutViewport *)viewport);
+		LSomeDataRef *ref = dynamic_cast<LSomeDataRef*>(selection->e(0)->obj);
+		if (!ref || !ref->thedata) {
+			PostMessage(_("Nothing to sever!"));
+			return 0;
+		}
+		SomeData *obj = ref->thedata->duplicate(NULL);
+		obj->m(ref->m());
+		obj->FindBBox();
+		selection->e(0)->SetObject(obj);
+		vp->DeleteObject();
+		vp->NewData(obj,NULL);
+		PostMessage(_("Severed."));
+		hover=0;
+		needtodraw=1;
+		return 0;
+
 	} else if (action==GIA_Jump_To_Parent) {
 		if (selection->n()==0) return 0;
 
@@ -1086,7 +1164,7 @@ int GroupInterface::PerformAction(int action)
 
 		return 0;
 
-	} else if (action==GIA_Parent) {
+	} else if (action == GIA_Reparent) {
 		if (selection->n()<=1) { PostMessage(_("Need at least 2 objects to do parenting")); return 0; }
 
 		DrawableObject *newparent=dynamic_cast<DrawableObject*>(selection->e(selection->n()-1)->obj);
@@ -1315,12 +1393,14 @@ int GroupInterface::Refresh()
 			if (selection->n()>1) dp->textout(p.x,p.y+2*th, _("Reparent"),  -1, LAX_CENTER);
 			else dp->textout(p.x,p.y+2*th,_("Jump to parent"),-1,LAX_CENTER);
 
-			if (hover==GIA_Reparent && selection->n()>1) DrawReparentArrows();
 		}
+
+		dp->DrawReal();
 
 		 //draw heavy outline of object to reparent to
 		if (reparent_temp.obj) {
 			dp->NewFG(0.,.7,0.);
+			dp->DrawScreen();
 			dp->LineAttributes(-1,LineSolid,LAXCAP_Butt,LAXJOIN_Miter);
 			dp->LineWidthScreen(3);
 			double m[6];
@@ -1332,9 +1412,12 @@ int GroupInterface::Refresh()
 			dp->closed();
 			dp->stroke(0);
 			dp->LineAttributes(1,LineSolid,LAXCAP_Butt,LAXJOIN_Miter);
+
+			DBG cerr << "GroupInterface hover: "<<hoverMessage(hover)<<endl;
+			if (hover == GIA_Reparent && selection->n()>1) DrawReparentArrows();
+			dp->DrawReal();
 		}
 
-		dp->DrawReal();
 	}
 	
 
@@ -1354,33 +1437,38 @@ int GroupInterface::Refresh()
 
 void GroupInterface::DrawReparentArrows()
 {
+	//assume dp->DrawScreen() already
 	SomeData *obj = selection->e(selection->n()-1)->obj;
 	double m[6];
 	viewport->transformToContext(m,selection->e(selection->n()-1),0,1);
 
 	flatpoint pp;
-	flatpoint p=transform_point(m, (flatpoint(obj->minx,obj->miny)+flatpoint(obj->maxx,obj->maxy))/2); //new parent center
-	p=dp->realtoscreen(p);
+	flatpoint p = transform_point(m, (flatpoint(obj->minx,obj->miny)+flatpoint(obj->maxx,obj->maxy))/2); //new parent center
+	p = dp->realtoscreen(p);
+	double th = dp->textheight();
 
-	dp->NewFG(0.,.7,0.);
+	dp->NewBG(0.,0.,0.,.85);
 	dp->LineAttributes(-2,LineSolid,LAXCAP_Butt,LAXJOIN_Miter);
 	dp->LineWidthScreen(2);
 	for (int c=0; c<selection->n()-1; c++) {
-		obj=selection->e(c)->obj;
+		obj = selection->e(c)->obj;
 		viewport->transformToContext(m,selection->e(c),0,1);
-		pp=transform_point(m, (flatpoint(obj->minx,obj->miny)+flatpoint(obj->maxx,obj->maxy))/2); //center
-		pp=dp->realtoscreen(pp);
-		dp->drawarrow(pp,p-pp, 0,1,2,3);
-		dp->textout(pp.x,pp.y, _("Child"),-1, LAX_CENTER);
+		pp = transform_point(m, (flatpoint(obj->minx,obj->miny)+flatpoint(obj->maxx,obj->maxy))/2); //center
+		pp = dp->realtoscreen(pp);
+		dp->NewFG(0.,.7,0.);
+		dp->drawline(pp, p);
+		//dp->drawarrow(pp,p-pp, 0,1,2,3);
+		dp->NewFG(0.,1.,0.);
+		dp->textout_bg(th/4, pp.x,pp.y, _("Child"),-1, LAX_CENTER);
 	}
 
-	dp->NewFG(0.,0.,0.);
-	dp->textout(p.x-1,p.y-1, _("Parent"),-1,LAX_CENTER);
-	dp->textout(p.x+1,p.y-1, _("Parent"),-1,LAX_CENTER);
-	dp->textout(p.x-1,p.y+1, _("Parent"),-1,LAX_CENTER);
-	dp->textout(p.x+1,p.y+1, _("Parent"),-1,LAX_CENTER);
+	dp->NewBG(0.,0.,0.,.85);
 	dp->NewFG(1.,1.,1.,1.);
-	dp->textout(p.x,p.y, _("Parent"),-1,LAX_CENTER);
+	dp->textout_bg(th/4, p.x,p.y, _("Parent"),-1, LAX_CENTER, true);
+
+	//dp->NewBG(0.,0.,0.,.85);
+	//dp->NewFG(1.,1.,1.,1.);
+	//dp->textout_bg(th/4, p.x,p.y,        _("Parent"),-1, LAX_CENTER);
 }
 
 //! Returns this, but count is incremented.

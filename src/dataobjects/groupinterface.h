@@ -45,8 +45,6 @@ enum GroupInterfaceActions {
 	GIA_RegistrationMark,
 	GIA_GrayBars,
 	GIA_CutMarks,
-	GIA_Parent,
-	GIA_Unparent,
 
 	//popup controls
 	GIA_No_Popup,
@@ -69,6 +67,7 @@ enum GroupInterfaceActions {
 	GIA_Parent_Matrix,
 	GIA_Jump_To_Parent,
 	GIA_Reparent,
+	GIA_Unparent,
 
 
 	GIA_MAX
@@ -88,6 +87,7 @@ class GroupInterface : public LaxInterfaces::ObjectInterface, public Value
 	virtual int GetMode();
 	virtual void DrawReparentArrows();
 
+	virtual void PopupCloneOptions(const Laxkit::LaxMouse *mouse);
 	virtual void PopupParentOptions(double x,double y,unsigned int state,const Laxkit::LaxMouse *mouse);
 
   public:
