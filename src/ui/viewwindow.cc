@@ -362,6 +362,19 @@ void VObjContext::clear()
 	context.flush(); 
 }
 
+/*! If obj, then remove it and do one pop.
+ * If no obj, then do nothing.
+ */
+void VObjContext::ClearTop()
+{
+	if (obj) {
+		obj->dec_count();
+		obj = nullptr;
+		//context.remove(context.n()-1);
+		context.pop();
+	}
+}
+
 /*! Make the context point to a page with no object, if possible, or limbo.
  */
 void VObjContext::clearToPage()
@@ -1520,11 +1533,11 @@ int SearchFunction(LaxInterfaces::SomeData *data, int searcharea, int searchmode
  * be able to search only in current layer, and exclude locked/invisible objects...
  */
 int LaidoutViewport::FindObject(int x,int y, 
-										const char *dtype,
-										LaxInterfaces::SomeData *exclude,
-										int start,
-										LaxInterfaces::ObjectContext **oc,
-										int searcharea)
+								const char *dtype,
+								LaxInterfaces::SomeData *exclude,
+								int start,
+								LaxInterfaces::ObjectContext **oc,
+								int searcharea)
 {
 	DBG cerr <<"lov.FindObject START: "<<endl;
 
@@ -1535,7 +1548,7 @@ int LaidoutViewport::FindObject(int x,int y,
 	VObjContext nextindex;
 	if (searchmode != SEARCH_Find || start || x!=searchx || y!=searchy) { //init search
 		foundobj.clear();
-		firstobj.clear();
+		firstobj.ClearTop();
 
 		 // Set up firstobj
 		FieldPlace context;
@@ -3651,15 +3664,18 @@ void ViewWindow::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *con
 		fprintf(f,"%s#paperlayout        #put the view mode to paper spreads\n",spc);
 		fprintf(f,"%s#layout Single      #see individual impositions for layout types\n",spc);
 		
+		fprintf(f,"%sdocument Name       #the id of the current document\n",spc);
 		fprintf(f,"%sspread 1            #the index of the spread for the acting imposition\n",spc);
 		fprintf(f,"%spage   0            #the document page index of the page to set context to\n",spc);
 		fprintf(f,"%smatrix 1 0 0 1 0 0  #transform between screen and real space\n",spc);
 		fprintf(f,"%sxbounds -20 20      #what distance a horizontal scrollbar represents\n",spc);
 		fprintf(f,"%sybounds -20 20      #what distance a vertical scrollbar represents\n",spc);
 		fprintf(f,"%slimbo name          #limbo name, or subattributes with objects (optional)\n",spc);
+		fprintf(f,"%sactive_tool Node    #Tool currently in use\n",spc);
 		return;
 	}
-	if (doc && doc->saveas) fprintf(f,"%sdocument %s\n",spc,doc->saveas);
+
+	if (doc) fprintf(f,"%sdocument %s\n",spc,doc->Id());
 
 	LaidoutViewport *vp=((LaidoutViewport *)viewport);
 	int vm=vp->viewmode;
@@ -3758,8 +3774,9 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *con
 			IntAttribute(value,&pn);
 
 		} else if (!strcmp(name,"document")) {
-			doc=laidout->findDocument(value);
-			if (doc) doc->inc_count();
+            doc = laidout->findDocument(value);
+			if (!doc) doc = laidout->findDocumentByIdStr(value);
+            if (doc) doc->inc_count();
 
 		} else if (!strcmp(name,"limbo")) {
 			LaidoutViewport *vp=(LaidoutViewport *)viewport;
@@ -3817,14 +3834,18 @@ void ViewWindow::setup()
 {
 	if (viewport) viewport->dp->NewBG(rgbcolor(255,255,255));
 
-	int i=-1;
+	int i=-1, i2=-1;
 	for (int c=0; c<laidout->interfacepool.n; c++) {
+		//always turn on certain overlays
 		if (!strcmp(laidout->interfacepool.e[c]->whattype(),"PageMarkerInterface"))
-			i=laidout->interfacepool.e[c]->id;
+			i = laidout->interfacepool.e[c]->id;
+		else if (!strcmp(laidout->interfacepool.e[c]->whattype(),"ObjectIndicator"))
+			i2 = laidout->interfacepool.e[c]->id;
 		AddTool(laidout->interfacepool.e[c]->duplicate(NULL),0,1);
 	}
 	SelectTool(0);
-	if (i>=0) SelectTool(i);
+	if (i  >= 0) SelectTool(i);
+	if (i2 >= 0) SelectTool(i2);
 }
 
 //--------- ***special page flipper
