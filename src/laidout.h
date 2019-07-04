@@ -62,7 +62,7 @@ class TreeChangeEvent : public Laxkit::EventData
 		Laxkit::anObject *obj;
 	} obj;
 	int start,end;
-	TreeChangeEvent() : changer(NULL),start(0),end(0) {}
+	TreeChangeEvent() : changer(nullptr),start(0),end(0) {}
 	TreeChangeEvent(const TreeChangeEvent &te);
 };
 
@@ -173,6 +173,7 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	Value *duplicate();
 
 	 //commands
+	Document *findDocumentByIdStr(const char *id);
 	Document *findDocumentById(unsigned long id);
 	Document *findDocument(const char *saveas);
 	int Load(const char *filename, Laxkit::ErrorLog &log);
@@ -192,7 +193,7 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	void notifyPrefsChanged(Laxkit::anXWindow *callfrom,int what);
 
 	 //resource and external executable management
-	char *full_path_for_resource(const char *name,const char *dir=NULL);
+	char *full_path_for_resource(const char *name,const char *dir = nullptr);
 	char *default_path_for_resource(const char *resource);
 	const char *binary(const char *what);
 };

@@ -1665,6 +1665,17 @@ Document *LaidoutApp::findDocumentById(unsigned long id)
 	return NULL;
 }
 
+//! Find the doc with the given obect_id. Does not increment its count.
+Document *LaidoutApp::findDocumentByIdStr(const char *id)
+{
+	if (!project) return nullptr;
+	for (int c=0; c<project->docs.n; c++) {
+		if (project->docs.e[c]->doc && !strcmp(project->docs.e[c]->doc->Id(), id))
+			return project->docs.e[c]->doc;
+	}
+	return nullptr;
+}
+
 //! Find the doc with saveas. Does not increment its count.
 Document *LaidoutApp::findDocument(const char *saveas)
 {
