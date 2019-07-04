@@ -104,8 +104,11 @@ class Document : public ObjectContainer, public Value
 
 
 	Document(const char *filename);
-	Document(Imposition *imp=NULL,const char *filename=NULL);
-	virtual ~Document();
+    Document(Imposition *imp = nullptr, const char *filename = nullptr);
+    virtual ~Document();
+	virtual const char *whattype() { return "Document"; }
+    virtual const char *Id();
+    virtual const char *Id(const char *newid);
 	virtual const char *Saveas();
 	virtual int Saveas(const char *nsaveas);
 	virtual const char *Name(int withsaveas);
@@ -143,9 +146,9 @@ class Document : public ObjectContainer, public Value
 	 //object content
 	virtual int n() { return pages.n; }
 	virtual Laxkit::anObject *object_e(int i) 
-		{ if (i>=0 && i<pages.n) return (anObject *)(pages.e[i]); return NULL; }
+		{ if (i>=0 && i<pages.n) return (anObject *)(pages.e[i]); return nullptr; }
 	virtual const char *object_e_name(int i);
-	virtual const double *object_transform(int i) { return NULL; }
+	virtual const double *object_transform(int i) { return nullptr; }
 	virtual int GroupItems(FieldPlace whatlevel, int *items);
 	virtual int UnGroup(FieldPlace which);
 

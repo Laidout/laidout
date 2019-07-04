@@ -336,9 +336,10 @@ void PageRange::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCon
 	if (!att) return;
 	char *name,*value;
 	for (int c=0; c<att->attributes.n; c++) {
-		name= att->attributes.e[c]->name;
-		value=att->attributes.e[c]->value;
-		if (!strcmp(name,"name")) {
+        name  = att->attributes.e[c]->name;
+        value = att->attributes.e[c]->value;
+
+        if (!strcmp(name,"name")) {
 			makestr(this->name,value);
 
 		} else if (!strcmp(name,"start")) {
@@ -1181,6 +1182,9 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCont
 		if (!strcmp(nme,"name")) {
 			makestr(name,value);
 
+		} else if (!strcmp(nme,"id")) {
+			if (!isblank(value)) Id(value);
+
 		} else if (!strcmp(nme,"saveas")) {
 			makestr(saveas,value);//*** make sure saveas is abs path
 
@@ -1300,6 +1304,7 @@ void Document::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *conte
 
 	if (what==-1) {
 		 //name
+		fprintf(f,"%sid     Some id                #identifier that may be more unique than name\n", spc);
 		fprintf(f,"%sname   Some name for the doc  #any random name you care to give the document\n",spc);
 		fprintf(f,"%ssaveas /path/to/filename.doc  #The path previously saved as, which\n",spc);
 		fprintf(f,"%s                              #is currently ignored when reading in again.\n",spc);
@@ -1372,6 +1377,7 @@ void Document::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *conte
 		return;
 	}
 
+	fprintf(f,"%sid %s\n",spc,Id());
 	if (name) fprintf(f,"%sname %s\n",spc,name);
 	if (saveas) fprintf(f,"%ssaveas %s\n",spc,saveas);
 
@@ -1420,6 +1426,16 @@ void Document::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *conte
 		fprintf(f,"%siohints\n",spc);
 		iohints.dump_out(f,indent+2);
 	}
+}
+
+const char *Document::Id(const char *newid)
+{
+	return anObject::Id(newid);
+}
+
+const char *Document::Id()
+{
+	return anObject::Id();
 }
 
 //! Rename the saveas part of the document. Return 1 for success, 0 for fail.
