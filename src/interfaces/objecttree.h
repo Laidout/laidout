@@ -44,7 +44,9 @@ class ObjectTreeWindow : public Laxkit::RowFrame
 	ObjectTree *tree;
 	ObjectContainer *objcontainer;
 	Laxkit::MenuInfo *menu;
+
 	virtual void UseContainerRecursive(ObjectContainer *container);
+	void ConstructTree();
 
   public:
 	ObjectTreeWindow(anXWindow *parnt,const char *nname,const char *ntitle,
@@ -52,6 +54,7 @@ class ObjectTreeWindow : public Laxkit::RowFrame
 						ObjectContainer *container);
 	virtual ~ObjectTreeWindow();
 	virtual const char *whattype() { return "ObjectTreeWindow"; }
+	virtual int Event(const Laxkit::EventData *data,const char *mes);
 	virtual int init();
 
 	virtual void UseContainer(ObjectContainer *container);
