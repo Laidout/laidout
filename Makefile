@@ -22,7 +22,6 @@ INSTALL=install -D
 
 INSTALLDIR=install -d
 
-
 LAIDOUTNAME=laidout-$(LAIDOUTVERSION)
 
 laidout: touchdepends
@@ -102,35 +101,28 @@ unhidegarbage: touchdepends
 depends: touchdepends
 	cd src && $(MAKE) depends
 
+SOURCEDIRS= \
+	src \
+	src/api \
+	src/calculator \
+	src/core \
+	src/dataobjects \
+	src/filetypes \
+	src/impositions \
+	src/interfaces \
+	src/nodes \
+	src/plugins \
+	src/polyptych/src \
+	src/printing \
+	src/text \
+	src/ui 
+
 touchdepends:
-	touch src/makedepend
-	touch src/calculator/makedepend
-	touch src/dataobjects/makedepend
-	touch src/filetypes/makedepend
-	touch src/impositions/makedepend
-	touch src/interfaces/makedepend
-	touch src/nodes/makedepend
-	touch src/printing/makedepend
-	touch src/api/makedepend
-	touch src/polyptych/src/makedepend
-	touch src/plugins/makedepend
-	touch src/core/makedepend
-	touch src/ui/makedepend
+	for NAME in $(SOURCEDIRS); do touch $$NAME/makedepend; done
 
 dist-clean: clean
+	for NAME in $(SOURCEDIRS); do rm -f $$NAME/makedepend $$NAME/makedepend.bak; done
 	rm -f Makefile-toinclude config.log src/version.h src/configured.h
-	rm -f src/makedepend               src/makedepend.bak
-	rm -f src/calculator/makedepend    src/calculator/makedepend.bak
-	rm -f src/dataobjects/makedepend   src/dataobjects/makedepend.bak
-	rm -f src/filetypes/makedepend     src/filetypes/makedepend.bak
-	rm -f src/impositions/makedepend   src/impositions/makedepend.bak
-	rm -f src/interfaces/makedepend    src/interfaces/makedepend.bak
-	rm -f src/nodes/makedepend         src/nodes/makedepend.bak
-	rm -f src/printing/makedepend      src/printing/makedepend.bak
-	rm -f src/api/makedepend           src/api/makedepend.bak
-	rm -f src/core/makedepend          src/core/makedepend.bak
-	rm -f src/ui/makedepend            src/ui/makedepend.bak
-	rm -f src/polyptych/src/makedepend src/polyptych/src/makedepend.bak
 	rm -f src/po/*.mo
 
 .PHONY: all icons laidout dist-clean clean docs install uninstall hidegarbage unhidegarbage depends touchdepends deb
