@@ -517,12 +517,6 @@ Value *LaidoutApp::duplicate()
  * control window, but no open docs.
  *
  * Create a new project, document, and viewwindow as necessary.
- *
- * \todo  manually adding a couple of pagestyles here there should be a better way to handle initializations.
- *   this should be cleared when plugin architecture is functional
- * \todo when the program is run before installing, should be able to automatically detect that
- *   and find icons and other resources (***NOT WORKING RIGHT NOW!!!) this seems to require checking
- *   argv[0] or the /proc/pid/exe link.  
  */
 int LaidoutApp::init(int argc,char **argv)
 {
@@ -879,7 +873,7 @@ int LaidoutApp::createlaidoutrc()
 
 			fprintf(f,"laxprofile Light #Default built in profiles are Dark, Light, and Gray. You can define others in the laxconfig section.\n");
 			fprintf(f,"laxconfig-sample #Remove the \"-sample\" part to redefine various default window behaviour settingss\n");
-			dump_out_rc(f,NULL,2,-1);
+			dump_out_rc(f,NULL,2,0);
 //			fprintf(f,"\n"
 //					  "#laxcolors  #To set only the colors of laxconfig, use this\n"
 //					  "#  panel\n"
@@ -987,13 +981,18 @@ int LaidoutApp::readinLaidoutDefaults()
 		//DBG cerr <<(name?name:"(no name)")<<": "<<(value?value:"(no value)")<<endl;
 
 		if (!strcmp(name,"laxconfig")) {
-			dump_in_rc(att.attributes.e[c],NULL);
+			dump_in_rc(att.attributes.e[c], nullptr);
 
 		} else if (!strcmp(name,"laxprofile")) {
 			if (value) {
 				makestr(app_profile,value);
-				if (!strcmp(value,"Dark") || !strcmp(value,"Gray") || !strcmp(value,"Light"))
+				if (!strcmp(value,"Dark") || !strcmp(value,"Gray") || !strcmp(value,"Light")) {
+					if (theme && strcmp(theme->name, value)) {
+						theme->dec_count();
+						theme = nullptr;
+					}
 					setupdefaultcolors();
+				}
 			}
 			
 		} else if (!strcmp(name,"theme")) {
