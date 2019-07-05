@@ -12,11 +12,11 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now:
 
+bug: severing clone link does some weird things, including crashing
+
 bug: window sizes seem to all be off a few pixels
 
 bug: curve is terrible approximation at end points
-
-ftgl problem in polyptych... font not rendering
 
 finish debugging mesh svg 2.0 out/in
 
@@ -156,6 +156,17 @@ stackframe seems to be ignoring window borders on layout
 website: explain a bit more how to install dev versions, and place side by side with "stable"
 website: need to redo screenshots section for mobile friendliness
 update fileformat.txt
+  missing Palette/GradientStrip
+  missing voronoi
+  missing LineStyle
+  missing FillStyle
+  DONE incomplete TextOnPath
+  should be resources:
+    PlainTextObject
+	Palette
+	Linestyle
+	Fillstyle
+	PaperGroups
 check laidout.1 when time to release
 update docs to have new release number
 update translation base files
@@ -294,6 +305,9 @@ cairo:
   cairo image save should use importer to do non-file creation?
   cairo render has color problems with gradients
   cairo development is dead? investigate alternatives
+
+utf8string:
+  move semantics to be more efficient
 
 importing: image import:
   need drag and drop from system for multi-image import
@@ -1044,6 +1058,7 @@ collect for out: define directory to pull all files and external resources in, i
 General design usability
 to be a decent editing platform, Laidout needs:
   undo/redo
+  viewport rendering needs to be far better
   master pages with auto page number is important.. for image based page numbers, dynamic objects important!!
   would be convenient to send to gimp for editing, update later live
   when delete/add pages, need option to reposition to same orientation in margin area
@@ -1064,16 +1079,19 @@ to be a decent editing platform, Laidout needs:
 polish:
   page navigator should allow type in shortcuts like "end"
 
-GroupInterface groupinterface ObjectInterface objectinterface:
+GroupInterface groupinterface ObjectInterface objectinterface: group:
+  real menuify the clone options
+  need consistent system to coordinate selection changes between any tools or windows that need to be in sync
   default hide draggable flip, but have as right click option
   viewport should fully utilize Selection::CurrentObject(), keep curobj in sync
   double click on group should change selection area to group contents?
     need to clarify how grouping operates. Perhaps implement sets at same time
     clearCurobj() with skim to group for group->double click?
   implement move to "Some other page..." when 'm' in groupinterface
-  things to allow editing of wrap, inset, clip paths, and chains
+  things to allow editing of wrap, inset, clip paths(done), and chains
   maybe show flip and 90 deg rotate handles only when mouse outside the selection area?
   control-move flip line to snap to horizontal, vertical, 45 deg, or common gravity points
+  DONE menuify parent options
 
 ObjectIndicator objectindicator:
   current should be bold
@@ -1083,6 +1101,7 @@ ObjectIndicator objectindicator:
   show (root) at bottom of stack
 
 voronoi Voronoi delauney Delauney:
+  be able to control inset shapes
   is double rendering when object is selected
   importing raw points or data without matrix should map so that it all appears on screen
   intersect with page bounds? or other custom boundary? default bounding box + padding?
@@ -1211,7 +1230,10 @@ Colors:
     DONE images (doesn't use color per se)
 
 in general for windows, need better styling.. too much is hardcoded. problems later with high dpi screens
+  perhaps respond to GDK_SCALE or QT_SCREEN_SCALE_FACTOR (or maybe only QT_SCALE_FACTOR) 
   for instance revamp interfaces' concept of single pixel lines
+  laxconfig not working
+  DONE laxprofile not working
 
 make drag and drop selections work
 
@@ -1252,6 +1274,7 @@ guides:
   snap objects edges to various things
 
 align tool: aligninterface AlignInterface align:
+  
   needs polishing, the lines and indicators get a bit lost
   context menu seems to be the group interface menu
   need way to specify center of rotation per object
@@ -1269,7 +1292,12 @@ align tool: aligninterface AlignInterface align:
     trace out order path... show with numbers
   drag out path, order of intersection is new object order?
   maybe grid drag control to reorder
-  snapping to 0/50/100
+  snapping:
+    snap to page middle, left, right, top, bottom
+	snap to original selection bounds
+	snap to first bounds
+	snap to last bounds
+    snapping to 0/50/100
   number box while dragging, goes away after a second, or click on it to edit
     if inc/dec arrows, have it inc or dec the decimal place cursor is on
   default presets: inkscape crossover
@@ -1880,6 +1908,7 @@ polyptych:
   can't seem to save new bookmarks or use old ones in polyptych, but it's ok in Laidout
 
 hedron window:
+  opengl impl needs a modern refresh
   send imp
   receive imp
   remember net and paper placement
@@ -1899,7 +1928,7 @@ hedron window:
 implement undo.. ideally use same code for both undo and recordable/assignable actions
   object interface
     need to account for:
-	  dragging m changes
+	  dragging matrix changes
 	  key flip, or non-dragging changes
 	  object deletion
   nodes
@@ -2027,3 +2056,4 @@ DONE finish phasing out MenuSelector
 DONE laidout settings option to always load last file on startup
 DONE added rudimentary plugin list window
 DONE when using static SingletonKeeper in ColorManager, dlopen would wipe its object. wuuuuh? <-- something about dlopen process wipes some non-statics in some files
+DONE ftgl problem in polyptych... font not rendering <-- just needed ftgl update
