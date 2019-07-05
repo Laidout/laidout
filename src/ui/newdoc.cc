@@ -74,7 +74,7 @@ LaidoutOpenWindow::LaidoutOpenWindow(int whichstart)
 			   0,0,500,500,0,
 			   NULL,0,NULL, 50)
 {
-	padinset=laidout->defaultlaxfont->textheight()/3;
+	padinset = win_themestyle->normal->textheight()/3;
 
 	AddWin(new NewDocWindow(this,"New Document",_("New Document"),0, 0,0,0,0, 0), 1,
 				_("New Document"),
@@ -228,6 +228,8 @@ NewDocWindow::NewDocWindow(Laxkit::anXWindow *parnt,const char *nname,const char
 					xx,yy,ww,hh,brder, NULL,0,NULL,
 					10)
 {
+	InstallColors(THEME_Panel);
+
 	curorientation=0;
 	papersizes=NULL;
 	numpages=NULL;
@@ -271,8 +273,8 @@ int NewDocWindow::preinit()
 int NewDocWindow::init()
 {
 	
-	int textheight=app->defaultlaxfont->textheight();
-	int linpheight=textheight+12;
+	int textheight = win_themestyle->normal->textheight();
+	int linpheight = textheight + 12;
 	Button *tbut;
 	anXWindow *last=NULL;
 	LineInput *linp;
@@ -940,8 +942,8 @@ int NewProjectWindow::preinit()
 
 int NewProjectWindow::init()
 {
-	int textheight=app->defaultlaxfont->textheight();
-	int linpheight=textheight+12;
+	int textheight = win_themestyle->normal->textheight();
+	int linpheight = textheight+12;
 	Button *tbut=NULL;
 	anXWindow *last=NULL;
 	LineInput *linp=NULL;
