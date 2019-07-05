@@ -15,7 +15,7 @@
 
 #include <lax/interfaces/somedatafactory.h>
 #include "lengraverfilldata.h"
-#include "../stylemanager.h"
+#include "../core/stylemanager.h"
 #include "../language.h"
 
 #include <lax/interfaces/pathinterface.h>

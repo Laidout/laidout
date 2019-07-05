@@ -27,15 +27,23 @@ namespace Laidout {
 
 
 //------------------------------- LPerspectiveInterface --------------------------------
+class PerspectiveNode;
+
 class LPerspectiveInterface : public LaxInterfaces::PerspectiveInterface
 {
  protected:
+	PerspectiveNode *pnode;
+
+	virtual void Modified();
+
  public:
 	LPerspectiveInterface(LaxInterfaces::anInterface *nowner, int nid,Laxkit::Displayer *ndp);
+	virtual ~LPerspectiveInterface();
 	virtual const char *whattype() { return "PerspectiveInterface"; }
 	virtual LaxInterfaces::anInterface *duplicate(LaxInterfaces::anInterface *dup);
 
 	virtual int UseThis(Laxkit::anObject *nobj,unsigned int mask=0);
+
 
 	//from value
 	//virtual Value *duplicate();
@@ -66,10 +74,13 @@ class PerspectiveNode : public ObjectFilterNode
 
 	virtual NodeBase *Duplicate();
 	virtual int Update();
+	virtual int UpdateTransform();
 	virtual int GetStatus();
 
 	virtual LaxInterfaces::anInterface *ObjectFilterInterface();
 	virtual DrawableObject *ObjectFilterData();
+	//virtual int Connected(NodeConnection *connection);
+
 };
 
 

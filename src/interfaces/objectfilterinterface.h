@@ -64,6 +64,7 @@ class ObjectFilterInterface : public LaxInterfaces::anInterface
 		OFI_Move_Panel,
 		OFI_Edit_Nodes,
 		OFI_Rearrange,
+		OFI_Refresh,
 		OFI_MAX
 	};
 

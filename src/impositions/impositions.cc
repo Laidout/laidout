@@ -28,25 +28,26 @@
 
 
 #include "../laidout.h"
-#include "utils.h"
-#include "configured.h"
+#include "../core/utils.h"
+#include "../core/stylemanager.h"
+#include "../configured.h"
 
-#include "../stylemanager.h"
 #include "imposition.h"
 #include "singles.h"
 #include "netimposition.h"
 #include "signatures.h"
 
 #include <lax/fileutils.h>
-#include <lax/lists.cc>
 #include <dirent.h>
-
-#include <lax/lists.cc>
 
 
 #define DBG
 #include <iostream>
 using namespace std;
+
+//template implentation:
+#include <lax/lists.cc>
+
 
 using namespace Laxkit;
 using namespace LaxFiles;
@@ -141,11 +142,11 @@ PtrStack<ImpositionResource> *GetBuiltinImpositionPool(PtrStack<ImpositionResour
 
 	 //read in imposition resources from specified directory, and add to stack
 
-	if (!existingpool) existingpool=new PtrStack<ImpositionResource>;
+	if (!existingpool) existingpool = new PtrStack<ImpositionResource>;
 	
-	char *globalresourcedir=newstr(SHARED_DIRECTORY);
-	char *localresourcedir=newstr(laidout->config_dir);
-	char *projectresourcedir=newstr(laidout->project->dir);
+	char *globalresourcedir  = newstr(laidout->shared_dir);
+	char *localresourcedir   = newstr(laidout->config_dir);
+	char *projectresourcedir = newstr(laidout->project->dir);
 
 	appendstr(localresourcedir,"impositions/");
 	appendstr(globalresourcedir,"impositions/");

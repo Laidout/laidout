@@ -6,9 +6,11 @@
 <title>Laidout 0.096.1 Shortcuts</title>
 
 <style type="text/css">
+body { background-color: #eee; color: #000; }
 .cntlkey, .metakey, .altkey, .shiftkey {
 	border: 1px solid #bbb;
 	background-color: #ddd;
+	color: #444;
 	padding: .25em;
 	margin: .1em;
 	border-radius: .4em;
@@ -16,6 +18,7 @@
 	font-family: sans-serif, courier;
 	font-size: 85%;
 	display: inline-block;
+   box-shadow: 0px .1em .15em #555;
 }
 
 .cntlkey::before  { content: "control"; }
@@ -24,11 +27,14 @@
 .shiftkey::before { content: "shift"; }
 
 .keystyle {
-	border: 1px solid #bbb;
-	padding: .25em;
-	margin: .1em;
-	border-radius: .4em;
-	display: inline-block;
+   border: 1px solid #bbb;
+   padding: .25em .25em .15em .25em;
+   margin: .1em;
+   border-radius: .4em;
+	font-size: 90%;
+	font-weight: bold;
+   display: inline-block;
+   box-shadow: 0px .1em .2em #555;
 }
 
 table.formattable {
@@ -46,16 +52,15 @@ table.formattable th {
 	-moz-border-radius: 0px;
 }
 table.formattable td {
-	border-width: 1px 1px 1px 1px;
 	border-style: inset inset inset inset;
 	border-color: #ccc;
-	padding: .2em .5em .2em .5em;
+	padding: .2em .6em .2em .6em;
 	-moz-border-radius: 0px;
 }
-td.area { background-color: #cccccc; }
-td.key { background-color: #ffffff; text-align: right; }
-td.id { background-color: #dddddd; }
-td.description { background-color: #ffffff; }
+td.area { background-color: #cccccc; border-width: 1px 1px 1px 1px; }
+td.key { background-color: #ffffff; text-align: right; border-width: 1px 0px 1px 1px; }
+td.id { background-color: #dddddd; border-width: 1px 1px 1px 1px; }
+td.description { background-color: #ffffff; border-width: 1px 1px 1px 0px; }
 </style>
 
 </head>
@@ -249,30 +254,8 @@ td.description { background-color: #ffffff; }
   <tr><td class="key"><span class="keystyle">Up</span></td><td class="description">Edit next rule</td><td class="id">NextRule</td></tr>
   <tr><td class="key"><span class="keystyle">Down</span></td><td class="description">Edit previous rule</td><td class="id">PreviousRule</td></tr>
   <tr><td class="key"><span class="keystyle">x</span></td><td class="description">Delete current or last rule if no current</td><td class="id">DeleteRule</td></tr>
-<tr><td colspan="3" class="area">NodeInterface</td></tr>
-  <tr><td class="key"><span class="keystyle">space</span></td><td class="description">Center</td><td class="id">Center</td></tr>
-  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">space</span></td><td class="description">Center Selected</td><td class="id">CenterSelecetd</td></tr>
-  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">g</span></td><td class="description">Group Nodes</td><td class="id">GroupNodes</td></tr>
-  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">G</span></td><td class="description">Ungroup Nodes</td><td class="id">UngroupNodes</td></tr>
-  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">A</span></td><td class="description">Add Node</td><td class="id">AddNode</td></tr>
-  <tr><td class="key"><span class="keystyle">Bksp</span></td><td class="description">Delete Node</td><td class="id">DeleteNode</td></tr>
-  <tr><td class="key"><span class="keystyle">Del</span></td><td class="description">Delete Node</td><td class="id">DeleteNode</td></tr>
-  <tr><td class="key"><span class="keystyle">c</span></td><td class="description">ToggleCollapse</td><td class="id">ToggleCollapse</td></tr>
-  <tr><td class="key"><span class="keystyle">p</span></td><td class="description">TogglePreview</td><td class="id">TogglePreview</td></tr>
-  <tr><td class="key"><span class="keystyle">f</span></td><td class="description">Frame Selected</td><td class="id">Frame</td></tr>
-  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">F</span></td><td class="description">Remove connected frame</td><td class="id">Unframe</td></tr>
-  <tr><td class="key"><span class="keystyle">Tab</span></td><td class="description">Toggle Edit Group</td><td class="id">EditGroup</td></tr>
-  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">Tab</span></td><td class="description">Leave Group</td><td class="id">LeaveGroup</td></tr>
-  <tr><td class="key"><span class="keystyle">e</span></td><td class="description">Thread controls</td><td class="id">ThreadControls</td></tr>
-  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">f</span></td><td class="description">Find a node</td><td class="id">Find</td></tr>
-  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">f</span></td><td class="description">Find next node</td><td class="id">FindNext</td></tr>
-  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">D</span></td><td class="description">Duplicate</td><td class="id">Duplicate</td></tr>
-  <tr><td class="key"><span class="keystyle">o</span></td><td class="description">NoOverlap</td><td class="id">NoOverlap</td></tr>
-  <tr><td class="key"><span class="keystyle">g</span></td><td class="description">Arrange in a grid</td><td class="id">ArrangeGrid</td></tr>
-  <tr><td class="key"><span class="keystyle">h</span></td><td class="description">Arrange in a row</td><td class="id">ArrangeRow</td></tr>
-  <tr><td class="key"><span class="keystyle">v</span></td><td class="description">Arrange in a column</td><td class="id">ArrangeCol</td></tr>
-  <tr><td class="key"><span class="keystyle">s</span></td><td class="description">Save Nodes</td><td class="id">SaveNodes</td></tr>
-  <tr><td class="key"><span class="keystyle">l</span></td><td class="description">Load Nodes</td><td class="id">LoadNodes</td></tr>
+<tr><td colspan="3" class="area">ObjectFilterInterface</td></tr>
+  <tr><td class="key"><span class="keystyle">r</span></td><td class="description">Force a refresh</td><td class="id">Refresh</td></tr>
 <tr><td colspan="3" class="area">ObjectInterface</td></tr>
   <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">D</span></td><td class="description">Toggle decorations</td><td class="id">Decorations</td></tr>
   <tr><td class="key"><span class="keystyle">n</span></td><td class="description">Distribute selected objects in rows and columns</td><td class="id">Nup</td></tr>
@@ -578,6 +561,30 @@ td.description { background-color: #ffffff; }
   <tr><td class="key"><span class="keystyle">o</span></td><td class="description">Make the axes horizontal and vertical</td><td class="id">Rectify</td></tr>
   <tr><td class="key"><span class="keystyle">r</span></td><td class="description">Rotate selected by 90 degrees</td><td class="id">Rotate</td></tr>
   <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">R</span></td><td class="description">Rotate selected by 90 degrees in the other direction</td><td class="id">RotateCC</td></tr>
+<tr><td colspan="3" class="area">NodeInterface</td></tr>
+  <tr><td class="key"><span class="keystyle">space</span></td><td class="description">Center</td><td class="id">Center</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">space</span></td><td class="description">Center Selected</td><td class="id">CenterSelecetd</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">g</span></td><td class="description">Group Nodes</td><td class="id">GroupNodes</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">G</span></td><td class="description">Ungroup Nodes</td><td class="id">UngroupNodes</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">A</span></td><td class="description">Add Node</td><td class="id">AddNode</td></tr>
+  <tr><td class="key"><span class="keystyle">Bksp</span></td><td class="description">Delete Node</td><td class="id">DeleteNode</td></tr>
+  <tr><td class="key"><span class="keystyle">Del</span></td><td class="description">Delete Node</td><td class="id">DeleteNode</td></tr>
+  <tr><td class="key"><span class="keystyle">c</span></td><td class="description">ToggleCollapse</td><td class="id">ToggleCollapse</td></tr>
+  <tr><td class="key"><span class="keystyle">p</span></td><td class="description">TogglePreview</td><td class="id">TogglePreview</td></tr>
+  <tr><td class="key"><span class="keystyle">f</span></td><td class="description">Frame Selected</td><td class="id">Frame</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">F</span></td><td class="description">Remove connected frame</td><td class="id">Unframe</td></tr>
+  <tr><td class="key"><span class="keystyle">Tab</span></td><td class="description">Toggle Edit Group</td><td class="id">EditGroup</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">Tab</span></td><td class="description">Leave Group</td><td class="id">LeaveGroup</td></tr>
+  <tr><td class="key"><span class="keystyle">e</span></td><td class="description">Thread controls</td><td class="id">ThreadControls</td></tr>
+  <tr><td class="key"><span class="cntlkey"></span><span class="keystyle">f</span></td><td class="description">Find a node</td><td class="id">Find</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">f</span></td><td class="description">Find next node</td><td class="id">FindNext</td></tr>
+  <tr><td class="key"><span class="shiftkey"></span><span class="keystyle">D</span></td><td class="description">Duplicate</td><td class="id">Duplicate</td></tr>
+  <tr><td class="key"><span class="keystyle">o</span></td><td class="description">NoOverlap</td><td class="id">NoOverlap</td></tr>
+  <tr><td class="key"><span class="keystyle">g</span></td><td class="description">Arrange in a grid</td><td class="id">ArrangeGrid</td></tr>
+  <tr><td class="key"><span class="keystyle">h</span></td><td class="description">Arrange in a row</td><td class="id">ArrangeRow</td></tr>
+  <tr><td class="key"><span class="keystyle">v</span></td><td class="description">Arrange in a column</td><td class="id">ArrangeCol</td></tr>
+  <tr><td class="key"><span class="keystyle">s</span></td><td class="description">Save Nodes</td><td class="id">SaveNodes</td></tr>
+  <tr><td class="key"><span class="keystyle">l</span></td><td class="description">Load Nodes</td><td class="id">LoadNodes</td></tr>
 <tr><td colspan="3" class="area">GraphicalShell</td></tr>
   <tr><td class="key"><span class="keystyle">/</span></td><td class="description">Turn on the prompt, if it was off.</td><td class="id">Activate</td></tr>
   <tr><td class="key"><span class="shiftkey"></span><span class="cntlkey"></span><span class="keystyle">Up</span></td><td class="description">Toggle placement of input bar, top or bottom</td><td class="id">ToggleGravity</td></tr>

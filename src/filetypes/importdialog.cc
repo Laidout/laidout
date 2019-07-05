@@ -16,12 +16,13 @@
 #include "importdialog.h"
 #include "../language.h"
 #include "../laidout.h"
-#include "../utils.h"
+#include "../core/utils.h"
 #include <lax/checkbox.h>
 #include <lax/fileutils.h>
 #include <lax/menubutton.h>
 #include <lax/sliderpopup.h>
 
+//template implementation:
 #include <lax/lists.cc>
 
 #include <iostream>
@@ -209,7 +210,7 @@ int ImportFileDialog::init()
 	AddWin(mbar,1, mbar->win_w,0,mbar->win_w/3,50,0, linpheight,0,0,50,0, -1);
 
     SliderPopup *p;
-	last=p=new SliderPopup(this,"ScaleToPage",NULL,0, 0,0,0,0,0, NULL,object_id,"scaletopage");
+	last = p = new SliderPopup(this,"ScaleToPage",NULL,0, 0,0,0,0,0, NULL,object_id,"scaletopage");
 	p->AddItem(_("No"),1);
 	p->AddItem(_("Yes"),2);
 	p->AddItem(_("Down"),3);

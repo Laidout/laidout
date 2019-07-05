@@ -196,6 +196,11 @@ void ObjectFilterInterface::ViewportResized()
  */
 Laxkit::MenuInfo *ObjectFilterInterface::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
+	if (child) {
+		menu = child->ContextMenu(x,y,deviceid, menu);
+		if (menu) return menu;
+	}
+
 	if (!menu) menu=new MenuInfo;
 	//if (!menu->n()) menu->AddSep(_("Some new menu header"));
 
@@ -211,6 +216,8 @@ Laxkit::MenuInfo *ObjectFilterInterface::ContextMenu(int x,int y,int deviceid, L
 int ObjectFilterInterface::Event(const Laxkit::EventData *data, const char *mes)
 {
 	if (!strcmp(mes,"menuevent")) {
+		if (child) return child->Event(data, mes);
+
 		 //these are sent by the ContextMenu popup
 		const SimpleMessage *s = dynamic_cast<const SimpleMessage*>(data);
 		int i	= s->info2; //id of menu item
@@ -285,10 +292,10 @@ int ObjectFilterInterface::Refresh()
 	dp->DrawScreen();
 
 	dp->LineAttributes(1,LineSolid,LAXCAP_Round,LAXJOIN_Round);
-	dp->NewFG(curwindow->win_colors->fg);
+	dp->NewFG(curwindow->win_themestyle->fg);
 
-	dp->NewFG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg, .25));
-    dp->NewBG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg, .75));
+	dp->NewFG(coloravg(curwindow->win_themestyle->fg,curwindow->win_themestyle->bg, .25));
+    dp->NewBG(coloravg(curwindow->win_themestyle->fg,curwindow->win_themestyle->bg, .75));
 
 
 	double th = dp->textheight();
@@ -304,8 +311,8 @@ int ObjectFilterInterface::Refresh()
 		//draw one block for each filter
 		double w, x=0;
 		for (int c=0; c<filternodes.n; c++) {
-			dp->NewFG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg, .25));
-			dp->NewBG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg, .75));
+			dp->NewFG(coloravg(curwindow->win_themestyle->fg,curwindow->win_themestyle->bg, .25));
+			dp->NewBG(coloravg(curwindow->win_themestyle->fg,curwindow->win_themestyle->bg, .75));
 
 			 //draw:
 			 //   Name
@@ -315,7 +322,7 @@ int ObjectFilterInterface::Refresh()
 			if (w > width) width = w;
 			width += th;
 
-			dp->NewFG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg, .25));
+			dp->NewFG(coloravg(curwindow->win_themestyle->fg,curwindow->win_themestyle->bg, .25));
 
 			 //draw box
 			dp->LineWidthScreen(current == c ? 3 : 1);
@@ -326,7 +333,7 @@ int ObjectFilterInterface::Refresh()
 			dp->textout(x+width/2,th/4, filternodes.e[c]->Label(),-1, LAX_TOP|LAX_HCENTER);
 
 			 //eyeball
-			dp->NewFG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg, .25));
+			dp->NewFG(coloravg(curwindow->win_themestyle->fg,curwindow->win_themestyle->bg, .25));
 			dp->NewBG(1.,1.,1.);
 			dp->LineWidthScreen(hover == OFI_Mute && hoverindex == c ? 2 : 1);
 			dp->drawthing(x+th, th*1.75, th/2,-th/2, 2, filternodes.e[c]->IsMuted() ? THING_Closed_Eye : THING_Open_Eye);
@@ -338,7 +345,7 @@ int ObjectFilterInterface::Refresh()
 				dp->drawcircle(x + width-th, th*1.75, th/2, 1);
 				dp->NewFG(1.,1.,1.);
 
-			} else dp->NewFG(curwindow->win_colors->fg);
+			} else dp->NewFG(curwindow->win_themestyle->fg);
 
 			dp->drawthing(x+width - th, th*1.75, th/3,th/3, 0, THING_X);
 
@@ -466,7 +473,7 @@ int ObjectFilterInterface::LBUp(int x,int y,unsigned int state, const Laxkit::La
 		if (!dragged) {
 			current = hoveredindex;
 			if (current >= 0) {
-				filternodes.e[current]->Mute(filternodes.e[current]->IsMuted());
+				filternodes.e[current]->Mute(!filternodes.e[current]->IsMuted());
 				needtodraw=1;
 			}
 		}
@@ -540,6 +547,11 @@ int ObjectFilterInterface::CharInput(unsigned int ch, const char *buffer,int len
 
         needtodraw=1;
         return 0;
+
+	} else if (ch == LAX_Esc && current >= 0) {
+		current = -1;
+		needtodraw=1;
+		return 0;
     }
 
 
@@ -562,10 +574,8 @@ Laxkit::ShortcutHandler *ObjectFilterInterface::GetShortcuts()
     sc=new ShortcutHandler(whattype());
 
 	//sc->Add([id number],  [key], [mod mask], [mode], [action string id], [description], [icon], [assignable]);
-    //sc->Add(OBJECTFILTER_Something,  'B',ShiftMask|ControlMask,0, "BaselineJustify", _("Baseline Justify"),NULL,0);
-    //sc->Add(OBJECTFILTER_Something2, 'b',ControlMask,0, "BottomJustify"  , _("Bottom Justify"  ),NULL,0);
-    //sc->Add(OBJECTFILTER_Something3, 'd',ControlMask,0, "Decorations"    , _("Toggle Decorations"),NULL,0);
-	//sc->Add(OBJECTFILTER_Something4, '+',ShiftMask,0,   "ZoomIn"         , _("Zoom in"),NULL,0);
+    sc->Add(OFI_Refresh,  'r',0,0, "Refresh", _("Force a refresh"),NULL,0);
+
 	//sc->AddShortcut('=',0,0, OBJECTFILTER_Something); //add key to existing action
 
     manager->AddArea(whattype(),sc);
@@ -576,8 +586,11 @@ Laxkit::ShortcutHandler *ObjectFilterInterface::GetShortcuts()
  */
 int ObjectFilterInterface::PerformAction(int action)
 {
-	//if (action == ***) {
-	//}
+	if (action == OFI_Refresh) {
+
+		return 0;
+	}
+
 	return 1;
 }
 

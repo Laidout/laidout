@@ -25,7 +25,7 @@
 
 #include "../language.h"
 #include "../laidout.h"
-#include "../stylemanager.h"
+#include "../core/stylemanager.h"
 #include "../printing/psout.h"
 #include "image-gs.h"
 #include "../impositions/singles.h"

@@ -1,4 +1,5 @@
-This directory is for functions and other items that are accessed through scripting.
+This directory is for functions and other items that are accessed through scripting,
+or through callable actions.
 Usually this means parsing the peculiar format of scripting parameters, and calling
 some other function that does the actual work, usually located in a file or object in
 some other directory.

@@ -18,7 +18,7 @@
 #define PRINT_H
 
 #include "../filetypes/exportdialog.h"
-#include "../document.h"
+#include "../core/document.h"
 #include <lax/messagebar.h>
 
 

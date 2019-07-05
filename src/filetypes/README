@@ -16,7 +16,7 @@ one for PDF 1.3.
 
 Filters can define their own configuration dialogs if they wish, or
 they can use the default dialog generated based on the filter's
-StyleDef (***unimplemented, todo!!).
+StyleDef.
 
 Remember that you might have to set the current locale, so that when you
 output 1.2, for instance, it does not get output as "1,2". To do that,

@@ -14,10 +14,10 @@
 //
 
 #include "cloneinterface.h"
-#include "../laidout.h"
-#include "../drawdata.h"
-#include "../viewwindow.h"
 #include "../version.h"
+#include "../laidout.h"
+#include "../core/drawdata.h"
+#include "../ui/viewwindow.h"
 
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
@@ -26,6 +26,7 @@
 #include <lax/interfaces/somedatafactory.h>
 #include <lax/interfaces/rectinterface.h>
 
+//template implementation:
 #include <lax/lists.cc>
 #include <lax/refptrstack.cc>
 
@@ -416,7 +417,7 @@ void Tiling::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpCont
             makestr(category,value);
 
         } else if (!strcmp(name,"icon_file")) {
-			LaxImage *nicon=load_image(value);
+			LaxImage *nicon = ImageLoader::LoadImage(value);
 			if (nicon) {
 				if (icon) icon->dec_count();
 				icon=nicon;

@@ -28,6 +28,7 @@
 
 #include <lax/interfaces/interfacemanager.h>
 
+//template implementation:
 #include <lax/lists.cc>
 
 #include <iostream>

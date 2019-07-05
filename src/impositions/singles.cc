@@ -19,8 +19,8 @@
 
 #include "../laidout.h"
 #include "singles.h"
-#include "stylemanager.h"
-#include "language.h"
+#include "../core/stylemanager.h"
+#include "../language.h"
 
 using namespace Laxkit;
 using namespace LaxInterfaces;
@@ -617,6 +617,8 @@ Page **Singles::CreatePages(int npages)
 SomeData *Singles::GetPageOutline(int pagenum,int local)
 {
 	PathsData *newpath=new PathsData();//count==1
+	newpath->style |= PathsData::PATHS_Ignore_Weights;
+
 	newpath->appendRect(0,0,pagestyle->w(),pagestyle->h());
 	newpath->maxx=pagestyle->w();
 	newpath->maxy=pagestyle->h();

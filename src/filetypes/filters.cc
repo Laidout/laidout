@@ -22,6 +22,7 @@
 #include "image-gs.h"
 #include "scribus.h"
 #include "pdf.h"
+#include "htmlgallery.h"
 #include "podofoimposeplan.h"
 #include "laidoutimport.h"
 
@@ -38,6 +39,7 @@ void installFilters()
 	installLaidoutFilter();
 	installImageFilter();
 	installImageGsFilter();
+	InstallHtmlFilter();
 	installPodofoFilter();
 	installPptFilter();
 	installPostscriptFilters();

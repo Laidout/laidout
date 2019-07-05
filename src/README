@@ -9,15 +9,23 @@ Here are a few notes about the general layout of the Laidout code.
 
 api           Various functions and classes that can be used in the interpreter
 calculator    The guts of the internal interpreter
-dataobjects   Data objects used in Laidout
+core          Core Laidout classes relating to Project, Document, and Page.
+dataobjects   Data objects used in Laidout, and interfaces that directly operate on them
 extras        Extra plugins and such, not to be considered part of core functionality
-impositions   All things impositions
-interfaces    Extra interfaces
 filetypes     Export and import code
-plugins       C++ plugin mechanism implemented here
+impositions   All things impositions
+interfaces    Interfaces not directly tied to particular object types
+nodes         Core classes relating to nodes
+plugins       C++ based plugins
 printing      Code for printing, and postscript export
+ui            Various window panes and dialogs
 
 </pre>
+
+In a nutshell, the LaidoutApp (laidout.cc, laidout.h) is what coordinates everything.
+Main windows are composed of panes. Some pane types are viewports, which is
+where interfaces operate. The basic visual elements that make up Laidout pages
+are in dataobjects, as are interfaces directly relating to them.
 
 If you add more source files and thus other object files that must be linked in,
 you must modify ./Makefile -> otherobjs to include the new object files, as well

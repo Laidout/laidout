@@ -187,7 +187,7 @@ int ObjectTreeWindow::init()
  	 //add the tree
 	if (!tree) {
 		tree=new ObjectTree(this,"tree",NULL,object_id,"tree");
-		tree->installColors(app->color_edits);
+		tree->InstallColors(THEME_Edit);
 		tree->InstallMenu(menu);
 	}
 	tree->tree_column=1;

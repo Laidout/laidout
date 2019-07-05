@@ -19,7 +19,7 @@
 #include <lax/anxapp.h>
 #include <lax/dump.h>
 
-#include "../papersizes.h"
+#include "../core/papersizes.h"
 #include "../dataobjects/group.h"
 #include "../calculator/values.h"
 #include "../plugins/plugin.h"
@@ -37,6 +37,7 @@ class DocumentExportConfig;
 
 #define FILTER_MULTIPAGE  (1<<0)
 #define FILTER_MANY_FILES (1<<1)
+#define FILTER_DIR_BASED  (1<<2)
 
 class FileFilter : public Laxkit::anObject
 {
@@ -45,7 +46,7 @@ class FileFilter : public Laxkit::anObject
 	PluginBase *plugin; //***which plugin, if any, the filter came from.
 
 	FileFilter();
-	virtual ~FileFilter() {}
+	virtual ~FileFilter();
 	virtual const char *Author() = 0;
 	virtual const char *FilterVersion() = 0;
 	
@@ -55,6 +56,7 @@ class FileFilter : public Laxkit::anObject
 	virtual const char *VersionName() = 0;
 	virtual const char *FilterClass() = 0;
 	virtual ObjectDef *GetObjectDef() = 0;
+	virtual bool DirectoryBased();
 
 	virtual Laxkit::anXWindow *ConfigDialog() { return NULL; }
 };
@@ -97,7 +99,8 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 class DocumentExportConfig : public Value
 {
  public:
-	int target;
+	enum Targets { TARGET_Single = 0, TARGET_Multi = 1, TARGET_Command = 2 }; //needs to stay in sync with objectdef enum
+	int target; //single file: 0, multiple files: 1
 	int start,end;
 	int layout;
 	enum EvenOdd { All,Even,Odd } evenodd;

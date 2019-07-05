@@ -47,7 +47,9 @@ class ExportDialog : public Laxkit::RowFrame
 	int firstextra;
 	int overwriteok;
 	unsigned long dialog_style;
-	int tofile, cur, max, min;
+	int tofile;
+	int cur, max, min;
+	char *last_meta_dir;
 	Laxkit::LineEdit *fileedit,*filesedit,*printstart,*printend,*command;
 	Laxkit::CheckBox *filecheck,*filescheck,*commandcheck;
 	Laxkit::CheckBox *printall,*printcurrent,*printrange;

@@ -1713,7 +1713,7 @@ ObjectDef default_ValueHash_ObjectDef(NULL,"Hash",_("Hash"),_("Set of name-value
 
 ObjectDef *Get_ValueHash_ObjectDef()
 {
-	ObjectDef *def=&default_ValueHash_ObjectDef;
+	ObjectDef *def = &default_ValueHash_ObjectDef;
 	if (def->fields) return def;
 
 //	virtual int pushFunction(const char *nname,const char *nName,const char *ndesc,
@@ -2722,6 +2722,8 @@ Value *AttributeToValue(Attribute *att)
 		return NULL;
 
     } else if (!strcmp(att->name, "FileValue")) {
+		return new FileValue(att->value);
+
     } else if (!strcmp(att->name, "EnumValue")) {
     } else if (!strcmp(att->name, "ValueHash")) {
     } else if (!strcmp(att->name, "GenericValue")) {
@@ -3061,6 +3063,7 @@ const char *SetValue::FieldName(int i)
 
 //----------------------------- ArrayValue ----------------------------------
 /*! \class ArrayValue
+ * Just a set with optional element type.
  */
 
 ArrayValue::ArrayValue(const char *elementtype, int size)
@@ -3148,6 +3151,7 @@ Value *NullValue::duplicate()
  */
 BooleanValue::BooleanValue(const char *val)
 {
+	i = 0;
 	if (isblank(val)) i=0;
 	else if (!strcmp(val,"0") || !strcasecmp(val,"no") || !strcasecmp(val,"false")) i=0;
 	else if (!strcmp(val,"1") || !strcasecmp(val,"yes") || !strcasecmp(val,"true")) i=1;
@@ -3718,9 +3722,17 @@ Value *StringValue::duplicate()
 
 /*! Replace current str with nstr.
  */
-void StringValue::Set(const char *nstr)
+void StringValue::Set(const char *nstr, int n)
 {
-	makestr(str,nstr);
+	if (!nstr) {
+		makestr(str, NULL);
+
+	} else {
+		int slen = strlen(nstr);
+		if (n<0) n = slen;
+		else if (n>slen) n = slen;
+		makenstr(str,nstr, n);
+	}
 }
 
 
@@ -3950,6 +3962,11 @@ const char *FileValue::Part(int i)
 {
 	if (i<0 || i>=parts.n) return NULL;
 	return parts.e[i];
+}
+
+void FileValue::Set(const char *nstr)
+{
+	makestr(filename, nstr);
 }
 
 int FileValue::getValueStr(char *buffer,int len)
@@ -4206,8 +4223,23 @@ ObjectDef *ObjectValue::makeObjectDef()
 	return Get_ObjectValue_ObjectDef();
 }
 
+void ObjectValue::SetObject(anObject *nobj, bool absorb_count)
+{
+	if (!absorb_count && nobj) nobj->inc_count();
+	if (nobj != object) {
+		if (object) object->dec_count();
+		object = nobj;
+		if (object) object->inc_count();
+	}
+}
+
 
 //--------------------------------- ColorValue -----------------------------
+
+ColorValue::ColorValue()
+{
+}
+
 /*! Set from a hex string.
  */
 ColorValue::ColorValue(const char *str)
@@ -4403,9 +4435,32 @@ double getNumberValue(Value *v, int *isnum)
 	return 0;
 }
 
+/*! Get integer value from bool, int, or real.
+ * Return actual type in isnum, 0 for unknown, 1 for real, 2 for int, 3 for bool.
+ */
+int getIntValue(Value *v, int *isnum)
+{
+	if (!v) {
+		*isnum=0; //it is a null!
+		return 0;
+	}
+	if (v->type() == VALUE_Real) {
+		*isnum=1;
+		return dynamic_cast<DoubleValue*>(v)->d + .5;
+	} else if (v->type() == VALUE_Int) {
+		*isnum=2;
+		return dynamic_cast<IntValue*>(v)->i;
+	} else if (v->type() == VALUE_Boolean) {
+		*isnum=3;
+		return dynamic_cast<BooleanValue*>(v)->i;
+	}
+	*isnum=0;
+	return 0;
+}
+
 /*! Like getNumberValue(), but swap order of returns.
  */
-bool isNumberType(Value *v, double *number_ret)
+int isNumberType(Value *v, double *number_ret)
 {
 	int isnum = 0;
 	double n = getNumberValue(v, &isnum);

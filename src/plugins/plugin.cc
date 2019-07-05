@@ -17,6 +17,7 @@
 
 #include "plugin.h"
 #include "../language.h"
+#include "../core/utils.h"
 
 #include <lax/strmanip.h>
 
@@ -69,8 +70,8 @@ PluginBase *LoadPlugin(const char *path_to_plugin, Laxkit::ErrorLog &log)
 		handle = dlopen(path_to_plugin, RTLD_LAZY);
 		//handle = dlopen(path_to_plugin, RTLD_NOW);
 		//handle = dlopen(path_to_plugin, RTLD_LAZY|RTLD_GLOBAL);
-
-		DBG cerr <<"dl opened..."<<endl;
+		
+		DBG cerr <<"dl opened... dlerror: "<<(dlerror() ? dlerror() : "no error")<<endl;
 
 		if (!handle) throw 1;
 
@@ -180,7 +181,24 @@ PluginBase::~PluginBase()
 }
 
 
-/*! Default just set initialized to 1.
+/*! Return a new char[] for a default plugin config path.
+ * This will be something like "ConfigFile()/PluginName()/".
+ * If include_file, then also append with a default config filename like:
+ * "ConfigFile()/PluginName()/PluginName().rc".
+ */
+char *PluginBase::DefaultConfigPath(bool include_file)
+{
+	char *file = ConfigDir(PluginName());
+	if (include_file) {
+		appendstr(file, PluginName());
+		appendstr(file, ".rc");
+	}
+	return file;
+}
+
+
+/*! Perform any initialization here.
+ * Default just sets initialized to 1.
  */
 int PluginBase::Initialize()
 {
@@ -190,6 +208,7 @@ int PluginBase::Initialize()
 }
 
 /*! This should be the reverse of Initialize().
+ * Free any resources that have been allocated for the plugin.
  */
 void PluginBase::Finalize()
 {

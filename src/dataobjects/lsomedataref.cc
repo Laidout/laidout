@@ -15,7 +15,7 @@
 
 #include "lsomedataref.h"
 #include "datafactory.h"
-#include "../stylemanager.h"
+#include "../core/stylemanager.h"
 #include "../language.h"
 
 #include <lax/misc.h>
@@ -30,6 +30,7 @@ namespace Laidout {
  */
 
 LSomeDataRef::LSomeDataRef(LaxInterfaces::SomeData *refobj)
+  : SomeDataRef(refobj)
 {
 }
 
@@ -190,6 +191,20 @@ int LSomeDataRef::assign(FieldExtPlace *ext,Value *v)
 //
 //	return -1;
 //}
+
+
+
+//------------------------------- LBleedProxy ---------------------------------------
+/*! \class LBleedProxy
+ * A type of LSomeDataRef to hold references to objects that bleed across pages.
+ * Ideally, this enables easy selection of bleed objects on other pages and still use
+ * mostly the same code to change.
+ */
+
+LBleedProxy::LBleedProxy(LaxInterfaces::SomeData *refobj)
+  : LSomeDataRef(refobj)
+{
+}
 
 
 } //namespace Laidout

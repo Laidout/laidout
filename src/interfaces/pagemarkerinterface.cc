@@ -250,14 +250,14 @@ int PageMarkerInterface::Refresh()
 				fg=rgbcolorf(1.,0.,0.);
 			} else if (c==curpage) {
 				lwidth=2;
-				fg=coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg,.6);
+				fg=coloravg(curwindow->win_themestyle->fg,curwindow->win_themestyle->bg,.6);
 				//dp->LineAttributes(2,LineSolid,LAXCAP_Round,LAXJOIN_Round);
-				//dp->NewFG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg,.6));
+				//dp->NewFG(coloravg(curwindow->win_themestyle->fg,curwindow->win_themestyle->bg,.6));
 			} else {
 				lwidth=1;
-				fg=coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg,.3);
+				fg=coloravg(curwindow->win_themestyle->fg,curwindow->win_themestyle->bg,.3);
 				//dp->LineAttributes(1,LineSolid,LAXCAP_Round,LAXJOIN_Round);
-				//dp->NewFG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg,.3));
+				//dp->NewFG(coloravg(curwindow->win_themestyle->fg,curwindow->win_themestyle->bg,.3));
 			}
 			bg=&pages.e[c]->page->labelcolor;
 			//dp->NewBG(&pages.e[c]->page->labelcolor);
@@ -281,7 +281,7 @@ int PageMarkerInterface::Refresh()
 			dp->drawthing(p.x,p.y,w,h, t, fg,bg->Pixel(), lwidth);
 
 			dp->NewFG(standoutcolor(pages.e[c]->page->labelcolor,true));
-			//dp->NewFG(curwindow->win_colors->fg);
+			//dp->NewFG(curwindow->win_themestyle->fg);
 			dp->textout(p.x,p.y, pages.e[c]->page->label,-1, LAX_CENTER);
 
 		}
@@ -298,8 +298,8 @@ int PageMarkerInterface::Refresh()
 		dp->LineAttributes(1,LineSolid,LAXCAP_Round,LAXJOIN_Round);
 
 		 //fill background
-		dp->NewFG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg,.3));
-		dp->NewBG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg,.8));
+		dp->NewFG(coloravg(curwindow->win_themestyle->fg,curwindow->win_themestyle->bg,.3));
+		dp->NewBG(coloravg(curwindow->win_themestyle->fg,curwindow->win_themestyle->bg,.8));
 		dp->drawrectangle(boxoffset.x,boxoffset.y, boxw,boxh, 2);
 
 		dp->NewFG(0,0,0);

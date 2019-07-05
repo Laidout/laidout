@@ -16,7 +16,7 @@
 #include <lax/imagedialog.h>
 #include "limageinterface.h"
 #include "../language.h"
-#include "../stylemanager.h"
+#include "../core/stylemanager.h"
 #include "../calculator/shortcuttodef.h"
 
 

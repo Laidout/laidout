@@ -27,11 +27,11 @@
 
 #include "../language.h"
 #include "../laidout.h"
-#include "../stylemanager.h"
+#include "../core/stylemanager.h"
 #include "../printing/psout.h"
 #include "pdf.h"
 #include "../impositions/singles.h"
-#include "../utils.h"
+#include "../core/utils.h"
 
 #include <iostream>
 #define DBG 
@@ -48,6 +48,14 @@ namespace Laidout {
 /*! \file 
  * Pdf import and export code.
  */
+
+
+
+//------------------------- forward decs -----------------------
+
+int pdfSetClipToPath(char *&stream,LaxInterfaces::SomeData *outline,int iscontinuing, const double *extra_m);
+static int pdfaddpath(FILE *f,Coordinate *path, char *&stream, const double *extra_m=NULL);
+
 
 //------------------------- PdfImportFilter -----------------------------
 
@@ -197,10 +205,12 @@ ObjectDef *PdfExportFilter::GetObjectDef()
 
 //-------------------------------------- pdf out -------------------------------------------
 
+AffineStack transforms;
+double current_dpi = 300;
+
 //---------------------------- PdfObjInfo
 static int o=1;//***DBG
 
-double current_dpi = 300;
 
 /*! \class PdfObjInfo
  * \brief Temporary class to hold info about pdf objects during export.
@@ -226,7 +236,7 @@ class PdfObjInfo
 PdfObjInfo::PdfObjInfo()
 	 : byteoffset(0), inuse('n'), number(0), generation(0), next(NULL), data(NULL), len(0)
 {
-	i=o++; 
+	i = o++; 
 	lo_object_id=0;
 	lo_object=NULL;
 	DBG cerr<<"creating PdfObjInfo "<<i<<"..."<<endl;
@@ -251,8 +261,9 @@ class PdfPageInfo : public PdfObjInfo
 	Attribute resources;
 	int rotation;
 	int landscape;
+	bool clip;
 
-	PdfPageInfo() { pagelabel=NULL; rotation=0; landscape=0; }
+	PdfPageInfo() { pagelabel=NULL; rotation=0; landscape=0; clip = false; }
 	virtual ~PdfPageInfo();
 };
 
@@ -309,21 +320,59 @@ void pdfdumpobj(FILE *f,
 				LaxInterfaces::SomeData *object,
 				ErrorLog &log,
 				int &warning,
-				DocumentExportConfig *config)
+				DocumentExportConfig *config,
+				bool ignore_filter = false,
+				bool use_transform = true)
 {
 	if (!obj) return;
+
+	DrawableObject *dobj=dynamic_cast<DrawableObject*>(object);
+	char scratch[200];
+
+    if (dobj && dobj->clip_path) {
+		PathsData *clip = dobj->clip_path;
+		double m[6];
+		if (use_transform) transform_mult(m, clip->m(), object->m());
+		else transform_copy(m, clip->m());
+		//transform_identity(m);
+
+		psPushCtm();
+		//psConcat(m);
+		sprintf(scratch,"q\n");
+
+		//sprintf(scratch,"q\n"
+				  //"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
+					//m[0], m[1], m[2], m[3], m[4], m[5]); 
+		appendstr(stream,scratch);
+		//pdfSetClipToPath(stream, clip, 0, clip->m());
+		pdfSetClipToPath(stream, clip, 0, m);
+	}
+
+	Group *g = dynamic_cast<Group *>(object);
+    if (g && g->filter && !ignore_filter) {
+        pdfdumpobj(f,objs,obj,stream,objectcount,resources, g->FinalObject(), log,warning,config, true);
+
+		//remove clip
+		if (dobj && dobj->clip_path) {
+			//sprintf(scratch,"Q\n");
+			appendstr(stream,"Q\n");
+			psPopCtm();
+		}
+        return; // *** this fails when children exist!!
+    }
+
 	
-	 // push axes
-	psPushCtm();
-	psConcat(object->m());
-	char scratch[100];
-	sprintf(scratch,"q\n"
-			  "%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
-				object->m(0), object->m(1), object->m(2), object->m(3), object->m(4), object->m(5)); 
-	appendstr(stream,scratch);
+	 // push object transform
+	if (use_transform) {
+		psPushCtm();
+		psConcat(object->m());
+		sprintf(scratch,"q\n"
+				  "%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
+					object->m(0), object->m(1), object->m(2), object->m(3), object->m(4), object->m(5)); 
+		appendstr(stream,scratch);
+	}
 	
 	if (!strcmp(object->whattype(),"Group")) {
-		Group *g=dynamic_cast<Group *>(object);
 		for (int c=0; c<g->n(); c++) 
 			pdfdumpobj(f,objs,obj,stream,objectcount,resources,g->e(c),log,warning,config);
 
@@ -348,7 +397,7 @@ void pdfdumpobj(FILE *f,
 		if (config->textaspaths) {
 			CaptionData *text = dynamic_cast<CaptionData*>(object);
 			SomeData *path = text->ConvertToPaths(false, NULL);
-			pdfPaths(f,objs,obj,stream,objectcount,resources, dynamic_cast<PathsData *>(object), log,warning,config);
+			pdfPaths(f,objs,obj,stream,objectcount,resources, dynamic_cast<PathsData *>(path), log,warning,config);
             path->dec_count();
 		} else {
 			pdfCaption(f,objs,obj,stream,objectcount,resources,dynamic_cast<CaptionData *>(object), log,warning,config);
@@ -358,28 +407,39 @@ void pdfdumpobj(FILE *f,
 		if (config->textaspaths) {
 			TextOnPath *text = dynamic_cast<TextOnPath*>(object);
 			SomeData *path = text->ConvertToPaths(false, NULL);
-			pdfPaths(f,objs,obj,stream,objectcount,resources, dynamic_cast<PathsData *>(object), log,warning,config);
+			pdfPaths(f,objs,obj,stream,objectcount,resources, dynamic_cast<PathsData *>(path), log,warning,config);
             path->dec_count();
 		} else {
 			pdfTextOnPath(f,objs,obj,stream,objectcount,resources,dynamic_cast<TextOnPath*>(object), log,warning,config);
 		}
 
+	} else if (!strcmp(object->whattype(),"SomeDataRef")) {
+		//this can link to any object, in or out of the current page, but pdf pages are supposed to be self contained. vexing!
+		SomeDataRef *ref = dynamic_cast<SomeDataRef*>(object);
+		SomeData *refed = ref->GetFinalObject();
+		if (refed != NULL) {
+			pdfdumpobj(f, objs, obj, stream, objectcount, resources, refed, log, warning, config, false, false);
+		}
+
 	} else {
-		DrawableObject *dobj=dynamic_cast<DrawableObject*>(object);
+		//DrawableObject *dobj=dynamic_cast<DrawableObject*>(object);
         SomeData *dobje=NULL;
         if (dobj) dobje=dobj->EquivalentObject();
+
+		//remove object transform, since we use a totally different one
+		if (use_transform) {
+			appendstr(stream,"Q\n");
+			psPopCtm(); 
+		}
 
         if (dobje) {
             dobje->Id(object->Id());
 
-			appendstr(stream,"Q\n");
-			psPopCtm(); 
             pdfdumpobj(f,objs,obj,stream,objectcount,resources,dobje,log,warning,config);
 
             dobje->dec_count();
 
-        } else {
-
+        } else { 
             setlocale(LC_ALL,"");
             char buffer[strlen(_("Cannot export %s objects to pdf."))+strlen(object->whattype())+1];
             sprintf(buffer,_("Cannot export %s objects to pdf."),object->whattype());
@@ -388,13 +448,26 @@ void pdfdumpobj(FILE *f,
             warning++;
         }
 
+		//remove clipping
+		if (dobj && dobj->clip_path) {
+			appendstr(stream,"Q\n");
+			psPopCtm();
+		}
 		return;
 
 	}
 	
-	 // pop axes
-	appendstr(stream,"Q\n");
-	psPopCtm();
+	 // pop object transform
+	if (use_transform) {
+		appendstr(stream,"Q\n");
+		psPopCtm();
+	}
+
+	//remove clipping
+	if (dobj && dobj->clip_path) {
+		appendstr(stream,"Q\n");
+		psPopCtm();
+	}
 }
 
 //! Output a pdf clipping path from outline.
@@ -414,7 +487,7 @@ void pdfdumpobj(FILE *f,
  *   that PathsData are capable of. when pdf output of paths is 
  *   actually more implemented, this will change..
  */
-int pdfSetClipToPath(char *&stream,LaxInterfaces::SomeData *outline,int iscontinuing)//iscontinuing=0
+int pdfSetClipToPath(char *&stream,LaxInterfaces::SomeData *outline,int iscontinuing, const double *extra_m)
 {
 	PathsData *path=dynamic_cast<PathsData *>(outline);
 
@@ -444,7 +517,7 @@ int pdfSetClipToPath(char *&stream,LaxInterfaces::SomeData *outline,int iscontin
 			sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
 					d->m(0), d->m(1), d->m(2), d->m(3), d->m(4), d->m(5)); 
 			appendstr(stream,scratch);
-			n+=pdfSetClipToPath(stream,g->e(c),1);
+			n += pdfSetClipToPath(stream,g->e(c),1, NULL);
 			transform_invert(m,d->m());
 			 //reverse the transform
 			sprintf(stream,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
@@ -457,6 +530,7 @@ int pdfSetClipToPath(char *&stream,LaxInterfaces::SomeData *outline,int iscontin
 	
 	 // finally append to clip path
 	Coordinate *start,*p;
+	flatpoint fp;
 	for (int c=0; c<path->paths.n; c++) {
 		start=p=path->paths.e[c]->path;
 		if (!p) continue;
@@ -464,13 +538,20 @@ int pdfSetClipToPath(char *&stream,LaxInterfaces::SomeData *outline,int iscontin
 		if (p==start) { // only include closed paths
 			n++;
 			p=start;
-			do {
-				sprintf(scratch,"%.10f %.10f %s\n",
-						p->x(),p->y(), (p==start?"m":"l"));
-				appendstr(stream,scratch);
-				p=p->next;	
-			} while (p && p!=start);
-			appendstr(stream,"W n\n");
+			//-----
+			n += pdfaddpath(NULL, p, stream, extra_m);
+			//----
+			//do {
+			//	fp = (extra_m ? transform_point(extra_m, p->fp) : p->fp);
+			//	sprintf(scratch,"%.10f %.10f %s\n",
+			//			fp.x,fp.y, (p==start?"m":"l"));
+			//	appendstr(stream,scratch);
+			//	p=p->next;	
+			//} while (p && p!=start);
+			//----
+
+			//appendstr(stream,"S\n");
+			appendstr(stream,"W n\n"); //define the clip
 		}
 	}
 	
@@ -482,12 +563,14 @@ int pdfSetClipToPath(char *&stream,LaxInterfaces::SomeData *outline,int iscontin
 
 //--------------------------------------- PDF Out ------------------------------------
 
+
 //! Save the document as PDF.
-/*! This does not export EpsData.
- * Files are not checked for existence. They are clobbered if they already exist, and are writable.
+/*! Files are not checked for existence. They are clobbered if they already exist, and are writable.
  *
  * Return 0 for success, 1 for error and nothing written, 2 for error, and corrupted file possibly written.
  * 2 is mainly for debugging purposes, and will be perhaps be removed in the future.
+ *
+ * Document tree is parsed to create a list of objects. Then the whole list is output at once.
  */
 int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 {
@@ -540,6 +623,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	DBG      <<papergroup->papers.n<<" ====================\n";
 
 	 // initialize outside accessible ctm
+	transforms.ClearAxes();
 	psCtmInit();
 	psFlushCtms();
 
@@ -552,7 +636,6 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	
 	int warning=0;
 	Spread *spread=NULL;
-	int c2,l;
 
 	 // Start the list of objects with the head of free objects, which
 	 // has generation number of 65535. Its number is the object number of
@@ -627,7 +710,9 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			//transform_set(m,1,0,0,1,0,0);
 			appendstr(stream,"q\n"
 							 "72 0 0 72 0 0 cm\n"); // convert from inches
+			//transforms.Multiply(Affine(72.,0.,0.,72.,0.,0.));
 			psConcat(72.,0.,0.,72.,0.,0.);
+			transforms.PushAndNewAxes(72.,0.,0.,72.,0.,0.);
 
 
 			 //apply papergroup->paper transform
@@ -635,7 +720,9 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
 					m[0], m[1], m[2], m[3], m[4], m[5]); 
 			appendstr(stream,scratch);
+			//transforms.Multiply(m);
 			psConcat(m);
+			transforms.PushAndNewAxes(m);
 			
 			 //write out limbo object if any
 			if (limbo && limbo->n()) {
@@ -655,47 +742,84 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 				}
 				
 				 // for each paper in paper layout..
-				for (c2=0; c2<spread->pagestack.n(); c2++) {
+				for (int c2=0; c2<spread->pagestack.n(); c2++) {
 					PaperStyle *defaultpaper=doc->imposition->GetDefaultPaper();
 					psDpi(defaultpaper->dpi);
+					current_dpi = defaultpaper->dpi;
 					
-					pgindex=spread->pagestack.e[c2]->index;
-					if (pgindex<0 || pgindex>=doc->pages.n) continue;
-					page=doc->pages.e[pgindex];
+					pgindex = spread->pagestack.e[c2]->index;
+					if (pgindex < 0 || pgindex >= doc->pages.n) continue;
+					page = doc->pages.e[pgindex];
 					
 					 // transform to page
 					appendstr(stream,"q\n"); //save ctm
+					//transforms.PushAxes();
 					psPushCtm();
+					transforms.PushAxes();
 					transform_copy(m,spread->pagestack.e[c2]->outline->m());
 					sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
 							m[0], m[1], m[2], m[3], m[4], m[5]); 
 					appendstr(stream,scratch);
+					transforms.Multiply(m);
 					psConcat(m);
 
 					 // set clipping region
 					DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
-					if (page->pagestyle->flags&PAGE_CLIPS) {
-						pdfSetClipToPath(stream,spread->pagestack.e[c2]->outline,0);
+					if ((page->pagestyle->flags&PAGE_CLIPS) || config->layout == PAPERLAYOUT) {
+						pdfSetClipToPath(stream,spread->pagestack.e[c2]->outline,0, NULL);
 					} 
+
+
+					 // handle object bleeds from other pages
+					if (page->pagebleeds.n && (config->layout == PAPERLAYOUT || config->layout == SINGLELAYOUT)) {
+						 //assume PAGELAYOUT already renders bleeds properly, since that's where the bleed objects come from
+
+						for (int pb=0; pb<page->pagebleeds.n; pb++) {
+							PageBleed *bleed = page->pagebleeds[pb];
+							if (bleed->index < 0 || bleed->index >= doc->pages.n) continue;
+							Page *otherpage = doc->pages[bleed->index];
+							if (!otherpage || !otherpage->HasObjects()) continue;
+
+							sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
+									bleed->matrix[0], bleed->matrix[1], bleed->matrix[2], bleed->matrix[3], bleed->matrix[4], bleed->matrix[5]); 
+							appendstr(stream,"q\n"); //save ctm
+							appendstr(stream,scratch);
+							transforms.PushAndNewAxes(bleed->matrix);
+							psPushCtm();
+							psConcat(bleed->matrix);
+
+							//for (int l = 0; l < otherpage->layers.n(); l++) {
+								//pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,otherpage->layers.e(l),log,warning,config);
+							//}
+
+							appendstr(stream,"Q\n"); //pop ctm, bleed transform
+							transforms.PopAxes();
+							psPopCtm();
+						}
+		            }
+
 						
 					 // for each layer on the page..
-					for (l=0; l<page->layers.n(); l++) {
+					for (int l=0; l<page->layers.n(); l++) {
 						pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,page->layers.e(l),log,warning,config);
 					}
 
 					appendstr(stream,"Q\n"); //pop ctm, page transform
+					transforms.PopAxes();
 					psPopCtm();
 				}
 			}
 
 			 // print out paper footer
 			appendstr(stream,"Q\n"); //pop papergroup transform
+			transforms.PopAxes();
 			psPopCtm();
 //			if (paperrotate>0) {
 //				appendstr(stream,"Q\n"); //pop paper rotation transform
 //				psPopCtm();
 //			}
 			//appendstr(stream,"Q\n"); //pop  pt to inches conversion (not really necessary
+			//transforms.PopAxes();
 			//psPopCtm();
 
 
@@ -1411,7 +1535,7 @@ static void pdfImagePatch(FILE *f,
 	width= (int)(sqrt((ul-ur)*(ul-ur))/72*psDpi());
 	height=(int)(sqrt((ul-ll)*(ul-ll))/72*psDpi());
 	
-	LaxImage *image = create_new_image(width,height);
+	LaxImage *image = ImageLoader::NewImage(width,height);
 	unsigned char *buffer=image->getImageBuffer();
 	memset(buffer,0,width*height*4); // make whole transparent/black
 	//memset(buf,0xff,width*height*4); // makes whole non-transparent/white
@@ -1427,7 +1551,6 @@ static void pdfImagePatch(FILE *f,
 	m[4]=-i->minx/a;
 	m[5]=-i->maxy/d;
 	i->renderToBuffer(buffer,width,height, 0,8,4);
-	//imlib_image_flip_vertical();
 	image->doneWithBuffer(buffer);
 	ImageData img;
 	img.SetImage(image, NULL);
@@ -1785,7 +1908,7 @@ static void pdfGradient(FILE *f,
 	 // >>
 
 	int c;
-	double clen=g->colors[g->colors.n-1]->t-g->colors[0]->t;
+	double clen = g->strip->colors[g->strip->colors.n-1]->t - g->strip->colors[0]->t;
 	char scratch[100];
 
 	 // shading dict object
@@ -1796,17 +1919,17 @@ static void pdfGradient(FILE *f,
 	int shadedict=obj->number;
 	fprintf(f,"%ld 0 obj\n",obj->number);
 	fprintf(f,"<<\n"
-			  "  /ShadingType %d\n",(g->style&GRADIENT_RADIAL)?3:2);
+			  "  /ShadingType %d\n",(g->IsRadial())?3:2);
 	fprintf(f,"  /ColorSpace /DeviceRGB\n"
 			  "    /BBox   [ %.10f %.10f %.10f %.10f ]\n", //[l b r t]
 				g->minx, g->miny, g->maxx, g->maxy);
 	fprintf(f,"  /Domain [0 1]\n");
 
 	 //Coords of shading dict
-	if (g->style&GRADIENT_RADIAL) fprintf(f,"  /Coords [ %.10f 0 %.10f %.10f 0 %.10f ]\n",
-			  g->p1, fabs(g->r1), //x0, r0
-			  g->p2, fabs(g->r2)); //x1, r1
-	else fprintf(f,"  /Coords [ %.10f 0 %.10f 0]\n", g->p1, g->p2);
+	if (g->IsRadial()) fprintf(f,"  /Coords [ %.10f %.10f %.10f %.10f %.10f %.10f ]\n",
+			  g->strip->p1.x,g->strip->p1.y, fabs(g->strip->r1), //x0, r0
+			  g->strip->p2.x,g->strip->p2.y, fabs(g->strip->r2)); //x1, r1
+	else fprintf(f,"  /Coords [ %.10f %.10f %.10f %.10f]\n", g->strip->p1.x,g->strip->p1.y, g->strip->p2.x,g->strip->p2.y);
 	fprintf(f,"  /Function %d 0 R\n"
 			  ">>\n"
 			  "endobj\n", objectcount); //end shading dict
@@ -1822,21 +1945,21 @@ static void pdfGradient(FILE *f,
 			  "  /FunctionType 3\n"
 			  "  /Domain [0 1]\n"
 			  "  /Encode [");
-	for (c=1; c<g->colors.n; c++) fprintf(f,"0 1 ");
+	for (c=1; c<g->strip->colors.n; c++) fprintf(f,"0 1 ");
 	fprintf(f,"]\n"
 			  "  /Bounds [");
-	for (c=1; c<g->colors.n-1; c++) fprintf(f,"%.10f ", (g->colors.e[c]->t-g->colors.e[0]->t)/clen);
+	for (c=1; c<g->strip->colors.n-1; c++) fprintf(f,"%.10f ", (g->strip->colors.e[c]->t - g->strip->colors.e[0]->t)/clen);
 	fprintf(f,
 			"]\n");
 	fprintf(f,"  /Functions [");
-	for (c=0; c<g->colors.n-1; c++) fprintf(f,"%d 0 R  ",objectcount+c);
+	for (c=0; c<g->strip->colors.n-1; c++) fprintf(f,"%d 0 R  ",objectcount+c);
 	fprintf(f,"]\n"
 			  ">>\n"
 			  "endobj\n");
 
 
 	 //individual function objects
-	for (c=1; c<g->colors.n; c++) {
+	for (c=1; c<g->strip->colors.n; c++) {
 		obj->next=new PdfObjInfo;
 		obj=obj->next;
 		obj->byteoffset=ftell(f);
@@ -1851,12 +1974,12 @@ static void pdfGradient(FILE *f,
 				  ">>\n"
 				  "endobj\n",
 					obj->number, 
-					g->colors.e[c-1]->color.red/65535.0, 
-					g->colors.e[c-1]->color.green/65535.0,
-					g->colors.e[c-1]->color.blue/65535.0, 
-					g->colors.e[c  ]->color.red/65535.0,
-					g->colors.e[c  ]->color.green/65535.0, 
-					g->colors.e[c  ]->color.blue/65535.0
+					g->strip->colors.e[c-1]->color->screen.Red(), 
+					g->strip->colors.e[c-1]->color->screen.Green(),
+					g->strip->colors.e[c-1]->color->screen.Blue(), 
+					g->strip->colors.e[c  ]->color->screen.Red(),
+					g->strip->colors.e[c  ]->color->screen.Green(), 
+					g->strip->colors.e[c  ]->color->screen.Blue()
 				);
 	}
 
@@ -1879,7 +2002,6 @@ static void pdfGradient(FILE *f,
 
 //--------------------------------------- pdfPaths() ----------------------------------------
 
-static int pdfaddpath(FILE *f,Coordinate *path, char *&stream);
 static int pdfaddpath(FILE *f, flatpoint *points,int n, char *&stream);
 static void pdfLineStyle(LineStyle *lstyle, char *&stream);
 
@@ -2042,19 +2164,22 @@ static void pdfLineStyle(LineStyle *lstyle, char *&stream)
 }
 
 
-static int pdfaddpath(FILE *f,Coordinate *path, char *&stream)
+static int pdfaddpath(FILE *f,Coordinate *path, char *&stream, const double *extra_m)
 {
 	Coordinate *p,*p2,*start;
 	p=start=path->firstPoint(1);
 	if (!p) return 0;
 
 	 //build the path to draw
-	flatpoint c1,c2;
+	flatpoint c1,c2, fp;
 	int n=1; //number of points seen
 	char buffer[255];
 
-	sprintf(buffer,"%.10f %.10f m ",start->p().x,start->p().y);
+	fp = (extra_m ? transform_point(extra_m, start->p()) : start->p());
+	sprintf(buffer,"%.10f %.10f m ", fp.x,fp.y);
+	//sprintf(buffer,"%.10f %.10f m ",start->p().x,start->p().y);
 	appendstr(stream,buffer);
+
 	do { //one loop per vertex point
 		p2=p->next; //p points to a vertex
 		if (!p2) break;
@@ -2078,19 +2203,30 @@ static int pdfaddpath(FILE *f,Coordinate *path, char *&stream)
 				c2=p2->p();
 			}
 
+			if (extra_m) {
+				fp = transform_point(extra_m, p2->p());
+				c1 = transform_point(extra_m, c1);
+				c2 = transform_point(extra_m, c2);
+			} else {
+				fp = p2->p();
+			}
 			sprintf(buffer,"%.10f %.10f %.10f %.10f %.10f %.10f c\n",
 					c1.x,c1.y,
 					c2.x,c2.y,
-					p2->p().x,p2->p().y);
+					fp.x,fp.y);
+					//p2->p().x,p2->p().y);
 			appendstr(stream,buffer);
 		} else {
 			 //we do not have control points, so is just a straight line segment
-			sprintf(buffer,"%.10f %.10f l\n", p2->p().x,p2->p().y);
+			fp = (extra_m ? transform_point(extra_m, p2->p()) : p2->p());
+			sprintf(buffer,"%.10f %.10f l\n", fp.x,fp.y);
 			appendstr(stream,buffer);
 		}
-		p=p2;
+		p = p2;
+
 	} while (p && p->next && p!=start);
-	if (p==start) appendstr(stream,"h ");
+
+	if (p == start) appendstr(stream,"h "); //closes path
 
 	return n;
 }

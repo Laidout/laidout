@@ -13,11 +13,11 @@
 // Copyright (C) 2004-2010 by Tom Lechner
 //
 
-#include <X11/Xlib.h>
 #include <lax/fileutils.h>
 #include <lax/strmanip.h>
-#include <lax/laximages-imlib.h>
+#include <lax/laximages.h>
 #include "epsdata.h"
+#include "../laidout.h"
 #include "../printing/epsutils.h"
 #include "../configured.h"
 #include "../language.h"
@@ -55,16 +55,6 @@ EpsData::~EpsData()
 	if (title) delete[] title;
 	if (resources) delete[] resources;
 	if (creationdate) delete[] creationdate;
-}
-
-//! Return new EpsInterface.
-/*! If dup!=NULL and it cannot be cast to EpsInterface, then return NULL.
- */
-LaxInterfaces::anInterface *EpsInterface::duplicate(LaxInterfaces::anInterface *dup)
-{
-	if (dup==NULL) dup=new EpsInterface(id,NULL);
-	else if (!dynamic_cast<EpsInterface *>(dup)) return NULL;
-	return ImageInterface::duplicate(dup);
 }
 
 /*! 
@@ -120,7 +110,7 @@ void EpsData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *contex
 		dump_out_value(f,indent+2,description);
 	}
 }
-	
+
 /*! When the image listed in the attribute cannot be loaded,
  * image is set to NULL, and the width and height attributes
  * are used if present. If the image can be loaded, then width and
@@ -185,11 +175,10 @@ void EpsData::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *contex
  * \todo in general must figure out a decent way to deal with errors while loading images,
  *    for instance.
  * \todo del is ignored
- * \todo ***rework so as not to depend on imlib
  */
 int EpsData::LoadImage(const char *fname, const char *npreview, int maxpw, int maxph, char del)
 {
-	FILE *f=fopen(fname,"r");
+	FILE *f = fopen(fname,"r");
 	if (!f) return -1;
 	
 	char *preview=NULL;
@@ -200,24 +189,25 @@ int EpsData::LoadImage(const char *fname, const char *npreview, int maxpw, int m
 
 	 // puts the eps BoundingBox into this::DoubleBBox
 	setlocale(LC_ALL,"C");
-	c=scaninEPS(f,this,&title,&creationdate,&preview,&depth,&width,&height);
+	c = scaninEPS(f,this,&title,&creationdate,&preview,&depth,&width,&height);
 	fclose(f);
 	setlocale(LC_ALL,"");
 	
-	if (c!=0) return -2;
+	if (c != 0) return -2;
 	
 	 // set up the preview if any
-	if (image) { image->dec_count(); image=NULL; }
-	
-	Imlib_Image imlibimage=NULL;
+	if (image) { image->dec_count(); image=NULL; } //clear main image in any
+
+	LaxImage *eimage = NULL;
 	if (file_exists(npreview,1,NULL)) {
 		// do nothing if preview file already exists..
 		//*** perhaps optionally regenerate?
-	} else if (strcmp("",GHOSTSCRIPT_BIN)) {
+
+	} else if (laidout->binary("gs") != nullptr) {
 		 // call ghostscript from command line, save preview ***where?
-		char *error=NULL;
+		char *error = nullptr;
 		
-		c=WriteEpsPreviewAsPng(GHOSTSCRIPT_BIN,
+		c = WriteEpsPreviewAsPng(laidout->binary("gs"),
 						 fname, width, height,
 						 npreview, maxpw, maxph,
 						 &error);
@@ -226,77 +216,22 @@ int EpsData::LoadImage(const char *fname, const char *npreview, int maxpw, int m
 			if (error) delete[] error;
 			return -3;
 		}
+
 	} else if (preview) {
 		 // install preview image from EPSI data
-		imlibimage=imlib_create_image(width,height);
-		DATA32 *data=imlib_image_get_data();
-		EpsPreviewToARGB((unsigned char *)data,preview,width,height,depth);
-		imlib_image_put_back_data(data);
-		//if (imlibimage) { use this as preview image for eps, set up below.... }
+		eimage = ImageLoader::NewImage(width,height);
+		unsigned char *data = eimage->getImageBuffer();
+		EpsPreviewToARGB((unsigned char *)data, preview, width,height, depth);
+		eimage->doneWithBuffer(data);
 	}
 
 	 // now set this->image to have the generated preview as the main image
-	image=new LaxImlibImage(npreview,imlibimage);
+	image = eimage;
 	
 	return 0;
 }
 
 
-//-------------------------------- EpsInterface ----------------------------------
-/*! \class EpsInterface
- * \brief Interface to manipulate placement of eps files.
- *
- * If there is an epsi style preview in the eps, then that is what is put
- * on screen. Otherwise, the title/file/date are put on.
- */
-
-
-EpsInterface::EpsInterface(int nid,Laxkit::Displayer *ndp)
-	: ImageInterface(nid,ndp)
-{
-}
-
-const char *EpsInterface::Name()
-{ return _("EPS Tool"); }
-
-//! Return whether this interface can draw the given type of object.
-/*! \todo should redo this to be more easily expandable for other
- *    image types. Each spunky new image type might have many idiosyncracies (like EPS),
- *    so each added image type would need to define:
- *     an import filter, returning an ImageData pointer,
- *     output functions for various types: bitmap, ps, etc.,
- *     Refresh() extras,
- *     additional controls if any including extra StyleDef elements.
- *   could have an interface shell, whose purpose is to have one tool icon, but
- *   several sub tools that it dispatches events to...
- *   
- */
-int EpsInterface::draws(const char *what)
-{
-	//if (!strcmp(what,"ImageData") || !strcmp("EpsData")) return 1;
-	if (!strcmp(what,"EpsData")) return 1;
-	return 0;		
-}
-
-//! Redefine ImageInterface::newData() to never create a random new eps. These can only be imported.
-LaxInterfaces::ImageData *EpsInterface::newData()
-{
-	return NULL;
-}
-
-//! Draw title or filename if no preview data.
-int EpsInterface::Refresh()
-{
-	int c=ImageInterface::Refresh();
-	if (c!=0) return c;
-
-	 // draw title or filename...
-	if (!data->image && data->filename) {
-		flatpoint fp=dp->realtoscreen(flatpoint((data->maxx+data->minx)/2,(data->maxy+data->miny)));
-		dp->textout((int)fp.x,(int)fp.y,data->filename,0);
-	}
-	return 0;
-}
 
 } //namespace Laidout
 

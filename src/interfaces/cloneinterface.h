@@ -16,7 +16,7 @@
 #include "../calculator/values.h"
 #include "../dataobjects/group.h"
 #include "../language.h"
-#include "../viewwindow.h"
+#include "../ui/viewwindow.h"
 
 #include <lax/lists.h>
 #include <lax/laximages.h>

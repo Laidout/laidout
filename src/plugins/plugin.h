@@ -74,6 +74,7 @@ class PluginBase : public Laxkit::anObject
 	virtual unsigned long WhatYouGot() = 0; //or'd list of PluginBaseContents
 
 	virtual int Initialize(); //install stuff
+	virtual char *DefaultConfigPath(bool include_file);
 	virtual void Finalize();
 };
 

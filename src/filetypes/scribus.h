@@ -17,7 +17,7 @@
 
 
 #include "../version.h"
-#include "../document.h"
+#include "../core/document.h"
 #include "filefilters.h"
 
 

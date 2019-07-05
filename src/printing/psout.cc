@@ -25,10 +25,10 @@
 #include <lax/fileutils.h>
 
 #include "../version.h"
-#include "../utils.h"
+#include "../core/utils.h"
 #include "psfilters.h"
 #include "../filetypes/filefilters.h"
-#include "../laidoutdefs.h"
+#include "../core/laidoutdefs.h"
 
 #include "psgradient.h"
 #include "psimage.h"
@@ -37,6 +37,7 @@
 #include "pspathsdata.h"
 #include "pseps.h"
 
+//template implementation:
 #include <lax/lists.cc>
 
 #include <iostream>

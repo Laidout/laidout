@@ -21,7 +21,7 @@
 #include <lax/transformmath.h>
 #include <lax/lineedit.h>
 
-
+//template implementation:
 #include <lax/refptrstack.cc>
 
 using namespace Laxkit;
@@ -273,33 +273,42 @@ int ObjectIndicator::Refresh()
 	 //draw object place description
 	int x=0;
 	int y=viewport->win_h;
-	ObjectContainer *objc=dynamic_cast<ObjectContainer*>(viewport);
+	ObjectContainer *objc = dynamic_cast<ObjectContainer*>(viewport);
 	char scratch[10];
 	const char *str;
-	dp->NewFG(coloravg(viewport->win_colors->fg, viewport->win_colors->bg));
+	dp->NewFG(coloravg(viewport->win_themestyle->fg, viewport->win_themestyle->bg));
 
 	for (int c=0; objc && c<context->context.n(); c++) {
 		if (!objc) break;
 
-		if (c==last_hover) dp->NewFG(.2,.2,.2);
+		if (c == last_hover) dp->NewFG(.2,.2,.2);
 
 		 // textout: (index) element name
-		x=0;
-		str=objc->object_e_name(context->context.e(c));
+		x = 0;
+		str = objc->object_e_name(context->context.e(c));
 		if (!str) {
+			//no label, use index number
 			sprintf(scratch,"%d",context->context.e(c));
-			str=scratch;
+			str = scratch;
 		} else {
+			//label exists, write out index number before actual label
 			sprintf(scratch,"(%d) ",context->context.e(c));
-			x+=dp->textout_halo(1, 0,y, scratch,-1, LAX_BOTTOM|LAX_LEFT);
+			x += dp->textout_halo(1, 0,y, scratch,-1, LAX_BOTTOM|LAX_LEFT);
+
+			anObject *obj = objc->object_e(context->context.e(c));
+			if (dynamic_cast<Page*>(obj) != NULL && strcmp(str, "page")) {
+				sprintf(scratch, "page %s", dynamic_cast<Page*>(obj)->label);
+				str = scratch;
+			}
 		}
+
 
 		dp->textout_halo(1, x,y, str,-1, LAX_BOTTOM|LAX_LEFT);
 		y-=dp->textheight();
 
-		if (c==last_hover) dp->NewFG(.5,.5,.5);
+		if (c == last_hover) dp->NewFG(.5,.5,.5);
 
-		objc=dynamic_cast<ObjectContainer*>(objc->object_e(context->context.e(c)));
+		objc = dynamic_cast<ObjectContainer*>(objc->object_e(context->context.e(c)));
 	}
 
 	if (!context->obj) {

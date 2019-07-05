@@ -1,4 +1,4 @@
-LAIDOUT Version 0.096.1
+LAIDOUT Version 0.097.1
 =======================
 http://laidout.org
 
@@ -11,6 +11,8 @@ impositions, such as a booklet, or even a dodecahedron. You can fill
 pages with images, gradients (linear, radial, and mesh), mesh 
 transformed images, engraving-like fill objects, and some basic text.
 Export with varying degrees of success to Svg, Scribus, Pdf, and more.
+
+See it in action here: https://www.youtube.com/playlist?list=PL22F7148142927C13
 
 Sometimes there are experimental tools you can activate by
 running: `laidout --experimental` or `laidout -E`
@@ -54,25 +56,19 @@ to compile Laidout. Running ./configure does a simple check for these,
 but the check is so simple, that it may miss them or otherwise get confused.
 
 For everything, you will need the header files for at least:
-  Imlib2, harfbuzz, freetype2, fontconfig, cairo, x11, ssl, cups, sqlite3, 
+  Imlib2, harfbuzz, gegl, freetype2, fontconfig, cairo, x11, ssl, cups, sqlite3, 
   graphicsmagick++, ftgl, opengl 
 
 If you are on a debian based system, you can probably install these with this command:
 
-    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libcairo2-dev libharfbuzz-dev libsqlite3-dev libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev zlib1g-dev
+    apt-get install g++ pkg-config libpng-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libcairo2-dev libharfbuzz-dev libsqlite3-dev libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev zlib1g-dev libgegl-dev
 
 On Fedora, this list is more like this:
 
-    sudo dnf install -y cairo-devel cups-devel fontconfig-devel ftgl-devel glibc-headers harfbuzz-devel imlib2-devel lcms-devel libpng-devel libX11-devel libXext-devel libXft-devel libXi-devel mesa-libGL-devel mesa-libGLU-devel openssl-devel readline-devel sqlite-devel xorg-x11-proto-devel zlib-devel GraphicsMagick-c++-devel libstdc++-devel freetype-devel imake
+    sudo dnf install -y gegl-devel cairo-devel cups-devel fontconfig-devel ftgl-devel glibc-headers harfbuzz-devel imlib2-devel lcms-devel libpng-devel libX11-devel libXext-devel libXft-devel libXi-devel mesa-libGL-devel mesa-libGLU-devel openssl-devel readline-devel sqlite-devel xorg-x11-proto-devel zlib-devel GraphicsMagick-c++-devel libstdc++-devel freetype-devel imake
 
 
-For only the bare minimum, without the polyhedron unwrapper (requires opengl),
-and without the ability to grab Fontmatrix font tags (requires sqlite), you 
-only need the following. Note that you will also need to pass 
-in "--nogl" and "--disable-sqlite" to ./configure below if you are not
-compiling everything:
-
-    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libcairo2-dev libharfbuzz-dev zlib1g-dev
+Some of the above packages are technically optional. See 'Optional Dependencies' section below for more about that.
 
 
 
@@ -109,6 +105,7 @@ If you want to create a deb package of Laidout, make sure you have the fakeroot,
 dpkg-dev, and debhelper packages installed, and have all the other packages listed 
 from the COMPILING RELEASES section above, and do this from the top laidout directory:
 
+    touch Makefile-toinclude
     make deb
 
 This makes sure there is a "debian" directory, then calls `dpkg-buildpackage -rfakeroot`.
@@ -127,6 +124,16 @@ If you do run into problems and have to run make deb again, you might want to ru
 so you don't have rebuild everything again.:
 
 	dpkg-buildpackage -rfakeroot -nc
+
+
+OPTIONAL DEPENDENCIES
+----------------------
+If you get in a bind about dependencies, from `./configure` you can disable certain libraries to aid in compiling.
+
+Specifically:
+ - OpenGL: If you don't need the opengl polyhedron unwrapper, use `--nogl`
+ - Sqlite: If you don't care about Fontmatrix font tags, use `--disable-sqlite`
+ - Gegl: If you don't want to mess around with gegl, it's trickier, but just comment out geglnodes.so in src/plugins/Makefile
 
 
 COMPILING FROM DEVELOPMENT GIT
@@ -198,6 +205,12 @@ Here is a fast and easy way to get Laidout up and running from development sourc
     like. The master icon file is src/icons.svg. Each top level object in that file
     with ids that start with a capital letter will have an icon generated of the same
     name by running makeimages.py ThatName.
+
+	If for some reason you cannot see any icons after you run Laidout, even after you have 
+	generated them, you can tell Laidout to search particular directories for icons by adding
+	a line like the following to `~/.config/laidout/(version)/laidoutrc`:
+
+	    icon_dir /path/to/icon/directory
 
 5.  Ok, now do `make install`.
 

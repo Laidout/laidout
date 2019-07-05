@@ -19,11 +19,11 @@
 #include <lax/interfaces/somedataref.h>
 #include "drawableobject.h"
 
-//------------------------------- LSomeDataRef ---------------------------------------
-
 
 namespace Laidout {
 
+
+//------------------------------- LSomeDataRef ---------------------------------------
 
 class LSomeDataRef : public DrawableObject,
 				     public LaxInterfaces::SomeDataRef
@@ -49,6 +49,15 @@ class LSomeDataRef : public DrawableObject,
 };
 
 
+
+//------------------------------- LSomeDataRef ---------------------------------------
+
+class LBleedProxy : public LSomeDataRef
+{
+  public:
+	LBleedProxy(LaxInterfaces::SomeData *refobj=NULL);
+	virtual const char *whattype() { return "LBleedProxy"; }
+};
 
 
 } //namespace Laidout

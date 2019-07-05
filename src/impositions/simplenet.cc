@@ -19,10 +19,11 @@
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
 
-#include <lax/lists.cc>
-
 #include "../language.h"
 #include "simplenet.h"
+
+//template implementation:
+#include <lax/lists.cc>
 
 using namespace LaxFiles;
 using namespace Laxkit;
@@ -481,9 +482,10 @@ SimpleNet *SimpleNet::duplicate()
 	net->np=np;
 	net->tabs=tabs;
 	if (vertices) {
-		net->vertices=new spacepoint[nvertices];
-		net->nvertices=nvertices;
-		memcpy(net->vertices,vertices,sizeof(spacepoint));
+		net->vertices = new spacepoint[nvertices];
+		net->nvertices = nvertices;
+		//memcpy(net->vertices,vertices,nvertices * sizeof(spacepoint));
+		for (int c=0; c<nvertices; c++) net->vertices[c] = vertices[c];
 	}
 	if (np) {
 		net->pointmap=new int[np];

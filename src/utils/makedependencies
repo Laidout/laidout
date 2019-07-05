@@ -1,0 +1,168 @@
+#!/usr/bin/python3
+
+#
+# ./makedepencies -v -f output_to_file -I /path/to/include/directory -I /path/to/another/include/dir *.cc
+#
+# This is a naive replacement so we don't have to depend on Xorg's makedepend found in xutils-dev.
+# Unlike Xorg's much for robust code parser, we only create a list of ANY #included directories,
+# regardless of any #if statements.
+#
+# This will completely overwrite output_to_file.
+#
+#
+
+
+#create files that look something like this:
+#
+# #DO NOT DELETE
+#
+# targetFile.o: ./path/to/dependency.h
+# nextfile.o: ./path/to/dependency.h /other/path/to/file.h
+#
+
+
+import argparse
+import os
+import re
+
+
+
+#--------------------------------------------- Setup
+
+defaultOutputFile = "makedepend"
+
+
+parser = argparse.ArgumentParser(description =  'Create dependencies for make.')
+
+parser.add_argument('-f', dest = 'outputFile', help = 'The file to output to')
+parser.add_argument('-I', dest = 'includes', help = 'Add an include directory', action='append')
+parser.add_argument('-v', dest = 'verbose', help = 'Print out warnings', action = "store_true")
+parser.add_argument('files', help = 'Files to parse', nargs = '*')
+
+args = parser.parse_args()
+
+#print (dir(args))
+
+if (args.outputFile == None or args.outputFile == ""):
+    args.outputFile = defaultOutputFile
+    print ("Output file not specified, using ", args.outputFile)
+else:
+    print ("output file: ", args.outputFile)
+if (args.verbose): 
+    print ("includes: ", args.includes)
+    #print ("files: ", args.files)
+    #print ("verbose: ", args.verbose)
+print ()
+
+
+
+#--------------------------------------------- defs
+
+def AddIncludes(file, dependencies):
+    if (args.verbose):
+        print ("Add includes from: ",file)
+
+    if not os.path.isfile(file):
+        print (" - Warning! Cannot open dependency: ", file)
+        return;
+    with open(file) as fin:
+        line = fin.readline()
+        while (line):
+            ff = None
+            match = quoted.match(line)
+            if (match):
+                #check = os.path.relpath(match.group(1), file)
+                ff = match.group(1)
+                check = ff
+                rel = os.path.dirname(file)
+                if rel != "": rel = rel + '/'
+                check = os.path.abspath(rel + check)
+                if check in dependencies:
+                    ff = None
+                else:
+                    if os.path.isfile(check):
+                        dependencies.append(check)
+                        if args.verbose: print ("  found: ", check)
+                        AddIncludes(check, dependencies)
+                        check = None
+                    else:
+                        found = False
+                        check = ""
+                        if args.includes:
+                            for incdir in args.includes:
+                                check = os.path.abspath(incdir + '/' + ff)
+                                if os.path.isfile(check):
+                                    if check not in dependencies:
+                                        dependencies.append(check)
+                                        AddIncludes(check, dependencies)
+                                    found = True
+                                    break
+                        if args.verbose:
+                            if found: print("  found with includes: ", ff, '->', check)
+                            else:     print(" - Warning! Could not find included file: " + ff)
+
+                #makedependFile.write(objectfile+': ' + check + "\n")
+                #print ("  found: ", match.group(1), '->', pathToFile + check)
+
+            else:
+                match = bracketed.match(line)
+                if (match):
+                    ff = match.group(1)
+                    #print ("  found bracketed: ", ff)
+
+                    found = False
+                    check = ""
+                    if args.includes:
+                        for incdir in args.includes:
+                            check = os.path.abspath(incdir + '/' + ff)
+                            if os.path.isfile(check):
+                                if check not in dependencies:
+                                    dependencies.append(check)
+                                    AddIncludes(check, dependencies)
+                                found = True
+                                break
+                    if args.verbose:
+                        if found: print("  found bracketed: ", ff, '->', check)
+                        else:     print(" - Warning! Could not find included file: " + ff)
+                              
+            line = fin.readline()
+
+
+
+#--------------------------------------------- main
+
+
+#    #include <thing/to/prefix/by/each/includes/file.h>
+#    #  include <another/thing/to/prefix/by/each/includes/file.h>
+#    #include "relative/from/current/dir.h"
+#
+# for include dir'd files, need to construct path relative to current dir
+
+makedependFile = open(args.outputFile, "w")
+
+quoted = re.compile('^\s*#\s*include\s*"([^"]*)"')
+bracketed = re.compile('^\s*#\s*include\s*<([^>]*)>')
+
+for file in args.files:
+    pathToFile = os.path.dirname(file)
+    if pathToFile != "": pathToFile += '/'
+    print("parsing file: ", file)
+    #print("parsing file: ", file,"  path to file:", pathToFile)
+
+    objectfile = os.path.splitext(file)[0] + '.o'
+
+
+    dependencies = []
+    AddIncludes(file, dependencies)
+
+    for dependency in dependencies:
+        makedependFile.write(objectfile + ': ' + os.path.relpath(dependency) + "\n")
+
+
+makedependFile.close()
+
+print ("Dependencies written to", args.outputFile)
+
+
+
+

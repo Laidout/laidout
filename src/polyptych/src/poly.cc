@@ -86,6 +86,11 @@ ExtraFace::~ExtraFace()
 /*! \var int *Face::p
  * \brief Vertex indices, index of point in Polyhedron::p.
  */
+/*! \var int *Face::facegroupid
+ * Any faces with the same facegroupid should be considered to be the same face
+ * in a user interface. Thus a curved surface that has been broken down into flat sides
+ * can be "grouped" to retain it's definition as a single surface.
+ */
 
 
 DBG void dumpface(Face *face,int facenum)
@@ -506,7 +511,8 @@ Polyhedron &Polyhedron::operator=(const Polyhedron &nphed)
 		n=nphed.vertices.n;
 		spacepoint *t;
 		t=new spacepoint[nphed.vertices.n];
-		memcpy(t,nphed.vertices.e,sizeof(spacepoint));
+		//memcpy(t,nphed.vertices.e,sizeof(spacepoint));
+		for (int c=0; c<nphed.vertices.n; c++) t[c] = nphed.vertices.e[c];
 		vertices.insertArray(t,n);
 	}
 	if (nphed.edges.n) {
@@ -950,6 +956,18 @@ int Polyhedron::AddFace(const char *str)
 	return 0;
 }
 
+/*! Search all existing faces to find a unique number for use as a new facegroupid.
+ */
+int Polyhedron::FindUniqueFaceId()
+{
+	int num = -1;
+	for (int c=0; c<faces.n; c++) {
+		if (faces.e[c]->facegroupid > num) num = faces.e[c]->facegroupid+1;
+	}
+	return num;
+}
+
+
 //---------------------------------- dump functions:
 
 //! Save a polyhedron in indented data format.
@@ -1324,6 +1342,120 @@ int Polyhedron::dumpOutObj(FILE *f,char **error_ret)
 	}
 	return 0;
 }
+
+
+//! Output a GLB file. Return 0 for things output, else nonzero.
+/*! It is assumed f points to the beginning of the file.
+ * Reminder official mimetype for this is model/gltf-binary.
+ */
+int Polyhedron::dumpOutGlb(FILE *f,char **error_ret)
+{// *** NOT DONE YET!!!
+	if (!faces.n || !vertices.n) return 1;
+
+
+	//write out header: 
+	fwrite("glTF\x02\0\0\0\0\0\0\0", 1,8, f); //[glTF][version 2.0][size of file].. we need to fill in size later
+	
+
+	//-----write out json portion
+	fwrite("\0\0\0\0", 1,4, f); //size of json chunk in bytes.. we fill this in later
+	fwrite("JSON", 1,4, f); //type of chunk
+
+	// *** the rest...
+	dumpOutGltfJson(f, error_ret, 0,nullptr);
+
+	//update json chunk length
+	long pos = ftell(f);
+	while (pos%4 != 0) { fwrite("\0",1,1,f); pos++; } //make sure chunk is 4-byte aligned. Pad with 0 if not
+	long len = pos - 20;
+	fseek(f, 12, SEEK_SET);
+	fwrite(&len, 4,1, f); // not sure if this works endianwise
+	fseek(f, 0, SEEK_END);
+
+
+
+	//-----write out bin portion, containing vertex and face data
+	fwrite("\0\0\0\0", 1,4, f); //size of bin chunk in bytes.. we fill this in later
+	fwrite("BIN\0", 1,4, f); //type of chunk
+	pos = ftell(f);
+
+	// *** write out the bin data
+
+	long pos2 = ftell(f);
+	while (pos2%4 != 0) { fwrite("\0",1,1,f); pos2++; } //make sure chunk is 4-byte aligned. Pad with 0 if not
+	len = pos2 - pos;
+	fseek(f, 12, SEEK_SET);
+	fwrite(&len, 4,1, f); // not sure if this works endianwise
+	fseek(f, 0, SEEK_END);
+
+
+
+	//-----write out texture image
+	//if (texture) {
+		// ***
+	//}
+
+
+
+	return 0;
+}
+
+int Polyhedron::dumpOutGltfJson(FILE *f, char **error_ret, long binlength, const char *binfile)
+{// *** NOT DONE YET!!!
+	fprintf(f,
+		"{\n"
+		"  \"asset\": {\n"
+		"    \"version\": \"2.0\",\n"
+		"    \"generator\": \"Laidout\"\n"
+		"    },\n"
+		);
+	fprintf(f,
+		"  \"scenes\": [\n"
+		"     { \"name\": \"%s\",\n"
+		"       \"nodes\": [ 0 ]\n"
+		"     }\n"
+		"  ],\n", (name ? name : (Id() ? Id() : "Shape"))
+		);
+	fprintf(f,
+		"  \"nodes\": [\n"
+		"    { \"name\": \"ShapeMesh\"\n"
+		"    }\n"
+		"  ],\n"
+		);
+
+	fprintf(f,
+		"  \"buffers\": [\n"
+		"    {\n"
+		"       \"byteLength\": %ld,\n", binlength);
+	if (binfile) fprintf(f,"       \"uri\": \"%s\"\n", binfile);
+	fprintf(f,
+		"    }\n"
+		"  ]\n");
+
+	fprintf(f,
+		"  \"meshes\": [\n"
+		"    {\n"
+		"      \"primitives\": [ {\n"
+		"        \"attributes\": {\n"
+		"            \"NORMAL\": %d,\n"
+		"            \"POSITION\": %d,\n"
+		//"            \"TANGENT\": %d,\n"
+		"            \"TEXCOORD_0\": %d\n"
+		"        },\n"
+		"        \"indices\": %d,\n"
+		"        \"material\": %d,\n"
+		"        \"mode\": %d\n"
+		"          \n"
+		"      } ]\n"
+		"    }\n",
+		1,2,3,4,5,6
+		);
+
+	fprintf(f, "}\n");
+
+	return 0;
+}
+
 
 /*! Return 0 for success, nonzero for error.
  *

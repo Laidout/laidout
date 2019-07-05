@@ -32,26 +32,31 @@
 #include <lax/laxoptions.h>
 #include <lax/units.h>
 #include <lax/bitmaputils.h>
+#include <lax/freedesktop.h>
 #include <lax/interfaces/interfacemanager.h>
+#include <lax/utf8string.h>
 #include <sys/file.h>
 
 #define LAIDOUT_CC
-#include "language.h"
-#include "laidout.h"
-#include "viewwindow.h"
-#include "impositions/singles.h"
-#include "impositions/netimposition.h"
-#include "impositions/impositioneditor.h"
-#include "interfaces/nodeeditor.h"
-#include "headwindow.h"
-#include "version.h"
-#include "stylemanager.h"
-#include "configured.h"
-#include "printing/epsutils.h"
-#include "filetypes/filters.h"
-#include "utils.h"
 #include "api/functions.h"
-#include "newdoc.h"
+#include "configured.h"
+#include "core/stylemanager.h"
+#include "core/utils.h"
+#include "filetypes/filters.h"
+#include "impositions/impositioneditor.h"
+#include "impositions/netimposition.h"
+#include "impositions/singles.h"
+#include "nodes/nodeeditor.h"
+#include "printing/epsutils.h"
+#include "ui/headwindow.h"
+#include "ui/newdoc.h"
+#include "ui/viewwindow.h"
+#include "version.h"
+#include "laidout.h"
+#include "language.h"
+
+// *** FOR DEBUGGING:
+#include "ui/valuewindow.h"
 
 
 //template implementations
@@ -97,8 +102,8 @@ const char *LaidoutVersion()
 		const char *outstr=
 						_("Laidout Version %s\n"
 						  "http://www.laidout.org\n"
-						  "by Tom Lechner, sometime between 2006 and 2017\n"
-						  "Released under the GNU Public License, Version 2.\n"
+						  "by Tom Lechner, sometime between 2006 and 2019\n"
+						  "Released under the GNU Public License, Version 3.\n"
 						  " (using Laxkit Version %s)");
 		version_str=new char[1+strlen(outstr)+strlen(LAIDOUT_VERSION)+strlen(LAXKIT_VERSION)];
 		sprintf(version_str,outstr,LAIDOUT_VERSION,LAXKIT_VERSION);
@@ -113,46 +118,35 @@ const char *LaidoutVersion()
  * is perhaps a little more meaningful or something...
  */
 
-//! Redefinition of the default Laxkit preview generator.
-/*! \ingroup misc
- *
- * This can create previews of eps files..
- *
- * Return 0 for success.
- */
-int laidout_preview_maker(const char *original, const char *preview, const char *format, int width, int height, int fit)
-{
-	if (!generate_preview_image(original,preview,format,width,height,fit)) return 0;
-
-	 //normal preview maker didn't work, so try something else...
-	DoubleBBox bbox;
-	char *title,*date;
-	int depth,w,h;
-	FILE *f=fopen(original,"r");
-	if (!f) return 1;
-	setlocale(LC_ALL,"C");
-	int c=scaninEPS(f,&bbox,&title,&date,NULL,&depth,&w,&h);
-	setlocale(LC_ALL,"");
-	fclose(f);
-	if (c) return 1; //not eps probably
-	return WriteEpsPreviewAsPng(GHOSTSCRIPT_BIN,
-						 original,w,h,
-						 preview,width,height,
-						 NULL);
-}
-
-
-
-
-
-//----------------------- Main Control Panel: an unmapped window until further notice? -------------------------------
-
-//class ControlPanel : public Laxkit::anXWindow
+////! Redefinition of the default Laxkit preview generator.
+///*! \ingroup misc
+// *
+// * This can create previews of eps files..
+// *
+// * Return 0 for success.
+// */
+//int laidout_preview_maker(const char *original, const char *preview, const char *format, int width, int height, int fit)
 //{
-// public:
-//	virtual int DataEvent(EventData *data,const char *mes); 
-//	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
-//};
+//	// *** need to wrap eps handling into something else...
+//	if (!GeneratePreviewFile(original,preview,format,width,height,fit)) return 0;
+//
+//	 //normal preview maker didn't work, so try something else...
+//	DoubleBBox bbox;
+//	char *title,*date;
+//	int depth,w,h;
+//	FILE *f=fopen(original,"r");
+//	if (!f) return 1;
+//	setlocale(LC_ALL,"C");
+//	int c=scaninEPS(f,&bbox,&title,&date,NULL,&depth,&w,&h);
+//	setlocale(LC_ALL,"");
+//	fclose(f);
+//	if (c) return 1; //not eps probably
+//	return WriteEpsPreviewAsPng(GHOSTSCRIPT_BIN,
+//						 original,w,h,
+//						 preview,width,height,
+//						 NULL);
+//}
+
 
 
 
@@ -229,6 +223,7 @@ int laidout_preview_maker(const char *original, const char *preview, const char 
  * \brief The file size in kilobytes over which preview images should be used where possible.
  */
 
+ColorManager *colorManager = nullptr;
 
 //! Laidout constructor, just inits a few variables to 0.
 /*! 
@@ -237,16 +232,29 @@ LaidoutApp::LaidoutApp()
   : anXApp(),
 	preview_file_bases(2)
 {	
-	autosave_timerid=0;
-	
+	colorManager = new ColorManager();
+	colorManager->AddSystem(Create_sRGB_System(true), true);
+	ColorManager::SetDefault(colorManager);
+	//colorManager->dec_count();
+
+
+	autosave_timerid = 0;
+	force_new_dialog = false;
+
 	icons=IconManager::GetDefault();
 
-	runmode=RUNMODE_Normal;
+	runmode = RUNMODE_Normal;
 
-	config_dir=newstr(getenv("HOME"));
-	appendstr(config_dir,"/.config/laidout/");
-	appendstr(config_dir,LAIDOUT_VERSION);
-	appendstr(config_dir,"/");
+	config_dir = ConfigDir();
+
+	if (!strncmp(SHARED_DIRECTORY, "..", 2)) { 
+		shared_dir = ExecutablePath();
+		appendstr(shared_dir, "/../");
+		appendstr(shared_dir, SHARED_DIRECTORY);
+		simplify_path(shared_dir, 1);
+		if (shared_dir[strlen(shared_dir)-1] != '/')
+			appendstr(shared_dir, "/");
+	} else shared_dir = newstr(SHARED_DIRECTORY);
 
 	makestr(controlfontstr,"sans-15");
 
@@ -260,8 +268,6 @@ LaidoutApp::LaidoutApp()
 	experimental=0;
 
 	 // laidoutrc defaults
-	icon_dir=NULL;
-	
 	preview_over_this_size=250; 
 	max_preview_length=200;
 	max_preview_width=max_preview_height=-1;
@@ -269,7 +275,9 @@ LaidoutApp::LaidoutApp()
 
 	defaultpaper=NULL;
 
-	ghostscript_binary=newstr(GHOSTSCRIPT_BIN);
+	//ghostscript_binary=newstr(GHOSTSCRIPT_BIN);
+	if (file_exists("/usr/bin/gs", 0, nullptr) == S_IFREG) ghostscript_binary = newstr("/usr/bin/gs");
+	else ghostscript_binary = nullptr;
 
 	calculator=NULL;
 	GetUnitManager()->DefaultUnits(prefs.unitname);
@@ -521,35 +529,35 @@ int LaidoutApp::init(int argc,char **argv)
 	 //             when running before installing
  
 	 // find the current executable path
-	 //****** this is wrong!!
-	 //could use /proc/(pid)/exe, which is link to actual executable
-	char *curexecpath=NULL;
-	if (argv[0][0]!='/') {
-		//char *d=get_current_dir_name();
-		char *d=getcwd(NULL,0);
-		curexecpath=newstr(d);
-		free(d);
-		appendstr(curexecpath,"/");
-		appendstr(curexecpath,argv[0]);
-		simplify_path(curexecpath,1);
-	} else curexecpath=newstr(argv[0]);
-	
-	 // add either configured icon_dir to icons 
-	 // or ./icons if the installed executable path is not the same as current executable path
-	 //*******this doesn't work, curexecpath resolves to $curdir/laidout when you run. CRAP!!
-//	if (strcmp(BIN_PATH,curexecpath)) {
-//		char *iconpath=lax_dirname(curexecpath,0);
-//		appendstr(iconpath,"/icons");
-//		icons->AddPath(iconpath);
-//		DBG cerr <<"Added uninstalled icon dir "<<iconpath<<" to icon path"<<endl;
-//		delete[] iconpath;
-//	} else {
-		DBG cerr <<"Added installed icon dir "<<ICON_DIRECTORY<<" to icon path"<<endl;
-		if (icon_dir) icons->AddPath(icon_dir);
-		icons->AddPath(ICON_DIRECTORY);
-		if (!icon_dir) makestr(icon_dir,ICON_DIRECTORY);
-//	}
-	delete[] curexecpath; curexecpath=NULL;
+	Utf8String execdir(ExecutablePath(), -1, true);
+	execdir = lax_dirname(execdir.c_str(),0);
+
+	 // Check executabledir/icons first
+	Utf8String iconpath = execdir;
+	iconpath.Append("/icons");
+	if (file_exists(iconpath.c_str(), 1, nullptr) == S_IFDIR) {
+		icons->AddPath(iconpath.c_str());
+		DBG cerr <<"Added uninstalled icon dir "<<iconpath<<" to icon path"<<endl;
+	}
+
+	if (!strncmp(ICON_DIRECTORY, "..", 2)) {
+		//configured dir is relative to executable
+		iconpath = execdir;
+		iconpath.Append("/");
+		iconpath.Append(ICON_DIRECTORY);
+		char *path = simplify_path(iconpath.c_str());
+		if (file_exists(path, 1, nullptr) == S_IFDIR) {
+			icons->AddPath(path);
+			DBG cerr <<"Added relocatabale icon dir "<<path<<" to icon path"<<endl;
+		}
+		delete[] path;
+
+	} else {
+		if (file_exists(ICON_DIRECTORY, 1, nullptr) == S_IFDIR) {
+			icons->AddPath(ICON_DIRECTORY);
+			DBG cerr <<"Added installed icon dir "<<ICON_DIRECTORY<<" to icon path"<<endl;
+		}
+	}
 
 
 	 //-----read in laidoutrc
@@ -616,11 +624,14 @@ int LaidoutApp::init(int argc,char **argv)
 	}
 	
 	 //-----define default icon
-	char *str=newstr(icon_dir);
-	//appendstr(str,"/Laidout-shaded-icon-48x48.png");
-	appendstr(str,"/laidout-48x48.png");
-	DefaultIcon(str);
-	delete[] str;
+	for (int c=0; c<icons->NumPaths(); c++) {
+		Utf8String path = newstr(icons->GetPath(c));
+		path.Append("/laidout-48x48.png");
+		if (file_exists(path.c_str(), 1, nullptr) == S_IFREG) {
+			DefaultIcon(path.c_str());
+			break;
+		}
+	}
 
 
 	 // Note parseargs has to come after initing all the pools and whatever else
@@ -632,7 +643,29 @@ int LaidoutApp::init(int argc,char **argv)
 
 	if (runmode == RUNMODE_Normal) {
 		 //try to load the default template if no windows are up
-		if (topwindows.n==0 && prefs.default_template) {
+		if (topwindows.n == 0 && !force_new_dialog && prefs.start_with_last) {
+			MenuInfo recent;
+	        recently_used(NULL, NULL, "Laidout", 0, &recent);
+			if (recent.n()) {
+				const char *file_to_load = recent.e(0)->name;
+				if (!isblank(file_to_load)) {
+					Document *doc = NULL;
+					int index = topwindows.n;
+
+					if (Load(file_to_load, generallog) == 0) doc = curdoc;
+					else {
+						generallog.AddError(0,0,0, _("Could not load %s!"), file_to_load);
+					}
+
+					if (doc != nullptr && topwindows.n == index) {
+						if (!doc && project->docs.n) doc = project->docs.e[0]->doc;
+						if (doc) addwindow(newHeadWindow(doc));
+					}
+				}
+			}
+		}
+
+		if (topwindows.n==0 && !force_new_dialog && prefs.default_template) {
 			ErrorLog log;
 			LoadTemplate(prefs.default_template,log);
 		}
@@ -769,6 +802,11 @@ int LaidoutApp::createlaidoutrc()
 					  "\n"
 					  "\n"
 
+					   //enable experimental
+					  "## Uncomment to enable any features that are experimental.\n"
+					  "#experimental\n"
+					  "\n"
+
 					   //shortcuts
 					  " #By default when you modify shortcuts in Laidout, they are saved in ./shortcuts.\n"
 					  " #Listing another file here will load keys from that file first, THEN the ./shortcuts will\n"
@@ -809,12 +847,6 @@ int LaidoutApp::createlaidoutrc()
 					  "#defaultunits inches\n"
 					  "\n"
 
-					   //colors
-					  "#colors (***TODO)\n"
-					  "#  activate   rgbf  0 .78  0    #Some controls have green/red to indicate go/no-go. Redefine here\n"
-					  "#  deactivate rgbf  1 .39 .39   # for instance, to compensate for red/green color blindness.\n"
-					  "\n"
-
 					   //default paper
 					  "#defaultpapersize letter #Name of default paper to use\n"
 					  "\n"
@@ -830,11 +862,17 @@ int LaidoutApp::createlaidoutrc()
 
 					   //resource directories
 					  " # Some assorted directories:\n");
-			fprintf(f,"#icon_dir %s/icons\n",SHARED_DIRECTORY);
-			fprintf(f,"#plugin_dir %s/plugins #configdir/plugins, and this dir are always consulted after any dir in this config\n",SHARED_DIRECTORY);
+			fprintf(f,"#icon_dir %s/icons\n", shared_dir);
+			fprintf(f,"#plugin_dir %s/plugins #configdir/plugins, and this dir are always consulted after any dir in this config\n", shared_dir);
 			fprintf(f,"#palette_dir /usr/share/gimp/2.0/palettes\n"
 					  "\n");
 
+
+					   ////colors
+					  //"#colors (***ToDO)\n"
+					  //"#  activate   rgbf  0 .78  0    #Some controls have green/red to indicate go/no-go. Redefine here\n"
+					  //"#  deactivate rgbf  1 .39 .39   # for instance, to compensate for red/green color blindness.\n"
+					  //"\n"
 
 			fprintf(f,"laxprofile Light #Default built in profiles are Dark, Light, and Gray. You can define others in the laxconfig section.\n");
 			fprintf(f,"laxconfig-sample #Remove the \"-sample\" part to redefine various default window behaviour settingss\n");
@@ -948,13 +986,20 @@ int LaidoutApp::readinLaidoutDefaults()
 			dump_in_rc(att.attributes.e[c],NULL);
 
 		} else if (!strcmp(name,"laxprofile")) {
-			makestr(app_profile,value);
-			if (!strcmp(value,"Dark")) setupdefaultcolors();
+			if (value) {
+				makestr(app_profile,value);
+				if (!strcmp(value,"Dark") || !strcmp(value,"Gray") || !strcmp(value,"Light"))
+					setupdefaultcolors();
+			}
 			
-		} else if (!strcmp(name,"laxcolors")) {
-			//*** this, or force use of laxconfig?
-			dump_in_colors(att.attributes.e[c]);
-			
+		} else if (!strcmp(name,"theme")) {
+			if (isblank(app_profile) || (!isblank(app_profile) && value && !strcmp(app_profile, value))) {
+				Theme *thme = new Theme(app_profile);
+				thme->dump_in_atts(att.attributes.e[c], 0, NULL);
+				if (theme) theme->dec_count();
+				theme = thme;
+			}
+
 		} else if (!strcmp(name,"shortcuts")) {
 			foundkeys=1;
 			InitializeShortcuts();
@@ -963,6 +1008,9 @@ int LaidoutApp::readinLaidoutDefaults()
 
 		} else if (!strcmp(name,"experimental")) {
 			experimental = 1;
+
+		} else if (!strcmp(name,"start_with_last")) {
+			prefs.start_with_last = 1;
 
 		} else if (!strcmp(name,"default_template")) {
 			if (file_exists(value,1,NULL)==S_IFREG) makestr(prefs.default_template,value);
@@ -993,8 +1041,9 @@ int LaidoutApp::readinLaidoutDefaults()
 			if (file_exists(value,1,NULL)==S_IFREG) makestr(ghostscript_binary,value);
 
 		} else if (!strcmp(name,"icon_dir")) {
-			if (file_exists(value,1,NULL)==S_IFDIR) makestr(icon_dir,value);
-			if (!isblank(icon_dir)) icons->AddPath(icon_dir);
+			if (file_exists(value,1,NULL) == S_IFDIR) {
+				icons->AddPath(value);
+			}
 		
 		} else if (!strcmp(name,"plugin_dir")) {
 			if (file_exists(value,1,NULL) == S_IFDIR) {
@@ -1017,7 +1066,7 @@ int LaidoutApp::readinLaidoutDefaults()
 			if (value) {
 				int id=0;
 				UnitManager *units=GetUnitManager();
-				if (units->UnitInfo(value,&id,NULL,NULL,NULL,NULL)==0) {
+				if (units->UnitInfo(value,&id,NULL,NULL,NULL,NULL,NULL)==0) {
 					makestr(prefs.unitname,value);
 					prefs.default_units=id;
 					units->DefaultUnits(value);
@@ -1105,12 +1154,12 @@ int LaidoutApp::InitializePlugins()
 	 //try to load all in prefs.plugin_dirs/*.so
 
 	 //always add default plugin dir to end of list
-	char scratch[500];
+	char scratch[PATH_MAX];
 
 	sprintf(scratch,"%splugins",config_dir);
 	prefs.AddPath("plugins", scratch);
 
-	sprintf(scratch,"%splugins",SHARED_DIRECTORY);
+	sprintf(scratch,"%splugins", shared_dir);
 	prefs.AddPath("plugins", scratch);
 
 	glob_t globbuf;
@@ -1156,6 +1205,10 @@ int LaidoutApp::InitializePlugins()
 					plugin->Initialize();
 					n++;
 				}
+			}
+			if (ColorManager::GetDefault(false) == nullptr) {
+				cerr << " *** ColorManager wiped after dlopen!! This shouldn't happen!!!!! Aaaaaaagh!!"<<endl;
+				ColorManager::SetDefault(colorManager);
 			}
 		}
 		globfree(&globbuf);
@@ -1225,12 +1278,12 @@ void InitOptions()
 	options.Add("list-export-options",'O', 1, "List all the options for the given format",   0, "format");
 	options.Add("export"             ,'e', 1, "Export a document based on the given options",0, "\"format=EPS start=3\"");
 	options.Add("template",           't', 1, "Start laidout from this template in ~/.laidout/(version)/templates",0,"templatename");
-	options.Add("no-template",        'N', 0, "Do not use a default template",               0, NULL);
+	options.Add("no-template",        'N', 0, "Do not use a default template or load from last", 0, NULL);
 	options.Add("new",                'n', 1, "Create new document",                         0, "\"letter,portrait,3pgs\"");
 	options.Add("file-format",        'F', 0, "Print out a pseudocode mockup of the file format, then exit",0,NULL);
 	options.Add("command",            'c', 1, "Run one or more commands without the gui",    0, "\"newdoc net\"");
-	options.Add("script",             'C', 1, "Like --command, but the commands are in the given file",     0, "/some/file");
-	options.Add("shell",              'P', 0, "Enter a command line shell. Can be used with --command and --script.", 0, NULL);
+	options.Add("script",             's', 1, "Like --command, but the commands are in the given file",     0, "/some/file");
+	options.Add("shell",              'L', 0, "Enter a command line shell. Can be used with --command and --script.", 0, NULL);
 	options.Add("default-units",      'u', 1, "Use the specified units.",                    0, "(in|cm|mm|m|ft|yards)");
 	options.Add("load-dir",           'l', 1, "Start in this directory.",                    0, "path");
 	options.Add("experimental",       'E', 0, "Enable any compiled in experimental features",0, NULL);
@@ -1285,7 +1338,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					LoadTemplate(o->arg(),log);
 				} break;
 
-			case 'C': { // --shell
+			case 'L': { // --shell
 					donotusex=2;
 					runmode=RUNMODE_Shell;
 				} break;
@@ -1332,7 +1385,8 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 
 			case 'N': { // do not use a default template
-					if (prefs.default_template) { delete[] prefs.default_template; prefs.default_template=NULL; }
+					//if (prefs.default_template) { delete[] prefs.default_template; prefs.default_template=NULL; }
+					force_new_dialog = true;
 				} break;
 
 			case 'F': { // dump out file format
@@ -1420,7 +1474,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			case 'u': { // default units
 					UnitManager *units=GetUnitManager();
 					int id=0;
-					if (units->UnitInfo(o->arg(),&id,NULL,NULL,NULL,NULL)==0) {
+					if (units->UnitInfo(o->arg(),&id,NULL,NULL,NULL,NULL,NULL)==0) {
 						makestr(prefs.unitname,o->arg());
 						prefs.default_units=id;
 						units->DefaultUnits(prefs.unitname);
@@ -1524,8 +1578,12 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 	for (o=options.remaining(); o; o=options.next()) {
 		DBG cerr <<"----Read in:  "<<o->arg()<<endl;
-		doc=NULL;
-		if (Load(o->arg(),log)==0) doc=curdoc;
+		doc = NULL;
+		if (Load(o->arg(),log)==0) doc = curdoc;
+		else {
+			generallog.AddError(0,0,0, _("Could not load %s!"), o->arg());
+		}
+
 		if (topwindows.n == index) {
 			if (!doc && project->docs.n) doc = project->docs.e[0]->doc;
 			if (doc && runmode==RUNMODE_Normal) addwindow(newHeadWindow(doc));
@@ -1677,7 +1735,7 @@ char *LaidoutApp::full_path_for_resource(const char *name,const char *dir)//dir=
 		convert_to_full_path(fullname,NULL);
 		if (readable_file(fullname)) return fullname;
 
-		cout <<" *** need to implement full_path_for_resource() name search!"<<endl;
+		DBG cerr <<" *** need to fully implement full_path_for_resource() name search!"<<endl;
 	}
 	delete[] fullname;//***
 	fullname=NULL;//***
@@ -2088,12 +2146,19 @@ int main(int argc,char **argv)
 	char scratch[100];
 	sprintf(scratch,"laidout-%s",LAIDOUT_VERSION);
 	setlocale(LC_ALL,"");
-	bindtextdomain(scratch,LANGUAGE_PATH);
+	if (!strncmp(LANGUAGE_PATH, "..", 2)) {
+		char *path = ExecutablePath();
+		appendstr(path, "/../"); //since path points to binary file, assume it's */bin/laidout
+		appendstr(path, LANGUAGE_PATH);
+		simplify_path(path, 1);
+		bindtextdomain(scratch,path);
+		delete[] path;
+	} else bindtextdomain(scratch,LANGUAGE_PATH);
 	textdomain(scratch);
 
 	DBG cerr<<"---------Intl settings----------"<<endl;
 	DBG cerr<<"Text domain: "<<textdomain(NULL)<<endl;
-	DBG cerr<<"Domain dir:  "<<bindtextdomain("laidout",NULL)<<endl;
+	DBG cerr<<"Domain dir:  "<<bindtextdomain(scratch,NULL)<<endl;
 	DBG cerr<<"Locale:      "<<setlocale(LC_MESSAGES,NULL)<<endl;
 	DBG cerr<<"--------------------------------"<<endl;
 
@@ -2101,7 +2166,7 @@ int main(int argc,char **argv)
 	InitOptions();
 
 	int c,index;
-	c=options.Parse(argc,argv, &index); //parses into arguments, but does not process
+	c = options.Parse(argc,argv, &index); //parses into arguments, but does not process
 
 	if (c==-2) {
 		cerr <<"Missing parameter for "<<argv[index]<<"!!"<<endl;
@@ -2150,21 +2215,15 @@ int main(int argc,char **argv)
 
 
 	 //redefine Laxkit's default preview maker
-	generate_preview_image=laidout_preview_maker;
+	//generate_preview_image = laidout_preview_maker;
 
 	laidout=new LaidoutApp();
-	if (theme) laidout->Theme(theme);
+	if (theme) laidout->SetTheme(theme);
 	if (backend) laidout->Backend(backend);
-	o=options.find("experimental",0);
-	if (o && o->parsed_present) laidout->experimental=1;
+	o = options.find("experimental",0);
+	if (o && o->parsed_present) laidout->experimental = 1;
 
 
-	DBG cerr <<" *** Warning! Undo is VERY VERY experimental, and not uniformly implemented!! use at your own risk!!!"<<endl;
-	//if (!laidout->experimental) EnableUndo(false);
-	//EnableUndo(true);
-
-	// *** LaxInterfaces::InterfaceManager::SetDefault(new LInterfaceManager(),true);
-	
 	laidout->init(argc,argv);
 
 	//DBG cerr <<"------------ stylemanager->dump --------------------"<<endl;
@@ -2204,10 +2263,10 @@ int main(int argc,char **argv)
 	
 
 
-#ifdef LAX_USES_CAIRO
-	DBG cerr <<"---------  cairo_debug_reset_static_data()..."<<endl;
-	DBG cairo_debug_reset_static_data();
-#endif
+//#ifdef LAX_USES_CAIRO
+//	DBG cerr <<"---------  cairo_debug_reset_static_data()..."<<endl;
+//	DBG cairo_debug_reset_static_data();
+//#endif
 
 	DBG cerr <<"-----------------------------Bye!--------------------------"<<endl;
 	DBG cerr <<"------------end of code, default destructors follow--------"<<endl;

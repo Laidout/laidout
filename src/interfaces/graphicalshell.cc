@@ -16,9 +16,10 @@
 
 #include "../language.h"
 #include "graphicalshell.h"
-#include "../viewwindow.h"
-#include "../drawdata.h"
+#include "../ui/viewwindow.h"
+#include "../core/drawdata.h"
 #include "../dataobjects/printermarks.h"
+
 #include <lax/inputdialog.h>
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>

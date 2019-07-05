@@ -10,15 +10,15 @@
 // version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2010-2013 by Tom Lechner
+// Copyright (C) 2010-2019 by Tom Lechner
 //
 
 
 #include "../language.h"
 #include "signatureinterface.h"
-#include "../utils.h"
+#include "../core/utils.h"
 #include "../version.h"
-#include "../drawdata.h"
+#include "../core/drawdata.h"
 
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
@@ -29,6 +29,7 @@
 // DBG !!!!!
 #include <lax/displayer-cairo.h>
 
+//template implementation:
 #include <lax/lists.cc>
 
 using namespace Laxkit;
@@ -45,19 +46,12 @@ using namespace std;
 namespace Laidout {
 
 
-Laxkit::anXWindow *NewLengthInputWindow(LaxInterfaces::anInterface *owner, const char *name, int x,int y,int w,int h, int border,
-										const char *message, double startvalue)
+void SignatureInterface::NewLengthInputWindow(const char *name, ActionArea *area, const char *message, double startvalue)
 {
-	char buf[30];
-	sprintf(buf,"%g",startvalue);
-	LineEdit *win=new LineEdit(owner->curwindow, "lengthinput",name,
-				 ANXWIN_HOVER_FOCUS|ANXWIN_OUT_CLICK_DESTROYS|ANXWIN_ESCAPABLE|LINEEDIT_DESTROY_ON_ENTER|LINEEDIT_GRAB_ON_MAP,
-				 x,y,w,h, border,
-				 NULL,owner->object_id,message,
-				 buf);
-	win->SetSelection(0,-1);
-
-	return win;
+	DoubleBBox bounds(area->minx,area->maxx+area->boxwidth(), area->miny,area->maxy);
+	char scratch[30];
+	sprintf(scratch, "%g", startvalue);
+	viewport->SetupInputBox(object_id, name, scratch, message, bounds);
 }
 
 
@@ -86,60 +80,115 @@ void dumpfoldinfo(FoldedPageInfo **finfo, int numhfolds, int numvfolds)
 #define INDICATOR_SIZE 10
 
 
+enum SignatureInterfaceAreas {
+	SP_None = 0,
 
-#define SP_None              0
+	SP_Tile_X_top,
+	SP_Tile_X_bottom,
+	SP_Tile_Y_left,
+	SP_Tile_Y_right,
+	SP_Tile_Gap_X,
+	SP_Tile_Gap_Y,
 
-#define SP_Tile_X_top        1
-#define SP_Tile_X_bottom     2
-#define SP_Tile_Y_left       3
-#define SP_Tile_Y_right      4
-#define SP_Tile_Gap_X        5
-#define SP_Tile_Gap_Y        6
+	SP_Inset_Top,
+	SP_Inset_Bottom,
+	SP_Inset_Left,
+	SP_Inset_Right,
 
-#define SP_Inset_Top         7
-#define SP_Inset_Bottom      8
-#define SP_Inset_Left        9
-#define SP_Inset_Right       10
+	SP_H_Folds_left,
+	SP_H_Folds_right,
+	SP_V_Folds_top,
+	SP_V_Folds_bottom,
 
-#define SP_H_Folds_left      11
-#define SP_H_Folds_right     12
-#define SP_V_Folds_top       13
-#define SP_V_Folds_bottom    14
+	SP_Trim_Top,
+	SP_Trim_Bottom,
+	SP_Trim_Left,
+	SP_Trim_Right,
 
-#define SP_Trim_Top          15
-#define SP_Trim_Bottom       16
-#define SP_Trim_Left         17
-#define SP_Trim_Right        18
+	SP_Margin_Top,
+	SP_Margin_Bottom,
+	SP_Margin_Left,
+	SP_Margin_Right,
 
-#define SP_Margin_Top        19
-#define SP_Margin_Bottom     20
-#define SP_Margin_Left       21
-#define SP_Margin_Right      22
+	SP_Binding,
 
-#define SP_Binding           23
+	SP_Sheets_Per_Sig,
+	SP_Num_Pages,
+	SP_Paper_Name,
+	SP_Paper_Width,
+	SP_Paper_Height,
+	SP_Paper_Orient,
+	SP_Current_Sheet,
 
-#define SP_Sheets_Per_Sig    24
-#define SP_Num_Pages         25
-#define SP_Paper_Name        26
-#define SP_Paper_Width       27
-#define SP_Paper_Height      28
-#define SP_Paper_Orient      29
-#define SP_Current_Sheet     30
+	SP_Automarks,
 
-#define SP_Automarks         31
+	 //these three currently ignored:
+	SP_Up,
+	SP_X,
+	SP_Y,
 
- //these three currently ignored:
-#define SP_Up                32
-#define SP_X                 33
-#define SP_Y                 34
+	SP_On_Stack,
+	SP_New_First_Stack,
+	SP_New_Last_Stack,
+	SP_New_Insert,
+	SP_Delete_Stack,
 
-#define SP_On_Stack          35
-#define SP_New_First_Stack   36
-#define SP_New_Last_Stack    37
-#define SP_New_Insert        38
-#define SP_Delete_Stack      39
+	SP_FOLDS = 100
+};
 
-#define SP_FOLDS             100
+//#define SP_None              0
+//
+//#define SP_Tile_X_top        1
+//#define SP_Tile_X_bottom     2
+//#define SP_Tile_Y_left       3
+//#define SP_Tile_Y_right      4
+//#define SP_Tile_Gap_X        5
+//#define SP_Tile_Gap_Y        6
+//
+//#define SP_Inset_Top         7
+//#define SP_Inset_Bottom      8
+//#define SP_Inset_Left        9
+//#define SP_Inset_Right       10
+//
+//#define SP_H_Folds_left      11
+//#define SP_H_Folds_right     12
+//#define SP_V_Folds_top       13
+//#define SP_V_Folds_bottom    14
+//
+//#define SP_Trim_Top          15
+//#define SP_Trim_Bottom       16
+//#define SP_Trim_Left         17
+//#define SP_Trim_Right        18
+//
+//#define SP_Margin_Top        19
+//#define SP_Margin_Bottom     20
+//#define SP_Margin_Left       21
+//#define SP_Margin_Right      22
+//
+//#define SP_Binding           23
+//
+//#define SP_Sheets_Per_Sig    24
+//#define SP_Num_Pages         25
+//#define SP_Paper_Name        26
+//#define SP_Paper_Width       27
+//#define SP_Paper_Height      28
+//#define SP_Paper_Orient      29
+//#define SP_Current_Sheet     30
+//
+//#define SP_Automarks         31
+//
+ ////these three currently ignored:
+//#define SP_Up                32
+//#define SP_X                 33
+//#define SP_Y                 34
+//
+//#define SP_On_Stack          35
+//#define SP_New_First_Stack   36
+//#define SP_New_Last_Stack    37
+//#define SP_New_Insert        38
+//#define SP_Delete_Stack      39
+//
+//#define SP_FOLDS             100
 
 
 enum SignatureInterfaceActions {
@@ -376,8 +425,8 @@ Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid, Lax
 		paper=siginstance->partition->paper->name;
 	}
 
-	menu->AddItem(_("Portrait"),  SIGM_Portrait,  LAX_ISTOGGLE|(landscape?0:LAX_CHECKED));
-	menu->AddItem(_("Landscape"), SIGM_Landscape, LAX_ISTOGGLE|(landscape?LAX_CHECKED:0));
+	menu->AddToggleItem(_("Portrait"),nullptr,  SIGM_Portrait,  0, !landscape);
+	menu->AddToggleItem(_("Landscape"),nullptr, SIGM_Landscape, 0, landscape);
 	menu->AddSep(_("Paper"));
 
 	menu->AddItem(_("Paper Size"),999);
@@ -386,9 +435,10 @@ Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid, Lax
 		//if (!strcmp(laidout->papersizes.e[c]->name,"Custom")) continue; // *** 
 		if (!strcmp(laidout->papersizes.e[c]->name,"Whatever")) continue;
 
-		menu->AddItem(laidout->papersizes.e[c]->name,c,
-				LAX_ISTOGGLE
-				| (!strcmp(paper,laidout->papersizes.e[c]->name) ? LAX_CHECKED : 0));
+		menu->AddToggleItem(laidout->papersizes.e[c]->name, nullptr, c, 0, (!strcasecmp(paper,laidout->papersizes.e[c]->name)));
+		//menu->AddItem(laidout->papersizes.e[c]->name,c,
+		//		LAX_ISTOGGLE
+		//		| (!strcmp(paper,laidout->papersizes.e[c]->name) ? LAX_CHECKED : 0));
 	}
 	menu->EndSubMenu();
 	//menu->AddItem(_("Custom paper size"),SIGM_CustomPaper);
@@ -400,8 +450,12 @@ Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid, Lax
 	}
 
 	menu->AddSep();
-	menu->AddItem(_("Show page images"), SIGM_Thumbs, LAX_ISTOGGLE|(showthumbs?LAX_CHECKED:0));
-	menu->AddItem(_("Scale pages when reimposing"), SIGM_Rescale_Pages, LAX_ISTOGGLE|(rescale_pages?LAX_CHECKED:0));
+
+	menu->AddToggleItem(_("Show page images"), nullptr, SIGM_Thumbs, 0, showthumbs);
+	//menu->AddItem(_("Show page images"), SIGM_Thumbs, LAX_ISTOGGLE|(showthumbs?LAX_CHECKED:0));
+
+	menu->AddToggleItem(_("Scale pages when reimposing"),nullptr, SIGM_Rescale_Pages, 0, rescale_pages);
+	//menu->AddItem(_("Scale pages when reimposing"), SIGM_Rescale_Pages, LAX_ISTOGGLE|(rescale_pages?LAX_CHECKED:0));
 	return menu;
 }
 
@@ -937,8 +991,13 @@ int SignatureInterface::Refresh()
 	
 	 //----------------draw inset
 	dp->NewFG(color_inset); //dark red for inset
-	if (siginstance->partition->insetleft)   dp->drawline(siginstance->partition->insetleft,0,    siginstance->partition->insetleft, h);
-	if (siginstance->partition->insetright)  dp->drawline(w-siginstance->partition->insetright,0, w-siginstance->partition->insetright, h);
+	if (OnBack()) {
+		if (siginstance->partition->insetleft)   dp->drawline(siginstance->partition->insetleft,0,    siginstance->partition->insetleft, h);
+		if (siginstance->partition->insetright)  dp->drawline(w-siginstance->partition->insetright,0, w-siginstance->partition->insetright, h);
+	} else {
+		if (siginstance->partition->insetleft)   dp->drawline(siginstance->partition->insetright,0,    siginstance->partition->insetright, h);
+		if (siginstance->partition->insetright)  dp->drawline(w-siginstance->partition->insetleft,0, w-siginstance->partition->insetleft, h);
+	}
 	if (siginstance->partition->insettop)    dp->drawline(0,h-siginstance->partition->insettop,   w, h-siginstance->partition->insettop);
 	if (siginstance->partition->insetbottom) dp->drawline(0,siginstance->partition->insetbottom,  w, siginstance->partition->insetbottom);
 
@@ -963,29 +1022,31 @@ int SignatureInterface::Refresh()
 	int i=-1;
 	ImageData *thumb;
 
-	DBG dumpfoldinfo(foldinfo, signature->numhfolds, signature->numvfolds);
+	//DBG dumpfoldinfo(foldinfo, signature->numhfolds, signature->numvfolds);
 
-	int rangeofpapers=2*siginstance->sheetspersignature;
-	int npageshalf=siginstance->PagesPerSignature(0,1)/2;
+	int rangeofpapers = 2*siginstance->sheetspersignature;
+	int npageshalf = siginstance->PagesPerSignature(0,1)/2;
+	double apparentleft = OnBack() ? siginstance->partition->insetleft : siginstance->partition->insetright; 
 
-	x=siginstance->partition->insetleft;
+	x = apparentleft;
 	for (int tx=0; tx<siginstance->partition->tilex; tx++) {
-	  y=siginstance->partition->insetbottom;
+	  y = siginstance->partition->insetbottom;
+
 	  for (int ty=0; ty<siginstance->partition->tiley; ty++) {
 
 		 //fill in light gray for elements with no current faces
 		 //or draw orientation arrow and number for existing faces
 		for (int rr=0; rr<signature->numhfolds+1; rr++) {
 		  for (int cc=0; cc<signature->numvfolds+1; cc++) {
-			hasface=foldinfo[rr][cc].pages.n;
+			hasface = foldinfo[rr][cc].pages.n;
 
 			 //when on back page, flip horizontal placements
 			if (foldlevel==0 && OnBack()) {
-				urr=rr;
-				ucc=signature->numvfolds-cc;
+				urr = rr;
+				ucc = signature->numvfolds-cc;
 			} else {
-				urr=rr;
-				ucc=cc;
+				urr = rr;
+				ucc = cc;
 			}
 
 			 //first draw filled face, grayed if no current faces
@@ -1356,7 +1417,7 @@ int SignatureInterface::Refresh()
 			if (overoverlay==SP_Tile_Gap_X) {
 				dp->LineWidthScreen(5);
 				for (int c2=0; c2<siginstance->partition->tilex-1; c2++) {
-					d=pp->insetleft+(c2+1)*(pp->tilegapx+s->PatternWidth()) - pp->tilegapx/2;
+					d = (OnBack() ? pp->insetleft : pp->insetright) + (c2+1)*(pp->tilegapx+s->PatternWidth()) - pp->tilegapx/2;
 					dp->drawline(d,0, d,totalheight);
 				}
 			}
@@ -1403,8 +1464,8 @@ int SignatureInterface::Refresh()
 			dp->LineWidthScreen(1);
 			dv.x=dv.y=0;
 			if (area->category==2) { //page specific
-				dv.x=pp->insetleft  +activetilex*(s->PatternWidth() +pp->tilegapx) + finalc*s->PageWidth(0);
-				dv.y=pp->insetbottom+activetiley*(s->PatternHeight()+pp->tilegapy) + finalr*s->PageHeight(0);
+				dv.x = (OnBack() ? pp->insetleft : pp->insetright)  +activetilex*(s->PatternWidth() +pp->tilegapx) + finalc*s->PageWidth(0);
+				dv.y = pp->insetbottom+activetiley*(s->PatternHeight()+pp->tilegapy) + finalr*s->PageHeight(0);
 			}
 			drawHandle(area,dv);
 		}
@@ -1580,6 +1641,8 @@ void SignatureInterface::drawHandle(ActionArea *area, flatpoint offset)
 	dp->NewFG(area->color);
 	dp->PushAxes();
 
+	if (!OnBack()) dp->ShiftReal(siginstance->partition->insetright - siginstance->partition->insetleft, 0);
+
 	if (area->real==1) dp->DrawReal(); else dp->DrawScreen();
 	dp->LineWidthScreen(1);
 
@@ -1746,6 +1809,9 @@ int SignatureInterface::scanHandle(int x,int y, int *i1, int *i2)
 		}
 	}
 
+	double insetleft = OnBack() ? pp->insetleft  : pp->insetright;
+	double insetright= OnBack() ? pp->insetright : pp->insetleft;
+
 	for (int c=0; c<controls.n; c++) {
 		if (controls.e[c]->hidden) continue;
 
@@ -1765,7 +1831,7 @@ int SignatureInterface::scanHandle(int x,int y, int *i1, int *i2)
 			 //fold lines, in the pattern area
 			for (int x=0; x<siginstance->partition->tilex; x++) {
 			  for (int y=0; y<siginstance->partition->tiley; y++) {
-				tp=fp-flatpoint(pp->insetleft,pp->insetbottom);
+				tp=fp-flatpoint(insetleft,pp->insetbottom);
 				tp-=flatpoint(x*(pp->tilegapx+s->PatternWidth()), y*(pp->tilegapy+s->PatternHeight()));
 
 				if (controls.e[c]->PointIn(tp.x,tp.y)) return controls.e[c]->action;
@@ -1776,7 +1842,7 @@ int SignatureInterface::scanHandle(int x,int y, int *i1, int *i2)
 			 //in a final page area
 			double w=s->PageWidth(0);
 			double h=s->PageHeight(0);
-			tp.x=fp.x-(pp->insetleft  +activetilex*(s->PatternWidth() +pp->tilegapx) + finalc*w);
+			tp.x=fp.x-(insetleft  +activetilex*(s->PatternWidth() +pp->tilegapx) + finalc*w);
 			tp.y=fp.y-(pp->insetbottom+activetiley*(s->PatternHeight()+pp->tilegapy) + finalr*h);
 
 			ffp=tp-controls.e[c]->offset;
@@ -1804,7 +1870,7 @@ int SignatureInterface::scanHandle(int x,int y, int *i1, int *i2)
 			if (controls.e[c]->action==SP_Tile_Gap_X) {
 				for (int c=0; c<siginstance->partition->tilex-1; c++) {
 					 //first check for inside gap itself
-					d=pp->insetleft+(c+1)*(pp->tilegapx+s->PatternWidth())-pp->tilegapx/2;
+					d=insetleft+(c+1)*(pp->tilegapx+s->PatternWidth())-pp->tilegapx/2;
 					if (pp->tilegapx>zone) zone=pp->tilegapx;
 					if (fp.y>0 && fp.y<totalheight && fp.x<=d+zone/2 && fp.x>=d-zone/2) return SP_Tile_Gap_X;
 				}
@@ -1821,13 +1887,13 @@ int SignatureInterface::scanHandle(int x,int y, int *i1, int *i2)
 	}
 
 	 //check for gross areas for insets 
-	if (fp.x>0 && fp.x<siginstance->partition->totalwidth) {
-		if (fp.y>0 && fp.y<siginstance->partition->insetbottom) return SP_Inset_Bottom;
+	if (fp.x>0 && fp.x<pp->totalwidth) {
+		if (fp.y>0 && fp.y<pp->insetbottom) return SP_Inset_Bottom;
 		if (fp.y>totalheight-pp->insettop && fp.y<totalheight) return SP_Inset_Top;
 	}
-	if (fp.y>0 && fp.y<siginstance->partition->totalheight) {
-		if (fp.x>0 && fp.x<siginstance->partition->insetleft) return SP_Inset_Left;
-		if (fp.x>totalwidth-pp->insetright && fp.x<totalwidth) return SP_Inset_Right;
+	if (fp.y>0 && fp.y<pp->totalheight) {
+		if (fp.x>0 && fp.x<insetleft) return SP_Inset_Left;
+		if (fp.x>totalwidth-insetright && fp.x<totalwidth) return SP_Inset_Right;
 	}
 
 
@@ -2226,24 +2292,16 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 			SetPaperFromInstance(siginstance);
 			needtodraw=1;			
 
-		} else if (onoverlay==curhandle && onoverlay==SP_Paper_Width) {
+		} else if (onoverlay == curhandle && onoverlay == SP_Paper_Width) {
 			 //create input edit
-			ActionArea *area=control(SP_Paper_Width);
-			anXWindow *w=viewport->findChildWindowByName("lengthinput");
-			if (w) app->destroywindow(w);
-			w=NewLengthInputWindow(this, _("Paper Width"), area->minx,area->miny, 2*(area->maxx-area->minx),area->maxy-area->miny,3,
-											  "paperwidth",siginstance->partition->paper->w());
-			app->addwindow(w);
+			ActionArea *area = control(SP_Paper_Width);
+			NewLengthInputWindow(_("Paper Width"), area, "paperwidth",siginstance->partition->paper->w());
 			return 0;
 
-		} else if (onoverlay==curhandle && onoverlay==SP_Paper_Height) {
+		} else if (onoverlay == curhandle && onoverlay == SP_Paper_Height) {
 			 //create input edit
-			ActionArea *area=control(SP_Paper_Height);
-			anXWindow *w=viewport->findChildWindowByName("lengthinput");
-			if (w) app->destroywindow(w);
-			w=NewLengthInputWindow(this, _("Paper Height"), area->minx,area->miny, 2*(area->maxx-area->minx),area->maxy-area->miny,3,
-											  "paperheight",siginstance->partition->paper->h());
-			app->addwindow(w);
+			ActionArea *area = control(SP_Paper_Height);
+			NewLengthInputWindow(_("Paper Height"), area, "paperheight",siginstance->partition->paper->h());
 			return 0;
 
 
@@ -2270,11 +2328,14 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 			needtodraw=1;
 
 		} else if (!dragged) {
-			ActionArea *area=control(onoverlay);
-			if (area->visible && (area->type==AREA_H_Slider || area->type==AREA_Slider)) {
-				flatpoint d=flatpoint(x,y)-area->Center();
+			ActionArea *area = control(onoverlay);
+			if (area->visible && (area->type == AREA_H_Slider || area->type == AREA_Slider)) {
+				flatpoint d = flatpoint(x,y) - area->Center();
 				if (d.x>0) adjustControl(onoverlay,1);
-				else if (d.x<0) adjustControl(onoverlay,-1);
+				else if (d.x < 0) adjustControl(onoverlay,-1);
+
+			} else {
+				// *** check for tap on controls
 			}
 		
 		}

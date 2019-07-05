@@ -16,7 +16,7 @@
 
 
 #include <lax/curveinfo.h>
-#include "../stylemanager.h"
+#include "../core/stylemanager.h"
 #include "values.h"
 
 namespace Laidout { 

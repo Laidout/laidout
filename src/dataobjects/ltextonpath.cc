@@ -15,7 +15,7 @@
 
 #include "ltextonpath.h"
 #include "datafactory.h"
-#include "../stylemanager.h"
+#include "../core/stylemanager.h"
 #include "../language.h"
 
 

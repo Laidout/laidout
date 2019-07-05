@@ -4,6 +4,15 @@ Laidout Feature History
 http://www.laidout.org
 
 
+New in Version 0.097  --  released 25 November 2018!
+----------------------------------------------------
+ - Node based interface
+ - Improved clone tool
+ - Save options now include save copy, save incremented copy
+ - Autosave
+ - Harfbuzz based text (work in progress)
+
+
 New in Version 0.096  --  released 18 December 2015!
 ----------------------------------------------------
  - Caption text tool, for simple layers. Includes ability to use layered color fonts

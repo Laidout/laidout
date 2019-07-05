@@ -18,7 +18,6 @@
 #include "panoviewwindow.h"
 #include "../language.h"
 
-#include <Imlib2.h>
 #include <lax/strmanip.h>
 #include <lax/freedesktop.h>
 #include <lax/transformmath.h>
@@ -26,6 +25,8 @@
 #include <lax/fileutils.h>
 #include <lax/filedialog.h>
 
+
+//template implementation:
 #include <lax/lists.cc>
 #include <lax/refptrstack.cc>
 
@@ -196,28 +197,28 @@ PanoViewWindow::PanoViewWindow(anXWindow *parnt,const char *nname,const char *nt
 							   int xx,int yy,int ww,int hh,int brder)
  	: anXWindow(parnt,nname,ntitle,nstyle,xx,yy,ww,hh,brder,NULL,0,0)
 {
-	poly=CreateGlobe(NUMLAT,NUMLONG);
-	hedron=NULL;
+	poly = CreateGlobe(NUMLAT,NUMLONG);
+	hedron = NULL;
 
-	draw_texture=1;
-	draw_axes=1;
-	draw_info=1;
-	draw_overlays=1;
-	draw_edges=1;
-	free_rotate = 0;
+	draw_texture  = 1;
+	draw_axes     = 1;
+	draw_info     = 1;
+	draw_overlays = 1;
+	draw_edges    = 1;
+	free_rotate   = 1;
 
-	mouseover_overlay=-1;
-	mouseover_index=-1;
-	mouseover_group=OGROUP_None;
-	mouseover_paper=-1;
-	grab_overlay=-1; //mouse down on this overlay
-	active_action=ACTION_None;
+	mouseover_overlay = -1;
+	mouseover_index = -1;
+	mouseover_group = OGROUP_None;
+	mouseover_paper = -1;
+	grab_overlay = -1; //mouse down on this overlay
+	active_action = ACTION_None;
 
-	oldmode=mode=MODE_Solid;
+	oldmode = mode = MODE_Solid;
 
-	fontsize=20;
-	pad=20; 
-	helpoffset=10000;
+	fontsize = 20;
+	pad = 20; 
+	helpoffset = 10000;
 
 	polyptychfile         =NULL;
 	polyhedronfile        =NULL;
@@ -228,18 +229,18 @@ PanoViewWindow::PanoViewWindow(anXWindow *parnt,const char *nname,const char *nt
 	spheremap_height      =0;
 	spheretexture=flattexture=0; //gl texture ids
 
-	currentmessage=lastmessage=NULL;
+	currentmessage = lastmessage = NULL;
 
-	consolefontfile=NULL;
+	consolefontfile = NULL;
 	makestr(consolefontfile,"/usr/share/fonts/truetype/freefont/FreeSans.ttf"); // ***
-	consolefont=NULL;
-	movestep=.5;
-	autorepeat=1;
-	current_object=0;
-	view=0;
-	firsttime=1;
-	currentface=-1;
-	currentpotential=-1;
+	consolefont = NULL;
+	movestep = .5;
+	autorepeat = 1;
+	current_object = 0;
+	view = 0;
+	firsttime = 1;
+	currentface = -1;
+	currentpotential = -1;
 
 	fovy = 50*M_PI/180;
 	current_camera = -1;
@@ -1429,8 +1430,10 @@ int PanoViewWindow::event(XEvent *e)
 	return anXWindow::event(e);
 }
 
-int PanoViewWindow::Idle(int tid)
+int PanoViewWindow::Idle(int tid, double delta)
 {
+	DBG cerr <<"idle..."<<endl;
+
 	int x,y, lx,ly;
 	int m = buttondown.whichdown(0);
 	
@@ -1531,9 +1534,11 @@ int PanoViewWindow::LBDown(int x,int y,unsigned int state,int count,const LaxMou
 	int index=(overlay?overlay->id:-1);
 
 	if (group==OGROUP_None) index = state;
-	if (!buttondown.any()) timerid = app->addtimer(this, 30, 30, -1);
 
+	if (!buttondown.any()) timerid = app->addtimer(this, 30, 30, -1);
 	buttondown.down(mouse->id,LEFTBUTTON,x,y, group,index);
+
+	DBG cerr << " pano LBDown group: " <<group<<endl;
 
 
 	return 0;
@@ -1643,7 +1648,7 @@ int PanoViewWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mou
 	 //first off, check if mouse in any overlays
 	int action=0,index=-1,group=OGROUP_None;
 	Overlay *in;
-	in=scanOverlays(x,y, &action,&index,&group);
+	in = scanOverlays(x,y, &action,&index,&group);
 
 	if (mouseover_group!=group || mouseover_overlay!=action || mouseover_index!=index) {
 		mouseover_group=group;
@@ -1652,7 +1657,7 @@ int PanoViewWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mou
 		DBG cerr <<"move group:"<<group<<" action:"<<action<<" index:"<<index<<endl;
 		needtodraw=1;
 	}
-	if (in) return 0;
+	if (in) return 0; //in an overlay that doesn't care about movement, done!
 
 
 	if (grab_overlay>=0) return 0;
@@ -1683,6 +1688,7 @@ int PanoViewWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mou
 
 	//so below is for when button is down
 
+	DBG cerr << "Pano mouse drag..."<<endl;
 
 
 	int lx,ly;
@@ -1756,7 +1762,7 @@ int PanoViewWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mou
 	//if (buttondown.isdown(0,MIDDLEBUTTON)) current_action = ACTION_Unwrap_Angle;
 	//else if (buttondown.isdown(0,RIGHTBUTTON)) current_action = ACTION_Unwrap;
 
-	if (current_action==ACTION_Zoom) {
+	if (current_action == ACTION_Zoom) {
 		 //zoom
 		if (x-mbdown>10) { WheelUp(x,y,0,0,mouse); mbdown=x; }
 		else if (mbdown-x>10) { WheelDown(x,y,0,0,mouse); mbdown=x; }
@@ -1851,43 +1857,42 @@ int PanoViewWindow::installImage(const char *file)
 	DBG cerr <<"attempting to install image at "<<file<<endl;
 
 	const char *error=NULL;
-	Imlib_Image image,
-				image_scaled;
+
 	try {
-		image=imlib_load_image(file);
+		LaxImage *image = ImageLoader::LoadImage(file, NULL,0,0,NULL, 0, LAX_IMAGE_DEFAULT, NULL, false, 0);
 		if (!image) throw _("Could not load ");
 		
-		int width,height;
-		imlib_context_set_image(image);
-		width=imlib_image_get_width();
-		height=imlib_image_get_height();
+		int width;
+		width  = image->w();
+		//height = image->w();
 
 		 //gl texture dimensions must be powers of 2
-		if (width>4096) { spheremap_width=4096; spheremap_height=2048; }
-		else if (width>2048) { spheremap_width=2048; spheremap_height=1024; }
+		if (width>2048) { spheremap_width=2048; spheremap_height=1024; }
 		else if (width>1024) { spheremap_width=1024; spheremap_height=512; }
 		else if (width>512) { spheremap_width=512; spheremap_height=256; }
 		else { spheremap_width=256; spheremap_height=128; }
 
 		if (spheremap_data) delete[] spheremap_data;
-		spheremap_data=new unsigned char[spheremap_width*spheremap_height*3];
+		spheremap_data = new unsigned char[spheremap_width*spheremap_height*3];
 
-		imlib_context_set_image(image);
-		image_scaled=imlib_create_cropped_scaled_image(0,0,width,height,spheremap_width,spheremap_height);
-		imlib_context_set_image(image_scaled);
-		unsigned char *data=(unsigned char *)imlib_image_get_data_for_reading_only();
+		 //crop and scale image to image_scaled
+		LaxImage *image_scaled = ImageLoader::NewImage(spheremap_width,spheremap_height);
+		Displayer *dp = GetDefaultDisplayer();
+		dp->MakeCurrent(image_scaled);
+		dp->imageout(image, 0,0, spheremap_width,spheremap_height);
+		dp->EndDrawing();
+
+		unsigned char *data = image_scaled->getImageBuffer();
+
 		int i=0,i2=0;
 		for (int c=0; c<spheremap_width; c++) {
 		  for (int c2=0; c2<spheremap_height; c2++) {
-			spheremap_data[i++]=data[i2++];
-			spheremap_data[i++]=data[i2++];
-			spheremap_data[i++]=data[i2++];
-			i2++;
+			spheremap_data[i++] = data[i2++];
+			spheremap_data[i++] = data[i2++];
+			spheremap_data[i++] = data[i2++];
+			i2++; //skip alpha
 		  }
 		}
-		imlib_free_image();
-		imlib_context_set_image(image);
-		imlib_free_image();
 
 		makestr(spherefile,file);
 	} catch (const char *err) {
@@ -2090,8 +2095,9 @@ int PanoViewWindow::PerformAction(int action)
 			appendstr(file,".polyptych");
 		} else makestr(file,polyptychfile);
 
-		foreground_color(rgbcolor(255,255,255));
-		textout(this,file,-1,0,app->defaultlaxfont->textheight(),LAX_LEFT|LAX_TOP);
+		Displayer *dp = MakeCurrent();
+		dp->NewFG(rgbcolor(255,255,255));
+		dp->textout(0,app->defaultlaxfont->textheight(), file,-1, LAX_LEFT|LAX_TOP);
 
 		if (saveas) {
 			 //saveas
@@ -2103,8 +2109,8 @@ int PanoViewWindow::PerformAction(int action)
 		} else {
 			 //normal save
 			DBG cerr<<"Saving to "<<file<<endl;
-			if (Save(file)==0) textout(this,"...Saved",-1,0,2*app->defaultlaxfont->textheight(),LAX_LEFT|LAX_TOP);
-			else textout(this,"...ERROR!!! Not saved",-1,0,2*app->defaultlaxfont->textheight(),LAX_LEFT|LAX_TOP);
+			if (Save(file)==0) dp->textout(0,2*app->defaultlaxfont->textheight(), "...Saved",-1, LAX_LEFT|LAX_TOP);
+			else dp->textout(0,2*app->defaultlaxfont->textheight(), "...ERROR!!! Not saved",-1, LAX_LEFT|LAX_TOP);
 		}
 
 		delete[] file;

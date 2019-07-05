@@ -17,8 +17,8 @@
 #include "podofoimposeplan.h"
 #include "../language.h"
 #include "../laidout.h"
-#include "../stylemanager.h"
-#include "../utils.h"
+#include "../core/stylemanager.h"
+#include "../core/utils.h"
 
 #include <lax/transformmath.h>
 
@@ -99,10 +99,6 @@ ObjectDef *PodofooutFilter::GetObjectDef()
 	return styledef;
 }
 
-//! Internal function to dump out the obj if it is an ImageData.
-/*! \todo deal with SomeDataRef
- * \todo *** test EpsData out
- */
 static void podofodumppage(FILE *f,const double *mm,int source,int target)
 {
 	double rot=atan2(mm[1],mm[0]);

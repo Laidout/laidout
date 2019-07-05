@@ -26,9 +26,21 @@ namespace Laidout {
 namespace GeglNodesPluginNS {
 
 
+//-------------------------------- GeglUser --------------------------
+
+class GeglUser : public Laidout::NodeBase
+{
+  public:
+	GeglUser() {}
+	virtual ~GeglUser() {};
+	virtual GeglNode *GetGeglNode() = 0;
+	virtual int UpdatePreview();
+};
+
+
 //-------------------------------- GeglLaidoutNode --------------------------
 
-class GeglLaidoutNode : public Laidout::NodeBase
+class GeglLaidoutNode : public GeglUser
 {
   protected:
 	Laxkit::MenuItem *op;
@@ -46,6 +58,7 @@ class GeglLaidoutNode : public Laidout::NodeBase
 	GeglLaidoutNode(GeglNode *node);
 	virtual ~GeglLaidoutNode();
 	virtual NodeBase *Duplicate();
+	virtual GeglNode *GetGeglNode();
 
 	virtual int SetOperation(const char *oper);
 	virtual int UpdateProperties();

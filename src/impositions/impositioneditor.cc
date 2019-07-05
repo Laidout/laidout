@@ -18,10 +18,10 @@
 #include <lax/filedialog.h>
 
 #include "../language.h"
-#include "../utils.h"
+#include "../core/utils.h"
 #include "../filetypes/scribus.h"
-#include "../viewwindow.h"
-#include "../headwindow.h"
+#include "../ui/viewwindow.h"
+#include "../ui/headwindow.h"
 #include "impositioneditor.h"
 #include "signatureinterface.h"
 //#include "polyptych/src/poly.h"
@@ -129,7 +129,9 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 		viewport->dec_count();
 	}
 
-	win_colors->bg=rgbcolor(200,200,200);
+	WindowStyle *style = win_themestyle->duplicate();
+	InstallColors(style);
+	win_themestyle->bg.rgbf(200/255.,200/255.,200/255.);
 	viewport->dp->NewBG(200,200,200);
 
 	DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(viewport->dp);

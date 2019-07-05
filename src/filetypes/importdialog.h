@@ -21,7 +21,7 @@
 #include <lax/dump.h>
 
 #include "filefilters.h"
-#include "../document.h"
+#include "../core/document.h"
 
 
 

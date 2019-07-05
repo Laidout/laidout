@@ -17,11 +17,14 @@
 #include <lax/transformmath.h>
 #include "drawableobject.h"
 #include "../laidout.h"
-#include "../drawdata.h"
+#include "../core/drawdata.h"
 #include "../language.h"
-#include "../stylemanager.h"
+#include "../core/stylemanager.h"
 #include "objectfilter.h"
 
+#include "lpathsdata.h"
+
+//template instantiation:
 #include <lax/refptrstack.cc>
 
 #include <iostream>
@@ -192,7 +195,7 @@ DrawObjectChain::~DrawObjectChain()
 
 DrawableObject::DrawableObject()
 {
-	clip = NULL;
+	soft_mask = NULL;
 	clip_path = wrap_path = inset_path=NULL;
 	autowrap = autoinset = 0;
 
@@ -202,6 +205,11 @@ DrawableObject::DrawableObject()
 
 	parent_link=NULL;
 
+	importer = NULL;
+	importer_data = NULL;
+
+	metadata = nullptr;
+
 	//Id(); //makes this->nameid (of SomeData) be something like `whattype()`12343
 }
 
@@ -210,11 +218,15 @@ DrawableObject::DrawableObject()
  */
 DrawableObject::~DrawableObject()
 {
-	if (clip)       clip      ->dec_count();
+	if (soft_mask)  soft_mask ->dec_count();
 	if (clip_path)  clip_path ->dec_count();
 	if (wrap_path)  wrap_path ->dec_count();
 	if (inset_path) inset_path->dec_count();
 	if (filter)     filter    ->dec_count();
+	if (metadata)   metadata  ->dec_count();
+
+	if (importer)      importer     ->dec_count();
+	if (importer_data) importer_data->dec_count();
 
 	if (chains.n)   chains.flush();
 
@@ -492,7 +504,9 @@ LaxInterfaces::SomeData *DrawableObject::duplicate(LaxInterfaces::SomeData *dup)
 	d->blur  = blur;
 	if (filter) {
 		ObjectFilter *ofilter = dynamic_cast<ObjectFilter*>(filter);
-		d->filter = ofilter->Duplicate();
+		ObjectFilter *nfilter = dynamic_cast<ObjectFilter*>(ofilter->Duplicate());
+		d->filter = nfilter;
+		nfilter->SetParent(d);
 	}
 
 	 //kids
@@ -509,16 +523,36 @@ LaxInterfaces::SomeData *DrawableObject::duplicate(LaxInterfaces::SomeData *dup)
 	return dup;
 }
 
+
+/*! Install pathsdata as clip_path. Replaces any that exist already.
+ * It is assumed that pathsdata's transform is relative to our own.
+ *
+ * Return 0 for success, non zero error.
+ */
+int DrawableObject::InstallClip(LaxInterfaces::PathsData *pathsdata)
+{
+	if (pathsdata) pathsdata->inc_count();
+	if (clip_path) clip_path->dec_count();
+	clip_path = pathsdata;
+//	if (pathsdata) {
+//		// *** update transform
+//		cerr <<" *** need to implement transform adjust in InstallClip()"<<endl;
+//	}
+	return 0;
+}
+
+
 /*! Default is to return clip_path if it exists, or a bounding box path.
  */
 LaxInterfaces::PathsData *DrawableObject::GetAreaPath()
 {
 	if (clip_path) return clip_path;
 
-	 //contsruct bounding box path
-	clip_path=new PathsData;
-	clip_path->appendRect(minx,miny, maxx-minx,maxy-miny);
-	return clip_path;
+//	 //contsruct bounding box path
+//	clip_path=new PathsData;
+//	clip_path->appendRect(minx,miny, maxx-minx,maxy-miny);
+//	return clip_path;
+	return NULL;
 }
 
 /*! Return an inset path, may or may not be inset_path, where streams are laid into.
@@ -539,6 +573,22 @@ LaxInterfaces::PathsData *DrawableObject::GetWrapPath()
 {
 	if (wrap_path) return wrap_path;
 	return NULL;
+}
+
+LaxInterfaces::PathsData *DrawableObject::ClipPath(const double **extra_m)
+{
+	*extra_m = nullptr;
+
+	if (clip_type == CLIP_None) return nullptr;
+	if (clip_type == CLIP_From_Parent_Area) {
+		// ***
+	}
+	if (clip_type == CLIP_Custom_Path) {
+		*extra_m = clip_path->m();
+		return clip_path;
+	}
+
+	return nullptr;
 }
 
 
@@ -881,6 +931,8 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext 
 		fprintf(f,"%sfilter            #(optional) Nodes defining filter transformationss\n",spc);
 		fprintf(f,"%salignmentrule align (a1x,a1y) (a2x,a2y)  #(optional) if different than simple matrix\n",spc);
 		fprintf(f,"%s  ...\n",spc);
+		fprintf(f,"%sclip_path         #(optional) a path object\n",spc);
+		fprintf(f,"%s  ...\n",spc);
 		fprintf(f,"%skids          #child object list...\n",spc);
 		//fprintf(f,"%s    ...\n",spc);
 		return;
@@ -910,9 +962,9 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext 
 
 
 	 // dump notes/meta data
-	if (metadata.attributes.n) {
+	if (metadata && metadata->attributes.n) {
 		fprintf(f,"%smetadata\n",spc);
-		metadata.dump_out(f,indent+2);
+		metadata->dump_out(f,indent+2);
 	}
 	
 	 // dump iohints if any
@@ -930,7 +982,7 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext 
 	if (filter) {
 		ObjectFilter *ofilter = dynamic_cast<ObjectFilter*>(filter);
 		fprintf(f,"%sfilter\n",spc);
-		ofilter->dump_out(f, indent+4,what,context);
+		ofilter->dump_out(f, indent+2,what,context);
 	}
 
 	if (anchors.n) {
@@ -1016,6 +1068,22 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext 
 		}
 	}
 
+	if (clip_path) {
+		fprintf(f,"%sclip_path\n", spc);
+		clip_path->dump_out(f, indent+2, what, context);
+	}
+
+	if (wrap_path) {
+		fprintf(f,"%swrap_path\n", spc);
+		wrap_path->dump_out(f, indent+2, what, context);
+	}
+
+	if (inset_path) {
+		fprintf(f,"%sinset_path\n", spc);
+		inset_path->dump_out(f, indent+2, what, context);
+	}
+
+
 	if (properties.n()) {
 		fprintf(f, "%sproperties\n",spc);
 		for (int c=0; c<properties.n(); c++) {
@@ -1070,9 +1138,10 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Du
 				iohints.push(att->attributes.e[c]->attributes.e[c2]->duplicate(),-1);
 
 		} else if (!strcmp(name,"metadata")) {
-			if (metadata.attributes.n) metadata.clear();
+			if (!metadata) metadata = new AttributeObject();
+			if (metadata->attributes.n) metadata->clear();
 			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) 
-				metadata.push(att->attributes.e[c]->attributes.e[c2]->duplicate(),-1);
+				metadata->push(att->attributes.e[c]->attributes.e[c2]->duplicate(),-1);
 
 		} else if (!strcmp(name,"anchor")) {
 			 //anchor value will be something like: "name" bbox 1.5,3.5
@@ -1091,6 +1160,24 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Du
 
 			delete[] name;
 			delete[] type;
+
+		} else if (!strcmp(name,"clip_path")) {
+			LPathsData *path = new LPathsData();
+			path->dump_in_atts(att->attributes.e[c], flag, context);
+			if (clip_path) clip_path->dec_count();
+			clip_path = path;
+
+		} else if (!strcmp(name,"wrap_path")) {
+			LPathsData *path = new LPathsData();
+			path->dump_in_atts(att->attributes.e[c], flag, context);
+			if (wrap_path) wrap_path->dec_count();
+			wrap_path = path;
+
+		} else if (!strcmp(name,"inset_path")) {
+			LPathsData *path = new LPathsData();
+			path->dump_in_atts(att->attributes.e[c], flag, context);
+			if (inset_path) inset_path->dec_count();
+			inset_path = path;
 
 		} else if (!strcmp(name,"alignmentrule")) {
 			if (!strncmp(value,"matrix",6)) continue; //we assume matrix anyway
@@ -1283,6 +1370,7 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Du
 		 //note: transform and possibly other important data not set yet!
 		ObjectFilter *ofilter = new ObjectFilter(this, 0);
 		ofilter->dump_in_atts(att->attributes.e[foundfilter], 0, context);
+		ofilter->FindProperty("in")->data_is_linked = true;
 		if (filter) filter->dec_count();
 		NodeProperty *in = ofilter->FindProperty("in");
 		in->SetData(this, 0);
@@ -1965,6 +2053,140 @@ int BBoxValue::Evaluate(const char *function,int len, ValueHash *context, ValueH
 	}
 
 	return 1;
+}
+
+
+//--------------------------------------- ImageValue ---------------------------------------
+
+/* \class ImageValue
+ * \brief Adds scripting functions for a Laxkit::Image object.
+ */
+
+ImageValue::ImageValue()
+{
+	image = nullptr;
+}
+
+//ImageValue::ImageValue(int width, int height)
+//{
+//	image = nullptr;
+//}
+
+int ImageValue::TypeNumber()
+{
+	static int v = VALUE_MaxBuiltIn + getUniqueNumber();
+	return v;
+}
+
+int ImageValue::type()
+{
+	return TypeNumber();
+}
+
+Value *ImageValue::dereference(int index)
+{
+	if (image == nullptr) return nullptr;
+	if (index == 0) return new IntValue(image->w());
+	if (index == 1) return new IntValue(image->h());
+	if (index == 2) return new StringValue(image->filename);
+	return nullptr;
+}
+
+int ImageValue::getValueStr(char *buffer,int len)
+{
+	if (!image) {
+		int needed = 7;
+		if (!buffer || len<needed) return needed;
+		sprintf(buffer,"Image()");
+		return 0;
+	}
+
+    int needed = 30 + 20 + 20 + (image->filename ? strlen(image->filename) : 0);
+    if (!buffer || len<needed) return needed;
+
+	sprintf(buffer,"Image(width=%d, height=%d, filename=\"%s\")", image->w(),image->h(), image->filename ? image->filename : "");
+    modified=0;
+    return 0;
+}
+
+Value *ImageValue::duplicate()
+{
+	ImageValue *dup = new ImageValue();
+	return dup;
+}
+
+ObjectDef *ImageValue::makeObjectDef()
+{
+	objectdef = stylemanager.FindDef("Image");
+	if (objectdef) objectdef->inc_count();
+	else {
+		objectdef = makeImageValueDef();
+		if (objectdef) stylemanager.AddObjectDef(objectdef,0);
+	}
+	return objectdef;
+}
+
+/*! Return 0 success, -1 incompatible values, 1 for error.
+ */
+int ImageValue::Evaluate(const char *function,int len, ValueHash *context, ValueHash *pp, CalcSettings *settings,
+			             Value **value_ret, ErrorLog *log)
+{
+	if (len == 5 && !strncmp(function,"width",6)) {
+		if (value_ret) *value_ret = new IntValue(image->w());
+		return 0;
+
+	} else if (len == 6 && !strncmp(function,"height",6)) {
+		if (value_ret) *value_ret = new IntValue(image->h());
+		return 0;
+
+	} else if (len == 5 && !strncmp(function,"index",5)) {
+		if (value_ret) *value_ret = new IntValue(image->index);
+		return 0;
+
+	} else if (len == 8 && !strncmp(function,"filename",8)) {
+		if (value_ret) *value_ret = new StringValue(image->filename);
+		return 0;
+	}
+
+	return 1;
+}
+
+//! Contructor for ImageValue objects.
+int NewImageObject(ValueHash *context, ValueHash *parameters, Value **value_ret, ErrorLog &log)
+{
+	Value *v=new ImageValue();
+	*value_ret=v;
+
+	if (!parameters || !parameters->n()) return 0;
+
+//	Value *matrix=parameters->find("matrix");
+//	if (matrix) {
+//		SetValue *set=dynamic_cast<SetValue*>(matrix);
+//		if (set && set->GetNumFields()==6) {
+//		}
+//	}
+
+	return 0;
+}
+
+//! Create a new ObjectDef with Image characteristics. Always creates new one, does not search for Image globally.
+ObjectDef *makeImageValueDef()
+{
+	ObjectDef *sd = new ObjectDef(NULL,"Image",
+			_("Image"),
+			_("Image buffer"),
+			"class",
+			NULL,NULL, //range, default value
+			NULL,0, //fields, flags
+			NULL,NewImageObject);
+
+
+	sd->pushFunction("width",    _("Width"),    _("Width"), NULL, NULL);
+	sd->pushFunction("height",   _("Height"),   _("Height"), NULL, NULL);
+	sd->pushFunction("filename", _("Filename"), _("Filename"), NULL, NULL);
+	sd->pushFunction("index",    _("Index"),    _("Index, if file contains more than one image"), NULL, NULL);
+
+	return sd;
 }
 
 

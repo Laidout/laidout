@@ -15,7 +15,7 @@
 
 
 #include "../language.h"
-#include "../drawdata.h"
+#include "../core/drawdata.h"
 #include "anchorinterface.h"
 #include <lax/interfaces/somedatafactory.h>
 #include <lax/strmanip.h>
@@ -23,6 +23,7 @@
 #include <lax/transformmath.h>
 
 
+//template implementation:
 #include <lax/refptrstack.cc>
 
 using namespace Laxkit;

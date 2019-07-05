@@ -24,10 +24,6 @@ using namespace Polyptych;
 
 #include <iostream>
 using namespace std;
-
-
-#include <iostream>
-using namespace std;
 #define DBG 
 
 

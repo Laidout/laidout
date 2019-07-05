@@ -19,7 +19,7 @@
 #include <lax/interfaces/objectinterface.h>
 #include <lax/interfaces/somedata.h>
 #include "../calculator/values.h"
-#include "../viewwindow.h"
+#include "../ui/viewwindow.h"
 
 
 
@@ -32,6 +32,7 @@ namespace Laidout {
 enum GroupInterfaceActions {
 	GIA_Align = LaxInterfaces::OIA_MAX,
 	GIA_Distribute,
+	GIA_Edit_Object_Meta,
 	GIA_Edit_Filter_Nodes,
 	GIA_Filter_Editor,
 	GIA_Remove_Filter,
@@ -48,11 +49,18 @@ enum GroupInterfaceActions {
 	GIA_Unparent,
 
 	//popup controls
+	GIA_No_Popup,
 	GIA_Link,
 	GIA_Parent_Link,
 	GIA_Constraints,
 	GIA_Zone,
 	GIA_Chains,
+
+	GIA_Clip_First_On_Second,
+	GIA_Clip_Second_On_First,
+	GIA_Extract_Clip,
+	GIA_Remove_Clip,
+	GIA_Edit_Clip,
 
 	GIA_Jump_To_Link,
 	GIA_Sever_Link,
@@ -71,7 +79,7 @@ class GroupInterface : public LaxInterfaces::ObjectInterface, public Value
 {
   protected:
 	int rx,ry;
-	int popupcontrols;
+	GroupInterfaceActions popupcontrols;
 	VObjContext reparent_temp;
 
 	virtual int PerformAction(int action);

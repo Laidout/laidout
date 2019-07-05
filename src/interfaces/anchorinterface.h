@@ -19,8 +19,8 @@
 #include <lax/interfaces/selection.h>
 #include <lax/refptrstack.h>
 
-#include "../guides.h"
-#include "../viewwindow.h"
+#include "../core/guides.h"
+#include "../ui/viewwindow.h"
 
 //#include "../laidout.h"
 

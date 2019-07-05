@@ -15,12 +15,14 @@
 
 #include "signatures.h"
 #include "signatureinterface.h"
-#include "stylemanager.h"
+#include "../core/stylemanager.h"
 #include "../language.h"
 
 #include <lax/interfaces/pathinterface.h>
 #include <lax/attributes.h>
 #include <lax/transformmath.h>
+
+//template implementation:
 #include <lax/lists.cc>
 
 
@@ -2184,6 +2186,7 @@ void SignatureInstance::setPageStyles(int force_new)
 LaxInterfaces::SomeData *SignatureInstance::GetPageOutline()
 {
 	PathsData *newpath=new PathsData();//count==1
+	newpath->style |= PathsData::PATHS_Ignore_Weights;
 
 	double pw=pattern->PageWidth(1),
 		   ph=pattern->PageHeight(1);
@@ -2209,6 +2212,7 @@ LaxInterfaces::SomeData *SignatureInstance::GetPageMarginOutline(int pagenum)
 		   ph=pattern->PageHeight(1);//trim box height
 
 	PathsData *newpath=new PathsData();//count==1
+	newpath->style |= PathsData::PATHS_Ignore_Weights;
 
 	if (pattern->binding=='l') {
 		if (oddpage) newpath->appendRect(pw-w-box.minx,box.miny, w,h);
@@ -2991,8 +2995,8 @@ Page **SignatureImposition::CreatePages(int npages)
  * \todo assumption is that each signature has the same final page size.. maybe this isn't necessary?
  */
 void SignatureImposition::fixPageBleeds(int index, //!< Document page index
-										Page *page,
-										bool update_pagestyle)//!< Actual document page
+										Page *page, //!< Actual document page
+										bool update_pagestyle)
 {
 	 //fix pagestyle
 	if (!signatures) signatures=new SignatureInstance();
@@ -3012,24 +3016,24 @@ void SignatureImposition::fixPageBleeds(int index, //!< Document page index
 	double pw=signatures->pattern->PageWidth(1);
 	double ph=signatures->pattern->PageHeight(1);
 
-	char binding=signatures->pattern->binding;
-	if (binding=='l') { if (odd) { dir='r'; adjacent=index+1; } else { dir='l'; adjacent=index-1; } }
+	char binding = signatures->pattern->binding;
+	if      (binding=='l') { if (odd) { dir='r'; adjacent=index+1; } else { dir='l'; adjacent=index-1; } }
 	else if (binding=='r') { if (odd) { dir='l'; adjacent=index+1; } else { dir='r'; adjacent=index-1; } }
 	else if (binding=='t') { if (odd) { dir='b'; adjacent=index+1; } else { dir='t'; adjacent=index-1; } }
-	else { if (odd) { dir='t'; adjacent=index+1; } else { dir='b'; adjacent=index-1; } } //botom binding
+	else {                   if (odd) { dir='t'; adjacent=index+1; } else { dir='b'; adjacent=index-1; } } //botom binding
 
 	m[4]=m[5]=0;
-	if (dir=='l') { m[4]=pw; }
-	else if (dir=='r') { m[4]=-pw; }
-	else if (dir=='t') { m[5]=-ph; }
-	else { m[5]=ph; } //botom binding
+	if      (dir=='l') { m[4] = -pw; }
+	else if (dir=='r') { m[4] = pw; }
+	else if (dir=='t') { m[5] = -ph; }
+	else               { m[5] = ph; } //botom binding
 
 	if (adjacent<0 && showwholecover) {
-		adjacent=numpages-1;
-	} else if (adjacent==numpages && showwholecover) {
-		adjacent=0;
+		adjacent = numpages-1;
+	} else if (adjacent == numpages && showwholecover) {
+		adjacent = 0;
 	}
-	if (adjacent>=0) page->pagebleeds.push(new PageBleed(adjacent,m));
+	if (adjacent>=0 && adjacent < numpages) page->pagebleeds.push(new PageBleed(adjacent,m, doc && adjacent>=0 && adjacent<doc->pages.n ? doc->pages[adjacent] : nullptr));
 }
 
 //! Ensure that each page has a proper pagestyle and bleed information.
@@ -3042,6 +3046,7 @@ int SignatureImposition::SyncPageStyles(Document *doc,int start,int n, bool shif
 
 	int status=Imposition::SyncPageStyles(doc,start,n, shift_within_margins);
 
+	this->doc = doc;
 	for (int c=start; c<doc->pages.n; c++) {
 		fixPageBleeds(c,doc->pages.e[c],false);
 	}
@@ -3167,12 +3172,14 @@ Spread *SignatureImposition::PageLayout(int whichspread)
 	if (page2>=numpages) page2=-1;
 
 	PathsData *newpath=new PathsData(); //newpath has all the paths used to draw the whole spread
+	newpath->style |= PathsData::PATHS_Ignore_Weights;
+
 	if (binding=='l' || binding=='r') {
 		double o=0, w=pw;
 		if (page1>=0 && page2>=0) w+=pw;
-		if (page1<0) o+=pw;
+		if (page1<0) o += pw;
 
-		spread->path=(SomeData *)newpath;
+		spread->path = (SomeData *)newpath;
 		newpath->appendRect(o,0, w,ph);
 		if (page1>=0 && page2>=0) {
 			newpath->pushEmpty();
@@ -3182,11 +3189,10 @@ Spread *SignatureImposition::PageLayout(int whichspread)
 
 	} else {
 		double o=0, h=ph;
-		if (page1>=0 && page2>=0) h+=ph;
-		if (page1<0) o+=ph;
+		if (page1>=0 && page2>=0) h += ph;
+		if (page1<0) o += ph;
 
-		PathsData *newpath=new PathsData(); //newpath has all the paths used to draw the whole spread
-		spread->path=(SomeData *)newpath;
+		spread->path = (SomeData *)newpath;
 		newpath->appendRect(0,o, pw,h);
 		if (page1>=0 && page2>=0) {
 			newpath->pushEmpty();

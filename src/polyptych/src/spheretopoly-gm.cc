@@ -527,10 +527,6 @@ int SphereToPoly(Image spheremap,
 	return 0;
 }
 
-//***better to use nona/hugin?
-//Imlib_Image rollspheremap(double rotatetheta, double rotategamma, Imlib_Image oldsphere)
-//{***
-//}
 
 //--------------------------------- main(), help(), version() ----------------------------
 

@@ -10,10 +10,10 @@ include ../../Makefile-toinclude
 LAXIDIR=$(LAXDIR)/interfaces
 LAXOBJDIR=$(LAXDIR)
 LD=g++
-LDFLAGS= $(EXTRA_LDFLAGS) -L/usr/X11R6/lib -lXi -lXext -lX11 -lm -lpng `imlib2-config --libs` `freetype-config --libs`\
+LDFLAGS= $(EXTRA_LDFLAGS) -L/usr/X11R6/lib -lXi -lXext -lX11 -lm -lpng `imlib2-config --libs` `pkg-config --libs freetype2`\
 		 `cups-config --libs` -lXft -L$(LAXIDIR) -L$(LAXDIR)
 DEBUGFLAGS= -g -gdwarf-2
-CPPFLAGS= $(EXTRA_CPPFLAGS) -fPIC -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. -I/usr/include/freetype2
+CPPFLAGS= $(EXTRA_CPPFLAGS) -std=c++11 -fPIC -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. `pkg-config --cflags freetype2`
 
 
 
@@ -21,12 +21,16 @@ objs= \
 	plugin.o 
 
 #
-# If you want a plugin built by default, include in plugins here.
+# If you want a plugin built by default, uncomment or add here.
 #
 plugins= \
 	geglnodes.so \
+	#python.so \
 	#exampleplugin.so \
-	#antiprism.so
+
+	#gmicnodes.so           #ToDO!
+	#graphicsmagicknodes.so #ToDO!
+	#antiprism.so           #ToDO!
 
 
 all: lax laxinterface $(objs) $(plugins)
@@ -40,7 +44,7 @@ laxinterface:
 	cd $(LAXIDIR) && $(MAKE)
 
 depends:
-	makedepend -fmakedepend -I.. -I$(LAXDIR)/.. -Y *.cc
+	../utils/makedependencies -fmakedepend -I$(LAXDIR)/.. *.cc
 
 include makedepend
 
@@ -49,8 +53,8 @@ test: lax laxinterface plugin.o test.o exampleplugin.so
 
 
 ####------------------  Gegl  --------------------#####
-GEGLCPPFLAGS= `pkg-config --cflags gegl-0.3`
-GEGLLIBS= `pkg-config --libs gegl-0.3`
+GEGLCPPFLAGS= `pkg-config --cflags ${GEGLVERSION}`
+GEGLLIBS=     `pkg-config --libs   ${GEGLVERSION}`
 
 geglnodes.so: geglnodes.o svgnodes.o
 #geglnodes.so: geglnodes.cc
@@ -68,20 +72,19 @@ svgnodes.o: svg/svgnodes.cc
 
 
 ####------------------  Python  --------------------#####
-PYTHONCPPFLAGS= `python3.5-config --cflags`
-PYTHONLIBS= `python3.5-config --ldflags`
+PYTHONCPPFLAGS= `${PYTHONVERSION}-config --cflags`
+PYTHONLIBS=     `${PYTHONVERSION}-config --ldflags`
 
 python.so: python.cc
-	@echo "Compiling geglnodes with pkg-config path $(PKG_CONFIG_PATH)"
-	@echo "gegl cflags: $(GEGLCPPFLAGS)"
-	@echo "gegl libs  : $(GEGLLIBS)"
+	@echo "Compiling python plugin with pkg-config path $(PKG_CONFIG_PATH)"
+	@echo "  python cflags: $(PYTHONCPPFLAGS)"
+	@echo "  python libs  : $(PYTHONLIBS)"
 	g++ -shared -fPIC $(CPPFLAGS) $(PYTHONCPPFLAGS) -L$(LAXDIR) python.cc -llaxkit $(PYTHONLIBS) -o python.so
 
 
 ####------------------  ExamplePlugin  --------------------#####
 exampleplugin.so: lax laxinterface exampleplugin.o
 	g++ $(CPPFLAGS) -shared -fPIC exampleplugin.o -L$(LAXDIR) -llaxkit -o exampleplugin.so
-	#g++ $(CPPFLAGS) -shared -fPIC exampleplugin.cc -L$(LAXDIR) -o exampleplugin.so
 
 
 hidegarbage:

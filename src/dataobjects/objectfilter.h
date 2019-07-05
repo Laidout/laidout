@@ -18,7 +18,7 @@
 
 
 #include <lax/refptrstack.h>
-#include "../interfaces/nodeinterface.h"
+#include "../nodes/nodeinterface.h"
 
 
 namespace Laidout {
@@ -33,17 +33,12 @@ int RegisterFilterNodes(Laxkit::ObjectFactory *factory);
 
 class ObjectFilterNode : public NodeBase
 {
-  protected:
-	int muted;
-
   public:
     ObjectFilterNode();
     virtual ~ObjectFilterNode();
 
     virtual LaxInterfaces::anInterface *ObjectFilterInterface() = 0;
     virtual DrawableObject *ObjectFilterData() = 0;
-	virtual int IsMuted();
-	virtual int Mute(bool yes=true);
 };
 
 
@@ -67,6 +62,7 @@ class ObjectFilter : public NodeGroup
 	virtual int Update();
 	virtual int GetStatus();
 
+	virtual int SetParent(anObject *newparent);
 	virtual Laxkit::anObject *FinalObject();
 	virtual int FindInterfaceNodes(NodeGroup *group);
 	virtual int FindInterfaceNodes(Laxkit::RefPtrStack<ObjectFilterNode> &filternodes, NodeProperty *start_here=NULL);

@@ -18,15 +18,17 @@
 #include "netimposition.h"
 #include "simplenet.h"
 #include "box.h"
-#include "stylemanager.h"
+#include "../core/stylemanager.h"
 #include <lax/interfaces/pathinterface.h>
 #include <lax/transformmath.h>
-#include <lax/refptrstack.cc>
 
  //built in nets:
  /*! \todo this should have a much more automated mechanism... */
 #include "dodecahedron.h"
 #include "box.h"
+
+//template implementation:
+#include <lax/refptrstack.cc>
 
 using namespace Laxkit;
 using namespace LaxInterfaces;
@@ -547,6 +549,7 @@ LaxInterfaces::SomeData *NetImposition::GetPageOutline(int pagenum,int local)
 	}
 
 	PathsData *newpath=new PathsData(); //count==1
+	newpath->style |= PathsData::PATHS_Ignore_Weights;
 	unsigned long flag=(isbez==2 ? POINT_TONEXT : POINT_VERTEX);
 	for (int c=0; c<n; c++) {
 		newpath->append(pts[c].x,pts[c].y,flag);
@@ -639,16 +642,18 @@ Spread *NetImposition::GenerateSpread(Spread *spread, //!< If not null, append t
 	DBG net->dump_out(stderr,0,0,NULL);
 	DBG cerr <<"-- end net dump"<<endl;
 
-	if (!spread) spread=new Spread();
-	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
+	if (!spread) spread = new Spread();
+	spread->mask = SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
 
 	 // fill pagestack
-	PathsData *spreadpath=dynamic_cast<PathsData *>(spread->path);
+	PathsData *spreadpath = dynamic_cast<PathsData *>(spread->path);
 	DBG if (!spreadpath && spread->path) cerr <<"**** error!!! wrong type for net spread path!"<<endl;
 	if (!spreadpath) { 
-		spreadpath=new PathsData;
-		spread->path=spreadpath;
+		spreadpath = new PathsData;
+		spread->path = spreadpath;
 	}
+
+	spreadpath->style |= PathsData::PATHS_Ignore_Weights;
 
 	 // build lines...
 	NetLine *l=NULL;
@@ -789,7 +794,7 @@ Spread *NetImposition::PaperLayout(int whichpaper)
 	Spread *spread=PageLayout(whichpaper);
 	spread->style=SPREAD_PAPER;
 
-	PathsData *path=dynamic_cast<PathsData *>(spread->path);//this was a non-local PathsData obj
+	PathsData *path = dynamic_cast<PathsData *>(spread->path);//this was a non-local PathsData obj
 
 	 // put a reference to the outline in marks if printnet
 	if (printnet) {

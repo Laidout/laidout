@@ -22,7 +22,8 @@
 #include <lax/interfaces/groupdata.h>
 #include <lax/interfaces/pathinterface.h>
 #include "objectcontainer.h"
-#include "../guides.h"
+//#include "../filetypes/objectio.h"
+#include "../core/guides.h"
 #include "../calculator/values.h"
 //#include "objectfilter.h"
 
@@ -36,6 +37,7 @@ class DrawableObject;
 class PointAnchor;
 class Document;
 class Page;
+class ObjectIO;
 //class ObjectFilter;
 
 
@@ -135,6 +137,14 @@ enum BBoxAnchorTypes {
 	BBOXANCHOR_MAX
 };
 
+enum ClipTypes {
+	CLIP_None,
+	CLIP_From_Parent_Area,
+	CLIP_Custom_Path,
+	CLIP_Custom_Softmask,
+	CLIP_MAX
+};
+
 class DrawableObject :  virtual public ObjectContainer,
 						virtual public Laxkit::Tagged,
 						virtual public LaxInterfaces::GroupData,
@@ -145,13 +155,29 @@ class DrawableObject :  virtual public ObjectContainer,
  public:
 	AlignmentRule *parent_link;
 
+	ObjectIO *importer;
+	Laxkit::anObject *importer_data;
 
-	SomeData *clip; //If not a PathsData, then is an object for a softmask
-	LaxInterfaces::PathsData *clip_path;
-	LaxInterfaces::PathsData *wrap_path;
+	ClipTypes clip_type;
+	SomeData *soft_mask; //whatever it is, take copy to use as alpha
+	LaxInterfaces::PathsData *clip_path; //its m is from main object coordinate space
+	virtual LaxInterfaces::PathsData *ClipPath(const double **extra_m);
+
+	LaxInterfaces::PathsData *wrap_path; //area path + offset, or custom
 	LaxInterfaces::PathsData *inset_path;
 	double autowrap, autoinset; //distance away from default to put the paths when auto generated
-	int wraptype;
+
+	enum WrapType {
+		NoWrap,
+		BlockLeft,
+		BlockRight,
+		BlockAround,
+		Bounds,
+		VisualBounds, //page level aligned bounds
+		Offset,
+		Custom
+	};
+	WrapType wraptype, wrapblock;
 
 	Laxkit::RefPtrStack<DrawObjectChain> chains; //for linked objects
 
@@ -165,11 +191,10 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual DrawableObject *FinalObject();
 	virtual int SetFilter(Laxkit::anObject *nfilter, int absorb);
 
-
 	//Laxkit::RefPtrStack<anObject *> refs; //what other resources this objects depends on?
 
 	ValueHash properties;
-	LaxFiles::Attribute metadata;
+	LaxFiles::AttributeObject *metadata;
 	LaxFiles::Attribute iohints;
 
 
@@ -202,6 +227,8 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual LaxInterfaces::PathsData *GetAreaPath();
 	virtual LaxInterfaces::PathsData *GetInsetPath(); //return an inset path, may or may not be inset_path, where streams are laid into
 	virtual LaxInterfaces::PathsData *GetWrapPath(); //path inside which external streams can't go
+
+	virtual int InstallClip(LaxInterfaces::PathsData *pathsdata);
 
 	Laxkit::RefPtrStack<PointAnchor> anchors;
 	virtual int NumAnchors();
@@ -281,6 +308,28 @@ class BBoxValue : virtual public Value, virtual public Laxkit::DoubleBBox, virtu
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 			             Value **value_ret, Laxkit::ErrorLog *log);
 };
+
+
+//------------------------------------ ImageValue ------------------------------------------------
+ObjectDef *makeImageValueDef();
+class ImageValue : virtual public Value, virtual public FunctionEvaluator
+{
+  public:
+	static int TypeNumber();
+	Laxkit::LaxImage *image;
+
+	ImageValue();
+	virtual int type();
+    virtual const char *whattype() { return "ImageValue"; }
+	virtual ObjectDef *makeObjectDef();
+	virtual int getValueStr(char *buffer,int len);
+	virtual Value *duplicate();
+	virtual Value *dereference(int index);
+	//virtual int assign(FieldExtPlace *ext,Value *v);
+	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+			             Value **value_ret, Laxkit::ErrorLog *log);
+};
+
 
 } //namespace Laidout
 

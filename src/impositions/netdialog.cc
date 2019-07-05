@@ -18,12 +18,12 @@
 #include <lax/checkbox.h>
 
 #include "../language.h"
-#include "../headwindow.h"
+#include "../ui/headwindow.h"
+#include "../core/utils.h"
 #include "netdialog.h"
 #include "netimposition.h"
 #include "polyptychwindow.h"
-#include "utils.h"
-#include "polyptych/src/poly.h"
+#include "../polyptych/src/poly.h"
 	
 #include <iostream>
 using namespace std;
@@ -61,8 +61,8 @@ NetDialog::NetDialog(Laxkit::anXWindow *parnt,const char *nname,const char *ntit
 
 	doc=NULL;
 
-	if (paper) paperstyle=(PaperStyle*)paper->duplicate();
-	else paper=new PaperStyle;
+	if (paper) paperstyle = dynamic_cast<PaperStyle*>(paper->duplicate());
+	else paperstyle = new PaperStyle;
 
 	//doc=ndoc;
 	//if (doc) doc->inc_count();
@@ -135,7 +135,7 @@ int NetDialog::init()
 			        			    " ",NULL,0,
 						            0,0,1,0,3,3);
 	impfromfile->tooltip(_("Create from a polyhedron or a net file."));
-	impfromfile->GetLineEdit()->setWinStyle(LINEEDIT_SEND_FOCUS_ON,1);
+	impfromfile->GetLineEdit()->SetWinStyle(LINEEDIT_SEND_FOCUS_ON,1);
 	AddWin(impfromfile,1, impfromfile->win_w,0,2000,50,0, linpheight,0,0,50,0, -1);
 	last=tbut=new Button(this,"impfileselect",NULL,0, 0,0,0,0, 1, 
 					last,object_id,"impfileselect",
@@ -156,7 +156,7 @@ int NetDialog::init()
 								last,object_id,"boxdims",
 				        	    _("Width, length, height:"),"1,1,1",0,
 			    	        	100,0,1,1,3,3);
-	boxdims->GetLineEdit()->setWinStyle(LINEEDIT_SEND_FOCUS_ON,1);
+	boxdims->GetLineEdit()->SetWinStyle(LINEEDIT_SEND_FOCUS_ON,1);
 	AddWin(boxdims,1, boxdims->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddWin(NULL,0, 3000,2990,0,50,0, 20,0,0,50,0, -1); //force left justify and line break
 

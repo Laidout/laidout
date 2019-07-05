@@ -5,76 +5,91 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 
 
-VERSION 0.097
--------------
-(done) debug previous version at least slightly!
-(done) experimental Delauny/voronoi lines tool
-(done) engraver tool, fix non-live updates when tweaking various parameters
-(done) Clean up symmetry clone interface, not easy to use currently
-(done) Allow setting custom default exported file name (via a line in laidoutrc)
-       Text on path tool
-(done) text objects: harfbuzz based
-(done) Add more save options: save a copy, save incremented, save as template, autosave settings
-       Moving selected things in group contents does not update group bounds
-       should not be able to select both group and group contents at same time
-       double click on group should change selection area to group contents like inkscape?
-(done) Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
-       debug svg in
-       svg out default to 96dpi
-       Make sure scribus can export to 1.5
-(done) Experimental perspective transform interface
-(done) Experimental voronoi interface
-(done) Experimental node interface (done aside from large todo list)
-(done) fix tooltips
-
-
 VERSION 0.098
 -------------
-       debug previous version!
+       debug previous version a bit
+(done) Animated gif import
+(done) Clip paths
+(done) Clip path in place editing
+(done) Convert backend to using Theme objects for easier adjusting in the future
+(done) Fix object bleeding across pages for signatures and nets (issue #12)
+(done) Make Imlib2 dependency optional, prepare replacement image loading with GraphicsMagick
+(done) Html gallery output with optional template
+       Way to export svg embedded into html
+       lock down color backend.. it's currently a series of weak hacks based on 8-bit screen rgb
+
+       Debug Text on path tool
+(done) make laidout.org twitterable with an image card
+
+       Perspective transform object filter
+       Node based image "importer"
+       Empty objects that can be parents, or whose contents are defined by nodes
+
+       layers (object tree) palette
+       Tools should remember their settings
+       Import Images dialog needs total reprogramming
+       In image properties dialog, be able to select from various default preview configs
+       Undo/Redo
+
+       Moving selected things in group contents does not update group bounds
+       should not be able to select both group and group contents at same time
+       fix object transform handles for really small objects (handles should still be accessible)
+       double click on group should change selection area to group contents like inkscape?
+
        engraver tool grow point mode
        engraver tool, resolution cut mode
        engraver tool, blockout needs to be more precise
        engraver tool, fully test tool effects when many objects selected
-       layers (object tree) palette
-       Connect node interface for use with object filters
-       Perspective transform object filter
-       Tools should remember their settings
-       option to specify alignment of different size signature stacks
        debug line outline cache, especially for joins
-       Finish implementing anchor tool. maybe gss compatibility?
-       Masking, clip paths and/or softmask
-       Fix object bleeding across pages for signatures and nets
-       export preview
-       Externally rendered objects, similar to Scribus render frames
-       Custom alignments to parents, not just affine transform to parent
-       Merge EpsData with normal images
-       Import Images dialog needs total reprogramming
-       In image properties dialog, be able to select from various default preview configs
-       lock down color backend.. it's currently a series of weak hacks based on 8-bit screen rgb
+       make PathInterface extrapolate line join work
+
        Clean up patch controls
        Clean up project load/save internals and dialogs
        Object and resource tags interface
+
        Finish implementing double sided net impositions
        allow inserting net impositions as foldouts in regular Signature Imposition stacks
        debug Net imposition interactive unwrapper, via optional opengl Polyptych
        Net imposition build net interface
-       Tool scripting
-       Custom line caps
-       Undo/Redo
-       Clone Pattern Builder
-       color styles, so objects can refer to a named color, just change that named to change all
-       Soup up the color box so one can recall previous colors, and/or integration with palette window
-       make PathInterface extrapolate line join work
        Signature editor: detect non staplable binding edge, show red rather than green
-       fix object transform handles for really small objects (handles should still be accessible)
+       Signature editor: option to specify alignment of different size signature stacks
+
+       Tool scripting
+       Scripted plugin interface
+       Clone Pattern Builder
+       Soup up the color box so one can recall previous colors, and/or integration with palette window
+
+       debug svg in
+       Collect for out
+       export preview
+       Make sure scribus export works with 1.5, and can handle new clipping features
        Scribus import should try to do something appropriate with page spreads >= 2 pages wide
        Scribus import should do something meaningful with original Scribus page bleed values
-       Collect for out
+
        PDF in, at least as 1 image per page, for purposes of imposition
        pdf export, unicode capable
        Optimize pdf export to rescale to target dpi, and compress image data
+
        drag-n-drop text to and from the various text edits
        drag-n-drop with system, like drag images into viewwindow from an external file browser
+
+       Figure out what on earth is to be done about color font processing (issue #6)
+       Invistigate Flatpak creation (issue #11)
+       Investigate AppImage creation (issue #10)
+
+
+VERSION 0.099
+-------------
+       color styles, so objects can refer to a named color, just change that named to change all
+       Custom line caps
+       Finish implementing anchor tool. maybe gss compatibility?
+       Custom alignments to parents, not just affine transform to parent
+       Externally rendered objects, similar to Scribus render frames
+       Softmask
+       GraphicsMagick nodes
+       Gmic nodes plugin
+       Merge EpsData with normal images, since they can be previewed with gm now
+       Make a laxkit.pc
 
 
 VERSION 0.1 
@@ -207,6 +222,25 @@ While i'm at it, I'd like a pony.
             ---------------- 
 ------------- OLD RELEASES -----------------
             ----------------
+
+VERSION 0.097
+-------------
+(done) debug previous version at least slightly!
+(done) experimental Delauny/voronoi lines tool
+(done) engraver tool, fix non-live updates when tweaking various parameters
+(done) Clean up symmetry clone interface, not easy to use currently
+(done) Allow setting custom default exported file name (via a line in laidoutrc)
+(done) text objects: harfbuzz based
+(done) Add more save options: save a copy, save incremented, save as template, autosave settings
+(done) Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
+(done) svg out default to 96dpi
+(done) Implement c++ plugin infrastructure
+(done) Experimental perspective transform interface
+(done) Experimental voronoi interface
+(done) Experimental node interface (done aside from large todo list)
+(done) fix tooltips
+(done) Connect node interface for use with object filters
+
 
 VERSION 0.096  --  released 18 December 2015!
 -------------

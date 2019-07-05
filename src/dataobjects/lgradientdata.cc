@@ -15,7 +15,7 @@
 
 #include "lgradientdata.h"
 #include "datafactory.h"
-#include "../stylemanager.h"
+#include "../core/stylemanager.h"
 #include "../language.h"
 #include "../calculator/shortcuttodef.h"
 
@@ -26,12 +26,106 @@ using namespace Laxkit;
 namespace Laidout {
 
 
+//------------------------------- GradientStrip ---------------------------------------
 
+/*! \class GradientValue
+ */
+
+
+GradientValue::GradientValue()
+  : GradientStrip(1)
+{
+	Id();
+}
+
+void GradientValue::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+{
+	GradientStrip::dump_out(f,indent,what,context);
+}
+
+void GradientValue::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+{
+	GradientStrip::dump_in_atts(att,flag,context);
+}
+
+LaxFiles::Attribute *GradientValue::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+{
+	return GradientStrip::dump_out_atts(att,what,context);
+}
+
+GradientStrip *GradientValue::newGradientStrip()
+{
+	return new GradientValue();
+}
+
+Value *GradientValue::duplicate()
+{
+	GradientValue *dup = new GradientValue();
+
+	GradientStrip::duplicate(dynamic_cast<anObject*>(this));
+
+	return dup;
+}
+
+ObjectDef *GradientValue::makeObjectDef()
+{
+    ObjectDef *sd=stylemanager.FindDef("GradientStrip");
+    if (sd) {
+        sd->inc_count();
+        return sd;
+    }
+
+    sd = new ObjectDef(nullptr,
+            "GradientStrip",
+            _("Gradient"),
+            _("A simple gradient definition"),
+            "class",
+            NULL,NULL);
+
+//    sd->pushFunction("LoadFile",_("Load File"),_("Load a gradient file"),
+//                     NULL,
+//                     "file",NULL,_("File name to load"),"string", NULL, NULL,
+//                     NULL);
+//    sd->pushFunction("SaveFile",_("Save File"),_("Save a gradient file"),
+//                     NULL,
+//                     "file",NULL,_("File name to load"),"string", NULL, NULL,
+//                     NULL);
+
+    //sd->pushVariable("file",  _("File"),  _("File name"),    "string",0, NULL,0);
+    //sd->pushVariable("width", _("Width"), _("Pixel width"),  "real",0,   NULL,0);
+    //sd->pushVariable("height",_("Height"),_("Pixel height"), "real",0,   NULL,0);
+
+    sd->pushVariable("colors",  _("Colors"),  _("List of colors"),    "array of GradientColor",0, NULL,0);
+
+    return sd;
+}
+
+Value *GradientValue::dereference(const char *extstring, int len)
+{
+	//***
+	return nullptr;
+}
+
+/*! Return 1 for success, 2 for success, but other contents changed too, -1 for unknown
+ */
+int GradientValue::assign(FieldExtPlace *ext,Value *v)
+{
+	//***
+	return -1;
+}
+
+//int GradientValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+//                         Value **value_ret, Laxkit::ErrorLog *log)
+//{
+//	***
+//}
+
+
+//------------------------------- LGradientData ---------------------------------------
 
 /*! \class LGradientData 
  * \brief Subclassing LaxInterfaces::GradientData
  */
-
 
 
 LGradientData::LGradientData(LaxInterfaces::SomeData *refobj)
@@ -137,19 +231,19 @@ ObjectDef *LGradientData::makeObjectDef()
 Value *LGradientData::dereference(const char *extstring, int len)
 {
 	if (extequal(extstring,len, "p1")) {
-		return new DoubleValue(p1);
+		return new FlatvectorValue(strip->p1);
 	}
 
 	if (extequal(extstring,len, "p2")) {
-		return new DoubleValue(p2);
+		return new FlatvectorValue(strip->p2);
 	}
 
 	if (extequal(extstring,len, "r1")) {
-		return new DoubleValue(r1);
+		return new DoubleValue(strip->r1);
 	}
 
 	if (extequal(extstring,len, "r2")) {
-		return new DoubleValue(r2);
+		return new DoubleValue(strip->r2);
 	}
 
 //	if (extequal(extstring,len, "colors")) {
@@ -167,30 +261,30 @@ int LGradientData::assign(FieldExtPlace *ext,Value *v)
 		double d;
 		if (str) {
 			if (!strcmp(str,"p1")) {
-				d=getNumberValue(v, &isnum);
-				if (!isnum) return 0;
-				p1=d;
+				FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(v);
+				if (!fv) return 0;
+				strip->p1 = fv->v;
 				FindBBox();
 				return 1;
 
 			} else if (!strcmp(str,"p2")) {
-				d=getNumberValue(v, &isnum);
-				if (!isnum) return 0;
-				p2=d;
+				FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(v);
+				if (!fv) return 0;
+				strip->p2 = fv->v;
 				FindBBox();
 				return 1;
 
 			} else if (!strcmp(str,"r1")) {
 				d=getNumberValue(v, &isnum);
 				if (!isnum) return 0;
-				r1=d;
+				strip->r1 = d;
 				FindBBox();
 				return 1;
 
 			} else if (!strcmp(str,"r2")) {
 				d=getNumberValue(v, &isnum);
 				if (!isnum) return 0;
-				r2=d;
+				strip->r2 = d;
 				FindBBox();
 				return 1;
 

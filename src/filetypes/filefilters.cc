@@ -14,10 +14,10 @@
 //
 
 #include "filefilters.h"
-#include "../document.h"
+#include "../core/document.h"
 #include "../language.h"
 #include "../laidout.h"
-#include "../stylemanager.h"
+#include "../core/stylemanager.h"
 
 #include <lax/strmanip.h>
 #include <lax/fileutils.h>
@@ -121,6 +121,19 @@ FileFilter::FileFilter()
 {
 	plugin = NULL; 
 	flags  = 0;
+}
+
+FileFilter::~FileFilter()
+{
+	DBG cerr << "FileFilter destructor " <<endl;
+}
+
+/*! Return whether the filter is based on import or export from whole directories, rather than files.
+ * Default is to return false.
+ */
+bool FileFilter::DirectoryBased()
+{
+	return false;
 }
 
 //------------------------------------- ImportFilter -----------------------------------
@@ -857,7 +870,7 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 		} else if (e==2) { sprintf(error, _("Invalid format for %s!"),"evenodd"); throw error; }
 
 		 //---rotate180
-		i=parameters->findInt("rotate180",-1,&e);
+		i = parameters->findInt("rotate180",-1,&e);
 		if (e==0) {
 			if (i==0) config->rotate180=0;
 			else if (i==1) config->rotate180=1;
@@ -885,7 +898,6 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 		BBoxValue *crop=dynamic_cast<BBoxValue*>(parameters->findObject("crop",-1,&e));
 		if (e==0) {
 			if (i!=0 && i!=1) throw _("Invalid crop value!");
-			config->target=i;
 			config->crop=*crop;
 		} else if (e==2) { sprintf(error, _("Invalid format for %s!"),"crop"); throw error; }
 
@@ -1028,7 +1040,7 @@ void DocumentExportConfig::BaseDefaults()
 	evenodd         = All;
 	batches         = 0;
 	filter          = NULL;
-	target          = 0;
+	target          = TARGET_Single;
 	filename        = NULL;
 	tofiles         = NULL;
 	start     = end = -1;
@@ -1125,6 +1137,8 @@ LaxFiles::Attribute *DocumentExportConfig::dump_out_atts(LaxFiles::Attribute *at
 
 	if (filename) att->push("tofile", filename);
 	if (tofiles) att->push("tofiles", tofiles);
+	att->push("target", target == TARGET_Single ? "single" : (target == TARGET_Multi ? "multi" : "command"));
+
 	if (filter) att->push("format", filter->VersionName());
 	if (doc && doc->imposition) {
 		att->push("imposition", doc->imposition->whattype());
@@ -1134,7 +1148,7 @@ LaxFiles::Attribute *DocumentExportConfig::dump_out_atts(LaxFiles::Attribute *at
 	att->push("end",  end);
 
 	att->push("paperrotation", paperrotation);
-	att->push("rotate180", rotate180==0 ? "yes" : "no"); 
+	att->push("rotate180", rotate180 == 0 ? "no" : "yes"); 
 	att->push("reverse", reverse_order ? "yes" : "no");
 	att->push("batches", batches);
 	if (evenodd==Odd) att->push("evenodd","odd");
@@ -1163,11 +1177,17 @@ void DocumentExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpCo
 		fprintf(f,"%sevenodd odd          #all|even|odd. Based on spread index, maybe export only even or odd spreads.\n",spc);
 		fprintf(f,"%spaperrotation 0      #0|90|180|270. Whether to rotate each exported (final) paper by that number of degrees\n",spc);
 		fprintf(f,"%srotate180 yes        #or no. Whether to rotate every other paper by 180 degrees, in addition to paperrotation\n",spc);
+		fprintf(f,"%starget single        #or multi, or command. Whether to try to output to a single file or many\n",spc);
 
 		return;
 	}
 	if (filename) fprintf(f,"%stofile %s\n",spc,filename);
 	if (tofiles) fprintf(f,"%stofiles  \"%s\"\n",spc,tofiles);
+
+	if (target == TARGET_Single)       fprintf(f,"%starget single\n",  spc);
+	else if (target == TARGET_Multi)   fprintf(f,"%starget multi\n",   spc);
+	else if (target == TARGET_Command) fprintf(f,"%starget command\n", spc);
+
 	if (filter) fprintf(f,"%sformat  \"%s\"\n",spc,filter->VersionName());
 	if (doc && doc->imposition) {
 		fprintf(f,"%simposition \"%s\"\n",spc,doc->imposition->whattype());
@@ -1199,19 +1219,25 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpCo
 		value=att->attributes.e[c]->value;
 
 		if (!strcmp(name,"tofile")) {
-			target=0;
+			//target=0;
 			makestr(filename,value);
 
 		} else if (!strcmp(name,"tofiles")) {
-			target=1;
+			//target=1;
 			makestr(tofiles,value);
+
+		} else if (!strcmp(name,"target")) {
+			if (isblank(value)) target = TARGET_Single;
+			else if (!strcmp(value, "single"))  target = TARGET_Single;
+			else if (!strcmp(value, "multi"))   target = TARGET_Multi;
+			else if (!strcmp(value, "command")) target = TARGET_Command;
 
 		} else if (!strcmp(name,"format")) {
 			filter=laidout->FindExportFilter(value,false);
 
 		} else if (!strcmp(name,"imposition")) {
 			//***
-			cout <<"Need to implement export with alternate imposition.."<<endl;
+			cerr <<"Need to implement export with alternate imposition.."<<endl;
 
 		} else if (!strcmp(name,"layout")) {
 			if (!doc || isblank(value)) { layout=0; continue; }
@@ -1241,7 +1267,7 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpCo
 				paperrotation=0;
 
 		} else if (!strcmp(name,"rotate180")) {
-			rotate180=BooleanAttribute(value);
+			rotate180 = BooleanAttribute(value);
 			//if (isblank(value) || !strcasecmp(value,"none")) rotate180=0;
 			//else if (!strcasecmp(value,"odd")) rotate180=1;
 			//else rotate180=2;
@@ -1251,8 +1277,8 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpCo
 
 		} else if (!strcmp(name,"evenodd")) {
 			if (isblank(value)) evenodd=All;
-			else if (strcmp(value,"odd")) evenodd=Odd;
-			else if (strcmp(value,"even")) evenodd=Even;
+			else if (!strcmp(value,"odd")) evenodd=Odd;
+			else if (!strcmp(value,"even")) evenodd=Even;
 			else evenodd=All;
 
 		} else if (!strcmp(name,"textaspaths")) {
@@ -1372,17 +1398,18 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 
 	int numoutput = (config->end-config->start+1)*papergroup->papers.n; //number of output "pages"
 	//int numdigits=log10(numoutput);
-	if (numoutput>1 && config->target==0 && !(config->filter->flags&FILTER_MULTIPAGE)) {
+	if (numoutput>1 && config->target == DocumentExportConfig::TARGET_Single && !(config->filter->flags&FILTER_MULTIPAGE)) {
 		log.AddMessage(_("Filter cannot export more than one page to a single file."),ERROR_Fail);
 		return 1;
 	}
 
 	int err=0;
-	if (numoutput>1 && config->target==1 && !(config->filter->flags&FILTER_MANY_FILES)) {
+	if (numoutput>1 && config->target == DocumentExportConfig::TARGET_Multi && !(config->filter->flags&FILTER_MANY_FILES)) {
 		 //filter does not support outputting to many files, so loop over each paper and spread,
 		 //exporting 1 file per each spread-paper combination
 
-		config->target=0;
+		int oldtarget = config->target;
+		config->target = DocumentExportConfig::TARGET_Single;
 		PaperGroup *pg;
 		char *filebase=NULL;
 		if (config->tofiles) filebase=LaxFiles::make_filename_base(config->tofiles);//###.ext -> %03d.ext
@@ -1433,9 +1460,11 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 		}
 
 		if (config->reverse_order) { int temp=start; start=end; end=temp; }
-		config->papergroup=oldpg;
-		config->start=start;
-		config->end=end;
+
+		config->papergroup = oldpg;
+		config->start      = start;
+		config->end        = end;
+		config->target     = oldtarget;
 		delete[] filebase;
 
 		if (left) {
@@ -1447,7 +1476,7 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 	} else {
 		 //output filter can handle multiple pages...
 		 //
-		if (config->target==0 && config->batches>0 && config->batches<config->end-config->start+1) {
+		if (config->target == DocumentExportConfig::TARGET_Single && config->batches > 0 && config->batches < config->end - config->start + 1) {
 			 //divide into batches
 			int s=config->start;
 			int e=config->end;
@@ -1480,7 +1509,7 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 			config->end=e;
 			config->filename=oldfilename;
 
-		} else err=config->filter->Out(NULL,config,log); //send all pages at once to filter
+		} else err = config->filter->Out(NULL,config,log); //send all pages at once to filter
 	}
 	
 	DBG cerr << "export_document end."<<endl;

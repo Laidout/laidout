@@ -9,10 +9,10 @@ LAXIDIR=$(LAXDIR)/interfaces
 
 
 LD=g++
-LDFLAGS= $(EXTRA_LDFLAGS) -L/usr/local/lib -L/usr/X11R6/lib -rdynamic -lXi -lXext -lX11 -lm -lpng `imlib2-config --libs` `freetype-config --libs`\
-		 `cups-config --libs` -ldl -lXft
+LDFLAGS= $(EXTRA_LDFLAGS) -L/usr/local/lib -L/usr/X11R6/lib -rdynamic -lXi -lXext -lX11 -lm -lpng `imlib2-config --libs` `pkg-config --libs freetype2`\
+		 `pkg-config --libs GraphicsMagick++` `cups-config --libs` -ldl -lXft -lXrandr
 DEBUGFLAGS= -g -gdwarf-2
-CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) $(EXTRA_CPPFLAGS)  -I$(LAXDIR)/.. `freetype-config --cflags` -I$(POLYPTYCHBASEDIR)
+CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) $(EXTRA_CPPFLAGS)  -I$(LAXDIR)/.. `pkg-config --cflags freetype2` -I$(POLYPTYCHBASEDIR)
 
 
 #---optional libs:
@@ -24,7 +24,7 @@ endif
 #---polyptych related:
 ifeq ($(LAIDOUT_USING_GL), yes)
 #---if gl:
-POLYPTYCHLIBS= -lGraphicsMagick++ -ltiff -lGL -lGLU -lftgl 
+POLYPTYCHLIBS=  -ltiff -lGL -lGLU -lftgl
 POLYPTYCH_GL_OBJS=polyptych/src/hedronwindow.o  polyptych/src/glbase.o  polyptych/src/gloverlay.o  polyptych/src/polyrender.o
 POLYPTYCHFORLAIDOUT=polyptychgl
 
@@ -42,47 +42,36 @@ POLYPTYCHOBJS=polyptych/src/nets.o polyptych/src/poly.o
 dirs= \
 	api \
 	calculator \
+	core \
 	dataobjects \
 	filetypes \
 	impositions \
 	interfaces \
+	nodes \
 	plugins \
-	printing
+	printing \
+	ui
 
 objs= \
-	utils.o \
-	fieldplace.o \
-	stylemanager.o \
-	papersizes.o \
-	plaintext.o \
-	page.o \
-	spreadview.o \
-	document.o \
-	project.o \
-	guides.o \
-	interfaces.o \
-	autosavewindow.o \
-	about.o \
-	buttonbox.o \
-	commandwindow.o \
-	plaintextwindow.o \
-	headwindow.o \
-	helpwindow.o \
-	settingswindow.o \
-	newdoc.o \
-	viewwindow.o \
-	palettes.o \
-	drawdata.o \
-	spreadeditor.o \
 	laidout-more.o \
-	importimage.o \
-	importimagesdialog.o \
-	laidoutprefs.o \
 	laidout.o 
 
 #object files from other directories. Listing them all explicitly to prevent
 #spurious inclusion of temporary testing stuff.
 otherobjs= \
+	core/document.o \
+	core/drawdata.o \
+	core/fieldplace.o \
+	core/guides.o \
+	core/importimage.o \
+	core/laidoutprefs.o \
+	core/page.o \
+	core/papersizes.o \
+	core/plaintext.o \
+	core/project.o \
+	core/spreadview.o \
+	core/stylemanager.o \
+	core/utils.o \
 	calculator/values.o \
 	calculator/calculator.o \
 	calculator/interpreter.o \
@@ -118,10 +107,11 @@ otherobjs= \
 	interfaces/animationinterface.o \
 	interfaces/objecttree.o \
 	interfaces/pagemarkerinterface.o \
-	interfaces/nodeinterface.o \
-	interfaces/nodeeditor.o \
-	interfaces/nodes.o \
 	interfaces/objectfilterinterface.o \
+	nodes/nodeinterface.o \
+	nodes/nodeeditor.o \
+	nodes/nodes-dataobjects.o \
+	nodes/nodes.o \
 	printing/print.o \
 	printing/psfilters.o \
 	printing/pscolorpatch.o \
@@ -139,6 +129,7 @@ otherobjs= \
 	filetypes/image.o \
 	filetypes/image-gs.o \
 	filetypes/laidoutimport.o \
+	filetypes/htmlgallery.o \
 	filetypes/pdf.o \
 	filetypes/podofoimposeplan.o \
 	filetypes/postscript.o \
@@ -165,11 +156,28 @@ otherobjs= \
 	dataobjects/ltextonpath.o \
 	dataobjects/lvoronoidata.o \
 	dataobjects/printermarks.o \
+	ui/about.o \
+	ui/autosavewindow.o \
+	ui/buttonbox.o \
+	ui/commandwindow.o \
+	ui/headwindow.o \
+	ui/helpwindow.o \
+	ui/metawindow.o \
+	ui/importimagesdialog.o \
+	ui/newdoc.o \
+	ui/palettes.o \
+	ui/plaintextwindow.o \
+	ui/settingswindow.o \
+	ui/spreadeditor.o \
+	ui/viewwindow.o \
+	ui/valuewindow.o \
+	ui/interfaces.o \
 
 
 all: laidout
 
-laidout: lax laxinterface $(dirs) $(objs) $(POLYPTYCHFORLAIDOUT)
+laidout: lax laxinterface $(objs) $(POLYPTYCHFORLAIDOUT)
+	for NAME in $(dirs); do $(MAKE) -C $$NAME || exit ; done
 	$(LD) $(otherobjs) $(objs) $(POLYPTYCH_GL_OBJS) $(POLYPTYCHOBJS) -L$(LAXIDIR) -L$(LAXDIR) -llaxinterfaces -llaxkit -lharfbuzz -lcairo -lfontconfig $(LDFLAGS) $(OPTIONALLIBS) -lreadline -lcrypto $(POLYPTYCHLIBS) -o $@
 
 icons:
@@ -182,32 +190,8 @@ polyptych:
 polyptychgl:
 	cd $(POLYPTYCHBASEDIR)/polyptych/src && $(MAKE) forlaidoutgl
 
-api:
-	cd api && $(MAKE)
-
-calculator:
-	cd calculator && $(MAKE)
-
-dataobjects:
-	cd dataobjects && $(MAKE)
-
-impositions:
-	cd impositions && $(MAKE)
-
-interfaces:
-	cd interfaces && $(MAKE)
-
-filetypes:
-	cd filetypes && $(MAKE)
-
-printing:
-	cd printing && $(MAKE)
-
-plugins:
-	cd $@ && $(MAKE)
-
-addons:
-	cd plugins && $(MAKE) plugins
+alldirs:
+	for NAME in $(dirs); do $(MAKE) -C $$NAME ; done
 
 # This changes in *.cc all occurrences of '(whitespace)DBG' to '(same ws)//DBG' and
 # '(whitespace)//DBG' to '(same ws)////DBG'
@@ -233,8 +217,9 @@ laxinterface:
 test2: lax laxinterface interfaces test2.o papersizes.o
 	$(LD) test2.o styles.o dataobjects/group.o dataobjects/objectcontainer.o papersizes.o interfaces/paperinterface.o $(LDFLAGS)  -llaxinterfaces -llaxkit -o $@
 
-test: lax laxinterface stylewindow.o  styles.o stylemanager.o test.o
-	$(LD) test.o stylewindow.o styles.o stylemanager.o $(LDFLAGS) -llaxinterfaces -llaxkit -o $@
+test: lax laxinterface $(objs) $(POLYPTYCHFORLAIDOUT)
+	for NAME in $(dirs); do $(MAKE) -C $$NAME || exit ; done
+	$(LD) $(CPPFLAGS) $(otherobjs) test.cc $(POLYPTYCH_GL_OBJS) $(POLYPTYCHOBJS) -L$(LAXIDIR) -L$(LAXDIR) -llaxinterfaces -llaxkit -lharfbuzz -lcairo -lfontconfig $(LDFLAGS) $(OPTIONALLIBS) -lreadline -lcrypto $(POLYPTYCHLIBS) -o $@
 
 docs:
 	cd ../docs && doxygen 
@@ -243,15 +228,16 @@ alldocs:
 	cd ../docs && doxygen Doxyfile-with-laxkit
 
 depends:
-	makedepend -fmakedepend -I$(LAXDIR)/.. -Y *.cc
+	utils/makedependencies -fmakedepend -I$(LAXDIR)/.. *.cc
 	for NAME in $(dirs); do $(MAKE) -C $$NAME depends; done
 	cd $(POLYPTYCHBASEDIR)/polyptych/src && $(MAKE) depends
 
 include makedepend
 
 
-.PHONY: clean lax docs $(dirs) addons hidegarbage unhidegarbage polyptych polyptychgl
+.PHONY: clean lax docs $(dirs) alldirs addons hidegarbage unhidegarbage polyptych polyptychgl
 clean:
 	rm -f laidout *.o
 	for NAME in $(dirs); do $(MAKE) -C $$NAME clean; done
+	$(MAKE) -C polyptych/src clean
 

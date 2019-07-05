@@ -14,7 +14,7 @@
    inkscape:output_extension="org.inkscape.output.svg.inkscape"
    sodipodi:docname="icons.svg"
    version="1.0"
-   inkscape:version="0.92.2 (5c3e80d, 2017-08-06)"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)"
    sodipodi:version="0.32"
    id="svg2"
    height="17in"
@@ -31,14 +31,14 @@
      inkscape:grid-bbox="false"
      showgrid="true"
      inkscape:window-y="1"
-     inkscape:window-x="1"
-     inkscape:window-height="1153"
-     inkscape:window-width="1918"
+     inkscape:window-x="1280"
+     inkscape:window-height="1393"
+     inkscape:window-width="2559"
      inkscape:current-layer="layer1"
      inkscape:document-units="in"
-     inkscape:cy="1027.8159"
-     inkscape:cx="1246.0986"
-     inkscape:zoom="0.63974013"
+     inkscape:cy="1113.6181"
+     inkscape:cx="1317.3486"
+     inkscape:zoom="2.5589605"
      inkscape:pageshadow="2"
      inkscape:pageopacity="0.0"
      borderopacity="1.0"
@@ -1721,8 +1721,8 @@
        id="rect6757"
        width="250.5"
        height="283"
-       x="1454.5439"
-       y="152.19229"
+       x="1172.447"
+       y="-137.96458"
        rx="0.025489558"
        ry="0.025489558" />
     <rect
@@ -5711,7 +5711,7 @@
     </g>
     <g
        style="display:inline"
-       transform="translate(908.61173,-768.16476)"
+       transform="translate(907.14628,-679.50572)"
        id="g4633">
       <g
          style="display:inline"
@@ -5803,7 +5803,7 @@
     </g>
     <g
        id="g4744"
-       transform="translate(951.89753,-678.69927)"
+       transform="translate(995.8607,-678.69927)"
        style="display:inline">
       <g
          transform="matrix(1.323894,0,0,0.7071351,124.18247,621.92656)"
@@ -5899,7 +5899,7 @@
     <g
        inkscape:label="#ApplyText-9"
        id="applyText-9"
-       transform="translate(906.54753,-682.40709)"
+       transform="translate(996.30566,-768.50162)"
        style="display:inline">
       <g
          transform="matrix(1.323894,0,0,0.7071351,124.18247,621.92656)"
@@ -5950,7 +5950,7 @@
          style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.79999983;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
     </g>
     <g
-       transform="translate(535.82396,-360.42689)"
+       transform="translate(491.12808,-360.42689)"
        style="display:inline"
        id="g4874">
       <path
@@ -6221,7 +6221,7 @@
     </g>
     <g
        id="g4880-0"
-       transform="matrix(1.1887167,0,0,1.0281107,933.28717,-835.37856)"
+       transform="matrix(1.1887167,0,0,1.0281107,845.36084,-834.27948)"
        style="display:inline;fill:none;stroke:#000000;stroke-opacity:1">
       <g
          transform="matrix(1.0725785,0,0,0.87862223,163.164,602.35966)"

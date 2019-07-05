@@ -18,7 +18,6 @@
 #include "hedronwindow.h"
 #include "../language.h"
 
-#include <Imlib2.h>
 #include <lax/strmanip.h>
 #include <lax/freedesktop.h>
 #include <lax/transformmath.h>
@@ -2900,9 +2899,12 @@ int HedronWindow::unwrapTo(int from,int to)
 		}
 
 		int fromi,toi;
-		int status=netf->findOriginalFace(from,1,0,&fromi);
+		DBG int status =
+		netf->findOriginalFace(from,1,0,&fromi);
 		DBG cerr <<"from: find orig "<<from<<":"<<fromi<<", status="<<status<<endl;
-		status=nett->findOriginalFace(to,1,0,&toi);
+
+		DBG status = 
+		nett->findOriginalFace(to,1,0,&toi);
 		DBG cerr <<"  to: find orig "<<to<<":"<<toi<<", status="<<status<<endl;
 
 		netf->resetTick(0);
@@ -3065,22 +3067,21 @@ int HedronWindow::installPolyhedron(const char *file)
 }
 
 /*! Return 0 for image installed, or nonzero for error installing, and old image kept.
+ * Updates spheremap_data.
  */
 int HedronWindow::installImage(const char *file)
 {
 	DBG cerr <<"attempting to install image at "<<file<<endl;
 
 	const char *error=NULL;
-	Imlib_Image image,
-				image_scaled;
+
 	try {
-		image=imlib_load_image(file);
+		LaxImage *image = ImageLoader::LoadImage(file, NULL,0,0,NULL, 0, LAX_IMAGE_DEFAULT, NULL, false, 0);
 		if (!image) throw _("Could not load ");
 		
-		int width,height;
-		imlib_context_set_image(image);
-		width=imlib_image_get_width();
-		height=imlib_image_get_height();
+		int width;
+		width  = image->w();
+		//height = image->w();
 
 		 //gl texture dimensions must be powers of 2
 		if (width>2048) { spheremap_width=2048; spheremap_height=1024; }
@@ -3089,24 +3090,26 @@ int HedronWindow::installImage(const char *file)
 		else { spheremap_width=256; spheremap_height=128; }
 
 		if (spheremap_data) delete[] spheremap_data;
-		spheremap_data=new unsigned char[spheremap_width*spheremap_height*3];
+		spheremap_data = new unsigned char[spheremap_width*spheremap_height*3];
 
-		imlib_context_set_image(image);
-		image_scaled=imlib_create_cropped_scaled_image(0,0,width,height,spheremap_width,spheremap_height);
-		imlib_context_set_image(image_scaled);
-		unsigned char *data=(unsigned char *)imlib_image_get_data_for_reading_only();
+		 //crop and scale image to image_scaled
+		LaxImage *image_scaled = ImageLoader::NewImage(spheremap_width,spheremap_height);
+		Displayer *dp = GetDefaultDisplayer();
+		dp->MakeCurrent(image_scaled);
+		dp->imageout(image, 0,0, spheremap_width,spheremap_height);
+		dp->EndDrawing();
+
+		unsigned char *data = image_scaled->getImageBuffer();
+
 		int i=0,i2=0;
 		for (int c=0; c<spheremap_width; c++) {
 		  for (int c2=0; c2<spheremap_height; c2++) {
-			spheremap_data[i++]=data[i2++];
-			spheremap_data[i++]=data[i2++];
-			spheremap_data[i++]=data[i2++];
-			i2++;
+			spheremap_data[i++] = data[i2++];
+			spheremap_data[i++] = data[i2++];
+			spheremap_data[i++] = data[i2++];
+			i2++; //skip alpha
 		  }
 		}
-		imlib_free_image();
-		imlib_context_set_image(image);
-		imlib_free_image();
 
 		makestr(spherefile,file);
 	} catch (const char *err) {
@@ -3469,8 +3472,9 @@ int HedronWindow::PerformAction(int action)
 			appendstr(file,".polyptych");
 		} else makestr(file,polyptychfile);
 
-		foreground_color(rgbcolor(255,255,255));
-		textout(this,file,-1,0,app->defaultlaxfont->textheight(),LAX_LEFT|LAX_TOP);
+		Displayer *dp = MakeCurrent();
+		dp->NewFG(rgbcolor(255,255,255));
+		dp->textout(0,app->defaultlaxfont->textheight(), file,-1, LAX_LEFT|LAX_TOP);
 
 		if (saveas) {
 			 //saveas
@@ -3482,8 +3486,8 @@ int HedronWindow::PerformAction(int action)
 		} else {
 			 //normal save
 			DBG cerr<<"Saving to "<<file<<endl;
-			if (Save(file)==0) textout(this,"...Saved",-1,0,2*app->defaultlaxfont->textheight(),LAX_LEFT|LAX_TOP);
-			else textout(this,"...ERROR!!! Not saved",-1,0,2*app->defaultlaxfont->textheight(),LAX_LEFT|LAX_TOP);
+			if (Save(file)==0) dp->textout(0,2*app->defaultlaxfont->textheight(), "...Saved",-1, LAX_LEFT|LAX_TOP);
+			else dp->textout(0,2*app->defaultlaxfont->textheight(), "...ERROR!!! Not saved",-1, LAX_LEFT|LAX_TOP);
 		}
 
 		delete[] file;

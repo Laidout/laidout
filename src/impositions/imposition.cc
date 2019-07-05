@@ -16,7 +16,7 @@
 
 #include "../language.h"
 #include "imposition.h"
-#include "utils.h"
+#include "../core/utils.h"
 
 #include <lax/misc.h>
 #include <lax/lists.cc>
@@ -34,6 +34,17 @@ using namespace std;
 
 namespace Laidout {
 
+
+//------------------------- PageLocationStack --------------------------------------
+/* \class PageLocationStack
+ * Hold a stack of PageLocation objects for an impostion Spread.
+ */
+
+const char *PageLocationStack::object_e_name(int i)
+{ 
+	if (i < 0 || i >= Laxkit::PtrStack<PageLocation>::n || e[i]->page == NULL || e[i]->page->label == NULL) return "page";
+	return e[i]->page->label;
+}
 
 
 //------------------------- PageLocation --------------------------------------
@@ -638,6 +649,7 @@ int Imposition::SyncPageStyles(Document *doc,int start,int n, bool shift_within_
 		temppagestyle=GetPageStyle(c,0); //the default style with increased count
 
 		if (doc->pages.e[c]->pagestyle!=temppagestyle) {
+			doc->pages.e[c]->pagebleeds.flush();
 			if (doc->pages.e[c]->pagestyle) {
 				oldflags=doc->pages.e[c]->pagestyle->flags;
 				if (oldflags!=temppagestyle->flags) {

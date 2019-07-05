@@ -1,6 +1,6 @@
-.TH LAIDOUT 1 "December 18, 2015"
+.TH LAIDOUT 1 "May 30, 2018"
 .SH NAME
-Laidout \- Version 0.096.1, for laying out books
+Laidout \- Version 0.097.1, for laying out books, and playing with odd interfaces.
 .SH SYNOPSIS
 .B laidout
 .RI [ options ] " files" ...
@@ -10,11 +10,7 @@ Laidout \- Version 0.096.1, for laying out books
 books. For instance, from 11x17 inch master sheets, one can cut and fold in
 such a way that produces 3 cute little 5.5x5.6 inch booklets.
 
-Please be advised that Laidout is still quite rough. There is a mailing
-list and a page describing various bugs and deficiencies at the Laidout website.
-Only you can help stop bugs.
-
-Donations are encouraged! Money and code, that is, not bugs.
+Donations are encouraged! Money, code, and testing, that is, not bugs.
 
 http://www.laidout.org
 .PP
@@ -22,22 +18,33 @@ http://www.laidout.org
 .\" \fI<whatever>\fP escape sequences to invode bold face and italics, 
 .\" respectively.
 .SH OPTIONS
-This program follows the usual GNU command line syntax, with long
-options starting with two dashes (`-').
+Options can be given as long (two dashes) or short (one dash).
 A summary of options is included below.
+
 
 .TP
 .B \-h, \-\-help
-Show summary of options and exit.
+Show this summary and exit.
 
 .TP
 .B \-v, \-\-version
-Show version of program and exit.
+Print out version info, then exit.
 
 .TP
-.B \-\-file\-format file
-Write out a pseudocode mockup of the Laidout file format to file then exit.
-Will fail if file exists already.
+.B \-X, \-\-export\-formats
+List all the available export formats
+
+.TP
+.B \-O, \-\-list\-export\-options format
+List all the options for the given format
+
+.TP
+.B \-e, \-\-export 'format=EPS start=3'
+Export a document based on the given options
+
+.TP
+.B \-N, \-\-no\-template
+Do not use a default template
 
 .TP
 .B \-n, \-\-new \fISPECIFICATION\fI
@@ -67,39 +74,15 @@ no arguments, that template will be loaded (in this case templates/default
 will be loaded), rather then prompting you through the new document dialog.
 
 .TP
-.B \-N, \-\-no\-template
-Do not use a default template
-
-.TP
-.B \-e, \-\-export\-formats
-List all the available export formats
-
-.TP
-.B \-O, \-\-list\-export\-options \fIformat\fI
-List all the options for the given format
-
-.TP
-.B \-e, \-\-export \fI'format=EPS start=3'\fI
-Export a document based on the given options
-
-.TP
 .B \-F, \-\-file\-format
 Print out a pseudocode mockup of the file format, then exit
 
 .TP
-.B \-S, \-\-list\-shortcuts
-Print out a list of current keyboard bindings, then exit
+.B \-c, \-\-command 'newdoc net'
+Run one or more commands without the gui
 
 .TP
-.B \-S, \-\-help\-html
-Print out a list of current keyboard bindings in html, then exit
-
-.TP
-.B \-c, \-\-command \fI'newdoc net'\fI
-Run one or more commands without the gui, then exit
-
-.TP
-.B \-s, \-\-script \fI/some/file\fI
+.B \-C, \-\-script /some/file
 Like --command, but the commands are in the given file
 
 .TP
@@ -107,37 +90,60 @@ Like --command, but the commands are in the given file
 Enter a command line shell. Can be used with --command and --script.
 
 .TP
-.B \-u, \-\-default\-units \fI(in|cm|mm|m|ft|yards)\fI
+.B \-u, \-\-default\-units (in|cm|mm|m|ft|yards)
 Use the specified units.
 
 .TP
-.B \-l, \-\-load\-dir \fIpath\fI
+.B \-l, \-\-load\-dir path
 Start in this directory.
-
-.TP
-.B \-I, \-\-impose\-only \fIarg\fI
-Run only as a file imposer, not full Laidout
 
 .TP
 .B \-E, \-\-experimental
 Enable any compiled in experimental features
 
 .TP
+.B \-I, \-\-impose\-only arg
+Run only as a file imposer, not full Laidout. This is used by the Scribus plugin, for instance.
+
+.TP
+.B \-o, \-\-nodes\-only 'in=File.nodes, out=OutFile.nodes, pipein, pipeout'
+Run only as a node editor. If pipein, in is ignored. Same for pipeout and out.
+If out or pipeout is given, then write to that on document exit..
+
+.TP
+.B \-p, \-\-pipein default
+Start with a document piped in on stdin
+
+.TP
+.B \-P, \-\-pipeout default
+On exit, export document[0] to stdout
+
+.TP
+.B \-T, \-\-theme arg
+Set theme. Currently, one of Light, Dark, or Gray
+
+.TP
+.B \-S, \-\-list\-shortcuts
+Print out a list of current keyboard bindings, then exit
+
+.TP
+.B \-H, \-\-helphtml
+Output an html fragment of key shortcuts.
+
+.TP
 .B \-\-helpman
 Output a man page fragment of options.
 
+
 .SH Development
 
-
-
 .br
-The source code has a lot of documentation that you can get via the program doxygen. For more
-about being involved in development, see: http://www.laidout.org/dev.html
+For more about being involved in development, see: http://www.laidout.org/dev.html.
+Only you can help fight bugs!
 
 .SH COPYRIGHT
-This program is released under the GPL v2.
+This program is released under the GPL v3.
 .SH AUTHOR
-\fBLaidout\fP was written with varying degrees of success between 2005 and 2015 by 
+\fBLaidout\fP was written with varying degrees of success between 2005 and 2018 by 
 \fBTom Lechner\fP <tom@tomlechner.com>,
-who is still currently the only developer, and who would probably rather be
-drawing cartoons (http://www.tomlechner.com).
+who would probably rather be drawing cartoons (http://www.tomlechner.com).

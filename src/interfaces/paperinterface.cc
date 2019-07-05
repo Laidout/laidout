@@ -16,15 +16,17 @@
 
 #include "../language.h"
 #include "paperinterface.h"
-#include "../viewwindow.h"
-#include "../drawdata.h"
+#include "../ui/viewwindow.h"
+#include "../core/drawdata.h"
 #include "../dataobjects/printermarks.h"
+
 #include <lax/inputdialog.h>
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
 #include <lax/transformmath.h>
 #include <lax/colors.h>
 
+//template implementation:
 #include <lax/lists.cc>
 
 using namespace Laxkit;

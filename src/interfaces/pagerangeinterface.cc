@@ -21,8 +21,9 @@
 
 #include "../language.h"
 #include "pagerangeinterface.h"
-#include "../viewwindow.h"
+#include "../ui/viewwindow.h"
 
+//template implementation:
 #include <lax/lists.cc>
 
 using namespace Laxkit;

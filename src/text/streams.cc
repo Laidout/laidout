@@ -773,6 +773,168 @@ int Stream::ImportXML(const char *value)
 }
 
 
+
+/*! Something like:
+ *  - local(blah)
+ *  - local("Blah")
+ *  - local('Blah')
+ *  - url(https://thing)
+ *
+ *  Return 1 for successful parse, else 0.
+ */
+int ParseFofS(const char *value, int *f_len_ret, const char **s_ret, int *s_len_ret, const char **end_ret)
+{
+	//while (isspace(*value)) value++;
+	const char *ptr = value;
+	while (isalnum(*ptr)) ptr++;
+	if (ptr == value) return 0;
+	*f_len_ret = ptr - value;
+
+	value = ptr;
+	while (isspace(*value)) value++;
+	if (*value != '(') return 0;
+	value++;
+
+	while (isspace(*value)) value++;
+	char has_quote = '\0';
+	if (*value == '"' || *value == '\'') { has_quote = *value; value++; }
+	ptr = value;
+	*s_ret = value;
+	while (*ptr && *ptr != has_quote && *ptr != ')') ptr++;
+	*s_len_ret = ptr - value;
+	if (has_quote) {
+		if (*ptr != has_quote) return 0;
+		ptr++;
+	}
+	if (*ptr != ')') return 0;
+
+	value = ptr+1; 
+	*end_ret = value;
+	return 1;
+}
+
+/*! 
+ * See https://www.w3.org/TR/css-fonts-3/#font-face-rule.
+ *
+ * Return NULL on could not process.
+ */
+Style *ProcessCSSFontFace(Style *style, Attribute *att, Laxkit::ErrorLog *log)
+{
+	// CSS spec says font-family and src must be present. Otherwise ignore.
+	// Given font-family overrides any name given in the actual font.
+
+	if (!att) return style;
+
+	const char *name;
+	const char *value;
+
+	int err = 0;
+
+	try {
+		for (int c=0; c<att.attributes.n; c++) {
+			name =att.attributes.e[c]->name;
+			value=att.attributes.e[c]->value;
+
+			if (!strcmp(name, "font-family")) {
+				style->push("font-family", value);
+
+			} else if (!strcmp(name, "src")) {
+				//a comma separated list, go with first found:
+				//
+				// src: local("Some Name"),
+				//	   local(SomeOtherNameWithoutQuotes),
+				//	   url(/absolute/path),
+				//	   url(rel/to/css/file),
+				//	   url(file.svg#fontIdInFile)
+				//	   url(fontcollection.woff2#fontId) format('woff2')
+				//	   
+				//format is optional, and string can be: woff, woff2, truetype, opentype, embedded-opentype, or svg
+
+				const char *what = nullptr;
+				int flen, slen;
+				while (*value) {
+					while (isspace(*value)) value++;
+					const char *endptr = value;
+
+					//int ParseFofS(const char *value, int *f_len_ret, const char **s_ret, int *s_len_ret, const char **end_ret)
+					if (!strncmp(value, "local(", 6)) {
+						if (ParseFofS(value, &flen, &what, &slen, &endptr)) {
+							style->push("src-local", what,slen);
+						} else {
+							throw(_("Bad css"));
+						};
+
+					} else if (!strncmp(value, "url(", 4)) {
+						if (ParseFofS(value, &flen, &what, &slen, &endptr)) {
+							style->push("src", what,slen);
+						} else {
+							throw(_("Bad css"));
+						};
+					}
+					value = endptr;
+
+					while (isspace(*value)) value++;
+					if (*value != ',') break;
+					value++;
+				}
+
+			} else if (!strcmp(name, "unicode-range")) {
+				//something like: unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+
+				//single codepoint (e.g. U+416)
+				//	a Unicode codepoint, represented as one to six hexadecimal digits
+				//interval range (e.g. U+400-4ff)
+				//	represented as two hyphen-separated Unicode codepoints indicating the inclusive start and end codepoints of a range
+				//wildcard range (e.g. U+4??)
+				//	defined by the set of codepoints implied when trailing ‘?’ characters signify any hexadeximal digit
+
+				// ***  punting for now:
+				style->push("unicode-range", value);
+
+			} else if (!strcmp(name, "font-feature-settings")) {
+				// ***  punting for now:
+				style->push("font-feature-settings", value);
+
+			} else if (!strcmp(name, "font-style")) {
+				//Name: 	font-style
+				//Value: 	normal | italic | oblique
+				//Initial: 	normal
+
+				int italic = 0;
+				if (!strcmp(value,"normal"))  italic=0; 
+				else if (!strcmp(value,"italic"))  italic=1;
+				else if (!strcmp(value,"oblique")) italic=1; //technically oblique is distorted normal, italic is actual new glyphs
+
+				style->push("italic", italic);
+
+			} else if (!strcmp(name, "font-weight")) {
+				//like usual font-weight, but no relative tags "bolder" or "lighter"
+				//font-weight: normal | bold | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | inherit
+
+				const char *endptr = nullptr;
+				weight = CSSFontWeight(value, endptr, nullptr);
+				value = endptr;
+
+			} else if (!strcmp(name, "font-stretch")) {
+				//Name: 	font-stretch
+				//Value: 	normal | ultra-condensed | extra-condensed | condensed | semi-condensed | semi-expanded | expanded | extra-expanded | ultra-expanded
+				//Initial: 	normal
+
+				//stretch refers to physically stretching the letters
+				//CSS4 allows percentages >= 0.
+				style->push(value); //always just a string
+			}
+		}
+
+	} catch (const char *str) {
+		if (log) log->AddError(str);
+		return nullptr;
+	}
+
+	return style;
+}
+
+
 Style *ProcessCSSBlock(Style *style, const char *cssvalue)
 {
 		//CSS:
@@ -866,7 +1028,7 @@ Style *ProcessCSSBlock(Style *style, const char *cssvalue)
 		//  caption  { display: table-caption }
 		// 
 
-	if (!style) style=new Style;
+	if (!style) style = new Style;
 	Attribute att;
 	CSSBlockToAttribute(&att, cssvalue);
 
@@ -895,17 +1057,18 @@ Style *ProcessCSSBlock(Style *style, const char *cssvalue)
 			if (!strcmp(value,"inherit")) ;
 			else if (!strcmp(value,"normal"))  italic=0; 
 			else if (!strcmp(value,"italic"))  italic=1;
-			else if (!strcmp(value,"oblique")) italic=1;
+			else if (!strcmp(value,"oblique")) italic=1; //technically oblique is distorted normal, italic is actual new glyphs
 
 			if (font_style>0) style->pushInteger("font-style", font_style);
 			 
 		} else if (!strcmp(name, "font-weight")) {
 			//normal | bold | bolder | lighter | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | inherit
 			const char *endptr;
-			weight=CSSFontWeight(value, endptr);
-			value=endptr;
+			weight = CSSFontWeight(value, endptr, nullptr);
+			value = endptr;
 
-			if (weight>0) style->pushInteger("font-weight", w);
+			if (weight > 0) style->pushInteger("font-weight", w);
+			//if (weight > 0 && is_relative) style->pushInteger("font-weight-offset", w);
 
 		} else if (!strcmp(name, "font-size")) {
 			 //  font-size: 	<absolute-size> | <relative-size> | <length> | <percentage> | inherit
@@ -914,30 +1077,11 @@ Style *ProcessCSSBlock(Style *style, const char *cssvalue)
 			double v=-1;
 			int type=0; //0 for absolute size
 			Unit units;
+			CSSName relative = CSS_Unknown;
+			const char *endptr = nullptr;
 
-			if (!strcmp(value,"inherit")) ; //do nothing special
-
-			 //named absolute sizes, these are relative to some platform specific table of numbers:
-			else if (!strcmp(value,"xx-small")) v=.5;
-			else if (!strcmp(value,"x-small")) v=.75;
-			else if (!strcmp(value,"small")) v=.8;
-			else if (!strcmp(value,"medium")) v=1;
-			else if (!strcmp(value,"large")) v=1.2;
-			else if (!strcmp(value,"x-large")) v=1.4;
-			else if (!strcmp(value,"xx-large")) v=1.7;
-
-		   	 //for relative size
-			else if (!strcmp(value,"larger")) { v=1.2; type=1; }
-			else if (!strcmp(value,"smaller")) { v=.8; type=1; }
-
-			 //percentage
-			else if (strchr(value,"%")) {
-				DoubleAttribute(value,&v,NULL); //relative size
-				type=1;
-
-			 //length
-			} else {
-				LengthAttribute(value, &v, &units, NULL);
+			if (!CssFontSize(value, &v, &relative, &units, &endptr)) {
+				*** error parsing!
 			}
 
 			if (v>=0) style->pushLength(v,units,type);
@@ -962,16 +1106,21 @@ Style *ProcessCSSBlock(Style *style, const char *cssvalue)
 				int font_weight=-1;
 
 				if (endptr==value) {
-					font_variant=CSSFontVariant(value, &endptr);
-					if (endptr==value) {
-						font_weight=CSSFontWeight(value, &endptr);
-					} else value=endptr+1;
-				} else value=endptr+1;
+					font_variant = CSSFontVariant(value, &endptr);
+					if (endptr == value) {
+						font_weight = CSSFontWeight(value, &endptr, nullptr);
+					} else value = endptr+1;
+				} else value = endptr+1;
 				
-				Value *fontsize=CSSFontSize(value,endptr);
-				if (endptr==value) {
+				double v = -1;
+				Unit units;
+				CSSName relative = CSS_Unknown;
+				const char *endptr = nullptr;
+				
+				if (!CSSFontSize(value, &v,&relative,&units, &endptr) || v < 0) {
 					*** error! font-size is required
 				} else {
+					if (v >= 0) style->pushLength(v,units,type);
 				}
 			}
 
@@ -1046,7 +1195,7 @@ Style *ProcessCSSBlock(Style *style, const char *cssvalue)
 	}
 
 	if (fontfamily) {
-		LFont *font=MatchCSSFont(fontfamily, italic, variant, weight);
+		LFont *font = MatchCSSFont(fontfamily, italic, variant, weight);
 		if (font) style->push("font",font);
 	}
 
@@ -1073,21 +1222,30 @@ Value *ParseLengthOrPercent(const char *value, const char *relative_to, const ch
 }
 
 
-/*! <pre>
+/*! Return integer weight.
+ *
+ * <pre>
  *  normal | bold | bolder | lighter | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | inherit
  *  </pre>
+ *
+ *  "bolder" and "lighter" are here arbitrarily mapped to 700 and 200 respectively and relative_ret is set to true.
  */
-int CSSFontWeight(const char *value, const char *&endptr)
+int CSSFontWeight(const char *value, const char *&endptr, bool *relative_ret)
 {
 	int weight=-1;
-	if (!strncmp(value,"inherit",7))       { endptr=value+7; } //do nothing special
-	else if (!strncmp(value,"normal",6))   { endptr=value+6; weight=400; }
-	else if (!strncmp(value,"bold",4))     { endptr=value+4; weight=700; }
-	else if (!strncmp(value,"bolder", 6))  { endptr=value+6; weight=900; } //120% ?
-	else if (!strncmp(value,"lighter", 7)) { endptr=value+7; weight=300; } //80% ? 
-	else if (value[0]>='1' && value[0]<='9') { //scan in any integer... not really css compliant, but what the hay
-		weight=strtol(value,10,&endptr);
-	} else endptr=value;
+	if (relative_ret) *relative_ret = false;
+
+	if (!strncmp(value,"inherit",7))       { endptr = value+7; } //do nothing special
+	else if (!strncmp(value,"normal",6))   { endptr = value+6; weight=400; }
+	else if (!strncmp(value,"bold",4))     { endptr = value+4; weight=700; }
+	else if (!strncmp(value,"bolder", 6))  { endptr = value+6; weight=700; if (relative_ret) *relative_ret = true; } //120% ?
+	else if (!strncmp(value,"lighter", 7)) { endptr = value+7; weight=200; if (relative_ret) *relative_ret = true; } //80% ? 
+	else if (value[0] >= '1' && value[0] <= '9' &&
+			 value[1] >= '0' && value[1] <= '9' &&
+			 value[2] >= '0' && value[2] <= '9') {
+		//scan in any 3 digit integer between 100 and 999 inclusive... not really css compliant, but what the hay
+		weight = strtol(value,10,&endptr);
+	} else endptr = value;
 
 	return weight;
 }

@@ -10,7 +10,7 @@ LAXOBJDIR=$(LAXDIR)
 LD=g++
 LDFLAGS= -L/usr/X11R6/lib -lX11 -lm -lpng `imlib2-config --libs` -L$(LAXDIR) -L$(LAXIDIR)
 DEBUGFLAGS= -g -gdwarf-2
-CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. -I/usr/include/freetype2
+CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. `pkg-config --cflags freetype2`
 
 
 objs= \
@@ -30,7 +30,7 @@ objs= \
 printing: $(objs)
 
 depends:
-	makedepend -fmakedepend -I.. -I$(LAXDIR)/.. -Y *.cc
+	../utils/makedependencies -fmakedepend -I$(LAXDIR)/.. *.cc
 
 include makedepend
 

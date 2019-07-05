@@ -24,7 +24,7 @@
 
 #include <lax/shortcuts.h>
 
-#include "../fieldplace.h"
+#include "../core/fieldplace.h"
 
 namespace Laidout {
 
@@ -625,7 +625,7 @@ class StringValue : public Value, virtual public FunctionEvaluator
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_String; }
  	virtual ObjectDef *makeObjectDef();
-	virtual void Set(const char *nstr);
+	virtual void Set(const char *nstr, int n=-1);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret,
 						 Laxkit::ErrorLog *log);
@@ -703,6 +703,7 @@ class FileValue : public Value, virtual public FunctionEvaluator
 	virtual int Exists();
 	virtual int Depth();
 	virtual const char *Part(int i);
+	virtual void Set(const char *nstr);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret,
 						 Laxkit::ErrorLog *log);
@@ -713,6 +714,7 @@ class ColorValue : public Value
 {
   public:
 	Laxkit::ColorBase color;
+	ColorValue();
 	ColorValue(const char *color);
 	ColorValue(double r, double g, double b, double a);
 	//ColorValue(Laxkit::ColorBase &color);
@@ -736,12 +738,14 @@ class ObjectValue : public Value
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Object; }
  	virtual ObjectDef *makeObjectDef();
+	virtual void SetObject(anObject *nobj, bool absorb_count);
 };
 
 //------------------------------- parsing helpers ------------------------------------
 ValueHash *MapParameters(ObjectDef *def,ValueHash *rawparams);
 double getNumberValue(Value *v, int *isnum);
-bool isNumberType(Value *v, double *number_ret);
+int getIntValue(Value *v, int *isnum);
+int isNumberType(Value *v, double *number_ret);
 int isVectorType(Value *v, double *values);
 int extequal(const char *str, int len, const char *field, char **next_ret=NULL);
 int isName(const char *longstr,int len, const char *str);
