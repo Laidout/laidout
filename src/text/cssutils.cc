@@ -14,6 +14,7 @@
 //
 
 #include <cctype>
+#include <cstdlib>
 
 #include <lax/units.h>
 #include <lax/strmanip.h>
