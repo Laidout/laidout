@@ -27,7 +27,7 @@ script:
   - cd ..
   # Laidout 
   - mkdir -p appdir
-  - cp AppRun appdir/ ; chmod +x appdir/AppRun
+  - cp AppImage/AppRun appdir/ ; chmod +x appdir/AppRun
   - ./configure --prefix=`pwd`/appdir/usr --relocatable --laxkit=`pwd`/laxkit/lax --nogl --disable-sqlite --force --gegl-version=gegl-0.3
   - make -j$(nproc)
   # TODO: Making the icons requires Inkscape(!); FIXME, see https://github.com/Laidout/laidout
