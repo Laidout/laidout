@@ -1,24 +1,16 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
+
+#Usage:
+# ./parseimage.py fontletters1.svg [letters directory default="letters"]
 #
-# Convert an svg file containing colored glyphs into individual svg files for each glyph.
-# Assumes you are ONLY using flat colored paths, no images or path effects.
-# Currently ascii only
-#
-# Output is a ttx file you can convert to woff/otf with the ttx program.
-#
-# Usage:
-#  ./parseimage.py fontletters1.svg [letters directory default="letters"]
-#
-#   then:
+#  then:
 # ttx -f --flavor woff VillaPazza.ttx
+#
+# ttx is from fonttools: https://github.com/fonttools/fonttools
 #
 
 #ToDO:
-# - command line option to specify the ttx template
-# - command line option to specify the output ttx file
-# - command line option for outputting layers, instead of svg
-# - command line option for how many cells to chop the original svg into
 # - Do a proper guillotine, not the current major hack that assumes each path object is the whole layer color.
 #    current system only works when you use Inkscape to trace bitmap right from image, but then you don't edit
 #    the resulting svg at all.
@@ -28,61 +20,91 @@
 # - finish alt glyph system
 # - implement the CPAL color name substitution for SVG table: replace found colors in the individual svg
 #    with refs to colors in CPAL
+#
+# DONE - somehow automate namerecord table, --namerecord-sample to stdout
+# DONE - command line option to specify the ttx template
+# DONE - command line option to specify the output ttx file
+# DONE - command line option for outputting layers, instead of svg
+# DONE - command line option for how many cells to chop the original svg into
 
 
 
-import os, sys, re, math, copy
+import os, sys, re, math, copy, argparse
 
+
+
+#
+###################  Parse arguments  #############################
+#
+
+parser = argparse.ArgumentParser(description = 'Convert an svg into a ttx file.')
+parser.add_argument('--ttx-template', default = "TEMPLATE.ttx", nargs = '?', help = 'The ttx template files.')
+parser.add_argument('--output-name',  default = "Output",       nargs = '?', help = 'The ttx filename to output.')
+parser.add_argument('--output-dir',   default = "letters",      nargs = '?', help = 'Directory to put parsed outputs.')
+parser.add_argument('--layers',       action = 'store_true',      help='If given, output one ttx per layer.')
+parser.add_argument('--cells-wide',   default = 16, type = int,   help='If given, divide horizontally by this many cells.')
+parser.add_argument('--cells-tall',   default = 6,  type = int,   help='If given, divide vertically by this many cells.')
+parser.add_argument('--namerecord',   default = 'namerecord.txt', help='File containing various metadata for the namerecord table.')
+parser.add_argument('--namerecord-sample', action = 'store_true', help='Output a sample template file for the bits that go in namerecord.')
+parser.add_argument('svgin', help='The svg file to parse.', nargs = argparse.REMAINDER)
 
 if len(sys.argv)==1:
-    print('Usage:\n  parseimage.py svg_master_file.svg [letters directory (defaults to "letters")]')
+    parser.print_usage()
+    #print('Usage:\n  parseimage.py svg_master_file.svg [letters directory (defaults to "letters")]')
+    sys.exit()
+
+args = parser.parse_args()
+
+if args.namerecord_sample:
+    print( """
+copyright:              (c) 2019 Some Person
+font_family:            Really Cool Font
+style:                  Regular
+unique_font_id:         Really Cool Font Regular 1.0
+full_font_name:         Really Cool Font
+Version_number_number:  1.0
+psname:                 ReallyCoolFont
+trademark:              ReallyCoolFont (tm I guess)
+manufacturer:           The Beast Font
+designer:               The Beast Font
+description:            Really just the tops
+url_vendor:             http://www.beast.font
+url_designer:           http://www.beast.font
+license_desc:           KillerLicense 1.0
+license_url:            http://www.beast.font/license
+typographic_fam_name:   (defaults to font_family)
+typographic_style_name: (defaults to stye)
+sample_text:            Getta load a this
+""")
     sys.exit()
 
 
-filename = sys.argv[1]
-
-if len(sys.argv)>=3: 
-    letterdir= sys.argv[2]
-else: letterdir="letters"
-
-print ("filename: "+filename);
-print ("svg files to :  "+letterdir);
+files = args.svgin
+if len(files) > 1 or len(files) == 0:
+    print('You must specify one input file.')
+    sys.exit()
 
 
-dolayered = False
-#dolayered = False
-layer=0
+default_ttx_template = args.ttx_template
+namerecord_file = args.namerecord
+filename   = files[0]
+outputName = args.output_name
+letterdir  = args.output_dir
+gridwidth  = args.cells_wide
+gridheight = args.cells_tall
+dolayered  = args.layers
 
+print ("filename: " + filename);
+print ("output ttx: " + outputName + ".ttx")
+print ("svg files to :  "+letterdir+"/"+outputName);
+print ("grid: ", gridwidth,"x",gridheight)
+print ("do layered: ", dolayered)
+
+
+
+layer      = 0
 startindex = 32
 
-gridwidth = 16
-gridheight = 6
-
-
-# *** todo: somehow automate namerecord table
-#
-# [nameid, platformid, platEncId, langid, text]
-# platform = 0=unicode, 1=mac, 2=iso(deprecated), 3=windows, 4=custom
-# platEncId for 0(unicode): 0=unicode 1.0, 1=unicode 1.1, 2=10646, 3=unicode 2.0 BMP only, 4=unicode 2.0
-# platEncId for 3(windows): 1=unicode BMP
-# platEndId for 1(mac) should be 0
-# for windows, language for usa english is 0x409
-#
-# 0=copyright, 1=font family, 2=style,        3=unique font id, 4=full font name, 5=Version number.number
-# 6=psname,    7=trademark,   8=manufacturer, 9=designer,       10=description,   11=url vendor
-# 12=url designer, 13=license desc, 14=license info url, 15=(reserved),
-# 16=typographic fam name (def is 1), 17=typo style name (def is 2),
-# 18=some mac thing, 19=sample text
-namerecord = {}
-namerecord["copyright"] = [0, 1, 0, "0x0", "(c) 2016 Tom Lechner. All rights reserved."]
-
-
-
-#---------------------
-#codes[unicode] == name, description
-#glyphmap[name] == glyph index
-#hmtx[unicode] == bounds(xmin, xmax,  ymin, ymax)
-#glyfs[glyphname] == first non-color path
 
 
 #------------------- borrowing simplepath.py from inkscape install --------------
@@ -135,7 +157,7 @@ def lexPath(d):
             offset = m.end()
             continue
         #TODO: create new exception
-        raise Exception, 'Invalid path data!'
+        raise Exception('Invalid path data!')
 '''
 pathdefs = {commandfamily:
     [
@@ -180,7 +202,7 @@ def parsePath(d):
         needParam = True
         if isCommand:
             if not lastCommand and token.upper() != 'M':
-                raise Exception, 'Invalid path, must begin with moveto.'    
+                raise Exception('Invalid path, must begin with moveto.')
             else:                
                 command = token
         else:
@@ -193,16 +215,16 @@ def parsePath(d):
                 else:
                     command = pathdefs[lastCommand.upper()][0].lower()
             else:
-                raise Exception, 'Invalid path, no initial command.'    
+                raise Exception('Invalid path, no initial command.')
         numParams = pathdefs[command.upper()][1]
         while numParams > 0:
             if needParam:
                 try: 
                     token, isCommand = lexer.next()
                     if isCommand:
-                        raise Exception, 'Invalid number of parameters'
+                        raise Exception('Invalid number of parameters')
                 except StopIteration:
-                    raise Exception, 'Unexpected end of path'
+                    raise Exception('Unexpected end of path')
             cast = pathdefs[command.upper()][2][-numParams]
             param = cast(token)
             if command.islower():
@@ -899,107 +921,192 @@ codes = GetCharNames()
 #--^^^^----------------------------- end GetCharNames()--------------
 
 
+
+#---------------------
+#codes[unicode] == name, description
+#glyphmap[name] == glyph index
+#hmtx[unicode] == bounds(xmin, xmax,  ymin, ymax)
+#glyfs[glyphname] == first non-color path
+
+
+#
+###################  build namerecord table  #############################
+#
+
+# *** todo: somehow automate namerecord table
+#
+# [nameid, platformid, platEncId, langid, text]
+# platform = 0=unicode, 1=mac, 2=iso(deprecated), 3=windows, 4=custom
+# platEncId for 0(unicode): 0=unicode 1.0, 1=unicode 1.1, 2=10646, 3=unicode 2.0 BMP only, 4=unicode 2.0
+# platEncId for 3(windows): 1=unicode BMP
+# platEndId for 1(mac) should be 0
+# for windows, language for usa english is 0x409
+#
+# 0  = copyright
+# 1  = font family
+# 2  = style
+# 3  = unique font id
+# 4  = full font name
+# 5  = Version number.number
+# 6  = psname
+# 7  = trademark
+# 8  = manufacturer
+# 9  = designer
+# 10 = description
+# 11 = url vendor
+# 12 = url designer
+# 13 = license desc
+# 14 = license info url
+# 15 = (reserved)
+# 16 = typographic fam name (def is 1)
+# 17 = typo style name (def is 2)
+# 18 = some mac thing
+# 19 = sample text
+
+nameids = {
+        'copyright':              0 ,
+		'font_family':            1 ,
+		'style':                  2 ,
+		'unique_font_id':         3 ,
+		'full_font_name':         4 ,
+		'Version_number_number':  5 ,
+		'psname':                 6 ,
+		'trademark':              7 ,
+		'manufacturer':           8 ,
+		'designer':               9 ,
+		'description':            10,
+		'url_vendor':             11,
+		'url_designer':           12,
+		'license_desc':           13,
+		'license_url':            14,
+        #'(reserved)':             15,
+		'typographic_fam_name':   16,
+		'typographic_style_name': 17,
+        #'some_mac_thing':         18,
+		'sample_text':            19
+        }
+
+namerecord = {}
+if namerecord_file:
+    f = open(namerecord_file)
+    if f:
+        for line in f:
+            s = line.split(':')
+            namerecord[s[0]] = s[1].strip()
+
+
+
+
+
+#
+###################  instructions table  #############################
+#
+
 instructions = """    <instructions><assembly> </assembly></instructions>\n """
 # instructions = """
 #       <instructions><assembly>
-#           PUSH[ ]	/* 1 value pushed */
+#           PUSH[ ]    /* 1 value pushed */
 #           0
-#           CALL[ ]	/* CallFunction */
-#           SVTCA[0]	/* SetFPVectorToAxis */
-#           PUSH[ ]	/* 1 value pushed */
+#           CALL[ ]    /* CallFunction */
+#           SVTCA[0]    /* SetFPVectorToAxis */
+#           PUSH[ ]    /* 1 value pushed */
 #           0
-#           RCVT[ ]	/* ReadCVT */
-#           IF[ ]	/* If */
-#           PUSH[ ]	/* 1 value pushed */
+#           RCVT[ ]    /* ReadCVT */
+#           IF[ ]    /* If */
+#           PUSH[ ]    /* 1 value pushed */
 #           16
-#           MDAP[1]	/* MoveDirectAbsPt */
-#           ELSE[ ]	/* Else */
-#           PUSH[ ]	/* 2 values pushed */
+#           MDAP[1]    /* MoveDirectAbsPt */
+#           ELSE[ ]    /* Else */
+#           PUSH[ ]    /* 2 values pushed */
 #           16 5
-#           MIAP[0]	/* MoveIndirectAbsPt */
-#           EIF[ ]	/* EndIf */
-#           PUSH[ ]	/* 3 values pushed */
+#           MIAP[0]    /* MoveIndirectAbsPt */
+#           EIF[ ]    /* EndIf */
+#           PUSH[ ]    /* 3 values pushed */
 #           13 12 3
-#           CALL[ ]	/* CallFunction */
-#           PUSH[ ]	/* 3 values pushed */
+#           CALL[ ]    /* CallFunction */
+#           PUSH[ ]    /* 3 values pushed */
 #           1 0 3
-#           CALL[ ]	/* CallFunction */
-#           PUSH[ ]	/* 3 values pushed */
+#           CALL[ ]    /* CallFunction */
+#           PUSH[ ]    /* 3 values pushed */
 #           9 8 3
-#           CALL[ ]	/* CallFunction */
-#           PUSH[ ]	/* 3 values pushed */
+#           CALL[ ]    /* CallFunction */
+#           PUSH[ ]    /* 3 values pushed */
 #           5 4 3
-#           CALL[ ]	/* CallFunction */
-#           PUSH[ ]	/* 1 value pushed */
+#           CALL[ ]    /* CallFunction */
+#           PUSH[ ]    /* 1 value pushed */
 #           16
-#           SRP0[ ]	/* SetRefPoint0 */
-#           PUSH[ ]	/* 1 value pushed */
+#           SRP0[ ]    /* SetRefPoint0 */
+#           PUSH[ ]    /* 1 value pushed */
 #           17
-#           MDRP[11100]	/* MoveDirectRelPt */
-#           PUSH[ ]	/* 1 value pushed */
+#           MDRP[11100]    /* MoveDirectRelPt */
+#           PUSH[ ]    /* 1 value pushed */
 #           0
-#           SRP0[ ]	/* SetRefPoint0 */
-#           PUSH[ ]	/* 1 value pushed */
+#           SRP0[ ]    /* SetRefPoint0 */
+#           PUSH[ ]    /* 1 value pushed */
 #           25
-#           MDRP[10000]	/* MoveDirectRelPt */
-#           PUSH[ ]	/* 1 value pushed */
+#           MDRP[10000]    /* MoveDirectRelPt */
+#           PUSH[ ]    /* 1 value pushed */
 #           4
-#           SRP0[ ]	/* SetRefPoint0 */
-#           PUSH[ ]	/* 1 value pushed */
+#           SRP0[ ]    /* SetRefPoint0 */
+#           PUSH[ ]    /* 1 value pushed */
 #           29
-#           MDRP[10000]	/* MoveDirectRelPt */
-#           PUSH[ ]	/* 1 value pushed */
+#           MDRP[10000]    /* MoveDirectRelPt */
+#           PUSH[ ]    /* 1 value pushed */
 #           8
-#           SRP0[ ]	/* SetRefPoint0 */
-#           PUSH[ ]	/* 1 value pushed */
+#           SRP0[ ]    /* SetRefPoint0 */
+#           PUSH[ ]    /* 1 value pushed */
 #           33
-#           MDRP[10000]	/* MoveDirectRelPt */
-#           PUSH[ ]	/* 1 value pushed */
+#           MDRP[10000]    /* MoveDirectRelPt */
+#           PUSH[ ]    /* 1 value pushed */
 #           12
-#           SRP0[ ]	/* SetRefPoint0 */
-#           PUSH[ ]	/* 1 value pushed */
+#           SRP0[ ]    /* SetRefPoint0 */
+#           PUSH[ ]    /* 1 value pushed */
 #           37
-#           MDRP[10000]	/* MoveDirectRelPt */
-#           PUSH[ ]	/* 1 value pushed */
+#           MDRP[10000]    /* MoveDirectRelPt */
+#           PUSH[ ]    /* 1 value pushed */
 #           1
-#           SRP0[ ]	/* SetRefPoint0 */
-#           PUSH[ ]	/* 1 value pushed */
+#           SRP0[ ]    /* SetRefPoint0 */
+#           PUSH[ ]    /* 1 value pushed */
 #           40
-#           MDRP[10000]	/* MoveDirectRelPt */
-#           PUSH[ ]	/* 1 value pushed */
+#           MDRP[10000]    /* MoveDirectRelPt */
+#           PUSH[ ]    /* 1 value pushed */
 #           5
-#           SRP0[ ]	/* SetRefPoint0 */
-#           PUSH[ ]	/* 1 value pushed */
+#           SRP0[ ]    /* SetRefPoint0 */
+#           PUSH[ ]    /* 1 value pushed */
 #           44
-#           MDRP[10000]	/* MoveDirectRelPt */
-#           PUSH[ ]	/* 1 value pushed */
+#           MDRP[10000]    /* MoveDirectRelPt */
+#           PUSH[ ]    /* 1 value pushed */
 #           9
-#           SRP0[ ]	/* SetRefPoint0 */
-#           PUSH[ ]	/* 1 value pushed */
+#           SRP0[ ]    /* SetRefPoint0 */
+#           PUSH[ ]    /* 1 value pushed */
 #           48
-#           MDRP[10000]	/* MoveDirectRelPt */
-#           PUSH[ ]	/* 1 value pushed */
+#           MDRP[10000]    /* MoveDirectRelPt */
+#           PUSH[ ]    /* 1 value pushed */
 #           13
-#           SRP0[ ]	/* SetRefPoint0 */
-#           PUSH[ ]	/* 1 value pushed */
+#           SRP0[ ]    /* SetRefPoint0 */
+#           PUSH[ ]    /* 1 value pushed */
 #           52
-#           MDRP[10000]	/* MoveDirectRelPt */
-#           PUSH[ ]	/* 1 value pushed */
+#           MDRP[10000]    /* MoveDirectRelPt */
+#           PUSH[ ]    /* 1 value pushed */
 #           17
-#           SRP0[ ]	/* SetRefPoint0 */
-#           PUSH[ ]	/* 1 value pushed */
+#           SRP0[ ]    /* SetRefPoint0 */
+#           PUSH[ ]    /* 1 value pushed */
 #           56
-#           MDRP[10000]	/* MoveDirectRelPt */
-#           PUSH[ ]	/* 1 value pushed */
+#           MDRP[10000]    /* MoveDirectRelPt */
+#           PUSH[ ]    /* 1 value pushed */
 #           59
-#           MDRP[10000]	/* MoveDirectRelPt */
-#           IUP[0]	/* InterpolateUntPts */
-#           IUP[1]	/* InterpolateUntPts */
+#           MDRP[10000]    /* MoveDirectRelPt */
+#           IUP[0]    /* InterpolateUntPts */
+#           IUP[1]    /* InterpolateUntPts */
 #         </assembly></instructions>
 # """
 
 
 
+
+#
+###################  glyfs table  #############################
+#
 
 
 #define mapping of glyph id to names for later use in hmtx
@@ -1323,21 +1430,45 @@ for row in range (0, gridheight):
         out.close()
 
 
-#------------------------- output various tables
+
+#
+#
+#
+#
+########------------------------- output the tables -----------------------#################
+#
+#
+#
+#
+
+
+#output both mac and windows namerecords based on the same text and id number
+#todo: Note: does no sanity checking or encode entities
+def OutputNamerecord(out, Id, text):
+    #mac:
+    out.write('    <namerecord nameID="'+str(Id)+'" platformID="1" platEncID="0" langID="0x0" unicode="True">\n')
+    out.write('      ' + text + '\n')
+    out.write('    </namerecord>\n')
+    #windows:
+    out.write('    <namerecord nameID="'+str(Id)+'" platformID="3" platEncID="1" langID="0x409">\n')
+    out.write('      ' + text + '\n')
+    out.write('    </namerecord>\n')
+
+
 
 #
 #the template file should be a basic ttx, with the following tables replaced with a single comment line:
-#	glyf, cmap, hmtx, SVG, GlyphOrder, CPAL
+#    glyf, cmap, hmtx, SVG, GlyphOrder, CPAL
 #For instance, instead of the SVG table, there should be a single line like this:
 #  <!-- SVG -->
 #
-template = open("VillaPazza-TEMPLATE.ttx", "r")
+template = open(default_ttx_template, "r")
 
 #set output file
 if dolayered:
-    ttx = open("VillaPazza"+str(layer)+".ttx", "w")
+    ttx = open(outputName + str(layer) + ".ttx", "w")
 else:
-    ttx = open("VillaPazza.ttx", "w")
+    ttx = open(outputName + ".ttx", "w")
 
 
 for line in template:
@@ -1519,6 +1650,16 @@ for line in template:
 
         ttx.write('    </palette>\n')
         ttx.write('  </CPAL>\n')
+
+
+
+  elif line.find("<!-- name -->")>=0:
+    ttx.write('  <name>\n')
+    for key in namerecord:
+        #macs:     <namerecord nameID="0" platformID="1" platEncID="0" langID="0x0" unicode="True"> ... </namerecord>
+        #windows:  <namerecord nameID="0" platformID="3" platEncID="1" langID="0x409"> ... </namerecord>
+        OutputNamerecord(ttx, nameids[key], namerecord[key])
+    ttx.write('  </name>\n')
 
 
 
