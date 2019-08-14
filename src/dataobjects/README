@@ -7,7 +7,7 @@ functions from Value. See limagedata.cc for an example.
 
 Once implemented, you must add a creator function in datafactory.cc to 
 actually be able to use these new objects, and add the object file name to 
-the list in Makefile.
+the list in Makefile, and the other list in ../Makefile
 
 If you also have an interface to go along with your new objects, you also must
 add creation code for the interface in ../interfaces.cc. If you do not have
