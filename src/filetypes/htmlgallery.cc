@@ -1128,7 +1128,7 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 			if (images) delete images;
 			return 6;
 		}
-		imgtemplate.InsertBytes(templ,-1);
+		imgtemplate.InsertBytes(templ,-1,-1);
 	}
 
 	int i=0;

@@ -527,7 +527,7 @@ int LaidoutApp::init(int argc,char **argv)
  
 	 // find the current executable path
 	Utf8String execdir(ExecutablePath(), -1, true);
-	execdir.InsertBytes(lax_dirname(execdir.c_str(),0), -1);
+	execdir.InsertBytes(lax_dirname(execdir.c_str(),0), -1, -1);
 
 	 // Check executabledir/icons first
 	Utf8String iconpath = execdir;
