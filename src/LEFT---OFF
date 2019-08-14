@@ -174,6 +174,8 @@ update screenshots, sync with features
 update links page
 update help page
 update dtpcompare.html
+update dev page
+  document pull request process on dev.html page, also in repo readme.md
 comment out cairo_debug_reset_static_data before release, since it usually means crash, interferes with pipeout
 run through "valgrind --leak-check=full --error-limit=no ./laidout" and fix anything that can be nailed down to laidout
   DONE XIQueryPointer?     buttons->mask  = malloc(buttons->mask_len); needs freeing
@@ -184,6 +186,7 @@ test:
     help: window pane does funky stuff
   test in different window managers
   make some test scripts for command line testing
+
 
 
 get splash image working
@@ -561,6 +564,7 @@ PathInterface: pathinterface
   ApplyTransform() and MatchTransform() should adjust scaling of width nodes?
   custom caps.. define cap to a horizontal line, take endpoints and endpoint tangents, return the cap warped to fit the tangents
   custom dashes, with custom start/end dash caps
+  so called vector brushes, that allow sweeping out an area with a whole shape
   need some kind of extrema fill in for angled paths, so it matches sweep of whole segment, not just endpoint sweep lines
   should have shortcut to offset ALL weight nodes, or angle ALL nodes
   how to deal with bbox when using wacky weights?? -> use bbox of outlinecache (or centercache), non-weighted (optional): use flat bbox + linewidth
@@ -583,6 +587,15 @@ PathInterface: pathinterface
     if add points, show dotted line to indicate a new segment incoming
   finish new path/pathoperator/pathsubinterface/pathinterface structure
   have a widthtype == hairline? use width==0 as no stroke
+
+simplepathinterface:
+  make circle green when manual, gray when auto
+  snap:
+    toggle auto snap (control will reverse)
+    auto snap to h and v when holding down control
+  debug first point corner issue
+  implement quadratic
+  implement cubic 
 
 engraving tool: Engraving  engraver
   bug: trace object opacity is not working for non-image trace objects.. stroke and fill needs mask integration!!
@@ -1234,6 +1247,9 @@ in general for windows, need better styling.. too much is hardcoded. problems la
   for instance revamp interfaces' concept of single pixel lines
   laxconfig not working
   DONE laxprofile not working
+  themes:
+    should be all cascading, bare minimum font size should be defaultable
+
 
 make drag and drop selections work
 
@@ -1646,8 +1662,10 @@ pagerangeinterface:
 
 for range on import/export, should have a range parser that accepts unconnected ranges, ie "2,4, 5-10"
 
-shortcut dialog:
-  need mode column
+shortcut dialog: shortcuts:
+  keyboard display
+  need mode column, mode based shortcuts have no display capability
+  sort by columns is not sorting by anything rational
   general window arrangement is really bad
   area heads need to have human titles, _("Image Tool") instead of "ImageInterface"
   mode for shortcut check not quite working, such as ' ' with button to duplicate
@@ -1656,7 +1674,6 @@ shortcut dialog:
   needs to make in window for cursor moving
   numberpadmask?
   char names for wacky xf86 codes.. accept 0x*
-  mode based shortcuts have no display capability
   implement search
   need ability to add multiple keys for same action
   svg keyboard out

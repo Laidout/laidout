@@ -14,8 +14,9 @@ VERSION 0.098
 (done) Convert backend to using Theme objects for easier adjusting in the future
 (done) Fix object bleeding across pages for signatures and nets (issue #12)
 (done) Make Imlib2 dependency optional, prepare replacement image loading with GraphicsMagick
+(done) Investigate AppImage creation (issue #10)
 (done) Html gallery output with optional template
-       Way to export svg embedded into html
+       Way to export pages as svg embedded into html
        lock down color backend.. it's currently a series of weak hacks based on 8-bit screen rgb
 
        Debug Text on path tool
@@ -74,8 +75,6 @@ VERSION 0.098
        drag-n-drop with system, like drag images into viewwindow from an external file browser
 
        Figure out what on earth is to be done about color font processing (issue #6)
-       Invistigate Flatpak creation (issue #11)
-       Investigate AppImage creation (issue #10)
 
 
 VERSION 0.099
@@ -141,6 +140,7 @@ VERSION 0.1
        update french and spanish translations, if possible
        Paper sizes should be translated strings
        Implement poor man's multi-contact interface for all appropriate interfaces
+       Flatpak creation (issue #11)
 
 
 VERSION 0.2
