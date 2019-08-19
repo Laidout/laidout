@@ -241,68 +241,68 @@ HedronWindow::HedronWindow(anXWindow *parnt,const char *nname,const char *ntitle
  	: anXWindow(parnt,nname,ntitle,nstyle,xx,yy,ww,hh,brder,NULL,0,0), rendermode(0),
 	  default_paper("Letter",8.5,11,"in")
 {
-	poly=newpoly;
+	poly = newpoly;
 	if (poly) {
 		poly->inc_count();
 		poly->BuildExtra();
 	}
-	hedron=NULL;
+	hedron = NULL;
 
-	draw_papers=1;
-	draw_texture=1;
-	draw_axes=1;
-	draw_info=1;
-	draw_overlays=1;
-	draw_edges=1;
-	draw_seams=3;
-	free_rotate = false;
+	draw_papers   = 1;
+	draw_texture  = 1;
+	draw_axes     = 1;
+	draw_info     = 1;
+	draw_overlays = 1;
+	draw_edges    = 1;
+	draw_seams    = 3;
+	free_rotate   = false;
 
-	mouseover_overlay=-1;
-	mouseover_index=-1;
-	mouseover_group=OGROUP_None;
-	mouseover_paper=-1;
-	grab_overlay=-1; //mouse down on this overlay
-	active_action=ACTION_None;
-	touchmode=0;
+	mouseover_overlay = -1;
+	mouseover_index   = -1;
+	mouseover_group   = OGROUP_None;
+	mouseover_paper   = -1;
+	grab_overlay      = -1;  // mouse down on this overlay
+	active_action     = ACTION_None;
+	touchmode         = 0;
 
-	oldmode=mode=MODE_Net;
-	cylinderscale=edgeScaleFromBox();
+	oldmode = mode = MODE_Net;
+	cylinderscale  = edgeScaleFromBox();
 
-	fontsize=20;
-	pad=20; 
-	helpoffset=10000;
+	fontsize   = 20;
+	pad        = 20;
+	helpoffset = 10000;
 
-	polyptychfile         =NULL;
-	polyhedronfile        =NULL;
-	spherefile            =NULL;
-	spheremap_data        =NULL;
-	spheremap_data_rotated=NULL;
-	spheremap_width       =0;
-	spheremap_height      =0;
-	spheretexture=flattexture=0; //gl texture ids
+	polyptychfile          = NULL;
+	polyhedronfile         = NULL;
+	spherefile             = NULL;
+	spheremap_data         = NULL;
+	spheremap_data_rotated = NULL;
+	spheremap_width        = 0;
+	spheremap_height       = 0;
+	spheretexture = flattexture = 0;  // gl texture ids
 
-	currentmessage=lastmessage=NULL;
+	currentmessage = lastmessage = NULL;
 
-	consolefontfile=NULL;
+	consolefontfile  = NULL;
 	makestr(consolefontfile,"/usr/share/fonts/truetype/freefont/FreeSans.ttf"); // ***
-	consolefont=NULL;
-	movestep=.5;
-	autorepeat=1;
-	curobj=0;
-	firsttime=1;
-	currentface=-1;
-	currentpotential=-1;
-	currentnet=NULL;
-	currentpaper=-1;
+	consolefont      = NULL;
+	movestep         = .5;
+	autorepeat       = 1;
+	curobj           = 0;
+	firsttime        = 1;
+	currentface      = -1;
+	currentpotential = -1;
+	currentnet       = NULL;
+	currentpaper     = -1;
 
-	unwrapangle=1.0;
+	unwrapangle = 1.0;
 
-	fovy=50*M_PI/180;
-	current_camera=-1;
-	instereo=0;
-	cureye=0;
-	
-	sc=NULL;
+	fovy           = 50 * M_PI / 180;
+	current_camera = -1;
+	instereo       = 0;
+	cureye         = 0;
+
+	sc = NULL;
 }
 
 HedronWindow::~HedronWindow()
@@ -745,14 +745,14 @@ int HedronWindow::init()
 	if (!glcontext) glcontext= glXCreateContext(app->dpy, glvisual, 0, GL_TRUE);
 
 	if (!poly) {
-		poly=defineCube();
-		cylinderscale=edgeScaleFromBox();
+		poly = defineCube();
+		cylinderscale = edgeScaleFromBox();
 		nets.flush();
 		if (currentnet) currentnet->dec_count();
-		currentnet=NULL;
-		makestr(polyhedronfile,NULL);
-		currentface=currentpotential=-1;
-		needtodraw=1;
+		currentnet = NULL;
+		makestr(polyhedronfile, NULL);
+		currentface = currentpotential = -1;
+		needtodraw = 1;
 	}
 
 	if (!spheremap_data) {
@@ -988,7 +988,7 @@ void HedronWindow::reshape (int x, int y, int w, int h)
 void HedronWindow::Refresh()
 {
 	if (!win_on) return;
-	if (glXGetCurrentDrawable()!=xlib_window) glXMakeCurrent(app->dpy, xlib_window, glcontext);
+	if (glXGetCurrentDrawable() != xlib_window) glXMakeCurrent(app->dpy, xlib_window, glcontext);
 
 	needtodraw=0;
 
@@ -1040,7 +1040,7 @@ void HedronWindow::drawHelp()
 			 "\n");
 	if (s) {
 		for (int c2=0; c2<s->n; c2++) {
-			sprintf(str,"  %-15s ",m->ShortcutString(s->e[c2], buffer));
+			sprintf(str,"  %-15s ",m->ShortcutString(s->e[c2], buffer, false));
 			if (a) aa=a->FindAction(s->e[c2]->action); else aa=NULL;
 			if (aa) {
 				 //print out string id and commented out description
