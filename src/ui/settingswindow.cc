@@ -18,6 +18,7 @@
 #include <lax/tabframe.h>
 
 #include <lax/shortcutwindow.h>
+#include <lax/shortcutwindow2.h>
 
 #include "settingswindow.h"
 #include "about.h"
@@ -56,7 +57,7 @@ Laxkit::anXWindow *newSettingsWindow(const char *which, const char *place)
 {
 	TabFrame *frame = new HelpAbout();
 
-	 //shortcuts tab
+	 //-----shortcuts tab
 	laidout->InitializeShortcuts();
 	ShortcutManager *manager=GetDefaultShortcutManager();
 
@@ -74,22 +75,35 @@ Laxkit::anXWindow *newSettingsWindow(const char *which, const char *place)
 	frame->AddWin(shortcutwin, 1, _("Shortcuts"), NULL, 0);
 
 
-	 //settings tab
+	//-----new shortcuts
+    ShortcutWindow2 *kb = new ShortcutWindow2(nullptr,"Shortcuts",_("Shortcuts"),
+                                ANXWIN_REMEMBER | SHORTCUTW2_Show_Search | SHORTCUTW2_Load_Save,
+                                0,200,1500,800,0,
+                                place);
+	makestr(kb->textheader,"#\n# Laidout shortcuts\n#\n");
+
+	frame->AddWin(kb, 1, _("Shortcuts2"), NULL, 0);
+
+
+
+	 //-----settings tab
 	ValueWindow *settings = new ValueWindow(nullptr, "Settings", _("Settings"), frame->object_id, "settings", &laidout->prefs);
 	settings->Initialize();
+	int settingstab = frame->NumBoxes();
 	frame->AddWin(settings,1,
 				   _("Settings"), NULL, 0);
 
 
-	 //about tab
+	 //----about tab
 	AboutWindow *about=new AboutWindow(frame);
 	about->SetWinStyle(ANXWIN_ESCAPABLE, 0);
+	int abouttab = frame->NumBoxes();
 	frame->AddWin(about, 1, _("About"), NULL, 0);
 
 
 
-	if (!strcmp(which, "about")) frame->SelectN(2);
-	else if (!strcmp(which, "settings")) frame->SelectN(1);
+	if (!strcmp(which, "about")) frame->SelectN(abouttab);
+	else if (!strcmp(which, "settings")) frame->SelectN(settingstab);
 	else frame->SelectN(0);
 
 	return frame;
