@@ -66,13 +66,13 @@ Laxkit::anXWindow *newSettingsWindow(const char *which, const char *place)
 		appendstr(manager->setfile,"/default.keys");
 	}
 
-	ShortcutWindow *shortcutwin=new ShortcutWindow(frame,"Shortcuts",_("Shortcuts"),
-					ANXWIN_REMEMBER | SHORTCUTW_Show_Search | SHORTCUTW_Load_Save,
-					0,0,400,600,0,place);
-	shortcutwin->SetWinStyle(ANXWIN_ESCAPABLE, 0);
-	makestr(shortcutwin->textheader,"#\n# Laidout shortcuts\n#\n");
-
-	frame->AddWin(shortcutwin, 1, _("Shortcuts"), NULL, 0);
+//	ShortcutWindow *shortcutwin=new ShortcutWindow(frame,"Shortcuts",_("Shortcuts"),
+//					ANXWIN_REMEMBER | SHORTCUTW_Show_Search | SHORTCUTW_Load_Save,
+//					0,0,400,600,0,place);
+//	shortcutwin->SetWinStyle(ANXWIN_ESCAPABLE, 0);
+//	makestr(shortcutwin->textheader,"#\n# Laidout shortcuts\n#\n");
+//
+//	frame->AddWin(shortcutwin, 1, _("Shortcuts"), NULL, 0);
 
 
 	//-----new shortcuts
@@ -80,9 +80,11 @@ Laxkit::anXWindow *newSettingsWindow(const char *which, const char *place)
                                 ANXWIN_REMEMBER | SHORTCUTW2_Show_Search | SHORTCUTW2_Load_Save,
                                 0,200,1500,800,0,
                                 place);
+	kb->ApplyCurrentLocale();
 	makestr(kb->textheader,"#\n# Laidout shortcuts\n#\n");
 
-	frame->AddWin(kb, 1, _("Shortcuts2"), NULL, 0);
+	int shortcutstab = frame->NumBoxes();
+	frame->AddWin(kb, 1, _("Shortcuts"), NULL, 0);
 
 
 
@@ -95,7 +97,7 @@ Laxkit::anXWindow *newSettingsWindow(const char *which, const char *place)
 
 
 	 //----about tab
-	AboutWindow *about=new AboutWindow(frame);
+	AboutWindow *about = new AboutWindow(frame);
 	about->SetWinStyle(ANXWIN_ESCAPABLE, 0);
 	int abouttab = frame->NumBoxes();
 	frame->AddWin(about, 1, _("About"), NULL, 0);
@@ -104,7 +106,7 @@ Laxkit::anXWindow *newSettingsWindow(const char *which, const char *place)
 
 	if (!strcmp(which, "about")) frame->SelectN(abouttab);
 	else if (!strcmp(which, "settings")) frame->SelectN(settingstab);
-	else frame->SelectN(0);
+	else frame->SelectN(shortcutstab);
 
 	return frame;
 }
