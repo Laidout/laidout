@@ -444,6 +444,11 @@ void LImagePatchInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFil
 	ImagePatchInterface::dump_in_atts(att,flag,context);
 }
 
+LaxFiles::Attribute *LImagePatchInterface::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
+{
+	return att;
+}
+
 //------------------------------------- LColorPatchInterface -------------------------
 /*! \class LColorPatchInterface
  * 
@@ -557,6 +562,11 @@ void LColorPatchInterface::dump_out(FILE *f,int indent,int what,LaxFiles::DumpCo
 void LColorPatchInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	ColorPatchInterface::dump_in_atts(att,flag,context);
+}
+
+LaxFiles::Attribute *LColorPatchInterface::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
+{
+	return att;
 }
 
 

@@ -294,6 +294,11 @@ void LPathInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Du
 	PathInterface::dump_in_atts(att,flag,context);
 }
 
+LaxFiles::Attribute *LPathInterface::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
+{
+	return att;
+}
+
 
 } //namespace Laidout
 
