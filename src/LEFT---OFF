@@ -12,6 +12,8 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now:
 
+bug: can't duplicate gradient nodes.. causes seg fault
+
 bug: severing clone link does some weird things, including crashing
 
 bug: window sizes seem to all be off a few pixels

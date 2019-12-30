@@ -412,6 +412,7 @@ int AnimationInterface::Idle(int tid, double delta)
 	else if (current_time < start_time) current_time = end_time;
 
 	current_frame++;
+	//laidout->globals.push("current_frame", current_frame);
 	needtodraw=1;
 
 	DBG cerr << "(note: not actual frame, this is event tick) Frame #"<<current_frame<<",  fps: "<<current_fps<<endl;

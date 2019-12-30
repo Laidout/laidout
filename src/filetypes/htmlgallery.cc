@@ -1176,7 +1176,7 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 		//default fallback for no template
 		fprintf(htmlout, "<html>\n<head>\n<title>%s</title>\n<style>\n body { background-color: #555; }\n</style>\n</head>\n<body>\n", filename);
 		fprintf(htmlout, imageliststr.c_str());
-		fprintf(htmlout, "</body>\n</html>");
+		fwrite("</body>\n</html>", 1, 15, htmlout);
 	}
 	else 
 	{

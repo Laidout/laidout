@@ -56,7 +56,7 @@ FileRef::FileRef(const char *file)
  *
  * These are for holding random notes and scripts. Actual text loading can 
  * be defered. This means that the actual text may or may
- * not be in PlainText::thetext. If filename!=NULL, then calls to GetText() will
+ * not be in PlainText::thetext. If filename!=nullptr, then calls to GetText() will
  * then load the text in.
  *
  * Ultimately, they might contain something like Latex code that an EPS
@@ -73,13 +73,15 @@ FileRef::FileRef(const char *file)
 
 PlainText::PlainText()
 {
-	thetext=NULL;
-	name=NULL;
-	filename=NULL;
-	owner=NULL;
-	texttype=TEXT_Temporary;
-	textsubtype=-1;
-	lastmodtime=lastfiletime=0;
+	thetext      = nullptr;
+	name         = nullptr;
+	filename     = nullptr;
+	owner        = nullptr;
+	texttype     = TEXT_Temporary;
+	textsubtype  = -1;
+	lastmodtime  = 0;
+	lastfiletime = 0;
+	loaded       = false;
 }
 
 PlainText::PlainText(const char *newtext)
@@ -135,17 +137,18 @@ int PlainText::SaveText()
  */
 int PlainText::LoadFromFile(const char *fname)
 {
-	char *filetext=read_in_whole_file(fname,NULL);
+	char *filetext = read_in_whole_file(fname,nullptr);
 	if (!filetext) return 1;
 	
-	makestr(filename,fname);
-	makestr(name,lax_basename(fname));
-	prependstr(name,_("file: "));
+	makestr(filename, fname);
+	makestr(name, lax_basename(fname));
+	prependstr(name, _("file: "));
 	if (thetext) delete[] thetext;
-	thetext=filetext;
-	texttype=TEXT_Temporary;
-	textsubtype=-1;
-	lastmodtime=lastfiletime=times(&tmptimestruct);
+	thetext = filetext;
+	texttype = TEXT_Temporary;
+	textsubtype = -1;
+	lastmodtime = lastfiletime = times(&tmptimestruct);
+	loaded = true;
 	return 0;
 }
 
@@ -160,33 +163,34 @@ int PlainText::SetText(const char *newtext)
 }
 
 //! Return relevant text.
-/*! If thetext==NULL, and filename!=NULL, then read in all of file into
+/*! If thetext==nullptr, and filename!=nullptr, then read in all of file into
  * thetext, and return thetext, also setting lastmodtime.
  */
 const char *PlainText::GetText()
 {
 	if (thetext) return thetext;
 
-	if (!S_ISREG(file_exists(Filename(),1,NULL))) return NULL;
+	if (!S_ISREG(file_exists(Filename(),1,nullptr))) return nullptr;
 
-	int size=file_size(Filename(),1,NULL);
-	if (size<=0) return NULL;
+	int size = file_size(Filename(),1,nullptr);
+	if (size <= 0) return nullptr;
 
-	FILE *f=fopen(Filename(),"r");
-	if (!f) return NULL;
-	thetext=new char[size+1];
-	int actuallyread=fread(thetext,1,size,f);
-	if (actuallyread>size || actuallyread<=0) {
+	FILE *f = fopen(Filename(),"r");
+	if (!f) return nullptr;
+	thetext = new char[size+1];
+	int actuallyread = fread(thetext,1,size,f);
+	if (actuallyread > size || actuallyread <= 0) {
 		delete thetext;
-		thetext=NULL;
+		thetext = nullptr;
 	} else thetext[actuallyread]='\0';
 
 	fclose(f);
-	lastmodtime=lastfiletime=times(&tmptimestruct);
+	lastmodtime = lastfiletime = times(&tmptimestruct);
+	loaded = true;
 	return thetext;
 }
 
-/*! If filename!=NULL, then filename is output, but thetext is ignored, and 
+/*! If filename!=nullptr, then filename is output, but thetext is ignored, and 
  * assumed to have been saved in filename already.
  *
  * <pre>

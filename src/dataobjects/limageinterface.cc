@@ -159,6 +159,11 @@ void LImageInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::D
 	ImageInterface::dump_in_atts(att,flag,context);
 }
 
+LaxFiles::Attribute *LImageInterface::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
+{
+	return att;
+}
+
 
 } //namespace Laidout
 

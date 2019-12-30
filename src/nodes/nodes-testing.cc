@@ -506,12 +506,34 @@ int GridPoints(
 		double zwidth, double zstep,
 		spacevector center, Polyhedron *poly)
 {
+	double pz, py;
+	for (int zz = 0; zz < zdiv; zz++) {
+		pz = zz / (double)zdiv * zwidth - zwidth/2;
+		for (int yy = 0; yy < ydiv; yy++) {
+			py = yy / (double)ydiv * ywidth - ywidth/2;
+			for (int xx = 0; xx < xdiv; xx++) {
+				poly->AddPoint(center + spacevector(xx / (double)xdiv * xwidth - xwidth/2, py, pz));
+			}
+		}
+	}
 }
 
 /*! Cube centered at center.
  */
-int Cube( double xwidth, double ywidth, double zwidth, spacevector center, Polyhedron *poly)
+int Cube(double xwidth, double ywidth, double zwidth,
+		 int xdiv, int ydiv, int zdiv,
+		 spacevector center, Polyhedron *poly)
 {
+	double pz, py;
+	for (int zz = 0; zz < zdiv; zz++) {
+		pz = zz / (double)zdiv * zwidth - zwidth/2;
+		for (int yy = 0; yy < ydiv; yy++) {
+			py = yy / (double)ydiv * ywidth - ywidth/2;
+			for (int xx = 0; xx < xdiv; xx++) {
+				poly->AddPoint(center + spacevector(xx / (double)xdiv * xwidth - xwidth/2, py, pz));
+			}
+		}
+	}
 }
 
 

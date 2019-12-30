@@ -55,6 +55,7 @@ class PlainText : public Laxkit::anObject, public LaxFiles::DumpUtility
 	char *thetext;
 	char *name;
 	char *filename;
+	bool loaded;
 
 	PlainText();
 	PlainText(const char *newtext);
