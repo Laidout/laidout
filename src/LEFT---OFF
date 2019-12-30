@@ -1675,7 +1675,7 @@ shortcut dialog: shortcuts:
   numberpadmask?
   char names for wacky xf86 codes.. accept 0x*
   implement search
-  need ability to add multiple keys for same action
+  DONE need ability to add multiple keys for same action
   svg keyboard out
 
 have option to specify language from command line
