@@ -185,13 +185,20 @@ ValueTypes element_NameToType(const char *type)
  */
 
 
+//---------------------------------- SimpleFunctionEvaluator ------------------------------------------
+/*! \class SimpleFunctionEvaluator
+ * \brief Simple subclass of FunctionEvaluator where we only have one function to call.
+ */
+
 SimpleFunctionEvaluator::SimpleFunctionEvaluator(ObjectFunc func)
 {
-	newfunc=NULL;
-	function=func;
+	newfunc  = nullptr;
+	function = func;
 }
 
-/*! Return
+/*! Override for FunctionEvaluator::Evaluate(). Ignores func, and uses this->function instead.
+ *
+ * Return
  *  0 for success, value returned.
  * -1 for no value returned due to incompatible parameters, which aids in function overloading.
  *  1 for parameters ok, but there was somehow an error, so no value returned.
