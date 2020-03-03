@@ -123,7 +123,7 @@ enum ViewActions {
 	VIEW_Revert_To_Save,
 
 	VIEW_Config_Addons,
-	VIEW_Extension,
+	VIEW_AddonAction,
 
 	VIEW_NewDocument,
 	VIEW_Open_Document,
@@ -3377,8 +3377,8 @@ ValueHash *LaidoutViewport::build_context()
 //
 //	context->push("viewport", this);
 //	context->push("object", curobj***)//current object
-//	context->push("selection", ***);//current selection
-//	context->push("tools",***); //stack of active tools
+//	context->push("selection", selection);//current selection
+//	context->push("tools", ***); //stack of active tools
 //	context->push("parent",win_parent); //parent context
 //
 //	return context;
@@ -4184,26 +4184,26 @@ int ViewWindow::init()
 
 
 	 //--------extensions
-	if (laidout->experimental) {
-		menu = new MenuInfo;
-	//	if (laidout->extensions.n) {
-	//		for (int c=0; c<laidout->extensions.n; c++) {
-	//			AddonAction *action = laidout->extensions.e[c];
-	//			menu->AddItem(action->Name(), VIEW_Extension, 0, c);
-	//		}
-	//	}
-		if (menu->n()) menu->AddSep();
-		//menu->AddItem(_("Configure addons..."), VIEW_Config_Addons);
-		menu->AddItem(_("Plugin information..."), VIEW_Config_Addons);
+	menu = new MenuInfo;
 
-		last = menub = new MenuButton(this,"extensions",NULL,
-								MENUBUTTON_LEFT|IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"extbutton",-1,
-								 menu,1, _("Extensions"),
-								 NULL, laidout->icons->GetIcon("List"),
-								 0);
-		menub->tooltip(_("Miscellaneous actions"));
-		AddWin(menub,1, menub->win_w,0,50,50,0, menub->win_h,0,50,50,0, -1);
+	if (laidout->addonactions.n) {
+		for (int c=0; c<laidout->addonactions.n; c++) {
+			AddonAction *action = laidout->addonactions.e[c];
+			menu->AddItem(action->Label(), VIEW_AddonAction, 0, c);
+		}
 	}
+
+	if (menu->n()) menu->AddSep();
+	//menu->AddItem(_("Configure addons..."), VIEW_Config_Addons);
+	menu->AddItem(_("Plugin information..."), VIEW_Config_Addons);
+
+	last = menub = new MenuButton(this,"extensions",NULL,
+							MENUBUTTON_LEFT|IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"extbutton",-1,
+							 menu,1, _("Extensions"),
+							 NULL, laidout->icons->GetIcon("List"),
+							 0);
+	menub->tooltip(_("Miscellaneous actions"));
+	AddWin(menub,1, menub->win_w,0,50,50,0, menub->win_h,0,50,50,0, -1);
 
 
 	 //---------help
