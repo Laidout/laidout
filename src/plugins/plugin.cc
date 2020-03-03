@@ -118,7 +118,9 @@ PluginBase *LoadPlugin(const char *path_to_plugin, Laxkit::ErrorLog &log)
 	makestr(plugin->filepath, path_to_plugin);
 
 	DBG cerr <<"Found plugin!"<<endl;
-	DBG cerr <<"  Name:        "<< plugin->PluginName()  << endl;
+	DBG cerr <<"  Plugin Name: "<< plugin->PluginName()  << endl;
+	DBG cerr <<"  Local Name:  "<< plugin->Name()        << endl;
+	DBG cerr <<"  Local Name:  "<< plugin->Name()        << endl;
 	DBG cerr <<"  Version:     "<< plugin->Version()     << endl;
 	DBG cerr <<"  Description: "<< plugin->Description() << endl;
 	DBG cerr <<"  Author:      "<< plugin->Author()      << endl;

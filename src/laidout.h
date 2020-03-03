@@ -30,6 +30,7 @@
 #include "filetypes/filefilters.h"
 #include "calculator/values.h"
 #include "plugins/plugin.h"
+#include "plugins/addonaction.h"
 
 
 namespace Laidout {
@@ -130,7 +131,8 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	Laxkit::RefPtrStack<LaxInterfaces::anInterface> interfacepool;
 	Laxkit::PtrStack<ImpositionResource> impositionpool;
 	Laxkit::PtrStack<ExportFilter> exportfilters;
-	Laxkit::PtrStack<ImportFilter>  importfilters;
+	Laxkit::PtrStack<ImportFilter> importfilters;
+	Laxkit::RefPtrStack<AddonAction> addonactions;
 
 	Laxkit::PtrStack<char> disabled_plugins;
 	Laxkit::RefPtrStack<PluginBase> plugins;

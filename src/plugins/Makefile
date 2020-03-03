@@ -18,6 +18,7 @@ CPPFLAGS= $(EXTRA_CPPFLAGS) -std=c++11 -fPIC -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. 
 
 
 objs= \
+	addonaction.o \
 	plugin.o 
 
 #
@@ -25,8 +26,8 @@ objs= \
 #
 plugins= \
 	geglnodes.so \
-	#python.so \
 	#exampleplugin.so \
+	#python.so \
 
 	#gmicnodes.so           #ToDO!
 	#graphicsmagicknodes.so #ToDO!

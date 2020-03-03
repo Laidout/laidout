@@ -41,31 +41,31 @@ namespace ExamplePluginNS {
  */
 
 ExamplePlugin::ExamplePlugin()
-{ ***
+{
 	//in general, you should not initialize anything other than simple types in or really do anything in
 	//constructor, as accidentally loading or destroying the same thing twice will likely produce strange errors.
 	//Instead do important initialization in Initialize(), and destroy those things in Finalize().
 }
 
 ExamplePlugin::~ExamplePlugin()
-{ ***
+{
 }
 
 /*! This needs to be a unique, non-localized name of the plugin.
  * Laidout will not load this plugin in another with the same PluginName().
  */
 const char *ExamplePlugin::PluginName()
-{ ***
+{
 	return "Example Plugin";
 }
 
 const char *ExamplePlugin::Name()
-{ ***
+{
 	return _("Example Plugin");
 }
 
 unsigned long ExamplePlugin::WhatYouGot()
-{ ***
+{
 	 //or'd list of PluginBase::PluginBaseContents
 	return 0
 		//| PLUGIN_Panes
@@ -86,29 +86,29 @@ unsigned long ExamplePlugin::WhatYouGot()
 }
 
 const char *ExamplePlugin::Version()
-{ ***
+{
 	return "1.0";
 }
 
 /*! Return localized description.
  */
 const char *ExamplePlugin::Description()
-{ ***
+{
 	return _("A good time to be had by all.");
 }
 
 const char *ExamplePlugin::Author()
-{ ***
+{
 	return "I. M. Sunshine";
 }
 
 const char *ExamplePlugin::ReleaseDate()
-{ ***
-	return "2017 04 15";
+{
+	return "2020 02 29";
 }
 
 const char *ExamplePlugin::License()
-{ ***
+{
 	return "LGPL3";
 }
 
@@ -125,7 +125,7 @@ const char *ExamplePlugin::License()
 /*! Install stuff.
  */
 int ExamplePlugin::Initialize()
-{ ***
+{
 	if (initialized) return 0;
 
 	initialized = 1;
@@ -138,7 +138,8 @@ int ExamplePlugin::Initialize()
 /*! Reverse of Initialize().
  */
 void ExamplePlugin::Finalize()
-{ ***
+{
+	DBG cerr << "ExamplePlugin finalizing!"<<endl;
 }
 
 
