@@ -15,6 +15,7 @@ Those are purged with each release.
 bug: can't duplicate gradient nodes.. causes seg fault
 
 bug: severing clone link does some weird things, including crashing
+bug: clone tool clones do not have proper bounding box
 
 bug: window sizes seem to all be off a few pixels
 
@@ -528,6 +529,12 @@ xtg from quark?
 idml from indesign?
 
 PathInterface: pathinterface
+  need path combine:
+    with more than one object selected, turn to path tool, pop a menu that asks:
+	  Edit both objects at same time
+	  Combine to single object
+	  Combine and merge endpoints
+
   that hot new spiro curve
   boolean ops
   mirror, array, with join (akin to blender modifiers)
@@ -1852,6 +1859,8 @@ for clones, it would be easier to have a "defs" group or something, so deleting 
   if an object is without a home.
 
 tiling cloner: clone tiler  CloneInterface
+  should have option to apply clones as an object filter, not as actual clones
+  default should be use lines only when there is no source object. 
   new tiling should update viewport color per basecells
   should not assume preview has I transform
   memory hole back, third time!!!
