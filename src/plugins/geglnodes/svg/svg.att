@@ -1,0 +1,211 @@
+#Laidout namespace
+name SvgFilters
+format class
+class FilterPrimitive
+  number x
+  number y
+  number width
+  number height
+  string result
+class feFuncR
+  enum type
+    enumval "identity"
+    enumval "table"
+    enumval "discrete"
+    enumval "linear"
+    enumval "gamma"
+  string tableValues
+  number slope
+  number intercept
+  number amplitude
+  number exponent
+  number offset
+class feFuncG
+  enum type
+    enumval "identity"
+    enumval "table"
+    enumval "discrete"
+    enumval "linear"
+    enumval "gamma"
+  string tableValues
+  number slope
+  number intercept
+  number amplitude
+  number exponent
+  number offset
+class feFuncB
+  enum type
+    enumval "identity"
+    enumval "table"
+    enumval "discrete"
+    enumval "linear"
+    enumval "gamma"
+  string tableValues
+  number slope
+  number intercept
+  number amplitude
+  number exponent
+  number offset
+class feFuncA
+  enum type
+    enumval "identity"
+    enumval "table"
+    enumval "discrete"
+    enumval "linear"
+    enumval "gamma"
+  string tableValues
+  number slope
+  number intercept
+  number amplitude
+  number exponent
+  number offset
+class feDistantLight
+  number azimuth
+  number elevation
+class fePointLight
+  number x
+  number y
+  number z
+class feSpotLight
+  number x
+  number y
+  number z
+  number pointsAtX
+  number pointsAtY
+  number pointsAtZ
+  number specularExponent
+  number limitingConeAngle
+class feMergeNode
+  string in
+class feBlend
+  extends FilterPrimitive
+  string in
+  string in2
+  enum mode
+    defaultValue normal
+    enumval "normal"
+    enumval "multiply"
+    enumval "screen"
+    enumval "darken"
+    enumval "lighten"
+class feColorMatrix
+  extends FilterPrimitive
+  string in
+  enum type
+    defaultValue matrix
+    enumval "matrix"
+    enumval "saturate"
+    enumval "hueRotate"
+    enumval "luminanceToAlpha"
+  string values
+class feComponentTransfer
+  extends FilterPrimitive
+  uihint kids(feFuncR, feFuncG, feFuncB, feFuncA)
+  string in
+class feComposite
+  extends FilterPrimitive
+  string in
+  string in2
+  enum operator
+    defaultValue over
+    enumval "over"
+    enumval "in"
+    enumval "out"
+    enumval "atop"
+    enumval "xor"
+    enumval "arithmetic"
+  number k1
+  number k2
+  number k3
+  number k4
+class feConvolveMatrix
+  extends FilterPrimitive
+  string in
+  number order
+  string kernelMatrix
+  number divisor
+  number bias
+  int targetX
+  int targetY
+  enum edgeMode
+    defaultValue duplicate
+    enumval "duplicate"
+    enumval "wrap"
+    enumval "none"
+  number kernelUnitLength
+  boolean preserveAlpha
+class feDiffuseLighting
+  extends FilterPrimitive
+  uihint kids(feDistantLight, fePointLight, feSpotLight)
+  string in
+  number surfaceScale
+  number diffuseConstant
+  number kernelUnitLength
+class feDisplacementMap
+  extends FilterPrimitive
+  string in
+  string in2
+  number scale
+  enum xChannelSelector
+    defaultValue A
+    enumval "R"
+    enumval "G"
+    enumval "B"
+    enumval "A"
+  enum yChannelSelector
+    defaultValue A
+    enumval "R"
+    enumval "G"
+    enumval "B"
+    enumval "A"
+class feFlood
+  extends FilterPrimitive
+class feGaussianBlur
+  extends FilterPrimitive
+  string in
+  number stdDeviation
+class feImage
+  extends FilterPrimitive
+  string preserveAspectRatio
+    defaultValue xMidYMid meet
+class feMerge
+  extends FilterPrimitive
+  uihint kids(feMergeNode)
+class feMorphology
+  extends FilterPrimitive
+  string in
+  enum operator
+    defaultValue erode
+    enumval "erode"
+    enumval "dilate"
+  number radius
+class feOffset
+  extends FilterPrimitive
+  string in
+  number dx
+  number dy
+class feSpecularLighting
+  extends FilterPrimitive
+  uihint kids(feDistantLight, fePointLight, feSpotLight)
+  string in
+  number surfaceScale
+  number specularConstant
+  number specularExponent
+  number kernelUnitLength
+class feTile
+  extends FilterPrimitive
+  string in
+class feTurbulence
+  extends FilterPrimitive
+  number baseFrequency
+  int numOctaves
+  number seed
+  enum stitchTiles
+    defaultValue noStitch
+    enumval "stitch"
+    enumval "noStitch"
+  enum type
+    defaultValue turbulence
+    enumval "fractalNoise"
+    enumval "turbulence"
+class SVG.FilterPrimitive.extra.class
