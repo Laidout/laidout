@@ -1,5 +1,7 @@
 /*! \page NOTES Random Notes
-\section notes cryptic dtp related notes of mine i wrote down somehwere along the line
+
+Cryptic dtp related notes of mine i wrote down somehwere along the line
+----------------
 
 <pre>
 

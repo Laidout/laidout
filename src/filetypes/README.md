@@ -1,13 +1,13 @@
-//note: this file is processed by doxygen for your viewing pleasure
+Writing File Filters {#writingFilters}
+====================
 
-
-/*! \page writingfilters   Writing Filters
   
-  
-\section filterhowto      How to create a new filter
+How to create a new filter
+--------------------------
 
-There are import filters (ImportFilter) to import vector images, and
-convert to Laidout objects as possible, export filters (ExportFilter) to
+There are import filters (Laidout::ImportFilter) to import vector images, and
+convert to Laidout objects as possible, 
+export filters ([ExportFilter](@ref Laidout::ExportFilter)) to
 export to a any format, and image import filters (ImageImportFilter), to
 convert any file to a rasterized image, and treated like any old image.
 When running, there will be one instance of each file format and version.
@@ -20,23 +20,24 @@ StyleDef.
 
 Remember that you might have to set the current locale, so that when you
 output 1.2, for instance, it does not get output as "1,2". To do that,
-simply call setlocale(LC_ALL,"C") before outputting, and (IMPORTANT!!) 
-afterwards, call setlocale(LC_ALL,""). Before In() or Out() is called,
+simply call `setlocale(LC_ALL,"C")` before outputting, and (IMPORTANT!!) 
+afterwards, call `setlocale(LC_ALL,"")`. Before `In()` or `Out()` is called,
 the locale will be the normal locale, not the "C" locale. For an example
-of how to do this, see filefilter-boilerplate.cc (***todo!!).
+of how to do this, see filefilter-boilerplate.cc (todo!!).
 
 Filters should follow the following guidelines.
 
 
 
-\section exportfilters    Export Filters
+Export Filters
+--------------
 
 When an export filter is called, it is passed a reference to a Document, PaperGroup,
 and a Group object. If the Document and 
 Group objects are both given, then the Group is assumed to be a limbo
 object, and must be drawn before (that is, under) any Document spreads.
 
-Export filters are called from export_document(), which does some basic
+Export filters are called from `Laidout::export_document()`, which does some basic
 verification on the export configuration, so that filters may assume
 that start<=end, that doc or limbo can be NULL, but not both, and that
 papergroup is not NULL and does not need to be changed at all.
@@ -45,39 +46,41 @@ If no Document is given, then the start, end, and layout type passed
 to the filter are to be ignored.
 
 If an ExportFilter can export many pages to the same file, it must have 
-FILTER_MULTIPAGE set in its flags. 
+`FILTER_MULTIPAGE` set in its flags. 
 
 If the filter can export each spread or paper
-to many files natively, then it must have FILTER_MANY_FILES set. If it cannot export
-to many files natively, and if the context passed to export_document() wants it output
-to many files, then export_document() will create one file per spread per paper,
+to many files natively, then it must have `FILTER_MANY_FILES` set. If it cannot export
+to many files natively, and if the context passed to `export_document()` wants it output
+to many files, then `export_document()` will create one file per spread per paper,
 and call the export filter accordingly.
 
-Note that when export_document() ensures that the PaperGroup is not NULL,
+Note that when `export_document()` ensures that the PaperGroup is not NULL,
 it may be using a PaperGroup that is different from the default imposition PaperGroup
 that is contained in Spread::papergroup. Filters must use the PaperGroup
 provided in the context, and not the default one returned in an imposition's spread.
 
 
 
-\section importfilters     Import Filters
+Import Filters
+--------------
 
 Import should be performed in such a way as to preserve as much as possible the
 data that was in the original file so that an ImportFilter's companion 
 ExportFilter can take that preserved original data, and export it back
 into that file format properly.
 
-This magical feat is performed via MysteryData objects, and Attribute objects
+This magical feat is performed via MysteryData objects, and properties
 attached to otherwise normal Laidout elements.
 
-ImportFilter::In() is called from import_document().
+`Laidout::ImportFilter::In()` is called from `Laidout::import_document()`.
 
 
 
 
-\section imageimportfilters Image Import Filters
+Image Import Filters
+--------------------
 
-***TODO! This is still a work in progress.....
+TODO! This is still a work in progress.....
 
 Image import filters (ImageImportFilter) convert a random file or text object into a rasterized image.
 This means EPS, PS pages, PDF pages, lilypond pages, etc. These are akin to

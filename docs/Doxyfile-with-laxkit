@@ -777,7 +777,7 @@ INPUT                  = doxygen/laidoutintro.txt \
                          doxygen/gpl-license \
                          ../src \
                          doxygen/miscdocs.txt \
-                         ../src/filetypes/README \
+                         ../src/filetypes/README.md \
                          ../laxkit/docs/doxygen/laxintro.txt \
                          ../laxkit/lax/TODO \
                          ../laxkit/docs/doxygen/math.txt \
