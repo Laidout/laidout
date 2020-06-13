@@ -25,18 +25,23 @@ objs= \
 # If you want a plugin built by default, uncomment or add here.
 #
 plugins= \
-	geglnodes.so \
-	#exampleplugin.so \
-	#python.so \
+	geglnodes \
+	#example \
+	#python \
 
-	#gmicnodes.so           #ToDO!
-	#graphicsmagicknodes.so #ToDO!
-	#antiprism.so           #ToDO!
+	#gmic           #ToDO!
+	#graphicsmagick #ToDO!
+	#antiprism      #ToDO!
 
 
-all: lax laxinterface $(objs) $(plugins)
+all: lax laxinterface $(objs) plugins
 
-plugins: $(plugins)
+plugins:
+	for NAME in $(plugins); do \
+		$(MAKE) -C $$NAME ; \
+		cp $$NAME/*.so . ; \
+	done
+
 
 lax:
 	cd $(LAXDIR) && $(MAKE)
@@ -46,30 +51,12 @@ laxinterface:
 
 depends:
 	../utils/makedependencies -fmakedepend -I$(LAXDIR)/.. *.cc
+	for NAME in $(plugins); do $(MAKE) -C $$NAME depends ; done
 
 include makedepend
 
 test: lax laxinterface plugin.o test.o exampleplugin.so
 	g++ -rdynamic $(CPPFLAGS) plugin.o test.o -llaxkit $(LDFLAGS) -ldl -o test
-
-
-####------------------  Gegl  --------------------#####
-GEGLCPPFLAGS= `pkg-config --cflags ${GEGLVERSION}`
-GEGLLIBS=     `pkg-config --libs   ${GEGLVERSION}`
-
-geglnodes.so: geglnodes.o svgnodes.o
-#geglnodes.so: geglnodes.cc
-	@echo "Compiling geglnodes with pkg-config path $(PKG_CONFIG_PATH)"
-	@echo "gegl cflags: $(GEGLCPPFLAGS)"
-	@echo "gegl libs  : $(GEGLLIBS)"
-#	g++ -shared -fPIC $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) geglnodes.cc -llaxkit $(GEGLLIBS) -o geglnodes.so
-	g++ -shared -fPIC $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) svgnodes.o geglnodes.o -llaxkit $(GEGLLIBS) -o geglnodes.so
-
-geglnodes.o: geglnodes.cc
-	g++ -shared -fPIC $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) geglnodes.cc -llaxkit $(GEGLLIBS) -c -o $@
-
-svgnodes.o: svg/svgnodes.cc
-	g++ -shared -fPIC $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) svg/svgnodes.cc -llaxkit $(GEGLLIBS) -c -o $@
 
 
 ####------------------  Python  --------------------#####
@@ -90,12 +77,15 @@ exampleplugin.so: lax laxinterface exampleplugin.o
 
 hidegarbage:
 	../hidegarbage *.cc
+	for NAME in $(plugins); do $(MAKE) -C $$NAME hidegarbage ; done
 
 unhidegarbage:
 	../hidegarbage -0 *.cc
+	for NAME in $(plugins); do $(MAKE) -C $$NAME unhidegarbage ; done
 
 
 .PHONY: clean hidegarbage unhidegarbage lax laxinterfaces all plugins depends
 clean:
 	rm -f *.o *.so test svg/*.o
+	for NAME in $(plugins); do $(MAKE) -C $$NAME clean ; done
 
