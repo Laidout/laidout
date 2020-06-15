@@ -842,6 +842,8 @@ Laxkit::ShortcutHandler *GroupInterface::GetShortcuts()
 	sc->Add(GIA_Reparent,  'p',AltMask,0,          "Parent",  _("Parent selected objects to last selected"),NULL,0);
 	sc->Add(GIA_Unparent,  'P',AltMask|ShiftMask,0,"Unparent",_("Unparent selected objects from their immediate parents"),NULL,0);
 
+	sc->Add(GIA_Edit_Contents,LAX_Enter,0,0,    "Edit Object",  _("Switch to content edit tool"),NULL,0);
+
 	//...shortcuts to switch to other tools are handled in ViewWindow
 
 
@@ -888,6 +890,24 @@ int GroupInterface::PerformAction(int action)
 		PostMessage(_("Flow objects"));
 		FreeSelection();
 		return 0;
+
+	} else if (action == GIA_Edit_Contents) {
+		if (selection->n() == 0) return 0;
+
+		if (strcmp(selection->e(0)->obj->whattype(),"Group")) {
+			//double click to switch to more specific tool
+			if (viewport) viewport->ChangeObject(selection->e(0),1);
+			buttondown.clear();
+
+		} else { //was group, enter group
+			//enter group and clear selection
+			ObjectContext *oc = selection->e(0)->duplicate();
+			FreeSelection();
+			oc->SetObject(NULL);
+			((LaidoutViewport *)viewport)->ChangeContext(oc);
+			delete oc;
+			needtodraw=1;
+		}
 
 	} else if (action == GIA_Edit_Clip) {
 		if (selection->n()!=1) return 0;
