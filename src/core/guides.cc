@@ -150,48 +150,20 @@ void PathGuide::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCon
 
 
 
-//------------------------------------- GridGuide -----------------------------------------------------
+//------------------------------------- Guide -----------------------------------------------------
 
+/*! \class Abstract base class for guides.
+ */
+
+
+//------------------------------------- GridGuide -----------------------------------------------------
 /*! \class GridGuide
  * Info about a grid guide.
  */
-class GridGuide : public LaxFiles::DumpUtility
-{
-  public:
-	Laxkit::anObject *owner;
-
-	enum GridType {
-		Grid,
-		Horizontal,
-		Vertical,
-		Triangles,
-		Hex,
-		MAX
-	};
-	GridType gridtype;
-	char enabled, visible;
-	flatpoint offset;
-	flatvector majordir, minordir;
-	int spacingunits;
-	double xspacing, yspacing;
-	Laxkit::ScreenColor minorcolor, majorcolor;
-	int majorinterval; //draw thick every this number
-	bool snaponlytovisible;
-
-
-	GridGuide();
-	virtual ~GridGuide();
-	virtual const char *whattype() { return "GridGuide"; }
-	virtual flatpoint Snap(flatpoint p);
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
-};
 
 GridGuide::GridGuide()
   : majordir(1,0), minordir(0,1)
 {
-	owner = NULL;
-
 	gridtype = Grid;
 	enabled = visible = 1;
 	xspacing = yspacing = .5;
@@ -205,6 +177,14 @@ GridGuide::GridGuide()
 
 GridGuide::~GridGuide()
 {}
+
+/*! Return 0 for success, nonzero for error such as units not recognized.
+ */
+int GridGuide::SetUnits(const char *units)
+{
+	cerr << " *** NEED TO IMPLEMENT GridGuide::SetUnits(const char *units)"<<endl;
+	return 1;
+}
 
 flatpoint GridGuide::Snap(flatpoint p)
 {

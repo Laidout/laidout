@@ -61,6 +61,47 @@ class PointAnchor : public Laxkit::anObject,
 };
 
 
+//----------------------------------------- Guide -------------------------------------
+class Guide : virtual public LaxInterfaces::SomeData
+{
+  public:
+	Guide() {}
+	virtual ~Guide() {}
+};
+
+
+//----------------------------------------- GridGuide -------------------------------------
+class GridGuide : public Guide
+{
+  public:
+	enum GridType {
+		Grid,
+		Horizontal,
+		Vertical,
+		Triangles,
+		Hex,
+		MAX
+	};
+	GridType            gridtype;
+	bool                enabled;
+	bool                visible;
+	flatpoint           offset;
+	flatvector          majordir, minordir;
+	int                 spacingunits;
+	double              xspacing, yspacing;
+	Laxkit::ScreenColor minorcolor, majorcolor;
+	int                 majorinterval;  // draw thick every this number
+	bool                snaponlytovisible;
+
+	GridGuide();
+	virtual ~GridGuide();
+	virtual const char *whattype() { return "GridGuide"; }
+	virtual flatpoint Snap(flatpoint p);
+	virtual int SetUnits(const char *units);
+	virtual void dump_out(FILE *f, int indent, int what, LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context);
+};
+
 } // namespace Laidout
 
 #endif
