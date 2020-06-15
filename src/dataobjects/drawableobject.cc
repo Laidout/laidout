@@ -195,22 +195,22 @@ DrawObjectChain::~DrawObjectChain()
 
 DrawableObject::DrawableObject()
 {
-	soft_mask = NULL;
-	clip_path = wrap_path = inset_path=NULL;
+	soft_mask = nullptr;
+	clip_type = CLIP_None;
+	child_clip_type = CLIP_None;
+	clip_path = wrap_path = inset_path = nullptr;
 	autowrap = autoinset = 0;
 
 	alpha  = 1;
 	blur   = 0;
-	filter = NULL;
+	filter = nullptr;
 
-	parent_link=NULL;
+	parent_link = nullptr;
 
-	importer = NULL;
-	importer_data = NULL;
+	importer = nullptr;
+	importer_data = nullptr;
 
 	metadata = nullptr;
-
-	//Id(); //makes this->nameid (of SomeData) be something like `whattype()`12343
 }
 
 /*! Will detach this object from any object chain. It is assumed that other objects in
@@ -534,6 +534,7 @@ int DrawableObject::InstallClip(LaxInterfaces::PathsData *pathsdata)
 	if (pathsdata) pathsdata->inc_count();
 	if (clip_path) clip_path->dec_count();
 	clip_path = pathsdata;
+	clip_type = CLIP_Custom_Path;
 //	if (pathsdata) {
 //		// *** update transform
 //		cerr <<" *** need to implement transform adjust in InstallClip()"<<endl;
@@ -575,13 +576,23 @@ LaxInterfaces::PathsData *DrawableObject::GetWrapPath()
 	return NULL;
 }
 
+/*! Called when clip path object is older that main object.
+ */
+void DrawableObject::RebuildClipPath()
+{
+	if (clip_type == CLIP_From_Parent_Area) {
+	}
+}
+
 LaxInterfaces::PathsData *DrawableObject::ClipPath(const double **extra_m)
 {
 	*extra_m = nullptr;
 
 	if (clip_type == CLIP_None) return nullptr;
 	if (clip_type == CLIP_From_Parent_Area) {
-		// ***
+		if (clip_path && clip_path->modtime < modtime) {
+			RebuildClipPath();
+		}
 	}
 	if (clip_type == CLIP_Custom_Path) {
 		*extra_m = clip_path->m();

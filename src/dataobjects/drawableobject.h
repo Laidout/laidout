@@ -138,6 +138,7 @@ enum BBoxAnchorTypes {
 };
 
 enum ClipTypes {
+	//self clip types:
 	CLIP_None,
 	CLIP_From_Parent_Area,
 	CLIP_Custom_Path,
@@ -159,13 +160,16 @@ class DrawableObject :  virtual public ObjectContainer,
 	Laxkit::anObject *importer_data;
 
 	ClipTypes clip_type;
+	ClipTypes child_clip_type;
 	SomeData *soft_mask; //whatever it is, take copy to use as alpha
 	LaxInterfaces::PathsData *clip_path; //its m is from main object coordinate space
 	virtual LaxInterfaces::PathsData *ClipPath(const double **extra_m);
+	virtual void RebuildClipPath();
 
-	LaxInterfaces::PathsData *wrap_path; //area path + offset, or custom
+	double autowrap;
+	double autoinset; //distance away from default to put the paths when auto generated
 	LaxInterfaces::PathsData *inset_path;
-	double autowrap, autoinset; //distance away from default to put the paths when auto generated
+	LaxInterfaces::PathsData *wrap_path; //area path + offset, or custom
 
 	enum WrapType {
 		NoWrap,
