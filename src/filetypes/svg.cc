@@ -35,6 +35,7 @@
 #include "../impositions/singles.h"
 #include "../core/utils.h"
 #include "../core/drawdata.h"
+#include "../core/guides.h"
 #include "../text/cssutils.h"
 
 //template implementation:
@@ -804,9 +805,9 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 						 obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
 			fprintf(f,"%s    id=\"%s\" %s\n", spc,grad->Id(), clipid);
 			fprintf(f,"%s    fill=\"url(#radialGradient%ld)\"\n", spc,grad->object_id);
-			fprintf(f,"%s    cx=\"%f\"\n",spc, fabs(grad->strip->r1) > fabs(grad->strip->r2) ? grad->strip->p1.x : grad->strip->p2.x);
-			fprintf(f,"%s    cy=\"%f\"\n",spc, fabs(grad->strip->r1) > fabs(grad->strip->r2) ? grad->strip->p1.y : grad->strip->p2.y);
-			fprintf(f,"%s    r=\"%f\"\n",spc,  fabs(grad->strip->r1) > fabs(grad->strip->r2) ? fabs(grad->strip->r1) : fabs(grad->strip->r2));
+			fprintf(f,"%s    cx=\"%f\"\n",spc, fabs(grad->R1()) > fabs(grad->R2()) ? grad->P1().x : grad->P2().x);
+			fprintf(f,"%s    cy=\"%f\"\n",spc, fabs(grad->R1()) > fabs(grad->R2()) ? grad->P1().y : grad->P2().y);
+			fprintf(f,"%s    r=\"%f\"\n",spc,  fabs(grad->R1()) > fabs(grad->R2()) ? fabs(grad->R1()) : fabs(grad->R2()));
 			fprintf(f,"%s  />\n",spc);
 		} else {
 			fprintf(f,"%s<rect %s transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
@@ -1471,25 +1472,25 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgE
 			double mm[6];
 			grad->GradientTransform(mm, false);
 			//pp = transform_point_inverse(mm, pp);
-			flatpoint pp1 = transform_point_inverse(mm, grad->strip->p1); //pp1.x should be 0
-			flatpoint pp2 = transform_point_inverse(mm, grad->strip->p2);
+			flatpoint pp1 = transform_point_inverse(mm, grad->P1()); //pp1.x should be 0
+			flatpoint pp2 = transform_point_inverse(mm, grad->P2());
 			flatpoint opp1, opp2;
 
-			if (fabs(grad->strip->r1) > fabs(grad->strip->r2)) { 
-				opp1 = grad->strip->p2;
-				opp2 = grad->strip->p1;
+			if (fabs(grad->R1()) > fabs(grad->R2())) { 
+				opp1 = grad->P2();
+				opp2 = grad->P1();
 				p2 = pp1.x;
 				p1 = pp2.x;
-				r2 = fabs(grad->strip->r1);
-				r1 = fabs(grad->strip->r2);
+				r2 = fabs(grad->R1());
+				r1 = fabs(grad->R2());
 				rr=1; 
 			} else {
-				opp1 = grad->strip->p1;
-				opp2 = grad->strip->p2;
+				opp1 = grad->P1();
+				opp2 = grad->P2();
 				p1 = pp1.x;
 				p2 = pp2.x;
-				r1 = fabs(grad->strip->r1);
-				r2 = fabs(grad->strip->r2); 
+				r1 = fabs(grad->R1());
+				r2 = fabs(grad->R2()); 
 				rr=0; 
 			}
 
@@ -1542,10 +1543,10 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgE
 
 		} else {
 			fprintf(f,"    <linearGradient  id=\"linearGradient%ld\"\n", grad->object_id);
-			fprintf(f,"        x1=\"%f\"\n", grad->strip->p1.x);
-			fprintf(f,"        y1=\"%f\"\n", grad->strip->p1.y);
-			fprintf(f,"        x2=\"%f\"\n", grad->strip->p2.x);
-			fprintf(f,"        y2=\"%f\"\n", grad->strip->p2.y);
+			fprintf(f,"        x1=\"%f\"\n", grad->P1().x);
+			fprintf(f,"        y1=\"%f\"\n", grad->P1().y);
+			fprintf(f,"        x2=\"%f\"\n", grad->P2().x);
+			fprintf(f,"        y2=\"%f\"\n", grad->P2().y);
 			fprintf(f,"        gradientUnits=\"userSpaceOnUse\">\n");
 			double clen=grad->strip->colors.e[grad->strip->colors.n-1]->t-grad->strip->colors.e[0]->t;
 			for (int c=0; c<grad->strip->colors.n; c++) {
@@ -1989,10 +1990,73 @@ ObjectDef *SvgImportFilter::GetObjectDef()
 }
 
 
+GridGuide *ParseGrid(Attribute *def)
+{
+	char *name,*value;
+	double d;
+	GridGuide *grid = new GridGuide;
+
+	for (int c=0; c<def->attributes.n; c++) {
+		name  = def->attributes.e[c]->name;
+		value = def->attributes.e[c]->value;
+
+		if (!strcmp(name,"id")) {
+			grid->Id(value);
+
+		} else if (!strcmp(name,"type")) {
+			if (value && !strcmp(value, "xygrid")) {
+				grid->gridtype = GridGuide::Grid;
+			}
+
+		} else if (!strcmp(name,"originx")) {
+			DoubleAttribute(value, &grid->offset.x, nullptr);
+
+		} else if (!strcmp(name,"originy")) {
+			DoubleAttribute(value, &grid->offset.y, nullptr);
+
+		} else if (!strcmp(name,"spacingx")) {
+			DoubleAttribute(value, &grid->xspacing, nullptr);
+
+		} else if (!strcmp(name,"spacingy")) {
+			DoubleAttribute(value, &grid->yspacing, nullptr);
+
+		} else if (!strcmp(name,"color")) {
+			SimpleColorAttribute(value, nullptr, &grid->majorcolor, nullptr);
+
+		} else if (!strcmp(name,"opacity")) {
+			if (DoubleAttribute(value, &d, nullptr))
+				grid->majorcolor.Alpha(d);
+
+		} else if (!strcmp(name,"empcolor")) {
+			SimpleColorAttribute(value, nullptr, &grid->minorcolor, nullptr);
+
+		} else if (!strcmp(name,"empopacity")) {
+			if (DoubleAttribute(value, &d, nullptr))
+				grid->minorcolor.Alpha(d);
+
+		} else if (!strcmp(name,"empspacing")) {
+			IntAttribute(value, &grid->majorinterval, nullptr);
+
+		} else if (!strcmp(name,"visible")) {
+			grid->visible = BooleanAttribute(value);
+
+		} else if (!strcmp(name,"enabled")) {
+			grid->enabled = BooleanAttribute(value);
+
+		} else if (!strcmp(name,"units")) {
+			grid->SetUnits(value);
+
+		} else if (!strcmp(name,"snapvisiblegridlinesonly")) {
+			grid->snaponlytovisible = BooleanAttribute(value);
+		}
+	}
+
+	return grid;
+}
 
 //forward declaration:
 int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribute> &powerstrokes, RefPtrStack<anObject> &gradients, ErrorLog &log);
-GradientData *svgDumpInGradientDef(Attribute *att, Attribute *defs, int type, GradientData *gradient, RefPtrStack<anObject> &gradients);
+GradientData *svgDumpInGradientDef(Attribute *att, Attribute *defs, RefPtrStack<anObject> &gradients, int depth);
 ColorPatchData *svgDumpInMeshGradientDef(Attribute *att, Attribute *defs);
 
 int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log, const char *filecontents,int contentslen)
@@ -2006,9 +2070,9 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 	if (!XMLFileToAttribute(&att,file,nullptr)) return 2;
 	
 	 //create repository for hints if necessary
-	Attribute *svghints=nullptr,
-			  *svg=nullptr; //points to the "svg" section of svghints. Do not delete!!
-	//if (in->keepmystery) svghints=new Attribute(VersionName(),file);  ***disable svghints for now
+	Attribute *svghints = nullptr,  // anything outside "svg" element, plus all "svg" attributes
+	          *svg      = nullptr;  // points to the "svg" lax attribute of svghints. Do not delete!!
+	// if (in->keepmystery) svghints=new Attribute(VersionName(),file);  ***disable svghints for now
 
 	try {
 
@@ -2018,7 +2082,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 				if (!strcmp(att.attributes.e[c]->name,"svg")) continue;
 				svghints->push(att.attributes.e[c]->duplicate(),-1);
 			}
-			svg=new Attribute("svg",nullptr);
+			svg = new Attribute("svg", nullptr);
 			svghints->push(svg,-1);
 		}
 
@@ -2033,10 +2097,11 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 			throw 3;
 		}
 
-		for (c=0; c<svgdoc->attributes.n; c++) {
-			name=svgdoc->attributes.e[c]->name;
-			value=svgdoc->attributes.e[c]->value;
-			if (!strcmp(name,"content:")) continue;
+		 // parse main "svg" attributes
+		for (c = 0; c < svgdoc->attributes.n; c++) {
+			name  = svgdoc->attributes.e[c]->name;
+			value = svgdoc->attributes.e[c]->value;
+			if (!strcmp(name, "content:")) continue;
 
 			if (svghints) svg->push(svgdoc->attributes.e[c]->duplicate(),-1);
 			 
@@ -2148,8 +2213,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 			imp->dec_count();
 		} //if (!doc && !in->toobj)
 
-
-		Group *group=in->toobj;
+		Group *group = in->toobj;
 
 		if (!group && doc) {
 			 //document page to start dumping onto
@@ -2177,47 +2241,25 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 
 			if (!strcmp(name,"metadata")
 				     || !strcmp(name,"sodipodi:namedview")) {
-				 //just copy over "metadata" and "sodipodi:namedview" to svghints
+				 //just copy over to svghints:
+				 //  "metadata"
+				 //  "sodipodi:namedview"
 				if (svghints) {
 					svg->push(svgdoc->attributes.e[c]->duplicate(),-1);
 				}
 
-				//if (!strcmp(name,"sodipodi:namedview")) {
-					//extract inkscape:grid, a child of namedview
-					//} else if (!strcmp(name,"inkscape:grid")) {
-						//} else if !strcmp(name,"id") {
-							//grid->Id(value);
-
-						//} else if !strcmp(name,"type") {
-							//"xygrid"
-						//} else if !strcmp(name,"originx") {
-							//DoubleAttribute(value, &grid->originx, nullptr);
-						//} else if !strcmp(name,"originy") {
-							//DoubleAttribute(value, &grid->originy, nullptr);
-						//} else if !strcmp(name,"spacingx") {
-							//DoubleAttribute(value, &grid->spacingx, nullptr);
-						//} else if !strcmp(name,"spacingy") {
-							//DoubleAttribute(value, &grid->spacingy, nullptr);
-						//} else if !strcmp(name,"color") {
-							//SimpleColorAttribute(value, &grid->color);
-						//} else if !strcmp(name,"opacity") {
-							//DoubleAttribute(value, &grid->color->alpha, nullptr);
-						//} else if !strcmp(name,"empcolor") {
-							//SimpleColorAttribute(value, &grid->color2);
-						//} else if !strcmp(name,"empopacity") {
-							//DoubleAttribute(value, &grid->color2->alpha, nullptr);
-						//} else if !strcmp(name,"empspacing") {
-							//DoubleAttribute(value, &grid->lineheavyspacing, nullptr);
-						//} else if !strcmp(name,"units") {
-							//grid->SetUnits(value);
-						//} else if !strcmp(name,"visible") {
-							//grid->visible = BooleanAttribute(value);
-						//} else if !strcmp(name,"enabled") {
-							//grid->active = BooleanAttribute(value);
-						//} else if !strcmp(name,"snapvisiblegridlinesonly") {
-							//"true" ???
-
-				//}
+//				if (!strcmp(name,"sodipodi:namedview")) {
+//					//extract inkscape:grid, a child of namedview
+//					Attribute *vatt = svgdoc->attributes.e[c]->find("content:");
+//					for (int c2=0; c2<vatt->attributes.n; c2++) {
+//						name  = vatt->attributes.e[c]->name;
+//						value = vatt->attributes.e[c]->value;
+//
+//						if (!strcmp(name,"inkscape:grid")) {
+//							ParseGrid(vatt->attributes.e[c]);
+//						}
+//					}
+//				}
 				continue;
 
 			} else if (!strcmp(name,"defs")) {
@@ -2227,19 +2269,12 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 				if (!defsatt || !defsatt->attributes.n) continue;
 
 				for (int c2=0; c2<defsatt->attributes.n; c2++) {
-					def=defsatt->attributes.e[c2];
-					name =def->name;
-					value=def->value;
+					def   = defsatt->attributes.e[c2];
+					name  = def->name;
+					value = def->value;
 
-					if (!strcmp(name,"linearGradient")) {
-						GradientData *gradient = svgDumpInGradientDef(def, defsatt, GradientData::GRADIENT_LINEAR, nullptr, gradients);
-						gradients.push(gradient);
-						gradient->dec_count();
-
-					} else if (!strcmp(name,"radialGradient")) {
-						GradientData *gradient = svgDumpInGradientDef(def, defsatt, GradientData::GRADIENT_RADIAL, nullptr, gradients);
-						gradients.push(gradient);
-						gradient->dec_count();
+					if (!strcmp(name,"linearGradient") || !strcmp(name,"radialGradient")) {
+						svgDumpInGradientDef(def, defsatt, gradients, 0);
 
 					} else if (!strcmp(name,"meshgradient")) {
 						ColorPatchData *mesh = svgDumpInMeshGradientDef(def, defsatt);
@@ -2333,56 +2368,68 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 	return 0;
 }
 
-GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, GradientData *gradient, RefPtrStack<anObject> &gradients)
+/*! If gradient, then apply anything in the def to that existing gradient.
+ * gradient will also be returned in this case, or nullptr for error.
+ */
+GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, RefPtrStack<anObject> &gradients, int depth)
 {
 	if (!def) return nullptr;
 
-	double cx,cy,fx,fy,r;
-	flatpoint p1,p2;
-	const char *id = nullptr;
-	bool foundf = false;
-	//bool foundp1 = false;
+	int type = (!strcmp(def->name, "linearGradient") ? GradientData::GRADIENT_LINEAR : GradientData::GRADIENT_RADIAL);
+
+	const char *id = def->findValue("id");
+	if (id) {  //check to see if we have already processed this gradient
+		for (int c=0; c<gradients.n; c++) {
+			if (!strcmp(gradients.e[c]->Id(), id)) return dynamic_cast<GradientData*>(gradients.e[c]);
+		}
+	}
+
+	double      cx, cy, fx, fy, r;
+	flatpoint   p1, p2;
+	bool        foundf = false;
+	bool foundp1 = false;
 	bool foundp2 = false;
-	char *name, *value;
-	//int units=0;//0 is user space, 1 is bounding box
+	GradientStrip *strip = nullptr;
+	// int units=0;//0 is user space, 1 is bounding box
+
 	double gm[6];
 	transform_identity(gm);
-	GradientStrip *strip = nullptr;
+	char *name, *value;
+	GradientData *gradient = nullptr;
+
+	const char *xlink = def->findValue("xlink:href");
+	if (!isblank(xlink) && xlink[0] == '#') {
+		 // the link might contain the color spots, need to scan in the ref for them.
+		 // For instance, radialGradient often links to a linearGradient in inkscape docs
+
+		const char *xlinkid = xlink+1;
+
+		for (int c=0; c<defs->attributes.n; c++) {
+			Attribute *d = defs->attributes.e[c];
+			name = d->name;
+			if (strcmp(name,"linearGradient") && strcmp(name,"radialGradient"))
+				continue;
+
+			const char *did = d->findValue("id");
+			if (did && !strcmp(did, xlinkid)) {
+				gradient = svgDumpInGradientDef(d, defs, gradients, depth+1);
+				break;
+			}
+		}
+	}
 
 	for (int c3=0; c3<def->attributes.n; c3++) {
-		name =def->attributes.e[c3]->name;
-		value=def->attributes.e[c3]->value;
+		name  = def->attributes.e[c3]->name;
+		value = def->attributes.e[c3]->value;
 
-		if (!strcmp(name,"xlink:href")) {
-			 // the link might contain the color spots, need to scan in the ref for them.
-			 // For instance, radialGradient often links to a linearGradient in inkscape docs
-
-			if (!value || value[0]!='#') continue; //only check for "#name" attributes
-			char *xlinkid = value+1;
-
-			for (int c=0; c<gradients.n; c++) {
-				if (!strcmp(gradients.e[c]->Id(), xlinkid)) {
-					GradientData *grad = dynamic_cast<GradientData*>(gradients.e[c]);
-					if (grad) {
-						if (grad->strip) {
-							if (strip) strip->dec_count();
-							strip = dynamic_cast<GradientStrip*>(grad->strip->duplicate(nullptr));
-							DBG cerr << " svg dup strip:"<<endl;
-							DBG strip->dump_out(stderr, 2, 0, nullptr);
-							break;
-						}
-					}
-				}
-			}
-
-		} else if (!strcmp(name,"id")) {
+		if (!strcmp(name,"id")) {
 			id = value;
 
 		} else if (!strcmp(name,"gradientUnits")) {
 			 //gradientUnits = "userSpaceOnUse | objectBoundingBox"
 			//if (!strcmp(value,"userSpaceOnUse")) units=0;
 			//else if (!strcmp(value,"objectBoundingBox")) units=1;
-			DBG cerr <<" warning: ignoring gradientUnits on svg gradient in"<<endl;
+			DBG cerr <<" warning: ignoring gradientUnits on svg gradient In"<<endl;
 
 		} else if (!strcmp(name,"gradientTransform")) {
 			svgtransform(value,gm);
@@ -2398,11 +2445,11 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 
 		} else if (!strcmp(name,"cx")) {
 			DoubleAttribute(value,&cx,nullptr);
-			//foundp1 = true;
+			foundp1 = true;
 
 		} else if (!strcmp(name,"cy")) {
 			DoubleAttribute(value,&cy,nullptr);
-			//foundp1 = true;
+			foundp1 = true;
 
 		} else if (!strcmp(name,"fx")) {
 			DoubleAttribute(value,&fx,nullptr);
@@ -2417,11 +2464,11 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 
 		} else if (!strcmp(name,"x1")) {
 			DoubleAttribute(value,&p1.x,nullptr);
-			//foundp1 = true;
+			foundp1 = true;
 
 		} else if (!strcmp(name,"y1")) {
 			DoubleAttribute(value,&p1.y,nullptr);
-			//foundp1 = true;
+			foundp1 = true;
 
 		} else if (!strcmp(name,"x2")) {
 			DoubleAttribute(value,&p2.x,nullptr);
@@ -2490,19 +2537,36 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 	if (!gradient) gradient = dynamic_cast<GradientData *>(newObject("GradientData"));
 
 	if (type == GradientData::GRADIENT_RADIAL) {
-		p1=transform_point(gm,flatpoint(cx,cy));
-		p2=(foundf ? transform_point(gm,flatpoint(fx,fy)) : p1);
-		gradient->SetRadial(p1,p2, r,0, nullptr,nullptr);
+		//p1 = transform_point(gm, flatpoint(cx, cy));
+		//p2 = (foundf ? transform_point(gm, flatpoint(fx, fy)) : p1);
+		p1 = flatpoint(cx, cy);
+		p2 = (foundf ? flatpoint(fx, fy) : p1);
+		if (foundp1 || foundf) {
+			gradient->SetRadial(p1, p2, r, 0);
+		} else gradient->SetRadial();
 	} else {
 		if (!foundp2) p2 = p1;
-		gradient->SetLinear(p1,p2, 1,-1, nullptr,nullptr);
+		if (foundp1 || foundf) {
+			//p1 = transform_point(gm, p1);
+			//p2 = transform_point(gm, p2);
+			r = (p1-p2).norm();
+			gradient->SetLinear(p2, p1, r, r); //for some reason reversed
+		} else gradient->SetLinear();
 	}
 	gradient->m(gm);
-	gradient->Set(strip, 1, true);
+	if (strip) {
+		strip->Id(id);
+		gradient->Set(strip, 1, true, true);
+	}
 	if (!isblank(id)) gradient->Id(id);
 	
 	DBG cerr << "svg gradient def: "<<endl;
 	DBG gradient->dump_out(stderr, 2, 0, nullptr);
+
+	if (depth == 0) {
+		gradients.push(gradient);
+		gradient->dec_count();
+	}
 
 	return gradient;
 }
@@ -2790,8 +2854,14 @@ void InsertFillobj(SomeData *fillobj, SomeData *obj, Group *group)
 		 //need to scale to object bbox
 	}
 
-	fillobj->m(obj->m());
-	group->push(fillobj);
+	DrawableObject *ddata = dynamic_cast<DrawableObject*>(obj);
+	if (ddata) {
+		ddata->push(fillobj);
+		ddata->child_clip_type = CLIP_From_Parent_Area;
+	} else {
+		fillobj->m(obj->m());
+		group->push(fillobj);
+	}
 	fillobj->dec_count();
 }
 
@@ -3479,8 +3549,14 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 					if (!strcmp(gradients.e[c]->Id(), id)) {
 						fillobj = dynamic_cast<SomeData*>(gradients.e[c]);
 						if (fillobj) {
+							cout << "-----------fillobj pre"<<endl;
+							fillobj->dump_out(stdout, 2, 0, nullptr);
+							const char *id = fillobj->Id();
 							fillobj = fillobj->duplicate(nullptr);
+							fillobj->Id(id);
 							fillobj->FindBBox();
+							cout << "-----------fillobj post"<<endl;
+							fillobj->dump_out(stdout, 2, 0, nullptr);
 						}
 						break;
 					}
