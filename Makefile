@@ -112,6 +112,7 @@ SOURCEDIRS= \
 	src/interfaces \
 	src/nodes \
 	src/plugins \
+	src/plugins/geglnodes \
 	src/polyptych/src \
 	src/printing \
 	src/text \
