@@ -61,6 +61,7 @@ void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,uns
     //DBG if (ddp && ddp->GetCairo()) cerr <<" DrawDataStraight for "<<data->Id()<<", cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 	DrawableObject *ddata = dynamic_cast<DrawableObject*>(data);
+	PathsData *clipobj = nullptr;
 
 	if (flags&DRAW_AXES) dp->drawaxes();
 	if (flags&DRAW_BOX && data->validbounds()) {
@@ -78,10 +79,19 @@ void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,uns
 		//we have a clip path
 		dp->PushClip(0);
 		SetClipFromPaths(dp, ddata->clip_path, ddata->clip_path->m(), true);
+
 	}
 
 	//draw children
 	if (ddata && ddata->n()) {
+		if (ddata->child_clip_type == CLIP_From_Parent_Area) {
+			clipobj = dynamic_cast<PathsData*>(ddata);
+			if (clipobj) {
+				dp->PushClip(0);
+				SetClipFromPaths(dp, clipobj, clipobj->m(), true);
+			}
+		}
+
 		for (int c=0; c<ddata->n(); c++) DrawData(dp,ddata->e(c),a1,a2,flags);
 
 		//if (!strcmp(data->whattype(),"Group")) {
@@ -89,6 +99,8 @@ void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,uns
 		//	// If no kids, we are on an empty, so later we draw
 		//	if (ddata->n()) return;
 		//}
+
+		if (clipobj) dp->PopClip();
 	}
 	
 	 //special treatment for clones
@@ -189,6 +201,7 @@ void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,uns
 		}
 	}
 
+	//if (clipobj || (ddata && ddata->clip_path)) {
 	if (ddata && ddata->clip_path) {
 		//remove clip path
 		dp->PopClip();
