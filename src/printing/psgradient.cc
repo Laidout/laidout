@@ -65,11 +65,11 @@ void psGradient(FILE *f,GradientData *g)
 			"    /ColorSpace  /DeviceRGB\n",
 			  (g->IsRadial())?3:2);
 	if (g->IsRadial()) fprintf(f,"    /Coords [ %.10g %.10g %.10g %.10g %.10g %.10g ]\n",
-			  g->strip->p1.x,g->strip->p1.y, fabs(g->strip->r1), //x0, r0
-			  g->strip->p2.x,g->strip->p2.y, fabs(g->strip->r2)); //x1, r1
+			  g->P1().x,g->P1().y, fabs(g->R1()), //x0, r0
+			  g->P2().x,g->P2().y, fabs(g->R2())); //x1, r1
 	else fprintf(f,"    /Coords [ %.10g %.10g %.10g %.10g ]\n",
-			  g->strip->p1.x,g->strip->p1.y,
-              g->strip->p2.x,g->strip->p2.y);
+			  g->P1().x,g->P1().y,
+              g->P2().x,g->P2().y);
 
 	fprintf(f,
 			"    /BBox   [ %.10g %.10g %.10g %.10g ]\n",//[l b r t]

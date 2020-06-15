@@ -1928,9 +1928,9 @@ static void pdfGradient(FILE *f,
 
 	 //Coords of shading dict
 	if (g->IsRadial()) fprintf(f,"  /Coords [ %.10f %.10f %.10f %.10f %.10f %.10f ]\n",
-			  g->strip->p1.x,g->strip->p1.y, fabs(g->strip->r1), //x0, r0
-			  g->strip->p2.x,g->strip->p2.y, fabs(g->strip->r2)); //x1, r1
-	else fprintf(f,"  /Coords [ %.10f %.10f %.10f %.10f]\n", g->strip->p1.x,g->strip->p1.y, g->strip->p2.x,g->strip->p2.y);
+			  g->P1().x,g->P1().y, fabs(g->R1()), //x0, r0
+			  g->P2().x,g->P2().y, fabs(g->R2())); //x1, r1
+	else fprintf(f,"  /Coords [ %.10f %.10f %.10f %.10f]\n", g->P1().x,g->P1().y, g->P2().x,g->P2().y);
 	fprintf(f,"  /Function %d 0 R\n"
 			  ">>\n"
 			  "endobj\n", objectcount); //end shading dict

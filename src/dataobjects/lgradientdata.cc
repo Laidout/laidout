@@ -231,19 +231,19 @@ ObjectDef *LGradientData::makeObjectDef()
 Value *LGradientData::dereference(const char *extstring, int len)
 {
 	if (extequal(extstring,len, "p1")) {
-		return new FlatvectorValue(strip->p1);
+		return new FlatvectorValue(P1());
 	}
 
 	if (extequal(extstring,len, "p2")) {
-		return new FlatvectorValue(strip->p2);
+		return new FlatvectorValue(P2());
 	}
 
 	if (extequal(extstring,len, "r1")) {
-		return new DoubleValue(strip->r1);
+		return new DoubleValue(R1());
 	}
 
 	if (extequal(extstring,len, "r2")) {
-		return new DoubleValue(strip->r2);
+		return new DoubleValue(R2());
 	}
 
 //	if (extequal(extstring,len, "colors")) {
@@ -263,28 +263,28 @@ int LGradientData::assign(FieldExtPlace *ext,Value *v)
 			if (!strcmp(str,"p1")) {
 				FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(v);
 				if (!fv) return 0;
-				strip->p1 = fv->v;
+				P1(fv->v);
 				FindBBox();
 				return 1;
 
 			} else if (!strcmp(str,"p2")) {
 				FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(v);
 				if (!fv) return 0;
-				strip->p2 = fv->v;
+				P2(fv->v);
 				FindBBox();
 				return 1;
 
 			} else if (!strcmp(str,"r1")) {
 				d=getNumberValue(v, &isnum);
 				if (!isnum) return 0;
-				strip->r1 = d;
+				R1(d);
 				FindBBox();
 				return 1;
 
 			} else if (!strcmp(str,"r2")) {
 				d=getNumberValue(v, &isnum);
 				if (!isnum) return 0;
-				strip->r2 = d;
+				R2(d);
 				FindBBox();
 				return 1;
 
