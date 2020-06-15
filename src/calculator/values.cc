@@ -2746,6 +2746,233 @@ Value *AttributeToValue(Attribute *att)
 	return NULL;
 }
 
+#define JSON_NUMBER_ERROR "Bad number"
+#define JSON_STRING_ERROR "Bad string"
+#define JSON_KEY_ERROR "Bad key"
+#define JSON_SYNTAX_ERROR "Syntax error"
+//#define JSON__ERROR ""
+//#define JSON__ERROR ""
+
+/*! Read in a single element.
+ *
+ * <pre>
+ *   { "hashname" : [ "array", "of", 5, "stuff", 10.0, true ],
+ *     "hashname2" : null
+ *   }
+ * </pre>
+ *
+ * Json objects become ValueHash objects.
+ * Json arrays become SetValue objects.
+ *
+ * Returns nullptr on error, and sets end_ptr where the error occurs.
+ */
+Value *JsonToValue(const char *jsonstring, const char **end_ptr)
+{
+	const char *str = jsonstring;
+	const char *strend;
+	char *endptr;
+
+	while (*str && isspace(*str)) str++;
+
+	if (*str=='t' && !strncmp(str, "true", 4)) {
+		Value *val = new BooleanValue(true);
+		str += 4;
+		if (end_ptr) *end_ptr = str;
+		return val;
+
+	} else if (*str=='f' && !strncmp(str, "false", 5)) {
+		Value *val = new BooleanValue(false);
+		str += 5;
+		if (end_ptr) *end_ptr = str;
+		return val;
+
+	} else if (*str=='n' && !strncmp(str, "null", 4)) {
+		Value *val = new NullValue();
+		str += 4;
+		if (end_ptr) *end_ptr = str;
+		return val;
+
+	} else if (*str=='"') {
+		// string
+		char *s = QuotedAttribute(str, &endptr);
+		if (!s || str == endptr) {
+			 // *** uh oh! problem in the parsing!
+			s++;
+			if (end_ptr) *end_ptr = str;
+			return nullptr;
+
+		} else {
+			str = endptr;
+			StringValue *val = new StringValue();
+			val->InstallString(s);
+			if (end_ptr) *end_ptr = str;
+			return val;
+		}
+
+	} else if (isdigit(*str) || *str == '.') {
+		 //is number
+		int isint = 1;
+		strend = str;
+
+		while (isdigit(*strend)) strend++; //int part
+		if (*strend == '.') { //fraction
+			isint = 0;
+			strend++;
+			while (isdigit(*strend)) strend++;
+		}
+		if (*strend == 'e' || *strend == 'E') {
+			strend++;
+			if (*strend == '+' || *strend == '-') strend++;
+			if (!isdigit(*strend)) {
+				//malformed number!
+				return nullptr;
+			}
+			while (isdigit(*strend)) strend++;
+		}
+
+
+		Value *val = nullptr;
+		char *strendd = nullptr;
+		if (isint) {
+			val = new IntValue(strtol(str, &strendd, 10));
+		} else {
+			val = new DoubleValue(strtod(str, &strendd));
+		}
+		str = strend;
+
+		if (end_ptr) *end_ptr = str;
+		return val;
+
+	} else if (*str=='[') {
+		// array
+		str++;
+		SetValue *val = new SetValue();
+
+		int error = 0;
+		while (*str && isspace(*str)) str++;
+		while (!error) {
+			endptr = nullptr;
+			Value *v = JsonToValue(str, &strend);
+			if (v) {
+				val->Push(v, true, -1);
+				str = strend;
+			} else {
+				error = 1;
+				break;
+			}
+			
+			while (*str && isspace(*str)) str++;
+			if (*str != ',') break;
+			str++;
+		}
+
+		while (!error && *str && isspace(*str)) str++;
+		if (error || *str != ']') {
+			// *** error!! missing close bracket
+			delete val;
+			if (end_ptr) *end_ptr = str;
+			return nullptr;
+		}
+
+		str++;
+		if (end_ptr) *end_ptr = str;
+		return val;
+
+	} else if (*str=='{') {
+		// object
+		str++;
+		ValueHash *val = new ValueHash();
+
+		while (1) {
+			//scan for key
+			while (*str && isspace(*str)) str++;
+			if (*str != '"') {
+				if (*str != '}') {
+					//error! expecting a string or empty object!
+					delete val;
+					if (end_ptr) *end_ptr = str;
+					return nullptr;
+				}
+				break;
+			}
+
+			str++;
+			strend = str;
+			while (*strend && *strend != '"') {
+				if (*strend == '\\') strend++;
+				if (*strend) strend++;
+			}
+
+			if (*strend == '\0' || *strend != '"' || strend-str == 0) {
+				//badly formed string!
+				delete val;
+				if (end_ptr) *end_ptr = str;
+				return nullptr;
+			}
+
+			char *key = newnstr(str, strend-str);
+
+			str = strend+1; //so right after closing quote
+			while (*str && isspace(*str)) str++;
+			if (*str != ':') {
+				//expected object
+				delete val;
+				delete[] key;
+				if (end_ptr) *end_ptr = str;
+				return nullptr;
+			}
+			str++;
+
+			endptr = nullptr;
+			Value *value = JsonToValue(str, &strend);
+			if (!value) {
+				//expected object
+				delete val;
+				delete[] key;
+				if (end_ptr) *end_ptr = str;
+				return nullptr;
+			}
+			val->push(key, value, -1);
+			value->dec_count();
+			delete[] key;
+			str = strend;
+			
+			while (*str && isspace(*str)) str++;
+			if (*str != ',') break;
+			str++;
+		}
+
+		while (*str && isspace(*str)) str++;
+		if (*str != '}') {
+			// *** error!! missing close curly brace
+			delete val;
+			if (end_ptr) *end_ptr = str;
+			return nullptr;
+		}
+
+		str++;
+		if (end_ptr) *end_ptr = str;
+		return val;
+	}
+
+	//fail!
+	if (end_ptr) *end_ptr = str;
+	return nullptr;
+}
+
+/*! The reverse of JsonToValue.
+ *
+ * If fail_on_non_json, fail if val contains anything other than:
+ *   NullValue, SetValue, ValueHash, IntValue, BooleanValue, DoubleValue, StringValue.
+ * Otherwise, non-json values are converted to strings.
+ */
+char *ValueToJson(Value *val, bool fail_on_non_json)
+{
+	cerr << " *** NEED TO IMPLEMENT ValueToJson()!!"<<endl;
+	return nullptr;
+}
+
+
 ////----------------------------- GenericValue ----------------------------------
 /*! \class GenericValue
  * Value object for a purely coded class.
@@ -3740,6 +3967,14 @@ void StringValue::Set(const char *nstr, int n)
 		else if (n>slen) n = slen;
 		makenstr(str,nstr, n);
 	}
+}
+
+/*! Take possession of nstr.
+ */
+void StringValue::InstallString(char *nstr)
+{
+	if (str) delete[] str;
+	str = nstr;
 }
 
 

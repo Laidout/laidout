@@ -340,6 +340,7 @@ class Value : virtual public Laxkit::anObject, virtual public LaxFiles::DumpUtil
   protected:
 	int modified;
 	ObjectDef *objectdef;
+
   public:
 	Value();
 	virtual ~Value();
@@ -626,6 +627,7 @@ class StringValue : public Value, virtual public FunctionEvaluator
 	virtual int type() { return VALUE_String; }
  	virtual ObjectDef *makeObjectDef();
 	virtual void Set(const char *nstr, int n=-1);
+	virtual void InstallString(char *nstr);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret,
 						 Laxkit::ErrorLog *log);
@@ -751,6 +753,8 @@ int extequal(const char *str, int len, const char *field, char **next_ret=NULL);
 int isName(const char *longstr,int len, const char *str);
 
 Value *AttributeToValue(LaxFiles::Attribute *att);
+Value *JsonToValue(const char *str);
+Value *ValueToJson(const char *str);
 
 
 //-------------------------- Default ObjectDefs for builtin types ---------------------
