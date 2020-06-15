@@ -21,7 +21,15 @@ bug: window sizes seem to all be off a few pixels
 
 bug: curve is terrible approximation at end points
 
-finish debugging mesh svg 2.0 out/in
+svg import problems:
+  finish debugging mesh svg 2.0 out/in
+  DONE gradient clipping
+  gradient filling past minimum definition bounds
+  any clipping
+  text placement and size
+  grid guides
+  sometimes path endpoint spikes
+  dotted line style
 
 debug registration, cut marks, trim marks
   custom papergroup, add registration/bars/, can't move it
@@ -120,7 +128,10 @@ svg out, EquivalentObject doesn't play nice with defs.. only accessed once.. how
 svg coord numpoints==0???? numpoints doesn't really serve any purpose other than debugging, but....
 svg to coord incomplete: arcs needs testing
 memory hole in svg in? test svg import, svg path import must be done
+object deleting funky, import svg images, select one, hit delete, doesn't delete!!
+svg not exporting images when they are children of other non-group objects
 
+place 3 images, object select, must press delete twice...!?!?!?!
 
 sigimp fail for multiple stacks with no folds!!
 
@@ -138,8 +149,6 @@ Need better mouse shape support
 
 possible modifier-pairing error with multiple mice...
 
-object deleting funky, import svg images, select one, hit delete, doesn't delete!!
-place 3 images, object select, must press delete twice...!?!?!?!
 
 should not be able to group select an object and another object nested within
 
@@ -221,7 +230,6 @@ alternate packaging:
   debian (get in to main repository)
 
 panel editing:
-  svg not exporting images when they are children of other non-group objects
   selecting objects really sucks
   data-data-
   bulk assign meta
@@ -303,6 +311,7 @@ image loaders:
   some way to prioritize image saving
 
 dual monitors:
+  centering windows should center on monitor of originating window
   open in same screen as mouse
   when you open a new window, ensure that it is always on screen
   DONE Menus should respect actual screen borders, not just full virtual screen
@@ -954,8 +963,10 @@ MenuInfo AddItem functions are really terrible overload nightmare, need somethin
   AddToggleItem(const char *name, LaxImage *icon, int id, int info, int state, int where = -1);
 
 plugins:
+  need more automatic way to install:
+    mechanism for plugin config files
+    plugins maybe have plugin.conf resources/
   beef up the config window, to allow toggling plugins.
-  mechanism for plugin config files
   figure out proper de-loading.. have to restart?
   check for already loaded
 
