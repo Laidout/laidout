@@ -138,7 +138,6 @@ enum BBoxAnchorTypes {
 };
 
 enum ClipTypes {
-	//self clip types:
 	CLIP_None,
 	CLIP_From_Parent_Area,
 	CLIP_Custom_Path,

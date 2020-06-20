@@ -37,6 +37,7 @@ namespace Laidout {
 LPathsData::LPathsData(LaxInterfaces::SomeData *refobj)
   : LaxInterfaces::PathsData(0)
 {
+	child_clip_type = CLIP_From_Parent_Area;
 }
 
 LPathsData::~LPathsData()

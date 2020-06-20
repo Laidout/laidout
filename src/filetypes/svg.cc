@@ -2378,7 +2378,7 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, RefPtrStack<
 	int type = (!strcmp(def->name, "linearGradient") ? GradientData::GRADIENT_LINEAR : GradientData::GRADIENT_RADIAL);
 
 	const char *id = def->findValue("id");
-	if (id) {  //check to see if we have already processed this gradient
+	if (id && depth == 0) {  //check to see if we have already processed this gradient
 		for (int c=0; c<gradients.n; c++) {
 			if (!strcmp(gradients.e[c]->Id(), id)) return dynamic_cast<GradientData*>(gradients.e[c]);
 		}
@@ -2553,6 +2553,8 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, RefPtrStack<
 			gradient->SetLinear(p2, p1, r, r); //for some reason reversed
 		} else gradient->SetLinear();
 	}
+	gradient->spread_method = LAXSPREAD_Pad;
+	gradient->fill_parent = true;
 	gradient->m(gm);
 	if (strip) {
 		strip->Id(id);
