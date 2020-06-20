@@ -75,9 +75,10 @@ class PaperStyle : public Value
 	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
 };
 
-PaperStyle *GetNamedPaper(double width, double height, int *orientation_ret, int startfrom, int *index_ret, double epsilon);
 
-//----------------------------- GetBuiltInPaperSizes() --------------------------------------
+//----------------------------- Paper Helper Funcs --------------------------------------
+PaperStyle *GetNamedPaper(double width, double height, int *orientation_ret, int startfrom, int *index_ret, double epsilon);
+PaperStyle *GetPaperFromName(const char *name);
 Laxkit::PtrStack<PaperStyle> *GetBuiltinPaperSizes(Laxkit::PtrStack<PaperStyle> *papers);
 
 

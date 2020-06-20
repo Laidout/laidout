@@ -170,6 +170,16 @@ PaperStyle *GetNamedPaper(double width, double height, int *orientation_ret, int
 	return NULL;
 }
 
+PaperStyle *GetPaperFromName(const char *name)
+{
+	for (int c = 0; laidout->papersizes.n; c++) {
+		if (!strcasecmp(name, laidout->papersizes.e[c]->name)) {
+			return laidout->papersizes.e[c];
+		}
+	}
+	return nullptr;
+}
+
 
 //---------------------------------- PaperStyle --------------------------------
 
