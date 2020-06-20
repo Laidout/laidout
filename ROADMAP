@@ -16,8 +16,9 @@ VERSION 0.098
 (done) Make Imlib2 dependency optional, prepare replacement image loading with GraphicsMagick
 (done) Investigate AppImage creation (issue #10)
 (done) Html gallery output with optional template
+(done) Gradients able to fill parents with none,pad,reflect,repeat spread methods
        Way to export pages as svg embedded into html
-       lock down color backend.. it's currently a series of weak hacks based on 8-bit screen rgb
+       lock down color backend.. currently it's mostly a series of terrible hacks based on 8-bit screen rgb
 
        Debug Text on path tool
 (done) make laidout.org twitterable with an image card
@@ -61,6 +62,7 @@ VERSION 0.098
        Soup up the color box so one can recall previous colors, and/or integration with palette window
 
        debug svg in
+(done) Import svg gradients with proper filling of parent
        Collect for out
        export preview
        Make sure scribus export works with 1.5, and can handle new clipping features
@@ -89,6 +91,7 @@ VERSION 0.099
        Gmic nodes plugin
        Merge EpsData with normal images, since they can be previewed with gm now
        Make a laxkit.pc
+       Python plugin
 
 
 VERSION 0.1 

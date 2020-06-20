@@ -12,6 +12,13 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now:
 
+bug: Gradient:
+  radial color spots wrong
+  DONE can't drag circles properly
+  DONE circles hover offset incorrect
+  DONE linear spread modes
+  DONE dragging p1/2 bars should not rotate
+
 bug: can't duplicate gradient nodes.. causes seg fault
 
 bug: severing clone link does some weird things, including crashing
@@ -23,13 +30,13 @@ bug: curve is terrible approximation at end points
 
 svg import problems:
   finish debugging mesh svg 2.0 out/in
-  DONE gradient clipping
-  gradient filling past minimum definition bounds
   any clipping
   text placement and size
   grid guides
   sometimes path endpoint spikes
   dotted line style
+  DONE gradient clipping
+  DONE gradient filling past minimum definition bounds
 
 debug registration, cut marks, trim marks
   custom papergroup, add registration/bars/, can't move it
@@ -200,6 +207,12 @@ test:
   make some test scripts for command line testing
 
 
+interface manager interfacemanager:
+  touch threshholds:
+    near point: default 5 px ? try to find a real world measure based on monitors?
+  draw point sizes:
+    normal bez point, for instance
+	hovered size
 
 get splash image working
 
@@ -1363,6 +1376,20 @@ Tools should remember their settings
      well as the running tool use settings
 
 paperinterface:
+  if page is too big, need indicator around mouse that we are placing something
+  rotate paper shortcut should be around paper center, not origin
+  menu options:
+    fit to selection
+	fit to page
+	fit to spread
+	center on selection
+	center on page
+	center on spread
+  export options:
+    meta name
+	export settings
+	  more that one settings per paper
+  when you add gray bars/reg marks, center on paper?
   interface for custom paper size
   implement paper favorites:
     be able to nest favorites, item->favorite = "submenu/23", item2->favorite="2", final element is number?
@@ -1371,10 +1398,12 @@ paperinterface:
   debug papergroup tool in spread editor
   paperinterface: in spread editor (done), and able to print it out, don't forget to remove DBG for release!
   options to show order of papers, print all of one size paper first? auto sort order by size? auto wrap image?
-  Load, save, add, delete paper groups
   papersizes are not translated. Should they be??
   papergroups:
+    Load, save, add, delete paper groups..
     work out scheme for resource ownership: they can be owned by:
+      need reusable resource [ name ][load][save][dup][delete]
+
       1.DONE  Document: if no project, save with document by default
       2.DONE  Project:  save in project file
       3.or Global resource: save in ~/.laidout/version/papergroups
