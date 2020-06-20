@@ -165,17 +165,13 @@ int NewDocumentFunction(ValueHash *context,
 			if (v->type()==VALUE_String) {
 				const char *str=dynamic_cast<StringValue*>(v)->str;
 				if (!str) throw _("Invalid object for paper!");
-				for (int c=0; c<laidout->papersizes.n; c++) {
-					if (strcmp(str,laidout->papersizes.e[c]->name)==0) {
-						paper=(PaperStyle*)laidout->papersizes.e[c]->duplicate();
-						break;
-					}
-				}
+				PaperStyle *paper = GetPaperFromName(str);
+				if (paper) paper = (PaperStyle*)paper->duplicate();
 			
 			} else if (v->type()==VALUE_Object) {
-				paper=dynamic_cast<PaperStyle*>(dynamic_cast<ObjectValue*>(v));
+				paper = dynamic_cast<PaperStyle *>(dynamic_cast<ObjectValue *>(v));
 				if (!paper) throw _("Invalid object for paper!");
-				paper=(PaperStyle*)paper->duplicate();
+				paper = (PaperStyle *)paper->duplicate();
 			}
 		}
 
