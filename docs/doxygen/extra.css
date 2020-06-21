@@ -1,0 +1,14 @@
+table.doxtable th {
+	background-color: #6f98ec;
+}
+table.doxtable td,
+table.doxtable th {
+	border: 1px solid #DBDCDF;
+}
+
+code {
+	border: 1px solid #e4edf5;
+	background-color: #FBFCFD;
+	padding: .1em .25em;
+}
+

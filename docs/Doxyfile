@@ -772,12 +772,10 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = doxygen/laidoutintro.txt \
-                         ../src/TODO \
-                         ../src/README \
                          doxygen/gpl-license \
                          ../src \
-                         doxygen/miscdocs.txt \
-                         ../src/filetypes/README.md
+                         ../src/TODO \
+                         doxygen/miscdocs.txt
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -804,7 +802,8 @@ INPUT_ENCODING         = UTF-8
 
 FILE_PATTERNS          = *.cc \
                          *.h \
-                         README
+                         README \
+						 README.md
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
 # be searched for input files as well.
@@ -1138,7 +1137,7 @@ HTML_STYLESHEET        =
 # list). For an example see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_STYLESHEET  =
+HTML_EXTRA_STYLESHEET  = doxygen/extra.css
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
 # other source files which should be copied to the HTML output directory. Note

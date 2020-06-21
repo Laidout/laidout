@@ -1017,7 +1017,8 @@ ScriptNode *CompileMath(RefPtrStack<NodeBase> &nodes, Interpreter *interpreter, 
 
 //------------------------ ForeachNode ------------------------
 
-/*! \class For loop node.
+/*! \class
+ * For each loop node.
  */
 
 class ForeachNode : public NodeBase

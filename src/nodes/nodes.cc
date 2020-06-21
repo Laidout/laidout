@@ -2392,7 +2392,8 @@ Laxkit::anObject *newIfNode(int p, Laxkit::anObject *ref)
 
 //------------------------ LoopNode ------------------------
 
-/*! \class For loop node.
+/*! \class
+ * Traditional for loop with start, end, and step.
  */
 
 class LoopNode : public NodeBase
