@@ -1,4 +1,4 @@
-Translating Laidout {#translating-laidout}
+Translating Laidout
 ===================
 
 
@@ -25,6 +25,7 @@ Any po files you make MUST be encoded as UTF-8 characters.
 
 
 <a name="updating-basic-info"/>
+
 ## Updating Basic Info
 
 1. `POTFILES` is a list of files to grab translatable strings from.
@@ -50,6 +51,7 @@ Any po files you make MUST be encoded as UTF-8 characters.
 
 
 <a name="making-new"/>
+
 ## Making New Translations
 
 1. Update the basic info as above.
