@@ -163,8 +163,6 @@ file previewer not updating preview when using arrow keys
 
 shrink image lets you go immeasurably small
 
-GradientInterface problem rendering radial when two circles separated by large distance
-
 WATCH OUT for when preview file is OLDER than original file!!
 
 stackframe seems to be ignoring window borders on layout
@@ -787,10 +785,6 @@ Perspective perspective:
   optimize the image mapping
   filtering paths needs to detect big distortions and add points, as simply transforming bez points is not enough
 
-GradientInterface: gradients
-  radial controls not quite working
-  gradient rework to make it easier to use as a direct fill
-  
 node editor NodeInterface nodes: node: interface:
   DONE resize preview broken
 
@@ -1137,10 +1131,12 @@ GroupInterface groupinterface ObjectInterface objectinterface: group:
   things to allow editing of wrap, inset, clip paths(done), and chains
   maybe show flip and 90 deg rotate handles only when mouse outside the selection area?
   control-move flip line to snap to horizontal, vertical, 45 deg, or common gravity points
+  parent options colors don't really make sense
   DONE menuify parent options
 
 ObjectIndicator objectindicator:
   current should be bold
+  clicking around in hierarchy should remember children we just clicked from
   need ability to click on object to select that object. Rename only when already selected
   allow drag reparenting
     hover over parents to pop list of alternate children to reparent to
@@ -1234,11 +1230,6 @@ color slider popup:
   clicking anywher in the new/old should swap
   show numbers to click on: 255, 65535, float
   toggle sets of sliders: rgb, cmyk, alpha, cielab, hsl
-
-Gradient:
-  resize inner circle, make small past a threshhold makes circle go away
-  extending past bounds
-  double click to call up color selector
 
 Palettes:
   load palette should have a preview: file dialog preview function
@@ -2125,3 +2116,11 @@ DONE laidout settings option to always load last file on startup
 DONE added rudimentary plugin list window
 DONE when using static SingletonKeeper in ColorManager, dlopen would wipe its object. wuuuuh? <-- something about dlopen process wipes some non-statics in some files
 DONE ftgl problem in polyptych... font not rendering <-- just needed ftgl update
+DONE Gradient:
+  DONE dragging colors in radial is still really bad
+    DONE sliding radial colors not 1:1
+	DONE p1, p2 need little indicator nugget
+  DONE resize inner circle, make small past a threshhold makes circle go away
+  DONE extending past bounds
+  DONE double click to call up color selector
+

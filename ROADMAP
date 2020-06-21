@@ -17,6 +17,7 @@ VERSION 0.098
 (done) Investigate AppImage creation (issue #10)
 (done) Html gallery output with optional template
 (done) Gradients able to fill parents with none,pad,reflect,repeat spread methods
+(done) Debug gradient radial controls
        Way to export pages as svg embedded into html
        lock down color backend.. currently it's mostly a series of terrible hacks based on 8-bit screen rgb
 
