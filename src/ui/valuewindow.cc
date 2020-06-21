@@ -140,8 +140,8 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 	Utf8String path = mes;
 
 	bool do_kids = false;
-	bool rearrangeable = false;
-	bool deleteable = false;
+	//bool rearrangeable = false;
+	//bool deleteable = false;
 
 	if (type == VALUE_Int) {
 		//gui hint: slider or input, range
