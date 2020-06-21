@@ -1,0 +1,46 @@
+#
+# ignore build byproducts
+*.o
+src/icons/*.png
+*-stamp
+*.stamp
+*.bak
+makedepend
+deb/laidout.debhelper.log
+deb/laidout.postinst.debhelper
+deb/laidout.postrm.debhelper
+deb/laidout/
+docs/html
+src/po/*.mo
+src/po/POTFILES
+src/laidout
+
+#
+# ignore configured files
+Makefile-toinclude
+config.log
+src/version.h
+
+#
+# ignore editing related
+*.swp
+
+
+#
+# ignore various on the fly testing files
+src/exported*
+TEMP
+src/temp*
+src/test*
+src/TEMP*
+src/*.jpg
+src/*.png
+src/*.pto
+src/*.xml
+src/*.laidout
+src/*.nodes
+src/*.tif
+src/*.sla
+src/*.svg
+src/*.data
+src/*.dump
