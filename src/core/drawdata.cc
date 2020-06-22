@@ -88,7 +88,7 @@ void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,uns
 			clipobj = dynamic_cast<PathsData*>(ddata);
 			if (clipobj) {
 				dp->PushClip(0);
-				SetClipFromPaths(dp, clipobj, clipobj->m(), true);
+				SetClipFromPaths(dp, clipobj, nullptr, true);
 			}
 		}
 

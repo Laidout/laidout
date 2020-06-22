@@ -345,6 +345,13 @@ LaxInterfaces::anInterface *LGradientInterface::duplicate(LaxInterfaces::anInter
 	return GradientInterface::duplicate(dup);
 }
 
+int LGradientInterface::InterfaceOn()
+{
+	GradientInterface::InterfaceOn();
+	showdecs &= ~GradientInterface::ShowColors;
+	return 0;
+}
+
 
 //! Returns this, but count is incremented.
 Value *LGradientInterface::duplicate()

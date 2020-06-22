@@ -12,13 +12,6 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now:
 
-bug: Gradient:
-  radial color spots wrong
-  DONE can't drag circles properly
-  DONE circles hover offset incorrect
-  DONE linear spread modes
-  DONE dragging p1/2 bars should not rotate
-
 bug: can't duplicate gradient nodes.. causes seg fault
 
 bug: severing clone link does some weird things, including crashing
@@ -205,6 +198,42 @@ test:
   make some test scripts for command line testing
 
 
+Gradients:
+  SHOWCOLORS should be off by default
+  dragging around color points from inside to outside should allow going out of bounds
+    DONE linear 
+	radial
+  radial:
+    default on r1,r2 should be change radius, not move
+  perhaps split radial and linear gradients to different tools? makes more sense
+
+  bug: on start, colors get zapped to window origin ?? can't duplicate
+
+  gradient resources
+    owner: file/user global/system global
+    name
+    tags
+    color strip:
+	  stops
+  	  position
+  	  r1, r2
+
+Palettes:
+  load palette should have a preview: file dialog preview function
+  allow editing palette strips, import those to gradient tools
+  custom palettes
+  if height < 2*textheight, then hide name info
+  wheel between loaded palettes?
+  have a none color
+  right click for:
+    load palette
+	select palette
+	save palette
+	dup palette
+	New from a generator (like rainbow)
+Soup up the color box so one can recall previous colors, and/or integration with palette window
+    -->delay until proper color implementation in place
+
 interface manager interfacemanager:
   touch threshholds:
     near point: default 5 px ? try to find a real world measure based on monitors?
@@ -212,7 +241,7 @@ interface manager interfacemanager:
     normal bez point, for instance
 	hovered size
 
-get splash image working
+get splash image working.. better label class?
 
 lgm 2019 feedback and ideas:
   configure still sucks:
@@ -516,9 +545,9 @@ svg: SVG
   DONE in needs to account for viewBox
   in needs to parse "use" elements and other "#" refs
   in:
-    linear gradients
+    DONE linear gradients
 	radial gradients
-	mesh gradients
+	mesh gradients (inkscape variety)
   in for powerstroke
     on read in width nodes are zeroed, does not correspond to actual width of line
     some other dup nodes causing bad stroke approximation in some of the stuff that magically disappears
@@ -1217,7 +1246,8 @@ need to clarify what happens when you open and close documents. open already ope
 colorbox color box:
   hsv slide, configurable clicks
 
-color slider popup:
+color slider popup: colorpicker color picker colorsliders
+  bug: text is not showing at correct size at first
   have a "Done"/"Dismiss" button
   be able to choose which color sets are visible
   make color slider box be able to be a pane
@@ -1231,28 +1261,6 @@ color slider popup:
   show numbers to click on: 255, 65535, float
   toggle sets of sliders: rgb, cmyk, alpha, cielab, hsl
 
-Palettes:
-  load palette should have a preview: file dialog preview function
-  allow editing palette strips, import those to gradient tools
-  custom palettes
-  if height < 2*textheight, then hide name info
-  wheel between loaded palettes?
-  have a none color
-  right click for:
-    load palette
-	select palette
-	save palette
-	dup palette
-	New from a generator (like rainbow)
-Soup up the color box so one can recall previous colors, and/or integration with palette window
-    -->delay until proper color implementation in place
-gradient resources
-  owner: file/user global/system global
-  name
-  tags
-  color strip: stops
-    position
-    color
 
 Colors:
   color picker that previews text?
@@ -1565,6 +1573,7 @@ customizable object child relationships to parent, rather than simple transform
 
 
 calculator/scripting
+  cannot assign dict elements, like a["b"] = c or a.b = c
   security restrictions?
   showing defined functions should show the code
   set dump_out_atts should do full atts if any subattribute has full atts, else output "set": "{1,2,3}"
@@ -1574,7 +1583,7 @@ calculator/scripting
   debug operator definitions
   debug using and import... maybe remove using, use import Math.* instead
   debug number deref: var a={1,2}.. out of bounds not returning cannot deref.. returning "Ok"
-  var a if a already exists should fail
+  var a if a already exists in current scope should fail
   error reporting up function calls doesn't say pos/line for each expression
   overloading does not handle parameter mapping per overloaded, it is scanning only the first, and using that
   print string plus any non string should stringify the thing and append to string
@@ -1811,8 +1820,6 @@ views with multiple spreads
 
 messages to the status line should have priorities? so once mouse over messages are cleared, it would revert
   back to a lower priority message
-
-perhaps split radial and linear gradients to different tools? makes more sense
 
 WhateverImposition, to only have limbos, but extra handling for exporting
 all at once imposition... this would allow mapping of scribus layout without fuss. that
@@ -2121,6 +2128,8 @@ DONE Gradient:
     DONE sliding radial colors not 1:1
 	DONE p1, p2 need little indicator nugget
   DONE resize inner circle, make small past a threshhold makes circle go away
-  DONE extending past bounds
   DONE double click to call up color selector
-
+  DONE dragging p1/2 bars should not rotate
+  DONE spread modes
+  DONE change object, curpoints still selected
+  DONE clipping path is double applying parent path transform

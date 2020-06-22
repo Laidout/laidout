@@ -14,30 +14,32 @@ VERSION 0.098
 (done) Convert backend to using Theme objects for easier adjusting in the future
 (done) Fix object bleeding across pages for signatures and nets (issue #12)
 (done) Make Imlib2 dependency optional, prepare replacement image loading with GraphicsMagick
+(done) Replace x11-dev makedepend with custom script
+(done) make laidout.org twitterable with an image card
 (done) Investigate AppImage creation (issue #10)
 (done) Html gallery output with optional template
 (done) Gradients able to fill parents with none,pad,reflect,repeat spread methods
 (done) Debug gradient radial controls
        Way to export pages as svg embedded into html
        lock down color backend.. currently it's mostly a series of terrible hacks based on 8-bit screen rgb
-
-       Debug Text on path tool
-(done) make laidout.org twitterable with an image card
-
-       Perspective transform object filter
-       Node based image "importer"
-       Empty objects that can be parents, or whose contents are defined by nodes
-
-       layers (object tree) palette
-       Tools should remember their settings
-       Import Images dialog needs total reprogramming
-       In image properties dialog, be able to select from various default preview configs
-       Undo/Redo
+       Soup up the color box so one can recall previous colors, and/or integration with palette window
 
        Moving selected things in group contents does not update group bounds
        should not be able to select both group and group contents at same time
        fix object transform handles for really small objects (handles should still be accessible)
        double click on group should change selection area to group contents like inkscape?
+
+       layers (object tree) palette
+       Tools should remember their settings
+	   Find interface
+       Object and resource tags interface
+       Import Images dialog needs total reprogramming
+       In image properties dialog, be able to select from various default preview configs
+       Undo/Redo
+
+       Empty objects that can be parents, or whose contents are defined by nodes
+       Perspective transform object filter
+       Node based image "importer"
 
        engraver tool grow point mode
        engraver tool, resolution cut mode
@@ -46,9 +48,9 @@ VERSION 0.098
        debug line outline cache, especially for joins
        make PathInterface extrapolate line join work
 
+       Debug Text on path tool
        Clean up patch controls
        Clean up project load/save internals and dialogs
-       Object and resource tags interface
 
        Finish implementing double sided net impositions
        allow inserting net impositions as foldouts in regular Signature Imposition stacks
@@ -60,7 +62,6 @@ VERSION 0.098
        Tool scripting
        Scripted plugin interface
        Clone Pattern Builder
-       Soup up the color box so one can recall previous colors, and/or integration with palette window
 
        debug svg in
 (done) Import svg gradients with proper filling of parent
@@ -129,7 +130,7 @@ VERSION 0.1
        all things must define their styledefs
        Low level tree editor, akin to the xml editor in inkscape
        make it easy to add/remove/prioritize/replace import/export filters
-       support for the svg filters?
+       support for rendering the svg filters
        Provide some kind of visual feedback while doing lengthy operations
        Improve and/or make new logo and splash image, and generate icons from a laidout doc
        Somehow combine the ViewWindow and SpreadEditor to optionally allow the sort of 'infinite scroll'
@@ -163,7 +164,7 @@ text: auto track chapter/section
 text: Automatic, yet overrideable hyphenation
 text: layout inside anything that provides an 'area' and runaround facility.  
 text: math mode
-Full multi-contact, blob and pressure sensitive touch with tuio,touchlib(?). See www.nuigroup.com/touchlib for diy surfaces
+Full multi-contact, blob and pressure sensitive touch for possible tablet interface
 partial Laidout export
 implement export even/odd, batches, and paper rotation for other exporters: ps eps plan ppt 
 Figure out best way to expose laidout functions to other program's scripters (ie inkscape and scribus)
