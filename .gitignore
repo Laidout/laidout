@@ -20,6 +20,7 @@ src/laidout
 Makefile-toinclude
 config.log
 src/version.h
+src/configured.h
 
 #
 # ignore editing related
