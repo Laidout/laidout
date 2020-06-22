@@ -146,6 +146,8 @@ class LaidoutCalculator : public Interpreter,
 						  public FunctionEvaluator
 {
  private:
+	bool not_quitting; // during shell mode
+
 	 //context state
 	char *dir;
 	ValueHash *build_context();

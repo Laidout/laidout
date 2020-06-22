@@ -23,6 +23,7 @@
 #include "ui/spreadeditor.h"
 #include "ui/headwindow.h"
 #include "version.h"
+#include "language.h"
 #include "core/importimage.h"
 
 #ifndef LAIDOUT_NOGL
@@ -337,6 +338,40 @@ int LaidoutApp::dump_out_shortcuts(FILE *f, int indent, int how)
 	if (how==0) manager->dump_out(f,indent,0,NULL);
 	else manager->SaveHTML("-");
 	return 0;
+}
+
+// maybe keep this for a quick summary function for scripting:
+char *ShowSummary()
+{
+	//if (nextword("about")) {
+	char *temp = newstr(LaidoutVersion());
+	appendstr(temp, "\n");
+
+	 // Show laidout project and documents
+	 appendstr(temp, _("Project: "));
+	 if (laidout->project->name) appendstr(temp, laidout->project->name);
+	 else appendstr(temp, _("(untitled)"));
+	 appendstr(temp, "\n");
+
+	 if (laidout->project->filename) {
+		 appendstr(temp, laidout->project->filename);
+		 appendstr(temp, "\n");
+	 }
+
+	 if (laidout->project->docs.n) appendstr(temp, " documents\n");
+	 char temp2[15];
+	 for (int c = 0; c < laidout->project->docs.n; c++) {
+		 sprintf(temp2, "  %d. ", c + 1);
+		 appendstr(temp, temp2);
+		 if (laidout->project->docs.e[c]->doc)  //***maybe need project->DocName(int i)
+			 appendstr(temp, laidout->project->docs.e[c]->doc->Name(1));
+		 else
+			 appendstr(temp, _("unknown"));
+		 appendstr(temp, "\n");
+	 }
+	 appendstr(temp, "\n");
+
+	 return temp;
 }
 
 

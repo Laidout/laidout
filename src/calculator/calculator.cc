@@ -16,25 +16,25 @@
 
 #include <lax/fileutils.h>
 #include <lax/units.h>
+#include <lax/strmanip.h>
 #include "calculator.h"
 #include "../language.h"
-#include "../laidout.h"
-#include "../core/stylemanager.h"
-#include "../ui/headwindow.h"
-#include "../version.h"
 
 #include <readline/readline.h>
 #include <readline/history.h>
+
+
+#define DBG 
+#include <iostream>
 
 
 //template implementation
 #include <lax/refptrstack.cc>
 
 
+using namespace std;
 using namespace Laxkit;
 using namespace LaxFiles;
-
-#define DBG 
 
 
 namespace Laidout {
@@ -951,6 +951,7 @@ Value *LValue::dereference(const char *extstring, int len)
 	Value *v=Resolve();
 	if (!v) return NULL;
 
+	if (len == -1) len = strlen(extstring);
 	char ext[len+1];
 	strncpy(ext,extstring,len);
 	ext[len]='\0';
@@ -1077,6 +1078,8 @@ LaidoutCalculator::LaidoutCalculator()
   : leftops(OPS_Left,0),
 	rightops(OPS_Right,0)
 {
+	not_quitting = true;
+
 	dir=NULL; //working directory...
 	calcsettings.decimal=0;
 
@@ -1099,9 +1102,6 @@ LaidoutCalculator::LaidoutCalculator()
 	 //initialize base modules
 	InstallInnate();
 	InstallBaseTypes();
-
-	 //things specific to Laidout:
-	InstallModule(&stylemanager,1); //autoimport name only
 
 	//DBG cerr <<"Calculator Contents: "<<endl;
 	//DBG
@@ -1249,7 +1249,6 @@ int LaidoutCalculator::RemoveModule(const char *modulename)
 
 int LaidoutCalculator::RunShell()
 {
-	cout << "Laidout "<<LAIDOUT_VERSION<<" shell. Type \"quit\" to quit."<<endl;
 
 //----------non-readline variant--------------------------
 //	int numl=0;
@@ -1284,7 +1283,7 @@ int LaidoutCalculator::RunShell()
 	char prompt[50];
 	int status;
 
-	while (1) {
+	while (not_quitting) {
 		numl++;
 		
 		strcpy(prompt,"\n\nInput(");
@@ -2331,7 +2330,7 @@ void LaidoutCalculator::showDef(char *&temp, ObjectDef *sd)
 			appendstr(temp,"  ");
 
 			if (fmt==VALUE_Function) {
-				//appendstr(temp,"function ");
+				appendstr(temp,"function ");
 				appendstr(temp,nm);
 				appendstr(temp," (");
 				if (subdef && subdef->fields) for (int c3=0; c3<subdef->fields->n; c3++) {
@@ -2370,8 +2369,6 @@ void LaidoutCalculator::showDef(char *&temp, ObjectDef *sd)
 
 			} else {
 				 //namespace or class
-				appendstr(temp,nm);
-				appendstr(temp,": (");
 				appendstr(temp,element_TypeNames(fmt));
 				if (fmt==VALUE_Set) {
 					if (!isblank(rng)) {
@@ -2379,7 +2376,9 @@ void LaidoutCalculator::showDef(char *&temp, ObjectDef *sd)
 						appendstr(temp,rng);
 					}
 				}
-				appendstr(temp,")   ");
+				appendstr(temp," ");
+				appendstr(temp,nm);
+				appendstr(temp,":   ");
 				appendstr(temp,Nm);
 				if (desc) {
 					appendstr(temp,", ");
@@ -2418,7 +2417,7 @@ ObjectDef *LaidoutCalculator::GetSessionCommandObjectDef()
 	makestr(sessiondef.Name,_("Session Commands"));
 
 	sessiondef.pushFunction("show", _("Show"), _("Give information about something"), NULL, NULL);
-	sessiondef.pushFunction("about",_("About"),_("Show version information"), NULL, NULL);
+	//sessiondef.pushFunction("about",_("About"),_("Show version information"), NULL, NULL);
 	sessiondef.pushFunction("unset",_("Unset"),_("Remove a name from the current namespace"), NULL, NULL);
 	sessiondef.pushFunction("print",_("Print"),_("Print out something to the console"), NULL, NULL);
 
@@ -2456,13 +2455,8 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 		return 1;
 	}
 
-	if (nextword("about")) {
-		messageOut(LaidoutVersion());
-		return 1;
-	}
-
 	if (nextword("quit")) {
-		laidout->quit();
+		not_quitting = false;
 		return 1;
 	}
 
@@ -2918,31 +2912,6 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 			//} else messageOut(_("Nothing to see here. Move along."));
 			//--------------
 
-			 //vvvvvv *** this will be removed once module installation working....
-			 // Show laidout project and documents
-			temp=newstr(_("Project: "));
-			if (laidout->project->name) appendstr(temp,laidout->project->name);
-			else appendstr(temp,_("(untitled)"));
-			appendstr(temp,"\n");
-
-			if (laidout->project->filename) {
-				appendstr(temp,laidout->project->filename);
-				appendstr(temp,"\n");
-			}
-
-			if (laidout->project->docs.n) appendstr(temp," documents\n");
-			char temp2[15];
-			for (int c=0; c<laidout->project->docs.n; c++) {
-				sprintf(temp2,"  %d. ",c+1);
-				appendstr(temp,temp2);
-				if (laidout->project->docs.e[c]->doc) //***maybe need project->DocName(int i)
-					appendstr(temp,laidout->project->docs.e[c]->doc->Name(1));
-				else appendstr(temp,_("unknown"));
-				appendstr(temp,"\n");
-			}
-			appendstr(temp,"\n");
-			 //^^^^^^ *** this will be removed once module installation working....
-		
 
 			 //module dump
 			if (modules.n) {
@@ -3002,6 +2971,7 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 
 			 //scope dump
 			appendstr(temp, "Scopes:\n");
+			char temp2[20];
 			for (int c=0; c<scopes.n; c++) {
 				sprintf(temp2,"%d. ",c);
 				appendstr(temp,temp2);
@@ -3396,21 +3366,27 @@ Value *LaidoutCalculator::dereference(Value *val)
 		 //something like set.(2+6-3), or set[3*2] so we need to evaluate
 		Value *v=evalLevel(0);
 		if (calcerror) return NULL;
-		if (v->type()!=VALUE_Int) {
-			calcerr(_("You may only dereference with integers"));
-			v->dec_count();
-			return NULL;
-		}
 		if (!nextchar(ch)) {
 			if (ch==')') calcerr(_("Expected closing ')'"));
 			else calcerr(_("Expected closing ']'"));
 			v->dec_count();
 			return NULL;
 		}
-		index=dynamic_cast<IntValue*>(v)->i;
-		v->dec_count();
+		if (v->type()==VALUE_Int) {
+			index = dynamic_cast<IntValue*>(v)->i;
+			v->dec_count();
+			value = val->dereference(index);
 
-		value=val->dereference(index);
+		} else if (v->type()==VALUE_String) {
+			const char *str = dynamic_cast<StringValue*>(v)->str;
+			value = val->dereference(str, strlen(str));
+			v->dec_count();
+
+		} else {
+			calcerr(_("Bad index type"));
+			v->dec_count();
+			return NULL;
+		}
 		if (!value) {
 			calcerr(_("Bad index!"));
 			return NULL;
@@ -4307,10 +4283,7 @@ int LaidoutCalculator::addOperator(const char *op,int dir,int priority, int modu
  * who might want to halt the script based on what's happening.
  */
 void LaidoutCalculator::messageOut(const char *str,int output_lines)
-{//***
-	//DBG cerr <<"*** must implement LaidoutCalculator::messageOut() properly! "<<endl;
-	//DBG if (laidout->runmode!=RUNMODE_Shell) cerr <<str<<endl;
-
+{
 	if (output_lines) appendline(messagebuffer,str);
 	else appendstr(messagebuffer,str);
 }
@@ -4325,9 +4298,6 @@ ValueHash *LaidoutCalculator::build_context()
 {
 	ValueHash *pp=new ValueHash();
 	pp->push("current_directory", dir);
-	//if (laidout->project->docs.n) pp->push("document", laidout->project->docs.e[0]->doc->Saveas());//***
-	if (laidout->project->docs.n) pp->pushObject("document", laidout->project->docs.e[0]->doc);
-	//pp.push("window", NULL); ***default to first view window pane in same headwindow?
 	return pp;
 }
 

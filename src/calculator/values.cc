@@ -1703,6 +1703,13 @@ int ValueHash::getValueStr(char *buffer,int len)
 	return 0;
 }
 
+Value *ValueHash::dereference(const char *extstring, int len)
+{
+	int i = findIndex(extstring, len);
+	if (i >= 0) return values.e[i];
+	return nullptr;
+}
+
 //! Return a set with the index'th {name,value}. value is a ref to original value, not a duplicate.
 Value *ValueHash::dereference(int index)
 {

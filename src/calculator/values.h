@@ -420,6 +420,7 @@ class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual
 	virtual int       getValueStr(char *buffer,int len);
  	virtual ObjectDef *makeObjectDef();
 	virtual Value     *dereference(int index);
+	virtual Value     *dereference(const char *extstring, int len);
     virtual int        getNumFields();
     virtual ObjectDef  *FieldInfo(int i);
     virtual const char *FieldName(int i);

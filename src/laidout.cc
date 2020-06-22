@@ -281,7 +281,7 @@ LaidoutApp::LaidoutApp()
 	if (file_exists("/usr/bin/gs", 0, nullptr) == S_IFREG) ghostscript_binary = newstr("/usr/bin/gs");
 	else ghostscript_binary = nullptr;
 
-	calculator=NULL;
+	calculator = nullptr;
 	GetUnitManager()->DefaultUnits(prefs.unitname);
 	GetUnitManager()->PixelSize(1./72,UNITS_Inches);
 
@@ -686,7 +686,9 @@ int LaidoutApp::init(int argc,char **argv)
 		//***
 
 	} else if (runmode == RUNMODE_Shell) {
+	    cout << "Laidout "<<LAIDOUT_VERSION<<" shell. Type \"quit\" to quit."<<endl;
 		calculator->RunShell();
+		quit();
 		return 0;
 	}
 
@@ -698,7 +700,10 @@ int LaidoutApp::init(int argc,char **argv)
 //! Initialize and install built in interpreters. Returns number added.
 int LaidoutApp::InitInterpreters()
 {
-	if (!calculator) calculator = new LaidoutCalculator();
+	if (!calculator) {
+		calculator = new LaidoutCalculator();
+		calculator->InstallModule(&stylemanager, 1);
+	}
 	interpreters.push(calculator, LISTS_DELETE_Refcount, 0); //list should be blank, but just in case push to 0
 
     return 1;
