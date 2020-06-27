@@ -2618,7 +2618,7 @@ void LaidoutViewport::Refresh()
 	 // draw the scratchboard, just blank out screen..
 	dp->ClearWindow();
 
-	if (drawflags&DRAW_AXES) dp->drawaxes();
+	if (drawflags & DRAW_AXES) dp->drawaxes(); //draw real origin
 	int c,c2;
 
 	dp->Updates(0);
@@ -3131,10 +3131,22 @@ int LaidoutViewport::PerformAction(int action)
 
 	} else if (action==LOV_ToggleDrawFlags) {
 		DBG cerr << "----drawflags: "<<drawflags;
-		if (drawflags==DRAW_AXES) drawflags=DRAW_BOX;
-		else if (drawflags==DRAW_BOX) drawflags=DRAW_BOX|DRAW_AXES;
-		else if (drawflags==(DRAW_AXES|DRAW_BOX)) drawflags=0;
-		else drawflags=DRAW_AXES;
+		if (drawflags == DRAW_AXES) {
+			drawflags = DRAW_BOX;
+			postmessage(_("Draw object boxes"));
+
+		} else if (drawflags == DRAW_BOX) {
+			drawflags = DRAW_BOX | DRAW_AXES;
+			postmessage(_("Draw object boxes and axes"));
+
+		}else if (drawflags == (DRAW_AXES | DRAW_BOX)) {
+			drawflags = 0;
+			postmessage(_("Don't draw object boxes or axes"));
+
+		} else {
+			drawflags = DRAW_AXES;
+			postmessage(_("Draw object axes"));
+		}
 		DBG cerr << " --> "<<drawflags<<endl;
 		needtodraw=1;
 		return 0;
