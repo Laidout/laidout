@@ -122,7 +122,10 @@ Value *Fold::duplicate()
 ObjectDef *Fold::makeObjectDef()
 {
 	ObjectDef *foldd=stylemanager.FindDef("Fold");
-	if (foldd) return foldd;
+	if (foldd) {
+		foldd->inc_count();
+		return foldd;
+	}
 
 	foldd=new ObjectDef(NULL,"Fold",
 			_("Fold"),
@@ -1056,7 +1059,10 @@ void Signature::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCon
 ObjectDef *Signature::makeObjectDef()
 {
 	ObjectDef *sd=stylemanager.FindDef("Signature");
-	if (sd) { sd->inc_count(); return sd; }
+	if (sd) {
+		sd->inc_count();
+		return sd;
+	}
 
 	sd=new ObjectDef(NULL,"Signature",
 			_("Signature"),
@@ -1495,7 +1501,10 @@ int PaperPartition::SetPaper(PaperStyle *p)
 ObjectDef *PaperPartition::makeObjectDef()
 {
 	ObjectDef *def=stylemanager.FindDef("PaperPartition");
-	if (def) { def->inc_count(); return def; }
+	if (def) {
+		def->inc_count();
+		return def;
+	}
 
 	def=new ObjectDef(NULL,"PaperPartition",
 			_("PaperPartition"),
@@ -2354,7 +2363,10 @@ void SignatureInstance::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles:
 ObjectDef *SignatureInstance::makeObjectDef()
 {
 	ObjectDef *sd=stylemanager.FindDef("SignatureInstance");
-	if (sd) return sd;
+	if (sd) {
+		sd->inc_count();
+		return sd;
+	}
 
 	sd=new ObjectDef(NULL,"SignatureInstance",
 			_("Signature Instance"),
@@ -2475,10 +2487,10 @@ SignatureImposition::SignatureImposition(SignatureInstance *newsig)
 	signatures=NULL;
 	if (newsig) signatures=(SignatureInstance*)newsig->duplicate();
 	
-	objectdef=stylemanager.FindDef("SignatureImposition");
+	objectdef = stylemanager.FindDef("SignatureImposition");
 	if (objectdef) objectdef->inc_count(); 
 	else {
-		objectdef=makeObjectDef();
+		objectdef = makeObjectDef();
 		if (objectdef) stylemanager.AddObjectDef(objectdef,0);
 	}
 
@@ -3863,8 +3875,11 @@ void SignatureImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFile
  */
 ObjectDef *makeSignatureImpositionObjectDef()
 {
-	ObjectDef *sd=stylemanager.FindDef("SignatureImposition");
-	if (sd) return sd;
+	ObjectDef *sd = stylemanager.FindDef("SignatureImposition");
+	if (sd) {
+		sd->inc_count();
+		return sd;
+	}
 
 	sd=new ObjectDef(NULL,"SignatureImposition",
 			_("SignatureImposition"),
