@@ -50,14 +50,15 @@ PolyhedronWindow::PolyhedronWindow(anXWindow *parent)
   : HedronWindow(parent, "Hedron","Hedron",0, 0,0,0,0,0, NULL)
 {
 	int i=0;
-	PaperStyle *p=laidout->papersizes.e[i];
+	PaperStyle *p = laidout->GetDefaultPaper();
+	if (!p) return;
 
-	default_paper.id=i;
-	default_paper.width =p->width;
-	default_paper.height=p->height;
-	makestr(default_paper.name,p->name);
-	makestr(default_paper.units,"in");
-	//makestr(default_paper.units,p->defaultunits);
+	default_paper.id     = i;
+	default_paper.width  = p->width;
+	default_paper.height = p->height;
+	makestr(default_paper.name, p->name);
+	makestr(default_paper.units, "in");
+	// makestr(default_paper.units,p->defaultunits);
 }
 
 //! Change paper index to a different type of paper.
