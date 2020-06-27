@@ -38,7 +38,7 @@ all: lax laxinterface $(objs) plugins
 
 plugins:
 	for NAME in $(plugins); do \
-		$(MAKE) -C $$NAME ; \
+		$(MAKE) -C $$NAME $$NAME.so; \
 		cp $$NAME/*.so . ; \
 	done
 
