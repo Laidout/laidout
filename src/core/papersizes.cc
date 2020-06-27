@@ -304,7 +304,7 @@ int PaperStyle::SetFromString(const char *nname)
 	if (!nname) return 1;
 
 	flags &= ~PAPERSTYLE_Landscape;
-	if (strncasecmp(nname,"custom",6)) {
+	if (!strncasecmp(nname,"custom",6)) {
 		nname+=6;
 		makestr(name,"Custom");
 
@@ -319,59 +319,60 @@ int PaperStyle::SetFromString(const char *nname)
 		//}
 
 		char *endptr=NULL;
-		width=strtod(nname, &endptr);
-		if (endptr==nname) return 2;
-		nname=endptr;
+		double d = strtod(nname, &endptr);
+		if (endptr == nname) return 2;
+		width = d;
+		nname = endptr;
 		while (isspace(*nname)) nname++;
 
-		int units=UNITS_None;
-		UnitManager *unitmanager=GetUnitManager();
+		int units = UNITS_None;
+		UnitManager *unitmanager = GetUnitManager();
 		if (isalpha(*nname)) {
 			//read units
-			const char *cendptr=nname;
+			const char *cendptr = nname;
 			while (isalpha(*cendptr)) cendptr++;
-			units=unitmanager->UnitId(nname,cendptr-nname);
-			if (units==UNITS_None) return 3;
-			width=unitmanager->Convert(width,units,UNITS_Inches,NULL);
-			makenstr(defaultunits,nname,cendptr-nname);
-			nname=cendptr;
+			units = unitmanager->UnitId(nname, cendptr - nname);
+			if (units == UNITS_None) return 3;
+			width = unitmanager->Convert(width, units, UNITS_Inches, NULL);
+			makenstr(defaultunits, nname, cendptr - nname);
+			nname = cendptr;
 		}
 		
 		if (*nname==',') nname++;
 
-		height=strtod(nname, &endptr);
-		if (endptr==nname) return 4;
-		nname=endptr;
+		d = strtod(nname, &endptr);
+		if (endptr == nname) return 4;
+		height = d;
+		nname = endptr;
 		if (isalpha(*nname)) {
 			//read units
-			const char *cendptr=nname;
+			const char *cendptr = nname;
 			while (isalpha(*cendptr)) cendptr++;
-			units=unitmanager->UnitId(nname,cendptr-nname);
-			if (units==UNITS_None) return 3;
-			height=unitmanager->Convert(height,units,UNITS_Inches,NULL);
-			makenstr(defaultunits,nname,cendptr-nname);
-			nname=cendptr;
+			units = unitmanager->UnitId(nname, cendptr - nname);
+			if (units == UNITS_None) return 3;
+			height = unitmanager->Convert(height, units, UNITS_Inches, NULL);
+			makenstr(defaultunits, nname, cendptr - nname);
+			nname = cendptr;
 		}
 
 		if (*nname==')') nname++;
 
 	} else { 
 		for (int c=0; c<laidout->papersizes.n; c++) {
-			if (strncasecmp(nname,laidout->papersizes.e[c]->name,strlen(laidout->papersizes.e[c]->name))==0) {
-				makestr(name,laidout->papersizes.e[c]->name);
-				width=laidout->papersizes.e[c]->width;
-				height=laidout->papersizes.e[c]->height;
-				flags=laidout->papersizes.e[c]->flags;
-				dpi=laidout->papersizes.e[c]->dpi;
-				makestr(defaultunits,laidout->papersizes.e[c]->defaultunits);
+			if (strncasecmp(nname, laidout->papersizes.e[c]->name, strlen(laidout->papersizes.e[c]->name)) == 0) {
+				makestr(name, laidout->papersizes.e[c]->name);
+				width  = laidout->papersizes.e[c]->width;
+				height = laidout->papersizes.e[c]->height;
+				flags  = laidout->papersizes.e[c]->flags;
+				dpi    = laidout->papersizes.e[c]->dpi;
+				makestr(defaultunits, laidout->papersizes.e[c]->defaultunits);
 				break;
 			}
 		}
 	}
 
-	if (strcasestr(nname,"portrait")) flags&=~PAPERSTYLE_Landscape;
-	else if (strcasestr(nname,"landscape")) flags|=PAPERSTYLE_Landscape; 
-
+	if (strcasestr(nname, "portrait"))       flags &= ~PAPERSTYLE_Landscape;
+	else if (strcasestr(nname, "landscape")) flags |= PAPERSTYLE_Landscape;
 
 	return 0;
 }
