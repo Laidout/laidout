@@ -12,6 +12,8 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now:
 
+bug: NONE of the interfaces are initializing shortcuts
+
 bug: can't duplicate gradient nodes.. causes seg fault
 
 bug: severing clone link does some weird things, including crashing
@@ -22,14 +24,22 @@ bug: window sizes seem to all be off a few pixels
 bug: curve is terrible approximation at end points
 
 svg import problems:
-  finish debugging mesh svg 2.0 out/in
   any clipping
-  text placement and size
+  finish debugging mesh svg 2.0 out/in
+  finish debugging powerstroke out/in
   grid guides
   sometimes path endpoint spikes
   dotted line style
+  DONE problem with transform sometimes, see icons-tiling.svg
+    DONE non-1 scale problem
+    DONE seems like children screw up -> problem with x,y in: rotate(angle, x,y)
+	DONE "use" transforms not compounding
+  DONE text placement and size
+  DONE width/height makes scale 0 when after viewBox
   DONE gradient clipping
   DONE gradient filling past minimum definition bounds
+
+svg out, select to files, often the first time goes to file, not files
 
 debug registration, cut marks, trim marks
   custom papergroup, add registration/bars/, can't move it
@@ -40,7 +50,6 @@ object indicator:
 
 back to not maximizing properly on default ubuntu. Seems to work fine on every other window manager I've tried.
 
-svg out, select to files, often the first time goes to file, not files
 
 
 ------------ other bugs:
@@ -198,8 +207,12 @@ test:
   make some test scripts for command line testing
 
 
+ViewWindow:
+  maybe drawaxes should show dotted line from origin to bbox?
+
 Gradients:
-  SHOWCOLORS should be off by default
+  check svg export of gradients with new spread method
+  DONE SHOWCOLORS should be off by default
   dragging around color points from inside to outside should allow going out of bounds
     DONE linear 
 	radial
@@ -209,7 +222,7 @@ Gradients:
 
   bug: on start, colors get zapped to window origin ?? can't duplicate
 
-  gradient resources
+  gradient and gradientstrip resources
     owner: file/user global/system global
     name
     tags
@@ -244,23 +257,23 @@ interface manager interfacemanager:
 get splash image working.. better label class?
 
 lgm 2019 feedback and ideas:
-  configure still sucks:
-    laidout configure needs to drive laxkit configure more thoroughly.
-    automate default laxkit detection, or git download of laxkit if missing
   path tool:
     hard to see helper graphics, needs haloing
 	should have space to dup weight node
-  be able to load old docs
   method to fix all broken images at once
     option: do just this one, or fix all
 	old path: _____     new path: _____
   method to collect all used resources of a doc for distribution
+  be able to load old docs
   from here on out, ensure backwards compatibility of files still works
     enhance mystery data to work with laidout data too?
   some kind of graphicsmagick LoadToMemory bug.. could be only on loading old file, bad config translation?
   out clicking from a dialog should probably destroy that dialog.. too easy to get buried confusedly in windows
   make connecting to online information easy: click to open web browser, xdg-open?
   from talk: diffusion curves, "local mod" mesh manipulation
+  DONEish configure still sucks:
+    DONE laidout configure needs to drive laxkit configure more thoroughly.
+    DONE automate default laxkit detection, or git download of laxkit if missing
   DONE mageia: makedepend trouble? replace with custom script to get rid of x11-dev dependency?
 
 alternate packaging:
@@ -1711,7 +1724,10 @@ pagerangeinterface:
 
 for range on import/export, should have a range parser that accepts unconnected ranges, ie "2,4, 5-10"
 
-shortcut dialog: shortcuts:
+shortcut dialog: shortcuts: shortcut manager shortcutmanager
+  saving keys for first time should default to config directory
+  need to be able to delete keys
+  layout needs to save
   keyboard display
   need mode column, mode based shortcuts have no display capability
   sort by columns is not sorting by anything rational
@@ -1724,8 +1740,8 @@ shortcut dialog: shortcuts:
   numberpadmask?
   char names for wacky xf86 codes.. accept 0x*
   implement search
-  DONE need ability to add multiple keys for same action
   svg keyboard out
+  DONE need ability to add multiple keys for same action
 
 have option to specify language from command line
 
@@ -1790,6 +1806,20 @@ page thumbnail should be rational, ie image should be whole page, not just conte
 
 in number edit boxes, wheel should allow changing numbers, change on digit mouse is over?
   is it better to wheel at curpos?? probably.. select that digit, must track after changes!!!
+
+if no png icons detected, try to autogenerate
+	id pattern:
+		0: [A-Z].*
+		  1: *-s*
+		    +
+	unit size: .5 in
+	output unit size: 24px
+	from files:
+		- icons.svg
+		- icons-tiling.svg
+		- lax-icons.svg
+		+
+	output directory: _____ ...
 
 global resources:
   current frame/time
