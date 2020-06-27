@@ -557,7 +557,7 @@ ObjectDef::~ObjectDef()
 {
 	//parent_namespace->dec_count(); <- do NOT do this, we assume the module will outlive the objectdef
 
-	DBG cerr <<"--<ObjectDef \""<<(name?name:"(no name)")<<"\" destructor"<<endl;
+	DBG cerr <<"--<ObjectDef \""<<(name?name:"(no name)")<<"\" destructor "<<object_id<<" "<<_count<<endl;
 
 	if (name)         delete[] name;
 	if (Name)         delete[] Name;
@@ -1222,10 +1222,10 @@ int ObjectDef::SetVariable(const char *name,Value *v, int absorb)
 int ObjectDef::AddObjectDef(ObjectDef *def, int absorb)
 {
 	if (!def) return 1;
-	if (!fields) fields=new Laxkit::RefPtrStack<ObjectDef>;
-	int i=fields->findindex(def);
-	if (i>=0) { if (absorb) def->dec_count(); return 1; }
-	int c=0;
+	if (!fields) fields = new Laxkit::RefPtrStack<ObjectDef>;
+	int i = fields->findindex(def);
+	if (i >= 0) { if (absorb) def->dec_count(); return 1; }
+	int c = 0;
 	if (fields->n) {
 		for (c=0; c<fields->n; c++) {
 			 //push sorted
@@ -2387,7 +2387,7 @@ int Value::getValueStr(char **buffer,int *len, int oktoreallocate)
  */
 ObjectDef *Value::GetObjectDef()
 {
-	if (!objectdef) objectdef=makeObjectDef();
+	if (!objectdef) objectdef = makeObjectDef();
 	return objectdef;
 }
 
@@ -2396,13 +2396,13 @@ ObjectDef *Value::GetObjectDef()
  *  ObjectDef itself has no way of knowing how many fields there are
  *  and even what kind of fields they are in that case.
  *
- *  Returns objectdef->getNumFields(). Calls makeObjectDef() if necessary
+ *  Returns objectdef->getNumFields(). Calls GetObjectDef() if necessary
  *
  * Set and array values will have this redefined to return the number of objects in the set.
  */
 int Value::getNumFields()
 {
-    ObjectDef *def=GetObjectDef();
+	ObjectDef *def = GetObjectDef();
 	if (def) return def->getNumFields();
     return -1;
 }

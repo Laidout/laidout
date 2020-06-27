@@ -360,7 +360,7 @@ class Value : virtual public Laxkit::anObject, virtual public LaxFiles::DumpUtil
 	virtual Value *dereference(const char *extstring, int len);
 	virtual Value *dereference(int index);
 
- 	virtual ObjectDef *makeObjectDef() = 0;
+ 	virtual ObjectDef *makeObjectDef() = 0; //calling code responsible for ref
     virtual ObjectDef *GetObjectDef();
     virtual int getNumFields();
     virtual  ObjectDef *FieldInfo(int i);
