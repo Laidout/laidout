@@ -798,6 +798,10 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 		grad=dynamic_cast<GradientData *>(obj);
 		if (!grad) return 0;
 
+		const char *spreadMethod = "pad";
+		if (grad->spread_method == LAXSPREAD_Reflect) spreadMethod = "reflect";
+		else if (grad->spread_method == LAXSPREAD_Repeat) spreadMethod = "repeat";
+
 		if (grad->IsRadial()) {
 			fprintf(f,"%s<circle %s transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
 						 spc,
@@ -808,6 +812,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			fprintf(f,"%s    cx=\"%f\"\n",spc, fabs(grad->R1()) > fabs(grad->R2()) ? grad->P1().x : grad->P2().x);
 			fprintf(f,"%s    cy=\"%f\"\n",spc, fabs(grad->R1()) > fabs(grad->R2()) ? grad->P1().y : grad->P2().y);
 			fprintf(f,"%s    r=\"%f\"\n",spc,  fabs(grad->R1()) > fabs(grad->R2()) ? fabs(grad->R1()) : fabs(grad->R2()));
+			fprintf(f,"%s    spreadMethod=\"%s\"\n",spc, spreadMethod);
 			fprintf(f,"%s  />\n",spc);
 		} else {
 			fprintf(f,"%s<rect %s transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
@@ -819,6 +824,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			fprintf(f,"%s    y=\"%f\"\n", spc,grad->miny);
 			fprintf(f,"%s    width=\"%f\"\n", spc,grad->maxx-grad->minx);
 			fprintf(f,"%s    height=\"%f\"\n", spc,grad->maxy-grad->miny);
+			fprintf(f,"%s    spreadMethod=\"%s\"\n",spc, spreadMethod);
 			fprintf(f,"%s  />\n",spc);
 		}
 
@@ -2054,10 +2060,14 @@ GridGuide *ParseGrid(Attribute *def)
 	return grid;
 }
 
-//forward declaration:
+
+//forward declarations:
 int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribute> &powerstrokes, RefPtrStack<anObject> &gradients, ErrorLog &log);
 GradientData *svgDumpInGradientDef(Attribute *att, Attribute *defs, RefPtrStack<anObject> &gradients, int depth);
 ColorPatchData *svgDumpInMeshGradientDef(Attribute *att, Attribute *defs);
+void CompoundTransformForRef(SomeDataRef *ref, Group *top);
+void CompoundTransforms(Group *group, Group *top);
+
 
 int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log, const char *filecontents,int contentslen)
 {
@@ -2098,6 +2108,45 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 		}
 
 		 // parse main "svg" attributes
+		 
+		 // check width and height first since viewBox depends on them.
+		Attribute *aatt = svgdoc->find("width");
+		if (aatt) {
+			char *endptr = nullptr;
+			DoubleAttribute(aatt->value, &width, &endptr);
+			if (*endptr) {
+				 //parse units 
+				UnitManager *unitm = GetUnitManager();
+				while (isspace(*endptr)) endptr++;
+				const char *ptr = endptr;
+				while (isalpha(*endptr)) endptr++;
+				int units = unitm->UnitId(ptr, endptr-ptr);
+				if (units != UNITS_None) width = unitm->Convert(width, units, UNITS_Inches, nullptr);
+
+			} else {
+				width /= DEFAULT_PPINCH; //no specified units, assume svg pts
+				scalex = 1./DEFAULT_PPINCH;
+			}
+		}
+		aatt = svgdoc->find("height");
+		if (aatt) {
+			char *endptr = nullptr;
+			DoubleAttribute(aatt->value, &height, &endptr);
+			if (*endptr) {
+				 //parse units 
+				UnitManager *unitm = GetUnitManager();
+				while (isspace(*endptr)) endptr++;
+				const char *ptr = endptr;
+				while (isalpha(*endptr)) endptr++;
+				int units = unitm->UnitId(ptr, endptr-ptr);
+				if (units != UNITS_None) height = unitm->Convert(height, units, UNITS_Inches, nullptr);
+
+			} else {
+				height /= DEFAULT_PPINCH; //no specified units, assume svg pts
+				scaley = 1./DEFAULT_PPINCH;
+			}
+		}
+
 		for (c = 0; c < svgdoc->attributes.n; c++) {
 			name  = svgdoc->attributes.e[c]->name;
 			value = svgdoc->attributes.e[c]->value;
@@ -2106,41 +2155,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 			if (svghints) svg->push(svgdoc->attributes.e[c]->duplicate(),-1);
 			 
 			 //find the width and height of the document
-			if (!strcmp(name,"width")) {
-				char *endptr=nullptr;
-				DoubleAttribute(value,&width, &endptr);
-				if (*endptr) {
-					 //parse units 
-					UnitManager *unitm = GetUnitManager();
-					while (isspace(*endptr)) endptr++;
-					const char *ptr=endptr;
-					while (isalpha(*endptr)) endptr++;
-					int units = unitm->UnitId(ptr, endptr-ptr);
-					if (units!=UNITS_None) width = unitm->Convert(width, units, UNITS_Inches, nullptr);
-
-				} else {
-					width /= DEFAULT_PPINCH; //no specified units, assume svg pts
-					scalex = 1./DEFAULT_PPINCH;
-				}
-
-			} else if (!strcmp(name,"height")) {
-				char *endptr=nullptr;
-				DoubleAttribute(value,&height, &endptr);
-				if (*endptr) {
-					 //parse units 
-					UnitManager *unitm = GetUnitManager();
-					while (isspace(*endptr)) endptr++;
-					const char *ptr=endptr;
-					while (isalpha(*endptr)) endptr++;
-					int units = unitm->UnitId(ptr, endptr-ptr);
-					if (units!=UNITS_None) height = unitm->Convert(height, units, UNITS_Inches, nullptr);
-
-				} else {
-					height /= DEFAULT_PPINCH; //no specified units, assume svg pts
-					scaley = 1./DEFAULT_PPINCH;
-				}
-				
-			} else if (!strcmp(name,"viewBox")) {
+			if (!strcmp(name,"viewBox")) {
 				// *** also need to look out for other transform defined on base svg level, maybe nonstandard, but sometimes it's present
 
 				// viewBox="0 0 1530 1530", map this rectangle to 0,0 -> width,height
@@ -2151,6 +2166,11 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 					scaley = height / l[3];
 				}
 			}
+		}
+
+		if (scalex == 0 || scaley == 0) {
+			log.AddMessage(_("Bad dimensions!\n"),ERROR_Fail); 
+			throw 3;
 		}
 
 		svgdoc = svgdoc->find("content:");
@@ -2226,7 +2246,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 			if (curdocpage>=doc->pages.n) {
 				doc->NewPages(-1,(curdocpage+1)-doc->pages.n);
 			}
-			group=dynamic_cast<Group *>(doc->pages.e[curdocpage]->layers.e(0)); //pick layer 0 of the page
+			group = dynamic_cast<Group *>(doc->pages.e[curdocpage]->layers.e(0));  // pick layer 0 of the page
 		}
 
 		RefPtrStack<anObject> gradients;
@@ -2289,8 +2309,9 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 							powerstrokes.push(def,0);
 						}
 
-					} else if (!strcmp(name,"mask")) {
-					} else if (!strcmp(name,"filter")) {
+					} else if (!strcmp(name,"clipPath")) {
+					//} else if (!strcmp(name,"mask")) {
+					//} else if (!strcmp(name,"filter")) {
 					//} else if (!strcmp(name,"font")) {
 					//} else if (!strcmp(name,"font-face")) {
 					//} else if (!strcmp(name,"image")) {
@@ -2298,7 +2319,6 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 					//} else if (!strcmp(name,"text")) {
 					//} else if (!strcmp(name,"a")) {
 					//} else if (!strcmp(name,"altGlyphDef")) {
-					//} else if (!strcmp(name,"clipPath")) {
 					//} else if (!strcmp(name,"color-profile")) {
 					//} else if (!strcmp(name,"cursor")) {
 					//} else if (!strcmp(name,"foreignObject")) {
@@ -2359,13 +2379,54 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 			laidout->app->addwindow(newHeadWindow(doc));
 		}
 
-		laidout->project->ClarifyRefs(log);
+		CompoundTransforms(group, group);
+		//laidout->project->ClarifyRefs(log);
 	
 	} catch (int error) {
 		if (svghints) delete svghints;
 		return 1;
 	}
 	return 0;
+}
+
+/*! Overcome linking issues for nested refs.
+ */
+void CompoundTransformForRef(SomeDataRef *ref, Group *top)
+{
+	SomeData *found = top->FindObject(ref->thedata_id);
+	if (!found) return;
+
+	SomeDataRef *foundref = dynamic_cast<SomeDataRef*>(found);
+	if (foundref) {
+		if (!foundref->thedata) {
+			CompoundTransformForRef(foundref, top);
+		}
+		if (!foundref->thedata) {
+			DBG cerr <<" *** WARNING! broken ref links!! No link for: "<<foundref->thedata_id<<endl;
+			return;
+		}
+	}
+
+	ref->Set(found, 1);
+	ref->PreMultiply(found->m());
+}
+
+/*! SVG use elements compound transforms, while Laidout SomeDataRef supercedes, so we need to step
+ * through and compond where necessary.
+ */
+void CompoundTransforms(Group *group, Group *top)
+{
+	for (int c=0; c<group->n(); c++) {
+		SomeDataRef *ref = dynamic_cast<SomeDataRef*>(group->e(c));
+		if (ref && !ref->thedata && ref->thedata_id) {
+			CompoundTransformForRef(ref, top);
+		}
+
+		DrawableObject *dobj = dynamic_cast<DrawableObject*>(group->e(c));
+		if (dobj && dobj->n()) {
+			CompoundTransforms(dobj, top);
+		}
+	}
 }
 
 /*! If gradient, then apply anything in the def to that existing gradient.
@@ -2386,6 +2447,7 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, RefPtrStack<
 
 	double      cx, cy, fx, fy, r;
 	flatpoint   p1, p2;
+	int         spreadMethod = LAXSPREAD_Pad;
 	bool        foundf = false;
 	bool foundp1 = false;
 	bool foundp2 = false;
@@ -2436,12 +2498,15 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, RefPtrStack<
 
 		} else if (!strcmp(name,"spreadMethod")) {
 			//pad | repeat | reflect
-			//todo!
-			
-			//if (!strcmp(value, "pad")) {
-			//} else if (!strcmp(value, "repeat")) {
-			//} else if (!strcmp(value, "reflect")) {
-			//}
+			if (value) {
+				if (!strcmp(value, "pad")) {
+					spreadMethod = LAXSPREAD_Pad;
+				} else if (!strcmp(value, "repeat")) {
+					spreadMethod = LAXSPREAD_Repeat;
+				} else if (!strcmp(value, "reflect")) {
+					spreadMethod = LAXSPREAD_Reflect;
+				}
+			}
 
 		} else if (!strcmp(name,"cx")) {
 			DoubleAttribute(value,&cx,nullptr);
@@ -2553,7 +2618,7 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, RefPtrStack<
 			gradient->SetLinear(p2, p1, r, r); //for some reason reversed
 		} else gradient->SetLinear();
 	}
-	gradient->spread_method = LAXSPREAD_Pad;
+	gradient->spread_method = spreadMethod;
 	gradient->fill_parent = true;
 	gradient->m(gm);
 	if (strip) {
@@ -3394,7 +3459,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 			if (font_size == -1) font_size = 12; //arbitrary number to play nice with CaptionData.
 			if (font_family) textobj->Font(nullptr, font_family, font_style, font_size);
 			else if (font_size != -1) textobj->Size(font_size);
-			textobj->origin(flatpoint(x,y));
+			textobj->origin(textobj->transformPoint(flatpoint(x,y-font_size)));
 			group->push(textobj);
 			textobj->dec_count();
 		}
@@ -3410,6 +3475,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 		const char *link = nullptr;
 		const char *id = nullptr;
 		double m[6];
+		transform_identity(m);
 
 		for (int c=0; c<element->attributes.n; c++) {
 			name =element->attributes.e[c]->name;
@@ -3425,6 +3491,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 				hasy = DoubleAttribute(value,&y,nullptr);
 
 			} else if (!strcmp(name,"width")) {
+				//note: width and height are only supposed to be used when the use element is an svg or a symbol
 				hasw = DoubleAttribute(value,&w,nullptr); // *** could be like "100%"
 
 			} else if (!strcmp(name,"height")) {
@@ -3433,7 +3500,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 			} else if (!strcmp(name,"transform")) {
 				svgtransform(value,m);
 
-			} else if (!strcmp(name,"xlink:href")) {
+			} else if (!strcmp(name,"xlink:href") || !strcmp(name,"href")) { //note xlink:href deprecated as of svg2
 				if (value && *value=='#') link = value+1; //for now, only use links to objects
 
 			}
@@ -3446,6 +3513,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 			ref->m(m);
 			if (hasx || hasy) {
 				// *** additional translate x,y
+				cerr << " todo: implement extra x,y translate on svg use x,y"<<endl;
 			}
 			if (hasw) ref->maxx = w;
 			if (hash) ref->maxy = h;
@@ -3551,14 +3619,14 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 					if (!strcmp(gradients.e[c]->Id(), id)) {
 						fillobj = dynamic_cast<SomeData*>(gradients.e[c]);
 						if (fillobj) {
-							cout << "-----------fillobj pre"<<endl;
-							fillobj->dump_out(stdout, 2, 0, nullptr);
+							//DBG cerr << "-----------fillobj pre"<<endl;
+							//fillobj->dump_out(stdout, 2, 0, nullptr);
 							const char *id = fillobj->Id();
 							fillobj = fillobj->duplicate(nullptr);
 							fillobj->Id(id);
 							fillobj->FindBBox();
-							cout << "-----------fillobj post"<<endl;
-							fillobj->dump_out(stdout, 2, 0, nullptr);
+							//DBG cerr << "-----------fillobj post"<<endl;
+							//fillobj->dump_out(stdout, 2, 0, nullptr);
 						}
 						break;
 					}
