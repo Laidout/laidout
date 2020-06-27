@@ -160,13 +160,6 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 			NULL, //range
 			NULL); //defaultvalue
 
-	def->push("experimental",
-			_("Experimental"),
-			_("Whether to activate experimental features. Requires restart."),
-			"boolean", NULL,"false",
-			0,
-			NULL);
-
 	def->push("uiscale",
 			_("UI Scale"),
 			_("UI Scale"),
@@ -203,7 +196,7 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 			NULL);
 
 	def->push("start_with_last",
-			_("Start With Last"),
+			_("Start With Last Document"),
 			_("Start with last document used."),
 			"boolean", NULL,NULL,
 			0,
@@ -290,6 +283,13 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 			_("Export file name"),
 			_("Default base name (without extension) to use when exporting."),
 			"string", NULL,"%f-exported",
+			0,
+			NULL);
+
+	def->push("experimental",
+			_("Experimental"),
+			_("Whether to activate experimental features. Requires restart."),
+			"boolean", NULL,"false",
 			0,
 			NULL);
 
