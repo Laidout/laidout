@@ -63,9 +63,15 @@ void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,uns
 	DrawableObject *ddata = dynamic_cast<DrawableObject*>(data);
 	PathsData *clipobj = nullptr;
 
-	if (flags&DRAW_AXES) dp->drawaxes();
+	if (flags&DRAW_AXES) {
+		dp->PushAxes();
+		//dp->LineWidthScreen(2);
+		dp->drawaxes();
+		dp->PopAxes();
+	}
 	if (flags&DRAW_BOX && data->validbounds()) {
 		dp->NewFG(128,128,128);
+		dp->LineWidthScreen(2);
 		//DBG cerr<<" drawing obj "<<data->object_id<<":"<<data->minx<<' '<<data->maxx<<' '<<data->miny<<' '<<data->maxy<<endl;
 		dp->drawline(flatpoint(data->minx,data->miny),flatpoint(data->maxx,data->miny));
 		dp->drawline(flatpoint(data->maxx,data->miny),flatpoint(data->maxx,data->maxy));
