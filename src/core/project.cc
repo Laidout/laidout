@@ -466,7 +466,7 @@ int Project::ClarifyAnchors(ErrorLog &log)
 	return adjusted;
 }
 
-/*! Step through all drawable objects looking for unresolved somedatarefs.
+/*! Step through all drawable objects looking for unresolved SomeDataRefs.
  * Also calls ClarifyAnchors after sorting out clones.
  * If found, find matching reference and install object. If not found,
  * issue a warning.
