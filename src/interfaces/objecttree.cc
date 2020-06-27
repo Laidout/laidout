@@ -121,6 +121,7 @@ ObjectTreeWindow::~ObjectTreeWindow()
 {
 	if (menu) menu->dec_count();
 	if (objcontainer) objcontainer->dec_count();
+	if (tree) tree->dec_count();
 }
 
 /*! Connect to a governing container.
@@ -202,7 +203,7 @@ int ObjectTreeWindow::init()
 
  	 //add the tree
 	if (!tree) ConstructTree();
-	AddWin(tree,1, tree->win_w,tree->win_w/2,500,50,0, th*4,0,5000,50,0, -1);
+	AddWin(tree,0, tree->win_w,tree->win_w/2,500,50,0, th*4,0,5000,50,0, -1);
 	AddNull();
 
 
