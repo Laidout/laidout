@@ -557,8 +557,14 @@ int LaidoutApp::init(int argc,char **argv)
 	}
 
 
+	 // interfaces must be initialized before reading in laidoutrc, because we need
+	 // to have the list available in case shortcuts need to be constructed
+	DBG cerr <<"---interfaces pool init"<<endl;
+	PushBuiltinPathops(); // this must be called before getinterfaces because of pathops...
+	GetBuiltinInterfaces(&interfacepool);
+
 	 //-----read in laidoutrc
-	if (!readinLaidoutDefaults()) {
+	if (!readinLaidoutDefaults()) { //warning: this may or may not InitializeShortcuts()
 		createlaidoutrc();
 	}
 
@@ -575,10 +581,6 @@ int LaidoutApp::init(int argc,char **argv)
 	DBG cerr <<"---papersizes pool init"<<endl;
 	GetBuiltinPaperSizes(&papersizes);
 	
-	DBG cerr <<"---interfaces pool init"<<endl;
-	PushBuiltinPathops(); // this must be called before getinterfaces because of pathops...
-	GetBuiltinInterfaces(&interfacepool);
-
 
 	 //-----establish user accesible api
 	DBG cerr<<"---install functions"<<endl;
@@ -591,6 +593,7 @@ int LaidoutApp::init(int argc,char **argv)
 	
 	 //------load plugins
 	InitializePlugins();
+
 
 	 //-----read in resources
 	char configfile[strlen(config_dir)+20];
@@ -965,14 +968,14 @@ int LaidoutApp::readinLaidoutDefaults()
 {
 
 	DBG cerr <<"-------------Checking $HOME/.laidout/(version)/laidoutrc----------"<<endl;
-	int foundkeys=0;
+	int foundkeys = 0;
 
-	FILE *f=NULL;
-	char configfile[strlen(config_dir)+20];
-	sprintf(configfile,"%s/laidoutrc",config_dir);
-	if (!readable_file(configfile,&f)) return 0;
+	FILE *f = NULL;
+	char  configfile[strlen(config_dir) + 20];
+	sprintf(configfile, "%s/laidoutrc", config_dir);
+	if (!readable_file(configfile, &f)) return 0;
 
-	 //now f is open, must read in...
+	// now f is open, must read in...
 	setlocale(LC_ALL,"C");
 	Attribute att;
 	att.dump_in(f,0,NULL);
@@ -1009,9 +1012,9 @@ int LaidoutApp::readinLaidoutDefaults()
 			}
 
 		} else if (!strcmp(name,"shortcuts")) {
-			foundkeys=1;
+			foundkeys = 1;
 			InitializeShortcuts();
-			ShortcutManager *m=GetDefaultShortcutManager();
+			ShortcutManager *m = GetDefaultShortcutManager();
 			m->Load(value);
 
 		} else if (!strcmp(name,"experimental")) {
@@ -1127,7 +1130,7 @@ int LaidoutApp::readinLaidoutDefaults()
 	setlocale(LC_ALL,"");
 	DBG cerr <<"-------------Done with $HOME/.laidout/(version)/laidoutrc----------"<<endl;
 
-	if (foundkeys==0) {
+	if (foundkeys == 0) {
 		char *keys=newstr(laidout->config_dir);
 		appendstr(keys,"/default.keys");
 		if (readable_file(keys)) {
@@ -1260,14 +1263,14 @@ PaperStyle *LaidoutApp::GetDefaultPaper()
 	if (!strchr(prefs.defaultpaper,',')) { 
        for (int c=0; c<laidout->papersizes.n; c++) {
             if (strcasecmp(prefs.defaultpaper, laidout->papersizes.e[c]->name)==0) {
-				defaultpaper=laidout->papersizes.e[c];
+				defaultpaper = laidout->papersizes.e[c];
 				defaultpaper->inc_count();
 				return defaultpaper;
             }
         }
 	}
 
-	defaultpaper=new PaperStyle();
+	defaultpaper = new PaperStyle();
 	defaultpaper->SetFromString(prefs.defaultpaper);
 
 	return defaultpaper;
@@ -1279,10 +1282,7 @@ PaperStyle *LaidoutApp::GetDefaultPaper()
  */
 void LaidoutApp::setupdefaultcolors()
 {
-	//char *oldpf=app_profile;
-	//app_profile=NULL; //force it to light colors
 	anXApp::setupdefaultcolors();
-	//app_profile=oldpf;
 }
 
 LaxOptions options;
