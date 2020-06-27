@@ -1760,15 +1760,17 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *nname,const char
 	DBG if (viewport) cerr <<"*** there shouldn't be a viewport here, SpreadEditor::SpreadEditor()!!!"<<endl;
 	SpreadEditorViewport *sed=new SpreadEditorViewport(this,"spread-editor-viewport","spread-editor-viewport",
 									ANXWIN_HOVER_FOCUS|VIEWPORT_RIGHT_HANDED|VIEWPORT_BACK_BUFFER|VIEWPORT_ROTATABLE,
-									0,0,0,0,0,NULL,spreadtool); 
-	viewport=sed;
+									0,0,0,0,0,NULL,spreadtool);
+	viewport = sed;
 	WindowStyle *col = win_themestyle->duplicate();
 	InstallColors(col);
 	viewport->InstallColors(col);
-	win_themestyle->bg.rgb8(200,200,200);
+	win_themestyle->bg.rgb8(200, 200, 200);
 	col->dec_count();
-	viewport->dp->NewBG(255,255,255); 
-	viewer_style |= VIEWPORT_NO_XRULER|VIEWPORT_NO_YRULER;
+	viewport->dp->NewBG(255, 255, 255);
+	viewer_style |= VIEWPORT_NO_XRULER | VIEWPORT_NO_YRULER;
+
+	app->reparent(viewport,this); //adds to kids stack so we don't have to worry about dec_counting it
 
 	//app->reparent(viewport,this);
 	//viewport->dec_count();
