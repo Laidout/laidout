@@ -880,6 +880,48 @@ const double *DrawableObject::object_transform(int i)
 	return kids.e[i]->m();
 }
 
+/*! Find exact case sensitive id match.
+ * Will match ourself or first matching descendent.
+ */
+LaxInterfaces::SomeData *DrawableObject::FindObject(const char *id)
+{
+	if (!id || !Id()) return nullptr;
+	if (!strcmp(Id(), id)) return this;
+
+	for (int c=0; c<n(); c++) {
+		SomeData *obj = e(c);
+		if (!strcmp(obj->Id(), id)) return obj;
+		DrawableObject *dobj = dynamic_cast<DrawableObject*>(obj);
+		if (dobj && dobj->n()) {
+			obj = dobj->FindObject(id);
+			if (obj) return obj;
+		}
+	}
+	return nullptr;
+}
+
+/*! Find first object with id matched by pattern regular expression.
+ */
+LaxInterfaces::SomeData *DrawableObject::FindObjectRegex(const char *pattern, LaxInterfaces::SomeData *after)
+{
+	cerr << " *** Must implement DrawableObject::FindObjectRegex(const char *pattern)!!"<<endl;
+	return nullptr;
+
+//	if (!id || !Id()) return nullptr;
+//	if (!strcmp(Id(), id)) return this;
+//
+//	for (int c=0; c<n(); c++) {
+//		SomeData *obj = e(c);
+//		if (!strcmp(obj->Id()), id) return obj;
+//		DrawableObject *dobj = dynamic_cast<DrawableObject*>(obj);
+//		if (dobj && dobj->n()) {
+//			obj = dobe->FindObject(id);
+//			if (obj) return obj;
+//		}
+//	}
+//	return nullptr;
+}
+
 //! Take all the elements in the list which, and put them in a new group at the smallest index.
 /*! If any of which are not in kids, then nothing is changed. If ne<=0 then the which list
  * is assumed to be terminated by a -1.

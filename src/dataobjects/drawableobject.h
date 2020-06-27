@@ -262,6 +262,9 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual const char *object_e_name(int i);
 	virtual const double *object_transform(int i);
 
+	virtual LaxInterfaces::SomeData *FindObject(const char *id);
+	virtual LaxInterfaces::SomeData *FindObjectRegex(const char *pattern, LaxInterfaces::SomeData *after);
+
 	 //for Value
 	virtual ObjectDef *makeObjectDef();
 	virtual Value *duplicate();
