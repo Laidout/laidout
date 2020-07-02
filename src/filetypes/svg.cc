@@ -1451,14 +1451,38 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgE
 					if (c2<path->pathweights.n-1) fprintf(f,"| ");
 				}
 
+				//determine caps
+				int startcap = (path->linestyle ? path->linestyle->capstyle : (pdata->linestyle ? pdata->linestyle->capstyle : LAXCAP_Butt));
+				int endcap   = (path->linestyle ? path->linestyle->endcapstyle : (pdata->linestyle ? pdata->linestyle->endcapstyle : LAXCAP_Butt));
+				if (endcap == 0) endcap = startcap;
+				const char *startstr = "butt";
+				const char *endstr   = "butt";
+
+						//if      (!strcasecmp(value, "round"))     start_linecap = LAXCAP_Round;
+						//else if (!strcasecmp(value, "peak"))      start_linecap = LAXCAP_Peak;
+						//else if (!strcasecmp(value, "butt"))      start_linecap = LAXCAP_Butt;
+						//else if (!strcasecmp(value, "square"))    start_linecap = LAXCAP_Square;
+						//else if (!strcasecmp(value, "zerowidth")) start_linecap = LAXCAP_Zero_Width;
+				if      (startcap == LAXCAP_Round)      startstr="round";
+				else if (startcap == LAXCAP_Peak)       startstr="peak";
+				else if (startcap == LAXCAP_Square)     startstr="square";
+				else if (startcap == LAXCAP_Zero_Width) startstr="zerowidth";
+
+				if      (endcap == LAXCAP_Round)      endstr="round";
+				else if (endcap == LAXCAP_Peak)       endstr="peak";
+				else if (endcap == LAXCAP_Square)     endstr="square";
+				else if (endcap == LAXCAP_Zero_Width) endstr="zerowidth";
+
 				fprintf(f,"\"\n"
 						  "  sort_points=\"true\"\n"
 						  "  interpolator_type=\"CentripetalCatmullRom\"\n"
 						  "  interpolator_beta=\"0.2\"\n"
-						  "  start_linecap_type=\"butt\"\n"
 						  "  linejoin_type=\"extrapolated\"\n"
 						  "  miter_limit=\"4\"\n"
-						  "  end_linecap_type=\"butt\" />\n"
+						  "  start_linecap_type=\"%s\"\n"
+						  "  end_linecap_type=\"%s\"\n"
+						  " />\n",
+						  startstr, endstr
 						);
 
 
@@ -2062,7 +2086,9 @@ GridGuide *ParseGrid(Attribute *def)
 
 
 //forward declarations:
-int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribute> &powerstrokes, RefPtrStack<anObject> &gradients, ErrorLog &log);
+int svgDumpInObjects(int top,Group *group, Attribute *element,
+					 PtrStack<Attribute> &powerstrokes, RefPtrStack<anObject> &gradients,
+					 ErrorLog &log, const char *filedir);
 GradientData *svgDumpInGradientDef(Attribute *att, Attribute *defs, RefPtrStack<anObject> &gradients, int depth);
 ColorPatchData *svgDumpInMeshGradientDef(Attribute *att, Attribute *defs);
 void CompoundTransformForRef(SomeDataRef *ref, Group *top);
@@ -2083,6 +2109,8 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 	Attribute *svghints = nullptr,  // anything outside "svg" element, plus all "svg" attributes
 	          *svg      = nullptr;  // points to the "svg" lax attribute of svghints. Do not delete!!
 	// if (in->keepmystery) svghints=new Attribute(VersionName(),file);  ***disable svghints for now
+
+	char *filedir = lax_dirname(file, 1);
 
 	try {
 
@@ -2121,7 +2149,9 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 				const char *ptr = endptr;
 				while (isalpha(*endptr)) endptr++;
 				int units = unitm->UnitId(ptr, endptr-ptr);
+				double raw_width = width;
 				if (units != UNITS_None) width = unitm->Convert(width, units, UNITS_Inches, nullptr);
+				scalex = width / raw_width;
 
 			} else {
 				width /= DEFAULT_PPINCH; //no specified units, assume svg pts
@@ -2139,7 +2169,9 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 				const char *ptr = endptr;
 				while (isalpha(*endptr)) endptr++;
 				int units = unitm->UnitId(ptr, endptr-ptr);
+				double raw_height = height;
 				if (units != UNITS_None) height = unitm->Convert(height, units, UNITS_Inches, nullptr);
+				scaley = height / raw_height;
 
 			} else {
 				height /= DEFAULT_PPINCH; //no specified units, assume svg pts
@@ -2252,6 +2284,33 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 		RefPtrStack<anObject> gradients;
 		PtrStack<Attribute> powerstrokes;
 
+		Attribute *namedview = svgdoc->find("sodipodi:namedview");
+		if (namedview) {
+			for (c=0; c<namedview->attributes.n; c++) {
+				name  = namedview->attributes.e[c]->name;
+				value = namedview->attributes.e[c]->value;
+
+				if (!strcmp(name, "units")) {
+					if (doc) doc->properties.push("doc_units", value);
+
+				} else if (!strcmp(name, "inkscape:document-units")) {
+					if (doc) doc->properties.push("view_units", value);
+
+//				} else if (!strcmp(name, "content:")) {
+//					for (c2=0; c2<namedview->attributes.e[c]->attributes.n; c2++) {
+//						name  =   namedview->attributes.e[c]->attributes.e[c2]->name;
+//						value =   namedview->attributes.e[c]->attributes.e[c2]->value;
+//
+//						if (!strcmp(name,"inkscape:grid")) {
+//							//extract inkscape:grid, a child of namedview
+//							GridGuide *grid = ParseGrid(vatt->attributes.e[c]);
+//							if (grid) document->guides.push(grid);
+//						}
+//					}
+				}
+			}
+		}
+
 		 //first check for document level things like gradients in defs or metadata.
 		 //then check for drawable things
 		 //then push any other stuff unchanged
@@ -2268,18 +2327,6 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 					svg->push(svgdoc->attributes.e[c]->duplicate(),-1);
 				}
 
-//				if (!strcmp(name,"sodipodi:namedview")) {
-//					//extract inkscape:grid, a child of namedview
-//					Attribute *vatt = svgdoc->attributes.e[c]->find("content:");
-//					for (int c2=0; c2<vatt->attributes.n; c2++) {
-//						name  = vatt->attributes.e[c]->name;
-//						value = vatt->attributes.e[c]->value;
-//
-//						if (!strcmp(name,"inkscape:grid")) {
-//							ParseGrid(vatt->attributes.e[c]);
-//						}
-//					}
-//				}
 				continue;
 
 			} else if (!strcmp(name,"defs")) {
@@ -2336,7 +2383,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 			} 
 			
 			int oldn = group->n();
-			if (svgDumpInObjects(1,group,svgdoc->attributes.e[c],powerstrokes,gradients,log)) {
+			if (svgDumpInObjects(1,group,svgdoc->attributes.e[c],powerstrokes,gradients,log, filedir)) {
 				DrawableObject *obj;
 				if (scalex != 1 || scaley != 1) {
 					for (int c=oldn; c < group->n(); c++) {
@@ -2384,8 +2431,11 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 	
 	} catch (int error) {
 		if (svghints) delete svghints;
+		delete[] filedir;
 		return 1;
 	}
+
+	delete[] filedir;
 	return 0;
 }
 
@@ -2936,7 +2986,8 @@ void InsertFillobj(SomeData *fillobj, SomeData *obj, Group *group)
 /*! If top!=0, then top is the height of the document. We need to flip elements up,
  * since down is positive y in svg. We also need to scale by .8/72 to convert svg units to Laidout units.
  */
-int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribute> &powerstrokes, RefPtrStack<anObject> &gradients, ErrorLog &log)
+int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribute> &powerstrokes, RefPtrStack<anObject> &gradients,
+		ErrorLog &log, const char *filedir)
 {
 	char *name,*value;
 
@@ -2956,7 +3007,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 			} else if (!strcmp(name,"content:")) {
 				for (int c2=0; c2<element->attributes.e[c]->attributes.n; c2++) 
-					svgDumpInObjects(0,g,element->attributes.e[c]->attributes.e[c2],powerstrokes,gradients,log);
+					svgDumpInObjects(0,g,element->attributes.e[c]->attributes.e[c2],powerstrokes,gradients,log, filedir);
 			}
 		}
 
@@ -3006,7 +3057,10 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 				DoubleAttribute(value,&h,nullptr);
 
 			} else if (!strcmp(name,"xlink:href")) {
-				err=image->LoadImage(value);
+				char *file = newstr(filedir);
+				appendstr(file, value);
+				err = image->LoadImage(file);
+				delete[] file;
 				if (err) break;
 
 			} else if (!strcmp(name,"transform")) {
@@ -3060,10 +3114,10 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 					const char *id;
 
 					for (int c2=0; c2<powerstrokes.n; c2++) {
-						id=powerstrokes.e[c]->findValue("id");
+						id = powerstrokes.e[c2]->findValue("id");
 						if (!id) continue;
-						if (!strncmp(value,id,endptr-value)) {
-							powerstroke=powerstrokes.e[c];
+						if (!strncmp(value, id, endptr - value)) {
+							powerstroke = powerstrokes.e[c2];
 							break;
 						}
 					}
@@ -3072,16 +3126,79 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 					if (*value==';') value++;
 				}
 
-			} else if (!strcmp(name,"d")) {
-				d_index=c;
+			//} else if (!strcmp(name,"d")) {
+				//d_index=c;
 
 			//} else if (!strcmp(name,"x")) {
 			//} else if (!strcmp(name,"y")) {
 			}
 		}
 
-		if (d_index>=0) {
+		if (powerstroke) element->find("inkscape:original-d", &d_index);
+		if (d_index == -1) element->find("d", &d_index);
+		if (d_index >= 0) {
 			SvgToPathsData(paths, element->attributes.e[d_index]->value, nullptr, powerstroke);
+		}
+
+		if (powerstroke && paths->NumPaths() > 0) {
+			paths->paths.e[0]->linestyle->function = LAXOP_Over;
+			paths->fillstyle->function = LAXOP_None;
+
+			int    start_linecap = LAXCAP_Round;
+			int    end_linecap   = 0;
+			double scale_width   = 1;
+
+			const char *visible = powerstroke->findValue("is_visible");
+
+			if (BooleanAttribute(visible)) {
+				for (int c=0; c < powerstroke->attributes.n; c++) {
+					name  = powerstroke->attributes.e[c]->name;
+					value = powerstroke->attributes.e[c]->value;
+
+					if (!strcmp(name, "start_linecap_type")) {
+						if      (!strcasecmp(value, "round"))     start_linecap = LAXCAP_Round;
+						else if (!strcasecmp(value, "peak"))      start_linecap = LAXCAP_Peak;
+						else if (!strcasecmp(value, "butt"))      start_linecap = LAXCAP_Butt;
+						else if (!strcasecmp(value, "square"))    start_linecap = LAXCAP_Square;
+						else if (!strcasecmp(value, "zerowidth")) start_linecap = LAXCAP_Zero_Width;
+						paths->linestyle->capstyle = start_linecap;
+
+					} else if (!strcmp(name, "end_linecap_type")) {
+						if      (!strcasecmp(value, "round"))     end_linecap = LAXCAP_Round;
+						else if (!strcasecmp(value, "peak"))      end_linecap = LAXCAP_Peak;
+						else if (!strcasecmp(value, "butt"))      end_linecap = LAXCAP_Butt;
+						else if (!strcasecmp(value, "square"))    end_linecap = LAXCAP_Square;
+						else if (!strcasecmp(value, "zerowidth")) end_linecap = LAXCAP_Zero_Width;
+						paths->linestyle->endcapstyle = end_linecap;
+
+					} else if (!strcmp(name, "scale_width")) {
+						DoubleAttribute(value, &scale_width);
+
+					} else if (!strcmp(name, "offset_points")) {
+						//offset_points="0,0.19207847 | 0.98943653,0.55041926 | 1.5510075,0.25217076" <- t, width
+						const char *p = value;
+						char *end_ptr = nullptr;
+						double d[2];
+						while (p && *p) {
+							int n = DoubleListAttribute(p, d, 2, &end_ptr);
+							if (n != 2) break;
+							paths->paths.e[0]->AddWeightNode(d[0], 0, 2 * scale_width * d[1], 0);
+							p = end_ptr;
+							while (isspace(*p) || *p == '|') p++;
+						}
+						
+					//linejoin_type="round" //beveled, extrapolated arc, mitered, rounded, spiro
+					//lpeversion="1"
+					//miter_limit="4"
+					//interpolator_beta="0.2"
+					//interpolator_type="CentripetalCatmullRom"
+					//sort_points="true"
+					//id="path-effect2802"
+					//effect="powerstroke" />
+					}
+				}
+			}
+
 		}
 
 		if (paths->paths.n) {

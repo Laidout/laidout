@@ -12,8 +12,6 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now:
 
-bug: NONE of the interfaces are initializing shortcuts
-
 bug: can't duplicate gradient nodes.. causes seg fault
 
 bug: severing clone link does some weird things, including crashing
@@ -26,10 +24,16 @@ bug: curve is terrible approximation at end points
 svg import problems:
   any clipping
   finish debugging mesh svg 2.0 out/in
-  finish debugging powerstroke out/in
   grid guides
   sometimes path endpoint spikes
   dotted line style
+  for new docs, should set rulers to use some reasonable units, from either width="100px", or namedview.document-units
+
+  DONE finish debugging powerstroke out/in
+    DONE try actually implementing powerstroke in
+    DONE zero width caps not working
+  DONE width="512px" is mapping to 7.11111 inches (72 dpi)..
+  DONE images with xlink:href need to be read in relative to the svg file, not cwd
   DONE problem with transform sometimes, see icons-tiling.svg
     DONE non-1 scale problem
     DONE seems like children screw up -> problem with x,y in: rotate(angle, x,y)
@@ -329,6 +333,8 @@ need a better file preview system
 
 save as needs to use current save path, not current directory
 
+need a Revert option
+
 valuewindow:
   ui hints:
     DoubleRectangle      [maxy]
@@ -559,30 +565,24 @@ svg: SVG
   in needs to parse "use" elements and other "#" refs
   in:
     DONE linear gradients
-	radial gradients
+	DONE radial gradients
 	mesh gradients (inkscape variety)
-  in for powerstroke
-    on read in width nodes are zeroed, does not correspond to actual width of line
-    some other dup nodes causing bad stroke approximation in some of the stuff that magically disappears
-    can't get at the weight nodes after import
-    after in: nodes right on each other produce bad vectors
-    after in, does weird things with width node -> child objects not display correctly
   radial: transparent inner circle, patch edges
   out: text linespacing.. unclear how Msize/linespacing maps to svg options
 plan:
   need an In()
   implement paper rotation for out
-ppt:
+ppt: DEPRECATE
   implement crop
   implement paper rotation
-ps:
+ps: DEPRECATE
   implement paper rotation
   for plain postscript, there's bitmask, but no transparency. maybe optionally do simulation with dithered bitmask..
     a lot of work for a deprecated format, but could have other uses, like for PDF/X-1a
   paths not filling correctly
   engraver no out, equiv object problem?
   implement crop
-eps:
+eps: DEPRECATE
   implement crop
   export seems to be rather broken
   command line export file name defaults to "output#.eps"
@@ -1253,8 +1253,12 @@ minimum dp size is not small enough
 
 anInterface::PreRefresh(), for instance to get engraver trace object to render below all selected objects
 
-need to clarify what happens when you open and close documents. open already open pops new window, not sure if it should
-  also record ownership of limbos, open and close docs always leaves limbos behind
+need to clarify what happens when you open and close documents.
+  open and close docs always leaves limbos behind
+  open already open pops new window
+  not sure if it should also record ownership of limbos
+    open doc:  limbo->SetResourceOwner(document);
+	close doc: if (limbo->ObjectOwner() == doc) limbo->SetResourceOwner(nullptr);
 
 colorbox color box:
   hsv slide, configurable clicks
@@ -2163,3 +2167,5 @@ DONE Gradient:
   DONE spread modes
   DONE change object, curpoints still selected
   DONE clipping path is double applying parent path transform
+DONE bug: NONE of the interfaces are initializing shortcuts 
+
