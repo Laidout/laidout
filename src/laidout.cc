@@ -55,18 +55,14 @@
 #include "laidout.h"
 #include "language.h"
 
-// *** FOR DEBUGGING:
-#include "ui/valuewindow.h"
-
-
 
 #include <sys/stat.h>
 #include <glob.h>
 #include <cstdio>
 
 #ifdef LAX_USES_CAIRO
-//for debugging below
-#include <cairo/cairo-xlib.h>
+////for debugging below, uncomment here and below
+//#include <cairo/cairo-xlib.h>
 #endif
 
 //template implementations
@@ -102,7 +98,7 @@ const char *LaidoutVersion()
 		const char *outstr=
 						_("Laidout Version %s\n"
 						  "http://www.laidout.org\n"
-						  "by Tom Lechner, sometime between 2006 and 2019\n"
+						  "by Tom Lechner, sometime between 2006 and 2020\n"
 						  "Released under the GNU Public License, Version 3.\n"
 						  " (using Laxkit Version %s)");
 		version_str=new char[1+strlen(outstr)+strlen(LAIDOUT_VERSION)+strlen(LAXKIT_VERSION)];
@@ -283,7 +279,7 @@ LaidoutApp::LaidoutApp()
 
 	calculator = nullptr;
 	GetUnitManager()->DefaultUnits(prefs.unitname);
-	GetUnitManager()->PixelSize(1./72,UNITS_Inches);
+	GetUnitManager()->PixelSize(1./96,UNITS_Inches); //use css style 96 ppi
 
 	resources.SetAppName("laidout",LAIDOUT_VERSION);
 
@@ -1287,6 +1283,33 @@ void LaidoutApp::setupdefaultcolors()
 
 LaxOptions options;
 
+enum LaidoutOptions {
+	OPT_export_formats,
+	OPT_list_export_options,
+	OPT_export,
+	OPT_template,
+	OPT_no_template,
+	OPT_new,
+	OPT_file_format,
+	OPT_command,
+	OPT_script,
+	OPT_shell,
+	OPT_default_units,
+	OPT_load_dir,
+	OPT_experimental,
+	OPT_backend,
+	OPT_impose_only,
+	OPT_nodes_only,
+	OPT_pipein,
+	OPT_pipeout,
+	OPT_list_shortcuts,
+	OPT_theme,
+	OPT_helphtml,
+	OPT_helpman,
+	OPT_version,
+	OPT_help,
+};
+
 //! Initialize a LaxOptions object to contain Laidout's command line option summary.
 /*! \ingroup lmisc
  */
@@ -1295,30 +1318,30 @@ void InitOptions()
 	 //command line options are somewhat low level, so NOT localized (for now)
 	options.HelpHeader(LaidoutVersion());
 	options.UsageLine("laidout [options] [file1] [file2] ...");
-	options.Add("export-formats",     'X', 0, "List all the available export formats",       0, NULL);
-	options.Add("list-export-options",'O', 1, "List all the options for the given format",   0, "format");
-	options.Add("export"             ,'e', 1, "Export a document based on the given options",0, "\"format=EPS start=3\"");
-	options.Add("template",           't', 1, "Start laidout from this template in ~/.laidout/(version)/templates",0,"templatename");
-	options.Add("no-template",        'N', 0, "Do not use a default template or load from last", 0, NULL);
-	options.Add("new",                'n', 1, "Create new document",                         0, "\"letter,portrait,3pgs\"");
-	options.Add("file-format",        'F', 0, "Print out a pseudocode mockup of the file format, then exit",0,NULL);
-	options.Add("command",            'c', 1, "Run one or more commands without the gui",    0, "\"newdoc net\"");
-	options.Add("script",             's', 1, "Like --command, but the commands are in the given file",     0, "/some/file");
-	options.Add("shell",              'L', 0, "Enter a command line shell. Can be used with --command and --script.", 0, NULL);
-	options.Add("default-units",      'u', 1, "Use the specified units.",                    0, "(in|cm|mm|m|ft|yards)");
-	options.Add("load-dir",           'l', 1, "Start in this directory.",                    0, "path");
-	options.Add("experimental",       'E', 0, "Enable any compiled in experimental features",0, NULL);
-	//options.Add("backend",            'B', 1, "Either cairo or xlib (xlib very deprecated).",0, NULL);
-	options.Add("impose-only",        'I', 1, "Run only as a file imposer, not full Laidout",0, NULL);
-	options.Add("nodes-only",         'o', 1, "Run only as a node editor on argument",       0, NULL);
-	options.Add("pipein",             'p', 1, "Start with a document piped in on stdin",     0, "default");
-	options.Add("pipeout",            'P', 1, "On exit, export document[0] to stdout",       0, "default");
-	options.Add("list-shortcuts",     'S', 0, "Print out a list of current keyboard bindings, then exit",0,NULL);
-	options.Add("theme",              'T', 1, "Set theme. Currently, one of Light, Dark, or Gray",0,NULL);
-	options.Add("helphtml",           'H', 0, "Output an html fragment of key shortcuts.",   0, NULL);
-	options.Add("helpman",             0 , 0, "Output a man page fragment of options.",      0, NULL);
-	options.Add("version",            'v', 0, "Print out version info, then exit.",          0, NULL);
-	options.Add("help",               'h', 0, "Show this summary and exit.",                 0, NULL);
+	options.Add("export-formats",     'X', 0, "List all the available export formats",       OPT_export_formats, nullptr);
+	options.Add("list-export-options",'O', 1, "List all the options for the given format",   OPT_list_export_options, "format");
+	options.Add("export"             ,'e', 1, "Export a document based on the given options",OPT_export, "\"format=EPS start=3\"");
+	options.Add("template",           't', 1, "Start laidout from this template in ~/.laidout/(version)/templates",OPT_template,"templatename");
+	options.Add("no-template",        'N', 0, "Do not use a default template or load from last", OPT_no_template, nullptr);
+	options.Add("new",                'n', 1, "Create new document",                         OPT_new, "\"letter,portrait,3pgs\"");
+	options.Add("file-format",        'F', 0, "Print out a pseudocode mockup of the file format, then exit",OPT_file_format,nullptr);
+	options.Add("command",            'c', 1, "Run one or more commands without the gui",    OPT_command, "\"newdoc net\"");
+	options.Add("script",             's', 1, "Like --command, but the commands are in the given file", OPT_script, "/some/file");
+	options.Add("shell",              'L', 0, "Enter a command line shell. Can be used with --command and --script.", OPT_shell, nullptr);
+	options.Add("default-units",      'u', 1, "Use the specified units.",                    OPT_default_units, "(in|cm|mm|m|ft|yards)");
+	options.Add("load-dir",           'l', 1, "Start in this directory.",                    OPT_load_dir, "path");
+	options.Add("experimental",       'E', 0, "Enable any compiled in experimental features",OPT_experimental, nullptr);
+	//options.Add("backend",            'B', 1, "Either cairo or xlib (xlib very deprecated).",OPT_backend, nullptr);
+	options.Add("impose-only",        'I', 1, "Run only as a file imposer, not full Laidout",OPT_impose_only, nullptr);
+	options.Add("nodes-only",         'o', 1, "Run only as a node editor on argument",       OPT_nodes_only, nullptr);
+	options.Add("pipein",             'p', 1, "Start with a document piped in on stdin",     OPT_pipein, "default");
+	options.Add("pipeout",            'P', 1, "On exit, export document[0] to stdout",       OPT_pipeout, "default");
+	options.Add("list-shortcuts",     'S', 0, "Print out a list of current keyboard bindings, then exit",OPT_list_shortcuts,nullptr);
+	options.Add("theme",              'T', 1, "Set theme. Currently, one of Light, Dark, or Gray",OPT_theme,nullptr);
+	options.Add("helphtml",           'H', 0, "Output an html fragment of key shortcuts.",   OPT_helphtml, nullptr);
+	options.Add("helpman",             0 , 0, "Output a man page fragment of options.",      OPT_helpman, nullptr);
+	options.Add("version",            'v', 0, "Print out version info, then exit.",          OPT_version, nullptr);
+	options.Add("help",               'h', 0, "Show this summary and exit.",                 OPT_help, nullptr);
 
 }
 
@@ -1338,33 +1361,34 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 	LaxOption *o;
 	for (o=options.start(); o; o=options.next()) {
-		switch(o->chr()) {
-			case 'h': // Show usage summary, then exit
+		//switch(o->chr()) {
+		switch(o->id()) {
+			case OPT_help: // Show usage summary, then exit
 				options.Help(stdout);
 				exit(0);
-			case 'v':  // Show version info, then exit
+			case OPT_version:  // Show version info, then exit
 				cout <<LaidoutVersion()<<endl;
 				exit(0);
 
-			case 'E': { // experimental
+			case OPT_experimental: { // experimental
 				experimental=1;
 			  } break; 
 
-			case 'T': { // theme
+			case OPT_theme: { // theme
 				makestr(app_profile, o->arg());
 			  } break; 
 
-			case 't': { // load in template
+			case OPT_template: { // load in template
 					ErrorLog log;
 					LoadTemplate(o->arg(),log);
 				} break;
 
-			case 'L': { // --shell
+			case OPT_shell: { // --shell
 					donotusex=2;
 					runmode=RUNMODE_Shell;
 				} break;
 
-			case 's': { // --script
+			case OPT_script: { // --script
 					donotusex=1;
 					int size=file_size(o->arg(),1,NULL);
 					if (size<=0) {
@@ -1385,7 +1409,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					if (runmode != RUNMODE_Shell) runmode = RUNMODE_Quit;
 				} break;
 
-			case 'c': { // --command
+			case OPT_command: { // --command
 					donotusex=1;
 					runmode = RUNMODE_Commands;
 					char *str = calculator->In(o->arg(), NULL);
@@ -1393,7 +1417,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					if (runmode != RUNMODE_Shell) runmode = RUNMODE_Quit;
 				} break;
 
-			case 'n': { // --new "letter singles 3 pages blah blah blah"
+			case OPT_new: { // --new "letter singles 3 pages blah blah blah"
 					if (NewDocument(o->arg())==0) {
 						if (curdoc) curdoc->dec_count();
 						curdoc=project->docs.e[project->docs.n-1]->doc;
@@ -1401,35 +1425,35 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					}
 				} break;
 
-			case 'l': { // load dir
+			case OPT_load_dir: { // load dir
 					makestr(load_dir,o->arg());
 				} break;
 
-			case 'N': { // do not use a default template
+			case OPT_no_template: { // do not use a default template
 					//if (prefs.default_template) { delete[] prefs.default_template; prefs.default_template=NULL; }
 					force_new_dialog = true;
 				} break;
 
-			case 'F': { // dump out file format
+			case OPT_file_format: { // dump out file format
 					if (dump_out_file_format("-",0)) exit(1);
 					exit(0);
 				} break;
 
-			case 'S': { // dump out shortcuts
+			case OPT_list_shortcuts: { // dump out shortcuts
 					dump_out_shortcuts(stdout,0,0);
 					exit(0);
 				} break;
 
-			case 'H': { // dump out shortcuts
+			case OPT_helphtml: { // dump out shortcuts to html
 					dump_out_shortcuts(stdout,0,1);
 					exit(0);
 				} break;
 
-			case 'e': { // export
+			case OPT_export: { // export
 					exprt=newstr(o->arg());
 				} break;
 
-			case 'O': { // list export options for a given format
+			case OPT_list_export_options: { // list export options for a given format
 					//DBG cout <<"   ***** --list-export-options IS A HACK!! Code me right! ***"<<endl;
 					//printf("format   = \"theformat\"    #the format to export as\n");
 					//printf("tofile   = /file/to/export/to\n");
@@ -1462,13 +1486,13 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					exit(0);
 				} break;
 
-			case 'X': { // list export formats
+			case OPT_export_formats: { // list export formats
 					for (int c=0; c<exportfilters.n; c++) 
 						cout << exportfilters.e[c]->VersionName() <<endl;
 					exit(0);
 				} break;
 
-			case 'I': { // impose-only
+			case OPT_impose_only: { // impose-only
 					runmode = RUNMODE_Impose_Only;
 					anXWindow *editor = newImpositionEditor(NULL,"impedit",_("Impose..."),0,NULL,
 														  NULL,"SignatureImposition",NULL,o->arg(),
@@ -1476,23 +1500,23 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					addwindow(editor);
 				} break;
 
-			case 'o': { // nodes-only
+			case OPT_nodes_only: { // nodes-only
 					runmode = RUNMODE_Nodes_Only;
 					anXWindow *editor = newNodeEditor(NULL,"nodeedit",_("Nodes"), 0,NULL, NULL,0, o->arg());
 					addwindow(editor);
 				} break;
 
-			case 'p': { //pipein
+			case OPT_pipein: { //pipein
 					pipein = true;
 					pipeinarg = o->arg();
 			    } break;
 
-			case 'P': { //pipeout
+			case OPT_pipeout: { //pipeout
 					pipeout = true;
 					makestr(pipeoutarg, o->arg());
 			    } break;
 
-			case 'u': { // default units
+			case OPT_default_units: { // default units
 					UnitManager *units=GetUnitManager();
 					int id=0;
 					if (units->UnitInfo(o->arg(),&id,NULL,NULL,NULL,NULL,NULL)==0) {
