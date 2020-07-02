@@ -94,6 +94,7 @@ class Document : public ObjectContainer, public Value
 	Laxkit::RefPtrStack<Page> pages;
 	Laxkit::PtrStack<PageRange> pageranges;
 	Laxkit::RefPtrStack<SpreadView> spreadviews;
+	ValueHash properties;
 
 	clock_t modtime;
 

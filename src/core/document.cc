@@ -1374,6 +1374,8 @@ void Document::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *conte
 		fprintf(f,"\n%smetadata   #Whatever general metadata is attached to the document.\n"
 				    "%s  ....     #This might be author, copyright, etc.\n",spc,spc);
 
+		fprintf(f, "\n%sproperties #List of extra properties not otherwise built in.\n", spc);
+
 		return;
 	}
 
@@ -1425,6 +1427,12 @@ void Document::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *conte
 	if (iohints.attributes.n) {
 		fprintf(f,"%siohints\n",spc);
 		iohints.dump_out(f,indent+2);
+	}
+
+	 // dump out properties if any
+	if (properties.n()) {
+		fprintf(f, "\n%sproperties\n", spc);
+		properties.dump_out(f, indent+2, 0, nullptr);
 	}
 }
 
