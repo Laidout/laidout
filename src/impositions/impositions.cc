@@ -124,14 +124,14 @@ PtrStack<ImpositionResource> *GetBuiltinImpositionPool(PtrStack<ImpositionResour
 	 //first install basic imposition styledefs, since they do not otherwise get installed
 	 //unless the imposition is instantiated
 	StyleDef *def;
-	def=stylemanager.FindDef("Singles");
+	def = stylemanager.FindDef("Singles");
 	if (!def) {
-		def=makeSinglesObjectDef();
+		def = makeSinglesObjectDef();
 		stylemanager.AddObjectDef(def,1);
 	}
-	def=stylemanager.FindDef("Signature");
+	def = stylemanager.FindDef("Signature");
 	if (!def) {
-		def=makeSignatureImpositionObjectDef();
+		def = makeSignatureImpositionObjectDef();
 		stylemanager.AddObjectDef(def,1);
 	}
 	def=stylemanager.FindDef("NetImposition");
