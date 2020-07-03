@@ -2671,6 +2671,7 @@ void Value::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 
 void Value::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 { //  ***
+	cerr << " *** WARNING! Need to implement Value::dump_in_atts!"<<endl;
 }
 
 /*! Try to convert att into a builtin Value object. This is designed to work well
