@@ -817,80 +817,9 @@ unsigned int Signature::Validity()
 
 void Signature::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
-	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	if (what==-1) {
-		fprintf(f,"%sname \"Some name\"      #short name of the signature\n",spc);
-		fprintf(f,"%sdescription \"Huh\"     #a one line description of the signature\n",spc);
-		//fprintf(f,"%ssheetspersignature 1  #The number of sheets of paper to stack before\n",spc);
-		//fprintf(f,"%s                      #applying inset or folding\n",spc);
-		fprintf(f,"%sautoaddsheets no      #If no, then more pages means use more signatures.\n",spc);
-		fprintf(f,"%s                      #If yes, then add more sheets, and fold all as a single signature.\n",spc);
-		fprintf(f,"\n");
-		fprintf(f,"%snumhfolds 0        #The number of horizontal fold lines of a folding pattern\n",spc);
-		fprintf(f,"%snumvfolds 0        #The number of vertical fold lines of a folding pattern\n",spc);
-		fprintf(f,"%sfold 3 Under Left  #There will be numhfolds+numvfolds fold blocks. When reading in, the number\n",spc);
-		fprintf(f,"%sfold 2 Top         #of these blocks will override values of numhfolds and numvfolds.\n",spc);
-		fprintf(f,"%s                   #1st number is which horizontal or vertical fold, counting from the left or the top\n",spc);
-		fprintf(f,"%s                   #The direction Can be right, left, top, bottom, under right, under left,\n",spc);
-		fprintf(f,"%s                   #under top, under bottom. The \"under\" values fold in that\n",spc);
-		fprintf(f,"%s                   #direction, but the fold is behind as you look at it,\n",spc);
-		fprintf(f,"%s                   #rather than the default of over and on top.\n",spc);
-		fprintf(f,"\n");
-		fprintf(f,"%sbinding left       #left, right, top, or bottom. The side to expect a document to be bound.\n",spc);
-		fprintf(f,"%s                   #Any trim value for the binding edge will be ignored.\n",spc);
-		fprintf(f,"%strimtop    0       #How much to trim off the top of a totally folded section\n",spc);
-		fprintf(f,"%strimbottom 0       #How much to trim off the bottom of a totally folded section\n",spc);
-		fprintf(f,"%strimleft   0       #How much to trim off the left of a totally folded section\n",spc);
-		fprintf(f,"%strimright  0       #How much to trim off the right of a totally folded section\n",spc);
-		fprintf(f,"%smargintop    0     #How much of a margin to apply to totally folded pages.\n",spc);
-		fprintf(f,"%smarginbottom 0     #Inside and outside margins are automatically kept track of.\n",spc);
-		fprintf(f,"%smarginleft   0\n",spc);
-		fprintf(f,"%smarginright  0\n",spc);
-		fprintf(f,"%sup top             #When displaying pages, this direction should be toward the top of the screen\n",spc);
-		fprintf(f,"%spositivex right    #(optional) Default is a right handed x axis with the up direction the y axis\n",spc);
-		fprintf(f,"%spositivey top      #(optional) Default to the same direction as up\n",spc);
-		return;
-	}
-
-	if (name) {
-		fprintf(f,"%sname ",spc);
-		dump_out_escaped(f,name,-1);
-		fprintf(f,"\n");
-	}
-
-	if (description) {
-		fprintf(f,"%sdescription ",spc);
-		dump_out_escaped(f,description,-1);
-		fprintf(f,"\n");
-	}
-
-	//fprintf(f,"%ssheetspersignature %d\n",spc,sheetspersignature);
-
-	fprintf(f,"%snumhfolds %d\n",spc,numhfolds);
-	fprintf(f,"%snumvfolds %d\n",spc,numvfolds);
-	
-	for (int c=0; c<folds.n; c++) {
-		fprintf(f,"%sfold %d %s #%d\n",spc,folds.e[c]->whichfold, FoldDirectionName(folds.e[c]->direction,0), c);
-		//fprintf(f,"%s  index %d\n",spc,folds.e[c]->whichfold);
-		//fprintf(f,"%s  direction %s\n",spc,FoldDirectionName(folds.e[c]->direction,0));
-	}
-
-	fprintf(f,"%sbinding %s\n",spc,CtoStr(binding));
-
-	fprintf(f,"%strimtop    %.10g\n",spc,trimtop);
-	fprintf(f,"%strimbottom %.10g\n",spc,trimbottom);
-	fprintf(f,"%strimleft   %.10g\n",spc,trimleft);
-	fprintf(f,"%strimright  %.10g\n",spc,trimright);
-
-	fprintf(f,"%smargintop    %.10g\n",spc,margintop);
-	fprintf(f,"%smarginbottom %.10g\n",spc,marginbottom);
-	fprintf(f,"%smarginleft   %.10g\n",spc,marginleft);
-	fprintf(f,"%smarginright  %.10g\n",spc,marginright);
-
-	fprintf(f,"%sup %s\n",spc,CtoStr(up));
-	if (positivex) fprintf(f,"%spositivex %s\n",spc,CtoStr(positivex));
-	if (positivey) fprintf(f,"%spositivey %s\n",spc,CtoStr(positivey));
-
+	Attribute att;
+	dump_out_atts(&att, what, context);
+	att.dump_out(f, indent);
 }
 
 Attribute *Signature::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
@@ -898,34 +827,34 @@ Attribute *Signature::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::
 	if (!att) att=new Attribute;
 	if (what==-1) {
 		
-		att->push("name \"Some name\"",   "short name of the signature ");
-		att->push("description \"Huh\"",  "a one line description of the signature ");
-//		att->push("sheetspersignature 1", "The number of sheets of paper to stack before "
-//										  "applying inset or folding ");
+		att->push("name", "\"Some name\"",   "short name of the signature ");
+		att->push("description", "\"Huh\"",  "a one line description of the signature ");
+//		att->push("sheetspersignature", "1", "The number of sheets of paper to stack before "
+//										     "applying inset or folding ");
 	
-		att->push("numhfolds 0", "The number of horizontal fold lines of a folding pattern ");
-		att->push("numvfolds 0", "The number of vertical fold lines of a folding pattern ");
-		att->push("fold 3 Under Left", "There will be numhfolds+numvfolds fold blocks. When reading in, the number ");
-		att->push("fold 2 Top", "of these blocks will override values of numhfolds and numvfolds. "
+		att->push("numhfolds","0", "The number of horizontal fold lines of a folding pattern ");
+		att->push("numvfolds","0", "The number of vertical fold lines of a folding pattern ");
+		att->push("fold","3 Under Left", "There will be numhfolds+numvfolds fold blocks. When reading in, the number ");
+		att->push("fold","2 Top", "of these blocks will override values of numhfolds and numvfolds. "
 								"1st number is which horizontal or vertical fold, counting from the left or the top "
 								"The direction Can be right, left, top, bottom, under right, under left, "
 								"under top, under bottom. The \"under\" values fold in that "
 								"direction, but the fold is behind as you look at it, "
 								"rather than the default of over and on top. ");
 		
-		att->push("binding left", "left, right, top, or bottom. The side to expect a document to be bound. "
-								  "Any trim value for the binding edge will be ignored. ");
-		att->push("trimtop    0", "How much to trim off the top of a totally folded section ");
-		att->push("trimbottom 0", "How much to trim off the bottom of a totally folded section ");
-		att->push("trimleft   0", "How much to trim off the left of a totally folded section ");
-		att->push("trimright  0", "How much to trim off the right of a totally folded section ");
-		att->push("margintop    0", "How much of a margin to apply to totally folded pages. ");
-		att->push("marginbottom 0", "Inside and outside margins are automatically kept track of. ");
-		att->push("marginleft   0 ");
-		att->push("marginright  0 ");
-		att->push("up top", "When displaying pages, this direction should be toward the top of the screen ");
-		att->push("positivex right", "(optional) Default is a right handed x axis with the up direction the y axis ");
-		att->push("positivey top", "(optional) Default to the same direction as up ");
+		att->push("binding","left", "left, right, top, or bottom. The side to expect a document to be bound. "
+								    "Any trim value for the binding edge will be ignored. ");
+		att->push("trimtop",     "0", "How much to trim off the top of a totally folded section ");
+		att->push("trimbottom",  "0", "How much to trim off the bottom of a totally folded section ");
+		att->push("trimleft",    "0", "How much to trim off the left of a totally folded section ");
+		att->push("trimright",   "0", "How much to trim off the right of a totally folded section ");
+		att->push("margintop",   "0", "How much of a margin to apply to totally folded pages. ");
+		att->push("marginbottom","0", "Inside and outside margins are automatically kept track of. ");
+		att->push("marginleft",  "0");
+		att->push("marginright", "0");
+		att->push("up", "top", "When displaying pages, this direction should be toward the top of the screen ");
+		att->push("positivex", "right", "(optional) Default is a right handed x axis with the up direction the y axis ");
+		att->push("positivey", "top", "(optional) Default to the same direction as up ");
 		return att;
 	}
 

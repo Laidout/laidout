@@ -288,6 +288,38 @@ char *PageRange::GetLabel(int i,int altfirst,int alttype)
 	return label;
 }
 
+Attribute *PageRange::dump_out_atts(Attribute *att,int what,DumpContext *context)
+{
+	if (!att) att = new Attribute();
+	
+	if (what==-1) {
+		att->push("name", "Blah",   "optional name of the range");
+		att->push("start", "0",     "the starting page index for the range");
+		att->push("first", "2",     "amount to add to the index of each page");
+		att->push("labelbase", "#", "(default) would make normal numbers: 0,1,2,3,...\n"
+									"\"###\" would make labels with 0 padding: 000,001,...100,...999,1000,...\n"
+									"\"A-#\" would make: A-0,A-1,A-2,A-3,...");
+		att->push("decreasing",nullptr, "make the range count down rather than up");
+		att->push("labeltype","default","this can instead be one of the following:\n"
+										" - arabic              ->  1,2,3,...\n"
+										" - roman               ->  i,ii,iii,iv,...\n"
+										" - roman_capitals      ->  I,II,III,...\n"
+										" - abc                 ->  a,b,c,...\n"
+										" - ABC                 ->  A,B,C,...\n"
+										" - none                ->  (do not show anything for the label)");
+		return att;
+	}
+
+	if (name) att->push("name", name);
+	att->push("start", start);
+	att->push("first", first);
+	att->push("labeltype", pageLabelTypeName((PageLabelType)labeltype));
+	if (decreasing) att->push("decreasing");
+	att->push("labelbase ", labelbase);
+
+	return att;
+}
+
 /*! \todo make labeltype be the enum names.. this ultimately means PageRange
  *    will have to make full switch to Value.
  *
@@ -295,40 +327,9 @@ char *PageRange::GetLabel(int i,int altfirst,int alttype)
  */
 void PageRange::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
-	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-
-	if (what==-1) {
-		fprintf(f,"%sname Blah          #optional name of the range\n",spc);
-		fprintf(f,"%sstart 0            #the starting page index for the range\n",spc);
-		fprintf(f,"%sfirst 2            #amount to add to the index of each page\n",spc);
-		fprintf(f,"%s#labelbase is a template used to construct labels:\n",spc);
-		fprintf(f,"%slabelbase \"#\"      #(default) would make normal numbers: 0,1,2,3,...\n",spc);
-		fprintf(f,"%s#labelbase \"###\"   #would make labels with 0 padding: 000,001,...100,...999,1000,...\n",spc);
-		fprintf(f,"%s#labelbase \"A-#\"   #would make: A-0,A-1,A-2,A-3,...\n",spc);
-		fprintf(f,"%sdecreasing         #make the range count down rather than up\n",spc);
-		fprintf(f,"%slabeltype default  #this can instead be one of the following:\n",spc);
-		fprintf(f,"%s                   # arabic              ->  1,2,3,...\n",spc);
-		fprintf(f,"%s                   # roman               ->  i,ii,iii,iv,...\n",spc);
-		fprintf(f,"%s                   # roman_capitals      ->  I,II,III,...\n",spc);
-		fprintf(f,"%s                   # abc                 ->  a,b,c,...\n",spc);
-		fprintf(f,"%s                   # ABC                 ->  A,B,C,...\n",spc);
-		fprintf(f,"%s                   # none                ->  (do not show anything for the label)\n",spc);
-		return;
-	}
-
-	//int start,end,offset;
-	//char *labelbase;
-	//int labeltype;
-	
-	if (name) fprintf(f,"%sname %s\n",spc,name);
-	fprintf(f,"%sstart %d\n",spc,start);
-	fprintf(f,"%sfirst %d\n",spc,first);
-	fprintf(f,"%slabeltype %s\n",spc,pageLabelTypeName((PageLabelType)labeltype));
-	if (decreasing) fprintf(f,"%sdecreasing",spc);
-
-	fprintf(f,"%slabelbase ",spc);
-	dump_out_escaped(f,labelbase,-1);
-	fprintf(f,"\n");
+	Attribute att;
+	dump_out_atts(&att, what, context);
+	att.dump_out(f, indent);
 }
 
 void PageRange::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
