@@ -42,7 +42,7 @@ page 0
       visible
       prints
       object 0 ColorPatchData
-        id ColorPatchData925
+        id Chest
         config
           matrix 1 0 0 1 -2.997141606 -0.3077456647
           griddivisions 10
@@ -67,7 +67,7 @@ page 0
             8.296235092 4.169372139 
             8.917121821 4.127406821 14615 4082 771 65535
       object 1 ColorPatchData
-        id ColorPatchData926
+        id Head
         config
           matrix 2.391777062 0.08796546021 -0.07613835265 2.070198519 -5.003255265 -1.817468416
           griddivisions 10
@@ -572,7 +572,7 @@ page 0
             4.87214326 4.871735421 
             4.915508961 4.85747494 62398 51349 32939 65535
       object 2 ColorPatchData
-        id ColorPatchData927
+        id Shoulder
         config
           matrix 1 0 0 1 -0.5909856688 -0.503583815
           griddivisions 10
@@ -630,7 +630,7 @@ page 0
             4.235797699 4.477732624 
             4.430203842 4.374330081 32896 21845 12336 65535
       object 3 ColorPatchData
-        id ColorPatchData928
+        id Mouth
         config
           matrix 1 0 0 1 -2.479557547 0.06353225486
           griddivisions 10
@@ -847,7 +847,7 @@ page 0
             9.370960937 6.013159737 
             9.397498077 6.025549886 19789 12336 5911 65535
       object 4 ColorPatchData
-        id ColorPatchData929
+        id Ear
         config
           matrix 1 0 0 1 2.809292891 -2.135119019
           griddivisions 10
@@ -1142,7 +1142,7 @@ page 0
             0.6236845183 10.18791418 
             0.6691872894 10.14735163 31611 20560 11565 65535
       object 5 ColorPatchData
-        id ColorPatchData930
+        id Nose
         config
           matrix 0.2820892015 0 0 0.3144986141 3.823482711 4.488257582
           griddivisions 10
@@ -1320,7 +1320,7 @@ page 0
             10.49467018 9.510298072 
             10.5133004 9.502356947 62451 51400 32896 65535
       object 6 ColorPatchData
-        id ColorPatchData931
+        id EyeBrows
         config
           matrix 1 0 0 1 -4.237187467 -1.398843931
           griddivisions 10
@@ -1459,7 +1459,7 @@ page 0
             10.6090625 10.03956806 
             10.63303288 10.02860113 62451 51400 32896 65535
       object 7 GradientData
-        id GradientData673
+        id RightEye
         config
           matrix 0.2646406243 0.07273299248 -0.07273299248 0.2646406243 5.338790618 8.021085697
           p1 0.9517182304
@@ -1477,7 +1477,7 @@ page 0
             t 1
             rgba 34952 23901 13878 65535
       object 8 GradientData
-        id GradientData676
+        id LeftEye
         config
           matrix 0.1713160669 0.03117485192 -0.03264784609 0.2262914815 6.371425952 8.090562185
           p1 2.988967513e-19
