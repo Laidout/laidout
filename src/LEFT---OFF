@@ -12,6 +12,13 @@ Those are purged with each release.
 
 ------------ serious bugs to fix right now:
 
+save as should default to same directory as existing file
+save as needs to use current save path, not current directory
+save as should change save/import/export/current directory to that directory
+  -> need to test current behavior
+
+bug: space bar for centering not working anymore.. shift-space seems to
+
 bug: can't duplicate gradient nodes.. causes seg fault
 
 bug: severing clone link does some weird things, including crashing
@@ -190,6 +197,7 @@ update fileformat.txt
 	Linestyle
 	Fillstyle
 	PaperGroups
+	PaperStyle
 check laidout.1 when time to release
 update docs to have new release number
 update translation base files
@@ -330,8 +338,6 @@ object clipping:
 
 need a better file preview system
   need to wrap laidout_preview_maker(), which previews EPS with the help of gs
-
-save as needs to use current save path, not current directory
 
 need a Revert option
 
@@ -496,9 +502,10 @@ html: htmlgallery: html out htmlout:
   DONE figure out template scheme
   DONE standardize save to directory or file, not just assume file
 image
+  width, height defaults to 0
+  should have color select for background color, which would include setting full transparent
   export depth map based on metadata z
   export format should be an enum. need to extract possible save formats from Laxkit
-  option for setting background color, at least white|transparent
   for gs, make sure temp file is removed, should probably locate in user space maybe? or make sure perms set reasonably
 laidout export:
   need a Laidout out! for partial exports, or conversions between nets/papergroup lines/etc
@@ -1120,8 +1127,6 @@ newdoc:
   when change number of named paper, make it "custom"
   open on image should create a new singles with default paper and image centered
 
-save as should change save/import/export/current directory to that directory
-  -> need to test current behavior
 
 TreeSelector:
   click open jumping current to 0
@@ -1392,8 +1397,12 @@ Tools should remember their settings
      well as the running tool use settings
 
 paperinterface:
+  bug: sometimes clicking around when you have custom papergroup in viewport crashes
+  snap to angle
+  papergroup tool needs custom paper input
+
+  options to show and edit order of papers, print all of one size paper first? auto sort order by size?
   if page is too big, need indicator around mouse that we are placing something
-  rotate paper shortcut should be around paper center, not origin
   menu options:
     fit to selection
 	fit to page
@@ -1401,45 +1410,42 @@ paperinterface:
 	center on selection
 	center on page
 	center on spread
+    orient viewport to paper
   export options:
     meta name
 	export settings
 	  more that one settings per paper
   when you add gray bars/reg marks, center on paper?
-  interface for custom paper size
-  implement paper favorites:
-    be able to nest favorites, item->favorite = "submenu/23", item2->favorite="2", final element is number?
-  laidoutrc needs list of custom paper sizes
-  papergroup tool needs custom paper input
+  PaperSize/PaperGroup as resource:
+    implement paper favorites:
+      be able to nest favorites, item->favorite = "submenu/23", item2->favorite="2", final element is number?
+    laidoutrc needs list of custom paper sizes
+    papergroups:
+      Load, save, add, delete paper groups..
+      work out scheme for resource ownership: they can be owned by:
+        need reusable resource [ name ][load][save][dup][delete]
+ 
+        1.DONE  Document: if no project, save with document by default
+        2.DONE  Project:  save in project file
+        3.or Global resource: save in ~/.laidout/version/papergroups
+            class FileRef
+          papergroup->owner=Document, Project, or FileRef
   debug papergroup tool in spread editor
-  paperinterface: in spread editor (done), and able to print it out, don't forget to remove DBG for release!
-  options to show order of papers, print all of one size paper first? auto sort order by size? auto wrap image?
-  papersizes are not translated. Should they be??
-  papergroups:
-    Load, save, add, delete paper groups..
-    work out scheme for resource ownership: they can be owned by:
-      need reusable resource [ name ][load][save][dup][delete]
-
-      1.DONE  Document: if no project, save with document by default
-      2.DONE  Project:  save in project file
-      3.or Global resource: save in ~/.laidout/version/papergroups
-          class FileRef
-        papergroup->owner=Document, Project, or FileRef
-  paperinterface:
-     no doc, define papergroup, convert papergroup to singles pages?
-     orient viewport to paper
-     snap other papers to various boxes
-     double click to edit paper details
-     in spread editor (done), and be able to print it out
-     more versatile size control per paper
-     edit window? should be edit on screen....
-        Name:  default single letter
-        Paper: Letter, 8.5/11, landscape
-        Box: Media [v]   Box: Clip [v]
-                            [ ] None
-           0 0 8.5 11       X: 0   Y: 0
-                          W: 8.5 H: 11
-        [delete paper type][new paper type]
+    paperinterface: in spread editor (done), and able to print it out, don't forget to remove DBG for release!
+    in spread editor (done), and be able to print it out
+  papersize names are not translated. Should they be??
+  no doc, define papergroup, convert papergroup to singles pages?
+  more versatile size control per paper: edit window? should be edit on screen....
+     Name:  default single letter
+     Paper: Letter, 8.5/11, landscape
+     Box: Media [v]   Box: Clip [v]
+                         [ ] None
+        0 0 8.5 11       X: 0   Y: 0
+                       W: 8.5 H: 11
+     [delete paper type][new paper type]
+  DONE rotate paper shortcut should be around paper center, not origin
+  DONE snap other papers to various boxes
+  DONE bug: maybebox zooming off on mouse move
 
 should take precautions so that dialogs do not get buried, would need to respond to circulate events
 
@@ -1889,9 +1895,9 @@ Convert:
   newobject = Convert(object, to);
 
 file format prettification  --file-format
+  DONE make names/values/comments all kind of line up for those that use dump_out_atts
   dump should differentiate between DrawableObject and pure resource objects... right now, all lumped together
-  adapt the scribus xml/att convertor to parse the output of laidout --file-format
-  into something meaningful...
+  adapt the scribus xml/att convertor to parse the output of laidout --file-format into something meaningful...
   #-------blah--------  <- mark a new section
     thing      #thing's docs
       subthing #subthing's docs

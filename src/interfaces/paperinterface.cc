@@ -25,6 +25,7 @@
 #include <lax/laxutils.h>
 #include <lax/transformmath.h>
 #include <lax/colors.h>
+#include <lax/interfaces/interfacemanager.h>
 
 //template implementation:
 #include <lax/lists.cc>
@@ -63,7 +64,7 @@ char *new_paper_group_name()
 		if (c==laidout->project->papergroups.n) return str;
 		delete[] str;
 	}
-	return NULL;
+	return nullptr;
 }
 
 //------------------------------------- PaperInterface --------------------------------------
@@ -78,38 +79,30 @@ char *new_paper_group_name()
  * \brief Temporary pointer to aid viewport refreshing of PaperBoxData objects.
  */
 
-PaperInterface::PaperInterface(int nid,Displayer *ndp)
-	: anInterface(nid,ndp) 
-{
-	snapto=MediaBox;
-	editwhat=MediaBox;
-	drawwhat=MediaBox;
-	showdecs=0;
-
-	curbox=maybebox=NULL;
-
-	papergroup=NULL;
-	paperboxdata=NULL;
-	doc=NULL;
-
-	sc=NULL;
-}
-
 PaperInterface::PaperInterface(anInterface *nowner,int nid,Displayer *ndp)
 	: anInterface(nowner,nid,ndp) 
 {
-	snapto=MediaBox;
-	editwhat=MediaBox;
-	drawwhat=MediaBox;
-	showdecs=0;
+	snapto      = MediaBox;
+	editwhat    = MediaBox;
+	drawwhat    = MediaBox;
+	showdecs    = 0;
+	show_labels = true;
+	search_snap = true;
+	snap_px_threshhold = 5 * InterfaceManager::GetDefault()->ScreenLine();
+	font        = nullptr;
 
-	curbox=maybebox=NULL;
+	curbox = maybebox = nullptr;
 
-	papergroup=NULL;
-	paperboxdata=NULL;
-	doc=NULL;
+	papergroup   = nullptr;
+	paperboxdata = nullptr;
+	doc          = nullptr;
 
-	sc=NULL;
+	sc = nullptr;
+}
+
+PaperInterface::PaperInterface(int nid,Displayer *ndp)
+	: PaperInterface(nullptr, nid, ndp)
+{
 }
 
 PaperInterface::~PaperInterface()
@@ -117,65 +110,84 @@ PaperInterface::~PaperInterface()
 	DBG cerr <<"PaperInterface destructor.."<<endl;
 
 	if (maybebox) maybebox->dec_count();
-	if (curbox) { curbox->dec_count(); curbox=NULL; }
+	if (curbox) { curbox->dec_count(); curbox=nullptr; }
 	if (papergroup) papergroup->dec_count();
 	if (doc) doc->dec_count();
 	if (sc) sc->dec_count();
+	if (font) font->dec_count();
 }
 
 const char *PaperInterface::Name()
 { return _("Paper Group Tool"); }
 
-#define PAPERM_PaperSize        1
-#define PAPERM_Landscape        2 
-#define PAPERM_Portrait         3 
-#define PAPERM_NewPaperGroup    4 
-#define PAPERM_RenamePaperGroup 5
-#define PAPERM_DeletePaperGroup 6 
-#define PAPERM_Print            7 
-#define PAPERM_RegistrationMark 8
-#define PAPERM_GrayBars         9 
-#define PAPERM_CutMarks         10 
-#define PAPERM_ResetScaling     11
-#define PAPERM_ResetAngle       12
+enum PaperInterfaceActions {
+	PAPERI_PaperSize = 1,
+	PAPERI_Landscape,
+	PAPERI_Portrait,
+	PAPERI_NewPaperGroup,
+	PAPERI_RenamePaperGroup,
+	PAPERI_DeletePaperGroup, //from resource list
+	PAPERI_Print,
+	PAPERI_RegistrationMark,
+	PAPERI_GrayBars,
+	PAPERI_CutMarks,
+	PAPERI_ResetScaling,
+	PAPERI_ResetAngle,
+	PAPERI_ToggleSnap,
+	PAPERI_ToggleLabels,
 
-#define PAPERM_first_pagesize   1000
-#define PAPERM_first_papergroup 2000
+	PAPERI_Select,
+	PAPERI_Decorations,
+	PAPERI_Delete, //curboxes
+	PAPERI_Rectify,
+	PAPERI_Rotate,
+	PAPERI_RotateCC,
+
+	PAPERI_first_pagesize   = 1000,
+	PAPERI_first_papergroup = 2000,
+
+	PAPERI_MAX = 5000
+};
 
 /*! \todo much of this here will change in future versions as more of the possible
  *    boxes are implemented.
  */
 Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
-	rx=x,ry=y;
+	rx = x;
+	ry = y;
 
 	if (!menu) menu=new MenuInfo(_("Paper Interface"));
 	else menu->AddSep(_("Papers"));
 
+	menu->AddToggleItem(_("Snap"),        nullptr, PAPERI_ToggleSnap,   0, search_snap);
+	menu->AddToggleItem(_("Show labels"), nullptr, PAPERI_ToggleLabels, 0, show_labels);
+	menu->AddSep();
+
 	if (papergroup) {
-		menu->AddItem(_("Add Registration Mark"),PAPERM_RegistrationMark);
-		menu->AddItem(_("Add Gray Bars"),PAPERM_GrayBars);
-		menu->AddItem(_("Add Cut Marks"),PAPERM_CutMarks);
+		menu->AddItem(_("Add Registration Mark"),PAPERI_RegistrationMark);
+		menu->AddItem(_("Add Gray Bars"),PAPERI_GrayBars);
+		menu->AddItem(_("Add Cut Marks"),PAPERI_CutMarks);
 		menu->AddSep();
-		menu->AddItem(_("Reset paper scaling"),PAPERM_ResetScaling);
+		menu->AddItem(_("Reset paper scaling"),PAPERI_ResetScaling);
 	}
 
 	if (papergroup && curboxes.n) {
 
-		menu->AddItem(_("Reset paper angle"),PAPERM_ResetAngle);
-		menu->AddItem(_("Paper Size"),PAPERM_PaperSize);
+		menu->AddItem(_("Reset paper angle"),PAPERI_ResetAngle);
+		menu->AddItem(_("Paper Size"),PAPERI_PaperSize);
 		menu->SubMenu(_("Paper Size"));
 		for (int c=0; c<laidout->papersizes.n; c++) {
-			menu->AddItem(laidout->papersizes.e[c]->name,PAPERM_first_pagesize+c,
+			menu->AddItem(laidout->papersizes.e[c]->name,PAPERI_first_pagesize+c,
 					LAX_ISTOGGLE
 					| (!strcmp(curboxes.e[0]->box->paperstyle->name,laidout->papersizes.e[c]->name)
 					  ? LAX_CHECKED : 0));
 		}
 		menu->EndSubMenu();
 		//int landscape=curboxes.e[0]->box->paperstyle->flags&1;
-		//menu->AddItem(_("Portrait"), PAPERM_Portrait, LAX_OFF|MENU_ISTOGGLE|(landscape?0:MENU_CHECKED));
-		//menu->AddItem(_("Landscape"),PAPERM_Landscape, LAX_OFF|MENU_ISTOGGLE|(landscape?MENU_CHECKED:0));
-		menu->AddItem(_("Print with paper group"),PAPERM_Print);
+		//menu->AddItem(_("Portrait"), PAPERI_Portrait, LAX_OFF|MENU_ISTOGGLE|(landscape?0:MENU_CHECKED));
+		//menu->AddItem(_("Landscape"),PAPERI_Landscape, LAX_OFF|MENU_ISTOGGLE|(landscape?MENU_CHECKED:0));
+		menu->AddItem(_("Print with paper group"),PAPERI_Print);
 		menu->AddSep();	
 	}
 
@@ -189,14 +201,14 @@ Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 			nme=pg->Name;
 			if (!nme) nme=pg->name;
 			if (!nme) nme=_("(unnamed)");
-			menu->AddItem(nme, PAPERM_first_papergroup+c,
+			menu->AddItem(nme, PAPERI_first_papergroup+c,
 						  LAX_ISTOGGLE | LAX_OFF | (papergroup==pg ? LAX_CHECKED : 0));
 		}
 		menu->EndSubMenu();
 	}
-	menu->AddItem(_("New paper group..."),PAPERM_NewPaperGroup);
-	if (papergroup) menu->AddItem(_("Rename current paper group..."),PAPERM_RenamePaperGroup);
-	if (papergroup) menu->AddItem(_("Delete current paper group..."),PAPERM_DeletePaperGroup);
+	menu->AddItem(_("New paper group..."),PAPERI_NewPaperGroup);
+	if (papergroup) menu->AddItem(_("Rename current paper group..."),PAPERI_RenamePaperGroup);
+	if (papergroup) menu->AddItem(_("Delete current paper group..."),PAPERI_DeletePaperGroup);
 
 	return menu;
 }
@@ -217,20 +229,26 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 	} else if (!strcmp(mes,"menuevent")) {
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
 		int i=s->info2; //id of menu item
-		if (i==PAPERM_Portrait) {
-			 //portrait
+
+		if (     i == PAPERI_ToggleSnap
+			  || i == PAPERI_ToggleLabels) {
+			PerformAction(i);
 			return 0;
 
-		} else if (i==PAPERM_Landscape) {
-			 //landscape
-			return 0;
+//		} else if (i==PAPERI_Portrait) {
+//			 //portrait
+//			return 0;
+//
+//		} else if (i==PAPERI_Landscape) {
+//			 //landscape
+//			return 0;
 
-		} else if (i==PAPERM_Print) {
+		} else if (i==PAPERI_Print) {
 			 //print with the active paper group
-			curwindow->win_parent->Event(NULL,"print");//***hack Hack HACK
+			curwindow->win_parent->Event(nullptr,"print");//***hack Hack HACK
 			return 0;
 
-		} else if (i==PAPERM_ResetScaling) {
+		} else if (i==PAPERI_ResetScaling) {
 			if (!papergroup) return 0;
 			PaperBoxData *data=papergroup->papers.e[0];
 			double s=1/data->xaxis().norm();
@@ -241,7 +259,7 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			needtodraw=1;
 			return 0;
 
-		} else if (i==PAPERM_ResetAngle) {
+		} else if (i==PAPERI_ResetAngle) {
 			if (!curboxes.n) return 0;
 
 			PaperBoxData *data;
@@ -254,9 +272,9 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			needtodraw=1;
 			return 0;
 
-		} else if (i>=PAPERM_first_pagesize && i<PAPERM_first_pagesize+1000) {
+		} else if (i>=PAPERI_first_pagesize && i<PAPERI_first_pagesize+1000) {
 			 //paper size
-			i-=PAPERM_first_pagesize;
+			i-=PAPERI_first_pagesize;
 			if (i>=laidout->papersizes.n-1) return 1;
 			PaperStyle *newpaper=(PaperStyle *)laidout->papersizes.e[i]->duplicate();
 			for (int c=0; c<curboxes.n; c++) {
@@ -267,12 +285,12 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			needtodraw=1;
 			return 0;
 
-		} else if (i>=PAPERM_first_papergroup && i<PAPERM_first_papergroup+1000) {
+		} else if (i>=PAPERI_first_papergroup && i<PAPERI_first_papergroup+1000) {
 			//***is selecting a new papergroup from laidout->project->papergroups	
-			i-=PAPERM_first_papergroup;
+			i-=PAPERI_first_papergroup;
 			if (i<0 || i>laidout->project->papergroups.n) return 0;
 
-			Clear(NULL);
+			Clear(nullptr);
 			papergroup=laidout->project->papergroups.e[i];
 			papergroup->inc_count();
 			LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
@@ -280,7 +298,7 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			needtodraw=1;
 			return 0;
 
-		} else if (i==PAPERM_NewPaperGroup) {
+		} else if (i==PAPERI_NewPaperGroup) {
 			 //New paper group...
 			if (papergroup) papergroup->dec_count();
 			papergroup=new PaperGroup;
@@ -292,19 +310,19 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			needtodraw=1;
 			return 0;
 
-		} else if (i==PAPERM_RenamePaperGroup) {
+		} else if (i==PAPERI_RenamePaperGroup) {
 			//***Rename paper group...
 			if (!papergroup) return 0;
-			InputDialog *i=new InputDialog(NULL,_("New paper group name"),_("New paper group name"),ANXWIN_CENTER,
+			InputDialog *i=new InputDialog(nullptr,_("New paper group name"),_("New paper group name"),ANXWIN_CENTER,
 									 0,0,0,0,0,
-									 NULL,object_id,"newname",
+									 nullptr,object_id,"newname",
 									 papergroup->name?papergroup->name:papergroup->Name, _("Name:"),
 									 _("Ok"),BUTTON_OK,
 									 _("Cancel"),BUTTON_CANCEL);
 			app->rundialog(i);
 			return 0;
 
-		} else if (i==PAPERM_RegistrationMark) {
+		} else if (i==PAPERI_RegistrationMark) {
 			if (!papergroup) return 0;
 			SomeData *obj= RegistrationMark(18,1);
 			flatpoint fp=dp->screentoreal(rx,ry);
@@ -313,7 +331,7 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			obj->dec_count();
 			return 0;
 
-		} else if (i==PAPERM_GrayBars) {
+		} else if (i==PAPERI_GrayBars) {
 			if (!papergroup) return 0;
 			SomeData *obj= BWColorBars(18,LAX_COLOR_GRAY);
 			flatpoint fp=dp->screentoreal(rx,ry);
@@ -348,13 +366,13 @@ int PaperInterface::draws(const char *atype)
 }
 
 
-//! Return a new PaperInterface if dup=NULL, or anInterface::duplicate(dup) otherwise.
+//! Return a new PaperInterface if dup=nullptr, or anInterface::duplicate(dup) otherwise.
 /*! 
  */
-anInterface *PaperInterface::duplicate(anInterface *dup)//dup=NULL
+anInterface *PaperInterface::duplicate(anInterface *dup)//dup=nullptr
 {
-	if (dup==NULL) dup=new PaperInterface(id,NULL);
-	else if (!dynamic_cast<PaperInterface *>(dup)) return NULL;
+	if (dup==nullptr) dup=new PaperInterface(id,nullptr);
+	else if (!dynamic_cast<PaperInterface *>(dup)) return nullptr;
 	
 	return anInterface::duplicate(dup);
 }
@@ -372,13 +390,13 @@ int PaperInterface::InterfaceOn()
 
 int PaperInterface::InterfaceOff()
 {
-	Clear(NULL);
+	Clear(nullptr);
 	showdecs=0;
 
 	LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
-	if (lvp) lvp->UseThisPaperGroup(NULL);
+	if (lvp) lvp->UseThisPaperGroup(nullptr);
 
-	if (maybebox) { maybebox->dec_count(); maybebox=NULL; }
+	if (maybebox) { maybebox->dec_count(); maybebox=nullptr; }
 
 	needtodraw=1;
 	DBG cerr <<"imageinterfaceOff()"<<endl;
@@ -390,7 +408,7 @@ int PaperInterface::UseThis(Laxkit::anObject *ndata,unsigned int mask)
 {
 	PaperGroup *pg=dynamic_cast<PaperGroup *>(ndata);
 	if (!pg && ndata) return 0; //was a non-null object, but not a papergroup
-	Clear(NULL);
+	Clear(nullptr);
 	
 	papergroup=pg;
 	if (papergroup) papergroup->inc_count();
@@ -404,10 +422,10 @@ int PaperInterface::UseThis(Laxkit::anObject *ndata,unsigned int mask)
  */
 void PaperInterface::Clear(SomeData *d)
 {
-	if (maybebox) { maybebox->dec_count(); maybebox=NULL; }
-	if (curbox) { curbox->dec_count(); curbox=NULL; }
+	if (maybebox) { maybebox->dec_count(); maybebox=nullptr; }
+	if (curbox) { curbox->dec_count(); curbox=nullptr; }
 	curboxes.flush();
-	if (papergroup) { papergroup->dec_count(); papergroup=NULL; }
+	if (papergroup) { papergroup->dec_count(); papergroup=nullptr; }
 }
 
 	
@@ -417,21 +435,25 @@ void PaperInterface::Clear(SomeData *d)
 int PaperInterface::DrawDataDp(Laxkit::Displayer *tdp,SomeData *tdata,
 			Laxkit::anObject *a1,Laxkit::anObject *a2,int info)
 {
-	PaperBoxData *data=dynamic_cast<PaperBoxData *>(tdata);
+	PaperBoxData *data = dynamic_cast<PaperBoxData *>(tdata);
 	if (!data) return 1;
-	int td=showdecs,ntd=needtodraw;
-	BoxTypes tdrawwhat=drawwhat;
-	drawwhat=AllBoxes;
-	showdecs=1;
-	needtodraw=1;
-	Displayer *olddp=dp;
-	dp=tdp;
-	DrawPaper(data,~0,1,5,0);
-	dp=olddp;
-	drawwhat=tdrawwhat;
-	needtodraw=ntd;
-	showdecs=td;
-	paperboxdata=NULL;
+	int td             = showdecs;
+	bool labels        = show_labels;
+	int ntd            = needtodraw;
+	BoxTypes tdrawwhat = drawwhat;
+	drawwhat           = AllBoxes;
+	showdecs           = 1;
+	show_labels        = false;
+	needtodraw         = 1;
+	Displayer *olddp   = dp;
+	dp                 = tdp;
+	DrawPaper(data, ~0, 1, 5, 0);
+	show_labels  = labels;
+	dp           = olddp;
+	drawwhat     = tdrawwhat;
+	needtodraw   = ntd;
+	showdecs     = td;
+	paperboxdata = nullptr;
 	return 1;
 }
 
@@ -443,7 +465,7 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 {
 	if (!data) return;
 
-	int w=1;
+	int w = InterfaceManager::GetDefault()->ScreenLine(); //1
 	if (data==curbox || curboxes.findindex(data)>=0) w=2;
 	dp->LineAttributes(-1,LineSolid,CapButt,JoinMiter);
 	dp->LineWidthScreen(w);
@@ -502,10 +524,25 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 			dp->LineWidthScreen(w);
 		}
 
+		if (show_labels) {
+			if (!font) { font = laidout->defaultlaxfont; font->inc_count(); }
+			dp->DrawScreen();
+			dp->font(font);
+			double th = dp->textheight();
+			dp->NewFG(128,128,128);
+			flatpoint ang = dp->realtoscreen(p[3]) - dp->realtoscreen(p[0]);
+			flatpoint center = dp->realtoscreen((p[1] + p[2])/2);
+			double y = center.y;
+			dp->textout(-atan2(ang.y, ang.x), center.x,y, box->paperstyle->name,-1,LAX_HCENTER|LAX_BOTTOM);
+			y -= th;
+			if (!data->label.IsEmpty()) dp->textout(atan2(ang.y, ang.x), center.x,y, data->label.c_str(),-1, LAX_HCENTER|LAX_BOTTOM);
+			dp->DrawReal();
+		}
 	}
 
 	dp->DrawScreen();
 	dp->LineWidthScreen(w);
+
 	if ((what&ArtBox) && (box->which&ArtBox)) {
 		p[0]=dp->realtoscreen(box->art.minx,box->art.miny);
 		p[1]=dp->realtoscreen(box->art.minx,box->art.maxy);
@@ -565,7 +602,7 @@ void PaperInterface::DrawGroup(PaperGroup *group, char shadow, char fill, char a
 	if (which&2) {
 		if (group->objs.n()) {
 			for (int c=0; c<group->objs.n(); c++) {
-				Laidout::DrawData(dp,group->objs.e(c),NULL,NULL,0);
+				Laidout::DrawData(dp,group->objs.e(c),nullptr,nullptr,0);
 			}
 		}
 	}
@@ -620,14 +657,14 @@ int PaperInterface::scan(int x,int y)
 	return -1;
 }
 
-//! Make a maybebox, if one does not exist.
-void PaperInterface::createMaybebox(flatpoint p)
+//! Make a maybebox at real point p, if one does not exist.
+void PaperInterface::CreateMaybebox(flatpoint p)
 {
 	if (maybebox) return;
 
 	 // find a paper size, not so easy!
-	PaperBox *box=NULL;
-	PaperBoxData *boxdata=NULL;
+	PaperBox *box=nullptr;
+	PaperBoxData *boxdata=nullptr;
 	int del=0;
 	if (curbox) {
 		box=curbox->box;
@@ -652,6 +689,10 @@ void PaperInterface::createMaybebox(flatpoint p)
 	maybebox->origin(flatpoint(0,0));
 	maybebox->origin(p-transform_point(maybebox->m(),(maybebox->maxx+maybebox->minx)/2, norm(maybebox->yaxis())*(maybebox->maxy+maybebox->miny)/2));
 	if (del) box->dec_count();
+
+	p = dp->realtoscreen(p);
+	rx = p.x;
+	ry = p.y;
 }
 
 /*! Add maybe box if shift is down.
@@ -661,18 +702,17 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 	if (buttondown.isdown(0,LEFTBUTTON)) return 1;
 	buttondown.down(d->id,LEFTBUTTON,x,y,state);
 
-	mx=x; my=y;
 	DBG flatpoint fp;
 	DBG fp=dp->screentoreal(x,y);
 	DBG cerr <<"1 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 
-	int over=scan(x,y);
+	int over = scan(x, y);
 
 	DBG fp=dp->screentoreal(x,y);
 	DBG cerr <<"2 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 	if ((state&LAX_STATE_MASK)==ShiftMask && over<0) {
 		//add a new box
-		if (!maybebox) createMaybebox(dp->screentoreal(x,y));
+		if (!maybebox) CreateMaybebox(dp->screentoreal(x,y));
 
 		DBG fp=dp->screentoreal(x,y);
 		DBG cerr <<"3 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
@@ -693,7 +733,7 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 		over=papergroup->papers.push(maybebox);
 
 		maybebox->dec_count();
-		maybebox=NULL;
+		maybebox=nullptr;
 		needtodraw=1;
 		//return 0; -- do not return, continue to let box be added..
 	}
@@ -727,70 +767,148 @@ int PaperInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 	DBG cerr <<"9 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 
 	//***
-	//if (curbox) { curbox->dec_count(); curbox=NULL; }
+	//if (curbox) { curbox->dec_count(); curbox=nullptr; }
 	//if (curboxes.n) curboxes.flush();
 
 	return 0;
 }
 
+/*! Adjust curboxes so that they snap to other non-curboxes.
+ * Return number of boxes changed.
+ */
+int PaperInterface::SnapBoxes()
+{
+	if (curboxes.n == papergroup->papers.n) return 0; //all boxes are selected.. todo: maybe we should snap to viewport spread/pages?
+
+	double threshhold = snap_px_threshhold / dp->Getmag();
+
+	NumStack<double> xx,yy;
+	for (int c=0; c<curboxes.n; c++) {
+		//build points that we need to check for snapping
+		flatpoint p = curboxes.e[c]->BBoxPoint(0,0,true);
+		xx.pushnodup(p.x);
+		yy.pushnodup(p.y);
+		p = curboxes.e[c]->BBoxPoint(0,1,true);
+		xx.pushnodup(p.x);
+		yy.pushnodup(p.y);
+		p = curboxes.e[c]->BBoxPoint(1,1,true);
+		xx.pushnodup(p.x);
+		yy.pushnodup(p.y);
+		p = curboxes.e[c]->BBoxPoint(1,0,true);
+		xx.pushnodup(p.x);
+		yy.pushnodup(p.y);
+		p = curboxes.e[c]->BBoxPoint(.5,.5,true);
+		xx.pushnodup(p.x);
+		yy.pushnodup(p.y);
+	}
+
+	flatpoint d, p;
+	flatpoint dp;
+	double dd;
+	bool do_x = true;
+	bool do_y = true;
+	flatpoint pgp[5];
+	for (int c=0; c<papergroup->papers.n; c++) {
+		if (curboxes.Contains(papergroup->papers.e[c])) continue;
+
+		pgp[0] = papergroup->papers.e[c]->BBoxPoint(0,1,true);
+		pgp[1] = papergroup->papers.e[c]->BBoxPoint(1,1,true);
+		pgp[2] = papergroup->papers.e[c]->BBoxPoint(1,0,true);
+		pgp[3] = papergroup->papers.e[c]->BBoxPoint(0,0,true);
+		pgp[4] = papergroup->papers.e[c]->BBoxPoint(.5,.5,true);
+
+		for (int c2=0; c2<xx.n && (do_x || do_y); c2++) {
+			for (int c3 = 0; c3 < 5; c3++) {
+				p = pgp[c3];
+				if (do_x) {
+					dd = fabs(xx.e[c2] - p.x);
+					if (dd < threshhold) {
+						do_x = false;
+						dp.x = p.x - xx.e[c2];
+					}
+				}
+				if (do_y) {
+					dd = fabs(yy.e[c2] - p.y);
+					if (dd < threshhold) {
+						do_y = false;
+						dp.y = p.y - yy.e[c2];
+					}
+				}
+			}
+		}
+	}
+
+	if (do_x == false || do_y == false) {
+		//we matched a snap, so adjust transforms
+		for (int c=0; c<curboxes.n; c++) {
+			curboxes.e[c]->origin(curboxes.e[c]->origin() + dp);
+		}
+		return curboxes.n;
+	}
+	return 0;
+}
+
+
 int PaperInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
 {
-	DBG flatpoint fpp=dp->screentoreal(x,y);
+	DBG flatpoint fpp = dp->screentoreal(x, y);
 	DBG cerr <<"mm *****ARG**** "<<fpp.x<<","<<fpp.y<<endl;
 
-	int over=scan(x,y);
+	int over = scan(x, y);
 
 	DBG cerr <<"over box: "<<over<<endl;
 
-	buttondown.move(mouse->id,x,y);
 	if (!buttondown.any()) {
-		if (!(state&ShiftMask)) return 1;
-		//*** activate maybebox
-		if (over>=0) {
-			if (maybebox) { 
+		if (!(state & ShiftMask)) return 1;
+
+		//update maybebox when shift key down
+		if (over >= 0) { //don't show maybebox when we hover over an existing box
+			if (maybebox) {
 				maybebox->dec_count();
-				maybebox=NULL;
-				needtodraw=1;
+				maybebox   = nullptr;
+				needtodraw = 1;
 			}
-			mx=x; my=y;
 			return 0;
 		}
 		if (!maybebox) {
-			createMaybebox(dp->screentoreal(x,y));
+			CreateMaybebox(dp->screentoreal(x,y));
 		} else {
-			maybebox->origin(maybebox->origin()
-						+dp->screentoreal(x,y)-dp->screentoreal(mx,my));
+			maybebox->origin(maybebox->origin() + dp->screentoreal(x, y) - dp->screentoreal(rx, ry));
+			rx = x;
+			ry = y;
 		}
-		mx=x; my=y;
-		needtodraw=1;
+		needtodraw = 1;
 		return 0;
 	}
 
-	if (curboxes.n==0) return 1;
+	if (curboxes.n == 0) return 1;
 
-	 //if curboxes.n>0, this implies papergroup!=NULL
+	int mx, my;
+	buttondown.move(mouse->id, x,y, &mx,&my);
 
-	flatpoint fp=dp->screentoreal(x,y),
-			  d =fp-dp->screentoreal(mx,my);
+	// if curboxes.n>0, this implies papergroup!=nullptr
 
-	 //plain or + moves curboxes (or the box given by editwhat)
+	flatpoint fp = dp->screentoreal(x, y);
+	flatpoint d  = fp - dp->screentoreal(mx, my);
+
+	// plain or + moves curboxes (or the box given by editwhat)
 	if ((state&LAX_STATE_MASK)==0 || (state&LAX_STATE_MASK)==ShiftMask) {
-		// ***snapto
-
 		for (int c=0; c<curboxes.n; c++) {
 			curboxes.e[c]->origin(curboxes.e[c]->origin()+d);
 		}
+		if ((search_snap && (state&LAX_STATE_MASK)==0)
+				|| (!search_snap && (state&LAX_STATE_MASK)==ShiftMask)) {
+			SnapBoxes();
+		}
 		needtodraw=1;
-		mx=x; my=y;
 		return 0;
 	}
 
 	 //^ scales
 	if ((state&LAX_STATE_MASK)==ControlMask) {
 		PaperBoxData *data;
-		//flatpoint leftd=transform_point_inverse(data->m(),lbdown);
 		for (int c=0; c<papergroup->papers.n; c++) {
-			data=papergroup->papers.e[c];
+			data = papergroup->papers.e[c];
 			if (x>mx) {
 				if (data->xaxis()*data->xaxis()<dp->upperbound*dp->upperbound) {
 					data->xaxis(data->xaxis()*1.05);
@@ -809,12 +927,7 @@ int PaperInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 				}
 			}
 		}
-		//oo=data->origin() + leftp.x*data->xaxis() + leftp.y*data->yaxis(); // where the point clicked down on is now
-		////DBG cerr <<"  oo="<<oo.x<<','<<oo.y<<endl;
-		//d=lp-oo;
-		//data->origin(data->origin()+d);
 		needtodraw=1;
-		mx=x; my=y;
 		return 0;
 	}
 
@@ -833,22 +946,11 @@ int PaperInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 			data->origin(data->origin()+d);
 		}
 		needtodraw=1;
-		mx=x; my=y;
 		return 0;
 	}
 
 	return 0;
 }
-
-enum PaperInterfaceActions {
-	PAPERI_Select,
-	PAPERI_Decorations,
-	PAPERI_Delete,
-	PAPERI_Rectify,
-	PAPERI_Rotate,
-	PAPERI_RotateCC,
-	PAPERI_MAX
-};
 
 Laxkit::ShortcutHandler *PaperInterface::GetShortcuts()
 {
@@ -861,13 +963,13 @@ Laxkit::ShortcutHandler *PaperInterface::GetShortcuts()
 
 	sc=new ShortcutHandler("PaperInterface");
 
-	sc->Add(PAPERI_Select,      'a',0,0,         "Select",  _("Select or deselect all"),NULL,0);
-	sc->Add(PAPERI_Decorations, 'd',0,0,         "Decs",    _("Toggle decorations"),NULL,0);
-	sc->Add(PAPERI_Delete,      LAX_Bksp,0,0,    "Delete",  _("Delete selected"),NULL,0);
+	sc->Add(PAPERI_Select,      'a',0,0,         "Select",  _("Select or deselect all"),nullptr,0);
+	sc->Add(PAPERI_Decorations, 'd',0,0,         "Decs",    _("Toggle decorations"),nullptr,0);
+	sc->Add(PAPERI_Delete,      LAX_Bksp,0,0,    "Delete",  _("Delete selected"),nullptr,0);
 	sc->AddShortcut(LAX_Del,0,0, PAPERI_Delete);
-	sc->Add(PAPERI_Rectify,     'o',0,0,         "Rectify", _("Make the axes horizontal and vertical"),NULL,0);
-	sc->Add(PAPERI_Rotate,      'r',0,0,         "Rotate",  _("Rotate selected by 90 degrees"),NULL,0);
-	sc->Add(PAPERI_RotateCC,    'R',ShiftMask,0, "RotateCC",_("Rotate selected by 90 degrees in the other direction"),NULL,0);
+	sc->Add(PAPERI_Rectify,     'o',0,0,         "Rectify", _("Make the axes horizontal and vertical"),nullptr,0);
+	sc->Add(PAPERI_Rotate,      'r',0,0,         "Rotate",  _("Rotate selected by 90 degrees"),nullptr,0);
+	sc->Add(PAPERI_RotateCC,    'R',ShiftMask,0, "RotateCC",_("Rotate selected by 90 degrees in the other direction"),nullptr,0);
 
 
 	manager->AddArea("PaperInterface",sc);
@@ -881,10 +983,26 @@ int PaperInterface::PerformAction(int action)
 		needtodraw=1;
 		int n=curboxes.n;
 		curboxes.flush();
-		if (curbox) { curbox->dec_count(); curbox=NULL; }
+		if (curbox) { curbox->dec_count(); curbox=nullptr; }
 		if (n) return 0;
 		for (int c=0; c<papergroup->papers.n; c++) 
 			curboxes.push(papergroup->papers.e[c],0);
+		return 0;
+
+	} else if (action==PAPERI_Decorations) {
+		showdecs++;
+		if (showdecs>2) showdecs=0;
+		needtodraw=1;
+		return 0;
+
+	} else if (action==PAPERI_ToggleSnap) {
+		search_snap = !search_snap;
+		PostMessage(search_snap ? _("Snap on (hold shift to not snap)") : _("Snap off (hold shift to snap)"));
+		return 0;
+
+	} else if (action==PAPERI_ToggleLabels) {
+		show_labels = !show_labels;
+		PostMessage(show_labels ? _("Show labels") : _("Don't show labels"));
 		return 0;
 
 	} else if (action==PAPERI_Decorations) {
@@ -902,7 +1020,7 @@ int PaperInterface::PerformAction(int action)
 			papergroup->papers.remove(c2);
 		}
 		curboxes.flush();
-		if (curbox) { curbox->dec_count(); curbox=NULL; }
+		if (curbox) { curbox->dec_count(); curbox=nullptr; }
 		needtodraw=1;
 		return 0;
 
@@ -919,94 +1037,91 @@ int PaperInterface::PerformAction(int action)
 			return 0;
 		}
 
-	} else if (action==PAPERI_Rotate) {
+	} else if (action==PAPERI_Rotate || action==PAPERI_RotateCC) {
 		 //rotate by 90 degree increments
 		if (!curboxes.n) return 0;
+		bool ccw = (action == PAPERI_RotateCC);
 		double x,y;
+		flatpoint invariant;
 		for (int c=0; c<curboxes.n; c++) {
+			invariant += curboxes.e[c]->BBoxPoint(.5,.5,true);
+		}
+		invariant /= curboxes.n;
+		for (int c=0; c<curboxes.n; c++) {
+			flatpoint i1 = curboxes.e[c]->transformPointInverse(invariant);
 			 //rotate x axis
-			x=curboxes.e[c]->m(0);
-			y=curboxes.e[c]->m(1);
-			curboxes.e[c]->m(0,-y);
-			curboxes.e[c]->m(1,x);
-			 //rotate y axis
-			x=curboxes.e[c]->m(2);
-			y=curboxes.e[c]->m(3);
-			curboxes.e[c]->m(2,-y);
-			curboxes.e[c]->m(3,x);
+			x = curboxes.e[c]->m(0);
+			y = curboxes.e[c]->m(1);
+			curboxes.e[c]->m(0, ccw ? y : -y);
+			curboxes.e[c]->m(1, ccw ? -x : x);
+			// rotate y axis
+			x = curboxes.e[c]->m(2);
+			y = curboxes.e[c]->m(3);
+			curboxes.e[c]->m(2, ccw ? y : -y);
+			curboxes.e[c]->m(3, ccw ? -x : x);
+			i1 = curboxes.e[c]->transformPoint(i1);
+			curboxes.e[c]->origin(curboxes.e[c]->origin() + invariant-i1);
 		}
 		needtodraw=1;
 		return 0;
 
-	} else if (action==PAPERI_RotateCC) {
-		 //rotate by 90 degree increments
-		if (!curboxes.n) return 0;
-		double x,y;
-		for (int c=0; c<curboxes.n; c++) {
-			 //rotate x axis
-			x=curboxes.e[c]->m(0);
-			y=curboxes.e[c]->m(1);
-			curboxes.e[c]->m(0,y);
-			curboxes.e[c]->m(1,-x);
-			 //rotate y axis
-			x=curboxes.e[c]->m(2);
-			y=curboxes.e[c]->m(3);
-			curboxes.e[c]->m(2,y);
-			curboxes.e[c]->m(3,-x);
-		}
-		needtodraw=1;
-		return 0;
+//	} else if (action==PAPERI_RotateCC) {
+//		 //rotate by 90 degree increments
+//		if (!curboxes.n) return 0;
+//		double x,y;
+//		for (int c=0; c<curboxes.n; c++) {
+//			 //rotate x axis
+//			x=curboxes.e[c]->m(0);
+//			y=curboxes.e[c]->m(1);
+//			curboxes.e[c]->m(0,y);
+//			curboxes.e[c]->m(1,-x);
+//			 //rotate y axis
+//			x=curboxes.e[c]->m(2);
+//			y=curboxes.e[c]->m(3);
+//			curboxes.e[c]->m(2,y);
+//			curboxes.e[c]->m(3,-x);
+//		}
+//		needtodraw=1;
+//		return 0;
 	}
 
 	return 1;
 }
 
-/*!
- * 'a'          select all, or if some are selected, deselect all
- * del or bksp  delete currently selected papers
- *
- * \todo auto tile spread contents
- * \todo revert to other group
- * \todo edit another group
- */
 int PaperInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
 	DBG cerr<<" got ch:"<<ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
-	
-//	if (ch==' ') {
-//		if (!papergroup) papergroup=new PaperGroup;
-//		papergroup->AddPaper(8.5,11,-1,-1);
-//		needtodraw=1;
-//		return 0;
-//	}
 
 	if (!sc) GetShortcuts();
-	int action=sc->FindActionNumber(ch,state&LAX_STATE_MASK,0);
-	if (action>=0) {
+	int action = sc->FindActionNumber(ch, state & LAX_STATE_MASK, 0);
+	if (action >= 0) {
 		return PerformAction(action);
 	}
 
-	if (ch==LAX_Shift) {
+	if (ch == LAX_Shift) {
+		//turn on maybebox
 		if (maybebox) return 0;
-		int x,y;
-		if (mouseposition(d->paired_mouse->id,viewport,&x,&y,NULL,NULL)!=0) return 0;
-		if (scan(x,y)>=0) return 0;
-		mx=x; my=y;
-		createMaybebox(flatpoint(dp->screentoreal(x,y)));
-		needtodraw=1;
+		if (buttondown.any()) return 0;
+		int x, y;
+		if (mouseposition(d->paired_mouse->id, viewport, &x, &y, nullptr, nullptr) != 0) return 0;
+		if (scan(x, y) >= 0) return 0;
+		CreateMaybebox(flatpoint(dp->screentoreal(x, y)));
+		if (buttondown.isdown(d->paired_mouse->id, LEFTBUTTON))
+			buttondown.down(d->paired_mouse->id, LEFTBUTTON, x,y, state);
+		needtodraw = 1;
 		return 0;
-
 	}
 	return 1;
 }
 
 int PaperInterface::KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d)
-{//***
-	if (ch==LAX_Shift) {
+{
+	if (ch == LAX_Shift) {
+		 //turn off maybebox
 		if (!maybebox) return 1;
 		maybebox->dec_count();
-		maybebox=NULL;
-		needtodraw=1;
+		maybebox   = nullptr;
+		needtodraw = 1;
 		return 0;
 	}
 	return 1;

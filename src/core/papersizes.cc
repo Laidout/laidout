@@ -14,7 +14,6 @@
 
 
 
-//#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
@@ -31,6 +30,7 @@
 
 //template implementation:
 #include <lax/refptrstack.cc>
+
 
 using namespace std;
 using namespace LaxFiles;
@@ -138,7 +138,7 @@ PtrStack<PaperStyle> *GetBuiltinPaperSizes(PtrStack<PaperStyle> *papers)
 		x=atof(BuiltinPaperSizes[c+1]);
 		y=atof(BuiltinPaperSizes[c+2]);
 
-		if (!strcmp(BuiltinPaperSizes[c+3],"px")) dpi=1;  else dpi=360;
+		if (!strcmp(BuiltinPaperSizes[c+3],"px")) dpi=1;  else dpi=300;
 
 		papers->push(new PaperStyle(BuiltinPaperSizes[c],x,y,0,dpi,BuiltinPaperSizes[c+3]));
 	}
@@ -224,26 +224,26 @@ PaperStyle::PaperStyle(const char *nname)
 {
 	if (!isblank(nname)) name=newstr(nname); else name=NULL;
 
-	favorite=false;
-	flags=0;
-	dpi=360;
-	width=8.5;
-	height=11;
-	defaultunits=newstr("in");
+	favorite     = false;
+	flags        = 0;
+	dpi          = 300;
+	width        = 8.5;
+	height       = 11;
+	defaultunits = newstr("in");
 
 	DBG cerr <<"blank PaperStyle created, obj "<<object_id<<endl;
 
-	if (!name) name=newstr(laidout->prefs.defaultpaper);
-	if (!name) name=newstr("letter");
+	if (!name) name = newstr(laidout->prefs.defaultpaper);
+	if (!name) name = newstr("letter");
 	//if (!name) name=get_system_default_paper(NULL);
 
 	for (int c=0; c<laidout->papersizes.n; c++) {
 		if (strcasecmp(name,laidout->papersizes.e[c]->name)==0) {
-			width=laidout->papersizes.e[c]->width;
-			height=laidout->papersizes.e[c]->height;
-			flags=laidout->papersizes.e[c]->flags;
-			dpi=laidout->papersizes.e[c]->dpi;
-			makestr(defaultunits,laidout->papersizes.e[c]->defaultunits);
+			width  = laidout->papersizes.e[c]->width;
+			height = laidout->papersizes.e[c]->height;
+			flags  = laidout->papersizes.e[c]->flags;
+			dpi    = laidout->papersizes.e[c]->dpi;
+			makestr(defaultunits, laidout->papersizes.e[c]->defaultunits);
 			break;
 		}
 	}
@@ -255,18 +255,20 @@ PaperStyle::PaperStyle(const char *nname)
  */
 PaperStyle::PaperStyle(const char *nname,double w,double h,unsigned int nflags,double ndpi,const char *units)
 {
-	name=newstr(nname);
-	width=w;
-	height=h;
-	dpi=ndpi;
-	flags=nflags;
-	defaultunits=newstr(units);
-	if (!defaultunits) defaultunits=newstr("in");
+	name         = newstr(nname);
+	width        = w;
+	height       = h;
+	dpi          = ndpi;
+	flags        = nflags;
+	defaultunits = newstr(units);
+	if (!defaultunits) defaultunits = newstr("in");
 
-	if (!strcmp(defaultunits,"mm")) { width/=25.4; height/=25.4; }
-	else if (!strcmp(defaultunits,"cm")) { width/=2.54; height/=2.54; }
-	else if (!strcmp(defaultunits,"pt")) { width/=72; height/=72; }
-	else if (!strcmp(defaultunits,"svgpt")) { width/=90; height/=90; }
+	//convert to inches internally
+	if      (!strcmp(defaultunits,"mm"))    { width/=25.4; height/=25.4; }
+	else if (!strcmp(defaultunits,"cm"))    { width/=2.54; height/=2.54; }
+	else if (!strcmp(defaultunits,"pt"))    { width/=72;   height/=72;   }
+	else if (!strcmp(defaultunits,"svgpt")) { width/=90;   height/=90;   }
+	else if (!strcmp(defaultunits,"px"))    { width/=96;   height/=96;   }
 
 	DBG cerr <<"PaperStyle created, obj "<<object_id<<endl;
 }
@@ -385,7 +387,7 @@ int PaperStyle::SetFromString(const char *nname)
  *   name Letter
  *   width 8.5
  *   height 11
- *   dpi 360
+ *   dpi 300
  *   landscape
  * </pre>
  */
@@ -396,7 +398,7 @@ void PaperStyle::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *con
 		fprintf(f,"%sname Letter     #the name of the paper\n",spc);
 		fprintf(f,"%swidth 8.5       #in the default units\n",spc); 
 		fprintf(f,"%sheight 11       #in the default units\n",spc);
-		fprintf(f,"%sdpi 360         #default dpi for the paper\n",spc);
+		fprintf(f,"%sdpi 300         #default dpi for the paper\n",spc);
 		fprintf(f,"%slandscape       #could be portrait (the default) instead\n",spc);
 		fprintf(f,"%sunits in        #(optional) When reading in, width and height are converted from this\n",spc);
 		return;
@@ -516,7 +518,7 @@ Value *PaperStyle::duplicate()
 
 int PaperStyle::getValueStr(char *buffer,int len)
 {
-	//"PaperStyle(width=8.4, height=11, orientation=portrait, dpi=360)"
+	//"PaperStyle(width=8.4, height=11, orientation=portrait, dpi=300)"
 	int needed=55+15+15+15+15+(name?strlen(name):0);
 	if (len<needed) return needed;
 
@@ -594,7 +596,7 @@ int createPaperStyle(ValueHash *context, ValueHash *parameters, Value **value_re
 				break;
 			}
 		}
-		if (!paper) paper=new PaperStyle("Letter",8.5,11,0,360,"in");
+		if (!paper) paper=new PaperStyle("Letter",8.5,11,0,300,"in");
 
 
 		 //----orientation
@@ -951,7 +953,7 @@ int PaperGroup::FindPaperBBox(Laxkit::DoubleBBox *box_ret)
  *     width 8.5
  *     height 11
  *     portrait #or landscape
- *     dpi 360
+ *     dpi 300
  * </pre>
  */
 void PaperGroup::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)

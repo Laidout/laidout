@@ -32,27 +32,34 @@ char *new_paper_group_name();
 
 class PaperInterface : public LaxInterfaces::anInterface
 {
- protected:
+  protected:
 	int showdecs;
+	bool show_labels;
 	PaperGroup *papergroup;
 	PaperBoxData *paperboxdata;
 	Laxkit::PtrStack<PaperBoxData> curboxes;
 	PaperBoxData *curbox, *maybebox;
 	BoxTypes editwhat, drawwhat, snapto;
-	virtual int scan(int x,int y);
-	virtual void createMaybebox(flatpoint p);
+	Laxkit::LaxFont *font;
+
 	Document *doc;
-	int mx,my;
-	int rx,ry;
+	int rx,ry; //used for context menu, also moving maybebox
 	flatpoint lbdown;
+	bool search_snap;
+	double snap_px_threshhold;
+
+	virtual int scan(int x,int y);
+	virtual void CreateMaybebox(flatpoint p);
+	virtual int SnapBoxes();
 
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);
- public:
-	PaperInterface(int nid=0,Laxkit::Displayer *ndp=NULL);
-	PaperInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
+
+  public:
+	PaperInterface(int nid=0,Laxkit::Displayer *ndp=nullptr);
+	PaperInterface(anInterface *nowner=nullptr,int nid=0,Laxkit::Displayer *ndp=nullptr);
 	virtual ~PaperInterface();
-	virtual anInterface *duplicate(anInterface *dup=NULL);
+	virtual anInterface *duplicate(anInterface *dup=nullptr);
 	virtual Laxkit::ShortcutHandler *GetShortcuts();
 
 	virtual const char *IconId() { return "Paper"; }
@@ -78,14 +85,14 @@ class PaperInterface : public LaxInterfaces::anInterface
 	virtual void DrawPaper(PaperBoxData *data,int what,char fill,int shadow,char arrow);
 	virtual void DrawGroup(PaperGroup *group,char shadow,char fill,char arrow, int which=3);
 	virtual int DrawDataDp(Laxkit::Displayer *tdp,LaxInterfaces::SomeData *tdata,
-					Laxkit::anObject *a1=NULL,Laxkit::anObject *a2=NULL,int info=1);
+					Laxkit::anObject *a1=nullptr,Laxkit::anObject *a2=nullptr,int info=1);
 
 	
 	virtual int UseThis(Laxkit::anObject *ndata,unsigned int mask=0); 
 	//virtual int DrawData(Laxkit::anObject *ndata,
-	//		Laxkit::anObject *a1=NULL,Laxkit::anObject *a2=NULL,int info=0);
+	//		Laxkit::anObject *a1=nullptr,Laxkit::anObject *a2=nullptr,int info=0);
 	//virtual int DrawDataDp(Laxkit::Displayer *tdp,LaxInterfaces::SomeData *tdata,
-	//		Laxkit::anObject *a1=NULL,Laxkit::anObject *a2=NULL,int info=1);
+	//		Laxkit::anObject *a1=nullptr,Laxkit::anObject *a2=nullptr,int info=1);
 	
 	virtual int UseThisDocument(Document *doc);
 };

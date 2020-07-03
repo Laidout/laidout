@@ -16,6 +16,7 @@
 
 
 #include <lax/refptrstack.h>
+#include <lax/utf8string.h>
 #include <lax/interfaces/somedata.h>
 
 #include "../calculator/values.h"
@@ -28,14 +29,21 @@ namespace Laidout {
 
 
 //--------------------------------- BoxTypesEnum --------------------------------
+/*! Usually, 
+ * MediaBox >= PrintableBox >= BleedBox >= TrimBox >= ArtBox.
+ * Laidout does not have a CropBox per se. The PrintableBox is meant to 
+ * correspond to the printable area of particular printers.
+ * 
+ * Note that currently, only MediaBox is used.
+ */
 enum BoxTypes {
-	NoBox        =0,
-	MediaBox     =(1<<0),
-	ArtBox       =(1<<1),
-	TrimBox      =(1<<2),
-	PrintableBox =(1<<3),
-	BleedBox     =(1<<4),
-	AllBoxes     =31
+	NoBox        = 0,
+	MediaBox     = (1<<0), //paper size
+	PrintableBox = (1<<3), //printable area
+	BleedBox     = (1<<4), //area outside trimbox to print, usually 3-5mm
+	TrimBox      = (1<<2), //area after trimming, final page size
+	ArtBox       = (1<<1), //guide for area of image interest
+	AllBoxes     = ((1<<0)|(1<<3)|(1<<4)|(1<<2)|(1<<1))
 };
 
 
@@ -99,6 +107,8 @@ class PaperBox :  public Laxkit::anObject
 class PaperBoxData : public LaxInterfaces::SomeData
 {
  public:
+	Laxkit::Utf8String label;
+	ValueHash properties;
 	Laxkit::ScreenColor color, outlinecolor;
 	PaperBox *box;
 	int index;
