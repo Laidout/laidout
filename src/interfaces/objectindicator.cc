@@ -52,33 +52,23 @@ namespace Laidout {
  */
 
 
-ObjectIndicator::ObjectIndicator(int nid,Displayer *ndp)
-	: anInterface(nid,ndp) 
-{
-	firsttime=1;
-	showdecs=0;
-	color_arrow = rgbcolor(60,60,60);
-	color_num   = rgbcolor(0,0,0);
-	interface_type=INTERFACE_Overlay;
-	context=NULL;
-	hover_object=NULL;
-	last_hover=-1;
-	font=NULL;
-}
-
 ObjectIndicator::ObjectIndicator(anInterface *nowner,int nid,Displayer *ndp)
 	: anInterface(nowner,nid,ndp) 
 {
-	firsttime=1;
-	showdecs=0;
-	color_arrow = rgbcolor(60,60,60);
-	color_num   = rgbcolor(0,0,0);
-	interface_type=INTERFACE_Overlay;
-	context=NULL;
-	hover_object=NULL;
-	last_hover=-1;
-	font=NULL;
+	firsttime      = 1;
+	showdecs       = 0;
+	color_arrow    = rgbcolor(60, 60, 60);
+	color_num      = rgbcolor(0, 0, 0);
+	interface_type = INTERFACE_Overlay;
+	context        = NULL;
+	hover_object   = NULL;
+	last_hover     = -1;
+	font           = NULL;
 }
+
+ObjectIndicator::ObjectIndicator(int nid,Displayer *ndp)
+	: ObjectIndicator(nullptr, nid,ndp) 
+{}
 
 ObjectIndicator::~ObjectIndicator()
 {
