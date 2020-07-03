@@ -1447,7 +1447,7 @@ LaxFiles::Attribute *NodeBase::dump_out_atts(LaxFiles::Attribute *att, int what,
         att->push("id", "some_name");
         att->push("label", "Displayed label");
         att->push("collapsed", "true");
-        att->push("show_preview", NULL, "If present, show node preview if possible");
+        att->push("show_preview", nullptr, "If present, show node preview if possible");
         att->push("fullwidth", "100", "Full uncollapsed width");
         att->push("preview_height", "50", "Height of preview area");
         att->push("psamplew", "100", "Sampling width for previews");
