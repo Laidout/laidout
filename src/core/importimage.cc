@@ -61,7 +61,7 @@ ImportImageSettings::ImportImageSettings()
 {
 	settingsname = NULL;
 	filename     = NULL;
-	defaultdpi   = 360;
+	defaultdpi   = 300;
 	scaleup      = scaledown = 0;
 	startpage    = 0;
 	perpage      = 0;

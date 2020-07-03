@@ -1027,7 +1027,7 @@ int NewProjectWindow::init()
 	 // target dpi:		__300____
 	last=linp=new LineInput(this,"dpi",NULL,LINP_ONLEFT, 5,250,0,0, 0, 
 						last,object_id,"dpi",
-			            _("Default dpi:"),"360",0,
+			            _("Default dpi:"),"300",0,
 			            0,0,1,1,3,3);
 	AddWin(linp,1, linp->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);//forced linebreak
