@@ -457,10 +457,13 @@ class SetValue : public Value, virtual public FunctionEvaluator
 	SetValue(const char *restricted=NULL);
 	virtual ~SetValue();
 	virtual const char *whattype() { return "SetValue"; }
-	virtual int Push(Value *v,int absorb, int where=-1);
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Set; }
+
+	virtual int Push(Value *v,int absorb, int where=-1);
+	virtual int n();
+	virtual Value *e(int i);
 
  	virtual ObjectDef *makeObjectDef();
     virtual int getNumFields();

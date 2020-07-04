@@ -61,37 +61,21 @@ void installImageFilter()
 /*! \class ImageExportConfig
  * \brief Holds extra config for image export.
  *
- * \todo currently no extra settings, but could be image type, and background color to use, or transparency...
+ * Extras include image format, whether to use a transparent background, pixel width and height.
  */
-class ImageExportConfig : public DocumentExportConfig
-{
- public:
-	char *format;
-	int use_transparent_bg;
-	int width, height;
 
-	ImageExportConfig();
-	ImageExportConfig(DocumentExportConfig *config);
-	virtual ~ImageExportConfig();
-	virtual const char *whattype() { return "ImageExportConfig"; }
-	virtual ObjectDef* makeObjectDef();
-	virtual Value *dereference(const char *extstring, int len);
-	virtual int assign(FieldExtPlace *ext,Value *v);
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
-	virtual LaxFiles::Attribute * dump_out_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
-};
 
 //! Set the filter to the Image export filter stored in the laidout object.
 ImageExportConfig::ImageExportConfig()
 {
-	format=newstr("png");
-	use_transparent_bg=true;
-	width=height=0;
+	format = newstr("png");
+	background = nullptr;
+	use_transparent_bg = true;
+	width = height = 0;
 
 	for (int c=0; c<laidout->exportfilters.n; c++) {
 		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Image")) {
-			filter=laidout->exportfilters.e[c];
+			filter = laidout->exportfilters.e[c];
 			break; 
 		}
 	}
@@ -100,59 +84,65 @@ ImageExportConfig::ImageExportConfig()
 ImageExportConfig::ImageExportConfig(DocumentExportConfig *config)
   : DocumentExportConfig(config)
 {
+	background = nullptr;
+
 	ImageExportConfig *conf = dynamic_cast<ImageExportConfig*>(config);
 	if (conf) {
 		format = newstr(conf->format);
 		use_transparent_bg = conf->use_transparent_bg;
-		width=conf->width;
-		height=conf->height;
+		width  = conf->width;
+		height = conf->height;
+		if (conf->background) background = conf->background->duplicate();
 
 	} else {
-		format=newstr("png");
-		use_transparent_bg=true;
-		width=height=0;
+		format = newstr("png");
+		use_transparent_bg = true;
+		width = height = 0;
 	}
 }
 
 
 ImageExportConfig::~ImageExportConfig()
 {
+	if (background) background->dec_count();
 	delete[] format;
 }
 
 void ImageExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
-	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-
-	if (what==-1) {
-		DocumentExportConfig::dump_out(f,indent,-1,context);
-		fprintf(f,"%stransparent  #use a transparent background, not a rendered color.\n",spc);
-		fprintf(f,"%sformat  png  #file format to use. Default is png\n",spc);
-		fprintf(f,"%swidth  0  #width of resulting image. 0 means auto calculate from dpi.\n",spc);
-		fprintf(f,"%sheight 0  #height of resulting image. 0 means auto calculate from dpi.\n",spc);
-		return;
-	}
-
-	DocumentExportConfig::dump_out(f,indent,what,context);
-	if (use_transparent_bg) fprintf(f,"%stransparent\n",spc);
-	fprintf(f,"%sformat  %s\n",spc,format);
-	fprintf(f,"%swidth  %d\n",spc, width);
-	fprintf(f,"%sheight %d\n",spc, height);
+	Attribute att;
+	dump_out_atts(&att, what, context);
+	att.dump_out(f, indent);
 }
 
-LaxFiles::Attribute *ImageExportConfig::dump_out_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+LaxFiles::Attribute *ImageExportConfig::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
 {
-	att=DocumentExportConfig::dump_out_atts(att,flag,context);
+	att = DocumentExportConfig::dump_out_atts(att,what,context);
+
+	if (what == -1) {
+		att->push("transparent", nullptr,      "Use a transparent background, not a rendered color.");
+		att->push("background", "rgbf(1,1,1)", "The color to use as background when not explicitly transparent.");
+		att->push("format",     "png",         "File format to use. Default is png");
+		att->push("width",      "0",           "Pixel width of resulting image. 0 means auto calculate from dpi.");
+		att->push("height",     "0",           "Pixel height of resulting image. 0 means auto calculate from dpi.");
+		return att;
+	}
+
 	att->push("transparent", use_transparent_bg ? "yes" : "no");
+	if (background) {
+		char *str = background->dump_out_simple_string();
+		att->push("color", str);
+		delete[] str;
+	}
 	att->push("format", format);
 	att->push("width", width);
 	att->push("height", height);
 	return att;
 }
 
-void ImageExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void ImageExportConfig::dump_in_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
 {
-	DocumentExportConfig::dump_in_atts(att,flag,context);
+	DocumentExportConfig::dump_in_atts(att,what,context);
 
 	char *value, *name;
 	for (int c=0; c<att->attributes.n; c++) {
@@ -170,6 +160,13 @@ void ImageExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles:
 
 		} else if (!strcmp(name, "height")) {
 			IntAttribute(value, &height, NULL);
+
+		} else if (!strcmp(name, "color")) { //overrides paper color?
+			Color *ncolor = ColorManager::newColor(att->attributes.e[c]);
+			if (ncolor) {
+				if (background) background->dec_count();
+				background = ncolor;
+			}
 
 		}
 	}
@@ -209,6 +206,15 @@ ObjectDef *ImageExportConfig::makeObjectDef()
             "boolean",
             NULL,    //range
             "true", //defvalue
+            0,      //flags
+            NULL); //newfunc
+
+    def->push("color",
+            _("Color"),
+            _("The color to use as background when not explicitly transparent."),
+            "Color",
+            NULL,    //range
+            "rgbf(1,1,1)", //defvalue
             0,      //flags
             NULL); //newfunc
 

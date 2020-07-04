@@ -4323,13 +4323,16 @@ ValueHash *LaidoutCalculator::parseParameters(ObjectDef *def)
 //	}
 
 	if (nextchar('(')) {
-		pp=new ValueHash;
+		pp = new ValueHash;
 		int tfrom;
-		char *pname=NULL, *ename=NULL;
 		int namel;
-		Value *v=NULL;
-		int pnum=0;
 		int enumcheck;
+		int pnum = 0;
+		bool unnamed = true; //true as long as each parameter so far is unnamed
+		char *pname = nullptr;
+		char *ename = nullptr;
+		Value *v    = nullptr;
+
 		if (nextchar(')')) { from--; }
 		else do {
 			enumcheck=-1;//default field number to check for enum values in
@@ -4337,19 +4340,24 @@ ValueHash *LaidoutCalculator::parseParameters(ObjectDef *def)
 
 			 //check for parameter name given
 			skipwscomment();
-			tfrom=from;
-			pname=getnamestring(&namel);
+			tfrom = from;
+			pname = getnamestring(&namel);
 			if (pname) {
-				from+=namel;
+				 //this might be:
+				 //  paramname = value
+				 //  enumname
+				 //  value
+				from += namel;
 				if (nextchar('=')) {
-					//it is a parameter name (hopefully) so nothing special to do here
-					if (def) enumcheck=def->findfield(pname,NULL);
-					tfrom=from; //update from to just after '=', might have to reset after enum check
+					//it is a parameter name (hopefully)
+					// might be: parameter = enumName, which we check for later
+					if (def) enumcheck = def->findfield(pname, nullptr);
+					tfrom = from; //update from to just after '=', might have to reset after enum check
 				} else {
-					 //name was not in the form of parameter assignment
-					ename=pname;
-					pname=NULL; //ename will be deleted below
-					if (def) enumcheck=pnum; //pname might be an enum value for styledef.field[pnum]
+					 //name was not in the form of parameter assignment, it might still be an enum name
+					 ename = pname;
+					 pname = nullptr; // ename will be deleted below
+					 if (def) enumcheck = pnum;  // pname might be an enum value for styledef.field[pnum]
 				}
 			}
 
@@ -4383,15 +4391,16 @@ ValueHash *LaidoutCalculator::parseParameters(ObjectDef *def)
 					if (!v) enumcheck=-1; //force scan for value 
 				} else {
 					enumcheck=-1; //either info check failed, or field is not an enum, so still must parse value
-					from=tfrom;
+					from = tfrom;
 				}
-				if (ename) { delete[] ename; ename=NULL; }
+				if (ename) { delete[] ename; ename = nullptr; }
 			}
 			if (ename) {
 				delete[] ename;
-				from=tfrom;
+				ename = nullptr;
+				from = tfrom;
 			}
-			if (enumcheck<0) v=evalLevel(0); //either enum check failed, or was not an enum
+			if (enumcheck < 0) v = evalLevel(0); //either enum check failed, or was not an enum
 
 			if (v && v->type()==VALUE_LValue) {
 				 //functions can't use LValue objects, only operators can do that, so remove any LValue status
@@ -4400,10 +4409,24 @@ ValueHash *LaidoutCalculator::parseParameters(ObjectDef *def)
 				v=v2;
 			}
 
+			if (pname) unnamed = false;
 			if (v && !calcerror) {
-				pp->push(pname,v);
+				if (!pname) {
+					//we have a value but no parameter name, so try to find the right one
+					if (!unnamed) calcerr(_("All unnamed parameters must come before named parameters"));
+					else {
+						const char *param = nullptr;
+						if (def->getInfo(pnum-1, &param, NULL,NULL,NULL,NULL,NULL,NULL)==0) {
+							pname = newstr(param);
+						} else calcerr(_("Unknown parameter!"));
+					}
+				}
+				if (!calcerror) {
+					pp->push(pname,v);
+				}
 				v->dec_count();
 				v=NULL;
+
 			} else if (calcerror) {
 				if (pname) { delete[] pname; pname=NULL; }
 				break;

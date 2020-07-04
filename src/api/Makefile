@@ -17,6 +17,7 @@ objs= \
 	reimpose.o \
 	openandnew.o \
 	importexport.o \
+	buildicons.o \
 	functions.o 
 
 

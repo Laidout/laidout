@@ -29,24 +29,19 @@ import locale
 
 iconfile = "icons.svg"
 
-#
-# If you don't have Inkscape 0.92 or newer, use the "old inkscape" one below
-#
-PPU = 96.0 #new inkscape, >= 0.92
-#PPU = 90.0 #old inkscape
-
-HALFPPU = PPU/2
+use_inkscape = False #else use Laidout
+inkscape_1_0 = True
 
 
 #not sure if this is necessary: seems to work for me with or without under a french locale
 locale.setlocale(locale.LC_ALL, '')
 
-makethisonly="" #maybe select only one icon to generate
-bitmapw=24
+makethisonly = "" #maybe select only one icon to generate
+bitmapw = 24
 
 for c in range(1, len(sys.argv)):
     arg = sys.argv[c]
-    if (arg[0]>='A' and arg[0]<='Z') :
+    if (arg[0]>='A' and arg[0]<='Z') or (arg[0]>='a' and arg[0]<='z'):
         makethisonly = arg
         if (makethisonly[-4:] == ".png"): makethisonly = makethisonly[0:-4]
     elif (arg[0]>='0' and arg[0]<='9') :
@@ -59,100 +54,137 @@ print ("Make icons this many pixels wide: "+str(bitmapw))
 if (makethisonly != ""): print ("Make only: "+makethisonly)
 
 
-DOCUMENTHEIGHT = 17 #in inches, just a hint here, gets read in later
+if use_inkscape:
+	#
+	#
+	# If you don't have Inkscape 0.92 or newer, use the "old inkscape" one below
+	#
+	PPU = 96.0 #new inkscape, >= 0.92
+	#PPU = 90.0 #old inkscape
 
-#get names
-names=[]
+	HALFPPU = PPU/2
 
-depth=0
-class SAXtracer (xml.sax.handler.ContentHandler):
+	DOCUMENTHEIGHT = 17 #in inches, just a hint here, gets read in later
 
-    def __init__(self,objname):
-        self.objname=objname
-        self.met_name=""
+	#get names
+	names=[]
 
-    def __getattr__(self,name):
-        self.met_name=name # UGLY! :)
-        return self.trace
+	depth=0
+	class SAXtracer (xml.sax.handler.ContentHandler):
 
-    def endElement(self, name):
-        globals()["depth"]=globals()["depth"]-1
-        #print "depth=",globals()["depth"]
+		def __init__(self,objname):
+			self.objname=objname
+			self.met_name=""
 
-    def startElement(self, name, attrs):
-        globals()["depth"]=globals()["depth"]+1
-        #print "depth=",globals()["depth"]
-  
-        #print "depth="+str(globals()["depth"])+", attr name:"+name
-        #print "attrs="+str(attrs)
-        if (name=="svg"):
-           global DOCUMENTHEIGHT
-           height = attrs.get("height");
-           if (height.find('in')>0):
-               height = height[0:-2]
-               DOCUMENTHEIGHT = int(height)
-           else:
-               DOCUMENTHEIGHT = int(height)/PPU
-           print("found doc height: "+str(DOCUMENTHEIGHT)+" inches from "+height)
-           
-        if (globals()["depth"]!=3) : return 
-        if (name == "marker") : return #prevents rendering marker defs!
+		def __getattr__(self,name):
+			self.met_name=name # UGLY! :)
+			return self.trace
 
-        id = attrs.get("id")
-        if (type(id)==type(None)) : return
-        if (id=="") : return
-        if (makethisonly!="" and id!=makethisonly) : return
+		def endElement(self, name):
+			globals()["depth"]=globals()["depth"]-1
+			#print "depth=",globals()["depth"]
 
-         #there is an element that is of depth 3 whose id is capitalized
-         #so we specifically have to skip that
-        if (id[0]>='A' and id[0]<='Z' and id.find("GridFrom")<0) : 
-            names.append(id)
-            print (id)
+		def startElement(self, name, attrs):
+			globals()["depth"]=globals()["depth"]+1
+			#print "depth=",globals()["depth"]
+	  
+			#print "depth="+str(globals()["depth"])+", attr name:"+name
+			#print "attrs="+str(attrs)
+			if (name=="svg"):
+			   global DOCUMENTHEIGHT
+			   height = attrs.get("height");
+			   if (height.find('in')>0):
+				   height = height[0:-2]
+				   DOCUMENTHEIGHT = int(height)
+			   else:
+				   DOCUMENTHEIGHT = int(height)/PPU
+			   print("found doc height: "+str(DOCUMENTHEIGHT)+" inches from "+height)
+			   
+			if (globals()["depth"]!=3) : return 
+			if (name == "marker") : return #prevents rendering marker defs!
 
-    def trace(self,*rest):
-        return
+			id = attrs.get("id")
+			if (type(id)==type(None)) : return
+			if (id=="") : return
+			if (makethisonly!="" and id!=makethisonly) : return
 
-# --- Main prog
+			 #there is an element that is of depth 3 whose id is capitalized
+			 #so we specifically have to skip that
+			if (id[0]>='A' and id[0]<='Z' and id.find("GridFrom")<0) : 
+				names.append(id)
+				print (id)
 
-print ("")
-print ("Detecting icons to make:")
-p=xml.sax.make_parser();
-curHandler=SAXtracer("my parser")
-p.setContentHandler(curHandler)
-p.parse(open(iconfile))
+		def trace(self,*rest):
+			return
 
-print ("")
-print ("Making icons:")
-for name in names :
-    print ("")
-    X=int(float(subprocess.check_output("inkscape -I "+name+" -X "+iconfile, shell=True)))
-    Y=int(float(subprocess.check_output("inkscape -I "+name+" -Y "+iconfile, shell=True)))
-    W=int(float(subprocess.check_output("inkscape -I "+name+" -W "+iconfile, shell=True)))
-    H=int(float(subprocess.check_output("inkscape -I "+name+" -H "+iconfile, shell=True)))
+	# --- Main prog
 
-    print ("raw inkscape coords xywh: "+str(X)+","+str(Y)+" "+str(W)+","+str(H))
-    x1 = int(int(X/HALFPPU)*HALFPPU)
-    #y1 = int(Y/HALFPPU)*HALFPPU
-    print ('doc height: '+str(DOCUMENTHEIGHT))
-    y1 = int(DOCUMENTHEIGHT*PPU-int(Y/HALFPPU)*HALFPPU-HALFPPU)
-    renderwidth  = bitmapw*(1+int(W/HALFPPU))
-    renderheight = bitmapw*(1+int(H/HALFPPU))
-    x2 = int(x1+HALFPPU*(1+int(W/HALFPPU)))
-    y2 = int(y1+HALFPPU*(1+int(H/HALFPPU)))
+	print ("")
+	print ("Detecting icons to make:")
+	p=xml.sax.make_parser();
+	curHandler=SAXtracer("my parser")
+	p.setContentHandler(curHandler)
+	p.parse(open(iconfile))
 
-    print ("x1,y1:"+str(x1)+","+str(y1)+"  x2,y2:"+str(x2)+"x"+str(y2))
-    print ("icon coords x1,y1:"+str(int(x1*2/PPU)) + "," + str(int(y1*2/PPU)))
+	print ("")
+	print ("Making",len(names),"icons:")
+	for name in names :
+		print ("")
+		X=int(float(subprocess.check_output("inkscape -I "+name+" -X "+iconfile + " | tail -n 1", shell=True)))
+		Y=int(float(subprocess.check_output("inkscape -I "+name+" -Y "+iconfile + " | tail -n 1", shell=True)))
+		W=int(float(subprocess.check_output("inkscape -I "+name+" -W "+iconfile + " | tail -n 1", shell=True)))
+		H=int(float(subprocess.check_output("inkscape -I "+name+" -H "+iconfile + " | tail -n 1", shell=True)))
 
-    command="inkscape -a "+str(x1)+":"+str(y1)+":"+str(x2)+":"+str(y2)+" -w "+ \
-        str(renderwidth)+" -h "+str(renderheight)+" -e "+name+".png "+iconfile
+		print ("raw inkscape coords xywh: "+str(X)+","+str(Y)+" "+str(W)+","+str(H))
+		print ('doc height: '+str(DOCUMENTHEIGHT))
 
-    print (command)
-    print (subprocess.call(command, shell=True))
-   
-     #do something special for main Laidout icon, create a 48x48, 
-     #which gets placed in /usr/share/icons/hicolor/48x48/apps/laidout.png
-    if (name=="LaidoutIcon"):
-        command="inkscape -a "+str(x1)+":"+str(y1)+":"+str(x2)+":"+str(y2)+" -w 48 -h 48 -e laidout-48x48.png "+iconfile
+		x1 = int(int(X/HALFPPU)*HALFPPU)
+		if inkscape_1_0:
+			y1 = int(HALFPPU + int(Y/HALFPPU)*HALFPPU-HALFPPU)
+		else: #### inkscape 0.92:
+			y1 = int(DOCUMENTHEIGHT*PPU-int(Y/HALFPPU)*HALFPPU-HALFPPU)
+		renderwidth  = bitmapw*(1+int(W/HALFPPU))
+		renderheight = bitmapw*(1+int(H/HALFPPU))
+		x2 = int(x1+HALFPPU*(1+int(W/HALFPPU)))
+		y2 = int(y1+HALFPPU*(1+int(H/HALFPPU)))
 
-        print (command)
-        print (subprocess.call(command, shell=True))
+		print ("x1,y1:"+str(x1)+","+str(y1)+"  x2,y2:"+str(x2)+"x"+str(y2))
+		print ("icon coords x1,y1:"+str(int(x1*2/PPU)) + "," + str(int(y1*2/PPU)))
+
+		### inkscape 1.0:
+		if inkscape_1_0:
+			command="inkscape --export-area="+str(x1)+":"+str(y1)+":"+str(x2)+":"+str(y2)+" -w "+ \
+				str(renderwidth)+" -h "+str(renderheight)+" -o "+name+".png "+iconfile
+		else:
+			### inkscape 0.92:
+			command="inkscape -a "+str(x1)+":"+str(y1)+":"+str(x2)+":"+str(y2)+" -w "+ \
+				str(renderwidth)+" -h "+str(renderheight)+" -e "+name+".png "+iconfile
+
+		print (command)
+		print (subprocess.call(command, shell=True))
+	   
+		 #do something special for main Laidout icon, create a 48x48, 
+		 #which gets placed in /usr/share/icons/hicolor/48x48/apps/laidout.png
+		if (name=="LaidoutIcon"):
+			### inkscape 1.0:
+			if inkscape_1_0:
+				command="inkscape --export-area="+str(x1)+":"+str(y1)+":"+str(x2)+":"+str(y2)+" -w 48 -h 48 -o laidout-48x48.png "+iconfile
+			else:
+				### inkscape 0.92:
+				command="inkscape -a "+str(x1)+":"+str(y1)+":"+str(x2)+":"+str(y2)+" -w 48 -h 48 -e laidout-48x48.png "+iconfile
+
+			print (command)
+			print (subprocess.call(command, shell=True))
+
+else: ### Use Laidout
+
+	pattern = ""
+	if makethisonly: pattern = 'pattern = "'+makethisonly+'",'
+	command = "../laidout --command 'Laidout.BuildIcons([{}], output_px_size={}, {} output_dir=\"TEST_ICON_BUILD\")'" \
+					.format('"{}"'.format(iconfile), bitmapw, pattern)
+	print (command)
+	print (subprocess.call(command, shell=True))
+
+
+
+

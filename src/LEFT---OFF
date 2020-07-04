@@ -3,7 +3,8 @@ to meet various goals. This includes Roadmap items as well as fixing bugs.
 List bug tracker number if any.
 
 When an item is satisfied, put it in the DONE section at bottom of file.
-Those are purged with each release.
+With each release, that section is transfered to the DONE file, and edited
+down to major items in ../features.md.
 
 
 
@@ -11,6 +12,8 @@ Those are purged with each release.
 
 
 ------------ serious bugs to fix right now:
+
+bug: switching export types in export dialog not clearing extra fields
 
 save as should default to same directory as existing file
 save as needs to use current save path, not current directory
@@ -28,29 +31,7 @@ bug: window sizes seem to all be off a few pixels
 
 bug: curve is terrible approximation at end points
 
-svg import problems:
-  any clipping
-  finish debugging mesh svg 2.0 out/in
-  grid guides
-  sometimes path endpoint spikes
-  dotted line style
-  for new docs, should set rulers to use some reasonable units, from either width="100px", or namedview.document-units
-
-  DONE finish debugging powerstroke out/in
-    DONE try actually implementing powerstroke in
-    DONE zero width caps not working
-  DONE width="512px" is mapping to 7.11111 inches (72 dpi)..
-  DONE images with xlink:href need to be read in relative to the svg file, not cwd
-  DONE problem with transform sometimes, see icons-tiling.svg
-    DONE non-1 scale problem
-    DONE seems like children screw up -> problem with x,y in: rotate(angle, x,y)
-	DONE "use" transforms not compounding
-  DONE text placement and size
-  DONE width/height makes scale 0 when after viewBox
-  DONE gradient clipping
-  DONE gradient filling past minimum definition bounds
-
-svg out, select to files, often the first time goes to file, not files
+bug: svg out, select to files, often the first time goes to file, not files
 
 debug registration, cut marks, trim marks
   custom papergroup, add registration/bars/, can't move it
@@ -185,6 +166,7 @@ stackframe seems to be ignoring window borders on layout
 ----------------0.098 ROADMAP ITEMS: features and enhancements------------------------
 website: explain a bit more how to install dev versions, and place side by side with "stable"
 website: need to redo screenshots section for mobile friendliness
+for CI, https://github.com/Laidout/laidout-icons.git needs to be updated
 update fileformat.txt
   missing Palette/GradientStrip
   missing voronoi
@@ -205,6 +187,7 @@ update screenshots, sync with features
 update links page
 update help page
 update dtpcompare.html
+update features.md: sweep LEFT-OFF to DONE, edit major items to features.md
 update dev page
   document pull request process on dev.html page, also in repo readme.md
 comment out cairo_debug_reset_static_data before release, since it usually means crash, interferes with pipeout
@@ -218,6 +201,34 @@ test:
   test in different window managers
   make some test scripts for command line testing
 
+
+if no png icons detected, try to autogenerate
+  101 icons in main icons.svg:
+    old, Inkscape .92: 8.5 minutes
+    new, Laidout: 24 seconds !!! 
+  all images: 203 icons, 39 seconds!
+  still to optimize: render to single image, image subset, save that
+ 
+  laidout shell command: Laidout.BuildIcons(["icons/icons.svg","icons/icons-tiling.svg","../laxkit/lax/icons/icons.svg"],
+		  								grid_cell_size = .5,
+		  								output_px_size = 24,
+										output_dir="TEST_ICON_BUILD")
+
+  image batch export:
+	id pattern:
+	  spread/pagestack/0/*/
+		0: [A-Z].*
+		  1: *-s*
+		    +
+	padding: [by grid] [l r t b]
+	unit size: .5 in
+	output unit size: 24px
+	from files:
+		- icons.svg
+		- icons-tiling.svg
+		- lax-icons.svg
+		+
+	output directory: _____ ...
 
 ViewWindow:
   maybe drawaxes should show dotted line from origin to bbox?
@@ -556,24 +567,47 @@ Scribus scribus:
   scribus import: need to read page sizes from actual page attributes, as it may well be different than in document attributes
     -> this necessitates revamp of singles to use more than one paper type
   implement crop
+
 svg: SVG
+  in:
+    finish debugging mesh svg 2.0 out/in
+      monkey.doc export, then import, all wrong!
+    any clipping
+    grid guides
+    sometimes path endpoint spikes
+    dotted line style
+    for new docs, should set rulers to use some reasonable units, from either width="100px", or namedview.document-units
+    
+    DONE mesh out
+    DONE finish debugging powerstroke out/in
+      DONE try actually implementing powerstroke in
+      DONE zero width caps not working
+    DONE width="512px" is mapping to 7.11111 inches (72 dpi)..
+    DONE images with xlink:href need to be read in relative to the svg file, not cwd
+    DONE problem with transform sometimes, see icons-tiling.svg
+      DONE non-1 scale problem
+      DONE seems like children screw up -> problem with x,y in: rotate(angle, x,y)
+      DONE "use" transforms not compounding
+    DONE text placement and size
+    DONE width/height makes scale 0 when after viewBox
+    DONE gradient clipping
+    DONE gradient filling past minimum definition bounds
+    DONE in needs to account for viewBox
+    DONE linear gradients
+    DONE radial gradients
+    DONE in needs to parse "use" elements and other "#" refs
+
   text:
     multiline
 	direction
 	spans
 	DONE color
   arcs
-  export papers current not going to correct paper
+  export papers currently not going to correct paper
   text on path without path conversion
   rudimentary mesh in.. try to scale and place as separate object (without proper clipping)
-  dump_in filter to nodes optionally
+  dump_in filter to nodes optionally, once those are renderable
   need to parse units
-  DONE in needs to account for viewBox
-  in needs to parse "use" elements and other "#" refs
-  in:
-    DONE linear gradients
-	DONE radial gradients
-	mesh gradients (inkscape variety)
   radial: transparent inner circle, patch edges
   out: text linespacing.. unclear how Msize/linespacing maps to svg options
 plan:
@@ -1145,7 +1179,7 @@ collect for out: define directory to pull all files and external resources in, i
 General design usability
 to be a decent editing platform, Laidout needs:
   undo/redo
-  viewport rendering needs to be far better
+  viewport rendering needs to be far,far better
   master pages with auto page number is important.. for image based page numbers, dynamic objects important!!
   would be convenient to send to gimp for editing, update later live
   when delete/add pages, need option to reposition to same orientation in margin area
@@ -1594,8 +1628,11 @@ customizable object child relationships to parent, rather than simple transform
   when trying to move an anchor when you still need to select invariants, flash the invariants
   need edge indicators for more convenient snapping
 
+lax:
+  CheckDirs / check_dirs is confusing
 
 calculator/scripting
+  function calls, assigning named parameters, checks for '=', but only single char, fails when it's actually a ==
   cannot assign dict elements, like a["b"] = c or a.b = c
   security restrictions?
   showing defined functions should show the code
@@ -1653,8 +1690,8 @@ maybe flag whether to export limbo with spreads?
 action/shortcut selector overlay
 
 templates Templates:
-  save as default, or just save as.
   partial templates, fill in non defined, like use booklet but manually define paper size
+  DONE save as default, or just save as.
 
 ImageImport dialog: (actually, needs a total redesign) import images importimage
   should have preview for alignment options.. grab destination page to show preview
@@ -1816,20 +1853,6 @@ page thumbnail should be rational, ie image should be whole page, not just conte
 
 in number edit boxes, wheel should allow changing numbers, change on digit mouse is over?
   is it better to wheel at curpos?? probably.. select that digit, must track after changes!!!
-
-if no png icons detected, try to autogenerate
-	id pattern:
-		0: [A-Z].*
-		  1: *-s*
-		    +
-	unit size: .5 in
-	output unit size: 24px
-	from files:
-		- icons.svg
-		- icons-tiling.svg
-		- lax-icons.svg
-		+
-	output directory: _____ ...
 
 global resources:
   current frame/time

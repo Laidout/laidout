@@ -20,22 +20,20 @@ VERSION 0.098
 (done) Html gallery output with optional template
 (done) Gradients able to fill parents with none,pad,reflect,repeat spread methods
 (done) Debug gradient radial controls
+(done) Be able to generate icons from source svg directly
        Way to export pages as svg embedded into html
-       lock down color backend.. currently it's mostly a series of terrible hacks based on 8-bit screen rgb
-       Soup up the color box so one can recall previous colors, and/or integration with palette window
+       Fix icon/text/thin line sizing issues for high dpi monitors (issue #16)
 
        Moving selected things in group contents does not update group bounds
        should not be able to select both group and group contents at same time
        fix object transform handles for really small objects (handles should still be accessible)
-       double click on group should change selection area to group contents like inkscape?
+(done) double click on group should change selection area to group contents like inkscape?
 
        layers (object tree) palette
        Tools should remember their settings
-	   Find interface
-       Object and resource tags interface
+       Find interface
        Import Images dialog needs total reprogramming
        In image properties dialog, be able to select from various default preview configs
-       Undo/Redo
 
        Empty objects that can be parents, or whose contents are defined by nodes
        Perspective transform object filter
@@ -50,7 +48,27 @@ VERSION 0.098
 
        Debug Text on path tool
        Clean up patch controls
-       Clean up project load/save internals and dialogs
+
+(done) debug svg in enough to be able to load icons.svg
+(done) svg in/out with powerstroke
+       svg in/(done)out with meshes
+(done) Import svg gradients with proper filling of parent
+       Collect for out
+       export preview
+       Make sure scribus export works with 1.5, and can handle new clipping features
+
+
+VERSION 0.099
+-------------
+       Undo/Redo
+
+       PDF in, at least as 1 image per page, for purposes of imposition
+       pdf export, unicode capable
+       Optimize pdf export to rescale to target dpi, and compress image data
+
+       Tool scripting
+       Scripted plugin interface
+       Clone Pattern Builder
 
        Finish implementing double sided net impositions
        allow inserting net impositions as foldouts in regular Signature Imposition stacks
@@ -59,30 +77,15 @@ VERSION 0.098
        Signature editor: detect non staplable binding edge, show red rather than green
        Signature editor: option to specify alignment of different size signature stacks
 
-       Tool scripting
-       Scripted plugin interface
-       Clone Pattern Builder
-
-       debug svg in
-(done) Import svg gradients with proper filling of parent
-       Collect for out
-       export preview
-       Make sure scribus export works with 1.5, and can handle new clipping features
-       Scribus import should try to do something appropriate with page spreads >= 2 pages wide
-       Scribus import should do something meaningful with original Scribus page bleed values
-
-       PDF in, at least as 1 image per page, for purposes of imposition
-       pdf export, unicode capable
-       Optimize pdf export to rescale to target dpi, and compress image data
-
        drag-n-drop text to and from the various text edits
        drag-n-drop with system, like drag images into viewwindow from an external file browser
 
        Figure out what on earth is to be done about color font processing (issue #6)
 
-
-VERSION 0.099
--------------
+       lock down color backend.. currently it's mostly a series of terrible hacks based on 8-bit screen rgb
+       Soup up the color box so one can recall previous colors, and/or integration with palette window
+       Clean up project load/save internals and dialogs
+       Object and resource tags interface
        color styles, so objects can refer to a named color, just change that named to change all
        Custom line caps
        Finish implementing anchor tool. maybe gss compatibility?
@@ -94,6 +97,9 @@ VERSION 0.099
        Merge EpsData with normal images, since they can be previewed with gm now
        Make a laxkit.pc
        Python plugin
+
+       Scribus import should try to do something appropriate with page spreads >= 2 pages wide
+       Scribus import should do something meaningful with original Scribus page bleed values
 
 
 VERSION 0.1 
@@ -228,7 +234,7 @@ While i'm at it, I'd like a pony.
 ------------- OLD RELEASES -----------------
             ----------------
 
-VERSION 0.097
+VERSION 0.097  --  released 25 November 2018!
 -------------
 (done) debug previous version at least slightly!
 (done) experimental Delauny/voronoi lines tool

@@ -27,6 +27,28 @@ namespace Laidout {
 void installImageFilter();
 
 
+//----------------------------- ImageExportConfig -----------------------------
+class ImageExportConfig : public DocumentExportConfig
+{
+ public:
+	char *format;
+	int use_transparent_bg;
+	Laxkit::Color *background;
+	int width, height; //px of output
+
+	ImageExportConfig();
+	ImageExportConfig(DocumentExportConfig *config);
+	virtual ~ImageExportConfig();
+	virtual const char *whattype() { return "ImageExportConfig"; }
+	virtual ObjectDef* makeObjectDef();
+	virtual Value *dereference(const char *extstring, int len);
+	virtual int assign(FieldExtPlace *ext,Value *v);
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual LaxFiles::Attribute * dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
+};
+
+
 //------------------------------------ ImageExportFilter ----------------------------------
 class ImageExportFilter : public ExportFilter
 {

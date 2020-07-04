@@ -18,6 +18,7 @@
 #include "reimpose.h"
 #include "openandnew.h"
 #include "importexport.h"
+#include "buildicons.h"
 
 #include "../core/stylemanager.h"
 #include "../core/papersizes.h"
@@ -39,6 +40,7 @@ int InitFunctions()
 	stylemanager.AddObjectDef(makeNewDocumentObjectDef(),1);
 	stylemanager.AddObjectDef(makeImportObjectDef(),1);
 	stylemanager.AddObjectDef(makeExportObjectDef(),1);
+	stylemanager.AddObjectDef(makeBuildIconsDef(),1);
 	
 	return stylemanager.getNumFields();
 }

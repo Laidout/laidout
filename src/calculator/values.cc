@@ -3105,6 +3105,17 @@ int SetValue::Push(Value *v,int absorb, int where)
 	return 1; //fail
 }
 
+int SetValue::n()
+{
+	return values.n;
+}
+
+Value *SetValue::e(int i)
+{
+	if (i >=0 && i < values.n) return values.e[i];
+	return nullptr;
+}
+
 int SetValue::getValueStr(char *buffer,int len)
 {
 	int needed=3;//"{}\n"

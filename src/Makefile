@@ -95,6 +95,7 @@ otherobjs= \
 	api/reimpose.o \
 	api/openandnew.o \
 	api/importexport.o \
+	api/buildicons.o \
 	api/functions.o \
 	interfaces/actionarea.o \
 	interfaces/nupinterface.o \
