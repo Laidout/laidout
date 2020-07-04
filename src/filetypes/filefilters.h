@@ -100,7 +100,7 @@ class DocumentExportConfig : public Value
 {
  public:
 	enum Targets { TARGET_Single = 0, TARGET_Multi = 1, TARGET_Command = 2 }; //needs to stay in sync with objectdef enum
-	int target; //single file: 0, multiple files: 1
+	int target; //one of Targets
 	int start,end;
 	int layout;
 	enum EvenOdd { All,Even,Odd } evenodd;

@@ -442,15 +442,15 @@ int createImportConfig(ValueHash *context, ValueHash *parameters,
 
 ImportConfig::ImportConfig()
 {
-	scaletopage=2;
-	filename=NULL;
-	keepmystery=0;
-	instart=inend=-1;
-	topage=spread=layout=-1;
-	doc=NULL;
-	toobj=NULL;
-	filter=NULL;
-	dpi=300;
+	scaletopage = 2;
+	filename    = NULL;
+	keepmystery = 0;
+	instart = inend = -1;
+	topage = spread = layout = -1;
+	doc         = NULL;
+	toobj       = NULL;
+	filter      = NULL;
+	dpi         = 300;
 }
 
 /*! Increments count of ndoc and nobj if given.
@@ -460,18 +460,18 @@ ImportConfig::ImportConfig()
 ImportConfig::ImportConfig(const char *file, double ndpi, int ins, int ine, int top, int spr, int lay,
 				 Document *ndoc, Group *nobj)
 {
-	filename=newstr(file);
-	scaletopage=2;
-	keepmystery=0;
-	instart=ins;
-	inend=ine;
-	topage=top;
-	spread=spr;
-	layout=lay;
-	doc=ndoc;
-	toobj=nobj;
-	filter=NULL;
-	if (dpi>0) dpi=ndpi; else dpi=300;
+	filename    = newstr(file);
+	scaletopage = 2;
+	keepmystery = 0;
+	instart     = ins;
+	inend       = ine;
+	topage      = top;
+	spread      = spr;
+	layout      = lay;
+	doc         = ndoc;
+	toobj       = nobj;
+	filter      = NULL;
+	if (dpi > 0) dpi = ndpi; else dpi = 300;
 
 	if (doc) doc->inc_count();
 	if (toobj) toobj->inc_count();
