@@ -953,8 +953,8 @@ int Document::Load(const char *file,ErrorLog &log)
 		}
 
 		if (isSvgFile(file)) {
-			int c=addSvgDocument(file,this); //0 success, 1 failure
-			if (c==0) return 1;
+			int c = AddSvgDocument(file, this);  // 0 success, 1 failure
+			if (c == 0) return 1;
 		}
 		return 0;
 	}
