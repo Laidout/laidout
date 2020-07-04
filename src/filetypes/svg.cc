@@ -74,7 +74,7 @@ static int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData 
  * pushed onto the project, as it is assumed it is elsewhere. Note that this will
  * basically wipe the existing document, and replace with the Svg document.
  */
-int addSvgDocument(const char *file, Document *existingdoc)
+int AddSvgDocument(const char *file, Document *existingdoc)
 {
 	FILE *f=fopen(file,"r");
 	if (!f) return 1;
