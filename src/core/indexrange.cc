@@ -16,6 +16,15 @@
 
 #include "indexrange.h"
 
+#include <lax/strmanip.h>
+
+
+//template implementation:
+#include <lax/lists.cc>
+
+
+using namespace Laxkit;
+
 
 namespace Laidout {
 
@@ -38,7 +47,7 @@ IndexRange::IndexRange()
 	curi = 0;
 	cur = 0;
 	max = -1;
-	min = 0;
+	//min = 0;
 	range_marker = newstr("-"); //used in ToString, and ALSO checked in Parse(), along with '-' and ':'
 }
 
@@ -51,6 +60,7 @@ const char *IndexRange::RangeMarker(const char *marker)
 {
 	if (isblank(marker)) return range_marker;
 	makestr(range_marker, marker);
+	return range_marker;
 }
 
 /*! Return 0 for succes, or -1 for which not found.
@@ -235,13 +245,14 @@ const char *IndexRange::ToString(bool absolute, bool use_labels)
 
 	if (use_labels) {
 		Utf8String l1, l2;
-
-		i1 = indices[c];
-		i2 = indices[c+1];
-		IndexToLabel(i1, l1, absolute);
-		IndexToLabel(i2, l2, absolute);
+		int i1, i2;
 
 		for (int c=0; c<indices.n; c+=2) {
+			i1 = indices[c];
+			i2 = indices[c+1];
+			IndexToLabel(i1, l1, absolute);
+			IndexToLabel(i2, l2, absolute);
+
 			if (i1 == i2) scratch.Sprintf("%s", l1.c_str());
 			else scratch.Sprintf("%s%s%s", l1.c_str(), range_marker, l2.c_str());
 			str.Append(scratch);

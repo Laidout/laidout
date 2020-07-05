@@ -45,7 +45,7 @@ class IndexRange
 	int Next();
 	int Current();
 	int End();
-	virtual int Max(int nmax) { max = nmax; }
+	virtual int Max(int nmax) { max = nmax; return max; }
 	virtual int Max() { return max; }
 	//virtual int Min(int nmin) { min = nmin; }
 	//virtual int Min() { return min; }
@@ -54,10 +54,10 @@ class IndexRange
 	virtual const char *RangeMarker(const char *marker);
 
 	virtual void Clear();
-	virtual int Parse(const char *range);
-	virtual char *ToString();
+	virtual int Parse(const char *range, const char **end_ptr, bool use_labels);
+	virtual const char *ToString(bool absolute, bool use_labels);
 
-	virtual void IndexToLabel(int i, Utf8String &str, bool absolute);
+	virtual void IndexToLabel(int i, Laxkit::Utf8String &str, bool absolute);
 	virtual int LabelToIndex(const char *label, const char **end_ptr);
 };
 
