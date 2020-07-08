@@ -21,6 +21,7 @@
 #include "../laidout.h"
 #include "../filetypes/image.h"
 #include "../filetypes/svg.h"
+#include "../core/utils.h"
 
 #include <unistd.h>
 
@@ -102,6 +103,7 @@ int BuildIconsFunction(ValueHash *context,
 	Document *doc = nullptr;
 	int        numhits = 0;
 	clock_t time_start = times(nullptr);
+	SetValue *files = nullptr;
 
 	try {
 		if (!parameters) throw _("BuildIcons needs parameters!");
@@ -127,7 +129,21 @@ int BuildIconsFunction(ValueHash *context,
 		//			  output_dir = "./icon-dump-test"
 		//			 )
 
-		 //----grid_cell_size
+		 //-----files: set or string
+		// int num_files = 0;
+		Value *v = parameters->find("files");
+		if (!v) throw _("Missing file list!");
+		files = dynamic_cast<SetValue*>(v);
+		if (!files) {
+			StringValue *sv = dynamic_cast<StringValue*>(v);
+			if (!sv) throw _("Wrong format for file list!");
+			files = new SetValue();
+			files->Push(sv, 0);
+		} else files->inc_count();
+		if (!files || !files->n()) throw _("Missing file list!");
+
+
+		 //----grid_cell_size.... TODO: accept lists
 		int i;
 		double grid_cell_size = .5; //inches
 		double d = parameters->findIntOrDouble("grid_cell_size",-1,&i);
@@ -137,21 +153,45 @@ int BuildIconsFunction(ValueHash *context,
 
 		 //-----output_px_size
 		int output_px_size = 24; //px
-		int ii = parameters->findInt("output_px_size", -1, &i);
-		if (i==2) throw _("Invalid format for output_px_size!");
-		else if (i == 0) output_px_size = ii;
+		NumStack<int> px_sizes;
+		v = parameters->find("output_px_size");
+		if (dynamic_cast<SetValue*>(v)) {
+			SetValue *set = dynamic_cast<SetValue*>(v);
+			int isnum;
+			for (int c=0; c<set->n(); c++) {
+				int ii = getIntValue(set->e(c), &isnum);
+				if (isnum == 0) throw _("Invalid format for output_px_size!");
+				output_px_size = ii;
+				px_sizes.push(ii);
+			}
+			while (px_sizes.n < files->n()) px_sizes.push(output_px_size);
+		} else {
+			int ii = parameters->findInt("output_px_size", -1, &i);
+			if (i==2) throw _("Invalid format for output_px_size!");
+			else if (i == 0) {
+				output_px_size = ii;
+			}
+			for (int c=0; c<files->n(); c++) px_sizes.push(output_px_size);
+		}
 
 
-		 //-----files
-		SetValue *files = nullptr;
-		files = dynamic_cast<SetValue*>(parameters->find("files"));
-		if (!files || !files->n()) throw _("Missing file list!");
-
+		 //-----pattern
+		Utf8String pattern;
+		v = parameters->find("pattern");
+		if (v) {
+			if (dynamic_cast<StringValue*>(v)) {
+				StringValue *sv = dynamic_cast<StringValue*>(v);
+				pattern = sv->str;
+				pattern.Replace("*", ".*", true); //turn wildcard pattern to regex
+			} else {
+				throw _("Wrong format for pattern!");
+			}
+		}
 
 		 //-----output_dir
 		//Utf8String output_dir = "./icon-dump-test";
 		Utf8String output_dir;
-		Value *v = parameters->find("output_dir");
+		v = parameters->find("output_dir");
 		if (!v) throw _("Missing output_dir!");
 		if (dynamic_cast<StringValue*>(v)) {
 			StringValue *sv = dynamic_cast<StringValue*>(v);
@@ -168,6 +208,7 @@ int BuildIconsFunction(ValueHash *context,
 		DoubleBBox outbox;
 		int        error = 0;
 		ImageExportConfig config;
+		Affine traabb;
 
 		config.target = DocumentExportConfig::TARGET_Single;
 		config.start = 0;
@@ -184,13 +225,22 @@ int BuildIconsFunction(ValueHash *context,
 			StringValue *file = dynamic_cast<StringValue*>(files->e(c));
 			if (!file) throw(_("Wrong value format for file!"));
 
+			cout <<"----Parsing file "<<file->str<<endl;
+
+			output_px_size = px_sizes.e[c];
+
 			// import file
 			if (!file_exists(file->str, 1, nullptr)) {
 				str.Sprintf(_("Source file %s not found!"), file->str);
 				throw str.c_str();
 			}
+
+			if (!isSvgFile(file->str)) {
+				str.Sprintf(_("File %s is not SVG!"), file->str);
+				throw str.c_str();
+			}
 			
-			if (AddSvgDocument(file->str) != 0) {
+			if (AddSvgDocument(file->str, log) != 0) {
 				str.Sprintf(_("Problem reading svg file %s!"), file->str);
 				throw str.c_str();
 			}
@@ -202,6 +252,23 @@ int BuildIconsFunction(ValueHash *context,
 			config.doc = doc;
 			doc->inc_count();
 			int nx,ny;
+
+			// method 2, with single large image:
+			// render page once, grab icons off it.. maybe 1 px rounding errors? need testing...
+			int pagew = page->pagestyle->w() / grid_cell_size * output_px_size;
+			int pageh = page->pagestyle->h() / grid_cell_size * output_px_size;
+			int pagehunits = page->pagestyle->h() / grid_cell_size;
+			// double scx = pagew / page->pagestyle->w();
+			// double scy = pageh / page->pagestyle->h();
+			LaxImage *page_image = page->RenderPage(pagew, pageh, nullptr, true);
+			// Utf8String TESTSTR = file->str;
+			// TESTSTR.Append(".png");
+			// page_image->Save(TESTSTR.c_str());
+
+			// LaxImage *croptest = page_image->Crop(50,50,100,100, true);
+			// croptest->Save("CROPTESTPLUS.png");
+			// croptest = page_image->Crop(-50,-50,100,100, true);
+			// croptest->Save("CROPTESTMINUS.png");
 
 			// walk through searching for pattern
 			for (int c3=0; c3<pagelayer->n(); c3++) { //for each inkscape "layer"
@@ -216,10 +283,15 @@ int BuildIconsFunction(ValueHash *context,
 
 					//   find bbox in page space
 					box.clear();
-					box.addtobounds(layer->transformPoint(obj->BBoxPoint(0,0,true)));
-					box.addtobounds(layer->transformPoint(obj->BBoxPoint(1,0,true)));
-					box.addtobounds(layer->transformPoint(obj->BBoxPoint(0,1,true)));
-					box.addtobounds(layer->transformPoint(obj->BBoxPoint(1,1,true)));
+					// ----------
+					// box.addtobounds(layer->transformPoint(obj->BBoxPoint(0,0,true)));
+					// box.addtobounds(layer->transformPoint(obj->BBoxPoint(1,0,true)));
+					// box.addtobounds(layer->transformPoint(obj->BBoxPoint(0,1,true)));
+					// box.addtobounds(layer->transformPoint(obj->BBoxPoint(1,1,true)));
+					// --------
+					traabb.m(layer->m());
+					traabb.PreMultiply(obj->m());
+					obj->ComputeAABB(traabb.m(), box);
 
 					//   compute enclosing bounds
 					outbox.minx = grid_cell_size * int(box.minx / grid_cell_size);
@@ -248,7 +320,15 @@ int BuildIconsFunction(ValueHash *context,
 						check_dirs(output_dir.c_str(), true, 0700);
 					}
 					cout << "Writing icon: "<<outfile.c_str()<<endl;
-					if (imagefilter->Out(outfile.c_str(), &config, log) != 0) throw _("Error outputting image file!");
+					// //method 1: use image out filter, which rerenders page over and over: ~36 seconds
+					// if (imagefilter->Out(outfile.c_str(), &config, log) != 0) throw _("Error outputting image file!");
+					//method 2: crop down from large single image: ~3 seconds
+					int x = int(outbox.minx / grid_cell_size);
+					int y = int(outbox.miny / grid_cell_size);
+					cout << "x,y: "<<x<<','<<y<<",  w,h: "<<config.width<<" x "<<config.height << endl;
+					LaxImage *cropped = page_image->Crop(x * output_px_size, (pagehunits-y-ny) * output_px_size, config.width, config.height, true);
+					cropped->Save(outfile.c_str());
+					cropped->dec_count();
 
 					numhits++;
 				}
@@ -261,15 +341,26 @@ int BuildIconsFunction(ValueHash *context,
 
 	} catch (const char *error) {
 		if (doc) laidout->project->Pop(doc);
+		if (files) files->dec_count();
 		log.AddMessage(error,ERROR_Fail);
 		if (value_ret) *value_ret=NULL;
 		return 1;
 	}
 	
+	if (files) files->dec_count();
 	time_start = times(nullptr) - time_start;
 	cout << "Generated "<<numhits<<" icons in "<< (time_start / (float)sysconf(_SC_CLK_TCK)) <<" seconds."<<endl;
 	if (value_ret) *value_ret=NULL;
 	return 0;
+}
+
+/*! Load in source svg files, parse all into icons, and install to iconmanager.
+ * Return 0 for success, nonzero for error.
+ */
+int BuildIconsLive()
+{
+	// *** needs to trigger some kind of theme icon update in everything
+	return 1;
 }
 
 

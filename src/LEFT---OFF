@@ -13,12 +13,6 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
-bug: switching export types in export dialog not clearing extra fields
-
-save as should default to same directory as existing file
-save as needs to use current save path, not current directory
-save as should change save/import/export/current directory to that directory
-  -> need to test current behavior
 
 bug: space bar for centering not working anymore.. shift-space seems to
 
@@ -64,6 +58,7 @@ configure should check for libreadline-dev? apparently not pkg-config ready <- h
 
 scroll bar zoom handles don't appear to work
 
+memory hole ./laidout -n letter then quit
 memory hole in reimpose .. reimposed 5 page booklet
 memory hole when graphical shell activated
 memory hole do laidout -n letter, split a window, then quit. undeleted Objects remain!
@@ -184,6 +179,7 @@ check laidout.1 when time to release
 update docs to have new release number
 update translation base files
 update screenshots, sync with features
+  some of the old youtube embedding doesn't work any more
 update links page
 update help page
 update dtpcompare.html
@@ -202,19 +198,13 @@ test:
   make some test scripts for command line testing
 
 
-if no png icons detected, try to autogenerate
-  101 icons in main icons.svg:
-    old, Inkscape .92: 8.5 minutes
-    new, Laidout: 24 seconds !!! 
-  all images: 203 icons, 39 seconds!
-  still to optimize: render to single image, image subset, save that
- 
-  laidout shell command: Laidout.BuildIcons(["icons/icons.svg","icons/icons-tiling.svg","../laxkit/lax/icons/icons.svg"],
-		  								grid_cell_size = .5,
-		  								output_px_size = 24,
-										output_dir="TEST_ICON_BUILD")
+laxkit lists need move semantics
 
-  image batch export:
+icons
+  if no png icons detected, try to autogenerate
+  test how fast, have autogenerate as option on startup
+
+  image batch export: ...wrap this into general Selection export
 	id pattern:
 	  spread/pagestack/0/*/
 		0: [A-Z].*
@@ -400,12 +390,6 @@ cairo:
 utf8string:
   move semantics to be more efficient
 
-importing: image import:
-  need drag and drop from system for multi-image import
-  cannot import images directly from recents
-  need thumbnail preview of images in directories
-  when you have a filter, should still show directories(?)
-
 pdf export lines has outlines in evince?
 
 debug inkscape node extension
@@ -426,22 +410,17 @@ text on path textonpath: TextOnPath
   glyph positioning is wrong
   position glyphs based on middle of glyph, not start of glyph
 
-PathInterface: pathinterface
-  bug: seems to be possible to move nodes out of order, only occassionally
-  bug: shift click down then up on a point selects then deselects.. control can toggle
-  bug: problems for non-bez-controlled corners at endpoint. Also variable offset causes weird connections
-  bug: applyoffset, the bez part at joins is messed up when no offset, suspect problem in FlatpointToCoordinate, mismatch with bez join next to sample points
-
-  bug: should not create new control points by pressing cntl, unless there is movement
-  bug: delete last weight node, sometimes width is wrong
-  bug: make new line with freehand tool, cannot move weight nodes in a rational way
-
-
 
 Find interface:
-  search by name and/or type, description, other meta, broken images, other preflight things, etc.
-  find next or find all, all shows selection of thumbs
-  mass operations on found objects
+  ____pattern_____ .* Aa  (is regex, case sensitive)
+  [next] [prev] [all] 
+  [ 5 found: (found object thumbnail list) ]
+  search:
+    name desc other-meta
+	broken
+	scriptable pre-flighty conditions
+	current spread only
+  foreach: scriptable action
 
 in menus, click down, then drag, will return what is under mouse.. should default to not do anything but stay in menu
 
@@ -468,18 +447,29 @@ build: building:
 
 rework ui to be programmable. Perhaps an ui builder
 
+LaxCairoImage:
+  make sure image counters are ok, such as in new Crop()
+
 file filters: filefilters:
   multiple export targets, including per object export settings
+  export with custom project files:
+    like html gallery, has project config in coop/
+	some files templated
+	project defined by:
+	  directory with project files to copy
+	  export config to create files that go along with copied project files
+	  template vars to replace in set of copied project files
   config resource load/save
   need to ensure that when bouncing around filters, Export All sets range properly
   need to preserve last settings per filter
   would be nice to standardize viewport display so each exporter doesn't have to implement everything themselves
     like define an iterator to walk over the view
   fix when filtered object has children.. currently skips children
-  open with... on export
+  open with... on export ? combine with command option, which does basically the same thing.. need to decide about tmp files and unlink them
+    export by command needs work, bypasses safeties.. what about multiple files?
+	DONE put command export within export_document()
   remember full export settings
   need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
-  need equirectangular out
   selecting out should auto select tofile | tofiles, depending on how many spreads selected for out
   export ranges should accept "1-4, 6, 20-25" and "5-1", or by name "iii - iv"
   perhaps switch export/import objects to new cascading Style as base..
@@ -488,6 +478,15 @@ file filters: filefilters:
     you can just jump to the offending bit easily. This would also be used for preflight verifiers,
     and maybe also mass edit things, like edit all images..
     - have ViewWindow::JumpToObject(&place, objectid);
+export equirectangular:
+  for flat, choose lat/long/rotation
+  for hedron, export projected from hedron
+export textured gltf / Godot based 3d viewer project?
+export godot book project
+  show animation of book folding up
+  book page turner
+exportdialog export dialog:
+  incorporate IndexRange
 importdialog ImportDialog import dialog:
   should show filename as red if don't know how to import
   import option to preserve broken links
@@ -513,8 +512,8 @@ html: htmlgallery: html out htmlout:
   DONE figure out template scheme
   DONE standardize save to directory or file, not just assume file
 image
-  width, height defaults to 0
-  should have color select for background color, which would include setting full transparent
+  width, height defaults to 0, which is supposed to autocompute correct w,h from dpi.. check!
+  should have color select for background color, which would be alternate way to set full transparent
   export depth map based on metadata z
   export format should be an enum. need to extract possible save formats from Laxkit
   for gs, make sure temp file is removed, should probably locate in user space maybe? or make sure perms set reasonably
@@ -632,6 +631,18 @@ xtg from quark?
 idml from indesign?
 
 PathInterface: pathinterface
+  bug: width handle has bit of a hitch when handle near a vertex.. extra temp width node being added?
+  bug: seems to be possible to move nodes out of order, only occassionally
+  bug: shift click down then up on a point selects then deselects.. control can toggle
+  bug: problems for non-bez-controlled corners at endpoint. Also variable offset causes weird connections
+  bug: applyoffset, the bez part at joins is messed up when no offset, suspect problem in FlatpointToCoordinate, mismatch with bez join next to sample points
+
+  bug: should not create new control points by pressing cntl, unless there is movement
+  bug: delete last weight node, sometimes width is wrong
+  bug: make new line with freehand tool, cannot move weight nodes in a rational way
+
+PathInterface: pathinterface
+  need stroke fill
   need path combine:
     with more than one object selected, turn to path tool, pop a menu that asks:
 	  Edit both objects at same time
@@ -1091,6 +1102,10 @@ export/print dialog
   export should have a preview of what is actually going out, flip through spreads
   in papergroups with multiple papers and double sided impositions, need to ensure front and back are output properly for printer
 
+DrawableObject:
+  bbox and aabb need to build in kids?
+  should transplant child to SomeData. would simplify making new objects considerably
+
 clean up filefilter.h definition to allow explicit declaration of ObjectFilter in DrawableObject
 
 fontdialog: FontDialog
@@ -1330,13 +1345,35 @@ Colors:
 	path
     DONE images (doesn't use color per se)
 
-in general for windows, need better styling.. too much is hardcoded. problems later with high dpi screens
+high dpi hidpi:
+  in general for windows, need better styling.. too much is hardcoded. problems later with high dpi screens
+  per monitor ui scaling:
+    xrandr only gives monitor names like DP-5 DP-0
+	xrandr --verbose lists EDID hex block that usually contains monitor model somehow
+	auto scale by detected pixel density
+  supply a "default" ppi? for instance xlib thinks: 94.1467h or 94.0741v of multisync lcd2490wiki2 (specs say 94)
   perhaps respond to GDK_SCALE or QT_SCREEN_SCALE_FACTOR (or maybe only QT_SCALE_FACTOR) 
-  for instance revamp interfaces' concept of single pixel lines
   laxconfig not working
+  affected:
+    font sizes
+	window bevel, padding
+	thin line in interfaces
+	various interface threshholds, like path node indicator size, touch distance
+
+themes:
+  on ThemeUpdated events, things need to account for:
+    color styling
+	pads
+	font size/type
+	refreshing icons
   DONE laxprofile not working
-  themes:
-    should be all cascading, bare minimum font size should be defaultable
+  should be able to access theme files/directories, instead of define all in laidoutrc
+  should be all cascading, bare minimum font size should be defaultable
+	  so like a common style is loaded FIRST, then particulars dumped in afterward:
+	    theme
+		  windowstyle common
+		    category common
+			  ...
 
 
 make drag and drop selections work
@@ -1353,8 +1390,6 @@ image graphics filters:
 plugin for easy antiprism import for net creation
 
 for purely command line execution, should be able to make a binary totally not X dependent.
-
-Import image list: default previews
 
 externally saved pages, for long documents
   save "page" files? reference from Document?
@@ -1591,6 +1626,10 @@ how best to integrate Styles, Attributes, and Values??? style types:
 	 interpreter
    would be advantageous to write a single object def, and output options and documention to
    each of the 3 targets
+ each class:Value has:
+  - "internal" variables/funcs
+  - scriptable variables/funcs
+     some kind of preprocessor (ugg!!) to convert the header file to object def
 
 when closing a document window, decide whether this removes access to it, or just the view to it
 
@@ -1632,6 +1671,7 @@ lax:
   CheckDirs / check_dirs is confusing
 
 calculator/scripting
+  bug: run command with BuildIcons, error is not propagating up to cout
   function calls, assigning named parameters, checks for '=', but only single char, fails when it's actually a ==
   cannot assign dict elements, like a["b"] = c or a.b = c
   security restrictions?
@@ -1693,6 +1733,13 @@ templates Templates:
   partial templates, fill in non defined, like use booklet but manually define paper size
   DONE save as default, or just save as.
 
+
+image import:
+  need drag and drop from system for multi-image import
+  cannot import images directly from recents
+  need thumbnail preview of images in directories
+  when you have a filter, should still show directories(?)
+Import image list: default previews
 ImageImport dialog: (actually, needs a total redesign) import images importimage
   should have preview for alignment options.. grab destination page to show preview
   auto bookmarks, one for examples, or save as template
@@ -1704,6 +1751,13 @@ ImageImport dialog: (actually, needs a total redesign) import images importimage
   generate image previews progress box...
   autogenerate should do special check for ~/.thumbnails to conform to freedesktop spec size and type...
   importimages-> eps --> they are fit into boxes!! they should maybe be inserted into a stream..
+  importimages: remember last settings
+DumpImages within Arrangements, which are sort of a template of rect regions (2-d guides)
+    would also implement the dump into Limbo
+	dump into any string of objects, this is really the same thing as laying out a stream, maybe merge this?
+a "Place" tool like indesign?? preview images and place by dragging out one by one, as well
+ as optionally into Arrangements
+
 
 external tools:
   figure out a way to standardize verifying that tool exists and is executable
@@ -1764,6 +1818,7 @@ debug multi head? seems to crash when showing with projectors plugged in
 	if only one screen, then x,y is 0
 
 pagerangeinterface:
+  incorporate IndexRange?
   drag off screen should toggle off
   need overlay close box?
   edit base in place
@@ -1889,8 +1944,6 @@ all at once imposition... this would allow mapping of scribus layout without fus
   could be a special case of n-up, where you specify n to be infinity, with m number of
   columns, not necessarily aligned, as scribus does.
 
-
-importimages: remember last settings
 
 Master Pages master pages / template pages:
   have objects be tagged with ref object, so you can create a page with a master page
@@ -2117,15 +2170,16 @@ dump OUT an image list? Scribus has "review images" feature.. can jump to locati
 
 repeater tool on path: could be adapted to help animation tweening
 
-animation:
+animation: real time
   animation interface can set laidout->globals.frame, but how best to add callbacks when a Value is modified?
+  anything even remotely real time needs serious rewrite of rendering, and use compute shaders opengl? vulcan?
 
-
-===================Anything below here probably needs discussion before implementing================
----------------------------------- other enhancements ----------------------------------
 how to keep track of class hierarchy? impositions are now listed by resource instance, what is
   best way of keeping track of base imposition classes? this is needed for file format description output
 
+
+===================Consider anything below here food for thought, not active dev notes================
+------------------------------------------------------------------------------------------------------
 for translations, there is a difference between locale translations and language translations!
   not sure if it is worth paying attention to... need to investigate if locale as it affects keyboard input
   is separate from what locale we read in translations from. If it is distinguishable, that is fabulous, in that
@@ -2133,27 +2187,16 @@ for translations, there is a difference between locale translations and language
 
 investigate pdfcreator as method to reduce file size
 
-DumpImages within Arrangements, which are sort of a template of rect regions (2-d guides)
-    would also implement the dump into Limbo
-	dump into any string of objects, this is really the same thing as laying out a stream, maybe merge this?
-
-
 historical impositions:
  Name                  Abbr.       Folds     Leaves    Pages
  Folio                  fo, f        1         2         4
  Quarto                 4to          2         4         8
  Sexto, Sixmo           6to, 6mo     3         6        12
  Octavo                 8vo          3         8        16
- Duodecimo, Twelvemo    12mo         4        12        24
+ Duodecimo, Twelvemo    12mo         4        12        24  https://rhollick.wordpress.com/2017/06/12/duodecimo/
  Sextodecimo, Sixteenmo 16mo         4        16        32
 
-directory reorganization?
- windows/ <-- purely ui elements
- core/ <-- implies isolating core functions
-
-
-a "Place" tool like indesign?? preview images and place by dragging out one by one, as well
- as optionally into Arrangements
+On duodecimo: 3x4 on a side, cut off the bottom 4, fold, use as insert into more traditional 2x4
 
 food for thought:
   haskell envelope function:  http://projects.haskell.org/diagrams/doc/manual.html
@@ -2197,4 +2240,22 @@ DONE Gradient:
   DONE change object, curpoints still selected
   DONE clipping path is double applying parent path transform
 DONE bug: NONE of the interfaces are initializing shortcuts 
-
+DONE bug: DocumentExportConfig subclasses need duplicate()
+DONE directory reorganization
+  DONE ui/ <-- purely ui elements
+  DONE core/ <-- implies isolating core functions
+  DONE etc
+DONE save as should default to same directory as existing file
+DONE save as should change save/import/export/current directory to that directory
+DONE bug: crash! import images, select image. boom!
+DONE bug: switching export types in export dialog not clearing extra fields
+DONE icon generation trouble spots: LaidoutIcon.png has wrong bounds, cut in half p3m1 p6 circular_rm 101 icons in main icons.svg:
+  DONE old, Inkscape .92: 8.5 minutes
+  DONE new, Laidout: 39 seconds !!! 
+  DONE new new: 3.1 seconds!!!!
+DONE all images: 203 icons, 39 seconds!
+DONE still to optimize: render to single image, image subset, save that
+DONE laidout shell command: Laidout.BuildIcons(["icons/icons.svg","icons/icons-tiling.svg","../laxkit/lax/icons/icons.svg"],
+		  								grid_cell_size = .5,
+		  								output_px_size = 24,
+										output_dir="TEST_ICON_BUILD")
