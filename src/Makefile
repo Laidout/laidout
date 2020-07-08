@@ -185,7 +185,7 @@ laidout: lax laxinterface $(objs) $(POLYPTYCHFORLAIDOUT)
 	$(LD) $(otherobjs) $(objs) $(POLYPTYCH_GL_OBJS) $(POLYPTYCHOBJS) -L$(LAXIDIR) -L$(LAXDIR) -llaxinterfaces -llaxkit -lharfbuzz -lcairo -lfontconfig $(LDFLAGS) $(OPTIONALLIBS) -lreadline -lcrypto $(POLYPTYCHLIBS) -o $@
 
 icons:
-	cd src/icons && $(MAKE)
+	cd icons && $(MAKE)
 	cd $(LAXDIR)/icons && $(MAKE)
 									 
 polyptych:
