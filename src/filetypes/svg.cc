@@ -68,16 +68,22 @@ static int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData 
 //------------------------ Svg in/reimpose/out helpers -------------------------------------
 
 //! Creates a Laidout Document from a Svg file, and adds to laidout->project.
-/*! Return 0 for success or nonzero for error.
+/*! Assumes something has already checked that file is an SVG, so things like failure to
+ * open, and munched up file data will produce fatal errors.
+ *
+ * Return 0 for success, or nonzero for error.
  *
  * If existingdoc!=nullptr, then insert the file to that Document. In this case, it is not
  * pushed onto the project, as it is assumed it is elsewhere. Note that this will
  * basically wipe the existing document, and replace with the Svg document.
  */
-int AddSvgDocument(const char *file, Document *existingdoc)
+int AddSvgDocument(const char *file, Laxkit::ErrorLog &log, Document *existingdoc)
 {
 	FILE *f=fopen(file,"r");
-	if (!f) return 1;
+	if (!f) {
+		log.AddMessage(_("Could not open file!"),ERROR_Fail);
+		return 1;
+	}
 	char chunk[2000];
 	size_t c=fread(chunk,1,1999,f); //note this is not a guarantee of finding width/height/viewbox!!
 	chunk[c]='\0';
@@ -180,7 +186,6 @@ int AddSvgDocument(const char *file, Document *existingdoc)
 	ImportConfig config(file,300, 0,-1, 0,-1,-1, newdoc,nullptr);
 	config.keepmystery=0;
 	config.filter=&filter;
-	ErrorLog log;
 	filter.In(file,&config,log, nullptr,0);
 
 	 //scale down
@@ -228,14 +233,15 @@ class SvgExportConfig : public DocumentExportConfig
 	SvgExportConfig();
 	SvgExportConfig(DocumentExportConfig *config);
     virtual ObjectDef* makeObjectDef();
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);
+	//virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual LaxFiles::Attribute * dump_out_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual Value* duplicate();
 };
 
 /*! Base on config, copy over its stuff.
- * \todo *** this shouldn't really be necessary, right now is just a hack to make export work in a pinch
  */
 SvgExportConfig::SvgExportConfig(DocumentExportConfig *config)
 	: DocumentExportConfig(config)
@@ -273,6 +279,13 @@ SvgExportConfig::SvgExportConfig()
 		}
 	}
 }
+
+Value* SvgExportConfig::duplicate()
+{
+	SvgExportConfig *dup = new SvgExportConfig(this);
+	return dup;
+}
+
 
 Value *SvgExportConfig::dereference(const char *extstring, int len)
 {
@@ -399,24 +412,25 @@ ObjectDef* SvgExportConfig::makeObjectDef()
 	return def;
 }
 
-void SvgExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+//void SvgExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+LaxFiles::Attribute *SvgExportConfig::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
 {
-	DocumentExportConfig::dump_out(f,indent,what,context);
+	att = DocumentExportConfig::dump_out_atts(att, what, context);
 
-	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-
-	if (what==-1) {
-		fprintf(f,"%suse_mesh %s         #whether to output meshes as svg2 meshes\n",spc,use_mesh?"yes":"no");
-		fprintf(f,"%suse_powerstroke %s  #whether to use Inkscape's powerstroke LPE with paths where appropriate\n",spc,use_powerstroke?"yes":"no");
-		fprintf(f,"%spixels_per_inch %f  #Pixels per inch. Usually 96 (css's value) is a safe bet.\n",spc,pixels_per_inch);
-		fprintf(f,"%sdata_meta %s        #Whether to convert object metadata to data-* attributes.\n",spc,data_meta?"yes":"no");
-		return;
+	if (what == -1) {
+		att->push("use_mesh","no",       "whether to output meshes as svg2 meshes");
+		att->push("use_powerstroke","no","whether to use Inkscape's powerstroke LPE with paths where appropriate");
+		att->push("pixels_per_inch","96","Pixels per inch. Usually 96 (css's value) is a safe bet.");
+		att->push("data_meta","no",      "Whether to convert object metadata to data-* attributes.");
+		return att;
 	}
 
-	fprintf(f,"%suse_mesh %s\n",spc,use_mesh?"yes":"no");
-	fprintf(f,"%suse_powerstroke %s\n",spc,use_powerstroke?"yes":"no");
-	fprintf(f,"%spixels_per_inch %.10g\n",spc,pixels_per_inch);
-	fprintf(f,"%sdata_meta %sn",spc,data_meta?"yes":"no");
+	att->push("use_mesh",        use_mesh?"yes":"no");
+	att->push("use_powerstroke", use_powerstroke?"yes":"no");
+	att->push("pixels_per_inch", pixels_per_inch);
+	att->push("data_meta",       data_meta?"yes":"no");
+
+	return att;
 }
 
 void SvgExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
