@@ -51,6 +51,12 @@ void LImagePatchData::FindBBox()
 	ImagePatchData::FindBBox();
 }
 
+void LImagePatchData::ComputeAABB(const double *transform, DoubleBBox &box)
+{
+	ImagePatchData::ComputeAABB(transform, box);
+	DrawableObject::ComputeAABB(transform, box);
+}
+
 /*! Provide final pointin() definition.
  */
 int LImagePatchData::pointin(flatpoint pp,int pin)

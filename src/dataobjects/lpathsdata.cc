@@ -49,6 +49,12 @@ void LPathsData::FindBBox()
 	PathsData::FindBBox();
 }
 
+void LPathsData::ComputeAABB(const double *transform, DoubleBBox &box)
+{
+	PathsData::ComputeAABB(transform, box);
+	DrawableObject::ComputeAABB(transform, box);
+}
+
 /*! Provide final pointin() definition.
  */
 int LPathsData::pointin(flatpoint pp,int pin)

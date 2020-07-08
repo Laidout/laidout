@@ -142,6 +142,12 @@ void LGradientData::FindBBox()
 	GradientData::FindBBox();
 }
 
+void LGradientData::ComputeAABB(const double *transform, DoubleBBox &box)
+{
+	GradientData::ComputeAABB(transform, box);
+	DrawableObject::ComputeAABB(transform, box);
+}
+
 /*! Provide final pointin() definition.
  */
 int LGradientData::pointin(flatpoint pp,int pin)

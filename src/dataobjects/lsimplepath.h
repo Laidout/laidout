@@ -11,10 +11,10 @@
 //
 // Copyright (C) 2016 by Tom Lechner
 //
-#ifndef LVORONOIDATA_H
-#define LVORONOIDATA_H
+#ifndef LSIMPLEPATHDATA_H
+#define LSIMPLEPATHDATA_H
 
-#include <lax/interfaces/delauneyinterface.h>
+#include <lax/interfaces/simplepathinterface.h>
 #include "drawableobject.h"
 
 
@@ -23,15 +23,15 @@ namespace Laidout {
 
 
 
-//------------------------------- LVoronoiData ---------------------------------------
+//------------------------------- LSimplePathData ---------------------------------------
 
-class LVoronoiData : public DrawableObject,
-					  public LaxInterfaces::VoronoiData
+class LSimplePathData : public DrawableObject,
+					  public LaxInterfaces::SimplePathData
 {
   public:
-	LVoronoiData(LaxInterfaces::SomeData *refobj=NULL);
-	virtual ~LVoronoiData();
-	virtual const char *whattype() { return "VoronoiData"; }
+	LSimplePathData(LaxInterfaces::SomeData *refobj = nullptr);
+	virtual ~LSimplePathData();
+	virtual const char *whattype() { return "SimplePathData"; }
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 	virtual void FindBBox();
@@ -51,14 +51,14 @@ class LVoronoiData : public DrawableObject,
 };
 
 
-//------------------------------- LDelauneyInterface --------------------------------
-class LDelauneyInterface : public LaxInterfaces::DelauneyInterface,
+//------------------------------- LSimplePathInterface --------------------------------
+class LSimplePathInterface : public LaxInterfaces::SimplePathInterface,
 						   public Value
 {
  protected:
  public:
-	LDelauneyInterface(int nid,Laxkit::Displayer *ndp);
-	virtual const char *whattype() { return "VoronoiInterface"; }
+	LSimplePathInterface(int nid,Laxkit::Displayer *ndp);
+	virtual const char *whattype() { return "SimplePathInterface"; }
 	virtual LaxInterfaces::anInterface *duplicate(LaxInterfaces::anInterface *dup);
 
 	//from value
@@ -69,7 +69,6 @@ class LDelauneyInterface : public LaxInterfaces::DelauneyInterface,
 
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext);
 };
 
 

@@ -56,6 +56,12 @@ void LSomeDataRef::FindBBox()
 	SomeDataRef::FindBBox();
 }
 
+void LSomeDataRef::ComputeAABB(const double *transform, DoubleBBox &box)
+{
+	SomeDataRef::ComputeAABB(transform, box);
+	DrawableObject::ComputeAABB(transform, box);
+}
+
 /*! Provide final pointin() definition.
  */
 int LSomeDataRef::pointin(flatpoint pp,int pin)

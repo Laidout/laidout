@@ -51,6 +51,12 @@ void LVoronoiData::FindBBox()
 	VoronoiData::FindBBox();
 }
 
+void LVoronoiData::ComputeAABB(const double *transform, DoubleBBox &box)
+{
+	VoronoiData::ComputeAABB(transform, box);
+	DrawableObject::ComputeAABB(transform, box);
+}
+
 /*! Provide final pointin() definition.
  */
 int LVoronoiData::pointin(flatpoint pp,int pin)

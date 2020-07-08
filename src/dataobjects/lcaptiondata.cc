@@ -48,6 +48,12 @@ void LCaptionData::FindBBox()
 	CaptionData::FindBBox();
 }
 
+void LCaptionData::ComputeAABB(const double *transform, DoubleBBox &box)
+{
+	CaptionData::ComputeAABB(transform, box);
+	DrawableObject::ComputeAABB(transform, box);
+}
+
 /*! Provide final pointin() definition.
  */
 int LCaptionData::pointin(flatpoint pp,int pin)

@@ -53,6 +53,12 @@ void LEngraverFillData::FindBBox()
 	EngraverFillData::FindBBox();
 }
 
+void LEngraverFillData::ComputeAABB(const double *transform, DoubleBBox &box)
+{
+	EngraverFillData::ComputeAABB(transform, box);
+	DrawableObject::ComputeAABB(transform, box);
+}
+
 /*! Provide final pointin() definition.
  */
 int LEngraverFillData::pointin(flatpoint pp,int pin)

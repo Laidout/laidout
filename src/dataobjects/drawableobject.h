@@ -215,6 +215,7 @@ class DrawableObject :  virtual public ObjectContainer,
 	 //default is point to things particular to Groups.
 	//virtual int pointin(flatpoint pp,int pin=1);
 	virtual void FindBBox();
+	virtual void ComputeAABB(const double *transform, DoubleBBox &box);
 	virtual int AddAlignmentRule(AlignmentRule *newlink, bool replace=false, int where=-1);
 	virtual int RemoveAlignmentRule(int index);
 	virtual void UpdateFromRules();

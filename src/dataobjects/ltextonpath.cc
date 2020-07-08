@@ -48,6 +48,12 @@ void LTextOnPath::FindBBox()
 	TextOnPath::FindBBox();
 }
 
+void LTextOnPath::ComputeAABB(const double *transform, DoubleBBox &box)
+{
+	TextOnPath::ComputeAABB(transform, box);
+	DrawableObject::ComputeAABB(transform, box);
+}
+
 /*! Provide final pointin() definition.
  */
 int LTextOnPath::pointin(flatpoint pp,int pin)

@@ -36,6 +36,7 @@ class LTextOnPath : public DrawableObject,
 	virtual ~LTextOnPath();
 	virtual const char *whattype() { return "TextOnPath"; }
 	virtual void FindBBox();
+	virtual void ComputeAABB(const double *transform, DoubleBBox &box);
 	virtual int pointin(flatpoint pp,int pin=1);
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);

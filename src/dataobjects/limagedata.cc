@@ -48,6 +48,12 @@ void LImageData::FindBBox()
 	ImageData::FindBBox();
 }
 
+void LImageData::ComputeAABB(const double *transform, DoubleBBox &box)
+{
+	ImageData::ComputeAABB(transform, box);
+	DrawableObject::ComputeAABB(transform, box);
+}
+
 /*! Provide final pointin() definition.
  */
 int LImageData::pointin(flatpoint pp,int pin)

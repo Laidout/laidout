@@ -812,7 +812,7 @@ int DrawableObject::GetAnchor(int anchor_id, PointAnchor **anchor)
 	return 1;
 }
 
-//! Append all the bboxes of the objects.
+//! Append all the bboxes of the child objects. Ignores any bbox of *this.
 void DrawableObject::FindBBox()
 {
 	//if (flags&DRAWABLEOBJ_Fixed_Bounds) return;
@@ -826,6 +826,34 @@ void DrawableObject::FindBBox()
 		o=dynamic_cast<DrawableObject*>(kids.e[c]);
 		if (o && o->parent_link) continue; //skip when there are alignment rules
 		addtobounds(kids.e[c]->m(),kids.e[c]);
+	}
+}
+
+//! Append all the bboxes of the child objects. Ignores any bbox of *this.
+void DrawableObject::ComputeAABB(const double *transform, DoubleBBox &box)
+{
+	if (!kids.n) return;
+
+	Affine tr;
+	DrawableObject *o;
+
+	if (clip_path) {
+		tr.m(transform);
+		tr.PreMultiply(clip_path->m());
+		clip_path->ComputeAABB(tr.m(), box);
+
+	} else if (child_clip_type != CLIP_From_Parent_Area) {
+		//if CLIP_From_Parent_Area, then we are assuming we can ignore kids here,
+		//and object content is from the subclass ComputeAABB
+
+		for (int c=0; c<kids.n; c++) {
+			o=dynamic_cast<DrawableObject*>(kids.e[c]);
+			if (o && o->parent_link) continue; //skip when there are alignment rules
+			tr.m(transform);
+			tr.PreMultiply(kids.e[c]->m());
+			// tr.Multiply(kids.e[c]->m());
+			kids.e[c]->ComputeAABB(tr.m(), box);
+		}
 	}
 }
 
