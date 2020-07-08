@@ -259,7 +259,7 @@ int ImportImagesDialog::init()
 
 	 //---------------------- add prev/next file buttons next to file
 	linp=dynamic_cast<LineInput *>(findWindow("file"));
-	linp->SetLabel(" ");
+	linp->Label(" ");
 	linp->GetLineEdit()->win_style|=LINEEDIT_SEND_ANY_CHANGE;
 	c=findWindowIndex("file");
 	AddWin(new MessageBar(this,"file",NULL,MB_MOVE, 0,0, 0,0, 0, "File? "), 1,c);
