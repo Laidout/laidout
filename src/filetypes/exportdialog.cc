@@ -91,9 +91,9 @@ ExportDialog::ExportDialog(unsigned long nstyle,unsigned long nowner,const char 
 			   0,0,0,0,0,
 			   NULL,nowner,nsend, 5)
 {
-	dialog_style=nstyle&~ANXWIN_MASK;
+	dialog_style = nstyle & ~ANXWIN_MASK;
 
-	filter=nfilter;
+	filter = nfilter;
 	if (filter) {
 		config=filter->CreateConfig(NULL);
 		config->layout = layout;
@@ -119,17 +119,17 @@ ExportDialog::ExportDialog(unsigned long nstyle,unsigned long nowner,const char 
 
 	} else config=new DocumentExportConfig(doc,limbo,file,NULL,layout,pmin,pmax,papergroup);
 
-	cur=pcur;
+	cur = pcur;
 
-	fileedit=filesedit=printstart=printend=command=NULL;
-	filecheck=filescheck=commandcheck=printall=printcurrent=printrange=NULL;
+	fileedit = filesedit = printstart = printend = command = NULL;
+	filecheck = filescheck = commandcheck = printall = printcurrent = printrange = NULL;
 
-	batches=NULL;
-	batchnumber=NULL;
+	batches     = NULL;
+	batchnumber = NULL;
 
-	everyspread=evenonly=oddonly=NULL;
+	everyspread = evenonly = oddonly = NULL;
 
-	firstextra=-1;
+	firstextra = -1;
 
 	last_meta_dir = nullptr;
 }
@@ -194,6 +194,17 @@ Attribute *ExportDialog::dump_out_atts(Attribute *att,int what, LaxFiles::DumpCo
 
 	if (last_meta_dir) att->push("last_meta_dir", last_meta_dir);
 
+	if (previous_configs.n()) {
+		Attribute *att2 = att->pushSubAtt("previous_configs");
+		for (int c=0; c<previous_configs.n(); c++) {
+			DocumentExportConfig *config = dynamic_cast<DocumentExportConfig*>(previous_configs.e(c));
+			if (!config->filter) continue; //this shouldn't happen
+			
+			Attribute *att3 = att2->pushSubAtt("config", config->filter->VersionName());
+			config->dump_out_atts(att3, what, context);
+		}
+	}
+
 	return att;
 }
 
@@ -205,6 +216,7 @@ void ExportDialog::dump_in_atts(Attribute *att,int flag, LaxFiles::DumpContext *
 	for (int c=0; c<att->attributes.n; c++) {
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
+
 		if (!strcmp(name,"win_x")) {
 			IntAttribute(value,&win_x);
 		} else if (!strcmp(name,"win_y")) {
@@ -231,7 +243,37 @@ void ExportDialog::dump_in_atts(Attribute *att,int flag, LaxFiles::DumpContext *
 				config = nconfig;
 			} 
 
+			char *oldfile = newstr(config->filename);
+			char *oldfiles = newstr(config->tofiles);
 			config->dump_in_atts(att->attributes.e[c], flag, context);
+			makestr(config->filename, oldfile);
+			makestr(config->tofiles, oldfiles);
+			delete[] oldfile;
+			delete[] oldfiles;
+
+		} else if (!strcmp(name,"previous_configs")) {
+			for (int c2 = 0; c2 < att->attributes.e[c]->attributes.n; c2++) {
+				name  = att->attributes.e[c]->attributes.e[c2]->name;
+				value = att->attributes.e[c]->attributes.e[c2]->value;
+
+				if (!strcmp(name, "config")) {
+					ExportFilter *nfilter = nullptr;
+					for (int cc2=0; cc2<laidout->exportfilters.n; cc2++) {
+						if (!strcmp(value, laidout->exportfilters.e[cc2]->VersionName())) {
+							nfilter = laidout->exportfilters.e[cc2];
+							break;
+						}
+					}
+
+					 //update config to new filter
+					if (nfilter) {
+						DocumentExportConfig *nconfig = nfilter->CreateConfig(nullptr);
+						nconfig->dump_in_atts(att->attributes.e[c]->attributes.e[c2], flag, context);
+						previous_configs.push(value, nconfig);
+						nconfig->dec_count();
+					}
+				}
+			}
 
 		} else if (!strcmp(name,"last_meta_dir")) {
 			makestr(last_meta_dir, value);
@@ -742,7 +784,7 @@ void ExportDialog::updateEdits()
 		box=dynamic_cast<WinFrameBox*>(wholelist.e[c]);
 		if (!box || !box->win()) continue;
 		str = box->win()->win_name;
-		if (!strncmp(str,"extra-",6) || !strncmp(str+1, "extra",5)) {
+		if (strstr(str,"extra-")) {
 			Pop(c);
 		}
 	}
@@ -830,24 +872,24 @@ void ExportDialog::updateEdits()
 				AttributeObject *ao = dynamic_cast<AttributeObject*>(ov->object);
 				if (ao) { //assume this is a meta object
 					//label [edit]
-					AddWin(new MessageBar(this,"meta",NULL,0, 0,0,0,0,0, fd->Name),1, i++);
+					AddWin(new MessageBar(this,"extra-meta","meta",0, 0,0,0,0,0, fd->Name),1, i++);
 					Button *tbut;
 					sprintf(scratch,"=extra-%s",fd->name);
-					tbut = new Button(this,"metaedit",NULL,0,
+					tbut = new Button(this, scratch,"metaedit",0,
 										0,0,0,0, 1, 
 										last,object_id,scratch,
 										0,_("Edit meta"),NULL,NULL,3,3);
 					AddWin(tbut,1,i++);
 
 					sprintf(scratch,"+extra-%s",fd->name);
-					tbut = new Button(this,"metaload",NULL,0,
+					tbut = new Button(this, scratch,"metaload",0,
 										0,0,0,0, 1, 
 										last,object_id,scratch,
 										0,_("Load meta"),NULL,NULL,3,3);
 					AddWin(tbut,1,i++);
 
 					sprintf(scratch,"-extra-%s",fd->name);
-					tbut = new Button(this,"metasave",NULL,0,
+					tbut = new Button(this, scratch,"metasave",0,
 										0,0,0,0, 1, 
 										last,object_id,scratch,
 										0,_("Save meta"),NULL,NULL,3,3);
@@ -1098,6 +1140,9 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 			 //focus on
 			changeTofile(DocumentExportConfig::TARGET_Command);
 			return 0;
+		} else if (e->info1==0) {
+			 //text was modified
+			makestr(config->command, command->GetCText());
 		}
 		return 0;
 
@@ -1335,8 +1380,6 @@ void ExportDialog::changeRangeTarget(int t)
 
 //! Send the config object to owner.
 /*! Note that a new config object is sent, and the receiving code should delete it.
- *
- * \todo the print by command should be moved to export_document()?
  */
 int ExportDialog::send()
 {
@@ -1348,53 +1391,13 @@ int ExportDialog::send()
 		config->end = max;
 	}
 
-	config->filter=filter;
-	if (commandcheck && commandcheck->State()==LAX_ON) {
-		//----------**** clean this up or move it back to ViewWindow!!
-		char *cm=newstr(command->GetCText());
-		appendstr(cm," ");
-		//***investigate tmpfile() tmpnam tempnam mktemp
-		
-		char tmp[256];
-		cupsTempFile2(tmp,sizeof(tmp));
-		DBG cerr <<"attempting to write temp file for printing: "<<tmp<<endl;
+	config->filter = filter;
+	DocumentExportConfig *nconf = dynamic_cast<DocumentExportConfig*>(config->duplicate());
+	previous_configs.push(config->filter->VersionName(), nconf);
+	nconf->dec_count();
 
-		FILE *f=fopen(tmp,"w");
-		if (f) {
-			fclose(f);
-
-			ErrorLog log;
-			if (filter->Out(tmp,config,log)==0) {
-				appendstr(cm,tmp);
-
-				 //now do the actual command
-				int c=system(cm); //-1 for error, else the return value of the call
-				if (c!=0) {
-					DBG cerr <<"there was an error printing...."<<endl;
-					SimpleMessage *mes=new SimpleMessage(_("Error with command"), 0,0,0,0,"statusMessage");
-					app->SendMessage(mes,win_owner,"statusMessage",object_id);
-				} else {
-					SimpleMessage *mes=new SimpleMessage(_("Printed."), 0,0,0,0,"statusMessage");
-					app->SendMessage(mes,win_owner,"statusMessage",object_id);
-				}
-				//***maybe should have to delete (unlink) tmp, but only after actually done printing?
-				//does cups keep file in place, or copy when queueing?
-				
-			} else {
-				 //there was an error during filter export
-				const char *error=log.MessageStr(log.Total()-1);
-				SimpleMessage *mes=new SimpleMessage(error?error:_("Error printing"), 0,0,0,0,"statusMessage");
-				app->SendMessage(mes,win_owner,"statusMessage",object_id);
-			}
-		}
-		//---------
-		app->destroywindow(this);
-		return 0;
-	}
-
-
-	ConfigEventData *data=new ConfigEventData(config);
-	app->SendMessage(data,win_owner,win_sendthis,object_id);
+	ConfigEventData *data = new ConfigEventData(config);
+	app->SendMessage(data, win_owner, win_sendthis, object_id);
 	app->destroywindow(this);
 	return 1;
 }

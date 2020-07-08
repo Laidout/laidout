@@ -947,14 +947,23 @@ int Document::Load(const char *file,ErrorLog &log)
 	
 	FILE *f=open_laidout_file_to_read(file,"Document",&log);
 	if (!f) {
+		bool found_special = false;
 		if (isScribusFile(file)) {
 			int c=addScribusDocument(file,this); //0 success, 1 failure
-			if (c==0) return 1;
+			if (c==0) found_special = true;
+
+		} else if (isSvgFile(file)) {
+			int c = AddSvgDocument(file, this);  // 0 success, 1 failure
+			if (c==0) found_special = true;
 		}
 
-		if (isSvgFile(file)) {
-			int c = AddSvgDocument(file, this);  // 0 success, 1 failure
-			if (c == 0) return 1;
+		if (found_special) {
+			//so future save as's will default to dir of original file
+			char *dir = lax_dirname(file, 1);
+			makestr(anXApp::app->load_dir, dir);
+			makestr(anXApp::app->save_dir, dir);
+			delete[] dir;
+			return 1;
 		}
 		return 0;
 	}

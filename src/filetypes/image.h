@@ -40,6 +40,7 @@ class ImageExportConfig : public DocumentExportConfig
 	ImageExportConfig(DocumentExportConfig *config);
 	virtual ~ImageExportConfig();
 	virtual const char *whattype() { return "ImageExportConfig"; }
+	virtual Value* duplicate();
 	virtual ObjectDef* makeObjectDef();
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);

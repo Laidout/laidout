@@ -50,7 +50,7 @@ namespace Laidout {
 
 
 /*! \var Plugin *FileFilter::plugin;
- * \brief Which plugin, if any, the filter came from. NULL if is built in.
+ * \brief Which plugin, if any, the filter came from. nullptr if is built in.
  * \todo *** implement plugins!!
  */
 /*! \fn ~FileFilter()
@@ -112,14 +112,14 @@ namespace Laidout {
 /*! \fn Laxkit::anXWindow *ConfigDialog()
  * \brief Return a configuration dialog for the filter.
  *
- * Default is to return NULL.
+ * Default is to return nullptr.
  *
  * \todo *** implement this feature!
  */
 
 FileFilter::FileFilter()
 {
-	plugin = NULL; 
+	plugin = nullptr; 
 	flags  = 0;
 }
 
@@ -143,13 +143,13 @@ bool FileFilter::DirectoryBased()
 
 
 /*! \fn const char *ImportFilter::FileType(const char *first100bytes)
- * \brief Return the version of the filter's format that the file seems to be, or NULL if not recognized.
+ * \brief Return the version of the filter's format that the file seems to be, or nullptr if not recognized.
  */
 /*! \fn int ImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log, const char *filecontents, int contentslen)
  * \brief The function that outputs the stuff.
  *
- * If file!=NULL, then input from that single file, and ignore the files in context.
- * If file==NULL and filecontents!=NULL, then assume filecontents is a string containing file data of contentslen bytes.
+ * If file!=nullptr, then input from that single file, and ignore the files in context.
+ * If file==nullptr and filecontents!=nullptr, then assume filecontents is a string containing file data of contentslen bytes.
  *
  * context must be a configuration object that the filter understands. For instance, this
  * might be a DocumentExportConfig object, or perhaps a parameter list from the scripter.
@@ -172,89 +172,89 @@ ObjectDef *ImportFilter::makeObjectDef()
 //! Create and return a basic ImportConfig definition.
 ObjectDef *makeImportConfigDef()
 {
-	ObjectDef *sd=new ObjectDef(NULL,"Import",
+	ObjectDef *sd=new ObjectDef(nullptr,"Import",
 			_("Import"),
 			_("A filter that imports a vector file to an existing document or a group."),
 			"class",
-			NULL,NULL,
-			NULL,
+			nullptr,nullptr,
+			nullptr,
 			0, //new flags
-			NULL,
+			nullptr,
 			createImportConfig);
 
 	sd->push("file",
 			_("File"),
 			_("Path to file to import"),
 			"string",
-			NULL, //range
+			nullptr, //range
 			"1",  //defvalue
 			0,    //flags
-			NULL);//newfunc
+			nullptr);//newfunc
 	sd->pushEnum("keepmystery",
 			_("Keep mystery data"),
 			_("Whether to attempt to preserve things not understood"),
 			"sometimes",  //defvalue
-			NULL,NULL, //newfunc
+			nullptr,nullptr, //newfunc
 			"no", _("No"), _("Ignore all mystery data"),
 			"sometimes", _("Sometimes"), _("Convert what is possible, preserve other mystery data"),
 			"always", _("Always"), _("Treat everything as mystery data"),
-			NULL);
+			nullptr);
 	sd->push("instart",
 			_("Start"),
 			_("First page to import from a multipage file"),
 			"int",
-			NULL,
-			NULL,
-			0,NULL);
+			nullptr,
+			nullptr,
+			0,nullptr);
 	sd->push("inend",
 			_("End"),
 			_("Last page to import from a multipage file"),
 			"int",
-			NULL,
-			NULL,
-			0,NULL);
+			nullptr,
+			nullptr,
+			0,nullptr);
 	sd->push("topage",
 			_("To page"),
 			_("The page in the existing document to begin importing to"),
 			"int",
-			NULL,
-			NULL,
-			0,NULL);
+			nullptr,
+			nullptr,
+			0,nullptr);
 	sd->push("dpi",
 			_("Default dpi"),
 			_("Default dpi to use while importing if necessary"),
 			"real",
-			NULL,
-			NULL,
-			0,NULL);
+			nullptr,
+			nullptr,
+			0,nullptr);
 	sd->push("spread",
 			_("Spread"),
 			_("Index of the spread to import to"),
 			"int",
-			NULL,
-			NULL,
-			0,NULL);
+			nullptr,
+			nullptr,
+			0,nullptr);
 	sd->push("layout",
 			_("Layout"),
 			_("Type of layout in which to count the spread index. Depends on the imposition."),
 			"any",
-			NULL,
-			NULL,
-			0,NULL);
+			nullptr,
+			nullptr,
+			0,nullptr);
 	sd->push("document",
 			_("Document"),
 			_("Which document to import to, if not importing to a group"),
 			"any",
-			NULL,
-			NULL,
-			0,NULL);
+			nullptr,
+			nullptr,
+			0,nullptr);
 	sd->push("group",
 			_("Group"),
 			_("Group to import to, if not importing to a document"),
 			"any",
-			NULL,
-			NULL,
-			0,NULL);
+			nullptr,
+			nullptr,
+			0,nullptr);
 
 	return sd;
 }
@@ -270,13 +270,13 @@ int createImportConfig(ValueHash *context, ValueHash *parameters,
 					   Value **value_ret, Laxkit::ErrorLog &log)
 {
 	if (!parameters || !parameters->n()) {
-		if (value_ret) *value_ret=NULL;
+		if (value_ret) *value_ret=nullptr;
 		log.AddMessage(_("Missing parameters!"),ERROR_Fail);
 		return 1;
 	}
 
-	ImportConfig *config=NULL;
-	Value *v=NULL;
+	ImportConfig *config=nullptr;
+	Value *v=nullptr;
 	if (parameters) v=parameters->find("importconfig");
 	if (v) {
 		config=dynamic_cast<ImportConfig*>(dynamic_cast<ObjectValue*>(v));
@@ -330,7 +330,7 @@ int createImportConfig(ValueHash *context, ValueHash *parameters,
 
 		 //---document
 		v=parameters->find("document");
-		Document *doc=NULL;
+		Document *doc=nullptr;
 		if (v) {
 			if (v->type()==VALUE_String) {
 				str=dynamic_cast<StringValue*>(v)->str;
@@ -393,7 +393,7 @@ int createImportConfig(ValueHash *context, ValueHash *parameters,
 	if (value_ret && err==0) {
 		if (config) {
 			*value_ret=new ObjectValue(config);
-		} else *value_ret=NULL;
+		} else *value_ret=nullptr;
 	}
 	if (config) config->dec_count();
 
@@ -443,13 +443,13 @@ int createImportConfig(ValueHash *context, ValueHash *parameters,
 ImportConfig::ImportConfig()
 {
 	scaletopage = 2;
-	filename    = NULL;
+	filename    = nullptr;
 	keepmystery = 0;
 	instart = inend = -1;
 	topage = spread = layout = -1;
-	doc         = NULL;
-	toobj       = NULL;
-	filter      = NULL;
+	doc         = nullptr;
+	toobj       = nullptr;
+	filter      = nullptr;
 	dpi         = 300;
 }
 
@@ -470,7 +470,7 @@ ImportConfig::ImportConfig(const char *file, double ndpi, int ins, int ine, int 
 	layout      = lay;
 	doc         = ndoc;
 	toobj       = nobj;
-	filter      = NULL;
+	filter      = nullptr;
 	if (dpi > 0) dpi = ndpi; else dpi = 300;
 
 	if (doc) doc->inc_count();
@@ -527,7 +527,7 @@ void ImportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *c
 			else scaletopage=2;
 
 		} else if (!strcmp(name,"format")) {
-			filter=NULL;
+			filter=nullptr;
 			 //search for exact format match first
 			for (c2=0; c2<laidout->importfilters.n; c2++) {
 				if (!strcmp(laidout->importfilters.e[c2]->VersionName(),value)) {
@@ -536,7 +536,7 @@ void ImportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *c
 				}
 			}
 			 //if no match, search for first case insensitive match
-			if (filter==NULL) {
+			if (filter==nullptr) {
 				for (c2=0; c2<laidout->importfilters.n; c2++) {
 					if (!strncasecmp(laidout->importfilters.e[c2]->VersionName(),value,strlen(value))) {
 						filter=laidout->importfilters.e[c2];
@@ -638,157 +638,157 @@ ObjectDef *ExportFilter::makeObjectDef()
 
 ObjectDef *makeExportConfigDef()
 {
-	ObjectDef *sd=new ObjectDef(NULL,"ExportConfig",
+	ObjectDef *sd=new ObjectDef(nullptr,"ExportConfig",
 			_("Export Configuration"),
 			_("Settings for a filter that exports a document to one or more files of various formats."),
 			"class",
-			NULL,NULL,
-			NULL,
+			nullptr,nullptr,
+			nullptr,
 			0, //new flags
-			NULL,
-			NULL);
+			nullptr,
+			nullptr);
 
 	 //define parameters
 	sd->push("filename",
 			_("Filename"),
 			_("Path of exported file. For multiple files, use \"file##.svg\", for instance."),
 			"string",
-			NULL, //range
-			NULL,  //defvalue
+			nullptr, //range
+			nullptr,  //defvalue
 			0,    //flags
-			NULL);//newfunc
+			nullptr);//newfunc
 
 	sd->pushEnum("target",
 			_("Output target"),
 			_("Whether to try to save to a single file (0), or multiple files (1)"),
 			"one_file",  //defvalue
-			NULL,NULL, //newfunc, objectfunc
+			nullptr,nullptr, //newfunc, objectfunc
 			"one_file", _("One file"), _("Export all pages to a single file if possible"),
 			"many_files", _("Many files"), _("Export each page to different files"),
-			NULL);
+			nullptr);
 	sd->push("document",
 			_("Document"),
 			_("The document to export, if not exporting a group."),
 			"any",
-			NULL, //range
-			NULL,  //defvalue
+			nullptr, //range
+			nullptr,  //defvalue
 			0,    //flags
-			NULL);//newfunc
+			nullptr);//newfunc
 	sd->push("start",
 			_("Start"),
 			_("Starting index of a document spread to export"),
 			"int",
-			NULL, //range
-			NULL,  //defvalue
+			nullptr, //range
+			nullptr,  //defvalue
 			0,    //flags
-			NULL);//newfunc
+			nullptr);//newfunc
 	sd->push("end",
 			_("End"),
 			_("Ending index of a document spread to export"),
 			"int",
-			NULL, //range
-			NULL,  //defvalue
+			nullptr, //range
+			nullptr,  //defvalue
 			0,    //flags
-			NULL);//newfunc
+			nullptr);//newfunc
 	sd->push("batches",
 			_("Batches"),
 			_("For multi-page capable targets, how many spreads to include in a single file. Repeat to cover whole range."),
 			"int",
-			NULL, //range
-			NULL,  //defvalue
+			nullptr, //range
+			nullptr,  //defvalue
 			0,    //flags
-			NULL);//newfunc
+			nullptr);//newfunc
 	sd->pushEnum("evenodd",
 			_("Even or odd"),
 			_("Whether to export even, odd, or all spread indices in range"),
 			"all",  //defvalue
-			NULL,NULL, //newfunc
+			nullptr,nullptr, //newfunc
 			"all", _("All"), _("Export all spreads"),
 			"even", _("Even"), _("Export only even spreads"),
 			"odd", _("Odd"), _("Export only odd spreads"),
-			NULL);
+			nullptr);
 	sd->pushEnum("paperrotation",
 			_("Rotate paper"),
 			_("Whether to rotate the final exported paper on export"),
 			"0",  //defvalue
-			NULL,NULL, //newfunc
+			nullptr,nullptr, //newfunc
 			"0", _("0"), _("No rotation"),
 			"90", _("90"), _("90 degree rotation"),
 			"180", _("180"), _("180 degree rotation"),
 			"270", _("270"), _("270 degree rotation"),
-			NULL);
+			nullptr);
 	sd->push("rotate180",
 			_("Alternate 180 degrees"),
 			_("Whether to rotate every other paper by 180 degrees."),
 			"boolean",
-			NULL, //range
+			nullptr, //range
 			"false",  //defvalue
 			0,    //flags
-			NULL);//newfunc
+			nullptr);//newfunc
 	sd->push("reverse",
 			_("Reverse order"),
 			_("Whether to export in reverse order or not."),
 			"boolean",
-			NULL, //range
+			nullptr, //range
 			"false",  //defvalue
 			0,    //flags
-			NULL);//newfunc
+			nullptr);//newfunc
 	sd->push("layout",
 			_("Layout"),
 			_("Type of spread layout to export as. Possibilities defined by the imposition."),
 			"enum", 
-			NULL, //range
-			NULL,  //defvalue
+			nullptr, //range
+			nullptr,  //defvalue
 			0,    //flags
-			NULL);//newfunc
+			nullptr);//newfunc
 	sd->push("group",
 			_("Group"),
 			_("Group to export, if not exporting a document."),
 			"any",
-			NULL, //range
-			NULL,  //defvalue
+			nullptr, //range
+			nullptr,  //defvalue
 			0,    //flags
-			NULL);//newfunc
+			nullptr);//newfunc
 	sd->push("textaspaths",
 			_("Text as paths"),
 			_("Whether to export any text based objects as path objects, instead of text."),
 			"boolean",
-			NULL, //range
+			nullptr, //range
 			"false",  //defvalue
 			0,    //flags
-			NULL);//newfunc
+			nullptr);//newfunc
 	sd->push("rasterize",
 			_("Rasterize"),
 			_("Whether to rasterize objects that cannot be otherwise dealt with natively in the target format."),
 			"boolean",
-			NULL, //range
-			NULL,  //defvalue
+			nullptr, //range
+			nullptr,  //defvalue
 			0,    //flags
-			NULL);//newfunc
+			nullptr);//newfunc
 	sd->push("collect",
 			_("Collect for out"),
 			_("Whether to copy all the accessed resources to the same directory as the exported file."),
 			"boolean",
-			NULL, //range
-			NULL,  //defvalue
+			nullptr, //range
+			nullptr,  //defvalue
 			0,    //flags
-			NULL);//newfunc
+			nullptr);//newfunc
 	sd->push("papergroup",
 			_("Paper group"),
 			_("The paper group to export onto. Do not include if you want to use the default paper group."),
 			"any",
-			NULL, //range
-			NULL,  //defvalue
+			nullptr, //range
+			nullptr,  //defvalue
 			0,    //flags
-			NULL);//newfunc
+			nullptr);//newfunc
 	sd->push("crop",
 			_("Crop"),
 			_("Cropping boundary, applied per spread."),
 			"BBox",
-			NULL, //range
-			NULL,  //defvalue
+			nullptr, //range
+			nullptr,  //defvalue
 			0,    //flags
-			NULL);//newfunc
+			nullptr);//newfunc
 
 	return sd;
 }
@@ -807,13 +807,13 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 					   Value **value_ret, Laxkit::ErrorLog &log)
 {
 	if (!parameters || !parameters->n()) {
-		if (value_ret) *value_ret=NULL;
+		if (value_ret) *value_ret=nullptr;
 		log.AddMessage(_("Missing parameters!"),ERROR_Fail);
 		return 1;
 	}
 
-	DocumentExportConfig *config=NULL;
-	Value *v=NULL;
+	DocumentExportConfig *config=nullptr;
+	Value *v=nullptr;
 	if (parameters) v=parameters->find("exportconfig");
 	if (v) {
 		config=dynamic_cast<DocumentExportConfig*>(dynamic_cast<ObjectValue*>(v)->object);
@@ -913,7 +913,7 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 
 		 //---document
 		v=parameters->find("document");
-		Document *doc=NULL;
+		Document *doc=nullptr;
 		if (v) {
 			if (v->type()==VALUE_String) {
 				str=dynamic_cast<StringValue*>(v)->str;
@@ -976,7 +976,7 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 	if (value_ret && err==0) {
 		if (config) {
 			*value_ret=new ObjectValue(config);
-		} else *value_ret=NULL;
+		} else *value_ret=nullptr;
 	}
 	if (config) config->dec_count();
 
@@ -988,7 +988,7 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 /*! \class DocumentExportConfig
  * \brief Holds basic settings for exporting a document.
  *
- * If filename==NULL and tofiles!=NULL, then write out one spread per file, and tofiles
+ * If filename==nullptr and tofiles!=nullptr, then write out one spread per file, and tofiles
  * must be a file name template.
  *
  * \todo On exporting, should have option to collect for out to a directory. This includes
@@ -1028,26 +1028,22 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 
 DocumentExportConfig::DocumentExportConfig()
 {
-	BaseDefaults();
-}
-
-void DocumentExportConfig::BaseDefaults()
-{
 	curpaperrotation= 0;
 	paperrotation   = 0;
 	rotate180       = 0;
 	reverse_order   = 0;
 	evenodd         = All;
 	batches         = 0;
-	filter          = NULL;
+	filter          = nullptr;
 	target          = TARGET_Single;
-	filename        = NULL;
-	tofiles         = NULL;
+	command         = nullptr;
+	filename        = nullptr;
+	tofiles         = nullptr;
 	start     = end = -1;
 	layout          = 0;
-	doc             = NULL;
-	papergroup      = NULL;
-	limbo           = NULL;
+	doc             = nullptr;
+	papergroup      = nullptr;
+	limbo           = nullptr;
 	collect_for_out = COLLECT_Dont_Collect;
 	rasterize       = 0;
 	textaspaths     = true; // *** change to false when text is better implemented!!
@@ -1061,9 +1057,8 @@ DocumentExportConfig::DocumentExportConfig(Document *ndoc,
 										   const char *to,
 										   int l,int s,int e,
 										   PaperGroup *group)
+  : DocumentExportConfig()
 {
-	BaseDefaults();
-
 	filename   = newstr(file);
 	tofiles    = newstr(to);
 	start      = s;
@@ -1075,9 +1070,9 @@ DocumentExportConfig::DocumentExportConfig(Document *ndoc,
 }
 
 DocumentExportConfig::DocumentExportConfig(DocumentExportConfig *config) 
+  : DocumentExportConfig()
 {
-	BaseDefaults();
-	if (config==NULL) {
+	if (config == nullptr) {
 		return;
 	}
 
@@ -1095,6 +1090,7 @@ DocumentExportConfig::DocumentExportConfig(DocumentExportConfig *config)
 
     filename       = newstr(config->filename);
     tofiles        = newstr(config->tofiles);
+    command        = newstr(config->command);
 
     filter         = config->filter; //object, but does not get inc_counted
 
@@ -1112,17 +1108,35 @@ DocumentExportConfig::DocumentExportConfig(DocumentExportConfig *config)
  */
 DocumentExportConfig::~DocumentExportConfig()
 {
-	if (filename) delete[] filename;
-	if (tofiles)  delete[] tofiles;
+	delete[] command;
+	delete[] filename;
+	delete[] tofiles;
 	if (doc) doc->dec_count();
 	if (limbo) limbo->dec_count();
 	if (papergroup) papergroup->dec_count();
 }
 
+Value* DocumentExportConfig::duplicate()
+{
+	DocumentExportConfig *c=new DocumentExportConfig(this);
+	//*c=*this; //shallow copy!!
+
+	////if (c->filter) c->filter->inc_count();
+	//if (c->doc) c->doc->inc_count();
+	//if (c->limbo) c->limbo->inc_count();
+	//if (c->papergroup) c->papergroup->inc_count();
+
+	//c->filename=newstr(c->filename);
+	//c->tofiles =newstr(c->tofiles);
+	//c->command =newstr(c->command);
+
+	return c;
+}
+
 Value *DocumentExportConfig::dereference(const char *extstring, int len)
 {
 	DBG cerr <<" *** Need to implement DocumentExportConfig::dereference()!!"<<endl;
-	return NULL;
+	return nullptr;
 }
 
 int DocumentExportConfig::assign(FieldExtPlace *ext,Value *v)
@@ -1131,12 +1145,30 @@ int DocumentExportConfig::assign(FieldExtPlace *ext,Value *v)
 	return 0;
 }
 
-LaxFiles::Attribute *DocumentExportConfig::dump_out_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+LaxFiles::Attribute *DocumentExportConfig::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
 {
 	if (!att) att=new Attribute;
 
+	if (what == -1) {
+		att->push("tofile","/file/to/export/to");
+		att->push("tofiles","\"/files/like###.this\"","the # section is replaced with the page index.");
+		att->push("format","\"SVG 1.0\""   ,"the format to export as");
+		att->push("imposition","SignatureImposition","the imposition used. This is set automatically when exporting a document");
+		att->push("layout","papers"        ,"this is particular to the imposition used by the document");
+		att->push("start","3"              ,"the starting index to export, counting from 0");
+		att->push("end","5"                ,"the ending index to export, counting from 0");
+		att->push("batches","4"            ,"for multi-page capable targets, the number of spreads to put in a single file, repeat for whole range");
+		att->push("evenodd","odd"          ,"all|even|odd. Based on spread index, maybe export only even or odd spreads.");
+		att->push("paperrotation","0"      ,"0|90|180|270. Whether to rotate each exported (final) paper by that number of degrees");
+		att->push("rotate180","yes"        ,"or no. Whether to rotate every other paper by 180 degrees, in addition to paperrotation");
+		att->push("target","single"        ,"or multi, or command. Whether to try to output to a single file or many");
+
+		return att;
+	}
+
 	if (filename) att->push("tofile", filename);
 	if (tofiles) att->push("tofiles", tofiles);
+	if (command) att->push("command", command);
 	att->push("target", target == TARGET_Single ? "single" : (target == TARGET_Multi ? "multi" : "command"));
 
 	if (filter) att->push("format", filter->VersionName());
@@ -1162,51 +1194,9 @@ LaxFiles::Attribute *DocumentExportConfig::dump_out_atts(LaxFiles::Attribute *at
 
 void DocumentExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
-	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	if (what==-1) {
-		fprintf(f,"%stofile /file/to/export/to \n",spc);
-		fprintf(f,"%stofiles  \"/files/like###.this\"  #the # section is replaced with the page index\n",spc);
-		fprintf(f,"%s                                #Only one of tofile or tofiles should be present\n",spc);
-		if (filter) fprintf(f,"%sformat  \"%s\"    #the format to export as\n",spc,filter->VersionName());
-		else fprintf(f,"%sformat  \"SVG 1.0\"    #the format to export as\n",spc);
-		fprintf(f,"%simposition SignatureImposition  #the imposition used. This is set automatically when exporting a document\n",spc);
-		fprintf(f,"%slayout papers        #this is particular to the imposition used by the document\n",spc);
-		fprintf(f,"%sstart 3              #the starting index to export, counting from 0\n",spc);
-		fprintf(f,"%send   5              #the ending index to export, counting from 0\n",spc);
-		fprintf(f,"%sbatches 4            #for multi-page capable targets, the number of spreads to put in a single file, repeat for whole range\n",spc);
-		fprintf(f,"%sevenodd odd          #all|even|odd. Based on spread index, maybe export only even or odd spreads.\n",spc);
-		fprintf(f,"%spaperrotation 0      #0|90|180|270. Whether to rotate each exported (final) paper by that number of degrees\n",spc);
-		fprintf(f,"%srotate180 yes        #or no. Whether to rotate every other paper by 180 degrees, in addition to paperrotation\n",spc);
-		fprintf(f,"%starget single        #or multi, or command. Whether to try to output to a single file or many\n",spc);
-
-		return;
-	}
-	if (filename) fprintf(f,"%stofile %s\n",spc,filename);
-	if (tofiles) fprintf(f,"%stofiles  \"%s\"\n",spc,tofiles);
-
-	if (target == TARGET_Single)       fprintf(f,"%starget single\n",  spc);
-	else if (target == TARGET_Multi)   fprintf(f,"%starget multi\n",   spc);
-	else if (target == TARGET_Command) fprintf(f,"%starget command\n", spc);
-
-	if (filter) fprintf(f,"%sformat  \"%s\"\n",spc,filter->VersionName());
-	if (doc && doc->imposition) {
-		fprintf(f,"%simposition \"%s\"\n",spc,doc->imposition->whattype());
-		fprintf(f,"%slayout \"%s\"\n",spc,doc->imposition->LayoutName(layout));
-	}
-	fprintf(f,"%sstart %d\n",spc,start);
-	fprintf(f,"%send   %d\n",spc,end);
-
-	fprintf(f,"%spaperrotation %d\n",spc,paperrotation);
-	//fprintf(f,"%srotate180 %s\n",spc, rotate180==0 ? "none" : (rotate180==1 ? "odd" : "even")); 
-	fprintf(f,"%srotate180 %s\n",spc, rotate180==0 ? "yes" : "no"); 
-	fprintf(f,"%sreverse %s\n",spc,reverse_order ? "yes" : "no");
-	fprintf(f,"%sbatches %d\n",spc,batches);
-	if (evenodd==Odd) fprintf(f,"%sevenodd odd\n",spc);
-	else if (evenodd==Even) fprintf(f,"%sevenodd even\n",spc);
-	else fprintf(f,"%sevenodd all\n",spc);
-
-	fprintf(f,"%stextaspaths %s\n",spc,textaspaths ? "yes" : "no");
-
+	Attribute att;
+	dump_out_atts(&att, what, context);
+	att.dump_out(f, indent);
 }
 
 void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context)
@@ -1219,12 +1209,13 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpCo
 		value=att->attributes.e[c]->value;
 
 		if (!strcmp(name,"tofile")) {
-			//target=0;
 			makestr(filename,value);
 
 		} else if (!strcmp(name,"tofiles")) {
-			//target=1;
 			makestr(tofiles,value);
+
+		} else if (!strcmp(name,"command")) {
+			makestr(command,value);
 
 		} else if (!strcmp(name,"target")) {
 			if (isblank(value)) target = TARGET_Single;
@@ -1290,7 +1281,7 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpCo
 			//while (isspace(*value)) value++;
 			if (*value=='[' || *value=='(') value++;
 			double d[4];
-			int n=DoubleListAttribute(value, d, 4, NULL);
+			int n=DoubleListAttribute(value, d, 4, nullptr);
 			if (n==4) {
 				crop.minx=(d[0]<d[1] ? d[0] : d[1]);
 				crop.maxx=(d[0]>d[1] ? d[0] : d[1]);
@@ -1308,22 +1299,6 @@ ObjectDef *DocumentExportConfig::makeObjectDef()
 	return makeExportConfigDef();
 }
 
-Value* DocumentExportConfig::duplicate()
-{
-	DocumentExportConfig *c=new DocumentExportConfig;
-	*c=*this; //shallow copy!!
-
-	//if (c->filter) c->filter->inc_count();
-	if (c->doc) c->doc->inc_count();
-	if (c->limbo) c->limbo->inc_count();
-	if (c->papergroup) c->papergroup->inc_count();
-
-	c->filename=newstr(c->filename);
-	c->tofiles =newstr(c->tofiles);
-
-	return c;
-}
-
 
 //------------------------------- export_document() ----------------------------------
 
@@ -1336,17 +1311,15 @@ Value* DocumentExportConfig::duplicate()
  * then this function will call filter->Out() with the correct data for each file.
  *
  * Also does sanity checking on config->papergoup, config->start, and config->end. Ensures that
- * config->papergroup is never NULL, that start<=end, and that start and end are proper for
+ * config->papergroup is never nullptr, that start<=end, and that start and end are proper for
  * the requested spreads. If end<0, then make end the last spread. WARNING! This will
  * modify contents of config to have those sane values.
  *
  * If no doc is specified, then start=end=0 is passed to the filter. Also ensures that at least
- * one of doc and limbo is not NULL before calling the filter.O
+ * one of doc and limbo is not nullptr before calling the filter.O
  *
  * For single file targets, obeys config->evenodd. For multifile targets, the output filter
  * must account for it.
- *
- * \todo perhaps command facility should be here... currently it sits in ExportDialog.
  */
 int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 {
@@ -1360,12 +1333,61 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 
 	DBG cerr << "export_document begin to \""<<config->filter->VersionName()<<"\"......."<<endl;
 
+    if (config->target == DocumentExportConfig::TARGET_Command) {
+		// TODO! *** this currently bypasses all the safety checks normally done below...
+		if (isblank(config->command)) {
+			log.AddMessage(_("Expected command!"),ERROR_Fail);
+			return 1;
+		}
+		if (!config->filter) {
+			log.AddMessage(_("Missing filter!"),ERROR_Fail);
+			return 1;
+		}
+
+        char *cm = newstr(config->command);
+        appendstr(cm," ");
+
+        char tmp[256];
+        //cupsTempFile2(tmp,sizeof(tmp));
+		//tmpnam(tmp);
+		sprintf(tmp, "laidoutTmpXXXXXX");
+		mkstemp(tmp);
+        DBG cerr <<"attempting to write temp file "<<tmp<<" for export by command "<< cm <<endl;
+
+		FILE *f = fopen(tmp, "w");
+		if (f) { //make sure it is writable
+            fclose(f);
+
+            if (config->filter->Out(tmp,config,log)==0) {
+                appendstr(cm,tmp);
+
+                 //now do the actual command
+                int c=system(cm); //-1 for error, else the return value of the call
+                if (c!=0) {
+					log.AddMessage(_("Error running command!"),ERROR_Fail);
+					return 1;
+                } else {
+					//done, no error!
+                }
+                //***maybe should have to delete (unlink) tmp, but only after actually done printing?
+                //does cups keep file in place, or copy when queueing?
+
+            } else {
+                 //there was an error during filter export
+				log.AddMessage(_("Error exporting with command!"),ERROR_Fail);
+				return 1;
+            }
+        }
+        return 0;
+    } //if command
+
+
 	 //figure out what paper arrangement to print out on
 	PaperGroup *papergroup=config->papergroup;
-	if (papergroup && papergroup->papers.n==0) papergroup=NULL;
+	if (papergroup && papergroup->papers.n==0) papergroup=nullptr;
 	if (!papergroup && config->doc) papergroup=config->doc->imposition->papergroup;
 	if (!papergroup && config->doc) papergroup=new PaperGroup(config->doc->imposition->GetDefaultPaper());
-	if (papergroup && papergroup->papers.n==0) papergroup=NULL;
+	if (papergroup && papergroup->papers.n==0) papergroup=nullptr;
 	if (!papergroup) {
 		 //use global default paper
 		int c;
@@ -1411,14 +1433,14 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 		int oldtarget = config->target;
 		config->target = DocumentExportConfig::TARGET_Single;
 		PaperGroup *pg;
-		char *filebase=NULL;
+		char *filebase=nullptr;
 		if (config->tofiles) filebase=LaxFiles::make_filename_base(config->tofiles);//###.ext -> %03d.ext
 		else filebase=LaxFiles::make_filename_base(config->filename);//###.ext -> %03d.ext
 		if (papergroup->papers.n>1) {
 			 // basically make base###.ps --> base(spread number)-(paper number).ps
 			char *pos=strchr(filebase,'%'); //pos will never be 0
 			while (*pos!='d') pos++;
-			replace(filebase,"d-%d",pos-filebase,1,NULL);
+			replace(filebase,"d-%d",pos-filebase,1,nullptr);
 		}
 		char filename[strlen(filebase)+20];
 
@@ -1481,7 +1503,7 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 			int s=config->start;
 			int e=config->end;
 			char *oldfilename=config->filename;
-			char *fname=NULL;
+			char *fname=nullptr;
 			char str[20];
 			char *ext=strrchr(oldfilename,'.');
 
@@ -1501,7 +1523,7 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 				}
 
 				config->filename=fname;
-				err=config->filter->Out(NULL,config,log);
+				err=config->filter->Out(nullptr,config,log);
 				delete[] fname;
 			}
 
@@ -1509,7 +1531,7 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 			config->end=e;
 			config->filename=oldfilename;
 
-		} else err = config->filter->Out(NULL,config,log); //send all pages at once to filter
+		} else err = config->filter->Out(nullptr,config,log); //send all pages at once to filter
 	}
 	
 	DBG cerr << "export_document end."<<endl;

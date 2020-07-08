@@ -55,52 +55,14 @@ void installImageGsFilter()
 }
 
 
-//----------------------------- ImageGsExportConfig -----------------------------
-/*! \class ImageGsExportConfig
- * \brief Holds extra config for image export.
- *
- * \todo currently no extra settings, but could be image type, and background color to use, or transparency...
- */
-class ImageGsExportConfig : public DocumentExportConfig
-{
- public:
-	//char *imagetype;
-	//int use_transparent_bkgd;
-	ImageGsExportConfig();
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
-};
-
-//! Set the filter to the Image export filter stored in the laidout object.
-ImageGsExportConfig::ImageGsExportConfig()
-{
-	for (int c=0; c<laidout->exportfilters.n; c++) {
-		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Image via gs")) {
-			filter=laidout->exportfilters.e[c];
-			break; 
-		}
-	}
-}
-
-void ImageGsExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
-{
-	DocumentExportConfig::dump_out(f,indent,what,context);
-}
-
-void ImageGsExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
-{
-	DocumentExportConfig::dump_in_atts(att,flag,context);
-}
-
-
 //------------------------------------ ImageGsExportFilter ----------------------------------
 	
 /*! \class ImageGsExportFilter
  * \brief Filter for exporting pages to images via ghostscript.
  *
- * Right now, just exports through pngalpha with ghostscript.
+ * Please note this is deprecated now that we have a superior ImageExportFilter.
  *
- * Uses ImageGsExportConfig.
+ * Right now, just exports through pngalpha with ghostscript.
  */
 
 
@@ -125,39 +87,15 @@ const char *ImageGsExportFilter::VersionName()
 
 Value *newImageGsExportConfig()
 {
-	ImageGsExportConfig *o=new ImageGsExportConfig;
-	ObjectValue *v=new ObjectValue(o);
-	o->dec_count();
-	return v;
+	DocumentExportConfig *o = new DocumentExportConfig();
+	return o;
 }
 
 /*! \todo *** this needs a going over for safety's sake!! track down ref counting
  */
 int createImageGsExportConfig(ValueHash *context,ValueHash *parameters,Value **v_ret,ErrorLog &log)
 {
-	ImageGsExportConfig *d=new ImageGsExportConfig;
-
-	ValueHash *pp=parameters;
-	if (pp==NULL) pp=new ValueHash;
-
-	Value *vv=NULL, *v=NULL;
-	vv=new ObjectValue(d);
-	pp->push("exportconfig",vv);
-
-	int status=createExportConfig(context,pp,&v,log);
-	if (status==0 && v && v->type()==VALUE_Object) d=dynamic_cast<ImageGsExportConfig *>(((ObjectValue *)v)->object);
-
-	if (d) for (int c=0; c<laidout->exportfilters.n; c++) {
-		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Image via gs")) {
-			d->filter=laidout->exportfilters.e[c];
-			break;
-		}
-	}
-	*v_ret=v;
-
-	if (pp!=parameters) delete pp;
-
-	return 0;
+	return createExportConfig(context, parameters, v_ret, log);
 }
 
 //! Try to grab from stylemanager, and install a new one there if not found.
@@ -168,19 +106,15 @@ int createImageGsExportConfig(ValueHash *context,ValueHash *parameters,Value **v
 ObjectDef *ImageGsExportFilter::GetObjectDef()
 {
 	ObjectDef *styledef;
-	styledef=stylemanager.FindDef("ImageGsExportConfig");
-	if (styledef) return styledef; 
+	styledef = stylemanager.FindDef("ImageGsExportConfig");
+	if (styledef) return styledef;
 
-	styledef=makeObjectDef();
+	styledef = makeObjectDef();
 	makestr(styledef->name,"ImageGsExportConfig");
 	makestr(styledef->Name,_("Image Export Configuration"));
 	makestr(styledef->description,_("Configuration to export a document to a png using Ghostscript."));
-	styledef->newfunc=newImageGsExportConfig;
-	styledef->stylefunc=createImageGsExportConfig;
-
-	// *** push any other settings:
-	// *** image format
-	// *** background color
+	styledef->newfunc = newImageGsExportConfig;
+	styledef->stylefunc = createImageGsExportConfig;
 
 	stylemanager.AddObjectDef(styledef,0);
 	styledef->dec_count();
@@ -198,19 +132,14 @@ ObjectDef *ImageGsExportFilter::GetObjectDef()
  * Return 0 for success, or nonzero error. Possible errors are error and nothing written,
  * and corrupted file possibly written.
  * 
- * Currently uses a DocumentExportConfig for context, but ultimately should use 
- * an ImageGsExportConfig.
+ * Currently uses a DocumentExportConfig for context.
  *
- * \todo must figure out if gs can directly process pdf 1.4 with transparency. If it can, then
- *   when full transparency is implemented, that will be the preferred method, that is until
- *   laidout buffer rendering is capable enough in its own right.
  * \todo output file names messed up when papergroup has more than one paper, plus starting number
  *   not accurate...
  */
 int ImageGsExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 {
-	//ImageGsExportConfig *iout=dynamic_cast<ImageGsExportConfig *>(context);
-	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
+	DocumentExportConfig *out = dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;
 
 	Document *doc =out->doc;

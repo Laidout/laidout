@@ -101,6 +101,12 @@ ImageExportConfig::ImageExportConfig(DocumentExportConfig *config)
 	}
 }
 
+Value* ImageExportConfig::duplicate()
+{
+	ImageExportConfig *dup = new ImageExportConfig(this);
+	return dup;
+}
+
 
 ImageExportConfig::~ImageExportConfig()
 {
@@ -671,7 +677,6 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 
 	 //Now save the page
 	LaxImage *img = dp->GetSurface();
-	//int err=img->Save(filename, out->format);
 	int err = img->Save(filename, out->format);
 	if (err) {
 		log.AddMessage(_("Could not save the image"), ERROR_Fail);

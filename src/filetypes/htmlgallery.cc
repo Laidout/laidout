@@ -133,6 +133,7 @@ class HtmlGalleryExportConfig : public DocumentExportConfig
 	HtmlGalleryExportConfig(DocumentExportConfig *config);
 	virtual ~HtmlGalleryExportConfig();
 	virtual const char *whattype() { return "HtmlGalleryExportConfig"; }
+	virtual Value* duplicate();
 	virtual ObjectDef* makeObjectDef();
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);
@@ -201,6 +202,12 @@ HtmlGalleryExportConfig::~HtmlGalleryExportConfig()
 	delete[] html_template_file;
 	delete[] page_template_file;
 	delete[] image_template_file;
+}
+
+Value* HtmlGalleryExportConfig::duplicate()
+{
+	HtmlGalleryExportConfig *dup = new HtmlGalleryExportConfig(this);
+	return dup;
 }
 
 void HtmlGalleryExportConfig::DefaultTemplateVars()

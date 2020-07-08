@@ -122,6 +122,10 @@ enum ViewActions {
 	VIEW_Save_As_Default_Template,
 	VIEW_Revert_To_Save,
 
+	VIEW_Import_Images,
+	VIEW_Import,
+	VIEW_Export,
+
 	VIEW_Config_Addons,
 	VIEW_AddonAction,
 
@@ -4788,97 +4792,15 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"importImage")) {
-		Group *toobj=NULL;
-		if (!doc) {
-			 //create a group object with the same aspect as the viewport, and dump images
-			 //into that. This group object gets sent back to the viewer in an event message.
-			 //The objects are then inserted into limbo.
-			double aspect=(viewport->dp->Maxy-viewport->dp->Miny)/(float)(viewport->dp->Maxx-viewport->dp->Minx);
-			toobj = ((LaidoutViewport *)viewport)->limbo;
-			if (!((LaidoutViewport *)viewport)->limbo->validbounds()) {
-				toobj->maxx = 10;
-				toobj->maxy = aspect;
-			}
-		}
-		app->rundialog(new ImportImagesDialog(NULL,"Import Images",_("Import Images"),
-					FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
-					0,0,0,0,0, object_id,"import new image",
-					NULL,NULL,NULL,
-					toobj,
-					doc,((LaidoutViewport *)viewport)->curobjPage(),0));
+		PerformAction(VIEW_Import_Images);
 		return 0;
 
 	} else if (!strcmp(mes,"import")) { 
-		if (laidout->importfilters.n==0) {
-			mesbar->SetText(_("Sorry, there are no import filters installed."));
-			return 0;
-
-		} else {
-			mesbar->SetText(_("Importing..."));
-			Group *toobj=NULL;
-			if (!doc) {
-				 //create a group object with the same aspect as the viewport, and dump images
-				 //into that. This group object gets sent back to the viewer in an event message.
-				 //The objects are then inserted into limbo.
-				double aspect = (viewport->dp->Maxy-viewport->dp->Miny)/(float)(viewport->dp->Maxx-viewport->dp->Minx);
-				toobj = ((LaidoutViewport *)viewport)->limbo;
-				if (!((LaidoutViewport *)viewport)->limbo->validbounds()) {
-					toobj->maxx = 10;
-					toobj->maxy = aspect;
-				}
-			}
-			app->rundialog(new ImportFileDialog(NULL,NULL,_("Import File"),
-						FILES_FILES_ONLY|FILES_OPEN_ONE|FILES_PREVIEW,
-						0,0,0,0,0, object_id,"import file",
-						NULL,NULL,NULL,
-						toobj,
-						doc,
-						((LaidoutViewport *)viewport)->curobjPage(),
-						((LaidoutViewport *)viewport)->spreadi,
-						((LaidoutViewport *)viewport)->viewmode,
-						0)); //dpi
-			return 0;
-		}
+		PerformAction(VIEW_Import);
 		return 0;
 
 	} else if (!strcmp(mes,"export")) { 
-		 //user clicked down on the export button, and selected an export type from menu..
-		PaperGroup *pg=((LaidoutViewport *)viewport)->papergroup;
-		Group *l;
-		if (!pg || !pg->papers.n) l=NULL; else l=((LaidoutViewport *)viewport)->limbo;
-		char *file=NULL;
-		if (doc) {
-			if (!isblank(laidout->prefs.exportfilename)) {
-				char *nfile = newstr(laidout->prefs.exportfilename);
-				char *fname = newstr(isblank(doc->Saveas()) ? "untitled" : doc->Saveas());
-				chop_extension(fname);
-				file = replaceallname(nfile, "%f", fname);
-				delete[] nfile;
-				delete[] fname;
-
-			} else {
-				file = newstr(doc->Saveas());
-				chop_extension(file);
-				appendstr(file, "-exported.huh");
-			}
-
-			convert_to_full_path(file,NULL);
-		} else {
-			file=full_path_for_file("exported-file.huh",NULL);
-		}
-		ExportDialog *d=new ExportDialog(0,object_id,"export config", 
-										 doc,
-										 l,
-										 pg,
-										 NULL,//***should be last filter...
-										 file,
-										 PAPERLAYOUT,
-										 0,
-										 doc?doc->imposition->NumPapers()-1:0,
-										 doc?doc->imposition->PaperFromPage(
-											((LaidoutViewport *)viewport)->curobjPage()):0);
-		app->rundialog(d);
-		delete[] file;
+		PerformAction(VIEW_Export);
 		return 0;
 
 	} else if (!strcmp(mes,"openDoc")) { 
@@ -5194,12 +5116,116 @@ int ViewWindow::PerformAction(int action)
 		}
 		return 0; 
 
+	} else if (action==VIEW_Export) {
+		 //user clicked down on the export button
+		PaperGroup *pg = ((LaidoutViewport *)viewport)->papergroup;
+		Group *l;
+		if (!pg || !pg->papers.n) l=NULL; else l=((LaidoutViewport *)viewport)->limbo;
+		char *file=NULL;
+		if (doc) {
+			if (!isblank(laidout->prefs.exportfilename)) {
+				char *nfile = newstr(laidout->prefs.exportfilename); //this is a name template
+				char *fname = newstr(isblank(doc->Saveas()) ? "untitled" : lax_basename(doc->Saveas()));
+				chop_extension(fname);
+				file = replaceallname(nfile, "%f", fname);
+				delete[] nfile;
+				delete[] fname;
+				char *dir = CurrentDirectory();
+				if (dir) {
+					prependstr(file, dir);
+					delete[] dir;
+				}
+
+			} else {
+				file = newstr(doc->Saveas());
+				chop_extension(file);
+				appendstr(file, "-exported.huh");
+			}
+
+			convert_to_full_path(file,NULL);
+		} else {
+			char *file = CurrentDirectory();
+			appendstr(file, "exported-file.huh");
+			//file = full_path_for_file("exported-file.huh",NULL);
+		}
+		ExportDialog *d = new ExportDialog(0,object_id,"export config", 
+										 doc,
+										 l,
+										 pg,
+										 NULL,//***should be last filter...
+										 file,
+										 PAPERLAYOUT,
+										 0,
+										 doc?doc->imposition->NumPapers()-1:0,
+										 doc?doc->imposition->PaperFromPage(
+											((LaidoutViewport *)viewport)->curobjPage()):0);
+		app->rundialog(d);
+		delete[] file;
+		return 0; 
+
+	} else if (action==VIEW_Import) {
+		if (laidout->importfilters.n==0) {
+			mesbar->SetText(_("Sorry, there are no import filters installed."));
+			return 0;
+
+		} else {
+			mesbar->SetText(_("Importing..."));
+			Group *toobj=NULL;
+			if (!doc) {
+				 //create a group object with the same aspect as the viewport, and dump images
+				 //into that. This group object gets sent back to the viewer in an event message.
+				 //The objects are then inserted into limbo.
+				double aspect = (viewport->dp->Maxy-viewport->dp->Miny)/(float)(viewport->dp->Maxx-viewport->dp->Minx);
+				toobj = ((LaidoutViewport *)viewport)->limbo;
+				if (!((LaidoutViewport *)viewport)->limbo->validbounds()) {
+					toobj->maxx = 10;
+					toobj->maxy = aspect;
+				}
+			}
+			app->rundialog(new ImportFileDialog(NULL,NULL,_("Import File"),
+						FILES_FILES_ONLY|FILES_OPEN_ONE|FILES_PREVIEW,
+						0,0,0,0,0, object_id,"import file",
+						NULL,NULL,NULL,
+						toobj,
+						doc,
+						((LaidoutViewport *)viewport)->curobjPage(),
+						((LaidoutViewport *)viewport)->spreadi,
+						((LaidoutViewport *)viewport)->viewmode,
+						0)); //dpi
+			return 0;
+		}
+		return 0;
+
+	} else if (action==VIEW_Import_Images) {
+		Group *toobj=NULL;
+		if (!doc) {
+			 //create a group object with the same aspect as the viewport, and dump images
+			 //into that. This group object gets sent back to the viewer in an event message.
+			 //The objects are then inserted into limbo.
+			double aspect = (viewport->dp->Maxy-viewport->dp->Miny)/(float)(viewport->dp->Maxx-viewport->dp->Minx);
+			toobj = ((LaidoutViewport *)viewport)->limbo;
+			if (!((LaidoutViewport *)viewport)->limbo->validbounds()) {
+				toobj->maxx = 10;
+				toobj->maxy = aspect;
+			}
+		}
+		char *where = CurrentDirectory();
+		app->rundialog(new ImportImagesDialog(nullptr,"Import Images",_("Import Images"),
+					FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
+					0,0,0,0,0, object_id,"import new image",
+					nullptr, where, nullptr, //file,path,mask
+					toobj,
+					doc,((LaidoutViewport *)viewport)->curobjPage(),0));
+		delete[] where;
+		return 0;
+
 	} else if (action==VIEW_Save || action==VIEW_SaveAs) {
 		 // save file
-		Document *sdoc=doc;
-		if (!sdoc) sdoc=laidout->curdoc;
+		Document *sdoc = doc;
+		if (!sdoc) sdoc = laidout->curdoc;
 		if (!sdoc) {
 			if (!isblank(laidout->project->filename)) {
+				//save as project file
 				//***need to collect error msg
 				
 				ErrorLog log;
@@ -5217,8 +5243,8 @@ int ViewWindow::PerformAction(int action)
 				|| strstr(sdoc->Saveas(),_("untitled"))
 				|| action==VIEW_SaveAs) {
 			 // launch saveas!!
-			char *where=newstr(isblank(sdoc->Saveas())?NULL:sdoc->Saveas());
-			if (!where && !isblank(laidout->project->filename)) where=lax_dirname(laidout->project->filename,0);
+			char *where = newstr(isblank(sdoc->Saveas()) ? NULL : sdoc->Saveas());
+			if (!where && !isblank(laidout->project->filename)) where = lax_dirname(laidout->project->filename,0);
 
 			app->rundialog(new FileDialog(NULL,NULL,_("Save As..."),
 						ANXWIN_REMEMBER,
@@ -5230,7 +5256,7 @@ int ViewWindow::PerformAction(int action)
 		} else {
 			ErrorLog log;
 
-			if (sdoc->Save(1,1,log)==0) {
+			if (sdoc->Save(1, 1, log) == 0) {
 				char blah[strlen(sdoc->Saveas())+15];
 				sprintf(blah,"Saved to %s.",sdoc->Saveas());
 				PostMessage(blah);
@@ -5452,6 +5478,40 @@ int ViewWindow::PerformAction(int action)
 	}
 
 	return 1;
+}
+
+/*! Return a new char[] of the most appropriate save directory.
+ *  Searches in this order:
+ *
+ *    1. doc->SaveAs()
+ *    2. laidout->curdoc->SaveAs()
+ *    3. app->load_dir / app->save_dir
+ *    4. project->filename
+ *    5. current_directory()
+ */
+char *ViewWindow::CurrentDirectory()
+{
+	char *where = nullptr;
+
+	Document *sdoc = doc;
+	if (!sdoc) sdoc = laidout->curdoc;
+
+	if (sdoc && !isblank(sdoc->Saveas()) && !strcasestr(sdoc->Saveas(),_("untitled"))) {
+		where = lax_dirname(sdoc->Saveas(), 1);
+	}
+
+	if (!where && !isblank(app->load_dir)) where = newstr(app->load_dir);
+	if (!where && !isblank(app->save_dir)) where = newstr(app->save_dir);
+
+	if (!where) {
+		if (!isblank(laidout->project->filename)) {
+			where = lax_dirname(laidout->project->filename, 1);
+		}
+	}
+	if (!where) where = current_directory();
+
+	if (where && where[strlen(where)-1] != '/') appendstr(where, "/");
+	return where;
 }
 
 int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)

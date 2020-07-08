@@ -43,6 +43,7 @@ class ExportDialog : public Laxkit::RowFrame
 {
  protected:
 	DocumentExportConfig *config;
+	ValueHash previous_configs;
 	
 	int firstextra;
 	int overwriteok;
