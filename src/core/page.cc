@@ -836,13 +836,7 @@ void Page::Touch(clock_t at_time)
 	else modtime=times(NULL);
 }
 
-//! Update the thumbnail if necessary and return it.
-/*! Creates thumbnail only if thumbmodtime<modtime.
- * 
- * These are used notably in the SpreadEditor and SignatureInterface.
- *
- * Creates thumb images that are 200 pixels wide, and as many high as aspect ratio calls for.
- * 
+/*! Update thumbnail if necessary.
  */
 ImageData *Page::Thumbnail()
 {
@@ -923,6 +917,88 @@ ImageData *Page::Thumbnail()
 	dp->dec_count();
 
 	return thumbnail;
+}
+
+/*! Render the page transparently.
+ * 
+ * If existing != null then existing->w() and existing->h() override width, height.
+ *
+ * If existing == null, and one of width or height is 0, then fill in according to
+ * page dimension aspect ratio.
+ */
+Laxkit::LaxImage *Page::RenderPage(int width, int height, LaxImage *existing, bool transparent)
+{
+	if (width == 0 && height == 0 && !existing) return nullptr;
+	if (existing && (existing->w() == 0 || existing->h() == 0)) return nullptr;
+	if (!pagestyle) return nullptr;
+
+	DoubleBBox bbox;
+	if (pagestyle->outline)
+		bbox = *(pagestyle->outline);
+	else {
+		bbox.maxx = pagestyle->w();
+		bbox.maxy = pagestyle->h();
+	}
+
+	if (width == 0) {
+		width = height * bbox.boxwidth() / (double) bbox.boxheight();
+	} else if (height == 0) {
+		height = width * bbox.boxheight() / (double) bbox.boxwidth();
+	}
+
+	DBG cerr <<"..----rendering page "<<width<<" x "<<height<<"  pgW,H:"<<pagestyle->w()<<','<<pagestyle->h()
+	DBG 	<<"  bbox:"<<bbox.minx<<','<<bbox.maxx<<' '<<bbox.miny<<','<<bbox.maxy<<endl;
+
+	Displayer *dp = newDisplayer(nullptr);
+	dp->defaultRighthanded(true);
+	if (existing) {
+		dp->MakeCurrent(existing);
+		width = existing->w();
+		height = existing->h();
+	} else {
+		dp->CreateSurface(width, height);
+	}
+
+	// setup dp to have proper scaling...
+	dp->NewTransform(1.,0.,0.,-1.,0.,0.);
+	//dp->NewTransform(1.,0.,0.,1.,0.,0.);
+	dp->SetSpace(bbox.minx,bbox.maxx, bbox.miny,bbox.maxy);
+	dp->Center  (bbox.minx,bbox.maxx, bbox.miny,bbox.maxy);
+
+	if (!transparent) {
+		dp->NewBG(255,255,255); // *** this should be the paper color for paper the page is on...
+		dp->NewFG(0,0,0,255);
+		dp->ClearWindow();
+	}
+
+	for (int c=0; c<pagebleeds.n; c++) {
+		PageBleed *bleed = pagebleeds[c];
+        //Page *otherpage = doc->pages[bleed->index];
+        Page *otherpage = bleed->page;
+		if (!otherpage) continue;
+
+        dp->PushAndNewTransform(bleed->matrix);
+
+        for (int c2 = 0; c2 < otherpage->layers.n(); c2++) {
+            DrawData(dp,otherpage->e(c2),NULL,NULL,0);
+        }
+
+        dp->PopAxes();
+	}
+
+	for (int c=0; c<layers.n(); c++) {
+		//dp->PushAndNewTransform(layers.e[c]->m());
+		DrawData(dp,layers.e(c));
+		//dp->PopAxes();
+	}
+
+	LaxImage *img = dp->GetSurface(); //note: if existing!=null, then img should == existing
+
+	dp->EndDrawing();
+	dp->dec_count();
+
+	DBG cerr <<"==--- Done Page::RenderPage.."<<endl;
+	return img;
 }
 
 /*! Perform any AlignmentRule things in any object on the page.
