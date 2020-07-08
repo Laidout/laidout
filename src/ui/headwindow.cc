@@ -202,7 +202,7 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
 			if (laidout->project->docs.n) doc=laidout->project->docs.e[0]->doc;
 		}
 	}
-	HeadWindow *head=new HeadWindow(NULL,"head",_("Laidout"),0, 0,0,700,700,0);
+	HeadWindow *head=new HeadWindow(NULL,"head",_("Laidout"),ANXWIN_XDND_AWARE, 0,0,700,700,0);
 	//HeadWindow *head=new HeadWindow(NULL,"head",0, 0,0,700,700,0);
 
 	 // put a new which in it. default to view
