@@ -869,29 +869,11 @@ int LaidoutApp::createlaidoutrc()
 					  "\n");
 
 
-					   ////colors
-					  //"#colors (***ToDO)\n"
-					  //"#  activate   rgbf  0 .78  0    #Some controls have green/red to indicate go/no-go. Redefine here\n"
-					  //"#  deactivate rgbf  1 .39 .39   # for instance, to compensate for red/green color blindness.\n"
-					  //"\n"
-
+					   ////theme
 			fprintf(f,"laxprofile Light #Default built in profiles are Dark, Light, and Gray. You can define others in the laxconfig section.\n");
-			fprintf(f,"laxconfig-sample #Remove the \"-sample\" part to redefine various default window behaviour settingss\n");
+			fprintf(f,"laxconfig-sample #Remove the \"-sample\" part to redefine various default window behavior settings\n");
 			dump_out_rc(f,NULL,2,0);
-//			fprintf(f,"\n"
-//					  "#laxcolors  #To set only the colors of laxconfig, use this\n"
-//					  "#  panel\n"
-//					  "#    ...\n"
-//					  "#  menu\n"
-//					  "#    ...\n"
-//					  "#  edits\n"
-//					  "#    ...\n"
-//					  "#  buttons\n"
-//					  "#    ...\n");
-//
-//			fprintf(f,"\n"
-//					  "\n"
-//					  "\n"
+
 
 //					   //preview generation
 //					  //" # Alternately, you can specify the maximum width and height separately:\n"
@@ -938,17 +920,17 @@ int LaidoutApp::createlaidoutrc()
 
 		 // create the other relevant directories
 		sprintf(path,"%s/addons",config_dir);
-		mkdir(path,0755);
+		mkdir(path,0700);
 		sprintf(path,"%s/templates",config_dir);
-		mkdir(path,0755);
+		mkdir(path,0700);
 		sprintf(path,"%s/impositions",config_dir);
-		mkdir(path,0755);
+		mkdir(path,0700);
 		sprintf(path,"%s/palettes",config_dir);
-		mkdir(path,0755);
+		mkdir(path,0700);
 		sprintf(path,"%s/fonts",config_dir);
-		mkdir(path,0755);
+		mkdir(path,0700);
 		sprintf(path,"%s/plugins",config_dir);
-		mkdir(path,0755);
+		mkdir(path,0700);
 
 	} else return -1;
 
@@ -1891,9 +1873,10 @@ int LaidoutApp::Load(const char *filename, ErrorLog &log)
 	}
 
 
+	// not a project file, so try something else
 	doc=new Document(NULL,fullname);
 	if (!project) project=new Project;
-	project->Push(doc); //important: this must be before doc->Load()
+	project->Push(doc); //important: this must be before doc->Load() also important: Shouldn't be necessary!!! FIX!!!
 	doc->dec_count();
 	
 	if (doc->Load(fullname, log)==0) {
