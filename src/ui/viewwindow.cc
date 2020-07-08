@@ -2096,18 +2096,18 @@ int LaidoutViewport::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
 		return 0;
 	}
 
-	DBG if (!buttondown.any()) {
-	DBG 	int c=-1;
-	DBG 	flatpoint p=dp->screentoreal(x,y);//viewer coordinates
-	DBG 	cerr <<" realp:"<<p.x<<","<<p.y<<"  ";
-	DBG 	if (spread) {
-	DBG 		for (c=0; c<spread->pagestack.n(); c++) {
-	DBG 			if (spread->pagestack.e[c]->outline->pointin(p)) break;
-	DBG 		}
-	DBG 		if (c==spread->pagestack.n()) c=-1;
-	DBG 	}
-	DBG 	cerr <<"mouse over: "<<c<<", page "<<(c>=0?spread->pagestack.e[c]->index:-1)<<endl;
-	DBG }
+	// DBG if (!buttondown.any()) {
+	// DBG 	int c=-1;
+	// DBG 	flatpoint p=dp->screentoreal(x,y);//viewer coordinates
+	// DBG 	cerr <<" realp:"<<p.x<<","<<p.y<<"  ";
+	// DBG 	if (spread) {
+	// DBG 		for (c=0; c<spread->pagestack.n(); c++) {
+	// DBG 			if (spread->pagestack.e[c]->outline->pointin(p)) break;
+	// DBG 		}
+	// DBG 		if (c==spread->pagestack.n()) c=-1;
+	// DBG 	}
+	// DBG 	cerr <<"mouse over: "<<c<<", page "<<(c>=0?spread->pagestack.e[c]->index:-1)<<endl;
+	// DBG }
 
 	//DBG ObjectContext *oc=NULL;
 	//DBG int cc=FindObject(x,y,NULL,NULL,1,&oc);
