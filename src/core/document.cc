@@ -953,7 +953,7 @@ int Document::Load(const char *file,ErrorLog &log)
 			if (c==0) found_special = true;
 
 		} else if (isSvgFile(file)) {
-			int c = AddSvgDocument(file, this);  // 0 success, 1 failure
+			int c = AddSvgDocument(file, log, this);  // 0 success, 1 failure
 			if (c==0) found_special = true;
 		}
 
