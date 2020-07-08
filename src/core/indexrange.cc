@@ -94,6 +94,7 @@ int IndexRange::Start()
 	curi = 0;
 	curi2 = 0;
 	cur = indices[0];
+	if (cur < 0) cur = max + cur;
 	return cur;
 }
 
@@ -101,16 +102,22 @@ int IndexRange::Start()
  */
 int IndexRange::Next()
 {
-	if (cur == indices[curi+1]) {
+	int i1 = indices[curi];
+	int i2 = indices[curi+1];
+	if (i1 < 0) i1 = max + i1;
+	if (i2 < 0) i2 = max + i2;
+
+	if (cur == i2) {
 		//advance to next section
 		curi += 2;
 		curi2 = 0;
 		if (curi >= indices.n) return -1;
 		cur = indices[curi];
+		if (cur < 0) cur = max + cur;
 
 	} else {
 		//next in current range
-		if (indices[curi+1] > indices[curi]) {
+		if (i2 > i1) {
 			cur++;
 			curi2++;
 
@@ -131,7 +138,9 @@ int IndexRange::Current()
 int IndexRange::End()
 {
 	if (indices.n == 0) return -1;
-	return indices[indices.n-1];
+	int i = indices[indices.n-1];
+	if (i < 0) i = max + i;
+	return i;
 }
 
 void IndexRange::Clear()
