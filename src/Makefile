@@ -158,7 +158,6 @@ otherobjs= \
 	dataobjects/ltextonpath.o \
 	dataobjects/lvoronoidata.o \
 	dataobjects/printermarks.o \
-	text/cssutils.o \
 	ui/about.o \
 	ui/autosavewindow.o \
 	ui/buttonbox.o \
