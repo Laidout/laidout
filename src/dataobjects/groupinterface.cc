@@ -119,6 +119,7 @@ Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 	if (selection->n() > 1)
 	{
 		if (!menu) menu=new MenuInfo(_("Group Interface"));
+		else menu->AddSep();
 		menu->AddItem(_("Align..."), GIA_Align);
 		menu->AddItem(_("Distribute..."), GIA_Distribute);
 
@@ -192,6 +193,7 @@ Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 		//menu->AddSep();
 	}
 
+	RectInterface::ContextMenu(x,y,deviceid,menu);
 	return menu;
 }
 
@@ -199,6 +201,8 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 {
 	if (!strcmp(mes,"menuevent")) {
 		if (child) return child->Event(e,mes);
+
+		if (ObjectInterface::Event(e,mes) == 0) return 0;
 
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
 		int i=s->info2; //id of menu item
@@ -313,7 +317,7 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 
 	}
 
-	return 1;
+	return ObjectInterface::Event(e,mes);
 }
 
 const char *GroupInterface::hoverMessage(int p)
