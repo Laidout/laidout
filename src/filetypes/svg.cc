@@ -25,6 +25,7 @@
 #include <lax/units.h>
 #include <lax/attributes.h>
 #include <lax/utf8string.h>
+#include <lax/cssutils.h>
 
 #include "../language.h"
 #include "../laidout.h"
@@ -36,7 +37,6 @@
 #include "../core/utils.h"
 #include "../core/drawdata.h"
 #include "../core/guides.h"
-#include "../text/cssutils.h"
 
 //template implementation:
 #include <lax/refptrstack.cc>
@@ -822,7 +822,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 						 datameta.c_str_nonnull(),
 						 obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
 			fprintf(f,"%s    id=\"%s\" %s\n", spc,grad->Id(), clipid);
-			fprintf(f,"%s    fill=\"url(#radialGradient%ld)\"\n", spc,grad->object_id);
+			fprintf(f,"%s    style=\"stroke:none;fill:url(#radialGradient%ld)\"\n", spc,grad->object_id);
 			fprintf(f,"%s    cx=\"%f\"\n",spc, fabs(grad->R1()) > fabs(grad->R2()) ? grad->P1().x : grad->P2().x);
 			fprintf(f,"%s    cy=\"%f\"\n",spc, fabs(grad->R1()) > fabs(grad->R2()) ? grad->P1().y : grad->P2().y);
 			fprintf(f,"%s    r=\"%f\"\n",spc,  fabs(grad->R1()) > fabs(grad->R2()) ? fabs(grad->R1()) : fabs(grad->R2()));
@@ -833,7 +833,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 						 spc, datameta.c_str_nonnull(),
 						 obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
 			fprintf(f,"%s    id=\"%s\" %s\n", spc,grad->Id(), clipid);
-			fprintf(f,"%s    fill=\"url(#linearGradient%ld)\"\n", spc,grad->object_id);
+			fprintf(f,"%s    style=\"stroke:none;fill:url(#linearGradient%ld)\"\n", spc,grad->object_id);
 			fprintf(f,"%s    x=\"%f\"\n", spc,grad->minx);
 			fprintf(f,"%s    y=\"%f\"\n", spc,grad->miny);
 			fprintf(f,"%s    width=\"%f\"\n", spc,grad->maxx-grad->minx);
@@ -2102,7 +2102,7 @@ GridGuide *ParseGrid(Attribute *def)
 //forward declarations:
 int svgDumpInObjects(int top,Group *group, Attribute *element,
 					 PtrStack<Attribute> &powerstrokes, RefPtrStack<anObject> &gradients,
-					 ErrorLog &log, const char *filedir);
+					 ErrorLog &log, const char *filedir, double docwidth,double docheight);
 GradientData *svgDumpInGradientDef(Attribute *att, Attribute *defs, RefPtrStack<anObject> &gradients, int depth);
 ColorPatchData *svgDumpInMeshGradientDef(Attribute *att, Attribute *defs);
 void CompoundTransformForRef(SomeDataRef *ref, Group *top);
@@ -2150,7 +2150,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 		}
 
 		 // parse main "svg" attributes
-		 
+
 		 // check width and height first since viewBox depends on them.
 		Attribute *aatt = svgdoc->find("width");
 		if (aatt) {
@@ -2397,7 +2397,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 			} 
 			
 			int oldn = group->n();
-			if (svgDumpInObjects(1,group,svgdoc->attributes.e[c],powerstrokes,gradients,log, filedir)) {
+			if (svgDumpInObjects(1,group,svgdoc->attributes.e[c],powerstrokes,gradients,log, filedir, width/scalex,height/scaley)) {
 				DrawableObject *obj;
 				if (scalex != 1 || scaley != 1) {
 					for (int c=oldn; c < group->n(); c++) {
@@ -2627,7 +2627,8 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, RefPtrStack<
 							char *str = strstr(value,"stop-color:");
 							if (str) {
 								str += 11;
-								HexColorAttributeRGB(str,&color,nullptr);
+								SimpleColorAttribute(str, nullptr, &color, nullptr);
+								//HexColorAttributeRGB(str,&color,nullptr);
 							}
 							str=strstr(value,"stop-opacity:");
 							if (str) {
@@ -2644,7 +2645,8 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, RefPtrStack<
 							}
 
 						} else if (!strcmp(name,"stop-color")) {
-							HexColorAttributeRGB(value,&color,nullptr);
+							SimpleColorAttribute(value, nullptr, &color, nullptr);
+							//HexColorAttributeRGB(value,&color,nullptr);
 
 						} else if (!strcmp(name,"stop-opacity")) {
 							DoubleAttribute(value,&opacity,nullptr);
@@ -2803,6 +2805,7 @@ ColorPatchData *svgDumpInMeshGradientDef(Attribute *def, Attribute *defs)
 							if (rowi>0) edge++;
 
 							Attribute *stop = patch->attributes.e[c4];;
+							//bool colorfound = false;
 
 							for (int c5=0; c5<stop->attributes.n; c5++) {
 								name  = stop->attributes.e[c5]->name;
@@ -2829,8 +2832,8 @@ ColorPatchData *svgDumpInMeshGradientDef(Attribute *def, Attribute *defs)
 
 										} else if (command == 'c') {
 											if (n != 6) throw(2);
-											mesh->points[pi+1].set(pts[0]+lastp.x, pts[1]+lastp.y); lastp = mesh->points[pi+1];
-											mesh->points[pi+2].set(pts[2]+lastp.x, pts[3]+lastp.y); lastp = mesh->points[pi+2];
+											mesh->points[pi+1].set(pts[0]+lastp.x, pts[1]+lastp.y); //lastp = mesh->points[pi+1];
+											mesh->points[pi+2].set(pts[2]+lastp.x, pts[3]+lastp.y); //lastp = mesh->points[pi+2];
 											mesh->points[pi+3].set(pts[4]+lastp.x, pts[5]+lastp.y);
 
 										} else if (command == 'C') {
@@ -2856,8 +2859,8 @@ ColorPatchData *svgDumpInMeshGradientDef(Attribute *def, Attribute *defs)
 
 										} else if (command == 'c') {
 											if (n != 6) throw(5);
-											mesh->points[pi+3+  xsize].set(pts[0]+lastp.x, pts[1]+lastp.y); lastp = mesh->points[pi+3+  xsize];
-											mesh->points[pi+3+2*xsize].set(pts[2]+lastp.x, pts[3]+lastp.y); lastp = mesh->points[pi+3+2*xsize];
+											mesh->points[pi+3+  xsize].set(pts[0]+lastp.x, pts[1]+lastp.y); //lastp = mesh->points[pi+3+  xsize];
+											mesh->points[pi+3+2*xsize].set(pts[2]+lastp.x, pts[3]+lastp.y); //lastp = mesh->points[pi+3+2*xsize];
 											mesh->points[pi+3+3*xsize].set(pts[4]+lastp.x, pts[5]+lastp.y);
 
 										} else if (command == 'C') {
@@ -2883,8 +2886,8 @@ ColorPatchData *svgDumpInMeshGradientDef(Attribute *def, Attribute *defs)
 
 										} else if (command == 'c') {
 											if (n != 6 && n != 4) throw(8);
-											mesh->points[pi+2+3*xsize].set(pts[0]+lastp.x, pts[1]+lastp.y); lastp = mesh->points[pi+2+3*xsize];
-											mesh->points[pi+1+3*xsize].set(pts[2]+lastp.x, pts[3]+lastp.y); lastp = mesh->points[pi+1+3*xsize];
+											mesh->points[pi+2+3*xsize].set(pts[0]+lastp.x, pts[1]+lastp.y); //lastp = mesh->points[pi+2+3*xsize];
+											mesh->points[pi+1+3*xsize].set(pts[2]+lastp.x, pts[3]+lastp.y); //lastp = mesh->points[pi+1+3*xsize];
 											if (n==6) mesh->points[pi+  3*xsize].set(pts[4]+lastp.x, pts[5]+lastp.y);
 
 										} else if (command == 'C') {
@@ -2910,8 +2913,8 @@ ColorPatchData *svgDumpInMeshGradientDef(Attribute *def, Attribute *defs)
 
 										} else if (command == 'c') {
 											if (n != 6 && n != 4) throw(11);
-											mesh->points[pi+2*xsize].set(pts[0]+lastp.x, pts[1]+lastp.y); lastp = mesh->points[pi+2*xsize];
-											mesh->points[pi+1*xsize].set(pts[2]+lastp.x, pts[3]+lastp.y); lastp = mesh->points[pi+1*xsize];
+											mesh->points[pi+2*xsize].set(pts[0]+lastp.x, pts[1]+lastp.y); //lastp = mesh->points[pi+2*xsize];
+											mesh->points[pi+1*xsize].set(pts[2]+lastp.x, pts[3]+lastp.y); //lastp = mesh->points[pi+1*xsize];
 											if (n==6) mesh->points[pi].set(pts[4]+lastp.x, pts[5]+lastp.y);
 
 										} else if (command == 'C') {
@@ -2927,12 +2930,15 @@ ColorPatchData *svgDumpInMeshGradientDef(Attribute *def, Attribute *defs)
 									}
 
 								} else if (!strcmp(name,"stop-color")) {
-									SimpleColorAttribute(value, nullptr, &mesh->colors[cic], nullptr);
+									SimpleColorAttribute(value, nullptr, &color, nullptr);
+									mesh->colors[cic] = color;
+									//colorfound = true;
 
 								} else if (!strcmp(name,"stop-opacity")) {
 									double a;
 									DoubleAttribute(value,&a,nullptr);
-									mesh->colors[cic].alpha = a*65535;
+									color.alpha = mesh->colors[cic].alpha = a*65535;
+									//colorfound = true;
 
 								} else if (!strcmp(name,"style")) {
 									// *** parse the style string
@@ -2944,16 +2950,20 @@ ColorPatchData *svgDumpInMeshGradientDef(Attribute *def, Attribute *defs)
 										value = satt.attributes.e[c6]->value;
 
 										if (!strcmp(name, "stop-color")) {
-											SimpleColorAttribute(value, nullptr, &mesh->colors[cic], nullptr);
+											SimpleColorAttribute(value, nullptr, &color, nullptr);
+											mesh->colors[cic] = color;
 
 										} else if (!strcmp(name, "stop-opacity")) {
 											double a;
 											DoubleAttribute(value,&a,nullptr);
-											mesh->colors[cic].alpha = a*65535;
+											color.alpha = mesh->colors[cic].alpha = a*65535;
 										}
 									}
 								} //stop atts
 							} //stops
+
+							//mesh->colors[cic] = color; //uses last color if color wasn't found
+
 						} //foreach patchatts
 					} //if rowatt is meshpatch
 				} //foreach row atts
@@ -2983,6 +2993,13 @@ void InsertFillobj(SomeData *fillobj, SomeData *obj, Group *group)
 	ColorPatchData *mesh = dynamic_cast<ColorPatchData*>(fillobj);
 	if (mesh && (mesh->flags & PATCH_Units_BBox)) {
 		 //need to scale to object bbox
+	} else {
+		GradientData *grad = dynamic_cast<GradientData*>(fillobj);
+		if (grad && grad->IsLinear() && (grad->P1()-grad->P2()).norm() < 1e-5) {
+			//probably gradient was not supplied with p1 and p2, so arbitrarily insert default to fill parent
+			grad->P2(grad->transformPointInverse(obj->BBoxPoint(0,.5,false)));
+			grad->P1(grad->transformPointInverse(obj->BBoxPoint(1,.5,false)));
+		}
 	}
 
 	DrawableObject *ddata = dynamic_cast<DrawableObject*>(obj);
@@ -3001,7 +3018,7 @@ void InsertFillobj(SomeData *fillobj, SomeData *obj, Group *group)
  * since down is positive y in svg. We also need to scale by .8/72 to convert svg units to Laidout units.
  */
 int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribute> &powerstrokes, RefPtrStack<anObject> &gradients,
-		ErrorLog &log, const char *filedir)
+		ErrorLog &log, const char *filedir, double docwidth,double docheight)
 {
 	char *name,*value;
 
@@ -3021,7 +3038,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 			} else if (!strcmp(name,"content:")) {
 				for (int c2=0; c2<element->attributes.e[c]->attributes.n; c2++) 
-					svgDumpInObjects(0,g,element->attributes.e[c]->attributes.e[c2],powerstrokes,gradients,log, filedir);
+					svgDumpInObjects(0,g,element->attributes.e[c]->attributes.e[c2],powerstrokes,gradients,log, filedir, docwidth,docheight);
 			}
 		}
 
@@ -3065,10 +3082,12 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 			} else if (!strcmp(name,"width")) {
 				foundcoord|=4;
 				DoubleAttribute(value,&w,nullptr);
+				if (strstr(value, "%")) w = w/100*docwidth;
 
 			} else if (!strcmp(name,"height")) {
 				foundcoord|=8;
 				DoubleAttribute(value,&h,nullptr);
+				if (strstr(value, "%")) h = h/100*docheight;
 
 			} else if (!strcmp(name,"xlink:href")) {
 				char *file = newstr(filedir);
@@ -3246,8 +3265,10 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 				DoubleAttribute(value,&y,nullptr);
 			} else if (!strcmp(name,"width")) {
 				DoubleAttribute(value,&w,nullptr);
+				if (strstr(value, "%")) w = w/100*docwidth; //bit of a hack in lieu of units parsing here
 			} else if (!strcmp(name,"height")) {
 				DoubleAttribute(value,&h,nullptr);
+				if (strstr(value, "%")) h = h/100*docheight;
 
 			} else if (!strcmp(name,"transform")) {
 				double m[6];
