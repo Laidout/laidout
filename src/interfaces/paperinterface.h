@@ -35,6 +35,7 @@ class PaperInterface : public LaxInterfaces::anInterface
   protected:
 	int showdecs;
 	bool show_labels;
+	bool show_indices;
 	PaperGroup *papergroup;
 	PaperBoxData *paperboxdata;
 	Laxkit::PtrStack<PaperBoxData> curboxes;
@@ -47,6 +48,7 @@ class PaperInterface : public LaxInterfaces::anInterface
 	flatpoint lbdown;
 	bool search_snap;
 	double snap_px_threshhold;
+	double snap_running_angle;
 
 	virtual int scan(int x,int y);
 	virtual void CreateMaybebox(flatpoint p);
