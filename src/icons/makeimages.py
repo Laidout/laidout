@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 """
 ./makeimages.py                     <-- make all icons
@@ -7,18 +7,15 @@
 ./makeimages.py 24 IconId           <-- make only this icon, and that wide
 ./makeimages.py --file file.svg     <-- use "file.svg" instead
 ./makeimages.py 24 --file file.svg  <-- use "file.svg", and make icon base unit 24 px
+./makeimages.py 24 --file file.svg 100 --file otherfile.svg
 
-Using Inkscape, look in icons.svg and take all top items in base
+Look in the specified svg file, and take all top items in base
 layers of the document that have ids starting with capital letters,
 and export the half inch area around them to TheId.png.
 
-Someday I hope to have something to generate the icons internally to
-Laidout, the icons should be able to be generated from svg-ish (or
-laidout-ish vector specs fast enough to not be irritating maybe.
+Note this requires ../laidout to do the actual generating.
 
-Tested to run with python 2.7 and above (including python 3).
-
-developer note: if you change this file, copy to laxkit/lax/icons/makeimages.py
+developer note: if you change this file, also update laxkit/lax/icons/makeimages.py
 and vice versa.
 """
 
@@ -31,7 +28,7 @@ import locale
 iconfile = "icons.svg"
 
 makethisonly = "" #maybe select only one icon to generate
-bitmapw = 24
+bitmapw = 24 #default pixel unit width
 
 
 use_inkscape = False #else use Laidout
