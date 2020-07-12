@@ -511,8 +511,6 @@ Value *LaidoutApp::duplicate()
  *  Init pools, then parse args, then
  * if no windows made yet, then pop up a newdoc window. ***optionally go straight to just having
  * control window, but no open docs.
- *
- * Create a new project, document, and viewwindow as necessary.
  */
 int LaidoutApp::init(int argc,char **argv)
 {
@@ -755,7 +753,7 @@ void LaidoutApp::dumpOutResources()
 	setlocale(LC_ALL,"");
 }
 
-//! Return 1 is saving as a single project, or 0 if saving as individual documents.
+//! Return 1 if saving as a single project, or 0 if saving as individual documents.
 int LaidoutApp::IsProject()
 {
 	return !isblank(project->filename);
@@ -774,7 +772,7 @@ int LaidoutApp::createlaidoutrc()
 	DBG cerr <<"-------------Creating $HOME/.config/laidout/(version)/laidoutrc----------"<<endl;
 
 	 // ensure that ~/.config/ladiout/(version) exists
-	 //   if not, create, and put in a README explaining what's what:
+	 //   if not, create, and put in a (todo) README explaining what's what:
 	 //   	laidoutrc
 	 //   	icons/
 	 //   	palettes/
@@ -1874,8 +1872,8 @@ int LaidoutApp::Load(const char *filename, ErrorLog &log)
 
 
 	// not a project file, so try something else
-	doc=new Document(NULL,fullname);
-	if (!project) project=new Project;
+	doc = new Document(NULL, fullname);
+	if (!project) project = new Project;
 	project->Push(doc); //important: this must be before doc->Load() also important: Shouldn't be necessary!!! FIX!!!
 	doc->dec_count();
 	
