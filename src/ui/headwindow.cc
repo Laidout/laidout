@@ -1094,5 +1094,17 @@ int HeadWindow::HasOnlyThis(Document *doc)
 	return 1;
 }
 
+bool HeadWindow::DndWillAcceptDrop(int x, int y, const char *action, IntRectangle &rect, char **types, int *type_ret)
+{
+	for (int c=0; types[c]; c++) {
+		if (!strcmp(types[c], "text/uri-list")) {
+			*type_ret = c;
+			return true;
+		}
+	}
+	return false;
+}
+
+
 } // namespace Laidout
 

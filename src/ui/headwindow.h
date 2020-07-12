@@ -28,14 +28,15 @@ namespace Laidout {
 
 class HeadWindow : public Laxkit::SplitWindow
 {
- protected:
+  protected:
 	static Laxkit::PlainWinBox *markedpane;
 	static HeadWindow *markedhead;
 	virtual int splitthewindow(anXWindow *fillwindow=NULL);
 
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);
- public:
+
+  public:
 	Laxkit::anXWindow *lastview, *lastedit;
  	HeadWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
  		int xx,int yy,int ww,int hh,int brder);
@@ -50,6 +51,7 @@ class HeadWindow : public Laxkit::SplitWindow
 	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int FocusOff(const Laxkit::FocusChangeData *e);
 	virtual int Event(const Laxkit::EventData *e,const char *mes);
+	virtual bool DndWillAcceptDrop(int x, int y, const char *action, Laxkit::IntRectangle &rect, char **types, int *type_ret);
 	
 	virtual int Mark(int c);
 	virtual int SwapWithMarked();
