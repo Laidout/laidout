@@ -100,8 +100,6 @@ object reordering (with home/end) produces outline of unrelated objects on top
 
 don't allow reparent to a child!! or reparent as appropriate
 
-need to implement ObjectInterface/GroupInterface::DrawData()
-
 cloning, change original, not triggering bbox update in clone
 
 ubuntu maximize window failing (but not on today's debian unstable gnome), resize seems to work now
@@ -570,7 +568,20 @@ Scribus scribus:
 svg: SVG
   in:
     finish debugging mesh svg 2.0 out/in
-      monkey.doc export, then import, all wrong!
+      monkey.doc export, then import, all wrong! not putting in page bounds even though width/height are fine.. gradients not importing
+	  DONE mesh.svg
+	  conical2.svg ..fill in text
+	  DONE conical.svg
+	  mesh_objectbb.svg
+	  mesh_opacity.svg
+	  DONE mesh_test.svg
+	  mesh_transform.svg
+	  pepper.svg
+
+	bug: when stroke+fill presentation atts are not under a "style" att, they are ignored
+	bug: gradient with no p1,p2 defaults to 0,0
+	stroke fill
+	fill/stroke for text
     any clipping
     grid guides
     sometimes path endpoint spikes
@@ -595,20 +606,21 @@ svg: SVG
     DONE linear gradients
     DONE radial gradients
     DONE in needs to parse "use" elements and other "#" refs
+  out:
+    special check for paths with a single gradient child
+    text linespacing.. unclear how Msize/linespacing maps to svg options
 
   text:
     multiline
 	direction
 	spans
 	DONE color
-  arcs
+  test arcs in/out
   export papers currently not going to correct paper
   text on path without path conversion
-  rudimentary mesh in.. try to scale and place as separate object (without proper clipping)
   dump_in filter to nodes optionally, once those are renderable
   need to parse units
   radial: transparent inner circle, patch edges
-  out: text linespacing.. unclear how Msize/linespacing maps to svg options
 plan:
   need an In()
   implement paper rotation for out
@@ -1108,6 +1120,9 @@ DrawableObject:
 
 clean up filefilter.h definition to allow explicit declaration of ObjectFilter in DrawableObject
 
+color fonts issue #6 svg otf svg
+  see this freetype gsoc 2019 project: https://www.mail-archive.com/freetype-devel@nongnu.org/msg11459.html
+  
 fontdialog: FontDialog
   need a way to remember layered fonts, to easily activate and deactivate
     read from standard fonts places, like .config/laidout/(version)/fonts
@@ -1198,7 +1213,10 @@ to be a decent editing platform, Laidout needs:
   master pages with auto page number is important.. for image based page numbers, dynamic objects important!!
   would be convenient to send to gimp for editing, update later live
   when delete/add pages, need option to reposition to same orientation in margin area
-  snapping rotate, maybe drag handle with control?
+  snapping:
+    selection snapping: select a bunch of stuff, mark as snap sources, next selection tries to snap against those in old sel, not in new sel
+    rotation, maybe drag handle with control?
+	snap to bbox vs aabb
   drag constraints more accessible in only y or x direction
   more specific control over transform.. numerical specification
   per object visibility
@@ -1215,10 +1233,29 @@ to be a decent editing platform, Laidout needs:
 polish:
   page navigator should allow type in shortcuts like "end"
 
-GroupInterface groupinterface ObjectInterface objectinterface: group:
+
+selecting in viewwindow
+  on limbo, and spread/page/papergroup, select  first object it finds
+  else
+    if curobj, select only siblings of currently selected
+	if no curobj, select only children of current context
+  if you click on something, then single click again, search for anything else under
+  double click group to descend into group
+  double click or enter non-group to edit content
+  cntl-double click or cntl-enter to descend into non-groups' kids
+  currently on selected object:
+    C left click drag: scale around mouse
+	S+C Left drag: rotate
+	Left drag: move object
+
+GroupInterface groupinterface ObjectInterface objectinterface: group: object interface
+  constrain aspect while scaling should do so from drag start, not moment of mod press
+  new drag/scale/rotate behavior:
+    rotation circle, inner: number +-/absolute,  mid: free rotate,  outer: snap rotate
+    DONE scale slide bar, go above or below, allow number input
+	DONE drag with shift lock to nearest drag axis
   real menuify the clone options
   need consistent system to coordinate selection changes between any tools or windows that need to be in sync
-  default hide draggable flip, but have as right click option
   viewport should fully utilize Selection::CurrentObject(), keep curobj in sync
   double click on group should change selection area to group contents?
     need to clarify how grouping operates. Perhaps implement sets at same time
@@ -1228,6 +1265,7 @@ GroupInterface groupinterface ObjectInterface objectinterface: group:
   maybe show flip and 90 deg rotate handles only when mouse outside the selection area?
   control-move flip line to snap to horizontal, vertical, 45 deg, or common gravity points
   parent options colors don't really make sense
+  DONE default hide draggable flip, but have as right click option
   DONE menuify parent options
 
 ObjectIndicator objectindicator:
@@ -1377,6 +1415,16 @@ themes:
 
 
 make drag and drop selections work
+  implement proper action querying
+  do proper translation between screen coords and window coords during acceptance query
+  Initiate dnd
+    set up system dnd state
+	send regular updates per protocol
+	send data per protocol on drop if to other process, or internally if drop on ourself
+  accept dnd
+    mouse moves around due to ourself or some other process
+	window needs to decide whether dropping is ok, and choose which window will take the drop
+	handle drop of data
 
 need more mechanism so that popup dialogs stay on top of window they are "children" of
 
@@ -1465,13 +1513,22 @@ Tools should remember their settings
      windows are using diff tools? which settings are remembered? have tool styles that are saved, as
      well as the running tool use settings
 
-paperinterface:
+paperinterface: papergroupinterface papergroup interface
+  when scaling should try to preserve relative orientations
+  when reset scale or rotation, preserve relative orientations
+  option for "Sync Physical Scale"
   bug: sometimes clicking around when you have custom papergroup in viewport crashes
-  snap to angle
   papergroup tool needs custom paper input
+  maybebox needs to snap
 
-  options to show and edit order of papers, print all of one size paper first? auto sort order by size?
+  DONE snap to angle
+  DONE show paper numbers
+  DONE indices should be underlined
+  options to edit order of papers.. drag indices
   if page is too big, need indicator around mouse that we are placing something
+  define papergroup, convert papergroup to Singles pages?
+    print all of one size paper first? auto sort order by size?
+  define papergroup, convert papergroup to new Net doc?
   menu options:
     fit to selection
 	fit to page
@@ -1503,7 +1560,6 @@ paperinterface:
     paperinterface: in spread editor (done), and able to print it out, don't forget to remove DBG for release!
     in spread editor (done), and be able to print it out
   papersize names are not translated. Should they be??
-  no doc, define papergroup, convert papergroup to singles pages?
   more versatile size control per paper: edit window? should be edit on screen....
      Name:  default single letter
      Paper: Letter, 8.5/11, landscape
@@ -1827,13 +1883,14 @@ pagerangeinterface:
 for range on import/export, should have a range parser that accepts unconnected ranges, ie "2,4, 5-10"
 
 shortcut dialog: shortcuts: shortcut manager shortcutmanager
+  bug: ObjectInterface Duplicate objects has key u0000 ???
+  bug: on pulling up window, action list shows current tool, but that is not highlighted in area list
+  bug: keyboard display stretched way too much, general window arrangement is really bad
+  bug: sort by columns is not sorting by anything rational
   saving keys for first time should default to config directory
   need to be able to delete keys
   layout needs to save
-  keyboard display
   need mode column, mode based shortcuts have no display capability
-  sort by columns is not sorting by anything rational
-  general window arrangement is really bad
   area heads need to have human titles, _("Image Tool") instead of "ImageInterface"
   mode for shortcut check not quite working, such as ' ' with button to duplicate
   need hierarchy overlap features... it is easy to get lost in different zones
@@ -1888,6 +1945,14 @@ signature editor  Signature editor Signature Editor signaturei
   test impose-only for all imposition types
   be able to specify single sided.. allows bound accordian foldings?
   implement creep
+
+accordion folds:
+  map style
+  various pamphlet types
+  wacky minimal origami: https://www.youtube.com/watch?v=__9_KZi_tpE
+  maze books / meander scrapbook
+  cootie catcher
+  explodion books with cross folds on pages
 
 Make extension to be able to use Inkscape live path effects (lpe)!! The run on svg snippets, so should be somewhat
   straightforward to call externally.. BUT have optional tool overlay. Figure out how to reverse implement to also
@@ -2085,8 +2150,8 @@ Net imposition
   save different setups: papertile AND net layout
   load save nets from: 1.net files or 2.OFF files(done)
 
-
 polyptych:
+  bug: won't set custom net/paper after edit imposition with polyptych
   can't seem to save new bookmarks or use old ones in polyptych, but it's ok in Laidout
 
 hedron window:
@@ -2259,3 +2324,5 @@ DONE laidout shell command: Laidout.BuildIcons(["icons/icons.svg","icons/icons-t
 		  								grid_cell_size = .5,
 		  								output_px_size = 24,
 										output_dir="TEST_ICON_BUILD")
+DONE bug: patchinterface point select when object transform not identify broken
+DONE detect when a resource section is ONLY built in ones, and don't output that section on save
