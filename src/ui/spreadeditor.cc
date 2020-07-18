@@ -642,8 +642,7 @@ int SpreadInterface::Event(const Laxkit::EventData *data,const char *mes)
 	} else if (i>=SIA_ArrangeTypeMin && i<=SIA_ArrangeTypeMax) {
 		view->arrangetype = i-SIA_ArrangeTypeMin + ArrangetypeMin;
 
-		if (viewport) viewport->postmessage(arrangetypestring(view->arrangetype));
-		else app->postmessage(arrangetypestring(view->arrangetype));
+		PostMessage(arrangetypestring(view->arrangetype));
 
 		ArrangeSpreads();
 		//Center(1);
@@ -758,7 +757,7 @@ void SpreadInterface::ApplyChanges()
 	if (!view) return;
 
 	if (view->threads.n) {
-		if (viewport) viewport->postmessage(_("Cannot apply when there are unconnected threads"));
+		PostMessage(_("Cannot apply when there are unconnected threads"));
 		return;
 	}
 	if (!view->Modified()) {
@@ -1511,8 +1510,7 @@ int SpreadInterface::PerformAction(int action)
 		view->arrangetype++;
 		if (view->arrangetype==ArrangetypeMax+1) view->arrangetype=ArrangetypeMin;
 
-		if (viewport) viewport->postmessage(arrangetypestring(view->arrangetype));
-		else app->postmessage(arrangetypestring(view->arrangetype));
+		PostMessage(arrangetypestring(view->arrangetype));
 
 		ArrangeSpreads();
 		Center(1);
@@ -1762,6 +1760,8 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *nname,const char
 									ANXWIN_HOVER_FOCUS|VIEWPORT_RIGHT_HANDED|VIEWPORT_BACK_BUFFER|VIEWPORT_ROTATABLE,
 									0,0,0,0,0,NULL,spreadtool);
 	viewport = sed;
+	app->reparent(sed,this);
+	sed->dec_count();
 	WindowStyle *col = win_themestyle->duplicate();
 	InstallColors(col);
 	viewport->InstallColors(col);
