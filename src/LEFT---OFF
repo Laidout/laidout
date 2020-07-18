@@ -14,6 +14,8 @@ down to major items in ../features.md.
 ------------ serious bugs to fix right now:
 
 
+bug: signature editor, selected pages have almost not noticable seleceted emphasis.. line width problem?
+
 bug: space bar for centering not working anymore.. shift-space seems to
 
 bug: can't duplicate gradient nodes.. causes seg fault
@@ -39,6 +41,8 @@ back to not maximizing properly on default ubuntu. Seems to work fine on every o
 
 
 ------------ other bugs:
+
+bug: lineedit cursor is leaving artifacts
 
 Overwrite dialog box and other centering boxes should center over calling window, or current screen if no specified owner
 
@@ -180,6 +184,7 @@ update screenshots, sync with features
   some of the old youtube embedding doesn't work any more
 update links page
 update help page
+update quickref.html
 update dtpcompare.html
 update features.md: sweep LEFT-OFF to DONE, edit major items to features.md
 update dev page
@@ -374,12 +379,6 @@ image loaders:
   implement loader priorities
   some way to prioritize image saving
 
-dual monitors:
-  centering windows should center on monitor of originating window
-  open in same screen as mouse
-  when you open a new window, ensure that it is always on screen
-  DONE Menus should respect actual screen borders, not just full virtual screen
-
 cairo:
   cairo image save should use importer to do non-file creation?
   cairo render has color problems with gradients
@@ -476,9 +475,13 @@ file filters: filefilters:
     you can just jump to the offending bit easily. This would also be used for preflight verifiers,
     and maybe also mass edit things, like edit all images..
     - have ViewWindow::JumpToObject(&place, objectid);
-export equirectangular:
-  for flat, choose lat/long/rotation
-  for hedron, export projected from hedron
+equirectangular:
+  export:
+    for flat, choose lat/long/rotation
+    for hedron, export projected from hedron
+	export lines
+  import:
+    page clip / object clip
 export textured gltf / Godot based 3d viewer project?
 export godot book project
   show animation of book folding up
@@ -486,6 +489,7 @@ export godot book project
 exportdialog export dialog:
   incorporate IndexRange
 importdialog ImportDialog import dialog:
+  be able to choose importer
   should show filename as red if don't know how to import
   import option to preserve broken links
   importing should not spawn new windows
@@ -641,6 +645,7 @@ eps: DEPRECATE
   implement paper rotation
 xtg from quark?
 idml from indesign?
+
 
 PathInterface: pathinterface
   bug: width handle has bit of a hitch when handle near a vertex.. extra temp width node being added?
@@ -1082,6 +1087,12 @@ plugins:
   beef up the config window, to allow toggling plugins.
   figure out proper de-loading.. have to restart?
   check for already loaded
+  think through plugin infrastructure better, and from external perspective
+    need to beef out the plugin readme
+    usually, a plugin dev downloads an sdk that might just have selected headers, and .so file
+	how to specify plugin is built at all
+    how to specify plugin is compiled in, or exists as .so
+	plugins (c++) vs extensions (scripted)
 
 captioninterface CaptionInterface captiondata CaptionData
   bug: bitstream vera sans, "Text" convert to path puts e correct, but screen render puts it out too far. huh??
@@ -1235,7 +1246,7 @@ polish:
 
 
 selecting in viewwindow
-  on limbo, and spread/page/papergroup, select  first object it finds
+  on limbo, and spread/page, papergroup, select  first object it finds
   else
     if curobj, select only siblings of currently selected
 	if no curobj, select only children of current context
@@ -1243,28 +1254,38 @@ selecting in viewwindow
   double click group to descend into group
   double click or enter non-group to edit content
   cntl-double click or cntl-enter to descend into non-groups' kids
-  currently on selected object:
+  currently on selected object, click not on handles:
     C left click drag: scale around mouse
 	S+C Left drag: rotate
 	Left drag: move object
 
+	C left click: place/remove anchor points
+
 GroupInterface groupinterface ObjectInterface objectinterface: group: object interface
-  constrain aspect while scaling should do so from drag start, not moment of mod press
   new drag/scale/rotate behavior:
-    rotation circle, inner: number +-/absolute,  mid: free rotate,  outer: snap rotate
+    anchor point drag should use the new widgets as appropriate
+    DONE rotation circle, inner: number +-/absolute,  mid: free rotate,  outer: snap rotate
     DONE scale slide bar, go above or below, allow number input
 	DONE drag with shift lock to nearest drag axis
+  constrain aspect for corner scale handles should do so from drag start, not moment of mod press
+  control-move flip line to snap to horizontal, vertical, 45 deg, or common gravity points
+  maybe show flip and 90 deg rotate handles only when mouse outside the selection area?
+  anchors:
+    need to be able to control click outside box to create? currenty you must click inside, then drag it out
+  world / local transforms:
+    screen
+	world
+	object
+	object parent
+	object parent parent (etc)
+
+  parent options colors don't really make sense
   real menuify the clone options
   need consistent system to coordinate selection changes between any tools or windows that need to be in sync
   viewport should fully utilize Selection::CurrentObject(), keep curobj in sync
-  double click on group should change selection area to group contents?
-    need to clarify how grouping operates. Perhaps implement sets at same time
-    clearCurobj() with skim to group for group->double click?
   implement move to "Some other page..." when 'm' in groupinterface
   things to allow editing of wrap, inset, clip paths(done), and chains
-  maybe show flip and 90 deg rotate handles only when mouse outside the selection area?
-  control-move flip line to snap to horizontal, vertical, 45 deg, or common gravity points
-  parent options colors don't really make sense
+
   DONE default hide draggable flip, but have as right click option
   DONE menuify parent options
 
@@ -1382,6 +1403,12 @@ Colors:
 	fillstyle
 	path
     DONE images (doesn't use color per se)
+
+dual monitors:
+  centering windows should center on monitor of originating window
+  open in same screen as mouse
+  when you open a new window, ensure that it is always on screen
+  DONE Menus should respect actual screen borders, not just full virtual screen
 
 high dpi hidpi:
   in general for windows, need better styling.. too much is hardcoded. problems later with high dpi screens
@@ -1542,6 +1569,7 @@ paperinterface: papergroupinterface papergroup interface
 	export settings
 	  more that one settings per paper
   when you add gray bars/reg marks, center on paper?
+
   PaperSize/PaperGroup as resource:
     implement paper favorites:
       be able to nest favorites, item->favorite = "submenu/23", item2->favorite="2", final element is number?
@@ -1556,6 +1584,7 @@ paperinterface: papergroupinterface papergroup interface
         3.or Global resource: save in ~/.laidout/version/papergroups
             class FileRef
           papergroup->owner=Document, Project, or FileRef
+
   debug papergroup tool in spread editor
     paperinterface: in spread editor (done), and able to print it out, don't forget to remove DBG for release!
     in spread editor (done), and be able to print it out
@@ -1568,9 +1597,22 @@ paperinterface: papergroupinterface papergroup interface
         0 0 8.5 11       X: 0   Y: 0
                        W: 8.5 H: 11
      [delete paper type][new paper type]
+  DONE Use new custom paper size window
   DONE rotate paper shortcut should be around paper center, not origin
   DONE snap other papers to various boxes
   DONE bug: maybebox zooming off on mouse move
+
+  need a paper size editor stand alone window, entering numbers should convert name to custom
+
+new PaperSizeWindow:
+  integrate with: 
+    signature interface
+    singles editor
+    newdoc
+    DONE paper interface
+  bug: rowframe WrapToExtent() doesn't work
+  DONE from gimp: in either field, input aspect like 1:2 or 16:9 and it autocomputes value
+
 
 should take precautions so that dialogs do not get buried, would need to respond to circulate events
 
@@ -1615,7 +1657,7 @@ nup:
   bug: not showing highlight on rectangle
   doesn't appear to update random target area when you resize area
   flowed
-  unclump
+  unclump. Lloyds algo? voronoi of points, move original point to centroid
   unoverlap -> define strategy, either shift H, Vert, along v, or shift on axes between objects
   object reorder
   scale panel should allow mpx and control zoom around point
@@ -1865,13 +1907,8 @@ move Value and FieldPlace to laxkit? ValueHash would be very useful to ease conf
 
 merge set and ValueHash?
 
-Masking
-    pathinterface conversion must be done
-    true object tree with all lax data objects subclassed to hold children, and reference parent
-
-debug multi head? seems to crash when showing with projectors plugged in
-	screen info should return x,y,w,h, with flag saying it is part of a whole.
-	if only one screen, then x,y is 0
+soft masking
+    mask object optionally converted to grayscale
 
 pagerangeinterface:
   incorporate IndexRange?
@@ -1912,7 +1949,9 @@ improve split window
   debug mouse cursor change when over gap
   simplify pane customization, docking
 
-signature editor  Signature editor Signature Editor signaturei
+signature editor  Signature editor Signature Editor signatureeditor
+  bug: background colors are wrong now.. supposed to be gray background
+  mouse roll on paper size is confusing
   number input for everything
   symmetric trim
   be able to enter final size, and adjust trim to match
