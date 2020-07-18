@@ -92,6 +92,9 @@ deb: touchdepends
 	if [ ! -e debian ] ; then ln -s deb debian; fi
 	dpkg-buildpackage -rfakeroot
 
+tar:
+	sh deb/maketar.sh
+
 hidegarbage: touchdepends
 	cd src && $(MAKE) hidegarbage
 
@@ -121,6 +124,7 @@ SOURCEDIRS= \
 touchdepends:
 	for NAME in $(SOURCEDIRS); do touch $$NAME/makedepend; done
 
+# remove everything that is generated, but not in repo
 dist-clean: clean
 	for NAME in $(SOURCEDIRS); do rm -f $$NAME/makedepend $$NAME/makedepend.bak; done
 	rm -f Makefile-toinclude config.log src/version.h src/configured.h
