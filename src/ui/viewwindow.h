@@ -119,6 +119,9 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	virtual int MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse);
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 	virtual int FocusOn(const Laxkit::FocusChangeData *e);
+	virtual bool DndWillAcceptDrop(int x, int y, const char *action, Laxkit::IntRectangle &rect, char **types, int *type_ret, anXWindow **child_ret);
+	virtual int selectionDropped(const unsigned char *data,unsigned long len,const char *actual_type,const char *which);
+
 	virtual int UseTheseRulers(Laxkit::RulerWindow *x,Laxkit::RulerWindow *y);
 	virtual double *transformToContext(double *m,LaxInterfaces::ObjectContext *oc,int invert,int full);
 	virtual void DrawSomeData(Laxkit::Displayer *ddp,LaxInterfaces::SomeData *ndata,

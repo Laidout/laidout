@@ -523,6 +523,56 @@ LaidoutViewport::~LaidoutViewport()
 	DBG ClearSearch(); //to spell it out
 }
 
+bool LaidoutViewport::DndWillAcceptDrop(int x, int y, const char *action, Laxkit::IntRectangle &rect,
+										char **types, int *type_ret, anXWindow **child_ret)
+{
+	// //check interfaces first...
+	// for (int c=0; c<interfaces.n; c++) {
+	// 	if (interfaces.e[c]->DndWillAcceptDrop(x,y,action,rect,types,type_ret)) {
+	// 		return true;
+	// 	}
+	// }
+
+	// else allow dropping image lists by passing to ImportImageDialog
+	for (int c=0; types[c]; c++) {
+		if (!strcmp(types[c], "text/uri-list")) {
+			*type_ret = c;
+			// PostMessage("MUST IMPLEMENT drop to LaidoutViewport!");
+			// cout << "MUST IMPLEMENT drop to LaidoutViewport!" << endl;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/*! Called from a SelectionNotify event. This is used for both generic selection events
+ * (see selectionPaste()) and also drag-and-drop events.
+ *
+ * Typical actual_type values:
+ *  - text/uri-list
+ *  - text/plain
+ *  - text/plain;charset=UTF-8
+ *  - text/plain;charset=ISO-8859-1
+ *  - TEXT
+ *  - UTF8_STRING
+ *
+ * Returns 0 if used, nonzero otherwise.
+ */
+int LaidoutViewport::selectionDropped(const unsigned char *data,unsigned long len,const char *actual_type,const char *which)
+{
+	// //check interfaces first...
+	// for (int c=0; c<interfaces.n; c++) {
+	// 	if (interfaces.e[c]->selectionDropped(data, len, actual_type, which) == 0) return 0;
+	// }
+
+	if (!strcmp(actual_type, "text/uri-list")) {
+		DBG cerr << "Dropping file list into LaidoutViewport: "<<endl<<data<<endl;
+		return 0;
+	}
+	return 1;
+}
+
 int LaidoutViewport::UseThisPaperGroup(PaperGroup *group)
 {
 	if (group==papergroup) return 0;
@@ -4113,7 +4163,7 @@ int ViewWindow::init()
 	 //*** this can be somehow combined with import images maybe?...
 	last=ibut=new Button(this,"import",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"import",-1,
 						 _("Import"),NULL,laidout->icons->GetIcon("Import"),buttongap);
-	ibut->tooltip(_("Try to import various vector based files into the document"));
+	ibut->tooltip(_("Import a single file to various vector based objects in the document"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	 //---------------******** export
