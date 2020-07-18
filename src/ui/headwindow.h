@@ -51,7 +51,7 @@ class HeadWindow : public Laxkit::SplitWindow
 	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int FocusOff(const Laxkit::FocusChangeData *e);
 	virtual int Event(const Laxkit::EventData *e,const char *mes);
-	virtual bool DndWillAcceptDrop(int x, int y, const char *action, Laxkit::IntRectangle &rect, char **types, int *type_ret);
+	virtual bool DndWillAcceptDrop(int x, int y, const char *action, Laxkit::IntRectangle &rect, char **types, int *type_ret, anXWindow **child_ret);
 	
 	virtual int Mark(int c);
 	virtual int SwapWithMarked();

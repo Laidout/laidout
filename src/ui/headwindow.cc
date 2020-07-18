@@ -202,7 +202,7 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
 			if (laidout->project->docs.n) doc=laidout->project->docs.e[0]->doc;
 		}
 	}
-	HeadWindow *head=new HeadWindow(NULL,"head",_("Laidout"),ANXWIN_XDND_AWARE, 0,0,700,700,0);
+	HeadWindow *head=new HeadWindow(NULL,"head",_("Laidout"),0, 0,0,700,700,0);
 	//HeadWindow *head=new HeadWindow(NULL,"head",0, 0,0,700,700,0);
 
 	 // put a new which in it. default to view
@@ -268,7 +268,7 @@ HeadWindow *HeadWindow::markedhead=NULL;
 HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 							int xx,int yy,int ww,int hh,int brder)
 		: SplitWindow(parnt,nname,ntitle,
-				nstyle|SPLIT_WITH_SAME|SPLIT_BEVEL|SPLIT_DRAG_MAPPED,
+				nstyle|SPLIT_WITH_SAME|SPLIT_BEVEL|SPLIT_DRAG_MAPPED|ANXWIN_XDND_AWARE,
 				xx,yy,ww,hh,brder,
 				NULL,0,NULL)
 {
@@ -1094,15 +1094,21 @@ int HeadWindow::HasOnlyThis(Document *doc)
 	return 1;
 }
 
-bool HeadWindow::DndWillAcceptDrop(int x, int y, const char *action, IntRectangle &rect, char **types, int *type_ret)
+bool HeadWindow::DndWillAcceptDrop(int x, int y, const char *action, IntRectangle &rect, char **types, int *type_ret, anXWindow **child_ret)
 {
-	for (int c=0; types[c]; c++) {
-		if (!strcmp(types[c], "text/uri-list")) {
-			*type_ret = c;
-			return true;
+	anXWindow *drop = nullptr;
+	// app->findDropCandidate(nullptr, x,y, &drop);
+	drop = findContainingChild(x,y);
+	cout <<"HeadWindow::DndWillAcceptDrop, drop: "<<(drop ? drop->whattype() : "none")<< endl;
+	while (drop && drop != this) {
+		if (drop->DndWillAcceptDrop(x,y,action,rect,types,type_ret, nullptr)) {
+			break;
 		}
+		drop = drop->win_parent;
 	}
-	return false;
+
+	if (child_ret) *child_ret = drop;
+	return drop != nullptr;
 }
 
 
