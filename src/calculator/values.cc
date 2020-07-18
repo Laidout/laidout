@@ -2285,6 +2285,7 @@ Value::Value()
 
 Value::~Value()
 {
+	DBG cerr << "Value "<<whattype() <<" destructor"<<endl;
 	if (objectdef) objectdef->dec_count();
 }
 
