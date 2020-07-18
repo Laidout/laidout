@@ -65,6 +65,8 @@ class PaperStyle : public Value
 	virtual ~PaperStyle();
 	virtual double w() { if (landscape()) return height; else return width; }
 	virtual double h() { if (landscape()) return width; else return height; }
+	virtual double w(double v) { if (landscape()) height = v; else width = v; return w(); }
+	virtual double h(double v) { if (landscape()) width = v; else height = v; return h(); }
 	virtual int landscape() { return flags&PAPERSTYLE_Landscape; }
 	virtual int landscape(int l)
 		{ if (l) flags|=PAPERSTYLE_Landscape; else flags&=~PAPERSTYLE_Landscape; return flags&PAPERSTYLE_Landscape; }

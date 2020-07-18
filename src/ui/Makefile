@@ -24,6 +24,7 @@ objs= \
 	importimagesdialog.o \
 	newdoc.o \
 	palettes.o \
+	papersizewindow.o \
 	plaintextwindow.o \
 	pluginwindow.o \
 	settingswindow.o \

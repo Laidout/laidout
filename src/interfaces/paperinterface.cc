@@ -14,9 +14,10 @@
 //
 
 
-#include "../language.h"
 #include "paperinterface.h"
+#include "../language.h"
 #include "../ui/viewwindow.h"
+#include "../ui/papersizewindow.h"
 #include "../core/drawdata.h"
 #include "../dataobjects/printermarks.h"
 
@@ -182,10 +183,9 @@ Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 		menu->AddItem(_("Paper Size"),PAPERI_PaperSize);
 		menu->SubMenu(_("Paper Size"));
 		for (int c=0; c<laidout->papersizes.n; c++) {
-			menu->AddItem(laidout->papersizes.e[c]->name,PAPERI_first_pagesize+c,
-					LAX_ISTOGGLE
-					| (!strcmp(curboxes.e[0]->box->paperstyle->name,laidout->papersizes.e[c]->name)
-					  ? LAX_CHECKED : 0));
+			if (!strcasecmp(laidout->papersizes.e[c]->name, "Whatever")) continue;
+			menu->AddToggleItem(laidout->papersizes.e[c]->name, nullptr, PAPERI_first_pagesize+c,
+					0, strcasecmp(curboxes.e[0]->box->paperstyle->name, laidout->papersizes.e[c]->name) == 0);
 		}
 		menu->EndSubMenu();
 		//int landscape=curboxes.e[0]->box->paperstyle->flags&1;
@@ -237,6 +237,8 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 		if (     i == PAPERI_ToggleSnap
 			  || i == PAPERI_ToggleLabels
 			  || i == PAPERI_ToggleIndices
+			  || i == PAPERI_ResetScaling
+			  || i == PAPERI_ResetAngle
 		   ) {
 			PerformAction(i);
 			return 0;
@@ -254,44 +256,27 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			curwindow->win_parent->Event(nullptr,"print");//***hack Hack HACK
 			return 0;
 
-		} else if (i==PAPERI_ResetScaling) {
-			if (!papergroup) return 0;
-			PaperBoxData *data=papergroup->papers.e[0];
-			double s=1/data->xaxis().norm();
-			for (int c=0; c<papergroup->papers.n; c++) {
-				data=papergroup->papers.e[c];
-				data->Scale(s);
+		} else if (i >= PAPERI_first_pagesize && i < PAPERI_first_pagesize + 1000) {
+			// paper size
+			i -= PAPERI_first_pagesize;
+			if (i >= laidout->papersizes.n-1) return 1;
+			if (!strcasecmp(laidout->papersizes.e[i]->name, "Custom")) {
+				//popup paper size window
+				app->rundialog(new PaperSizeWindow(nullptr, "Paper", "Paper", 0, object_id,"custompaper", curboxes.e[0]->box->paperstyle, 
+												false, true, false)); //mod in place, dpi, color
+
+			} else {
+				PaperStyle *newpaper = (PaperStyle *)laidout->papersizes.e[i]->duplicate();
+				for (int c=0; c<curboxes.n; c++) {
+					curboxes.e[c]->box->Set(newpaper);
+					curboxes.e[c]->setbounds(&curboxes.e[c]->box->media);
+				}
+				newpaper->dec_count();
+				needtodraw=1;
 			}
-			needtodraw=1;
 			return 0;
 
-		} else if (i==PAPERI_ResetAngle) {
-			if (!curboxes.n) return 0;
-
-			PaperBoxData *data;
-			double s=norm(curboxes.e[0]->xaxis());
-			for (int c=0; c<curboxes.n; c++) {
-				data=curboxes.e[c];
-				data->xaxis(flatpoint(s,0));
-				data->yaxis(flatpoint(0,s));
-			}
-			needtodraw=1;
-			return 0;
-
-		} else if (i>=PAPERI_first_pagesize && i<PAPERI_first_pagesize+1000) {
-			 //paper size
-			i-=PAPERI_first_pagesize;
-			if (i>=laidout->papersizes.n-1) return 1;
-			PaperStyle *newpaper=(PaperStyle *)laidout->papersizes.e[i]->duplicate();
-			for (int c=0; c<curboxes.n; c++) {
-				curboxes.e[c]->box->Set(newpaper);
-				curboxes.e[c]->setbounds(&curboxes.e[c]->box->media);
-			}
-			newpaper->dec_count();
-			needtodraw=1;
-			return 0;
-
-		} else if (i>=PAPERI_first_papergroup && i<PAPERI_first_papergroup+1000) {
+		} else if (i >= PAPERI_first_papergroup && i < PAPERI_first_papergroup + 1000) {
 			//***is selecting a new papergroup from laidout->project->papergroups	
 			i-=PAPERI_first_papergroup;
 			if (i<0 || i>laidout->project->papergroups.n) return 0;
@@ -304,8 +289,8 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			needtodraw=1;
 			return 0;
 
-		} else if (i==PAPERI_NewPaperGroup) {
-			 //New paper group...
+		} else if (i == PAPERI_NewPaperGroup) {
+			// New paper group...
 			if (papergroup) papergroup->dec_count();
 			papergroup=new PaperGroup;
 			papergroup->name=new_paper_group_name();
@@ -316,7 +301,7 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			needtodraw=1;
 			return 0;
 
-		} else if (i==PAPERI_RenamePaperGroup) {
+		} else if (i == PAPERI_RenamePaperGroup) {
 			//***Rename paper group...
 			if (!papergroup) return 0;
 			InputDialog *i=new InputDialog(nullptr,_("New paper group name"),_("New paper group name"),ANXWIN_CENTER,
@@ -328,7 +313,7 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			app->rundialog(i);
 			return 0;
 
-		} else if (i==PAPERI_RegistrationMark) {
+		} else if (i == PAPERI_RegistrationMark) {
 			if (!papergroup) return 0;
 			SomeData *obj= RegistrationMark(18,1);
 			flatpoint fp=dp->screentoreal(rx,ry);
@@ -337,7 +322,7 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			obj->dec_count();
 			return 0;
 
-		} else if (i==PAPERI_GrayBars) {
+		} else if (i == PAPERI_GrayBars) {
 			if (!papergroup) return 0;
 			SomeData *obj= BWColorBars(18,LAX_COLOR_GRAY);
 			flatpoint fp=dp->screentoreal(rx,ry);
@@ -346,6 +331,18 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			obj->dec_count();
 			return 0;
 		}
+		return 0;
+
+	} else if (!strcmp(mes,"custompaper")) {
+		const SimpleMessage *s = dynamic_cast<const SimpleMessage*>(e);
+		if (!s || !s->object) return 0;
+		PaperStyle *newpaper = dynamic_cast<PaperStyle*>(s->object);
+		if (!newpaper) return 0;
+		for (int c=0; c<curboxes.n; c++) {
+			curboxes.e[c]->box->Set(newpaper);
+			curboxes.e[c]->setbounds(&curboxes.e[c]->box->media);
+		}
+		needtodraw = 1;
 		return 0;
 	}
 	return 1;
@@ -1037,6 +1034,30 @@ int PaperInterface::PerformAction(int action)
 		showdecs++;
 		if (showdecs>2) showdecs=0;
 		needtodraw=1;
+		return 0;
+
+	} else if (action == PAPERI_ResetScaling) {
+		if (!papergroup) return 0;
+		PaperBoxData *data = papergroup->papers.e[0];
+		double s = 1 / data->xaxis().norm();
+		for (int c = 0; c < papergroup->papers.n; c++) {
+			data = papergroup->papers.e[c];
+			data->Scale(s);
+		}
+		needtodraw = 1;
+		return 0;
+
+	} else if (action == PAPERI_ResetAngle) {
+		if (!curboxes.n) return 0;
+
+		PaperBoxData *data;
+		double s = norm(curboxes.e[0]->xaxis());
+		for (int c = 0; c < curboxes.n; c++) {
+			data = curboxes.e[c];
+			data->xaxis(flatpoint(s, 0));
+			data->yaxis(flatpoint(0, s));
+		}
+		needtodraw = 1;
 		return 0;
 
 	} else if (action==PAPERI_ToggleSnap) {

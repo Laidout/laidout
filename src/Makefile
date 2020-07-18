@@ -168,6 +168,7 @@ otherobjs= \
 	ui/importimagesdialog.o \
 	ui/newdoc.o \
 	ui/palettes.o \
+	ui/papersizewindow.o \
 	ui/plaintextwindow.o \
 	ui/pluginwindow.o \
 	ui/settingswindow.o \

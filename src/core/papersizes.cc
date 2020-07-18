@@ -159,15 +159,16 @@ PaperStyle *GetNamedPaper(double width, double height, int *orientation_ret, int
 {
 	int match;
 	if (startfrom<0) startfrom=0;
-	for (int c = startfrom; laidout->papersizes.n; c++) {
+	for (int c = startfrom; c < laidout->papersizes.n; c++) {
 		match = laidout->papersizes.e[c]->IsMatch(width, height, epsilon);
 		if (match) {
 			if (orientation_ret) *orientation_ret = match;
 			if (index_ret) *index_ret = c;
+			return laidout->papersizes.e[c];
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 PaperStyle *GetPaperFromName(const char *name)
