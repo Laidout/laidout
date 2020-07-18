@@ -236,7 +236,7 @@ echo "Done parsing options.";
 ##
 ## Configure Laxkit if necessary, and pass in relevant flags
 ##
-if [ ! -e $LAXDIR ] ; then
+if [ ! -d $LAXDIR ] ; then
     #clone if not found
     git clone $LAXREPO
 	$LAXDIR = `pwd`/laxkit/lax

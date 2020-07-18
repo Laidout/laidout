@@ -93,7 +93,7 @@ deb: touchdepends
 	dpkg-buildpackage -rfakeroot
 
 tar:
-	sh deb/maketar.sh
+	sh deb/maketar.sh $(LAIDOUTVERSION) 
 
 hidegarbage: touchdepends
 	cd src && $(MAKE) hidegarbage
