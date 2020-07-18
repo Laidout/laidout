@@ -57,7 +57,8 @@ ImportImagesDialog::ImportImagesDialog(anXWindow *parnt,const char *nname,const 
 			unsigned long  nowner,const char *nsend,
 			const char *nfile,const char *npath,const char *nmask,
 			Group *obj,
-			Document *ndoc,int startpg,double defdpi)
+			Document *ndoc,int startpg,double defdpi,
+			const char *urilist)
 	: FileDialog(parnt,nname,ntitle,
 			(nstyle&0xffff)|ANXWIN_REMEMBER|ANXWIN_ESCAPABLE,
 			xx,yy,ww,hh,brder,

@@ -50,7 +50,7 @@ class ImportImagesDialog : public Laxkit::FileDialog
 			unsigned long nowner,const char *nsend,
 			const char *nfile,const char *npath,const char *nmask,
 			Group *obj,
-			Document *ndoc,int startpg,double defdpi);
+			Document *ndoc,int startpg,double defdpi, const char *urilist = nullptr);
 	virtual ~ImportImagesDialog();
 	virtual const char *whattype() { return "ImportImagesDialog"; }
 	virtual int init();
