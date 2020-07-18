@@ -461,7 +461,7 @@ const char *NUpInterface::flowtypeMessage(int set)
 	else if (i==NUP_Random)     mes=_("Randomize");
 	else if (i==NUP_Unclump)    mes=_("Unclump");
 	else if (i==NUP_Unoverlap)  mes=_("Unoverlap");
-	if (set && mes) viewport->postmessage(mes);
+	if (set && mes) PostMessage(mes);
 	return mes;
 }
 
@@ -1125,7 +1125,7 @@ int NUpInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMous
 			overoverlay=over;
 			needtodraw=1;
 			const char *mes=controlTooltip(over);
-			if (mes) viewport->postmessage(mes);
+			if (mes) PostMessage(mes);
 		}
 		return 0;
 	}
@@ -1311,7 +1311,7 @@ int NUpInterface::PerformAction(int action)
 		nupinfo->direction++;
 		if (nupinfo->direction>7) nupinfo->direction=0;
 		remapControls();
-		viewport->postmessage(dirname(nupinfo->direction));
+		PostMessage(dirname(nupinfo->direction));
 		needtoresetlayout=1;
 		if (active) Apply(0);
 		needtodraw=1;
@@ -1321,7 +1321,7 @@ int NUpInterface::PerformAction(int action)
 		nupinfo->direction--;
 		if (nupinfo->direction<0) nupinfo->direction=7;
 		remapControls();
-		viewport->postmessage(dirname(nupinfo->direction));
+		PostMessage(dirname(nupinfo->direction));
 		needtoresetlayout=1;
 		if (active) Apply(0);
 		needtodraw=1;

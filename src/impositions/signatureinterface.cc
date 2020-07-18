@@ -335,7 +335,7 @@ void SignatureInterface::reallocateFoldinfo()
 	if (viewport) {
 		char str[200];
 		sprintf(str,_("Base holds %d pages."),2*(signature->numvfolds+1)*(signature->numhfolds+1));
-		viewport->postmessage(str);
+		PostMessage(str);
 	}
 }
 
@@ -569,7 +569,7 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 		ErrorLog log;
 		FILE *f=open_file_for_writing(s->str,1,&log);
 		if (!f) {
-			if (log.Total()) viewport->postmessage(log.MessageStr(log.Total()-1));
+			if (log.Total()) PostMessage(log.MessageStr(log.Total()-1));
 			return 0;
 		}
 
@@ -580,7 +580,7 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 
 		fclose(f);
 
-		viewport->postmessage(_("Saved."));
+		PostMessage(_("Saved."));
 
 		return 0;
 	}
@@ -2413,7 +2413,7 @@ int SignatureInterface::offsetHandle(ActionArea *area, flatpoint d)
 
 			sprintf(scratch,_("Top Inset")); //to make fewer things to translate
 			sprintf(scratch+strlen(scratch),_(" %.10g"),pp->insettop);
-			viewport->postmessage(scratch);
+			PostMessage(scratch);
 
 			remapHandles(2|4);
 			needtodraw=1;
@@ -2438,7 +2438,7 @@ int SignatureInterface::offsetHandle(ActionArea *area, flatpoint d)
 
 			sprintf(scratch,_("Bottom Inset")); //to make fewer things to translate
 			sprintf(scratch+strlen(scratch),_(" %.10g"),pp->insetbottom);
-			viewport->postmessage(scratch);
+			PostMessage(scratch);
 
 			remapHandles(2|4);
 			needtodraw=1;
@@ -2462,7 +2462,7 @@ int SignatureInterface::offsetHandle(ActionArea *area, flatpoint d)
 
 			sprintf(scratch,_("Left Inset")); //to make fewer things to translate
 			sprintf(scratch+strlen(scratch),_(" %.10g"),pp->insetleft);
-			viewport->postmessage(scratch);
+			PostMessage(scratch);
 
 			remapHandles(2|4);
 			needtodraw=1;
@@ -2486,7 +2486,7 @@ int SignatureInterface::offsetHandle(ActionArea *area, flatpoint d)
 
 			sprintf(scratch,_("Right Inset")); //to make fewer things to translate
 			sprintf(scratch+strlen(scratch),_(" %.10g"),pp->insetright);
-			viewport->postmessage(scratch);
+			PostMessage(scratch);
 
 			remapHandles(2|4);
 			needtodraw=1;
@@ -2504,7 +2504,7 @@ int SignatureInterface::offsetHandle(ActionArea *area, flatpoint d)
 
 			sprintf(scratch,_("Tile gap")); //to make fewer things to translate
 			sprintf(scratch+strlen(scratch),_(" %.10g"),pp->tilegapx);
-			viewport->postmessage(scratch);
+			PostMessage(scratch);
 
 			remapHandles(2|4);
 			needtodraw=1;
@@ -2522,7 +2522,7 @@ int SignatureInterface::offsetHandle(ActionArea *area, flatpoint d)
 
 			sprintf(scratch,_("Tile gap")); //to make fewer things to translate
 			sprintf(scratch+strlen(scratch),_(" %.10g"),pp->tilegapy);
-			viewport->postmessage(scratch);
+			PostMessage(scratch);
 
 			remapHandles(2|4);
 			needtodraw=1;
@@ -2537,7 +2537,7 @@ int SignatureInterface::offsetHandle(ActionArea *area, flatpoint d)
 
 			sprintf(scratch,_("Top Trim"));
 			sprintf(scratch+strlen(scratch),_(" %.10g"),s->trimtop);
-			viewport->postmessage(scratch);
+			PostMessage(scratch);
 
 			remapHandles(4);
 			needtodraw=1;
@@ -2552,7 +2552,7 @@ int SignatureInterface::offsetHandle(ActionArea *area, flatpoint d)
 
 			sprintf(scratch,_("Bottom Trim"));
 			sprintf(scratch+strlen(scratch),_(" %.10g"),s->trimbottom);
-			viewport->postmessage(scratch);
+			PostMessage(scratch);
 
 			remapHandles(4);
 			needtodraw=1;
@@ -2567,7 +2567,7 @@ int SignatureInterface::offsetHandle(ActionArea *area, flatpoint d)
 
 			sprintf(scratch,_("Left Trim"));
 			sprintf(scratch+strlen(scratch),_(" %.10g"),s->trimleft);
-			viewport->postmessage(scratch);
+			PostMessage(scratch);
 
 			remapHandles(4);
 			needtodraw=1;
@@ -2582,7 +2582,7 @@ int SignatureInterface::offsetHandle(ActionArea *area, flatpoint d)
 
 			sprintf(scratch,_("Right Trim"));
 			sprintf(scratch+strlen(scratch),_(" %.10g"),s->trimright);
-			viewport->postmessage(scratch);
+			PostMessage(scratch);
 
 			remapHandles(4);
 			needtodraw=1;
@@ -2597,7 +2597,7 @@ int SignatureInterface::offsetHandle(ActionArea *area, flatpoint d)
 
 			sprintf(scratch,_("Top Margin"));
 			sprintf(scratch+strlen(scratch),_(" %.10g"),s->margintop);
-			viewport->postmessage(scratch);
+			PostMessage(scratch);
 
 			remapHandles(4);
 			needtodraw=1;
@@ -2612,7 +2612,7 @@ int SignatureInterface::offsetHandle(ActionArea *area, flatpoint d)
 
 			sprintf(scratch,_("Bottom Margin"));
 			sprintf(scratch+strlen(scratch),_(" %.10g"),s->marginbottom);
-			viewport->postmessage(scratch);
+			PostMessage(scratch);
 
 			remapHandles(4);
 			needtodraw=1;
@@ -2627,7 +2627,7 @@ int SignatureInterface::offsetHandle(ActionArea *area, flatpoint d)
 
 			sprintf(scratch,_("Left Margin"));
 			sprintf(scratch+strlen(scratch),_(" %.10g"),s->marginleft);
-			viewport->postmessage(scratch);
+			PostMessage(scratch);
 
 			remapHandles(4);
 			needtodraw=1;
@@ -2642,7 +2642,7 @@ int SignatureInterface::offsetHandle(ActionArea *area, flatpoint d)
 
 			sprintf(scratch,_("Right Margin"));
 			sprintf(scratch+strlen(scratch),_(" %.10g"),s->marginright);
-			viewport->postmessage(scratch);
+			PostMessage(scratch);
 
 			remapHandles(4);
 			needtodraw=1;
@@ -2728,12 +2728,12 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 		if (handle!=SP_None) {
 			overoverlay=handle;
 			ActionArea *a=control(handle);
-			viewport->postmessage(a?a->tip:"TOOLTIP NEEDED!!!!!!!!");
+			PostMessage(a?a->tip:"TOOLTIP NEEDED!!!!!!!!");
 			return 0;
 		}
 		if (handle==SP_None) {
 			overoverlay=0;
-			viewport->postmessage(" ");
+			PostMessage(" ");
 		}
 		return 0;
 	}
@@ -3251,7 +3251,7 @@ int SignatureInterface::PerformAction(int action)
 		else { insetmask<<=1; if (insetmask>15) insetmask=15; }
 		char str[100];
 		sprintf(str,_("Sets %s inset"),masktostr(insetmask));
-		viewport->postmessage(str);
+		PostMessage(str);
 		return 0;
 
 	} else if (action==SIA_InsetInc) {
@@ -3346,7 +3346,7 @@ int SignatureInterface::PerformAction(int action)
 		else { trimmask<<=1; if (trimmask>15) trimmask=15; }
 		char str[100];
 		sprintf(str,_("Set %s trim"),masktostr(trimmask));
-		viewport->postmessage(str);
+		PostMessage(str);
 		return 0;
 
 	} else if (action==SIA_TrimInc) {
@@ -3370,7 +3370,7 @@ int SignatureInterface::PerformAction(int action)
 		else { marginmask<<=1; if (marginmask>15) marginmask=15; }
 		char str[100];
 		sprintf(str,_("Set %s margin"),masktostr(marginmask));
-		viewport->postmessage(str);
+		PostMessage(str);
 		return 0;
 
 	} else if (action==SIA_MarginInc) {

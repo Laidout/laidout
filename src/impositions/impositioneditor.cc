@@ -368,7 +368,7 @@ int ImpositionEditor::init()
 	double w=1,h=1;
 	tool->GetDimensions(w,h);
 	viewport->dp->Center(-w*.15,w*1.15, -h*.15,h*1.15);
-	viewport->postmessage(" ");
+	PostMessage(" ");
 
 	if (whichactive!=WHICH_Signature) {
 		ChangeImposition(firstimp);

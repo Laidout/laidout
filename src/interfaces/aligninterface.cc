@@ -1365,7 +1365,7 @@ int AlignInterface::RemoveChild()
 	if (active) ApplyAlignment(0);
 	needtodraw=1;
 
-	viewport->postmessage("");
+	PostMessage("");
 
 	return c;
 }
@@ -1478,7 +1478,7 @@ int AlignInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 			hover = 0;
 			needtodraw = 1;
 
-			viewport->postmessage(_("Press Enter to finish editing"));
+			PostMessage(_("Press Enter to finish editing"));
 			return 0;
 
 		}
@@ -1678,7 +1678,7 @@ void AlignInterface::postAlignMessage(int a)
 		case FALIGN_ObjectRotate: m=_("Align transform to path"); break;
 		default: m=nullptr; break;
 	}
-	viewport->postmessage(m?m:"");
+	PostMessage(m?m:"");
 }
 
 void AlignInterface::postHoverMessage()
@@ -1705,7 +1705,7 @@ void AlignInterface::postHoverMessage()
 		case ALIGN_LineControl: m=_(" *** line control ***"); break;
 		default: m=nullptr; break;
 	}
-	viewport->postmessage(m?m:"");
+	PostMessage(m?m:"");
 }
 
 /*! snapto is a list of n doubles in range [0..360).
@@ -1862,7 +1862,7 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 
 		char buffer[100];
 		sprintf(buffer,_("Rotation %.10g degrees"),aligninfo->extrarotation*180/M_PI);
-		viewport->postmessage(buffer);
+		PostMessage(buffer);
 		needtodraw=1;
 		return 0;
 	}
@@ -1933,7 +1933,7 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 
 		char buffer[100];
 		sprintf(buffer,"snapalign %f",aligninfo->snapalignment);
-		viewport->postmessage(buffer);
+		PostMessage(buffer);
 
 		needtodraw=1;
 		if (!explodemode) return 0;
@@ -1955,7 +1955,7 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 
 		char buffer[100];
 		sprintf(buffer,"final align %f",aligninfo->finalalignment);
-		viewport->postmessage(buffer);
+		PostMessage(buffer);
 
 		needtodraw=1;
 		return 0;
@@ -1981,7 +1981,7 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 
 		char buffer[100];
 		sprintf(buffer,"rotate %f degrees",angle*180/M_PI);
-		viewport->postmessage(buffer);
+		PostMessage(buffer);
 		
 		needtodraw=1;
 		return 0;
@@ -2089,7 +2089,7 @@ int AlignInterface::PerformAction(int action)
 		boundstep*=(action==ALIGN_LessStep?.9:1.1);
 		char buffer[100];
 		sprintf(buffer,_("bound step %f"),boundstep);
-		viewport->postmessage(buffer);
+		PostMessage(buffer);
 		return 0;
 
 	} else if (action==ALIGN_LeftBoundLess || action==ALIGN_LeftBoundMore) {
@@ -2118,7 +2118,7 @@ int AlignInterface::PerformAction(int action)
 
 		char buffer[100];
 		sprintf(buffer,_("Final align %f"),aligninfo->finalalignment);
-		viewport->postmessage(buffer);
+		PostMessage(buffer);
 
 		needtodraw=1;
 		return 0;
@@ -2135,7 +2135,7 @@ int AlignInterface::PerformAction(int action)
 
 		char buffer[100];
 		sprintf(buffer,_("Final align %f"),aligninfo->finalalignment);
-		viewport->postmessage(buffer);
+		PostMessage(buffer);
 
 		needtodraw=1;
 		return 0;
@@ -2152,7 +2152,7 @@ int AlignInterface::PerformAction(int action)
 
 		char buffer[100];
 		sprintf(buffer,_("Snap align %f"),aligninfo->snapalignment);
-		viewport->postmessage(buffer);
+		PostMessage(buffer);
 
 		needtodraw=1;
 		return 0;
@@ -2169,7 +2169,7 @@ int AlignInterface::PerformAction(int action)
 
 		char buffer[100];
 		sprintf(buffer,_("snapalign %f"),aligninfo->snapalignment);
-		viewport->postmessage(buffer);
+		PostMessage(buffer);
 
 		needtodraw=1;
 		return 0;

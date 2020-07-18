@@ -790,12 +790,12 @@ int PageRangeInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 			hover_position=over;
 			hover_index=index;
 
-			if (hover_part==PART_None)  viewport->postmessage(NULL);
-			else if (hover_part==PART_Index) viewport->postmessage(_("Click to divide range"));
-			else if (hover_part==PART_Label) viewport->postmessage(_("Wheel to change label type"));
-			else if (hover_part==PART_DocPageStart) viewport->postmessage(_("Document page range"));
-			else if (hover_part==PART_LabelStart) viewport->postmessage(_("Wheel to change first page of labels"));
-			else if (hover_part==PART_Position) viewport->postmessage(_("Drag to adjust range"));
+			if      (hover_part==PART_None)         PostMessage(NULL);
+			else if (hover_part==PART_Index)        PostMessage(_("Click to divide range"));
+			else if (hover_part==PART_Label)        PostMessage(_("Wheel to change label type"));
+			else if (hover_part==PART_DocPageStart) PostMessage(_("Document page range"));
+			else if (hover_part==PART_LabelStart)   PostMessage(_("Wheel to change first page of labels"));
+			else if (hover_part==PART_Position)     PostMessage(_("Drag to adjust range"));
 
 			needtodraw=1;
 		}
