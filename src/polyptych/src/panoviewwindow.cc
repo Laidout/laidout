@@ -944,7 +944,7 @@ void PanoViewWindow::drawHelp()
 			 "\n");
 	if (s) {
 		for (int c2=0; c2<s->n; c2++) {
-			sprintf(str,"  %-15s ",m->ShortcutString(s->e[c2], buffer));
+			sprintf(str,"  %-15s ",m->ShortcutString(s->e[c2], buffer, true));
 			if (a) aa=a->FindAction(s->e[c2]->action); else aa=NULL;
 			if (aa) {
 				 //print out string id and commented out description
