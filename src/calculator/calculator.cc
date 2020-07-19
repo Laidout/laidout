@@ -3274,17 +3274,22 @@ Value *LaidoutCalculator::number()
 
 	} else if (isdigit(curexprs[from]) || curexprs[from]=='.') {
 		 //read in an integer or a real
-		int tfrom=from;
+		int tfrom = from;
+		int base = -1;
 		if (isdigit(curexprs[from])) {
-			snum=new IntValue(intnumber());
-		}
+			snum = new IntValue(intnumber(&base));
+		} else base = 10;
 		if (curexprs[from]=='.' || curexprs[from]=='e') {
 			 // was real number
-			from=tfrom; 
-			if (snum) delete snum;
-			snum=new DoubleValue(realnumber());
+			// if (base == 10) {
+				from = tfrom; 
+				if (snum) delete snum;
+				snum = new DoubleValue(realnumber());
+			// } else {
+			// 	***
+			// }
 		}
-		int units=getunits();
+		int units = getunits();
 		if (units) {
 			if (dynamic_cast<IntValue*>(snum)) dynamic_cast<IntValue*>(snum)->units=units;
 			else if (dynamic_cast<DoubleValue*>(snum)) dynamic_cast<DoubleValue*>(snum)->units=units;
@@ -3665,16 +3670,35 @@ double LaidoutCalculator::realnumber()
 }
 
 //! Read in an integer.
-long LaidoutCalculator::intnumber()
+long LaidoutCalculator::intnumber(int *base_ret)
 {
-	char *endptr,*startptr=curexprs+from;
+	int base = 10;
+	if (base_ret && *base_ret > 0) base = *base_ret;
+	if (base_ret && *base_ret <= 0) {
+		//determine base
+		if (curexprs[from] == '0') {
+			if (curexprs[from+1] == 'x' || curexprs[from+1] == 'X') {
+				base = *base_ret = 16;
+				from += 2;
+
+			} else if (curexprs[from+1] == 'b' || curexprs[from+1] == 'B') {
+				base = *base_ret = 2;
+				from += 2;
+
+			} else if (isdigit(curexprs[from+1])) {
+				base = *base_ret = 8;
+				from ++;
+			}
+		}
+	}
+	char *endptr, *startptr = curexprs+from;
 	//long c=strtol(startptr,&endptr,base);
-	long c=strtol(startptr,&endptr,10);
-	if (endptr==startptr) {
+	long c = strtol(startptr, &endptr, base);
+	if (endptr == startptr) {
 		calcerr("Expected an integer.");
 		return 0;
 	}
-	from+=endptr-startptr;
+	from += endptr-startptr;
 	return c;
 }
 
@@ -4503,6 +4527,7 @@ void LaidoutCalculator::InstallInnate()
 	innates->pushOperator("-", OPS_LtoR,400, _("Subtract"), this);
 
 	innates->pushOperator("*", OPS_LtoR,500, _("Multiply"), this);
+	innates->pushOperator("%", OPS_LtoR,500, _("Mod"), this);
 	innates->pushOperator("/", OPS_LtoR,500, _("Divide"), this);
 
 	innates->pushOperator("^", OPS_RtoL,600, _("Raise to the power of"), this);
@@ -4525,6 +4550,10 @@ void LaidoutCalculator::InstallInnate()
 									   "y",NULL,NULL,"number",NULL,NULL,
 									   "x",NULL,NULL,"number",NULL,NULL,
 									   NULL); // "x:int|real,y:int|real");
+   	innates->pushFunction("base",    NULL,_("String from number and specified base."),this, 
+									   "x",NULL,NULL,"number",NULL,NULL,
+									   "base",NULL,NULL,"int",NULL,NULL,
+									   NULL); // "x:int|real,y:int|real");
     innates->pushFunction("sin",      NULL,_("sine"),                                   this, "r",NULL,NULL,NULL,NULL,NULL, NULL); // "int|real|complex");
     innates->pushFunction("asin",     NULL,_("arcsine"),                                this, "x",NULL,NULL,NULL,NULL,NULL, NULL); // "int|real|complex");
     innates->pushFunction("cos",      NULL,_("cosine"),                                 this, "r",NULL,NULL,NULL,NULL,NULL, NULL); // "int|real|complex");
@@ -4541,6 +4570,9 @@ void LaidoutCalculator::InstallInnate()
     innates->pushFunction("tanh",     NULL,_("hyperbolic tangent"),                     this, "x",NULL,NULL,NULL,NULL,NULL, NULL); // "int|real|complex");
     innates->pushFunction("sgn",      NULL,_("pos,neg,or 0"),                           this, "x",NULL,NULL,NULL,NULL,NULL, NULL); // "int|real");
     innates->pushFunction("int",      NULL,_("integer of"),                             this, "x",NULL,NULL,NULL,NULL,NULL, NULL); // "int|real");
+    innates->pushFunction("hex",      NULL,_("Hex string of number"),                   this, "x",NULL,NULL,NULL,NULL,NULL, NULL); // "int|real");
+    innates->pushFunction("binary",   NULL,_("Binary string of number"),                this, "x",NULL,NULL,NULL,NULL,NULL, NULL); // "int|real");
+    innates->pushFunction("octal",    NULL,_("Octal string of number"),                 this, "x",NULL,NULL,NULL,NULL,NULL, NULL); // "int|real");
     innates->pushFunction("gint",     NULL,_("greatest integer less than"),             this, "x",NULL,NULL,NULL,NULL,NULL, NULL); // "int|real");
     innates->pushFunction("lint",     NULL,_("least integer greater than"),             this, "x",NULL,NULL,NULL,NULL,NULL, NULL); // "int|real");
     innates->pushFunction("factor",   NULL,_("set of factors of an integer"),           this, "i",NULL,NULL,"int",NULL,NULL, NULL); // "int");
@@ -4637,6 +4669,48 @@ int LaidoutCalculator::Evaluate(const char *word,int len, ValueHash *context, Va
 			else if (len==4 && !strncmp(word,"sinh",4))    { v=new DoubleValue(sinh(d)); }
 			else if (len==4 && !strncmp(word,"tanh",4))    { v=new DoubleValue(tanh(d)); }
 
+			else if (len==3 && !strncmp(word,"hex",3))     { 
+				if (vv->type()!=VALUE_Int) throw 1;
+				char str[30];
+				sprintf(str, "0x%lx", ((IntValue*)vv)->i);
+				v = new StringValue(str);
+			}
+			else if (len==5 && !strncmp(word,"octal",5))     { 
+				if (vv->type()!=VALUE_Int) throw 1;
+				char str[30];
+				sprintf(str, "0%lo", ((IntValue*)vv)->i);
+				v = new StringValue(str);
+			}
+			else if (len==6 && !strncmp(word,"binary",6))     { 
+				if (vv->type()!=VALUE_Int) throw 1;
+				char str[50];
+				int i = ((IntValue*)vv)->i;
+				char *ptr = nullptr;
+				if (i < 0) { sprintf(str, "-0b"); i = -i; ptr = str+3; }
+				else { sprintf(str, "0b"); ptr = str+2; }
+				int digits = 0;
+				while (i > 0) {
+					if (i%2 == 0) *ptr = '0'; else *ptr = '1';
+					i = i >> 1;
+					digits++;
+					ptr++;
+				}
+				if (digits == 0) strcat(str, "0");
+				else {
+					*ptr = '\0';
+					ptr = str;
+					if (*ptr == '-') ptr++;
+					ptr += 2;
+					for (int c=0; c<digits/2; c++) { //reverse order
+						char b = *ptr;
+						*ptr = *(ptr + digits - 2*c - 1);
+						*(ptr + digits - 2*c - 1) = b;
+						ptr++;
+					}
+				}
+				v = new StringValue(str);
+			}
+
 			else if (len==4 && !strncmp(word,"sqrt",4)) { if (d<0) throw 2; v=new DoubleValue(sqrt(d)); }
 
 			else if (len==3 && !strncmp(word,"log",3))  { if (d<=0) throw 4; v=new DoubleValue(log(d)/log(10)); }
@@ -4716,6 +4790,7 @@ int LaidoutCalculator::Op(const char *the_op,int len, int dir, Value *num1, Valu
 	if (dir==OPS_LtoR && len==1 && !strncmp(the_op,"+",1)) { return add(num1,num2, value_ret);
 	} else if (dir==OPS_LtoR && len==1 && !strncmp(the_op,"-",1)) { return subtract(num1,num2, value_ret);
 	} else if (dir==OPS_LtoR && len==1 && !strncmp(the_op,"*",1)) { return multiply(num1,num2, value_ret);
+	} else if (dir==OPS_LtoR && len==1 && !strncmp(the_op,"%",1)) { return mod(num1,num2, value_ret);
 	} else if (dir==OPS_LtoR && len==1 && !strncmp(the_op,"/",1)) { return divide(num1,num2, value_ret);
 	} else if (dir==OPS_RtoL && len==1 && !strncmp(the_op,"^",1)) { return power(num1,num2, value_ret);
 	}
@@ -4952,6 +5027,46 @@ int LaidoutCalculator::multiply(Value *num1,Value *num2, Value **ret)
 
 	if (*ret) return 0;
 	return -1; //throw _("Cannot multiply those types");
+}
+
+int LaidoutCalculator::mod(Value *num1,Value *num2, Value **ret)
+{
+	*ret = nullptr;
+
+	if (num1 == nullptr) { return -1; }
+	if (num2 == nullptr) { return -1; }
+
+//	if (strcmp(num1->units,num2->units)) {
+//		 //must correct units
+//		***
+//		if one has units, but the other doesn't, then assume same units
+//	}
+
+	double divisor;
+	if (num2->type()==VALUE_Int)       divisor = ((IntValue*)   num2)->i;
+	else if (num2->type()==VALUE_Real) divisor = ((DoubleValue*)num2)->d;
+	else return -1; //throw _("Cannot divide with that type");
+
+	if (divisor == 0) {
+		calcerr(_("Division by zero!"));
+		return 1;
+	}
+
+	if (num1->type()==VALUE_Int && num2->type()==VALUE_Int) { // i/i
+		*ret = new IntValue(((IntValue *) num1)->i % ((IntValue*)num2)->i);
+
+	} else if (num1->type()==VALUE_Real && num2->type()==VALUE_Int) { // d/i
+		*ret = new DoubleValue(fmod(((DoubleValue *) num1)->d, (double)((IntValue*)num2)->i));
+
+	} else if (num1->type()==VALUE_Int && num2->type()==VALUE_Real) { // i/d
+		*ret = new DoubleValue(fmod((double)((IntValue*)num1)->i, ((DoubleValue *) num2)->d));
+
+	} else if (num1->type()==VALUE_Real && num2->type()==VALUE_Real) { // d/d
+		*ret=new DoubleValue(fmod(((DoubleValue *) num1)->d, ((DoubleValue*)num2)->d));
+	} 
+
+	if (*ret) return 0;
+	return -1; //throw _("Cannot divide those types");
 }
 
 int LaidoutCalculator::divide(Value *num1,Value *num2, Value **ret)

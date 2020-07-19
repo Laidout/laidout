@@ -212,7 +212,7 @@ class LaidoutCalculator : public Interpreter,
 	int Assignment(Value *num1, Value *num2, Value **value_ret, Laxkit::ErrorLog *log);
 	int checkBlock(Value **value_ret);
 	Value *number();
-	long intnumber();
+	long intnumber(int *base_ret = nullptr);
 	double realnumber();
 	int getunits();
 	Value *getstring();
@@ -231,6 +231,7 @@ class LaidoutCalculator : public Interpreter,
 	int subtract(Value *num1,Value *num2, Value **ret);
 	int multiply(Value *num1,Value *num2, Value **ret);
 	int divide(Value *num1,Value *num2, Value **ret);
+	int mod(Value *num1,Value *num2, Value **ret);
 	int power(Value *num1,Value *num2, Value **ret);
 
 	virtual int Op(const char *the_op,int len, int dir, Value *num1, Value *num2, CalcSettings *settings, Value **value_ret, Laxkit::ErrorLog *log);
