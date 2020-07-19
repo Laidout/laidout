@@ -18,6 +18,7 @@
 #include <lax/errorlog.h>
 #include <lax/anxapp.h>
 #include <lax/dump.h>
+#include <lax/indexrange.h>
 
 #include "../core/papersizes.h"
 #include "../dataobjects/group.h"
@@ -101,7 +102,7 @@ class DocumentExportConfig : public Value
  public:
 	enum Targets { TARGET_Single = 0, TARGET_Multi = 1, TARGET_Command = 2 }; //needs to stay in sync with objectdef enum
 	int target; //one of Targets
-	int start,end;
+	Laxkit::IndexRange range; //of spreads in doc
 	int layout;
 	enum EvenOdd { All,Even,Odd } evenodd;
 	int batches;
@@ -154,7 +155,7 @@ class ImportConfig : public Value
  public:
 	char *filename;
 	int keepmystery;
-	int instart,inend;
+	Laxkit::IndexRange range;
 	int topage,spread,layout;
 	int scaletopage;
 	Document *doc;
@@ -170,6 +171,7 @@ class ImportConfig : public Value
 	virtual ObjectDef* makeObjectDef();
 	virtual Value* duplicate();
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual LaxFiles::Attribute * dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 

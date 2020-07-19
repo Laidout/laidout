@@ -97,8 +97,8 @@ ExportDialog::ExportDialog(unsigned long nstyle,unsigned long nowner,const char 
 	if (filter) {
 		config=filter->CreateConfig(NULL);
 		config->layout = layout;
-		config->start  = pmin;
-		config->end    = pmax;
+		config->range.Clear();
+		config->range.AddRange(pmin, pmax);
 		makestr(config->filename, file);
 
 		if (doc!=config->doc) {
@@ -121,7 +121,7 @@ ExportDialog::ExportDialog(unsigned long nstyle,unsigned long nowner,const char 
 
 	cur = pcur;
 
-	fileedit = filesedit = printstart = printend = command = NULL;
+	fileedit = filesedit = printspreadrange = command = NULL;
 	filecheck = filescheck = commandcheck = printall = printcurrent = printrange = NULL;
 
 	batches     = NULL;
@@ -284,9 +284,8 @@ void ExportDialog::dump_in_atts(Attribute *att,int flag, LaxFiles::DumpContext *
 //! Based on config->layout, set min and max accordingly.
 void ExportDialog::findMinMax()
 {
-	min=0;
-	if (config->doc) max=config->doc->imposition->NumSpreads(config->layout)-1;
-		else max=0;
+	if (config->doc) max = config->doc->imposition->NumSpreads(config->layout)-1;
+	else max = 0;
 }
 
 //! Make sure the kid windows have this as owner.
@@ -477,26 +476,16 @@ int ExportDialog::init()
 	printrange->State(LAX_OFF);
 	AddWin(printrange,1,-1);
 
-	char blah[15];
-	sprintf(blah,"%d",config->start);
-	last=printstart=new LineEdit(this,"start",NULL,
+	const char *prange = config->range.ToString(false, false, false);
+	last = printspreadrange = new LineEdit(this,"range",NULL,
 						 LINEEDIT_SEND_FOCUS_ON|LINEEDIT_SEND_FOCUS_OFF, 
 						 0,0,50,20, 1,
-						 last,object_id,"start",
-						 blah,0);
-	printstart->padx=5;
-	printstart->tooltip(_("The starting index"));
-	AddWin(printstart,1, printstart->win_w,0,1000,50,0, printstart->win_h,0,0,50,0, -1);
+						 last,object_id,"range",
+						 prange,0);
+	printspreadrange->padx = 5;
+	printspreadrange->tooltip(_("The index range of spreads, counting from 1.\nNegative numbers mean index count from end."));
+	AddWin(printspreadrange,1, printspreadrange->win_w,0,1000,50,0, printspreadrange->win_h,0,0,50,0, -1);
 		
-	AddWin(new MessageBar(this,"end",NULL,0, 0,0,0,0,0, _("To:")),1,-1);
-	sprintf(blah,"%d",config->end);
-	last=printend=new LineEdit(this,"end",NULL,LINEEDIT_SEND_FOCUS_ON|LINEEDIT_SEND_FOCUS_OFF, 
-						 0,0,50,20, 1,
-						 last,object_id,"end",
-						 blah,0);
-	printend->padx=5;
-	printend->tooltip(_("The ending index"));
-	AddWin(printend,1, printend->win_w,0,1000,50,0, printend->win_h,0,0,50,0, -1);
 	AddNull();
 
 	//printend->tooltip(_("Range of pages to use.\nRange is indices starting from 0, or quote for page labels."));
@@ -516,6 +505,7 @@ int ExportDialog::init()
 	AddWin(batches,1,-1);
 	AddHSpacer(textheight,0,0,50);
 
+	char blah[15];
 	sprintf(blah,"%d",config->batches>0?config->batches:1);
 	last=batchnumber=new LineEdit(this,"batchnumber",NULL,
 						 LINEEDIT_SEND_FOCUS_ON|LINEEDIT_SEND_ANY_CHANGE|LINEEDIT_INT, 
@@ -673,57 +663,7 @@ int ExportDialog::init()
  */
 void ExportDialog::configBounds()
 {
-	int a=start(),
-		b=end();
-
-	if (a<min) a=min;
-	else if (a>max) a=max;
-	if (b<min) b=min;
-	else if (b>max) b=max;
-
-	config->start=a;
-	config->end  =b;
-
-	start(a);
-	end(b);
-}
-
-//! Set the start of the range in config and edit based on index s.
-/*! \todo *** just does index right now!! must use page labels
- */
-void ExportDialog::start(int s)
-{
-	printstart->SetText(s);
-}
-
-//! Set the end of the range in config and edit based on index s.
-/*! \todo *** just does index right now!! must use page labels
- */
-void ExportDialog::end(int e)
-{
-	printend->SetText(e);
-}
-
-//! Return the start of the range as an index, not a name.
-/*! \todo *** just does index right now!! must use page labels
- */
-int ExportDialog::start()
-{
-	int e;
-	int a=printstart->GetLong(&e);
-	if (e) return 0;
-	return a;
-}
-
-//! Return the end of the range as an index, not a name.
-/*! \todo *** just does index right now!! must use page labels
- */
-int ExportDialog::end()
-{
-	int e;
-	int a=printend->GetLong(&e);
-	if (e) return 0;
-	return a;
+	config->range.Max(max, true);
 }
 
 //! Update extensions in file edits.
@@ -1057,20 +997,32 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 
 	} else if (!strcmp(mes,"ps-printall")) {
 		changeRangeTarget(1);
-		start(0);
-		end(max);
+		config->range.Clear();
+		config->range.Max(max);
+		config->range.AddRange(0,-1);
 		configBounds();
 		return 0;
 
 	} else if (!strcmp(mes,"ps-printcurrent")) {
 		changeRangeTarget(2);
-		start(cur);
-		end(cur);
+		config->range.Clear();
+		config->range.AddRange(cur,cur);
 		configBounds();
 		return 0;
 
 	} else if (!strcmp(mes,"ps-printrange")) {
 		changeRangeTarget(3);
+		config->range.Parse(printspreadrange->GetCText(), nullptr, false);
+		return 0;
+
+	} else if (!strcmp(mes,"range")) {
+		DBG cerr <<"range data: "<<e->info1<<endl;
+		if (e->info1==2) {
+			changeRangeTarget(3);
+		} else {
+			configBounds();
+		}
+		config->range.Parse(printspreadrange->GetCText(), nullptr, false);
 		return 0;
 
 	} else if (!strcmp(mes,"start")) {
@@ -1287,17 +1239,17 @@ void ExportDialog::overwriteCheck()
 		}
 
 		char *filebase;
-		int e=0,w=0; //errors and warnings
-		filebase=LaxFiles::make_filename_base(config->tofiles);
-		char file[strlen(filebase)+10]; //*** someone could trick this with more than "##" blocks maybe!! check!
-		for (int c=config->start; c<=config->end; c++) {
-			sprintf(file,filebase,c);
+		int   e = 0, w = 0;  // errors and warnings
+		filebase = LaxFiles::make_filename_base(config->tofiles);
+		char file[strlen(filebase) + 10];  //*** someone could trick this with more than "##" blocks maybe!! check!
+		for (int c = config->range.Start(); c >= 0; c = config->range.Next()) {
+			sprintf(file, filebase, c);
 
-			valid = file_exists(file,1,&err);
+			valid = file_exists(file, 1, &err);
 			if (valid) {
-				if ((isdir && valid != S_IFDIR) || (!isdir && valid != S_IFREG)) { // exists, but is wrong type
+				if ((isdir && valid != S_IFDIR) || (!isdir && valid != S_IFREG)) {  // exists, but is wrong type
 					e++;
-				} else { // was proper type
+				} else {  // was proper type
 					w++;
 				}
 			}
@@ -1311,7 +1263,7 @@ void ExportDialog::overwriteCheck()
 			filesedit->tooltip(_("Warning: Some files will be overwritten!"));
 			findChildWindowByName("export")->Grayed(0);
 		} else {
-			 //note: this must be same tip as in init().
+			// note: this must be same tip as in init().
 			filesedit->tooltip(_("Export to these files. A '#' is replaced with\n"
 					  "the spread index. A \"###\" for an index like 3\n"
 					  "will get replaced with \"003\"."));
@@ -1387,8 +1339,9 @@ int ExportDialog::send()
 
 	//a little sanity checking...
 	if (printall->State() == LAX_ON) {
-		config->start = 0;
-		config->end = max;
+		config->range.Clear();
+		config->range.Max(max);
+		config->range.AddRange(0,-1);
 	}
 
 	config->filter = filter;

@@ -180,7 +180,7 @@ int ImportFileDialog::init()
 
 	last=importpagerange=new LineInput(this,"importpagerange",NULL,0, 0,0,0,0,0, 
 						last,object_id,"importpagerange",
-						_("Import page range:"),_("all"),0,
+						_("Import page range:"), config->range.ToString(false, false, false),0,
 						0,0,2,2,2,2);
 	importpagerange->tooltip(_("The range of pages of the file to import, numbered from 0.\n"
 							   "Such as \"3-9\". Currently, only one range per import"));
@@ -379,27 +379,10 @@ int ImportFileDialog::send(int id)
 {
 	const char *range=importpagerange->GetCText();
 	if (!strcasecmp(range,_("all"))) {
-		config->instart=0;
-		config->inend=-1;
-
+		config->range.Clear();
+		config->range.AddRange(0,-1);
 	} else {
-		char *tmp;
-		int s,e;
-		s=strtol(range,&tmp,10); //read in first number
-		if (tmp==range) {
-			s=0;
-			e=-1;
-		} else {
-			range=tmp;
-			while (isspace(*range)) range++;
-			if (*range=='-') range++; //skip over '-' when something like (3-5)
-			e=strtol(range,&tmp,10);
-			if (tmp==range) {
-				e=s;
-			}
-		}
-		config->instart=s;
-		config->inend=e;
+		config->range.Parse(range, nullptr, false);
 	}
 
 	LineInput *linp=dynamic_cast<LineInput*>(findChildWindowByName("StartIndex"));

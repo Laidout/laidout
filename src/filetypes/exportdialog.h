@@ -49,9 +49,9 @@ class ExportDialog : public Laxkit::RowFrame
 	int overwriteok;
 	unsigned long dialog_style;
 	int tofile;
-	int cur, max, min;
+	int cur, max;
 	char *last_meta_dir;
-	Laxkit::LineEdit *fileedit,*filesedit,*printstart,*printend,*command;
+	Laxkit::LineEdit *fileedit,*filesedit,*printspreadrange,*command;
 	Laxkit::CheckBox *filecheck,*filescheck,*commandcheck;
 	Laxkit::CheckBox *printall,*printcurrent,*printrange;
 	Laxkit::CheckBox *everyspread, *evenonly, *oddonly;
@@ -71,10 +71,6 @@ class ExportDialog : public Laxkit::RowFrame
 	virtual void overwriteCheck();
 	virtual int send();
 
-	virtual void start(int s);
-	virtual int  start();
-	virtual void end(int e);
-	virtual int  end();
 	virtual void findMinMax();
 	virtual int updateExt();
 	virtual void updateEdits();

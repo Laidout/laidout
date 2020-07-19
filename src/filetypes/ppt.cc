@@ -249,8 +249,6 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog 
 	if (!config) return 1;
 	
 	Document *doc =config->doc;
-	int start     =config->start;
-	int end       =config->end;
 	int layout    =config->layout;
 	Group *limbo  =config->limbo;
 	PaperGroup *papergroup=config->papergroup;
@@ -314,7 +312,7 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog 
 	 // write out header
 	fprintf(f,"<?xml version=\"1.0\"?>\n");
 	fprintf(f,"<document paper_name=\"%s\" doublesided=\"false\" landscape=\"%s\" first_page_num=\"%d\">\n",
-				papersize, landscape, start);
+				papersize, landscape, config->range.Start());
 	
 	 // write out text_stream from doc->iohints, if any
 	if (doc) {
@@ -342,7 +340,7 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog 
 	
 	transform_set(mm,72,0,0,72,0,0);
 	psCtmInit();
-	for (int c=start; c<=end; c++) {
+	for (int c = config->range.Start(); c >= 0; c = config->range.Next()) {
 		if (config->evenodd==DocumentExportConfig::Even && c%2==0) continue;
         if (config->evenodd==DocumentExportConfig::Odd && c%2==1) continue;
 

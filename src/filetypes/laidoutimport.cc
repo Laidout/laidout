@@ -268,15 +268,22 @@ int LaidoutInFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 		return 1; //load fail!
 	}
 
-	if (in->inend<0) in->inend=fdoc->pages.n-1;
-
 	 //create the document
 	//if (!doc && !in->toobj) {
 	if (!doc) {
-		 //read in chosen pages to a new document
-		doc=fdoc;
-		for (int c=in->inend+1; c<doc->pages.n; ) doc->pages.remove(c);
-		for (int c=in->instart; c>0; c++) doc->pages.remove(c);
+		doc = fdoc;
+
+		//remove unwanted pages
+		int nn = 0;
+		int *ii = in->range.GetSortedList(&nn);
+		if (nn) {
+			NumStack<int> nums;
+			nums.insertArray(ii, nn);
+			for (int c=doc->pages.n-1; c>=0; c--) {
+				if (!nums.Contains(c)) doc->pages.remove(c);
+			}
+		}
+
 		if (in->topage>0) doc->NewPages(0,in->topage);
 
 		laidout->project->Push(doc);
@@ -286,16 +293,17 @@ int LaidoutInFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 	}
 
 	//Import pages [in->instart..in->inend] to in->topage
-	int curpage=in->topage;
-	if (curpage<0) curpage=0;
-	SomeData *obj=NULL;
-	SomeData origpagedims, newpagedims;
+	int curpage = in->topage;
+	if (curpage < 0) curpage = 0;
+	SomeData *      obj = NULL;
+	SomeData        origpagedims, newpagedims;
 	DrawableObject *layer;
-	SomeData *layerdup, *kid;
-	double tt[6];
+	SomeData *      layerdup, *kid;
+	double          tt[6];
 
-	for (int c=in->instart; c<=in->inend; c++) {
-		while (doc->pages.n<=curpage) doc->NewPages(doc->pages.n,1);
+	for (int c = in->range.Start(); c >= 0; c = in->range.Next()) {
+
+		while (doc->pages.n <= curpage) doc->NewPages(doc->pages.n, 1);
 		newpagedims.setIdentity();
 		newpagedims.setbounds(0,doc->pages.e[curpage]->pagestyle->w(), 0,doc->pages.e[curpage]->pagestyle->h());
 		origpagedims.setIdentity();

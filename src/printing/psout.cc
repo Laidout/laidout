@@ -314,8 +314,6 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	if (!out) return 1;
 
 	Document *doc =out->doc;
-	int start     =out->start;
-	int end       =out->end;
 	int layout    =out->layout;
 	Group *limbo  =out->limbo;
 	PaperGroup *papergroup=out->papergroup;
@@ -397,13 +395,13 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	 // initialize outside accessible ctm
 	psctms.flush();
 	psctm=transform_identity(psctm);
-	DBG cerr <<"=================== start printing "<<start<<" to "<<end<<" ====================\n";
+	DBG cerr <<"=================== start printing "<<out->range.ToString(true, false, false)<<" ====================\n";
 	
 	 // print out header
 	fprintf (f,"%%!PS-Adobe-3.0\n"
 			   "%%%%Orientation: ");
 	fprintf (f,"%s\n",(landscape?"Landscape":"Portrait"));
-	fprintf(f,"%%%%Pages: %d\n",(end-start+1)*(papergroup?papergroup->papers.n:1));
+	fprintf(f,"%%%%Pages: %d\n",(out->range.NumInRanges())*(papergroup?papergroup->papers.n:1));
 	time_t t=time(NULL);
 	fprintf(f,"%%%%PageOrder: Ascend\n"
 			  "%%%%CreationDate: %s" //ctime puts a terminating newline
@@ -481,7 +479,8 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	Page *page=NULL;
 	char *desc=NULL;
 	int p,plandscape;
-	for (c=start; c<=end; c++) {
+	int cur_page_index = 1;
+	for (c = out->range.Start(); c >= 0; c = out->range.Next()) {
 		 //get spread if any
 		if (doc) spread=doc->imposition->Layout(layout,c);
 		else spread=NULL;
@@ -500,9 +499,10 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 			 //print (postscript) page header
 			 //%%Page label (ordinal starting at 1)
 			if (desc) {
-				fprintf(f, "%%%%Page: %s %d\n", desc,(c-start)*papergroup->papers.n+p+1);
+				fprintf(f, "%%%%Page: %s %d\n", desc, cur_page_index);
 			} else fprintf(f, "%%%%Page: %d %d\n", 
-					(c-start)*papergroup->papers.n+p+1,(c-start)*papergroup->papers.n+p+1);
+					cur_page_index, cur_page_index);
+			cur_page_index++;
 
 			// //paper media
 			//if (this paper media != default paper media) {
@@ -643,8 +643,6 @@ int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 
 	 //set up config
 	Document *doc =out->doc;
-	int start     =out->start;
-	DBG int end       =out->end;
 	int layout    =out->layout;
 	Group *limbo  =out->limbo;
 	PaperGroup *papergroup=out->papergroup;
@@ -664,7 +662,7 @@ int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 
 
 
-	DBG cerr <<"=================== start printing eps "<<start<<" to "<<end<<" ====================\n";
+	DBG cerr <<"=================== start printing eps "<<out->range.ToString(true, false, false)<<" ====================\n";
 		
 	Spread *spread=NULL;
 	DoubleBBox bbox;
@@ -686,7 +684,7 @@ int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 
 	 // Find bbox
 	 //*** note bbox is not used!!
-	if (doc) spread=doc->imposition->Layout(layout,start);
+	if (doc) spread=doc->imposition->Layout(layout,out->range.Start());
 	bbox.clear();
 	bbox.addtobounds(spread->path);
 	
@@ -744,7 +742,7 @@ int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	fprintf(f,"%%%%EndProlog\n");
 		
 	 //print paper header
-	fprintf(f, "%%%%Page: %d 1\n", start+1);//%%Page (label) (ordinal starting at 1)
+	fprintf(f, "%%%%Page: %d 1\n", out->range.Start()+1);//%%Page (label) (ordinal starting at 1)
 
 	 //begin paper contents
 	fprintf(f, "save\n");

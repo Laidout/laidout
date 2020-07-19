@@ -438,9 +438,11 @@ have an actual splash image shown
 
 you can't control unclick selected directories
 
-build: building:
+build: building: build process
   in config.log should show actual configure line for easy duplicating
   should update faq with details about graphicsmagick, harfbuzz, and gegl versioning
+  update configure message about try installing packages.. when fail on gegl, it's not listed
+  laidout ./configure needs to pass on relevant things to laxkit
 
 rework ui to be programmable. Perhaps an ui builder
 
@@ -468,7 +470,7 @@ file filters: filefilters:
   remember full export settings
   need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
   selecting out should auto select tofile | tofiles, depending on how many spreads selected for out
-  export ranges should accept "1-4, 6, 20-25" and "5-1", or by name "iii - iv"
+  export range should optionally allow label not spread indices? labels are only valid for pages.. by name "iii - iv", export preview better?
   perhaps switch export/import objects to new cascading Style as base..
   standardize basic load such that non-laidout files create new document of proper size then import
   When there are errors or warnings in exporting, should be able to have the error log such that
@@ -548,6 +550,7 @@ pdf: PDF:
   page labels?
   implement crop
 Scribus scribus:
+  needs better error return: use try/catch
   outputting with settings that result in 0 pages result in scribus crash
   caption as path flips
   implement equivalent object
@@ -1315,6 +1318,7 @@ voronoi Voronoi delauney Delauney:
   less than three points doesn't remap rationally, need to update extra lines to something proper
 
 FileDialog filedialog:
+  bug: sort caseless, other sorrts not working
   focus should start on file line
   ^l should shift focus to file line
   when something is not openable or saveable, buttons should be greyed out
@@ -1917,8 +1921,6 @@ pagerangeinterface:
   edit base in place
   should remember old label format strings, to easily select back to them
 
-for range on import/export, should have a range parser that accepts unconnected ranges, ie "2,4, 5-10"
-
 shortcut dialog: shortcuts: shortcut manager shortcutmanager
   bug: ObjectInterface Duplicate objects has key u0000 ???
   bug: on pulling up window, action list shows current tool, but that is not highlighted in area list
@@ -2365,3 +2367,6 @@ DONE laidout shell command: Laidout.BuildIcons(["icons/icons.svg","icons/icons-t
 										output_dir="TEST_ICON_BUILD")
 DONE bug: patchinterface point select when object transform not identify broken
 DONE detect when a resource section is ONLY built in ones, and don't output that section on save
+DONE export ranges should accept "1-4, 6, 20-25" and "5-1"
+DONE for range on import/export, should have a range parser that accepts unconnected ranges, ie "2,4, 5-10"
+

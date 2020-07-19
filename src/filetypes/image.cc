@@ -581,7 +581,7 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 	 //spread objects
 	Spread *spread = NULL;
 	if (doc) {
-		spread = doc->imposition->Layout(out->layout, out->start);
+		spread = doc->imposition->Layout(out->layout, out->range.Start());
 	}
 
 	if (spread) {

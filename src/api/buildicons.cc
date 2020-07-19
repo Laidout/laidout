@@ -211,8 +211,7 @@ int BuildIconsFunction(ValueHash *context,
 		Affine traabb;
 
 		config.target = DocumentExportConfig::TARGET_Single;
-		config.start = 0;
-		config.end = 0;
+		config.range.AddRange(0,0);
 		config.use_transparent_bg = true;
 		makestr(config.format, "png");
 		PaperGroup *papergroup = new PaperGroup();

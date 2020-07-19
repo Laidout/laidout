@@ -884,10 +884,9 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 	Spread *spread = nullptr;
 	try {
 
-		int start = out->start;
-		int end = out->end;
-		if (end < 0) end = (doc ? doc->imposition->NumSpreads(out->layout) : start);
-		for (int sc = start; sc <= end; sc++) {
+		int end = out->range.End();
+
+		for (int sc = out->range.Start(); sc >= 0; sc = out->range.Next()) {
 
 			 //spread objects
 			if (spread) spread->dec_count();

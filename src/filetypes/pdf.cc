@@ -579,15 +579,11 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	if (!config) return 1;
 
 	Document *doc =config->doc;
-	int start     =config->start;
-	int end       =config->end;
 	int layout    =config->layout;
 	Group *limbo  =config->limbo;
 	PaperGroup *papergroup=config->papergroup;
 	if (!filename) filename=config->filename;
 	
-	if (config->reverse_order) { int temp=start; start=end; end=temp; }
-
 
 	 //we must have something to export...
 	if (!doc && !limbo) {
@@ -620,7 +616,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 
 	setlocale(LC_ALL,"C");
 	
-	DBG cerr <<"=================== start pdf out "<<start<<" to "<<end<<", papers:"
+	DBG cerr <<"=================== start pdf out range "<<config->range.ToString(false, false, false)<<", papers:"
 	DBG      <<papergroup->papers.n<<" ====================\n";
 
 	 // initialize outside accessible ctm
@@ -676,7 +672,10 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	
 	 // find basic pdf page info, and generate content streams.
 	 // Actual page objects are written out after the contents of all the pages have been processed.
-	for (int c=start; (end>=start ? c<=end : c>=end); (end>=start ? c++ : c--)) {
+	for (int c = (config->reverse_order ? config->range.End() : config->range.Start());
+		 c >= 0;
+		 c = (config->reverse_order ? config->range.Previous() : config->range.Next())) 
+	{
 		if (config->evenodd==DocumentExportConfig::Even && c%2==0) continue;
         if (config->evenodd==DocumentExportConfig::Odd && c%2==1) continue;
 			

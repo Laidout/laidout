@@ -13,6 +13,7 @@
 //
 
 #include <unistd.h>
+#include <map>
 
 #include <lax/interfaces/imageinterface.h>
 #include <lax/interfaces/gradientinterface.h>
@@ -375,15 +376,11 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	if (!config) return 1;
 
 	Document *doc =config->doc;
-	int start     =config->start;
-	int end       =config->end;
 	int layout    =config->layout;
 	Group *limbo  =config->limbo;
 	PaperGroup *papergroup=config->papergroup;
 	if (!filename) filename=config->filename;
 	
-	if (config->reverse_order) { int temp=start; start=end; end=temp; }
-
 	 //we must have something to export...
 	if (!doc && !limbo) {
 		//|| !doc->imposition || !doc->imposition->paper)...
@@ -470,15 +467,17 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	paperwidth= defaultpaper->width;
 	paperheight=defaultpaper->height;
 
-	int totalnumpages = (abs(end-start)+1)*papergroup->papers.n;
-
-	if (config->evenodd==DocumentExportConfig::Even) {
-		totalnumpages/=2;
-		if (config->end%2==0) totalnumpages++;
-	} else if (config->evenodd==DocumentExportConfig::Odd) {
-		totalnumpages/=2;
-		if (config->end%2==1) totalnumpages++;
+	int totalnumpages = 0;
+	if (config->evenodd == DocumentExportConfig::Even) {
+		for (int c = config->range.Start(); c >= 0; c = config->range.Next())
+			if (c % 2 == 0) totalnumpages++;
+	} else if (config->evenodd == DocumentExportConfig::Odd) {
+		for (int c = config->range.Start(); c >= 0; c = config->range.Next())
+			if (c % 2 == 1) totalnumpages++;
+	} else {
+ 		totalnumpages = (config->range.NumInRanges());
 	}
+	totalnumpages *= papergroup->papers.n;
 	
 	 //------------ write out document attributes
 	 //****** all the scribushints.slahead blocks are output as DOCUMENT attributes
@@ -519,7 +518,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 				  "    DFONT=\"Bitstream Charter Bold\" \n" //default font
 				  "    DSIZE=\"12\" \n"         //default font size
 				  //"    FIRSTLEFT \n"  //*** doublesidedsingles->isleft
-				  "    FIRSTPAGENUM=\"%d\" \n", start); //***check this is right
+				  "    FIRSTPAGENUM=\"%d\" \n", config->range.Start()); //***this is probably not right?
 		fprintf(f,"    KEYWORDS=\"\" \n"
 				  "    ORIENTATION=\"%d\" \n",landscape);
 		fprintf(f,"    PAGEHEIGHT=\"%f\" \n",72*paperheight);
@@ -683,9 +682,13 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	PtrStack<PageObject> pageobjects; //we need to keep track of pageobject correspondence, as scribus docs
 									 //object id is the order they appear in the file, so for linked objects,
 									 //we need to know the order that they will appear!
-	for (int c=start; (end>=start ? c<=end : c>=end); (end>=start ? c++ : c--)) { //for each spread
+
+	for (int c = (config->reverse_order ? config->range.End() : config->range.Start());
+		 c >= 0;
+		 c = (config->reverse_order ? config->range.Previous() : config->range.Next()))  //for each spread
+	{
 		if (config->evenodd==DocumentExportConfig::Even && c%2==0) continue;
-		if (config->evenodd==DocumentExportConfig::Odd && c%2==1) continue;
+		if (config->evenodd==DocumentExportConfig::Odd  && c%2==1) continue;
 
 		if (doc) spread=doc->imposition->Layout(layout,c);
 		for (p=0; p<papergroup->papers.n; p++) { //for each paper
@@ -870,7 +873,10 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	int scribuspagei=0;
 
 	 //------now dump pages and objects to the file
-	for (int c=start; (end>=start ? c<=end : c>=end); (end>=start ? c++ : c--)) { //for each spread
+	for (int c = (config->reverse_order ? config->range.End() : config->range.Start());
+		 c >= 0;
+		 c = (config->reverse_order ? config->range.Previous() : config->range.Next()))  //for each spread
+	{
 		if (config->evenodd==DocumentExportConfig::Even && c%2==0) continue;
 		if (config->evenodd==DocumentExportConfig::Odd && c%2==1) continue;
 
@@ -2032,7 +2038,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 		return 1;
 	}
 
-	Document *doc=in->doc;
+	Document *doc = in->doc;
 
 	Attribute *att=XMLFileToAttribute(NULL,file,NULL);
 	if (!att) {
@@ -2041,13 +2047,14 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 	}
 
 	int c;
-	Attribute *scribusdoc=att->find("SCRIBUSUTF8NEW"),
-			  *version;
+	Attribute *scribusdoc=att->find("SCRIBUSUTF8NEW");
+	Attribute *version;
+
 	if (!scribusdoc) { delete att; return 3; }
-	version=scribusdoc->find("Version");
-	scribusdoc=scribusdoc->find("content:");
+	version    = scribusdoc->find("Version");
+	scribusdoc = scribusdoc->find("content:");
 	if (!scribusdoc) { delete att; return 4; }
-	scribusdoc=scribusdoc->find("DOCUMENT");
+	scribusdoc = scribusdoc->find("DOCUMENT");
 	if (!scribusdoc) { delete att; return 4; }
 
 	 //create repository for hints if necessary
@@ -2060,8 +2067,8 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 
 
 	 //figure out the paper size, orientation
-	PaperStyle *paper=NULL;
-	int landscape=0;
+	PaperStyle *paper = nullptr;
+	int landscape = 0;
 
 	 //****setup paper based on scribus pagesize only if creating a new document....
 	Attribute *a=scribusdoc->find("PAGESIZE");
@@ -2075,31 +2082,37 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 	if (!paper) paper=laidout->papersizes.e[0];
 
 	 //figure out orientation
-	a=scribusdoc->find("ORIENTATION");
-	if (a) landscape=BooleanAttribute(a->value);
-	else landscape=0;
-	
-	 //pagenum to start dumping onto
-	int docpagenum=in->topage; //the page in doc to start dumping into
-	int pagenum,
-		curdocpage; //the current page, used in loop below
-	if (docpagenum<0) docpagenum=0;
+	a = scribusdoc->find("ORIENTATION");
+	if (a) landscape = BooleanAttribute(a->value);
+	else landscape = 0;
 
-	 //find the number of pages to expect in the scribus document
-	a=scribusdoc->find("ANZPAGES");
-	int numpages=-1;
+	// pagenum to start dumping onto
+	int docpagenum = in->topage;  // the page in doc to start dumping into
+	int pagenum = -1;
+	int curdocpage; //the current page, used in loop below
+	if (docpagenum < 0) docpagenum = 0;
+
+	// find the number of pages to expect in the scribus document
+	a = scribusdoc->find("ANZPAGES");
+	int numpages = -1;
 	if (a) IntAttribute(a->value,&numpages);//***should error check here!
-	int start,end; //page indices in Scribus file
-	if (in->instart<0) start=0; else start=in->instart;
-	if (in->inend<0 || in->inend>=numpages) end=numpages-1; 
-		else end=in->inend;
+	// int start,end; //page indices in Scribus file
+	int num_pages_to_import = in->range.NumInRanges();
 
 	 //find first page number, for offset page numbering
-	int firstpagenum=0;
-	a=scribusdoc->find("FIRSTPAGENUM");
+	int firstpagenum = 0;
+	a = scribusdoc->find("FIRSTPAGENUM");
 	if (a) IntAttribute(a->value,&firstpagenum);
 
-	SomeData pagebounds[end-start+1]; //max/min are the bounds in the Scribus canvas space,
+	std::map<int,int> boundsmap; //scribus page -> (doc index - docpagenum)
+	std::map<int,int> boundsmaprev; // (doc index - docpagenum) -> scribus page
+	int i = 0;
+	for (int c = in->range.Start(); c>= 0; c = in->range.Next()) {
+		boundsmap[c] = i;
+		boundsmaprev[i] = c;
+		i++;
+	}
+	SomeData pagebounds[num_pages_to_import]; //max/min are the bounds in the Scribus canvas space,
 									 //and m() is optional whole page transform to fit doc pages
 
 	if (scribushints) {
@@ -2114,7 +2127,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 	}
 
 	 //get to the contents of the scribus document
-	scribusdoc=scribusdoc->find("content:");
+	scribusdoc = scribusdoc->find("content:");
 	if (!scribusdoc) { delete att; return 5; }
 
 
@@ -2124,54 +2137,54 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 
 	 //create the document if necessary
 	if (!doc && !in->toobj) {
-		Imposition *imp=new Singles; //*** this is not necessarily so! uses PageSets??
-		paper->flags=((paper->flags)&~1)|(landscape?1:0);
+		Imposition *imp = new Singles;  //*** this is not necessarily so! uses PageSets??
+		paper->flags = ((paper->flags) & ~1) | (landscape ? 1 : 0);
 		imp->SetPaperSize(paper);
-		doc=new Document(imp,Untitled_name());//incs imp count
-		imp->dec_count();//remove initial count
+		doc = new Document(imp, Untitled_name());  // incs imp count
+		imp->dec_count();                          // remove initial count
 	}
 
-	if (doc && docpagenum+(end-start)>=doc->pages.n) //create enough pages to hold the Scribus pages
-		doc->NewPages(-1,(docpagenum+(end-start+1))-doc->pages.n);
+	if (doc && docpagenum+num_pages_to_import > doc->pages.n) //create enough pages to hold the Scribus pages
+		doc->NewPages(-1, (docpagenum + num_pages_to_import) - doc->pages.n);
 
-	Group *group=in->toobj;
-	Attribute *page,*object;
-	char scratch[50];
-	MysteryData *mdata=NULL;
-	char *name, *value;
-	PtrStack<Page> masterpages;
+	Group *       group = in->toobj;
+	Attribute *   page, *object;
+	char          scratch[50];
+	MysteryData * mdata = nullptr;
+	char *        name, *value;
+	PtrStack<Page>        masterpages;
 	RefPtrStack<SomeData> masterpagebounds;
 
-
-	 //changedir to directory of file to correctly parse relative links
-	 //***warning, not thread safe!!
-	char *dir=lax_dirname(file,0);
+	// changedir to directory of file to correctly parse relative links
+	//***warning, not thread safe!!
+	char *dir = lax_dirname(file,0);
 	if (dir) {
-		chdir(dir);
-		delete[] dir; dir=NULL;
+		chdir(dir); //so we can more easily catch linked files
+		delete[] dir; dir = nullptr;
 	}
 
 	 //1st pass, scan for PAGE attributes
-	for (c=0; c<scribusdoc->attributes.n; c++) {
-		name=scribusdoc->attributes.e[c]->name;
-		value=scribusdoc->attributes.e[c]->value;
+	for (c = 0; c < scribusdoc->attributes.n; c++) {
+		name  = scribusdoc->attributes.e[c]->name;
+		value = scribusdoc->attributes.e[c]->value;
 
 		if (!strcmp(name,"PAGE")) {
-			page=scribusdoc->attributes.e[c];
-			a=page->find("NUM");
-			IntAttribute(a->value,&pagenum); //*** could use some error checking here so corrupt files dont crash laidout!!
-			if (pagenum<start || pagenum>end) continue; //only store pages that'll really be imported *** but what about object bleeds??
+			page = scribusdoc->attributes.e[c];
+			a    = page->find("NUM");
+			IntAttribute(a->value, &pagenum);  //*** could use some error checking here so corrupt files dont crash laidout!!
+			if (!in->range.Contains(pagenum)) continue; //only store pages that'll really be imported *** but what about object bleeds??
 
-			DoubleAttribute(page->find("PAGEXPOS")->value,&pagebounds[pagenum].minx);
-			DoubleAttribute(page->find("PAGEYPOS")->value,&pagebounds[pagenum].miny);
-			DoubleAttribute(page->find("PAGEWIDTH")->value,&pagebounds[pagenum].maxx);
-			DoubleAttribute(page->find("PAGEHEIGHT")->value,&pagebounds[pagenum].maxy);
-			pagebounds[pagenum].maxx+=pagebounds[pagenum].minx;
-			pagebounds[pagenum].maxy+=pagebounds[pagenum].miny;
+			i = boundsmap[pagenum];
+			DoubleAttribute(page->find("PAGEXPOS")->value,  &pagebounds[i].minx);
+			DoubleAttribute(page->find("PAGEYPOS")->value,  &pagebounds[i].miny);
+			DoubleAttribute(page->find("PAGEWIDTH")->value, &pagebounds[i].maxx);
+			DoubleAttribute(page->find("PAGEHEIGHT")->value,&pagebounds[i].maxy);
+			pagebounds[i].maxx += pagebounds[i].minx;
+			pagebounds[i].maxy += pagebounds[i].miny;
 
-			a=page->find("MNAM"); //the name of the master page to use for this page
+			a = page->find("MNAM"); //the name of the master page to use for this page
 			if (a && !isblank(a->value)) {
-				makestr(pagebounds[pagenum].nameid,a->value);
+				makestr(pagebounds[i].nameid,a->value);
 			}
 
 			 //remaining stuff is iohint 
@@ -2185,9 +2198,9 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 
 			 //create extra transform if we need to scale to pages
 			if (doc && in->scaletopage!=0) {
-				PageStyle *pagestyle=doc->pages.e[docpagenum+(pagenum-start)]->pagestyle;
-				double scrw=(pagebounds[pagenum].maxx-pagebounds[pagenum].minx)/72,
-					   scrh=(pagebounds[pagenum].maxy-pagebounds[pagenum].miny)/72;
+				PageStyle *pagestyle=doc->pages.e[docpagenum + i]->pagestyle;
+				double scrw=(pagebounds[i].maxx-pagebounds[i].minx)/72,
+					   scrh=(pagebounds[i].maxy-pagebounds[i].miny)/72;
 				double sx,sy; //scaling factors: laidout page/scribus page
 				sx=pagestyle->w()/scrw;
 				sy=pagestyle->h()/scrh;
@@ -2199,13 +2212,13 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 				 //apply scale
 				if (sx!=1 && sy!=1) {
 					if (sy<sx) sx=sy;
-					pagebounds[pagenum].m(0,sx);
-					pagebounds[pagenum].m(3,sx);
+					pagebounds[i].m(0,sx);
+					pagebounds[i].m(3,sx);
 				}
 				 //center when dimensions vary
 				if (scrw!=pagestyle->w() && scrh!=pagestyle->h()) {
-					pagebounds[pagenum].m(4,(pagestyle->w()-scrw*sx)/2);
-					pagebounds[pagenum].m(5,(pagestyle->h()-scrh*sx)/2);
+					pagebounds[i].m(4,(pagestyle->w()-scrw*sx)/2);
+					pagebounds[i].m(5,(pagestyle->h()-scrh*sx)/2);
 				}
 			}
 			continue;
@@ -2216,21 +2229,21 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 			 //Master page objects appear to be applied underneath all actual page objects.
 			 //MASTEROBJECTs have an OnMasterPage attribute which is the name of the MASTERPAGE it belongs to.
 
-			Page *mpage=new Page;
-			page=scribusdoc->attributes.e[c];
-			a=page->find("NAM");
+			Page *mpage = new Page;
+			page = scribusdoc->attributes.e[c];
+			a = page->find("NAM");
 			makestr(mpage->label,a->value);
 
 			masterpages.push(mpage,1);
 
-			SomeData *pagebound=new SomeData;
+			SomeData *pagebound = new SomeData;
 			masterpagebounds.push(pagebound); pagebound->dec_count();
 			DoubleAttribute(page->find("PAGEXPOS")->value,  &pagebound->minx);
 			DoubleAttribute(page->find("PAGEYPOS")->value,  &pagebound->miny);
 			DoubleAttribute(page->find("PAGEWIDTH")->value, &pagebound->maxx);
 			DoubleAttribute(page->find("PAGEHEIGHT")->value,&pagebound->maxy);
-			pagebound->maxx+=pagebound->minx;
-			pagebound->maxy+=pagebound->miny;
+			pagebound->maxx += pagebound->minx;
+			pagebound->maxy += pagebound->miny;
 
 			//ignore other MASTERPAGE attributes, they are mainly just hints
 		}
@@ -2266,13 +2279,13 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 			 // ***need some way to compensate for bleeding!!!
 			tmp=object->find("OwnPage");
 			if (tmp) IntAttribute(tmp->value,&pagenum);
-			if (masterpageindex==-1 && (pagenum<start || pagenum>end)) continue; //***what about when object bleeding!!
+			if (masterpageindex==-1 && (!in->range.Contains(pagenum))) continue; //***what about when object bleeding!!
 			if (masterpageindex==-1 && doc) {
 				 //update group to point to the document page's group
-				curdocpage=docpagenum+(pagenum-start);
-				group=dynamic_cast<Group *>(doc->pages.e[curdocpage]->layers.e(0)); //pick layer 0 of the page
-			} else if (masterpageindex>=0) {
-				group=dynamic_cast<Group *>(masterpages.e[masterpageindex]->layers.e(0));
+				curdocpage = docpagenum + boundsmap[pagenum];
+				group = dynamic_cast<Group *>(doc->pages.e[curdocpage]->layers.e(0)); //pick layer 0 of the page
+			} else if (masterpageindex >= 0) {
+				group = dynamic_cast<Group *>(masterpages.e[masterpageindex]->layers.e(0));
 			}
 
 			double x=0,y=0,rot=0,w=0,h=0;
@@ -2283,6 +2296,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 			DoubleAttribute(object->find("WIDTH")->value ,&w);
 			DoubleAttribute(object->find("HEIGHT")->value,&h);
 
+			pagenum = boundsmap[pagenum]; //note this is no longer scribus page number from now on
 			if (masterpageindex==-1) { //pagebounds are only for document pages
 				x-=pagebounds[pagenum].minx;
 				y-=pagebounds[pagenum].miny;
@@ -2379,9 +2393,9 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 						num=-1;
 						if (strcmp(sub->name,"var")) continue;
 						if (!strcmp(sub->attributes.e[0]->value,"pgno")) {
-							num=firstpagenum+pagenum+1;
+							num = firstpagenum + pagenum + 1;
 						} else if (!strcmp(sub->attributes.e[0]->value,"pgco")) {
-							num=numpages;
+							num = numpages;
 						}
 						if (num<0) continue;
 
@@ -2496,7 +2510,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 		SomeData *obj, *newobj;
 		Group *layer;
 		MysteryData *mobj;
-		for (int c=docpagenum; c<=docpagenum+end-start; c++) {
+		for (int c = docpagenum; c <= docpagenum + num_pages_to_import-1; c++) {
 			 //find which master page to use
 			if (!pagebounds[c-docpagenum].nameid) continue; //no master page for this page
 			master=NULL;
@@ -2523,24 +2537,24 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 				}
 				dynamic_cast<Group *>(docpage->layers.e(0))->push(newobj);
 
-				mobj=dynamic_cast<MysteryData*>(newobj);
+				mobj = dynamic_cast<MysteryData*>(newobj);
 				if (mobj && (!strcmp(mobj->name,"Text Frame") || !strcmp(mobj->name,"Text on path"))) {
 					 //now convert variable text
-					tmp=mobj->attributes->find("content:");
+					tmp = mobj->attributes->find("content:");
 					if (tmp) {
 						Attribute *sub;
-						int num=-1;
+						int num = -1;
 						char scratch[50];
 						for (int c4=0; c4<tmp->attributes.n; c4++) {
-							sub=tmp->attributes.e[c4];
-							num=-1;
+							sub = tmp->attributes.e[c4];
+							num = -1;
 							if (strcmp(sub->name,"var")) continue;
 							if (!strcmp(sub->attributes.e[0]->value,"pgno")) {
-								num=start+(c-docpagenum)+1;
+								num = boundsmaprev[c-docpagenum];
 							} else if (!strcmp(sub->attributes.e[0]->value,"pgco")) {
-								num=numpages;
+								num = numpages;
 							}
-							if (num<0) continue;
+							if (num < 0) continue;
 
 							makestr(sub->name,"ITEXT");
 							makestr(sub->attributes.e[0]->name,"CH");

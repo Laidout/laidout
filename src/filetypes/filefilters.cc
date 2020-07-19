@@ -88,25 +88,24 @@ namespace Laidout {
  *
  * \todo **** implement me!!!!!
  *
- * These can currently be "document", "object", "bitmap" (a raster image),
- * or resources such as "gradient", "palette", or "net", "imposition".
+ * These can currently be:
  *
- * The "document" type is for importing page based documents, and breaking down the page
- * components into Laidout elements as possible. This might be svg (with or without pageSets),
- * or Scribus documents. 
+ * - __"document"__ is for importing page based documents, and breaking down the page
+ *   components into Laidout elements as possible. This might be svg (with or without pageSets),
+ *   or Scribus documents. 
  *
- * The "image" type is for importing arbitrary files and treating them
- * like bitmaps. For instance, some output filters can directly use EPS files, but EPS files
- * are not innately understood by Laidout, so there is a filter to move and transform them
- * like bitmaps, but the postscript exporter can use the original file. Other output filters
- * would be able only to use a rasterized version. Same thing for PDF pages, or svg (coverted
- * to a png by inkscape, perhaps).
+ * - __"image"__ is for importing arbitrary files and treating them
+ *   like bitmaps. For instance, some output filters can directly use EPS files, but EPS files
+ *   are not understood as vectors by Laidout, so there is a filter to move and transform them
+ *   like bitmaps, but the postscript exporter can use the original file. Other output filters
+ *   would be able only to use a rasterized version. Same thing for PDF pages, or svg (coverted
+ *   to a png by inkscape, perhaps).
  *
- * "object" is analogous to the "image" type, that is, it
- * produces a block of things based on some arbitrary file, and the onscreen version is
- * represented as a bunch of Laidout elements.
+ * - __"object"__ is analogous to the "image" type, that is, it
+ *   produces a block of things based on some arbitrary file, and the onscreen version is
+ *   represented as a bunch of Laidout elements.
  *
- * LaidoutApp keeps a catalog of filters grouped by FilterClass(), and then by whether
+ * TODO: LaidoutApp keeps a catalog of filters grouped by FilterClass(), and then by whether
  * they are for input or output.
  */
 /*! \fn Laxkit::anXWindow *ConfigDialog()
@@ -199,16 +198,9 @@ ObjectDef *makeImportConfigDef()
 			"sometimes", _("Sometimes"), _("Convert what is possible, preserve other mystery data"),
 			"always", _("Always"), _("Treat everything as mystery data"),
 			nullptr);
-	sd->push("instart",
-			_("Start"),
-			_("First page to import from a multipage file"),
-			"int",
-			nullptr,
-			nullptr,
-			0,nullptr);
-	sd->push("inend",
-			_("End"),
-			_("Last page to import from a multipage file"),
+	sd->push("range",
+			_("Range"),
+			_("Range of pages to import from a multipage file"),
 			"int",
 			nullptr,
 			nullptr,
@@ -288,6 +280,7 @@ int createImportConfig(ValueHash *context, ValueHash *parameters,
 	int err=0;
 	try {
 		int i, e;
+		int instart = -1, inend = -1;
 
 		 //---file
 		const char *str=parameters->findString("file",-1,&e);
@@ -308,15 +301,24 @@ int createImportConfig(ValueHash *context, ValueHash *parameters,
 			else if (!strcmp(km,"always")) config->keepmystery=2;
 		}
 
-		 //---instart
+		 //---instart, DEPRECATED! here for backwards compat
 		i=parameters->findInt("instart",-1,&e);
-		if (e==0) config->instart=i;
+		if (e==0) instart=i;
 		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"instart"); throw error; }
 
-		 //---inend
+		 //---inend, DEPRECATED! here for backwards compat
 		i=parameters->findInt("inend",-1,&e);
-		if (e==0) config->inend=i;
+		if (e==0) inend=i;
 		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"inend"); throw error; }
+
+		const char *sv = parameters->findString("range",-1,&e);
+		if (e == 0) {
+			config->range.Clear();
+			config->range.Parse(sv, nullptr, false);
+		} else if (e == 2) { sprintf(error, _("Invalid format for %s!"),"range"); throw error; }
+		
+		if (instart >= 0 && inend < 0) config->range.AddRange(instart, instart);
+		else if (instart >=0 && inend >= 0) config->range.AddRange(instart, inend);
 
 		 //---topage
 		i=parameters->findInt("topage",-1,&e);
@@ -422,12 +424,6 @@ int createImportConfig(ValueHash *context, ValueHash *parameters,
  * 0 is convert nothing and no mystery data is stored. 1 is convert as possible. 2 is do not convert, all
  * objects become mystery data.
  */
-/*! \var int ImportConfig::instart
- * \brief The first page of the document to be imported. 0 is the first in the document.
- */
-/*! \var int ImportConfig::inend
- * \brief The last page of the document to be imported. -1 mean import until the end.
- */
 /*! \var int ImportConfig::topage
  * \brief The first page of the Laidout Document to import onto.
  */
@@ -445,12 +441,13 @@ ImportConfig::ImportConfig()
 	scaletopage = 2;
 	filename    = nullptr;
 	keepmystery = 0;
-	instart = inend = -1;
-	topage = spread = layout = -1;
 	doc         = nullptr;
 	toobj       = nullptr;
 	filter      = nullptr;
 	dpi         = 300;
+	topage = spread = layout = -1;
+
+	range.parse_from_one = true;
 }
 
 /*! Increments count of ndoc and nobj if given.
@@ -463,8 +460,6 @@ ImportConfig::ImportConfig(const char *file, double ndpi, int ins, int ine, int 
 	filename    = newstr(file);
 	scaletopage = 2;
 	keepmystery = 0;
-	instart     = ins;
-	inend       = ine;
 	topage      = top;
 	spread      = spr;
 	layout      = lay;
@@ -472,6 +467,11 @@ ImportConfig::ImportConfig(const char *file, double ndpi, int ins, int ine, int 
 	toobj       = nobj;
 	filter      = nullptr;
 	if (dpi > 0) dpi = ndpi; else dpi = 300;
+
+	range.parse_from_one = true;
+	if (ins >= 0 && ine < 0) range.AddRange(ins,ins);
+	else if (ins >= 0 && ine < 0) range.AddRange(ins,ine);
+
 
 	if (doc) doc->inc_count();
 	if (toobj) toobj->inc_count();
@@ -487,33 +487,50 @@ ImportConfig::~ImportConfig()
 
 void ImportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
-	cout <<"***ImportConfig::dump_out() is incomplete!! Finish implementing!"<<endl;
+	Attribute att;
+	dump_out_atts(&att, what, context);
+	att.dump_out(f, indent);
+}
 
-	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-
+LaxFiles::Attribute *ImportConfig::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+{
+	if (!att) att = new Attribute;
 	if (what==-1) {
-		fprintf(f,"%sfromfile /file/to/import/from \n",spc);
-		fprintf(f,"%sformat  \"SVG 1.0\"    #the format to attempt import from\n",spc);
-		fprintf(f,"%sscaletopage yes        #yes, no, or down. down does not scale up if smaller than page\n",spc);
-		return;
+		att->push("fromfile", "/file/to/import/from");
+		att->push("format", "\"SVG 1.0\"", "the format to attempt import from");
+		att->push("scaletopage", "yes",    "yes, no, or down. down does not scale up if smaller than page");
+		att->push("range", "1-5", "Range of pages to import");
+		att->push("topage", "0", "Document page to import to");
+		att->push("spread", "0", "Spread number to import to");
+		att->push("layout", "0", "Layout number to get spread from");
+		att->push("dpi", "300", "Default dpi to import at");
+		return att;
 	}
-	if (scaletopage==0) fprintf(f,"%sscaletopage no\n",spc);
-	else if (scaletopage==1) fprintf(f,"%sscaletopage down\n",spc);
-	else fprintf(f,"%sscaletopage yes\n",spc);
 
-	if (keepmystery) fprintf(f,"%skeepmystery\n",spc);
-	if (filter) fprintf(f,"%sformat  \"%s\"\n",spc,filter->VersionName());
+	if (scaletopage==0) att->push("scaletopage", "no");
+	else if (scaletopage==1) att->push("scaletopage", "down");
+	else att->push("scaletopage", "yes");
+
+	if (keepmystery) att->push("keepmystery");
+	if (filter) att->push("format", filter->VersionName());
 	//fprintf(f,"%sstart %d\n",spc,start);
 	//fprintf(f,"%send   %d\n\n",spc,end);
+
+	att->push("range", range.ToString(false, false, false));
+	att->push("topage", topage);
+	att->push("spread", spread);
+	att->push("layout", layout);
+	att->push("dpi",    dpi);
+
+	return att;
 }
+	
 
 void ImportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
-	cout <<"***ImportConfig::dump_in_atts() is incomplete!! Finish implementing!"<<endl;
-
 	char *name,*value;
 	int c,c2;
-	instart=inend=-1;
+	int start = -1, end = -1;
 	for (c=0; c<att->attributes.n; c++)  {
 		name=att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
@@ -544,10 +561,36 @@ void ImportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *c
 					}
 				}
 			}
+
+		} else if (!strcmp(name,"start")) { //for backwards compat
+			IntAttribute(value,&start);
+
+		} else if (!strcmp(name,"end")) { //for backwards compat
+			IntAttribute(value,&end);
+
+		} else if (!strcmp(name,"range")) {
+			if (!isblank(value)) {
+				range.Clear();
+				if (!strcasecmp(value, "all")) range.AddRange(0,-1);
+				else range.Parse(value, nullptr, false);
+			}
+
+		} else if (!strcmp(name,"topage")) { //for backwards compat
+			IntAttribute(value,&topage);
+
+		} else if (!strcmp(name,"spread")) { //for backwards compat
+			IntAttribute(value,&spread);
+
+		} else if (!strcmp(name,"layout")) { //for backwards compat
+			IntAttribute(value,&layout);
+
+		} else if (!strcmp(name,"dpi")) { //for backwards compat
+			DoubleAttribute(value,&dpi);
 		}
 	}
-	if (instart<0) instart=0;
-	if (inend<0) inend=1000000000;
+
+	if (start >= 0 && end < 0) { range.Clear(); range.AddRange(start, start); }
+	else if (start >=0 && end >= 0) { range.Clear(); range.AddRange(start, end); }
 }
 
 ObjectDef* ImportConfig::makeObjectDef()
@@ -825,6 +868,7 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 	int err=0;
 	try {
 		int i, e;
+		int start = -1, end = -1;
 
 		 //---file
 		const char *str=parameters->findString("filename",-1,&e);
@@ -847,15 +891,24 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"collect"); throw error; }
 
 		 //---start
-		i=parameters->findInt("start",-1,&e);
-		if (e==0) config->start=i;
+		i=parameters->findInt("start",-1,&e); //for backwards compatibility
+		if (e==0) start=i;
 		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"start"); throw error; }
 
 		 //---end
-		i=parameters->findInt("end",-1,&e);
-		if (e==0) config->end=i;
+		i=parameters->findInt("end",-1,&e); //for backwards compatibility
+		if (e==0) end=i;
 		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"end"); throw error; }
 
+		if (start >= 0 && end < 0) config->range.AddRange(start, start);
+		else if (start >=0 && end >= 0) config->range.AddRange(start, end);
+
+		const char *sv = parameters->findString("range",-1,&e);
+		if (e == 0) {
+			config->range.Clear();
+			config->range.Parse(sv, nullptr, false);
+		} else if (e == 2) { sprintf(error, _("Invalid format for %s!"),"range"); throw error; }
+		
 		 //---batches
 		i=parameters->findInt("batches",-1,&e);
 		if (e==0) config->batches=i;
@@ -1039,7 +1092,6 @@ DocumentExportConfig::DocumentExportConfig()
 	command         = nullptr;
 	filename        = nullptr;
 	tofiles         = nullptr;
-	start     = end = -1;
 	layout          = 0;
 	doc             = nullptr;
 	papergroup      = nullptr;
@@ -1047,6 +1099,7 @@ DocumentExportConfig::DocumentExportConfig()
 	collect_for_out = COLLECT_Dont_Collect;
 	rasterize       = 0;
 	textaspaths     = true; // *** change to false when text is better implemented!!
+	range.parse_from_one = true;
 }
 
 /*! Increments count on ndoc if it exists.
@@ -1061,12 +1114,13 @@ DocumentExportConfig::DocumentExportConfig(Document *ndoc,
 {
 	filename   = newstr(file);
 	tofiles    = newstr(to);
-	start      = s;
-	end        = e;
 	layout     = l;
 	doc        = ndoc;   if (doc) doc->inc_count();
 	limbo      = lmbo;   if (limbo) limbo->inc_count();
 	papergroup = group;  if (papergroup) papergroup->inc_count();
+
+	if (s >= 0 && e < 0) range.AddRange(s,s);
+	else if (s >= 0 && e >= 0) range.AddRange(s,e);
 }
 
 DocumentExportConfig::DocumentExportConfig(DocumentExportConfig *config) 
@@ -1082,7 +1136,7 @@ DocumentExportConfig::DocumentExportConfig(DocumentExportConfig *config)
     evenodd        = config->evenodd;
     batches        = config->batches;
     target         = config->target;
-    start          = config->start;
+    range          = config->range;
     layout         = config->layout;
     collect_for_out= config->collect_for_out;
     rasterize      = config->rasterize;
@@ -1118,7 +1172,7 @@ DocumentExportConfig::~DocumentExportConfig()
 
 Value* DocumentExportConfig::duplicate()
 {
-	DocumentExportConfig *c=new DocumentExportConfig(this);
+	DocumentExportConfig *c = new DocumentExportConfig(this);
 	//*c=*this; //shallow copy!!
 
 	////if (c->filter) c->filter->inc_count();
@@ -1155,8 +1209,7 @@ LaxFiles::Attribute *DocumentExportConfig::dump_out_atts(LaxFiles::Attribute *at
 		att->push("format","\"SVG 1.0\""   ,"the format to export as");
 		att->push("imposition","SignatureImposition","the imposition used. This is set automatically when exporting a document");
 		att->push("layout","papers"        ,"this is particular to the imposition used by the document");
-		att->push("start","3"              ,"the starting index to export, counting from 0");
-		att->push("end","5"                ,"the ending index to export, counting from 0");
+		att->push("range","3-5,10-15"      ,"Spread index range(s) to export, counting from 0");
 		att->push("batches","4"            ,"for multi-page capable targets, the number of spreads to put in a single file, repeat for whole range");
 		att->push("evenodd","odd"          ,"all|even|odd. Based on spread index, maybe export only even or odd spreads.");
 		att->push("paperrotation","0"      ,"0|90|180|270. Whether to rotate each exported (final) paper by that number of degrees");
@@ -1176,8 +1229,8 @@ LaxFiles::Attribute *DocumentExportConfig::dump_out_atts(LaxFiles::Attribute *at
 		att->push("imposition", doc->imposition->whattype());
 		att->push("layout", doc->imposition->LayoutName(layout));
 	}
-	att->push("start",start);
-	att->push("end",  end);
+
+	att->push("range",range.ToString(false, false, false));
 
 	att->push("paperrotation", paperrotation);
 	att->push("rotate180", rotate180 == 0 ? "no" : "yes"); 
@@ -1203,7 +1256,8 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpCo
 {
 	char *name,*value;
 	int c,c2;
-	start=end=-1;
+	int start = -1, end = -1;
+
 	for (c=0; c<att->attributes.n; c++)  {
 		name=att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
@@ -1243,11 +1297,18 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpCo
 			if (c2==doc->imposition->NumLayoutTypes()) c2=0;
 			layout=c2;
 
-		} else if (!strcmp(name,"start")) {
+		} else if (!strcmp(name,"start")) { //for backwards compat
 			IntAttribute(value,&start);
 
-		} else if (!strcmp(name,"end")) {
+		} else if (!strcmp(name,"end")) { //for backwards compat
 			IntAttribute(value,&end);
+
+		} else if (!strcmp(name,"range")) {
+			if (!isblank(value)) {
+				range.Clear();
+				if (!strcasecmp(value, "all")) range.AddRange(0,-1);
+				else range.Parse(value, nullptr, false);
+			}
 
 		} else if (!strcmp(name,"reverse")) {
 			reverse_order=BooleanAttribute(value);
@@ -1290,8 +1351,9 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpCo
 			}
 		}
 	}
-	if (start<0) start=0;
-	if (end<0) end=1000000000;
+
+	if (start >= 0 && end < 0) { range.Clear(); range.AddRange(start, start); }
+	else if (start >=0 && end >= 0) { range.Clear(); range.AddRange(start, end); }
 }
 
 ObjectDef *DocumentExportConfig::makeObjectDef()
@@ -1406,19 +1468,12 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 
 	 //establish starting and ending spreads. If no doc, then use only limbo (1 spread)
 	if (!config->doc) {
-		config->start=config->end=0;
+		config->range.Clear();
 	} else {
-		 //clamp start
-		if (config->start<0) config->start=0;
-		else if (config->start>=config->doc->imposition->NumSpreads(config->layout))
-			config->start=config->doc->imposition->NumSpreads(config->layout)-1;
-		 //clamp end, but if end<0, make it the maximum instead of 0
-		if (config->end<0 || config->end>=config->doc->imposition->NumSpreads(config->layout))
-			config->end=config->doc->imposition->NumSpreads(config->layout)-1;
-		if (config->end<config->start) config->end=config->start;
+		config->range.Max(config->doc->imposition->NumSpreads(config->layout), true);
 	}
 
-	int numoutput = (config->end-config->start+1)*papergroup->papers.n; //number of output "pages"
+	int numoutput = config->range.NumInRanges() * papergroup->papers.n; //number of output "pages"
 	//int numdigits=log10(numoutput);
 	if (numoutput>1 && config->target == DocumentExportConfig::TARGET_Single && !(config->filter->flags&FILTER_MULTIPAGE)) {
 		log.AddMessage(_("Filter cannot export more than one page to a single file."),ERROR_Fail);
@@ -1444,91 +1499,99 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 		}
 		char filename[strlen(filebase)+20];
 
-		int start=config->start,
-			end=config->end;
-		PaperGroup *oldpg=config->papergroup;
-		int left=0;
+		PaperGroup *oldpg = config->papergroup;
+		IndexRange range = config->range;
+		IndexRange range_orig = config->range;
+		int filenum = 0;
 
-		if (config->reverse_order) { int temp=start; start=end; end=temp; }
-
-		for (int c=start; (end>=start ? c<=end : c>=end); (end>=start ? c++ : c--)) { //loop over each spread
-		//for (int c=start; c<=end; c++) { //loop over each spread
-			if (config->evenodd==DocumentExportConfig::Even && c%2==0) continue;
-			if (config->evenodd==DocumentExportConfig::Odd && c%2==1) continue;
+		for (int c = (config->reverse_order ? range.End() : range.Start());
+				 c >= 0;
+			 	 c = (config->reverse_order ? range.Previous() : range.Next())) //loop over each spread
+		{
+			if (config->evenodd == DocumentExportConfig::Even && c%2==0) continue;
+			if (config->evenodd == DocumentExportConfig::Odd  && c%2==1) continue;
 
 			for (int p=0; p<papergroup->papers.n; p++) { //loop over each paper in a spread
-				config->start=config->end=c;
+				config->range.Clear();
+				config->range.AddRange(c,c);
 
 				config->curpaperrotation = config->paperrotation;
-				if (config->rotate180 && c%2==1) {
-					config->curpaperrotation+=180;
-					if (config->curpaperrotation>=360) config->curpaperrotation -= 360;
+				if (config->rotate180 && c % 2 == 1) {
+					config->curpaperrotation += 180;
+					if (config->curpaperrotation >= 360) config->curpaperrotation -= 360;
 				}
 
-				if (papergroup->papers.n==1) sprintf(filename,filebase,c);
-				else sprintf(filename,filebase,c,p);
+				if (papergroup->papers.n == 1)
+					sprintf(filename, filebase, c);
+				else
+					sprintf(filename, filebase, c, p);
 
-				pg=new PaperGroup(papergroup->papers.e[p]);
+				pg = new PaperGroup(papergroup->papers.e[p]);
 				if (papergroup->objs.n()) {
-					for (int o=0; o<papergroup->objs.n(); o++) pg->objs.push(papergroup->objs.e(o));
+					for (int o = 0; o < papergroup->objs.n(); o++) pg->objs.push(papergroup->objs.e(o));
 				}
-				config->papergroup=pg;
+				config->papergroup = pg;
 
-				err=config->filter->Out(filename,config,log);
+				err = config->filter->Out(filename, config, log);
 				pg->dec_count();
-				if (err>0) { left=papergroup->papers.n-p; break; }
+				if (err > 0) break;
+				filenum++;
 			}
-			if (err>0) { left+=(end-c+1)*papergroup->papers.n; break; }
+			if (err > 0) break;
 		}
 
-		if (config->reverse_order) { int temp=start; start=end; end=temp; }
-
+		//restore config, since we messed with it
+		config->range      = range_orig;
 		config->papergroup = oldpg;
-		config->start      = start;
-		config->end        = end;
 		config->target     = oldtarget;
 		delete[] filebase;
 
-		if (left) {
-			char scratch[strlen(_("Export failed at file %d out of %d"))+20];
-			sprintf(scratch,_("Export failed at file %d out of %d"), numoutput-left, numoutput);
-			log.AddMessage(scratch,ERROR_Fail);
+		if (err) {
+			// char scratch[strlen(_("Export failed at file %d out of %d"))+20];
+			// sprintf(scratch,_("Export failed at file %d out of %d"), filenum, numoutput);
+			// log.AddMessage(scratch,ERROR_Fail);
+			// ---
+			log.AddError(0,0,0, _("Export failed at file %d out of %d"), filenum, numoutput);
 		}
 
 	} else {
 		 //output filter can handle multiple pages...
 		 //
-		if (config->target == DocumentExportConfig::TARGET_Single && config->batches > 0 && config->batches < config->end - config->start + 1) {
+		if (config->target == DocumentExportConfig::TARGET_Single && config->batches > 0 && config->batches < config->range.NumInRanges()) {
 			 //divide into batches
-			int s=config->start;
-			int e=config->end;
-			char *oldfilename=config->filename;
-			char *fname=nullptr;
-			char str[20];
-			char *ext=strrchr(oldfilename,'.');
 
-			for (int c=s; err==0 && c<=e; c+=config->batches) {
-				config->start=c;
-				config->end=c+config->batches-1;
-				if (config->end>e) config->end=e;
+			IndexRange range_orig = config->range;
+			IndexRange range = config->range;
+			char *oldfilename = config->filename;
+			char *fname       = nullptr;
+			char  str[20];
+			char *ext = strrchr(oldfilename, '.');
 
-				sprintf(str,"%d-%d",config->start,config->end);
-				if (ext) {
-					fname=newnstr(oldfilename,ext-oldfilename+1);
-					appendstr(fname,str);
-					appendstr(fname,ext);
-				} else {
-					fname=newstr(oldfilename);
-					appendstr(fname,str);
+			for (int c = range.Start(); err == 0 && c >= 0; /*no inc step*/) {
+				config->range.Clear();
+				int start = c, end = c;
+				for (int cc = 0; c >= 0 && cc < config->batches; cc++) {
+					config->range.AddRange(c,c); //this is rather hideous, but at least don't have to subdivide ranges
+					end = c;
+					c = range.Next();
 				}
 
-				config->filename=fname;
-				err=config->filter->Out(nullptr,config,log);
+				sprintf(str, "%d-%d", start, end);
+				if (ext) {
+					fname = newnstr(oldfilename, ext - oldfilename + 1);
+					appendstr(fname, str);
+					appendstr(fname, ext);
+				} else {
+					fname = newstr(oldfilename);
+					appendstr(fname, str);
+				}
+
+				config->filename = fname;
+				err              = config->filter->Out(nullptr, config, log);
 				delete[] fname;
 			}
 
-			config->start=s;
-			config->end=e;
+			config->range = range_orig;
 			config->filename=oldfilename;
 
 		} else err = config->filter->Out(nullptr,config,log); //send all pages at once to filter

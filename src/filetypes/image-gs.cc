@@ -146,7 +146,7 @@ int ImageGsExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	//int start     =out->start;
 	//int end       =out->end;
 	//int layout    =out->layout;
-	int numout = (out->end-out->start+1)*(out->papergroup?out->papergroup->papers.n:1);
+	int numout = (out->range.NumInRanges())*(out->papergroup?out->papergroup->papers.n:1);
 	if (!filename && numout==1) filename=out->filename;
 	if (!filename) filename=out->tofiles;
 	

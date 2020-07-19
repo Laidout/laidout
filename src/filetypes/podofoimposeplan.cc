@@ -126,8 +126,6 @@ int PodofooutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	if (!out) return 1;
 	
 	Document *doc =out->doc;
-	int start     =out->start;
-	int end       =out->end;
 	int layout    =out->layout;
 	Group *limbo  =out->limbo;
 	PaperGroup *papergroup=out->papergroup;
@@ -166,7 +164,6 @@ int PodofooutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	setlocale(LC_ALL,"C");
 
 	 //figure out paper size and orientation
-	int c;
 
 	 // note this is orientation for only the first paper in papergroup.
 	 // If there are more than one papers, this may not work as expected...
@@ -188,7 +185,7 @@ int PodofooutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 
 	} else {
 		fprintf(f," # %s\n",doc->imposition->BriefDescription());
-		fprintf(f," # %d papers\n\n",start-end+1);
+		fprintf(f," # %d papers\n\n",out->range.NumInRanges());
 
 		double dx,dy;
 		doc->imposition->GetDimensions(0,&dx,&dy);
@@ -203,14 +200,14 @@ int PodofooutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	int p,c2,pg;
 	int papernumber=0;
 
-	for (c=start; c<=end; c++) {
-		if (doc) spread=doc->imposition->Layout(layout,c);
-		for (p=0; p<papergroup->papers.n; p++) {
+	for (int c = out->range.Start(); c >= 0; c = out->range.Next()) {
+		if (doc) spread = doc->imposition->Layout(layout,c);
+		for (p = 0; p < papergroup->papers.n; p++) {
 
-			 //for plans, transforms are only 2 deep: 1 for the paper, 1 for the page
+			// for plans, transforms are only 2 deep: 1 for the paper, 1 for the page
 
-			 // **** if there are any printer marks, they would be applied by outputting a special
-			 // pdf, which is then stamped onto final pdf from podofoimpose
+			// **** if there are any printer marks, they would be applied by outputting a special
+			// pdf, which is then stamped onto final pdf from podofoimpose
 
 			if (!spread) {
 				 //we are only putting out a group, so just write out the group transform

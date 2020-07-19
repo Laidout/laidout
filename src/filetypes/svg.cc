@@ -1715,8 +1715,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	} else out->inc_count();
 
 	Document *doc =out->doc;
-	int start     =out->start;
-	//int end       =out->end;
+	int start     =out->range.Start(); //we assume there's only one, so rest of range if any doesn't matter
 	int layout    =out->layout;
 	Group *limbo  =out->limbo;
 	PaperGroup *papergroup=out->papergroup;
