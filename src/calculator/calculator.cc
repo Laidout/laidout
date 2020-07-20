@@ -4550,10 +4550,10 @@ void LaidoutCalculator::InstallInnate()
 									   "y",NULL,NULL,"number",NULL,NULL,
 									   "x",NULL,NULL,"number",NULL,NULL,
 									   NULL); // "x:int|real,y:int|real");
-   	innates->pushFunction("base",    NULL,_("String from number and specified base."),this, 
-									   "x",NULL,NULL,"number",NULL,NULL,
-									   "base",NULL,NULL,"int",NULL,NULL,
-									   NULL); // "x:int|real,y:int|real");
+   	// innates->pushFunction("base",    NULL,_("String from number and specified base."),this, 
+				// 					   "x",NULL,NULL,"number",NULL,NULL,
+				// 					   "base",NULL,NULL,"int",NULL,NULL,
+				// 					   NULL); // "x:int|real,y:int|real");
     innates->pushFunction("sin",      NULL,_("sine"),                                   this, "r",NULL,NULL,NULL,NULL,NULL, NULL); // "int|real|complex");
     innates->pushFunction("asin",     NULL,_("arcsine"),                                this, "x",NULL,NULL,NULL,NULL,NULL, NULL); // "int|real|complex");
     innates->pushFunction("cos",      NULL,_("cosine"),                                 this, "r",NULL,NULL,NULL,NULL,NULL, NULL); // "int|real|complex");
@@ -4568,7 +4568,7 @@ void LaidoutCalculator::InstallInnate()
     innates->pushFunction("cosh",     NULL,_("hyperbolic cosine"),                      this, "x",NULL,NULL,NULL,NULL,NULL, NULL); // "int|real|complex");
     innates->pushFunction("sinh",     NULL,_("hyperbolic sine"),                        this, "x",NULL,NULL,NULL,NULL,NULL, NULL); // "int|real|complex");
     innates->pushFunction("tanh",     NULL,_("hyperbolic tangent"),                     this, "x",NULL,NULL,NULL,NULL,NULL, NULL); // "int|real|complex");
-    innates->pushFunction("sgn",      NULL,_("pos,neg,or 0"),                           this, "x",NULL,NULL,NULL,NULL,NULL, NULL); // "int|real");
+    innates->pushFunction("sign",     NULL,_("1 for pos, -1 for neg, or 0"),            this, "x",NULL,NULL,NULL,NULL,NULL, NULL); // "int|real");
     innates->pushFunction("int",      NULL,_("integer of"),                             this, "x",NULL,NULL,NULL,NULL,NULL, NULL); // "int|real");
     innates->pushFunction("hex",      NULL,_("Hex string of number"),                   this, "x",NULL,NULL,NULL,NULL,NULL, NULL); // "int|real");
     innates->pushFunction("binary",   NULL,_("Binary string of number"),                this, "x",NULL,NULL,NULL,NULL,NULL, NULL); // "int|real");
@@ -4658,7 +4658,7 @@ int LaidoutCalculator::Evaluate(const char *word,int len, ValueHash *context, Va
 				if (vv->type()==VALUE_Int) v=new IntValue(abs(((IntValue*)vv)->i));
 				else v=new DoubleValue(fabs(d)); 
 			}
-			else if (len==3 && !strncmp(word,"sgn",3))     { v=new IntValue(d>0?1:(d<0?-1:0)); }
+			else if (len==4 && !strncmp(word,"sign",4))    { v=new IntValue(d>0?1:(d<0?-1:0)); }
 			else if (len==3 && !strncmp(word,"int",3))     { v=new IntValue(int(d)); }
 			else if (len==4 && !strncmp(word,"gint",4))    { v=new IntValue(floor(d)); }
 			else if (len==5 && !strncmp(word,"floor",5))   { v=new IntValue(floor(d)); }
