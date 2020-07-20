@@ -21,8 +21,8 @@
 #include <lax/colorbox.h>
 #include <lax/units.h>
 
-#include "../language.h"
 #include "newdoc.h"
+#include "../language.h"
 #include "../impositions/singles.h"
 #include "../impositions/netimposition.h"
 #include "../impositions/impositioneditor.h"
@@ -32,6 +32,7 @@
 #include "../core/utils.h"
 #include "../filetypes/scribus.h"
 #include "headwindow.h"
+
 	
 #include <iostream>
 using namespace std;
@@ -204,19 +205,6 @@ anXWindow *BrandNew(int which)
 //--------------------------------- NewDocWindow ------------------------------------
 /*! \class NewDocWindow
  * \brief Class to let users chose which imposition, paper size, and how many pages to make in a document.
- *
- * This is still currently a bit hacky.
- *
- * <pre> 
- *  todo: (?)
- *  *** NewDocWindow different than DocInfoWindow by the Ok/Cancel at bottom?? or difference by who calls it?
- *  *** clear up number of pages, when impositions say to use more than specified
- *  *** first page is page number ____
- *  		margins clip       [ ]
- *  		facing pages carry [ ]
- *  *** modify paper color
- * </pre> 
- *  
  */  
 
 /*! If doc!=NULL, then assume we are editing settings of that document.
@@ -224,28 +212,28 @@ anXWindow *BrandNew(int which)
 NewDocWindow::NewDocWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 							int xx,int yy,int ww,int hh,int brder,
 							Document *ndoc)
-		: RowFrame(parnt,nname,ntitle,nstyle|ROWFRAME_HORIZONTAL|ROWFRAME_CENTER|ANXWIN_REMEMBER,
+		: RowFrame(parnt,nname,ntitle,nstyle|ROWFRAME_HORIZONTAL|ROWFRAME_LEFT|ANXWIN_REMEMBER,
 					xx,yy,ww,hh,brder, NULL,0,NULL,
 					10)
 {
 	InstallColors(THEME_Panel);
 
-	curorientation=0;
-	papersizes=NULL;
-	numpages=NULL;
+	curorientation = 0;
+	papersizes     = nullptr;
+	numpages       = nullptr;
 
-	papertype=NULL;
-	imp=NULL;
-	oldimp=-1;
+	papertype = nullptr;
+	imp       = nullptr;
+	oldimp    = -1;
 
-	doc=ndoc;
+	doc = ndoc;
 	if (doc) {
-		imp=(Imposition*)doc->imposition->duplicate();
+		imp = (Imposition *)doc->imposition->duplicate();
 		doc->inc_count();
 	}
 
-
-	impfromfile=NULL;
+	impfromfile = nullptr;
+	psizewindow = nullptr;
 	//pageinfo=NULL;
 }
 
@@ -277,14 +265,13 @@ int NewDocWindow::init()
 	int linpheight = textheight + 12;
 	Button *tbut;
 	anXWindow *last=NULL;
-	LineInput *linp;
 	MessageBar *mesbar;
 
 
 	
 	 // ------ General Directory Setup ---------------
 	 
-	int c,c2,o;
+	int o;
 	char *where=NULL;
 	if (doc) where=newstr(doc->Saveas());
 	if (!where && !isblank(laidout->project->filename)) where=lax_dirname(laidout->project->filename,0);
@@ -308,71 +295,33 @@ int NewDocWindow::init()
 
 	 // -------------- Paper Size --------------------
 	
-	papersizes=&laidout->papersizes;
+
+	papersizes = &laidout->papersizes;
 
 	if (doc && doc->imposition->paper && doc->imposition->paper->paperstyle)
 		papertype=(PaperStyle*)doc->imposition->paper->paperstyle->duplicate();
 	if (!papertype) papertype=dynamic_cast<PaperStyle*>(laidout->GetDefaultPaper()->duplicate());
 
-	char blah[100],blah2[100];
-	o=papertype->landscape();
-	curorientation=o;
+	o = papertype->landscape();
+	curorientation = o;
 
-	 // -----Paper Size X
-	UnitManager *units=GetUnitManager();
-	sprintf(blah,"%.10g", units->Convert(papertype->w(),UNITS_Inches,laidout->prefs.default_units,NULL));
-	sprintf(blah2,"%.10g",units->Convert(papertype->h(),UNITS_Inches,laidout->prefs.default_units,NULL));
-	last=paperx=new LineInput(this,"paper x",NULL,LINP_ONLEFT|LINP_FLOAT, 0,0,0,0, 0, 
-						last,object_id,"paper x",
-			            _("Paper Size  x:"),(o&1?blah2:blah),0,
-			            100,0,1,1,3,3);
-	AddWin(paperx,1, paperx->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
-	
-	 // -----Paper Size Y
-	last=papery=new LineInput(this,"paper y",NULL,LINP_ONLEFT|LINP_FLOAT, 0,0,0,0, 0, 
-						last,object_id,"paper y",
-			            _("y:"),(o&1?blah:blah2),0,
-			           100,0,1,1,3,3);
-	AddWin(papery,1, papery->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+	psizewindow = new PaperSizeWindow(this, "psizewindow", nullptr, 0, object_id, "papersize", 
+										papertype, false, true, false, true);
+	AddWin(psizewindow,1,-1);
+	AddNull();
 
-	 // -----Default Units
-    SliderPopup *popup;
-	last=popup=new SliderPopup(this,"units",NULL,SLIDER_POP_ONLY, 0,0, 0,0, 1, last,object_id,"units");
-	char *tmp;
-	c2=0;
-	int uniti=-1,tid;
-	units->UnitInfo(laidout->prefs.unitname,&uniti,NULL,NULL,NULL,NULL,NULL);
-	for (int c=0; c<units->NumberOfUnits(); c++) {
-		units->UnitInfoIndex(c,&tid,NULL,NULL,NULL,&tmp,NULL);
-		if (uniti==tid) c2=c;
-		popup->AddItem(tmp,c);
-	}
-	if (c2>=0) popup->Select(c2);
-	AddWin(popup,1, 200,100,50,50,0, linpheight,0,0,50,0, -1);
-	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);//*** forced linebreak
+
+	//pageinfo=mesbar=new MessageBar(this,"pageinfo",NULL,MB_MOVE, 0,0, 0,0, 0, pagesDescription(0));
+	//AddWin(mesbar,1, 2000,1900,0,50,0, mesbar->win_h,0,0,50,0, -1);
+
+	// AddWin(NULL,0, 2000,2000,0,50,0, textheight*2/3,0,0,0,0, -1);// forced linebreak, vertical spacer
+
 
 	
-	 // -----Paper Name
-	last=popup=new SliderPopup(this,"paperName",NULL,SLIDER_POP_ONLY, 0,0, 0,0, 1, last,object_id,"paper name");
-	for (int c=0; c<papersizes->n; c++) {
-		if (!strcmp(papersizes->e[c]->name,papertype->name)) c2=c;
-		popup->AddItem(papersizes->e[c]->name,c);
-	}
-	popup->Select(c2);
-	AddWin(popup,1, 200,100,50,50,0, linpheight,0,0,50,0, -1);
-	
-	 // -----Paper Orientation
-	last=popup=new SliderPopup(this,"paperOrientation",NULL,0, 0,0, 0,0, 1, last,object_id,"orientation");
-	popup->AddItem(_("Portrait"),0);
-	popup->AddItem(_("Landscape"),1);
-	popup->Select(o&1?1:0);
-	AddWin(popup,1, 200,100,50,50,0, linpheight,0,0,50,0, -1);
-	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);// forced linebreak
-
 	 // -----Number of pages
 	int npages=1;
 	if (doc) npages=doc->pages.n;
-	last=numpages=new LineInput(this,"numpages",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
+	last = numpages = new LineInput(this,"numpages",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
 						last,object_id,"numpages",
 			            _("Number of pages:"),NULL,0, // *** must do auto set papersize
 			            100,0,1,1,3,3);
@@ -380,25 +329,8 @@ int NewDocWindow::init()
 	numpages->SetText(npages);
 	numpages->tooltip(_("The number of pages with which to start a document."));
 	AddWin(numpages,1, numpages->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+	AddNull();
 
-	//pageinfo=mesbar=new MessageBar(this,"pageinfo",NULL,MB_MOVE, 0,0, 0,0, 0, pagesDescription(0));
-	//AddWin(mesbar,1, 2000,1900,0,50,0, mesbar->win_h,0,0,50,0, -1);
-	//AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);
-
-	AddWin(NULL,0, 2000,2000,0,50,0, textheight*2/3,0,0,0,0, -1);// forced linebreak, vertical spacer
-
-
-	 // ------------------- printing misc ---------------------------
-	 // -------- target dpi:		__300____
-	double d=papertype->dpi;
-	last=linp=new LineInput(this,"dpi",NULL,LINP_ONLEFT, 5,250,0,0, 0, 
-						last,object_id,"dpi",
-			            _("Default dpi:"),NULL,0,
-			            0,0,1,1,3,3);
-	linp->SetText(d);
-	AddWin(linp,1, linp->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
-	//AddWin(NULL, 2000,2000,0,50, 0,0,0,0,0);//*** forced linebreak
-	
 
 // ******* uncomment when implemented!!
 //
@@ -410,13 +342,7 @@ int NewDocWindow::init()
 //	popup->Select(0);
 //	AddWin(popup, 200,100,50,50,0, linpheight,0,0,50,0);
 //	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);// forced linebreak
-//
-//	AddWin(new MessageBar(this,"colormes",MB_MOVE, 0,0,0,0,0, _("Paper Color:")));
-//	ColorBox *cbox;
-//	last=cbox=new ColorBox(this,"paper color",COLORBOX_DRAW_NUMBER, 0,0,0,0, 1, last,object_id,"paper color", LAX_COLORS_RGB,1./255, 1.,1.,1.);
-//	AddWin(cbox, 40,0,50,50,0, linpheight,0,0,50,0);
 
-	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);//*** forced linebreak
 	
 //	 // ------- target printer: ___whatever____ (file, pdf, html, png, select ppd
 //	last=linp=new LineInput(this,"printer",LINP_ONLEFT, 5,250,0,0, 0, 
@@ -431,7 +357,7 @@ int NewDocWindow::init()
 //			-1,
 //			_("Set options from PPD..."),NULL,NULL,3,3);
 //	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
-//	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0);//*** forced linebreak
+//	AddNull();
 
 
 	 //add thin spacer
@@ -449,7 +375,7 @@ int NewDocWindow::init()
 		whichimp=laidout->impositionpool.n;
 		impsel->AddItem(_("Current"),IMP_CURRENT);
 	}
-	for (c=0; c<laidout->impositionpool.n; c++) {
+	for (int c=0; c<laidout->impositionpool.n; c++) {
 		impsel->AddItem(laidout->impositionpool.e[c]->name,c);
 		if (whichimp<0 && doc && !strcmp(doc->imposition->Name(),laidout->impositionpool.e[c]->name))
 			whichimp=c;
@@ -560,7 +486,7 @@ const char *NewDocWindow::pagesDescription(int updatetoo)
 
 int NewDocWindow::Event(const EventData *data,const char *mes)
 {
-	DBG cerr <<"newdocmessage: "<<(mes?mes:"(unknown)")<<endl;
+	// DBG cerr <<"newdocmessage: "<<(mes?mes:"(unknown)")<<endl;
 
 	if (!strcmp(mes,"save as")) {
 		 //comes after a file select dialog for document save as
@@ -597,70 +523,31 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		impositionFromFile(s->str);
 		return 0;
 
-	} else if (!strcmp(mes,"paper name")) { 
-		 // new paper selected from the popup, so must find the x/y and set x/y appropriately
-		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
-
-		int i=s->info1;
-		DBG cerr <<"new paper size:"<<i<<endl;
-		if (i<0 || i>=papersizes->n) return 0;
+	} else if (!strcmp(mes,"papersize")) { 
+		const SimpleMessage *s = dynamic_cast<const SimpleMessage *>(data);
+		PaperStyle *paper = dynamic_cast<PaperStyle*>(s->object);
+		if (!paper) return 0;
 		delete papertype;
-		papertype=(PaperStyle *)papersizes->e[i]->duplicate();
-		if (!strcmp(papertype->name,"custom")) return 0;
-		papertype->landscape(curorientation);
-		char num[30];
-		UnitManager *units=GetUnitManager();
-		numtostr(num,30,units->Convert(papertype->w(),UNITS_Inches,laidout->prefs.default_units,NULL),0);
-		paperx->SetText(num);
-		numtostr(num,30,units->Convert(papertype->h(),UNITS_Inches,laidout->prefs.default_units,NULL),0);
-		papery->SetText(num);
-
+		papertype = dynamic_cast<PaperStyle*>(paper->duplicate());
 		UpdatePaper(1);
-
-		//*** would also reset page size x/y based on Layout Scheme, and if page is Default
 		return 0;
 
-	} else if (!strcmp(mes,"orientation")) {
-		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
-		int l=s->info1;
-		DBG cerr <<"New orientation:"<<l<<endl;
-		if (l!=curorientation) {
-			char *txt=paperx->GetText(),
-				*txt2=papery->GetText();
-			paperx->SetText(txt2);
-			papery->SetText(txt);
-			delete[] txt;
-			delete[] txt2;
-			curorientation=(l?1:0);
-			papertype->landscape(curorientation);
-			UpdatePaper(1);
-		}
-		return 0;
+	// } else if (!strcmp(mes,"dpi")) {
+	// 	//****
 
-	} else if (!strcmp(mes,"paper x")) {
-		//***should switch to custom paper maybe
-		makestr(papertype->name,_("Custom"));
+	// } else if (!strcmp(mes,"units")) {
+	// 	const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
 
-	} else if (!strcmp(mes,"paper y")) {
-		//***should switch to custom paper maybe
-		makestr(papertype->name,_("Custom"));
-
-	} else if (!strcmp(mes,"dpi")) {
-		//****
-
-	} else if (!strcmp(mes,"units")) {
-		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
-
-		int i=s->info1;
-		UnitManager *units=GetUnitManager();
-		int id;
-		char *name;
-		units->UnitInfoIndex(i,&id, NULL,NULL,NULL,&name,NULL);
-		paperx->SetText(units->Convert(paperx->GetDouble(), laidout->prefs.default_units,id,NULL));
-		papery->SetText(units->Convert(papery->GetDouble(), laidout->prefs.default_units,id,NULL));
-		laidout->prefs.default_units=id;
-		makestr(laidout->prefs.unitname,name);
-		return 0;
+	// 	int i=s->info1;
+	// 	UnitManager *units=GetUnitManager();
+	// 	int id;
+	// 	char *name;
+	// 	units->UnitInfoIndex(i,&id, NULL,NULL,NULL,&name,NULL);
+	// 	paperx->SetText(units->Convert(paperx->GetDouble(), laidout->prefs.default_units,id,NULL));
+	// 	papery->SetText(units->Convert(papery->GetDouble(), laidout->prefs.default_units,id,NULL));
+	// 	laidout->prefs.default_units=id;
+	// 	makestr(laidout->prefs.unitname,name);
+	// 	return 0;
 
 	} else if (!strcmp(mes,"imposition")) {
 		 //sent by the impsel SliderPopup 
@@ -787,28 +674,30 @@ void NewDocWindow::UpdatePaper(int dialogtoimp)
 		if (papertype) delete papertype;
 		papertype=(PaperStyle*)paper->duplicate();
 
-		 //update orientation
-		SliderPopup *o=NULL;
-		curorientation=papertype->landscape();
-		o=dynamic_cast<SliderPopup*>(findChildWindowByName("paperOrientation"));
-		o->Select(curorientation?1:0);
+		psizewindow->UsePaper(papertype, false);
 
-		 //update name
-		o=dynamic_cast<SliderPopup*>(findChildWindowByName("paperName"));
-		for (int c=0; c<papersizes->n; c++) {
-			if (!strcasecmp(papersizes->e[c]->name,papertype->name)) {
-				o->Select(c);
-				break;
-			}
-		}
+		//  //update orientation
+		// SliderPopup *o=NULL;
+		// curorientation=papertype->landscape();
+		// o=dynamic_cast<SliderPopup*>(findChildWindowByName("paperOrientation"));
+		// o->Select(curorientation?1:0);
 
-		 //update dimensions
-		char num[30];
-		UnitManager *units=GetUnitManager();
-		numtostr(num,30,units->Convert(papertype->w(),UNITS_Inches,laidout->prefs.default_units,NULL),0);
-		paperx->SetText(num);
-		numtostr(num,30,units->Convert(papertype->h(),UNITS_Inches,laidout->prefs.default_units,NULL),0);
-		papery->SetText(num);
+		//  //update name
+		// o=dynamic_cast<SliderPopup*>(findChildWindowByName("paperName"));
+		// for (int c=0; c<papersizes->n; c++) {
+		// 	if (!strcasecmp(papersizes->e[c]->name,papertype->name)) {
+		// 		o->Select(c);
+		// 		break;
+		// 	}
+		// }
+
+		//  //update dimensions
+		// char num[30];
+		// UnitManager *units=GetUnitManager();
+		// numtostr(num,30,units->Convert(papertype->w(),UNITS_Inches,laidout->prefs.default_units,NULL),0);
+		// paperx->SetText(num);
+		// numtostr(num,30,units->Convert(papertype->h(),UNITS_Inches,laidout->prefs.default_units,NULL),0);
+		// papery->SetText(num);
 
 		pagesDescription(1);	
 	}
@@ -1022,6 +911,7 @@ int NewProjectWindow::init()
 //						last,object_id,"storedoc", _("Store new documents in project file"),5,5);
 //	AddWin(check, check->win_w,0,0,50,0, linpheight,0,0,50,0);
 //	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0);//forced linebreak
+
 		
 	 // ------------------- printing misc ---------------------------
 	 // target dpi:		__300____

@@ -18,6 +18,7 @@
 #include <lax/rowframe.h>
 #include <lax/lineinput.h>
 #include "singles.h"
+#include "../ui/papersizewindow.h"
 
 
 namespace Laidout {
@@ -33,7 +34,7 @@ class SinglesEditor : public Laxkit::RowFrame, public ImpositionWindow
 	Document *doc;
 	PaperStyle *papertype;
 
-	Laxkit::LineInput *paperx,*papery;
+	PaperSizeWindow *psizewindow;
 	Laxkit::LineInput *marginl,*marginr,*margint,*marginb;
 	Laxkit::LineInput *insetl,*insetr,*insett,*insetb;
 	Laxkit::LineInput *tilex,*tiley,*gapx,*gapy;

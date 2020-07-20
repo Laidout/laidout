@@ -34,7 +34,7 @@ class PaperSizeWindow : public Laxkit::RowFrame
 {
 	int custom_index;
 
-	virtual void send();
+	virtual void send(bool also_delete);
 	const char *pagesDescription(int updatetoo);
 	void UpdatePaperName();
 
@@ -45,6 +45,7 @@ class PaperSizeWindow : public Laxkit::RowFrame
 	bool modify_in_place;
 	bool with_dpi;
 	bool with_color;
+	bool send_on_change;
 
 	Laxkit::SliderPopup *papernames, *orientation;
 	Laxkit::PtrStack<PaperStyle> *papersizes;
@@ -53,14 +54,14 @@ class PaperSizeWindow : public Laxkit::RowFrame
 
  	PaperSizeWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
  			unsigned long owner, const char *msg,
-			PaperStyle *paper, bool mod_in_place, bool edit_dpi, bool edit_color);
+			PaperStyle *paper, bool mod_in_place, bool edit_dpi, bool edit_color, bool send_every_change);
 	virtual ~PaperSizeWindow();
 	virtual const char *whattype() { return "PaperSizeWindow"; }
 	virtual int preinit();
 	virtual int init();
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 
-	void UpdatePaper(int dialogtoimp);
+	virtual int UsePaper(PaperStyle *paper, bool mod_in_place);
 };
 
 } //namespace Laidout

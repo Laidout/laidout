@@ -263,7 +263,7 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			if (!strcasecmp(laidout->papersizes.e[i]->name, "Custom")) {
 				//popup paper size window
 				app->rundialog(new PaperSizeWindow(nullptr, "Paper", "Paper", 0, object_id,"custompaper", curboxes.e[0]->box->paperstyle, 
-												false, true, false)); //mod in place, dpi, color
+												false, true, false, false)); //mod in place, dpi, color
 
 			} else {
 				PaperStyle *newpaper = (PaperStyle *)laidout->papersizes.e[i]->duplicate();
@@ -608,8 +608,16 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 
 /*! If which&1 draw paper outline. If which&2, draw paper objects.
  */
-void PaperInterface::DrawGroup(PaperGroup *group, char shadow, char fill, char arrow, int which)
+void PaperInterface::DrawGroup(PaperGroup *group, char shadow, char fill, char arrow, int which,
+								bool with_decs)
 {
+	int slabels = show_labels;
+	int sindices = show_indices;
+	if (!with_decs) {
+		show_labels = false;
+		show_indices = false;
+	}
+
 	if (which&1) {
 		 //draw shadow under whole group
 		if (shadow) {
@@ -636,6 +644,9 @@ void PaperInterface::DrawGroup(PaperGroup *group, char shadow, char fill, char a
 			}
 		}
 	}
+
+	show_labels = slabels;
+	show_indices = sindices;
 }
 
 /*! Draws maybebox if any, then DrawGroup() with the current papergroup.
@@ -667,7 +678,12 @@ int PaperInterface::Refresh()
 
 		if (!papergroup || !papergroup->papers.n) return 0;
 
-		DrawGroup(papergroup,0,showdecs==1?1:0,showdecs==2?1:0);
+		DrawGroup(papergroup, 0, //shadow
+							  showdecs==1?1:0, //fill
+							  showdecs==2?1:0, //arrow
+							  3, // which
+							  true //with_decs
+							  );
 	}
 
 	return 1;

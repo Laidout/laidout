@@ -85,7 +85,7 @@ class PaperInterface : public LaxInterfaces::anInterface
 	virtual int KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int Refresh();
 	virtual void DrawPaper(PaperBoxData *data,int what,char fill,int shadow,char arrow);
-	virtual void DrawGroup(PaperGroup *group,char shadow,char fill,char arrow, int which=3);
+	virtual void DrawGroup(PaperGroup *group,char shadow,char fill,char arrow, int which=3, bool with_decs = false);
 	virtual int DrawDataDp(Laxkit::Displayer *tdp,LaxInterfaces::SomeData *tdata,
 					Laxkit::anObject *a1=nullptr,Laxkit::anObject *a2=nullptr,int info=1);
 

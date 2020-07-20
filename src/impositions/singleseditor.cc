@@ -45,13 +45,13 @@ namespace Laidout {
 
 
 
-/*! If doc!=NULL, then assume we are editing settings of that document.
+/*! If doc!=nullptr, then assume we are editing settings of that document.
  */
 SinglesEditor::SinglesEditor(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,
 							unsigned long nowner, const char *mes,
 							Document *ndoc, Singles *simp, PaperStyle *paper)
 		: RowFrame(parnt,nname,ntitle,ROWFRAME_HORIZONTAL|ROWFRAME_LEFT|ROWFRAME_VCENTER|ANXWIN_REMEMBER|ANXWIN_ESCAPABLE,
-					0,0,500,500,0, NULL,nowner,mes,
+					0,0,500,500,0, nullptr,nowner,mes,
 					10)
 {
 	curorientation=0;
@@ -59,18 +59,19 @@ SinglesEditor::SinglesEditor(Laxkit::anXWindow *parnt,const char *nname,const ch
 	doc=ndoc;
 	if (doc) doc->inc_count();
 
-	papertype=NULL;
-	if (paper) papertype=(PaperStyle*)paper->duplicate(); else papertype=NULL;
+	papertype=nullptr;
+	if (paper) papertype=(PaperStyle*)paper->duplicate(); else papertype=nullptr;
 	if (!papertype && doc && doc->imposition->paper && doc->imposition->paper->paperstyle)
 		papertype=(PaperStyle*)doc->imposition->paper->paperstyle->duplicate();
 
-	imp=NULL;
+	imp=nullptr;
 	if (simp) imp=(Singles*)simp->duplicate();
 
-	tilex=tiley=NULL;
-	gapx=gapy=NULL;
-	insetl=insetr=insett=insetb=NULL;
-	marginl=marginr=margint=marginb=NULL;
+	tilex = tiley = nullptr;
+	gapx = gapy = nullptr;
+	insetl = insetr = insett = insetb = nullptr;
+	marginl = marginr = margint = marginb = nullptr;
+	psizewindow = nullptr;
 }
 
 SinglesEditor::~SinglesEditor()
@@ -93,7 +94,7 @@ int SinglesEditor::init()
 	
 	int textheight=app->defaultlaxfont->textheight();
 	int linpheight=textheight+12;
-	anXWindow *last=NULL;
+	anXWindow *last=nullptr;
 	LineInput *linp;
 
 
@@ -101,61 +102,24 @@ int SinglesEditor::init()
 	
 	if (!papertype) papertype=(PaperStyle *)laidout->papersizes.e[0]->duplicate();
 
-	char blah[100],blah2[100];
 	int o=papertype->landscape();
 	curorientation=o;
 
-	 // -----Paper Size X
-	SimpleUnit *units=GetUnitManager();
-	sprintf(blah,"%.10g", units->Convert(papertype->w(),UNITS_Inches,laidout->prefs.default_units,NULL));
-	sprintf(blah2,"%.10g",units->Convert(papertype->h(),UNITS_Inches,laidout->prefs.default_units,NULL));
+	psizewindow = new PaperSizeWindow(this, "psizewindow", nullptr, 0, object_id, "papersize", 
+										papertype, false, true, false, true);
+	AddWin(psizewindow,1,-1);
+	AddNull();
 
-	last=paperx=new LineInput(this,"paper x",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
-						last,object_id,"paper x",
-			            _("Paper Size  x:"),(o&1?blah2:blah),0,
-			            100,0,1,1,3,3);
-	AddWin(paperx,1, paperx->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	
-	 // -----Paper Size Y
-	last=papery=new LineInput(this,"paper y",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
-						last,object_id,"paper y",
-			            _("y:"),(o&1?blah:blah2),0,
-			           100,0,1,1,3,3);
-	AddWin(papery,1, papery->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
-	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);//*** forced linebreak
-
-	 // -----Paper Name
-    SliderPopup *popup;
-	last=popup=new SliderPopup(this,"paperName",NULL,0, 0,0, 0,0, 1, last,object_id,"paper name");
-	int c2=-1;
-	for (int c=0; c<laidout->papersizes.n; c++) {
-		if (!strcmp(laidout->papersizes.e[c]->name,papertype->name)) c2=c;
-		popup->AddItem(laidout->papersizes.e[c]->name,c);
-	}
-	popup->Select(c2);
-	AddWin(popup,1, 200,100,50,50,0, linpheight,0,0,50,0, -1);
-	
-	 // -----Paper Orientation
-	last=popup=new SliderPopup(this,"paperOrientation",NULL,0, 0,0, 0,0, 1, last,object_id,"orientation");
-	popup->AddItem(_("Portrait"),0);
-	popup->AddItem(_("Landscape"),1);
-	popup->Select(o&1?1:0);
-	AddWin(popup,1, 200,100,50,50,0, linpheight,0,0,50,0, -1);
-	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);// forced linebreak
-
-	 //add thin spacer
-	AddSpacer(2000,2000,0,50, textheight*2/3,0,0,0);// forced vertical spacer
-
-
 	 // ------Tiling
-	last=tiley=new LineInput(this,"y tiling",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
+	last=tiley=new LineInput(this,"y tiling",nullptr,LINP_ONLEFT, 0,0,0,0, 0, 
 						last,object_id,"ytile",
 			            _("Tile y:"),"1", 0,
 			           100,0,1,1,3,3);
 	if (imp) tiley->SetText(imp->tiley);
 	tiley->tooltip("How many times to repeat a spread vertically on a paper.");
 	AddWin(tiley,1, tiley->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
-	last=tilex=new LineInput(this,"x tiling",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
+	last=tilex=new LineInput(this,"x tiling",nullptr,LINP_ONLEFT, 0,0,0,0, 0, 
 						last,object_id,"xtile",
 			            _("Tile x:"),"1", 0,
 			           100,0,1,1,3,3);
@@ -164,19 +128,20 @@ int SinglesEditor::init()
 	AddWin(tilex,1, tilex->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 
-	last=gapy=new LineInput(this,"y gap",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
+	UnitManager *units = GetUnitManager();
+	last=gapy=new LineInput(this,"y gap",nullptr,LINP_ONLEFT, 0,0,0,0, 0, 
 						last,object_id,"ygap",
 			            _("Gap y:"),"1", 0,
 			           100,0,1,1,3,3);
-	if (imp) gapy->SetText(units->Convert(imp->gapy,UNITS_Inches,laidout->prefs.default_units,NULL));
+	if (imp) gapy->SetText(units->Convert(imp->gapy,UNITS_Inches,laidout->prefs.default_units,nullptr));
 	gapy->tooltip("Gap between tiles vertically");
 	AddWin(gapy,1, gapy->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 
-	last=gapx=new LineInput(this,"x gap",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
+	last=gapx=new LineInput(this,"x gap",nullptr,LINP_ONLEFT, 0,0,0,0, 0, 
 						last,object_id,"xgap",
 			            _("Gap x:"),"1", 0,
 			           100,0,1,1,3,3);
-	if (imp) gapx->SetText(units->Convert(imp->gapx,UNITS_Inches,laidout->prefs.default_units,NULL));
+	if (imp) gapx->SetText(units->Convert(imp->gapx,UNITS_Inches,laidout->prefs.default_units,nullptr));
 	gapx->tooltip("Gap between tiles horizontally");
 	AddWin(gapx,1, gapx->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
@@ -184,51 +149,51 @@ int SinglesEditor::init()
 
 	 // -------  paper inset
 	//AddWin(new MessageBar(this,"Paper inset",MB_MOVE|MB_LEFT, 0,0,0,0,0, _("Paper inset:")));
-	//AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0);//forced linebreak, makes left justify
+	//AddWin(nullptr, 2000,2000,0,50,0, 0,0,0,0);//forced linebreak, makes left justify
 
-	last=linp=insett=new LineInput(this,"inset t",NULL,LINP_ONLEFT,
+	last=linp=insett=new LineInput(this,"inset t",nullptr,LINP_ONLEFT,
 			            5,250,0,0, 0, 
 						last,object_id,"inset t",
-			            _("Inset Top:"),NULL,0,
+			            _("Inset Top:"),nullptr,0,
 			            0,0,3,0,3,3);
 	linp->tooltip(_("Amount to chop from paper before applying tiling"));
-	if (imp) linp->SetText(units->Convert(imp->insettop,UNITS_Inches,laidout->prefs.default_units,NULL)); 
+	if (imp) linp->SetText(units->Convert(imp->insettop,UNITS_Inches,laidout->prefs.default_units,nullptr)); 
 	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	 // ******
-//	NumSlider *slider=new NumSlider(this,"inset t",NULL, NumSlider::NO_MAXIMUM,
+//	NumSlider *slider=new NumSlider(this,"inset t",nullptr, NumSlider::NO_MAXIMUM,
 //			            0,0,0,linpheight, 0, 
 //						last,object_id,"inset t2",
-//						NULL, 0,1000, units->Convert(imp->insettop,UNITS_Inches,laidout->prefs.default_units,NULL), .05);
+//						nullptr, 0,1000, units->Convert(imp->insettop,UNITS_Inches,laidout->prefs.default_units,nullptr), .05);
 //	last=slider;
 //	slider->tooltip(_("Amount to chop from paper before applying tiling"));
 //	AddWin(slider,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	
-	last=linp=insetb=new LineInput(this,"inset b",NULL,LINP_ONLEFT,
+	last=linp=insetb=new LineInput(this,"inset b",nullptr,LINP_ONLEFT,
 			            5,250,0,0, 0, 
 						last,object_id,"inset b",
-			            _("Inset Bottom:"),NULL,0,
+			            _("Inset Bottom:"),nullptr,0,
 			            0,0,3,0,3,3);
 	linp->tooltip(_("Amount to chop from paper before applying tiling"));
-	if (imp) linp->SetText(units->Convert(imp->insetbottom,UNITS_Inches,laidout->prefs.default_units,NULL));
+	if (imp) linp->SetText(units->Convert(imp->insetbottom,UNITS_Inches,laidout->prefs.default_units,nullptr));
 	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 	
-	last=linp=insetl=new LineInput(this,"inset l",NULL,LINP_ONLEFT,
+	last=linp=insetl=new LineInput(this,"inset l",nullptr,LINP_ONLEFT,
 			            5,250,0,0, 0, 
 						last,object_id,"inset l",
-			            _("Inset Left:"),NULL,0,
+			            _("Inset Left:"),nullptr,0,
 			            0,0,3,0,3,3);
 	linp->tooltip(_("Amount to chop from paper before applying tiling"));
-	if (imp) linp->SetText(units->Convert(imp->insetleft,UNITS_Inches,laidout->prefs.default_units,NULL));
+	if (imp) linp->SetText(units->Convert(imp->insetleft,UNITS_Inches,laidout->prefs.default_units,nullptr));
 	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	
-	last=linp=insetr=new LineInput(this,"inset r",NULL,LINP_ONLEFT,
+	last=linp=insetr=new LineInput(this,"inset r",nullptr,LINP_ONLEFT,
 			            5,250,0,0, 0, 
 						last,object_id,"inset r",
-			            _("Inset Right:"),NULL,0,
+			            _("Inset Right:"),nullptr,0,
 			            0,0,3,0,3,3);
 	linp->tooltip(_("Amount to chop from paper before applying tiling"));
-	if (imp) linp->SetText(units->Convert(imp->insetright,UNITS_Inches,laidout->prefs.default_units,NULL));
+	if (imp) linp->SetText(units->Convert(imp->insetright,UNITS_Inches,laidout->prefs.default_units,nullptr));
 	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 	
@@ -249,40 +214,40 @@ int SinglesEditor::init()
 //		imp->insett=margint->GetDouble();
 //		imp->insetb=marginb->GetDouble();
 	 // ------------------ margins ------------------
-	AddWin(new MessageBar(this,"page margins",NULL,MB_MOVE, 0,0,0,0,0, _("Default page margins:")), 1,-1);
-	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);//forced linebreak, makes left justify
+	AddWin(new MessageBar(this,"page margins",nullptr,MB_MOVE, 0,0,0,0,0, _("Default page margins:")), 1,-1);
+	AddWin(nullptr,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);//forced linebreak, makes left justify
 
-	last=linp=margint=new LineInput(this,"margin t",NULL,LINP_ONLEFT,
+	last=linp=margint=new LineInput(this,"margin t",nullptr,LINP_ONLEFT,
 			            5,250,0,0, 0, 
 						last,object_id,"margin t",
-			            _("Top Margin"),NULL,0,
+			            _("Top Margin"),nullptr,0,
 			            0,0,3,0,3,3);
-	if (imp) linp->SetText(units->Convert(imp->margintop,UNITS_Inches,laidout->prefs.default_units,NULL));
+	if (imp) linp->SetText(units->Convert(imp->margintop,UNITS_Inches,laidout->prefs.default_units,nullptr));
 	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	
-	last=linp=marginb=new LineInput(this,"margin b",NULL,LINP_ONLEFT,
+	last=linp=marginb=new LineInput(this,"margin b",nullptr,LINP_ONLEFT,
 			            5,250,0,0, 0, 
 						last,object_id,"margin b",
-			            _("Bottom Margin"),NULL,0,
+			            _("Bottom Margin"),nullptr,0,
 			            0,0,3,0,3,3);
-	if (imp) linp->SetText(units->Convert(imp->marginbottom,UNITS_Inches,laidout->prefs.default_units,NULL));
+	if (imp) linp->SetText(units->Convert(imp->marginbottom,UNITS_Inches,laidout->prefs.default_units,nullptr));
 	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 	
-	last=linp=marginl=new LineInput(this,"margin l",NULL,LINP_ONLEFT,
+	last=linp=marginl=new LineInput(this,"margin l",nullptr,LINP_ONLEFT,
 			            5,250,0,0, 0, 
 						last,object_id,"margin l",
-			            _("Left Margin"),NULL,0,
+			            _("Left Margin"),nullptr,0,
 			            0,0,3,0,3,3);
-	if (imp) linp->SetText(units->Convert(imp->marginleft,UNITS_Inches,laidout->prefs.default_units,NULL));
+	if (imp) linp->SetText(units->Convert(imp->marginleft,UNITS_Inches,laidout->prefs.default_units,nullptr));
 	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	
-	last=linp=marginr=new LineInput(this,"margin r",NULL,LINP_ONLEFT,
+	last=linp=marginr=new LineInput(this,"margin r",nullptr,LINP_ONLEFT,
 			            5,250,0,0, 0, 
 						last,object_id,"margin r",
-			            _("Right Margin"),NULL,0,
+			            _("Right Margin"),nullptr,0,
 			            0,0,3,0,3,3);
-	if (imp) linp->SetText(units->Convert(imp->marginright,UNITS_Inches,laidout->prefs.default_units,NULL));
+	if (imp) linp->SetText(units->Convert(imp->marginright,UNITS_Inches,laidout->prefs.default_units,nullptr));
 	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 	
@@ -293,19 +258,19 @@ int SinglesEditor::init()
 	
 	//------------------------------ final ok -------------------------------------------------------
 
-//	AddWin(NULL,0, 2000,1990,0,50,0, 20,0,0,50,0, -1);
+//	AddWin(nullptr,0, 2000,1990,0,50,0, 20,0,0,50,0, -1);
 //	
 //	 // [ ok ]   [ cancel ]
 //	AddHSpacer(0,0,1000,50);
 //	Button *tbut;
-//	last=tbut=new Button(this,"ok",NULL,0, 0,0,0,0,1, last,object_id,"Ok",
+//	last=tbut=new Button(this,"ok",nullptr,0, 0,0,0,0,1, last,object_id,"Ok",
 //						 BUTTON_OK,
-//						 NULL,
-//						 NULL,NULL);
+//						 nullptr,
+//						 nullptr,nullptr);
 //	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
-//	AddWin(NULL,0, 20,0,0,50,0, 5,0,0,50,0, -1); // add space of 20 pixels
+//	AddWin(nullptr,0, 20,0,0,50,0, 5,0,0,50,0, -1); // add space of 20 pixels
 //
-//	last=tbut=new Button(this,"cancel",NULL,BUTTON_CANCEL, 0,0,0,0,1, last,object_id,"Cancel");
+//	last=tbut=new Button(this,"cancel",nullptr,BUTTON_CANCEL, 0,0,0,0,1, last,object_id,"Cancel");
 //	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 //	AddHSpacer(0,0,1000,50);
 
@@ -321,53 +286,15 @@ int SinglesEditor::Event(const EventData *data,const char *mes)
 {
 	DBG cerr <<"newdocmessage: "<<(mes?mes:"(unknown)")<<endl;
 
-	if (!strcmp(mes,"paper name")) { 
-		 // new paper selected from the popup, so must find the x/y and set x/y appropriately
-		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
-
-		int i=s->info1;
-		DBG cerr <<"new paper size:"<<i<<endl;
-		if (i<0 || i>=laidout->papersizes.n) return 0;
+	if (!strcmp(mes,"papersize")) { 
+		const SimpleMessage *s = dynamic_cast<const SimpleMessage *>(data);
+		PaperStyle *paper = dynamic_cast<PaperStyle*>(s->object);
+		if (!paper) return 0;
 		delete papertype;
-		papertype=(PaperStyle *)laidout->papersizes.e[i]->duplicate();
-		if (!strcmp(papertype->name,"custom")) return 0;
-		papertype->landscape(curorientation);
-
-		char num[30];
-		SimpleUnit *units=GetUnitManager();
-		numtostr(num,30,units->Convert(papertype->w(),UNITS_Inches,laidout->prefs.default_units,NULL),0);
-		paperx->SetText(num);
-		numtostr(num,30,units->Convert(papertype->h(),UNITS_Inches,laidout->prefs.default_units,NULL),0);
-		papery->SetText(num);
+		papertype = dynamic_cast<PaperStyle*>(paper->duplicate());
 		UpdatePaper(1);
-		//*** would also reset page size x/y based on Layout Scheme, and if page is Default
 		return 0;
-
-	} else if (!strcmp(mes,"orientation")) {
-		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
-		int l=s->info1;
-		DBG cerr <<"New orientation:"<<l<<endl;
-		if (l!=curorientation) {
-			char *txt=paperx->GetText(),
-				*txt2=papery->GetText();
-			paperx->SetText(txt2);
-			papery->SetText(txt);
-			delete[] txt;
-			delete[] txt2;
-			curorientation=(l?1:0);
-			papertype->landscape(curorientation);
-			UpdatePaper(1);
-		}
-		return 0;
-
-	} else if (!strcmp(mes,"paper x")) {
-		//***should switch to custom paper maybe
-		makestr(papertype->name,_("Custom"));
-
-	} else if (!strcmp(mes,"paper y")) {
-		//***should switch to custom paper maybe
-		makestr(papertype->name,_("Custom"));
-
+	
 	} else if (!strcmp(mes,"inset l")) {
 	} else if (!strcmp(mes,"inset r")) {
 	} else if (!strcmp(mes,"inset t")) {
@@ -399,7 +326,7 @@ int SinglesEditor::Event(const EventData *data,const char *mes)
 void SinglesEditor::send()
 {
 	Singles *imposition=imp; 
-	imp=NULL; //disable so as to not delete it in ~SinglesEditor()
+	imp=nullptr; //disable so as to not delete it in ~SinglesEditor()
 	
 	int npgs=(doc?doc->pages.n:1);
 	int xtile=1, ytile=1;
@@ -408,8 +335,8 @@ void SinglesEditor::send()
 
 	SimpleUnit *units=GetUnitManager();
 	double xgap=0, ygap=0;
-	if (gapx) xgap=units->Convert(atof(gapx->GetCText()),laidout->prefs.default_units,UNITS_Inches,NULL);
-	if (gapy) ygap=units->Convert(atof(gapy->GetCText()),laidout->prefs.default_units,UNITS_Inches,NULL);
+	if (gapx) xgap=units->Convert(atof(gapx->GetCText()),laidout->prefs.default_units,UNITS_Inches,nullptr);
+	if (gapy) ygap=units->Convert(atof(gapy->GetCText()),laidout->prefs.default_units,UNITS_Inches,nullptr);
 
 	if (npgs<=0) npgs=1;
 
@@ -420,15 +347,15 @@ void SinglesEditor::send()
 	imposition->tiley=ytile;
 	imposition->gapx=xgap;
 	imposition->gapy=ygap;
-	imposition->insetleft  =units->Convert(insetl->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL);
-	imposition->insetright =units->Convert(insetr->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL);
-	imposition->insettop   =units->Convert(insett->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL);
-	imposition->insetbottom=units->Convert(insetb->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL);
+	imposition->insetleft  =units->Convert(insetl->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
+	imposition->insetright =units->Convert(insetr->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
+	imposition->insettop   =units->Convert(insett->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
+	imposition->insetbottom=units->Convert(insetb->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
 	imposition->SetDefaultMargins(
-					units->Convert(marginl->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL),
-					units->Convert(marginr->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL),
-					units->Convert(margint->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL),
-					units->Convert(marginb->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL)
+					units->Convert(marginl->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr),
+					units->Convert(marginr->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr),
+					units->Convert(margint->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr),
+					units->Convert(marginb->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr)
 				);
 
 	imposition->NumPages(npgs);
@@ -449,8 +376,8 @@ Imposition *SinglesEditor::GetImposition()
 
 	SimpleUnit *units=GetUnitManager();
 	double xgap=0, ygap=0;
-	if (gapx) xgap=units->Convert(atof(gapx->GetCText()),laidout->prefs.default_units,UNITS_Inches,NULL);
-	if (gapy) ygap=units->Convert(atof(gapy->GetCText()),laidout->prefs.default_units,UNITS_Inches,NULL);
+	if (gapx) xgap=units->Convert(atof(gapx->GetCText()),laidout->prefs.default_units,UNITS_Inches,nullptr);
+	if (gapy) ygap=units->Convert(atof(gapy->GetCText()),laidout->prefs.default_units,UNITS_Inches,nullptr);
 
 	if (npgs<=0) npgs=1;
 
@@ -461,15 +388,15 @@ Imposition *SinglesEditor::GetImposition()
 	imp->tiley=ytile;
 	imp->gapx=xgap;
 	imp->gapy=ygap;
-	imp->insetleft  =units->Convert(insetl->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL);
-	imp->insetright =units->Convert(insetr->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL);
-	imp->insettop   =units->Convert(insett->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL);
-	imp->insetbottom=units->Convert(insetb->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL);
+	imp->insetleft  =units->Convert(insetl->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
+	imp->insetright =units->Convert(insetr->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
+	imp->insettop   =units->Convert(insett->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
+	imp->insetbottom=units->Convert(insetb->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
 	imp->SetDefaultMargins(
-					units->Convert(marginl->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL),
-					units->Convert(marginr->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL),
-					units->Convert(margint->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL),
-					units->Convert(marginb->GetDouble(),laidout->prefs.default_units,UNITS_Inches,NULL)
+					units->Convert(marginl->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr),
+					units->Convert(marginr->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr),
+					units->Convert(margint->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr),
+					units->Convert(marginb->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr)
 				);
 
 	imp->NumPages(npgs);
@@ -497,30 +424,8 @@ void SinglesEditor::UpdatePaper(int dialogtoimp)
 			&& imp->papergroup->papers.e[0]->box->paperstyle) {
 
 		if (papertype) delete papertype;
-		papertype=(PaperStyle*)imp->papergroup->papers.e[0]->box->paperstyle->duplicate();
-
-		 //update orientation
-		SliderPopup *o=NULL;
-		curorientation=papertype->landscape();
-		o=dynamic_cast<SliderPopup*>(findChildWindowByName("paperOrientation"));
-		o->Select(curorientation?1:0);
-
-		 //update name
-		o=dynamic_cast<SliderPopup*>(findChildWindowByName("paperName"));
-		for (int c=0; c<laidout->papersizes.n; c++) {
-			if (!strcasecmp(laidout->papersizes.e[c]->name,papertype->name)) {
-				o->Select(c);
-				break;
-			}
-		}
-
-		 //update dimensions
-		char num[30];
-		SimpleUnit *units=GetUnitManager();
-		numtostr(num,30,units->Convert(papertype->w(),UNITS_Inches,laidout->prefs.default_units,NULL),0);
-		paperx->SetText(num);
-		numtostr(num,30,units->Convert(papertype->h(),UNITS_Inches,laidout->prefs.default_units,NULL),0);
-		papery->SetText(num);
+		papertype = (PaperStyle*)imp->papergroup->papers.e[0]->box->paperstyle->duplicate();
+		psizewindow->UsePaper(papertype, false);
 	}
 }
 

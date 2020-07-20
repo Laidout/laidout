@@ -24,6 +24,7 @@
 
 #include "../laidout.h"
 #include "../core/papersizes.h"
+#include "papersizewindow.h"
 
 
 namespace Laidout {
@@ -47,7 +48,8 @@ class NewDocWindow : public Laxkit::RowFrame
 	Laxkit::PtrStack<PaperStyle> *papersizes;
 	Laxkit::SliderPopup *impsel;
 	Laxkit::LineEdit *lineedit;
-	Laxkit::LineInput *saveas,*paperx,*papery,*numpages,*impfromfile;
+	PaperSizeWindow *psizewindow;
+	Laxkit::LineInput *saveas,*numpages,*impfromfile;
 	Laxkit::MessageBar *impmesbar, *pageinfo;
 	Laxkit::CheckBox *defaultpage,*custompage;
 

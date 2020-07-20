@@ -13,7 +13,6 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
-
 bug: signature editor, selected pages have almost not noticable seleceted emphasis.. line width problem?
 
 bug: space bar for centering not working anymore.. shift-space seems to
@@ -1593,7 +1592,7 @@ paperinterface: papergroupinterface papergroup interface
     paperinterface: in spread editor (done), and able to print it out, don't forget to remove DBG for release!
     in spread editor (done), and be able to print it out
   papersize names are not translated. Should they be??
-  more versatile size control per paper: edit window? should be edit on screen....
+  more versatile size control per box type per paper: edit window? should be edit on screen....
      Name:  default single letter
      Paper: Letter, 8.5/11, landscape
      Box: Media [v]   Box: Clip [v]
@@ -1605,16 +1604,15 @@ paperinterface: papergroupinterface papergroup interface
   DONE rotate paper shortcut should be around paper center, not origin
   DONE snap other papers to various boxes
   DONE bug: maybebox zooming off on mouse move
-
-  need a paper size editor stand alone window, entering numbers should convert name to custom
+  DONE need a paper size editor stand alone window, entering numbers should convert name to custom
 
 new PaperSizeWindow:
-  integrate with: 
-    signature interface
-    singles editor
-    newdoc
-    DONE paper interface
   bug: rowframe WrapToExtent() doesn't work
+  DONE integrate with: 
+    DONE signature interface
+    DONE singles editor
+    DONE newdoc
+    DONE paper interface
   DONE from gimp: in either field, input aspect like 1:2 or 16:9 and it autocomputes value
 
 

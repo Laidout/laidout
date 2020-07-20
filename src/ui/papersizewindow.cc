@@ -45,8 +45,8 @@ namespace Laidout {
  */
 PaperSizeWindow::PaperSizeWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 							unsigned long owner, const char *msg,
-							PaperStyle *paper, bool mod_in_place, bool edit_dpi, bool edit_color)
-		: RowFrame(parnt,nname,ntitle,nstyle|ROWFRAME_HORIZONTAL|ROWFRAME_CENTER|ANXWIN_REMEMBER,
+							PaperStyle *paper, bool mod_in_place, bool edit_dpi, bool edit_color, bool send_every_change)
+		: RowFrame(parnt,nname,ntitle,nstyle | ROWFRAME_HORIZONTAL | ROWFRAME_LEFT | ANXWIN_REMEMBER,
 					0,0,0,0,0, nullptr,owner,msg,
 					10)
 {
@@ -61,6 +61,7 @@ PaperSizeWindow::PaperSizeWindow(Laxkit::anXWindow *parnt,const char *nname,cons
 	custom_index = -1;
 	with_dpi = edit_dpi;
 	with_color = edit_color;
+	send_on_change = send_every_change;
 
 	if (!modify_in_place && paper) papertype = dynamic_cast<PaperStyle*>(paper->duplicate());
 	else {
@@ -81,7 +82,7 @@ PaperSizeWindow::~PaperSizeWindow()
 int PaperSizeWindow::preinit()
 {
 	anXWindow::preinit();
-	if (win_w <= 0 || win_h <= 0) WrapToExtent();
+	if (win_w <= 0 || win_h <= 0) flags |= BOX_WRAP_TO_EXTENT; //WrapToExtent();
 	// if (win_w <= 0) win_w = 500;
 	// if (win_h <= 0) win_h = 600;
 	return 0;
@@ -102,7 +103,7 @@ int PaperSizeWindow::init()
 
 	int         textheight = win_themestyle->normal->textheight();
 	int         linpheight = textheight + 12;
-	Button *    tbut;
+	Button *    tbut = nullptr;
 	anXWindow * last = nullptr;
 	LineInput * linp;
 
@@ -126,7 +127,7 @@ int PaperSizeWindow::init()
 			            _("Paper Size  w:"),(o&1?blah2:blah),0,
 			            100,0,1,1,3,3);
 	paperx->GetLineEdit()->SetWinStyle(LINEEDIT_SEND_FOCUS_OFF, true);
-	AddWin(paperx,1, paperx->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+	AddWin(paperx,1, paperx->win_w,0,0,50,0, linpheight,0,0,50,0, -1);
 
 	
 	 // -----Paper Size Y
@@ -135,7 +136,7 @@ int PaperSizeWindow::init()
 			            _("h:"),(o ? blah : blah2),0,
 			           100,0,1,1,3,3);
 	papery->GetLineEdit()->SetWinStyle(LINEEDIT_SEND_FOCUS_OFF, true);
-	AddWin(papery,1, papery->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+	AddWin(papery,1, papery->win_w,0,0,50,0, linpheight,0,0,50,0, -1);
 
 
 	 // -----Default Units
@@ -225,9 +226,9 @@ int PaperSizeWindow::init()
 
 
 	
-	tbut->CloseControlLoop();
+	WrapToExtent();
+	last->CloseControlLoop();
 	Sync(1);
-//	wrapextent();
 	return 0;
 }
 
@@ -275,6 +276,34 @@ void PaperSizeWindow::UpdatePaperName()
 	}
 }
 
+/*! Incs count of paper.
+ * Return 0 for success, or 1 for error, like paper == null.
+ */
+int PaperSizeWindow::UsePaper(PaperStyle *paper, bool mod_in_place)
+{
+	if (!paper) return 1;
+	modify_in_place = mod_in_place;
+	if (papertype) papertype->dec_count();
+	if (!modify_in_place) papertype = dynamic_cast<PaperStyle*>(paper->duplicate());
+	else {
+		papertype = paper;
+		if (papertype) papertype->inc_count();
+	}
+
+	orientation->Select(papertype->landscape());
+
+	char num[30];
+	UnitManager *units=GetUnitManager();
+	numtostr(num,30, units->Convert(papertype->w(),UNITS_Inches,cur_units,nullptr),0);
+	paperx->SetText(num);
+	numtostr(num,30, units->Convert(papertype->h(),UNITS_Inches,cur_units,nullptr),0);
+	papery->SetText(num);
+
+	UpdatePaperName();
+
+	return 0;
+}
+
 int PaperSizeWindow::Event(const EventData *data,const char *mes)
 {
 	DBG cerr <<"newdocmessage: "<<(mes?mes:"(unknown)")<<endl;
@@ -288,8 +317,8 @@ int PaperSizeWindow::Event(const EventData *data,const char *mes)
 		DBG cerr <<"new paper size:"<<i<<endl;
 		if (i < 0 || i >= papersizes->n) return 0;
 
-		delete papertype;
-		papertype=(PaperStyle *)papersizes->e[i]->duplicate();
+		papertype->dec_count();
+		papertype = (PaperStyle *)papersizes->e[i]->duplicate();
 		if (!strcmp(papertype->name,"custom")) return 0;
 		papertype->landscape(curorientation);
 		char num[30];
@@ -298,6 +327,8 @@ int PaperSizeWindow::Event(const EventData *data,const char *mes)
 		paperx->SetText(num);
 		numtostr(num,30, units->Convert(papertype->h(),UNITS_Inches,cur_units,nullptr),0);
 		papery->SetText(num);
+
+		if (send_on_change) send(false);
 
 		return 0;
 
@@ -314,6 +345,7 @@ int PaperSizeWindow::Event(const EventData *data,const char *mes)
 			delete[] txt2;
 			curorientation = (l ? 1 : 0);
 			papertype->landscape(curorientation);
+			if (send_on_change) send(false);
 		}
 		return 0;
 
@@ -338,6 +370,7 @@ int PaperSizeWindow::Event(const EventData *data,const char *mes)
 
 		// if not currently custom, try to match to a known paper portrait or landscape?
 		UpdatePaperName();
+		if (send_on_change) send(false);
 		return 0;
 
 	} else if (!strcmp(mes,"paper y")) {
@@ -361,6 +394,7 @@ int PaperSizeWindow::Event(const EventData *data,const char *mes)
 
 		// if not currently custom, try to match to a known paper portrait or landscape?
 		UpdatePaperName();
+		if (send_on_change) send(false);
 		return 0;
 
 	} else if (!strcmp(mes,"dpi")) {
@@ -370,6 +404,7 @@ int PaperSizeWindow::Event(const EventData *data,const char *mes)
 		if (dpi > 0) {
 			papertype->dpi = dpi;
 			DBG cerr << "new paper dpi: "<<dpi<<endl;
+			if (send_on_change) send(false);
 		}
 		return 0;
 
@@ -387,10 +422,11 @@ int PaperSizeWindow::Event(const EventData *data,const char *mes)
 		//laidout->prefs.default_units = id;
 		//makestr(laidout->prefs.unitname, name);
 		makestr(papertype->defaultunits, name);
+		if (send_on_change) send(false);
 		return 0;
 
 	} else if (!strcmp(mes,"Ok")) {
-		send();
+		send(true);
 		if (win_parent) app->destroywindow(win_parent);
 		else app->destroywindow(this);
 		return 0;
@@ -404,7 +440,7 @@ int PaperSizeWindow::Event(const EventData *data,const char *mes)
 }
 
 
-void PaperSizeWindow::send()
+void PaperSizeWindow::send(bool also_delete)
 {
 	DBG cerr << "Send paper:"<<endl;
 	DBG papertype->dump_out(stderr, 2, 0, nullptr);

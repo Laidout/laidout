@@ -19,6 +19,7 @@
 #include "../core/utils.h"
 #include "../version.h"
 #include "../core/drawdata.h"
+#include "../ui/papersizewindow.h"
 
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
@@ -136,60 +137,6 @@ enum SignatureInterfaceAreas {
 
 	SP_FOLDS = 100
 };
-
-//#define SP_None              0
-//
-//#define SP_Tile_X_top        1
-//#define SP_Tile_X_bottom     2
-//#define SP_Tile_Y_left       3
-//#define SP_Tile_Y_right      4
-//#define SP_Tile_Gap_X        5
-//#define SP_Tile_Gap_Y        6
-//
-//#define SP_Inset_Top         7
-//#define SP_Inset_Bottom      8
-//#define SP_Inset_Left        9
-//#define SP_Inset_Right       10
-//
-//#define SP_H_Folds_left      11
-//#define SP_H_Folds_right     12
-//#define SP_V_Folds_top       13
-//#define SP_V_Folds_bottom    14
-//
-//#define SP_Trim_Top          15
-//#define SP_Trim_Bottom       16
-//#define SP_Trim_Left         17
-//#define SP_Trim_Right        18
-//
-//#define SP_Margin_Top        19
-//#define SP_Margin_Bottom     20
-//#define SP_Margin_Left       21
-//#define SP_Margin_Right      22
-//
-//#define SP_Binding           23
-//
-//#define SP_Sheets_Per_Sig    24
-//#define SP_Num_Pages         25
-//#define SP_Paper_Name        26
-//#define SP_Paper_Width       27
-//#define SP_Paper_Height      28
-//#define SP_Paper_Orient      29
-//#define SP_Current_Sheet     30
-//
-//#define SP_Automarks         31
-//
- ////these three currently ignored:
-//#define SP_Up                32
-//#define SP_X                 33
-//#define SP_Y                 34
-//
-//#define SP_On_Stack          35
-//#define SP_New_First_Stack   36
-//#define SP_New_Last_Stack    37
-//#define SP_New_Insert        38
-//#define SP_Delete_Stack      39
-//
-//#define SP_FOLDS             100
 
 
 enum SignatureInterfaceActions {
@@ -560,6 +507,14 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 		siginstance->SetPaper(siginstance->partition->paper,0);
 		remapHandles();
 		needtodraw=1;
+		return 0;
+
+	} else if (!strcmp(mes,"papersize")) {
+		const SimpleMessage *s = dynamic_cast<const SimpleMessage *>(data);
+		PaperStyle *paper = dynamic_cast<PaperStyle*>(s->object);
+		if (!paper) return 0;
+		SetPaper(paper);
+		remapHandles();
 		return 0;
 
 	} else if (!strcmp(mes,"saveAsPopup")) {
@@ -2305,6 +2260,12 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 			NewLengthInputWindow(_("Paper Height"), area, "paperheight",siginstance->partition->paper->h());
 			return 0;
 
+		} else if (onoverlay == curhandle && onoverlay == SP_Paper_Name) {
+			PaperStyle *paper = siginstance->partition->paper;
+			PaperSizeWindow *psizewindow = new PaperSizeWindow(nullptr, "psizewindow", nullptr, 0, object_id, "papersize", 
+										paper, false, false, false, false);
+			app->rundialog(psizewindow);
+			return 0;
 
 		} else if (onoverlay>=SP_FOLDS) {
 			 //selecting different fold maybe...
