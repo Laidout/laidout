@@ -170,8 +170,8 @@ Value *PageAtlasExportConfig::dereference(const char *extstring, int len)
 	} else if (IsName("round_up_to_power_2",extstring,len)) {
 		return new BooleanValue(round_up_to_power_2);
 
-	} else if (IsName("color",extstring,len)) {
-		return new ColorValue(color);
+	// } else if (IsName("color",extstring,len)) {
+	// 	return new ColorValue(color);
 
 	}
 	return DocumentExportConfig::dereference(extstring,len);
