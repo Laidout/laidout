@@ -127,17 +127,19 @@ otherobjs= \
 	filetypes/filefilters.o \
 	filetypes/filters.o \
 	filetypes/exportdialog.o \
+	filetypes/htmlgallery.o \
 	filetypes/importdialog.o \
 	filetypes/image.o \
 	filetypes/image-gs.o \
 	filetypes/laidoutimport.o \
-	filetypes/htmlgallery.o \
+	filetypes/pageatlas.o \
 	filetypes/pdf.o \
 	filetypes/podofoimposeplan.o \
 	filetypes/postscript.o \
 	filetypes/ppt.o \
 	filetypes/scribus.o \
 	filetypes/svg.o \
+	dataobjects/bboxvalue.o \
 	dataobjects/group.o \
 	dataobjects/objectcontainer.o \
 	dataobjects/objectfilter.o \

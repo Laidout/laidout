@@ -14,6 +14,7 @@ CPPFLAGS= -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. `pkg-config --cflags freetype2`
 
 
 objs= \
+	bboxvalue.o \
 	group.o \
 	objectcontainer.o \
 	objectfilter.o \

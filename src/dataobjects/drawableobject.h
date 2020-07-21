@@ -299,24 +299,6 @@ class AffineValue : virtual public Value, virtual public Laxkit::Affine, virtual
 };
 
 
-//------------------------------------ BBoxValue ------------------------------------------------
-ObjectDef *makeBBoxObjectDef();
-class BBoxValue : virtual public Value, virtual public Laxkit::DoubleBBox, virtual public FunctionEvaluator
-{
-  public:
-	BBoxValue();
-	BBoxValue(double mix,double max,double miy,double may);
-    virtual const char *whattype() { return "BBoxValue"; }
-	virtual ObjectDef *makeObjectDef();
-	virtual int getValueStr(char *buffer,int len);
-	virtual Value *duplicate();
-	virtual Value *dereference(const char *extstring, int len);
-	virtual int assign(FieldExtPlace *ext,Value *v);
-	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
-			             Value **value_ret, Laxkit::ErrorLog *log);
-};
-
-
 //------------------------------------ ImageValue ------------------------------------------------
 ObjectDef *makeImageValueDef();
 class ImageValue : virtual public Value, virtual public FunctionEvaluator
