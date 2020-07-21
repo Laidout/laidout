@@ -16,6 +16,7 @@
 #include <lax/language.h>
 #include "nodeinterface.h"
 #include "../dataobjects/limagedata.h"
+#include "../dataobjects/bboxvalue.h"
 
 #include <unistd.h>
 

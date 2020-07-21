@@ -23,6 +23,7 @@
 #include "../calculator/curvevalue.h"
 #include "../dataobjects/lsomedataref.h"
 #include "../dataobjects/objectfilter.h"
+#include "../dataobjects/bboxvalue.h"
 
 #include <unistd.h>
 #include <iostream>

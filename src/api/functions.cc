@@ -23,6 +23,7 @@
 #include "../core/stylemanager.h"
 #include "../core/papersizes.h"
 #include "../core/page.h"
+#include "../dataobjects/bboxvalue.h"
 
 #include "../language.h"
 #include "../laidout.h"
