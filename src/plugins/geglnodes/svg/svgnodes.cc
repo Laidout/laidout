@@ -16,6 +16,7 @@
 #include "../../../language.h"
 #include "svgnodes.h"
 #include "../../../nodes/nodeinterface.h"
+#include "../../../dataobjects/bboxvalue.h"
 #include <exception>
 
 
