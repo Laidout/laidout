@@ -102,6 +102,7 @@ class Spread : public ObjectContainer
 	virtual Laxkit::anObject *object_e(int i);
 	virtual const char *object_e_name(int i);
 	virtual const double *object_transform(int i);
+	virtual bool GetBounds(Laxkit::DoubleBBox &bounds);
 };
 
 

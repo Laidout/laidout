@@ -312,6 +312,20 @@ int Spread::PagestackIndex(int docpage)
 	return -1;
 }
 
+bool Spread::GetBounds(Laxkit::DoubleBBox &bounds)
+{
+	bounds.clear();
+	if (path) bounds.addtobounds(path->m(), path);
+	else {
+		for (int c=0; c<pagestack.n(); c++) {
+			if (!pagestack.e[c]->outline) continue;
+			bounds.addtobounds(pagestack.e[c]->outline->m(), pagestack.e[c]->outline);
+		}
+	}
+
+	return bounds.validbounds();
+}
+
 //----------------------------- ImpositionInterface --------------------------
 /*! \class ImpositionInterface 
  *
