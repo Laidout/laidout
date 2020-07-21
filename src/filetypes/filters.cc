@@ -25,6 +25,7 @@
 #include "htmlgallery.h"
 #include "podofoimposeplan.h"
 #include "laidoutimport.h"
+#include "pageatlas.h"
 
 
 namespace Laidout {
@@ -43,6 +44,7 @@ void installFilters()
 	installPodofoFilter();
 	installPptFilter();
 	installPostscriptFilters();
+	installPageAtlasFilter();
 }
 
 

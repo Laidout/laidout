@@ -22,6 +22,7 @@ objs= \
 	image.o \
 	image-gs.o \
 	laidoutimport.o \
+	pageatlas.o \
 	pdf.o \
 	podofoimposeplan.o \
 	postscript.o \

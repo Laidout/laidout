@@ -476,6 +476,9 @@ file filters: filefilters:
     you can just jump to the offending bit easily. This would also be used for preflight verifiers,
     and maybe also mass edit things, like edit all images..
     - have ViewWindow::JumpToObject(&place, objectid);
+pageatlas: page atlas:
+  needs bg color 
+  DONE basically n-up page out, lrtb
 equirectangular:
   export:
     for flat, choose lat/long/rotation

@@ -18,6 +18,7 @@
 #include "../language.h"
 #include "../laidout.h"
 #include "../core/stylemanager.h"
+#include "../dataobjects/bboxvalue.h"
 
 #include <lax/strmanip.h>
 #include <lax/fileutils.h>
@@ -717,22 +718,13 @@ ObjectDef *makeExportConfigDef()
 			nullptr,  //defvalue
 			0,    //flags
 			nullptr);//newfunc
-	sd->push("start",
-			_("Start"),
-			_("Starting index of a document spread to export"),
+	sd->push("range",
+			_("Range"),
+			_("Range of pages to export."),
 			"int",
-			nullptr, //range
-			nullptr,  //defvalue
-			0,    //flags
-			nullptr);//newfunc
-	sd->push("end",
-			_("End"),
-			_("Ending index of a document spread to export"),
-			"int",
-			nullptr, //range
-			nullptr,  //defvalue
-			0,    //flags
-			nullptr);//newfunc
+			nullptr,
+			nullptr,
+			0,nullptr);
 	sd->push("batches",
 			_("Batches"),
 			_("For multi-page capable targets, how many spreads to include in a single file. Repeat to cover whole range."),
@@ -855,14 +847,16 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 		return 1;
 	}
 
-	DocumentExportConfig *config=nullptr;
-	Value *v=nullptr;
-	if (parameters) v=parameters->find("exportconfig");
+	DocumentExportConfig *config = nullptr;
+	Value * v = nullptr;
+	if (parameters) v = parameters->find("exportconfig");
 	if (v) {
-		config=dynamic_cast<DocumentExportConfig*>(dynamic_cast<ObjectValue*>(v)->object);
+		if (dynamic_cast<ObjectValue*>(v))
+			config = dynamic_cast<DocumentExportConfig *>(dynamic_cast<ObjectValue *>(v)->object);
+		else config = dynamic_cast<DocumentExportConfig *>(v);
 		if (config) config->inc_count();
 	}
-	if (!config) config=new DocumentExportConfig();
+	if (!config) config = new DocumentExportConfig();
 
 	char error[100];
 	int err=0;
@@ -1189,7 +1183,26 @@ Value* DocumentExportConfig::duplicate()
 
 Value *DocumentExportConfig::dereference(const char *extstring, int len)
 {
-	DBG cerr <<" *** Need to implement DocumentExportConfig::dereference()!!"<<endl;
+
+	if (IsName("filename", extstring, len)) return new StringValue(filename);
+	if (IsName("tofiles", extstring, len)) return new StringValue(tofiles);
+	if (IsName("command", extstring, len)) return new StringValue(command);
+	if (IsName("textaspaths", extstring, len)) return new BooleanValue(textaspaths);
+	if (IsName("rasterize", extstring, len)) return new BooleanValue(rasterize);
+	if (IsName("collect", extstring, len)) return new BooleanValue(collect_for_out);
+	if (IsName("range", extstring, len)) return new StringValue(range.ToString(true, false, false));
+	if (IsName("batches", extstring, len)) return new IntValue(batches);
+	if (IsName("evenodd", extstring, len)) return new StringValue(evenodd==Odd ? "odd" : (evenodd == Even ? "even" : "all"));
+	if (IsName("rotate180", extstring, len)) return new BooleanValue(rotate180);
+	if (IsName("paperrotation", extstring, len)) return new DoubleValue(paperrotation);
+	if (IsName("reverse", extstring, len)) return new BooleanValue(reverse_order);
+	if (IsName("target", extstring, len)) return new StringValue(target == TARGET_Single ? "single" : (target == TARGET_Multi ? "multi" : "command"));
+	if (IsName("crop", extstring, len)) return new BBoxValue(crop);
+	if (IsName("document", extstring, len))  { if (doc) doc->inc_count(); return doc; }
+	if (IsName("layout", extstring, len)) return new IntValue(layout);
+	if (IsName("papergroup", extstring, len)) return new ObjectValue(papergroup); //{ if (papergroup) papergroup->inc_count(); return papergroup; }
+
+	// if (log) log->AddError(_("Could not dereference!"));
 	return nullptr;
 }
 
