@@ -21,7 +21,8 @@ VERSION 0.098
 (done) Gradients able to fill parents with none,pad,reflect,repeat spread methods
 (done) Debug gradient radial controls
 (done) Be able to generate icons from source svg directly
-       Way to export pages as svg embedded into html
+(done) Page Atlas exporter
+(done) Way to export pages as svg embedded into html
        Fix icon/text/thin line sizing issues for high dpi monitors (issue #16)
 
        Moving selected things in group contents does not update group bounds
@@ -29,7 +30,7 @@ VERSION 0.098
        fix object transform handles for really small objects (handles should still be accessible)
 (done) double click on group should change selection area to group contents like inkscape?
 
-       layers (object tree) palette
+       layers palette (object tree)
        Tools should remember their settings
        Find interface
        Import Images dialog needs total reprogramming

@@ -13,7 +13,9 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
-bug: signature editor, selected pages have almost not noticable seleceted emphasis.. line width problem?
+bug: imported white images are not white, very slightly gray. gm load problem?
+
+bug: signature editor, selected pages have almost not noticeable selected emphasis.. line width problem?
 
 bug: space bar for centering not working anymore.. shift-space seems to
 
@@ -28,14 +30,14 @@ bug: curve is terrible approximation at end points
 
 bug: svg out, select to files, often the first time goes to file, not files
 
-debug registration, cut marks, trim marks
+bug: debug registration, cut marks, trim marks
   custom papergroup, add registration/bars/, can't move it
   DONE can't add cut marks to signatures
 
 object indicator:
   click on object, does not update selection
 
-back to not maximizing properly on default ubuntu. Seems to work fine on every other window manager I've tried.
+bug: back to not maximizing properly on default ubuntu. Seems to work fine on every other window manager I've tried.
 
 
 
@@ -44,8 +46,6 @@ back to not maximizing properly on default ubuntu. Seems to work fine on every o
 bug: lineedit cursor is leaving artifacts
 
 Overwrite dialog box and other centering boxes should center over calling window, or current screen if no specified owner
-
-Reconfigure text edits. Need something that works in interface land, with harfbuzz
 
 drag off page, space to duplicate, copy is not in limbo!
 duplicate does not duplicate clip_path
@@ -61,12 +61,12 @@ configure should check for libreadline-dev? apparently not pkg-config ready <- h
 
 scroll bar zoom handles don't appear to work
 
-memory hole ./laidout -n letter then quit
 memory hole in reimpose .. reimposed 5 page booklet
 memory hole when graphical shell activated
 memory hole do laidout -n letter, split a window, then quit. undeleted Objects remain!
 memory hole delauneyinterface
 memory hole helpwindow -> probably something to do with ShortcutWindow and ShortcutTreeSelector not refcounting as expected
+DONE memory hole ./laidout -n letter then quit
 DONE memory hole paper interface, activate tool, lay down one paper, quit, 3 objects remain
 DONE memory hole cairo backend (can't duplicate)
 
@@ -158,7 +158,6 @@ WATCH OUT for when preview file is OLDER than original file!!
 stackframe seems to be ignoring window borders on layout
 
 
-
 ----------------0.098 ROADMAP ITEMS: features and enhancements------------------------
 website: explain a bit more how to install dev versions, and place side by side with "stable"
 website: need to redo screenshots section for mobile friendliness
@@ -199,6 +198,10 @@ test:
   test in different window managers
   make some test scripts for command line testing
 
+
+make lax templates be only .h includes, since gcc complains when .cc isn't included anyway... need to do compile speed tests
+
+Reconfigure text edits. Need something that works in interface land, with harfbuzz
 
 laxkit lists need move semantics
 
@@ -513,6 +516,7 @@ html: htmlgallery: html out htmlout:
     clip paths
     css 3d transforms
   specify image file name, also preview file name "###-s.png"
+  DONE embedded page svg
   DONE implement save and load template vars
   DONE include scrim in coop/html
   DONE figure out template scheme
@@ -1220,7 +1224,6 @@ Units:
   need something like Convert(value, units_from, units_to, &error, overrides), where overrides is
     something like: list of [units_id, newscaling], like for temp redefining "Em" or "px"
 
-collect for out: define directory to pull all files and external resources in, including the .laidout file
 
 General design usability
 to be a decent editing platform, Laidout needs:
@@ -2006,6 +2009,7 @@ then changes not stored
 probably should decide how to handle making windows based on interfaces.. it is a more productive route than window dominant
 
 make a laxkit.pc from laxkit configure
+use that laxkit.pc from Laidout and laxkit examples
 
 pagemarkerinterface:
   option to lock label size to real space? make export contact sheets a little prettier in some cases
@@ -2095,7 +2099,32 @@ measure tool.. configure measurements to be:
  units mapped to either type of units, so can use light years for units that are actually inch physical paper units
 have arrows, and write on screen what the size is...
 
+
+collect for out:
+  define directory to pull all files and external resources in
+  write out new .laidout file linked for the new system
+  define map of  oldfile -> newfile
+  name mangling as necessary to prevent clobbering
+  need limited collect for only resources used by exported items
+
+    collected/
+      images/
+	  fonts/
+	  resources/   <- that were laidout resources linked in
+	  file.laidout with proper links to new dirs
+	  collect.log  <- what was collected / rasterized?
+
 preflighting:
+  steps:
+    specify layout and spread range
+	specify checking functions
+	step through each object
+	run checking function(s) on object
+	append trouble spots to error log
+	  needs path to object:  project.limbo / project.doc.page.layer.obj.obj / project.papergroup
+	  message
+	  possible remedy
+	show window with list of offenders, offer remedies
   check for empty groups
   check for broken images
   check for transparency
@@ -2239,6 +2268,7 @@ implement undo.. ideally use same code for both undo and recordable/assignable a
   saveable?
 
 PlainTextWindow plaintextwindow PlainText plain text window:
+  PlainTextObjects should be resources
   need showing line numbers
   clicking around doesn't properly update caret drawing
   need control zoom to change font size
@@ -2252,8 +2282,6 @@ PlainTextWindow plaintextwindow PlainText plain text window:
   regex searching
 
 pixels units should be set as per document dpi
-
-perhaps laidout configure should call laxkit configure if it thinks laxkit is not configured yet
 
 CharacterInterface characterinterface
   should show unicode number/glyph name if available
@@ -2370,4 +2398,5 @@ DONE bug: patchinterface point select when object transform not identify broken
 DONE detect when a resource section is ONLY built in ones, and don't output that section on save
 DONE export ranges should accept "1-4, 6, 20-25" and "5-1"
 DONE for range on import/export, should have a range parser that accepts unconnected ranges, ie "2,4, 5-10"
+DONE perhaps laidout configure should call laxkit configure if it thinks laxkit is not configured yet
 

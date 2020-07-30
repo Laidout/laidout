@@ -22,13 +22,16 @@
 #include <lax/fileutils.h>
 #include <lax/utf8string.h>
 
+#include "htmlgallery.h"
+#include "svg.h"
 #include "../language.h"
 #include "../laidout.h"
 #include "../core/stylemanager.h"
 #include "../printing/psout.h"
-#include "htmlgallery.h"
 #include "../impositions/singles.h"
 #include "../core/drawdata.h"
+
+#include <unistd.h>
 
 #include <iostream>
 #define DBG 
@@ -398,7 +401,7 @@ ObjectDef *HtmlGalleryExportConfig::makeObjectDef()
      //define parameters
     def->push("transparent",
             _("Transparent"),
-            _("Render background as transparent, not as paper color."),
+            _("Render background of images as transparent, not as paper color."),
             "boolean",
             NULL,    //range
             "true", //defvalue
@@ -407,7 +410,7 @@ ObjectDef *HtmlGalleryExportConfig::makeObjectDef()
 
     def->push("make_thumbs",
             _("Make Thumbnails"),
-            _("Save thumbnails of images alongside the output images."),
+            _("Save thumbnails of pages alongside the output page images."),
             "boolean",
             NULL,    //range
             "true", //defvalue
@@ -416,7 +419,7 @@ ObjectDef *HtmlGalleryExportConfig::makeObjectDef()
 
     def->push("image_format",
             _("File format"),
-            _("What file format to export as."),
+            _("What file format to export images as."),
             "string",
             NULL,   //range
             "jpg", //defvalue
@@ -425,7 +428,7 @@ ObjectDef *HtmlGalleryExportConfig::makeObjectDef()
  
     def->push("width",
             _("Width"),
-            _("Pixel width of resulting image. 0 means autocalculate"),
+            _("Pixel width of resulting page image. 0 means autocalculate"),
             "int",
             NULL,   //range
             "0", //defvalue
@@ -434,25 +437,16 @@ ObjectDef *HtmlGalleryExportConfig::makeObjectDef()
 
     def->push("height",
             _("Height"),
-            _("Pixel height of resulting image. 0 means autocalculate"),
+            _("Pixel height of resulting page image. 0 means autocalculate"),
             "int",
             NULL,   //range
             "0", //defvalue
             0,     //flags
             NULL);//newfunc
 
-    def->push("render_each_page",
-            _("Export Pages"),
-            _("Save each page as embedded svg."),
-            "boolean",
-            NULL,    //range
-            "false", //defvalue
-            0,      //flags
-            NULL); //newfunc
-
     def->push("html_template_file",
-            _("Index template file"),
-            _("Index template file"),
+            _("index.html template file"),
+            _("index.html template file"),
             "File",
             NULL,   //range
             NULL, //defvalue
@@ -461,7 +455,25 @@ ObjectDef *HtmlGalleryExportConfig::makeObjectDef()
 
     def->push("image_template_file",
             _("Image template file"),
-            _("Image template file, for html bits unique for each image"),
+            _("Image template file, for html unique for each image ebmedded in main index.html"),
+            "File",
+            NULL,   //range
+            NULL, //defvalue
+            0,     //flags
+            NULL);//newfunc
+
+    def->push("render_each_page",
+            _("Create one html+svg file per spread"),
+            _("Save each page as embedded svg, otherwise pages are rendered to images."),
+            "boolean",
+            NULL,    //range
+            "false", //defvalue
+            0,      //flags
+            NULL); //newfunc
+
+	def->push("page_template_file",
+            _("Page template file"),
+            _("Page template file, one for each page"),
             "File",
             NULL,   //range
             NULL, //defvalue
@@ -508,6 +520,9 @@ Value *HtmlGalleryExportConfig::dereference(const char *extstring, int len)
 
 	} else if (!strncmp(extstring,"image_template_file",18)) {
 		return new FileValue(image_template_file);
+
+	} else if (!strncmp(extstring,"page_template_file",18)) {
+		return new FileValue(page_template_file);
 
 	} else if (!strncmp(extstring,"templatevars",12)) {
 		return new ObjectValue(templatevars);
@@ -557,6 +572,19 @@ int HtmlGalleryExportConfig::assign(FieldExtPlace *ext,Value *v)
                 if (!isnum) return 0;
 				height=h;
                 return 1;
+
+			} else if (!strcmp(str,"page_template_file")) {
+				StringValue *str = dynamic_cast<StringValue*>(v);
+				if (str) {
+					makestr(page_template_file, str->str);
+					return 1;
+				}
+				FileValue *fv = dynamic_cast<FileValue*>(v);
+				if (fv) {
+					makestr(page_template_file, fv->filename);
+					return 1;
+				}
+				return 0;
 
 			} else if (!strcmp(str,"html_template_file")) {
 				StringValue *str = dynamic_cast<StringValue*>(v);
@@ -810,9 +838,6 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 	}
 
 	Document *doc = out->doc;
-	//int start     =out->start;
-	//int end       =out->end;
-	//int layout    =out->layout;
 	if (!filename) filename = out->filename;
 	
 	 //we must have something to export...
@@ -1096,6 +1121,73 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 
 			img->dec_count();
 
+			if (out->render_each_page) {
+				//create page##.html with embedded svg of the pages.
+				//The svg is normal svg export, with particular config, then prepended and appended with html header and footer.
+				scratch.Sprintf("%s/temp.svg", filename, sc);
+				SvgExportConfig svgconfig;
+				makestr(svgconfig.filename, scratch.c_str());
+				svgconfig.layout = out->layout;
+				svgconfig.range.AddRange(sc, sc);
+				svgconfig.target = DocumentExportConfig::TARGET_Single;
+				svgconfig.textaspaths = true;
+				svgconfig.doc = out->doc;
+				out->doc->inc_count();
+				svgconfig.papergroup = out->papergroup;
+				out->papergroup->inc_count();
+
+				ExportFilter *svgfilter = laidout->FindExportFilter("svg", false);
+				if (svgfilter->Out(svgconfig.filename, &svgconfig, log) != 0) {
+					log.AddError("Could not export svg!");
+					return 10;
+				}
+
+				int n = 0;
+				char *svg = read_in_whole_file(svgconfig.filename, &n, -1);
+				Utf8String svgstr;
+				svgstr.InsertBytes(svg, n, -1);
+				long svgpos = svgstr.Find("<svg", 0, true);
+				if (svgpos > 0) svgstr = svgstr.Substr(svgpos, -1);
+				if (n) {
+					scratch.Sprintf("%s/page-%03d.html", filename, sc);
+					curimage->file = scratch;
+
+					if (!isblank(out->page_template_file)) {
+						Utf8String pagetemplate;
+						int n = 0;
+						char *templ = read_in_whole_file(out->page_template_file, &n, -1);
+						if (!templ) {
+							log.AddError("Could not read page template file for reading!");
+							if (images) delete images;
+							return 6;
+						}
+						pagetemplate.InsertBytes(templ,-1,-1);
+
+						if (out->templatevars) {
+							for (int tc=0; tc<out->templatevars->attributes.n; tc++) {
+								pagetemplate.Replace(out->templatevars->attributes.e[tc]->name, out->templatevars->attributes.e[tc]->value, true);
+							}
+						}
+						pagetemplate.Replace("<!--PAGE-SVG-->", svgstr.c_str(), true);
+
+						save_string_to_file(pagetemplate.c_str(), pagetemplate.Bytes(), scratch.c_str());
+
+					} else {
+						// default page html
+						scratch.Sprintf("%s/page-%03d.html", filename, sc);
+						FILE *pagehtml = fopen(svgconfig.filename, "r");
+
+						fprintf(pagehtml, "<html>\n<head>\n<title>%s</title>\n<style>\n body { background-color: #555; }\n</style>\n</head>\n<body>\n", filename);
+						fprintf(pagehtml, "%s<br>", filename);
+						fwrite(svgstr.c_str(), 1, n, pagehtml);
+						fwrite("</body>\n</html>", 1, 15, pagehtml);
+
+						fclose(pagehtml);
+					}
+				}
+				unlink(svgconfig.filename);
+			}
+
 		} //each spread
 
 	} catch(const char *err) {
@@ -1164,8 +1256,8 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 		} else {
 			//default IMAGE-LIST
 			if (out->make_thumbs) {
-				scratch.Sprintf("<a class=\"laidoutPage\" href=\"images/%03d.%s\"><img src=\"images/%03d-s.png\"></a>\n",
-						img->index, out->image_format, img->index);
+				scratch.Sprintf("<a class=\"laidoutPage\" href=\"%s\"><img src=\"images/%03d-s.png\"></a>\n",
+						img->file.c_str(), img->index);
 				imageliststr.Append(scratch);
 
 			} else {
@@ -1181,6 +1273,7 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 	{
 		//default fallback for no template
 		fprintf(htmlout, "<html>\n<head>\n<title>%s</title>\n<style>\n body { background-color: #555; }\n</style>\n</head>\n<body>\n", filename);
+		fprintf(htmlout, "%s<br>", filename);
 		fprintf(htmlout, imageliststr.c_str());
 		fwrite("</body>\n</html>", 1, 15, htmlout);
 	}
@@ -1200,7 +1293,7 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 				if (c<=0) break;
 				str = line;
 				for (int tc=0; tc<out->templatevars->attributes.n; tc++) {
-					str.Replace(out->templatevars->attributes.e[tc]->value, out->templatevars->attributes.e[tc]->name, true);
+					str.Replace(out->templatevars->attributes.e[tc]->name, out->templatevars->attributes.e[tc]->value, true);
 				}
 				if (str.Find("<!--IMAGE-LIST-->",0,0) >= 0) str.Replace("<!--IMAGE-LIST-->", imageliststr.c_str(), true);
 				fwrite(str.c_str(), 1, str.Bytes(), htmlout);
@@ -1211,11 +1304,7 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 	}
 
 	fclose(htmlout);
-
-	if (out->render_each_page) {
-		//create page##.html with embedded svg of the pages.
-		//The svg is normal svg export, with particular config, then prepended and appended with html header and footer.
-	}
+	htmlout = nullptr;
 
 
 	dp->EndDrawing();
