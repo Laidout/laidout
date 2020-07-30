@@ -32,6 +32,28 @@ void installSvgFilter();
 int AddSvgDocument(const char *file, Laxkit::ErrorLog &log, Document *existingdoc = nullptr);
 
 
+//------------------------------------ SvgExportConfig ----------------------------------
+
+class SvgExportConfig : public DocumentExportConfig
+{
+  public:
+	bool use_powerstroke;
+	bool use_mesh;
+	bool data_meta;
+	double pixels_per_inch; //if rasterizing anything
+
+	SvgExportConfig();
+	SvgExportConfig(DocumentExportConfig *config);
+    virtual ObjectDef* makeObjectDef();
+	virtual Value *dereference(const char *extstring, int len);
+	virtual int assign(FieldExtPlace *ext,Value *v);
+	//virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual LaxFiles::Attribute * dump_out_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual Value* duplicate();
+};
+
+
 //------------------------------------ SvgOutputFilter ----------------------------------
 class SvgOutputFilter : public ExportFilter
 {

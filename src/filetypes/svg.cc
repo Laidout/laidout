@@ -220,33 +220,31 @@ void installSvgFilter()
 //------------------------------------ SvgExportConfig ----------------------------------
 
 /*! \class SvgExportConfig
- * \brief Holds extra config for export.
+ * \brief Holds extra config for svg export.
  */
-class SvgExportConfig : public DocumentExportConfig
-{
-  public:
-	bool use_powerstroke;
-	bool use_mesh;
-	bool data_meta;
-	double pixels_per_inch;
 
-	SvgExportConfig();
-	SvgExportConfig(DocumentExportConfig *config);
-    virtual ObjectDef* makeObjectDef();
-	virtual Value *dereference(const char *extstring, int len);
-	virtual int assign(FieldExtPlace *ext,Value *v);
-	//virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual LaxFiles::Attribute * dump_out_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
-	virtual Value* duplicate();
-};
+
+//! Set the filter to the Image export filter stored in the laidout object.
+SvgExportConfig::SvgExportConfig()
+{
+	use_mesh        = false;
+	data_meta       = false;
+	use_powerstroke = false;
+	pixels_per_inch = DEFAULT_PPINCH;
+
+	for (int c=0; c<laidout->exportfilters.n; c++) {
+		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Image")) {
+			filter=laidout->exportfilters.e[c];
+			break;
+		}
+	}
+}
 
 /*! Base on config, copy over its stuff.
  */
 SvgExportConfig::SvgExportConfig(DocumentExportConfig *config)
 	: DocumentExportConfig(config)
 {
-
 	SvgExportConfig *svgconf=dynamic_cast<SvgExportConfig*>(config);
 	if (svgconf) {
 		use_mesh        = svgconf->use_mesh;
@@ -255,28 +253,10 @@ SvgExportConfig::SvgExportConfig(DocumentExportConfig *config)
 		data_meta       = svgconf->data_meta;
 
 	} else {
-		use_mesh=false;
-		use_powerstroke=false;
-		//use_powerstroke = true;
+		use_mesh        = false;
+		use_powerstroke = false;
 		pixels_per_inch = DEFAULT_PPINCH;
-		data_meta = false;
-	}
-}
-
-//! Set the filter to the Image export filter stored in the laidout object.
-SvgExportConfig::SvgExportConfig()
-{
-	use_mesh = false;
-	data_meta = false;
-	//use_powerstroke = true;
-	use_powerstroke=false;
-	pixels_per_inch = DEFAULT_PPINCH;
-
-	for (int c=0; c<laidout->exportfilters.n; c++) {
-		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Image")) {
-			filter=laidout->exportfilters.e[c];
-			break; 
-		}
+		data_meta       = false;
 	}
 }
 
@@ -746,7 +726,7 @@ static void svgMeshPathOut(FILE *f, const char *spc, ColorPatchData *patch, int 
 //! Function to dump out obj as svg.
 /*! Return nonzero for fatal errors encountered, else 0.
  *
- * Remember that connceted defs are collected in svgdumpdef().
+ * Remember that connected defs are collected in svgdumpdef().
  *
  * \todo put in indentation
  * \todo add warning when invalid radial gradient: one circle not totally contained in another
@@ -779,7 +759,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 					continue;
 				}
 				str = obj_meta->attributes.e[c]->name;
-				str.Replace("_"," ",true);
+				str.Replace(" ","_",true);
 				for (int c2=0; c2<str.Bytes(); c2++) {
 					ch = str.byte(c2);
 					if (ch >= 'A' && ch <= 'Z') ch = tolower(ch);
@@ -1790,7 +1770,9 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			  "     xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\n"
 			  "     version=\"1.0\"\n");
 	fprintf(f,"     width=\"%fin\"\n", width); //***inches by default?
-	fprintf(f,"     height=\"%fin\"\n", height);
+	// fprintf(f,"     height=\"%fin\"\n", height);
+	fprintf(f,"     height=\"auto\"\n"
+	          "     viewBox=\"0 0 %f %f\"\n", width*96, height*96);
 	fprintf(f,"   >\n");
 
 	 //set default units for use later in Inkscape
