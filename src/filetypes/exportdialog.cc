@@ -472,7 +472,8 @@ int ExportDialog::init()
 	last=printrange=new CheckBox(this,"ps-printrange",NULL,CHECK_CIRCLE|CHECK_LEFT,
 						 0,0,0,0,0, 
 						 last,object_id,"ps-printrange",
-						 _("Export From:"), CHECKGAP,5);
+						 _("Export Range:"), CHECKGAP,5);
+	printrange->tooltip(_("Negative numbers mean from the end."));
 	printrange->State(LAX_OFF);
 	AddWin(printrange,1,-1);
 
