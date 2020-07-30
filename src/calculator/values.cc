@@ -73,9 +73,9 @@ const char *element_TypeNames(int type)
 	if (type==VALUE_Flags)       return "flags";
 	if (type==VALUE_Enum)        return "enum";
 	if (type==VALUE_EnumVal)     return "enumval";
-	if (type==VALUE_Color)       return "color";
-	if (type==VALUE_Date)        return "date";
-	if (type==VALUE_Time)        return "time";
+	if (type==VALUE_Color)       return "Color";
+	if (type==VALUE_Date)        return "Date";
+	if (type==VALUE_Time)        return "Time";
 	if (type==VALUE_Boolean)     return "boolean";
 	if (type==VALUE_Complex)     return "complex";
 
@@ -139,10 +139,10 @@ ValueTypes element_NameToType(const char *type)
 	if (!strcmp(type,"enum"))        return VALUE_Enum;
 	if (!strcmp(type,"enumval"))     return VALUE_EnumVal;
 
-	if (!strcmp(type,"color"))       return VALUE_Color;
+	if (!strcmp(type,"Color"))       return VALUE_Color;
 	if (!strcmp(type,"File"))        return VALUE_File;
-	if (!strcmp(type,"date"))        return VALUE_Date;
-	if (!strcmp(type,"time"))        return VALUE_Time;
+	if (!strcmp(type,"Date"))        return VALUE_Date;
+	if (!strcmp(type,"Time"))        return VALUE_Time;
 	if (!strcmp(type,"complex"))     return VALUE_Complex;
 
 	if (!strcmp(type,"fields"))      return VALUE_Fields;
@@ -4507,7 +4507,7 @@ ColorValue::ColorValue()
 ColorValue::ColorValue(const char *str)
   : color(LAX_COLOR_RGB,65535,0,0,0,65535)
 {
-	color.SetHexValue(str);
+	if (str) color.Parse(str,-1,nullptr);
 }
 
 ColorValue::ColorValue(double r, double g, double b, double a)
@@ -4519,6 +4519,11 @@ ColorValue::ColorValue(double r, double g, double b, double a)
 ColorValue::~ColorValue()
 {
 	DBG cerr <<"ColorValue destructor.."<<endl;
+}
+
+bool ColorValue::Parse(const char *str)
+{
+	return color.Parse(str, -1, nullptr);
 }
 
 int ColorValue::getValueStr(char *buffer,int len)

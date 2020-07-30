@@ -725,6 +725,7 @@ class ColorValue : public Value
 	ColorValue(double r, double g, double b, double a);
 	//ColorValue(Laxkit::ColorBase &color);
 	virtual ~ColorValue();
+	virtual bool Parse(const char *str);
 	virtual const char *whattype() { return "ColorValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
