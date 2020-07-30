@@ -281,35 +281,35 @@ SCRIBUSUTF8NEW   #Wraps up the whole enchilada
                    #3 = Comma 
                    #4 = Center
         TableStyle
-		  NAME
-		  DefaultStyle
-		  FillColor
-		  FillShade
-		  elements:
-		    TableBorderLeft
-			  elements:
-			    TableBorderLine #Used in TableBorder*, also in CellStyle
-				  Width
-				  PenStyle
-				  Color
-				  Shade
-		    TableBorderRight
-		    TableBorderTop
-		    TableBorderBottom
-		CellStyle
-		  NAME
-		  DefaultStyle
-		  FillColor
-		  FillShade
-		  LeftPadding
-		  RightPadding
-		  TopPadding
-		  BottomPadding
-		  elements:
-		    TableBorderLeft
-		    TableBorderRight
-		    TableBorderTop
-		    TableBorderBottom
+          NAME
+          DefaultStyle
+          FillColor
+          FillShade
+          elements:
+            TableBorderLeft
+              elements:
+                TableBorderLine #Used in TableBorder*, also in CellStyle
+                  Width
+                  PenStyle
+                  Color
+                  Shade
+            TableBorderRight
+            TableBorderTop
+            TableBorderBottom
+        CellStyle
+          NAME
+          DefaultStyle
+          FillColor
+          FillShade
+          LeftPadding
+          RightPadding
+          TopPadding
+          BottomPadding
+          elements:
+            TableBorderLeft
+            TableBorderRight
+            TableBorderTop
+            TableBorderBottom
         CHARSTYLE   #A character style
           CNAME     #Name of the style
           CPARENT    #Parent style name
@@ -471,25 +471,25 @@ SCRIBUSUTF8NEW   #Wraps up the whole enchilada
           ListNonPrinting
           Style    #Text style to use
           NumberPlacement
-		NotesStyles
-		  elements:
-		    notesStyle
-			  Name
-			  Start
-			  Endnotes
-			  Type
-			  Range
-			  Prefix
-			  Suffix
-			  AutoHeight
-			  AutoWidth
-			  AutoRemove
-			  AutoWeld
-			  SuperNote
-			  SuperMaster
-			  MarksStyle
-			  NotesStyle
-		NotesFrames	  
+        NotesStyles
+          elements:
+            notesStyle
+              Name
+              Start
+              Endnotes
+              Type
+              Range
+              Prefix
+              Suffix
+              AutoHeight
+              AutoWidth
+              AutoRemove
+              AutoWeld
+              SuperNote
+              SuperMaster
+              MarksStyle
+              NotesStyle
+        NotesFrames      
         Sections   #description of how to number groups of pages
           elements:
             Section
@@ -533,7 +533,7 @@ SCRIBUSUTF8NEW   #Wraps up the whole enchilada
           NAM            #Page name, blank if not a master page
           MNAM           #Name of attached master page
           LEFT           #For multipage spreads, which page in the spread is the left most
-		  PRESET
+          PRESET
           Orientation    #1 for landscape, 0 for portrait
           PAGEHEIGHT      #Height in postscript points (72==1 inch)
           PAGEWIDTH       #Width in postscript points (72==1 inch)
@@ -550,8 +550,8 @@ SCRIBUSUTF8NEW   #Wraps up the whole enchilada
           AGHorizontalAutoRefer
           AGVerticalAutoRefer
           AGSelection
-		  pageEffectDuration
-		  pageViewDuration
+          pageEffectDuration
+          pageViewDuration
         MASTEROBJECT  #Same as a PAGEOBJECT, but is on a MASTERPAGE
         PAGEOBJECT    #An object that is somehow drawable on a PAGE
           ALIGN   #(optional) Alignment for text when no paragraph style is set 
@@ -847,7 +847,7 @@ SCRIBUSUTF8NEW   #Wraps up the whole enchilada
               SHADE   #Shading of the stop colour in Percent
               TRANS   #Transparency of the colour stop, range from 0.0 till 1.0
                 
-			StoryText
+            StoryText
               elements:
                 DefaultStyle
                 ITEXT      #Chunk of text. These can have CHARSTYLE attributes, which will override
