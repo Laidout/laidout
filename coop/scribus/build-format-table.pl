@@ -1,5 +1,14 @@
 #!/usr/bin/perl
 
+# Create an html page for a file format.
+#
+# usage:
+#  Input formats can be:   .att  
+#  Output formats can be:  .html .wiki .dtd
+#
+#  ./build-format-table.pl  infile.att   outfile.html 
+#  ./build-format-table.pl  infile.att   outfile.wiki 
+#
 
 #This file will convert an indented format of essentially xml to an html table.
 #You may also import and export wiki table formatted data.
@@ -23,13 +32,7 @@
 #The comments after the '#' will be put alongside an html table of the elements and attributes. 
 #Comments beginning with "##" at the start of a line will be ignored.
 #
-# usage:
-#  Input formats can be:   .att  
-#  Output formats can be:  .html .wiki .dtd
-#
-#  ./build-format-table.pl  infile.att   outfile.html 
-#  ./build-format-table.pl  infile.att   outfile.wiki 
-#
+
 #Written by Tom Lechner (tomlechner.com).
 #Copyright (c) 2009,2010, 2013
 #
@@ -61,6 +64,7 @@
 #---------------------------------------------------------------------
 
 if ($ARGV[0] eq "--pure-att" or $ARGV[0] eq "-a") {
+	print "Inputting pure att file\n";
 	$allelements=1;
 	$ARGIN  = $ARGV[1];
 	$ARGOUT = $ARGV[2];
@@ -140,6 +144,7 @@ die "Output where!?\n" if ($dtdfile eq "" and $htmlfile eq "" and $wikifile eq "
 
 #attribute has:
 #  name
+#  default 
 #  description
 #  optional (can be "zero or one" or "optional" or "required")
 #  owner
@@ -156,6 +161,16 @@ die "Output where!?\n" if ($dtdfile eq "" and $htmlfile eq "" and $wikifile eq "
 $initialnotes="";
 
 %mainnode={};
+$mainnode{"name"}        = "top";
+$mainnode{"owner"}       = 0;
+$mainnode{"indent"}      = -1;
+$mainnode{"childindent"} = -1;
+$mainnode{"isattribute"} = 0;
+$mainnode{"optional"}    = $optional;
+$mainnode{"comment"}     = $linecomment;
+$mainnode{"subelements"} = [];
+$mainnode{"attributes"}  = [];
+$currentelement          = \%mainnode;
 
 $maxdepth=0;
 $depth=0;
@@ -163,7 +178,6 @@ $linenum=0;
 $maybemoredesc=0; #if line indented with more comment: /^ +#(.*)$/, append to desc
 $lastindent=0;
 $reading_attributes=0;
-$currentelement=0;
 $currentindent=-1; #set to -1 with each new element or an "elements:" section
 $desc="";
 
@@ -175,6 +189,8 @@ if ($infile ne "") {
 	while (defined($line = <INFILE>)) {
 		$linenum++;
 
+		print $line;
+
 		if ($line =~ /^##/) {
 			#print "skipping comment starting with \"##\"...\n";
 			next;
@@ -182,6 +198,7 @@ if ($infile ne "") {
 
 		if ($line =~ /^\s*$/) {
 			#print "skipping blank line $linenum...\n";
+			$maybemoredesc = 0;
 			next;
 		}
 
@@ -214,7 +231,7 @@ if ($infile ne "") {
 
 
 		 #append any initial notes
-		if ($line =~ /^#(.*)$/) {
+		if ($line =~ /^\s*#(.*)$/) {
 			my $add=trim($1);
 			if ($add eq "") { $add="<br/>\n<br/>\n"; }
 			$initialnotes.="\n$add";
@@ -239,12 +256,14 @@ if ($infile ne "") {
 		if ($line =~ /([^#]*)(#.*)$/) {  #get (name) (#final comment)
 			$linename   =rtrim($1); #if "" then append any comment found to current name
 			$linecomment=$2; #comment could be "#blah" or "#(optional) blah" 
-			
+
 			if ($linename =~ /(\S*)\s+(.*)/) {
 				$defaultvalue=trim($2);
 				$linename=$1;
 			} else { $defaultvalue=""; }
 
+			#print "Found name:$linename  value:$defaultvalue  comment:$linecomment\n";
+			
 			if ($linecomment =~ /^#\(([^)]*)\)(.*)$/) {
 				$linecomment=$2;
 
@@ -262,7 +281,6 @@ if ($infile ne "") {
 				$optional="one only";
 			}
 		} else {  #make sure comment is "" if none given
-			#print "--no comment for $linename\n";
 			$optional="one only";
 			$linecomment="";
 			$linename=$line;
@@ -272,11 +290,12 @@ if ($infile ne "") {
 				$linename=$1;
 			} else { $defaultvalue=""; }
 
+			#print "Found name:$linename  value:$defaultvalue  (no comment)\n";
 		}
 
 		# we have now scanned the line, and parsed into indent, name, and comment
 		# we just need to deal with those now!
-		#print "line:$linenum, name:$linename  optional:$optional  indent:$lineindent  comment:\"$linecomment\"\n";
+		#print "line:$linenum, name:$linename  value:$defaultvalue   optional:$optional  indent:$lineindent  comment:\"$linecomment\"\n";
 
 		if ($linename eq "") {
 			 #no name
@@ -320,7 +339,7 @@ if ($infile ne "") {
 
 				$maybemoredesc=$currentelement;
 				if ($allelements!=1) { $reading_attributes=1; }
-				#print "created first node from line $linenum.\n";
+				print "created first node from line $linenum.\n";
 				next;
 			}
 			#print "line:$linenum, line data: $line\n";
@@ -434,7 +453,7 @@ if ($inwiki ne "") {
 
 
 
-$depth=$maxdepth;
+$depth = $maxdepth;
 computedepth(\%mainnode);
 
 
@@ -446,6 +465,7 @@ computedepth(\%mainnode);
 
 #------------------------ write out html file --------------------------------
 if ($htmlfile ne "") {
+
 	print "Writing out html table to \"$htmlfile\"...";
 	open(OUTHTML, ">$htmlfile");
 
@@ -478,6 +498,22 @@ table.formattable td {
 	#background-color: white;
 	-moz-border-radius: 0px 0px 0px 0px;
 }
+table.formattable td.normal {
+	background-color: #A9FFFF;
+}
+table.formattable td.parentel {
+	background-color: #eeeeee;
+	color:            #aaaaaa;
+}
+table.formattable td.undocumented {
+	background-color: #ffaaaa;
+}
+table.formattable td.optional {
+	background-color: #c9e4FF;
+}
+table.formattable td.comment {
+	background-color: #ddffdd;
+}
 </style>
 INHTML
 	print OUTHTML "</head>\n<body>\n";
@@ -486,7 +522,7 @@ INHTML
 	print OUTHTML "<br/><div>\n<table class=\"formattable\">\n".
 				  "  <tr valign=\"top\">\n".
 				  "    <td colspan=\"$depth\" align=\"center\"><b>Tags</b></td>\n".
-				  "	   <td><b>Attributes</b></td>\n".
+				  "    <td><b>Attributes</b></td>\n".
 				  "    <td><b>Meaning</b></td>\n".
 				  "  </tr>\n";
 
@@ -494,7 +530,16 @@ INHTML
 	$tdcolor0="#000000";
 	$tdcolor1="#222222";
 	$currenttdcolor=$tdcolor0;
-	dumphtmlatt(\%mainnode);
+
+	$top = \%mainnode;
+	print "\nnum top elements: ".(scalar(@{$top->{"subelements"}}))."\n";
+	if (scalar(@{$top->{"subelements"}})>0) {
+		foreach $a (@{$top->{"subelements"}}) {
+			dumphtmlatt($a);
+		}
+	}
+
+#	dumphtmlatt(\%mainnode);
 
 
 	print OUTHTML "</div>\n</table>\n</body>\n</html>";
@@ -510,34 +555,45 @@ sub dumphtmlatt
 
 	my $numatts=scalar(@{$att->{"attributes"}});
 
+	 #print out 1 row for element name and comment if any
 	print OUTHTML "  <tr>\n";
 	my $currentdepth = dumpPreviousElements($att,1+$numatts);
 	my $bgcolor="#ffffff"; #"#A9D1FF"
 	my $cbgcolor="#ffffff"; #"#A9D1FF"
+	my $class = "normal";
 
-	 #print out 1 row for element name and comment if any
-	if ($att->{"optional"} eq "one only" or $att->{"optional"} eq "one or more" ) { $bgcolor="#eeeeee"; } else { $bgcolor="#A9D1FF"; }
-	print OUTHTML "    <td colspan=\"".($depth-$currentdepth+2)."\" style=\"background:$bgcolor;color:$currenttdcolor\">";
+	 #current thing <td>
+	if ($att->{"optional"} eq "one only" or $att->{"optional"} eq "one or more" ) { $class = "normal"; } else { $class="optional"; }
+	print OUTHTML "    <td colspan=\"".($depth-$currentdepth+2)."\" class=\"$class\">";
 	print OUTHTML $att->{"name"}."</td>\n";
-	print OUTHTML "    <td colspan=\"1\" style=\"background:$bgcolor;\">";
-	if ($att->{"comment"} ne "") { print OUTHTML $att->{"comment"}; }
+
+	 #comment <td>
+	if ($class == "normal") { $class = "comment"; }
+	print OUTHTML "    <td colspan=\"1\" class=\"$class\">";
+	my $comment = "";
+	if ($att->{"default"} ne "") { $comment = "<b>".$att->{"default"}."</b>"; }
+	if ($comment ne "") { $comment .= "<br>"; }
+	$comment .= $att->{"comment"};
+	if ($att->{"comment"} ne "") { print OUTHTML $comment; }
 	else { print OUTHTML "&nbsp;"; }
 	print OUTHTML "</td>\n";
 	print OUTHTML "  </tr>\n"; #end of element name row
 	
 	 #output all attributes of the element
-	if ($att->{"optional"} eq "one only" or $att->{"optional"} eq "one or more" ) { $bgcolor="#ffffff"; } else { $bgcolor="#c9e4FF"; }
+	$class = "parentel";
+	if ($att->{"optional"} eq "one only" or $att->{"optional"} eq "one or more" ) { $class="parentel"; } else { $class="optional"; }
 	if (scalar(@{$att->{"attributes"}})>0) {
-		print OUTHTML "  <tr>\n      <td style=\"background:$bgcolor\" colspan=\"".($depth-$currentdepth+1)
+		print OUTHTML "  <tr>\n      <td class=\"$class\" colspan=\"".($depth-$currentdepth+1)
 					 ."\" rowspan=\"".$numatts."\">&nbsp;&nbsp;&nbsp;</td>\n";
 	}
 	my $c=0;
 	foreach $a (@{$att->{"attributes"}}) {
 		if ($c>0) { print OUTHTML "  <tr>\n"; }
 		$c++;
-		if ($a->{"optional"} eq "one only" or $a->{"optional"} eq "one or more" ) { $bgcolor="#ffffff"; } else { $bgcolor="#c9e4FF"; }
-		if ($a->{"comment"} eq "") { $cbgcolor="#ffaaaa"; } else { $cbgcolor=$bgcolor; }
-		print OUTHTML "    <td style=\"background:$bgcolor\">".$a->{"name"}."</td><td style=\"background:$cbgcolor\">";
+		my $cclass="comment";
+		if ($a->{"optional"} eq "one only" or $a->{"optional"} eq "one or more" ) { $class="normal"; } else { $class="optional"; }
+		if ($a->{"comment"} eq "") { $cclass="undocumented"; } else { $cclass="normal"; }
+		print OUTHTML "    <td class=\"$class\">".$a->{"name"}."</td><td class=\"$cclass\">";
 		if ($a->{"default"} ne "") { print OUTHTML "Default value: ".$a->{"default"}.".<br/>\n"; }
 		if ($a->{"comment"} ne "") { print OUTHTML $a->{"comment"}; }
 		else { print OUTHTML "<blink>DOCUMENT ME!!</blink>"; }
@@ -562,10 +618,10 @@ sub dumpPreviousElements
 	my $d=1;
 
 	$att=$att->{"owner"};
-	if ($att==0) { return 1; }
+	if ($att==0 || $att->{"indent"} == -1) { return 1; }
 
 	$d+=dumpPreviousElements($att,$span);
-	print OUTHTML "    <td valign=\"top\" style=\"background:#eeeeee;color:#aaaaaa\" rowspan=\"$span\">".$att->{"name"}."</td>\n";
+	print OUTHTML "    <td valign=\"top\" class=\"parentel\" rowspan=\"$span\">".$att->{"name"}."</td>\n";
 
 	return $d;
 }
@@ -758,6 +814,7 @@ sub computedepth
 	my $att=$_[0];
 
 	my $num=1; #1 for the att passed in
+	if ($att->{"indent"} == -1) { $num = 0; }
 
 	$num+=scalar(@{$att->{"attributes"}});
 
@@ -767,6 +824,7 @@ sub computedepth
 		}
 	}
 	$att->{"totallines"}=$num;
+	print "total lines for ".$att->{"name"}.": $num\n";
 	return $num;
 }
 
