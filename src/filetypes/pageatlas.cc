@@ -83,7 +83,8 @@ class PageAtlasExportConfig : public DocumentExportConfig
 	int px_width;
 	int px_height;
 	bool round_up_to_power_2;
-	Laxkit::Color *color;
+	ColorValue *color;
+	// Laxkit::Color *color;
 
 	PageAtlasExportConfig();
 	PageAtlasExportConfig(DocumentExportConfig *config);
@@ -129,7 +130,7 @@ PageAtlasExportConfig::PageAtlasExportConfig(DocumentExportConfig *config)
 		px_height           = conf->px_height;
 		round_up_to_power_2 = conf->round_up_to_power_2;
 		color               = conf->color;
-		if (color) color = color->duplicate();
+		if (color) color = dynamic_cast<ColorValue*>(color->duplicate());
 
 	} else {
 		pages_wide          = 1;
@@ -170,8 +171,9 @@ Value *PageAtlasExportConfig::dereference(const char *extstring, int len)
 	} else if (IsName("round_up_to_power_2",extstring,len)) {
 		return new BooleanValue(round_up_to_power_2);
 
-	// } else if (IsName("color",extstring,len)) {
-	// 	return new ColorValue(color);
+	} else if (IsName("color",extstring,len)) {
+		if (!color) return new ColorValue();
+	 	return new ColorValue(color->color.Red(), color->color.Green(), color->color.Blue(), color->color.Alpha());
 
 	}
 	return DocumentExportConfig::dereference(extstring,len);
@@ -283,12 +285,11 @@ int PageAtlasExportConfig::assign(FieldExtPlace *ext,Value *v)
                 return 1;
 
             } else if (!strcmp(str,"color")) {
-            	// ColorValue *cv = dynamic_cast<ColorValue*>(v);
-            	// if (!cv) return 0;
-            	// if (color) color->dec_count();
-				// color = cv->GetColor();
-                // return 1;
-            	return 0;
+            	ColorValue *cv = dynamic_cast<ColorValue*>(v);
+            	if (!cv) return 0;
+            	if (color) color->dec_count();
+				color = dynamic_cast<ColorValue*>(cv->duplicate());
+                return 1;
             }
 		}
 	}
@@ -366,14 +367,14 @@ ObjectDef* PageAtlasExportConfig::makeObjectDef()
             0,     //flags
             nullptr);//newfunc
 
-    // def->push("color",
-    //         _("Background color"),
-    //         _("Background color"),
-    //         "Color",
-    //         nullptr,   //range
-    //         nullptr, //defvalue
-    //         0,     //flags
-    //         nullptr);//newfunc
+    def->push("color",
+            _("Background color"),
+            _("Background color"),
+            "Color",
+            nullptr,   //range
+            nullptr, //defvalue
+            0,     //flags
+            nullptr);//newfunc
  
 	stylemanager.AddObjectDef(def,0);
 	return def;
@@ -399,7 +400,12 @@ LaxFiles::Attribute *PageAtlasExportConfig::dump_out_atts(LaxFiles::Attribute *a
 	att->push("px_width",            px_width           );
 	att->push("px_height",           px_height          );
 	att->push("round_up_to_power_2", round_up_to_power_2);
-	// if (color) att->push("color", ***);
+
+	if (color) {
+		char buffer[50];
+		color->getValueStr(buffer, 50);
+		att->push("color", buffer);
+	} 
 
 	return att;
 }
@@ -437,7 +443,10 @@ void PageAtlasExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFi
 			if (d > 0) px_height = d;
 
 		} else if (!strcmp(name,"color")) {
-			// ***
+			if (!isblank(value)) {
+				if (!color) color = new ColorValue;
+				color->Parse(value);
+			}
 		}
 	}
 }
@@ -615,7 +624,11 @@ int PageAtlasExportFilter::Out(const char *filename, Laxkit::anObject *context, 
 	dpw->PushAxes();
 	// dpw->defaultRighthanded(true);
 	// dpw->NewTransform(1,0,0,-1,0,-height);
-	dpw->ClearTransparent();
+	if (config->color) {
+		ScreenColor col(config->color->color.Red(), config->color->color.Green(), config->color->color.Blue(), config->color->color.Alpha());
+		dpw->NewBG(col);
+		dpw->ClearWindow();
+	} else dpw->ClearTransparent();
 
 	Displayer *dp = imanager->GetDisplayer(DRAWS_Hires); //for pages
 
@@ -637,7 +650,11 @@ int PageAtlasExportFilter::Out(const char *filename, Laxkit::anObject *context, 
 			dp->MakeCurrent(subimg);
 			dp->SetSpace(bounds.minx,bounds.maxx, bounds.miny,bounds.maxy);
 			dp->Center(bounds.minx,bounds.maxx, bounds.miny,bounds.maxy);
-			dp->ClearTransparent();
+			if (config->color) {
+				ScreenColor col(config->color->color.Red(), config->color->color.Green(), config->color->color.Blue(), config->color->color.Alpha());
+				dp->NewBG(col);
+				dp->ClearWindow();
+			} else dp->ClearTransparent();
 					
 			if (papergroup->objs.n()) {
 				// .... output papergroup objects
