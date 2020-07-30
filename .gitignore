@@ -3,6 +3,7 @@
 *.o
 src/icons/*.png
 src/icons/laidout-icons
+src/icons/laidout-icons.zip
 *-stamp
 *.stamp
 *.bak
@@ -14,7 +15,17 @@ deb/laidout/
 docs/html
 src/po/*.mo
 src/po/POTFILES
+src/po/laidout-freshdump.pot
 src/laidout
+src/polyptych/src/panolyptych
+src/polyptych/src/panoramanoise
+src/polyptych/src/remapsphere
+src/polyptych/src/skyflow
+src/polyptych/src/spheretocubemap
+src/plugins/**/*.so
+coop/scribus/out.html
+laxkit
+
 
 #
 # ignore configured files
@@ -46,3 +57,8 @@ src/*.sla
 src/*.svg
 src/*.data
 src/*.dump
+src/*.html
+src/default.keys
+src/polyptych/src/*tif
+src/polyptych/src/*jpg
+docs/web
