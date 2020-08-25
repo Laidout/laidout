@@ -114,6 +114,8 @@ const char *CtoStr(char c)
  */
 
 
+Value *NewFoldValue() { return new Fold('r', 0, 0); }
+
 Value *Fold::duplicate()
 { return new Fold(direction,under,whichfold); }
 
@@ -134,7 +136,7 @@ ObjectDef *Fold::makeObjectDef()
 			NULL,NULL, //range, default value
 			NULL, //fields
 			0, //new flags
-			NULL, //newfunc
+			NewFoldValue, //newfunc
 			NULL /*createFold*/); //newfunc with parameters
 
 	foldd->push("index", _("Index"), _("The index of the fold, starting from 0, from the top or left."),
@@ -985,6 +987,8 @@ void Signature::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCon
 	checkFoldLevel(NULL,NULL,NULL);
 }
 
+Value *NewSignatureValue() { return new Signature(); }
+
 ObjectDef *Signature::makeObjectDef()
 {
 	ObjectDef *sd=stylemanager.FindDef("Signature");
@@ -1000,7 +1004,7 @@ ObjectDef *Signature::makeObjectDef()
 			NULL,NULL, //range, default value
 			NULL, //fields
 			0, //new flags
-			NULL, //newfunc
+			NewSignatureValue, //newfunc
 			NULL /*createSignature*/);
 
 	sd->push("name", _("Name"), _("Name of the imposition"),
@@ -1424,6 +1428,8 @@ int PaperPartition::SetPaper(PaperStyle *p)
 	return 0;
 }
 
+Value *NewPartitionValue() { return new PaperPartition(); }
+
 /*! Create a new PaperPartition ObjectDef.
  * Returns an inc counted reference to it if found in stylemanager.
  */
@@ -1442,7 +1448,7 @@ ObjectDef *PaperPartition::makeObjectDef()
 			NULL,NULL, //range, default value
 			NULL, //fields
 			0, //new flags
-			NULL, //newfunc
+			NewPartitionValue, //newfunc
 			NULL /*createPaperPartition*/); //newfunc with parameters
 
 	def->push("paper", _("Paper"), _("Which paper size to use"),
@@ -2287,6 +2293,8 @@ void SignatureInstance::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles:
 	setPageStyles(1);
 }
 
+Value *NewSigInstanceValue() { return new SignatureInstance(); }
+
 /*! Always makes new one, does not consult stylemanager.
  */
 ObjectDef *SignatureInstance::makeObjectDef()
@@ -2304,7 +2312,7 @@ ObjectDef *SignatureInstance::makeObjectDef()
 			NULL,NULL, //range, default value
 			NULL, //fields
 			0, //new flags
-			NULL, //newfunc
+			NewSigInstanceValue, //newfunc
 			NULL);
 			
 
@@ -3799,6 +3807,7 @@ void SignatureImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFile
 
 //------------------------------- ObjectDefs
 
+Value *NewSigImpositionValue() { return new SignatureImposition(); }
 
 /*! Always makes new one, does not consult stylemanager.
  */
@@ -3817,7 +3826,7 @@ ObjectDef *makeSignatureImpositionObjectDef()
 			NULL,NULL, //range, default value
 			NULL, //fields
 			0, //new flags
-			NULL, //newfunc
+			NewSigImpositionValue, //newfunc
 			NULL /*newSignatureImposition*/);
 
 	sd->push("name", _("Name"), _("Name of the imposition"),
