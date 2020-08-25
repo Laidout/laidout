@@ -37,7 +37,8 @@ namespace Laidout {
  */
 PluginWindow::PluginWindow(Laxkit::anXWindow *parnt)
 		: RowFrame(parnt,"plugins",_("Plugins"),
-					ROWFRAME_HORIZONTAL|ROWFRAME_LEFT|ANXWIN_REMEMBER|ANXWIN_CENTER,
+					ROWFRAME_HORIZONTAL | ROWFRAME_LEFT | ANXWIN_REMEMBER | ANXWIN_CENTER
+					   | (parnt ? 0 : ANXWIN_ESCAPABLE),
 					0,0,0,0,0, nullptr,0,nullptr,
 					laidout->defaultlaxfont->textheight()/3)
 {
@@ -97,6 +98,15 @@ int PluginWindow::init()
 
 	Utf8String str;
 
+	str = str + "Plugin directories:\n";
+	for (int c=0; c<laidout->prefs.plugin_dirs.n; c++) {
+		str = str + laidout->prefs.plugin_dirs.e[c] + "\n";
+	}
+	str += "\n";
+	MessageBar *bar = new MessageBar(this,"directories",NULL,MB_LEFT | MB_MOVE, 0,0,0,0,0, str.c_str());
+    AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
+    AddNull();
+
 	//note: laidout's plugin list needs to be expanded to list also unloaded but available, or broken plugins, not just active ones.
 	for (int c=0; c<laidout->plugins.n; c++) {
 		PluginBase *plugin = laidout->plugins.e[c];
@@ -109,7 +119,7 @@ int PluginWindow::init()
 		 + "ReleaseDate: " + plugin->ReleaseDate() + "\n"
 		 + "License:     " + plugin->License()     + "\n\n" ;
 
-		MessageBar *bar = new MessageBar(this,plugin->PluginName(),NULL,MB_LEFT | MB_MOVE, 0,0,0,0,0, str.c_str());
+		bar = new MessageBar(this,plugin->PluginName(),NULL,MB_LEFT | MB_MOVE, 0,0,0,0,0, str.c_str());
         AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
         AddNull();
 	}
