@@ -265,7 +265,7 @@ ObjectDef *PageStyle::makeObjectDef()
 
 	//ObjectDef(const char *nname,const char *nName,const char *ntp, const char *ndesc,unsigned int fflags=STYLEDEF_CAPPED);
 	sd=new ObjectDef(NULL,"PageStyle",
-			_("Generic Page"),
+			_("Generic Page Style"),
 			_("A page"),
 			"class",
 			NULL,NULL);
@@ -586,27 +586,28 @@ ObjectDef *RectPageStyle::makeObjectDef()
  */
 Page::Page(PageStyle *npagestyle,int num)
 {
-	label=NULL;
-	thumbmodtime=0;
-	modtime=times(NULL);
-	pagestyle=npagestyle;
+	label        = NULL;
+	thumbmodtime = 0;
+	modtime      = times(NULL);
+	pagestyle    = npagestyle;
 	if (pagestyle) pagestyle->inc_count();
-	labeltype=MARKER_Circle;
-	labelcolor.rgbf(1,1,1);
-	thumbnail=NULL;
-	pagenumber=num;
+	labeltype = MARKER_Circle;
+	labelcolor.rgbf(1, 1, 1);
+	thumbnail  = NULL;
+	pagenumber = num;
+	// properties = nullptr;
 
-	 // initialize page contents to 1 empty layer.
-	Group *g=new Group;
+	// initialize page contents to 1 empty layer.
+	Group *g = new Group;
 	g->Id("pagelayer");
-	g->selectable=0;
-	g->obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return individual layers
-	layers.push(g); //incs count
+	g->selectable = 0;
+	g->obj_flags  = OBJ_Unselectable | OBJ_Zone;  // force searches to not return return individual layers
+	layers.push(g);                               // incs count
 	g->dec_count();
 
-	layers.selectable=0;
-	layers.obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return layers
-	obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return this
+	layers.selectable = 0;
+	layers.obj_flags = OBJ_Unselectable | OBJ_Zone;  // force searches to not return return layers
+	obj_flags = OBJ_Unselectable | OBJ_Zone;         // force searches to not return return this
 	layers.Id("pagegroup");
 }
 
@@ -618,6 +619,7 @@ Page::~Page()
 	if (thumbnail) thumbnail->dec_count();
 	if (pagestyle) pagestyle->dec_count();
 	layers.flush();
+	// if (properties) properties->dec_count();
 }
 
 /*! Return number of immediate children page's layers contain.
@@ -701,8 +703,8 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext 
 {
 	char *name,*value;
 	for (int c=0; c<att->attributes.n; c++)  {
-		name=att->attributes.e[c]->name;
-		value=att->attributes.e[c]->value;
+		name  = att->attributes.e[c]->name;
+		value = att->attributes.e[c]->value;
 
 		if (!strcmp(name,"pagestyle")) {
 			PageStyle *ps=NULL;
@@ -754,6 +756,10 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext 
 
 		} else if (!strcmp(name,"labelcolor")) {
 			SimpleColorAttribute(value,NULL,&labelcolor, NULL);
+
+		} else if (!strcmp(name,"properties")) {
+			properties.flush();
+			properties.dump_in_atts(att->attributes.e[c], flag, context);
 
 		} else { 
 			DBG cerr <<"Page dump_in:*** unknown attribute "<<(name?name:"(noname)")<<"!!"<<endl;
@@ -826,6 +832,12 @@ void Page::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 	for (int c=0; c<layers.n(); c++) {
 		fprintf(f,"%slayer %d\n",spc,c);
 		layers.e(c)->dump_out(f,indent+2,0,context);
+	}
+
+	 // dump out properties if any
+	if (properties.n()) {
+		fprintf(f, "\n%sproperties\n", spc);
+		properties.dump_out(f, indent+2, 0, nullptr);
 	}
 }
 
