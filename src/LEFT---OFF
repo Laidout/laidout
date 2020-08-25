@@ -13,6 +13,8 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
+bug: filters repeatedly writing \"\"\"\"  reading in quoted names?
+
 bug: imported white images are not white, very slightly gray. gm load problem?
 
 bug: signature editor, selected pages have almost not noticeable selected emphasis.. line width problem?
@@ -122,7 +124,7 @@ headwindow swapping is now REALLY messed up
 pane swapping/dropto on maximized, swapping in general...
 
 svg out, EquivalentObject doesn't play nice with defs.. only accessed once.. how to upkeep clones in this case?
-	-> when equiv objects are composed of groups, what happens?
+    -> when equiv objects are composed of groups, what happens?
 svg coord numpoints==0???? numpoints doesn't really serve any purpose other than debugging, but....
 svg to coord incomplete: arcs needs testing
 memory hole in svg in? test svg import, svg path import must be done
@@ -171,11 +173,11 @@ update fileformat.txt
   DONE incomplete TextOnPath
   should be resources:
     PlainTextObject
-	Palette
-	Linestyle
-	Fillstyle
-	PaperGroups
-	PaperStyle
+    Palette
+    Linestyle
+    Fillstyle
+    PaperGroups
+    PaperStyle
 check laidout.1 when time to release
 update docs to have new release number
 update translation base files
@@ -211,20 +213,20 @@ icons
   test how fast, have autogenerate as option on startup
 
   image batch export: ...wrap this into general Selection export
-	id pattern:
-	  spread/pagestack/0/*/
-		0: [A-Z].*
-		  1: *-s*
-		    +
-	padding: [by grid] [l r t b]
-	unit size: .5 in
-	output unit size: 24px
-	from files:
-		- icons.svg
-		- icons-tiling.svg
-		- lax-icons.svg
-		+
-	output directory: _____ ...
+    id pattern:
+      spread/pagestack/0/*/
+        0: [A-Z].*
+          1: *-s*
+            +
+    padding: [by grid] [l r t b]
+    unit size: .5 in
+    output unit size: 24px
+    from files:
+        - icons.svg
+        - icons-tiling.svg
+        - lax-icons.svg
+        +
+    output directory: _____ ...
 
 ViewWindow:
   maybe drawaxes should show dotted line from origin to bbox?
@@ -233,8 +235,8 @@ Gradients:
   check svg export of gradients with new spread method
   DONE SHOWCOLORS should be off by default
   dragging around color points from inside to outside should allow going out of bounds
-    DONE linear 
-	radial
+    DONE linear
+    radial
   radial:
     default on r1,r2 should be change radius, not move
   perhaps split radial and linear gradients to different tools? makes more sense
@@ -246,9 +248,9 @@ Gradients:
     name
     tags
     color strip:
-	  stops
-  	  position
-  	  r1, r2
+      stops
+        position
+        r1, r2
 
 Palettes:
   load palette should have a preview: file dialog preview function
@@ -259,10 +261,10 @@ Palettes:
   have a none color
   right click for:
     load palette
-	select palette
-	save palette
-	dup palette
-	New from a generator (like rainbow)
+    select palette
+    save palette
+    dup palette
+    New from a generator (like rainbow)
 Soup up the color box so one can recall previous colors, and/or integration with palette window
     -->delay until proper color implementation in place
 
@@ -271,17 +273,17 @@ interface manager interfacemanager:
     near point: default 5 px ? try to find a real world measure based on monitors?
   draw point sizes:
     normal bez point, for instance
-	hovered size
+    hovered size
 
 get splash image working.. better label class?
 
 lgm 2019 feedback and ideas:
   path tool:
     hard to see helper graphics, needs haloing
-	should have space to dup weight node
+    should have space to dup weight node
   method to fix all broken images at once
     option: do just this one, or fix all
-	old path: _____     new path: _____
+    old path: _____     new path: _____
   method to collect all used resources of a doc for distribution
   be able to load old docs
   from here on out, ensure backwards compatibility of files still works
@@ -309,10 +311,10 @@ panel editing:
     should allow both name+value for new
   parenting and unparenting really sucks
     options should be:
-	  Jump to parent --hover to show what is the parent
-	  Unparent
-	  Parent under first --hover to show potential parent 
-	  Parent under last --hover to show potential parent 
+      Jump to parent --hover to show what is the parent
+      Unparent
+      Parent under first --hover to show potential parent
+      Parent under last --hover to show potential parent
 
 need something like laximages->Save(file, format, native_save_only), in case object doesn't know how to save to that format.. maybe default to something like static ImageLoader::Save
 
@@ -344,11 +346,11 @@ need a Revert option
 valuewindow:
   ui hints:
     DoubleRectangle      [maxy]
-	                 [minx]  [maxx]
-					     [miny]
-    AffineValue:  [xx] [xy] {scale x} {rotation} 
-	              [yx] [yy] {scale y} {shear}
-				  [x0] [y0]
+                     [minx]  [maxx]
+                         [miny]
+    AffineValue:  [xx] [xy] {scale x} {rotation}
+                  [yx] [yy] {scale y} {shear}
+                  [x0] [y0]
   setvalue
   arrayvalue
   ValueHash
@@ -356,7 +358,7 @@ valuewindow:
   delete elements of list
   scrolledwindow:
     errant scroller visible, pops on and off
-	when scroller visible, not adjusting thewindow size properly
+    when scroller visible, not adjusting thewindow size properly
   when you quit, does not remember from open windows
 
 instead of _LAX_PLATFORM_MAC, do relevant check with _LAX_ON_NON_GNU instead? currently only place this is necessary is where getline is used
@@ -390,7 +392,7 @@ text on path textonpath: TextOnPath
 
   envelope:
     vertical position bad
-	horizontal spacing a bit wonky
+    horizontal spacing a bit wonky
   bug: drag the baseline handle off to the sides, makes huge bad jumps in value
   bug: dragging the offest handle sometimes jumps to really bad
   handle to remove from current path, and possibly attach it to some other path
@@ -401,16 +403,16 @@ text on path textonpath: TextOnPath
 Find interface: findinterface:
   ____pattern_____ .* Aa all (is regex, case sensitive)
   Criteria: [dropdown of predefined criteria] [ ___type:"Image", brokenimages, expr:"obj.maxy < context.page.maxy/2"__ ]
-  [next] [prev] [all] 
+  [next] [prev] [all]
   [ 5 found: (found object thumbnail list) ]
   search:
     id desc other-meta
-	broken images
-	empty groups
-	empty text
-	by type
-	scriptable pre-flighty conditions
-	current view only | in current selection | everywhere
+    broken images
+    empty groups
+    empty text
+    by type
+    scriptable pre-flighty conditions
+    current view only | in current selection | everywhere
   foreach: scriptable action
   sort found by: modtime, name, page, size, type
   need draggable window frame
@@ -458,15 +460,15 @@ file filters: filefilters:
   multiple export targets, including per object export settings
   export with custom project files:
     like html gallery, has project config in coop/
-	some files templated
-	project defined by:
-	  directory with project files to copy
-	  export config to create files that go along with copied project files
-	  template vars to replace in set of copied project files
-	export.config
-	  copy: [f1, f2, "**/*.png"]
-	  templates: [ { pass_id: "template1", file: "f1", export_as: "%f###.png"}, var: { name:"{{FRAME_NUMBER}}", value:"laidout.globals.frame" ]
-	  filter: "Html Gallery"
+    some files templated
+    project defined by:
+      directory with project files to copy
+      export config to create files that go along with copied project files
+      template vars to replace in set of copied project files
+    export.config
+      copy: [f1, f2, "**/*.png"]
+      templates: [ { pass_id: "template1", file: "f1", export_as: "%f###.png"}, var: { name:"{{FRAME_NUMBER}}", value:"laidout.globals.frame" ]
+      filter: "Html Gallery"
 
   config resource load/save
   need to ensure that when bouncing around filters, Export All sets range properly
@@ -476,7 +478,7 @@ file filters: filefilters:
   fix when filtered object has children.. currently skips children
   open with... on export ? combine with command option, which does basically the same thing.. need to decide about tmp files and unlink them
     export by command needs work, bypasses safeties.. what about multiple files?
-	DONE put command export within export_document()
+    DONE put command export within export_document()
   remember full export settings
   need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
   selecting out should auto select tofile | tofiles, depending on how many spreads selected for out
@@ -488,13 +490,13 @@ file filters: filefilters:
     and maybe also mass edit things, like edit all images..
     - have ViewWindow::JumpToObject(&place, objectid);
 pageatlas: page atlas:
-  needs bg color 
+  needs bg color
   DONE basically n-up page out, lrtb
 equirectangular:
   export:
     for flat, choose lat/long/rotation
     for hedron, export projected from hedron
-	export lines
+    export lines
   import:
     page clip / object clip
 export textured gltf / Godot based 3d viewer project?
@@ -515,7 +517,7 @@ html: htmlgallery: html out htmlout:
     parallax
       auto gyrate
       control over parallax point
- 	  autoplay repeating parallax elements
+       autoplay repeating parallax elements
     follow mouse
     video objects as mystery data?
     path follow
@@ -590,25 +592,25 @@ svg: SVG
   in:
     finish debugging mesh svg 2.0 out/in
       monkey.doc export, then import, all wrong! not putting in page bounds even though width/height are fine.. gradients not importing
-	  DONE mesh.svg
-	  conical2.svg ..fill in text
-	  DONE conical.svg
-	  mesh_objectbb.svg
-	  mesh_opacity.svg
-	  DONE mesh_test.svg
-	  mesh_transform.svg
-	  pepper.svg
+      DONE mesh.svg
+      conical2.svg ..fill in text
+      DONE conical.svg
+      mesh_objectbb.svg
+      mesh_opacity.svg
+      DONE mesh_test.svg
+      mesh_transform.svg
+      pepper.svg
 
-	bug: when stroke+fill presentation atts are not under a "style" att, they are ignored
-	bug: gradient with no p1,p2 defaults to 0,0
-	stroke fill
-	fill/stroke for text
+    bug: when stroke+fill presentation atts are not under a "style" att, they are ignored
+    bug: gradient with no p1,p2 defaults to 0,0
+    stroke fill
+    fill/stroke for text
     any clipping
     grid guides
     sometimes path endpoint spikes
     dotted line style
     for new docs, should set rulers to use some reasonable units, from either width="100px", or namedview.document-units
-    
+
     DONE mesh out
     DONE finish debugging powerstroke out/in
       DONE try actually implementing powerstroke in
@@ -633,9 +635,9 @@ svg: SVG
 
   text:
     multiline
-	direction
-	spans
-	DONE color
+    direction
+    spans
+    DONE color
   test arcs in/out
   export papers currently not going to correct paper
   text on path without path conversion
@@ -679,9 +681,9 @@ PathInterface: pathinterface
   need stroke fill
   need path combine:
     with more than one object selected, turn to path tool, pop a menu that asks:
-	  Edit both objects at same time
-	  Combine to single object
-	  Combine and merge endpoints
+      Edit both objects at same time
+      Combine to single object
+      Combine and merge endpoints
 
   that hot new spiro curve
   boolean ops
@@ -692,8 +694,8 @@ PathInterface: pathinterface
   compound paths, change width only changes one. no way to affect all
   need a way to work on multiple weight nodes:
     shift all
-	width multiply all
-	set width
+    width multiply all
+    set width
   need input boxes for weight node info
   zero tips not working on mesh edit? with import test-engrave.laidout
   debug cache sample point distribution, the interpolator is really bad as is
@@ -752,7 +754,7 @@ simplepathinterface:
     auto snap to h and v when holding down control
   debug first point corner issue
   implement quadratic
-  implement cubic 
+  implement cubic
 
 engraving tool: Engraving  engraver
   bug: trace object opacity is not working for non-image trace objects.. stroke and fill needs mask integration!!
@@ -762,9 +764,9 @@ engraving tool: Engraving  engraver
 
   multiobject:
     object lines in group list needs eye per object, affect actual object visibility
-	need to enforce resource unique names
+    need to enforce resource unique names
     need ability to store overall styles of a patch, not just each individually
-	on resource menus, should check mark if current matches a resource??
+    on resource menus, should check mark if current matches a resource??
 
   orient:
     should adjust all linked
@@ -775,14 +777,14 @@ engraving tool: Engraving  engraver
   tracing:
     seems to be grabbing spurious tracing values outside of the tracing object, and at borders of trace object
     tracing object, lines abort just inside the image, maybe should just go one off the edge?
-	trace object needs flip, at least h and v, not really needing the whole affine thing
+    trace object needs flip, at least h and v, not really needing the whole affine thing
     need option to export trace object in same position as the traced lines, so it can be further processed elsewhere
     custom sample of channels
     sharp edge detection in tracing
-	snapshot should be for all in selection
-	shift-drag (or drag anything not covered by trace object) should drag ANY of the meshes in selection, not just current
-	when multi objects, the traceobject is interweaved, based on draw order, only under current object, should be under all?
-	make gradient interface work in trace mode
+    snapshot should be for all in selection
+    shift-drag (or drag anything not covered by trace object) should drag ANY of the meshes in selection, not just current
+    when multi objects, the traceobject is interweaved, based on draw order, only under current object, should be under all?
+    make gradient interface work in trace mode
 
   freehand/path:
     freehand not being interpreted correctly: non-equal smooth is adding erroneous extra mesh column
@@ -793,22 +795,22 @@ engraving tool: Engraving  engraver
 
   curvemap needs predefined ramp profiles, remember last, load/save (per context?)
     -> options to insert various predefined patterns
-	need magnify do dads for easy expanding of countour without having to place each and every node
+    need magnify do dads for easy expanding of countour without having to place each and every node
 
   direction:
     need accuracy modifiers for dragging controls around
-	only when at endpoints, lineprofile not producing smooth results at random spots inside
+    only when at endpoints, lineprofile not producing smooth results at random spots inside
     should be able to adjust number of sample points to match up well enough for points in lineprofile
     random end point sliders should inc or dec according to which side mouse clicked down on compared to absolute end point
     spiral spacing computation bad when spokes are nearer radial
     save the opensimplex line displacement from line/point randomness, to be used to also adjust a spacing map to preserve value when viewed at a distance
-	be able to trigger a reline on load in
-	be able to set a 3-d parameter for noise? useful for animated noise
-	option for "adjust for spacing", making weight reflect the spacing, either for constant width or trace
+    be able to trigger a reline on load in
+    be able to set a 3-d parameter for noise? useful for animated noise
+    option for "adjust for spacing", making weight reflect the spacing, either for constant width or trace
     line profiles: (done) linear, circular, radial, spiral?
-	be able to edit and create new profiles
-	grow
-	spiral arm count makes poor resolution
+    be able to edit and create new profiles
+    grow
+    spiral arm count makes poor resolution
     line generation:
       grow: implement custom line merge and break to preserve spacing across mesh contraction
       grow: edge abutment when generating
@@ -891,9 +893,9 @@ from big import:
     need a force thumb refresh, or actually make modified propagation work
     there should be a paper view for previewing purposes
     select all for current marker type
-	arrange in rows at current scale not scaling and placing correctly
-	crash during thumbnail generation if you delete pages while there are still some to render
-	auto-arrange not consistent.. doesn't really respect the screen aspect
+    arrange in rows at current scale not scaling and placing correctly
+    crash during thumbnail generation if you delete pages while there are still some to render
+    auto-arrange not consistent.. doesn't really respect the screen aspect
   should be able to save from any window
   delete discontinous range of pages doesn't delete all sometimes
   undo extremely necessary
@@ -922,25 +924,25 @@ node editor NodeInterface nodes: node: interface:
   data node types:
     generic Value in/out. Run off an ObjectDef.
     gradient
-	  DONE double click to call up color box
-	  receive color messages from viewport color box
-	paths
-	  path ops:
-	    combine
-		break apart
-		merge
-	engraving
-	  dashes
-	  spacing
-	  tracing
-	mesh
-	  color
-	  transform
-	caption text
+      DONE double click to call up color box
+      receive color messages from viewport color box
+    paths
+      path ops:
+        combine
+        break apart
+        merge
+    engraving
+      dashes
+      spacing
+      tracing
+    mesh
+      color
+      transform
+    caption text
     text on a path
   group nodes, connect to (new in) or (new out):
-	should take names from props. 
-	doesn't update the parent props
+    should take names from props.
+    doesn't update the parent props
   curve node needs y expand ability
   should probably bring forward any selected
   load/save custom properties needs to preserve name, label, tooltip, types, custom info
@@ -951,39 +953,39 @@ node editor NodeInterface nodes: node: interface:
   find:
     by label(done), name, or type
     search node or property name, or data contents
-	regex
-	stack of last searches
-	search in child groups
-	find all
+    regex
+    stack of last searches
+    search in child groups
+    find all
   gegl nodes:
-	maybe have gegl node preview gen be in different thread, as they can be quite lengthy
-	not responding to curve updates
-	reload file, load node out of sync or something, not showing preview after file load in
+    maybe have gegl node preview gen be in different thread, as they can be quite lengthy
+    not responding to curve updates
+    reload file, load node out of sync or something, not showing preview after file load in
     need browser buttons on "path" properties of IsSaveNode()s
     need needtoupdate caching or force work on small proxy images.. gegl with big images takes a long time
     scale-size has runaway render for undefined rect
     make sure deleting/rearranging nodes correctly removes gegl connections
     inkscape filter read in, set up as gegl nodes internally
-	make sure input/outputs can translate from other data types
-	need protection against unknown gegl ops, like when "gpl" is toggled
+    make sure input/outputs can translate from other data types
+    need protection against unknown gegl ops, like when "gpl" is toggled
     some process actions bog everything down like overlay a crop with a non-cropped input.. need a check for unbounded nodes before process
-	some nodes define a particular extent, like gradients. preview should detect
-	need a gegl <-> Value converter to allow interacting with Get/SetVariableNode
-	do something decent with property types: GeglCurve GeglPath. ignore these for now: GeglAudioFragment GeglBuffer GdkPixbuf GeglNode
-	DONE Gegl to LaxImage
-	DONE LaxImage to Gegl
+    some nodes define a particular extent, like gradients. preview should detect
+    need a gegl <-> Value converter to allow interacting with Get/SetVariableNode
+    do something decent with property types: GeglCurve GeglPath. ignore these for now: GeglAudioFragment GeglBuffer GdkPixbuf GeglNode
+    DONE Gegl to LaxImage
+    DONE LaxImage to Gegl
   svg/inkscape specific filter interface, io passthrough
     svg color properties are strings, but there should be button for color select
     need full "length" readin, not just floats, ie "100%", "15in"
-	feTurbulence->baseFrequency is TWO numbers, not one, need data[] support
+    feTurbulence->baseFrequency is TWO numbers, not one, need data[] support
     handle child groups
-	handle chaining full filter group nodes
-	Embossed Leather fails
+    handle chaining full filter group nodes
+    Embossed Leather fails
     Plastify has an orphan feFlood node
-	nodes with children, loading in puts the child properties at the end
+    nodes with children, loading in puts the child properties at the end
   for memory saving, need to determine what is a "final" node, since intermediate nodes can free data, or pass it on
   node browser
-	tooltips for operation, not just properties
+    tooltips for operation, not just properties
     in menu, so many nodes, need way to classify favorites, maybe custom arrangements of menu
       progressive search
   need a way to collect custom property types, so they can be added to custom nodes
@@ -996,9 +998,9 @@ node editor NodeInterface nodes: node: interface:
   extensibility: need easy way to extend functionality, both menu actions and new nodes
   groups
     allow editable labels for input props
-	add dummy prop on in/out to hot link data (only from within group)
+    add dummy prop on in/out to hot link data (only from within group)
     linked vs appended node groups, to allow mass changing of particular effects
-	  GroupRef : NodeGroup, with some sort of relay to actual group internals
+      GroupRef : NodeGroup, with some sort of relay to actual group internals
     node libraries: nodes as resources
   auto shift on connection
   auto connect when dragging nodes.. needs parsing of compatible properties
@@ -1006,8 +1008,8 @@ node editor NodeInterface nodes: node: interface:
     node magnifier for easier browsing when otherwise zoomed way out
     toggle show only selected nodes?
   exec paths
-	events for ui tool construction?
-	exec tick speed control for debugging
+    events for ui tool construction?
+    exec tick speed control for debugging
   make sure entire nodes don't go totally offscreen
   scriptify node graph
   expression node: nodes to script and script to nodes
@@ -1020,10 +1022,10 @@ node editor NodeInterface nodes: node: interface:
     a filter to respond to a global frame value, thus have minimal animation control
   list nodes
     set range [start,end] = value
-	subset [start, end], neg nums for from end
-	element [index]
-	create list  [type, number]
-	foreach thread processor
+    subset [start, end], neg nums for from end
+    element [index]
+    create list  [type, number]
+    foreach thread processor
 
   examine imgflo for compatibility
     imgflo lets you compile and load new operations on the fly
@@ -1044,45 +1046,45 @@ node editor NodeInterface nodes: node: interface:
   simplex noise node
   voronoise
   frames
-	receive color messages from viewport color box
+    receive color messages from viewport color box
     grouping framed objects have complications
     frames need to be moveable
-	nodes within frames need to be moveable
-	pressing f:
-	  any selected objs in any frame, then unframe
-	  group selected objects into frame
+    nodes within frames need to be moveable
+    pressing f:
+      any selected objs in any frame, then unframe
+      group selected objects into frame
     label font size should be adjustable
-	changeable color
+    changeable color
     drag out a rectangle
-	  if any nodes in rect, bind them and shrinkwrap frame
-	  if no nodes in rect, just use dragged area for bounds
-	drag and drop nodes to insert into frame
-	shift-drag to remove from frame?
+      if any nodes in rect, bind them and shrinkwrap frame
+      if no nodes in rect, just use dragged area for bounds
+    drag and drop nodes to insert into frame
+    shift-drag to remove from frame?
     have visible/togglable comment
   expression node:
     any number of inputs
-	any number of outputs
-	inputs map to names according to property label
-	expression must result in a hash, which must map to defined output properties
-	scriptify nodes
-	nodify script
-	use PlainText objects
-	edit text externally or in different text editor frame
+    any number of outputs
+    inputs map to names according to property label
+    expression must result in a hash, which must map to defined output properties
+    scriptify nodes
+    nodify script
+    use PlainText objects
+    edit text externally or in different text editor frame
   string ops:
-	printf
+    printf
   more math:
     interpolate with easing
-	select from panel:
-	  ---two-arg---
-	  +    -    *    /     %     ^
-	  <    >    !=   ==
-	  min  max  avg
-	  and  or   xor  not   <<    >>
+    select from panel:
+      ---two-arg---
+      +    -    *    /     %     ^
+      <    >    !=   ==
+      min  max  avg
+      and  or   xor  not   <<    >>
 
-	  ---one arg---
-	  abs  neg  sqrt sgn
-	  sin  cos  tan  asin  acos  atan
-	  sinh cosh tanh asinh acosh atanh
+      ---one arg---
+      abs  neg  sqrt sgn
+      sin  cos  tan  asin  acos  atan
+      sinh cosh tanh asinh acosh atanh
 
   DONE resize preview broken
   DONE image from file node
@@ -1115,23 +1117,23 @@ plugins:
   think through plugin infrastructure better, and from external perspective
     need to beef out the plugin readme
     usually, a plugin dev downloads an sdk that might just have selected headers, and .so file
-	how to specify plugin is built at all
+    how to specify plugin is built at all
     how to specify plugin is compiled in, or exists as .so
-	plugins (c++) vs extensions (scripted)
+    plugins (c++) vs extensions (scripted)
 
 captioninterface CaptionInterface captiondata CaptionData
   bug: bitstream vera sans, "Text" convert to path puts e correct, but screen render puts it out too far. huh??
   implement proper pdf export
   color fonts: consider native otf:
     Mozilla and Adobe’s svg table, microsoft's colr/cpal, Google’s PNG images (CBDT/CBLC tables), Apple’s PNG images (SBIX table)
-	freetype dev branch maybe supports colr/cpal and google's way?
+    freetype dev branch maybe supports colr/cpal and google's way?
   implement the different layout modes: rtl ttb
   debug for rtl and vertical as returned by hb, or set explicitly with direction
   right to left (figure out how to do with harfbuzz)
   need to do proper coordinate finding for mouseposition when paste into a nested group
   text to path:
     option to do all one path,
-	or separate objects per character (or glyph), but clones of a resourced group of glyphs
+    or separate objects per character (or glyph), but clones of a resourced group of glyphs
   need handy option to mirror, instead of escaping to object tool
   need handling when opening a file and the font is not found!!!!!!!  options for substitution
   opentype variations
@@ -1158,7 +1160,7 @@ clean up filefilter.h definition to allow explicit declaration of ObjectFilter i
 
 color fonts issue #6 svg otf svg
   see this freetype gsoc 2019 project: https://www.mail-archive.com/freetype-devel@nongnu.org/msg11459.html
-  
+
 fontdialog: FontDialog
   need a way to remember layered fonts, to easily activate and deactivate
     read from standard fonts places, like .config/laidout/(version)/fonts
@@ -1245,24 +1247,24 @@ selecting in viewwindow
   on limbo, and spread/page, papergroup, select  first object it finds
   else
     if curobj, select only siblings of currently selected
-	if no curobj, select only children of current context
+    if no curobj, select only children of current context
   if you click on something, then single click again, search for anything else under
   double click group to descend into group
   double click or enter non-group to edit content
   cntl-double click or cntl-enter to descend into non-groups' kids
   currently on selected object, click not on handles:
     C left click drag: scale around mouse
-	S+C Left drag: rotate
-	Left drag: move object
+    S+C Left drag: rotate
+    Left drag: move object
 
-	C left click: place/remove anchor points
+    C left click: place/remove anchor points
 
 GroupInterface groupinterface ObjectInterface objectinterface: group: object interface
   new drag/scale/rotate behavior:
     anchor point drag should use the new widgets as appropriate
     DONE rotation circle, inner: number +-/absolute,  mid: free rotate,  outer: snap rotate
     DONE scale slide bar, go above or below, allow number input
-	DONE drag with shift lock to nearest drag axis
+    DONE drag with shift lock to nearest drag axis
   constrain aspect for corner scale handles should do so from drag start, not moment of mod press
   control-move flip line to snap to horizontal, vertical, 45 deg, or common gravity points
   maybe show flip and 90 deg rotate handles only when mouse outside the selection area?
@@ -1270,10 +1272,10 @@ GroupInterface groupinterface ObjectInterface objectinterface: group: object int
     need to be able to control click outside box to create? currenty you must click inside, then drag it out
   world / local transforms:
     screen
-	world
-	object
-	object parent
-	object parent parent (etc)
+    world
+    object
+    object parent
+    object parent parent (etc)
 
   parent options colors don't really make sense
   real menuify the clone options
@@ -1302,9 +1304,9 @@ voronoi Voronoi delauney Delauney:
   implement as extension for delauney/voronoi interface
   right click
     start new object
-	toggle delauney lines
-	toggle voronoi lines
-	toggle points
+    toggle delauney lines
+    toggle voronoi lines
+    toggle points
   auto fill with randomized colors
   merge different voronoi objects
   sample point color from background?
@@ -1333,11 +1335,11 @@ autosave
   start fresh doc, autosaves which may be saving into confusing location. maybe save in config dir?
   autorecover.. -> when an autosave is newer than the file we are opening
   option to choose how many to save near original file, and how to remove old
-	[ ] Backup on save to: __%f~__   ___%f#~___ <-- use '#' to signal increment save
-			%f=filename, %b=basename (without extension), %e=extension, # for numbered autosave
-	[ ] Autosave.
-	  Time between autosaves:___5_minute__  ...ms millisecond s sec seconds second m minute min hr hour h
-	  Naming for autosaves: __%f-autosave#____
+    [ ] Backup on save to: __%f~__   ___%f#~___ <-- use '#' to signal increment save
+            %f=filename, %b=basename (without extension), %e=extension, # for numbered autosave
+    [ ] Autosave.
+      Time between autosaves:___5_minute__  ...ms millisecond s sec seconds second m minute min hr hour h
+      Naming for autosaves: __%f-autosave#____
       Number of different autosaves: ___1___
 
 need option for always write relative links.. now defaults to absolute
@@ -1346,7 +1348,7 @@ file button expansion:
    Collect...          <- gather all refd files into one place. ask to specifically not collect per file
    ----
    Commit (git)        <- ensure file is git tracked.. add if necssary before commit
-   					      double check that other files refd by this one are tracked in same repo as well?
+                             double check that other files refd by this one are tracked in same repo as well?
                           maintain list of what to collect, what to ignore when committing?
    Commit settings...  <- choose or set up repository, how to handle passwords?? libgit?
    Revert...           <- show log, select old
@@ -1370,7 +1372,7 @@ need to clarify what happens when you open and close documents.
   open already open pops new window
   not sure if it should also record ownership of limbos
     open doc:  limbo->SetResourceOwner(document);
-	close doc: if (limbo->ObjectOwner() == doc) limbo->SetResourceOwner(nullptr);
+    close doc: if (limbo->ObjectOwner() == doc) limbo->SetResourceOwner(nullptr);
 
 colorbox color box:
   hsv slide, configurable clicks
@@ -1394,13 +1396,13 @@ color slider popup: colorpicker color picker colorsliders
 Colors:
   color picker that previews text?
   convert to using Color objects instead of all ScreenColor:
-	gradient
-	color patch gradient
-	image patch
-	caption
-	linestyle
-	fillstyle
-	path
+    gradient
+    color patch gradient
+    image patch
+    caption
+    linestyle
+    fillstyle
+    path
     DONE images (doesn't use color per se)
 
 dual monitors:
@@ -1413,10 +1415,10 @@ high dpi hidpi:
   in general for windows, need better styling.. too much is hardcoded. problems later with high dpi screens
   per monitor ui scaling:
     xrandr only gives monitor names like DP-5 DP-0
-	xrandr --verbose lists EDID hex block that usually contains monitor model somehow
-	auto scale by detected pixel density
-  perhaps respond to GDK_SCALE or QT_SCREEN_SCALE_FACTOR (or maybe only QT_SCALE_FACTOR) 
-	update all widgets accordingly
+    xrandr --verbose lists EDID hex block that usually contains monitor model somehow
+    auto scale by detected pixel density
+  perhaps respond to GDK_SCALE or QT_SCREEN_SCALE_FACTOR (or maybe only QT_SCALE_FACTOR)
+    update all widgets accordingly
     affected:
       font sizes
       window bevel, padding
@@ -1427,17 +1429,17 @@ high dpi hidpi:
 themes:
   on ThemeUpdated events, things need to account for:
     color styling
-	pads
-	font size/type
-	refreshing icons
+    pads
+    font size/type
+    refreshing icons
   DONE laxprofile not working
   should be able to access theme files/directories, instead of define all in laidoutrc
   should be all cascading, bare minimum font size should be defaultable
-	  so like a common style is loaded FIRST, then particulars dumped in afterward:
-	    theme
-		  windowstyle common
-		    category common
-			  ...
+      so like a common style is loaded FIRST, then particulars dumped in afterward:
+        theme
+          windowstyle common
+            category common
+              ...
 
 
 make drag and drop selections work
@@ -1445,12 +1447,12 @@ make drag and drop selections work
   do proper translation between screen coords and window coords during acceptance query
   Initiate dnd
     set up system dnd state
-	send regular updates per protocol
-	send data per protocol on drop if to other process, or internally if drop on ourself
+    send regular updates per protocol
+    send data per protocol on drop if to other process, or internally if drop on ourself
   accept dnd
     mouse moves around due to ourself or some other process
-	window needs to decide whether dropping is ok, and choose which window will take the drop
-	handle drop of data
+    window needs to decide whether dropping is ok, and choose which window will take the drop
+    handle drop of data
 
 need more mechanism so that popup dialogs stay on top of window they are "children" of
 
@@ -1487,7 +1489,7 @@ guides:
   snap objects edges to various things
 
 align tool: aligninterface AlignInterface align:
-  
+
   needs polishing, the lines and indicators get a bit lost
   context menu seems to be the group interface menu
   need way to specify center of rotation per object
@@ -1507,9 +1509,9 @@ align tool: aligninterface AlignInterface align:
   maybe grid drag control to reorder
   snapping:
     snap to page middle, left, right, top, bottom
-	snap to original selection bounds
-	snap to first bounds
-	snap to last bounds
+    snap to original selection bounds
+    snap to first bounds
+    snap to last bounds
     snapping to 0/50/100
   number box while dragging, goes away after a second, or click on it to edit
     if inc/dec arrows, have it inc or dec the decimal place cursor is on
@@ -1526,14 +1528,14 @@ Spread Editor:
   modify page range gui, click on a page label, where ever it might be... select pages in spread editor
   debug spread limbo threads and page groups
     implement render
-	debug drag and drop
+    debug drag and drop
   create new document from spread view?
   hide should collapse into a single thing so you can arrange more simply, instead of still having to sift through many
 
 need infrastructure to propagate and save tool settings
 Tools should remember their settings
-	remember tool settings: double click on tool icon? right click...
-	remember tool settings
+    remember tool settings: double click on tool icon? right click...
+    remember tool settings
 
     figure out which settings need to be remembered, and install as resource.. what happens when diff
      windows are using diff tools? which settings are remembered? have tool styles that are saved, as
@@ -1558,16 +1560,16 @@ paperinterface: papergroupinterface papergroup interface
   define papergroup, convert papergroup to new Net doc?
   menu options:
     fit to selection
-	fit to page
-	fit to spread
-	center on selection
-	center on page
-	center on spread
+    fit to page
+    fit to spread
+    center on selection
+    center on page
+    center on spread
     orient viewport to paper
   export options:
     meta name
-	export settings
-	  more that one settings per paper
+    export settings
+      more that one settings per paper
   when you add gray bars/reg marks, center on paper?
 
   PaperSize/PaperGroup as resource:
@@ -1578,7 +1580,7 @@ paperinterface: papergroupinterface papergroup interface
       Load, save, add, delete paper groups..
       work out scheme for resource ownership: they can be owned by:
         need reusable resource [ name ][load][save][dup][delete]
- 
+
         1.DONE  Document: if no project, save with document by default
         2.DONE  Project:  save in project file
         3.or Global resource: save in ~/.laidout/version/papergroups
@@ -1606,7 +1608,7 @@ paperinterface: papergroupinterface papergroup interface
 
 new PaperSizeWindow:
   bug: rowframe WrapToExtent() doesn't work
-  DONE integrate with: 
+  DONE integrate with:
     DONE signature interface
     DONE singles editor
     DONE newdoc
@@ -1703,7 +1705,8 @@ resources:
     have multiple docs open, the resources are mixed
   really should have option to separate or merge resources when multiple documents open, rather than always merge?
 
-how best to integrate Styles, Attributes, and Values??? style types:
+how best to integrate Styles, Attributes, and Values???
+various object types:
  Laidout
  Project
  Document
@@ -1717,16 +1720,17 @@ how best to integrate Styles, Attributes, and Values??? style types:
  ImportFilter:svg,ppt,sla,ps,eps,odraw
  ExportFilter
 -->Styles are Values that can be cascaded from other Styles
-   Values cannot be cascaded
+   Values by themselves cannot be cascaded
 -->C++ classes represent data that can be accessed and modified through:
-     onscreen
-	 file saved to disk
-	 interpreter
+     onscreen:           compels direct c++ access
+     file saved to disk: uses Laxkit::Attribute as intermediary for disk i/o
+     interpreter:        parses input using Value objects which have ObjectDefs defined at runtime
    would be advantageous to write a single object def, and output options and documention to
    each of the 3 targets
- each class:Value has:
+ each class:Value potentially has:
   - "internal" variables/funcs
-  - scriptable variables/funcs
+  - scriptable variables/funcs defined in ObjectDef
+  these are vaguely compatible, but it is not a 1 to 1 match
      some kind of preprocessor (ugg!!) to convert the header file to object def
 
 when closing a document window, decide whether this removes access to it, or just the view to it
@@ -1804,13 +1808,17 @@ calculator/scripting
   DONE bug: can't remove dict elements
   DONE bug: var a={a:1,b:2}, cannot add to dict, like a.c = 234; a["d"] = 5655
 
+privacy/security gotchas to watch out for:
+  autolaidoutrc with export settings can potentially save user data in templatevars..
+    maybe have special project/autolaidoutrc to save such things?
+  file system access in scripts?
 
 gshell:
-	needs massive testing
-	type "tool." (for instance), you can highlight choice with mouse, but does not insert into edit, only inserts when nothing had been typed
+    needs massive testing
+    type "tool." (for instance), you can highlight choice with mouse, but does not insert into edit, only inserts when nothing had been typed
     *** not getting options for all tool and object!!
     searching seems to be messed up, improper matches when mid stream
-	mid stream search is messing up match names
+    mid stream search is messing up match names
     completion should be worked into the edit.. "object.|" then tab is replacing all text with field name
     when in function, search among parameter names also
     need to search for context names before searching for calculator names
@@ -1862,7 +1870,7 @@ ImageImport dialog: (actually, needs a total redesign) import images importimage
   importimages: remember last settings
 DumpImages within Arrangements, which are sort of a template of rect regions (2-d guides)
     would also implement the dump into Limbo
-	dump into any string of objects, this is really the same thing as laying out a stream, maybe merge this?
+    dump into any string of objects, this is really the same thing as laying out a stream, maybe merge this?
 a "Place" tool like indesign?? preview images and place by dragging out one by one, as well
  as optionally into Arrangements
 
@@ -2017,7 +2025,7 @@ pagemarkerinterface:
   option to lock label size to real space? make export contact sheets a little prettier in some cases
 
 page thumbnail should be rational, ie image should be whole page, not just contents+transform,
-	 and thumb transform makes image dims to page coords
+     and thumb transform makes image dims to page coords
 
 in number edit boxes, wheel should allow changing numbers, change on digit mouse is over?
   is it better to wheel at curpos?? probably.. select that digit, must track after changes!!!
@@ -2037,7 +2045,7 @@ global Laidout settings:
 > laidout blah.laidout...     <-- if starting like this, if blah.laidout does not exist, then abort
 > laidout 1.laidout 2.laidout <-- if starting like this, if either exist, then start up, but have
                                     warning message that one document failed to load?
-	-> could have a consumable message interface? show a message until the box is clicked on, then it removes itself?
+    -> could have a consumable message interface? show a message until the box is clicked on, then it removes itself?
 
 textobjects,limbos,papergroups should maybe be able to be stored per document, not just file, project, or temp
 either that, or do away with whole project/document difference, and use only
@@ -2072,9 +2080,9 @@ need conversions: gradient->color patch
                   image -> imagepatch <- do with image filters rather than specific object type
                   imagepatch -> image
                   colorpatch -> image?
-				  engraver -> path
-				  path -> engraver
-				  text -> path
+                  engraver -> path
+                  path -> engraver
+                  text -> path
 Convert:
   bool reversible;
   char *from;
@@ -2111,22 +2119,22 @@ collect for out:
 
     collected/
       images/
-	  fonts/
-	  resources/   <- that were laidout resources linked in
-	  file.laidout with proper links to new dirs
-	  collect.log  <- what was collected / rasterized?
+      fonts/
+      resources/   <- that were laidout resources linked in
+      file.laidout with proper links to new dirs
+      collect.log  <- what was collected / rasterized?
 
 preflighting:
   steps:
     specify layout and spread range
-	specify checking functions
-	step through each object
-	run checking function(s) on object
-	append trouble spots to error log
-	  needs path to object:  project.limbo / project.doc.page.layer.obj.obj / project.papergroup
-	  message
-	  possible remedy
-	show window with list of offenders, offer remedies
+    specify checking functions
+    step through each object
+    run checking function(s) on object
+    append trouble spots to error log
+      needs path to object:  project.limbo / project.doc.page.layer.obj.obj / project.papergroup
+      message
+      possible remedy
+    show window with list of offenders, offer remedies
   check for empty groups
   check for broken images
   check for transparency
@@ -2152,7 +2160,7 @@ for clones, it would be easier to have a "defs" group or something, so deleting 
 
 tiling cloner: clone tiler  CloneInterface
   should have option to apply clones as an object filter, not as actual clones
-  default should be use lines only when there is no source object. 
+  default should be use lines only when there is no source object.
   new tiling should update viewport color per basecells
   should not assume preview has I transform
   memory hole back, third time!!!
@@ -2180,8 +2188,8 @@ tiling cloner: clone tiler  CloneInterface
   need flag for ok for cell to shear, ok for cell to scale x/y independently, and have it apply as it should afterwards
   config:
     default line/fill render style (if any)
-	boundary outline style
-	base cell outline styles
+    boundary outline style
+    base cell outline styles
   should have a render preview to show actual grid coverage
   need finishing tool
   design interface for clone on path
@@ -2248,16 +2256,16 @@ hedron window:
 implement undo.. ideally use same code for both undo and recordable/assignable actions
   object interface
     need to account for:
-	  dragging matrix changes
-	  key flip, or non-dragging changes
-	  object deletion
+      dragging matrix changes
+      key flip, or non-dragging changes
+      object deletion
   nodes
   image
   gradients
   paths
   meshes
     color
-	image
+    image
   engraver
   inside curve editors
   paper interface
@@ -2335,7 +2343,7 @@ to be a decent editing platform, Laidout needs:
   snapping:
     selection snapping: select a bunch of stuff, mark as snap sources, next selection tries to snap against those in old sel, not in new sel
     rotation, maybe drag handle with control?
-	snap to bbox vs aabb
+    snap to bbox vs aabb
   drag constraints more accessible in only y or x direction
   more specific control over transform.. numerical specification
   per object visibility
@@ -2345,8 +2353,8 @@ to be a decent editing platform, Laidout needs:
   text
   Grouping:
     select only within group zone
-	easy selection of proper group zone
-	remove 'i' from common shortcuts for all tools to let it be used for ObjectIndicator
+    easy selection of proper group zone
+    remove 'i' from common shortcuts for all tools to let it be used for ObjectIndicator
   DONE clipping
 
 ============== Future of Laidout ================
@@ -2428,14 +2436,14 @@ DONE ftgl problem in polyptych... font not rendering <-- just needed ftgl update
 DONE Gradient:
   DONE dragging colors in radial is still really bad
     DONE sliding radial colors not 1:1
-	DONE p1, p2 need little indicator nugget
+    DONE p1, p2 need little indicator nugget
   DONE resize inner circle, make small past a threshhold makes circle go away
   DONE double click to call up color selector
   DONE dragging p1/2 bars should not rotate
   DONE spread modes
   DONE change object, curpoints still selected
   DONE clipping path is double applying parent path transform
-DONE bug: NONE of the interfaces are initializing shortcuts 
+DONE bug: NONE of the interfaces are initializing shortcuts
 DONE bug: DocumentExportConfig subclasses need duplicate()
 DONE directory reorganization
   DONE ui/ <-- purely ui elements
@@ -2447,14 +2455,14 @@ DONE bug: crash! import images, select image. boom!
 DONE bug: switching export types in export dialog not clearing extra fields
 DONE icon generation trouble spots: LaidoutIcon.png has wrong bounds, cut in half p3m1 p6 circular_rm 101 icons in main icons.svg:
   DONE old, Inkscape .92: 8.5 minutes
-  DONE new, Laidout: 39 seconds !!! 
+  DONE new, Laidout: 39 seconds !!!
   DONE new new: 3.1 seconds!!!!
 DONE all images: 203 icons, 39 seconds!
 DONE still to optimize: render to single image, image subset, save that
 DONE laidout shell command: Laidout.BuildIcons(["icons/icons.svg","icons/icons-tiling.svg","../laxkit/lax/icons/icons.svg"],
-		  								grid_cell_size = .5,
-		  								output_px_size = 24,
-										output_dir="TEST_ICON_BUILD")
+                                          grid_cell_size = .5,
+                                          output_px_size = 24,
+                                        output_dir="TEST_ICON_BUILD")
 DONE bug: patchinterface point select when object transform not identify broken
 DONE detect when a resource section is ONLY built in ones, and don't output that section on save
 DONE export ranges should accept "1-4, 6, 20-25" and "5-1"
