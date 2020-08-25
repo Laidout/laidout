@@ -66,7 +66,7 @@ page 0
       visible
       prints
       object 0 ImageData
-        id ImageData1260
+        id TestImage
         config
           filename "./test.jpg"
           previewfile ""
@@ -74,7 +74,7 @@ page 0
           height 300
           matrix 0.005088297699 0 0 0.005088297699 0.6451922285 7.490209799
       object 1 GradientData
-        id GradientData1889
+        id LinearGradient
         config
           matrix 0.9998897305 0.01485014924 -0.01485014924 0.9998897305 5.052542373 8.613559322
           p1 0
@@ -89,7 +89,7 @@ page 0
             t 1
             rgba 65535 0 0 65535
       object 2 PathsData
-        id PathsData4141
+        id PathExample
         config
           matrix 1 0 0 1 0.186440678 -0.6711864406
           linestyle
@@ -688,7 +688,7 @@ page 0
               1.064028728, 6.00338926   216  
               1.062247668, 6.03276082   217  Bez      Closed   
       object 3 ColorPatchData
-        id ColorPatchData4142
+        id ColorMesh
         config
           matrix 1 0 0 1 -0.09322033901 -1.472881356
           griddivisions 10
@@ -713,7 +713,7 @@ page 0
             5.802576985 8.300103837 
             6.789934345 8.300103837 65535 65535 0 65535
       object 4 ImagePatchData
-        id ImagePatchData4508
+        id ImageMesh
         config
           matrix 1.86440678 0 0 1.86440678 1.249152542 1.677966102
           griddivisions 10
@@ -745,7 +745,7 @@ page 0
           iwidth 394
           iheight 300
       object 5 EngraverFillData
-        id EngraverFillData8591
+        id EngraverExample
         config
           mesh
             matrix 0.856 0 0 0.8486997636 -0.0156610175 0.01961373562
@@ -2854,7 +2854,7 @@ page 0
               orig 0 (8.262602341, 3.553374396) 0.06769410227 on on
               orig 0 (8.436440678, 3.546805509) 0.06429879642 on on
       object 6 CaptionData
-        id CaptionData2024
+        id TitleText
         config
           matrix 0.009322033898 0 -0 -0.009322033898 3.244067796 10.38474576
           fontfamily "sans"
@@ -2869,7 +2869,7 @@ page 0
             Testing all object types!
             For sure!
       object 7 CaptionData
-        id CaptionData3886
+        id ImagesText
         config
           matrix 0.009322033898 0 -0 -0.009322033898 1.081355932 7.345762711
           fontfamily "sans"
@@ -2883,7 +2883,7 @@ page 0
           text \
             Images
       object 8 CaptionData
-        id CaptionData4109
+        id GradientsText
         config
           matrix 0.009322033898 0 -0 -0.009322033898 5.798305084 7.513559322
           fontfamily "sans"
@@ -2897,7 +2897,7 @@ page 0
           text \
             Gradients
       object 9 CaptionData
-        id CaptionData4346
+        id MeshText
         config
           matrix 0.009322033898 0 -0 -0.009322033898 5.537288135 4.064406779
           fontfamily "sans"
@@ -2911,7 +2911,7 @@ page 0
           text \
             Mesh Gradient
       object 10 CaptionData
-        id CaptionData4737
+        id EngraverText
         config
           matrix 0.009322033898 0 -0 -0.009322033898 4.623728813 0.6711864406
           fontfamily "sans"
@@ -2925,7 +2925,7 @@ page 0
           text \
             Engraver Lines
       object 11 CaptionData
-        id CaptionData5250
+        id ImageWarpText
         config
           matrix 0.009322033898 0 -0 -0.009322033898 1.118644068 0.8762711864
           fontfamily "sans"
@@ -2939,7 +2939,7 @@ page 0
           text \
             Image warping
       object 12 CaptionData
-        id CaptionData5967
+        id PathText
         config
           matrix 0.009322033898 0 -0 -0.009322033898 1.416949152 4.008474576
           fontfamily "sans"
