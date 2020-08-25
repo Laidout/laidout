@@ -25,20 +25,17 @@ VERSION 0.098
 (done) Way to export pages as svg embedded into html
        Fix icon/text/thin line sizing issues for high dpi monitors (issue #16)
 
-       Moving selected things in group contents does not update group bounds
-       should not be able to select both group and group contents at same time
-       fix object transform handles for really small objects (handles should still be accessible)
+(done) Moving selected things in group contents does not update group bounds
+(done) should not be able to select both group and group contents at same time
+(done) If curobj, select siblings first. If no curobj, select direct children of context first
 (done) double click on group should change selection area to group contents like inkscape?
 
        layers palette (object tree)
-       Tools should remember their settings
-       Find interface
-       Import Images dialog needs total reprogramming
-       In image properties dialog, be able to select from various default preview configs
+       Find object interface
 
-       Empty objects that can be parents, or whose contents are defined by nodes
-       Perspective transform object filter
-       Node based image "importer"
+(done) Empty objects that can be parents, or whose contents are defined by nodes
+       Perspective transform object filter, proof of concept for hybrid interface/node workflow
+(done) Node based image "importer"
 
        engraver tool grow point mode
        engraver tool, resolution cut mode
@@ -54,9 +51,6 @@ VERSION 0.098
 (done) svg in/out with powerstroke
        svg in/(done)out with meshes
 (done) Import svg gradients with proper filling of parent
-       Collect for out
-       export preview
-       Make sure scribus export works with 1.5, and can handle new clipping features
 
 
 VERSION 0.099
@@ -67,6 +61,8 @@ VERSION 0.099
        pdf export, unicode capable
        Optimize pdf export to rescale to target dpi, and compress image data
 
+       Tools should remember their settings
+       Import Images dialog needs total reprogramming
        Tool scripting
        Scripted plugin interface
        Clone Pattern Builder
@@ -83,6 +79,8 @@ VERSION 0.099
 
        Figure out what on earth is to be done about color font processing (issue #6)
 
+       In image properties dialog, be able to select from various default preview configs
+       fix object transform handles for really small objects (handles should still be accessible)
        lock down color backend.. currently it's mostly a series of terrible hacks based on 8-bit screen rgb
        Soup up the color box so one can recall previous colors, and/or integration with palette window
        Clean up project load/save internals and dialogs
@@ -96,9 +94,12 @@ VERSION 0.099
        GraphicsMagick nodes
        Gmic nodes plugin
        Merge EpsData with normal images, since they can be previewed with gm now
-       Make a laxkit.pc
+       Make a laxkit.pc and use it in Laidout build to simplify build process
        Python plugin
 
+       Collect for out
+       export preview
+       Make sure scribus export works with 1.5, and can handle new clipping features
        Scribus import should try to do something appropriate with page spreads >= 2 pages wide
        Scribus import should do something meaningful with original Scribus page bleed values
 

@@ -61,6 +61,7 @@ configure should check for libreadline-dev? apparently not pkg-config ready <- h
 
 scroll bar zoom handles don't appear to work
 
+memory hole in calculator
 memory hole in reimpose .. reimposed 5 page booklet
 memory hole when graphical shell activated
 memory hole do laidout -n letter, split a window, then quit. undeleted Objects remain!
@@ -313,13 +314,6 @@ panel editing:
 	  Parent under first --hover to show potential parent 
 	  Parent under last --hover to show potential parent 
 
-gif flipbooks:
-  mod to center trims in sig editor
-  need a revert to last save option
-  for one offs, need to implement progressive repeat imposing
-  auto format partition so final page size has same aspect as image
-  sig editor needs number input
-
 need something like laximages->Save(file, format, native_save_only), in case object doesn't know how to save to that format.. maybe default to something like static ImageLoader::Save
 
 need ability to show "reprocessing.." or "progress.." indicator in different thread to what is actually processing
@@ -365,12 +359,6 @@ valuewindow:
 	when scroller visible, not adjusting thewindow size properly
   when you quit, does not remember from open windows
 
-ux:
-  when you save, also save a preview of current spread?
-  resizeable ui
-  should be able to mass disconnect clones
-  current page should be highlighted
-
 instead of _LAX_PLATFORM_MAC, do relevant check with _LAX_ON_NON_GNU instead? currently only place this is necessary is where getline is used
 
 remove imlib/"xlib" font, image, and render backends, replace with GraphicsMagick and cairo, keep imlib loader but load to cairo image only
@@ -410,18 +398,23 @@ text on path textonpath: TextOnPath
   position glyphs based on middle of glyph, not start of glyph
 
 
-Find interface:
-  ____pattern_____ .* Aa  (is regex, case sensitive)
+Find interface: findinterface:
+  ____pattern_____ .* Aa all (is regex, case sensitive)
+  Criteria: [dropdown of predefined criteria] [ ___type:"Image", brokenimages, expr:"obj.maxy < context.page.maxy/2"__ ]
   [next] [prev] [all] 
   [ 5 found: (found object thumbnail list) ]
   search:
-    name desc other-meta
-	broken
+    id desc other-meta
+	broken images
+	empty groups
+	empty text
+	by type
 	scriptable pre-flighty conditions
-	current spread only
+	current view only | in current selection | everywhere
   foreach: scriptable action
-
-in menus, click down, then drag, will return what is under mouse.. should default to not do anything but stay in menu
+  sort found by: modtime, name, page, size, type
+  need draggable window frame
+  iconselector should have force image to particular size option so we could use object preview directly
 
 layers palette Layers
   key controls for navigation within menu:
@@ -441,15 +434,25 @@ have an actual splash image shown
 you can't control unclick selected directories
 
 build: building: build process
-  in config.log should show actual configure line for easy duplicating
   should update faq with details about graphicsmagick, harfbuzz, and gegl versioning
   update configure message about try installing packages.. when fail on gegl, it's not listed
   laidout ./configure needs to pass on relevant things to laxkit
+  DONE in config.log should show actual configure line for easy duplicating
 
 rework ui to be programmable. Perhaps an ui builder
 
 LaxCairoImage:
   make sure image counters are ok, such as in new Crop()
+
+gif flipbooks:
+  mod to center trims in sig editor
+  need a revert to last save option
+  for one offs, need to implement progressive repeat imposing
+  auto format partition so final page size has same aspect as image
+  sig editor needs number input
+gif exporter:
+  use graphicsmagick? C example: http://www.graphicsmagick.org/api/api.html
+  set custom timing in page properties
 
 file filters: filefilters:
   multiple export targets, including per object export settings
@@ -460,6 +463,11 @@ file filters: filefilters:
 	  directory with project files to copy
 	  export config to create files that go along with copied project files
 	  template vars to replace in set of copied project files
+	export.config
+	  copy: [f1, f2, "**/*.png"]
+	  templates: [ { pass_id: "template1", file: "f1", export_as: "%f###.png"}, var: { name:"{{FRAME_NUMBER}}", value:"laidout.globals.frame" ]
+	  filter: "Html Gallery"
+
   config resource load/save
   need to ensure that when bouncing around filters, Export All sets range properly
   need to preserve last settings per filter
@@ -637,7 +645,7 @@ svg: SVG
 plan:
   need an In()
   implement paper rotation for out
-ppt: DEPRECATE
+ppt (passepartout): DEPRECATE
   implement crop
   implement paper rotation
 ps: DEPRECATE
@@ -667,7 +675,7 @@ PathInterface: pathinterface
   bug: delete last weight node, sometimes width is wrong
   bug: make new line with freehand tool, cannot move weight nodes in a rational way
 
-PathInterface: pathinterface
+  need option for bbox to include line width, not just centerline
   need stroke fill
   need path combine:
     with more than one object selected, turn to path tool, pop a menu that asks:
@@ -890,15 +898,15 @@ from big import:
   delete discontinous range of pages doesn't delete all sometimes
   undo extremely necessary
   thumbs refreshing a lot unnecessarily
-  selecting ranges
   for images, need edit image feature, with watch for changes, or "reload image"
   image dialog, select new image, hangs on imlib complain about null image
   save as should have sample file names: from directory name with ".laidout", incremented from any *.laidout
-  export directory should default to last loaded file
   large images all being loaded in, need way to ask about creating proxy images. only img info is supposed to be read in until img data is actually needed
   need better ui for selecting templates
   load in autosave should ask if you want to save as the original
   spread editor needs edge dragging
+  DONE export directory should default to last loaded file
+  DONE selecting ranges
 
 Perspective perspective:
   finish debugging update path object without reallocating each time
@@ -906,15 +914,21 @@ Perspective perspective:
   filtering paths needs to detect big distortions and add points, as simply transforming bez points is not enough
 
 node editor NodeInterface nodes: node: interface:
-  DONE resize preview broken
-
-  need solution for shared interface getting messages for different nodes
+  undo redo
+  bug: traverse path only goes about 80%
+  bug: transform object isn't copying images in an ImageData
+  bug: height of resizable property not saved
+  need solution for shared interface getting messages for different nodes.. probably need to do one instance per whatever
   data node types:
     generic Value in/out. Run off an ObjectDef.
     gradient
 	  DONE double click to call up color box
 	  receive color messages from viewport color box
 	paths
+	  path ops:
+	    combine
+		break apart
+		merge
 	engraving
 	  dashes
 	  spacing
@@ -924,17 +938,12 @@ node editor NodeInterface nodes: node: interface:
 	  transform
 	caption text
     text on a path
-  bug: traverse path only goes about 80%
-  bug: transform object isn't copying images in an ImageData
-  height of resizable property not saved
   group nodes, connect to (new in) or (new out):
 	should take names from props. 
 	doesn't update the parent props
   curve node needs y expand ability
   should probably bring forward any selected
   load/save custom properties needs to preserve name, label, tooltip, types, custom info
-  undo redo
-  grouping framed objects have complications
   check for double linking
   idea seen in anim nodes: collapsing math shows expression as label
   control drag on slot to reconnect all connections
@@ -1032,12 +1041,16 @@ node editor NodeInterface nodes: node: interface:
   any crossover with mypaint brushes or krita???
 
   viewer node, resizable
-  image from file node
   simplex noise node
   voronoise
   frames
+	receive color messages from viewport color box
+    grouping framed objects have complications
     frames need to be moveable
-	unframe
+	nodes within frames need to be moveable
+	pressing f:
+	  any selected objs in any frame, then unframe
+	  group selected objects into frame
     label font size should be adjustable
 	changeable color
     drag out a rectangle
@@ -1070,6 +1083,9 @@ node editor NodeInterface nodes: node: interface:
 	  abs  neg  sqrt sgn
 	  sin  cos  tan  asin  acos  atan
 	  sinh cosh tanh asinh acosh atanh
+
+  DONE resize preview broken
+  DONE image from file node
 
 
 Whenever there's a byte read in, like with read_in_whole_file to string, really should do some minimal string validation before using it?
@@ -1225,34 +1241,6 @@ Units:
     something like: list of [units_id, newscaling], like for temp redefining "Em" or "px"
 
 
-General design usability
-to be a decent editing platform, Laidout needs:
-  undo/redo
-  viewport rendering needs to be far,far better
-  master pages with auto page number is important.. for image based page numbers, dynamic objects important!!
-  would be convenient to send to gimp for editing, update later live
-  when delete/add pages, need option to reposition to same orientation in margin area
-  snapping:
-    selection snapping: select a bunch of stuff, mark as snap sources, next selection tries to snap against those in old sel, not in new sel
-    rotation, maybe drag handle with control?
-	snap to bbox vs aabb
-  drag constraints more accessible in only y or x direction
-  more specific control over transform.. numerical specification
-  per object visibility
-  per object opacity
-  better key input edits, right click on menu items to ch key
-  guides
-  text
-  Grouping:
-    select only within group zone
-	easy selection of proper group zone
-	remove 'i' from common shortcuts for all tools to let it be used for ObjectIndicator
-  DONE clipping
-
-polish:
-  page navigator should allow type in shortcuts like "end"
-
-
 selecting in viewwindow
   on limbo, and spread/page, papergroup, select  first object it finds
   else
@@ -1323,11 +1311,12 @@ voronoi Voronoi delauney Delauney:
   less than three points doesn't remap rationally, need to update extra lines to something proper
 
 FileDialog filedialog:
-  bug: sort caseless, other sorrts not working
+  bug: sort caseless, other sorts not working
   focus should start on file line
   ^l should shift focus to file line
   when something is not openable or saveable, buttons should be greyed out
-  should probably have a scroll bar
+  file dialog, single click should not enter directory, double click should do that
+  file dialog needs click on parent dir to jump to the dir, but still be able to easily return to prev dir
   implement icon list selector
   implement option for (or just show) directories first
   Resizing zaps view to top, should preserve 1st in window
@@ -1336,6 +1325,7 @@ FileDialog filedialog:
   tooltip to show full path of bookmarks
   need drag and drop bookmarking
   when you change directories, it should indicate if it corresponds to a bookmark
+  DONE should probably have a scroll bar
 
 when resizing viewportwindow and a temp_input window active, make sure it stays on screen?
 
@@ -1425,14 +1415,14 @@ high dpi hidpi:
     xrandr only gives monitor names like DP-5 DP-0
 	xrandr --verbose lists EDID hex block that usually contains monitor model somehow
 	auto scale by detected pixel density
-  supply a "default" ppi? for instance xlib thinks: 94.1467h or 94.0741v of multisync lcd2490wiki2 (specs say 94)
   perhaps respond to GDK_SCALE or QT_SCREEN_SCALE_FACTOR (or maybe only QT_SCALE_FACTOR) 
-  laxconfig not working
-  affected:
-    font sizes
-	window bevel, padding
-	thin line in interfaces
-	various interface threshholds, like path node indicator size, touch distance
+	update all widgets accordingly
+    affected:
+      font sizes
+      window bevel, padding
+      thin line in interfaces
+      various interface threshholds, like path node indicator size, touch distance
+  DONE supply a "default" ppi? for instance xlib thinks: 94.1467h or 94.0741v of multisync lcd2490wiki2 (specs say 94)
 
 themes:
   on ThemeUpdated events, things need to account for:
@@ -1550,6 +1540,7 @@ Tools should remember their settings
      well as the running tool use settings
 
 paperinterface: papergroupinterface papergroup interface
+  need to be able to edge drag paper to resize, maybe with grid snapping
   when scaling should try to preserve relative orientations
   when reset scale or rotation, preserve relative orientations
   option for "Sync Physical Scale"
@@ -1598,6 +1589,7 @@ paperinterface: papergroupinterface papergroup interface
     paperinterface: in spread editor (done), and able to print it out, don't forget to remove DBG for release!
     in spread editor (done), and be able to print it out
   papersize names are not translated. Should they be??
+  buff out the paper interface to be the net builder?
   more versatile size control per box type per paper: edit window? should be edit on screen....
      Name:  default single letter
      Paper: Letter, 8.5/11, landscape
@@ -1746,6 +1738,8 @@ from laxkit: clear up focus handling which currently REALLY SUCKS especially whe
 pointin should check to visual boundary, not bounding box (? maybe just optionally)
 
 customizable object child relationships to parent, rather than simple transform
+  this needs to be reworked to be an object filter instead of special anchor properties
+
   incorporate gss!!
   DONE scale x
   scale y
@@ -1778,29 +1772,37 @@ lax:
 
 calculator/scripting
   bug: run command with BuildIcons, error is not propagating up to cout
-  function calls, assigning named parameters, checks for '=', but only single char, fails when it's actually a ==
-  cannot assign dict elements, like a["b"] = c or a.b = c
+  bug: function calls, assigning named parameters, checks for '=', but only single char, fails when it's actually a ==
+  bug: Math.oeuaeou does not produce an error
+  bug: number deref: var a={1,2}.. out of bounds not returning cannot deref.. returning "Ok"
+  bug: for loops broken
+  bug: explicit var a=flatvector() fails with unknow name flatvector
+  test heavily nested assignments
+  need multiple assignment
+  need special Parse(expression, &unknown_names) to assist expression node
   security restrictions?
   showing defined functions should show the code
+  showing variables should show name = value and the class def (such as laidout.globals)
   set dump_out_atts should do full atts if any subattribute has full atts, else output "set": "{1,2,3}"
   dump_out_atts should output raw toStr things.. Strings currently return "str" which is output "\"str\""
-  debug for
   debug generic with operators, doesn't seem to be working
   debug operator definitions
   debug using and import... maybe remove using, use import Math.* instead
-  debug number deref: var a={1,2}.. out of bounds not returning cannot deref.. returning "Ok"
-  var a if a already exists in current scope should fail
+  var a if a already exists in current scope should fail. currently just says ok, but keeps old value
   error reporting up function calls doesn't say pos/line for each expression
   overloading does not handle parameter mapping per overloaded, it is scanning only the first, and using that
   print string plus any non string should stringify the thing and append to string
   curline not getting incremented properly when there is skipping or looping going on
   implement a PaperSizes object that recognizes all the names, or maybe a set somewhere with all names?
-  Math.oeuaeou does not produce an error
   allow if statements on single line without curly braces
   inputting lines when open {"( maybe prompt "... " to wait for closure?
   how best to allow created object defs to be referenced as parameter, variable, or set types, it is a mess right now
   destructors
   show overloaded entries
+  DONE bug: a={a:1,b:2}; a.a  -> crash! ..sometimes.. a.b crash other times
+  DONE bug: var a={a:1,b:2}; a["a"]=3 -> cannot assign  like a["b"] = c or a.b = c
+  DONE bug: can't remove dict elements
+  DONE bug: var a={a:1,b:2}, cannot add to dict, like a.c = 234; a["d"] = 5655
 
 
 gshell:
@@ -2082,7 +2084,6 @@ Convert:
   newobject = Convert(object, to);
 
 file format prettification  --file-format
-  DONE make names/values/comments all kind of line up for those that use dump_out_atts
   dump should differentiate between DrawableObject and pure resource objects... right now, all lumped together
   adapt the scribus xml/att convertor to parse the output of laidout --file-format into something meaningful...
   #-------blah--------  <- mark a new section
@@ -2090,6 +2091,7 @@ file format prettification  --file-format
       subthing #subthing's docs
     #docs for following atts indented same as previous atts
     next_att #(one or more) next_att docs
+  DONE make names/values/comments all kind of line up for those that use dump_out_atts
 
 export with limbo, and no doc or papergroup, means use bounding box for limbo?
 
@@ -2313,6 +2315,65 @@ how to keep track of class hierarchy? impositions are now listed by resource ins
   best way of keeping track of base imposition classes? this is needed for file format description output
 
 
+polish: ux:
+  when you save, also save a preview of current spread?
+  resizeable ui
+  should be able to mass disconnect clones
+  current page should be highlighted
+
+  in menus, click down, then drag, will return what is under mouse.. should default to not do anything but stay in menu
+  page navigator should allow type in shortcuts like "end" or "-2" for second from last
+
+
+General design usability
+to be a decent editing platform, Laidout needs:
+  undo/redo
+  viewport rendering needs to be far,far better
+  master pages with auto page number is important.. for image based page numbers, dynamic objects important!!
+  would be convenient to send to gimp for editing, update later live
+  when delete/add pages, need option to reposition to same orientation in margin area
+  snapping:
+    selection snapping: select a bunch of stuff, mark as snap sources, next selection tries to snap against those in old sel, not in new sel
+    rotation, maybe drag handle with control?
+	snap to bbox vs aabb
+  drag constraints more accessible in only y or x direction
+  more specific control over transform.. numerical specification
+  per object visibility
+  per object opacity
+  better key shortcut edits, right click on menu items to ch key
+  guides
+  text
+  Grouping:
+    select only within group zone
+	easy selection of proper group zone
+	remove 'i' from common shortcuts for all tools to let it be used for ObjectIndicator
+  DONE clipping
+
+============== Future of Laidout ================
+
+Goals:
+  2D Vector graphics editor built for multiple output types, whether printed pages, or html, or image files
+  While 2d focused, has some limited capabilities to lay out on 3d surfaces made out of flat but bent or folded surfaces
+Current deficiencies:
+  Render update is way too slow
+  Too many bugs/quirks in object management, resource coordiation
+  Spotty undo/redo
+  cairo is only 8 bit, limits use for animation
+  Way too hard to have user created tools
+    internal object system is flexible, but not without a huge amount of boilerplate-like code to tie to scripter
+  Being Linux only limits user base, and thus user testing
+  no color management
+  raster/paint/editable image layers, or stroke based on non-destructive vector paths would help
+Ways forward:
+  maybe gegl-ify everything?
+   - fixes 8 bit limit
+   - babl flexibility
+   - cross code with gimp/gegl has long term benefits
+  Pure svg/pdf vector graphics is limiting
+  Game engine-esque, real time animation and 3d tools are rising in importance as everyone aquires powerful cheap devices
+  Compute shader/ graphics shaders are very powerful and should be used for speed and image effects
+
+
 ===================Consider anything below here food for thought, not active dev notes================
 ------------------------------------------------------------------------------------------------------
 for translations, there is a difference between locale translations and language translations!
@@ -2399,4 +2460,4 @@ DONE detect when a resource section is ONLY built in ones, and don't output that
 DONE export ranges should accept "1-4, 6, 20-25" and "5-1"
 DONE for range on import/export, should have a range parser that accepts unconnected ranges, ie "2,4, 5-10"
 DONE perhaps laidout configure should call laxkit configure if it thinks laxkit is not configured yet
-
+DONE Be able to create empties
