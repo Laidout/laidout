@@ -88,9 +88,8 @@ class ExportFilter : public FileFilter
 //------------------------------- DocumentExportConfig ----------------------------------
 enum CollectForOutValues {
 	COLLECT_Dont_Collect,
-	COLLECT_Only_Rasterized,
-	COLLECT_Only_Existing,
-	COLLECT_Existing_And_Rasterized
+	COLLECT_Without_log,
+	COLLECT_With_Log
 };
 
 ObjectDef *makeExportConfigDef();
