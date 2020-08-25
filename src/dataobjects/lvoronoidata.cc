@@ -163,7 +163,7 @@ LaxInterfaces::SomeData *LVoronoiData::EquivalentObject()
 		paths->Id("points");
 		for (int c=0; c<points.n; c++) {
 			if (c!=0) paths->pushEmpty();
-			paths->appendEllipse(points.e[c], width_points, width_points, 2*M_PI, 4, true);
+			paths->appendEllipse(points.e[c], width_points, width_points, 2*M_PI, 0, 4, 1);
 			paths->close();
 		}
 
