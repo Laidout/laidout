@@ -319,6 +319,10 @@ void NodeProperty::SetExtents(NodeColors *colors)
 			StringValue *s = dynamic_cast<StringValue*>(v);
 			w += th + colors->font->Extent(s->str, -1);
 
+		} else if (v->type()==VALUE_File) {
+			FileValue *s = dynamic_cast<FileValue*>(v);
+			w += th + colors->font->Extent(s->filename, -1) + colors->font->Extent("..", 3);
+
 		} else if (v->type()==VALUE_Enum) {
 			EnumValue *ev = dynamic_cast<EnumValue*>(v);
 			const char *nm=NULL, *Nm=NULL;
@@ -490,10 +494,11 @@ int NodeProperty::SetData(Value *newdata, bool absorb)
 	if (data) data->dec_count();
 	data = newdata;
 	if (data && !absorb) data->inc_count();
+	Touch();
 	return 1;
 }
 
-/*! Update mod time to now.
+/*! Update modtime to now.
  */
 void NodeProperty::Touch()
 {
@@ -687,6 +692,13 @@ NodeBase::~NodeBase()
 }
 
 
+/*! Update modtime to now.
+ */
+void NodeBase::Touch()
+{
+	modtime = times(NULL);
+}
+
 /*! Defualt just return muted.
  */
 int NodeBase::IsMuted()
@@ -837,17 +849,22 @@ void NodeBase::PropagateUpdate()
 int NodeBase::GetStatus()
 { 
 	 //find newest mod time of inputs
-	std::clock_t t=0;
+	std::clock_t t=0, outt = 0;
+	int outs = 0;
 	for (int c=0; c<properties.n; c++) {
-		if (!properties.e[c]->IsOutput() && properties.e[c]->modtime > t) t = properties.e[c]->modtime;
+		if (!properties.e[c]->IsOutput()) {
+			if (properties.e[c]->modtime > t) {
+				t = properties.e[c]->modtime;
+				outs++;
+			}
+		} else if (properties.e[c]->modtime > outt) {
+			outt = properties.e[c]->modtime;
+		}
 	}
-	if (t==0) return 0; //earliest output time is beginning, or no outputs, so nothing to be done!
 
-	 //if any outputs older than newest mod, then return 1
-	for (int c=0; c<properties.n; c++) {
-		if (properties.e[c]->IsOutput()) continue;
-		if (properties.e[c]->modtime < t) return 1; 
-	}
+	if (outs == 0) return 0; //no outputs, so nothing to be done!
+	if (outt == 0) return 1; //everything at beginning of time, definitely needs update
+	if (outt < t) return 1; //inputs newer than outputs
 	return 0;
 }
 
@@ -1257,6 +1274,7 @@ int NodeBase::Connected(NodeConnection *connection)
 			prop->SetFlag(NodeProperty::PROPF_New_In, false);
 			prop->SetFlag(NodeProperty::PROPF_List_In, false);
 			prop->Label(connection->fromprop->Label());
+			Wrap();
 
 			return 1;
 		}
@@ -1268,6 +1286,7 @@ int NodeBase::Connected(NodeConnection *connection)
 			prop->SetFlag(NodeProperty::PROPF_New_Out, false);
 			prop->SetFlag(NodeProperty::PROPF_List_Out, false);
 			prop->Label(connection->fromprop->Label());
+			Wrap();
 
 			return 1;
 		}
@@ -1319,11 +1338,12 @@ int NodeBase::RemoveProperty(NodeProperty *prop)
 
 /*! Return the property with prop as name, or NULL if not found.
  */
-NodeProperty *NodeBase::FindProperty(const char *prop)
+NodeProperty *NodeBase::FindProperty(const char *prop, int *index_ret)
 {
 	if (!prop) return NULL;
 	for (int c=0; c<properties.n; c++) {
 		if (!strcmp(prop, properties.e[c]->name)) {
+			if (index_ret) *index_ret = c;
 			return properties.e[c];
 		}
 	}
@@ -1453,8 +1473,7 @@ LaxFiles::Attribute *NodeBase::dump_out_atts(LaxFiles::Attribute *att, int what,
         att->push("psamplew", "100", "Sampling width for previews");
         att->push("psampleh", "100", "Sampling height for previews");
         att->push("xywh", "10 10 100 50", "Position and dimensions");
-		Attribute *att2 = att->pushSubAtt("in", "some_name");
-		att2->Comment("An input property");
+		Attribute *att2 = att->pushSubAtt("in", "some_name", "An input property");
 		  att2->push("IntValue", "1", "If given for any property type, this data is installed onto the property.");
 		att->push("out", "some_name", "An output property");
 		att->push("block", "some_name", "A block property");
@@ -1673,7 +1692,7 @@ int NodeGroup::Export(NodeGroup *group, const char *format, const char *file)
 
 
 
-//--------------NodeGroup funcs
+//--------------non-static NodeGroup funcs
 
 NodeGroup::NodeGroup()
 {
@@ -2292,7 +2311,7 @@ int NodeGroup::NoOverlap(NodeBase *which, double gap)
  */
 void NodeGroup::BoundingBox(DoubleBBox &box)
 {
-	box.clear();
+	box.ClearBBox();
 	for (int c=0; c<nodes.n; c++) {
 		box.addtobounds(nodes.e[c]->x,nodes.e[c]->y);
 		box.addtobounds(nodes.e[c]->x+nodes.e[c]->width, nodes.e[c]->y+nodes.e[c]->height);
@@ -2549,7 +2568,12 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 
 					if (!from || !to || !fromprop || !toprop) {
 						// *** warning!
-						DBG cerr <<" *** bad node att input!"<<endl;
+						DBG cerr <<" *** bad node att input! "<<fromstr<<','<<fpstr<< " -> "<<tostr<<','<<tpstr
+						DBG   <<"\n    from:     "<<(from ? from->Id() : "null")
+						DBG   <<"\n    fromprop: "<<(fromprop ? fromprop->name : "null")
+						DBG   <<"\n    to:       "<<(to ? to->Id() : "null")
+						DBG   <<"\n    toprop:   "<<(toprop ? toprop->name : "null")
+						DBG   <<endl;
 						//continue;
 
 					} else {
@@ -2640,10 +2664,6 @@ int NodeGroup::AddNode(NodeBase *node)
  */
 NodeBase *NodeGroup::NewNode(const char *type)
 {
-//	if (!strcmp(type, "group")) {
-//		return new NodeGroup;
-//	}
-
 	ObjectFactory *factory = NodeFactory();
 	ObjectFactoryNode *fnode;
 
@@ -2655,9 +2675,11 @@ NodeBase *NodeGroup::NewNode(const char *type)
 			NodeBase *newnode = dynamic_cast<NodeBase*>(obj);
 
 			if (obj && !newnode) {
+				// please note this shouldn't happen
 				DBG cerr << " *** uh oh! factory returned bad object in NodeGroup::NewNode()!"<<endl;
 				return NULL;
 			} 
+			makestr(newnode->type, fnode->name); //protect against mismatch between constructor type and factory type
 			return newnode;
 		}
 	}
@@ -3000,7 +3022,7 @@ Laxkit::MenuInfo *NodeInterface::ContextMenu(int x,int y,int deviceid, Laxkit::M
 	ResourceManager *manager = InterfaceManager::GetDefault(true)->GetResourceManager();
 	if (manager->NumResources("Nodes")) {
 		menu->AddSep();
-		menu->AddItem(_("New nodes"), NODES_New_Nodes);
+		menu->AddItem(_("New node graph"), NODES_New_Nodes);
 		menu->AddItem(_("Resources"));
 		menu->SubMenu(_("Saved Nodes"));
 		manager->ResourceMenu("Nodes", true, menu);
@@ -3070,9 +3092,9 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 
 		return 0;
 
-	} else if (!strcmp(mes,"setpropdouble") || !strcmp(mes,"setpropint") || !strcmp(mes,"setpropstring")) {
+	} else if (!strcmp(mes,"setpropdouble") || !strcmp(mes,"setpropint") || !strcmp(mes,"setpropstring") || !strcmp(mes,"setpropfile")) {
 		if (!nodes || lasthover<0 || lasthover>=nodes->nodes.n || lasthoverprop<0
-				|| lasthoverprop>=nodes->nodes.e[lasthover]->properties.n) return 0;
+				|| lasthoverprop >= nodes->nodes.e[lasthover]->properties.n) return 0;
 
         const SimpleMessage *s = dynamic_cast<const SimpleMessage*>(data);
 
@@ -3085,7 +3107,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 		LineEdit *e = dynamic_cast<LineEdit*>(viewport->GetInputBox());
 		
 		if (s->info1 == -1) {
-			 //was control key, either tab, up, or down.
+			 //was control key, either tab, up, or down.. switch what property we are editing
 			if (!e) return 0;
 			int ch = s->info2;
 			int state = s->info3;
@@ -3100,19 +3122,19 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 					if (node->properties.e[pi]->IsEditable()) {
 						v = node->properties.e[pi]->GetData();
 						if (!v) continue;
-						if (v->type()!=VALUE_Real && v->type()!=VALUE_Int && v->type()!=VALUE_String) continue;
+						if (v->type()!=VALUE_Real && v->type()!=VALUE_Int && v->type()!=VALUE_String && v->type()!=VALUE_File) continue;
 						break;
 					}
 				}
 				
-			} else {
+			} else { //shift tab or down key
 				while((pi+1)%node->properties.n != lasthoverprop) {
 					pi++;
 					if (pi>=node->properties.n) pi = 0;
 					if (node->properties.e[pi]->IsEditable()) {
 						v = node->properties.e[pi]->GetData();
 						if (!v) continue;
-						if (v->type()!=VALUE_Real && v->type()!=VALUE_Int && v->type()!=VALUE_String) continue;
+						if (v->type()!=VALUE_Real && v->type()!=VALUE_Int && v->type()!=VALUE_String && v->type()!=VALUE_File) continue;
 						break;
 					}
 				}
@@ -3127,30 +3149,47 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 				viewport->ClearInputBox();
 				EditProperty(lasthover, lasthoverprop);
 
-			} else return 0;
-		}
-
-		 //parse the new data
-		if (isblank(str) && strcmp(mes,"setpropstring")) { delete[] sstr; return  0; }
-		char *endptr=NULL;
-		d = strtod(str, &endptr);
-		if (endptr==str && strcmp(mes,"setpropstring")) {
-			PostMessage(_("Bad value."));
-			delete[] sstr;
+			}
 			return 0;
 		}
 
-		 //update node data
-		if (!strcmp(mes,"setpropdouble")) {
-			DoubleValue *v=dynamic_cast<DoubleValue*>(prop->data);
-			v->d = d;
-		} else if (!strcmp(mes,"setpropstring")) {
-			StringValue *v=dynamic_cast<StringValue*>(prop->data);
-			v->Set(str);
+		 //parse the new data
+		bool isint    = (strcmp(mes, "setpropint")    == 0);
+		bool isdouble = (strcmp(mes, "setpropdouble") == 0);
+		bool isstring = (strcmp(mes, "setpropstring") == 0);
+		// bool isfile   = (strcmp(mes, "setpropfile")   == 0);
+
+		if (isint || isdouble) {
+			char *endptr = nullptr;
+			d = strtod(str, &endptr);
+			if (endptr == str) {
+				PostMessage(_("Bad value."));
+				delete[] sstr;
+				return 0;
+			}			
+
+			if (isdouble) {
+				DoubleValue *v = dynamic_cast<DoubleValue*>(prop->data);
+				v->d = d;
+
+			} else {
+				IntValue *v = dynamic_cast<IntValue*>(prop->data);
+				v->i = d;
+			}
+
 		} else {
-			IntValue *v=dynamic_cast<IntValue*>(prop->data);
-			v->i = d;
+			// if (isblank(str)) { delete[] sstr; return  0; } //don't set if blank ? really?
+			
+			if (isstring) {
+				StringValue *v = dynamic_cast<StringValue*>(prop->data);
+				v->Set(str);
+
+			} else if (!strcmp(mes,"setpropfile")) {
+				FileValue *v = dynamic_cast<FileValue*>(prop->data);
+				v->Set(str);
+			}
 		}
+		
 		node->Update();
 		needtodraw=1;
 
@@ -3226,6 +3265,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 				anObject *obj = type->newfunc(type->parameter, NULL);
 				NodeBase *newnode = dynamic_cast<NodeBase*>(obj);
 				flatpoint p = nodes->m.transformPointInverse(lastpos);
+				makestr(newnode->type, what); //protect against mismatch between constructor type and factory type
 				newnode->x  = p.x;
 				newnode->y  = p.y;
 				newnode->InstallColors(nodes->colors, false);
@@ -3707,6 +3747,7 @@ int NodeInterface::Refresh()
 		}
 
 		if (node->ErrorMessage()) {
+			dp->NewFG(colors->error_border);
 			dp->textout(node->x+node->width/2, node->y, node->ErrorMessage(),-1, LAX_HCENTER|LAX_BOTTOM);
 		}
 
@@ -3749,8 +3790,8 @@ int NodeInterface::Refresh()
 		cliprect[1].x = cliprect[2].x = node->x + node->width;
 		cliprect[0].y = cliprect[1].y = node->y;
 		cliprect[3].y = cliprect[2].y = node->y + node->height;
-		//dp->PushClip(0);
-		//dp->Clip(cliprect, 4, 1);
+		dp->PushClip(0);
+		dp->Clip(cliprect, 4, 1);
 
 		 //draw label
 		double labely = node->y;
@@ -3819,6 +3860,8 @@ int NodeInterface::Refresh()
 			y += prop->height;
 		}
 
+		dp->PopClip();
+
 		if (lasthover == c && (lasthoverslot == NODES_LeftEdge || lasthoverslot == NODES_RightEdge)) {	
 			NodeBase *node = nodes->nodes.e[lasthover];
 			flatpoint p1,p2;
@@ -3830,7 +3873,6 @@ int NodeInterface::Refresh()
 			dp->drawline(p1,p2);
 		}
 
-		//dp->PopClip();
 
 		dp->LineWidth(1);
 		dp->NewFG(fg);
@@ -3945,8 +3987,15 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 				}
 				dp->textout(node->x+prop->x+th, node->y+prop->y+prop->height/2, extra, -1, LAX_LEFT|LAX_VCENTER);
 
-			} else if (v && v->type()==VALUE_String) {
+			} else if (v && (v->type()==VALUE_String || v->type() == VALUE_File)) {
 				dp->NewFG(&nodes->colors->fg);
+				const char *str = nullptr;
+				double dots = 0;
+				if (v->type() == VALUE_String) str = dynamic_cast<StringValue*>(v)->str;
+				else {
+					dots = dp->textextent("...",-1, nullptr,nullptr);
+					str = dynamic_cast<FileValue*>(v)->filename;
+				}
 
 				 //prop label
 				double dx = th/2+dp->textout(node->x+th/2, y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER); 
@@ -3954,11 +4003,15 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 				 //prop string
 				dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
 				dp->NewBG(&nodes->colors->bg_edit);
-				if (prop->IsEditable()) 
-					dp->drawRoundedRect(dx+node->x+prop->x+th/2, node->y+prop->y+th/4, node->width-th-dx, prop->height*.66,
+				if (prop->IsEditable()) {
+					dp->drawRoundedRect(dx+node->x+prop->x+th/2, node->y+prop->y+th/4, node->width-th-dx-dots, prop->height*.66,
 									th/3, false, th/3, false, 2);
+					if (dots > 0) {
+						dp->textout(node->x + prop->x + prop->width - th/2, y+prop->height/2, "...",3, LAX_RIGHT|LAX_VCENTER);
+					}
+				}
 				dp->NewFG(&nodes->colors->fg_edit);
-				dp->textout(dx+node->x+th, y+prop->height/2, dynamic_cast<StringValue*>(v)->str,-1, LAX_LEFT|LAX_VCENTER); 
+				dp->textout(dx+node->x+th, y+prop->height/2, str,-1, LAX_LEFT|LAX_VCENTER); 
 
 			} else if (v && v->type()==VALUE_Enum) {
 
@@ -4503,7 +4556,7 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, int 
 				for (int c3=0; c3<prop->connections.n; c3++) {
 					connection = prop->connections.e[c3];
 					GetConnectionBez(connection, bezbuf);
-					box.clear();
+					box.ClearBBox();
 					box.addtobounds(bezbuf[0]);
 					box.addtobounds(bezbuf[1]);
 					box.addtobounds(bezbuf[2]);
@@ -4727,7 +4780,7 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 }
 
 /*! Return whether we know how to edit. 0 for success, nonzero for cannot.
- * Default here is just numbers and strings.
+ * Default here is just numbers, strings, and file. Opens a viewport input box.
  */
 int NodeInterface::EditProperty(int nodei, int propertyi)
 {
@@ -4742,7 +4795,7 @@ int NodeInterface::EditProperty(int nodei, int propertyi)
 	Value *v=dynamic_cast<Value*>(prop->GetData());
 	if (!v) return 2;
 
-	if (v->type()!=VALUE_Real && v->type()!=VALUE_Int && v->type()!=VALUE_String) return 3;
+	if (v->type()!=VALUE_Real && v->type()!=VALUE_Int && v->type()!=VALUE_String && v->type()!=VALUE_File) return 3;
 
 	flatpoint ul= nodes->m.transformPoint(flatpoint(node->x, node->y+prop->y));
 	flatpoint lr= nodes->m.transformPoint(flatpoint(node->x+node->width, node->y+prop->y+prop->height));
@@ -4758,11 +4811,14 @@ int NodeInterface::EditProperty(int nodei, int propertyi)
 	bounds.addtobounds(lr);
 
 	char valuestr[200];
-	if (v->type()!=VALUE_String) v->getValueStr(valuestr, 199);
+	if (v->type() != VALUE_String && v->type() != VALUE_File) v->getValueStr(valuestr, 199);
 
 	viewport->SetupInputBox(object_id, NULL,
-			v->type()==VALUE_String ? dynamic_cast<StringValue*>(v)->str : valuestr,
-			v->type()==VALUE_String ? "setpropstring" : (v->type()==VALUE_Int ? "setpropint" : "setpropdouble"), bounds,
+			v->type()==VALUE_String ? dynamic_cast<StringValue*>(v)->str
+				: v->type() == VALUE_File ? dynamic_cast<FileValue*>(v)->filename : valuestr,
+			v->type()==VALUE_String ? "setpropstring"
+				: v->type() == VALUE_File ? "setpropfile" : (v->type()==VALUE_Int ? "setpropint" : "setpropdouble"),
+			bounds,
 			NULL, true);
 
 	return 10;
@@ -4792,9 +4848,14 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		Value *v=dynamic_cast<Value*>(prop->data);
 		if (!v) return 0;
 
-		if (v->type()==VALUE_Real || v->type()==VALUE_Int || v->type()==VALUE_String) {
-			 //create input box..
-			EditProperty(overnode, overproperty);
+		if (v->type()==VALUE_Real || v->type()==VALUE_Int || v->type()==VALUE_String || v->type()==VALUE_File) {
+
+			if (v->type()==VALUE_File && x > node->x + prop->x + prop->width - prop->height) {
+				app->rundialog(new FileDialog(NULL,"GetFile",_("Get filename..."),ANXWIN_REMEMBER|ANXWIN_CENTER,0,0,0,0,0,
+	                                          object_id,"setpropfile", FILES_PREVIEW | FILES_OPEN_ONE, lastsave));
+			} else { //create input box..
+				EditProperty(overnode, overproperty);
+			}
 
 		} else if (v->type()==VALUE_Boolean) {
 			BooleanValue *vv=dynamic_cast<BooleanValue*>(prop->data);
@@ -4937,7 +4998,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		for (int c=0; c<nodes->nodes.n; c++) {
 			node = nodes->nodes.e[c];
 
-			box.clear();
+			box.ClearBBox();
 			box.addtobounds(nodes->m.transformPoint(flatpoint(node->x,            node->y)));
 			box.addtobounds(nodes->m.transformPoint(flatpoint(node->x+node->width,node->y)));
 			box.addtobounds(nodes->m.transformPoint(flatpoint(node->x+node->width,node->y+node->height)));
@@ -5743,7 +5804,7 @@ int NodeInterface::PerformAction(int action)
 	} else if (action==NODES_Center || action==NODES_Center_Selected) {
 		if (!nodes) return 0;
 		SomeData box;
-		box.clear();
+		box.ClearBBox();
 		NodeBase *node;
 
 		Laxkit::RefPtrStack<NodeBase> *nn;

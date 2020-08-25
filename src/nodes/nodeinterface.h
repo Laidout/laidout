@@ -110,7 +110,7 @@ class NodeProperty : public Laxkit::RefCounted
 	bool is_linkable; //default true for something that allows links in
 	bool is_editable;
 	bool hidden;
-	unsigned int flags;
+	unsigned int flags; //see PropertyFlags
 
 	double x,y,width,height;
 	Laxkit::ScreenColor color;
@@ -314,6 +314,7 @@ class NodeBase : public Laxkit::anObject,
 	virtual int UpdatePreview();
 	virtual void PreviewSample(double w, double h, bool is_shift);
 	virtual int GetStatus(); //0 ok, -1 bad ins, 1 just needs updating
+	virtual void Touch();
 	virtual clock_t MostRecentIn(int *index);
 	virtual int UsesPreview() { return total_preview!=NULL && show_preview; }
 	virtual int Wrap();
@@ -338,7 +339,7 @@ class NodeBase : public Laxkit::anObject,
 	virtual NodeProperty *AddNewIn (int is_for_list, const char *nname, const char *nlabel, const char *ttip, int where=-1);
 	virtual NodeProperty *AddNewOut(int is_for_list, const char *nname, const char *nlabel, const char *ttip, int where=-1);
 	virtual int RemoveProperty(NodeProperty *prop);
-	virtual NodeProperty *FindProperty(const char *prop);
+	virtual NodeProperty *FindProperty(const char *prop, int *index_ret = nullptr);
 	virtual int SetProperty(const char *prop, Value *value, bool absorb);
 	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
 	virtual int NumInputs(bool connected);
