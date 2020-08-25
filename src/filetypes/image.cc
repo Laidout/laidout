@@ -178,6 +178,8 @@ void ImageExportConfig::dump_in_atts(LaxFiles::Attribute *att,int what,LaxFiles:
 	}
 }
 
+Value *NewImageExportConfig() { return new ImageExportConfig(); }
+
 ObjectDef *ImageExportConfig::makeObjectDef()
 {
     ObjectDef *def=stylemanager.FindDef("ImageExportConfig");
@@ -201,7 +203,7 @@ ObjectDef *ImageExportConfig::makeObjectDef()
             NULL,NULL,
             NULL,
             0, //new flags
-            NULL,
+            NewImageExportConfig, //newfunc
             NULL);
 
 

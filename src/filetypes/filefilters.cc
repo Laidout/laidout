@@ -680,6 +680,8 @@ ObjectDef *ExportFilter::makeObjectDef()
 	return sd;
 }
 
+Value *NewExportConfig() { return new DocumentExportConfig(); }
+
 ObjectDef *makeExportConfigDef()
 {
 	ObjectDef *sd=new ObjectDef(nullptr,"ExportConfig",
@@ -689,8 +691,8 @@ ObjectDef *makeExportConfigDef()
 			nullptr,nullptr,
 			nullptr,
 			0, //new flags
-			nullptr,
-			nullptr);
+			NewExportConfig, //newfunc
+			nullptr); //stylefunc
 
 	 //define parameters
 	sd->push("filename",

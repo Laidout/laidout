@@ -371,6 +371,8 @@ void HtmlGalleryExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,Lax
 	}
 }
 
+Value *NewHtmlGalleryConfigValue() { return new HtmlGalleryExportConfig(); }
+
 ObjectDef *HtmlGalleryExportConfig::makeObjectDef()
 {
     ObjectDef *def=stylemanager.FindDef("HtmlGalleryExportConfig");
@@ -394,7 +396,7 @@ ObjectDef *HtmlGalleryExportConfig::makeObjectDef()
             NULL,NULL,
             NULL,
             0, //new flags
-            NULL,
+            NewHtmlGalleryConfigValue, //newfunc
             NULL);
 
 
@@ -1274,7 +1276,7 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 		//default fallback for no template
 		fprintf(htmlout, "<html>\n<head>\n<title>%s</title>\n<style>\n body { background-color: #555; }\n</style>\n</head>\n<body>\n", filename);
 		fprintf(htmlout, "%s<br>", filename);
-		fprintf(htmlout, imageliststr.c_str());
+		fwrite(imageliststr.c_str(), 1, strlen(imageliststr.c_str()), htmlout);
 		fwrite("</body>\n</html>", 1, 15, htmlout);
 	}
 	else 
