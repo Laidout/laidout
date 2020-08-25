@@ -14,6 +14,8 @@
 //
 
 #include <lax/transformmath.h>
+#include <lax/interfaces/interfacemanager.h>
+#include <lax/interfaces/somedatafactory.h>
 #include <lax/interfaces/rectpointdefs.h>
 #include <lax/colors.h>
 #include <lax/popupmenu.h>
@@ -114,7 +116,8 @@ Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 	if (child) return child->ContextMenu(x,y,deviceid, menu);
 	//if (child) return menu;
 
-	rx=x,ry=y;
+	rx=x;
+	ry=y;
 
 	if (selection->n() > 1)
 	{
@@ -147,10 +150,6 @@ Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 			}
 		}
 
-		menu->AddSep(_("Parenting"));
-		menu->AddItem(_("Jump to parent"), GIA_Jump_To_Parent);
-		menu->AddItem(_("Reparent..."),    GIA_Reparent);
-		menu->AddItem(_("Unparent"),       GIA_Unparent);
 	}
 	else if (selection->n() == 1)
 	{
@@ -175,6 +174,17 @@ Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 		}
 	}
 
+	if (selection->n() > 0) {
+		DrawableObject *obj = dynamic_cast<DrawableObject*>(selection->e(0)->obj);
+		
+		menu->AddSep(_("Parenting"));
+		menu->AddItem(_("Reparent..."),    GIA_Reparent);
+		if (obj->GetParent() && obj->GetParent()->Selectable()) {
+			menu->AddItem(_("Jump to parent"), GIA_Jump_To_Parent);
+			menu->AddItem(_("Unparent"),       GIA_Unparent);
+		}
+	}
+
 	// *** for when multiobject meta edit available:
 	//if (selection->n()) {
 	//	if (!menu) menu=new MenuInfo(_("Group Interface"));
@@ -192,6 +202,10 @@ Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 		//menu->AddItem(_("Add Cut Marks"),PAPERM_CutMarks);
 		//menu->AddSep();
 	}
+
+	if (!menu) menu = new MenuInfo(_("Group Interface"));
+	if (menu->n()) menu->AddSep();
+	menu->AddItem(_("Create empty"), GIA_Create_Empty);
 
 	RectInterface::ContextMenu(x,y,deviceid,menu);
 	return menu;
@@ -244,6 +258,7 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 				|| i == GIA_Jump_To_Parent
 				|| i == GIA_Reparent 
 				|| i == GIA_Unparent
+				|| i == GIA_Create_Empty
 				) {
 			PerformAction(i);
 			return 0;
@@ -846,7 +861,8 @@ Laxkit::ShortcutHandler *GroupInterface::GetShortcuts()
 	sc->Add(GIA_Reparent,  'p',AltMask,0,          "Parent",  _("Parent selected objects to last selected"),NULL,0);
 	sc->Add(GIA_Unparent,  'P',AltMask|ShiftMask,0,"Unparent",_("Unparent selected objects from their immediate parents"),NULL,0);
 
-	sc->Add(GIA_Edit_Contents,LAX_Enter,0,0,    "Edit Object",  _("Switch to content edit tool"),NULL,0);
+	sc->Add(GIA_Edit_Contents,LAX_Enter,0,0, "EditObject",   _("Switch to content edit tool"),NULL,0);
+	sc->Add(GIA_Create_Empty, 'e',0,0,       "CreateEmpty",  _("Create empty group object"),NULL,0);
 
 	//...shortcuts to switch to other tools are handled in ViewWindow
 
@@ -1277,6 +1293,23 @@ int GroupInterface::PerformAction(int action)
 			app->addwindow(new MetaWindow(NULL,"meta",_("Object Meta"),0, object_id,"objectMeta", meta));
 		}
 		
+		return 0;
+	} else if (action == GIA_Create_Empty) {
+		GroupData *g = dynamic_cast<GroupData *>(InterfaceManager::GetDefault()->NewObject(LAX_GROUPDATA));
+		DrawableObject *d = dynamic_cast<DrawableObject*>(g);
+		double halfdim = .5; // / dp->Getmag();
+		d->minx = -halfdim;
+		d->maxx = halfdim;
+		d->miny = -halfdim;
+		d->maxy = halfdim;
+		char *id = make_id(_("Empty"));
+		d->Id(id);
+		delete[] id;
+
+		viewport->NewData(d, nullptr);
+		d->dec_count();
+		d->origin(dp->screentoreal(rx,ry)); // *** FIXME!! not proper transform when nested
+
 		return 0;
 	}
 

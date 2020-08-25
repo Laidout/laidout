@@ -71,6 +71,7 @@ enum GroupInterfaceActions {
 	GIA_Reparent,
 	GIA_Unparent,
 
+	GIA_Create_Empty,
 
 	GIA_MAX
 };
