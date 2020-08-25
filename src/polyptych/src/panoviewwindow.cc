@@ -1865,8 +1865,10 @@ int PanoViewWindow::installImage(const char *file)
 		width  = image->w();
 		//height = image->w();
 
-		 //gl texture dimensions must be powers of 2
-		if (width>2048) { spheremap_width=2048; spheremap_height=1024; }
+		 //gl texture dimensions must be powers of 2, round down to nearest power of 2
+		if (width>8192) { spheremap_width=8192; spheremap_height=4096; }
+		else if (width>4096) { spheremap_width=4096; spheremap_height=2048; }
+		else if (width>2048) { spheremap_width=2048; spheremap_height=1024; }
 		else if (width>1024) { spheremap_width=1024; spheremap_height=512; }
 		else if (width>512) { spheremap_width=512; spheremap_height=256; }
 		else { spheremap_width=256; spheremap_height=128; }
