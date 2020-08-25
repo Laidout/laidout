@@ -314,7 +314,7 @@ int Spread::PagestackIndex(int docpage)
 
 bool Spread::GetBounds(Laxkit::DoubleBBox &bounds)
 {
-	bounds.clear();
+	bounds.ClearBBox();
 	if (path) bounds.addtobounds(path->m(), path);
 	else {
 		for (int c=0; c<pagestack.n(); c++) {
@@ -614,7 +614,7 @@ const char *Imposition::Name()
 Laxkit::DoubleBBox *Imposition::GoodWorkspaceSize(Laxkit::DoubleBBox *bbox)
 {
 	if (!bbox) bbox=new DoubleBBox();
-	else bbox->clear();
+	else bbox->ClearBBox();
 
 	if (papergroup) {
 		for (int c=0; c<papergroup->papers.n; c++) {

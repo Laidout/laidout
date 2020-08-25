@@ -328,7 +328,7 @@ int AnchorInterface::UpdateAnchors(int region)
 			if (pl->index<0) return 0;
 
 			DrawableObject d;
-			d.clear();
+			d.ClearBBox();
 			d.m(pl->outline->m());
 			d.setbounds(pl->outline);
 
@@ -368,7 +368,7 @@ int AnchorInterface::UpdateAnchors(int region)
 			if (!vp->doc->pages.e[pl->index]->pagestyle->margin) return 0;
 
 			DrawableObject d;
-			d.clear();
+			d.ClearBBox();
 			d.m(vp->doc->pages.e[pl->index]->pagestyle->margin->m());
 			d.setbounds(vp->doc->pages.e[pl->index]->pagestyle->margin);
 
@@ -444,7 +444,7 @@ void AnchorInterface::UpdateSelectionAnchors()
 	if (!active && !oactive) return;
 
 	DrawableObject o;
-	o.clear();
+	o.ClearBBox();
     double m[6];
     for (int c=0; c<selection->n(); c++) {
 		if (oactive) AddAnchors(dynamic_cast<VObjContext*>(selection->e(c)), ANCHOR_Other_Objects);

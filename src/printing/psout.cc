@@ -685,7 +685,7 @@ int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	 // Find bbox
 	 //*** note bbox is not used!!
 	if (doc) spread=doc->imposition->Layout(layout,out->range.Start());
-	bbox.clear();
+	bbox.ClearBBox();
 	bbox.addtobounds(spread->path);
 	
 

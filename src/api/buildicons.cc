@@ -281,7 +281,7 @@ int BuildIconsFunction(ValueHash *context,
 					// else match!
 
 					//   find bbox in page space
-					box.clear();
+					box.ClearBBox();
 					// ----------
 					// box.addtobounds(layer->transformPoint(obj->BBoxPoint(0,0,true)));
 					// box.addtobounds(layer->transformPoint(obj->BBoxPoint(1,0,true)));

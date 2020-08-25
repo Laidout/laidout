@@ -625,7 +625,7 @@ int SphereToPoly(Image spheremap,
 		b.y/=norm(b.y);
 		b.z=b.x / b.y;
 
-		bbox.clear();
+		bbox.ClearBBox();
 		pgon=new Pgon();
 		pgon->setup(poly->faces.e[c]->pn,c);
 		for (int c2=0; c2<poly->faces.e[c]->pn; c2++) {

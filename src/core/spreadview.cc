@@ -798,7 +798,7 @@ void SpreadView::ArrangeSpreads(Displayer *dp,int how)//how==-1
 //! For an already arranged view, set bounds properly.
 void SpreadView::FindBBox()
 {
-	DoubleBBox::clear();
+	ClearBBox();
 
 	for (int c=0; c<spreads.n; c++) {
 		addtobounds(spreads.e[c]->m(),spreads.e[c]);

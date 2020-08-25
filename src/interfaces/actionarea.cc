@@ -172,7 +172,7 @@ void ActionArea::FindBBox()
 {
 	if (!npoints) return;
 
-	DoubleBBox::clear(); //makes bounding box invalid
+	ClearBBox(); //makes bounding box invalid
 	for (int c=0; c<npoints; c++) addtobounds(outline[c]);
 }
 

@@ -140,6 +140,8 @@ int NewBBoxObject(ValueHash *context, ValueHash *parameters, Value **value_ret, 
 	return 0;
 }
 
+Value *NewBBoxValue() { return new BBoxValue; }
+
 //! Create a new ObjectDef with BBox characteristics. Always creates new one, does not search for BBox globally.
 ObjectDef *makeBBoxObjectDef()
 {
@@ -149,7 +151,7 @@ ObjectDef *makeBBoxObjectDef()
 			"class",
 			NULL,NULL, //range, default value
 			NULL,0, //fields, flags
-			NULL,NewBBoxObject);
+			NewBBoxValue, NewBBoxObject); //newfunc, objectfunc
 
 
 	 //Contstructor
@@ -166,7 +168,7 @@ ObjectDef *makeBBoxObjectDef()
 	sd->push("miny",_("Miny"),_("Minimium y"),"real",NULL,NULL,0,0);
 	sd->push("maxy",_("Maxy"),_("Maximium y"),"real",NULL,NULL,0,0);
 
-	sd->pushFunction("clear", _("Clear"), _("Clear bounds."),
+	sd->pushFunction("ClearBBox", _("Clear bounds"), _("Clear bounds."),
 					 NULL, //evaluator
 					 NULL);
 
@@ -228,7 +230,7 @@ int BBoxValue::Evaluate(const char *function,int len, ValueHash *context, ValueH
 			             Value **value_ret, ErrorLog *log)
 {
 	if (isName(function,len,"clear")) {
-		clear();		 
+		ClearBBox();		 
 		if (value_ret) *value_ret=NULL;
 		return 0;
 
