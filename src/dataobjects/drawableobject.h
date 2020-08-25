@@ -308,6 +308,7 @@ class ImageValue : virtual public Value, virtual public FunctionEvaluator
 	Laxkit::LaxImage *image;
 
 	ImageValue();
+	virtual ~ImageValue();
 	virtual int type();
     virtual const char *whattype() { return "ImageValue"; }
 	virtual ObjectDef *makeObjectDef();
@@ -315,6 +316,7 @@ class ImageValue : virtual public Value, virtual public FunctionEvaluator
 	virtual Value *duplicate();
 	virtual Value *dereference(int index);
 	//virtual int assign(FieldExtPlace *ext,Value *v);
+	virtual void SetImage(Laxkit::LaxImage *newimage);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 			             Value **value_ret, Laxkit::ErrorLog *log);
 };

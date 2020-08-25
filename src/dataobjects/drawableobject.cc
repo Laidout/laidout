@@ -817,9 +817,10 @@ void DrawableObject::FindBBox()
 {
 	//if (flags&DRAWABLEOBJ_Fixed_Bounds) return;
 
-	maxx=minx-1;
-	maxy=miny-1;
 	if (!kids.n) return;
+
+	maxx = minx-1;
+	maxy = miny-1;
 
 	DrawableObject *o;
 	for (int c=0; c<kids.n; c++) {
@@ -1782,6 +1783,8 @@ int NewAffineObject(ValueHash *context, ValueHash *parameters, Value **value_ret
 	return 0;
 }
 
+Value *NewAffineValue() { return new AffineValue(); }
+
 //! Create a new ObjectDef with Affine characteristics. Always creates new one, does not search for Affine globally.
 ObjectDef *makeAffineObjectDef()
 {
@@ -1791,7 +1794,7 @@ ObjectDef *makeAffineObjectDef()
 			"class",
 			NULL,NULL, //range, default value
 			NULL,0, //fields, flags
-			NULL,NewAffineObject);
+			NewAffineValue, NewAffineObject);
 
 
 	sd->pushFunction("translate", _("Translate"), _("Move by a certain amount"),
@@ -1861,6 +1864,21 @@ ImageValue::ImageValue()
 //{
 //	image = nullptr;
 //}
+
+ImageValue::~ImageValue()
+{
+	if (image) image->dec_count();
+}
+
+/*! Incs count.
+ */
+void ImageValue::SetImage(LaxImage *newimage)
+{
+	if (image == newimage) return;
+	if (image) image->dec_count();
+	image = newimage;
+	if (image) image->inc_count();
+}
 
 int ImageValue::TypeNumber()
 {
