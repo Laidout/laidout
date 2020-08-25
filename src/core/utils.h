@@ -18,7 +18,6 @@
 
 #include <lax/errorlog.h>
 #include <lax/attributes.h>
-#include <lax/errorlog.h>
 
 
 namespace Laidout {
