@@ -80,7 +80,7 @@ ObjectContainer::~ObjectContainer()
  *
  * Incrementing\n
  * If an object has kids, then step to the first child.
- * If on object has no kids, then step to its next sibling. 
+ * If an object has no kids, then step to its next sibling. 
  * If there are no more siblings, then step to next sibling of the parent, or its parent's sibling, etc.
  * 
  * Return Next_Success       on successful stepping. Place points to that next step.\n
@@ -117,7 +117,7 @@ int ObjectContainer::nextObject(FieldPlace &place,
 			 //object has kids, return the first kid
 			place.push(0);
 			if (d) *d=oc->object_e(0);
-			DBG place.out("ObjectContainer::nextObject returning: ");
+			DBG place.out("ObjectContainer::nextObject returning A: ");
 			return Next_Success;
 		}
 
@@ -126,7 +126,7 @@ int ObjectContainer::nextObject(FieldPlace &place,
 		while (1) {
 			if (place.n()==offset) {
 				if (d) *d=anobj;
-				DBG place.out("ObjectContainer::nextObject returning: ");
+				DBG place.out("ObjectContainer::nextObject returning B: ");
 				return Next_Success;
 			}
 			i=place.pop(); //old child index
@@ -143,7 +143,7 @@ int ObjectContainer::nextObject(FieldPlace &place,
 				place.push(i);
 				anobj=getanObject(place,offset); //retrieve the object pointed to by place
 				if (d) *d=anobj;
-				DBG place.out("ObjectContainer::nextObject returning: ");
+				DBG place.out("ObjectContainer::nextObject returning C: ");
 				return Next_Success;
 			}
 			
@@ -156,7 +156,7 @@ int ObjectContainer::nextObject(FieldPlace &place,
 			if (i==0) {
 				anobj=getanObject(place,offset); //retrieve the object pointed to by place
 				if (d) *d=anobj;
-				DBG place.out("ObjectContainer::nextObject returning: ");
+				DBG place.out("ObjectContainer::nextObject returning D: ");
 				return Next_Success;
 			}
 
@@ -183,7 +183,7 @@ int ObjectContainer::nextObject(FieldPlace &place,
 			}
 
 			if (d) *d=anobj;
-			DBG place.out("ObjectContainer::nextObject found: ");
+			DBG place.out("ObjectContainer::nextObject returning E: ");
 			return Next_Success;
 		}
 		if (oc && place.n()==offset) {
@@ -202,13 +202,13 @@ int ObjectContainer::nextObject(FieldPlace &place,
 				} else nn=0;
 			}
 			if (d) *d=anobj;
-			DBG place.out("ObjectContainer::nextObject returning: ");
+			DBG place.out("ObjectContainer::nextObject returning F: ");
 			return Next_Success;
 		}
 	}
 
 	if (d) *d=this;
-	DBG place.out("ObjectContainer::nextObject found: ");
+	DBG place.out("ObjectContainer::nextObject end G: ");
 	return Next_Success;
 }
 

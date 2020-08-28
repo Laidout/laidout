@@ -69,6 +69,7 @@ class PageLocationStack : public Laxkit::PtrStack<PageLocation>, public ObjectCo
   public:
 	PageLocationStack() { obj_flags|=OBJ_Unselectable|OBJ_Zone; }
 	virtual ~PageLocationStack() {}
+	virtual const char *whattype() { return "PageLocation"; }
 	virtual int n() { return Laxkit::PtrStack<PageLocation>::n; }
 	virtual Laxkit::anObject *object_e(int i) { if (i>=0 && i<Laxkit::PtrStack<PageLocation>::n) return e[i]->page; return NULL; }
 	virtual const char *object_e_name(int i);

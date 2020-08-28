@@ -31,7 +31,7 @@ VERSION 0.098
 (done) double click on group should change selection area to group contents like inkscape?
 
        layers palette (object tree)
-       Find object interface
+(done) Find object interface
 
 (done) Empty objects that can be parents, or whose contents are defined by nodes
        Perspective transform object filter, proof of concept for hybrid interface/node workflow

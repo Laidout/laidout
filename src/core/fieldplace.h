@@ -43,6 +43,7 @@ class FieldExtPlace : protected Laxkit::PtrStack<char>
 	virtual char *e(int i, int *ei=NULL) const;
 	virtual int e(int i,const char *val, int ei);
 	virtual int operator==(const FieldExtPlace &place) const;
+	virtual int operator!=(const FieldExtPlace &place) const;
 	virtual FieldExtPlace &operator=(const FieldExtPlace &place);
 	virtual int push(const char *nd,int where=-1);
 	virtual int push(int i,int where=-1);
@@ -66,6 +67,7 @@ class FieldPlace : protected Laxkit::NumStack<int>
 	virtual int e(int i,int val) { if (i>=0 && i<Laxkit::NumStack<int>::n) 
 		{ return Laxkit::NumStack<int>::e[i]=val; }  return -1; }
 	virtual int operator==(const FieldPlace &place) const;
+	virtual int operator!=(const FieldPlace &place) const;
 	virtual FieldPlace &operator=(const FieldPlace &place);
 	virtual int push(int nd,int where=-1) { return Laxkit::NumStack<int>::push(nd,where); }
 	virtual int pop(int which=-1) { return Laxkit::NumStack<int>::pop(which); }

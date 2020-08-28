@@ -138,6 +138,19 @@ int FieldExtPlace::operator==(const FieldExtPlace &place) const
 	return 1;
 }
 
+//! Return whether place specifies a different location than this.
+int FieldExtPlace::operator!=(const FieldExtPlace &place) const
+{
+	if (n()!=place.n()) return 1;
+	int i;
+	char *str;
+	for (int c=0; c<ext.n; c++) {
+		str=place.e(c, &i);
+		if (i!=ext.e[c]->exti || strcmp(ext.e[c]->ext,str)) return 1;
+	}
+	return 0;
+}
+
 //! Return the string and integer of element i (if ei!=NULL).
 char *FieldExtPlace::e(int i, int *ei) const
 {
@@ -242,6 +255,15 @@ int FieldPlace::operator==(const FieldPlace &place) const
 	for (int c=0; c<NumStack<int>::n; c++) if (e(c)!=place.e(c)) return 0;
 	return 1;
 }
+
+//! Return whether place specifies the same location as this.
+int FieldPlace::operator!=(const FieldPlace &place) const
+{
+	if (n()!=place.n()) return 1;
+	for (int c=0; c<NumStack<int>::n; c++) if (e(c)!=place.e(c)) return 1;
+	return 0;
+}
+
 
 //! Assignment operator. Flushes, and copies over place's stuff.
 FieldPlace &FieldPlace::operator=(const FieldPlace &place)

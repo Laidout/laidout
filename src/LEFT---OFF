@@ -401,6 +401,16 @@ text on path textonpath: TextOnPath
 
 
 Find interface: findinterface:
+  iconselector needs: click-select, drag rect to select, shift to add to selection
+  iconselector needs to scroll
+  bug: FindWindow is not remembering placement
+  bug: key presses aren't propagating up to viewport?
+  memory hole
+  DONE iconselector needs pad + highlight hover + highlight selected option
+  DONE send to viewport and update actually selected
+  DONE toggle list vs icon view
+  DONE bug: dragging suddenly all messed up??!?!? ... worked around, not really fixed: maybe race condition with resizing? 
+
   ____pattern_____ .* Aa all (is regex, case sensitive)
   Criteria: [dropdown of predefined criteria] [ ___type:"Image", brokenimages, expr:"obj.maxy < context.page.maxy/2"__ ]
   [next] [prev] [all]
@@ -415,8 +425,10 @@ Find interface: findinterface:
     current view only | in current selection | everywhere
   foreach: scriptable action
   sort found by: modtime, name, page, size, type
-  need draggable window frame
   iconselector should have force image to particular size option so we could use object preview directly
+
+  DONE on pressing cntl-f, must focus on pattern lineedit
+  DONE need draggable window frame
 
 layers palette Layers
   key controls for navigation within menu:

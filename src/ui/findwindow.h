@@ -17,21 +17,43 @@
 
 #include <lax/rowframe.h>
 #include <lax/lineinput.h>
-#include <lax/checkbox.h>
-#include <lax/sliderpopup.h>
 #include <lax/messagebar.h>
+#include <lax/iconselector.h>
+#include <lax/draggableframe.h>
+#include <lax/interfaces/selection.h>
 
-#include "../laidout.h"
-#include "../core/papersizes.h"
+#include "../core/objectiterator.h"
 
 
 namespace Laidout {
 
 
-
-class FindWindow : public Laxkit::RowFrame
+class FindWindow : public Laxkit::DraggableFrame
 {
-	LaxInterfaces::Selection found;
+  public:
+	enum FindThings {
+		FIND_Anywhere = 1,
+		FIND_InView = 2,
+		FIND_InSelection = 3,
+		FIND_MAX
+	};
+	
+  private:
+	class FindResult
+	{
+	  public:
+	  	FieldPlace where;
+	  	anObject *obj;
+	  	FindResult(FieldPlace &place, anObject *o) {
+	  		where = place;
+	  		obj = o;
+	  		if (o) o->inc_count();
+	  	}
+	  	~FindResult() { if (obj) obj->dec_count(); }
+	};
+
+	Laxkit::PtrStack<FindResult> selection;
+	int most_recent;
 
 	Laxkit::MessageBar *howmany;
 	Laxkit::LineInput *pattern;
@@ -39,32 +61,34 @@ class FindWindow : public Laxkit::RowFrame
 
 	bool regex;
 	bool caseless;
-	int where;
 
-	enum FindThings {
-		FIND_Anywhere = 1,
-		FIND_InView = 2,
-		FIND_InSelection = 3,
-		FIND_MAX
-	};
+	ObjectIterator iterator;
+	bool search_started;
+	
 	FindThings where;
 
-	virtual void send(bool also_delete);
+	virtual void send(int info);
 	virtual void UpdateFound();
 
 	virtual void SearchNext();
 	virtual void SearchPrevious();
 	virtual void SearchAll();
 
+	virtual void InitiateSearch();
+
  public:
 
  	FindWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
- 			unsigned long owner, const char *msg);
+ 			int x, int y, int w, int h, unsigned long owner, const char *msg);
 	virtual ~FindWindow();
 	virtual const char *whattype() { return "FindWindow"; }
 	virtual int preinit();
 	virtual int init();
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
+	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
+	virtual void SetFocus();
+	virtual int GetCurrent(FieldPlace &place_ret, Laxkit::anObject *&obj_ret);
+	virtual FindThings Where() { return where; }
 };
 
 } //namespace Laidout

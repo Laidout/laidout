@@ -27,7 +27,6 @@
 
 
 
-
 namespace Laidout {
 
 class Project;
@@ -63,6 +62,9 @@ class VObjContext : public LaxInterfaces::ObjectContext
 	virtual int paperi() { if (context.n()>1 && context.e(0)==2) return context.e(1); else return -1; }
 };
 
+std::ostream &operator<<(std::ostream &os, VObjContext const &o);
+
+
 //------------------------------- LaidoutViewport ---------------------------
 class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 						virtual public ObjectContainer,
@@ -82,6 +84,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	int transformlevel;
 	double ectm[6];
 	Group *limbo;
+	Laxkit::anXWindow *findwindow;
 
 	char *pageviewlabel;
 

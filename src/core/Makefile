@@ -15,6 +15,7 @@ CPPFLAGS= -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. `pkg-config --cflags freetype2`
 
 objs= \
 	document.o \
+	objectiterator.o \
 	drawdata.o \
 	fieldplace.o \
 	guides.o \
