@@ -2,6 +2,163 @@
 //*********** WORKS IN PROGRESS ****************
 
 
+//------------------------------ GetGlobalNode --------------------------------------------
+
+/*! \class GetGlobalNode
+ * Get a laidout->global variable.
+ */
+
+class GetGlobalNode : public NodeBase
+{
+  public:
+	GetGlobalNode(const char *what);
+	virtual ~GetGlobalNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new GetGlobalNode(nullptr); }
+};
+
+GetGlobalNode::GetGlobalNode(const char *what)
+{
+	makestr(type, "GetGlobal");
+	makestr(Name, _("Get Global Variable"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "name",   new StringValue(what),1, _("Name")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output,  true, "value",  NULL,1, _("Value"), 0, false));
+}
+
+GetGlobalNode::~GetGlobalNode()
+{
+}
+
+NodeBase *GetGlobalNode::Duplicate()
+{
+	const char *what = nullptr;
+	StringValue *v = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	if (v) what = v->str;
+	GetGlobalNode *node = new GetGlobalNode(what);
+	node->DuplicateBase(this);
+	return node;
+}
+
+int GetGlobalNode::Update()
+{
+	const char *what = nullptr;
+	StringValue *sv = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	if (!sv) return -1;
+	what = sv->str;
+	if (isblank(what)) return -1;
+
+	Value *shouldbe = laidout->globals.find(what);
+	if (!shouldbe) return -1;
+
+	Value *v = properties.e[1]->GetData();
+	if (v != shouldbe) {
+		properties.e[1]->SetData(shouldbe);
+	}
+
+	return 0; //do nothing here!
+}
+
+int GetGlobalNode::GetStatus()
+{
+	const char *what = nullptr;
+	StringValue *sv = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	if (!sv) return -1;
+	what = sv->str;
+	if (isblank(what)) return -1;
+
+	Value *shouldbe = laidout->globals.find(what);
+	if (!shouldbe) return -1;
+
+	Value *v = properties.e[1]->GetData();
+	if (v != shouldbe) return -1;
+
+	return 0;
+}
+
+
+//------------------------------ SetGlobalNode --------------------------------------------
+
+/*! \class SetGlobalNode
+ * Set a laidout->global variable.
+ */
+
+class SetGlobalNode : public NodeBase
+{
+  public:
+	SetGlobalNode(const char *what);
+	virtual ~SetGlobalNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new SetGlobalNode(nullptr); }
+};
+
+SetGlobalNode::SetGlobalNode()
+{
+	makestr(type, "SetGlobal");
+	makestr(Name, _("Set Global Variable"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "name",   new StringValue(""),1, _("Name")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "value",  NULL,1,                 _("Value")));
+}
+
+SetGlobalNode::~SetGlobalNode()
+{
+}
+
+NodeBase *SetGlobalNode::Duplicate()
+{
+	const char *what = nullptr;
+	StringValue *v = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	if (v) what = v->str;
+	SetGlobalNode *node = new SetGlobalNode(what);
+	node->DuplicateBase(this);
+	return node;
+}
+
+int SetGlobalNode::Update()
+{
+	const char *what = nullptr;
+	StringValue *sv = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	if (sv) what = sv->str;
+
+	if (!what) return -1;
+
+	Value *shouldbe = properties.e[1]->GetData();
+	if (!shouldbe) return -1;
+
+	Value *v = laidout->globals.find(what);
+	if (v != shouldbe) {
+		// properties.e[1]->SetData(v);
+		laidout.globals.set(what, shouldbe);
+	}
+
+	return 0; //do nothing here!
+}
+
+int SetGlobalNode::GetStatus()
+{
+	const char *what = nullptr;
+	StringValue *sv = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	if (!sv) return -1;
+	what = sv->str;
+	if (!what) return -1;
+	Value *shouldbe = properties.e[1]->GetData();
+	if (!shouldbe) return -1;
+	Value *v = laidout->globals.find(what);
+	if (v != shouldbe) return -1;
+
+	return 0;
+}
+
+
+
+
 
 //------------------------ ResourceProperty ---------------------------------
 
@@ -36,8 +193,9 @@ ResourceProperty::~ResourceProperty()
 //------------------------ NodePanel ------------------------
 
 /*! \class NodePanel
- * Class to hold a definition for a panel allowing random access to
- * individual properties of nodes in one much simpler panel.
+ * Class to hold a definition for a standalone panel allowing random access to
+ * individual properties of other nodes, so users can adjust very complicated
+ * node arrangements via this much simpler panel.
  */
 
 
@@ -105,13 +263,22 @@ class SimpleArrayValue : public Value
 };
 
 
-typedef StackValue<int> IntStackValue;
-typedef StackValue<double> DoubleStackValue;
-typedef StackValue<flatvector> Vector2StackValue;
-typedef StackValue<spacevector> Vector3StackValue;
-typedef StackValue<Quaternion> QuaternionStackValue;
+typedef SimpleArrayValue<int> IntStackValue;
+typedef SimpleArrayValue<double> DoubleStackValue;
+typedef SimpleArrayValue<flatvector> Vector2StackValue;
+typedef SimpleArrayValue<spacevector> Vector3StackValue;
+typedef SimpleArrayValue<Quaternion> QuaternionStackValue;
 
-typedef PtrStackValue<anObject> ObjectStackValue;
+typedef SimpleArrayValue<anObject> ObjectStackValue;
+
+
+SimpleArrayValue<Int>::whattype() { return "IntStackValue"; }
+SimpleArrayValue<Double>::whattype() { return "DoubleStackValue"; }
+SimpleArrayValue<Vector2>::whattype() { return "Vector2StackValue"; }
+SimpleArrayValue<Vector3>::whattype() { return "Vector3StackValue"; }
+SimpleArrayValue<Quaternion>::whattype() { return "QuaternionStackValue"; }
+SimpleArrayValue<String>::whattype() { return "StringStackValue"; }
+
 
 
 class Vector2StackValue : public Value
@@ -129,332 +296,6 @@ class Vector2StackValue : public Value
 };
 
 
-
-//------------------------ PathsDataNode ------------------------
-
-/*! \class Node for constructing PathsData objects..
- *
- * todo:
- *   points
- *   weight nodes
- *   fillstyle
- *   linestyle
- */
-
-class PathsDataNode
-{
-  public:
-	LPathsData *pathsdata;
-
-	PathsDataNode(LPathsData *path);
-	virtual ~PathsDataNode();
-
-	virtual NodeBase *Duplicate();
-	virtual int Update();
-	virtual int GetStatus();
-};
-
-
-PathsDataNode::PathsDataNode(LPathsData *path, int absorb)
-{
-	pathsdata = path;
-	if (pathsdata && !absorb) pathsdata->inc_count();
-
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Path", pathsdata,1, _("Path"), NULL,0, false));
-}
-
-PathsDataNode::~PathsDataNode()
-{
-	//if (pathsdata) pathsdata->dec_count();
-}
-
-NodeBase *PathsDataNode::Duplicate()
-{
-	PathsDataNode *node = new PathsDataNode(pathsdata);
-	node->DuplicateBase(this);
-	return node;
-}
-
-int PathsDataNode::Update()
-{
-	return NodeBase::Update();
-}
-
-int PathsDataNode::GetStatus()
-{
-	return NodeBase::GetStatus();
-}
-
-
-
-//---------------------
-class PathGeneratorNode
-{
-  public:
-	enum PathTypes {
-		Square,
-		Circle,     //num points, is bez, start, end
-		Polygon, // vertices, winds
-		Svgd, // svg style d string
-		Function, //y=f(x), x range, step
-		FunctionT, //p=(x(t), y(t)), t range, step
-		MAX
-	};
-	PathTypes pathtype;
-	LPathsData *path;
-
-	PathGeneratorNode(PathTypes ntype);
-	virtual ~PathGeneratorNode();
-
-	virtual NodeBase *Duplicate();
-	virtual int Update();
-	virtual int GetStatus();
-};
-
-PathGeneratorNode::PathGeneratorNode(PathTypes ntype)
-{
-	pathtype = ntype;
-
-	if (pathtype == Square) {
-		makestr(type, "Path/Square");
-		makestr(Name, _("Square");
-		//no inputs! always square 0..1
-
-	} else if (pathtype == Circle) {
-		makestr(type, "Path/Circle");
-		makestr(Name, _("Circle");
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "n",      new IntValue(4),1,     _("Points"), _("Number of points")));
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Start",  new DoubleValue(0),1,  _("Start"),  _("Start angle")));
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "End",    new DoubleValue(0),1,  _("End"),    _("End angle. Same as start means full circle.")));
-		//AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Smooth", new BooleanValue(1),1, _("Smooth"), _("Is a bezier curve"));
-		// if you don't want smooth, use polygon
-
-	} else if (pathtype == Polygon) {
-		makestr(type, "Path/Polygon");
-		makestr(Name, _("Polygon");
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "n",      new IntValue(4),1,     _("Points"), _("Number of points")));
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Winding",new DoubleValue(1),1,  _("Winding"),_("Angle between points is winding*360/n")));
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Offset", new DoubleValue(0),1,  _("Offset"), _("Rotate all points by this many degrees")));
-
-	} else if (pathtype == Function) {
-		makestr(type, "Path/FunctionX");
-		makestr(Name, _("Function of x");
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Y", new StringValue("x"),1, _("Y as a function of x")));
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Minx", new DoubleValue(0),1,  _("Min x"), NULL));
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Maxy", new DoubleValue(1),1,  _("Max x"), NULL));
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Step", new DoubleValue(.1),1, _("Step"), NULL));
-
-	} else if (pathtype == FunctionT) {
-		makestr(type, "Path/FunctionT");
-		makestr(Name, _("Function of t");
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "X", new StringValue("t"),1, _("X as a function of t")));
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Y", new StringValue("t"),1, _("Y as a function of t")));
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Mint", new DoubleValue(0),1,  _("Min t"), NULL));
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Maxt", new DoubleValue(1),1,  _("Max t"), NULL));
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Step", new DoubleValue(.1),1, _("Step"), NULL));
-
-	} else if (pathtype == Svgd) {
-		makestr(type, "Path/Svgd");
-		makestr(Name, _("Svg d");
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "d",      new StringValue(""),1, _("d"), _("Svg style d path string")));
-	}
-
-	path = new LPathsData();
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", path,1, _("Out"), NULL,0, false));
-}
-
-PathGeneratorNode::~PathGeneratorNode()
-{
-}
-
-NodeBase *PathGeneratorNode::Duplicate()
-{
-	PathGeneratorNode *newnode = new PathGeneratorNode(pathtype);
-
-	for (int c=0; c<properties.n-1; c++) {
-		Value *v = properties.e[c]->GetData();
-		if (v) newnode->properties.e[c]->SetData(v->duplicate(), 1);
-	}
-
-	return newnode;
-}
-
-//0 ok, -1 bad ins, 1 just needs updating
-int PathGeneratorNode::GetStatus()
-{
-	char types[6];
-	const char *stype;
-	const char sig = "     nnn  nnn  snnn ssnnns    ";
-
-	for (int c=0; c<properties.n-1; c++) {
-		stype = properties.e[c]->GetData()->whattype();
-		if (isNumberType(properties.e[c]->GetData()) types[c] = 'n';
-		else if (!strcmp(stype, "StringValue")) types[c] = 's';
-		else types[c] = ' ';
-	}
-	for (int c=properties.n-1; c<5; c++) types[c] = ' ';
-	types[5] = '\0';
-
-#define OFFSQUARE     0
-#define OFFCIRCLE     5
-#define OFFPOLYGON    10
-#define OFFFUNCTION   15
-#define OFFFUNCTIONT  20
-#define OFFSVGD       25
-
-	if (pathtype == Square) {
-		//always ok
-
-	} else if (pathtype == Circle) {
-		if (strcmp(sig+OFFCIRCLE, "nnn", 3) return -1;
-
-	} else if (pathtype == Polygon) {
-		if (strcmp(sig+OFFPOLYGON, "nnn", 3) return -1;
-
-	} else if (pathtype == Function) {
-		if (strcmp(sig+OFFFUNCTION, "snnn", 4) return -1;
-
-	} else if (pathtype == FunctionT) {
-		if (strcmp(sig+OFFFUNCTIONT, "ssnnn", 5) return -1;
-
-	} else if (pathtype == Svgd) {
-		if (strcmp(sig+OFFSVGD, "s", 1) return -1;
-	}
-
-	return NodeBase::GetStatus();
-}
-
-int PathGeneratorNode::Update()
-{
-	makestr(error_message, NULL);
-	if (GetStatus() == -1) return -1;
-
-	PathsData *path = dynamic_cast<PathsData>(properties.e[properties.n-1]->GetData());
-	if (!path) {
-		path = dynamic_cast<PathsData*>(somedatafactory()->NewObject(LAX_PATHSDATA));
-		properties.e[properties.n-1]->SetData(path, 1);
-	}
-
-	if (pathtype == Square) {
-		path->appendRect(0,0,1,1);
-
-	} else if (pathtype == Circle) {
-		path->clear();
-		int i =
-		path->appendEllipse(flatpoint(), 1,1, 360, i, true);
-
-	} else if (pathtype == Polygon) {
-		path->clear();
-		***
-
-		if (start == end) end = start + M_PI;
-		double dtheta = 2*M_PI * winding / npoints;
-
-	} else if (pathtype == Function) {
-		if (start<end && step<=0 || start>end && step>=0) {
-			makestr(error_message, _("Bad step value"));
-			return -1;
-		}
-		if (start == end) {
-			makestr(error_message, _("Start can't equal end"));
-			return -1;
-		}
-
-		path->clear();
-
-		Value *ret = NULL;
-		DoubleValue *d;
-		DoubleValue xx;
-		ValueHash hash;
-		hash.push("x", &xx);
-		int status;
-		int pointsadded = 0
-
-		for (double x = start; (start < end && x <= end) || (start > end && x>=end); x += step) {
-			xx.d = x;
-			status = calculator->evaluate(expression, &hash, *** , &ret);
-			d = dynamic_cast<DoubleValue*>(ret);
-			if (d) {
-				path.append(x, d->d);
-				pointsadded++;
-			}
-		}
-		hash.flush();
-
-	} else if (pathtype == FunctionT) {
-		if (start<end && step<=0 || start>end && step>=0) {
-			makestr(error_message, _("Bad step value"));
-			return -1;
-		}
-		if (start == end) {
-			makestr(error_message, _("Start can't equal end"));
-			return -1;
-		}
-
-		path->clear();
-
-		ValueHash hash;
-		Value *ret = NULL;
-		DoubleValue *rx;
-		DoubleValue tt;
-		hash.push("t", &tt);
-		int status;
-		int pointsadded = 0
-
-		for (double t = start; (start < end && t <= end) || (start > end && t>=end); t += step) {
-			tt->d = t;
-			status = calculator->evaluate(expressionX, &hash, *** , &ret);
-			rx = dynamic_cast<DoubleValue*>(ret);
-			status = calculator->evaluate(expressionY, &hash, *** , &ret);
-			ry = dynamic_cast<DoubleValue*>(ret);
-
-			if (rx && ry) {
-				path.append(rx->d, ry->d);
-				pointsadded++;
-			}
-		}
-
-	} else if (pathtype == Svgd) {
-		StringValue v = dynamic_cast<StringValue*>(properties.GetData(0));
-		path->clear();
-		path->appendsvg(v->str);
-	}
-
-	return NodeBase::Update();
-}
-
-
-Laxkit::anObject *newCircleNode(int p, Laxkit::anObject *ref)
-{
-	return new PathGeneratorNode(PathGeneratorNode::Circle);
-}
-
-Laxkit::anObject *newRectangleNode(int p, Laxkit::anObject *ref)
-{
-	return new PathGeneratorNode(PathGeneratorNode::Rectangle);
-}
-
-Laxkit::anObject *newPolygonNode(int p, Laxkit::anObject *ref)
-{
-	return new PathGeneratorNode(PathGeneratorNode::Polygon);
-}
-
-Laxkit::anObject *newPathFunctionNode(int p, Laxkit::anObject *ref)
-{
-	return new PathGeneratorNode(PathGeneratorNode::Function);
-}
-
-Laxkit::anObject *newPathFunctionTNode(int p, Laxkit::anObject *ref)
-{
-	return new PathGeneratorNode(PathGeneratorNode::FunctionT);
-}
-
-
-	factory->DefineNewObject(getUniqueNumber(), "Paths/Circle",newCircleNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Paths/RectanglePath",newRectangleNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Paths/Polygon",newPolygonNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Paths/PathFunctionX",newPathFunctionNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Paths/PathFunctionT",newPathFunctionTNode, NULL, 0);
 
 
 
@@ -553,10 +394,10 @@ class ExtrudeNode : public NodeBase
 	virtual int GetStatus();
 };
 
-EtxrudeNode::EtxrudeNode()
+ExtrudeNode::ExtrudeNode()
 {
 	makestr(type, "Models/Extrude");
-	makestr(Name, _("Extrude");
+	makestr(Name, _("Extrude"));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,     _("Input"), _("A path or model")));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "dir",   new SpacevectorValue(0,0,1),1,  _("Vector"),  _("Direction of extrusion")));
 
@@ -1200,7 +1041,7 @@ int SwizzleNode::GetStatus()
 
 Laxkit::anObject *newSwizzle(int p, Laxkit::anObject *ref)
 {
-	return new ForkNode();
+	return new SwizzleNode();
 }
 
 

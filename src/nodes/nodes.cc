@@ -16,6 +16,7 @@
 #include <lax/language.h>
 #include <lax/interfaces/curvemapinterface.h>
 #include <lax/interfaces/gradientinterface.h>
+#include <lax/interfaces/interfacemanager.h>
 #include "nodes.h"
 #include "nodeinterface.h"
 #include "nodes-dataobjects.h"
@@ -34,6 +35,7 @@
 
 using namespace std;
 #define DBG
+
 using namespace Laxkit;
 using namespace LaxInterfaces;
 
@@ -385,9 +387,8 @@ int RectangleNode::Update()
 	double vs[4];
 	for (int c=0; c<4; c++) {
 		vs[c] = getNumberValue(properties.e[c]->GetData(),&isnum);
+		if (!isnum) return -1;
 	}
-
-	//if (!properties.e[2]->data) return 1;
 
 	if (!properties.e[4]->data) properties.e[4]->data = new BBoxValue(vs[0], vs[0]+vs[2], vs[1], vs[1]+vs[3]);
 	else {
@@ -395,7 +396,7 @@ int RectangleNode::Update()
 		v->setbounds(vs[0], vs[0]+vs[2], vs[1], vs[1]+vs[3]);
 	}
 
-	properties.e[4]->modtime = times(NULL);
+	properties.e[4]->Touch();
 
 	return NodeBase::Update();
 }
@@ -1565,6 +1566,70 @@ Laxkit::anObject *newMathConstants(int p, Laxkit::anObject *ref)
 }
 
 
+//------------ TypeInfoNode ----------------------
+
+/*! \class TypeInfoNode
+ * Make a string with the type of value, or "null" for no value.
+ */
+
+class TypeInfoNode : public NodeBase
+{
+  public:
+	TypeInfoNode();
+	virtual ~TypeInfoNode();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
+};
+
+TypeInfoNode::TypeInfoNode()
+{
+	makestr(type, "TypeInfo");
+	makestr(Name, _("Type Info"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in",    nullptr,1, _("In"))); 
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "type",  new StringValue("null"),1 , _("typeinfo") ,nullptr,0,false )); 
+}
+
+TypeInfoNode::~TypeInfoNode()
+{
+}
+
+NodeBase *TypeInfoNode::Duplicate()
+{
+	TypeInfoNode *newnode = new TypeInfoNode();
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+/*! -1 for bad values. 0 for ok, 1 for just needs update.
+ */
+int TypeInfoNode::GetStatus()
+{
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int TypeInfoNode::Update()
+{
+	Value *v = properties.e[0]->GetData();
+	
+	dynamic_cast<StringValue*>(properties.e[1]->GetData())->Set(v ? v->whattype() : "null");
+
+	UpdatePreview();
+	Wrap();
+
+	return NodeBase::Update();
+}
+
+
+Laxkit::anObject *newTypeInfoNode(int p, Laxkit::anObject *ref)
+{
+	return new TypeInfoNode();
+}
+
+
+
 //------------ ImageNode
 
 /*! \class ImageNode
@@ -1613,10 +1678,17 @@ int ImageNode::UpdatePreview()
 {
 	if (!show_preview) return 1;
 
-	// *** should probably scale down
 	if (!total_preview) {
+		// generate preview, scale down if big
 		ImageValue *img = dynamic_cast<ImageValue*>(properties.e[3]->GetData());
-		total_preview = img->image;
+		if (img && img->image) {
+			if (img->image->w() < 200 && img->image->h() < 200) {
+				total_preview = img->image;
+				total_preview->inc_count();
+			} else {
+				total_preview = GeneratePreview(img->image, 200,200, true);
+			}
+		}
 	}
 
 	return 0;
@@ -1639,9 +1711,9 @@ int ImageNode::GetStatus()
 {
 	int isnum;
 	int width = getIntValue(properties.e[0]->GetData(), &isnum);
-	if (!isnum || width <= 0) return -1;
+	if (!isnum || width <= 0) { makestr(error_message, _("Width must be positive")); return -1; }
 	int height = getIntValue(properties.e[1]->GetData(), &isnum);
-	if (!isnum || height <= 0) return -1;
+	if (!isnum || height <= 0) { makestr(error_message, _("Height must be positive")); return -1; }
 	if (!dynamic_cast<ColorValue*>(properties.e[2]->GetData())) return -1;
 
 	if (!properties.e[3]->data) return 1;
@@ -1707,6 +1779,122 @@ ObjectDef *GetImageDepthDef()
 Laxkit::anObject *newImageNode(int p, Laxkit::anObject *ref)
 {
 	return new ImageNode(100, 100);
+}
+
+
+//------------ ImageFileNode
+
+/*! \class ImageFileNode
+ * Create a new LaxImage from a file.
+ */
+
+class ImageFileNode : public NodeBase
+{
+  public:
+	ImageFileNode(const char *filename);
+	virtual ~ImageFileNode();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
+	virtual int UpdatePreview();
+	const char *GetFilename();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ImageFileNode(nullptr); }
+};
+
+ImageFileNode::ImageFileNode(const char *filename)
+{
+	makestr(type, "ImageFile");
+	makestr(Name, _("Image File"));
+
+// NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count,
+// 					const char *nlabel=NULL, const char *ntip=NULL, int info=0, bool editable=true);
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "file",  new FileValue(),1 , _("File"), nullptr,0,true  )); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("Image"), nullptr,1));
+}
+
+ImageFileNode::~ImageFileNode()
+{
+}
+
+int ImageFileNode::UpdatePreview()
+{
+	if (!show_preview) return 1;
+
+	if (!total_preview) {
+		ImageValue *img = dynamic_cast<ImageValue*>(properties.e[1]->GetData());
+		if (img && img->image) {
+			if (img->image->w() < 200 && img->image->h() < 200) {
+				total_preview = img->image;
+				total_preview->inc_count();
+			} else {
+				total_preview = GeneratePreview(img->image, 200,200, true);
+			}
+		}
+	}
+
+	return 0;
+}
+
+const char *ImageFileNode::GetFilename()
+{
+	Value *pv = properties.e[0]->GetData();
+	StringValue *f = dynamic_cast<StringValue*>(pv);
+	if (f) return f->str;
+	else {
+		FileValue *fv = dynamic_cast<FileValue*>(pv);
+		if (fv) return fv->filename;
+	}	
+	return nullptr;
+}
+
+NodeBase *ImageFileNode::Duplicate()
+{
+	const char *file = GetFilename();
+	
+	ImageFileNode *newnode = new ImageFileNode(file);
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+/*! -1 for bad values. 0 for ok, 1 for just needs update.
+ */
+int ImageFileNode::GetStatus()
+{
+	ImageValue *i = dynamic_cast<ImageValue*>(properties.e[1]->GetData());
+	if (!i || !i->image) return -1;
+	if (i->image->w() <= 0 || i->image->h() <= 0) return -1;
+
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+/*! -1 for bad values. 0 for ok, 1 for just needs update.
+ */
+int ImageFileNode::Update()
+{
+	const char *file = GetFilename();
+	ImageValue *iv = dynamic_cast<ImageValue*>(properties.e[1]->GetData());
+
+	if (iv && iv->image && iv->image->filename && file && !strcmp(iv->image->filename, file)) {
+		//same filename, assume its up to date
+		return 0;
+	}
+	
+	//otherwise, create new image and install
+	LaxImage *img = ImageLoader::LoadImage(file);
+	if (!img) return -1;
+	if (!iv) {
+		iv = new ImageValue();
+		properties.e[1]->SetData(iv, 1);
+	}
+
+	iv->SetImage(img);
+	img->dec_count();
+	if (total_preview) { total_preview->dec_count(); total_preview = nullptr; }
+	UpdatePreview();
+	Wrap();
+
+	return NodeBase::Update();
 }
 
 
@@ -2067,7 +2255,8 @@ ConcatNode::ConcatNode(const char *s1, const char *s2)
 
 	char ns[1 + (s1 ? strlen(s1) : 0) + (s2 ? strlen(s2) : 0)];
 	sprintf(ns, "%s%s", (s1 ? s1 : ""), (s2 ? s2 : ""));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", new StringValue(ns),1, _("Out")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", new StringValue(ns),1, _("Out"),
+								 nullptr, 0, false));
 }
 
 ConcatNode::~ConcatNode()
@@ -2615,7 +2804,7 @@ Laxkit::anObject *newForkNode(int p, Laxkit::anObject *ref)
 //------------------------------ SetVariableNode --------------------------------------------
 
 /*! \class SetVariableNode
- * Map arrays to other arrays using a special SetVariable interface.
+ * In threads, set a state variable.
  */
 
 class SetVariableNode : public NodeBase
@@ -3756,6 +3945,308 @@ Laxkit::anObject *newGradientTransformNode(int p, Laxkit::anObject *ref)
 }
 
 
+//------------------------ NewObjectNode ------------------------
+
+
+class NewObjectNode : public NodeBase
+{
+  public:
+	NewObjectNode(const char *what);
+	virtual ~NewObjectNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new NewObjectNode(nullptr); }
+	static SingletonKeeper menuKeeper;
+
+};
+
+SingletonKeeper NewObjectNode::menuKeeper;
+
+NewObjectNode::NewObjectNode(const char *what)
+{
+	makestr(Name, _("New Object"));
+	makestr(type, "NewObject");
+
+	// enum of all objects	
+	def = dynamic_cast<ObjectDef*>(menuKeeper.GetObject());
+	int whati = 0;
+	if (!def) {
+		def = new ObjectDef("Objects", _("Objects"), NULL,NULL,"enum", 0);
+
+		int i = 0;
+		// InterfaceManager *imanager=InterfaceManager::GetDefault(true); // *** can't use this since these aren't Value derived!! aaaarg!
+	 //    ObjectFactory *lobjectfactory = imanager->GetObjectFactory();
+	 //    for (int c = 0; c < lobjectfactory->NumTypes(); c++) {
+	 //    	const char *tstr = lobjectfactory->TypeStr(c);
+	 //    	def->pushEnumValue(tstr, nullptr, nullptr);
+	 //    	if (what && !strcmp(tstr, what)) whati = i;
+	 //    	DBG cerr << "NewObjectNode: adding from imanager: "<<tstr<<endl;
+	 //    	i++;
+	 //    }
+
+		for (int c = 0; c < stylemanager.getNumFields(); c++) {
+			ObjectDef *d = stylemanager.getField(c);
+			if (d->format == VALUE_Class)	{
+				// DBG if (!d->newfunc && !d->stylefunc) cerr << "NewObjectNode: *** Warning! Missing constructor for "<<d->name<<". FIXME!!"<<endl;
+				// DBG else cerr << "NewObjectNode:  newfunc: "<<(d->newfunc ? "yes": "no ")<<" ofunc: "<<(d->stylefunc? "yes  ": "no   ")<<d->name<<endl;
+				if (what && !strcmp(d->name, what)) whati = i;
+				def->pushEnumValue(d->name, d->Name, d->description);
+				i++;
+			}
+		}
+		
+		menuKeeper.SetObject(def, false);
+	} else def->inc_count();
+
+	EnumValue *e = new EnumValue(def, whati);
+	
+	AddProperty(new NodeProperty(NodeProperty::PROP_Block, false, "what", e,1, "", NULL,0, true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Object"), NULL,0, false));
+}
+
+NewObjectNode::~NewObjectNode()
+{
+}
+
+NodeBase *NewObjectNode::Duplicate()
+{
+	const char *what = nullptr;
+	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
+	if (ev && ev->GetObjectDef()) {
+		ev->GetObjectDef()->getEnumInfo(ev->value, &what);
+	}
+
+	NewObjectNode *node = new NewObjectNode(what);
+	node->DuplicateBase(this);
+	return node;
+}
+
+int NewObjectNode::Update()
+{
+	// if enum not equal value->whattype, recreate
+	const char *what = nullptr;
+	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
+	if (ev && ev->GetObjectDef()) {
+		ev->GetObjectDef()->getEnumInfo(ev->value, &what);
+	}
+
+	if (!what) return -1;
+
+	Value *o = properties.e[1]->GetData();
+	if (!o || (o && strcmp(what, o->whattype()))) { //missing or different out, recreate
+		ObjectDef *d = stylemanager.FindDef(what);
+		if (d) {
+			if (d->newfunc) o = d->newfunc();
+			else if (d->stylefunc) {
+				cerr << "Warning! "<< d->name<<" missing newfunc! FIXME!! attempting to use objectfunc."<<endl;
+				ErrorLog log;
+				d->stylefunc(nullptr, nullptr, &o, log);
+						
+			} else {
+				cerr << "Warning! "<<d->name<<" has no constructor! FIXME!!" <<endl;
+			}
+		// } else {
+		// 	InterfaceManager *imanager=InterfaceManager::GetDefault(true);
+	 //    	ObjectFactory *lobjectfactory = imanager->GetObjectFactory();
+		// 	int i = lobjectfactory->FindType(what);
+		// 	if (i >= 0) {
+		// 		anObject *ao = lobjectfactory->NewObject(what);
+		// 		if (ao) {
+		// 			o = dynamic_cast<Value*>(ao);
+		// 			if (!o) ao->dec_count();
+		// 		}
+		// 	}
+		}
+		properties.e[1]->SetData(o,1);
+	}
+
+	if (!properties.e[1]->GetData()) return -1;
+	return NodeBase::Update();
+}
+
+//0 ok, -1 bad ins, 1 just needs updating
+int NewObjectNode::GetStatus()
+{
+	if (!properties.e[1]->GetData()) return -1;
+	return NodeBase::GetStatus();
+}
+
+
+//------------ ModifyObjectNode
+
+
+/*! \class ModifyObjectNode
+ * Class to expose any DrawableObject properties in its ObjectDef.
+ */
+class ModifyObjectNode : public NodeBase
+{
+  public:
+	Value *obj; // we keep this around so as to not dup properties unnecessarily
+
+	// ModifyObjectNode(DrawableObject *nobj, int absorb);
+	ModifyObjectNode(Value *nobj, int absorb);
+	virtual ~ModifyObjectNode();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
+	virtual int Connected(NodeConnection *connection);
+	virtual int Disconnected(NodeConnection *connection, bool from_will_be_replaced, bool to_will_be_replaced);
+	virtual void dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context);
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ModifyObjectNode(nullptr, 0); }
+};
+
+ModifyObjectNode::ModifyObjectNode(Value *nobj, int absorb)
+{
+	makestr(type, "ModifyObjectNode");
+	makestr(Name, _("Modify Object"));
+
+	obj = nobj;
+	if (obj) {
+		if (!absorb) obj->inc_count();
+		def = obj->GetObjectDef();
+	}
+	if (def) def->inc_count();
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", obj,0, _("In"), NULL, 0,false));
+
+	if (def) {
+		ObjectDef *field;
+		for (int c=0; c<def->getNumFields(); c++) {
+			field = def->getField(c);
+
+			if (field->format==VALUE_Function || field->format==VALUE_Class || field->format==VALUE_Operator || field->format==VALUE_Namespace)
+				continue;
+
+			//NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count,
+			//			const char *nlabel=NULL, const char *ntip=NULL, int info=0, bool editable=true);
+			AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, field->name, NULL,1, field->Name, field->description, 0,true));
+		}
+	}
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", NULL,1, _("Out"), NULL, 0,false));
+
+	Update();
+}
+
+ModifyObjectNode::~ModifyObjectNode()
+{
+	if (obj) obj->dec_count();
+}
+
+NodeBase *ModifyObjectNode::Duplicate()
+{
+	NodeBase *newnode = new ModifyObjectNode(nullptr,0);
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int ModifyObjectNode::Disconnected(NodeConnection *connection, bool from_will_be_replaced, bool to_will_be_replaced)
+{
+	//*** handle disconnecting in how?
+	return NodeBase::Disconnected(connection, from_will_be_replaced, to_will_be_replaced);
+}
+
+int ModifyObjectNode::Connected(NodeConnection *connection)
+{
+	if (this == connection->to && connection->toprop == properties.e[0]) {
+		// we just connected something to in slot
+		Value *nobj = connection->fromprop->GetData();
+		
+		if (obj) obj->dec_count();
+		obj = nobj;
+		int added = 0;
+		if (obj) {
+			obj->inc_count();
+			if (def) def->dec_count();
+			def = obj->GetObjectDef();
+			def->inc_count();
+
+			ObjectDef *field;
+			for (int c=0; c<def->getNumFields(); c++) {
+				field = def->getField(c);
+
+				if (field->format==VALUE_Function || field->format==VALUE_Class || field->format==VALUE_Operator || field->format==VALUE_Namespace)
+					continue;
+
+				// update property with new name, Name, desc...
+				// *** note to be thorough, this should be able to handle custom property types
+				NodeProperty *prop = nullptr;
+				Value *val = obj->dereference(field->name,-1);
+				if (added+1 < properties.n-1) {
+					// modify property
+					prop = properties.e[added+1];
+					makestr(prop->name, field->name);
+					makestr(prop->label, field->Name);
+					makestr(prop->tooltip, field->description);
+					prop->SetData(val,1);
+
+				} else {
+					// insert new property
+					prop = new NodeProperty(NodeProperty::PROP_Input,  true, field->name, val,1, field->Name, field->description);
+					AddProperty(prop, added+1);
+				}
+				added++;
+			}
+		}
+
+		// remove old extra properties
+		for (int c = added+1 ; c<properties.n-1; ) {
+			RemoveProperty(properties.e[c]);
+		}
+		properties.e[properties.n-1]->Touch();
+		Wrap();
+	}
+
+	return NodeBase::Connected(connection);
+}
+
+/*! Clean up after NodeBade::dump_in_atts() to make sure the out property is at the end.
+ */
+void ModifyObjectNode::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context)
+{
+	NodeBase::dump_in_atts(att,flag,context);
+	int i = -1;
+	NodeProperty *out = FindProperty("out", &i);
+	if (out && i != properties.n-1) {
+		properties.slide(i, properties.n-1);
+	}
+}
+
+int ModifyObjectNode::Update()
+{
+	Value *o = properties.e[0]->GetData();
+	if (o) {
+		o = o->duplicate();
+		for (int c=1; c<properties.n-1; c++) {
+			Value *v = properties.e[c]->GetData();
+			if (v) {
+				o->assign(v, properties.e[c]->Name());
+				// v->dec_count();
+			}
+		}
+	}
+	properties.e[properties.n-1]->SetData(o,1);
+	if (!o) return -1;
+	return NodeBase::Update();
+}
+
+/*! Return 0 for no error and everything up to date.
+ * -1 means bad inputs and node in error state.
+ * 1 means needs updating.
+ */
+int ModifyObjectNode::GetStatus()
+{
+	if (!properties.e[0]->GetData()) return -1;
+	return NodeBase::GetStatus();
+}
+
+
+
+
 //--------------------------- SetupDefaultNodeTypes() -----------------------------------------
 
 /*! Install default built in node types to factory.
@@ -3774,46 +4265,38 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	 //--- GradientTransform
 	factory->DefineNewObject(getUniqueNumber(), "GradientTransform", newGradientTransformNode,  NULL, 0);
 
-	 //--- ImageNode
+	 //--- Images
 	factory->DefineNewObject(getUniqueNumber(), "Image", newImageNode,  NULL, 0);
-
-	 //--- ImageInfoNode
+	factory->DefineNewObject(getUniqueNumber(), "ImageFile", ImageFileNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "ImageInfo", newImageInfoNode,  NULL, 0);
 
 	 //--- CurveNodes
 	factory->DefineNewObject(getUniqueNumber(), "Curve",         newCurveNode,  NULL, 1);
 	factory->DefineNewObject(getUniqueNumber(), "CurveTransform",newCurveNode,  NULL, 0);
 
+
+	//------------------ Object maintenance -------------
+
+	 //--- TypeInfoNode
+	factory->DefineNewObject(getUniqueNumber(), "TypeInfo", newTypeInfoNode,  NULL, 0);
+
+	 //--- NewObjectNode
+	factory->DefineNewObject(getUniqueNumber(), "NewObject", NewObjectNode::NewNode,  NULL, 0);
+
+	 //--- ModifyObjectNode
+	factory->DefineNewObject(getUniqueNumber(), "ModifyObject",  ModifyObjectNode::NewNode,  NULL, 0);
+
+
+	//------------------ Groups -------------
+
+	 //--- NodeGroup
+	factory->DefineNewObject(getUniqueNumber(), "NodeGroup",newNodeGroup,  NULL, 0);
+
 	 //--- ObjectNodes
 	factory->DefineNewObject(getUniqueNumber(), "Object In", newObjectInNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Object Out",newObjectOutNode, NULL, 0);
 
-
-	//------------------ Math -------------
-
-	 //--- MathNode1
-	factory->DefineNewObject(getUniqueNumber(), "Math1",     newMathNode1,   NULL, 0);
-
-	 //--- MathNode2
-	factory->DefineNewObject(getUniqueNumber(), "Math2",     newMathNode2,   NULL, 0);
-
-	 //--- DoubleNode
-	factory->DefineNewObject(getUniqueNumber(), "Value",    newDoubleNode, NULL, 0);
-
-	 //--- FlatvectorNode
-	factory->DefineNewObject(getUniqueNumber(), "Vector2", newFlatvectorNode, NULL, 0);
-
-	 //--- SpacevectorNode
-	factory->DefineNewObject(getUniqueNumber(), "Vector3", newSpacevectorNode, NULL, 0);
-
-	 //--- QuaternionNode
-	factory->DefineNewObject(getUniqueNumber(), "Vector4", newQuaternionNode, NULL, 0);
-
-	 //--- ExpandVectorNode
-	factory->DefineNewObject(getUniqueNumber(), "ExpandVector", newExpandVectorNode, NULL, 0);
-
-	 //--- NodeGroup
-	factory->DefineNewObject(getUniqueNumber(), "NodeGroup",newNodeGroup,  NULL, 0);
+	//------------------ Bounds and transforms -------------
 
 	 //--- RectangleNode
 	factory->DefineNewObject(getUniqueNumber(), "Rectangle",newRectangleNode,  NULL, 0);
@@ -3823,30 +4306,54 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Math/Affine2",newAffineNode2, NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Math/AffineExpand",newAffineExpandNode, NULL, 0);
 
+
+	//------------------ Math -------------
+
+	 //--- MathNode1
+	factory->DefineNewObject(getUniqueNumber(), "Math/Math1",     newMathNode1,   NULL, 0);
+
+	 //--- MathNode2
+	factory->DefineNewObject(getUniqueNumber(), "Math/Math2",     newMathNode2,   NULL, 0);
+
+	 //--- DoubleNode
+	factory->DefineNewObject(getUniqueNumber(), "Math/Value",    newDoubleNode, NULL, 0);
+
+	 //--- FlatvectorNode
+	factory->DefineNewObject(getUniqueNumber(), "Math/Vector2", newFlatvectorNode, NULL, 0);
+
+	 //--- SpacevectorNode
+	factory->DefineNewObject(getUniqueNumber(), "Math/Vector3", newSpacevectorNode, NULL, 0);
+
+	 //--- QuaternionNode
+	factory->DefineNewObject(getUniqueNumber(), "Math/Quaternion", newQuaternionNode, NULL, 0);
+
+	 //--- ExpandVectorNode
+	factory->DefineNewObject(getUniqueNumber(), "Math/ExpandVector", newExpandVectorNode, NULL, 0);
+
 	 //--- RandomNode
-	factory->DefineNewObject(getUniqueNumber(), "Random",newRandomNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/Random",newRandomNode,  NULL, 0);
 
 	 //--- LerpNode
-	factory->DefineNewObject(getUniqueNumber(), "Lerp",newLerpNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/Lerp",newLerpNode,  NULL, 0);
 
 	 //--- MapRangeNodes
-	factory->DefineNewObject(getUniqueNumber(), "MapToRange",  newMapToRangeNode,    NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "MapFromRange",newMapFromRangeNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/MapToRange",  newMapToRangeNode,    NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/MapFromRange",newMapFromRangeNode,  NULL, 0);
 
-	 //--- MathContantNode
+	 //--- MathConstantNode
 	factory->DefineNewObject(getUniqueNumber(), "Math/Constant",newMathConstants,  NULL, 0);
 
 
 	//------------------ String -------------
 
 	 //--- ConcatNode
-	factory->DefineNewObject(getUniqueNumber(), "Concat",newConcatNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Strings/Concat",newConcatNode,  NULL, 0);
 
 	 //--- StringNode
-	factory->DefineNewObject(getUniqueNumber(), "String",newStringNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Strings/String",newStringNode,  NULL, 0);
 
 	 //--- SliceNode
-	factory->DefineNewObject(getUniqueNumber(), "Slice",newSliceNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Strings/Slice",newSliceNode,  NULL, 0);
 
 
 	 //-------------------- FILTERS -------------

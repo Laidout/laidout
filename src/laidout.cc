@@ -479,6 +479,11 @@ ObjectDef *LaidoutApp::makeObjectDef()
 			_("List of various settings. These get loaded and saved in a laidoutrc file."),
 			"LaidoutPreferences", NULL, NULL,
 			0,NULL);
+	sd->push("globals",
+			_("Globals"),
+			_("User defined global properties that can be used in scripts and nodes"),
+			"Hash", NULL, NULL,
+			0,NULL);
 
 	return sd;
 }
