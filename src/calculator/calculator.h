@@ -256,6 +256,8 @@ class LaidoutCalculator : public Interpreter,
 
 	virtual char *In(const char *in, int *return_type);
 	virtual int Evaluate(const char *in, int len, Value **value_ret, Laxkit::ErrorLog *log);
+	virtual int EvaluateWithParams(const char *in, int len, ValueHash *context, ValueHash *parameters,
+						 Value **value_ret, Laxkit::ErrorLog *log);
 
 	virtual void ClearError();
 	virtual const char *Message();

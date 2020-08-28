@@ -1495,8 +1495,20 @@ int LaidoutCalculator::Evaluate(const char *in, int len, Value **value_ret, Erro
 	return calcerror>0 ? 1 : (errorlog->Total()>numerr && errorlog->Warnings(numerr)>0 ? -1: 0);
 }
 
+int LaidoutCalculator::EvaluateWithParams(const char *in, int len, ValueHash *context, ValueHash *parameters,
+						 Value **value_ret, Laxkit::ErrorLog *log)
+{
+	return evaluate(in,len, context, parameters, value_ret, log);
+}
+
+
 /*! Called recursively for scripted functions, establish a scope containing "context", and parameters.
  * Store old expression, and call the other evaluate().
+ *
+ * Return
+ *  0 for success, value returned.
+ * -1 for no value returned due to incompatible parameters, which aids in function overloading.
+ *  1 for parameters ok, but there was somehow an error, so no value returned.
  */
 int LaidoutCalculator::evaluate(const char *in, int len, ValueHash *context, ValueHash *parameters, Value **value_ret, ErrorLog *log)
 {
@@ -2418,7 +2430,7 @@ ObjectDef *LaidoutCalculator::GetSessionCommandObjectDef()
 
 	sessiondef.pushFunction("show", _("Show"), _("Give information about something"), NULL, NULL);
 	//sessiondef.pushFunction("about",_("About"),_("Show version information"), NULL, NULL);
-	sessiondef.pushFunction("unset",_("Unset"),_("Remove a name from the current namespace"), NULL, NULL);
+	// sessiondef.pushFunction("unset",_("Unset"),_("Remove a name from the current namespace"), NULL, NULL);
 	sessiondef.pushFunction("print",_("Print"),_("Print out something to the console"), NULL, NULL);
 
 	sessiondef.pushFunction("typeof", _("typeof"), _("Return the final type of an object"), NULL, NULL);
@@ -2540,12 +2552,12 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 	if (nextword("var")) {
 		 //add a variable to the current scope's namespace
 		 // *** todo: Name and description
-		ObjectDef *def=currentLevel()->scope_namespace;
+		ObjectDef *def = currentLevel()->scope_namespace;
 		if (def->format!=VALUE_Namespace && def->format!=VALUE_Class) { calcerr(_("Cannot add variables to current scope!")); return 1; }
 
 		skipwscomment();
-		int n=0;
-		char *type=getnamestring(&n);
+		int n = 0;
+		char *type = getnamestring(&n);
 		if (!type) { calcerr(_("Expected type!")); return 1; }
 		from+=n;
 
@@ -2663,6 +2675,8 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 	} //"function"
 
 	if (nextword("operator")) {
+		// define a new operator
+
 		 //operator * (x,y) { x*y }
 		 //operator right ++ (o) { o=o+1; }
 		 //operator x * y { x^2+y }
@@ -2768,7 +2782,7 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 	} //"operator"
 
 	if (nextword("class")) {
-		 //class name extends Class1,Class2 : "doc string"
+		 //class name extends Class1,Class2 ~ "doc name string", "description"
 		 //{ var one=1;
 		 //  var two="two";
 		 //  var three; //initialized as null object
@@ -2778,7 +2792,7 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 		 //}
 		skipwscomment();
 		int n=0;
-		char *classname=getnamestring(&n);
+		char *classname = getnamestring(&n);
 		if (!n) {
 			calcerr(_("Expected class name!"));
 			return 1;
@@ -2788,7 +2802,7 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 		delete[] classname;
 		ObjectDef *edef;
 
-		if (nextword("extends")) {
+		if (nextword("extends") || nextchar(':')) {
 			skipwscomment();
 			do {
 				edef=getClass();
@@ -2799,6 +2813,11 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 				}
 				def->Extend(edef);
 			} while (nextchar(','));
+		}
+
+		if (nextchar('~')) {
+			//meta block
+
 		}
 
 		if (!nextchar('{')) {
@@ -2820,23 +2839,23 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 //		return 1;
 //	}
 
-	if (nextword("unset")) {
-//		***
-//		skipwscomment();
-//		int namelen=getnamestringlen();
-//		if (!namelen) {
-//    		calcerr(_("Expecting name!"));
-//			return 1;
-//		}
-//		int assign=uservars.findIndex(curexprs+from, namelen);
-//		if (assign<0) {
-//    		calcerr(_("Unknown name!"));
-//			return 1;
-//		}
-//		uservars.remove(assign);
-//		from+=namelen;
-		return 1;
-	}
+// 	if (nextword("unset")) {
+// //		***
+// //		skipwscomment();
+// //		int namelen=getnamestringlen();
+// //		if (!namelen) {
+// //    		calcerr(_("Expecting name!"));
+// //			return 1;
+// //		}
+// //		int assign=uservars.findIndex(curexprs+from, namelen);
+// //		if (assign<0) {
+// //    		calcerr(_("Unknown name!"));
+// //			return 1;
+// //		}
+// //		uservars.remove(assign);
+// //		from+=namelen;
+// 		return 1;
+// 	}
 
 	if (nextword("show")) {
 		 //need scope dump
@@ -4589,7 +4608,7 @@ void LaidoutCalculator::InstallInnate()
 	innates->dec_count();
 }
 
-//! Compute various built in functions, such as from the built in Math module.
+//! From FunctionEvaluator, compute various built in functions, such as from the built in Math module.
 /*! parse and compute standard math functions like sqrt(x), sin(x), etc.
  * Also a couple math numbers like e, pi, and tau (golden ratio).
  *
