@@ -41,6 +41,7 @@
 #include "../printing/print.h"
 #include "../printing/psout.h"
 #include "../impositions/impositioneditor.h"
+#include "findwindow.h"
 #include "helpwindow.h"
 #include "settingswindow.h"
 #include "about.h"
@@ -184,6 +185,7 @@ enum LaidoutViewportActions {
 	LOV_ToggleDrawFlags,
 	LOV_ObjectIndicator,
 	LOV_ForceRemap,
+	LOV_Find,
 	LOV_MAX
 };
 
@@ -388,6 +390,15 @@ void VObjContext::clearToPage()
 	SetObject(NULL);
 }
 
+
+inline std::ostream &operator<<(std::ostream &os, VObjContext const &o)
+{
+	for (int c=0; c<o.context.n(); c++) {
+		os << o.context.e(c)<< " ";
+	}
+	return os;
+}
+
 //------------------------------- LaidoutViewport ---------------------------
 /*! \class LaidoutViewport
  * \brief General viewport to pass to the ViewerWindow base class of ViewWindow
@@ -455,52 +466,52 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 {
 	DBG cerr <<"in LaidoutViewport constructor, obj "<<object_id<<endl;
 
-	dp->displayer_style|=DISPLAYER_NO_SHEAR;
-	papergroup=NULL;
-	win_themestyle->bg=rgbcolor(255,255,255);
+	dp->displayer_style |= DISPLAYER_NO_SHEAR;
+	papergroup         = NULL;
+	win_themestyle->bg = rgbcolor(255, 255, 255);
 
-	viewportmode=VIEW_NORMAL;
-	showstate=1;
-	lfirsttime=1;
-	//drawflags=DRAW_AXES;
-	drawflags=0;
-	doc=newdoc;
+	findwindow   = nullptr;
+	viewportmode = VIEW_NORMAL;
+	showstate    = 1;
+	lfirsttime   = 1;
+	// drawflags=DRAW_AXES;
+	drawflags = 0;
+	doc       = newdoc;
 	if (!doc) {
-		doc=laidout->curdoc;
+		doc = laidout->curdoc;
 	}
 	if (doc) doc->inc_count();
-	dp->NewTransform(1.,0.,0.,-1.,0.,0.); //***this should be adjusted for physical dimensions of monitor screen
-	
-	transform_set(ectm,1,0,0,1,0,0);
-	spread=NULL;
-	spreadi=-1;
-	curpage=NULL;
+	dp->NewTransform(1., 0., 0., -1., 0., 0.);  //***this should be adjusted for physical dimensions of monitor screen
+
+	transform_set(ectm, 1, 0, 0, 1, 0, 0);
+	spread        = NULL;
+	spreadi       = -1;
+	curpage       = NULL;
 	pageviewlabel = nullptr;
 
-	searchmode = SEARCH_None;
+	searchmode     = SEARCH_None;
 	searchcriteria = SEARCH_Any;
-	
-	limbo=NULL; //start out as NULL in case we are loading from something. If still NULL in init(), then add new limbo
-	
-	current_edit_area=-1; //which aspect of a drawable object we are working on.. -1 means curobj is not DrawableObject
-	edit_area_icon=NULL;
 
-	
-	viewmode=-1;
-	SetViewMode(PAGELAYOUT,-1);
-	//setupthings();
-	
-	 // Set workspace bounds.
+	limbo = NULL;  // start out as NULL in case we are loading from something. If still NULL in init(), then add new limbo
+
+	current_edit_area = -1;  // which aspect of a drawable object we are working on.. -1 means curobj is not DrawableObject
+	edit_area_icon = NULL;
+
+	viewmode = -1;
+	SetViewMode(PAGELAYOUT, -1);
+	// setupthings();
+
+	// Set workspace bounds.
 	if (newdoc && newdoc->imposition) {
 		DoubleBBox bb;
 		newdoc->imposition->GoodWorkspaceSize(&bb);
-		dp->SetSpace(bb.minx,bb.maxx,bb.miny,bb.maxy);
-		//Center(); //this doesn't do anything because dp->Minx,Maxx... are 0
+		dp->SetSpace(bb.minx, bb.maxx, bb.miny, bb.maxy);
+		// Center(); //this doesn't do anything because dp->Minx,Maxx... are 0
 	} else {
-		dp->SetSpace(-8.5,17,-11,22);
+		dp->SetSpace(-8.5, 17, -11, 22);
 	}
 
-	fakepointer=0; //***for lack of screen record for multipointer
+	fakepointer = 0;  //***for lack of screen record for multipointer
 }
 
 //! Delete spread, doc and page are assumed non-local.
@@ -780,7 +791,45 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 		if (!s) return 1;
 		if (!isblank(s->str)) makestr(limbo->id,s->str);
 		return 0;
+	
+	} else if (!strcmp(mes,"findobject")) {
+		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
+		if (!s) return 0;
+		DBG cerr << "Viewport got FindWindow msg: "<<s->info1<< endl;
+		if (!findwindow) return 0;
+		FindWindow *fw = dynamic_cast<FindWindow*>(findwindow);
+		VObjContext oc;
+		anObject *o = nullptr;
+		if (fw->GetCurrent(oc.context, o)) {
+			if (fw->Where() == FindWindow::FIND_InView) {
+				oc.obj = dynamic_cast<SomeData*>(o);
+				if (oc.obj) {
+					oc.obj->inc_count();
+					setCurobj(&oc);
+					ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); 
+					viewer->SelectToolFor("Group", &oc);
+					needtodraw=1;
+				}
+			} else if (fw->Where() == FindWindow::FIND_InSelection) {
+				if (selection && selection->n() > 0) {
+					int i = oc.context.e(0);
+					if (i >= 0 && i < selection->n()) {
+						setCurobj(dynamic_cast<VObjContext*>(selection->e(i)));
+						ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); 
+						viewer->SelectToolFor("Group", selection->e(i));
+						needtodraw=1;
+					}
+					
+				} else PostMessage(_("Can't find in selection!"));
 
+			} else if (fw->Where() == FindWindow::FIND_Anywhere) {
+				PostMessage("Find anywhere not implemented yet! Bug the dev!!");
+				// if not in current view, jump to proper page
+				// context is relative to laidout->project
+			}
+		}
+		return 0;
+    
 	} else if (!strcmp(mes,"image properties")) {
 		 //pass on to the first active interface that wants it, if any
 		const RefCountedEventData *e=dynamic_cast<const RefCountedEventData *>(data);
@@ -1635,15 +1684,74 @@ int LaidoutViewport::FindObject(int x,int y,
 	if (!firstobj.obj) return 0; //no first object was found. give up!
 	if (dtype) searchtype = dtype;
 
-	if (!start) nextObject(&nextindex);
-
-	 // nextindex now points to the next object to consider.
-
+	double m[6];
 	flatpoint p,pp;
 	p = dp->screentoreal(x,y); // so this is in viewer coordinates
 	DBG cerr <<"lov.FindObject: "<<p.x<<','<<p.y<<endl;
 
-	double m[6];
+	if (searchcriteria == SEARCH_SameLevel) {
+		DrawableObject *pnt = nullptr;
+		int from = 0;
+
+		if (curobj.obj) {
+			// search siblings
+			transformToContext(m, curobj.context,1, curobj.context.n()-1);
+			pp = transform_point(m,p);
+			pnt = dynamic_cast<DrawableObject*>(curobj.obj->GetParent());
+
+			for (int c=0; c < pnt->n(); c++) {
+				if (curobj.obj == pnt->e(c)) { from = c+1; break; }
+			}
+
+		} else {
+			// search children of context
+			pnt = dynamic_cast<DrawableObject*>(GetObject(&curobj));
+			transformToContext(m, curobj.context,1, curobj.context.n());
+		}
+
+		if (pnt) {
+			pp = transform_point(m,p);
+			int found = -1;
+
+			for (int c = from; c < pnt->n(); c++) {
+				SomeData *obj = pnt->e(c);
+				if (!searchtype || (searchtype && strcmp(obj->whattype(), searchtype))) {
+					if (obj->pointin(pp)) {
+						found = c;
+						break;
+					}
+				}
+			}
+			if (found == -1) {
+				for (int c = 0; c < from; c++) {
+					SomeData *obj = pnt->e(c);
+					if (!searchtype || (searchtype && strcmp(obj->whattype(), searchtype))) {
+						if (obj->pointin(pp)) {
+							found = c;
+							break;
+						}
+					}
+				}
+			}
+			if (found >= 0) {
+				nextindex = curobj;
+				if (nextindex.obj) {
+					nextindex.context.pop();
+				}
+				nextindex.SetObject(pnt->e(found));
+				nextindex.context.push(found);
+				foundtypeobj = nextindex;
+				if (oc) *oc = &foundtypeobj;
+				return 1;
+			}
+		}
+	}
+
+	if (!start) nextObject(&nextindex);
+
+	 // nextindex now points to the next object to consider.
+
+
 	DBG firstobj.context.out("firstobj");
 
 	int nob = 1; //is there a next object
@@ -1928,7 +2036,10 @@ void LaidoutViewport::findAny(int searcharea)
 
 	if (searcharea == SEARCH_SameLevel) {
 		firstobj = curobj;
-		if (firstobj.obj) return;
+		if (firstobj.obj) {
+			DBG cerr << "findAny: "<< firstobj.obj->Id()<<"  " <<firstobj <<endl;
+			return;
+		}
 
 		Group *tosearch = dynamic_cast<Group*>(GetObject(&curobj));
 		if (tosearch->n()) {
@@ -1936,6 +2047,7 @@ void LaidoutViewport::findAny(int searcharea)
 			firstobj.SetObject(tosearch->e(0));
 		}
 
+		DBG cerr << "findAny: "<< (firstobj.obj ? firstobj.obj->Id() : "none")<<"  " <<firstobj <<endl;
 		return;
 	}
 
@@ -2377,12 +2489,12 @@ LaxInterfaces::ObjectContext *LaidoutViewport::ObjectMoved(LaxInterfaces::Object
 
 			 //*** this is rather poor, but fast and good enough for now:
 			outline=spread->pagestack.e[c]->outline;
-			bbox.clear();
+			bbox.ClearBBox();
 			bbox.addtobounds(outline->m(),outline);
 			transformToContext(mm,curobj.context,0,-1);
 			//transformToContext(m,curobj.context,0,curobj.context.n()-1);
 			//transform_mult(mm,curobj.obj->m(),m);
-			bbox2.clear();
+			bbox2.ClearBBox();
 			bbox2.addtobounds(mm,curobj.obj);
 			if (bbox.intersect(&bbox2)) {
 				if (!spread->pagestack[c]->page)
@@ -2401,11 +2513,11 @@ LaxInterfaces::ObjectContext *LaidoutViewport::ObjectMoved(LaxInterfaces::Object
 	if (!destgroup && papergroup && papergroup->papers.n) {
 		for (int c=0; c<papergroup->papers.n; c++) {
 			outline=papergroup->papers.e[c];
-			bbox.clear();
+			bbox.ClearBBox();
 			bbox.addtobounds(outline->m(),outline);
 			transformToContext(m,curobj.context,0,curobj.context.n()-1);
 			transform_mult(mm,curobj.obj->m(),m);
-			bbox2.clear();
+			bbox2.ClearBBox();
 			bbox2.addtobounds(mm,curobj.obj);
 			if (bbox.intersect(&bbox2)) {
 				destgroup=&papergroup->objs;
@@ -2552,7 +2664,7 @@ void LaidoutViewport::Center(int w)
 		if (papergroup) {
 			double w,h;
 			for (int c=0; c<papergroup->papers.n; c++) {
-				box2.clear();
+				box2.ClearBBox();
 				w=papergroup->papers.e[c]->maxx-papergroup->papers.e[c]->minx;
 		       	h=papergroup->papers.e[c]->maxy-papergroup->papers.e[c]->miny;
 				box2.addtobounds(papergroup->papers.e[c]->minx-.05*w, papergroup->papers.e[c]->miny-.05*h);
@@ -3007,6 +3119,7 @@ Laxkit::ShortcutHandler *LaidoutViewport::GetShortcuts()
 	sc->Add(LOV_ToggleDrawFlags,'D',ShiftMask,0,_("ToggleDrawFlags"),_("Toggle drawing flags"),NULL,0);
 	sc->Add(LOV_ObjectIndicator,'i',0,0,        _("ObjectInfo"),     _("Toggle showing object information"),NULL,0);
 	sc->Add(LOV_ForceRemap,     'r',ControlMask,0,_("ForceRemap"),   _("Force reapplication of any alignment rules of objects in current spread"),NULL,0);
+	sc->Add(LOV_Find,           'f',ControlMask,0,_("Find"),         _("Open the find panel"),NULL,0);
 
 	return sc;
 }
@@ -3061,6 +3174,19 @@ int LaidoutViewport::PerformAction(int action)
 			viewportmode=VIEW_NORMAL;
 			LaxMouse *mouse=app->devicemanager->findMouse(last_mouse);
 			if (mouse) mouse->setMouseShape(this,0);
+		}
+		return 0;
+
+	} else if (action==LOV_Find) {
+		if (findwindow) {
+			if (findwindow->win_on) app->unmapwindow(findwindow);
+			else app->mapwindow(findwindow);
+		}
+		else {
+			FindWindow *w = new FindWindow(this, "find", _("Find"), 0, win_w-152, 0, 150, win_h - 10, object_id, "findobject");
+			findwindow = w;
+			app->addwindow(findwindow);
+			w->SetFocus();
 		}
 		return 0;
 
@@ -3240,12 +3366,17 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 	//DBG 	return 0;
 	//DBG }
 
-	if (ch==LAX_Esc && (state&LAX_STATE_MASK)==0 && viewportmode==VIEW_GRAB_COLOR) {
+	if (ch == LAX_Esc && (state & LAX_STATE_MASK) == 0 && viewportmode == VIEW_GRAB_COLOR) {
 		 //escape out of grabbing color
 		viewportmode=VIEW_NORMAL;
 		const_cast<LaxMouse*>(d->paired_mouse)->setMouseShape(this,0);
 		return 0;
 	}
+
+	if (ch == LAX_Esc && findwindow && findwindow->win_on) {
+		app->unmapwindow(findwindow);
+		return 0;
+	}	
 
 	 // ask interfaces, and default viewport stuff, which queries all action based activity.
 	if (ViewportWindow::CharInput(ch,buffer,len,state,d)==0) return 0;
@@ -3261,7 +3392,6 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 		return 0;
 	}
 	DBG // ******** ^^^^^^^  for debugging objecttreewindow:
-
 
 
 	if (ch=='M' && (state&LAX_STATE_MASK)==(ShiftMask|AltMask)) {
@@ -4475,7 +4605,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 		return 0;
 
-    } else if (!strcmp(mes,"confirmSaveTemplate")) {
+	} else if (!strcmp(mes,"confirmSaveTemplate")) {
 		 //this is called resulting from a save as dialog to confirm where to save a template
 		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
 		if (!s || isblank(s->str)) {
