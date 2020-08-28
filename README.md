@@ -1,7 +1,7 @@
 Laidout Version 0.097.1
 =======================
 
-http://laidout.org
+https://laidout.org
 
 The latest releases: https://github.com/Laidout/laidout/releases
 
@@ -24,7 +24,7 @@ Please post about any snags to Laidout's
 github issue tracker: https://github.com/Laidout/laidout/issues.
 
 Laidout is currently in the 'mostly works on my machine' stage of development.
-It was created by and developed by Tom Lechner (http://www.tomlechner.com).
+It was created by and developed by Tom Lechner (https://www.tomlechner.com).
 
 
 
@@ -43,7 +43,7 @@ test on. Donations of the newest, most expensive and lightest Macs are welcome!
 Laidout will not currently run on Windows. Feel free to subsidize a port
 by showering the developer with money.
 
-Please see http://www.laidout.org/faq.html for some extra help. Let me
+Please see https://laidout.org/faq.html for some extra help. Let me
 know if you get stuck trying to install. It is supposed to be easy!
 
 
@@ -276,7 +276,7 @@ By the way, all the code assumes tabs are 4 characters wide.
 (in vim, :set tabstop=4)
 
 Also check out the dev page on the Laidout website:
-http://www.laidout.org/dev.html
+https://laidout.org/dev.html
 
 
 Compiling on Mac OS X
