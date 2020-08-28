@@ -61,6 +61,7 @@ objs= \
 #spurious inclusion of temporary testing stuff.
 otherobjs= \
 	core/document.o \
+	core/objectiterator.o \
 	core/drawdata.o \
 	core/fieldplace.o \
 	core/guides.o \
@@ -164,6 +165,7 @@ otherobjs= \
 	ui/autosavewindow.o \
 	ui/buttonbox.o \
 	ui/commandwindow.o \
+	ui/findwindow.o \
 	ui/headwindow.o \
 	ui/helpwindow.o \
 	ui/metawindow.o \
