@@ -19,7 +19,7 @@
 
 #include <lax/strmanip.h>
 #include <lax/fileutils.h>
-
+#include <lax/utf8string.h>
 
 #include <cctype>
 #include <cstdlib>
@@ -731,40 +731,68 @@ LaxFiles::Attribute *ObjectDef::dump_out_atts(LaxFiles::Attribute *att,int what,
 
 	} else if (what==DEFOUT_CPP) {
 		//append c++ code snippet to att->value
+		//somewhat boilerplate, so we hopefully only need to lightly edit in c++
 
-		char *str=NULL;
-		appendstr(str, "ObjectDef *def=new ObjectDef(");
+		// ObjectDef(ObjectDef *nextends,const char *nname,const char *nName, const char *ndesc,
+		// 	const char *fmt,const char *nrange, const char *newdefval,
+		// 	Laxkit::RefPtrStack<ObjectDef>  *nfields=NULL,unsigned int fflags=OBJECTDEF_CAPPED,
+		// 	NewObjectFunc nnewfunc=0,ObjectFunc nstylefunc=0);
+		
+		Utf8String str, str2;
+		
+		str.Append("ObjectDef *def = new ObjectDef(");
 		if (extendsdefs.n) {
 			 //output list of classes extended
-			appendstr(str,"\"");
+			str.Append("\"");
 			for (int c=0; c<extendsdefs.n; c++) {
-				appendstr(str,extendsdefs.e[c]->name);
-				if (c!=extendsdefs.n-1) appendstr(str,", ");
+				str.Append(extendsdefs.e[c]->name);
+				if (c != extendsdefs.n-1) str.Append(", ");
 			}
-			appendstr(str,"\"");
-		} else appendstr(str,"NULL, ");
-		if (name) { appendstr(str,"\""); appendstr(str,name); appendstr(str,"\", "); } else appendstr(str,"NULL, ");
-		if (Name) { appendstr(str,"\""); appendstr(str,Name); appendstr(str,"\", "); } else appendstr(str,"NULL, ");
-		if (description) { appendstr(str,"\""); appendstr(str,description); appendstr(str,"\", "); } else appendstr(str,"NULL, ");
-		appendstr(str,"\""); appendstr(str,valueEnumCodeName(format)); appendstr(str,"\"");
-		// *** defaultval
-		// *** defaultValue
-		// *** range
-		// *** flags
-		appendstr(str,");\n");
+			str.Append("\"");
+		} else str.Append("NULL, ");
+		if (name) { str.Append("\""); str.Append(name); str.Append("\", "); } else str.Append("nullptr, ");
+		if (Name) { str.Append("\""); str.Append(Name); str.Append("\", "); } else str.Append("nullptr, ");
+		if (description) { str2.Sprintf("\"%s\"", description); str.Append(str2); } else str.Append("nullptr, ");
+
+		// format
+		str2.Sprintf("\n\t\"%s\"\n", valueEnumCodeName(format));
+		str.Append(str2);
+
+		// range
+		str.Append("\tnullptr,\n");
+
+		// defaultval
+		str.Append("\tnullptr, // default value\n");
+
+		// fields
+		str.Append("\tnullptr,0, //fields, flags\n");
+
+		// newfunc
+		str2.Sprintf("\tNew%s, //newfunc\n");
+		str.Append(str);
+
+		// stylefunc
+		str2.Sprintf("\tCall%s, //stylefunc\n");
+		str.Append(str);
+
+		str.Append("\t);\n");
 
 		ObjectDef *ff;
 		if (fields) for (int c=0; c<fields->n; c++) {
 			ff=fields->e[c];
-			appendstr(str, "def->push(");
-			if (ff->name) { appendstr(str,"\""); appendstr(str,ff->name); appendstr(str,"\", "); } else appendstr(str,"NULL, ");
-			if (ff->Name) { appendstr(str,"\""); appendstr(str,ff->Name); appendstr(str,"\", "); } else appendstr(str,"NULL, ");
-			if (ff->description) { appendstr(str,"\""); appendstr(str,ff->description); appendstr(str,"\", "); } else appendstr(str,"NULL, ");
-			appendstr(str,"\""); appendstr(str,valueEnumCodeName(ff->format)); appendstr(str,"\"");
+			str.Append( "def->push(");
+			if (ff->name) { str.Append("\""); str.Append(ff->name); str.Append("\", "); } else str.Append("nullptr, ");
+			if (ff->Name) { str.Append("\""); str.Append(ff->Name); str.Append("\", "); } else str.Append("nullptr, ");
+			if (ff->description) { str.Append("\""); str.Append(ff->description); str.Append("\", "); } else str.Append("nullptr, ");
+			str.Append("\""); str.Append(valueEnumCodeName(ff->format)); str.Append("\"");
 			// *** flags
-			appendstr(str,");\n");
+			str.Append(");\n\n");
 		}
-		cerr <<" *** finish implementing ObjectDef code out!"<<endl;
+
+		if (att->value) delete[] att->value;
+		att->value = str.ExtractBytes(nullptr, nullptr, nullptr);
+		
+		cerr <<" *** finish implementing ObjectDef DEFOUT_CPP out!"<<endl;
 		return att;
 
 	} else if (what==DEFOUT_JSON) {
@@ -777,6 +805,7 @@ LaxFiles::Attribute *ObjectDef::dump_out_atts(LaxFiles::Attribute *att,int what,
 			appendstr(str,"\""); appendstr(str,name); appendstr(str,"\": ");
 
 		}
+		// ***
 	}
 
 	return NULL;
@@ -1706,7 +1735,10 @@ int ValueHash::getValueStr(char *buffer,int len)
 Value *ValueHash::dereference(const char *extstring, int len)
 {
 	int i = findIndex(extstring, len);
-	if (i >= 0) return values.e[i];
+	if (i >= 0) {
+		values.e[i]->inc_count();
+		return values.e[i];
+	}
 	return nullptr;
 }
 
@@ -1718,6 +1750,28 @@ Value *ValueHash::dereference(int index)
 	set->Push(new StringValue(keys.e[index]),1);
 	set->Push(values.e[index],0);
 	return set;
+}
+
+/*! Return 1 for success, 2 for success, but other contents changed too, -1 for unknown extension.
+ * 0 for total fail, as when v is wrong type.
+ */
+int ValueHash::assign(FieldExtPlace *ext,Value *v)
+{
+	if (!ext || ext->n() == 0) return -1;
+	if (!v) return 0;
+
+	int i = -1;
+	const char *str = ext->e(0, &i);
+	if (i >= 0 && i < n()) {
+		set(i, v);
+		return 1;
+	}
+
+	if (!str) return 0;
+	i = findIndex(str);
+	if (i < 0) push(str, v); //assume it's always ok to add new key/value
+	else set(i, v);
+	return 1;
 }
 
 ObjectDef default_ValueHash_ObjectDef(NULL,"Hash",_("Hash"),_("Set of name-value pairs"),
@@ -1769,6 +1823,11 @@ ObjectDef *Get_ValueHash_ObjectDef()
 					  NULL,
 					  "pos",_("Position 1"),_("Position to take."), "int",NULL,NULL,
 					  "pos2",_("Position 2"),_("Where to put."), "int",NULL,NULL,
+					  NULL);
+
+	def->pushFunction("remove",_("Remove"),_("Remove an element"),
+					  NULL,
+					  "key",_("Key"),_("The key to remove"), "string",NULL,NULL,
 					  NULL);
 
 	def->pushFunction("key",_("Key"),_("Return string of the key"),
@@ -1834,6 +1893,20 @@ int ValueHash::Evaluate(const char *func,int len, ValueHash *context, ValueHash 
 			if (pos<0 || pos>=keys.n) throw 2; //index out of range!
 			*value_ret=values.e[pos];
 			values.e[pos]->inc_count();
+			return 0;
+		}
+
+		if (isName(func,len,"remove")) {
+			Value *v=parameters->find("key");
+			if (!v) throw 1; //missing parameter!
+			int pos=-1;
+			if (v->type()==VALUE_Int) pos=dynamic_cast<IntValue*>(v)->i;
+			else if (v->type()==VALUE_String) {
+				pos=findIndex(dynamic_cast<StringValue*>(v)->str);
+			}
+			if (pos<0 || pos>=keys.n) throw 2; //index out of range!
+			*value_ret = nullptr;
+			remove(pos);
 			return 0;
 		}
 
@@ -2079,7 +2152,7 @@ void ValueHash::renameKey(int i,const char *newname)
 }
 
 /*! Set value of an existing key. Return 0 for success, or nonzero for error such as key not found.
- * Increments count of newv.
+ * Increments count of newv. If key not found, use push instead.
  */
 int ValueHash::set(const char *key, Value *newv)
 {
@@ -2106,8 +2179,8 @@ int ValueHash::findIndex(const char *name,int len)
 	if (!name) return -1;
 	if (len<0) len = strlen(name);
 	for (int c=0; c<keys.n; c++) {
-		if (len<0 && !strcmp(name,keys.e[c])) return c;
-		if (len>0 && !strncmp(name,keys.e[c],len)) return c;
+		// if (len<0 && !strcmp(name,keys.e[c])) return c;
+		if (len>0 && (int)strlen(keys.e[c]) == len && !strncmp(name,keys.e[c],len)) return c;
 	}
 	return -1;
 }
@@ -2342,6 +2415,16 @@ Value *Value::dereference(int index)
 int Value::assign(FieldExtPlace *ext,Value *v)
 { return 0; }
 
+/*! Convenience function, which just calls assign(FieldExtPlace,v) with a FieldExtPlace corresponding to extstring.
+ * Returns 1 for success, 2 for success but other contents changed too, -1 for bad extension.
+ */
+int Value::assign(Value *v, const char *extstring)
+{
+	if (isblank(extstring)) return assign(nullptr, v);
+	FieldExtPlace ext;
+	ext.push(extstring);
+	return assign(&ext, v);
+}	
 
 
 //! Output to buffer, do NOT reallocate buffer, assume it has enough space. If len is not enough, return how much is needed.
@@ -2740,16 +2823,18 @@ Value *AttributeToValue(Attribute *att)
     } else if (!strcmp(att->name, "FileValue")) {
 		return new FileValue(att->value);
 
-    } else if (!strcmp(att->name, "EnumValue")) {
-    } else if (!strcmp(att->name, "ValueHash")) {
-    } else if (!strcmp(att->name, "GenericValue")) {
-    } else if (!strcmp(att->name, "SetValue")) {
-    } else if (!strcmp(att->name, "ArrayValue")) {
     } else if (!strcmp(att->name, "NullValue")) {
 		return new NullValue();
 
-    } else if (!strcmp(att->name, "FunctionValue")) {
-    } else if (!strcmp(att->name, "ObjectValue")) {
+    // } else if (!strcmp(att->name, "EnumValue")) {
+    // } else if (!strcmp(att->name, "ValueHash")) {
+    // } else if (!strcmp(att->name, "GenericValue")) {
+    // } else if (!strcmp(att->name, "SetValue")) {
+    // } else if (!strcmp(att->name, "ArrayValue")) {
+    // } else if (!strcmp(att->name, "FunctionValue")) {
+    // } else if (!strcmp(att->name, "ObjectValue")) {
+    } else {
+		cerr << " *** NEED TO IMPLEMENT AttributeToValue() with "<<att->name<<"EnumValue!"<<endl;
 	}
 
 	return NULL;
@@ -4233,10 +4318,10 @@ void FileValue::Set(const char *nstr)
 
 int FileValue::getValueStr(char *buffer,int len)
 {
-	int needed=strlen(filename)+1;
+	int needed = (filename ? strlen(filename) : 0) + 1;
 	if (!buffer || len<needed) return needed;
 
-	strcpy(buffer,filename);
+	strcpy(buffer, filename ? filename : "");
 	modified=0;
 	return 0;
 }
@@ -4796,7 +4881,7 @@ int isVectorType(Value *v, double *values)
 int extequal(const char *str, int len, const char *field, char **next_ret)
 {
 	unsigned int n=len;
-	if (len<=0) while (isalnum(str[n]) || str[n]=='_') n++;
+	if (len<=0) { n = 0; while (isalnum(str[n]) || str[n]=='_') n++; }
 
 	if (n!=strlen(field) || strncmp(str,field,n)!=0) {
 		if (next_ret) *next_ret=NULL;
@@ -4810,10 +4895,10 @@ int extequal(const char *str, int len, const char *field, char **next_ret)
 
 /*! \ingroup misc
  * Return len==strlen(str) && !strncmp(longstr,str,len).
- * See also extequal(). The check here is simpler.
+ * See also extequal(). The check here is simpler and requires a definite len > 0.
  */
-int isName(const char *longstr,int len, const char *str)
-{ return len==(int)strlen(str) && !strncmp(longstr,str,len); }
+int isName(const char *longstr,int len, const char *null_term_str)
+{ return len==(int)strlen(null_term_str) && !strncmp(longstr,null_term_str,len); }
 
 
 

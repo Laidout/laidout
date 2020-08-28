@@ -353,7 +353,7 @@ class Value : virtual public Laxkit::anObject, virtual public LaxFiles::DumpUtil
 	virtual const char *Id();
 
 	//virtual int isValidExt(const char *extstring, FieldPlace *place_ret) = 0; //for assignment checking
-	//virtual int assign(const char *extstring,Value *v); //return 1 for success, 2 for success, but other contents changed too, -1 for unknown
+	virtual int assign(Value *v, const char *extstring); //return 1 for success, 2 for success, but other contents changed too, -1 for unknown
 	virtual int assign(FieldExtPlace *ext,Value *v); //return 1 for success, 2 for success, but other contents changed too, -1 for unknown
 
 	//virtual Value *dereference(const FieldPlace &ext) = 0; // returns a reference if possible, or new. Calling code MUST decrement count.
@@ -421,6 +421,7 @@ class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual
  	virtual ObjectDef *makeObjectDef();
 	virtual Value     *dereference(int index);
 	virtual Value     *dereference(const char *extstring, int len);
+	virtual int        assign(FieldExtPlace *ext,Value *v); //return 1 for success, 2 for success, but other contents changed too, -1 for unknown
     virtual int        getNumFields();
     virtual ObjectDef  *FieldInfo(int i);
     virtual const char *FieldName(int i);
@@ -755,7 +756,7 @@ int getIntValue(Value *v, int *isnum);
 int isNumberType(Value *v, double *number_ret);
 int isVectorType(Value *v, double *values);
 int extequal(const char *str, int len, const char *field, char **next_ret=NULL);
-int isName(const char *longstr,int len, const char *str);
+int isName(const char *longstr,int len, const char *null_terminated_str);
 
 Value *AttributeToValue(LaxFiles::Attribute *att);
 Value *JsonToValue(const char *str);
