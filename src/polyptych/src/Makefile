@@ -64,6 +64,12 @@ panoramanoise: panoramanoise.o
 skyflow: skyflow.o
 	$(LD) $@.o -llaxkit $(LDFLAGS) -o $@
 
+makenormal.o: makenormal.cc
+	g++ -c $(CPPFLAGS) makenormal.cc -o makenormal.o
+
+makenormal: makenormal.o
+	$(LD) $@.o  $(LDFLAGS) -o $@
+
 spheretocubemap: spheretocubemap.o
 	$(LD) spheretocubemap.o -llaxkit $(LDFLAGS) -o $@
 
