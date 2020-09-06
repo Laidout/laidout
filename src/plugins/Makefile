@@ -86,6 +86,6 @@ unhidegarbage:
 
 .PHONY: clean hidegarbage unhidegarbage lax laxinterfaces all plugins depends
 clean:
-	rm -f *.o *.so test svg/*.o
+	rm -f *.o *.so test
 	for NAME in $(plugins); do $(MAKE) -C $$NAME clean ; done
 
