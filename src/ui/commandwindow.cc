@@ -41,7 +41,9 @@ CommandWindow::CommandWindow(Laxkit::anXWindow *parnt,const char *nname,const ch
 {
 	textstyle |= TEXT_WORDWRAP;
 	padx = pady = 6;
-	calculator = new LaidoutCalculator();
+	LaidoutCalculator *calc = new LaidoutCalculator();
+	calc->InstallModule(&stylemanager, 1);
+	calculator = calc;
 }
 
 //! Empty destructor.
