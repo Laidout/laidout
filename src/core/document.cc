@@ -210,7 +210,8 @@ ObjectDef *PageRangeObjectDef()
 			0,
 			NULL);
 
-	sd->pushEnum("labeltype",_("Page number style"),_("Page number style"),"Arabic",NULL,NULL,
+	sd->pushEnum("labeltype",_("Page number style"),_("Page number style"), false,
+				"Arabic", NULL,NULL, //def value, newfunc, stylefunc
 				  "arabic", _("Arabic"), _("Arabic: 1,2,3..."),
 				  "roman", _("Lower case roman numerals"), _("Roman: i,ii,iii..."),
 				  "roman_cap", _("Upper case roman numerals"), _("Roman: I,II,III..."),
