@@ -121,13 +121,18 @@ ObjectDef *LImagePatchData::makeObjectDef()
         return sd;
     }
 
-	ObjectDef *affinedef=stylemanager.FindDef("Affine");
-	sd=new ObjectDef(affinedef,
+	ObjectDef *gdef = stylemanager.FindDef("Group");
+	if (!gdef) {
+		Group g;
+		gdef = g.GetObjectDef();
+	}
+	sd = new ObjectDef(gdef,
 			"ImagePatchData",
             _("ImagePatchData"),
             _("An image mesh distortion"),
             "class",
             NULL,NULL);
+	stylemanager.AddObjectDef(sd, 0);
 
 //	sd->pushFunction("FlipColors",_("Flip Colors"),_("Flip the order of colors"), NULL,
 //					 NULL);
@@ -143,7 +148,7 @@ Value *LImagePatchData::dereference(const char *extstring, int len)
 //	}
 
 
-	return NULL;
+	return DrawableObject::dereference(extstring, len);
 }
 
 int LImagePatchData::assign(FieldExtPlace *ext,Value *v)
@@ -163,13 +168,7 @@ int LImagePatchData::assign(FieldExtPlace *ext,Value *v)
 //		}
 //	}
 
-	AffineValue affine(m());
-	int status=affine.assign(ext,v);
-	if (status==1) {
-		m(affine.m());
-		return 1;
-	}
-	return 0;
+	return DrawableObject::assign(ext,v);
 }
 
 /*! Return 0 success, -1 incompatible values, 1 for error.
@@ -177,14 +176,7 @@ int LImagePatchData::assign(FieldExtPlace *ext,Value *v)
 int LImagePatchData::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 	                     Value **value_ret, ErrorLog *log)
 {
-	AffineValue v(m());
-	int status=v.Evaluate(func,len,context,parameters,settings,value_ret,log);
-	if (status==0) {
-		m(v.m());
-		return 0;
-	}
-
-	return status;
+	return DrawableObject::Evaluate(func, len, context, parameters, settings, value_ret, log);
 }
 
 
@@ -273,13 +265,18 @@ ObjectDef *LColorPatchData::makeObjectDef()
         return sd;
     }
 
-	ObjectDef *affinedef=stylemanager.FindDef("Affine");
-	sd=new ObjectDef(affinedef,
+	ObjectDef *gdef = stylemanager.FindDef("Group");
+	if (!gdef) {
+		Group g;
+		gdef = g.GetObjectDef();
+	}
+	sd = new ObjectDef(gdef,
 			"ColorPatchData",
             _("ColorPatchData"),
             _("A color mesh gradient"),
             "class",
             NULL,NULL);
+	stylemanager.AddObjectDef(sd, 0);
 
 //	sd->pushFunction("FlipColors",_("Flip Colors"),_("Flip the order of colors"), NULL,
 //					 NULL);
@@ -294,8 +291,7 @@ Value *LColorPatchData::dereference(const char *extstring, int len)
 //		return new DoubleValue(p1);
 //	}
 
-
-	return NULL;
+	return DrawableObject::dereference(extstring, len);
 }
 
 int LColorPatchData::assign(FieldExtPlace *ext,Value *v)
@@ -315,13 +311,7 @@ int LColorPatchData::assign(FieldExtPlace *ext,Value *v)
 //		}
 //	}
 
-	AffineValue affine(m());
-	int status=affine.assign(ext,v);
-	if (status==1) {
-		m(affine.m());
-		return 1;
-	}
-	return 0;
+	return DrawableObject::assign(ext,v);
 }
 
 /*! Return 0 success, -1 incompatible values, 1 for error.
@@ -329,7 +319,7 @@ int LColorPatchData::assign(FieldExtPlace *ext,Value *v)
 int LColorPatchData::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 	                     Value **value_ret, ErrorLog *log)
 {
-	return -1;
+	return DrawableObject::Evaluate(func, len, context, parameters, settings, value_ret, log);
 }
 
 
@@ -437,7 +427,7 @@ int LImagePatchInterface::assign(FieldExtPlace *ext,Value *v)
 
 Value *LImagePatchInterface::dereference(const char *extstring, int len)
 {
-	return NULL;
+	return nullptr;
 }
 
 void LImagePatchInterface::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)

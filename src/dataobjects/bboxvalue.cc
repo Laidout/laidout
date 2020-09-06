@@ -104,7 +104,7 @@ ObjectDef *BBoxValue::makeObjectDef()
 	return objectdef;
 }
 
-//! Contructor for BBoxValue objects.
+//! Constructor for BBoxValue objects.
 int NewBBoxObject(ValueHash *context, ValueHash *parameters, Value **value_ret, ErrorLog &log)
 {
 	BBoxValue *v=new BBoxValue();
@@ -145,7 +145,13 @@ Value *NewBBoxValue() { return new BBoxValue; }
 //! Create a new ObjectDef with BBox characteristics. Always creates new one, does not search for BBox globally.
 ObjectDef *makeBBoxObjectDef()
 {
-	ObjectDef *sd=new ObjectDef(NULL,"BBox",
+	ObjectDef *sd = stylemanager.FindDef("BBox");
+	if (sd) {
+		sd->inc_count();
+		return sd;
+	}
+
+	sd = new ObjectDef(NULL,"BBox",
 			_("BBox"),
 			_("Bounding box"),
 			"class",
@@ -229,7 +235,7 @@ ObjectDef *makeBBoxObjectDef()
 int BBoxValue::Evaluate(const char *function,int len, ValueHash *context, ValueHash *pp, CalcSettings *settings,
 			             Value **value_ret, ErrorLog *log)
 {
-	if (isName(function,len,"clear")) {
+	if (isName(function,len,"ClearBBox")) {
 		ClearBBox();		 
 		if (value_ret) *value_ret=NULL;
 		return 0;

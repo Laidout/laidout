@@ -636,7 +636,10 @@ Group *Tiling::Render(Group *parent_space,
 
 		} else {
 			double w = basecells.e[0]->celloutline->MaxDimension()/50;
-			LineStyle *ls = new LineStyle(65535,0,0,65535, w, LAXCAP_Round,LAXJOIN_Round,0,LAXOP_Over);
+			LineStyle *ls = new LineStyle();
+			ls->width = w;
+			ls->capstyle = LAXCAP_Round;
+			ls->joinstyle = LAXJOIN_Round;
 			ls->Colorf(.5,.5,.5,1.);
 			trace = new Group;
 			trace->Id("base_cells");

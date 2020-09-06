@@ -187,20 +187,24 @@ Value *LVoronoiData::duplicate()
 
 ObjectDef *LVoronoiData::makeObjectDef()
 {
-
 	ObjectDef *sd=stylemanager.FindDef("VoronoiData");
     if (sd) {
         sd->inc_count();
         return sd;
     }
 
-	ObjectDef *affinedef=stylemanager.FindDef("Affine");
-	sd=new ObjectDef(affinedef,
+	ObjectDef *gdef = stylemanager.FindDef("Group");
+	if (!gdef) {
+		Group g;
+		gdef = g.GetObjectDef();
+	}
+	sd = new ObjectDef(gdef,
 			"VoronoiData",
             _("Voronoi Data"),
             _("Delauney triangles and Voronoi regions"),
             "class",
             NULL,NULL);
+	stylemanager.AddObjectDef(sd, 0);
 
 //	sd->pushFunction("FlipColors",_("Flip Colors"),_("Flip the order of colors"), NULL,
 //					 NULL);
@@ -238,7 +242,7 @@ Value *LVoronoiData::dereference(const char *extstring, int len)
 //		return new DoubleValue(maxy);
 //	}
 
-	return NULL;
+	return DrawableObject::dereference(extstring, len);
 }
 
 int LVoronoiData::assign(FieldExtPlace *ext,Value *v)
@@ -280,13 +284,7 @@ int LVoronoiData::assign(FieldExtPlace *ext,Value *v)
 //		}
 //	}
 
-	AffineValue affine(m());
-	int status=affine.assign(ext,v);
-	if (status==1) {
-		m(affine.m());
-		return 1;
-	}
-	return 0;
+	return DrawableObject::assign(ext,v);
 }
 
 /*! Return 0 success, -1 incompatible values, 1 for error.
@@ -301,14 +299,7 @@ int LVoronoiData::Evaluate(const char *func,int len, ValueHash *context, ValueHa
 //		return 0;
 //	}
 
-	AffineValue v(m());
-	int status=v.Evaluate(func,len,context,parameters,settings,value_ret,log);
-	if (status==0) {
-		m(v.m());
-		return 0;
-	}
-
-	return status;
+	return DrawableObject::Evaluate(func, len, context, parameters, settings, value_ret, log);
 }
 
 

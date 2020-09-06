@@ -143,6 +143,7 @@ ObjectDef *Fold::makeObjectDef()
 			"int", "[0..", "0", 0, NULL);
 
 	foldd->pushEnum("direction", _("Direction"), _("Direction of the fold: left, right, top, or bottom."),
+			false, //whether is enumclass or enum instance
 				 NULL, NULL, NULL,
 				 "Left",_("Left"),_("Right over to Left"),
 				 "UnderLeft",_("Under Left"),_("Right under to Left"),
@@ -1040,6 +1041,7 @@ ObjectDef *Signature::makeObjectDef()
 
 
 	sd->pushEnum("binding", _("Binding"), _("left, right, top, or bottom. The side to expect a document to be bound."),
+			false, //whether is enumclass or enum instance
 				 "Left", NULL, NULL, //defvalue, newfunc, newstylefunc
 				 "Left",_("Left"),_("Left"),
 				 "Right",_("Right"),_("Right"),
@@ -1478,7 +1480,9 @@ ObjectDef *PaperPartition::makeObjectDef()
 	def->push("tilegapy", _("V Tile Gap"), _("How much space to put between folding areas vertically"),
 			"real", "[0..", "0", 0, NULL);
 
-	def->pushEnum("work_and_turn",_("Work and turn"), _("Work and turn"), NULL,NULL,NULL,
+	def->pushEnum("work_and_turn",_("Work and turn"), _("Work and turn"),
+				false, //whether is enumclass or enum instance
+				NULL,NULL,NULL,
 					"turn",_("Turn"),_("Flip paper along vertical axis"),
 					"turnBF",_("Turn BF"),_("Flip paper along vertical axis with front on the right"),
 					"tumble",_("Tumble"),_("Flip paper along horizontal axis"),

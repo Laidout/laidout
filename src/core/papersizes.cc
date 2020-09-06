@@ -678,6 +678,7 @@ ObjectDef *PaperStyle::makeObjectDef()
 	sd->pushEnum("orientation",
 			_("Orientation"),
 			_("Either portrait (0) or landscape (1)"),
+			false, //whether is enumclass or enum instance
 			"portrait",//defval
 			NULL,NULL,//new funcs
 			  "portrait",_("Portrait"),_("Width and height are as normal"),

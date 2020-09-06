@@ -19,6 +19,7 @@
 #include "../../nodes/nodeinterface.h"
 #include "../../nodes/nodes.h"
 #include "../../calculator/curvevalue.h"
+#include "../../dataobjects/imagevalue.h"
 #include "../../configured.h"
 #include "geglnodes.h"
 #include "svg/svgnodes.h"

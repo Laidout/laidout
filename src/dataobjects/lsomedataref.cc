@@ -126,8 +126,12 @@ ObjectDef *LSomeDataRef::makeObjectDef()
         return sd;
     }
 
-	ObjectDef *affinedef=stylemanager.FindDef("Affine");
-	sd=new ObjectDef(affinedef,
+	ObjectDef *gdef = stylemanager.FindDef("Group");
+	if (!gdef) {
+		Group g;
+		gdef = g.GetObjectDef();
+	}
+	sd = new ObjectDef(gdef,
 			"SomeDataRef",
             _("SomeDataRef"),
             _("A linked clone of an object"),
@@ -146,7 +150,7 @@ Value *LSomeDataRef::dereference(const char *extstring, int len)
 		return NULL;
 	}
 
-	return NULL;
+	return DrawableObject::dereference(extstring, len);
 }
 
 int LSomeDataRef::assign(FieldExtPlace *ext,Value *v)
@@ -169,19 +173,13 @@ int LSomeDataRef::assign(FieldExtPlace *ext,Value *v)
 			}
 		}
 	}
-
-	AffineValue affine(m());
-	int status=affine.assign(ext,v);
-	if (status==1) {
-		m(affine.m());
-		return 1;
-	}
-	return 0;
+ 
+	return DrawableObject::assign(ext,v);
 }
 
-//int LSomeDataRef::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
-//	                     Value **value_ret, ErrorLog *log)
-//{
+int LSomeDataRef::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+	                     Value **value_ret, Laxkit::ErrorLog *log)
+{
 //	if (len==8 && !strncmp(func,"LoadFile",8)) {
 //		if (!parameters) return -1;
 //		int status=0;
@@ -194,9 +192,9 @@ int LSomeDataRef::assign(FieldExtPlace *ext,Value *v)
 //		LoadImage(s,NULL);
 //		return 0;
 //	}
-//
-//	return -1;
-//}
+
+	return DrawableObject::Evaluate(func, len, context, parameters, settings, value_ret, log);
+}
 
 
 

@@ -180,7 +180,7 @@ ValueTypes element_NameToType(const char *type)
  *
  * Return
  *  0 for success, value optionally returned.
- * -1 for no value returned due to incompatible parameters, which aids in function overloading.
+ * -1 for no value returned due to incompatible parameters or name not known, which aids in function overloading.
  *  1 for parameters ok, but there was somehow an error, so no value returned.
  */
 
@@ -617,29 +617,6 @@ int ObjectDef::SetType(const char *type)
 	return 0;
 }
 
-/*! \ingroup misc
- * Append src to dest, but escape newlines, tabs, and quotes.
- */
-char *appendescaped(char *&dest, const char *src, char quote)
-{
-	if (!src) return dest;
-
-	int n=0;
-	for (unsigned int c=0; c<strlen(src); c++) if (src[c]==quote || src[c]=='\n' || src[c]=='\t') n++;
-	if (n==0) return appendstr(dest,src);
-
-	char newsrc[strlen(src)+n+1];
-	n=strlen(src);
-	int i=0;
-	int is=0;
-	while (is<n) {
-		if (src[is]==quote) newsrc[i++]='\\';
-		newsrc[i++]=src[is++];
-	}
-	newsrc[i]='\0';
-	return appendstr(dest,newsrc);
-}
-
 LaxFiles::Attribute *ObjectDef::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
 {
 	if (what==0 || what==-1) {
@@ -1063,13 +1040,14 @@ int ObjectDef::pushEnumValue(const char *str, const char *Str, const char *dsc, 
  * description.
  *
  * - the enum value scripting name,
- * - the enum value translated, human readable name
- * - the description of the value
+ * - the enum value translated, human readable name for menus
+ * - the description of the value for tool tips
  *
  * For instance, if you are adding 2 enum values, you must supply 6 const char * values, followed
  * by a single NULL, or all hell will break loose.
  */
 int ObjectDef::pushEnum(const char *nname,const char *nName,const char *ndesc,
+					 bool is_class, //false means this enum works ONLY for this field. else it can be used elsewhere as a type
 					 const char *newdefval,
 					 NewObjectFunc nnewfunc,
 					 ObjectFunc nstylefunc,
@@ -1497,30 +1475,30 @@ int ObjectDef::getInfo(int index,
 						const char **objtype,
 						ObjectDef **def_ret)
 {
-	ObjectDef *def=NULL;
-	index=findActualDef(index,&def);
+	ObjectDef *def = NULL;
+	index = findActualDef(index,&def);
 	if (!def) return 1; // otherwise index should be a valid value in fields, or refer to this
-	if (index==-1) {
-		if (nm) *nm=def->name;
-		if (Nm) *Nm=def->Name;
-		if (desc) *desc=def->description;
-		if (rng) *rng=def->range;
-		if (defv) *defv=def->defaultvalue;
-		if (fmt) *fmt=def->format;
-		if (objtype) *objtype=def->format_str;
-		if (def_ret) *def_ret=def;
+	if (index == -1) {
+		if (nm)      *nm      = def->name;
+		if (Nm)      *Nm      = def->Name;
+		if (desc)    *desc    = def->description;
+		if (rng)     *rng     = def->range;
+		if (defv)    *defv    = def->defaultvalue;
+		if (fmt)     *fmt     = def->format;
+		if (objtype) *objtype = def->format_str;
+		if (def_ret) *def_ret = def;
 		return 0;
 	}
 
-	if (!fields) return 1;
-	if (nm) *nm=def->fields->e[index]->name;
-	if (Nm) *Nm=def->fields->e[index]->Name;
-	if (desc) *desc=def->fields->e[index]->description;
-	if (rng) *rng=def->fields->e[index]->range;
-	if (defv) *defv=def->fields->e[index]->defaultvalue;
-	if (fmt) *fmt=def->fields->e[index]->format;
-	if (objtype) *objtype=def->fields->e[index]->format_str;
-	if (def_ret) *def_ret=def->fields->e[index];
+	if (!def->fields) return 1; // we hope the returned index is valid
+	if (nm)      *nm      = def->fields->e[index]->name;
+	if (Nm)      *Nm      = def->fields->e[index]->Name;
+	if (desc)    *desc    = def->fields->e[index]->description;
+	if (rng)     *rng     = def->fields->e[index]->range;
+	if (defv)    *defv    = def->fields->e[index]->defaultvalue;
+	if (fmt)     *fmt     = def->fields->e[index]->format;
+	if (objtype) *objtype = def->fields->e[index]->format_str;
+	if (def_ret) *def_ret = def->fields->e[index];
 	return 0;
 }
 
@@ -1550,7 +1528,7 @@ ObjectDef *ObjectDef::getField(int index)
  */
 int ObjectDef::findActualDef(int index,ObjectDef **def_ret)
 {
-	if (index<0) { *def_ret=NULL; return -1; }
+	if (index < 0) { *def_ret = nullptr; return -1; }
 
 	 // if enum, or this is single unit (not extending anything): index must be 0
 	if (index==0 && (format==VALUE_Enum || (!extendsdefs.n && (!fields || !fields->n)))) {
@@ -1561,24 +1539,28 @@ int ObjectDef::findActualDef(int index,ObjectDef **def_ret)
 	 // else there should be fields somewhere
 	int n=0;
 	if (extendsdefs.n) {
+		int ii = index;
+		int nn = 0;
 		ObjectDef *extendsdef;
-		for (int c=0; c<extendsdefs.n; c++) {
-			extendsdef=extendsdefs.e[c];
-			n+=extendsdef->getNumFields(); //counts all fields in extensions
-			if (index<n) { // index lies in extendsdef somewhere
-				return extendsdef->findActualDef(index,def_ret);
+		for (int c=0; ii >= 0 && c<extendsdefs.n; c++) {
+			extendsdef = extendsdefs.e[c];
+			nn = extendsdef->getNumFields();
+			n += nn; //counts all fields in extensions
+			if (ii < nn) { // index lies in extendsdef somewhere
+				return extendsdef->findActualDef(ii, def_ret);
 			}
+			ii -= nn;
 		}
 	}
 
 	 // index puts it in *this.
-	index-=n;
+	index -= n;
 	 // index>=0 at this point implies that this has fields, assuming original index is valid
 	if (!fields || !fields->n || index<0 || index>=fields->n)  { //error
-		*def_ret=NULL;
+		*def_ret = nullptr;
 		return -1;
 	}
-	*def_ret=this;
+	*def_ret = this;
 	return index;
 }
 
@@ -4450,6 +4432,24 @@ EnumValue::EnumValue(ObjectDef *baseenum, int which)
 	value=which;
 }
 
+/*! baseenum needs to not be null. */
+EnumValue::EnumValue(ObjectDef *baseenum, const char *which)
+{
+	if (objectdef) objectdef->dec_count();
+	objectdef=baseenum;
+	if (objectdef) objectdef->inc_count();
+
+	value = 0;
+	const char *nm = nullptr;
+	for (int c = 0; c<baseenum->getNumEnumFields(); c++) {
+		baseenum->getEnumInfo(c, &nm);
+		if (!strcmp(which, nm)) {
+			value = c;
+			break;
+		}
+	}
+}
+
 EnumValue::~EnumValue()
 {
 }
@@ -4585,6 +4585,11 @@ void ObjectValue::SetObject(anObject *nobj, bool absorb_count)
 
 ColorValue::ColorValue()
 {
+}
+
+ColorValue::ColorValue(const Laxkit::ScreenColor &scolor)
+{
+	color.Set(scolor);
 }
 
 /*! Set from a hex string.
@@ -4787,6 +4792,18 @@ double getNumberValue(Value *v, int *isnum)
 	return 0;
 }
 
+/*! Return whether v was a number (int, real, or boolean). d gets set only if it was a number.
+ */
+bool setNumberValue(double *d, Value *v)
+{
+	switch (v->type()) {
+		case VALUE_Int:     { *d = dynamic_cast<IntValue*>(v)->i;     return true; }
+		case VALUE_Real:    { *d = dynamic_cast<DoubleValue*>(v)->d;  return true; }
+		case VALUE_Boolean: { *d = dynamic_cast<BooleanValue*>(v)->i; return true; }
+	}
+	return false;
+}
+
 /*! Get integer value from bool, int, or real.
  * Return actual type in isnum, 0 for unknown, 1 for real, 2 for int, 3 for bool.
  */
@@ -4900,6 +4917,20 @@ int extequal(const char *str, int len, const char *field, char **next_ret)
 int isName(const char *longstr,int len, const char *null_term_str)
 { return len==(int)strlen(null_term_str) && !strncmp(longstr,null_term_str,len); }
 
+
+// /*! Convenience cast to handle direct dynamic cast, or if object is within an ObjectValue.
+//  */
+// template<class T>
+// T *ObjectCast(anObject *v)
+// {
+// 	T *o = dynamic_cast<T*>(v);
+// 	if (o) return o;
+// 	ObjectValue *ov = dynamic_cast<ObjectValue*>(v);
+// 	if (ov) {
+// 		o = dynamic_cast<T*>(ov->object);
+// 		if (o) return o;
+// 	}
+// }
 
 
 } // namespace Laidout

@@ -97,6 +97,7 @@ ObjectDef *GradientValue::makeObjectDef()
 
     sd->pushVariable("colors",  _("Colors"),  _("List of colors"),    "array of GradientColor",0, NULL,0);
 
+	stylemanager.AddObjectDef(sd,0);
     return sd;
 }
 
@@ -212,8 +213,12 @@ ObjectDef *LGradientData::makeObjectDef()
         return sd;
     }
 
-	ObjectDef *affinedef=stylemanager.FindDef("Affine");
-	sd=new ObjectDef(affinedef,
+	ObjectDef *gdef = stylemanager.FindDef("Group");
+	if (!gdef) {
+		Group g;
+		gdef = g.GetObjectDef();
+	}
+	sd = new ObjectDef(gdef,
 			"GradientData",
             _("GradientData"),
             _("A gradient"),
@@ -231,6 +236,7 @@ ObjectDef *LGradientData::makeObjectDef()
 
 	//sd->pushVariable("stops",  _("Stops"),  _("The set of color positions"), NULL,0);
 
+	stylemanager.AddObjectDef(sd,0);
 	return sd;
 }
 
@@ -255,8 +261,8 @@ Value *LGradientData::dereference(const char *extstring, int len)
 //	if (extequal(extstring,len, "colors")) {
 //		return new DoubleValue(maxy);
 //	}
-
-	return NULL;
+//	
+	return DrawableObject::dereference(extstring, len);
 }
 
 int LGradientData::assign(FieldExtPlace *ext,Value *v)
@@ -298,13 +304,7 @@ int LGradientData::assign(FieldExtPlace *ext,Value *v)
 		}
 	}
 
-	AffineValue affine(m());
-	int status=affine.assign(ext,v);
-	if (status==1) {
-		m(affine.m());
-		return 1;
-	}
-	return 0;
+	return DrawableObject::assign(ext,v);
 }
 
 /*! Return 0 success, -1 incompatible values, 1 for error.
@@ -319,14 +319,7 @@ int LGradientData::Evaluate(const char *func,int len, ValueHash *context, ValueH
 		return 0;
 	}
 
-	AffineValue v(m());
-	int status=v.Evaluate(func,len,context,parameters,settings,value_ret,log);
-	if (status==0) {
-		m(v.m());
-		return 0;
-	}
-
-	return status;
+	return DrawableObject::Evaluate(func, len, context, parameters, settings, value_ret, log);
 }
 
 

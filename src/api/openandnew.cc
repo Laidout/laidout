@@ -72,6 +72,7 @@ ObjectDef *makeNewDocumentObjectDef()
 	sd->pushEnum("orientation",
 			_("Orientiation"),
 			_("Either portrait (0) or landscape (1)"),
+			false, //whether is enumclass or enum instance
 			"portrait",
 			NULL,NULL,
 			"portrait", _("Portrait"), _("Long direction is vertical"),

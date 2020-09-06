@@ -72,6 +72,7 @@ ObjectDef *makeReimposeObjectDef()
 	sd->pushEnum("orientation",
 			_("Orientation"),
 			_("Orientation of the paper. Either portrait (0) or landscape (1)."),
+			false, //whether is enumclass or enum instance
 			"portrait",
 			NULL,NULL,
 			"portrait", _("Portrait"), _("Long direction is vertical"),

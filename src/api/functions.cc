@@ -51,15 +51,14 @@ int InitObjectDefinitions()
 	PaperStyle paper;
 	paper.GetObjectDef();
 
-	PageStyle *ps=new PageStyle;
-	ps->GetObjectDef();
-	ps->dec_count();
-
+	PageStyle ps;
+	ps.GetObjectDef();
+	
 	RectPageStyle rps(RECTPAGE_LRTB);
 	rps.GetObjectDef();
 
 
-	stylemanager.AddObjectDef(makeAffineObjectDef(),1);
+	//stylemanager.AddObjectDef(makeAffineObjectDef(),1);
 	stylemanager.AddObjectDef(makeBBoxObjectDef(),1);
 	stylemanager.pushVariable("laidout",_("Laidout"),_("Main Laidout container"),NULL,0,laidout,0);
 	

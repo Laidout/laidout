@@ -2328,12 +2328,30 @@ void LaidoutCalculator::showDef(char *&temp, ObjectDef *sd)
 		appendstr(temp,", extends: ");
 		for (int c2=0; c2<sd->extendsdefs.n; c2++) {
 			appendstr(temp,sd->extendsdefs.e[c2]->name);
+			if (c2 != sd->extendsdefs.n-1) appendstr(temp, ", ");
 		}
 	}
 
+	const char *nm,*Nm,*desc,*rng,*fmts;
+
+	if (sd->format == VALUE_Enum && sd->getNumFields()) {
+		appendstr(temp,"  ");
+		appendstr(temp,_("Possible values:\n"));
+		for (int c3=0; c3<sd->getNumEnumFields(); c3++) {
+			sd->getEnumInfo(c3,&nm,&Nm,&desc);
+			appendstr(temp,"    ");
+			appendstr(temp,nm);
+			appendstr(temp,": ");
+			appendstr(temp,Nm);
+			appendstr(temp,",   ");
+			appendstr(temp,desc);
+			appendstr(temp,"\n");
+		}
+		return;
+	}
+
 	if ((sd->format==VALUE_Namespace || sd->format==VALUE_Class || sd->format==VALUE_Fields || sd->format==VALUE_Function)
-			&& sd->fields && sd->getNumFields()) {
-		const char *nm,*Nm,*desc,*rng,*fmts;
+			&& sd->getNumFields()) {
 		ValueTypes fmt;
 		ObjectDef *subdef=NULL;
 		appendstr(temp,"\n");
@@ -2397,20 +2415,6 @@ void LaidoutCalculator::showDef(char *&temp, ObjectDef *sd)
 					appendstr(temp,desc);
 				}
 				appendstr(temp,"\n");
-				if (fmt==VALUE_Enum && subdef && subdef->fields) {
-					appendstr(temp,"    ");
-					appendstr(temp,_("Possible values:\n"));
-					for (int c3=0; c3<subdef->fields->n; c3++) {
-						subdef->getInfo(c3,&nm,&Nm,&desc);
-						appendstr(temp,"      ");
-						appendstr(temp,nm);
-						appendstr(temp,": ");
-						appendstr(temp,Nm);
-						appendstr(temp,",   ");
-						appendstr(temp,desc);
-						appendstr(temp,"\n");
-					}
-				}
 			}
 		}
 	} //if fields or function

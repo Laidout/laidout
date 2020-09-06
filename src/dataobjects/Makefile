@@ -14,6 +14,7 @@ CPPFLAGS= -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. `pkg-config --cflags freetype2`
 
 
 objs= \
+	affinevalue.o \
 	bboxvalue.o \
 	group.o \
 	objectcontainer.o \
@@ -22,6 +23,8 @@ objs= \
 	datafactory.o \
 	groupinterface.o \
 	epsdata.o \
+	helpertypes.o \
+	imagevalue.o \
 	limagepatch.o \
 	limagedata.o \
 	limageinterface.o \

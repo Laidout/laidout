@@ -43,8 +43,15 @@
 #include "../dataobjects/groupinterface.h"
 #include "../dataobjects/mysterydata.h"
 #include "../dataobjects/limageinterface.h"
+#include "../dataobjects/limagedata.h"
 #include "../dataobjects/lgradientdata.h"
 #include "../dataobjects/lpathsdata.h"
+#include "../dataobjects/lcaptiondata.h"
+#include "../dataobjects/ltextonpath.h"
+#include "../dataobjects/lengraverfilldata.h"
+#include "../dataobjects/lvoronoidata.h"
+
+#include "../dataobjects/imagevalue.h"
 
 #include "../interfaces/aligninterface.h"
 #include "../interfaces/nupinterface.h"
@@ -140,13 +147,20 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	}
 
 
+
 	 //------Group
+	Group group;
+	group.GetObjectDef();
 	i=new GroupInterface(id++,NULL);
 	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 	existingpool->push(i);
 	i->dec_count();
 	
 	 //------Images
+	ImageValue iv;
+	iv.GetObjectDef();
+	LImageData lid;
+	lid.GetObjectDef();
 	LImageInterface *imagei=new LImageInterface(id++,NULL);
 	tools->AddResource("tools", imagei, NULL, imagei->whattype(), imagei->Name(), NULL,NULL,NULL);
 	imagei->style=1;
@@ -154,7 +168,9 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	imagei->dec_count();
 	
 	 //------Gradients
-	LGradientInterface *gi=new LGradientInterface(id++,NULL);
+	GradientValue gv;  gv.GetObjectDef();
+	LGradientData lgd; lgd.GetObjectDef();
+	LGradientInterface *gi = new LGradientInterface(id++,NULL);
 	tools->AddResource("tools", gi, NULL, gi->whattype(), gi->Name(), NULL,NULL,NULL);
 	gi->createv=flatpoint(1,0);
 	gi->creater1=gi->creater2=1;
@@ -162,30 +178,40 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	gi->dec_count();
 	
 	 //------Paths
+	LPathsData pdata;
+	pdata.GetObjectDef();
 	i=new LPathInterface(id++,NULL);
 	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
-	existingpool->push(i); //2nd null is pathop pool
+	existingpool->push(i);
 	i->dec_count();
 
 	 //-----Caption
+	LCaptionData caption;
+	caption.GetObjectDef();
 	i=new CaptionInterface(id++,NULL);
 	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 	existingpool->push(i);
 	i->dec_count();
 		
 	 //------TextOnPath
+	LTextOnPath tonpath;
+	tonpath.GetObjectDef();
 	i=new TextOnPathInterface(NULL,id++);
 	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 	existingpool->push(i);
 	i->dec_count();
 
 	 //------Color Patch
+	LColorPatchData cpatch;
+	cpatch.GetObjectDef();
 	i=new LColorPatchInterface(id++,NULL);
 	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 	existingpool->push(i);
 	i->dec_count();
 	
 	 //------Image Patch
+	LImagePatchData ipatch;
+	ipatch.GetObjectDef();
 	LImagePatchInterface *ip=new LImagePatchInterface(id++,NULL);
 	tools->AddResource("tools", ip, NULL, ip->whattype(), ip->Name(), NULL,NULL,NULL);
 	ip->style=IMGPATCHI_POPUP_INFO;
@@ -194,6 +220,8 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	ip->dec_count();
 	
 	 //-----Engraver
+	LEngraverFillData engdata;
+	engdata.GetObjectDef();
 	i=new EngraverFillInterface(id++,NULL);
 	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 	i->InitializeResources();
@@ -232,6 +260,8 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	i->dec_count();
 
 	 //------Delauney
+	LVoronoiData voronoi;
+	voronoi.GetObjectDef();
 	i=new DelauneyInterface(NULL,id++,NULL);
 	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 	existingpool->push(i);

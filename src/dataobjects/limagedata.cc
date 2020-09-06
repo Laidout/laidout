@@ -118,8 +118,12 @@ ObjectDef *LImageData::makeObjectDef()
         return sd;
     }
 
-	ObjectDef *affinedef=stylemanager.FindDef("Affine");
-	sd=new ObjectDef(affinedef,
+	ObjectDef *gdef = stylemanager.FindDef("Group");
+	if (!gdef) {
+		Group g;
+		gdef = g.GetObjectDef();
+	}
+	sd = new ObjectDef(gdef,
 			"ImageData",
             _("ImageData"),
             _("An image"),
@@ -135,6 +139,7 @@ ObjectDef *LImageData::makeObjectDef()
 	sd->pushVariable("width", _("Width"), _("Pixel width"),  "real",0,   NULL,0);
 	sd->pushVariable("height",_("Height"),_("Pixel height"), "real",0,   NULL,0);
 
+	stylemanager.AddObjectDef(sd, 0);
 	return sd;
 }
 
@@ -161,7 +166,7 @@ Value *LImageData::dereference(const char *extstring, int len)
 	//if (extequal(extstring,len, "ColorSpace")) {
 	//if (extequal(extstring,len, "HasAlpha")) {
 
-	return NULL;
+	return DrawableObject::dereference(extstring, len);
 }
 
 int LImageData::assign(FieldExtPlace *ext,Value *v)
@@ -179,13 +184,7 @@ int LImageData::assign(FieldExtPlace *ext,Value *v)
 		}
 	}
 
-	AffineValue affine(m());
-	int status=affine.assign(ext,v);
-	if (status==1) {
-		m(affine.m());
-		return 1;
-	}
-	return 0;
+	return DrawableObject::assign(ext,v);
 }
 
 /*! Return 0 success, -1 incompatible values, 1 for error.
@@ -206,14 +205,7 @@ int LImageData::Evaluate(const char *func,int len, ValueHash *context, ValueHash
 		return 0;
 	}
 
-	AffineValue v(m());
-	int status=v.Evaluate(func,len,context,parameters,settings,value_ret,log);
-	if (status==0) {
-		m(v.m());
-		return 0;
-	}
-
-	return status;
+	return DrawableObject::Evaluate(func, len, context, parameters, settings, value_ret, log);
 }
 
 

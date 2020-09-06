@@ -118,60 +118,86 @@ ObjectDef *LCaptionData::makeObjectDef()
         return sd;
     }
 
-	ObjectDef *affinedef=stylemanager.FindDef("Affine");
-	sd=new ObjectDef(affinedef,
+	ObjectDef *groupdef = stylemanager.FindDef("Group");
+	if (!groupdef) {
+		Group g;
+		groupdef = g.GetObjectDef();
+	}
+	sd = new ObjectDef(groupdef,
 			"CaptionData",
             _("CaptionData"),
             _("A snippet of text"),
             "class",
             NULL,NULL);
+	stylemanager.AddObjectDef(sd, 0);
 
-	//sd->pushVariable("file",  _("File"),  _("File name"),    "string",0, NULL,0);
-	//sd->pushVariable("width", _("Width"), _("Pixel width"),  "real",0,   NULL,0);
-	//sd->pushVariable("height",_("Height"),_("Pixel height"), "real",0,   NULL,0);
+
+	sd->pushVariable("color",    _("Color"),  _("Color fill"),    "Color",0, NULL,0);
+	sd->pushVariable("fontsize", _("Font size"), _("Size of font in local units"),  "real",0,   NULL,0);
+	sd->pushVariable("text",_("Text"),_("Text"), "string",0,   NULL,0);
+	//sd->pushVariable("font",_("Font"),_("The font"), "Font",0,   NULL,0);
 
 	return sd;
 }
 
 Value *LCaptionData::dereference(const char *extstring, int len)
 {
-//	if (extequal(extstring,len, "file")) {
-//		return new StringValue(image ? image->filename : "");
-//	}
-//
-//	if (extequal(extstring,len, "width")) {
-//		return new DoubleValue(maxx);
-//	}
-//
-//	if (extequal(extstring,len, "height")) {
-//		return new DoubleValue(maxy);
-//	}
+	if (extequal(extstring,len, "color")) {
+		return new ColorValue(red, green, blue, CaptionData::alpha);
+	}
 
-	return NULL;
+	if (extequal(extstring,len, "fontsize")) {
+		return new DoubleValue(Size());
+	}
+
+	if (extequal(extstring,len, "text")) {
+		char *text = GetText();
+		StringValue *s = new StringValue;
+		s->InstallString(text);
+		return s;
+	}
+
+	// if (extequal(extstring,len, "height")) {
+	// 	return new FontValue(font);
+	// }
+
+	return DrawableObject::dereference(extstring, len);
 }
 
+/*! Return 1 for success, 2 for success, but other contents changed too, -1 for unknown extension.
+ * 0 for total fail, as when v is wrong type.
+ */
 int LCaptionData::assign(FieldExtPlace *ext,Value *v)
 {
 	if (ext && ext->n()==1) {
 		const char *str=ext->e(0);
 		if (str) {
-//			if (!strcmp(str,"file")) {
-//				LoadImage(str,NULL);
-//				return 0;
+			if (!strcmp(str,"color")) {
+				ColorValue *cv = dynamic_cast<ColorValue*>(v);
+				if (!cv) return 0;
+				red   = cv->color.Red();
+				green = cv->color.Green();
+				blue  = cv->color.Blue();
+				CaptionData::alpha = cv->color.Alpha();
+				return 1;
 
-			//} else if (!strcmp(str,"width")) { <-- these are read only
-			//} else if (!strcmp(str,"height")) {
-//			}
+			} else if (!strcmp(str,"fontsize")) {
+				double d;
+				if (!setNumberValue(&d, v)) return 0;
+				if (d < 0) return 0;
+				Size(d);
+				return 1;
+
+			} else if (!strcmp(str,"text")) {
+				StringValue *s = dynamic_cast<StringValue*>(v);
+				if (!s) return 0;
+				SetText(s->str);
+				return 1;
+			}
 		}
 	}
 
-	AffineValue affine(m());
-	int status=affine.assign(ext,v);
-	if (status==1) {
-		m(affine.m());
-		return 1;
-	}
-	return 0;
+	return DrawableObject::assign(ext, v);
 }
 
 /*! Return 0 success, -1 incompatible values, 1 for error.
@@ -192,14 +218,7 @@ int LCaptionData::Evaluate(const char *func,int len, ValueHash *context, ValueHa
 //		return 0;
 //	}
 
-	AffineValue v(m());
-	int status=v.Evaluate(func,len,context,parameters,settings,value_ret,log);
-	if (status==0) {
-		m(v.m());
-		return 0;
-	}
-
-	return status;
+	return DrawableObject::Evaluate(func,len, context, parameters, settings, value_ret, log);
 }
 
 

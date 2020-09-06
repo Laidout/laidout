@@ -88,6 +88,8 @@ class ValueHash;
 class CalcSettings;
 
 typedef Value *(*NewObjectFunc)();
+
+//return 0 for success, -1 incompatible params, 1 error with params
 typedef int (*ObjectFunc)(ValueHash *context, ValueHash *parameters, Value **value_ret, Laxkit::ErrorLog &log);
 //typedef int (*ObjectFunc)(const char *func,int len, ValueHash *context, ValueHash *parameters,  CalcSettings *settings,
 //						  Value **value_ret, Laxkit::ErrorLog *log);
@@ -211,8 +213,8 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	Laxkit::RefPtrStack<ObjectDef> extendsdefs;
 
 	 //Default callers
-	NewObjectFunc newfunc;
-	ObjectFunc stylefunc;
+	NewObjectFunc newfunc; //bare creation func
+	ObjectFunc stylefunc; //constructor func with parameters
 	FunctionEvaluator *evaluator;
 	OpFuncEvaluator *opevaluator;
 	Value *newObject(ObjectDef *def);
@@ -237,9 +239,9 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	 // OBJECTDEF_FORCE_TYPES
 	unsigned int flags;
 
-	ValueTypes format;    // int,real,string,... fields means it is not a builtin type
+	ValueTypes format;    //built in type: int,real,string,... fields means it is not really a builtin type, implies use of fieldsformat
 	char *format_str;     //for convenience, this is a string name of this->format
-	int islist;           //if this element is actually an array of the given type
+	int islist;           //if this variable is actually an array of the given type
 	int fieldsformat;     //dynamically assigned to new object types
 	ObjectDef *fieldsdef; //a def associated with fieldsformat. Overrides fields.
 	Laxkit::RefPtrStack<ObjectDef> *fields;
@@ -310,6 +312,7 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 					 NewObjectFunc nnewfunc,
 					 ObjectFunc nstylefunc);
 	virtual int pushEnum(const char *nname,const char *nName,const char *ndesc,
+					 bool is_class, //false means this enum works ONLY for this field. else it can be used elsewhere as a type
 					 const char *newdefval,
 					 NewObjectFunc nnewfunc,
 					 ObjectFunc nstylefunc,
@@ -353,10 +356,9 @@ class Value : virtual public Laxkit::anObject, virtual public LaxFiles::DumpUtil
 	virtual const char *Id();
 
 	//virtual int isValidExt(const char *extstring, FieldPlace *place_ret) = 0; //for assignment checking
-	virtual int assign(Value *v, const char *extstring); //return 1 for success, 2 for success, but other contents changed too, -1 for unknown
+	virtual int assign(Value *v, const char *extstring); //1 success, 0 fail, 2 for success but other contents changed too, -1 for unknown
 	virtual int assign(FieldExtPlace *ext,Value *v); //return 1 for success, 2 for success, but other contents changed too, -1 for unknown
 
-	//virtual Value *dereference(const FieldPlace &ext) = 0; // returns a reference if possible, or new. Calling code MUST decrement count.
 	virtual Value *dereference(const char *extstring, int len);
 	virtual Value *dereference(int index);
 
@@ -367,10 +369,10 @@ class Value : virtual public Laxkit::anObject, virtual public LaxFiles::DumpUtil
     virtual const char *FieldName(int i);
     virtual int FieldIndex(const char *name);
 
+    //from DumpUtility:
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
-	//virtual int Validate(); //after load in, make sure values are valid for type
 };
 
 
@@ -663,6 +665,7 @@ class EnumValue : public Value
 	int value;
 	//ObjectDef *enumdef;
 	EnumValue(ObjectDef *baseenum, int which);
+	EnumValue(ObjectDef *baseenum, const char *which);
 	virtual ~EnumValue();
 	virtual const char *whattype() { return "EnumValue"; }
 	virtual int getValueStr(char *buffer,int len);
@@ -724,6 +727,7 @@ class ColorValue : public Value
 	ColorValue();
 	ColorValue(const char *color);
 	ColorValue(double r, double g, double b, double a);
+	ColorValue(const Laxkit::ScreenColor &scolor);
 	//ColorValue(Laxkit::ColorBase &color);
 	virtual ~ColorValue();
 	virtual bool Parse(const char *str);
@@ -752,6 +756,7 @@ class ObjectValue : public Value
 //------------------------------- parsing helpers ------------------------------------
 ValueHash *MapParameters(ObjectDef *def,ValueHash *rawparams);
 double getNumberValue(Value *v, int *isnum);
+bool setNumberValue(double *d, Value *v);
 int getIntValue(Value *v, int *isnum);
 int isNumberType(Value *v, double *number_ret);
 int isVectorType(Value *v, double *values);

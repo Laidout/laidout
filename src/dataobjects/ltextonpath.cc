@@ -118,13 +118,18 @@ ObjectDef *LTextOnPath::makeObjectDef()
         return sd;
     }
 
-	ObjectDef *affinedef=stylemanager.FindDef("Affine");
-	sd=new ObjectDef(affinedef,
+	ObjectDef *gdef = stylemanager.FindDef("Group");
+	if (!gdef) {
+		Group g;
+		gdef = g.GetObjectDef();
+	}
+	sd=new ObjectDef(gdef,
 			"TextOnPath",
             _("TextOnPath"),
             _("Text on a path"),
             "class",
             NULL,NULL);
+	stylemanager.AddObjectDef(sd, 0);
 
 	sd->pushVariable("text",  _("Text"),  _("Text"),    "string",0, NULL,0);
 	//sd->pushVariable("width", _("Width"), _("Pixel width"),  "real",0,   NULL,0);
@@ -147,7 +152,8 @@ Value *LTextOnPath::dereference(const char *extstring, int len)
 //		return new DoubleValue(maxy);
 //	}
 
-	return NULL;
+
+	return DrawableObject::dereference(extstring, len);
 }
 
 int LTextOnPath::assign(FieldExtPlace *ext,Value *v)
@@ -165,13 +171,7 @@ int LTextOnPath::assign(FieldExtPlace *ext,Value *v)
 		}
 	}
 
-	AffineValue affine(m());
-	int status=affine.assign(ext,v);
-	if (status==1) {
-		m(affine.m());
-		return 1;
-	}
-	return 0;
+	return DrawableObject::assign(ext,v);
 }
 
 /*! Return 0 success, -1 incompatible values, 1 for error.
@@ -192,14 +192,7 @@ int LTextOnPath::Evaluate(const char *func,int len, ValueHash *context, ValueHas
 //		return 0;
 //	}
 
-	AffineValue v(m());
-	int status=v.Evaluate(func,len,context,parameters,settings,value_ret,log);
-	if (status==0) {
-		m(v.m());
-		return 0;
-	}
-
-	return status;
+	return DrawableObject::Evaluate(func, len, context, parameters, settings, value_ret, log);
 }
 
 

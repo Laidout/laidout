@@ -140,6 +140,7 @@ otherobjs= \
 	filetypes/ppt.o \
 	filetypes/scribus.o \
 	filetypes/svg.o \
+	dataobjects/affinevalue.o \
 	dataobjects/bboxvalue.o \
 	dataobjects/group.o \
 	dataobjects/objectcontainer.o \
@@ -148,6 +149,8 @@ otherobjs= \
 	dataobjects/datafactory.o \
 	dataobjects/groupinterface.o \
 	dataobjects/epsdata.o \
+	dataobjects/helpertypes.o \
+	dataobjects/imagevalue.o \
 	dataobjects/limagepatch.o \
 	dataobjects/limagedata.o \
 	dataobjects/limageinterface.o \

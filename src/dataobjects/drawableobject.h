@@ -278,49 +278,6 @@ class DrawableObject :  virtual public ObjectContainer,
 typedef DrawableObject Group;
 
 
-//------------------------------------ AffineValue ------------------------------------------------
-ObjectDef *makeAffineObjectDef();
-class AffineValue : virtual public Value, virtual public Laxkit::Affine, virtual public FunctionEvaluator
-{
-  public:
-	static int TypeNumber();
-
-	AffineValue();
-	AffineValue(const double *m);
-	virtual int type();
-    virtual const char *whattype() { return "AffineValue"; }
-	virtual ObjectDef *makeObjectDef();
-	virtual int getValueStr(char *buffer,int len);
-	virtual Value *duplicate();
-	virtual Value *dereference(int index);
-	//virtual int assign(FieldExtPlace *ext,Value *v);
-	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
-			             Value **value_ret, Laxkit::ErrorLog *log);
-};
-
-
-//------------------------------------ ImageValue ------------------------------------------------
-ObjectDef *makeImageValueDef();
-class ImageValue : virtual public Value, virtual public FunctionEvaluator
-{
-  public:
-	static int TypeNumber();
-	Laxkit::LaxImage *image;
-
-	ImageValue();
-	virtual ~ImageValue();
-	virtual int type();
-    virtual const char *whattype() { return "ImageValue"; }
-	virtual ObjectDef *makeObjectDef();
-	virtual int getValueStr(char *buffer,int len);
-	virtual Value *duplicate();
-	virtual Value *dereference(int index);
-	//virtual int assign(FieldExtPlace *ext,Value *v);
-	virtual void SetImage(Laxkit::LaxImage *newimage);
-	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
-			             Value **value_ret, Laxkit::ErrorLog *log);
-};
-
 
 } //namespace Laidout
 

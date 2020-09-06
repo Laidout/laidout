@@ -193,6 +193,7 @@ ObjectDef *makeImportConfigDef()
 	sd->pushEnum("keepmystery",
 			_("Keep mystery data"),
 			_("Whether to attempt to preserve things not understood"),
+			false, //whether is enumclass or enum instance
 			"sometimes",  //defvalue
 			nullptr,nullptr, //newfunc
 			"no", _("No"), _("Ignore all mystery data"),
@@ -707,6 +708,7 @@ ObjectDef *makeExportConfigDef()
 	sd->pushEnum("target",
 			_("Output target"),
 			_("Whether to try to save to a single file (0), or multiple files (1)"),
+			false, //whether is enumclass or enum instance
 			"one_file",  //defvalue
 			nullptr,nullptr, //newfunc, objectfunc
 			"one_file", _("One file"), _("Export all pages to a single file if possible"),
@@ -738,6 +740,7 @@ ObjectDef *makeExportConfigDef()
 	sd->pushEnum("evenodd",
 			_("Even or odd"),
 			_("Whether to export even, odd, or all spread indices in range"),
+			false, //whether is enumclass or enum instance
 			"all",  //defvalue
 			nullptr,nullptr, //newfunc
 			"all", _("All"), _("Export all spreads"),
@@ -747,6 +750,7 @@ ObjectDef *makeExportConfigDef()
 	sd->pushEnum("paperrotation",
 			_("Rotate paper"),
 			_("Whether to rotate the final exported paper on export"),
+			false, //whether is enumclass or enum instance
 			"0",  //defvalue
 			nullptr,nullptr, //newfunc
 			"0", _("0"), _("No rotation"),

@@ -2834,7 +2834,10 @@ void LaidoutViewport::Refresh()
 		if (spread->path) {
 			 //draw shadow if papergroup does not exist
 			FillStyle fs(0,0,0,0xffff, WindingRule,FillSolid,LAXOP_Over);
-			LineStyle ls(0xffff,0,0,0xffff, 1, LAXCAP_Round,LAXJOIN_Miter,0,LAXOP_Over);
+			LineStyle ls; //(0xffff,0,0,0xffff, 1, LAXCAP_Round,LAXJOIN_Miter,0,LAXOP_Over);
+			ls.Colorf(1.0,0.,0.,1.0);
+			ls.width = 1;
+			ls.capstyle = LAXCAP_Round;
 			ls.widthtype = 0;
 			ls.function = LAXOP_None;
 
@@ -2977,7 +2980,9 @@ void LaidoutViewport::Refresh()
 				DBG cerr <<"********outline bounds ll:"<<marginoutline->minx<<','<<marginoutline->miny
 				DBG      <<"  ur:"<<marginoutline->maxx<<','<<marginoutline->maxy<<endl;
 				// ***DrawData(dp,marginoutline,&margin_linestyle,NULL,drawflags);
-				LineStyle ls(0xa000,0xa000,0xa000,0xffff, 1,CapButt,JoinBevel,0,LAXOP_Over);
+				LineStyle ls; //(0xa000,0xa000,0xa000,0xffff, 1,CapButt,JoinBevel,0,LAXOP_Over);
+				ls.Color(0xa000,0xa000,0xa000,0xffff);
+				ls.width = 1;
 				ls.widthtype=0;
 				if (dynamic_cast<PathsData*>(marginoutline)) {
 					dynamic_cast<PathsData*>(marginoutline)->style|=PathsData::PATHS_Ignore_Weights;

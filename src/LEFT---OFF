@@ -13,8 +13,6 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
-bug: filters repeatedly writing \"\"\"\"  reading in quoted names?
-
 bug: imported white images are not white, very slightly gray. gm load problem?
 
 bug: signature editor, selected pages have almost not noticeable selected emphasis.. line width problem?
@@ -44,6 +42,10 @@ bug: back to not maximizing properly on default ubuntu. Seems to work fine on ev
 
 
 ------------ other bugs:
+
+bug: command prompt window cursor often invisible
+bug: command prompt window input sometimes unrecoverably locks if cursor not at very end
+DONE bug: command prompt window missing Laidout module
 
 bug: lineedit cursor is leaving artifacts
 
@@ -104,8 +106,6 @@ scribus plugin needs a proper dealing with temporary files
 
 object reordering (with home/end) produces outline of unrelated objects on top
 
-don't allow reparent to a child!! or reparent as appropriate
-
 cloning, change original, not triggering bbox update in clone
 
 ubuntu maximize window failing (but not on today's debian unstable gnome), resize seems to work now
@@ -155,8 +155,6 @@ should not be able to group select an object and another object nested within
 file previewer not updating preview when using arrow keys
 
 shrink image lets you go immeasurably small
-
-WATCH OUT for when preview file is OLDER than original file!!
 
 stackframe seems to be ignoring window borders on layout
 
@@ -274,6 +272,8 @@ interface manager interfacemanager:
   draw point sizes:
     normal bez point, for instance
     hovered size
+
+WATCH OUT for when preview file is OLDER than original file!!
 
 get splash image working.. better label class?
 
@@ -759,6 +759,13 @@ PathInterface: pathinterface
   finish new path/pathoperator/pathsubinterface/pathinterface structure
   have a widthtype == hairline? use width==0 as no stroke
 
+  markers:
+    resource drawables with extra "origin" and "direction", maybe stored as properties?
+    they need to respond to object color.. marker is a SomeDataRef with filter to respond to obj.marker_color ?
+    start, end
+    mid
+      at specific intervals, or n per line
+
 simplepathinterface:
   make circle green when manual, gray when auto
   snap:
@@ -922,7 +929,25 @@ from big import:
   DONE export directory should default to last loaded file
   DONE selecting ranges
 
+common property editor tool:  ..overlay and put editor box in a corner?
+  - select a bunch of objects
+  - tool determines properties in common:
+      name + type
+      whether properties are equal
+        if not equal provide menu to select from existing to apply to all
+  - Provides widgets to change those properties all at once
+
+  maybe other mode, where you can copy certain properties, then apply those to other objects?
+
+ObjectFilter objectfilters object filter:
+  need menu options:
+    Create filtered copy
+    Apply filters
+  clean up filefilter.h definition to allow explicit declaration of ObjectFilter in DrawableObject
+  anchoring to other objects
+
 Perspective perspective:
+  path transform should transform line widths accurately
   finish debugging update path object without reallocating each time
   optimize the image mapping
   filtering paths needs to detect big distortions and add points, as simply transforming bez points is not enough
@@ -934,24 +959,67 @@ node editor NodeInterface nodes: node: interface:
   bug: height of resizable property not saved
   need solution for shared interface getting messages for different nodes.. probably need to do one instance per whatever
   data node types:
+    EACH need to double check: dereference, assign, Evaluate, extend from Group, not affine
     generic Value in/out. Run off an ObjectDef.
+    image (double check objdef setup)
+      DONE check: dereference assign Evaluate extend from Group, not affine
+    somedataref
+      DONE check: dereference assign Evaluate extend from Group, not affine
     gradient
-      DONE double click to call up color box
       receive color messages from viewport color box
+      DONE check: dereference assign Evaluate extend from Group, not affine
+      DONE double click to call up color box
+    delauney/point set tool: Vector2 + properties
+      functions:
+        delauney
+        voronoi
+        convex hull
+        tsp
+        equalize (optionally within path)
+      DONE check: dereference assign Evaluate extend from Group, not affine
     paths
+      fill and stroke controls
+      weight controls .. present as line profile?
       path ops:
+        project onto heightmap? onto mesh?
+        make net then inset
         combine
         break apart
         merge
+        simplify
+        set line profile from resource
+        apply weights
+      DONE check: dereference assign Evaluate extend from Group, not affine
     engraving
       dashes
       spacing
       tracing
+      direction
+      DONE check: dereference assign Evaluate extend from Group, not affine
     mesh
       color
+        DONE check: dereference assign Evaluate extend from Group, not affine
       transform
+        DONE check: dereference assign Evaluate extend from Group, not affine
     caption text
+      DONE check: dereference assign Evaluate extend from Group, not affine
     text on a path
+      properties
+      DONE dereference assign Evaluate extend from Group, not affine
+
+  object/resource management nodes:
+    anchor nodes to mostly replace alignment rules
+    ALL ObjectDef data types need to be installed on startup, or at least when node tool starts up
+    modifiy object on disconnect should make a copy of the object, and show that type in property 0
+    rename "Object Info" to "Drawable Info"
+    "Object Properties".. maybe have a string field with list of desired properties? Array of props that show enum but output value?
+    have a dangerous "Object Function" node? needs to dup in, then run function
+    ref other object
+    alignment node .. access to alignment tool data?
+    clone tool access
+    nup tool access
+    anchor point transforms
+    inverse affine transform
   group nodes, connect to (new in) or (new out):
     should take names from props.
     doesn't update the parent props
@@ -1023,36 +1091,38 @@ node editor NodeInterface nodes: node: interface:
     events for ui tool construction?
     exec tick speed control for debugging
   make sure entire nodes don't go totally offscreen
-  scriptify node graph
-  expression node: nodes to script and script to nodes
   deferred update when massive operations, maybe highlight nodes in yellow?
   color code pipes by value type, color: yellow, number: gray, vector: purple
   need better styling.. too much is hardcoded. problems later with high dpi screens
   finish implementing no cycle check: on load in could be a crash magnet currently if constructed with loops
-  file properties need browser button
-  object filters:
-    a filter to respond to a global frame value, thus have minimal animation control
+  math nodes
+    function nodes need a smooth option
+    should always be 'using Math'
   list nodes
     set range [start,end] = value
     subset [start, end], neg nums for from end
     element [index]
     create list  [type, number]
     foreach thread processor
+    foreach in list, create new list with transformed elements
+    sort with function
 
-  examine imgflo for compatibility
-    imgflo lets you compile and load new operations on the fly
-  css named filter: brightness(1) contrast(67%) saturate(250%) grayscale(0%) invert(0%) hue-rotate(330deg) sepia(40%) blur(0px)
-    see https://www.w3.org/TR/filter-effects-1/#grayscaleEquivalent for svg filter equivalents
-  gmic nodes
-  graphicsmagick nodes
-  antiprism nodes
-  examine blender for compatibility -> animation node addon seems fuller for general data processing
-  examine godot for compatibility -> does full scripting execution
-  examine Natron for compatibility
-  examine pure data for compatibility
-  praxis-live?
-  proprietary import like substance or houdini?
-  any crossover with mypaint brushes or krita???
+  other node systems:
+    examine imgflo for compatibility
+      imgflo lets you compile and load new operations on the fly
+    css named filter: brightness(1) contrast(67%) saturate(250%) grayscale(0%) invert(0%) hue-rotate(330deg) sepia(40%) blur(0px)
+      see https://www.w3.org/TR/filter-effects-1/#grayscaleEquivalent for svg filter equivalents
+    gmic nodes
+    graphicsmagick nodes
+    antiprism nodes
+    examine blender for compatibility -> animation node addon seems fuller for general data processing
+    examine godot for compatibility -> does full scripting execution
+    examine Natron for compatibility
+    examine pure data for compatibility
+    examine BespokeSynch for compatibility: https://github.com/awwbees/BespokeSynth
+    praxis-live?
+    proprietary import like substance or houdini?
+    any crossover with mypaint brushes or krita???
 
   viewer node, resizable
   simplex noise node
@@ -1098,6 +1168,8 @@ node editor NodeInterface nodes: node: interface:
       sin  cos  tan  asin  acos  atan
       sinh cosh tanh asinh acosh atanh
 
+  DONE file properties need browser button
+  DONE basic path creation nodes, including math function plotting
   DONE resize preview broken
   DONE image from file node
 
@@ -1167,8 +1239,6 @@ export/print dialog
 DrawableObject:
   bbox and aabb need to build in kids?
   should transplant child to SomeData. would simplify making new objects considerably
-
-clean up filefilter.h definition to allow explicit declaration of ObjectFilter in DrawableObject
 
 color fonts issue #6 svg otf svg
   see this freetype gsoc 2019 project: https://www.mail-archive.com/freetype-devel@nongnu.org/msg11459.html
@@ -2481,3 +2551,6 @@ DONE export ranges should accept "1-4, 6, 20-25" and "5-1"
 DONE for range on import/export, should have a range parser that accepts unconnected ranges, ie "2,4, 5-10"
 DONE perhaps laidout configure should call laxkit configure if it thinks laxkit is not configured yet
 DONE Be able to create empties
+DONE bug: filters repeatedly writing \"\"\"\"  reading in quoted names? 
+DONE don't allow reparent to a child!! or reparent as appropriate
+
