@@ -22,6 +22,8 @@
 #include "../dataobjects/limagedata.h"
 #include "../dataobjects/lpathsdata.h"
 #include "../dataobjects/bboxvalue.h"
+#include "../dataobjects/affinevalue.h"
+#include "../dataobjects/imagevalue.h"
 
 #include <unistd.h>
 
@@ -314,6 +316,8 @@ class PathGeneratorNode : public NodeBase
 		Svgd, // svg style d string
 		Function, //y=f(x), x range, step
 		FunctionT, //p=(x(t), y(t)), t range, step
+		FunctionRofT, //polar coordinate = r(theta)
+		FunctionPolarT, //polar coord = r(t), theta(t)
 		MAX
 	};
 	PathTypes pathtype;
@@ -383,6 +387,23 @@ PathGeneratorNode::PathGeneratorNode(PathGeneratorNode::PathTypes ntype)
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Maxt", new DoubleValue(1),1,  _("Max t"), NULL));
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Step", new DoubleValue(.1),1, _("Step"), NULL));
 
+	} else if (pathtype == FunctionRofT) {
+		makestr(type, "Paths/PolarR");
+		makestr(Name, _("Polar function r(theta)"));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "r", new StringValue("theta"),1, _("r(theta)")));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Mint", new DoubleValue(0),1,  _("Min theta"), NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Maxt", new DoubleValue(1),1,  _("Max theta"), NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Step", new DoubleValue(.1),1, _("Step"), NULL));
+
+	} else if (pathtype == FunctionPolarT) {
+		makestr(type, "Paths/PolarT");
+		makestr(Name, _("Polar function r(t), theta(t)"));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "r",     new StringValue("t"),1, _("r(t)")));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "theta", new StringValue("t"),1, _("theta(t)")));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Mint", new DoubleValue(0),1,  _("Min t"), NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Maxt", new DoubleValue(1),1,  _("Max t"), NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Step", new DoubleValue(.1),1, _("Step"), NULL));
+
 	} else if (pathtype == Svgd) {
 		makestr(type, "Paths/Svgd");
 		makestr(Name, _("Svg d"));
@@ -432,7 +453,7 @@ int PathGeneratorNode::GetStatus()
 {
 	char types[6];
 	const char *stype;
-	const char *sig = "     nnnn n    nnnn snnn ssnnns    ";
+	const char *sig = "     nnnn n    nnnn snnn ssnnns    snnn ssnnn";
 	int sigoff = 0;
 
 #define OFFSQUARE     0
@@ -442,14 +463,18 @@ int PathGeneratorNode::GetStatus()
 #define OFFFUNCTION   20
 #define OFFFUNCTIONT  25
 #define OFFSVGD       30
+#define OFFPOLARRofT  35
+#define OFFPOLART     40
 
-	if      (pathtype == Square)    sigoff = OFFSQUARE;
-	else if (pathtype == Circle)    sigoff = OFFCIRCLE;
-	else if (pathtype == Rectangle) sigoff = OFFRECTANGLE;
-	else if (pathtype == Polygon)   sigoff = OFFPOLYGON;
-	else if (pathtype == Svgd)      sigoff = OFFSVGD;
-	else if (pathtype == Function)  sigoff = OFFFUNCTION;
-	else if (pathtype == FunctionT) sigoff = OFFFUNCTIONT;
+	if      (pathtype == Square)         sigoff = OFFSQUARE;
+	else if (pathtype == Circle)         sigoff = OFFCIRCLE;
+	else if (pathtype == Rectangle)      sigoff = OFFRECTANGLE;
+	else if (pathtype == Polygon)        sigoff = OFFPOLYGON;
+	else if (pathtype == Svgd)           sigoff = OFFSVGD;
+	else if (pathtype == Function)       sigoff = OFFFUNCTION;
+	else if (pathtype == FunctionT)      sigoff = OFFFUNCTIONT;
+	else if (pathtype == FunctionRofT)   sigoff = OFFPOLARRofT;
+	else if (pathtype == FunctionPolarT) sigoff = OFFPOLART;
 
 	for (int c=0; c<properties.n-1; c++) {
 		Value *data = properties.e[c]->GetData();
@@ -529,16 +554,16 @@ int PathGeneratorNode::Update()
 		path->close();
 		
 
-	} else if (pathtype == Function) {
+	} else if (pathtype == Function || pathtype == FunctionRofT) {
 		int isnum;
 		StringValue *expr = dynamic_cast<StringValue*>(properties.e[0]->GetData());
 		if (!expr) { makestr(error_message, _("Expression must be a string")); return -1; }
 		const char *expression = expr->str;
 
 		double start = getNumberValue(properties.e[1]->GetData(), &isnum);
-		if (!isnum) { makestr(error_message, _("Bad min x")); return -1; }
+		if (!isnum) { makestr(error_message, _("Bad min")); return -1; }
 		double end = getNumberValue(properties.e[2]->GetData(), &isnum);
-		if (!isnum) { makestr(error_message, _("Bad max x")); return -1; }
+		if (!isnum) { makestr(error_message, _("Bad max")); return -1; }
 		double step = getNumberValue(properties.e[3]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad step")); return -1; }
 
@@ -555,7 +580,9 @@ int PathGeneratorNode::Update()
 
 		DoubleValue *xx = new DoubleValue();
 		ValueHash hash;
-		hash.push("x", xx);
+		const char *param = "x";
+		if (pathtype == FunctionRofT) param = "theta";
+		hash.push(param, xx);
 		xx->dec_count();
 		int status;
 		// int pointsadded = 0;
@@ -583,12 +610,13 @@ int PathGeneratorNode::Update()
 				return -1;
 			}
 
-			path->append(x, ret_valx);
+			if (pathtype == FunctionRofT) path->append(ret_valx * cos(x), ret_valx * sin(x));
+			else path->append(x, ret_valx);
 			// pointsadded++;		
 		}
 		// hash.flush();
 
-	} else if (pathtype == FunctionT) {
+	} else if (pathtype == FunctionT || pathtype == FunctionPolarT) {
 		int isnum;
 		StringValue *expr = dynamic_cast<StringValue*>(properties.e[0]->GetData());
 		if (!expr) { makestr(error_message, _("Expression must be a string")); return -1; }
@@ -599,9 +627,9 @@ int PathGeneratorNode::Update()
 		const char *expressiony = expr->str;
 
 		double start = getNumberValue(properties.e[2]->GetData(), &isnum);
-		if (!isnum) { makestr(error_message, _("Bad min t")); return -1; }
+		if (!isnum) { makestr(error_message, _("Bad min")); return -1; }
 		double end = getNumberValue(properties.e[3]->GetData(), &isnum);
-		if (!isnum) { makestr(error_message, _("Bad max t")); return -1; }
+		if (!isnum) { makestr(error_message, _("Bad max")); return -1; }
 		double step = getNumberValue(properties.e[4]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad step")); return -1; }
 		
@@ -666,8 +694,9 @@ int PathGeneratorNode::Update()
 				return -1;
 			}
 
-			path->append(ret_valx, ret_valy);
-			// pointsadded++;		
+			if (pathtype == FunctionPolarT) path->append(ret_valx * cos(ret_valy), ret_valx * sin(ret_valy));
+			else path->append(ret_valx, ret_valy);
+			// pointsadded++;
 		}
 		// hash.flush();
 
@@ -712,6 +741,16 @@ Laxkit::anObject *newPathFunctionNode(int p, Laxkit::anObject *ref)
 Laxkit::anObject *newPathFunctionTNode(int p, Laxkit::anObject *ref)
 {
 	return new PathGeneratorNode(PathGeneratorNode::FunctionT);
+}
+
+Laxkit::anObject *newPathFunctionRofTNode(int p, Laxkit::anObject *ref)
+{
+	return new PathGeneratorNode(PathGeneratorNode::FunctionRofT);
+}
+
+Laxkit::anObject *newPathFunctionPolarTNode(int p, Laxkit::anObject *ref)
+{
+	return new PathGeneratorNode(PathGeneratorNode::FunctionPolarT);
 }
 
 Laxkit::anObject *newPathSvgdNode(int p, Laxkit::anObject *ref)
@@ -829,8 +868,9 @@ int SetupDataObjectNodes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Paths/Polygon",newPathPolygonNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/PathFunctionX",newPathFunctionNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/PathFunctionT",newPathFunctionTNode, NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/PathFunctionRofT",newPathFunctionRofTNode, NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/PathFunctionPolarT",newPathFunctionPolarTNode, NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/Svgd",newPathSvgdNode,  NULL, 0);
-
 
 	return 0;
 }
