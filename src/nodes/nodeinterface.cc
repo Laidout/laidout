@@ -838,6 +838,17 @@ void NodeBase::PropagateUpdate()
 	}
 }
 
+/*! Call this when you want to set the node to an error state.
+ * Default is this just updates error_message. If error_msg is null or blank, then clears it.
+ * Returns whatever error_message is afterwards.
+ */
+const char *NodeBase::Error(const char *error_msg)
+{
+	if (isblank(error_msg)) makestr(error_message, nullptr);
+	else makestr(error_message, error_msg);
+	return error_message;
+}
+
 /*! Return whether the node has valid values, or the outputs are older than inputs.
  * Return 0 for no error and everything up to date.
  * -1 means bad inputs and node in error state.

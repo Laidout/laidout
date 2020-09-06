@@ -301,6 +301,7 @@ class NodeBase : public Laxkit::anObject,
 	virtual const char *ScriptName() { return object_idstr; } //not localized
 	virtual const char *Type() { return type; } //not localized
 	virtual const char *ErrorMessage() { return error_message; }
+	virtual const char *Error(const char *error_msg);
 	virtual ObjectDef *GetDef() { return def; }
 	virtual void InstallDef(ObjectDef *def, bool absorb_count);
 	virtual LaxInterfaces::anInterface *GetInterface(LaxInterfaces::anInterface *interface);
