@@ -25,6 +25,8 @@
 #include "../dataobjects/lsomedataref.h"
 #include "../dataobjects/objectfilter.h"
 #include "../dataobjects/bboxvalue.h"
+#include "../dataobjects/affinevalue.h"
+#include "../dataobjects/imagevalue.h"
 
 #include <unistd.h>
 #include <iostream>
@@ -3373,7 +3375,7 @@ class TransformAffineNode : public NodeBase
 
 TransformAffineNode::TransformAffineNode()
 {
-	makestr(Name, _("Transform"));
+	makestr(Name, _("Transform Affine"));
 	makestr(type, "Filters/TransformAffine");
 
 	Value *v = new AffineValue();
@@ -3397,35 +3399,48 @@ NodeBase *TransformAffineNode::Duplicate()
  */
 int TransformAffineNode::GetStatus()
 {
-	AffineValue *affine  = dynamic_cast<AffineValue*>(properties.e[1]->GetData());
+	//make sure transform is affine
+	Affine *affine  = dynamic_cast<Affine*>(properties.e[1]->GetData());
 	if (!affine) return -1;
 
+	// in can be a vector, or an affine
 	Value *v = properties.e[0]->GetData();
 	if (v) {
 		int vtype = v->type();
 		if (   vtype != AffineValue::TypeNumber()
 			&& vtype != VALUE_Flatvector
-			&& !dynamic_cast<DrawableObject*>(v)
+			&& !dynamic_cast<Affine*>(v)
 		   ) return -1;
 	}
 
-	if (v && !properties.e[2]->data) return 1;
+	if (v && !properties.e[2]->data) return 1; //just needs update
 
 	return NodeBase::GetStatus(); //default checks mod times
 }
 
 int TransformAffineNode::Update()
 {
+	Error(nullptr);
+
 	Value *nv = NULL;
 	Value *v = properties.e[0]->GetData();
 
-	AffineValue *affine  = dynamic_cast<AffineValue*>(properties.e[1]->GetData());
-	if (!affine) return -1;
-	if (!affine->IsInvertible()) return -1;
+	Value *aff = properties.e[1]->GetData();
+	DBG cerr << "TransformAfffineNode::Update with prop 1 type: "<<(aff ? aff->whattype() : "null")<<endl;
+	Affine *affine  = dynamic_cast<Affine*>(aff);
+	if (!affine) {
+		Error(_("Transform must be affine"));
+		return -1;
+	} else if (!affine->IsInvertible()) {
+		Error(_("Invalid affine"));
+		return -1;
+	}
 
 	if (!v) {
 		 //clear output when there is no input
 		if (properties.e[2]->GetData()) properties.e[2]->SetData(NULL,0);
+		Error(_("Missing input"));
+		return -1;
 
 	} else {
 		int vtype = v->type();
@@ -3469,6 +3484,10 @@ int TransformAffineNode::Update()
 			}
 			nnv->Multiply(*affine);
 			nv = nnv;
+
+		} else {
+			Error(_("Cannot transform that type"));
+			return -1;
 		}
 
 	}
