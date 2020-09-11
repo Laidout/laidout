@@ -109,6 +109,8 @@ LaxInterfaces::SomeData *LImageData::duplicate(LaxInterfaces::SomeData *dup)
 	return dup;
 }
 
+Value *NewLImageData() { return new LImageData; }
+
 ObjectDef *LImageData::makeObjectDef()
 {
 
@@ -127,8 +129,7 @@ ObjectDef *LImageData::makeObjectDef()
 			"ImageData",
             _("ImageData"),
             _("An image"),
-            "class",
-            NULL,NULL);
+            NewLImageData,NULL);
 
 	sd->pushFunction("LoadFile",_("Load File"),_("Load an image file"),
 					 NULL,

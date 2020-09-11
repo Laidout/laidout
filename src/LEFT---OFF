@@ -952,15 +952,23 @@ Perspective perspective:
   optimize the image mapping
   filtering paths needs to detect big distortions and add points, as simply transforming bez points is not enough
 
-node editor NodeInterface nodes: node: interface:
+node editor node interface NodeInterface nodes: node: interface: 
   undo redo
+  bug: load in recovery: should ensure only one input, and only one exec_out
+  bug: seems like node names can sometimes erroneously get duplicate names? this messes up load in/connecting
   bug: traverse path only goes about 80%
   bug: transform object isn't copying images in an ImageData
   bug: height of resizable property not saved
   need solution for shared interface getting messages for different nodes.. probably need to do one instance per whatever
   data node types:
-    EACH need to double check: dereference, assign, Evaluate, extend from Group, not affine
+    fit obj in rectangle, with alignment
+    anchor nodes (double up with revamped AnchorInterface):
+      in anchor: object local space, or parent space
+      out anchor: other object point (of non-parent), page, spread
+      type: x,y
+      2 point anchor: change position + scale|rotation
     generic Value in/out. Run off an ObjectDef.
+    DONE each need to double check: dereference, assign, Evaluate, extend from Group, not affine
     image (double check objdef setup)
       DONE check: dereference assign Evaluate extend from Group, not affine
     somedataref
@@ -1006,10 +1014,8 @@ node editor NodeInterface nodes: node: interface:
     text on a path
       properties
       DONE dereference assign Evaluate extend from Group, not affine
-
   object/resource management nodes:
     anchor nodes to mostly replace alignment rules
-    ALL ObjectDef data types need to be installed on startup, or at least when node tool starts up
     modifiy object on disconnect should make a copy of the object, and show that type in property 0
     rename "Object Info" to "Drawable Info"
     "Object Properties".. maybe have a string field with list of desired properties? Array of props that show enum but output value?
@@ -1020,6 +1026,7 @@ node editor NodeInterface nodes: node: interface:
     nup tool access
     anchor point transforms
     inverse affine transform
+    DONE ALL ObjectDef data types need to be installed on startup, or at least when node tool starts up
   group nodes, connect to (new in) or (new out):
     should take names from props.
     doesn't update the parent props
@@ -1076,12 +1083,14 @@ node editor NodeInterface nodes: node: interface:
   image object creation node, tie node output to a custom LaxImage importer (the proof of concept node for 0.097)
   load something already loaded makes dups of everything.. need to check for name collision!!
   extensibility: need easy way to extend functionality, both menu actions and new nodes
+  ideally whole node core codebase should not explicitly depend on laidout
   groups
     allow editable labels for input props
     add dummy prop on in/out to hot link data (only from within group)
     linked vs appended node groups, to allow mass changing of particular effects
       GroupRef : NodeGroup, with some sort of relay to actual group internals
     node libraries: nodes as resources
+      need to check for cyclic dependency in resources (and disallow)
   auto shift on connection
   auto connect when dragging nodes.. needs parsing of compatible properties
   view area things:
@@ -1168,6 +1177,7 @@ node editor NodeInterface nodes: node: interface:
       sin  cos  tan  asin  acos  atan
       sinh cosh tanh asinh acosh atanh
 
+  DONE need reroute node
   DONE file properties need browser button
   DONE basic path creation nodes, including math function plotting
   DONE resize preview broken
@@ -1807,10 +1817,9 @@ various object types:
      onscreen:           compels direct c++ access
      file saved to disk: uses Laxkit::Attribute as intermediary for disk i/o
      interpreter:        parses input using Value objects which have ObjectDefs defined at runtime
-   would be advantageous to write a single object def, and output options and documention to
-   each of the 3 targets
+   would be advantageous to write a single object def, and output options and documention to each of the 3 targets
  each class:Value potentially has:
-  - "internal" variables/funcs
+  - "internal" variables/funcs that don't correspond to ObjectDef entries which are all "public"
   - scriptable variables/funcs defined in ObjectDef
   these are vaguely compatible, but it is not a 1 to 1 match
      some kind of preprocessor (ugg!!) to convert the header file to object def
@@ -2005,8 +2014,6 @@ Image import chain:
 
 move Value and FieldPlace to laxkit? ValueHash would be very useful to ease configs
 
-merge set and ValueHash?
-
 soft masking
     mask object optionally converted to grayscale
 
@@ -2091,7 +2098,7 @@ accordion folds:
   cootie catcher
   explodion books with cross folds on pages
 
-Make extension to be able to use Inkscape live path effects (lpe)!! The run on svg snippets, so should be somewhat
+Make extension to be able to use Inkscape live path effects (lpe)!! Then run on svg snippets, so should be somewhat
   straightforward to call externally.. BUT have optional tool overlay. Figure out how to reverse implement to also
   run within Inkscape.
 
@@ -2100,7 +2107,7 @@ then changes not stored
 
 probably should decide how to handle making windows based on interfaces.. it is a more productive route than window dominant
 
-make a laxkit.pc from laxkit configure
+DONE make a laxkit.pc from laxkit configure
 use that laxkit.pc from Laidout and laxkit examples
 
 pagemarkerinterface:
@@ -2124,10 +2131,7 @@ global Laidout settings:
   per tool default settings
   thin line width (default 1 pixel, but this is bad for high dpi screens)
 
-> laidout blah.laidout...     <-- if starting like this, if blah.laidout does not exist, then abort
-> laidout 1.laidout 2.laidout <-- if starting like this, if either exist, then start up, but have
-                                    warning message that one document failed to load?
-    -> could have a consumable message interface? show a message until the box is clicked on, then it removes itself?
+> laidout blah.laidout  <-- if starting like this and can't load file, have option to quit immediately
 
 textobjects,limbos,papergroups should maybe be able to be stored per document, not just file, project, or temp
 either that, or do away with whole project/document difference, and use only
@@ -2150,8 +2154,11 @@ all at once imposition... this would allow mapping of scribus layout without fus
 
 Master Pages master pages / template pages:
   have objects be tagged with ref object, so you can create a page with a master page
-    that has a "text frame" for instance, but different children per page
-  need option to import master pages
+    that has a "text frame" for instance, but different properties per page
+    ProxyObjects : public SomeDataRef
+      SomeData *proxy_of; // <- object on master page, for instance, but the real ref object is editable
+    option to revert edited object to base proxy
+  need option to import master pages from scribus docs
 
 some kind of grease pencil?
 

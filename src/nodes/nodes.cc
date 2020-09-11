@@ -17,6 +17,7 @@
 #include <lax/interfaces/curvemapinterface.h>
 #include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/interfacemanager.h>
+#include <lax/fileutils.h>
 #include "nodes.h"
 #include "nodeinterface.h"
 #include "nodes-dataobjects.h"
@@ -27,6 +28,9 @@
 #include "../dataobjects/bboxvalue.h"
 #include "../dataobjects/affinevalue.h"
 #include "../dataobjects/imagevalue.h"
+
+//needs calculator... some other way to abstract this so we don't depend directly on laidout??
+#include "../laidout.h"
 
 #include <unistd.h>
 #include <iostream>
@@ -1465,6 +1469,216 @@ int MathNode2::UpdateThisOnly()
 Laxkit::anObject *newMathNode2(int p, Laxkit::anObject *ref)
 {
 	return new MathNode2();
+}
+
+
+//----------------------------------- ExpressionNode ------------------------------
+
+class ExpressionNode : public NodeBase
+{
+  public:
+	ExpressionNode(const char *expr);
+	virtual ~ExpressionNode();
+
+	virtual int Set(const char *expr, bool force_remap);
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual int UpdatePreview();
+	virtual void dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context);
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ExpressionNode(nullptr); }
+};
+
+ExpressionNode::ExpressionNode(const char *expr)
+{
+	makestr(type, "Math/Expression");
+	makestr(Name, _("Expression"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Expr", new StringValue(""),1, nullptr,_("Expression")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", nullptr,1, _("Out"), NULL,0, false));
+
+	Set(expr, true);
+
+	Update();
+}
+
+ExpressionNode::~ExpressionNode()
+{
+}
+
+/*! Intercept to make sure property labels are correct.
+ */
+void ExpressionNode::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context)
+{
+	NodeBase::dump_in_atts(att, flag, context);
+
+	//make sure out it at the end
+	int propi = -1;
+	FindProperty("Out", &propi);
+	if (propi != properties.n-1) { //sometimes out gets lost on read in
+		properties.slide(propi, properties.n-1);
+	}
+
+	//make sure prop labels are "thing", not "p_thing" like the names
+	for (int c=1; c<properties.n-1; c++) {
+		properties.e[c]->Label(properties.e[c]->name+2);
+	}
+}
+
+/*! Set up properties to show unknow names in expression.
+ * Installs expression as LOCAL data of property 0, no matter what is connected to it.
+ * Returns 0 for ok, nonzero for some kind of error.
+ */
+int ExpressionNode::Set(const char *expr, bool force_remap)
+{
+	StringValue *s = dynamic_cast<StringValue*>(properties.e[0]->data);
+	if (!s) {
+		s = new StringValue(expr);
+		properties.e[0]->SetData(s, 1);
+	} else {
+		if (!force_remap && expr && s->str && !strcmp(expr, s->str)) return 0;
+		s->Set(expr);
+		properties.e[0]->Touch();
+	}
+
+	int propi = -1;
+	FindProperty("Out", &propi);
+	if (propi != properties.n-1) { //sometimes out gets lost on read in
+		properties.slide(propi, properties.n-1);
+	}
+
+	// determine unknow names and use those as properties
+	PtrStack<char> names(LISTS_DELETE_Array);
+	ErrorLog log;
+	int status = laidout->calculator->FindUnknownNames(expr,-1, nullptr, nullptr, &log, names);
+	if (status != 0) {
+		return status;
+		char *er = log.FullMessageStr();
+		if (er) {
+			makestr(error_message, er);
+			delete[] er;
+		}
+		return -1;
+	}
+
+	//modify or add new properties
+	Utf8String str;
+	for (int c=0; c<names.n; c++) {
+		str.Sprintf("p_%s", names.e[c]);
+
+		NodeProperty *prop = FindProperty(str.c_str(), &propi);
+		if (prop) {
+			if (propi != 1+c) properties.slide(propi, 1+c);
+		} else {
+			if (c+1 == properties.n-1) {
+				//insert new prop
+				NodeProperty *prop = new NodeProperty(NodeProperty::PROP_Input,  true, str.c_str(), new DoubleValue(0),1, names.e[c], nullptr, 0, true);
+				AddProperty(prop, c+1);
+
+			} else {
+				if (!str.Equals(properties.e[c+1]->name)) {
+					makestr(properties.e[c+1]->name,  str.c_str());
+					makestr(properties.e[c+1]->label, names.e[c]);
+				}
+			}
+		}
+	}
+
+	// remove extraneous properties
+	for (int c = properties.n-2; c > names.n; c--) {
+		RemoveProperty(properties.e[c]);
+	}
+
+	Wrap();
+	return 0;
+}
+
+int ExpressionNode::UpdatePreview()
+{
+	Previewable *p = dynamic_cast<Previewable*>(properties.e[properties.n-1]->GetData());
+	if (!p) {
+		if (total_preview) { total_preview->dec_count(); total_preview = nullptr; }
+		return 0;
+	}
+
+	LaxImage *img = p->GetPreview();
+	if (img) {
+		if (img != total_preview) {
+			if (total_preview) total_preview->dec_count();
+			total_preview = img;
+			total_preview->inc_count();
+		}
+	}
+	return 1;
+}
+
+NodeBase *ExpressionNode::Duplicate()
+{
+	const char *expr = nullptr;
+	StringValue *s = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	if (s) expr = s->str;
+	ExpressionNode *newnode = new ExpressionNode(expr);
+
+	for (int c=1; c<properties.n-1 && c < newnode->properties.n-1; c++) {
+		Value *v = properties.e[c]->GetData();
+		if (v) newnode->properties.e[c]->SetData(v->duplicate(), 1);
+	}
+
+	return newnode;
+}
+
+//0 ok, -1 bad ins, 1 just needs updating
+int ExpressionNode::GetStatus()
+{
+	StringValue *s = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	if (!s) return -1;
+
+	if (ErrorMessage()) return -1;
+
+	return NodeBase::GetStatus();
+}
+
+//0 ok, -1 bad ins, 1 just needs updating
+int ExpressionNode::Update()
+{
+	Error(nullptr);
+	if (GetStatus() == -1) return -1;
+
+	StringValue *s = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	if (!s) return -1;
+	const char *expression = s->str;
+
+	if (modtime == 0 || modtime < properties.e[0]->modtime) {
+		Set(expression, modtime == 0);
+		if (error_message) return -1;
+	}
+
+	ValueHash params;
+	for (int c=1; c<properties.n-1; c++) {
+		Value *v = properties.e[c]->GetData();
+		if (!v) return -1;
+		params.push(properties.e[c]->name+2, v); //prop names are p_propertyname
+	}
+	int status;
+	ErrorLog log;
+	Value *ret = nullptr;
+
+	status = laidout->calculator->EvaluateWithParams(expression,-1, nullptr, &params, &ret, &log);
+	if (status != 0 || !ret) {
+		char *er = log.FullMessageStr();
+		if (er) {
+			makestr(error_message, er);
+			delete[] er;
+		}
+		if (ret) ret->dec_count();
+		return -1;
+	}
+
+	properties.e[properties.n-1]->SetData(ret, 1);
+	UpdatePreview();
+	Wrap();
+	return NodeBase::Update();
 }
 
 
@@ -4016,6 +4230,8 @@ NewObjectNode::NewObjectNode(const char *what)
 				i++;
 			}
 		}
+
+		def->Sort();
 		
 		menuKeeper.SetObject(def, false);
 	} else def->inc_count();
@@ -4264,6 +4480,298 @@ int ModifyObjectNode::GetStatus()
 }
 
 
+//------------------------ TextFileNode ------------------------
+
+
+class TextFileNode : public NodeBase
+{
+  public:
+	TextFileNode(const char *txt);
+	virtual ~TextFileNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new TextFileNode(nullptr); }
+};
+
+TextFileNode::TextFileNode(const char *what)
+{
+	makestr(Name, _("Text from file"));
+	makestr(type, "Files/TextFile");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Block, false, "what", new FileValue(what),1, _("File"), NULL,0, true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Text"), NULL,0, false));
+}
+
+TextFileNode::~TextFileNode()
+{
+}
+
+NodeBase *TextFileNode::Duplicate()
+{
+	const char *file = nullptr;
+	Value *v = properties.e[0]->GetData();
+	if (v->type() == VALUE_String) file = dynamic_cast<StringValue*>(v)->str;
+	else if (v->type() == VALUE_File) file = dynamic_cast<FileValue*>(v)->filename;
+	
+	TextFileNode *node = new TextFileNode(file);
+	node->DuplicateBase(this);
+	return node;
+}
+
+int TextFileNode::Update()
+{
+	const char *file = nullptr;
+	Value *v = properties.e[0]->GetData();
+	if (v->type() == VALUE_String) file = dynamic_cast<StringValue*>(v)->str;
+	else if (v->type() == VALUE_File) file = dynamic_cast<FileValue*>(v)->filename;
+	if (isblank(file)) return -1;
+
+	int n = 0;
+	char *contents = LaxFiles::read_in_whole_file(file, &n);
+	if (!contents) return -1;
+
+	StringValue *sv = dynamic_cast<StringValue*>(properties.e[1]->data);
+	if (!sv) {
+		sv = new StringValue();
+		properties.e[1]->SetData(sv, 1);
+	}
+	sv->InstallString(contents);
+
+	return NodeBase::Update();
+}
+
+//0 ok, -1 bad ins, 1 just needs updating
+int TextFileNode::GetStatus()
+{
+	Value *v = properties.e[0]->GetData();
+	if (!v) return 1;
+	if (v->type() != VALUE_String && v->type() != VALUE_File) return -1;
+	return NodeBase::GetStatus();
+}
+
+
+//------------------------------ GetGlobalNode --------------------------------------------
+
+/*! \class GetGlobalNode
+ * Get a laidout->global variable.
+ */
+
+class GetGlobalNode : public NodeBase
+{
+  public:
+  	// std::clock_t lastcheck;
+	GetGlobalNode(const char *what);
+	virtual ~GetGlobalNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new GetGlobalNode(nullptr); }
+};
+
+GetGlobalNode::GetGlobalNode(const char *what)
+{
+	// lastcheck = 0;
+
+	makestr(type, "Resources/GetGlobal");
+	makestr(Name, _("Get Global Variable"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "name",   new StringValue(what),1, _("Name")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output,  true, "value",  NULL,1, _("Value"), nullptr, 0, false));
+}
+
+GetGlobalNode::~GetGlobalNode()
+{
+}
+
+NodeBase *GetGlobalNode::Duplicate()
+{
+	const char *what = nullptr;
+	StringValue *v = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	if (v) what = v->str;
+	GetGlobalNode *node = new GetGlobalNode(what);
+	node->DuplicateBase(this);
+	return node;
+}
+
+int GetGlobalNode::Update()
+{
+	const char *what = nullptr;
+	StringValue *sv = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	if (!sv) return -1;
+	what = sv->str;
+	if (isblank(what)) return -1;
+
+	Value *shouldbe = laidout->globals.find(what);
+	if (!shouldbe) return -1;
+
+	Value *v = properties.e[1]->GetData();
+	if (v != shouldbe) {
+		properties.e[1]->SetData(shouldbe, 0);
+	}
+
+	return 0; //do nothing here!
+}
+
+int GetGlobalNode::GetStatus()
+{
+	const char *what = nullptr;
+	StringValue *sv = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	if (!sv) return -1;
+	what = sv->str;
+	if (isblank(what)) return -1;
+
+	Value *shouldbe = laidout->globals.find(what);
+	if (!shouldbe) return -1;
+
+	Value *v = properties.e[1]->GetData();
+	if (!v) return -1;
+	if (v != shouldbe) return 1;
+
+	return 0;
+}
+
+
+//------------------------------ SetGlobalNode --------------------------------------------
+
+/*! \class SetGlobalNode
+ * Set a laidout->global variable.
+ */
+
+class SetGlobalNode : public NodeBase
+{
+  public:
+	SetGlobalNode(const char *what);
+	virtual ~SetGlobalNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new SetGlobalNode(nullptr); }
+};
+
+SetGlobalNode::SetGlobalNode(const char *what)
+{
+	makestr(type, "Resources/SetGlobal");
+	makestr(Name, _("Set Global Variable"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "name",   new StringValue(what),1, _("Name")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "value",  NULL,1,                 _("Value")));
+}
+
+SetGlobalNode::~SetGlobalNode()
+{
+}
+
+NodeBase *SetGlobalNode::Duplicate()
+{
+	const char *what = nullptr;
+	StringValue *v = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	if (v) what = v->str;
+	SetGlobalNode *node = new SetGlobalNode(what);
+	node->DuplicateBase(this);
+	return node;
+}
+
+int SetGlobalNode::Update()
+{
+	const char *what = nullptr;
+	StringValue *sv = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	if (sv) what = sv->str;
+
+	if (isblank(what)) return -1;
+
+	Value *shouldbe = properties.e[1]->GetData();
+	if (!shouldbe) return -1;
+
+	Value *v = laidout->globals.find(what);
+	if (!v) {
+		laidout->globals.push(what, shouldbe);
+	} else if (v != shouldbe) {
+		// properties.e[1]->SetData(v);
+		laidout->globals.set(what, shouldbe);
+	}
+
+	return 0; //do nothing here!
+}
+
+int SetGlobalNode::GetStatus()
+{
+	const char *what = nullptr;
+	StringValue *sv = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	if (!sv) return -1;
+	what = sv->str;
+	if (!what) return -1;
+	Value *shouldbe = properties.e[1]->GetData();
+	if (!shouldbe) return -1;
+	Value *v = laidout->globals.find(what);
+	if (v != shouldbe) return -1;
+
+	return 0;
+}
+
+
+//------------------------------ RerouteNode --------------------------------------------
+
+/*! \class RerouteNode
+ * Map arrays to other arrays using a special Swizzle interface.
+ */
+
+class RerouteNode : public NodeBase
+{
+  public:
+	RerouteNode();
+	virtual ~RerouteNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual int Wrap();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new RerouteNode(); }
+};
+
+RerouteNode::RerouteNode()
+{
+	makestr(type, "Reroute");
+	makestr(Name, _("Reroute"));
+	special_type = NODES_Reroute;
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in",  NULL,1, _("In"),  nullptr,0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output,true, "out", NULL,0, _("Out"), nullptr,0, false)); 
+}
+
+RerouteNode::~RerouteNode()
+{}
+
+NodeBase *RerouteNode::Duplicate()
+{
+	RerouteNode *node = new RerouteNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int RerouteNode::Update()
+{
+	properties.e[1]->SetData(properties.e[0]->GetData(), 0);
+	return NodeBase::Update();
+}
+
+int RerouteNode::GetStatus()
+{
+	return NodeBase::GetStatus();
+}
+
+int RerouteNode::Wrap()
+{
+	width = 0;
+	height = 0;
+	properties.e[0]->x = properties.e[0]->y = properties.e[0]->width = properties.e[0]->height = 0;
+	properties.e[1]->x = properties.e[1]->y = properties.e[1]->width = properties.e[1]->height = 0;
+	return 0;
+}
 
 
 //--------------------------- SetupDefaultNodeTypes() -----------------------------------------
@@ -4362,6 +4870,9 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	 //--- MathConstantNode
 	factory->DefineNewObject(getUniqueNumber(), "Math/Constant",newMathConstants,  NULL, 0);
 
+	 //--- ExpressionNode
+	factory->DefineNewObject(getUniqueNumber(), "Math/Expression",ExpressionNode::NewNode,  NULL, 0);
+
 
 	//------------------ String -------------
 
@@ -4373,6 +4884,9 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 
 	 //--- SliceNode
 	factory->DefineNewObject(getUniqueNumber(), "Strings/Slice",newSliceNode,  NULL, 0);
+
+	 //--- TextFileNode
+	factory->DefineNewObject(getUniqueNumber(), "Strings/TextFromFile",TextFileNode::NewNode,  NULL, 0);
 
 
 	 //-------------------- FILTERS -------------
@@ -4404,6 +4918,20 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	 //--- GetVariableNode
 	factory->DefineNewObject(getUniqueNumber(), "Threads/GetVariable",newGetVariableNode,  NULL, 0);
 
+
+	 //-------------------- Resources -------------
+
+	 //--- set laidout->globals
+	factory->DefineNewObject(getUniqueNumber(), "Resources/SetGlobal",SetGlobalNode::NewNode,  NULL, 0);
+
+	 //--- get laidout->globals
+	factory->DefineNewObject(getUniqueNumber(), "Resources/GetGlobal",GetGlobalNode::NewNode,  NULL, 0);
+
+
+	 //-------------------- Specials -------------
+
+	 //--- Reroute
+	factory->DefineNewObject(getUniqueNumber(), "Reroute",RerouteNode::NewNode,  NULL, 0);
 
 
 	//Register nodes for DrawableObject filters:

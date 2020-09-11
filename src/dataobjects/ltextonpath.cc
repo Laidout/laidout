@@ -109,6 +109,8 @@ LaxInterfaces::SomeData *LTextOnPath::duplicate(LaxInterfaces::SomeData *dup)
 	return dup;
 }
 
+Value *NewLTextOnPath() { return new LTextOnPath; }
+
 ObjectDef *LTextOnPath::makeObjectDef()
 {
 
@@ -127,8 +129,7 @@ ObjectDef *LTextOnPath::makeObjectDef()
 			"TextOnPath",
             _("TextOnPath"),
             _("Text on a path"),
-            "class",
-            NULL,NULL);
+            NewLTextOnPath,NULL);
 	stylemanager.AddObjectDef(sd, 0);
 
 	sd->pushVariable("text",  _("Text"),  _("Text"),    "string",0, NULL,0);

@@ -109,6 +109,8 @@ LaxInterfaces::SomeData *LCaptionData::duplicate(LaxInterfaces::SomeData *dup)
 	return dup;
 }
 
+Value *NewLCaptionData() { return new LCaptionData; }
+
 ObjectDef *LCaptionData::makeObjectDef()
 {
 
@@ -127,8 +129,7 @@ ObjectDef *LCaptionData::makeObjectDef()
 			"CaptionData",
             _("CaptionData"),
             _("A snippet of text"),
-            "class",
-            NULL,NULL);
+            NewLCaptionData,NULL);
 	stylemanager.AddObjectDef(sd, 0);
 
 
@@ -136,6 +137,10 @@ ObjectDef *LCaptionData::makeObjectDef()
 	sd->pushVariable("fontsize", _("Font size"), _("Size of font in local units"),  "real",0,   NULL,0);
 	sd->pushVariable("text",_("Text"),_("Text"), "string",0,   NULL,0);
 	//sd->pushVariable("font",_("Font"),_("The font"), "Font",0,   NULL,0);
+	sd->pushVariable("xcentering", _("X Centering"), _("0 is left, 100 is right. Any other number works too."),  "real",0,   NULL,0);
+	sd->pushVariable("ycentering", _("Y Centering"), _("0 is top, 100 is bottom. Any other number works too."),  "real",0,   NULL,0);
+	sd->pushVariable("linespacing", _("Line Spacing"), _("1 is 100% of font's default line spacing."),  "real",0,   NULL,0);
+	
 
 	return sd;
 }
@@ -157,9 +162,17 @@ Value *LCaptionData::dereference(const char *extstring, int len)
 		return s;
 	}
 
-	// if (extequal(extstring,len, "height")) {
-	// 	return new FontValue(font);
-	// }
+	if (extequal(extstring,len, "xcentering")) {
+		return new DoubleValue(xcentering);
+	}
+
+	if (extequal(extstring,len, "ycentering")) {
+		return new DoubleValue(ycentering);
+	}
+
+	if (extequal(extstring,len, "linespacing")) {
+		return new DoubleValue(LineSpacing());
+	}
 
 	return DrawableObject::dereference(extstring, len);
 }
@@ -179,6 +192,7 @@ int LCaptionData::assign(FieldExtPlace *ext,Value *v)
 				green = cv->color.Green();
 				blue  = cv->color.Blue();
 				CaptionData::alpha = cv->color.Alpha();
+				touchContents();
 				return 1;
 
 			} else if (!strcmp(str,"fontsize")) {
@@ -186,6 +200,43 @@ int LCaptionData::assign(FieldExtPlace *ext,Value *v)
 				if (!setNumberValue(&d, v)) return 0;
 				if (d < 0) return 0;
 				Size(d);
+				return 1;
+			
+			} else if (!strcmp(str,"linespacing")) {
+				double d;
+				if (!setNumberValue(&d, v)) return 0;
+				if (d <= 0) return 0;
+				LineSpacing(d);
+				return 1;
+
+			} else if (!strcmp(str,"xcentering")) {
+				double d = 50;
+				if (v->type() == VALUE_String) {
+					StringValue *sv = dynamic_cast<StringValue*>(v);
+					if (!sv || !sv->str) return 0;
+					if (!strcasecmp(sv->str, "left")) d = 0;
+					else if (!strcasecmp(sv->str, "center")) d = 50;
+					else if (!strcasecmp(sv->str, "right")) d = 100;
+					else d = strtod(sv->str, nullptr);
+				} else {
+					if (!setNumberValue(&d, v)) return 0;
+				}
+				XCenter(d);
+				return 1;
+
+			} else if (!strcmp(str,"ycentering")) {
+				double d = 50;
+				if (v->type() == VALUE_String) {
+					StringValue *sv = dynamic_cast<StringValue*>(v);
+					if (!sv || !sv->str) return 0;
+					if (!strcasecmp(sv->str, "top")) d = 0;
+					else if (!strcasecmp(sv->str, "center")) d = 50;
+					else if (!strcasecmp(sv->str, "bottom")) d = 100;
+					else d = strtod(sv->str, nullptr);
+				} else {
+					if (!setNumberValue(&d, v)) return 0;
+				}
+				YCenter(d);
 				return 1;
 
 			} else if (!strcmp(str,"text")) {

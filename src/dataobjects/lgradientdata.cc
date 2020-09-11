@@ -67,6 +67,8 @@ Value *GradientValue::duplicate()
 	return dup;
 }
 
+Value *NewGradientValue() { return new GradientValue; }
+
 ObjectDef *GradientValue::makeObjectDef()
 {
     ObjectDef *sd=stylemanager.FindDef("GradientStrip");
@@ -79,8 +81,7 @@ ObjectDef *GradientValue::makeObjectDef()
             "GradientStrip",
             _("Gradient"),
             _("A simple gradient definition"),
-            "class",
-            NULL,NULL);
+            NewGradientValue,NULL);
 
 //    sd->pushFunction("LoadFile",_("Load File"),_("Load a gradient file"),
 //                     NULL,
@@ -204,6 +205,8 @@ Value *LGradientData::duplicate()
 	return dynamic_cast<Value*>(dup);
 }
 
+Value *NewLGradientData() { return new LGradientData; }
+
 ObjectDef *LGradientData::makeObjectDef()
 {
 
@@ -222,8 +225,7 @@ ObjectDef *LGradientData::makeObjectDef()
 			"GradientData",
             _("GradientData"),
             _("A gradient"),
-            "class",
-            NULL,NULL);
+            NewLGradientData,NULL);
 
 	sd->pushFunction("FlipColors",_("Flip Colors"),_("Flip the order of colors"), NULL,
 					 NULL);
@@ -358,7 +360,6 @@ Value *LGradientInterface::duplicate()
     this->inc_count();
     return this;
 }
-
 
 ObjectDef *LGradientInterface::makeObjectDef()
 {

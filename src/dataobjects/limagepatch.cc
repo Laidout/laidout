@@ -112,6 +112,8 @@ Value *LImagePatchData::duplicate()
 	return dynamic_cast<Value*>(dup);
 }
 
+Value *NewLImagePatchData() { return new LImagePatchData; }
+
 ObjectDef *LImagePatchData::makeObjectDef()
 {
 
@@ -130,8 +132,7 @@ ObjectDef *LImagePatchData::makeObjectDef()
 			"ImagePatchData",
             _("ImagePatchData"),
             _("An image mesh distortion"),
-            "class",
-            NULL,NULL);
+            NewLImagePatchData,NULL);
 	stylemanager.AddObjectDef(sd, 0);
 
 //	sd->pushFunction("FlipColors",_("Flip Colors"),_("Flip the order of colors"), NULL,
@@ -256,6 +257,8 @@ Value *LColorPatchData::duplicate()
 	return dynamic_cast<Value*>(dup);
 }
 
+Value *NewLColorPatchData() { return new LColorPatchData; }
+
 ObjectDef *LColorPatchData::makeObjectDef()
 {
 
@@ -274,8 +277,7 @@ ObjectDef *LColorPatchData::makeObjectDef()
 			"ColorPatchData",
             _("ColorPatchData"),
             _("A color mesh gradient"),
-            "class",
-            NULL,NULL);
+            NewLColorPatchData,NULL);
 	stylemanager.AddObjectDef(sd, 0);
 
 //	sd->pushFunction("FlipColors",_("Flip Colors"),_("Flip the order of colors"), NULL,
@@ -493,7 +495,6 @@ Value *LColorPatchInterface::duplicate()
     return this;
 }
 
-
 ObjectDef *LColorPatchInterface::makeObjectDef()
 {
 
@@ -506,7 +507,6 @@ ObjectDef *LColorPatchInterface::makeObjectDef()
 	sd=new ObjectDef(NULL,"ColorPatchInterface",
             _("Image Patch Interface"),
             _("Image Patch Interface"),
-            "class",
             NULL,NULL);
 
 	if (!sc) sc=GetShortcuts();

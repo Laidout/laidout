@@ -430,8 +430,7 @@ ObjectDef *LFillStyle::makeObjectDef()
             "FillStyle",
             _("Fill Style"),
             _("Fill properties"),
-            "class",
-            NULL,NULL);
+            LFillStyle::newLFillStyle, NULL);
 
     sd->pushVariable("color", _("Color"),  _("Color"), "Color",0,  NULL,0);
 

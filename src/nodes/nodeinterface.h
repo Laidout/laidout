@@ -98,7 +98,7 @@ class NodeProperty : public Laxkit::RefCounted
 	std::clock_t modtime;
 
 	NodeBase *owner;
-	NodeProperty *frompropproxy, *topropproxy;
+	NodeProperty *frompropproxy, *topropproxy; //connects to outer group ins and outs
 	NodeProperty *mute_to;
 	Value *data;
 	bool data_is_linked;
@@ -270,6 +270,7 @@ class NodeBase : public Laxkit::anObject,
 	 //state
 	char *Name; //displayed name (see Label())
 	char *type; //non translated type, like "Value", or "Math"
+	int special_type;
 	ObjectDef *def; //optional
 	char *error_message;
 	int muted;
@@ -290,6 +291,8 @@ class NodeBase : public Laxkit::anObject,
 
 	NodeFrame *frame;
 	NodeColors *colors;
+
+	NodeBase *resource_proxy; //when nodes are moved/sized/linked, relay these changes to the resource we are copied from
 
 	NodeBase();
 	virtual ~NodeBase();
@@ -343,7 +346,7 @@ class NodeBase : public Laxkit::anObject,
 	virtual NodeProperty *FindProperty(const char *prop, int *index_ret = nullptr);
 	virtual int SetProperty(const char *prop, Value *value, bool absorb);
 	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
-	virtual int NumInputs(bool connected);
+	virtual int NumInputs(bool connected, bool include_execin);
 	virtual int NumOutputs(bool connected);
 
 	virtual int IsMuted();
@@ -412,6 +415,7 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	virtual NodeConnection *Connect(NodeProperty *from, NodeProperty *to);
 	virtual NodeConnection *Connect(NodeConnection *newcon, int absorb);
 	virtual int Disconnect(NodeConnection *connection, bool from_will_be_replaced, bool to_will_be_replaced);
+	virtual int ForceUpdates();
 
 	virtual void       dump_out(FILE *f, int indent, int what, LaxFiles::DumpContext *context);
     virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context);
@@ -494,6 +498,7 @@ enum NodeHover {
 	NODES_Thread_Run     ,
 	NODES_Thread_Reset   ,
 	NODES_Thread_Break   ,
+	NODES_Reroute        ,
 	NODES_HOVER_MAX
 };
 
@@ -549,7 +554,8 @@ enum NodeInterfaceActions {
 	NODES_Hide_Previews,
 	NODES_Find,
 	NODES_Find_Next,
-
+	NODES_Force_Updates,
+	
 	NODES_MAX
 };
 

@@ -119,6 +119,8 @@ Value *LPathsData::duplicate()
 	return dynamic_cast<Value*>(dup);
 }
 
+Value *NewLPathsData() { return new LPathsData; }
+
 /*! Add to stylemanager if not exists. Else create, along with same for LineStyle, FillStyle, and Affine.
  */
 ObjectDef *LPathsData::makeObjectDef()
@@ -143,8 +145,7 @@ ObjectDef *LPathsData::makeObjectDef()
 			"PathsData",
             _("PathsData"),
             _("A collection of paths"),
-            "class",
-            NULL,NULL);
+            NewLPathsData,NULL);
 
 	sd->pushFunction("moveto",_("moveto"),_("Start a new subpath"), NULL,
 					"x",_("X"),_("X position"),"number", NULL,NULL,

@@ -185,6 +185,8 @@ Value *LVoronoiData::duplicate()
 	return dynamic_cast<Value*>(dup);
 }
 
+Value *NewLVoronoiData() { return new LVoronoiData; }
+
 ObjectDef *LVoronoiData::makeObjectDef()
 {
 	ObjectDef *sd=stylemanager.FindDef("VoronoiData");
@@ -202,8 +204,7 @@ ObjectDef *LVoronoiData::makeObjectDef()
 			"VoronoiData",
             _("Voronoi Data"),
             _("Delauney triangles and Voronoi regions"),
-            "class",
-            NULL,NULL);
+            NewLVoronoiData,NULL);
 	stylemanager.AddObjectDef(sd, 0);
 
 //	sd->pushFunction("FlipColors",_("Flip Colors"),_("Flip the order of colors"), NULL,

@@ -269,6 +269,11 @@ NodeProperty::~NodeProperty()
 	delete[] tooltip;
 	delete[] datatypes;
 	if (data) data->dec_count();
+	for (int c=0; c<connections.n; c++) {
+		NodeConnection *con = connections.e[c];
+		if (con->fromprop == this) { con->fromprop = nullptr; con->from = nullptr; }
+		if (con->toprop == this)   { con->toprop = nullptr;   con->to   = nullptr; }
+	}
 	connections.flush();
 }
 
@@ -317,7 +322,15 @@ void NodeProperty::SetExtents(NodeColors *colors)
 
 		} else if (v->type()==VALUE_String) {
 			StringValue *s = dynamic_cast<StringValue*>(v);
-			w += th + colors->font->Extent(s->str, -1);
+			// use at most 30 chars, and only from the first line
+			const char *str = s ? s->str : nullptr;
+			int n = 0;
+			if (str) {
+				n = strlen(str);
+				const char *nl = strchr(str, '\n');
+				if (nl) n = nl-str;
+			}
+			w += th + (n > 0 ? colors->font->Extent(s->str, n) : 0);
 
 		} else if (v->type()==VALUE_File) {
 			FileValue *s = dynamic_cast<FileValue*>(v);
@@ -484,6 +497,7 @@ NodeBase *NodeProperty::GetDataOwner()
 }
 
 /*! Returns 1 for successful setting, or 0 for not set. newdata not absorbed on failure.
+ * Note this ONLY changes data LOCAL to property and ignores anything that may be connected.
  */
 int NodeProperty::SetData(Value *newdata, bool absorb)
 {
@@ -670,6 +684,8 @@ NodeBase::NodeBase()
 	deletable = true; //often at least one node will not be deletable, like group output/inputs
 	modtime   = 0;
 	muted     = 0;
+	resource_proxy = nullptr;
+	special_type = NODES_None; //currently none or NODES_Reroute
 
 	frame = NULL;
 
@@ -688,6 +704,7 @@ NodeBase::~NodeBase()
 	if (def) def->dec_count();
 	if (colors) colors->dec_count();
 	if (total_preview) total_preview->dec_count();
+	if (resource_proxy) resource_proxy->dec_count();
 	properties.flush(); //explicit here for debugging purposes
 }
 
@@ -1434,11 +1451,11 @@ int NodeBase::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
 /*! If connected, then return the number of connected inputs.
  * Else just the number of input properties.
  */
-int NodeBase::NumInputs(bool connected)
+int NodeBase::NumInputs(bool connected, bool include_execin)
 {
 	int n = 0;
 	for (int c=0; c<properties.n; c++) {
-		if (properties.e[c]->IsInput()) {
+		if (properties.e[c]->IsInput() || (include_execin && properties.e[c]->IsExecIn())) {
 			if (connected) {
 				n += properties.e[c]->connections.n;
 			} else n++;
@@ -1743,7 +1760,7 @@ NodeBase *NodeGroup::DuplicateGroup(NodeGroup *newgroup)
 		NodeBase *nnode = nodes.e[c]->Duplicate();
 		if (!nnode->colors) nnode->InstallColors(colors,0);
 		nnode->Wrap();
-		newgroup->nodes.push(nnode);
+		newgroup->AddNode(nnode);
 		if (nodes.e[c] == input)  newgroup->DesignateInput (nnode);
 		if (nodes.e[c] == output) newgroup->DesignateOutput(nnode);
 		nnode->dec_count();
@@ -1961,6 +1978,7 @@ NodeGroup *NodeGroup::GroupNodes(Laxkit::RefPtrStack<NodeBase> &selected)
 
 	NodeGroup *group = new NodeGroup;
 	group->m = m;
+	group->Id("Group");
 	group->Label(_("Group"));
 	group->InstallColors(colors, 0);
 	NodeBase *node, *ins, *outs;
@@ -1991,7 +2009,7 @@ NodeGroup *NodeGroup::GroupNodes(Laxkit::RefPtrStack<NodeBase> &selected)
 
 	for (int c=0; c<selected.n; c++) {
 		node = selected.e[c];
-		group->nodes.push(node);
+		group->nodes.push(node); //we assume we don't have name collisions, so we avoid group->AddNode()
 
 		box.addtobounds(node->x, node->y);
 		box.addtobounds(node->x+node->width, node->y+node->height);
@@ -2100,7 +2118,7 @@ NodeGroup *NodeGroup::GroupNodes(Laxkit::RefPtrStack<NodeBase> &selected)
 	outs->x = box.maxx + outs->width;
 	outs->y = (box.miny + box.maxy)/2 - outs->height/2;
 
-	nodes.push(group);
+	AddNode(group);
 
 	return group;
 }
@@ -2125,7 +2143,7 @@ int NodeGroup::UngroupNodes(Laxkit::RefPtrStack<NodeBase> &selected, bool update
 			} else if (group->nodes.e[c2] == group->output) {
 				continue;
 			} else {
-				nodes.push(group->nodes.e[c2]);
+				AddNode(group->nodes.e[c2]);
 				nselected.push(group->nodes.e[c2]);
 			}
 		}
@@ -2261,6 +2279,26 @@ int NodeGroup::Disconnect(NodeConnection *connection, bool from_will_be_replaced
 	if (connection->fromprop) connection->fromprop->RemoveConnection(connection);
 	if (connection->toprop)   connection->toprop  ->RemoveConnection(connection);
 	return 0;
+}
+
+/*! 
+ * Update all the nodes in the group, starting from leftmost.
+ * 
+ * If successful,  returns the number of nodes updated.
+ * If any nodes fail to update, return -1.
+ */
+int NodeGroup::ForceUpdates()
+{
+	PtrStack<NodeBase> starts;
+	for (int c=0; c<nodes.n; c++) {
+		nodes.e[c]->modtime = 0;
+		if (nodes.e[c]->NumInputs(true, true) == 0) starts.push(nodes.e[c], 0);
+	}
+
+	for (int c=0; c<starts.n; c++)
+		if (starts.e[0]->Update() == -1) return -1;
+
+	return starts.n;
 }
 
 /*! Move things around so there is no overlap.
@@ -2526,7 +2564,7 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 
 			if (!newnode->colors && colors) newnode->InstallColors(colors, false);
 			newnode->Wrap();
-			nodes.push(newnode);
+			AddNode(newnode); // *** note: if there's bad ids in the file, connections will be missing up if AddNode changes the node name
 			newnode->dec_count();
 
         } else if (!strcmp(name,"connections")) {
@@ -2664,14 +2702,28 @@ int NodeGroup::InstallColors(NodeColors *newcolors, bool absorb_count)
 	return 0;
 }
 
-/*! Default is to just nodes.push(node).
+/*! Default is to just nodes.push(node), and make node->Id() something unique within ourself.
  */
 int NodeGroup::AddNode(NodeBase *node)
 {
+	for (int c=0; c<nodes.n; c++) {
+		if (!strcmp(node->Id(), nodes.e[c]->Id())) {
+			//we need to uniquify the name
+			char *nname = increment_file(node->Id());
+			while (FindNode(nname)) {
+				char *old = nname;
+				nname = increment_file(nname);
+				delete[] old;
+			}
+			node->Id(nname);
+			delete[] nname;
+			break;
+		}
+	}
 	return nodes.push(node);
 }
 
-/*! Create and return a new fresh node object, unconnected to anything.
+/*! Create and return a new fresh node object, unconnected to anything, and not a child of anything.
  */
 NodeBase *NodeGroup::NewNode(const char *type)
 {
@@ -3047,6 +3099,11 @@ Laxkit::MenuInfo *NodeInterface::ContextMenu(int x,int y,int deviceid, Laxkit::M
 	menu->AddSep();
 	menu->AddItem(_("Show thread controls"), NODES_Thread_Controls);
 
+	if (nodes) {
+		menu->AddSep();
+		menu->AddItem(_("Force updates"), NODES_Force_Updates);
+	}
+
 	return menu;
 }
 
@@ -3089,6 +3146,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 			|| action == NODES_Hide_Previews
 			|| action == NODES_Thread_Controls
 			|| action == NODES_New_Nodes
+			|| action == NODES_Force_Updates
 			) {
 			PerformAction(action);
 
@@ -3288,7 +3346,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 					g->InitializeBlank();
 				}
 
-				nodes->nodes.push(newnode);
+				nodes->AddNode(newnode);
 				newnode->dec_count();
 
 				selected.flush();
@@ -3778,9 +3836,21 @@ int NodeInterface::Refresh()
 		 //draw whole rect, bg
 		dp->NewFG(node->collapsed ? &colors->label_bg : bg);
 		dp->LineWidth(borderwidth);
-		dp->drawRoundedRect(node->x, node->y, node->width, node->height,
-							th/3, false, th/3, false, 1); 
+		if (node->special_type == NODES_Reroute) {
+			dp->NewFG(border);
+			dp->drawcircle(node->x, node->y, 2*(lasthover == c && overprop == -1 ? 2 : 1)*th*node->colors->slot_radius, 2);
+			dp->LineWidth(1);
+			dp->NewFG(fg);
+			prop = node->properties.e[0];
+			DrawPropertySlot(node, prop,
+					overnode == c && overprop == NODES_Reroute,
+					overnode == c && overprop == NODES_Reroute);
+			continue;
+		}
 
+		dp->drawRoundedRect(node->x, node->y, node->width, node->height,
+							th/3, false, th/3, false, 1);
+		
 		 //do something special for groups
 		if (dynamic_cast<NodeGroup*>(node)) {
 			dp->drawRoundedRect(node->x-th/4, node->y-th/4, node->width+th/2, node->height+th/2,
@@ -4022,7 +4092,14 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 					}
 				}
 				dp->NewFG(&nodes->colors->fg_edit);
-				dp->textout(dx+node->x+th, y+prop->height/2, str,-1, LAX_LEFT|LAX_VCENTER); 
+				// use at most 30 chars, and only from the first line
+				int n = 0;
+				if (str) {
+					n = strlen(str);
+					const char *nl = strchr(str, '\n');
+					if (nl) n = nl-str;
+				}
+				if (n) dp->textout(dx+node->x+th, y+prop->height/2, str,n, LAX_LEFT|LAX_VCENTER); 
 
 			} else if (v && v->type()==VALUE_Enum) {
 
@@ -4457,6 +4534,17 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, int 
 		if (node->collapsed) rr = th*node->colors->slot_radius;
 		else rr = th/2;
 
+		if (node->special_type == NODES_Reroute) {
+			if (p.x >= node->x-th &&  p.x <= node->x+th && p.y >= node->y-th && p.y <= node->y+th) {	
+				if (p.x >= node->x-th/2 &&  p.x <= node->x+th/2 && p.y >= node->y-th/2 && p.y <= node->y+th/2) {	
+					*overpropslot = NODES_Reroute;
+					*overproperty = NODES_Reroute;
+				}
+				return c;
+			}
+			continue;
+		}
+
 		 //check for bounds slightly bigger horizontally than actual bounds
 		if (p.x >= node->x-th/2 &&  p.x <= node->x+node->width+th/2 &&  p.y >= node->y &&  p.y <= node->y+node->height) {
 			 //found a node, now see if over a property's in/out
@@ -4607,6 +4695,15 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 	int action = NODES_None;
 	int overpropslot=-1, overproperty=-1, overconnection=-1; 
 	int overnode = scan(x,y, &overpropslot, &overproperty, &overconnection, state);
+
+	if (overnode >= 0 && overproperty == NODES_Reroute) {
+		NodeBase *node = nodes->nodes.e[overnode];
+		if (!node->properties.e[0]->IsConnected()) {
+			overproperty = overpropslot = 0;
+		} else {
+			overproperty = overpropslot = 1;
+		}
+	}
 
 	if (overnode >= 0 && overpropslot==-1 && (state&ShiftMask)!=0) {
 		 //intercept so shift drag moves current nodes
@@ -5031,6 +5128,28 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		// *** need to ensure there is no circular linking
 		DBG cerr << " *** need to ensure there is no circular linking for nodes!!!"<<endl;
 
+		if (overnode >= 0 && nodes->nodes.e[overnode]->special_type == NODES_Reroute) {
+			NodeProperty *p1 = nodes->nodes.e[overnode]->properties.e[0];
+			NodeProperty *p2 = nodes->nodes.e[overnode]->properties.e[1];
+
+			if (action == NODES_Drag_Input && p1->IsExecIn()) {
+				if (!p1->IsConnected() && !p2->IsConnected()) {
+					//change to normal in/out if no execs connected
+					p1->type = NodeProperty::PROP_Input;
+					p2->type = NodeProperty::PROP_Output;
+					overproperty = 1;
+				} // else don't allow connection
+
+			} else if (action == NODES_Drag_Exec_In && p1->IsInput()) {
+				if (!p1->IsConnected() && !p2->IsConnected()) {
+					//change to normal in/out if no execs connected
+					p1->type = NodeProperty::PROP_Exec_In;
+					p2->type = NodeProperty::PROP_Exec_Out;
+					overproperty = 1;
+				}
+			} else overproperty = 1;
+		}
+
 		int remove=0;
 
 		if (overnode>=0 && overproperty>=0) {
@@ -5080,6 +5199,28 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 	} else if (action == NODES_Drag_Output || action == NODES_Drag_Exec_Out) {
 		//check if hovering over the input of some other node
 		DBG cerr << " *** need to ensure there is no circular linking for nodes!!!"<<endl;
+
+		if (overnode >= 0 && nodes->nodes.e[overnode]->special_type == NODES_Reroute) {
+			NodeProperty *p1 = nodes->nodes.e[overnode]->properties.e[0];
+			NodeProperty *p2 = nodes->nodes.e[overnode]->properties.e[1];
+			
+			if (action == NODES_Drag_Output && p1->IsExecIn()) {
+				if (!p1->IsConnected() && !p2->IsConnected()) {
+					//change to normal in/out if no execs connected
+					p1->type = NodeProperty::PROP_Input;
+					p2->type = NodeProperty::PROP_Output;
+					overproperty = 0;
+				} // else don't allow connection
+
+			} else if (action == NODES_Drag_Exec_Out && p1->IsInput()) {
+				if (!p1->IsConnected() && !p2->IsConnected()) {
+					//change to normal in/out if no execs connected
+					p1->type = NodeProperty::PROP_Exec_In;
+					p2->type = NodeProperty::PROP_Exec_Out;
+					overproperty = 0;
+				}
+			} else overproperty = 0;
+		}
 
 		int remove=0;
 
@@ -6033,6 +6174,12 @@ int NodeInterface::PerformAction(int action)
 		show_threads = !show_threads;
 		needtodraw=1;
 		return 0;
+
+	} else if (action == NODES_Force_Updates) {
+		// mainly or debugging, force all nodes to refresh
+		if (!nodes) return 0;
+		nodes->ForceUpdates();
+		return 0;
 	}
 
 	return 1;
@@ -6353,6 +6500,7 @@ int NodeInterface::DuplicateNodes()
 	RefPtrStack<NodeBase> newnodes;
 	for (int c=0; c<selected.n; c++) {
 		NodeBase *newnode = selected.e[c]->Duplicate();
+		makestr(newnode->type, selected.e[c]->Type());
 		if (!newnode) {
 			cerr << " *** warning! Duplicate() not implemented for "<<selected.e[c]->Type()<<endl;
 			continue;

@@ -27,6 +27,96 @@ using namespace Laxkit;
 namespace Laidout {
 
 
+//------------------------------- TraceSettingsValue ---------------------------------------
+
+class TraceSettingsValue : public Value
+{
+  public:
+  	LaxInterfaces::EngraverTraceSettings *settings;
+
+ 	TraceSettingsValue(LaxInterfaces::EngraverTraceSettings *nsettings);
+ 	virtual ~TraceSettingsValue();
+
+	virtual Value *duplicate();
+	virtual ObjectDef *makeObjectDef();
+	virtual Value *dereference(const char *extstring, int len);
+	virtual int assign(FieldExtPlace *ext,Value *v);
+	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+	                     Value **value_ret, Laxkit::ErrorLog *log);
+};
+
+TraceSettingsValue::TraceSettingsValue(LaxInterfaces::EngraverTraceSettings *nsettings)
+{
+	settings = nsettings;
+	if (settings) settings->inc_count();
+}
+
+TraceSettingsValue::~TraceSettingsValue()
+{
+	if (settings) settings->dec_count();
+}
+
+Value *TraceSettingsValue::duplicate()
+{
+	TraceSettingsValue *dup = new TraceSettingsValue(settings);
+	return dup;
+}
+
+ObjectDef *TraceSettingsValue::makeObjectDef()
+{
+	ObjectDef *sd = stylemanager.FindDef("TraceSettings");
+    if (sd) {
+        sd->inc_count();
+        return sd;
+    }
+
+	sd = new ObjectDef(nullptr,
+			"TraceSettings",
+            _("Trace Settings"),
+            _("Trace settings for engraving lines"),
+            "class",
+            NULL,NULL);
+	stylemanager.AddObjectDef(sd, 0);
+
+//	sd->pushVariable("height",_("Height"),_("Pixel height"), "real",0,   NULL,0);
+	
+//	sd->pushFunction("LoadFile",_("Load File"),_("Load an image file"),
+//					 NULL,
+//			 		 "file",NULL,_("File name to load"),"string", NULL, NULL,
+//					 NULL);
+//
+//	sd->pushVariable("file",  _("File"),  _("File name"),    "string",0, NULL,0);
+//	sd->pushVariable("width", _("Width"), _("Pixel width"),  "real",0,   NULL,0);
+//	sd->pushVariable("height",_("Height"),_("Pixel height"), "real",0,   NULL,0);
+
+	return sd;
+}
+
+Value *TraceSettingsValue::dereference(const char *extstring, int len)
+{
+	return nullptr;
+}
+
+/*! Return 1 for success, 2 for success, but other contents changed too, -1 for unknown extension.
+ * 0 for total fail, as when v is wrong type.
+ */
+int TraceSettingsValue::assign(FieldExtPlace *ext,Value *v)
+{
+	return -1;
+}
+
+/*! Return
+ *  0 for success, value optionally returned.
+ * -1 for no value returned due to incompatible parameters or name not known, which aids in function overloading.
+ *  1 for parameters ok, but there was somehow an error, so no value returned.
+ */
+int TraceSettingsValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+	                     Value **value_ret, Laxkit::ErrorLog *log)
+{
+	return -1;
+}
+
+
 //------------------------------- LEngraverFillData ---------------------------------------
 /*! \class LEngraverFillData
  * \brief Redefined LaxInterfaces::EngraverFillData.
@@ -114,6 +204,8 @@ LaxInterfaces::SomeData *LEngraverFillData::duplicate(LaxInterfaces::SomeData *d
 	return dup;
 }
 
+Value *NewLEngraverFillData() { return new LEngraverFillData; }
+
 ObjectDef *LEngraverFillData::makeObjectDef()
 {
 
@@ -132,8 +224,7 @@ ObjectDef *LEngraverFillData::makeObjectDef()
 			"EngraverFillData",
             _("EngraverFillData"),
             _("An field of engraving lines"),
-            "class",
-            NULL,NULL);
+            NewLEngraverFillData,NULL);
 	stylemanager.AddObjectDef(sd, 0);
 
 //	sd->pushVariable("height",_("Height"),_("Pixel height"), "real",0,   NULL,0);
