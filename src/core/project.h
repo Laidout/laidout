@@ -68,6 +68,7 @@ class Project : public LaxFiles::DumpUtility, public ObjectContainer
 	virtual int Pop(Document *doc);
 
 	virtual Document *Find(const char *name, int howmatch);
+	virtual int LocatePage(Page *page, Document **doc_ret);
 	virtual int valid();
 	virtual int ClarifyRefs(Laxkit::ErrorLog &log);
 	virtual int ClarifyAnchors(Laxkit::ErrorLog &log);

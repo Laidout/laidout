@@ -149,6 +149,20 @@ Document *Project::Find(const char *name, int howmatch)
 	return NULL;
 }
 
+int Project::LocatePage(Page *page, Document **doc_ret)
+{
+	for (int c=0; c<docs.n; c++) {
+		if (!docs.e[c]->doc) continue;
+		for (int p=0; p<docs.e[c]->doc->pages.n; p++) {
+			if (docs.e[c]->doc->pages.e[p] == page) {
+				if (doc_ret) *doc_ret = docs.e[c]->doc;
+				return p;
+			}
+		}
+	}
+	if (doc_ret) *doc_ret = nullptr;
+	return -1;
+}
 
 /*! Return 0 for document removed, or 1 for not found or otherwise not removed.
  * The doc's count will be decremented.
