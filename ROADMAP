@@ -36,6 +36,7 @@ VERSION 0.098
 (done) Empty objects that can be parents, or whose contents are defined by nodes
        Perspective transform object filter, proof of concept for hybrid interface/node workflow
 (done) Node based image "importer"
+       More nodes: global var access, any drawable object, expressions, path generators, reroute
 
        engraver tool grow point mode
        engraver tool, resolution cut mode
@@ -49,7 +50,7 @@ VERSION 0.098
 
 (done) debug svg in enough to be able to load icons.svg
 (done) svg in/out with powerstroke
-       svg in/(done)out with meshes
+       svg in/(done)out with meshes, at miminum round trip export/import should work
 (done) Import svg gradients with proper filling of parent
 
 
@@ -91,6 +92,7 @@ VERSION 0.099
        Custom alignments to parents, not just affine transform to parent
        Externally rendered objects, similar to Scribus render frames
        Softmask
+       Stroke fill
        GraphicsMagick nodes
        Gmic nodes plugin
        Merge EpsData with normal images, since they can be previewed with gm now
