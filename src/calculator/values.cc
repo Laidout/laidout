@@ -455,6 +455,12 @@ ObjectDef::ObjectDef()
 	extrainfo    = NULL;
 }
 
+/*! Shortcut to define classes (and only classes). */
+ObjectDef::ObjectDef(ObjectDef *nextends,const char *nname,const char *nName, const char *ndesc,
+			NewObjectFunc nnewfunc, ObjectFunc nstylefunc)
+  : ObjectDef(nextends, nname, nName, ndesc, "class", nullptr, nullptr, nullptr, OBJECTDEF_CAPPED, nnewfunc, nstylefunc)
+{}
+
 //! Constructor.
 /*! Takes possession of fields, and will delete in destructor.
  */
@@ -1298,6 +1304,19 @@ int ObjectDef::pop(int fieldindex)
 	if (!d) return 0;
 	d->dec_count();
 	return 1;
+}
+
+int cmp_ObjectDef_Name(const void *v1, const void *v2)
+{
+	const ObjectDef *d1 = *((const ObjectDef**)v1);
+	const ObjectDef *d2 = *((const ObjectDef**)v2);
+	return strcmp(d1->Name, d2->Name);
+}
+
+void ObjectDef::Sort()
+{
+	if (!fields || fields->n < 2) return;
+	qsort(fields->e, fields->n, sizeof(ObjectDef*), cmp_ObjectDef_Name);
 }
 
 /*! Return whether this is plain data (1) or is something else like a class, function, etc.
@@ -2409,8 +2428,9 @@ int Value::assign(Value *v, const char *extstring)
 }	
 
 
-//! Output to buffer, do NOT reallocate buffer, assume it has enough space. If len is not enough, return how much is needed.
-/*! Generally, subclasses should redefine this, and not the other getValueStr().
+/*! Output to buffer, do NOT reallocate buffer, assuming it has enough space.
+ * If len is not enough, return how much is needed (including null terminator).
+ *  Generally, subclasses should redefine this, and not the other getValueStr().
  * The string returned generally should be a string that can reasonably be
  * expected to convert back to a value in the interpreter.
  *

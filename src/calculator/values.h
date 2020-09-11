@@ -71,6 +71,7 @@ enum ValueTypes {
 
 	VALUE_Alias,      //!< For BlockInfo, tag to use a name in place of another
 	VALUE_Overloaded, //!< For Entry, stores names that happen to be overloaded
+	VALUE_Dummy,      //!< Internal Entry type to aid diagnostic parsing
 
 	VALUE_LValue,     //!< A name value that you can assign things to.
 
@@ -255,6 +256,8 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 			const char *fmt,const char *nrange, const char *newdefval,
 			Laxkit::RefPtrStack<ObjectDef>  *nfields=NULL,unsigned int fflags=OBJECTDEF_CAPPED,
 			NewObjectFunc nnewfunc=0,ObjectFunc nstylefunc=0);
+	ObjectDef(ObjectDef *nextends,const char *nname,const char *nName, const char *ndesc,
+			NewObjectFunc nnewfunc, ObjectFunc nstylefunc);
 	virtual ~ObjectDef();
 	virtual const char *whattype() { return "ObjectDef"; }
 	virtual void Clear(int which=~0);
@@ -324,6 +327,7 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	virtual int pushOperator(const char *op,int dir,int priority, const char *desc, OpFuncEvaluator *evaluator, int nflags=0);
 	virtual int pushParameter(const char *nname,const char *nName,const char *ndesc,
 					const char *ptype, const char *nrange, const char *newdefval, Value *defvalue);
+	virtual void Sort();
 
 //	virtual int callFunction(const char *field, ValueHash *context, ValueHash *parameters,
 //							 Value **value_ret, CalcSettings *settings, Laxkit::ErrorLog *log);
