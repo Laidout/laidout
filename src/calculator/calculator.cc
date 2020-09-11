@@ -162,8 +162,8 @@ int OperatorLevel::pushOp(const char *op,int dir, OpFuncEvaluator *opfunc,Object
 
 Entry::Entry(const char *newname, int modid)
 {
-	name=newstr(newname);
-	module_id=modid;
+	name = newstr(newname);
+	module_id = modid;
 }
 
 Entry::~Entry()
@@ -845,7 +845,7 @@ class LValue : public Value
   public:
 	char *name;
 
-	ValueEntry *entry; //entry the base is found in, might just be an alias to base
+	ValueEntry *entry; //entry the base is found in, might just be an alias to base. If null, this is a dummy LValue.
 	Value *basevalue; //assumed to NOT be an LValue
 	ObjectDef *basedef; //if basevalue==NULL, then assume extension is from namespace basedef
 	FieldExtPlace extension;
@@ -864,12 +864,14 @@ class LValue : public Value
 
 LValue::LValue(const char *newname,int len, Value *v, ValueEntry *ve, ObjectDef *def, FieldExtPlace *p)
 {
-	name=newnstr(newname,len);
-	basevalue=v; if (v) v->inc_count();
-	basedef=def; if (def) def->inc_count();
-	entry=ve;
+	name = newnstr(newname, len);
+	basevalue = v;
+	if (v) v->inc_count();
+	basedef = def;
+	if (def) def->inc_count();
+	entry = ve;
 
-	if (p) extension=*p;
+	if (p) extension = *p;
 }
 
 LValue::~LValue()
@@ -884,15 +886,21 @@ Value *LValue::duplicate()
 
 int LValue::getValueStr(char *buffer,int len)
 {
-	Value *v=Resolve();
+	if (entry && entry->type() == VALUE_Dummy) {
+		if (len < 6) return 10;
+		strcpy(buffer, "__DUMMY__");
+		return 0;
+	}
+	Value *v = Resolve();
 	if (!v) return Value::getValueStr(buffer,len);
-	int s=v->getValueStr(buffer,len);
+	int s = v->getValueStr(buffer,len);
 	v->dec_count();
 	return s;
 }
 
 int LValue::assign(FieldExtPlace *ext,Value *v)
 {
+	if (entry && entry->type() == VALUE_Dummy) return 1;
 	int oldn=extension.n();
 
 	char *str;
@@ -946,6 +954,7 @@ int LValue::assign(FieldExtPlace *ext,Value *v)
 
 Value *LValue::dereference(const char *extstring, int len)
 {
+	if (entry && entry->type() == VALUE_Dummy) return this;
 	if (!basevalue) return NULL;
 
 	Value *v=Resolve();
@@ -993,6 +1002,7 @@ Value *LValue::dereference(const char *extstring, int len)
  */
 Value *LValue::dereference(int index)
 {
+	if (entry && entry->type() == VALUE_Dummy) return this;
 	if (!basevalue) return NULL;
 
 	Value *v=NULL;
@@ -1012,6 +1022,11 @@ Value *LValue::dereference(int index)
  */
 Value *LValue::Resolve()
 {
+	if (entry && entry->type() == VALUE_Dummy) {
+		inc_count();
+		return this;
+	}
+
 	Value *v=basevalue, *v2;
 	if (v) v->inc_count();
 	else {
@@ -1079,6 +1094,8 @@ LaidoutCalculator::LaidoutCalculator()
 	rightops(OPS_Right,0)
 {
 	not_quitting = true;
+	run_mode = RUN_Normal;
+	name_catalog = nullptr;
 
 	dir=NULL; //working directory...
 	calcsettings.decimal=0;
@@ -1416,7 +1433,9 @@ ObjectDef *LaidoutCalculator::GetInfo(const char *expr)
  *  parsed. If there are multiple expressions, then the value from the final expression is returned.
  *
  *  This function is called as necessary by In().
- *  The other evaluate() is used to process functions during a script, not directly by the user.
+ *  The other evaluate() is used to process functions during a script, no1t directly by the user.
+ *
+ * Return 0 for success, nonzero for error.
  */
 int LaidoutCalculator::Evaluate(const char *in, int len, Value **value_ret, ErrorLog *log)
 {
@@ -1495,12 +1514,24 @@ int LaidoutCalculator::Evaluate(const char *in, int len, Value **value_ret, Erro
 	return calcerror>0 ? 1 : (errorlog->Total()>numerr && errorlog->Warnings(numerr)>0 ? -1: 0);
 }
 
+/*! Return 0 for success, nonzero for error. */
 int LaidoutCalculator::EvaluateWithParams(const char *in, int len, ValueHash *context, ValueHash *parameters,
 						 Value **value_ret, Laxkit::ErrorLog *log)
 {
 	return evaluate(in,len, context, parameters, value_ret, log);
 }
 
+/*! Return 0 for success, nonzero for error. */
+int LaidoutCalculator::FindUnknownNames(const char *in, int len, ValueHash *context, ValueHash *parameters,
+						 Laxkit::ErrorLog *log, Laxkit::PtrStack<char> &names)
+{
+	run_mode = RUN_NameCatalog;
+	name_catalog = &names;
+	int status = evaluate(in,len, context,parameters, nullptr, log);
+	run_mode = RUN_Normal;
+	name_catalog = nullptr;
+	return status;
+}
 
 /*! Called recursively for scripted functions, establish a scope containing "context", and parameters.
  * Store old expression, and call the other evaluate().
@@ -3139,28 +3170,33 @@ Value *LaidoutCalculator::evalLevel(int level)
 		 //all done with 2 number ops, now check left ops, read number, right ops
 		op=getopstring(&n);
 		if (n) { //found an op string
-			opfunc=leftops.hasOp(op,n,OPS_Left, &index,-1);
+			opfunc = leftops.hasOp(op,n,OPS_Left, &index,-1);
 			if (!opfunc) {
 				 //if left hand op.. if not, is error
 				calcerr(_("Unexpected characters!"));
 				return NULL;
 			}
 
-			from+=n;
-			num=evalLevel(level); //will plow through any other left hand ops
+			from += n;
+			num = evalLevel(level); //will plow through any other left hand ops
 			if (num->type()==VALUE_LValue) {
 				if (opfunc->def && (opfunc->def->flags&OPS_Assignment)) {
 					//keep as lvalue
 				} else {
 					 //op is not assignment related, so remove any lvalue status
-					num2=dynamic_cast<LValue*>(num)->Resolve();
+					num2 = dynamic_cast<LValue*>(num)->Resolve();
 				}
 			}
 
 			 //still need to apply the op
-			int status=opfunc->function->Op(op,n,OPS_Left, (num2?num2:num),NULL, &calcsettings, &num_ret, NULL);
-			if (status==-1) num_ret=opCall(op,n,OPS_Left, (num2?num2:num),NULL, &leftops, index); //need to try overloaded
-			if (calcerror) { if (num) num->dec_count(); if (num2) num2->dec_count(); return NULL; }
+			if (run_mode == RUN_NameCatalog) {
+				num_ret = num;
+				if (num_ret) num_ret->inc_count();
+			} else {
+				int status = opfunc->function->Op(op,n,OPS_Left, (num2?num2:num),NULL, &calcsettings, &num_ret, NULL);
+				if (status == -1) num_ret = opCall(op,n,OPS_Left, (num2?num2:num),NULL, &leftops, index); //need to try overloaded
+				if (calcerror) { if (num) num->dec_count(); if (num2) num2->dec_count(); return NULL; }
+			}
 
 			if (num2) num2->dec_count();
 			if (num_ret) {
@@ -3175,10 +3211,10 @@ Value *LaidoutCalculator::evalLevel(int level)
 		if (!num) return NULL; //did not find a number
 		 
 		 //check for right hand ops
-		op=getopstring(&n);
+		op = getopstring(&n);
 		while (n) {
 			 //found an op string
-			opfunc=rightops.hasOp(op,n,OPS_Right, &index,-1);
+			opfunc = rightops.hasOp(op,n,OPS_Right, &index,-1);
 			if (opfunc) {
 
 				if (num->type()==VALUE_LValue) {
@@ -3191,10 +3227,15 @@ Value *LaidoutCalculator::evalLevel(int level)
 				}
 
 				Value *num_ret=NULL;
-				int status=opfunc->function->Op(op,n,OPS_Right, (num2?num2:num),NULL, &calcsettings, &num_ret, NULL);
-				if (status==-1) num_ret=opCall(op,n,OPS_Right, (num2?num2:num),NULL, &rightops, index); //need to try overloaded
-				if (calcerror) { if (num) num->dec_count(); if (num2) num2->dec_count(); return NULL; }
-				if (num2) num2->dec_count();
+				if (run_mode == RUN_NameCatalog) {
+					num_ret = num;
+					if (num_ret) num_ret->inc_count();
+				} else {
+					int status=opfunc->function->Op(op,n,OPS_Right, (num2?num2:num),NULL, &calcsettings, &num_ret, NULL);
+					if (status==-1) num_ret=opCall(op,n,OPS_Right, (num2?num2:num),NULL, &rightops, index); //need to try overloaded
+					if (calcerror) { if (num) num->dec_count(); if (num2) num2->dec_count(); return NULL; }
+					if (num2) num2->dec_count();
+				}
 
 				if (num_ret) {
 					num->dec_count();
@@ -3217,20 +3258,20 @@ Value *LaidoutCalculator::evalLevel(int level)
 	int status;
 	Value *num1v=NULL, *num2v=NULL;
 
-	num=evalLevel(level+1);
+	num = evalLevel(level+1);
 	if (calcerror) return NULL;
 
-	op=getopstring(&n);
+	op = getopstring(&n);
 	while (n) { 
-		opfunc=oplevels.e[level]->hasOp(op,n,dir, &index,-1);
+		opfunc = oplevels.e[level]->hasOp(op,n,dir, &index,-1);
 		if (!opfunc) {
 			n--; //search for smaller ops
 			break;
 		}
 
-		from+=n;
-		if (dir==OPS_LtoR) num2=evalLevel(level+1);
-		else num2=evalLevel(level);
+		from += n;
+		if (dir == OPS_LtoR) num2 = evalLevel(level+1);
+		else num2 = evalLevel(level);
 		if (calcerror) { num->dec_count(); return NULL; }
 
 		if (!num2) {
@@ -3239,32 +3280,37 @@ Value *LaidoutCalculator::evalLevel(int level)
 			return NULL;
 		}
 
-		uselvalue=(opfunc->def && (opfunc->def->flags&OPS_Assignment));
-		if (uselvalue) {
-			 //operator is potentially an assignment
-			status=opfunc->function->Op(op,n,dir, num,  num2,  &calcsettings, &num_ret, NULL);
-		} else {
-			 //need to resolve any LValue states, operator is NOT as assignment
-			if (!num1v && num->type()==VALUE_LValue)  num1v=dynamic_cast<LValue*>(num )->Resolve(); else { num1v=num;  num1v->inc_count(); }
-			if (!num2v && num2->type()==VALUE_LValue) num2v=dynamic_cast<LValue*>(num2)->Resolve(); else { num2v=num2; num2v->inc_count(); }
-			status=opfunc->function->Op(op,n,dir, num1v,num2v, &calcsettings, &num_ret, NULL);
-		}
+		if (run_mode == RUN_NameCatalog) {
+			if (num2) { num2->dec_count(); num2 = nullptr; }
 
-		if (status==-1) {
-			 //overloading...
-			num_ret=opCall(op,n,dir, num,num2, oplevels.e[level],index);
+		} else {
+			uselvalue = (opfunc->def && (opfunc->def->flags&OPS_Assignment));
+			if (uselvalue) {
+				 //operator is potentially an assignment
+				status = opfunc->function->Op(op,n,dir, num,  num2,  &calcsettings, &num_ret, NULL);
+			} else {
+				 //need to resolve any LValue states, operator is NOT as assignment
+				if (!num1v && num->type()==VALUE_LValue)  num1v=dynamic_cast<LValue*>(num )->Resolve(); else { num1v=num;  num1v->inc_count(); }
+				if (!num2v && num2->type()==VALUE_LValue) num2v=dynamic_cast<LValue*>(num2)->Resolve(); else { num2v=num2; num2v->inc_count(); }
+				status = opfunc->function->Op(op,n,dir, num1v,num2v, &calcsettings, &num_ret, NULL);
+			}
+
+			if (status==-1) {
+				 //overloading...
+				num_ret = opCall(op,n,dir, num,num2, oplevels.e[level],index);
+			}
+			if (!calcerror && !num_ret) calcerr(_("Cannot compute with given values."));
+			num->dec_count();  num=NULL;
+			num2->dec_count(); num2=NULL;
+			if (calcerror) {
+				if (num1v) num1v->dec_count();
+				if (num2v) num2v->dec_count();
+				return NULL;
+			}
+			num = num_ret;
 		}
-		if (!calcerror && !num_ret) calcerr(_("Cannot compute with given values."));
-		num->dec_count();  num=NULL;
-		num2->dec_count(); num2=NULL;
-		if (calcerror) {
-			if (num1v) num1v->dec_count();
-			if (num2v) num2v->dec_count();
-			return NULL;
-		}
-		num=num_ret;
 		
-		op=getopstring(&n);
+		op = getopstring(&n);
 	}
 
 	if (num1v) num1v->dec_count();
@@ -3367,21 +3413,23 @@ Value *LaidoutCalculator::dereference(Value *val)
 	int n=0;
 
 	skipwscomment();
-	name=getnamestringc(&n);
-	Value *value=NULL;
-	Value *usethis=NULL;
-	ObjectDef *def=NULL;
+	name = getnamestringc(&n);
+	Value *value   = NULL;
+	Value *usethis = NULL;
+	ObjectDef *def = NULL;
 
 	if (n) {
 		 //we have a name
-		from+=n;
-		value=val->dereference(name,n); //if a simple value can be returned, we are in luck!
+		from += n;
+		if (run_mode != RUN_NameCatalog) 
+			value = val->dereference(name,n); //if a simple value can be returned, we are in luck!
+		else value = val;
 		if (!value) {
 			 //if val is a normal Value, if deref comes back NULL, then we can look in
 			 //the ObjectDef. If name is defined, and object can be cast to a FunctionEvaluator,
 			 //then call that object's Evaluate() with parameters.
 
-			def=val->GetObjectDef();
+			def = val->GetObjectDef();
 			if (def) def=def->FindDef(name,n);
 			//if (def) then so def is the definition of the member function
 			usethis=val;
@@ -3392,7 +3440,7 @@ Value *LaidoutCalculator::dereference(Value *val)
 		from++;
 
 		 //something like set.(2+6-3), or set[3*2] so we need to evaluate
-		Value *v=evalLevel(0);
+		Value *v = evalLevel(0);
 		if (calcerror) return NULL;
 		if (!nextchar(ch)) {
 			if (ch==')') calcerr(_("Expected closing ')'"));
@@ -3806,19 +3854,24 @@ Value *LaidoutCalculator::getstring()
  */
 Entry *LaidoutCalculator::findNameEntry(const char *word,int len, int *scope, int *module, int *index)
 {
-	Entry *entry=NULL;
-	int i=-1; //index in scope->entries.. for overloading?
-	for (int c=scopes.n-1; c>=0; c--) {
-		//entry=scopes.e[c]->FindName(word,len, &i);
-		entry=scopes.e[c]->FindName(word,len);
+	Entry *entry = nullptr;
+	int    i = -1;  // index in scope->entries.. for overloading?
+	for (int c = scopes.n - 1; c >= 0; c--) {
+		// entry=scopes.e[c]->FindName(word,len, &i);
+		entry = scopes.e[c]->FindName(word, len);
 		if (entry) {
-			*scope=c;
-			*module=scopes.e[c]->scope_namespace->object_id;
-			if (index) *index=i;
+			*scope  = c;
+			*module = scopes.e[c]->scope_namespace->object_id;
+			if (index) *index = i;
 			return entry;
 		}
 	}
-	return NULL;
+	if (run_mode == RUN_NameCatalog) {
+		makenstr(dummy_entry.name, word, len);
+		name_catalog->push(newnstr(word, len));
+		return &dummy_entry;
+	}
+	return nullptr;
 }
 
 /*! from points to beginning of word.
@@ -3946,7 +3999,13 @@ Value *LaidoutCalculator::evalname()
 		//now any function calls that return -1 can step through available name resolution in oo
 	}
 
-	if (entry->type()==VALUE_Function) {
+	if (run_mode == RUN_NameCatalog || entry->type() == VALUE_Dummy) {
+		ValueHash *pp = parseParameters(nullptr); //build parameter hash in order of styledef
+		if (pp) pp->dec_count();
+		from += n;
+		return new LValue(nullptr,0, nullptr, nullptr, nullptr, nullptr);
+
+	} else if (entry->type()==VALUE_Function) {
 		ObjectDef *function=dynamic_cast<FunctionEntry*>(entry)->def;
 		Value *v=NULL;
 
@@ -4053,9 +4112,9 @@ Value *LaidoutCalculator::evalname()
 
 		 //prep for possible lvalue based assignment operator
 		ValueEntry *ve=dynamic_cast<ValueEntry*>(entry);
-		LValue *val=new LValue(word,n, ve->GetValue(),ve,NULL,NULL);
-		from+=n;
-		return val; 
+		LValue *val = new LValue(word,n, ve->GetValue(),ve,NULL,NULL);
+		from += n;
+		return val;
 
 //	} else if (dynamic_cast<AliasEntry*>(entry)) {
 //		// *** should be able to do something like this: alias blah.(5+3).func() aliasname
@@ -4067,6 +4126,7 @@ Value *LaidoutCalculator::evalname()
 
 	//} else if (dynamic_cast<OperatorEntry*>(entry)) {
 		//currently, operators are searched for differently and must not have letters, see eval()
+		
 	}
 
 
@@ -4465,7 +4525,7 @@ ValueHash *LaidoutCalculator::parseParameters(ObjectDef *def)
 						const char *param = nullptr;
 						if (def->getInfo(pnum-1, &param, NULL,NULL,NULL,NULL,NULL,NULL)==0) {
 							pname = newstr(param);
-						} else calcerr(_("Unknown parameter!"));
+						} else if (run_mode == RUN_Normal) calcerr(_("Unknown parameter!"));
 					}
 				}
 				if (!calcerror) {
@@ -4806,6 +4866,11 @@ int LaidoutCalculator::Assignment(Value *num1, Value *num2, Value **value_ret, E
 int LaidoutCalculator::Op(const char *the_op,int len, int dir, Value *num1, Value *num2, CalcSettings *settings,
 						  Value **value_ret, ErrorLog *log)
 {
+	if (run_mode == RUN_NameCatalog) {
+		if (value_ret) *value_ret = num1; //should be a dummy LValue
+		if (num1) num1->inc_count();
+		return 0;
+	}
 	if (len==1 && *the_op=='=') {
 		return Assignment(num1,num2, value_ret,log);
 	}

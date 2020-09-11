@@ -95,6 +95,13 @@ class Entry
 	virtual ObjectDef *GetDef();
 };
 
+class DummyEntry : public Entry
+{
+  public:
+  	DummyEntry() : Entry(nullptr, -1) {}
+  	virtual int type() { return VALUE_Dummy; }
+};
+
 //---------------------------BlockInfo
 enum BlockTypes {
 	BLOCK_error,
@@ -146,6 +153,14 @@ class LaidoutCalculator : public Interpreter,
 						  public FunctionEvaluator
 {
  private:
+ 	enum RunMode {
+ 		RUN_Normal,
+ 		RUN_NameCatalog
+ 	};
+ 	RunMode run_mode;
+ 	Laxkit::PtrStack<char> *name_catalog;
+ 	DummyEntry dummy_entry;
+
 	bool not_quitting; // during shell mode
 
 	 //context state
@@ -258,6 +273,8 @@ class LaidoutCalculator : public Interpreter,
 	virtual int Evaluate(const char *in, int len, Value **value_ret, Laxkit::ErrorLog *log);
 	virtual int EvaluateWithParams(const char *in, int len, ValueHash *context, ValueHash *parameters,
 						 Value **value_ret, Laxkit::ErrorLog *log);
+	virtual int FindUnknownNames(const char *in, int len, ValueHash *context, ValueHash *parameters,
+						 Laxkit::ErrorLog *log, Laxkit::PtrStack<char> &names);
 
 	virtual void ClearError();
 	virtual const char *Message();
