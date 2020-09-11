@@ -609,6 +609,7 @@ Page::Page(PageStyle *npagestyle,int num)
 	layers.obj_flags = OBJ_Unselectable | OBJ_Zone;  // force searches to not return return layers
 	obj_flags = OBJ_Unselectable | OBJ_Zone;         // force searches to not return return this
 	layers.Id("pagegroup");
+	layers.SetResourceOwner(this);
 }
 
 //! Destructor, destroys the thumbnail, and dec_counts pagestyle.
