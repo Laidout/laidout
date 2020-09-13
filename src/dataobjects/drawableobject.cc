@@ -15,6 +15,8 @@
 
 
 #include <lax/transformmath.h>
+#include <lax/utf8string.h>
+
 #include "drawableobject.h"
 #include "../laidout.h"
 #include "../core/drawdata.h"
@@ -1179,6 +1181,209 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext 
 		fprintf(f,"%skids\n",spc);
 		dump_out_group(f,indent+2,what,context, true);
 	}
+}
+
+LaxFiles::Attribute *DrawableObject::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+{
+	if (!att) att = new Attribute;
+
+	if (what==-1) {
+		att->push("id", "nameofobject");
+		att->push("iohints",  "...", "(optional) object level i/o leftovers from importing");
+		att->push("metadata", "...", "(optional) object level metadata");
+		att->push("tags", "tag1 \"tag 2\"","(optional) list of string tags");
+		att->push("filter", nullptr, "(optional) Nodes defining filter transformationss");
+		att->push("alignmentrule", "align (a1x,a1y) (a2x,a2y)", "(optional) if different than simple matrix");
+		att->push("clip_path", "        #(optional) a path object");
+		//att->pushSubAtt("...");
+		att->push("kids", nullptr, "child object list...");
+		return att;
+	}
+
+	Attribute *att2;
+	Utf8String s;
+	
+	att->push("id", Id());
+
+	 //for plain group objects only, dumps out matrix, visible, selectable, locks, min/max
+	if (!strcmp(whattype(),"Group")) {
+		SomeData::dump_out_atts(att, what, context);
+		//otherwise, some of the the base somedata stuff will be in the config section
+
+	} else { 
+		 //output just the locks.. most Laxkit objects dump out their own matrix. ignoring min/max for now
+		if (visible)    att->push("visible");
+		if (selectable) att->push("selectable");
+		s.SetToNone();
+		if (locks & OBJLOCK_Contents  ) s.Append("contents ");
+		if (locks & OBJLOCK_Position  ) s.Append("position ");
+		if (locks & OBJLOCK_Rotation  ) s.Append("rotation ");
+		if (locks & OBJLOCK_Scale     ) s.Append("scale ");
+		if (locks & OBJLOCK_Shear     ) s.Append("shear ");
+		if (locks & OBJLOCK_Kids      ) s.Append("kids ");
+		if (locks & OBJLOCK_Selectable) s.Append("selectable ");
+		att->push("locks", s.c_str());
+	}
+
+
+	 // dump notes/meta data
+	if (metadata && metadata->attributes.n) {
+		att2 = metadata->duplicate();
+		makestr(att2->name, "metadata");
+		att->push(att2,-1);
+	}
+	
+	 // dump iohints if any
+	if (iohints.attributes.n) {
+		att2 = iohints.duplicate();
+		makestr(att2->name, "iohints");
+		att->push(att2,-1);
+	}
+
+	if (NumberOfTags()) {
+		char *str=GetAllTags();
+		att->push("tags", str);
+		delete[] str;
+	}
+
+	if (filter) {
+		ObjectFilter *ofilter = dynamic_cast<ObjectFilter*>(filter);
+		att2 = att->pushSubAtt("filter");
+		ofilter->dump_out_atts(att2, what,context);
+	}
+
+	if (anchors.n) {
+		PointAnchor *a;
+		for (int c=0; c<anchors.n; c++) {
+			a = anchors.e[c];
+			if (a->name && strchr(a->name,'"')) {
+				 // *** HACK! lazy dev...
+				cerr << " *** WARNING! unescaped \" character in anchor name.. devs need to implement protection!!"<<endl;
+			}
+			if (a->anchor_type==PANCHOR_BBox) {
+				s.Sprintf("\"%s\" bbox %.10g,%.10g", a->name, a->p.x,a->p.y);
+				att->push("anchor", s.c_str());
+
+			} else if (a->anchor_type==PANCHOR_Absolute) {
+				s.Sprintf("\"%s\" point %.10g,%.10g", a->name, a->p.x,a->p.y);
+				att->push("anchor", s.c_str());
+			}
+		}
+	}
+
+	if (parent_link) {
+		AlignmentRule *link=parent_link;
+		flatpoint p;
+		//PointAnchor *anchor=NULL;
+
+		while (link) {
+			if (link->type==ALIGNMENTRULE_Matrix) {
+				//ignore matrix ones, they are no-op currently
+
+			} if (link->type==ALIGNMENTRULE_Align) {
+				s.Sprintf("align (%.10g,%.10g) (%.10g,%.10g)",
+						link->align1.x, link->align1.y,
+						link->align2.x, link->align2.y);
+				att->push("alignmentrule", s.c_str());
+
+			} if (link->type==ALIGNMENTRULE_EdgeMagnet) {
+				cerr << " *** WARNING! alignment rule edgemagnet save not implemented!"<<endl;
+
+			} if (link->type==ALIGNMENTRULE_Code) {
+				cerr << " *** WARNING! alignment rule code save not implemented!"<<endl;
+
+			} else {
+				s.Sprintf("%s", AlignmentRulePlainName(link->type));
+				att2 = att->pushSubAtt("alignmentrule", s.c_str());
+
+				const char *nm=NULL;
+				if (link->type!=ALIGNMENTRULE_Move) {
+					GetAnchorInfo(link->invariant1, &nm, NULL,NULL, false);
+					if (link->type==ALIGNMENTRULE_Shear) {
+						const char *nm2=NULL;
+						GetAnchorInfo(link->invariant2, &nm2, NULL,NULL, false);
+						s.Sprintf("\"%s\" \"%s\"", nm,nm2);
+						att2->push("constant", s.c_str());
+					} else {
+						s.Sprintf("\"%s\"", nm);
+						att2->push("constant", s.c_str());
+					}
+				}
+				GetAnchorInfo(link->object_anchor, &nm, NULL,NULL, false);
+				s.Sprintf("\"%s\"", nm);
+				att2->push("point", s.c_str());
+
+				if (link->target) {
+					if (link->target->owner==parent) {
+						s.Sprintf("parent.\"%s\"", link->target->name);
+						att2->push("target", s.c_str());
+
+					} else if (link->target->owner==NULL || link->target_location==AlignmentRule::PAGE) {
+						s.Sprintf("page.\"%s\"", link->target->name);
+						att2->push("target", s.c_str());
+					} else {
+						if (dynamic_cast<DrawableObject*>(link->target->owner))
+						s.Sprintf("object(\"%s\").\"%s\"\n",
+								dynamic_cast<DrawableObject*>(link->target->owner)->Id(),link->target->name);
+						att2->push("target", s.c_str());
+					}
+				}
+
+				if (link->constraintype==AlignmentRule::PARENT) {
+					s.Sprintf("parent (%.10g,%.10g)\n", link->constraindir.x,link->constraindir.y);
+				    att2->push("constrain", s.c_str());
+				} else if (link->constraintype==AlignmentRule::OBJECT) {
+					s.Sprintf("object (%.10g,%.10g)\n", link->constraindir.x,link->constraindir.y);
+					att2->push("constrain", s.c_str());
+				} else if (link->constraintype==AlignmentRule::PAGE) {
+					s.Sprintf("page (%.10g,%.10g)\n", link->constraindir.x,link->constraindir.y);
+					att2->push("constrain", s.c_str());
+				}
+
+				if (link->offset_units==AlignmentRule::PARENT) {
+					s.Sprintf("parent (%.10g,%.10g)\n", link->offset.x,link->offset.y);
+					att2->push("offset", s.c_str());
+				} else if (link->offset_units==AlignmentRule::OBJECT) {
+					s.Sprintf("object (%.10g,%.10g)\n", link->offset.x,link->offset.y);
+					att2->push("offset", s.c_str());
+				} else if (link->offset_units==AlignmentRule::PAGE) {
+					s.Sprintf("page (%.10g,%.10g)\n", link->offset.x,link->offset.y);
+					att2->push("offset", s.c_str());
+				}
+			}
+
+			link = link->next;
+		}
+	}
+
+	if (clip_path) {
+		att2 = att->pushSubAtt("clip_path");
+		clip_path->dump_out_atts(att2, what, context);
+	}
+
+	if (wrap_path) {
+		att2 = att->pushSubAtt("wrap_path");
+		wrap_path->dump_out_atts(att2, what, context);
+	}
+
+	if (inset_path) {
+		att2 = att->pushSubAtt("inset_path");
+		inset_path->dump_out_atts(att2, what, context);
+	}
+
+
+	if (properties.n()) {
+		att2 = att->pushSubAtt("properties");
+		properties.dump_out_atts(att2, what, context);
+	}
+
+	if (kids.n) {
+		att2->pushSubAtt("kids");
+		dump_out_group_atts(att2, what, context, true);
+		//dump_out_group(f,indent+2,what,context, true);
+	}	
+
+	return att;
 }
 
 void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)

@@ -160,16 +160,17 @@ int LGradientData::pointin(flatpoint pp,int pin)
 void LGradientData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	if (what==-1) {
-		DrawableObject::dump_out(f,indent,what,context);
-		fprintf(f,"%sconfig\n",spc);
-		GradientData::dump_out(f,indent+2,what,context);
-		return;
-	}
-
 	DrawableObject::dump_out(f,indent,what,context);
 	fprintf(f,"%sconfig\n",spc);
 	GradientData::dump_out(f,indent+2,what,context);
+}
+
+LaxFiles::Attribute *LGradientData::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+{
+	att = DrawableObject::dump_out_atts(att, what,context);
+	LaxFiles::Attribute *att2 = att->pushSubAtt("config");
+	GradientData::dump_out_atts(att2, what,context);
+	return att;
 }
 
 void LGradientData::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)

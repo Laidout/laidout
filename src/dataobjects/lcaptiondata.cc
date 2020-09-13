@@ -65,16 +65,17 @@ int LCaptionData::pointin(flatpoint pp,int pin)
 void LCaptionData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	if (what==-1) {
-		DrawableObject::dump_out(f,indent,what,context);
-		fprintf(f,"%sconfig\n",spc);
-		CaptionData::dump_out(f,indent+2,what,context);
-		return;
-	}
-
 	DrawableObject::dump_out(f,indent,what,context);
 	fprintf(f,"%sconfig\n",spc);
 	CaptionData::dump_out(f,indent+2,what,context);
+}
+
+LaxFiles::Attribute *LCaptionData::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+{
+	att = DrawableObject::dump_out_atts(att, what,context);
+	LaxFiles::Attribute *att2 = att->pushSubAtt("config");
+	CaptionData::dump_out_atts(att2, what,context);
+	return att;
 }
 
 /*! If no "config" element, then it is assumed there are no DrawableObject fields.

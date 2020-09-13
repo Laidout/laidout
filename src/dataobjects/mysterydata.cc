@@ -104,6 +104,38 @@ void MysteryData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *co
 	}
 }
 	
+LaxFiles::Attribute *MysteryData::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+{
+	if (!att) att = new Attribute;
+
+	if (what==-1) {
+		att->push("importer","Svg",       "the name of the importer that created this data");
+		att->push("name", "Raster x.jpg", "some name that the importer gave this data");
+        att->push("maxx","100",           "width of the data");
+        att->push("maxy"," 200",          "height of the data");
+		att->push("matrix","1 0 0 1 0 0", "affine transform to apply to the data");
+		att->push("nativeid","1",         "A numeric id grabbed from the original file, if any");
+		att->push("attributes",nullptr,   "the imported hints for this data");
+		att->pushSubAtt("...",nullptr,    "what these are depend on the importer");
+		return att;
+	}
+	
+	if (importer) att->push("importer", importer);
+	if (name)     att->push("name", name);
+	att->push("maxx", maxx);
+	att->push("maxy", maxy);
+	att->pushStr("matrix", -1, "%.10g %.10g %.10g %.10g %.10g %.10g",
+				m(0),m(1),m(2),m(3),m(4),m(5));
+	att->push("nativeid", nativeid);
+	if (attributes) {
+		Attribute *att2 = attributes->duplicate();
+		makestr(att2->name, "attributes");
+		att->push(att2, -1);
+	}
+
+	return att;
+}
+
 /*! When the image listed in the attribute cannot be loaded,
  * image is set to NULL, and the width and height attributes
  * are used if present. If the image can be loaded, then width and
