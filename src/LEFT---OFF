@@ -678,6 +678,13 @@ xtg from quark?
 idml from indesign?
 
 
+freehand tool:
+  path simplification needs to be considerably better, both points and weight nodes
+  need "brush size" controls
+  implement Shape Brush?
+    output to either "shape brush" line profile, or flattened path
+
+
 PathInterface: pathinterface
   bug: width handle has bit of a hitch when handle near a vertex.. extra temp width node being added?
   bug: seems to be possible to move nodes out of order, only occassionally
@@ -689,6 +696,7 @@ PathInterface: pathinterface
   bug: delete last weight node, sometimes width is wrong
   bug: make new line with freehand tool, cannot move weight nodes in a rational way
 
+  need dissolve option on point delete to adjust control point lengths
   need option for bbox to include line width, not just centerline
   need stroke fill
   need path combine:
@@ -967,7 +975,8 @@ node editor node interface NodeInterface nodes: node: interface:
       out anchor: other object point (of non-parent), page, spread
       type: x,y
       2 point anchor: change position + scale|rotation
-    generic Value in/out. Run off an ObjectDef.
+    NewObject/ModifyObject based on an ObjectDef.
+    DONE need to make sure all types have dump_out_atts defined, otherwise the paltry Value::dump_out_atts gets used in data out
     DONE each need to double check: dereference, assign, Evaluate, extend from Group, not affine
     image (double check objdef setup)
       DONE check: dereference assign Evaluate extend from Group, not affine
@@ -1248,7 +1257,8 @@ export/print dialog
 
 DrawableObject:
   bbox and aabb need to build in kids?
-  should transplant child to SomeData. would simplify making new objects considerably
+  should transplant child to SomeData? would simplify making new objects considerably. or do (parenting shell)-data like blender
+  SomeData should derive from DumpUtility?
 
 color fonts issue #6 svg otf svg
   see this freetype gsoc 2019 project: https://www.mail-archive.com/freetype-devel@nongnu.org/msg11459.html
@@ -2560,4 +2570,5 @@ DONE perhaps laidout configure should call laxkit configure if it thinks laxkit 
 DONE Be able to create empties
 DONE bug: filters repeatedly writing \"\"\"\"  reading in quoted names? 
 DONE don't allow reparent to a child!! or reparent as appropriate
+DONE bug: ImagePatchData crashes in preview generation 
 
