@@ -17,7 +17,7 @@
 #include "nodeinterface.h"
 #include "nodes.h"
 #include "../core/utils.h"
-#include "../core/utils.h"
+#include "../core/stylemanager.h"
 #include "../version.h"
 
 #include <lax/interfaces/interfacemanager.h>
@@ -1400,17 +1400,21 @@ int NodeBase::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
 {
 	NodeProperty *prop = FindProperty(propname);
 	if (!prop) return 0; //only work on existing props.
-
-	Attribute *h_resized = att->find("h_resized");
-	if (h_resized) {
-		prop->height = strtod(h_resized->value,NULL);
-	}
-
 	if (att->attributes.n == 0) return 0; //nothing to do if no data!
 
+	//find general property settings first
+	int i = 0;
+	Attribute *h_resized = att->find("h_resized", &i);
+	if (h_resized) {
+		prop->height = strtod(h_resized->value,NULL);
+		if (i == 0) i = 1;
+	} else i = 0;
+	if (i >= att->attributes.n) return 0;
+	att = att->attributes.e[i];
+
 	 //check for EnumValue
-    if (att->attributes.n == 1 && !strcmp(att->attributes.e[0]->name,"EnumValue")) {
-		if (isblank(att->attributes.e[0]->value)) return 0; //missing actual value, corrupt file!
+    if (!strcmp(att->name,"EnumValue")) {
+		if (isblank(att->value)) return 0; //missing actual value, corrupt file!
 
 		 //we hope current value was constructed with an EnumValue in place
 		EnumValue *ev  = dynamic_cast<EnumValue*>(prop->GetData());
@@ -1418,8 +1422,8 @@ int NodeBase::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
 			ObjectDef *def = ev->GetObjectDef();
 
 			 //value should be like "GeglSamplerType.Cubic"
-			const char *nval = lax_extension(att->attributes.e[0]->value);
-			if (!nval) nval = att->attributes.e[0]->value;
+			const char *nval = lax_extension(att->value);
+			if (!nval) nval = att->value;
 			if (isblank(nval)) return 0;
 			// *** should probably check that the first part is actually the enum in def
 
@@ -1437,7 +1441,12 @@ int NodeBase::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
 	}
 
 
-	Value *val = AttributeToValue(att->attributes.e[0]);
+	Value *val = AttributeToValue(att); //this handles simple (but not compound) types in values.cc
+	if (!val) {
+		// consult stylemanager for Laidout.* ... *** need better way to define not dependent on Laidout
+		ObjectDef *def = stylemanager.FindDef(att->name, -1, 2);
+		if (def && def->newfunc) val = def->newfunc();
+	}
 	if (val) {
 		if (!prop->SetData(val, true)) {
 			val->dec_count();
@@ -1557,10 +1566,13 @@ LaxFiles::Attribute *NodeBase::dump_out_atts(LaxFiles::Attribute *att, int what,
 		if (prop->HasFlag(NodeProperty::PROPF_Y_Resizeable))
 			att2->push("h_resized", prop->height);
 
-		if (    (prop->IsBlock()
+		Value *v = prop->GetData();
+		if (v && (prop->IsBlock()
 			 || (prop->IsInput() && !prop->IsConnected()) 
-			 || (prop->IsOutput())) && prop->GetData())  {
-			prop->GetData()->dump_out_atts(att2, what, context);
+			 || (prop->IsOutput())))  {
+
+			Attribute *att3 = att2->pushSubAtt(v->whattype());
+			v->dump_out_atts(att3, what, context);
 
 		} else {
 			DBG cerr <<" not data for node out: "<<prop->name<<endl;
@@ -1647,9 +1659,9 @@ void NodeBase::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpCo
 					prop = new NodeProperty(ptype, true, value, NULL,1, NULL, NULL);
 					AddProperty(prop);
 				}
-			}
 
-			SetPropertyFromAtt(value, att->attributes.e[c]); 
+				SetPropertyFromAtt(value, att->attributes.e[c]); 
+			}
 		}
 	}
 }
@@ -5203,7 +5215,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		if (overnode >= 0 && nodes->nodes.e[overnode]->special_type == NODES_Reroute) {
 			NodeProperty *p1 = nodes->nodes.e[overnode]->properties.e[0];
 			NodeProperty *p2 = nodes->nodes.e[overnode]->properties.e[1];
-			
+
 			if (action == NODES_Drag_Output && p1->IsExecIn()) {
 				if (!p1->IsConnected() && !p2->IsConnected()) {
 					//change to normal in/out if no execs connected

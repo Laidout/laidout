@@ -2587,17 +2587,19 @@ LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,LaxF
 		const char *nm = NULL;
 		def->getEnumInfo(ev->value, &nm);
 		string s = (string)"" + def->name + '.' + nm;
-		att->push(whattype(), s.c_str());
+		makestr(att->value, s.c_str());
+		// att->push(whattype(), s.c_str());
 
 	} else if (!strcmp(def->name, "string")) {
 		StringValue *v = dynamic_cast<StringValue*>(this);
-		att->push(whattype(), v->str);
+		makestr(att->value, v->str);
+		// att->push(whattype(), v->str);
 
 	} else {
 		Value *v;
 		int numout = 0;
 
-		Attribute *vatt=NULL;
+		Attribute *vatt = att;
 
 		for (int c=0; c<getNumFields(); c++) {
 			fdef=FieldInfo(c); //this is the object fdef of a field. If it exists, then this element has subfields.
@@ -2615,7 +2617,7 @@ LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,LaxF
 			v->getValueStr(&buffer,&len, 1);
 			str=buffer;
 
-			if (vatt == NULL) vatt = att->pushSubAtt(whattype());
+			// if (vatt == NULL) vatt = att->pushSubAtt(whattype());
 			vatt->push(name,str);
 			numout++;
 		}
@@ -2623,7 +2625,8 @@ LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,LaxF
 		if (numout == 0) {
 			len = 0;
 			getValueStr(&buffer,&len, 1);
-			if (len>0) att->push(whattype(), buffer);
+			if (len>0) makestr(att->value, buffer);
+			// if (len>0) att->push(whattype(), buffer);
 		}
 	}
 
@@ -2836,7 +2839,7 @@ Value *AttributeToValue(Attribute *att)
     // } else if (!strcmp(att->name, "FunctionValue")) {
     // } else if (!strcmp(att->name, "ObjectValue")) {
     } else {
-		cerr << " *** NEED TO IMPLEMENT AttributeToValue() with "<<att->name<<"EnumValue!"<<endl;
+		cerr << " *** NEED TO IMPLEMENT AttributeToValue() with "<<att->name<<"!"<<endl;
 	}
 
 	return NULL;
