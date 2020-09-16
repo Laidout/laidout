@@ -4408,20 +4408,19 @@ int ModifyObjectNode::Connected(NodeConnection *connection)
 					continue;
 
 				// update property with new name, Name, desc...
-				// *** note to be thorough, this should be able to handle custom property types
 				NodeProperty *prop = nullptr;
-				Value *val = obj->dereference(field->name,-1);
+				// Value *val = obj->dereference(field->name,-1);
 				if (added+1 < properties.n-1) {
 					// modify property
 					prop = properties.e[added+1];
 					makestr(prop->name, field->name);
 					makestr(prop->label, field->Name);
 					makestr(prop->tooltip, field->description);
-					prop->SetData(val,1);
+					// prop->SetData(val,1);
 
 				} else {
 					// insert new property
-					prop = new NodeProperty(NodeProperty::PROP_Input,  true, field->name, val,1, field->Name, field->description);
+					prop = new NodeProperty(NodeProperty::PROP_Input,  true, field->name, nullptr,1, field->Name, field->description, 0, false);
 					AddProperty(prop, added+1);
 				}
 				added++;
