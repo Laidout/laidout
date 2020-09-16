@@ -783,12 +783,13 @@ ObjectInfoNode::ObjectInfoNode()
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in",  NULL,1, _("In")));
 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "name",      new StringValue(),1, _("Name"),     nullptr, 0, false));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "parent",    nullptr,1, _("Parent"),     nullptr, 0, false));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "transform", new AffineValue(),1, _("Transform"),nullptr, 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "name",      new StringValue(),1, _("Name"),      nullptr, 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "parent",    nullptr,1,           _("Parent"),    nullptr, 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "transform", new AffineValue(),1, _("Transform"), nullptr, 0, false));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "fulltransform", new AffineValue(),1, _("Full Transform"),nullptr, 0, false));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "bounds",    new BBoxValue(),1,   _("Bounds"),   nullptr, 0, false));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "page",      new StringValue(),1,   _("Page"),   nullptr, 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "bounds",    new BBoxValue(),1,   _("Bounds"),    nullptr, 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "page",      new StringValue(),1, _("Page"),      nullptr, 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "pagetype",  new StringValue(),1, _("Page type"), nullptr, 0, false));
 	//AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "clippath", nullptr,1, _("ClipPath"), nullptr,0,false));
 }
 
@@ -825,22 +826,30 @@ int ObjectInfoNode::Update()
 	for (int c=1; c<properties.n; c++) properties.e[c]->modtime = times(NULL);
 
 	//find page
-	StringValue *sv = dynamic_cast<StringValue*>(properties.e[6]->GetData());
+	StringValue *pg    = dynamic_cast<StringValue*>(properties.e[6]->GetData());
+	StringValue *ptype = dynamic_cast<StringValue*>(properties.e[7]->GetData());
 	LaxInterfaces::SomeData *pnt = dr;
 	while (pnt->GetParent()) pnt = pnt->GetParent();
 	Page *page = dynamic_cast<Page*>(pnt->ResourceOwner());
+	Document *doc = nullptr;
+	int i = (page ? laidout->project->LocatePage(page, &doc) : -1);
 	if (page) {
-		if (page->label) sv->Set(page->label);
-		else {
-			int i = laidout->project->LocatePage(page, nullptr);
-			if (i == -1) sv->Set("??");
-			else {
+		if (page->label) {
+			pg->Set(page->label);
+		} else {
+			if (i == -1) {
+				pg->Set("??");
+			} else {
 				char str[20];
-				sprintf(str, "%d", i);
-				sv->Set(str);
+				sprintf(str, "%d", i+1);
+				pg->Set(str);
 			}
 		}
-	} else sv->Set("none");
+		ptype->Set(doc ? doc->imposition->PageTypeName(page->pagestyle->pagetype) : "");
+	} else {
+		pg->Set("none");
+		ptype->Set("");
+	}
 
 	return NodeBase::Update();
 }

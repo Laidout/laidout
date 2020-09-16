@@ -149,8 +149,14 @@ Document *Project::Find(const char *name, int howmatch)
 	return NULL;
 }
 
+/*! Return doc and page index in doc if page exists somewhere.
+ */
 int Project::LocatePage(Page *page, Document **doc_ret)
 {
+	if (!page) {
+		if (doc_ret) *doc_ret = nullptr;
+		return -1;
+	}
 	for (int c=0; c<docs.n; c++) {
 		if (!docs.e[c]->doc) continue;
 		for (int p=0; p<docs.e[c]->doc->pages.n; p++) {
