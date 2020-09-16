@@ -1569,7 +1569,7 @@ LaxFiles::Attribute *NodeBase::dump_out_atts(LaxFiles::Attribute *att, int what,
 		Value *v = prop->GetData();
 		if (v && (prop->IsBlock()
 			 || (prop->IsInput() && !prop->IsConnected()) 
-			 || (prop->IsOutput())))  {
+			 )) { //|| (prop->IsOutput()))) { ... inf loop when data is, say, a parent DrawableObject
 
 			Attribute *att3 = att2->pushSubAtt(v->whattype());
 			v->dump_out_atts(att3, what, context);
@@ -2599,6 +2599,11 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 		if (node) DesignateInput(node);
 	}
 
+	// we need to do a first run up updates before connecting nodes, because
+	// some nodes' properties depend on input object type
+	for (int c=0; c<nodes.n; c++) {
+		nodes.e[c]->Update();
+	}
 
 	if (conatt) {
 		 //define connections
@@ -2657,7 +2662,7 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 				delete[] tpstr;
 			}
 		}
-	}
+	} //if connections
 
 	if (framesatt) {
 		 //build the frames
@@ -2689,9 +2694,7 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 		}
 	}
 
-	for (int c=0; c<nodes.n; c++) {
-		nodes.e[c]->Update();
-	}
+	ForceUpdates();
 }
 
 /*! Recursively install colors on any that doesn't have one.
