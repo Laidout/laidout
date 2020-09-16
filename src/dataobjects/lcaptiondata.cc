@@ -110,7 +110,12 @@ LaxInterfaces::SomeData *LCaptionData::duplicate(LaxInterfaces::SomeData *dup)
 	return dup;
 }
 
-Value *NewLCaptionData() { return new LCaptionData; }
+Value *NewLCaptionData()
+{
+	LCaptionData *cap = new LCaptionData;
+	cap->yaxis(-cap->yaxis()); //premptively reorient for right handed coordinates
+	return cap;
+}
 
 ObjectDef *LCaptionData::makeObjectDef()
 {

@@ -63,10 +63,13 @@ int LImageData::pointin(flatpoint pp,int pin)
 
 void LImageData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
-	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	DrawableObject::dump_out(f,indent,what,context);
-	fprintf(f,"%sconfig\n",spc);
-	ImageData::dump_out(f,indent+2,what,context);
+	LaxFiles::Attribute att;
+	dump_out_atts(&att, what, context);
+	att.dump_out(f, indent);
+	// char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	// DrawableObject::dump_out(f,indent,what,context);
+	// fprintf(f,"%sconfig\n",spc);
+	// ImageData::dump_out(f,indent+2,what,context);
 }
 
 LaxFiles::Attribute *LImageData::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
