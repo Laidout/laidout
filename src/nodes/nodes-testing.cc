@@ -3,6 +3,87 @@
 
 
 
+//------------------------ AlignToBoundsNode ------------------------
+
+/*! \class Node to get a reference to other DrawableObjects in same page.
+ */
+
+class AlignToBoundsNode : public NodeBase
+{
+  public:
+	AlignToBoundsNode();
+	virtual ~AlignToBoundsNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref);
+
+	// static SingletonKeeper keeper; //the def for domain enum
+	// static ObjectDef *GetDef() { return dynamic_cast<ObjectDef*>(keeper.GetObject()); }
+};
+
+Laxkit::anObject *AlignToBoundsNode::NewNode(int p, Laxkit::anObject *ref)
+{
+	return new AlignToBoundsNode();
+}
+
+AlignToBoundsNode::AlignToBoundsNode()
+{
+	makestr(Name, _("Find Drawable"));
+	makestr(type, "Drawable/AlignToBounds");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,  _("In"),     _("Object to align")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "bounds", NULL,1,  _("Bounds"), _("A bounding box to align in")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out",  nullptr,1, _("Out"), nullptr, 0, false));
+}
+
+AlignToBoundsNode::~AlignToBoundsNode()
+{
+}
+
+NodeBase *AlignToBoundsNode::Duplicate()
+{
+	AlignToBoundsNode *node = new AlignToBoundsNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+/*! Return 0 for no error and everything up to date.
+ * -1 means bad inputs and node in error state.
+ * 1 means needs updating.
+ */
+int AlignToBoundsNode::Update()
+{
+	DrawableObject *in = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
+	if (!in) return -1;
+
+	DoubleBBox *bbox = dynamic_cast<DoubleBBox*>(properties.e[1]->GetData());
+	if (!bbox) return -1;
+
+	DrawableObject *out = in->duplicate();
+	out->fitto
+	
+	properties.e[4]->SetData(in, 0);
+	return NodeBase::Update();
+}
+
+int AlignToBoundsNode::GetStatus()
+{
+	DrawableObject *dr = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
+	if (!dr) return -1;
+	StringValue *s = dynamic_cast<StringValue*>(properties.e[1]->GetData());
+	if (!s) return -1;
+	const char *pattern = s->str;
+	if (isblank(pattern)) return -1;
+
+	return NodeBase::GetStatus();
+}
+
+
+
+
 
 //------------------------ ResourceProperty ---------------------------------
 
