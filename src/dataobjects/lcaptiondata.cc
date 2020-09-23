@@ -14,6 +14,7 @@
 //
 
 #include "lcaptiondata.h"
+#include "fontvalue.h"
 #include "datafactory.h"
 #include "../core/stylemanager.h"
 #include "../language.h"
@@ -138,11 +139,16 @@ ObjectDef *LCaptionData::makeObjectDef()
             NewLCaptionData,NULL);
 	stylemanager.AddObjectDef(sd, 0);
 
+	ObjectDef *fontdef = stylemanager.FindDef("Font");
+	if (!fontdef) {
+		FontValue f;
+		fontdef = f.GetObjectDef();
+	}
 
 	sd->pushVariable("color",    _("Color"),  _("Color fill"),    "Color",0, NULL,0);
 	sd->pushVariable("fontsize", _("Font size"), _("Size of font in local units"),  "real",0,   NULL,0);
 	sd->pushVariable("text",_("Text"),_("Text"), "string",0,   NULL,0);
-	//sd->pushVariable("font",_("Font"),_("The font"), "Font",0,   NULL,0);
+	sd->pushVariable("font",_("Font"),_("The font"), "Font",0,   NULL,0);
 	sd->pushVariable("xcentering", _("X Centering"), _("0 is left, 100 is right. Any other number works too."),  "real",0,   NULL,0);
 	sd->pushVariable("ycentering", _("Y Centering"), _("0 is top, 100 is bottom. Any other number works too."),  "real",0,   NULL,0);
 	sd->pushVariable("linespacing", _("Line Spacing"), _("1 is 100% of font's default line spacing."),  "real",0,   NULL,0);
@@ -159,6 +165,11 @@ Value *LCaptionData::dereference(const char *extstring, int len)
 
 	if (extequal(extstring,len, "fontsize")) {
 		return new DoubleValue(Size());
+	}
+
+	if (extequal(extstring,len, "font")) {
+		if (!font) return new NullValue();
+		return new FontValue(font->duplicate(), 1);
 	}
 
 	if (extequal(extstring,len, "text")) {
@@ -249,6 +260,14 @@ int LCaptionData::assign(FieldExtPlace *ext,Value *v)
 				StringValue *s = dynamic_cast<StringValue*>(v);
 				if (!s) return 0;
 				SetText(s->str);
+				return 1;
+
+			} else if (!strcmp(str,"font")) {
+				FontValue *f = dynamic_cast<FontValue*>(v);
+				if (!f || !f->font) return 0;
+				LaxFont *ff = f->font->duplicate();
+				Font(ff);
+				ff->dec_count();
 				return 1;
 			}
 		}
