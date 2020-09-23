@@ -426,6 +426,7 @@ int ObjectFilterInterface::ActivateTool(int index)
 
 	ObjectFilterNode *fnode = filternodes.e[index];
 	anInterface *i = fnode->ObjectFilterInterface()->duplicate(NULL);
+	i->Id("duptool");
 	//NodeProperty *in = fnode->FindProperty("in");
 	//NodeProperty *out = fnode->FindProperty("out");
 

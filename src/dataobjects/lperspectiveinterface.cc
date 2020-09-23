@@ -121,6 +121,9 @@ int LPerspectiveInterface::UseThis(Laxkit::anObject *nobj,unsigned int mask)
 	return PerspectiveInterface::UseThis(nobj, mask);
 }
 
+/*! Perspective has updated transform, so this updates node state with information in that transform
+ * whenever the interface thinks it has been modified.
+ */
 void LPerspectiveInterface::Modified()
 {
 	if (!pnode) return;
@@ -128,15 +131,50 @@ void LPerspectiveInterface::Modified()
 	 //update pnode
 	FlatvectorValue *v;
 
-	// *** note this will overwrite data connected in.. should probably only update if not connected, then reverse update transform
-	v = dynamic_cast<FlatvectorValue *>(pnode->properties.e[1]->GetData());
-	if (v) v->v = transform->to_ll;
-	v = dynamic_cast<FlatvectorValue *>(pnode->properties.e[2]->GetData());
-	if (v) v->v = transform->to_lr;
-	v = dynamic_cast<FlatvectorValue *>(pnode->properties.e[3]->GetData());
-	if (v) v->v = transform->to_ul;
-	v = dynamic_cast<FlatvectorValue *>(pnode->properties.e[4]->GetData());
-	if (v) v->v = transform->to_ur;
+	// only update if not connected, then reverse update transform
+	NodeProperty *prop = pnode->properties.e[1];
+	v = dynamic_cast<FlatvectorValue *>(prop->GetData());
+	bool rev = false;
+	if (v) {
+		if (!prop->IsConnected()) {
+			v->v = transform->to_ll;
+		} else {
+			transform->to_ll = v->v;
+			rev = true;
+		}		
+	}
+	prop = pnode->properties.e[2];
+	v = dynamic_cast<FlatvectorValue *>(prop->GetData());
+	if (v) {
+		if (!prop->IsConnected()) {
+			v->v = transform->to_lr;
+		} else {
+			transform->to_lr = v->v;
+			rev = true;
+		}
+	}
+	prop = pnode->properties.e[3];
+	v = dynamic_cast<FlatvectorValue *>(prop->GetData());
+	if (v) {
+		if (!prop->IsConnected()) {
+			v->v = transform->to_ul;
+		} else {
+			transform->to_ul = v->v;
+			rev = true;
+		}
+	}
+	prop = pnode->properties.e[4];
+	v = dynamic_cast<FlatvectorValue *>(prop->GetData());
+	if (v) {
+		if (!prop->IsConnected()) {
+			v->v = transform->to_ur;
+		} else {
+			transform->to_ur = v->v;
+			rev = true;
+		}
+	}
+
+	if (rev) transform->ComputeTransform();
 
 	pnode->properties.e[1]->Touch();
 	pnode->properties.e[2]->Touch();
@@ -145,6 +183,15 @@ void LPerspectiveInterface::Modified()
 
 	pnode->Update();
 
+	// make sure "base" object is still correct
+	DrawableObject *obj = dynamic_cast<DrawableObject*>(pnode->properties.e[0]->GetData());
+	if (obj != data) {
+		if (obj) {
+			if (data) data->dec_count();
+			data = obj;
+			data->inc_count(); //note oc will point to base object still
+		}
+	}
 }
 
 
@@ -166,6 +213,7 @@ LaxInterfaces::PerspectiveInterface *PerspectiveNode::GetPerspectiveInterface()
 	PerspectiveInterface *interf = dynamic_cast<PerspectiveInterface*>(keeper.GetObject());
 	if (!interf) {
 		interf = new LPerspectiveInterface(NULL, getUniqueNumber(), NULL);
+		interf->Id("keeperpersp");
 		interf->interface_flags |= LaxInterfaces::PerspectiveInterface::PERSP_Dont_Change_Object;
 		keeper.SetObject(interf, 1);
 	}
@@ -263,9 +311,14 @@ int PerspectiveNode::UpdateTransform()
 	return 0;
 }
 
+// int PerspectiveNode::Mute(bool yes)
+// {
+// 	return NodeBase::Mute(yes);
+// }
+
 int PerspectiveNode::Update()
 {
-	makestr(error_message, NULL);
+	Error(nullptr);
 
 	NodeProperty *inprop = FindProperty("in");
 	DrawableObject *orig = dynamic_cast<DrawableObject*>(inprop->GetData());
@@ -274,30 +327,20 @@ int PerspectiveNode::Update()
 	DrawableObject *out = dynamic_cast<DrawableObject*>(outprop->GetData());
 
 	if (!orig) {
-		outprop->SetData(NULL, 0);
+		outprop->SetData(nullptr, 0);
 		return 0;
 	}
 
 	if (IsMuted()) {
 		outprop->SetData(orig, 0);
 		return 0;
+	} else if (out == orig) {
+		//need to unset the mute
+		outprop->SetData(nullptr, 0);
+		out = nullptr;
 	}
 
-	clock_t recent = MostRecentIn(NULL);
-	if (out && recent <= out->modtime) {
-		if (out != orig) {
-			//already up to date, just make sure object transform is good
-			out->set(*orig);
-			return 0;
-		}
-		outprop->SetData(NULL, 0); //else propbably just unmuted, so reset output prop
-		out = NULL;
-	}
-	//if (recent <= out->modtime && transform->modtime <= out->modtime) return 0; //already up to date
-
-	outprop->SetData(NULL, 0); //else propbably just unmuted, so reset output prop
-	out = NULL;
-
+	if (out) out->set(*orig); //sets affine transform only
 
 	 // get input coordinates and:
 	double v[4];
@@ -321,22 +364,12 @@ int PerspectiveNode::Update()
 
 	if (!transform->IsValid()) return -1;
 
-	//Affine toglobal(*orig), tolocal(*orig);
-	//tolocal.Invert();
-
-
 	// *** vectors should be able to handle:
 	//   base vector like PathsData
 	//   clones to those
 	//   groups composed of only vector objects
+	//   sets of flatvector
 
-	//transform vectors:
-	//  PathsData
-	//  PatchData
-	//  ColorPatchData
-	//  EngraverFillData
-	//  Voronoi
-	//else transform rasterized
 
 	if (dynamic_cast<PathsData*>(orig)) {
 		 //go through point by point and transform.
@@ -347,12 +380,15 @@ int PerspectiveNode::Update()
 		LPathsData *pathout = dynamic_cast<LPathsData*>(out);
 		if (!pathout) {
 			pathout = dynamic_cast<LPathsData*>(somedatafactory()->NewObject(LAX_PATHSDATA));
+			pathout->Id("PerspFiltered");
 			pathout->set(*pathin); //sets the affine transform
 			pathout->InstallLineStyle(pathin->linestyle);
 			pathout->InstallFillStyle(pathin->fillstyle);
 			outprop->SetData(pathout,1);
 			out = pathout;
 		}
+
+		DBG cerr << "pathout "<<pathout->Id()<<" previous bbox: "<<pathout->minx<<','<<pathout->maxx<<" "<<pathout->miny<<','<<pathout->maxy<<endl;
 
 		Coordinate *start, *start2, *p, *p2;
 		Path *path, *path2;
@@ -365,6 +401,8 @@ int PerspectiveNode::Update()
 		for (int c=0; c<pathin->NumPaths(); c++) {
 			path  = pathin ->paths.e[c];
 			path2 = pathout->paths.e[c];
+			path2->needtorecache = true;
+		
 			p  = path ->path;
 			p2 = path2->path;
 			start  = p;
@@ -380,30 +418,62 @@ int PerspectiveNode::Update()
 						*p2 = *p;
 					}
 
-
 					fp = transform->transform(p->fp);
 					p2->fp = fp;
 
 					p  = p->next;
 					p2 = p2->next;
-					if (p2 == start2 && p != start) p2 = NULL;
+					if (p2 == start2 && p != start) p2 = nullptr;
 				} while (p && p != start);
 
 				if (p == start && !p2) {
 					path2->close();
+				}
 
-				} else if (p==start && p2 && p2!=start) {
-					 //too many points in path2!
-					 //*** remove extra points
+				if (p == start && p2 && p2 != start2) {
+					 //too many points in path2! remove extra...
+					 while (p2 && p2 != start2) {
+					 	Coordinate *prev = p2->prev;
+					 	path2->removePoint(p2, true);
+					 	if (prev) p2 = prev->next;
+					 	else p2 = nullptr;
+					 }
 				}
 
 			} else {
 				 //current path is an empty
 				if (p2) path2->clear();
 			}
+
+			while (path2->pathweights.n > path->pathweights.n) path2->pathweights.remove(path2->pathweights.n-1);
+			if (path2->pathweights.n < path->pathweights.n) {
+				for (int c2 = 0; c2 < path->pathweights.n; c2++) {
+					PathWeightNode *w1 = path->pathweights.e[c2];
+					if (c2 >= path2->pathweights.n)
+						path2->AddWeightNode(w1->t, w1->offset, w1->width, w1->angle);
+					else *path2->pathweights.e[c2] = *w1;
+				}
+			}
+			flatpoint tangent, point, wp1, wp2;
+			for (int c2=0; c2<path->pathweights.n; c2++) {
+				// virtual int PointAlongPath(double t, int tisdistance, flatpoint *point, flatpoint *tangent);
+				PathWeightNode *w1 = path->pathweights.e[c2];
+				PathWeightNode *w2 = path2->pathweights.e[c2];
+				*w2 = *w1;
+				path->PointAlongPath(w1->t, false, &point, &tangent);
+				tangent.normalize();
+				wp1 = transform->transform(point);
+				wp2 = transform->transform(point + transpose(tangent) * .05);
+				double scale = (wp1-wp2).norm() / .05;
+				w2->offset *= scale;
+				w2->width *= scale;
+			}
 		}
 
-		out->modtime = recent;
+
+		pathout->FindBBox();
+		DBG cerr << "pathout new bbox: "<<pathout->minx<<','<<pathout->maxx<<" "<<pathout->miny<<','<<pathout->maxy<<endl;
+		outprop->Touch();
 		pathout->touchContents();
 
 		DBG cerr << "filter out:"<<endl;
@@ -413,10 +483,16 @@ int PerspectiveNode::Update()
 
 		return NodeBase::Update();
 
-	} //if (dynamic_cast<PathsData*>(orig))
+	// } else if (dynamic_cast<EngraverFillData*>(orig)) {
+	// } else if (dynamic_cast<ColorPatchData*>(orig)) {
+	// } else if (dynamic_cast<ImagePatchData*>(orig)) {
+	// } else if (!strcmp(orig->whattype(), "PatchData")) {
+	// } else if (dynamic_cast<VoronoiData*>(orig)) {
+	// } else { // transform rasterized
 
+	}
 
-	makestr(error_message, _("Can only use paths right now"));
+	Error(_("Cannot apply perspective to that type!"));
 	return -1;
 
 
@@ -428,10 +504,6 @@ int PerspectiveNode::Update()
 //	}
 
 }
-
-
-
-
 
 
 } //namespace Laidout

@@ -68,7 +68,6 @@ class ObjectFilter : public NodeGroup
 	virtual int FindInterfaceNodes(Laxkit::RefPtrStack<ObjectFilterNode> &filternodes, NodeProperty *start_here=NULL);
 
     virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context);
-
 };
 
 

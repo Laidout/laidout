@@ -147,7 +147,8 @@ int ObjectFilter::SetParent(anObject *newparent)
  */
 int ObjectFilter::Update()
 {
-	return GetStatus();
+	return NodeBase::Update();
+	// return GetStatus();
 }
 
 int ObjectFilter::GetStatus()
@@ -158,6 +159,10 @@ int ObjectFilter::GetStatus()
 Laxkit::anObject *ObjectFilter::FinalObject()
 {
 	NodeProperty *prop = output->FindProperty("out");
+	// clock_t recent = MostRecentIn(nullptr);
+	// if (recent > prop->modtime) {
+	// 	// filter needs updating
+	// }
 	if (prop) return dynamic_cast<DrawableObject*>(prop->GetData());
 	return NULL;
 }
@@ -219,8 +224,6 @@ int ObjectFilter::FindInterfaceNodes(Laxkit::RefPtrStack<ObjectFilterNode> &filt
 			n += FindInterfaceNodes(filternodes, prop);
 		}
 	}
-
-
 
 	return n;
 }

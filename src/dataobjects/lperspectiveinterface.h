@@ -79,6 +79,7 @@ class PerspectiveNode : public ObjectFilterNode
 
 	virtual LaxInterfaces::anInterface *ObjectFilterInterface();
 	virtual DrawableObject *ObjectFilterData();
+	// virtual int Mute(bool yes=true);
 	//virtual int Connected(NodeConnection *connection);
 
 };

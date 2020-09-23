@@ -948,6 +948,7 @@ common property editor tool:  ..overlay and put editor box in a corner?
   maybe other mode, where you can copy certain properties, then apply those to other objects?
 
 ObjectFilter objectfilters object filter:
+  need way to go from node interface to interactive
   need menu options:
     Create filtered copy
     Apply filters
@@ -955,20 +956,38 @@ ObjectFilter objectfilters object filter:
   anchoring to other objects
 
 Perspective perspective:
+  bug: deleting path points makes transformed path faulty on updates sometimes
+  perspective interface needs to allow changing pos of in points, not just use bbox
   path transform should transform line widths accurately
   finish debugging update path object without reallocating each time
   optimize the image mapping
   filtering paths needs to detect big distortions and add points, as simply transforming bez points is not enough
+  implement transform for:
+    ColorPatchData
+    ImagePatchData
+    PatchData
+    EngraverFillData
+    VoronoiData
+    Caption (convert to path first)
+    text on path (convert to path first)
+    ImageData
+    Refs and groups of any combination of the above
+  DONE bug: chained filter nodes make context wrong, thus bad Refresh
 
 node editor node interface NodeInterface nodes: node: interface: 
   undo redo
+  bug: say Vector2, edit value, tab to next, does not save previous value
   bug: load in recovery: should ensure only one input, and only one exec_out
   bug: seems like node names can sometimes erroneously get duplicate names? this messes up load in/connecting
   bug: traverse path only goes about 80%
   bug: transform object isn't copying images in an ImageData
   bug: height of resizable property not saved
+  reroute needs double click on connection to add node
+  edit filter nodes for the first time should center nodes in viewport
   need solution for shared interface getting messages for different nodes.. probably need to do one instance per whatever
+  would be nice to have a "Collapse unlinked properties" option
   data node types:
+    how to systematize read only field overrides (like minx,maxx,...)
     fit obj in rectangle, with alignment
     anchor nodes (double up with revamped AnchorInterface):
       in anchor: object local space, or parent space
@@ -1024,16 +1043,25 @@ node editor node interface NodeInterface nodes: node: interface:
       properties
       DONE dereference assign Evaluate extend from Group, not affine
   object/resource management nodes:
-    anchor nodes to mostly replace alignment rules
-    modifiy object on disconnect should make a copy of the object, and show that type in property 0
+    find drawable:
+      child of
+      self
+      siblings
+      direct parent
+      in whole tree
+      other pages?
+      resources?
+    alignment nodes:
+      align to page (with page type)
+      access to alignment/nup tool config?
+      anchor nodes to mostly replace alignment rules
+      anchor point transforms
     rename "Object Info" to "Drawable Info"
     "Object Properties".. maybe have a string field with list of desired properties? Array of props that show enum but output value?
     have a dangerous "Object Function" node? needs to dup in, then run function
     ref other object
-    alignment node .. access to alignment tool data?
     clone tool access
     nup tool access
-    anchor point transforms
     inverse affine transform
     DONE ALL ObjectDef data types need to be installed on startup, or at least when node tool starts up
   group nodes, connect to (new in) or (new out):
@@ -1100,7 +1128,7 @@ node editor node interface NodeInterface nodes: node: interface:
       GroupRef : NodeGroup, with some sort of relay to actual group internals
     node libraries: nodes as resources
       need to check for cyclic dependency in resources (and disallow)
-  auto shift on connection
+  auto shift placement on connection
   auto connect when dragging nodes.. needs parsing of compatible properties
   view area things:
     node magnifier for easier browsing when otherwise zoomed way out
@@ -1113,17 +1141,6 @@ node editor node interface NodeInterface nodes: node: interface:
   color code pipes by value type, color: yellow, number: gray, vector: purple
   need better styling.. too much is hardcoded. problems later with high dpi screens
   finish implementing no cycle check: on load in could be a crash magnet currently if constructed with loops
-  math nodes
-    function nodes need a smooth option
-    should always be 'using Math'
-  list nodes
-    set range [start,end] = value
-    subset [start, end], neg nums for from end
-    element [index]
-    create list  [type, number]
-    foreach thread processor
-    foreach in list, create new list with transformed elements
-    sort with function
 
   other node systems:
     examine imgflo for compatibility
@@ -1137,7 +1154,7 @@ node editor node interface NodeInterface nodes: node: interface:
     examine godot for compatibility -> does full scripting execution
     examine Natron for compatibility
     examine pure data for compatibility
-    examine BespokeSynch for compatibility: https://github.com/awwbees/BespokeSynth
+    examine BespokeSynth for compatibility: https://github.com/awwbees/BespokeSynth
     praxis-live?
     proprietary import like substance or houdini?
     any crossover with mypaint brushes or krita???
@@ -1163,15 +1180,24 @@ node editor node interface NodeInterface nodes: node: interface:
     have visible/togglable comment
   expression node:
     any number of inputs
-    any number of outputs
     inputs map to names according to property label
-    expression must result in a hash, which must map to defined output properties
     scriptify nodes
     nodify script
-    use PlainText objects
+    use PlainText objects.. ScriptNode ?
     edit text externally or in different text editor frame
   string ops:
     printf
+  list nodes
+    set range [start,end] = value
+    subset [start, end], neg nums for from end
+    element [index]
+    create list  [type, number]
+    foreach thread processor
+    foreach in list, create new list with transformed elements
+    sort with function
+  math nodes
+    function nodes need a smooth option
+    should always be 'using Math'
   more math:
     interpolate with easing
     select from panel:
@@ -1192,6 +1218,11 @@ node editor node interface NodeInterface nodes: node: interface:
   DONE resize preview broken
   DONE image from file node
 
+
+large files:
+  note that most object dump_out routines now use Attribute intermediary rather that write directly to file.
+    if this becomes a problem with large files, need to revert that, or update so less heap thrashing
+  page range file refs, so you can make massive docs without the whole thing in memory at once?
 
 Whenever there's a byte read in, like with read_in_whole_file to string, really should do some minimal string validation before using it?
 
@@ -2571,4 +2602,4 @@ DONE Be able to create empties
 DONE bug: filters repeatedly writing \"\"\"\"  reading in quoted names? 
 DONE don't allow reparent to a child!! or reparent as appropriate
 DONE bug: ImagePatchData crashes in preview generation 
-
+DONE add FontValue
