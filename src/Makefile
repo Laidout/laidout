@@ -149,6 +149,7 @@ otherobjs= \
 	dataobjects/datafactory.o \
 	dataobjects/groupinterface.o \
 	dataobjects/epsdata.o \
+	dataobjects/fontvalue.o \
 	dataobjects/helpertypes.o \
 	dataobjects/imagevalue.o \
 	dataobjects/limagepatch.o \

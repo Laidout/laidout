@@ -23,6 +23,7 @@ objs= \
 	datafactory.o \
 	groupinterface.o \
 	epsdata.o \
+	fontvalue.o \
 	helpertypes.o \
 	imagevalue.o \
 	limagepatch.o \
