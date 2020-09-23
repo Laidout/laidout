@@ -263,8 +263,14 @@ DrawableObject *DrawableObject::FinalObject()
 	if (!filter) return this;
 
 	ObjectFilter *ofilter = dynamic_cast<ObjectFilter*>(filter);
-	DrawableObject *fobj = (ofilter ? dynamic_cast<DrawableObject*>(ofilter->FinalObject()) : NULL);
-	if (fobj) return fobj;
+	if (ofilter) {
+		DrawableObject *fobj = dynamic_cast<DrawableObject*>(ofilter->FinalObject());
+		// clock_t recent = ofilter MostRecentIn(nullptr);
+		// if (recent > prop->modtime) {
+		// 	// filter needs updating
+		// }
+		if (fobj) return fobj;
+	}
 
 	DBG cerr << " *** Warning! filter did not return a valid object for "<<Id()<<"!"<<endl;
 	return this;
@@ -953,6 +959,13 @@ LaxInterfaces::SomeData *DrawableObject::FindObjectRegex(const char *pattern, La
 //		}
 //	}
 //	return nullptr;
+}
+
+/*! Convenience cast of GetParent() to DrawableObject.
+ */
+DrawableObject *DrawableObject::GetDrawableParent()
+{
+	return dynamic_cast<DrawableObject*>(GetParent());
 }
 
 //! Take all the elements in the list which, and put them in a new group at the smallest index.

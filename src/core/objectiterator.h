@@ -22,6 +22,7 @@
 #include <regex>
 
 #include "../dataobjects/objectcontainer.h"
+#include "../dataobjects/drawableobject.h"
 
 
 namespace Laidout {
@@ -49,6 +50,7 @@ class ObjectIterator
 	enum SearchDomain {
 		SEARCH_Selection,
 		SEARCH_ObjectContainer,
+		SEARCH_Drawable,
 		SEARCH_Project,
 		SEARCH_Document,
 		SEARCH_Viewport,
@@ -60,6 +62,7 @@ class ObjectIterator
 
 
 	ObjectContainer *root;
+	// DrawableObject *droot;
 	LaxInterfaces::Selection *selection;
 
 	FieldPlace first;
@@ -80,6 +83,7 @@ class ObjectIterator
 	virtual int Pattern(MatchFunc func, bool must_match, bool must_not_match, bool keep_current);
 
 	virtual void SearchIn(ObjectContainer *o);
+	virtual void SearchIn(DrawableObject *o);
 	virtual void SearchIn(LaxInterfaces::Selection *sel); //note: not an ObjectContainer, it's flat and easy to search
 	virtual bool Match(Laxkit::anObject *obj);
 	virtual void Clear();

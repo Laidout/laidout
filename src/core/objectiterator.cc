@@ -81,6 +81,7 @@ ObjectIterator::ObjectIterator()
 {
 	where = SEARCH_ObjectContainer;
 	root = nullptr;
+	// oroot = nullptr;
 	selection = nullptr;
 
 	max_matches = -1;
@@ -91,11 +92,13 @@ ObjectIterator::~ObjectIterator()
 {
 	if (selection) selection->dec_count();
 	if (root) root->dec_count();
+	// if (oroot) oroot->dec_count();
 }
 
 void ObjectIterator::Clear()
 {
 	if (root) { root->dec_count(); root = nullptr; }
+	// if (oroot) { oroot->dec_count(); oroot = nullptr; }
 	if (selection) { selection->dec_count(); selection = nullptr; }
 	patterns.flush();
 	finished = true;
@@ -163,6 +166,19 @@ void ObjectIterator::SearchIn(ObjectContainer *o)
 	}
 }
 
+void ObjectIterator::SearchIn(DrawableObject *o)
+{
+	if (root != o) {
+		if (root) root->dec_count();
+		root = o;
+		if (root) root->inc_count();
+
+		where = SEARCH_Drawable;
+		first.flush();
+		current.flush();
+	}
+}
+
 /*! note: Selections are not currently ObjectContainers, it's flat and easy to search, so we treat it specially.
  *
  *  If o != current root, then flush first and current.
@@ -182,6 +198,8 @@ void ObjectIterator::SearchIn(LaxInterfaces::Selection *sel)
 	}
 }
 
+/*! Check obj against current patterns.
+ */
 bool ObjectIterator::Match(anObject *obj)
 {
 	if (!obj) return false;
@@ -226,7 +244,7 @@ Laxkit::anObject *ObjectIterator::Start(FieldPlace *where_ret)
 		return nullptr;
 	}
 
-	if (where == SEARCH_ObjectContainer) {
+	if (where == SEARCH_ObjectContainer || where == SEARCH_Drawable) {
 		if (!root || root->n() == 0) { finished = true; return nullptr; }
 
 		//root is taken to be a "zone" head, and will not ever be matched.
@@ -282,7 +300,7 @@ Laxkit::anObject *ObjectIterator::End(FieldPlace *where_ret)
 		return nullptr;
 	}
 
-	if (where == SEARCH_ObjectContainer) {
+	if (where == SEARCH_ObjectContainer || where == SEARCH_Drawable) {
 		if (!root || root->n() == 0) { finished = true; return nullptr; }
 
 		//root is taken to be a "zone" head, and will not ever be matched.
@@ -350,7 +368,7 @@ Laxkit::anObject *ObjectIterator::Next(FieldPlace *where_ret)
 		return nullptr;
 	}
 
-	if (where == SEARCH_ObjectContainer) {
+	if (where == SEARCH_ObjectContainer || where == SEARCH_Drawable) {
 		if (!root || root->n() == 0) { finished = true; return nullptr; }
 
 		anObject *obj = nullptr;
@@ -405,7 +423,7 @@ Laxkit::anObject *ObjectIterator::Previous(FieldPlace *where_ret)
 		return nullptr;
 	}
 
-	if (where == SEARCH_ObjectContainer) {
+	if (where == SEARCH_ObjectContainer || where == SEARCH_Drawable) {
 		if (!root || root->n() == 0) { finished = true; return nullptr; }
 
 		anObject *obj = nullptr;

@@ -266,6 +266,7 @@ class DrawableObject :  virtual public ObjectContainer,
 
 	virtual LaxInterfaces::SomeData *FindObject(const char *id);
 	virtual LaxInterfaces::SomeData *FindObjectRegex(const char *pattern, LaxInterfaces::SomeData *after);
+	virtual DrawableObject *GetDrawableParent();
 
 	 //for Value
 	virtual ObjectDef *makeObjectDef();
