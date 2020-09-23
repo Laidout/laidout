@@ -56,12 +56,13 @@ enum ValueTypes {
 	VALUE_Array,      //!< Mathematical matrices, or sets of fixed sizes
 	VALUE_Hash,       //!< Basically a set with named values
 
-	VALUE_Image,      //!< *** unimplemented!
+	VALUE_Image,      //!< see ImageValue in imagevalue.h
 	VALUE_Flags,      //!< *** unimplemented!
 	VALUE_Color,      //!< A Color
 	VALUE_Date,       //!< *** unimplemented!
 	VALUE_Time,       //!< *** unimplemented!
 	VALUE_Complex,    //!< *** unimplemented!
+	VALUE_Font,       //!< see FontValue in fontvalue.h
 
 	VALUE_Variable,   //!< for use in an ObjectDef
 	VALUE_Operator,   //!< for use in an ObjectDef
