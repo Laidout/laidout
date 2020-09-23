@@ -24,6 +24,7 @@
 #include "../dataobjects/bboxvalue.h"
 #include "../dataobjects/affinevalue.h"
 #include "../dataobjects/imagevalue.h"
+#include "../core/objectiterator.h"
 
 #include <unistd.h>
 
@@ -759,27 +760,136 @@ Laxkit::anObject *newPathSvgdNode(int p, Laxkit::anObject *ref)
 }
 
 
-//------------------------ ObjectInfoNode ------------------------
+//------------------------ FindDrawableNode ------------------------
 
-/*! \class Node for basic DrawableObject information, like name, parent, transform, and bounds..
+/*! \class Node to get a reference to other DrawableObjects in same page.
  */
 
-class ObjectInfoNode : public NodeBase
+class FindDrawableNode : public NodeBase
 {
   public:
-	ObjectInfoNode();
-	virtual ~ObjectInfoNode();
+	FindDrawableNode();
+	virtual ~FindDrawableNode();
 
 	virtual NodeBase *Duplicate();
 	virtual int Update();
 	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref);
+
+	// static SingletonKeeper keeper; //the def for domain enum
+	// static ObjectDef *GetDef() { return dynamic_cast<ObjectDef*>(keeper.GetObject()); }
 };
 
-
-ObjectInfoNode::ObjectInfoNode()
+Laxkit::anObject *FindDrawableNode::NewNode(int p, Laxkit::anObject *ref)
 {
-	makestr(Name, _("Object Info"));
-	makestr(type, "Drawable/ObjectInfo");
+	return new FindDrawableNode();
+}
+
+FindDrawableNode::FindDrawableNode()
+{
+	makestr(Name, _("Find Drawable"));
+	makestr(type, "Drawable/FindDrawable");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "base",    NULL,1, _("Base"), _("Object from which to begin searching")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "pattern", NULL,1, _("Pattern"), _("Pattern to search for")));
+
+	// AddProperty(new NodeProperty(NodeProperty::PROP_Block, true, "exact",    new BooleanValue(false),1,_("Exact"),   _("Match must be exact")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Block, true, "regex",    new BooleanValue(false),1,_("regex"),   _("Pattern is a regular expression")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Block, true, "above",    new BooleanValue(true),1, _("Above"),   _("Look in parents and parents other children. Else looks only in children.")));
+	// AddProperty(new NodeProperty(NodeProperty::PROP_Block, true, "siblings", new BooleanValue(true),1, _("Siblings"),_("Look adjacent to base")));
+	// AddProperty(new NodeProperty(NodeProperty::PROP_Block, true, "kids",     new BooleanValue(true),1, _("Kids"),    _("Look under base")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out",  nullptr,1, _("Found"), nullptr, 0, false));
+}
+
+FindDrawableNode::~FindDrawableNode()
+{
+}
+
+NodeBase *FindDrawableNode::Duplicate()
+{
+	FindDrawableNode *node = new FindDrawableNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+/*! Return 0 for no error and everything up to date.
+ * -1 means bad inputs and node in error state.
+ * 1 means needs updating.
+ */
+int FindDrawableNode::Update()
+{
+	DrawableObject *base = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
+	if (!base) return -1;
+
+	StringValue *s = dynamic_cast<StringValue*>(properties.e[1]->GetData());
+	if (!s) return -1;
+	const char *pattern = s->str;
+	if (isblank(pattern)) return -1;
+
+	bool regex    = dynamic_cast<BooleanValue*>(properties.e[2]->GetData())->i;
+	bool above    = dynamic_cast<BooleanValue*>(properties.e[3]->GetData())->i;
+	// bool exact = dynamic_cast<BooleanValue*>(properties.e[2]->GetData())->i;
+	// bool siblings = dynamic_cast<BooleanValue*>(properties.e[4]->GetData())->i;
+	// bool kids     = dynamic_cast<BooleanValue*>(properties.e[4]->GetData())->i;
+
+
+	if (above) {
+		while (base->GetDrawableParent()) base = base->GetDrawableParent();
+	}
+
+	ObjectIterator itr;
+	DrawableObject *pnt = base;
+	itr.SearchIn(pnt);
+	itr.Pattern(pattern, regex, true, true, false, false);
+	FieldPlace place;
+	DrawableObject *found = dynamic_cast<DrawableObject*>(itr.Start(&place));
+	
+	properties.e[4]->SetData(found, 0);
+	return NodeBase::Update();
+}
+
+int FindDrawableNode::GetStatus()
+{
+	DrawableObject *dr = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
+	if (!dr) return -1;
+	StringValue *s = dynamic_cast<StringValue*>(properties.e[1]->GetData());
+	if (!s) return -1;
+	const char *pattern = s->str;
+	if (isblank(pattern)) return -1;
+
+	return NodeBase::GetStatus();
+}
+
+
+//------------------------ DrawableInfoNode ------------------------
+
+/*! \class Node for basic DrawableObject information, like name, parent, transform, and bounds..
+ */
+
+class DrawableInfoNode : public NodeBase
+{
+  public:
+	DrawableInfoNode();
+	virtual ~DrawableInfoNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref);
+};
+
+Laxkit::anObject *DrawableInfoNode::NewNode(int p, Laxkit::anObject *ref)
+{
+	return new DrawableInfoNode();
+}
+
+DrawableInfoNode::DrawableInfoNode()
+{
+	makestr(Name, _("Drawable Info"));
+	makestr(type, "Drawable/DrawableInfo");
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in",  NULL,1, _("In")));
 
@@ -793,18 +903,18 @@ ObjectInfoNode::ObjectInfoNode()
 	//AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "clippath", nullptr,1, _("ClipPath"), nullptr,0,false));
 }
 
-ObjectInfoNode::~ObjectInfoNode()
+DrawableInfoNode::~DrawableInfoNode()
 {
 }
 
-NodeBase *ObjectInfoNode::Duplicate()
+NodeBase *DrawableInfoNode::Duplicate()
 {
-	ObjectInfoNode *node = new ObjectInfoNode();
+	DrawableInfoNode *node = new DrawableInfoNode();
 	node->DuplicateBase(this);
 	return node;
 }
 
-int ObjectInfoNode::Update()
+int DrawableInfoNode::Update()
 {
 	DrawableObject *dr = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
 	if (!dr) return -1;
@@ -854,7 +964,7 @@ int ObjectInfoNode::Update()
 	return NodeBase::Update();
 }
 
-int ObjectInfoNode::GetStatus()
+int DrawableInfoNode::GetStatus()
 {
 	DrawableObject *dr = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
 	if (!dr) return -1;
@@ -864,12 +974,6 @@ int ObjectInfoNode::GetStatus()
 
 
 
-Laxkit::anObject *newObjectInfoNode(int p, Laxkit::anObject *ref)
-{
-	return new ObjectInfoNode();
-}
-
-
 //--------------------------- SetupDataObjectNodes() -----------------------------------------
 
 /*! Install default built in node types to factory.
@@ -877,18 +981,13 @@ Laxkit::anObject *newObjectInfoNode(int p, Laxkit::anObject *ref)
  */
 int SetupDataObjectNodes(Laxkit::ObjectFactory *factory)
 {
-	 //--- LImageDataNode
+	 //--- Drawables
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/ImageData",  newLImageDataNode,  NULL, 0);
-
-	 //--- LImageDataInfoNode
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/ImageDataInfo",  newLImageDataInfoNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/DrawableInfo",  DrawableInfoNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/FindDrawable",  FindDrawableNode::NewNode,  NULL, 0);
 
-	 //--- ObjectInfoNode
-	factory->DefineNewObject(getUniqueNumber(), "Drawable/ObjectInfo",  newObjectInfoNode,  NULL, 0);
-
-	 //--- LPathsData generators
 	factory->DefineNewObject(getUniqueNumber(), "Paths/PathsData",newPathsDataNode,  NULL, 0);
-
 	factory->DefineNewObject(getUniqueNumber(), "Paths/Circle",newPathCircleNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/Square",newPathSquareNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/RectanglePath",newPathRectangleNode,  NULL, 0);

@@ -3684,6 +3684,7 @@ int TransformAffineNode::Update()
 			anObject *filter = d->filter;
 			d->filter = NULL;
 			DrawableObject *copy = dynamic_cast<DrawableObject*>(d->duplicate());
+			copy->FindBBox();
 			d->filter = filter;
 			copy->Multiply(*affine);
 			nv = copy;
@@ -4310,11 +4311,177 @@ int NewObjectNode::GetStatus()
 }
 
 
+//------------ ObjectInfoNode
+
+
+/*! \class ObjectInfoNode
+ * Class to expose any properties in a Value's ObjectDef.
+ */
+class ObjectInfoNode : public NodeBase
+{
+  public:
+	Value *obj; // we keep this around so as to not dup properties unnecessarily
+
+	// ObjectInfoNode(DrawableObject *nobj, int absorb);
+	ObjectInfoNode(Value *nobj, int absorb);
+	virtual ~ObjectInfoNode();
+	virtual int Update();
+	virtual void UpdateProps();
+	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
+	virtual int Connected(NodeConnection *connection);
+	virtual int Disconnected(NodeConnection *connection, bool from_will_be_replaced, bool to_will_be_replaced);
+	
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ObjectInfoNode(nullptr, 0); }
+};
+
+ObjectInfoNode::ObjectInfoNode(Value *nobj, int absorb)
+{
+	makestr(type, "ObjectInfoNode");
+	makestr(Name, _("Object Info"));
+
+	obj = nobj;
+	if (obj) {
+		if (!absorb) obj->inc_count();
+	}
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in", obj,0, _("In"), NULL, 0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "id", NULL,1, _("Id"), NULL, 0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "type", NULL,1, _("Type"), NULL, 0,false));
+	
+	if (obj) UpdateProps();
+	Update();
+}
+
+ObjectInfoNode::~ObjectInfoNode()
+{
+	if (obj) obj->dec_count();
+}
+
+NodeBase *ObjectInfoNode::Duplicate()
+{
+	NodeBase *newnode = new ObjectInfoNode(nullptr,0);
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int ObjectInfoNode::Disconnected(NodeConnection *connection, bool from_will_be_replaced, bool to_will_be_replaced)
+{
+	//*** handle disconnecting in how?
+	return NodeBase::Disconnected(connection, from_will_be_replaced, to_will_be_replaced);
+}
+
+int ObjectInfoNode::Connected(NodeConnection *connection)
+{
+	if (this == connection->to && connection->toprop == properties.e[0]) {
+		// we just connected something to in slot
+		Value *nobj = connection->fromprop->GetData();
+		
+		if (nobj != obj) {
+			if (obj) obj->dec_count();
+			obj = nobj;
+			if (obj) obj->inc_count();
+
+			UpdateProps();
+		}
+	}
+
+	return NodeBase::Connected(connection);
+}
+
+/*! Update the prop fields. Does NOT update the actual values here. Use the usual Update() for that.
+ */
+void ObjectInfoNode::UpdateProps()
+{
+	int added = 0;
+
+	if (obj) {
+		obj->inc_count();
+		ObjectDef *def = obj->GetObjectDef(); //warning: shawdows NodeBase::def
+		
+		ObjectDef *field;
+
+		for (int c=0; c<def->getNumFields(); c++) {
+			field = def->getField(c);
+
+			if (field->format==VALUE_Function || field->format==VALUE_Class || field->format==VALUE_Operator || field->format==VALUE_Namespace)
+				continue;
+
+			// update property with new name, Name, desc...
+			NodeProperty *prop = nullptr;
+			// Value *val = obj->dereference(field->name,-1);
+			if (added+3 < properties.n-1) {
+				// modify property
+				prop = properties.e[added+3];
+				makestr(prop->name, field->name);
+				makestr(prop->label, field->Name);
+				makestr(prop->tooltip, field->description);
+				// prop->SetData(val,1);
+
+			} else {
+				// insert new property
+				prop = new NodeProperty(NodeProperty::PROP_Output,  true, field->name, nullptr,1, field->Name, field->description, 0, false);
+				AddProperty(prop, added+3);
+			}
+			added++;
+		}
+	}
+
+	// remove old extra properties
+	for (int c = added+3; c<properties.n; ) {
+		RemoveProperty(properties.e[c]);
+	}
+
+	Wrap();
+}
+
+int ObjectInfoNode::Update()
+{
+	Value *o = properties.e[0]->GetData();
+	if (!o) return -1;
+
+	// always set id
+	StringValue *sv = dynamic_cast<StringValue*>(properties.e[1]->GetData());
+	if (!sv) {
+		sv = new StringValue(o->Id());
+		properties.e[1]->SetData(sv, 1);
+	} else {
+		sv->Set(o->Id());
+	}
+
+	// always set type
+	sv = dynamic_cast<StringValue*>(properties.e[2]->GetData());
+	if (!sv) {
+		sv = new StringValue(o->whattype());
+		properties.e[2]->SetData(sv, 1);
+	} else {
+		sv->Set(o->whattype());
+	}
+
+	for (int c=3; c<properties.n-1; c++) {
+		Value *v = o->dereference(properties.e[c]->Name(), -1);
+		properties.e[c]->SetData(v, 1);
+	}
+
+	return NodeBase::Update();
+}
+
+/*! Return 0 for no error and everything up to date.
+ * -1 means bad inputs and node in error state.
+ * 1 means needs updating.
+ */
+int ObjectInfoNode::GetStatus()
+{
+	if (!properties.e[0]->GetData()) return -1;
+	return NodeBase::GetStatus();
+}
+
+
 //------------ ModifyObjectNode
 
 
 /*! \class ModifyObjectNode
- * Class to expose any DrawableObject properties in its ObjectDef.
+ * Class to allow changing any DrawableObject properties in its ObjectDef.
  */
 class ModifyObjectNode : public NodeBase
 {
@@ -4350,10 +4517,20 @@ ModifyObjectNode::ModifyObjectNode(Value *nobj, int absorb)
 
 	if (def) {
 		ObjectDef *field;
+		bool isdrawable = (dynamic_cast<DrawableObject*>(obj) != nullptr && strcmp(obj->whattype(), "Group"));
+
 		for (int c=0; c<def->getNumFields(); c++) {
 			field = def->getField(c);
 
 			if (field->format==VALUE_Function || field->format==VALUE_Class || field->format==VALUE_Operator || field->format==VALUE_Namespace)
+				continue;
+
+			if (isdrawable && ( // these are usually readonly, so special case skip.. need a better way to standardize readonly overrides
+					!strcmp(field->name, "minx") || 
+					!strcmp(field->name, "maxx") || 
+					!strcmp(field->name, "miny") || 
+					!strcmp(field->name, "maxy")
+				 ))
 				continue;
 
 			//NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count,
@@ -4395,6 +4572,9 @@ int ModifyObjectNode::Connected(NodeConnection *connection)
 		obj = nobj;
 		int added = 0;
 		if (obj) {
+			 //Group is currently the only DrawableObject that has editable min/max
+			bool isdrawable = (dynamic_cast<DrawableObject*>(obj) != nullptr && strcmp(obj->whattype(), "Group"));
+
 			obj->inc_count();
 			if (def) def->dec_count();
 			def = obj->GetObjectDef();
@@ -4405,6 +4585,14 @@ int ModifyObjectNode::Connected(NodeConnection *connection)
 				field = def->getField(c);
 
 				if (field->format==VALUE_Function || field->format==VALUE_Class || field->format==VALUE_Operator || field->format==VALUE_Namespace)
+					continue;
+
+				if (isdrawable && ( // these are usually readonly, so special case skip.. need a better way to standardize readonly overrides
+						!strcmp(field->name, "minx") || 
+						!strcmp(field->name, "maxx") || 
+						!strcmp(field->name, "miny") || 
+						!strcmp(field->name, "maxy")
+					 ))
 					continue;
 
 				// update property with new name, Name, desc...
@@ -4804,13 +4992,15 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	//------------------ Object maintenance -------------
 
 	 //--- TypeInfoNode
-	factory->DefineNewObject(getUniqueNumber(), "TypeInfo", newTypeInfoNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Object/TypeInfo", newTypeInfoNode,  NULL, 0);
 
 	 //--- NewObjectNode
-	factory->DefineNewObject(getUniqueNumber(), "NewObject", NewObjectNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Object/NewObject", NewObjectNode::NewNode,  NULL, 0);
 
 	 //--- ModifyObjectNode
-	factory->DefineNewObject(getUniqueNumber(), "ModifyObject",  ModifyObjectNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Object/ModifyObject",  ModifyObjectNode::NewNode,  NULL, 0);
+
+	factory->DefineNewObject(getUniqueNumber(), "Object/ObjectInfo",  ObjectInfoNode::NewNode,  NULL, 0);
 
 
 	//------------------ Groups -------------
