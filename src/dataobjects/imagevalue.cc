@@ -29,7 +29,7 @@ namespace Laidout {
 //--------------------------------------- ImageValue ---------------------------------------
 
 /* \class ImageValue
- * \brief Adds scripting functions for a Laxkit::Image object.
+ * \brief Adds scripting functions for a Laxkit::LaxImage object.
  */
 
 ImageValue::ImageValue()
