@@ -40,6 +40,7 @@ class LPathsData : public DrawableObject,
 	virtual void ComputeAABB(const double *transform, DoubleBBox &box);
 	virtual int pointin(flatpoint pp,int pin=1);
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
+	virtual void touchContents();
 
 	 //from Value:
 	virtual Value *duplicate();

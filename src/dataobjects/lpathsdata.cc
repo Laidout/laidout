@@ -65,6 +65,23 @@ int LPathsData::pointin(flatpoint pp,int pin)
 }
 
 
+void LPathsData::touchContents()
+{
+	SomeData::touchContents();
+
+	ObjectFilter *ofilter = dynamic_cast<ObjectFilter*>(filter);
+	if (ofilter) {
+		NodeProperty *prop = ofilter->FindProperty("out");
+		//DrawableObject *fobj = dynamic_cast<DrawableObject*>(ofilter->FinalObject());
+		clock_t recent = ofilter->MostRecentIn(nullptr);
+		if (recent > prop->modtime) {
+			// filter needs updating
+			ofilter->FindProperty("in")->topropproxy->owner->Update();
+			//ofilter->Update();
+		}
+	}
+}
+
 void LPathsData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	Attribute att;
