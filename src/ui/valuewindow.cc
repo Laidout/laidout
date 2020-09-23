@@ -1,5 +1,5 @@
 //
-//  
+//
 // Laidout, for laying out
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -301,7 +301,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 	} else if (type == VALUE_Object) {
 		ObjectValue *v = dynamic_cast<ObjectValue*>(val);
 
-		MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,0,0,1, fieldName); 
+		MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,0,0,1, fieldName);
 		if (fieldTooltip) bar->tooltip(fieldTooltip);
 		rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
 		if (v) {
@@ -315,7 +315,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 	} else if (type == VALUE_Hash) {
 		do_kids = true;
 		// *** need extra for adding and removing elements
-		
+
 	} else if (type == VALUE_Fields) {
 		do_kids = true;
 
@@ -327,7 +327,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 	} else if (type == VALUE_Set) {
 		SetValue *v = dynamic_cast<SetValue*>(val);
 
-		MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,0,0,0, fieldName); 
+		MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,0,0,0, fieldName);
 		if (fieldTooltip) bar->tooltip(fieldTooltip);
 		rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, HMULT * bar->win_h,0,0,50,0, -1);
 		rowframe->AddNull();
@@ -483,7 +483,7 @@ int ValueWindow::Event(const EventData *data,const char *mes)
 		} else if (type == VALUE_Object) {
 			ObjectValue *v = dynamic_cast<ObjectValue*>(val);
 			v->SetObject(const_cast<anObject*>(e->object), false);
-	
+
 		} else if (type == VALUE_Enum) {
 		//} else if (type == VALUE_EnumVal) {
 			EnumValue *ev = dynamic_cast<EnumValue*>(val);
@@ -493,7 +493,7 @@ int ValueWindow::Event(const EventData *data,const char *mes)
 		return 0;
 
 	}
-	
+
 	if (type == VALUE_Color) {
 		ColorValue *v = dynamic_cast<ColorValue*>(val);
 		const SimpleColorEventData *ce = dynamic_cast<const SimpleColorEventData *>(data);
@@ -503,8 +503,8 @@ int ValueWindow::Event(const EventData *data,const char *mes)
 		v->color.Set(ce->colorsystem, ce->Valuef(0), ce->Valuef(1), ce->Valuef(2), ce->Valuef(3), ce->Valuef(4));
 
 		return 0;
-	} 
-	
+	}
+
 //	} else if (type == VALUE_Date) {
 //	} else if (type == VALUE_Image) {
 //	} else if (type == VALUE_Flags) {
@@ -515,7 +515,7 @@ int ValueWindow::Event(const EventData *data,const char *mes)
 //	} else if (type == VALUE_Hash) {
 //		do_kids = true;
 //		// *** need extra for adding and removing elements
-//		
+//
 //	} else if (type == VALUE_Fields) {
 //		do_kids = true;
 //	} else if (type == VALUE_Array) {
@@ -546,7 +546,7 @@ void ValueWindow::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *co
 //		fprintf(f,"%sAField value #comment\n",spc);
 //		return;
 //	}
-//						
+//
 //	fprintf(f,"%sAField %d\n",spc, value);
 //
 //	-------- OR:  piggy back on dump_out_atts() ------------
@@ -585,7 +585,7 @@ void ValueWindow::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpC
 //        if (!strcmp(name,"AField")) {
 //			*** //do stuff
 //		}
-//	} 
+//	}
 }
 
 
