@@ -1589,8 +1589,17 @@ void NUpInterface::ApplySizedGrid()
  */
 double rect_radius(flatpoint cc,double w,double h,flatpoint v)
 {
-	// ****
-	return 0;
+	if (w == 0 || h == 0) return 0;
+	if (v.x == 0) return h;
+
+	v.x = fabs(v.x);
+	v.y = fabs(v.y);
+	v.normalize();
+	w /= 2;
+	h /= 2;
+
+	if (v.y / v.x < h/w) return h/v.y * v.x;
+	return w/v.x * v.y;
 }
 
 void NUpInterface::ApplyUnclump()
