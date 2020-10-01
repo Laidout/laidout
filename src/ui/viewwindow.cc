@@ -3245,11 +3245,7 @@ int LaidoutViewport::PerformAction(int action)
 					if (!isblank(str)) sprintf(buffer,_("Page %s"),str);
 				}
 				//if (buffer[0]=='\0') sprintf(buffer,_("Page #%d"),c);
-				if (buffer[0]!='\0') menu->AddItem(buffer,MOVETO_Page,
-									LAX_OFF
-									  | LAX_ISTOGGLE
-									  | ((curobj.spreadpage()==c)?LAX_CHECKED:0),
-									c);
+				if (buffer[0]!='\0') menu->AddToggleItem(buffer, MOVETO_Page, c, (curobj.spreadpage()==c));
 			}
 			menu->AddItem(_("Some other page.."),MOVETO_OtherPage,LAX_OFF|LAX_ISTOGGLE);
 		}
@@ -4390,7 +4386,7 @@ int ViewWindow::init()
 	if (laidout->addonactions.n) {
 		for (int c=0; c<laidout->addonactions.n; c++) {
 			AddonAction *action = laidout->addonactions.e[c];
-			menu->AddItem(action->Label(), VIEW_AddonAction, 0, c);
+			menu->AddItem(action->Label(), VIEW_AddonAction, c);
 		}
 	}
 

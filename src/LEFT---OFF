@@ -13,6 +13,8 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
+bug: Engraver fill, just moving mouse around is rerendering to buffer for preview
+
 bug: imported white images are not white, very slightly gray. gm load problem?
 
 bug: signature editor, selected pages have almost not noticeable selected emphasis.. line width problem?
@@ -1245,11 +1247,6 @@ need to implement DRAW_Hires for all interfaces that default to preview renders.
 mousemove decorations shouldn't change when an interface absorbs one
 
 color strips for full transparent should show checkers in all strips, not just the alpha strip
-
-MenuInfo AddItem functions are really terrible overload nightmare, need something simpler like, with no menu combined:
-  AddItem      (const char *name, int id = 0, int info = 0, int where = -1);
-  AddIconItem  (const char *name, LaxImage *icon, int id = 0, int info = 0, int where = -1);
-  AddToggleItem(const char *name, LaxImage *icon, int id, int info, int state, int where = -1);
 
 plugins:
   need more automatic way to install:
@@ -2619,4 +2616,8 @@ DONE don't allow reparent to a child!! or reparent as appropriate
 DONE bug: ImagePatchData crashes in preview generation 
 DONE add FontValue
 DONE bug: experimental in laidoutrc is ignored
+DONE MenuInfo AddItem functions are really terrible overload nightmare, need something simpler like, with no menu combined:
+  DONE AddItem      (const char *name, int id = 0, int info = 0, int where = -1);
+  DONE AddIconItem  (const char *name, LaxImage *icon, int id = 0, int info = 0, int where = -1);
+  DONE AddToggleItem(const char *name, LaxImage *icon, int id, int info, int state, int where = -1);
 

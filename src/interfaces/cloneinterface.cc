@@ -3051,8 +3051,8 @@ Laxkit::MenuInfo *CloneInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
     menu->AddItem(_("Clear base objects"), CLONEM_Clear_Base_Objects);
     menu->AddItem(_("Reset all"), CLONEM_Reset);
     menu->AddSep();
-    menu->AddItem(_("Include lines"),        CLONEM_Include_Lines,    LAX_ISTOGGLE|(trace_cells    ?LAX_CHECKED:0), -1);
-	menu->AddItem(_("Auto select base cell"),CLONEM_Auto_Select_Cell, LAX_ISTOGGLE|(snap_to_base   ?LAX_CHECKED:0), -1);
+    menu->AddToggleItem(_("Include lines"),        CLONEM_Include_Lines,    0, trace_cells );
+	menu->AddToggleItem(_("Auto select base cell"),CLONEM_Auto_Select_Cell, 0, snap_to_base);
     menu->AddSep();
     menu->AddItem(_("Load resource"), CLONEM_Load);
     menu->AddItem(_("Save as resource"), CLONEM_Save);

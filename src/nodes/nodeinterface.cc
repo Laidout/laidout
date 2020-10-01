@@ -3083,14 +3083,14 @@ Laxkit::MenuInfo *NodeInterface::ContextMenu(int x,int y,int deviceid, Laxkit::M
 		for (int c=0; c<NodeGroup::loaders.n; c++) {
 			if (NodeGroup::loaders.e[c]->CanImport(NULL, NULL)) {
 				sprintf(scratch, _("Load with %s..."), NodeGroup::loaders.e[c]->VersionName());
-				menu->AddItem(scratch, NODES_Load_With_Loader, LAX_OFF, c);
+				menu->AddItem(scratch, NODES_Load_With_Loader, c);
 			}
 		}
 		if (nodes) {
 			for (int c=0; c<NodeGroup::loaders.n; c++) {
 				if (NodeGroup::loaders.e[c]->CanExport(NULL)) {
 					sprintf(scratch, _("Save with %s..."), NodeGroup::loaders.e[c]->VersionName());
-					menu->AddItem(scratch, NODES_Save_With_Loader, LAX_OFF, c);
+					menu->AddItem(scratch, NODES_Save_With_Loader, c);
 				}
 			}
 		}

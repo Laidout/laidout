@@ -100,12 +100,12 @@ AnchorInterface::AnchorInterface(anInterface *nowner,int nid,Displayer *ndp)
 	firsttime=true;
 
 	show_region_selector=true;
-	regions.AddItem(_("Parents"),  (LaxImage*)NULL, ANCHOR_Parents,       LAX_ON|LAX_ISTOGGLE);
-	regions.AddItem(_("Page"),     (LaxImage*)NULL, ANCHOR_Page_Area,     LAX_ON|LAX_ISTOGGLE);
-	regions.AddItem(_("Margin"),   (LaxImage*)NULL, ANCHOR_Margin_Area,   LAX_ON|LAX_ISTOGGLE);
-	//regions.AddItem(_("Paper"),    (LaxImage*)NULL, ANCHOR_Paper,         LAX_ON|LAX_ISTOGGLE);
-	regions.AddItem(_("Selection"),(LaxImage*)NULL, ANCHOR_Selection,     LAX_ON|LAX_ISTOGGLE);
-	regions.AddItem(_("Objects"),  (LaxImage*)NULL, ANCHOR_Other_Objects, LAX_ON|LAX_ISTOGGLE);
+	regions.AddToggleItem(_("Parents"),  ANCHOR_Parents);
+	regions.AddToggleItem(_("Page"),     ANCHOR_Page_Area);
+	regions.AddToggleItem(_("Margin"),   ANCHOR_Margin_Area);
+	//regions.AddToggleItem(_("Paper"),    ANCHOR_Paper);
+	regions.AddToggleItem(_("Selection"),ANCHOR_Selection);
+	regions.AddToggleItem(_("Objects"),  ANCHOR_Other_Objects);
 	//regions.AddItem(_("Guides"),   (LaxImage*)NULL, ANCHOR_Guides,        LAX_ON|LAX_ISTOGGLE);
 
 	hover_item=-1;

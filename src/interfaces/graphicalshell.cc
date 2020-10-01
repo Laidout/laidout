@@ -674,7 +674,7 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 				le->SetText("");
 				 //add, but not if is same as top of history stack! (minimize dups)
 				if (!columns[1].items.n() || (columns[1].items.n() && strcmp(columns[1].items.e(0)->name,command)))
-					columns[1].items.AddItem(command,0,(unsigned int)LAX_OFF,0,(MenuInfo*)NULL, 0,0);
+					columns[1].items.AddItem(command,0,0,nullptr,0);
 			}
 			
 			if (status==1 || status==-1) {
@@ -694,7 +694,7 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 						ObjectDef *def=answer->GetObjectDef();
 						makestr(result,def->name);
 						if (!isblank(result)) {
-							columns[2].items.AddItem(result,0,(unsigned int)LAX_OFF,0,(MenuInfo*)NULL, 0,0);
+							columns[2].items.AddItem(result,0,0,nullptr,0);
 							added=1;
 						}
 						
@@ -703,7 +703,7 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 						int len=0;
 						answer->getValueStr(&str,&len,1);
 						if (!isblank(str)) {
-							columns[2].items.AddItem(str,0,(unsigned int)LAX_OFF,0,(MenuInfo*)NULL, 0,0);
+							columns[2].items.AddItem(str,0,0,nullptr,0);
 							added=1;
 						}
 						delete[] str;

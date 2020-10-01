@@ -482,22 +482,22 @@ Laxkit::MenuInfo *AlignInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 	menu->AddItem(_("Presets..."), ALIGN_Presets);
 
 	menu->AddSep(_("Snap"));
-	menu->AddToggleItem(_("None"),                  nullptr, ALIGN_Snap_None,              0, aligninfo->snap_align_type == FALIGN_None        );
-	menu->AddToggleItem(_("Aligned"),               nullptr, ALIGN_Snap_Align,             0, aligninfo->snap_align_type == FALIGN_Align       );
-	menu->AddToggleItem(_("Aligned proportionally"),nullptr, ALIGN_Snap_AlignProportional, 0, aligninfo->snap_align_type == FALIGN_Proportional);
+	menu->AddToggleItem(_("None"),                  ALIGN_Snap_None,              0, aligninfo->snap_align_type == FALIGN_None        );
+	menu->AddToggleItem(_("Aligned"),               ALIGN_Snap_Align,             0, aligninfo->snap_align_type == FALIGN_Align       );
+	menu->AddToggleItem(_("Aligned proportionally"),ALIGN_Snap_AlignProportional, 0, aligninfo->snap_align_type == FALIGN_Proportional);
 
 	menu->AddSep(_("Final"));
-	menu->AddToggleItem(_("None"),                   nullptr, ALIGN_Final_None,          0, aligninfo->final_layout_type == FALIGN_None         );
-	menu->AddToggleItem(_("Aligned"),                nullptr, ALIGN_Aligned,             0, aligninfo->final_layout_type == FALIGN_Align        );
-	menu->AddToggleItem(_("Aligned proportionally"), nullptr, ALIGN_AlignedProportional, 0, aligninfo->final_layout_type == FALIGN_Proportional );
-	menu->AddToggleItem(_("Grid"),                   nullptr, ALIGN_Grid,                0, aligninfo->final_layout_type == FALIGN_Grid         );
-	menu->AddToggleItem(_("Gaps"),                   nullptr, ALIGN_Gaps,                0, aligninfo->final_layout_type == FALIGN_Gap          );
-	menu->AddToggleItem(_("Random"),                 nullptr, ALIGN_Random,              0, aligninfo->final_layout_type == FALIGN_Random       );
+	menu->AddToggleItem(_("None"),                   ALIGN_Final_None,          0, aligninfo->final_layout_type == FALIGN_None         );
+	menu->AddToggleItem(_("Aligned"),                ALIGN_Aligned,             0, aligninfo->final_layout_type == FALIGN_Align        );
+	menu->AddToggleItem(_("Aligned proportionally"), ALIGN_AlignedProportional, 0, aligninfo->final_layout_type == FALIGN_Proportional );
+	menu->AddToggleItem(_("Grid"),                   ALIGN_Grid,                0, aligninfo->final_layout_type == FALIGN_Grid         );
+	menu->AddToggleItem(_("Gaps"),                   ALIGN_Gaps,                0, aligninfo->final_layout_type == FALIGN_Gap          );
+	menu->AddToggleItem(_("Random"),                 ALIGN_Random,              0, aligninfo->final_layout_type == FALIGN_Random       );
 
 	menu->AddSep(_("Rotation"));
-	menu->AddToggleItem(_("Shift only"),             nullptr, ALIGN_Visual      , 0, aligninfo->final_layout_type == FALIGN_Visual      );
-	menu->AddToggleItem(_("Shift and follow"),       nullptr, ALIGN_VisualRotate, 0, aligninfo->final_layout_type == FALIGN_VisualRotate);
-	menu->AddToggleItem(_("Follow path"),            nullptr, ALIGN_ObjectRotate, 0, aligninfo->final_layout_type == FALIGN_ObjectRotate);
+	menu->AddToggleItem(_("Shift only"),             ALIGN_Visual      , 0, aligninfo->final_layout_type == FALIGN_Visual      );
+	menu->AddToggleItem(_("Shift and follow"),       ALIGN_VisualRotate, 0, aligninfo->final_layout_type == FALIGN_VisualRotate);
+	menu->AddToggleItem(_("Follow path"),            ALIGN_ObjectRotate, 0, aligninfo->final_layout_type == FALIGN_ObjectRotate);
 
 	menu->AddSep();
 	//if (showextra) menu->AddItem(_("Hide extra"), ALIGN_ShowExtra);

@@ -164,9 +164,9 @@ Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 	if (!menu) menu=new MenuInfo(_("Paper Interface"));
 	else menu->AddSep(_("Papers"));
 
-	menu->AddToggleItem(_("Snap"),        nullptr, PAPERI_ToggleSnap,   0, search_snap);
-	menu->AddToggleItem(_("Show labels"), nullptr, PAPERI_ToggleLabels, 0, show_labels);
-	menu->AddToggleItem(_("Show indices"),nullptr, PAPERI_ToggleIndices,0, show_indices);
+	menu->AddToggleItem(_("Snap"),         PAPERI_ToggleSnap,   0, search_snap);
+	menu->AddToggleItem(_("Show labels"),  PAPERI_ToggleLabels, 0, show_labels);
+	menu->AddToggleItem(_("Show indices"), PAPERI_ToggleIndices,0, show_indices);
 	menu->AddSep();
 
 	if (papergroup) {
@@ -184,7 +184,7 @@ Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 		menu->SubMenu(_("Paper Size"));
 		for (int c=0; c<laidout->papersizes.n; c++) {
 			if (!strcasecmp(laidout->papersizes.e[c]->name, "Whatever")) continue;
-			menu->AddToggleItem(laidout->papersizes.e[c]->name, nullptr, PAPERI_first_pagesize+c,
+			menu->AddToggleItem(laidout->papersizes.e[c]->name, PAPERI_first_pagesize+c,
 					0, strcasecmp(curboxes.e[0]->box->paperstyle->name, laidout->papersizes.e[c]->name) == 0);
 		}
 		menu->EndSubMenu();

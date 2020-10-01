@@ -203,7 +203,7 @@ Laxkit::MenuInfo *PageRangeInterface::ContextMenu(int x,int y,int deviceid, Laxk
 		else {
 			 //add first, first++, first+++, ...  in number format
 			str=LabelPreview(currange,-1,c);
-			menu->AddItem(str,RANGE_NumberType,LAX_OFF,c);
+			menu->AddItem(str, RANGE_NumberType, c);
 			delete[] str;
 		}
 	}

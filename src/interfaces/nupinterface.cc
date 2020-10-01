@@ -486,23 +486,23 @@ Laxkit::MenuInfo *NUpInterface::ContextMenu(int x,int y,int deviceid, Laxkit::Me
 	if (!menu) menu=new MenuInfo(_("N-up Interface"));
 	else menu->AddSep(_("Nup"));
 
-	menu->AddItem(dirname(LAX_LRTB), NULL, LAX_LRTB, LAX_ISTOGGLE|(nupinfo->direction==LAX_LRTB?LAX_CHECKED:0)|LAX_OFF, 1);
-	menu->AddItem(dirname(LAX_LRBT), NULL, LAX_LRBT, LAX_ISTOGGLE|(nupinfo->direction==LAX_LRBT?LAX_CHECKED:0)|LAX_OFF, 1);
-	menu->AddItem(dirname(LAX_RLTB), NULL, LAX_RLTB, LAX_ISTOGGLE|(nupinfo->direction==LAX_RLTB?LAX_CHECKED:0)|LAX_OFF, 1);
-	menu->AddItem(dirname(LAX_RLBT), NULL, LAX_RLBT, LAX_ISTOGGLE|(nupinfo->direction==LAX_RLBT?LAX_CHECKED:0)|LAX_OFF, 1);
-	menu->AddItem(dirname(LAX_TBLR), NULL, LAX_TBLR, LAX_ISTOGGLE|(nupinfo->direction==LAX_TBLR?LAX_CHECKED:0)|LAX_OFF, 1);
-	menu->AddItem(dirname(LAX_BTLR), NULL, LAX_BTLR, LAX_ISTOGGLE|(nupinfo->direction==LAX_BTLR?LAX_CHECKED:0)|LAX_OFF, 1);
-	menu->AddItem(dirname(LAX_TBRL), NULL, LAX_TBRL, LAX_ISTOGGLE|(nupinfo->direction==LAX_TBRL?LAX_CHECKED:0)|LAX_OFF, 1);
-	menu->AddItem(dirname(LAX_BTRL), NULL, LAX_BTRL, LAX_ISTOGGLE|(nupinfo->direction==LAX_BTRL?LAX_CHECKED:0)|LAX_OFF, 1);
+	menu->AddToggleItem(dirname(LAX_LRTB), LAX_LRTB, 1, nupinfo->direction == LAX_LRTB);
+	menu->AddToggleItem(dirname(LAX_LRBT), LAX_LRBT, 1, nupinfo->direction == LAX_LRBT);
+	menu->AddToggleItem(dirname(LAX_RLTB), LAX_RLTB, 1, nupinfo->direction == LAX_RLTB);
+	menu->AddToggleItem(dirname(LAX_RLBT), LAX_RLBT, 1, nupinfo->direction == LAX_RLBT);
+	menu->AddToggleItem(dirname(LAX_TBLR), LAX_TBLR, 1, nupinfo->direction == LAX_TBLR);
+	menu->AddToggleItem(dirname(LAX_BTLR), LAX_BTLR, 1, nupinfo->direction == LAX_BTLR);
+	menu->AddToggleItem(dirname(LAX_TBRL), LAX_TBRL, 1, nupinfo->direction == LAX_TBRL);
+	menu->AddToggleItem(dirname(LAX_BTRL), LAX_BTRL, 1, nupinfo->direction == LAX_BTRL);
 
 	menu->AddSep();
 
-	menu->AddToggleItem(_("Grid"),      nullptr, NUP_Grid      , 0, nupinfo->flowtype == NUP_Grid      );
-	menu->AddToggleItem(_("Sized Grid"),nullptr, NUP_Sized_Grid, 0, nupinfo->flowtype == NUP_Sized_Grid);
-	menu->AddToggleItem(_("Flowed"),    nullptr, NUP_Flowed    , 0, nupinfo->flowtype == NUP_Flowed    );
-	menu->AddToggleItem(_("Random"),    nullptr, NUP_Random    , 0, nupinfo->flowtype == NUP_Random    );
-	menu->AddToggleItem(_("Unclump"),   nullptr, NUP_Unclump   , 0, nupinfo->flowtype == NUP_Unclump   );
-	menu->AddToggleItem(_("Unoverlap"), nullptr, NUP_Unoverlap , 0, nupinfo->flowtype == NUP_Unoverlap );
+	menu->AddToggleItem(_("Grid"),       NUP_Grid      , 0, nupinfo->flowtype == NUP_Grid      );
+	menu->AddToggleItem(_("Sized Grid"), NUP_Sized_Grid, 0, nupinfo->flowtype == NUP_Sized_Grid);
+	menu->AddToggleItem(_("Flowed"),     NUP_Flowed    , 0, nupinfo->flowtype == NUP_Flowed    );
+	menu->AddToggleItem(_("Random"),     NUP_Random    , 0, nupinfo->flowtype == NUP_Random    );
+	menu->AddToggleItem(_("Unclump"),    NUP_Unclump   , 0, nupinfo->flowtype == NUP_Unclump   );
+	menu->AddToggleItem(_("Unoverlap"),  NUP_Unoverlap , 0, nupinfo->flowtype == NUP_Unoverlap );
 
 	return menu;
 }
