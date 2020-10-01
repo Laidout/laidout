@@ -1,6 +1,281 @@
 
 //*********** WORKS IN PROGRESS ****************
 
+//------------------------------ MirrorNode ---------------------------------
+
+class MirrorPathNode : public ObjectFilterNode
+{
+	static SingletonKeeper keeper; //the def for the op enum
+
+  public:
+	static LaxInterfaces::PerspectiveInterface *GetPerspectiveInterface();
+
+	bool render_preview;
+	double render_dpi;
+	LaxInterfaces::PerspectiveTransform *transform;
+	Laxkit::Affine render_transform;
+
+	PerspectiveNode();
+	virtual ~PerspectiveNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int UpdateTransform();
+	virtual int GetStatus();
+
+	virtual LaxInterfaces::anInterface *ObjectFilterInterface();
+	virtual DrawableObject *ObjectFilterData();
+	// virtual int Mute(bool yes=true);
+	//virtual int Connected(NodeConnection *connection);
+
+};
+
+SingletonKeeper MirrorPathNode::keeper;
+
+/*! Static return for a PerspectiveInterface.
+ */
+LaxInterfaces::MirrorInterface *MirrorPathNode::GetPerspectiveInterface()
+{
+	PerspectiveInterface *interf = dynamic_cast<PerspectiveInterface*>(keeper.GetObject());
+	if (!interf) {
+		interf = new LPerspectiveInterface(NULL, getUniqueNumber(), NULL);
+		interf->Id("keeperpersp");
+		interf->interface_flags |= LaxInterfaces::PerspectiveInterface::PERSP_Dont_Change_Object;
+		keeper.SetObject(interf, 1);
+	}
+	return interf;
+}
+
+
+MirrorPathNode::MirrorPathNode()
+{
+	makestr(Name, _("Mirror"));
+	makestr(type, "Filters/Mirror");
+
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",  NULL,1, _("In"),  NULL,0, false));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "p1",  new FlatvectorValue(0,0),1, _("p1")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "p2",  new FlatvectorValue(1,0),1, _("p2")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", NULL,1, _("Out"), NULL,0, false));
+}
+
+MirrorPathNode::~MirrorPathNode()
+{
+}
+
+LaxInterfaces::anInterface *MirrorPathNode::ObjectFilterInterface()
+{
+	PerspectiveInterface *interf = GetPerspectiveInterface();
+	return interf;
+}
+
+DrawableObject *MirrorPathNode::ObjectFilterData()
+{
+	NodeProperty *prop = FindProperty("out");
+	return dynamic_cast<DrawableObject*>(prop->GetData());
+}
+
+NodeBase *MirrorPathNode::Duplicate()
+{
+	MirrorPathNode *node = new MirrorPathNode();
+	node->DuplicateBase(this);
+	node->DuplicateProperties(this);
+	return node;
+}
+
+int MirrorPathNode::GetStatus()
+{
+	if (!dynamic_cast<PathsData*>(properties.e[0]->GetData())) return -1;
+	return NodeBase::GetStatus();
+}
+
+int MirrorPathNode::UpdateMirror(flatpoint p1, flatpoint p2)
+{
+	NodeProperty *inprop = FindProperty("in");
+
+	if (!properties.e[1]->IsConnected()) {
+		FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(properties.e[1]->GetData());
+		if (!fv) {
+			fv = new FlatvectorValue(p1);
+			properties.e[1]->SetData(fv,1);
+		} else fv->v = p1;
+	}
+
+	if (!properties.e[2]->IsConnected()) {
+		FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(properties.e[2]->GetData());
+		if (!fv) {
+			fv = new FlatvectorValue(p2);
+			properties.e[2]->SetData(fv,1);
+		} else fv->v = p2;
+	}
+
+	return 0;
+}
+
+int MirrorPathNode::Update()
+{
+	Error(nullptr);
+
+	PathsData *orig = dynamic_cast<PathsData*>(properties.e[0]->GetData());
+	if (!orig) { Error(_("Expected path")); return -1; }
+
+	NodeProperty *outprop = FindProperty("out");
+	PathsData *out = dynamic_cast<PathsData*>(outprop->GetData());
+
+	if (IsMuted()) {
+		outprop->SetData(orig, 0);
+		return 0;
+	} else if (out == orig) {
+		//need to unset the mute
+		outprop->SetData(nullptr, 0);
+		out = nullptr;
+	}
+
+	FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(properties.e[1]->GetData());
+	if (!fv) { Error(_("Expected Vector2")); return -1; }
+
+	FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(properties.e[2]->GetData());
+	if (!fv) { Error(_("Expected Vector2")); return -1; }
+
+	if (out) out->set(*orig); //sets affine transform only
+
+
+	if (dynamic_cast<PathsData*>(orig)) {
+		 //go through point by point and transform.
+		 //Try to preserve existing points to reduce allocations
+		
+		PathsData *pathin = dynamic_cast<PathsData*>(orig);
+
+		LPathsData *pathout = dynamic_cast<LPathsData*>(out);
+		if (!pathout) {
+			pathout = dynamic_cast<LPathsData*>(somedatafactory()->NewObject(LAX_PATHSDATA));
+			pathout->Id("PerspFiltered");
+			pathout->set(*pathin); //sets the affine transform
+			pathout->InstallLineStyle(pathin->linestyle);
+			pathout->InstallFillStyle(pathin->fillstyle);
+			outprop->SetData(pathout,1);
+			out = pathout;
+		}
+
+		DBG cerr << "pathout "<<pathout->Id()<<" previous bbox: "<<pathout->minx<<','<<pathout->maxx<<" "<<pathout->miny<<','<<pathout->maxy<<endl;
+
+		Coordinate *start, *start2, *p, *p2;
+		Path *path, *path2;
+		flatpoint fp;
+
+		 //make sure in and out have same number of paths
+		while (pathout->NumPaths() > pathin->NumPaths()) pathout->RemovePath(pathout->NumPaths()-1, NULL);
+		while (pathout->NumPaths() < pathin->NumPaths()) pathout->pushEmpty();
+
+		for (int c=0; c<pathin->NumPaths(); c++) {
+			path  = pathin ->paths.e[c];
+			path2 = pathout->paths.e[c];
+			path2->needtorecache = true;
+		
+			p  = path ->path;
+			p2 = path2->path;
+			start  = p;
+			start2 = p2;
+
+			if (p) {
+				do {
+					if (!p2) {
+						p2 = p->duplicate();
+						path2->append(p2);
+						if (!start2) start2 = p2;
+					} else {
+						*p2 = *p;
+					}
+
+					fp = transform->transform(p->fp);
+					p2->fp = fp;
+
+					p  = p->next;
+					p2 = p2->next;
+					if (p2 == start2 && p != start) p2 = nullptr;
+				} while (p && p != start);
+
+				if (p == start && !p2) {
+					path2->close();
+				}
+
+				if (p == start && p2 && p2 != start2) {
+					 //too many points in path2! remove extra...
+					 while (p2 && p2 != start2) {
+					 	Coordinate *prev = p2->prev;
+					 	path2->removePoint(p2, true);
+					 	if (prev) p2 = prev->next;
+					 	else p2 = nullptr;
+					 }
+				}
+
+			} else {
+				 //current path is an empty
+				if (p2) path2->clear();
+			}
+
+			while (path2->pathweights.n > path->pathweights.n) path2->pathweights.remove(path2->pathweights.n-1);
+			if (path2->pathweights.n < path->pathweights.n) {
+				for (int c2 = 0; c2 < path->pathweights.n; c2++) {
+					PathWeightNode *w1 = path->pathweights.e[c2];
+					if (c2 >= path2->pathweights.n)
+						path2->AddWeightNode(w1->t, w1->offset, w1->width, w1->angle);
+					else *path2->pathweights.e[c2] = *w1;
+				}
+			}
+			flatpoint tangent, point, wp1, wp2;
+			for (int c2=0; c2<path->pathweights.n; c2++) {
+				// virtual int PointAlongPath(double t, int tisdistance, flatpoint *point, flatpoint *tangent);
+				PathWeightNode *w1 = path->pathweights.e[c2];
+				PathWeightNode *w2 = path2->pathweights.e[c2];
+				*w2 = *w1;
+				path->PointAlongPath(w1->t, false, &point, &tangent);
+				tangent.normalize();
+				wp1 = transform->transform(point);
+				wp2 = transform->transform(point + transpose(tangent) * .05);
+				double scale = (wp1-wp2).norm() / .05;
+				w2->offset *= scale;
+				w2->width *= scale;
+			}
+		}
+
+
+		pathout->FindBBox();
+		DBG cerr << "pathout new bbox: "<<pathout->minx<<','<<pathout->maxx<<" "<<pathout->miny<<','<<pathout->maxy<<endl;
+		outprop->Touch();
+		pathout->touchContents();
+
+		DBG cerr << "filter out:"<<endl;
+		DBG pathout->dump_out(stderr, 10, 0, NULL);
+		DBG cerr << "perspective transform:"<<endl;
+		DBG transform->dump_out(stderr, 10, 0, NULL);
+
+		return NodeBase::Update();
+
+	// } else if (dynamic_cast<EngraverFillData*>(orig)) {
+	// } else if (dynamic_cast<ColorPatchData*>(orig)) {
+	// } else if (dynamic_cast<ImagePatchData*>(orig)) {
+	// } else if (!strcmp(orig->whattype(), "PatchData")) {
+	// } else if (dynamic_cast<VoronoiData*>(orig)) {
+	// } else { // transform rasterized
+
+	}
+
+	Error(_("Cannot apply mirror to that type!"));
+	return -1;
+
+
+//	if (render_preview) {
+//		*** //transform rasterized at much less than print resolution
+//	} else {
+//		//use render_scale
+//		***
+//	}
+
+}
+
 
 
 //------------------------ AlignToBoundsNode ------------------------
