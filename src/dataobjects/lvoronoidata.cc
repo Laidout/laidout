@@ -149,9 +149,9 @@ LaxInterfaces::SomeData *LVoronoiData::EquivalentObject()
 		paths->fill(NULL);
 		paths->Id("delauney");
 		for (int c=0; c<triangles.n; c++) {
-			paths->moveTo(points.e[triangles[c].p1]);
-			paths->lineTo(points.e[triangles[c].p2]);
-			paths->lineTo(points.e[triangles[c].p3]);
+			paths->moveTo(points.e[triangles[c].p1]->p);
+			paths->lineTo(points.e[triangles[c].p2]->p);
+			paths->lineTo(points.e[triangles[c].p3]->p);
 			paths->close();
 		}	 
 
@@ -167,7 +167,7 @@ LaxInterfaces::SomeData *LVoronoiData::EquivalentObject()
 		paths->Id("points");
 		for (int c=0; c<points.n; c++) {
 			if (c!=0) paths->pushEmpty();
-			paths->appendEllipse(points.e[c], width_points, width_points, 2*M_PI, 0, 4, 1);
+			paths->appendEllipse(points.e[c]->p, width_points, width_points, 2*M_PI, 0, 4, 1);
 			paths->close();
 		}
 
