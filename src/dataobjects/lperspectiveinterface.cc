@@ -255,7 +255,6 @@ PerspectiveNode::~PerspectiveNode()
 LaxInterfaces::anInterface *PerspectiveNode::ObjectFilterInterface()
 {
 	PerspectiveInterface *interf = GetPerspectiveInterface();
-	interf->UseThis(transform);
 	return interf;
 }
 
