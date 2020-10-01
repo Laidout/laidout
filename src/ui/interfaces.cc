@@ -33,6 +33,7 @@
 #include <lax/interfaces/ellipseinterface.h>
 #include "../interfaces/anchorinterface.h"
 #include "../interfaces/animationinterface.h"
+#include "../interfaces/pathintersectionsinterface.h"
 
 
 #include "interfaces.h"
@@ -112,6 +113,12 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 
 	if (laidout->experimental) {
 		// *************** testing:
+
+		 // pathintersections
+		i=new PathIntersectionsInterface(NULL,id++,NULL);
+		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+		existingpool->push(i);
+		i->dec_count();
 
 		 //------Animation
 		i=new AnimationInterface(NULL,id++,NULL);
