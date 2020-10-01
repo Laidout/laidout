@@ -27,6 +27,7 @@ objs= \
 	objecttree.o \
 	pagemarkerinterface.o \
 	objectfilterinterface.o \
+	pathintersectionsinterface.o \
 
 
 

@@ -111,6 +111,7 @@ otherobjs= \
 	interfaces/objecttree.o \
 	interfaces/pagemarkerinterface.o \
 	interfaces/objectfilterinterface.o \
+	interfaces/pathintersectionsinterface.o \
 	nodes/nodeinterface.o \
 	nodes/nodeeditor.o \
 	nodes/nodes-dataobjects.o \
