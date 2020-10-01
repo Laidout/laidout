@@ -65,6 +65,7 @@ configure should check for libreadline-dev? apparently not pkg-config ready <- h
 
 scroll bar zoom handles don't appear to work
 
+memory hole objectfilters with interface
 memory hole in calculator
 memory hole in reimpose .. reimposed 5 page booklet
 memory hole when graphical shell activated
@@ -81,7 +82,7 @@ lineinput not propagating escapable
 
 clones of images scale not like images.. should also snap aspect to start of drag, not when control key pressed
 
-select none, select doc, viewport jumps around... it should stay the same area
+select no doc, select doc, viewport jumps around... it should stay the same area
 switch to None document, and units change to unreasonable
 
 
@@ -238,6 +239,8 @@ Gradients:
   radial:
     default on r1,r2 should be change radius, not move
   perhaps split radial and linear gradients to different tools? makes more sense
+  tool: drag define gradients ala substance
+  tool: sketch define gradient fields ala sketch studio
 
   bug: on start, colors get zapped to window origin ?? can't duplicate
 
@@ -1011,12 +1014,16 @@ node editor node interface NodeInterface nodes: node: interface:
         voronoi
         convex hull
         tsp
-        equalize (optionally within path)
+        relax (optionally within path)
+		conformal relax
+		quadrilateralize and relax
+		voronoi region centroid replacement relax
       DONE check: dereference assign Evaluate extend from Group, not affine
     paths
       fill and stroke controls
       weight controls .. present as line profile?
       path ops:
+	    boolean pathops
         project onto heightmap? onto mesh?
         make net then inset
         combine
@@ -1056,6 +1063,9 @@ node editor node interface NodeInterface nodes: node: interface:
       access to alignment/nup tool config?
       anchor nodes to mostly replace alignment rules
       anchor point transforms
+	mirror node
+	clone tiler node
+	boolean pathops node
     rename "Object Info" to "Drawable Info"
     "Object Properties".. maybe have a string field with list of desired properties? Array of props that show enum but output value?
     have a dangerous "Object Function" node? needs to dup in, then run function
@@ -1428,22 +1438,31 @@ ObjectIndicator objectindicator:
     hover over parents to pop list of alternate children to reparent to
   show (root) at bottom of stack
 
-voronoi Voronoi delauney Delauney:
+Nudge tool nudgeinterface nudge interface:
+  break off from engraver tool, to operate on any PointCollection
+
+build net interface graph
+
+voronoi Voronoi delauney Delauney: point set pointset
   be able to control inset shapes
   is double rendering when object is selected
   importing raw points or data without matrix should map so that it all appears on screen
   intersect with page bounds? or other custom boundary? default bounding box + padding?
-  implement show_points
-  implement as extension for delauney/voronoi interface
-  right click
-    start new object
-    toggle delauney lines
-    toggle voronoi lines
-    toggle points
-  auto fill with randomized colors
+  color per point:
+    auto fill with randomized colors
+    sample point color from background?
   merge different voronoi objects
-  sample point color from background?
+  multiple point select
+  separate selection to new object
+  convert voronoi or delauney tris to graph
   less than three points doesn't remap rationally, need to update extra lines to something proper
+  DONE right click
+    DONE start new object
+	DONE generators
+    DONE toggle delauney lines
+    DONE toggle voronoi lines
+    DONE toggle points
+  DONE implement show_points
 
 FileDialog filedialog:
   bug: sort caseless, other sorts not working
@@ -1461,8 +1480,6 @@ FileDialog filedialog:
   need drag and drop bookmarking
   when you change directories, it should indicate if it corresponds to a bookmark
   DONE should probably have a scroll bar
-
-when resizing viewportwindow and a temp_input window active, make sure it stays on screen?
 
 autosave
   start fresh doc, autosaves which may be saving into confusing location. maybe save in config dir?
@@ -1592,10 +1609,6 @@ need more mechanism so that popup dialogs stay on top of window they are "childr
 need a global Laidout method of making unique ids
  -> update in Engraver tool, and object indicator overlay
 
-image graphics filters:
-  node editor
-  graphicsmagick
-  gmic
 plugin for easy antiprism import for net creation
 
 for purely command line execution, should be able to make a binary totally not X dependent.
@@ -1905,6 +1918,8 @@ customizable object child relationships to parent, rather than simple transform
 
 lax:
   CheckDirs / check_dirs is confusing
+  when resizing viewportwindow and a temp_input window active, make sure it stays on screen?
+
 
 calculator/scripting
   bug: run command with BuildIcons, error is not propagating up to cout
@@ -2357,7 +2372,7 @@ Net imposition
   finish implementing double sided nets
   saving when net is internal is not proper.. does not distinguish between diff. nets and whole
   import/export cff2?
-  export vrml? pdf 1.6?
+  export pdf 1.6?
   save different setups: papertile AND net layout
   load save nets from: 1.net files or 2.OFF files(done)
 
@@ -2603,3 +2618,5 @@ DONE bug: filters repeatedly writing \"\"\"\"  reading in quoted names?
 DONE don't allow reparent to a child!! or reparent as appropriate
 DONE bug: ImagePatchData crashes in preview generation 
 DONE add FontValue
+DONE bug: experimental in laidoutrc is ignored
+
