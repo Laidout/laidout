@@ -555,18 +555,22 @@ int LaidoutApp::init(int argc,char **argv)
 		}
 	}
 
+	 //-----read in laidoutrc
+	char *shortcutsfile = nullptr; //need this workaround so laidoutrc can specify experimental
+	if (!readinLaidoutDefaults(&shortcutsfile)) { //warning: this may or may not InitializeShortcuts()
+		createlaidoutrc();
+	}
 
-	 // interfaces must be initialized before reading in laidoutrc, because we need
-	 // to have the list available in case shortcuts need to be constructed
 	DBG cerr <<"---interfaces pool init"<<endl;
 	PushBuiltinPathops(); // this must be called before getinterfaces because of pathops...
 	GetBuiltinInterfaces(&interfacepool);
 
-	 //-----read in laidoutrc
-	if (!readinLaidoutDefaults()) { //warning: this may or may not InitializeShortcuts()
-		createlaidoutrc();
+	if (shortcutsfile) {
+		InitializeShortcuts();
+		ShortcutManager *m = GetDefaultShortcutManager();
+		m->Load(shortcutsfile);
+		delete[] shortcutsfile;
 	}
-
 
 	 //------setup initial pools
 	 
@@ -812,10 +816,10 @@ int LaidoutApp::createlaidoutrc()
 					  "\n"
 
 					   //shortcuts
-					  " #By default when you modify shortcuts in Laidout, they are saved in ./shortcuts.\n"
-					  " #Listing another file here will load keys from that file first, THEN the ./shortcuts will\n"
-					  " #load on top of that. For the file format, you may do a dump of current keys by\n"
-					  " #running \"laidout -S\".\n"
+					  " #By default when you modify shortcuts in Laidout, they are saved in ./default.keys.\n"
+					  " #Listing another file here will load keys from the sepecified file instead of default.keys.\n"
+					  " #For the file format, you may do a dump of current keys by\n"
+					  " #running \"laidout -S\" for text version, or html with: \"laidout -H\".\n"
 					  "#shortcuts shortcutsfile\n"
 					  "\n"
 
@@ -945,11 +949,10 @@ int LaidoutApp::createlaidoutrc()
  * Return 0 if laidoutrc doesn't exist, 1 if ok.
  * The default location is $HOME/.laidout/(version)/laidoutrc.
  */
-int LaidoutApp::readinLaidoutDefaults()
+int LaidoutApp::readinLaidoutDefaults(char **shortcutsfile)
 {
 
 	DBG cerr <<"-------------Checking $HOME/.laidout/(version)/laidoutrc----------"<<endl;
-	int foundkeys = 0;
 
 	FILE *f = NULL;
 	char  configfile[strlen(config_dir) + 20];
@@ -993,10 +996,11 @@ int LaidoutApp::readinLaidoutDefaults()
 			}
 
 		} else if (!strcmp(name,"shortcuts")) {
-			foundkeys = 1;
-			InitializeShortcuts();
-			ShortcutManager *m = GetDefaultShortcutManager();
-			m->Load(value);
+			if (!value || !readable_file(value)) {
+				cerr << "Warning: shortcuts file is not readable, ignoring: "<<(value ? value : "(no file)")<<endl;
+			} else {
+				*shortcutsfile = newstr(value);
+			}
 
 		} else if (!strcmp(name,"experimental")) {
 			experimental = 1;
@@ -1111,17 +1115,13 @@ int LaidoutApp::readinLaidoutDefaults()
 	setlocale(LC_ALL,"");
 	DBG cerr <<"-------------Done with $HOME/.laidout/(version)/laidoutrc----------"<<endl;
 
-	if (foundkeys == 0) {
-		char *keys=newstr(laidout->config_dir);
+	if (! *shortcutsfile) {
+		char *keys = newstr(laidout->config_dir);
 		appendstr(keys,"/default.keys");
 		if (readable_file(keys)) {
 			DBG cerr <<" ----- reading in default shortcuts file ------"<<endl;
-
-			InitializeShortcuts();
-			ShortcutManager *m=GetDefaultShortcutManager();
-			m->Load(keys);
-		}
-		delete[] keys;
+			*shortcutsfile = keys;
+		} else delete[] keys;
 	}
 
 	return 1;

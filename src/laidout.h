@@ -159,7 +159,7 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	virtual int init(int argc,char **argv);
 	virtual void setupdefaultcolors();
 	void parseargs(int argc,char **argv);
-	int readinLaidoutDefaults();
+	int readinLaidoutDefaults(char **shortcutsfile);
 	int createlaidoutrc();
 	int isTopWindow(Laxkit::anXWindow *win);
 	int numTopWindows() { return topwindows.n; }
