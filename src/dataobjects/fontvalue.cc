@@ -174,7 +174,7 @@ ObjectDef *FontValue::makeObjectDef()
 	def->pushFunction("descent", _("Descent"), _("Font defined height below baseline"), NULL, NULL);
 
 	stylemanager.AddObjectDef(def,0);
-	return objectdef;
+	return def;
 }
 
 /*! Return 0 success, -1 name unknown, 1 for error.
