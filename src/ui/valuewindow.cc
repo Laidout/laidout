@@ -113,6 +113,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 
 	if (thewindow != rowframe) {
 		UseThisWindow(rowframe);
+		rowframe->dec_count();
 	}
 
 	anXWindow *last = nullptr;
@@ -325,6 +326,9 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 	//} else if (type == VALUE_Array) {
 
 	} else if (type == VALUE_Set) {
+		// [spacer] [Element] [helpers] [x]
+		// ...
+		// [ + ]
 		SetValue *v = dynamic_cast<SetValue*>(val);
 
 		MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,0,0,0, fieldName);
@@ -354,10 +358,12 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 		path2 = "+";
 		path2 += path;
 		last = tbut = new Button(this,path2.c_str(),NULL,0, 0,0,0,0, 1,
-            last, object_id, path2.c_str(),
-            -1,
-            " + ");
-
+								last, object_id, path2.c_str(),
+								-1,
+								" + ");
+		rowframe->AddHSpacer(th,0,0,0);
+		rowframe->AddWin(tbut,1, tbut->win_w*2,0,0,50,0, HMULT * bar->win_h,0,0,50,0, -1);
+		rowframe->AddNull();
 
 
 //	} else if (type == VALUE_Date) {
@@ -399,6 +405,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 			if (!v) continue;
 			path2 = path + "." + nm;
 			Initialize(path2.c_str(), v, fdef, nullptr);
+			v->dec_count();
 		}
 	}
 }
