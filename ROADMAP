@@ -7,7 +7,6 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.098
 -------------
-       debug previous version a bit
 (done) Animated gif import
 (done) Clip paths
 (done) Clip path in place editing
@@ -34,9 +33,9 @@ VERSION 0.098
 (done) Find object interface
 
 (done) Empty objects that can be parents, or whose contents are defined by nodes
-       Perspective transform object filter, proof of concept for hybrid interface/node workflow
+(done) Perspective transform object filter, proof of concept for hybrid interface/node workflow
 (done) Node based image "importer"
-       More nodes: global var access, any drawable object, expressions, path generators, reroute
+(done) More nodes: global var access, any drawable object, expressions, path generators, reroute
 
        engraver tool grow point mode
        engraver tool, resolution cut mode
@@ -56,6 +55,7 @@ VERSION 0.098
 
 VERSION 0.099
 -------------
+       debug previous version a bit
        Undo/Redo
 
        PDF in, at least as 1 image per page, for purposes of imposition

@@ -67,13 +67,13 @@ configure should check for libreadline-dev? apparently not pkg-config ready <- h
 
 scroll bar zoom handles don't appear to work
 
-memory hole objectfilters with interface
 memory hole in calculator
 memory hole in reimpose .. reimposed 5 page booklet
 memory hole when graphical shell activated
 memory hole do laidout -n letter, split a window, then quit. undeleted Objects remain!
-memory hole delauneyinterface
-memory hole helpwindow -> probably something to do with ShortcutWindow and ShortcutTreeSelector not refcounting as expected
+DONE memory hole helpwindow -> probably something to do with ShortcutWindow and ShortcutTreeSelector not refcounting as expected
+DONE memory hole delauneyinterface
+DONE memory hole objectfilters with interface
 DONE memory hole ./laidout -n letter then quit
 DONE memory hole paper interface, activate tool, lay down one paper, quit, 3 objects remain
 DONE memory hole cairo backend (can't duplicate)
@@ -330,7 +330,7 @@ in singles view, spread number in box should be page label instead of spread num
 
 export current appears to be broken
 
-object content selector menu
+object content selector menu to more easily flip between tools for object-content-streams-otherSpecials
 
 object clipping:
   menu should bold the object names.. hard to read as is
@@ -366,6 +366,11 @@ valuewindow:
     when scroller visible, not adjusting thewindow size properly
   when you quit, does not remember from open windows
 
+
+lax:
+  CheckDirs / check_dirs is confusing
+  when resizing viewportwindow and a temp_input window active, make sure it stays on screen?
+
 instead of _LAX_PLATFORM_MAC, do relevant check with _LAX_ON_NON_GNU instead? currently only place this is necessary is where getline is used
 
 remove imlib/"xlib" font, image, and render backends, replace with GraphicsMagick and cairo, keep imlib loader but load to cairo image only
@@ -383,6 +388,7 @@ cairo:
 
 utf8string:
   move semantics to be more efficient
+
 
 pdf export lines has outlines in evince?
 
@@ -953,14 +959,15 @@ common property editor tool:  ..overlay and put editor box in a corner?
   maybe other mode, where you can copy certain properties, then apply those to other objects?
 
 ObjectFilter objectfilters object filter:
-  need way to go from node interface to interactive
   need menu options:
     Create filtered copy
     Apply filters
   clean up filefilter.h definition to allow explicit declaration of ObjectFilter in DrawableObject
   anchoring to other objects
+  DONE need way to go from node interface to interactive
 
 Perspective perspective:
+  map() should be able to map from a different base
   bug: deleting path points makes transformed path faulty on updates sometimes
   perspective interface needs to allow changing pos of in points, not just use bbox
   path transform should transform line widths accurately
@@ -987,6 +994,7 @@ node editor node interface NodeInterface nodes: node: interface:
   bug: traverse path only goes about 80%
   bug: transform object isn't copying images in an ImageData
   bug: height of resizable property not saved
+  implement objectfilterinterface/nodeinterface interchange with nested node groups
   reroute needs double click on connection to add node
   edit filter nodes for the first time should center nodes in viewport
   need solution for shared interface getting messages for different nodes.. probably need to do one instance per whatever
@@ -1245,8 +1253,6 @@ need to implement DRAW_Hires for all interfaces that default to preview renders.
   includes at least image(done), path, engraver
 
 mousemove decorations shouldn't change when an interface absorbs one
-
-color strips for full transparent should show checkers in all strips, not just the alpha strip
 
 plugins:
   need more automatic way to install:
@@ -1526,6 +1532,7 @@ colorbox color box:
 
 color slider popup: colorpicker color picker colorsliders
   bug: text is not showing at correct size at first
+  color strips for full transparent should show checkers in all strips, not just the alpha strip
   have a "Done"/"Dismiss" button
   be able to choose which color sets are visible
   make color slider box be able to be a pane
@@ -1912,11 +1919,6 @@ customizable object child relationships to parent, rather than simple transform
   edge magnet
   when trying to move an anchor when you still need to select invariants, flash the invariants
   need edge indicators for more convenient snapping
-
-lax:
-  CheckDirs / check_dirs is confusing
-  when resizing viewportwindow and a temp_input window active, make sure it stays on screen?
-
 
 calculator/scripting
   bug: run command with BuildIcons, error is not propagating up to cout
@@ -2620,4 +2622,5 @@ DONE MenuInfo AddItem functions are really terrible overload nightmare, need som
   DONE AddItem      (const char *name, int id = 0, int info = 0, int where = -1);
   DONE AddIconItem  (const char *name, LaxImage *icon, int id = 0, int info = 0, int where = -1);
   DONE AddToggleItem(const char *name, LaxImage *icon, int id, int info, int state, int where = -1);
+DONE bug: tabframe not showing tabs, such as in help window
 
