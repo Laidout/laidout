@@ -88,13 +88,14 @@ int AboutWindow::preinit()
 	appendstr(about,LAIDOUT_VERSION);
 	appendstr(about,_(
 			"\nusing Laxkit version " LAXKIT_VERSION "\n"
-			"2004-2018\n"
+			"2004-2020\n"
 			"\n"
-			"so far coded\n"
 			"by Tom Lechner,\n"
 			"\n"
-			"Translations:\n"
-			"French: Nabyl Bennouri\n"));
+			"Contributors:\n"
+			"Probonopd\n"
+			"Nabyl Bennouri\n"
+			));
 	MessageBar *mesbar=new MessageBar(this,"aboutmesbar",NULL,MB_CENTER|MB_TOP|MB_MOVE, 0,0,0,0,0,about);
 	delete[] about;
 			
