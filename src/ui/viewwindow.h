@@ -225,6 +225,8 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 	char *tempstring;
 	int initial_tool;
 
+	int ClearTools(int except_this);
+
   public:
 	Project *project;
 	Document *doc;

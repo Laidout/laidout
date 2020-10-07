@@ -3083,8 +3083,15 @@ void LaidoutViewport::Refresh()
 		dp->DrawReal();
 	}
 
-	dp->Updates(1);
+	// DBG // print out interface stack in upper right corner
+	// DBG dp->DrawScreen();
+	// DBG double th = dp->textheight();
+	// DBG for (int c=0; c<interfaces.n; c++) {
+	// DBG 	dp->textout(dp->Maxx, c*th, interfaces.e[c]->whattype(),-1, LAX_TOP|LAX_RIGHT);
+	// DBG }
+	// DBG dp->DrawReal();
 
+	dp->Updates(1);
 
 
 	 // swap buffers
@@ -3377,7 +3384,7 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 	if (ch == LAX_Esc && findwindow && findwindow->win_on) {
 		app->unmapwindow(findwindow);
 		return 0;
-	}	
+	}
 
 	 // ask interfaces, and default viewport stuff, which queries all action based activity.
 	if (ViewportWindow::CharInput(ch,buffer,len,state,d)==0) return 0;
@@ -5263,12 +5270,33 @@ LaxInterfaces::anInterface *ViewWindow::GetObjectTool()
 	return NULL;
 }
 
+/*! Remove tools from viewport->interfaces (but leave overlays)
+ * Return index of except_this if found, else -1.
+ */
+int ViewWindow::ClearTools(int except_this)
+{
+	int found = -1;
+	for (int c = viewport->interfaces.n-1; c >= 0; c--) {
+		if (c >= viewport->interfaces.n) continue;
+		DBG cerr << "check viewer ClearTools interf: "<<viewport->interfaces.e[c]->whattype()<<endl;
+		if (viewport->interfaces.e[c]->id == except_this) {
+			found = c;
+			continue;
+		}
+		if (viewport->interfaces.e[c]->interface_type == INTERFACE_Overlay) continue;
+		if (curtool == viewport->interfaces.e[c]) curtool = nullptr;
+		viewport->PopId(viewport->interfaces.e[c]->id, true);
+	}
+	return found;
+}
+
 int ViewWindow::PerformAction(int action)
 {
 	if (action==VIEW_ObjectTool) {
 		 //change to object tool
 		for (int c=0; c<tools.n; c++) {
 			if (!strcmp(tools.e[c]->whattype(),"ObjectInterface")) {
+				ClearTools(tools.e[c]->id);
 				SelectTool(tools.e[c]->id);
 				((ObjectInterface*)tools.e[c])->AddToSelection(&((LaidoutViewport*)viewport)->curobj);
 				updateContext(1);
