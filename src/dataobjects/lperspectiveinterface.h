@@ -67,7 +67,7 @@ class PerspectiveNode : public ObjectFilterNode
 	bool render_preview;
 	double render_dpi;
 	LaxInterfaces::PerspectiveTransform *transform;
-	Laxkit::Affine render_transform;
+	// Laxkit::Affine render_transform;
 
 	PerspectiveNode();
 	virtual ~PerspectiveNode();

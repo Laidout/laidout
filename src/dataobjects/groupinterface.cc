@@ -1034,9 +1034,14 @@ int GroupInterface::PerformAction(int action)
 		NodeInterface *i = new NodeInterface(NULL,10002,dp);
 		i->UseThis(filter);
 		filter->dec_count();
-		i->owner = this;
-		child = i;
+		// i->owner = this;
+		// child = i;
+		inc_count();
+		ViewerWindow *viewer = dynamic_cast<ViewerWindow *>(curwindow->win_parent);
+		viewer->PopInterface(this); //makes sure viewer->curtool is maintained
+		// viewport->Pop(this);
 		viewport->Push(i,-1,0);
+		dec_count();
 		PostMessage(_("Edit filter nodes"));
 
 		return 0;
@@ -1050,9 +1055,14 @@ int GroupInterface::PerformAction(int action)
 
 		ObjectFilterInterface *i = new ObjectFilterInterface(NULL,10003,dp);
 		i->UseThisObject(selection->e(0));
-		i->owner = this;
-		child = i;
-		viewport->Push(i,-1,0);
+		// i->owner = this;
+		// child = i;
+		inc_count();
+		ViewerWindow *viewer = dynamic_cast<ViewerWindow *>(curwindow->win_parent);
+		viewer->PopInterface(this); //makes sure viewer->curtool is maintained
+		// viewport->Pop(this);
+		viewport->Push(i,-1,1);
+		dec_count();
 		PostMessage(_("Edit filters"));
 
 		return 0;

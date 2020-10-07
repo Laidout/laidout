@@ -404,6 +404,8 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	virtual void BoundingBox(DoubleBBox &box);
 	virtual NodeBase *Duplicate();
 	virtual NodeBase *DuplicateGroup(NodeGroup *newgroup);
+	virtual bool HasAlternateInterface() { return false; }
+	virtual LaxInterfaces::anInterface *AlternateInterface() { return nullptr; }
 
 	virtual void InitializeBlank();
 	virtual NodeProperty *AddGroupInput(const char *pname, const char *plabel, const char *ptip);
@@ -555,6 +557,7 @@ enum NodeInterfaceActions {
 	NODES_Find,
 	NODES_Find_Next,
 	NODES_Force_Updates,
+	NODES_Edit_With_Tool,
 	
 	NODES_MAX
 };
@@ -571,8 +574,10 @@ class NodeInterface : public LaxInterfaces::anInterface
 
 	PtrStack<NodeThread> forks; //used each Execute tick
 
-	Attribute *passthrough;
+	Attribute *passthrough; //pipe io helper data
 	NodeConnection *onconnection;
+
+	Laxkit::anObject *originating_data; //for when we are used as an on the spot editor for another tool
 
   protected:
 	void GetConnectionBez(NodeConnection *connection, flatpoint *pts);
@@ -593,7 +598,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 
 	Laxkit::ObjectFactory *node_factory; //usually, convenience cast to return of NodeBase::NodeFactory()
 
-	Nodes *nodes;
+	Nodes *nodes; //top of grouptree
 	NodeColors *default_colors;
 
 	Laxkit::MenuInfo *node_menu;
@@ -674,6 +679,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state, const Laxkit::LaxKeyboard *d);
 	virtual int KeyUp(unsigned int ch,unsigned int state, const Laxkit::LaxKeyboard *d);
 
+	virtual void SetOriginatingData(Laxkit::anObject *data, int absorb);
+
 	virtual void DrawConnection(NodeConnection *connection);
 	virtual void DrawPropertySlot(NodeBase *node, NodeProperty *prop, int hoverprop, int hoverslot);
 	virtual void DrawProperty(NodeBase *node, NodeProperty *prop, double y, int hoverprop, int hoverslot);
@@ -691,6 +698,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual int FindNext();
 	virtual int Find(const char *what);
 	virtual NodeGroup *GetCurrent() { return nodes; }
+	virtual int SelectNode(NodeBase *what, bool also_center);
 
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *savecontext);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *loadcontext);

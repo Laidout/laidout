@@ -14,11 +14,13 @@
 //
 
 #include <lax/interfaces/somedatafactory.h>
+#include <lax/pointset.h>
 
 #include "lperspectiveinterface.h"
-#include "../language.h"
+#include "lcaptiondata.h"
 #include "objectfilter.h"
 #include "lpathsdata.h"
+#include "../language.h"
 
 
 #include <iostream>
@@ -243,6 +245,7 @@ PerspectiveNode::PerspectiveNode()
 
 PerspectiveNode::~PerspectiveNode()
 {
+	if (transform) transform->dec_count();
 }
 
 //int PerspectiveNode::Connected(NodeConnection *connection)
@@ -369,12 +372,21 @@ int PerspectiveNode::Update()
 	//   groups composed of only vector objects
 	//   sets of flatvector
 
+	SomeData *torig = orig;
 
-	if (dynamic_cast<PathsData*>(orig)) {
+	// do some initial conversions if necessary
+	if (dynamic_cast<CaptionData*>(torig)) {
+		//convert text to paths before transforming
+		CaptionData *cdata = dynamic_cast<CaptionData*>(torig);
+		torig = cdata->ConvertToPaths(false, nullptr);
+	}
+
+	// process the data, replace outprop's data if necessary
+	if (dynamic_cast<PathsData*>(torig)) {
 		 //go through point by point and transform.
 		 //Try to preserve existing points to reduce allocations
 		
-		PathsData *pathin = dynamic_cast<PathsData*>(orig);
+		PathsData *pathin = dynamic_cast<PathsData*>(torig);
 
 		LPathsData *pathout = dynamic_cast<LPathsData*>(out);
 		if (!pathout) {
@@ -480,6 +492,16 @@ int PerspectiveNode::Update()
 		DBG cerr << "perspective transform:"<<endl;
 		DBG transform->dump_out(stderr, 10, 0, NULL);
 
+		if (torig != orig) torig->dec_count();
+		return NodeBase::Update();
+
+	} else if (dynamic_cast<PointCollection*>(torig)) {
+		// should catch VoronoiData and *PatchData classes
+		SomeData *newobj = torig->duplicate(nullptr);
+		PointCollection *pc = dynamic_cast<PointCollection*>(newobj);
+		pc->Map([&](const flatpoint &pin, flatpoint &pout) { pout = transform->transform(pin); return 1; } );
+		outprop->SetData(dynamic_cast<Value*>(newobj),1);
+		if (torig != orig) torig->dec_count();
 		return NodeBase::Update();
 
 	// } else if (dynamic_cast<EngraverFillData*>(orig)) {

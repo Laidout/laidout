@@ -21,6 +21,7 @@
 #include "../version.h"
 
 #include <lax/interfaces/interfacemanager.h>
+#include <lax/interfaces/viewerwindow.h>
 #include <lax/laxutils.h>
 #include <lax/bezutils.h>
 #include <lax/popupmenu.h>
@@ -2877,6 +2878,8 @@ NodeInterface::NodeInterface(anInterface *nowner, int nid, Displayer *ndp)
 	viewport_bounds.setbounds(0.,1.,0.,1.); // viewport_bounds is always fraction of actual viewport bounds
 	vp_dragpad = 40; //screen pixels
 
+	originating_data = nullptr;
+
 	sc = NULL; //shortcut list, define as needed in GetShortcuts()
 }
 
@@ -2890,6 +2893,7 @@ NodeInterface::~NodeInterface()
 	if (tempconnection) tempconnection->dec_count();
 	if (onconnection) onconnection->dec_count();
 	if (default_colors) default_colors->dec_count();
+	if (originating_data) originating_data->dec_count();
 	if (passthrough) delete passthrough;
 
 	delete[] lastsave;
@@ -2905,6 +2909,14 @@ const char *NodeInterface::whatdatatype()
 const char *NodeInterface::Name()
 { return _("Node tool"); }
 
+void NodeInterface::SetOriginatingData(Laxkit::anObject *data, int absorb)
+{
+	if (originating_data != data) {
+		if (originating_data) originating_data->dec_count();
+		originating_data = data;
+		if (data && !absorb) data->inc_count();
+	} else if (absorb) data->dec_count();
+}
 
 //! Return new NodeInterface.
 /*! If dup!=NULL and it cannot be cast to NodeInterface, then return NULL.
@@ -2964,6 +2976,26 @@ int NodeInterface::Idle(int tid, double delta)
 	}
 
 	return 1;
+}
+
+/*! Make this node be selected, and optionally centered upon.
+ * It can be any node somewhere within nodes.
+ * Return 0 if node not found, else 1.
+ */
+int NodeInterface::SelectNode(NodeBase *what, bool also_center)
+{
+	if (!nodes) return 0;
+	for (int c=0; c<nodes->nodes.n; c++) {
+		if (what == nodes->nodes.e[c]) {
+			selected.flush();
+			selected.push(what);
+			if (also_center) PerformAction(NODES_Center_Selected);
+			needtodraw = 1;
+			return 1;
+		}
+	}
+	cerr << " *** SelectNode(what), what not found, need to implement looking in node groups for particular object!!"<<endl;
+	return 0;
 }
 
 /*! Normally this will accept some common things like NodeGroup.
@@ -3065,6 +3097,11 @@ Laxkit::MenuInfo *NodeInterface::ContextMenu(int x,int y,int deviceid, Laxkit::M
 	if (!menu) menu=new MenuInfo;
 	if (!menu->n()) menu->AddSep(_("Nodes"));
 
+	if (nodes && nodes->HasAlternateInterface()) {
+		menu->AddItem(_("Edit with filter interface"), NODES_Edit_With_Tool);
+		menu->AddSep();
+	}
+
 	menu->AddItem(_("Add node..."), NODES_Add_Node);
 
 	if (selected.n) {
@@ -3162,6 +3199,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 			|| action == NODES_Thread_Controls
 			|| action == NODES_New_Nodes
 			|| action == NODES_Force_Updates
+			|| action == NODES_Edit_With_Tool
 			) {
 			PerformAction(action);
 
@@ -6194,6 +6232,32 @@ int NodeInterface::PerformAction(int action)
 		// mainly or debugging, force all nodes to refresh
 		if (!nodes) return 0;
 		nodes->ForceUpdates();
+		return 0;
+
+	} else if (action == NODES_Edit_With_Tool) {
+		if (!nodes) return 0;
+		anInterface *interf = nodes->AlternateInterface();
+		if (!interf) { PostMessage(_("No alternate interface!")); return 0; }
+
+		interf->Dp(dp);
+		NodeBase *sel = nullptr;
+		if (selected.n) sel = selected.e[0];
+		
+		// i->UseThisObject(selection->e(0));
+		// i->owner = this;
+		// child = i;
+		// viewport->Push(i,-1,0);
+		// ----
+
+		if (originating_data) interf->UseThis(originating_data);
+		if (sel) interf->UseThis(sel);
+		inc_count();
+		ViewerWindow *viewer=dynamic_cast<ViewerWindow *>(curwindow->win_parent);
+		viewer->PopInterface(this); //makes sure viewer->curtool is maintained
+		// viewport->Pop(this);
+		viewport->Push(interf,-1,1);
+		dec_count();
+
 		return 0;
 	}
 

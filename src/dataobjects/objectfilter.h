@@ -67,21 +67,25 @@ class ObjectFilter : public NodeGroup
 	virtual int FindInterfaceNodes(NodeGroup *group);
 	virtual int FindInterfaceNodes(Laxkit::RefPtrStack<ObjectFilterNode> &filternodes, NodeProperty *start_here=NULL);
 
+	virtual bool HasAlternateInterface() { return true; }
+	virtual LaxInterfaces::anInterface *AlternateInterface();
+
     virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context);
 };
 
 
 //----------------------------- ObjectFilterInfo ---------------------------------
 
-class ObjectFilterInfo : public NodeGroup
+class ObjectFilterInfo : public Laxkit::anObject
 {
   public:
 	//DrawableObject *object; //object that owns the filter
 	DrawableObject *filtered_object;
 	LaxInterfaces::ObjectContext *oc;
 	ObjectFilterNode *node;	//node home to filtered_object
+	NodeBase *selected_node;
 
-	ObjectFilterInfo(LaxInterfaces::ObjectContext *noc, DrawableObject *nfobj, ObjectFilterNode *nnode);
+	ObjectFilterInfo(LaxInterfaces::ObjectContext *noc, DrawableObject *nfobj, ObjectFilterNode *nnode, NodeBase *selnode);
 	virtual ~ObjectFilterInfo();
 };
 

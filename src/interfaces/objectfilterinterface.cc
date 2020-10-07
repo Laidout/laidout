@@ -25,6 +25,8 @@
 #include "objectfilterinterface.h"
 
 #include <lax/interfaces/somedatafactory.h>
+#include <lax/interfaces/interfacemanager.h>
+#include <lax/interfaces/viewerwindow.h>
 #include <lax/laxutils.h>
 #include <lax/language.h>
 
@@ -69,6 +71,8 @@ ObjectFilterInterface::ObjectFilterInterface(anInterface *nowner, int nid, Displ
 	hover = OFI_None;
 	hoverindex = -1;
 
+	nodes_icon = nullptr;
+
 	sc = NULL; //shortcut list, define as needed in GetShortcuts()
 }
 
@@ -77,6 +81,7 @@ ObjectFilterInterface::~ObjectFilterInterface()
 	if (dataoc) delete dataoc;
 	if (data) { data->dec_count(); data=NULL; }
 	if (sc) sc->dec_count();
+	if (nodes_icon) nodes_icon->dec_count();
 }
 
 const char *ObjectFilterInterface::whatdatatype()
@@ -131,6 +136,23 @@ int ObjectFilterInterface::UseThisObject(ObjectContext *oc)
 int ObjectFilterInterface::UseThis(anObject *nobj, unsigned int mask)
 {
 	if (!nobj) return 1;
+
+	ObjectFilterInfo *oinfo = dynamic_cast<ObjectFilterInfo *>(nobj);
+	if (oinfo) {
+		Clear(nullptr);
+		if (oinfo->oc) UseThisObject(oinfo->oc);
+		needtodraw = 1;
+		return 1;
+	}
+
+	ObjectFilterNode *ofn = dynamic_cast<ObjectFilterNode *>(nobj);
+	if (ofn) {
+		// try to select this node
+		SelectNode(ofn);
+		needtodraw=1;
+		return 1;
+	}
+
 	ObjectFilter *f = dynamic_cast<ObjectFilter *>(nobj);
 	if (f != NULL) {
 		if (data && data->filter != f) {
@@ -140,6 +162,23 @@ int ObjectFilterInterface::UseThis(anObject *nobj, unsigned int mask)
 
 		needtodraw=1;
 		return 1;
+	}
+
+	return 0;
+}
+
+/*! Return 1 for node found and selected, or 0 for not found.
+ */
+int ObjectFilterInterface::SelectNode(NodeBase *which)
+{
+	for (int c=0; c<filternodes.n; c++) {
+		if (filternodes.e[c] == which) {
+			if (c != current) {
+				ActivateTool(c);
+				needtodraw=1;
+			}
+			return 1;
+		}
 	}
 	return 0;
 }
@@ -224,28 +263,7 @@ int ObjectFilterInterface::Event(const Laxkit::EventData *data, const char *mes)
 		//int info = s->info4; //info of menu item
 
 		if (i == OFI_Edit_Nodes) {
-
-			//...make child a NodeInterface with filter, with current node selected
-
-			if (!dataoc || !dataoc->obj) return 0;
-			DrawableObject *obj = dynamic_cast<DrawableObject*>(dataoc->obj);
-
-			ObjectFilter *filter = dynamic_cast<ObjectFilter*>(obj->filter);
-			if (filter) filter->inc_count();
-			else {
-				filter = new ObjectFilter(obj, 1);
-				filter->Id(obj->Id());
-				obj->SetFilter(filter, 0);
-			}
-
-			NodeInterface *i = new NodeInterface(NULL,10002,dp);
-			i->UseThis(filter);
-			filter->dec_count();
-			i->owner = this;
-			child = i;
-			viewport->Push(i,-1,0);
-			PostMessage(_("Edit filter nodes"));
-
+			PerformAction(OFI_Edit_Nodes);
 			return 0;
 		}
 
@@ -254,32 +272,6 @@ int ObjectFilterInterface::Event(const Laxkit::EventData *data, const char *mes)
 
 	return 1; //event not absorbed
 }
-
-
-///*! Draw some data other than the current data.
-// * This is called during screen refreshes.
-// */
-//int ObjectFilterInterface::DrawData(anObject *ndata,anObject *a1,anObject *a2,int info)
-//{
-////	if (!ndata || dynamic_cast<ObjectFilterData *>(ndata)==NULL) return 1;
-////
-////	ObjectFilterData *bzd=data;
-////	data=dynamic_cast<ObjectFilterData *>(ndata);
-////
-////	 // store any other state we need to remember
-////	 // and update to draw just the temporary object, no decorations
-////	int td=showdecs,ntd=needtodraw;
-////	showdecs=0;
-////	needtodraw=1;
-////
-////	Refresh();
-////
-////	 //now restore the old state
-////	needtodraw=ntd;
-////	showdecs=td;
-////	data=bzd;
-//	return 1;
-//}
 
 
 int ObjectFilterInterface::Refresh()
@@ -316,7 +308,7 @@ int ObjectFilterInterface::Refresh()
 
 			 //draw:
 			 //   Name
-			 //   [eyeball] [remove]
+			 //   [eyeball] [nodes] [remove]
 			width = 2*th;
 			w = dp->textextent(filternodes.e[c]->Label(),-1, NULL,NULL);
 			if (w > width) width = w;
@@ -338,6 +330,18 @@ int ObjectFilterInterface::Refresh()
 			dp->LineWidthScreen(hover == OFI_Mute && hoverindex == c ? 2 : 1);
 			dp->drawthing(x+th, th*1.75, th/2,-th/2, 2, filternodes.e[c]->IsMuted() ? THING_Closed_Eye : THING_Open_Eye);
 			dp->LineWidthScreen(1);
+
+			 // edit nodes icon
+			if (hover == OFI_Edit_Nodes && hoverindex == c) {
+				dp->NewFG(coloravg(curwindow->win_themestyle->fg,curwindow->win_themestyle->bg, .6));
+				dp->drawrectangle(x + width/2-th, 1.5*th, 2*th, .8*th, 1);
+			}
+			if (!nodes_icon) {
+				IconManager *iconmanager=InterfaceManager::GetDefault(true)->GetIconManager();
+				nodes_icon = iconmanager->GetIcon("Node");
+			}
+			if (nodes_icon) dp->imageout_within(nodes_icon, x+width/2-th, 1.5*th, 2*th, .75*th);
+
 
 			 //remove
 			if (hover == OFI_Remove && hoverindex == c) {
@@ -388,6 +392,7 @@ int ObjectFilterInterface::scan(int x, int y, unsigned int state, int *nhoverind
 			*nhoverindex = c;
 			if (y > offset.y + 1.25*th) {
 				if (x < offset.x + xx + 1.5*th) return OFI_Mute;
+				if (x > offset.x + xx + width/2 - th && x < offset.x + xx + width/2 + th) return OFI_Edit_Nodes;
 				if (x > offset.x + xx + width - 2*th) return OFI_Remove;
 			}
 			return OFI_On_Block;
@@ -430,7 +435,7 @@ int ObjectFilterInterface::ActivateTool(int index)
 	//NodeProperty *in = fnode->FindProperty("in");
 	//NodeProperty *out = fnode->FindProperty("out");
 
-	ObjectFilterInfo info(dataoc, NULL, fnode);
+	ObjectFilterInfo info(dataoc, NULL, fnode, nullptr);
 
 	i->UseThis(&info);
 	i->owner = this;
@@ -467,6 +472,14 @@ int ObjectFilterInterface::LBUp(int x,int y,unsigned int state, const Laxkit::La
 	if (hovered == OFI_Remove) {
 		if (!dragged) {
 			//***ok clicked down and up on same
+			PostMessage("NEED TO IMPLEMENT REMOVE!!!!");
+		}
+		return 0;
+
+	} else if (hovered == OFI_Edit_Nodes) {
+		if (!dragged) {
+			current = hoveredindex;
+			PerformAction(OFI_Edit_Nodes);
 		}
 		return 0;
 
@@ -502,6 +515,7 @@ int ObjectFilterInterface::MouseMove(int x,int y,unsigned int state, const Laxki
 			hover = nhover;
 			hoverindex = nhoverindex;
 			if (nhover == OFI_Mute) PostMessage(_("Toggle this filter"));
+			else if (nhover == OFI_Edit_Nodes) PostMessage(_("Edit with node tool"));
 			else if (nhover == OFI_Remove) PostMessage(_("Remove this filter"));
 			else PostMessage("");
 			needtodraw=1;
@@ -589,6 +603,39 @@ int ObjectFilterInterface::PerformAction(int action)
 {
 	if (action == OFI_Refresh) {
 
+		return 0;
+
+	} else if (action == OFI_Edit_Nodes) {
+		//...make child a NodeInterface with filter, with current node selected
+
+		if (!dataoc || !dataoc->obj) return 0;
+		DrawableObject *obj = dynamic_cast<DrawableObject*>(dataoc->obj);
+
+		ObjectFilter *filter = dynamic_cast<ObjectFilter*>(obj->filter);
+		if (filter) filter->inc_count();
+		else {
+			filter = new ObjectFilter(obj, 1);
+			filter->Id(obj->Id());
+			obj->SetFilter(filter, 0);
+		}
+
+		NodeInterface *i = nullptr;
+
+
+		// //---------------
+		// Replace ourself with a NodeInterface
+		i = new NodeInterface(NULL,-1,dp);
+		i->UseThis(filter);
+		ObjectFilterInfo *info = new ObjectFilterInfo(dataoc, dynamic_cast<DrawableObject*>(dataoc->obj), nullptr, current >= 0 ? filternodes.e[current] : nullptr);
+		i->SetOriginatingData(info, 1);
+		filter->dec_count();
+		inc_count();
+		ViewerWindow *viewer = dynamic_cast<ViewerWindow *>(curwindow->win_parent);
+		viewer->PopInterface(this); //makes sure viewer->curtool is maintained
+		// viewport->Pop(this);
+		viewport->Push(i,-1,1);
+		if (current >= 0) i->SelectNode(filternodes.e[current], true);
+		dec_count();
 		return 0;
 	}
 

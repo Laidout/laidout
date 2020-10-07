@@ -14,6 +14,7 @@
 //
 
 #include "objectfilter.h"
+#include "../interfaces/objectfilterinterface.h"
 #include "../nodes/nodes.h"
 #include "drawableobject.h"
 #include "lpathsdata.h"
@@ -103,7 +104,7 @@ ObjectFilter::ObjectFilter(anObject *nparent, int make_in_outs)
 		to->x = from->x + from->width*2;
 
 		DrawableObject *dobj = dynamic_cast<DrawableObject*>(parent);
-		if (dobj) in->SetData(dobj, 0);
+		if (dobj) in->SetData(dobj, 0); //aaa!!! this makes circular ref count!! this is handled by DrawableObject::dec_count
 	}
 }
 
@@ -238,6 +239,11 @@ LaxFiles::Attribute *ObjectFilter::dump_out_atts(LaxFiles::Attribute *att, int w
 	return attt;
 }
 
+LaxInterfaces::anInterface *ObjectFilter::AlternateInterface()
+{
+	return new ObjectFilterInterface(nullptr, -1, nullptr);
+}
+
 
 //------------------------ ObjectFilterNode ------------------------
 
@@ -257,7 +263,7 @@ int RegisterFilterNodes(Laxkit::ObjectFactory *factory)
 
 	return 0;
 }
- 
+
 
 //----------------------------- ObjectFilterInfo ---------------------------------
 
@@ -266,7 +272,7 @@ int RegisterFilterNodes(Laxkit::ObjectFactory *factory)
  */
 
 
-ObjectFilterInfo::ObjectFilterInfo(LaxInterfaces::ObjectContext *noc, DrawableObject *nfobj, ObjectFilterNode *nnode)
+ObjectFilterInfo::ObjectFilterInfo(LaxInterfaces::ObjectContext *noc, DrawableObject *nfobj, ObjectFilterNode *nnode, NodeBase *selnode)
 {
 	oc = (noc ? noc->duplicate() : NULL);
 
@@ -274,6 +280,9 @@ ObjectFilterInfo::ObjectFilterInfo(LaxInterfaces::ObjectContext *noc, DrawableOb
 	if (filtered_object) filtered_object->inc_count();
 	node = nnode;
 	if (node) node->inc_count();
+
+	selected_node = selnode;
+	if (selected_node) selected_node->inc_count();
 }
 
 ObjectFilterInfo::~ObjectFilterInfo()
@@ -281,6 +290,7 @@ ObjectFilterInfo::~ObjectFilterInfo()
 	if (oc) delete oc;
 	if (filtered_object) filtered_object->dec_count();
 	if (node) node->dec_count();
+	if (selected_node) selected_node->dec_count();
 }
 
 

@@ -49,6 +49,8 @@ class ObjectFilterInterface : public LaxInterfaces::anInterface
 	int hover;
 	int hoverindex;
 
+	Laxkit::LaxImage *nodes_icon;
+
 	virtual int scan(int x, int y, unsigned int state, int *nhoverindex);
 	//virtual int OtherObjectCheck(int x,int y,unsigned int state);
 
@@ -85,6 +87,7 @@ class ObjectFilterInterface : public LaxInterfaces::anInterface
 
 	virtual int UseThis(Laxkit::anObject *nlinestyle,unsigned int mask=0);
 	virtual int UseThisObject(LaxInterfaces::ObjectContext *oc);
+	virtual int SelectNode(NodeBase *which);
 	virtual int ActivateTool(int index);
 	virtual int InterfaceOn();
 	virtual int InterfaceOff();
