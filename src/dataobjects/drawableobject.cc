@@ -1017,6 +1017,19 @@ const char *DrawableObject::Id()
 const char *DrawableObject::Id(const char *newid)
 { return SomeData::Id(newid); }
 
+/*! Hook to deal with circular references with filter.
+ */
+int DrawableObject::dec_count()
+{
+	int c = Resourceable::dec_count();
+	if (c == 1 && filter) {
+		anObject *f = filter;
+		filter = nullptr;
+		f->dec_count();
+	}
+	return c;
+}
+
 //! Dump out iohints and metadata, if any.
 void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {

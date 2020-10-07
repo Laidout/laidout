@@ -208,6 +208,7 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
 	virtual const char *Id();
 	virtual const char *Id(const char *newid);
+	virtual int dec_count();
 
 	virtual int Selectable();
 
