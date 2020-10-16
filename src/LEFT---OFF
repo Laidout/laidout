@@ -13,11 +13,11 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
+bug: menus, left click down, drag to other item, lbup then selects other, but initial still highlighted
+
 bug: Engraver fill, just moving mouse around is rerendering to buffer for preview
 
 bug: imported white images are not white, very slightly gray. gm load problem?
-
-bug: signature editor, selected pages have almost not noticeable selected emphasis.. line width problem?
 
 bug: space bar for centering not working anymore.. shift-space seems to
 
@@ -26,15 +26,7 @@ bug: can't duplicate gradient nodes.. causes seg fault
 bug: severing clone link does some weird things, including crashing
 bug: clone tool clones do not have proper bounding box
 
-bug: window sizes seem to all be off a few pixels
-
 bug: curve is terrible approximation at end points
-
-bug: svg out, select to files, often the first time goes to file, not files
-
-bug: debug registration, cut marks, trim marks
-  custom papergroup, add registration/bars/, can't move it
-  DONE can't add cut marks to signatures
 
 object indicator:
   click on object, does not update selection
@@ -48,6 +40,8 @@ bug: back to not maximizing properly on default ubuntu. Seems to work fine on ev
 bug: command prompt window cursor often invisible
 bug: command prompt window input sometimes unrecoverably locks if cursor not at very end
 DONE bug: command prompt window missing Laidout module
+
+bug: calculator: using Math; acos(.9)*180/pi -> "Cannot compute with those values"
 
 bug: lineedit cursor is leaving artifacts
 
@@ -67,6 +61,7 @@ configure should check for libreadline-dev? apparently not pkg-config ready <- h
 
 scroll bar zoom handles don't appear to work
 
+memory hole in ExportDialog.. open export, cylce through formats, quit
 memory hole in calculator
 memory hole in reimpose .. reimposed 5 page booklet
 memory hole when graphical shell activated
@@ -86,8 +81,6 @@ clones of images scale not like images.. should also snap aspect to start of dra
 
 select no doc, select doc, viewport jumps around... it should stay the same area
 switch to None document, and units change to unreasonable
-
-
 
 shearing or scaling produces null axes occasionally when crossing over opposite edge, borking the display
   --> seems to be only when needing to draw images on close to parallel axes, doesn't seem do it with paths
@@ -160,6 +153,8 @@ file previewer not updating preview when using arrow keys
 shrink image lets you go immeasurably small
 
 stackframe seems to be ignoring window borders on layout
+
+bug: window sizes seem to all be off a few pixels (?? on what measure? can't reproduce)
 
 
 ----------------0.098 ROADMAP ITEMS: features and enhancements------------------------
@@ -489,20 +484,25 @@ file filters: filefilters:
       export config to create files that go along with copied project files
       template vars to replace in set of copied project files
     export.config
-      copy: [f1, f2, "**/*.png"]
-      templates: [ { pass_id: "template1", file: "f1", export_as: "%f###.png"}, var: { name:"{{FRAME_NUMBER}}", value:"laidout.globals.frame" ]
       filter: "Html Gallery"
+      copy: [f1, f2, "**/*.png", { from: "here.txt", to: "to/there.txt" } ]
+      templates:
+		[
+ 		  { pass_id: "template1",
+			file: "f1.tmpl",
+			export_as: "%f###.png"
+		  },
+		  vars: [ { name:"{{FRAME_NUMBER}}", value:"laidout.globals.frame" } ]
+		]
 
   config resource load/save
   need to ensure that when bouncing around filters, Export All sets range properly
-  need to preserve last settings per filter
-  would be nice to standardize viewport display so each exporter doesn't have to implement everything themselves
+  would be nice to standardize viewport render/obj-traverse so each exporter doesn't have to implement everything themselves
     like define an iterator to walk over the view
   fix when filtered object has children.. currently skips children
   open with... on export ? combine with command option, which does basically the same thing.. need to decide about tmp files and unlink them
     export by command needs work, bypasses safeties.. what about multiple files?
     DONE put command export within export_document()
-  remember full export settings
   need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
   selecting out should auto select tofile | tofiles, depending on how many spreads selected for out
   export range should optionally allow label not spread indices? labels are only valid for pages.. by name "iii - iv", export preview better?
@@ -512,6 +512,7 @@ file filters: filefilters:
     you can just jump to the offending bit easily. This would also be used for preflight verifiers,
     and maybe also mass edit things, like edit all images..
     - have ViewWindow::JumpToObject(&place, objectid);
+  DONE need to preserve last settings per filter, remember full export settings
 pageatlas: page atlas:
   needs bg color
   DONE basically n-up page out, lrtb
@@ -526,8 +527,6 @@ export textured gltf / Godot based 3d viewer project?
 export godot book project
   show animation of book folding up
   book page turner
-exportdialog export dialog:
-  incorporate IndexRange
 importdialog ImportDialog import dialog:
   be able to choose importer
   should show filename as red if don't know how to import
@@ -707,7 +706,8 @@ PathInterface: pathinterface
   bug: delete last weight node, sometimes width is wrong
   bug: make new line with freehand tool, cannot move weight nodes in a rational way
 
-  need dissolve option on point delete to adjust control point lengths
+  need an easier way to edit gradient fills, like child tool edit for fill items, auto add filler types
+  need simplify option on point delete to adjust control point lengths
   need option for bbox to include line width, not just centerline
   need stroke fill
   need path combine:
@@ -716,10 +716,13 @@ PathInterface: pathinterface
       Combine to single object
       Combine and merge endpoints
 
+  DONE shift over endpoint needs add point hint
+  DONE shift(?) over segment should allow cutting the segment, draw a big red x? highlight whole segment in red?
+  DONE need to show hints for when new points will be placed
+
   that hot new spiro curve
   boolean ops
   mirror, array, with join (akin to blender modifiers)
-  need to show hints for when new points will be placed
   dup path object links the path style, but save and load, it is not linked... need to sort out line/fill style inheritance/linking
   needs input boxes for width nodes
   compound paths, change width only changes one. no way to affect all
@@ -771,12 +774,10 @@ PathInterface: pathinterface
   maybe control when on vertex will create whichever handle does not exist, control nearest drag point determines which is created
   not show every single handle. only ones associated with active vertices, show unactive vertices with small circles
   align nodes -> create temp set of data to pass to AlignInterface?
-  transform handles for nodes, including flip
+  transform handles for selected points, including flip
   subdivide, repeat key press restores old segment, then adds 1 more point to num of points from last press
   toggle between add points / select points?
-    if add points, show dotted line to indicate a new segment incoming
   finish new path/pathoperator/pathsubinterface/pathinterface structure
-  have a widthtype == hairline? use width==0 as no stroke
 
   markers:
     resource drawables with extra "origin" and "direction", maybe stored as properties?
@@ -1007,7 +1008,7 @@ node editor node interface NodeInterface nodes: node: interface:
       out anchor: other object point (of non-parent), page, spread
       type: x,y
       2 point anchor: change position + scale|rotation
-    NewObject/ModifyObject based on an ObjectDef.
+    DONE NewObject/ModifyObject based on an ObjectDef.
     DONE need to make sure all types have dump_out_atts defined, otherwise the paltry Value::dump_out_atts gets used in data out
     DONE each need to double check: dereference, assign, Evaluate, extend from Group, not affine
     image (double check objdef setup)
@@ -1566,7 +1567,31 @@ dual monitors:
   DONE Menus should respect actual screen borders, not just full virtual screen
 
 high dpi hidpi:
+  don't hardcode for instance thin as 1
+    check interfaces, make sure everything uses ScreenLine,Threshhold,UIScale:
+      DONE image
+      path
+      gradient
+      patch
+      imagepatch
+      colorpatch
+      voronoi
+      caption
+      character
+      curvemap
+      ellipse
+      engraver
+      freehand
+      object
+      perspective
+      simplepath
+      textonpath
+	  align
+	  nup
+	  clone
+	  DONE spread editor
   in general for windows, need better styling.. too much is hardcoded. problems later with high dpi screens
+  need themeeditor to easily adjust things that are off
   per monitor ui scaling:
     xrandr only gives monitor names like DP-5 DP-0
     xrandr --verbose lists EDID hex block that usually contains monitor model somehow
@@ -1921,6 +1946,7 @@ customizable object child relationships to parent, rather than simple transform
   need edge indicators for more convenient snapping
 
 calculator/scripting
+  make ArrayValue by MatrixValue, make SetValue be ArrayValue
   bug: run command with BuildIcons, error is not propagating up to cout
   bug: function calls, assigning named parameters, checks for '=', but only single char, fails when it's actually a ==
   bug: Math.oeuaeou does not produce an error
@@ -2303,12 +2329,19 @@ for clones, it would be easier to have a "defs" group or something, so deleting 
   if an object is without a home.
 
 tiling cloner: clone tiler  CloneInterface
+  options:
+    show/not-show base + source_clones
+    embed origin in pattern
+	embed pattern in final
   should have option to apply clones as an object filter, not as actual clones
   default should be use lines only when there is no source object.
   new tiling should update viewport color per basecells
   should not assume preview has I transform
   memory hole back, third time!!!
   radial needs wind scale input
+  fill out the Tiling objectdef
+  DONE bug: Tiling doesn't save, need to make Tiling be a Value so it can be io with drawable->properties
+  DONE various source refs should take names from ref'd objects
 
   need more distinction between what is a base object, and grabbing a copy of existing object.. too easy to confuse the two!
   copies should be selectable, at least so you can adjust the colors: gave current_base, current_copy
@@ -2337,7 +2370,7 @@ tiling cloner: clone tiler  CloneInterface
   should have a render preview to show actual grid coverage
   need finishing tool
   design interface for clone on path
-  Hisrchhorn Medallion
+  Hirschhorn Medallion, and other pentagon tilings https://en.wikipedia.org/wiki/Pentagonal_tiling
   truchet tiling
   penrose/heesch/net clone interface
     penrose p1: pentagons, pentagrams, rhombus, sliced pentagram
@@ -2468,14 +2501,13 @@ how to keep track of class hierarchy? impositions are now listed by resource ins
 
 
 polish: ux:
-  when you save, also save a preview of current spread?
+  when you save, also save a preview of current spread in freedesktop thumbs?
   resizeable ui
   should be able to mass disconnect clones
   current page should be highlighted
 
   in menus, click down, then drag, will return what is under mouse.. should default to not do anything but stay in menu
   page navigator should allow type in shortcuts like "end" or "-2" for second from last
-
 
 General design usability
 to be a decent editing platform, Laidout needs:
@@ -2489,7 +2521,6 @@ to be a decent editing platform, Laidout needs:
     rotation, maybe drag handle with control?
     snap to bbox vs aabb
   drag constraints more accessible in only y or x direction
-  more specific control over transform.. numerical specification
   per object visibility
   per object opacity
   better key shortcut edits, right click on menu items to ch key
@@ -2499,31 +2530,36 @@ to be a decent editing platform, Laidout needs:
     select only within group zone
     easy selection of proper group zone
     remove 'i' from common shortcuts for all tools to let it be used for ObjectIndicator
+  DONE more specific control over transform.. numerical specification
   DONE clipping
 
 ============== Future of Laidout ================
 
 Goals:
-  2D Vector graphics editor built for multiple output types, whether printed pages, or html, or image files
-  While 2d focused, has some limited capabilities to lay out on 3d surfaces made out of flat but bent or folded surfaces
+  2D Vector graphics editor built for multiple output types, such as multi-page physical prints, html, or image files
+  While 2D focused, has some limited capabilities to lay out on 3d surfaces made out of flat but bent or folded surfaces
 Current deficiencies:
   Render update is way too slow
   Too many bugs/quirks in object management, resource coordiation
-  Spotty undo/redo
+  undo/redo barely implemented
   cairo is only 8 bit, limits use for animation
   Way too hard to have user created tools
     internal object system is flexible, but not without a huge amount of boilerplate-like code to tie to scripter
-  Being Linux only limits user base, and thus user testing
+  Being Linux only limits user base, and thus also limits user testing
   no color management
   raster/paint/editable image layers, or stroke based on non-destructive vector paths would help
+Considerations:
+  Pure svg/pdf vector graphics is limiting, current custom format is very flexible
+  Game engine-esque, real time animation and 3d tools are rising in importance as everyone aquires powerful cheap devices
+  Compute shader/ graphics shaders are very powerful and should be used for speed and image effects
 Ways forward:
   maybe gegl-ify everything?
    - fixes 8 bit limit
    - babl flexibility
    - cross code with gimp/gegl has long term benefits
-  Pure svg/pdf vector graphics is limiting
-  Game engine-esque, real time animation and 3d tools are rising in importance as everyone aquires powerful cheap devices
-  Compute shader/ graphics shaders are very powerful and should be used for speed and image effects
+  consider gigantic revamp so that ui is all made with python..
+   - essentially the blender route
+   - makes tool development way more accessible to new users
 
 
 ===================Consider anything below here food for thought, not active dev notes================
@@ -2623,4 +2659,10 @@ DONE MenuInfo AddItem functions are really terrible overload nightmare, need som
   DONE AddIconItem  (const char *name, LaxImage *icon, int id = 0, int info = 0, int where = -1);
   DONE AddToggleItem(const char *name, LaxImage *icon, int id, int info, int state, int where = -1);
 DONE bug: tabframe not showing tabs, such as in help window
+DONE bug: spread editor, selected pages have almost not noticeable selected emphasis.. line width problem?
+DONE (? can't duplicate) bug: svg out, select to files, often the first time goes to file, not files
+DONE exportdialog export dialog: incorporate IndexRange
+DONE bug: debug registration, cut marks, trim marks
+  DONE custom papergroup, add registration/bars/, can't move it
+  DONE can't add cut marks to signatures
 
