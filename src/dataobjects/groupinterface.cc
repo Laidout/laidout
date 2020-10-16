@@ -471,7 +471,7 @@ int GroupInterface::LBDown(int x, int y,unsigned int state, int count,const Laxk
 	//if (count==2 && selection->n()==1 && strcmp(selection->e(0)->obj->whattype(),"Group")) {
 	if (count==2 && selection->n() && strcmp(selection->e(0)->obj->whattype(),"Group")) {
 		//double click to switch to more specific tool
-		if (viewport) viewport->ChangeObject(selection->e(0),1);
+		if (viewport) viewport->ChangeObject(selection->e(0),1,true);
 		buttondown.clear();
 	}
 	return c;
@@ -695,7 +695,7 @@ int GroupInterface::GroupObjects()
 
 		DBG place.out(".....group position after grouping: ");
 
-		((LaidoutViewport *)viewport)->ChangeObject(&context, 0);
+		((LaidoutViewport *)viewport)->ChangeObject(&context, 0,true);
 
 	} else {
 		((LaidoutViewport *)viewport)->clearCurobj();
@@ -916,7 +916,7 @@ int GroupInterface::PerformAction(int action)
 
 		if (strcmp(selection->e(0)->obj->whattype(),"Group")) {
 			//double click to switch to more specific tool
-			if (viewport) viewport->ChangeObject(selection->e(0),1);
+			if (viewport) viewport->ChangeObject(selection->e(0),1,true);
 			buttondown.clear();
 
 		} else { //was group, enter group
@@ -968,10 +968,10 @@ int GroupInterface::PerformAction(int action)
 		DrawableObject *dobj = dynamic_cast<DrawableObject*>(o2->obj);
 		if (dobj && paths) {
 			// remove paths from tree
-			viewport->ChangeObject(selection->e(toremove),0); 
+			viewport->ChangeObject(selection->e(toremove),0,true); 
             viewport->DeleteObject(); 
             selection->Remove(toremove);
-			viewport->ChangeObject(selection->e(0),0); 
+			viewport->ChangeObject(selection->e(0),0,true);
 
 			//adjust paths transform
 			paths->Multiply(dobj->Inversion());
@@ -1144,7 +1144,7 @@ int GroupInterface::PerformAction(int action)
 		context.SetObject(obj);
 		if (vp->locateObject(obj,context.context)) {
 			//update viewport to view that object, it was found in current spread
-			vp->ChangeObject(&context,0);
+			vp->ChangeObject(&context,0,true);
 			FreeSelection();
 			AddToSelection(&context);
 		} else {
@@ -1202,7 +1202,7 @@ int GroupInterface::PerformAction(int action)
 
 		if (pp && pp->Selectable()) {
 			oc.SetObject(pp);
-			vp->ChangeObject(&oc,0);
+			vp->ChangeObject(&oc,0,true);
 			FreeSelection();
 			AddToSelection(&oc);
 			((LaidoutViewport *)viewport)->clearCurobj();

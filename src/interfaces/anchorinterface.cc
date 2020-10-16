@@ -894,7 +894,7 @@ int AnchorInterface::LBDown(int x,int y,unsigned int state,int count,const Laxki
 			}
 
 			if (!cur_oc) {
-				viewport->ChangeObject(oc,0);
+				viewport->ChangeObject(oc,0,true);
 				cur_oc=dynamic_cast<VObjContext*>(oc->duplicate());
 				active_anchor=-1;
 				AddAnchors(cur_oc, ANCHOR_Object);

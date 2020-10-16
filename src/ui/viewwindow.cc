@@ -1556,12 +1556,14 @@ int LaidoutViewport::SelectObject(int i)
  * the current spread somewhere. If oc->obj==NULL, then the same goes for where oc points to.
  * The first interface to report being able to handle oc->obj->whattype() will be activated.
  *
+ * If update_selection, flush current selection and add current object.
+ * 
  * Returns 1 for current object changed, otherwise 0 for not changed or d not found.
  *
  * \todo *** for laxkit also, but must have some mechanism to optionally pass the LBDown grab
  * to new interface in control of new object..
  */
-int LaidoutViewport::ChangeObject(LaxInterfaces::ObjectContext *oc, int switchtool)
+int LaidoutViewport::ChangeObject(LaxInterfaces::ObjectContext *oc, int switchtool, bool update_selection)
 {
 	if (!oc || !oc->obj) return 0;
 
@@ -1569,6 +1571,13 @@ int LaidoutViewport::ChangeObject(LaxInterfaces::ObjectContext *oc, int switchto
 	if (voc==NULL || !IsValidContext(voc)) return 0;
 	setCurobj(voc);
 	
+	if (update_selection) {
+		if (!selection) selection = new Selection();
+		selection->Flush();
+		if (oc->obj) selection->Add(oc, -1);
+		needtodraw = 1;
+	}
+
 	 // makes sure curtool can take it, and makes it take it.
 	if (switchtool) {
 		ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); // always returns non-null
@@ -1577,6 +1586,8 @@ int LaidoutViewport::ChangeObject(LaxInterfaces::ObjectContext *oc, int switchto
 			viewer->updateContext(1);
 		}
 	}
+
+
 
 	return 1;
 }
@@ -2104,7 +2115,10 @@ SomeData *LaidoutViewport::GetObject(ObjectContext *oc)
 {
 	VObjContext *loc = dynamic_cast<VObjContext*>(oc);
 	if (!loc) return NULL;
-	anObject *anobj=getanObject(loc->context,0,-1);
+	anObject *anobj = getanObject(loc->context,0,-1);
+	if (anobj && anobj->istype("PaperGroup")) {
+		return &(dynamic_cast<PaperGroup*>(anobj)->objs);
+	}
 	return dynamic_cast<SomeData*>(anobj);
 }
 
@@ -2114,6 +2128,7 @@ LaxInterfaces::ObjectContext *LaidoutViewport::CurrentContext()
 }
 
 /*! Return the number of contexts that were updated or removed.
+ * Removes invalid contexts.
  */
 int LaidoutViewport::UpdateSelection(Selection *sel)
 {
@@ -2560,22 +2575,22 @@ LaxInterfaces::ObjectContext *LaidoutViewport::ObjectMoved(LaxInterfaces::Object
 	DBG curobj.context.out(NULL);
 	needtodraw=1;
 
+	 //we might need to synchronize selection objects to the new order
 	if (selection->n()) {
-		 //we might need to synchronize selection objects to the new order
         for (int c=selection->n()-1; c>=0; c--) {
+        	if (selection->e(c) == oc) continue; //oc gets updated below
             if (IsValidContext(selection->e(c))) continue;
             if (locateObject(selection->e(c)->obj, dynamic_cast<VObjContext*>(selection->e(c))->context)==0) {
 				 //somehow object is no longer there, remove from selection
 				selection->Remove(c);
 			}
         }
-
 	}
 
 	if (!modifyoc) return new VObjContext(destcontext);
-	
-	VObjContext *noc=dynamic_cast<VObjContext*>(oc);
-	*noc=destcontext;
+
+	VObjContext *noc = dynamic_cast<VObjContext *>(oc);
+	*noc = destcontext;
 	return oc;
 }
 
@@ -5621,15 +5636,19 @@ int ViewWindow::PerformAction(int action)
 		return 0;
 
 
-	} else if (action==VIEW_PathTool) {       
+	} else if (action == VIEW_PathTool) {
 		SelectToolFor("PathsData");
+		Selection *selection = viewport->GetSelection();
+		if (selection && selection->n()) {
+			curtool->UseThisObject(selection->e(0));
+		}
 		return 0;
 
-	} else if (action==VIEW_ImageTool) {      
+	} else if (action==VIEW_ImageTool) {
 		SelectToolFor("ImageData");
 		return 0;
 
-	} else if (action==VIEW_GradientTool) {   
+	} else if (action==VIEW_GradientTool) {
 		SelectToolFor("GradientData");
 		return 0;
 

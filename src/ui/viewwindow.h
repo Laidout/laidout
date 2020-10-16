@@ -151,7 +151,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	virtual int PreviousSpread();
 	virtual int CurrentSpread() { return spreadi; }
 	
-	virtual int ChangeObject(LaxInterfaces::ObjectContext *oc,int switchtool);
+	virtual int ChangeObject(LaxInterfaces::ObjectContext *oc,int switchtool, bool update_selection);
 	virtual int SelectObject(int i);
 	virtual int FindObject(int x,int y, const char *dtype, 
 					LaxInterfaces::SomeData *exclude, int start,
