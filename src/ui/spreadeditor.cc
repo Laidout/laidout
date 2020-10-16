@@ -416,7 +416,7 @@ int SpreadInterface::Refresh()
 	FillStyle efs(0xdddd,0xdddd,0xdddd,0xffff, WindingRule,FillSolid,GXcopy); //empty
 	LineStyle ls; //(0,0,0xffff,0xffff, 4/dp->Getmag(),CapButt,JoinMiter,~0,GXcopy);
 	ls.Colorf(0.,0.,1.0,1.0);
-	ls.width = 4/dp->Getmag();
+	ls.width = 4*ScreenLine();
 	ls.widthtype = 0;
 	//Page *page;
 	ImageData *thumb = NULL;
@@ -508,7 +508,7 @@ int SpreadInterface::Refresh()
 				unsigned long oldfg=dp->FG();
 				dp->NewFG(0,0,255);
 				dp->LineAttributes(-1,LineSolid,CapButt,JoinMiter);
-				dp->LineWidthScreen(3);
+				dp->LineWidthScreen(3*ScreenLine());
 				Laidout::DrawData(dp,outline, &ls,NULL);
 				dp->NewFG(oldfg);
 			}
