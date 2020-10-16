@@ -232,7 +232,7 @@ class LaidoutCalculator : public Interpreter,
 	int getunits();
 	Value *getstring();
 	Value *getset();
-	Value *getarray();
+	// Value *getarray();
 	ValueHash *getValueHash();
 	Value *evalname();
 	Value *dereference(Value *val);

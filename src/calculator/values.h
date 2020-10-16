@@ -408,6 +408,7 @@ class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual
 	void renameKey(int i,const char *newname);
 	int set(const char *key, Value *newv);
 	int set(int which, Value *newv);
+	int CopyFrom(ValueHash *hash, bool linked);
 
 	int n();
 	Value *e(int i);
@@ -436,6 +437,10 @@ class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret,
 						 Laxkit::ErrorLog *log);
+
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 
 //----------------------------- GenericValue ----------------------------------
@@ -484,24 +489,24 @@ class SetValue : public Value, virtual public FunctionEvaluator
 						 Laxkit::ErrorLog *log);
 };
 
-//----------------------------- ArrayValue ----------------------------------
-class ArrayValue : public SetValue
-{
-  public:
-	int fixed_size;
-	char *element_type;
+// //----------------------------- MatrixValue ----------------------------------
+// class MatrixValue : public SetValue
+// {
+//   public:
+// 	int fixed_size;
+// 	char *element_type;
 
-	ArrayValue(const char *elementtype=NULL, int size=0);
-	virtual ~ArrayValue();
-	virtual const char *whattype() { return "ArrayValue"; }
-	virtual int getValueStr(char *buffer,int len);
-	virtual Value *duplicate();
-	virtual int type() { return VALUE_Array; }
+// 	MatrixValue(const char *elementtype=NULL, int size=0);
+// 	virtual ~MatrixValue();
+// 	virtual const char *whattype() { return "MatrixValue"; }
+// 	virtual int getValueStr(char *buffer,int len);
+// 	virtual Value *duplicate();
+// 	virtual int type() { return VALUE_Array; }
 
- 	virtual ObjectDef *makeObjectDef();
+//  	virtual ObjectDef *makeObjectDef();
 
-	virtual int Dimensions();
-};
+// 	virtual int Dimensions();
+// };
 
 //----------------------------- NullValue ----------------------------------
 class NullValue : public Value

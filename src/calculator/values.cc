@@ -1733,6 +1733,43 @@ int ValueHash::getValueStr(char *buffer,int len)
 	return 0;
 }
 
+void ValueHash::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+{
+	return Value::dump_out(f,indent,what,context); //note: this just reroutes to ValueHash::dump_in_atts
+}
+
+LaxFiles::Attribute *ValueHash::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+{
+	if (!att) att = new Attribute;
+	if (what == -1) {
+		att->push("key", "ValueType", "Any number of these, where subatts are what ValueType requires");
+		return att;
+	}
+
+	for (int c=0; c<n(); c++) {
+		Value *v = e(c);
+		const char *k = key(c);
+		Attribute *att2 = att->pushSubAtt(k, v->whattype());
+		v->dump_out_atts(att2, what, context);
+	}
+
+	return att;
+}
+
+void ValueHash::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+{
+	if (!att) return;
+
+	for (int c=0; c<att->attributes.n; c++) {
+		const char *key = att->attributes.e[c]->name;
+		const char *type = att->attributes.e[c]->value;
+		if (!key || !type) continue; //punt this att if file malformed
+
+		// ***
+	}
+
+}
+
 Value *ValueHash::dereference(const char *extstring, int len)
 {
 	int i = findIndex(extstring, len);
@@ -2172,6 +2209,26 @@ int ValueHash::set(int which, Value *newv)
 	if (values.e[which]) values.e[which]->dec_count();
 	values.e[which]=newv;
 	return 0;
+}
+
+/*! Make duplicates of all the key,value pairs of another hash.
+ * If linked, then only link values, else push key:value->duplicate().
+ * Return number copied.
+ */
+int ValueHash::CopyFrom(ValueHash *hash, bool linked)
+{
+	int n = 0;
+	for (int c=0; c<hash->n(); c++) {
+		const char *k = hash->key(c);
+		Value *v = hash->value(c);
+		if (linked) push(k,v);
+		else {
+			v = v->duplicate();
+			push(k,v);
+			v->dec_count();
+		}
+	}
+	return n;
 }
 
 //! Return the index corresponding to name, or -1 if not found.
@@ -2831,11 +2888,16 @@ Value *AttributeToValue(Attribute *att)
     } else if (!strcmp(att->name, "NullValue")) {
 		return new NullValue();
 
-    // } else if (!strcmp(att->name, "EnumValue")) {
-    // } else if (!strcmp(att->name, "ValueHash")) {
-    // } else if (!strcmp(att->name, "GenericValue")) {
+    } else if (!strcmp(att->name, "ValueHash")) {
+    	ValueHash *hash = new ValueHash();
+    	DumpContext context;
+    	hash->dump_in_atts(att, 0, &context);
+    	return hash;
+
     // } else if (!strcmp(att->name, "SetValue")) {
-    // } else if (!strcmp(att->name, "ArrayValue")) {
+    // } else if (!strcmp(att->name, "EnumValue")) {
+    // } else if (!strcmp(att->name, "GenericValue")) {
+    // } else if (!strcmp(att->name, "MatrixValue")) {
     // } else if (!strcmp(att->name, "FunctionValue")) {
     // } else if (!strcmp(att->name, "ObjectValue")) {
     } else {
@@ -3405,68 +3467,68 @@ const char *SetValue::FieldName(int i)
 }
 
 
-//----------------------------- ArrayValue ----------------------------------
-/*! \class ArrayValue
- * Just a set with optional element type.
- */
+// //----------------------------- MatrixValue ----------------------------------
+// /*! \class MatrixValue
+//  * Just a set with optional element type.
+//  */
 
-ArrayValue::ArrayValue(const char *elementtype, int size)
-{
-	element_type=newstr(elementtype);
-	fixed_size=size;
-}
+// MatrixValue::MatrixValue(const char *elementtype, int size)
+// {
+// 	element_type=newstr(elementtype);
+// 	fixed_size=size;
+// }
 
-ArrayValue::~ArrayValue()
-{
-	if (element_type) delete[] element_type;
-}
+// MatrixValue::~MatrixValue()
+// {
+// 	if (element_type) delete[] element_type;
+// }
 
-ObjectDef *ArrayValue::makeObjectDef()
-{
-	return NULL; // ***
-}
+// ObjectDef *MatrixValue::makeObjectDef()
+// {
+// 	return NULL; // ***
+// }
 
-int ArrayValue::getValueStr(char *buffer,int len)
-{
-	int needed=3;//"[]\n"
-	for (int c=0; c<values.n; c++) {
-		needed+= 1 + values.e[c]->getValueStr(NULL,0);
-	}
-	if (!buffer || len<needed) return needed;
+// int MatrixValue::getValueStr(char *buffer,int len)
+// {
+// 	int needed=3;//"[]\n"
+// 	for (int c=0; c<values.n; c++) {
+// 		needed+= 1 + values.e[c]->getValueStr(NULL,0);
+// 	}
+// 	if (!buffer || len<needed) return needed;
 
-	int pos=1;
-	sprintf(buffer,"[");
-	for (int c=0; c<values.n; c++) {
-		values.e[c]->getValueStr(buffer+pos,len);
-		if (c!=values.n-1) strcat(buffer+pos,",");
-		pos+=strlen(buffer+pos);
-	}
-	strcat(buffer+pos,"]");
-	modified=0;
-	return 0;
-}
+// 	int pos=1;
+// 	sprintf(buffer,"[");
+// 	for (int c=0; c<values.n; c++) {
+// 		values.e[c]->getValueStr(buffer+pos,len);
+// 		if (c!=values.n-1) strcat(buffer+pos,",");
+// 		pos+=strlen(buffer+pos);
+// 	}
+// 	strcat(buffer+pos,"]");
+// 	modified=0;
+// 	return 0;
+// }
 
-/*! Returns set with each element duplicate()'d.
- */
-Value *ArrayValue::duplicate()
-{
-	ArrayValue *s=new ArrayValue;
-	Value *v;
-	for (int c=0; c<values.n; c++) {
-		v=values.e[c]->duplicate();
-		s->Push(v,1);
-	}
-	return s;
-}
+// /*! Returns set with each element duplicate()'d.
+//  */
+// Value *MatrixValue::duplicate()
+// {
+// 	MatrixValue *s=new MatrixValue;
+// 	Value *v;
+// 	for (int c=0; c<values.n; c++) {
+// 		v=values.e[c]->duplicate();
+// 		s->Push(v,1);
+// 	}
+// 	return s;
+// }
 
-//! Return number of common dimensions.
-/*! If subfields are also arrays of the same dimension as each other, then that row counts as 1.
- */
-int ArrayValue::Dimensions()
-{
-	//***;
-	return 1;
-}
+// //! Return number of common dimensions.
+// /*! If subfields are also arrays of the same dimension as each other, then that row counts as 1.
+//  */
+// int MatrixValue::Dimensions()
+// {
+// 	//***;
+// 	return 1;
+// }
 
 
 //--------------------------------- NullValue -----------------------------

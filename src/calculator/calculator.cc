@@ -3325,16 +3325,16 @@ Value *LaidoutCalculator::number()
 {
 	Value *snum=NULL;
 
-	if (nextchar('(') || nextchar('{')) {
+	if (nextchar('(') || nextchar('{') || nextchar('[')) {
 		 // handle stuff in parenthesis: (2-3-5)-2342
 		from--;
 		snum=getset();
 		if (calcerror) return NULL;
 
-	} else if (nextchar('[')) {
-		from--;
-		snum=getarray();
-		if (calcerror) return NULL;
+	// } else if (nextchar('[')) {
+	// 	from--;
+	// 	snum=getarray();
+	// 	if (calcerror) return NULL;
 
 	} else if (curexprs[from]=='\'' || curexprs[from]=='"') {
 		 //read in strings
@@ -3618,7 +3618,7 @@ ValueHash *LaidoutCalculator::getValueHash()
 }
 
 //! Read in values for a set.
-/*! Next char must be '(' or '{'. Otherwise return NULL.
+/*! Next char must be '(', '{', or '['. Otherwise return NULL.
  * If '(', then ApplyDefaultSets() is used to convert something like (2,3) to a flatvector.
  *
  * Will automatically convert LValue objects to normal values.
@@ -3633,6 +3633,7 @@ Value *LaidoutCalculator::getset()
 		from++;
 		setchar='}';
 	} else if (nextchar('(')) setchar=')';
+	else if (nextchar('[')) setchar = ']';
 	else return NULL;
 
 	SetValue *set=new SetValue;
@@ -3653,6 +3654,7 @@ Value *LaidoutCalculator::getset()
 
 	if (!nextchar(setchar)) {
 		if (setchar==')') calcerr("Expecting ')'.");
+		else if (setchar==']') calcerr("Expecting ']'.");
 		else calcerr("Expecting '}'.");
 		delete set;
 		return NULL;
@@ -3669,39 +3671,39 @@ Value *LaidoutCalculator::getset()
 	return set;
 }
 
-/*! Will automatically convert LValue objects to normal values.
- */
-Value *LaidoutCalculator::getarray()
-{
-	if (!nextchar('[')) return NULL;
+// /*! Will automatically convert LValue objects to normal values.
+//  */
+// Value *LaidoutCalculator::getarray()
+// {
+// 	if (!nextchar('[')) return NULL;
 
-	ArrayValue *array=new ArrayValue;
-	do {
-		Value *num=evalLevel(0);
-		if (calcerror) {
-			return NULL;
-		}
-		if (num->type()==VALUE_LValue) {
-			array->Push(dynamic_cast<LValue*>(num)->Resolve(),1);
-			num->dec_count();
-		} else array->Push(num,1);
+// 	MatrixValue *array=new MatrixValue;
+// 	do {
+// 		Value *num=evalLevel(0);
+// 		if (calcerror) {
+// 			return NULL;
+// 		}
+// 		if (num->type()==VALUE_LValue) {
+// 			array->Push(dynamic_cast<LValue*>(num)->Resolve(),1);
+// 			num->dec_count();
+// 		} else array->Push(num,1);
 		
-	} while (nextchar(','));
+// 	} while (nextchar(','));
 
-	if (!nextchar(']')) {
-		calcerr("Expecting ']'.");
-		delete array;
-		return NULL;
-	}
+// 	if (!nextchar(']')) {
+// 		calcerr("Expecting ']'.");
+// 		delete array;
+// 		return NULL;
+// 	}
 
-	if (array->values.n==0) {
-		calcerr("Expecting a number!");
-		delete array;
-		return NULL;
-	}
+// 	if (array->values.n==0) {
+// 		calcerr("Expecting a number!");
+// 		delete array;
+// 		return NULL;
+// 	}
 
-	return array;
-}
+// 	return array;
+// }
 
 /*! Currently, create flatvector or spacevector if has 2 or 3 real or int elements.
  * Sets of single elements are taken out of the set.
