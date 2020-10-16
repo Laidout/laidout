@@ -380,6 +380,7 @@ int ObjectIndicator::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse 
 				 //select this object
 				while (context->context.n()-1 != i) context->pop(); 
 				context->SetObject(d);
+				viewport->ChangeObject(context, false, true);
 				needtodraw=1;
 			}
 		}
