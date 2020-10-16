@@ -17,9 +17,11 @@
 #include "../version.h"
 #include "../laidout.h"
 #include "../core/drawdata.h"
+#include "../core/stylemanager.h"
 #include "../ui/viewwindow.h"
 
 #include <lax/strmanip.h>
+#include <lax/utf8string.h>
 #include <lax/laxutils.h>
 #include <lax/filedialog.h>
 #include <lax/interfaces/somedataref.h>
@@ -59,29 +61,53 @@ namespace Laidout {
 
 TilingDest::TilingDest()
 {
-	cloneid=0; //of containing Tiling
-	op_id=0; //of newly placed clone, can be any of uber parent Tiling::basecells
-	parent_op_id=0; //of containing TilingOp
+	cloneid      = 0;  // of containing Tiling
+	op_id        = 0;  // of newly placed clone, can be any of uber parent Tiling::basecells
+	parent_op_id = 0;  // of containing TilingOp
 
-	is_progressive=false;
-	traceable=true;
+	is_progressive = false;
+	traceable      = true;
 
-	 //conditions for traversal
-	conditions=0; //1 use iterations, 2 use max size, 3 use min size, 4 use scripted
-	max_iterations=1; // <0 for endless, use other constraints to control
-	recurse_objects=0; // 0 for dest only, 1 for all dests of base cell, 2 for whole set repeats
-	max_size=min_size=0;
-	traversal_chance=1;
-	scripted_condition=NULL;
+	// conditions for traversal
+	conditions      = 0;  // 1 use iterations, 2 use max size, 3 use min size, 4 use scripted
+	max_iterations  = 1;  // <0 for endless, use other constraints to control
+	recurse_objects = 0;  // 0 for dest only, 1 for all dests of base cell, 2 for whole set repeats
+	max_size = min_size = 0;
+	traversal_chance    = 1;
+	scripted_condition  = NULL;
 
-	 //transform from current space to this destination cell
-	scripted_transform=NULL;
+	// transform from current space to this destination cell
+	scripted_transform = NULL;
 }
 
 TilingDest::~TilingDest()
 {
 	if (scripted_transform) scripted_transform->dec_count();
 	delete[] scripted_condition;
+}
+
+TilingDest *TilingDest::duplicate()
+{
+	TilingDest *dup = new TilingDest();
+
+	dup->cloneid = cloneid;
+	dup->op_id = op_id;
+	dup->parent_op_id = parent_op_id;
+	dup->is_progressive = is_progressive;
+	dup->traceable = traceable;
+	dup->conditions = conditions;
+	dup->max_iterations = max_iterations;
+	dup->recurse_objects = recurse_objects;
+	dup->max_size = max_size;
+	dup->min_size = min_size;
+	dup->traversal_chance = traversal_chance;
+
+	makestr(dup->scripted_condition, scripted_condition);
+
+	if (scripted_transform) dup->scripted_transform = scripted_transform->duplicate();
+	dup->transform = transform;
+
+	return dup;
 }
 
 //------------------------------------- TilingOp ------------------------------------
@@ -104,6 +130,24 @@ TilingOp::TilingOp()
 TilingOp::~TilingOp()
 {
 	if (celloutline) celloutline->dec_count();
+}
+
+TilingOp *TilingOp::duplicate()
+{
+	TilingOp *dup = new TilingOp;
+	
+	dup->id = id;
+	dup->basecell_is_editable = basecell_is_editable;
+	dup->shearable = shearable;
+	dup->flexible_aspect = flexible_aspect;
+
+	if (celloutline) dup->celloutline = dynamic_cast<PathsData*>(celloutline->duplicate(nullptr));
+	
+	for (int c=0; c<transforms.n; c++) {
+		dup->transforms.push(transforms.e[c]->duplicate());
+	}
+
+	return dup;
 }
 
 /*! Returns pointer to the newly created and pushed dest.
@@ -183,6 +227,32 @@ Tiling::~Tiling()
 	delete[] category;
 	if (icon) icon->dec_count();
 	if (boundary) boundary->dec_count();
+}
+
+Value *Tiling::duplicate()
+{
+	Tiling *dup = new Tiling();
+
+	makestr(dup->name, name);
+	makestr(dup->category, category);
+	dup->icon = icon;
+	if (icon) icon->inc_count();
+	if (boundary) dup->boundary = dynamic_cast<PathsData*>(boundary->duplicate(nullptr));
+	dup->required_interface = required_interface;
+	dup->repeat_basis = repeat_basis;
+	dup->repeatable = repeatable;
+	dup->radial_divisions = radial_divisions;
+	dup->final_transform = final_transform;
+	dup->properties.CopyFrom(&properties, false);
+
+	for (int c=0; c<basecells.n; c++) {
+		dup->basecells.push(basecells.e[c]->duplicate());
+	}
+
+	// TODO:
+	// Laxkit::RefPtrStack<Tiling> dimensions;
+
+	return dup;
 }
 
 /*! Use laidout->icons->GetIcon() to search for "category__name".
@@ -289,24 +359,33 @@ void Tiling::DefaultHex(double side_length)
 }
 
 	
-LaxFiles::Attribute *Tiling::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+
+Value *NewTiling()
 {
-    if (what==-1) {
-		if (!att) att = new Attribute();
-
-        att->push("name",     "Blah  #optional human readable name");
-        att->push("category", "Blah  #optional human readable category name");
-		return att;
-	}
-
-	// ***
-	return NULL;
+	Tiling *tiling = new Tiling;
+	return tiling;
 }
 
 ObjectDef *Tiling::makeObjectDef()
 {
-	cerr << " *** need to implement Tiling::makeObjectDef()!!"<<endl;
-	return NULL;
+	ObjectDef *sd = stylemanager.FindDef("Tiling");
+    if (sd) {
+        sd->inc_count();
+        return sd;
+    }
+
+    sd = new ObjectDef(nullptr,
+			"Tiling",
+            _("Tiling"),
+            _("Symmetry pattern for tiling"),
+            NewTiling, nullptr);
+	stylemanager.AddObjectDef(sd, 0);
+
+	sd->pushVariable("name",     _("Name"),    _("Optional human readable name"),"string",0, NULL,0);
+	sd->pushVariable("category", _("Category"),_("Optional category name"),      "string",0, NULL,0);
+	// ***
+
+	return sd;
 }
 
 void Tiling::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
@@ -398,6 +477,102 @@ void Tiling::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context
 			}
 		}
 	}
+}
+
+LaxFiles::Attribute *Tiling::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+{
+	if (!att) att = new Attribute();
+
+    if (what==-1) {
+        att->push("name",     "Blah  #optional human readable name");
+        att->push("category", "Blah  #optional human readable category name");
+
+		att->push("repeatable", "no",      "or x, y, \"x y\", whether to allow repeat in overall p1");
+		att->push("repeat_origin", "1,1",  "vector for origin of overall p1 arrangement");
+		att->push("repeat_x", "1,0",       "vector for x axis of overall p1 arrangement");
+		att->push("repeat_x", "0,1",       "vector for y axis of overall p1 arrangement");
+		att->push("radial_divisions", "5", "Hint for how many slices to cut a cirlce into");
+		Attribute *att2 = att->pushSubAtt("basecell", nullptr,     "one or more of these, the guts of the tiling");
+
+		att2->push("shearable", nullptr,   "whether to allow shearing of this cell");
+		att2->push("flexible", nullptr,    "whether the cell can change aspect ratio without breaking things");
+		Attribute *att3 = att2->pushSubAtt("outline", nullptr,     "path for this cell");
+		att3->push("...");
+
+		att2->push("transform", "matrix(1,0,0,1,0,0)", "simple placement of outline to a certain orientation");
+		att3 = att2->pushSubAtt("clone", nullptr, "recursive placement of outline clones");
+		att3->push("transform", "matrix(1,0,0,1,0,0)  #matrix for this placement");
+		att3->push("traceable", nullptr,   "Whether to render lines for this clone. Sometimes it is just a node for further cloning");
+		att3->push("iterations", "22",     "How many times to repeat this transform with outline");
+		att3->push("max_size", nullptr,    "(todo) Max size of clones after which repeating stops");
+		att3->push("min_size", nullptr,    "(todo) Min size of clones below which repeating stops");
+		return att;
+	}
+
+	if (name) att->push("name",name);
+	if (category) att->push("category", category);
+	if (icon && icon->filename) att->push("icon_file",icon->filename);
+
+	const char *str = nullptr;
+	if      (repeatable==0) str = "no";
+	else if (repeatable==1) str = "x";
+	else if (repeatable==2) str = "y";
+	else if (repeatable==3) str = "x y";
+	if (str) att->push("repeatable", str);
+
+	if (repeatable) {
+		flatpoint v = repeatOrigin();
+		att->pushStr("repeat_origin", -1, "%.10g,%.10g", v.x,v.y);
+		v = repeatXDir();
+		att->pushStr("repeat_x", -1, "%.10g,%.10g", v.x,v.y);
+		v = repeatYDir();
+		att->pushStr("repeat_y", -1, "%.10g,%.10g", v.x,v.y);
+	}
+
+	if (radial_divisions>0) att->push("radial_divisions", radial_divisions);
+
+	if (properties.n()) {
+		Attribute *att2 = att->pushSubAtt("properties");
+		properties.dump_out_atts(att2, what, context);
+	}
+
+	if (required_interface != "") att->push("required_interface", required_interface.c_str());
+
+	TilingOp *op;
+	TilingDest *dest;
+	for (int c=0; c<basecells.n; c++) {
+		op=basecells.e[c];
+
+		Attribute *att2 = att->pushSubAtt("basecell");
+		if (op->shearable) att2->push("shearable");
+		if (op->flexible_aspect) att2->push("flexible");
+		if (op->celloutline) {
+			Attribute *att3 = att2->pushSubAtt("outline");
+			op->celloutline->dump_out_atts(att3, what, context);
+		}
+		for (int c2=0; c2<op->transforms.n; c2++) {
+			dest=op->transforms.e[c2];
+			if (dest->max_iterations==1) {
+				 //simple duplication
+				const double *m=dest->transform.m();
+				att2->pushStr("transform", -1, "matrix(%.10g %.10g %.10g %.10g %.10g %.10g)",
+						m[0],m[1],m[2],m[3],m[4],m[5]);
+			} else {
+				 //assume recursive
+				Attribute *att3 = att2->pushSubAtt("clone");
+				const double *m=dest->transform.m();
+				att3->pushStr("transform", -1, "matrix(%.10g %.10g %.10g %.10g %.10g %.10g)",
+						m[0],m[1],m[2],m[3],m[4],m[5]);
+
+				if (dest->traceable) att3->push("traceable");
+				att3->push("iterations", dest->max_iterations);
+				att3->push("max_size", dest->max_size);
+				att3->push("min_size", dest->min_size);
+			}
+		}
+	}
+
+	return att;
 }
 
 void Tiling::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context)
@@ -675,6 +850,7 @@ Group *Tiling::Render(Group *parent_space,
 	}
 	
 	flatpoint pp;
+	Utf8String idname;
 	for (int x=p1_minx; x<=p1_maxx; x++) {
 	  for (int y=p1_miny; y<=p1_maxy; y++) {
 		pp.x = x+.5;
@@ -705,7 +881,8 @@ Group *Tiling::Render(Group *parent_space,
 				if (base_lines == trace) {
 					obj = dynamic_cast<DrawableObject*>(obj->e(0));
 				}
-				InsertClone(parent_space, obj, NULL, NULL, clonet, final_orient);
+				idname.Sprintf("Line_%d_%d_%d_%d", x,y,c,c2);
+				InsertClone(parent_space, obj, NULL, NULL, clonet, final_orient, idname.c_str());
 			  }
 
 			} else { //for each source object in current base cell...
@@ -713,7 +890,8 @@ Group *Tiling::Render(Group *parent_space,
 				obj = dynamic_cast<DrawableObject*>(source_objects->e(s));
 				if (!obj || obj->properties.findInt("tilingSource") != c) continue;
 
-				InsertClone(parent_space, obj, &sourcem[s], &basecellmi, clonet, final_orient);
+				idname.Sprintf("Clone_%d_%d_%d_%d_%d", x,y,c,c2,s);
+				InsertClone(parent_space, obj, &sourcem[s], &basecellmi, clonet, final_orient, idname.c_str());
 			  }
 			}
 
@@ -727,7 +905,8 @@ Group *Tiling::Render(Group *parent_space,
 					if (base_lines == trace) {
 						obj = dynamic_cast<DrawableObject*>(obj->e(0));
 					}
-					InsertClone(parent_space, obj, NULL, NULL, clonet, final_orient);
+					idname.Sprintf("RecLine_%d_%d_%d_%d_%d", x,y,c,c2,i);
+					InsertClone(parent_space, obj, NULL, NULL, clonet, final_orient, idname.c_str());
 				  }
 
 				} else { //if source objects..
@@ -735,7 +914,8 @@ Group *Tiling::Render(Group *parent_space,
 					obj = dynamic_cast<DrawableObject*>(source_objects->e(s));
 					if (!obj || obj->properties.findInt("tilingSource") != c) continue;
 
-					InsertClone(parent_space, obj, &sourcem[s], &basecellmi, clonet, final_orient);
+					idname.Sprintf("RecSource_%d_%d_%d_%d_%d_%d", x,y,c,c2,i,s);
+					InsertClone(parent_space, obj, &sourcem[s], &basecellmi, clonet, final_orient, idname.c_str());
 				  }
 				}
 
@@ -751,6 +931,7 @@ Group *Tiling::Render(Group *parent_space,
 	delete[] sourcem;
 	delete[] sourcemi;
 
+	parent_space->FindBBox();
 	return parent_space;
 }
 
@@ -763,14 +944,15 @@ void Tiling::InsertClone(Group *parent_space,  //!< clone into here
 						 Affine *sourcem,      //!< use this transform in place of identity
 						 Affine *basecellmi,   //!< mapping to get source onto proper place for current base cell
 						 Affine &clonet,       //!< current clone transform
-						 Affine *final_orient  //!< final transform to apply to clone
+						 Affine *final_orient, //!< final transform to apply to clone
+						 const char *idname    //!< Id to assign to the clone
 						 )
 {
 	SomeDataRef *clone = dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory()->NewObject("SomeDataRef"));
 	
 	if (dynamic_cast<SomeDataRef*>(object)) object=dynamic_cast<SomeDataRef*>(object)->GetFinalObject();
 	clone->Set(object,1); //the 1 means don't copy matrix also
-	clone->FindBBox();
+	clone->Id(idname);
 	if (sourcem) clone->m(sourcem->m()); //else starts out as identity
 
 	if (basecellmi) clone->Multiply(*basecellmi);
@@ -832,6 +1014,7 @@ Tiling *CreateRadial(double start_angle, //!< radians
 
 	 //define cell outline
 	PathsData *path=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
+	path->Id("Outline");
 	double a =start_angle;
 	double a2=a+cellangle;
 	path->append(start_radius*flatpoint(cos(a),sin(a)));
@@ -947,6 +1130,7 @@ Tiling *CreateSpiral(double start_angle, //!< radians
 
 	 //define cell outline
 	PathsData *path = dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
+	path->Id("Outline");
 	double a = start_angle;
 	double a2= start_angle + cellangle;
 	path->append(  end_radius*flatpoint(cos(a),sin(a)));
@@ -2547,6 +2731,7 @@ CloneInterface::CloneInterface(anInterface *nowner,int nid,Laxkit::Displayer *nd
 	current_base=-1;
 	ScreenColor col(0.,.7,0.,1.);
 	boundary=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
+	boundary->Id("Boundary");
 	boundary->style=PathsData::PATHS_Ignore_Weights;
 	boundary->line(2,-1,-1,&col);
 	boundary->linestyle->widthtype = 0;
@@ -2725,7 +2910,7 @@ int CloneInterface::SetTiling(Tiling *newtiling)
 
 	if (oldtiling && oldtiling != tiling) oldtiling->dec_count();
 
-	preview->properties.pushObject("tiling", tiling);
+	preview->properties.push("tiling", tiling);
 	return 0;
 }
 
@@ -3891,6 +4076,9 @@ int CloneInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 			//noc->clearToPage();
 			SomeDataRef *ref=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory()->NewObject("SomeDataRef"));
 			ref->Set(obj, false);
+			Utf8String nme(obj->Id());
+			nme.Append("Ref");
+			ref->Id(nme.c_str());
 			ref->flags|=SOMEDATA_KEEP_ASPECT;
 			double m[6];
 			viewport->transformToContext(m,oc,0,1);

@@ -33,6 +33,7 @@ namespace Laidout {
 
 //------------------------------------- TileCloneInfo ------------------------------------
 
+// *** not used currently, but may one day if Tiling::dimensions gets implemented:
 class TileCloneInfo
 {
   public:
@@ -71,6 +72,7 @@ class TilingDest
 
 	TilingDest();
 	virtual ~TilingDest();
+	virtual TilingDest *duplicate();
 };
 
 
@@ -90,6 +92,7 @@ class TilingOp
 
 	TilingOp();
 	virtual ~TilingOp();
+	virtual TilingOp *duplicate();
 
 	virtual int NumTransforms() { return transforms.n; }
 	virtual Laxkit::Affine Transform(int which);
@@ -103,18 +106,18 @@ class TilingOp
 
 //------------------------------------- Tiling ------------------------------------
 
-class Tiling : public Laxkit::anObject, public LaxFiles::DumpUtility //, public MetaInfo
+class Tiling : public Value
 {
   protected:
 	void InsertClone(Group *parent_space, LaxInterfaces::SomeData *object, 
-			Laxkit::Affine *sourcem, Laxkit::Affine *basecellmi, Laxkit::Affine &clonet, Laxkit::Affine *final_orient);
+			Laxkit::Affine *sourcem, Laxkit::Affine *basecellmi, Laxkit::Affine &clonet, Laxkit::Affine *final_orient,
+			const char *idname);
 
   public:
 	char *name;
 	char *category;
 	Laxkit::LaxImage *icon;
 
-	int id;
 	std::string required_interface;
 
 	Laxkit::Affine repeat_basis; //of overall p1 (before final_transform applied)
@@ -137,6 +140,7 @@ class Tiling : public Laxkit::anObject, public LaxFiles::DumpUtility //, public 
 	Tiling(const char *nname=NULL, const char *ncategory=NULL);
 	virtual ~Tiling();
 	virtual const char *whattype() { return "Tiling"; }
+	virtual Value *duplicate();
 
 	virtual void InstallDefaultIcon();
 	virtual void DefaultHex(double side_length);
