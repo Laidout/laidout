@@ -344,7 +344,7 @@ int ExportDialog::init()
 							 0,0,0,0,0, 
 							 last,object_id,"command-check",
 							 _("By Command: "), CHECKGAP,5);
-		commandcheck->State(LAX_ON);
+		commandcheck->State(config->target == DocumentExportConfig::TARGET_Command ?  LAX_ON : LAX_OFF);
 		commandcheck->tooltip(_("Run this command on a single exported file"));
 		AddWin(commandcheck,1,-1);
 
@@ -363,7 +363,7 @@ int ExportDialog::init()
 						 0,0,0,0,0, 
 	 					 last,object_id,"tofile-check",
 						 filter->DirectoryBased() ? _("To Dir: ") : _("To File: "), CHECKGAP,5);
-	filecheck->State(LAX_ON);
+	filecheck->State(config->target == DocumentExportConfig::TARGET_Single ?  LAX_ON : LAX_OFF);
 	filecheck->tooltip(_("Export to this path"));
 	AddWin(filecheck,1,-1);
 
@@ -393,7 +393,7 @@ int ExportDialog::init()
 						 0,0,0,0,0, 
 	 					 last,object_id,"tofiles-check",
 						 filter->DirectoryBased() ? _("To Dirs: ") : _("To Files: "), CHECKGAP,5);
-	filescheck->State(LAX_OFF);
+	filescheck->State(config->target == DocumentExportConfig::TARGET_Multi ?  LAX_ON : LAX_OFF);
 	filescheck->tooltip(_("Export to these paths. A '#' is replaced with\n"
 						  "the spread index. A \"###\" for an index like 3\n"
 						  "will get replaced with \"003\"."));
@@ -448,7 +448,7 @@ int ExportDialog::init()
 
 	 //-------------[ ] All
 	 //             [ ] Current
-	 //             [ ] From _____ to ______  <-- need to know their ranges!!
+	 //             [ ] Range
 	 //             ...todo: and use labels for pages   __"A1"_-_"Z8"_  __0 - 10, 15-2, 22__   _all_
 
 	last = printall = new CheckBox(this,"ps-printall",NULL,CHECK_CIRCLE|CHECK_LEFT,
@@ -902,9 +902,16 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 
 	} else if (!strcmp(mes,"format")) {
 		filter=laidout->exportfilters.e[e->info1];
-		DocumentExportConfig *nconfig=filter->CreateConfig(config);
-		config->dec_count();
-		config=nconfig;
+		int prev = previous_configs.findIndex(filter->VersionName());
+		if (prev >= 0) {
+			DocumentExportConfig *nconfig = dynamic_cast<DocumentExportConfig*>(previous_configs.value(prev)->duplicate());
+			config->dec_count();
+			config = nconfig;
+		} else {
+			DocumentExportConfig *nconfig=filter->CreateConfig(config);
+			config->dec_count();
+			config=nconfig;
+		}
 
 		updateEdits();
 		findMinMax();
@@ -1347,7 +1354,7 @@ int ExportDialog::send()
 
 	config->filter = filter;
 	DocumentExportConfig *nconf = dynamic_cast<DocumentExportConfig*>(config->duplicate());
-	previous_configs.push(config->filter->VersionName(), nconf);
+	previous_configs.push(config->filter->VersionName(), nconf); //note: replaces if key exists
 	nconf->dec_count();
 
 	ConfigEventData *data = new ConfigEventData(config);
