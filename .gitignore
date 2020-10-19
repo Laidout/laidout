@@ -42,6 +42,7 @@ src/configured.h
 #
 # ignore various on the fly testing files
 src/exported*
+src/TESTING
 TEMP
 src/temp*
 src/test*
