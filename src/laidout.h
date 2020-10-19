@@ -48,6 +48,7 @@ enum TreeChangeType {
 		TreeObjectDiffPage,
 		TreeObjectDeleted,
 		TreeObjectAdded,
+		TreeSelectionChange,
 		TreeMAX
 	};
 

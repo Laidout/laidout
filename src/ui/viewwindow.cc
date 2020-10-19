@@ -1575,6 +1575,7 @@ int LaidoutViewport::ChangeObject(LaxInterfaces::ObjectContext *oc, int switchto
 		if (!selection) selection = new Selection();
 		selection->Flush();
 		if (oc->obj) selection->Add(oc, -1);
+		laidout->notifyDocTreeChanged(nullptr, TreeSelectionChange, 0,0);
 		needtodraw = 1;
 	}
 

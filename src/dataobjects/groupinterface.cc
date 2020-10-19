@@ -301,15 +301,22 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"docTreeChange")) {
-		 //valid all refs in selection
-		for (int c=selection->n()-1; c>=0; c--) {
-			if (!viewport->IsValidContext(selection->e(c))) {
-				selection->Remove(c);
-			} 
+		const TreeChangeEvent *te = dynamic_cast<const TreeChangeEvent*>(e);
+		if (te->changetype == TreeSelectionChange) {
+			// tree was changed from the outside, so we need to adapt to what is now in selection
+			// if (selection->n() == 0) FreeSelection();
+
+		} else {
+			 //valid all refs in selection
+			for (int c=selection->n()-1; c>=0; c--) {
+				if (!viewport->IsValidContext(selection->e(c))) {
+					selection->Remove(c);
+				} 
+			}
 		}
 
 		RemapBounds();
-		needtodraw=1;
+		needtodraw = 1;
 		return 0;
 
 	} else if (!strcmp(mes,"objectMeta")) {

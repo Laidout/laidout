@@ -13,8 +13,6 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
-bug: menus, left click down, drag to other item, lbup then selects other, but initial still highlighted
-
 bug: Engraver fill, just moving mouse around is rerendering to buffer for preview
 
 bug: imported white images are not white, very slightly gray. gm load problem?
@@ -27,9 +25,6 @@ bug: severing clone link does some weird things, including crashing
 bug: clone tool clones do not have proper bounding box
 
 bug: curve is terrible approximation at end points
-
-object indicator:
-  click on object, does not update selection
 
 bug: back to not maximizing properly on default ubuntu. Seems to work fine on every other window manager I've tried.
 
@@ -1177,7 +1172,7 @@ node editor node interface NodeInterface nodes: node: interface:
     examine pure data for compatibility
     examine BespokeSynth for compatibility: https://github.com/awwbees/BespokeSynth
     praxis-live?
-    proprietary import like substance or houdini?
+    proprietary import like substance, houdini, archimatix, Photo Reactor?
     any crossover with mypaint brushes or krita???
 
   viewer node, resizable
@@ -2665,4 +2660,6 @@ DONE exportdialog export dialog: incorporate IndexRange
 DONE bug: debug registration, cut marks, trim marks
   DONE custom papergroup, add registration/bars/, can't move it
   DONE can't add cut marks to signatures
+DONE bug: menus, left click down, drag to other item, lbup then selects other, but initial still highlighted
+DONE object indicator: click on object, does not update selection
 

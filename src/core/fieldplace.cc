@@ -268,6 +268,8 @@ int FieldPlace::operator!=(const FieldPlace &place) const
 //! Assignment operator. Flushes, and copies over place's stuff.
 FieldPlace &FieldPlace::operator=(const FieldPlace &place)
 {
+	if (this == &place) return *this;
+	
 	flush();
 	if (place.NumStack<int>::e) {
 		NumStack<int>::n=place.NumStack<int>::n;
