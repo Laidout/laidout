@@ -17,8 +17,6 @@ bug: Engraver fill, just moving mouse around is rerendering to buffer for previe
 
 bug: imported white images are not white, very slightly gray. gm load problem?
 
-bug: space bar for centering not working anymore.. shift-space seems to
-
 bug: can't duplicate gradient nodes.. causes seg fault
 
 bug: severing clone link does some weird things, including crashing
@@ -36,8 +34,6 @@ bug: command prompt window cursor often invisible
 bug: command prompt window input sometimes unrecoverably locks if cursor not at very end
 DONE bug: command prompt window missing Laidout module
 
-bug: calculator: using Math; acos(.9)*180/pi -> "Cannot compute with those values"
-
 bug: lineedit cursor is leaving artifacts
 
 Overwrite dialog box and other centering boxes should center over calling window, or current screen if no specified owner
@@ -53,8 +49,6 @@ evince on ubuntu 14.04, pdf export won't load, says Syntax Error... Dictionary k
 
 configure should check for libreadline-dev? apparently not pkg-config ready <- half fix of listing in package requirements
   needs to use the new extra_cppflags thing
-
-scroll bar zoom handles don't appear to work
 
 memory hole in ExportDialog.. open export, cylce through formats, quit
 memory hole in calculator
@@ -1947,10 +1941,9 @@ calculator/scripting
   bug: Math.oeuaeou does not produce an error
   bug: number deref: var a={1,2}.. out of bounds not returning cannot deref.. returning "Ok"
   bug: for loops broken
-  bug: explicit var a=flatvector() fails with unknow name flatvector
+  bug: explicit var a=flatvector() fails with unknown name flatvector
   test heavily nested assignments
   need multiple assignment
-  need special Parse(expression, &unknown_names) to assist expression node
   security restrictions?
   showing defined functions should show the code
   showing variables should show name = value and the class def (such as laidout.globals)
@@ -1964,12 +1957,13 @@ calculator/scripting
   overloading does not handle parameter mapping per overloaded, it is scanning only the first, and using that
   print string plus any non string should stringify the thing and append to string
   curline not getting incremented properly when there is skipping or looping going on
-  implement a PaperSizes object that recognizes all the names, or maybe a set somewhere with all names?
   allow if statements on single line without curly braces
   inputting lines when open {"( maybe prompt "... " to wait for closure?
   how best to allow created object defs to be referenced as parameter, variable, or set types, it is a mess right now
   destructors
   show overloaded entries
+  DONE implement a PaperSizes object that recognizes all the names, or maybe a set somewhere with all names? -> Paper.SetFromName(str)
+  DONE need special Parse(expression, &unknown_names) to assist expression node
   DONE bug: a={a:1,b:2}; a.a  -> crash! ..sometimes.. a.b crash other times
   DONE bug: var a={a:1,b:2}; a["a"]=3 -> cannot assign  like a["b"] = c or a.b = c
   DONE bug: can't remove dict elements
@@ -2662,4 +2656,7 @@ DONE bug: debug registration, cut marks, trim marks
   DONE can't add cut marks to signatures
 DONE bug: menus, left click down, drag to other item, lbup then selects other, but initial still highlighted
 DONE object indicator: click on object, does not update selection
+DONE bug: space bar for centering not working anymore.. shift-space seems to... fixed somehow
+DONE scroll bar zoom handles don't appear to work ?? can't duplicate
+DONE bug: calculator: using Math; 1*2*pi -> "Cannot compute with those values"
 

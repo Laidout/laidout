@@ -50,7 +50,7 @@ enum BoxTypes {
 //------------------------------------- PaperStyle --------------------------------------
 #define PAPERSTYLE_Landscape  1
 
-class PaperStyle : public Value
+class PaperStyle : public Value, public FunctionEvaluator
 {
  public:
 	char *name;
@@ -78,6 +78,8 @@ class PaperStyle : public Value
 	virtual int type();
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *dereference(const char *extstring, int len);
+	virtual int Evaluate(const char *function,int len, ValueHash *context, ValueHash *pp, CalcSettings *settings,
+                         Value **value_ret, Laxkit::ErrorLog *log);
 	virtual int IsMatch(double w, double h, double epsilon = 0);
 
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);

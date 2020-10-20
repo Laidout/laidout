@@ -554,6 +554,19 @@ Value *PaperStyle::dereference(const char *extstring, int len)
 	return NULL;
 }
 
+int PaperStyle::Evaluate(const char *function,int len, ValueHash *context, ValueHash *pp, CalcSettings *settings,
+                         Value **value_ret, ErrorLog *log)
+{
+	if (!pp || pp->n() == 0) return 1;
+	if (isName(function, len, "SetFromName")) {
+		const char *name = pp->findString("name");
+		if (!name) return 1;
+		return SetFromString(name);
+	}
+
+	return 1;
+}
+
 Value *NewPaperStyle()
 {
 	PaperStyle *d=new PaperStyle;
@@ -704,6 +717,10 @@ ObjectDef *PaperStyle::makeObjectDef()
 			NULL,
 			0,
 			NULL);
+	sd->pushFunction("SetFromName", _("Set from name"), _("Set paper from common paper names like letter or A4"), 
+			nullptr,
+			"name", _("Paper Name"), _("Paper name"), "string", nullptr, nullptr,
+			nullptr);
 
 	stylemanager.AddObjectDef(sd,0);
 	return sd;

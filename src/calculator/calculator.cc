@@ -3300,13 +3300,11 @@ Value *LaidoutCalculator::evalLevel(int level)
 				num_ret = opCall(op,n,dir, num,num2, oplevels.e[level],index);
 			}
 			if (!calcerror && !num_ret) calcerr(_("Cannot compute with given values."));
-			num->dec_count();  num=NULL;
-			num2->dec_count(); num2=NULL;
-			if (calcerror) {
-				if (num1v) num1v->dec_count();
-				if (num2v) num2v->dec_count();
-				return NULL;
-			}
+			num->dec_count();   num   = nullptr;
+			num2->dec_count();  num2  = nullptr;
+			num1v->dec_count(); num1v = nullptr;
+			num2v->dec_count(); num2v = nullptr;
+			if (calcerror) return nullptr;
 			num = num_ret;
 		}
 		
