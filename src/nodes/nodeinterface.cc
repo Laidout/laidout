@@ -504,6 +504,7 @@ int NodeProperty::SetData(Value *newdata, bool absorb)
 {
 	if (newdata==data) {
 		if (data && absorb) data->dec_count();
+		Touch();
 		return 1;
 	}
 	if (data) data->dec_count();
@@ -1569,7 +1570,8 @@ LaxFiles::Attribute *NodeBase::dump_out_atts(LaxFiles::Attribute *att, int what,
 
 		Value *v = prop->GetData();
 		if (v && (prop->IsBlock()
-			 || (prop->IsInput() && !prop->IsConnected()) 
+			 || (prop->IsInput() && !prop->IsConnected())
+			 || (prop->IsOutput() && prop->IsEditable())
 			 )) { //|| (prop->IsOutput()))) { ... inf loop when data is, say, a parent DrawableObject
 
 			Attribute *att3 = att2->pushSubAtt(v->whattype());
@@ -1889,7 +1891,7 @@ NodeProperty *NodeGroup::AddGroupOutput(const char *pname, const char *plabel, c
 	NodeProperty *outsprop = new NodeProperty(NodeProperty::PROP_Input, true, pname, NULL,1, plabel, ptooltip);
 	output->AddProperty(outsprop);
 
-	NodeProperty *groupprop = new NodeProperty(NodeProperty::PROP_Output, true, pname, NULL,1, plabel, ptooltip);
+	NodeProperty *groupprop = new NodeProperty(NodeProperty::PROP_Output, true, pname, NULL,1, plabel, ptooltip, 0, false);
 	AddProperty(groupprop);
 
 	groupprop->frompropproxy = outsprop;
@@ -2308,8 +2310,10 @@ int NodeGroup::ForceUpdates()
 		if (nodes.e[c]->NumInputs(true, true) == 0) starts.push(nodes.e[c], 0);
 	}
 
-	for (int c=0; c<starts.n; c++)
-		if (starts.e[0]->Update() == -1) return -1;
+	for (int c=0; c<starts.n; c++) {
+		DBG cerr << "ForceUpdates, found initial: "<<starts.e[c]->Name<<endl;
+		if (starts.e[c]->Update() == -1) return -1;
+	}
 
 	return starts.n;
 }
@@ -3842,7 +3846,7 @@ int NodeInterface::Refresh()
 		}
 
 
-		DBG cerr <<"node "<<node->Id()<<" "<<node->x<<" "<<node->y<<" "<<node->width<<" "<<node->height<<endl;
+		// DBG cerr <<"node "<<node->Id()<<" "<<node->x<<" "<<node->y<<" "<<node->width<<" "<<node->height<<endl;
 
 		 //set up colors based on whether the node is selected or mouse overed
 		if (node->colors) colors=node->colors;
@@ -5432,7 +5436,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMouse *mouse)
 {
-	DBG cerr <<"NodeInterface::MouseMove..."<<endl;
+	// DBG cerr <<"NodeInterface::MouseMove..."<<endl;
 
 	if (!buttondown.any()) {
 		// update any mouse over state
@@ -5442,7 +5446,7 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 		int newhover = scan(x,y, &newhoverslot, &newhoverprop, &newconnection, state);
 		lastpos.x=x; lastpos.y=y;
 		//DBG cerr << "nodes lastpos: "<<lastpos.x<<','<<lastpos.y<<endl;
-		DBG cerr <<"nodes scan, node,prop,slot: "<<newhover<<','<<newhoverprop<<','<<newhoverslot<<","<<newconnection<<endl;
+		// DBG cerr <<"nodes scan, node,prop,slot: "<<newhover<<','<<newhoverprop<<','<<newhoverslot<<","<<newconnection<<endl;
 
 		if (newhover >= 0 && newhoverprop >= 0 && nodes->nodes.e[newhover]->properties.e[newhoverprop]->HasInterface()) {
 			NodeProperty *prop = nodes->nodes.e[newhover]->properties.e[newhoverprop];

@@ -15,7 +15,7 @@
 
 #include <lax/language.h>
 #include <lax/interfaces/curvemapinterface.h>
-#include <lax/interfaces/gradientinterface.h>
+	#include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/interfacemanager.h>
 #include <lax/fileutils.h>
 #include "nodes.h"
@@ -28,6 +28,7 @@
 #include "../dataobjects/bboxvalue.h"
 #include "../dataobjects/affinevalue.h"
 #include "../dataobjects/imagevalue.h"
+#include "../dataobjects/pointsetvalue.h"
 
 //needs calculator... some other way to abstract this so we don't depend directly on laidout??
 #include "../laidout.h"
@@ -564,7 +565,7 @@ int AffineNode::Update()
 		if (!affine) return -1;
 		for (int c=0; c<6; c++) {
 			dynamic_cast<DoubleValue*>(properties.e[c+1]->GetData())->d = affine->m(c);
-			properties.e[c+1]->modtime = times(NULL);
+			properties.e[c+1]->Touch();
 		}
 
 	} else {
@@ -3623,6 +3624,7 @@ int TransformAffineNode::GetStatus()
 		int vtype = v->type();
 		if (   vtype != AffineValue::TypeNumber()
 			&& vtype != VALUE_Flatvector
+			&& vtype != PointSetValue::TypeNumber()
 			&& !dynamic_cast<Affine*>(v)
 		   ) return -1;
 	}
@@ -3699,6 +3701,11 @@ int TransformAffineNode::Update()
 			}
 			nnv->Multiply(*affine);
 			nv = nnv;
+
+		} else if (vtype == PointSetValue::TypeNumber()) {
+			nv = v->duplicate();
+			PointSetValue *pv = dynamic_cast<PointSetValue*>(nv);
+			pv->Map([&](const flatpoint &pin, flatpoint &pout) { pout = affine->transformPoint(pin); return 1; } );
 
 		} else {
 			Error(_("Cannot transform that type"));
@@ -4389,7 +4396,7 @@ int ObjectInfoNode::Connected(NodeConnection *connection)
 	return NodeBase::Connected(connection);
 }
 
-/*! Update the prop fields. Does NOT update the actual values here. Use the usual Update() for that.
+/*! Update the prop field arrangement. Does NOT update the actual values here. Use the usual Update() for that.
  */
 void ObjectInfoNode::UpdateProps()
 {
@@ -4438,7 +4445,11 @@ void ObjectInfoNode::UpdateProps()
 int ObjectInfoNode::Update()
 {
 	Value *o = properties.e[0]->GetData();
-	if (!o) return -1;
+	if (!o) {
+		properties.e[1]->SetData(nullptr, 0); //id
+		properties.e[2]->SetData(nullptr, 0); //type
+		return -1;
+	}
 
 	// always set id
 	StringValue *sv = dynamic_cast<StringValue*>(properties.e[1]->GetData());
@@ -4458,8 +4469,9 @@ int ObjectInfoNode::Update()
 		sv->Set(o->whattype());
 	}
 
-	for (int c=3; c<properties.n-1; c++) {
+	for (int c=3; c<properties.n; c++) {
 		Value *v = o->dereference(properties.e[c]->Name(), -1);
+		properties.e[c]->is_editable = false; // hack to recover from property read in not checking fro editability
 		properties.e[c]->SetData(v, 1);
 	}
 
@@ -4613,11 +4625,11 @@ int ModifyObjectNode::Connected(NodeConnection *connection)
 				}
 				added++;
 			}
-		}
 
-		// remove old extra properties
-		for (int c = added+1 ; c<properties.n-1; ) {
-			RemoveProperty(properties.e[c]);
+			// remove old extra properties
+			for (int c = added+1 ; c<properties.n-1; ) {
+				RemoveProperty(properties.e[c]);
+			}
 		}
 		properties.e[properties.n-1]->Touch();
 		Wrap();
