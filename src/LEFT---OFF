@@ -13,6 +13,8 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
+bug: laxkit, spelled Delaunay wrong
+
 bug: Engraver fill, just moving mouse around is rerendering to buffer for preview
 
 bug: imported white images are not white, very slightly gray. gm load problem?
@@ -705,9 +707,16 @@ PathInterface: pathinterface
       Combine to single object
       Combine and merge endpoints
 
+  DONE not show every single handle. only ones associated with active vertices
+  DONE impliment flip curpoints horizontally or vertically
+  DONE need invert selection: ^i for total invert, +^i for invert within current paths?
+  DONE offset handle instead of mystery shift press
   DONE shift over endpoint needs add point hint
   DONE shift(?) over segment should allow cutting the segment, draw a big red x? highlight whole segment in red?
   DONE need to show hints for when new points will be placed
+  DONE implement open at any point to possibly break into separate subpaths
+  DONE need way to turn off selectability of path points (thus leaving only width nodes selectable)
+  DONE if background is green or red, hard to see the direction indicator
 
   that hot new spiro curve
   boolean ops
@@ -730,14 +739,13 @@ PathInterface: pathinterface
   be able to pull points back along path near endpoints
 
   debug extrapolate
-  implement open at any point to possibly break into separate subpaths
   need numerical entry for all weight node characteristics
   need to protect against reentrants at corner joins.. makes holes unless nonzero rule, and sometimes sticks out the other side
   sliding around the nodes is really annoying.. should do according to proximity to center line
   inkscape has multiple interpolators, we should too!
   actions to implement:
     need arbitrary cut
-    need command to apply offset
+    need better apply offset: not simplifying offset path
     need path combine (combine path stacks of multiple PathsData)
     need break apart (make new PathsData from each in paths stack)
     need special break apart to make new PathsData, but preserve totally enclosed paths as intential holes
@@ -752,16 +760,12 @@ PathInterface: pathinterface
   how to deal with bbox when using wacky weights?? -> use bbox of outlinecache (or centercache), non-weighted (optional): use flat bbox + linewidth
   need something like path->PointInfo(t, &pp, &vprev_ret, &vnext_ret).. done is GetWeight(t, &width, &offset, &angle)
   maybe should revisit PathOperator stuff, such as for spiro paths
-  need way to turn off selectability of path points (thus leaving only width nodes selectable)
   per vertex join type?
   linestyles are always output independently, can't currently cascade with current code
-  if background is green or red, hard to see the direction indicator
   line join round should add extra point for really wide angles to make them more circular
 
   copy and paste
-  maybe dotted connection if only both end points selected, click connection to close?
   maybe control when on vertex will create whichever handle does not exist, control nearest drag point determines which is created
-  not show every single handle. only ones associated with active vertices, show unactive vertices with small circles
   align nodes -> create temp set of data to pass to AlignInterface?
   transform handles for selected points, including flip
   subdivide, repeat key press restores old segment, then adds 1 more point to num of points from last press
@@ -978,17 +982,24 @@ Perspective perspective:
 
 node editor node interface NodeInterface nodes: node: interface: 
   undo redo
+  bug: ObjectInfo should reset id and type on disconnection or null object
+  bug: adaptive nodes need to cache previous in and check that rather than just update on connection change, since could change upstream
   bug: say Vector2, edit value, tab to next, does not save previous value
   bug: load in recovery: should ensure only one input, and only one exec_out
   bug: seems like node names can sometimes erroneously get duplicate names? this messes up load in/connecting
   bug: traverse path only goes about 80%
   bug: transform object isn't copying images in an ImageData
   bug: height of resizable property not saved
+  bug: why are nodes yellow: PerspectiveFilter, PointsToDots, Affine, Affine2
+  bug: memory hole in pointset then modifying somewhere
   implement objectfilterinterface/nodeinterface interchange with nested node groups
   reroute needs double click on connection to add node
   edit filter nodes for the first time should center nodes in viewport
   need solution for shared interface getting messages for different nodes.. probably need to do one instance per whatever
   would be nice to have a "Collapse unlinked properties" option
+
+  DONE but: Color node only has output, but outputting data of output nodes currently forbidden.. make exception when output is editable?
+
   data node types:
     how to systematize read only field overrides (like minx,maxx,...)
     fit obj in rectangle, with alignment
@@ -1065,6 +1076,7 @@ node editor node interface NodeInterface nodes: node: interface:
       anchor point transforms
 	mirror node
 	clone tiler node
+	create clones for further manipulation, like apply point set origins
 	boolean pathops node
     rename "Object Info" to "Drawable Info"
     "Object Properties".. maybe have a string field with list of desired properties? Array of props that show enum but output value?
@@ -1074,6 +1086,13 @@ node editor node interface NodeInterface nodes: node: interface:
     nup tool access
     inverse affine transform
     DONE ALL ObjectDef data types need to be installed on startup, or at least when node tool starts up
+  pointset
+    double time with path generators
+	optionally do set of affine?
+	grid, hexgrid, random square, random circle
+	apply positions to groups of drawables
+	set from drawables
+	perturb set
   group nodes, connect to (new in) or (new out):
     should take names from props.
     doesn't update the parent props
@@ -1935,7 +1954,7 @@ customizable object child relationships to parent, rather than simple transform
   need edge indicators for more convenient snapping
 
 calculator/scripting
-  make ArrayValue by MatrixValue, make SetValue be ArrayValue
+  make ArrayValue be MatrixValue, make SetValue be ArrayValue
   bug: run command with BuildIcons, error is not propagating up to cout
   bug: function calls, assigning named parameters, checks for '=', but only single char, fails when it's actually a ==
   bug: Math.oeuaeou does not produce an error
@@ -2201,8 +2220,6 @@ global Laidout settings:
   per tool default settings
   thin line width (default 1 pixel, but this is bad for high dpi screens)
 
-> laidout blah.laidout  <-- if starting like this and can't load file, have option to quit immediately
-
 textobjects,limbos,papergroups should maybe be able to be stored per document, not just file, project, or temp
 either that, or do away with whole project/document difference, and use only
 projects with their own directory, and projects without their own directory
@@ -2332,6 +2349,7 @@ tiling cloner: clone tiler  CloneInterface
   DONE bug: Tiling doesn't save, need to make Tiling be a Value so it can be io with drawable->properties
   DONE various source refs should take names from ref'd objects
 
+  need path morphing
   need more distinction between what is a base object, and grabbing a copy of existing object.. too easy to confuse the two!
   copies should be selectable, at least so you can adjust the colors: gave current_base, current_copy
   should have z order controls for base cell stuff

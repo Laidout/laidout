@@ -36,6 +36,7 @@ VERSION 0.098
 (done) Perspective transform object filter, proof of concept for hybrid interface/node workflow
 (done) Node based image "importer"
 (done) More nodes: global var access, any drawable object, expressions, path generators, reroute
+(done) Even more nodes: point set creators and converters
 
        engraver tool grow point mode
        engraver tool, resolution cut mode
