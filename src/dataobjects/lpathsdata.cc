@@ -168,6 +168,9 @@ ObjectDef *LPathsData::makeObjectDef()
             _("A collection of paths"),
             NewLPathsData,NULL);
 
+	sd->pushVariable("linestyle", _("Line style"), _("Default line style of all subpaths"), "LineStyle", 0, nullptr,0);
+	sd->pushVariable("fillstyle", _("Fill style"), _("Default fill style of all subpaths"), "FillStyle", 0, nullptr,0);
+
 	sd->pushFunction("moveto",_("moveto"),_("Start a new subpath"), NULL,
 					"x",_("X"),_("X position"),"number", NULL,NULL,
 					"y",_("Y"),_("Y position"),"number", NULL,NULL,
@@ -199,21 +202,59 @@ ObjectDef *LPathsData::makeObjectDef()
 
 	sd->pushFunction("clear",_("Clear"),_("Clear all paths"), NULL, NULL);
 
+	sd->pushFunction("pushEmpty",_("Push empty subpath"),_("Add empty subpath to current path stack"), NULL, NULL);
+
+	sd->pushFunction("RemovePath",_("Remove path"),_("Remove path with given index"), NULL,
+                     "index",_("Index"),_("Index starting at 0, or -1 for the top"),"int", NULL,NULL,
+                     NULL);
+
 	stylemanager.AddObjectDef(sd, 0);
 	return sd;
 }
 
 Value *LPathsData::dereference(const char *extstring, int len)
 {
-//	if (extequal(extstring,len, "p1")) {
-//		return new DoubleValue(p1);
-//	}
+	if (isName(extstring, len, "linestyle")) {
+		if (!linestyle) return nullptr;
+		LLineStyle *ls = new LLineStyle(linestyle);
+		return ls;
+
+	} else if (isName(extstring, len, "fillstyle")) {
+		if (!fillstyle) return nullptr;
+		LFillStyle *fs = new LFillStyle(fillstyle);
+		return fs;
+	}
 
 	return DrawableObject::dereference(extstring, len);
 }
 
+/* Return 1 for success.
+ *  2 for success, but other contents changed too.
+ *  0 for total fail, as when v is wrong type.
+ *  -1 for bad extension.
+ *
+ *  Default is return 0;
+ */
 int LPathsData::assign(FieldExtPlace *ext,Value *v)
 {
+	if (ext->n() == 1) {
+		const char *what = ext->e(0);
+		if (what) {
+			if (!strcmp(what, "fillstyle")) {
+				LFillStyle *fs = dynamic_cast<LFillStyle*>(v);
+				if (!fs || !fs->fillstyle) return 0;
+				InstallFillStyle(fs->fillstyle);
+				return 1;
+
+			} else if (!strcmp(what, "linestyle")) {
+				LLineStyle *s = dynamic_cast<LLineStyle*>(v);
+				if (!s || !s->linestyle) return 0;
+				InstallLineStyle(s->linestyle);
+				return 1;
+			}
+		}
+	}
+
 	return DrawableObject::assign(ext,v);
 }
 
@@ -222,6 +263,55 @@ int LPathsData::assign(FieldExtPlace *ext,Value *v)
 int LPathsData::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 	                     Value **value_ret, Laxkit::ErrorLog *log)
 {
+	if (isName(func,len, "clear")) {
+		clear();
+		return 0;
+
+	} else if (isName(func,len, "close")) {
+		close();
+		return 0;
+
+	} else if (isName(func,len, "pushEmpty")) {
+		pushEmpty();
+		return 0;
+
+	} else if (isName(func,len, "RemovePath")) {
+		int err = 0;
+		int index = parameters->findInt("index", -1, &err);
+		if (err != 0) {
+			if (log) log->AddError(_("Bad index"));
+			return 1;
+		}
+		if (index == -1) index = paths.n-1;
+		if (index < 0 || index >= paths.n) {
+			if (log) log->AddError(_("Bad index"));
+			return 1;
+		}
+		RemovePath(index, nullptr);
+		return 0;
+
+	} else if (isName(func,len, "NumPaths")) {
+		IntValue *i = new IntValue(paths.n);
+		*value_ret = i;
+		return 0;
+
+	} else if (isName(func,len, "moveto")) {
+		log->AddError("NEED TO IMPLEMENT!!!!");
+		return 1;
+	} else if (isName(func,len, "lineto")) {
+		log->AddError("NEED TO IMPLEMENT!!!!");
+		return 1;
+	} else if (isName(func,len, "curveto")) {
+		log->AddError("NEED TO IMPLEMENT!!!!");
+		return 1;
+	} else if (isName(func,len, "appendRect")) {
+		log->AddError("NEED TO IMPLEMENT!!!!");
+		return 1;
+	} else if (isName(func,len, "appendEllipse")) {
+		log->AddError("NEED TO IMPLEMENT!!!!");
+		return 1;
+	}
+
 	return DrawableObject::Evaluate(func, len, context, parameters, settings, value_ret, log);
 }
 
