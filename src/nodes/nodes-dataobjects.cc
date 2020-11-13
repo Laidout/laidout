@@ -14,7 +14,7 @@
 
 
 #include <lax/language.h>
-// #include <lax/interfaces/somedatafactory.h>
+#include <lax/interfaces/svgcoord.h>
 
 #include "../laidout.h"
 
@@ -23,6 +23,7 @@
 #include "../dataobjects/lpathsdata.h"
 #include "../dataobjects/bboxvalue.h"
 #include "../dataobjects/affinevalue.h"
+#include "../dataobjects/pointsetvalue.h"
 #include "../dataobjects/imagevalue.h"
 #include "../core/objectiterator.h"
 
@@ -304,6 +305,626 @@ Laxkit::anObject *newPathsDataNode(int p, Laxkit::anObject *ref)
 }
 
 
+
+//------------------------ PointsToDotsNode ------------------------
+
+/*! \class Node to convert a PointSet to a dots in a PathsData.
+ */
+
+class PointsToDotsNode : public NodeBase
+{
+  public:
+	PointsToDotsNode();
+	virtual ~PointsToDotsNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual int UpdatePreview();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new PointsToDotsNode(); }
+};
+
+
+PointsToDotsNode::PointsToDotsNode()
+{
+	makestr(Name, _("Points to dots"));
+	makestr(type, "Points/PointsToDots");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", nullptr,1, NULL, 0, false)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "radius", new DoubleValue(1),1, _("Point radius"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Out"), nullptr,0,false));
+}
+
+PointsToDotsNode::~PointsToDotsNode()
+{
+}
+
+NodeBase *PointsToDotsNode::Duplicate()
+{
+	PointsToDotsNode *node = new PointsToDotsNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int PointsToDotsNode::GetStatus()
+{
+	PointSetValue *set = dynamic_cast<PointSetValue*>(properties.e[0]->GetData());
+	if (!set) return -1;
+	int isnum;
+	getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	return NodeBase::GetStatus();
+}
+
+int PointsToDotsNode::Update()
+{
+	PointSetValue *set = dynamic_cast<PointSetValue*>(properties.e[0]->GetData());
+	if (!set) return -1;
+
+	int isnum;
+	double radius = getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	LPathsData *out = dynamic_cast<LPathsData*>(properties.e[2]->GetData());
+	if (!out) {
+		out = new LPathsData();
+		properties.e[2]->SetData(out, 1);
+	}
+
+	out->clear();
+	for (int c=0; c<set->NumPoints(); c++) {
+		out->pushEmpty();
+		out->appendEllipse(set->points.e[c]->p, radius, radius, 0, 0, 4, 1);
+	}
+
+	properties.e[2]->Touch();
+	UpdatePreview();
+	Wrap();
+
+	return NodeBase::Update();
+}
+
+int PointsToDotsNode::UpdatePreview()
+{
+	LPathsData *out = dynamic_cast<LPathsData*>(properties.e[2]->GetData());
+	if (!out) return 1;
+
+	LaxImage *img = out->GetPreview();
+	if (img) {
+		if (img != total_preview) {
+			if (total_preview) total_preview->dec_count();
+			total_preview = img;
+			total_preview->inc_count();
+		}
+	} else {
+		if (total_preview) total_preview->dec_count();
+		total_preview = nullptr;
+	}
+	return 1;
+}
+
+
+//------------------------ PointsToBarChartNode ------------------------
+
+/*! \class Convert PointSet to a bar chart, sorted by x.
+ */
+
+class PointsToBarChartNode : public NodeBase
+{
+  public:
+	PointsToBarChartNode();
+	virtual ~PointsToBarChartNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual int UpdatePreview();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new PointsToBarChartNode(); }
+};
+
+
+PointsToBarChartNode::PointsToBarChartNode()
+{
+	makestr(Name, _("Points to bar chart"));
+	makestr(type, "Points/PointsToBarChart");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", nullptr,1, NULL, 0, false)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "x", new DoubleValue(0),1, _("X"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "y", new DoubleValue(0),1, _("Y"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "w", new DoubleValue(1),1, _("Width"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "h", new DoubleValue(1),1, _("Height"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "gap", new DoubleValue(.1),1, _("Gap"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "bounds", nullptr,1, _("Data bounds"), nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Out"), nullptr,0,false));
+}
+
+PointsToBarChartNode::~PointsToBarChartNode()
+{
+}
+
+NodeBase *PointsToBarChartNode::Duplicate()
+{
+	PointsToBarChartNode *node = new PointsToBarChartNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int PointsToBarChartNode::GetStatus()
+{
+	PointSetValue *set = dynamic_cast<PointSetValue*>(properties.e[0]->GetData());
+	if (!set) return -1;
+	for (int c=1; c<6; c++) {
+		int isnum;
+		getNumberValue(properties.e[c]->GetData(), &isnum);
+		if (!isnum) return -1;
+	}
+
+	return NodeBase::GetStatus();
+}
+
+int PointsToBarChartNode::Update()
+{
+	PointSetValue *set = dynamic_cast<PointSetValue*>(properties.e[0]->GetData());
+	if (!set) return -1;
+
+	int isnum;
+	double x = getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+	double y = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+	double w = getNumberValue(properties.e[3]->GetData(), &isnum);
+	if (!isnum) return -1;
+	double h = getNumberValue(properties.e[4]->GetData(), &isnum);
+	if (!isnum) return -1;
+	double gap = getNumberValue(properties.e[5]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	BBoxValue *databounds = dynamic_cast<BBoxValue*>(properties.e[6]->GetData());
+	if (!databounds) {
+		databounds = new BBoxValue();
+		properties.e[6]->SetData(databounds, 1);
+	}
+	LPathsData *out = dynamic_cast<LPathsData*>(properties.e[7]->GetData());
+	if (!out) {
+		out = new LPathsData();
+		properties.e[7]->SetData(out, 1);
+	}
+
+	out->clear();
+	PointSet dup;
+	dup.CopyFrom(set, false);
+	dup.SortX(true);
+	double slotwidth = w / dup.NumPoints();
+	double barwidth = slotwidth * (1-gap);
+	dup.GetBBox(*databounds);
+
+	for (int c=0; c<dup.NumPoints(); c++) {
+		out->pushEmpty();
+		double v = (dup.points.e[c]->p.y - databounds->miny) / databounds->boxheight();
+		if (fabs(v) < .001) v = .001; //prevent path line construction from wigging out
+		out->appendRect(x + (c+.5)*slotwidth-barwidth/2, y, barwidth, v * h);
+	}
+
+	properties.e[6]->Touch();
+	properties.e[7]->Touch();
+	UpdatePreview();
+	Wrap();
+
+	return NodeBase::Update();
+}
+
+int PointsToBarChartNode::UpdatePreview()
+{
+	LPathsData *out = dynamic_cast<LPathsData*>(properties.e[7]->GetData());
+	if (!out) return 1;
+
+	LaxImage *img = out->GetPreview();
+	if (img) {
+		if (img != total_preview) {
+			if (total_preview) total_preview->dec_count();
+			total_preview = img;
+			total_preview->inc_count();
+		}
+	} else {
+		if (total_preview) total_preview->dec_count();
+		total_preview = nullptr;
+	}
+	return 1;
+}
+
+
+//------------------------ PointsToBarsNode ------------------------
+
+/*! \class Node to convert a PointSet to a bars in a PathsData, sorted by point index order.
+ */
+
+class PointsToBarsNode : public NodeBase
+{
+  public:
+	PointsToBarsNode();
+	virtual ~PointsToBarsNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual int UpdatePreview();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new PointsToBarsNode(); }
+};
+
+
+PointsToBarsNode::PointsToBarsNode()
+{
+	makestr(Name, _("Points to bars"));
+	makestr(type, "Points/PointsToBars");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", nullptr,1, NULL, 0, false)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "slotwidth", new DoubleValue(1),1, _("Slot width"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "barwidth", new DoubleValue(.8),1, _("Bar Width"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "scale", new DoubleValue(1),1, _("Scale"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Out"), nullptr,0,false));
+}
+
+PointsToBarsNode::~PointsToBarsNode()
+{
+}
+
+NodeBase *PointsToBarsNode::Duplicate()
+{
+	PointsToBarsNode *node = new PointsToBarsNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int PointsToBarsNode::GetStatus()
+{
+	PointSetValue *set = dynamic_cast<PointSetValue*>(properties.e[0]->GetData());
+	if (!set) return -1;
+	int isnum;
+	getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+	getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+	getNumberValue(properties.e[3]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	return NodeBase::GetStatus();
+}
+
+int PointsToBarsNode::Update()
+{
+	PointSetValue *set = dynamic_cast<PointSetValue*>(properties.e[0]->GetData());
+	if (!set) return -1;
+
+	int isnum;
+	double slotwidth = getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+	double barwidth = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+	double vscale = getNumberValue(properties.e[3]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	LPathsData *out = dynamic_cast<LPathsData*>(properties.e[4]->GetData());
+	if (!out) {
+		out = new LPathsData();
+		properties.e[4]->SetData(out, 1);
+	} else {
+		properties.e[4]->Touch();
+	}
+
+	out->clear();
+	for (int c=0; c<set->NumPoints(); c++) {
+		out->pushEmpty();
+		out->appendRect((c+.5)*slotwidth-barwidth/2, 0, barwidth, vscale * set->points.e[c]->p.y);
+	}
+
+	UpdatePreview();
+	Wrap();
+
+	return NodeBase::Update();
+}
+
+int PointsToBarsNode::UpdatePreview()
+{
+	LPathsData *out = dynamic_cast<LPathsData*>(properties.e[4]->GetData());
+	if (!out) return 1;
+
+	LaxImage *img = out->GetPreview();
+	if (img) {
+		if (img != total_preview) {
+			if (total_preview) total_preview->dec_count();
+			total_preview = img;
+			total_preview->inc_count();
+		}
+	} else {
+		if (total_preview) total_preview->dec_count();
+		total_preview = nullptr;
+	}
+	return 1;
+}
+
+
+
+//------------------------  PointSetNode -----------------------------
+
+class PointSetNode : public NodeBase
+{
+  public:
+	enum SetTypes {
+		Empty,
+		Grid,    // x,y
+		HexGrid, // num on edge    
+		RandomSquare, // n
+		RandomCircle, // 
+		MAX
+	};
+	SetTypes settype;
+	
+	PointSetNode(SetTypes ntype);
+	virtual ~PointSetNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual int UpdatePreview();
+};
+
+
+PointSetNode::PointSetNode(PointSetNode::SetTypes ntype)
+{
+	settype = ntype;
+
+	if (settype == Grid) {
+		makestr(type, "Points/Grid");
+		makestr(Name, _("Point Grid"));
+
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "x", new DoubleValue(0),1,  _("X"),     NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "y", new DoubleValue(0),1,  _("Y"),     NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "w", new DoubleValue(1),1,  _("Width"), NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "h", new DoubleValue(1),1, _("Height"), NULL));
+
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "nx", new IntValue(2),1,  _("Num X"),    NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "ny", new IntValue(2),1,  _("Num Y"),    NULL));
+		
+	} else if (settype == HexGrid) {
+		makestr(type, "Points/HexGrid");
+		makestr(Name, _("Hex Point Grid"));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "o", new FlatvectorValue(),1, _("Center"),   NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "length", new DoubleValue(1),1,  _("Edge"),  NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "num", new IntValue(4),1,  _("Num on edge"), NULL));
+		
+	} else if (settype == RandomSquare) {
+		makestr(type, "Points/RandomSquare");
+		makestr(Name, _("Random Square"));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "o", new FlatvectorValue(),1, _("Center"),   NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "w", new DoubleValue(1),1,  _("Width"), NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "h", new DoubleValue(1),1, _("Height"), NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "num", new IntValue(4),1,  _("Num points"), NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "seed", new IntValue(0),1,  _("Seed"), NULL));
+
+	} else if (settype == RandomCircle) {
+		makestr(type, "Points/RandomCircle");
+		makestr(Name, _("Random Circle"));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "o", new FlatvectorValue(),1, _("Center"),   NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "radius", new DoubleValue(1),1,  _("Radius"),  NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "num", new IntValue(4),1,  _("Num points"), NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "seed", new IntValue(0),1,  _("Seed"), NULL));
+	}
+
+	PointSetValue *set = new PointSetValue();
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", set,1, _("Out"), NULL,0, false));
+
+	Update();
+	Wrap();
+}
+
+PointSetNode::~PointSetNode()
+{
+}
+
+int PointSetNode::UpdatePreview()
+{
+	return 0;
+	// LPathsData *pathsdata = dynamic_cast<LPathsData*>(properties.e[properties.n-1]->GetData());
+	// if (!pathsdata) return 0;
+	// LaxImage *img = pathsdata->GetPreview();
+	// if (img) {
+	// 	if (img != total_preview) {
+	// 		if (total_preview) total_preview->dec_count();
+	// 		total_preview = img;
+	// 		total_preview->inc_count();
+	// 	}
+	// }
+	// return 1;
+}
+
+NodeBase *PointSetNode::Duplicate()
+{
+	PointSetNode *newnode = new PointSetNode(settype);
+
+	for (int c=0; c<properties.n-1; c++) {
+		Value *v = properties.e[c]->GetData();
+		if (v) newnode->properties.e[c]->SetData(v->duplicate(), 1);
+	}
+
+	return newnode;
+}
+
+//0 ok, -1 bad ins, 1 just needs updating
+int PointSetNode::GetStatus()
+{
+	char types[7];
+	const char *sig = "nnnnnnvnn   vnnnn vnnn  ";
+	int sigoff = 0;
+
+		// Grid,    // x,y
+		// HexGrid, // num on edge    
+		// RandomSquare, // n
+		// RandomCircle, // 
+		
+#define OFFGRID     0
+#define OFFHEX      6
+#define OFFRSQUARE  12
+#define OFFRCIRCLE  18
+
+	if      (settype == Grid)         sigoff = OFFGRID   ;
+	else if (settype == HexGrid)      sigoff = OFFHEX    ;
+	else if (settype == RandomSquare) sigoff = OFFRSQUARE;
+	else if (settype == RandomCircle) sigoff = OFFRCIRCLE;
+	
+	for (int c=0; c<properties.n-1; c++) {
+		Value *data = properties.e[c]->GetData();
+		if (!data) { types[c] = ' '; continue; }
+
+		// stype = data->whattype();
+		if (isNumberType(data, nullptr)) types[c] = 'n';
+		// else if (!strcmp(stype, "StringValue")) types[c] = 's';
+		else if (data->type() == VALUE_Flatvector) types[c] = 'v';
+		else types[c] = ' ';
+	}
+	for (int c=properties.n-1; c<6; c++) types[c] = ' ';
+	types[6] = '\0';
+
+	if (strncmp(sig+sigoff, types, 6)) return -1;
+
+	return NodeBase::GetStatus();
+}
+
+//0 ok, -1 bad ins, 1 just needs updating
+int PointSetNode::Update()
+{
+	Error(nullptr);
+	if (GetStatus() == -1) return -1;
+
+	PointSetValue *set = dynamic_cast<PointSetValue*>(properties.e[properties.n-1]->GetData());
+	if (!set) {
+		set = new PointSetValue();
+		properties.e[properties.n-1]->SetData(set, 1);
+	} else {
+		set->Flush();
+		properties.e[properties.n-1]->Touch();
+	}
+
+	if (settype == Grid) {
+		int isnum;
+		double x = getNumberValue(properties.e[0]->GetData(), &isnum);
+		if (!isnum) { makestr(error_message, _("Bad x")); return -1; }
+		double y = getNumberValue(properties.e[1]->GetData(), &isnum);
+		if (!isnum) { makestr(error_message, _("Bad y")); return -1; }
+		double w = getNumberValue(properties.e[2]->GetData(), &isnum);
+		if (!isnum) { makestr(error_message, _("Bad width")); return -1; }
+		double h = getNumberValue(properties.e[3]->GetData(), &isnum);
+		if (!isnum) { makestr(error_message, _("Bad height")); return -1; }
+
+		int nx = getNumberValue(properties.e[4]->GetData(), &isnum);
+		if (!isnum) { makestr(error_message, _("Bad num x")); return -1; }
+		int ny = getNumberValue(properties.e[5]->GetData(), &isnum);
+		if (!isnum) { makestr(error_message, _("Bad num y")); return -1; }
+
+		set->CreateGrid(nx,ny,x,y,w,h, LAX_LRTB);
+
+	} else if (settype == HexGrid) {
+		flatvector o;
+		FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(properties.e[0]->GetData());
+		if (fv) o = fv->v;
+		else {
+			AffineValue *av = dynamic_cast<AffineValue*>(properties.e[0]->GetData());
+			if (av) o = av->origin();
+			else { 
+				Error(_("Expected vector"));
+				return -1;
+			}
+		}
+		int isnum = 0;
+		double l = getNumberValue(properties.e[1]->GetData(), &isnum);
+		if (!isnum) { makestr(error_message, _("Bad edge length")); return -1; }
+
+		int n = getNumberValue(properties.e[2]->GetData(), &isnum);
+		if (!isnum) { makestr(error_message, _("Bad num on edge")); return -1; }
+
+		set->CreateHexChunk(l, n);
+		for (int c=0; c<set->points.n; c++) set->points.e[c]->p += o;
+	
+	} else if (settype == RandomSquare) {
+		flatvector o;
+		FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(properties.e[0]->GetData());
+		if (fv) o = fv->v;
+		else {
+			AffineValue *av = dynamic_cast<AffineValue*>(properties.e[0]->GetData());
+			if (av) o = av->origin();
+			else { 
+				Error(_("Expected vector"));
+				return -1;
+			}
+		}
+		int isnum = 0;
+		double w = getNumberValue(properties.e[1]->GetData(), &isnum);
+		if (!isnum) { makestr(error_message, _("Bad width")); return -1; }
+		double h = getNumberValue(properties.e[2]->GetData(), &isnum);
+		if (!isnum) { makestr(error_message, _("Bad height")); return -1; }
+
+		int n = getNumberValue(properties.e[3]->GetData(), &isnum);
+		if (!isnum) { makestr(error_message, _("Bad num points")); return -1; }
+
+		int seed = getNumberValue(properties.e[4]->GetData(), &isnum);
+		if (!isnum) { makestr(error_message, _("Bad seed")); return -1; }
+
+		set->CreateRandomPoints(n, seed, o.x-w/2,o.x+w/2, o.y-h/2, o.y+h/2);
+
+	} else if (settype == RandomCircle) {
+		flatvector o;
+		FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(properties.e[0]->GetData());
+		if (fv) o = fv->v;
+		else {
+			AffineValue *av = dynamic_cast<AffineValue*>(properties.e[0]->GetData());
+			if (av) o = av->origin();
+			else { 
+				Error(_("Expected vector"));
+				return -1;
+			}
+		}
+		int isnum = 0;
+		double r = getNumberValue(properties.e[1]->GetData(), &isnum);
+		if (!isnum) { makestr(error_message, _("Bad radius")); return -1; }
+		
+		int n = getNumberValue(properties.e[3]->GetData(), &isnum);
+		if (!isnum) { makestr(error_message, _("Bad num points")); return -1; }
+
+		int seed = getNumberValue(properties.e[4]->GetData(), &isnum);
+		if (!isnum) { makestr(error_message, _("Bad seed")); return -1; }
+
+		set->CreateRandomRadial(n, seed, o.x, o.y, r);
+	}
+
+	// set->FindBBox();
+	UpdatePreview();
+	Wrap();
+	return NodeBase::Update();
+}
+
+Laxkit::anObject *newPointsGridNode(int p, Laxkit::anObject *ref)
+{
+	return new PointSetNode(PointSetNode::Grid);
+}
+
+Laxkit::anObject *newPointsHexNode(int p, Laxkit::anObject *ref)
+{
+	return new PointSetNode(PointSetNode::HexGrid);
+}
+
+Laxkit::anObject *newPointsRandomSquareNode(int p, Laxkit::anObject *ref)
+{
+	return new PointSetNode(PointSetNode::RandomSquare);
+}
+
+Laxkit::anObject *newPointsRandomRadialNode(int p, Laxkit::anObject *ref)
+{
+	return new PointSetNode(PointSetNode::RandomCircle);
+}
+
 //------------------------  PathGeneratorNode -----------------------------
 
 class PathGeneratorNode : public NodeBase
@@ -336,6 +957,8 @@ class PathGeneratorNode : public NodeBase
 PathGeneratorNode::PathGeneratorNode(PathGeneratorNode::PathTypes ntype)
 {
 	pathtype = ntype;
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "pointset", new BooleanValue(false),1,  _("As pointset"), _("If true, output a PointSet. If false, output a PathsData")));
 
 	if (pathtype == Square) {
 		makestr(type, "Paths/Square");
@@ -457,6 +1080,10 @@ int PathGeneratorNode::GetStatus()
 	const char *sig = "     nnnn n    nnnn snnn ssnnns    snnn ssnnn";
 	int sigoff = 0;
 
+	if (!dynamic_cast<BooleanValue*>(properties.e[0]->GetData())) {
+		return -1;
+	}
+
 #define OFFSQUARE     0
 #define OFFRECTANGLE  5
 #define OFFCIRCLE     10
@@ -478,14 +1105,14 @@ int PathGeneratorNode::GetStatus()
 	else if (pathtype == FunctionPolarT) sigoff = OFFPOLART;
 
 	for (int c=0; c<properties.n-1; c++) {
-		Value *data = properties.e[c]->GetData();
+		Value *data = properties.e[c+1]->GetData();
 		if (!data) { types[c] = ' '; continue; }
 		stype = data->whattype();
 		if (isNumberType(data, nullptr)) types[c] = 'n';
 		else if (!strcmp(stype, "StringValue")) types[c] = 's';
 		else types[c] = ' ';
 	}
-	for (int c=properties.n-1; c<5; c++) types[c] = ' ';
+	for (int c=properties.n-2; c<5; c++) types[c] = ' ';
 	types[5] = '\0';
 
 	if (strncmp(sig+sigoff, types, 5)) return -1;
@@ -499,73 +1126,100 @@ int PathGeneratorNode::Update()
 	makestr(error_message, NULL);
 	if (GetStatus() == -1) return -1;
 
-	LPathsData *path = dynamic_cast<LPathsData*>(properties.e[properties.n-1]->GetData());
-	if (!path) {
-		path = new LPathsData();
-		properties.e[properties.n-1]->SetData(path, 1);
+	PointSetValue *set = nullptr;
+	LPathsData *path = nullptr;
+	bool doset = dynamic_cast<BooleanValue*>(properties.e[0]->GetData())->i;
+	if (doset) {
+		set = dynamic_cast<PointSetValue*>(properties.e[properties.n-1]->GetData());
+		if (!set) {
+			set = new PointSetValue();
+			properties.e[properties.n-1]->SetData(set, 1);
+
+		} else {
+			set->Flush();
+		}
 	} else {
-		path->clear();
+		path = dynamic_cast<LPathsData*>(properties.e[properties.n-1]->GetData());
+		if (!path) {
+			path = new LPathsData();
+			properties.e[properties.n-1]->SetData(path, 1);
+
+		} else {
+			path->clear();
+		}
 	}
 
 	if (pathtype == Square) {
-		// path->clear();
-		path->appendRect(0,0,1,1);
+		if (path) path->appendRect(0,0,1,1);
+		else {
+			set->AddPoint(flatpoint(0,0));
+			set->AddPoint(flatpoint(1,0));
+			set->AddPoint(flatpoint(1,1));
+			set->AddPoint(flatpoint(0,1));
+		}
 
 	} else if (pathtype == Rectangle) {
 		// path->clear();
 		int isnum;
-		double x = getNumberValue(properties.e[0]->GetData(), &isnum);
+		double x = getNumberValue(properties.e[1]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad x")); return -1; }
-		double y = getNumberValue(properties.e[1]->GetData(), &isnum);
+		double y = getNumberValue(properties.e[2]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad y")); return -1; }
-		double w = getNumberValue(properties.e[2]->GetData(), &isnum);
+		double w = getNumberValue(properties.e[3]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad width")); return -1; }
-		double h = getNumberValue(properties.e[3]->GetData(), &isnum);
+		double h = getNumberValue(properties.e[4]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad height")); return -1; }
 
-		path->appendRect(x,y,w,h);
+		if (path) path->appendRect(x,y,w,h);
+		else {
+			set->AddPoint(flatpoint(x,y));
+			set->AddPoint(flatpoint(x+w,y));
+			set->AddPoint(flatpoint(x+w,y+h));
+			set->AddPoint(flatpoint(x,y+h));
+		}
 
 	} else if (pathtype == Circle) {
 		// path->clear();
 		int isnum = 0;
-		int n = getNumberValue(properties.e[0]->GetData(), &isnum);
+		int n = getNumberValue(properties.e[1]->GetData(), &isnum);
 		if (!isnum || n <= 0) {makestr(error_message, _("Bad number of points")); return -1; }
 
-		path->appendEllipse(flatpoint(), 1,1, 2*M_PI, 0, n, 1);
+		if (path) path->appendEllipse(flatpoint(), 1,1, 2*M_PI, 0, n, 1);
+		else set->CreateCircle(n, 0,0, 1);
 
 	} else if (pathtype == Polygon) {
 		// make an n sided polygon
 		// path->clear();
 		
 		int isnum = 0;
-		int n = getNumberValue(properties.e[0]->GetData(), &isnum);
+		int n = getNumberValue(properties.e[1]->GetData(), &isnum);
 		if (!isnum || n <= 0) {makestr(error_message, _("Bad number of points")); return -1; }
-		double radius = getNumberValue(properties.e[1]->GetData(), &isnum);
+		double radius = getNumberValue(properties.e[2]->GetData(), &isnum);
 		if (!isnum) {makestr(error_message, _("Bad radius number")); return -1; }
-		double winding = getNumberValue(properties.e[2]->GetData(), &isnum);
+		double winding = getNumberValue(properties.e[3]->GetData(), &isnum);
 		if (!isnum) {makestr(error_message, _("Bad winding number")); return -1; }
-		double offset = getNumberValue(properties.e[3]->GetData(), &isnum);
+		double offset = getNumberValue(properties.e[4]->GetData(), &isnum);
 		if (!isnum) {makestr(error_message, _("Bad offset number")); return -1; }
 
 		double anglediff = winding * 2*M_PI / n;
 		for (int c=0; c<n; c++) {
 			double angle = offset + c * anglediff;
-			path->append(radius * cos(angle), radius * sin(angle));
+			if (path) path->append(radius * cos(angle), radius * sin(angle));
+			else set->AddPoint(flatpoint(radius * cos(angle), radius * sin(angle)));
 		}
-		path->close();
-		
+		if (path) path->close();		
 
 	} else if (pathtype == Function || pathtype == FunctionRofT) {
 		int isnum;
-		StringValue *expr = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+		StringValue *expr = dynamic_cast<StringValue*>(properties.e[1]->GetData());
 		if (!expr) { makestr(error_message, _("Expression must be a string")); return -1; }
 		const char *expression = expr->str;
 
-		double start = getNumberValue(properties.e[1]->GetData(), &isnum);
+		double start = getNumberValue(properties.e[2]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad min")); return -1; }
-		double end = getNumberValue(properties.e[2]->GetData(), &isnum);
+		double end = getNumberValue(properties.e[3]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad max")); return -1; }
-		double step = getNumberValue(properties.e[3]->GetData(), &isnum);
+		double step = getNumberValue(properties.e[4]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad step")); return -1; }
 
 		if ((start < end && step <= 0) || (start > end && step >= 0)) {
@@ -611,27 +1265,31 @@ int PathGeneratorNode::Update()
 				return -1;
 			}
 
-			if (pathtype == FunctionRofT) path->append(ret_valx * cos(x), ret_valx * sin(x));
-			else path->append(x, ret_valx);
-			// pointsadded++;		
+			if (path) {
+				if (pathtype == FunctionRofT) path->append(ret_valx * cos(x), ret_valx * sin(x));
+				else path->append(x, ret_valx);
+			} else {
+				if (pathtype == FunctionRofT) set->AddPoint(flatpoint(ret_valx * cos(x), ret_valx * sin(x)));
+				else set->AddPoint(flatpoint(x, ret_valx));
+			}
 		}
 		// hash.flush();
 
 	} else if (pathtype == FunctionT || pathtype == FunctionPolarT) {
 		int isnum;
-		StringValue *expr = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+		StringValue *expr = dynamic_cast<StringValue*>(properties.e[1]->GetData());
 		if (!expr) { makestr(error_message, _("Expression must be a string")); return -1; }
 		const char *expressionx = expr->str;
 
-		expr = dynamic_cast<StringValue*>(properties.e[1]->GetData());
+		expr = dynamic_cast<StringValue*>(properties.e[2]->GetData());
 		if (!expr) { makestr(error_message, _("Expression must be a string")); return -1; }
 		const char *expressiony = expr->str;
 
-		double start = getNumberValue(properties.e[2]->GetData(), &isnum);
+		double start = getNumberValue(properties.e[3]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad min")); return -1; }
-		double end = getNumberValue(properties.e[3]->GetData(), &isnum);
+		double end = getNumberValue(properties.e[4]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad max")); return -1; }
-		double step = getNumberValue(properties.e[4]->GetData(), &isnum);
+		double step = getNumberValue(properties.e[5]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad step")); return -1; }
 		
 
@@ -643,8 +1301,6 @@ int PathGeneratorNode::Update()
 			makestr(error_message, _("Start can't equal end"));
 			return -1;
 		}
-
-		// path->clear();
 
 		DoubleValue *xx = new DoubleValue();
 		ValueHash hash;
@@ -695,16 +1351,29 @@ int PathGeneratorNode::Update()
 				return -1;
 			}
 
-			if (pathtype == FunctionPolarT) path->append(ret_valx * cos(ret_valy), ret_valx * sin(ret_valy));
-			else path->append(ret_valx, ret_valy);
-			// pointsadded++;
+			if (path) {
+				if (pathtype == FunctionPolarT) path->append(ret_valx * cos(ret_valy), ret_valx * sin(ret_valy));
+				else path->append(ret_valx, ret_valy);
+			} else {
+				if (pathtype == FunctionPolarT) set->AddPoint(flatpoint(ret_valx * cos(ret_valy), ret_valx * sin(ret_valy)));
+				else set->AddPoint(flatpoint(ret_valx, ret_valy));
+			}
 		}
-		// hash.flush();
 
 	} else if (pathtype == Svgd) {
-		StringValue *v = dynamic_cast<StringValue*>(properties.e[0]->GetData());
-		// path->clear();
-		path->appendSvg(v->str);
+		StringValue *v = dynamic_cast<StringValue*>(properties.e[1]->GetData());
+		if (path) path->appendSvg(v->str);
+		else {
+			//only adds vertices, no interpolated bez segments
+			LaxInterfaces::Coordinate *coords = LaxInterfaces::SvgToCoordinate(v->str, 1, nullptr, nullptr);
+			if (coords) {
+				LaxInterfaces::Coordinate *p = coords, *start = coords;
+				do {
+					if (p->flags & POINT_VERTEX) set->AddPoint(p->p());
+					p = p->next;
+				} while (p && p != start);
+			}
+		}
 	}
 
 	path->FindBBox();
@@ -982,25 +1651,32 @@ int DrawableInfoNode::GetStatus()
 int SetupDataObjectNodes(Laxkit::ObjectFactory *factory)
 {
 	 //--- Drawables
-	factory->DefineNewObject(getUniqueNumber(), "Drawable/ImageData",  newLImageDataNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Drawable/ImageDataInfo",  newLImageDataInfoNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/ImageData",     newLImageDataNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/ImageDataInfo", newLImageDataInfoNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/DrawableInfo",  DrawableInfoNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/FindDrawable",  FindDrawableNode::NewNode,  NULL, 0);
 
-	factory->DefineNewObject(getUniqueNumber(), "Paths/PathsData",newPathsDataNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Paths/Circle",newPathCircleNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Paths/Square",newPathSquareNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Paths/RectanglePath",newPathRectangleNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Paths/Polygon",newPathPolygonNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Paths/PathFunctionX",newPathFunctionNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Paths/PathFunctionT",newPathFunctionTNode, NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Paths/PathFunctionRofT",newPathFunctionRofTNode, NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/PathsData",         newPathsDataNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/Circle",            newPathCircleNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/Square",            newPathSquareNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/RectanglePath",     newPathRectangleNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/Polygon",           newPathPolygonNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/PathFunctionX",     newPathFunctionNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/PathFunctionT",     newPathFunctionTNode, NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/PathFunctionRofT",  newPathFunctionRofTNode, NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/PathFunctionPolarT",newPathFunctionPolarTNode, NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Paths/Svgd",newPathSvgdNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/Svgd",              newPathSvgdNode,  NULL, 0);
+
+	factory->DefineNewObject(getUniqueNumber(), "Points/Grid",         newPointsGridNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Points/HexGrid",      newPointsHexNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Points/RandomSquare", newPointsRandomSquareNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Points/RandomCircle", newPointsRandomRadialNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Points/PointsToDots", PointsToDotsNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Points/PointsToBars", PointsToBarsNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Points/PointsToBarChart", PointsToBarChartNode::NewNode,  NULL, 0);
 
 	return 0;
 }
-
 
 } //namespace Laidout
 

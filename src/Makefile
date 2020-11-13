@@ -142,6 +142,7 @@ otherobjs= \
 	filetypes/scribus.o \
 	filetypes/svg.o \
 	dataobjects/affinevalue.o \
+	dataobjects/pointsetvalue.o \
 	dataobjects/bboxvalue.o \
 	dataobjects/group.o \
 	dataobjects/objectcontainer.o \

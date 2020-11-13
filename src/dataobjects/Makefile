@@ -19,6 +19,7 @@ objs= \
 	group.o \
 	objectcontainer.o \
 	objectfilter.o \
+	pointsetvalue.o \
 	drawableobject.o \
 	datafactory.o \
 	groupinterface.o \
