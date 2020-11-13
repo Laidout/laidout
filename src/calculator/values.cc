@@ -2324,7 +2324,7 @@ double ValueHash::findDouble(const char *name, int which, int *error_ret)
  * Otherwise find it with findIndex().
  *
  * If name is not found, then set *error_ret=1 if error_ret!=0.
- * If the value exists, but is not a DoubleValue, then sets *error_ret=2.
+ * If the value exists, but is not a DoubleValue or IntValue, then sets *error_ret=2.
  * Otherwise set to 0.
  *
  * No cast conversion is done between int and real.
