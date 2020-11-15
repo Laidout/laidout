@@ -2422,24 +2422,22 @@ int StringNode::GetStatus()
 
 int StringNode::Update()
 {
-	char *str=NULL;
+	StringValue *out = dynamic_cast<StringValue*>(properties.e[1]->GetData());
 
+	char *str=NULL;
 	int isnum=0;
 	double d = getNumberValue(properties.e[0]->GetData(), &isnum);
 	if (isnum) {
 		str = numtostr(d);
+		out->Set(str);
+		delete[] str;
 	} else {
 		StringValue *s = dynamic_cast<StringValue*>(properties.e[0]->GetData());
 		if (!s) return -1;
-
-		str = newstr(s->str);
+		out->Set(s->str);
 	}
 
-	StringValue *out = dynamic_cast<StringValue*>(properties.e[1]->GetData());
-	out->Set(str);
-
-	delete[] str;
-
+	properties.e[1]->Touch();
 	return NodeBase::Update();
 }
 
@@ -2664,7 +2662,8 @@ Laxkit::anObject *newSliceNode(int p, Laxkit::anObject *ref)
 
 //------------------------ ThreadNode ------------------------
 
-/*! \class Starts an execution path.
+/*! \class ThreadNode
+ * Starts an execution path.
  */
 
 class ThreadNode : public NodeBase
@@ -2799,7 +2798,7 @@ Laxkit::anObject *newIfNode(int p, Laxkit::anObject *ref)
 
 //------------------------ LoopNode ------------------------
 
-/*! \class
+/*! \class LoopNode
  * Traditional for loop with start, end, and step.
  */
 
@@ -3509,6 +3508,171 @@ Laxkit::anObject *newMapToRangeNode(int p, Laxkit::anObject *ref)
 Laxkit::anObject *newMapFromRangeNode(int p, Laxkit::anObject *ref)
 {
 	return new MapRangeNode(false, 0,1, false);
+}
+
+
+//------------------------------ GetSizeNode --------------------------------------------
+
+/*! \class GetSizeNode
+ * Get the size of an input set
+ */
+
+class GetSizeNode : public NodeBase
+{
+  public:
+	GetSizeNode();
+	virtual ~GetSizeNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new GetSizeNode(); }
+};
+
+GetSizeNode::GetSizeNode()
+{
+	makestr(type, "Lists/GetSize");
+	makestr(Name, _("Size"));
+
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "obj",  nullptr,1, _("Object")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out",  new IntValue(),1,    _("Out"), NULL, 0, false));
+}
+
+GetSizeNode::~GetSizeNode()
+{
+}
+
+NodeBase *GetSizeNode::Duplicate()
+{
+	GetSizeNode *node = new GetSizeNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+/*! Return 0 for no error and everything up to date.
+ * -1 means bad inputs and node in error state.
+ * 1 means needs updating.
+ */
+int GetSizeNode::GetStatus()
+{
+	Value *in = properties.e[0]->GetData();
+	if (!in) return -1;
+	if (in->type() != VALUE_Set && in->type() != VALUE_Hash) return -1;
+	return 0;
+}
+
+int GetSizeNode::Update()
+{
+	Error(nullptr);
+
+	SetValue *set = dynamic_cast<SetValue*>(properties.e[0]->GetData());
+	if (set) {
+		dynamic_cast<IntValue*>(properties.e[1]->GetData())->i = set->n();
+	} else {
+		ValueHash *hash = dynamic_cast<ValueHash*>(properties.e[0]->GetData());
+		if (hash) {
+			dynamic_cast<IntValue*>(properties.e[1]->GetData())->i = set->n();
+		} else return -1;
+	}
+	
+	properties.e[1]->Touch();
+	return NodeBase::Update();
+}
+
+
+//------------------------------ GetElementNode --------------------------------------------
+
+/*! \class GetElementNode
+ * Get 
+ */
+
+class GetElementNode : public NodeBase
+{
+  public:
+	GetElementNode();
+	virtual ~GetElementNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual Value *PreviewFrom() { return properties.e[2]->GetData(); }
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new GetElementNode(); }
+};
+
+GetElementNode::GetElementNode()
+{
+	makestr(type, "Lists/GetElement");
+	makestr(Name, _("Get Element"));
+
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "obj",  nullptr,1, _("Object")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "index", new IntValue(0),1, _("Index")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out",  NULL,1,            _("Out"), NULL, 0, false));
+}
+
+GetElementNode::~GetElementNode()
+{
+}
+
+NodeBase *GetElementNode::Duplicate()
+{
+	GetElementNode *node = new GetElementNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int GetElementNode::Update()
+{
+	Error(nullptr);
+
+	Value *in = properties.e[0]->GetData();
+	SetValue *set = dynamic_cast<SetValue*>(in);
+	if (!set) {
+		Error(_("Input must be a list!"));
+		return -1;
+	}
+
+	int isnum = 0;
+	int index = getIntValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) {
+		Error(_("Index must be a number!"));
+		return -1;
+	}
+	if (index < 0 || index >= set->n()) {
+		Error(_("Index out of range!"));
+		return -1;
+	}
+	
+	properties.e[2]->SetData(set->e(index),0);
+	UpdatePreview();
+	Wrap();
+	return NodeBase::Update();
+}
+
+/*! Return 0 for no error and everything up to date.
+ * -1 means bad inputs and node in error state.
+ * 1 means needs updating.
+ */
+int GetElementNode::GetStatus()
+{
+	SetValue *set = dynamic_cast<SetValue*>(properties.e[0]->GetData());
+	if (!set) {
+		Error(_("Input must be a list!"));
+		return -1;
+	}
+
+	int isnum = 0;
+	int index = getIntValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) {
+		Error(_("Index must be a number!"));
+		return -1;
+	}
+	if (index < 0 || index >= set->n()) {
+		Error(_("Index out of range!"));
+		return -1;
+	}
+	return 0;
 }
 
 
@@ -4338,6 +4502,7 @@ class ObjectInfoNode : public NodeBase
 	virtual NodeBase *Duplicate();
 	virtual int Connected(NodeConnection *connection);
 	virtual int Disconnected(NodeConnection *connection, bool from_will_be_replaced, bool to_will_be_replaced);
+	virtual int UpdatePreview();
 	
 	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ObjectInfoNode(nullptr, 0); }
 };
@@ -4396,6 +4561,24 @@ int ObjectInfoNode::Connected(NodeConnection *connection)
 	return NodeBase::Connected(connection);
 }
 
+int ObjectInfoNode::UpdatePreview()
+{
+	Previewable *obj = dynamic_cast<Previewable*>(properties.e[0]->GetData());
+	LaxImage *img = nullptr;
+	if (obj) img = obj->GetPreview();
+	if (img) {
+		if (img != total_preview) {
+			if (total_preview) total_preview->dec_count();
+			total_preview = img;
+			total_preview->inc_count();
+		}
+	} else {
+		if (total_preview) total_preview->dec_count();
+		total_preview = nullptr;
+	}
+	return 1;
+}
+
 /*! Update the prop field arrangement. Does NOT update the actual values here. Use the usual Update() for that.
  */
 void ObjectInfoNode::UpdateProps()
@@ -4448,6 +4631,8 @@ int ObjectInfoNode::Update()
 	if (!o) {
 		properties.e[1]->SetData(nullptr, 0); //id
 		properties.e[2]->SetData(nullptr, 0); //type
+		UpdatePreview();
+		Wrap();
 		return -1;
 	}
 
@@ -4475,6 +4660,8 @@ int ObjectInfoNode::Update()
 		properties.e[c]->SetData(v, 1);
 	}
 
+	UpdatePreview();
+	Wrap();
 	return NodeBase::Update();
 }
 
@@ -4992,7 +5179,7 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "GradientTransform", newGradientTransformNode,  NULL, 0);
 
 	 //--- Images
-	factory->DefineNewObject(getUniqueNumber(), "Image", newImageNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Image",     newImageNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "ImageFile", ImageFileNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "ImageInfo", newImageInfoNode,  NULL, 0);
 
@@ -5003,16 +5190,10 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 
 	//------------------ Object maintenance -------------
 
-	 //--- TypeInfoNode
-	factory->DefineNewObject(getUniqueNumber(), "Object/TypeInfo", newTypeInfoNode,  NULL, 0);
-
-	 //--- NewObjectNode
-	factory->DefineNewObject(getUniqueNumber(), "Object/NewObject", NewObjectNode::NewNode,  NULL, 0);
-
-	 //--- ModifyObjectNode
+	factory->DefineNewObject(getUniqueNumber(), "Object/TypeInfo",      newTypeInfoNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Object/NewObject",     NewObjectNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Object/ModifyObject",  ModifyObjectNode::NewNode,  NULL, 0);
-
-	factory->DefineNewObject(getUniqueNumber(), "Object/ObjectInfo",  ObjectInfoNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Object/ObjectInfo",    ObjectInfoNode::NewNode,  NULL, 0);
 
 
 	//------------------ Groups -------------
@@ -5035,103 +5216,60 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Math/AffineExpand",newAffineExpandNode, NULL, 0);
 
 
+	//------------------ Lists -------------
+	factory->DefineNewObject(getUniqueNumber(), "Lists/GetElement",  GetElementNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Lists/GetSize",     GetSizeNode::NewNode,  NULL, 0);
+
+
 	//------------------ Math -------------
 
-	 //--- MathNode1
-	factory->DefineNewObject(getUniqueNumber(), "Math/Math1",     newMathNode1,   NULL, 0);
-
-	 //--- MathNode2
-	factory->DefineNewObject(getUniqueNumber(), "Math/Math2",     newMathNode2,   NULL, 0);
-
-	 //--- DoubleNode
-	factory->DefineNewObject(getUniqueNumber(), "Math/Value",    newDoubleNode, NULL, 0);
-
-	 //--- FlatvectorNode
-	factory->DefineNewObject(getUniqueNumber(), "Math/Vector2", newFlatvectorNode, NULL, 0);
-
-	 //--- SpacevectorNode
-	factory->DefineNewObject(getUniqueNumber(), "Math/Vector3", newSpacevectorNode, NULL, 0);
-
-	 //--- QuaternionNode
-	factory->DefineNewObject(getUniqueNumber(), "Math/Quaternion", newQuaternionNode, NULL, 0);
-
-	 //--- ExpandVectorNode
+	factory->DefineNewObject(getUniqueNumber(), "Math/Math1",        newMathNode1,   NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/Math2",        newMathNode2,   NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/Value",        newDoubleNode, NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/Vector2",      newFlatvectorNode, NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/Vector3",      newSpacevectorNode, NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/Quaternion",   newQuaternionNode, NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Math/ExpandVector", newExpandVectorNode, NULL, 0);
-
-	 //--- RandomNode
-	factory->DefineNewObject(getUniqueNumber(), "Math/Random",newRandomNode,  NULL, 0);
-
-	 //--- LerpNode
-	factory->DefineNewObject(getUniqueNumber(), "Math/Lerp",newLerpNode,  NULL, 0);
-
-	 //--- MapRangeNodes
-	factory->DefineNewObject(getUniqueNumber(), "Math/MapToRange",  newMapToRangeNode,    NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Math/MapFromRange",newMapFromRangeNode,  NULL, 0);
-
-	 //--- MathConstantNode
-	factory->DefineNewObject(getUniqueNumber(), "Math/Constant",newMathConstants,  NULL, 0);
-
-	 //--- ExpressionNode
-	factory->DefineNewObject(getUniqueNumber(), "Math/Expression",ExpressionNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/Random",       newRandomNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/Lerp",         newLerpNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/MapToRange",   newMapToRangeNode,    NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/MapFromRange", newMapFromRangeNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/Constant",     newMathConstants,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/Expression",   ExpressionNode::NewNode,  NULL, 0);
 
 
 	//------------------ String -------------
 
-	 //--- ConcatNode
-	factory->DefineNewObject(getUniqueNumber(), "Strings/Concat",newConcatNode,  NULL, 0);
-
-	 //--- StringNode
-	factory->DefineNewObject(getUniqueNumber(), "Strings/String",newStringNode,  NULL, 0);
-
-	 //--- SliceNode
-	factory->DefineNewObject(getUniqueNumber(), "Strings/Slice",newSliceNode,  NULL, 0);
-
-	 //--- TextFileNode
+	factory->DefineNewObject(getUniqueNumber(), "Strings/Concat",      newConcatNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Strings/String",      newStringNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Strings/Slice",       newSliceNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Strings/TextFromFile",TextFileNode::NewNode,  NULL, 0);
 
 
 	 //-------------------- FILTERS -------------
 
-	 //--- TransformAffineNodes
 	factory->DefineNewObject(getUniqueNumber(), "Filters/TransformAffine", newTransformAffineNode,  NULL, 0);
 
 
 	 //-------------------- THREADS -------------
 
-	 //--- ThreadNode
-	factory->DefineNewObject(getUniqueNumber(), "Threads/Thread",newThreadNode,  NULL, 0);
-
-	 //--- LoopNode
-	factory->DefineNewObject(getUniqueNumber(), "Threads/Loop",newLoopNode,  NULL, 0);
-
-	 //--- IfNode
-	factory->DefineNewObject(getUniqueNumber(), "Threads/If",newIfNode,  NULL, 0);
-
-	 //--- ForkNode
-	factory->DefineNewObject(getUniqueNumber(), "Threads/Fork",newForkNode,  NULL, 0);
-
-	 //--- DelayNode
-	factory->DefineNewObject(getUniqueNumber(), "Threads/Delay",newDelayNode,  NULL, 0);
-
-	 //--- SetVariableNode
+	factory->DefineNewObject(getUniqueNumber(), "Threads/Thread",     newThreadNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Threads/Loop",       newLoopNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Threads/If",         newIfNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Threads/Fork",       newForkNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Threads/Delay",      newDelayNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Threads/SetVariable",newSetVariableNode,  NULL, 0);
-
-	 //--- GetVariableNode
 	factory->DefineNewObject(getUniqueNumber(), "Threads/GetVariable",newGetVariableNode,  NULL, 0);
 
 
 	 //-------------------- Resources -------------
 
-	 //--- set laidout->globals
 	factory->DefineNewObject(getUniqueNumber(), "Resources/SetGlobal",SetGlobalNode::NewNode,  NULL, 0);
-
-	 //--- get laidout->globals
 	factory->DefineNewObject(getUniqueNumber(), "Resources/GetGlobal",GetGlobalNode::NewNode,  NULL, 0);
 
 
 	 //-------------------- Specials -------------
 
-	 //--- Reroute
 	factory->DefineNewObject(getUniqueNumber(), "Reroute",RerouteNode::NewNode,  NULL, 0);
 
 

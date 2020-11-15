@@ -20,10 +20,12 @@
 
 #include "nodeinterface.h"
 #include "../dataobjects/limagedata.h"
+#include "../dataobjects/lsomedataref.h"
 #include "../dataobjects/lpathsdata.h"
 #include "../dataobjects/bboxvalue.h"
 #include "../dataobjects/affinevalue.h"
 #include "../dataobjects/pointsetvalue.h"
+#include "../dataobjects/lvoronoidata.h"
 #include "../dataobjects/imagevalue.h"
 #include "../core/objectiterator.h"
 
@@ -38,9 +40,614 @@
 namespace Laidout {
 
 
+//------------------------ DuplicateDrawableNode ------------------------
+
+/*! 
+ * Node to create an array of duplicates or clones of a drawable
+ */
+
+class DuplicateDrawableNode : public NodeBase
+{
+  public:
+	DuplicateDrawableNode();
+	virtual ~DuplicateDrawableNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual int UpdatePreview();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new DuplicateDrawableNode(); }
+};
+
+
+DuplicateDrawableNode::DuplicateDrawableNode()
+{
+	makestr(Name, _("Duplicate Drawable"));
+	makestr(type, "Drawables/DuplicateDrawable");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", nullptr,1, NULL, 0, false)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "clone", new BooleanValue(false),1, _("As clones"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "n", new IntValue(1),1, _("How many"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Out"), nullptr,0,false));
+}
+
+DuplicateDrawableNode::~DuplicateDrawableNode()
+{
+}
+
+NodeBase *DuplicateDrawableNode::Duplicate()
+{
+	DuplicateDrawableNode *node = new DuplicateDrawableNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int DuplicateDrawableNode::GetStatus()
+{
+	DrawableObject *o = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
+	if (!o) return -1;
+
+	int isnum;
+	getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+	getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+	
+	return NodeBase::GetStatus();
+}
+
+int DuplicateDrawableNode::Update()
+{
+	Error(nullptr);
+
+	DrawableObject *o = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
+	if (!o) return -1;
+
+	int isnum;
+	bool clone = getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+	int n = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+	
+	if (n <= 0) {
+		Error(_("How many must be > 0"));
+		return -1;
+	}
+
+	SetValue *set = dynamic_cast<SetValue*>(properties.e[3]->GetData());
+	if (!set) {
+		set = new SetValue();
+		properties.e[3]->SetData(set, 1);
+	} else {
+		// while (set->n() > n) set->remove(set->n()-1);
+		set->values.flush();
+	}
+	
+	DBG Utf8String str;
+	if (clone) {
+		for (int c=0; c<n; c++) {
+			LSomeDataRef *oo = new LSomeDataRef(o);
+			DBG str.Sprintf("%s_%d", o->Id(), c);
+			DBG dynamic_cast<anObject*>(oo)->Id(str.c_str());
+			oo->FindBBox();
+			set->Push(oo, 1);
+		}
+	} else {
+		for (int c=0; c<n; c++) {
+			DrawableObject *oo = dynamic_cast<DrawableObject*>(o->duplicate());
+			DBG str.Sprintf("%s_%d", o->Id(), c);
+			DBG oo->Id(str.c_str());
+			oo->FindBBox();
+			set->Push(oo, 1);
+		}
+	}
+
+	// UpdatePreview();
+	// Wrap();
+
+	properties.e[3]->Touch();
+	return NodeBase::Update();
+}
+
+int DuplicateDrawableNode::UpdatePreview()
+{
+	return 1;
+}
+
+
+//------------------------ DuplicateSingleNode ------------------------
+
+/*! 
+ * Node to create an array of duplicates or clones of a drawable
+ */
+
+class DuplicateSingleNode : public NodeBase
+{
+  public:
+	DuplicateSingleNode();
+	virtual ~DuplicateSingleNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual int UpdatePreview();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new DuplicateSingleNode(); }
+};
+
+
+DuplicateSingleNode::DuplicateSingleNode()
+{
+	makestr(Name, _("Duplicate single"));
+	makestr(type, "Drawables/DuplicateSingle");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", nullptr,1, NULL, 0, false)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Out"), nullptr,0,false));
+}
+
+DuplicateSingleNode::~DuplicateSingleNode()
+{
+}
+
+NodeBase *DuplicateSingleNode::Duplicate()
+{
+	DuplicateSingleNode *node = new DuplicateSingleNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int DuplicateSingleNode::GetStatus()
+{
+	DrawableObject *o = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
+	if (!o) return -1;
+	return NodeBase::GetStatus();
+}
+
+int DuplicateSingleNode::Update()
+{
+	Error(nullptr);
+
+	DrawableObject *o = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
+	if (!o) {
+		Error(_("In must be a Drawable"));
+		return -1;
+	}
+
+	anObject *filter = o->filter;
+	if (filter) o->filter = nullptr;
+	DrawableObject *dup = dynamic_cast<DrawableObject*>(o->duplicate(NULL));
+	// *** duplicate filter separately for safety... otherwise needs a ton of overloaded funcs to deal with.. needs more thought
+	// *** just ignore filter for now
+	// if (filter) {
+	// 	ObjectFilter *nfilter = dynamic_cast<ObjectFilter*>(dynamic_cast<ObjectFilter*>(filter)->Duplicate());
+	// 	dup->filter = nfilter;
+	// 	nfilter->SetParent(dup);
+	// }
+	if (filter) o->filter = filter; //put filter back on
+	dup->FindBBox();
+	properties.e[1]->SetData(dup,1);
+	return NodeBase::Update();
+}
+
+int DuplicateSingleNode::UpdatePreview()
+{
+	return 1;
+}
+
+
+//------------------------ SetParentNode ------------------------
+
+/*! 
+ * Node to set parent of a DrawableObject or array of them.
+ */
+
+class SetParentNode : public NodeBase
+{
+  public:
+	SetParentNode();
+	virtual ~SetParentNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual int UpdatePreview();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new SetParentNode(); }
+};
+
+
+SetParentNode::SetParentNode()
+{
+	makestr(Name, _("Set parent"));
+	makestr(type, "Drawables/SetParent");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "parent", nullptr,1, _("Parent"), 0, false)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "kids", nullptr,1, _("Children"), 0, false)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Out"), nullptr,0,false));
+}
+
+SetParentNode::~SetParentNode()
+{
+}
+
+NodeBase *SetParentNode::Duplicate()
+{
+	SetParentNode *node = new SetParentNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int SetParentNode::GetStatus()
+{
+	DrawableObject *o = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
+	if (!o) return -1;
+	o = dynamic_cast<DrawableObject*>(properties.e[1]->GetData());
+	if (!o) {
+		SetValue *s = dynamic_cast<SetValue*>(properties.e[1]->GetData());
+		if (!s) return -1;
+	}
+	return NodeBase::GetStatus();
+}
+
+int SetParentNode::Update()
+{
+	Error(nullptr);
+
+	DrawableObject *pnt = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
+	if (!pnt) {
+		Error(_("Parent must be a Drawable"));
+		return -1;
+	}
+
+	DrawableObject *newpnt = nullptr;
+	DrawableObject *k = dynamic_cast<DrawableObject*>(properties.e[1]->GetData());
+
+	if (k) { //simple single child to parent
+		newpnt = dynamic_cast<DrawableObject*>(pnt->duplicate());
+		DrawableObject *kk = dynamic_cast<DrawableObject*>(k->duplicate());
+		newpnt->push(kk);
+		kk->dec_count();
+
+	} else { // set of children to parent
+		SetValue *set = dynamic_cast<SetValue*>(properties.e[1]->GetData());
+		if (!set) {
+			Error(_("Children must be a single Drawable or set of Drawables"));
+			return -1;
+		}
+		for (int c=0; c<set->n(); c++) {
+			if (!dynamic_cast<DrawableObject*>(set->e(c))) {
+				Error(_("Children must be a single Drawable or set of Drawables"));
+				return -1;
+			}
+		}
+
+		newpnt = dynamic_cast<DrawableObject*>(pnt->duplicate());
+		for (int c=0; c<set->n(); c++) {
+			DrawableObject *kk = dynamic_cast<DrawableObject*>(set->e(c)->duplicate());
+			newpnt->push(kk);
+			kk->dec_count();
+		}
+	}
+
+	newpnt->FindBBox();
+	properties.e[2]->SetData(newpnt,1);
+	return NodeBase::Update();
+}
+
+int SetParentNode::UpdatePreview()
+{
+	return 1;
+}
+
+
+//------------------------ SetPositionsNode ------------------------
+
+/*! 
+ * Node to Set positions of Drawables from a PointSet
+ */
+
+class SetPositionsNode : public NodeBase
+{
+  public:
+	SetPositionsNode();
+	virtual ~SetPositionsNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual Value *PreviewFrom() { return properties.e[2]->GetData(); }
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new SetPositionsNode(); }
+};
+
+
+SetPositionsNode::SetPositionsNode()
+{
+	makestr(Name, _("Set positions"));
+	makestr(type, "Drawable/SetPositions");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "objects", nullptr,1, _("Objects"), nullptr,0,false)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "positions", nullptr,1, _("Positions"), nullptr,0,false));
+	// AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "override", new BooleanValue(false),1, _("Override in"), _("Modifies in. Dangerous!!"),0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Out"), nullptr,0,false));
+}
+
+SetPositionsNode::~SetPositionsNode()
+{
+}
+
+NodeBase *SetPositionsNode::Duplicate()
+{
+	SetPositionsNode *node = new SetPositionsNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int SetPositionsNode::GetStatus()
+{
+	DrawableObject *o = dynamic_cast<DrawableObject*>(properties.e[0]->GetData()); 
+	if (!o) {
+		SetValue *ss = dynamic_cast<SetValue*>(properties.e[0]->GetData());
+		if (!ss) return -1;
+	}
+
+	FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(properties.e[1]->GetData()); 
+	if (!fv) {
+		PointSetValue *set = dynamic_cast<PointSetValue*>(properties.e[1]->GetData());
+		if (!set) {
+			SetValue *ss = dynamic_cast<SetValue*>(properties.e[1]->GetData());
+			if (!ss) return -1;
+		}
+	}
+
+	return NodeBase::GetStatus();
+}
+
+int SetPositionsNode::Update()
+{
+	bool override = false;
+
+	// determine input object(s)
+	DrawableObject *o = dynamic_cast<DrawableObject*>(properties.e[0]->GetData()); 
+	SetValue *oset = nullptr;
+	if (!o) {
+		oset = dynamic_cast<SetValue*>(properties.e[0]->GetData());
+		if (!oset) return -1;
+	}
+
+	// determine position(s)
+	FlatvectorValue *pos = dynamic_cast<FlatvectorValue*>(properties.e[1]->GetData()); 
+	PointSetValue *pset = nullptr;
+	SetValue *set = nullptr;
+	if (!pos) {
+		pset = dynamic_cast<PointSetValue*>(properties.e[1]->GetData());
+		if (!pset) {
+			set = dynamic_cast<SetValue*>(properties.e[1]->GetData());
+			if (!set) return -1;
+		} //else if (pset->NumPoints() == 0) return -1;
+	}	
+
+	// apply into output
+	if (o) { //single object, easy!
+		if (!override) o = dynamic_cast<DrawableObject*>(o->duplicate());
+		else o->inc_count();
+		properties.e[2]->SetData(o, 1);
+
+		if (pos) o->origin(pos->v);
+		else if (pset) {
+			if (pset->NumPoints() > 0) {
+				o->origin(pset->points.e[0]->p);
+			}
+		} else { //set
+			if (set->n() > 0) {
+				pos = dynamic_cast<FlatvectorValue*>(set->e(0));
+				if (pos) o->origin(pos->v);
+				else return -1;
+			}
+		}
+
+	} else { //oset of input drawables
+		SetValue *out = dynamic_cast<SetValue *>(properties.e[2]->GetData());
+		if (!out) {
+			if (override) {
+				out = oset;
+				out->inc_count();
+			} else out = new SetValue();
+			properties.e[2]->SetData(out, 1);
+		} else {
+			if (override && out != oset) {
+				properties.e[2]->SetData(out, 0);
+			} else if (!override) out->values.flush();
+			properties.e[2]->Touch();
+		}
+
+		int i = 0;
+		flatvector p;
+		for (int c=0; c<oset->n(); c++) {
+			DrawableObject *oo = dynamic_cast<DrawableObject*>(oset->e(c));
+			if (!oo) continue;
+
+			AffineValue *aff = nullptr;
+			if (pos) p = pos->v;
+			else if (pset) {
+				if (i < pset->NumPoints()) {
+					p = pset->points.e[i]->p;
+					aff = dynamic_cast<AffineValue*>(pset->points.e[i]->info);
+					i++;
+				}
+			} else { //set
+				if (i < set->n()) {
+					pos = dynamic_cast<FlatvectorValue*>(set->e(i));
+					if (pos) p = pos->v;
+					i++; // *** this is poor.. should track to next flatvector or ensure set is all vectors above
+				}
+			}
+
+			if (!override) {
+				oo = dynamic_cast<DrawableObject*>(oo->duplicate());
+				oo->FindBBox();
+				out->Push(oo, 1);
+			} //else oo is already in out, since out == oset
+			oo->origin(p);
+			if (aff) {
+				oo->xaxis(aff->xaxis());
+				oo->yaxis(aff->yaxis());
+			}
+			// DBG cerr << "SetPositions: duped obj: "<<endl;
+			// DBG oo->dump_out(stderr, 2, 0, nullptr);
+		}
+	}
+
+	// UpdatePreview();
+	// Wrap();
+	return NodeBase::Update();
+}
+
+
+//------------------------ RotateDrawablesNode ------------------------
+
+/*! 
+ * Rotate a DrawableObject or list thereof.
+ */
+
+class RotateDrawablesNode : public NodeBase
+{
+  public:
+	RotateDrawablesNode();
+	virtual ~RotateDrawablesNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual Value *PreviewFrom() { return properties.e[2]->GetData(); }
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new RotateDrawablesNode(); }
+};
+
+
+RotateDrawablesNode::RotateDrawablesNode()
+{
+	makestr(Name, _("Rotate Objs"));
+	makestr(type, "Drawable/RotateDrawables");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "objects", nullptr,1, _("Objects"), nullptr,0,false)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "angle", new DoubleValue(0),1, _("Angle"), nullptr,0,true));
+	// AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "override", new BooleanValue(false),1, _("Override in"), _("Modifies in. Dangerous!!"),0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Out"), nullptr,0,false));
+}
+
+RotateDrawablesNode::~RotateDrawablesNode()
+{
+}
+
+NodeBase *RotateDrawablesNode::Duplicate()
+{
+	RotateDrawablesNode *node = new RotateDrawablesNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int RotateDrawablesNode::GetStatus()
+{
+	DrawableObject *o = dynamic_cast<DrawableObject*>(properties.e[0]->GetData()); 
+	if (!o) {
+		SetValue *ss = dynamic_cast<SetValue*>(properties.e[0]->GetData());
+		if (!ss) return -1;
+	}
+
+	if (!isNumberType(properties.e[1]->GetData(), nullptr)) return -1;
+	return NodeBase::GetStatus();
+}
+
+int RotateDrawablesNode::Update()
+{
+	Error(nullptr);
+	bool override = false;
+
+	// determine input object(s)
+	DrawableObject *o = dynamic_cast<DrawableObject*>(properties.e[0]->GetData()); 
+	SetValue *oset = nullptr;
+	if (!o) {
+		oset = dynamic_cast<SetValue*>(properties.e[0]->GetData());
+		if (!oset) return -1;
+	}
+
+	// determine position(s)
+	int isnum;
+	double angle = getNumberValue(properties.e[1]->GetData(), &isnum);
+	SetValue *set = nullptr;
+	if (!isnum) {
+		set = dynamic_cast<SetValue*>(properties.e[1]->GetData());
+		if (!set) {
+			Error(_("Angle must be a number or a set of numbers"));
+			return -1;
+		}
+	}
+	
+
+	// apply into output
+	if (o) { //single object, easy!
+		if (!override) o = dynamic_cast<DrawableObject*>(o->duplicate());
+		else o->inc_count();
+		properties.e[2]->SetData(o, 1);
+
+		if (set) {
+			if (set->n() > 0) {
+				angle = getNumberValue(set->e(0), &isnum);
+				if (!isnum) {
+					o->dec_count();
+					Error(_("Set must contain only numbers"));
+					return -1;
+				}
+			}
+		}
+		o->Rotate(angle);
+
+	} else { //oset of input drawables
+		SetValue *out = dynamic_cast<SetValue *>(properties.e[2]->GetData());
+		if (!out) {
+			if (override) {
+				out = oset;
+				out->inc_count();
+			} else out = new SetValue();
+			properties.e[2]->SetData(out, 1);
+		} else {
+			if (override && out != oset) {
+				properties.e[2]->SetData(out, 0);
+			} else if (!override) out->values.flush();
+			properties.e[2]->Touch();
+		}
+
+		int i = 0;
+		for (int c=0; c<oset->n(); c++) {
+			DrawableObject *oo = dynamic_cast<DrawableObject*>(oset->e(c));
+			if (!oo) continue;
+
+			if (set) {
+				if (i < set->n()) {
+					angle = getNumberValue(set->e(c), &isnum);
+					if (isnum) i++;
+				} else angle = 0;
+			}
+
+			if (!override) {
+				oo = dynamic_cast<DrawableObject*>(oo->duplicate());
+				oo->FindBBox();
+				out->Push(oo, 1);
+			} //else oo is already in out, since out == oset
+			oo->Rotate(angle);
+		}
+	}
+
+	return NodeBase::Update();
+}
+
+
 //------------------------ LImageDataNode ------------------------
 
-/*! \class Node for LImageData.
+/*! 
+ * Node for LImageData.
  */
 
 class LImageDataNode : public NodeBase
@@ -131,7 +738,8 @@ Laxkit::anObject *newLImageDataNode(int p, Laxkit::anObject *ref)
 
 //------------------------ LImageDataInfoNode ------------------------
 
-/*! \class Node for LImageDataInfo.
+/*! \class LImageDataInfoNode
+ * Node for LImageDataInfo.
  */
 
 class LImageDataInfoNode : public NodeBase
@@ -228,7 +836,8 @@ Laxkit::anObject *newLImageDataInfoNode(int p, Laxkit::anObject *ref)
 
 //------------------------ PathsDataNode ------------------------
 
-/*! \class Node for constructing PathsData objects..
+/*! \class PathsDataNode
+ * Node for constructing PathsData objects..
  *
  * todo:
  *   points
@@ -305,10 +914,332 @@ Laxkit::anObject *newPathsDataNode(int p, Laxkit::anObject *ref)
 }
 
 
+//------------------------ SetOriginBBoxNode ------------------------
+
+/*! 
+ * Node for setting a PathsData origin to a bbox point.
+ */
+
+class SetOriginBBoxNode : public NodeBase
+{
+  public:
+	SetOriginBBoxNode();
+	virtual ~SetOriginBBoxNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new SetOriginBBoxNode(); }
+};
+
+
+SetOriginBBoxNode::SetOriginBBoxNode()
+{
+	makestr(Name, "Set Origin at bbox");
+	makestr(type, "Paths/SetOriginToBBox");
+	
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", nullptr,1, NULL, 0, false)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "x", new DoubleValue(.5),1, _("BBox X"), _("0..1, 0 is minimum, 1 is maximum"),0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "y", new DoubleValue(.5),1, _("BBox Y"), _("0..1, 0 is minimum, 1 is maximum"),0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Out"), nullptr,0,false));
+}
+
+SetOriginBBoxNode::~SetOriginBBoxNode()
+{
+	//if (pathsdata) pathsdata->dec_count();
+}
+
+NodeBase *SetOriginBBoxNode::Duplicate()
+{
+	SetOriginBBoxNode *node = new SetOriginBBoxNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int SetOriginBBoxNode::GetStatus()
+{
+	LPathsData *o = dynamic_cast<LPathsData*>(properties.e[0]->GetData());
+	if (!o) {
+		Error(_("Only works on PathsData"));
+		return -1;
+	}
+
+	if (!isNumberType(properties.e[1]->GetData(), nullptr)) return -1;
+	if (!isNumberType(properties.e[2]->GetData(), nullptr)) return -1;
+	
+	return NodeBase::GetStatus();
+}
+
+int SetOriginBBoxNode::Update()
+{
+	Error(nullptr);
+
+	LPathsData *o = dynamic_cast<LPathsData*>(properties.e[0]->GetData());
+	if (!o) return -1;
+
+	int isnum;
+	double x = getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+	double y = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+	
+	// *** safe duplicating when an object has a filter, but it also doesn't copy the filter.. need to sort this out
+	DrawableObject *d = dynamic_cast<DrawableObject*>(o);
+	anObject *filter = d->filter;
+	d->filter = NULL;
+	DrawableObject *copy = dynamic_cast<DrawableObject*>(d->duplicate());
+	copy->FindBBox();
+	d->filter = filter;
+		
+	LPathsData *out = dynamic_cast<LPathsData*>(copy);
+	out->SetOriginToBBoxPoint(flatpoint(x,y));
+	properties.e[3]->SetData(out,1);
+	return NodeBase::Update();
+}
+
+
+//------------------------ EndPointsNode ------------------------
+
+/*! 
+ * Node for extracting end points of paths.
+ */
+
+class EndPointsNode : public NodeBase
+{
+  public:
+	EndPointsNode();
+	virtual ~EndPointsNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual int UpdatePreview();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new EndPointsNode(); }
+};
+
+
+EndPointsNode::EndPointsNode()
+{
+	makestr(Name, "End points");
+	makestr(type, "Paths/EndPoints");
+	
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", nullptr,1, NULL, 0, false)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "ends", new BooleanValue(true),1, _("Ends"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "starts", new BooleanValue(true),1, _("Starts"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "transforms", new BooleanValue(false),1, _("As transforms"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "n", new IntValue(0),1, _("Num points"), nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Out"), nullptr,0,false));
+}
+
+EndPointsNode::~EndPointsNode()
+{
+	//if (pathsdata) pathsdata->dec_count();
+}
+
+NodeBase *EndPointsNode::Duplicate()
+{
+	EndPointsNode *node = new EndPointsNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int EndPointsNode::GetStatus()
+{
+	LPathsData *o = dynamic_cast<LPathsData*>(properties.e[0]->GetData());
+	if (!o) return -1;
+
+	if (!isNumberType(properties.e[1]->GetData(), nullptr)) return -1;
+	if (!isNumberType(properties.e[2]->GetData(), nullptr)) return -1;
+	if (!isNumberType(properties.e[3]->GetData(), nullptr)) return -1;
+	
+	return NodeBase::GetStatus();
+}
+
+int EndPointsNode::Update()
+{
+	LPathsData *o = dynamic_cast<LPathsData*>(properties.e[0]->GetData());
+	if (!o) return -1;
+
+	int isnum;
+	bool ends = getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+	bool starts = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+	bool astransform = getNumberValue(properties.e[3]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	PointSetValue *out = dynamic_cast<PointSetValue*>(properties.e[5]->GetData());
+	if (!out) {
+		out = new PointSetValue();
+		properties.e[5]->SetData(out, 1);
+	} else {
+		out->Flush();
+	}
+
+	for (int c=0; c<o->paths.n; c++) {
+		LaxInterfaces::Coordinate *p = o->paths.e[c]->path;
+		if (!p) continue;
+		if (starts) {
+			LaxInterfaces::Coordinate *pp = p->previousVertex(0);
+			if (!pp) {
+				AffineValue *a = nullptr;
+				if (astransform) {
+					a = new AffineValue();
+					a->origin(p->p());
+					flatpoint dir = p->direction(1);
+					a->xaxis(dir);
+					a->yaxis(transpose(dir));
+				}
+				out->AddPoint(p->p(), a, 1);
+			}
+		}
+		if (ends) {
+			LaxInterfaces::Coordinate *pp = p->lastPoint(1);
+			if (pp && pp != p) {
+				AffineValue *a = nullptr;
+				if (astransform) {
+					a = new AffineValue();
+					a->origin(pp->p());
+					flatpoint dir = -pp->direction(0);
+					a->xaxis(dir);
+					a->yaxis(transpose(dir));
+				}
+				out->AddPoint(pp->p(), a,1);
+			}
+		}
+	}
+	
+	IntValue *iv = dynamic_cast<IntValue*>(properties.e[4]->GetData());
+	iv->i = out->NumPoints();
+	properties.e[4]->Touch();
+	properties.e[5]->Touch();
+	return NodeBase::Update();
+}
+
+int EndPointsNode::UpdatePreview()
+{
+	return 1;
+}
+
+
+//------------------------ PointsToDelaunayNode ------------------------
+
+/*! 
+ * Node to convert a PointSet to a VoronoiData.
+ */
+
+class PointsToDelaunayNode : public NodeBase
+{
+  public:
+	PointsToDelaunayNode();
+	virtual ~PointsToDelaunayNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual int UpdatePreview();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new PointsToDelaunayNode(); }
+};
+
+
+PointsToDelaunayNode::PointsToDelaunayNode()
+{
+	makestr(Name, _("Points to Delaunay"));
+	makestr(type, "Points/PointsToDelaunay");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", nullptr,1, NULL, 0, false)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "points", new BooleanValue(true),1, _("Points"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "tris", new BooleanValue(true),1, _("Triangles"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "voronoi", new BooleanValue(true),1, _("Voronoi"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Out"), nullptr,0,false));
+}
+
+PointsToDelaunayNode::~PointsToDelaunayNode()
+{
+}
+
+NodeBase *PointsToDelaunayNode::Duplicate()
+{
+	PointsToDelaunayNode *node = new PointsToDelaunayNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int PointsToDelaunayNode::GetStatus()
+{
+	PointSetValue *set = dynamic_cast<PointSetValue*>(properties.e[0]->GetData());
+	if (!set) return -1;
+	int isnum;
+	for (int c=1; c<4; c++) {
+		getNumberValue(properties.e[c]->GetData(), &isnum);
+		if (!isnum) return -1;
+	}
+
+	return NodeBase::GetStatus();
+}
+
+int PointsToDelaunayNode::Update()
+{
+	PointSetValue *set = dynamic_cast<PointSetValue*>(properties.e[0]->GetData());
+	if (!set) return -1;
+
+	int isnum;
+	bool points = getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+	bool tris = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+	bool voronoi = getNumberValue(properties.e[3]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	LVoronoiData *out = dynamic_cast<LVoronoiData*>(properties.e[4]->GetData());
+	if (!out) {
+		out = new LVoronoiData();
+		properties.e[4]->SetData(out, 1);
+	}
+
+	out->Flush();
+	out->show_points = points;
+	out->show_delaunay = tris;
+	out->show_voronoi = voronoi;
+	out->CopyFrom(set, false);
+	out->RebuildVoronoi(true);
+	out->FindBBox();
+	out->touchContents();
+
+	properties.e[4]->Touch();
+	UpdatePreview();
+	Wrap();
+
+	return NodeBase::Update();
+}
+
+int PointsToDelaunayNode::UpdatePreview()
+{
+	DrawableObject *out = dynamic_cast<DrawableObject*>(properties.e[properties.n-1]->GetData());
+	if (!out) return 1;
+
+	LaxImage *img = out->GetPreview();
+	if (img) {
+		if (img != total_preview) {
+			if (total_preview) total_preview->dec_count();
+			total_preview = img;
+			total_preview->inc_count();
+		}
+	} else {
+		if (total_preview) total_preview->dec_count();
+		total_preview = nullptr;
+	}
+	return 1;
+}
+
 
 //------------------------ PointsToDotsNode ------------------------
 
-/*! \class Node to convert a PointSet to a dots in a PathsData.
+/*! 
+ * Node to convert a PointSet to a dots in a PathsData.
  */
 
 class PointsToDotsNode : public NodeBase
@@ -378,6 +1309,7 @@ int PointsToDotsNode::Update()
 		out->pushEmpty();
 		out->appendEllipse(set->points.e[c]->p, radius, radius, 0, 0, 4, 1);
 	}
+	out->FindBBox();
 
 	properties.e[2]->Touch();
 	UpdatePreview();
@@ -408,7 +1340,8 @@ int PointsToDotsNode::UpdatePreview()
 
 //------------------------ PointsToBarChartNode ------------------------
 
-/*! \class Convert PointSet to a bar chart, sorted by x.
+/*! 
+ * Convert PointSet to a bar chart, sorted by x.
  */
 
 class PointsToBarChartNode : public NodeBase
@@ -500,10 +1433,12 @@ int PointsToBarChartNode::Update()
 	double slotwidth = w / dup.NumPoints();
 	double barwidth = slotwidth * (1-gap);
 	dup.GetBBox(*databounds);
+	databounds->addtobounds(flatpoint(dup.points.e[0]->p.x, 0));
 
 	for (int c=0; c<dup.NumPoints(); c++) {
 		out->pushEmpty();
-		double v = (dup.points.e[c]->p.y - databounds->miny) / databounds->boxheight();
+		// double v = (dup.points.e[c]->p.y - databounds->miny) / databounds->boxheight();
+		double v = (dup.points.e[c]->p.y) / databounds->boxheight(); //always use actual origin
 		if (fabs(v) < .001) v = .001; //prevent path line construction from wigging out
 		out->appendRect(x + (c+.5)*slotwidth-barwidth/2, y, barwidth, v * h);
 	}
@@ -538,7 +1473,8 @@ int PointsToBarChartNode::UpdatePreview()
 
 //------------------------ PointsToBarsNode ------------------------
 
-/*! \class Node to convert a PointSet to a bars in a PathsData, sorted by point index order.
+/*! 
+ * Node to convert a PointSet to a bars in a PathsData, sorted by point index order.
  */
 
 class PointsToBarsNode : public NodeBase
@@ -925,6 +1861,7 @@ Laxkit::anObject *newPointsRandomRadialNode(int p, Laxkit::anObject *ref)
 	return new PointSetNode(PointSetNode::RandomCircle);
 }
 
+
 //------------------------  PathGeneratorNode -----------------------------
 
 class PathGeneratorNode : public NodeBase
@@ -1047,9 +1984,9 @@ PathGeneratorNode::~PathGeneratorNode()
 
 int PathGeneratorNode::UpdatePreview()
 {
-	LPathsData *pathsdata = dynamic_cast<LPathsData*>(properties.e[properties.n-1]->GetData());
-	if (!pathsdata) return 0;
-	LaxImage *img = pathsdata->GetPreview();
+	Previewable *obj = dynamic_cast<Previewable*>(properties.e[properties.n-1]->GetData());
+	if (!obj) return 0;
+	LaxImage *img = obj->GetPreview();
 	if (img) {
 		if (img != total_preview) {
 			if (total_preview) total_preview->dec_count();
@@ -1376,7 +2313,8 @@ int PathGeneratorNode::Update()
 		}
 	}
 
-	path->FindBBox();
+	if (path) path->FindBBox();
+	properties.e[properties.n-1]->Touch();
 	UpdatePreview();
 	Wrap();
 	return NodeBase::Update();
@@ -1431,7 +2369,8 @@ Laxkit::anObject *newPathSvgdNode(int p, Laxkit::anObject *ref)
 
 //------------------------ FindDrawableNode ------------------------
 
-/*! \class Node to get a reference to other DrawableObjects in same page.
+/*! 
+ * Node to get a reference to other DrawableObjects in same page.
  */
 
 class FindDrawableNode : public NodeBase
@@ -1443,6 +2382,7 @@ class FindDrawableNode : public NodeBase
 	virtual NodeBase *Duplicate();
 	virtual int Update();
 	virtual int GetStatus();
+	virtual int UpdatePreview();
 
 	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref);
 
@@ -1461,7 +2401,7 @@ FindDrawableNode::FindDrawableNode()
 	makestr(type, "Drawable/FindDrawable");
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "base",    NULL,1, _("Base"), _("Object from which to begin searching")));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "pattern", NULL,1, _("Pattern"), _("Pattern to search for")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "pattern", new StringValue(),1, _("Pattern"), _("Pattern to search for"), 0, true));
 
 	// AddProperty(new NodeProperty(NodeProperty::PROP_Block, true, "exact",    new BooleanValue(false),1,_("Exact"),   _("Match must be exact")));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Block, true, "regex",    new BooleanValue(false),1,_("regex"),   _("Pattern is a regular expression")));
@@ -1483,6 +2423,18 @@ NodeBase *FindDrawableNode::Duplicate()
 	return node;
 }
 
+int FindDrawableNode::GetStatus()
+{
+	DrawableObject *dr = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
+	if (!dr) return -1;
+	StringValue *s = dynamic_cast<StringValue*>(properties.e[1]->GetData());
+	if (!s) return -1;
+	const char *pattern = s->str;
+	if (isblank(pattern)) return -1;
+
+	return NodeBase::GetStatus();
+}
+
 /*! Return 0 for no error and everything up to date.
  * -1 means bad inputs and node in error state.
  * 1 means needs updating.
@@ -1490,7 +2442,11 @@ NodeBase *FindDrawableNode::Duplicate()
 int FindDrawableNode::Update()
 {
 	DrawableObject *base = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
-	if (!base) return -1;
+	if (!base) {
+		UpdatePreview();
+		Wrap();
+		return -1;
+	}
 
 	StringValue *s = dynamic_cast<StringValue*>(properties.e[1]->GetData());
 	if (!s) return -1;
@@ -1516,25 +2472,33 @@ int FindDrawableNode::Update()
 	DrawableObject *found = dynamic_cast<DrawableObject*>(itr.Start(&place));
 	
 	properties.e[4]->SetData(found, 0);
+	UpdatePreview();
+	Wrap();
 	return NodeBase::Update();
 }
 
-int FindDrawableNode::GetStatus()
+int FindDrawableNode::UpdatePreview()
 {
-	DrawableObject *dr = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
-	if (!dr) return -1;
-	StringValue *s = dynamic_cast<StringValue*>(properties.e[1]->GetData());
-	if (!s) return -1;
-	const char *pattern = s->str;
-	if (isblank(pattern)) return -1;
-
-	return NodeBase::GetStatus();
+	Previewable *obj = dynamic_cast<Previewable*>(properties.e[properties.n-1]->GetData());
+	LaxImage *img = nullptr;
+	if (obj) img = obj->GetPreview();
+	if (img) {
+		if (img != total_preview) {
+			if (total_preview) total_preview->dec_count();
+			total_preview = img;
+			total_preview->inc_count();
+		}
+	} else {
+		if (total_preview) total_preview->dec_count();
+		total_preview = nullptr;
+	}
+	return 1;
 }
-
 
 //------------------------ DrawableInfoNode ------------------------
 
-/*! \class Node for basic DrawableObject information, like name, parent, transform, and bounds..
+/*! 
+ * Node for basic DrawableObject information, like name, parent, transform, and bounds..
  */
 
 class DrawableInfoNode : public NodeBase
@@ -1651,10 +2615,17 @@ int DrawableInfoNode::GetStatus()
 int SetupDataObjectNodes(Laxkit::ObjectFactory *factory)
 {
 	 //--- Drawables
-	factory->DefineNewObject(getUniqueNumber(), "Drawable/ImageData",     newLImageDataNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Drawable/ImageDataInfo", newLImageDataInfoNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Drawable/DrawableInfo",  DrawableInfoNode::NewNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Drawable/FindDrawable",  FindDrawableNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/ImageData",         newLImageDataNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/ImageDataInfo",     newLImageDataInfoNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/DrawableInfo",      DrawableInfoNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/FindDrawable",      FindDrawableNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/DuplicateDrawable", DuplicateDrawableNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/DuplicateSingle",   DuplicateSingleNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/SetParent",         SetParentNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/SetPositions",      SetPositionsNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/RotateDrawables",   RotateDrawablesNode::NewNode,  NULL, 0);
+
+
 
 	factory->DefineNewObject(getUniqueNumber(), "Paths/PathsData",         newPathsDataNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/Circle",            newPathCircleNode,  NULL, 0);
@@ -1666,14 +2637,18 @@ int SetupDataObjectNodes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Paths/PathFunctionRofT",  newPathFunctionRofTNode, NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/PathFunctionPolarT",newPathFunctionPolarTNode, NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/Svgd",              newPathSvgdNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/EndPoints",         EndPointsNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/SetOriginToBBox",   SetOriginBBoxNode::NewNode,  NULL, 0);
 
-	factory->DefineNewObject(getUniqueNumber(), "Points/Grid",         newPointsGridNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Points/HexGrid",      newPointsHexNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Points/RandomSquare", newPointsRandomSquareNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Points/RandomCircle", newPointsRandomRadialNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Points/PointsToDots", PointsToDotsNode::NewNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Points/PointsToBars", PointsToBarsNode::NewNode,  NULL, 0);
+
+	factory->DefineNewObject(getUniqueNumber(), "Points/Grid",             newPointsGridNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Points/HexGrid",          newPointsHexNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Points/RandomSquare",     newPointsRandomSquareNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Points/RandomCircle",     newPointsRandomRadialNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Points/PointsToDots",     PointsToDotsNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Points/PointsToBars",     PointsToBarsNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Points/PointsToBarChart", PointsToBarChartNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Points/PointsToDelaunay", PointsToDelaunayNode::NewNode,  NULL, 0);
 
 	return 0;
 }

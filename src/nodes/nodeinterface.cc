@@ -914,6 +914,21 @@ int NodeBase::Update()
 
 int NodeBase::UpdatePreview()
 {
+	Value *v = PreviewFrom();
+	if (!v) return 1;
+	Previewable *obj = dynamic_cast<Previewable*>(v);
+	LaxImage *img = nullptr;
+	if (obj) img = obj->GetPreview();
+	if (img) {
+		if (img != total_preview) {
+			if (total_preview) total_preview->dec_count();
+			total_preview = img;
+			total_preview->inc_count();
+		}
+	} else {
+		if (total_preview) total_preview->dec_count();
+		total_preview = nullptr;
+	}
 	return 1;
 }
 
@@ -1147,7 +1162,10 @@ void NodeBase::DuplicateProperties(NodeBase *from)
 		Value *v = NULL;
 
 		 //sometimes dup data, just in case
-		if (property->IsBlock() || (property->IsInput() && property->connections.n == 0)) {
+		if (property->IsBlock()
+			  || (property->IsInput() && property->connections.n == 0)
+			  || (property->IsOutput() && property->IsEditable())
+			 ) {
 			v = property->GetData();
 			if (v && property->data_is_linked) v->inc_count();
 			else if (v) v = v->duplicate();
@@ -3237,6 +3255,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 			if (!e) return 0;
 			int ch = s->info2;
 			int state = s->info3;
+			bool setold = false;
 
 			int pi = lasthoverprop;
 
@@ -3267,6 +3286,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 			}
 
 			if (pi != lasthoverprop) {
+				// pop up a new input box
 				if (e) {
 					sstr = e->GetText();
 					str = sstr;
@@ -3274,9 +3294,10 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 				lasthoverprop = pi;
 				viewport->ClearInputBox();
 				EditProperty(lasthover, lasthoverprop);
+				setold = true;
 
 			}
-			return 0;
+			if (!setold) return 0;
 		}
 
 		 //parse the new data

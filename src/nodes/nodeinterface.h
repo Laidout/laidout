@@ -316,6 +316,7 @@ class NodeBase : public Laxkit::anObject,
 	virtual int Update();
 	virtual void PropagateUpdate();
 	virtual int UpdatePreview();
+	virtual Value *PreviewFrom() { return nullptr; }
 	virtual void PreviewSample(double w, double h, bool is_shift);
 	virtual int GetStatus(); //0 ok, -1 bad ins, 1 just needs updating
 	virtual void Touch();
