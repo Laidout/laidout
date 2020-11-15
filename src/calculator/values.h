@@ -197,6 +197,7 @@ class ValueConstraint
 #define OBJECTDEF_ORPHAN    (1<<2)
 #define OBJECTDEF_ISSET     (1<<3)
 #define OBJECTDEF_LIST      (1<<3)
+#define OBJECTDEF_READONLY  (1<<4)
 
 enum ObjectDefOut {
 	DEFOUT_Indented     = 0,
@@ -477,6 +478,7 @@ class SetValue : public Value, virtual public FunctionEvaluator
 	virtual int Push(Value *v,int absorb, int where=-1);
 	virtual int n();
 	virtual Value *e(int i);
+	virtual int Set(int i, Value *v, int absorb);
 
  	virtual ObjectDef *makeObjectDef();
     virtual int getNumFields();

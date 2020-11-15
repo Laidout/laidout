@@ -3269,6 +3269,19 @@ Value *SetValue::e(int i)
 	return nullptr;
 }
 
+/*! Return 1 for success. i must exist, return 0 if not.
+ */
+int SetValue::Set(int i, Value *v, int absorb)
+{
+	if (i < 0 || i >= values.n) return 0;
+	if (v != values.e[i]) {
+		values.e[i]->dec_count();
+		values.e[i] = v;
+	}
+	if (!absorb) v->inc_count();
+	return 1;
+}
+
 int SetValue::getValueStr(char *buffer,int len)
 {
 	int needed=3;//"{}\n"
