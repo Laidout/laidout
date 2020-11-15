@@ -56,6 +56,8 @@ class LPathsData : public DrawableObject,
 class LPathInterface : public LaxInterfaces::PathInterface,
 					   public Value
 {
+	int cache_modified;
+
  protected:
  public:
 	LPathInterface(int nid,Laxkit::Displayer *ndp);
@@ -67,6 +69,8 @@ class LPathInterface : public LaxInterfaces::PathInterface,
 	virtual ObjectDef *makeObjectDef();
 	virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual Value *dereference(const char *extstring, int len);
+	virtual void Modified(int level=0);
+	virtual int LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
 
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);

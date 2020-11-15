@@ -76,6 +76,8 @@ ObjectFilterNode::~ObjectFilterNode()
  */
 ObjectFilter::ObjectFilter(anObject *nparent, int make_in_outs)
 {
+	DBG cerr << "ObjectFilter constructor, id: "<<object_id<<", "<<(Id()?Id():"")<<endl;
+
 	parent = nparent;
 
 	NodeColors *cols = new NodeColors;
@@ -110,6 +112,7 @@ ObjectFilter::ObjectFilter(anObject *nparent, int make_in_outs)
 
 ObjectFilter::~ObjectFilter()
 {
+	DBG cerr << "ObjectFilter destructor, id: "<<object_id<<", "<<(Id()?Id():"")<<endl;
 }
 
 anObject *ObjectFilter::ObjectOwner()
@@ -232,10 +235,12 @@ int ObjectFilter::FindInterfaceNodes(Laxkit::RefPtrStack<ObjectFilterNode> &filt
 
 LaxFiles::Attribute *ObjectFilter::dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context)
 {
+	if (parent) parent->inc_count();
 	NodeProperty *in = FindProperty("in");
 	in->SetData(NULL,0);
 	Attribute *attt = NodeGroup::dump_out_atts(att, what, context);
 	in->SetData(dynamic_cast<DrawableObject*>(parent), 0);
+	if (parent) parent->dec_count();
 	return attt;
 }
 

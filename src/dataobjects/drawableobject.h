@@ -193,6 +193,7 @@ class DrawableObject :  virtual public ObjectContainer,
 	Laxkit::anObject *filter; // *** can't declare as ObjectFilter directly due to absurd filefilter.h definitions.. need to fix this!
 	virtual DrawableObject *FinalObject();
 	virtual int SetFilter(Laxkit::anObject *nfilter, int absorb);
+	virtual void ForceFilterUpdates(bool onlythis);
 
 	//Laxkit::RefPtrStack<anObject *> refs; //what other resources this objects depends on?
 

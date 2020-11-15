@@ -143,6 +143,7 @@ class Document : public ObjectContainer, public Value
 	virtual int SaveAsTemplate(const char *tname, const char *tfile,
 						int includelimbos,int includewindows,Laxkit::ErrorLog &log,
 						bool clobber, char **tfilename_attempt);
+	virtual void ForceFilterUpdates(int frompage, int topage);
 	
 	
 	 //object content

@@ -1127,7 +1127,18 @@ int GroupInterface::PerformAction(int action)
 			obj=NULL;
 			DBG cerr <<" - Duplicate "<<selection->e(c)->obj->whattype()<<":"<<selection->e(c)->obj->object_id<<endl;
 
-			obj=selection->e(c)->obj->duplicate(NULL);
+			DrawableObject *dobj = dynamic_cast<DrawableObject*>(selection->e(c)->obj);
+			anObject *filter = dobj->filter;
+			if (filter) dobj->filter = nullptr;
+			obj = dobj->duplicate(NULL);
+			// *** duplicate filter separately for safety... otherwise needs a ton of overloaded funcs to deal with.. needs more thought
+			if (filter) {
+				ObjectFilter *nfilter = dynamic_cast<ObjectFilter*>(dynamic_cast<ObjectFilter*>(filter)->Duplicate());
+				DrawableObject *dup = dynamic_cast<DrawableObject*>(obj);
+				dup->filter = nfilter;
+				nfilter->SetParent(dup);
+			}
+			if (filter) dobj->filter = filter; //put filter back on
 			obj->FindBBox();
 			obj->m(selection->e(c)->obj->m());
 

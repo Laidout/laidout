@@ -286,6 +286,21 @@ int DrawableObject::SetFilter(Laxkit::anObject *nfilter, int absorb)
 	return 0;
 }
 
+void DrawableObject::ForceFilterUpdates(bool onlythis)
+{
+	if (!onlythis) { //do kids
+		for (int c=0; c<n(); c++) {
+			DrawableObject *o = dynamic_cast<DrawableObject*>(e(c));
+			if (!o) continue;
+			o->ForceFilterUpdates(false);
+		}
+	}
+
+	if (filter) {
+		ObjectFilter *ofilter = dynamic_cast<ObjectFilter*>(filter);
+		ofilter->ForceUpdates();
+	}
+}
 
 /*! If index out or range, remove top.
  * Return 0 for success, nonzero error.
@@ -1023,6 +1038,7 @@ int DrawableObject::dec_count()
 {
 	int c = Resourceable::dec_count();
 	if (c == 1 && filter) {
+		//filter holds 1 ref to ourself, which dec_count below should remove allowing full delete
 		anObject *f = filter;
 		filter = nullptr;
 		f->dec_count();

@@ -327,7 +327,8 @@ int LPathsData::Evaluate(const char *func,int len, ValueHash *context, ValueHash
 LPathInterface::LPathInterface(int nid,Laxkit::Displayer *ndp)
   : PathInterface(nid,ndp)
 {
-	pathi_style|=LaxInterfaces::PATHI_Render_With_Cache;
+	pathi_style |= LaxInterfaces::PATHI_Render_With_Cache;
+	cache_modified = 0;
 }
 
 
@@ -347,6 +348,24 @@ Value *LPathInterface::duplicate()
     return this;
 }
 
+void LPathInterface::Modified(int level)
+{
+	PathInterface::Modified(level);
+	cache_modified = 1;
+}
+
+int LPathInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
+{
+	int ret = PathInterface::LBUp(x,y,state,d);
+	if (cache_modified) {
+		if (data && dynamic_cast<DrawableObject*>(data)->filter) {
+			ObjectFilter *f = dynamic_cast<ObjectFilter*>(dynamic_cast<DrawableObject*>(data)->filter);
+			if (f) f->ForceUpdates();
+		}
+		cache_modified = 0;
+	}
+	return ret;
+}
 
 ObjectDef *LPathInterface::makeObjectDef()
 {

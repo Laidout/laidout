@@ -1003,6 +1003,8 @@ int Document::Load(const char *file,ErrorLog &log)
 	SyncPages(0,-1, false);
 
 	laidout->project->ClarifyRefs(log);
+
+	ForceFilterUpdates(-1,-1);
 	DBG cerr<<" *** Document::Load should probably have a load context storing refs that need to be sorted, to save time loading..."<<endl;
 
 	if (!(strstr(file,"/laidout/") && strstr(file,"/templates/"))) {
@@ -1022,6 +1024,18 @@ int Document::Load(const char *file,ErrorLog &log)
 
 	DBG cerr <<"------ Done reading "<<file<<endl<<endl;
 	return 1;
+}
+
+/*! After load in, need to make sure all filters run and can hopefully access everything they
+ * need after actual file load done.
+ */
+void Document::ForceFilterUpdates(int frompage, int topage)
+{
+	if (frompage < 0) frompage = 0;
+	if (topage < frompage || topage >= pages.n) topage = pages.n-1;
+	for (int c=frompage; c<=topage; c++) {
+		pages.e[c]->layers.ForceFilterUpdates(false);
+	}
 }
 
 //! Make sure each page has the correct PageStyle and page label.
