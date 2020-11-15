@@ -14,7 +14,7 @@
 #ifndef LVORONOIDATA_H
 #define LVORONOIDATA_H
 
-#include <lax/interfaces/delauneyinterface.h>
+#include <lax/interfaces/delaunayinterface.h>
 #include "drawableobject.h"
 
 
@@ -52,13 +52,13 @@ class LVoronoiData : public DrawableObject,
 };
 
 
-//------------------------------- LDelauneyInterface --------------------------------
-class LDelauneyInterface : public LaxInterfaces::DelauneyInterface,
+//------------------------------- LDelaunayInterface --------------------------------
+class LDelaunayInterface : public LaxInterfaces::DelaunayInterface,
 						   public Value
 {
  protected:
  public:
-	LDelauneyInterface(int nid,Laxkit::Displayer *ndp);
+	LDelaunayInterface(int nid,Laxkit::Displayer *ndp);
 	virtual const char *whattype() { return "VoronoiInterface"; }
 	virtual LaxInterfaces::anInterface *duplicate(LaxInterfaces::anInterface *dup);
 

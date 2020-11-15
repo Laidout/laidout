@@ -13,7 +13,7 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
-bug: laxkit, spelled Delaunay wrong
+bug: home and end through selection bounds out of whack.. try with gradient tool for instance, controls bad until reselect
 
 bug: Engraver fill, just moving mouse around is rerendering to buffer for preview
 
@@ -31,6 +31,8 @@ bug: back to not maximizing properly on default ubuntu. Seems to work fine on ev
 
 
 ------------ other bugs:
+
+bug: popup menus: submenus spawning on wrong side on far right monitors
 
 bug: command prompt window cursor often invisible
 bug: command prompt window input sometimes unrecoverably locks if cursor not at very end
@@ -953,6 +955,9 @@ common property editor tool:  ..overlay and put editor box in a corner?
   maybe other mode, where you can copy certain properties, then apply those to other objects?
 
 ObjectFilter objectfilters object filter:
+  bug: did something that made object filter totally disappear.. not sure what
+
+  need a way to easily apply one object's filter to another object
   need menu options:
     Create filtered copy
     Apply filters
@@ -982,27 +987,41 @@ Perspective perspective:
 
 node editor node interface NodeInterface nodes: node: interface: 
   undo redo
+  bug: control click on connection for pan traversal not working all the way
   bug: ObjectInfo should reset id and type on disconnection or null object
   bug: adaptive nodes need to cache previous in and check that rather than just update on connection change, since could change upstream
-  bug: say Vector2, edit value, tab to next, does not save previous value
   bug: load in recovery: should ensure only one input, and only one exec_out
   bug: seems like node names can sometimes erroneously get duplicate names? this messes up load in/connecting
-  bug: traverse path only goes about 80%
   bug: transform object isn't copying images in an ImageData
   bug: height of resizable property not saved
-  bug: why are nodes yellow: PerspectiveFilter, PointsToDots, Affine, Affine2
-  bug: memory hole in pointset then modifying somewhere
+  bug: why are nodes yellow sometimes after load in: PerspectiveFilter, PointsToDots, Affine, Affine2.. DONE: String Circle
+  bug: memory hole in pointset(?) then modifying somewhere
+  bug: duplicating objectfilter does not transfer values for the most part for the most part
+  if a node is in error state, error color overrides the selected highlight.. it shouldn't
+  need to figure out safe way to duplicate DrawableObjects that have filters and/or children
   implement objectfilterinterface/nodeinterface interchange with nested node groups
   reroute needs double click on connection to add node
   edit filter nodes for the first time should center nodes in viewport
   need solution for shared interface getting messages for different nodes.. probably need to do one instance per whatever
   would be nice to have a "Collapse unlinked properties" option
 
+  DONE bug: say Vector2, edit value, tab to next, does not save previous value
   DONE but: Color node only has output, but outputting data of output nodes currently forbidden.. make exception when output is editable?
 
+  adaptive text balloons:
+    tail point + direction
+	tail attach point + direction
+	text
+	font
+	target rect to fit in if possible
   data node types:
     how to systematize read only field overrides (like minx,maxx,...)
     fit obj in rectangle, with alignment
+	EditDrawable: bring up appropriate interface to edit
+	create clones: make array of clones
+	Reparent
+	Perturb: random point/rotation/scale shifting, from rng or sample from NumberField?
+	RandomColors,RandomFill,RandomStroke: select from gradient, or array of colors
     anchor nodes (double up with revamped AnchorInterface):
       in anchor: object local space, or parent space
       out anchor: other object point (of non-parent), page, spread
@@ -1027,13 +1046,14 @@ node editor node interface NodeInterface nodes: node: interface:
         tsp
         relax (optionally within path)
 		conformal relax
-		quadrilateralize and relax
-		voronoi region centroid replacement relax
+		quadrilateralize and relax -> work Net into a full Drawable?
+		voronoi region centroid replacement relax: strength, iterations
       DONE check: dereference assign Evaluate extend from Group, not affine
     paths
-      fill and stroke controls
       weight controls .. present as line profile?
       path ops:
+	    path from points: linear or smooth
+		sample path to points, optionally with transforms. sample at t OR s by step OR by n points OR squishy step
 	    boolean pathops
         project onto heightmap? onto mesh?
         make net then inset
@@ -1043,6 +1063,7 @@ node editor node interface NodeInterface nodes: node: interface:
         simplify
         set line profile from resource
         apply weights
+      DONE fill and stroke controls (by using ModifyObjectNode)
       DONE check: dereference assign Evaluate extend from Group, not affine
     engraving
       dashes
@@ -1069,6 +1090,7 @@ node editor node interface NodeInterface nodes: node: interface:
       in whole tree
       other pages?
       resources?
+    DONE SetParent: take list of objs, and just put as kids
     alignment nodes:
       align to page (with page type)
       access to alignment/nup tool config?
@@ -1442,6 +1464,10 @@ GroupInterface groupinterface ObjectInterface objectinterface: group: object int
   DONE default hide draggable flip, but have as right click option
   DONE menuify parent options
 
+Reparenting:
+  the label hint should have "Parent: ItsId" and "Child:Id"
+  need option to select parent from current selected, like Parent to > (list)
+
 ObjectIndicator objectindicator:
   current should be bold
   clicking around in hierarchy should remember children we just clicked from
@@ -1568,7 +1594,7 @@ Colors:
     path
     DONE images (doesn't use color per se)
 
-dual monitors:
+dual monitors: multi monitor multimonitor
   centering windows should center on monitor of originating window
   open in same screen as mouse
   when you open a new window, ensure that it is always on screen
@@ -2677,4 +2703,6 @@ DONE object indicator: click on object, does not update selection
 DONE bug: space bar for centering not working anymore.. shift-space seems to... fixed somehow
 DONE scroll bar zoom handles don't appear to work ?? can't duplicate
 DONE bug: calculator: using Math; 1*2*pi -> "Cannot compute with those values"
+DONE bug: laxkit, spelled Delaunay wrong
+DONE bug: Gradient load in not reading one of the two points
 

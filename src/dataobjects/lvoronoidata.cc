@@ -108,7 +108,7 @@ LaxInterfaces::SomeData *LVoronoiData::duplicate(LaxInterfaces::SomeData *dup)
 LaxInterfaces::SomeData *LVoronoiData::EquivalentObject()
 {
 	int n=0;
-	if (show_delauney) n++;
+	if (show_delaunay) n++;
 	if (show_points) n++;
 	if (show_voronoi) n++;
 	//if (show_numbers) n++;
@@ -143,11 +143,11 @@ LaxInterfaces::SomeData *LVoronoiData::EquivalentObject()
 		else return paths;
 	} 
 
-	if (show_delauney) {
+	if (show_delaunay) {
 		PathsData *paths=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
-		paths->line(width_delauney, LAXCAP_Round,LAXJOIN_Round, &color_delauney->screen);
+		paths->line(width_delaunay, LAXCAP_Round,LAXJOIN_Round, &color_delaunay->screen);
 		paths->fill(NULL);
-		paths->Id("delauney");
+		paths->Id("delaunay");
 		for (int c=0; c<triangles.n; c++) {
 			paths->moveTo(points.e[triangles[c].p1]->p);
 			paths->lineTo(points.e[triangles[c].p2]->p);
@@ -207,7 +207,7 @@ ObjectDef *LVoronoiData::makeObjectDef()
 	sd = new ObjectDef(gdef,
 			"VoronoiData",
             _("Voronoi Data"),
-            _("Delauney triangles and Voronoi regions"),
+            _("Delaunay triangles and Voronoi regions"),
             NewLVoronoiData,NULL);
 	stylemanager.AddObjectDef(sd, 0);
 
@@ -309,45 +309,45 @@ int LVoronoiData::Evaluate(const char *func,int len, ValueHash *context, ValueHa
 
 
 
-//------------------------------- LDelauneyInterface --------------------------------
-/*! \class LDelauneyInterface
+//------------------------------- LDelaunayInterface --------------------------------
+/*! \class LDelaunayInterface
  * \brief add on a little custom behavior.
  */
 
 
-LDelauneyInterface::LDelauneyInterface(int nid,Laxkit::Displayer *ndp)
-  : DelauneyInterface(NULL, nid,ndp)
+LDelaunayInterface::LDelaunayInterface(int nid,Laxkit::Displayer *ndp)
+  : DelaunayInterface(NULL, nid,ndp)
 {
 }
 
 
-LaxInterfaces::anInterface *LDelauneyInterface::duplicate(LaxInterfaces::anInterface *dup)
+LaxInterfaces::anInterface *LDelaunayInterface::duplicate(LaxInterfaces::anInterface *dup)
 {
-	if (dup==NULL) dup=dynamic_cast<anInterface *>(new LDelauneyInterface(id,NULL));
-	else if (!dynamic_cast<LDelauneyInterface *>(dup)) return NULL;
+	if (dup==NULL) dup=dynamic_cast<anInterface *>(new LDelaunayInterface(id,NULL));
+	else if (!dynamic_cast<LDelaunayInterface *>(dup)) return NULL;
 
-	return DelauneyInterface::duplicate(dup);
+	return DelaunayInterface::duplicate(dup);
 }
 
 
 //! Returns this, but count is incremented.
-Value *LDelauneyInterface::duplicate()
+Value *LDelaunayInterface::duplicate()
 {
     this->inc_count();
     return this;
 }
 
 
-ObjectDef *LDelauneyInterface::makeObjectDef()
+ObjectDef *LDelaunayInterface::makeObjectDef()
 {
 
-	ObjectDef *sd=stylemanager.FindDef("DelauneyInterface");
+	ObjectDef *sd=stylemanager.FindDef("DelaunayInterface");
     if (sd) {
         sd->inc_count();
         return sd;
     }
 
-	sd=new ObjectDef(NULL,"DelauneyInterface",
+	sd=new ObjectDef(NULL,"DelaunayInterface",
             _("Voronoi Interface"),
             _("Voronoi Interface"),
             "class",
@@ -367,7 +367,7 @@ ObjectDef *LDelauneyInterface::makeObjectDef()
 // * -1 for no value returned due to incompatible parameters, which aids in function overloading.
 // *  1 for parameters ok, but there was somehow an error, so no value returned.
 // */
-//int LDelauneyInterface::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+//int LDelaunayInterface::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 //	                     Value **value_ret, ErrorLog *log)
 //{
 //	return 1;
@@ -383,28 +383,28 @@ ObjectDef *LDelauneyInterface::makeObjectDef()
  *  0 for total fail, as when v is wrong type.
  *  -1 for bad extension.
  */
-int LDelauneyInterface::assign(FieldExtPlace *ext,Value *v)
+int LDelaunayInterface::assign(FieldExtPlace *ext,Value *v)
 {
 	 //assignments not allowed
 	return 0;
 }
 
-Value *LDelauneyInterface::dereference(const char *extstring, int len)
+Value *LDelaunayInterface::dereference(const char *extstring, int len)
 {
 	return NULL;
 }
 
-void LDelauneyInterface::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void LDelaunayInterface::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
 	anInterface::dump_out(f,indent,what,context);
 }
 
-void LDelauneyInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void LDelaunayInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
 	anInterface::dump_in_atts(att,flag,context);
 }
 
-LaxFiles::Attribute *LDelauneyInterface::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
+LaxFiles::Attribute *LDelaunayInterface::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
 {
 	return att;
 }
