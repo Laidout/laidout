@@ -22,7 +22,7 @@
 #include <lax/interfaces/engraverfillinterface.h>
 #include <lax/interfaces/freehandinterface.h>
 #include <lax/interfaces/textonpathinterface.h>
-#include <lax/interfaces/delauneyinterface.h>
+#include <lax/interfaces/delaunayinterface.h>
 
 #include "../nodes/nodeinterface.h"
 #include "../interfaces/objectfilterinterface.h"
@@ -266,10 +266,10 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	existingpool->push(i);
 	i->dec_count();
 
-	 //------Delauney
+	 //------Delaunay
 	LVoronoiData voronoi;
 	voronoi.GetObjectDef();
-	i=new DelauneyInterface(NULL,id++,NULL);
+	i=new DelaunayInterface(NULL,id++,NULL);
 	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 	existingpool->push(i);
 	i->dec_count();
