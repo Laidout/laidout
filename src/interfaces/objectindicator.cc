@@ -231,7 +231,7 @@ int ObjectIndicator::Refresh()
 	if (!context) return 0;
 
 
-	DBG cerr <<"ObjectIndicator::Refresh()..."<<endl;
+	// DBG cerr <<"ObjectIndicator::Refresh()..."<<endl;
 
 	dp->DrawScreen();
 	dp->NewBG(1.,1.,1.);

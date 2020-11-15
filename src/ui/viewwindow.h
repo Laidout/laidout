@@ -72,6 +72,9 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 						virtual public FunctionEvaluator
 {
 	char lfirsttime;
+	LaxInterfaces::LineStyle ls; //for default papergroup style
+	LaxInterfaces::FillStyle fs; //for default papergroup style
+
   protected:
 	int fakepointer;   //***for lack of screencast recorder for multipointer
 	flatpoint fakepos; //***for lack of screencast recorder for multipointer

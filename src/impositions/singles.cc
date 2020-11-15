@@ -50,29 +50,32 @@ namespace Laidout {
 
 Singles::Singles() : Imposition(_("Singles"))
 { 
-	insetleft=insetright=insettop=insetbottom=0;
-	marginleft=marginright=margintop=marginbottom=0;
-	tilex=tiley=1;
-	gapx=gapy=0;
-	pagestyle=NULL;
+	cached_margin_outline = nullptr;
+	c_ml = c_mr = c_mt = c_mb = c_w = c_h = 0;
 
-	PaperStyle *paperstyle=laidout->GetDefaultPaper();
-	if (paperstyle) paperstyle=static_cast<PaperStyle *>(paperstyle->duplicate());
-	else paperstyle=new PaperStyle("letter",8.5,11.0,0,300,"in");
+	insetleft  = insetright  = insettop  = insetbottom  = 0;
+	marginleft = marginright = margintop = marginbottom = 0;
+	tilex = tiley = 1;
+	gapx  = gapy  = 0;
+	pagestyle     = NULL;
+
+	PaperStyle *paperstyle = laidout->GetDefaultPaper();
+	if (paperstyle) paperstyle = static_cast<PaperStyle *>(paperstyle->duplicate());
+	else paperstyle = new PaperStyle("letter", 8.5, 11.0, 0, 300, "in");
 	SetPaperSize(paperstyle);
 	paperstyle->dec_count();
-			
+
 	setPage();
 
-	objectdef=stylemanager.FindDef("Singles");
-	if (objectdef) objectdef->inc_count(); 
+	objectdef = stylemanager.FindDef("Singles");
+	if (objectdef) objectdef->inc_count();
 	else {
-		objectdef=makeObjectDef();
-		if (objectdef) stylemanager.AddObjectDef(objectdef,1);
-		 // so this new objectdef should have a count of 2. The Style destructor removes
-		 // 1 count, and the stylemanager should remove the other
+		objectdef = makeObjectDef();
+		if (objectdef) stylemanager.AddObjectDef(objectdef, 1);
+		// so this new objectdef should have a count of 2. The Style destructor removes
+		// 1 count, and the stylemanager should remove the other
 	}
-	
+
 	DBG cerr <<"imposition singles init"<<endl;
 }
 
@@ -81,6 +84,7 @@ Singles::~Singles()
 {
 	DBG cerr <<"--Singles destructor object "<<object_id<<endl;
 	pagestyle->dec_count();
+	if (cached_margin_outline) cached_margin_outline->dec_count();
 }
 
 
@@ -628,19 +632,35 @@ SomeData *Singles::GetPageOutline(int pagenum,int local)
 
 //! Return outline of page margin in page coords. 
 /*! Calling code should call dec_count() on the returned object when it is no longer needed.
- *
- * If all the margins are 0, then NULL is returned.
  */
 SomeData *Singles::GetPageMarginOutline(int pagenum,int local)
 {
 //	 //return if no margins.
 //	if (pagestyle->ml==0 && pagestyle->mr==0 && pagestyle->mt==0 && pagestyle->mb==0) return NULL;
 
-	PathsData *newpath=new PathsData();//count==1
+	if (cached_margin_outline) {
+		if (c_ml == pagestyle->ml && c_mr == pagestyle->mr && c_mt == pagestyle->mt && c_mb == pagestyle->mb
+				&& c_w == pagestyle->w() && c_h == pagestyle->h()) {
+			cached_margin_outline->inc_count();
+			return cached_margin_outline;
+		}
+		cached_margin_outline->dec_count();
+	}
+
+	PathsData *newpath = new PathsData();
 	newpath->appendRect(pagestyle->ml,pagestyle->mb, 
 						pagestyle->w()-pagestyle->mr-pagestyle->ml,pagestyle->h()-pagestyle->mt-pagestyle->mb);
 	newpath->FindBBox();
 	//nothing special is done when local==0
+
+	cached_margin_outline = newpath;
+	c_ml = pagestyle->ml;
+	c_mr = pagestyle->mr;
+	c_mt = pagestyle->mt;
+	c_mb = pagestyle->mb;
+	c_w = pagestyle->w();
+	c_h = pagestyle->h();
+	newpath->inc_count();
 	return newpath;
 }
 

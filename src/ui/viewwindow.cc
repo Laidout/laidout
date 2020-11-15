@@ -462,7 +462,8 @@ inline std::ostream &operator<<(std::ostream &os, VObjContext const &o)
 //! Constructor, set up initial dp->ctm, init various things, call setupthings(), and set workspace bounds.
 /*! Incs count on newdoc. */
 LaidoutViewport::LaidoutViewport(Document *newdoc)
-	: ViewportWindow(NULL,"laidoutviewport",NULL,ANXWIN_HOVER_FOCUS|ANXWIN_DOUBLEBUFFER|VIEWPORT_ROTATABLE,0,0,0,0,0)
+	: ViewportWindow(NULL,"laidoutviewport",NULL,ANXWIN_HOVER_FOCUS|ANXWIN_DOUBLEBUFFER|VIEWPORT_ROTATABLE,0,0,0,0,0),
+	  fs(0,0,0,0xffff, WindingRule,FillSolid,LAXOP_Over)
 {
 	DBG cerr <<"in LaidoutViewport constructor, obj "<<object_id<<endl;
 
@@ -2794,8 +2795,8 @@ void LaidoutViewport::Refresh()
 
 	dp->StartDrawing(this);
 
-	DBGCAIROSTATUS(" LO viewport refresh, cairo status:  ")
-	DBG cerr <<"LO viewport Transform start: "<<endl; dumpctm(dp->Getctm());
+	// DBGCAIROSTATUS(" LO viewport refresh, cairo status:  ")
+	// DBG cerr <<"LO viewport Transform start: "<<endl; dumpctm(dp->Getctm());
 
 	 // draw the scratchboard, just blank out screen..
 	dp->ClearWindow();
@@ -2816,19 +2817,19 @@ void LaidoutViewport::Refresh()
 
     DBG for (int c=0; c<interfaces.n; c++) interfaces.e[c]->Needtodraw(0);
 
-	DBG cerr <<"LO viewport needtodraw: "<<Needtodraw()<<endl;
+	// DBG cerr <<"LO viewport needtodraw: "<<Needtodraw()<<endl;
 
 	 // draw limbo objects
-	DBG cerr <<"drawing limbo objects.."<<endl;
+	// DBG cerr <<"drawing limbo objects.."<<endl;
 	for (c=0; c<limbo->n(); c++) {
 		DrawData(dp,limbo->e(c),NULL,NULL,drawflags);
 	}
 
-	DBGCAIROSTATUS(" LO viewport after  limbo, cairo status:  ")
+	// DBGCAIROSTATUS(" LO viewport after  limbo, cairo status:  ")
 
 
 	 //draw papergroup
-	DBG cerr <<"drawing viewport->papergroup.."<<endl;
+	// DBG cerr <<"drawing viewport->papergroup.."<<endl;
 	if (papergroup) {
 		 //draw paper outlines
 		ViewerWindow *vw=dynamic_cast<ViewerWindow *>(win_parent);
@@ -2837,10 +2838,10 @@ void LaidoutViewport::Refresh()
 	}
 
 	
-	DBGCAIROSTATUS(" LO viewport after  papergroup, cairo status:  ")
+	// DBGCAIROSTATUS(" LO viewport after  papergroup, cairo status:  ")
 
 	
-	DBG cerr <<"drawing spread objects.."<<endl;
+	// DBG cerr <<"drawing spread objects.."<<endl;
 	if (spread && showstate==1) {
 		dp->BlendMode(LAXOP_Over);
 
@@ -2849,13 +2850,14 @@ void LaidoutViewport::Refresh()
 		 // draw shadow
 		if (spread->path) {
 			 //draw shadow if papergroup does not exist
-			FillStyle fs(0,0,0,0xffff, WindingRule,FillSolid,LAXOP_Over);
-			LineStyle ls; //(0xffff,0,0,0xffff, 1, LAXCAP_Round,LAXJOIN_Miter,0,LAXOP_Over);
+			// FillStyle fs(0,0,0,0xffff, WindingRule,FillSolid,LAXOP_Over);
+			// LineStyle ls; //(0xffff,0,0,0xffff, 1, LAXCAP_Round,LAXJOIN_Miter,0,LAXOP_Over);
 			ls.Colorf(1.0,0.,0.,1.0);
 			ls.width = 1;
 			ls.capstyle = LAXCAP_Round;
 			ls.widthtype = 0;
 			ls.function = LAXOP_None;
+			fs.Color(0,0,0,0xffff);
 
 			if (!(papergroup && papergroup->papers.n)) {
 				dp->NewFG(0,0,0);
@@ -2873,7 +2875,7 @@ void LaidoutViewport::Refresh()
 
 		if (spread->marks) DrawData(dp,spread->marks,NULL,NULL,drawflags);
 		 
-		DBGCAIROSTATUS(" LO viewport after spread, cairo status:  ")
+		// DBGCAIROSTATUS(" LO viewport after spread, cairo status:  ")
 
 		 // draw the page's objects and margins
 		Page *page = NULL;
@@ -2881,7 +2883,7 @@ void LaidoutViewport::Refresh()
 		flatpoint p,p2;
 		SomeData *sd = NULL;
 		for (c=0; c<spread->pagestack.n(); c++) {
-			DBG cerr <<" drawing from pagestack.e["<<c<<"], which has page "<<spread->pagestack.e[c]->index<<endl;
+			// DBG cerr <<" drawing from pagestack.e["<<c<<"], which has page "<<spread->pagestack.e[c]->index<<endl;
 			page  = spread->pagestack.e[c]->page;
 			pagei = spread->pagestack.e[c]->index;
 
@@ -2991,12 +2993,12 @@ void LaidoutViewport::Refresh()
 	
 
 			 // Draw page margin path, if any
-			SomeData *marginoutline=doc->imposition->GetPageMarginOutline(pagei,1);
+			SomeData *marginoutline = doc->imposition->GetPageMarginOutline(pagei,1);
 			if (marginoutline) {
-				DBG cerr <<"********outline bounds ll:"<<marginoutline->minx<<','<<marginoutline->miny
-				DBG      <<"  ur:"<<marginoutline->maxx<<','<<marginoutline->maxy<<endl;
-				// ***DrawData(dp,marginoutline,&margin_linestyle,NULL,drawflags);
-				LineStyle ls; //(0xa000,0xa000,0xa000,0xffff, 1,CapButt,JoinBevel,0,LAXOP_Over);
+				// DBG cerr <<"********outline bounds ll:"<<marginoutline->minx<<','<<marginoutline->miny
+				// DBG      <<"  ur:"<<marginoutline->maxx<<','<<marginoutline->maxy<<endl;
+				
+				// LineStyle ls; //(0xa000,0xa000,0xa000,0xffff, 1,CapButt,JoinBevel,0,LAXOP_Over);
 				ls.Color(0xa000,0xa000,0xa000,0xffff);
 				ls.width = 1;
 				ls.widthtype=0;
@@ -3009,8 +3011,8 @@ void LaidoutViewport::Refresh()
 
 			 // Draw all the page's objects.
 			for (c2=0; c2<page->layers.n(); c2++) {
-				DBG cerr <<"  num objs in page: "<<page->n()<<endl;
-				DBG cerr <<"  Layer "<<c2<<", objs.n="<<page->e(c2)->n()<<endl;
+				// DBG cerr <<"  num objs in page: "<<page->n()<<endl;
+				// DBG cerr <<"  Layer "<<c2<<", objs.n="<<page->e(c2)->n()<<endl;
 				DrawData(dp,page->e(c2),NULL,NULL,drawflags);
 			}
 			
@@ -3030,7 +3032,7 @@ void LaidoutViewport::Refresh()
 		if (pi) pi->DrawGroup(papergroup,1,1,0, 2);
 	}
 
-	DBGCAIROSTATUS(" LO viewport after pages, cairo status:  ")
+	// DBGCAIROSTATUS(" LO viewport after pages, cairo status:  ")
 
 	
 	 // Call Refresh for each interface that needs it, ignoring clipping region
@@ -3114,7 +3116,7 @@ void LaidoutViewport::Refresh()
 	SwapBuffers();
 
 	DBG cerr <<"------- done refreshing LaidoutViewport.."<<endl;
-	DBG cerr <<"LO viewport Transform end: "<<endl; dumpctm(dp->Getctm());
+	// DBG cerr <<"LO viewport Transform end: "<<endl; dumpctm(dp->Getctm());
 }
 
 

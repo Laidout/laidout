@@ -27,6 +27,10 @@ ObjectDef *makeSinglesObjectDef();
 
 class Singles : public Imposition
 {
+  private:
+  	LaxInterfaces::PathsData *cached_margin_outline;
+  	double c_ml, c_mr, c_mt, c_mb, c_w, c_h;
+
   public:
 	double insetleft,insetright,insettop,insetbottom;
 	double marginleft,marginright,margintop,marginbottom;
