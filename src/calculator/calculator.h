@@ -256,7 +256,7 @@ class LaidoutCalculator : public Interpreter,
 	Value *ApplyDefaultSets(SetValue *set);
 	void messageOut(const char *str,int output_lines=1);
 
-	ValueHash *parseParameters(StyleDef *def);
+	ValueHash *parseParameters(ObjectDef *def);
 
  protected:
  public:

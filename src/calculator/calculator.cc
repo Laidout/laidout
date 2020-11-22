@@ -2365,7 +2365,7 @@ void LaidoutCalculator::showDef(char *&temp, ObjectDef *sd)
 
 	const char *nm,*Nm,*desc,*rng,*fmts;
 
-	if (sd->format == VALUE_Enum && sd->getNumFields()) {
+	if (sd->format == VALUE_Enum && sd->getNumEnumFields()) {
 		appendstr(temp,"  ");
 		appendstr(temp,_("Possible values:\n"));
 		for (int c3=0; c3<sd->getNumEnumFields(); c3++) {
@@ -3496,7 +3496,7 @@ Value *LaidoutCalculator::dereference(Value *val)
 		 //build context and find parameters
 		//int error_pos=0;
 		ValueHash *context=build_context(); //build calculator context
-		ValueHash *pp=parseParameters(def); //build parameter hash in order of styledef
+		ValueHash *pp=parseParameters(def); //build parameter hash in order of objectdef
 		if (calcerror) {
 			context->dec_count();
 			if (pp) delete pp;
@@ -4000,7 +4000,7 @@ Value *LaidoutCalculator::evalname()
 	}
 
 	if (run_mode == RUN_NameCatalog || entry->type() == VALUE_Dummy) {
-		ValueHash *pp = parseParameters(nullptr); //build parameter hash in order of styledef
+		ValueHash *pp = parseParameters(nullptr); //build parameter hash in order of objectdef
 		if (pp) pp->dec_count();
 		from += n;
 		return new LValue(nullptr,0, nullptr, nullptr, nullptr, nullptr);
@@ -4016,7 +4016,7 @@ Value *LaidoutCalculator::evalname()
 		 //build context and find parameters
 		//int error_pos=0;
 		ValueHash *context=build_context(); //build calculator context
-		ValueHash *pp=parseParameters(function); //build parameter hash in order of styledef
+		ValueHash *pp=parseParameters(function); //build parameter hash in order of objectdef
 		if (calcerror) {
 			context->dec_count();
 			if (pp) delete pp;
@@ -4415,7 +4415,7 @@ ValueHash *LaidoutCalculator::parseParameters(ObjectDef *def)
 {
 	ValueHash *pp=NULL;
 
-// ***	 //check for when the styledef has 1 string parameter, and you have a large in string.
+// ***	 //check for when the objectdef has 1 string parameter, and you have a large in string.
 //	 //all of in maps to that one string. This allows functions to act like command line strings.
 //	 //They would then call some other function to parse the string or parse it internally.
 //	if (def->getNumFields()==1 ) {
@@ -4464,7 +4464,7 @@ ValueHash *LaidoutCalculator::parseParameters(ObjectDef *def)
 					 //name was not in the form of parameter assignment, it might still be an enum name
 					 ename = pname;
 					 pname = nullptr; // ename will be deleted below
-					 if (def) enumcheck = pnum;  // pname might be an enum value for styledef.field[pnum]
+					 if (def) enumcheck = pnum;  // pname might be an enum value for objectdef.field[pnum]
 				}
 			}
 
