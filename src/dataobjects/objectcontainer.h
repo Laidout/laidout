@@ -66,11 +66,6 @@ class ObjectContainer : virtual public Laxkit::anObject
 };
 
 
-
-
-
-
-
 } //namespace Laidout
 
 #endif

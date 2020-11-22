@@ -654,7 +654,7 @@ static int svgaddpath(FILE *f,flatpoint *points,int n)
 }
 
 /*! Assumes "style=" has already been output to f.
- * After retruning, user must supply closing quote mark.
+ * After returning, user must supply closing quote mark.
  */
 void svgStyleTagsDump(FILE *f, LineStyle *lstyle, FillStyle *fstyle)
 {
