@@ -28,6 +28,7 @@ bug: curve is terrible approximation at end points
 
 bug: back to not maximizing properly on default ubuntu. Seems to work fine on every other window manager I've tried.
 
+bug: gegl nodes, connect sinus to waves and also to displace, freeze!
 
 
 ------------ other bugs:
@@ -190,6 +191,9 @@ test:
   test in different window managers
   make some test scripts for command line testing
 
+
+save dialog should probably ignore clobber safety and allow enter key in edit to be "save". also auto focus file edit on start and on ^l
+  if you enter a new location in file edit, first go to that place. else save with that file name
 
 make lax templates be only .h includes, since gcc complains when .cc isn't included anyway... need to do compile speed tests
 
@@ -988,15 +992,17 @@ Perspective perspective:
 node editor node interface NodeInterface nodes: node: interface: 
   undo redo
   bug: control click on connection for pan traversal not working all the way
-  bug: ObjectInfo should reset id and type on disconnection or null object
+  bug: ObjectInfo should reset id and type on disconnection or null object, but keep any props that are connected
   bug: adaptive nodes need to cache previous in and check that rather than just update on connection change, since could change upstream
-  bug: load in recovery: should ensure only one input, and only one exec_out
+  bug: load in recovery: should ensure only one connection to input, and only one to exec_out
   bug: seems like node names can sometimes erroneously get duplicate names? this messes up load in/connecting
   bug: transform object isn't copying images in an ImageData
   bug: height of resizable property not saved
   bug: why are nodes yellow sometimes after load in: PerspectiveFilter, PointsToDots, Affine, Affine2.. DONE: String Circle
   bug: memory hole in pointset(?) then modifying somewhere
   bug: duplicating objectfilter does not transfer values for the most part for the most part
+  bug: when loading in, need to force update nodes in Resources
+  bug: gegl to image, disconnect, it is still updating the image, because LaxImage is linked through
   if a node is in error state, error color overrides the selected highlight.. it shouldn't
   need to figure out safe way to duplicate DrawableObjects that have filters and/or children
   implement objectfilterinterface/nodeinterface interchange with nested node groups
@@ -1004,22 +1010,29 @@ node editor node interface NodeInterface nodes: node: interface:
   edit filter nodes for the first time should center nodes in viewport
   need solution for shared interface getting messages for different nodes.. probably need to do one instance per whatever
   would be nice to have a "Collapse unlinked properties" option
+  bug: load and connect needs to trigger an Update, but it doesn't always?
 
+  DONE path endpoints
+  DONE path extrema
   DONE bug: say Vector2, edit value, tab to next, does not save previous value
   DONE but: Color node only has output, but outputting data of output nodes currently forbidden.. make exception when output is editable?
+  DONE Get document node
 
+  need 
+  buttons:
+    DONE mouse down/up
+	greyed out depending on properties
   adaptive text balloons:
     tail point + direction
 	tail attach point + direction
-	text
+	text -> get extent from CaptionData bbox
 	font
 	target rect to fit in if possible
   data node types:
-    how to systematize read only field overrides (like minx,maxx,...)
+    how to systematize read only field overrides (like minx,maxx,...), also "const" functions for sanity re duping before ObjectFunction returns
     fit obj in rectangle, with alignment
 	EditDrawable: bring up appropriate interface to edit
-	create clones: make array of clones
-	Reparent
+	Reparent? restrict to particular top object? otherwise you will mess things up terribly
 	Perturb: random point/rotation/scale shifting, from rng or sample from NumberField?
 	RandomColors,RandomFill,RandomStroke: select from gradient, or array of colors
     anchor nodes (double up with revamped AnchorInterface):
@@ -1027,6 +1040,7 @@ node editor node interface NodeInterface nodes: node: interface:
       out anchor: other object point (of non-parent), page, spread
       type: x,y
       2 point anchor: change position + scale|rotation
+	DONE create clones: make array of clones
     DONE NewObject/ModifyObject based on an ObjectDef.
     DONE need to make sure all types have dump_out_atts defined, otherwise the paltry Value::dump_out_atts gets used in data out
     DONE each need to double check: dereference, assign, Evaluate, extend from Group, not affine
@@ -1035,6 +1049,7 @@ node editor node interface NodeInterface nodes: node: interface:
     somedataref
       DONE check: dereference assign Evaluate extend from Group, not affine
     gradient
+	  bug: gradient controls broken
       receive color messages from viewport color box
       DONE check: dereference assign Evaluate extend from Group, not affine
       DONE double click to call up color box
@@ -1048,10 +1063,18 @@ node editor node interface NodeInterface nodes: node: interface:
 		conformal relax
 		quadrilateralize and relax -> work Net into a full Drawable?
 		voronoi region centroid replacement relax: strength, iterations
+	  pointset
+		optionally do set of affine?
+		set from drawables
+		perturb set
+		DONE double time with path generators
+		DONE grid, hexgrid, random square, random circle
+		DONE apply positions to groups of drawables
       DONE check: dereference assign Evaluate extend from Group, not affine
     paths
       weight controls .. present as line profile?
       path ops:
+	    path morph
 	    path from points: linear or smooth
 		sample path to points, optionally with transforms. sample at t OR s by step OR by n points OR squishy step
 	    boolean pathops
@@ -1083,13 +1106,13 @@ node editor node interface NodeInterface nodes: node: interface:
       DONE dereference assign Evaluate extend from Group, not affine
   object/resource management nodes:
     find drawable:
-      child of
-      self
+      DONE child of
+      DONE self
       siblings
       direct parent
       in whole tree
       other pages?
-      resources?
+      DONE resources?
     DONE SetParent: take list of objs, and just put as kids
     alignment nodes:
       align to page (with page type)
@@ -1108,13 +1131,6 @@ node editor node interface NodeInterface nodes: node: interface:
     nup tool access
     inverse affine transform
     DONE ALL ObjectDef data types need to be installed on startup, or at least when node tool starts up
-  pointset
-    double time with path generators
-	optionally do set of affine?
-	grid, hexgrid, random square, random circle
-	apply positions to groups of drawables
-	set from drawables
-	perturb set
   group nodes, connect to (new in) or (new out):
     should take names from props.
     doesn't update the parent props
@@ -1125,7 +1141,7 @@ node editor node interface NodeInterface nodes: node: interface:
   idea seen in anim nodes: collapsing math shows expression as label
   control drag on slot to reconnect all connections
   duplicate linked nodes needs to preserve connections
-  find:
+  find node:
     by label(done), name, or type
     search node or property name, or data contents
     regex
@@ -1230,7 +1246,7 @@ node editor node interface NodeInterface nodes: node: interface:
     shift-drag to remove from frame?
     have visible/togglable comment
   expression node:
-    any number of inputs
+    DONE any number of inputs (pulled from expression)
     inputs map to names according to property label
     scriptify nodes
     nodify script
@@ -1239,15 +1255,16 @@ node editor node interface NodeInterface nodes: node: interface:
   string ops:
     printf
   list nodes
-    set range [start,end] = value
-    subset [start, end], neg nums for from end
-    element [index]
+    set range [start,end] = value, optionally linked
+	concat
     create list  [type, number]
     foreach thread processor
     foreach in list, create new list with transformed elements
     sort with function
+    DONE subset [start, end], neg nums for from end
+    DONE element [index]
   math nodes
-    function nodes need a smooth option
+    function nodes need a smooth option, not just polyline
     should always be 'using Math'
   more math:
     interpolate with easing
