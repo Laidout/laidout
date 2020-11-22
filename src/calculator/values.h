@@ -190,15 +190,6 @@ class ValueConstraint
 //------------------------------ ObjectDef --------------------------------------------
 
 
-
-//ObjectDef::flags:
-#define OBJECTDEF_CAPPED    (1<<0)
-#define OBJECTDEF_DUPLICATE (1<<1)
-#define OBJECTDEF_ORPHAN    (1<<2)
-#define OBJECTDEF_ISSET     (1<<3)
-#define OBJECTDEF_LIST      (1<<3)
-#define OBJECTDEF_READONLY  (1<<4)
-
 enum ObjectDefOut {
 	DEFOUT_Indented     = 0,
 	DEFOUT_Script       = (-2),
@@ -208,6 +199,18 @@ enum ObjectDefOut {
 	DEFOUT_MAX
 };
 
+enum ObjectDefFlags {
+	OBJECTDEF_CAPPED    = (1<<0), //!< Forbid adding new fields to a variable
+	OBJECTDEF_DUPLICATE = (1<<1),
+	OBJECTDEF_ORPHAN    = (1<<2),
+	OBJECTDEF_ISSET     = (1<<3),
+	OBJECTDEF_READONLY  = (1<<4), //!< An override making something from a baseclass readonly in the derived class
+	OBJECTDEF_CONST     = (1<<5), //!< Function does not change anything internal
+ // OBJECTDEF_OPTIONAL
+ // OBJECTDEF_FORCE_NUM_PARAMS
+ // OBJECTDEF_FORCE_TYPES
+	OBJECTDEF_MAX
+};
 
 class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 {
@@ -222,7 +225,6 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	OpFuncEvaluator *opevaluator;
 	Value *newObject(ObjectDef *def);
 
-
 	 //descriptive elements
 	char *name; //name for interpreter (basically class name)
 	char *Name; // Name for dialog label
@@ -232,15 +234,7 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	char *defaultvalue;
 	Value *defaultValue; //this has more overhead than just a string, but can be more convenient in some cases.
 
-	 // OBJECTDEF_ORIGINAL
-	 // OBJECTDEF_DUPLICATE
-	 // OBJECTDEF_ORPHAN  =  is a representation of a composite style, not stored in any manager, and only 1 reference to it exists
-	 // OBJECTDEF_CAPPED = cannot push/pop fields
-	 // OBJECTDEF_READONLY = cannot modify parts
-	 // OBJECTDEF_OPTIONAL
-	 // OBJECTDEF_FORCE_NUM_PARAMS
-	 // OBJECTDEF_FORCE_TYPES
-	unsigned int flags;
+	unsigned int flags; //!< see ObjectDefFlags
 
 	ValueTypes format;    //built in type: int,real,string,... fields means it is not really a builtin type, implies use of fieldsformat
 	char *format_str;     //for convenience, this is a string name of this->format
@@ -339,8 +333,6 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };
 
-typedef ObjectDef StyleDef;
-
 
 //----------------------------- Value ----------------------------------
 
@@ -360,6 +352,7 @@ class Value : virtual public Laxkit::anObject, virtual public LaxFiles::DumpUtil
 	virtual int getValueStr(char **buffer,int *len, int oktoreallocate);//subclasses should NOT redefine this
 	virtual int getValueStr(char *buffer,int len);//subclasses SHOULD redefine this
 	virtual const char *Id();
+	virtual const char *Id(const char *str);
 
 	//virtual int isValidExt(const char *extstring, FieldPlace *place_ret) = 0; //for assignment checking
 	virtual int assign(Value *v, const char *extstring); //1 success, 0 fail, 2 for success but other contents changed too, -1 for unknown
@@ -479,6 +472,7 @@ class SetValue : public Value, virtual public FunctionEvaluator
 	virtual int n();
 	virtual Value *e(int i);
 	virtual int Set(int i, Value *v, int absorb);
+	virtual void Flush();
 
  	virtual ObjectDef *makeObjectDef();
     virtual int getNumFields();
@@ -675,7 +669,8 @@ class EnumValue : public Value
 {
   public:
 	int value;
-	//ObjectDef *enumdef;
+	char *tempkey; //hack for ease of i/o.. to be removed if MenuValue implemented instead
+
 	EnumValue(ObjectDef *baseenum, int which);
 	EnumValue(ObjectDef *baseenum, const char *which);
 	virtual ~EnumValue();
@@ -686,6 +681,7 @@ class EnumValue : public Value
  	virtual ObjectDef *makeObjectDef();
 	virtual int EnumId();
 	virtual const char *EnumLabel();
+	virtual const char *EnumName();
 	virtual int SetFromId(int id);
 };
 
@@ -776,6 +772,8 @@ int extequal(const char *str, int len, const char *field, char **next_ret=NULL);
 int isName(const char *longstr,int len, const char *null_terminated_str);
 
 Value *AttributeToValue(LaxFiles::Attribute *att);
+Value *NewSimpleType(int type);
+
 Value *JsonToValue(const char *str);
 Value *ValueToJson(const char *str);
 

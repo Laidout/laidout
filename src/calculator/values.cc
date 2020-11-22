@@ -69,6 +69,7 @@ const char *element_TypeNames(int type)
 	if (type==VALUE_Fields)      return "fields";
 	if (type==VALUE_Flatvector)  return "flatvector";
 	if (type==VALUE_Spacevector) return "spacevector";
+	if (type==VALUE_Quaternion)  return "Quaternion";
 	if (type==VALUE_File)        return "File"; //this one is capitalized, as it is a bit specialized
 	if (type==VALUE_Flags)       return "flags";
 	if (type==VALUE_Enum)        return "enum";
@@ -103,6 +104,7 @@ const char *valueEnumCodeName(int format)
 	if (format==VALUE_Fields)      return "VALUE_Fields";
 	if (format==VALUE_Flatvector)  return "VALUE_Flatvector";
 	if (format==VALUE_Spacevector) return "VALUE_Spacevector";
+	if (format==VALUE_Quaternion)  return "VALUE_Quaternion";
 	if (format==VALUE_File)        return "VALUE_File";
 	if (format==VALUE_Flags)       return "VALUE_Flags";
 	if (format==VALUE_Enum)        return "VALUE_Enum";
@@ -135,7 +137,8 @@ ValueTypes element_NameToType(const char *type)
 	if (!strcmp(type,"string"))      return VALUE_String;
 	if (!strcmp(type,"flatvector"))  return VALUE_Flatvector;
 	if (!strcmp(type,"spacevector")) return VALUE_Spacevector;
-	if (!strcmp(type,"flags"))       return VALUE_Flags;
+	if (!strcmp(type,"Quaternion"))  return VALUE_Quaternion;
+	if (!strcmp(type,"Flags"))       return VALUE_Flags;
 	if (!strcmp(type,"enum"))        return VALUE_Enum;
 	if (!strcmp(type,"enumval"))     return VALUE_EnumVal;
 
@@ -1352,8 +1355,8 @@ ObjectDef *ObjectDef::getFieldOfThis(int index)
  /*! If this styledef is an extension of another, then the number returned is
   * the total number of fields defined in *this plus all the upper fields in
   * the extended styledef(s). Each styledef simply adds fields->n if fields
-  * exists, or 0 if fields does not exists and extendsdef exists, or 1 if neither fields
-  * nor extendsdef exist.
+  * exists, or 0 if fields does not exists and extendsdef exists. If neither fields
+  * nor extendsdef exist, then 0 is returned.
   *
   * A special exception is when format==VALUE_Enum. In that case, fields would
   * contain the possible enum values, but the enum as a whole acts like a single
@@ -1376,7 +1379,6 @@ int ObjectDef::getNumFields()
 		if (!extendsdefs.n) n++;
 	} else {
 		if (fields && fields->n) n+=fields->n;
-			else if (!extendsdefs.n) n++;
 		if (extendsdefs.n) {
 			for (int c=0; c<extendsdefs.n; c++)
 				n+=extendsdefs.e[c]->getNumFields();
@@ -2426,6 +2428,12 @@ Value::~Value()
 const char *Value::Id()
 { return object_idstr; }
 
+const char *Value::Id(const char *str)
+{
+	makestr(object_idstr, str);
+	return object_idstr;
+}
+
 /*! Default is to return GetObjectDef()->format, or ->fieldsformat if format==VALUE_Formats.
  * Built in types will redefine.
  */
@@ -2907,6 +2915,36 @@ Value *AttributeToValue(Attribute *att)
 	return NULL;
 }
 
+
+Value *NewSimpleType(int type)
+{
+	switch(type) {
+		case VALUE_Set:         return new SetValue;
+		case VALUE_Boolean:     return new BooleanValue(false);
+		case VALUE_Int:         return new IntValue;
+		case VALUE_Number:
+		case VALUE_Real:        return new DoubleValue;
+		case VALUE_String:      return new StringValue;
+		case VALUE_Flatvector:  return new FlatvectorValue;
+		case VALUE_Spacevector: return new SpacevectorValue;
+		case VALUE_Quaternion:  return new QuaternionValue;
+		case VALUE_Color:       return new ColorValue;
+
+		// case VALUE_Flags:       return new Value;
+		// case VALUE_Object:      return new Value;
+		// case VALUE_Enum:        return new Value;
+		// case VALUE_EnumVal:     return new Value;
+		// case VALUE_File:        return new Value;
+		// case VALUE_Date:        return new Value;
+		// case VALUE_Time:        return new Value;
+		// case VALUE_Complex:     return new Value;
+	}
+
+	return nullptr;
+}
+
+
+
 #define JSON_NUMBER_ERROR "Bad number"
 #define JSON_STRING_ERROR "Bad string"
 #define JSON_KEY_ERROR "Bad key"
@@ -3244,6 +3282,11 @@ SetValue::~SetValue()
 	if (restrictto) delete[] restrictto;
 }
 
+
+void SetValue::Flush()
+{
+	values.flush();
+}
 
 //! Push v, which increments its count if !absorb.
 /*! Return 0 for success or nonzero for error.
@@ -4523,6 +4566,8 @@ int FileValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash 
  */
 EnumValue::EnumValue(ObjectDef *baseenum, int which)
 {
+	tempkey = nullptr;
+
 	if (objectdef) objectdef->dec_count();
 	objectdef=baseenum;
 	if (objectdef) objectdef->inc_count();
@@ -4533,6 +4578,8 @@ EnumValue::EnumValue(ObjectDef *baseenum, int which)
 /*! baseenum needs to not be null. */
 EnumValue::EnumValue(ObjectDef *baseenum, const char *which)
 {
+	tempkey = nullptr;
+
 	if (objectdef) objectdef->dec_count();
 	objectdef=baseenum;
 	if (objectdef) objectdef->inc_count();
@@ -4550,6 +4597,7 @@ EnumValue::EnumValue(ObjectDef *baseenum, const char *which)
 
 EnumValue::~EnumValue()
 {
+	delete[] tempkey;
 }
 
 int EnumValue::getValueStr(char *buffer,int len)
@@ -4574,11 +4622,22 @@ int EnumValue::EnumId()
 	return id;
 }
 
+/*! Return the Name of the element.
+ */
 const char *EnumValue::EnumLabel()
 {
 	const char *Nm = NULL;
 	objectdef->getEnumInfo(value, NULL, &Nm);
 	return Nm;
+}
+
+/*! Return the name of the element.
+ */
+const char *EnumValue::EnumName()
+{
+	const char *nm = NULL;
+	objectdef->getEnumInfo(value, &nm);
+	return nm;
 }
 
 /*! Set value to the corresponding index. Also return it.
