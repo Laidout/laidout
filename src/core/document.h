@@ -118,7 +118,7 @@ class Document : public ObjectContainer, public Value
 	virtual void clear();
 	virtual void InitMeta();
 
-	 //style functions
+	 //Value functions
 	virtual Value *duplicate();
 	virtual ObjectDef* makeObjectDef();
 

@@ -30,6 +30,7 @@
 #include "../ui/headwindow.h"
 #include "utils.h"
 #include "../nodes/nodeinterface.h"
+#include "stylemanager.h"
 #include "../language.h"
 
 
@@ -490,10 +491,39 @@ void Document::clear()
 	curpage=-1;
 }
 
+Value *NewDocumentValue()
+{
+	return new Document();
+}
+
 ObjectDef* Document::makeObjectDef()
 {
-	cout <<"*** implement Document styledef!!!"<<endl;
-	return NULL; //*****
+	ObjectDef *def=stylemanager.FindDef("Document");
+	if (def) {
+		def->inc_count();
+		return def;
+	}
+
+	//ObjectDef(const char *nname,const char *nName,const char *ntp, const char *ndesc,unsigned int fflags=STYLEDEF_CAPPED);
+	def = new ObjectDef(NULL,"Document",
+			_("Document"),
+			_("A Laidout Document"),
+			"class",
+			NULL,NULL);
+
+	//int ObjectDef::push(name,Name,ttip,ndesc,format,range,val,flags,newfunc);
+	def->newfunc = NewDocumentValue;
+
+	// def->push("marginsclip",
+	// 		_("Margins Clip"),
+	// 		_("Whether a page's margins clip the contents"),
+	// 		"boolean", NULL,"0",
+	// 		0,
+	// 		NULL);
+	
+	stylemanager.AddObjectDef(def,0);
+	return def;
+
 }
 
 //! Duplicate a document.
