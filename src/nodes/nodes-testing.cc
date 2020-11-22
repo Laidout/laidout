@@ -1,6 +1,63 @@
 
 //*********** WORKS IN PROGRESS ****************
 
+
+//------------------------------ MenuValue ---------------------------------
+
+/*! Value so that node properties can spawn custom selection windows, like popup menus or date selectors
+ */
+class MenuValue : public Value
+{
+  public:
+  	Laxkit::MenuInfo *menu;
+  	char *current;
+
+  	MenuValue(MenuInfo *menu, bool absorb, const char *curvalue);
+  	virtual ~MenuValue();
+
+  	virtual void SetMenu(Laxkit::MenuInfo *nmenu, bool absorb);
+  	virtual anXWindow *GetDialog();
+};
+
+MenuValue::MenuValue(MenuInfo *menu, bool absorb, const char *curvalue)
+{
+	this->menu = menu;
+	if (!absorb && menu) menu->inc_count();
+	current = nullptr;
+	makestr(current, curvalue);
+}
+
+MenuValue::~MenuValue()
+{
+	if (menu) menu->dec_count();
+	delete[] current;
+}
+
+void MenuValue::SetMenu(Laxkit::MenuInfo *nmenu, bool absorb)
+{
+	if (menu != nmenu) {
+		if (menu) menu->dec_count();
+		menu = nmenu;
+	}
+	if (!absorb && menu) menu->inc_count();
+}
+
+Laxkit::anXWindow *MenuValue::GetDialog(Laxkit::EventReceiver *proxy)
+{
+	if (!menu) return nullptr;
+
+	PopupMenu *popup=new PopupMenu(NULL,menu->title, 0,
+							0,0,0,0, 1,
+							object_id,"prop_dialog_ret",
+							0, //mouse to position near?
+							menu,1, NULL,
+							TREESEL_LEFT|TREESEL_SEND_PATH|TREESEL_LIVE_SEARCH);
+	popup->WrapToMouse(0);
+	return popup;
+	// anXApp::app->rundialog(popup);
+}
+
+
 //------------------------------ MirrorNode ---------------------------------
 
 class MirrorPathNode : public ObjectFilterNode

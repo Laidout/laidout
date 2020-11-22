@@ -15,9 +15,10 @@
 
 #include <lax/language.h>
 #include <lax/interfaces/curvemapinterface.h>
-	#include <lax/interfaces/gradientinterface.h>
+#include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/interfacemanager.h>
 #include <lax/fileutils.h>
+#include <lax/popupmenu.h>
 #include "nodes.h"
 #include "nodeinterface.h"
 #include "nodes-dataobjects.h"
@@ -336,27 +337,32 @@ Laxkit::anObject *newQuaternionNode(int p, Laxkit::anObject *ref)
 class RectangleNode : public NodeBase
 {
   public:
-	RectangleNode();
+  	bool isbbox;
+	RectangleNode(int as_bbox);
 	virtual ~RectangleNode();
 	virtual int Update();
 	virtual int GetStatus();
 	virtual NodeBase *Duplicate();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new RectangleNode(p); }
 };
 
-RectangleNode::RectangleNode()
+RectangleNode::RectangleNode(int as_bbox)
 {
-	Id("Rectangle");
-	Label(_("Rectangle"));
-	makestr(type, "Rectangle");
+	isbbox = as_bbox;
 
-	const char *names[]  = {   "x" ,   "y" ,   "width" ,   "height"  };
-	const char *labels[] = { _("x"), _("y"), _("width"), _("height") };
+	Id(isbbox ? "BBox" : "Rectangle");
+	Label(isbbox ? _("BBox") : _("Rectangle"));
+	makestr(type, isbbox ? "BBox" : "Rectangle");
+
+	const char *names[]  = {   "x" ,   "y" ,   "width" ,   "height",   "minx" ,   "maxx" ,   "miny" ,   "maxy"  };
+	const char *labels[] = { _("x"), _("y"), _("width"), _("height"),  _("Min x"), _("Max x"), _("Min y"), _("Max y") };
 
 	for (int c=0; c<4; c++) {
-		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, names[c], new DoubleValue(0), 1, labels[c])); 
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, names[(isbbox ? 4 : 0) + c], new DoubleValue(0), 1, labels[(isbbox ? 4 : 0) + c])); 
 	}
 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Rect", new BBoxValue(), 1, _("Rect")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "box", new BBoxValue(), 1, isbbox ? _("BBox") : _("Rect")));
 }
 
 RectangleNode::~RectangleNode()
@@ -365,7 +371,7 @@ RectangleNode::~RectangleNode()
 
 NodeBase *RectangleNode::Duplicate()
 {
-	RectangleNode *newnode = new RectangleNode();
+	RectangleNode *newnode = new RectangleNode(isbbox);
 	int isnum;
 	for (int c=0; c<4; c++) {
 		double v = getNumberValue(properties.e[c]->GetData(), &isnum);		
@@ -397,10 +403,18 @@ int RectangleNode::Update()
 		if (!isnum) return -1;
 	}
 
-	if (!properties.e[4]->data) properties.e[4]->data = new BBoxValue(vs[0], vs[0]+vs[2], vs[1], vs[1]+vs[3]);
-	else {
-		BBoxValue *v = dynamic_cast<BBoxValue*>(properties.e[4]->data);
-		v->setbounds(vs[0], vs[0]+vs[2], vs[1], vs[1]+vs[3]);
+	if (isbbox) {
+		if (!properties.e[4]->data) properties.e[4]->data = new BBoxValue(vs[0], vs[1], vs[2], vs[3]);
+		else {
+			BBoxValue *v = dynamic_cast<BBoxValue*>(properties.e[4]->data);
+			v->setbounds(vs[0], vs[1], vs[2], vs[3]);
+		}
+	} else {
+		if (!properties.e[4]->data) properties.e[4]->data = new BBoxValue(vs[0], vs[0]+vs[2], vs[1], vs[1]+vs[3]);
+		else {
+			BBoxValue *v = dynamic_cast<BBoxValue*>(properties.e[4]->data);
+			v->setbounds(vs[0], vs[0]+vs[2], vs[1], vs[1]+vs[3]);
+		}
 	}
 
 	properties.e[4]->Touch();
@@ -408,10 +422,6 @@ int RectangleNode::Update()
 	return NodeBase::Update();
 }
 
-Laxkit::anObject *newRectangleNode(int p, Laxkit::anObject *ref)
-{
-	return new RectangleNode();
-}
 
 
 //------------ ColorNode
@@ -422,7 +432,7 @@ Laxkit::anObject *newColorNode(int p, Laxkit::anObject *ref)
 	makestr(node->Name, _("Color"));
 	makestr(node->type, "Color");
 
-	node->AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("Color"), new ColorValue("#ffffff"), 1));
+	node->AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Color", new ColorValue("#ffffff"), 1, _("Color")));
 	//----------
 	//node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, _("Red"), new DoubleValue(1), 1)); 
 	//node->AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, _("Green"), new DoubleValue(1), 1)); 
@@ -432,6 +442,31 @@ Laxkit::anObject *newColorNode(int p, Laxkit::anObject *ref)
 	return node;
 }
 
+
+//------------ IntNode
+
+Laxkit::anObject *newIntNode(int p, Laxkit::anObject *ref)
+{
+	NodeBase *node = new NodeBase;
+	makestr(node->Name, _("Int"));
+	makestr(node->type, "Basics/Integer");
+
+	node->AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Int", new IntValue(0), 1, _("Int")));
+	return node;
+}
+
+
+//------------ BooleanNode
+
+Laxkit::anObject *newBooleanNode(int p, Laxkit::anObject *ref)
+{
+	NodeBase *node = new NodeBase;
+	makestr(node->Name, _("Boolean"));
+	makestr(node->type, "Basics/Boolean");
+
+	node->AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Bool", new BooleanValue(0), 1, _("Bool")));
+	return node;
+}
 
 //------------ AffineNode
 
@@ -3511,6 +3546,19 @@ Laxkit::anObject *newMapFromRangeNode(int p, Laxkit::anObject *ref)
 }
 
 
+//------------ EmptySetNode
+
+Laxkit::anObject *newEmptySetNode(int p, Laxkit::anObject *ref)
+{
+	NodeBase *node = new NodeBase;
+	makestr(node->Name, _("Set"));
+	makestr(node->type, "Basics/EmptySet");
+
+	node->AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "set", new SetValue(), 1, _("Set")));
+	return node;
+}
+
+
 //------------------------------ GetSizeNode --------------------------------------------
 
 /*! \class GetSizeNode
@@ -3558,7 +3606,7 @@ int GetSizeNode::GetStatus()
 {
 	Value *in = properties.e[0]->GetData();
 	if (!in) return -1;
-	if (in->type() != VALUE_Set && in->type() != VALUE_Hash) return -1;
+	if (in->type() != VALUE_Set && in->type() != VALUE_Hash && in->type() != PointSetValue::TypeNumber()) return -1;
 	return 0;
 }
 
@@ -3573,7 +3621,12 @@ int GetSizeNode::Update()
 		ValueHash *hash = dynamic_cast<ValueHash*>(properties.e[0]->GetData());
 		if (hash) {
 			dynamic_cast<IntValue*>(properties.e[1]->GetData())->i = set->n();
-		} else return -1;
+		} else {
+			PointSet *ps = dynamic_cast<PointSet*>(properties.e[0]->GetData());
+			if (ps) {
+				dynamic_cast<IntValue*>(properties.e[1]->GetData())->i = ps->NumPoints();
+			} else return -1;
+		}
 	}
 	
 	properties.e[1]->Touch();
@@ -3670,6 +3723,108 @@ int GetElementNode::GetStatus()
 	}
 	if (index < 0 || index >= set->n()) {
 		Error(_("Index out of range!"));
+		return -1;
+	}
+	return 0;
+}
+
+
+//------------------------------ SubsetNode --------------------------------------------
+
+/*! \class SubsetNode
+ * Get a subset of a list.
+ */
+
+class SubsetNode : public NodeBase
+{
+  public:
+	SubsetNode();
+	virtual ~SubsetNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new SubsetNode(); }
+};
+
+SubsetNode::SubsetNode()
+{
+	makestr(type, "Lists/Subset");
+	makestr(Name, _("Subset"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "set",  nullptr,1, _("Set")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "from", new IntValue(0),1, _("From"), _("Negative numbers count from end")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "to",   new IntValue(-1),1, _("To"), _("Negative numbers count from end")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out",  NULL,1,            _("Out"), NULL, 0, false));
+}
+
+SubsetNode::~SubsetNode()
+{
+}
+
+NodeBase *SubsetNode::Duplicate()
+{
+	SubsetNode *node = new SubsetNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int SubsetNode::Update()
+{
+	Error(nullptr);
+
+	Value *in = properties.e[0]->GetData();
+	SetValue *set = dynamic_cast<SetValue*>(in);
+	if (!set) {
+		Error(_("Input must be a list!"));
+		return -1;
+	}
+
+	int isnum = 0;
+	int from = getIntValue(properties.e[1]->GetData(), &isnum);
+	int to;
+	if (isnum) to = getIntValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) {
+		Error(_("From and to must be numbers!"));
+		return -1;
+	}
+	if (from < 0) from = set->n()+from;
+	if (to < 0) to = set->n()+to;
+	if (from < 0 || from >= set->n() || to < 0 || to >= set->n()) {
+		Error(_("Index out of range!"));
+		return -1;
+	}
+	
+	SetValue *out = dynamic_cast<SetValue*>(properties.e[3]->GetData());
+	if (!out) {
+		out = new SetValue();
+		properties.e[3]->SetData(out, 1);
+	} else out->Flush();
+
+	for (int c=from; (from < to && c <= to) || (from >= to && c >= to); c += (from > to ? -1 : 1)) {
+		out->Push(set->e(c), 0);
+	}
+
+	return NodeBase::Update();
+}
+
+/*! Return 0 for no error and everything up to date.
+ * -1 means bad inputs and node in error state.
+ * 1 means needs updating.
+ */
+int SubsetNode::GetStatus()
+{
+	SetValue *set = dynamic_cast<SetValue*>(properties.e[0]->GetData());
+	if (!set) {
+		Error(_("Input must be a list!"));
+		return -1;
+	}
+
+	int isnum = 0;
+	getIntValue(properties.e[1]->GetData(), &isnum);
+	if (isnum) getIntValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) {
+		Error(_("Index must be a number!"));
 		return -1;
 	}
 	return 0;
@@ -4586,7 +4741,7 @@ void ObjectInfoNode::UpdateProps()
 	int added = 0;
 
 	if (obj) {
-		obj->inc_count();
+		// obj->inc_count();
 		ObjectDef *def = obj->GetObjectDef(); //warning: shawdows NodeBase::def
 		
 		ObjectDef *field;
@@ -4634,6 +4789,13 @@ int ObjectInfoNode::Update()
 		UpdatePreview();
 		Wrap();
 		return -1;
+	}
+
+	if (o != obj) {
+		if (obj) obj->dec_count();
+		obj = o;
+		obj->inc_count();
+		UpdateProps();
 	}
 
 	// always set id
@@ -4866,6 +5028,278 @@ int ModifyObjectNode::GetStatus()
 }
 
 
+//------------ ObjectFunctionNode
+
+
+/*! \class ObjectFunctionNode
+ * Class to allow calling any function from an object's ObjectDef.
+ * Please note the object is duplicated first, then the function is called.
+ * If the function has output, that output is returned, else the object is returned.
+ */
+class ObjectFunctionNode : public NodeBase
+{
+  public:
+	// Value *obj; // we keep this around so as to not dup properties unnecessarily
+	char *lastfunc;
+
+	ObjectFunctionNode();
+	virtual ~ObjectFunctionNode();
+	virtual int Update();
+	virtual void UpdateProps();
+	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
+	virtual int Connected(NodeConnection *connection);
+	virtual int Disconnected(NodeConnection *connection, bool from_will_be_replaced, bool to_will_be_replaced);
+	virtual Value *PreviewFrom() { return FindProperty("out")->GetData(); }
+	virtual void dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context);
+	
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ObjectFunctionNode(); }
+};
+
+ObjectFunctionNode::ObjectFunctionNode()
+{
+	makestr(type, "Objects/ObjectFunction");
+	makestr(Name, _("Object Function"));
+
+	lastfunc = nullptr;
+	
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in", nullptr,0, _("In"), NULL, 0,false));
+
+	ObjectDef *funcs = new ObjectDef(nullptr, "", "", nullptr, "enum", nullptr, nullptr);
+	AddProperty(new NodeProperty(NodeProperty::PROP_Block, true, "function", new EnumValue(funcs,0),1, "", NULL, 0,true));
+	funcs->dec_count();
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", NULL,1, _("out"), NULL, 0,false));
+	
+	// if (obj) UpdateProps();
+	Update();
+}
+
+ObjectFunctionNode::~ObjectFunctionNode()
+{
+	// if (obj) obj->dec_count();
+	// if (func) func->dec_count();
+	delete[] lastfunc;
+}
+
+/*! Clean up after NodeBade::dump_in_atts() to make sure the out property is at the end.
+ */
+void ObjectFunctionNode::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context)
+{
+	NodeBase::dump_in_atts(att,flag,context);
+	int i = -1;
+	NodeProperty *out = FindProperty("out", &i);
+	if (out && i != properties.n-1) {
+		properties.slide(i, properties.n-1);
+	}
+}
+
+NodeBase *ObjectFunctionNode::Duplicate()
+{
+	NodeBase *newnode = new ObjectFunctionNode();
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int ObjectFunctionNode::Disconnected(NodeConnection *connection, bool from_will_be_replaced, bool to_will_be_replaced)
+{
+	//*** handle disconnecting in how?
+	return NodeBase::Disconnected(connection, from_will_be_replaced, to_will_be_replaced);
+}
+
+int ObjectFunctionNode::Connected(NodeConnection *connection)
+{
+	if (this == connection->to && connection->toprop == properties.e[0]) {
+		// we just connected something to in slot
+		// Value *nobj = connection->fromprop->GetData();
+		
+		// if (nobj != obj) {
+		// 	if (obj) obj->dec_count();
+		// 	obj = nobj;
+		// 	if (obj) obj->inc_count();
+
+		// 	UpdateProps();
+		// }
+		UpdateProps();
+		Update();
+	}
+
+	return NodeBase::Connected(connection);
+}
+
+
+/*! Update the prop field arrangement. Does NOT update the actual values here. Use the usual Update() for that.
+ */
+void ObjectFunctionNode::UpdateProps()
+{
+	int added = 0;
+
+	Value *obj = properties.e[0]->GetData();
+	if (obj) {
+		// obj->inc_count();
+		ObjectDef *def = obj->GetObjectDef(); //warning: shawdows NodeBase::def
+		if (!def) {
+			Error(_("Missing object def!"));
+			return;
+		}
+
+		//update funcs list stored in prop 1 enumvalue. Will contain name and Name of all functions in object's def
+		EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[1]->GetData());
+		ObjectDef *funcs = ev->GetObjectDef();
+		// const char *oldfunc = ev->EnumLabel();
+
+		if (strcmp(funcs->name, def->name)) {
+			//different objectdef, so we need to update the funcs list, copy over only function names
+			funcs->Clear();
+			makestr(funcs->name, def->name);
+			makestr(funcs->Name, def->Name);
+
+			ev->value = -1;
+			for (int c=0; c<def->getNumFields(); c++) {
+				ObjectDef *field = def->getField(c);
+				if (field->format != VALUE_Function) continue;
+				funcs->pushFunction(field->name, field->name, nullptr, nullptr, nullptr);
+				added++;
+			}
+			funcs->Sort();
+			if (ev->tempkey) {
+				ev->value = funcs->findfield(ev->tempkey, nullptr);
+				delete[] ev->tempkey;
+				ev->tempkey = nullptr;
+				ev->value = funcs->getNumEnumFields()-1;
+			}
+
+			if (ev->value < 0) ev->value = 0;
+			delete[] lastfunc;
+			lastfunc = nullptr;
+
+			if (added == 0) {
+				Error(_("Object has no functions"));
+				return;
+			}
+		}
+
+		//update properties to reflect the parameters of the new function
+		const char *funcname = ev->EnumName();
+		if (!funcname) funcname = ev->tempkey;
+		added = 0;
+		if (funcname && !strEquals(funcname, lastfunc)) {
+			ObjectDef *funcdef = def->FindDef(funcname);
+			if (funcdef) {
+				makestr(lastfunc, funcname);
+
+				for (int c=0; c<funcdef->getNumFields(); c++) {
+					ObjectDef *field = funcdef->getField(c);
+
+					// update property with new name, Name, desc...
+					NodeProperty *prop = nullptr;
+					Value *default_val = nullptr;
+					if (funcdef->defaultValue) default_val = funcdef->defaultValue->duplicate();
+					else {
+						if (funcdef->format_str) {
+							//try to create new object from type
+							default_val = NewSimpleType(field->format);
+						}
+					}
+					
+					if (added+2 < properties.n-1) {
+						// modify property
+						prop = properties.e[added+2];
+						makestr(prop->name, field->name);
+						makestr(prop->label, field->Name);
+						makestr(prop->tooltip, field->description);
+						prop->SetData(default_val,1);
+
+					} else {
+						// insert new property
+						prop = new NodeProperty(NodeProperty::PROP_Input,  true, field->name, default_val,1, field->Name, field->description, 0, true);
+						AddProperty(prop, added+2);
+					}
+					added++;
+				}
+			}
+		}
+	}
+
+	// remove old extra properties
+	for (int c = added+2; c<properties.n-1; ) {
+		RemoveProperty(properties.e[c]);
+	}
+
+	Wrap();
+}
+
+int ObjectFunctionNode::Update()
+{
+	Value *o = properties.e[0]->GetData();
+	if (!o) {
+		makestr(lastfunc,nullptr);
+		UpdatePreview();
+		Wrap();
+		return -1;
+	}
+	if (!lastfunc) {
+		UpdateProps();
+	}
+
+	//check function
+	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[1]->GetData());
+	const char *fname = ev->EnumName();
+	// if (!fname) fname = ev->tempkey;
+	if (!strEquals(fname,lastfunc)) UpdateProps();
+
+	ValueHash parameters;
+
+	for (int c=2; c<properties.n-1; c++) {
+		parameters.push(properties.e[c]->name, properties.e[c]->GetData());
+	}
+
+// *  0 for success, value optionally returned.
+//  * -1 for no value returned due to incompatible parameters or name not known, which aids in function overloading.
+//  *  1 for parameters ok, but there was somehow an error, so no value returned.
+// virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+// 						 Value **value_ret,
+// 						 Laxkit::ErrorLog *log) = 0;
+
+	// Value *oo = o; oo->inc_count();
+	Value *oo = o->duplicate(); // *** should do this only for non-"const" functions, or have it be optional
+	FunctionEvaluator *func = dynamic_cast<FunctionEvaluator*>(oo);
+	if (!func) {
+		Error(_("Value cannot evaluate functions"));
+	} else {
+		Value *result = nullptr;
+		// ValueHash *context = nullptr;
+		ErrorLog log;
+		// oo->Evaluate(fname,-1, context, &parameters, settings, &result, &log);
+		if (func->Evaluate(fname,-1, nullptr, &parameters, nullptr, &result, &log) != 0) {
+			// error!
+			char *err = log.FullMessageStr();
+			Error(err ? err : _("Error returned!"));
+			delete[] err;
+		} else {
+			if (result) properties.e[properties.n-1]->SetData(result,1);
+			else properties.e[properties.n-1]->SetData(oo,0);
+		}
+	}
+	oo->dec_count();
+
+	properties.e[properties.n-1]->Touch();
+	UpdatePreview();
+	Wrap();
+	return NodeBase::Update();
+}
+
+/*! Return 0 for no error and everything up to date.
+ * -1 means bad inputs and node in error state.
+ * 1 means needs updating.
+ */
+int ObjectFunctionNode::GetStatus()
+{
+	if (!properties.e[0]->GetData()) return -1;
+	return NodeBase::GetStatus();
+}
+
+
 //------------------------ TextFileNode ------------------------
 
 
@@ -4939,6 +5373,169 @@ int TextFileNode::GetStatus()
 }
 
 
+//------------------------------ GetResourceNode --------------------------------------------
+
+/*! \class GetResourceNode
+ * Get an object from the resource manager.
+ */
+
+class GetResourceNode : public NodeBase, public EventReceiver
+{
+	// static SingletonKeeper typeskeeper; //the def for the op enum
+	// static ObjectDef *GetTypes() { return dynamic_cast<ObjectDef*>(typeskeeper.GetObject()); }
+	// EventReceiver *eventcatch;
+
+  public:
+  	// std::clock_t lastcheck;
+	GetResourceNode(const char *what);
+	virtual ~GetResourceNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual void ButtonClick(NodeProperty *prop, NodeInterface *controller);
+	virtual Value *PreviewFrom() { return FindProperty("out")->GetData(); }
+	virtual int Event(const EventData *data,const char *mes);
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new GetResourceNode(nullptr); }
+};
+
+GetResourceNode::GetResourceNode(const char *what)
+{
+	// eventcatch = nullptr;
+
+	// ObjectDef *resourcetypes = GetTypes();
+	// if (!resourcetypes) {
+	// 	resourcetypes = new ObjectDef(nullptr, "Resources", _("Resources"), nullptr, "enum", nullptr, nullptr);
+	// 	typeskeeper.SetObject(resourcetypes, 1);
+
+	// 	ResourceManager *resources = InterfaceManager::GetDefault(true)->GetResourceManager();
+	// 	// *** this sucks because contents can change any time... need a dynamic menu for this
+	// 	for (int c=0; c<resources->NumTypes(); c++) {
+	// 		ResourceType *res = resources->GetTypeFromIndex(c);
+	// 		resources.pushEnumValue(res->name, res->Name, res->description, c);
+	// 	}
+	// }
+
+	makestr(type, "Resources/GetResource");
+	makestr(Name, _("Get Resource"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Button, false, "Select", nullptr,1, _("Select..."), nullptr, 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  false, "type",  new StringValue(what),1, _("Type"), nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  false, "which", new StringValue(),1, _("Name"), nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out",   NULL,1, _("Out"), nullptr, 0, false));
+}
+
+GetResourceNode::~GetResourceNode()
+{
+	// if (eventcatch) delete eventcatch;
+}
+
+NodeBase *GetResourceNode::Duplicate()
+{
+	const char *what = nullptr;
+	// StringValue *v = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	// if (v) what = v->str;
+	GetResourceNode *node = new GetResourceNode(what);
+	node->DuplicateBase(this);
+	return node;
+}
+
+void GetResourceNode::ButtonClick(NodeProperty *prop, NodeInterface *controller)
+{
+	DBG cerr << "Get resource CLICK!!"<<endl;
+
+	// if (!eventcatch) eventcatch = new EventReceiver();
+
+	ResourceManager *resources = InterfaceManager::GetDefault(true)->GetResourceManager();
+
+	MenuInfo *menu = new MenuInfo();
+	for (int c=0; c<resources->NumTypes(); c++) {
+		ResourceType *res = resources->GetTypeFromIndex(c);
+		if (res->NumResources() == 0) continue;
+		menu->AddItem(res->name);
+		menu->SubMenu();
+		res->AppendMenu(menu, false, nullptr);
+		menu->EndSubMenu();
+	}
+
+	if (menu->n()) {
+		PopupMenu *popup=new PopupMenu(NULL,_("Select Resource..."), 0,
+								0,0,0,0, 1,
+								object_id,"resource",
+								0, //mouse to position near?
+								menu,1, NULL,
+								TREESEL_LEFT|TREESEL_SEND_PATH|TREESEL_LIVE_SEARCH);
+		popup->WrapToMouse(0);
+		anXApp::app->rundialog(popup);
+
+	} else delete menu;
+}
+
+int GetResourceNode::Event(const EventData *data,const char *mes)
+{
+	DBG cerr << "GetResourceNode::Event: "<<mes<<endl;
+
+	const SimpleMessage *e = dynamic_cast<const SimpleMessage*>(data);
+	if (!e) return 1;
+
+	const char *ptr = strchr(e->str, '/');
+	if (!ptr) return 0; //malformed return string, expected "ResourceType/Blah/Blah/ResourceName"
+	char *rtype = newnstr(e->str, ptr - e->str);
+	const char *objname = strrchr(e->str, '/');
+	if (!objname) return 0;
+	objname++;
+
+	ResourceManager *resources = InterfaceManager::GetDefault(true)->GetResourceManager();
+	anObject *obj = resources->FindResource(objname, rtype, nullptr);
+
+	//update rtype property
+	StringValue *sv = dynamic_cast<StringValue*>(properties.e[1]->data);
+	if (!sv) {
+		sv = new StringValue(rtype);
+		properties.e[1]->SetData(sv,1);
+	} else {
+		sv->Set(rtype);
+		properties.e[1]->Touch();
+	}
+
+	//update which property
+	sv = dynamic_cast<StringValue*>(properties.e[2]->data);
+	if (!sv) {
+		sv = new StringValue(objname);
+		properties.e[2]->SetData(sv,1);
+	} else {
+		sv->Set(objname);
+		properties.e[2]->Touch();
+	}
+
+	if (obj) {
+		Value *v = dynamic_cast<Value*>(obj);
+		if (v) FindProperty("out")->SetData(v, 0);
+		else {
+			ObjectValue *vv = new ObjectValue(obj);
+			vv->Id(obj->Id());
+			FindProperty("out")->SetData(vv, 1);
+		}
+		Update();
+	} else return -1;
+
+	return 0;
+}
+
+int GetResourceNode::Update()
+{
+	// FindProperty("out")->Touch();
+	UpdatePreview();
+	Wrap();
+	return NodeBase::Update();
+}
+
+int GetResourceNode::GetStatus()
+{
+	return 0; //either something's there on not. c'est la vie!
+}
+
+
 //------------------------------ GetGlobalNode --------------------------------------------
 
 /*! \class GetGlobalNode
@@ -4999,7 +5596,8 @@ int GetGlobalNode::Update()
 		properties.e[1]->SetData(shouldbe, 0);
 	}
 
-	return 0; //do nothing here!
+	// return 0; //do nothing here!
+	return NodeBase::Update();
 }
 
 int GetGlobalNode::GetStatus()
@@ -5081,7 +5679,8 @@ int SetGlobalNode::Update()
 		laidout->globals.set(what, shouldbe);
 	}
 
-	return 0; //do nothing here!
+	// return 0; //do nothing here!
+	return NodeBase::Update();
 }
 
 int SetGlobalNode::GetStatus()
@@ -5097,6 +5696,166 @@ int SetGlobalNode::GetStatus()
 	if (v != shouldbe) return -1;
 
 	return 0;
+}
+
+
+//------------------------------ GetDocumentNode --------------------------------------------
+
+/*! \class GetDocumentNode
+ * Get document object. Kind of dangerous!!
+ */
+
+class GetDocumentNode : public NodeBase
+{
+  public:
+	GetDocumentNode();
+	virtual ~GetDocumentNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new GetDocumentNode(); }
+};
+
+GetDocumentNode::GetDocumentNode()
+{
+	makestr(type, "Document/GetDocument");
+	makestr(Name, _("Get Document"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  false, "index",  new IntValue(0),1, _("Index"), _("Index into list of open documents")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "doc",  NULL,1,  _("Document"), nullptr, 0, false));
+}
+
+GetDocumentNode::~GetDocumentNode()
+{
+}
+
+NodeBase *GetDocumentNode::Duplicate()
+{
+	GetDocumentNode *node = new GetDocumentNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int GetDocumentNode::Update()
+{
+	Error(nullptr);
+	IntValue *v = dynamic_cast<IntValue*>(properties.e[0]->GetData());
+	if (!v || v->i < 0 || v->i >= laidout->project->docs.n) {
+		Error(_("Bad index!"));
+		return -1;
+	}
+	
+	properties.e[1]->SetData(laidout->project->docs.e[v->i]->doc, 0);
+
+	return NodeBase::Update();
+}
+
+int GetDocumentNode::GetStatus()
+{
+	if (!dynamic_cast<Document*>(properties.e[1]->GetData())) return -1;
+	return 0;
+}
+
+
+//------------------------------ ExportNode --------------------------------------------
+
+/*! \class ExportNode
+ * Export something to a file.
+ */
+
+class ExportNode : public NodeBase
+{
+  public:
+	ExportNode();
+	virtual ~ExportNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual void ButtonClick(NodeProperty *prop, NodeInterface *controller);
+	virtual void ExportNow(DocumentExportConfig *config);
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ExportNode(); }
+};
+
+ExportNode::ExportNode()
+{
+	makestr(type, "Document/Export");
+	makestr(Name, _("Export"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "config",  nullptr,1, _("Config")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Button, false, "savenow", nullptr,1, _("Export now"), nullptr, 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "autosave",  new BooleanValue(false),1, _("Auto process"), _("Export every single time input changes")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "value",  NULL,1,                 _("Value")));
+}
+
+ExportNode::~ExportNode()
+{
+}
+
+NodeBase *ExportNode::Duplicate()
+{
+	ExportNode *node = new ExportNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int ExportNode::Update()
+{
+	Error(nullptr);
+	DocumentExportConfig *config = dynamic_cast<DocumentExportConfig*>(properties.e[0]->GetData());
+	if (!config) {
+		Error(_("Missing config"));
+		return -1;
+	}
+	
+	int isnum = 0;
+	bool save_now = getIntValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+	if (!save_now) return NodeBase::Update();
+
+	ExportNow(config);
+
+	return NodeBase::Update();
+}
+
+int ExportNode::GetStatus()
+{
+	if (!dynamic_cast<DocumentExportConfig*>(properties.e[0]->GetData())) return -1;
+	return 0;
+}
+
+void ExportNode::ButtonClick(NodeProperty *prop, NodeInterface *controller)
+{
+	DBG cerr << "Export now!"<<endl;
+	ExportNow(nullptr);
+}
+
+void ExportNode::ExportNow(DocumentExportConfig *config)
+{
+	if (!config) {
+		config = dynamic_cast<DocumentExportConfig*>(properties.e[0]->GetData());
+		if (!config) {
+			Error(_("Missing config"));
+			return;
+		}	
+	}
+
+	if (config->range.NumRanges() == 0) {
+		config->range.AddRange(0,-1,0);
+	}
+
+	ErrorLog log;
+	int status = export_document(config, log);
+
+	if (status != 0) {
+		char *msg = log.FullMessageStr();
+		if (status == 1) { //error
+			Error(msg);
+		} // else just warning
+		DBG cerr << "Export message: "<<msg<<endl;
+		delete[] msg;
+	}
 }
 
 
@@ -5170,6 +5929,13 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 
 	//------------------ Misc value types -------------
 
+	 //--- basics
+	factory->DefineNewObject(getUniqueNumber(), "Basics/Integer",    newIntNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Basics/Boolean",    newBooleanNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Basics/Set",        newEmptySetNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Basics/Value",      newDoubleNode, NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Basics/String",     newStringNode,  NULL, 0);
+
 	 //--- ColorNode
 	factory->DefineNewObject(getUniqueNumber(), "Color",    newColorNode,  NULL, 0);
 
@@ -5194,6 +5960,7 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Object/NewObject",     NewObjectNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Object/ModifyObject",  ModifyObjectNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Object/ObjectInfo",    ObjectInfoNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Object/ObjectFunction",ObjectFunctionNode::NewNode,  NULL, 0);
 
 
 	//------------------ Groups -------------
@@ -5208,21 +5975,15 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	//------------------ Bounds and transforms -------------
 
 	 //--- RectangleNode
-	factory->DefineNewObject(getUniqueNumber(), "Rectangle",newRectangleNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/Rectangle", RectangleNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/BBox",      RectangleNode::NewNode,  NULL, 1);
 
 	 //--- Affine nodes
-	factory->DefineNewObject(getUniqueNumber(), "Math/Affine", newAffineNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Math/Affine2",newAffineNode2, NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/Affine",      newAffineNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/Affine2",     newAffineNode2, NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Math/AffineExpand",newAffineExpandNode, NULL, 0);
 
-
-	//------------------ Lists -------------
-	factory->DefineNewObject(getUniqueNumber(), "Lists/GetElement",  GetElementNode::NewNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Lists/GetSize",     GetSizeNode::NewNode,  NULL, 0);
-
-
 	//------------------ Math -------------
-
 	factory->DefineNewObject(getUniqueNumber(), "Math/Math1",        newMathNode1,   NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Math/Math2",        newMathNode2,   NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Math/Value",        newDoubleNode, NULL, 0);
@@ -5236,23 +5997,23 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Math/MapFromRange", newMapFromRangeNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Math/Constant",     newMathConstants,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Math/Expression",   ExpressionNode::NewNode,  NULL, 0);
-
+	
+	//------------------ Lists -------------
+	factory->DefineNewObject(getUniqueNumber(), "Lists/EmptySet",    newEmptySetNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Lists/GetElement",  GetElementNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Lists/GetSize",     GetSizeNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Lists/Subset",      SubsetNode::NewNode,  NULL, 0);
 
 	//------------------ String -------------
-
-	factory->DefineNewObject(getUniqueNumber(), "Strings/Concat",      newConcatNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Strings/String",      newStringNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Strings/Concat",      newConcatNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Strings/Slice",       newSliceNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Strings/TextFromFile",TextFileNode::NewNode,  NULL, 0);
 
-
 	 //-------------------- FILTERS -------------
-
 	factory->DefineNewObject(getUniqueNumber(), "Filters/TransformAffine", newTransformAffineNode,  NULL, 0);
 
-
 	 //-------------------- THREADS -------------
-
 	factory->DefineNewObject(getUniqueNumber(), "Threads/Thread",     newThreadNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Threads/Loop",       newLoopNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Threads/If",         newIfNode,  NULL, 0);
@@ -5261,16 +6022,17 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Threads/SetVariable",newSetVariableNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Threads/GetVariable",newGetVariableNode,  NULL, 0);
 
-
 	 //-------------------- Resources -------------
-
-	factory->DefineNewObject(getUniqueNumber(), "Resources/SetGlobal",SetGlobalNode::NewNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Resources/GetGlobal",GetGlobalNode::NewNode,  NULL, 0);
-
+	factory->DefineNewObject(getUniqueNumber(), "Resources/SetGlobal",  SetGlobalNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Resources/GetGlobal",  GetGlobalNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Resources/GetResource",GetResourceNode::NewNode,  NULL, 0);
 
 	 //-------------------- Specials -------------
-
 	factory->DefineNewObject(getUniqueNumber(), "Reroute",RerouteNode::NewNode,  NULL, 0);
+
+	factory->DefineNewObject(getUniqueNumber(), "Document/Export",      ExportNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Document/GetDocument", GetDocumentNode::NewNode,  NULL, 0);
+
 
 
 	//Register nodes for DrawableObject filters:

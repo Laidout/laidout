@@ -653,15 +653,15 @@ int RotateDrawablesNode::Update()
 class LImageDataNode : public NodeBase
 {
   public:
-	LImageData *imagedata;
-
 	LImageDataNode();
 	virtual ~LImageDataNode();
 
 	virtual NodeBase *Duplicate();
 	virtual int Update();
 	virtual int GetStatus();
-	virtual int UpdatePreview();
+	virtual Value *PreviewFrom() { return properties.e[2]->GetData(); }
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new LImageDataNode(); }
 };
 
 
@@ -671,10 +671,11 @@ LImageDataNode::LImageDataNode()
 	makestr(type, "Drawable/ImageData");
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "transform",  new AffineValue(),1, _("Transform")));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "image", new ColorValue(1.,1.,1.,1.),1, _("Image")));
+	// AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "image", new ColorValue(1.,1.,1.,1.),1, _("Image")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "image", nullptr,1, _("Image")));
 
-	imagedata = new LImageData();
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output,true, "out", imagedata,1, NULL, 0, false)); 
+	LImageData *imagedata = new LImageData();
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output,true, "out", imagedata,1, nullptr, nullptr, 0, false)); 
 }
 
 LImageDataNode::~LImageDataNode()
@@ -697,9 +698,10 @@ int LImageDataNode::Update()
 	//if (!col && !image) return -1;
 	if (!image) return -1;
 
+	LImageData *imagedata = dynamic_cast<LImageData*>(properties.e[2]->GetData());
+	imagedata->m(a->m());
 	//if (col) imagedata->SetImageAsColor(col->color.Red(), col->color.Green(), col->color.Blue(), col->color.Alpha());
 	//else
-	imagedata->m(a->m());
 	imagedata->SetImage(image->image, nullptr);
 
 	return NodeBase::Update();
@@ -710,30 +712,11 @@ int LImageDataNode::GetStatus()
 	if (!dynamic_cast<Affine*>(properties.e[0]->GetData())) return -1;
 	if (!dynamic_cast<ColorValue*>(properties.e[1]->GetData())
 		&& !dynamic_cast<ImageValue*>(properties.e[1]->GetData())) return -1;
-	if (!properties.e[2]) return 1;
+	if (!properties.e[2]->data) return 1;
 
 	return NodeBase::GetStatus();
 }
 
-int LImageDataNode::UpdatePreview()
-{
-	LaxImage *img = imagedata->GetPreview();
-	if (img == nullptr) img = imagedata->image;
-	if (img) {
-		if (img != total_preview) {
-			if (total_preview) total_preview->dec_count();
-			total_preview = img;
-			total_preview->inc_count();
-		}
-	}
-	return 1;
-}
-
-
-Laxkit::anObject *newLImageDataNode(int p, Laxkit::anObject *ref)
-{
-	return new LImageDataNode();
-}
 
 
 //------------------------ LImageDataInfoNode ------------------------
@@ -1122,6 +1105,142 @@ int EndPointsNode::UpdatePreview()
 {
 	return 1;
 }
+
+
+//------------------------ ExtremaNode ------------------------
+
+/*! 
+ * Node for extracting end points of paths.
+ */
+
+class ExtremaNode : public NodeBase
+{
+  public:
+	ExtremaNode();
+	virtual ~ExtremaNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ExtremaNode(); }
+};
+
+
+ExtremaNode::ExtremaNode()
+{
+	makestr(Name, "Extrema");
+	makestr(type, "Paths/Extrema");
+	
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", nullptr,1, NULL, 0, false)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "leftmost",   new BooleanValue(true),1, _("Leftmost"),   nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "rightmost",  new BooleanValue(true),1, _("Rightmost"),  nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "topmost",    new BooleanValue(true),1, _("Topmost"),    nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "bottommost", new BooleanValue(true),1, _("Bottommost"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "n", new IntValue(0),1, _("Num points"), nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "paths", nullptr,1, _("Path indices"), nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "t", nullptr,1, _("t"), nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "points", nullptr,1, _("Points"), nullptr,0,false));
+}
+
+ExtremaNode::~ExtremaNode()
+{
+	//if (pathsdata) pathsdata->dec_count();
+}
+
+NodeBase *ExtremaNode::Duplicate()
+{
+	ExtremaNode *node = new ExtremaNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int ExtremaNode::GetStatus()
+{
+	LPathsData *o = dynamic_cast<LPathsData*>(properties.e[0]->GetData());
+	if (!o) return -1;
+
+	if (!isNumberType(properties.e[1]->GetData(), nullptr)) return -1;
+	if (!isNumberType(properties.e[2]->GetData(), nullptr)) return -1;
+	if (!isNumberType(properties.e[3]->GetData(), nullptr)) return -1;
+	if (!isNumberType(properties.e[4]->GetData(), nullptr)) return -1;
+	
+	return NodeBase::GetStatus();
+}
+
+int ExtremaNode::Update()
+{
+	LPathsData *pdata = dynamic_cast<LPathsData*>(properties.e[0]->GetData());
+	if (!pdata) return -1;
+
+	int isnum;
+	bool lefts = getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+	bool rights = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+	bool tops = getNumberValue(properties.e[3]->GetData(), &isnum);
+	if (!isnum) return -1;
+	bool bottoms = getNumberValue(properties.e[4]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	SetValue *pindices = dynamic_cast<SetValue*>(properties.e[6]->GetData());
+	if (!pindices) {
+		pindices = new SetValue();
+		properties.e[6]->SetData(pindices, 1);
+	} else {
+		pindices->Flush();
+	}
+	SetValue *t = dynamic_cast<SetValue*>(properties.e[7]->GetData());
+	if (!t) {
+		t = new SetValue();
+		properties.e[7]->SetData(t, 1);
+	} else {
+		t->Flush();
+	}
+	PointSetValue *points = dynamic_cast<PointSetValue*>(properties.e[8]->GetData());
+	if (!points) {
+		points = new PointSetValue();
+		properties.e[8]->SetData(points, 1);
+	} else {
+		points->Flush();
+	}
+
+	NumStack<double> t_vals;
+	NumStack<flatpoint> p_rets;
+
+	for (int c=0; c<pdata->paths.n; c++) {
+		t_vals.flush();
+		p_rets.flush();
+		int n = pdata->FindExtrema(c, &p_rets, &t_vals);
+		for (int c2=0; c2<n; c2++) {
+			if (    (lefts   && p_rets[c2].info == LAX_RIGHT)
+				 || (rights  && p_rets[c2].info == LAX_LEFT)
+				 || (tops    && p_rets[c2].info == LAX_BOTTOM)
+				 || (bottoms && p_rets[c2].info == LAX_TOP)
+			   ) {
+			   	AffineValue *af = new AffineValue;
+			    af->origin(p_rets[c2]);
+			    flatvector v;
+			    pdata->PointAlongPath(c, t_vals[c2], 0, nullptr, &v);
+			    v.normalize();
+			    af->xaxis(v);
+			    af->yaxis(transpose(v));
+				points->AddPoint(p_rets[c2], af, true);
+				t->Push(new DoubleValue(t_vals[c2]), 1);
+				pindices->Push(new IntValue(c), 1);
+			}
+		}
+	}
+	
+	IntValue *iv = dynamic_cast<IntValue*>(properties.e[5]->GetData());
+	iv->i = points->NumPoints();
+	properties.e[5]->Touch();
+	properties.e[6]->Touch();
+	properties.e[7]->Touch();
+	properties.e[8]->Touch();
+	return NodeBase::Update();
+}
+
 
 
 //------------------------ PointsToDelaunayNode ------------------------
@@ -1633,8 +1752,8 @@ PointSetNode::PointSetNode(PointSetNode::SetTypes ntype)
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "num", new IntValue(4),1,  _("Num on edge"), NULL));
 		
 	} else if (settype == RandomSquare) {
-		makestr(type, "Points/RandomSquare");
-		makestr(Name, _("Random Square"));
+		makestr(type, "Points/RandomRectangle");
+		makestr(Name, _("Random Rectangle"));
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "o", new FlatvectorValue(),1, _("Center"),   NULL));
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "w", new DoubleValue(1),1,  _("Width"), NULL));
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "h", new DoubleValue(1),1, _("Height"), NULL));
@@ -1826,10 +1945,10 @@ int PointSetNode::Update()
 		double r = getNumberValue(properties.e[1]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad radius")); return -1; }
 		
-		int n = getNumberValue(properties.e[3]->GetData(), &isnum);
+		int n = getNumberValue(properties.e[2]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad num points")); return -1; }
 
-		int seed = getNumberValue(properties.e[4]->GetData(), &isnum);
+		int seed = getNumberValue(properties.e[3]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad seed")); return -1; }
 
 		set->CreateRandomRadial(n, seed, o.x, o.y, r);
@@ -1900,6 +2019,7 @@ PathGeneratorNode::PathGeneratorNode(PathGeneratorNode::PathTypes ntype)
 	if (pathtype == Square) {
 		makestr(type, "Paths/Square");
 		makestr(Name, _("Square"));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "edge", new DoubleValue(1),1,  _("Edge"),  NULL));
 		//no inputs! always square 0..1
 
 	} else if (pathtype == Rectangle) {
@@ -1918,6 +2038,7 @@ PathGeneratorNode::PathGeneratorNode(PathGeneratorNode::PathTypes ntype)
 		makestr(type, "Paths/Circle");
 		makestr(Name, _("Circle"));
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "n",      new IntValue(4),1,     _("Points"), _("Number of points")));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "radius", new DoubleValue(1),1,  _("Radius"),  NULL));
 		// AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Start",  new DoubleValue(0),1,  _("Start"),  _("Start angle")));
 		// AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "End",    new DoubleValue(0),1,  _("End"),    _("End angle. Same as start means full circle.")));
 		//AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Smooth", new BooleanValue(1),1, _("Smooth"), _("Is a bezier curve"));
@@ -2014,7 +2135,7 @@ int PathGeneratorNode::GetStatus()
 {
 	char types[6];
 	const char *stype;
-	const char *sig = "     nnnn n    nnnn snnn ssnnns    snnn ssnnn";
+	const char *sig = "n    nnnn nn   nnnn snnn ssnnns    snnn ssnnn";
 	int sigoff = 0;
 
 	if (!dynamic_cast<BooleanValue*>(properties.e[0]->GetData())) {
@@ -2087,12 +2208,14 @@ int PathGeneratorNode::Update()
 	}
 
 	if (pathtype == Square) {
-		if (path) path->appendRect(0,0,1,1);
+		int isnum;
+		double e = getNumberValue(properties.e[1]->GetData(), &isnum);
+		if (path) path->appendRect(0,0,e,e);
 		else {
 			set->AddPoint(flatpoint(0,0));
-			set->AddPoint(flatpoint(1,0));
-			set->AddPoint(flatpoint(1,1));
-			set->AddPoint(flatpoint(0,1));
+			set->AddPoint(flatpoint(e,0));
+			set->AddPoint(flatpoint(e,e));
+			set->AddPoint(flatpoint(0,e));
 		}
 
 	} else if (pathtype == Rectangle) {
@@ -2120,9 +2243,10 @@ int PathGeneratorNode::Update()
 		int isnum = 0;
 		int n = getNumberValue(properties.e[1]->GetData(), &isnum);
 		if (!isnum || n <= 0) {makestr(error_message, _("Bad number of points")); return -1; }
+		double r = getNumberValue(properties.e[2]->GetData(), &isnum);
 
-		if (path) path->appendEllipse(flatpoint(), 1,1, 2*M_PI, 0, n, 1);
-		else set->CreateCircle(n, 0,0, 1);
+		if (path) path->appendEllipse(flatpoint(), r,r, 2*M_PI, 0, n, 1);
+		else set->CreateCircle(n, 0,0, r);
 
 	} else if (pathtype == Polygon) {
 		// make an n sided polygon
@@ -2606,7 +2730,6 @@ int DrawableInfoNode::GetStatus()
 }
 
 
-
 //--------------------------- SetupDataObjectNodes() -----------------------------------------
 
 /*! Install default built in node types to factory.
@@ -2614,8 +2737,7 @@ int DrawableInfoNode::GetStatus()
  */
 int SetupDataObjectNodes(Laxkit::ObjectFactory *factory)
 {
-	 //--- Drawables
-	factory->DefineNewObject(getUniqueNumber(), "Drawable/ImageData",         newLImageDataNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/ImageData",         LImageDataNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/ImageDataInfo",     newLImageDataInfoNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/DrawableInfo",      DrawableInfoNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/FindDrawable",      FindDrawableNode::NewNode,  NULL, 0);
@@ -2624,8 +2746,6 @@ int SetupDataObjectNodes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/SetParent",         SetParentNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/SetPositions",      SetPositionsNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/RotateDrawables",   RotateDrawablesNode::NewNode,  NULL, 0);
-
-
 
 	factory->DefineNewObject(getUniqueNumber(), "Paths/PathsData",         newPathsDataNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/Circle",            newPathCircleNode,  NULL, 0);
@@ -2638,12 +2758,12 @@ int SetupDataObjectNodes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Paths/PathFunctionPolarT",newPathFunctionPolarTNode, NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/Svgd",              newPathSvgdNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/EndPoints",         EndPointsNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/Extrema",           ExtremaNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/SetOriginToBBox",   SetOriginBBoxNode::NewNode,  NULL, 0);
-
 
 	factory->DefineNewObject(getUniqueNumber(), "Points/Grid",             newPointsGridNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Points/HexGrid",          newPointsHexNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Points/RandomSquare",     newPointsRandomSquareNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Points/RandomRectangle",  newPointsRandomSquareNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Points/RandomCircle",     newPointsRandomRadialNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Points/PointsToDots",     PointsToDotsNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Points/PointsToBars",     PointsToBarsNode::NewNode,  NULL, 0);

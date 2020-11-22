@@ -917,6 +917,10 @@ int NodeBase::UpdatePreview()
 	Value *v = PreviewFrom();
 	if (!v) return 1;
 	Previewable *obj = dynamic_cast<Previewable*>(v);
+	if (!obj) {
+		ObjectValue *ov = dynamic_cast<ObjectValue*>(v);
+		if (ov) obj = dynamic_cast<Previewable*>(ov->object);
+	}
 	LaxImage *img = nullptr;
 	if (obj) img = obj->GetPreview();
 	if (img) {
@@ -1456,6 +1460,8 @@ int NodeBase::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
 					return 1;
 				}
 			}
+			//val not found, uh oh! store for later processing
+			makestr(ev->tempkey, nval);
 		}
 		return 0; //couldn't set it!
 	}
@@ -2843,7 +2849,8 @@ NodeFrame *NodeGroup::GetFrame(int index)
 
 
 NodeInterface::NodeInterface(anInterface *nowner, int nid, Displayer *ndp)
- : anInterface(nowner,nid,ndp)
+ : anInterface(nowner,nid,ndp),
+   recent_node_types(LISTS_DELETE_Array)
 {
 	node_interface_style=0;
 
@@ -4105,9 +4112,13 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 			double w = th + dp->textextent(prop->Label(),-1, NULL,NULL);
 			ScreenColor highlight(node->colors->bg), shadow(node->colors->bg);
 			highlight.Average(&highlight, node->colors->fg, .2);
-			shadow.   Average(&highlight, node->colors->fg, .8);
-			int state = 0;
+			shadow.   Average(&shadow,    node->colors->fg, .8);
+			cerr << "hoverprop: "<<hoverprop<<"   buttondown: "<<buttondown.any(0,LEFTBUTTON)<<endl;
+			int state = (((prop->flags & NodeProperty::PROPF_Button_Grayed) == 0) && (hoverprop && buttondown.any(0,LEFTBUTTON)) ? LAX_ON : LAX_OFF);
 			dp->drawBevel(th*.05, &highlight, &shadow, state, node->x+prop->x+prop->width/2-w/2, node->y+prop->y+prop->height/2-th*.6, w, th*1.2);
+			if (prop->flags & NodeProperty::PROPF_Button_Grayed)
+				dp->NewFG(dp->NewFG(coloravg(&highlight, &nodes->colors->bg, &nodes->colors->fg)));
+			else dp->NewFG(nodes->colors->fg);
 			dp->textout(node->x+prop->x+prop->width/2, node->y+prop->y+prop->height/2, prop->Label(),-1, LAX_CENTER);
 
 		} else {
@@ -4848,6 +4859,7 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 		action = NODES_Property;
 
 		NodeProperty *prop = nodes->nodes.e[overnode]->properties.e[overproperty];
+		if (prop->type == NodeProperty::PROP_Button) needtodraw=1;
 		if (prop->HasInterface()) {
 			//-------------
 			dp->PushAxes();
@@ -5027,6 +5039,12 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		if (!nodes || overnode<0 || dragged>5) return 0;
 		NodeBase *node = nodes->nodes.e[overnode];
 		NodeProperty *prop = node->properties.e[overproperty];
+
+		if (prop->type == NodeProperty::PROP_Button) {
+			node->ButtonClick(prop, this);
+			needtodraw = 1;
+			return 0;
+		}
 
 		//if (prop->IsInput() && prop->IsConnected()) return 0; //can't change if piped in from elsewhere
 		if (!prop->IsEditable()) return 0;
@@ -5532,7 +5550,7 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 
 		} else {
 			 //move screen
-			DBG cerr <<"node middle button move: "<<x-lx<<", "<<y-ly<<endl;
+			// DBG cerr <<"node middle button move: "<<x-lx<<", "<<y-ly<<endl;
 			nodes->m.origin(nodes->m.origin() + flatpoint(x-lx, y-ly));
 		}
 		needtodraw=1;

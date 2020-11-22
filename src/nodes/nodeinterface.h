@@ -38,6 +38,7 @@ class NodeGroup;
 class NodeBase;
 class NodeProperty;
 class NodeColors;
+class NodeInterface;
 
 
 //---------------------------- NodeConnection ------------------------------------
@@ -89,6 +90,7 @@ class NodeProperty : public Laxkit::RefCounted
 		PROPF_List_Out = (1<<3),
 		PROPF_Label_From_Data = (1<<4),
 		PROPF_Y_Resizeable = (1<<5),
+		PROPF_Button_Grayed = (1<<6),
 		PROPF_MAX
 	};
 
@@ -262,7 +264,7 @@ class NodeFrame : public Laxkit::anObject,
 
 
 //---------------------------- NodeBase ------------------------------------
-class NodeBase : public Laxkit::anObject,
+class NodeBase : virtual public Laxkit::anObject,
 				 public Laxkit::DoubleRectangle,
 				 public Laxkit::Undoable
 {
@@ -330,6 +332,7 @@ class NodeBase : public Laxkit::anObject,
 	virtual void UpdateLayout();
 	virtual NodeBase *Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks);
 	virtual void ExecuteReset();
+	virtual void ButtonClick(NodeProperty *prop, NodeInterface *controller) {}
 
 	virtual NodeBase *Duplicate();
 	virtual void DuplicateBase(NodeBase *from);
@@ -573,6 +576,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 	double pan_duration; //seconds
 	int    pan_tick_ms;
 
+	PtrStack<char> recent_node_types;
+
 	PtrStack<NodeThread> forks; //used each Execute tick
 
 	Attribute *passthrough; //pipe io helper data
@@ -622,8 +627,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 
 	//Laxkit::Affine transform; //from nodes to screen coords
 
-	 //style state:
-	char *lastsave;
+	//---user config:
+	char *lastsave; //last file nodes were saved/loaded
 	Laxkit::LaxFont *font;
 	double defaultpreviewsize;
 
@@ -634,10 +639,11 @@ class NodeInterface : public LaxInterfaces::anInterface
 	Laxkit::ScreenColor color_controls;
 	Laxkit::ScreenColor color_background;
 	Laxkit::ScreenColor color_grid;
-	double draw_grid; //pixel spacing
+	double draw_grid;  //pixel spacing
+	double vp_dragpad; //screen pixel amount for drag area around viewport_bounds
+	//---end user config
 
 	Laxkit::DoubleBBox viewport_bounds;
-	double vp_dragpad;
 
 	Laxkit::ShortcutHandler *sc;
 
