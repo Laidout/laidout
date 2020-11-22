@@ -142,7 +142,7 @@ int NewBBoxObject(ValueHash *context, ValueHash *parameters, Value **value_ret, 
 
 Value *NewBBoxValue() { return new BBoxValue; }
 
-//! Create a new ObjectDef with BBox characteristics. Always creates new one, does not search for BBox globally.
+//! Create a new ObjectDef with BBox characteristics.
 ObjectDef *makeBBoxObjectDef()
 {
 	ObjectDef *sd = stylemanager.FindDef("BBox");
@@ -186,10 +186,16 @@ ObjectDef *makeBBoxObjectDef()
 	sd->pushFunction("Add", _("Add To Bounds"), _("Add a point to bounds"),
 					 NULL,
 					 "x",_("x"),_("An x coordinate"),"real", NULL,NULL,
-					 "y",_("y"),_("A y coordinate"), "real""real", NULL,NULL,
+					 "y",_("y"),_("A y coordinate"), "real", NULL,NULL,
 					 "p",_("p"),_("A point"),"flatvector", NULL,NULL,
 					 NULL);
 
+	sd->pushFunction("PadBox", _("Pad bounds"), nullptr, //_("Add a pad to bounds"),
+					 NULL,
+					 "x",_("X pad"),_("Amount to add horizontally"),"real", NULL,NULL,
+					 "y",_("Y pad"),_("Amount to add vertically"), "real", NULL,NULL,
+					 // "p",_("p"),_("A point"),"flatvector", NULL,NULL,
+					 NULL);
 
 	sd->pushFunction("AddBox", _("Add box"), _("Add another bbox to bounds, so that old and new bounds contain both."),
 					 NULL,
@@ -235,12 +241,15 @@ ObjectDef *makeBBoxObjectDef()
 int BBoxValue::Evaluate(const char *function,int len, ValueHash *context, ValueHash *pp, CalcSettings *settings,
 			             Value **value_ret, ErrorLog *log)
 {
+	if (len < 0) len = strlen(function);
+
 	if (isName(function,len,"ClearBBox")) {
 		ClearBBox();		 
 		if (value_ret) *value_ret=NULL;
 		return 0;
+	}
 
-	} else if (isName(function,len,"Add")) {
+	if (isName(function,len,"Add")) {
 		int err=0;
 		flatpoint p;
 		p.x=pp->findIntOrDouble("x",-1,&err); 
@@ -248,30 +257,38 @@ int BBoxValue::Evaluate(const char *function,int len, ValueHash *context, ValueH
 		int i=pp->findIndex("p",1);
 		if (i>=0 && dynamic_cast<FlatvectorValue*>(pp->e(i))) p=dynamic_cast<FlatvectorValue*>(pp->e(i))->v;
 		addtobounds(p);
-		if (value_ret) *value_ret=NULL;
+		*value_ret = this;
+		this->inc_count();
 		return 0;
+	}
 
-	} if (isName(function,len,"x")) {
+	if (isName(function,len,"x")) {
 		*value_ret=new DoubleValue(minx);
 		return 0;
 
-	} if (isName(function,len,"y")) {
+	}
+
+	if (isName(function,len,"y")) {
 		*value_ret=new DoubleValue(miny);
 		return 0;
+	}
 
-	} if (isName(function,len,"width")) {
+	if (isName(function,len,"width")) {
 		*value_ret=new DoubleValue(maxx-minx);
 		return 0;
+	}
 
-	} if (isName(function,len,"height")) {
+	if (isName(function,len,"height")) {
 		*value_ret=new DoubleValue(maxy-miny);
 		return 0;
+	}
 
-	} if (isName(function,len,"IsValid")) {
+	if (isName(function,len,"IsValid")) {
 		*value_ret=new BooleanValue(validbounds());
 		return 0;
+	}
 
-	} if (isName(function,len,"Contains")) {
+	if (isName(function,len,"Contains")) {
 		int err=0;
 		flatpoint p;
 		p.x=pp->findIntOrDouble("x",-1,&err); 
@@ -280,8 +297,20 @@ int BBoxValue::Evaluate(const char *function,int len, ValueHash *context, ValueH
 		if (i>=0 && dynamic_cast<FlatvectorValue*>(pp->e(i))) p=dynamic_cast<FlatvectorValue*>(pp->e(i))->v;
 		*value_ret=new BooleanValue(boxcontains(p.x,p.y));
 		return 0;
+	}
 
-	} if (isName(function,len,"AddBox")) {
+	if (isName(function,len,"PadBox")) {
+		double padx = 0;
+		double pady = 0;
+		int err=0;
+		padx = pp->findIntOrDouble("x",-1,&err); // if (err==0) box.maxx=d;
+		pady = pp->findIntOrDouble("y",-1,&err); // if (err==0) box.maxy=d;
+		ShiftBounds(-padx, padx, -pady, pady);
+		if (value_ret) *value_ret=NULL;
+		return 0;
+	}
+
+	if (isName(function,len,"AddBox")) {
 		DoubleBBox box;
 		Value *v=pp->find("box");
 		if (v && dynamic_cast<BBoxValue*>(v)) box=*dynamic_cast<DoubleBBox*>(v);
@@ -292,8 +321,11 @@ int BBoxValue::Evaluate(const char *function,int len, ValueHash *context, ValueH
 		d=pp->findIntOrDouble("miny",-1,&err); if (err==0) box.miny=d;
 		d=pp->findIntOrDouble("maxy",-1,&err); if (err==0) box.maxy=d;
 		addtobounds(&box);
+		if (value_ret) *value_ret=NULL;
+		return 0;
+	}
 
-	} if (isName(function,len,"Intersects")) {
+	if (isName(function,len,"Intersects")) {
 		DoubleBBox box;
 		Value *v=pp->find("box");
 		if (v && dynamic_cast<BBoxValue*>(v)) box=*dynamic_cast<DoubleBBox*>(v);
@@ -305,8 +337,9 @@ int BBoxValue::Evaluate(const char *function,int len, ValueHash *context, ValueH
 		d=pp->findIntOrDouble("maxy",-1,&err); if (err==0) box.maxy=d;
 		*value_ret=new BooleanValue(intersect(&box,0));
 		return 0;
+	}
 
-	} if (isName(function,len,"Intersection")) {
+	if (isName(function,len,"Intersection")) {
 		BBoxValue *box=new BBoxValue;
 		Value *v=pp->find("box");
 		if (v && dynamic_cast<BBoxValue*>(v)) *box=*dynamic_cast<BBoxValue*>(v);
