@@ -1189,7 +1189,6 @@ Value* DocumentExportConfig::duplicate()
 
 Value *DocumentExportConfig::dereference(const char *extstring, int len)
 {
-
 	if (IsName("filename", extstring, len)) return new StringValue(filename);
 	if (IsName("tofiles", extstring, len)) return new StringValue(tofiles);
 	if (IsName("command", extstring, len)) return new StringValue(command);
@@ -1212,10 +1211,131 @@ Value *DocumentExportConfig::dereference(const char *extstring, int len)
 	return nullptr;
 }
 
+/*! Return 1 for success, 2 for success, but other contents changed too, -1 for unknown extension.
+ * 0 for total fail, as when v is wrong type.
+ */
 int DocumentExportConfig::assign(FieldExtPlace *ext,Value *v)
 {
 	DBG cerr <<" *** Need to implement DocumentExportConfig::assign()!!"<<endl;
-	return 0;
+
+	if (ext->n()!=1) return -1;
+	const char *str=ext->e(0);
+
+
+	if (!strcmp("filename", str)) {
+		StringValue *sv = dynamic_cast<StringValue*>(v);
+		if (!sv) return 0;
+		makestr(filename, sv->str);
+		return 1;
+	}
+	if (!strcmp("tofiles", str)) {
+		StringValue *sv = dynamic_cast<StringValue*>(v);
+		if (!sv) return 0;
+		makestr(tofiles, sv->str);
+		return 1;
+	}
+	if (!strcmp("command", str)) {
+		StringValue *sv = dynamic_cast<StringValue*>(v);
+		if (!sv) return 0;
+		makestr(command, sv->str);
+		return 1;
+	}
+	if (!strcmp("textaspaths", str)) {
+		BooleanValue *vv = dynamic_cast<BooleanValue*>(v);
+		if (!vv) return 0;
+		textaspaths = vv->i;
+		return 1;
+	}
+	if (!strcmp("rasterize", str)) {
+		BooleanValue *vv = dynamic_cast<BooleanValue*>(v);
+		if (!vv) return 0;
+		rasterize = vv->i;
+		return 1;
+	}
+	if (!strcmp("collect", str)) {
+		BooleanValue *vv = dynamic_cast<BooleanValue*>(v);
+		if (!vv) return 0;
+		collect_for_out = vv->i;
+		return 1;
+	}
+	if (!strcmp("range", str)) {
+		StringValue *sv = dynamic_cast<StringValue*>(v);
+		if (!sv || !sv->str) return 0;
+		range.Parse(sv->str, nullptr, false);
+		return 1;
+	}
+	if (!strcmp("batches", str)) {
+		IntValue *vv = dynamic_cast<IntValue*>(v);
+		if (!vv) return 0;
+		batches = vv->i;
+		return 1;
+	}
+	if (!strcmp("evenodd", str)) {
+		StringValue *sv = dynamic_cast<StringValue*>(v);
+		if (!sv || !sv->str) return 0;
+		if (!strcasecmp(sv->str, "odd")) evenodd = Odd;
+		else if (!strcasecmp(sv->str, "even")) evenodd = Even;
+		else evenodd = All;
+		return 1;
+	}
+	if (!strcmp("rotate180", str)) {
+		BooleanValue *vv = dynamic_cast<BooleanValue*>(v);
+		if (!vv) return 0;
+		rotate180 = vv->i;
+		return 1;
+	}
+	if (!strcmp("paperrotation", str)) {
+		double vv;
+		if (!isNumberType(v, &vv)) return 0;
+		int pr = vv + .5;
+		if (pr != 0 && pr != 90 && pr != 180 && pr != 270 && pr != 360) return 0;
+		paperrotation = pr;
+		return 0;
+	}
+	if (!strcmp("reverse", str)) {
+		BooleanValue *vv = dynamic_cast<BooleanValue*>(v);
+		if (!vv) return 0;
+		reverse_order = vv->i;
+		return 1;
+	}
+	if (!strcmp("target", str)) {
+		StringValue *vv = dynamic_cast<StringValue*>(v);
+		if (!vv || !vv->str) return 0;
+		if      (!strcasecmp(vv->str, "single"))  target = TARGET_Single;
+		else if (!strcasecmp(vv->str, "multi"))   target = TARGET_Multi;
+		else if (!strcasecmp(vv->str, "command")) target = TARGET_Command;
+		else return 0;
+		return 1;
+	}
+	if (!strcmp("crop", str)) {
+		BBoxValue *vv = dynamic_cast<BBoxValue*>(v);
+		if (!vv) return 0;
+		crop.setbounds(vv);
+		return 1;
+	}
+	if (!strcmp("document", str)) {
+		Document *d = dynamic_cast<Document*>(v);
+		if (!d) return 0;
+		if (doc != d) {
+			if (doc) doc->dec_count();
+			doc = d;
+		}
+		doc->inc_count();
+		return 1;
+	}
+	if (!strcmp("layout", str)) {
+		IntValue *vv = dynamic_cast<IntValue*>(v);
+		if (!vv) return 0;
+		layout = vv->i;
+		return 1;
+	}
+
+	if (!strcmp("papergroup", str)) {
+		cerr << "Aaa!!! Need to implement PaperGroup as a Value!!"<<endl;
+		return 0;
+	}
+
+	return -1;
 }
 
 LaxFiles::Attribute *DocumentExportConfig::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
