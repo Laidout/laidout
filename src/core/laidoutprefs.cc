@@ -149,8 +149,7 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 		return def;
 	}
 
-	//StyleDef(const char *nname,const char *nName,const char *ntp, const char *ndesc,unsigned int fflags=STYLEDEF_CAPPED);
-	def=new StyleDef(NULL, //extensd
+	def=new ObjectDef(NULL, //extensd
 			"LaidoutPreferences", //name
 			_("General preferences"), //Name
 			_("Laidout global configuration options go here. They are stored in ~/.config/laidout-(version)/laidoutrc."

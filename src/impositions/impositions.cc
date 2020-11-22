@@ -121,9 +121,9 @@ void dumpOutImpositionTypes(FILE *f,int indent)
  */
 PtrStack<ImpositionResource> *GetBuiltinImpositionPool(PtrStack<ImpositionResource> *existingpool)
 {
-	 //first install basic imposition styledefs, since they do not otherwise get installed
+	 //first install basic imposition objectdefs, since they do not otherwise get installed
 	 //unless the imposition is instantiated
-	StyleDef *def;
+	ObjectDef *def;
 	def = stylemanager.FindDef("Singles");
 	if (!def) {
 		def = makeSinglesObjectDef();

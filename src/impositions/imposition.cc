@@ -887,7 +887,7 @@ Spread *Imposition::SingleLayout(int whichpage)
  * \brief Info about how to create new Imposition instances.
  */
 /*! \var char *ImpositionResource::objectdef
- * \brief StyleDef name for the type of Imposition this is.
+ * \brief ObjectDef name for the type of Imposition this is.
  */
 
 
