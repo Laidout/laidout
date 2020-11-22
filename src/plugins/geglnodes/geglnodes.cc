@@ -1186,8 +1186,8 @@ GeglToLaxImageNode::GeglToLaxImageNode()
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "In", NULL,1, _("In"),_("Gegl node"), 0, false));
 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output,true, "width",  new DoubleValue(100),1, _("Width")));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output,true, "height", new DoubleValue(100),1, _("Height")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output,true, "width",  new DoubleValue(100),1, _("Width") ,nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output,true, "height", new DoubleValue(100),1, _("Height"),nullptr,0,false));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output,true, "image",  NULL,1, _("Image")));
 }
 
