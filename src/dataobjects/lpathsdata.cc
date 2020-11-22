@@ -172,14 +172,14 @@ ObjectDef *LPathsData::makeObjectDef()
 	sd->pushVariable("fillstyle", _("Fill style"), _("Default fill style of all subpaths"), "FillStyle", 0, nullptr,0);
 
 	sd->pushFunction("moveto",_("moveto"),_("Start a new subpath"), NULL,
-					"x",_("X"),_("X position"),"number", NULL,NULL,
-					"y",_("Y"),_("Y position"),"number", NULL,NULL,
+					// "x",_("X"),_("X position"),"number", NULL,NULL,
+					// "y",_("Y"),_("Y position"),"number", NULL,NULL,
 					"p",_("P"),_("Point"),"flatvector", NULL,NULL,
 					 NULL);
 
 	sd->pushFunction("lineto",_("lineto"),_("Add a simple straight line to the path"), NULL,
-					"x",_("X"),_("X position"),"number", NULL,NULL,
-					"y",_("Y"),_("Y position"),"number", NULL,NULL,
+					// "x",_("X"),_("X position"),"number", NULL,NULL,
+					// "y",_("Y"),_("Y position"),"number", NULL,NULL,
 					"p",_("P"),_("Point"),"flatvector", NULL,NULL,
 					 NULL);
 
@@ -203,6 +203,13 @@ ObjectDef *LPathsData::makeObjectDef()
 	sd->pushFunction("clear",_("Clear"),_("Clear all paths"), NULL, NULL);
 
 	sd->pushFunction("pushEmpty",_("Push empty subpath"),_("Add empty subpath to current path stack"), NULL, NULL);
+
+	sd->pushFunction("BreakApart",_("Break Apart"),_("Make each subpath a new path object"), NULL, NULL);
+	// sd->pushFunction("BreakApartChunks",_("Break Apart Chunks"),_("Make subpaths new path objects, but preserve contained holes"), NULL, NULL);
+
+	sd->pushFunction("Combine",_("Combine"),_("Absorb subpaths of other objects into ourself"), NULL,
+					 "paths",_("Paths"),_("Paths, PathsData or list of paths"), nullptr, NULL,NULL,
+                     NULL);
 
 	sd->pushFunction("RemovePath",_("Remove path"),_("Remove path with given index"), NULL,
                      "index",_("Index"),_("Index starting at 0, or -1 for the top"),"int", NULL,NULL,
@@ -294,6 +301,24 @@ int LPathsData::Evaluate(const char *func,int len, ValueHash *context, ValueHash
 		IntValue *i = new IntValue(paths.n);
 		*value_ret = i;
 		return 0;
+
+	} else if (isName(func,len, "BreakApart")) {
+		SetValue *set = new SetValue();
+		for (int c=0; c<paths.n; c++) {
+			LPathsData *pathsdata = new LPathsData();
+			pathsdata->m(m());
+			pathsdata->InstallLineStyle(linestyle);
+			pathsdata->InstallFillStyle(fillstyle);
+			LaxInterfaces::Path *path = paths.e[c]->duplicate();
+			pathsdata->paths.push(path);
+			set->Push(pathsdata, 1);
+		}
+		*value_ret = set;
+		return 0;
+
+	} else if (isName(func,len, "Combine")) {
+		log->AddError("NEED TO IMPLEMENT!!!!");
+		return 1;
 
 	} else if (isName(func,len, "moveto")) {
 		log->AddError("NEED TO IMPLEMENT!!!!");
