@@ -302,7 +302,7 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 	AddWindowType("PaletteWindow","Palette",PALW_DBCLK_TO_LOAD,newPaletteWindowFunc,0);
 	AddWindowType("PlainTextWindow","Text Editor",0,newPlainTextWindowFunc,0);
 
-	if (laidout->experimental) 
+	if (laidout->prefs.experimental) 
 		AddWindowType("ObjectTreeWindow","Layers",0,newObjectTreeWindowFunc,0);
 
 	//AddWindowType("ColorSliders","Color picker",0,newColorSlidersFunc,0);

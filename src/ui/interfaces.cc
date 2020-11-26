@@ -111,7 +111,7 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	//-----------------end new fangled InterfaceManager tools-----------------
 
 
-	if (laidout->experimental) {
+	if (laidout->prefs.experimental) {
 		// *************** testing:
 
 		 // pathintersections

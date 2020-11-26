@@ -263,8 +263,6 @@ LaidoutApp::LaidoutApp()
 	curdoc=NULL;
 	tooltips=1000;
 
-	experimental=0;
-
 	 // laidoutrc defaults
 	preview_over_this_size=250; 
 	max_preview_length=200;
@@ -1003,7 +1001,7 @@ int LaidoutApp::readinLaidoutDefaults(char **shortcutsfile)
 			}
 
 		} else if (!strcmp(name,"experimental")) {
-			experimental = 1;
+			prefs.experimental = 1;
 
 		} else if (!strcmp(name,"start_with_last")) {
 			prefs.start_with_last = 1;
@@ -1356,7 +1354,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				exit(0);
 
 			case OPT_experimental: { // experimental
-				experimental=1;
+				prefs.experimental = 1;
 			  } break; 
 
 			case OPT_theme: { // theme
@@ -2263,7 +2261,7 @@ int main(int argc,char **argv)
 	if (theme) laidout->SetTheme(theme);
 	if (backend) laidout->Backend(backend);
 	o = options.find("experimental",0);
-	if (o && o->parsed_present) laidout->experimental = 1;
+	if (o && o->parsed_present) laidout->prefs.experimental = 1;
 
 
 	laidout->init(argc,argv);

@@ -82,7 +82,7 @@ LaidoutOpenWindow::LaidoutOpenWindow(int whichstart)
 				NULL,
 				0);
 
-	if (laidout->experimental) {
+	if (laidout->prefs.experimental) {
 		AddWin(new NewProjectWindow(this,"New Project",_("New Project"),0, 0,0,0,0, 0), 1,
 				_("New Project"),
 				NULL,

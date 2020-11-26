@@ -110,7 +110,6 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	Laxkit::anXWindow *lastview;
 
 	 //global prefs
-	int experimental;
 	LaidoutPreferences prefs;
 
 	Laxkit::IconManager *icons;
