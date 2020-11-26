@@ -341,6 +341,9 @@ need a better file preview system
 need a Revert option
 
 valuewindow:
+  bug: When scrollers come on, does not trigger an inset of widgets
+  bug: shrink for scroller, scroll to bottom, resize big.. window is still scrolled to bottom!!
+  FileValue needs a directory hint.. currently turning red on any change
   ui hints:
     DoubleRectangle      [maxy]
                      [minx]  [maxx]
@@ -349,13 +352,9 @@ valuewindow:
                   [yx] [yy] {scale y} {shear}
                   [x0] [y0]
   setvalue
-  arrayvalue
   ValueHash
-  rearrange
+  rearrange set elements
   delete elements of list
-  scrolledwindow:
-    errant scroller visible, pops on and off
-    when scroller visible, not adjusting thewindow size properly
   when you quit, does not remember from open windows
 
 
@@ -1641,8 +1640,9 @@ high dpi hidpi:
 	  nup
 	  clone
 	  DONE spread editor
-  in general for windows, need better styling.. too much is hardcoded. problems later with high dpi screens
-  need themeeditor to easily adjust things that are off
+  rebuild icons in app
+  global UI scale adjustment
+  need in app themeeditor to easily adjust things that are off
   per monitor ui scaling:
     xrandr only gives monitor names like DP-5 DP-0
     xrandr --verbose lists EDID hex block that usually contains monitor model somehow
@@ -2722,4 +2722,4 @@ DONE scroll bar zoom handles don't appear to work ?? can't duplicate
 DONE bug: calculator: using Math; 1*2*pi -> "Cannot compute with those values"
 DONE bug: laxkit, spelled Delaunay wrong
 DONE bug: Gradient load in not reading one of the two points
-
+DONE Implement passing on configure options to Laxkit configure
