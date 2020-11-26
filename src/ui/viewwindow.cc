@@ -3408,7 +3408,7 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 	if (ViewportWindow::CharInput(ch,buffer,len,state,d)==0) return 0;
 
 	DBG // ******** vvvvvvvv  for debugging objecttreewindow:
-	if (laidout->experimental && ch=='O' && (state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) {
+	if (laidout->prefs.experimental && ch=='O' && (state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) {
 		ObjectTreeWindow *otree=new ObjectTreeWindow(NULL, "tree","Object Tree", 0,NULL, this);
 		app->addwindow(otree);
 
@@ -4352,7 +4352,7 @@ int ViewWindow::init()
 
 
 	 //-----------print
-	//if (laidout->experimental) {
+	//if (laidout->prefs.experimental) {
 		last=ibut=new Button(this,"print",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"print",-1,
 							 _("Print"),NULL,laidout->icons->GetIcon("Print"),buttongap);
 		ibut->tooltip(_("Print the document"));
