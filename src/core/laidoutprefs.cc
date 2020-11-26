@@ -28,6 +28,9 @@
 #include <cctype>
 #include <unistd.h>
 
+//template implementation:
+#include <lax/lists.cc>
+
 #include <iostream>
 #define DBG
 using namespace std;
