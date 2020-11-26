@@ -102,6 +102,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 
 	double th = win_themestyle->normal->textheight();
 	double HMULT = 1.5;
+	double NUMW = 12;
 
 	if (rowframe == nullptr) {
 		const char *id = val->Id();
@@ -155,7 +156,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 							 last,object_id, mes.c_str(),
 							 fieldName, scratch.c_str());
 		if (fieldTooltip) last->tooltip(fieldTooltip);
-		rowframe->AddWin(box,1, box->win_w,0,10000,50,0, th*HMULT,0,0,50,0, -1);
+		rowframe->AddWin(box,1, th * NUMW,0,0,50,0, th*HMULT,0,0,50,0, -1);
 		rowframe->AddNull();
 
 	} else if (type == VALUE_Real || type == VALUE_Number) {
@@ -169,7 +170,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 							 last,object_id, mes.c_str(),
 							 fieldName, scratch.c_str());
 		if (fieldTooltip) last->tooltip(fieldTooltip);
-		rowframe->AddWin(box,1, box->win_w,0,10000,50,0, th*HMULT,0,0,50,0, -1);
+		rowframe->AddWin(box,1, th * NUMW,0,0,50,0, th*HMULT,0,0,50,0, -1);
 		rowframe->AddNull();
 
 
@@ -336,8 +337,9 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 		rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, HMULT * bar->win_h,0,0,50,0, -1);
 		rowframe->AddNull();
 
-		Utf8String path2;
+		Utf8String path2, path3;
 		ObjectDef *fdef;
+		Button *tbut;
 
 		for (int c=0; c<v->values.n; c++) {
 			Value *vv = v->values.e[c];
@@ -349,12 +351,16 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 			path2 = c;
 			Initialize(prevpath, vv, fdef, path2.c_str());
 
-			//bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,0,0,1, vv->whattype());
-			//rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
-			//rowframe->AddNull();
+			rowframe->AddHSpacer(th/2,0,0,0, rowframe->NumBoxes()-1);
+			path3 = "-" + path + "." + c;
+			last = tbut = new Button(this,path3.c_str(),NULL,IBUT_FLAT, 0,0,0,0, 0,
+									last, object_id, path3.c_str(),
+									-1,
+									"x");
+			tbut->tooltip(_("Remove this element"));
+			rowframe->AddWin(tbut,1, tbut->win_w,0,0,50,0, HMULT * th,0,0,50,0, rowframe->NumBoxes()-1);
 		}
 
-		Button *tbut;
 		path2 = "+";
 		path2 += path;
 		last = tbut = new Button(this,path2.c_str(),NULL,0, 0,0,0,0, 1,
@@ -362,7 +368,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 								-1,
 								" + ");
 		rowframe->AddHSpacer(th,0,0,0);
-		rowframe->AddWin(tbut,1, tbut->win_w*2,0,0,50,0, HMULT * bar->win_h,0,0,50,0, -1);
+		rowframe->AddWin(tbut,1, tbut->win_w*2,0,0,50,0, HMULT * th,0,0,50,0, -1);
 		rowframe->AddNull();
 
 
@@ -426,7 +432,7 @@ int ValueWindow::Event(const EventData *data,const char *mes)
 {
 	if (!strcmp(mes, "pan change")) return ScrolledWindow::Event(data,mes);
 
-	if (!isalnum(mes[0])) {
+	if (!isalnum(mes[0]) && mes[0] != '-' && mes[0] != '+') {
 		return ScrolledWindow::Event(data,mes);
 	}
 
@@ -435,7 +441,9 @@ int ValueWindow::Event(const EventData *data,const char *mes)
 
 	int type = value->type();
 
-    const SimpleMessage *e = dynamic_cast<const SimpleMessage *>(data);
+	const SimpleMessage *e = dynamic_cast<const SimpleMessage *>(data);
+	DBG cerr << "ValueWindow got: "<< (mes?mes:"(nullmes)")<<endl;
+
 	if (e) {
 
 		if (type == VALUE_Int) {
