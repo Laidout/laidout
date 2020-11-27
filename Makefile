@@ -123,6 +123,7 @@ SOURCEDIRS= \
 
 touchdepends:
 	for NAME in $(SOURCEDIRS); do touch $$NAME/makedepend; done
+	if [ -e laxkit ] ; then cd laxkit && $(MAKE) touchdepends; fi
 
 # remove everything that is generated, but not in repo
 dist-clean: clean
