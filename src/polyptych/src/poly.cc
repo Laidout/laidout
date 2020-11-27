@@ -742,6 +742,90 @@ int Polyhedron::makeedges()
 	return 1;
 }
 
+/*! Merge the face connected to face1 at edge with face1.
+ */
+void Polyhedron::MergeFaces(int face1, int edge)
+{
+	cerr << " *** FINISH IMPLEMENTING MergeFaces "<<endl;
+
+	if (face1 < 0 || face1 >= faces.n) return;
+	Face *face = faces.e[face1];
+
+	if (edge < 0 || edge >= face->pn) return;
+	Face *other = faces.e[edge];
+
+	int otheredge = -1;
+	for (int c=0; c<other->pn; c++) {
+		if (other->f[c] == face1) {
+			otheredge = c;
+			break;
+		}
+	}
+
+	int newn = face->pn + other->pn - 2;
+	int *newp = new int[newn];
+	int *newv = new int[newn];
+	int *newf = new int[newn];
+	double *newdihedral = new double[newn];
+
+	int i = 0;
+	for (int c=0; c<edge; c++) {
+		if (face->p) newp[i] = face->p ? face->p[c] : -1;
+		if (face->v) newv[i] = face->p ? face->v[c] : -1;
+		if (face->f) newf[i] = face->p ? face->f[c] : -1;
+		if (face->dihedral) newdihedral[i] = face->dihedral ? face->dihedral[c] : -1;
+		i++;
+	}
+
+	if (other->p[otheredge] == face->p[edge]) {
+		for (int c=0; c<other->pn-2; c++) {
+			int ii = (otheredge+c) % other->pn;
+			if (other->p) newp[i] = other->p[ii];
+			if (other->f) newf[i] = other->f[ii];
+			if (other->v) newv[i] = other->v[ii];
+			if (other->dihedral) newdihedral[i] = other->dihedral[ii];
+		}
+	} else {
+		for (int c=0; c<other->pn-2; c++) {
+			int ii = (otheredge - 1 - c + other->pn) % other->pn;
+			if (other->p) newp[i] = other->p[ii];
+			if (other->f) newf[i] = other->f[ii];
+			if (other->v) newv[i] = other->v[ii];
+			if (other->dihedral) newdihedral[i] = other->dihedral[ii];
+		}
+	}
+
+	for (int c=edge+1; c<face->pn; c++) {
+		if (face->p) newp[i] = face->p ? face->p[c] : -1;
+		if (face->v) newv[i] = face->p ? face->v[c] : -1;
+		if (face->f) newf[i] = face->p ? face->f[c] : -1;
+		if (face->dihedral) newdihedral[i] = face->dihedral ? face->dihedral[c] : -1;
+		i++;
+	}
+
+	delete[] face->p;
+	delete[] face->v;
+	delete[] face->f;
+	delete[] face->dihedral;
+
+	face->p = newp;
+	face->v = newv;
+	face->f = newf;
+	face->dihedral = newdihedral;
+
+	// remove face
+	faces.remove(otheredge);
+	for (int c=0; c<faces.n; c++) {
+		Face *f = faces.e[c];
+		for (int c2=0; c2<f->pn; c2++) {
+			if (f->f[c2] >= otheredge) f->f[c2]--;
+		}
+	}
+
+	cerr << " *** NOT FINISHED!!! FINISH ME!!!"<<endl;
+	// *** update edges, remove the particular edge
+}
+
 //! Make any vertices within a certain distance be the same vertex.
 /*! For approximation purposes, you can say zero=1e-10, for instance, to 
  * collapse all points that distance or less. Pass in 0 if the point has to be exactly the same.
@@ -1210,17 +1294,18 @@ void Polyhedron::dump_in_atts(Attribute *att,int what,LaxFiles::DumpContext *con
 			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
 				nme=  att->attributes.e[c]->name;
 				value=att->attributes.e[c]->value;
+
 				if (!strcmp(nme,"p")) {
-					n=DoubleListAttribute(tt,p3,3,&ee);
+					n=DoubleListAttribute(value, p3,3,&ee);
 					if (n==3) bas.p=spacevector(p3);
 				} else if (!strcmp(nme,"x")) {
-					n=DoubleListAttribute(tt,p3,3,&ee);
+					n=DoubleListAttribute(value, p3,3,&ee);
 					if (n==3) bas.x=spacevector(p3);
 				} else if (!strcmp(nme,"y")) {
-					n=DoubleListAttribute(tt,p3,3,&ee);
+					n=DoubleListAttribute(value, p3,3,&ee);
 					if (n==3) bas.y=spacevector(p3);
 				} else if (!strcmp(nme,"z")) {
-					n=DoubleListAttribute(tt,p3,3,&ee);
+					n=DoubleListAttribute(value, p3,3,&ee);
 					if (n==3) bas.z=spacevector(p3);
 				}
 				planes.push(bas);

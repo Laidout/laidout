@@ -172,6 +172,7 @@ class Polyhedron :
 	virtual void BuildExtra(); //create face cache
 	virtual ExtraFace *newExtraFace();
 	virtual void collapseVertices(double zero, int vstart=-1, int vend=-1);
+	virtual void MergeFaces(int face1, int edge);
 	virtual int FindUniqueFaceId();
 
 	virtual void dump_out(FILE *ff,int indent,int what,LaxFiles::DumpContext *context);

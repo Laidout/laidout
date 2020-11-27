@@ -694,6 +694,7 @@ int SphereToPoly(Image spheremap,
 			color2=faceimage.pixelColor(x,y);
 			if (color2.alpha()==1.) continue;
 
+			rq = gq = bq = 0;
 			for (int xa=0; xa<AA; xa++) {
 			  for (int ya=0; ya<AA; ya++) {
 				p=b.p+xx[xa]*b.x+yy[ya]*b.y;

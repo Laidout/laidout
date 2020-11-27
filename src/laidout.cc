@@ -1384,7 +1384,8 @@ void LaidoutApp::parseargs(int argc,char **argv)
 						cerr <<_("Could not open ")<<o->arg()<<endl;
 						exit(1);
 					}
-					fread(instr,1,size,f);
+					size_t len = fread(instr,1,size,f);
+					if (size > (int)len) size = (int)len;
 					instr[size]='\0';
 					runmode = RUNMODE_Commands;
 					char *str = calculator->In(instr, NULL);
