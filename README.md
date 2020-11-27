@@ -184,10 +184,10 @@ Here is a fast and easy way to get Laidout up and running from development sourc
 	hundred png icon files from `./src/icons/icons.svg`, `./src/icons/icons-tiling.svg`
 	and `./laxkit/lax/icons/icons.svg`. Each top level object in those files
     with ids that start with a capital letter will have an icon generated of the same
-    name.
+    name. To build icons from all three sources:
 
         cd src/icons
-        make
+        make all-with-lax
 
 
 	If for some reason you cannot see any icons after you run Laidout, even after you have
