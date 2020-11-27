@@ -215,6 +215,16 @@ ObjectDef *LPathsData::makeObjectDef()
                      "index",_("Index"),_("Index starting at 0, or -1 for the top"),"int", NULL,NULL,
                      NULL);
 
+	sd->pushFunction("AddAt",_("Add At"),_("Add points at specified t values"), NULL,
+                     "indices",_("Path"),_("Path index for t values. If not specified, assume path 0."),nullptr, NULL,NULL,
+                     "t",_("t"),_("A t value, or set of t values. There is 1 t between each vertex."),nullptr, NULL,NULL,
+                     NULL);
+
+	sd->pushFunction("SliceAt",_("Slice At"),_("Slice a path to multiple paths at at specified t values"), NULL,
+                     "indices",_("Path"),_("Path index for t values. If not specified, assume path 0."),nullptr, NULL,NULL,
+                     "t",_("t"),_("A t value, or set of t values. There is 1 t between each vertex."),nullptr, NULL,NULL,
+                     NULL);
+
 	stylemanager.AddObjectDef(sd, 0);
 	return sd;
 }
@@ -317,24 +327,125 @@ int LPathsData::Evaluate(const char *func,int len, ValueHash *context, ValueHash
 		return 0;
 
 	} else if (isName(func,len, "Combine")) {
-		log->AddError("NEED TO IMPLEMENT!!!!");
-		return 1;
+		SetValue *sv = dynamic_cast<SetValue*>(parameters->find("paths"));
+		if (!sv) return 1;
+		LPathsData *paths = dynamic_cast<LPathsData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
+		for (int c=0; c < sv->n(); c++) {
+			PathsData *p = dynamic_cast<PathsData*>(sv->e(c));
+			if (!p) {
+				log->AddError(_("Set contains non-path objects"));
+				paths->dec_count();
+				return 1;
+			}
+			for (int c2=0; c2<p->paths.n; c2++) {
+				LaxInterfaces::Path *pp = p->paths.e[c2]->duplicate();
+				paths->paths.push(pp);
+			}
+		}
+		*value_ret = paths;
+		return 0;
 
 	} else if (isName(func,len, "moveto")) {
-		log->AddError("NEED TO IMPLEMENT!!!!");
-		return 1;
+		Value *pv = dynamic_cast<Value*>(parameters->find("p"));
+		if (!pv) return 1;
+		FlatvectorValue *v = dynamic_cast<FlatvectorValue*>(pv);
+		if (!v) return 1;
+		moveTo(v->v);
+		return 0;
+
 	} else if (isName(func,len, "lineto")) {
-		log->AddError("NEED TO IMPLEMENT!!!!");
-		return 1;
+		Value *pv = dynamic_cast<Value*>(parameters->find("p"));
+		if (!pv) return 1;
+		FlatvectorValue *v = dynamic_cast<FlatvectorValue*>(pv);
+		if (v) {
+			lineTo(v->v);
+			return 0;
+		}
+
+		SetValue *sv = dynamic_cast<SetValue*>(pv);
+		if (!sv) return 1;
+
+		for (int c=0; c<sv->n(); c++) {
+			v = dynamic_cast<FlatvectorValue*>(sv->e(c));
+			if (!v) continue;
+			lineTo(v->v);
+		}
+		return 0;
+
 	} else if (isName(func,len, "curveto")) {
-		log->AddError("NEED TO IMPLEMENT!!!!");
-		return 1;
+		FlatvectorValue *c1 = dynamic_cast<FlatvectorValue*>(parameters->find("c1"));
+		if (!c1) return 1;
+		FlatvectorValue *c2 = dynamic_cast<FlatvectorValue*>(parameters->find("c2"));
+		if (!c2) return 1;
+		FlatvectorValue *p2 = dynamic_cast<FlatvectorValue*>(parameters->find("p2"));
+		if (!p2) return 1;
+		curveTo(c1->v, c2->v, p2->v);
+		return 0;
+
 	} else if (isName(func,len, "appendRect")) {
-		log->AddError("NEED TO IMPLEMENT!!!!");
-		return 1;
-	} else if (isName(func,len, "appendEllipse")) {
-		log->AddError("NEED TO IMPLEMENT!!!!");
-		return 1;
+		int err = 0;
+		double x = parameters->findIntOrDouble("x", -1, &err);  if (err != 0) return 1;
+		double y = parameters->findIntOrDouble("y", -1, &err);  if (err != 0) return 1;
+		double w = parameters->findIntOrDouble("w", -1, &err);  if (err != 0) return 1;
+		double h = parameters->findIntOrDouble("h", -1, &err);  if (err != 0) return 1;
+		appendRect(x,y,w,h);
+		return 0;
+
+	} else if (isName(func,len, "AddAt")) {
+	// sd->pushFunction("AddAt",_("Add At"),_("Add points at specified t values"), NULL,
+ //                     "indices",_("Path"),_("Path index for t values. If not specified, assume path 0."),nullptr, NULL,NULL,
+ //                     "t",_("t"),_("A t value, or set of t values. There is 1 t between each vertex."),nullptr, NULL,NULL,
+ //                     NULL);
+ 		double t,d;
+		Value *v = parameters->find("indices");
+		SetValue *indices = nullptr;
+		NumStack<int> ii;
+		NumStack<double> tt;
+
+		if (v) {
+			if (isNumberType(v, &t)) {
+				ii.push((int)t);
+			} else {
+				indices = dynamic_cast<SetValue*>(v);
+				if (!indices) {
+					return 1;
+				}
+				for (int c=0; c<indices->n(); c++) {
+					if (!isNumberType(indices->e(c), &d)) return 1;
+        			ii.push((int)d);
+				}
+			}
+		}
+		v = parameters->find("t");
+		if (!v) return 1;
+		SetValue *sett = nullptr;
+		if (isNumberType(v, &t)) {
+			tt.push(t);
+		} else {
+			sett = dynamic_cast<SetValue*>(v);
+			if (!sett) return 1;
+			for (int c=0; c<sett->n(); c++) {
+				if (!isNumberType(sett->e(c), &t)) return 1;
+				tt.push(t);
+			}
+		}
+
+		while (ii.n < tt.n) ii.push(ii.e[ii.n-1]);
+
+       	// now we have path index and t
+       	// AddAt();
+       	// return 0;
+       	return 1; // FINISH ME!!!!!
+
+	} else if (isName(func,len, "SliceAt")) {
+	// sd->pushFunction("SliceAt",_("Slice At"),_("Slice a path to multiple paths at at specified t values"), NULL,
+ //                     "indices",_("Path"),_("Path index for t values. If not specified, assume path 0."),nullptr, NULL,NULL,
+ //                     "t",_("t"),_("A t value, or set of t values. There is 1 t between each vertex."),nullptr, NULL,NULL,
+ //                     NULL);
+
+	// } else if (isName(func,len, "appendEllipse")) {
+	// 	log->AddError("NEED TO IMPLEMENT!!!!");
+	// 	return 1;
 	}
 
 	return DrawableObject::Evaluate(func, len, context, parameters, settings, value_ret, log);
