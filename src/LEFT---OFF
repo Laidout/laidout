@@ -295,10 +295,10 @@ lgm 2019 feedback and ideas:
   DONE mageia: makedepend trouble? replace with custom script to get rid of x11-dev dependency?
 
 alternate packaging:
-  appimage, see: https://github.com/Laidout/laidout/issues/10
-  flatpak
-  snapcraft
+  flatpak: https://github.com/Laidout/laidout/issues/11
   debian (get in to main repository)
+  snapcraft
+  DONE appimage, see: https://github.com/Laidout/laidout/issues/10
 
 panel editing:
   selecting objects really sucks
@@ -452,7 +452,8 @@ you can't control unclick selected directories
 build: building: build process
   should update faq with details about graphicsmagick, harfbuzz, and gegl versioning
   update configure message about try installing packages.. when fail on gegl, it's not listed
-  laidout ./configure needs to pass on relevant things to laxkit
+  should be able to do out-of-source builds
+  DONE laidout ./configure needs to pass on relevant things to laxkit
   DONE in config.log should show actual configure line for easy duplicating
 
 rework ui to be programmable. Perhaps an ui builder
@@ -1048,8 +1049,9 @@ node editor node interface NodeInterface nodes: node: interface:
     somedataref
       DONE check: dereference assign Evaluate extend from Group, not affine
     gradient
-	  bug: gradient controls broken
-      receive color messages from viewport color box
+      nodes must receive correct color messages from viewport color box
+	  bug: gradient controls broken sometimes
+	  needs a little settings button to pop interpolation or do strip resource selection
       DONE check: dereference assign Evaluate extend from Group, not affine
       DONE double click to call up color box
     delauney/point set tool: Vector2 + properties

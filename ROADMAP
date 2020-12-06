@@ -159,7 +159,7 @@ VERSION 0.1
        update french and spanish translations, if possible
        Paper sizes should be translated strings
        Implement poor man's multi-contact interface for all appropriate interfaces
-       Flatpak creation (issue #11)
+       Flatpak creation, submit for Flathub (issue #11)
 
 
 VERSION 0.2
