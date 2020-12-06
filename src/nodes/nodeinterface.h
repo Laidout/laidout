@@ -349,7 +349,7 @@ class NodeBase : virtual public Laxkit::anObject,
 	virtual int RemoveProperty(NodeProperty *prop);
 	virtual NodeProperty *FindProperty(const char *prop, int *index_ret = nullptr);
 	virtual int SetProperty(const char *prop, Value *value, bool absorb);
-	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
+	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att, LaxFiles::DumpContext *context);
 	virtual int NumInputs(bool connected, bool include_execin);
 	virtual int NumOutputs(bool connected);
 

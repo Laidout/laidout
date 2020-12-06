@@ -1420,7 +1420,7 @@ int NodeBase::SetProperty(const char *prop, Value *value, bool absorb)
  *
  * Return 1 for property set, 0 for could not set.
  */
-int NodeBase::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
+int NodeBase::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att, LaxFiles::DumpContext *context)
 {
 	NodeProperty *prop = FindProperty(propname);
 	if (!prop) return 0; //only work on existing props.
@@ -1471,7 +1471,10 @@ int NodeBase::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
 	if (!val) {
 		// consult stylemanager for Laidout.* ... *** need better way to define not dependent on Laidout
 		ObjectDef *def = stylemanager.FindDef(att->name, -1, 2);
-		if (def && def->newfunc) val = def->newfunc();
+		if (def && def->newfunc) {
+			val = def->newfunc();
+			if (val) val->dump_in_atts(att, 0, context);
+		}
 	}
 	if (val) {
 		if (!prop->SetData(val, true)) {
@@ -1687,7 +1690,7 @@ void NodeBase::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpCo
 					AddProperty(prop);
 				}
 
-				SetPropertyFromAtt(value, att->attributes.e[c]); 
+				SetPropertyFromAtt(value, att->attributes.e[c], context);
 			}
 		}
 	}
@@ -3653,7 +3656,7 @@ int NodeInterface::IsSelected(NodeBase *node)
 	return selected.findindex(node) >= 0;
 }
 
-/*! Draw 3 diagonal lines in lower triangle.
+/*! Draw 3 diagonal lines in lower triangle for resize indicator.
  */
 void DrawResizeMark(Displayer *dp, double x, double y, double w, double h)
 {
@@ -4017,9 +4020,10 @@ int NodeInterface::Refresh()
 				if (overslot == NODES_PropResize) {
 					//*** set hover color
 					dp->NewFG(&nodes->colors->fg);
-				} else 
+				} else {
 					dp->NewFG(coloravg(nodes->colors->fg.Pixel(),nodes->colors->bg.Pixel()));
-
+				}
+				dp->LineWidthScreen(1);
 				DrawResizeMark(dp, node->x + prop->x + prop->width - 2*th, node->y + prop->y + prop->height - 2*th, th, th);
 			}
 
@@ -5487,26 +5491,15 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 		//DBG cerr << "nodes lastpos: "<<lastpos.x<<','<<lastpos.y<<endl;
 		// DBG cerr <<"nodes scan, node,prop,slot: "<<newhover<<','<<newhoverprop<<','<<newhoverslot<<","<<newconnection<<endl;
 
-		if (newhover >= 0 && newhoverprop >= 0 && nodes->nodes.e[newhover]->properties.e[newhoverprop]->HasInterface()) {
+		if (newhover >= 0 && newhoverprop >= 0) {
 			NodeProperty *prop = nodes->nodes.e[newhover]->properties.e[newhoverprop];
 			if (prop->HasInterface()) {
-				anInterface *interface = prop->PropInterface(NULL, dp);
-
 				dp->PushAxes();
 				dp->NewTransform(nodes->m.m());
+				anInterface *interface = prop->PropInterface(NULL, dp);
 				interface->MouseMove(x,y, state,mouse);
 				dp->PopAxes();
 
-//				------
-//				//dp->PushAxes();
-//				//dp->NewTransform(nodes->m.m());
-//				anInterface *interface = prop->PropInterface(NULL, dp);
-//				flatpoint p = nodes->m.transformPointInverse(flatpoint(x,y));
-//				interface->MouseMove(p.x,p.y, state,mouse);
-//				//interface->MouseMove(x,y, state,mouse);
-//				//dp->PopAxes();
-//
-//				------
 				needtodraw |= interface->Needtodraw();
 			}
 		}
