@@ -66,16 +66,15 @@ class GradientProperty : public NodeProperty
 	static SingletonKeeper interfacekeeper;
 
   public:
-	static LaxInterfaces::GradientInterface *GetGradientInterface();
+	LaxInterfaces::GradientInterface *GetGradientInterface();
 
-	GradientValue *gradient;
+	LaxInterfaces::GradientInterface *ginterf;
 
 	GradientProperty(GradientValue *ncurve, int absorb, int isout);
 	virtual ~GradientProperty();
 
 	virtual void SetExtents(NodeColors *colors);
-	//virtual bool AllowType(Value *v);
-
+	
 	virtual LaxInterfaces::anInterface *PropInterface(LaxInterfaces::anInterface *interface, Laxkit::Displayer *dp);
 	virtual const char *PropInterfaceName() { return "GradientInterface"; }
 	virtual bool HasInterface();

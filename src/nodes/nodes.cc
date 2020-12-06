@@ -2974,6 +2974,150 @@ Laxkit::anObject *newLoopNode(int p, Laxkit::anObject *ref)
 }
 
 
+//------------------------ ForeachNode ------------------------
+
+/*! \class
+ * For each loop node.
+ */
+
+class ForeachNode : public NodeBase
+{
+  public:
+	int current;
+	int running;
+
+	ForeachNode();
+	virtual ~ForeachNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int GetStatus();
+	virtual int Update();
+	virtual NodeBase *Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks);
+	virtual void ExecuteReset();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ForeachNode(); }
+};
+
+
+ForeachNode::ForeachNode()
+{
+	current = -1;
+	running = 0;
+
+	makestr(type,   "Threads/Foreach");
+	makestr(Name, _("Foreach"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_In,  true, "In",    NULL,1, _("In")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_Out, true, "Done",  NULL,1, _("Done")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Exec_Out, true, "Foreach",  NULL,1, _("Foreach")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "list",  NULL,1, _("List")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Index",   new IntValue(current),1, _("Index"),   NULL, 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Element", NULL,1, _("Element"), NULL, 0, false));
+}
+
+ForeachNode::~ForeachNode()
+{
+}
+
+NodeBase *ForeachNode::Duplicate()
+{
+	ForeachNode *node = new ForeachNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int ForeachNode::GetStatus()
+{
+	return 0;
+}
+
+void ForeachNode::ExecuteReset()
+{
+	current = -1;
+	running = 0;
+	//dynamic_cast<IntValue*>(FindProperty("Index")->GetData())->i = current;
+}
+
+NodeBase *ForeachNode::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &forks)
+{
+	NodeProperty *done = properties.e[1];
+	NodeProperty *loop = properties.e[2];
+
+	NodeBase *next = NULL;
+
+	int max = 0;
+	Value *vin = properties.e[3]->GetData();
+	Value *el = nullptr;
+	ValueHash *hash = nullptr;
+	SetValue *set = nullptr;
+
+	if (vin->type() == VALUE_Hash) {
+		hash = dynamic_cast<ValueHash*>(vin);
+		max = hash->n();
+
+	} else if (vin->type() == VALUE_Set) {
+		set = dynamic_cast<SetValue*>(vin);
+		max = set->n();
+
+	} //else vectors? each point in a path?
+
+	if (!running && max>0) {
+		 //initialize loop
+		running = 1;
+		current = 0;
+
+		if      (loop->connections.n) next = loop->connections.e[0]->to;
+		else if (done->connections.n) next = done->connections.e[0]->to;
+		else next = this;
+
+		if (hash) el = hash->value(current);
+		else if (set) el = set->e(current);
+		properties.e[5]->SetData(el, 0);
+
+		dynamic_cast<IntValue*>(properties.e[4]->GetData())->i = current;
+		properties.e[4]->Touch();
+		PropagateUpdate();
+		thread->scopes.push(this);
+		return next;
+	}
+
+	 //update current
+	if (current == max) {
+		 //end loop
+		running = 0;
+		if (done->connections.n) next = done->connections.e[0]->to;
+		else next = NULL;
+		thread->scopes.remove(-1);
+
+	} else {
+		 //continue loop
+		current++;
+		if (loop->connections.n) next = loop->connections.e[0]->to;
+		else next = this;
+
+		if (hash) el = hash->value(current);
+		else if (set) el = set->e(current);
+		properties.e[5]->SetData(el, 0);
+
+		dynamic_cast<IntValue*>(properties.e[4]->GetData())->i = current;
+		properties.e[4]->Touch();
+		PropagateUpdate();
+	}
+
+	return next;
+}
+
+int ForeachNode::Update()
+{
+	Error(nullptr);
+	Value *vin = properties.e[3]->GetData();
+	if (vin->type() != VALUE_Hash && vin->type() != VALUE_Set) return -1;
+	return NodeBase::Update();
+}
+
+
 //------------------------ ForkNode ------------------------
 
 /*! \class ForkNode
@@ -4164,7 +4308,7 @@ class CurveNode : public NodeBase
 	virtual NodeBase *Duplicate();
 	virtual int Update();
 	virtual int GetStatus();
-	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
+	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att, LaxFiles::DumpContext *context);
 };
 
 /*! absorbs ncurve.
@@ -4220,7 +4364,7 @@ NodeBase *CurveNode::Duplicate()
 
 /*! Return 1 for set, 0 for not set.
  */
-int CurveNode::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
+int CurveNode::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att, LaxFiles::DumpContext *context)
 {
 	if (!strcmp(propname, "Curve")) {
 		CurveProperty *prop = dynamic_cast<CurveProperty*>(FindProperty(propname));
@@ -4229,7 +4373,7 @@ int CurveNode::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att
 		prop->SetData(curve, 0);
 	}
 	
-	return NodeBase::SetPropertyFromAtt(propname, att);
+	return NodeBase::SetPropertyFromAtt(propname, att, context);
 }
 
 int CurveNode::Update()
@@ -4278,17 +4422,22 @@ GradientProperty::GradientProperty(GradientValue *ngradient, int absorb, int iso
 	makestr(label, _("Gradient"));
 	//makestr(tooltip, _(""));
 	SetFlag(NODES_PropResize, true);
+	is_editable = true;
 
-	gradient = ngradient;
-	if (gradient && !absorb) gradient->inc_count();
-	data = dynamic_cast<Value*>(gradient);
+	// gradient = ngradient;
+	// if (gradient && !absorb) gradient->inc_count();
+	// data = dynamic_cast<Value*>(ngradient);
+	data = ngradient;
 	if (data) data->inc_count();
+
+	ginterf = nullptr;
 }
 
 GradientProperty::~GradientProperty()
 {
 	DBG cerr <<"...deleting gradient prop data"<<endl;
-	if (gradient) gradient->dec_count();
+	// if (gradient) gradient->dec_count();
+	if (ginterf) ginterf->dec_count();
 }
 
 /*! Set a default width and height based on colors->font->textheight().
@@ -4307,6 +4456,8 @@ bool GradientProperty::HasInterface()
  */
 LaxInterfaces::GradientInterface *GradientProperty::GetGradientInterface()
 {
+	if (ginterf) return ginterf;
+
 	GradientInterface *interf = dynamic_cast<GradientInterface*>(interfacekeeper.GetObject());
 	if (!interf) {
 		interf = new GradientInterface(getUniqueNumber(), NULL);
@@ -4314,7 +4465,11 @@ LaxInterfaces::GradientInterface *GradientProperty::GetGradientInterface()
 		interf->style |= GradientInterface::RealSpace | GradientInterface::RealSpaceMouse | GradientInterface::Expandable | GradientInterface::EditStrip;
 		interfacekeeper.SetObject(interf, 1);
 	}
-	return interf;
+
+	ginterf = dynamic_cast<GradientInterface*>(interf->duplicate(nullptr));
+	ginterf->showdecs |= GradientInterface::ShowColors;
+	makestr(ginterf->owner_message, "GradientChange");
+	return ginterf;
 }
 
 /*! If interface!=NULL, then try to use it. If NULL, create and return a new appropriate interface.
@@ -4333,9 +4488,9 @@ LaxInterfaces::anInterface *GradientProperty::PropInterface(LaxInterfaces::anInt
 	if (!interf) interf = GetGradientInterface();
 
 	interf->Dp(dp);
-	interf->UseThisObject(gradient);
+	interf->UseThisObject(dynamic_cast<GradientStrip*>(data));
 	double th = owner->colors->font->textheight();
-	interf->SetupRect(owner->x + x + th, owner->y + y, width-2*th, height);
+	interf->SetupRect(owner->x + x + th, owner->y + y, width-2*th, height-th/2);
 
 	return interf;
 }
@@ -4379,8 +4534,18 @@ class GradientNode : public NodeBase
 	virtual NodeBase *Duplicate();
 	virtual int Update();
 	virtual int GetStatus();
-	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
+	// virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att, LaxFiles::DumpContext *context);
 };
+
+Laxkit::anObject *newGradientNode(int p, Laxkit::anObject *ref)
+{
+	return new GradientNode(1, nullptr);
+}
+
+Laxkit::anObject *newGradientTransformNode(int p, Laxkit::anObject *ref)
+{
+	return new GradientNode(0, nullptr);
+}
 
 /*! absorbs ngradient.
  */
@@ -4423,28 +4588,22 @@ GradientNode::~GradientNode()
 
 NodeBase *GradientNode::Duplicate()
 {
-	GradientValue *v = dynamic_cast<GradientProperty*>(FindProperty("Gradient"))->gradient;
-	v = dynamic_cast<GradientValue*>(v->duplicate());
+	GradientProperty *prop = dynamic_cast<GradientProperty*>(FindProperty("gradient"));
+	GradientValue *v = prop ? dynamic_cast<GradientValue*>(prop->data) : nullptr;
+	if (v) v = dynamic_cast<GradientValue*>(v->duplicate());
 	GradientNode *newnode = new GradientNode(for_creation, v);
 	newnode->DuplicateBase(this);
 	newnode->Wrap();
 	return newnode;
 }
 
-/*! Return 1 for set, 0 for not set.
- */
-int GradientNode::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
-{
-	if (!strcmp(propname, "gradient")) {
-		GradientProperty *prop = dynamic_cast<GradientProperty*>(FindProperty(propname));
-		GradientValue *gradient = prop->gradient;
-		gradient->dump_in_atts(att,0,NULL);
-		prop->SetData(gradient, 0);
-		return 1;
-	}
-	
-	return NodeBase::SetPropertyFromAtt(propname, att);
-}
+// /*! Return 1 for set, 0 for not set.
+//  */
+// int GradientNode::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att, LaxFiles::DumpContext *context)
+// {
+// 	int status = NodeBase::SetPropertyFromAtt(propname, att, context);
+// 	return status;
+// }
 
 /*! Return 0 for no error and everything up to date.
  * -1 means bad inputs and node in error state.
@@ -4452,37 +4611,91 @@ int GradientNode::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *
  */
 int GradientNode::Update()
 {
-	if (for_creation) return NodeBase::Update();
+	Error(nullptr);
 
+	if (for_creation) {
+		return NodeBase::Update();
+	}
+
+	// properties.e[properties.n-1]->SetData(properties.e[0]->GetData(), 0);
+	
 	//float -> color
 	//color -> grayscale -> color
 	//image -> grayscale -> new image
 	
 	GradientValue *gv = dynamic_cast<GradientValue*>(properties.e[1]->GetData());
 	Value *in = properties.e[0]->GetData();
+	if (!in) return -1;
+
 	double d;
 	bool isnum = false;
-	if (isNumberType(in, &d)) isnum = true;
-	else if (dynamic_cast<ColorValue*>(in)) {
-		ColorValue *cv = dynamic_cast<ColorValue*>(in);
-		d = simple_rgb_to_grayf(cv->color.Red(), cv->color.Green(), cv->color.Blue());
-		isnum = true;
+	SetValue *set = nullptr;
+	NumStack<double> vals;
+	
+	if (in->type() == VALUE_Set) {
+		set = dynamic_cast<SetValue*>(in);
+		int num = 0;
+		for (int c=0; c<set->n(); c++) {
+			Value *v = set->e(c);
+			if (!v) {
+				vals.push(0);
+				continue;
+			}
+			isnum = false;
+			d = 0;
+			if (isNumberType(in, &d)) isnum = true;
+			else if (dynamic_cast<ColorValue*>(in)) {
+				ColorValue *cv = dynamic_cast<ColorValue*>(in);
+				d = simple_rgb_to_grayf(cv->color.Red(), cv->color.Green(), cv->color.Blue());
+				isnum = true;
+			}
+			vals.push(d);
+			if (isnum) num++;
+		}
+		if (num == 0) {
+			Error(_("Set contains no numbers"));
+			return -1;
+		}
+	} else {
+		d = 0;
+		if (isNumberType(in, &d)) isnum = true;
+		else if (dynamic_cast<ColorValue*>(in)) {
+			ColorValue *cv = dynamic_cast<ColorValue*>(in);
+			d = simple_rgb_to_grayf(cv->color.Red(), cv->color.Green(), cv->color.Blue());
+			isnum = true;
+		} else {
+			return -1;
+		}
 	}
 
-	if (isnum) {
-		ColorValue *cv = dynamic_cast<ColorValue*>(properties.e[2]->GetData());
-		if (!cv) cv = new ColorValue();
-		else cv->inc_count();
+	ColorValue *cv = nullptr;
+	SetValue *outset = nullptr;
+	if (set) {
+		outset = dynamic_cast<SetValue*>(properties.e[2]->GetData());
+		if (!outset) {
+			outset = new SetValue();
+			properties.e[2]->SetData(outset,1);
+		}
+	}
+	for (int c=0; c < (set ? vals.n : 1); c++) {
+		if (set) d = vals.e[c];
 		ScreenColor col;
 		gv->WhatColor(d, &col, true);
+
+		if (set) {
+			cv = new ColorValue();
+			outset->Push(cv, 1);
+		} else {
+			cv = dynamic_cast<ColorValue*>(properties.e[2]->GetData());
+			if (!cv) {
+				cv = new ColorValue();
+				properties.e[2]->SetData(cv,1);
+			}
+		}
 		cv->color.SetRGB(col.Red(), col.Green(), col.Blue());
-		properties.e[2]->SetData(cv,1);
-	}
-	else {
-		// ***
-		return -1;
 	}
 
+	properties.e[2]->Touch();
 	return NodeBase::Update();
 }
 
@@ -4491,18 +4704,6 @@ int GradientNode::GetStatus()
 	return NodeBase::GetStatus();
 }
  
-
-
-
-Laxkit::anObject *newGradientNode(int p, Laxkit::anObject *ref)
-{
-	return new GradientNode(1, nullptr);
-}
-
-Laxkit::anObject *newGradientTransformNode(int p, Laxkit::anObject *ref)
-{
-	return new GradientNode(0, nullptr);
-}
 
 
 //------------------------ NewObjectNode ------------------------
@@ -6019,6 +6220,7 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Threads/If",         newIfNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Threads/Fork",       newForkNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Threads/Delay",      newDelayNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Threads/Foreach",    ForeachNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Threads/SetVariable",newSetVariableNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Threads/GetVariable",newGetVariableNode,  NULL, 0);
 
