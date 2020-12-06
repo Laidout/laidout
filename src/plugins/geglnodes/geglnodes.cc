@@ -785,9 +785,9 @@ int GeglLaidoutNode::Connected(NodeConnection *connection)
 	return 0;
 }
 
-int GeglLaidoutNode::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att)
+int GeglLaidoutNode::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att, LaxFiles::DumpContext *context)
 {
-    return NodeBase::SetPropertyFromAtt(propname, att);
+    return NodeBase::SetPropertyFromAtt(propname, att, context);
 }
 
 #define GEGLNODE_INPUT   (-1)
