@@ -220,7 +220,7 @@ ObjectDef *LPathsData::makeObjectDef()
                      "t",_("t"),_("A t value, or set of t values. There is 1 t between each vertex."),nullptr, NULL,NULL,
                      NULL);
 
-	sd->pushFunction("SliceAt",_("Slice At"),_("Slice a path to multiple paths at at specified t values"), NULL,
+	sd->pushFunction("CutAt",_("Cut At"),_("Slice a path to multiple paths at at specified t values"), NULL,
                      "indices",_("Path"),_("Path index for t values. If not specified, assume path 0."),nullptr, NULL,NULL,
                      "t",_("t"),_("A t value, or set of t values. There is 1 t between each vertex."),nullptr, NULL,NULL,
                      NULL);
@@ -391,16 +391,31 @@ int LPathsData::Evaluate(const char *func,int len, ValueHash *context, ValueHash
 		appendRect(x,y,w,h);
 		return 0;
 
-	} else if (isName(func,len, "AddAt")) {
-	// sd->pushFunction("AddAt",_("Add At"),_("Add points at specified t values"), NULL,
- //                     "indices",_("Path"),_("Path index for t values. If not specified, assume path 0."),nullptr, NULL,NULL,
- //                     "t",_("t"),_("A t value, or set of t values. There is 1 t between each vertex."),nullptr, NULL,NULL,
- //                     NULL);
+	} else if (isName(func,len, "AddAt") || isName(func,len, "SliceAt")) {
+		bool for_adding = isName(func,len, "AddAt");
+
  		double t,d;
-		Value *v = parameters->find("indices");
-		SetValue *indices = nullptr;
 		NumStack<int> ii;
 		NumStack<double> tt;
+		
+		// parse t
+		Value *v = parameters->find("t");
+		if (!v) return 1;
+		SetValue *sett = nullptr;
+		if (isNumberType(v, &t)) {
+			tt.push(t);
+		} else {
+			sett = dynamic_cast<SetValue*>(v);
+			if (!sett) return 1;
+			for (int c=0; c<sett->n(); c++) {
+				if (!isNumberType(sett->e(c), &t)) return 1;
+				tt.push(t);
+			}
+		}
+
+ 		// parse indices
+		v = parameters->find("indices");
+		SetValue *indices = nullptr;
 
 		if (v) {
 			if (isNumberType(v, &t)) {
@@ -415,37 +430,23 @@ int LPathsData::Evaluate(const char *func,int len, ValueHash *context, ValueHash
         			ii.push((int)d);
 				}
 			}
-		}
-		v = parameters->find("t");
-		if (!v) return 1;
-		SetValue *sett = nullptr;
-		if (isNumberType(v, &t)) {
-			tt.push(t);
 		} else {
-			sett = dynamic_cast<SetValue*>(v);
-			if (!sett) return 1;
-			for (int c=0; c<sett->n(); c++) {
-				if (!isNumberType(sett->e(c), &t)) return 1;
-				tt.push(t);
-			}
+			while (ii.n != tt.n) ii.push(0);
 		}
 
-		while (ii.n < tt.n) ii.push(ii.e[ii.n-1]);
+		if (ii.n != tt.n) return 1;
 
-       	// now we have path index and t
-       	// AddAt();
-       	// return 0;
-       	return 1; // FINISH ME!!!!!
-
-	} else if (isName(func,len, "SliceAt")) {
-	// sd->pushFunction("SliceAt",_("Slice At"),_("Slice a path to multiple paths at at specified t values"), NULL,
- //                     "indices",_("Path"),_("Path index for t values. If not specified, assume path 0."),nullptr, NULL,NULL,
- //                     "t",_("t"),_("A t value, or set of t values. There is 1 t between each vertex."),nullptr, NULL,NULL,
- //                     NULL);
+       	// now we have path indices and t
+       	if (for_adding) {
+       		if (AddAt(ii.n, ii.e, tt.e) == 0) return 0;
+       	} else {
+			if (CutAt(ii.n, ii.e, tt.e) == 0) return 0;
+       	}
+       	return 1;
 
 	// } else if (isName(func,len, "appendEllipse")) {
-	// 	log->AddError("NEED TO IMPLEMENT!!!!");
-	// 	return 1;
+	// log->AddError("NEED TO IMPLEMENT!!!!");
+	//	return 1;
 	}
 
 	return DrawableObject::Evaluate(func, len, context, parameters, settings, value_ret, log);
