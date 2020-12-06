@@ -62,7 +62,7 @@ Value *GradientValue::duplicate()
 {
 	GradientValue *dup = new GradientValue();
 
-	GradientStrip::duplicate(dynamic_cast<anObject*>(this));
+	GradientStrip::duplicate(dynamic_cast<anObject*>(dup));
 
 	return dup;
 }
