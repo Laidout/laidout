@@ -348,8 +348,8 @@ LImagePatchInterface::LImagePatchInterface(int nid,Laxkit::Displayer *ndp)
 	: ImagePatchInterface(nid,ndp)
 {
 	style|=IMGPATCHI_POPUP_INFO;
-	drawrendermode=1;
-	rendermode=3;
+	drawrendermode = RENDER_Preview;
+	rendermode = RENDER_Controls_Only;
 }
 
 anInterface *LImagePatchInterface::duplicate(anInterface *dup)
@@ -469,8 +469,8 @@ LaxFiles::Attribute *LImagePatchInterface::dump_out_atts(LaxFiles::Attribute *at
 LColorPatchInterface::LColorPatchInterface(int nid,Laxkit::Displayer *ndp)
 	: ColorPatchInterface(nid,ndp)
 {
-	drawrendermode=2;
-	rendermode=2;
+	drawrendermode = RENDER_Color;
+	rendermode = RENDER_Controls_Only;
 }
 
 anInterface *LColorPatchInterface::duplicate(anInterface *dup)
