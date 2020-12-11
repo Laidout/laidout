@@ -1438,16 +1438,6 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 
 			case OPT_list_export_options: { // list export options for a given format
-					//DBG cout <<"   ***** --list-export-options IS A HACK!! Code me right! ***"<<endl;
-					//printf("format   = \"theformat\"    #the format to export as\n");
-					//printf("tofile   = /file/to/export/to\n");
-					//printf("tofiles  = \"/files/like###.this\"  #the \"###\" section is replaced with the spread index\n");
-					//printf("                                  #Either tofile or tofiles should be present, not both\n");
-					//printf("layout   = papers  #usually singles, papers, or pages, but full range of possible values\n");
-					//printf("                   #    depends on the particular imposition used by the document\n");
-					//printf("start    = 3       #the starting index to export, counting from 0\n");
-					//printf("end      = 5       #the ending index to export, counting from 0\n");
-					//---------
 					if (!o->arg()) {
 						//cerr << "Must specify one of:"<<endl;
 						//for (int c=0; c<exportfilters.n; c++) cerr << exportfilters.e[c]->VersionName() <<endl;
@@ -1562,6 +1552,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		}
 
 		const char *format=att.findValue("filter");
+		if (!format) format = att.findValue("format"); //shortcut for forgetful dev
 		DBG cout << "Exporting with \""<<(format ? format : "unknown filter") <<"\""<<endl;
 		ExportFilter *filter = FindExportFilter(format,false);
 		if (!filter) {
@@ -1576,6 +1567,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		config->doc->inc_count();
 		config->filter=filter;
 		config->dump_in_atts(&att,0,NULL);//second time with doc!
+		if (config->range.NumRanges() == 0) config->range.AddRange(0,-1);
 
 		int err=export_document(config,error);
 		if (err>0) {
