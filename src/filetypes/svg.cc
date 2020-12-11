@@ -90,7 +90,7 @@ int AddSvgDocument(const char *file, Laxkit::ErrorLog &log, Document *existingdo
 	fclose(f);
 
 	 //find default page width and height
-	double width,height;
+	double width,height = -100;
 	//double scalex = 1, scaley = 1;
 	//bool needtoscale = false;
 	UnitManager *unitm = GetUnitManager();
@@ -119,34 +119,41 @@ int AddSvgDocument(const char *file, Laxkit::ErrorLog &log, Document *existingdo
 		width /= DEFAULT_PPINCH;
 		//scalex = 1./DEFAULT_PPINCH;
 	}
-	if (width<=0) return 4;
+	if (width<=0) {
+		log.AddError(_("Bad width value"));
+		return 4;
+	}
 
 	 //height
-	ptr=strstr(chunk,"height");
-	if (!ptr) return 5;
-	ptr+=6;
-	while (isspace(*ptr) || *ptr=='=') ptr++;
-	if (*ptr!='\"') return 6;
-	ptr++;
-	height=strtod(ptr,&endptr);
-	ptr=endptr;
-	if (*ptr!='\"') {
-		 //need to parse units
-		while (isspace(*ptr)) ptr++;
-		const char *eptr=ptr;
-		while (isalpha(*eptr)) eptr++;
-		int units = unitm->UnitId(ptr, eptr-ptr);
-		if (units!=UNITS_None) {
-			height = unitm->Convert(height, units, UNITS_Inches, nullptr);
-			//needtoscale = false;
+	ptr = strstr(chunk,"height");
+	if (ptr) {
+		ptr+=6;
+		while (isspace(*ptr) || *ptr=='=') ptr++;
+		if (*ptr!='\"') return 6;
+		ptr++;
+		if (!strncmp(ptr, "auto", 4)) height = -100;
+		else {
+			height = strtod(ptr,&endptr);
+			ptr=endptr;
+			if (*ptr!='\"') {
+				 //need to parse units
+				while (isspace(*ptr)) ptr++;
+				const char *eptr=ptr;
+				while (isalpha(*eptr)) eptr++;
+				int units = unitm->UnitId(ptr, eptr-ptr);
+				if (units!=UNITS_None) {
+					height = unitm->Convert(height, units, UNITS_Inches, nullptr);
+					//needtoscale = false;
+				}
+			} else {
+				height /= DEFAULT_PPINCH;
+				//scaley = 1./DEFAULT_PPINCH;
+			}
 		}
-	} else {
-		height /= DEFAULT_PPINCH;
-		//scaley = 1./DEFAULT_PPINCH;
 	}
-	if (height<=0) return 7;
 
 	ptr = strstr(chunk,"viewBox"); // viewBox="0 0 1530 1530", map this rectangle to 0,0 -> width,height
+	double viewbox_aspect = 1;
 	if (ptr) {
 		ptr+=7;
 		while (isspace(*ptr) || *ptr=='=' || *ptr=='"') ptr++;
@@ -154,11 +161,23 @@ int AddSvgDocument(const char *file, Laxkit::ErrorLog &log, Document *existingdo
 		int n = DoubleListAttribute(ptr, l, 4, nullptr);
 		if (n==4) {
 			//scalex = width  / l[2];
-			//scaley = height / l[3];
+			//scaley = height / l[3]; ***note auto height not found yet
 			//needtoscale = true;
+			if (fabs(l[2] - l[0]) < 1e-8) {
+				log.AddError(_("Bad viewbox!"));
+				return 8;
+			}
+			viewbox_aspect = (l[3] - l[1]) / (l[2] - l[0]);
 		}
 	}
 
+	if (height == -100) { // was auto
+		height = width * viewbox_aspect;
+	}
+	if (height<=0) {
+		log.AddError(_("Bad height value!"));
+		return 7;
+	}
 	PaperStyle paper("custom",width,height, 0,300, "in");
 	
 	Singles *imp=new Singles;
@@ -199,7 +218,6 @@ int AddSvgDocument(const char *file, Laxkit::ErrorLog &log, Document *existingdo
 //	}
 
 	newdoc->dec_count();
-
 	return 0;
 }
 
@@ -656,10 +674,9 @@ static int svgaddpath(FILE *f,flatpoint *points,int n)
 /*! Assumes "style=" has already been output to f.
  * After returning, user must supply closing quote mark.
  */
-void svgStyleTagsDump(FILE *f, LineStyle *lstyle, FillStyle *fstyle)
+void svgStyleTagsDump(FILE *f, LineStyle *lstyle, FillStyle *fstyle, DrawableObject *fillobj)
 {
 	 //---write style: style="fill:none;stroke:#000000;stroke-width:1px;stroke-opacity:1"
-
 
 	 //stroke
 	if (lstyle) { 
@@ -691,7 +708,14 @@ void svgStyleTagsDump(FILE *f, LineStyle *lstyle, FillStyle *fstyle)
 
 
 	 //fill
-	if (fstyle) {
+	if (fillobj) {
+		GradientData *grad = dynamic_cast<GradientData*>(fillobj);
+		if (grad) {
+			fprintf(f,"fill:url(#%sGradient%ld);", grad->IsRadial() ? "radial" : "linear", fillobj->object_id);
+
+		} else fprintf(f,"fill:url(#ColorPatchFill%ld);", fillobj->object_id);
+		
+	} else if (fstyle) {
 		if  (    fstyle->fillrule==LAXFILL_EvenOdd) fprintf(f,"fill-rule:evenodd; ");
 		else if (fstyle->fillrule==LAXFILL_Nonzero) fprintf(f,"fill-rule:nonzero; ");
 
@@ -728,10 +752,10 @@ static void svgMeshPathOut(FILE *f, const char *spc, ColorPatchData *patch, int 
  *
  * Remember that connected defs are collected in svgdumpdef().
  *
- * \todo put in indentation
  * \todo add warning when invalid radial gradient: one circle not totally contained in another
  */
-int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorLog &log, SvgExportConfig *out, bool ignore_filter = false, bool data_meta = false)
+int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorLog &log, SvgExportConfig *out, 
+				bool ignore_filter = false, bool data_meta = false)
 {
 	Group *g=dynamic_cast<Group *>(obj);
 	if (g && g->filter && !ignore_filter) {
@@ -1198,13 +1222,27 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 		if (fstyle && fstyle->hasFill()==0) fstyle=nullptr;
 		if (!lstyle && !fstyle) return 0;
 
-
 		int weighted=0;
 		bool open=true;
 		for (int c=0; c<pdata->paths.n; c++) {
 			if (!pdata->paths.e[c]->path) continue;
 			if (pdata->paths.e[c]->Weighted()) weighted++;
 			if (pdata->paths.e[c]->IsClosed()) open=false;
+		}
+
+		DrawableObject *fillobj = nullptr;
+		if (dobj && dobj->NumKids()) {
+			DrawableObject *kid = dynamic_cast<DrawableObject*>(dobj->Child(0));
+			GradientData *grad = dynamic_cast<GradientData*>(kid);
+			if (grad) {
+				fillobj = kid;
+			} else {
+				ColorPatchData *mesh = dynamic_cast<ColorPatchData *>(kid);
+				if (mesh) {
+					fillobj = kid;
+				}
+			}
+			if (dobj->NumKids()-(fillobj ? 1 : 0) > 0) log.AddWarning(_("Ignoring path children"));
 		}
 
 		if (!weighted) {
@@ -1226,7 +1264,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			fprintf(f,"\"\n");//end of "d" for non-weighted or original-d for weighted
 
 			fprintf(f,"%s       style=\"",spc);
-			svgStyleTagsDump(f, lstyle, fstyle);
+			svgStyleTagsDump(f, lstyle, fstyle, fillobj);
 			fprintf(f,"\"\n");//end of "style"
 
 			fprintf(f,"%s />\n",spc);//end of PathsData!
@@ -1245,7 +1283,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 
 				 //---write style for fill within centercache.. no stroke to that, as we apply artificial stroke
 				fprintf(f,"%s       style=\"",spc);
-				svgStyleTagsDump(f, nullptr, fstyle);
+				svgStyleTagsDump(f, nullptr, fstyle, fillobj);
 				fprintf(f,"\"\n");//end of "style"
 
 				fprintf(f,"%s       d=\"",spc);
@@ -1273,7 +1311,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 				fprintf(f,"%s       style=\"",spc);
 				FillStyle fillstyle;
 				fillstyle.color=lstyle->color;
-				svgStyleTagsDump(f, nullptr, &fillstyle);
+				svgStyleTagsDump(f, nullptr, &fillstyle, fillobj);
 				fprintf(f,"\"\n");//end of "style"
 
 
@@ -1314,8 +1352,6 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 				fprintf(f,"%s />\n",spc);//end of fill PathsData!
 			}
 		} //end if weighted path
-
-
 
 
 //	} else if (!strcmp(obj->whattype(),"ImagePatchData")) {
@@ -1413,11 +1449,7 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgE
 		return 0;
 	}
 
-	if (!strcmp(obj->whattype(),"Group")) {
-		for (int c=0; c<g->n(); c++) 
-			svgdumpdef(f,nullptr,g->e(c),warning,log, out); 
-
-	} else if (!strcmp(obj->whattype(),"PathsData")) {
+	if (!strcmp(obj->whattype(),"PathsData")) {
 		 //write out a powerstroke def section. When there is an offset,
 		 //not just a width change, the actual path is later
 		 //converted to the "area path", not the defined path
@@ -1628,8 +1660,11 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgE
 		} else { //use_mesh for meshgradient fills
 			const char *spc = "";
 
-			fprintf(f, "%s    <meshgradient gradientUnits=\"userSpaceOnUse\" id=\"ColorPatchFill%ld\" x=\"%.10g\" y=\"%.10g\">\n",
-					spc, patch->object_id, patch->points[0].x, patch->points[0].y); 
+			fprintf(f, "%s    <meshgradient gradientUnits=\"userSpaceOnUse\" id=\"ColorPatchFill%ld\" "
+							" gradientTransform=\"matrix(%.10g,%.10g,%.10g,%.10g,%.10g,%.10g)\" x=\"%.10g\" y=\"%.10g\">\n",
+					spc, patch->object_id,
+					patch->m(0), patch->m(1), patch->m(2), patch->m(3), patch->m(4), patch->m(5),
+					patch->points[0].x, patch->points[0].y); 
 
 			int xsize = patch->xsize;
 			int i, ci;
@@ -1663,6 +1698,13 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgE
 			fprintf(f, "%s    </meshgradient>\n", spc);
 		}
 	}
+
+	//check for kids no matter what type it is
+	if (g) {
+		for (int c=0; c<g->n(); c++) 
+			svgdumpdef(f,nullptr,g->e(c),warning,log, out);
+	}
+
 
 	return 0;
 }
@@ -1771,8 +1813,8 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			  "     version=\"1.0\"\n");
 	fprintf(f,"     width=\"%fin\"\n", width); //***inches by default?
 	// fprintf(f,"     height=\"%fin\"\n", height);
-	fprintf(f,"     height=\"auto\"\n"
-	          "     viewBox=\"0 0 %f %f\"\n", width*96, height*96);
+	fprintf(f,"     height=\"%fin\"\n" //was auto?!
+	          "     viewBox=\"0 0 %f %f\"\n", height, width*96, height*96);
 	fprintf(f,"   >\n");
 
 	 //set default units for use later in Inkscape
@@ -2131,9 +2173,16 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 		}
 
 		 // parse main "svg" attributes
+		double viewbox[4];
+		viewbox[0] = -1;
+		Attribute *aatt = svgdoc->find("viewBox");
+		if (aatt) {
+			int n = DoubleListAttribute(aatt->value, viewbox, 4, nullptr);
+			if (n!=4) viewbox[0] = -1;
+		}
 
 		 // check width and height first since viewBox depends on them.
-		Attribute *aatt = svgdoc->find("width");
+		aatt = svgdoc->find("width");
 		if (aatt) {
 			char *endptr = nullptr;
 			DoubleAttribute(aatt->value, &width, &endptr);
@@ -2155,22 +2204,29 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 		}
 		aatt = svgdoc->find("height");
 		if (aatt) {
-			char *endptr = nullptr;
-			DoubleAttribute(aatt->value, &height, &endptr);
-			if (*endptr) {
-				 //parse units 
-				UnitManager *unitm = GetUnitManager();
-				while (isspace(*endptr)) endptr++;
-				const char *ptr = endptr;
-				while (isalpha(*endptr)) endptr++;
-				int units = unitm->UnitId(ptr, endptr-ptr);
-				double raw_height = height;
-				if (units != UNITS_None) height = unitm->Convert(height, units, UNITS_Inches, nullptr);
-				scaley = height / raw_height;
+			if (!strcmp_safe(aatt->value, "auto")) {
+				if (viewbox[0] != -1) {
+					height = width * (viewbox[3] - viewbox[1]) / (viewbox[2] - viewbox[0]);
+				} else height = width;
 
 			} else {
-				height /= DEFAULT_PPINCH; //no specified units, assume svg pts
-				scaley = 1./DEFAULT_PPINCH;
+				char *endptr = nullptr;
+				DoubleAttribute(aatt->value, &height, &endptr);
+				if (*endptr) {
+					 //parse units 
+					UnitManager *unitm = GetUnitManager();
+					while (isspace(*endptr)) endptr++;
+					const char *ptr = endptr;
+					while (isalpha(*endptr)) endptr++;
+					int units = unitm->UnitId(ptr, endptr-ptr);
+					double raw_height = height;
+					if (units != UNITS_None) height = unitm->Convert(height, units, UNITS_Inches, nullptr);
+					scaley = height / raw_height;
+
+				} else {
+					height /= DEFAULT_PPINCH; //no specified units, assume svg pts
+					scaley = 1./DEFAULT_PPINCH;
+				}
 			}
 		}
 
@@ -2180,22 +2236,14 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 			if (!strcmp(name, "content:")) continue;
 
 			if (svghints) svg->push(svgdoc->attributes.e[c]->duplicate(),-1);
-			 
-			 //find the width and height of the document
-			if (!strcmp(name,"viewBox")) {
-				// *** also need to look out for other transform defined on base svg level, maybe nonstandard, but sometimes it's present
-
-				// viewBox="0 0 1530 1530", map this rectangle to 0,0 -> width,height
-				double l[4];
-				int n = DoubleListAttribute(value, l, 4, nullptr);
-				if (n==4) {
-					scalex = width  / l[2];
-					scaley = height / l[3];
-				}
-			}
 		}
 
-		if (scalex == 0 || scaley == 0) {
+		if (viewbox[0] != -1) {
+			scalex = width  / viewbox[2];
+			scaley = height / viewbox[3];
+		}
+
+		if (scalex <= 0 || scaley <= 0) {
 			log.AddMessage(_("Bad dimensions!\n"),ERROR_Fail); 
 			throw 3;
 		}
@@ -2738,6 +2786,11 @@ ColorPatchData *svgDumpInMeshGradientDef(Attribute *def, Attribute *defs)
 
 			mesh->points[0] = initial;
 
+			//Order is: traverse clockwise from upper left, skip any edges already taken
+			//  1  2  3  4
+			//  5  6  7  8
+			//  9 10 11 12
+
 			for (int c2=0; c2<rows->attributes.n; c2++) {
 				name  = rows->attributes.e[c2]->name;
 				value = rows->attributes.e[c2]->value;
@@ -2750,7 +2803,7 @@ ColorPatchData *svgDumpInMeshGradientDef(Attribute *def, Attribute *defs)
 
 				rowi++;
 				if (rowi >= mesh->ysize/3) {
-					mesh->grow(LAX_TOP, tr.m());
+					mesh->grow(LAX_TOP, tr.m(), false);
 				}
 				coli = -1;
 
@@ -2764,15 +2817,16 @@ ColorPatchData *svgDumpInMeshGradientDef(Attribute *def, Attribute *defs)
 
 						coli++;
 						if (coli >= mesh->xsize/3) {
-							mesh->grow(LAX_RIGHT, tr.m());
+							mesh->grow(LAX_RIGHT, tr.m(), false);
 							xsize = mesh->xsize;
 						}
 
-						int pi = 3 * rowi * mesh->xsize + 3 * coli;
-						int ci = rowi * (mesh->xsize/3+1) + coli;
-						int cic = ci;
+						int pi = 3 * rowi * mesh->xsize + 3 * coli; //point index, upper left
+						int ci = rowi * (mesh->xsize/3+1) + coli; //color index, upper left
+						int cic = ci; //where next color should go
 						int stopi = -1;
-						lastp = mesh->points[pi];
+						if (rowi == 0) lastp = mesh->points[pi];
+						else lastp = mesh->points[pi + 3];
 
 						if (!patch) continue;
 						for (int c4=0; c4<patch->attributes.n; c4++) {
@@ -2788,129 +2842,134 @@ ColorPatchData *svgDumpInMeshGradientDef(Attribute *def, Attribute *defs)
 							Attribute *stop = patch->attributes.e[c4];;
 							//bool colorfound = false;
 
+							//style has to be processed after path which updates cic, so:
+							Attribute *pathatt = stop->find("path");
+							if (!pathatt) throw 100; //malformed!
+
+							//paths that are "l x y" "L x y" "c x y x y x y" "C x y x y"(last one can ignore final)
+							value = pathatt->value;
+							if (!value || !*value) continue;
+							while (isspace(*value)) value++;
+							command = value[0];
+							value++;
+							int n = DoubleListAttribute(value, pts, 6);
+
+							if (edge == TOP ) {
+								if (command == 'l' || command == 'L') { //relative line
+									if (n!=2) throw(1);
+
+									if (command == 'l') v = flatpoint(pts[0],pts[1])/3;
+									else v = (flatpoint(pts[0],pts[1]) - lastp)/3;
+
+									mesh->points[pi+1] = lastp + v;
+									mesh->points[pi+2] = lastp + 2*v;
+									mesh->points[pi+3] = lastp + 3*v;
+
+								} else if (command == 'c') {
+									if (n != 6) throw(2);
+									mesh->points[pi+1].set(pts[0]+lastp.x, pts[1]+lastp.y); //lastp = mesh->points[pi+1];
+									mesh->points[pi+2].set(pts[2]+lastp.x, pts[3]+lastp.y); //lastp = mesh->points[pi+2];
+									mesh->points[pi+3].set(pts[4]+lastp.x, pts[5]+lastp.y);
+
+								} else if (command == 'C') {
+									if (n != 6) throw(3);
+									mesh->points[pi+1].set(pts[0], pts[1]);
+									mesh->points[pi+2].set(pts[2], pts[3]);
+									mesh->points[pi+3].set(pts[4], pts[5]);
+								}
+
+								cic = ci;
+								lastp = mesh->points[pi+3];
+
+							} else if (edge == RIGHT) {
+								if (command == 'l' || command == 'L') { //relative line
+									if (n!=2) throw(4);
+
+									if (command == 'l') v = flatpoint(pts[0],pts[1])/3;
+									else v = (flatpoint(pts[0],pts[1]) - lastp)/3;
+
+									mesh->points[pi+3+  xsize] = lastp + v;
+									mesh->points[pi+3+2*xsize] = lastp + 2*v;
+									mesh->points[pi+3+3*xsize] = lastp + 3*v;
+
+								} else if (command == 'c') {
+									if (n != 6) throw(5);
+									mesh->points[pi+3+  xsize].set(pts[0]+lastp.x, pts[1]+lastp.y); //lastp = mesh->points[pi+3+  xsize];
+									mesh->points[pi+3+2*xsize].set(pts[2]+lastp.x, pts[3]+lastp.y); //lastp = mesh->points[pi+3+2*xsize];
+									mesh->points[pi+3+3*xsize].set(pts[4]+lastp.x, pts[5]+lastp.y);
+
+								} else if (command == 'C') {
+									if (n != 6) throw(6);
+									mesh->points[pi+3+  xsize].set(pts[0], pts[1]);
+									mesh->points[pi+3+2*xsize].set(pts[2], pts[3]);
+									mesh->points[pi+3+3*xsize].set(pts[4], pts[5]);
+								}
+
+								cic = ci + 1;
+								lastp = mesh->points[pi+3+3*xsize];
+
+							} else if (edge == BOTTOM) {
+								if (command == 'l' || command == 'L') { //relative line
+									if (n!=2) throw(7);
+
+									if (command == 'l') v = flatpoint(pts[0],pts[1])/3;
+									else v = (flatpoint(pts[0],pts[1]) - lastp)/3;
+
+									mesh->points[pi+2+3*xsize] = lastp + v;
+									mesh->points[pi+1+3*xsize] = lastp + 2*v;
+									mesh->points[pi+  3*xsize] = lastp + 3*v;
+
+								} else if (command == 'c') {
+									if (n != 6 && n != 4) throw(8);
+									mesh->points[pi+2+3*xsize].set(pts[0]+lastp.x, pts[1]+lastp.y); //lastp = mesh->points[pi+2+3*xsize];
+									mesh->points[pi+1+3*xsize].set(pts[2]+lastp.x, pts[3]+lastp.y); //lastp = mesh->points[pi+1+3*xsize];
+									if (n==6) mesh->points[pi+  3*xsize].set(pts[4]+lastp.x, pts[5]+lastp.y);
+
+								} else if (command == 'C') {
+									if (n != 6 && n != 4) throw(9);
+									mesh->points[pi+2+3*xsize].set(pts[0], pts[1]);
+									mesh->points[pi+1+3*xsize].set(pts[2], pts[3]);
+									if (n==6) mesh->points[pi+  3*xsize].set(pts[4], pts[5]);
+								}
+
+								cic = ci + 1 + (xsize/3+1);
+								lastp = mesh->points[pi+3*xsize];
+
+							} else { //LEFT
+								if (command == 'l' || command == 'L') { //relative line
+									if (n!=2) throw(10);
+
+									if (command == 'l') v = flatpoint(pts[0],pts[1])/3;
+									else v = (flatpoint(pts[0],pts[1]) - lastp)/3;
+
+									mesh->points[pi+2*xsize] = lastp + v;
+									mesh->points[pi+1*xsize] = lastp + 2*v;
+									mesh->points[pi        ] = lastp + 3*v;
+
+								} else if (command == 'c') {
+									if (n != 6 && n != 4) throw(11);
+									mesh->points[pi+2*xsize].set(pts[0]+lastp.x, pts[1]+lastp.y); //lastp = mesh->points[pi+2*xsize];
+									mesh->points[pi+1*xsize].set(pts[2]+lastp.x, pts[3]+lastp.y); //lastp = mesh->points[pi+1*xsize];
+									if (n==6) mesh->points[pi].set(pts[4]+lastp.x, pts[5]+lastp.y);
+
+								} else if (command == 'C') {
+									if (n != 6 && n != 4) throw(12);
+									mesh->points[pi+2*xsize].set(pts[0], pts[1]);
+									mesh->points[pi+1*xsize].set(pts[2], pts[3]);
+									if (n==6) mesh->points[pi].set(pts[4], pts[5]);
+								}
+
+								cic = ci + (xsize/3+1);
+								lastp = mesh->points[pi];
+
+							} //end process path
+
+							//now process style:
 							for (int c5=0; c5<stop->attributes.n; c5++) {
 								name  = stop->attributes.e[c5]->name;
 								value = stop->attributes.e[c5]->value;
 
-								if (!strcmp(name,"path")) {
-									//paths that are "l x y" "L x y" "c x y x y x y" "C x y x y"(last one can ignore final)
-									if (!value || !*value) continue;
-									while (isspace(*value)) value++;
-									command = value[0];
-									value++;
-									int n = DoubleListAttribute(value, pts, 6);
-
-									if (edge == TOP ) {
-										if (command == 'l' || command == 'L') { //relative line
-											if (n!=2) throw(1);
-
-											if (command == 'l') v = flatpoint(pts[0],pts[1])/3;
-											else v = (flatpoint(pts[0],pts[1]) - lastp)/3;
-
-											mesh->points[pi+1] = lastp + v;
-											mesh->points[pi+2] = lastp + 2*v;
-											mesh->points[pi+3] = lastp + 3*v;
-
-										} else if (command == 'c') {
-											if (n != 6) throw(2);
-											mesh->points[pi+1].set(pts[0]+lastp.x, pts[1]+lastp.y); //lastp = mesh->points[pi+1];
-											mesh->points[pi+2].set(pts[2]+lastp.x, pts[3]+lastp.y); //lastp = mesh->points[pi+2];
-											mesh->points[pi+3].set(pts[4]+lastp.x, pts[5]+lastp.y);
-
-										} else if (command == 'C') {
-											if (n != 6) throw(3);
-											mesh->points[pi+1].set(pts[0], pts[1]);
-											mesh->points[pi+2].set(pts[2], pts[3]);
-											mesh->points[pi+3].set(pts[4], pts[5]);
-										}
-
-										cic = ci;
-										lastp = mesh->points[pi+3];
-
-									} else if (edge == RIGHT) {
-										if (command == 'l' || command == 'L') { //relative line
-											if (n!=2) throw(4);
-
-											if (command == 'l') v = flatpoint(pts[0],pts[1])/3;
-											else v = (flatpoint(pts[0],pts[1]) - lastp)/3;
-
-											mesh->points[pi+3+  xsize] = lastp + v;
-											mesh->points[pi+3+2*xsize] = lastp + 2*v;
-											mesh->points[pi+3+3*xsize] = lastp + 3*v;
-
-										} else if (command == 'c') {
-											if (n != 6) throw(5);
-											mesh->points[pi+3+  xsize].set(pts[0]+lastp.x, pts[1]+lastp.y); //lastp = mesh->points[pi+3+  xsize];
-											mesh->points[pi+3+2*xsize].set(pts[2]+lastp.x, pts[3]+lastp.y); //lastp = mesh->points[pi+3+2*xsize];
-											mesh->points[pi+3+3*xsize].set(pts[4]+lastp.x, pts[5]+lastp.y);
-
-										} else if (command == 'C') {
-											if (n != 6) throw(6);
-											mesh->points[pi+3+  xsize].set(pts[0], pts[1]);
-											mesh->points[pi+3+2*xsize].set(pts[2], pts[3]);
-											mesh->points[pi+3+3*xsize].set(pts[4], pts[5]);
-										}
-
-										cic = ci + 1;
-										lastp = mesh->points[pi+3+3*xsize];
-
-									} else if (edge == BOTTOM) {
-										if (command == 'l' || command == 'L') { //relative line
-											if (n!=2) throw(7);
-
-											if (command == 'l') v = flatpoint(pts[0],pts[1])/3;
-											else v = (flatpoint(pts[0],pts[1]) - lastp)/3;
-
-											mesh->points[pi+2+3*xsize] = lastp + v;
-											mesh->points[pi+1+3*xsize] = lastp + 2*v;
-											mesh->points[pi+  3*xsize] = lastp + 3*v;
-
-										} else if (command == 'c') {
-											if (n != 6 && n != 4) throw(8);
-											mesh->points[pi+2+3*xsize].set(pts[0]+lastp.x, pts[1]+lastp.y); //lastp = mesh->points[pi+2+3*xsize];
-											mesh->points[pi+1+3*xsize].set(pts[2]+lastp.x, pts[3]+lastp.y); //lastp = mesh->points[pi+1+3*xsize];
-											if (n==6) mesh->points[pi+  3*xsize].set(pts[4]+lastp.x, pts[5]+lastp.y);
-
-										} else if (command == 'C') {
-											if (n != 6 && n != 4) throw(9);
-											mesh->points[pi+2+3*xsize].set(pts[0], pts[1]);
-											mesh->points[pi+1+3*xsize].set(pts[2], pts[3]);
-											if (n==6) mesh->points[pi+  3*xsize].set(pts[4], pts[5]);
-										}
-
-										cic = ci + 1 + (xsize/3+1);
-										lastp = mesh->points[pi+3*xsize];
-
-									} else { //left
-										if (command == 'l' || command == 'L') { //relative line
-											if (n!=2) throw(10);
-
-											if (command == 'l') v = flatpoint(pts[0],pts[1])/3;
-											else v = (flatpoint(pts[0],pts[1]) - lastp)/3;
-
-											mesh->points[pi+2*xsize] = lastp + v;
-											mesh->points[pi+1*xsize] = lastp + 2*v;
-											mesh->points[pi        ] = lastp + 3*v;
-
-										} else if (command == 'c') {
-											if (n != 6 && n != 4) throw(11);
-											mesh->points[pi+2*xsize].set(pts[0]+lastp.x, pts[1]+lastp.y); //lastp = mesh->points[pi+2*xsize];
-											mesh->points[pi+1*xsize].set(pts[2]+lastp.x, pts[3]+lastp.y); //lastp = mesh->points[pi+1*xsize];
-											if (n==6) mesh->points[pi].set(pts[4]+lastp.x, pts[5]+lastp.y);
-
-										} else if (command == 'C') {
-											if (n != 6 && n != 4) throw(12);
-											mesh->points[pi+2*xsize].set(pts[0], pts[1]);
-											mesh->points[pi+1*xsize].set(pts[2], pts[3]);
-											if (n==6) mesh->points[pi].set(pts[4], pts[5]);
-										}
-
-										cic = ci + (xsize/3+1);
-										lastp = mesh->points[pi];
-
-									}
-
-								} else if (!strcmp(name,"stop-color")) {
+								if (!strcmp(name,"stop-color")) {
 									SimpleColorAttribute(value, nullptr, &color, nullptr);
 									mesh->colors[cic] = color;
 									//colorfound = true;
@@ -2940,8 +2999,8 @@ ColorPatchData *svgDumpInMeshGradientDef(Attribute *def, Attribute *defs)
 											color.alpha = mesh->colors[cic].alpha = a*65535;
 										}
 									}
-								} //stop atts
-							} //stops
+								} 
+							} //stop atts
 
 							//mesh->colors[cic] = color; //uses last color if color wasn't found
 
@@ -2958,6 +3017,7 @@ ColorPatchData *svgDumpInMeshGradientDef(Attribute *def, Attribute *defs)
 		  return nullptr;
 	}
 
+	mesh->m(gm);
 	mesh->InterpolateControls(Patch_Coons);
 	mesh->controls = Patch_Coons;
 	mesh->FindBBox();
@@ -2972,8 +3032,13 @@ void InsertFillobj(SomeData *fillobj, SomeData *obj, Group *group)
 
 	//*** need to push a reference to the def?
 	ColorPatchData *mesh = dynamic_cast<ColorPatchData*>(fillobj);
-	if (mesh && (mesh->flags & PATCH_Units_BBox)) {
-		 //need to scale to object bbox
+	if (mesh) {
+		if ((mesh->flags & PATCH_Units_BBox)) {
+			//need to scale to object bbox, 0..1 maps to min,max
+			double mm[6];
+			transform_set(mm, obj->maxx-obj->minx, 0,0, obj->maxy-obj->miny, obj->minx,obj->miny);
+			mesh->Multiply(mm);
+		}
 	} else {
 		GradientData *grad = dynamic_cast<GradientData*>(fillobj);
 		if (grad && grad->IsLinear() && (grad->P1()-grad->P2()).norm() < 1e-5) {
@@ -3687,6 +3752,7 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 	if (!linestyle) {
 		linestyle = new LineStyle;
 		linestyle->width = 1./96;
+		linestyle->function = LAXOP_None;
 		paths->InstallLineStyle(linestyle);
 		linestyle->dec_count();
 	}
@@ -3899,13 +3965,16 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 
 	if (founddefcol) {
 		 // *** note: fails when opacity but not color specified
-		if (!foundstroke) memcpy(strokecolor, defaultcolor, 4*sizeof(double));
+		if (!foundstroke) { memcpy(strokecolor, defaultcolor, 4*sizeof(double)); foundstroke = founddefcol; }
 		if (!foundfill)   memcpy(fillcolor,   defaultcolor, 4*sizeof(double));
 	}
 
 	if (foundstroke) {
 		if (foundstroke==-1) linestyle->function = LAXOP_None;
-		else linestyle->Colorf(strokecolor[0],strokecolor[1],strokecolor[2],strokecolor[3]);
+		else {
+			linestyle->function = LAXOP_Over;
+			linestyle->Colorf(strokecolor[0],strokecolor[1],strokecolor[2],strokecolor[3]);
+		}
 	}
 	if (foundfill) {
 		if (foundfill==-1) fillstyle->function = LAXOP_None;

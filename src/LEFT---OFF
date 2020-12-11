@@ -13,13 +13,13 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
+bug: ImagePatch doing anything with it causes double free crash
+
 bug: home and end through selection bounds out of whack.. try with gradient tool for instance, controls bad until reselect
 
 bug: Engraver fill, just moving mouse around is rerendering to buffer for preview
 
 bug: imported white images are not white, very slightly gray. gm load problem?
-
-bug: can't duplicate gradient nodes.. causes seg fault
 
 bug: severing clone link does some weird things, including crashing
 bug: clone tool clones do not have proper bounding box
@@ -609,17 +609,7 @@ Scribus scribus:
 
 svg: SVG
   in:
-    finish debugging mesh svg 2.0 out/in
-      monkey.doc export, then import, all wrong! not putting in page bounds even though width/height are fine.. gradients not importing
-      DONE mesh.svg
-      conical2.svg ..fill in text
-      DONE conical.svg
-      mesh_objectbb.svg
-      mesh_opacity.svg
-      DONE mesh_test.svg
-      mesh_transform.svg
-      pepper.svg
-
+	in units should default to csspoints
     bug: when stroke+fill presentation atts are not under a "style" att, they are ignored
     bug: gradient with no p1,p2 defaults to 0,0
     stroke fill
@@ -630,6 +620,24 @@ svg: SVG
     dotted line style
     for new docs, should set rulers to use some reasonable units, from either width="100px", or namedview.document-units
 
+    DONE monkey.doc, export then import:
+	  DONE radial gradients not importing
+	  DONE not putting in page bounds even though width/height are fine..
+	  DONE try to open exported svg, says cannot load with no further explanation
+    DONE finish debugging mesh svg 2.0 out/in, svg-mesh-polyfill/testfiles
+	 DONE test import, then visual similarity of export
+	  DONE conical.svg FAIL! needs check for translatable fill object
+	  DONE mesh1x2.svg
+	  DONE mesh2.svg
+	  DONE mesh2x1.svg
+	  DONE mesh_objectbb.svg
+	  DONE mesh_opacity.svg
+	  DONE mesh.svg
+	  DONE mesh_test.svg
+	  DONE mesh_transform.svg
+	  DONE pepper.svg
+	DONE bug: bad colors when style atts occur before path in meshpatch
+	DONE unless fill/stroke is specifically given a color, it should be noop
     DONE mesh out
     DONE finish debugging powerstroke out/in
       DONE try actually implementing powerstroke in
@@ -657,12 +665,15 @@ svg: SVG
     direction
     spans
     DONE color
+
+  see conical2.svg mesh test (filling text), need to implement text fill/stroke
+  need more comprehensive parenting handling.. how to output object children and also handle fills properly
   test arcs in/out
   export papers currently not going to correct paper
   text on path without path conversion
-  dump_in filter to nodes optionally, once those are renderable
-  need to parse units
+  dump_in svg filter to nodes optionally, once those are renderable
   radial: transparent inner circle, patch edges
+  DONE need to parse units
 plan:
   need an In()
   implement paper rotation for out
@@ -703,6 +714,7 @@ PathInterface: pathinterface
   bug: delete last weight node, sometimes width is wrong
   bug: make new line with freehand tool, cannot move weight nodes in a rational way
 
+  when you delete a point, curvertex should go to go to nearest previous
   need an easier way to edit gradient fills, like child tool edit for fill items, auto add filler types
   need simplify option on point delete to adjust control point lengths
   need option for bbox to include line width, not just centerline
@@ -978,11 +990,12 @@ Perspective perspective:
   optimize the image mapping
   filtering paths needs to detect big distortions and add points, as simply transforming bez points is not enough
   implement transform for:
-    ColorPatchData
-    ImagePatchData
-    PatchData
-    EngraverFillData
-    VoronoiData
+    vector transform should be through PointCollection for:
+      ColorPatchData
+      ImagePatchData
+      PatchData
+      EngraverFillData
+      VoronoiData
     Caption (convert to path first)
     text on path (convert to path first)
     ImageData
@@ -1050,7 +1063,7 @@ node editor node interface NodeInterface nodes: node: interface:
       DONE check: dereference assign Evaluate extend from Group, not affine
     gradient
       nodes must receive correct color messages from viewport color box
-	  bug: gradient controls broken sometimes
+	  DONE(?) bug: gradient controls broken sometimes
 	  needs a little settings button to pop interpolation or do strip resource selection
       DONE check: dereference assign Evaluate extend from Group, not affine
       DONE double click to call up color box
@@ -1081,12 +1094,12 @@ node editor node interface NodeInterface nodes: node: interface:
 	    boolean pathops
         project onto heightmap? onto mesh?
         make net then inset
-        combine
-        break apart
         merge
         simplify
         set line profile from resource
         apply weights
+        DONE combine
+        DONE break apart
       DONE fill and stroke controls (by using ModifyObjectNode)
       DONE check: dereference assign Evaluate extend from Group, not affine
     engraving
@@ -1388,34 +1401,51 @@ fontdialog: FontDialog
   select opentype features
   optional common font finishers? like centering, underline, color, highlight, fg/bg, etc
 
+Clean up mesh/patch controls: Mesh PatchInterface
+  bug: base on path remove/add should try to remember previous weight nodes, scratch only when mod points (not colors) too far off
+  bug: convert path to mesh inserting null patches at each point
+  bug: should still be able to edit colors while based on path
+
+  selected nodes should probably be more prominent and colored, just gray disappears, hard to work with
+  rotate/scale single or more control points should move attached controls in smooth mode
+  circle warp needs a proper circle/ellipse interface
+
+  DONE maybe should not be able to escape off path tool when editing as path, since that breaks path connection
+  DONE bug: when edit as path, path is below the mesh, so can't see path
+  DONE bug: subdividing is broken beyond 1st subdivide on anything other than outer patches
+  DONE bug: selected points, hover over edge, try to drag deselects then moves whole mesh. Should select for hovered and move that
+  DONE bug: when on edge, it highlights, but if you are outside of mesh, it will switch to other object
+  DONE bug: smooth edit fails along edges
+  DONE add new patches should smoothify joins when in smooth edit
+  DONE smooth edit not working when more than one square
+  DONE just as moving edges, should be able to move any vert column or horizontal row of points
+  DONE implement more right button config options to make the settings more discoverable
+  DONE smooth edit mode should be default. 
+
 ImagePatch:
-  use float or double for color sample
   abstract to be a filter, with optional stand alone object
 
-Clean up mesh/patch controls: Mesh PatchInterface
-  perspective arrangement: approximate transform controls through perspective grid
-  maybe should not be able to escape off path tool when editing as path
+ColorPatch / MeshGradient:
+  need bicubic color interpolation, as just cairo bilinear is pretty ugly
+  need sampling from beneath
+  convert from/to linear/radial gradient as possible
+  DONE flip colors vertically or horizontally
+
+PatchData:
+  smooth edit needs to adjust for interior point smoothness
   reverse lookup is not very precise: need to warp back and forth ONLY when necessary, as when
     switching to different, non-point-distort mode
+  perspective arrangement: approximate transform controls through perspective grid
+  maybe have status message say how many points are selected
+  need bez path to mesh, and extract bez from mesh
 
   edit multi objects in mesh tool.. should be able to move around many nodes?
+  rect select nodes
   coons are not really smooth at internal edges? try with engraver, makes corners with current inner interpolation
   tracing infrastructure should be part of base mesh class.. would make easy for color mesh to use
-  when on edge, it highlights, but if you are outside of mesh, it will switch to other object
-  smooth edit mode should be default. It's not working when more than one square
-  smooth edit fails along edges
-  rotate/scale single control point should move attached controls in smooth mode
-  add new patches should smoothify joins when in smooth edit
 
-  just as moving edges, should be able to move any vert column or horizontal row of points
-  selected nodes should probably be colored, just gray disappears, hard to work with
-  maybe have status message say how many points are selected
-  nudge mode with shift?
-  rect select nodes
-  for cache preview, only update affected patches.. difficult to compute when overlaps
-  changing recurse and rendermode in patch controls doesn't change that setting in the instance that does random rendering!!
-  implement more right button config options to make the settings more discoverable
-  circle warp needs a proper circle/ellipse interface
+  nudge mode with shift + arrow keys?
+  See that lgm talk about "local mod" to do subdivided mesh modifications that reduces control point clutter
   make base path dump_out as Path, not PathsData? make it easier to read file removing the unnecessary??
 
 raster paint layers, mypaint?
@@ -2725,3 +2755,5 @@ DONE bug: calculator: using Math; 1*2*pi -> "Cannot compute with those values"
 DONE bug: laxkit, spelled Delaunay wrong
 DONE bug: Gradient load in not reading one of the two points
 DONE Implement passing on configure options to Laxkit configure
+DONE bug: can't duplicate gradient nodes.. causes seg fault
+DONE bug: gradients always loading as linear instead of radial
