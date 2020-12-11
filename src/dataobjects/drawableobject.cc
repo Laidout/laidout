@@ -522,6 +522,7 @@ LaxInterfaces::SomeData *DrawableObject::duplicate(LaxInterfaces::SomeData *dup)
 	//meta? and tags
 	//iohints
 
+	d->flags = flags;
 	d->m(m());
 
 	 //filter
@@ -1240,7 +1241,7 @@ LaxFiles::Attribute *DrawableObject::dump_out_atts(LaxFiles::Attribute *att,int 
 		return att;
 	}
 
-	Attribute *att2;
+	Attribute *att2 = nullptr;
 	Utf8String s;
 	
 	att->push("id", Id());
@@ -1418,7 +1419,7 @@ LaxFiles::Attribute *DrawableObject::dump_out_atts(LaxFiles::Attribute *att,int 
 	}
 
 	if (kids.n) {
-		att2->pushSubAtt("kids");
+		att2 = att->pushSubAtt("kids");
 		dump_out_group_atts(att2, what, context, true);
 		//dump_out_group(f,indent+2,what,context, true);
 	}	
