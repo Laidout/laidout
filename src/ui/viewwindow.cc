@@ -1360,7 +1360,7 @@ void LaidoutViewport::UpdateMarkers()
 			PageLocation *pl;
 			for (int c=0; c<spread->pagestack.n(); c++) {
 				pl=spread->pagestack.e[c];
-				if (!pl->page && pl->index>=0) pl->page=doc->pages.e[pl->index];
+				if (!pl->page && pl->index>=0 && pl->index < doc->pages.n) pl->page=doc->pages.e[pl->index];
 				if (!pl->page) continue;
 
 				pmi->AddPage(pl->page, pl->outline->transformPoint(flatpoint(pl->outline->minx,pl->outline->miny)), 1, 0);
