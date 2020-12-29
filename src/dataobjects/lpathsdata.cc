@@ -498,6 +498,7 @@ int LPathInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 		if (data && dynamic_cast<DrawableObject*>(data)->filter) {
 			ObjectFilter *f = dynamic_cast<ObjectFilter*>(dynamic_cast<DrawableObject*>(data)->filter);
 			if (f) f->ForceUpdates();
+			needtodraw = 1;
 		}
 		cache_modified = 0;
 	}
