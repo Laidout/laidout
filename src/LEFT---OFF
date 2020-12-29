@@ -195,11 +195,20 @@ test:
 save dialog should probably ignore clobber safety and allow enter key in edit to be "save". also auto focus file edit on start and on ^l
   if you enter a new location in file edit, first go to that place. else save with that file name
 
-make lax templates be only .h includes, since gcc complains when .cc isn't included anyway... need to do compile speed tests
+make lax templates be only .h includes, since gcc complains when .cc isn't included anyway...
+  need to do compile speed tests -> marginally faster as separate, makes binary ~1mb larger for some reason?! dup funcs not optimized out?
 
 Reconfigure text edits. Need something that works in interface land, with harfbuzz
 
-laxkit lists need move semantics
+laxkit:
+  lists need move semantics
+  DONE interfs example has memory hole: interfaces are not being destroyed
+    DONE shortcutmanager should be singleton
+	DONE unitmanager should be singleton
+	DONE interfacemanager should be singleton
+  having managers as singletons in Laidout seems to make crash on exit.. for some reason manager destructor order matters
+  DONE dlopen seems to be wiping singletons???? -> making them static in files seems to fix
+
 
 icons
   if no png icons detected, try to autogenerate
@@ -1024,9 +1033,6 @@ node editor node interface NodeInterface nodes: node: interface:
   need solution for shared interface getting messages for different nodes.. probably need to do one instance per whatever
   would be nice to have a "Collapse unlinked properties" option
   bug: load and connect needs to trigger an Update, but it doesn't always?
-
-  DONE path endpoints
-  DONE path extrema
   DONE bug: say Vector2, edit value, tab to next, does not save previous value
   DONE but: Color node only has output, but outputting data of output nodes currently forbidden.. make exception when output is editable?
   DONE Get document node
@@ -1087,15 +1093,23 @@ node editor node interface NodeInterface nodes: node: interface:
       DONE check: dereference assign Evaluate extend from Group, not affine
     paths
       weight controls .. present as line profile?
+
+	  DONE path corners: points past a certain angle threshhold
+	  DONE path endpoints
+	  DONE path extrema
+
       path ops:
 	    path morph
 	    path from points: linear or smooth
 		sample path to points, optionally with transforms. sample at t OR s by step OR by n points OR squishy step
+		  SampleAt: t | t[], t is dist
+		  SampleEvery: step, step is dist, fit step
 	    boolean pathops
         project onto heightmap? onto mesh?
         make net then inset
         merge
         simplify
+		extrude
         set line profile from resource
         apply weights
         DONE combine
@@ -1231,7 +1245,7 @@ node editor node interface NodeInterface nodes: node: interface:
     gmic nodes
     graphicsmagick nodes
     antiprism nodes
-    examine blender for compatibility -> animation node addon seems fuller for general data processing
+    examine blender for compatibility -> animation node addon seems fuller for general data processing, everything/geometry nodes
     examine godot for compatibility -> does full scripting execution
     examine Natron for compatibility
     examine pure data for compatibility
@@ -1270,11 +1284,10 @@ node editor node interface NodeInterface nodes: node: interface:
     printf
   list nodes
     set range [start,end] = value, optionally linked
-	concat
     create list  [type, number]
-    foreach thread processor
-    foreach in list, create new list with transformed elements
+    ScriptForeach in list, create new list with transformed elements
     sort with function
+	DONE concat
     DONE subset [start, end], neg nums for from end
     DONE element [index]
   math nodes
@@ -1294,6 +1307,7 @@ node editor node interface NodeInterface nodes: node: interface:
       sin  cos  tan  asin  acos  atan
       sinh cosh tanh asinh acosh atanh
 
+  DONE foreach thread processor
   DONE need reroute node
   DONE file properties need browser button
   DONE basic path creation nodes, including math function plotting
@@ -1401,15 +1415,41 @@ fontdialog: FontDialog
   select opentype features
   optional common font finishers? like centering, underline, color, highlight, fg/bg, etc
 
+ellipseinterface:
+  incorporate to mesh tool
+  incorporate as special mode in path tool
+  angle drag lapping should preserve large arc
+  if you click and release without dragging, should not make a really tiny new data, should keep old if any
+  DONE memory hole
+  DONE implement minimal fill:color, stroke:color+width
+  DONE should have menu options for wedge and toggle circle
+  DONE debug wedge hover
+  DONE draw dotted for wedge edge?
+  DONE click or drag to/away from origin  on open arc edge to toggle wedge, open, chord
+  DONE render with inner bad since drawfocusellipse ignores inner
+  DONE drag radii, toggle control, original center point should also be remembered
+  DONE angles mess up when foci flip
+  DONE snap angles with control
+  DONE control drag on x or y should move center, keep opposite
+  DONE inner radius
+  DONE snap closed if drag start to end near enough (multiple of 2*pi)
+  DONE outer, inner, center hover need indicators
+  DONE need numerical entry
+  DONE implement angles.. bug with bez_ellipse, not spanning start to end properly
+  DONE shift, control down up to toggle hover 
+  DONE Remove old rect interface stuff, debug basic render and new object creation
+
 Clean up mesh/patch controls: Mesh PatchInterface
   bug: base on path remove/add should try to remember previous weight nodes, scratch only when mod points (not colors) too far off
   bug: convert path to mesh inserting null patches at each point
   bug: should still be able to edit colors while based on path
 
+  when color points overlap like with circle warp, have a way to change all coincident color points
   selected nodes should probably be more prominent and colored, just gray disappears, hard to work with
   rotate/scale single or more control points should move attached controls in smooth mode
   circle warp needs a proper circle/ellipse interface
 
+  DONE bug: can't change point types with menu... path is not getting any menu messages
   DONE maybe should not be able to escape off path tool when editing as path, since that breaks path connection
   DONE bug: when edit as path, path is below the mesh, so can't see path
   DONE bug: subdividing is broken beyond 1st subdivide on anything other than outer patches
@@ -1438,6 +1478,7 @@ PatchData:
   perspective arrangement: approximate transform controls through perspective grid
   maybe have status message say how many points are selected
   need bez path to mesh, and extract bez from mesh
+  krita mesh tool has "uv preserving" move edge, yowza!
 
   edit multi objects in mesh tool.. should be able to move around many nodes?
   rect select nodes
@@ -1448,6 +1489,8 @@ PatchData:
   See that lgm talk about "local mod" to do subdivided mesh modifications that reduces control point clutter
   make base path dump_out as Path, not PathsData? make it easier to read file removing the unnecessary??
 
+dataobjects/datafactory should somehow combine with stylemanager.. seems redundant as is
+ 
 raster paint layers, mypaint?
 
 newdoc:
@@ -1730,9 +1773,6 @@ externally saved pages, for long documents
   and/or save "object" files, with layers in the file, have special DrawableObject flag to save its contents externally
 
 conformal mapping option instead of mesh? see http://benpaulthurstonblog.blogspot.com/2015/12/parameterized-quadratic-conformal.html
-
-ellipseinterface:
-  crash on lbdown: dp is null???
 
 command prompt window: command line
   bug: delete at pos 1 deletes space after prompt, then does not allow any input

@@ -1242,6 +1242,168 @@ int ExtremaNode::Update()
 }
 
 
+//------------------------ CornersNode ------------------------
+
+/*! 
+ * Node for extracting corner points of paths.
+ */
+
+class CornersNode : public NodeBase
+{
+  public:
+	CornersNode();
+	virtual ~CornersNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new CornersNode(); }
+};
+
+CornersNode::CornersNode()
+{
+	makestr(Name, "Corners");
+	makestr(type, "Paths/Corners");
+	
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", nullptr,1, NULL, 0, false)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "threshhold", new DoubleValue(1e-5),1, _("Threshhold"), _("Angle in degrees"),0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "n", new IntValue(0),1, _("Num points"), nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "paths", nullptr,1, _("Path indices"), nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "t", nullptr,1, _("t"), nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "points", nullptr,1, _("Points"), nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "inv",  nullptr,1, _("In v"),  nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "outv", nullptr,1, _("Out v"), nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "angles", nullptr,1, _("Angles"), nullptr,0,false));
+}
+
+CornersNode::~CornersNode()
+{
+}
+
+NodeBase *CornersNode::Duplicate()
+{
+	CornersNode *node = new CornersNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int CornersNode::GetStatus()
+{
+	LPathsData *o = dynamic_cast<LPathsData*>(properties.e[0]->GetData());
+	if (!o) return -1;
+
+	if (!isNumberType(properties.e[1]->GetData(), nullptr)) return -1;
+	
+	return NodeBase::GetStatus();
+}
+
+int CornersNode::Update()
+{
+	LPathsData *pdata = dynamic_cast<LPathsData*>(properties.e[0]->GetData());
+	if (!pdata) return -1;
+
+	int isnum;
+	double threshhold = getNumberValue(properties.e[1]->GetData(), &isnum) * M_PI/180;
+	if (!isnum) return -1;
+
+	SetValue *pindices = dynamic_cast<SetValue*>(properties.e[3]->GetData());
+	if (!pindices) {
+		pindices = new SetValue();
+		properties.e[3]->SetData(pindices, 1);
+	} else {
+		pindices->Flush();
+	}
+
+	SetValue *t = dynamic_cast<SetValue*>(properties.e[4]->GetData());
+	if (!t) {
+		t = new SetValue();
+		properties.e[4]->SetData(t, 1);
+	} else {
+		t->Flush();
+	}
+
+	PointSetValue *points = dynamic_cast<PointSetValue*>(properties.e[5]->GetData());
+	if (!points) {
+		points = new PointSetValue();
+		properties.e[5]->SetData(points, 1);
+	} else {
+		points->Flush();
+	}
+
+	PointSetValue *ins = dynamic_cast<PointSetValue*>(properties.e[6]->GetData());
+	if (!ins) {
+		ins = new PointSetValue();
+		properties.e[6]->SetData(ins, 1);
+	} else {
+		ins->Flush();
+	}
+
+	PointSetValue *outs = dynamic_cast<PointSetValue*>(properties.e[7]->GetData());
+	if (!outs) {
+		outs = new PointSetValue();
+		properties.e[7]->SetData(outs, 1);
+	} else {
+		outs->Flush();
+	}
+
+	SetValue *angles = dynamic_cast<SetValue*>(properties.e[8]->GetData());
+	if (!angles) {
+		angles = new SetValue();
+		properties.e[8]->SetData(angles, 1);
+	} else {
+		angles->Flush();
+	}
+
+	LaxInterfaces::Coordinate *p, *start, *pnext;
+	for (int c=0; c<pdata->paths.n; c++) {
+		p = pdata->paths.e[c]->path;
+		if (!p) continue;
+
+		start = p;
+		int i = 0;
+
+		do {
+			pnext = p->nextVertex(0);
+			if (!pnext || (p == start && p->previousVertex(0))) {
+				p = p->nextVertex(0);
+				i++;
+				continue;
+			}
+			flatvector vbefore = p->direction(0);
+			flatvector vafter = p->direction(1);
+			if (-vbefore * vafter < cos(threshhold)) {	
+				points->AddPoint(p->p(), nullptr, true);
+				t->Push(new DoubleValue(i), 1);
+				pindices->Push(new IntValue(c), 1);
+				ins     ->AddPoint(vbefore);
+				outs    ->AddPoint(vafter);
+
+				double a1 = vbefore.angle();
+				if (a1 < 0) a1 += 2*M_PI;
+				double a2 = vafter.angle();
+				if (a2 < 0) a2 += 2*M_PI;
+				a2 -= a1;
+				if (a2 < 0) a2 += 2*M_PI;
+				angles  ->Push(new DoubleValue(a2), 1);
+			}
+			p = p->nextVertex(0);
+			i++;
+		} while (p && p != start);
+	}
+	
+	IntValue *iv = dynamic_cast<IntValue*>(properties.e[2]->GetData());
+	iv->i = points->NumPoints();
+	properties.e[2]->Touch();
+	properties.e[3]->Touch();
+	properties.e[4]->Touch();
+	properties.e[5]->Touch();
+	properties.e[6]->Touch();
+	properties.e[7]->Touch();
+	properties.e[8]->Touch();
+	return NodeBase::Update();
+}
+
 
 //------------------------ PointsToDelaunayNode ------------------------
 
@@ -2759,6 +2921,7 @@ int SetupDataObjectNodes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Paths/Svgd",              newPathSvgdNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/EndPoints",         EndPointsNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/Extrema",           ExtremaNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/Corners",           CornersNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/SetOriginToBBox",   SetOriginBBoxNode::NewNode,  NULL, 0);
 
 	factory->DefineNewObject(getUniqueNumber(), "Points/Grid",             newPointsGridNode,  NULL, 0);

@@ -1324,7 +1324,7 @@ int NodeBase::Connected(NodeConnection *connection)
 			NodeProperty *prop = connection->toprop;
 			AddNewIn(prop->flags & NodeProperty::PROPF_List_In, prop->Name(), prop->Label(), prop->Tooltip(), properties.findindex(prop)+1);
 			prop->SetFlag(NodeProperty::PROPF_New_In, false);
-			prop->SetFlag(NodeProperty::PROPF_List_In, false);
+			prop->SetFlag(NodeProperty::PROPF_List_In, true);
 			prop->Label(connection->fromprop->Label());
 			Wrap();
 
@@ -1336,7 +1336,7 @@ int NodeBase::Connected(NodeConnection *connection)
 			NodeProperty *prop = connection->fromprop;
 			AddNewIn(prop->flags & NodeProperty::PROPF_List_Out, prop->Name(), prop->Label(), prop->Tooltip(), properties.findindex(prop)+1);
 			prop->SetFlag(NodeProperty::PROPF_New_Out, false);
-			prop->SetFlag(NodeProperty::PROPF_List_Out, false);
+			prop->SetFlag(NodeProperty::PROPF_List_Out, true);
 			prop->Label(connection->fromprop->Label());
 			Wrap();
 
@@ -1367,7 +1367,7 @@ NodeProperty *NodeBase::AddNewIn(int is_for_list, const char *nname, const char 
 					//const char *nlabel=NULL, const char *ntip=NULL, int info=0, bool editable=true);
 	NodeProperty *prop = new NodeProperty(NodeProperty::PROP_Input, true, nname, NULL,0, nlabel, ttip, is_for_list, true);
 	prop->SetFlag(NodeProperty::PROPF_New_In, true);
-	AddProperty(prop);
+	AddProperty(prop, where);
 	return prop;
 }
 
@@ -1378,7 +1378,7 @@ NodeProperty *NodeBase::AddNewOut(int is_for_list, const char *nname, const char
 {
 	NodeProperty *prop = new NodeProperty(NodeProperty::PROP_Output, true, nname, NULL,0, nlabel, ttip, is_for_list, true);
 	prop->SetFlag(NodeProperty::PROPF_New_Out, true);
-	AddProperty(prop);
+	AddProperty(prop, where);
 	return prop;
 }
 
@@ -2317,9 +2317,20 @@ int NodeGroup::Disconnect(NodeConnection *connection, bool from_will_be_replaced
 	connection->to      ->Disconnected(connection, from_will_be_replaced, to_will_be_replaced);
 	connection->from    ->Disconnected(connection, from_will_be_replaced, to_will_be_replaced);
 
+	NodeBase *to = connection->to;
+	NodeProperty *toprop = connection->toprop;
+
 	 //these might have been removed during Disconnected() above
 	if (connection->fromprop) connection->fromprop->RemoveConnection(connection);
 	if (connection->toprop)   connection->toprop  ->RemoveConnection(connection);
+
+	if (toprop && (toprop->flags & NodeProperty::PROPF_List_In)) {
+		//one prop in an expandable list, need to remove this prop
+		int i = to->properties.findindex(toprop);
+		to->properties.remove(i);
+		to->Wrap();
+	}
+	
 	return 0;
 }
 

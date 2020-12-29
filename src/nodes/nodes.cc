@@ -3975,6 +3975,98 @@ int SubsetNode::GetStatus()
 }
 
 
+//------------------------------ JoinSetsNode --------------------------------------------
+
+/*! \class JoinSetsNode
+ * Get a subset of a list.
+ */
+
+class JoinSetsNode : public NodeBase
+{
+  public:
+	JoinSetsNode();
+	virtual ~JoinSetsNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new JoinSetsNode(); }
+};
+
+JoinSetsNode::JoinSetsNode()
+{
+	makestr(type, "Lists/JoinSets");
+	makestr(Name, _("Join sets"));
+
+	// AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "set",  nullptr,1, _("Set")));
+	// virtual NodeProperty *AddNewIn (int is_for_list, const char *nname, const char *nlabel, const char *ttip, int where=-1);
+	AddNewIn(true, "set", _("Set"), nullptr);
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out",  NULL,1, _("Out"), NULL, 0, false));
+}
+
+JoinSetsNode::~JoinSetsNode()
+{
+}
+
+NodeBase *JoinSetsNode::Duplicate()
+{
+	JoinSetsNode *node = new JoinSetsNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int JoinSetsNode::Update()
+{
+	Error(nullptr);
+
+	for (int c=0; c<properties.n-2; c++) {
+		if (!properties.e[c]->GetData()) continue;
+		SetValue *set = dynamic_cast<SetValue*>(properties.e[c]->GetData());
+		if (!set) {
+			Error(_("Input must be a list!"));
+			return -1;
+		}
+	}
+
+	SetValue *out = dynamic_cast<SetValue*>(properties.e[properties.n-1]->GetData());
+	if (!out) {
+		out = new SetValue();
+		properties.e[properties.n-1]->SetData(out, 1);
+	} else {
+		out->Flush();
+		properties.e[properties.n-1]->Touch();
+	}
+
+	for (int c=0; c<properties.n-2; c++) {
+		SetValue *set = dynamic_cast<SetValue*>(properties.e[c]->GetData());
+		if (!set) continue;
+		for (int c2=0; c2<set->n(); c2++) {
+			out->Push(set->e(c2), 0);
+		}
+	}
+
+	return NodeBase::Update();
+}
+
+/*! Return 0 for no error and everything up to date.
+ * -1 means bad inputs and node in error state.
+ * 1 means needs updating.
+ */
+int JoinSetsNode::GetStatus()
+{
+	for (int c=0; c<properties.n-2; c++) {
+		if (!properties.e[c]->GetData()) continue;
+		SetValue *set = dynamic_cast<SetValue*>(properties.e[c]->GetData());
+		if (!set) {
+			Error(_("Input must be a list!"));
+			return -1;
+		}
+	}
+	return 0;
+}
+
+
 //------------ ObjectNode
 
 /*! \class ObjectNode
@@ -6204,6 +6296,7 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Lists/GetElement",  GetElementNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Lists/GetSize",     GetSizeNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Lists/Subset",      SubsetNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Lists/JoinSets",    JoinSetsNode::NewNode,  NULL, 0);
 
 	//------------------ String -------------
 	factory->DefineNewObject(getUniqueNumber(), "Strings/String",      newStringNode,  NULL, 0);
