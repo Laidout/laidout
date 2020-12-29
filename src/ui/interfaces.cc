@@ -139,7 +139,9 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		i->dec_count();
 
 		 //------Ellipse
-		i=new EllipseInterface(NULL,id++,NULL);
+		EllipseInterface *ei = new EllipseInterface(NULL,id++,NULL);
+		ei->linestyle.width = .1;
+		i = ei;
 		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 		existingpool->push(i);
 		i->dec_count();
