@@ -31,7 +31,7 @@ It was created by and developed by Tom Lechner (https://www.tomlechner.com).
 System Requirements
 -------------------
 Currently, Laidout only runs in variations of Linux. It is being developed
-on a Debian Unstable system, thus that one is the most hassle free to setup.
+on a Debian stable system, thus that one is the most hassle free to setup.
 
 Ubuntu 14.04 needs a more recent harfbuzz than is included, but more
 recent Ubuntu should work well.
@@ -66,7 +66,7 @@ For everything, you will need the header files for at least:
 
 If you are on a debian based system, you can probably install these with this command:
 
-    apt-get install g++ pkg-config libpng-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libcairo2-dev libharfbuzz-dev libsqlite3-dev libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev zlib1g-dev libgegl-dev
+    apt-get install g++ pkg-config libpng-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxrandr-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libcairo2-dev libharfbuzz-dev libsqlite3-dev libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev zlib1g-dev libgegl-dev
 
 On Fedora, this list is more like this:
 
