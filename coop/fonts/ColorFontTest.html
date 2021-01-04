@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta content="text/html; charset=utf-8" http-equiv="content-type">
+<meta name="Description" content="Test of color fonts.">
+<title>Color Font Test</title>
+
+<style type="text/css">
+@font-face {
+  font-family: "my_color_font";
+  src: url('VillaPazza.woff');  /*************** <- PUT YOUR FONT FILE NAME HERE!!! *********/
+  font-weight: 400;
+  font-style: normal;
+  /*text-rendering: optimizeLegibility;*/
+}
+
+
+#show .first {
+	padding-top: .5em;
+}
+
+.color_a {
+	font-family: "my_color_font"; 
+}
+
+#show p {
+	font-size: 5rem; 
+	margin: 0 auto;
+	padding: 0;
+	/* text-transform: uppercase; */
+	max-width: 90%;
+    outline: none;
+}
+
+#fonttable {
+	border: 1px solid #ddd;
+	border-spacing: 0px;
+}
+#fonttable td, #fonttable th {
+	padding: .5em;
+	border: 1px solid #ddd;
+}
+
+</style>
+
+</head>
+
+<body>
+<section id="show">
+	<h1>Color font test</h1>
+	<p contenteditable="true" spellcheck="false" class="color_a">
+		abcdefghijklmnopqrstuvwxyz
+		ABCDEFGHIJKLMNOPQRSTUVWXYZ<br>
+		!"#$%&amp;'()*+,-./0123456789:;&lt;=&gt;?@[\]_^`{|}~
+		</p>
+</section>
+<section id="show">
+	<h1>Normal font</h1>
+	<p contenteditable="true" spellcheck="false">Some<br>normal<br>text</p>
+</section>
+
+
+
+<h2>Where can I use color fonts??</h2>
+<p>
+If you are trying to use a color font on Chrome and it's not working, it's because Chrome does NOT currently support
+SVG based OpenType fonts, but it does allow COLR based OpenType fonts. Also, you can try creating a layered font 
+(one font file per color), and using
+<a href="http://manufacturaindependente.org/colorfont/">some javascript from Manufactura Independente</a>.
+</p>
+
+<p>
+For fuller discussion of color fonts, see this <a href="https://www.colorfonts.wtf/">great overview at colorfonts.wtf</a>.
+That page has a great list of compatability with various proprietary software, but NOT any open source software,
+so here goes, as of January 2021:
+</p>
+
+<table id="fonttable">
+<tr>
+  <th></th><th>Formats</th><th>Issue</th>
+</tr>
+<tr> <td><a href="https://fontforge.org">FontForge</a></td>     <td>NONE</td> <td><a href="https://github.com/fontforge/fontforge/issues/677">#667</a></td> </tr>
+<tr> <td><a href="https://laidout.org">Laidout</a></td>         <td>NONE</td> <td><a href="https://github.com/Laidout/laidout/issues/6">#6</a></td> </tr>
+<tr> <td><a href="https://inkscape.org">Inkscape</a></td>       <td>NONE</td> <td><a href="https://gitlab.com/inkscape/inbox/-/issues/457">#457</a></td> </tr>
+<tr> <td><a href="https://libreoffice.org">Libreoffice</a></td> <td>NONE</td> <td></td> </tr>
+<tr> <td><a href="https://gimp.org">Gimp</a></td>               <td>NONE</td> <td></td> </tr>
+<tr> <td><a href="https://krita.org">Krita</a></td>             <td>NONE</td> <td></td> </tr>
+<tr> <td><a href="https://scribus.org">Scribus</a></td>         <td>NONE</td> <td></td> </tr>
+<tr> <td><a href="https://blender.org">Blender</a></td>         <td>NONE</td> <td></td> </tr>
+<tr> <td><a href="https://godotengine.org">Godot</a></td>       <td>NONE</td> <td></td> </tr>
+<!-- tr> <td><a href="https://"></a></td> <td>NO</td> <td><a href="">#</a></td> </tr -->
+</table>
+
+<br><br><br>
+
+</body>
+</html>
