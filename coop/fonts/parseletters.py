@@ -1,14 +1,47 @@
 #!/usr/bin/python3
 
+##  parseletters.py
+##  Guillotine an svg containing glyphs into individual svg glyph files.
+##  
+##  Copyright (C) 2021 Tom Lechner, tom@tomlechner.com
+##  
+##  This program is free software; you can redistribute it and/or modify
+##  it under the terms of the GNU General Public License as published by
+##  the Free Software Foundation; either version 3 of the License, or
+##  (at your option) any later version.
+##  
+##  This program is distributed in the hope that it will be useful,
+##  but WITHOUT ANY WARRANTY; without even the implied warranty of
+##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+##  GNU General Public License for more details.
+##  
+##  You should have received a copy of the GNU General Public License
+##  along with this program; if not, write to the Free Software
+##  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
 
 #Usage:
-# ./parseimage.py fontletters1.svg [letters directory default="letters"]
+# ./parseletters.py fontletters1.svg [--output-dir letters]
 #
 #  then:
 # ttx -f --flavor woff VillaPazza.ttx
 #
 # ttx is from fonttools: https://github.com/fonttools/fonttools
 #
+
+#
+# the ttx template file should be a basic ttx, with the following tables replaced with a single comment line:
+#    glyf, cmap, hmtx, SVG, GlyphOrder, CPAL
+#
+# For instance, instead of the SVG table, there should be a single line like this, with single space
+# before and after the name:
+#  <!-- SVG -->
+#
+
+
+# Deficiencies:
+# - can only do solid colored filled paths, not strokes or gradients
+
 
 #ToDO:
 # - Do a proper guillotine, not the current major hack that assumes each path object is the whole layer color.
@@ -17,9 +50,10 @@
 # - auto kerning
 # - for glyf table, either convert cubic to quadratic, or figure out if opentype type1 (cubic glyfs) is suitable for
 #    the fallback glyf table
-# - finish alt glyph system
+# - finish alt glyph system: have layer with only text objects that show glyph name and/or unicode number
 # - implement the CPAL color name substitution for SVG table: replace found colors in the individual svg
 #    with refs to colors in CPAL
+# - implement CPAL/COLR font output instead of SVG, so we can use on chrome
 #
 # DONE - somehow automate namerecord table, --namerecord-sample to stdout
 # DONE - command line option to specify the ttx template
@@ -37,16 +71,17 @@ import os, sys, re, math, copy, argparse
 ###################  Parse arguments  #############################
 #
 
-parser = argparse.ArgumentParser(description = 'Convert an svg into a ttx file.')
-parser.add_argument('--ttx-template', default = "TEMPLATE.ttx", nargs = '?', help = 'The ttx template files.')
-parser.add_argument('--output-name',  default = "Output",       nargs = '?', help = 'The ttx filename to output.')
-parser.add_argument('--output-dir',   default = "letters",      nargs = '?', help = 'Directory to put parsed outputs.')
-parser.add_argument('--layers',       action = 'store_true',      help='If given, output one ttx per layer.')
-parser.add_argument('--cells-wide',   default = 16, type = int,   help='If given, divide horizontally by this many cells.')
-parser.add_argument('--cells-tall',   default = 6,  type = int,   help='If given, divide vertically by this many cells.')
-parser.add_argument('--namerecord',   default = 'namerecord.txt', help='File containing various metadata for the namerecord table.')
-parser.add_argument('--namerecord-sample', action = 'store_true', help='Output a sample template file for the bits that go in namerecord.')
+parser = argparse.ArgumentParser(description = 'Convert an svg into a ttx file, which you can convert to an opentype font with ttx from fonttools.')
+parser.add_argument('-x', '--ttx-template', default = "TEMPLATE.ttx", nargs = '?', help = 'The ttx template files.')
+parser.add_argument('-o', '--output-name',  default = "Output",       nargs = '?', help = 'The ttx filename to output.')
+parser.add_argument('-d', '--output-dir',   default = "letters",      nargs = '?', help = 'Directory to put parsed outputs.')
+parser.add_argument('-l', '--layers',       action = 'store_true',      help='If given, output one ttx per color layer.')
+parser.add_argument('-w', '--cells-wide',   default = 16, type = int,   help='If given, divide svgin horizontally by this many cells. Default 16.')
+parser.add_argument('-t', '--cells-tall',   default = 6,  type = int,   help='If given, divide svgin vertically by this many cells. Default 6')
+parser.add_argument('-n', '--namerecord',   default = 'namerecord.txt', help='File containing various metadata for the namerecord table.')
+parser.add_argument('-N', '--namerecord-sample', action = 'store_true', help='Output a sample template file for the bits that go in namerecord.')
 parser.add_argument('svgin', help='The svg file to parse.', nargs = argparse.REMAINDER)
+
 
 if len(sys.argv)==1:
     parser.print_usage()
@@ -57,7 +92,7 @@ args = parser.parse_args()
 
 if args.namerecord_sample:
     print( """
-copyright:              (c) 2019 Some Person
+copyright:              (c) 2021 Some Person
 font_family:            Really Cool Font
 style:                  Regular
 unique_font_id:         Really Cool Font Regular 1.0
@@ -65,15 +100,15 @@ full_font_name:         Really Cool Font
 Version_number_number:  1.0
 psname:                 ReallyCoolFont
 trademark:              ReallyCoolFont (tm I guess)
-manufacturer:           The Beast Font
-designer:               The Beast Font
+manufacturer:           The Really Cool Font Maker
+designer:               The Really Cool Font Designer
 description:            Really just the tops
-url_vendor:             http://www.beast.font
-url_designer:           http://www.beast.font
-license_desc:           KillerLicense 1.0
-license_url:            http://www.beast.font/license
-typographic_fam_name:   (defaults to font_family)
-typographic_style_name: (defaults to stye)
+url_vendor:             http://www.reallythebest.font
+url_designer:           http://www.reallythebest.font
+license_desc:           OFL 1.1
+license_url:            https://opensource.org/licenses/OFL-1.1
+typographic_fam_name:   (defaults to font_family, REMOVE THIS LINE IF NOT NECESSARY)
+typographic_style_name: (defaults to stye, REMOVE THIS LINE IF NOT NECESSARY)
 sample_text:            Getta load a this
 """)
     sys.exit()
@@ -94,12 +129,18 @@ gridwidth  = args.cells_wide
 gridheight = args.cells_tall
 dolayered  = args.layers
 
+# option sanitizing:
+if namerecord_file == "":
+    print ("Missing namerecord file. run ./parseimage.py --namerecord-sample to generate an example")
+    exit(1)
+
+
 print ("filename: " + filename);
 print ("output ttx: " + outputName + ".ttx")
 print ("svg files to :  "+letterdir+"/"+outputName);
 print ("grid: ", gridwidth,"x",gridheight)
 print ("do layered: ", dolayered)
-
+print ("namerecord: ", namerecord_file)
 
 
 layer      = 0
@@ -132,7 +173,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 def lexPath(d):
     """
-    returns and iterator that breaks path data 
+    returns an iterator that breaks path data 
     identifies command and parameter tokens
     """
     offset = 0
@@ -965,25 +1006,25 @@ codes = GetCharNames()
 
 nameids = {
         'copyright':              0 ,
-		'font_family':            1 ,
-		'style':                  2 ,
-		'unique_font_id':         3 ,
-		'full_font_name':         4 ,
-		'Version_number_number':  5 ,
-		'psname':                 6 ,
-		'trademark':              7 ,
-		'manufacturer':           8 ,
-		'designer':               9 ,
-		'description':            10,
-		'url_vendor':             11,
-		'url_designer':           12,
-		'license_desc':           13,
-		'license_url':            14,
+        'font_family':            1 ,
+        'style':                  2 ,
+        'unique_font_id':         3 ,
+        'full_font_name':         4 ,
+        'Version_number_number':  5 ,
+        'psname':                 6 ,
+        'trademark':              7 ,
+        'manufacturer':           8 ,
+        'designer':               9 ,
+        'description':            10,
+        'url_vendor':             11,
+        'url_designer':           12,
+        'license_desc':           13,
+        'license_url':            14,
         #'(reserved)':             15,
-		'typographic_fam_name':   16,
-		'typographic_style_name': 17,
+        'typographic_fam_name':   16,
+        'typographic_style_name': 17,
         #'some_mac_thing':         18,
-		'sample_text':            19
+        'sample_text':            19
         }
 
 namerecord = {}
@@ -1003,103 +1044,6 @@ if namerecord_file:
 #
 
 instructions = """    <instructions><assembly> </assembly></instructions>\n """
-# instructions = """
-#       <instructions><assembly>
-#           PUSH[ ]    /* 1 value pushed */
-#           0
-#           CALL[ ]    /* CallFunction */
-#           SVTCA[0]    /* SetFPVectorToAxis */
-#           PUSH[ ]    /* 1 value pushed */
-#           0
-#           RCVT[ ]    /* ReadCVT */
-#           IF[ ]    /* If */
-#           PUSH[ ]    /* 1 value pushed */
-#           16
-#           MDAP[1]    /* MoveDirectAbsPt */
-#           ELSE[ ]    /* Else */
-#           PUSH[ ]    /* 2 values pushed */
-#           16 5
-#           MIAP[0]    /* MoveIndirectAbsPt */
-#           EIF[ ]    /* EndIf */
-#           PUSH[ ]    /* 3 values pushed */
-#           13 12 3
-#           CALL[ ]    /* CallFunction */
-#           PUSH[ ]    /* 3 values pushed */
-#           1 0 3
-#           CALL[ ]    /* CallFunction */
-#           PUSH[ ]    /* 3 values pushed */
-#           9 8 3
-#           CALL[ ]    /* CallFunction */
-#           PUSH[ ]    /* 3 values pushed */
-#           5 4 3
-#           CALL[ ]    /* CallFunction */
-#           PUSH[ ]    /* 1 value pushed */
-#           16
-#           SRP0[ ]    /* SetRefPoint0 */
-#           PUSH[ ]    /* 1 value pushed */
-#           17
-#           MDRP[11100]    /* MoveDirectRelPt */
-#           PUSH[ ]    /* 1 value pushed */
-#           0
-#           SRP0[ ]    /* SetRefPoint0 */
-#           PUSH[ ]    /* 1 value pushed */
-#           25
-#           MDRP[10000]    /* MoveDirectRelPt */
-#           PUSH[ ]    /* 1 value pushed */
-#           4
-#           SRP0[ ]    /* SetRefPoint0 */
-#           PUSH[ ]    /* 1 value pushed */
-#           29
-#           MDRP[10000]    /* MoveDirectRelPt */
-#           PUSH[ ]    /* 1 value pushed */
-#           8
-#           SRP0[ ]    /* SetRefPoint0 */
-#           PUSH[ ]    /* 1 value pushed */
-#           33
-#           MDRP[10000]    /* MoveDirectRelPt */
-#           PUSH[ ]    /* 1 value pushed */
-#           12
-#           SRP0[ ]    /* SetRefPoint0 */
-#           PUSH[ ]    /* 1 value pushed */
-#           37
-#           MDRP[10000]    /* MoveDirectRelPt */
-#           PUSH[ ]    /* 1 value pushed */
-#           1
-#           SRP0[ ]    /* SetRefPoint0 */
-#           PUSH[ ]    /* 1 value pushed */
-#           40
-#           MDRP[10000]    /* MoveDirectRelPt */
-#           PUSH[ ]    /* 1 value pushed */
-#           5
-#           SRP0[ ]    /* SetRefPoint0 */
-#           PUSH[ ]    /* 1 value pushed */
-#           44
-#           MDRP[10000]    /* MoveDirectRelPt */
-#           PUSH[ ]    /* 1 value pushed */
-#           9
-#           SRP0[ ]    /* SetRefPoint0 */
-#           PUSH[ ]    /* 1 value pushed */
-#           48
-#           MDRP[10000]    /* MoveDirectRelPt */
-#           PUSH[ ]    /* 1 value pushed */
-#           13
-#           SRP0[ ]    /* SetRefPoint0 */
-#           PUSH[ ]    /* 1 value pushed */
-#           52
-#           MDRP[10000]    /* MoveDirectRelPt */
-#           PUSH[ ]    /* 1 value pushed */
-#           17
-#           SRP0[ ]    /* SetRefPoint0 */
-#           PUSH[ ]    /* 1 value pushed */
-#           56
-#           MDRP[10000]    /* MoveDirectRelPt */
-#           PUSH[ ]    /* 1 value pushed */
-#           59
-#           MDRP[10000]    /* MoveDirectRelPt */
-#           IUP[0]    /* InterpolateUntPts */
-#           IUP[1]    /* InterpolateUntPts */
-#         </assembly></instructions>
-# """
 
 
 
@@ -1263,7 +1207,9 @@ for row in range (0, gridheight):
 
         if charindex in codes:
             glyphname  = codes[charindex][0]
-        else: glyphname = "AAAAARRRRR!!! ERRORORRORRR"
+        else:
+            print ("Aaaaa! unknown charindex ", charindex, " for row ", row, ", column ", column)
+            glyphname = "AAAAARRRRR!!! ERRORORRORRR"
 
         outfile = letterdir+"/char-" + glyphname + ".svg"  #file name by glyph name
         #outfile = letterdir+"/char-" + hex(charindex) + ".svg"      #file name by unicode
@@ -1273,8 +1219,6 @@ for row in range (0, gridheight):
         yoff = -5
         minx = columnpixwidth  * column - xoff
         maxx = columnpixwidth  * (column+1) - xoff
-        #miny = columnpixheight * (gridheight - row -1)
-        #maxy = columnpixheight * (gridheight - row)
         miny = columnpixheight * (row) - yoff
         maxy = columnpixheight * (row+1) - yoff
 
@@ -1422,8 +1366,6 @@ for row in range (0, gridheight):
 
         if glyphname!="AAAAARRRRR!!! ERRORORRORRR":
             glyphmap[glyphname] = len(glyphmap)
-#        else:
-#            glyphmap[glyphname] = len(glyphmap)
 
 
         out.write ('</g>\n</svg>\n')
@@ -1442,8 +1384,8 @@ for row in range (0, gridheight):
 #
 
 
-#output both mac and windows namerecords based on the same text and id number
-#todo: Note: does no sanity checking or encode entities
+# output both mac and windows namerecords based on the same text and id number
+# todo: Note: does no sanity checking or any special encoding on entities
 def OutputNamerecord(out, Id, text):
     #mac:
     out.write('    <namerecord nameID="'+str(Id)+'" platformID="1" platEncID="0" langID="0x0" unicode="True">\n')
@@ -1456,13 +1398,7 @@ def OutputNamerecord(out, Id, text):
 
 
 
-#
-#the template file should be a basic ttx, with the following tables replaced with a single comment line:
-#    glyf, cmap, hmtx, SVG, GlyphOrder, CPAL
-#For instance, instead of the SVG table, there should be a single line like this:
-#  <!-- SVG -->
-#
-template = open(default_ttx_template, "r")
+templatettx = open(default_ttx_template, "r")
 
 #set output file
 if dolayered:
@@ -1471,7 +1407,7 @@ else:
     ttx = open(outputName + ".ttx", "w")
 
 
-for line in template:
+for line in templatettx:
 
   if dolayered==False and line.find("<!-- SVG -->")>=0:
     ###
@@ -1550,8 +1486,6 @@ for line in template:
 
 
 
-
-
   elif line.find("<!-- glyf -->")>=0:
     ###
     ###  glyf, with flat, noncolor outline
@@ -1606,7 +1540,6 @@ for line in template:
 
 
 
-
   elif line.find("<!-- hmtx -->")>=0:
     ###
     ###  hmtx
@@ -1636,6 +1569,7 @@ for line in template:
     ttx.write ("</hmtx>")
 
 
+
   elif line.find("<!-- CPAL -->")>=0:
     if (len(colors)>0):
         ttx.write('  <CPAL>\n    <version value="0"/>\n')
@@ -1662,14 +1596,69 @@ for line in template:
     ttx.write('  </name>\n')
 
 
+  #ToDO:
+  # hhea 
+  #elif line.find("<!-- OS_2 -->")>=0:  
+  #elif line.find("<!-- maxp -->")>=0: <- numGlpyhs anyway?
+  #elif line.find("<!-- kern -->")>=0:
+#    <version value="0"/>
+#    <kernsubtable coverage="1" format="0">
+#      <pair l="A" r="O" v="-23"/>
+#      <pair l="A" r="T" v="-68"/>
 
-  else:
+
+  else:  # passthrough: (for instance) fpgm, cvt, prep, gasp, post, loca
     ttx.write(line)
         
 
 
 print ("Done!")
 
+
+#------------------------ SVG in otf information --------------------------
+#
+# Svg table in otf: see https://docs.microsoft.com/en-us/typography/opentype/spec/svg
+#
+# DO NOT USE:
+#   <text>, <font>, and associated elements
+#   <foreignObject> elements
+#   <switch> elements
+#   <script> elements
+#   <a> elements
+#   <view> elements
+#   XSL processing
+#   Use of relative units em, ex
+#   Use of SVG data within <image> elements
+#   Use of color profiles (the <icccolor> data type, the <color-profile> element, the color-profile property, or the CSS @color-profile rule)
+#   Use of the contentStyleType attribute
+#   Use of CSS2 system color keywords
+#
+# Ignored:
+#   <desc>, <metadata>, <title>
+#
+# Not required for support:
+#   <style>, inline css in style attribute, css vars*, css media query, calc()
+#   svg animations, svg child elements
+#   <filter> and associated
+#   <pattern>
+#   <mask>
+#   <marker>
+#   <symbol>
+#   XML entities
+#   images in <image> that are not jpg or png
+#   interactivity
+#
+#   *for css vars, "strongly recommended", particularly for colors defined in CPAL table,
+#   and fonts should not define any of their own variables. var() should only be used for colors.
+#   Ref colors in CPAL with, for instance: <path fill="var(--color0, yellow)" d=".." />
+#   In this case, yellow is the default value if no color0 in cpal.
+#
+# images can be embedded, ie:
+#  <image .. xlink:href="data:image/png;base64,
+#   iVBORw0KGgoAAAANSUhEUgAAAMgAAAJ7CAYAAACmmd5sAAAFZklEQVR42u3XsQ3D
+#   ...(etc)...
+#   MBAEQUpw9ypahrMPGGwiwcFMCQQW9zzWuu4FbJ2eAAQCAgGBgEBAICAQEAgIBAQC=
+#   ">
 
 
 # vim: expandtab shiftwidth=4 tabstop=8 softtabstop=4 fileencoding=utf-8 textwidth=99
