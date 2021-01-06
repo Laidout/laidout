@@ -17,6 +17,7 @@
 #include <lax/fileutils.h>
 #include <lax/units.h>
 #include <lax/strmanip.h>
+#include <lax/utf8utils.h>
 #include "calculator.h"
 #include "../language.h"
 
@@ -3642,7 +3643,7 @@ Value *LaidoutCalculator::getset()
 			return NULL;
 		}
 		if (num) {
-			if (num->type()==VALUE_LValue) {
+			if (run_mode != RUN_NameCatalog && num->type()==VALUE_LValue) {
 				set->Push(dynamic_cast<LValue*>(num)->Resolve(),1);
 				num->dec_count();
 			} else set->Push(num,1);
@@ -3827,6 +3828,25 @@ Value *LaidoutCalculator::getstring()
 			else if (curexprs[from+1]=='n') ch='\n';
 			else if (curexprs[from+1]=='t') ch='\t';
 			else if (curexprs[from+1]=='\\') ch='\\';
+			else if ((curexprs[from+1]=='u' || curexprs[from+1]=='U')
+				 && isxdigit(curexprs[from+2])
+				 && isxdigit(curexprs[from+3])
+				 && isxdigit(curexprs[from+4])
+				 && isxdigit(curexprs[from+5])) {
+				//unicode character
+				char *endptr = nullptr;
+				unsigned int i = strtol(curexprs+from+2, &endptr, 16);
+				if (endptr != curexprs+from+2) {
+					//was valid number
+					from = endptr - curexprs;
+					char utf8[20]; //really should only need 4 bytes, but future proofing or something
+					int len = utf8encode(i, utf8);
+					if (len + spos > maxstr) extendstr(newstr, maxstr, 20+len);
+					strncpy(newstr+spos, utf8, len);
+					spos += len;
+					continue;
+				}
+			}
 			if (ch) from++; else ch='\\';
 		}
 		if (spos==maxstr) extendstr(newstr,maxstr,20);
@@ -3988,8 +4008,12 @@ Value *LaidoutCalculator::evalname()
 	OverloadedEntry *oo=dynamic_cast<OverloadedEntry*>(entry);
 	int ooi=-1; //index in list of overloaded entries
 	if (!entry) {
+		// if (run_mode == RUN_NameCatalog) {
+		// 	from += n;
+		// 	return new LValue(nullptr,0, nullptr, nullptr, nullptr, nullptr);
+		// }
 		calcerr(_("Unknown name!"));
-		return NULL;
+		return nullptr;
 	}
 
 	if (oo) {
@@ -4000,9 +4024,9 @@ Value *LaidoutCalculator::evalname()
 	}
 
 	if (run_mode == RUN_NameCatalog || entry->type() == VALUE_Dummy) {
+		from += n;
 		ValueHash *pp = parseParameters(nullptr); //build parameter hash in order of objectdef
 		if (pp) pp->dec_count();
-		from += n;
 		return new LValue(nullptr,0, nullptr, nullptr, nullptr, nullptr);
 
 	} else if (entry->type()==VALUE_Function) {
