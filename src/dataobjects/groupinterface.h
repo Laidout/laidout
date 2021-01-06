@@ -37,6 +37,7 @@ enum GroupInterfaceActions {
 	GIA_Filter_Editor,
 	GIA_Remove_Filter,
 	GIA_Refresh_Filter,
+	GIA_Apply_Filter,
 
 	GIA_Clone,
 	GIA_CloneB,

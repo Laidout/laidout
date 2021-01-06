@@ -160,6 +160,7 @@ Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 			if (obj->filter) {
 				menu->AddItem(_("Interactive filters..."), GIA_Filter_Editor);
 				menu->AddItem(_("Remove filter"), GIA_Remove_Filter);
+				menu->AddItem(_("Apply filter"), GIA_Apply_Filter);
 				menu->AddItem(_("Update filter"), GIA_Refresh_Filter);
 			}
 			if (obj->clip_path) {
@@ -249,6 +250,7 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 				|| i == GIA_Filter_Editor
 				|| i == GIA_Remove_Filter
 				|| i == GIA_Refresh_Filter
+				|| i == GIA_Apply_Filter
 				|| i == GIA_Remove_Clip
 				|| i == GIA_Extract_Clip
 				|| i == GIA_Edit_Clip
@@ -1080,6 +1082,20 @@ int GroupInterface::PerformAction(int action)
 		obj->SetFilter(NULL,0);
 		PostMessage(_("Filter removed."));
 		needtodraw=1;
+		return 0;
+
+	} else if (action == GIA_Apply_Filter) {
+		DrawableObject *obj = dynamic_cast<DrawableObject*>(selection->e(0)->obj);
+		if (!obj || !obj->filter) return 0;
+		DrawableObject *fobj = dynamic_cast<DrawableObject*>(obj->filter)->FinalObject();
+		if (!fobj) {
+			PostMessage(_("Filter does not produce an object!"));
+			return 0;
+		}
+		// need to replace in tree and reparent children
+		//*** 
+		PostMessage("IMPLEMENT ME");
+		needtodraw = 1;
 		return 0;
 
 	} else if (action == GIA_Refresh_Filter) {
