@@ -19,6 +19,7 @@
 #include "../laidout.h"
 
 #include "nodeinterface.h"
+#include "../dataobjects/lcaptiondata.h"
 #include "../dataobjects/limagedata.h"
 #include "../dataobjects/lsomedataref.h"
 #include "../dataobjects/lpathsdata.h"
@@ -27,6 +28,7 @@
 #include "../dataobjects/pointsetvalue.h"
 #include "../dataobjects/lvoronoidata.h"
 #include "../dataobjects/imagevalue.h"
+#include "../dataobjects/fontvalue.h"
 #include "../core/objectiterator.h"
 
 #include <unistd.h>
@@ -36,6 +38,8 @@
 #include <lax/lists.cc>
 #include <lax/refptrstack.cc>
 
+
+using namespace LaxInterfaces;
 
 namespace Laidout {
 
@@ -406,6 +410,7 @@ int SetPositionsNode::GetStatus()
 
 int SetPositionsNode::Update()
 {
+	Error(nullptr);
 	bool override = false;
 
 	// determine input object(s)
@@ -413,7 +418,10 @@ int SetPositionsNode::Update()
 	SetValue *oset = nullptr;
 	if (!o) {
 		oset = dynamic_cast<SetValue*>(properties.e[0]->GetData());
-		if (!oset) return -1;
+		if (!oset) {
+			Error(_("Objects must be Drawable or set of Drawables"));
+			return -1;
+		}
 	}
 
 	// determine position(s)
@@ -424,7 +432,10 @@ int SetPositionsNode::Update()
 		pset = dynamic_cast<PointSetValue*>(properties.e[1]->GetData());
 		if (!pset) {
 			set = dynamic_cast<SetValue*>(properties.e[1]->GetData());
-			if (!set) return -1;
+			if (!set) {
+				Error(_("Positions must be a vector2, PointSet, or Set of Vector2"));
+				return -1;
+			}
 		} //else if (pset->NumPoints() == 0) return -1;
 	}	
 
@@ -443,7 +454,10 @@ int SetPositionsNode::Update()
 			if (set->n() > 0) {
 				pos = dynamic_cast<FlatvectorValue*>(set->e(0));
 				if (pos) o->origin(pos->v);
-				else return -1;
+				else {
+					Error(_("Set must only contain Vector2"));
+					return -1;
+				}
 			}
 		}
 
@@ -638,6 +652,183 @@ int RotateDrawablesNode::Update()
 			} //else oo is already in out, since out == oset
 			oo->Rotate(angle);
 		}
+	}
+
+	return NodeBase::Update();
+}
+
+
+//------------------------ LCaptionDataNode ------------------------
+
+/*! 
+ * Node for LImageData.
+ */
+
+class LCaptionDataNode : public NodeBase
+{
+  public:
+	LCaptionDataNode();
+	virtual ~LCaptionDataNode();
+
+	virtual int Update();
+	virtual int GetStatus();
+	virtual Value *PreviewFrom() { return properties.e[2]->GetData(); }
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new LCaptionDataNode(); }
+};
+
+
+LCaptionDataNode::LCaptionDataNode()
+{
+	makestr(Name, _("Caption"));
+	makestr(type, "Drawable/CaptionData");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "text", new StringValue(),1, _("Text")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "escaped", new BooleanValue(false),1, _("Escaped text")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "transform",  nullptr,1, _("Transform")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "font", nullptr,1, _("Font")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output,true, "out", nullptr,1, _("out"), nullptr, 0, false)); 
+}
+
+LCaptionDataNode::~LCaptionDataNode()
+{
+}
+
+int LCaptionDataNode::GetStatus()
+{
+	Value *v = properties.e[0]->GetData();
+	if (!v || (v->type() != VALUE_String && v->type() != VALUE_Set)) return -1;
+
+	v = properties.e[1]->GetData();
+	if (!isNumberType(v, nullptr)) return -1;
+
+	v = properties.e[2]->GetData();
+	if (v && !dynamic_cast<Affine*>(v) && v->type() != VALUE_Set) return -1;
+
+	v = properties.e[3]->GetData();
+	if (v && v->type() != VALUE_Font && v->type() != VALUE_Set) return -1;
+	
+	return NodeBase::GetStatus();
+}
+
+int LCaptionDataNode::Update()
+{
+	Error(nullptr);
+
+	StringValue *strin = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	SetValue *strsetin = nullptr;
+	if (!strin) {
+		strsetin = dynamic_cast<SetValue*>(properties.e[0]->GetData());
+		if (!strsetin) {
+			Error(_("Text must be a string or set of strings"));
+			return -1;
+		}
+	}
+
+	int isnum = 0;
+	bool escaped_text = getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	// *** should be able to parse from PointSet, or SetValue of positions
+	Affine af;
+	SetValue *afset = nullptr;
+	Value *v = properties.e[2]->GetData();
+	Affine *a = dynamic_cast<Affine*>(v);
+	if (a) {
+		af.m(a->m());
+	} else if (v) { //assume identity if null
+		afset = dynamic_cast<SetValue*>(v);
+		if (!afset) {
+			Error(_("Transforms must be Affine or set of Affine"));
+			return -1;
+		}
+	}
+
+	v = properties.e[3]->GetData();
+	FontValue *fv = dynamic_cast<FontValue*>(v);
+	SetValue *fontset = nullptr;
+	if (!fv && v) {
+		fontset = dynamic_cast<SetValue*>(v);
+		if (!fontset) {
+			Error(_("Font must be a font or set of fonts")); //note it's ok if null
+			return -1;
+		}
+	}
+
+	int max = 1;
+	if (strsetin && strsetin->n() > max) max = strsetin->n();
+	if (afset && afset->n() > max)       max = afset->n();
+	if (fontset && fontset->n() > max)   max = fontset->n();
+
+	SetValue *outset = nullptr;
+	LCaptionData *out = nullptr;
+	if (strsetin || afset || fontset) {
+		outset = dynamic_cast<SetValue*>(properties.e[properties.n-1]->GetData());
+		if (!outset) {
+			outset = new SetValue();
+			properties.e[properties.n-1]->SetData(outset, 1);
+		} else properties.e[properties.n-1]->Touch();
+	} else {
+		out = dynamic_cast<LCaptionData*>(properties.e[properties.n-1]->GetData());
+		if (!out) {
+			out = new LCaptionData();
+			out->yaxis(-out->yaxis());
+			properties.e[properties.n-1]->SetData(out, 1);
+		} else {
+			out->m(1,0,0,-1,0,0);
+			properties.e[properties.n-1]->Touch();
+		}
+	}
+
+	for (int c=0; c<max; c++) {
+		if (afset && c < afset->n()) {
+			a = dynamic_cast<Affine*>(afset->e(c));
+			if (!a) {
+				Error(_("Transforms must be Affine or set of Affine"));
+				return -1;
+			}
+			af.m(a->m());
+		}
+
+		if (fontset && c < fontset->n()) {
+			fv = dynamic_cast<FontValue*>(fontset->e(c));
+			if (!fv) {
+				Error(_("Font must be a font or set of fonts")); //note it's ok if null
+				return -1;
+			}
+		}
+
+		if (strsetin && c < strsetin->n()) {
+			strin = dynamic_cast<StringValue*>(strsetin->e(c));
+			if (!strin) {
+				Error(_("Text must be a string or set of strings"));
+				return -1;
+			}	
+		}
+		if (!strin) {
+			Error(_("Text must be a string or set of strings"));
+			return -1;
+		}
+
+		if (outset) {
+			out = nullptr;
+			if (c < outset->n()) out = dynamic_cast<LCaptionData*>(outset->e(c));
+			if (!out) {
+				out = new LCaptionData();
+				out->yaxis(-out->yaxis());
+				if (c < outset->n()) outset->Set(c, out, 1);
+				else outset->Push(out, 1);
+			} else out->m(1,0,0,-1,0,0);
+		}
+
+		out->Multiply(af);
+		if (fv && fv->font) out->Font(fv->font);
+		if (escaped_text) out->SetTextEscaped(strin->str);
+		else out->SetText(strin->str);
+	}
+	if (outset) {
+		while (outset->n() > max) outset->Remove(max);
 	}
 
 	return NodeBase::Update();
@@ -1401,6 +1592,222 @@ int CornersNode::Update()
 	properties.e[6]->Touch();
 	properties.e[7]->Touch();
 	properties.e[8]->Touch();
+	return NodeBase::Update();
+}
+
+
+//----------------------- ExtrudeNode ------------------------
+
+/*! \class ExtrudeNode
+ *
+ * Extrude a path. Only works on open paths. Add control points to the end points according to the extrude direction (or path).
+ */
+class ExtrudeNode : public NodeBase
+{
+  public:
+	ExtrudeNode();
+	virtual ~ExtrudeNode();
+	virtual int Update();
+	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ExtrudeNode(); }
+};
+
+ExtrudeNode::ExtrudeNode()
+{
+	makestr(type, "Paths/Extrude");
+	makestr(Name, _("Extrude"));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",  nullptr,1,    _("Input"), _("A path")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "dir", new FlatvectorValue(1,0),1,  _("Vector"),  _("Vector or path")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", nullptr,1, _("Out"), nullptr,0, false));
+}
+
+ExtrudeNode::~ExtrudeNode()
+{
+}
+
+/*! 0 for ok, -1 for bad ins. */
+int ExtrudeNode::GetStatus()
+{
+	Value *v = properties.e[0]->GetData();
+	if (!v || !v->istype("PathsData")) return -1;
+
+	v = properties.e[1]->GetData();
+	if (v->type() != VALUE_Flatvector && !v->istype("PathsData")) return -1;
+
+	return 0;
+}
+
+int ExtrudeNode::Update()
+{
+	PathsData *in = dynamic_cast<PathsData*>(properties.e[0]->GetData());
+	if (!in) return -1;
+
+	FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(properties.e[1]->GetData());
+	PathsData *pdir = (fv ? nullptr : dynamic_cast<PathsData*>(properties.e[1]->GetData()));
+	if (!fv && !pdir) return -1;
+	if (pdir && (pdir->paths.n == 0 || pdir->paths.e[0]->path == nullptr)) return -1;
+
+	LPathsData *out = dynamic_cast<LPathsData*>(properties.e[2]->GetData());
+	if (!out) {
+		out = new LPathsData();
+		properties.e[2]->SetData(out, 1);
+	} else properties.e[2]->Touch();
+
+	out->clear();
+	out->m(in->m());
+	if (in->linestyle) out->InstallLineStyle(in->linestyle);
+	
+	Affine af;
+	flatvector v_diff;
+	Path *dir = nullptr;
+	Coordinate *p1, *p2;
+	if (fv) {
+		v_diff = fv->v;
+	} else {
+		if (pdir->paths.e[0]->path->NumPoints(1) < 2) {
+			Error(_("Must have more than 1 point extrusion"));
+			return -1;
+		}
+		dir = pdir->paths.e[0]->duplicate();
+		dir->openAt(nullptr,0);
+		
+		flatpoint dir_start = dir->path->p();
+		p1 = dir->path->lastPoint(1);
+		flatpoint dir_end = p1->p();
+		v_diff = dir_end - dir_start;
+
+		if (dir->path->prev) { //remove initial controls if any
+			p2 = dir->path->firstPoint(0);
+			dir->path->disconnect(false);
+			delete p2;
+		}
+		if (p1->next) { //remove trailing controls, if any
+			p2 = p1->next;
+			p1->disconnect(true);
+			delete p2;
+		}
+	}
+
+	for (int c=0; c<in->paths.n; c++) {
+		Path *path1 = in->paths.e[c];
+		if (!path1 || !path1->path) continue;
+
+		path1 = path1->duplicate();
+		path1->openAt(nullptr,0);
+
+		//remove initial/trailing controls if any
+		if (path1->path->prev) {
+			p1 = path1->path->firstPoint(0);
+			path1->path->disconnect(false);
+			delete p1;
+		}
+		p1 = path1->path->lastPoint(1);
+		if (p1->next) { //remove trailing controls, if any
+			p2 = p1->next;
+			p1->disconnect(true);
+			delete p2;
+		}
+
+		// offset new edge
+		Path *path2 = path1->duplicate();
+		path2->Reverse();
+		af.origin(v_diff);
+		path2->Transform(af.m());
+
+		if (fv) {
+			 //easy just offset and connect
+			p1 = path1->path->lastPoint(1);
+			p2 = path2->path->firstPoint(1);
+			flatvector vv = (p2->p() - p1->p())/3;
+
+			p1->next = new Coordinate(p1->p() + vv, POINT_TOPREV, nullptr);
+			p1->next->prev = p1;
+			p1 = p1->next;
+			
+			p2->prev = new Coordinate(p2->p() - vv, POINT_TONEXT, nullptr);
+			p2->prev->next = p2;
+			p2 = p2->prev;
+			
+			p1->next = p2;
+			p2->prev = p1;
+			path2->path = nullptr;
+			delete path2;
+
+			p1 = path1->path->lastPoint(1);
+			p2 = path1->path->firstPoint(1);
+			vv = (p2->p() - p1->p())/3;
+
+			p1->next = new Coordinate(p1->p() + vv, POINT_TOPREV, nullptr);
+			p1->next->prev = p1;
+			p1 = p1->next;
+		
+			p2->prev = new Coordinate(p2->p() - vv, POINT_TONEXT, nullptr);
+			p2->prev->next = p2;
+			p2 = p2->prev;
+			
+			p1->next = p2;
+			p2->prev = p1;
+
+			out->paths.push(path1);
+
+		} else {
+			//we need to install dups of a path between end points
+			Path *dir1 = dir->duplicate();
+			Path *dir2 = dir->duplicate();
+
+			// so now we have vertex....vertex to add as new edges, minus the initial/final vertices
+			
+			// transform dir1 paths to proper places
+			p1 = path1->path;
+			p2 = path1->path->lastPoint(1);
+			flatvector v = p2->p() - dir1->path->p();
+			af.origin(v);
+			dir1->Transform(af.m());
+			v = p1->p() - dir2->path->p();
+			af.origin(v);
+			dir2->Transform(af.m());
+			dir2->Reverse();
+
+			// connect path1 to dir1
+			p1 = path1->path->lastPoint(1);
+			p1->next = dir1->path->next;
+			p1->next->prev = p1;
+			dir1->path->next = nullptr;
+			delete dir1;
+
+			// connect to path2
+			p1 = p1->lastPoint(1);
+			p1->next = path2->path->next;
+			path2->path->next->prev = p1;
+			path2->path->next = nullptr;
+			delete path2;
+
+			// connect to dir2
+			p1 = p1->lastPoint(1);
+			p1->next = dir2->path->next;
+			p1->next->prev = p1;
+			dir2->path->next = nullptr;
+			delete dir2;
+
+			// connect to path1
+			p1 = p1->lastPoint(1);
+			p2 = p1;
+			p1 = p1->prev;
+			p1->disconnect(true);
+			delete p2;
+			p1->next = path1->path;
+			path1->path->prev = p1;
+			
+			out->paths.push(path1);
+		}
+	}
+
+	//clean up
+	DBG out->dump_out(stdout, 2, 0, nullptr);
+	out->FindBBox();
+	delete dir;
 	return NodeBase::Update();
 }
 
@@ -2899,6 +3306,7 @@ int DrawableInfoNode::GetStatus()
  */
 int SetupDataObjectNodes(Laxkit::ObjectFactory *factory)
 {
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/CaptionData",       LCaptionDataNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/ImageData",         LImageDataNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/ImageDataInfo",     newLImageDataInfoNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/DrawableInfo",      DrawableInfoNode::NewNode,  NULL, 0);
@@ -2923,6 +3331,8 @@ int SetupDataObjectNodes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Paths/Extrema",           ExtremaNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/Corners",           CornersNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/SetOriginToBBox",   SetOriginBBoxNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/Extrude",           ExtrudeNode::NewNode,  NULL, 0);
+
 
 	factory->DefineNewObject(getUniqueNumber(), "Points/Grid",             newPointsGridNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Points/HexGrid",          newPointsHexNode,  NULL, 0);

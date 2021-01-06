@@ -641,6 +641,100 @@ Laxkit::anObject *newAffineExpandNode(int p, Laxkit::anObject *ref)
 	return new AffineNode(AffineNode::Expand, NULL);
 }
 
+
+//------------ InvertNode
+
+class InvertNode : public NodeBase
+{
+  public:
+	InvertNode();
+	virtual ~InvertNode();
+	virtual int Update();
+	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new InvertNode(); }
+};
+
+InvertNode::InvertNode()
+{
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", nullptr,1, _("In"), _("Invert a number, vector, quaternion, or affine"),0,false)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "out", nullptr,1, _("Out"), nullptr,0,false));
+}
+
+InvertNode::~InvertNode()
+{
+}
+
+/*! -1 for bad values. 0 for ok, 1 for just needs update.
+ */
+int InvertNode::GetStatus()
+{
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int InvertNode::Update()
+{
+	Error(nullptr);
+
+	Value *v = properties.e[0]->GetData();
+	if (!v) return 0;
+
+	double d;
+	if (isNumberType(v, &d)) {
+		if (d == 0) {
+			Error(_("Cannot invert"));
+			return -1;
+		}
+		DoubleValue *vv = dynamic_cast<DoubleValue*>(properties.e[1]->GetData());
+		if (!vv) {
+			vv = new DoubleValue();
+			properties.e[1]->SetData(vv, 1);
+		}
+		vv->d = 1/d;
+
+	} else if (v->type() == VALUE_Flatvector) {
+		FlatvectorValue *vv = dynamic_cast<FlatvectorValue*>(properties.e[1]->GetData());
+		if (!vv) {
+			vv = new FlatvectorValue();
+			properties.e[1]->SetData(vv, 1);
+		}
+		vv->v = -dynamic_cast<FlatvectorValue*>(v)->v;
+
+	} else if (v->type() == VALUE_Spacevector) {
+		SpacevectorValue *vv = dynamic_cast<SpacevectorValue*>(properties.e[1]->GetData());
+		if (!vv) {
+			vv = new SpacevectorValue();
+			properties.e[1]->SetData(vv, 1);
+		}
+		vv->v = -dynamic_cast<SpacevectorValue*>(v)->v;
+
+	} else if (v->type() == VALUE_Quaternion) {
+		QuaternionValue *vv = dynamic_cast<QuaternionValue*>(properties.e[1]->GetData());
+		if (!vv) {
+			vv = new QuaternionValue();
+			properties.e[1]->SetData(vv, 1);
+		}
+		vv->v = -dynamic_cast<QuaternionValue*>(v)->v.conjugate();
+
+	} else if (v->type() == AffineValue::TypeNumber()) {
+		AffineValue *vv = dynamic_cast<AffineValue*>(properties.e[1]->GetData());
+		if (!vv) {
+			vv = new AffineValue();
+			properties.e[1]->SetData(vv, 1);
+		}
+		vv = dynamic_cast<AffineValue*>(v);
+		vv->Invert();
+
+	} else {
+		Error(_("Cannot invert"));
+		return -1;
+	}
+
+	properties.e[1]->Touch();
+	return NodeBase::Update();
+}
+
+
 //------------ MathNode
 
 
@@ -1568,6 +1662,10 @@ void ExpressionNode::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::
  */
 int ExpressionNode::Set(const char *expr, bool force_remap)
 {
+	if (isblank(expr)) {
+		return 1;
+	}
+
 	StringValue *s = dynamic_cast<StringValue*>(properties.e[0]->data);
 	if (!s) {
 		s = new StringValue(expr);
@@ -1584,12 +1682,12 @@ int ExpressionNode::Set(const char *expr, bool force_remap)
 		properties.slide(propi, properties.n-1);
 	}
 
+
 	// determine unknow names and use those as properties
 	PtrStack<char> names(LISTS_DELETE_Array);
 	ErrorLog log;
 	int status = laidout->calculator->FindUnknownNames(expr,-1, nullptr, nullptr, &log, names);
-	if (status != 0) {
-		return status;
+	if (names.n == 0 || status != 0) {
 		char *er = log.FullMessageStr();
 		if (er) {
 			makestr(error_message, er);
@@ -2487,12 +2585,15 @@ Laxkit::anObject *newStringNode(int p, Laxkit::anObject *ref)
 
 class ConcatNode : public NodeBase
 {
+	bool GetValueString(Value *v, const char **cstr, char **str, SetValue **set);
+
   public:
 	ConcatNode(const char *s1, const char *s2);
 	virtual ~ConcatNode();
-	virtual NodeBase *Duplicate();
-	virtual int Update();
 	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ConcatNode(NULL,NULL); }
 };
 
 ConcatNode::ConcatNode(const char *s1, const char *s2)
@@ -2503,75 +2604,210 @@ ConcatNode::ConcatNode(const char *s1, const char *s2)
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "A", new StringValue(s1),1, _("A")));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "B", new StringValue(s2),1, _("B")));
 
-	char ns[1 + (s1 ? strlen(s1) : 0) + (s2 ? strlen(s2) : 0)];
-	sprintf(ns, "%s%s", (s1 ? s1 : ""), (s2 ? s2 : ""));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", new StringValue(ns),1, _("Out"),
-								 nullptr, 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", nullptr,1, _("Out"), nullptr, 0, false));
 }
 
 ConcatNode::~ConcatNode()
 {
 }
 
-NodeBase *ConcatNode::Duplicate()
-{
-	StringValue *s1 = dynamic_cast<StringValue*>(properties.e[0]->GetData());
-	StringValue *s2 = dynamic_cast<StringValue*>(properties.e[1]->GetData());
-
-	ConcatNode *newnode = new ConcatNode(s1 ? s1->str : NULL, s2 ? s2->str : NULL);
-	newnode->DuplicateBase(this);
-	return newnode;
-}
-
 int ConcatNode::GetStatus()
 {
-	if (!isNumberType(properties.e[0]->GetData(), NULL) && !dynamic_cast<StringValue*>(properties.e[0]->GetData())) return -1;
-	if (!isNumberType(properties.e[1]->GetData(), NULL) && !dynamic_cast<StringValue*>(properties.e[1]->GetData())) return -1;
-
-	if (!properties.e[2]->data) return 1;
+	Value *v = properties.e[0]->GetData();
+	if (!isNumberType(v, NULL) && v->type() != VALUE_String && v->type() != VALUE_Set) return -1;
+	v = properties.e[1]->GetData();
+	if (!isNumberType(v, NULL) && v->type() != VALUE_String && v->type() != VALUE_Set) return -1;
 
 	return NodeBase::GetStatus(); //default checks mod times
 }
 
+bool ConcatNode::GetValueString(Value *v, const char **cstr, char **str, SetValue **set)
+{
+	if (!v) return false;
+	int isnum=0;
+	double d1 = getNumberValue(v, &isnum);
+	if (isnum) {
+		*str = numtostr(d1);
+	} else {
+		StringValue *s = dynamic_cast<StringValue*>(v);
+		if (s) {
+			*cstr = s->str;
+		} else {
+			*set = dynamic_cast<SetValue*>(v);
+			if (!*set) {
+				Error(_("In must be a number, string, or set of either."));
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
 int ConcatNode::Update()
 {
-	char *str=NULL;
+	Value *v = properties.e[0]->GetData();
+	char *str1 = nullptr;
+	const char *strin1 = nullptr;
+	SetValue *setin1 = nullptr;
+	if (!GetValueString(v, &strin1, &str1, &setin1)) return -1;
 
-	int isnum=0;
-	double d = getNumberValue(properties.e[0]->GetData(), &isnum);
-	if (isnum) {
-		str = numtostr(d);
+	v = properties.e[1]->GetData();
+	char *str2 = nullptr;
+	const char *strin2 = nullptr;
+	SetValue *setin2 = nullptr;
+	if (!GetValueString(v, &strin2, &str2, &setin2)) return -1;
+
+	bool isset = (setin1 || setin2);
+	int max = 0;
+	if (setin1 && setin1->n() > max) max = setin1->n();
+	if (setin2 && setin2->n() > max) max = setin2->n();
+
+	StringValue *out = nullptr;
+	SetValue *outset = nullptr;
+	if (isset) {
+		outset = dynamic_cast<SetValue*>(properties.e[properties.n-1]->GetData());
+		if (!outset) {
+			outset = new SetValue();
+			properties.e[properties.n-1]->SetData(outset, 1);
+		} else properties.e[properties.n-1]->Touch();
 	} else {
-		StringValue *s = dynamic_cast<StringValue*>(properties.e[0]->GetData());
-		if (!s) return -1;
-
-		str = newstr(s->str);
+		out = dynamic_cast<StringValue*>(properties.e[properties.n-1]->GetData());
+		if (!out) {
+			out = new StringValue();
+			properties.e[properties.n-1]->SetData(outset, 1);
+		} else properties.e[properties.n-1]->Touch();
 	}
 
-	d = getNumberValue(properties.e[1]->GetData(), &isnum);
-	if (isnum) {
-		char *ss = numtostr(d);
-		appendstr(str, ss);
-		delete[] ss;
-	} else {
-		StringValue *s = dynamic_cast<StringValue*>(properties.e[1]->GetData());
-		if (!s) return -1;
+	for (int c=0; c < (isset ? max : 1); c++) {
+		if (setin1 && c < setin1->n()) {
+			v = setin1->e(c);
+			if (!GetValueString(v, &strin1, &str1, &setin1)) return -1;
+		}
+		if (setin2 && c < setin2->n()) {
+			v = setin2->e(c);
+			if (!GetValueString(v, &strin2, &str2, &setin2)) return -1;
+		}
+		if (outset) {
+			if (c < outset->n()) {
+				out = dynamic_cast<StringValue*>(outset->e(c));
+				if (!out) {
+					out = new StringValue();
+					outset->Set(c, out, 1);
+				}
+			} else {
+				out = new StringValue();
+				outset->Push(out, 1);
+			}
+		}
 
-		appendstr(str, s->str);
+		char *ss = newstr(strin1);
+		appendstr(ss, strin2);
+		out->InstallString(ss);
+
+		if (str1) delete[] str1;
+		if (str2) delete[] str2;
 	}
 
-	StringValue *out = dynamic_cast<StringValue*>(properties.e[2]->GetData());
-	out->Set(str);
+	if (outset) {
+		while (outset->n() > max) outset->Remove(max);
+	}
 
-	delete[] str;
 
 	return NodeBase::Update();
 }
 
 
-Laxkit::anObject *newConcatNode(int p, Laxkit::anObject *ref)
+//------------------------------ SplitNode  --------------------------------------------
+
+class SplitNode : public NodeBase
 {
-	return new ConcatNode(NULL,NULL);
+  public:
+	SplitNode();
+	virtual ~SplitNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new SplitNode(); }
+};
+
+SplitNode::SplitNode()
+{
+	makestr(Name, _("Split"));
+	makestr(type, "Split strings");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", new StringValue(),1, _("In")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "delim", new StringValue(","),1, _("Delimiter")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", nullptr,1, _("Out"),
+								 nullptr, 0, false));
+}
+
+SplitNode::~SplitNode()
+{
+}
+
+NodeBase *SplitNode::Duplicate()
+{
+	SplitNode *newnode = new SplitNode();
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int SplitNode::GetStatus()
+{
+	Value *v = properties.e[0]->GetData();
+	if (!v || !(v->type() == VALUE_String && v->type() != VALUE_Set)) return -1;
+	v = properties.e[1]->GetData();
+	if (!v || v->type() != VALUE_String) return -1;
+
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int SplitNode::Update()
+{
+	StringValue *strin = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	SetValue *setin = nullptr;
+	if (!strin) setin = dynamic_cast<SetValue*>(properties.e[0]->GetData());
+	if (!strin && !setin) return -1;
+	if (setin && setin->n() == 0) return -1;
+
+	StringValue *delim = dynamic_cast<StringValue*>(properties.e[1]->GetData());
+	if (!delim || isblank(delim->str)) return -1;
+	
+	char *str = strin ? strin->str : nullptr;
+
+	SetValue *outset = dynamic_cast<SetValue*>(properties.e[2]->GetData());
+	if (!outset) {
+		outset = new SetValue();
+		properties.e[2]->SetData(outset, 1);
+	} else {
+		outset->Flush();
+		properties.e[2]->Touch();
+	}
+
+	for (int c=0; c< (setin ? setin->n() : 1); c++){
+		if (setin) {
+			StringValue *sv = dynamic_cast<StringValue*>(setin->e(c));
+			if (!sv) return -1;
+			str = sv->str;
+		}
+
+		int n = 0;
+		char **strs = split(str, delim->str, &n);
+		SetValue *set = outset;
+		if (setin) {
+			set = new SetValue();
+			outset->Push(set, 1);
+		}
+
+		for (int c=0; c<n; c++) {
+			set->Push(new StringValue(strs[c]), 1);
+		}
+		deletestrs(strs, n);
+	}
+	
+	return NodeBase::Update();
 }
 
 
@@ -2585,8 +2821,10 @@ class SliceNode : public NodeBase
 	virtual ~SliceNode();
 	virtual const char *Label();
 	virtual NodeBase *Duplicate();
-	virtual int Update();
 	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new SliceNode(NULL,0,0); }
 };
 
 SliceNode::SliceNode(const char *s1, int from, int to)
@@ -2689,10 +2927,172 @@ int SliceNode::Update()
 }
 
 
-Laxkit::anObject *newSliceNode(int p, Laxkit::anObject *ref)
+
+//------------------------------ NumToStringNode --------------------------------------------
+
+class NumToStringNode : public NodeBase
 {
-	return new SliceNode(NULL,0,0);
+  public:
+	NumToStringNode();
+	virtual ~NumToStringNode();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new NumToStringNode(); }
+};
+
+NumToStringNode::NumToStringNode()
+{
+	makestr(Name, _("NumToString"));
+	makestr(type, "Strings/NumToString");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Num", new DoubleValue(0),1, _("Num"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "asint", new BooleanValue(false),1, _("As integer")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Base", new IntValue(10),1, _("Base")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "capital", new BooleanValue(false),1, _("Capitalize"), _("For base 16, and exponentials")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Padding", new IntValue(0),1, _("Padding")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "zero", new BooleanValue(false),1, _("Pad 0")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Left", new BooleanValue(false),1, _("Left"), _("Left justify when value is thinner than padding")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Precision", new IntValue(1),1, _("Precision"))); 
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out"), nullptr, 0, false));
 }
+
+NumToStringNode::~NumToStringNode()
+{
+}
+
+int NumToStringNode::GetStatus()
+{
+	if (!isNumberType(properties.e[0]->GetData(), NULL) && !dynamic_cast<SetValue*>(properties.e[0]->GetData())) return -1;
+	if (!isNumberType(properties.e[1]->GetData(), NULL)) return -1;
+	if (!isNumberType(properties.e[2]->GetData(), NULL)) return -1;
+	if (!isNumberType(properties.e[3]->GetData(), NULL)) return -1;
+	if (!isNumberType(properties.e[4]->GetData(), NULL)) return -1;
+	if (!isNumberType(properties.e[5]->GetData(), NULL)) return -1;
+	if (!isNumberType(properties.e[6]->GetData(), NULL)) return -1;
+
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int NumToStringNode::Update()
+{
+	Error(nullptr);
+	SetValue *setin = nullptr;
+	int isnum=0;
+	double d = getNumberValue(properties.e[0]->GetData(), &isnum);
+	if (!isnum) {
+		setin = dynamic_cast<SetValue*>(properties.e[0]->GetData());
+		if (!setin) {
+			Error(_("In must be a number or a set of numbers"));
+			return -1;
+		}
+	}
+
+	bool asint = getNumberValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) {
+		Error(_("Zero must be boolean"));
+		return -1;
+	}
+
+	int base = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum || (base != 2 && base != 8 && base != 16 && base != 10)) {
+		Error(_("Base must be 2, 8, 16, or 10"));
+		return -1;
+	}
+
+	bool capitalize = getNumberValue(properties.e[3]->GetData(), &isnum);
+	if (!isnum) {
+		Error(_("Zero must be boolean"));
+		return -1;
+	}
+
+	int padding = getNumberValue(properties.e[4]->GetData(), &isnum);
+	if (!isnum) {
+		Error(_("Padding must be a number"));
+		return -1;
+	}
+	if (padding < 0) padding = 0;
+
+	bool zeropadding = getNumberValue(properties.e[5]->GetData(), &isnum);
+	if (!isnum) {
+		Error(_("Zero must be boolean"));
+		return -1;
+	}
+	
+	bool left = getNumberValue(properties.e[6]->GetData(), &isnum);
+	if (!isnum) {
+		Error(_("Left must be boolean"));
+		return -1;
+	}
+
+	int precision = getNumberValue(properties.e[7]->GetData(), &isnum);
+	if (!isnum || precision < 0) {
+		Error(_("Precision must be a non-negative number"));
+		return -1;
+	}
+	if (padding < 0) padding = 0;
+
+	SetValue *setout = nullptr;
+	StringValue *out = nullptr; 
+	if (setin) {
+		setout = dynamic_cast<SetValue*>(properties.e[properties.n-1]->GetData());
+		if (!setout) {
+			setout = new SetValue();
+			properties.e[properties.n-1]->SetData(setout, 1);
+		} else properties.e[properties.n-1]->Touch();
+
+	} else {
+		out = dynamic_cast<StringValue*>(properties.e[properties.n-1]->GetData());
+		if (!out) {
+			out = new StringValue();
+			properties.e[properties.n-1]->SetData(out, 1);
+		} else properties.e[properties.n-1]->Touch();
+	}
+
+	Utf8String scratch;
+	char format[50];
+	if (asint) {
+		char type = 'd';
+		if (base == 8) type = 'o';
+		else if (base == 16) type = capitalize ? 'X' : 'x';
+		sprintf(format, "%%%s%s%d%c", left ? "-" : "", zeropadding ? "0" : (padding > 0 ? " " : ""), padding, type);
+	} else {
+		char type = capitalize ? 'G' : 'g'; // %010.10g
+		sprintf(format, "%%%s%s%d.%d%c", left ? "-" : "", zeropadding ? "0" : (padding > 0 ? " " : ""), padding, precision, type);
+	}
+	for (int c=0; c < (setin ? setin->n() : 1); c++) {
+		if (setin) {
+			d = getNumberValue(setin->e(c), &isnum);
+			if (!isnum) {
+				Error(_("In must be a number or a set of numbers"));
+				return -1;
+			}
+
+			if (c < setout->n()) {
+				out = dynamic_cast<StringValue*>(setout->e(c));
+				if (!out) {
+					out = new StringValue();
+					setout->Set(c, out, 1);
+				}
+			} else {
+				out = new StringValue();
+				setout->Push(out, 1);
+			}
+		}
+
+		if (asint) {
+			scratch.Sprintf(format, (int)(d+.5));
+		} else {
+			scratch.Sprintf(format, d);
+		}
+		out->Set(scratch.c_str());
+
+	}
+
+	return NodeBase::Update();
+}
+
 
 
 //------------------------ ThreadNode ------------------------
@@ -3987,8 +4387,9 @@ class JoinSetsNode : public NodeBase
 	JoinSetsNode();
 	virtual ~JoinSetsNode();
 	virtual NodeBase *Duplicate();
-	virtual int Update();
 	virtual int GetStatus();
+	virtual int Update();
+	virtual void dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context);
 
 	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new JoinSetsNode(); }
 };
@@ -4014,6 +4415,42 @@ NodeBase *JoinSetsNode::Duplicate()
 	JoinSetsNode *node = new JoinSetsNode();
 	node->DuplicateBase(this);
 	return node;
+}
+
+/*! Clean up after NodeBase::dump_in_atts() to make sure the out property is at the end.
+ */
+void JoinSetsNode::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context)
+{
+	NodeBase::dump_in_atts(att,flag,context);
+	int i = -1;
+	NodeProperty *prop = FindProperty("out", &i);
+	if (prop && i != properties.n-1) {
+		properties.slide(i, properties.n-1);
+	}
+	prop = FindProperty("set", &i);
+	if (prop && i != properties.n-2) {
+		properties.slide(i, properties.n-2);
+	}
+	for (int c=0; c<properties.n-1; c++) {
+		properties.e[c]->Label(_("Set"));
+	}
+}
+
+/*! Return 0 for no error and everything up to date.
+ * -1 means bad inputs and node in error state.
+ * 1 means needs updating.
+ */
+int JoinSetsNode::GetStatus()
+{
+	for (int c=0; c<properties.n-2; c++) {
+		if (!properties.e[c]->GetData()) continue;
+		SetValue *set = dynamic_cast<SetValue*>(properties.e[c]->GetData());
+		if (!set) {
+			Error(_("Input must be a list!"));
+			return -1;
+		}
+	}
+	return 0;
 }
 
 int JoinSetsNode::Update()
@@ -4049,22 +4486,90 @@ int JoinSetsNode::Update()
 	return NodeBase::Update();
 }
 
-/*! Return 0 for no error and everything up to date.
- * -1 means bad inputs and node in error state.
- * 1 means needs updating.
+
+//------------------------ NumberListNode ------------------------
+
+/*! \class NumberListNode
+ * Make a set of numbers.
  */
-int JoinSetsNode::GetStatus()
+
+class NumberListNode : public NodeBase
 {
-	for (int c=0; c<properties.n-2; c++) {
-		if (!properties.e[c]->GetData()) continue;
-		SetValue *set = dynamic_cast<SetValue*>(properties.e[c]->GetData());
-		if (!set) {
-			Error(_("Input must be a list!"));
-			return -1;
-		}
-	}
-	return 0;
+  public:
+	NumberListNode();
+	virtual ~NumberListNode();
+	virtual int Update();
+	virtual int GetStatus();
+	
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new NumberListNode(); }
+};
+
+
+NumberListNode::NumberListNode()
+{
+	makestr(Name, _("Number list"));
+	makestr(type,   "Lists/NumberList");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Start", new DoubleValue(1),1,  _("Start"), NULL));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "End",   new DoubleValue(10),1, _("End"),   NULL));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Step",  new DoubleValue(1),1,  _("Step"),  NULL));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out",  nullptr,1, _("out"),  NULL, 0, false));
 }
+
+NumberListNode::~NumberListNode()
+{
+}
+
+int NumberListNode::GetStatus()
+{
+	if (!isNumberType(properties.e[0]->GetData(), nullptr)) return -1;
+	if (!isNumberType(properties.e[1]->GetData(), nullptr)) return -1;
+	if (!isNumberType(properties.e[2]->GetData(), nullptr)) return -1;
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int NumberListNode::Update()
+{
+	Error(nullptr);
+
+	int isnum;
+	double start = getNumberValue(properties.e[0]->GetData(), &isnum);  if (!isnum) return -1;
+	double end   = getNumberValue(properties.e[1]->GetData(), &isnum);  if (!isnum) return -1;
+	double step  = getNumberValue(properties.e[2]->GetData(), &isnum);  if (!isnum) return -1;
+
+	if ((start>end && step>=0) || (start<end && step<=0)) {
+		Error(_("Bad step value"));
+		return -1;
+	}
+
+	if (fabs((end-start)/step) > 2000) {
+		Error(_("Too many values!"));
+		return -1;
+	}
+
+	SetValue *out = dynamic_cast<SetValue*>(properties.e[properties.n-1]->GetData());
+	if (!out) {
+		out = new SetValue();
+		properties.e[properties.n-1]->SetData(out, 1);
+	} else properties.e[properties.n-1]->Touch();
+	
+	int i = 0;
+	for (double c = start; (start < end && c < end) || (start > end && c > end); c += step) {
+		DoubleValue *v = nullptr;
+		if (i < out->n()) v = dynamic_cast<DoubleValue*>(out->e(i));
+		if (!v) {
+			v = new DoubleValue(c);
+			if (i < out->n()) out->Set(i, out, 1);
+			else out->Push(v, 1);
+		} else v->d = c;
+		i++;
+	}
+	while (out->n() > i) out->Remove(i);
+
+	return NodeBase::Update();
+}
+
 
 
 //------------ ObjectNode
@@ -4151,7 +4656,7 @@ TransformAffineNode::TransformAffineNode()
 	Value *v = new AffineValue();
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", NULL,0, _("In"))); 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Affine", v,1, _("Affine"))); 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", NULL,0, _("Out"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", NULL,0, _("Out"), nullptr, 0, false)); 
 }
 
 TransformAffineNode::~TransformAffineNode()
@@ -5666,6 +6171,98 @@ int TextFileNode::GetStatus()
 }
 
 
+//------------------------ ToFileNode ------------------------
+
+
+class ToFileNode : public NodeBase
+{
+  public:
+	ToFileNode();
+	virtual ~ToFileNode();
+
+	virtual void ButtonClick(NodeProperty *prop, NodeInterface *controller);
+	virtual int SaveNow();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ToFileNode(); }
+};
+
+ToFileNode::ToFileNode()
+{
+	makestr(Name, _("Object to file"));
+	makestr(type, "Strings/ToFile");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", nullptr,1, _("In"), NULL,0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Block, false, "file", new FileValue(),1, _("File"), NULL,0, true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Block, false, "autosave", new BooleanValue(false),1, _("Save every update"), NULL,0, true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Button, false, "savenow", nullptr,1, _("Save now"), NULL,0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Text"), NULL,0, false));
+}
+
+ToFileNode::~ToFileNode()
+{
+}
+
+void ToFileNode::ButtonClick(NodeProperty *prop, NodeInterface *controller)
+{
+	SaveNow();
+}
+
+int ToFileNode::SaveNow()
+{
+	Value *v = properties.e[0]->GetData();
+	if (!v) return 0;
+
+	const char *file = nullptr;
+	Value *vv = properties.e[1]->GetData();
+	if (vv->type() == VALUE_String) file = dynamic_cast<StringValue*>(vv)->str;
+	else if (vv->type() == VALUE_File) file = dynamic_cast<FileValue*>(vv)->filename;
+	if (isblank(file)) {
+		Error(_("Missing file"));
+		return 0;
+	}
+
+	FILE *f = fopen(file, "w");
+	if (!f) {
+		Error(_("Cannot open file for writing"));
+		return 0;
+	}
+
+	DumpContext context;
+	v->dump_out(f, 0, 0, &context);
+
+	fclose(f);
+
+	return 1;
+}
+
+//0 ok, -1 bad ins, 1 just needs updating
+int ToFileNode::GetStatus()
+{
+	Value *v = properties.e[0]->GetData();
+	if (!v) return -1;
+	v = properties.e[1]->GetData();
+	if (v->type() != VALUE_String && v->type() != VALUE_File) return -1;
+	return NodeBase::GetStatus();
+}
+
+int ToFileNode::Update()
+{
+	Error(nullptr);
+
+	int isnum = 0;
+	bool autosave = getIntValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+	if (!autosave) return NodeBase::Update();
+	if (!SaveNow()) {
+		return -1;
+	}
+	return NodeBase::Update();
+}
+
+
+
 //------------------------------ GetResourceNode --------------------------------------------
 
 /*! \class GetResourceNode
@@ -6290,6 +6887,7 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Math/MapFromRange", newMapFromRangeNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Math/Constant",     newMathConstants,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Math/Expression",   ExpressionNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/Invert",       InvertNode::NewNode, NULL, 0);
 	
 	//------------------ Lists -------------
 	factory->DefineNewObject(getUniqueNumber(), "Lists/EmptySet",    newEmptySetNode,  NULL, 0);
@@ -6297,12 +6895,16 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Lists/GetSize",     GetSizeNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Lists/Subset",      SubsetNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Lists/JoinSets",    JoinSetsNode::NewNode,  NULL, 0);
-
+	factory->DefineNewObject(getUniqueNumber(), "Lists/NumberList",    NumberListNode::NewNode,  NULL, 0);
+	
 	//------------------ String -------------
 	factory->DefineNewObject(getUniqueNumber(), "Strings/String",      newStringNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Strings/Concat",      newConcatNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Strings/Slice",       newSliceNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Strings/Concat",      ConcatNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Strings/Slice",       SliceNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Strings/Split",       SplitNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Strings/NumToString", NumToStringNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Strings/TextFromFile",TextFileNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Strings/ToFile",      ToFileNode::NewNode,  NULL, 0);
 
 	 //-------------------- FILTERS -------------
 	factory->DefineNewObject(getUniqueNumber(), "Filters/TransformAffine", newTransformAffineNode,  NULL, 0);

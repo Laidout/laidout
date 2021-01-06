@@ -2,6 +2,186 @@
 //*********** WORKS IN PROGRESS ****************
 
 
+//------------------------------ concat --------------------------------------------
+
+class PrintfNode : public NodeBase
+{
+  public:
+	PrintfNode(const char *s1, const char *s2);
+	virtual ~PrintfNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+};
+
+PrintfNode::PrintfNode(const char *s1, const char *s2)
+{
+	makestr(Name, _("Printf"));
+	makestr(type, "Strings/Printf");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "format", new StringValue(),1, ""));
+	
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", new StringValue(ns),1, _("Out"), nullptr, 0, false));
+}
+
+PrintfNode::~PrintfNode()
+{
+}
+
+NodeBase *PrintfNode::Duplicate()
+{
+	PrintfNode *newnode = new PrintfNode();
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int PrintfNode::GetStatus()
+{
+	if (!dynamic_cast<StringValue*>(properties.e[0]->GetData())) return -1;
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int PrintfNode::SetProperties(const char *fmt)
+{
+
+}
+
+int PrintfNode::Update()
+{
+	// NOT doing: %2$
+	// NOT doing: length modifiers
+
+	StringValue *fmtstr = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	if (!fmtstr) return -1;
+	const char *fmt = fmtstr->str();
+
+	if (modtime == 0 || modtime < properties.e[0]->modtime) SetProperties(fmt);
+
+	Utf8String str, str2, str3;
+
+	int cur_param = 0;
+	int precision = 0;
+	int fieldwidth = 0;
+	int flags = 0;
+	const char *ptr;
+	const char *fstart = nullptr, *endptr;
+	int i;
+	char ch[2];
+	ch[1] = '\0';
+
+	#define ZEROPAD   (1<<0)
+	#define LEFTJUST  (1<<1)
+	#define BLANKSIGN (1<<2)
+	#define PLUSMINUS (1<<3)
+
+	//each input has: flags, field width, precision, type
+	// flags: 
+	//   0  zero padding
+	//   -  make left justified within field
+	//  ' ' insert a blank before positive number
+	//   +  insert a + or - before numbers (never blank)
+	//   #  NOT IMPLEMENTED -- force output with a decimal point, make first char a digit
+	//   '  NOT IMPLEMENTED -- group by thounds
+	//   I  NOT IMPLEMENTED -- locale alternate digits
+	ptr = fmt;
+	while (*ptr) {
+		if (*ptr != '%') {
+			ch[0] = *ptr;
+			str.Append(ch);
+			ptr++;
+			continue;
+		}
+
+		if (ptr[1] == '%') {
+			ch[0] = '%'
+			str.Append(ch);
+			ptr += 2;
+			continue;
+		}
+
+		fstart = ptr;
+		ptr++;
+		precision = 1;
+		fieldwidth = 1;
+		flags = 0;
+
+		while (strchr("0- +", *ptr)) {
+			switch(*ptr) {
+				case '0': flags |= ZEROPAD; break;
+				case '-': flags |= LEFTJUST; break;
+				case ' ': flags |= BLANKSIGN; break;
+				case '+': flags |= PLUSMINUS; break;
+			}
+			ptr++;
+		}
+
+		if (isdigit(*ptr)) {
+			// read in field width
+			i = strtol(ptr, &endptr, 10);
+			fieldwidth = i;
+			ptr = endptr;
+		}
+		if (*ptr == '.') {
+			// read in precision
+			ptr++;
+			if (isdigit(*ptr)) {
+				i = strtol(ptr, &endptr, 10);
+				precision = i;
+				ptr = endptr;
+			} else precision = 0;
+		}
+
+		if (!strchr("diouxXbeEfFgGcs", *ptr)) { //NOT doing aA (fractional hex), or p n m
+			// add unformatted string, type was not recognized
+			str.AppendN(fstart, ptr - fstart+1);
+			ptr++;
+		} else {
+			//valid formatting, perform conversion
+			char type = *ptr;
+			ptr++;
+			if (type == 'c') type = 's'; //we don't do chars per se
+			if (type == 'b') {
+				***; //our own special binary out
+
+			} else if (type == 's') {
+				//string/char
+				str2.Sprintf("%%%s%s%ds", (flags&ZEROPAD) ? "0" : "", (flags&LEFTJUST) ? "-":"", fieldwidth);
+				str3.Sprintf(str2.c_str(), sv->str);
+
+			} else if (type == 'd' || type == 'i' || type == 'o' || type == 'u' || type == 'x' || type == 'X') {
+				//integers
+				str2.Sprintf("%%%s%s%d%c", (flags&ZEROPAD) ? "0" : "", (flags&LEFTJUST) ? "-":"", fieldwidth, type);
+				str3.Sprintf(str2.c_str(), i);
+
+			} else if (type == 'e' || type == 'E' || type == 'f' || type == 'F' || type == 'g' || type == 'G') {
+				//floating point
+				str2.Sprintf("%%%s%s%d", (flags&ZEROPAD) ? "0" : "", (flags&LEFTJUST) ? "-":"", fieldwidth);
+				if (precision != 0) {
+					str3.Sprintf(".%d", precision);
+					str2.Append(str3);
+				}
+				ch[0] = type;
+				str2.Append(ch);
+
+				str3.Sprintf(str2.c_str(), d);
+			}
+		}
+	}
+
+
+	return NodeBase::Update();
+}
+
+
+Laxkit::anObject *newPrintfNode(int p, Laxkit::anObject *ref)
+{
+	return new PrintfNode(NULL,NULL);
+}
+
+
+
+
+
 //------------------------------ MenuValue ---------------------------------
 
 /*! Value so that node properties can spawn custom selection windows, like popup menus or date selectors
@@ -635,38 +815,6 @@ int Cube(double xwidth, double ywidth, double zwidth,
 }
 
 
-//----------------------- ExtrudeNode ------------------------
-
-/*! \class ExtrudeNode
- *
- * Extrude a path or a Polyhedron, outputting a new Polyhedron.
- */
-class ExtrudeNode : public NodeBase
-{
-  public:
-	EtxrudeNode();
-	virtual ~ExtrudeNode();
-	virtual NodeBase *Duplicate();
-	virtual int Update();
-	virtual int GetStatus();
-};
-
-ExtrudeNode::ExtrudeNode()
-{
-	makestr(type, "Models/Extrude");
-	makestr(Name, _("Extrude"));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,     _("Input"), _("A path or model")));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "dir",   new SpacevectorValue(0,0,1),1,  _("Vector"),  _("Direction of extrusion")));
-
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out"), NULL,0, false));
-}
-
-EtxrudeNode::~ExtrudeNode()
-{
-}
-
-
-
 //----------------------- ScriptNode ------------------------
 
 /*! \class ScriptNode
@@ -742,97 +890,6 @@ int ScriptNode::AddOutputs(const char *pname, const char *pName, const char *pTi
 int ScriptNode::Run()
 {
 }
-
-//------------------------------ NumToStringNode --------------------------------------------
-
-class NumToStringNode : public NodeBase
-{
-  public:
-	NumToStringNode(double d, int isint);
-	virtual ~NumToStringNode();
-	virtual NodeBase *Duplicate();
-	virtual int Update();
-	virtual int GetStatus();
-};
-
-NumToStringNode::NumToStringNode(double d, int isint)
-{
-	makestr(Name, _("NumToString"));
-	makestr(type, "Strings/NumToString");
-
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Num", isint ? new IntValue(d) : new DoubleValue(d),1, _("Num"))); 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Padding", new StringValue(""),1, _("Padding"))); 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Decimals", new StringValue(""),1, _("Decimals"))); 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Base", new IntValue(10),1, _("Base")));
-
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out"))); 
-}
-
-NumToStringNode::~NumToStringNode()
-{
-}
-
-NodeBase *NumToStringNode::Duplicate()
-{
-	StringValue *s1 = dynamic_cast<StringValue*>(properties.e[0]->GetData());
-	StringValue *s2 = dynamic_cast<StringValue*>(properties.e[1]->GetData());
-
-	NumToStringNode *newnode = new NumToStringNode(s1 ? s1->str : NULL, s2 ? s2->str : NULL);
-	newnode->DuplicateBase(this);
-	return newnode;
-}
-
-int NumToStringNode::GetStatus()
-{ ***
-	if (!isNumberType(properties.e[0]->GetData(), NULL) && !dynamic_cast<StringValue*>(properties.e[0]->GetData())) return -1;
-	if (!isNumberType(properties.e[1]->GetData(), NULL) && !dynamic_cast<StringValue*>(properties.e[1]->GetData())) return -1;
-
-	if (!properties.e[2]->data) return 1;
-
-	return NodeBase::GetStatus(); //default checks mod times
-}
-
-int NumToStringNode::Update()
-{ ***
-	char *str=NULL;
-
-	int isnum=0;
-	double d = getNumberValue(properties.e[0]->GetData(), &isnum);
-	if (isnum) {
-		str = numtostr(d);
-	} else {
-		StringValue *s = dynamic_cast<StringValue*>(properties.e[0]->GetData());
-		if (!s) return -1;
-		
-		str = newstr(s->str);
-	}
-
-	d = getNumberValue(properties.e[1]->GetData(), &isnum);
-	if (isnum) {
-		char *ss = numtostr(d);
-		appendstr(str, ss);
-		delete[] ss;
-	} else {
-		StringValue *s = dynamic_cast<StringValue*>(properties.e[1]->GetData());
-		if (!s) return -1;
-		
-		appendstr(str, s->str);
-	}
-
-	StringValue *out = dynamic_cast<StringValue*>(properties.e[2]->GetData());
-	out->Set(str);
-
-	delete[] str;
-
-	return NodeBase::Update();
-}
-
-
-Laxkit::anObject *newNumToStringNode(int p, Laxkit::anObject *ref)
-{ ***
-	return new NumToStringNode(NULL,NULL);
-}
-
 
 
 
@@ -1260,5 +1317,44 @@ Laxkit::anObject *newPathBoolean(int p, Laxkit::anObject *ref)
 
 
 
+//----------------------- BoilerPlateNode ------------------------
 
+/*! \class BoilerPlateNode
+ *
+ * Extrude a path or a Polyhedron, outputting a new Polyhedron.
+ */
+class BoilerPlateNode : public NodeBase
+{
+  public:
+	BoilerPlateNode();
+	virtual ~BoilerPlateNode();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new BoilerPlateNode(); }
+};
+
+BoilerPlateNode::BoilerPlateNode()
+{
+	makestr(type, "Paths/Extrude");
+	makestr(Name, _("Extrude"));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,     _("Input"), _("A path or model")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "dir",   new FlatvectorValue(0,0,1),1,  _("Vector"),  _("Vector or path")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out"), NULL,0, false));
+}
+
+BoilerPlateNode::~BoilerPlateNode()
+{
+}
+
+int BoilerPlateNode::GetStatus()
+{
+
+}
+
+int BoilerPlateNode::Update()
+{
+
+}
 

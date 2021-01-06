@@ -268,6 +268,9 @@ class NodeBase : virtual public Laxkit::anObject,
 				 public Laxkit::DoubleRectangle,
 				 public Laxkit::Undoable
 {
+  protected:
+  	char *UniquePropName(const char *oldname);
+
   public:
 	 //state
 	char *Name; //displayed name (see Label())

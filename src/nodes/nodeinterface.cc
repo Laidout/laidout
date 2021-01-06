@@ -1307,6 +1307,30 @@ int NodeBase::Disconnected(NodeConnection *connection, bool from_will_be_replace
 	return 0;
 }
 
+/*! This will always return a new char[]. Used for expandable property lists, just increase number at end
+ * until we have a name not already taken. Assume prop names are text-doubleUnderscore-number: "name__34"
+ */
+char *NodeBase::UniquePropName(const char *oldname)
+{
+	char *newname = newstr(oldname);
+	int c=-1;
+	while (c != properties.n-1) {
+		for (c=0; c<properties.n-1; c++) {
+			if (strEquals(properties.e[c]->name, newname)) {
+				//name taken, need to increment
+				if (!strstr(newname, "__")) appendstr(newname, "__1");
+				else {
+					char *nstr = increment_file(newname);
+					delete[] newname;
+					newname = nstr;
+				}
+				break;
+			}
+		}
+	}
+	return newname;
+}
+
 /*! A notification that happens right after a connection is added.
  * Connected() and Disconnected() calls are usually followed shortly after by a call to Update(), so
  * these functions are for low level linkage maintenance (but not messing with
@@ -1322,7 +1346,9 @@ int NodeBase::Connected(NodeConnection *connection)
 	if (this == connection->to) {
 		if (connection->toprop->flags & NodeProperty::PROPF_New_In) {
 			NodeProperty *prop = connection->toprop;
-			AddNewIn(prop->flags & NodeProperty::PROPF_List_In, prop->Name(), prop->Label(), prop->Tooltip(), properties.findindex(prop)+1);
+			char *newname = UniquePropName(prop->Name());
+			AddNewIn(prop->flags & NodeProperty::PROPF_List_In, newname, prop->Label(), prop->Tooltip(), properties.findindex(prop)+1);
+			delete[] newname;
 			prop->SetFlag(NodeProperty::PROPF_New_In, false);
 			prop->SetFlag(NodeProperty::PROPF_List_In, true);
 			prop->Label(connection->fromprop->Label());
