@@ -1011,8 +1011,19 @@ Perspective perspective:
     Refs and groups of any combination of the above
   DONE bug: chained filter nodes make context wrong, thus bad Refresh
 
+BBoxValue:
+  needs width and height functions for convenience in scripting
+
 node editor node interface NodeInterface nodes: node: interface: 
+  bug: should be able to turn off update when loading in.. takes A LOT of time otherwise
+  bug: top filter "out" is outputting data
+  bug: JoinSets is not loading/saving properly.. variable list props need unique names
+  bug: TransformAffine using PointSet outputing "out" to file
+  bug: new object caption, attach to object function, crash!!
+  bug: CaptionData is creating a new font every single instantiation
   undo redo
+  bug: file prop popup not working
+  bug: trying to open menu for enum with 0 entries should not pop up a window
   bug: control click on connection for pan traversal not working all the way
   bug: ObjectInfo should reset id and type on disconnection or null object, but keep any props that are connected
   bug: adaptive nodes need to cache previous in and check that rather than just update on connection change, since could change upstream
@@ -1030,12 +1041,20 @@ node editor node interface NodeInterface nodes: node: interface:
   implement objectfilterinterface/nodeinterface interchange with nested node groups
   reroute needs double click on connection to add node
   edit filter nodes for the first time should center nodes in viewport
-  need solution for shared interface getting messages for different nodes.. probably need to do one instance per whatever
   would be nice to have a "Collapse unlinked properties" option
   bug: load and connect needs to trigger an Update, but it doesn't always?
+
+  need option to turn off main viewport render while tool up, since sometimes that render takes a long time
+  some people are going to want grid snapping
+
+  DONE concat should support sets
+  DONE bug: expression auto parse parameters not working when unknowns in paretheses
+  DONE need solution for shared interface getting messages for different nodes.. probably need to do one instance per whatever <-(yes)
   DONE bug: say Vector2, edit value, tab to next, does not save previous value
   DONE but: Color node only has output, but outputting data of output nodes currently forbidden.. make exception when output is editable?
   DONE Get document node
+  DONE Number list
+  DONE NumToString
 
   need 
   buttons:
@@ -1063,14 +1082,16 @@ node editor node interface NodeInterface nodes: node: interface:
     DONE NewObject/ModifyObject based on an ObjectDef.
     DONE need to make sure all types have dump_out_atts defined, otherwise the paltry Value::dump_out_atts gets used in data out
     DONE each need to double check: dereference, assign, Evaluate, extend from Group, not affine
+	LCaptionData from array of text
+	  need a "text is escaped" option
     image (double check objdef setup)
       DONE check: dereference assign Evaluate extend from Group, not affine
     somedataref
       DONE check: dereference assign Evaluate extend from Group, not affine
     gradient
       nodes must receive correct color messages from viewport color box
-	  DONE(?) bug: gradient controls broken sometimes
 	  needs a little settings button to pop interpolation or do strip resource selection
+	  DONE(?) bug: gradient controls broken sometimes
       DONE check: dereference assign Evaluate extend from Group, not affine
       DONE double click to call up color box
     delauney/point set tool: Vector2 + properties
@@ -1109,7 +1130,9 @@ node editor node interface NodeInterface nodes: node: interface:
         make net then inset
         merge
         simplify
-		extrude
+		extrude (this should probably be a path function)
+	      needs to check for same tree and transform points before using
+		  when you use another object for the extrude path, no automatic update happens
         set line profile from resource
         apply weights
         DONE combine
@@ -1148,16 +1171,15 @@ node editor node interface NodeInterface nodes: node: interface:
       anchor nodes to mostly replace alignment rules
       anchor point transforms
 	mirror node
-	clone tiler node
-	create clones for further manipulation, like apply point set origins
 	boolean pathops node
-    rename "Object Info" to "Drawable Info"
     "Object Properties".. maybe have a string field with list of desired properties? Array of props that show enum but output value?
     have a dangerous "Object Function" node? needs to dup in, then run function
     ref other object
     clone tool access
     nup tool access
-    inverse affine transform
+	DONE create clones for further manipulation, like apply point set origins
+    DONE inverse affine transform.. also invert number, vector, or quaternion
+    DONE rename "Object Info" to "Drawable Info"
     DONE ALL ObjectDef data types need to be installed on startup, or at least when node tool starts up
   group nodes, connect to (new in) or (new out):
     should take names from props.
@@ -1282,6 +1304,8 @@ node editor node interface NodeInterface nodes: node: interface:
     edit text externally or in different text editor frame
   string ops:
     printf
+  nested node group resources:
+    implement NodeBase.proxy to point to a resource NodeGroup, which relays changes
   list nodes
     set range [start,end] = value, optionally linked
     create list  [type, number]
@@ -1345,6 +1369,8 @@ plugins:
     plugins (c++) vs extensions (scripted)
 
 captioninterface CaptionInterface captiondata CaptionData
+  bug: why is a font being created and destroyed each refresh??
+  should be able access fonts as resources, to preserve links on load/save
   bug: bitstream vera sans, "Text" convert to path puts e correct, but screen render puts it out too far. huh??
   implement proper pdf export
   color fonts: consider native otf:
@@ -1633,6 +1659,7 @@ file button expansion:
    Revert...           <- show log, select old
 
 open from template:
+  needs to be incorporated in newdoc dialog
   get template list:
     scan all template dirs: ~/.config/laidout/version/templates, or SHAREDIR/templates
     name -- file path -- basic info about file
@@ -1814,6 +1841,10 @@ align tool: aligninterface AlignInterface align:
   number box while dragging, goes away after a second, or click on it to edit
     if inc/dec arrows, have it inc or dec the decimal place cursor is on
   default presets: inkscape crossover
+
+empties:
+  use as targets in, for instance, node alignments
+  need display object to make visible if truly empty.. display object is not exported
 
 Spread Editor:
   need to make pagelocation ref count pages, or (need to anyway) check all known views for errant page refs after delete pages
@@ -2069,6 +2100,7 @@ customizable object child relationships to parent, rather than simple transform
   need edge indicators for more convenient snapping
 
 calculator/scripting
+  bug: string output not escaping things to display correctly
   make ArrayValue be MatrixValue, make SetValue be ArrayValue
   bug: run command with BuildIcons, error is not propagating up to cout
   bug: function calls, assigning named parameters, checks for '=', but only single char, fails when it's actually a ==
