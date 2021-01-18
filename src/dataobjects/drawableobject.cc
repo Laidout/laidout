@@ -205,9 +205,9 @@ DrawableObject::DrawableObject()
 	clip_path = wrap_path = inset_path = nullptr;
 	autowrap = autoinset = 0;
 
-	alpha  = 1;
-	blur   = 0;
-	filter = nullptr;
+	opacity = 1;
+	blur    = 0;
+	filter  = nullptr;
 
 	parent_link = nullptr;
 
@@ -526,7 +526,7 @@ LaxInterfaces::SomeData *DrawableObject::duplicate(LaxInterfaces::SomeData *dup)
 	d->m(m());
 
 	 //filter
-	d->alpha = alpha;
+	d->opacity = opacity;
 	d->blur  = blur;
 	if (filter) {
 		ObjectFilter *ofilter = dynamic_cast<ObjectFilter*>(filter);
@@ -1701,12 +1701,13 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Du
 		ObjectFilter *ofilter = new ObjectFilter(this, 0);
 		ofilter->dump_in_atts(att->attributes.e[foundfilter], 0, context);
 		ofilter->FindProperty("in")->data_is_linked = true;
-		if (filter) filter->dec_count();
+		if (filter) { filter->dec_count(); filter = nullptr; }
 		NodeProperty *in = ofilter->FindProperty("in");
 		in->SetData(this, 0);
 		in->SetFlag(NodeProperty::PROPF_Label_From_Data, 1);
 		in->topropproxy->SetFlag(NodeProperty::PROPF_Label_From_Data, 1);
-		//ofilter->Update();
+		in->topropproxy->Touch();
+		// ofilter->ForceUpdates();
 		//in->topropproxy->owner->Update();
 
 		filter = ofilter;
