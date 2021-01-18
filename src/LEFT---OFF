@@ -83,10 +83,6 @@ bug: page progress popup is wrong place, and mouse maps at wrong scale ONLY OCCA
 
 sometimes crash at insert page before (?? can't duplicate)
 
-text window controls have difficulties
-  doesn't handle tabs
-  (see PlainTextWindow below for feature plans instead of bugs)
-
 saving window positions doesn't take into account window decorations, makes pos slide downward each time
   _NET_FRAME_EXTENTS? _KDE_NET_WM_FRAME_STRUT? how to get before mapping a window?
 
@@ -514,6 +510,7 @@ file filters: filefilters:
   export range should optionally allow label not spread indices? labels are only valid for pages.. by name "iii - iv", export preview better?
   perhaps switch export/import objects to new cascading Style as base..
   standardize basic load such that non-laidout files create new document of proper size then import
+  todo: electric zine maker export/import?
   When there are errors or warnings in exporting, should be able to have the error log such that
     you can just jump to the offending bit easily. This would also be used for preflight verifiers,
     and maybe also mass edit things, like edit all images..
@@ -1014,11 +1011,27 @@ Perspective perspective:
 BBoxValue:
   needs width and height functions for convenience in scripting
 
+valgrind:
+  DONE mismatch free colorbase.cc 298
+  conditional jump on uninit: strlens in newnstr re attributes.cc 2673, 2192, 2206/1007, 2651
+
 node editor node interface NodeInterface nodes: node: interface: 
+  bug: node duplicating, reminder default DOES NOT DUP TYPE!! it dups NodeBase.. double check this is fine, might need to imp duplicate()
+  bug: math2 error message not being cleared properly
+  bug maybe: dup math1 or math2 copies label.. if label actually blank should leave blank
+  DONE bug: empty reroute, click no drag on prop slot, crash!
+  DONE bug: expression node broken, won't update expression
+    DONE drag value, doesn't trigger update, but click and input does
+    DONE if you take away a variable that was connected, bad things happen
+  bug: sporadic, 1st input edit doesn't stick
+  bug: reroute nodes doing weird colors
+  grouped nodes: need to properly propagate MarkMustUpdate() past container node directly to output props
+    check NodeBase::GetSatus() when no outs, but topropproxy
+  memory hole page info? drawableinfo, objectinfo
+  execution order: Update() should ONLY update current.. UpdateRecursively() parse backwards Update()ing as necessary
   bug: should be able to turn off update when loading in.. takes A LOT of time otherwise
   bug: top filter "out" is outputting data
   bug: JoinSets is not loading/saving properly.. variable list props need unique names
-  bug: TransformAffine using PointSet outputing "out" to file
   bug: new object caption, attach to object function, crash!!
   bug: CaptionData is creating a new font every single instantiation
   undo redo
@@ -1032,10 +1045,10 @@ node editor node interface NodeInterface nodes: node: interface:
   bug: transform object isn't copying images in an ImageData
   bug: height of resizable property not saved
   bug: why are nodes yellow sometimes after load in: PerspectiveFilter, PointsToDots, Affine, Affine2.. DONE: String Circle
-  bug: memory hole in pointset(?) then modifying somewhere
   bug: duplicating objectfilter does not transfer values for the most part for the most part
   bug: when loading in, need to force update nodes in Resources
   bug: gegl to image, disconnect, it is still updating the image, because LaxImage is linked through
+  bug: memory hole TransformAffineNode??
   if a node is in error state, error color overrides the selected highlight.. it shouldn't
   need to figure out safe way to duplicate DrawableObjects that have filters and/or children
   implement objectfilterinterface/nodeinterface interchange with nested node groups
@@ -1047,6 +1060,10 @@ node editor node interface NodeInterface nodes: node: interface:
   need option to turn off main viewport render while tool up, since sometimes that render takes a long time
   some people are going to want grid snapping
 
+  DONE bug: TransformAffine using PointSet outputing "out" to file
+  DONE bug: memory hole in objectfilter interface
+  DONE ConvertNumberNode
+  DONE KidsToSetNode
   DONE concat should support sets
   DONE bug: expression auto parse parameters not working when unknowns in paretheses
   DONE need solution for shared interface getting messages for different nodes.. probably need to do one instance per whatever <-(yes)
@@ -1055,6 +1072,7 @@ node editor node interface NodeInterface nodes: node: interface:
   DONE Get document node
   DONE Number list
   DONE NumToString
+  DONE bug: color property doesn't show transparency checkerboard
 
   need 
   buttons:
@@ -1082,8 +1100,8 @@ node editor node interface NodeInterface nodes: node: interface:
     DONE NewObject/ModifyObject based on an ObjectDef.
     DONE need to make sure all types have dump_out_atts defined, otherwise the paltry Value::dump_out_atts gets used in data out
     DONE each need to double check: dereference, assign, Evaluate, extend from Group, not affine
-	LCaptionData from array of text
-	  need a "text is escaped" option
+	DONE LCaptionData from array of text
+	DONE   need a "text is escaped" option
     image (double check objdef setup)
       DONE check: dereference assign Evaluate extend from Group, not affine
     somedataref
@@ -1113,7 +1131,14 @@ node editor node interface NodeInterface nodes: node: interface:
 		DONE apply positions to groups of drawables
       DONE check: dereference assign Evaluate extend from Group, not affine
     paths
-      weight controls .. present as line profile?
+	  generators:
+	    DONE need linewidth, stroke, fill
+		stroke should accept color, gradient, or LineStyle.. LineStyle overrides line width
+		fill should accept color, gradient, FillStyle.. or other path object?
+      weight controls:
+	    weight edit: index: width, offset, angle
+	    weights set: t[], width[], offset[], angle[]
+		present as line profile?
 
 	  DONE path corners: points past a certain angle threshhold
 	  DONE path endpoints
@@ -1151,6 +1176,7 @@ node editor node interface NodeInterface nodes: node: interface:
       transform
         DONE check: dereference assign Evaluate extend from Group, not affine
     caption text
+	  DONE needs color property
       DONE check: dereference assign Evaluate extend from Group, not affine
     text on a path
       properties
@@ -1188,7 +1214,6 @@ node editor node interface NodeInterface nodes: node: interface:
   should probably bring forward any selected
   load/save custom properties needs to preserve name, label, tooltip, types, custom info
   check for double linking
-  idea seen in anim nodes: collapsing math shows expression as label
   control drag on slot to reconnect all connections
   duplicate linked nodes needs to preserve connections
   find node:
@@ -1280,24 +1305,24 @@ node editor node interface NodeInterface nodes: node: interface:
   simplex noise node
   voronoise
   frames
-    receive color messages from viewport color box
+    changeable color:
+      DONE receive bg color messages from viewport color box
+      receive fg color messages from viewport color box (stalled pending impl of fg+bg colorbox in viewerwindow)
     grouping framed objects have complications
-    frames need to be moveable
-    nodes within frames need to be moveable
-    pressing f:
-      any selected objs in any frame, then unframe
-      group selected objects into frame
-    label font size should be adjustable
-    changeable color
-    drag out a rectangle
-      if any nodes in rect, bind them and shrinkwrap frame
-      if no nodes in rect, just use dragged area for bounds
-    drag and drop nodes to insert into frame
-    shift-drag to remove from frame?
+    DONE frames need to be moveable
+    DONE nodes within frames need to be moveable
+    DONE pressing f: any selected objs in any frame, then unframe. Else group selected objects into frame
+    DONE drag and drop nodes to insert into frame
+    DONE shift-drag to remove from frame
+	DONE selecting frame needs to update viewer current color
+
+    bug: wrap sizes are different start up vs move frame
+	implement comment
+    label/comment font size should be adjustable.. draggable size triangle on right?
     have visible/togglable comment
+	convert frame to panel
   expression node:
     DONE any number of inputs (pulled from expression)
-    inputs map to names according to property label
     scriptify nodes
     nodify script
     use PlainText objects.. ScriptNode ?
@@ -1337,6 +1362,7 @@ node editor node interface NodeInterface nodes: node: interface:
   DONE basic path creation nodes, including math function plotting
   DONE resize preview broken
   DONE image from file node
+  DONE (using Name) idea seen in anim nodes: collapsing math shows expression as label
 
 
 large files:
@@ -1369,7 +1395,6 @@ plugins:
     plugins (c++) vs extensions (scripted)
 
 captioninterface CaptionInterface captiondata CaptionData
-  bug: why is a font being created and destroyed each refresh??
   should be able access fonts as resources, to preserve links on load/save
   bug: bitstream vera sans, "Text" convert to path puts e correct, but screen render puts it out too far. huh??
   implement proper pdf export
@@ -1393,6 +1418,7 @@ captioninterface CaptionInterface captiondata CaptionData
   use selected text as sample when popping up font dialog
   lorem ipsum
   markov ipsum
+  DONE bug: why is a font being created and destroyed each refresh??
 
 export/print dialog
   need better print dialog.. old ppd cups stuff is deprecated
@@ -2100,6 +2126,7 @@ customizable object child relationships to parent, rather than simple transform
   need edge indicators for more convenient snapping
 
 calculator/scripting
+  bug: var x =0; x^3  -> "cannot compute 0^x"
   bug: string output not escaping things to display correctly
   make ArrayValue be MatrixValue, make SetValue be ArrayValue
   bug: run command with BuildIcons, error is not propagating up to cout
@@ -2609,18 +2636,24 @@ implement undo.. ideally use same code for both undo and recordable/assignable a
   saveable?
 
 PlainTextWindow plaintextwindow PlainText plain text window:
-  PlainTextObjects should be resources
-  need showing line numbers
-  clicking around doesn't properly update caret drawing
+  bug: doesn't handle tabs
   need control zoom to change font size
-  some day should have syntax highlighting in Laxkit::MultiLineEdit
-  indent/unindent selected lines
-  toggle expandtab
+  clicking around doesn't properly update caret drawing
   plain text edit window specify interpreter to process the text with
-  option to show line numbers
-  indent/unindent
+  DONE PlainTextObjects should be resources
+
   move selected lines up/down
   regex searching
+  jump to line
+  jump to previous/next edit (in stack)
+  bookmark spots
+  option to show line numbers
+  indent/unindent selected lines
+  toggle expandtab
+  comment/uncomment: // or /**/ or #
+  indent/unindent
+  multicursor edit
+  some day should have syntax highlighting in Laxkit::MultiLineEdit
 
 pixels units should be set as per document dpi
 
