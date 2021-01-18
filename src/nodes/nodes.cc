@@ -19,6 +19,7 @@
 #include <lax/interfaces/interfacemanager.h>
 #include <lax/fileutils.h>
 #include <lax/popupmenu.h>
+#include <lax/units.h>
 #include "nodes.h"
 #include "nodeinterface.h"
 #include "nodes-dataobjects.h"
@@ -85,6 +86,7 @@ int DoubleNode::Update()
 {
 	 //just copy reference to out
 	properties.e[1]->SetData(properties.e[0]->GetData(), 0);
+	Touch();
 	return NodeBase::Update();
 }
 
@@ -607,6 +609,7 @@ int AffineNode::Update()
 		int isnum;
 		for (int c=0; c<6; c++) {
 			vs[c] = getNumberValue(properties.e[c]->GetData(), &isnum);
+			if (!isnum) return -1;
 		}
 
 		AffineValue *v = dynamic_cast<AffineValue*>(properties.e[6]->GetData());
@@ -658,7 +661,7 @@ class InvertNode : public NodeBase
 InvertNode::InvertNode()
 {
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", nullptr,1, _("In"), _("Invert a number, vector, quaternion, or affine"),0,false)); 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "out", nullptr,1, _("Out"), nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Out"), nullptr,0,false));
 }
 
 InvertNode::~InvertNode()
@@ -938,28 +941,7 @@ class MathNode1 : public NodeBase
 	virtual const char *Label();
 };
 
-class MathNode2 : public NodeBase
-{
-  public:
-	static SingletonKeeper mathnodekeeper; //the def for the op enum
-	static ObjectDef *GetMathNode2Def() { return dynamic_cast<ObjectDef*>(mathnodekeeper.GetObject()); }
-
-	int last_status;
-	clock_t status_time;
-
-	int numargs;
-	double a,b,result;
-	MathNode2(int op=0, double aa=0, double bb=0); //see 2 arg MathNodeOps for op
-	virtual ~MathNode2();
-	virtual int UpdateThisOnly();
-	virtual int Update();
-	virtual int GetStatus();
-	virtual NodeBase *Duplicate();
-	//virtual const char *Label();
-};
-
 SingletonKeeper MathNode1::mathnodekeeper(DefineMathNode1Def(), true);
-SingletonKeeper MathNode2::mathnodekeeper(DefineMathNode2Def(), true);
 
 //------MathNode1
 
@@ -1043,7 +1025,7 @@ int MathNode1::Update()
 	int status = UpdateThisOnly();
 	if (!status) {
 		modtime = times(NULL);
-		PropagateUpdate();
+		// PropagateUpdate();
 		return status;
 	}
 	return status;
@@ -1236,10 +1218,37 @@ Laxkit::anObject *newMathNode1(int p, Laxkit::anObject *ref)
 
 //------MathNode2
 
+class MathNode2 : public NodeBase
+{
+  public:
+	static SingletonKeeper mathnodekeeper; //the def for the op enum
+	static ObjectDef *GetMathNode2Def() { return dynamic_cast<ObjectDef*>(mathnodekeeper.GetObject()); }
+
+	int last_status;
+	clock_t status_time;
+
+	int numargs;
+	double a,b,result;
+	MathNode2(int op=0, double aa=0, double bb=0); //see 2 arg MathNodeOps for op
+	virtual ~MathNode2();
+	virtual int UpdateThisOnly();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
+	virtual const char *Label();
+};
+
+SingletonKeeper MathNode2::mathnodekeeper(DefineMathNode2Def(), true);
+
+Laxkit::anObject *newMathNode2(int p, Laxkit::anObject *ref)
+{
+	return new MathNode2();
+}
+
 MathNode2::MathNode2(int op, double aa, double bb)
 {
 	type = newstr("Math2");
-	Name = newstr(_("Math 2"));
+	// Name = newstr(_("Math 2"));
 
 	last_status = 1;
 	status_time = 0;
@@ -1251,7 +1260,6 @@ MathNode2::MathNode2(int op, double aa, double bb)
 	ObjectDef *enumdef = GetMathNode2Def();
 	enumdef->inc_count();
 
-
 	EnumValue *e = new EnumValue(enumdef, 0);
 	e->SetFromId(op);
 	enumdef->dec_count();
@@ -1260,9 +1268,6 @@ MathNode2::MathNode2(int op, double aa, double bb)
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "A", new DoubleValue(a), 1));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "B", new DoubleValue(b), 1));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Result", NULL,0, _("Result"), NULL, 0, false));
-
-	//NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count,
-					//const char *nlabel=NULL, const char *ntip=NULL, int info=0, bool editable);
 
 	last_status = Update();
 	status_time = MostRecentIn(NULL);
@@ -1273,6 +1278,16 @@ MathNode2::~MathNode2()
 //	if (mathnodedef) {
 //		if (mathnodedef->dec_count()<=0) mathnodedef=NULL;
 //	}
+}
+
+const char *MathNode2::Label()
+{
+	if (!isblank(Name)) return Name;
+
+	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
+	const char *Nm = ev->EnumLabel();
+
+	return Nm;
 }
 
 NodeBase *MathNode2::Duplicate()
@@ -1315,7 +1330,7 @@ int MathNode2::GetStatus()
 	if (status == 1) return 1; //just simple update
 
 	clock_t proptime = MostRecentIn(NULL);
-	if (proptime > last_status) {
+	if (proptime > status_time) {
 		last_status = UpdateThisOnly();
 		status_time = proptime;
 	}
@@ -1324,18 +1339,18 @@ int MathNode2::GetStatus()
 
 int MathNode2::Update()
 {
-	int status = UpdateThisOnly();
-	if (!status) {
+	last_status = UpdateThisOnly();
+	status_time = times(nullptr);
+	if (last_status == 0) {
 		modtime = times(NULL);
-		PropagateUpdate();
-		return status;
+		return last_status;
 	}
 	return NodeBase::Update();
 }
 
 int MathNode2::UpdateThisOnly()
 {
-	makestr(error_message, NULL);
+	Error(nullptr);
 
 	Value *valuea = properties.e[1]->GetData();
 	Value *valueb = properties.e[2]->GetData();
@@ -1357,8 +1372,7 @@ int MathNode2::UpdateThisOnly()
 	const char *nm = NULL, *Nm = NULL;
 	int operation = OP_None;
 	def->getEnumInfo(ev->value, &nm, &Nm, NULL, &operation);
-	makestr(Name, Nm);
-
+	
 
 	if (aisnum == 1 && bisnum == 1) {
 		if      (operation==OP_Add)      result = a+b;
@@ -1368,7 +1382,7 @@ int MathNode2::UpdateThisOnly()
 			if (b!=0) result = a/b;
 			else {
 				result=0;
-				makestr(error_message, _("Can't divide by 0"));
+				Error(_("Can't divide by 0"));
 				return -1;
 			}
 
@@ -1376,7 +1390,7 @@ int MathNode2::UpdateThisOnly()
 			if (b!=0) result = a-b*int(a/b);
 			else {
 				result=0;
-				makestr(error_message, _("Can't divide by 0"));
+				Error(_("Can't divide by 0"));
 				return -1;
 			}
 		} else if (operation==OP_Power) {
@@ -1592,13 +1606,103 @@ int MathNode2::UpdateThisOnly()
 		return -1;
 	}
 
-	properties.e[3]->modtime = times(NULL);
+	properties.e[3]->Touch();
 	return 0;
 }
 
-Laxkit::anObject *newMathNode2(int p, Laxkit::anObject *ref)
+
+//------------------------------ ConvertNumberNode --------------------------------------------
+
+/*! \class ConvertNumberNode
+ * Number units conversion
+ */
+class ConvertNumberNode : public NodeBase
 {
-	return new MathNode2();
+  public:
+  	static SingletonKeeper unitsMenu;
+  	ObjectDef *GetConvertDef();
+
+	ConvertNumberNode();
+	virtual ~ConvertNumberNode();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ConvertNumberNode(); }
+};
+
+SingletonKeeper ConvertNumberNode::unitsMenu;
+
+ObjectDef *ConvertNumberNode::GetConvertDef()
+{
+	ObjectDef *def = dynamic_cast<ObjectDef*>(unitsMenu.GetObject());
+	if (def) return def;
+
+	def = new ObjectDef("ConvertDef", _("Number Conversions"), NULL,NULL,"enum", 0);
+	unitsMenu.SetObject(def, 1);
+
+	UnitManager *units = GetUnitManager();
+
+	//units should be: singular plural abbreviation  localized_Name localized_Description
+	char *shortname, *singular, *plural;
+	const char *label;
+	double scale;
+	int id;
+
+	for (int c=0; c<units->NumberOfUnits(); c++) {
+		units->UnitInfoIndex(c, &id, &scale, &shortname, &singular, &plural, &label);
+		def->pushEnumValue(shortname, label, nullptr, id);
+	}
+
+	return def;
+}
+
+ConvertNumberNode::ConvertNumberNode()
+{
+	makestr(Name, _("Convert number"));
+	makestr(type, "ConvertNumber");
+
+	ObjectDef *unitsdef = GetConvertDef();
+	UnitManager *units = GetUnitManager();
+	int u = units->DefaultUnits();
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "In",    new DoubleValue(0),1,         _("In"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, "From", new EnumValue(unitsdef, u),1, _("From"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, "To",   new EnumValue(unitsdef, u),1, _("To"))); 
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out",  new DoubleValue(0),1, _("Out"), NULL, 0, false));
+}
+
+ConvertNumberNode::~ConvertNumberNode()
+{
+}
+
+int ConvertNumberNode::GetStatus()
+{
+	if (!isNumberType(properties.e[0]->GetData(), NULL)) return -1;
+
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int ConvertNumberNode::Update()
+{
+	int isnum = 0;
+	double in = getNumberValue(properties.e[0]->GetData(), &isnum);
+	if (!isnum) {
+		return -1;
+	}
+
+	EnumValue *from = dynamic_cast<EnumValue*>(properties.e[1]->GetData());
+	EnumValue *to   = dynamic_cast<EnumValue*>(properties.e[2]->GetData());
+
+	UnitManager *units = GetUnitManager();
+	int err = 0;
+	double out = units->Convert(in, from->EnumId(), to->EnumId(), &err);
+	DoubleValue *vv = dynamic_cast<DoubleValue*>(properties.e[3]->GetData());
+	vv->d = out;
+	properties.e[3]->Touch();
+	if (err != 0) return -1;
+
+	return NodeBase::Update();
 }
 
 
@@ -1606,11 +1710,14 @@ Laxkit::anObject *newMathNode2(int p, Laxkit::anObject *ref)
 
 class ExpressionNode : public NodeBase
 {
+	clock_t last_eval;
+
   public:
 	ExpressionNode(const char *expr);
 	virtual ~ExpressionNode();
 
 	virtual int Set(const char *expr, bool force_remap);
+	virtual const char *Label();
 	virtual NodeBase *Duplicate();
 	virtual int Update();
 	virtual int GetStatus();
@@ -1623,11 +1730,12 @@ class ExpressionNode : public NodeBase
 ExpressionNode::ExpressionNode(const char *expr)
 {
 	makestr(type, "Math/Expression");
-	makestr(Name, _("Expression"));
+	// makestr(Name, _("Expression"));
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "Expr", new StringValue(""),1, nullptr,_("Expression")));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", nullptr,1, _("Out"), NULL,0, false));
 
+	last_eval = 0;
 	Set(expr, true);
 
 	Update();
@@ -1635,6 +1743,15 @@ ExpressionNode::ExpressionNode(const char *expr)
 
 ExpressionNode::~ExpressionNode()
 {
+}
+
+const char *ExpressionNode::Label()
+{
+	if (!isblank(Name)) return Name;
+
+	StringValue *v = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	if (!v || isblank(v->str)) return _("Expression");
+	return v->str;
 }
 
 /*! Intercept to make sure property labels are correct.
@@ -1721,7 +1838,8 @@ int ExpressionNode::Set(const char *expr, bool force_remap)
 
 	// remove extraneous properties
 	for (int c = properties.n-2; c > names.n; c--) {
-		RemoveProperty(properties.e[c]);
+		if (!properties.e[c]->IsConnected())
+			RemoveProperty(properties.e[c]);
 	}
 
 	Wrap();
@@ -1766,9 +1884,11 @@ NodeBase *ExpressionNode::Duplicate()
 int ExpressionNode::GetStatus()
 {
 	StringValue *s = dynamic_cast<StringValue*>(properties.e[0]->GetData());
-	if (!s) return -1;
+	if (!s || isblank(s->str)) return -1;
 
-	if (ErrorMessage()) return -1;
+	clock_t ins = MostRecentIn(nullptr);
+	if (ins > last_eval) Error(nullptr);
+	// if (ErrorMessage()) return 1;
 
 	return NodeBase::GetStatus();
 }
@@ -1780,12 +1900,11 @@ int ExpressionNode::Update()
 	if (GetStatus() == -1) return -1;
 
 	StringValue *s = dynamic_cast<StringValue*>(properties.e[0]->GetData());
-	if (!s) return -1;
+	// if (!s) return -1; <- checked in GetStatus()
 	const char *expression = s->str;
 
 	if (modtime == 0 || modtime < properties.e[0]->modtime) {
-		Set(expression, modtime == 0);
-		if (error_message) return -1;
+		if (Set(expression, modtime == 0) || error_message) return -1;
 	}
 
 	ValueHash params;
@@ -1798,6 +1917,7 @@ int ExpressionNode::Update()
 	ErrorLog log;
 	Value *ret = nullptr;
 
+	last_eval = times(nullptr);
 	status = laidout->calculator->EvaluateWithParams(expression,-1, nullptr, &params, &ret, &log);
 	if (status != 0 || !ret) {
 		char *er = log.FullMessageStr();
@@ -2571,6 +2691,7 @@ int StringNode::Update()
 	}
 
 	properties.e[1]->Touch();
+	Touch();
 	return NodeBase::Update();
 }
 
@@ -3194,7 +3315,8 @@ NodeBase *IfNode::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &fork
 	if (prop->connections.n) next = prop->connections.e[0]->to;
 
 	modtime = times(NULL);
-	PropagateUpdate();
+	MarkMustUpdate();
+	// PropagateUpdate();
 
 	return next;
 }
@@ -3310,7 +3432,8 @@ NodeBase *LoopNode::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &fo
 
 		dynamic_cast<DoubleValue*>(properties.e[6]->GetData())->d = current;
 		properties.e[6]->Touch();
-		PropagateUpdate();
+		MarkMustUpdate();
+		// PropagateUpdate();
 		thread->scopes.push(this);
 		return next;
 	}
@@ -3478,7 +3601,8 @@ NodeBase *ForeachNode::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> 
 
 		dynamic_cast<IntValue*>(properties.e[4]->GetData())->i = current;
 		properties.e[4]->Touch();
-		PropagateUpdate();
+		MarkMustUpdate();
+		// PropagateUpdate();
 		thread->scopes.push(this);
 		return next;
 	}
@@ -3503,7 +3627,8 @@ NodeBase *ForeachNode::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> 
 
 		dynamic_cast<IntValue*>(properties.e[4]->GetData())->i = current;
 		properties.e[4]->Touch();
-		PropagateUpdate();
+		MarkMustUpdate();
+		// PropagateUpdate();
 	}
 
 	return next;
@@ -3669,7 +3794,8 @@ NodeBase *SetVariableNode::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThre
 	NodeProperty *out = properties.e[1];
 	if (out->connections.n) return out->connections.e[0]->to;
 
-	PropagateUpdate();
+	MarkMustUpdate();
+	// PropagateUpdate();
 	return NULL;
 }
 
@@ -3756,16 +3882,17 @@ NodeBase *GetVariableNode::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThre
 	NodeProperty *out = properties.e[1];
 	if (out->connections.n) return out->connections.e[0]->to;
 
-	PropagateUpdate();
+	MarkMustUpdate();
+	// PropagateUpdate();
 	return NULL;
 }
-
 
 
 Laxkit::anObject *newGetVariableNode(int p, Laxkit::anObject *ref)
 {
 	return new GetVariableNode();
 }
+
 
 //------------------------------ DelayNode --------------------------------------------
 
@@ -4151,7 +4278,7 @@ int GetSizeNode::GetStatus()
 	Value *in = properties.e[0]->GetData();
 	if (!in) return -1;
 	if (in->type() != VALUE_Set && in->type() != VALUE_Hash && in->type() != PointSetValue::TypeNumber()) return -1;
-	return 0;
+	return NodeBase::GetStatus();
 }
 
 int GetSizeNode::Update()
@@ -4269,7 +4396,7 @@ int GetElementNode::GetStatus()
 		Error(_("Index out of range!"));
 		return -1;
 	}
-	return 0;
+	return NodeBase::GetStatus();
 }
 
 
@@ -4371,7 +4498,7 @@ int SubsetNode::GetStatus()
 		Error(_("Index must be a number!"));
 		return -1;
 	}
-	return 0;
+	return NodeBase::GetStatus();
 }
 
 
@@ -4450,7 +4577,7 @@ int JoinSetsNode::GetStatus()
 			return -1;
 		}
 	}
-	return 0;
+	return NodeBase::GetStatus();
 }
 
 int JoinSetsNode::Update()
@@ -5384,6 +5511,13 @@ NodeBase *NewObjectNode::Duplicate()
 	return node;
 }
 
+//0 ok, -1 bad ins, 1 just needs updating
+int NewObjectNode::GetStatus()
+{
+	if (!properties.e[1]->GetData()) return -1;
+	return NodeBase::GetStatus();
+}
+
 int NewObjectNode::Update()
 {
 	// if enum not equal value->whattype, recreate
@@ -5421,18 +5555,13 @@ int NewObjectNode::Update()
 		// 	}
 		}
 		properties.e[1]->SetData(o,1);
-	}
+
+	} else properties.e[1]->Touch();;
 
 	if (!properties.e[1]->GetData()) return -1;
 	return NodeBase::Update();
 }
 
-//0 ok, -1 bad ins, 1 just needs updating
-int NewObjectNode::GetStatus()
-{
-	if (!properties.e[1]->GetData()) return -1;
-	return NodeBase::GetStatus();
-}
 
 
 //------------ ObjectInfoNode
@@ -5583,7 +5712,14 @@ int ObjectInfoNode::Update()
 	Value *o = properties.e[0]->GetData();
 	if (!o) {
 		properties.e[1]->SetData(nullptr, 0); //id
-		properties.e[2]->SetData(nullptr, 0); //type
+		// properties.e[2]->SetData(nullptr, 0); //type
+		StringValue *sv = dynamic_cast<StringValue*>(properties.e[2]->GetData());
+		if (!sv) {
+			sv = new StringValue("null");
+			properties.e[2]->SetData(sv, 1);
+		} else {
+			sv->Set("null");
+		}
 		UpdatePreview();
 		Wrap();
 		return -1;
@@ -5612,11 +5748,12 @@ int ObjectInfoNode::Update()
 		properties.e[2]->SetData(sv, 1);
 	} else {
 		sv->Set(o->whattype());
+		properties.e[2]->Touch();
 	}
 
 	for (int c=3; c<properties.n; c++) {
 		Value *v = o->dereference(properties.e[c]->Name(), -1);
-		properties.e[c]->is_editable = false; // hack to recover from property read in not checking fro editability
+		properties.e[c]->is_editable = false; // hack to recover from property read in not checking for editability
 		properties.e[c]->SetData(v, 1);
 	}
 
@@ -6422,7 +6559,7 @@ int GetResourceNode::Update()
 
 int GetResourceNode::GetStatus()
 {
-	return 0; //either something's there on not. c'est la vie!
+	return 0; //either something's there or not. c'est la vie!
 }
 
 
@@ -6505,7 +6642,7 @@ int GetGlobalNode::GetStatus()
 	if (!v) return -1;
 	if (v != shouldbe) return 1;
 
-	return 0;
+	return NodeBase::GetStatus();
 }
 
 
@@ -6585,7 +6722,7 @@ int SetGlobalNode::GetStatus()
 	Value *v = laidout->globals.find(what);
 	if (v != shouldbe) return -1;
 
-	return 0;
+	return NodeBase::GetStatus();
 }
 
 
@@ -6644,7 +6781,7 @@ int GetDocumentNode::Update()
 int GetDocumentNode::GetStatus()
 {
 	if (!dynamic_cast<Document*>(properties.e[1]->GetData())) return -1;
-	return 0;
+	return NodeBase::GetStatus();
 }
 
 
@@ -6760,7 +6897,7 @@ class RerouteNode : public NodeBase
   public:
 	RerouteNode();
 	virtual ~RerouteNode();
-	virtual NodeBase *Duplicate();
+	// virtual NodeBase *Duplicate();
 	virtual int Update();
 	virtual int GetStatus();
 	virtual int Wrap();
@@ -6781,12 +6918,12 @@ RerouteNode::RerouteNode()
 RerouteNode::~RerouteNode()
 {}
 
-NodeBase *RerouteNode::Duplicate()
-{
-	RerouteNode *node = new RerouteNode();
-	node->DuplicateBase(this);
-	return node;
-}
+// NodeBase *RerouteNode::Duplicate()
+// {
+// 	RerouteNode *node = new RerouteNode();
+// 	node->DuplicateBase(this);
+// 	return node;
+// }
 
 int RerouteNode::Update()
 {
@@ -6888,6 +7025,7 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Math/Constant",     newMathConstants,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Math/Expression",   ExpressionNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Math/Invert",       InvertNode::NewNode, NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/ConvertNumber",ConvertNumberNode::NewNode, NULL, 0);
 	
 	//------------------ Lists -------------
 	factory->DefineNewObject(getUniqueNumber(), "Lists/EmptySet",    newEmptySetNode,  NULL, 0);

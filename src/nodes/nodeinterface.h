@@ -241,7 +241,7 @@ class NodeFrame : public Laxkit::anObject,
 				 public Laxkit::DoubleRectangle
 {
   public:
-	//ScreenColor bg, fg, label_fg, label_bg;
+	Laxkit::Color *bg, *fg; //border, comment, label_bg;
 
 	NodeGroup *owner;
 	char *label;
@@ -260,6 +260,7 @@ class NodeFrame : public Laxkit::anObject,
 	virtual void Wrap(double gap=-1);
 
     virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context);
+    virtual void dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context);
 };
 
 
@@ -279,6 +280,7 @@ class NodeBase : virtual public Laxkit::anObject,
 	ObjectDef *def; //optional
 	char *error_message;
 	int muted;
+	bool manual_update; //flag to prevent excessive updating while loading
 
 	int collapsed;
 	double fullwidth; //uncollapsed
@@ -310,6 +312,7 @@ class NodeBase : virtual public Laxkit::anObject,
 	virtual const char *Type() { return type; } //not localized
 	virtual const char *ErrorMessage() { return error_message; }
 	virtual const char *Error(const char *error_msg);
+	virtual void ClearError();
 	virtual ObjectDef *GetDef() { return def; }
 	virtual void InstallDef(ObjectDef *def, bool absorb_count);
 	virtual LaxInterfaces::anInterface *GetInterface(LaxInterfaces::anInterface *interface);
@@ -319,8 +322,11 @@ class NodeBase : virtual public Laxkit::anObject,
 	virtual int Redo(UndoData *data);
 
 	virtual int Update();
+	virtual int UpdateRecursively();
+	virtual void MarkMustUpdate();
 	virtual void PropagateUpdate();
 	virtual int UpdatePreview();
+	virtual void ManualUpdate(bool yes);
 	virtual Value *PreviewFrom() { return nullptr; }
 	virtual void PreviewSample(double w, double h, bool is_shift);
 	virtual int GetStatus(); //0 ok, -1 bad ins, 1 just needs updating
@@ -398,6 +404,8 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	NodeGroup();
 	virtual ~NodeGroup();
 	virtual const char *whattype() { return "NodeGroup"; }
+	virtual int Undo(UndoData *data);
+	virtual int Redo(UndoData *data);
 	virtual int InstallColors(NodeColors *newcolors, bool absorb_count);
 	virtual int DesignateOutput(NodeBase *noutput);
 	virtual int DesignateInput(NodeBase *ninput);
@@ -425,6 +433,8 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	virtual NodeConnection *Connect(NodeConnection *newcon, int absorb);
 	virtual int Disconnect(NodeConnection *connection, bool from_will_be_replaced, bool to_will_be_replaced);
 	virtual int ForceUpdates();
+	virtual int UpdateAllRecursively();
+	virtual void ManualUpdate(bool yes);
 
 	virtual void       dump_out(FILE *f, int indent, int what, LaxFiles::DumpContext *context);
     virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context);
@@ -554,6 +564,7 @@ enum NodeInterfaceActions {
 	NODES_Leave_Group,
 	NODES_Frame_Nodes,
 	NODES_Unframe_Nodes,
+	NODES_Toggle_Frame,
 	NODES_Move_Frame,
 	NODES_Add_Node,
 	NODES_Delete_Nodes,
@@ -618,6 +629,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	Laxkit::DoubleBBox selection_rect;
 	Laxkit::DoubleBBox thread_controls;
 	double thread_run, thread_reset; //offsets in thread_controls
+	NodeFrame *selected_frame;
 	NodeConnection *tempconnection;
 	int hover_action;
 	int lasthover, lasthoverslot, lasthoverprop, lastconnection;
@@ -653,6 +665,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual int FreshNodes(bool asresource);
 	virtual int EditProperty(int nodei, int propertyi);
 	virtual int send();
+	virtual void UpdateCurrentColor(const Laxkit::ScreenColor &col);
 
   public:
 	unsigned int node_interface_style;
@@ -695,6 +708,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual void DrawPropertySlot(NodeBase *node, NodeProperty *prop, int hoverprop, int hoverslot);
 	virtual void DrawProperty(NodeBase *node, NodeProperty *prop, double y, int hoverprop, int hoverslot);
 	virtual int scan(int x, int y, int *overpropslot, int *overproperty, int *overconnection, unsigned int state);
+	virtual int scanFrames(int x, int y, unsigned int state);
 	virtual int IsSelected(NodeBase *node);
 
 	virtual int ToggleCollapsed();

@@ -1,6 +1,203 @@
 
 //*********** WORKS IN PROGRESS ****************
 
+TODO:
+  FitIn
+  ObjectArrayNode
+  MirrorPathNode
+  AlignToBounds
+  MergePaths
+  Printf
+  MenuValue
+
+  EulerToQuaternion
+  QuaternionToEuler
+  Swizzle
+
+
+//----------------------- GroupProxyNode ------------------------
+
+/*! \class GroupProxyNode
+ *
+ * Do stuff.
+ */
+class GroupProxyNode : public NodeBase
+{
+  public:
+	GroupProxyNode();
+	virtual ~GroupProxyNode();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new GroupProxyNode(); }
+};
+
+GroupProxyNode::GroupProxyNode(bool ins)
+{
+	makestr(type, "GroupProxy");
+	makestr(Name, ins ? _("Inputs") : _("Outputs"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,     _("Input"), _("A path or model")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "dir",   new FlatvectorValue(0,0,1),1,  _("Vector"),  _("Vector or path")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out"), NULL,0, false));
+}
+
+GroupProxyNode::~GroupProxyNode()
+{
+}
+
+int GroupProxyNode::GetStatus()
+{
+	return NodeBase::GetStatus();
+}
+
+int GroupProxyNode::Update()
+{
+
+}
+
+
+
+//----------------------- FitInNode ------------------------
+
+/*! \class FitInNode
+ *
+ * Scale an object to fit within bounds of parent space.
+ */
+class FitInNode : public NodeBase
+{
+  public:
+	FitInNode();
+	virtual ~FitInNode();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new FitInNode(); }
+};
+
+FitInNode::FitInNode()
+{
+	makestr(type, "Drawable/FitIn");
+	makestr(Name, _("Fit In"));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in",     NULL,1,    _("Input"),  _("A DrawableObject")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "bounds", nullptr,1, _("Bounds"), nullptr));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "padding", new DoubleValue(0),1, _("Padding"), _("A number, or set of 4: [top, right, bottom, left]")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "space", new IntValue(1),1, _("Parent space"), _("Number of parents up to use as bounds space. -1 for top.")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "scaleup", new BooleanValue(false),1, _("If smaller that bounds, scale up"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "scaledown", new BooleanValue(true),1, _("If Larger than bounds, scale down"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "alignx", new DoubleValue(50),1, _("Align horizontally, 0..100"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "aligny", new DoubleValue(50),1, _("Align vertically, 0..100"), nullptr,0,true));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out"), NULL,0, false));
+}
+
+FitInNode::~FitInNode()
+{
+}
+
+int FitInNode::GetStatus()
+{
+	DrawableObject *dr = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
+	if (!dr) return -1;
+	BBoxValue *b = dynamic_cast<BBoxValue*>(properties.e[1]->GetData());
+	if (!b) return -1;
+	if (!isNumberType(properties.e[2]->GetData()), nullptr) {
+		if (!dynamic_cast<SetValue*>(properties.e[2]->GetData())) return -1;
+	}
+	if (!isNumberType(properties.e[3]->GetData()), nullptr) return -1;
+	if (!isNumberType(properties.e[4]->GetData()), nullptr) return -1;
+	if (!isNumberType(properties.e[5]->GetData()), nullptr) return -1;
+	if (!isNumberType(properties.e[6]->GetData()), nullptr) return -1;
+	if (!isNumberType(properties.e[7]->GetData()), nullptr) return -1;
+	
+	return NodeBase::GetStatus();
+}
+
+int FitInNode::Update()
+{
+	DrawableObject *dr = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
+	if (!dr) return -1;
+	BBoxValue *bounds = dynamic_cast<BBoxValue*>(properties.e[1]->GetData());
+	if (!bounds) return -1;
+	double padding;
+	SetValue *padset = nullptr;
+	if (!isNumberType(properties.e[2]->GetData()), &padding) {
+		padset = dynamic_cast<SetValue*>(properties.e[2]->GetData());
+		if (!padset) return -1;
+	}
+
+	int parents = getNumberValue(properties.e[3]->GetData(), &isnum);
+	if (!isnum) return -1;
+	bool scaleup = getNumberValue(properties.e[4]->GetData(), &isnum);
+	if (!isnum) return -1;
+	bool scaledown = getNumberValue(properties.e[5]->GetData(), &isnum);
+	if (!isnum) return -1;
+	double alignx = getNumberValue(properties.e[6]->GetData(), &isnum);
+	if (!isnum) return -1;
+	double alignx = getNumberValue(properties.e[7]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	***
+
+	return NodeBase::Update();
+}
+
+
+//----------------------- ObjectArrayNode ------------------------
+
+/*! \class ObjectArrayNode
+ *
+ * Analagous to Blender's array modifier.
+ */
+class ObjectArrayNode : public NodeBase
+{
+  public:
+	ObjectArrayNode();
+	virtual ~ObjectArrayNode();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ObjectArrayNode(); }
+};
+
+ObjectArrayNode::ObjectArrayNode()
+{
+	makestr(type, "Drawable/Array");
+	makestr(Name, _("Object Array"));
+
+	//obj in, or set of objects (as from previous array) set uses bbox of whole set
+	//shift:
+	//  x,y as bbox multiple
+	//  x,y as absolute distance
+	//  x,y scale around clone origin
+	//  angle around clone origin
+	//count 
+	//merge if path
+	//start cap
+	//end cap
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,     _("Input"), _("A path or model")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "dir",   new FlatvectorValue(0,0,1),1,  _("Vector"),  _("Vector or path")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out"), NULL,0, false));
+}
+
+ObjectArrayNode::~ObjectArrayNode()
+{
+}
+
+int ObjectArrayNode::GetStatus()
+{
+	return NodeBase::GetStatus();
+}
+
+int ObjectArrayNode::Update()
+{
+
+}
+
+
 
 //------------------------------ concat --------------------------------------------
 
@@ -870,6 +1067,7 @@ int ScriptNode::Update()
 
 int ScriptNode::GetStatus()
 {
+	return NodeBase::GetStatus();
 }
 
 /*! Set up inputs. These can be accessed from the expression by name.
@@ -891,92 +1089,6 @@ int ScriptNode::Run()
 {
 }
 
-
-
-//------------------------------ ConvertNumberNode --------------------------------------------
-
-/*! \class ConvertNumberNode
- * Number units conversion
- */
-class ConvertNumberNode : public NodeBase
-{
-  public:
-	ConvertNumberNode();
-	virtual ~ConvertNumberNode();
-	virtual NodeBase *Duplicate();
-	virtual int Update();
-	virtual int GetStatus();
-};
-
-
-ObjectDef *DefineConvertDef()
-{
-	ObjectDef *def = new ObjectDef("ConvertDef", _("Number Conversions"), NULL,NULL,"enum", 0);
-
-	UnitManager *units = GetUnitManager();
-
-	//units should be: singular plural abbreviation  localized_Name localized_Description
-	char *shortname, *singular, *plural;
-	double scale;
-	int id;
-
-	for (int c=0; c<units->NumberOfUnits(); c++) {
-		UnitInfoIndex(c, &id, &scale, &shortname, &singular, &plural);
-		def->pushEnumValue(singular, singular, singular, id);
-	}
-
-
-	return def;
-}
-
-ConvertNumberNode::ConvertNumberNode()
-{
-	makestr(Name, _("Convert number"));
-	makestr(type, "ConvertNumber");
-
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "In",    new DoubleValue(d),1,  _("In"))); 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, "From", new EnumValue(from),1, _("From"))); 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, "To",   new EnumValue(to),1,   _("To"))); 
-
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out",  new DoubleValue(ns),1, _("Out")), NULL, 0, false); 
-}
-
-ConvertNumberNode::~ConvertNumberNode()
-{
-}
-
-NodeBase *ConvertNumberNode::Duplicate()
-{
-	double in = getNumberValue(properties.e[0]->GetData());
-	EnumValue *f = dynamic_cast<EnumValue*>(properties.e[1]->GetData())->duplicate();
-	EnumValue *t = dynamic_cast<ENumValue*>(properties.e[2]->GetData())->duplicate();
-
-	ConvertNumberNode *newnode = new ConvertNumberNode(in, f->value, t->value);
-	newnode->DuplicateBase(this);
-	return newnode;
-}
-
-int ConvertNumberNode::GetStatus()
-{ ***
-	if (!isNumberType(properties.e[0]->GetData(), NULL) && !dynamic_cast<StringValue*>(properties.e[0]->GetData())) return -1;
-	if (!isNumberType(properties.e[1]->GetData(), NULL) && !dynamic_cast<StringValue*>(properties.e[1]->GetData())) return -1;
-
-	if (!properties.e[2]->data) return 1;
-
-	return NodeBase::GetStatus(); //default checks mod times
-}
-
-int ConvertNumberNode::Update()
-{ ***
-
-	return NodeBase::Update();
-}
-
-
-Laxkit::anObject *newConvertNumberNode(int p, Laxkit::anObject *ref)
-{
-	return new ConvertNumberNode();
-}
 
 
 //------------------------------ HistogramNode --------------------------------------------
@@ -1159,6 +1271,7 @@ int ColorMapNode::Update()
 
 int ColorMapNode::GetStatus()
 { ***
+	return NodeBase::GetStatus();
 }
 
 
@@ -1212,6 +1325,7 @@ int SwizzleNode::Update()
 
 int SwizzleNode::GetStatus()
 { ***
+	return NodeBase::GetStatus();
 }
 
 Laxkit::anObject *newSwizzle(int p, Laxkit::anObject *ref)
@@ -1293,6 +1407,7 @@ int PathBooleanNode::Update()
 
 int PathBooleanNode::GetStatus()
 { ***
+	return NodeBase::GetStatus();
 }
 
 Laxkit::anObject *newPathBoolean(int p, Laxkit::anObject *ref)
@@ -1321,7 +1436,7 @@ Laxkit::anObject *newPathBoolean(int p, Laxkit::anObject *ref)
 
 /*! \class BoilerPlateNode
  *
- * Extrude a path or a Polyhedron, outputting a new Polyhedron.
+ * Do stuff.
  */
 class BoilerPlateNode : public NodeBase
 {
@@ -1350,11 +1465,11 @@ BoilerPlateNode::~BoilerPlateNode()
 
 int BoilerPlateNode::GetStatus()
 {
-
+	return NodeBase::GetStatus();
 }
 
 int BoilerPlateNode::Update()
 {
-
+	return NodeBase::Update();
 }
 

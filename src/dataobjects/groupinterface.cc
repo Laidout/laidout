@@ -1000,7 +1000,7 @@ int GroupInterface::PerformAction(int action)
 				obj->InstallClip(NULL);
 			}
 		}
-		PostMessage("Clipping removed.");
+		PostMessage(_("Clipping removed."));
 		return 0;
 
 	} else if (action == GIA_Extract_Clip) {
@@ -1022,7 +1022,7 @@ int GroupInterface::PerformAction(int action)
 
 			}
 		}
-		PostMessage("*** need to implement GIA_Extract_Clip");
+		PostMessage(_("Extracted"));
 		return 0;
 
 	} else if (action == GIA_Edit_Filter_Nodes) {
@@ -1049,7 +1049,7 @@ int GroupInterface::PerformAction(int action)
 		ViewerWindow *viewer = dynamic_cast<ViewerWindow *>(curwindow->win_parent);
 		viewer->PopInterface(this); //makes sure viewer->curtool is maintained
 		// viewport->Pop(this);
-		viewport->Push(i,-1,0);
+		viewport->Push(i,-1,1);
 		dec_count();
 		PostMessage(_("Edit filter nodes"));
 
@@ -1085,6 +1085,8 @@ int GroupInterface::PerformAction(int action)
 		return 0;
 
 	} else if (action == GIA_Apply_Filter) {
+		PostMessage("IMPLEMENT ME");
+		
 		DrawableObject *obj = dynamic_cast<DrawableObject*>(selection->e(0)->obj);
 		if (!obj || !obj->filter) return 0;
 		DrawableObject *fobj = dynamic_cast<DrawableObject*>(obj->filter)->FinalObject();
@@ -1094,7 +1096,6 @@ int GroupInterface::PerformAction(int action)
 		}
 		// need to replace in tree and reparent children
 		//*** 
-		PostMessage("IMPLEMENT ME");
 		needtodraw = 1;
 		return 0;
 
@@ -1105,7 +1106,8 @@ int GroupInterface::PerformAction(int action)
 			DrawableObject *obj = dynamic_cast<DrawableObject*>(selection->e(c)->obj);
 			if (!obj || !obj->filter) continue;;
 			ObjectFilter *filter = dynamic_cast<ObjectFilter*>(obj->filter);
-			filter->FindProperty("in")->topropproxy->owner->Update();
+			// filter->FindProperty("in")->topropproxy->owner->Update();
+			filter->ForceUpdates();
 		}
 
 		//PostMessage(_("Filter refresh."));

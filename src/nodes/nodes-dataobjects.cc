@@ -240,6 +240,72 @@ int DuplicateSingleNode::UpdatePreview()
 }
 
 
+//----------------------- KidsToSetNode ------------------------
+
+/*! \class KidsToSetNode
+ *
+ * Return a set of children of a DrawableObject.
+ */
+class KidsToSetNode : public NodeBase
+{
+  public:
+	KidsToSetNode();
+	virtual ~KidsToSetNode();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new KidsToSetNode(); }
+};
+
+KidsToSetNode::KidsToSetNode()
+{
+	makestr(type, "Drawable/KidsToSet");
+	makestr(Name, _("Set of kids"));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",  NULL,1, _("Parent"), _("A drawable")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", new SetValue(),1, _("Set of kids"), NULL,0, false));
+}
+
+KidsToSetNode::~KidsToSetNode()
+{
+}
+
+int KidsToSetNode::GetStatus()
+{
+	DrawableObject *o = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
+	if (!o) {
+		Error(_("Parent must be a DrawableObject"));
+		return -1;
+	}
+	return NodeBase::GetStatus();
+}
+
+int KidsToSetNode::Update()
+{
+	Error(nullptr);
+	DrawableObject *o = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
+	if (!o) {
+		Error(_("Parent must be a DrawableObject"));
+		return -1;
+	}
+
+	SetValue *out = dynamic_cast<SetValue*>(properties.e[1]->GetData());
+
+	for (int c=0; c<o->NumKids(); c++) {
+		DrawableObject *oo = dynamic_cast<DrawableObject*>(o->Child(c));
+		if (c > out->n()) {
+			out->Push(oo,0);
+		} else {
+			if (out->e(c) != oo) out->Set(c, oo, 0);
+		}
+	}
+
+	while (out->n() > o->NumKids()) out->Remove(out->n()-1);
+	properties.e[1]->Touch();
+	return NodeBase::Update();
+}
+
+
+
 //------------------------ SetParentNode ------------------------
 
 /*! 
@@ -373,7 +439,7 @@ SetPositionsNode::SetPositionsNode()
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "objects", nullptr,1, _("Objects"), nullptr,0,false)); 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "positions", nullptr,1, _("Positions"), nullptr,0,false));
-	// AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "override", new BooleanValue(false),1, _("Override in"), _("Modifies in. Dangerous!!"),0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "override", new BooleanValue(false),1, _("Modify original"), _("Dangerous!! Modifies original objects. May affect upstream connections."),0,true));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Out"), nullptr,0,false));
 }
 
@@ -405,13 +471,14 @@ int SetPositionsNode::GetStatus()
 		}
 	}
 
+	if (!isNumberType(properties.e[2]->GetData(), nullptr)) return -1;
+
 	return NodeBase::GetStatus();
 }
 
 int SetPositionsNode::Update()
 {
 	Error(nullptr);
-	bool override = false;
 
 	// determine input object(s)
 	DrawableObject *o = dynamic_cast<DrawableObject*>(properties.e[0]->GetData()); 
@@ -439,11 +506,15 @@ int SetPositionsNode::Update()
 		} //else if (pset->NumPoints() == 0) return -1;
 	}	
 
+	int isnum = 0;
+	bool override = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+
 	// apply into output
 	if (o) { //single object, easy!
 		if (!override) o = dynamic_cast<DrawableObject*>(o->duplicate());
 		else o->inc_count();
-		properties.e[2]->SetData(o, 1);
+		properties.e[3]->SetData(o, 1);
 
 		if (pos) o->origin(pos->v);
 		else if (pset) {
@@ -462,18 +533,18 @@ int SetPositionsNode::Update()
 		}
 
 	} else { //oset of input drawables
-		SetValue *out = dynamic_cast<SetValue *>(properties.e[2]->GetData());
+		SetValue *out = dynamic_cast<SetValue *>(properties.e[3]->GetData());
 		if (!out) {
 			if (override) {
 				out = oset;
 				out->inc_count();
 			} else out = new SetValue();
-			properties.e[2]->SetData(out, 1);
+			properties.e[3]->SetData(out, 1);
 		} else {
 			if (override && out != oset) {
-				properties.e[2]->SetData(out, 0);
+				properties.e[3]->SetData(out, 0);
 			} else if (!override) out->values.flush();
-			properties.e[2]->Touch();
+			properties.e[3]->Touch();
 		}
 
 		int i = 0;
@@ -513,8 +584,188 @@ int SetPositionsNode::Update()
 		}
 	}
 
-	// UpdatePreview();
-	// Wrap();
+	return NodeBase::Update();
+}
+
+//------------------------ SetScalesNode ------------------------
+
+/*! 
+ * Node to Set scales of Drawables from a number or vector, or set thereof.
+ */
+
+class SetScalesNode : public NodeBase
+{
+  public:
+	SetScalesNode();
+	virtual ~SetScalesNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual Value *PreviewFrom() { return properties.e[2]->GetData(); }
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new SetScalesNode(); }
+};
+
+
+SetScalesNode::SetScalesNode()
+{
+	makestr(Name, _("Set scales"));
+	makestr(type, "Drawable/SetScales");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "objects", nullptr,1, _("Objects"), nullptr,0,false)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "scales", nullptr,1, _("Scales"), nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "override", new BooleanValue(false),1, _("Modify original"), _("Dangerous!! Modifies original objects. May affect upstream connections."),0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Out"), nullptr,0,false));
+}
+
+SetScalesNode::~SetScalesNode()
+{
+}
+
+NodeBase *SetScalesNode::Duplicate()
+{
+	SetScalesNode *node = new SetScalesNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int SetScalesNode::GetStatus()
+{
+	DrawableObject *o = dynamic_cast<DrawableObject*>(properties.e[0]->GetData()); 
+	if (!o) {
+		SetValue *ss = dynamic_cast<SetValue*>(properties.e[0]->GetData());
+		if (!ss) return -1;
+	}
+
+	FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(properties.e[1]->GetData()); 
+	if (!fv) {
+		PointSetValue *set = dynamic_cast<PointSetValue*>(properties.e[1]->GetData());
+		if (!set) {
+			SetValue *ss = dynamic_cast<SetValue*>(properties.e[1]->GetData());
+			if (!ss) return -1;
+		}
+	}
+
+	if (!isNumberType(properties.e[2]->GetData(), nullptr)) return -1;
+
+	return NodeBase::GetStatus();
+}
+
+int SetScalesNode::Update()
+{
+	Error(nullptr);
+
+	// determine input object(s)
+	DrawableObject *o = dynamic_cast<DrawableObject*>(properties.e[0]->GetData()); 
+	SetValue *oset = nullptr;
+	if (!o) {
+		oset = dynamic_cast<SetValue*>(properties.e[0]->GetData());
+		if (!oset) {
+			Error(_("Objects must be Drawable or set of Drawables"));
+			return -1;
+		}
+	}
+
+	// determine position(s)
+	FlatvectorValue *pos = dynamic_cast<FlatvectorValue*>(properties.e[1]->GetData()); 
+	PointSetValue *pset = nullptr;
+	SetValue *set = nullptr;
+	double scale = 1;
+	if (!pos) {
+		pset = dynamic_cast<PointSetValue*>(properties.e[1]->GetData());
+		if (!pset) {
+			set = dynamic_cast<SetValue*>(properties.e[1]->GetData());
+			if (!set) {
+				if (!isNumberType(properties.e[1]->GetData(), &scale)) {
+					Error(_("Positions must be a vector2, PointSet, or Set of Vector2"));
+					return -1;
+				}
+			}
+		}
+	}	
+
+	int isnum = 0;
+	bool override = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	// apply into output
+	if (o) { //single object, easy!
+		if (!override) o = dynamic_cast<DrawableObject*>(o->duplicate());
+		else o->inc_count();
+		properties.e[3]->SetData(o, 1);
+
+		if (pos) o->setScale(pos->v.x, pos->v.y);
+		else if (pset) { //pointset
+			if (pset->NumPoints() > 0) {
+				o->origin(pset->points.e[0]->p);
+			}
+		} else { //set
+			if (set->n() > 0) {
+				pos = dynamic_cast<FlatvectorValue*>(set->e(0));
+				if (pos) o->setScale(pos->v.x, pos->v.y);
+				else {
+					if (!isNumberType(set->e(0), &scale)) {
+						Error(_("Set must only contain numbers or Vector2"));
+						return -1;
+					}
+					o->setScale(scale, scale);
+				}
+			}
+		}
+
+	} else { //oset of input drawables
+		SetValue *out = dynamic_cast<SetValue *>(properties.e[3]->GetData());
+		if (!out) {
+			if (override) {
+				out = oset;
+				out->inc_count();
+			} else out = new SetValue();
+			properties.e[3]->SetData(out, 1);
+		} else {
+			if (override && out != oset) {
+				properties.e[3]->SetData(out, 0);
+			} else if (!override) out->values.flush();
+			properties.e[3]->Touch();
+		}
+
+		int i = 0;
+		flatvector p;
+		for (int c=0; c<oset->n(); c++) {
+			DrawableObject *oo = dynamic_cast<DrawableObject*>(oset->e(c));
+			if (!oo) continue;
+
+			AffineValue *aff = nullptr;
+			if (pos) p = pos->v;
+			else if (pset) {
+				if (i < pset->NumPoints()) {
+					p = pset->points.e[i]->p;
+					aff = dynamic_cast<AffineValue*>(pset->points.e[i]->info);
+					i++;
+				}
+			} else { //set
+				if (i < set->n()) {
+					pos = dynamic_cast<FlatvectorValue*>(set->e(i));
+					if (pos) p = pos->v;
+					i++; // *** this is poor.. should track to next flatvector or ensure set is all vectors above
+				}
+			}
+
+			if (!override) {
+				oo = dynamic_cast<DrawableObject*>(oo->duplicate());
+				oo->FindBBox();
+				out->Push(oo, 1);
+			} //else oo is already in out, since out == oset
+			oo->origin(p);
+			if (aff) {
+				oo->xaxis(aff->xaxis());
+				oo->yaxis(aff->yaxis());
+			}
+			// DBG cerr << "SetPositions: duped obj: "<<endl;
+			// DBG oo->dump_out(stderr, 2, 0, nullptr);
+		}
+	}
+
 	return NodeBase::Update();
 }
 
@@ -684,9 +935,10 @@ LCaptionDataNode::LCaptionDataNode()
 	makestr(type, "Drawable/CaptionData");
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "text", new StringValue(),1, _("Text")));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "escaped", new BooleanValue(false),1, _("Escaped text")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "escaped", new BooleanValue(false),1, _("Escaped text"), _("Unescape '\\n', '\\t', and unicode chars: '\\U003F'")));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "transform",  nullptr,1, _("Transform")));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "font", nullptr,1, _("Font")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "color", new ColorValue(0.,0.,0.,1.),1, _("Color")));
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output,true, "out", nullptr,1, _("out"), nullptr, 0, false)); 
 }
@@ -708,6 +960,9 @@ int LCaptionDataNode::GetStatus()
 
 	v = properties.e[3]->GetData();
 	if (v && v->type() != VALUE_Font && v->type() != VALUE_Set) return -1;
+
+	v = properties.e[4]->GetData();
+	if (v && v->type() != VALUE_Color && v->type() != VALUE_Set) return -1;
 	
 	return NodeBase::GetStatus();
 }
@@ -756,20 +1011,34 @@ int LCaptionDataNode::Update()
 		}
 	}
 
+	v = properties.e[4]->GetData();
+	ColorValue *color = dynamic_cast<ColorValue*>(v);
+	SetValue *colorset = nullptr;
+	if (!color && v) {
+		colorset = dynamic_cast<SetValue*>(v);
+		if (!colorset) {
+			Error(_("Color must be a color or set of colors"));
+			return -1;
+		}
+	}
+
 	int max = 1;
 	if (strsetin && strsetin->n() > max) max = strsetin->n();
 	if (afset && afset->n() > max)       max = afset->n();
 	if (fontset && fontset->n() > max)   max = fontset->n();
+	if (colorset && colorset->n() > max) max = colorset->n();
 
 	SetValue *outset = nullptr;
 	LCaptionData *out = nullptr;
-	if (strsetin || afset || fontset) {
+	if (strsetin || afset || fontset || colorset) {
+		//out needs to be a set
 		outset = dynamic_cast<SetValue*>(properties.e[properties.n-1]->GetData());
 		if (!outset) {
 			outset = new SetValue();
 			properties.e[properties.n-1]->SetData(outset, 1);
 		} else properties.e[properties.n-1]->Touch();
 	} else {
+		//out is just a single object
 		out = dynamic_cast<LCaptionData*>(properties.e[properties.n-1]->GetData());
 		if (!out) {
 			out = new LCaptionData();
@@ -799,6 +1068,14 @@ int LCaptionDataNode::Update()
 			}
 		}
 
+		if (colorset && c < colorset->n()) {
+			color = dynamic_cast<ColorValue*>(colorset->e(c));
+			if (!color) {
+				Error(_("Color must be a color or set of colors"));
+				return -1;
+			}
+		}
+
 		if (strsetin && c < strsetin->n()) {
 			strin = dynamic_cast<StringValue*>(strsetin->e(c));
 			if (!strin) {
@@ -823,9 +1100,11 @@ int LCaptionDataNode::Update()
 		}
 
 		out->Multiply(af);
+		out->xcentering = out->ycentering = 50;
 		if (fv && fv->font) out->Font(fv->font);
 		if (escaped_text) out->SetTextEscaped(strin->str);
 		else out->SetText(strin->str);
+		if (color) out->ColorRGB(color->color.Red(), color->color.Green(), color->color.Blue(), color->color.Alpha());
 	}
 	if (outset) {
 		while (outset->n() > max) outset->Remove(max);
@@ -1636,7 +1915,7 @@ int ExtrudeNode::GetStatus()
 	v = properties.e[1]->GetData();
 	if (v->type() != VALUE_Flatvector && !v->istype("PathsData")) return -1;
 
-	return 0;
+	return NodeBase::GetStatus();
 }
 
 int ExtrudeNode::Update()
@@ -2309,9 +2588,9 @@ PointSetNode::PointSetNode(PointSetNode::SetTypes ntype)
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "y", new DoubleValue(0),1,  _("Y"),     NULL));
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "w", new DoubleValue(1),1,  _("Width"), NULL));
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "h", new DoubleValue(1),1, _("Height"), NULL));
-
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "nx", new IntValue(2),1,  _("Num X"),    NULL));
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "ny", new IntValue(2),1,  _("Num Y"),    NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "centers", new BooleanValue(false),1, _("Centers"), NULL));
 		
 	} else if (settype == HexGrid) {
 		makestr(type, "Points/HexGrid");
@@ -2381,7 +2660,7 @@ NodeBase *PointSetNode::Duplicate()
 int PointSetNode::GetStatus()
 {
 	char types[7];
-	const char *sig = "nnnnnnvnn   vnnnn vnnn  ";
+	const char *sig = "nnnnnnnvnn    vnnnn  vnnn   ";
 	int sigoff = 0;
 
 		// Grid,    // x,y
@@ -2390,9 +2669,9 @@ int PointSetNode::GetStatus()
 		// RandomCircle, // 
 		
 #define OFFGRID     0
-#define OFFHEX      6
-#define OFFRSQUARE  12
-#define OFFRCIRCLE  18
+#define OFFHEX      7
+#define OFFRSQUARE  14
+#define OFFRCIRCLE  21
 
 	if      (settype == Grid)         sigoff = OFFGRID   ;
 	else if (settype == HexGrid)      sigoff = OFFHEX    ;
@@ -2442,12 +2721,21 @@ int PointSetNode::Update()
 		if (!isnum) { makestr(error_message, _("Bad width")); return -1; }
 		double h = getNumberValue(properties.e[3]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad height")); return -1; }
-
 		int nx = getNumberValue(properties.e[4]->GetData(), &isnum);
-		if (!isnum) { makestr(error_message, _("Bad num x")); return -1; }
+		if (!isnum || nx <= 0) { makestr(error_message, _("Bad num x")); return -1; }
 		int ny = getNumberValue(properties.e[5]->GetData(), &isnum);
-		if (!isnum) { makestr(error_message, _("Bad num y")); return -1; }
+		if (!isnum || ny <= 0) { makestr(error_message, _("Bad num y")); return -1; }
+		bool centers = getNumberValue(properties.e[6]->GetData(), &isnum);
+		if (!isnum) { makestr(error_message, _("Expected boolean for centers")); return -1; }
 
+		if (centers) {
+			double dw = w / nx;
+			x += dw/2;
+			double dh = h / ny;
+			y += dh/2;
+			w -= dw;
+			h -= dh;
+		}
 		set->CreateGrid(nx,ny,x,y,w,h, LAX_LRTB);
 
 	} else if (settype == HexGrid) {
@@ -2661,6 +2949,10 @@ PathGeneratorNode::PathGeneratorNode(PathGeneratorNode::PathTypes ntype)
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "d",      new StringValue(""),1, _("d"), _("Svg style d path string")));
 	}
 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "line",   new DoubleValue(.1),1,         _("Line width"), NULL));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "stroke", new ColorValue(1.,0.,0.,1.),1, _("Stroke"), NULL));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "fill",   new ColorValue(1.,0.,1.,0.),1, _("Fill"), NULL));
+
 	path = new LPathsData();
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", path,1, _("Out"), NULL,0, false));
 
@@ -2731,18 +3023,29 @@ int PathGeneratorNode::GetStatus()
 	else if (pathtype == FunctionRofT)   sigoff = OFFPOLARRofT;
 	else if (pathtype == FunctionPolarT) sigoff = OFFPOLART;
 
-	for (int c=0; c<properties.n-1; c++) {
-		Value *data = properties.e[c+1]->GetData();
+	Value *data = nullptr;
+	for (int c=0; c<properties.n-1-3; c++) {
+		data = properties.e[c+1]->GetData();
 		if (!data) { types[c] = ' '; continue; }
 		stype = data->whattype();
 		if (isNumberType(data, nullptr)) types[c] = 'n';
 		else if (!strcmp(stype, "StringValue")) types[c] = 's';
 		else types[c] = ' ';
 	}
-	for (int c=properties.n-2; c<5; c++) types[c] = ' ';
+	for (int c=properties.n-2-3; c<5; c++) types[c] = ' ';
 	types[5] = '\0';
 
 	if (strncmp(sig+sigoff, types, 5)) return -1;
+
+	double d;
+	if (!isNumberType(properties.e[properties.n-4]->GetData(), &d) || d < 0) {
+		Error(_("Line width must be >= 0"));
+		return -1;
+	}
+	data = properties.e[properties.n-3]->GetData();
+	if (data->type() != VALUE_Color) return -1;
+	data = properties.e[properties.n-2]->GetData();
+	if (data->type() != VALUE_Color) return -1;
 
 	return NodeBase::GetStatus();
 }
@@ -2750,7 +3053,7 @@ int PathGeneratorNode::GetStatus()
 //0 ok, -1 bad ins, 1 just needs updating
 int PathGeneratorNode::Update()
 {
-	makestr(error_message, NULL);
+	Error(nullptr);
 	if (GetStatus() == -1) return -1;
 
 	PointSetValue *set = nullptr;
@@ -2776,6 +3079,17 @@ int PathGeneratorNode::Update()
 		}
 	}
 
+	int isnum;
+	double linewidth = getNumberValue(properties.e[properties.n-4]->GetData(), &isnum);
+	if (!isnum) { makestr(error_message, _("Bad line width")); return -1; }
+	Value *v;
+	v = properties.e[properties.n-3]->GetData();
+	if (v->type() != VALUE_Color) return -1;
+	ColorValue *stroke = static_cast<ColorValue*>(v);
+	v = properties.e[properties.n-2]->GetData();
+	if (v->type() != VALUE_Color) return -1;
+	ColorValue *fill = static_cast<ColorValue*>(v);
+
 	if (pathtype == Square) {
 		int isnum;
 		double e = getNumberValue(properties.e[1]->GetData(), &isnum);
@@ -2789,7 +3103,6 @@ int PathGeneratorNode::Update()
 
 	} else if (pathtype == Rectangle) {
 		// path->clear();
-		int isnum;
 		double x = getNumberValue(properties.e[1]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad x")); return -1; }
 		double y = getNumberValue(properties.e[2]->GetData(), &isnum);
@@ -2809,7 +3122,6 @@ int PathGeneratorNode::Update()
 
 	} else if (pathtype == Circle) {
 		// path->clear();
-		int isnum = 0;
 		int n = getNumberValue(properties.e[1]->GetData(), &isnum);
 		if (!isnum || n <= 0) {makestr(error_message, _("Bad number of points")); return -1; }
 		double r = getNumberValue(properties.e[2]->GetData(), &isnum);
@@ -2821,7 +3133,6 @@ int PathGeneratorNode::Update()
 		// make an n sided polygon
 		// path->clear();
 		
-		int isnum = 0;
 		int n = getNumberValue(properties.e[1]->GetData(), &isnum);
 		if (!isnum || n <= 0) {makestr(error_message, _("Bad number of points")); return -1; }
 		double radius = getNumberValue(properties.e[2]->GetData(), &isnum);
@@ -3006,7 +3317,13 @@ int PathGeneratorNode::Update()
 		}
 	}
 
-	if (path) path->FindBBox();
+	if (path) {
+		path->FindBBox();
+		ScreenColor col(stroke->color.Red(), stroke->color.Green(), stroke->color.Blue(), stroke->color.Alpha());
+		path->line(linewidth, -1, -1, &col);
+		col.rgbf(fill->color.Red(), fill->color.Green(), fill->color.Blue(), fill->color.Alpha());
+		path->fill(&col);
+	}
 	properties.e[properties.n-1]->Touch();
 	UpdatePreview();
 	Wrap();
@@ -3204,13 +3521,8 @@ class DrawableInfoNode : public NodeBase
 	virtual int Update();
 	virtual int GetStatus();
 
-	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref);
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new DrawableInfoNode(); }
 };
-
-Laxkit::anObject *DrawableInfoNode::NewNode(int p, Laxkit::anObject *ref)
-{
-	return new DrawableInfoNode();
-}
 
 DrawableInfoNode::DrawableInfoNode()
 {
@@ -3238,6 +3550,14 @@ NodeBase *DrawableInfoNode::Duplicate()
 	DrawableInfoNode *node = new DrawableInfoNode();
 	node->DuplicateBase(this);
 	return node;
+}
+
+int DrawableInfoNode::GetStatus()
+{
+	DrawableObject *dr = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
+	if (!dr) return -1;
+
+	return NodeBase::GetStatus();
 }
 
 int DrawableInfoNode::Update()
@@ -3290,12 +3610,98 @@ int DrawableInfoNode::Update()
 	return NodeBase::Update();
 }
 
-int DrawableInfoNode::GetStatus()
+
+//------------------------ PageInfoNode ------------------------
+
+/*! 
+ * Node for getting info about the page a DrawableObject is on.
+ */
+
+class PageInfoNode : public NodeBase
+{
+  public:
+	PageInfoNode();
+	virtual ~PageInfoNode();
+
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new PageInfoNode(); }
+};
+
+PageInfoNode::PageInfoNode()
+{
+	makestr(Name, _("Page Info"));
+	makestr(type, "Drawable/PageInfo");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in",  NULL,1, _("In")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "pagelabel", new StringValue(),1, _("Page label"),nullptr, 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "pagetype",  new StringValue(),1, _("Page type"), nullptr, 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "bounds",    new BBoxValue(),1,   _("Bounds"),    nullptr, 0, false));
+	// AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "outline",   nullptr,1,           _("Outline"),   nullptr, 0, false));
+	// AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "margin",    nullptr,1,           _("Margin"),    nullptr, 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "style",     nullptr,1,           _("Style"),     nullptr, 0, false));
+}
+
+PageInfoNode::~PageInfoNode()
+{
+}
+
+int PageInfoNode::GetStatus()
 {
 	DrawableObject *dr = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
 	if (!dr) return -1;
 
 	return NodeBase::GetStatus();
+}
+
+int PageInfoNode::Update()
+{
+	Error(nullptr);
+
+	DrawableObject *dr = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
+	if (!dr) {
+		Error(_("In must be a drawable object"));
+		return -1;
+	}
+
+	StringValue    *plabel  = dynamic_cast<StringValue *>(properties.e[1]->GetData());
+	StringValue    *ptype   = dynamic_cast<StringValue *>(properties.e[2]->GetData());
+	BBoxValue      *bounds  = dynamic_cast<BBoxValue *>(properties.e[3]->GetData());
+	
+	for (int c=1; c<properties.n; c++) properties.e[c]->Touch();
+
+	//find page
+	LaxInterfaces::SomeData *pnt = dr;
+	while (pnt->GetParent()) pnt = pnt->GetParent();
+	Page *page = dynamic_cast<Page*>(pnt->ResourceOwner());
+	Document *doc = nullptr;
+	int i = (page ? laidout->project->LocatePage(page, &doc) : -1);
+	if (page) {
+		if (page->label) {
+			plabel->Set(page->label);
+		} else {
+			if (i == -1) {
+				plabel->Set("??");
+			} else {
+				char str[20];
+				sprintf(str, "%d", i+1);
+				plabel->Set(str);
+			}
+		}
+		ptype->Set(doc ? doc->imposition->PageTypeName(page->pagestyle->pagetype) : "");
+
+		bounds->setbounds(page->pagestyle->outline);
+		properties.e[4]->SetData(page->pagestyle, 0);
+
+	} else {
+		plabel->Set("none");
+		ptype->Set("");
+		Error(_("Missing page!"));
+	}
+
+	return NodeBase::Update();
 }
 
 
@@ -3310,10 +3716,12 @@ int SetupDataObjectNodes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/ImageData",         LImageDataNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/ImageDataInfo",     newLImageDataInfoNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/DrawableInfo",      DrawableInfoNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/PageInfo",          PageInfoNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/FindDrawable",      FindDrawableNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/DuplicateDrawable", DuplicateDrawableNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/DuplicateSingle",   DuplicateSingleNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/SetParent",         SetParentNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/KidsToSet",         KidsToSetNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/SetPositions",      SetPositionsNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/RotateDrawables",   RotateDrawablesNode::NewNode,  NULL, 0);
 

@@ -574,6 +574,9 @@ int NodeThread::UpdateThread(NodeBase *node, NodeConnection *gonext)
 
 NodeFrame::NodeFrame(NodeGroup *nowner, const char *nlabel, const char *ncomment)
 {
+	bg = nullptr;
+	fg = nullptr;
+
 	owner   = nowner;
 	label   = newstr(nlabel);
 	comment = newstr(ncomment);
@@ -581,6 +584,9 @@ NodeFrame::NodeFrame(NodeGroup *nowner, const char *nlabel, const char *ncomment
 
 NodeFrame::~NodeFrame()
 {
+	if (bg) bg->dec_count();
+	if (fg) fg->dec_count();
+
 	for (int c=nodes.n-1; c>=0; c--) {
 		RemoveNode(nodes.e[c]);
 	}
@@ -608,7 +614,7 @@ int NodeFrame::AddNode(NodeBase *node)
 		node->frame->RemoveNode(node);
 	}
 	node->AssignFrame(this);
-	return nodes.push(node);
+	return nodes.pushnodup(node);
 }
 
 /*! Return 0 for success, or 1 for not found.
@@ -648,6 +654,7 @@ LaxFiles::Attribute *NodeFrame::dump_out_atts(LaxFiles::Attribute *att, int what
 		if (!att) att = new Attribute();
 		att->push("label", "Some label");
 		att->push("comment", "Some comment");
+		att->push("bg", "rgbf(255,0,0)", "Optional background color");
 		att->push("node", "node1_Id", "Any number of nodes that are part of this frame");
 		att->push("node", "node2_Id");
 		return att;
@@ -657,11 +664,49 @@ LaxFiles::Attribute *NodeFrame::dump_out_atts(LaxFiles::Attribute *att, int what
 	if (label) att->push("label", label);
 	if (comment) att->push("comment", comment);
 
+	if (bg) {
+		char *str = bg->dump_out_simple_string();
+		att->push("bg", str);
+		delete[] str;
+	}
+
 	for (int c=0; c<nodes.n; c++) {
 		att->push("node", nodes.e[c]->Id());
 	}
 
 	return att;
+}
+
+void NodeFrame::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context)
+{
+	if (!att) return;
+
+	const char *name, *value;
+	for (int c=0; c<att->attributes.n; c++) {
+		name  = att->attributes.e[c]->name;
+		value = att->attributes.e[c]->value;
+
+		if (!strcmp(name,"label")) {
+			Label(value);
+
+		} else if (!strcmp(name,"comment")) {
+			Comment(value);
+
+		} else if (!strcmp(name,"bg")) {
+			if (bg) bg->dec_count();
+			bg = ColorManager::newColor(att->attributes.e[c]);
+
+		} else if (!strcmp(name,"node")) {
+			if (owner) {
+				NodeBase *node = owner->FindNode(value);
+				if (node) AddNode(node);
+			} else {
+				cerr << " *** Ahhh! missing frame owner during dump_in_atts!"<<endl;
+			}
+		}
+	}
+
+	Wrap();
 }
 
 //-------------------------------------- NodeBase --------------------------
@@ -686,6 +731,7 @@ NodeBase::NodeBase()
 	deletable = true; //often at least one node will not be deletable, like group output/inputs
 	modtime   = 0;
 	muted     = 0;
+	manual_update = false;
 	resource_proxy = nullptr;
 	special_type = NODES_None; //currently none or NODES_Reroute
 
@@ -834,11 +880,111 @@ clock_t NodeBase::MostRecentIn(int *index)
 	return time;
 }
 
+/*! Call this when you want to set the node to an error state.
+ * Default is this just updates error_message. If error_msg is null or blank, then clears it.
+ * Returns whatever error_message is afterwards.
+ */
+const char *NodeBase::Error(const char *error_msg)
+{
+	if (isblank(error_msg)) makestr(error_message, nullptr);
+	else makestr(error_message, error_msg);
+	return error_message;
+}
+
+/*! Convenience function to just call Error(nullptr). */
+void NodeBase::ClearError()
+{
+	Error(nullptr);
+}
+
+/*! Return whether the node has valid values, or the outputs are older than inputs.
+ * Return 0 for no error and everything up to date.
+ * -1 means bad inputs and node in error state.
+ * 1 means needs updating.
+ *
+ * Default placeholder behavior is to return 1 if any output property has modtime less than
+ * any input modtime. Else return 0. Thus subclasses need only redefine to catch error states.
+ */
+int NodeBase::GetStatus()
+{ 
+	 //find newest mod time of inputs
+	std::clock_t t=0, outt = 0;
+	int outs = 0;
+	int ins = 0;
+	for (int c=0; c<properties.n; c++) {
+		if (!properties.e[c]->IsOutput()) {
+			ins++;
+			if (properties.e[c]->modtime > t) {
+				t = properties.e[c]->modtime;
+			}
+		} else {
+			outs++;
+			if (properties.e[c]->modtime > outt) {
+				outt = properties.e[c]->modtime;
+			}
+		}
+	}
+
+	if (outs == 0) return 0; //no outputs, so nothing to be done!
+	if (ins == 0) return 0; //no ins, ASSUME all outs are good to go
+	if (outt == 0) return 1; //everything at beginning of time, definitely needs update
+	if (outt < t) return 1; //inputs newer than outputs
+	return 0;
+}
+
+/*! Call whenever any of the inputs change, update outputs.
+ * Default placeholder is to update modtime to now, and return GetStatus().
+ * Subclasses should redefine to actually update the outputs based on the inputs
+ * or any other internal state, as well as the overall preview (if any).
+ *
+ * Returns GetStatus().
+ */
+int NodeBase::Update()
+{
+	modtime = times(NULL);
+
+	// int outs = 0; // *** hack to make a node of all outs
+	// for (int c=0; c<properties.n; c++) {
+	// 	if (properties.e[c]->IsOutput()) outs++;
+	// }
+	// if (outs == properties.n) {
+
+	// }
+ 
+	// PropagateUpdate();
+	return GetStatus();
+}
+
+/*! First update anything connected to inputs, then Update() ourself.
+ * Returns 0 if updating successful, else -1 for error somewhere.
+ */
+int NodeBase::UpdateRecursively()
+{
+	int err = 0;
+	for (int c=0; c<properties.n; c++) {
+		// update all connected previous nodes if necessary
+		NodeProperty *prop = properties.e[c];
+		if (!prop->IsInput() || !prop->IsConnected()) continue;
+		if (prop->connections.e[0]->from->UpdateRecursively() == -1) {
+			DBG cerr << "UpdateRecursively node fail at "<<Label()<<", prop "<<prop->Label()<<endl;
+			// return -1;
+			err = 1;
+		}
+	}
+
+	if (err) return 1;
+	int status = GetStatus();
+	if (status == 0 || status == -1) return status;
+	return Update();
+}
+
 /*! Call Update() on all connected output properties.
  * Just like Update(), but don't call GetStatus() and doesn't update this->modtime.
  */
 void NodeBase::PropagateUpdate()
 {
+	cout << "PropagateUpdate DEPRECATED" <<endl;
+
 	NodeProperty *prop;
 
 	for (int c=0; c<properties.n; c++) {
@@ -857,59 +1003,31 @@ void NodeBase::PropagateUpdate()
 	}
 }
 
-/*! Call this when you want to set the node to an error state.
- * Default is this just updates error_message. If error_msg is null or blank, then clears it.
- * Returns whatever error_message is afterwards.
+/*! Set modtime to 0, and do the same for any connected outs.
  */
-const char *NodeBase::Error(const char *error_msg)
+void NodeBase::MarkMustUpdate()
 {
-	if (isblank(error_msg)) makestr(error_message, nullptr);
-	else makestr(error_message, error_msg);
-	return error_message;
-}
-
-/*! Return whether the node has valid values, or the outputs are older than inputs.
- * Return 0 for no error and everything up to date.
- * -1 means bad inputs and node in error state.
- * 1 means needs updating.
- *
- * Default placeholder behavior is to return 1 if any output property has modtime less than
- * any input modtime. Else return 0. Thus subclasses need only redefine to catch error states.
- */
-int NodeBase::GetStatus()
-{ 
-	 //find newest mod time of inputs
-	std::clock_t t=0, outt = 0;
-	int outs = 0;
+	modtime = 0;
 	for (int c=0; c<properties.n; c++) {
-		if (!properties.e[c]->IsOutput()) {
-			if (properties.e[c]->modtime > t) {
-				t = properties.e[c]->modtime;
-				outs++;
+		NodeProperty *property = properties.e[c];
+
+		if (property->IsInput()) {
+			// *** causes stack overflow: if (property->topropproxy) property->topropproxy->owner->MarkMustUpdate();
+
+		} else if (property->IsOutput()) {
+			property->modtime = 0;
+			for (int c2=0; c2<property->connections.n; c2++) {
+				if (!property->connections.e[c2]->to) continue;
+				property->connections.e[c2]->toprop->Touch(); //is an input, make modtime now
+				property->connections.e[c2]->to->MarkMustUpdate();
 			}
-		} else if (properties.e[c]->modtime > outt) {
-			outt = properties.e[c]->modtime;
 		}
 	}
-
-	if (outs == 0) return 0; //no outputs, so nothing to be done!
-	if (outt == 0) return 1; //everything at beginning of time, definitely needs update
-	if (outt < t) return 1; //inputs newer than outputs
-	return 0;
 }
 
-/*! Call whenever any of the inputs change, update outputs.
- * Default placeolder is to update modtime to now, call PropagateUpdate(), and return GetStatus().
- * Subclasses should redefine to actually update the outputs based on the inputs
- * or any other internal state, as well as the overall preview (if any).
- *
- * Returns GetStatus().
- */
-int NodeBase::Update()
+void NodeBase::ManualUpdate(bool yes)
 {
-	modtime = times(NULL);
-	PropagateUpdate();
-	return GetStatus();
+	manual_update = yes;
 }
 
 int NodeBase::UpdatePreview()
@@ -1220,7 +1338,7 @@ NodeBase *NodeBase::Duplicate()
 	return newnode;
 }
 
-/*! Simple assigns the reference. Does not do ref upkeep in frame.
+/*! Simple assigns the reference. Does not do ref upkeep of frame.
  */
 int NodeBase::AssignFrame(NodeFrame *nframe)
 {
@@ -1865,6 +1983,18 @@ NodeBase *NodeGroup::DuplicateGroup(NodeGroup *newgroup)
 	return newgroup;
 }
 
+int NodeGroup::Undo(UndoData *data)
+{
+	cerr << " *** need to implement NodeGroup::Undo()!!"<<endl;
+	return 1;
+}
+
+int NodeGroup::Redo(UndoData *data)
+{
+	cerr << " *** need to implement NodeGroup::Redo()!!"<<endl;
+	return 1;
+}
+
 /*! Set up new initial nodes for input and output.
  * Will flush all properties of this.
  */
@@ -2361,7 +2491,7 @@ int NodeGroup::Disconnect(NodeConnection *connection, bool from_will_be_replaced
 }
 
 /*! 
- * Update all the nodes in the group, starting from leftmost.
+ * Update all the nodes in the group, starting from leftmost. ****THIS IS EXTREMELY INEFFICIENT
  * 
  * If successful,  returns the number of nodes updated.
  * If any nodes fail to update, return -1.
@@ -2375,11 +2505,43 @@ int NodeGroup::ForceUpdates()
 	}
 
 	for (int c=0; c<starts.n; c++) {
-		DBG cerr << "ForceUpdates, found initial: "<<starts.e[c]->Name<<endl;
-		if (starts.e[c]->Update() == -1) return -1;
+		DBG cerr << "ForceUpdates, found initial: "<<(starts.e[c]->Label()?starts.e[c]->Label():"?")<<endl;
+		starts.e[c]->MarkMustUpdate();
 	}
 
-	return starts.n;
+	return UpdateAllRecursively();
+}
+
+/*! Find all rightmost nodes and step leftward, updating as necessary.
+ */
+int NodeGroup::UpdateAllRecursively()
+{
+	PtrStack<NodeBase> ends;
+	for (int c=0; c<nodes.n; c++) {
+		if (nodes.e[c]->NumOutputs(true) == 0) ends.push(nodes.e[c], 0);
+	}
+
+	int err = 0;
+	for (int c=0; c<ends.n; c++) {
+		DBG cerr << "UpdateRecursively, with: "<<(ends.e[c]->Label()?ends.e[c]->Label():"?")<<endl;
+		if (ends.e[c]->UpdateRecursively() == -1) {
+			err = 1;
+			DBG cerr << "  warning, fail!"<<endl;
+			// return -1;
+		}
+	}
+
+	return err ? -1 : 0;
+}
+
+/*! Set same for all contained nodes.
+ */
+void NodeGroup::ManualUpdate(bool yes)
+{
+	manual_update = yes;
+	for (int c=0; c<nodes.n; c++) {
+		nodes.e[c]->ManualUpdate(yes);
+	}
 }
 
 /*! Move things around so there is no overlap.
@@ -2744,21 +2906,7 @@ void NodeGroup::dump_in_atts(Attribute *att,int flag,DumpContext *context)
 				NodeFrame *frame = new NodeFrame(this, value);
 				frames.push(frame);
 				frame->dec_count();
-
-				for (int c2=0; c2<framesatt->attributes.n; c2++) {
-					name= framesatt->attributes.e[c]->attributes.e[c2]->name;
-					value=framesatt->attributes.e[c]->attributes.e[c2]->value;
-
-        			if (!strcmp(name,"comment")) {
-						frame->Label(value);
-
-					} else if (!strcmp(name,"node")) {
-						NodeBase *node = FindNode(value);
-						if (node) frame->AddNode(node);
-					}
-				}
-
-				frame->Wrap();
+				frame->dump_in_atts(framesatt->attributes.e[c], 0, context);
 			}
 		}
 	}
@@ -2916,6 +3064,7 @@ NodeInterface::NodeInterface(anInterface *nowner, int nid, Displayer *ndp)
 	defaultpreviewsize = 50; //pixels
 	passthrough    = NULL;
 	default_colors = NULL;
+	selected_frame = nullptr;
 
 	search_term   = NULL;
 	last_search_index = -1;
@@ -3085,17 +3234,17 @@ int NodeInterface::UseThis(anObject *nobj, unsigned int mask)
 		return 0;
 	}
 
-//	LineStyle *ls=dynamic_cast<LineStyle *>(nobj);
-//	if (ls!=NULL) {
-//		if (mask&GCForeground) { 
-//			linecolor=ls->color;
-//		}
-////		if (mask&GCLineWidth) {
-////			linecolor.width=ls->width;
-////		}
-//		needtodraw=1;
-//		return 1;
-//	}
+	LineStyle *ls = dynamic_cast<LineStyle *>(nobj);
+	if (ls) {
+		DBG cerr << "NodeInterface got new color... selected_frame: "<<(selected_frame ? "not null" : "null")<<endl;
+		if (selected_frame) {
+			if (selected_frame->bg) selected_frame->bg->dec_count();
+			selected_frame->bg = ColorManager::newColor(LAX_COLOR_RGB, ls->color);
+			needtodraw = 1;
+		}
+
+		return 1;
+	}
 	return 0;
 }
 
@@ -3384,7 +3533,8 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 			}
 		}
 		
-		node->Update();
+		prop->Touch();
+		node->MarkMustUpdate();
 		needtodraw=1;
 
 		delete[] sstr;
@@ -3410,7 +3560,8 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 		ColorValue *color = dynamic_cast<ColorValue*>(prop->GetData()); 
 		color->color.Set(ce->colorsystem, cc[0],cc[1],cc[2],cc[3],cc[4]);
 
-		node->Update();
+		prop->Touch();
+		node->MarkMustUpdate();
 		needtodraw=1;
 		return 0;
 
@@ -3439,7 +3590,8 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 			}
 		}
 
-		node->Update();
+		prop->Touch();
+		node->MarkMustUpdate();
 		needtodraw=1;
 		return 0;
 
@@ -3581,7 +3733,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 		if (!node) return 0;
 
         const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
-		if (isblank(s->str)) return 0;
+		// if (isblank(s->str)) return 0;
 		node->Label(s->str);
 
 		needtodraw=1;
@@ -3862,14 +4014,20 @@ int NodeInterface::Refresh()
 	dp->NewTransform(nodes->m.m());
 	dp->font(font);
 
+	//--- draw frames
 	dp->LineWidth(1);
 	dp->NewFG(&nodes->colors->fg_frame);
 	dp->NewBG(&nodes->colors->bg_frame);
 	for (int c=0; c<nodes->frames.n; c++) {
-		dp->drawRoundedRect(nodes->frames.e[c]->x, nodes->frames.e[c]->y, nodes->frames.e[c]->width, nodes->frames.e[c]->height,
-							th/3, false, th/3, false, 2); 
-		if (nodes->frames.e[c]->Label())
-			dp->textout(th+nodes->frames.e[c]->x, th*.5 + nodes->frames.e[c]->y, nodes->frames.e[c]->Label(), -1, LAX_LEFT|LAX_TOP);
+		NodeFrame *frame = nodes->frames.e[c];
+		if (frame->bg) dp->NewBG(frame->bg->screen);
+		if (frame == selected_frame) dp->LineWidth(2);
+		dp->drawRoundedRect(frame->x, frame->y, frame->width, frame->height,
+							th/3, false, th/3, false, 2);
+		if (frame == selected_frame) dp->LineWidth(1);
+		if (frame->Label())
+			dp->textout(th+frame->x, th*.5 + frame->y, frame->Label(), -1, LAX_LEFT|LAX_TOP);
+		if (frame->bg) dp->NewBG(&nodes->colors->bg_frame);
 	}
 
 	 //---draw connections
@@ -3902,6 +4060,8 @@ int NodeInterface::Refresh()
 	flatpoint cliprect[4];
 	int status;
 	NodeProperty *prop;
+
+	int num_need_updating = 0;
 
 	for (int c=0; c<nodes->nodes.n; c++) {
 		node = nodes->nodes.e[c];
@@ -3936,8 +4096,11 @@ int NodeInterface::Refresh()
 		if (status < 0 || node->ErrorMessage()) {
 			borderwidth = 3;
 			border = &colors->error_border;
+			if (status == 1) num_need_updating++;
 		} else if (status > 0) {
 			border = &colors->update_border;
+			DBG cerr << "  needs to update: "<<node->Label()<<endl;
+			num_need_updating++;
 		}
 
 		if (node->ErrorMessage()) {
@@ -4126,6 +4289,12 @@ int NodeInterface::Refresh()
 
 	dp->PopAxes();
 
+	if (num_need_updating) {
+		DBG cerr << "Num need updating: "<<num_need_updating<<endl;
+		nodes->ForceUpdates();
+		needtodraw = 1;
+	}
+
 	return 0;
 }
 
@@ -4289,6 +4458,12 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 				unsigned long oldfg = dp->FG();
 				if (prop->IsEditable()) {
 					 //draw color box
+					if (color->color.Alpha() != 1.0) {
+						//traw transparency checkerboard
+						dp->NewFG(.7,.7,.7);
+						dp->NewBG(.3,.3,.3);
+						dp->drawCheckerboard(x,y+prop->height/2-th/2, 2*th, th, th/3, 0,0);
+					}
 					dp->NewFG(color->color.Red(),color->color.Green(),color->color.Blue(),color->color.Alpha());
 					dp->drawrectangle(x,y+prop->height/2-th/2, 2*th, th, 1);
 					dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
@@ -4616,6 +4791,26 @@ void NodeInterface::GetConnectionBez(NodeConnection *connection, flatpoint *pts)
 	pts[3] = p2;
 }
 
+/*! Return index of which frame mouse is over, or -1.
+ */
+int NodeInterface::scanFrames(int x, int y, unsigned int state)
+{
+	if (!nodes) return -1;
+
+	flatpoint p = nodes->m.transformPointInverse(flatpoint(x,y));
+
+	//check frame related
+	for (int c = nodes->frames.n-1; c >= 0; c--) {
+		if (nodes->frames.e[c]->pointIsIn(p.x, p.y)) {
+			return c;
+			// if (p.y < nodes->frames.e[c]->y + 1.5*th) {
+			// 	*overproperty = NODES_Frame_Label;
+			// }
+		}
+	}
+	return -1;
+}
+
 /*! Return the node under x,y, or -1 if no node there.
  * This will scan within a buffer around edges to scan for hovering over node
  * in/out, or edges for resizing.
@@ -4748,19 +4943,7 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, int 
 		}
 	}
 
-	 //check frame related
-	for (int c=0; c<nodes->frames.n; c++) {
-		if (nodes->frames.e[c]->pointIsIn(p.x, p.y)) {
-			*overproperty = NODES_Frame;
-			*overpropslot = c;
-
-			if (p.y < nodes->frames.e[c]->y + 1.5*th) {
-				*overproperty = NODES_Frame_Label;
-			}
-			break;
-		}
-	}
-
+	 
 	 //check over pipes
 	if ((state & (ShiftMask|ControlMask)) != 0) {
 		DoubleBBox box;
@@ -4806,6 +4989,19 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, int 
 		}
 	}
 
+	//check frame related
+	for (int c = nodes->frames.n-1; c >= 0; c--) {
+		if (nodes->frames.e[c]->pointIsIn(p.x, p.y)) {
+			*overproperty = NODES_Frame;
+			*overpropslot = c;
+
+			if (p.y < nodes->frames.e[c]->y + 1.5*th) {
+				*overproperty = NODES_Frame_Label;
+			}
+			return -1;
+		}
+	}
+
 	if (thread_controls.boxcontains(x,y)) {
 		*overpropslot = NODES_Thread_Controls;
 		if (playing<=0 && threads.n) {
@@ -4819,12 +5015,19 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, int 
 	return -1;
 }
 
+void NodeInterface::UpdateCurrentColor(const Laxkit::ScreenColor &col)
+{
+	SimpleColorEventData *e = new SimpleColorEventData( 65535, col.red, col.green, col.blue, col.alpha, 0);
+	app->SendMessage(e, curwindow->win_parent->object_id, "make curcolor", object_id);
+}
+
 int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit::LaxMouse *d) 
 {
 
 	int action = NODES_None;
 	int overpropslot=-1, overproperty=-1, overconnection=-1; 
 	int overnode = scan(x,y, &overpropslot, &overproperty, &overconnection, state);
+	selected_frame = nullptr;
 
 	if (overnode >= 0 && overproperty == NODES_Reroute) {
 		NodeBase *node = nodes->nodes.e[overnode];
@@ -4844,9 +5047,13 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 		action = NODES_Label;
 
 	} else if (count == 2 && overnode<0 && overproperty == NODES_Frame_Label) {
+		selected_frame = nodes->frames.e[overpropslot];
+		UpdateCurrentColor(selected_frame->bg ? selected_frame->bg->screen : nodes->colors->bg_frame);
 		action = NODES_Frame_Label;
 
 	} else if (overnode<0 && (overproperty == NODES_Frame || overproperty == NODES_Frame_Label)) {
+		selected_frame = nodes->frames.e[overpropslot];
+		UpdateCurrentColor(selected_frame->bg ? selected_frame->bg->screen : nodes->colors->bg_frame);
 		action = NODES_Move_Frame;
 
 	} else if (overproperty == NODES_Connection) {
@@ -5105,7 +5312,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		} else if (v->type()==VALUE_Boolean) {
 			BooleanValue *vv=dynamic_cast<BooleanValue*>(prop->data);
 			vv->i = !vv->i;
-			node->Update();
+			node->MarkMustUpdate();
 			needtodraw=1;
 
 		} else if (v->type()==VALUE_Color) {
@@ -5184,25 +5391,42 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		}
 		return 0;
 
+	} else if (action == NODES_Move_Nodes) {
+		//perhaps add or remove from frames
+		if (state & ShiftMask) {
+			//remove from existing frame
+			if (dragged) {
+				int c = -1;
+				for (c=0; c<selected.n; c++) {
+					if (selected.e[c]->frame) break;
+				}
+				if (c != selected.n) PerformAction(NODES_Toggle_Frame);
+			}
+
+		} else {
+			//drop into existing frame
+			int over_frame = scanFrames(x,y,state);
+			if (over_frame >= 0) {
+				NodeFrame *frame = nodes->GetFrame(over_frame);
+				for (int c=0; c<selected.n; c++) {
+					frame->AddNode(selected.e[c]); //will remove any previous frame connection node has
+				}
+				frame->Wrap();
+				needtodraw = 1;
+			}
+		}
+		return 0;
+
 	} else if (action == NODES_Property_Interface) {
 		NodeBase *node = nodes->nodes.e[lasthover];
 		NodeProperty *prop = node->properties.e[lasthoverprop];
 
 		if (prop->HasInterface()) {
-			//----------
 			dp->PushAxes();
 			dp->NewTransform(nodes->m.m());
 			anInterface *interface = prop->PropInterface(NULL, dp);
 			interface->LBUp(x,y, state,d);
 			dp->PopAxes();
-//			--------
-//			//dp->PushAxes();
-//			//dp->NewTransform(nodes->m.m());
-//			flatpoint p = nodes->m.transformPointInverse(flatpoint(x,y));
-//			anInterface *interface = prop->PropInterface(NULL, dp);
-//			interface->LBUp(p.x,p.y, state,d);
-//			node->Update();
-//			//dp->PopAxes();
 		}
 
 		hover_action = NODES_None;
@@ -5310,7 +5534,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 				nodes->Connect(tempconnection, 0);
 
-				tempconnection->to->Update();
+				tempconnection->to->MarkMustUpdate();
 				remove=1;
 
 			} else {
@@ -5364,8 +5588,12 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		if (overnode>=0 && overproperty>=0) {
 			NodeProperty *toprop = nodes->nodes.e[overnode]->properties.e[overproperty];
 
-			if ((toprop->IsInput() && action==NODES_Drag_Output)
-				|| (toprop->IsExecIn() && action==NODES_Drag_Exec_Out)) {
+			if ((action == NODES_Drag_Output && toprop->owner == tempconnection->from)
+				|| (action == NODES_Drag_Input && toprop->owner == tempconnection->to)) {
+				remove = 1; //prevent connecting to ourself
+
+			} else if ((toprop->IsInput() && action==NODES_Drag_Output)
+					|| (toprop->IsExecIn() && action==NODES_Drag_Exec_Out)) {
 
 				if (action!=NODES_Drag_Exec_Out && toprop->connections.n) {
 					 //clobber any other connection going into the input. Only one input allowed.
@@ -5379,7 +5607,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 				tempconnection->toprop = toprop;
 
 				nodes->Connect(tempconnection, 0);
-				tempconnection->to->Update();
+				tempconnection->to->MarkMustUpdate();
 				remove=1;
 
 			} else {
@@ -5428,7 +5656,6 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 		viewport->SetupInputBox(object_id, NULL, node->Label(), "setNodeLabel", bounds);
 
-	//} else if (action == NODES_Frame_Label || (dragged==0 && action == NODES_Move_Frame)) {
 	} else if (action == NODES_Frame_Label) {
 		 //popup to change label name
 		NodeFrame *frame = nodes->frames.e[lasthoverslot];
@@ -5542,15 +5769,18 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 		}
 
 		if (newhover!=lasthover || newhoverslot!=lasthoverslot || newhoverprop!=lasthoverprop || newconnection!=lastconnection) {
-			needtodraw=1;
+			needtodraw = 1;
 			lasthoverslot = newhoverslot;
 			lasthoverprop = newhoverprop;
 			lastconnection = newconnection;
 			lasthover = newhover;
 
 			//post hover message
-			if (lasthover<0) PostMessage("");
-			else {
+			if (lasthover<0) {
+				if (lasthoverprop == NODES_Frame || lasthoverprop == NODES_Move_Frame || lasthoverprop == NODES_Frame_Label) {
+					PostMessage2("Frame %s", nodes->frames.e[lasthoverslot]->Label());
+				} else PostMessage("");
+			} else {
 				if (lasthoverprop >= 0 && nodes->nodes.e[lasthover]->properties.e[lasthoverprop]->tooltip) {
 					PostMessage(nodes->nodes.e[lasthover]->properties.e[lasthoverprop]->tooltip);
 				} else if ((state&LAX_STATE_MASK) == ShiftMask && lasthover>=0 && lasthoverprop>=0 && lasthoverslot>=0) {
@@ -5630,22 +5860,30 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 			double drag = x-lx;
 			int changed = 0;
 			if (dynamic_cast<IntValue*>(v)) {
+				IntValue *iv = dynamic_cast<IntValue*>(v);
 				double dragscale = 1;
 				drag /= dragscale;
-				dynamic_cast<IntValue*>(v)->i += drag;
-				changed = 1;
+				int i = iv->i + drag;
+				if (i != iv->i) {
+					iv->i = i;
+					changed = 1;
+				}
 
 			} else if (dynamic_cast<DoubleValue*>(v)) {
+				DoubleValue *dv = dynamic_cast<DoubleValue*>(v);
 				double dragscale = 1;
 				drag /= dragscale;
-				double d = dynamic_cast<DoubleValue*>(v)->d + drag * ((state & ShiftMask) ? .1 : 1) * ((state & ControlMask) ? .1 : 1);
+				double d = dv->d + drag * ((state & ShiftMask) ? .1 : 1) * ((state & ControlMask) ? .1 : 1);
 				if (fabs(d) < 1e-10) d=0;
-				dynamic_cast<DoubleValue*>(v)->d = d;
-				changed = 1;
+				if (d != dv->d) {
+					dv->d = d;
+					changed = 1;
+				}
 			}
 
 			if (changed) {
-				node->Update();
+				prop->Touch();
+				node->MarkMustUpdate();
 				needtodraw=1;
 			}
 		}
@@ -5674,7 +5912,7 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 			for (int c=0; c<selected.n; c++) {
 				selected.e[c]->x += d.x;
 				selected.e[c]->y += d.y;
-				if (selected.e[c]->frame) selected.e[c]->frame->Wrap();
+				if ((state & ShiftMask) == 0 && selected.e[c]->frame) selected.e[c]->frame->Wrap();
 				else {
 					//if you move a node over an existing frame, then drop it into the frame
 				}
@@ -5705,21 +5943,11 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 		NodeProperty *prop = node->properties.e[lasthoverprop];
 
 		if (prop->HasInterface()) {
-			//------------
 			dp->PushAxes();
 			dp->NewTransform(nodes->m.m());
 			anInterface *interface = prop->PropInterface(NULL, dp);
 			interface->MouseMove(x,y, state,mouse);
 			dp->PopAxes();
-//			//---------------
-//			//dp->PushAxes();
-//			//dp->NewTransform(nodes->m.m());
-//			flatpoint p = nodes->m.transformPointInverse(flatpoint(x,y));
-//			anInterface *interface = prop->PropInterface(NULL, dp);
-//			interface->MouseMove(p.x,p.y, state,mouse);
-//			//node->Update();
-//			//interface->MouseMove(x,y,state,mouse);
-//			//dp->PopAxes();
 		}
 
 		//hover_action = NODES_None;
@@ -5951,6 +6179,20 @@ int NodeInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigne
 
 int NodeInterface::KeyUp(unsigned int ch,unsigned int state, const Laxkit::LaxKeyboard *d)
 {
+	if (ch == LAX_Shift && buttondown.any()) {
+		int device = buttondown.whichdown(0,LEFTBUTTON);
+		int action = 0;
+		buttondown.getextrainfo(device,LEFTBUTTON, &action, nullptr);
+		if (action == NODES_Move_Nodes) {
+			for (int c=0; c<selected.n; c++) {
+				if (selected.e[c]->frame) {
+					selected.e[c]->frame->Wrap();
+					needtodraw = 1;
+				}
+			}
+		}
+	}
+
 	return 1; //key not dealt with
 }
 
@@ -5975,7 +6217,8 @@ Laxkit::ShortcutHandler *NodeInterface::GetShortcuts()
 	sc->AddShortcut(LAX_Del,0,0,  NODES_Delete_Nodes);
     sc->Add(NODES_Toggle_Collapse,'c',0,          0, "ToggleCollapse", _("ToggleCollapse" ),NULL,0);
     sc->Add(NODES_TogglePreview,  'p',0,          0, "TogglePreview",  _("TogglePreview" ), NULL,0);
-    sc->Add(NODES_Frame_Nodes,    'f',0,          0, "Frame",          _("Frame Selected" ),NULL,0);
+    sc->Add(NODES_Toggle_Frame,   'f',0,          0, "ToggleFrame",    _("Frame/Unframe Selected" ),NULL,0);
+    sc->AddAction(NODES_Frame_Nodes,                 "Frame",          _("Frame Selected" ),NULL,0,1);
     sc->Add(NODES_Unframe_Nodes,  'F',ShiftMask,  0, "Unframe",        _("Remove connected frame" ),NULL,0);
     sc->Add(NODES_Edit_Group,     LAX_Tab,0,      0, "EditGroup",      _("Toggle Edit Group"),NULL,0);
     sc->Add(NODES_Leave_Group,    LAX_Tab,ShiftMask,0,"LeaveGroup",    _("Leave Group")    ,NULL,0);
@@ -6122,6 +6365,38 @@ int NodeInterface::PerformAction(int action)
 		FindNext();
 		return 0;
 
+	} else if (action==NODES_Toggle_Frame) {
+		if (!selected.n) {
+			PostMessage(_("No nodes selected!"));
+			return 0;
+		}
+
+		bool has_frames = false;
+		for (int c=0; c<selected.n; c++) {
+			if (selected.e[c]->frame) has_frames = true;
+		}
+
+		if (has_frames) { //unframe
+			for (int c=0; c<selected.n; c++) {
+				if (selected.e[c]->frame) {
+					int i = nodes->frames.findindex(selected.e[c]->frame);
+					nodes->frames.e[i]->RemoveNode(selected.e[c]);
+					if (nodes->frames.e[i]->nodes.n == 0) {
+						//remove empty frames
+						nodes->frames.remove(i);
+					} else {
+						nodes->frames.e[i]->Wrap();
+					}
+				}
+			}
+			PostMessage(_("Unframed."));
+		} else { //no framed, frame all selected to one frame
+			PerformAction(NODES_Frame_Nodes);
+		}
+		needtodraw=1;
+		return 0;
+
+	
 	} else if (action==NODES_Frame_Nodes) {
 		if (!selected.n) {
 			PostMessage(_("No nodes selected!"));
@@ -6134,6 +6409,7 @@ int NodeInterface::PerformAction(int action)
 		frame->Wrap();
 		nodes->frames.push(frame);
 		frame->dec_count();
+		PostMessage(_("Framed."));
 		needtodraw=1;
 		return 0;
 
