@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 
-#this file is used to track unmatched reference counting
-#do laidout 2> temp, then run:
-#./objecttracker.pl, which will make a file temp-parsed
-#that contains a list of what objects were not deleted.
+# this file is used to track unmatched reference counting
+# do laidout 2> temp, then run:
+# ./objecttracker.pl, which will make a file temp-parsed
+# that contains a list of what objects were not deleted.
 
 use FileHandle;
 
@@ -29,6 +29,8 @@ system("sort $temp_searched -o $temp_searched");
 open (TEMPSEARCHED, "<$temp_searched")   or die "can't open $temp_searched";
 open (TEMPPARSED, ">$temp_parsed") or die "can't open $temp_parsed";
 
+@nums = ();
+
 $line=<TEMPSEARCHED>;
 while (defined($line)) {
 	#print "$line\n";
@@ -39,11 +41,13 @@ while (defined($line)) {
 		if (!defined($line=<TEMPSEARCHED>)) {
 			 #end of file reached
 			print " $num created but NOT destroyed\n";
+			#push(@nums, $num);
 			break;
 		}
 		if (!($line =~ /^.*(\d*).*destroyed/)) {
 			print " $num  created but NOT destroyed\n";
-			print TEMPPARSED "$num  created but NOT destroyed\n";
+			#print TEMPPARSED "$num  created but NOT destroyed\n";
+			push(@nums, $num);
 			next;
 			#if (!($line=<TEMPSEARCHED>)) { break; }
 		} else {
@@ -55,6 +59,13 @@ while (defined($line)) {
 	}
 }
 close(INFILE);
+
+#@nums = sort(@nums);
+@nums = sort { $a <=> $b } @nums;
+foreach (@nums) {
+	#print "NOT: $_\n";
+	print TEMPPARSED "$_  created but NOT destroyed\n";
+}
 
 
 print "\nNow look in temp-parsed for which objects were not deleted!\n";
