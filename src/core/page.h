@@ -147,6 +147,7 @@ class Page : public ObjectContainer
 	virtual LaxInterfaces::ImageData *Thumbnail();
 	virtual Laxkit::LaxImage *RenderPage(int width, int height, Laxkit::LaxImage *existing, bool transparent);
 	virtual int InstallPageStyle(PageStyle *pstyle, bool shift_within_margins);
+	virtual const char *Label();
 
 	virtual int PushLayer(const char *layername, int where=-1);
 

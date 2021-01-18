@@ -655,6 +655,14 @@ const char *Page::object_e_name(int i)
 	return layers.e(i)->Id();
 }
 
+const char *Page::Label()
+{
+	if (label) return label;
+	makestr(label, "FIXME");
+	cerr << "FIX NULL PAGE LABEL"<<endl;
+	return label;
+}
+
 //! Delete (or checkin) old, checkout new.
 /*! If pstyle==NULL then still remove the old and make the pagestyle NULL.
  * This should later be corrected by imposition->SyncPages().
