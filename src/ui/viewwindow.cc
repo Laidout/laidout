@@ -4723,8 +4723,14 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 				(float) linestyle.color.blue  / 65535,
 				(float) linestyle.color.alpha / 65535);
 		mesbar->SetText(blah);
-		if (curtool)
+		if (curtool) {
 			if (curtool->UseThis(&linestyle,GCForeground)) ((anXWindow *)viewport)->Needtodraw(1);
+		} else {
+			for (int c2=0; c2<viewport->interfaces.n; c2++) {
+				if (viewport->interfaces.e[c2]->interface_type == INTERFACE_Overlay) continue;
+				viewport->interfaces.e[c2]->UseThis(&linestyle,GCForeground);
+			}
+		}
 		
 		return 0;
 
