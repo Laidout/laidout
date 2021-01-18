@@ -14,6 +14,7 @@
 //
 
 #include "plaintext.h"
+#include "stylemanager.h"
 #include "../language.h"
 
 #include <lax/strmanip.h>
@@ -85,6 +86,7 @@ PlainText::PlainText()
 }
 
 PlainText::PlainText(const char *newtext)
+ : PlainText()
 {
 	SetText(newtext);
 }
@@ -243,6 +245,62 @@ void PlainText::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCon
 			Filename(value);
 		}
 	}
+}
+
+/*! Does NOT copy file or owner.
+ */
+Value *PlainText::duplicate()
+{
+	PlainText *obj = new PlainText(thetext);
+	obj->texttype = texttype;
+	obj->textsubtype = textsubtype;
+	makestr(obj->name, name);
+	return obj;
+}
+
+Value *NewPlainText()
+{
+	return new PlainText();
+}
+
+ObjectDef *PlainText::makeObjectDef()
+{
+	ObjectDef *def = stylemanager.FindDef("PlainText");
+    if (def) {
+        def->inc_count();
+        return def;
+    }
+
+	def = new ObjectDef(nullptr,
+			"PlainText",
+            _("Plain Text"),
+            _("Plain Text"),
+            NewPlainText,nullptr);
+	stylemanager.AddObjectDef(def, 0);
+
+	def->pushVariable("text",_("Text"),_("Text"), "string",0,   NULL,0);
+	def->pushVariable("file",_("File"),_("File that contains the text"), "File",0,   NULL,0);
+	def->pushFunction("IsLoaded", _("Is loaded"), _("If from file, whether text is loaded. Always true if not from file."), NULL, NULL);
+
+	return def;
+}
+
+int PlainText::Evaluate(const char *function,int len, ValueHash *context, ValueHash *pp, CalcSettings *settings,
+			             Value **value_ret, Laxkit::ErrorLog *log)
+{
+	if (isName(function, len, "IsLoaded")) {
+		*value_ret = new BooleanValue(isblank(filename) ? true : loaded);
+		return 0;
+	}
+	return -1;
+}
+
+Value *PlainText::dereference(const char *extstring, int len)
+{
+	if (isName(extstring,len, "text")) return new StringValue(thetext);
+	if (isName(extstring,len, "file")) return new FileValue(filename);
+	
+	return nullptr;
 }
 
 } //namespace Laidout

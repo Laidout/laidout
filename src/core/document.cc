@@ -934,17 +934,8 @@ int Document::Save(int includelimbos,int includewindows,ErrorLog &log, bool add_
 				pg->dump_out(f,2,0,NULL);
 			}
 		}
-
-		if (laidout->project->textobjects.n) {
-			PlainText *t;
-			for (int c=0; c<laidout->project->textobjects.n; c++) {
-				t=laidout->project->textobjects.e[c];
-				fprintf(f,"textobject %s\n",(t->name?t->name:""));
-				t->dump_out(f,2,0,NULL);
-			}
-		}
-
 	}
+
 	if (includewindows) laidout->DumpWindows(f,0,this);
 	
 	fclose(f);
@@ -1283,14 +1274,6 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCont
 			if (isblank(pg->Name) && !isblank(value)) makestr(pg->Name,value);
 			laidout->project->papergroups.push(pg);
 			pg->dec_count();
-
-		} else if (!strcmp(nme,"textobject")) {
-			PlainText *t=new PlainText;  //count=1
-			if (!isblank(value)) makestr(t->name,value);
-			t->dump_in_atts(att->attributes.e[c],flag,context);
-			laidout->project->textobjects.push(t); //incs count
-			if (t->texttype==TEXT_Temporary) t->texttype=TEXT_Note;
-			t->dec_count();   //remove extra first count
 
 		} else if (!strcmp(nme,"iohints")) {
 			if (iohints.attributes.n) iohints.clear();

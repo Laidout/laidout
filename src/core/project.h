@@ -18,7 +18,6 @@
 #include <lax/refptrstack.h>
 #include "document.h"
 #include "papersizes.h"
-#include "plaintext.h"
 
 
 namespace Laidout {
@@ -48,11 +47,8 @@ class Project : public LaxFiles::DumpUtility, public ObjectContainer
 	Laxkit::PtrStack<ProjDocument> docs;
 	Group limbos;
 	Laxkit::RefPtrStack<PaperGroup> papergroups;
-	Laxkit::RefPtrStack<PlainText> textobjects;
 
 	LaxFiles::Attribute iohints;
-
-	//StyleManager styles;
 
 	Project();
 	virtual ~Project();

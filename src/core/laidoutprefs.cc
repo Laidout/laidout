@@ -56,7 +56,6 @@ namespace Laidout {
 //    documents -> set of Document
 //    limbos    -> set of Group
 //    papergroups -> set of PaperGroup
-//    plain textobjects  -> set of PlainTextObjects
 //
 //todo:
 //  resources

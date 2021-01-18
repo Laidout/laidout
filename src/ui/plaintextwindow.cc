@@ -20,6 +20,7 @@
 #include <lax/popupmenu.h>
 #include <lax/filedialog.h>
 #include <lax/messagebox.h>
+#include <lax/interfaces/interfacemanager.h>
 
 #include "plaintextwindow.h"
 #include "../language.h"
@@ -33,6 +34,7 @@ using namespace std;
 
 using namespace Laxkit;
 using namespace LaxFiles;
+using namespace LaxInterfaces;
 
 
 namespace Laidout {
@@ -87,20 +89,14 @@ void PlainTextWindow::updateControls()
 //! Make obj->name be a new name not found in the project.
 void PlainTextWindow::uniqueName(PlainText *obj)
 {
-	char *newname=NULL;
-	int c;
-	makestr(obj->name,_("Text object"));
-	while (1) {
-		for (c=0; c<laidout->project->textobjects.n; c++) {
-			if (!strcmp(obj->name,laidout->project->textobjects.e[c]->name)) {
-				newname=increment_file(obj->name);
-				delete[] obj->name;
-				obj->name=newname;
-				break;
-			}
-		}
-		if (c==laidout->project->textobjects.n) break; //name not used
-	}
+	if (isblank(obj->name)) makestr(obj->name, obj->Id());
+	if (isblank(obj->name)) makestr(obj->name,_("Text object"));
+
+	InterfaceManager *imanager = InterfaceManager::GetDefault(true);
+	ResourceManager *rm = imanager->GetResourceManager();
+	ResourceType *objs = rm->FindType("PlainText");
+	if (!objs) return; //no PlainText resources yet, so name definitely unique
+	objs->MakeNameUnique(obj->name);
 }
 
 int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
@@ -112,11 +108,15 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 		if (!s || !s->str) return 1;
 
 		 //remove old text object, and install new one
-		PlainText *newobj=new PlainText();
+		PlainText *newobj = new PlainText();
+		newobj->Id("PlainText");
 		if (newobj->LoadFromFile(s->str)==0) {
-			newobj->texttype=TEXT_Note;
+			newobj->texttype = TEXT_Note;
 			UseThis(newobj);
-			laidout->project->textobjects.push(newobj);
+
+			InterfaceManager *imanager = InterfaceManager::GetDefault(true);
+			ResourceManager *rm = imanager->GetResourceManager();
+			rm->AddResource("PlainText", newobj, nullptr, newobj->Id(), newobj->name, nullptr, s->str, nullptr);
 		} // else failed to load, do not replace text object
 		newobj->dec_count(); //remove excess count
 
@@ -153,9 +153,9 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 			} else if (i==TEXT_Save_With_Project) {
 				 //Change the save location to save with project.
 				 //If it is file text, then the project will save the file location, not the contents
-				int pos=laidout->project->textobjects.findindex(textobj);
-				if (pos>=0) return 0;
-				if (textobj->texttype==TEXT_Temporary) textobj->texttype=TEXT_Note;
+				if (dynamic_cast<Resource*>(textobj->ResourceOwner())) return 0; //already a resource
+
+				if (textobj->texttype==TEXT_Temporary) textobj->texttype = TEXT_Note;
 				if (isblank(textobj->name)) {
 					uniqueName(textobj);
 					LineInput *inp=dynamic_cast<LineInput *>(findChildWindowByName("nameinput"));
@@ -164,7 +164,10 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 						inp->SetText(str);
 					}
 				}
-				laidout->project->textobjects.push(textobj);
+
+				InterfaceManager *imanager = InterfaceManager::GetDefault(true);
+				ResourceManager *rm = imanager->GetResourceManager();
+				rm->AddResource("PlainText", textobj, nullptr, textobj->Id(), textobj->name, nullptr, nullptr, nullptr);
 				updateControls();
 				return 0;
 
@@ -192,7 +195,9 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 				uniqueName(obj);
 
 				 //push object onto project
-				laidout->project->textobjects.push(obj);
+				InterfaceManager *imanager = InterfaceManager::GetDefault(true);
+				ResourceManager *rm = imanager->GetResourceManager();
+				rm->AddResource("PlainText", obj, nullptr, obj->Id(), obj->name, nullptr, nullptr, nullptr);
 				UseThis(obj);
 				obj->dec_count();
 				return 0;
@@ -201,17 +206,20 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 				 //if in project, remove from project
 				if (!textobj) return 0;
 				if (textobj->texttype==TEXT_Temporary) return 0;
-				int pos=laidout->project->textobjects.findindex(textobj);
-				if (pos>=0) {
-					laidout->project->textobjects.remove(pos);
-				}
-				if (laidout->project->textobjects.n) UseThis(laidout->project->textobjects.e[0]);
-				else UseThis(NULL);
+
+				InterfaceManager *imanager = InterfaceManager::GetDefault(true);
+				ResourceManager *rm = imanager->GetResourceManager();
+				rm->RemoveResource(textobj, "PlainText");
+
+				UseThis(nullptr);
 				return 0;
 
 			}
-		} else if (i>=0 && i<laidout->project->textobjects.n) {
-			UseThis(laidout->project->textobjects.e[i]);
+		} else {
+			InterfaceManager *imanager = InterfaceManager::GetDefault(true);
+			ResourceManager *rm = imanager->GetResourceManager();
+			Resource *res = rm->FindResourceFromRID(i, "PlainText");
+			UseThis(dynamic_cast<PlainText*>(res->object));
 		}
 		return 0;
 
@@ -219,21 +227,21 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 		MenuInfo *menu;
 		menu=new MenuInfo("Text Objects");
 
-		 //---add textobject list, numbers start at 0
+		 //---add textobject list, info2 in return event is Resource object_id
+		InterfaceManager *imanager = InterfaceManager::GetDefault(true);
+		ResourceManager *rm = imanager->GetResourceManager();
 		menu->AddSep(_("Project texts"));
-		int c,pos=-1,
-			currentobj=-1,
-			isprojects=0;
-		if (laidout->project->textobjects.n) {
-			for (c=0; c<laidout->project->textobjects.n; c++) {
-				pos=menu->AddItem(laidout->project->textobjects.e[c]->name,c,LAX_ISTOGGLE|LAX_OFF)-1;
-				if (textobj==laidout->project->textobjects.e[c]) {
-					currentobj=pos;
-					isprojects=1;
-					menu->menuitems.e[pos]->state|=LAX_CHECKED;
-				}
-			}
-		} 
+		rm->ResourceMenu("PlainText", false, menu);
+
+		int currentobj=-1;
+		int isprojects=0;
+		if (textobj && rm->FindResource(textobj, "PlainText")) isprojects = 1;
+		
+		// //try to center on current object
+		// MenuItem *mitem = nullptr;
+		// if (textobj) mitem = menu->findid(textobj->object_id);
+		// **** if nested, straight index doesn't mean much
+
 
 		 //------- Content save location
 		menu->AddSep(_("Content save location"));
@@ -488,12 +496,11 @@ void PlainTextWindow::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::D
         value=att->attributes.e[c]->value;
 
         if (!strcmp(nme,"textobject") && value) {
-			for (c=0; c<laidout->project->textobjects.n; c++) {
-				if (!strcmp(value, laidout->project->textobjects.e[c]->name)) {
-					UseThis(laidout->project->textobjects.e[c]);
-					break;
-				}
-			}
+        	InterfaceManager *imanager = InterfaceManager::GetDefault(true);
+			ResourceManager *rm = imanager->GetResourceManager();
+			PlainText *tobj = dynamic_cast<PlainText*>(rm->FindResource(value, "PlainText"));
+
+			if (tobj) UseThis(tobj);
 
         } else if (!strcmp(nme,"filename")) {
             if (isblank(value)) continue;

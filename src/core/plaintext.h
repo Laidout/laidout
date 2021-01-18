@@ -16,9 +16,9 @@
 #ifndef PLAINTEXT_H
 #define PLAINTEXT_H
 
+#include <lax/resources.h>
 
-#include <lax/anobject.h>
-#include <lax/dump.h>
+#include "../calculator/values.h"
 
 #include <cstdlib>
 
@@ -45,7 +45,7 @@ enum PlainTextType {
 	TEXT_Temporary
 };
 
-class PlainText : public Laxkit::anObject, public LaxFiles::DumpUtility
+class PlainText : virtual public Laxkit::Resourceable, virtual public Value, virtual public FunctionEvaluator
 {
  public:
 	Laxkit::anObject *owner;
@@ -70,6 +70,15 @@ class PlainText : public Laxkit::anObject, public LaxFiles::DumpUtility
 
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+
+	//from Value:
+	virtual ObjectDef *makeObjectDef();
+	virtual Value *duplicate();
+	virtual Value *dereference(const char *extstring, int len);
+
+	//from FunctionEvaluator:
+	virtual int Evaluate(const char *function,int len, ValueHash *context, ValueHash *pp, CalcSettings *settings,
+			             Value **value_ret, Laxkit::ErrorLog *log);
 };
 
 
