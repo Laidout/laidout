@@ -5256,7 +5256,7 @@ int LaidoutCalculator::power(Value *num1,Value *num2, Value **ret)
 	else if (num2->type()==VALUE_Real) expon=((DoubleValue*)num2)->d;
 	else return -1; //throw _("Cannot raise powers with those types");
 
-	if (base==0) { calcerr(_("Cannot compute 0^x")); return 1; }
+	if (base==0 && expon < 0) { calcerr(_("Cannot compute 0^x")); return 1; }
 
 	//***this could check for double close enough to int:
 	if (base<0 && num2->type()!=VALUE_Int) { calcerr(_("(-x)^(non int): Complex not allowed")); return 1; }
