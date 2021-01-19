@@ -264,11 +264,14 @@ void PaperSizeWindow::UpdatePaperName()
 		papernames->Select(i_ret);
 		makestr(papertype->name, pp->name);
 		if (o_ret < 0) {
-			papertype->landscape(!papertype->landscape());
-			double d = papertype->width;
-			papertype->width = papertype->height;
-			papertype->height = d;
-			orientation->Select(papertype->landscape() ? 1 : 0); //need to flip orientation
+			if (papertype->landscape() == pp->landscape()) {
+				papertype->landscape(!papertype->landscape());
+				double d = papertype->width;
+				papertype->width = papertype->height;
+				papertype->height = d;
+				orientation->Select(papertype->landscape() ? 1 : 0); //need to flip orientation
+				curorientation = papertype->landscape();
+			}
 		}
 	} else {
 		papernames->Select(custom_index);
