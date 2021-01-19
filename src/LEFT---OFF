@@ -13,6 +13,8 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
+bug: initial warning about could not load ?? not showing the ??
+
 bug: ImagePatch doing anything with it causes double free crash
 
 bug: home and end through selection bounds out of whack.. try with gradient tool for instance, controls bad until reselect
@@ -32,6 +34,8 @@ bug: gegl nodes, connect sinus to waves and also to displace, freeze!
 
 
 ------------ other bugs:
+
+bug: scrollbars drawing extra line in bottom half
 
 bug: popup menus: submenus spawning on wrong side on far right monitors
 
@@ -1016,20 +1020,12 @@ valgrind:
   conditional jump on uninit: strlens in newnstr re attributes.cc 2673, 2192, 2206/1007, 2651
 
 node editor node interface NodeInterface nodes: node: interface: 
-  bug: node duplicating, reminder default DOES NOT DUP TYPE!! it dups NodeBase.. double check this is fine, might need to imp duplicate()
-  bug: math2 error message not being cleared properly
-  bug maybe: dup math1 or math2 copies label.. if label actually blank should leave blank
-  DONE bug: empty reroute, click no drag on prop slot, crash!
-  DONE bug: expression node broken, won't update expression
-    DONE drag value, doesn't trigger update, but click and input does
-    DONE if you take away a variable that was connected, bad things happen
+  need delete frame.. delete objects not deleting frame if empty
   bug: sporadic, 1st input edit doesn't stick
   bug: reroute nodes doing weird colors
   grouped nodes: need to properly propagate MarkMustUpdate() past container node directly to output props
-    check NodeBase::GetSatus() when no outs, but topropproxy
+    check NodeBase::GetStatus() when no outs, but topropproxy
   memory hole page info? drawableinfo, objectinfo
-  execution order: Update() should ONLY update current.. UpdateRecursively() parse backwards Update()ing as necessary
-  bug: should be able to turn off update when loading in.. takes A LOT of time otherwise
   bug: top filter "out" is outputting data
   bug: JoinSets is not loading/saving properly.. variable list props need unique names
   bug: new object caption, attach to object function, crash!!
@@ -1037,7 +1033,6 @@ node editor node interface NodeInterface nodes: node: interface:
   undo redo
   bug: file prop popup not working
   bug: trying to open menu for enum with 0 entries should not pop up a window
-  bug: control click on connection for pan traversal not working all the way
   bug: ObjectInfo should reset id and type on disconnection or null object, but keep any props that are connected
   bug: adaptive nodes need to cache previous in and check that rather than just update on connection change, since could change upstream
   bug: load in recovery: should ensure only one connection to input, and only one to exec_out
@@ -1055,11 +1050,20 @@ node editor node interface NodeInterface nodes: node: interface:
   reroute needs double click on connection to add node
   edit filter nodes for the first time should center nodes in viewport
   would be nice to have a "Collapse unlinked properties" option
-  bug: load and connect needs to trigger an Update, but it doesn't always?
 
   need option to turn off main viewport render while tool up, since sometimes that render takes a long time
   some people are going to want grid snapping
 
+  DONE bug: control click on connection for pan traversal not working all the way
+  DONE bug: duplicate reroute doesn't make a new reroute
+  DONE bug: duplicate a caption, goes status 1
+  DONE bug: node duplicating, reminder default DOES NOT DUP TYPE!! it dups NodeBase.. double check this is fine, might need to imp duplicate()
+  DONE bug: math2 error message not being cleared properly
+  DONE bug: empty reroute, click no drag on prop slot, crash!
+  DONE bug: expression node broken, won't update expression
+    DONE drag value, doesn't trigger update, but click and input does
+    DONE if you take away a variable that was connected, bad things happen
+  DONE execution order: Update() should ONLY update current.. UpdateRecursively() parse backwards Update()ing as necessary
   DONE bug: TransformAffine using PointSet outputing "out" to file
   DONE bug: memory hole in objectfilter interface
   DONE ConvertNumberNode
@@ -1305,6 +1309,7 @@ node editor node interface NodeInterface nodes: node: interface:
   simplex noise node
   voronoise
   frames
+    label/comment font size should be adjustable.. draggable size triangle on right?
     changeable color:
       DONE receive bg color messages from viewport color box
       receive fg color messages from viewport color box (stalled pending impl of fg+bg colorbox in viewerwindow)
@@ -1318,7 +1323,6 @@ node editor node interface NodeInterface nodes: node: interface:
 
     bug: wrap sizes are different start up vs move frame
 	implement comment
-    label/comment font size should be adjustable.. draggable size triangle on right?
     have visible/togglable comment
 	convert frame to panel
   expression node:
@@ -2862,3 +2866,5 @@ DONE bug: Gradient load in not reading one of the two points
 DONE Implement passing on configure options to Laxkit configure
 DONE bug: can't duplicate gradient nodes.. causes seg fault
 DONE bug: gradients always loading as linear instead of radial
+DONE bug: edit singles imposition, change portrait to landscape, apply, ok, now back to portrait, doesn't change!
+

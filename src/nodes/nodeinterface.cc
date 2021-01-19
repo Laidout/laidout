@@ -1338,7 +1338,7 @@ NodeBase *NodeBase::Duplicate()
 	return newnode;
 }
 
-/*! Simple assigns the reference. Does not do ref upkeep of frame.
+/*! Simple assigns the reference. Does not do ref upkeep of frame, assumes frames are kept track of at higher level.
  */
 int NodeBase::AssignFrame(NodeFrame *nframe)
 {
@@ -2144,6 +2144,11 @@ int NodeGroup::DeleteNodes(Laxkit::RefPtrStack<NodeBase> &selected)
 			}
 		}
 
+		if (node->frame) {
+			NodeFrame *frame = node->frame;
+			frame->RemoveNode(node);
+			DBG if (frame->NumNodes() == 0) { cerr << "Frame empty, hope you like it!"<<endl; }
+		}
 		nodes.remove(nodes.findindex(node));
 		selected.remove(c);
 		numdel++;
@@ -3160,9 +3165,12 @@ int NodeInterface::Idle(int tid, double delta)
 
 		double t = .5+.5*(-cos(pan_current/pan_duration*M_PI));
 		flatpoint oldpos = bez_point(t, panpath[0], panpath[1], panpath[2], panpath[3]);
-		pan_current += pan_tick_ms/1000.;
+		// pan_current += pan_tick_ms/1000.;
+		pan_current += delta;
 		t = .5+.5*(-cos(pan_current/pan_duration*M_PI));
 		flatpoint newpos = bez_point(t, panpath[0], panpath[1], panpath[2], panpath[3]);
+
+		DBG cerr << "   ...pan: "<<(pan_current / pan_duration)<< " now at t: "<<t<<"  cur: "<<pan_current<<" dur: "<<pan_duration<<endl;
 
 		newpos = nodes->m.transformPoint(newpos);
 		oldpos = nodes->m.transformPoint(oldpos);
@@ -5706,8 +5714,8 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 			//start timer
 			pan_duration = pan_tick_ms/1000. + bez_length(panpath, 4, false, true, 10) / (nodes->colors->font->textheight()*100);
-			pan_current = t*pan_duration;
 			if (pan_duration > 1) pan_duration = sqrt(pan_duration);
+			pan_current = t*pan_duration;
 			pan_timer = app->addtimer(this, pan_tick_ms, pan_tick_ms, pan_duration*1000);
 			DBG cerr <<"Adding Idle timer for NodeInterface connection traverse"<<endl;
 			DBG cerr <<"pan_duration = "<<pan_duration<<endl;

@@ -257,6 +257,7 @@ class NodeFrame : public Laxkit::anObject,
 	virtual const char *Comment(const char *ncomment);
 	virtual int AddNode(NodeBase *node);
 	virtual int RemoveNode(NodeBase *node);
+	virtual int NumNodes() { return nodes.n; }
 	virtual void Wrap(double gap=-1);
 
     virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context);
