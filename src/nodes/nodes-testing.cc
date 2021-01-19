@@ -1443,6 +1443,7 @@ class BoilerPlateNode : public NodeBase
   public:
 	BoilerPlateNode();
 	virtual ~BoilerPlateNode();
+	virtual NodeBase *Duplicate();
 	virtual int GetStatus();
 	virtual int Update();
 
@@ -1461,6 +1462,13 @@ BoilerPlateNode::BoilerPlateNode()
 
 BoilerPlateNode::~BoilerPlateNode()
 {
+}
+
+NodeBase *BoilerPlateNode::Duplicate()
+{
+	BoilerPlateNode *newnode = new BoilerPlateNode();
+	newnode->DuplicateBase(this);
+	return newnode;
 }
 
 int BoilerPlateNode::GetStatus()

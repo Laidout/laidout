@@ -654,6 +654,7 @@ class InvertNode : public NodeBase
 	virtual ~InvertNode();
 	virtual int Update();
 	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
 
 	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new InvertNode(); }
 };
@@ -664,8 +665,16 @@ InvertNode::InvertNode()
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Out"), nullptr,0,false));
 }
 
+
 InvertNode::~InvertNode()
 {
+}
+
+NodeBase *InvertNode::Duplicate()
+{
+	InvertNode *newnode = new InvertNode();
+	newnode->DuplicateBase(this);
+	return newnode;
 }
 
 /*! -1 for bad values. 0 for ok, 1 for just needs update.
@@ -1626,6 +1635,7 @@ class ConvertNumberNode : public NodeBase
 	virtual ~ConvertNumberNode();
 	virtual int GetStatus();
 	virtual int Update();
+	virtual NodeBase *Duplicate();
 
 	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ConvertNumberNode(); }
 };
@@ -1674,6 +1684,13 @@ ConvertNumberNode::ConvertNumberNode()
 
 ConvertNumberNode::~ConvertNumberNode()
 {
+}
+
+NodeBase *ConvertNumberNode::Duplicate()
+{
+	ConvertNumberNode *newnode = new ConvertNumberNode();
+	newnode->DuplicateBase(this);
+	return newnode;
 }
 
 int ConvertNumberNode::GetStatus()
@@ -2713,6 +2730,7 @@ class ConcatNode : public NodeBase
 	virtual ~ConcatNode();
 	virtual int GetStatus();
 	virtual int Update();
+	virtual NodeBase *Duplicate();
 
 	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ConcatNode(NULL,NULL); }
 };
@@ -2730,6 +2748,15 @@ ConcatNode::ConcatNode(const char *s1, const char *s2)
 
 ConcatNode::~ConcatNode()
 {
+}
+
+NodeBase *ConcatNode::Duplicate()
+{
+	StringValue *s1 = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	StringValue *s2 = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	ConcatNode *newnode = new ConcatNode(s1 ? s1->str : nullptr, s2 ? s2->str : nullptr);
+	newnode->DuplicateBase(this);
+	return newnode;
 }
 
 int ConcatNode::GetStatus()
@@ -3056,6 +3083,7 @@ class NumToStringNode : public NodeBase
   public:
 	NumToStringNode();
 	virtual ~NumToStringNode();
+	virtual NodeBase *Duplicate();
 	virtual int GetStatus();
 	virtual int Update();
 
@@ -3081,6 +3109,13 @@ NumToStringNode::NumToStringNode()
 
 NumToStringNode::~NumToStringNode()
 {
+}
+
+NodeBase *NumToStringNode::Duplicate()
+{
+	NumToStringNode *newnode = new NumToStringNode();
+	newnode->DuplicateBase(this);
+	return newnode;
 }
 
 int NumToStringNode::GetStatus()
@@ -4625,6 +4660,7 @@ class NumberListNode : public NodeBase
   public:
 	NumberListNode();
 	virtual ~NumberListNode();
+	virtual NodeBase *Duplicate();
 	virtual int Update();
 	virtual int GetStatus();
 	
@@ -4646,6 +4682,13 @@ NumberListNode::NumberListNode()
 
 NumberListNode::~NumberListNode()
 {
+}
+
+NodeBase *NumberListNode::Duplicate()
+{
+	NumberListNode *newnode = new NumberListNode();
+	newnode->DuplicateBase(this);
+	return newnode;
 }
 
 int NumberListNode::GetStatus()
@@ -5514,7 +5557,7 @@ NodeBase *NewObjectNode::Duplicate()
 //0 ok, -1 bad ins, 1 just needs updating
 int NewObjectNode::GetStatus()
 {
-	if (!properties.e[1]->GetData()) return -1;
+	if (!properties.e[1]->GetData()) return 1;
 	return NodeBase::GetStatus();
 }
 
@@ -6316,6 +6359,7 @@ class ToFileNode : public NodeBase
   public:
 	ToFileNode();
 	virtual ~ToFileNode();
+	virtual NodeBase *Duplicate();
 
 	virtual void ButtonClick(NodeProperty *prop, NodeInterface *controller);
 	virtual int SaveNow();
@@ -6339,6 +6383,13 @@ ToFileNode::ToFileNode()
 
 ToFileNode::~ToFileNode()
 {
+}
+
+NodeBase *ToFileNode::Duplicate()
+{
+	ToFileNode *newnode = new ToFileNode();
+	newnode->DuplicateBase(this);
+	return newnode;
 }
 
 void ToFileNode::ButtonClick(NodeProperty *prop, NodeInterface *controller)
@@ -6897,7 +6948,7 @@ class RerouteNode : public NodeBase
   public:
 	RerouteNode();
 	virtual ~RerouteNode();
-	// virtual NodeBase *Duplicate();
+	virtual NodeBase *Duplicate();
 	virtual int Update();
 	virtual int GetStatus();
 	virtual int Wrap();
@@ -6918,12 +6969,12 @@ RerouteNode::RerouteNode()
 RerouteNode::~RerouteNode()
 {}
 
-// NodeBase *RerouteNode::Duplicate()
-// {
-// 	RerouteNode *node = new RerouteNode();
-// 	node->DuplicateBase(this);
-// 	return node;
-// }
+NodeBase *RerouteNode::Duplicate()
+{
+	RerouteNode *node = new RerouteNode();
+	node->DuplicateBase(this);
+	return node;
+}
 
 int RerouteNode::Update()
 {

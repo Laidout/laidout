@@ -251,6 +251,7 @@ class KidsToSetNode : public NodeBase
   public:
 	KidsToSetNode();
 	virtual ~KidsToSetNode();
+	virtual NodeBase *Duplicate();
 	virtual int GetStatus();
 	virtual int Update();
 
@@ -267,6 +268,13 @@ KidsToSetNode::KidsToSetNode()
 
 KidsToSetNode::~KidsToSetNode()
 {
+}
+
+NodeBase *KidsToSetNode::Duplicate()
+{
+	KidsToSetNode *node = new KidsToSetNode();
+	node->DuplicateBase(this);
+	return node;
 }
 
 int KidsToSetNode::GetStatus()
@@ -923,6 +931,7 @@ class LCaptionDataNode : public NodeBase
 
 	virtual int Update();
 	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
 	virtual Value *PreviewFrom() { return properties.e[2]->GetData(); }
 
 	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new LCaptionDataNode(); }
@@ -945,6 +954,13 @@ LCaptionDataNode::LCaptionDataNode()
 
 LCaptionDataNode::~LCaptionDataNode()
 {
+}
+
+NodeBase *LCaptionDataNode::Duplicate()
+{
+	LCaptionDataNode *node = new LCaptionDataNode();
+	node->DuplicateBase(this);
+	return node;
 }
 
 int LCaptionDataNode::GetStatus()
@@ -1886,6 +1902,7 @@ class ExtrudeNode : public NodeBase
   public:
 	ExtrudeNode();
 	virtual ~ExtrudeNode();
+	virtual NodeBase *Duplicate();
 	virtual int Update();
 	virtual int GetStatus();
 
@@ -1904,6 +1921,13 @@ ExtrudeNode::ExtrudeNode()
 
 ExtrudeNode::~ExtrudeNode()
 {
+}
+
+NodeBase *ExtrudeNode::Duplicate()
+{
+	ExtrudeNode *node = new ExtrudeNode();
+	node->DuplicateBase(this);
+	return node;
 }
 
 /*! 0 for ok, -1 for bad ins. */
@@ -3625,6 +3649,7 @@ class PageInfoNode : public NodeBase
 
 	virtual int GetStatus();
 	virtual int Update();
+	virtual NodeBase *Duplicate();
 
 	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new PageInfoNode(); }
 };
@@ -3646,6 +3671,13 @@ PageInfoNode::PageInfoNode()
 
 PageInfoNode::~PageInfoNode()
 {
+}
+
+NodeBase *PageInfoNode::Duplicate()
+{
+	PageInfoNode *node = new PageInfoNode();
+	node->DuplicateBase(this);
+	return node;
 }
 
 int PageInfoNode::GetStatus()
