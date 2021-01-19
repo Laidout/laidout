@@ -63,3 +63,5 @@ src/default.keys
 src/polyptych/src/*tif
 src/polyptych/src/*jpg
 docs/web
+coop/fonts/namerecord-TEMPLATE.txt
+coop/fonts/asciichart.png
