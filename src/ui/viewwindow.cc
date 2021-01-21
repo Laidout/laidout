@@ -4712,7 +4712,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		linestyle.color.blue= (unsigned short) (ce->channels[2]/max*65535);
 		if (ce->numchannels>3) linestyle.color.alpha=(unsigned short) (ce->channels[3]/max*65535);
 		else linestyle.color.alpha=65535;
-		linestyle.mask=GCForeground;
+		linestyle.mask = (ce->colorindex == 0 ? LINESTYLE_Color : LINESTYLE_Color2);
 
 		char blah[100];
 		colorbox->SetRGB(linestyle.color.red/65535.,linestyle.color.green/65535.,linestyle.color.blue/65535.,linestyle.color.alpha/65535.);
@@ -4723,12 +4723,15 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 				(float) linestyle.color.blue  / 65535,
 				(float) linestyle.color.alpha / 65535);
 		mesbar->SetText(blah);
+
 		if (curtool) {
-			if (curtool->UseThis(&linestyle,GCForeground)) ((anXWindow *)viewport)->Needtodraw(1);
+			if (curtool->UseThis(&linestyle, linestyle.mask)) ((anXWindow *)viewport)->Needtodraw(1);
+			curtool->Event(data, mes);
 		} else {
 			for (int c2=0; c2<viewport->interfaces.n; c2++) {
 				if (viewport->interfaces.e[c2]->interface_type == INTERFACE_Overlay) continue;
-				viewport->interfaces.e[c2]->UseThis(&linestyle,GCForeground);
+				viewport->interfaces.e[c2]->UseThis(&linestyle, linestyle.mask);
+				viewport->interfaces.e[c2]->Event(data, mes);
 			}
 		}
 		
