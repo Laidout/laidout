@@ -162,6 +162,13 @@ Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 				menu->AddItem(_("Remove filter"), GIA_Remove_Filter);
 				menu->AddItem(_("Apply filter"), GIA_Apply_Filter);
 				menu->AddItem(_("Update filter"), GIA_Refresh_Filter);
+
+				// menu->SubMenu(_("Resources"));
+				// menu->AddItem(_("Create resource from filter"), GIA_Resourceify_Filter);
+				// menu->AddItem(_("Create linked resource from filter"), GIA_Resourceify_Linked_Filter);
+				// menu->AddItem(_("Filter from resource"), GIA_Copy_Filter_Resource);
+				// menu->AddItem(_("Link filter from resource"), GIA_Link_Filter_Resource);
+				// menu->EndSubMenu();
 			}
 			if (obj->clip_path) {
 				if (menu->n()) menu->AddSep();
@@ -1086,7 +1093,7 @@ int GroupInterface::PerformAction(int action)
 
 	} else if (action == GIA_Apply_Filter) {
 		PostMessage("IMPLEMENT ME");
-		
+
 		DrawableObject *obj = dynamic_cast<DrawableObject*>(selection->e(0)->obj);
 		if (!obj || !obj->filter) return 0;
 		DrawableObject *fobj = dynamic_cast<DrawableObject*>(obj->filter)->FinalObject();

@@ -33,11 +33,15 @@ enum GroupInterfaceActions {
 	GIA_Align = LaxInterfaces::OIA_MAX,
 	GIA_Distribute,
 	GIA_Edit_Object_Meta,
+
 	GIA_Edit_Filter_Nodes,
 	GIA_Filter_Editor,
 	GIA_Remove_Filter,
 	GIA_Refresh_Filter,
 	GIA_Apply_Filter,
+	GIA_Resourceify_Filter,
+	GIA_Copy_Filter_Resource,
+	GIA_Link_Filter_Resource,
 
 	GIA_Clone,
 	GIA_CloneB,
