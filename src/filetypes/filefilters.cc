@@ -628,6 +628,46 @@ int import_document(ImportConfig *config, Laxkit::ErrorLog &log, const char *fil
 }
 
 
+//------------------------------------- ProjectExportSettings -----------------------------------
+
+/*! \class ProjectExportSettings
+ * 
+ * TODO!! 
+ * Settings to copy extra files and process basic templates in addition to
+ * the files exported normally by the filter.
+ */
+class ProjectExportSettings : public Value
+{
+  public:
+  	// Laxkit::Utf8String label;
+  	ExportFilter *filter;
+  	DocumentExportConfig *config;
+
+  	class CopyFiles
+  	{
+  	  public:
+  	  	enum CopyType { Copy, Template, TemplaceEachSpread };
+  	  	CopyType type;
+  	  	Laxkit::Utf8String pass_id;
+  	    Laxkit::Utf8String from_pattern;
+  	    Laxkit::Utf8String to;
+  	    ValueHash vars;
+  	};
+
+  	ProjectExportSettings();
+  	virtual ~ProjectExportSettings();
+
+  	//from value:
+  	virtual int type();
+	virtual Value *duplicate();
+  	virtual ObjectDef *makeObjectDef(); //calling code responsible for ref
+
+  	//from DumpUtility:
+	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+};
+
 //------------------------------------- ExportFilter -----------------------------------
 /*! \class ExportFilter
  * \brief Abstract base class of file export filters.
