@@ -105,6 +105,7 @@ NodeColors::NodeColors()
 
 	mo_diff(.05),
 	preview_dims(100),
+	frame_label_size(1),
 
 	default_property(1.,1.,1.,1.),
 	connection(.5,.5,.5,1.),
@@ -576,6 +577,7 @@ NodeFrame::NodeFrame(NodeGroup *nowner, const char *nlabel, const char *ncomment
 {
 	bg = nullptr;
 	fg = nullptr;
+	label_size = 1;
 
 	owner   = nowner;
 	label   = newstr(nlabel);
@@ -4959,9 +4961,11 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, int 
 		NodeConnection *connection;
 		double d;
 		flatpoint bp;
-		double threshhold = 200 / dp->Getmag();
+		// double threshhold = 200 / dp->Getmag();
+		double threshhold = 20 * nodes->m.GetMagnification(1,0);
 
-		DBG cerr<<"scan connections "<<p.x<<','<<p.y<<"  threshhold: "<<threshhold<<endl;
+		// DBG cerr<<"scan connections "<<p.x<<','<<p.y<<"  threshhold: "<<threshhold<<", mag: "<<dp->Getmag()<<endl;
+		DBG cerr<<"scan connections "<<p.x<<','<<p.y<<"  threshhold: "<<threshhold<<", mag: "<<nodes->m.GetMagnification(1,0)<<endl;
 
 		for (int c=nodes->nodes.n-1; c>=0; c--) {
 			node = nodes->nodes.e[c];
@@ -4981,11 +4985,12 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, int 
 					box.addtobounds(bezbuf[1]);
 					box.addtobounds(bezbuf[2]);
 					box.addtobounds(bezbuf[3]);
+					box.ExpandBounds(threshhold/2);
 					if (!box.boxcontains(p.x, p.y)) continue;
-					DBG cerr <<" ----almost "<<c<<','<<c2<<','<<c3<<endl;
 
 					 //in box, now do more expensive scan for proximity
 					bez_closest_point(p, bezbuf[0], bezbuf[1], bezbuf[2], bezbuf[3], 20, &d, NULL, &bp);
+					DBG cerr <<" ----almost "<<c<<','<<c2<<','<<c3<<"  threshhold: "<<threshhold<<", d: "<<d<<endl;
 					if (d < threshhold) {
 						*overconnection = c3;
 						*overproperty = NODES_Connection;
@@ -5065,7 +5070,8 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 		action = NODES_Move_Frame;
 
 	} else if (overproperty == NODES_Connection) {
-		action = NODES_Jump_Nearest;
+		if ((state&(ShiftMask|ControlMask)) == ShiftMask) action = NODES_Add_Reroute;
+		else action = NODES_Jump_Nearest;
 
 	} else if (overpropslot == NODES_Thread_Controls) {
 		action = NODES_Thread_Controls;
@@ -5683,6 +5689,29 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 	} else if (action == NODES_Frame_Comment) {
 		// ***
+
+	} else if (action == NODES_Add_Reroute) {
+		if (overnode>=0 && overpropslot>=0) {
+			NodeProperty *prop = nodes->nodes.e[overnode]->properties.e[overpropslot];
+			NodeConnection *connection = prop->connections.e[0];
+			flatpoint p = nodes->m.transformPointInverse(flatpoint(x,y));
+			NodeBase *reroute = new RerouteNode();
+			reroute->InstallColors(nodes->colors, false);
+			reroute->x = p.x;
+			reroute->y = p.y;
+			NodeBase *to = connection->to;
+			NodeProperty *toprop = connection->toprop;
+			toprop->RemoveConnection(connection);
+			connection->to = reroute;
+			connection->toprop = reroute->properties.e[0];
+			reroute->properties.e[0]->AddConnection(connection, 0);
+			connection = new NodeConnection(reroute, to, reroute->properties.e[1], toprop);
+			reroute->properties.e[1]->AddConnection(connection, 1);
+			toprop->AddConnection(connection,0);
+			reroute->Update();
+			nodes->AddNode(reroute);
+			needtodraw = 1;
+		}
 
 	} else if (action == NODES_Jump_Forward || action == NODES_Jump_Back || action == NODES_Jump_Nearest) {
 		if (overnode>=0 && overpropslot>=0) {

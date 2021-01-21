@@ -6940,21 +6940,7 @@ void ExportNode::ExportNow(DocumentExportConfig *config)
 //------------------------------ RerouteNode --------------------------------------------
 
 /*! \class RerouteNode
- * Map arrays to other arrays using a special Swizzle interface.
  */
-
-class RerouteNode : public NodeBase
-{
-  public:
-	RerouteNode();
-	virtual ~RerouteNode();
-	virtual NodeBase *Duplicate();
-	virtual int Update();
-	virtual int GetStatus();
-	virtual int Wrap();
-
-	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new RerouteNode(); }
-};
 
 RerouteNode::RerouteNode()
 {

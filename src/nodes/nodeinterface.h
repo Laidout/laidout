@@ -196,6 +196,7 @@ class NodeColors : public Laxkit::anObject
 	double slot_radius; //as fraction of text size
 	double mo_diff; //amount to change color channel when mouse over
 	double preview_dims; //default preview dimension in pixels
+	double frame_label_size; //multiple of default font size
 
 	Laxkit::ScreenColor default_property;
 	Laxkit::ScreenColor connection;
@@ -242,6 +243,7 @@ class NodeFrame : public Laxkit::anObject,
 {
   public:
 	Laxkit::Color *bg, *fg; //border, comment, label_bg;
+	double label_size; //factor above default frame label size
 
 	NodeGroup *owner;
 	char *label;
@@ -498,6 +500,7 @@ enum NodeHover {
 	NODES_Connection    ,
 	NODES_Frame_Label   ,
 	NODES_Frame_Comment ,
+	NODES_Frame_Label_Size,
 	NODES_VP_Top         ,
 	NODES_VP_Top_Left    ,
 	NODES_VP_Left        ,
@@ -533,6 +536,7 @@ enum NodeInterfaceActions {
 	NODES_Move_Nodes,
 	NODES_Move_Or_Select,
 	NODES_Cut_Connections,
+	NODES_Add_Reroute,
 	NODES_Property,
 	NODES_Drag_Property,
 	NODES_Resize_Left,

@@ -99,6 +99,20 @@ class ObjectNode : public NodeBase
 };
 
 
+//-------------------------- class RerouteNode ---------------------------------
+class RerouteNode : public NodeBase
+{
+  public:
+	RerouteNode();
+	virtual ~RerouteNode();
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual int Wrap();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new RerouteNode(); }
+};
+
 
 } //namespace Laidout
 

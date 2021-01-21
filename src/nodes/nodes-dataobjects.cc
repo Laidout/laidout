@@ -598,11 +598,13 @@ int SetPositionsNode::Update()
 //------------------------ SetScalesNode ------------------------
 
 /*! 
- * Node to Set scales of Drawables from a number or vector, or set thereof.
+ * Node to Set scales of Affines from a number or vector, or set thereof.
  */
 
 class SetScalesNode : public NodeBase
 {
+	bool GetScale(Value *v, flatvector &scalev);
+
   public:
 	SetScalesNode();
 	virtual ~SetScalesNode();
@@ -640,7 +642,7 @@ NodeBase *SetScalesNode::Duplicate()
 
 int SetScalesNode::GetStatus()
 {
-	DrawableObject *o = dynamic_cast<DrawableObject*>(properties.e[0]->GetData()); 
+	Affine *o = dynamic_cast<Affine*>(properties.e[0]->GetData()); 
 	if (!o) {
 		SetValue *ss = dynamic_cast<SetValue*>(properties.e[0]->GetData());
 		if (!ss) return -1;
@@ -660,117 +662,140 @@ int SetScalesNode::GetStatus()
 	return NodeBase::GetStatus();
 }
 
+bool SetScalesNode::GetScale(Value *v, flatvector &scalev)
+{
+	if (!v) return false;
+	if (isNumberType(v, &(scalev.x))) { scalev.y = scalev.x; return true; }
+	if (v->type() == VALUE_Flatvector) {
+		scalev = dynamic_cast<FlatvectorValue*>(v)->v;
+		return true;
+	}
+	if (v->type() == VALUE_Spacevector) {
+		SpacevectorValue *vvv = dynamic_cast<SpacevectorValue*>(v);
+		scalev.set(vvv->v.x, vvv->v.y);
+		return true;
+	}
+	return false;
+}
+
 int SetScalesNode::Update()
 {
 	Error(nullptr);
 
 	// determine input object(s)
-	DrawableObject *o = dynamic_cast<DrawableObject*>(properties.e[0]->GetData()); 
-	SetValue *oset = nullptr;
+	Value *ov = properties.e[0]->GetData();
+	Affine *o = dynamic_cast<Affine*>(ov); 
+	SetValue *iset = nullptr;
 	if (!o) {
-		oset = dynamic_cast<SetValue*>(properties.e[0]->GetData());
-		if (!oset) {
-			Error(_("Objects must be Drawable or set of Drawables"));
+		iset = dynamic_cast<SetValue*>(ov);
+		if (!iset) {
+			Error(_("Objects must be Affine derived or set of Affine derived"));
 			return -1;
 		}
 	}
 
-	// determine position(s)
-	FlatvectorValue *pos = dynamic_cast<FlatvectorValue*>(properties.e[1]->GetData()); 
+	// determine scales(s)
+	flatvector scalev(1,1);
+	
+	Value *v = properties.e[1]->GetData();
+	if (!v) return -1;
+
 	PointSetValue *pset = nullptr;
 	SetValue *set = nullptr;
-	double scale = 1;
-	if (!pos) {
-		pset = dynamic_cast<PointSetValue*>(properties.e[1]->GetData());
-		if (!pset) {
-			set = dynamic_cast<SetValue*>(properties.e[1]->GetData());
-			if (!set) {
-				if (!isNumberType(properties.e[1]->GetData(), &scale)) {
-					Error(_("Positions must be a vector2, PointSet, or Set of Vector2"));
-					return -1;
-				}
-			}
+	if (!GetScale(v, scalev)) {
+		pset = dynamic_cast<PointSetValue*>(v);
+		if (!pset) set = dynamic_cast<SetValue*>(v);
+		if (!set && !pset) {
+			Error(_("Scales must be a number, vector2, PointSet, or Set of Vector2 or number"));
+			return -1;
 		}
-	}	
-
+	}
+	
 	int isnum = 0;
 	bool override = getNumberValue(properties.e[2]->GetData(), &isnum);
 	if (!isnum) return -1;
 
 	// apply into output
 	if (o) { //single object, easy!
-		if (!override) o = dynamic_cast<DrawableObject*>(o->duplicate());
-		else o->inc_count();
-		properties.e[3]->SetData(o, 1);
+		if (!override) {
+			ov = ov->duplicate();
+			o = dynamic_cast<Affine*>(ov);
+		} else ov->inc_count();
+		properties.e[3]->SetData(ov, 1);
 
-		if (pos) o->setScale(pos->v.x, pos->v.y);
-		else if (pset) { //pointset
+		if (pset) { //pointset, grab first
 			if (pset->NumPoints() > 0) {
-				o->origin(pset->points.e[0]->p);
+				Affine *af = dynamic_cast<Affine*>(pset->points.e[0]->info);
+				if (!af) {
+					Error(_("Point set missing scale information"));
+					return -1;
+				}
+				scalev.set(af->xaxis().norm(), af->yaxis().norm());
 			}
-		} else { //set
+		} else if (set) { //set, grab first
 			if (set->n() > 0) {
-				pos = dynamic_cast<FlatvectorValue*>(set->e(0));
-				if (pos) o->setScale(pos->v.x, pos->v.y);
-				else {
-					if (!isNumberType(set->e(0), &scale)) {
-						Error(_("Set must only contain numbers or Vector2"));
-						return -1;
-					}
-					o->setScale(scale, scale);
+				if (!GetScale(set->e(0), scalev)) {
+					Error(_("Set must only contain numbers or Vector2"));
+					return -1;
 				}
 			}
 		}
+		o->setScale(scalev.x, scalev.y);
 
-	} else { //oset of input drawables
+	} else { //iset of inputs
 		SetValue *out = dynamic_cast<SetValue *>(properties.e[3]->GetData());
 		if (!out) {
 			if (override) {
-				out = oset;
+				out = iset;
 				out->inc_count();
 			} else out = new SetValue();
 			properties.e[3]->SetData(out, 1);
 		} else {
-			if (override && out != oset) {
-				properties.e[3]->SetData(out, 0);
-			} else if (!override) out->values.flush();
+			if (override) {
+				if (out != iset) {
+					properties.e[3]->SetData(iset, 0);
+					out = iset;
+				}
+			} else out->values.flush();
 			properties.e[3]->Touch();
 		}
 
-		int i = 0;
-		flatvector p;
-		for (int c=0; c<oset->n(); c++) {
-			DrawableObject *oo = dynamic_cast<DrawableObject*>(oset->e(c));
-			if (!oo) continue;
-
-			AffineValue *aff = nullptr;
-			if (pos) p = pos->v;
-			else if (pset) {
-				if (i < pset->NumPoints()) {
-					p = pset->points.e[i]->p;
-					aff = dynamic_cast<AffineValue*>(pset->points.e[i]->info);
-					i++;
-				}
-			} else { //set
-				if (i < set->n()) {
-					pos = dynamic_cast<FlatvectorValue*>(set->e(i));
-					if (pos) p = pos->v;
-					i++; // *** this is poor.. should track to next flatvector or ensure set is all vectors above
-				}
+		for (int c=0; c<iset->n(); c++) {
+			//object to transform
+			ov = iset->e(c);
+			o = dynamic_cast<Affine*>(ov);
+			if (!o) {
+				Error(_("Bad input type"));
+				return -1;
 			}
+
+			//get scale value
+			if (pset) { //pointset
+				if (c < pset->NumPoints()) {
+					Affine *af = dynamic_cast<Affine*>(pset->points.e[c]->info);
+					if (!af) {
+						Error(_("Point set missing scale information"));
+						return -1;
+					}
+					scalev.x = af->xaxis().norm();
+					scalev.y = af->yaxis().norm();
+				}
+			} else if (set) {
+				if (c < set->n()) {
+					if (!GetScale(set->e(c), scalev)) {
+						Error(_("Scales must be a number, vector2, PointSet, or Set of Vector2 or number"));
+						return -1;
+					}
+				}
+			} //else just go with current scalev
 
 			if (!override) {
-				oo = dynamic_cast<DrawableObject*>(oo->duplicate());
-				oo->FindBBox();
-				out->Push(oo, 1);
+				ov = ov->duplicate();
+				o = dynamic_cast<Affine*>(ov);
+				if (dynamic_cast<DrawableObject*>(ov)) dynamic_cast<DrawableObject*>(ov)->FindBBox();
+				out->Push(ov, 1);
 			} //else oo is already in out, since out == oset
-			oo->origin(p);
-			if (aff) {
-				oo->xaxis(aff->xaxis());
-				oo->yaxis(aff->yaxis());
-			}
-			// DBG cerr << "SetPositions: duped obj: "<<endl;
-			// DBG oo->dump_out(stderr, 2, 0, nullptr);
+			o->setScale(scalev.x, scalev.y);
 		}
 	}
 
@@ -3755,6 +3780,7 @@ int SetupDataObjectNodes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/SetParent",         SetParentNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/KidsToSet",         KidsToSetNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/SetPositions",      SetPositionsNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/SetScales",         SetScalesNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/RotateDrawables",   RotateDrawablesNode::NewNode,  NULL, 0);
 
 	factory->DefineNewObject(getUniqueNumber(), "Paths/PathsData",         newPathsDataNode,  NULL, 0);

@@ -17,9 +17,9 @@ TODO:
 
 //----------------------- GroupProxyNode ------------------------
 
+ *** not sure if this class is worth it
 /*! \class GroupProxyNode
- *
- * Do stuff.
+ * Specific node to coordinate passing parameters across group nesting boundaries
  */
 class GroupProxyNode : public NodeBase
 {
@@ -63,7 +63,7 @@ int GroupProxyNode::Update()
 
 /*! \class FitInNode
  *
- * Scale an object to fit within bounds of parent space.
+ * Scale and move an object to fit within bounds of parent space.
  */
 class FitInNode : public NodeBase
 {
