@@ -13,11 +13,9 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
-bug: initial warning about could not load ?? not showing the ??
-
 bug: ImagePatch doing anything with it causes double free crash
 
-bug: home and end through selection bounds out of whack.. try with gradient tool for instance, controls bad until reselect
+bug: home and end throw selection bounds out of whack.. try with gradient tool for instance, controls bad until reselect
 
 bug: Engraver fill, just moving mouse around is rerendering to buffer for preview
 
@@ -152,7 +150,7 @@ bug: window sizes seem to all be off a few pixels (?? on what measure? can't rep
 
 
 ----------------0.098 ROADMAP ITEMS: features and enhancements------------------------
-website: explain a bit more how to install dev versions, and place side by side with "stable"
+DONE website: Rework download to be easier
 website: need to redo screenshots section for mobile friendliness
 for CI, https://github.com/Laidout/laidout-icons.git needs to be updated
 update fileformat.txt
@@ -160,6 +158,7 @@ update fileformat.txt
   missing voronoi
   missing LineStyle
   missing FillStyle
+  DONE Path: output problem when name - null - non-null-comment
   DONE incomplete TextOnPath
   should be resources:
     PlainTextObject
@@ -198,15 +197,20 @@ save dialog should probably ignore clobber safety and allow enter key in edit to
 make lax templates be only .h includes, since gcc complains when .cc isn't included anyway...
   need to do compile speed tests -> marginally faster as separate, makes binary ~1mb larger for some reason?! dup funcs not optimized out?
 
-Reconfigure text edits. Need something that works in interface land, with harfbuzz
+Reconfigure text edits. Need something that works in interface land, with harfbuzz, that integrates with lax fontmanager
 
 laxkit:
+  should revamp the viewport color events to exclusively use Color objects and handle specials
   lists need move semantics
+  from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
+      focus off a dialog, then refocus, must manually set control focus. should store which subwindow
+       gets the focus when autofocused.
+  having managers as singletons in Laidout seems to make crash on exit.. for some reason manager destructor order matters
+
   DONE interfs example has memory hole: interfaces are not being destroyed
     DONE shortcutmanager should be singleton
 	DONE unitmanager should be singleton
 	DONE interfacemanager should be singleton
-  having managers as singletons in Laidout seems to make crash on exit.. for some reason manager destructor order matters
   DONE dlopen seems to be wiping singletons???? -> making them static in files seems to fix
 
 
@@ -496,9 +500,10 @@ file filters: filefilters:
 		[
  		  { pass_id: "template1",
 			file: "f1.tmpl",
-			export_as: "%f###.png"
+			export_as: "%f###.png",
+		    vars: [ { name:"{{FRAME_NUMBER}}", value:"laidout.globals.frame" } ],
+			eachspread: true
 		  },
-		  vars: [ { name:"{{FRAME_NUMBER}}", value:"laidout.globals.frame" } ]
 		]
 
   config resource load/save
@@ -1047,13 +1052,13 @@ node editor node interface NodeInterface nodes: node: interface:
   if a node is in error state, error color overrides the selected highlight.. it shouldn't
   need to figure out safe way to duplicate DrawableObjects that have filters and/or children
   implement objectfilterinterface/nodeinterface interchange with nested node groups
-  reroute needs double click on connection to add node
   edit filter nodes for the first time should center nodes in viewport
   would be nice to have a "Collapse unlinked properties" option
 
   need option to turn off main viewport render while tool up, since sometimes that render takes a long time
   some people are going to want grid snapping
 
+  DONE reroute needs click on connection to add (via shift-control)
   DONE bug: control click on connection for pan traversal not working all the way
   DONE bug: duplicate reroute doesn't make a new reroute
   DONE bug: duplicate a caption, goes status 1
@@ -1472,6 +1477,8 @@ fontdialog: FontDialog
   optional common font finishers? like centering, underline, color, highlight, fg/bg, etc
 
 ellipseinterface:
+  center cross hair should be slanted when shape is slanted
+  del on center cross hair should straighten?
   incorporate to mesh tool
   incorporate as special mode in path tool
   angle drag lapping should preserve large arc
@@ -1714,20 +1721,19 @@ colorbox color box:
   hsv slide, configurable clicks
 
 color slider popup: colorpicker color picker colorsliders
-  bug: text is not showing at correct size at first
+  optionally show numbers, click to edit
   color strips for full transparent should show checkers in all strips, not just the alpha strip
   have a "Done"/"Dismiss" button
   be able to choose which color sets are visible
   make color slider box be able to be a pane
-  would be nice to enter number values in any color format
   need palette selection tab
   click without dragging select color
   click and drag shifts, but DOES not set value under mouse
   out click on hex edit is picking color
-  optionally show clickable numbers
   clicking anywher in the new/old should swap
   show numbers to click on: 255, 65535, float
   toggle sets of sliders: rgb, cmyk, alpha, cielab, hsl
+  DONE bug: text is not showing at correct size at first
 
 
 Colors:
@@ -2093,10 +2099,6 @@ various object types:
 
 when closing a document window, decide whether this removes access to it, or just the view to it
 
-from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
-    focus off a dialog, then refocus, must manually set control focus. should store which subwindow
-     gets the focus when autofocused.
-
 pointin should check to visual boundary, not bounding box (? maybe just optionally)
 
 customizable object child relationships to parent, rather than simple transform
@@ -2130,7 +2132,6 @@ customizable object child relationships to parent, rather than simple transform
   need edge indicators for more convenient snapping
 
 calculator/scripting
-  bug: var x =0; x^3  -> "cannot compute 0^x"
   bug: string output not escaping things to display correctly
   make ArrayValue be MatrixValue, make SetValue be ArrayValue
   bug: run command with BuildIcons, error is not propagating up to cout
@@ -2159,6 +2160,7 @@ calculator/scripting
   how best to allow created object defs to be referenced as parameter, variable, or set types, it is a mess right now
   destructors
   show overloaded entries
+  DONE bug: var x =0; x^3  -> "cannot compute 0^x"
   DONE implement a PaperSizes object that recognizes all the names, or maybe a set somewhere with all names? -> Paper.SetFromName(str)
   DONE need special Parse(expression, &unknown_names) to assist expression node
   DONE bug: a={a:1,b:2}; a.a  -> crash! ..sometimes.. a.b crash other times
@@ -2867,4 +2869,5 @@ DONE Implement passing on configure options to Laxkit configure
 DONE bug: can't duplicate gradient nodes.. causes seg fault
 DONE bug: gradients always loading as linear instead of radial
 DONE bug: edit singles imposition, change portrait to landscape, apply, ok, now back to portrait, doesn't change!
+DONE bug: initial warning about could not load ?? not showing the ??
 
