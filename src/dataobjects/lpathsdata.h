@@ -57,9 +57,13 @@ class LPathInterface : public LaxInterfaces::PathInterface,
 					   public Value
 {
 	int cache_modified;
+	LaxInterfaces::SomeData *cache_data;
+	void UpdateFilter();
 
  protected:
  public:
+ 	bool always_update_filter;
+
 	LPathInterface(int nid,Laxkit::Displayer *ndp);
 	virtual const char *whattype() { return "PathInterface"; }
 	virtual LaxInterfaces::anInterface *duplicate(LaxInterfaces::anInterface *dup);
@@ -71,6 +75,7 @@ class LPathInterface : public LaxInterfaces::PathInterface,
 	virtual Value *dereference(const char *extstring, int len);
 	virtual void Modified(int level=0);
 	virtual int LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
+	virtual int Refresh();
 
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);

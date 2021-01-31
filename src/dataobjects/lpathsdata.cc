@@ -466,6 +466,8 @@ LPathInterface::LPathInterface(int nid,Laxkit::Displayer *ndp)
 {
 	pathi_style |= LaxInterfaces::PATHI_Render_With_Cache;
 	cache_modified = 0;
+	cache_data = nullptr;
+	always_update_filter = true;
 }
 
 
@@ -489,11 +491,19 @@ void LPathInterface::Modified(int level)
 {
 	PathInterface::Modified(level);
 	cache_modified = 1;
+	cache_data = data;
 }
 
-int LPathInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
+int LPathInterface::Refresh()
 {
-	int ret = PathInterface::LBUp(x,y,state,d);
+	if (always_update_filter && cache_modified && cache_data == data) {
+		UpdateFilter();
+	}
+	return PathInterface::Refresh();
+}
+
+void LPathInterface::UpdateFilter()
+{
 	if (cache_modified) {
 		if (data && dynamic_cast<DrawableObject*>(data)->filter) {
 			ObjectFilter *f = dynamic_cast<ObjectFilter*>(dynamic_cast<DrawableObject*>(data)->filter);
@@ -502,6 +512,12 @@ int LPathInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 		}
 		cache_modified = 0;
 	}
+}
+
+int LPathInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
+{
+	int ret = PathInterface::LBUp(x,y,state,d);
+	UpdateFilter();
 	return ret;
 }
 
