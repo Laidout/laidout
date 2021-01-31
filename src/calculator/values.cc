@@ -2512,7 +2512,7 @@ LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,LaxF
 		EnumValue *ev = dynamic_cast<EnumValue*>(this);
 		const char *nm = NULL;
 		def->getEnumInfo(ev->value, &nm);
-		string s = (string)"" + def->name + '.' + nm;
+		string s = (string)"" + (def->name ? def->name : "") + '.' + (nm ? nm : "");
 		makestr(att->value, s.c_str());
 		// att->push(whattype(), s.c_str());
 
