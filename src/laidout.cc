@@ -831,6 +831,10 @@ int LaidoutApp::createlaidoutrc()
 					  "#pagedropshadow 5    #how much to offset drop shadows around papers and pages \n"
 					  "\n"
 
+					  "# If uncommented, when saving, first copy file of same name to that string, where %%f is the file's basename.\n"
+					  "#clobber_protection \"%%f~\"\n"
+					  "\n"
+
 					   //autosave
 					  " #Autosave settings\n"
 					  "autosave false #Whether to autosave. true or false.\n"
