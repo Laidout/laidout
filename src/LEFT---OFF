@@ -13,6 +13,8 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
+bug: press enter on filedialog, saves straight away, THEN asks about overwrite??
+
 bug: ImagePatch doing anything with it causes double free crash
 
 bug: home and end throw selection bounds out of whack.. try with gradient tool for instance, controls bad until reselect
@@ -151,7 +153,12 @@ bug: window sizes seem to all be off a few pixels (?? on what measure? can't rep
 
 ----------------0.098 ROADMAP ITEMS: features and enhancements------------------------
 DONE website: Rework download to be easier
-website: need to redo screenshots section for mobile friendliness
+website:
+  screenshots:
+    half the videos are not linking
+	need to redo screenshots section for mobile friendliness
+	rename to Tutorials or maybe Media. Inkscape uses "Learn"
+	on index should show version and date
 for CI, https://github.com/Laidout/laidout-icons.git needs to be updated
 update fileformat.txt
   missing Palette/GradientStrip
@@ -161,7 +168,7 @@ update fileformat.txt
   DONE Path: output problem when name - null - non-null-comment
   DONE incomplete TextOnPath
   should be resources:
-    PlainTextObject
+    DONE PlainTextObject
     Palette
     Linestyle
     Fillstyle
@@ -199,7 +206,17 @@ make lax templates be only .h includes, since gcc complains when .cc isn't inclu
 
 Reconfigure text edits. Need something that works in interface land, with harfbuzz, that integrates with lax fontmanager
 
+laxkit interface manager interfacemanager:
+  make DraggedThreshhold an InterfaceManager ui scalable setting
+  touch threshholds:
+    near point: default 5 px ? try to find a real world measure based on monitors?
+  draw point sizes:
+    normal bez point, for instance
+    hovered size
+
 laxkit:
+  need to make sure the weird stuff with xim/xim_ic in anXApp::CreateXInputContext() still works after not creating new xim_ics
+    need to investigate using ibus
   should revamp the viewport color events to exclusively use Color objects and handle specials
   lists need move semantics
   from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
@@ -275,13 +292,6 @@ Palettes:
     New from a generator (like rainbow)
 Soup up the color box so one can recall previous colors, and/or integration with palette window
     -->delay until proper color implementation in place
-
-interface manager interfacemanager:
-  touch threshholds:
-    near point: default 5 px ? try to find a real world measure based on monitors?
-  draw point sizes:
-    normal bez point, for instance
-    hovered size
 
 WATCH OUT for when preview file is OLDER than original file!!
 
@@ -712,10 +722,20 @@ idml from indesign?
 
 
 freehand tool:
+  should have option to output base weighted path, with custom filter resource to copy onto it
+  keep a stack of lines previously made for fake undo by repeated delete? or just implement undo for object added
   path simplification needs to be considerably better, both points and weight nodes
-  need "brush size" controls
+  needs to account for time and speed
+  auto apply line profile
+  gradient select: custom or resource
+  pressure curve
+  mesh outputs should still be Mesh based on path
   implement Shape Brush?
     output to either "shape brush" line profile, or flattened path
+  DONE numerical input for brush size
+  DONE brush_size should be real, not screen units
+  DONE need "brush size" controls
+  DONE needs to respond to viewport color change
 
 
 PathInterface: pathinterface
@@ -1025,6 +1045,11 @@ valgrind:
   conditional jump on uninit: strlens in newnstr re attributes.cc 2673, 2192, 2206/1007, 2651
 
 node editor node interface NodeInterface nodes: node: interface: 
+  bug: when in error state, tries again EVERY refresh.. should only try when values change again
+  bug: work on filter, save nodes, switch to object, load nodes, destroys proper in/out of filter
+  SetTransforms if single in, should be single out
+  bug: paths should not clip their children by default
+  would be nice to have a property type PROP_List so you can input "1px,2%,3,4" and have it parse to {1,.02,3,4} automatically
   need delete frame.. delete objects not deleting frame if empty
   bug: sporadic, 1st input edit doesn't stick
   bug: reroute nodes doing weird colors
@@ -1041,10 +1066,8 @@ node editor node interface NodeInterface nodes: node: interface:
   bug: ObjectInfo should reset id and type on disconnection or null object, but keep any props that are connected
   bug: adaptive nodes need to cache previous in and check that rather than just update on connection change, since could change upstream
   bug: load in recovery: should ensure only one connection to input, and only one to exec_out
-  bug: seems like node names can sometimes erroneously get duplicate names? this messes up load in/connecting
-  bug: transform object isn't copying images in an ImageData
+  bug: transform object is linking, not copying images in an ImageData, need to dup the actual image data
   bug: height of resizable property not saved
-  bug: why are nodes yellow sometimes after load in: PerspectiveFilter, PointsToDots, Affine, Affine2.. DONE: String Circle
   bug: duplicating objectfilter does not transfer values for the most part for the most part
   bug: when loading in, need to force update nodes in Resources
   bug: gegl to image, disconnect, it is still updating the image, because LaxImage is linked through
@@ -1058,6 +1081,11 @@ node editor node interface NodeInterface nodes: node: interface:
   need option to turn off main viewport render while tool up, since sometimes that render takes a long time
   some people are going to want grid snapping
 
+  DONE SetRotations
+  DONE SetTransforms
+  DONE SetScales
+  DONE (can't duplicate) bug: why are nodes yellow sometimes after load in: PerspectiveFilter, PointsToDots, Affine, Affine2.. DONE: String Circle
+  DONE bug: ObjectInfo if props connected to outs, change object, bad things happen
   DONE reroute needs click on connection to add (via shift-control)
   DONE bug: control click on connection for pan traversal not working all the way
   DONE bug: duplicate reroute doesn't make a new reroute
@@ -1128,20 +1156,23 @@ node editor node interface NodeInterface nodes: node: interface:
         convex hull
         tsp
         relax (optionally within path)
+	    sample relax: each iteration sample image/object for value, use that as a size. push based on it
 		conformal relax
 		quadrilateralize and relax -> work Net into a full Drawable?
 		voronoi region centroid replacement relax: strength, iterations
 	  pointset
 		optionally do set of affine?
 		set from drawables
-		perturb set
+		perturb set.. perturb ANY PointCollection
 		DONE double time with path generators
 		DONE grid, hexgrid, random square, random circle
 		DONE apply positions to groups of drawables
       DONE check: dereference assign Evaluate extend from Group, not affine
     paths
+	  intersections
 	  generators:
 	    DONE need linewidth, stroke, fill
+		DONE rounded rect
 		stroke should accept color, gradient, or LineStyle.. LineStyle overrides line width
 		fill should accept color, gradient, FillStyle.. or other path object?
       weight controls:
@@ -1154,21 +1185,27 @@ node editor node interface NodeInterface nodes: node: interface:
 	  DONE path extrema
 
       path ops:
+	    ClosestPoint(s)
 	    path morph
 	    path from points: linear or smooth
 		sample path to points, optionally with transforms. sample at t OR s by step OR by n points OR squishy step
 		  SampleAt: t | t[], t is dist
-		  SampleEvery: step, step is dist, fit step
+		  SampleInterval:
+		  	offset, step, step is dist, fit step
+		  SampleN: n times within path, padstart, padend
 	    boolean pathops
         project onto heightmap? onto mesh?
         make net then inset
         merge
         simplify
-		extrude (this should probably be a path function)
+		extrude:
+		  bug: when you use another object for the extrude path, no automatic update happens
+		  this should probably be a path function
 	      needs to check for same tree and transform points before using
-		  when you use another object for the extrude path, no automatic update happens
         set line profile from resource
         apply weights
+
+	    DONE path length
         DONE combine
         DONE break apart
       DONE fill and stroke controls (by using ModifyObjectNode)
@@ -1570,6 +1607,7 @@ TreeSelector:
   makeinwindow() doesn't account for columns
 
 Units:
+  page units should be adjustible so that node enthusiasts don't have to use inches.. maybe make page layer transforms scale by a units conversion
   need something like Convert(value, units_from, units_to, &error, overrides), where overrides is
     something like: list of [units_id, newscaling], like for temp redefining "Em" or "px"
 
@@ -1636,11 +1674,19 @@ Nudge tool nudgeinterface nudge interface:
 build net interface graph
 
 voronoi Voronoi delauney Delauney: point set pointset
+  bug: coincident points cause weird problems
   be able to control inset shapes
   is double rendering when object is selected
   importing raw points or data without matrix should map so that it all appears on screen
-  intersect with page bounds? or other custom boundary? default bounding box + padding?
+  boundary:
+    page
+	margin
+	draw outline
+	snapshot current bbox
+	draw area from other object
+	box + padding
   color per point:
+    color by weight as index into gradient
     auto fill with randomized colors
     sample point color from background?
   merge different voronoi objects
@@ -1648,6 +1694,8 @@ voronoi Voronoi delauney Delauney: point set pointset
   separate selection to new object
   convert voronoi or delauney tris to graph
   less than three points doesn't remap rationally, need to update extra lines to something proper
+  DONE repeat last generator shortcut
+  DONE Number input of random n, grid, hex
   DONE right click
     DONE start new object
 	DONE generators
@@ -1656,7 +1704,12 @@ voronoi Voronoi delauney Delauney: point set pointset
     DONE toggle points
   DONE implement show_points
 
+overwrite:
+  tab/left/right/enter not doing anything. should be able to control with keys
+
 FileDialog filedialog:
+  bug: saving before asking for overwrite?
+  bug: overwrite not escapable?
   bug: sort caseless, other sorts not working
   focus should start on file line
   ^l should shift focus to file line
@@ -1671,6 +1724,7 @@ FileDialog filedialog:
   tooltip to show full path of bookmarks
   need drag and drop bookmarking
   when you change directories, it should indicate if it corresponds to a bookmark
+  DONE enter on file line: if has dir, change dir, else trigger save
   DONE should probably have a scroll bar
 
 autosave
@@ -1809,6 +1863,13 @@ themes:
             category common
               ...
 
+createlaidoutrc() should migrate to a LaidoutPrefs::CreateLaidoutrc(), not a direct LaidoutApp func
+implement clobber_protection: "%f~", %f is basename, save in same dir as file (clobber file will be clobbered)
+  TEST THIS
+  saving templates
+  save as
+  save a copy
+  Document::Save
 
 make drag and drop selections work
   implement proper action querying
@@ -1879,8 +1940,8 @@ align tool: aligninterface AlignInterface align:
   default presets: inkscape crossover
 
 empties:
-  use as targets in, for instance, node alignments
   need display object to make visible if truly empty.. display object is not exported
+  DONE use as targets in, for instance, node alignments
 
 Spread Editor:
   need to make pagelocation ref count pages, or (need to anyway) check all known views for errant page refs after delete pages
@@ -1907,22 +1968,13 @@ Tools should remember their settings
      well as the running tool use settings
 
 paperinterface: papergroupinterface papergroup interface
-  need to be able to edge drag paper to resize, maybe with grid snapping
-  when scaling should try to preserve relative orientations
   when reset scale or rotation, preserve relative orientations
-  option for "Sync Physical Scale"
   bug: sometimes clicking around when you have custom papergroup in viewport crashes
-  papergroup tool needs custom paper input
-  maybebox needs to snap
-
-  DONE snap to angle
-  DONE show paper numbers
-  DONE indices should be underlined
-  options to edit order of papers.. drag indices
-  if page is too big, need indicator around mouse that we are placing something
-  define papergroup, convert papergroup to Singles pages?
-    print all of one size paper first? auto sort order by size?
-  define papergroup, convert papergroup to new Net doc?
+  options to edit order of papers.. drag indices (front or "back")
+  define papergroup, convert papergroup to NetImposition
+  need snap to margins
+    need to be able to edit margins: edit the art box
+  need an easy toggle for landscape/portrait
   menu options:
     fit to selection
     fit to page
@@ -1935,16 +1987,36 @@ paperinterface: papergroupinterface papergroup interface
     meta name
     export settings
       more that one settings per paper
+  debug papergroup tool in spread editor
+    paperinterface: in spread editor (done), and able to print it out
+    in spread editor (done), and be able to print it out
+
+  DONE maybebox needs to snap
+  DONE if page is too big, need indicator around mouse that we are placing something
+  DONE space while dragging should dup boxes
+  DONE bug: custom paper size window starts as 0 size window?
+  DONE option for "Sync Physical Sizes when scaling"
+  DONE bug: dash outline is way out of whack
+  DONE drag should not deselect
+  DONE paper name should be within boundary
+  DONE when scaling should try to preserve relative orientations
+  DONE snap to angle
+  DONE show paper numbers
+  DONE indices should be underlined
+
+  maybe need to be able to edge drag custom paper to resize, maybe with grid snapping
   when you add gray bars/reg marks, center on paper?
+  buff out the paper interface to be the net builder?
 
   PaperSize/PaperGroup as resource:
+    papersize names are not translated. Should they be??
     implement paper favorites:
       be able to nest favorites, item->favorite = "submenu/23", item2->favorite="2", final element is number?
     laidoutrc needs list of custom paper sizes
+    need reusable resource [ name ][load][save][dup][delete]
     papergroups:
       Load, save, add, delete paper groups..
       work out scheme for resource ownership: they can be owned by:
-        need reusable resource [ name ][load][save][dup][delete]
 
         1.DONE  Document: if no project, save with document by default
         2.DONE  Project:  save in project file
@@ -1952,19 +2024,6 @@ paperinterface: papergroupinterface papergroup interface
             class FileRef
           papergroup->owner=Document, Project, or FileRef
 
-  debug papergroup tool in spread editor
-    paperinterface: in spread editor (done), and able to print it out, don't forget to remove DBG for release!
-    in spread editor (done), and be able to print it out
-  papersize names are not translated. Should they be??
-  buff out the paper interface to be the net builder?
-  more versatile size control per box type per paper: edit window? should be edit on screen....
-     Name:  default single letter
-     Paper: Letter, 8.5/11, landscape
-     Box: Media [v]   Box: Clip [v]
-                         [ ] None
-        0 0 8.5 11       X: 0   Y: 0
-                       W: 8.5 H: 11
-     [delete paper type][new paper type]
   DONE Use new custom paper size window
   DONE rotate paper shortcut should be around paper center, not origin
   DONE snap other papers to various boxes
@@ -2104,7 +2163,7 @@ pointin should check to visual boundary, not bounding box (? maybe just optional
 customizable object child relationships to parent, rather than simple transform
   this needs to be reworked to be an object filter instead of special anchor properties
 
-  incorporate gss!!
+  incorporate gss? https://gss.github.io/
   DONE scale x
   scale y
   scale free
@@ -2133,7 +2192,6 @@ customizable object child relationships to parent, rather than simple transform
 
 calculator/scripting
   bug: string output not escaping things to display correctly
-  make ArrayValue be MatrixValue, make SetValue be ArrayValue
   bug: run command with BuildIcons, error is not propagating up to cout
   bug: function calls, assigning named parameters, checks for '=', but only single char, fails when it's actually a ==
   bug: Math.oeuaeou does not produce an error
@@ -2525,7 +2583,7 @@ tiling cloner: clone tiler  CloneInterface
   should not assume preview has I transform
   memory hole back, third time!!!
   radial needs wind scale input
-  fill out the Tiling objectdef
+  DONE fill out the Tiling objectdef
   DONE bug: Tiling doesn't save, need to make Tiling be a Value so it can be io with drawable->properties
   DONE various source refs should take names from ref'd objects
 
@@ -2688,6 +2746,12 @@ repeater tool on path: could be adapted to help animation tweening
 animation: real time
   animation interface can set laidout->globals.frame, but how best to add callbacks when a Value is modified?
   anything even remotely real time needs serious rewrite of rendering, and use compute shaders opengl? vulcan?
+animationinterface animation interface:
+  way to set start, end
+  way to set fps
+  DONE be able to move strip
+  DONE make strip an overlay that can trigger filter updates
+
 
 how to keep track of class hierarchy? impositions are now listed by resource instance, what is
   best way of keeping track of base imposition classes? this is needed for file format description output
@@ -2726,6 +2790,9 @@ to be a decent editing platform, Laidout needs:
   DONE more specific control over transform.. numerical specification
   DONE clipping
 
+---------------- 0.099 ROADMAP ITEMS: features and enhancements ------------------------
+
+
 ============== Future of Laidout ================
 
 Goals:
@@ -2750,9 +2817,11 @@ Ways forward:
    - fixes 8 bit limit
    - babl flexibility
    - cross code with gimp/gegl has long term benefits
+   - gegl already can access hardware acceleration for many things
   consider gigantic revamp so that ui is all made with python..
    - essentially the blender route
    - makes tool development way more accessible to new users
+
 
 
 ===================Consider anything below here food for thought, not active dev notes================
@@ -2870,4 +2939,6 @@ DONE bug: can't duplicate gradient nodes.. causes seg fault
 DONE bug: gradients always loading as linear instead of radial
 DONE bug: edit singles imposition, change portrait to landscape, apply, ok, now back to portrait, doesn't change!
 DONE bug: initial warning about could not load ?? not showing the ??
+DONE bug: freehand tool, press any key, crash!!
+DONE bug: lax: slight hitch, about 1/4 sec on every button down, XCreateIC() in app->CreateXInputContext() takes forever
 
