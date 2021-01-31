@@ -89,6 +89,8 @@ LaidoutPreferences::LaidoutPreferences()
 
 	preview_size = 400;
 
+	clobber_protection = nullptr;
+
 	autosave      = false;
 	autosave_time = 5; //minutes
 	autosave_path = newstr("./%f.autosave");
@@ -109,6 +111,7 @@ LaidoutPreferences::~LaidoutPreferences()
 	delete[] temp_dir;
 	delete[] palette_dir;
 	delete[] exportfilename;
+	delete[] clobber_protection;
 }
 
 Value *LaidoutPreferences::duplicate()

@@ -35,6 +35,7 @@ class LaidoutPreferences : public Value
 	char *temp_dir;
 	char *palette_dir;
 	double uiscale;
+	char *clobber_protection;
 	bool   autosave;
 	double autosave_time;
 	char  *autosave_path;

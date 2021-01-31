@@ -899,6 +899,33 @@ int Document::Save(int includelimbos,int includewindows,ErrorLog &log, bool add_
 		log.AddMessage(_("Need a file name to save to!"),ERROR_Fail);
 		return 2;
 	}
+
+	if (!isblank(laidout->prefs.clobber_protection)) {
+		if (S_ISREG(file_exists(saveas, 1, nullptr))) {
+			char *name = newstr(lax_basename(saveas));
+			if (strstr(laidout->prefs.clobber_protection, "%f")) {
+				char *bb = replaceall(laidout->prefs.clobber_protection, "%f", name);
+				delete[] name;
+				name = bb;
+			}
+			if (!isblank(name)) {
+				char *dname = lax_dirname(saveas, true);
+				prependstr(name, dname);
+				if (!strEquals(name, saveas)) {
+					//protect against sloppy clobber patterns
+					DBG cerr << "Clobber protection:\n"<<"  file: "<<saveas<<"\n  bak:  "<<name<<endl;
+					if (CopyFile(saveas, name, true) != 0) {
+						log.AddWarning(_("Clobber protection failed!"));
+						DBG cerr <<".. clobber protection FAIL!!"<<endl;
+					}
+				}
+				delete[] dname;
+			}
+
+			delete[] name;
+		}
+	}
+
 	f=fopen(saveas,"w");
 	if (!f) {
 		DBG cerr <<"**** cannot save, file \""<<saveas<<"\" cannot be opened for writing."<<endl;
