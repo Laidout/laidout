@@ -34,8 +34,14 @@ class PaperInterface : public LaxInterfaces::anInterface
 {
   protected:
 	int showdecs;
+	bool maybe_flush;
+
 	bool show_labels;
 	bool show_indices;
+	bool sync_physical_size;
+	bool edit_back_indices;
+	bool edit_margins;
+
 	PaperGroup *papergroup;
 	PaperBoxData *paperboxdata;
 	Laxkit::PtrStack<PaperBoxData> curboxes;

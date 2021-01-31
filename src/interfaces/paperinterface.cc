@@ -89,6 +89,9 @@ PaperInterface::PaperInterface(anInterface *nowner,int nid,Displayer *ndp)
 	showdecs    = 0;
 	show_labels = true;
 	show_indices = false;
+	sync_physical_size = true;
+	edit_back_indices = false;
+	edit_margins = false;
 	search_snap = true;
 	snap_px_threshhold = 5 * InterfaceManager::GetDefault()->ScreenLine();
 	snap_running_angle = 0;
@@ -125,6 +128,7 @@ const char *PaperInterface::Name()
 
 enum PaperInterfaceActions {
 	PAPERI_PaperSize = 1,
+	PAPERI_ToggleLandscape,
 	PAPERI_Landscape,
 	PAPERI_Portrait,
 	PAPERI_NewPaperGroup,
@@ -139,6 +143,11 @@ enum PaperInterfaceActions {
 	PAPERI_ToggleSnap,
 	PAPERI_ToggleLabels,
 	PAPERI_ToggleIndices,
+	PAPERI_ToggleBackIndices,
+	PAPERI_ToggleSyncSizes,
+	PAPERI_CreateImposition,
+	PAPERI_DupPapers,
+	PAPERI_EditMargins,
 
 	PAPERI_Select,
 	PAPERI_Decorations,
@@ -164,9 +173,11 @@ Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 	if (!menu) menu=new MenuInfo(_("Paper Interface"));
 	else menu->AddSep(_("Papers"));
 
-	menu->AddToggleItem(_("Snap"),         PAPERI_ToggleSnap,   0, search_snap);
-	menu->AddToggleItem(_("Show labels"),  PAPERI_ToggleLabels, 0, show_labels);
-	menu->AddToggleItem(_("Show indices"), PAPERI_ToggleIndices,0, show_indices);
+	menu->AddToggleItem(_("Snap"),         PAPERI_ToggleSnap,     0, search_snap);
+	menu->AddToggleItem(_("Show labels"),  PAPERI_ToggleLabels,   0, show_labels);
+	menu->AddToggleItem(_("Show indices"), PAPERI_ToggleIndices,  0, show_indices);
+	menu->AddToggleItem(_("Sync physical sizes"), PAPERI_ToggleSyncSizes,0, sync_physical_size);
+	menu->AddToggleItem(_("Edit margin"), PAPERI_EditMargins,  0, edit_margins);	
 	menu->AddSep();
 
 	if (papergroup) {
@@ -174,11 +185,13 @@ Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 		menu->AddItem(_("Add Gray Bars"),PAPERI_GrayBars);
 		menu->AddItem(_("Add Cut Marks"),PAPERI_CutMarks);
 		menu->AddSep();
-		menu->AddItem(_("Reset paper scaling"),PAPERI_ResetScaling);
+		menu->AddItem(_("Create Net from group"), PAPERI_CreateImposition);
+		menu->AddSep();
 	}
 
 	if (papergroup && curboxes.n) {
 
+		menu->AddItem(_("Reset paper scaling"),PAPERI_ResetScaling);
 		menu->AddItem(_("Reset paper angle"),PAPERI_ResetAngle);
 		menu->AddItem(_("Paper Size"),PAPERI_PaperSize);
 		menu->SubMenu(_("Paper Size"));
@@ -237,20 +250,25 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 		if (     i == PAPERI_ToggleSnap
 			  || i == PAPERI_ToggleLabels
 			  || i == PAPERI_ToggleIndices
+			  || i == PAPERI_ToggleBackIndices
+			  || i == PAPERI_ToggleSyncSizes
 			  || i == PAPERI_ResetScaling
 			  || i == PAPERI_ResetAngle
+			  || i == PAPERI_CreateImposition
+			  || i == PAPERI_EditMargins
+			  || i == PAPERI_ToggleLandscape
 		   ) {
 			PerformAction(i);
 			return 0;
 
-//		} else if (i==PAPERI_Portrait) {
-//			 //portrait
-//			return 0;
-//
-//		} else if (i==PAPERI_Landscape) {
-//			 //landscape
-//			return 0;
+		// } else if (i==PAPERI_Portrait) {
+		// 	 //portrait
+		// 	return 0;
 
+		// } else if (i==PAPERI_Landscape) {
+		// 	 //landscape
+		// 	return 0;
+		
 		} else if (i==PAPERI_Print) {
 			 //print with the active paper group
 			curwindow->win_parent->Event(nullptr,"print");//***hack Hack HACK
@@ -539,9 +557,9 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 			double th = dp->textheight();
 			dp->NewFG(128,128,128);
 			flatpoint center = dp->realtoscreen((p[1] + p[2])/2);
-			double y = center.y;
+			double y = center.y+th;
 			dp->textout(-atan2(ang.y, ang.x), center.x,y, box->paperstyle->name,-1,LAX_HCENTER|LAX_BOTTOM);
-			y -= th;
+			y += th;
 			if (!data->label.IsEmpty()) dp->textout(-atan2(ang.y, ang.x), center.x,y, data->label.c_str(),-1, LAX_HCENTER|LAX_BOTTOM);
 			dp->DrawReal();
 		}
@@ -661,13 +679,16 @@ int PaperInterface::Refresh()
 	// 1 draw with fill
 	// 2 draw without fill
 	if (showdecs) {
+		dp->LineAttributes(-1,LineSolid,CapButt,JoinMiter);
 		PaperBox *box;
 		flatpoint p[4];
 		if (maybebox) {
 			box=maybebox->box;
 			dp->PushAndNewTransform(maybebox->m());
-			dp->LineAttributes(-1,LineDoubleDash,CapButt,JoinMiter);
 			dp->LineWidthScreen(1);
+			dp->drawthing(box->media.BBoxPoint(.5,.5), box->media.boxwidth()/20, box->media.boxwidth()/20, 0, THING_Plus);
+			dp->LineAttributes(-1,LineDoubleDash,CapButt,JoinMiter);
+			dp->Dashes(5);
 			p[0]=flatpoint(box->media.minx,box->media.miny);
 			p[1]=flatpoint(box->media.minx,box->media.maxy);
 			p[2]=flatpoint(box->media.maxx,box->media.maxy);
@@ -745,6 +766,8 @@ void PaperInterface::CreateMaybebox(flatpoint p)
  */
 int PaperInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
+	maybe_flush = false;
+
 	if (buttondown.isdown(0,LEFTBUTTON)) return 1;
 	buttondown.down(d->id,LEFTBUTTON,x,y,state);
 
@@ -788,14 +811,23 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 	DBG cerr <<"6 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 	if (over >= 0) {
 		if (curbox) curbox->dec_count();
-		curbox=papergroup->papers.e[over];
+		curbox = papergroup->papers.e[over];
 		curbox->inc_count();
-		if ((state&LAX_STATE_MASK)==0) curboxes.flush();
+		if ((state&LAX_STATE_MASK)==0) {
+			if (curboxes.findindex(curbox) < 0)
+				curboxes.flush();
+			else maybe_flush = true;
+		}
 		curboxes.pushnodup(curbox,0);
 		flatpoint xx = curbox->xaxis();
 		snap_running_angle = atan2(xx.y, xx.x);
 		needtodraw=1;
+	} else {
+		curboxes.flush();
+		if (curbox) { curbox->dec_count(); curbox = nullptr; }
+		needtodraw = 1;
 	}
+
 	DBG fp=dp->screentoreal(x,y);
 	DBG cerr <<"7 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 
@@ -809,7 +841,13 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 int PaperInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {
 	if (!buttondown.isdown(d->id,LEFTBUTTON)) return 1;
-	buttondown.up(d->id,LEFTBUTTON);
+	int dragged = buttondown.up(d->id,LEFTBUTTON);
+	if (dragged < DraggedThreshhold() && maybe_flush) {
+		maybe_flush = false;
+		curboxes.flush();
+		curboxes.pushnodup(curbox, 0);
+		needtodraw = 1;
+	}
 
 	DBG flatpoint fp=dp->screentoreal(x,y);
 	DBG cerr <<"9 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
@@ -826,26 +864,35 @@ int PaperInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
  */
 int PaperInterface::SnapBoxes()
 {
-	if (curboxes.n == papergroup->papers.n) return 0; //all boxes are selected.. todo: maybe we should snap to viewport spread/pages?
+	if (!papergroup) return 0;
+	if (!maybebox && curboxes.n == papergroup->papers.n) return 0; //all boxes are selected.. todo: maybe we should snap to viewport spread/pages?
 
 	double threshhold = snap_px_threshhold / dp->Getmag();
 
 	NumStack<double> xx,yy;
-	for (int c=0; c<curboxes.n; c++) {
+	PaperBoxData *box = nullptr;
+	for (int c=-1; c<curboxes.n; c++) {
+		if (c == -1) {
+			if (!maybebox) continue;
+			box = maybebox;
+		} else {
+			if (maybebox) continue;
+			box = curboxes.e[c];
+		}
 		//build points that we need to check for snapping
-		flatpoint p = curboxes.e[c]->BBoxPoint(0,0,true);
+		flatpoint p = box->BBoxPoint(0,0,true);
 		xx.pushnodup(p.x);
 		yy.pushnodup(p.y);
-		p = curboxes.e[c]->BBoxPoint(0,1,true);
+		p = box->BBoxPoint(0,1,true);
 		xx.pushnodup(p.x);
 		yy.pushnodup(p.y);
-		p = curboxes.e[c]->BBoxPoint(1,1,true);
+		p = box->BBoxPoint(1,1,true);
 		xx.pushnodup(p.x);
 		yy.pushnodup(p.y);
-		p = curboxes.e[c]->BBoxPoint(1,0,true);
+		p = box->BBoxPoint(1,0,true);
 		xx.pushnodup(p.x);
 		yy.pushnodup(p.y);
-		p = curboxes.e[c]->BBoxPoint(.5,.5,true);
+		p = box->BBoxPoint(.5,.5,true);
 		xx.pushnodup(p.x);
 		yy.pushnodup(p.y);
 	}
@@ -888,8 +935,12 @@ int PaperInterface::SnapBoxes()
 
 	if (do_x == false || do_y == false) {
 		//we matched a snap, so adjust transforms
-		for (int c=0; c<curboxes.n; c++) {
-			curboxes.e[c]->origin(curboxes.e[c]->origin() + dp);
+		if (maybebox) {
+			maybebox->origin(maybebox->origin() + dp);
+		} else {
+			for (int c=0; c<curboxes.n; c++) {
+				curboxes.e[c]->origin(curboxes.e[c]->origin() + dp);
+			}
 		}
 		return curboxes.n;
 	}
@@ -922,6 +973,7 @@ int PaperInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 			CreateMaybebox(dp->screentoreal(x,y));
 		} else {
 			maybebox->origin(maybebox->origin() + dp->screentoreal(x, y) - dp->screentoreal(rx, ry));
+			SnapBoxes();
 			rx = x;
 			ry = y;
 		}
@@ -957,6 +1009,8 @@ int PaperInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 		PaperBoxData *data;
 		for (int c=0; c<papergroup->papers.n; c++) {
 			data = papergroup->papers.e[c];
+			if (!sync_physical_size && curboxes.findindex(data) < 0) continue;
+
 			if (x>mx) {
 				if (data->xaxis()*data->xaxis()<dp->upperbound*dp->upperbound) {
 					data->xaxis(data->xaxis()*1.05);
@@ -1020,13 +1074,18 @@ Laxkit::ShortcutHandler *PaperInterface::GetShortcuts()
 
 	sc=new ShortcutHandler("PaperInterface");
 
-	sc->Add(PAPERI_Select,      'a',0,0,         "Select",  _("Select or deselect all"),nullptr,0);
-	sc->Add(PAPERI_Decorations, 'd',0,0,         "Decs",    _("Toggle decorations"),nullptr,0);
-	sc->Add(PAPERI_Delete,      LAX_Bksp,0,0,    "Delete",  _("Delete selected"),nullptr,0);
+	sc->Add(PAPERI_DupPapers,   ' ',0,1,         "DupPapers",_("Duplicate selected papers"),nullptr,0);
+	sc->Add(PAPERI_Select,      'a',0,0,         "Select",   _("Select or deselect all"),nullptr,0);
+	sc->Add(PAPERI_Decorations, 'd',0,0,         "Decs",     _("Toggle decorations"),nullptr,0);
+	sc->Add(PAPERI_Delete,      LAX_Bksp,0,0,    "Delete",   _("Delete selected"),nullptr,0);
 	sc->AddShortcut(LAX_Del,0,0, PAPERI_Delete);
-	sc->Add(PAPERI_Rectify,     'o',0,0,         "Rectify", _("Make the axes horizontal and vertical"),nullptr,0);
-	sc->Add(PAPERI_Rotate,      'r',0,0,         "Rotate",  _("Rotate selected by 90 degrees"),nullptr,0);
-	sc->Add(PAPERI_RotateCC,    'R',ShiftMask,0, "RotateCC",_("Rotate selected by 90 degrees in the other direction"),nullptr,0);
+	sc->Add(PAPERI_Rectify,     'o',0,0,         "Rectify",  _("Make the axes horizontal and vertical"),nullptr,0);
+	sc->Add(PAPERI_Rotate,      'r',0,0,         "Rotate",   _("Rotate selected by 90 degrees"),nullptr,0);
+	sc->Add(PAPERI_RotateCC,    'R',ShiftMask,0, "RotateCC", _("Rotate selected by 90 degrees in the other direction"),nullptr,0);
+	sc->Add(PAPERI_ToggleLandscape, 'l',0,0, "ToggleLandscape", _("Toggle landscape"),nullptr,0);
+	sc->AddAction(PAPERI_Portrait, "Portrait", _("Portrait"), nullptr, 0, 0);
+	sc->AddAction(PAPERI_Landscape, "Landscape", _("Landscape"), nullptr, 0, 0);
+
 
 
 	manager->AddArea("PaperInterface",sc);
@@ -1054,11 +1113,11 @@ int PaperInterface::PerformAction(int action)
 
 	} else if (action == PAPERI_ResetScaling) {
 		if (!papergroup) return 0;
-		PaperBoxData *data = papergroup->papers.e[0];
-		double s = 1 / data->xaxis().norm();
+		// PaperBoxData *data = papergroup->papers.e[0];
+		// double s = 1 / data->xaxis().norm();
 		for (int c = 0; c < papergroup->papers.n; c++) {
-			data = papergroup->papers.e[c];
-			data->Scale(s);
+			PaperBoxData *data = papergroup->papers.e[c];
+			data->setScale(1,1);
 		}
 		needtodraw = 1;
 		return 0;
@@ -1090,6 +1149,26 @@ int PaperInterface::PerformAction(int action)
 	} else if (action==PAPERI_ToggleIndices) {
 		show_indices = !show_indices;
 		PostMessage(show_indices ? _("Show indices") : _("Don't show indices"));
+		needtodraw = 1;
+		return 0;
+
+	} else if (action==PAPERI_ToggleBackIndices) {
+		edit_back_indices = !edit_back_indices;
+		PostMessage(edit_back_indices ? _("Edit back indices") : _("Edit front indices"));
+		needtodraw = 1;
+		return 0;
+
+	} else if (action==PAPERI_ToggleSyncSizes) {
+		sync_physical_size = !sync_physical_size;
+		PostMessage(sync_physical_size ? _("Papers scale together") : _("Papers scale independently"));
+		if (sync_physical_size) {
+			if (papergroup && papergroup->papers.n > 0) {
+				double scale = papergroup->papers.e[0]->xaxis().norm();
+				for (int c=1; c<papergroup->papers.n; c++) {
+					papergroup->papers.e[c]->setScale(scale, scale);
+				}
+			}
+		}
 		needtodraw = 1;
 		return 0;
 
@@ -1153,24 +1232,55 @@ int PaperInterface::PerformAction(int action)
 		needtodraw=1;
 		return 0;
 
-//	} else if (action==PAPERI_RotateCC) {
-//		 //rotate by 90 degree increments
-//		if (!curboxes.n) return 0;
-//		double x,y;
-//		for (int c=0; c<curboxes.n; c++) {
-//			 //rotate x axis
-//			x=curboxes.e[c]->m(0);
-//			y=curboxes.e[c]->m(1);
-//			curboxes.e[c]->m(0,y);
-//			curboxes.e[c]->m(1,-x);
-//			 //rotate y axis
-//			x=curboxes.e[c]->m(2);
-//			y=curboxes.e[c]->m(3);
-//			curboxes.e[c]->m(2,y);
-//			curboxes.e[c]->m(3,-x);
-//		}
-//		needtodraw=1;
-//		return 0;
+	} else if (action == PAPERI_CreateImposition) {
+		PostMessage("IMPLEMENT ME!!!!");
+		return 0;
+
+	}  else if (action == PAPERI_DupPapers) {
+		if (!curboxes.n) return 0;
+		flatpoint offset;
+		if (!buttondown.any()) {
+			offset.x = offset.y = 10 * ScreenLine() / dp->Getmag();
+		}
+
+		for (int c=0; c<curboxes.n; c++) {
+			PaperBoxData *paper = curboxes.e[c];
+
+			PaperBoxData *newpaper = dynamic_cast<PaperBoxData*>(paper->duplicate(nullptr));
+
+			newpaper->origin(newpaper->origin() + offset);
+			papergroup->papers.push(newpaper);
+		}
+
+		PostMessage("Duplicated.");
+		return 0;
+
+	} else if (action == PAPERI_EditMargins) {
+		edit_margins = !edit_margins;
+		if (edit_margins) PostMessage("IMPLEMENT ME!!!!");
+		needtodraw = 1;
+		return 0;
+
+	} else if (action == PAPERI_ToggleLandscape) {
+		if (!curboxes.n) return 0;
+		for (int c=0; c<curboxes.n; c++) {
+			curboxes.e[c]->box->paperstyle->landscape(!curboxes.e[c]->box->paperstyle->landscape());
+		}
+		return 0;
+
+	} else if (action == PAPERI_Landscape) {
+		if (!curboxes.n) return 0;
+		for (int c=0; c<curboxes.n; c++) {
+			curboxes.e[c]->box->paperstyle->landscape(1);
+		}
+		return 0;
+	
+	} else if (action == PAPERI_Portrait) {
+		if (!curboxes.n) return 0;
+		for (int c=0; c<curboxes.n; c++) {
+			curboxes.e[c]->box->paperstyle->landscape(0);
+		}
+		return 0;
 	}
 
 	return 1;
@@ -1180,8 +1290,21 @@ int PaperInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 {
 	DBG cerr<<" got ch:"<<ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
 
+	if (ch == LAX_Esc) {
+		if (edit_margins) {
+			edit_margins = false;
+			needtodraw = 1;
+			return 0;
+		}
+		if (curboxes.n) {
+			curboxes.flush();
+			if (curbox) { curbox->dec_count(); curbox = nullptr; }
+			return 0;
+		}
+	}
+
 	if (!sc) GetShortcuts();
-	int action = sc->FindActionNumber(ch, state & LAX_STATE_MASK, 0);
+	int action = sc->FindActionNumber(ch, state & LAX_STATE_MASK, buttondown.any() ? 1 : 0);
 	if (action >= 0) {
 		return PerformAction(action);
 	}
