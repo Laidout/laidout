@@ -47,7 +47,7 @@ PaperSizeWindow::PaperSizeWindow(Laxkit::anXWindow *parnt,const char *nname,cons
 							unsigned long owner, const char *msg,
 							PaperStyle *paper, bool mod_in_place, bool edit_dpi, bool edit_color, bool send_every_change)
 		: RowFrame(parnt,nname,ntitle,nstyle | ROWFRAME_HORIZONTAL | ROWFRAME_LEFT | ANXWIN_REMEMBER,
-					0,0,0,0,0, nullptr,owner,msg,
+					0,0,600,300,0, nullptr,owner,msg,
 					10)
 {
 	modify_in_place = mod_in_place;
@@ -82,7 +82,8 @@ PaperSizeWindow::~PaperSizeWindow()
 int PaperSizeWindow::preinit()
 {
 	anXWindow::preinit();
-	if (win_w <= 0 || win_h <= 0) flags |= BOX_WRAP_TO_EXTENT; //WrapToExtent();
+	// if (win_w <= 0 || win_h <= 0) flags |= BOX_WRAP_TO_EXTENT; //WrapToExtent();
+	flags |= BOX_WRAP_TO_EXTENT;
 	// if (win_w <= 0) win_w = 500;
 	// if (win_h <= 0) win_h = 600;
 	return 0;
