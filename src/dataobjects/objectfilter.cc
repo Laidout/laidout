@@ -167,7 +167,10 @@ Laxkit::anObject *ObjectFilter::FinalObject()
 	// if (recent > prop->modtime) {
 	// 	// filter needs updating
 	// }
-	if (prop) return dynamic_cast<DrawableObject*>(prop->GetData());
+	if (prop) {
+		return dynamic_cast<DrawableObject*>(prop->GetData());
+	}
+
 	return NULL;
 }
 
