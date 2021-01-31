@@ -38,6 +38,7 @@ VERSION 0.098
 (done) More nodes: global var access, any drawable object, expressions, path generators, reroute
 (done) Even more nodes: point set creators and converters, path endpoints, path extrema
 (done) Yet ever more nodes: set element, subset, getdocument, export, "basics", objectfunction
+(done) Animation play/stop overlay, with node hooks
 
        engraver tool grow point mode
        engraver tool, resolution cut mode
