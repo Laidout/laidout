@@ -112,52 +112,84 @@ namespace Laidout {
  */
 
 
+NetImposition::NetImposition()
+  : Imposition(_("NetImposition"))
+{
+	briefdesc        = NULL;
+	scalefromnet     = 1;
+	maptoabstractnet = 0;
+	pagestyle        = NULL;
+	netisbuiltin     = 0;
+	abstractnet      = NULL;
+	printnet         = 1;
+
+	// setup default paperstyle
+	PaperStyle *paperstyle = dynamic_cast<PaperStyle *>(stylemanager.FindDef("defaultpapersize"));
+	if (paperstyle) paperstyle = static_cast<PaperStyle *>(paperstyle->duplicate());
+	else paperstyle = new PaperStyle("letter",8.5,11.0,0,300,"in");
+	Imposition::SetPaperSize(paperstyle);
+	paperstyle->dec_count();
+
+	objectdef = stylemanager.FindDef("NetImposition");
+	if (objectdef) objectdef->inc_count(); 
+	else {
+		objectdef = makeObjectDef();
+		if (objectdef) stylemanager.AddObjectDef(objectdef,0);
+	}
+
+	DBG cerr <<"imposition netimposition init"<<endl;
+}
+
+NetImposition::NetImposition(PaperGroup *papergroup)
+  : NetImposition()
+{
+	if (!papergroup || !papergroup->papers.n) return;
+
+	BasicNet *net = new BasicNet();
+	for (int c=0; c<papergroup->papers.n; c++) {
+		PaperBoxData *paper = papergroup->papers.e[c];
+
+		NetFace *face = new NetFace();
+		face->tag = FACE_Actual;
+		net->push(face, 1);
+
+		flatpoint p = paper->transformPoint(flatpoint(paper->minx, paper->miny));
+		NetFaceEdge *edge = new NetFaceEdge();
+		edge->points = new Coordinate(p);
+		face->edges.push(edge, 1);
+
+		p = paper->transformPoint(flatpoint(paper->maxx, paper->miny));
+		edge = new NetFaceEdge();
+		edge->points = new Coordinate(p);
+		face->edges.push(edge, 1);
+
+		p = paper->transformPoint(flatpoint(paper->maxx, paper->maxy));
+		edge = new NetFaceEdge();
+		edge->points = new Coordinate(p);
+		face->edges.push(edge, 1);
+
+		p = paper->transformPoint(flatpoint(paper->minx, paper->maxy));
+		edge = new NetFaceEdge();
+		edge->points = new Coordinate(p);
+		face->edges.push(edge, 1);
+	}
+
+	Net *nnet = new Net();
+	nnet->Basenet(net);
+	net->dec_count();
+	SetNet(nnet);
+	net->dec_count();
+}
+
 //! Constructor. Transfers newnet pointer, does not duplicate.
 /*!  Default is to have a dodecahedron.
  *
  * If newnet is not NULL, then its count is incremented (in SetNet()).
  */
 NetImposition::NetImposition(Net *newnet)
-	: Imposition(_("NetImposition"))
+  : NetImposition()
 { 
-	briefdesc=NULL;
-	scalefromnet=1;
-	maptoabstractnet=0;
-	pagestyle=NULL;
-	netisbuiltin=0;
-	abstractnet=NULL;
-	printnet=1;
-
-	 // setup default paperstyle
-	PaperStyle *paperstyle=dynamic_cast<PaperStyle *>(stylemanager.FindDef("defaultpapersize"));
-	if (paperstyle) paperstyle=static_cast<PaperStyle *>(paperstyle->duplicate());
-	else paperstyle=new PaperStyle("letter",8.5,11.0,0,300,"in");
-	Imposition::SetPaperSize(paperstyle);
-	paperstyle->dec_count();
-
-	DBG cerr <<"   net 1"<<endl;
-	
-	
-	//***can objectdef exist already? possible made by a superclass?
-	objectdef=stylemanager.FindDef("NetImposition");
-	if (objectdef) objectdef->inc_count(); 
-	else {
-		objectdef=makeObjectDef();
-		if (objectdef) stylemanager.AddObjectDef(objectdef,0);
-	}
-
-//	if (!newnet) {
-//		newnet=makeDodecahedronNet(paper->media.maxx,paper->media.maxy);
-//		SetNet(newnet);
-//		newnet->info|=NETIMP_Internal; //***-1 here means net is a built in net
-//		newnet->dec_count();
-//	} else {
-//		SetNet(newnet);
-//		newnet->info&=~NETIMP_Internal; //***0 here means net is not a built in net
-//	}
-
-	
-	DBG cerr <<"imposition netimposition init"<<endl;
+	if (newnet) SetNet(newnet);
 }
  
 NetImposition::~NetImposition()

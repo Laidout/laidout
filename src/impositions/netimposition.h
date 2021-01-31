@@ -43,7 +43,9 @@ class NetImposition : public Imposition
 
 	//Polyhedron *polyhedron;
 
-	NetImposition(Polyptych::Net *newnet=NULL);
+	NetImposition();
+	NetImposition(PaperGroup *papergroup);
+	NetImposition(Polyptych::Net *newnet);
 	virtual ~NetImposition();
 	virtual const char *whattype() { return "NetImposition"; }
 	static ImpositionResource **getDefaultResources();
