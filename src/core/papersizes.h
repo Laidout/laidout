@@ -104,6 +104,7 @@ class PaperBox :  public Laxkit::anObject
 	PaperBox(PaperStyle *paper, bool absorb_count);
 	virtual ~PaperBox();
 	virtual int Set(PaperStyle *paper);
+	virtual anObject *duplicate(anObject *ref);
 };
 
 
@@ -115,10 +116,12 @@ class PaperBoxData : public LaxInterfaces::SomeData
 	ValueHash properties;
 	Laxkit::ScreenColor color, outlinecolor;
 	PaperBox *box;
-	int index;
-	unsigned int which;
+	int index, index_back;
+	unsigned int which; //usused?
+
 	PaperBoxData(PaperBox *paper);
 	virtual ~PaperBoxData();
+	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
 	virtual const char *whattype() { return "PaperBoxData"; }
 	virtual void FindBBox();
 };

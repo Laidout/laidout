@@ -44,7 +44,7 @@ namespace Laidout {
 
 //      PAPERSIZE   Width  Height  Units
 //      ----------------------------------------
-const char *BuiltinPaperSizes[60*4]=
+const char *BuiltinPaperSizes[64*4]=
 	{
 		"Letter"   ,"8.5" ,"11"  ,"in",
 		"Legal"    ,"8.5" ,"14"  ,"in",
@@ -94,6 +94,7 @@ const char *BuiltinPaperSizes[60*4]=
 		"Ledger"   ,"17"  ,"11"  ,"in",
 		"Halfletter","5.5","8.5" ,"in",
 		"Note"      ,"7.5","10"  ,"in",
+		"1:1"       ,"1"  ,"1"   ,"in",
 		"4:3"       ,"4"  ,"3"   ,"in",
 		"16:9"      ,"16" ,"9"   ,"in",
 		"640x480"   ,"640","480" ,"px",
@@ -103,6 +104,9 @@ const char *BuiltinPaperSizes[60*4]=
 		"1600x1200" ,"1600","1200","px",
 		"1920x1080" ,"1920","1080","px",
 		"1920x1200" ,"1920","1200","px",
+		"2560x1440 (2k)", "2560","1440","px",
+		"3840x2160 (4k)", "3840","2160","px",
+		"7680x4320 (8k)", "7680","4320","px",
 		"Custom"    ,"8.5","11"   ,"in", /* NOTE!!! these two must be last!! */
 		"Whatever"  ,"8.5","11"   ,"in", /* NOTE!!! these two must be last!! */
 		NULL,NULL,NULL,NULL
@@ -792,6 +796,29 @@ int PaperBox::Set(PaperStyle *paper)
 	return 0;
 }
 
+anObject *PaperBox::duplicate(anObject *ref)
+{
+	PaperBox *box = nullptr;
+	if (!ref) {
+		box = new PaperBox(nullptr, 0);
+		ref = box;
+	} else {
+		box = dynamic_cast<PaperBox*>(ref);
+		if (!box) return nullptr; //wrong dup type!
+	}
+
+	box->which = which;
+	box->paperstyle = (paperstyle ? dynamic_cast<PaperStyle*>(paperstyle->duplicate()) : nullptr);
+	box->media = media;
+	box->printable = printable;
+	box->bleed = bleed;
+	box->trim = trim;
+	box->crop = crop;
+	box->art = art;
+
+	return box;
+}
+
 //------------------------------------- PaperBoxData --------------------------------------
 
 /*! \class PaperBoxData
@@ -807,7 +834,9 @@ PaperBoxData::PaperBoxData(PaperBox *paper)
 	outlinecolor.rgbf(0,0,1.0); //color of the outline, default is blue
 	color.rgbf(1.0,1.0,1.0);
 
-	box=paper;
+	index = index_back = -1;
+
+	box = paper;
 	if (box) {
 		box->inc_count();
 		setbounds(&box->media);
@@ -832,6 +861,29 @@ void PaperBoxData::FindBBox()
 	}
 }
 
+LaxInterfaces::SomeData *PaperBoxData::duplicate(LaxInterfaces::SomeData *dup)
+{
+	PaperBoxData *pdata = nullptr;
+	if (!dup) {
+		pdata = new PaperBoxData(nullptr);
+		dup = pdata;
+	} else {
+		pdata = dynamic_cast<PaperBoxData*>(dup);
+		if (!pdata) return nullptr; //wrong dup type!
+	}
+
+	pdata->label        = label;
+	pdata->color        = color;
+	pdata->outlinecolor = outlinecolor;
+	pdata->box          = dynamic_cast<PaperBox*>(box->duplicate(nullptr));
+	pdata->index        = index;
+	pdata->index_back   = index_back;
+	pdata->m(m());
+	// pdata->properties.CopyFrom(&properties);
+	pdata->FindBBox();
+
+	return dup;
+}
 
 //------------------------------------- PaperGroup --------------------------------------
 
