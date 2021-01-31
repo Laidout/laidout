@@ -64,6 +64,7 @@
 #include "../calculator/shortcuttodef.h"
 #include "../ui/metawindow.h"
 #include "../ui/pluginwindow.h"
+#include "../dataobjects/objectfilter.h"
 
 
 //template implementation:
@@ -2754,6 +2755,59 @@ void LaidoutViewport::DrawSomeData(LaxInterfaces::SomeData *ndata,
 {
 	Laidout::DrawDataStraight(dp, ndata, a1,a2,info);
 }
+
+void TriggerFiltersRecurse(DrawableObject *obj)
+{
+	//TODO: clones
+	
+	if (!obj) return;
+	for (int c=0; c<obj->n(); c++) {
+		DrawableObject *o = dynamic_cast<DrawableObject*>(obj->e(c));
+		if (o) TriggerFiltersRecurse(o);
+	}
+	if (obj->filter) {
+		dynamic_cast<ObjectFilter*>(obj->filter)->ForceUpdates();
+	}
+}
+
+/*! Step through all objects in viewport and trigger filter updates.
+ * \todo *** there needs to be a more systematic way to sync updates when things modified.
+ */
+void LaidoutViewport::TriggerFilterUpdates()
+{
+	TriggerFiltersRecurse(limbo);
+
+	if (papergroup && papergroup->objs.n()) {
+		 TriggerFiltersRecurse(&papergroup->objs);
+	}
+
+	if (spread && showstate==1) {
+		if (spread->marks) TriggerFiltersRecurse(dynamic_cast<DrawableObject*>(spread->marks));
+
+		Page *page = NULL;
+		int pagei = -1;
+		for (int c=0; c<spread->pagestack.n(); c++) {
+			// DBG cerr <<" drawing from pagestack.e["<<c<<"], which has page "<<spread->pagestack.e[c]->index<<endl;
+			page  = spread->pagestack.e[c]->page;
+			pagei = spread->pagestack.e[c]->index;
+
+			if (!page) { // try to look up page in doc using pagestack->index
+				if (spread->pagestack.e[c]->index>=0 && spread->pagestack.e[c]->index<doc->pages.n) {
+					pagei = spread->pagestack.e[c]->index;
+					page  = spread->pagestack.e[c]->page=doc->pages.e[pagei];
+				}
+			}
+
+			if (!page) continue;
+
+			 // the page's objects.
+			for (int c2=0; c2<page->layers.n(); c2++) {
+				TriggerFiltersRecurse(page->e(c2));
+			}
+		}
+	}
+}
+
 
 //! Draw the whole business.
 /*!

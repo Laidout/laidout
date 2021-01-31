@@ -184,6 +184,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	virtual int locateObject(LaxInterfaces::SomeData *d,FieldPlace &place);
 	virtual int curobjPage();
 	virtual int isDefaultPapergroup(int yes_if_in_project);
+	virtual void TriggerFilterUpdates();
 
 	 //from objectcontainer
 	virtual int n();
