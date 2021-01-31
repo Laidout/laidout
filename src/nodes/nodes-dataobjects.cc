@@ -300,7 +300,7 @@ int KidsToSetNode::Update()
 
 	for (int c=0; c<o->NumKids(); c++) {
 		DrawableObject *oo = dynamic_cast<DrawableObject*>(o->Child(c));
-		if (c > out->n()) {
+		if (c >= out->n()) {
 			out->Push(oo,0);
 		} else {
 			if (out->e(c) != oo) out->Set(c, oo, 0);
@@ -434,7 +434,6 @@ class SetPositionsNode : public NodeBase
 	virtual NodeBase *Duplicate();
 	virtual int Update();
 	virtual int GetStatus();
-	virtual Value *PreviewFrom() { return properties.e[2]->GetData(); }
 
 	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new SetPositionsNode(); }
 };
@@ -612,7 +611,6 @@ class SetScalesNode : public NodeBase
 	virtual NodeBase *Duplicate();
 	virtual int Update();
 	virtual int GetStatus();
-	virtual Value *PreviewFrom() { return properties.e[2]->GetData(); }
 
 	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new SetScalesNode(); }
 };
@@ -624,7 +622,7 @@ SetScalesNode::SetScalesNode()
 	makestr(type, "Drawable/SetScales");
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "objects", nullptr,1, _("Objects"), nullptr,0,false)); 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "scales", nullptr,1, _("Scales"), nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "scales", new DoubleValue(1),1, _("Scales"), nullptr,0,true));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "override", new BooleanValue(false),1, _("Modify original"), _("Dangerous!! Modifies original objects. May affect upstream connections."),0,true));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Out"), nullptr,0,false));
 }
@@ -653,7 +651,9 @@ int SetScalesNode::GetStatus()
 		PointSetValue *set = dynamic_cast<PointSetValue*>(properties.e[1]->GetData());
 		if (!set) {
 			SetValue *ss = dynamic_cast<SetValue*>(properties.e[1]->GetData());
-			if (!ss) return -1;
+			if (!ss) {
+				if (!isNumberType(properties.e[1]->GetData(), nullptr)) return -1;
+			}
 		}
 	}
 
@@ -796,6 +796,456 @@ int SetScalesNode::Update()
 				out->Push(ov, 1);
 			} //else oo is already in out, since out == oset
 			o->setScale(scalev.x, scalev.y);
+		}
+	}
+
+	return NodeBase::Update();
+}
+
+
+//------------------------ SetRotationsNode ------------------------
+
+/*! 
+ * Node to set rotations of Drawables from a number, vector, affine, or set of.
+ */
+
+class SetRotationsNode : public NodeBase
+{
+	int GetRotation(Value *v, flatvector &scalev);
+
+  public:
+	SetRotationsNode();
+	virtual ~SetRotationsNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new SetRotationsNode(); }
+};
+
+
+SetRotationsNode::SetRotationsNode()
+{
+	makestr(Name, _("Set rotations"));
+	makestr(type, "Drawable/SetRotations");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "objects", nullptr,1, _("Objects"), nullptr,0,false)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "rotations", new DoubleValue(0),1, _("Rotations"), _("Numbers assumed degrees"),0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "override", new BooleanValue(false),1, _("Modify original"), _("Dangerous!! Modifies original objects. May affect upstream connections."),0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Out"), nullptr,0,false));
+}
+
+SetRotationsNode::~SetRotationsNode()
+{
+}
+
+NodeBase *SetRotationsNode::Duplicate()
+{
+	SetRotationsNode *node = new SetRotationsNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int SetRotationsNode::GetStatus()
+{
+	Affine *o = dynamic_cast<Affine*>(properties.e[0]->GetData()); 
+	if (!o) {
+		SetValue *ss = dynamic_cast<SetValue*>(properties.e[0]->GetData());
+		if (!ss) return -1;
+	}
+
+	FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(properties.e[1]->GetData()); 
+	if (!fv) {
+		PointSetValue *set = dynamic_cast<PointSetValue*>(properties.e[1]->GetData());
+		if (!set) {
+			SetValue *ss = dynamic_cast<SetValue*>(properties.e[1]->GetData());
+			if (!ss) {
+				if (!isNumberType(properties.e[1]->GetData(), nullptr))
+					return -1;
+			}
+		}
+	}
+
+	if (!isNumberType(properties.e[2]->GetData(), nullptr)) return -1;
+
+	return NodeBase::GetStatus();
+}
+
+/*! 0 for no rotation. 1 for single rotation value. 2 for two. */
+int SetRotationsNode::GetRotation(Value *v, flatvector &rotv)
+{
+	if (!v) return false;
+	if (isNumberType(v, &(rotv.x))) { rotv.x *= M_PI/180; return 1; }
+	if (v->type() == VALUE_Flatvector) {
+		rotv = dynamic_cast<FlatvectorValue*>(v)->v;
+		rotv.x *= M_PI/180;
+		rotv.y *= M_PI/180;
+		return 2;
+	}
+	if (v->type() == VALUE_Spacevector) {
+		SpacevectorValue *vvv = dynamic_cast<SpacevectorValue*>(v);
+		rotv.set(vvv->v.x * M_PI/180, vvv->v.y * M_PI/180);
+		return 2;
+	}
+	Affine *o = dynamic_cast<Affine *>(v);
+	if (o) {
+		rotv.x = o->xaxis().angle();
+		rotv.y = o->yaxis().angle();
+		return 2;
+	}
+	return 0;
+}
+
+int SetRotationsNode::Update()
+{
+	Error(nullptr);
+
+	// determine input object(s)
+	Value *ov = properties.e[0]->GetData();
+	Affine *o = dynamic_cast<Affine*>(ov); 
+	SetValue *iset = nullptr;
+	if (!o) {
+		iset = dynamic_cast<SetValue*>(ov);
+		if (!iset) {
+			Error(_("Objects must be Affine derived or set of Affine derived"));
+			return -1;
+		}
+	}
+
+	// determine rotations(s)
+	flatvector rotv(0, M_PI/2);
+	
+	Value *v = properties.e[1]->GetData();
+	if (!v) return -1;
+
+	PointSetValue *pset = nullptr;
+	SetValue *set = nullptr;
+	int rottype = GetRotation(v, rotv);
+	if (!rottype) {
+		pset = dynamic_cast<PointSetValue*>(v);
+		if (!pset) set = dynamic_cast<SetValue*>(v);
+		if (!set && !pset) {
+			Error(_("Rotations must be a number, vector2, PointSet, or Set of Vector2 or number"));
+			return -1;
+		}
+	}
+	
+	int isnum = 0;
+	bool override = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	// apply into output
+	if (o) { //single object, easy!
+		if (!override) {
+			ov = ov->duplicate();
+			o = dynamic_cast<Affine*>(ov);
+		} else ov->inc_count();
+		properties.e[3]->SetData(ov, 1);
+
+		if (pset) { //pointset, grab first
+			if (pset->NumPoints() > 0) {
+				Affine *af = dynamic_cast<Affine*>(pset->points.e[0]->info);
+				if (!af) {
+					Error(_("Point set missing rotation information"));
+					return -1;
+				}
+				rotv.set(af->xaxis().angle(), af->yaxis().angle());
+				rottype = 2;
+			}
+		} else if (set) { //set, grab first
+			if (set->n() > 0) {
+				rottype = GetRotation(set->e(0), rotv);
+				if (!rottype) {
+					Error(_("Set must only contain numbers or Vector2"));
+					return -1;
+				}
+			}
+		}
+		if (rottype == 1) o->setRotation(rotv.x);
+		else o->setShear(rotv.x, rotv.y);
+
+	} else { //iset of inputs
+		SetValue *out = dynamic_cast<SetValue *>(properties.e[3]->GetData());
+		if (!out) {
+			if (override) {
+				out = iset;
+				out->inc_count();
+			} else out = new SetValue();
+			properties.e[3]->SetData(out, 1);
+		} else {
+			if (override) {
+				if (out != iset) {
+					properties.e[3]->SetData(iset, 0);
+					out = iset;
+				}
+			} else out->values.flush();
+			properties.e[3]->Touch();
+		}
+
+		for (int c=0; c<iset->n(); c++) {
+			//object to transform
+			ov = iset->e(c);
+			o = dynamic_cast<Affine*>(ov);
+			if (!o) {
+				Error(_("Bad input type"));
+				return -1;
+			}
+
+			//get scale value
+			if (pset) { //pointset
+				if (c < pset->NumPoints()) {
+					Affine *af = dynamic_cast<Affine*>(pset->points.e[c]->info);
+					if (!af) {
+						Error(_("Point set missing scale information"));
+						return -1;
+					}
+					rotv.x = af->xaxis().norm();
+					rotv.y = af->yaxis().norm();
+					rottype = 2;
+				}
+			} else if (set) {
+				if (c < set->n()) {
+					rottype = GetRotation(set->e(c), rotv);
+					if (!rottype) {
+						Error(_("Rotations must be a number, vector2, PointSet, or Set of Vector2 or number"));
+						return -1;
+					}
+				}
+			} //else just go with current rotv
+
+			if (!override) {
+				ov = ov->duplicate();
+				o = dynamic_cast<Affine*>(ov);
+				if (dynamic_cast<DrawableObject*>(ov)) dynamic_cast<DrawableObject*>(ov)->FindBBox();
+				out->Push(ov, 1);
+			} //else oo is already in out, since out == oset
+
+			if (rottype == 1) o->setRotation(rotv.x);
+			else o->setShear(rotv.x, rotv.y);
+		}
+	}
+
+	return NodeBase::Update();
+}
+
+
+//------------------------ SetTransformsNode ------------------------
+
+/*! 
+ * Node to Set scales of Affines from a number or vector, or set thereof.
+ */
+
+class SetTransformsNode : public NodeBase
+{
+	bool GetScale(Value *v, flatvector &scalev);
+
+  public:
+	SetTransformsNode();
+	virtual ~SetTransformsNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+	
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new SetTransformsNode(); }
+};
+
+
+SetTransformsNode::SetTransformsNode()
+{
+	makestr(Name, _("Set transforms"));
+	makestr(type, "Drawable/SetTransforms");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "objects", nullptr,1, _("Objects"), nullptr,0,false)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "transforms", nullptr,1, _("Transforms"), nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "override", new BooleanValue(false),1, _("Modify original"), _("Dangerous!! Modifies original objects. May affect upstream connections."),0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "positions", new BooleanValue(true),1, _("Positions"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "rotations", new BooleanValue(true),1, _("Rotations"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "scales", new BooleanValue(true),1, _("Scales"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Out"), nullptr,0,false));
+}
+
+SetTransformsNode::~SetTransformsNode()
+{
+}
+
+NodeBase *SetTransformsNode::Duplicate()
+{
+	SetTransformsNode *node = new SetTransformsNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+int SetTransformsNode::GetStatus()
+{
+	Affine *o = dynamic_cast<Affine*>(properties.e[0]->GetData()); 
+	if (!o) {
+		SetValue *ss = dynamic_cast<SetValue*>(properties.e[0]->GetData());
+		if (!ss) return -1;
+	}
+
+	FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(properties.e[1]->GetData()); 
+	if (!fv) {
+		o = dynamic_cast<Affine*>(properties.e[1]->GetData());
+		if (!o) {
+			PointSetValue *set = dynamic_cast<PointSetValue*>(properties.e[1]->GetData());
+			if (!set) {
+				SetValue *ss = dynamic_cast<SetValue*>(properties.e[1]->GetData());
+				if (!ss) return -1;
+			}
+		}
+	}
+
+	if (!isNumberType(properties.e[2]->GetData(), nullptr)) return -1;
+	if (!isNumberType(properties.e[3]->GetData(), nullptr)) return -1;
+	if (!isNumberType(properties.e[4]->GetData(), nullptr)) return -1;
+	if (!isNumberType(properties.e[5]->GetData(), nullptr)) return -1;
+
+	return NodeBase::GetStatus();
+}
+
+int SetTransformsNode::Update()
+{
+	Error(nullptr);
+
+	// determine input object(s)
+	Value *ov = properties.e[0]->GetData();
+	Affine *o = dynamic_cast<Affine*>(ov); 
+	SetValue *iset = nullptr;
+	if (!o) {
+		iset = dynamic_cast<SetValue*>(ov);
+		if (!iset) {
+			Error(_("Objects must be Affine derived or set of Affine derived"));
+			return -1;
+		}
+	}
+
+	Value *v = properties.e[1]->GetData();
+	if (!v) return -1;
+
+	PointSetValue *pset = nullptr;
+	SetValue *set = nullptr;
+	Affine *af = dynamic_cast<Affine*>(v);
+	if (!af) {
+		pset = dynamic_cast<PointSetValue*>(v);
+		if (!pset) {
+			set = dynamic_cast<SetValue*>(v);
+			if (!set) {
+				Error(_("Transforms must be Affine, PointSet with transforms, or Set of Affine"));
+				return -1;
+			}
+		}
+	}
+	
+	int isnum = 0;
+	bool override = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	bool positions = getNumberValue(properties.e[3]->GetData(), &isnum);
+	if (!isnum) return -1;
+	bool rotations = getNumberValue(properties.e[4]->GetData(), &isnum);
+	if (!isnum) return -1;
+	bool scales = getNumberValue(properties.e[5]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	// apply into output
+	if (o) { //single object, easy!
+		if (!override) {
+			ov = ov->duplicate();
+			o = dynamic_cast<Affine*>(ov);
+		} else ov->inc_count();
+		properties.e[properties.n-1]->SetData(ov, 1);
+
+		if (af) {
+			// o->m(af->m());
+
+		} else if (pset) { //pointset, grab first
+			if (pset->NumPoints() > 0) {
+				af = dynamic_cast<Affine*>(pset->points.e[0]->info);
+				if (!af) {
+					Error(_("Point set missing transform"));
+					return -1;
+				}
+				// o->m(af->m());
+			}
+		} else if (set) { //set, grab first
+			if (set->n() > 0) {
+				af = dynamic_cast<Affine*>(set->e(0));
+				if (!af) {
+					Error(_("Set must only contain transforms"));
+					return -1;
+				}
+			}
+		}
+
+		if (positions && rotations && scales) o->m(af->m());
+		else {
+			if (positions) o->origin(af->origin());
+			if (rotations) o->setShear(af->xaxis().angle(), af->yaxis().angle());
+			if (scales)    o->setScale(af->xaxis().norm(),  af->yaxis().norm());
+		}
+
+	} else { //iset of inputs
+		SetValue *out = dynamic_cast<SetValue *>(properties.e[properties.n-1]->GetData());
+		if (!out) {
+			if (override) {
+				out = iset;
+				out->inc_count();
+			} else out = new SetValue();
+			properties.e[properties.n-1]->SetData(out, 1);
+		} else {
+			if (override) {
+				if (out != iset) {
+					properties.e[properties.n-1]->SetData(iset, 0);
+					out = iset;
+				}
+			} else out->values.flush();
+			properties.e[properties.n-1]->Touch();
+		}
+
+		for (int c=0; c<iset->n(); c++) {
+			//object to transform
+			ov = iset->e(c);
+			o = dynamic_cast<Affine*>(ov);
+			if (!o) {
+				Error(_("Bad input type"));
+				return -1;
+			}
+
+			//get scale value
+			if (pset) { //pointset
+				if (c < pset->NumPoints()) {
+					af = dynamic_cast<Affine*>(pset->points.e[c]->info);
+					if (!af) {
+						Error(_("Point set missing scale information"));
+						return -1;
+					}
+				}
+			} else if (set) {
+				af = dynamic_cast<Affine*>(set->e(c));
+				if (!af) {
+					Error(_("Set must only contain transforms"));
+					return -1;
+				}
+			}
+
+			if (!override) {
+				ov = ov->duplicate();
+				o = dynamic_cast<Affine*>(ov);
+				if (dynamic_cast<DrawableObject*>(ov)) dynamic_cast<DrawableObject*>(ov)->FindBBox();
+				out->Push(ov, 1);
+			} //else oo is already in out, since out == oset
+
+			// if (af) o->m(af->m());
+			if (af) {
+				if (positions && rotations && scales) o->m(af->m());
+				else {
+					if (positions) o->origin(af->origin());
+					if (rotations) o->setShear(af->xaxis().angle(), af->yaxis().angle());
+					if (scales)    o->setScale(af->xaxis().norm(),  af->yaxis().norm());
+				}
+			}
 		}
 	}
 
@@ -2136,6 +2586,647 @@ int ExtrudeNode::Update()
 	DBG out->dump_out(stdout, 2, 0, nullptr);
 	out->FindBBox();
 	delete dir;
+	return NodeBase::Update();
+}
+
+
+//----------------------- SamplePathNode ------------------------
+
+/*! \class SamplePathNode
+ *
+ * Do stuff.
+ */
+class SamplePathNode : public NodeBase
+{
+  public:
+	SamplePathNode();
+	virtual ~SamplePathNode();
+	virtual NodeBase *Duplicate();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new SamplePathNode(); }
+};
+
+SamplePathNode::SamplePathNode()
+{
+	makestr(type, "Paths/Samplepath");
+	makestr(Name, _("Sample Path"));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in",     NULL,1,                 _("Path")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "p",    new DoubleValue(0),1,     _("Pos"),      _("Positions to sample")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "dist", new BooleanValue(true),1, _("Distance"), _("Whether pos is distance (s) or bezier number (t)"), 0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "paths",new IntValue(0),1,        _("Path indices"), _("Which subpath(s) to sample from")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "tr",   new BooleanValue(true),1, _("Transforms"), _("Whether to sample whole transforms or just positions"), 0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "asset",new BooleanValue(false),1,_("In pointset"),_("Whether result are in a Set or a PointSet"), 0,true));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out"), NULL,0, false));
+}
+
+SamplePathNode::~SamplePathNode()
+{
+}
+
+NodeBase *SamplePathNode::Duplicate()
+{
+	SamplePathNode *newnode = new SamplePathNode();
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int SamplePathNode::GetStatus()
+{
+	if (!dynamic_cast<LPathsData*>(properties.e[0]->GetData())) return -1;
+
+	return NodeBase::GetStatus();
+}
+
+int SamplePathNode::Update()
+{
+	ClearError();
+
+	LPathsData *path = dynamic_cast<LPathsData*>(properties.e[0]->GetData());
+	if (!path) return -1;
+
+	int isnum = 0;
+	int n = 0;
+	double *d;
+	double dd;
+
+	bool as_distance = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	bool with_transforms = getNumberValue(properties.e[4]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	bool as_pointset = getNumberValue(properties.e[5]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	// in positions
+	Value *v = properties.e[1]->GetData();
+	if (isNumberType(v, &dd)) {
+		n = 1;
+		d = new double[1];
+		d[0] = dd;
+	} else {
+		if (v->type() != VALUE_Set) {
+			Error(_("Positions must be a number or set of numbers."));
+			return -1;
+		}
+		SetValue *set = dynamic_cast<SetValue*>(v);
+		n = set->n();
+		d = new double[n];
+		for (int c=0; c<n; c++) {
+			if (!isNumberType(set->e(c), &dd)) {
+				Error(_("Positions must be a number or set of numbers."));
+				delete[] d;
+				return -1;
+			}
+			d[c] = dd;
+		}
+	}
+
+	// subpath indices
+	v = properties.e[3]->GetData();
+	int *pathindices = new int[n];
+	if (isNumberType(v, &dd)) {
+		if (dd < 0 || dd >= path->NumPaths()) {
+			Error(_("Bad path indices"));
+			delete[] d;
+			delete[] pathindices;
+			return -1;
+		}
+		for (int c=0; c<n; c++) pathindices[c] = (int)dd;
+
+	} else {
+		if (v->type() != VALUE_Set) {
+			Error(_("Path indices must be a number or set of numbers."));
+			return -1;
+		}
+		SetValue *set = dynamic_cast<SetValue*>(v);
+		int i = 0;
+		for (int c=0; c<n; c++) {
+			if (c < set->n()) {
+				if (!isNumberType(set->e(c), &dd)) {
+					Error(_("Path indices must be a number or set of numbers."));
+					delete[] d;
+					delete[] pathindices;
+					return -1;
+				}
+				i = dd;
+			}
+			d[c] = i;
+		}
+	}
+
+	// set up out
+	PointSetValue *psetout = nullptr;
+	SetValue *setout = nullptr;
+
+	if (as_pointset) {
+		psetout = dynamic_cast<PointSetValue*>(properties.e[properties.n-1]->GetData());
+		if (!psetout) {
+			psetout = new PointSetValue();
+			properties.e[properties.n-1]->SetData(psetout, 1);
+		} else properties.e[properties.n-1]->Touch();
+
+	} else {
+		setout = dynamic_cast<SetValue*>(properties.e[properties.n-1]->GetData());
+		if (!setout) {
+			setout = new SetValue();
+			properties.e[properties.n-1]->SetData(setout, 1);
+		} else properties.e[properties.n-1]->Touch();
+	}
+
+	if (psetout) with_transforms = true;
+
+	// compute points
+	flatpoint point, tangent;
+	Affine af;
+	for (int c=0; c<n; c++) {
+		// virtual int PointAlongPath(int pathindex, double t, int tisdistance, flatpoint *point, flatpoint *tangent);
+		path->PointAlongPath(pathindices[c], d[c], as_distance, &point, &tangent);
+		tangent.normalize();
+
+		af.origin(point);
+		af.xaxis(tangent);
+		af.yaxis(tangent.transpose());
+
+		if (with_transforms) {
+
+			if (setout) {
+				if (c >= setout->n()) {
+					setout->Push(new AffineValue(af.m()), 1);
+
+				} else {
+					AffineValue *a = dynamic_cast<AffineValue*>(setout->e(c));
+					if (!a) {
+						a = new AffineValue(af.m());
+						setout->Set(c, a, 1);
+					} else a->m(af.m());
+				}
+
+			} else { //assume pointset
+				if (c >= psetout->NumPoints()) {
+					psetout->AddPoint(point, new AffineValue(af.m()), 1);
+				} else {
+					psetout->Point(point, c);
+					AffineValue *a = dynamic_cast<AffineValue*>(psetout->PointInfo(c));
+					if (!a) {
+						a = new AffineValue(af.m());
+						psetout->SetPointInfo(c, a, 1);
+					} else a->m(af.m());
+				}
+
+			}
+		} else {
+			if (setout) {
+				if (c >= setout->n()) {
+					setout->Push(new FlatvectorValue(point), 1);
+
+				} else {
+					FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(setout->e(c));
+					if (!fv) {
+						fv = new FlatvectorValue(point);
+						setout->Set(c, fv, 1);
+					} else fv->v = point;
+				}
+			} // else pointset, but then always do with transforms			
+		}
+	}
+
+	if (setout) while (setout->n() > n) setout->Remove(setout->n()-1);
+	if (psetout) while (setout->n() > n) setout->Remove(psetout->NumPoints()-1);
+	
+	delete[] d;
+	delete[] pathindices;
+	return NodeBase::Update();
+}
+
+
+//----------------------- ClosestPointNode ------------------------
+
+/*! \class ClosestPointNode
+ *
+ * Make set of points closest to input points. Single in is single out.
+ */
+class ClosestPointNode : public NodeBase
+{
+  public:
+	ClosestPointNode();
+	virtual ~ClosestPointNode();
+	virtual NodeBase *Duplicate();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ClosestPointNode(); }
+};
+
+ClosestPointNode::ClosestPointNode()
+{
+	makestr(type, "Paths/ClosestPoint");
+	makestr(Name, _("Closest Point"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,     _("In"), _("A point or set of points")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "near", new FlatvectorValue(),1,  _("Near point")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "transforms", new BooleanValue(true),1,  _("As transforms")));
+	// AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "pointset",   new BooleanValue(false),1,  _("As PointSet")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "points", NULL,1, _("Points on path"), NULL,0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "t", NULL,1, _("t"), NULL,0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "pathi", NULL,1, _("Subpath index"), NULL,0, false));
+}
+
+ClosestPointNode::~ClosestPointNode()
+{
+}
+
+NodeBase *ClosestPointNode::Duplicate()
+{
+	ClosestPointNode *newnode = new ClosestPointNode();
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int ClosestPointNode::GetStatus()
+{
+	if (!dynamic_cast<LPathsData*>(properties.e[0]->GetData())) return -1;
+	Value *v = properties.e[1]->GetData();
+	if (v->type() != VALUE_Flatvector && v->type() != VALUE_Set) return -1;
+	if (!isNumberType(properties.e[2]->GetData(), nullptr)) return -1;
+	// if (!isNumberType(properties.e[2]->GetData())) return -1;
+
+	return NodeBase::GetStatus();
+}
+
+int ClosestPointNode::Update()
+{
+	ClearError();
+
+	LPathsData *path = dynamic_cast<LPathsData*>(properties.e[0]->GetData());
+	if (!path) return -1;
+
+	int isnum = 0;
+
+	bool as_transforms = getNumberValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	// bool as_pointset = getNumberValue(properties.e[2]->GetData(), &isnum);
+	// if (!isnum) return -1;
+
+	flatpoint vv;
+	SetValue *inset = nullptr;
+
+	Value *v = properties.e[1]->GetData();
+	if (v->type() == VALUE_Flatvector) {
+		vv = dynamic_cast<FlatvectorValue*>(v)->v;
+	} else if (v->type() == VALUE_Set) {
+		inset = dynamic_cast<SetValue*>(v);
+	}
+
+	SetValue *outsetv = nullptr;
+	FlatvectorValue *outv = nullptr;
+	AffineValue *outaf = nullptr;
+	SetValue *outsett = nullptr;
+	DoubleValue *outt = nullptr;
+	SetValue *outsetpathi = nullptr;
+	IntValue *outpathi = nullptr;
+
+	if (inset) {
+		outsetv = dynamic_cast<SetValue*>(properties.e[3]->GetData());
+		if (!outsetv) {
+			outsetv = new SetValue();
+			properties.e[3]->SetData(outsetv, 1);
+		} else properties.e[3]->Touch();
+
+		outsett = dynamic_cast<SetValue*>(properties.e[4]->GetData());
+		if (!outsett) {
+			outsett = new SetValue();
+			properties.e[4]->SetData(outsett, 1);
+		} else properties.e[4]->Touch();
+
+		outsetpathi = dynamic_cast<SetValue*>(properties.e[5]->GetData());
+		if (!outsetpathi) {
+			outsetpathi = new SetValue();
+			properties.e[5]->SetData(outsetpathi, 1);
+		} else properties.e[5]->Touch();
+
+	} else {
+		if (as_transforms) {
+			outaf = dynamic_cast<AffineValue*>(properties.e[3]->GetData());
+			if (!outaf) {
+				outaf = new AffineValue();
+				properties.e[3]->SetData(outaf, 1);
+			} else properties.e[3]->Touch();
+		} else {
+			outv = dynamic_cast<FlatvectorValue*>(properties.e[3]->GetData());
+			if (!outv) {
+				outv = new FlatvectorValue();
+				properties.e[3]->SetData(outv, 1);
+			} else properties.e[3]->Touch();
+		}
+
+		outt = dynamic_cast<DoubleValue*>(properties.e[4]->GetData());
+		if (!outt) {
+			outt = new DoubleValue();
+			properties.e[4]->SetData(outt, 1);
+		} else properties.e[4]->Touch();
+
+		outpathi = dynamic_cast<IntValue*>(properties.e[5]->GetData());
+		if (!outpathi) {
+			outpathi = new IntValue();
+			properties.e[5]->SetData(outpathi, 1);
+		} else properties.e[5]->Touch();
+	}
+
+	for (int c=0; c<(inset ? inset->n() : 1); c++) {
+		if (inset) {
+			FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(inset->e(c));
+			if (!fv) {
+				Error(_("Missing input point in set"));
+				return -1;
+			}
+			vv = fv->v;
+
+			if (as_transforms) {
+				if (c < outsetv->n()) {
+					outaf = dynamic_cast<AffineValue*>(outsetv->e(c));
+					if (!outaf) {
+						outaf = new AffineValue();
+						outsetv->Set(c, outaf, 1);
+					}
+				} else {
+					outaf = new AffineValue();
+					outsetv->Push(outaf, 1);
+				}
+			} else {
+				if (c < outsetv->n()) {
+					outv = dynamic_cast<FlatvectorValue*>(outsetv->e(c));
+					if (!outv) {
+						outv = new FlatvectorValue();
+						outsetv->Set(c, outv, 1);
+					}
+				} else {
+					outv = new FlatvectorValue();
+					outsetv->Push(outv, 1);
+				}
+			}
+
+			if (c < outsett->n()) {
+				outt = dynamic_cast<DoubleValue*>(outsett->e(c));
+				if (!outt) {
+					outt = new DoubleValue();
+					outsett->Set(c, outt, 1);
+				}
+			} else {
+				outt = new DoubleValue();
+				outsett->Push(outt, 1);
+			}
+
+			if (c < outsett->n()) {
+				outpathi = dynamic_cast<IntValue*>(outsetpathi->e(c));
+				if (!outpathi) {
+					outpathi = new IntValue();
+					outsetpathi->Set(c, outpathi, 1);
+				}
+			} else {
+				outpathi = new IntValue();
+				outsetpathi->Push(outpathi, 1);
+			}
+		}
+
+		// virtual flatpoint ClosestPoint(flatpoint point, double *disttopath, double *distalongpath, double *tdist, int *pathi);
+		int i;
+		flatpoint p = path->ClosestPoint(vv, nullptr, nullptr, &(outt->d), &i);
+		outpathi->i = i;
+		if (outv) outv->v = p;
+		else {
+			flatpoint point, tangent;
+			path->PointAlongPath(i, outt->d, 0, &point, &tangent);
+			tangent.normalize();
+			outaf->origin(p);
+			outaf->xaxis(tangent);
+			outaf->yaxis(tangent.transpose());
+		}
+	}
+
+	if (inset) {
+		while (outsetv->n() > inset->n()) {
+			outsetv->Remove(outsetv->n()-1);
+			outsett->Remove(outsett->n()-1);
+			outsetpathi->Remove(outsetpathi->n()-1);
+		}
+	}
+
+	return NodeBase::Update();
+}
+
+
+//----------------------- RoundedRectNode ------------------------
+
+/*! \class RoundedRectNode
+ *
+ */
+class RoundedRectNode : public NodeBase
+{
+  public:
+	RoundedRectNode();
+	virtual ~RoundedRectNode();
+	virtual NodeBase *Duplicate();
+	virtual int GetStatus();
+	virtual int Update();
+	virtual Value *PreviewFrom() { return properties.e[properties.n-1]->GetData(); }
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new RoundedRectNode(); }
+};
+
+RoundedRectNode::RoundedRectNode()
+{
+	makestr(type, "Paths/RoundedRect");
+	makestr(Name, _("Rounded Rect"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "x", new DoubleValue(-1),1,  _("X")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "y", new DoubleValue(-1),1,  _("Y")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "w", new DoubleValue(2),1,  _("Width")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "h", new DoubleValue(2),1,  _("Height")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "r", new DoubleValue(.5),1,  _("Round"), _("Round must be a number, vector2, or list of up to 4 of those")));
+	
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out"), NULL,0, false));
+}
+
+RoundedRectNode::~RoundedRectNode()
+{
+}
+
+NodeBase *RoundedRectNode::Duplicate()
+{
+	RoundedRectNode *newnode = new RoundedRectNode();
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int RoundedRectNode::GetStatus()
+{
+	for (int c=0; c<4; c++)
+		if (!isNumberType(properties.e[c]->GetData(), nullptr)) return -1;
+	Value *v = properties.e[4]->GetData();
+	if (!v) return -1;
+	if (!isNumberType(v, nullptr) && v->type() != VALUE_Set && v->type() != VALUE_Flatvector) return -1;
+	return NodeBase::GetStatus();
+}
+
+int RoundedRectNode::Update()
+{
+	// css uses border-radius: x [y]
+	// in_dist ... point ... out_dist
+	// corner shape, defined at right angle, but shear to fit. an open single Path
+
+	ClearError();
+
+	double x,y,w,h;
+	double r = -1;
+	flatvector sizes[4];
+	Value *v = properties.e[0]->GetData();
+	if (!isNumberType(v, &x)) return -1;
+	v = properties.e[1]->GetData();
+	if (!isNumberType(v, &y)) return -1;
+	v = properties.e[2]->GetData();
+	if (!isNumberType(v, &w)) return -1;
+	v = properties.e[3]->GetData();
+	if (!isNumberType(v, &h)) return -1;
+
+	//parse round
+	v = properties.e[4]->GetData();
+	if (isNumberType(v, &r)) {
+		sizes[0].set(r,r);
+		sizes[1].set(r,r);
+		sizes[2].set(r,r);
+		sizes[3].set(r,r);
+
+	} else if (v->type() == VALUE_Flatvector) {
+		FlatvectorValue *dv = dynamic_cast<FlatvectorValue*>(v);
+		sizes[0] = sizes[2] = dv->v;
+		sizes[1].set(dv->v.y,dv->v.x);
+		sizes[3].set(dv->v.y,dv->v.x);
+
+	} else if (v->type() == VALUE_Set) {
+		SetValue *set = dynamic_cast<SetValue*>(v);
+		if (set->n() == 0) return -1;
+		if (set->n() < 4) {
+			v = set->e(0);
+			if (isNumberType(v, &r)) {
+				sizes[0].set(r,r);
+				sizes[1].set(r,r);
+				sizes[2].set(r,r);
+				sizes[3].set(r,r);
+
+			} else if (v->type() == VALUE_Flatvector) {
+				FlatvectorValue *dv = dynamic_cast<FlatvectorValue*>(v);
+				sizes[0] = sizes[2] = dv->v;
+				sizes[1].set(dv->v.y,dv->v.x);
+				sizes[3].set(dv->v.y,dv->v.x);
+			} else {
+				Error(_("Bad round value"));
+				return -1;
+			}
+
+		} else {
+			for (int c=0; c<4; c++) {
+				v = set->e(c);
+				if (isNumberType(v, &r)) {
+					sizes[c].set(r,r);
+
+				} else if (v->type() == VALUE_Flatvector) {
+					FlatvectorValue *dv = dynamic_cast<FlatvectorValue*>(v);
+					if (c%2 == 0) sizes[c] = dv->v;
+					else sizes[c].set(dv->v.y,dv->v.x);
+					
+				} else {
+					Error(_("Bad round value"));
+					return -1;
+				}
+			}
+		}
+
+	} else {
+		Error(_("Round must be a number, vector2, or list of up to 4 of those"));
+		return -1;
+	}
+
+	LPathsData *out = dynamic_cast<LPathsData*>(properties.e[properties.n-1]->GetData());
+	if (!out) {
+		out = new LPathsData();
+		ScreenColor col(1.,0.,0.,1.);
+		out->line(.2, -1, -1, &col);
+		properties.e[properties.n-1]->SetData(out, 1);
+		cout << " setting out"<<endl;
+	} else properties.e[properties.n-1]->Touch();
+	
+	//always make a path with 4 vertices, each has control points
+	out->MakeRoundedRect(0, x,y,w,h, sizes,4);
+	out->touchContents();
+
+	UpdatePreview();
+	Wrap();
+	return NodeBase::Update();
+}
+
+
+//----------------------- PathLengthNode ------------------------
+
+/*! \class PathLengthNode
+ */
+class PathLengthNode : public NodeBase
+{
+  public:
+	PathLengthNode();
+	virtual ~PathLengthNode();
+	virtual NodeBase *Duplicate();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new PathLengthNode(); }
+};
+
+PathLengthNode::PathLengthNode()
+{
+	makestr(type, "Paths/Length");
+	makestr(Name, _("Path length"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,     _("Path")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "subpath", new IntValue(0),1, _("Subpath index")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", new DoubleValue(0),1, _("Length"), NULL,0, false));
+}
+
+PathLengthNode::~PathLengthNode()
+{
+}
+
+NodeBase *PathLengthNode::Duplicate()
+{
+	PathLengthNode *newnode = new PathLengthNode();
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int PathLengthNode::GetStatus()
+{
+	if (!dynamic_cast<LPathsData*>(properties.e[0]->GetData())) return -1;
+	return NodeBase::GetStatus();
+}
+
+int PathLengthNode::Update()
+{
+	LPathsData *path = dynamic_cast<LPathsData*>(properties.e[0]->GetData());
+	if (!path) return -1;
+	double d;
+
+	if (!isNumberType(properties.e[1]->GetData(), &d) || d < 0 || d >= path->NumPaths()) return -1;
+	int pathi = d;
+
+	DoubleValue *dv = dynamic_cast<DoubleValue*>(properties.e[2]->GetData());
+	dv->d = path->Length(pathi, 0,-1);
+	properties.e[2]->Touch();
+
 	return NodeBase::Update();
 }
 
@@ -3781,6 +4872,8 @@ int SetupDataObjectNodes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/KidsToSet",         KidsToSetNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/SetPositions",      SetPositionsNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/SetScales",         SetScalesNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/SetRotations",      SetRotationsNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/SetTransforms",     SetTransformsNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/RotateDrawables",   RotateDrawablesNode::NewNode,  NULL, 0);
 
 	factory->DefineNewObject(getUniqueNumber(), "Paths/PathsData",         newPathsDataNode,  NULL, 0);
@@ -3798,7 +4891,10 @@ int SetupDataObjectNodes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Paths/Corners",           CornersNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/SetOriginToBBox",   SetOriginBBoxNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/Extrude",           ExtrudeNode::NewNode,  NULL, 0);
-
+	factory->DefineNewObject(getUniqueNumber(), "Paths/Length",            PathLengthNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/SamplePath",        SamplePathNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/ClosestPoint",      ClosestPointNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/RoundedRect",       RoundedRectNode::NewNode,  NULL, 0);
 
 	factory->DefineNewObject(getUniqueNumber(), "Points/Grid",             newPointsGridNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Points/HexGrid",          newPointsHexNode,  NULL, 0);

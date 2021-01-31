@@ -3,60 +3,281 @@
 
 TODO:
   FitIn
+  AlignToBounds
+  MakeSet: manually link elements, output set of them
+  PathIntersections
   ObjectArrayNode
   MirrorPathNode
-  AlignToBounds
   MergePaths
   Printf
   MenuValue
+  CutPathFromTo
 
   EulerToQuaternion
   QuaternionToEuler
   Swizzle
 
 
-//----------------------- GroupProxyNode ------------------------
+//----------------------- PathIntersectionsNode ------------------------
 
- *** not sure if this class is worth it
-/*! \class GroupProxyNode
- * Specific node to coordinate passing parameters across group nesting boundaries
+/*! \class PathIntersectionsNode
+ *
+ * 
  */
-class GroupProxyNode : public NodeBase
+class PathIntersectionsNode : public NodeBase
 {
   public:
-	GroupProxyNode();
-	virtual ~GroupProxyNode();
+	PathIntersectionsNode();
+	virtual ~PathIntersectionsNode();
+	virtual NodeBase *Duplicate();
 	virtual int GetStatus();
 	virtual int Update();
 
-	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new GroupProxyNode(); }
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new PathIntersectionsNode(); }
 };
 
-GroupProxyNode::GroupProxyNode(bool ins)
+PathIntersectionsNode::PathIntersectionsNode()
 {
-	makestr(type, "GroupProxy");
-	makestr(Name, ins ? _("Inputs") : _("Outputs"));
+	makestr(type, "Paths/Intersections");
+	makestr(Name, _("Path Intersections"));
 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,     _("Input"), _("A path or model")));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "dir",   new FlatvectorValue(0,0,1),1,  _("Vector"),  _("Vector or path")));
-
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out"), NULL,0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,     _("Paths"), nullptr));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "self", new BooleanValue(true),1, _("Check self"), _("Whether to check for a path intersecting itself"),0,true));
+	
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "points", NULL,1, _("Points"), NULL,0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "dir1", NULL,1, _("Direction 1"), NULL,0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "dir2", NULL,1, _("Direction 2"), NULL,0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "info", NULL,1, _("info"), NULL,0, false));
 }
 
-GroupProxyNode::~GroupProxyNode()
+PathIntersectionsNode::~PathIntersectionsNode()
 {
 }
 
-int GroupProxyNode::GetStatus()
+NodeBase *PathIntersectionsNode::Duplicate()
 {
+	PathIntersectionsNode *newnode = new PathIntersectionsNode();
+	dynamic_cast<BooleanValue*>(newnode->properties.e[1]->GetData())->i
+		= dynamic_cast<BooleanValue*>(properties.e[1]->GetData())->i;
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int PathIntersectionsNode::GetStatus()
+{
+	Value *v = properties.e[0]->GetData();
+	if (!v || (!dynamic_cast<LPathsData*>(v) && v->type() != VALUE_Set)) return -1;
 	return NodeBase::GetStatus();
 }
 
-int GroupProxyNode::Update()
+int PathIntersectionsNode::Update()
 {
+	Value *v = properties.e[0]->GetData();
+	LPathsData *path1 = dynamic_cast<LPathsData*>(v);
+	if (!path1 && v->type() != VALUE_Set) return -1;
 
+	SetValue *setin = path1 ? nullptr : dynamic_cast<SetValue*>(v);
+
+	int isnum;
+	bool check_self = getIntValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	NumStack<flatpoint> points;
+	NumStack<int> obj1, obj2, pathi1, pathi2;
+	NumStack<double> t1, t2;
+	
+	int n = 0; //grand total
+	LPathsData *path2;
+	flatpoint pts1[4], pts2[4];
+	flatpoint found[9];
+	double foundt1[9], foundt2[9];
+	Coordinate *start1, *start2, *p1, *p2, *p1next, *p2next;
+	int num; //num per segment (up to 9 each check)
+	int isline;
+
+	for (int c=0; c< setin ? setin->n() : 1; c++) {
+		if (setin) {
+			path1 = dynamic_cast<LPathsData*>(setin->e(c));
+			if (!pathin) {
+				Error(_("In must be a path or set of paths"));
+				return -1;
+			}
+		}
+
+		path2 = path1;
+		for (int c2 = c + (check_self ? 0 : 1); c2 < setin ? setin->n() : 1; c2++) {
+			if (setin) {
+				path2 = dynamic_cast<LPathsData*>(setin->e(c2));
+				if (!path2) {
+					Error(_("In must be a path or set of paths"));
+					return -1;
+				}
+			}
+
+			// check each bez segment in path1 vs each in path2
+			if (path1 == path2) {
+				// *** TODO !!!!! IMPLEMENT ME!!!!!!
+				// bez_intersect_self(...);
+				continue;
+			}
+			
+			for (int c3 = 0; c3 < path1->paths.n; c3++) {
+				if (!path1->paths.e[c3]->path) continue;
+				start1 = p1 = path1->paths.e[c3]->path;
+
+				pts1[0] = p1->p();
+				if (!p1->getNext(pts1[1], pts1[2], p1next) != 0) break;
+				pts1[3] = p1next->p();
+
+				do {
+					for (int c4 = 0; c4 < path2->paths.n; c4++) {
+						if (!path2->paths.e[c4]->path) continue;
+						start2 = p2 = path2->paths.e[c4]->path;
+
+						do {
+							pts2[0] = p2->p();
+							if (!p2->getNext(pts2[1], pts2[2], p2next) != 0) break;
+							pts2[3] = p2next->p();
+
+							bez_intersect_bez(
+									pts1[0], pts1[1], pts1[2], pts1[3],
+									pts2[0], pts2[1], pts2[2], pts2[3],
+									found, foundt1, foundt2, num,
+									threshhold,
+									0,0,1,
+									1, maxdepth
+								);
+
+							for (int c5 = 0; c5 < num; c5++) {
+								points.push(found[c5]);
+								obj1.push(c);
+								obj2.push(c2);
+								pathi1.push(c3);
+								pathi2.push(c4);
+								t1.push(foundt1[c5]);
+								t2.push(foundt2[c5]);
+							}
+
+							p2 = p2next;
+						} while (p2 && p2 != start2);
+					}
+
+					p1 = p1next;
+				} while (p1 && p1 != start1);
+			}
+		}
+	}
+
+	//only update things that are connected to other things
+	if (properties.e[2]->IsConnected()) { //points
+		SetValue *outpoints = dynamic_cast<SetValue*>(properties.e[2]->GetData());
+		if (!outpoints) {
+			outpoints = new SetValue();
+			properties.e[2]->SetData(outpoints, 1);
+		} else properties.e[2]->Touch();
+
+		for (int c=0; c<points.n; c++) {
+			if (c >= outpoints->n()) {
+				outpoints->push(new FlatvectorValue(points.e[c]), 1);
+			} else {
+				FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(outpoints->e(c))
+				fv->v = points.e[c];
+			}
+		}
+
+		while (outpoints->n() != points.n) outpoints->Remove(outpoints->n()-1);
+	}
+	if (properties.e[3]->IsConnected()) { //dir1
+		SetValue *out = dynamic_cast<SetValue*>(properties.e[3]->GetData());
+		if (!out) {
+			out = new SetValue();
+			properties.e[3]->SetData(out, 1);
+		} else properties.e[3]->Touch();
+
+		flatpoint v;
+		for (int c=0; c<points.n; c++) {
+			int i = obj1[c];
+			LPathsData *paths = setin ? dynamic_cast<LPathsData*>(setin->e(i)) : path1;
+			paths->PointAlongPath(pathi1[c], foundt1[c], false, nullptr, &v);
+			v.normalize();
+
+			if (c >= out->n()) {
+				out->push(new FlatvectorValue(v), 1);
+			} else {
+				FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(out->e(c))
+				fv->v = v;
+			}
+		}
+
+		while (out->n() != points.n) out->Remove(out->n()-1);
+	}
+	if (properties.e[4]->IsConnected()) { //dir2
+		SetValue *out = dynamic_cast<SetValue*>(properties.e[4]->GetData());
+		if (!out) {
+			out = new SetValue();
+			properties.e[4]->SetData(out, 1);
+		} else properties.e[4]->Touch();
+
+		flatpoint v;
+		for (int c=0; c<points.n; c++) {
+			int i = obj2[c];
+			LPathsData *paths = setin ? dynamic_cast<LPathsData*>(setin->e(i)) : path1;
+			paths->PointAlongPath(pathi2[c], foundt2[c], false, nullptr, &v);
+			v.normalize();
+
+			if (c >= out->n()) {
+				out->push(new FlatvectorValue(v), 1);
+			} else {
+				FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(out->e(c))
+				fv->v = v;
+			}
+		}
+
+		while (out->n() != points.n) out->Remove(out->n()-1);
+	}
+	if (properties.e[5]->IsConnected()) { //info []
+		// info [
+		//   int    which path object1
+		//   int    which path index1
+		//   float  path1 t
+		//   int    which path object2
+		//   int    which path index2
+		//   float  path2 t
+		//  ]
+		SetValue *out = dynamic_cast<SetValue*>(properties.e[5]->GetData());
+		if (!out) {
+			out = new SetValue();
+			properties.e[5]->SetData(out, 1);
+		} else properties.e[5]->Touch();
+
+		flatpoint v;
+		for (int c=0; c<points.n; c++) {
+			if (c >= out->n()) {
+				SetValue *set = new SetValue();
+				set->push(new IntValue(obj1[c]), 1);
+				set->push(new IntValue(pathi1[c]), 1);
+				set->push(new DoubleValue(foundt1[c]), 1);
+				set->push(new IntValue(obj2[c]), 1);
+				set->push(new IntValue(pathi2[c]), 1);
+				set->push(new DoubleValue(foundt2[c]), 1);
+				out->Push(set, 1);
+				
+			} else {
+				SetValue *set = dynamic_cast<SetValue*>(out->e(c))
+				dynamic_cast<IntValue*>(set->e(0))->i    = obj1[c];
+				dynamic_cast<IntValue*>(set->e(1))->i    = pathi1[c];
+				dynamic_cast<DoubleValue*>(set->e(2))->i = foundt1[c];
+				dynamic_cast<IntValue*>(set->e(3))->i    = obj2[c];
+				dynamic_cast<IntValue*>(set->e(4))->i    = pathi2[c];
+				dynamic_cast<DoubleValue*>(set->e(5))->i = foundt2[c];
+			}
+		}
+
+		while (out->n() != points.n) out->Remove(out->n()-1);
+	}
+
+	return NodeBase::Update();
 }
-
 
 
 //----------------------- FitInNode ------------------------
@@ -199,26 +420,131 @@ int ObjectArrayNode::Update()
 
 
 
-//------------------------------ concat --------------------------------------------
+
+//----------------------- GroupProxyNode ------------------------
+
+ *** not sure if this class is worth it
+/*! \class GroupProxyNode
+ * Specific node to coordinate passing parameters across group nesting boundaries
+ */
+class GroupProxyNode : public NodeBase
+{
+  public:
+	GroupProxyNode();
+	virtual ~GroupProxyNode();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new GroupProxyNode(); }
+};
+
+GroupProxyNode::GroupProxyNode(bool ins)
+{
+	makestr(type, "GroupProxy");
+	makestr(Name, ins ? _("Inputs") : _("Outputs"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,     _("Input"), _("A path or model")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "dir",   new FlatvectorValue(0,0,1),1,  _("Vector"),  _("Vector or path")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out"), NULL,0, false));
+}
+
+GroupProxyNode::~GroupProxyNode()
+{
+}
+
+int GroupProxyNode::GetStatus()
+{
+	return NodeBase::GetStatus();
+}
+
+int GroupProxyNode::Update()
+{
+
+}
+
+
+//----------------------- SetToPointsetNode ------------------------
+
+/*! \class SetToPointsetNode
+ *
+ * Turn a vector, affine, affine derived, or set thereof into a PointSet with Affine info.
+ */
+class SetToPointsetNode : public NodeBase
+{
+  public:
+	SetToPointsetNode();
+	virtual ~SetToPointsetNode();
+	virtual NodeBase *Duplicate();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new SetToPointsetNode(); }
+};
+
+SetToPointsetNode::SetToPointsetNode()
+{
+	makestr(type, "Points/ToPointSet");
+	makestr(Name, _("To Pointset"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,     _("In"), _("Something with position or transform information")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", new PointSetValue(),1, _("Out"), NULL,0, false));
+}
+
+SetToPointsetNode::~SetToPointsetNode()
+{
+}
+
+NodeBase *SetToPointsetNode::Duplicate()
+{
+	SetToPointsetNode *newnode = new SetToPointsetNode();
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int SetToPointsetNode::GetStatus()
+{
+	return NodeBase::GetStatus();
+}
+
+int SetToPointsetNode::Update()
+{
+	// in can be:
+	//    vector2
+	//    vector2[]
+	//    Affine
+	//    Affine[]
+
+	Value *v = properties.e[0]->GetData();
+	PointSetValue *out = dynamic_cast<PointSetValue*>(properties.e[properties.n-1]->GetData());
+
+	return NodeBase::Update();
+}
+
+
+
+//------------------------------ PrintfNode --------------------------------------------
 
 class PrintfNode : public NodeBase
 {
   public:
-	PrintfNode(const char *s1, const char *s2);
+	PrintfNode(const char *fmt);
 	virtual ~PrintfNode();
 	virtual NodeBase *Duplicate();
 	virtual int Update();
 	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new PrintfNode(); }
 };
 
-PrintfNode::PrintfNode(const char *s1, const char *s2)
+PrintfNode::PrintfNode(const char *fmt)
 {
 	makestr(Name, _("Printf"));
 	makestr(type, "Strings/Printf");
 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "format", new StringValue(),1, ""));
-	
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", new StringValue(ns),1, _("Out"), nullptr, 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "format", new StringValue(fmt),1, ""));
+	// will autopopulate with % fields	
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", new StringValue(),1, _("Out"), nullptr, 0, false));
 }
 
 PrintfNode::~PrintfNode()
@@ -368,14 +694,6 @@ int PrintfNode::Update()
 
 	return NodeBase::Update();
 }
-
-
-Laxkit::anObject *newPrintfNode(int p, Laxkit::anObject *ref)
-{
-	return new PrintfNode(NULL,NULL);
-}
-
-
 
 
 
@@ -792,38 +1110,6 @@ int AlignToBoundsNode::GetStatus()
 
 
 
-
-
-//------------------------ ResourceProperty ---------------------------------
-
-/*! \class ResourceProperty
- * Node property that lets you select a Laidout resource.
- */
-
-// [Resource (editable name)] [create new / create new from current] [remove ref to resource]
-class ResourceProperty : public NodeProperty
-{
-  public:
-
-	char *resource_type;
-	Laxkit::Resource *resource;
-
-	ResourceProperty(Resource *nresource, int absorb);
-	virtual ~ResourceProperty();
-};
-
-ResourceProperty::ResourceProperty(Resource *nresource, int absorb)
-{
-	resource_type = nullptr;
-}
-
-ResourceProperty::~ResourceProperty()
-{
-	delete[] resource_type;
-	if (resource) resource->dec_count();
-}
-
-
 //------------------------ NodePanel ------------------------
 
 /*! \class NodePanel
@@ -848,6 +1134,7 @@ class NodePanel : public NodeBase
 		virtual ~NodePanelRef();
 	};
 
+	NodeGroup *owner;
 	PtrStack<NodePanelRef> props;
 
 	NodePanel();
@@ -1240,6 +1527,9 @@ int HistogramNode::Update()
 
 //------------------------------ ColorMapNode --------------------------------------------
 
+/*! \class ColorMapNode
+ * Map a number or a color through a gradient
+ */
 class ColorMapNode : public NodeBase
 {
   public:
@@ -1344,7 +1634,7 @@ class PathBooleanNode : public NodeBase
 {
   public:
 	static SingletonKeeper defkeeper; //the def for the op enum
-	static ObjectDef *GetDef() { return dynamic_cast<ObjectDef*>(defkeeper.GetObject()); }
+	static ObjectDef *GetDef();
 
 	PathBooleanNode();
 	virtual ~PathBooleanNode();
@@ -1362,10 +1652,12 @@ static ObjectDef *PathBooleanNode::GetDef()
 
 	def = new ObjectDef("PathBooleanDef", _("Path Boolean Def"), NULL,NULL,"enum", 0);
 
-	def->pushEnumValue("Union",        _("Union"),         _("Union"),         BOOL_Union         );
-	def->pushEnumValue("Intersection", _("Intersection"),  _("Intersection"),  BOOL_Intersection  );
-	def->pushEnumValue("NotInSecond",  _("Not In Second"), _("Not In Second"), BOOL_NotInSecond   );
-	def->pushEnumValue("NotInFirst",   _("Not In First"),  _("Not In First"),  BOOL_NotInFirst    );
+	def->pushEnumValue("Union",        _("Union"),         _("Union"),                     BOOL_Union         );
+	def->pushEnumValue("Intersection", _("Intersection"),  _("Intersection"),              BOOL_Intersection  );
+	def->pushEnumValue("OneMinusTwo",  _("A - B"),         _("Remove second from first"),  BOOL_AMinusB  );
+	def->pushEnumValue("Intersection", _("B - A"),         _("Remove first from second"),  BOOL_BMinusA  );
+	def->pushEnumValue("Xor",          _("Xor"),           _("A or B but not both"),       BOOL_Xor  );
+	
 
 	defkeeper.SetObject(def,1);
 	return def;

@@ -425,6 +425,110 @@ int RectangleNode::Update()
 }
 
 
+//------------ BBoxInfoNode
+
+class BBoxInfoNode : public NodeBase
+{
+  public:
+  	BBoxInfoNode();
+	virtual ~BBoxInfoNode();
+	virtual int Update();
+	virtual int GetStatus();
+	virtual NodeBase *Duplicate();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new BBoxInfoNode(); }
+};
+
+BBoxInfoNode::BBoxInfoNode()
+{
+
+	Id("BBoxInfo");
+	Label(_("BBox Info"));
+	makestr(type, "BBoxInfo");
+	
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", nullptr,1, _("In"), nullptr,0,false)); 
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "minx",   new DoubleValue(0),1, _("Minx"), nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "maxx",   new DoubleValue(0),1, _("Maxx"), nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "miny",   new DoubleValue(0),1, _("Miny"), nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "maxy",   new DoubleValue(0),1, _("Maxy"), nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "width",  new DoubleValue(0),1, _("Width"), nullptr,0,false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "height", new DoubleValue(0),1, _("Height"), nullptr,0,false));
+}
+
+BBoxInfoNode::~BBoxInfoNode()
+{
+}
+
+NodeBase *BBoxInfoNode::Duplicate()
+{
+	BBoxInfoNode *newnode = new BBoxInfoNode();
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int BBoxInfoNode::GetStatus()
+{
+	if (!dynamic_cast<DoubleBBox*>(properties.e[0]->GetData())
+		&& !dynamic_cast<SetValue*>(properties.e[0]->GetData())
+		) return -1;
+	return NodeBase::GetStatus(); //default checks mod times
+}
+
+int BBoxInfoNode::Update()
+{
+	DoubleBBox *bbox = dynamic_cast<DoubleBBox*>(properties.e[0]->GetData());
+	SetValue *inset = nullptr;
+	if (!bbox) {
+		inset = dynamic_cast<SetValue*>(properties.e[0]->GetData());
+		if (!inset) return -1;
+	}
+
+	DoubleValue *dv;
+	SetValue *set[6]; 
+
+	if (inset) {
+		for (int c=1; c<7; c++) {
+			set[c-1] = dynamic_cast<SetValue*>(properties.e[c]->GetData());
+			if (!set[c-1]) {
+				set[c-1] = new SetValue();
+				properties.e[c]->SetData(set[c-1], 1);
+			}
+			while (set[c-1]->n() > inset->n()) set[c-1]->Remove(set[c-1]->n()-1);
+			while (set[c-1]->n() < inset->n()) set[c-1]->Push(new DoubleValue(),1);
+		}
+	} else {
+		for (int c=1; c<7; c++) {
+			dv = dynamic_cast<DoubleValue*>(properties.e[c]->GetData());
+			if (!dv) {
+				dv = new DoubleValue();
+				properties.e[c]->SetData(dv, 1);
+			}
+		}
+	}
+
+	for (int c=0; c<(inset ? inset->n() : 1); c++) {
+
+		dv = dynamic_cast<DoubleValue*>(inset ? set[0]->e(c) : properties.e[1]->GetData());
+		dv->d = bbox->minx;
+		dv = dynamic_cast<DoubleValue*>(inset ? set[1]->e(c) : properties.e[2]->GetData());
+		dv->d = bbox->maxx;
+		dv = dynamic_cast<DoubleValue*>(inset ? set[2]->e(c) : properties.e[3]->GetData());
+		dv->d = bbox->miny;
+		dv = dynamic_cast<DoubleValue*>(inset ? set[3]->e(c) : properties.e[4]->GetData());
+		dv->d = bbox->maxy;
+		dv = dynamic_cast<DoubleValue*>(inset ? set[4]->e(c) : properties.e[5]->GetData());
+		dv->d = bbox->boxwidth();
+		dv = dynamic_cast<DoubleValue*>(inset ? set[5]->e(c) : properties.e[6]->GetData());
+		dv->d = bbox->boxheight();
+	}
+
+	for (int c=1; c<7; c++) properties.e[c]->Touch();
+
+	return NodeBase::Update();
+}
+
+
 
 //------------ ColorNode
 
@@ -5627,7 +5731,8 @@ class ObjectInfoNode : public NodeBase
 	virtual NodeBase *Duplicate();
 	virtual int Connected(NodeConnection *connection);
 	virtual int Disconnected(NodeConnection *connection, bool from_will_be_replaced, bool to_will_be_replaced);
-	virtual int UpdatePreview();
+	virtual Value *PreviewFrom() { return properties.e[0]->GetData(); }
+	// virtual int UpdatePreview();
 	
 	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ObjectInfoNode(nullptr, 0); }
 };
@@ -5686,23 +5791,23 @@ int ObjectInfoNode::Connected(NodeConnection *connection)
 	return NodeBase::Connected(connection);
 }
 
-int ObjectInfoNode::UpdatePreview()
-{
-	Previewable *obj = dynamic_cast<Previewable*>(properties.e[0]->GetData());
-	LaxImage *img = nullptr;
-	if (obj) img = obj->GetPreview();
-	if (img) {
-		if (img != total_preview) {
-			if (total_preview) total_preview->dec_count();
-			total_preview = img;
-			total_preview->inc_count();
-		}
-	} else {
-		if (total_preview) total_preview->dec_count();
-		total_preview = nullptr;
-	}
-	return 1;
-}
+// int ObjectInfoNode::UpdatePreview()
+// {
+// 	Previewable *obj = dynamic_cast<Previewable*>(properties.e[0]->GetData());
+// 	LaxImage *img = nullptr;
+// 	if (obj) img = obj->GetPreview();
+// 	if (img) {
+// 		if (img != total_preview) {
+// 			if (total_preview) total_preview->dec_count();
+// 			total_preview = img;
+// 			total_preview->inc_count();
+// 		}
+// 	} else {
+// 		if (total_preview) total_preview->dec_count();
+// 		total_preview = nullptr;
+// 	}
+// 	return 1;
+// }
 
 /*! Update the prop field arrangement. Does NOT update the actual values here. Use the usual Update() for that.
  */
@@ -5710,7 +5815,7 @@ void ObjectInfoNode::UpdateProps()
 {
 	int added = 0;
 
-	if (obj) {
+	if (obj) { //only update props when non-null obj
 		// obj->inc_count();
 		ObjectDef *def = obj->GetObjectDef(); //warning: shawdows NodeBase::def
 		
@@ -5725,7 +5830,7 @@ void ObjectInfoNode::UpdateProps()
 			// update property with new name, Name, desc...
 			NodeProperty *prop = nullptr;
 			// Value *val = obj->dereference(field->name,-1);
-			if (added+3 < properties.n-1) {
+			if (added+3 < properties.n) {
 				// modify property
 				prop = properties.e[added+3];
 				makestr(prop->name, field->name);
@@ -5744,6 +5849,11 @@ void ObjectInfoNode::UpdateProps()
 
 	// remove old extra properties
 	for (int c = added+3; c<properties.n; ) {
+		// if (properties.e[c]->IsConnected()) {
+		// 	for (int c2=0; c2<properties.e[c]->connections.n; c2++) {
+		// 		owner->Disconnect(properties.e[c]->connections.e[c2], false, false);
+		// 	}
+		// }
 		RemoveProperty(properties.e[c]);
 	}
 
@@ -5769,10 +5879,14 @@ int ObjectInfoNode::Update()
 	}
 
 	if (o != obj) {
+		bool doprops = true;
+		if (obj && o && obj->GetObjectDef() == o->GetObjectDef()) doprops = false;
+
 		if (obj) obj->dec_count();
 		obj = o;
 		obj->inc_count();
-		UpdateProps();
+
+		if (doprops) UpdateProps();
 	}
 
 	// always set id
@@ -6672,7 +6786,7 @@ int GetGlobalNode::Update()
 	Value *v = properties.e[1]->GetData();
 	if (v != shouldbe) {
 		properties.e[1]->SetData(shouldbe, 0);
-	}
+	} else properties.e[1]->Touch();
 
 	// return 0; //do nothing here!
 	return NodeBase::Update();
@@ -6690,7 +6804,7 @@ int GetGlobalNode::GetStatus()
 	if (!shouldbe) return -1;
 
 	Value *v = properties.e[1]->GetData();
-	if (!v) return -1;
+	if (!v) return 1;
 	if (v != shouldbe) return 1;
 
 	return NodeBase::GetStatus();
@@ -6771,7 +6885,7 @@ int SetGlobalNode::GetStatus()
 	Value *shouldbe = properties.e[1]->GetData();
 	if (!shouldbe) return -1;
 	Value *v = laidout->globals.find(what);
-	if (v != shouldbe) return -1;
+	if (v != shouldbe) return 1;
 
 	return NodeBase::GetStatus();
 }
@@ -7041,6 +7155,7 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	 //--- RectangleNode
 	factory->DefineNewObject(getUniqueNumber(), "Math/Rectangle", RectangleNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Math/BBox",      RectangleNode::NewNode,  NULL, 1);
+	factory->DefineNewObject(getUniqueNumber(), "Math/BBoxInfo",  BBoxInfoNode::NewNode,  NULL, 1);
 
 	 //--- Affine nodes
 	factory->DefineNewObject(getUniqueNumber(), "Math/Affine",      newAffineNode,  NULL, 0);
