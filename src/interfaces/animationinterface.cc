@@ -52,11 +52,11 @@ namespace Laidout {
 
 ClipInfo::ClipInfo(const char *nname, double len, double in, double out)
 {
-	name    = newstr(nname);
-	length  = len;
-	start   = in;
-	end     = out;
-	current = 0;
+	name      = newstr(nname);
+	length    = len;
+	this->in  = in;
+	this->out = out;
+	current   = 0;
 }
 
 ClipInfo::~ClipInfo()
@@ -92,6 +92,11 @@ enum AnimationActions {
 	ANIM_Timeline,
 	ANIM_Jump_to,
 	ANIM_Jump_toward,
+	ANIM_Move_Strip,
+	ANIM_Start_Time,
+	ANIM_End_Time,
+	ANIM_Duration,
+	ANIM_FPS,
 
 	ANIM_MAX
 };
@@ -104,6 +109,7 @@ AnimationInterface::AnimationInterface(anInterface *nowner,int nid,Laxkit::Displ
   : anInterface(nowner,nid,ndp)
 {
 	mode = ANIMMODE_Normal;
+	interface_type = INTERFACE_Overlay;
 
 	selection = NULL;
 
@@ -211,6 +217,9 @@ int AnimationInterface::PerformAction(int action)
 
 int AnimationInterface::InterfaceOn()
 {
+	if (!laidout->globals.find("frame")) {
+		SetCurrentFrame();
+	}
 	needtodraw=1;
 	return 0;
 }
@@ -232,6 +241,47 @@ enum AnimationMenuItems {
 	ANIM_Save
 };
 
+/*! Assuming current_time is accurate, compute current_frame.
+ * Set laidout->global["frame"] and laidout->global["frame_time"].
+ * Returns current_frame. 
+ */
+int AnimationInterface::SetCurrentFrame()
+{
+	int old = current_frame;
+	current_frame = (current_time - start_time) * fps;
+
+	Value *v = laidout->globals.find("frame");
+	if (!v) laidout->globals.push("frame", current_frame);
+	else {
+		if (v->type() == VALUE_Int) dynamic_cast<IntValue*>(v)->i = current_frame;
+		else if (v->type() == VALUE_Real) dynamic_cast<DoubleValue*>(v)->d = current_frame;
+		else { //was some other type, just wipe it out
+			DBG cerr << "Warning! laidout->globals[frame] was not int or double!"<<endl;
+			v = new IntValue(current_frame);
+			laidout->globals.push("frame", v);
+			v->dec_count();
+		}
+	}
+
+	v = laidout->globals.find("frame_time");
+	if (!v) laidout->globals.push("frame_time", current_time);
+	else {
+		if (v->type() == VALUE_Real) dynamic_cast<DoubleValue*>(v)->d = current_time;
+		else { //was some other type, just wipe it out
+			DBG cerr << "Warning! laidout->globals[frame] was not double!"<<endl;
+			v = new DoubleValue(current_time);
+			laidout->globals.push("frame", v);
+			v->dec_count();
+		}
+	}
+
+	if (old != current_frame) {
+		dynamic_cast<LaidoutViewport*>(curwindow)->TriggerFilterUpdates();
+	}
+
+	return current_frame;
+}
+
 Laxkit::MenuInfo *AnimationInterface::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
 //    MenuInfo *menu=new MenuInfo(_("Animation Interface"));
@@ -243,7 +293,9 @@ Laxkit::MenuInfo *AnimationInterface::ContextMenu(int x,int y,int deviceid, Laxk
 //    menu->AddSep();
 //    menu->AddItem(_("Load resource"), CLONEM_Load);
 //    menu->AddItem(_("Save as resource"), CLONEM_Save);
-//
+//    menu->AddSep();
+//	menu->AddItem(_("Render animation"), CLONEM_RenderAnim);
+//	
 //    return menu;
 
 	return menu;
@@ -408,11 +460,13 @@ int AnimationInterface::Idle(int tid, double delta)
 	current_fps = 1/delta;
 	current_time += delta * speed;
 
-	if (current_time > end_time) current_time = start_time;
-	else if (current_time < start_time) current_time = end_time;
+	if (current_time > end_time) {
+		current_time = start_time;
+	} else if (current_time < start_time) {
+		current_time = end_time;
+	}
 
-	current_frame++;
-	//laidout->globals.push("current_frame", current_frame);
+	SetCurrentFrame();
 	needtodraw=1;
 
 	DBG cerr << "(note: not actual frame, this is event tick) Frame #"<<current_frame<<",  fps: "<<current_fps<<endl;
@@ -436,7 +490,7 @@ bool AnimationInterface::Play(int on)
 		 //set up timer
 		timerid = app->addtimer(this, 1/fps*1000, 1/fps*1000, -1);
 		clock_gettime(CLOCK_REALTIME, &last_time);
-		current_frame=0;
+		SetCurrentFrame();
 	} else {
 		 //remove timer
 		if (timerid) app->removetimer(this,timerid);
@@ -474,9 +528,13 @@ int AnimationInterface::LBDown(int x,int y,unsigned int state,int count,const La
 
 	 // else click down on something for overlay
 	int over=scan(x,y,NULL);
-	buttondown.down(d->id,LEFTBUTTON,x,y, over,state);
+	if (over != ANIM_None) {
+		if (state & ShiftMask) over = ANIM_Move_Strip;
+		buttondown.down(d->id,LEFTBUTTON,x,y, over,state);
+		return 0;
+	}
 
-	return 0;
+	return 1;
 }
 
 
@@ -497,12 +555,14 @@ int AnimationInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 
 	} else if (firstover==over && over==ANIM_Rewind) {
 		current_time = 0;
-		current_frame = 0;
+		SetCurrentFrame();
 		needtodraw=1;
 		return 0;
 
 	} else if (firstover==over && over==ANIM_To_End) {
-		current_time = animation_length;
+		current_time = start_time + animation_length;
+		SetCurrentFrame();
+
 		needtodraw=1;
 		return 0;
 
@@ -517,9 +577,11 @@ int AnimationInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 		speed = -1;
 
 	} else if (firstover==over && over==ANIM_Timeline) {
-		double t = (x-timeline.minx) / timeline.boxwidth() * animation_length + start_time;
-		current_time = t;
-		needtodraw=1;
+		if (dragged >= DraggedThreshhold()) {
+			double t = (x-timeline.minx) / timeline.boxwidth() * animation_length + start_time;
+			current_time = t;
+			needtodraw=1;
+		}
 		return 0;
 	}
 
@@ -543,7 +605,6 @@ int AnimationInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 	}
 
 
-
 //	 //button is down on something...
 	int lx,ly, action = ANIM_None;
 	buttondown.move(mouse->id,x,y, &lx,&ly);
@@ -554,6 +615,7 @@ int AnimationInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 
 		if (current_time > end_time) current_time = end_time;
 		else if (current_time < start_time) current_time = start_time;
+		SetCurrentFrame();
 
 		needtodraw=1;
 		return 0;
@@ -573,6 +635,17 @@ int AnimationInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 			else speed *= 1 + (lx-x)*.1;
 		}
 
+	} else if (action == ANIM_Move_Strip) {
+		flatpoint dp = flatpoint(x,y) - flatpoint(lx,ly);
+		controlbox.minx += dp.x;
+		controlbox.miny += dp.y;
+		controlbox.maxx += dp.x;
+		controlbox.maxy += dp.y;
+		timeline.minx += dp.x;
+		timeline.miny += dp.y;
+		timeline.maxx += dp.x;
+		timeline.maxy += dp.y;
+		needtodraw = 1;
 	}
 
 

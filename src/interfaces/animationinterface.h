@@ -40,7 +40,7 @@ class ClipInfo : public Laxkit::anObject
   public:
 	char *name;
 	double length;
-	double start, end; //within 0..length
+	double in, out; //within 0..length
 	double current;
 
 	ClipInfo(const char *nname, double len, double in, double out);
@@ -106,7 +106,7 @@ class AnimationInterface : public LaxInterfaces::anInterface
 	double current_fps; //==fps*speed
 	double speed; //1==normal
 	int timerid;
-	int current_frame;
+	int current_frame; //note current_time is more accurate, currently frame is a flexible thing
 	bool playing;
 	bool show_fps;
 
@@ -127,7 +127,7 @@ class AnimationInterface : public LaxInterfaces::anInterface
 	virtual void UpdateHoverMessage(int hover);
 
 	virtual bool Play(int on); //-1==toggle
-
+	virtual int SetCurrentFrame();
 
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);
