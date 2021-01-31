@@ -273,8 +273,16 @@ NodeProperty::~NodeProperty()
 	if (data) data->dec_count();
 	for (int c=0; c<connections.n; c++) {
 		NodeConnection *con = connections.e[c];
-		if (con->fromprop == this) { con->fromprop = nullptr; con->from = nullptr; }
-		if (con->toprop == this)   { con->toprop = nullptr;   con->to   = nullptr; }
+		if (con->fromprop == this) {
+			con->fromprop = nullptr;
+			con->from = nullptr;
+			if (con->toprop) con->toprop->RemoveConnection(con);
+		}
+		if (con->toprop == this) {
+			con->toprop = nullptr;
+			con->to   = nullptr;
+			if (con->fromprop) con->fromprop->RemoveConnection(con);
+		}
 	}
 	connections.flush();
 }
@@ -1042,6 +1050,7 @@ int NodeBase::UpdatePreview()
 		if (ov) obj = dynamic_cast<Previewable*>(ov->object);
 	}
 	LaxImage *img = nullptr;
+	
 	if (obj) img = obj->GetPreview();
 	if (img) {
 		if (img != total_preview) {
@@ -3052,7 +3061,6 @@ NodeInterface::NodeInterface(anInterface *nowner, int nid, Displayer *ndp)
 	node_factory = NodeGroup::NodeFactory(true);
 	node_factory->inc_count();
 
-
 	nodes          = NULL;
 	node_menu      = NULL;
 	lasthover      = -1;
@@ -3072,6 +3080,7 @@ NodeInterface::NodeInterface(anInterface *nowner, int nid, Displayer *ndp)
 	passthrough    = NULL;
 	default_colors = NULL;
 	selected_frame = nullptr;
+	try_refresh    = true;
 
 	search_term   = NULL;
 	last_search_index = -1;
@@ -4299,13 +4308,20 @@ int NodeInterface::Refresh()
 
 	dp->PopAxes();
 
+	// if (num_need_updating && try_refresh) {
 	if (num_need_updating) {
 		DBG cerr << "Num need updating: "<<num_need_updating<<endl;
 		nodes->ForceUpdates();
 		needtodraw = 1;
+		try_refresh = false;
 	}
 
 	return 0;
+}
+
+void NodeInterface::NodesChanged()
+{
+	try_refresh = true;
 }
 
 void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, int hoverprop, int hoverslot)

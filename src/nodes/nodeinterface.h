@@ -607,6 +607,9 @@ class NodeInterface : public LaxInterfaces::anInterface
   protected:
 	void GetConnectionBez(NodeConnection *connection, flatpoint *pts);
 
+	bool try_refresh;
+	virtual void NodesChanged();
+
 	double play_fps, cur_fps;
 	int playing;
 	int play_timer;
