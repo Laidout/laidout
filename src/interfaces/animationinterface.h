@@ -96,12 +96,14 @@ class AnimationInterface : public LaxInterfaces::anInterface
 	int hoveri;
 	int mode;
 
+	Laxkit::LaxFont *font;
+
 	struct timespec last_time, cur_timespec; //use this because timers use times(), which is not real world time elapsed
 
 	//ObjectTimeline *global_time;
-	double animation_length; //in seconds
 	double start_time, end_time;
 	double current_time; //in seconds
+	double total_time;
 	double fps; //0 means continuous
 	double current_fps; //==fps*speed
 	double speed; //1==normal

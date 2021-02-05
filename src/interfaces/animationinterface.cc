@@ -57,6 +57,12 @@ ClipInfo::ClipInfo(const char *nname, double len, double in, double out)
 	this->in  = in;
 	this->out = out;
 	current   = 0;
+
+	//annotations: 
+	//  time
+	//  label
+	//  extra info, like an object to jump to
+	//  color
 }
 
 ClipInfo::~ClipInfo()
@@ -88,15 +94,20 @@ enum AnimationActions {
 	ANIM_Faster,
 	ANIM_Slower,
 	ANIM_Toggle_Backwards,
-	ANIM_Current,
+	ANIM_Current, //on the ball
+	ANIM_Current_Time, //on the number
+	ANIM_Current_Frame,
 	ANIM_Timeline,
 	ANIM_Jump_to,
 	ANIM_Jump_toward,
 	ANIM_Move_Strip,
 	ANIM_Start_Time,
+	ANIM_Start_Frame,
 	ANIM_End_Time,
+	ANIM_End_Frame,
 	ANIM_Duration,
 	ANIM_FPS,
+	ANIM_Timeline_Size,
 
 	ANIM_MAX
 };
@@ -118,6 +129,7 @@ AnimationInterface::AnimationInterface(anInterface *nowner,int nid,Laxkit::Displ
 	hoveri = -1;
 
 	sc = NULL;
+	font = app->defaultlaxfont->duplicate();
 
 	firsttime      = 1;
 	uiscale        = 1;
@@ -130,9 +142,9 @@ AnimationInterface::AnimationInterface(anInterface *nowner,int nid,Laxkit::Displ
 	playing         = false;
 	timerid         = 0;
 	current_time    = 0;
+	total_time      = 0;
 	start_time      = 0;
-	animation_length = 10;
-	end_time        = start_time + animation_length;
+	end_time        = start_time + 10;
 	fps             = 12;
 	current_fps     = 0;
 	current_frame   = 0;
@@ -147,6 +159,7 @@ AnimationInterface::~AnimationInterface()
 	//if (source_objs) source_objs->dec_count();
 	if (sc) sc->dec_count();
 	if (selection) { selection->dec_count(); selection=NULL; }
+	if (font) font->dec_count();
 }
 
 const char *AnimationInterface::Name()
@@ -227,6 +240,9 @@ int AnimationInterface::InterfaceOn()
 int AnimationInterface::InterfaceOff()
 {
 	if (selection) { selection->dec_count(); selection=NULL; }
+	
+	if (timerid) app->removetimer(this,timerid);
+	timerid=0;
 	playing=false;
 
 	needtodraw=1;
@@ -263,14 +279,26 @@ int AnimationInterface::SetCurrentFrame()
 		}
 	}
 
-	v = laidout->globals.find("frame_time");
-	if (!v) laidout->globals.push("frame_time", current_time);
+	v = laidout->globals.find("anim_time");
+	if (!v) laidout->globals.push("anim_time", current_time);
 	else {
 		if (v->type() == VALUE_Real) dynamic_cast<DoubleValue*>(v)->d = current_time;
 		else { //was some other type, just wipe it out
-			DBG cerr << "Warning! laidout->globals[frame] was not double!"<<endl;
+			DBG cerr << "Warning! laidout->globals[anim_time] was not double!"<<endl;
 			v = new DoubleValue(current_time);
-			laidout->globals.push("frame", v);
+			laidout->globals.push("anim_time", v);
+			v->dec_count();
+		}
+	}
+
+	v = laidout->globals.find("total_time");
+	if (!v) laidout->globals.push("total_time", total_time);
+	else {
+		if (v->type() == VALUE_Real) dynamic_cast<DoubleValue*>(v)->d = total_time;
+		else { //was some other type, just wipe it out
+			DBG cerr << "Warning! laidout->globals[total_time] was not double!"<<endl;
+			v = new DoubleValue(total_time);
+			laidout->globals.push("total_time", v);
 			v->dec_count();
 		}
 	}
@@ -315,7 +343,83 @@ int AnimationInterface::Event(const Laxkit::EventData *e,const char *mes)
 //
 //	} else if (!strcmp(mes,"load")) {
 
-	return 1;
+    const SimpleMessage *s = dynamic_cast<const SimpleMessage*>(e);
+    if (!s) return 1;
+
+    double d;
+    int i;
+
+	if (!strcmp(mes, "starttime")) {
+		if (DoubleAttribute(s->str, &d) && d >= 0) {
+			start_time = d;
+			if (start_time > end_time) start_time = end_time;
+			needtodraw = 1;
+		}
+
+	} else if (!strcmp(mes, "startframe")) {
+		if (IntAttribute(s->str, &i) && i >= 0) {
+			start_time = i / fps;
+			if (start_time > end_time) start_time = end_time;
+			needtodraw = 1;
+		}
+	} else if (!strcmp(mes, "curtime")) {
+		if (DoubleAttribute(s->str, &d) && d >= 0) {
+			if (d < start_time) d = start_time;
+			else if (d > end_time) d = end_time;
+			if (d != current_time) {
+				current_time = d;
+				total_time = d;
+				SetCurrentFrame();
+			}
+			needtodraw = 1;
+		}
+		
+	} else if (!strcmp(mes, "curframe")) {
+		if (DoubleAttribute(s->str, &d) && d >= 0) {
+			if (d < start_time * fps) d = start_time * fps;
+			else if (d > end_time * fps) d = end_time * fps;
+			if (d != current_time * fps) {
+				current_time = d / fps;
+				total_time = current_time;
+				SetCurrentFrame();
+			}
+			needtodraw = 1;
+		}
+		
+	} else if (!strcmp(mes, "endtime")) {
+		if (DoubleAttribute(s->str, &d) && d >= 0) {
+			end_time = d;
+			if (end_time < start_time + 1/fps) end_time = start_time + 1/fps;
+			needtodraw = 1;
+		}
+
+	} else if (!strcmp(mes, "endframe")) {
+		if (DoubleAttribute(s->str, &d) && d >= 0) {
+			end_time = d / fps;
+			if (end_time < start_time) end_time = start_time;
+			if (end_time < start_time + 1/fps) end_time = start_time + 1/fps;
+			needtodraw = 1;
+		}
+
+	} else if (!strcmp(mes, "duration")) {
+		if (DoubleAttribute(s->str, &d) && d >= 0) {
+			if (d < 1/fps) d = 1/fps;
+			end_time = start_time + d;
+			needtodraw = 1;
+		}
+		
+	} else if (!strcmp(mes, "setfps")) {
+		if (DoubleAttribute(s->str, &d) && d > 0) {
+			if (fps != d) {
+				fps = d;
+				if (playing) app->modifytimer(this, timerid, 1/fps*1000, -1);
+				needtodraw = 1;
+			}
+		}
+
+	} else return 1;
+
+	return 0;
 }
 
 int AnimationInterface::UseThis(Laxkit::anObject *ndata,unsigned int mask)
@@ -341,8 +445,9 @@ int AnimationInterface::Refresh()
 	//  4. faster forwards
 	//  5. advance to end
 	//
-	//   1  2  3  4  5
+	//   1  2  3  4  5     start time                    end time
 	//  |<  <  >  >  >|    ---------*----------------------------
+	//       fps           start frame                  end frame
 
 	if (firsttime==1) {
 		firsttime=2;
@@ -373,8 +478,9 @@ int AnimationInterface::Refresh()
 
 	 //--------draw control box------
 	dp->DrawScreen();
+	dp->font(font);
 
-	 //draw whole rect outline
+	 //draw control box outline
 	double h = controlbox.maxy-controlbox.miny;
 	dp->LineAttributes(1,LineSolid,CapButt,JoinMiter);
 	dp->moveto(controlbox.minx + h/2,   controlbox.miny);
@@ -403,9 +509,10 @@ int AnimationInterface::Refresh()
 
 
 	 //fps counter
+	char scratch[30];
 	if (show_fps) {
-		char scratch[20];
-		sprintf(scratch, "fps: %d", (int)current_fps);
+		dp->NewFG(hover == ANIM_FPS ? fg_color : coloravg(fg_color,bg_color));
+		sprintf(scratch, "%s: %d", (playing ? "cur fps" : "fps"), (int)(playing ? current_fps : fps));
 		dp->textout((controlbox.minx+controlbox.maxx)/2, controlbox.maxy, scratch,-1, LAX_TOP|LAX_HCENTER);
 	}
 
@@ -417,10 +524,36 @@ int AnimationInterface::Refresh()
 	dp->NewFG(coloravg(fg_color,bg_color));
 	dp->drawrectangle(tstart,y-h*.05, tend-tstart,h*.1, 1);
 
+	// start time
+	dp->NewFG(hover == ANIM_Start_Time ? fg_color : coloravg(fg_color,bg_color));
+	sprintf(scratch, "%g", start_time);
+	dp->textout(timeline.minx, timeline.miny, scratch,-1, LAX_LEFT|LAX_BOTTOM);
+
+	// start frame
+	dp->NewFG(hover == ANIM_Start_Frame ? fg_color : coloravg(fg_color,bg_color));
+	sprintf(scratch, "%d", (int)(start_time * fps));
+	dp->textout(timeline.minx, timeline.maxy, scratch,-1, LAX_LEFT|LAX_TOP);
+	
+	// end time
+	dp->NewFG(hover == ANIM_End_Time ? fg_color : coloravg(fg_color,bg_color));
+	sprintf(scratch, "%g", end_time);
+	dp->textout(timeline.maxx, timeline.miny, scratch,-1, LAX_RIGHT|LAX_BOTTOM);
+
+	// end frame
+	dp->NewFG(hover == ANIM_End_Frame ? fg_color : coloravg(fg_color,bg_color));
+	sprintf(scratch, "%d", int(end_time * fps));
+	dp->textout(timeline.maxx, timeline.maxy, scratch,-1, LAX_RIGHT|LAX_TOP);
+
 	 //timeline ball
-	double progress = (current_time - start_time)/animation_length;
+	dp->NewFG(coloravg(fg_color,bg_color));
+	double progress = (current_time - start_time)/(end_time - start_time);
 	dp->drawthing(tstart+progress*(tend-tstart), y, h/3,h/3, 2, THING_Circle);
 	//dp->drawthing(tstart+progress*(tend-tstart), y, h/3,h/3, 1, THING_Circle);
+
+	if (hover == ANIM_Timeline_Size) {
+		dp->drawthing(timeline.maxx + font->textheight(), (timeline.miny+timeline.maxy)/2,
+						font->textheight(),font->textheight(), 1, THING_Double_Arrow_Horizontal);
+	}
 
 	dp->DrawReal();
 
@@ -441,12 +574,33 @@ int AnimationInterface::scan(int x,int y, int *i)
 		return ANIM_To_End;
 	}
 
+	double th = font->textheight();
+
+	if (x >= controlbox.minx && x <= controlbox.maxx && y >= controlbox.maxy && y <= controlbox.maxy+th)
+		return ANIM_FPS;
+
 	//scan for on timeline
 	if (timeline.boxcontains(x,y)) {
-		double curpos = (current_time - start_time) /animation_length * timeline.boxwidth() + timeline.minx;
+		double curpos = (current_time - start_time) /(end_time - start_time) * timeline.boxwidth() + timeline.minx;
 		if (fabs(x-curpos) < 10) return ANIM_Current;
 		return ANIM_Timeline;
 	}
+
+	if (x >= timeline.minx && x <= timeline.maxx) {
+		if (y <= timeline.miny && y >= timeline.miny-th) {
+			if (x < timeline.minx + 5*th) return ANIM_Start_Time;
+			if (x > timeline.maxx - 5*th) return ANIM_End_Time;
+		} else if (y >= timeline.maxy && y <= timeline.maxy+th) {
+			if (x < timeline.minx + 5*th) return ANIM_Start_Frame;
+			if (x > timeline.maxx - 5*th) return ANIM_End_Frame;
+		}
+	}
+
+	if (x >= timeline.maxx && x < timeline.maxx+th && y >= timeline.miny && y <= timeline.maxy)
+		return ANIM_Timeline_Size;
+
+	// ANIM_Current_Time, //on the number
+	// ANIM_Current_Frame,
 
 	return ANIM_None;
 }
@@ -459,6 +613,7 @@ int AnimationInterface::Idle(int tid, double delta)
 
 	current_fps = 1/delta;
 	current_time += delta * speed;
+	total_time += delta * speed;
 
 	if (current_time > end_time) {
 		current_time = start_time;
@@ -469,7 +624,7 @@ int AnimationInterface::Idle(int tid, double delta)
 	SetCurrentFrame();
 	needtodraw=1;
 
-	DBG cerr << "(note: not actual frame, this is event tick) Frame #"<<current_frame<<",  fps: "<<current_fps<<endl;
+	DBG cerr << "AnimationInterface Frame #"<<current_frame<<",  current fps: "<<current_fps<<endl;
 	return 0;
 }
 
@@ -490,6 +645,7 @@ bool AnimationInterface::Play(int on)
 		 //set up timer
 		timerid = app->addtimer(this, 1/fps*1000, 1/fps*1000, -1);
 		clock_gettime(CLOCK_REALTIME, &last_time);
+		if (current_time == 0) total_time = 0;
 		SetCurrentFrame();
 	} else {
 		 //remove timer
@@ -512,12 +668,23 @@ int AnimationInterface::Mode(int newmode)
 
 void AnimationInterface::UpdateHoverMessage(int hover)
 {
-	if      (hover==ANIM_None)   PostMessage(" ");
-	else if (hover==ANIM_Play)   PostMessage(playing && speed==1 ? _("Pause") : playing ? _("Play normal speed") : _("Play"));
-	else if (hover==ANIM_Rewind) PostMessage(_("Jump to start"));
-	else if (hover==ANIM_To_End) PostMessage(_("Jump to end"));
-	else if (hover==ANIM_Faster) PostMessage(_("Play faster"));
-	else if (hover==ANIM_Backwards) PostMessage(speed>0 ? _("Play backwards") : _("Play faster backwards"));
+	if      (hover == ANIM_None)          PostMessage(" ");
+	else if (hover == ANIM_Play)          PostMessage(playing && speed==1 ? _("Pause") : playing ? _("Play normal speed") : _("Play"));
+	else if (hover == ANIM_Rewind)        PostMessage(_("Jump to start"));
+	else if (hover == ANIM_To_End)        PostMessage(_("Jump to end"));
+	else if (hover == ANIM_Faster)        PostMessage(_("Play faster"));
+	else if (hover == ANIM_Backwards)     PostMessage(speed>0 ? _("Play backwards") : _("Play faster backwards"));
+	else if (hover == ANIM_Timeline)      PostMessage(_("Timeline"));
+	else if (hover == ANIM_Timeline_Size) PostMessage(_("Timeline Size"));
+	else if (hover == ANIM_Current_Time)  PostMessage(_("Current Time"));
+	else if (hover == ANIM_Current_Frame) PostMessage(_("Current Frame"));
+	else if (hover == ANIM_Move_Strip)    PostMessage(_("Move Strip"));
+	else if (hover == ANIM_Start_Time)    PostMessage(_("Start Time"));
+	else if (hover == ANIM_Start_Frame)   PostMessage(_("Start Frame"));
+	else if (hover == ANIM_End_Time)      PostMessage(_("End Time"));
+	else if (hover == ANIM_End_Frame)     PostMessage(_("End Frame"));
+	else if (hover == ANIM_Duration)      PostMessage(_("Duration"));
+	else if (hover == ANIM_FPS)           PostMessage(_("FPS"));
 	else PostMessage(" ");
 }
 
@@ -555,12 +722,14 @@ int AnimationInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 
 	} else if (firstover==over && over==ANIM_Rewind) {
 		current_time = 0;
+		total_time = 0;
 		SetCurrentFrame();
 		needtodraw=1;
 		return 0;
 
 	} else if (firstover==over && over==ANIM_To_End) {
-		current_time = start_time + animation_length;
+		current_time = end_time;
+		total_time = current_time;
 		SetCurrentFrame();
 
 		needtodraw=1;
@@ -577,12 +746,71 @@ int AnimationInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 		speed = -1;
 
 	} else if (firstover==over && over==ANIM_Timeline) {
-		if (dragged >= DraggedThreshhold()) {
-			double t = (x-timeline.minx) / timeline.boxwidth() * animation_length + start_time;
+		if (dragged <= DraggedThreshhold()) {
+			double t = (x-timeline.minx) / timeline.boxwidth() * (end_time - start_time) + start_time;
 			current_time = t;
+			total_time = t;
 			needtodraw=1;
 		}
 		return 0;
+	}
+
+	if (dragged < DraggedThreshhold()) {
+		char str[30];
+		const char *label = nullptr;
+		const char *mes = nullptr;
+
+		if (over == ANIM_Start_Time) {
+			label = _("Start time");
+			mes = "starttime";
+			sprintf(str, "%g", start_time);
+
+		} else if (over == ANIM_Start_Frame) {
+			label = _("Start frame");
+			mes = "startframe";
+			sprintf(str, "%d", int(start_time * fps));
+
+		} else if (over == ANIM_Current_Time) {
+			label = _("Current time");
+			mes = "curtime";
+			sprintf(str, "%g", current_time);
+
+		} else if (over == ANIM_Current_Frame) {
+			label = _("Current frame");
+			mes = "curframe";
+			sprintf(str, "%d", int(current_time * fps));
+
+		} else if (over == ANIM_End_Time) {
+			label = _("End time");
+			mes = "endtime";
+			sprintf(str, "%g", end_time);
+
+		} else if (over == ANIM_End_Frame) {
+			label = _("End frame");
+			mes = "endframe";
+			sprintf(str, "%d", int(end_time * fps));
+
+		} else if (over == ANIM_Duration) {
+			label = _("Duration (seconds)");
+			mes = "duration";
+			sprintf(str, "%g", end_time - start_time);
+
+		} else if (over == ANIM_FPS) {
+			label = _("FPS");
+			mes = "setfps";
+			sprintf(str, "%g", fps);
+		}
+
+		if (mes) {
+			DoubleBBox bounds;
+			double th = font->textheight();
+			bounds.minx = x - 5 * th;
+			bounds.maxx = x + 5 * th;
+			bounds.miny = y - th;
+			bounds.maxy = y + th;			
+
+			viewport->SetupInputBox(object_id, label, str, mes, bounds);
+		}
 	}
 
 	return 0;
@@ -611,10 +839,11 @@ int AnimationInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 	buttondown.getextrainfo(mouse->id,LEFTBUTTON, &action);
 
 	if (action == ANIM_Current || action == ANIM_Timeline) {
-		current_time += (x-lx) / timeline.boxwidth() * animation_length;
+		current_time += (x-lx) / timeline.boxwidth() * (end_time - start_time);
 
 		if (current_time > end_time) current_time = end_time;
 		else if (current_time < start_time) current_time = start_time;
+		total_time = current_time;
 		SetCurrentFrame();
 
 		needtodraw=1;
@@ -646,6 +875,12 @@ int AnimationInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 		timeline.maxx += dp.x;
 		timeline.maxy += dp.y;
 		needtodraw = 1;
+
+	} else if (action == ANIM_Timeline_Size) {
+		timeline.maxx += x - lx;
+		if( timeline.maxx < timeline.minx + 10*font->textheight())
+			timeline.maxx = timeline.minx + 10*font->textheight();
+		needtodraw = 1;
 	}
 
 
@@ -654,13 +889,29 @@ int AnimationInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 
 int AnimationInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
+	int over = scan(x,y,NULL);
+	if (over == ANIM_Timeline && (state & ControlMask)) {
+		double cur = timeline.maxx - timeline.minx;
+		cur /= .9;
+		timeline.maxx = timeline.minx + cur;
+		needtodraw = 1;
+		return 0;
+	}
 	return 1;
 }
 
 int AnimationInterface::WheelDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
-	//int over=scan(x,y,NULL);
-	//DBG cerr <<"wheel down clone interface: "<<over<<endl;
+	int over = scan(x,y,NULL);
+	if (over == ANIM_Timeline && (state & ControlMask)) {
+		double cur = timeline.maxx - timeline.minx;
+		cur *= .9;
+		if (cur > font->textheight() * 10) {
+			timeline.maxx = timeline.minx + cur;
+			needtodraw = 1;
+		}
+		return 0;
+	}
 
 	return 1;
 }
