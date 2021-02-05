@@ -1045,7 +1045,9 @@ valgrind:
   conditional jump on uninit: strlens in newnstr re attributes.cc 2673, 2192, 2206/1007, 2651
 
 node editor node interface NodeInterface nodes: node: interface: 
-  bug: when in error state, tries again EVERY refresh.. should only try when values change again
+  objecttofile is yellow
+  bug: expressions broken: out not at last, is yellow, Math should be imported, crashes
+  bug: why is captiondata preview render getting triggered every node update?
   bug: work on filter, save nodes, switch to object, load nodes, destroys proper in/out of filter
   SetTransforms if single in, should be single out
   bug: paths should not clip their children by default
@@ -1057,9 +1059,9 @@ node editor node interface NodeInterface nodes: node: interface:
     check NodeBase::GetStatus() when no outs, but topropproxy
   memory hole page info? drawableinfo, objectinfo
   bug: top filter "out" is outputting data
-  bug: JoinSets is not loading/saving properly.. variable list props need unique names
   bug: new object caption, attach to object function, crash!!
   bug: CaptionData is creating a new font every single instantiation
+  bug: Need to make text objects have expected preview orientations
   undo redo
   bug: file prop popup not working
   bug: trying to open menu for enum with 0 entries should not pop up a window
@@ -1068,19 +1070,27 @@ node editor node interface NodeInterface nodes: node: interface:
   bug: load in recovery: should ensure only one connection to input, and only one to exec_out
   bug: transform object is linking, not copying images in an ImageData, need to dup the actual image data
   bug: height of resizable property not saved
-  bug: duplicating objectfilter does not transfer values for the most part for the most part
+  bug: duplicating objectfilter does not transfer values for the most part
   bug: when loading in, need to force update nodes in Resources
   bug: gegl to image, disconnect, it is still updating the image, because LaxImage is linked through
   bug: memory hole TransformAffineNode??
-  if a node is in error state, error color overrides the selected highlight.. it shouldn't
+  if a node is in error state, error color overrides the selected highlight.. maybe increase width instead?
   need to figure out safe way to duplicate DrawableObjects that have filters and/or children
   implement objectfilterinterface/nodeinterface interchange with nested node groups
   edit filter nodes for the first time should center nodes in viewport
   would be nice to have a "Collapse unlinked properties" option
 
+
   need option to turn off main viewport render while tool up, since sometimes that render takes a long time
   some people are going to want grid snapping
+  some people are going to want straight connection lines
 
+  DONE ListOf
+  DONE bug: JoinSets is not loading/saving properly.. variable list props need unique names
+  DONE bug: when in error state, tries again EVERY refresh.. should only try when values change again
+  DONE bug: make circle, link set, dup, now node in error state.. copies set?
+  DONE MakeSet
+  DONE GetElement should be able to access drawable children or dict elements, also either int index or string name
   DONE SetRotations
   DONE SetTransforms
   DONE SetScales
@@ -1112,6 +1122,30 @@ node editor node interface NodeInterface nodes: node: interface:
   DONE bug: color property doesn't show transparency checkerboard
 
   need 
+  expand list i..j
+  multi-input revamp:
+    ExpandVectorNode
+	RectangleNode
+	Affine
+	Invert
+	ConvertNumber
+	make new ExpressionEach node to allow process on each element
+	ImageNode
+	ImageFileNode
+	ImageInfo
+	RandomNode
+	Slice
+	Lerp
+	MapRange
+	TransformAffine
+	ModifyObject? ObjectFunction?
+	TextFile
+	ToFile
+	LImageData
+	LImageDataInfo
+	SetOriginBBox
+	RoundedRect
+	PointsToDots
   buttons:
     DONE mouse down/up
 	greyed out depending on properties
@@ -1144,6 +1178,8 @@ node editor node interface NodeInterface nodes: node: interface:
     somedataref
       DONE check: dereference assign Evaluate extend from Group, not affine
     gradient
+	  color list to gradient
+	  gradient interpolation type?
       nodes must receive correct color messages from viewport color box
 	  needs a little settings button to pop interpolation or do strip resource selection
 	  DONE(?) bug: gradient controls broken sometimes
@@ -1185,7 +1221,6 @@ node editor node interface NodeInterface nodes: node: interface:
 	  DONE path extrema
 
       path ops:
-	    ClosestPoint(s)
 	    path morph
 	    path from points: linear or smooth
 		sample path to points, optionally with transforms. sample at t OR s by step OR by n points OR squishy step
@@ -1205,6 +1240,7 @@ node editor node interface NodeInterface nodes: node: interface:
         set line profile from resource
         apply weights
 
+	    DONE ClosestPoint(s)
 	    DONE path length
         DONE combine
         DONE break apart
@@ -1229,6 +1265,7 @@ node editor node interface NodeInterface nodes: node: interface:
       DONE dereference assign Evaluate extend from Group, not affine
   object/resource management nodes:
     find drawable:
+	  from project or doc root, not just from particular drawable?
       DONE child of
       DONE self
       siblings
@@ -1301,7 +1338,6 @@ node editor node interface NodeInterface nodes: node: interface:
     in menu, so many nodes, need way to classify favorites, maybe custom arrangements of menu
       progressive search
   need a way to collect custom property types, so they can be added to custom nodes
-  for connecting, drop onto a property at all should link, not just on slot
   for preview resizer, shouldn't have it when preview is too tiny, since then usually you want to move the node, not resize
   save needs to remember file name per loader, plus default file
   no overlap needs to stack siblings as nicely as possible
@@ -1347,7 +1383,7 @@ node editor node interface NodeInterface nodes: node: interface:
     proprietary import like substance, houdini, archimatix, Photo Reactor?
     any crossover with mypaint brushes or krita???
 
-  viewer node, resizable
+  Viewer/Debug node, resizable
   simplex noise node
   voronoise
   frames
@@ -1388,6 +1424,7 @@ node editor node interface NodeInterface nodes: node: interface:
   math nodes
     function nodes need a smooth option, not just polyline
     should always be 'using Math'
+	need to allow sets of numbers as inputs, output set in that case
   more math:
     interpolate with easing
     select from panel:
@@ -1402,6 +1439,7 @@ node editor node interface NodeInterface nodes: node: interface:
       sin  cos  tan  asin  acos  atan
       sinh cosh tanh asinh acosh atanh
 
+  DONE for connecting, drop onto a property at all should link, not just on slot
   DONE foreach thread processor
   DONE need reroute node
   DONE file properties need browser button
