@@ -1474,13 +1474,15 @@ int NodeBase::Connected(NodeConnection *connection)
 {
 	if (this == connection->to) {
 		if (connection->toprop->flags & NodeProperty::PROPF_New_In) {
+			//we are connecting to a dynmically sized list...
 			NodeProperty *prop = connection->toprop;
 			char *newname = UniquePropName(prop->Name());
-			AddNewIn(prop->flags & NodeProperty::PROPF_List_In, newname, prop->Label(), prop->Tooltip(), properties.findindex(prop)+1);
-			delete[] newname;
+			AddNewIn(prop->flags & NodeProperty::PROPF_List_In, prop->Name(), prop->Label(), prop->Tooltip(), properties.findindex(prop)+1);
+			delete[] prop->name;
+			prop->name = newname;
 			prop->SetFlag(NodeProperty::PROPF_New_In, false);
 			prop->SetFlag(NodeProperty::PROPF_List_In, true);
-			prop->Label(connection->fromprop->Label());
+			// prop->Label(connection->fromprop->Label());
 			Wrap();
 
 			return 1;
@@ -2496,7 +2498,7 @@ int NodeGroup::Disconnect(NodeConnection *connection, bool from_will_be_replaced
 	if (connection->fromprop) connection->fromprop->RemoveConnection(connection);
 	if (connection->toprop)   connection->toprop  ->RemoveConnection(connection);
 
-	if (toprop && (toprop->flags & NodeProperty::PROPF_List_In)) {
+	if (!to_will_be_replaced && toprop && (toprop->flags & NodeProperty::PROPF_List_In)) {
 		//one prop in an expandable list, need to remove this prop
 		int i = to->properties.findindex(toprop);
 		to->properties.remove(i);
@@ -3044,6 +3046,49 @@ NodeFrame *NodeGroup::GetFrame(int index)
 
 
 
+//------------------- Property parsing helpers ---------------------
+
+/*! ins should be your input Value objects.
+ * if ins[*] is a set, put in setins.
+ * Return -1 for error. 0 for no sets. 1 for sets.
+ * If sets, max is set to maximum set n.
+ * If not sets, max is set to 1.
+ */
+int DetermineSetIns(int num_ins, Value **ins, SetValue **setins, int &max, bool &sets)
+{
+	max = 0;
+	sets = false;
+
+	for (int c=0; c<num_ins; c++) {
+		setins[c] = nullptr;
+
+		Value *v = ins[c];
+		if (!v) return -1; //missing value
+
+		if (v->type() == VALUE_Set) {
+			sets = true;
+			setins[c] = dynamic_cast<SetValue*>(v);
+			int n = setins[c]->n();
+			if (n > max) max = n;
+		}
+	}
+
+	if (!sets) max = 1;
+	return sets ? 1 : 0;
+}
+
+/*! Return -1 for not a number, or 0 for success. prev is updated. */
+int GetInNumber(int index, bool dosets, double &prev, Value *in, SetValue *setin)
+{
+	if (dosets && setin) {
+		if (index < setin->n()) {
+			in = setin->e(index);
+		}
+		else return 0;
+	}
+	if (!isNumberType(in, &prev)) return -1;
+	return 0;
+}
 
 //-------------------------------------- NodeInterface --------------------------
 
@@ -3272,6 +3317,7 @@ int NodeInterface::UseThis(anObject *nobj, unsigned int mask)
  */
 int NodeInterface::InterfaceOn()
 { 
+	NodesChanged();
 	needtodraw=1;
 	return 0;
 }
@@ -3554,6 +3600,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 		
 		prop->Touch();
 		node->MarkMustUpdate();
+		NodesChanged();
 		needtodraw=1;
 
 		delete[] sstr;
@@ -3581,6 +3628,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 
 		prop->Touch();
 		node->MarkMustUpdate();
+		NodesChanged();
 		needtodraw=1;
 		return 0;
 
@@ -3611,6 +3659,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 
 		prop->Touch();
 		node->MarkMustUpdate();
+		NodesChanged();
 		needtodraw=1;
 		return 0;
 
@@ -3648,7 +3697,8 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 				selected.flush();
 				selected.push(newnode);
 
-				needtodraw=1; 
+				needtodraw=1;
+				NodesChanged();
 				break;
 			}
 		}
@@ -3662,6 +3712,7 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 		if (LoadNodes(s->str, false, 0, false) == 0) {
 			 //success! select all new nodes
 			makestr(lastsave, s->str);
+			NodesChanged();
 		}
 		needtodraw=1;
 		return 0;
@@ -4113,7 +4164,7 @@ int NodeInterface::Refresh()
 		 //update for error state
 		status = node->GetStatus();
 		if (status < 0 || node->ErrorMessage()) {
-			borderwidth = 3;
+			borderwidth = IsSelected(node) ? 5 : 3;
 			border = &colors->error_border;
 			if (status == 1) num_need_updating++;
 		} else if (status > 0) {
@@ -4308,8 +4359,8 @@ int NodeInterface::Refresh()
 
 	dp->PopAxes();
 
-	// if (num_need_updating && try_refresh) {
-	if (num_need_updating) {
+	if (num_need_updating && try_refresh) {
+	// if (num_need_updating) {
 		DBG cerr << "Num need updating: "<<num_need_updating<<endl;
 		nodes->ForceUpdates();
 		needtodraw = 1;
@@ -4501,13 +4552,18 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 
 			} else {
 				 //fallback, just write out the property name
+				if (v && v->type()==VALUE_Set) {
+					//write label and size:  Label {4}
+					sprintf(extra, "{%d}", dynamic_cast<SetValue*>(v)->n());
+				}
+
 				dp->NewFG(&nodes->colors->fg);
 				if (!prop->IsOutput()) {
 					 //draw on left side
 					double dx = dp->textout(node->x+th/2, y+prop->height/2, prop->Label(),-1, LAX_LEFT|LAX_VCENTER); 
 					if (!isblank(extra)) {
 						dp->textout(node->x+th+dx, y+prop->height/2, extra,-1, LAX_LEFT|LAX_VCENTER);
-						dp->drawrectangle(node->x+th/2+dx, y, node->width-(th+dx), th*1.25, 0);
+						// dp->drawrectangle(node->x+th/2+dx, y, node->width-(th+dx), th*1.25, 0);
 					}
 
 				} else {
@@ -4515,7 +4571,7 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 					double dx = dp->textout(node->x+node->width-th/2, y+prop->height/2, prop->Label(),-1, LAX_RIGHT|LAX_VCENTER);
 					if (!isblank(extra)) {
 						dp->textout(node->x+node->width-th-dx, y+prop->height/2, extra,-1, LAX_RIGHT|LAX_VCENTER);
-						dp->drawrectangle(node->x+th/2, y-th*.25, node->width-(th*1.25+dx), th*1.25, 0);
+						// dp->drawrectangle(node->x+th/2, y-th*.25, node->width-(th*1.25+dx), th*1.25, 0);
 					}
 				}
 			}
@@ -4785,6 +4841,7 @@ int NodeInterface::ExecuteThreads()
 	}
 
 	elapsed_time += times(NULL) - ts;
+	NodesChanged();
 
 	if (!threads.n) {
 		elapsed_wall_time = times(NULL) - run_start_time;
@@ -5198,6 +5255,7 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 					lastconnection = 0;
 					lasthover      = overnode;
 					lasthoverslot  = overpropslot;
+					NodesChanged();
 
 				} else {
 					 //connection didn't exist, so install a half connection to current node
@@ -5343,6 +5401,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 			BooleanValue *vv=dynamic_cast<BooleanValue*>(prop->data);
 			vv->i = !vv->i;
 			node->MarkMustUpdate();
+			NodesChanged();
 			needtodraw=1;
 
 		} else if (v->type()==VALUE_Color) {
@@ -5586,6 +5645,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 			lastconnection = -1;
 		} 
 
+		NodesChanged();
 
 	} else if (action == NODES_Drag_Output || action == NODES_Drag_Exec_Out) {
 		//check if hovering over the input of some other node
@@ -5656,7 +5716,9 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 			tempconnection->dec_count();
 			tempconnection = NULL;
 			lastconnection = -1;
-		} 
+		}
+
+		NodesChanged();
 
 	} else if (action == NODES_Resize_Preview) {
 		DBG cerr << "Resize preview..."<<endl;
@@ -5937,6 +5999,7 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 			if (changed) {
 				prop->Touch();
 				node->MarkMustUpdate();
+				NodesChanged();
 				needtodraw=1;
 			}
 		}
@@ -6634,6 +6697,7 @@ int NodeInterface::PerformAction(int action)
 		// mainly or debugging, force all nodes to refresh
 		if (!nodes) return 0;
 		nodes->ForceUpdates();
+		NodesChanged();
 		return 0;
 
 	} else if (action == NODES_Edit_With_Tool) {
@@ -6965,6 +7029,7 @@ int NodeInterface::CutConnections(flatpoint p1,flatpoint p2)
 		}
 	}
 
+	NodesChanged();
 	return n;
 }
 

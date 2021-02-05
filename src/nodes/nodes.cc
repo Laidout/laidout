@@ -225,7 +225,7 @@ Laxkit::anObject *newExpandVectorNode(int p, Laxkit::anObject *ref)
 class VectorNode : public NodeBase
 {
   public:
-	int dims;
+	int dims; //must be 2,3, or 4
 	VectorNode(int dimensions, double *initialvalues); //up to 4
 	virtual ~VectorNode();
 	virtual int Update();
@@ -284,8 +284,9 @@ int VectorNode::GetStatus()
 {
 	int isnum = 0;
 	for (int c=0; c<dims; c++) {
-		getNumberValue(properties.e[c]->GetData(),&isnum);
-		if (!isnum) return -1;
+		Value *v = properties.e[c]->GetData();
+		getNumberValue(v,&isnum);
+		if (!isnum && v->type() != VALUE_Set) return -1;
 	}
 
 	if (!properties.e[dims]->data) return 1;
@@ -295,25 +296,56 @@ int VectorNode::GetStatus()
 
 int VectorNode::Update()
 {
-	int isnum;
-	double vs[4];
-	for (int c=0; c<dims; c++) {
-		vs[c] = getNumberValue(properties.e[c]->GetData(),&isnum);
+	ClearError();
+
+	int num_ins = dims;
+	Value *ins[num_ins];
+	for (int c=0; c<num_ins; c++) ins[c] = properties.e[c]->GetData();
+	
+	SetValue *setins[num_ins];
+	SetValue *outset = nullptr;
+
+	int max = 0;
+	bool dosets = false;
+	if (DetermineSetIns(num_ins, ins, setins, max, dosets) == -1) { //does not check contents of sets.
+		//had a null input
+		return -1;
 	}
 
-	//if (!properties.e[2]->data) return 1;
+	FlatvectorValue *fv = nullptr;
+	SpacevectorValue *sv = nullptr;
+	QuaternionValue *qv = nullptr;
 
-	if (!properties.e[dims]->data) {
-		if      (dims == 2) properties.e[2]->data=new FlatvectorValue (flatvector (vs));
-		else if (dims == 3) properties.e[3]->data=new SpacevectorValue(spacevector(vs));
-		else if (dims == 4) properties.e[4]->data=new QuaternionValue (Quaternion (vs));
-	} else {
-		//assume correct format already in prop
-		if      (dims == 2) dynamic_cast<FlatvectorValue* >(properties.e[2]->data)->v = flatvector (vs);
-        else if (dims == 3) dynamic_cast<SpacevectorValue*>(properties.e[3]->data)->v = spacevector(vs);
-        else if (dims == 4) dynamic_cast<QuaternionValue* >(properties.e[4]->data)->v = Quaternion (vs);
+	if      (dims == 2) fv = UpdatePropType<FlatvectorValue> (properties.e[dims], dosets, max, outset);
+    else if (dims == 3) sv = UpdatePropType<SpacevectorValue>(properties.e[dims], dosets, max, outset);
+    else if (dims == 4) qv = UpdatePropType<QuaternionValue> (properties.e[dims], dosets, max, outset);
+
+	DoubleValue *in[dims];
+	for (int c=0; c<dims; c++) in[c] = nullptr;
+
+	for (int c=0; c<max; c++) {
+		int isnum;
+		double vs[4];
+
+		for (int c2=0; c2<dims; c2++) {
+			in[c2] = GetInValue<DoubleValue>(c, dosets, in[c2], ins[c2], setins[c2]);
+			vs[c2] = getNumberValue(in[c2],&isnum);
+			if (!isnum) {
+				Error(_("Bad number!"));
+				return -1;
+			}
+		}
+
+		if      (dims == 2) GetOutValue<FlatvectorValue> (c, dosets, fv, outset);
+		else if (dims == 3) GetOutValue<SpacevectorValue>(c, dosets, sv, outset);
+		else if (dims == 4) GetOutValue<QuaternionValue> (c, dosets, qv, outset);
+		
+		if      (dims == 2) fv->v = flatvector (vs);
+		else if (dims == 3) sv->v = spacevector(vs);
+		else if (dims == 4) qv->v = Quaternion (vs);
 	}
-	properties.e[dims]->modtime = times(NULL);
+	
+	properties.e[dims]->Touch();
 
 	return NodeBase::Update();
 }
@@ -1061,7 +1093,6 @@ SingletonKeeper MathNode1::mathnodekeeper(DefineMathNode1Def(), true);
 MathNode1::MathNode1(int op, double aa)
 {
 	type = newstr("Math1");
-	//Name = newstr(_("Math 1"));
 
 	last_status = 1;
 	status_time = 0;
@@ -1107,7 +1138,7 @@ NodeBase *MathNode1::Duplicate()
 	MathNode1 *newnode = new MathNode1(operation);
 
 	Value *a = properties.e[1]->GetData();
-	if (a) {
+	if (isNumberType(a,nullptr) || a->type() == VALUE_Flatvector || a->type() == VALUE_Spacevector || a->type() == VALUE_Quaternion) {
 		a = a->duplicate();
 		newnode->properties.e[1]->SetData(a, 1);
 	}
@@ -1137,187 +1168,227 @@ int MathNode1::Update()
 {
 	int status = UpdateThisOnly();
 	if (!status) {
-		modtime = times(NULL);
+		Touch();
 		// PropagateUpdate();
-		return status;
+		return NodeBase::Update();
 	}
 	return status;
 }
 
 int MathNode1::UpdateThisOnly()
 {
-	makestr(error_message, NULL);
-
+	ClearError();
+	
+	int max = 0;
+	bool dosets = false;
+	SetValue *setin = nullptr;;
 	Value *valuea = properties.e[1]->GetData();
-	int aisnum=0;
-	double a = getNumberValue(valuea, &aisnum);
-	if (aisnum) aisnum = 1; //else ints and booleans return 2 and 3
 
-	if (!aisnum && dynamic_cast<FlatvectorValue *>(valuea)) aisnum = 2;
-	if (!aisnum && dynamic_cast<SpacevectorValue*>(valuea)) aisnum = 3;
-	if (!aisnum && dynamic_cast<QuaternionValue *>(valuea)) aisnum = 4;
+	if (DetermineSetIns(1, &valuea, &setin, max, dosets) == -1) return -1;
 
-	if (!aisnum) {
-		makestr(error_message, _("Operation can't use that argument"));
-		return -1;
+	Value *out = properties.e[2]->GetData();
+	SetValue *outset = nullptr;
+	if (dosets) {
+		if (out && out->type() == VALUE_Set) {
+			outset = dynamic_cast<SetValue*>(out);
+		} else {
+			outset = new SetValue();
+			properties.e[2]->SetData(outset,1);
+		}
+		out = nullptr;
 	}
 
+	//clamp outset to max
+	if (outset) while (outset->n() > max) outset->Remove(outset->n()-1);
+
+	//get operation
 	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
 	ObjectDef *def = ev->GetObjectDef();
 	const char *nm = NULL, *Nm = NULL;
 	double result=0;
 	int operation = OP_None;
 	def->getEnumInfo(ev->value, &nm, &Nm, NULL, &operation);
-	//makestr(Name, Nm);
-
-
-	if (aisnum == 1) {
-		if        (operation == OP_AbsoluteValue  || operation == OP_Norm) { result = fabs(a);
-		} else if (operation == OP_Norm2            ) { result = a*a;
-		} else if (operation == OP_Negative || operation == OP_Flip) { result = -a;
-		} else if (operation == OP_Sqrt             ) {
-			if (a>=0) result = sqrt(a);
-			else {
-				makestr(error_message, _("Sqrt needs nonnegative number"));
-				return -1;
-			}
-		} else if (operation == OP_Sgn              )  { result = a > 0 ? 1 : a < 0 ? -1 : 0;
-		} else if (operation == OP_Not              )  { result = !(int)a;
-		} else if (operation == OP_Radians_To_Degrees) { result = a *180/M_PI;
-		} else if (operation == OP_Degrees_To_Radians) { result = a * M_PI/180;
-		} else if (operation == OP_Sin              )  { result = sin(a);
-		} else if (operation == OP_Cos              )  { result = cos(a);
-		} else if (operation == OP_Tan              )  { result = tan(a);
-		} else if (operation == OP_Asin             )  {
-			if (a <= 1 && a >= -1) result = asin(a);
-			else {
-				makestr(error_message, _("Argument needs to be in range [-1, 1]"));
-				return -1;
-			}
-		} else if (operation == OP_Acos             )  {
-			if (a <= 1 && a >= -1) result = acos(a);
-			else {
-				makestr(error_message, _("Argument needs to be in range [-1, 1]"));
-				return -1;
-			}
-		} else if (operation == OP_Atan             )  { result = atan(a);
-		} else if (operation == OP_Sinh             )  { result = sinh(a);
-		} else if (operation == OP_Cosh             )  { result = cosh(a);
-		} else if (operation == OP_Tanh             )  { result = tanh(a);
-		} else if (operation == OP_Asinh            )  { result = asinh(a);
-		} else if (operation == OP_Acosh            )  {
-			if (a >= 1) result = acosh(a);
-			else {
-				makestr(error_message, _("Argument needs to be >= 1"));
-				return -1;
-			}
-		} else if (operation == OP_Atanh            )  {
-			if (a > -1 && a < 1) result = atanh(a);
-			else {
-				makestr(error_message, _("Argument needs to be -1 > a > 1"));
-				return -1;
-			}
-		} else if (operation == OP_Ceiling          )  { result = ceil(a);
-		} else if (operation == OP_Floor            )  { result = floor(a);
-		} else if (operation == OP_Clamp_To_1       )  { result = a > 1 ? 1 : a < 0 ? 0 : a;
-		} else if (operation == OP_Clamp_To_pm_1    )  { result = a > 1 ? 1 : a < -1 ? -1 : a;
-		} else {
-			makestr(error_message, _("Operation can't use that argument"));
-			return -1;
-		}
-
-		if (!dynamic_cast<DoubleValue*>(properties.e[2]->data)) {
-			DoubleValue *newv = new DoubleValue(result);
-			properties.e[2]->SetData(newv, 1);
-		} else dynamic_cast<DoubleValue*>(properties.e[2]->data)->d = result;
-
-		properties.e[2]->modtime = times(NULL);
-		return 0;
-
-	}
 	
-	//else involves vectors...
-	int resulttype = VALUE_None;
-
-	double va[4], rv[4];
-	for (int c=0; c<4; c++) { va[c] = rv[c] = 0; }
-
-	if (aisnum==2) {
-		dynamic_cast<FlatvectorValue*>(valuea)->v.get(va);
-		resulttype = VALUE_Flatvector;
-	} else if (aisnum==3) {
-		dynamic_cast<SpacevectorValue*>(valuea)->v.get(va);
-		resulttype = VALUE_Spacevector;
-	} else if (aisnum==4) {
-		dynamic_cast<SpacevectorValue*>(valuea)->v.get(va);
-		resulttype = VALUE_Quaternion;
-	}
+	for (int c=0; c<max; c++) {
+		if (dosets) {
+			if (c < setin->n()) valuea = setin->e(c); 
+			if (c < outset->n()) out = outset->e(c); else out = nullptr;
+		}
 	
 
-	if (operation == OP_AbsoluteValue || operation == OP_Norm) {
-		for (int c=0; c<aisnum; c++) result += va[c]*va[c];
-		result = sqrt(result);
-		resulttype = VALUE_Real;
+		int aisnum=0; //number of elements of result
+		double a = getNumberValue(valuea, &aisnum);
+		if (aisnum) aisnum = 1; //else ints and booleans return 2 and 3
 
-	} else if (operation == OP_Norm2         ) {
-		for (int c=0; c<aisnum; c++) result += va[c]*va[c];
-		resulttype = VALUE_Real;
+		if (!aisnum && dynamic_cast<FlatvectorValue *>(valuea)) aisnum = 2;
+		if (!aisnum && dynamic_cast<SpacevectorValue*>(valuea)) aisnum = 3;
+		if (!aisnum && dynamic_cast<QuaternionValue *>(valuea)) aisnum = 4;
 
-	} else if (operation == OP_Negative      ) { for (int c=0; c<aisnum; c++) rv[c] = -va[c];
-	} else if (operation == OP_Clamp_To_1    ) { for (int c=0; c<aisnum; c++) rv[c] = va[c] > 1 ? 1 : va[c] <  0 ?  0 : va[c];
-	} else if (operation == OP_Clamp_To_pm_1 ) { for (int c=0; c<aisnum; c++) rv[c] = va[c] > 1 ? 1 : va[c] < -1 ? -1 : va[c];
-	} else if (operation == OP_Flip          ) { for (int c=0; c<aisnum; c++) rv[c] = -va[c];
-	} else if (operation == OP_Normalize     ) {
-		for (int c=0; c<aisnum; c++) result += va[c]*va[c];
-		result = sqrt(result);
-		if (result == 0) {
-			makestr(error_message, _("Can't normalize a null vector"));
+		if (!aisnum) {
+			Error(_("Operation can't use that argument"));
 			return -1;
 		}
-		for (int c=0; c<aisnum; c++) rv[c] = va[c]/result;
 
-	} else if (operation == OP_Angle) {
-		if (aisnum != 2) {
-			makestr(error_message, _("Only for Vector2"));
-			return -1;
+
+		if (aisnum == 1) { //scalar
+			if        (operation == OP_AbsoluteValue  || operation == OP_Norm) { result = fabs(a);
+			} else if (operation == OP_Norm2            ) { result = a*a;
+			} else if (operation == OP_Negative || operation == OP_Flip) { result = -a;
+			} else if (operation == OP_Sqrt             ) {
+				if (a>=0) result = sqrt(a);
+				else {
+					Error(_("Sqrt needs nonnegative number"));
+					return -1;
+				}
+			} else if (operation == OP_Sgn              )  { result = a > 0 ? 1 : a < 0 ? -1 : 0;
+			} else if (operation == OP_Not              )  { result = !(int)a;
+			} else if (operation == OP_Radians_To_Degrees) { result = a *180/M_PI;
+			} else if (operation == OP_Degrees_To_Radians) { result = a * M_PI/180;
+			} else if (operation == OP_Sin              )  { result = sin(a);
+			} else if (operation == OP_Cos              )  { result = cos(a);
+			} else if (operation == OP_Tan              )  { result = tan(a);
+			} else if (operation == OP_Asin             )  {
+				if (a <= 1 && a >= -1) result = asin(a);
+				else {
+					Error(_("Argument needs to be in range [-1, 1]"));
+					return -1;
+				}
+			} else if (operation == OP_Acos             )  {
+				if (a <= 1 && a >= -1) result = acos(a);
+				else {
+					Error(_("Argument needs to be in range [-1, 1]"));
+					return -1;
+				}
+			} else if (operation == OP_Atan             )  { result = atan(a);
+			} else if (operation == OP_Sinh             )  { result = sinh(a);
+			} else if (operation == OP_Cosh             )  { result = cosh(a);
+			} else if (operation == OP_Tanh             )  { result = tanh(a);
+			} else if (operation == OP_Asinh            )  { result = asinh(a);
+			} else if (operation == OP_Acosh            )  {
+				if (a >= 1) result = acosh(a);
+				else {
+					Error(_("Argument needs to be >= 1"));
+					return -1;
+				}
+			} else if (operation == OP_Atanh            )  {
+				if (a > -1 && a < 1) result = atanh(a);
+				else {
+					Error(_("Argument needs to be -1 > a > 1"));
+					return -1;
+				}
+			} else if (operation == OP_Ceiling          )  { result = ceil(a);
+			} else if (operation == OP_Floor            )  { result = floor(a);
+			} else if (operation == OP_Clamp_To_1       )  { result = a > 1 ? 1 : a < 0 ? 0 : a;
+			} else if (operation == OP_Clamp_To_pm_1    )  { result = a > 1 ? 1 : a < -1 ? -1 : a;
+			} else {
+				Error(_("Operation can't use that argument"));
+				return -1;
+			}
+
+			if (!dynamic_cast<DoubleValue*>(out)) {
+				out = new DoubleValue(result);
+				if (dosets) {
+					if (c >= outset->n()) outset->Push(out, 1);
+					else outset->Set(c, out, 1);
+				} else properties.e[2]->SetData(out, 1);
+			} else dynamic_cast<DoubleValue*>(out)->d = result;
+
+		} else { //else involves vectors...
+
+			int resulttype = VALUE_None;
+
+			double va[4], rv[4];
+			for (int c=0; c<4; c++) { va[c] = rv[c] = 0; }
+
+			if (aisnum==2) {
+				dynamic_cast<FlatvectorValue*>(valuea)->v.get(va);
+				resulttype = VALUE_Flatvector;
+			} else if (aisnum==3) {
+				dynamic_cast<SpacevectorValue*>(valuea)->v.get(va);
+				resulttype = VALUE_Spacevector;
+			} else if (aisnum==4) {
+				dynamic_cast<SpacevectorValue*>(valuea)->v.get(va);
+				resulttype = VALUE_Quaternion;
+			}
+			
+
+			if (operation == OP_AbsoluteValue || operation == OP_Norm) {
+				for (int c=0; c<aisnum; c++) result += va[c]*va[c];
+				result = sqrt(result);
+				resulttype = VALUE_Real;
+
+			} else if (operation == OP_Norm2         ) {
+				for (int c=0; c<aisnum; c++) result += va[c]*va[c];
+				resulttype = VALUE_Real;
+
+			} else if (operation == OP_Negative      ) { for (int c=0; c<aisnum; c++) rv[c] = -va[c];
+			} else if (operation == OP_Clamp_To_1    ) { for (int c=0; c<aisnum; c++) rv[c] = va[c] > 1 ? 1 : va[c] <  0 ?  0 : va[c];
+			} else if (operation == OP_Clamp_To_pm_1 ) { for (int c=0; c<aisnum; c++) rv[c] = va[c] > 1 ? 1 : va[c] < -1 ? -1 : va[c];
+			} else if (operation == OP_Flip          ) { for (int c=0; c<aisnum; c++) rv[c] = -va[c];
+			} else if (operation == OP_Normalize     ) {
+				for (int c=0; c<aisnum; c++) result += va[c]*va[c];
+				result = sqrt(result);
+				if (result == 0) {
+					Error(_("Can't normalize a null vector"));
+					return -1;
+				}
+				for (int c=0; c<aisnum; c++) rv[c] = va[c]/result;
+
+			} else if (operation == OP_Angle) {
+				if (aisnum != 2) {
+					Error(_("Only for Vector2"));
+					return -1;
+				}
+				resulttype = VALUE_Real;
+				result = atan2(va[1], va[0]);
+
+			} else resulttype = VALUE_None;
+
+			if (resulttype == VALUE_None) {
+				Error(_("Operation can't use that argument"));
+				return -1;
+			}
+
+			if (resulttype == VALUE_Real) {
+				if (!dynamic_cast<DoubleValue*>(out)) {
+					out = new DoubleValue(result);
+					if (dosets) {
+						if (c >= outset->n()) outset->Push(out, 1);
+						else outset->Set(c, out, 1);
+					} else properties.e[2]->SetData(out, 1);
+				} else dynamic_cast<DoubleValue*>(out)->d = result;
+
+			} else if (resulttype == VALUE_Flatvector) {
+				if (!out || out->type() != VALUE_Flatvector) {
+					out = new FlatvectorValue(flatvector(rv));
+					if (dosets) {
+						if (c >= outset->n()) outset->Push(out, 1);
+						else outset->Set(c, out, 1);
+					} else properties.e[2]->SetData(out, 1);
+				} else dynamic_cast<FlatvectorValue*>(out)->v.set(rv);
+				
+			} else if (resulttype == VALUE_Spacevector) {
+				if (!out || out->type() != VALUE_Spacevector) {
+					out = new SpacevectorValue(spacevector(rv));
+					if (dosets) {
+						if (c >= outset->n()) outset->Push(out, 1);
+						else outset->Set(c, out, 1);
+					} else properties.e[2]->SetData(out, 1);
+				} else dynamic_cast<SpacevectorValue*>(out)->v.set(rv);
+				
+			} else if (resulttype == VALUE_Quaternion) {
+				if (!out || out->type() != VALUE_Quaternion) {
+					out = new QuaternionValue(Quaternion(rv));
+					if (dosets) {
+						if (c >= outset->n()) outset->Push(out, 1);
+						else outset->Set(c, out, 1);
+					} else properties.e[2]->SetData(out, 1);
+				} else dynamic_cast<QuaternionValue*>(out)->v.set(rv);
+			}
 		}
-		resulttype = VALUE_Real;
-		result = atan2(va[1], va[0]);
-
-	} else resulttype = VALUE_None;
-
-	if (resulttype == VALUE_None) {
-		makestr(error_message, _("Operation can't use that argument"));
-		return -1;
 	}
 
-	if (resulttype == VALUE_Real) {
-		if (!dynamic_cast<DoubleValue*>(properties.e[2]->data)) {
-			DoubleValue *newv = new DoubleValue(result);
-			properties.e[2]->SetData(newv, 1);
-		} else dynamic_cast<DoubleValue*>(properties.e[2]->data)->d = result;
-
-	} else if (resulttype == VALUE_Flatvector) {
-		if (!dynamic_cast<FlatvectorValue*>(properties.e[2]->data)) {
-			FlatvectorValue *newv = new FlatvectorValue(flatvector(rv));
-			properties.e[2]->SetData(newv, 1);
-		} else dynamic_cast<FlatvectorValue*>(properties.e[2]->data)->v.set(rv);
-
-	} else if (resulttype == VALUE_Spacevector) {
-		if (!dynamic_cast<SpacevectorValue*>(properties.e[2]->data)) {
-			SpacevectorValue *newv = new SpacevectorValue(spacevector(rv));
-			properties.e[2]->SetData(newv, 1);
-		} else dynamic_cast<SpacevectorValue*>(properties.e[2]->data)->v.set(rv);
-
-	} else if (resulttype == VALUE_Quaternion) {
-		if (!dynamic_cast<QuaternionValue*>(properties.e[2]->data)) {
-			QuaternionValue *newv = new QuaternionValue(Quaternion(rv));
-			properties.e[2]->SetData(newv, 1);
-		} else dynamic_cast<QuaternionValue*>(properties.e[2]->data)->v.set(rv);
-
-	}
-
-	properties.e[2]->modtime = times(NULL);
+	properties.e[2]->Touch();
 	return 0;
 }
 
@@ -1340,8 +1411,9 @@ class MathNode2 : public NodeBase
 	int last_status;
 	clock_t status_time;
 
-	int numargs;
-	double a,b,result;
+	// int numargs;
+	// double a,b,result;
+
 	MathNode2(int op=0, double aa=0, double bb=0); //see 2 arg MathNodeOps for op
 	virtual ~MathNode2();
 	virtual int UpdateThisOnly();
@@ -1366,9 +1438,9 @@ MathNode2::MathNode2(int op, double aa, double bb)
 	last_status = 1;
 	status_time = 0;
 
-	a=aa;
-	b=bb;
-	numargs = 2;
+	// a=aa;
+	// b=bb;
+	// numargs = 2;
 
 	ObjectDef *enumdef = GetMathNode2Def();
 	enumdef->inc_count();
@@ -1378,8 +1450,8 @@ MathNode2::MathNode2(int op, double aa, double bb)
 	enumdef->dec_count();
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, "Op", e, 1));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "A", new DoubleValue(a), 1));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "B", new DoubleValue(b), 1));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "A", new DoubleValue(aa), 1));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "B", new DoubleValue(bb), 1));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Result", NULL,0, _("Result"), NULL, 0, false));
 
 	last_status = Update();
@@ -1412,12 +1484,12 @@ NodeBase *MathNode2::Duplicate()
 
 	MathNode2 *newnode = new MathNode2(operation);
 	Value *a = properties.e[1]->GetData();
-	if (a) {
+	if (isNumberType(a,nullptr) || a->type() == VALUE_Flatvector || a->type() == VALUE_Spacevector || a->type() == VALUE_Quaternion) {
 		a = a->duplicate();
 		newnode->properties.e[1]->SetData(a, 1);
 	}
 	a = properties.e[2]->GetData();
-	if (a) {
+	if (isNumberType(a,nullptr) || a->type() == VALUE_Flatvector || a->type() == VALUE_Spacevector || a->type() == VALUE_Quaternion) {
 		a = a->duplicate();
 		newnode->properties.e[2]->SetData(a, 1);
 	}
@@ -1465,258 +1537,307 @@ int MathNode2::UpdateThisOnly()
 {
 	Error(nullptr);
 
+	int max = 0;
+	bool dosets = false;
 	Value *valuea = properties.e[1]->GetData();
 	Value *valueb = properties.e[2]->GetData();
-	int aisnum=0, bisnum=0;
-	a = getNumberValue(valuea, &aisnum);
-	b = getNumberValue(valueb, &bisnum);
-	if (aisnum) aisnum = 1; //else ints and booleans return 2 and 3
-	if (bisnum) bisnum = 1;
 
-	if (!aisnum && dynamic_cast<FlatvectorValue *>(valuea)) aisnum = 2;
-	if (!aisnum && dynamic_cast<SpacevectorValue*>(valuea)) aisnum = 3;
-	if (!aisnum && dynamic_cast<QuaternionValue *>(valuea)) aisnum = 4;
-	if (!bisnum && dynamic_cast<FlatvectorValue *>(valueb)) bisnum = 2;
-	if (!bisnum && dynamic_cast<SpacevectorValue*>(valueb)) bisnum = 3;
-	if (!bisnum && dynamic_cast<QuaternionValue *>(valueb)) bisnum = 4;
+	Value *ins[2];
+	ins[0] = valuea;
+	ins[1] = valueb;
+	SetValue *setins[2];
+	setins[0] = setins[1] = nullptr;
+
+	if (DetermineSetIns(2, ins, setins, max, dosets) == -1) return -1;
+
+	Value *out = properties.e[3]->GetData();
+	SetValue *outset = nullptr;
+	if (dosets) {
+		if (out && out->type() == VALUE_Set) {
+			outset = dynamic_cast<SetValue*>(out);
+		} else {
+			outset = new SetValue();
+			properties.e[3]->SetData(outset,1);
+		}
+		out = nullptr;
+	}
+
+	//clamp outset to max
+	if (outset) while (outset->n() > max) outset->Remove(outset->n()-1);
+
 
 	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
 	ObjectDef *def = ev->GetObjectDef();
 	const char *nm = NULL, *Nm = NULL;
 	int operation = OP_None;
 	def->getEnumInfo(ev->value, &nm, &Nm, NULL, &operation);
-	
 
-	if (aisnum == 1 && bisnum == 1) {
-		if      (operation==OP_Add)      result = a+b;
-		else if (operation==OP_Subtract) result = a-b;
-		else if (operation==OP_Multiply) result = a*b;
-		else if (operation==OP_Divide) {
-			if (b!=0) result = a/b;
-			else {
-				result=0;
-				Error(_("Can't divide by 0"));
-				return -1;
-			}
+	double a,b,result;
 
-		} else if (operation==OP_Mod) {
-			if (b!=0) result = a-b*int(a/b);
-			else {
-				result=0;
-				Error(_("Can't divide by 0"));
-				return -1;
-			}
-		} else if (operation==OP_Power) {
-			if (a==0 || (a<0 && fabs(b)-fabs(int(b))<1e-10)) {
-				 //0 to a power fails, as does negative numbers raised to non-integer powers
-				result=0;
-				makestr(error_message, _("Power must be positive"));
-				return -1;
-			}
-			result = pow(a,b);
-
-		} else if (operation==OP_Greater_Than_Or_Equal) { result = (a>=b);
-		} else if (operation==OP_Greater_Than)     { result = (a>b);
-		} else if (operation==OP_Less_Than)        { result = (a<b);
-		} else if (operation==OP_Less_Than_Or_Equal) { result = (a<=b);
-		} else if (operation==OP_Equals)           { result = (a==b);
-		} else if (operation==OP_Not_Equal)        { result = (a!=b);
-		} else if (operation==OP_Minimum)          { result = (a<b ? a : b);
-		} else if (operation==OP_Maximum)          { result = (a>b ? a : b);
-		} else if (operation==OP_Average)          { result = (a+b)/2;
-		} else if (operation==OP_Atan2)            { result = atan2(a,b);
-
-		} else if (operation==OP_And       )       { result = (int(a) & int(b));
-		} else if (operation==OP_Or        )       { result = (int(a) | int(b));
-		} else if (operation==OP_Xor       )       { result = (int(a) ^ int(b));
-		} else if (operation==OP_ShiftLeft )       { result = (int(a) << int(b));
-		} else if (operation==OP_ShiftRight)       { result = (int(a) >> int(b));
-
-		} else if (operation==OP_RandomRange)      {
-			srandom(a);
-			result = b * (double)random()/RAND_MAX;
-		} else {
-			makestr(error_message, _("Operation can't use those arguments"));
-			return -1;
+	for (int c=0; c<max; c++) {
+		if (dosets) {
+			if (c < outset->n()) out = outset->e(c);
+			else out = nullptr;
+			if (setins[0] && c < setins[0]->n()) valuea = setins[0]->e(c);
+			if (setins[1] && c < setins[1]->n()) valueb = setins[1]->e(c);
 		}
 
-		if (!dynamic_cast<DoubleValue*>(properties.e[3]->data)) {
-			DoubleValue *newv = new DoubleValue(result);
-			properties.e[3]->SetData(newv, 1);
-		} else dynamic_cast<DoubleValue*>(properties.e[3]->data)->d = result;
+		int aisnum=0, bisnum=0;
+		a = getNumberValue(valuea, &aisnum);
+		b = getNumberValue(valueb, &bisnum);
+		if (aisnum) aisnum = 1; //else ints and booleans return 2 and 3
+		if (bisnum) bisnum = 1;
 
-		properties.e[3]->modtime = times(NULL);
-		return 0;
+		if (!aisnum && dynamic_cast<FlatvectorValue *>(valuea)) aisnum = 2;
+		if (!aisnum && dynamic_cast<SpacevectorValue*>(valuea)) aisnum = 3;
+		if (!aisnum && dynamic_cast<QuaternionValue *>(valuea)) aisnum = 4;
+		if (!bisnum && dynamic_cast<FlatvectorValue *>(valueb)) bisnum = 2;
+		if (!bisnum && dynamic_cast<SpacevectorValue*>(valueb)) bisnum = 3;
+		if (!bisnum && dynamic_cast<QuaternionValue *>(valueb)) bisnum = 4;
 
-	}
-	
-	//else involves vectors...
-	int resulttype = VALUE_None;
+		if (aisnum == 1 && bisnum == 1) {
+			if      (operation==OP_Add)      result = a+b;
+			else if (operation==OP_Subtract) result = a-b;
+			else if (operation==OP_Multiply) result = a*b;
+			else if (operation==OP_Divide) {
+				if (b!=0) result = a/b;
+				else {
+					result=0;
+					Error(_("Can't divide by 0"));
+					return -1;
+				}
 
-	double va[4], vb[4], rv[4], *vv;
-	for (int c=0; c<4; c++) { va[c] = vb[c] = rv[c] = 0; }
+			} else if (operation==OP_Mod) {
+				if (b!=0) result = a-b*int(a/b);
+				else {
+					result=0;
+					Error(_("Can't divide by 0"));
+					return -1;
+				}
+			} else if (operation==OP_Power) {
+				if (a==0 || (a<0 && fabs(b)-fabs(int(b))<1e-10)) {
+					 //0 to a power fails, as does negative numbers raised to non-integer powers
+					result=0;
+					Error(_("Power must be positive"));
+					return -1;
+				}
+				result = pow(a,b);
 
-	if (aisnum==2) {
-		dynamic_cast<FlatvectorValue*>(valuea)->v.get(va);
-		resulttype = VALUE_Flatvector;
-	} else if (aisnum==3) {
-		dynamic_cast<SpacevectorValue*>(valuea)->v.get(va);
-		resulttype = VALUE_Spacevector;
-	} else if (aisnum==4) {
-		dynamic_cast<SpacevectorValue*>(valuea)->v.get(va);
-		resulttype = VALUE_Quaternion;
-	}
-	
-	if (bisnum==2) {
-		dynamic_cast<FlatvectorValue*>(valueb)->v.get(vb);
-		resulttype = VALUE_Flatvector;
-	} else if (bisnum==3) {
-		dynamic_cast<SpacevectorValue*>(valueb)->v.get(vb);
-		resulttype = VALUE_Spacevector;
-	} else if (bisnum==4) {
-		dynamic_cast<SpacevectorValue*>(valueb)->v.get(vb);
-		resulttype = VALUE_Quaternion;
-	}
+			} else if (operation==OP_Greater_Than_Or_Equal) { result = (a>=b);
+			} else if (operation==OP_Greater_Than)     { result = (a>b);
+			} else if (operation==OP_Less_Than)        { result = (a<b);
+			} else if (operation==OP_Less_Than_Or_Equal) { result = (a<=b);
+			} else if (operation==OP_Equals)           { result = (a==b);
+			} else if (operation==OP_Not_Equal)        { result = (a!=b);
+			} else if (operation==OP_Minimum)          { result = (a<b ? a : b);
+			} else if (operation==OP_Maximum)          { result = (a>b ? a : b);
+			} else if (operation==OP_Average)          { result = (a+b)/2;
+			} else if (operation==OP_Atan2)            { result = atan2(a,b);
 
-	if ((aisnum == 1 && bisnum > 1) || (aisnum > 1 && bisnum == 1)) {
-		 // r,v  v,r:  only multiply and maybe divide or mod
-		if (aisnum == 1) vv = vb; else vv = va;
+			} else if (operation==OP_And       )       { result = (int(a) & int(b));
+			} else if (operation==OP_Or        )       { result = (int(a) | int(b));
+			} else if (operation==OP_Xor       )       { result = (int(a) ^ int(b));
+			} else if (operation==OP_ShiftLeft )       { result = (int(a) << int(b));
+			} else if (operation==OP_ShiftRight)       { result = (int(a) >> int(b));
 
-		if (operation==OP_Multiply) {
-			if (aisnum == 1) { for (int c=0; c<4; c++) rv[c] = vv[c] * a; }
-			else { for (int c=0; c<4; c++) rv[c] = vv[c] * b; }
-
-		} else if (operation==OP_Divide || operation==OP_Mod) {
-			if (bisnum != 1) {
-				makestr(error_message, _("Bad parameters"));
+			} else if (operation==OP_RandomRange)      {
+				srandom(a);
+				result = b * (double)random()/RAND_MAX;
+			} else {
+				Error(_("Operation can't use those arguments"));
 				return -1;
 			}
-			if (b == 0) {
-				makestr(error_message, _("Can't divide by 0"));
-				return -1;
-			}
-			if (operation==OP_Mod) {
-				for (int c=0; c<4; c++) rv[c] = vv[c] - b*int(vv[c]/b);
 
-			} else for (int c=0; c<4; c++) rv[c] = vv[c] / b;
+			if (!dynamic_cast<DoubleValue*>(out)) {
+				out = new DoubleValue(result);
+				if (dosets) {
+					if (c >= outset->n()) outset->Push(out, 1);
+					else outset->Set(c, out, 1);
+				} else properties.e[3]->SetData(out, 1);
+			} else dynamic_cast<DoubleValue*>(out)->d = result;
 
 		} else {
-			makestr(error_message, _("Operation can't use those arguments"));
-			return -1;
-		}
+			//else involves vectors...
+			int resulttype = VALUE_None;
 
-	} else if ( (aisnum == 3 && bisnum == 3)
-			 || (aisnum == 4 && bisnum == 4)
-			 || (aisnum == 2 && bisnum == 2)) {
+			double va[4], vb[4], rv[4], *vv;
+			for (int c=0; c<4; c++) { va[c] = vb[c] = rv[c] = 0; }
 
-		resulttype = (aisnum==2 ? VALUE_Flatvector : (aisnum==3 ? VALUE_Spacevector : VALUE_Quaternion));
-
-		if      (operation==OP_Add)        { for (int c=0; c<4; c++) rv[c] = va[c] + vb[c];
-		} else if (operation==OP_Subtract) { for (int c=0; c<4; c++) rv[c] = va[c] - vb[c];
-		} else if (operation==OP_Equals)   {
-			resulttype = VALUE_Real;
-			result = 1;
-			for (int c=0; c<4; c++) if (va[c] != vb[c]) result = 0;
-
-		} else if (operation==OP_Not_Equal) {
-			resulttype = VALUE_Real;
-			result = 0;
-			for (int c=0; c<4; c++) if (va[c] != vb[c]) result = 1;
-
-		} else if (operation==OP_Average) {
-			for (int c=0; c<4; c++) rv[c] = (va[c] + vb[c])/2;
-
-		} else if (operation==OP_Dot) {
-			resulttype = VALUE_Real;
-			result = 0;
-			for (int c=0; c<4; c++) result += va[c]*vb[c];
-
-		} else if (operation==OP_Cross         ) {
-			if (aisnum == 4) resulttype = VALUE_None;
-			else {
+			if (aisnum==2) {
+				dynamic_cast<FlatvectorValue*>(valuea)->v.get(va);
+				resulttype = VALUE_Flatvector;
+			} else if (aisnum==3) {
+				dynamic_cast<SpacevectorValue*>(valuea)->v.get(va);
 				resulttype = VALUE_Spacevector;
-				spacevector aa(va), bb(vb);
-				aa = aa/bb;
-				aa.get(rv);
+			} else if (aisnum==4) {
+				dynamic_cast<SpacevectorValue*>(valuea)->v.get(va);
+				resulttype = VALUE_Quaternion;
 			}
-		} else if (operation==OP_Perpendicular ) {
-			double norm2 = vb[0]*vb[0]+vb[1]*vb[1]+vb[2]*vb[2]+vb[3]*vb[3];
-			if (norm2 == 0) {
-				makestr(error_message, _("Vector b can't be 0"));
+			
+			if (bisnum==2) {
+				dynamic_cast<FlatvectorValue*>(valueb)->v.get(vb);
+				resulttype = VALUE_Flatvector;
+			} else if (bisnum==3) {
+				dynamic_cast<SpacevectorValue*>(valueb)->v.get(vb);
+				resulttype = VALUE_Spacevector;
+			} else if (bisnum==4) {
+				dynamic_cast<SpacevectorValue*>(valueb)->v.get(vb);
+				resulttype = VALUE_Quaternion;
+			}
+
+			if ((aisnum == 1 && bisnum > 1) || (aisnum > 1 && bisnum == 1)) {
+				 // r,v  v,r:  only multiply and maybe divide or mod
+				if (aisnum == 1) vv = vb; else vv = va;
+
+				if (operation==OP_Multiply) {
+					if (aisnum == 1) { for (int c=0; c<4; c++) rv[c] = vv[c] * a; }
+					else { for (int c=0; c<4; c++) rv[c] = vv[c] * b; }
+
+				} else if (operation==OP_Divide || operation==OP_Mod) {
+					if (bisnum != 1) {
+						Error(_("Bad parameters"));
+						return -1;
+					}
+					if (b == 0) {
+						Error(_("Can't divide by 0"));
+						return -1;
+					}
+					if (operation==OP_Mod) {
+						for (int c=0; c<4; c++) rv[c] = vv[c] - b*int(vv[c]/b);
+
+					} else for (int c=0; c<4; c++) rv[c] = vv[c] / b;
+
+				} else {
+					Error(_("Operation can't use those arguments"));
+					return -1;
+				}
+
+			} else if ( (aisnum == 3 && bisnum == 3)
+					 || (aisnum == 4 && bisnum == 4)
+					 || (aisnum == 2 && bisnum == 2)) {
+
+				resulttype = (aisnum==2 ? VALUE_Flatvector : (aisnum==3 ? VALUE_Spacevector : VALUE_Quaternion));
+
+				if      (operation==OP_Add)        { for (int c=0; c<4; c++) rv[c] = va[c] + vb[c];
+				} else if (operation==OP_Subtract) { for (int c=0; c<4; c++) rv[c] = va[c] - vb[c];
+				} else if (operation==OP_Equals)   {
+					resulttype = VALUE_Real;
+					result = 1;
+					for (int c=0; c<4; c++) if (va[c] != vb[c]) result = 0;
+
+				} else if (operation==OP_Not_Equal) {
+					resulttype = VALUE_Real;
+					result = 0;
+					for (int c=0; c<4; c++) if (va[c] != vb[c]) result = 1;
+
+				} else if (operation==OP_Average) {
+					for (int c=0; c<4; c++) rv[c] = (va[c] + vb[c])/2;
+
+				} else if (operation==OP_Dot) {
+					resulttype = VALUE_Real;
+					result = 0;
+					for (int c=0; c<4; c++) result += va[c]*vb[c];
+
+				} else if (operation==OP_Cross         ) {
+					if (aisnum == 4) resulttype = VALUE_None;
+					else {
+						resulttype = VALUE_Spacevector;
+						spacevector aa(va), bb(vb);
+						aa = aa/bb;
+						aa.get(rv);
+					}
+				} else if (operation==OP_Perpendicular ) {
+					double norm2 = vb[0]*vb[0]+vb[1]*vb[1]+vb[2]*vb[2]+vb[3]*vb[3];
+					if (norm2 == 0) {
+						Error(_("Vector b can't be 0"));
+						return -1;
+					}
+					double dot = va[0]*vb[0]+va[1]*vb[1]+va[2]*vb[2]+va[3]*vb[3];
+					dot /= norm2;
+					for (int c=0; c<4; c++) rv[c] = va[c] - dot*vb[c];
+
+				} else if (operation==OP_Parallel      ) {
+					double norm2 = vb[0]*vb[0]+vb[1]*vb[1]+vb[2]*vb[2]+vb[3]*vb[3];
+					if (norm2 == 0) {
+						Error(_("Vector b can't be 0"));
+						return -1;
+					}
+					double dot = va[0]*vb[0]+va[1]*vb[1]+va[2]*vb[2]+va[3]*vb[3];
+					dot /= norm2;
+					for (int c=0; c<4; c++) rv[c] = dot*vb[c];
+
+				} else if (operation==OP_Angle_Between ) {
+					if (aisnum == 4) resulttype = VALUE_None;
+					else {
+						if (aisnum == 2) {
+							result = angle(flatvector(va), flatvector(vb));
+						} else {
+							result = angle(spacevector(va), spacevector(vb));
+						}
+						resulttype = VALUE_Real;
+					}
+				} else if (operation==OP_Angle2_Between) {
+					if (aisnum == 4) resulttype = VALUE_None;
+					else {
+						if (aisnum == 2) {
+							result = angle_full(flatvector(va), flatvector(vb));
+						} else {
+							result = angle(spacevector(va), spacevector(vb));
+						}
+						resulttype = VALUE_Real;
+					}
+
+				} else {
+					resulttype = VALUE_None;
+				}
+			}
+
+			if (resulttype == VALUE_None) {
+				Error(_("Operation can't use those arguments"));
 				return -1;
 			}
-			double dot = va[0]*vb[0]+va[1]*vb[1]+va[2]*vb[2]+va[3]*vb[3];
-			dot /= norm2;
-			for (int c=0; c<4; c++) rv[c] = va[c] - dot*vb[c];
 
-		} else if (operation==OP_Parallel      ) {
-			double norm2 = vb[0]*vb[0]+vb[1]*vb[1]+vb[2]*vb[2]+vb[3]*vb[3];
-			if (norm2 == 0) {
-				makestr(error_message, _("Vector b can't be 0"));
+			if (resulttype == VALUE_Real) {
+				if (!dynamic_cast<DoubleValue*>(out)) {
+					out = new DoubleValue(result);
+					if (dosets) {
+						if (c >= outset->n()) outset->Push(out, 1);
+						else outset->Set(c, out, 1);
+					} else properties.e[3]->SetData(out, 1);
+				} else dynamic_cast<DoubleValue*>(out)->d = result;
+
+			} else if (resulttype == VALUE_Flatvector) {
+				if (!out || out->type() != VALUE_Flatvector) {
+					out = new FlatvectorValue(flatvector(rv));
+					if (dosets) {
+						if (c >= outset->n()) outset->Push(out, 1);
+						else outset->Set(c, out, 1);
+					} else properties.e[3]->SetData(out, 1);
+				} else dynamic_cast<FlatvectorValue*>(out)->v.set(rv);
+				
+			} else if (resulttype == VALUE_Spacevector) {
+				if (!out || out->type() != VALUE_Spacevector) {
+					out = new SpacevectorValue(spacevector(rv));
+					if (dosets) {
+						if (c >= outset->n()) outset->Push(out, 1);
+						else outset->Set(c, out, 1);
+					} else properties.e[3]->SetData(out, 1);
+				} else dynamic_cast<SpacevectorValue*>(out)->v.set(rv);
+				
+			} else if (resulttype == VALUE_Quaternion) {
+				if (!out || out->type() != VALUE_Quaternion) {
+					out = new QuaternionValue(Quaternion(rv));
+					if (dosets) {
+						if (c >= outset->n()) outset->Push(out, 1);
+						else outset->Set(c, out, 1);
+					} else properties.e[3]->SetData(out, 1);
+				} else dynamic_cast<QuaternionValue*>(out)->v.set(rv);
+
+			} else {
+				Error(_("Operation can't use those arguments"));
 				return -1;
 			}
-			double dot = va[0]*vb[0]+va[1]*vb[1]+va[2]*vb[2]+va[3]*vb[3];
-			dot /= norm2;
-			for (int c=0; c<4; c++) rv[c] = dot*vb[c];
-
-		} else if (operation==OP_Angle_Between ) {
-			if (aisnum == 4) resulttype = VALUE_None;
-			else {
-				if (aisnum == 2) {
-					result = angle(flatvector(va), flatvector(vb));
-				} else {
-					result = angle(spacevector(va), spacevector(vb));
-				}
-				resulttype = VALUE_Real;
-			}
-		} else if (operation==OP_Angle2_Between) {
-			if (aisnum == 4) resulttype = VALUE_None;
-			else {
-				if (aisnum == 2) {
-					result = angle_full(flatvector(va), flatvector(vb));
-				} else {
-					result = angle(spacevector(va), spacevector(vb));
-				}
-				resulttype = VALUE_Real;
-			}
-
-		} else {
-			resulttype = VALUE_None;
-		}
-	}
-
-	if (resulttype == VALUE_None) {
-		makestr(error_message, _("Operation can't use those arguments"));
-		return -1;
-	}
-
-	if (resulttype == VALUE_Real) {
-		if (!dynamic_cast<DoubleValue*>(properties.e[3]->data)) {
-			DoubleValue *newv = new DoubleValue(result);
-			properties.e[3]->SetData(newv, 1);
-		} else dynamic_cast<DoubleValue*>(properties.e[3]->data)->d = result;
-
-	} else if (resulttype == VALUE_Flatvector) {
-		if (!dynamic_cast<FlatvectorValue*>(properties.e[3]->data)) {
-			FlatvectorValue *newv = new FlatvectorValue(flatvector(rv));
-			properties.e[3]->SetData(newv, 1);
-		} else dynamic_cast<FlatvectorValue*>(properties.e[3]->data)->v.set(rv);
-
-	} else if (resulttype == VALUE_Spacevector) {
-		if (!dynamic_cast<SpacevectorValue*>(properties.e[3]->data)) {
-			SpacevectorValue *newv = new SpacevectorValue(spacevector(rv));
-			properties.e[3]->SetData(newv, 1);
-		} else dynamic_cast<SpacevectorValue*>(properties.e[3]->data)->v.set(rv);
-
-	} else if (resulttype == VALUE_Quaternion) {
-		if (!dynamic_cast<QuaternionValue*>(properties.e[3]->data)) {
-			QuaternionValue *newv = new QuaternionValue(Quaternion(rv));
-			properties.e[3]->SetData(newv, 1);
-		} else dynamic_cast<QuaternionValue*>(properties.e[3]->data)->v.set(rv);
-
-	} else {
-		makestr(error_message, _("Operation can't use those arguments"));
-		return -1;
+		} //ops on vectors
 	}
 
 	properties.e[3]->Touch();
@@ -2672,7 +2793,10 @@ class RandomNode : public NodeBase
 	virtual int Update();
 	virtual int GetStatus();
 	virtual NodeBase *Duplicate();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new RandomNode(0, 0., 1.); }
 };
+
 
 RandomNode::RandomNode(int seed, double min, double max)
 {
@@ -2684,7 +2808,7 @@ RandomNode::RandomNode(int seed, double min, double max)
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Maximum", new DoubleValue(max),1,    _("Maximum"))); 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Block, false,"Integer", new BooleanValue(false),1, _("Integer"))); 
 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Number", new DoubleValue(),1, _("Number"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Number", new DoubleValue(),1, _("Number"), nullptr,0,false)); 
 }
 
 RandomNode::~RandomNode()
@@ -2708,8 +2832,6 @@ int RandomNode::GetStatus()
 	if (!isNumberType(properties.e[0]->GetData(), NULL)) return -1;
 	if (!isNumberType(properties.e[1]->GetData(), NULL)) return -1;
 	if (!isNumberType(properties.e[2]->GetData(), NULL)) return -1;
-
-	if (!properties.e[4]->data) return 1;
 
 	return NodeBase::GetStatus(); //default checks mod times
 }
@@ -2741,13 +2863,9 @@ int RandomNode::Update()
 			properties.e[4]->SetData(v, 1);
 		} else dynamic_cast<DoubleValue*>(v)->d = num;
 	}
+	properties.e[4]->Touch();
 
 	return NodeBase::Update();
-}
-
-Laxkit::anObject *newRandomNode(int p, Laxkit::anObject *ref)
-{
-	return new RandomNode(0, 0., 1.);
 }
 
 
@@ -4262,7 +4380,8 @@ MapRangeNode::MapRangeNode(bool map_to, double min, double max, bool clamp)
 		makestr(type, "MapFromRange");
 	}
 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", new DoubleValue(0),1,    _("In"))); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", new DoubleValue(0),1,    _("In"),
+		mapto ? _("0..1 maps to Min..Max") : _("Min..Max maps to 0..1"))); 
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Min", new DoubleValue(min),1,    _("Min"))); 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "Max", new DoubleValue(max),1,    _("Max"))); 
@@ -4447,26 +4566,29 @@ int GetSizeNode::Update()
 //------------------------------ GetElementNode --------------------------------------------
 
 /*! \class GetElementNode
- * Get 
+ * Get sub element.
  */
 
 class GetElementNode : public NodeBase
 {
+	int which;
+
   public:
-	GetElementNode();
+	GetElementNode(int which);
 	virtual ~GetElementNode();
 	virtual NodeBase *Duplicate();
 	virtual int Update();
 	virtual int GetStatus();
 	virtual Value *PreviewFrom() { return properties.e[2]->GetData(); }
 
-	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new GetElementNode(); }
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new GetElementNode(p); }
 };
 
-GetElementNode::GetElementNode()
+GetElementNode::GetElementNode(int which)
 {
-	makestr(type, "Lists/GetElement");
-	makestr(Name, _("Get Element"));
+	this->which = which;
+	makestr(type, which ? "Drawable/GetChild" : "Lists/GetElement");
+	makestr(Name, which ? _("Get child") : _("Get Element"));
 
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "obj",  nullptr,1, _("Object")));
@@ -4480,37 +4602,9 @@ GetElementNode::~GetElementNode()
 
 NodeBase *GetElementNode::Duplicate()
 {
-	GetElementNode *node = new GetElementNode();
+	GetElementNode *node = new GetElementNode(which);
 	node->DuplicateBase(this);
 	return node;
-}
-
-int GetElementNode::Update()
-{
-	Error(nullptr);
-
-	Value *in = properties.e[0]->GetData();
-	SetValue *set = dynamic_cast<SetValue*>(in);
-	if (!set) {
-		Error(_("Input must be a list!"));
-		return -1;
-	}
-
-	int isnum = 0;
-	int index = getIntValue(properties.e[1]->GetData(), &isnum);
-	if (!isnum) {
-		Error(_("Index must be a number!"));
-		return -1;
-	}
-	if (index < 0 || index >= set->n()) {
-		Error(_("Index out of range!"));
-		return -1;
-	}
-	
-	properties.e[2]->SetData(set->e(index),0);
-	UpdatePreview();
-	Wrap();
-	return NodeBase::Update();
 }
 
 /*! Return 0 for no error and everything up to date.
@@ -4519,23 +4613,77 @@ int GetElementNode::Update()
  */
 int GetElementNode::GetStatus()
 {
-	SetValue *set = dynamic_cast<SetValue*>(properties.e[0]->GetData());
-	if (!set) {
-		Error(_("Input must be a list!"));
+	Value *v = properties.e[0]->GetData();
+	if (!v) return -1;
+	if (v->type() != VALUE_Set && v->type() != VALUE_Hash && !dynamic_cast<DrawableObject*>(v)) {
+		Error(_("Input must be a list, dictionary, or Drawable!"));
 		return -1;
 	}
 
-	int isnum = 0;
-	int index = getIntValue(properties.e[1]->GetData(), &isnum);
-	if (!isnum) {
-		Error(_("Index must be a number!"));
-		return -1;
-	}
-	if (index < 0 || index >= set->n()) {
-		Error(_("Index out of range!"));
+	v = properties.e[1]->GetData();
+	if (!v || (!isNumberType(v, nullptr) && v->type() != VALUE_String)) {
+		Error(_("Index must be a number or object name!"));
 		return -1;
 	}
 	return NodeBase::GetStatus();
+}
+
+int GetElementNode::Update()
+{
+	Error(nullptr);
+
+	Value *in = properties.e[0]->GetData();
+	SetValue *set = dynamic_cast<SetValue*>(in);
+	DrawableObject *dobj = nullptr;
+	ValueHash *hash = nullptr;
+	if (!set) {
+		dobj = dynamic_cast<DrawableObject*>(in);
+		if (!dobj) {
+			hash = dynamic_cast<ValueHash*>(in);
+			if (!hash) {
+				Error(_("Input must be a list or a Drawable object!"));
+				return -1;
+			}
+		}
+	}
+
+	int isnum = 0;
+	Value *v = properties.e[1]->GetData();
+	int index = getIntValue(v, &isnum);
+	Value *out = nullptr;
+
+	if (!isnum && v->type() != VALUE_String) {
+		Error(_("Index must be a number or name!"));
+		return -1;
+	}
+	if (v->type() == VALUE_String) {
+		StringValue *sv = dynamic_cast<StringValue*>(v);
+		if (set) {
+			out = set->FindID(sv->str);
+		} else if (hash) {
+			out = hash->find(sv->str);
+		} else { // dobj
+			out = dynamic_cast<DrawableObject*>(dobj->FindChild(sv->str));
+		}
+		if (!out) {
+			Error(_("Bad index!"));
+			return -1;
+		}
+	} else { //use index
+		if (index < 0 || index >= (set ? set->n() : (hash ? hash->n() : dobj->NumKids()))) {
+			Error(_("Bad index!"));
+			return -1;
+		}
+		if (set) out = set->e(index);
+		else if (hash) out = hash->value(index);
+		else out = dynamic_cast<DrawableObject*>(dobj->Child(index));
+	}
+	
+	if (!out) return -1;
+	properties.e[2]->SetData(out,0);
+	UpdatePreview();
+	Wrap();
+	return NodeBase::Update();
 }
 
 
@@ -4644,7 +4792,7 @@ int SubsetNode::GetStatus()
 //------------------------------ JoinSetsNode --------------------------------------------
 
 /*! \class JoinSetsNode
- * Get a subset of a list.
+ * Concatenate sets.
  */
 
 class JoinSetsNode : public NodeBase
@@ -4699,6 +4847,11 @@ void JoinSetsNode::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::Du
 	}
 	for (int c=0; c<properties.n-1; c++) {
 		properties.e[c]->Label(_("Set"));
+		if (c < properties.n-2) {
+			// *** this really should be automated somehow
+			properties.e[c]->SetFlag(NodeProperty::PROPF_New_In, false);
+			properties.e[c]->SetFlag(NodeProperty::PROPF_List_In, true);
+		}
 	}
 }
 
@@ -4747,6 +4900,104 @@ int JoinSetsNode::Update()
 		for (int c2=0; c2<set->n(); c2++) {
 			out->Push(set->e(c2), 0);
 		}
+	}
+
+	return NodeBase::Update();
+}
+
+
+//------------------------------ MakeSetNode --------------------------------------------
+
+/*! \class MakeSetNode
+ * Make a set containing all the inputs.
+ */
+
+class MakeSetNode : public NodeBase
+{
+  public:
+	MakeSetNode();
+	virtual ~MakeSetNode();
+	virtual NodeBase *Duplicate();
+	virtual int GetStatus();
+	virtual int Update();
+	virtual void dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context);
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new MakeSetNode(); }
+};
+
+MakeSetNode::MakeSetNode()
+{
+	makestr(type, "Lists/MakeSet");
+	makestr(Name, _("Make set"));
+
+	// AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "set",  nullptr,1, _("Set")));
+	// virtual NodeProperty *AddNewIn (int is_for_list, const char *nname, const char *nlabel, const char *ttip, int where=-1);
+	AddNewIn(true, "in", _("In"), nullptr);
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out",  NULL,1, _("Out"), NULL, 0, false));
+}
+
+MakeSetNode::~MakeSetNode()
+{
+}
+
+NodeBase *MakeSetNode::Duplicate()
+{
+	MakeSetNode *node = new MakeSetNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+/*! Clean up after NodeBase::dump_in_atts() to make sure the out property is at the end.
+ */
+void MakeSetNode::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context)
+{
+	NodeBase::dump_in_atts(att,flag,context);
+	int i = -1;
+	NodeProperty *prop = FindProperty("out", &i);
+	if (prop && i != properties.n-1) {
+		properties.slide(i, properties.n-1);
+	}
+	prop = FindProperty("in", &i);
+	if (prop && i != properties.n-2) {
+		properties.slide(i, properties.n-2);
+	}
+	for (int c=0; c<properties.n-1; c++) {
+		properties.e[c]->Label(_("In"));
+		if (c < properties.n-2) {
+			// *** this really should be automated somehow
+			properties.e[c]->SetFlag(NodeProperty::PROPF_New_In, false);
+			properties.e[c]->SetFlag(NodeProperty::PROPF_List_In, true);
+		}
+	}
+}
+
+/*! Return 0 for no error and everything up to date.
+ * -1 means bad inputs and node in error state.
+ * 1 means needs updating.
+ */
+int MakeSetNode::GetStatus()
+{
+	return NodeBase::GetStatus();
+}
+
+int MakeSetNode::Update()
+{
+	Error(nullptr);
+
+	SetValue *out = dynamic_cast<SetValue*>(properties.e[properties.n-1]->GetData());
+	if (!out) {
+		out = new SetValue();
+		properties.e[properties.n-1]->SetData(out, 1);
+	} else {
+		out->Flush();
+		properties.e[properties.n-1]->Touch();
+	}
+
+	for (int c=0; c<properties.n-2; c++) {
+		Value *v = properties.e[c]->GetData();
+		if (!v) return -1; //don't allow null inputs
+		out->Push(v, 0);
 	}
 
 	return NodeBase::Update();
@@ -4844,6 +5095,93 @@ int NumberListNode::Update()
 	return NodeBase::Update();
 }
 
+
+//----------------------- ShuffleNode ------------------------
+
+/*! \class ShuffleNode
+ *
+ * Shuffle a set.
+ */
+class ShuffleNode : public NodeBase
+{
+  public:
+	ShuffleNode();
+	virtual ~ShuffleNode();
+	virtual NodeBase *Duplicate();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ShuffleNode(); }
+};
+
+ShuffleNode::ShuffleNode()
+{
+	makestr(type, "Lists/Shuffle");
+	makestr(Name, _("Shuffle"));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,  _("Set"), _("Either a Set or a PointSet")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out"), NULL,0, false));
+}
+
+ShuffleNode::~ShuffleNode()
+{
+}
+
+NodeBase *ShuffleNode::Duplicate()
+{
+	ShuffleNode *newnode = new ShuffleNode();
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int ShuffleNode::GetStatus()
+{
+	Value *v = properties.e[0]->GetData();
+	if (!v) return -1;
+	if (v->type() != VALUE_Set && v->type() != PointSetValue::TypeNumber()) return -1;
+	return NodeBase::GetStatus();
+}
+
+int ShuffleNode::Update()
+{
+	Value *v = properties.e[0]->GetData();
+	if (!v) return -1;
+	
+	SetValue *set = dynamic_cast<SetValue*>(v);
+	if (set) {
+		SetValue *out = dynamic_cast<SetValue*>(properties.e[1]->GetData());
+		if (!out) {
+			out = new SetValue();
+			properties.e[1]->SetData(out, 1);
+		}
+
+		int n = set->n();
+		for (int c=0; c<n; c++) {
+			if (c > out->n()) out->Push(set->e(c), 0);
+			else out->Set(c, set->e(c), 0);
+		}
+
+		int i;
+		for (int c=n-1; c>0; c--) {
+			i = c * (double)random()/RAND_MAX;
+			out->values.swap(c,i);
+		}
+
+	} else {
+		PointSetValue *pset = dynamic_cast<PointSetValue*>(v);
+		if (!pset) return -1;
+		PointSetValue *out = dynamic_cast<PointSetValue*>(properties.e[1]->GetData());
+		if (!out) {
+			out = new PointSetValue();
+			properties.e[1]->SetData(out, 1);
+		}
+
+		out->CopyFrom(pset, 1, 0);
+		out->Shuffle();
+	}
+
+	properties.e[1]->Touch();
+	return NodeBase::Update();
+}
 
 
 //------------ ObjectNode
@@ -5592,19 +5930,18 @@ class NewObjectNode : public NodeBase
 
 	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new NewObjectNode(nullptr); }
 	static SingletonKeeper menuKeeper;
+	static ObjectDef *GetObjectList();
 
 };
 
 SingletonKeeper NewObjectNode::menuKeeper;
 
-NewObjectNode::NewObjectNode(const char *what)
+/*! Return a menu for known objects from Laidout and Core calculator modules.
+ * Calling code must dec_count() the returned def.
+ */
+ObjectDef *NewObjectNode::GetObjectList()
 {
-	makestr(Name, _("New Object"));
-	makestr(type, "NewObject");
-
-	// enum of all objects	
-	def = dynamic_cast<ObjectDef*>(menuKeeper.GetObject());
-	int whati = 0;
+	ObjectDef *def = dynamic_cast<ObjectDef*>(menuKeeper.GetObject());
 	if (!def) {
 		def = new ObjectDef("Objects", _("Objects"), NULL,NULL,"enum", 0);
 
@@ -5619,13 +5956,25 @@ NewObjectNode::NewObjectNode(const char *what)
 	 //    	i++;
 	 //    }
 
+		//grab from the Laidout namespace
 		for (int c = 0; c < stylemanager.getNumFields(); c++) {
 			ObjectDef *d = stylemanager.getField(c);
 			if (d->format == VALUE_Class)	{
 				// DBG if (!d->newfunc && !d->stylefunc) cerr << "NewObjectNode: *** Warning! Missing constructor for "<<d->name<<". FIXME!!"<<endl;
 				// DBG else cerr << "NewObjectNode:  newfunc: "<<(d->newfunc ? "yes": "no ")<<" ofunc: "<<(d->stylefunc? "yes  ": "no   ")<<d->name<<endl;
-				if (what && !strcmp(d->name, what)) whati = i;
-				def->pushEnumValue(d->name, d->Name, d->description);
+				def->pushEnumValue(d->name, d->Name, d->description, i);
+				i++;
+			}
+		}
+
+		//grab from the Core namespace
+		ObjectDef *core = laidout->calculator->FindModule("Core");
+		for (int c = 0; c < core->getNumFields(); c++) {
+			ObjectDef *d = core->getField(c);
+			if (d->format == VALUE_Class)	{
+				// DBG if (!d->newfunc && !d->stylefunc) cerr << "NewObjectNode: *** Warning! Missing constructor for "<<d->name<<". FIXME!!"<<endl;
+				// DBG else cerr << "NewObjectNode:  newfunc: "<<(d->newfunc ? "yes": "no ")<<" ofunc: "<<(d->stylefunc? "yes  ": "no   ")<<d->name<<endl;
+				def->pushEnumValue(d->name, d->Name, d->description, i);
 				i++;
 			}
 		}
@@ -5634,7 +5983,26 @@ NewObjectNode::NewObjectNode(const char *what)
 		
 		menuKeeper.SetObject(def, false);
 	} else def->inc_count();
+	return def;
+}
 
+NewObjectNode::NewObjectNode(const char *what)
+{
+	makestr(Name, _("New Object"));
+	makestr(type, "NewObject");
+
+	// enum of all objects	
+	def = GetObjectList();
+	int whati = 0;
+	if (what) {
+		for (int c=0; c<def->getNumFields(); c++) {
+			if (!strcmp(def->name, what)) {
+				whati = c;
+				break;
+			}
+		}
+	}
+	
 	EnumValue *e = new EnumValue(def, whati);
 	
 	AddProperty(new NodeProperty(NodeProperty::PROP_Block, false, "what", e,1, "", NULL,0, true));
@@ -5679,6 +6047,10 @@ int NewObjectNode::Update()
 	Value *o = properties.e[1]->GetData();
 	if (!o || (o && strcmp(what, o->whattype()))) { //missing or different out, recreate
 		ObjectDef *d = stylemanager.FindDef(what);
+		if (!d) {
+			ObjectDef *core = laidout->calculator->FindModule("Core");
+			d = core->FindDef(what);
+		}
 		if (d) {
 			if (d->newfunc) o = d->newfunc();
 			else if (d->stylefunc) {
@@ -5706,6 +6078,195 @@ int NewObjectNode::Update()
 	} else properties.e[1]->Touch();;
 
 	if (!properties.e[1]->GetData()) return -1;
+	return NodeBase::Update();
+}
+
+
+//------------------------ ListOfNode ------------------------
+
+
+class ListOfNode : public NodeBase
+{
+  public:
+	ListOfNode(const char *what, int n);
+	virtual ~ListOfNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int GetStatus();
+	virtual int Update();
+	virtual int UpdateProps(int num);
+	virtual void dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context);
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ListOfNode(nullptr, 1); }
+};
+
+ListOfNode::ListOfNode(const char *what, int n)
+{
+	makestr(Name, _("List Of"));
+	makestr(type, "Lists/List");
+
+	if (isblank(what)) what = "real";
+
+	// enum of all objects	
+	def = NewObjectNode::GetObjectList();
+	int whati = 0;
+	if (what) {
+		const char *nm;
+		for (int c=0; c<def->getNumEnumFields(); c++) {
+			def->getEnumInfo(c, &nm);
+			if (nm && !strcmp(nm, what)) {
+				whati = c;
+				break;
+			}
+		}
+	}
+	
+	EnumValue *e = new EnumValue(def, whati);
+	
+	AddProperty(new NodeProperty(NodeProperty::PROP_Block, false, "what", e,1, "", NULL,0, true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, "num", new IntValue(n),1, _("Num"), NULL,0, true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Object"), NULL,0, false));
+}
+
+ListOfNode::~ListOfNode()
+{
+}
+
+NodeBase *ListOfNode::Duplicate()
+{
+	const char *what = nullptr;
+	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
+	if (ev && ev->GetObjectDef()) {
+		ev->GetObjectDef()->getEnumInfo(ev->value, &what);
+	}
+
+	int num = getIntValue(properties.e[1]->GetData(), nullptr);
+	if (num < 0) num = 1;
+
+	ListOfNode *node = new ListOfNode(what, num);
+	node->DuplicateBase(this);
+	return node;
+}
+
+//0 ok, -1 bad ins, 1 just needs updating
+int ListOfNode::GetStatus()
+{
+	return NodeBase::GetStatus();
+}
+
+void ListOfNode::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context)
+{
+	NodeBase::dump_in_atts(att,flag,context);
+	int i = -1;
+	NodeProperty *out = FindProperty("out", &i);
+	if (out && i != properties.n-1) {
+		properties.slide(i, properties.n-1);
+	}
+}
+
+int ListOfNode::UpdateProps(int num)
+{
+	// make sure we have the right number of extra props
+	// do NOT disconnect any extra automatically
+	// does not check existing data types, that is done in Update
+	
+	if (properties.n == num+3) return 1;
+
+	char scratch[20], scratch2[20];
+	while (properties.n < num+3) {
+		sprintf(scratch, "el%d", properties.n-3);
+		sprintf(scratch2, "%d", properties.n-3);
+		NodeProperty *prop = new NodeProperty(NodeProperty::PROP_Input, true, scratch, NULL,0, scratch2, nullptr, false, true);
+		AddProperty(prop, properties.n-1);
+	}
+
+	for (int c=2+num; c<properties.n-1; c++)
+		if (properties.e[c]->IsConnected()) return 0; //force users to unconnect elements more than num
+
+	while (properties.n > num+3) {
+		RemoveProperty(properties.e[properties.n-2]);
+	}
+	
+	return 1;
+}
+
+int ListOfNode::Update()
+{
+	ClearError();
+
+	// if enum not equal value->whattype, recreate
+	const char *what = nullptr;
+	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
+	if (ev && ev->GetObjectDef()) {
+		ev->GetObjectDef()->getEnumInfo(ev->value, &what);
+	}
+
+	if (!what) return -1;
+
+	int isnum = 0;
+	int num = getIntValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum || num < 0) {
+		Error(_("Invalid number!"));
+		return -1;
+	}
+
+	SetValue *out = dynamic_cast<SetValue*>(properties.e[properties.n-1]->GetData());
+	if (!out || out->type() != VALUE_Set) {
+		out = new SetValue();
+		properties.e[properties.n-1]->SetData(out, 1);
+	}
+
+	// bool needtowrap = false;
+	if (num != properties.n-3) {
+		if (!UpdateProps(num)) { //3 == -out-type-num
+			Wrap();
+			Error(_("Please unlink old data"));
+			return -1;
+		}
+		Wrap();
+		// needtowrap = true;
+	}
+
+	for (int c=0; c<num; c++) {
+		if (c+2 >= properties.n-1) {
+			Error(_("Aaaaaaaa!! FIXME"));
+			return -1;
+		}
+		Value *e = properties.e[c+2]->GetData();
+		if (!e || strcmp(what, e->whattype())) {
+			//wrong type!
+			if (properties.e[c+2]->IsConnected()) {
+				Error(_("In object wrong type!"));
+				return -1;
+			}
+
+			ObjectDef *d = stylemanager.FindDef(what);
+			if (!d) {
+				ObjectDef *core = laidout->calculator->FindModule("Core");
+				d = core->FindDef(what);
+			}
+			if (d) {
+				if (d->newfunc) e = d->newfunc();
+				else if (d->stylefunc) {
+					cerr << "Warning! "<< d->name<<" missing newfunc! FIXME!! attempting to use objectfunc."<<endl;
+					ErrorLog log;
+					d->stylefunc(nullptr, nullptr, &e, log);
+							
+				} else {
+					cerr << "Warning! "<<d->name<<" has no constructor! FIXME!!" <<endl;
+				}
+			}
+
+			properties.e[c+2]->SetData(e,1);
+		}
+		if (c < out->n()) {
+			if (e != out->e(c)) out->Set(c, e, 0);
+		} else out->Push(e, 0);
+	}
+	while (out->n() > num) out->Remove(out->n()-1);
+
+	properties.e[properties.n-1]->Touch();
+	// if (needtowrap) Wrap();
 	return NodeBase::Update();
 }
 
@@ -7170,7 +7731,7 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Math/Vector3",      newSpacevectorNode, NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Math/Quaternion",   newQuaternionNode, NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Math/ExpandVector", newExpandVectorNode, NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Math/Random",       newRandomNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Math/Random",       RandomNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Math/Lerp",         newLerpNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Math/MapToRange",   newMapToRangeNode,    NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Math/MapFromRange", newMapFromRangeNode,  NULL, 0);
@@ -7183,9 +7744,14 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Lists/EmptySet",    newEmptySetNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Lists/GetElement",  GetElementNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Lists/GetSize",     GetSizeNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Lists/ListOf",      ListOfNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Lists/Subset",      SubsetNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Lists/JoinSets",    JoinSetsNode::NewNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Lists/NumberList",    NumberListNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Lists/MakeSet",     MakeSetNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Lists/NumberList",  NumberListNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Lists/Shuffle",     ShuffleNode::NewNode,  NULL, 0);
+	//special duplication of GetElement
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/GetChild", GetElementNode::NewNode,  NULL, 1);
 	
 	//------------------ String -------------
 	factory->DefineNewObject(getUniqueNumber(), "Strings/String",      newStringNode,  NULL, 0);

@@ -3,8 +3,9 @@
 
 TODO:
   FitIn
+  CSV in: set of row hashes, or hash of row values
   AlignToBounds
-  MakeSet: manually link elements, output set of them
+  ListOf  [type][num] 0 1 2 ... n-1 out
   PathIntersections
   ObjectArrayNode
   MirrorPathNode
@@ -16,6 +17,9 @@ TODO:
   EulerToQuaternion
   QuaternionToEuler
   Swizzle
+
+
+
 
 
 //----------------------- PathIntersectionsNode ------------------------
@@ -1770,6 +1774,61 @@ int BoilerPlateNode::GetStatus()
 
 int BoilerPlateNode::Update()
 {
+	ClearError();
 	return NodeBase::Update();
 }
 
+int BoilerPlateNode::Update()
+{
+	//update with set parsing helpers
+	
+	ClearError();
+
+	int num_ins = 3;
+	ins[0] = properties.e[0]->GetData();
+	ins[1] = properties.e[1]->GetData();
+	ins[2] = properties.e[2]->GetData();
+
+	SetValue *setins[3];
+	SetValue *setouts[2];
+
+	int num_outs = 2;
+	int outprops[2];
+	outprops[0] = 3;
+	outprops[1] = 4;
+
+	int max = 0;
+	const char *err = nullptr;
+	bool dosets = false;
+	if (DetermineSetIns(num_ins, ins, setins, max, dosets) == -1) {; //does not check contents of sets.
+		//had a null input
+		return -1;
+	}
+
+	*** check for easy to spot errors with inputs
+
+	//establish outprop: make it either type, or set. do prop->Touch(). clamp to max. makes setouts[*] null or the out set
+	DoubleValue *out1 = UpdatePropType<DoubleValue>(properties.e[outprops[0]], dosets, max, setouts[0]);
+	LPathsData  *out2 = UpdatePropType<LPathsData> (properties.e[outprops[1]], dosets, max, setouts[1]);
+
+	DoubleValue *in1 = nullptr; //dynamic_cast<DoubleValue*>(ins[0]);
+	IntValue    *in2 = nullptr; //dynamic_cast<IntValue*>(ins[1]);
+	LPathsData  *in3 = nullptr; //dynamic_cast<LPathsData*>(ins[2]);
+
+	for (int c=0; c<max; c++) {
+		in1 = GetInValue<DoubleValue>(c, dosets, in1, ins[0], setins[0]);
+		in2 = GetInValue<IntValue>   (c, dosets, in2, ins[1], setins[1]);
+		in3 = GetInValue<LPathsData> (c, dosets, in3, ins[2], setins[2]);
+
+		*** error check ins
+
+		GetOutValue<DoubleValue>(c, dosets, out1, setouts[0]);
+		GetOutValue<LPathsData> (c, dosets, out2, setouts[1]);
+			
+
+		*** based on ins, update outs
+	}
+
+
+	return NodeBase::Update();
+}

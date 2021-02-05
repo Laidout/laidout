@@ -313,7 +313,6 @@ int KidsToSetNode::Update()
 }
 
 
-
 //------------------------ SetParentNode ------------------------
 
 /*! 
@@ -489,10 +488,10 @@ int SetPositionsNode::Update()
 
 	// determine input object(s)
 	DrawableObject *o = dynamic_cast<DrawableObject*>(properties.e[0]->GetData()); 
-	SetValue *oset = nullptr;
+	SetValue *inset = nullptr;
 	if (!o) {
-		oset = dynamic_cast<SetValue*>(properties.e[0]->GetData());
-		if (!oset) {
+		inset = dynamic_cast<SetValue*>(properties.e[0]->GetData());
+		if (!inset) {
 			Error(_("Objects must be Drawable or set of Drawables"));
 			return -1;
 		}
@@ -543,38 +542,43 @@ int SetPositionsNode::Update()
 		SetValue *out = dynamic_cast<SetValue *>(properties.e[3]->GetData());
 		if (!out) {
 			if (override) {
-				out = oset;
+				out = inset;
 				out->inc_count();
 			} else out = new SetValue();
 			properties.e[3]->SetData(out, 1);
 		} else {
-			if (override && out != oset) {
+			if (override && out != inset) {
 				properties.e[3]->SetData(out, 0);
 			} else if (!override) out->values.flush();
 			properties.e[3]->Touch();
 		}
 
-		int i = 0;
 		flatvector p;
-		for (int c=0; c<oset->n(); c++) {
-			DrawableObject *oo = dynamic_cast<DrawableObject*>(oset->e(c));
+		for (int c=0; c<inset->n(); c++) {
+			DrawableObject *oo = dynamic_cast<DrawableObject*>(inset->e(c));
 			if (!oo) continue;
 
 			AffineValue *aff = nullptr;
-			if (pos) p = pos->v;
-			else if (pset) {
-				if (i < pset->NumPoints()) {
-					p = pset->points.e[i]->p;
-					aff = dynamic_cast<AffineValue*>(pset->points.e[i]->info);
-					i++;
+			if (pset) {
+				if (c < pset->NumPoints()) {
+					p = pset->points.e[c]->p;
+					aff = dynamic_cast<AffineValue*>(pset->points.e[c]->info);
 				}
-			} else { //set
-				if (i < set->n()) {
-					pos = dynamic_cast<FlatvectorValue*>(set->e(i));
+			} else if (set) { //set
+				if (c < set->n()) {
+					pos = dynamic_cast<FlatvectorValue*>(set->e(c));
 					if (pos) p = pos->v;
-					i++; // *** this is poor.. should track to next flatvector or ensure set is all vectors above
+					else {
+						Affine *a = dynamic_cast<Affine*>(set->e(c));
+						if (a) {
+							p = a->origin();
+						} else {
+							Error(_("Missing position!"));
+							return -1;
+						}
+					}
 				}
-			}
+			} else if (pos) p = pos->v;
 
 			if (!override) {
 				oo = dynamic_cast<DrawableObject*>(oo->duplicate());
@@ -3311,7 +3315,7 @@ int PointsToDelaunayNode::Update()
 	out->show_points = points;
 	out->show_delaunay = tris;
 	out->show_voronoi = voronoi;
-	out->CopyFrom(set, false);
+	out->CopyFrom(set, false, 0);
 	out->RebuildVoronoi(true);
 	out->FindBBox();
 	out->touchContents();
@@ -3535,7 +3539,7 @@ int PointsToBarChartNode::Update()
 
 	out->clear();
 	PointSet dup;
-	dup.CopyFrom(set, false);
+	dup.CopyFrom(set, false, 0);
 	dup.SortX(true);
 	double slotwidth = w / dup.NumPoints();
 	double barwidth = slotwidth * (1-gap);
@@ -3982,6 +3986,9 @@ Laxkit::anObject *newPointsRandomRadialNode(int p, Laxkit::anObject *ref)
 
 class PathGeneratorNode : public NodeBase
 {
+  protected:
+  	const char *paramsig();
+
   public:
 	enum PathTypes {
 		Square,
@@ -4125,10 +4132,27 @@ NodeBase *PathGeneratorNode::Duplicate()
 
 	for (int c=0; c<properties.n-1; c++) {
 		Value *v = properties.e[c]->GetData();
-		if (v) newnode->properties.e[c]->SetData(v->duplicate(), 1);
+		if (v && v->type() != VALUE_Set) newnode->properties.e[c]->SetData(v->duplicate(), 1);
 	}
 
 	return newnode;
+}
+
+const char *PathGeneratorNode::paramsig()
+{
+	switch (pathtype) {
+		case Square:         return "n    ";
+		case Circle:         return "nn   ";
+		case Rectangle:      return "nnnn ";
+		case Polygon:        return "nnnn ";
+		case FunctionT:      return "ssnnn";
+		case Function:       return "snnn ";
+		case FunctionRofT:   return "snnn ";
+		case FunctionPolarT: return "ssnnn";
+		case Svgd:           return "s    ";
+		default:             return nullptr;
+	}
+	return nullptr;
 }
 
 //0 ok, -1 bad ins, 1 just needs updating
@@ -4136,54 +4160,46 @@ int PathGeneratorNode::GetStatus()
 {
 	char types[6];
 	const char *stype;
-	const char *sig = "n    nnnn nn   nnnn snnn ssnnns    snnn ssnnn";
-	int sigoff = 0;
+	const char *sig = paramsig();
 
+	//as pointset
 	if (!dynamic_cast<BooleanValue*>(properties.e[0]->GetData())) {
 		return -1;
 	}
 
-#define OFFSQUARE     0
-#define OFFRECTANGLE  5
-#define OFFCIRCLE     10
-#define OFFPOLYGON    15
-#define OFFFUNCTION   20
-#define OFFFUNCTIONT  25
-#define OFFSVGD       30
-#define OFFPOLARRofT  35
-#define OFFPOLART     40
-
-	if      (pathtype == Square)         sigoff = OFFSQUARE;
-	else if (pathtype == Circle)         sigoff = OFFCIRCLE;
-	else if (pathtype == Rectangle)      sigoff = OFFRECTANGLE;
-	else if (pathtype == Polygon)        sigoff = OFFPOLYGON;
-	else if (pathtype == Svgd)           sigoff = OFFSVGD;
-	else if (pathtype == Function)       sigoff = OFFFUNCTION;
-	else if (pathtype == FunctionT)      sigoff = OFFFUNCTIONT;
-	else if (pathtype == FunctionRofT)   sigoff = OFFPOLARRofT;
-	else if (pathtype == FunctionPolarT) sigoff = OFFPOLART;
-
 	Value *data = nullptr;
-	for (int c=0; c<properties.n-1-3; c++) {
+	for (int c=0; c<properties.n-5; c++) { //5 == pointset - out - line - stroke - fill
 		data = properties.e[c+1]->GetData();
 		if (!data) { types[c] = ' '; continue; }
-		stype = data->whattype();
-		if (isNumberType(data, nullptr)) types[c] = 'n';
-		else if (!strcmp(stype, "StringValue")) types[c] = 's';
-		else types[c] = ' ';
+		if (data->type() == VALUE_Set) {
+			types[c] = '-'; //free pass for now
+		} else {
+			stype = data->whattype();
+			if (isNumberType(data, nullptr)) types[c] = 'n';
+			else if (!strcmp(stype, "StringValue")) types[c] = 's';
+			else types[c] = ' ';
+		}
+
+		if (types[c] != '-' && sig[c] != types[c]) {
+			Error(_("Wrong input type"));
+			return -1;
+		}
 	}
 	for (int c=properties.n-2-3; c<5; c++) types[c] = ' ';
 	types[5] = '\0';
 
-	if (strncmp(sig+sigoff, types, 5)) return -1;
+	// if (strncmp(sig, types, 5)) return -1;
 
+	//linewidth
 	double d;
 	if (!isNumberType(properties.e[properties.n-4]->GetData(), &d) || d < 0) {
 		Error(_("Line width must be >= 0"));
 		return -1;
 	}
+	//stroke
 	data = properties.e[properties.n-3]->GetData();
 	if (data->type() != VALUE_Color) return -1;
+	//fill
 	data = properties.e[properties.n-2]->GetData();
 	if (data->type() != VALUE_Color) return -1;
 
@@ -4196,274 +4212,379 @@ int PathGeneratorNode::Update()
 	Error(nullptr);
 	if (GetStatus() == -1) return -1;
 
-	PointSetValue *set = nullptr;
+	bool aspointset = dynamic_cast<BooleanValue*>(properties.e[0]->GetData())->i;
+
+	const char *sig = paramsig();
+	int num_ins = 0;
+	while (*sig && *sig != ' ') { num_ins++; sig++; }
+
+	Value *ins[5];
+	SetValue *setins[5];
+	int max = 0;
+	bool dosets = false;
+	num_ins += 3; //for line width, stroke, fill
+	for (int c=0; c<num_ins; c++) {
+		ins[c] = properties.e[c+1]->GetData();
+	}
+	if (DetermineSetIns(num_ins, ins, setins, max, dosets) == -1) return -1;
+
+	PointSetValue *psetout = nullptr;
+	SetValue *setout = nullptr;
 	LPathsData *path = nullptr;
-	bool doset = dynamic_cast<BooleanValue*>(properties.e[0]->GetData())->i;
-	if (doset) {
-		set = dynamic_cast<PointSetValue*>(properties.e[properties.n-1]->GetData());
-		if (!set) {
-			set = new PointSetValue();
-			properties.e[properties.n-1]->SetData(set, 1);
-
-		} else {
-			set->Flush();
-		}
+	if (aspointset) {
+		psetout = UpdatePropType<PointSetValue>(properties.e[properties.n-1], dosets, max, setout);
 	} else {
-		path = dynamic_cast<LPathsData*>(properties.e[properties.n-1]->GetData());
-		if (!path) {
-			path = new LPathsData();
-			properties.e[properties.n-1]->SetData(path, 1);
+		path = UpdatePropType<LPathsData>(properties.e[properties.n-1], dosets, max, setout);
+	}
 
+	double linewidth = 1;
+	double r=0, t=0, t2=0, x=0, y=0, w=1, h=0;
+	int n = 0;
+	ColorValue *stroke = nullptr;
+	ColorValue *fill = nullptr;
+	StringValue *sv = nullptr, *sv2 = nullptr;
+
+	if (!dosets) max = 1;
+	for (int c=0; c<max; c++) {
+		if (aspointset) {
+			GetOutValue<PointSetValue>(c, dosets, psetout, setout);
+			psetout->Flush();
 		} else {
+			GetOutValue<LPathsData>(c, dosets, path, setout);
 			path->clear();
 		}
+
+		//line width
+		int isnum;
+		// int GetInNumber(int index, bool dosets, double &prev, Value *in, SetValue *setin)
+		if (GetInNumber(c, dosets, linewidth, ins[num_ins-3], setins[num_ins-3]) == -1) {
+			Error(_("Bad line width"));
+			return -1;
+		}
+
+		//stroke color
+		stroke = GetInValue<ColorValue>(c, dosets, stroke, ins[num_ins-2], setins[num_ins-2]);
+		if (!stroke) {
+			Error(_("Bad color!"));
+			return -1;
+		}
+
+		//fill color
+		fill = GetInValue<ColorValue>(c, dosets, fill, ins[num_ins-1], setins[num_ins-1]);
+		if (!fill) {
+			Error(_("Bad color!"));
+			return -1;
+		}
+
+		//all the rest
+		if (pathtype == Square) {
+			if (GetInNumber(c, dosets, r, ins[0], setins[0]) == -1) {
+				Error(_("Bad number!"));
+				return -1;
+			}
+			if (path) path->appendRect(0,0,r,r);
+			else {
+				psetout->AddPoint(flatpoint(0, 0));
+				psetout->AddPoint(flatpoint(r, 0));
+				psetout->AddPoint(flatpoint(r, r));
+				psetout->AddPoint(flatpoint(0, r));
+			}
+
+		} else if (pathtype == Rectangle) {
+			if (GetInNumber(c, dosets, x, ins[0], setins[0]) == -1) {
+				Error(_("Bad x"));
+				return -1;
+			}
+			if (GetInNumber(c, dosets, y, ins[1], setins[1]) == -1) {
+				Error(_("Bad y"));
+				return -1;
+			}
+			if (GetInNumber(c, dosets, w, ins[2], setins[2]) == -1) {
+				Error(_("Bad width"));
+				return -1;
+			}
+			if (GetInNumber(c, dosets, h, ins[3], setins[3]) == -1) {
+				Error(_("Bad height"));
+				return -1;
+			}
+			
+			if (path) path->appendRect(x,y,w,h);
+			else {
+				psetout->AddPoint(flatpoint(x,y));
+				psetout->AddPoint(flatpoint(x+w,y));
+				psetout->AddPoint(flatpoint(x+w,y+h));
+				psetout->AddPoint(flatpoint(x,y+h));
+			}
+
+		} else if (pathtype == Circle) {
+			if (GetInNumber(c, dosets, t, ins[0], setins[0]) == -1 || t < 1) {
+				Error(_("Bad number of points!"));
+				return -1;
+			}
+			n = t;
+			if (GetInNumber(c, dosets, r, ins[1], setins[1]) == -1) {
+				Error(_("Bad radius!"));
+				return -1;
+			}
+			
+			if (path) path->appendEllipse(flatpoint(), r,r, 2*M_PI, 0, n, 1);
+			else psetout->CreateCircle(n, 0,0, r);
+
+		} else if (pathtype == Polygon) {
+			// make an n sided polygon
+			
+			if (GetInNumber(c, dosets, t, ins[0], setins[0]) == -1 || t < 1) {
+				Error(_("Bad number of points"));
+				return -1;
+			}
+			n = t;
+			
+			if (GetInNumber(c, dosets, r, ins[1], setins[1]) == -1) {
+				Error(_("Bad radius!"));
+				return -1;
+			}
+			double radius = r;
+			if (GetInNumber(c, dosets, w, ins[2], setins[2]) == -1) {
+				Error(_("Bad winding number!"));
+				return -1;
+			}
+			if (GetInNumber(c, dosets, h, ins[3], setins[3]) == -1) {
+				Error(_("Bad offset number!"));
+				return -1;
+			}
+			double winding = w;
+			double offset = h;
+			double anglediff = winding * 2*M_PI / n;
+			for (int c=0; c<n; c++) {
+				double angle = offset + c * anglediff;
+				if (path) path->append(radius * cos(angle), radius * sin(angle));
+				else psetout->AddPoint(flatpoint(radius * cos(angle), radius * sin(angle)));
+			}
+			if (path) path->close();		
+
+		} else if (pathtype == Function || pathtype == FunctionRofT) {
+			GetInValue<StringValue>(c, dosets, sv, ins[0], setins[0]);
+			if (!sv || isblank(sv->str)) {
+				Error(_("Expression must be a string"));
+				return -1;
+			}
+			const char *expression = sv->str;
+			if (GetInNumber(c, dosets, t, ins[1], setins[1]) == -1) {
+				Error(_("Bad min!"));
+				return -1;
+			}
+			double start = t;
+			if (GetInNumber(c, dosets, t2, ins[2], setins[2]) == -1) {
+				Error(_("Bad max!"));
+				return -1;
+			}
+			double end = t2;
+			if (GetInNumber(c, dosets, w, ins[3], setins[3]) == -1) {
+				Error(_("Bad step!"));
+				return -1;
+			}
+			double step = w;
+
+			if ((start < end && step <= 0) || (start > end && step >= 0)) {
+				makestr(error_message, _("Bad step value"));
+				return -1;
+			}
+			if (start == end) {
+				makestr(error_message, _("Start can't equal end"));
+				return -1;
+			}
+
+			DoubleValue *xx = new DoubleValue();
+			ValueHash hash;
+			const char *param = "x";
+			if (pathtype == FunctionRofT) param = "theta";
+			hash.push(param, xx);
+			xx->dec_count();
+			int status;
+			// int pointsadded = 0;
+			ErrorLog log;
+
+			// *** need to construct a reasonable context
+			for (double x = start; (start < end && x <= end) || (start > end && x>=end); x += step) {
+				Value *ret = nullptr;
+				xx->d = x;
+				status = laidout->calculator->EvaluateWithParams(expression,-1, nullptr, &hash, &ret, &log);
+				if (status != 0 || !ret) {
+					char *er = log.FullMessageStr();
+					if (er) {
+						makestr(error_message, er);
+						delete[] er;
+					}
+					if (ret) ret->dec_count();
+					return -1;
+				}
+
+				double ret_valx = getNumberValue(ret, &isnum);
+				ret->dec_count();
+				if (!isnum) {
+					makestr(error_message, _("Function returned non-number."));
+					return -1;
+				}
+
+				// if (smooth) {
+				// 	xx->d = x + .001;
+				// 	status = laidout->calculator->EvaluateWithParams(expression,-1, nullptr, &hash, &ret2, &log);
+				// 	if (status != 0 || !ret) {
+				// 		char *er = log.FullMessageStr();
+				// 		if (er) {
+				// 			makestr(error_message, er);
+				// 			delete[] er;
+				// 		}
+				// 		if (ret) ret->dec_count();
+				// 		return -1;
+				// 	}
+				// 	double ret_val2 = getNumberValue(ret2, &isnum);
+				// 	if (!isnum) {
+				// 		makestr(error_message, _("Function returned non-number."));
+				// 		return -1;
+				// 	}
+				// 	flatvector tangent(1, (ret_val2 - ret_val)*1000);
+				// 	tangent /= 3; //so now tangent is the cubic bezier handle
+				// 	ret2->dec_count();
+				// }
+
+				if (path) {
+					if (pathtype == FunctionRofT) path->append(ret_valx * cos(x), ret_valx * sin(x));
+					else path->append(x, ret_valx);
+				} else {
+					if (pathtype == FunctionRofT) psetout->AddPoint(flatpoint(ret_valx * cos(x), ret_valx * sin(x)));
+					else psetout->AddPoint(flatpoint(x, ret_valx));
+				}
+			}
+			// hash.flush();
+
+		} else if (pathtype == FunctionT || pathtype == FunctionPolarT) {
+			GetInValue<StringValue>(c, dosets, sv, ins[0], setins[0]);
+			if (!sv || isblank(sv->str)) {
+				Error(_("Expression must be a string"));
+				return -1;
+			}
+			const char *expressionx = sv->str;
+			GetInValue<StringValue>(c, dosets, sv2, ins[1], setins[1]);
+			if (!sv2 || isblank(sv2->str)) {
+				Error(_("Expression must be a string"));
+				return -1;
+			}
+			const char *expressiony = sv2->str;
+			if (GetInNumber(c, dosets, t, ins[2], setins[2]) == -1) {
+				Error(_("Bad min!"));
+				return -1;
+			}
+			double start = t;
+			if (GetInNumber(c, dosets, t2, ins[3], setins[3]) == -1) {
+				Error(_("Bad max!"));
+				return -1;
+			}
+			double end = t2;
+			if (GetInNumber(c, dosets, w, ins[4], setins[4]) == -1) {
+				Error(_("Bad step!"));
+				return -1;
+			}
+			double step = w;
+
+
+			if ((start < end && step <= 0) || (start > end && step >= 0)) {
+				makestr(error_message, _("Bad step value"));
+				return -1;
+			}
+			if (start == end) {
+				makestr(error_message, _("Start can't equal end"));
+				return -1;
+			}
+
+			DoubleValue *xx = new DoubleValue();
+			ValueHash hash;
+			hash.push("t", xx);
+			xx->dec_count();
+			int status;
+			// int pointsadded = 0;
+			ErrorLog log;
+
+			// *** need to construct a reasonable context
+			for (double x = start; (start < end && x <= end) || (start > end && x>=end); x += step) {
+				xx->d = x;
+				Value *ret = nullptr;
+				status = laidout->calculator->EvaluateWithParams(expressionx,-1, nullptr, &hash, &ret, &log);
+				if (status != 0 || !ret) {
+					char *er = log.FullMessageStr();
+					if (er) {
+						makestr(error_message, er);
+						delete[] er;
+					}
+					if (ret) ret->dec_count();
+					return -1;
+				}
+
+				double ret_valx = getNumberValue(ret, &isnum);
+				ret->dec_count();
+				ret = nullptr;
+				if (!isnum) {
+					makestr(error_message, _("X function returned non-number."));
+					return -1;
+				}
+
+				status = laidout->calculator->EvaluateWithParams(expressiony,-1, nullptr, &hash, &ret, &log);
+				if (status != 0 || !ret) {
+					char *er = log.FullMessageStr();
+					if (er) {
+						makestr(error_message, er);
+						delete[] er;
+					}
+					if (ret) ret->dec_count();
+					return -1;
+				}
+
+				double ret_valy = getNumberValue(ret, &isnum);
+				ret->dec_count();
+				if (!isnum) {
+					makestr(error_message, _("Y function returned non-number."));
+					return -1;
+				}
+
+				if (path) {
+					if (pathtype == FunctionPolarT) path->append(ret_valx * cos(ret_valy), ret_valx * sin(ret_valy));
+					else path->append(ret_valx, ret_valy);
+				} else {
+					if (pathtype == FunctionPolarT) psetout->AddPoint(flatpoint(ret_valx * cos(ret_valy), ret_valx * sin(ret_valy)));
+					else psetout->AddPoint(flatpoint(ret_valx, ret_valy));
+				}
+			}
+
+		} else if (pathtype == Svgd) {
+			GetInValue<StringValue>(c, dosets, sv, ins[0], setins[0]);
+			if (!sv || isblank(sv->str)) {
+				Error(_("Bad svg path string!"));
+				return -1;
+			}
+
+			if (path) path->appendSvg(sv->str);
+			else {
+				//only adds vertices, no interpolated bez segments
+				LaxInterfaces::Coordinate *coords = LaxInterfaces::SvgToCoordinate(sv->str, 1, nullptr, nullptr);
+				if (coords) {
+					LaxInterfaces::Coordinate *p = coords, *start = coords;
+					do {
+						if (p->flags & POINT_VERTEX) psetout->AddPoint(p->p());
+						p = p->next;
+					} while (p && p != start);
+				}
+			}
+		}
+
+		if (path) {
+			ScreenColor col(stroke->color.Red(), stroke->color.Green(), stroke->color.Blue(), stroke->color.Alpha());
+			path->line(linewidth, -1, -1, &col);
+			col.rgbf(fill->color.Red(), fill->color.Green(), fill->color.Blue(), fill->color.Alpha());
+			path->fill(&col);
+			path->FindBBox();
+		}
 	}
 
-	int isnum;
-	double linewidth = getNumberValue(properties.e[properties.n-4]->GetData(), &isnum);
-	if (!isnum) { makestr(error_message, _("Bad line width")); return -1; }
-	Value *v;
-	v = properties.e[properties.n-3]->GetData();
-	if (v->type() != VALUE_Color) return -1;
-	ColorValue *stroke = static_cast<ColorValue*>(v);
-	v = properties.e[properties.n-2]->GetData();
-	if (v->type() != VALUE_Color) return -1;
-	ColorValue *fill = static_cast<ColorValue*>(v);
-
-	if (pathtype == Square) {
-		int isnum;
-		double e = getNumberValue(properties.e[1]->GetData(), &isnum);
-		if (path) path->appendRect(0,0,e,e);
-		else {
-			set->AddPoint(flatpoint(0,0));
-			set->AddPoint(flatpoint(e,0));
-			set->AddPoint(flatpoint(e,e));
-			set->AddPoint(flatpoint(0,e));
-		}
-
-	} else if (pathtype == Rectangle) {
-		// path->clear();
-		double x = getNumberValue(properties.e[1]->GetData(), &isnum);
-		if (!isnum) { makestr(error_message, _("Bad x")); return -1; }
-		double y = getNumberValue(properties.e[2]->GetData(), &isnum);
-		if (!isnum) { makestr(error_message, _("Bad y")); return -1; }
-		double w = getNumberValue(properties.e[3]->GetData(), &isnum);
-		if (!isnum) { makestr(error_message, _("Bad width")); return -1; }
-		double h = getNumberValue(properties.e[4]->GetData(), &isnum);
-		if (!isnum) { makestr(error_message, _("Bad height")); return -1; }
-
-		if (path) path->appendRect(x,y,w,h);
-		else {
-			set->AddPoint(flatpoint(x,y));
-			set->AddPoint(flatpoint(x+w,y));
-			set->AddPoint(flatpoint(x+w,y+h));
-			set->AddPoint(flatpoint(x,y+h));
-		}
-
-	} else if (pathtype == Circle) {
-		// path->clear();
-		int n = getNumberValue(properties.e[1]->GetData(), &isnum);
-		if (!isnum || n <= 0) {makestr(error_message, _("Bad number of points")); return -1; }
-		double r = getNumberValue(properties.e[2]->GetData(), &isnum);
-
-		if (path) path->appendEllipse(flatpoint(), r,r, 2*M_PI, 0, n, 1);
-		else set->CreateCircle(n, 0,0, r);
-
-	} else if (pathtype == Polygon) {
-		// make an n sided polygon
-		// path->clear();
-		
-		int n = getNumberValue(properties.e[1]->GetData(), &isnum);
-		if (!isnum || n <= 0) {makestr(error_message, _("Bad number of points")); return -1; }
-		double radius = getNumberValue(properties.e[2]->GetData(), &isnum);
-		if (!isnum) {makestr(error_message, _("Bad radius number")); return -1; }
-		double winding = getNumberValue(properties.e[3]->GetData(), &isnum);
-		if (!isnum) {makestr(error_message, _("Bad winding number")); return -1; }
-		double offset = getNumberValue(properties.e[4]->GetData(), &isnum);
-		if (!isnum) {makestr(error_message, _("Bad offset number")); return -1; }
-
-		double anglediff = winding * 2*M_PI / n;
-		for (int c=0; c<n; c++) {
-			double angle = offset + c * anglediff;
-			if (path) path->append(radius * cos(angle), radius * sin(angle));
-			else set->AddPoint(flatpoint(radius * cos(angle), radius * sin(angle)));
-		}
-		if (path) path->close();		
-
-	} else if (pathtype == Function || pathtype == FunctionRofT) {
-		int isnum;
-		StringValue *expr = dynamic_cast<StringValue*>(properties.e[1]->GetData());
-		if (!expr) { makestr(error_message, _("Expression must be a string")); return -1; }
-		const char *expression = expr->str;
-
-		double start = getNumberValue(properties.e[2]->GetData(), &isnum);
-		if (!isnum) { makestr(error_message, _("Bad min")); return -1; }
-		double end = getNumberValue(properties.e[3]->GetData(), &isnum);
-		if (!isnum) { makestr(error_message, _("Bad max")); return -1; }
-		double step = getNumberValue(properties.e[4]->GetData(), &isnum);
-		if (!isnum) { makestr(error_message, _("Bad step")); return -1; }
-
-		if ((start < end && step <= 0) || (start > end && step >= 0)) {
-			makestr(error_message, _("Bad step value"));
-			return -1;
-		}
-		if (start == end) {
-			makestr(error_message, _("Start can't equal end"));
-			return -1;
-		}
-
-		// path->clear();
-
-		DoubleValue *xx = new DoubleValue();
-		ValueHash hash;
-		const char *param = "x";
-		if (pathtype == FunctionRofT) param = "theta";
-		hash.push(param, xx);
-		xx->dec_count();
-		int status;
-		// int pointsadded = 0;
-		ErrorLog log;
-
-		// *** need to construct a reasonable context
-		for (double x = start; (start < end && x <= end) || (start > end && x>=end); x += step) {
-			Value *ret = nullptr;
-			xx->d = x;
-			status = laidout->calculator->EvaluateWithParams(expression,-1, nullptr, &hash, &ret, &log);
-			if (status != 0 || !ret) {
-				char *er = log.FullMessageStr();
-				if (er) {
-					makestr(error_message, er);
-					delete[] er;
-				}
-				if (ret) ret->dec_count();
-				return -1;
-			}
-
-			double ret_valx = getNumberValue(ret, &isnum);
-			ret->dec_count();
-			if (!isnum) {
-				makestr(error_message, _("Function returned non-number."));
-				return -1;
-			}
-
-			if (path) {
-				if (pathtype == FunctionRofT) path->append(ret_valx * cos(x), ret_valx * sin(x));
-				else path->append(x, ret_valx);
-			} else {
-				if (pathtype == FunctionRofT) set->AddPoint(flatpoint(ret_valx * cos(x), ret_valx * sin(x)));
-				else set->AddPoint(flatpoint(x, ret_valx));
-			}
-		}
-		// hash.flush();
-
-	} else if (pathtype == FunctionT || pathtype == FunctionPolarT) {
-		int isnum;
-		StringValue *expr = dynamic_cast<StringValue*>(properties.e[1]->GetData());
-		if (!expr) { makestr(error_message, _("Expression must be a string")); return -1; }
-		const char *expressionx = expr->str;
-
-		expr = dynamic_cast<StringValue*>(properties.e[2]->GetData());
-		if (!expr) { makestr(error_message, _("Expression must be a string")); return -1; }
-		const char *expressiony = expr->str;
-
-		double start = getNumberValue(properties.e[3]->GetData(), &isnum);
-		if (!isnum) { makestr(error_message, _("Bad min")); return -1; }
-		double end = getNumberValue(properties.e[4]->GetData(), &isnum);
-		if (!isnum) { makestr(error_message, _("Bad max")); return -1; }
-		double step = getNumberValue(properties.e[5]->GetData(), &isnum);
-		if (!isnum) { makestr(error_message, _("Bad step")); return -1; }
-		
-
-		if ((start < end && step <= 0) || (start > end && step >= 0)) {
-			makestr(error_message, _("Bad step value"));
-			return -1;
-		}
-		if (start == end) {
-			makestr(error_message, _("Start can't equal end"));
-			return -1;
-		}
-
-		DoubleValue *xx = new DoubleValue();
-		ValueHash hash;
-		hash.push("t", xx);
-		xx->dec_count();
-		int status;
-		// int pointsadded = 0;
-		ErrorLog log;
-
-		// *** need to construct a reasonable context
-		for (double x = start; (start < end && x <= end) || (start > end && x>=end); x += step) {
-			xx->d = x;
-			Value *ret = nullptr;
-			status = laidout->calculator->EvaluateWithParams(expressionx,-1, nullptr, &hash, &ret, &log);
-			if (status != 0 || !ret) {
-				char *er = log.FullMessageStr();
-				if (er) {
-					makestr(error_message, er);
-					delete[] er;
-				}
-				if (ret) ret->dec_count();
-				return -1;
-			}
-
-			double ret_valx = getNumberValue(ret, &isnum);
-			ret->dec_count();
-			ret = nullptr;
-			if (!isnum) {
-				makestr(error_message, _("X function returned non-number."));
-				return -1;
-			}
-
-			status = laidout->calculator->EvaluateWithParams(expressiony,-1, nullptr, &hash, &ret, &log);
-			if (status != 0 || !ret) {
-				char *er = log.FullMessageStr();
-				if (er) {
-					makestr(error_message, er);
-					delete[] er;
-				}
-				if (ret) ret->dec_count();
-				return -1;
-			}
-
-			double ret_valy = getNumberValue(ret, &isnum);
-			ret->dec_count();
-			if (!isnum) {
-				makestr(error_message, _("Y function returned non-number."));
-				return -1;
-			}
-
-			if (path) {
-				if (pathtype == FunctionPolarT) path->append(ret_valx * cos(ret_valy), ret_valx * sin(ret_valy));
-				else path->append(ret_valx, ret_valy);
-			} else {
-				if (pathtype == FunctionPolarT) set->AddPoint(flatpoint(ret_valx * cos(ret_valy), ret_valx * sin(ret_valy)));
-				else set->AddPoint(flatpoint(ret_valx, ret_valy));
-			}
-		}
-
-	} else if (pathtype == Svgd) {
-		StringValue *v = dynamic_cast<StringValue*>(properties.e[1]->GetData());
-		if (path) path->appendSvg(v->str);
-		else {
-			//only adds vertices, no interpolated bez segments
-			LaxInterfaces::Coordinate *coords = LaxInterfaces::SvgToCoordinate(v->str, 1, nullptr, nullptr);
-			if (coords) {
-				LaxInterfaces::Coordinate *p = coords, *start = coords;
-				do {
-					if (p->flags & POINT_VERTEX) set->AddPoint(p->p());
-					p = p->next;
-				} while (p && p != start);
-			}
-		}
-	}
-
-	if (path) {
-		path->FindBBox();
-		ScreenColor col(stroke->color.Red(), stroke->color.Green(), stroke->color.Blue(), stroke->color.Alpha());
-		path->line(linewidth, -1, -1, &col);
-		col.rgbf(fill->color.Red(), fill->color.Green(), fill->color.Blue(), fill->color.Alpha());
-		path->fill(&col);
-	}
 	properties.e[properties.n-1]->Touch();
 	UpdatePreview();
 	Wrap();

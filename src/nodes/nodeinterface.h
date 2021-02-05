@@ -594,6 +594,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	double pan_current; //0..1
 	double pan_duration; //seconds
 	int    pan_tick_ms;
+	char scratch[200];
 
 	PtrStack<char> recent_node_types;
 
@@ -748,6 +749,83 @@ class NodeLoader
 	virtual int LoadNodes(const char *file, NodeBase *parent);
 };
 
+
+
+//------------------- Property parsing helpers ---------------------
+
+int DetermineSetIns(int num_ins, Value **ins, SetValue **setins, int &max, bool &dosets);
+
+int GetInNumber(int index, bool dosets, double &prev, Value *in, SetValue *setin);
+
+
+template<typename T>
+T *GetInValue(int index, bool dosets, T *prev, Value *in, SetValue *setin)
+{
+	if (dosets && setin) {
+		if (index < setin->n()) return dynamic_cast<T*>(setin->e(index));
+		else return prev;
+	} else if (!prev) prev = dynamic_cast<T*>(in);
+	return prev;
+}
+
+
+template<typename T>
+void GetOutValue(int index, bool dosets, T *&out, SetValue *setout)
+{
+	if (!dosets) return; //just go with what's there
+	if (!setout) return;
+	if (index >= setout->n()) return; //is probably an old value
+
+	out = dynamic_cast<T*>(setout->e(index));	
+}
+
+/*! Make the property data be either the correct type or a set.
+ * If doset, then make sure set has max number in it, and they are all
+ * type T.
+ */
+template<typename T>
+T *UpdatePropType(NodeProperty *prop, bool doset, int max, SetValue *&setout_ret)
+{
+	Value *v = prop->GetData();
+	T *vv = nullptr;
+
+	if (doset) {
+		SetValue *set = dynamic_cast<SetValue*>(v);
+		if (!set) {
+			set = new SetValue();
+			prop->SetData(set, 1);
+		}
+
+		//fill with correct data type
+		for (int c=0; c<max; c++) {
+			if (c >= set->n()) {
+				vv = new T();
+				set->Push(vv, 1);
+			} else {
+				vv = dynamic_cast<T*>(set->e(c));
+				if (!vv) {
+					vv = new T();
+					set->Set(c, vv, 1);
+				}
+			}
+		}
+
+		//clamp to max
+		while (set->n() > max) set->Remove(set->n()-1);
+		setout_ret = set;
+
+	} else {
+		//single item
+		vv = dynamic_cast<T*>(v);
+		if (!vv) {
+			vv = new T;
+			prop->SetData(vv, 1);
+		}
+	}
+
+	prop->Touch();
+	return vv;
+}
 
 //--------------------------NodeUndo --------------------------------
 class NodeUndo : public Laxkit::UndoData
