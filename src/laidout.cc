@@ -283,6 +283,11 @@ LaidoutApp::LaidoutApp()
 
 	pipeout = false;
 	pipeoutarg = NULL;
+
+	//initialize some globals because of optimism
+	globals.push("frame", new DoubleValue(0));
+	globals.push("frame_time", new DoubleValue(0));
+	globals.push("total_time", new DoubleValue(0));
 }
 
 //! Destructor, only have to delete project!
