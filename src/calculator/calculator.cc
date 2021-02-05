@@ -1118,7 +1118,7 @@ LaidoutCalculator::LaidoutCalculator()
 
 
 	 //initialize base modules
-	InstallInnate();
+	InstallMath();
 	InstallBaseTypes();
 
 	//DBG cerr <<"Calculator Contents: "<<endl;
@@ -1186,6 +1186,14 @@ int LaidoutCalculator::InstallVariables(ValueHash *values)
 		}
 	}
 	return 0;
+}
+
+CalculatorModule *LaidoutCalculator::FindModule(const char *module)
+{
+	for (int c=0; c<modules.n; c++) {
+		if (!strcmp(module, modules.e[c]->name)) return modules.e[c];
+	}
+	return nullptr;
 }
 
 //! Add module to list of available modules.
@@ -4587,22 +4595,28 @@ ValueHash *LaidoutCalculator::parseParameters(ObjectDef *def)
 
 void LaidoutCalculator::InstallBaseTypes()
 {
-	global_scope.scope_namespace->push(Get_ValueHash_ObjectDef(),0);
-	global_scope.scope_namespace->push(Get_SetValue_ObjectDef(),0);
-	global_scope.scope_namespace->push(Get_StringValue_ObjectDef(),0);
+	ObjectDef *core = new ObjectDef(NULL,"Core",_("Core"),_("Core base types like int, string, etc."), "namespace",NULL,NULL);
 
-	//global_scope.scope_namespace->push(Get_BooleanValue_ObjectDef(),0);
-	//global_scope.scope_namespace->push(Get_IntValue_ObjectDef(),0);
-	//global_scope.scope_namespace->push(Get_RealValue_ObjectDef(),0);
-	//global_scope.scope_namespace->push(Get_FlatvectorValue_ObjectDef(),0);
-	//global_scope.scope_namespace->push(Get_SpacevectorValue_ObjectDef(),0);
-	//global_scope.scope_namespace->push(Get_DateValue_ObjectDef(),0);
-	//global_scope.scope_namespace->push(Get_ColorValue_ObjectDef(),0);
-	//global_scope.scope_namespace->push(Get_FileValue_ObjectDef(),0);
+	//add to a Core module?
+	core->push(Get_BooleanValue_ObjectDef(),0);
+	core->push(Get_ColorValue_ObjectDef(),0);
+	core->push(Get_DateValue_ObjectDef(),0);
+	core->push(Get_DoubleValue_ObjectDef(),0);
+	core->push(Get_FileValue_ObjectDef(),0);
+	core->push(Get_FlatvectorValue_ObjectDef(),0);
+	core->push(Get_IntValue_ObjectDef(),0);
+	core->push(Get_QuaternionValue_ObjectDef(),0);
+	core->push(Get_SetValue_ObjectDef(),0);
+	core->push(Get_SpacevectorValue_ObjectDef(),0);
+	core->push(Get_StringValue_ObjectDef(),0);
+	core->push(Get_ValueHash_ObjectDef(),0);
+
+	InstallModule(core, 2);
+	core->dec_count();
 }
 
 //! Create and install various built in operators and math functions.
-void LaidoutCalculator::InstallInnate()
+void LaidoutCalculator::InstallMath()
 {
 //	ObjectDef *innates=new ObjectDef(NULL,"Builtin",_("Builtin"),_("Things that are built in to the calculator."),
 //										   VALUE_Namespace,NULL,NULL);

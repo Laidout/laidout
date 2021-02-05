@@ -197,7 +197,7 @@ class LaidoutCalculator : public Interpreter,
 	int importOperators(CalculatorModule *module);
 	int removeOperators(int module_id);
 	int addOperator(const char *op,int dir,int priority, int module_id, OpFuncEvaluator *opfunc,ObjectDef *def);
-	void InstallInnate();
+	void InstallMath();
 	void InstallBaseTypes();
 
 	void calcerr(const char *error,const char *where=NULL,int w=0, int surround=40);
@@ -265,6 +265,7 @@ class LaidoutCalculator : public Interpreter,
 
 	virtual int InstallVariables(ValueHash *values);
 	virtual int InstallModule(CalculatorModule *module, int autoimport);
+	virtual CalculatorModule *FindModule(const char *module);
 	virtual int RemoveModule(const char *modulename);
 	virtual int ImportModule(const char *name, int allnames);
 	virtual ObjectDef *GetInfo(const char *expr);
