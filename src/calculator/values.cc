@@ -339,7 +339,7 @@ ObjectDef::ObjectDef(ObjectDef *nextends, //!< Definition of a class to derive f
 			unsigned int fflags,       //!< New flags
 			NewObjectFunc nnewfunc,    //!< Default creation function
 			ObjectFunc    nstylefunc)  //!< Full Function
-  : suggestions(2)
+  : suggestions(2), aliases(2)
 {
 	DBG cerr <<"..creating ObjectDef "<<nname<<endl;
 
@@ -1387,6 +1387,8 @@ int ObjectDef::getInfo(int index,
 //! Return the ObjectDef corresponding to the field at index.
 /*! If the element at index does not have subfields or is not an enum,
  * then return NULL.
+ *
+ * If you are trying to query an enum, use getEnumInfo() instead.
  */
 ObjectDef *ObjectDef::getField(int index)
 {
@@ -1675,10 +1677,12 @@ int ValueHash::assign(FieldExtPlace *ext,Value *v)
 	return 1;
 }
 
+Value *NewValueHashFunc() { return new ValueHash; }
+
 ObjectDef default_ValueHash_ObjectDef(NULL,"Hash",_("Hash"),_("Set of name-value pairs"),
 							 "class", NULL, "{ : }",
 							 NULL, 0,
-							 NULL, NULL);
+							 NewValueHashFunc, NULL);
 
 ObjectDef *Get_ValueHash_ObjectDef()
 {
@@ -2790,13 +2794,13 @@ Value *NewSimpleType(int type)
 		case VALUE_Spacevector: return new SpacevectorValue;
 		case VALUE_Quaternion:  return new QuaternionValue;
 		case VALUE_Color:       return new ColorValue;
+		case VALUE_File:        return new FileValue;
+		case VALUE_Date:        return new DateValue;
 
 		// case VALUE_Flags:       return new Value;
 		// case VALUE_Object:      return new Value;
 		// case VALUE_Enum:        return new Value;
 		// case VALUE_EnumVal:     return new Value;
-		// case VALUE_File:        return new Value;
-		// case VALUE_Date:        return new Value;
 		// case VALUE_Time:        return new Value;
 		// case VALUE_Complex:     return new Value;
 	}
@@ -3183,6 +3187,17 @@ Value *SetValue::e(int i)
 	return nullptr;
 }
 
+/*! Return the first object that matches id. */
+Value *SetValue::FindID(const char *id)
+{
+	if (isblank(id)) return nullptr;
+	for (int c=0; c<values.n; c++) {
+		if (!values.e[c] || isblank(values.e[c]->Id())) continue;
+		if (!strcmp(values.e[c]->Id(), id)) return values.e[c];
+	}
+	return nullptr;
+}
+
 /*! Return 1 for success. i must exist, return 0 if not.
  */
 int SetValue::Set(int i, Value *v, int absorb)
@@ -3237,11 +3252,12 @@ Value *SetValue::dereference(int index)
 	return values.e[index];
 }
 
+Value *NewSetValueFunc() { return new SetValue; }
 
 ObjectDef default_SetValue_ObjectDef(NULL,"set",_("Set"),_("Set of values"),
 							 "class", NULL, "{}",
 							 NULL, 0,
-							 NULL, NULL);
+							 NewSetValueFunc, NULL);
 
 ObjectDef *Get_SetValue_ObjectDef()
 {
@@ -3514,11 +3530,12 @@ int BooleanValue::assign(FieldExtPlace *ext,Value *v)
 	return 1;
 }
 
+Value *NewBooleanValueFunc() { return new BooleanValue(0); }
 
 ObjectDef default_BooleanValue_ObjectDef(NULL,"boolean",_("Boolean"),_("Boolean, true or false"),
 							 "class", NULL, "true",
 							 NULL, 0,
-							 NULL, NULL);
+							 NewBooleanValueFunc, NULL);
 
 ObjectDef *Get_BooleanValue_ObjectDef()
 { return &default_BooleanValue_ObjectDef; }
@@ -3561,11 +3578,12 @@ int IntValue::assign(FieldExtPlace *ext,Value *v)
 	return 1;
 }
 
+Value *NewIntValueFunc() { return new IntValue; }
 
 ObjectDef default_IntValue_ObjectDef(NULL,"int",_("Int"),_("Integers"),
 							 "class", NULL, "0",
 							 NULL, 0,
-							 NULL, NULL);
+							 NewIntValueFunc, NULL);
 
 ObjectDef *Get_IntValue_ObjectDef()
 { return &default_IntValue_ObjectDef; }
@@ -3614,11 +3632,12 @@ int DoubleValue::assign(FieldExtPlace *ext,Value *v)
 	return 1;
 }
 
+Value *NewDoubleValueFunc() { return new DoubleValue; }
 
 ObjectDef default_DoubleValue_ObjectDef(NULL,"real",_("Real"),_("Real numbers"),
 							 "class", NULL, "0.",
 							 NULL, 0,
-							 NULL, NULL);
+							 NewDoubleValueFunc, NULL);
 
 ObjectDef *Get_DoubleValue_ObjectDef()
 {
@@ -3718,10 +3737,12 @@ int FlatvectorValue::assign(FieldExtPlace *ext,Value *vv)
 }
 
 
-ObjectDef default_FlatvectorValue_ObjectDef(NULL,"flatvector",_("Flatvector"),_("A two dimensional vector"),
+Value *NewFlatvectorFunc() { return new FlatvectorValue; }
+
+ObjectDef default_FlatvectorValue_ObjectDef(NULL,"flatvector",_("Vector2 (aka Flatvector)"),_("A two dimensional vector"),
 							 "class", NULL, "(0,0)",
 							 NULL, 0,
-							 NULL, NULL);
+							 NewFlatvectorFunc, NULL);
 
 ObjectDef *Get_FlatvectorValue_ObjectDef()
 {
@@ -3833,11 +3854,12 @@ int SpacevectorValue::assign(FieldExtPlace *ext,Value *vv)
 	return 1;
 }
 
+Value *NewSpacevectorValueFunc() { return new SpacevectorValue; }
 
-ObjectDef default_SpacevectorValue_ObjectDef(NULL,"spacevector",_("Spacevector"),_("A three dimensional vector"),
+ObjectDef default_SpacevectorValue_ObjectDef(NULL,"spacevector",_("Vector3 (aka Spacevector)"),_("A three dimensional vector"),
 							 "class", NULL, "(0,0)",
 							 NULL, 0,
-							 NULL, NULL);
+							 NewSpacevectorValueFunc, NULL);
 
 ObjectDef *Get_SpacevectorValue_ObjectDef()
 {
@@ -3954,10 +3976,12 @@ int QuaternionValue::assign(FieldExtPlace *ext,Value *vv)
 }
 
 
+Value *NewQuaternionValueFunc() { return new QuaternionValue; }
+
 ObjectDef default_QuaternionValue_ObjectDef(NULL,"Quaternion",_("Quaternion"),_("Quaternion"),
 							 "class", NULL, "(0,0,0,0)",
 							 NULL, 0,
-							 NULL, NULL);
+							 NewQuaternionValueFunc, NULL);
 
 ObjectDef *Get_QuaternionValue_ObjectDef()
 {
@@ -4077,10 +4101,12 @@ void StringValue::InstallString(char *nstr)
 }
 
 
+Value *NewStringValueFunc() { return new StringValue; }
+
 ObjectDef default_StringValue_ObjectDef(NULL,"string",_("String"),_("String"),
 							 "class", NULL, "\"\"",
 							 NULL, 0,
-							 NULL, NULL);
+							 NewStringValueFunc, NULL);
 
 ObjectDef *Get_StringValue_ObjectDef()
 {
@@ -4244,10 +4270,12 @@ int BytesValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash
 	return -1;
 }
 
+Value *NewBytesValueFunc() { return new BytesValue; }
+
 ObjectDef default_BytesValue_ObjectDef(NULL,"Bytes",_("Bytes"),_("Bytes"),
 							 "class", NULL, NULL,
 							 NULL, 0,
-							 NULL, NULL);
+							 NewBytesValueFunc, NULL);
 
 ObjectDef *Get_BytesValue_ObjectDef()
 {
@@ -4272,6 +4300,63 @@ ObjectDef *BytesValue::makeObjectDef()
 	return Get_BytesValue_ObjectDef();
 }
 
+
+//----------------------------- DateValue ----------------------------------
+
+/*! \class DateValue
+ */
+
+/*! Return 0 for successfully written, or the length necessary if len is not enough.
+ */
+int DateValue::getValueStr(char *buffer,int len)
+{
+	// ***
+	return 0;
+}
+
+Value *DateValue::duplicate()
+{
+	return new DateValue();
+}
+
+
+ObjectDef *DateValue::makeObjectDef()
+{
+	Get_DateValue_ObjectDef()->inc_count();
+	return Get_DateValue_ObjectDef();
+}
+
+/*! Return 1 for success, 2 for success, but other contents changed too, -1 for unknown extension.
+ * 0 for total fail, as when v is wrong type.
+ */
+int DateValue::assign(FieldExtPlace *ext,Value *v)
+{
+	return 0;
+}
+
+Value *NewDateValueFunc() { return new DateValue; }
+
+ObjectDef default_DateValue_ObjectDef(NULL,"Date",_("Date"),_("Date"),
+							 "class", NULL, NULL,
+							 NULL, 0,
+							 NewDateValueFunc, NULL);
+
+ObjectDef *Get_DateValue_ObjectDef()
+{
+	ObjectDef *def = &default_DateValue_ObjectDef;
+	if (def->fields) return def;
+
+	// def->pushFunction("SetNow",_("Set now"),_("Set for today's date"), NULL,
+	// 				  NULL);
+
+	// def->pushFunction("sub",_("Substring"),_("Retrieve a subsection of data"),
+	// 				  NULL,
+	// 				  "start",_("Start"),_("Counting from 0"), "int",NULL,NULL,
+	// 				  "end",  _("End"),  _("Counting from 0"), "int",NULL,"-1",
+	// 				  NULL);
+
+	return def;
+}
 
 
 //--------------------------------- FileValue -----------------------------
@@ -4344,10 +4429,12 @@ int FileValue::Exists()
 	return file_exists(filename,1,NULL);
 }
 
+Value *NewFileValueFunc() { return new FileValue; }
+
 ObjectDef default_FileValue_ObjectDef(NULL,"file",_("File"),_("File"),
 							 "class", NULL, "/",
 							 NULL, 0,
-							 NULL, NULL);
+							 NewFileValueFunc, NULL);
 
 ObjectDef *Get_FileValue_ObjectDef()
 {
@@ -4574,12 +4661,14 @@ int ObjectValue::getValueStr(char *buffer,int len)
 Value *ObjectValue::duplicate()
 { return new ObjectValue(object); }
 
+Value *NewObjectValueFunc() { return new ObjectValue; }
+
 ObjectDef default_ObjectValue_ObjectDef(NULL,"ObjectWrapper",_("Object Wrapper"),_("Object Wrapper"),
 							 "class",
 							 NULL, //range
 							 NULL, //default
 							 NULL, 0, //fields
-							 NULL, NULL); //funcs
+							 NewObjectValueFunc, NULL); //funcs
 
 ObjectDef *Get_ObjectValue_ObjectDef()
 {
@@ -4662,12 +4751,14 @@ Value *ColorValue::duplicate()
 	return new ColorValue(buffer);
 }
 
+Value *NewColorValueFunc() { return new ColorValue; }
+
 ObjectDef default_ColorValue_ObjectDef(NULL,"Color",_("Color"),_("Color"),
 							 "class",
 							 NULL, //range
 							 NULL, //default
 							 NULL, 0, //fields
-							 NULL, NULL); //funcs
+							 NewColorValueFunc, NULL); //funcs
 
 ObjectDef *Get_ColorValue_ObjectDef()
 {

@@ -26,6 +26,9 @@
 
 #include "../core/fieldplace.h"
 
+#include <ctime>
+
+
 namespace Laidout {
 
 
@@ -184,6 +187,7 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	char *description; // description
 	char *range;
 	Laxkit::PtrStack<char> suggestions;
+	Laxkit::PtrStack<char> aliases; //TODO: any listed here are synonymous with *this
 	char *defaultvalue;
 	Value *defaultValue; //this has more overhead than just a string, but can be more convenient in some cases.
 
@@ -425,6 +429,7 @@ class SetValue : public Value, virtual public FunctionEvaluator
 	virtual int Remove(int index);
 	virtual int n();
 	virtual Value *e(int i);
+	virtual Value *FindID(const char *id);
 	virtual int Set(int i, Value *v, int absorb);
 	virtual void Flush();
 
@@ -618,6 +623,21 @@ class BytesValue : public Value, virtual public FunctionEvaluator
 						 Laxkit::ErrorLog *log);
 };
 
+//----------------------------- DateValue ----------------------------------
+class DateValue : public Value
+{
+  public:
+  	struct tm date;
+
+	DateValue() {}
+	virtual const char *whattype() { return "DateValue"; }
+	virtual int getValueStr(char *buffer,int len);
+	virtual Value *duplicate();
+	virtual int type() { return VALUE_Date; }
+ 	virtual ObjectDef *makeObjectDef();
+	virtual int assign(FieldExtPlace *ext,Value *v);
+};
+
 //----------------------------- EnumValue ----------------------------------
 class EnumValue : public Value
 {
@@ -736,15 +756,20 @@ Value *ValueToJson(const char *str);
 
 
 //-------------------------- Default ObjectDefs for builtin types ---------------------
-ObjectDef *Get_ValueHash_ObjectDef();
-ObjectDef *Get_SetValue_ObjectDef();
-ObjectDef *Get_StringValue_ObjectDef();
-
 ObjectDef *Get_BooleanValue_ObjectDef();
-ObjectDef *Get_IntValue_ObjectDef();
-ObjectDef *Get_RealValue_ObjectDef();
+ObjectDef *Get_BytesValue_ObjectDef();
+ObjectDef *Get_ColorValue_ObjectDef();
+ObjectDef *Get_DateValue_ObjectDef();
+ObjectDef *Get_DoubleValue_ObjectDef();
+ObjectDef *Get_FileValue_ObjectDef();
 ObjectDef *Get_FlatvectorValue_ObjectDef();
+ObjectDef *Get_IntValue_ObjectDef();
+ObjectDef *Get_QuaternionValue_ObjectDef();
+ObjectDef *Get_SetValue_ObjectDef();
 ObjectDef *Get_SpacevectorValue_ObjectDef();
+ObjectDef *Get_StringValue_ObjectDef();
+ObjectDef *Get_ValueHash_ObjectDef();
+
 
 } // namespace Laidout
 
