@@ -848,7 +848,7 @@ void NotifyGeneralErrors(Laxkit::ErrorLog *log)
     if (log->Total() == 0) return;
 
     char *mes = log->FullMessageStr();
-    MessageBox *box = new MessageBox(NULL,"plugin","plugin",ANXWIN_CENTER,
+    MessageBox *box = new MessageBox(NULL,"Errors",_("Errors"), ANXWIN_CENTER,
                                   0,0,0,0,0,
                                   NULL,0,NULL,
                                   mes);
