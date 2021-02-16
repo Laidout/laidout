@@ -23,7 +23,7 @@
 #include "palettes.h"
 #include "headwindow.h"
 #include "plaintextwindow.h"
-#include "../interfaces/objecttree.h"
+#include "objecttree.h"
 #include "../language.h"
 
 // if gl:
@@ -1099,7 +1099,7 @@ bool HeadWindow::DndWillAcceptDrop(int x, int y, const char *action, IntRectangl
 	anXWindow *drop = nullptr;
 	// app->findDropCandidate(nullptr, x,y, &drop);
 	drop = findContainingChild(x,y);
-	cout <<"HeadWindow::DndWillAcceptDrop, drop: "<<(drop ? drop->whattype() : "none")<< endl;
+	DBG cerr <<"HeadWindow::DndWillAcceptDrop, container window: "<<(drop ? drop->whattype() : "none")<< endl;
 	while (drop && drop != this) {
 		if (drop->DndWillAcceptDrop(x,y,action,rect,types,type_ret, nullptr)) {
 			break;
@@ -1108,7 +1108,7 @@ bool HeadWindow::DndWillAcceptDrop(int x, int y, const char *action, IntRectangl
 	}
 
 	if (child_ret) *child_ret = drop;
-	return drop != nullptr;
+	return drop != nullptr && drop != this;
 }
 
 
