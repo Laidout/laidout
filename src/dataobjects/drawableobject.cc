@@ -1698,15 +1698,18 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Du
 
 	if (foundfilter >= 0) {
 		 //note: transform and possibly other important data not set yet!
+		if (filter) { filter->dec_count(); filter = nullptr; }
+
 		ObjectFilter *ofilter = new ObjectFilter(this, 0);
 		ofilter->dump_in_atts(att->attributes.e[foundfilter], 0, context);
-		ofilter->FindProperty("in")->data_is_linked = true;
-		if (filter) { filter->dec_count(); filter = nullptr; }
 		NodeProperty *in = ofilter->FindProperty("in");
+		in->data_is_linked = true;
 		in->SetData(this, 0);
 		in->SetFlag(NodeProperty::PROPF_Label_From_Data, 1);
 		in->topropproxy->SetFlag(NodeProperty::PROPF_Label_From_Data, 1);
 		in->topropproxy->Touch();
+		NodeProperty *out = ofilter->FindProperty("out");
+		out->is_editable = false;
 		// ofilter->ForceUpdates();
 		//in->topropproxy->owner->Update();
 
