@@ -797,6 +797,9 @@ class InvertNode : public NodeBase
 
 InvertNode::InvertNode()
 {
+	type = newstr("Invert");
+	makestr(Name, _("Invert"));
+
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", nullptr,1, _("In"), _("Invert a number, vector, quaternion, or affine"),0,false)); 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Out"), nullptr,0,false));
 }
@@ -817,6 +820,8 @@ NodeBase *InvertNode::Duplicate()
  */
 int InvertNode::GetStatus()
 {
+	Value *v = properties.e[0]->GetData();
+	if (!v) return -1;
 	return NodeBase::GetStatus(); //default checks mod times
 }
 
@@ -825,7 +830,7 @@ int InvertNode::Update()
 	Error(nullptr);
 
 	Value *v = properties.e[0]->GetData();
-	if (!v) return 0;
+	if (!v) return -1;
 
 	double d;
 	if (isNumberType(v, &d)) {
@@ -1157,7 +1162,7 @@ int MathNode1::GetStatus()
 	if (status == 1) return 1; //just simple update
 
 	clock_t proptime = MostRecentIn(NULL);
-	if (proptime > last_status) {
+	if (proptime > status_time) {
 		last_status = UpdateThisOnly();
 		status_time = proptime;
 	}
@@ -1167,7 +1172,7 @@ int MathNode1::GetStatus()
 int MathNode1::Update()
 {
 	int status = UpdateThisOnly();
-	if (!status) {
+	if (status == 0) {
 		Touch();
 		// PropagateUpdate();
 		return NodeBase::Update();
@@ -1205,11 +1210,11 @@ int MathNode1::UpdateThisOnly()
 	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[0]->GetData());
 	ObjectDef *def = ev->GetObjectDef();
 	const char *nm = NULL, *Nm = NULL;
-	double result=0;
 	int operation = OP_None;
 	def->getEnumInfo(ev->value, &nm, &Nm, NULL, &operation);
 	
 	for (int c=0; c<max; c++) {
+		double result=0;
 		if (dosets) {
 			if (c < setin->n()) valuea = setin->e(c); 
 			if (c < outset->n()) out = outset->e(c); else out = nullptr;
@@ -1326,6 +1331,7 @@ int MathNode1::UpdateThisOnly()
 			} else if (operation == OP_Clamp_To_pm_1 ) { for (int c=0; c<aisnum; c++) rv[c] = va[c] > 1 ? 1 : va[c] < -1 ? -1 : va[c];
 			} else if (operation == OP_Flip          ) { for (int c=0; c<aisnum; c++) rv[c] = -va[c];
 			} else if (operation == OP_Normalize     ) {
+				result = 0;
 				for (int c=0; c<aisnum; c++) result += va[c]*va[c];
 				result = sqrt(result);
 				if (result == 0) {
@@ -2046,7 +2052,7 @@ int ExpressionNode::Set(const char *expr, bool force_remap)
 	PtrStack<char> names(LISTS_DELETE_Array);
 	ErrorLog log;
 	int status = laidout->calculator->FindUnknownNames(expr,-1, nullptr, nullptr, &log, names);
-	if (names.n == 0 || status != 0) {
+	if (status != 0) {
 		char *er = log.FullMessageStr();
 		if (er) {
 			makestr(error_message, er);
@@ -2573,10 +2579,7 @@ NodeBase *ImageFileNode::Duplicate()
  */
 int ImageFileNode::GetStatus()
 {
-	ImageValue *i = dynamic_cast<ImageValue*>(properties.e[1]->GetData());
-	if (!i || !i->image) return -1;
-	if (i->image->w() <= 0 || i->image->h() <= 0) return -1;
-
+	//ImageValue *i = dynamic_cast<ImageValue*>(properties.e[1]->GetData());
 	return NodeBase::GetStatus(); //default checks mod times
 }
 
@@ -2585,11 +2588,14 @@ int ImageFileNode::GetStatus()
 int ImageFileNode::Update()
 {
 	const char *file = GetFilename();
+	if (isblank(file)) return -1;
+
 	ImageValue *iv = dynamic_cast<ImageValue*>(properties.e[1]->GetData());
 
 	if (iv && iv->image && iv->image->filename && file && !strcmp(iv->image->filename, file)) {
-		//same filename, assume its up to date
-		return 0;
+		//same filename, assume its up to date *** should really check file mod time
+		DBG cerr << " *** note to self, need to check file mod time for ImageFileNode::Update"<<endl;
+		return NodeBase::Update();
 	}
 	
 	//otherwise, create new image and install
@@ -3107,7 +3113,7 @@ SplitNode::SplitNode()
 	makestr(type, "Split strings");
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in", new StringValue(),1, _("In")));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "delim", new StringValue(","),1, _("Delimiter")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "delim", new StringValue(","),1, _("Delimiter"), _("Use \\n for newline and \\t for tab.")));
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", nullptr,1, _("Out"),
 								 nullptr, 0, false));
@@ -3144,6 +3150,9 @@ int SplitNode::Update()
 
 	StringValue *delim = dynamic_cast<StringValue*>(properties.e[1]->GetData());
 	if (!delim || isblank(delim->str)) return -1;
+	Utf8String delimiter(delim->str);
+	delimiter.Replace("\\n", "\n", true);
+	delimiter.Replace("\\t", "\t", true);
 	
 	char *str = strin ? strin->str : nullptr;
 
@@ -3164,7 +3173,7 @@ int SplitNode::Update()
 		}
 
 		int n = 0;
-		char **strs = split(str, delim->str, &n);
+		char **strs = split(str, delimiter.c_str(), &n);
 		SetValue *set = outset;
 		if (setin) {
 			set = new SetValue();
@@ -4373,10 +4382,10 @@ MapRangeNode::MapRangeNode(bool map_to, double min, double max, bool clamp)
 	mapto = map_to;
 
 	if (mapto) {
-		makestr(Name, _("Map to range"));
+		makestr(Name, _("0..1 to range"));
 		makestr(type, "MapToRange");
 	} else {
-		makestr(Name, _("Map from range"));
+		makestr(Name, _("Range to 0..1"));
 		makestr(type, "MapFromRange");
 	}
 
@@ -4408,59 +4417,90 @@ NodeBase *MapRangeNode::Duplicate()
 
 int MapRangeNode::GetStatus()
 {
-	if (!isNumberType(properties.e[0]->GetData(), NULL)) return -1;
+	Value *v = properties.e[0]->GetData();
+	if (!isNumberType(v, NULL) && !(v && v->type() == VALUE_Set)) return -1;
 
 	int isnum;
-	double min = getNumberValue(properties.e[1]->GetData(), &isnum);
-	if (!isnum) return -1;
-	double max = getNumberValue(properties.e[2]->GetData(), &isnum);
-	if (!isnum) return -1;
-	if (min==max) return -1;
+	v = properties.e[1]->GetData();
+	getNumberValue(v, &isnum);
+	if (!isnum && !(v && v->type() == VALUE_Set)) return -1;
 
-	if (!properties.e[4]->data) return 1;
+	v = properties.e[2]->GetData();
+	getNumberValue(v, &isnum);
+	if (!isnum && !(v && v->type() == VALUE_Set)) return -1;
 
 	return NodeBase::GetStatus(); //default checks mod times
 }
 
 int MapRangeNode::Update()
 {
-	int isnum=0;
-	double in = getNumberValue(properties.e[0]->GetData(), &isnum);
-	if (!isnum) return -1;
-	double min = getNumberValue(properties.e[1]->GetData(), &isnum);
-	if (!isnum) return -1;
-	double max = getNumberValue(properties.e[2]->GetData(), &isnum);
-	if (!isnum) return -1;
-	if (min==max) return -1;
-	bool clamp = dynamic_cast<BooleanValue*>(properties.e[3]->GetData())->i;
+	ClearError();
 
-	double num;
-	if (mapto) {
-		num = min + (max-min)*in;
-		if (clamp) {
-			if (max>min) {
-				if (num<min) num=min;
-				else if (num>max) num=max;
-			} else {
-				if (num<max) num=max;
-				else if (num>min) num=min;
-			}
-		}
-	} else {
-		num = (in-min) / (max-min);
-		if (clamp) {
-			if (num<0) num=0;
-			if (num>1) num=1;
-		}
+	int num_ins = 3;
+	Value *ins[num_ins];
+	for (int c=0; c<num_ins; c++) ins[c] = properties.e[c]->GetData();
+	
+	SetValue *setins[num_ins];
+	SetValue *outset = nullptr;
+
+	int max = 0;
+	bool dosets = false;
+	if (DetermineSetIns(num_ins, ins, setins, max, dosets) == -1) { //does not check contents of sets.
+		//had a null input
+		return -1;
 	}
 
-	Value *v = properties.e[4]->GetData();
+	DoubleValue *dv = UpdatePropType<DoubleValue>(properties.e[properties.n-1], dosets, max, outset);
 
-	if (!dynamic_cast<DoubleValue*>(v)) {
-		v = new DoubleValue(num);
-		properties.e[4]->SetData(v, 1);
-	} else dynamic_cast<DoubleValue*>(v)->d = num;
+	// DoubleValue *in[num_ins];
+	// for (int c=0; c<num_ins; c++) in[c] = nullptr;
 
+	double input=0, min=0, maxv=0;
+
+	bool clamp = dynamic_cast<BooleanValue*>(properties.e[3]->GetData())->i;
+
+	for (int c=0; c<max; c++) {
+		if (GetInNumber(c, dosets, input, ins[0], setins[0]) != 0) {
+			Error(_("Bad in!"));
+			return -1;
+		}
+		if (GetInNumber(c, dosets, min, ins[1], setins[1]) != 0) {
+			Error(_("Bad min!"));
+			return -1;
+		}
+		if (GetInNumber(c, dosets, maxv, ins[2], setins[2]) != 0) {
+			Error(_("Bad max!"));
+			return -1;
+		}
+
+		double num;
+		if (mapto) {
+			num = min + (maxv-min)*input;
+			if (clamp) {
+				if (maxv>min) {
+					if (num<min) num=min;
+					else if (num>maxv) num=maxv;
+				} else {
+					if (num<maxv) num=maxv;
+					else if (num>min) num=min;
+				}
+			}
+		} else {
+			if (maxv == min) num = 0;
+			else {
+				num = (input-min) / (maxv-min);
+				if (clamp) {
+					if (num<0) num=0;
+					if (num>1) num=1;
+				}
+			}
+		}
+
+		GetOutValue<DoubleValue>(c, dosets, dv, outset);
+		dv->d = num;
+	}
+
+	properties.e[properties.n-1]->Touch();
 	return NodeBase::Update();
 }
 
@@ -4683,6 +4723,102 @@ int GetElementNode::Update()
 	properties.e[2]->SetData(out,0);
 	UpdatePreview();
 	Wrap();
+	return NodeBase::Update();
+}
+
+
+//------------------------------ SwitchNode --------------------------------------------
+
+/*! \class SwitchNode
+ * Make a set containing all the inputs.
+ */
+
+class SwitchNode : public NodeBase
+{
+  public:
+	SwitchNode();
+	virtual ~SwitchNode();
+	virtual NodeBase *Duplicate();
+	virtual int GetStatus();
+	virtual int Update();
+	virtual void dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context);
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new SwitchNode(); }
+};
+
+SwitchNode::SwitchNode()
+{
+	makestr(type, "Lists/Switch");
+	makestr(Name, _("Switch"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "index", new IntValue(0),1, _("Index"))); 
+	AddNewIn(true, "in", _("In"), nullptr);
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out",  NULL,1, _("Out"), NULL, 0, false));
+}
+
+SwitchNode::~SwitchNode()
+{
+}
+
+NodeBase *SwitchNode::Duplicate()
+{
+	SwitchNode *node = new SwitchNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+/*! Clean up after NodeBase::dump_in_atts() to make sure the out property is at the end.
+ */
+void SwitchNode::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context)
+{
+	NodeBase::dump_in_atts(att,flag,context);
+	int i = -1;
+	NodeProperty *prop = FindProperty("out", &i);
+	if (prop && i != properties.n-1) {
+		properties.slide(i, properties.n-1);
+	}
+	prop = FindProperty("in", &i);
+	if (prop && i != properties.n-2) {
+		properties.slide(i, properties.n-2);
+	}
+	for (int c=0; c<properties.n-1; c++) {
+		properties.e[c]->Label(_("In"));
+		if (c < properties.n-2) {
+			// *** this really should be automated somehow
+			properties.e[c]->SetFlag(NodeProperty::PROPF_New_In, false);
+			properties.e[c]->SetFlag(NodeProperty::PROPF_List_In, true);
+		}
+	}
+}
+
+/*! Return 0 for no error and everything up to date.
+ * -1 means bad inputs and node in error state.
+ * 1 means needs updating.
+ */
+int SwitchNode::GetStatus()
+{
+	return NodeBase::GetStatus();
+}
+
+int SwitchNode::Update()
+{
+	ClearError();
+
+	int isnum = 0;
+	int index = getIntValue(properties.e[0]->GetData(), &isnum);
+	if (!isnum || index < 0 || index >= properties.n-3) {
+		Error(_("Bad index!"));
+		return -1;
+	}
+
+	Value *out = properties.e[properties.n-1]->GetData();
+	Value *el = properties.e[index]->GetData();
+	if (el != out) {
+		properties.e[properties.n-1]->SetData(el, 0);
+	}
+	properties.e[properties.n-1]->Touch();
+
 	return NodeBase::Update();
 }
 
@@ -6045,7 +6181,8 @@ int NewObjectNode::Update()
 	if (!what) return -1;
 
 	Value *o = properties.e[1]->GetData();
-	if (!o || (o && strcmp(what, o->whattype()))) { //missing or different out, recreate
+	ObjectDef *odef = o ? o->GetObjectDef() : nullptr;
+	if (!o || (o && strcmp(what, odef->name))) { //missing or different out, recreate
 		ObjectDef *d = stylemanager.FindDef(what);
 		if (!d) {
 			ObjectDef *core = laidout->calculator->FindModule("Core");
@@ -6125,7 +6262,7 @@ ListOfNode::ListOfNode(const char *what, int n)
 	
 	AddProperty(new NodeProperty(NodeProperty::PROP_Block, false, "what", e,1, "", NULL,0, true));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, "num", new IntValue(n),1, _("Num"), NULL,0, true));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Object"), NULL,0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Set"), NULL,0, false));
 }
 
 ListOfNode::~ListOfNode()
@@ -6140,7 +6277,8 @@ NodeBase *ListOfNode::Duplicate()
 		ev->GetObjectDef()->getEnumInfo(ev->value, &what);
 	}
 
-	int num = getIntValue(properties.e[1]->GetData(), nullptr);
+	int isnum;
+	int num = getIntValue(properties.e[1]->GetData(), &isnum);
 	if (num < 0) num = 1;
 
 	ListOfNode *node = new ListOfNode(what, num);
@@ -6233,7 +6371,8 @@ int ListOfNode::Update()
 			return -1;
 		}
 		Value *e = properties.e[c+2]->GetData();
-		if (!e || strcmp(what, e->whattype())) {
+		ObjectDef *odef = e ? e->GetObjectDef() : nullptr;
+		if (!e || strcmp(what, odef->name)) {
 			//wrong type!
 			if (properties.e[c+2]->IsConnected()) {
 				Error(_("In object wrong type!"));
@@ -7012,6 +7151,7 @@ int TextFileNode::Update()
 		properties.e[1]->SetData(sv, 1);
 	}
 	sv->InstallString(contents);
+	properties.e[1]->Touch();
 
 	return NodeBase::Update();
 }
@@ -7023,6 +7163,176 @@ int TextFileNode::GetStatus()
 	if (!v) return 1;
 	if (v->type() != VALUE_String && v->type() != VALUE_File) return -1;
 	return NodeBase::GetStatus();
+}
+
+
+//------------------------ JsonFileNode ------------------------
+
+class JsonFileNode : public NodeBase
+{
+  public:
+	JsonFileNode(const char *txt);
+	virtual ~JsonFileNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new JsonFileNode(nullptr); }
+};
+
+JsonFileNode::JsonFileNode(const char *what)
+{
+	makestr(Name, _("Json file to object"));
+	makestr(type, "Files/JsonFile");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, "file", new FileValue(what),1, _("Json File"), NULL,0, true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("Json"), NULL,0, false));
+}
+
+JsonFileNode::~JsonFileNode()
+{
+}
+
+NodeBase *JsonFileNode::Duplicate()
+{
+	const char *file = nullptr;
+	Value *v = properties.e[0]->GetData();
+	if (v->type() == VALUE_String) file = dynamic_cast<StringValue*>(v)->str;
+	else if (v->type() == VALUE_File) file = dynamic_cast<FileValue*>(v)->filename;
+	
+	JsonFileNode *node = new JsonFileNode(file);
+	node->DuplicateBase(this);
+	return node;
+}
+
+int JsonFileNode::Update()
+{
+	const char *file = nullptr;
+	Value *v = properties.e[0]->GetData();
+	if (v->type() == VALUE_String) file = dynamic_cast<StringValue*>(v)->str;
+	else if (v->type() == VALUE_File) file = dynamic_cast<FileValue*>(v)->filename;
+	if (isblank(file)) return -1;
+
+	int n = 0;
+	char *contents = LaxFiles::read_in_whole_file(file, &n);
+	if (!contents) return -1;
+
+	const char *error_ptr = nullptr;
+	Value *json = JsonToValue(contents, &error_ptr);
+	delete[] contents;
+	if (!json) return -1;
+
+	properties.e[1]->SetData(json, 1);
+
+	return NodeBase::Update();
+}
+
+//0 ok, -1 bad ins, 1 just needs updating
+int JsonFileNode::GetStatus()
+{
+	Value *v = properties.e[0]->GetData();
+	if (!v) return 1;
+	if (v->type() != VALUE_String && v->type() != VALUE_File) return -1;
+	return NodeBase::GetStatus();
+}
+
+
+//------------------------ CSVFileNode ------------------------
+
+class CSVFileNode : public NodeBase
+{
+  public:
+	CSVFileNode(const char *txt);
+	virtual ~CSVFileNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new CSVFileNode(nullptr); }
+};
+
+CSVFileNode::CSVFileNode(const char *what)
+{
+	makestr(Name, _("CSV file to object"));
+	makestr(type, "Files/CSVFile");
+
+	//csv import options often:
+	//  has headers (always strings)
+	//  delimiter: comma, tab  --OR-- fixed width
+	//  
+	//  encoding
+	//  Auto type conversion
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, "file", new FileValue(what),1, _("CSV File"), NULL,0, true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "delimiter", new StringValue(","),1, _("Delim"), NULL,0, true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "headers", new BooleanValue(true),1, _("Has headers"),
+											_("If true, use hashes based on first row, else use sets in return value")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, "cols", new BooleanValue(true),1, _("Prefer columns"),
+											_("Hash or sets of columns, or Set of (hashes or sets) per row"),0,true));
+	// AddProperty(new NodeProperty(NodeProperty::PROP_Input, false, "coltypes", nullptr,1, _("Column types"), _("Default to strings, or numbers if convertible")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", nullptr,1, _("CSV"), NULL,0, false));
+}
+
+CSVFileNode::~CSVFileNode()
+{
+}
+
+NodeBase *CSVFileNode::Duplicate()
+{
+	const char *file = nullptr;
+	Value *v = properties.e[0]->GetData();
+	if (v->type() == VALUE_String) file = dynamic_cast<StringValue*>(v)->str;
+	else if (v->type() == VALUE_File) file = dynamic_cast<FileValue*>(v)->filename;
+	
+	CSVFileNode *node = new CSVFileNode(file);
+	node->DuplicateBase(this);
+	return node;
+}
+
+//0 ok, -1 bad ins, 1 just needs updating
+int CSVFileNode::GetStatus()
+{
+	Value *v = properties.e[0]->GetData();
+	if (!v) return 1;
+	if (v->type() != VALUE_String && v->type() != VALUE_File) return -1;
+	return NodeBase::GetStatus();
+}
+
+int CSVFileNode::Update()
+{
+	ClearError();
+
+	const char *file = nullptr;
+	Value *v = properties.e[0]->GetData();
+	if (v->type() == VALUE_String) file = dynamic_cast<StringValue*>(v)->str;
+	else if (v->type() == VALUE_File) file = dynamic_cast<FileValue*>(v)->filename;
+	if (isblank(file)) return -1;
+
+	StringValue *sv = dynamic_cast<StringValue*>(properties.e[1]->GetData());
+	if (!sv || isblank(sv->str)) return -1;
+	const char *delimiter = sv->str;
+	if (!delimiter) return -1;
+
+	int isnum = 0;
+	bool has_headers = getIntValue(properties.e[2]->GetData(), &isnum);
+	if (!isnum) return -1;
+	bool prefer_cols = getIntValue(properties.e[3]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	int n = 0;
+	char *contents = LaxFiles::read_in_whole_file(file, &n);
+	if (!contents) return -1;
+
+	int err = 0;
+	v = CSVStringToValue(contents, delimiter, has_headers, prefer_cols, &err);
+	if (err) return -1;
+
+	properties.e[properties.n-1]->SetData(v, 1);
+	properties.e[properties.n-1]->Touch();
+
+	return NodeBase::Update();
 }
 
 
@@ -7314,6 +7624,7 @@ GetGlobalNode::GetGlobalNode(const char *what)
 
 	makestr(type, "Resources/GetGlobal");
 	makestr(Name, _("Get Global Variable"));
+	special_type = NODES_Global_Var;
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "name",   new StringValue(what),1, _("Name")));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output,  true, "value",  NULL,1, _("Value"), nullptr, 0, false));
@@ -7658,6 +7969,54 @@ int RerouteNode::Wrap()
 }
 
 
+//----------------------- DebugNode ------------------------
+
+/*! \class DebugNode
+ *
+ * Do stuff.
+ */
+class DebugNode : public NodeBase
+{
+  public:
+	DebugNode();
+	virtual ~DebugNode();
+	virtual NodeBase *Duplicate();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new DebugNode(); }
+};
+
+DebugNode::DebugNode()
+{
+	makestr(type, "Debug");
+	makestr(Name, _("Debug"));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in", NULL,1, _("In")));
+	special_type = NODES_Debug;
+}
+
+DebugNode::~DebugNode()
+{
+}
+
+NodeBase *DebugNode::Duplicate()
+{
+	DebugNode *newnode = new DebugNode();
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int DebugNode::GetStatus()
+{
+	return NodeBase::GetStatus();
+}
+
+int DebugNode::Update() //bare bones
+{
+	return NodeBase::Update();
+}
+
+
 //--------------------------- SetupDefaultNodeTypes() -----------------------------------------
 
 /*! Install default built in node types to factory.
@@ -7684,9 +8043,9 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "GradientTransform", newGradientTransformNode,  NULL, 0);
 
 	 //--- Images
-	factory->DefineNewObject(getUniqueNumber(), "Image",     newImageNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "ImageFile", ImageFileNode::NewNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "ImageInfo", newImageInfoNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Images/Image",     newImageNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Images/ImageFile", ImageFileNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Images/ImageInfo", newImageInfoNode,  NULL, 0);
 
 	 //--- CurveNodes
 	factory->DefineNewObject(getUniqueNumber(), "Curve",         newCurveNode,  NULL, 1);
@@ -7750,17 +8109,21 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Lists/MakeSet",     MakeSetNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Lists/NumberList",  NumberListNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Lists/Shuffle",     ShuffleNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Lists/Switch",      SwitchNode::NewNode,  NULL, 0);
 	//special duplication of GetElement
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/GetChild", GetElementNode::NewNode,  NULL, 1);
-	
+
 	//------------------ String -------------
 	factory->DefineNewObject(getUniqueNumber(), "Strings/String",      newStringNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Strings/Concat",      ConcatNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Strings/Slice",       SliceNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Strings/Split",       SplitNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Strings/NumToString", NumToStringNode::NewNode,  NULL, 0);
-	factory->DefineNewObject(getUniqueNumber(), "Strings/TextFromFile",TextFileNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Strings/ToFile",      ToFileNode::NewNode,  NULL, 0);
+
+	factory->DefineNewObject(getUniqueNumber(), "Strings/TextFromFile",TextFileNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Files/JsonFile",      JsonFileNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Files/CSVFile",       CSVFileNode::NewNode,  NULL, 0);
 
 	 //-------------------- FILTERS -------------
 	factory->DefineNewObject(getUniqueNumber(), "Filters/TransformAffine", newTransformAffineNode,  NULL, 0);
@@ -7782,6 +8145,7 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 
 	 //-------------------- Specials -------------
 	factory->DefineNewObject(getUniqueNumber(), "Reroute",RerouteNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Debug",  DebugNode::NewNode,  NULL, 0);
 
 	factory->DefineNewObject(getUniqueNumber(), "Document/Export",      ExportNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Document/GetDocument", GetDocumentNode::NewNode,  NULL, 0);

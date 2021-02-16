@@ -35,8 +35,6 @@ bug: gegl nodes, connect sinus to waves and also to displace, freeze!
 
 ------------ other bugs:
 
-bug: scrollbars drawing extra line in bottom half
-
 bug: popup menus: submenus spawning on wrong side on far right monitors
 
 bug: command prompt window cursor often invisible
@@ -64,6 +62,7 @@ memory hole in calculator
 memory hole in reimpose .. reimposed 5 page booklet
 memory hole when graphical shell activated
 memory hole do laidout -n letter, split a window, then quit. undeleted Objects remain!
+DONE memory hole: start blank, exit. 3 remain!!
 DONE memory hole helpwindow -> probably something to do with ShortcutWindow and ShortcutTreeSelector not refcounting as expected
 DONE memory hole delauneyinterface
 DONE memory hole objectfilters with interface
@@ -455,18 +454,30 @@ Find interface: findinterface:
   DONE on pressing cntl-f, must focus on pattern lineedit
   DONE need draggable window frame
 
-layers palette Layers
+layers palette Layers ObjectTree
+  should have document list at top, showing current doc
+  top limbo should not have eye/lock flags
+  need icons for object types
+
+  drag change flags
+  flags, click to change: 
+    locked
+    visible
+    selectable
   key controls for navigation within menu:
     space/enter toggle open and closed submenu
-  edit colors not highlighting every other
   move
+  filter by:
+    type
+	name
   rename in place
   implement buttons
-  locked
-  visible
-  selectable
+    new empty
+	move up .. maybe do away with the button, and just implement drag and drop?
+	move down
+	duplicate
 
-  should have document list at top, showing current doc
+  DONE edit colors not highlighting every other
 
 have an actual splash image shown
 
@@ -557,6 +568,7 @@ importdialog ImportDialog import dialog:
   importing should sort out duplicate names
   would be nice to show preview of what is to be imported
 html: htmlgallery: html out htmlout:
+  obey object visible
   webcomic features:
     parallax
       auto gyrate
@@ -576,6 +588,7 @@ html: htmlgallery: html out htmlout:
   DONE figure out template scheme
   DONE standardize save to directory or file, not just assume file
 image
+  obey object visible
   width, height defaults to 0, which is supposed to autocompute correct w,h from dpi.. check!
   should have color select for background color, which would be alternate way to set full transparent
   export depth map based on metadata z
@@ -597,6 +610,7 @@ laidout import:
     import of master pages
     import of limbos
 pdf: PDF:
+  obey object visible
   export clones adds extra ref in resources section
   text out very broken.. imageout via gs complains about malformed pdf on fonts
   fonts are not doubled up, each text object is exporting its own
@@ -610,6 +624,7 @@ pdf: PDF:
   page labels?
   implement crop
 Scribus scribus:
+  obey object visible
   needs better error return: use try/catch
   outputting with settings that result in 0 pages result in scribus crash
   caption as path flips
@@ -633,6 +648,7 @@ Scribus scribus:
   implement crop
 
 svg: SVG
+  obey object visible
   in:
 	in units should default to csspoints
     bug: when stroke+fill presentation atts are not under a "style" att, they are ignored
@@ -749,6 +765,7 @@ PathInterface: pathinterface
   bug: delete last weight node, sometimes width is wrong
   bug: make new line with freehand tool, cannot move weight nodes in a rational way
 
+  drag on handle (not point) to resize handle. cntl to scale only it. cntl+shift to rotate it
   when you delete a point, curvertex should go to go to nearest previous
   need an easier way to edit gradient fills, like child tool edit for fill items, auto add filler types
   need simplify option on point delete to adjust control point lengths
@@ -1045,7 +1062,14 @@ valgrind:
   conditional jump on uninit: strlens in newnstr re attributes.cc 2673, 2192, 2206/1007, 2651
 
 node editor node interface NodeInterface nodes: node: interface: 
-  objecttofile is yellow
+  bug: file prop popup not working... sometimes?!?
+  bug: red: Lerp
+  bug: yellow:
+	ObjectToFile
+	DONE Math1 (only on initial add, fine on load in or dup)
+	DONE MapFromRange
+	DONE MapToRange
+  	DONE Invert
   bug: expressions broken: out not at last, is yellow, Math should be imported, crashes
   bug: why is captiondata preview render getting triggered every node update?
   bug: work on filter, save nodes, switch to object, load nodes, destroys proper in/out of filter
@@ -1053,17 +1077,15 @@ node editor node interface NodeInterface nodes: node: interface:
   bug: paths should not clip their children by default
   would be nice to have a property type PROP_List so you can input "1px,2%,3,4" and have it parse to {1,.02,3,4} automatically
   need delete frame.. delete objects not deleting frame if empty
-  bug: sporadic, 1st input edit doesn't stick
+  bug: sporadic, 1st input edit doesn't stick, maybe related to sometimes duplicate is not spawning near original.. not saving last prop?
   bug: reroute nodes doing weird colors
   grouped nodes: need to properly propagate MarkMustUpdate() past container node directly to output props
     check NodeBase::GetStatus() when no outs, but topropproxy
   memory hole page info? drawableinfo, objectinfo
-  bug: top filter "out" is outputting data
   bug: new object caption, attach to object function, crash!!
   bug: CaptionData is creating a new font every single instantiation
   bug: Need to make text objects have expected preview orientations
   undo redo
-  bug: file prop popup not working
   bug: trying to open menu for enum with 0 entries should not pop up a window
   bug: ObjectInfo should reset id and type on disconnection or null object, but keep any props that are connected
   bug: adaptive nodes need to cache previous in and check that rather than just update on connection change, since could change upstream
@@ -1079,12 +1101,18 @@ node editor node interface NodeInterface nodes: node: interface:
   implement objectfilterinterface/nodeinterface interchange with nested node groups
   edit filter nodes for the first time should center nodes in viewport
   would be nice to have a "Collapse unlinked properties" option
-
+  drop files into FileValue properties?
+  drop text/numbers to properties
 
   need option to turn off main viewport render while tool up, since sometimes that render takes a long time
   some people are going to want grid snapping
   some people are going to want straight connection lines
+  GetGlobal needs to use a menu
 
+  DONE CSVFileNode
+  DONE JsonFileNode, by adding or by drag and drop
+  DONE changing node width (like many image ones you drop in): all by same diff, all to same width
+  DONE bug: top filter "out" is outputting data
   DONE ListOf
   DONE bug: JoinSets is not loading/saving properly.. variable list props need unique names
   DONE bug: when in error state, tries again EVERY refresh.. should only try when values change again
@@ -1123,6 +1151,8 @@ node editor node interface NodeInterface nodes: node: interface:
 
   need 
   expand list i..j
+  Switch: variable in list, index element
+  GetFromEach: set in, get specified index from each element of in set, element must be hash, index, or have property with that name
   multi-input revamp:
     ExpandVectorNode
 	RectangleNode
@@ -1136,7 +1166,6 @@ node editor node interface NodeInterface nodes: node: interface:
 	RandomNode
 	Slice
 	Lerp
-	MapRange
 	TransformAffine
 	ModifyObject? ObjectFunction?
 	TextFile
@@ -1146,6 +1175,7 @@ node editor node interface NodeInterface nodes: node: interface:
 	SetOriginBBox
 	RoundedRect
 	PointsToDots
+	DONE MapRange
   buttons:
     DONE mouse down/up
 	greyed out depending on properties
@@ -1197,6 +1227,7 @@ node editor node interface NodeInterface nodes: node: interface:
 		quadrilateralize and relax -> work Net into a full Drawable?
 		voronoi region centroid replacement relax: strength, iterations
 	  pointset
+	    create without initial flush to reduce allocations?
 		optionally do set of affine?
 		set from drawables
 		perturb set.. perturb ANY PointCollection
@@ -1666,7 +1697,8 @@ selecting in viewwindow
 
     C left click: place/remove anchor points
 
-GroupInterface groupinterface ObjectInterface objectinterface: group: object interface
+GroupInterface groupinterface ObjectInterface objectinterface: group: object interface object tool
+  select/unselect all
   new drag/scale/rotate behavior:
     anchor point drag should use the new widgets as appropriate
     DONE rotation circle, inner: number +-/absolute,  mid: free rotate,  outer: snap rotate
@@ -1691,6 +1723,7 @@ GroupInterface groupinterface ObjectInterface objectinterface: group: object int
   implement move to "Some other page..." when 'm' in groupinterface
   things to allow editing of wrap, inset, clip paths(done), and chains
 
+  DONE hide/unhide
   DONE default hide draggable flip, but have as right click option
   DONE menuify parent options
 
@@ -1909,17 +1942,36 @@ implement clobber_protection: "%f~", %f is basename, save in same dir as file (c
   save a copy
   Document::Save
 
-make drag and drop selections work
-  implement proper action querying
-  do proper translation between screen coords and window coords during acceptance query
-  Initiate dnd
-    set up system dnd state
-    send regular updates per protocol
-    send data per protocol on drop if to other process, or internally if drop on ourself
-  accept dnd
-    mouse moves around due to ourself or some other process
-    window needs to decide whether dropping is ok, and choose which window will take the drop
-    handle drop of data
+make drag and drop selections work dnd
+  bug: seems like errant end of dnd animation after you drop something from nautilus??
+  implement viewport vector file drop
+  implement image file drop to nodes:
+    drop text onto specific properties
+	gegl file in node
+	DONE csv file
+	DONE json file
+  	DONE LaxImage node
+	DONE text file
+  dnd to CaptionInterface
+  dnd to ImageInterface
+  dnd to ImagePatchInterface
+  dnd colors somehow? interpret text "#fff" as a color
+  drag from lax edits to other places (in and outside app)
+
+  implement proper action querying, like when you press shift, control for copy or replace while dragging.. is it necessary, we always copy?
+
+  DONE Initiate dnd
+    DONE set up system dnd state
+    DONE send regular updates per protocol
+    DONE send data per protocol on drop if to other process, or internally if drop on ourself
+  DONE accept dnd
+    DONE mouse moves around due to ourself or some other process
+    DONE window needs to decide whether dropping is ok, and choose which window will take the drop
+    DONE handle drop of data
+  DONE LineEdit
+  DONE implement viewport bitmap image drop
+  DONE xlib_dnd->preferred_type not being set?? -> was bad child selection coords
+  DONE do proper translation between screen coords and window coords during acceptance query
 
 need more mechanism so that popup dialogs stay on top of window they are "children" of
 
@@ -2306,13 +2358,16 @@ templates Templates:
   DONE save as default, or just save as.
 
 
-image import:
+image import: ImportImagesDialog
+  bug: import all to one page with scale up/scale down doesn't scale properly
+  bug: cancel button is white and no mouseover??
   need drag and drop from system for multi-image import
+    SelectFile should update file/path.. right now only updates filelist
+  ImageImport dialog: (actually, needs a total redesign) import images importimage
   cannot import images directly from recents
   need thumbnail preview of images in directories
   when you have a filter, should still show directories(?)
-Import image list: default previews
-ImageImport dialog: (actually, needs a total redesign) import images importimage
+  Import image list: default previews
   should have preview for alignment options.. grab destination page to show preview
   auto bookmarks, one for examples, or save as template
   Choose/Review tabbed window
@@ -2324,11 +2379,10 @@ ImageImport dialog: (actually, needs a total redesign) import images importimage
   autogenerate should do special check for ~/.thumbnails to conform to freedesktop spec size and type...
   importimages-> eps --> they are fit into boxes!! they should maybe be inserted into a stream..
   importimages: remember last settings
-DumpImages within Arrangements, which are sort of a template of rect regions (2-d guides)
+  DumpImages within Arrangements? a template of rect regions (2-d guides)?  maybe use custom papergroups?
     would also implement the dump into Limbo
-    dump into any string of objects, this is really the same thing as laying out a stream, maybe merge this?
-a "Place" tool like indesign?? preview images and place by dragging out one by one, as well
- as optionally into Arrangements
+    dump into any chain of objects, this is really the same thing as laying out a stream, maybe merge this?
+  a "Place" tool like indesign?? preview images and place by dragging out one by one, as well as optionally into Arrangements
 
 
 external tools:
@@ -2979,4 +3033,5 @@ DONE bug: edit singles imposition, change portrait to landscape, apply, ok, now 
 DONE bug: initial warning about could not load ?? not showing the ??
 DONE bug: freehand tool, press any key, crash!!
 DONE bug: lax: slight hitch, about 1/4 sec on every button down, XCreateIC() in app->CreateXInputContext() takes forever
+DONE bug: scrollbars drawing extra line in bottom half
 

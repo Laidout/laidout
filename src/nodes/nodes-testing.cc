@@ -21,7 +21,6 @@ TODO:
 
 
 
-
 //----------------------- PathIntersectionsNode ------------------------
 
 /*! \class PathIntersectionsNode
@@ -1772,13 +1771,13 @@ int BoilerPlateNode::GetStatus()
 	return NodeBase::GetStatus();
 }
 
-int BoilerPlateNode::Update()
+int BoilerPlateNode::Update() //bare bones
 {
 	ClearError();
 	return NodeBase::Update();
 }
 
-int BoilerPlateNode::Update()
+int BoilerPlateNode::Update() //possible set ins
 {
 	//update with set parsing helpers
 	

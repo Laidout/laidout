@@ -124,26 +124,41 @@ int DuplicateDrawableNode::Update()
 		set = new SetValue();
 		properties.e[3]->SetData(set, 1);
 	} else {
-		// while (set->n() > n) set->remove(set->n()-1);
-		set->values.flush();
+		while (set->n() > n) set->Remove(set->n()-1);
 	}
 	
 	DBG Utf8String str;
 	if (clone) {
 		for (int c=0; c<n; c++) {
-			LSomeDataRef *oo = new LSomeDataRef(o);
+			LSomeDataRef *oo = nullptr;
+			if (c < set->n()) {
+				oo = dynamic_cast<LSomeDataRef*>(set->e(c));
+				if (!oo) {
+					oo = new LSomeDataRef(o);
+					// o->dec_count();
+					set->Set(c, oo, 1);
+				} else {
+					oo->Set(o, 0); //0 here means copy matrix
+				}
+			} else {
+				oo = new LSomeDataRef(o);
+				// o->dec_count();
+				set->Push(oo, 1);
+			}
 			DBG str.Sprintf("%s_%d", o->Id(), c);
 			DBG dynamic_cast<anObject*>(oo)->Id(str.c_str());
 			oo->FindBBox();
-			set->Push(oo, 1);
 		}
-	} else {
+
+	} else { //make dups
 		for (int c=0; c<n; c++) {
 			DrawableObject *oo = dynamic_cast<DrawableObject*>(o->duplicate());
 			DBG str.Sprintf("%s_%d", o->Id(), c);
 			DBG oo->Id(str.c_str());
 			oo->FindBBox();
-			set->Push(oo, 1);
+
+			if (c < set->n()) set->Set(c, oo, 1);
+			else set->Push(oo, 1);
 		}
 	}
 
@@ -1354,7 +1369,7 @@ int RotateDrawablesNode::Update()
 				}
 			}
 		}
-		o->Rotate(angle);
+		o->Rotate(angle * M_PI/180.);
 
 	} else { //oset of input drawables
 		SetValue *out = dynamic_cast<SetValue *>(properties.e[2]->GetData());
@@ -1388,7 +1403,7 @@ int RotateDrawablesNode::Update()
 				oo->FindBBox();
 				out->Push(oo, 1);
 			} //else oo is already in out, since out == oset
-			oo->Rotate(angle);
+			oo->Rotate(angle * M_PI/180.);
 		}
 	}
 
@@ -3699,6 +3714,9 @@ int PointsToBarsNode::UpdatePreview()
 
 class PointSetNode : public NodeBase
 {
+  protected:
+  	PointSetValue *psetvalue;
+
   public:
 	enum SetTypes {
 		Empty,
@@ -3716,13 +3734,15 @@ class PointSetNode : public NodeBase
 	virtual NodeBase *Duplicate();
 	virtual int Update();
 	virtual int GetStatus();
-	virtual int UpdatePreview();
 };
 
 
 PointSetNode::PointSetNode(PointSetNode::SetTypes ntype)
 {
+	psetvalue = nullptr;
 	settype = ntype;
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  false, "plain", new BooleanValue(false),1,  _("Plain set"),  NULL));
 
 	if (settype == Grid) {
 		makestr(type, "Points/Grid");
@@ -3770,23 +3790,9 @@ PointSetNode::PointSetNode(PointSetNode::SetTypes ntype)
 
 PointSetNode::~PointSetNode()
 {
+	if (psetvalue) psetvalue->dec_count();
 }
 
-int PointSetNode::UpdatePreview()
-{
-	return 0;
-	// LPathsData *pathsdata = dynamic_cast<LPathsData*>(properties.e[properties.n-1]->GetData());
-	// if (!pathsdata) return 0;
-	// LaxImage *img = pathsdata->GetPreview();
-	// if (img) {
-	// 	if (img != total_preview) {
-	// 		if (total_preview) total_preview->dec_count();
-	// 		total_preview = img;
-	// 		total_preview->inc_count();
-	// 	}
-	// }
-	// return 1;
-}
 
 NodeBase *PointSetNode::Duplicate()
 {
@@ -3822,17 +3828,17 @@ int PointSetNode::GetStatus()
 	else if (settype == RandomSquare) sigoff = OFFRSQUARE;
 	else if (settype == RandomCircle) sigoff = OFFRCIRCLE;
 	
-	for (int c=0; c<properties.n-1; c++) {
+	for (int c=1; c<properties.n-1; c++) {
 		Value *data = properties.e[c]->GetData();
-		if (!data) { types[c] = ' '; continue; }
+		if (!data) { types[c-1] = ' '; continue; }
 
 		// stype = data->whattype();
-		if (isNumberType(data, nullptr)) types[c] = 'n';
-		// else if (!strcmp(stype, "StringValue")) types[c] = 's';
-		else if (data->type() == VALUE_Flatvector) types[c] = 'v';
-		else types[c] = ' ';
+		if (isNumberType(data, nullptr)) types[c-1] = 'n';
+		// else if (!strcmp(stype, "StringValue")) types[c-1] = 's';
+		else if (data->type() == VALUE_Flatvector) types[c-1] = 'v';
+		else types[c-1] = ' ';
 	}
-	for (int c=properties.n-1; c<6; c++) types[c] = ' ';
+	for (int c=properties.n-2; c<6; c++) types[c] = ' ';
 	types[6] = '\0';
 
 	if (strncmp(sig+sigoff, types, 6)) return -1;
@@ -3846,30 +3852,48 @@ int PointSetNode::Update()
 	Error(nullptr);
 	if (GetStatus() == -1) return -1;
 
-	PointSetValue *set = dynamic_cast<PointSetValue*>(properties.e[properties.n-1]->GetData());
-	if (!set) {
-		set = new PointSetValue();
-		properties.e[properties.n-1]->SetData(set, 1);
-	} else {
-		set->Flush();
-		properties.e[properties.n-1]->Touch();
+	int isnum;
+	bool do_plain_set = getNumberValue(properties.e[0]->GetData(), &isnum);
+	if (!isnum) {
+		Error(_("Expected boolean!"));
+		return -1;
 	}
 
+	if (!psetvalue) psetvalue = new PointSetValue();
+
+	PointSetValue *set = psetvalue;
+	SetValue *plainset = nullptr;
+
+	//make out property correct type
+	if (do_plain_set) {
+		plainset = dynamic_cast<SetValue*>(properties.e[properties.n-1]->GetData());
+		if (!plainset) {
+			plainset = new SetValue();
+			properties.e[properties.n-1]->SetData(plainset, 1);
+		} else {
+			plainset->Flush();
+		}
+	} else {
+		if (properties.e[properties.n-1]->GetData() != psetvalue) {
+			properties.e[properties.n-1]->SetData(psetvalue, 0);
+		}
+	}
+	set->Flush();
+
 	if (settype == Grid) {
-		int isnum;
-		double x = getNumberValue(properties.e[0]->GetData(), &isnum);
+		double x = getNumberValue(properties.e[1]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad x")); return -1; }
-		double y = getNumberValue(properties.e[1]->GetData(), &isnum);
+		double y = getNumberValue(properties.e[2]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad y")); return -1; }
-		double w = getNumberValue(properties.e[2]->GetData(), &isnum);
+		double w = getNumberValue(properties.e[3]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad width")); return -1; }
-		double h = getNumberValue(properties.e[3]->GetData(), &isnum);
+		double h = getNumberValue(properties.e[4]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad height")); return -1; }
-		int nx = getNumberValue(properties.e[4]->GetData(), &isnum);
+		int nx = getNumberValue(properties.e[5]->GetData(), &isnum);
 		if (!isnum || nx <= 0) { makestr(error_message, _("Bad num x")); return -1; }
-		int ny = getNumberValue(properties.e[5]->GetData(), &isnum);
+		int ny = getNumberValue(properties.e[6]->GetData(), &isnum);
 		if (!isnum || ny <= 0) { makestr(error_message, _("Bad num y")); return -1; }
-		bool centers = getNumberValue(properties.e[6]->GetData(), &isnum);
+		bool centers = getNumberValue(properties.e[7]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Expected boolean for centers")); return -1; }
 
 		if (centers) {
@@ -3884,10 +3908,10 @@ int PointSetNode::Update()
 
 	} else if (settype == HexGrid) {
 		flatvector o;
-		FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(properties.e[0]->GetData());
+		FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(properties.e[1]->GetData());
 		if (fv) o = fv->v;
 		else {
-			AffineValue *av = dynamic_cast<AffineValue*>(properties.e[0]->GetData());
+			AffineValue *av = dynamic_cast<AffineValue*>(properties.e[1]->GetData());
 			if (av) o = av->origin();
 			else { 
 				Error(_("Expected vector"));
@@ -3895,10 +3919,10 @@ int PointSetNode::Update()
 			}
 		}
 		int isnum = 0;
-		double l = getNumberValue(properties.e[1]->GetData(), &isnum);
+		double l = getNumberValue(properties.e[2]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad edge length")); return -1; }
 
-		int n = getNumberValue(properties.e[2]->GetData(), &isnum);
+		int n = getNumberValue(properties.e[3]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad num on edge")); return -1; }
 
 		set->CreateHexChunk(l, n);
@@ -3906,10 +3930,10 @@ int PointSetNode::Update()
 	
 	} else if (settype == RandomSquare) {
 		flatvector o;
-		FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(properties.e[0]->GetData());
+		FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(properties.e[1]->GetData());
 		if (fv) o = fv->v;
 		else {
-			AffineValue *av = dynamic_cast<AffineValue*>(properties.e[0]->GetData());
+			AffineValue *av = dynamic_cast<AffineValue*>(properties.e[1]->GetData());
 			if (av) o = av->origin();
 			else { 
 				Error(_("Expected vector"));
@@ -3917,25 +3941,25 @@ int PointSetNode::Update()
 			}
 		}
 		int isnum = 0;
-		double w = getNumberValue(properties.e[1]->GetData(), &isnum);
+		double w = getNumberValue(properties.e[2]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad width")); return -1; }
-		double h = getNumberValue(properties.e[2]->GetData(), &isnum);
+		double h = getNumberValue(properties.e[3]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad height")); return -1; }
 
-		int n = getNumberValue(properties.e[3]->GetData(), &isnum);
+		int n = getNumberValue(properties.e[4]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad num points")); return -1; }
 
-		int seed = getNumberValue(properties.e[4]->GetData(), &isnum);
+		int seed = getNumberValue(properties.e[5]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad seed")); return -1; }
 
 		set->CreateRandomPoints(n, seed, o.x-w/2,o.x+w/2, o.y-h/2, o.y+h/2);
 
 	} else if (settype == RandomCircle) {
 		flatvector o;
-		FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(properties.e[0]->GetData());
+		FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(properties.e[1]->GetData());
 		if (fv) o = fv->v;
 		else {
-			AffineValue *av = dynamic_cast<AffineValue*>(properties.e[0]->GetData());
+			AffineValue *av = dynamic_cast<AffineValue*>(properties.e[1]->GetData());
 			if (av) o = av->origin();
 			else { 
 				Error(_("Expected vector"));
@@ -3943,19 +3967,28 @@ int PointSetNode::Update()
 			}
 		}
 		int isnum = 0;
-		double r = getNumberValue(properties.e[1]->GetData(), &isnum);
+		double r = getNumberValue(properties.e[2]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad radius")); return -1; }
 		
-		int n = getNumberValue(properties.e[2]->GetData(), &isnum);
+		int n = getNumberValue(properties.e[3]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad num points")); return -1; }
 
-		int seed = getNumberValue(properties.e[3]->GetData(), &isnum);
+		int seed = getNumberValue(properties.e[4]->GetData(), &isnum);
 		if (!isnum) { makestr(error_message, _("Bad seed")); return -1; }
 
 		set->CreateRandomRadial(n, seed, o.x, o.y, r);
 	}
 
-	// set->FindBBox();
+	if (plainset) {
+		for (int c=0; c<set->NumPoints(); c++) {
+			FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(plainset->e(c));
+			if (c < plainset->n()) {
+				fv->v = set->Point(c);
+			} else plainset->Push(new FlatvectorValue(set->Point(c)), 1);
+		}
+		while (plainset->n() > set->NumPoints()) plainset->Remove(plainset->n()-1);
+	}
+	properties.e[properties.n-1]->Touch();
 	UpdatePreview();
 	Wrap();
 	return NodeBase::Update();

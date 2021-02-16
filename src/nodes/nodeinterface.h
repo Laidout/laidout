@@ -438,6 +438,7 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	virtual int ForceUpdates();
 	virtual int UpdateAllRecursively();
 	virtual void ManualUpdate(bool yes);
+	virtual void SoftUpdate(int reason);
 
 	virtual void       dump_out(FILE *f, int indent, int what, LaxFiles::DumpContext *context);
     virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context);
@@ -521,7 +522,9 @@ enum NodeHover {
 	NODES_Thread_Run     ,
 	NODES_Thread_Reset   ,
 	NODES_Thread_Break   ,
-	NODES_Reroute        ,
+	NODES_Reroute        , //a special_type
+	NODES_Debug          , //a special_type
+	NODES_Global_Var     , //a special_type
 	NODES_HOVER_MAX
 };
 
@@ -675,6 +678,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual int EditProperty(int nodei, int propertyi);
 	virtual int send();
 	virtual void UpdateCurrentColor(const Laxkit::ScreenColor &col);
+	virtual void DebugOut(double x, double &y, Value *v);
+	virtual void PlaceNewNode(NodeBase *newnode, flatpoint pos, bool place_near_mouse, bool is_new);
 
   public:
 	unsigned int node_interface_style;
@@ -735,6 +740,10 @@ class NodeInterface : public LaxInterfaces::anInterface
 
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *savecontext);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *loadcontext);
+
+	//system dnd
+	virtual int selectionDropped(const unsigned char *data,unsigned long len,const char *actual_type,const char *which);
+	virtual bool DndWillAcceptDrop(int x, int y, const char *action, Laxkit::IntRectangle &rect, char **types, int *type_ret);
 };
 
 

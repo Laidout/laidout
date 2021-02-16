@@ -27,6 +27,7 @@
 #include <lax/popupmenu.h>
 #include <lax/colorsliders.h>
 #include <lax/filedialog.h>
+#include <lax/fileutils.h>
 #include <lax/language.h>
 
 #include <string>
@@ -140,6 +141,8 @@ NodeColors::NodeColors()
 	font  = NULL;
 	next  = NULL;
 	slot_radius=.25; //portion of text height
+
+	DBG cerr << "NodeColors contstructor "<<object_id<<endl;
 }
 
 NodeColors::~NodeColors()
@@ -650,7 +653,7 @@ void NodeFrame::Wrap(double gap)
 
 	double lw = (label && owner && owner->colors ? owner->colors->font->Extent(label,-1) : 100);
 	if (box.boxwidth() < lw) box.maxx = box.minx + lw;
-	box.ShiftBounds(-gap,gap, -(th*1.5 + gap),gap);
+	box.ShiftBounds(-gap,gap, -(th*label_size*1.5 + gap),gap);
 
 	x = box.minx;
 	y = box.miny;
@@ -664,6 +667,7 @@ LaxFiles::Attribute *NodeFrame::dump_out_atts(LaxFiles::Attribute *att, int what
 		if (!att) att = new Attribute();
 		att->push("label", "Some label");
 		att->push("comment", "Some comment");
+		att->push("label_size", "1", "Times normal size");
 		att->push("bg", "rgbf(255,0,0)", "Optional background color");
 		att->push("node", "node1_Id", "Any number of nodes that are part of this frame");
 		att->push("node", "node2_Id");
@@ -673,6 +677,7 @@ LaxFiles::Attribute *NodeFrame::dump_out_atts(LaxFiles::Attribute *att, int what
 	if (!att) att = new Attribute();
 	if (label) att->push("label", label);
 	if (comment) att->push("comment", comment);
+	att->push("label_size", label_size);
 
 	if (bg) {
 		char *str = bg->dump_out_simple_string();
@@ -705,6 +710,12 @@ void NodeFrame::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpC
 		} else if (!strcmp(name,"bg")) {
 			if (bg) bg->dec_count();
 			bg = ColorManager::newColor(att->attributes.e[c]);
+
+		} else if (!strcmp(name,"label_size")) {
+			double d;
+			if (DoubleAttribute(value, &d) && d >= 1) {
+				label_size = d;
+			}
 
 		} else if (!strcmp(name,"node")) {
 			if (owner) {
@@ -1013,7 +1024,7 @@ void NodeBase::PropagateUpdate()
 	}
 }
 
-/*! Set modtime to 0, and do the same for any connected outs.
+/*! Set node modtime to 0, and do the same for any connected outs.
  */
 void NodeBase::MarkMustUpdate()
 {
@@ -1023,6 +1034,7 @@ void NodeBase::MarkMustUpdate()
 
 		if (property->IsInput()) {
 			// *** causes stack overflow: if (property->topropproxy) property->topropproxy->owner->MarkMustUpdate();
+			property->Touch();
 
 		} else if (property->IsOutput()) {
 			property->modtime = 0;
@@ -2508,6 +2520,21 @@ int NodeGroup::Disconnect(NodeConnection *connection, bool from_will_be_replaced
 	return 0;
 }
 
+/*! A kind of cheap workaround to Value lacking proper modtime support.
+ */
+void NodeGroup::SoftUpdate(int reason)
+{
+	// int num_to_update = 0;
+	for (int c=0; c<nodes.n; c++) {
+		NodeBase *node = nodes.e[c];
+		NodeGroup *group = dynamic_cast<NodeGroup*>(node);
+		if (group) group->SoftUpdate(reason);
+		else {
+			if (node->special_type == NODES_Global_Var) node->MarkMustUpdate();
+		}
+	}
+}
+
 /*! 
  * Update all the nodes in the group, starting from leftmost. ****THIS IS EXTREMELY INEFFICIENT
  * 
@@ -3878,6 +3905,9 @@ void NodeInterface::RebuildNodeMenu()
 		type = node_factory->types.e[c];
 		node_menu->AddDelimited(type->name); //, '/', 0, c);
 	}
+
+	// DBG cerr << "Node menu dump:"<<endl;
+	// DBG menuinfoDump(node_menu, 2);
 }
 
 ///*! Draw an open path such that first point is BG() and last point is FG().
@@ -4090,6 +4120,7 @@ int NodeInterface::Refresh()
 	dp->NewBG(&nodes->colors->bg_frame);
 	for (int c=0; c<nodes->frames.n; c++) {
 		NodeFrame *frame = nodes->frames.e[c];
+		dp->font(nodes->colors->font, nodes->colors->font->textheight() * frame->label_size);
 		if (frame->bg) dp->NewBG(frame->bg->screen);
 		if (frame == selected_frame) dp->LineWidth(2);
 		dp->drawRoundedRect(frame->x, frame->y, frame->width, frame->height,
@@ -4098,7 +4129,16 @@ int NodeInterface::Refresh()
 		if (frame->Label())
 			dp->textout(th+frame->x, th*.5 + frame->y, frame->Label(), -1, LAX_LEFT|LAX_TOP);
 		if (frame->bg) dp->NewBG(&nodes->colors->bg_frame);
+		
+		if (lasthoverprop == NODES_Frame_Label_Size && lasthoverslot == c) {
+			dp->moveto(frame->x + .5*th, frame->y+1.5*th*frame->label_size);
+			dp->lineto(frame->x + .7*th, frame->y+.25*th);
+			dp->lineto(frame->x + .3*th, frame->y+.25*th);
+			dp->closed();
+			dp->stroke(0);
+		}
 	}
+	dp->font(nodes->colors->font);
 
 	 //---draw connections
 	dp->NewFG(&nodes->colors->connection);
@@ -4132,9 +4172,13 @@ int NodeInterface::Refresh()
 	NodeProperty *prop;
 
 	int num_need_updating = 0;
+	Value *todebug = nullptr;
 
 	for (int c=0; c<nodes->nodes.n; c++) {
 		node = nodes->nodes.e[c];
+		if (node->special_type == NODES_Debug) {
+			todebug = node->properties.e[0]->GetData();
+		}
 
 		 //make current threads show up by drawing colored box behind
 		if (show_threads && threads.n && IsThread(node)) {
@@ -4359,6 +4403,14 @@ int NodeInterface::Refresh()
 
 	dp->PopAxes();
 
+	if (todebug) {
+		double y = 2*th;
+		dp->DrawScreen();
+		dp->NewFG(0.,0.,0.,1.);
+		DebugOut(0, y, todebug);
+		dp->DrawReal();
+	}
+
 	if (num_need_updating && try_refresh) {
 	// if (num_need_updating) {
 		DBG cerr << "Num need updating: "<<num_need_updating<<endl;
@@ -4368,6 +4420,68 @@ int NodeInterface::Refresh()
 	}
 
 	return 0;
+}
+
+/*! Write out diagnostic info about v.
+ */
+void NodeInterface::DebugOut(double x, double &y, Value *v)
+{
+	if (!v) return;
+
+	double xx = x;
+	double th = dp->textheight();
+	xx += th + dp->textout(x,y, v->Id(), -1, LAX_LEFT|LAX_TOP);
+	xx += dp->textout(xx,y, v->whattype(), -1, LAX_LEFT|LAX_TOP);
+	char scratch[200];
+
+	if (v->type() == VALUE_Set) {
+		SetValue *set = dynamic_cast<SetValue*>(v);
+		y += th;
+		for (int c=0; c<set->n(); c++) {
+			DebugOut(x+th,y,set->e(c));
+		}
+
+	} else if (v->type() == VALUE_Hash) {
+		ValueHash *h = dynamic_cast<ValueHash*>(v);
+		y += th;
+		for (int c=0; c<h->n(); c++) {
+			const char *key = h->key(c);
+			double xxx = x+th+th + dp->textout(x+th+th, y, key, -1, LAX_LEFT|LAX_TOP);
+			xxx += dp->textout(xxx, y, ": ", 2, LAX_LEFT|LAX_TOP);
+			DebugOut(xxx+th,y, h->value(c));
+		}
+
+	} else if (v->type() == VALUE_Flatvector) {
+		FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(v);
+		sprintf(scratch, "(%g, %g)", fv->v.x, fv->v.y);
+		dp->textout(xx+th, y, scratch, -1, LAX_LEFT|LAX_TOP);
+		y += th;
+
+	} else if (v->type() == VALUE_Real || v->type() == VALUE_Int) {
+		double d = 0;
+		if (v->type() == VALUE_Real) d = dynamic_cast<DoubleValue*>(v)->d;
+		else if (v->type() == VALUE_Int) d = dynamic_cast<IntValue*>(v)->i;
+		sprintf(scratch, "%g", d);
+		dp->textout(xx+th, y, scratch, -1, LAX_LEFT|LAX_TOP);
+		y += th;
+
+	} else if (v->type() == VALUE_Boolean) {
+		dp->textout(xx+th, y, dynamic_cast<BooleanValue*>(v)->i ? "true" : "false", -1, LAX_LEFT|LAX_TOP);
+		y += th;
+
+	} else if (v->type() == VALUE_String) {
+		StringValue *vv = dynamic_cast<StringValue*>(v);
+		dp->textout(xx+th, y, vv->str,-1, LAX_LEFT|LAX_TOP);
+		y += th;
+
+	} else if (v->type() == VALUE_File) {
+		FileValue *vv = dynamic_cast<FileValue*>(v);
+		dp->textout(xx+th, y, vv->filename,-1, LAX_LEFT|LAX_TOP);
+		y += th;
+
+	} else {
+		y += th;
+	}
 }
 
 void NodeInterface::NodesChanged()
@@ -5076,15 +5190,19 @@ int NodeInterface::scan(int x, int y, int *overpropslot, int *overproperty, int 
 	}
 
 	//check frame related
-	for (int c = nodes->frames.n-1; c >= 0; c--) {
-		if (nodes->frames.e[c]->pointIsIn(p.x, p.y)) {
-			*overproperty = NODES_Frame;
-			*overpropslot = c;
+	if ((state & (ShiftMask | ControlMask)) == 0) {
+		for (int c = nodes->frames.n-1; c >= 0; c--) {
+			if (nodes->frames.e[c]->pointIsIn(p.x, p.y)) {
+				*overproperty = NODES_Frame;
+				*overpropslot = c;
 
-			if (p.y < nodes->frames.e[c]->y + 1.5*th) {
-				*overproperty = NODES_Frame_Label;
+				if (p.y < nodes->frames.e[c]->y + .5*th + th*nodes->frames.e[c]->label_size) {
+					if (p.x < nodes->frames.e[c]->x+1.5*th)
+						*overproperty = NODES_Frame_Label_Size;
+					else *overproperty = NODES_Frame_Label;
+				}
+				return -1;
 			}
-			return -1;
 		}
 	}
 
@@ -5141,6 +5259,11 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 		selected_frame = nodes->frames.e[overpropslot];
 		UpdateCurrentColor(selected_frame->bg ? selected_frame->bg->screen : nodes->colors->bg_frame);
 		action = NODES_Move_Frame;
+
+	} else if (overnode<0 && (overproperty == NODES_Frame_Label_Size)) {
+		selected_frame = nodes->frames.e[overpropslot];
+		UpdateCurrentColor(selected_frame->bg ? selected_frame->bg->screen : nodes->colors->bg_frame);
+		action = NODES_Frame_Label_Size;
 
 	} else if (overproperty == NODES_Connection) {
 		if ((state&(ShiftMask|ControlMask)) == ShiftMask) action = NODES_Add_Reroute;
@@ -5745,6 +5868,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		DoubleBBox bounds;
 		bounds.addtobounds(ul);
 		bounds.addtobounds(lr);
+		bounds.ExpandBounds(th/2);
 
 		viewport->SetupInputBox(object_id, NULL, node->Label(), "setNodeLabel", bounds);
 
@@ -5759,6 +5883,7 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		DoubleBBox bounds;
 		bounds.addtobounds(ul);
 		bounds.addtobounds(lr);
+		bounds.ExpandBounds(th/2);
 
 		viewport->SetupInputBox(object_id, NULL, frame->Label(), "setFrameLabel", bounds);
 
@@ -5892,7 +6017,8 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 
 			//post hover message
 			if (lasthover<0) {
-				if (lasthoverprop == NODES_Frame || lasthoverprop == NODES_Move_Frame || lasthoverprop == NODES_Frame_Label) {
+				if (lasthoverprop == NODES_Frame || lasthoverprop == NODES_Move_Frame 
+					|| lasthoverprop == NODES_Frame_Label || lasthoverprop == NODES_Frame_Label_Size) {
 					PostMessage2("Frame %s", nodes->frames.e[lasthoverslot]->Label());
 				} else PostMessage("");
 			} else {
@@ -6074,17 +6200,36 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 		if (selected.n && nodes) {
 			flatpoint d=nodes->m.transformPointInverse(flatpoint(x,y)) - nodes->m.transformPointInverse(flatpoint(lx,ly));
 
-			for (int c=0; c<selected.n; c++) {
+			double width = -1;
+			if (lasthover >= 0 && (state & (ShiftMask|ControlMask)) == 0) {
 				if (action == NODES_Resize_Left) {
-					if (selected.e[c]->width - d.x > 0) {
-						selected.e[c]->x += d.x;
-						selected.e[c]->width -= d.x;
+					if (nodes->nodes.e[lasthover]->width - d.x > 0) {
+						nodes->nodes.e[lasthover]->x += d.x;
+						nodes->nodes.e[lasthover]->width -= d.x;
 					}
-
 				} else {
-					if (selected.e[c]->width + d.x > 0) selected.e[c]->width += d.x;
-
+					if (nodes->nodes.e[lasthover]->width + d.x > 0) nodes->nodes.e[lasthover]->width += d.x;
 				}
+				width = nodes->nodes.e[lasthover]->width;
+			}
+
+			for (int c=0; c<selected.n; c++) {
+				if (width > 0) {
+					if (action == NODES_Resize_Left)
+						selected.e[c]->x = selected.e[c]->x + selected.e[c]->width - width;
+					selected.e[c]->width = width;
+				} else {
+					//move them all independently
+					if (action == NODES_Resize_Left) {
+						if (selected.e[c]->width - d.x > 0) {
+							selected.e[c]->x += d.x;
+							selected.e[c]->width -= d.x;
+						}
+					} else {
+						if (selected.e[c]->width + d.x > 0) selected.e[c]->width += d.x;
+					}
+				}
+
 
 				double th = font->textheight();
 				if (selected.e[c]->width < 2*th)  selected.e[c]->width = 2*th;
@@ -6156,6 +6301,19 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 		node->UpdateLayout();
 
 		needtodraw=1;
+		return 0;
+
+	} else if (action == NODES_Frame_Label_Size) {
+		NodeFrame *frame = nodes->frames.e[lasthoverslot];
+
+		double dy = (ly - y) * nodes->m.GetMagnification(1,0);
+		double oldth = nodes->colors->font->textheight() * frame->label_size;
+		double nth = oldth + dy;
+		// double scale = nth / oldth;
+		if (nth >= nodes->colors->font->textheight()) frame->label_size = nth / nodes->colors->font->textheight();
+		frame->y -= nth-oldth;
+		frame->height += nth-oldth;
+		needtodraw = 1;
 		return 0;
 	}
 
@@ -7109,6 +7267,170 @@ void NodeInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::Dum
 			UseResource(value);
 		}
 	}
+}
+
+/*! If place_near_mouse, pos will be ignored. Else pos is a real position (not screen position).
+ * If is_new, then install colors, wrap, and add to nodes (doing FreshNodes() if nodes does not exist). This 
+ * will absorb the count.
+ */
+void NodeInterface::PlaceNewNode(NodeBase *newnode, flatpoint pos, bool place_near_mouse, bool is_new)
+{
+	if (place_near_mouse) {
+		int mx=(dp->Maxx+dp->Minx)/2, my=(dp->Maxy+dp->Miny)/2;
+		int status=mouseposition(0, curwindow, &mx, &my, NULL, NULL, NULL);
+		if (status!=0 || mx<0 || mx>curwindow->win_w || my<0 || my>curwindow->win_h) {
+			mx=(dp->Maxx+dp->Minx)/2;
+			my=(dp->Maxy+dp->Miny)/2;
+		}
+		pos.set(mx,my);
+		pos = nodes->m.transformPointInverse(pos);
+	}
+	newnode->x  = pos.x;
+	newnode->y  = pos.y;
+
+	if (is_new) {
+		if (!nodes) FreshNodes(true);
+		newnode->InstallColors(nodes->colors, false);
+		newnode->Wrap();
+		nodes->AddNode(newnode);
+		newnode->dec_count();
+		NodesChanged();
+	}
+
+	needtodraw=1;
+}
+
+/*! Returns 0 if used, nonzero otherwise. */
+int NodeInterface::selectionDropped(const unsigned char *data,unsigned long len,const char *actual_type,const char *which)
+{
+	DBG cerr << "NodeInterface::selectionDropped, which: "<<(which ? which : "null")<<endl;
+
+	if (!strcmp(actual_type, "text/uri-list")) {
+		int n = 0;
+		char **files = splitonnewline((const char *)data, &n);
+		flatpoint pos;
+		double th = 0;
+		const char *ext;
+
+		if (n) {
+			int numadded = 0;
+			NodeBase *newnode = nullptr;
+
+			for (int c=0; c<n; c++) {
+				newnode = nullptr;
+
+				const char *fname = files[c];
+				if (!strncmp(fname, "file://", 7)) fname += 7;
+				if (isblank(fname)) continue;
+
+				if (!S_ISREG(file_exists(fname, true, nullptr))) {
+					DBG cerr << "WARNING! Could not open "<<fname<<endl;
+					continue;
+				}
+
+				DBG cerr <<"Trying to convert file to node: "<<fname<<endl;
+
+				ext = lax_extension(fname);
+
+				if (ext && !strcasecmp(ext, "json")) {
+					newnode = dynamic_cast<NodeBase*>(node_factory->NewObject("Files/JsonFile", nullptr));
+					FileValue *fv = dynamic_cast<FileValue*>(newnode->properties.e[0]->GetData());
+					fv->Set(fname);
+
+				} else if (ext && !strcasecmp(ext, "csv")) {
+					newnode = dynamic_cast<NodeBase*>(node_factory->NewObject("Files/CSVFile", nullptr));
+					FileValue *fv = dynamic_cast<FileValue*>(newnode->properties.e[0]->GetData());
+					fv->Set(fname);
+
+				} else if (ext && !strcasecmp(ext, "txt")) {
+					// text file
+					newnode = dynamic_cast<NodeBase*>(node_factory->NewObject("Strings/TextFromFile", nullptr));
+					FileValue *fv = dynamic_cast<FileValue*>(newnode->properties.e[0]->GetData());
+					fv->Set(fname);
+
+				} else {
+					// ImageFile node
+					if (ImageLoader::Ping(fname, nullptr, nullptr, nullptr, nullptr) == 0) {
+						//is image
+						newnode = dynamic_cast<NodeBase*>(node_factory->NewObject("Images/ImageFile", nullptr));
+						FileValue *fv = dynamic_cast<FileValue*>(newnode->properties.e[0]->GetData());
+						fv->Set(fname);
+					}				
+				}
+
+
+				if (newnode) {
+					numadded++;
+					if (numadded == 1) {
+						if (!nodes) FreshNodes(true);
+						selected.flush();
+						th = nodes->colors->font->textheight();
+					}
+					PlaceNewNode(newnode, pos, numadded == 1, true);
+					newnode->Update();
+					// newnode->UpdatePreview();
+					newnode->Wrap();
+					pos.x = newnode->x;
+					pos.y = newnode->y + newnode->height + th/2;
+					selected.push(newnode);
+				}
+			}
+		}
+		deletestrs(files, n);
+		return 0;
+	}
+
+	if ( !strcmp(actual_type, "text/plain;charset=UTF-8") || !strcmp(actual_type, "UTF8_STRING")
+	  || !strcmp(actual_type, "text/plain") || !strcmp(actual_type, "TEXT")) {
+		
+		if (!nodes) FreshNodes(true);
+
+		NodeBase *newnode = dynamic_cast<NodeBase*>(node_factory->NewObject("Basics/String", nullptr));
+		StringValue *sv = dynamic_cast<StringValue*>(newnode->properties.e[0]->GetData());
+		sv->Set((const char *)data,len);
+
+		makestr(newnode->type, "Basics/String"); //protect against mismatch between constructor type and factory type
+		PlaceNewNode(newnode, flatpoint(), true, true);
+
+		selected.flush();
+		selected.push(newnode);
+
+		needtodraw=1;
+		return 0;
+	}
+
+	return 1;			
+}
+
+bool NodeInterface::DndWillAcceptDrop(int x, int y, const char *action, Laxkit::IntRectangle &rect, char **types, int *type_ret)
+{
+	// hopefully file list...
+	for (int c=0; types[c]; c++) {
+		DBG cerr << "..compare dnd type "<<c<<": "<<types[c]<<endl;
+		if (!strcmp(types[c], "text/uri-list")) {
+			DBG cerr << "NodeInterface::DndWillAcceptDrop() "<<c<<": "<<types[c]<<endl;
+			*type_ret = c;
+			return true;
+		}
+	}
+
+	// ok for text to StringValue:
+	for (int c=0; types[c]; c++) {
+		if (!strcmp(types[c], "text/plain;charset=UTF-8") || !strcmp(types[c], "UTF8_STRING")) {
+			DBG cerr << "NodeInterface::DndWillAcceptDrop() "<<c<<": "<<types[c]<<endl;
+			*type_ret = c;
+			return true;
+		}
+	}
+	for (int c=0; types[c]; c++) {
+		if (!strcmp(types[c], "text/plain") || !strcmp(types[c], "TEXT")) {
+			*type_ret = c;
+			DBG cerr << "NodeInterface::DndWillAcceptDrop() "<<c<<": "<<types[c]<<endl;
+			return true;
+		}
+	}
+
+	return false;
 }
 
 
