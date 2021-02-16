@@ -357,8 +357,8 @@ class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual
 	void swap(int i1, int i2);
 
 	void renameKey(int i,const char *newname);
-	int set(const char *key, Value *newv);
-	int set(int which, Value *newv);
+	int set(const char *key, Value *newv, bool absorb = false);
+	int set(int which, Value *newv, bool absorb = false);
 	int CopyFrom(ValueHash *hash, bool linked);
 
 	int n();
@@ -751,9 +751,10 @@ int isName(const char *longstr,int len, const char *null_terminated_str);
 Value *AttributeToValue(LaxFiles::Attribute *att);
 Value *NewSimpleType(int type);
 
-Value *JsonToValue(const char *str);
+Value *JsonToValue(const char *str, const char **end_ptr);
 Value *ValueToJson(const char *str);
 
+Value *CSVStringToValue(const char *str, const char *delimiter, bool has_headers, bool prefer_cols, int *error_ret);
 
 //-------------------------- Default ObjectDefs for builtin types ---------------------
 ObjectDef *Get_BooleanValue_ObjectDef();

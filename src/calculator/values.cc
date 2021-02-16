@@ -2059,7 +2059,7 @@ void ValueHash::renameKey(int i,const char *newname)
 /*! Set value of an existing key. Return 0 for success, or nonzero for error such as key not found.
  * Increments count of newv. If key not found, use push instead.
  */
-int ValueHash::set(const char *key, Value *newv)
+int ValueHash::set(const char *key, Value *newv, bool absorb)
 {
 	int i=findIndex(key);
 	return set(i,newv);
@@ -2069,10 +2069,10 @@ int ValueHash::set(const char *key, Value *newv)
 /*! Return 0 for success, or nonzero for error.
  * Increments count of newv.
  */
-int ValueHash::set(int which, Value *newv)
+int ValueHash::set(int which, Value *newv, bool absorb)
 {
 	if (which<0 || which>=keys.n) return 1;
-	if (newv) newv->inc_count();
+	if (newv && !absorb) newv->inc_count();
 	if (values.e[which]) values.e[which]->dec_count();
 	values.e[which]=newv;
 	return 0;
@@ -3024,16 +3024,377 @@ Value *JsonToValue(const char *jsonstring, const char **end_ptr)
 	return nullptr;
 }
 
+/*! Append to str. Return 0 for success or nonzero error.
+ * If error, return the offending error in err_value.
+ */
+int ValueToJsonRecurse(Value *val, Utf8String &str, Value **err_value, int indent, bool fail_on_non_json)
+{
+	if (!val || val->type() == VALUE_None) {
+		str.Append("null");
+	}
+
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	char scratch[30];
+	if (val->type() == VALUE_Int) {
+		sprintf(scratch, "%s%ld", spc, dynamic_cast<IntValue*>(val)->i);
+		str.Append(scratch);
+
+	} else if (val->type() == VALUE_Boolean) {
+		if (indent) str.Append(spc);
+		str.Append(dynamic_cast<BooleanValue*>(val)->i ? "true" : "false");
+
+	} else if (val->type() == VALUE_Real) {
+		sprintf(scratch, "%s%g", spc, dynamic_cast<DoubleValue*>(val)->d);
+		str.Append(scratch);
+
+	} else if (val->type() == VALUE_String) {
+		if (indent) str.Append(spc);
+		str.Append("\"");
+		str.Append(dynamic_cast<StringValue*>(val)->str);
+		str.Append("\"");
+		cerr << " *** NEED TO escape json string chars if necessary!!"<<endl;
+
+	} else if (val->type() == VALUE_Set) {
+		SetValue *set = dynamic_cast<SetValue*>(val);
+		if (indent) str.Append(spc);
+		if (set->n() == 0) str.Append("[]");
+		else {
+			str.Append("[\n");
+			for (int c=0; c < set->n(); c++) {
+				if (ValueToJsonRecurse(set->e(c), str, err_value, indent+2, fail_on_non_json) != 0) {
+					return 1;
+				}
+				if (c != set->n()-1) str.Append(",\n");
+			}
+			if (indent) str.Append(spc);
+			str.Append("]");
+		}
+
+	} else if (val->type() == VALUE_Hash) {
+		ValueHash *hash = dynamic_cast<ValueHash*>(val);
+		if (indent) str.Append(spc);
+		if (hash->n() == 0) str.Append("{}");
+		else {
+			str.Append("{\n");
+			for (int c=0; c < hash->n(); c++) {
+				str.Append("\"");
+				str.Append(hash->key(c));
+				cerr << " *** NEED TO escape json string chars if necessary!!"<<endl;
+				str.Append("\": ");
+				if (ValueToJsonRecurse(hash->value(c), str, err_value, indent+2, fail_on_non_json) != 0) {
+					return 1;
+				}
+				if (c != hash->n()-1) str.Append(",\n");
+			}
+			if (indent) str.Append(spc);
+			str.Append("}");
+		}
+
+	} else {
+		if (!fail_on_non_json) {
+			// *** convert value to string??
+		}
+		if (err_value) *err_value = val;
+		return 1;
+	}
+
+	if (err_value) *err_value = nullptr;
+	return 0;
+}
+
+
 /*! The reverse of JsonToValue.
  *
  * If fail_on_non_json, fail if val contains anything other than:
  *   NullValue, SetValue, ValueHash, IntValue, BooleanValue, DoubleValue, StringValue.
  * Otherwise, non-json values are converted to strings.
  */
-char *ValueToJson(Value *val, bool fail_on_non_json)
+char *ValueToJson(Value *val, bool fail_on_non_json, Value **err_value)
 {
-	cerr << " *** NEED TO IMPLEMENT ValueToJson()!!"<<endl;
+	Utf8String str;
+	if (ValueToJsonRecurse(val, str, err_value, 0, fail_on_non_json) != 0) {
+		return nullptr;
+	}
+
+	char *sstr = str.ExtractBytes(nullptr, nullptr, nullptr);
+	return sstr;
+
 	return nullptr;
+}
+
+
+//---------------------------- CSV helpers ---------------------------------------
+
+/*! If has_headers && prefer_cols, return a ValueHash whose keys are the column headers and values are
+ * SetValue objects of the rows in those columns.
+ * 
+ * If has_headers && !prefer_cols, return a  SetValue whose elements are ValueHash objects of the columns.
+ *
+ * If !has_headers && prefer_cols, return a SetValue whose elements are SetValues of the column's rows.
+ *
+ * If !has_headers && !prefer_cols, return a SetValue whose elements are SetValues of each row.
+ *
+ * Individual cells will either be IntValue, DoubleValue, or StringValue as appropriate.
+ */
+Value *CSVStringToValue(const char *str, const char *delimiter, bool has_headers, bool prefer_cols, int *error_ret)
+{
+	IOBuffer buf;
+	if (buf.OpenCString(str) != 0) {
+		if (error_ret) *error_ret = -1;
+		return nullptr;
+	}
+
+	Value *val = nullptr;
+	int err = 0;
+
+	if (has_headers && prefer_cols) {
+		//Hash of Sets
+		ValueHash *everything = new ValueHash();
+		PtrStack<SetValue> cols;
+		val = everything;
+		
+		int numcols = 0;
+		int curcol = -1;
+		int currow = -1;
+
+		ParseCSV(buf, delimiter, has_headers,
+	 		[&]() {  //new row
+	 			if (currow > 0 && curcol+1 < cols.n) {
+	 				curcol++;
+	 				while (curcol < cols.n) {
+	 					cols.e[curcol]->Push(new NullValue(), 1);
+	 					curcol++;
+	 				}
+	 			}
+	 			currow++;
+	 			curcol = -1;
+	 		},
+	 		[&](const char *content, int len) { // NewHeader
+	 			curcol++;
+	 			numcols++;
+	 			SetValue *col = new SetValue();
+	 			char *name = newnstr(content,len);
+	 			everything->push(name, col);
+	 			col->dec_count();
+	 			cols.push(col,0);
+	 			delete[] name;
+
+	 		},
+	 		[&](const char *content, int len) {   //NewCell
+	 			curcol++;
+	 			if (curcol >= numcols) return; //ignore cells that don't have headers
+
+	 			int i = 0;
+	 			Value *v = nullptr;
+	 			if (IsOnlyInt(content, len, &i)) {
+	 				v = new IntValue(i);
+
+	 			} else {
+	 				double d;
+	 				if (IsOnlyDouble(content, len, &d)) {
+	 					v = new DoubleValue(d);
+
+	 				} else { //punt to string
+		 				StringValue *sv = new StringValue;
+		 				sv->Set(content, len);
+		 				v = sv;
+	 				}
+	 			}
+
+	 			cols.e[curcol]->Push(v,1);
+	 		},
+	 		[&](const char *error) {
+	 			DBG cerr << "Parse csv error "<<err<<": "<<(error?error:"?")<<endl;
+	 			everything->dec_count();
+	 			val = nullptr;
+	 			err = 1;
+	 		}
+ 		);
+
+	} else if (has_headers && !prefer_cols) {
+		//Set of Hash
+		SetValue *everything = new SetValue();
+		PtrStack<char> headers(LISTS_DELETE_Array);
+		
+		int numcols = 0;
+		int curcol = -1;
+		int currow = -1;
+		ValueHash *curhash = nullptr;
+
+		val = everything;
+
+		ParseCSV(buf, delimiter, has_headers,
+	 		[&]() {  //new row
+	 			if (curhash) {
+	 				if (curcol+1 < numcols) {
+		 				curcol++;
+		 				while (curcol < numcols) {
+		 					Value *v = new NullValue();
+		 					curhash->push(headers[curcol], v, 1);
+		 					v->dec_count();
+		 					curcol++;
+		 				}
+		 			}
+	 			}
+	 			currow++;
+	 			if (currow > 0) {
+	 				curhash = new ValueHash();
+	 				everything->Push(curhash, 1);
+	 			}
+	 			curcol = -1;
+	 		},
+	 		[&](const char *content, int len) { // NewHeader
+	 			curcol++;
+	 			numcols++;
+	 			char *name = newnstr(content,len);
+	 			headers.push(name);
+	 		},
+	 		[&](const char *content, int len) {   //NewCell
+	 			curcol++;
+	 			if (curcol >= numcols) return; //ignore cells that don't have headers
+
+	 			int i = 0;
+	 			Value *v = nullptr;
+	 			if (IsOnlyInt(content, len, &i)) {
+	 				v = new IntValue(i);
+
+	 			} else {
+	 				double d;
+	 				if (IsOnlyDouble(content, len, &d)) {
+	 					v = new DoubleValue(d);
+
+	 				} else { //punt to string
+		 				StringValue *sv = new StringValue;
+		 				sv->Set(content, len);
+		 				v = sv;
+	 				}
+	 			}
+
+	 			curhash->push(headers[curcol], v);
+	 			v->dec_count();
+	 		},
+	 		[&](const char *error) {
+	 			DBG cerr << "Parse csv error "<<err<<": "<<(error?error:"?")<<endl;
+	 			everything->dec_count();
+	 			val = nullptr;
+	 			err = 1;
+	 		}
+ 		);
+
+	} else if (!has_headers && prefer_cols) {
+		//Set of Column Sets
+		int numcols = 0;
+		int curcol = -1;
+		int currow = -1;
+
+		SetValue *everything = new SetValue();
+		PtrStack<SetValue> cols;
+		val = everything;
+
+		ParseCSV(buf, delimiter, has_headers,
+	 		[&]() {  //new row
+	 			if (currow > 0 && curcol+1 < cols.n) {
+	 				curcol++;
+	 				while (curcol < cols.n) {
+	 					cols.e[curcol]->Push(new NullValue(), 1);
+	 					curcol++;
+	 				}
+	 			}
+	 			currow++;
+	 			curcol = -1;
+	 		},
+	 		[&](const char *content, int len) {},  // NewHeader,
+	 		[&](const char *content, int len) {   //NewCell
+	 			curcol++;
+
+	 			if (currow == 0) {
+	 				numcols++;
+	 				SetValue *col = new SetValue();
+	 				cols.push(col, 0);
+	 				everything->Push(col, 1);
+	 			} else {
+	 				if (curcol >= numcols) {
+		 				//found cell outside of number of cols in first row
+		 				SetValue *col = new SetValue();
+		 				everything->Push(col, 1);
+	 					cols.push(col, 0);
+	 					numcols++;
+		 				for (int c=0; c<currow-1; c++) {
+		 					col->Push(new NullValue(), 1);
+		 				}
+		 				return;
+		 			}
+
+		 			int i = 0;
+		 			Value *v = nullptr;
+		 			if (IsOnlyInt(content, len, &i)) {
+		 				v = new IntValue(i);
+
+		 			} else {
+		 				double d;
+		 				if (IsOnlyDouble(content, len, &d)) {
+		 					v = new DoubleValue(d);
+
+		 				} else { //punt to string
+			 				StringValue *sv = new StringValue;
+			 				sv->Set(content, len);
+			 				v = sv;
+		 				}
+		 			}
+	 				cols.e[curcol]->Push(v, 1);
+	 			}
+	 		},
+	 		[&](const char *error) {
+	 			DBG cerr << "Parse csv error "<<err<<": "<<(error?error:"?")<<endl;
+	 			everything->dec_count();
+	 			val = nullptr;
+	 			err = 4;
+	 		}
+ 		);
+
+	} else { // !has_headers && !prefer_cols)
+		//Set of Row Sets
+		SetValue *everything = new SetValue();
+		SetValue *currow = nullptr;
+		val = everything;
+
+		ParseCSV(buf, delimiter, has_headers,
+	 		[&]() {  //new row
+	 			currow = new SetValue();
+	 			everything->Push(currow, 1);
+	 		},
+	 		[&](const char *content, int len) {},   // NewHeader,
+	 		[&](const char *content, int len) {   //NewCell
+	 			int i = 0;
+	 			if (IsOnlyInt(content, len, &i)) {
+	 				IntValue *iv = new IntValue(i);
+	 				currow->Push(iv, 1);
+
+	 			} else {
+	 				double d;
+	 				if (IsOnlyDouble(content, len, &d)) {
+	 					DoubleValue *v = new DoubleValue(d);
+	 					currow->Push(v, 1);
+
+	 				} else { //punt to string
+		 				StringValue *sv = new StringValue;
+		 				sv->Set(content, len);
+		 				currow->Push(sv, 1);
+	 				}
+	 			}
+	 		},
+	 		[&](const char *error) {
+	 			everything->dec_count();
+	 			val = nullptr;
+	 			err = 4;
+	 			DBG cerr << "Parse csv error "<<err<<": "<<(error?error:"?")<<endl;
+	 		}
+ 		);
+
+	}
+	
+	if (err && error_ret) *error_ret = err;
+	return val;
 }
 
 
@@ -3254,7 +3615,7 @@ Value *SetValue::dereference(int index)
 
 Value *NewSetValueFunc() { return new SetValue; }
 
-ObjectDef default_SetValue_ObjectDef(NULL,"set",_("Set"),_("Set of values"),
+ObjectDef default_SetValue_ObjectDef(NULL,"Set",_("Set"),_("Set of values"),
 							 "class", NULL, "{}",
 							 NULL, 0,
 							 NewSetValueFunc, NULL);
@@ -3739,7 +4100,7 @@ int FlatvectorValue::assign(FieldExtPlace *ext,Value *vv)
 
 Value *NewFlatvectorFunc() { return new FlatvectorValue; }
 
-ObjectDef default_FlatvectorValue_ObjectDef(NULL,"flatvector",_("Vector2 (aka Flatvector)"),_("A two dimensional vector"),
+ObjectDef default_FlatvectorValue_ObjectDef(NULL,"Vector2",_("Vector2 (aka Flatvector)"),_("A two dimensional vector"),
 							 "class", NULL, "(0,0)",
 							 NULL, 0,
 							 NewFlatvectorFunc, NULL);
@@ -3748,6 +4109,11 @@ ObjectDef *Get_FlatvectorValue_ObjectDef()
 {
 	ObjectDef *def=&default_FlatvectorValue_ObjectDef;
 	if (def->fields) return def;
+
+	def->pushFunction("Vector2", _("Constructor"), nullptr, nullptr,
+			 		"x",_("x"),_("x value"), "number",NULL,"0",
+			 		"y",_("y"),_("x value"), "number",NULL,"0",
+					nullptr);
 
 	def->pushFunction("length",_("Length"),_("Length"), NULL,
 					  NULL);
@@ -3803,6 +4169,25 @@ int FlatvectorValue::Evaluate(const char *func,int len, ValueHash *context, Valu
 	} else if (isName(func,len, "isnull")) {
 		*value_ret=new BooleanValue(v.x==0 && v.y==0);
 		return 0;
+
+	} else if (isName(func,len, "Vector2")) {
+		*value_ret = nullptr;
+		double x=0,y=0;
+		Value *px = (parameters ? parameters->find("x") : nullptr);
+		Value *py = (parameters ? parameters->find("y") : nullptr);
+		if (px && px->type() == VALUE_Flatvector) {
+			*value_ret = new FlatvectorValue(dynamic_cast<FlatvectorValue*>(px)->v);
+		} else if (px && !py) {
+			if (!isNumberType(px, &x)) return -1;
+			*value_ret = new FlatvectorValue(x,x);
+		} else if (px && py) {
+			if (!isNumberType(px, &x)) return -1;
+			if (!isNumberType(py, &y)) return -1;
+			*value_ret = new FlatvectorValue(x,y);
+			return 0;
+		}
+
+		return -1;
 	}
 
 	return -1;
@@ -3856,7 +4241,7 @@ int SpacevectorValue::assign(FieldExtPlace *ext,Value *vv)
 
 Value *NewSpacevectorValueFunc() { return new SpacevectorValue; }
 
-ObjectDef default_SpacevectorValue_ObjectDef(NULL,"spacevector",_("Vector3 (aka Spacevector)"),_("A three dimensional vector"),
+ObjectDef default_SpacevectorValue_ObjectDef(NULL,"Vector3",_("Vector3 (aka Spacevector)"),_("A three dimensional vector"),
 							 "class", NULL, "(0,0)",
 							 NULL, 0,
 							 NewSpacevectorValueFunc, NULL);
