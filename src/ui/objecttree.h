@@ -40,10 +40,15 @@ class ObjectTree : public Laxkit::TreeSelector
 
 class ObjectTreeWindow : public Laxkit::RowFrame
 {
+  public:
+	enum Domain { WholeProject, InViewport, SingleObject };
+
   protected: 
 	ObjectTree *tree;
 	ObjectContainer *objcontainer;
 	Laxkit::MenuInfo *menu;
+
+	Domain domain;
 
 	virtual void UseContainerRecursive(ObjectContainer *container);
 	void ConstructTree();
@@ -56,7 +61,11 @@ class ObjectTreeWindow : public Laxkit::RowFrame
 	virtual const char *whattype() { return "ObjectTreeWindow"; }
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 	virtual int init();
+	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
 
+	virtual void RefreshList();
+
+	virtual void UseContainer(ObjectTreeWindow::Domain container);
 	virtual void UseContainer(ObjectContainer *container);
 
     virtual void       dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *savecontext);

@@ -17,6 +17,7 @@
 #include "../dataobjects/drawableobject.h"
 #include "../language.h"
 #include "../laidout.h"
+#include "viewwindow.h"
 
 #include <lax/button.h>
 #include <lax/laxutils.h>
@@ -27,10 +28,36 @@
 
 
 using namespace Laxkit;
+using namespace LaxFiles;
 
 
 namespace Laidout {
 
+
+
+// domain: viewport
+//    limbo
+//      limbo obj1 
+//      libmo obj2
+//    page 1
+//      page layer
+//        page obj 1
+//        page obj 1
+//    page 16
+//      layer
+//        obj 3
+//        obj 4
+//
+// domain: Project
+//   limbos
+//     limbo1
+//     limbo2
+//   doc 1
+//     pages
+//     ...
+//   doc 2
+//
+// show only: selection, full tree
 
 
 
@@ -94,6 +121,8 @@ void ObjectTree::UseContainer(ObjectContainer *container)
 	}
 }
 
+
+
 //------------------------------- ObjectTreeWindow ----------------------------------
 
 /*! \class ObjectTree
@@ -112,7 +141,10 @@ ObjectTreeWindow::ObjectTreeWindow(anXWindow *parnt,const char *nname,const char
     menu         = nullptr;
     tree         = nullptr;
     objcontainer = nullptr;
+	domain       = WholeProject;
+
     if (container) UseContainer(container);
+    else UseContainer(WholeProject);
 
 	ConstructTree();
 }
@@ -124,12 +156,45 @@ ObjectTreeWindow::~ObjectTreeWindow()
 	if (tree) tree->dec_count();
 }
 
+void ObjectTreeWindow::UseContainer(ObjectTreeWindow::Domain container)
+{
+	if (container == SingleObject) {
+		domain = SingleObject;
+		return;
+	}
+
+	if (container == InViewport) {
+		ViewWindow *viewer = nullptr;
+		LaidoutViewport *viewport = nullptr;
+		for (int c=0; c<win_parent->NumWindowKids(); c++) {
+			viewer = dynamic_cast<ViewWindow*>(win_parent->WindowChild(c));
+			if (viewer) break;
+		}
+		if (!viewer) viewer = dynamic_cast<ViewWindow*>(laidout->lastview);
+		if (viewer) {
+			viewport = dynamic_cast<LaidoutViewport*>(viewer->viewport);
+		}
+		if (viewport) UseContainer(viewport);
+
+		return;
+	}
+
+	if (container == WholeProject) {
+		UseContainer(laidout->project);
+		return;
+	}
+}
+
+
 /*! Connect to a governing container.
  * Does container->inc_count().
  */
 void ObjectTreeWindow::UseContainer(ObjectContainer *container)
 {
 	if (!container) return;
+
+	domain = SingleObject;
+
 	UseContainerRecursive(container);
 	if (tree) tree->InstallMenu(menu);
 
@@ -269,6 +334,20 @@ int ObjectTreeWindow::Event(const Laxkit::EventData *data,const char *mes)
 	return anXWindow::Event(data, mes);
 }
 
+void ObjectTreeWindow::RefreshList()
+{
+
+}
+
+int ObjectTreeWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const LaxKeyboard *d)
+{
+	if (ch == 'r' && (state & ControlMask)) {
+		RefreshList();
+	}
+
+	return anXWindow::CharInput(ch, buffer, len, state, d);
+}
+
 
 void ObjectTreeWindow::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *savecontext)
 {   
@@ -292,11 +371,37 @@ LaxFiles::Attribute *ObjectTreeWindow::dump_out_atts(LaxFiles::Attribute *att,in
 		if (att->find("win_flags", &i)) att->remove(i);
 		if (att->find("win_themestyle", &i)) att->remove(i);
 	}
+
+	const char *dstr = "WholeProject";
+	if (domain == InViewport) dstr = "InViewport";
+	else if (domain == SingleObject) dstr = "SingleObject";
+	att->push("domain", dstr);
 	return anXWindow::dump_out_atts(att,what,savecontext);
 }
 
 void ObjectTreeWindow::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *loadcontext)
 {
+	Attribute *datt = att->find("domain");
+	if (datt) {
+		Domain ndomain = WholeProject;
+		if (strstr(datt->value, "WholeProject") == datt->value) ndomain = WholeProject;
+		else if (strstr(datt->value, "InViewport") == datt->value) ndomain = InViewport;
+		else if (strstr(datt->value, "SingleObject") == datt->value) ndomain = SingleObject;
+		if (ndomain != domain) {
+			// remap container before tree gets dumped in, as maybe it has open/unopen list
+
+			if (ndomain == SingleObject) {
+				const char *id = datt->value + 12;
+				while (isspace(*id)) id++;
+				ObjectContainer *obj = dynamic_cast<ObjectContainer*>(laidout->project->FindObject(id));
+				if (obj) UseContainer(obj);
+
+			} else {
+				UseContainer(ndomain);
+			}
+		}
+	}
+
 	if (tree) return tree->dump_in_atts(att,flag,loadcontext); 
 	return anXWindow::dump_in_atts(att,flag,loadcontext);
 

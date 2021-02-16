@@ -108,7 +108,6 @@ otherobjs= \
 	interfaces/paperinterface.o \
 	interfaces/cloneinterface.o \
 	interfaces/animationinterface.o \
-	interfaces/objecttree.o \
 	interfaces/pagemarkerinterface.o \
 	interfaces/objectfilterinterface.o \
 	interfaces/pathintersectionsinterface.o \
@@ -177,6 +176,7 @@ otherobjs= \
 	ui/metawindow.o \
 	ui/importimagesdialog.o \
 	ui/newdoc.o \
+	ui/objecttree.o \
 	ui/palettes.o \
 	ui/papersizewindow.o \
 	ui/plaintextwindow.o \
