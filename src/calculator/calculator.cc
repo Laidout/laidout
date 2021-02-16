@@ -4555,7 +4555,7 @@ ValueHash *LaidoutCalculator::parseParameters(ObjectDef *def)
 					if (!unnamed) calcerr(_("All unnamed parameters must come before named parameters"));
 					else {
 						const char *param = nullptr;
-						if (def->getInfo(pnum-1, &param, NULL,NULL,NULL,NULL,NULL,NULL)==0) {
+						if (def && def->getInfo(pnum-1, &param, NULL,NULL,NULL,NULL,NULL,NULL)==0) {
 							pname = newstr(param);
 						} else if (run_mode == RUN_Normal) calcerr(_("Unknown parameter!"));
 					}
