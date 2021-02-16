@@ -24,7 +24,6 @@ objs= \
 	paperinterface.o \
 	cloneinterface.o \
 	animationinterface.o \
-	objecttree.o \
 	pagemarkerinterface.o \
 	objectfilterinterface.o \
 	pathintersectionsinterface.o \
