@@ -728,6 +728,40 @@ int ImportImagesDialog::Event(const Laxkit::EventData *data,const char *mes)
 	return FileDialog::Event(data,mes);
 }
 
+/*! Return 0 for success or nonzero error.
+ */
+int ImportImagesDialog::SetFileList(int n, const char * const *files)
+{
+	if (!n) return 0;
+
+	const char *fname = files[0];
+	if (!strncmp(fname, "file://", 7)) fname += 7;
+	char *thedir = lax_dirname(fname, 0);
+	int len = strlen(thedir);
+
+	Cd(thedir);
+
+	// char *dir;
+	const char *file;
+
+	for (int c=0; c<n; c++) {
+		fname = files[c];
+		if (!strncmp(fname, "file://", 7)) fname += 7;
+
+		if (strncmp(fname, thedir, len)) {
+			DBG cerr << "Cannot handle multiple image import directories! Tell devs to get on it!!!!"<<endl;
+			continue;
+		}
+
+		file = lax_basename(fname);
+
+		SelectFile(file, false);
+	}
+
+	delete[] thedir;
+	return 1;
+}
+
 //! Set the file and preview fields, changing directory if need be.
 /*! \todo should probably redefine FileDialog::SetFile() also to check against
  * 		images?
