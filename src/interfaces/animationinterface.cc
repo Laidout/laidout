@@ -304,7 +304,7 @@ int AnimationInterface::SetCurrentFrame()
 	}
 
 	if (old != current_frame) {
-		dynamic_cast<LaidoutViewport*>(curwindow)->TriggerFilterUpdates();
+		dynamic_cast<LaidoutViewport*>(curwindow)->TriggerFilterUpdates(1);
 	}
 
 	return current_frame;
