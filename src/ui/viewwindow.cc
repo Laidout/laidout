@@ -36,7 +36,7 @@
 #include <sys/stat.h>
 
 #include "../language.h"
-#include "../interfaces/objecttree.h"
+#include "objecttree.h"
 #include "../interfaces/pagemarkerinterface.h"
 #include "../printing/print.h"
 #include "../printing/psout.h"
@@ -539,14 +539,14 @@ LaidoutViewport::~LaidoutViewport()
 bool LaidoutViewport::DndWillAcceptDrop(int x, int y, const char *action, Laxkit::IntRectangle &rect,
 										char **types, int *type_ret, anXWindow **child_ret)
 {
-	// //check interfaces first...
-	// for (int c=0; c<interfaces.n; c++) {
-	// 	if (interfaces.e[c]->DndWillAcceptDrop(x,y,action,rect,types,type_ret)) {
-	// 		return true;
-	// 	}
-	// }
+	//check interfaces first...
+	for (int c=0; c<interfaces.n; c++) {
+		if (interfaces.e[c]->DndWillAcceptDrop(x,y,action,rect,types,type_ret)) {
+			return true;
+		}
+	}
 
-	// else allow dropping image lists by passing to ImportImageDialog
+	// else allow dropping image lists by passing to ImportImagesDialog
 	for (int c=0; types[c]; c++) {
 		if (!strcmp(types[c], "text/uri-list")) {
 			*type_ret = c;
@@ -574,17 +574,79 @@ bool LaidoutViewport::DndWillAcceptDrop(int x, int y, const char *action, Laxkit
  */
 int LaidoutViewport::selectionDropped(const unsigned char *data,unsigned long len,const char *actual_type,const char *which)
 {
-	// //check interfaces first...
-	// for (int c=0; c<interfaces.n; c++) {
-	// 	if (interfaces.e[c]->selectionDropped(data, len, actual_type, which) == 0) return 0;
-	// }
+	//check interfaces first...
+	for (int c=0; c<interfaces.n; c++) {
+		if (interfaces.e[c]->selectionDropped(data, len, actual_type, which) == 0) return 0;
+	}
 
+	//fallback capture for file lists
 	if (!strcmp(actual_type, "text/uri-list")) {
 		DBG cerr << "Dropping file list into LaidoutViewport: "<<endl<<data<<endl;
+
+		PtrStack<char> files(LISTS_DELETE_Array);
+
+		const char *ptr;
+		const char *ptrs = (const char *)data;
+		unsigned long l;
+
+		while (ptrs && *ptrs) {
+			ptr = strchr(ptrs, '\n');
+
+			if (!ptr) {
+				if (len > 0) files.push(newnstr(ptrs, len));
+				break;
+			} else {
+				if (ptr-ptrs > 0) {
+					if (ptr > ptrs && *(ptr-1) == '\r') ptr--;
+					if (ptr-ptrs > 0) {
+						l = ptr - ptrs;
+						char *ff = newnstr(ptrs, l);
+						files.push(ff);
+					}
+				}
+				if (*ptr == '\r') { ptr++; len--; }
+				ptr++;
+				len -= 1+l;
+				ptrs = ptr;
+			}
+		}
+
+		if (files.n) {
+			LaunchImportImages(&files);
+		}
 		return 0;
 	}
 	return 1;
 }
+
+void LaidoutViewport::LaunchImportImages(PtrStack<char> *filenames)
+{
+	Group *toobj=NULL;
+	if (!doc) {
+		 //create a group object with the same aspect as the viewport, and dump images
+		 //into that. This group object gets sent back to the viewer in an event message.
+		 //The objects are then inserted into limbo.
+		double aspect = (dp->Maxy - dp->Miny)/(float)(dp->Maxx - dp->Minx);
+		toobj = limbo;
+		if (!limbo->validbounds()) {
+			toobj->maxx = 10;
+			toobj->maxy = aspect;
+		}
+	}
+	char *where = ((ViewWindow*)win_parent)->CurrentDirectory();
+	ImportImagesDialog *dialog = new ImportImagesDialog(nullptr,"Import Images",_("Import Images"),
+				FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
+				0,0,0,0,0, object_id,"import new image",
+				nullptr, where, nullptr, //file,path,mask
+				toobj,
+				doc, curobjPage(), 0);
+	if (filenames) {
+		dialog->SetFileList(filenames->n, filenames->e);
+	}
+	app->rundialog(dialog);
+	delete[] where;
+}
+
 
 int LaidoutViewport::UseThisPaperGroup(PaperGroup *group)
 {
@@ -2756,33 +2818,38 @@ void LaidoutViewport::DrawSomeData(LaxInterfaces::SomeData *ndata,
 	Laidout::DrawDataStraight(dp, ndata, a1,a2,info);
 }
 
-void TriggerFiltersRecurse(DrawableObject *obj)
+void TriggerFiltersRecurse(DrawableObject *obj, int reason)
 {
 	//TODO: clones
 	
 	if (!obj) return;
 	for (int c=0; c<obj->n(); c++) {
 		DrawableObject *o = dynamic_cast<DrawableObject*>(obj->e(c));
-		if (o) TriggerFiltersRecurse(o);
+		if (o) TriggerFiltersRecurse(o, reason);
 	}
 	if (obj->filter) {
-		dynamic_cast<ObjectFilter*>(obj->filter)->ForceUpdates();
+		ObjectFilter *filter = dynamic_cast<ObjectFilter*>(obj->filter);
+		if (reason != 0) {
+			filter->SoftUpdate(1);
+			filter->UpdateAllRecursively();
+		}
+		else filter->ForceUpdates();
 	}
 }
 
 /*! Step through all objects in viewport and trigger filter updates.
  * \todo *** there needs to be a more systematic way to sync updates when things modified.
  */
-void LaidoutViewport::TriggerFilterUpdates()
+void LaidoutViewport::TriggerFilterUpdates(int reason)
 {
-	TriggerFiltersRecurse(limbo);
+	TriggerFiltersRecurse(limbo, reason);
 
 	if (papergroup && papergroup->objs.n()) {
-		 TriggerFiltersRecurse(&papergroup->objs);
+		 TriggerFiltersRecurse(&papergroup->objs, reason);
 	}
 
 	if (spread && showstate==1) {
-		if (spread->marks) TriggerFiltersRecurse(dynamic_cast<DrawableObject*>(spread->marks));
+		if (spread->marks) TriggerFiltersRecurse(dynamic_cast<DrawableObject*>(spread->marks), reason);
 
 		Page *page = NULL;
 		int pagei = -1;
@@ -2802,7 +2869,7 @@ void LaidoutViewport::TriggerFilterUpdates()
 
 			 // the page's objects.
 			for (int c2=0; c2<page->layers.n(); c2++) {
-				TriggerFiltersRecurse(page->e(c2));
+				TriggerFiltersRecurse(page->e(c2), reason);
 			}
 		}
 	}
@@ -5487,26 +5554,7 @@ int ViewWindow::PerformAction(int action)
 		return 0;
 
 	} else if (action==VIEW_Import_Images) {
-		Group *toobj=NULL;
-		if (!doc) {
-			 //create a group object with the same aspect as the viewport, and dump images
-			 //into that. This group object gets sent back to the viewer in an event message.
-			 //The objects are then inserted into limbo.
-			double aspect = (viewport->dp->Maxy-viewport->dp->Miny)/(float)(viewport->dp->Maxx-viewport->dp->Minx);
-			toobj = ((LaidoutViewport *)viewport)->limbo;
-			if (!((LaidoutViewport *)viewport)->limbo->validbounds()) {
-				toobj->maxx = 10;
-				toobj->maxy = aspect;
-			}
-		}
-		char *where = CurrentDirectory();
-		app->rundialog(new ImportImagesDialog(nullptr,"Import Images",_("Import Images"),
-					FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
-					0,0,0,0,0, object_id,"import new image",
-					nullptr, where, nullptr, //file,path,mask
-					toobj,
-					doc,((LaidoutViewport *)viewport)->curobjPage(),0));
-		delete[] where;
+		((LaidoutViewport *)viewport)->LaunchImportImages(nullptr);
 		return 0;
 
 	} else if (action==VIEW_Save || action==VIEW_SaveAs) {

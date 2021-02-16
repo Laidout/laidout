@@ -97,6 +97,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	virtual void findAny(int searcharea=0);
 	virtual int nextObject(VObjContext *oc,int inc=0);
 	virtual void transformToContext(double *m,FieldPlace &place,int invert, int depth);
+	virtual void LaunchImportImages(Laxkit::PtrStack<char> *filenames);
 
 	virtual int PerformAction(int action);
 
@@ -125,7 +126,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	virtual int MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse);
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 	virtual int FocusOn(const Laxkit::FocusChangeData *e);
-	virtual bool DndWillAcceptDrop(int x, int y, const char *action, Laxkit::IntRectangle &rect, char **types, int *type_ret, anXWindow **child_ret);
+	virtual bool DndWillAcceptDrop(int x, int y, const char *action, Laxkit::IntRectangle &rect, char **types, int *type_ret, Laxkit::anXWindow **child_ret);
 	virtual int selectionDropped(const unsigned char *data,unsigned long len,const char *actual_type,const char *which);
 
 	virtual int UseTheseRulers(Laxkit::RulerWindow *x,Laxkit::RulerWindow *y);
@@ -184,7 +185,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	virtual int locateObject(LaxInterfaces::SomeData *d,FieldPlace &place);
 	virtual int curobjPage();
 	virtual int isDefaultPapergroup(int yes_if_in_project);
-	virtual void TriggerFilterUpdates();
+	virtual void TriggerFilterUpdates(int reason);
 
 	 //from objectcontainer
 	virtual int n();
