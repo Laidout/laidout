@@ -24,6 +24,7 @@ objs= \
 	metawindow.o \
 	importimagesdialog.o \
 	newdoc.o \
+	objecttree.o \
 	palettes.o \
 	papersizewindow.o \
 	plaintextwindow.o \
