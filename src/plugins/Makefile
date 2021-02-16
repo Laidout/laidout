@@ -34,7 +34,9 @@ plugins= \
 	#antiprism      #ToDO!
 
 
-all: lax laxinterface $(objs) plugins
+all: $(objs) plugins
+
+allwithlax: lax laxinterface $(objs) plugins
 
 plugins:
 	for NAME in $(plugins); do \
