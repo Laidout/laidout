@@ -61,6 +61,7 @@ void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,uns
     //DBG if (ddp && ddp->GetCairo()) cerr <<" DrawDataStraight for "<<data->Id()<<", cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 	DrawableObject *ddata = dynamic_cast<DrawableObject*>(data);
+	if (ddata && !ddata->Visible()) return;
 	PathsData *clipobj = nullptr;
 
 	if (flags&DRAW_AXES) {
@@ -228,6 +229,7 @@ void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,uns
 void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned int flags)
 {
 	DrawableObject *ddata = dynamic_cast<DrawableObject*>(data);
+	if (ddata && !ddata->Visible()) return;
 	if (ddata && ddata->filter && (flags & DRAW_NO_FILTER)==0) {
 		data = ddata->FinalObject();
 		DrawData(dp, data, a1, a2, flags|DRAW_NO_FILTER);
