@@ -231,7 +231,7 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 		InterfaceManager *imanager = InterfaceManager::GetDefault(true);
 		ResourceManager *rm = imanager->GetResourceManager();
 		menu->AddSep(_("Project texts"));
-		rm->ResourceMenu("PlainText", false, menu);
+		rm->ResourceMenu("PlainText", false, menu, 0, 0);
 
 		int currentobj=-1;
 		int isprojects=0;
