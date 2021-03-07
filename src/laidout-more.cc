@@ -86,6 +86,24 @@ TreeChangeEvent::TreeChangeEvent(const TreeChangeEvent &te)
 	propagate=0;
 }
 
+const char *TreeChangeEvent::Message() const
+{
+	switch (changetype) {
+		case TreeDocGone: return "TreeDocGone";
+		case TreePagesAdded: return "TreePagesAdded";
+		case TreePagesDeleted: return "TreePagesDeleted";
+		case TreePagesMoved: return "TreePagesMoved";
+		case TreeObjectRepositioned: return "TreeObjectRepositioned";
+		case TreeObjectReorder: return "TreeObjectReorder";
+		case TreeObjectDiffPage: return "TreeObjectDiffPage";
+		case TreeObjectDeleted: return "TreeObjectDeleted";
+		case TreeObjectAdded: return "TreeObjectAdded";
+		case TreeSelectionChange: return "TreeSelectionChange";
+		case TreePageChange: return "TreePageChange";
+		default: return "?";
+	}
+	return "?";
+}
 
 //! Tell all ViewWindow, SpreadEditor, and other main windows that the doc has changed.
 /*! Sends a TreeChangeEvent to all SpreadEditor and ViewWindow panes in each top level HeadWindow.
@@ -97,8 +115,8 @@ void LaidoutApp::notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType
 	DBG cerr<<"notifyDocTreeChanged sending.."<<endl;
 	HeadWindow *h;
 	PlainWinBox *pwb;
-	ViewWindow *view;
-	SpreadEditor *se;
+	// ViewWindow *view;
+	// SpreadEditor *se;
 	anXWindow *w;
 
 	TreeChangeEvent *edata;
@@ -120,9 +138,11 @@ void LaidoutApp::notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType
 			pwb=h->windowe(c2);
 			w=pwb->win();
 			if (!w || callfrom==w) continue;
-			view=dynamic_cast<ViewWindow *>(w);
-			if (view) yes=1;
-			else if (se=dynamic_cast<SpreadEditor *>(w), se) yes=1;
+
+			// view=dynamic_cast<ViewWindow *>(w);
+			// if (view) yes=1;
+			// else if (se=dynamic_cast<SpreadEditor *>(w), se) yes=1;
+			yes = 1;
 
 			 //construct events for the panes
 			if (yes){
@@ -138,7 +158,7 @@ void LaidoutApp::notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType
 		}
 	}
 	delete te; //delete template object
-	DBG cerr <<"eo notifyDocTreeChanged"<<endl;
+	DBG cerr <<"send notifyDocTreeChanged done"<<endl;
 	return;
 }
 
