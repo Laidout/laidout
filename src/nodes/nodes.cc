@@ -7517,7 +7517,7 @@ void GetResourceNode::ButtonClick(NodeProperty *prop, NodeInterface *controller)
 		if (res->NumResources() == 0) continue;
 		menu->AddItem(res->name);
 		menu->SubMenu();
-		res->AppendMenu(menu, false, nullptr);
+		res->AppendMenu(menu, false, nullptr, 0, 0);
 		menu->EndSubMenu();
 	}
 

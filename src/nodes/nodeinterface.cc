@@ -3450,7 +3450,7 @@ Laxkit::MenuInfo *NodeInterface::ContextMenu(int x,int y,int deviceid, Laxkit::M
 		menu->AddItem(_("New node graph"), NODES_New_Nodes);
 		menu->AddItem(_("Resources"));
 		menu->SubMenu(_("Saved Nodes"));
-		manager->ResourceMenu("Nodes", true, menu);
+		manager->ResourceMenu("Nodes", true, menu, 0, 0);
 		menu->EndSubMenu();
 	}
 
