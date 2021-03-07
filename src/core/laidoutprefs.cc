@@ -420,13 +420,6 @@ Value *LaidoutPreferences::dereference(const char *extstring, int len)
 
 int LaidoutPreferences::SavePrefs(const char *file)
 {
-//	char conf[strlen(laidout->config_dir)+20];
-//
-//	if (file==NULL) {
-//		sprintf(conf,"%s/laidoutrc",config_dir);
-//		file=conf;
-//	}
-
 	if (!file) return 2;
 
 	FILE *f=fopen(file,"w");
