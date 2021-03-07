@@ -765,6 +765,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 	}
 
 	DrawableObject *dobj = dynamic_cast<DrawableObject*>(obj);
+	const char *hiddenstr = (obj->Visible() ? "" : "display:none;");
 
 	Utf8String datameta;
 	if (data_meta && dobj != nullptr) {
@@ -826,7 +827,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 						 datameta.c_str_nonnull(),
 						 obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
 			fprintf(f,"%s    id=\"%s\" %s\n", spc,grad->Id(), clipid);
-			fprintf(f,"%s    style=\"stroke:none;fill:url(#radialGradient%ld)\"\n", spc,grad->object_id);
+			fprintf(f,"%s    style=\"%sstroke:none;fill:url(#radialGradient%ld)\"\n", spc, hiddenstr, grad->object_id);
 			fprintf(f,"%s    cx=\"%f\"\n",spc, fabs(grad->R1()) > fabs(grad->R2()) ? grad->P1().x : grad->P2().x);
 			fprintf(f,"%s    cy=\"%f\"\n",spc, fabs(grad->R1()) > fabs(grad->R2()) ? grad->P1().y : grad->P2().y);
 			fprintf(f,"%s    r=\"%f\"\n",spc,  fabs(grad->R1()) > fabs(grad->R2()) ? fabs(grad->R1()) : fabs(grad->R2()));
@@ -837,7 +838,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 						 spc, datameta.c_str_nonnull(),
 						 obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
 			fprintf(f,"%s    id=\"%s\" %s\n", spc,grad->Id(), clipid);
-			fprintf(f,"%s    style=\"stroke:none;fill:url(#linearGradient%ld)\"\n", spc,grad->object_id);
+			fprintf(f,"%s    style=\"%sstroke:none;fill:url(#linearGradient%ld)\"\n", spc, hiddenstr, grad->object_id);
 			fprintf(f,"%s    x=\"%f\"\n", spc,grad->minx);
 			fprintf(f,"%s    y=\"%f\"\n", spc,grad->miny);
 			fprintf(f,"%s    width=\"%f\"\n", spc,grad->maxx-grad->minx);
@@ -882,8 +883,8 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 				aa=caption->alpha;
 			}
 
-			fprintf(f,"%s   style=\"fill:#%02x%02x%02x; fill-opacity:%.10g; ",
-						spc, int(rr*255+.5), int(gg*255+.5), int(bb*255+.5), aa);
+			fprintf(f,"%s   style=\"%sfill:#%02x%02x%02x; fill-opacity:%.10g; ",
+						spc, hiddenstr, int(rr*255+.5), int(gg*255+.5), int(bb*255+.5), aa);
 			//if (caption->xcentering==0) fprintf(f,"text-anchor:start; ");
 			//else if (caption->xcentering==50) fprintf(f,"text-anchor:middle; ");
 			//else if (caption->xcentering==100) fprintf(f,"text-anchor:end; ");
@@ -968,8 +969,8 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 				aa=1.0;
 			}
 
-			fprintf(f,"%s   style=\"fill:#%02x%02x%02x; fill-opacity:%.10g; ",
-						spc, int(rr*255+.5), int(gg*255+.5), int(bb*255+.5), aa);
+			fprintf(f,"%s   style=\"%sfill:#%02x%02x%02x; fill-opacity:%.10g; ",
+						spc, hiddenstr, int(rr*255+.5), int(gg*255+.5), int(bb*255+.5), aa);
 			//if (text->xcentering==0) fprintf(f,"text-anchor:start; ");
 			//else if (text->xcentering==50) fprintf(f,"text-anchor:middle; ");
 			//else if (text->xcentering==100) fprintf(f,"text-anchor:end; ");
@@ -1196,7 +1197,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			fprintf(f,"%s<rect %s transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
 						 spc, datameta.c_str_nonnull(), obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
 			fprintf(f,"%s    id=\"%s\"\n", spc,patch->Id());
-			fprintf(f,"%s    style=\"fill:url(#ColorPatchFill%ld)\"\n", spc,patch->object_id);
+			fprintf(f,"%s    style=\"%sfill:url(#ColorPatchFill%ld)\"\n", spc, hiddenstr, patch->object_id);
 			fprintf(f,"%s    x=\"%f\"\n", spc, patch->minx);
 			fprintf(f,"%s    y=\"%f\"\n", spc, patch->miny);
 			fprintf(f,"%s    width=\"%f\"\n",  spc, patch->maxx-patch->minx);
@@ -1263,7 +1264,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			}
 			fprintf(f,"\"\n");//end of "d" for non-weighted or original-d for weighted
 
-			fprintf(f,"%s       style=\"",spc);
+			fprintf(f,"%s       style=\"%s",spc, hiddenstr);
 			svgStyleTagsDump(f, lstyle, fstyle, fillobj);
 			fprintf(f,"\"\n");//end of "style"
 
@@ -1282,7 +1283,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 				fprintf(f,"%s       id=\"%s-fill\" %s\n", spc,obj->Id(), clipid);
 
 				 //---write style for fill within centercache.. no stroke to that, as we apply artificial stroke
-				fprintf(f,"%s       style=\"",spc);
+				fprintf(f,"%s       style=\"%s",spc, hiddenstr);
 				svgStyleTagsDump(f, nullptr, fstyle, fillobj);
 				fprintf(f,"\"\n");//end of "style"
 
@@ -1308,7 +1309,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 				fprintf(f,"%s       id=\"%s\" %s\n", spc,obj->Id(), clipid);
 
 				 //---write style: no linestyle, but fill style is based on linestyle
-				fprintf(f,"%s       style=\"",spc);
+				fprintf(f,"%s       style=\"%s",spc, hiddenstr);
 				FillStyle fillstyle;
 				fillstyle.color=lstyle->color;
 				svgStyleTagsDump(f, nullptr, &fillstyle, fillobj);
@@ -2745,6 +2746,8 @@ ColorPatchData *svgDumpInMeshGradientDef(Attribute *def, Attribute *defs)
 
 	flatpoint p1,p2;
 	if (!def) return nullptr;
+	// bool visible = true;
+	// bool locked = false;
 	char *name, *value;
 	//int units=0;//0 is user space, 1 is bounding box
 	double gm[6];
@@ -3053,6 +3056,7 @@ void InsertFillobj(SomeData *fillobj, SomeData *obj, Group *group)
 		ddata->push(fillobj);
 		ddata->child_clip_type = CLIP_From_Parent_Area;
 	} else {
+		//can't add as child for some reason.. this should probably be a bug if it happens
 		fillobj->m(obj->m());
 		group->push(fillobj);
 	}
@@ -3067,6 +3071,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 		ErrorLog &log, const char *filedir, double docwidth,double docheight)
 {
 	char *name,*value;
+	ValueHash extra;
 
 	if (!strcmp(element->name,"g")) {
 		Group *g=new Group;
@@ -3081,6 +3086,15 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 				double m[6];
 				svgtransform(value,m);
 				g->m(m);
+
+			} else if (!strcmp(name,"sodipodi:insensitive")) {
+				bool locked = BooleanAttribute(value);
+				if (locked) g->Lock(OBJLOCK_Selectable);
+
+			} else if (!strcmp(name,"style")) {
+				if (value && strstr(value, "display:none")) {
+					g->Visible(false);
+				}
 
 			} else if (!strcmp(name,"content:")) {
 				for (int c2=0; c2<element->attributes.e[c]->attributes.n; c2++) 
@@ -3147,6 +3161,15 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 				transform_identity(m);
 				svgtransform(value,m);
 				if (!is_degenerate_transform(m)) image->m(m);
+
+			} else if (!strcmp(name,"sodipodi:insensitive")) {
+				bool locked = BooleanAttribute(value);
+				if (locked) image->Lock(OBJLOCK_Selectable);
+
+			} else if (!strcmp(name,"style")) {
+				if (value && strstr(value, "display:none")) {
+					image->Visible(false);
+				}
 			}
 		}
 
@@ -3180,7 +3203,11 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 				paths->m(m);
 
 			} else if (!strcmp(name,"style")) {
-				StyleToFillAndStroke(value, paths, gradients, &fillobj);
+				StyleToFillAndStroke(value, paths, gradients, &fillobj, &extra);
+
+			} else if (!strcmp(name,"sodipodi:insensitive")) {
+				bool locked = BooleanAttribute(value);
+				if (locked) paths->Lock(OBJLOCK_Selectable);
 
 			} else if (!strcmp(name,"inkscape:path-effect")) {
 				//path-effect is something like: "#path-effect3338;#path-effect3343"
@@ -3280,11 +3307,17 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 		}
 
-		if (paths->paths.n) {
+		if (paths->paths.n) { //only add non-empty paths
+			const char *disp = extra.findString("display");
+			if (disp && !strcmp(disp, "none")) {
+				paths->Visible(false);
+			}
+
 			paths->FindBBox();
 			group->push(paths);
+
+			if (fillobj) InsertFillobj(fillobj, paths, group);
 		}
-		if (fillobj) InsertFillobj(fillobj, paths, group);
 		paths->dec_count();
 
 		return 1;
@@ -3322,7 +3355,11 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 				paths->m(m);
 
 			} else if (!strcmp(name,"style")) {
-				StyleToFillAndStroke(value, paths, gradients, &fillobj); 
+				StyleToFillAndStroke(value, paths, gradients, &fillobj, &extra);
+
+			} else if (!strcmp(name,"sodipodi:insensitive")) {
+				bool locked = BooleanAttribute(value);
+				if (locked) paths->Lock(OBJLOCK_Selectable);
 			}
 		}
 
@@ -3364,11 +3401,18 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 				paths->close();
 			}
 		}
-		if (paths->paths.n) {
+
+		if (paths->paths.n) { //only add non-empty paths
+			const char *disp = extra.findString("display");
+			if (disp && !strcmp(disp, "none")) {
+				paths->Visible(false);
+			}
+
 			paths->FindBBox();
 			group->push(paths);
+
+			if (fillobj) InsertFillobj(fillobj, paths, group);
 		}
-		if (fillobj) InsertFillobj(fillobj, paths, group);
 		paths->dec_count();
 
 		return 1;
@@ -3403,7 +3447,11 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 				paths->m(m);
 
 			} else if (!strcmp(name,"style")) {
-				StyleToFillAndStroke(value, paths, gradients, &fillobj); 
+				StyleToFillAndStroke(value, paths, gradients, &fillobj, &extra);
+			
+			} else if (!strcmp(name,"sodipodi:insensitive")) {
+				bool locked = BooleanAttribute(value);
+				if (locked) paths->Lock(OBJLOCK_Selectable);
 			}
 		}
 
@@ -3427,13 +3475,20 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 			paths->append(cx-rx, cy+yv, POINT_TOPREV);
 			paths->close();
 
-			if (paths->paths.n) {
-				paths->FindBBox();
-				group->push(paths);
-			}
 		}
 
-		if (fillobj) InsertFillobj(fillobj, paths, group);
+		if (paths->paths.n) { //only add non-empty paths
+			const char *disp = extra.findString("display");
+			if (disp && !strcmp(disp, "none")) {
+				paths->Visible(false);
+			}
+
+			paths->FindBBox();
+			group->push(paths);
+
+			if (fillobj) InsertFillobj(fillobj, paths, group);
+		}
+
 		paths->dec_count();
 		return 1;
 
@@ -3467,19 +3522,28 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 				paths->m(m);
 
 			} else if (!strcmp(name,"style")) {
-				StyleToFillAndStroke(value, paths, gradients, &fillobj); 
+				StyleToFillAndStroke(value, paths, gradients, &fillobj, &extra);
+
+			} else if (!strcmp(name,"sodipodi:insensitive")) {
+				bool locked = BooleanAttribute(value);
+				if (locked) paths->Lock(OBJLOCK_Selectable);
 			}
 		}
 
 		paths->append(x1,y1);
 		paths->append(x2,y2);
 
-		if (paths->paths.n) {
+		if (paths->paths.n) { //only add non-empty paths
+			const char *disp = extra.findString("display");
+			if (disp && !strcmp(disp, "none")) {
+				paths->Visible(false);
+			}
 			paths->FindBBox();
 			group->push(paths);
+
+			if (fillobj) InsertFillobj(fillobj, paths, group);
 		}
 
-		if (fillobj) InsertFillobj(fillobj, paths, group);
 		paths->dec_count();
 		return 1;
 
@@ -3511,15 +3575,26 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 				paths->m(m);
 
 			} else if (!strcmp(name,"style")) {
-				StyleToFillAndStroke(value, paths, gradients, &fillobj); 
+				StyleToFillAndStroke(value, paths, gradients, &fillobj, &extra);
+
+			} else if (!strcmp(name,"sodipodi:insensitive")) {
+				bool locked = BooleanAttribute(value);
+				if (locked) paths->Lock(OBJLOCK_Selectable);
+
 			}
 		}
 
-		if (paths->paths.n) {
+		if (paths->paths.n) { //only add non-empty paths
+			const char *disp = extra.findString("display");
+			if (disp && !strcmp(disp, "none")) {
+				paths->Visible(false);
+			}
+
 			paths->FindBBox();
 			group->push(paths);
+
+			if (fillobj) InsertFillobj(fillobj, paths, group);
 		}
-		if (fillobj) InsertFillobj(fillobj, paths, group);
 		paths->dec_count();
 		return 1;
 
@@ -3553,6 +3628,10 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 			} else if (!strcmp(name,"transform")) {
 				svgtransform(value,m);
 				textobj->m(m);
+
+			} else if (!strcmp(name,"sodipodi:insensitive")) {
+				bool locked = BooleanAttribute(value);
+				if (locked) textobj->Lock(OBJLOCK_Selectable);
 
 			} else if (!strcmp(name,"style")) {
 				InlineCSSToAttribute(value, &styleatt);
@@ -3606,6 +3685,9 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 							textobj->green = fillcolor[1];
 							textobj->blue  = fillcolor[2];
 						}
+
+					} else if (!strcmp(name, "display")) {
+						if (value && !strcmp(value, "none")) textobj->Visible(false);
 					}
 				}
 
@@ -3673,6 +3755,8 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 		const char *link = nullptr;
 		const char *id = nullptr;
 		double m[6];
+		bool selectable = true;
+		bool hidden = false;
 		transform_identity(m);
 
 		for (int c=0; c<element->attributes.n; c++) {
@@ -3698,6 +3782,13 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 			} else if (!strcmp(name,"transform")) {
 				svgtransform(value,m);
 
+			} else if (!strcmp(name,"sodipodi:insensitive")) {
+				selectable = BooleanAttribute(value);
+
+			} else if (!strcmp(name,"style")) {
+				if (value && strstr(value, "display:none")) {
+					hidden = true;
+				}
 			} else if (!strcmp(name,"xlink:href") || !strcmp(name,"href")) { //note xlink:href deprecated as of svg2
 				if (value && *value=='#') link = value+1; //for now, only use links to objects
 
@@ -3709,6 +3800,8 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 			ref->Id(id);
 			makestr(ref->thedata_id, link);
 			ref->m(m);
+			if (!selectable) ref->Lock(OBJLOCK_Selectable);
+			if (hidden) ref->Visible(false);
 			if (hasx || hasy) {
 				// *** additional translate x,y
 				cerr << " todo: implement extra x,y translate on svg use x,y"<<endl;
@@ -3881,7 +3974,7 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 			 //TODo: other stuff found in inkscape svgs:
 			//} else if (!strcmp(name,"opacity")) { //1
 			//} else if (!strcmp(name,"clip-rule")) { //nonzero
-			//} else if (!strcmp(name,"display")) { //inline
+			//} else if (!strcmp(name,"display")) { //inline for ?, none for hidden
 			//} else if (!strcmp(name,"overflow")) { //visible
 			//} else if (!strcmp(name,"visibility")) { //visible
 			//} else if (!strcmp(name,"isolation")) { //auto
@@ -3894,18 +3987,19 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 			//} else if (!strcmp(name,"shape-rendering")) { //auto
 			//} else if (!strcmp(name,"text-rendering")) { //auto
 			//} else if (!strcmp(name,"enable-background")) { //accumulate"
+			//} else if (!strcmp(name,"sodipodi:insensitive")) { //true or false
 
 			if (!strcmp(name,"font-style")) {
-				extra->push(name, new StringValue(value)); //normal italic oblique
+				extra->push(name, new StringValue(value), -1, true); //normal italic oblique
 
 			} else if (!strcmp(name,"font-variant")) { // normal | small-caps | inherit
-				extra->push(name, new StringValue(value));
+				extra->push(name, new StringValue(value), -1, true);
 
 			} else if (!strcmp(name,"font-weight")) { // normal | bold | bolder | lighter | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | inherit
 				bool relative = false;
 				const char *endptr = nullptr;
 				int weight = CSSFontWeight(value, endptr, &relative);
-				extra->push(name, new IntValue(weight));
+				extra->push(name, new IntValue(weight), -1, true);
 
 			} else if (!strcmp(name,"font-stretch")) {
 				// normal = 100% | ultra-condensed 50% | extra-condensed 62.5% | condensed 75% | semi-condensed 87.5% | semi-expanded 112.5% | expanded 125% | extra-expanded 150% | ultra-expanded 200%
@@ -3921,7 +4015,7 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 				else if (!strcmp(value, "expanded"))        stretch = 125; 
 				else if (!strcmp(value, "extra-expanded"))  stretch = 150; 
 				else if (!strcmp(value, "ultra-expanded"))  stretch = 200;
-				extra->push(name, new DoubleValue(stretch));
+				extra->push(name, new DoubleValue(stretch), -1, true);
 
 			} else if (!strcmp(name,"line-height")) {
 				//number, length, percentage, or "normal"==1.2
@@ -3944,7 +4038,13 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 						}
 					}
 				}
-				extra->push(name, new DoubleValue(ems));
+				extra->push(name, new DoubleValue(ems), -1, true);
+
+			} else if (!strcmp(name,"sodipodi-insensitive")) {
+				extra->push(name, new BooleanValue(value), -1, true);
+
+			} else if (!strcmp(name,"display")) {
+				extra->push(name, value);
 
 			//ToDO:
 			//} else if (!strcmp(name, "text-indent")) {

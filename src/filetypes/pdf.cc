@@ -326,6 +326,7 @@ void pdfdumpobj(FILE *f,
 				bool use_transform = true)
 {
 	if (!obj) return;
+	if (!object || !object->Visible()) return;
 
 	DrawableObject *dobj=dynamic_cast<DrawableObject*>(object);
 	char scratch[200];

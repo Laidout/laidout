@@ -1041,6 +1041,8 @@ static void appendobjfordumping(ScribusExportConfig *config, PtrStack<PageObject
 {
 	//WARNING! This function must mirror scribusdumpobj() for what objects actually get output..
 
+	if (!obj->Visible()) return;
+
 	Group *g = dynamic_cast<Group *>(obj);
     if (g && g->filter && !ignore_filter) {
         obj = g->FinalObject();
@@ -1327,6 +1329,10 @@ static void scribusdumpobj(ScribusExportConfig *config, FILE *f,int &curobj,PtrS
 	//possibly set: ANNAME NUMGROUP GROUPS NUMPO POCOOR PTYPE ROT WIDTH HEIGHT XPOS YPOS
 	//	gradients: GRTYP GRSTARTX GRENDX GRSTARTY GRENDY
 	//	images: LOCALSCX LOCALSCY PFILE
+
+	//WARNING! This function must mirror appendobjectfordumping() for what objects actually get output..
+
+	if (!obj->Visible()) return;
 
 	Group *g = dynamic_cast<Group *>(obj);
     if (g && g->filter && !ignore_filter) {
