@@ -13,8 +13,6 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
-bug: press enter on filedialog, saves straight away, THEN asks about overwrite??
-
 bug: ImagePatch doing anything with it causes double free crash
 
 bug: home and end throw selection bounds out of whack.. try with gradient tool for instance, controls bad until reselect
@@ -57,11 +55,11 @@ evince on ubuntu 14.04, pdf export won't load, says Syntax Error... Dictionary k
 configure should check for libreadline-dev? apparently not pkg-config ready <- half fix of listing in package requirements
   needs to use the new extra_cppflags thing
 
-memory hole in ExportDialog.. open export, cylce through formats, quit
-memory hole in calculator
+memory hole in ExportDialog.. open export, cycle through formats, quit
 memory hole in reimpose .. reimposed 5 page booklet
 memory hole when graphical shell activated
 memory hole do laidout -n letter, split a window, then quit. undeleted Objects remain!
+DONE memory hole in calculator
 DONE memory hole: start blank, exit. 3 remain!!
 DONE memory hole helpwindow -> probably something to do with ShortcutWindow and ShortcutTreeSelector not refcounting as expected
 DONE memory hole delauneyinterface
@@ -455,9 +453,11 @@ Find interface: findinterface:
   DONE need draggable window frame
 
 layers palette Layers ObjectTree
+  need to update menu, not flush and repopulate
   should have document list at top, showing current doc
-  top limbo should not have eye/lock flags
   need icons for object types
+  hidden/locked objects should grey out contained objects
+  visible gray out non-visible
 
   drag change flags
   flags, click to change: 
@@ -505,6 +505,10 @@ gif exporter:
   use graphicsmagick? C example: http://www.graphicsmagick.org/api/api.html
   set custom timing in page properties
 
+
+export window:
+  needs to be ScrolledWindow
+  should convert to use ValueWindow when it's ready
 file filters: filefilters:
   multiple export targets, including per object export settings
   export with custom project files:
@@ -610,7 +614,6 @@ laidout import:
     import of master pages
     import of limbos
 pdf: PDF:
-  obey object visible
   export clones adds extra ref in resources section
   text out very broken.. imageout via gs complains about malformed pdf on fonts
   fonts are not doubled up, each text object is exporting its own
@@ -623,8 +626,8 @@ pdf: PDF:
   graphicsmagick for import? subimage and subrange of image_info passed to ReadImage
   page labels?
   implement crop
+  DONE obey object visible
 Scribus scribus:
-  obey object visible
   needs better error return: use try/catch
   outputting with settings that result in 0 pages result in scribus crash
   caption as path flips
@@ -647,8 +650,9 @@ Scribus scribus:
     -> this necessitates revamp of singles to use more than one paper type
   implement crop
 
+  DONE obey object visible (no hidden objects natively)
+
 svg: SVG
-  obey object visible
   in:
 	in units should default to csspoints
     bug: when stroke+fill presentation atts are not under a "style" att, they are ignored
@@ -661,6 +665,10 @@ svg: SVG
     dotted line style
     for new docs, should set rulers to use some reasonable units, from either width="100px", or namedview.document-units
 
+    DONE locked: sodipodi:insensitive="true"
+    DONE obey object visible: style="display:none;..."
+      DONE in: update StyleToFillAndStroke() calls to extra and react to display:none
+      DONE out
     DONE monkey.doc, export then import:
 	  DONE radial gradients not importing
 	  DONE not putting in page bounds even though width/height are fine..
@@ -700,6 +708,7 @@ svg: SVG
   out:
     special check for paths with a single gradient child
     text linespacing.. unclear how Msize/linespacing maps to svg options
+    DONE locked: sodipodi:insensitive="true"
 
   text:
     multiline
@@ -753,6 +762,10 @@ freehand tool:
   DONE need "brush size" controls
   DONE needs to respond to viewport color change
 
+shape brush shapebrush:
+  pathi -> save to shape brush should ask for a name
+  use shape brush should show previews
+  DONE not saving to file
 
 PathInterface: pathinterface
   bug: width handle has bit of a hitch when handle near a vertex.. extra temp width node being added?
@@ -1668,12 +1681,14 @@ newdoc:
 
 
 TreeSelector:
+  shift-control o to bring up window, click on flag: crash!
   click open jumping current to 0
   with text colors, mouse over highlight is off (can't dup?!?)
   not showing alternate gray/white bgs (can't dup?!?)
   option to use markup for labels
   tree display flat option
   makeinwindow() doesn't account for columns
+  DONE left and right need to open and close
 
 Units:
   page units should be adjustible so that node enthusiasts don't have to use inches.. maybe make page layer transforms scale by a units conversion
@@ -1779,22 +1794,28 @@ overwrite:
   tab/left/right/enter not doing anything. should be able to control with keys
 
 FileDialog filedialog:
-  bug: saving before asking for overwrite?
-  bug: overwrite not escapable?
+  when on recent, going back should just revert to directory view
+  click on big image/pdf, takes time to generate preview. click on already selected, regenerates preview
+    need a click to generate preview, gen preview in background
+  file dialog, single click should not enter directory, double click should do that
+  bug: layer on a page won't allow collapse/expand
   bug: sort caseless, other sorts not working
+  should be able to click on column header to sort
   focus should start on file line
   ^l should shift focus to file line
   when something is not openable or saveable, buttons should be greyed out
-  file dialog, single click should not enter directory, double click should do that
   file dialog needs click on parent dir to jump to the dir, but still be able to easily return to prev dir
   implement icon list selector
-  implement option for (or just show) directories first
   Resizing zaps view to top, should preserve 1st in window
   need laidout only bookmarks file
   edits color style: bg alternating isn't highlighting
   tooltip to show full path of bookmarks
   need drag and drop bookmarking
   when you change directories, it should indicate if it corresponds to a bookmark
+
+  DONE implement option for (or just show) directories first
+  DONE bug: saving before asking for overwrite? ..no?
+  DONE bug: overwrite not escapable?
   DONE enter on file line: if has dir, change dir, else trigger save
   DONE should probably have a scroll bar
 
@@ -2474,6 +2495,7 @@ improve split window
   simplify pane customization, docking
 
 signature editor  Signature editor Signature Editor signatureeditor
+  bug: edit imp from viewport, change page number, should it insert pages??
   bug: background colors are wrong now.. supposed to be gray background
   mouse roll on paper size is confusing
   number input for everything
@@ -3034,4 +3056,6 @@ DONE bug: initial warning about could not load ?? not showing the ??
 DONE bug: freehand tool, press any key, crash!!
 DONE bug: lax: slight hitch, about 1/4 sec on every button down, XCreateIC() in app->CreateXInputContext() takes forever
 DONE bug: scrollbars drawing extra line in bottom half
+DONE bug: caption mouse controls don't work on first object??
+DONE bug: new doc, pop up spread editor with f3, close the window: crash!
 

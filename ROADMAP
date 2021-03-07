@@ -22,6 +22,9 @@ VERSION 0.098
 (done) Be able to generate icons from source svg directly
 (done) Page Atlas exporter
 (done) Way to export pages as svg embedded into html
+(done) pick and choose export range, not single "from:start to:end", but like "1-3,5,19-20"
+(done) drag-n-drop from system, like drag images into viewwindow from an external file browser
+(done) Show/hide objects
        Fix icon/text/thin line sizing issues for high dpi monitors (issue #16)
 
 (done) Moving selected things in group contents does not update group bounds
@@ -81,19 +84,18 @@ VERSION 0.099
        Signature editor: option to specify alignment of different size signature stacks
 
        drag-n-drop text to and from the various text edits
-       drag-n-drop with system, like drag images into viewwindow from an external file browser
 
        Figure out what on earth is to be done about color font processing (issue #6)
+       lock down color backend.. currently it's mostly a series of terrible hacks based on 8-bit screen rgb
+       Soup up the color box so one can recall previous colors, and/or integration with palette window
+       color styles, so objects can refer to a named color, just change that named to change all
 
        In image properties dialog, be able to select from various default preview configs
        fix object transform handles for really small objects (handles should still be accessible)
-       lock down color backend.. currently it's mostly a series of terrible hacks based on 8-bit screen rgb
-       Soup up the color box so one can recall previous colors, and/or integration with palette window
        Clean up project load/save internals and dialogs
        Object and resource tags interface
-       color styles, so objects can refer to a named color, just change that named to change all
        Custom line caps
-       Finish implementing anchor tool. maybe gss compatibility?
+       Finish implementing anchor tool
        Custom alignments to parents, not just affine transform to parent
        Externally rendered objects, similar to Scribus render frames
        Softmask
@@ -118,7 +120,6 @@ VERSION 0.1
        Full internationalization support (via harfbuzz) in window controls for input and output, including rtl/mixed text?  
        SpreadEditor: be able to eject a page into limbo, for creation threads, connect, then insert as a group
        When importing from an image list file, should be able to say if and when to auto-make previews
-       pick and choose export range, not single "from:start to:end", but like "1-3,5,19-20"
        Basic infrastructure for most things should be in place.
        Must be Stable, not merely "Stable"
        Creep management controls
@@ -126,14 +127,12 @@ VERSION 0.1
        Construct an adequate command core, so that no X connection necessary for batch processing
        Improve open from template to be able to use names (defined in a file), not just filenames
        perhaps have image open window pane for main split window? drag and drop in images? that would be AWESOME
-       Change cursor or otherwise indicate what will happen as mouse moves around
        Should have option to print/see or not print/see big, preview, or no images, per image
        When adjusting things with the object tool, must have option to be temporarily a little transparent
        All the pdf 1.4 group combine properties, like most importantly transparency
        Configurable icon panel/menu system, make the button box actually function
        Linear (including curvilinear) guides
        Have imagepatch be a transform you can apply to any object
-       Allow objects to have any number of various kinds of transforms applied to it
        Some sort of basic scripting infrastructure allowing easy addition of other scripting language plugins. Swig?
        Plugin infrastructure should be in place: add objects, panes, commands, interfaces, resources, command-line-options?
        allow for easy method for runaround area determination
@@ -143,7 +142,6 @@ VERSION 0.1
        a real PrintDialog that can configure itself based on printer info
        non-hacky new document box that can retrieve printer capabilities, and adjust accordingly (ie grok ppds)
        all things must define their styledefs
-       Low level tree editor, akin to the xml editor in inkscape
        make it easy to add/remove/prioritize/replace import/export filters
        support for rendering the svg filters
        Provide some kind of visual feedback while doing lengthy operations
@@ -152,8 +150,7 @@ VERSION 0.1
        Be able to interact with patches in a way reminiscent of Inkscape's node sculpting
        Object and page templates, aka master pages
        Pages with curved edges, to allow nets for shapes resulting from intersecting cylinders, for instance
-       Optional Midi controller usage
-       Able to select and transform nodes from different objects at the same time
+       Able to select and transform paths/points from different objects at the same time
        Color channel density control, to not overdo CMYK mix, for instance
        Allow accessing scribus image cache, or try to spin off a non project specific general image cache
        Backwards compatibility with previous Laidout versions, without extra utilities, starting with 0.1
@@ -193,6 +190,7 @@ Decide on adequate rendering backend: going with cairo for now, but that's only 
 GraphicsMagick/ImageMagick plugin or integration: benefits: a gazillion file formats, including EPS, and color profiles
   Imlib chokes on really big image files, whereas this would not
 svgfont/cairo user font support.. too special of a case?
+Optional Midi controller usage
 gmic filter plugin
 full TeX importer
 Would be nice to have tex/latex text and equation reader
