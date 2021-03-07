@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+
 ##  parseletters.py
 ##  Guillotine an svg containing glyphs into individual svg glyph files.
 ##  
@@ -47,13 +48,14 @@
 # - Do a proper guillotine, not the current major hack that assumes each path object is the whole layer color.
 #    current system only works when you use Inkscape to trace bitmap right from image, but then you don't edit
 #    the resulting svg at all.
-# - auto kerning
+# - auto kerning based on actual path proximities
 # - for glyf table, either convert cubic to quadratic, or figure out if opentype type1 (cubic glyfs) is suitable for
 #    the fallback glyf table
+# - Have a special "fallback" layer full of black and white glyfs
 # - finish alt glyph system: have layer with only text objects that show glyph name and/or unicode number
 # - implement the CPAL color name substitution for SVG table: replace found colors in the individual svg
 #    with refs to colors in CPAL
-# - implement CPAL/COLR font output instead of SVG, so we can use on chrome
+# - implement COLR/CPAL font output instead of SVG, so we can use on chrome
 #
 # DONE - somehow automate namerecord table, --namerecord-sample to stdout
 # DONE - command line option to specify the ttx template
@@ -64,6 +66,7 @@
 
 
 import os, sys, re, math, copy, argparse
+import xml.etree.ElementTree as ET
 
 
 
@@ -77,7 +80,8 @@ parser.add_argument('-o', '--output-name',  default = "Output",       nargs = '?
 parser.add_argument('-d', '--output-dir',   default = "letters",      nargs = '?', help = 'Directory to put parsed outputs.')
 parser.add_argument('-l', '--layers',       action = 'store_true',      help='If given, output one ttx per color layer.')
 parser.add_argument('-w', '--cells-wide',   default = 16, type = int,   help='If given, divide svgin horizontally by this many cells. Default 16.')
-parser.add_argument('-t', '--cells-tall',   default = 6,  type = int,   help='If given, divide svgin vertically by this many cells. Default 6')
+parser.add_argument('-t', '--cells-tall',   default = 6,  type = int,   help='If given, divide svgin vertically by this many cells. Default 6.')
+parser.add_argument('-C', '--colr',         action = 'store_true',      help='Build a COLR based font, instead of the default SVG.')
 parser.add_argument('-n', '--namerecord',   default = 'namerecord.txt', help='File containing various metadata for the namerecord table.')
 parser.add_argument('-N', '--namerecord-sample', action = 'store_true', help='Output a sample template file for the bits that go in namerecord.')
 parser.add_argument('svgin', help='The svg file to parse.', nargs = argparse.REMAINDER)
@@ -1033,6 +1037,7 @@ if namerecord_file:
     if f:
         for line in f:
             s = line.split(':')
+            if len(s) != 2: continue
             namerecord[s[0]] = s[1].strip()
 
 
@@ -1053,6 +1058,33 @@ instructions = """    <instructions><assembly> </assembly></instructions>\n """
 #
 
 
+
+
+
+
+
+#========================== alt svg parser ====================================================
+#==============================================================================
+#==============================================================================
+
+#----- we are parsing these from the svg:
+baseline  = 0
+docwidth  = 0
+docheight = 0
+columnpixwidth  = 0
+columnpixheight = 0
+
+colors  = []     # there will be 1:1 color per paths_d
+colormap = []    # 1:1 with paths_d, has index in colors_cpal of color
+colors_cpal = [] # colors squashed down to not contain duplicates
+paths_d = []
+
+alts = []
+
+#-----
+
+
+
 #define mapping of glyph id to names for later use in hmtx
 glyphmap = {}         
 glyphmap[".notdef"         ] = 0
@@ -1064,121 +1096,144 @@ glyph_start_index = len(glyphmap)
 #glyphmap["space"           ] = 3
 
 
-
 glyfs = {}
 
 
 
+tree = ET.parse(filename)
+svgroot = tree.getroot()
+
+print ('\nParse svg from', filename, '...')
+
+# Remove {namespace} cruft, because I don't want to depend on lxml
+def clean(name):
+    if '}' in name: return name.split('}', 1)[1]
+    return name
+
+# Remove {namespace} cruft, because I don't want to depend on lxml
+def cleanDict(d):
+    dd = {}
+    keys = d.keys()
+    for key in keys:
+        dd[clean(key)] = d[key]
+    return dd
+
+attribs = cleanDict(svgroot.attrib)
+if 'width' not in attribs or 'height' not in attribs:
+    print ("Missing width,height in svg tag!")
+    exit(1)
+
+docwidth = float(attribs['width'])
+columnpixwidth  = float(docwidth)  / gridwidth
+print ("doc width: "+str(docwidth), " cell width ", columnpixwidth)
+
+docheight = float(attribs['height'])
+columnpixheight = float(docheight) / gridheight
+print ("doc height: "+str(docheight), " cell height ", columnpixheight)
+
+
+transforms = []
 transform = [1,0,0,1,0,0]
-lasttag = ""
 
+# Make transform = t[n] * t[n-1] * .. t[0]
+def UpdateTransform():
+    global transform
+    global transforms
+    transform = [1,0,0,1,0,0]
+    result = [1,0,0,1,0,0]
+    for tr in transforms:
+        a = tr
+        b = transform
+        result[0] = a[0]*b[0]+a[1]*b[2];
+        result[1] = a[0]*b[1]+a[1]*b[3];
+        result[2] = a[2]*b[0]+a[3]*b[2];
+        result[3] = a[2]*b[1]+a[3]*b[3];
+        result[4] = a[4]*b[0]+a[5]*b[2]+b[4];
+        result[5] = a[4]*b[1]+a[5]*b[3]+b[5];
+        transform = result
 
-docwidth=0
-docheight=0
-columnpixwidth  = 0
-columnpixheight = 0
+def ParseForPaths(el):
+    global transform
+    global transforms
 
-colors=[]
-paths_d=[]
-alts = {}
+    tag = clean(child.tag)
+    attribs = cleanDict(ch.attrib)
 
- #first parse in the original svg
-svg = open(filename)
+    if tag == 'g':
+        if 'transform' in attribs:
+            tr = ParseTransform(attribs['transform'])
+            transforms.append(tr)
+            UpdateTransform()
+            for child in el:
+                ParseForPaths(child)
+            transforms.pop()
 
-curcolor = None
-intspan = False
-x=0
-y=0
+    elif tag == 'text': # search for alts
+        #look for alternates, labeled with text objects in the svg
 
-for line in svg:
-    #print (line[:40].rstrip()+"...")
+        if 'x' in attribs and 'y' in attribs:
+            posx = int(float(attribs['x'])/columnpixwidth)
+            posy = int(float(attribs['y'])/columnpixheight)
 
-    #find opening tag
-    match = re.search("^\s*<(\w+)", line)
-    if (match) :
-        #print (match.group(0) + ",   "+match.group(1))
-        lasttag = match.group(1)
-        intspan = False
+        if *** has 'tspan':
+            tstr = match.group(1)
+            print ("found text: "+tstr+' at '+str(x)+', '+str(y))
+            #alts[str(x)+','+str(y)] = tstr
 
-    match = re.search("^\s*([a-zA-Z]+)", line)
-    if match:
-        attribute = match.group(1)
-        #print ("att: "+attribute)
-    else:
-        attribute = ""
-
-    if lasttag == "svg" and line.find("width")>=0:
-        match = re.search("\"(\d*)\"", line)
-        if (match):
-            docwidth = float(match.group(1))
-            columnpixwidth  = float(docwidth)  / gridwidth
-            #print ("doc width: "+str(docwidth)+ " from line "+line)
-
-    elif lasttag == "svg" and line.find("height")>=0:
-        match = re.search("\"(\d*)\"", line)
-        if (match):
-            docheight = float(match.group(1))
-            columnpixheight = float(docheight) / gridheight
-            #print ("doc height: "+str(docheight)+ " from line "+line)
-
-    elif line.find("transform")>=0:
-        #*** append to transform
-        match = re.search("transform=\"translate\(([^,]*),([^)]*)\)\"", line)
-        if match:
-            #print ("transform translate: "+match.group(1)+", "+match.group(2))
-            transform[4] = transform[4] + float(match.group(1))
-            transform[5] = transform[5] + float(match.group(2))
-            #print (str(transform))
-
-    if lasttag == "path" and attribute == "style": 
-        attr_string = line[line.find("\"")+1:line.rfind("\"")]
-        #print ("attr string: "+attr_string)
-
+    elif tag == 'path':
+        
         attr_dict = {pair.split(":")[0]:pair.split(":")[1] for pair in attr_string.split(";")}
         #print ("attrs: "+str(attr_dict))
         if "fill" in attr_dict:
             curcolor = attr_dict["fill"]
             colors.append(curcolor)
 
-    elif lasttag == "path" and attribute == "d": 
-        d = line[line.find("\"")+1:line.rfind("\"")]
-
-        paths_d.append(d)
-#        if dolayered == False:
-#            paths_d.append(d)
-#        else:
-#            if len(paths_d)==layer:
-#                paths_d.append(d)
-#            else:
-#                paths_d.append("")
-
-    elif lasttag == "text":
-        #look for alternates, labeled with text objects in the svg
-
-        if line.find("<tspan")>=0:
-            intspan = True
-
-        elif attribute == 'x' and intspan == False:
-            match = re.search("\"([0123456789.-]*)\"", line)
-            x = int(float(match.group(1))/columnpixwidth)
-
-        elif attribute == 'y' and intspan == False:
-            match = re.search("\"([0123456789.-]*)\"", line)
-            y = int(float(match.group(1))/columnpixheight)
-        else: 
-            match = re.search(">([^<]+)</tspan", line)
-            if match:
-                tstr = match.group(1)
-                print ("found text: "+tstr+' at '+str(x)+', '+str(y))
-                #alts[str(x)+','+str(y)] = tstr
+        colors.append(color)
+        if color not in colors_cpal:
+            colors_cpal.append(color)
+            colormap.append(len(colors_cpal)-1)
+        else:
+            colormap.append(colors_cpal.index(color))
 
 
-svg.close()
 
+for child in svgroot:
+    tag = clean(child.tag)
+    #print(tag, cleanDict(child.attrib))
+
+    if tag == "namedview": # look for a baseline guide
+        for ch in child:
+            tag = clean(ch.tag)
+            attribs = cleanDict(ch.attrib)
+            #print(tag, cleanDict(ch.attrib))
+            if tag == 'guide':
+                if 'label' in attribs and attribs['label'].lower() == 'baseline':
+                    baseline = float(attribs['position'].split(',')[1])
+                    print ("Found baseline: ", baseline, "->", math.fmod(baseline, columnpixheight))
             
-#svg.seek(0)
-#for line in svg:
-#    print ("redo!!" + line[:40].rstrip()+"...")
+    elif tag == "g": # look for a baseline guide
+        attribs = cleanDict(ch.attrib)
+        if attribs['id'].lower() == 'fallback':
+            # we have a fallback font layer supplied!
+            pass
+        else:
+            # we have a normal layer, we need to parse for paths
+            ParseForPaths(child)
+    elif tag == 'text' || tag == 'path':
+        # catch stragglers
+        ParseForPaths(child)
+    print()
+
+
+exit(0)
+
+
+#==============================================================================
+#==============================================================================
+#==============================================================================
+
+
+
 
 
 print ("Offset: "+str(transform))
@@ -1192,12 +1247,12 @@ for path_d in paths_d:
     translatePath(pathlist, transform[4],transform[5])
     paths.append(pathlist)
 
-columnpixwidth  = float(docwidth)  / gridwidth
-columnpixheight = float(docheight) / gridheight
 
 hmtx = {}
 
-#process the svg and output to individual files
+
+#----------- chop up the parsed paths and output to individual files --------
+
 for row in range (0, gridheight):
     for column in range(0, gridwidth):
         charindex  = startindex + row*gridwidth + column
@@ -1233,8 +1288,6 @@ for row in range (0, gridheight):
                    '   width="'+str(columnpixwidth)+'"\n'
                    '   height="'+str(columnpixheight)+'"\n'
                    '   viewBox="0 250 '+str(columnpixwidth)+' '+str(columnpixheight)+'"\n'
-                   #'   viewBox="50 250 '+str(columnpixwidth)+' '+str(columnpixheight)+'"\n'
-                   #'   viewBox="0 -250 '+str(columnpixwidth)+' '+str(columnpixheight)+'"\n'
                    '   >\n'
                    '<g>\n')
 
@@ -1571,13 +1624,13 @@ for line in templatettx:
 
 
   elif line.find("<!-- CPAL -->")>=0:
-    if (len(colors)>0):
+    if (len(colors_cpal)>0):
         ttx.write('  <CPAL>\n    <version value="0"/>\n')
-        ttx.write('    <numPaletteEntries value="'+str(len(colors))+'"/>\n')
+        ttx.write('    <numPaletteEntries value="'+str(len(colors_cpal))+'"/>\n')
         ttx.write('    <palette index="0">\n')
 
         index=0
-        for color in colors:
+        for color in colors_cpal:
             ttx.write('      <color index="'+str(index)+'" value="'+color+'FF"/>\n')
             index=index+1
 
