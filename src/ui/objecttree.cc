@@ -70,10 +70,11 @@ namespace Laidout {
 
 ObjectTree::ObjectTree(anXWindow *parnt,const char *nname,const char *ntitle,
 						unsigned long nowner,const char *mes)
-  : TreeSelector(parnt,nname,ntitle, ANXWIN_REMEMBER|ANXWIN_ESCAPABLE,
+  : TreeSelector(parnt,nname,ntitle, ANXWIN_REMEMBER, //| ANXWIN_ESCAPABLE,
                 0,0,400,400,0,
                 nullptr,nowner,mes,
-                0,nullptr)
+                TREESEL_SEND_PATH | TREESEL_SEND_ON_UP,
+                nullptr)
 {
 	tree_column = 1;
 	AddColumn("Flags", nullptr, 2*GetDefaultDisplayer()->textheight(),0,    TreeSelector::ColumnInfo::ColumnFlags,  1);
@@ -85,42 +86,11 @@ ObjectTree::~ObjectTree()
 {
 }
 
-void ObjectTree::UseContainer(ObjectContainer *container)
+char ObjectTree::ToggleFlag(char current)
 {
-	if (!menu) menu = new MenuInfo();
-
-	anObject *o;
-	ObjectContainer *oc;
-	DrawableObject *d;
-	char flagstr[10];
-	sprintf(flagstr,"el");
-
-	for (int c=0; c<container->n(); c++) {
-		menu->AddItem(container->object_e_name(c));
-
-		o  = container->object_e(c);
-		oc = dynamic_cast<ObjectContainer*>(o);
-
-		sprintf(flagstr,"  ");
-		d=dynamic_cast<DrawableObject*>(o);
-		if (d) {
-			if (d->Visible())   flagstr[0]='E'; else flagstr[0]='e';
-			if (d->IsLocked(0)) flagstr[1]='L'; else flagstr[1]='l';
-		}
-		menu->AddDetail(flagstr,nullptr);
-
-		if (oc && oc->n()) {
-			menu->SubMenu();
-			UseContainer(oc);
-			menu->EndSubMenu();
-		}
-	}
-
-	if (!menu->parent) {
-		DBG menuinfoDump(menu,0);
-	}
+	if (current == ' ') return ' ';
+	return TreeSelector::ToggleFlag(current);
 }
-
 
 
 //------------------------------- ObjectTreeWindow ----------------------------------
@@ -141,10 +111,13 @@ ObjectTreeWindow::ObjectTreeWindow(anXWindow *parnt,const char *nname,const char
     menu         = nullptr;
     tree         = nullptr;
     objcontainer = nullptr;
-	domain       = WholeProject;
+	domain       = Unknown;
+	selection    = nullptr;
+
+	if (dynamic_cast<LaidoutViewport*>(container)) domain = InViewport;
 
     if (container) UseContainer(container);
-    else UseContainer(WholeProject);
+    // else UseContainer(domain);
 
 	ConstructTree();
 }
@@ -154,6 +127,25 @@ ObjectTreeWindow::~ObjectTreeWindow()
 	if (menu) menu->dec_count();
 	if (objcontainer) objcontainer->dec_count();
 	if (tree) tree->dec_count();
+	if (selection) selection->dec_count();
+}
+
+LaidoutViewport *ObjectTreeWindow::FindViewport()
+{
+	ViewWindow *viewer = nullptr;
+	LaidoutViewport *viewport = nullptr;
+	if (win_parent) {
+		for (int c=0; c<win_parent->NumWindowKids(); c++) {
+			viewer = dynamic_cast<ViewWindow*>(win_parent->WindowChild(c));
+			if (viewer) break;
+		}
+	}
+	if (!viewer) viewer = dynamic_cast<ViewWindow*>(laidout->lastview);
+	if (viewer) {
+		viewport = dynamic_cast<LaidoutViewport*>(viewer->viewport);
+	}
+
+	return viewport;
 }
 
 void ObjectTreeWindow::UseContainer(ObjectTreeWindow::Domain container)
@@ -164,16 +156,7 @@ void ObjectTreeWindow::UseContainer(ObjectTreeWindow::Domain container)
 	}
 
 	if (container == InViewport) {
-		ViewWindow *viewer = nullptr;
-		LaidoutViewport *viewport = nullptr;
-		for (int c=0; c<win_parent->NumWindowKids(); c++) {
-			viewer = dynamic_cast<ViewWindow*>(win_parent->WindowChild(c));
-			if (viewer) break;
-		}
-		if (!viewer) viewer = dynamic_cast<ViewWindow*>(laidout->lastview);
-		if (viewer) {
-			viewport = dynamic_cast<LaidoutViewport*>(viewer->viewport);
-		}
+		LaidoutViewport *viewport = FindViewport();
 		if (viewport) UseContainer(viewport);
 
 		return;
@@ -194,15 +177,14 @@ void ObjectTreeWindow::UseContainer(ObjectContainer *container)
 	if (!container) return;
 
 	domain = SingleObject;
+	if (menu) menu->Flush();
 
 	UseContainerRecursive(container);
 	if (tree) tree->InstallMenu(menu);
 
-	if (objcontainer && objcontainer!=container) {
-		objcontainer->dec_count();
-		objcontainer=container;
-		objcontainer->inc_count();
-	}
+	container->inc_count();
+	if (objcontainer) objcontainer->dec_count();
+	objcontainer = container;
 }
 
 /*! Populate menu with all the items.
@@ -247,7 +229,7 @@ void ObjectTreeWindow::UseContainerRecursive(ObjectContainer *container)
 	}
 }
 
-/*! Make sure tree is created already.
+/*! Make sure the tree TreeSelector is created already.
  */
 void ObjectTreeWindow::ConstructTree()
 {
@@ -264,6 +246,8 @@ int ObjectTreeWindow::init()
 	Button *tbut;
 	Displayer *dp=GetDefaultDisplayer();
 	double th=dp->textheight();
+
+	if (domain == Unknown) UseContainer(InViewport);
 
 
  	 //add the tree
@@ -324,9 +308,33 @@ int ObjectTreeWindow::init()
 
 int ObjectTreeWindow::Event(const Laxkit::EventData *data,const char *mes)
 {
-	if (!strcmp(mes,"docTreeChange")) {
+	if (!strcmp(mes,"tree")) {
+		const SimpleMessage *sm = dynamic_cast<const SimpleMessage*>(data);
+		DBG cerr << "ObjectTreeWindow event: "<<sm->info1<<" "<<sm->info2<<" "<<sm->info3<<" "<<sm->info4<<" "<<(sm->str ? sm->str : "null")<<endl;
+
+		DBG LaidoutViewport *viewport = FindViewport();
+		DBG if (!viewport) return 0;
+		DBG viewport->PostMessage(sm->str);
+
+		if (viewport && domain == InViewport) {
+			// viewport->Select(sm->str);
+		}
+
+		return 0;
+
+	} else if (!strcmp(mes,"docTreeChange")) {
 		const TreeChangeEvent *te=dynamic_cast<const TreeChangeEvent *>(data);
 		if (!te) return 0;
+		DBG cerr << "ObjectTreeWindow got docTreeChange "<<te->Message()<<endl;
+
+		if (te->changetype == TreeSelectionChange) {
+			UpdateSelection();
+
+		// } else if (te->changetype == TreeDocGone) {
+		} else {
+			//tree has altered somehow, to be safe regenerate the whole tree
+			RefreshList();
+		}
 
 		return 0;
 	}
@@ -334,9 +342,15 @@ int ObjectTreeWindow::Event(const Laxkit::EventData *data,const char *mes)
 	return anXWindow::Event(data, mes);
 }
 
+int ObjectTreeWindow::UpdateSelection()
+{
+	return 0;
+}
+
 void ObjectTreeWindow::RefreshList()
 {
-
+	DBG cerr << "ObjectTreeWindow::RefreshList()"<<endl;
+	if (objcontainer) UseContainer(objcontainer);
 }
 
 int ObjectTreeWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const LaxKeyboard *d)

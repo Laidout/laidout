@@ -18,7 +18,10 @@
 
 #include <lax/treeselector.h>
 #include <lax/rowframe.h>
+#include <lax/interfaces/selection.h>
+
 #include "../dataobjects/objectcontainer.h"
+#include "viewwindow.h"
 
 
 namespace Laidout {
@@ -29,11 +32,9 @@ class ObjectTree : public Laxkit::TreeSelector
   public:
 	ObjectTree(anXWindow *parnt,const char *nname,const char *ntitle,
 						unsigned long nowner,const char *mes);
-	//ObjectTree(Value *value);
 	virtual ~ObjectTree();
 	virtual const char *whattype() { return "ObjectTree"; }
-
-	virtual void UseContainer(ObjectContainer *container);
+	virtual char ToggleFlag(char current);
 };
 
 
@@ -41,17 +42,20 @@ class ObjectTree : public Laxkit::TreeSelector
 class ObjectTreeWindow : public Laxkit::RowFrame
 {
   public:
-	enum Domain { WholeProject, InViewport, SingleObject };
+	enum Domain { Unknown, WholeProject, InViewport, SingleObject };
 
   protected: 
 	ObjectTree *tree;
 	ObjectContainer *objcontainer;
+	LaxInterfaces::Selection *selection;
 	Laxkit::MenuInfo *menu;
 
 	Domain domain;
 
 	virtual void UseContainerRecursive(ObjectContainer *container);
 	void ConstructTree();
+	int UpdateSelection();
+	LaidoutViewport *FindViewport();
 
   public:
 	ObjectTreeWindow(anXWindow *parnt,const char *nname,const char *ntitle,
