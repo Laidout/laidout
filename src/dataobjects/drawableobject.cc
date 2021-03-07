@@ -204,6 +204,7 @@ DrawableObject::DrawableObject()
 	child_clip_type = CLIP_None;
 	clip_path = wrap_path = inset_path = nullptr;
 	autowrap = autoinset = 0;
+	proxy_shape = nullptr;
 
 	opacity = 1;
 	blur    = 0;
@@ -222,12 +223,13 @@ DrawableObject::DrawableObject()
  */
 DrawableObject::~DrawableObject()
 {
-	if (soft_mask)  soft_mask ->dec_count();
-	if (clip_path)  clip_path ->dec_count();
-	if (wrap_path)  wrap_path ->dec_count();
-	if (inset_path) inset_path->dec_count();
-	if (filter)     filter    ->dec_count();
-	if (metadata)   metadata  ->dec_count();
+	if (soft_mask)   soft_mask  ->dec_count();
+	if (clip_path)   clip_path  ->dec_count();
+	if (wrap_path)   wrap_path  ->dec_count();
+	if (inset_path)  inset_path ->dec_count();
+	if (filter)      filter     ->dec_count();
+	if (metadata)    metadata   ->dec_count();
+	if (proxy_shape) proxy_shape->dec_count();
 
 	if (importer)      importer     ->dec_count();
 	if (importer_data) importer_data->dec_count();
@@ -1790,7 +1792,23 @@ int DrawableObject::ResolveAnchorRefs(Document *doc, Page *page, Group *g, Laxki
 	return adjusted;
 }
 
+Laxkit::anObject *DrawableObject::GetProperty(const char *name)
+{
+	return properties.find(name);
+}
 
+/*! Return 0 for success, nonzero for error.
+ */
+int DrawableObject::SetProperty(const char *name, Laxkit::anObject *prop, bool absorb)
+{
+	Value *v = dynamic_cast<Value*>(prop);
+	if (v) properties.push(name, v, -1, absorb);
+	else {
+		properties.pushObject(name, prop);
+		if (absorb) prop->dec_count();
+	}
+	return 0;
+}
 
 //-------------- Value functions:
 

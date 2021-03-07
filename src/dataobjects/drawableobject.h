@@ -21,6 +21,7 @@
 #include <lax/interfaces/somedata.h>
 #include <lax/interfaces/groupdata.h>
 #include <lax/interfaces/pathinterface.h>
+#include <lax/interfaces/somedataref.h>
 #include "objectcontainer.h"
 //#include "../filetypes/objectio.h"
 #include "../core/guides.h"
@@ -197,6 +198,8 @@ class DrawableObject :  virtual public ObjectContainer,
 
 	//Laxkit::RefPtrStack<anObject *> refs; //what other resources this objects depends on?
 
+	LaxInterfaces::SomeDataRef *proxy_shape; //a ref to a DrawableObject Resource
+
 	ValueHash properties;
 	LaxFiles::AttributeObject *metadata;
 	LaxFiles::Attribute iohints;
@@ -206,6 +209,7 @@ class DrawableObject :  virtual public ObjectContainer,
 	DrawableObject();
 	virtual ~DrawableObject();
 	virtual const char *whattype() { return "Group"; }
+	virtual const char *IconKey() { return "Group"; }
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
 	virtual const char *Id();
 	virtual const char *Id(const char *newid);
@@ -249,6 +253,8 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual int RemoveAnchorI(int index);
 	virtual int ResolveAnchorRefs(Document *doc, Page *page, DrawableObject *g, Laxkit::ErrorLog &log);
 
+	virtual Laxkit::anObject *GetProperty(const char *name);
+	virtual int SetProperty(const char *name, Laxkit::anObject *prop, bool absorb);
 
 	 //Group specific functions:
 	//virtual int contains(SomeData *d,FieldPlace &place);
