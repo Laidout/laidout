@@ -1762,8 +1762,7 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *nname,const char
 									ANXWIN_HOVER_FOCUS|VIEWPORT_RIGHT_HANDED|VIEWPORT_BACK_BUFFER|VIEWPORT_ROTATABLE,
 									0,0,0,0,0,NULL,spreadtool);
 	viewport = sed;
-	app->reparent(sed,this);
-	sed->dec_count();
+	app->reparent(sed,this); //note viewport is later added with AddWin(0), so don't remove creation count HasInterface
 	WindowStyle *col = win_themestyle->duplicate();
 	InstallColors(col);
 	viewport->InstallColors(col);
@@ -1771,12 +1770,6 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *nname,const char
 	col->dec_count();
 	viewport->dp->NewBG(255, 255, 255);
 	viewer_style |= VIEWPORT_NO_XRULER | VIEWPORT_NO_YRULER;
-
-	app->reparent(viewport,this); //adds to kids stack so we don't have to worry about dec_counting it
-
-	//app->reparent(viewport,this);
-	//viewport->dec_count();
-	//*** doing this here removes memory hole, but adds rulers to window!?!?!?!?
 
 	needtodraw=1;
 
