@@ -351,7 +351,7 @@ class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual
 	int push(const char *name,double d,int where=-1);
 	int push(const char *name,const char *string,int where=-1);
 	int pushObject(const char *name,Laxkit::anObject *obj,int where=-1);
-	int push(const char *name,Value *v,int where=-1);
+	int push(const char *name,Value *v,int where=-1, bool absorb = false);
 	int push(const char *name,int len,Value *v,int where=-1);
 	int remove(int i);
 	void swap(int i1, int i2);

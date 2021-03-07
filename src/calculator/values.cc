@@ -1971,7 +1971,7 @@ int ValueHash::pushObject(const char *name,Laxkit::anObject *obj,int where)
  *
  * Returns index of pushed value, or -1 if failed somehow.
  */
-int ValueHash::push(const char *name,Value *v,int where)
+int ValueHash::push(const char *name,Value *v,int where, bool absorb)
 {
 	if (where<0 || where>=keys.n) where=keys.n;
 
@@ -1996,7 +1996,9 @@ int ValueHash::push(const char *name,Value *v,int where)
 	}
 
 	keys.push(newstr(name),-1,where);
-	return values.push(v,-1,where);
+	int status = values.push(v,-1,where);
+	if (absorb) v->dec_count();
+	return status;
 }
 
 /*! Increments count on v.
