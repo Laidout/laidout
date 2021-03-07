@@ -356,7 +356,7 @@ const char *GroupInterface::hoverMessage(int p)
 	if (p == GIA_Link) return _("Clone options");
 	if (p == GIA_Jump_To_Link) return _("Jump to original");
 	if (p == GIA_Sever_Link) return _("Sever link");
-	if (p == GIA_Parent_Link) return _("Parent alignment options");
+	if (p == GIA_Parent_Link) return _("Parent options");
 	if (p == GIA_Reparent) return _("Parent to");
 	if (p == GIA_Unparent) return _("Remove parent of each selected");
 	if (p == GIA_Jump_To_Parent) return _("Select parent");
