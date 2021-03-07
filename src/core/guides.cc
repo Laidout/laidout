@@ -108,7 +108,7 @@ void PointAnchor::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpC
  *  (1<<6) attract objects perpendicularly
  * </pre>
  */
-class PathGuide : public LaxInterfaces::SomeData, public LaxFiles::DumpUtility
+class PathGuide : public LaxInterfaces::SomeData
 {
  public:
 	unsigned int guidetype;
