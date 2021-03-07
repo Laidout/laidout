@@ -1453,7 +1453,7 @@ int Net::LoadFile(const char *file,char **error_ret)
 	}
 
 	cerr << "WARNING: assuming indented format for net file "<<file<<endl;//***check!
-	dump_in(f,0,NULL,NULL);
+	dump_in(f,0,0,NULL,NULL);
 
 	fclose(f);
 
