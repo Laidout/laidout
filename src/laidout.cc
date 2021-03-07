@@ -1121,6 +1121,8 @@ int LaidoutApp::readinLaidoutDefaults(char **shortcutsfile)
 		} else if (!strcmp(name,"maxPreviewLength")) {
 			IntAttribute(value,&max_preview_length);
 
+		} else if (!strcmp(name,"uiscale")) {
+			DoubleAttribute(value, &prefs.uiscale);
 		}
 	}
 	
@@ -1302,6 +1304,7 @@ enum LaidoutOptions {
 	OPT_pipeout,
 	OPT_list_shortcuts,
 	OPT_theme,
+	OPT_uiscale,
 	OPT_helphtml,
 	OPT_helpman,
 	OPT_version,
@@ -1336,11 +1339,11 @@ void InitOptions()
 	options.Add("pipeout",            'P', 1, "On exit, export document[0] to stdout",       OPT_pipeout, "default");
 	options.Add("list-shortcuts",     'S', 0, "Print out a list of current keyboard bindings, then exit",OPT_list_shortcuts,nullptr);
 	options.Add("theme",              'T', 1, "Set theme. Currently, one of Light, Dark, or Gray",OPT_theme,nullptr);
+	options.Add("uiscale",            'U', 1, "UI scale multiplier",                         OPT_uiscale,"1");
 	options.Add("helphtml",           'H', 0, "Output an html fragment of key shortcuts.",   OPT_helphtml, nullptr);
 	options.Add("helpman",             0 , 0, "Output a man page fragment of options.",      OPT_helpman, nullptr);
 	options.Add("version",            'v', 0, "Print out version info, then exit.",          OPT_version, nullptr);
 	options.Add("help",               'h', 0, "Show this summary and exit.",                 OPT_help, nullptr);
-
 }
 
 //! Parse command line options, and load up initial documents or projects.
@@ -1375,6 +1378,15 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			case OPT_theme: { // theme
 				makestr(app_profile, o->arg());
 			  } break; 
+
+			case OPT_uiscale: {
+				double scale = strtod(o->arg(), nullptr);
+				if (scale > 0) {
+					prefs.uiscale = scale;
+					if (theme) theme->ui_scale = scale;
+				}
+				break;
+			  }
 
 			case OPT_template: { // load in template
 					ErrorLog log;

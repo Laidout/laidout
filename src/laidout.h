@@ -49,6 +49,7 @@ enum TreeChangeType {
 		TreeObjectDeleted,
 		TreeObjectAdded,
 		TreeSelectionChange,
+		TreePageChange,
 		TreeMAX
 	};
 
@@ -66,6 +67,7 @@ class TreeChangeEvent : public Laxkit::EventData
 	int start,end;
 	TreeChangeEvent() : changer(nullptr),start(0),end(0) {}
 	TreeChangeEvent(const TreeChangeEvent &te);
+	const char *Message() const;
 };
 
 enum GlobalPrefsNotify {
