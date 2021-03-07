@@ -221,7 +221,7 @@ int PageMarkerInterface::Refresh()
 
 	if (shapes.n==0 || colors.n==0) return 0;
 
-	double th=app->defaultlaxfont->textheight();
+	double th = curwindow->win_themestyle->normal->textheight();// app->defaultlaxfont->textheight();
 	double pad=th/3;
 
 	if (boxw==0) {
@@ -340,7 +340,8 @@ int PageMarkerInterface::Refresh()
 int PageMarkerInterface::scan(int x,int y, int &index)
 {
 	index=-1;
-	double th=dp->textheight();
+	// double th=dp->textheight();
+	double th = curwindow->win_themestyle->normal->textheight();
 	double pad=th/3;
 
 	if (mode==PSTATE_Select || mode==PSTATE_SelectFull) {
@@ -388,7 +389,8 @@ int PageMarkerInterface::LBDown(int x,int y,unsigned int state,int count, const 
 	buttondown.down(d->id,LEFTBUTTON,x,y, what,index);
 
 	if (what==PSTATE_Page) { //index should be >=0
-		double th=dp->textheight();
+		// double th=dp->textheight();
+		double th = curwindow->win_themestyle->normal->textheight();
 		double pad=th/3;
 		int xx=0;
 
@@ -545,7 +547,8 @@ int PageMarkerInterface::WheelUp(int x,int y,unsigned int state,int count, const
 		return 1;
 	}
 
-	boxoffset.y-=uiscale*dp->textheight();
+	boxoffset.y -= uiscale*curwindow->win_themestyle->normal->textheight();
+	
 	if (boxoffset.y + boxh <=dp->Miny) mode=PSTATE_Normal;
 	needtodraw=1;
 	return 0;
@@ -555,7 +558,7 @@ int PageMarkerInterface::WheelDown(int x,int y,unsigned int state,int count, con
 {
 	if (mode==PSTATE_Normal) return 1;
 
-	boxoffset.y+=uiscale*dp->textheight();
+	boxoffset.y+=uiscale*curwindow->win_themestyle->normal->textheight();
 	if (boxoffset.y>dp->Maxy) mode=PSTATE_Normal;
 	needtodraw=1;
 	return 0;
