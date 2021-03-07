@@ -1,0 +1,340 @@
+#Laidout 0.097.1 Document
+id Document19
+name default
+saveas booklet.laidout
+resources
+imposition SignatureImposition
+  numpages       8
+  showwholecover no
+  signature     
+    autoaddsheets      yes
+    sheetspersignature 2
+    pattern           
+      numhfolds    0
+      numvfolds    1
+      fold         \
+        1 Right #0
+
+      binding      Left
+      trimtop      0
+      trimbottom   0
+      trimleft     0
+      trimright    0
+      margintop    0
+      marginbottom 0
+      marginleft   0
+      marginright  0
+      up           Top
+      positivex    Right
+      positivey    Top
+    partition         
+      paper      
+        name        letter
+        units       in
+        width       8.5
+        height      11
+        dpi         300
+        orientation landscape
+      insettop    0
+      insetbottom 0
+      insetleft   0
+      insetright  0
+      tilegapx    0
+      tilegapy    0
+      tilex       1
+      tiley       1
+page 0
+  labeltype circle
+  labelcolor rgbf(1,1,1)
+  layer 0
+    id pagelayer
+    matrix 1 0 0 1 0 0
+    minx 0
+    maxx 0
+    miny 0
+    maxy 0
+    visible
+    locks 
+    kids
+      object 0 CaptionData
+        id CaptionData27
+        visible
+        selectable
+        locks 
+        config
+          matrix 0.006111111111 0 0 -0.006111111111 1.880299853 5.534744297
+          font
+            fontsize   588
+            Msize      505.4736842
+            fontfile   /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
+            fontfamily sans
+            fontstyle  
+          fontsize 588
+          linespacing 1
+          direction guess
+          xcentering 0
+          ycentering 0
+          color rgbaf(0.5, 0.5, 0.5, 1)
+          text \
+            1
+page 1
+  labeltype circle
+  labelcolor rgbf(1,1,1)
+  layer 0
+    id pagelayer
+    matrix 1 0 0 1 0 0
+    minx 1.971359455
+    maxx 3.936654594
+    miny 2.402172553
+    maxy 5.995505887
+    visible
+    locks 
+    kids
+      object 0 CaptionData
+        id CaptionData30
+        visible
+        selectable
+        locks 
+        config
+          matrix 0.006111111111 0 -0 -0.006111111111 1.971359455 5.995505887
+          font
+            fontsize   588
+            Msize      505.4736842
+            fontfile   /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
+            fontfamily sans
+            fontstyle  
+          fontsize 588
+          linespacing 1
+          direction guess
+          xcentering 0
+          ycentering 0
+          color rgbaf(0.5, 0.5, 0.5, 1)
+          text \
+            2
+page 2
+  labeltype circle
+  labelcolor rgbf(1,1,1)
+  layer 0
+    id pagelayer
+    matrix 1 0 0 1 0 0
+    minx 0
+    maxx 0
+    miny 0
+    maxy 0
+    visible
+    locks 
+    kids
+      object 0 CaptionData
+        id CaptionData29
+        visible
+        selectable
+        locks 
+        config
+          matrix 0.006111111111 0 0 -0.006111111111 1.529720383 6.015538999
+          font
+            fontsize   588
+            Msize      505.4736842
+            fontfile   /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
+            fontfamily sans
+            fontstyle  
+          fontsize 588
+          linespacing 1
+          direction guess
+          xcentering 0
+          ycentering 0
+          color rgbaf(0.5, 0.5, 0.5, 1)
+          text \
+            3
+page 3
+  labeltype circle
+  labelcolor rgbf(1,1,1)
+  layer 0
+    id pagelayer
+    matrix 1 0 0 1 0 0
+    minx 1.620083392
+    maxx 3.585378531
+    miny 2.493503741
+    maxy 6.086837075
+    visible
+    locks 
+    kids
+      object 0 CaptionData
+        id CaptionData32
+        visible
+        selectable
+        locks 
+        config
+          matrix 0.006111111111 0 0 -0.006111111111 1.620083392 6.086837075
+          font
+            fontsize   588
+            Msize      505.4736842
+            fontfile   /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
+            fontfamily sans
+            fontstyle  
+          fontsize 588
+          linespacing 1
+          direction guess
+          xcentering 0
+          ycentering 0
+          color rgbaf(0.5, 0.5, 0.5, 1)
+          text \
+            4
+page 4
+  labeltype circle
+  labelcolor rgbf(1,1,1)
+  layer 0
+    id pagelayer
+    matrix 1 0 0 1 0 0
+    minx 0
+    maxx 0
+    miny 0
+    maxy 0
+    visible
+    locks 
+    kids
+      object 0 CaptionData
+        id CaptionData26
+        visible
+        selectable
+        locks 
+        config
+          matrix 0.006111111111 0 0 -0.006111111111 1.78710537 6.315346025
+          font
+            fontsize   595
+            Msize      517.3913043
+            fontfile   /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
+            fontfamily sans
+            fontstyle  
+          fontsize 588
+          linespacing 1
+          direction guess
+          xcentering 0
+          ycentering 0
+          color rgbaf(0.5, 0.5, 0.5, 1)
+          text \
+            5
+page 5
+  labeltype circle
+  labelcolor rgbf(1,1,1)
+  layer 0
+    id pagelayer
+    matrix 1 0 0 1 0 0
+    minx 0
+    maxx 0
+    miny 0
+    maxy 0
+    visible
+    locks 
+    kids
+      object 0 CaptionData
+        id CaptionData34
+        visible
+        selectable
+        locks 
+        config
+          matrix 0.006111111111 0 0 -0.006111111111 1.665785182 5.827860264
+          font
+            fontsize   588
+            Msize      505.4736842
+            fontfile   /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
+            fontfamily sans
+            fontstyle  
+          fontsize 588
+          linespacing 1
+          direction guess
+          xcentering 0
+          ycentering 0
+          color rgbaf(0.5, 0.5, 0.5, 1)
+          text \
+            6
+page 6
+  labeltype circle
+  labelcolor rgbf(1,1,1)
+  layer 0
+    id pagelayer
+    matrix 1 0 0 1 0 0
+    minx 1.8023393
+    maxx 3.767634439
+    miny 2.493503741
+    maxy 6.086837075
+    visible
+    locks 
+    kids
+      object 0 CaptionData
+        id CaptionData31
+        visible
+        selectable
+        locks 
+        config
+          matrix 0.006111111111 0 0 -0.006111111111 1.8023393 6.086837075
+          font
+            fontsize   588
+            Msize      505.4736842
+            fontfile   /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
+            fontfamily sans
+            fontstyle  
+          fontsize 588
+          linespacing 1
+          direction guess
+          xcentering 0
+          ycentering 0
+          color rgbaf(0.5, 0.5, 0.5, 1)
+          text \
+            7
+page 7
+  labeltype circle
+  labelcolor rgbf(1,1,1)
+  layer 0
+    id pagelayer
+    matrix 1 0 0 1 0 0
+    minx 0
+    maxx 0
+    miny 0
+    maxy 0
+    visible
+    locks 
+    kids
+      object 0 CaptionData
+        id CaptionData35
+        visible
+        selectable
+        locks 
+        config
+          matrix 0.006111111111 0 0 -0.006111111111 1.879060203 6.025901354
+          font
+            fontsize   588
+            Msize      505.4736842
+            fontfile   /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
+            fontfamily sans
+            fontstyle  
+          fontsize 588
+          linespacing 1
+          direction guess
+          xcentering 0
+          ycentering 0
+          color rgbaf(0.5, 0.5, 0.5, 1)
+          text \
+            8
+limbo Limbo 1
+  id Group20
+  matrix 1 0 0 1 0 0
+  minx 1.879060203
+  maxx 9.115295139
+  miny 2.432568021
+  maxy 12.51555556
+  visible
+  locks 
+window
+  xywh 67 78 1016 835
+  pane
+    xyxy 0 0 1016 835
+    window ViewWindow
+      document Document19
+      layout Pages
+      spread 1
+      page 1
+      matrix 77.00534759 0 0 -77.00534759 57.54384811 687.8953727
+      xbounds -8.5 17
+      ybounds -5.5 16.5
+      limbo Limbo 1
+      active_tool ObjectInterface
