@@ -687,6 +687,8 @@ int LaidoutViewport::UseThisDoc(Document *ndoc)
 		if (d) d->UseThisDocument(doc);
 	}
 
+	laidout->notifyDocTreeChanged(NULL,TreePageChange,0,0);
+
 	setupthings();
 	ClearSearch();
 	clearCurobj();
