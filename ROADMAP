@@ -25,7 +25,7 @@ VERSION 0.098
 (done) pick and choose export range, not single "from:start to:end", but like "1-3,5,19-20"
 (done) drag-n-drop from system, like drag images into viewwindow from an external file browser
 (done) Show/hide objects
-       Fix icon/text/thin line sizing issues for high dpi monitors (issue #16)
+(done) Address icon/text/thin line sizing issues for high dpi monitors (issue #16)
 
 (done) Moving selected things in group contents does not update group bounds
 (done) should not be able to select both group and group contents at same time
@@ -48,7 +48,6 @@ VERSION 0.098
        engraver tool, blockout needs to be more precise
        engraver tool, fully test tool effects when many objects selected
        debug and optimize line outline cache, especially for joins
-       make PathInterface extrapolate line join work
 (done) PathInterface: adding point hint
 (done) PathInterface: Mouse based delete segments
 
@@ -70,6 +69,7 @@ VERSION 0.099
        pdf export, unicode capable
        Optimize pdf export to rescale to target dpi, and compress image data
 
+       Global Settings window, so you don't have to tinker with laidoutrc
        Tools should remember their settings
        Import Images dialog needs total reprogramming
        Tool scripting
@@ -95,6 +95,7 @@ VERSION 0.099
        Clean up project load/save internals and dialogs
        Object and resource tags interface
        Custom line caps
+       make PathInterface extrapolate line join work
        Finish implementing anchor tool
        Custom alignments to parents, not just affine transform to parent
        Externally rendered objects, similar to Scribus render frames

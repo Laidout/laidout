@@ -785,11 +785,13 @@ PathInterface: pathinterface
   need option for bbox to include line width, not just centerline
   need stroke fill
   need path combine:
-    with more than one object selected, turn to path tool, pop a menu that asks:
-      Edit both objects at same time
-      Combine to single object
-      Combine and merge endpoints
+    with more than one object selected, turn to path tool, have a multi-object widget that lets you:
+      Edit all objects at same time (default) -> box that says [3 objects] click for action menu?
+      Combine to single object    (select from menu?)
+      Combine and merge endpoints (select from menu?)
+	  cross link linestyle or fillstyle
 
+  DONE need numerical entry for all weight node characteristics
   DONE not show every single handle. only ones associated with active vertices
   DONE impliment flip curpoints horizontally or vertically
   DONE need invert selection: ^i for total invert, +^i for invert within current paths?
@@ -822,7 +824,6 @@ PathInterface: pathinterface
   be able to pull points back along path near endpoints
 
   debug extrapolate
-  need numerical entry for all weight node characteristics
   need to protect against reentrants at corner joins.. makes holes unless nonzero rule, and sometimes sticks out the other side
   sliding around the nodes is really annoying.. should do according to proximity to center line
   inkscape has multiple interpolators, we should too!
@@ -1376,6 +1377,7 @@ node editor node interface NodeInterface nodes: node: interface:
     Embossed Leather fails
     Plastify has an orphan feFlood node
     nodes with children, loading in puts the child properties at the end
+    DONE bug: says bad svg path string??
   for memory saving, need to determine what is a "final" node, since intermediate nodes can free data, or pass it on
   node browser
     tooltips for operation, not just properties
@@ -1523,6 +1525,7 @@ plugins:
     plugins (c++) vs extensions (scripted)
 
 captioninterface CaptionInterface captiondata CaptionData
+  default text size is super small
   should be able access fonts as resources, to preserve links on load/save
   bug: bitstream vera sans, "Text" convert to path puts e correct, but screen render puts it out too far. huh??
   implement proper pdf export
@@ -1543,17 +1546,23 @@ captioninterface CaptionInterface captiondata CaptionData
   for overstretched alignment, bounding box not updating correctly
   should adapt from multiline edit, since it already has cut/paste, selections, and is mostly debugged??
   control-u hack for poweruser unicode character insertion
+  toggle for evaluated text? only allow edit on the raw text, run {{expression}} through calcualtor?
   use selected text as sample when popping up font dialog
   lorem ipsum
   markov ipsum
+  DONE right click menu options for insert char and select font
   DONE bug: why is a font being created and destroyed each refresh??
 
 export/print dialog
+  [] Send files to command: __lp %f__
+     [] Delete files after command
   need better print dialog.. old ppd cups stuff is deprecated
   make print button experimental only?
   vital to debug send to printer
   export should have a preview of what is actually going out, flip through spreads
   in papergroups with multiple papers and double sided impositions, need to ensure front and back are output properly for printer
+  Make export dialog optionally have the to command field
+  DONE For now remove print button, as it produces incorrect results. All it does is allow "to command" option, not vital
 
 DrawableObject:
   bbox and aabb need to build in kids?
@@ -1602,6 +1611,7 @@ ellipseinterface:
   incorporate as special mode in path tool
   angle drag lapping should preserve large arc
   if you click and release without dragging, should not make a really tiny new data, should keep old if any
+  DONE bug: inner radius hint not using center
   DONE memory hole
   DONE implement minimal fill:color, stroke:color+width
   DONE should have menu options for wedge and toggle circle
@@ -1901,31 +1911,49 @@ dual monitors: multi monitor multimonitor
   DONE Menus should respect actual screen borders, not just full virtual screen
 
 high dpi hidpi:
-  don't hardcode for instance thin as 1
-    check interfaces, make sure everything uses ScreenLine,Threshhold,UIScale:
+  uiscale option
+    passing in 1 is different than having no uiscale.. forcing it to check screen??
+	should have option to use native icons.. otherwise they render kind of bad.
+      prefs.scale_icons ?
+  DONE don't hardcode for instance thin as 1
+    DONE check interfaces, make sure everything uses ScreenLine,Threshhold,UIScale:
+      DONE curvemap
+      DONE freehand
+      DONE perspective
+      DONE simplepath
+      DONE textonpath
+	  DONE align
+	  DONE-ish nup
+	  DONE clone
+      DONE object
+	  DONE nodes
+      DONE engraver
+      DONE ellipse
+      DONE character
+      DONE caption
+      DONE patch
+      DONE imagepatch
+      DONE colorpatch
+      DONE gradient
       DONE image
-      path
-      gradient
-      patch
-      imagepatch
-      colorpatch
-      voronoi
-      caption
-      character
-      curvemap
-      ellipse
-      engraver
-      freehand
-      object
-      perspective
-      simplepath
-      textonpath
-	  align
-	  nup
-	  clone
+      DONE path
+      DONE voronoi
 	  DONE spread editor
-  rebuild icons in app
-  global UI scale adjustment
+  check windows, need ThemeUpdate
+	defaultlaxfont
+	DONE overwrite
+	DONE reimpose
+	DONE filedialog
+	DONE export
+	DONE import
+	DONE Import images
+	DONE palette
+    DONE newdoc
+	DONE fontdialog
+	DONE viewport
+	DONE color sliders
+	DONE error message box
+  rebuild icons in app: detect if scaled icons make fuzzy and ask to rebuild
   need in app themeeditor to easily adjust things that are off
   per monitor ui scaling:
     xrandr only gives monitor names like DP-5 DP-0
@@ -2190,14 +2218,20 @@ For objects that are really skinny, it is not practical to have the handles be a
 for blend modes, maybe place name conversion in Displayer, in case there are a ton of custom blend modes??
 
 nup:
-  fill in box
   bug: not showing highlight on rectangle
+  bug: drag rect turns off scale handles until you click down again
+  need gap around arrows
+  need numerical input
+  need gap adjustments
+  what is "sized grid" supposed to be doing?? perhaps auto size rect when this?
   doesn't appear to update random target area when you resize area
-  flowed
+  implement flowed
   unclump. Lloyds algo? voronoi of points, move original point to centroid
   unoverlap -> define strategy, either shift H, Vert, along v, or shift on axes between objects
-  object reorder
+  object reorder: drag outline of object to new position (when you enter another object, assume you want to slide to that place
   scale panel should allow mpx and control zoom around point
+  show flow with numbers and arrows?
+  DONE fill in box
 
 overlays should get first pick of input, BUT if another has a button lock, it shouldn't mouse move update
 
@@ -2687,11 +2721,13 @@ for clones, it would be easier to have a "defs" group or something, so deleting 
   if an object is without a home.
 
 tiling cloner: clone tiler  CloneInterface
+  escape doesn't let you go back to object tool
   options:
     show/not-show base + source_clones
     embed origin in pattern
 	embed pattern in final
   should have option to apply clones as an object filter, not as actual clones
+  should have option to map cell size to cell objects for easier tiling
   default should be use lines only when there is no source object.
   new tiling should update viewport color per basecells
   should not assume preview has I transform
@@ -2702,6 +2738,9 @@ tiling cloner: clone tiler  CloneInterface
   DONE various source refs should take names from ref'd objects
 
   need path morphing
+  spiral needs:
+    number of spirals: color different for each
+	direction of spiral
   need more distinction between what is a base object, and grabbing a copy of existing object.. too easy to confuse the two!
   copies should be selectable, at least so you can adjust the colors: gave current_base, current_copy
   should have z order controls for base cell stuff
