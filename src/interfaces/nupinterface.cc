@@ -74,18 +74,20 @@ namespace Laidout {
 
 NUpInfo::NUpInfo()
 {
-	direction=LAX_LRTB;
-	rows=3;
-	cols=3;
-	valign=halign=50;
-	flowtype=NUP_Grid;
-	name=NULL;
-	defaultgap=0;
+	direction  = LAX_LRTB;
+	rows       = 3;
+	cols       = 3;
+	flowtype   = NUP_Grid;
+	name       = NULL;
+	defaultgap = 0;
+	valign = halign = 50;
 
-	scale=1;
+	scale = 1;
 
-	minx=0; maxx=100;
-	miny=0; maxy=100;
+	minx = 0;
+	maxx = 100;
+	miny = 0;
+	maxy = 100;
 }
 
 NUpInfo::~NUpInfo()
@@ -233,48 +235,48 @@ enum NupInterfaceActions {
 NUpInterface::NUpInterface(int nid,Displayer *ndp)
 	: ObjectInterface(nid,ndp) 
 {
-	tempdir=0;
-	//style|=RECT_HIDE_CONTROLS;
-	style=style&~RECT_FLIP_AT_SIDES;
+	tempdir = 0;
+	// style|=RECT_HIDE_CONTROLS;
+	style = style & ~RECT_FLIP_AT_SIDES;
 
-	//nup_style=NUP_Has_Ok|NUP_Has_Type;
-	firsttime=1;
-	showdecs=0;
-	color_arrow=rgbcolor(60,60,60);
-	color_num=rgbcolor(0,0,0);
-	overoverlay=-1;
-	tempdir=-1;
-	temparrowdir=-1;
-	active=0;
-	needtoresetlayout=1;
+	// nup_style=NUP_Has_Ok|NUP_Has_Type;
+	firsttime         = 1;
+	showdecs          = 0;
+	color_arrow       = rgbcolor(60, 60, 60);
+	color_num         = rgbcolor(0, 0, 0);
+	overoverlay       = -1;
+	tempdir           = -1;
+	temparrowdir      = -1;
+	active            = 0;
+	needtoresetlayout = 1;
 
-	nupinfo=new NUpInfo;
-	nupinfo->uioffset=flatpoint(50,50);
-	valignblock=halignblock=NULL;
+	nupinfo           = new NUpInfo;
+	nupinfo->uioffset = flatpoint(50, 50);
+	valignblock = halignblock = NULL;
 	createControls();
 }
 
 NUpInterface::NUpInterface(anInterface *nowner,int nid,Displayer *ndp)
 	: ObjectInterface(nid,ndp) 
 {
-	tempdir=0;
-	//style|=RECT_HIDE_CONTROLS;
-	style=style&~RECT_FLIP_AT_SIDES;
+	tempdir = 0;
+	// style|=RECT_HIDE_CONTROLS;
+	style = style & ~RECT_FLIP_AT_SIDES;
 
-	//nup_style=NUP_Has_Ok|NUP_Has_Type;
-	firsttime=1;
-	showdecs=0;
-	color_arrow=rgbcolor(60,60,60);
-	color_num=rgbcolor(0,0,0);
-	overoverlay=-1;
-	tempdir=-1;
-	temparrowdir=-1;
-	active=0;
-	needtoresetlayout=1;
+	// nup_style=NUP_Has_Ok|NUP_Has_Type;
+	firsttime         = 1;
+	showdecs          = 0;
+	color_arrow       = rgbcolor(60, 60, 60);
+	color_num         = rgbcolor(0, 0, 0);
+	overoverlay       = -1;
+	tempdir           = -1;
+	temparrowdir      = -1;
+	active            = 0;
+	needtoresetlayout = 1;
 
-	nupinfo=new NUpInfo;
-	nupinfo->uioffset=flatpoint(50,50);
-	valignblock=halignblock=NULL;
+	nupinfo           = new NUpInfo;
+	nupinfo->uioffset = flatpoint(50, 50);
+	valignblock = halignblock = NULL;
 	createControls();
 }
 
@@ -627,32 +629,30 @@ int NUpInterface::Refresh()
 	char buffer[30];
 
 	//draw ui outline
+	double thin = ScreenLine();
 	dp->NewFG(rgbcolor(128,128,128));
-	dp->DrawScreen();
-	//--square:
-	//dp->drawline(flatpoint(x+nupinfo->minx,y+nupinfo->miny),flatpoint(x+nupinfo->maxx,y+nupinfo->miny));
-	//dp->drawline(flatpoint(x+nupinfo->maxx,y+nupinfo->miny),flatpoint(x+nupinfo->maxx,y+nupinfo->maxy));
-	//dp->drawline(flatpoint(x+nupinfo->maxx,y+nupinfo->maxy),flatpoint(x+nupinfo->minx,y+nupinfo->maxy));
-	//dp->drawline(flatpoint(x+nupinfo->minx,y+nupinfo->maxy),flatpoint(x+nupinfo->minx,y+nupinfo->miny));
-	//--rect:
+	dp->NewBG(rgbcolorf(1.,1.,1.));
+	dp->LineWidthScreen(thin);
 
 	 //the control box is drawn in the rectangle bounds of nupinfo
 	double width =nupinfo->maxx-nupinfo->minx;
 	double height=nupinfo->maxy-nupinfo->miny;
-	dp->drawline(flatpoint(x+nupinfo->minx,y+nupinfo->miny),flatpoint(x+nupinfo->maxx,y+nupinfo->miny));
-	dp->drawline(flatpoint(x+nupinfo->maxx,y+nupinfo->miny),flatpoint(x+nupinfo->maxx,y+nupinfo->maxy+height/4));
-	dp->drawline(flatpoint(x+nupinfo->minx,y+nupinfo->maxy+height/4),flatpoint(x+nupinfo->minx,y+nupinfo->miny));
-	dp->drawline(flatpoint(x+nupinfo->maxx-width/3,y+nupinfo->maxy+height/4),flatpoint(x+nupinfo->maxx,y+nupinfo->maxy+height/4));
-	dp->drawline(flatpoint(x+nupinfo->minx+width/3,y+nupinfo->maxy+height/4),flatpoint(x+nupinfo->minx,y+nupinfo->maxy+height/4));
+	//drag bg
+	dp->drawrectangle(x+nupinfo->minx,y+nupinfo->miny, width,height*1.25, 2);
+	// dp->drawline(flatpoint(x+nupinfo->minx,y+nupinfo->miny),flatpoint(x+nupinfo->maxx,y+nupinfo->miny));
+	// dp->drawline(flatpoint(x+nupinfo->maxx,y+nupinfo->miny),flatpoint(x+nupinfo->maxx,y+nupinfo->maxy+height/4));
+	// dp->drawline(flatpoint(x+nupinfo->minx,y+nupinfo->maxy+height/4),flatpoint(x+nupinfo->minx,y+nupinfo->miny));
+	// dp->drawline(flatpoint(x+nupinfo->maxx-width/3,y+nupinfo->maxy+height/4),flatpoint(x+nupinfo->maxx,y+nupinfo->maxy+height/4));
+	// dp->drawline(flatpoint(x+nupinfo->minx+width/3,y+nupinfo->maxy+height/4),flatpoint(x+nupinfo->minx,y+nupinfo->maxy+height/4));
 
 	 //with activator button, 1/6 of the total box width:
 	if (active) dp->NewFG(0,200,0); else dp->NewFG(255,100,100);
-	dp->LineAttributes(3,LineSolid, CapButt, JoinMiter);
+	dp->LineAttributes(3*thin,LineSolid, CapButt, JoinMiter);
 	flatpoint cc=flatpoint(x+nupinfo->maxx-width/2,y+nupinfo->maxy+height/4);
 	dp->drawellipse(cc.x,cc.y,
 			width/6,width/6,
 			0,2*M_PI,
-			0);
+			2);
 	dp->NewFG(rgbcolor(128,128,128));
 	dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 	if (nupinfo->flowtype==NUP_Grid)            sprintf(buffer,"#");
@@ -844,7 +844,8 @@ int NUpInterface::scanNup(int x,int y)
 	double xx,yy;
 	xx=(x-nupinfo->minx)/w*4;
 	yy=(y-nupinfo->miny)/h*4;
-	cerr <<"  over:"<<xx<<','<<yy<<endl;
+
+	DBG cerr <<"  over:"<<xx<<','<<yy<<endl;
 
 	 //check activate button
 	if (norm(flatpoint(nupinfo->minx+w/2,nupinfo->maxy+h/4)-flatpoint(x,y))<w/6) return NUP_Activate;

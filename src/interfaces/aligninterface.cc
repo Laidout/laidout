@@ -678,7 +678,7 @@ void AlignInterface::DrawAlignBox(flatpoint dir,
 								  int hover //!< 0 for none, 1 for bar, 2 for rotation handle
 								 )
 {
-	double w = aligninfo->uiscale;
+	double w = aligninfo->uiscale*ScreenLine();
 
 	flatpoint v = transform_vector(dp->Getctm(),dir);  v/=norm(v);
 	flatpoint vt = transpose(v);
@@ -786,6 +786,7 @@ int AlignInterface::Refresh()
 	dp->DrawScreen();
 	dp->NewFG(&controlcolor);
 	dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+	double thin = ScreenLine();
 
 	//DBG dp->drawpoint(dp->realtoscreen(closestpoint),5,0);
 	//DBG dp->drawpoint(dp->realtoscreen(closestpoint2),8,0);
@@ -797,34 +798,34 @@ int AlignInterface::Refresh()
 		if (!(aligni_style & ALIGNI_Hide_Path)) {
 			if (!aligninfo->path) {
 				 //draw a straight line, in lieu of an actual path
-				if (hover == ALIGN_Path) dp->LineAttributes(3,LineSolid, CapButt, JoinMiter);
+				if (hover == ALIGN_Path) dp->LineAttributes(3*thin, LineSolid, CapButt, JoinMiter);
 				//dp->drawline(aligninfo->center+aligninfo->leftbound*aligninfo->layout_direction, <- screen, not real
 				//			 aligninfo->center+aligninfo->rightbound*aligninfo->layout_direction);
-				dp->LineWidthScreen(hover == ALIGN_Path ? 4 : 2);
+				dp->LineWidthScreen(hover == ALIGN_Path ? 4*thin : 2*thin);
 				dp->NewFG(&bgStandout);
 				//dp->NewFG(1.,1.,1.,1.);
 				dp->drawline(dp->realtoscreen(aligninfo->center + aligninfo->leftbound  * aligninfo->layout_direction),
 							 dp->realtoscreen(aligninfo->center + aligninfo->rightbound * aligninfo->layout_direction));
-				dp->LineWidthScreen(hover == ALIGN_Path ? 3 : 1);
+				dp->LineWidthScreen(hover == ALIGN_Path ? 3*thin : 1*thin);
 				dp->NewFG(&controlcolor);
 				dp->drawline(dp->realtoscreen(aligninfo->center + aligninfo->leftbound  * aligninfo->layout_direction),
 							 dp->realtoscreen(aligninfo->center + aligninfo->rightbound * aligninfo->layout_direction));
-				dp->LineWidthScreen(1);
+				dp->LineWidthScreen(1*thin);
 
 			} else {
 				 // draw the PathsData
 				LineStyle ls(*aligninfo->path->linestyle);
 				 //draw twice, once with background color to emphasize the path
-				ls.width = (hover == ALIGN_Path ? 4 : 2);
+				ls.width = (hover == ALIGN_Path ? 4*thin : 2*thin);
 				ls.Colorf(bgStandout);
 				//ls.Colorf(1.,1.,1.,1.);
 				Laidout::DrawData(dp,aligninfo->path,&ls,nullptr,0);
 				//--------
 				ls.color = aligninfo->path->linestyle->color;
-				ls.width = (hover==ALIGN_Path?3:1);
+				ls.width = (hover==ALIGN_Path ? 3*thin : 1*thin);
 				Laidout::DrawData(dp,aligninfo->path,&ls,nullptr,0);
 
-				dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+				dp->LineAttributes(thin,LineSolid, CapButt, JoinMiter);
 				dp->NewFG(&controlcolor);
 				dp->DrawScreen();
 			}
@@ -832,10 +833,10 @@ int AlignInterface::Refresh()
 
 		if (showrotation) {
 			flatpoint cc(dp->realtoscreen(aligninfo->center + (aligninfo->path ? flatpoint() : aligninfo->centeroffset)));
-			double r = aligninfo->uiscale*RADIUS*ROTRADIUS;
+			double r = aligninfo->uiscale*RADIUS*ROTRADIUS*thin;
 			flatpoint wub[6];
-			if (hover == ALIGN_Rotation) dp->LineAttributes(2,LineSolid, CapButt, JoinRound);
-			else dp->LineWidthScreen(1);
+			if (hover == ALIGN_Rotation) dp->LineAttributes(2*thin,LineSolid, CapButt, JoinRound);
+			else dp->LineWidthScreen(1*thin);
 			WubPoints(wub, cc, r,r*1.2, M_PI/2+M_PI/4 + aligninfo->extrarotation, M_PI/2-M_PI/4 + aligninfo->extrarotation);
 
 			dp->NewBG(hover == ALIGN_Rotation ? &bgHover : &bgDefault);
@@ -857,7 +858,7 @@ int AlignInterface::Refresh()
 
 		} else {
 			 //other layout types selector
-			double w = aligninfo->uiscale;
+			double w = aligninfo->uiscale*thin;
 			double x1 = 1/sqrt(2)*w*RADIUS;
 			double x2 = 2*w*RADIUS;
 			double yy = x1;
@@ -877,7 +878,7 @@ int AlignInterface::Refresh()
 
 			 //blank out background, so we can see what we are changing
 			dp->NewFG(hover == ALIGN_VisualShift ? &bgHover : &bgDefault);
-			dp->LineWidthScreen(hover == ALIGN_VisualShift ? 3 : 1);
+			dp->LineWidthScreen(hover == ALIGN_VisualShift ? 3*thin : 1*thin);
 			dp->drawlines(pts,5,1,1); //fill closed
 			dp->NewFG(&controlcolor);
 			dp->drawlines(pts,4,0,0); //draw open for less clutter
@@ -891,12 +892,12 @@ int AlignInterface::Refresh()
 
 			 //blank out background, so we can see what we are changing
 			dp->NewFG(hover == ALIGN_LayoutType ? &bgHover : &bgDefault);
-			dp->LineWidthScreen(hover == ALIGN_LayoutType ? 3 : 1);
+			dp->LineWidthScreen(hover == ALIGN_LayoutType ? 3*thin : 1*thin);
 			dp->drawlines(pts,5,1,1);
 			dp->NewFG(&controlcolor);
 			dp->drawlines(pts,4,0,0);
 
-			dp->LineWidthScreen(1);
+			dp->LineWidthScreen(thin);
 
 			 //final layout type. Really these should be actual icons, maybe with popup text
 			const char *buf;
@@ -927,9 +928,9 @@ int AlignInterface::Refresh()
 		 //draw control circle
 		flatpoint cc(dp->realtoscreen(aligninfo->center+(aligninfo->path?flatpoint():aligninfo->centeroffset)));
 		if (active) dp->NewFG(0,200,0); else dp->NewFG(255,100,100);
-		dp->LineAttributes(3,LineSolid, CapButt, JoinMiter);
+		dp->LineAttributes(3*thin,LineSolid, CapButt, JoinMiter);
 		dp->drawellipse(cc.x,cc.y,
-						aligninfo->uiscale*RADIUS,aligninfo->uiscale*RADIUS,
+						aligninfo->uiscale*RADIUS*thin,aligninfo->uiscale*RADIUS*thin,
 						0,2*M_PI,
 						0);
 
@@ -941,9 +942,9 @@ int AlignInterface::Refresh()
 		if (!(aligni_style&ALIGNI_Hide_Path)) {
 			if (!child) {
 				PointAlongPath(aligninfo->leftbound,0, p, nullptr);
-				dp->drawpoint(dp->realtoscreen(p),5,hover==ALIGN_MoveLeftBound);
+				dp->drawpoint(dp->realtoscreen(p),5*thin,hover==ALIGN_MoveLeftBound);
 				PointAlongPath(aligninfo->rightbound,0, p, nullptr);
-				dp->drawpoint(dp->realtoscreen(p),5,hover==ALIGN_MoveRightBound);
+				dp->drawpoint(dp->realtoscreen(p),5*thin,hover==ALIGN_MoveRightBound);
 			}
 		}
 
@@ -979,8 +980,8 @@ int AlignInterface::Refresh()
 
 			} else if (aligninfo->final_layout_type==FALIGN_Gap) {
 				if (hover==ALIGN_MoveGap && hoverindex==c)
-					dp->LineAttributes(4,LineSolid, CapButt, JoinMiter);
-				else dp->LineAttributes(2,LineSolid, CapButt, JoinMiter);
+					dp->LineAttributes(4*thin,LineSolid, CapButt, JoinMiter);
+				else dp->LineAttributes(2*thin,LineSolid, CapButt, JoinMiter);
 
 				dp->NewFG(.5,0.,0.);
 				//double a = controls.e[c]->amount;
@@ -1184,9 +1185,10 @@ int AlignInterface::scan(int x,int y, int &index, unsigned int state)
 {
 	flatpoint fp(x,y);
 
+	double thin = ScreenLine();
 
 	if (show_presets || hover==ALIGN_Presets) {
-		double panelwidth = aligninfo->uiscale*PRESETSPANEL;
+		double panelwidth = aligninfo->uiscale*PRESETSPANEL*thin;
 		double cc = panelwidth/4;
 		fp-=hoverpoint;
 		int r=floor(fp.y/cc);
@@ -1212,13 +1214,13 @@ int AlignInterface::scan(int x,int y, int &index, unsigned int state)
 	flatpoint cc=dp->realtoscreen(aligninfo->center+(aligninfo->path?flatpoint():aligninfo->centeroffset));
 	fp-=cc;
 	double d=norm(fp);
-	if (d<aligninfo->uiscale*RADIUS) return ALIGN_Move; //align move circle
+	if (d<aligninfo->uiscale*RADIUS*thin) return ALIGN_Move; //align move circle
 
 	 //transform in snap direction 
-	double w=aligninfo->uiscale;
-	flatpoint v=transform_vector(dp->Getctm(),aligninfo->snap_direction);
-	v/=norm(v);
-	flatpoint vt=transpose(v);
+	double w = aligninfo->uiscale*thin;
+	flatpoint v = transform_vector(dp->Getctm(),aligninfo->snap_direction);
+	v /= norm(v);
+	flatpoint vt = transpose(v);
 
 	double xx,yy;
 	xx=vt*fp;
@@ -1270,7 +1272,7 @@ int AlignInterface::scan(int x,int y, int &index, unsigned int state)
 	}
 
 	if (showrotation) {
-		if (d < aligninfo->uiscale*RADIUS*ROTRADIUS+PAD && d > aligninfo->uiscale*RADIUS*ROTRADIUS-PAD) {
+		if (d < thin*(aligninfo->uiscale*RADIUS*ROTRADIUS+PAD) && d > thin*(aligninfo->uiscale*RADIUS*ROTRADIUS-PAD)) {
 			DBG double cura=atan2(fp.y,fp.x);
 			DBG cerr <<"angle: "<<cura<<endl;
 			//M_PI/2+aligninfo->extrarotation
@@ -1288,13 +1290,13 @@ int AlignInterface::scan(int x,int y, int &index, unsigned int state)
 		 //scan for left boundary
 		flatpoint p;
 		PointAlongPath(aligninfo->leftbound,0, p, nullptr);
-		if (norm(dp->realtoscreen(p)-flatpoint(x,y))<PAD) {
+		if (norm(dp->realtoscreen(p)-flatpoint(x,y))<PAD*thin) {
 			return ALIGN_MoveLeftBound;
 		}
 
 		 //scan for right boundary
 		PointAlongPath(aligninfo->rightbound,0, p, nullptr);
-		if (norm(dp->realtoscreen(p)-flatpoint(x,y))<PAD) {
+		if (norm(dp->realtoscreen(p)-flatpoint(x,y))<PAD*thin) {
 			return ALIGN_MoveRightBound;
 		}
 
@@ -1316,7 +1318,7 @@ int AlignInterface::scanForLineControl(int x,int y, int &index)
 {
 	flatpoint fp(x,y);
 	for (int c=0; c<controls.n; c++) {
-		if (norm(dp->realtoscreen(controls.e[c]->p)-fp)<PAD) {
+		if (norm(dp->realtoscreen(controls.e[c]->p)-fp)<PAD*ScreenLine()) {
 			index=c;
 			if (aligninfo->final_layout_type==FALIGN_Random) return ALIGN_Randomize;
 			if (aligninfo->final_layout_type==FALIGN_Grid) return ALIGN_MoveGrid;
@@ -1337,14 +1339,14 @@ int AlignInterface::onPath(int x,int y)
 		int dist=distance(flatpoint(x,y),
 						  dp->realtoscreen(aligninfo->center+aligninfo->leftbound *aligninfo->layout_direction),
 						  dp->realtoscreen(aligninfo->center+aligninfo->rightbound *aligninfo->layout_direction));
-		if (dist<PAD) return 1;
+		if (dist<PAD*ScreenLine()) return 1;
 		return 0;
 	}
 
 	 //else check for point on PathsData
 	flatpoint fp(x,y);
 	flatpoint closest = ClosestPoint(dp->screentoreal(fp),nullptr,nullptr);
-	if (norm(fp-dp->realtoscreen(closest))<PAD) return 1;
+	if (norm(fp-dp->realtoscreen(closest))<PAD*ScreenLine()) return 1;
 	
 	return 0;
 }

@@ -77,6 +77,7 @@ LaidoutPreferences::LaidoutPreferences()
 	unitname       = newstr("inches");
 	uiscale        = 1;
 	pagedropshadow = 5;
+	dont_scale_icons = true;
 
     default_template = NULL;
     defaultpaper = get_system_default_paper();
@@ -134,6 +135,7 @@ Value *LaidoutPreferences::duplicate()
 	p->start_with_last = start_with_last;
 	p->experimental = experimental;
 	p->uiscale = uiscale;
+	p->dont_scale_icons = dont_scale_icons;
 
 	for (int c=0; c<icon_dirs.n; c++) {
 		p->icon_dirs.push(newstr(icon_dirs.e[c]), LISTS_DELETE_Array);
@@ -168,6 +170,13 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 			_("UI Scale"),
 			_("UI Scale"),
 			"real", NULL,"1",
+			0,
+			NULL);
+
+	def->push("dont_scale_icons",
+			_("Don't scale icons"),
+			_("Use native icon size, not scaled along with font size"),
+			"boolean", NULL,"true",
 			0,
 			NULL);
 
@@ -355,6 +364,10 @@ Value *LaidoutPreferences::dereference(const char *extstring, int len)
 
 	if (!strcmp(extstring, "uiscale")) {
 		return new DoubleValue(uiscale);
+	}
+
+	if (!strcmp(extstring, "dont_scale_icons")) {
+		return new BooleanValue(dont_scale_icons);
 	}
 
 	if (!strcmp(extstring, "experimental")) {

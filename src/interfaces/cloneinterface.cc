@@ -3610,14 +3610,15 @@ int CloneInterface::Refresh()
 	//
 
 
-	double circle_radius=INTERFACE_CIRCLE*uiscale;
+	double thin = ScreenLine();
+	double circle_radius = INTERFACE_CIRCLE*uiscale*thin;
 
 	if (firsttime==1) {
 		firsttime=0;
 		box.minx=10;
-		box.maxx=10+4*circle_radius*uiscale;
+		box.maxx=10+4*circle_radius*uiscale*thin;
 		box.miny=10;
-		box.maxy=10+5*circle_radius*uiscale + 2*dp->textheight();
+		box.maxy=10+5*circle_radius*uiscale*thin + 2*dp->textheight();
 
 	} else if (firsttime==2) {
 		 //remap control box size only, leave in same place
@@ -3663,7 +3664,7 @@ int CloneInterface::Refresh()
 
 			if (preview_orient) {
 				 //draw arrows to indicate orientions of base cells
-				dp->LineWidthScreen(2);
+				dp->LineWidthScreen(2*thin);
 
 				for (int c2=0; c2 < base->n(); c2++) {
 					DrawableObject *o = dynamic_cast<DrawableObject*>(base->e(c2));
@@ -3692,9 +3693,9 @@ int CloneInterface::Refresh()
 			PathsData *p = NULL;
 			if (obj) p = dynamic_cast<PathsData*>(obj->e(0));
 			if (p) {
-				p->linestyle->width=4;
+				p->linestyle->width = 4*thin;
 				Laidout::DrawData(dp, p, NULL,NULL);
-				p->linestyle->width=2;
+				p->linestyle->width = 2*thin;
 			}
 		}
 
@@ -3711,7 +3712,7 @@ int CloneInterface::Refresh()
 	dp->DrawScreen(); 
 
 	 //draw whole rect outline
-	dp->LineAttributes(1,LineSolid,CapButt,JoinMiter);
+	dp->LineAttributes(thin, LineSolid,CapButt,JoinMiter);
 	//dp->LineWidthScreen(1);
 	dp->NewBG(bg_color);
 	dp->NewFG(fg_color);
@@ -3810,7 +3811,8 @@ int CloneInterface::Refresh()
 int CloneInterface::scan(int x,int y, int *i, int *dest)
 {
 	flatpoint cc((box.minx+box.maxx)/2,box.maxy);
-	double circle_radius = INTERFACE_CIRCLE*uiscale;
+	double thin = ScreenLine();
+	double circle_radius = INTERFACE_CIRCLE*uiscale*thin;
 
 	if (norm((cc-flatpoint(x,y)))<circle_radius) return CLONEI_Circle;
 

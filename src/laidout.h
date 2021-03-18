@@ -113,6 +113,7 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 
 	 //global prefs
 	LaidoutPreferences prefs;
+	double uiscale_override; //hack to propagate from command line option
 
 	Laxkit::IconManager *icons;
 

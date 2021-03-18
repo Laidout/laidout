@@ -239,6 +239,7 @@ LaidoutApp::LaidoutApp()
 	force_new_dialog = false;
 
 	icons=IconManager::GetDefault();
+	uiscale_override = -1;
 
 	runmode = RUNMODE_Normal;
 
@@ -570,6 +571,12 @@ int LaidoutApp::init(int argc,char **argv)
 		createlaidoutrc();
 	}
 
+	if (uiscale_override > 0) {
+		prefs.uiscale = uiscale_override;
+		theme->ui_scale = uiscale_override;
+		theme->UpdateFontSizes();
+	}
+
 	DBG cerr <<"---interfaces pool init"<<endl;
 	PushBuiltinPathops(); // this must be called before getinterfaces because of pathops...
 	GetBuiltinInterfaces(&interfacepool);
@@ -645,11 +652,11 @@ int LaidoutApp::init(int argc,char **argv)
 		}
 	}
 
-
 	 // Note parseargs has to come after initing all the pools and whatever else
 	DBG cerr <<"---init: parse args"<<endl;
 	parseargs(argc,argv);
 	
+
 	 // Define default project if necessary, and Pop something up if there hasn't been anything yet
 	if (!project) project=new Project();
 
@@ -890,6 +897,8 @@ int LaidoutApp::createlaidoutrc()
 
 
 					   ////theme
+			fprintf(f,"#uiscale -1            #-1 is use default, otherwise multiply default by this.\n");
+			fprintf(f,"dont_scale_icons true #If true, use native icon pixel size. If false, icons are scaled along with font size\n");
 			fprintf(f,"laxprofile Light #Default built in profiles are Dark, Light, and Gray. You can define others in the laxconfig section.\n");
 			fprintf(f,"laxconfig-sample #Remove the \"-sample\" part to redefine various default window behavior settings\n");
 			dump_out_rc(f,NULL,2,0);
@@ -1008,6 +1017,13 @@ int LaidoutApp::readinLaidoutDefaults(char **shortcutsfile)
 				theme = thme;
 			}
 
+		} else if (!strcmp(name,"uiscale")) {
+			if (DoubleAttribute(value, &prefs.uiscale))
+				uiscale_override = prefs.uiscale;
+
+		} else if (!strcmp(name,"dont_scale_icons")) {
+			prefs.dont_scale_icons = BooleanAttribute(value);
+
 		} else if (!strcmp(name,"shortcuts")) {
 			if (!value || !readable_file(value)) {
 				cerr << "Warning: shortcuts file is not readable, ignoring: "<<(value ? value : "(no file)")<<endl;
@@ -1120,12 +1136,15 @@ int LaidoutApp::readinLaidoutDefaults(char **shortcutsfile)
 		
 		} else if (!strcmp(name,"maxPreviewLength")) {
 			IntAttribute(value,&max_preview_length);
-
-		} else if (!strcmp(name,"uiscale")) {
-			DoubleAttribute(value, &prefs.uiscale);
+		
 		}
 	}
 	
+	if (uiscale_override > 0) {
+		prefs.uiscale = uiscale_override;
+		theme->UpdateFontSizes();
+	}
+
 	fclose(f);
 	setlocale(LC_ALL,"");
 	DBG cerr <<"-------------Done with $HOME/.laidout/(version)/laidoutrc----------"<<endl;
@@ -1383,7 +1402,11 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				double scale = strtod(o->arg(), nullptr);
 				if (scale > 0) {
 					prefs.uiscale = scale;
-					if (theme) theme->ui_scale = scale;
+					if (theme) {
+						theme->ui_scale = scale;
+						theme->UpdateFontSizes();
+						uiscale_override = scale;
+					}
 				}
 				break;
 			  }
@@ -1533,6 +1556,10 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	}
 
 	if (runmode==RUNMODE_Quit) exit(0);
+
+	Button::default_icon_size_type = (prefs.dont_scale_icons ? Button::Image_pixels : Button::Relative_To_Font);
+	SliderPopup::default_icon_from_font_size = !prefs.dont_scale_icons;
+
 
 //	int readin=0;
 //	if (optind<argc && argv[optind][0]=='-' && argv[optind][0]=='\0') { 
