@@ -1557,6 +1557,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 	if (runmode==RUNMODE_Quit) exit(0);
 
+	if (uiscale_override > 0) prefs.dont_scale_icons = false;
 	Button::default_icon_size_type = (prefs.dont_scale_icons ? Button::Image_pixels : Button::Relative_To_Font);
 	SliderPopup::default_icon_from_font_size = !prefs.dont_scale_icons;
 
