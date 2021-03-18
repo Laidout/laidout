@@ -4396,7 +4396,7 @@ int PathGeneratorNode::Update()
 			if (path) path->close();		
 
 		} else if (pathtype == Function || pathtype == FunctionRofT) {
-			GetInValue<StringValue>(c, dosets, sv, ins[0], setins[0]);
+			sv = GetInValue<StringValue>(c, dosets, sv, ins[0], setins[0]);
 			if (!sv || isblank(sv->str)) {
 				Error(_("Expression must be a string"));
 				return -1;
@@ -4492,13 +4492,13 @@ int PathGeneratorNode::Update()
 			// hash.flush();
 
 		} else if (pathtype == FunctionT || pathtype == FunctionPolarT) {
-			GetInValue<StringValue>(c, dosets, sv, ins[0], setins[0]);
+			sv = GetInValue<StringValue>(c, dosets, sv, ins[0], setins[0]);
 			if (!sv || isblank(sv->str)) {
 				Error(_("Expression must be a string"));
 				return -1;
 			}
 			const char *expressionx = sv->str;
-			GetInValue<StringValue>(c, dosets, sv2, ins[1], setins[1]);
+			sv2 = GetInValue<StringValue>(c, dosets, sv2, ins[1], setins[1]);
 			if (!sv2 || isblank(sv2->str)) {
 				Error(_("Expression must be a string"));
 				return -1;
@@ -4589,7 +4589,7 @@ int PathGeneratorNode::Update()
 			}
 
 		} else if (pathtype == Svgd) {
-			GetInValue<StringValue>(c, dosets, sv, ins[0], setins[0]);
+			sv = GetInValue<StringValue>(c, dosets, sv, ins[0], setins[0]);
 			if (!sv || isblank(sv->str)) {
 				Error(_("Bad svg path string!"));
 				return -1;
