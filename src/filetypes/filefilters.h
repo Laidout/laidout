@@ -100,7 +100,9 @@ class DocumentExportConfig : public Value
 {
  public:
 	enum Targets { TARGET_Single = 0, TARGET_Multi = 1, TARGET_Command = 2 }; //needs to stay in sync with objectdef enum
-	int target; //one of Targets
+	int target; //TARGET_Single or TARGET_Multi
+	bool send_to_command;
+	bool del_after_command;
 	Laxkit::IndexRange range; //of spreads in doc
 	int layout;
 	enum EvenOdd { All,Even,Odd } evenodd;

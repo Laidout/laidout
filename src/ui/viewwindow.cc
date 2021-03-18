@@ -127,6 +127,7 @@ enum ViewActions {
 	VIEW_Import_Images,
 	VIEW_Import,
 	VIEW_Export,
+	VIEW_Print,
 
 	VIEW_Config_Addons,
 	VIEW_AddonAction,
@@ -4474,13 +4475,13 @@ int ViewWindow::init()
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 
-	 //-----------print
-	//if (laidout->prefs.experimental) {
-		last=ibut=new Button(this,"print",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"print",-1,
-							 _("Print"),NULL,laidout->icons->GetIcon("Print"),buttongap);
-		ibut->tooltip(_("Print the document"));
-		AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
-	//}
+	//  //-----------print  .... *** remove for now, it just causes headaches
+	// if (laidout->prefs.experimental) {
+	// 	last=ibut=new Button(this,"print",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"print",-1,
+	// 						 _("Print"),NULL,laidout->icons->GetIcon("Print"),buttongap);
+	// 	ibut->tooltip(_("Print the document"));
+	// 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
+	// }
 
 
 	 //---------open
@@ -5156,51 +5157,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"print")) { // print to output.ps
-		 //user clicked print button
-		LaidoutViewport *vp=((LaidoutViewport *)viewport);
-		int curpage=doc?doc->imposition->PaperFromPage(vp->curobjPage()):0;
-		if (curpage<0 && vp->doc && vp->spread) {
-			 //grab what is first page found in spread->pagestack
-			int c;
-			for (c=0; c<vp->spread->pagestack.n(); c++) {
-				if (vp->spread->pagestack.e[c]->index>=0) {
-					curpage=vp->spread->pagestack.e[c]->index>=0;
-					break;
-				}
-			}
-		}
-		PaperGroup *pg=vp->papergroup;
-		Group *l;
-		if (!pg || !pg->papers.n) {
-			l=NULL;
-			if (vp->doc) pg=vp->doc->imposition->papergroup;
-			if (pg && pg->papers.n==0) pg=NULL;
-			if (!pg) {
-				int c;
-				for (c=0; c<laidout->papersizes.n; c++) {
-					if (!strcasecmp(laidout->prefs.defaultpaper,laidout->papersizes.e[c]->name)) 
-						break;
-				}
-				PaperStyle *ps;
-				if (c==laidout->papersizes.n) c=0;
-				ps=(PaperStyle *)laidout->papersizes.e[0]->duplicate();
-				pg=new PaperGroup(ps);
-				ps->dec_count();
-			} else pg->inc_count();
-		} else l=vp->limbo;
-		PrintingDialog *p=new PrintingDialog(doc,object_id,"export config",
-										"output.ps", //file
-										"lp",        //command
-										NULL,        //thisfile
-										PAPERLAYOUT, 
-										0,              //min
-										doc?doc->imposition->NumPapers()-1:0, //max
-										curpage,       //cur
-										pg,           //papergroup
-										l,           //limbo
-										mesbar);     //progress window
-		pg->dec_count();
-		app->rundialog(p);
+		PerformAction(VIEW_Print);
 		return 0;
 
 	} else if (!strcmp(mes,"docMeta")) {
@@ -5474,6 +5431,55 @@ int ViewWindow::PerformAction(int action)
 			}
 		}
 		return 0; 
+
+	} else if (action==VIEW_Print) {
+		 //user clicked print button
+		 // *** note: somehow this uses incorrect papergroup:
+		LaidoutViewport *vp=((LaidoutViewport *)viewport);
+		int curpage=doc?doc->imposition->PaperFromPage(vp->curobjPage()):0;
+		if (curpage<0 && vp->doc && vp->spread) {
+			 //grab what is first page found in spread->pagestack
+			int c;
+			for (c=0; c<vp->spread->pagestack.n(); c++) {
+				if (vp->spread->pagestack.e[c]->index>=0) {
+					curpage=vp->spread->pagestack.e[c]->index>=0;
+					break;
+				}
+			}
+		}
+		PaperGroup *pg=vp->papergroup;
+		Group *l;
+		if (!pg || !pg->papers.n) {
+			l=NULL;
+			if (vp->doc) pg=vp->doc->imposition->papergroup;
+			if (pg && pg->papers.n==0) pg=NULL;
+			if (!pg) {
+				int c;
+				for (c=0; c<laidout->papersizes.n; c++) {
+					if (!strcasecmp(laidout->prefs.defaultpaper,laidout->papersizes.e[c]->name)) 
+						break;
+				}
+				PaperStyle *ps;
+				if (c==laidout->papersizes.n) c=0;
+				ps=(PaperStyle *)laidout->papersizes.e[0]->duplicate();
+				pg=new PaperGroup(ps);
+				ps->dec_count();
+			} else pg->inc_count();
+		} else l=vp->limbo;
+		PrintingDialog *p=new PrintingDialog(doc,object_id,"export config",
+										"output.ps", //file
+										"lp",        //command
+										NULL,        //thisfile
+										PAPERLAYOUT, 
+										0,              //min
+										doc?doc->imposition->NumPapers()-1:0, //max
+										curpage,       //cur
+										pg,           //papergroup
+										l,           //limbo
+										mesbar);     //progress window
+		pg->dec_count();
+		app->rundialog(p);
+		return 0;
 
 	} else if (action==VIEW_Export) {
 		 //user clicked down on the export button

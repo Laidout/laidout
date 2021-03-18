@@ -1129,6 +1129,8 @@ DocumentExportConfig::DocumentExportConfig()
 	batches         = 0;
 	filter          = nullptr;
 	target          = TARGET_Single;
+	send_to_command = false;
+	del_after_command = false;
 	command         = nullptr;
 	filename        = nullptr;
 	tofiles         = nullptr;
@@ -1185,6 +1187,9 @@ DocumentExportConfig::DocumentExportConfig(DocumentExportConfig *config)
     filename       = newstr(config->filename);
     tofiles        = newstr(config->tofiles);
     command        = newstr(config->command);
+
+    send_to_command   = config->send_to_command;
+	del_after_command = config->del_after_command;
 
     filter         = config->filter; //object, but does not get inc_counted
 
