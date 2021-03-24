@@ -312,13 +312,13 @@ int ObjectTreeWindow::Event(const Laxkit::EventData *data,const char *mes)
 		const SimpleMessage *sm = dynamic_cast<const SimpleMessage*>(data);
 		DBG cerr << "ObjectTreeWindow event: "<<sm->info1<<" "<<sm->info2<<" "<<sm->info3<<" "<<sm->info4<<" "<<(sm->str ? sm->str : "null")<<endl;
 
-		DBG LaidoutViewport *viewport = FindViewport();
-		DBG if (!viewport) return 0;
-		DBG viewport->PostMessage(sm->str);
+		// DBG LaidoutViewport *viewport = FindViewport();
+		// DBG if (!viewport) return 0;
+		// DBG viewport->PostMessage(sm->str);
 
-		if (viewport && domain == InViewport) {
-			// viewport->Select(sm->str);
-		}
+		// if (viewport && domain == InViewport) {
+		// 	// viewport->Select(sm->str);
+		// }
 
 		return 0;
 
