@@ -69,7 +69,7 @@ void installImageFilter()
 ImageExportConfig::ImageExportConfig()
 {
 	format = newstr("png");
-	background = nullptr;
+	background = ColorManager::newColor(LAX_COLOR_RGB, 4, 1.,1.,1.,1.);
 	use_transparent_bg = true;
 	width = height = 0;
 
@@ -98,6 +98,7 @@ ImageExportConfig::ImageExportConfig(DocumentExportConfig *config)
 		format = newstr("png");
 		use_transparent_bg = true;
 		width = height = 0;
+		background = ColorManager::newColor(LAX_COLOR_RGB, 4, 1.,1.,1.,1.);;
 	}
 }
 
@@ -273,6 +274,9 @@ Value *ImageExportConfig::dereference(const char *extstring, int len)
 	} else if (!strncmp(extstring,"height",8)) {
 		return new IntValue(height);
 
+	} else if (!strncmp(extstring,"color",8)) {
+		return new ColorValue(*background);
+
 	}
 	return DocumentExportConfig::dereference(extstring,len);
 }
@@ -307,6 +311,14 @@ int ImageExportConfig::assign(FieldExtPlace *ext,Value *v)
                 if (!isnum) return 0;
 				height=h;
                 return 1;
+
+            } else if (!strcmp(str,"color")) {
+            	ColorValue *col = dynamic_cast<ColorValue*>(v);
+            	if (!col) return 0;
+            	if (background) background->dec_count();
+            	background = new Color;
+            	col->GetColor(background);
+            	return 1;
 			}
 		}
 	}
