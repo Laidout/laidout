@@ -24,6 +24,7 @@
 #include "headwindow.h"
 #include "plaintextwindow.h"
 #include "objecttree.h"
+#include "../core/utils.h"
 #include "../language.h"
 
 // if gl:
@@ -723,6 +724,7 @@ int HeadWindow::Event(const Laxkit::EventData *data,const char *mes)
 			if (laidout->Load(s->strs[c],log)==0) d=laidout->curdoc;
 			if (!d) {
 				 //load fail
+				 NotifyGeneralErrors(&log);
 			} else {
 				 //load succeeded, maybe errors
 				if (nw==laidout->numTopWindows()) {
