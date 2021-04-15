@@ -105,7 +105,8 @@ PageAtlasExportConfig::PageAtlasExportConfig()
 	px_width            = 128;
 	px_height           = 128;
 	round_up_to_power_2 = true;
-	color               = nullptr;
+	color               = new ColorValue();
+	color->color.SetRGB(1.,1.,1.,1.);
 
 	// find the default filter for this config
 	for (int c=0; c<laidout->exportfilters.n; c++) {
@@ -555,7 +556,7 @@ int PageAtlasExportFilter::Out(const char *filename, Laxkit::anObject *context, 
 
 	// we must have something to export...
 	if (!doc) {
-		log.AddMessage(_("Page atlas requireS a document!"),ERROR_Fail);
+		log.AddError(_("Page atlas requires a document!"));
 		return 1;
 	}
 
@@ -591,6 +592,15 @@ int PageAtlasExportFilter::Out(const char *filename, Laxkit::anObject *context, 
 		return 2;
 	}
 
+	// if (layout != SINGLELAYOUT) {
+	// 	log.AddWarning(_("Using Singles layout. Page Atlas only supports Singles layout."));
+	// 	layout = SINGLELAYOUT;
+	// }
+
+	if (layout != PAPERLAYOUT) {
+		papergroup = nullptr; //force using spread bounds
+	}
+
 	int num_subs_per_image = config->pages_wide * config->pages_tall;
 	double sub_width  = (double)px_width  / config->pages_wide;
 	double sub_height = (double)px_height / config->pages_tall;
@@ -609,9 +619,9 @@ int PageAtlasExportFilter::Out(const char *filename, Laxkit::anObject *context, 
  		totalnumpages = (range->NumInRanges());
 	}
 
-	totalnumpages *= papergroup->papers.n;
+	if (papergroup) totalnumpages *= papergroup->papers.n;
 
-	int subs_on_image = 0;
+	int subs_on_image = 0; //num on whole image so far
 	int img_num = 1;
 	int img_start_num = 1;
 
@@ -632,6 +642,12 @@ int PageAtlasExportFilter::Out(const char *filename, Laxkit::anObject *context, 
 
 	Displayer *dp = imanager->GetDisplayer(DRAWS_Hires); //for pages
 
+	int numpages = range->NumInRanges();
+	int fmt_wide = 1+log10(numpages);
+	if (fmt_wide < 1) fmt_wide = 1;
+	Utf8String fname_fmt;
+	const char *img_fmt = "png";
+	fname_fmt.Sprintf("%%s-%%0%dd-%%0%dd.%s", fmt_wide, fmt_wide, img_fmt);
 
 	for (int c = (rev ? range->End() : range->Start());
 		 c >= 0;
@@ -643,20 +659,24 @@ int PageAtlasExportFilter::Out(const char *filename, Laxkit::anObject *context, 
 		Spread *spread = doc->imposition->Layout(layout, c);
 
 
-		for (int p = 0; p<papergroup->papers.n; p++) { //for each paper
+		for (int p = 0; p<(papergroup ? papergroup->papers.n : 1); p++) { //for each paper
 
-			papergroup->FindPaperBBox(&bounds);
+			if (papergroup) papergroup->FindPaperBBox(&bounds);
+			else {
+				bounds.setbounds(spread->path);
+			}
 
 			dp->MakeCurrent(subimg);
 			dp->SetSpace(bounds.minx,bounds.maxx, bounds.miny,bounds.maxy);
 			dp->Center(bounds.minx,bounds.maxx, bounds.miny,bounds.maxy);
-			if (config->color) {
-				ScreenColor col(config->color->color.Red(), config->color->color.Green(), config->color->color.Blue(), config->color->color.Alpha());
-				dp->NewBG(col);
-				dp->ClearWindow();
-			} else dp->ClearTransparent();
+			// if (config->color) {
+			// 	ScreenColor col(config->color->color.Red(), config->color->color.Green(), config->color->color.Blue(), config->color->color.Alpha());
+			// 	dp->NewBG(col);
+			// 	dp->ClearWindow();
+			// } else dp->ClearTransparent();
+			dp->ClearTransparent();
 					
-			if (papergroup->objs.n()) {
+			if (papergroup && papergroup->objs.n()) {
 				// .... output papergroup objects
 				DrawData(dp, &papergroup->objs);
 			}
@@ -678,6 +698,8 @@ int PageAtlasExportFilter::Out(const char *filename, Laxkit::anObject *context, 
 					int pg = spread->pagestack.e[c2]->index;
 					if (pg < 0 || pg >= doc->pages.n) continue;
 
+					dp->PushAndNewTransform(spread->pagestack.e[c2]->outline->m());
+
 					// for each layer on the page..
 					for (int l = 0; l < doc->pages[pg]->layers.n(); l++) {
 						// for each object in layer
@@ -686,6 +708,7 @@ int PageAtlasExportFilter::Out(const char *filename, Laxkit::anObject *context, 
 							DrawData(dp, g->e(c3));
 						}
 					}
+					dp->PopAxes();
 				}
 
 				// write subimg to proper place on wholeimg
@@ -698,14 +721,19 @@ int PageAtlasExportFilter::Out(const char *filename, Laxkit::anObject *context, 
 			subs_on_image++;
 			if (subs_on_image == num_subs_per_image || img_num == totalnumpages) {
 				//save image
-				file.Sprintf("%s-%d-%d.png", basename.c_str(), img_start_num, img_num);
+				// file.Sprintf("%s-%d-%d.png", basename.c_str(), img_start_num, img_num);
+				file.Sprintf(fname_fmt.c_str(), basename.c_str(), img_start_num, img_num);
 				wholeimg->Save(file.c_str());
 
 				subs_on_image = 0;
 				img_start_num = img_num+1;
 
 				if (img_num != totalnumpages) {
-					dpw->ClearTransparent();
+					if (config->color) {
+						ScreenColor col(config->color->color.Red(), config->color->color.Green(), config->color->color.Blue(), config->color->color.Alpha());
+						dpw->NewBG(col);
+						dpw->ClearWindow();
+					} else dpw->ClearTransparent();
 				}
 			}
 			img_num++;
