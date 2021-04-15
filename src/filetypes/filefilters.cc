@@ -23,6 +23,7 @@
 #include <lax/strmanip.h>
 #include <lax/fileutils.h>
 
+#include <unistd.h>
 
 #define DBG
 #include <iostream>
@@ -1094,7 +1095,6 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
  * 
  * 0 for filename,
  * 1 for tofiles: 1 spread (or paper slice) per file,
- * 2 for command.
  */
 /*! \var int DocumentExportConfig::collect_for_out
  * \brief Whether to gather needed extra files to one place.
@@ -1132,6 +1132,7 @@ DocumentExportConfig::DocumentExportConfig()
 	send_to_command = false;
 	del_after_command = false;
 	command         = nullptr;
+	custom_command  = nullptr;
 	filename        = nullptr;
 	tofiles         = nullptr;
 	layout          = 0;
@@ -1186,7 +1187,9 @@ DocumentExportConfig::DocumentExportConfig(DocumentExportConfig *config)
 
     filename       = newstr(config->filename);
     tofiles        = newstr(config->tofiles);
-    command        = newstr(config->command);
+    custom_command = newstr(config->custom_command);
+    command        = config->command;
+    if (command) command->inc_count();
 
     send_to_command   = config->send_to_command;
 	del_after_command = config->del_after_command;
@@ -1207,9 +1210,10 @@ DocumentExportConfig::DocumentExportConfig(DocumentExportConfig *config)
  */
 DocumentExportConfig::~DocumentExportConfig()
 {
-	delete[] command;
+	delete[] custom_command;
 	delete[] filename;
 	delete[] tofiles;
+	if (command) command->dec_count();
 	if (doc) doc->dec_count();
 	if (limbo) limbo->dec_count();
 	if (papergroup) papergroup->dec_count();
@@ -1218,17 +1222,6 @@ DocumentExportConfig::~DocumentExportConfig()
 Value* DocumentExportConfig::duplicate()
 {
 	DocumentExportConfig *c = new DocumentExportConfig(this);
-	//*c=*this; //shallow copy!!
-
-	////if (c->filter) c->filter->inc_count();
-	//if (c->doc) c->doc->inc_count();
-	//if (c->limbo) c->limbo->inc_count();
-	//if (c->papergroup) c->papergroup->inc_count();
-
-	//c->filename=newstr(c->filename);
-	//c->tofiles =newstr(c->tofiles);
-	//c->command =newstr(c->command);
-
 	return c;
 }
 
@@ -1236,7 +1229,7 @@ Value *DocumentExportConfig::dereference(const char *extstring, int len)
 {
 	if (IsName("filename", extstring, len)) return new StringValue(filename);
 	if (IsName("tofiles", extstring, len)) return new StringValue(tofiles);
-	if (IsName("command", extstring, len)) return new StringValue(command);
+	if (IsName("custom_command", extstring, len)) return new StringValue(custom_command);
 	if (IsName("textaspaths", extstring, len)) return new BooleanValue(textaspaths);
 	if (IsName("rasterize", extstring, len)) return new BooleanValue(rasterize);
 	if (IsName("collect", extstring, len)) return new BooleanValue(collect_for_out);
@@ -1251,6 +1244,7 @@ Value *DocumentExportConfig::dereference(const char *extstring, int len)
 	if (IsName("document", extstring, len))  { if (doc) doc->inc_count(); return doc; }
 	if (IsName("layout", extstring, len)) return new IntValue(layout);
 	if (IsName("papergroup", extstring, len)) return new ObjectValue(papergroup); //{ if (papergroup) papergroup->inc_count(); return papergroup; }
+	// if (IsName("command")) return ???? ;
 
 	// if (log) log->AddError(_("Could not dereference!"));
 	return nullptr;
@@ -1279,10 +1273,10 @@ int DocumentExportConfig::assign(FieldExtPlace *ext,Value *v)
 		makestr(tofiles, sv->str);
 		return 1;
 	}
-	if (!strcmp("command", str)) {
+	if (!strcmp("custom_command", str)) {
 		StringValue *sv = dynamic_cast<StringValue*>(v);
 		if (!sv) return 0;
-		makestr(command, sv->str);
+		makestr(custom_command, sv->str);
 		return 1;
 	}
 	if (!strcmp("textaspaths", str)) {
@@ -1348,7 +1342,10 @@ int DocumentExportConfig::assign(FieldExtPlace *ext,Value *v)
 		if (!vv || !vv->str) return 0;
 		if      (!strcasecmp(vv->str, "single"))  target = TARGET_Single;
 		else if (!strcasecmp(vv->str, "multi"))   target = TARGET_Multi;
-		else if (!strcasecmp(vv->str, "command")) target = TARGET_Command;
+		else if (!strcasecmp(vv->str, "command")) {
+			target = TARGET_Single;
+			send_to_command = true;
+		}
 		else return 0;
 		return 1;
 	}
@@ -1398,15 +1395,28 @@ LaxFiles::Attribute *DocumentExportConfig::dump_out_atts(LaxFiles::Attribute *at
 		att->push("evenodd","odd"          ,"all|even|odd. Based on spread index, maybe export only even or odd spreads.");
 		att->push("paperrotation","0"      ,"0|90|180|270. Whether to rotate each exported (final) paper by that number of degrees");
 		att->push("rotate180","yes"        ,"or no. Whether to rotate every other paper by 180 degrees, in addition to paperrotation");
-		att->push("target","single"        ,"or multi, or command. Whether to try to output to a single file or many");
+		att->push("target","single"        ,"or multi. Whether to try to output to a single file or many");
 
 		return att;
 	}
 
 	if (filename) att->push("tofile", filename);
 	if (tofiles) att->push("tofiles", tofiles);
-	if (command) att->push("command", command);
-	att->push("target", target == TARGET_Single ? "single" : (target == TARGET_Multi ? "multi" : "command"));
+	att->push("target", target == TARGET_Single ? "single" : (target == TARGET_Multi ? "multi" : "?"));
+
+	att->push("send_to_command", send_to_command ? "yes" : "no");
+	att->push("del_after_command", del_after_command ? "yes" : "no");
+	if (custom_command) att->push("custom_command", custom_command);
+
+	if (command) {
+		const char *toolname = nullptr;
+		laidout->prefs.GetToolCategoryName(command->category, &toolname);
+		char *str = newstr(toolname);
+		appendstr(str, ": ");
+		appendstr(str, command->command_name);
+		att->push("command", str);
+		delete[] str;
+	}
 
 	if (filter) att->push("format", filter->VersionName());
 	if (doc && doc->imposition) {
@@ -1452,14 +1462,33 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpCo
 		} else if (!strcmp(name,"tofiles")) {
 			makestr(tofiles,value);
 
+		} else if (!strcmp(name,"custom_command")) {
+			makestr(custom_command,value);
+
+		} else if (!strcmp(name,"send_to_command")) {
+			send_to_command = BooleanAttribute(value);
+
+		} else if (!strcmp(name,"del_after_command")) {
+			del_after_command = BooleanAttribute(value);
+
 		} else if (!strcmp(name,"command")) {
-			makestr(command,value);
+			//something like "Print: lp"
+			ExternalTool *tool = laidout->prefs.FindExternalTool(value);
+			if (tool) {
+				if (command) command->dec_count();
+				command = tool;
+				tool->inc_count();
+			}
 
 		} else if (!strcmp(name,"target")) {
 			if (isblank(value)) target = TARGET_Single;
 			else if (!strcmp(value, "single"))  target = TARGET_Single;
 			else if (!strcmp(value, "multi"))   target = TARGET_Multi;
-			else if (!strcmp(value, "command")) target = TARGET_Command;
+			else if (!strcmp(value, "command")) {
+				//DEPRECATED!!
+				target = TARGET_Single;
+				send_to_command = true;
+			}
 
 		} else if (!strcmp(name,"format")) {
 			filter=laidout->FindExportFilter(value,false);
@@ -1579,53 +1608,59 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 
 	DBG cerr << "export_document begin to \""<<config->filter->VersionName()<<"\"......."<<endl;
 
-    if (config->target == DocumentExportConfig::TARGET_Command) {
-		// TODO! *** this currently bypasses all the safety checks normally done below...
-		if (isblank(config->command)) {
-			log.AddMessage(_("Expected command!"),ERROR_Fail);
-			return 1;
-		}
-		if (!config->filter) {
-			log.AddMessage(_("Missing filter!"),ERROR_Fail);
-			return 1;
-		}
+	PtrStack<char> files_outputted(LISTS_DELETE_Array);
 
-        char *cm = newstr(config->command);
-        appendstr(cm," ");
-
-        char tmp[256];
-        //cupsTempFile2(tmp,sizeof(tmp));
-		//tmpnam(tmp);
-		sprintf(tmp, "laidoutTmpXXXXXX");
-		mkstemp(tmp);
-        DBG cerr <<"attempting to write temp file "<<tmp<<" for export by command "<< cm <<endl;
-
-		FILE *f = fopen(tmp, "w");
-		if (f) { //make sure it is writable
-            fclose(f);
-
-            if (config->filter->Out(tmp,config,log)==0) {
-                appendstr(cm,tmp);
-
-                 //now do the actual command
-                int c=system(cm); //-1 for error, else the return value of the call
-                if (c!=0) {
-					log.AddMessage(_("Error running command!"),ERROR_Fail);
-					return 1;
-                } else {
-					//done, no error!
-                }
-                //***maybe should have to delete (unlink) tmp, but only after actually done printing?
-                //does cups keep file in place, or copy when queueing?
-
-            } else {
-                 //there was an error during filter export
-				log.AddMessage(_("Error exporting with command!"),ERROR_Fail);
-				return 1;
-            }
-        }
-        return 0;
-    } //if command
+//	if (config->target == DocumentExportConfig::TARGET_Command) {
+//		// TODO! *** this currently bypasses all the safety checks normally done below...
+//		if (isblank(config->command)) {
+//			log.AddMessage(_("Expected command!"),ERROR_Fail);
+//			return 1;
+//		}
+//		if (!config->filter) {
+//			log.AddMessage(_("Missing filter!"),ERROR_Fail);
+//			return 1;
+//		}
+//
+//        char *cm = newstr(config->command);
+//        appendstr(cm," ");
+//
+//        char tmp[256];
+//        //cupsTempFile2(tmp,sizeof(tmp));
+//		//tmpnam(tmp);
+//		sprintf(tmp, "laidoutTmpXXXXXX");
+//		mkstemp(tmp);
+//        DBG cerr <<"attempting to write temp file "<<tmp<<" for export by command "<< cm <<endl;
+//
+//		FILE *f = fopen(tmp, "w");
+//		if (f) { //make sure it is writable
+//            fclose(f);
+//
+//            if (config->filter->Out(tmp,config,log)==0) {
+//                appendstr(cm,tmp);
+//
+//                 //now do the actual command
+//                int c=system(cm); //-1 for error, else the return value of the call
+//                if (c!=0) {
+//					log.AddMessage(_("Error running command!"),ERROR_Fail);
+//					return 1;
+//                } else {
+//					//done, no error!
+//                }
+//                //***maybe should have to delete (unlink) tmp, but only after actually done printing?
+//                //does cups keep file in place, or copy when queueing?
+//
+//            } else {
+//                 //there was an error during filter export
+//				log.AddMessage(_("Error exporting with command!"),ERROR_Fail);
+//				return 1;
+//            }
+//            
+//        } else {
+//        	log.AddError(_("Could not open temp file!"));
+//        	return 1;
+//        }
+//        return 0;
+//    } //if command
 
 
 	 //figure out what paper arrangement to print out on
@@ -1719,6 +1754,8 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 				err = config->filter->Out(filename, config, log);
 				pg->dec_count();
 				if (err > 0) break;
+
+				if (err == 0 && config->send_to_command) files_outputted.push(newstr(filename));
 				filenum++;
 			}
 			if (err > 0) break;
@@ -1772,15 +1809,45 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 
 				config->filename = fname;
 				err              = config->filter->Out(nullptr, config, log);
+				if (err == 0 && config->send_to_command) files_outputted.push(newstr(fname));
 				delete[] fname;
 			}
 
 			config->range = range_orig;
 			config->filename=oldfilename;
 
-		} else err = config->filter->Out(nullptr,config,log); //send all pages at once to filter
+		} else {
+			err = config->filter->Out(nullptr,config,log); //send all pages at once to filter
+			if (err == 0 && config->send_to_command) files_outputted.push(newstr(config->filename));
+		}
 	}
 	
+	if (err == 0 && config->send_to_command) {
+		if (files_outputted.n == 0) {
+			err = 1;
+			log.AddWarning(_("No files to send to command!"));
+		} else {
+			//run command
+			bool run_in_background = true;
+
+			if (!config->command) {
+				log.AddError(_("Config is missing command!"));
+				err = 1;
+			} else {
+				config->command->RunCommand(files_outputted, log, run_in_background);
+				if (log.Errors()) err = 1;
+			}
+			
+			// delete if necessary
+			if (!run_in_background && config->del_after_command) {
+				for (int c=0; c<files_outputted.n; c++) {
+					DBG cerr << "Deleting temporary exported file "<<files_outputted.e[c]<<endl;
+					unlink(files_outputted.e[c]);
+				}
+			}
+		}
+	}
+
 	DBG cerr << "export_document end."<<endl;
 
 	if (err>0) {

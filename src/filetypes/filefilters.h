@@ -21,6 +21,7 @@
 #include <lax/indexrange.h>
 
 #include "../core/papersizes.h"
+#include "../core/externaltools.h"
 #include "../dataobjects/group.h"
 #include "../calculator/values.h"
 #include "../plugins/plugin.h"
@@ -99,10 +100,11 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 class DocumentExportConfig : public Value
 {
  public:
-	enum Targets { TARGET_Single = 0, TARGET_Multi = 1, TARGET_Command = 2 }; //needs to stay in sync with objectdef enum
+	enum Targets { TARGET_Single = 0, TARGET_Multi = 1 }; //needs to stay in sync with objectdef enum
 	int target; //TARGET_Single or TARGET_Multi
 	bool send_to_command;
 	bool del_after_command;
+	ExternalTool *command;
 	Laxkit::IndexRange range; //of spreads in doc
 	int layout;
 	enum EvenOdd { All,Even,Odd } evenodd;
@@ -120,7 +122,7 @@ class DocumentExportConfig : public Value
 	Group *limbo;
 	char *filename;
 	char *tofiles;
-	char *command;
+	char *custom_command;
 	PaperGroup *papergroup;
 
 	ExportFilter *filter;

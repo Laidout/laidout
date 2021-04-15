@@ -562,5 +562,43 @@ int LaidoutPreferences::AddPath(const char *resource, const char *path)
 	return 1;
 }
 
+/*! tool->category must already be in external_categories, or else nothing is done and 1 is returned.
+ * Return 0 if added successfully.
+ *  Takes ownership of tool, so don't worry about dec_count UNLESS 1 IS RETURNED. 
+ */
+int LaidoutPreferences::AddExternalTool(ExternalTool *tool)
+{
+	return external_tool_manager.AddExternalTool(tool);
+}
+
+/*! Takes ownership of category, so don't worry about dec_count. */
+int LaidoutPreferences::AddExternalCategory(ExternalToolCategory *category)
+{
+	return external_tool_manager.AddExternalCategory(category);
+}
+
+const char *LaidoutPreferences::GetToolCategoryName(int id, const char **idstr)
+{
+	return external_tool_manager.GetToolCategoryName(id, idstr);
+}
+
+ExternalToolCategory *LaidoutPreferences::GetToolCategory(int category)
+{
+	return external_tool_manager.GetToolCategory(category);
+}
+
+/*! Find existing tool from str like "Print: lp" -> "category: command_name".
+ */
+ExternalTool *LaidoutPreferences::FindExternalTool(const char *str)
+{
+	return external_tool_manager.FindExternalTool(str);
+}
+
+/*! Return the first tool in category, or null. */
+ExternalTool *LaidoutPreferences::GetDefaultTool(int category)
+{
+	return external_tool_manager.GetDefaultTool(category);
+}
+
 } // namespace Laidout
 

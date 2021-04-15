@@ -652,6 +652,8 @@ int LaidoutApp::init(int argc,char **argv)
 		}
 	}
 
+	prefs.external_tool_manager.SetupDefaults();
+
 	 // Note parseargs has to come after initing all the pools and whatever else
 	DBG cerr <<"---init: parse args"<<endl;
 	parseargs(argc,argv);

@@ -24,10 +24,15 @@ namespace Laidout {
 
 //----------------------------- MetaWindow -------------------------------
 
+enum MetaFlags {
+	META_As_Is = (1<<16)
+};
+
 class MetaWindow : public Laxkit::RowFrame
 {
   protected:
 	int addpoint;
+	unsigned long dialog_style;
 
   public:
 	LaxFiles::AttributeObject *meta;

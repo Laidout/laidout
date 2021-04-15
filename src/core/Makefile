@@ -17,6 +17,7 @@ objs= \
 	document.o \
 	objectiterator.o \
 	drawdata.o \
+	externaltools.o \
 	fieldplace.o \
 	guides.o \
 	importimage.o \

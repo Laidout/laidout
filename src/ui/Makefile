@@ -18,6 +18,7 @@ objs= \
 	autosavewindow.o \
 	buttonbox.o \
 	commandwindow.o \
+	externaltoolwindow.o \
 	findwindow.o \
 	headwindow.o \
 	helpwindow.o \

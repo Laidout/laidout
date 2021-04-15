@@ -1640,8 +1640,15 @@ int LaidoutViewport::ChangeObject(LaxInterfaces::ObjectContext *oc, int switchto
 	
 	if (update_selection) {
 		if (!selection) selection = new Selection();
-		selection->Flush();
-		if (oc->obj) selection->Add(oc, -1);
+		if (selection->FindIndex(oc) >= 0 && oc->obj) {
+			//flush all but this one
+			for (int c=selection->n()-1; c >= 0; c--) {
+				if (selection->e(c) != oc) selection->Remove(c);
+			}
+		} else {
+			selection->Flush();
+			if (oc->obj) selection->Add(oc, -1);
+		}
 		laidout->notifyDocTreeChanged(nullptr, TreeSelectionChange, 0,0);
 		needtodraw = 1;
 	}
@@ -5513,7 +5520,7 @@ int ViewWindow::PerformAction(int action)
 			appendstr(file, "exported-file.huh");
 			//file = full_path_for_file("exported-file.huh",NULL);
 		}
-		ExportDialog *d = new ExportDialog(0,object_id,"export config", 
+		ExportDialog *d = new ExportDialog(EXPORT_COMMAND,object_id,"export config", 
 										 doc,
 										 l,
 										 pg,

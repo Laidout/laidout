@@ -15,7 +15,9 @@
 #define LAIDOUTPREFS_H
 
 
+#include "externaltools.h"
 #include "../calculator/values.h"
+
 
 namespace Laidout {
 
@@ -47,6 +49,8 @@ class LaidoutPreferences : public Value
 	Laxkit::PtrStack<char> plugin_dirs;
 	bool experimental;
 
+	ExternalToolManager external_tool_manager;
+	
 	LaidoutPreferences();
 	virtual ~LaidoutPreferences();
 
@@ -56,6 +60,13 @@ class LaidoutPreferences : public Value
 	virtual int SavePrefs(const char *file=NULL);
 
 	virtual int AddPath(const char *resource, const char *path);
+
+	virtual int AddExternalTool(ExternalTool *tool);
+	virtual int AddExternalCategory(ExternalToolCategory *category);
+	virtual ExternalToolCategory *GetToolCategory(int category);
+	virtual const char *GetToolCategoryName(int id, const char **idstr = nullptr);
+	virtual ExternalTool *FindExternalTool(const char *str);
+	virtual ExternalTool *GetDefaultTool(int category);
 };
 
 int UpdatePreference(const char *which, const char *value, const char *laidoutrc);

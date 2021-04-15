@@ -52,7 +52,8 @@ class ExportDialog : public Laxkit::RowFrame
 	int cur, max;
 	char *last_meta_dir;
 	Laxkit::LineEdit *fileedit,*filesedit,*printspreadrange,*command;
-	Laxkit::CheckBox *filecheck,*filescheck,*commandcheck;
+	Laxkit::CheckBox *filecheck,*filescheck;
+	Laxkit::CheckBox *commandcheck, *delaftercommand;
 	Laxkit::CheckBox *printall,*printcurrent,*printrange;
 	Laxkit::CheckBox *everyspread, *evenonly, *oddonly;
 	Laxkit::CheckBox *batches;
@@ -65,6 +66,7 @@ class ExportDialog : public Laxkit::RowFrame
 
 	virtual void changeToEvenOdd(DocumentExportConfig::EvenOdd t);
 	virtual void changeTofile(int t);
+	virtual void SetCommandToggle();
 	virtual void paperRotation(int rotation);
 	virtual void changeRangeTarget(int t);
 	virtual void configBounds();

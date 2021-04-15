@@ -33,9 +33,8 @@ namespace Laidout {
 /*! \class PrintingDialog
  * \brief Laidout's printing dialog.
  *
- * This is in contrast to ExportDialog. This dialog is intended for sending postscript
- * to a printer. Eventually, it'll allow selecting known printers, via Cups, for instance.
- * Currently, only "print by command" really sends anything to the printer.
+ * This is in contrast to ExportDialog. This dialog is intended for sending a PDF file
+ * to a printer. It is supposed to allow selecting a printer destination, via Cups.
  *
  * \todo this needs a lot of work
  */
@@ -53,7 +52,7 @@ PrintingDialog::PrintingDialog(Document *ndoc,Window nowner,const char *nsend,
 				   layout,pmin,pmax,pcur)
 {
 	for (int c=0; c<laidout->exportfilters.n; c++)
-		if (!strcmp(laidout->exportfilters.e[c]->VersionName(),_("Postscript LL3"))) {
+		if (!strcasecmp(laidout->exportfilters.e[c]->VersionName(), _("Pdf"))) { //Postscript LL3"))) {
 			filter=laidout->exportfilters.e[c];
 			break;
 		}

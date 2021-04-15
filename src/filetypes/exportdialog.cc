@@ -22,11 +22,13 @@
 #include <lax/filedialog.h>
 #include <lax/fileutils.h>
 #include <lax/laxutils.h>
+#include <lax/colorbox.h>
 
 #include "../version.h"
 #include "../laidout.h"
 #include "../language.h"
 #include "../ui/metawindow.h"
+#include "../ui/externaltoolwindow.h"
 #include "exportdialog.h"
 
 
@@ -122,7 +124,7 @@ ExportDialog::ExportDialog(unsigned long nstyle,unsigned long nowner,const char 
 	cur = pcur;
 
 	fileedit = filesedit = printspreadrange = command = NULL;
-	filecheck = filescheck = commandcheck = printall = printcurrent = printrange = NULL;
+	filecheck = filescheck = commandcheck = delaftercommand = printall = printcurrent = printrange = NULL;
 
 	batches     = NULL;
 	batchnumber = NULL;
@@ -338,26 +340,7 @@ int ExportDialog::init()
 	AddWin(format,1, format->win_w,0,50,50,0, 2*textheight,0,0,50,0, -1);
 	AddNull();
 
-	 //--------- to command
-	if (dialog_style&EXPORT_COMMAND) {
-		last=commandcheck=new CheckBox(this,"command-check",NULL,CHECK_CIRCLE|CHECK_LEFT, 
-							 0,0,0,0,0, 
-							 last,object_id,"command-check",
-							 _("By Command: "), CHECKGAP,5);
-		commandcheck->State(config->target == DocumentExportConfig::TARGET_Command ?  LAX_ON : LAX_OFF);
-		commandcheck->tooltip(_("Run this command on a single exported file"));
-		AddWin(commandcheck,1,-1);
-
-		last=command=new LineEdit(this,"command",NULL,LINEEDIT_SEND_FOCUS_ON|LINEEDIT_SEND_FOCUS_OFF, 
-							 0,0,100,20, 1,
-							 last,object_id,"command",
-							 "lp",0);
-		command->padx=5;
-		command->tooltip(_("Run this command on a single exported file"));
-		AddWin(command,1, command->win_w,0,1000,50,0, linpheight,0,0,50,0, -1);
-		AddNull();
-	}
-	
+		
 	 //--------- to file
 	last=filecheck=new CheckBox(this,"tofile-check",NULL,CHECK_CIRCLE|CHECK_LEFT, 
 						 0,0,0,0,0, 
@@ -417,7 +400,66 @@ int ExportDialog::init()
 	tbut->tooltip(_("Browse for a new location"));
 	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
+
+	//--- add a vertical spacer
+	AddWin(NULL,0, 0,0,9999,50,0, 12,0,0,50,0, -1);
+	AddNull();
+
+ 	//--------- to command
+	if (dialog_style&EXPORT_COMMAND) {
+		last = commandcheck = new CheckBox(this,"command-check",NULL,CHECK_CIRCLE|CHECK_LEFT, 
+							 0,0,0,0,0, 
+							 last,object_id,"command-check",
+							 _("Send files to command: "), CHECKGAP,5);
+		commandcheck->State(config->send_to_command ?  LAX_ON : LAX_OFF);
+		commandcheck->tooltip(_("Run this command with the exported files"));
+		AddWin(commandcheck,1,-1);
+
+		// last=command=new LineEdit(this,"command",NULL,LINEEDIT_SEND_FOCUS_ON|LINEEDIT_SEND_FOCUS_OFF, 
+		// 					 0,0,100,20, 1,
+		// 					 last,object_id,"command",
+		// 					 "lp",0);
+		// command->padx=5;
+		// command->tooltip(_("Run this command with the exported files"));
+		// AddWin(command,1, command->win_w,0,1000,50,0, linpheight,0,0,50,0, -1);
+		
+		int cur_tool = -1;
+		SliderPopup *commands;
+		last = commands = new SliderPopup(this, "commands",NULL,SLIDER_LEFT|SLIDER_POP_ONLY, 0,0,0,0,1, last, object_id, "commands",NULL,0);
+		int i = 1;
+		for (c=0; c<laidout->prefs.external_tool_manager.external_categories.n; c++) {
+			commands->AddSep(laidout->prefs.external_tool_manager.external_categories.e[c]->Name);
+			for (c2=0; c2<laidout->prefs.external_tool_manager.external_categories.e[c]->tools.n; c2++) {
+				ExternalTool *tool = laidout->prefs.external_tool_manager.external_categories.e[c]->tools.e[c2];
+				if (config && config->command == tool) cur_tool = i;
+				commands->AddToggleItem(tool->name, i, c2, cur_tool == i); //c, c2);
+				i++;
+			}
+		}
+		commands->AddSep();
+		commands->AddItem(_("Manage commands..."), -1);
+		commands->SetState(-1, SLIDER_IGNORE_ON_BROWSE, 1);
+		if (cur_tool < 1) cur_tool = 1;
+		commands->Select(cur_tool);
+		commands->WrapToExtent();
+		commands->tooltip(_("The command to send files to"));
+		AddWin(commands,1, commands->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+
+		// // AddNull();
+		// AddHSpacer(textheight);
+
+		// last = delaftercommand = new CheckBox(this,"delaftercommand",NULL,CHECK_CIRCLE|CHECK_LEFT, 
+		// 					 0,0,0,0,0, 
+		// 					 last,object_id,"delaftercommand",
+		// 					 _("Delete after"), CHECKGAP,5);
+		// delaftercommand->Checked(config->del_after_command);
+		// delaftercommand->Grayed(!config->send_to_command);
+		// delaftercommand->tooltip(_("Delete exported files after running command"));
+		// AddWin(delaftercommand,1,-1);
 	
+		AddNull();
+	}
+
 
 	 //--- add a vertical spacer
 	AddWin(NULL,0, 0,0,9999,50,0, 12,0,0,50,0, -1);
@@ -807,6 +849,29 @@ void ExportDialog::updateEdits()
 				AddWin(box,1,i++); 
 				AddNull(i++);
 
+			} else if (fd->format==VALUE_Color) { 
+				Value *v = config->dereference(fd->name,strlen(fd->name));
+				ColorValue *cval = dynamic_cast<ColorValue*>(v);
+
+				sprintf(scratch,"extra-%s-label",fd->name);
+				AddWin(new MessageBar(this,scratch,fd->name,0, 0,0,0,0,0, fd->Name),1, i++);
+
+				sprintf(scratch,"extra-%s",fd->name);
+
+				ColorBox *box;
+				last = box = new ColorBox(this, scratch, nullptr, COLORBOX_FG,
+						 0,0,linpheight,linpheight,1,
+						 last, object_id, scratch,
+						 LAX_COLOR_RGB, .01,
+						 cval->color.Red(), cval->color.Green(), cval->color.Blue(), cval->color.Alpha()
+					 );
+					
+				if (!isblank(fd->description)) box->tooltip(fd->description);
+				v->dec_count();
+
+				AddWin(box,1,i++); 
+				AddNull(i++);
+
 			} else if (fd->format == VALUE_Object) {
 				Value *v=config->dereference(fd->name,strlen(fd->name));
 				ObjectValue *ov = dynamic_cast<ObjectValue*>(v);
@@ -879,6 +944,13 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 		} else if (fd->format==VALUE_Int || fd->format==VALUE_Real) {
 			DoubleValue v(strtod(eee->str,NULL));
 			config->assign(&ff, &v);
+
+		} else if (fd->format == VALUE_Color) {
+			const SimpleColorEventData *cev = dynamic_cast<const SimpleColorEventData*>(ee);
+			ColorValue *cv = new ColorValue();
+			cv->SetFromEvent(cev);
+			config->assign(&ff, cv);
+			cv->dec_count();
 		}
 
 		return 0;
@@ -927,7 +999,63 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"command-check")) {
-		changeTofile(DocumentExportConfig::TARGET_Command);
+		SetCommandToggle();
+		// changeTofile(DocumentExportConfig::TARGET_Command);
+		return 0;
+
+	} else if (!strcmp(mes,"delaftercommand")) {
+		config->del_after_command = delaftercommand->Checked();
+		return 0;
+
+	} else if (!strcmp(mes,"commands")) { //from a sliderpopup
+		int id = e->info1;
+		if (id == -1) {
+			//manage commands
+			app->rundialog(new ExternalToolManagerWindow(nullptr, object_id, "managedcommands"));
+
+		} else {
+			int i = 1;
+			SliderPopup *commands = dynamic_cast<SliderPopup*>(findChildWindowByName("commands"));
+			for (int c=0; c<laidout->prefs.external_tool_manager.external_categories.n; c++) {
+				for (int c2=0; c2<laidout->prefs.external_tool_manager.external_categories.e[c]->tools.n; c2++) {
+					int ii = commands->GetItemIndex(i);
+					if (i == id) {
+						ExternalTool *tool = laidout->prefs.external_tool_manager.external_categories.e[c]->tools.e[c2];
+						if (config && config->command != tool) {
+							if (config->command) config->command->dec_count();
+							config->command = tool;
+							config->command->inc_count();
+						}
+
+						commands->SetState(ii, LAX_CHECKED, 1);
+					} else commands->SetState(ii, LAX_CHECKED, 0);
+					i++;
+				}
+			}
+		}
+		return 0;
+
+	} else if (!strcmp(mes,"managedcommands")) {
+		//need to remap the commands list
+		int cur_tool = -1;
+		SliderPopup *commands = dynamic_cast<SliderPopup*>(findChildWindowByName("commands"));
+		commands->Flush(0);
+		int i = 0;
+		for (int c=0; c<laidout->prefs.external_tool_manager.external_categories.n; c++) {
+			commands->AddSep(laidout->prefs.external_tool_manager.external_categories.e[c]->Name);
+			for (int c2=0; c2<laidout->prefs.external_tool_manager.external_categories.e[c]->tools.n; c2++) {
+				ExternalTool *tool = laidout->prefs.external_tool_manager.external_categories.e[c]->tools.e[c2];
+				if (config && config->command == tool) cur_tool = i;
+				commands->AddToggleItem(tool->name, i, c2, cur_tool == i); //c, c2);
+				i++;
+			}
+		}
+		commands->AddSep();
+		commands->AddItem(_("Manage commands..."), -1);
+		commands->SetState(-1, SLIDER_IGNORE_ON_BROWSE, 1);
+		if (cur_tool >= 0) commands->Select(cur_tool);
+		// commands->WrapToExtent();
+		// commands->tooltip(_("The command to send files to"));
 		return 0;
 
 	} else if (!strcmp(mes,"tofile-check")) {
@@ -1098,11 +1226,11 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 			return 0; 
 		} else if (e->info1==2) {
 			 //focus on
-			changeTofile(DocumentExportConfig::TARGET_Command);
+			// changeTofile(DocumentExportConfig::TARGET_Command);
 			return 0;
 		} else if (e->info1==0) {
 			 //text was modified
-			makestr(config->command, command->GetCText());
+			makestr(config->custom_command, command->GetCText());
 		}
 		return 0;
 
@@ -1308,9 +1436,16 @@ void ExportDialog::changeTofile(int t)
 	if (t == DocumentExportConfig::TARGET_Single) batches->State(LAX_OFF);
 	filecheck-> State(tofile == DocumentExportConfig::TARGET_Single ? LAX_ON : LAX_OFF);
 	filescheck->State(tofile == DocumentExportConfig::TARGET_Multi ? LAX_ON : LAX_OFF);
-	if (commandcheck) commandcheck->State(tofile == DocumentExportConfig::TARGET_Command ? LAX_ON : LAX_OFF);
+	// if (commandcheck) commandcheck->State(tofile == DocumentExportConfig::TARGET_Command ? LAX_ON : LAX_OFF);
 
 	overwriteCheck();
+}
+
+/*! Update widgets that depend on command-check. */
+void ExportDialog::SetCommandToggle()
+{
+	if (delaftercommand) delaftercommand->Grayed(!commandcheck->Checked());
+	config->send_to_command = commandcheck->Checked();
 }
 
 void ExportDialog::changeToEvenOdd(DocumentExportConfig::EvenOdd t)

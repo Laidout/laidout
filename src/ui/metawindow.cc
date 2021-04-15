@@ -44,6 +44,8 @@ MetaWindow::MetaWindow(anXWindow *prnt, const char *nname,const char *ntitle,uns
 					  LaxFiles::AttributeObject *nMeta)
   : RowFrame(prnt, nname, ntitle, ROWFRAME_ROWS | ROWFRAME_STRETCH_IN_COL | ROWFRAME_LEFT | ANXWIN_REMEMBER | ANXWIN_ESCAPABLE, 0,0,600,500,0, NULL,nowner,msg)
 {
+	dialog_style = nstyle & ~ANXWIN_MASK;
+
 	addpoint = 0;
 	meta = nMeta;
 	if (meta) meta->inc_count();
@@ -78,14 +80,16 @@ int MetaWindow::init()
 			//last->tooltip(sd->tooltip);
 			AddWin(linp,1, linp->win_w,0,10000,50,0, linp->win_h,0,0,50,0, -1);
 
-			scratch.Sprintf("x%s", att->name);
-			button = new Button(this, "X", "X", 0,
-                        0,0,0,0,1,
-                        last, object_id, scratch.c_str(),
-                        -1,
-                        "X"
-					);
-			AddWin(button,1, button->win_w,0,0,50,0, button->win_h,0,0,50,0, -1);
+			if (!(dialog_style & META_As_Is)) {
+				scratch.Sprintf("x%s", att->name);
+				button = new Button(this, "X", "X", 0,
+	                        0,0,0,0,1,
+	                        last, object_id, scratch.c_str(),
+	                        -1,
+	                        "X"
+						);
+				AddWin(button,1, button->win_w,0,0,50,0, button->win_h,0,0,50,0, -1);
+			}
 
 			AddNull();
 		}
@@ -93,12 +97,14 @@ int MetaWindow::init()
 
 	addpoint = wholelist.n;
 
-	last = linp = new LineInput(this, "add", "add", 0,
-			0,0,0,0,0,
-			last, object_id, "add",
-			_("New variable:"), nullptr);
-	AddWin(linp,1, -1);
-	AddNull();
+	if (!(dialog_style & META_As_Is)) {
+		last = linp = new LineInput(this, "add", "add", 0,
+				0,0,0,0,0,
+				last, object_id, "add",
+				_("New variable:"), nullptr);
+		AddWin(linp,1, -1);
+		AddNull();
+	}
 
 	//add Done button
 	AddVSpacer(th,0,0, 0);

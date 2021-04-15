@@ -63,6 +63,7 @@ otherobjs= \
 	core/document.o \
 	core/objectiterator.o \
 	core/drawdata.o \
+	core/externaltools.o \
 	core/fieldplace.o \
 	core/guides.o \
 	core/importimage.o \
@@ -170,6 +171,7 @@ otherobjs= \
 	ui/autosavewindow.o \
 	ui/buttonbox.o \
 	ui/commandwindow.o \
+	ui/externaltoolwindow.o \
 	ui/findwindow.o \
 	ui/headwindow.o \
 	ui/helpwindow.o \

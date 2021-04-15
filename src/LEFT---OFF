@@ -12,14 +12,13 @@ down to major items in ../features.md.
 
 
 ------------ serious bugs to fix right now:
+bug: export, switch off then back on: error: missing export source!
 
-bug: ImagePatch doing anything with it causes double free crash
+bug: ImagePatch doing anything with it causes crash.. before crash, image distorts incorrectly
 
 bug: home and end throw selection bounds out of whack.. try with gradient tool for instance, controls bad until reselect
 
 bug: Engraver fill, just moving mouse around is rerendering to buffer for preview
-
-bug: imported white images are not white, very slightly gray. gm load problem?
 
 bug: severing clone link does some weird things, including crashing
 bug: clone tool clones do not have proper bounding box
@@ -212,6 +211,8 @@ laxkit interface manager interfacemanager:
     hovered size
 
 laxkit:
+  FileDialog, when you open with particular thing, it should be highlighted and shown in file pane
+  need better indication of focused/not focused
   need to make sure the weird stuff with xim/xim_ic in anXApp::CreateXInputContext() still works after not creating new xim_ics
     need to investigate using ibus
   should revamp the viewport color events to exclusively use Color objects and handle specials
@@ -397,15 +398,16 @@ cairo:
   cairo render has color problems with gradients
   cairo development is dead? investigate alternatives
 
+graphicsmagick:
+  load_image() always loads full, even if ping_only (confirm?)
+
 utf8string:
   move semantics to be more efficient
-
-
-pdf export lines has outlines in evince?
 
 debug inkscape node extension
 
 text on path textonpath: TextOnPath
+  bug: final letter in envelope size is wrong size
   convert to path rendering to wrong place and orientation
   doesn't handle transforms with nested objects properly
   dragging size handle with shift|control does not scale properly
@@ -484,6 +486,7 @@ have an actual splash image shown
 you can't control unclick selected directories
 
 build: building: build process
+  should be able to specify default icon size as a compile option
   should update faq with details about graphicsmagick, harfbuzz, and gegl versioning
   update configure message about try installing packages.. when fail on gegl, it's not listed
   should be able to do out-of-source builds
@@ -519,8 +522,9 @@ file filters: filefilters:
       export config to create files that go along with copied project files
       template vars to replace in set of copied project files
     export.config
-      filter: "Html Gallery"
-      copy: [f1, f2, "**/*.png", { from: "here.txt", to: "to/there.txt" } ]
+      filter: "Html Gallery",
+	  filter_config: { ... },
+      copy: [f1, f2, "**/*.png", { from: "here.txt", to: "to/there.txt" } ],
       templates:
 		[
  		  { pass_id: "template1",
@@ -551,7 +555,10 @@ file filters: filefilters:
     - have ViewWindow::JumpToObject(&place, objectid);
   DONE need to preserve last settings per filter, remember full export settings
 pageatlas: page atlas:
-  needs bg color
+  double check: export current not selecting the proper spread??
+  DONE export singles nightlife booklet, everything is small??
+  DONE file names should be like exported-01-05.jpg not exported-1-5.jpg
+  DONE needs bg color
   DONE basically n-up page out, lrtb
 equirectangular:
   export:
@@ -614,6 +621,7 @@ laidout import:
     import of master pages
     import of limbos
 pdf: PDF:
+  pdf export lines has outlines in evince?
   export clones adds extra ref in resources section
   text out very broken.. imageout via gs complains about malformed pdf on fonts
   fonts are not doubled up, each text object is exporting its own
@@ -1554,14 +1562,23 @@ captioninterface CaptionInterface captiondata CaptionData
   DONE bug: why is a font being created and destroyed each refresh??
 
 export/print dialog
-  [] Send files to command: __lp %f__
-     [] Delete files after command
+  what happens about background programs, like opening something in gimp? can't delete temporary files
   need better print dialog.. old ppd cups stuff is deprecated
-  make print button experimental only?
   vital to debug send to printer
   export should have a preview of what is actually going out, flip through spreads
   in papergroups with multiple papers and double sided impositions, need to ensure front and back are output properly for printer
-  Make export dialog optionally have the to command field
+
+  Make export dialog optionally have the to command field:
+    DONE [] Send files to command: [ -Print commands- v]
+	[] Delete files after command (what about background run things??!?
+    Command: lp __%f__   <-- click to edit for one off custom
+	Command: command ___{files}__{context.page_label}__{range}__{evaluated.expression}
+
+  DONE load/save external tools config
+  DONE debug validity check
+  DONE after manage commands, list doesn't update from export dialog
+  DONE bug: slider popup shouldn't show item if hide_from_Browse
+  DONE make print button experimental only?  --> disable until a real print dialog happens
   DONE For now remove print button, as it produces incorrect results. All it does is allow "to command" option, not vital
 
 DrawableObject:
@@ -1605,6 +1622,7 @@ fontdialog: FontDialog
   optional common font finishers? like centering, underline, color, highlight, fg/bg, etc
 
 ellipseinterface:
+  select object, but controls not visible
   center cross hair should be slanted when shape is slanted
   del on center cross hair should straighten?
   incorporate to mesh tool
@@ -1635,11 +1653,15 @@ Clean up mesh/patch controls: Mesh PatchInterface
   bug: base on path remove/add should try to remember previous weight nodes, scratch only when mod points (not colors) too far off
   bug: convert path to mesh inserting null patches at each point
   bug: should still be able to edit colors while based on path
+  need ability to rect select points, like for cone gradient, points on overlapping edge can't be selected
 
   when color points overlap like with circle warp, have a way to change all coincident color points
   selected nodes should probably be more prominent and colored, just gray disappears, hard to work with
   rotate/scale single or more control points should move attached controls in smooth mode
-  circle warp needs a proper circle/ellipse interface
+  circle warp:
+    bug: sets "circle" property, but does not output the data to file
+    bug: circle: non-circle breaks ellipse scan
+    bug: circle: drag center, breaks ellipse scan
 
   DONE bug: can't change point types with menu... path is not getting any menu messages
   DONE maybe should not be able to escape off path tool when editing as path, since that breaks path connection
@@ -2336,6 +2358,7 @@ customizable object child relationships to parent, rather than simple transform
   need edge indicators for more convenient snapping
 
 calculator/scripting
+  bug: ln(3) -> cannot compute with given values
   bug: string output not escaping things to display correctly
   bug: run command with BuildIcons, error is not propagating up to cout
   bug: function calls, assigning named parameters, checks for '=', but only single char, fails when it's actually a ==
@@ -2440,20 +2463,24 @@ image import: ImportImagesDialog
   a "Place" tool like indesign?? preview images and place by dragging out one by one, as well as optionally into Arrangements
 
 
-external tools:
-  figure out a way to standardize verifying that tool exists and is executable
+external tools: external commands:
   to image renderers
   to object renderers
   Image editor (gimp, krita)
   plain text editor (gvim, console vim, command, etc)
   associate (object type) <-> (external editor)
 
-  binary_path
+  command_name, ie   "lp"
+  binary_path        "/usr/bin/lp"
+  description        "Print"
   doc_website
-  expected_file_ext
-  function to verify file
+  file_in_ext        "pdf"
   extra config
-  command structure "command %f --stuff {extra1} {extra2} {extra3}"
+  function to verify file
+  glob for expected output files (so that we can import generated images, for instance)
+  command structure "command {filename} --stuff {extra1} {extra2} {extra3}"
+
+  DONE figure out a way to standardize verifying that tool exists: command name: search in $PATH, check if executable
 
 dynamic objects (generated images, dynamic images, rendered images)
     eps objects to pdf: export as image, plant in PDF as image
@@ -2465,8 +2492,12 @@ dynamic objects (generated images, dynamic images, rendered images)
       needs what type of file
       needs how many files
       needs what other info
-In image properties dialog, have the popup list of potential previews
+ImageProperties image properties imageinfo image info:
+  click for file should show preview... there are two "..." !!
+  select file, not updating view?
+  In image properties dialog, have the popup list of potential previews
     preview style needs debugging and testing so as not to fry the freedesktop ones
+
 if you change an eps to a non eps with the insert file, it still thinks it is an eps..
  image objects should auto change between the available image formats:
   bitmap--eps--embedded svg--dynamic
@@ -3097,4 +3128,7 @@ DONE bug: lax: slight hitch, about 1/4 sec on every button down, XCreateIC() in 
 DONE bug: scrollbars drawing extra line in bottom half
 DONE bug: caption mouse controls don't work on first object??
 DONE bug: new doc, pop up spread editor with f3, close the window: crash!
+DONE when you try to open something bad with control-o, fails silently.. should show error log
+DONE bug: imported white images are not white, very slightly gray. gm load problem?  (255) becomes 254 -> LaxCairoImage::createFromData_ARGB8
+DONE bug: SliderPopup: select something that has SLIDER_IGNORE_ON_BROWSE, now it isn't ignored anymore
 
