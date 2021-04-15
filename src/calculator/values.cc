@@ -5109,6 +5109,21 @@ ColorValue::ColorValue(double r, double g, double b, double a)
   : color(LAX_COLOR_RGB, r,g,b,a,0, 1.0)
 {}
 
+ColorValue::ColorValue(const Laxkit::Color &col)
+{
+	if (col.colorsystemid == LAX_COLOR_RGB) color.SetRGB( col.values[0],
+													      col.values[1],
+													      col.values[2],
+													      col.values[3]);
+	else if (col.colorsystemid == LAX_COLOR_CMYK) color.SetCMYK(col.values[0],
+													            col.values[1],
+													            col.values[2],
+													            col.values[3],
+													            col.values[4]);
+	else if (col.colorsystemid == LAX_COLOR_GRAY) color.SetGray(col.values[0],
+													            col.values[1]);
+}
+
 /*! Objects gets count decremented.
  */
 ColorValue::~ColorValue()
@@ -5119,6 +5134,46 @@ ColorValue::~ColorValue()
 bool ColorValue::Parse(const char *str)
 {
 	return color.Parse(str, -1, nullptr);
+}
+
+/*! Return 0 for success, nonzero for error. */
+int ColorValue::SetFromEvent(const Laxkit::SimpleColorEventData *cev)
+{
+	if (!cev) return 1;
+
+	if (cev->colorsystem == LAX_COLOR_RGB) color.SetRGB(cev->channels[0]/(double)cev->max,
+													    cev->channels[1]/(double)cev->max,
+													    cev->channels[2]/(double)cev->max,
+													    cev->channels[3]/(double)cev->max);
+	else if (cev->colorsystem == LAX_COLOR_CMYK) color.SetCMYK(cev->channels[0]/(double)cev->max,
+													    cev->channels[1]/(double)cev->max,
+													    cev->channels[2]/(double)cev->max,
+													    cev->channels[3]/(double)cev->max,
+													    cev->channels[4]/(double)cev->max);
+	else if (cev->colorsystem == LAX_COLOR_GRAY) color.SetGray(cev->channels[0]/(double)cev->max,
+													    cev->channels[1]/(double)cev->max);
+	// *** else others...
+	
+	return 0;
+}
+
+/*! Set innards of to_color to match ourself. Return 0 for success, nonzero error. */
+int ColorValue::GetColor(Laxkit::Color *to_color)
+{
+	if (!to_color) return 1;
+
+	to_color->colorsystemid = LAX_COLOR_RGB;
+	if (to_color->nvalues != 4) {
+		delete[] to_color->values;
+		to_color->values = new double[4];
+	}
+	to_color->nvalues = 4;
+	to_color->values[0] = color.Red();
+	to_color->values[1] = color.Green();
+	to_color->values[2] = color.Blue();
+	to_color->values[3] = color.Alpha();
+
+	return 0;
 }
 
 int ColorValue::getValueStr(char *buffer,int len)

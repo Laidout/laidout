@@ -709,18 +709,23 @@ class ColorValue : public Value
 {
   public:
 	Laxkit::ColorBase color;
+
 	ColorValue();
 	ColorValue(const char *color);
 	ColorValue(double r, double g, double b, double a);
 	ColorValue(const Laxkit::ScreenColor &scolor);
+	ColorValue(const Laxkit::Color &col);
 	//ColorValue(Laxkit::ColorBase &color);
 	virtual ~ColorValue();
-	virtual bool Parse(const char *str);
 	virtual const char *whattype() { return "ColorValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Color; }
  	virtual ObjectDef *makeObjectDef();
+
+	virtual bool Parse(const char *str);
+	virtual int SetFromEvent(const Laxkit::SimpleColorEventData *cev);
+	virtual int GetColor(Laxkit::Color *to_color);
 };
 
 //----------------------------- ObjectValue ----------------------------------
