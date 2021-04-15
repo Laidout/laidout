@@ -26,6 +26,7 @@ VERSION 0.098
 (done) drag-n-drop from system, like drag images into viewwindow from an external file browser
 (done) Show/hide objects
 (done) Address icon/text/thin line sizing issues for high dpi monitors (issue #16)
+(done) System to manage external tools, like print command or image editor
 
 (done) Moving selected things in group contents does not update group bounds
 (done) should not be able to select both group and group contents at same time
