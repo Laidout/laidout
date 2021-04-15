@@ -3,9 +3,7 @@
 
 TODO:
   FitIn
-  CSV in: set of row hashes, or hash of row values
   AlignToBounds
-  ListOf  [type][num] 0 1 2 ... n-1 out
   PathIntersections
   ObjectArrayNode
   MirrorPathNode
