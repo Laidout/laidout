@@ -118,6 +118,7 @@ namespace Laidout {
 enum ViewActions {
 	VIEW_Save = 3500, // *** for now keep this at 3500.. need better way to organize this!
 	VIEW_SaveAs,
+	VIEW_Save_Incremented,
 	VIEW_Save_A_Copy,
 	VIEW_Save_A_Copy_Incremented,
 	VIEW_Save_As_Template,
@@ -4507,6 +4508,7 @@ int ViewWindow::init()
 	MenuInfo *menu=new MenuInfo;
 	menu->AddItem(_("Save"),           VIEW_Save);
 	menu->AddItem(_("Save as..."),     VIEW_SaveAs);
+	menu->AddItem(_("Save incremented"),  VIEW_Save_Incremented);
 	menu->AddItem(_("Save a copy..."), VIEW_Save_A_Copy);
 	menu->AddItem(_("Save a copy incremented"),  VIEW_Save_A_Copy_Incremented); //from last save a copy, or from file if no last copy?
 	menu->AddItem(_("Save as template..."),      VIEW_Save_As_Template);
@@ -5657,10 +5659,11 @@ int ViewWindow::PerformAction(int action)
 
 		return 0;
 
-	} else if (action==VIEW_Save_A_Copy_Incremented) {
+	} else if (action==VIEW_Save_A_Copy_Incremented || action == VIEW_Save_Incremented) {
 		Document *sdoc=doc;
 		if (!sdoc) sdoc=laidout->curdoc;
 		if (!sdoc) { PostMessage(_("Need a document to save!")); return 0; }
+
 
 		char *where=newstr(isblank(sdoc->Saveas()) ? "untitled" : sdoc->Saveas());
 
@@ -5676,16 +5679,20 @@ int ViewWindow::PerformAction(int action)
 		
 		ErrorLog log;
 		if (sdoc && sdoc->Save(1,1,log)==0) {
-			char message[strlen(_("Saved copy to %s"))+strlen(lax_basename(where))+1];
-			sprintf(message, _("Saved copy to %s"), lax_basename(where));
-			PostMessage(message); 
+			if (action == VIEW_Save_Incremented) {
+				//increment file name THEN save
+				PostMessage2(_("Saved to %s"), lax_basename(where));
+				SetParentTitle((doc && doc->Name(1)) ? doc->Name(1) :_("(no doc)"));
+			} else {
+				PostMessage2(_("Saved a copy to %s"), lax_basename(where));
+			}
 
 		} else {
 			if (log.Total()) {
 				PostMessage(log.MessageStr(log.Total()-1));
 			} else PostMessage(_("Problem saving. Not saved."));
 		}
-		sdoc->Saveas(oldname);
+		if (action == VIEW_Save_A_Copy_Incremented) sdoc->Saveas(oldname);
 
 		delete[] oldname;
 		delete[] where; 
