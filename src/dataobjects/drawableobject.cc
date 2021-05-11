@@ -1237,7 +1237,7 @@ LaxFiles::Attribute *DrawableObject::dump_out_atts(LaxFiles::Attribute *att,int 
 		att->push("tags", "tag1 \"tag 2\"","(optional) list of string tags");
 		att->push("filter", nullptr, "(optional) Nodes defining filter transformationss");
 		att->push("alignmentrule", "align (a1x,a1y) (a2x,a2y)", "(optional) if different than simple matrix");
-		att->push("clip_path", "        #(optional) a path object");
+		att->push("clip_path", nullptr, "(optional) a path object");
 		//att->pushSubAtt("...");
 		att->push("kids", nullptr, "child object list...");
 		return att;

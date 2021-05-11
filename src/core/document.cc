@@ -1385,7 +1385,47 @@ void Document::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *conte
 		NodeGroup node;
 		node.dump_out(f, indent+8, -1, context);
 		fprintf(f,"%s\n", spc);
+
+		fprintf(f,"%s  type PaperGroup\n",spc);
+		fprintf(f,"%s    name Paper Groups\n",spc);
+		fprintf(f,"%s    resource\n",spc);
+		fprintf(f,"%s      name SomeName\n",spc);
+		//fprintf(f,"%s      favorite 0 #whether this resource is a favorite\n",spc);
+		fprintf(f,"%s      object PaperGroup\n",spc);
+		PaperGroup pg;
+		pg.dump_out(f, indent+8, -1, context);
+		fprintf(f,"%s\n", spc);
+
+		fprintf(f,"%s  type RectPageStyle\n",spc);
+		fprintf(f,"%s    name Rectangular Page Style\n",spc);
+		fprintf(f,"%s    resource\n",spc);
+		fprintf(f,"%s      name SomeName\n",spc);
+		//fprintf(f,"%s      favorite 0 #whether this resource is a favorite\n",spc);
+		fprintf(f,"%s      object RectPageStyle\n",spc);
+		RectPageStyle ps;
+		ps.dump_out(f, indent+8, -1, context);
+		fprintf(f,"%s\n", spc);
 		
+		fprintf(f,"%s  type LineStyle\n",spc);
+		fprintf(f,"%s    name Line Style\n",spc);
+		fprintf(f,"%s    resource\n",spc);
+		fprintf(f,"%s      name SomeName\n",spc);
+		//fprintf(f,"%s      favorite 0 #whether this resource is a favorite\n",spc);
+		fprintf(f,"%s      object LineStyle\n",spc);
+		LineStyle ls;
+		ls.dump_out(f, indent+8, -1, context);
+		fprintf(f,"%s\n", spc);
+
+		fprintf(f,"%s  type FillStyle\n",spc);
+		fprintf(f,"%s    name Fill Style\n",spc);
+		fprintf(f,"%s    resource\n",spc);
+		fprintf(f,"%s      name SomeName\n",spc);
+		//fprintf(f,"%s      favorite 0 #whether this resource is a favorite\n",spc);
+		fprintf(f,"%s      object FillStyle\n",spc);
+		FillStyle fs;
+		fs.dump_out(f, indent+8, -1, context);
+		fprintf(f,"%s\n", spc);
+
 		 //imposition
 		fprintf(f,"%s#A document has only 1 imposition. It can be one of any imposition resources\n",spc);
 		fprintf(f,"%s#available, or built from scratch from one of the base imposition types..\n",spc);
