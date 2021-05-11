@@ -32,7 +32,6 @@
 #include <lax/shortcutwindow.h>
 
 #include <cstdarg>
-#include <cups/cups.h>
 #include <sys/stat.h>
 
 #include "../language.h"

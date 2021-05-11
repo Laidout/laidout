@@ -13,7 +13,6 @@
 //
 
 
-#include <cups/cups.h>
 #include <sys/wait.h>
 
 #include <lax/interfaces/interfacemanager.h>

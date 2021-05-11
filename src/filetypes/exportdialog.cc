@@ -14,8 +14,6 @@
 //
 
 
-#include <cups/cups.h>
-
 #include <lax/sliderpopup.h>
 #include <lax/simpleprint.h>
 #include <lax/messagebar.h>
