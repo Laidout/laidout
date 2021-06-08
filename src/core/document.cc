@@ -19,6 +19,7 @@
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
 #include <lax/freedesktop.h>
+#include <lax/gradientstrip.h>
 #include <lax/interfaces/interfacemanager.h>
 
 #include "document.h"
@@ -1424,6 +1425,26 @@ void Document::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *conte
 		fprintf(f,"%s      object FillStyle\n",spc);
 		FillStyle fs;
 		fs.dump_out(f, indent+8, -1, context);
+		fprintf(f,"%s\n", spc);
+
+		fprintf(f,"%s  type LineProfile\n",spc);
+		fprintf(f,"%s    name Line Profile\n",spc);
+		fprintf(f,"%s    resource\n",spc);
+		fprintf(f,"%s      name SomeName\n",spc);
+		//fprintf(f,"%s      favorite 0 #whether this resource is a favorite\n",spc);
+		fprintf(f,"%s      object LineProfile\n",spc);
+		LineProfile lpf;
+		lpf.dump_out(f, indent+8, -1, context);
+		fprintf(f,"%s\n", spc);
+
+		fprintf(f,"%s  type GradientStrip\n",spc);
+		fprintf(f,"%s    name Gradient Strip\n",spc);
+		fprintf(f,"%s    resource\n",spc);
+		fprintf(f,"%s      name SomeName\n",spc);
+		//fprintf(f,"%s      favorite 0 #whether this resource is a favorite\n",spc);
+		fprintf(f,"%s      object GradientStrip\n",spc);
+		GradientStrip grad;
+		grad.dump_out(f, indent+8, -1, context);
 		fprintf(f,"%s\n", spc);
 
 		 //imposition
