@@ -155,6 +155,7 @@ otherobjs= \
 	dataobjects/helpertypes.o \
 	dataobjects/imagevalue.o \
 	dataobjects/limagepatch.o \
+	dataobjects/lellipsedata.o \
 	dataobjects/limagedata.o \
 	dataobjects/limageinterface.o \
 	dataobjects/lgradientdata.o \

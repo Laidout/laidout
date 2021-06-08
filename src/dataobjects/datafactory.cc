@@ -18,6 +18,7 @@
 #include "mysterydata.h"
 #include "limagedata.h"
 #include "lpathsdata.h"
+#include "lellipsedata.h"
 #include "lgradientdata.h"
 #include "limagepatch.h"
 #include "lsomedataref.h"
@@ -58,6 +59,15 @@ Laxkit::anObject *createGroup(int p, Laxkit::anObject *refobj)
 Laxkit::anObject *createMysteryData(int p, Laxkit::anObject *refobj)
 {
 	return new MysteryData();
+}
+
+
+//---------------------------- LEllipseData --------------------------------
+
+//! For somedatafactory.
+Laxkit::anObject *createLEllipseData(int p, Laxkit::anObject *refobj)
+{
+	return new LEllipseData();
 }
 
 
@@ -161,6 +171,7 @@ void InitializeDataFactory()
 
 	lobjectfactory->DefineNewObject(LAX_GROUPDATA,       "Group",           createGroup,            NULL, 0);
 	lobjectfactory->DefineNewObject(LO_MYSTERYDATA,      "MysteryData",     createMysteryData,      NULL, 0);
+	lobjectfactory->DefineNewObject(LAX_ELLIPSEDATA,     "EllipseData",     createLEllipseData,       NULL, 0);
 	lobjectfactory->DefineNewObject(LAX_IMAGEDATA,       "ImageData",       createLImageData,       NULL, 0);
 	lobjectfactory->DefineNewObject(LAX_PATHSDATA,       "PathsData",       createLPathsData,       NULL, 0);
 	lobjectfactory->DefineNewObject(LAX_GRADIENTDATA,    "GradientData",    createLGradientData,    NULL, 0);
@@ -170,9 +181,11 @@ void InitializeDataFactory()
 	lobjectfactory->DefineNewObject(LAX_ENGRAVERFILLDATA,"EngraverFillData",createLEngraverFillData,NULL, 0);
 	lobjectfactory->DefineNewObject(LAX_CAPTIONDATA,     "CaptionData",     createLCaptionData,     NULL, 0);
 	lobjectfactory->DefineNewObject(LAX_TEXTONPATH,      "TextOnPath",      createLTextOnPath,      NULL, 0);
+	lobjectfactory->DefineNewObject(LAX_VORONOIDATA,     "VoronoiData",     createVoronoiData,      NULL, 0);
 
 	 //experimental:
-	lobjectfactory->DefineNewObject(LAX_VORONOIDATA,     "VoronoiData",     createVoronoiData,      NULL, 0);
+	// ...
+
 
 	DBG lobjectfactory->dump_out(stderr,0);
 }

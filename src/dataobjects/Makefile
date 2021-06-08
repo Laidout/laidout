@@ -27,6 +27,7 @@ objs= \
 	fontvalue.o \
 	helpertypes.o \
 	imagevalue.o \
+	lellipsedata.o \
 	limagepatch.o \
 	limagedata.o \
 	limageinterface.o \
