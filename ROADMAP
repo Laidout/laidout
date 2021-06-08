@@ -53,7 +53,7 @@ VERSION 0.098
 (done) PathInterface: Mouse based delete segments
 
        Debug Text on path tool
-       Clean up mesh controls
+(done) Clean up mesh controls
 
 (done) debug svg in enough to be able to load icons.svg
 (done) svg in/out with powerstroke

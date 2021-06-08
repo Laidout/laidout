@@ -14,8 +14,6 @@ down to major items in ../features.md.
 ------------ serious bugs to fix right now:
 bug: export, switch off current target then back on: error: missing export source!
 
-bug: ImagePatch doing anything with it causes crash.. before crash, image distorts incorrectly
-
 bug: home and end throw selection bounds out of whack.. try with gradient tool for instance, controls bad until reselect
 
 bug: Engraver fill, just moving mouse around is rerendering to buffer for preview
@@ -144,8 +142,6 @@ shrink image lets you go immeasurably small
 
 stackframe seems to be ignoring window borders on layout
 
-bug: window sizes seem to all be off a few pixels (?? on what measure? can't reproduce)
-
 
 ----------------0.098 ROADMAP ITEMS: features and enhancements------------------------
 DONE website: Rework download to be easier
@@ -157,20 +153,13 @@ website:
 	on index should show version and date
 for CI, https://github.com/Laidout/laidout-icons.git needs to be updated
 update fileformat.txt
-  missing Palette/GradientStrip
-  missing LineProfile
+  DONE missing Palette/GradientStrip
+  DONE missing LineProfile
   DONE missing voronoi
   DONE missing LineStyle
   DONE missing FillStyle
   DONE Path: output problem when name - null - non-null-comment
   DONE incomplete TextOnPath
-  should be resources:
-    DONE PlainTextObject
-    Palette
-    Linestyle
-    Fillstyle
-    PaperGroups
-    PaperStyle
 check laidout.1 when time to release
 update docs to have new release number
 update translation base files
@@ -182,7 +171,7 @@ update quickref.html
 update dtpcompare.html
 update features.md: sweep LEFT-OFF to DONE, edit major items to features.md
 update dev page
-  document pull request process on dev.html page, also in repo readme.md
+  document pull request process on dev.html page, sync with repo readme.md
 comment out cairo_debug_reset_static_data before release, since it usually means crash, interferes with pipeout
 run through "valgrind --leak-check=full --error-limit=no ./laidout" and fix anything that can be nailed down to laidout
   DONE XIQueryPointer?     buttons->mask  = malloc(buttons->mask_len); needs freeing
@@ -196,7 +185,7 @@ test:
 
 
 
-Gradients:
+Gradients: gradientinterface
   check svg export of gradients with new spread method
   DONE SHOWCOLORS should be off by default
   dragging around color points from inside to outside should allow going out of bounds
@@ -210,7 +199,14 @@ Gradients:
 
   bug: on start, colors get zapped to window origin ?? can't duplicate
 
-  gradient and gradientstrip resources
+  do dithering to reduce banding
+  color interpolation: render to image, then use that as color source
+    linear (current default and only option)
+	constant
+	auto bez
+	curve editor rgba
+
+  gradient data should be able to use resource GradientStrip
     owner: file/user global/system global
     name
     tags
@@ -221,29 +217,6 @@ Gradients:
 
 get splash image working.. better label class?
 have an actual splash image shown
-
-lgm 2019 feedback and ideas:
-  path tool:
-    hard to see helper graphics, needs haloing
-    should have space to dup weight node
-  method to fix all broken images at once
-    mass image edit, need to remap dirs for old files!!
-    option: do just this one, or fix all
-    old path: _____     new path: _____
-  method to collect all used resources of a doc for distribution
-  --- 0.099
-  be able to load old docs
-  from here on out, ensure backwards compatibility of files still works
-    enhance mystery data to work with laidout data too?
-  some kind of graphicsmagick LoadToMemory bug.. could be only on loading old file, bad config translation?
-  out clicking from a dialog should probably destroy that dialog.. too easy to get buried confusedly in windows
-  make connecting to online information easy: click to open web browser, xdg-open?
-  from talk: diffusion curves, "local mod" mesh manipulation
-
-  DONEish configure still sucks:
-    DONE laidout configure needs to drive laxkit configure more thoroughly.
-    DONE automate default laxkit detection, or git download of laxkit if missing
-  DONE mageia: makedepend trouble? replace with custom script to get rid of x11-dev dependency?
 
 alternate packaging:
   flatpak: https://github.com/Laidout/laidout/issues/11
@@ -264,8 +237,6 @@ object clipping:
   DONE page previewer in spread editor doesn't use bleeds.. need to refresh thumbs if has bleeds
   DONE in place editing
   DONE apply, remove, extract clip path
-
-need a Revert option
 
 valuewindow:
   bug: When scrollers come on, does not trigger an inset of widgets
@@ -383,6 +354,7 @@ build: building: build process
   update configure message about try installing packages.. when fail on gegl, it's not listed
   should be able to do out-of-source builds
   make "make uninstall" work, and remove coop from installed position
+  remove the lax onamac parts from configure? poorly named, more a bsd issue, not mac
 
   DONE make a laxkit.pc from laxkit configure
   use that laxkit.pc from Laidout and laxkit examples
@@ -623,6 +595,7 @@ svg: SVG
     DONE radial gradients
     DONE in needs to parse "use" elements and other "#" refs
   out:
+    needs option to not clip by page, or auto to not clip when single page in spread
     ---0.099---
     special check for paths with a single gradient child
     text linespacing.. unclear how Msize/linespacing maps to svg options
@@ -1470,13 +1443,16 @@ fontdialog: FontDialog
   optional common font finishers? like centering, underline, color, highlight, fg/bg, etc
 
 ellipseinterface:
-  select object, but controls not visible
-  center cross hair should be slanted when shape is slanted
+  need rotate handles
+  select object, but controls not visible.. not passing current seleceted?
   del on center cross hair should straighten?
-  incorporate to mesh tool
   incorporate as special mode in path tool
   angle drag lapping should preserve large arc
   if you click and release without dragging, should not make a really tiny new data, should keep old if any
+
+  DONE center cross hair should be slanted when shape is slanted
+  DONE incorporate to mesh tool
+  DONE derive from Value in LEllipseData, needed to make object property i/o work correctly
   DONE bug: inner radius hint not using center
   DONE memory hole
   DONE implement minimal fill:color, stroke:color+width
@@ -1502,16 +1478,18 @@ Clean up patch/mesh controls: Mesh PatchInterface
   bug: rotate/scale single or more control points should move attached controls in smooth mode
 
   circle warp:
-    bug: render initially displaying in small rect. changing inner radius gets it to sync
-    bug: sets "circle" property, but does not output the data to file
-    bug: circle: non-circle breaks ellipse scan
-    bug: circle: drag center, breaks ellipse scan
+    DONE bug: circle: non-circle breaks ellipse scan
+    DONE bug: circle: drag center, breaks ellipse scan
+    DONE bug: sets "circle" property, but does not output the data to file
+    DONE bug: render initially displaying in small rect. changing inner radius gets it to sync
 
   ---0.099---
   bug: base on path remove/add should try to remember previous weight nodes, scratch only when mod points (not colors) too far off
   bug: should still be able to edit colors while based on path
   need ability to rect select points, like for cone gradient, points on overlapping edge can't be selected
+  no ellipse right click options
 
+  DONE bug: select whole edge fails when points overlap and select near active
   DONE when color points overlap like with circle warp, have a way to change all coincident color points -> workaround: auto_select_close
   DONE selected nodes should probably be more prominent and colored, just gray disappears, hard to work with
   DONE bug: can't change point types with menu... path is not getting any menu messages
@@ -1932,6 +1910,7 @@ paperinterface: papergroupinterface papergroup interface
   DONE show paper numbers
   DONE indices should be underlined
 
+  ---0.099
   maybe need to be able to edge drag custom paper to resize, maybe with grid snapping
   when you add gray bars/reg marks, center on paper?
   buff out the paper interface to be the net builder?
@@ -1984,25 +1963,22 @@ nup:
   DONE fill in box
 
 calculator/scripting
-  bug: ln(3) -> cannot compute with given values
   bug: string output not escaping things to display correctly
+  bug: dump_out_atts should output raw toStr things.. Strings currently return "str" which is output "\"str\""
   bug: run command with BuildIcons, error is not propagating up to cout
   bug: function calls, assigning named parameters, checks for '=', but only single char, fails when it's actually a ==
-  bug: Math.oeuaeou does not produce an error
-  bug: number deref: var a={1,2}.. out of bounds not returning cannot deref.. returning "Ok"
   bug: for loops broken
-  bug: explicit var a=flatvector() fails with unknown name flatvector
-  test heavily nested assignments
-  need multiple assignment
-  security restrictions?
+  bug: var a if a already exists in current scope should fail. currently just says ok, but keeps old value
+  test heavily nested assignments like a.v.x = 5
   showing defined functions should show the code
   showing variables should show name = value and the class def (such as laidout.globals)
+  ---0.099:
   set dump_out_atts should do full atts if any subattribute has full atts, else output "set": "{1,2,3}"
-  dump_out_atts should output raw toStr things.. Strings currently return "str" which is output "\"str\""
+  security restrictions?
+  need multiple assignment
   debug generic with operators, doesn't seem to be working
   debug operator definitions
   debug using and import... maybe remove using, use import Math.* instead
-  var a if a already exists in current scope should fail. currently just says ok, but keeps old value
   error reporting up function calls doesn't say pos/line for each expression
   overloading does not handle parameter mapping per overloaded, it is scanning only the first, and using that
   print string plus any non string should stringify the thing and append to string
@@ -2012,6 +1988,13 @@ calculator/scripting
   how best to allow created object defs to be referenced as parameter, variable, or set types, it is a mess right now
   destructors
   show overloaded entries
+
+  DONE bug: function a(b,c) = b+c fails, says unknown name b
+  DONE bug: number deref: var a={1,2}.. out of bounds not returning cannot deref.. returning "Ok"
+  DONE bug: explicit var a=flatvector() fails with unknown name flatvector <- using Vector2 now
+  DONE bug: Math.oeuaeou does not produce an error, Math.aoeeou+3 crashes
+  DONE do string*int or int*string to duplicate string
+  DONE bug: ln(3) -> cannot compute with given values
   DONE bug: var x =0; x^3  -> "cannot compute 0^x"
   DONE implement a PaperSizes object that recognizes all the names, or maybe a set somewhere with all names? -> Paper.SetFromName(str)
   DONE need special Parse(expression, &unknown_names) to assist expression node
@@ -2125,16 +2108,6 @@ signature editor  Signature editor Signature Editor signatureeditor
   be able to specify single sided.. allows bound accordian foldings?
   implement creep
 
-pagemarkerinterface:
-  option to lock label size to real space? make export contact sheets a little prettier in some cases
-
-page thumbnail should be rational, ie image should be whole page, not just contents+transform,
-     and thumb transform makes image dims to page coords
-
-global resources:
-  current language, for conditional text
-  DONE current frame/time
-
 global Laidout settings:
   settings dialog
   color theme
@@ -2146,7 +2119,35 @@ global Laidout settings:
 
 ---------------- 0.099 ROADMAP ITEMS: features and enhancements ------------------------
 
+pagemarkerinterface:
+  option to lock label size to real space? make export contact sheets a little prettier in some cases
+
+page thumbnail should be rational, ie image should be whole page, not just contents+transform,
+     and thumb transform makes image dims to page coords
+
+global resources:
+  build use case of setting a global var for current language, then have objects update according to it
+
+need a Revert option
+
 Reconfigure text edits. Need something that works in interface land, with harfbuzz, that integrates with lax fontmanager
+
+lgm 2019 feedback and ideas:
+  path tool:
+    hard to see helper graphics, needs haloing
+    press space to dup weight node while dragging
+  method to fix all broken images at once
+    mass image edit, need to remap dirs for old files!!
+    option: do just this one, or fix all
+    old path: _____     new path: _____
+  method to collect all used resources of a doc for distribution
+  be able to load old docs
+  from here on out, ensure backwards compatibility of files still works
+    enhance mystery data to work with laidout data too?
+  some kind of graphicsmagick LoadToMemory bug.. could be only on loading old file, bad config translation?
+  out clicking from a dialog should probably destroy that dialog.. too easy to get buried confusedly in windows
+  make connecting to online information easy: click to open web browser, xdg-open?
+  from talk: diffusion curves, "local mod" mesh manipulation
 
 ViewWindow:
   maybe drawaxes should show dotted line from origin to bbox?
@@ -2459,6 +2460,13 @@ resources:
   textobjects,limbos,papergroups should maybe be able to be stored per document, not just file, project, or temp
     either that, or do away with whole project/document difference, and use only
     projects with their own directory, and documents without their own directory
+  should be resources:
+    Palette
+    Linestyle
+    Fillstyle
+    PaperGroups
+    PaperStyle
+    DONE PlainTextObject
 
 when closing a document window, decide whether this removes access to it, or just the view to it
 
@@ -3121,4 +3129,9 @@ DONE make lax templates be only .h includes, since gcc complains when .cc isn't 
   DONE need to do compile speed tests -> marginally faster as separate, makes binary ~1mb larger for some reason?! dup funcs not optimized out?
 DONE BBoxValue: needs width and height functions for convenience in scripting
 DONE turning off overlays should revert icon to current tool
-
+DONEish configure still sucks:
+  DONE laidout configure needs to drive laxkit configure more thoroughly.
+  DONE automate default laxkit detection, or git download of laxkit if missing
+DONE mageia: makedepend trouble? replace with custom script to get rid of x11-dev dependency?
+DONE a built in global variable: current frame/time
+DONE bug: ImagePatch doing anything with it causes crash.. before crash, image distorts incorrectly
