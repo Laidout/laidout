@@ -720,7 +720,7 @@ Entry *BlockInfo::FindName(const char *name,int len)
 		cmp=strncmp(name,dict.e[e]->name,len);
 		if (cmp==0) {
 			if ((int)strlen(dict.e[e]->name)==len) return dict.e[e];
-			cmp=1;
+			cmp=-1;
 		}
 		if (cmp>0) return NULL; //it is greater than greatest element
 		
@@ -1045,7 +1045,7 @@ Value *LValue::Resolve()
 			v2=v->dereference(i);
 		}
 		if (!v2) {
-			 //unable to dereference!
+			//unable to deref!!
 			v->dec_count();
 			return NULL; 
 		}
@@ -1499,6 +1499,11 @@ int LaidoutCalculator::Evaluate(const char *in, int len, Value **value_ret, Erro
 		if (answer && answer->type()==VALUE_LValue) {
 			Value *v=dynamic_cast<LValue*>(answer)->Resolve();
 			answer->dec_count();
+			if (calcerror || !v) {
+				answer = nullptr;
+				calcerr(_("Unable to dereference!"));
+				break;
+			}
 			answer=v;
 		}
 
@@ -2394,7 +2399,14 @@ void LaidoutCalculator::showDef(char *&temp, ObjectDef *sd)
 			&& sd->getNumFields()) {
 		ValueTypes fmt;
 		ObjectDef *subdef=NULL;
-		appendstr(temp,"\n");
+		
+		if (sd->format == VALUE_Function && sd->defaultvalue) {
+			appendstr(temp, "  = ");
+			appendstr(temp, sd->defaultvalue);
+			appendstr(temp, "\n");
+		}
+		else appendstr(temp,"\n");
+
 		for (int c2=0; c2<sd->getNumFields(); c2++) {
 			sd->getInfo(c2,&nm,&Nm,&desc,&rng,NULL,&fmt,NULL,&subdef);
 			appendstr(temp,"  ");
@@ -3299,8 +3311,14 @@ Value *LaidoutCalculator::evalLevel(int level)
 				status = opfunc->function->Op(op,n,dir, num,  num2,  &calcsettings, &num_ret, NULL);
 			} else {
 				 //need to resolve any LValue states, operator is NOT as assignment
-				if (!num1v && num->type()==VALUE_LValue)  num1v=dynamic_cast<LValue*>(num )->Resolve(); else { num1v=num;  num1v->inc_count(); }
-				if (!num2v && num2->type()==VALUE_LValue) num2v=dynamic_cast<LValue*>(num2)->Resolve(); else { num2v=num2; num2v->inc_count(); }
+				if (!num1v && num->type()==VALUE_LValue)  {
+					num1v = dynamic_cast<LValue*>(num )->Resolve(); 
+					if (!num1v) { calcerr(_("Unable to dereference!")); return nullptr; }
+				} else { num1v=num;  num1v->inc_count(); }
+				if (!num2v && num2->type()==VALUE_LValue) {
+					num2v = dynamic_cast<LValue*>(num2)->Resolve();
+					if (!num2v) { calcerr(_("Unable to dereference!")); return nullptr; }
+				} else { num2v=num2; num2v->inc_count(); }
 				status = opfunc->function->Op(op,n,dir, num1v,num2v, &calcsettings, &num_ret, NULL);
 			}
 
@@ -3439,6 +3457,10 @@ Value *LaidoutCalculator::dereference(Value *val)
 			def = val->GetObjectDef();
 			if (def) def=def->FindDef(name,n);
 			//if (def) then so def is the definition of the member function
+			if (!def) {
+				calcerr(_("Unknown name!"));
+				return nullptr;
+			}
 			usethis=val;
 		}
 
@@ -4835,7 +4857,7 @@ int LaidoutCalculator::Evaluate(const char *word,int len, ValueHash *context, Va
 			else if (len==4 && !strncmp(word,"sqrt",4)) { if (d<0) throw 2; v=new DoubleValue(sqrt(d)); }
 
 			else if (len==3 && !strncmp(word,"log",3))  { if (d<=0) throw 4; v=new DoubleValue(log(d)/log(10)); }
-			else if (len==4 && !strncmp(word,"ln",2))   { if (d<=0) throw 4; v=new DoubleValue(log(d)); } // d must be >0
+			else if (len==2 && !strncmp(word,"ln",2))   { if (d<=0) throw 4; v=new DoubleValue(log(d)); } // d must be >0
 
 			else if (len==6 && !strncmp(word,"factor",6)) {
 				if (vv->type()!=VALUE_Int) throw 1;
@@ -5149,6 +5171,22 @@ int LaidoutCalculator::multiply(Value *num1,Value *num2, Value **ret)
 
 	} else if (num1->type()==VALUE_Quaternion && num2->type()==VALUE_Quaternion) { //v*v (is a non-commutative quaternion, not dot)
 		*ret=new QuaternionValue(((QuaternionValue *) num1)->v * ((QuaternionValue*)num2)->v);
+
+	} else if (isNumberType(num2, &v2) && int(v2) >= 0 && num1->type()==VALUE_String) { //string * i
+		char *str = newstr("");
+		const char *rep = ((StringValue*)num1)->str;
+		if (rep) for (int c=0; c<int(v2); c++) appendstr(str, rep);
+		StringValue *sv = new StringValue();
+		sv->InstallString(str);
+		*ret = sv;
+
+	} else if (isNumberType(num1, &v1) && int(v1) >= 0 && num2->type()==VALUE_String) { //string * i
+		char *str = newstr("");
+		const char *rep = ((StringValue*)num2)->str;
+		if (rep) for (int c=0; c<int(v1); c++) appendstr(str, rep);
+		StringValue *sv = new StringValue();
+		sv->InstallString(str);
+		*ret = sv;
 	}
 
 	if (*ret) return 0;
