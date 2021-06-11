@@ -59,7 +59,7 @@ memory hole do laidout -n letter, split a window, then quit. undeleted Objects r
 DONE memory hole in calculator
 DONE memory hole: start blank, exit. 3 remain!!
 DONE memory hole helpwindow -> probably something to do with ShortcutWindow and ShortcutTreeSelector not refcounting as expected
-DONE memory hole delauneyinterface
+DONE memory hole delaunayinterface
 DONE memory hole objectfilters with interface
 DONE memory hole ./laidout -n letter then quit
 DONE memory hole paper interface, activate tool, lay down one paper, quit, 3 objects remain
@@ -1095,9 +1095,9 @@ node editor node interface NodeInterface nodes: node: interface:
 	  DONE(?) bug: gradient controls broken sometimes
       DONE check: dereference assign Evaluate extend from Group, not affine
       DONE double click to call up color box
-    delauney/point set tool: Vector2 + properties
+    delaunay/point set tool: Vector2 + properties
       functions:
-        delauney
+        delaunay
         voronoi
         convex hull
         tsp
@@ -1107,6 +1107,8 @@ node editor node interface NodeInterface nodes: node: interface:
 		quadrilateralize and relax -> work Net into a full Drawable?
 		voronoi region centroid replacement relax: strength, iterations
 	  pointset
+	    stipple from
+		poisson disc
 	    create without initial flush to reduce allocations?
 		optionally do set of affine?
 		set from drawables
@@ -1582,7 +1584,11 @@ ObjectIndicator objectindicator:
     hover over parents to pop list of alternate children to reparent to
   show (root) at bottom of stack
 
-voronoi Voronoi delauney Delauney: point set pointset
+voronoi Voronoi delaunay Delaunay: point set pointset
+  stipple sample:
+	pull in the eggbot stippler? results are way better, plus they implement voronoi center relaxing already
+    DONE custom radii
+  need to be able to cache need to recalc shapes
   bug: coincident points cause weird problems
   be able to control inset shapes
   is double rendering when object is selected
@@ -1601,14 +1607,15 @@ voronoi Voronoi delauney Delauney: point set pointset
   merge different voronoi objects
   multiple point select
   separate selection to new object
-  convert voronoi or delauney tris to graph
+  convert voronoi or delaunay tris to graph
   less than three points doesn't remap rationally, need to update extra lines to something proper
+  DONE should not recalc shapes that we are not viewing
   DONE repeat last generator shortcut
   DONE Number input of random n, grid, hex
   DONE right click
     DONE start new object
 	DONE generators
-    DONE toggle delauney lines
+    DONE toggle delaunay lines
     DONE toggle voronoi lines
     DONE toggle points
   DONE implement show_points
@@ -1862,6 +1869,7 @@ align tool: aligninterface AlignInterface align:
 
 empties:
   need display object to make visible if truly empty.. display object is not exported
+  DONE need node just for empty.. remembering NewObject->Group is irritating
   DONE use as targets in, for instance, node alignments
 
 need infrastructure to propagate and save tool settings

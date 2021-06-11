@@ -44,6 +44,19 @@ using namespace LaxInterfaces;
 namespace Laidout {
 
 
+//------------ NewEmptyNode
+
+Laxkit::anObject *newEmptyNode(int p, Laxkit::anObject *ref)
+{
+	NodeBase *node = new NodeBase;
+	makestr(node->Name, _("New Empty"));
+	makestr(node->type, "Drawable/NewEmpty");
+
+	node->AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", new Group(), 1, _("Empty")));
+	return node;
+}
+
+
 //------------------------ DuplicateDrawableNode ------------------------
 
 /*! 
@@ -3724,6 +3737,7 @@ class PointSetNode : public NodeBase
 		HexGrid, // num on edge    
 		RandomSquare, // n
 		RandomCircle, // 
+		RandomPoisson,
 		MAX
 	};
 	SetTypes settype;
@@ -3779,6 +3793,15 @@ PointSetNode::PointSetNode(PointSetNode::SetTypes ntype)
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "radius", new DoubleValue(1),1,  _("Radius"),  NULL));
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "num", new IntValue(4),1,  _("Num points"), NULL));
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "seed", new IntValue(0),1,  _("Seed"), NULL));
+
+	} else if (settype == RandomPoisson) {
+		makestr(type, "Points/RandomPoisson");
+		makestr(Name, _("Random Poisson"));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "o", new FlatvectorValue(),1, _("Center"),   NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "w", new DoubleValue(1),1,    _("Width"), NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "h", new DoubleValue(1),1,    _("Height"), NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "r", new DoubleValue(.1),1,   _("Cell size"), NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "seed", new IntValue(0),1,    _("Seed"), NULL));
 	}
 
 	PointSetValue *set = new PointSetValue();
@@ -3810,23 +3833,20 @@ NodeBase *PointSetNode::Duplicate()
 int PointSetNode::GetStatus()
 {
 	char types[7];
-	const char *sig = "nnnnnnnvnn    vnnnn  vnnn   ";
+	const char *sig = "nnnnnnnvnn    vnnnn  vnnn   vnnnn  ";
 	int sigoff = 0;
 
-		// Grid,    // x,y
-		// HexGrid, // num on edge    
-		// RandomSquare, // n
-		// RandomCircle, // 
-		
 #define OFFGRID     0
 #define OFFHEX      7
 #define OFFRSQUARE  14
 #define OFFRCIRCLE  21
+#define OFFPOISSON  28
 
-	if      (settype == Grid)         sigoff = OFFGRID   ;
-	else if (settype == HexGrid)      sigoff = OFFHEX    ;
-	else if (settype == RandomSquare) sigoff = OFFRSQUARE;
-	else if (settype == RandomCircle) sigoff = OFFRCIRCLE;
+	if      (settype == Grid)          sigoff = OFFGRID   ;
+	else if (settype == HexGrid)       sigoff = OFFHEX    ;
+	else if (settype == RandomSquare)  sigoff = OFFRSQUARE;
+	else if (settype == RandomCircle)  sigoff = OFFRCIRCLE;
+	else if (settype == RandomPoisson) sigoff = OFFPOISSON;
 	
 	for (int c=1; c<properties.n-1; c++) {
 		Value *data = properties.e[c]->GetData();
@@ -3954,6 +3974,32 @@ int PointSetNode::Update()
 
 		set->CreateRandomPoints(n, seed, o.x-w/2,o.x+w/2, o.y-h/2, o.y+h/2);
 
+	} else if (settype == RandomPoisson) {
+		flatvector o;
+		FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(properties.e[1]->GetData());
+		if (fv) o = fv->v;
+		else {
+			AffineValue *av = dynamic_cast<AffineValue*>(properties.e[1]->GetData());
+			if (av) o = av->origin();
+			else { 
+				Error(_("Expected vector"));
+				return -1;
+			}
+		}
+		int isnum = 0;
+		double w = getNumberValue(properties.e[2]->GetData(), &isnum);
+		if (!isnum) { makestr(error_message, _("Bad width")); return -1; }
+		double h = getNumberValue(properties.e[3]->GetData(), &isnum);
+		if (!isnum) { makestr(error_message, _("Bad height")); return -1; }
+
+		double cell = getNumberValue(properties.e[4]->GetData(), &isnum);
+		if (!isnum || cell <= 0) { makestr(error_message, _("Bad cell size")); return -1; }
+
+		int seed = getNumberValue(properties.e[5]->GetData(), &isnum);
+		if (!isnum) { makestr(error_message, _("Bad seed")); return -1; }
+
+		set->CreatePoissonPoints(cell, seed, o.x-w/2,o.x+w/2, o.y-h/2, o.y+h/2);
+
 	} else if (settype == RandomCircle) {
 		flatvector o;
 		FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(properties.e[1]->GetData());
@@ -3988,31 +4034,18 @@ int PointSetNode::Update()
 		}
 		while (plainset->n() > set->NumPoints()) plainset->Remove(plainset->n()-1);
 	}
+
 	properties.e[properties.n-1]->Touch();
 	UpdatePreview();
 	Wrap();
 	return NodeBase::Update();
 }
 
-Laxkit::anObject *newPointsGridNode(int p, Laxkit::anObject *ref)
-{
-	return new PointSetNode(PointSetNode::Grid);
-}
-
-Laxkit::anObject *newPointsHexNode(int p, Laxkit::anObject *ref)
-{
-	return new PointSetNode(PointSetNode::HexGrid);
-}
-
-Laxkit::anObject *newPointsRandomSquareNode(int p, Laxkit::anObject *ref)
-{
-	return new PointSetNode(PointSetNode::RandomSquare);
-}
-
-Laxkit::anObject *newPointsRandomRadialNode(int p, Laxkit::anObject *ref)
-{
-	return new PointSetNode(PointSetNode::RandomCircle);
-}
+Laxkit::anObject *newPointsGridNode(int p, Laxkit::anObject *ref)         { return new PointSetNode(PointSetNode::Grid); }
+Laxkit::anObject *newPointsHexNode(int p, Laxkit::anObject *ref)          { return new PointSetNode(PointSetNode::HexGrid); }
+Laxkit::anObject *newPointsRandomSquareNode(int p, Laxkit::anObject *ref) { return new PointSetNode(PointSetNode::RandomSquare); }
+Laxkit::anObject *newPointsRandomRadialNode(int p, Laxkit::anObject *ref) { return new PointSetNode(PointSetNode::RandomCircle); }
+Laxkit::anObject *newPointsRandomPoisson(int p, Laxkit::anObject *ref)    { return new PointSetNode(PointSetNode::RandomPoisson); }
 
 
 //------------------------  PathGeneratorNode -----------------------------
@@ -4251,12 +4284,13 @@ int PathGeneratorNode::Update()
 	int num_ins = 0;
 	while (*sig && *sig != ' ') { num_ins++; sig++; }
 
-	Value *ins[5];
-	SetValue *setins[5];
+	Value *ins[8];
+	SetValue *setins[8];
 	int max = 0;
 	bool dosets = false;
 	num_ins += 3; //for line width, stroke, fill
 	for (int c=0; c<num_ins; c++) {
+
 		ins[c] = properties.e[c+1]->GetData();
 	}
 	if (DetermineSetIns(num_ins, ins, setins, max, dosets) == -1) return -1;
@@ -4625,50 +4659,15 @@ int PathGeneratorNode::Update()
 }
 
 
-Laxkit::anObject *newPathCircleNode(int p, Laxkit::anObject *ref)
-{
-	return new PathGeneratorNode(PathGeneratorNode::Circle);
-}
-
-Laxkit::anObject *newPathRectangleNode(int p, Laxkit::anObject *ref)
-{
-	return new PathGeneratorNode(PathGeneratorNode::Rectangle);
-}
-
-Laxkit::anObject *newPathSquareNode(int p, Laxkit::anObject *ref)
-{
-	return new PathGeneratorNode(PathGeneratorNode::Square);
-}
-
-Laxkit::anObject *newPathPolygonNode(int p, Laxkit::anObject *ref)
-{
-	return new PathGeneratorNode(PathGeneratorNode::Polygon);
-}
-
-Laxkit::anObject *newPathFunctionNode(int p, Laxkit::anObject *ref)
-{
-	return new PathGeneratorNode(PathGeneratorNode::Function);
-}
-
-Laxkit::anObject *newPathFunctionTNode(int p, Laxkit::anObject *ref)
-{
-	return new PathGeneratorNode(PathGeneratorNode::FunctionT);
-}
-
-Laxkit::anObject *newPathFunctionRofTNode(int p, Laxkit::anObject *ref)
-{
-	return new PathGeneratorNode(PathGeneratorNode::FunctionRofT);
-}
-
-Laxkit::anObject *newPathFunctionPolarTNode(int p, Laxkit::anObject *ref)
-{
-	return new PathGeneratorNode(PathGeneratorNode::FunctionPolarT);
-}
-
-Laxkit::anObject *newPathSvgdNode(int p, Laxkit::anObject *ref)
-{
-	return new PathGeneratorNode(PathGeneratorNode::Svgd);
-}
+Laxkit::anObject *newPathCircleNode(int p, Laxkit::anObject *ref)         { return new PathGeneratorNode(PathGeneratorNode::Circle); }
+Laxkit::anObject *newPathRectangleNode(int p, Laxkit::anObject *ref)      { return new PathGeneratorNode(PathGeneratorNode::Rectangle); }
+Laxkit::anObject *newPathSquareNode(int p, Laxkit::anObject *ref)         { return new PathGeneratorNode(PathGeneratorNode::Square); }
+Laxkit::anObject *newPathPolygonNode(int p, Laxkit::anObject *ref)        { return new PathGeneratorNode(PathGeneratorNode::Polygon); }
+Laxkit::anObject *newPathFunctionNode(int p, Laxkit::anObject *ref)       { return new PathGeneratorNode(PathGeneratorNode::Function); }
+Laxkit::anObject *newPathFunctionTNode(int p, Laxkit::anObject *ref)      { return new PathGeneratorNode(PathGeneratorNode::FunctionT); }
+Laxkit::anObject *newPathFunctionRofTNode(int p, Laxkit::anObject *ref)   { return new PathGeneratorNode(PathGeneratorNode::FunctionRofT); }
+Laxkit::anObject *newPathFunctionPolarTNode(int p, Laxkit::anObject *ref) { return new PathGeneratorNode(PathGeneratorNode::FunctionPolarT); }
+Laxkit::anObject *newPathSvgdNode(int p, Laxkit::anObject *ref)           { return new PathGeneratorNode(PathGeneratorNode::Svgd); }
 
 
 //------------------------ FindDrawableNode ------------------------
@@ -5014,6 +5013,7 @@ int PageInfoNode::Update()
  */
 int SetupDataObjectNodes(Laxkit::ObjectFactory *factory)
 {
+	factory->DefineNewObject(getUniqueNumber(), "Drawable/NewEmpty",          newEmptyNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/CaptionData",       LCaptionDataNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/ImageData",         LImageDataNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Drawable/ImageDataInfo",     newLImageDataInfoNode,  NULL, 0);
@@ -5053,6 +5053,7 @@ int SetupDataObjectNodes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Points/Grid",             newPointsGridNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Points/HexGrid",          newPointsHexNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Points/RandomRectangle",  newPointsRandomSquareNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Points/RandomPoisson",    newPointsRandomPoisson,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Points/RandomCircle",     newPointsRandomRadialNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Points/PointsToDots",     PointsToDotsNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Points/PointsToBars",     PointsToBarsNode::NewNode,  NULL, 0);
