@@ -33,7 +33,7 @@ VERSION 0.098
 (done) If curobj, select siblings first. If no curobj, select direct children of context first
 (done) double click on group should change selection area to group contents like inkscape?
 
-       layers palette (object tree)
+       Object tree window, at least allow toggling locked and visible.
 (done) Find object interface
 
 (done) Empty objects that can be parents, or whose contents are defined by nodes
@@ -76,6 +76,7 @@ VERSION 0.099
        Tool scripting
        Scripted plugin interface
        Clone Pattern Builder
+       Object tree window, allow rename, rearrange
 
        Finish implementing double sided net impositions
        allow inserting net impositions as foldouts in regular Signature Imposition stacks
