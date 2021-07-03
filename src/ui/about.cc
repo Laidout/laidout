@@ -43,14 +43,17 @@ namespace Laidout {
 AboutWindow::AboutWindow(Laxkit::anXWindow *parent)
 	: MessageBox(parent,"About",_("About"),ANXWIN_CENTER, 0,0,500,600,0, NULL,0,"ok", NULL)
 {
-	win_style|=ANXWIN_ESCAPABLE;
+	win_style |= ANXWIN_ESCAPABLE;
 
-	splash=NULL;
+	splash = NULL;
 	if (laidout->prefs.splash_image_file) {
 		splash = ImageLoader::LoadImage(laidout->prefs.splash_image_file,
 									   NULL,0,0,NULL,
 									   0,-1,NULL, false, 0);
-	} else splash=NULL;
+	} else {
+		IconManager *iconmanager=IconManager::GetDefault();
+		splash = iconmanager->GetIcon("LaidoutSplash");
+	}
 }
 
 AboutWindow::~AboutWindow()
@@ -74,8 +77,8 @@ int AboutWindow::preinit()
 
 	if (splash) {
 		AddWin(NULL,0,
-				splash->w(),0,0,50,0,
-				splash->h(),0,0,50,0,
+				splash->w(),MAX(splash->w(), 50),0,50,0,
+				splash->h(),splash->h(),0,50,0,
 				0);
 		AddNull(1);
 	}
@@ -88,9 +91,10 @@ int AboutWindow::preinit()
 	appendstr(about,LAIDOUT_VERSION);
 	appendstr(about,_(
 			"\nusing Laxkit version " LAXKIT_VERSION "\n"
-			"2004-2020\n"
+			"2004-2021\n"
 			"\n"
 			"by Tom Lechner,\n"
+			"laidout.org\n"
 			"\n"
 			"Contributors:\n"
 			"Probonopd\n"
@@ -105,20 +109,11 @@ int AboutWindow::preinit()
 	AddNull();
 	if (!win_parent) AddButton(BUTTON_OK);
 	
-	//WrapToExtent: 
+	//WrapToExtent:
 	arrangeBoxes(1);
 	win_w=w();
 	win_h=h();
 
-//	int redo=0;
-//	if (win_h>(int)(.9*screen->height)) { 
-//		win_h=(int)(.9*screen->height);
-//		redo=1;
-//	}
-//	if (win_w>(int)(.9*screen->width)) { 
-//		win_w=(int)(.9*screen->width);
-//		redo=1;
-//	}
 	return 0;
 }
 
@@ -126,27 +121,6 @@ int AboutWindow::preinit()
  */
 int AboutWindow::init()
 {
-	
-//------done in preinit now to avoid moveresize not resizing:
-//	m[1]=BOX_SHOULD_WRAP;
-//	m[7]=BOX_SHOULD_WRAP; //<-- this triggers a wrap in rowcol-figureDims
-//	//WrapToExtent: 
-//	arrangeBoxes(1);
-//	win_w=m[1];
-//	win_h=m[7];
-
-//	//*** is this necessary??
-//	if (!xlib_win_sizehints) {
-//		xlib_win_sizehints=XAllocSizeHints();
-//	}
-//	xlib_win_sizehints->x=win_x;
-//	xlib_win_sizehints->y=win_y;
-//	xlib_win_sizehints->width=win_w;
-//	xlib_win_sizehints->height=win_h;
-//	xlib_win_sizehints->flags=USPosition|USSize;
-//	      
-//	MoveResize(win_x,win_y,win_w,win_h);
-	
 	MessageBox::init();
 
 	return 0;
@@ -154,10 +128,17 @@ int AboutWindow::init()
 
 void AboutWindow::Refresh()
 {
+	if (arrangedstate!=1 && splash) {
+		//force aspect for splash box
+		wholelist[0]->pw(win_w);
+		wholelist[0]->ph(win_w*splash->h()/(float)splash->w());
+	}
+	RowFrame::Refresh(); //window resize syncs are cached until this refresh
+
 	Displayer *dp = MakeCurrent();
 
 	if (splash) {
-		dp->imageout(splash, wholelist.e[0]->x(),wholelist.e[0]->y()); // *** needs to scale
+		dp->imageout_within(splash, wholelist.e[0]->x(),wholelist.e[0]->y(), wholelist.e[0]->w(),wholelist.e[0]->h(), nullptr, 0);
 	}
 	needtodraw=0;
 }
