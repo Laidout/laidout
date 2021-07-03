@@ -7,6 +7,7 @@ TODO:
   PathIntersections
   ObjectArrayNode
   MirrorPathNode
+  FlipNode
   MergePaths
   Printf
   MenuValue
@@ -758,7 +759,7 @@ Laxkit::anXWindow *MenuValue::GetDialog(Laxkit::EventReceiver *proxy)
 
 
 /*! \class MirrorPathNode
- * Node to mirror parts of a path across an axis.
+ * Node to mirror things across an axis.
  */
 
 class MirrorPathNode : public ObjectFilterNode
@@ -873,41 +874,78 @@ int MirrorPathNode::GetStatus()
 {
 	*** 
 	// should be able to mirror:
+	//   set of points
+	//   PointSet
+	//   PathsData with merge
+	//   Other Objects: make group with clones
+	//   
+	// should be able to flip:
 	//   points
 	//   set of points
 	//   PointSet
 	//   PathsData
 	//   Other Objects: produce clones
 
+
 	if (!dynamic_cast<PathsData*>(properties.e[0]->GetData())) return -1;
 	return NodeBase::GetStatus();
+}
+
+/*! Flip a point. If out is not a FlatVector, return a new one, else return out with updated contents. */
+Value *MirrorPathNode::FlipVector2(Value *in, flatpoint p1, flatpoint p2, Value *out)
+{
+
+	FlatvectorValue *p = dynamic_cast<FlatvectorValue*>(in);
+
+	FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(out);
+	if (!fv) {
+		fv = new FlatvectorValue();
+	}
+
+	flatvector v = p2 - p1;
+	fv->v = p->v + 2*((p1 - p->v) |= v);
+	// ----
+	// Affine affine;
+	// affine.Flip(p1,p2);
+	// fv->v = affine.transformPoint(fv->v);
+
+	return fv;
 }
 
 int MirrorPathNode::Update()
 {
 	Error(nullptr);
 
-	PathsData *orig = dynamic_cast<PathsData*>(properties.e[0]->GetData());
-	if (!orig) { Error(_("Expected path")); return -1; }
-
+	Value *origv = properties.e[0]->GetData();
 	NodeProperty *outprop = FindProperty("out");
-	PathsData *out = dynamic_cast<PathsData*>(outprop->GetData());
+	Value *outv = outprop->GetData();
 
 	if (IsMuted()) {
-		outprop->SetData(orig, 0);
+		outprop->SetData(origv, 0);
 		return 0;
-	} else if (out == orig) {
+	} else if (outv == origv) {
 		//need to unset the mute
 		outprop->SetData(nullptr, 0);
 		out = nullptr;
 	}
 
-	FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(properties.e[1]->GetData());
-	if (!fv) { Error(_("Expected Vector2")); return -1; }
+	FlatvectorValue *p1 = dynamic_cast<FlatvectorValue*>(properties.e[1]->GetData());
+	if (!p1) { Error(_("Expected Vector2")); return -1; }
 
-	FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(properties.e[2]->GetData());
-	if (!fv) { Error(_("Expected Vector2")); return -1; }
+	FlatvectorValue *p2 = dynamic_cast<FlatvectorValue*>(properties.e[2]->GetData());
+	if (!p2) { Error(_("Expected Vector2")); return -1; }
 
+	// if (origv->type() == VALUE_Flatvector) {
+	// 	Value *nout = UpdateVector2(origv, p1->v,p2->v, outv);
+	// 	if (nout != outv) {
+	// 		outprop->SetData(nout, 1);
+	// 	}
+	// }
+
+	PathsData *orig = dynamic_cast<PathsData*>(properties.e[0]->GetData());
+	if (!orig) { Error(_("Expected path")); return -1; }
+
+	PathsData *out = dynamic_cast<PathsData*>(outv);
 	if (out) out->set(*orig); //sets affine transform only
 
 
