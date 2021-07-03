@@ -1701,7 +1701,10 @@ high dpi hidpi:
 	DONE viewport
 	DONE color sliders
 	DONE error message box
-  rebuild icons in app: detect if scaled icons make fuzzy and ask to rebuild
+  rebuild icons in app:
+    need to install the source svg
+    detect if scaled icons make fuzzy and ask to rebuild
+	detect if missing icons, ask to build
   need in app themeeditor to easily adjust things that are off
   per monitor ui scaling:
     xrandr only gives monitor names like DP-5 DP-0
