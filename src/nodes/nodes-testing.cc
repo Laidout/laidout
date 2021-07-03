@@ -756,20 +756,25 @@ Laxkit::anXWindow *MenuValue::GetDialog(Laxkit::EventReceiver *proxy)
 
 //------------------------------ MirrorNode ---------------------------------
 
+
+/*! \class MirrorPathNode
+ * Node to mirror parts of a path across an axis.
+ */
+
 class MirrorPathNode : public ObjectFilterNode
 {
 	static SingletonKeeper keeper; //the def for the op enum
 
   public:
-	static LaxInterfaces::PerspectiveInterface *GetPerspectiveInterface();
+	static LaxInterfaces::MirrorInterface *GetMirrorInterface();
 
 	bool render_preview;
 	double render_dpi;
 	LaxInterfaces::PerspectiveTransform *transform;
 	Laxkit::Affine render_transform;
 
-	PerspectiveNode();
-	virtual ~PerspectiveNode();
+	MirrorNode();
+	virtual ~MirrorNode();
 
 	virtual NodeBase *Duplicate();
 	virtual int Update();
@@ -787,13 +792,13 @@ SingletonKeeper MirrorPathNode::keeper;
 
 /*! Static return for a PerspectiveInterface.
  */
-LaxInterfaces::MirrorInterface *MirrorPathNode::GetPerspectiveInterface()
+LaxInterfaces::MirrorInterface *MirrorPathNode::GetMirrorInterface()
 {
-	PerspectiveInterface *interf = dynamic_cast<PerspectiveInterface*>(keeper.GetObject());
+	MirrorInterface *interf = dynamic_cast<MirrorInterface*>(keeper.GetObject());
 	if (!interf) {
-		interf = new LPerspectiveInterface(NULL, getUniqueNumber(), NULL);
-		interf->Id("keeperpersp");
-		interf->interface_flags |= LaxInterfaces::PerspectiveInterface::PERSP_Dont_Change_Object;
+		interf = new LMirrorInterface(NULL, getUniqueNumber(), NULL);
+		interf->Id("keepermirror");
+		//interf->interface_flags |= LaxInterfaces::MirrorInterface::PERSP_Dont_Change_Object;
 		keeper.SetObject(interf, 1);
 	}
 	return interf;
@@ -810,6 +815,8 @@ MirrorPathNode::MirrorPathNode()
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "p1",  new FlatvectorValue(0,0),1, _("p1")));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "p2",  new FlatvectorValue(1,0),1, _("p2")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "merge",  new BooleanValue(false),1, _("Merge")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "merge_dist",  new DoubleValue(.01),1, _("Merge Distance")));
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", NULL,1, _("Out"), NULL,0, false));
 }
@@ -820,7 +827,7 @@ MirrorPathNode::~MirrorPathNode()
 
 LaxInterfaces::anInterface *MirrorPathNode::ObjectFilterInterface()
 {
-	PerspectiveInterface *interf = GetPerspectiveInterface();
+	MirrorInterface *interf = GetMirrorInterface();
 	return interf;
 }
 
@@ -838,11 +845,6 @@ NodeBase *MirrorPathNode::Duplicate()
 	return node;
 }
 
-int MirrorPathNode::GetStatus()
-{
-	if (!dynamic_cast<PathsData*>(properties.e[0]->GetData())) return -1;
-	return NodeBase::GetStatus();
-}
 
 int MirrorPathNode::UpdateMirror(flatpoint p1, flatpoint p2)
 {
@@ -865,6 +867,20 @@ int MirrorPathNode::UpdateMirror(flatpoint p1, flatpoint p2)
 	}
 
 	return 0;
+}
+
+int MirrorPathNode::GetStatus()
+{
+	*** 
+	// should be able to mirror:
+	//   points
+	//   set of points
+	//   PointSet
+	//   PathsData
+	//   Other Objects: produce clones
+
+	if (!dynamic_cast<PathsData*>(properties.e[0]->GetData())) return -1;
+	return NodeBase::GetStatus();
 }
 
 int MirrorPathNode::Update()
@@ -1033,7 +1049,7 @@ int MirrorPathNode::Update()
 
 //------------------------ AlignToBoundsNode ------------------------
 
-/*! \class Node to get a reference to other DrawableObjects in same page.
+/*! \class Node to align one object to another based on bounds.
  */
 
 class AlignToBoundsNode : public NodeBase
