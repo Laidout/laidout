@@ -86,10 +86,10 @@ ObjectTree::~ObjectTree()
 {
 }
 
-char ObjectTree::ToggleFlag(char current)
+char ObjectTree::ToggleChar(char current)
 {
 	if (current == ' ') return ' ';
-	return TreeSelector::ToggleFlag(current);
+	return TreeSelector::ToggleChar(current);
 }
 
 
@@ -246,6 +246,7 @@ int ObjectTreeWindow::init()
 	Button *tbut;
 	Displayer *dp=GetDefaultDisplayer();
 	double th=dp->textheight();
+	double lineh = th*1.5;
 
 	if (domain == Unknown) UseContainer(InViewport);
 
@@ -264,7 +265,7 @@ int ObjectTreeWindow::init()
                         0,_("+"),nullptr,nullptr,3,3);
 	tbut->SetIcon(laidout->icons->GetIcon("Add"));
 	tbut->tooltip(_("Add an empty group"));
-    AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,0,50,0, -1);
+    AddWin(tbut,1, tbut->win_w,0,50,50,0, lineh,0,0,50,0, -1);
 
 	 //up
     last=tbut=new Button(this,"up",nullptr,IBUT_ICON_ONLY, 0,0,0,0, 1,
@@ -272,7 +273,7 @@ int ObjectTreeWindow::init()
                         0,_("^"),nullptr,nullptr,3,3);
 	tbut->SetIcon(laidout->icons->GetIcon("MoveUp"));
 	tbut->tooltip(_("Move each selected up within each layer"));
-    AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,0,50,0, -1);
+    AddWin(tbut,1, tbut->win_w,0,50,50,0, lineh,0,0,50,0, -1);
 
 	 //down
     last=tbut=new Button(this,"down",nullptr,IBUT_ICON_ONLY, 0,0,0,0, 1,
@@ -280,7 +281,7 @@ int ObjectTreeWindow::init()
                         0,_("v"),nullptr,nullptr,3,3);
 	tbut->SetIcon(laidout->icons->GetIcon("MoveDown"));
 	tbut->tooltip(_("Move each selected down within each layer"));
-    AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,0,50,0, -1);
+    AddWin(tbut,1, tbut->win_w,0,50,50,0, lineh,0,0,50,0, -1);
 
 	 //duplicate
     last=tbut=new Button(this,"dup",nullptr,IBUT_ICON_ONLY, 0,0,0,0, 1,
@@ -288,7 +289,7 @@ int ObjectTreeWindow::init()
                         0,_("dup"),nullptr,nullptr,3,3);
 	tbut->SetIcon(laidout->icons->GetIcon("Duplicate"));
 	tbut->tooltip(_("Duplicate each selected"));
-    AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,0,50,0, -1);
+    AddWin(tbut,1, tbut->win_w,0,50,50,0, lineh,0,0,50,0, -1);
 
 	AddHSpacer(th/2,th/2,th/2, 50,-1);
 
@@ -298,7 +299,7 @@ int ObjectTreeWindow::init()
                         0,_("-"),nullptr,nullptr,3,3);
 	tbut->SetIcon(laidout->icons->GetIcon("Trash"));
 	tbut->tooltip(_("Remove selected")); 
-    AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,0,50,0, -1);
+    AddWin(tbut,1, tbut->win_w,0,50,50,0, lineh,0,0,50,0, -1);
 
 
 	last->CloseControlLoop();
@@ -311,6 +312,16 @@ int ObjectTreeWindow::Event(const Laxkit::EventData *data,const char *mes)
 	if (!strcmp(mes,"tree")) {
 		const SimpleMessage *sm = dynamic_cast<const SimpleMessage*>(data);
 		DBG cerr << "ObjectTreeWindow event: "<<sm->info1<<" "<<sm->info2<<" "<<sm->info3<<" "<<sm->info4<<" "<<(sm->str ? sm->str : "null")<<endl;
+
+		if (sm->info3 == 2) { //flag toggled
+			if (sm->info4 == 'e' || sm->info4 == 'E') {
+				bool visible = (sm->info4 == 'E');
+				DBG cerr << ".. toggle visible, now: "<<visible<<endl;
+			} else if (sm->info4 == 'l' || sm->info4 == 'L') {
+				bool locked = (sm->info4 == 'L');
+				DBG cerr << ".. toggle locked, now: "<<locked<<endl;
+			}
+		}
 
 		// DBG LaidoutViewport *viewport = FindViewport();
 		// DBG if (!viewport) return 0;

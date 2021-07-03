@@ -34,7 +34,7 @@ class ObjectTree : public Laxkit::TreeSelector
 						unsigned long nowner,const char *mes);
 	virtual ~ObjectTree();
 	virtual const char *whattype() { return "ObjectTree"; }
-	virtual char ToggleFlag(char current);
+	virtual char ToggleChar(char current);
 };
 
 
