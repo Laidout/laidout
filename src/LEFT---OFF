@@ -161,6 +161,7 @@ update fileformat.txt
   DONE Path: output problem when name - null - non-null-comment
   DONE incomplete TextOnPath
 check laidout.1 when time to release
+DONE update splash image at icons/LaidoutSplash.png
 update docs to have new release number
 update translation base files
 update screenshots, sync with features
@@ -214,9 +215,6 @@ Gradients: gradientinterface
       stops
         position
         r1, r2
-
-get splash image working.. better label class?
-have an actual splash image shown
 
 alternate packaging:
   flatpak: https://github.com/Laidout/laidout/issues/11
@@ -318,17 +316,23 @@ Find interface: findinterface:
   DONE need draggable window frame
 
 layers palette Layers ObjectTree
-  need to update menu, not flush and repopulate
+  bug: not remembering flags column width.. for a flags column, should always be visible?
+  must sync viewport selection with selected in tree
+  need to update menu, not flush and repopulate which wrecks selection
   should have document list at top, showing current doc
-  need icons for object types
-  hidden/locked objects should grey out contained objects
-  visible gray out non-visible
 
-  drag change flags
   flags, click to change: 
     locked
     visible
-    selectable
+
+  DONE edit colors not highlighting every other
+
+  ---0.099:
+  need icons for object types
+  hidden/locked objects should grey out contained objects
+  visible gray out non-visible
+  drag change flags
+  selectable flag
   key controls for navigation within menu:
     space/enter toggle open and closed submenu
   move
@@ -341,8 +345,7 @@ layers palette Layers ObjectTree
 	move up .. maybe do away with the button, and just implement drag and drop?
 	move down
 	duplicate
-
-  DONE edit colors not highlighting every other
+  copy item path?
 
 you can't control unclick selected directories
 
@@ -1657,7 +1660,7 @@ dual monitors: multi monitor multimonitor
 
 high dpi hidpi:
   uiscale option
-    passing in 1 is different than having no uiscale.. forcing it to check screen??
+    passing in 1 is different than having no uiscale, why??? forcing it to check screen??
 	should have option to use native icons.. otherwise they render kind of bad.
       prefs.scale_icons ?
   DONE don't hardcode for instance thin as 1
@@ -1713,6 +1716,9 @@ high dpi hidpi:
       various interface threshholds, like path node indicator size, touch distance
   DONE supply a "default" ppi? for instance xlib thinks: 94.1467h or 94.0741v of multisync lcd2490wiki2 (specs say 94)
 
+accessibility:
+  allow changing theme from command line, config file, or settings window
+  have alternatives whenever a tool expects modifiers + mouse movement
 themes:
   option to use different go/don't go colors
   on ThemeUpdated events, things need to account for:
@@ -1763,6 +1769,7 @@ laxkit:
     time
     DONE dir
   for blend modes, maybe place name conversion in Displayer, in case there are a ton of custom blend modes??
+  rowframe/squishybox would be nice to have aspect preserving squishes
 
   DONE interfs example has memory hole: interfaces are not being destroyed
     DONE shortcutmanager should be singleton
@@ -2118,6 +2125,12 @@ signature editor  Signature editor Signature Editor signatureeditor
 
 global Laidout settings:
   settings dialog
+    rearrange dir lists
+	rebuild icons
+	set uiscale live
+	resource search directories, per resource
+	remove old palette_dir thing, it should be wrapped into resources
+	need "import settings from..." (but always use hardcoded laidoutrc)
   color theme
   icons
   tooltips
@@ -2865,7 +2878,7 @@ hedron window:
 implement undo.. ideally use same code for both undo and recordable/assignable actions
   object interface
     need to account for:
-      dragging matrix changes
+      DONE dragging matrix changes
       key flip, or non-dragging changes
       object deletion
   nodes
@@ -3143,3 +3156,6 @@ DONEish configure still sucks:
 DONE mageia: makedepend trouble? replace with custom script to get rid of x11-dev dependency?
 DONE a built in global variable: current frame/time
 DONE bug: ImagePatch doing anything with it causes crash.. before crash, image distorts incorrectly
+DONE get splash image working..
+DONE have an actual splash image shown
+
