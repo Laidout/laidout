@@ -191,14 +191,14 @@ int AutosaveWindow::send()
 	bool newv = (autosave->State()==LAX_ON);
 	if (laidout->prefs.autosave != newv) {
 		laidout->prefs.autosave = newv;
-		UpdatePreference("autosave", laidout->prefs.autosave ? "yes" : "no", rcpath);
+		laidout->prefs.UpdatePreference("autosave", laidout->prefs.autosave ? "yes" : "no", rcpath);
 		modified=true;
 	}
 
 	//autosave_path
 	if (path->GetCText() && strcmp(path->GetCText(), laidout->prefs.autosave_path)) {
 		makestr(laidout->prefs.autosave_path, path->GetCText()); 
-		UpdatePreference("autosave_path", laidout->prefs.autosave_path, rcpath);
+		laidout->prefs.UpdatePreference("autosave_path", laidout->prefs.autosave_path, rcpath);
 		modified=true;
 	}
 
@@ -208,7 +208,7 @@ int AutosaveWindow::send()
 //	if (n!=laidout->prefs.autosave_num) {
 //		laidout->prefs.autosave_num = n;
 //		sprintf(scratch, "%d", laidout->prefs.autosave_num);
-//		UpdatePreference("autosave_num", scratch, rcpath);
+//		laidout->prefs.UpdatePreference("autosave_num", scratch, rcpath);
 //		modified=true;
 //	}
 
@@ -217,7 +217,7 @@ int AutosaveWindow::send()
 	if (d != laidout->prefs.autosave_time) {
 		laidout->prefs.autosave_time = d;
 		sprintf(scratch, "%.10g", laidout->prefs.autosave_time);
-		UpdatePreference("autosave_time", scratch, rcpath); 
+		laidout->prefs.UpdatePreference("autosave_time", scratch, rcpath); 
 		modified=true;
 	}
 	

@@ -437,9 +437,27 @@ int ValueWindow::Event(const EventData *data,const char *mes)
 	}
 
 	if (!value) return ScrolledWindow::Event(data,mes);
-	Value *val = value;
 
-	int type = value->type();
+	//mes should be structured like BaseClassName.fieldname[.fieldname.fieldname].type
+	
+	Value *val = value;
+	int basetype = value->type();
+	int type = VALUE_None;
+
+	const char *finaltype = strrchr(mes, '.');
+	char *ext = nullptr;
+	if (finaltype) {
+		type = element_NameToType(finaltype+1);
+
+		const char *field = strchr(mes, '.');
+		if (field == finaltype) {
+			// we have something like Classname.type, with no field name, so we have a direct, simple assign
+			type = basetype;
+
+		} else {
+			ext = newnstr(field+1, finaltype-field-1);
+		}
+	}
 
 	const SimpleMessage *e = dynamic_cast<const SimpleMessage *>(data);
 	DBG cerr << "ValueWindow got: "<< (mes?mes:"(nullmes)")<<endl;
@@ -447,24 +465,32 @@ int ValueWindow::Event(const EventData *data,const char *mes)
 	if (e) {
 
 		if (type == VALUE_Int) {
-			IntValue *v = dynamic_cast<IntValue*>(val);
 			char *endptr=NULL;
 			int i = strtol(e->str, &endptr, 10);
-			v->i = i;
+			if (endptr != e->str) {
+				IntValue *v = new IntValue(i);
+				value->assign(v, ext);
+				v->dec_count();
+			} //else bad int string
 
 		} else if (type == VALUE_Real || type == VALUE_Number) {
-			DoubleValue *v = dynamic_cast<DoubleValue*>(val);
 			char *endptr=NULL;
 			double d = strtod(e->str, &endptr);
-			v->d = d;
+			if (endptr != e->str) {
+				DoubleValue *v = new DoubleValue(d);
+				value->assign(v, ext);
+				v->dec_count();
+			}
 
 		} else if (type == VALUE_Boolean) {
-			BooleanValue *v = dynamic_cast<BooleanValue*>(val);
-			v->i = (e->info1 == LAX_ON);
+			BooleanValue *v = new BooleanValue(e->info1 == LAX_ON);
+			value->assign(v, ext);
+			v->dec_count();
 
 		} else if (type == VALUE_String) {
-			StringValue *v = dynamic_cast<StringValue*>(val);
-			v->Set(e->str,-1);
+			StringValue *v = new StringValue(e->str);
+			value->assign(v, ext);
+			v->dec_count();
 
 		} else if (type == VALUE_Flatvector || type == VALUE_Spacevector || type == VALUE_Quaternion) {
 			Quaternion v;
@@ -472,6 +498,8 @@ int ValueWindow::Event(const EventData *data,const char *mes)
 			char *endptr=NULL;
 			double d = strtod(e->str, &endptr);
 			char which = mes[strlen(mes)-1];
+
+			cerr << "ValueWindow vectors FIX ME!!"<<endl;
 
 			if (type == VALUE_Flatvector) {
 				FlatvectorValue *v = dynamic_cast<FlatvectorValue*>(val);
@@ -490,33 +518,36 @@ int ValueWindow::Event(const EventData *data,const char *mes)
 				else v->v.w = d;
 			}
 
-
 		} else if (type == VALUE_File) { //ignore? VALUE_FileSave and VALUE_FileLoad
-			FileValue *v = dynamic_cast<FileValue*>(value);
-			v->Set(e->str);
+			FileValue *v = new FileValue(e->str);
+			value->assign(v, ext);
+			v->dec_count();
 
 		} else if (type == VALUE_Object) {
+			cerr << "ValueWindow object FIX ME!!"<<endl;
+
 			ObjectValue *v = dynamic_cast<ObjectValue*>(val);
 			v->SetObject(const_cast<anObject*>(e->object), false);
 
 		} else if (type == VALUE_Enum) {
-		//} else if (type == VALUE_EnumVal) {
+			cerr << "ValueWindow enum FIX ME!!"<<endl;
 			EnumValue *ev = dynamic_cast<EnumValue*>(val);
 			ev->value = e->info1;
 		}
 
+		delete[] ext;
 		return 0;
-
 	}
 
 	if (type == VALUE_Color) {
 		ColorValue *v = dynamic_cast<ColorValue*>(val);
 		const SimpleColorEventData *ce = dynamic_cast<const SimpleColorEventData *>(data);
-        if (!ce) return ScrolledWindow::Event(data,mes);
+		if (!ce) return ScrolledWindow::Event(data,mes);
 
 		//if (ce->colorsystem = LAX_COLOR_RGB) v->color...
 		v->color.Set(ce->colorsystem, ce->Valuef(0), ce->Valuef(1), ce->Valuef(2), ce->Valuef(3), ce->Valuef(4));
-
+		
+		delete[] ext;
 		return 0;
 	}
 
@@ -541,6 +572,7 @@ int ValueWindow::Event(const EventData *data,const char *mes)
 //	} else if (type == VALUE_Any) {
 //	}
 
+	delete[] ext;
 	return ScrolledWindow::Event(data,mes);
 }
 

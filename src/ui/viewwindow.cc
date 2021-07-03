@@ -1162,7 +1162,7 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 
 		char path[strlen(laidout->config_dir)+20];
 		sprintf(path,"%s/laidoutrc",laidout->config_dir);
-		UpdatePreference("defaultunits", unitname, path);
+		laidout->prefs.UpdatePreference("defaultunits", unitname, path);
 
 		postmessage(_("Global preference updated."));
 		return 0;

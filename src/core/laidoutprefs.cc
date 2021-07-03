@@ -16,6 +16,7 @@
 #include <lax/strmanip.h>
 #include <lax/fileutils.h>
 #include <lax/iconmanager.h>
+#include <lax/anxapp.h>
 
 #include "laidoutprefs.h"
 #include "../language.h"
@@ -43,24 +44,6 @@ using namespace LaxFiles;
 namespace Laidout {
 
 
-//Laidout object def:
-//  tools
-//  windows
-//  global prefs
-//  imposition types/generators
-//  export filters
-//  import filters
-//  papersizes
-//
-//  project
-//    documents -> set of Document
-//    limbos    -> set of Group
-//    papergroups -> set of PaperGroup
-//
-//todo:
-//  resources
-
-
 /*! \class LaidoutPreferences
  * 
  * Global preferences of Laidout. These things get input and output with laidoutrc.
@@ -71,7 +54,10 @@ LaidoutPreferences::LaidoutPreferences()
  : icon_dirs(2),
    plugin_dirs(2)
 {
-	splash_image_file = newstr("./laidout-splash.png");
+	rc_file = nullptr;
+	autosave_prefs = true; //immediately on any change
+
+	splash_image_file = nullptr; //default later is LoadIcon("LaidoutSplash")...  
 
 	default_units  = UNITS_Inches;
 	unitname       = newstr("inches");
@@ -104,6 +90,7 @@ LaidoutPreferences::LaidoutPreferences()
 
 LaidoutPreferences::~LaidoutPreferences()
 {
+	delete[] rc_file;
 	delete[] autosave_path;
 	delete[] unitname;
 	delete[] splash_image_file;
@@ -118,6 +105,9 @@ LaidoutPreferences::~LaidoutPreferences()
 Value *LaidoutPreferences::duplicate()
 {
 	LaidoutPreferences *p=new LaidoutPreferences;
+
+	makestr(p->rc_file, rc_file);
+	p->autosave_prefs = autosave_prefs;
 
 	p->preview_size  = preview_size;
 	p->default_units = default_units;
@@ -332,6 +322,210 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 
 }
 
+/*! Return 1 for success, 2 for success, but other contents changed too, -1 for unknown */
+int LaidoutPreferences::assign(FieldExtPlace *ext,Value *v)
+{
+	const char *extstring = ext->e(0);
+
+	if (!strcmp(extstring, "defaultunits")) {
+		StringValue *str = dynamic_cast<StringValue*>(v);
+		if (!str) return 0;
+		UnitManager *units = GetUnitManager();
+		int id = units->UnitId(str->str);
+		if (id == UNITS_None) return 0;
+		default_units = id;
+		if (autosave_prefs) UpdatePreference(extstring, str->str, nullptr);
+		return 1;
+	}
+
+	if (!strcmp(extstring, "shortcuts_file")) {
+		FileValue *fv = dynamic_cast<FileValue*>(v);
+		if (fv) {
+			makestr(shortcuts_file, fv->filename);
+		} else {
+			StringValue *sv = dynamic_cast<StringValue*>(v);
+			if (!sv) return 0;
+			makestr(shortcuts_file, sv->str);
+		}
+		if (autosave_prefs) UpdatePreference(extstring, shortcuts_file, nullptr);
+		return 1;
+	}
+
+	if (!strcmp(extstring, "splashimage")) {
+		FileValue *fv = dynamic_cast<FileValue*>(v);
+		if (fv) {
+			makestr(splash_image_file, fv->filename);
+		} else {
+			StringValue *sv = dynamic_cast<StringValue*>(v);
+			if (!sv) return 0;
+			makestr(splash_image_file, sv->str);
+		}
+		if (autosave_prefs) UpdatePreference(extstring, splash_image_file, nullptr);
+		return 1;
+	}
+
+	if (!strcmp(extstring, "defaulttemplate")) {
+		FileValue *fv = dynamic_cast<FileValue*>(v);
+		if (fv) {
+			makestr(default_template, fv->filename);
+		} else {
+			StringValue *sv = dynamic_cast<StringValue*>(v);
+			if (!sv) return 0;
+			makestr(default_template, sv->str);
+		}
+		if (autosave_prefs) UpdatePreference(extstring, default_template, nullptr);
+		return 1;
+	}
+
+	if (!strcmp(extstring, "defaultpaper")) {
+		StringValue *sv = dynamic_cast<StringValue*>(v);
+		if (!sv) return 0;
+		makestr(defaultpaper, sv->str);
+		if (autosave_prefs) UpdatePreference(extstring, defaultpaper, nullptr);
+		return 1;
+	}
+
+	if (!strcmp(extstring, "pagedropshadow")) {
+		double d;
+		if (!isNumberType(v, &d)) return 0;
+		pagedropshadow = d;
+		if (autosave_prefs) UpdatePreference(extstring, pagedropshadow, nullptr);
+		return 1;
+	}
+
+	if (!strcmp(extstring, "uiscale")) {
+		double d;
+		if (!isNumberType(v, &d)) return 0;
+		uiscale = d;
+		anXApp::app->ThemeReconfigure();
+		if (autosave_prefs) UpdatePreference(extstring, uiscale, nullptr);
+		return 1;
+	}
+
+	if (!strcmp(extstring, "dont_scale_icons")) {
+		double d;
+		if (!isNumberType(v, &d)) return 0;
+		dont_scale_icons = d;
+		if (autosave_prefs) UpdatePreference(extstring, dont_scale_icons, nullptr);
+		return 1;
+	}
+
+	if (!strcmp(extstring, "experimental")) {
+		double d;
+		if (!isNumberType(v, &d)) return 0;
+		experimental = d;
+		// *** turn on/off experimental features? warning dialog about needing restart?
+		if (autosave_prefs) UpdatePreference(extstring, experimental, nullptr);
+		return 1;
+	}
+
+	if (!strcmp(extstring, "start_with_last")) {
+		double d;
+		if (!isNumberType(v, &d)) return 0;
+		start_with_last = d;
+		if (autosave_prefs) UpdatePreference(extstring, start_with_last, nullptr);
+		return 1;
+	}
+
+	if (!strcmp(extstring, "temp_dir")) {
+		FileValue *fv = dynamic_cast<FileValue*>(v);
+		if (fv) {
+			makestr(temp_dir, fv->filename);
+		} else {
+			StringValue *sv = dynamic_cast<StringValue*>(v);
+			if (!sv) return 0;
+			makestr(temp_dir, sv->str);
+		}
+		if (autosave_prefs) UpdatePreference(extstring, temp_dir, nullptr);
+		return 1;
+	}
+
+	if (!strcmp(extstring, "autosave")) {
+		double d;
+		if (!isNumberType(v, &d)) return 0;
+		autosave = d;
+		if (autosave_prefs) UpdatePreference(extstring, autosave, nullptr);
+		return 1;
+	}
+
+	if (!strcmp(extstring, "autosave_time")) {
+		double d;
+		if (!isNumberType(v, &d)) return 0;
+		autosave_time = d;
+		if (autosave_prefs) UpdatePreference(extstring, autosave_time, nullptr);
+		return 1;
+	}
+
+//	if (!strcmp(extstring, "autosave_num")) {
+//		return new IntValue(autosave_num);
+//	}
+
+	if (!strcmp(extstring, "autosave_path")) {
+		FileValue *fv = dynamic_cast<FileValue*>(v);
+		if (fv) {
+			makestr(autosave_path, fv->filename);
+		} else {
+			StringValue *sv = dynamic_cast<StringValue*>(v);
+			if (!sv) return 0;
+			makestr(autosave_path, sv->str);
+		}
+		if (autosave_prefs) UpdatePreference(extstring, autosave_path, nullptr);
+		return 1;
+	}
+
+	if (!strcmp(extstring, "export_file_name")) {
+		StringValue *sv = dynamic_cast<StringValue*>(v);
+		if (!sv) return 0;
+		makestr(exportfilename, sv->str);
+		if (autosave_prefs) UpdatePreference(extstring, exportfilename, nullptr);
+		return 1;
+	}
+
+	if (!strcmp(extstring, "previewsize")) {
+		double d;
+		if (!isNumberType(v, &d)) return 0;
+		if (d < 1.0) return 0;
+		preview_size = d;
+		if (autosave_prefs) UpdatePreference(extstring, preview_size, nullptr);
+		return 1;
+	}
+
+	if (!strcmp(extstring, "palette_dir")) {
+		FileValue *fv = dynamic_cast<FileValue*>(v);
+		if (fv) {
+			makestr(palette_dir, fv->filename);
+		} else {
+			StringValue *sv = dynamic_cast<StringValue*>(v);
+			if (!sv) return 0;
+			makestr(palette_dir, sv->str);
+		}
+		return 1;
+	}
+
+	if (!strcmp(extstring, "icon_dirs")) {
+		return 0;
+		// -
+		// SetValue *set = new SetValue("File");
+		// IconManager *icons=IconManager::GetDefault();
+		// for (int c=0; c<icons->NumPaths(); c++) {
+		// 	set->Push(new FileValue(icons->GetPath(c)), 1);
+		// }
+		// return set; 
+	}
+
+	if (!strcmp(extstring, "plugin_dirs")) {
+		return 0;
+		// -
+		// SetValue *set = new SetValue("File");
+		// for (int c=0; c<plugin_dirs.n; c++) {
+		// 	set->Push(new FileValue(plugin_dirs.e[c]), 1);
+		// }
+		// return set; 
+	}
+
+	return -1;
+}
+
 Value *LaidoutPreferences::dereference(const char *extstring, int len)
 {
 	if (!strcmp(extstring, "defaultunits")) {
@@ -431,6 +625,7 @@ Value *LaidoutPreferences::dereference(const char *extstring, int len)
 	return NULL;
 }
 
+/*! Note this totally clobbers old file. */
 int LaidoutPreferences::SavePrefs(const char *file)
 {
 	if (!file) return 2;
@@ -447,13 +642,101 @@ int LaidoutPreferences::SavePrefs(const char *file)
 	return 1;
 }
 
+
+/*! Add path to the list of directories used by resource.
+ * Currently resource can be "icons" or "plugins".
+ *
+ * Checks if path is a valid, existing directory. Fails with 1 if not.
+ * Return 0 on success.
+ */
+int LaidoutPreferences::AddPath(const char *resource, const char *path)
+{
+	if (file_exists(path, 1, NULL) != S_IFDIR) {
+		DBG cerr << "LaidoutPreferences::AddPath("<<resource<<", "<<path<<"): not a directory!"<<endl;
+		return 1;
+	}
+
+	if (!strcmp(resource, "icons")) {
+		DBG cerr <<"Adding icon path: "<<path<<endl;
+		icon_dirs.push(newstr(path), LISTS_DELETE_Array);
+		return 0;
+
+	} else if (!strcmp(resource, "plugins")) {
+		DBG cerr <<"Adding plugin path: "<<path<<endl;
+		plugin_dirs.push(newstr(path), LISTS_DELETE_Array);
+		return 0;
+	}
+
+	return 1;
+}
+
+/*! tool->category must already be in external_categories, or else nothing is done and 1 is returned.
+ * Return 0 if added successfully.
+ *  Takes ownership of tool, so don't worry about dec_count UNLESS 1 IS RETURNED. 
+ */
+int LaidoutPreferences::AddExternalTool(ExternalTool *tool)
+{
+	return external_tool_manager.AddExternalTool(tool);
+}
+
+/*! Takes ownership of category, so don't worry about dec_count. */
+int LaidoutPreferences::AddExternalCategory(ExternalToolCategory *category)
+{
+	return external_tool_manager.AddExternalCategory(category);
+}
+
+const char *LaidoutPreferences::GetToolCategoryName(int id, const char **idstr)
+{
+	return external_tool_manager.GetToolCategoryName(id, idstr);
+}
+
+ExternalToolCategory *LaidoutPreferences::GetToolCategory(int category)
+{
+	return external_tool_manager.GetToolCategory(category);
+}
+
+/*! Find existing tool from str like "Print: lp" -> "category: command_name".
+ */
+ExternalTool *LaidoutPreferences::FindExternalTool(const char *str)
+{
+	return external_tool_manager.FindExternalTool(str);
+}
+
+/*! Return the first tool in category, or null. */
+ExternalTool *LaidoutPreferences::GetDefaultTool(int category)
+{
+	return external_tool_manager.GetDefaultTool(category);
+}
+
+
+int LaidoutPreferences::UpdatePreference(const char *which, double value, const char *laidoutrc)
+{
+	char scratch[50];
+	sprintf(scratch, "%.10g", value);
+	return UpdatePreference(which, scratch, laidoutrc);
+}
+
+int LaidoutPreferences::UpdatePreference(const char *which, int value, const char *laidoutrc)
+{
+	char scratch[50];
+	sprintf(scratch, "%d", value);
+	return UpdatePreference(which, scratch, laidoutrc);
+}
+
+int LaidoutPreferences::UpdatePreference(const char *which, bool value, const char *laidoutrc)
+{
+	return UpdatePreference(which, value ? "true" : "false", laidoutrc);
+}
+
 /*! Update global preference by writing out a new laidoutrc.
  * This only works when which/value is supposed to be on one line. value shouldn't have any newlines.
  *
  * The line containing which at the beginning of the line or "#which" will be entirely replaced with "which value".
  */
-int UpdatePreference(const char *which, const char *value, const char *laidoutrc)
+int LaidoutPreferences::UpdatePreference(const char *which, const char *value, const char *laidoutrc)
 {
+	if (!laidoutrc) laidoutrc = rc_file;
+
 	int fd=open(laidoutrc, O_RDONLY, 0);
 	if (fd<0) { return 1; }
 	flock(fd,LOCK_EX);
@@ -535,70 +818,6 @@ int UpdatePreference(const char *which, const char *value, const char *laidoutrc
 	return 0;
 }
 
-/*! Add path to the list of directories used by resource.
- * Currently resource can be "icons" or "plugins".
- *
- * Checks if path is a valid, existing directory. Fails with 1 if not.
- * Return 0 on success.
- */
-int LaidoutPreferences::AddPath(const char *resource, const char *path)
-{
-	if (file_exists(path, 1, NULL) != S_IFDIR) {
-		DBG cerr << "LaidoutPreferences::AddPath("<<resource<<", "<<path<<"): not a directory!"<<endl;
-		return 1;
-	}
-
-	if (!strcmp(resource, "icons")) {
-		DBG cerr <<"Adding icon path: "<<path<<endl;
-		icon_dirs.push(newstr(path), LISTS_DELETE_Array);
-		return 0;
-
-	} else if (!strcmp(resource, "plugins")) {
-		DBG cerr <<"Adding plugin path: "<<path<<endl;
-		plugin_dirs.push(newstr(path), LISTS_DELETE_Array);
-		return 0;
-	}
-
-	return 1;
-}
-
-/*! tool->category must already be in external_categories, or else nothing is done and 1 is returned.
- * Return 0 if added successfully.
- *  Takes ownership of tool, so don't worry about dec_count UNLESS 1 IS RETURNED. 
- */
-int LaidoutPreferences::AddExternalTool(ExternalTool *tool)
-{
-	return external_tool_manager.AddExternalTool(tool);
-}
-
-/*! Takes ownership of category, so don't worry about dec_count. */
-int LaidoutPreferences::AddExternalCategory(ExternalToolCategory *category)
-{
-	return external_tool_manager.AddExternalCategory(category);
-}
-
-const char *LaidoutPreferences::GetToolCategoryName(int id, const char **idstr)
-{
-	return external_tool_manager.GetToolCategoryName(id, idstr);
-}
-
-ExternalToolCategory *LaidoutPreferences::GetToolCategory(int category)
-{
-	return external_tool_manager.GetToolCategory(category);
-}
-
-/*! Find existing tool from str like "Print: lp" -> "category: command_name".
- */
-ExternalTool *LaidoutPreferences::FindExternalTool(const char *str)
-{
-	return external_tool_manager.FindExternalTool(str);
-}
-
-/*! Return the first tool in category, or null. */
-ExternalTool *LaidoutPreferences::GetDefaultTool(int category)
-{
-	return external_tool_manager.GetDefaultTool(category);
-}
 
 } // namespace Laidout
 

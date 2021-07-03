@@ -904,18 +904,18 @@ int LValue::assign(FieldExtPlace *ext,Value *v)
 	if (entry && entry->type() == VALUE_Dummy) return 1;
 	int oldn=extension.n();
 
-	char *str;
+	const char *cstr;
 	int i;
 
 	if (ext && ext->n()) {
 		for (int c=0; c<ext->n(); c++) {
-			str=ext->e(c,&i);
-			if (str) extension.push(str);
+			cstr = ext->e(c,&i);
+			if (cstr) extension.push(cstr);
 			else extension.push(i);
 		}
 	}
 
-	str=NULL;
+	char *str = nullptr;
 	i=-1;
 	if (extension.n()) {
 		str=extension.pop(&i);

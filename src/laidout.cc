@@ -98,7 +98,7 @@ const char *LaidoutVersion()
 		const char *outstr=
 						_("Laidout Version %s\n"
 						  "http://www.laidout.org\n"
-						  "by Tom Lechner, sometime between 2006 and 2020\n"
+						  "by Tom Lechner, sometime between 2006 and 2021\n"
 						  "Released under the GNU Public License, Version 3.\n"
 						  " (using Laxkit Version %s)");
 		version_str=new char[1+strlen(outstr)+strlen(LAIDOUT_VERSION)+strlen(LAXKIT_VERSION)];
@@ -229,6 +229,10 @@ LaidoutApp::LaidoutApp()
 	preview_file_bases(LISTS_DELETE_Array),
 	disabled_plugins(LISTS_DELETE_Array)
 {	
+	LaxInterfaces::InterfaceManager *ifc = LaxInterfaces::InterfaceManager::GetDefault(true);
+	resourcemanager = ifc->GetResourceManager();
+	resourcemanager->inc_count();
+
 	colorManager = new ColorManager();
 	colorManager->AddSystem(Create_sRGB_System(true), true);
 	ColorManager::SetDefault(colorManager);
@@ -244,6 +248,8 @@ LaidoutApp::LaidoutApp()
 	runmode = RUNMODE_Normal;
 
 	config_dir = ConfigDir();
+	prefs.rc_file = new char[strlen(config_dir)+20];
+	sprintf(prefs.rc_file, "%s/laidoutrc", config_dir);
 
 	if (!strncmp(SHARED_DIRECTORY, "..", 2)) { 
 		shared_dir = ExecutablePath();

@@ -103,7 +103,7 @@ int FieldExtPlace::Set(const char *str, int len, const char **next)
 FieldExtPlace::FieldExtPlace(const FieldExtPlace &place)
 {
 	int i;
-	char *str;
+	const char *str;
 	for (int c=0; c<place.n(); c++) {
 		str=place.e(c,&i);
 		if (str) push(str);
@@ -116,7 +116,7 @@ FieldExtPlace &FieldExtPlace::operator=(const FieldExtPlace &place)
 {
 	flush();
 	int i;
-	char *str;
+	const char *str;
 	for (int c=0; c<place.n(); c++) {
 		str=place.e(c,&i);
 		if (str) push(str);
@@ -130,7 +130,7 @@ int FieldExtPlace::operator==(const FieldExtPlace &place) const
 {
 	if (n()!=place.n()) return 0;
 	int i;
-	char *str;
+	const char *str;
 	for (int c=0; c<ext.n; c++) {
 		str=place.e(c, &i);
 		if (i!=ext.e[c]->exti || strcmp(ext.e[c]->ext,str)) return 0;
@@ -143,7 +143,7 @@ int FieldExtPlace::operator!=(const FieldExtPlace &place) const
 {
 	if (n()!=place.n()) return 1;
 	int i;
-	char *str;
+	const char *str;
 	for (int c=0; c<ext.n; c++) {
 		str=place.e(c, &i);
 		if (i!=ext.e[c]->exti || strcmp(ext.e[c]->ext,str)) return 1;
@@ -152,7 +152,7 @@ int FieldExtPlace::operator!=(const FieldExtPlace &place) const
 }
 
 //! Return the string and integer of element i (if ei!=NULL).
-char *FieldExtPlace::e(int i, int *ei) const
+const char *FieldExtPlace::e(int i, int *ei) const
 {
 	if (i<0 && i>=ext.n) { if (ei) *ei=-1; return NULL; }
 	if (ei) *ei=ext.e[i]->exti;

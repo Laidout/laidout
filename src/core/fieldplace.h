@@ -40,7 +40,7 @@ class FieldExtPlace : protected Laxkit::PtrStack<char>
 	virtual ~FieldExtPlace() {}
 	int Set(const char *str, int len, const char **next);
 	virtual int n() const { return ext.n; }
-	virtual char *e(int i, int *ei=NULL) const;
+	virtual const char *e(int i, int *ei=NULL) const;
 	virtual int e(int i,const char *val, int ei);
 	virtual int operator==(const FieldExtPlace &place) const;
 	virtual int operator!=(const FieldExtPlace &place) const;

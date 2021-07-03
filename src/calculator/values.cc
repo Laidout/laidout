@@ -90,7 +90,7 @@ const char *element_TypeNames(int type)
 	return "";
 }
 
-//! Return the string name of a ValueTypes.
+//! Return the string name of a ValueTypes since core c++ doesn't know how to.
 const char *valueEnumCodeName(int format)
 {
 	if (format==VALUE_Any)         return "VALUE_Any";
@@ -2354,8 +2354,7 @@ int Value::assign(FieldExtPlace *ext,Value *v)
 int Value::assign(Value *v, const char *extstring)
 {
 	if (isblank(extstring)) return assign(nullptr, v);
-	FieldExtPlace ext;
-	ext.push(extstring);
+	FieldExtPlace ext(extstring);
 	return assign(&ext, v);
 }	
 
@@ -4818,7 +4817,7 @@ int FileValue::Exists()
 
 Value *NewFileValueFunc() { return new FileValue; }
 
-ObjectDef default_FileValue_ObjectDef(NULL,"file",_("File"),_("File"),
+ObjectDef default_FileValue_ObjectDef(NULL,"File",_("File"),_("File"),
 							 "class", NULL, "/",
 							 NULL, 0,
 							 NewFileValueFunc, NULL);

@@ -25,6 +25,8 @@ namespace Laidout {
 class LaidoutPreferences : public Value
 {
   public:
+  	char *rc_file;
+
 	int default_units;
 	char *unitname;
 	int pagedropshadow;
@@ -49,6 +51,8 @@ class LaidoutPreferences : public Value
 	Laxkit::PtrStack<char> plugin_dirs;
 	bool experimental;
 
+	bool autosave_prefs; //immediately on any change
+
 	ExternalToolManager external_tool_manager;
 	
 	LaidoutPreferences();
@@ -57,6 +61,7 @@ class LaidoutPreferences : public Value
 	virtual ObjectDef *makeObjectDef();
 	virtual Value *duplicate();
 	virtual Value *dereference(const char *extstring, int len);
+	virtual int assign(FieldExtPlace *ext,Value *v); //return 1 for success, 2 for success, but other contents changed too, -1 for unknown
 	virtual int SavePrefs(const char *file=NULL);
 
 	virtual int AddPath(const char *resource, const char *path);
@@ -67,9 +72,13 @@ class LaidoutPreferences : public Value
 	virtual const char *GetToolCategoryName(int id, const char **idstr = nullptr);
 	virtual ExternalTool *FindExternalTool(const char *str);
 	virtual ExternalTool *GetDefaultTool(int category);
+	
+	int UpdatePreference(const char *which, const char *value, const char *laidoutrc);
+	int UpdatePreference(const char *which, double value, const char *laidoutrc);
+	int UpdatePreference(const char *which, int value, const char *laidoutrc);
+	int UpdatePreference(const char *which, bool value, const char *laidoutrc);
 };
 
-int UpdatePreference(const char *which, const char *value, const char *laidoutrc);
 
 } //namespace Laidout
 

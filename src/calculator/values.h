@@ -86,6 +86,7 @@ enum ValueTypes {
 };
 
 const char *element_TypeNames(int type);
+ValueTypes element_NameToType(const char *type);
 
 class ObjectDef;
 class Value;
