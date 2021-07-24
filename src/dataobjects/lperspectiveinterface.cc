@@ -281,6 +281,7 @@ int PerspectiveNode::GetStatus()
 	return NodeBase::GetStatus();
 }
 
+/*! Set transform based on node values. */
 int PerspectiveNode::UpdateTransform()
 {
 	NodeProperty *inprop = FindProperty("in");
