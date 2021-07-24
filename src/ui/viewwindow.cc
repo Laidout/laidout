@@ -1465,6 +1465,40 @@ int LaidoutViewport::PlopData(LaxInterfaces::SomeData *ndata,char nearmouse)
 	return 1;
 }
 
+/*! Insert d at specific location oc. Will fail if oc is out of bounds, other than bottom most index.
+ * oc must be an existing location, or just after final location of context.
+ * Return 0 for failure, 1 for success.
+ */
+int LaidoutViewport::PlopDataAt(LaxInterfaces::SomeData *data, LaxInterfaces::ObjectContext *oc, bool clear_selection, bool add_to_selection)
+{
+	if (!data) return 0;
+
+	VObjContext noc;
+	noc.Set(oc);
+
+	int where = noc.context.pop();
+
+	Group *parent = dynamic_cast<Group*>(getanObject(noc.context,0,-1));
+	if (!parent) return 0; //context-1 had to be a Group!
+
+	if (where > parent->n()) return 0;
+
+	int c = parent->push(data);
+	noc.context.push(c);
+	noc.SetObject(data);
+
+	curobj = noc;
+
+	if (clear_selection) SetSelection(nullptr);
+	if (add_to_selection) selection->AddNoDup(&noc, -1);
+
+	laidout->notifyDocTreeChanged(this,TreeObjectAdded, curobjPage(), -1);
+	needtodraw=1;
+	
+	return c;
+}
+
+
 //! Delete curobj or current selection.
 /*! In addition to checking in, also removes object(s) from the document.
  *
@@ -2079,7 +2113,7 @@ int LaidoutViewport::nextObject(VObjContext *oc,int inc)//inc=0
  *
  * If object is not found, then return 0, despite whatever place.n is.
  */
-int LaidoutViewport::locateObject(LaxInterfaces::SomeData *d,FieldPlace &place)
+int LaidoutViewport::locateObject(LaxInterfaces::SomeData *d, FieldPlace &place)
 {
 	place.flush();
 
@@ -5334,6 +5368,16 @@ int ViewWindow::SelectTool(int id)
 	return c;
 }
 
+int ViewWindow::SetAsCurrentTool(anInterface *interf)
+{
+	int status = ViewerWindow::SetAsCurrentTool(interf);
+	if (!status) return 0;
+
+	int ii = toolselector->GetItemIndex(interf->Name());
+	toolselector->SelectIndex(ii);
+
+	return 1;
+}
 
 Laxkit::ShortcutHandler *ViewWindow::GetShortcuts()
 {

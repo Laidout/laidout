@@ -3524,18 +3524,33 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 
 		return 0;
 
-	} else if (!strcmp(mes,"setpropdouble") || !strcmp(mes,"setpropint") || !strcmp(mes,"setpropstring") || !strcmp(mes,"setpropfile")) {
+	} else if (!strcmp(mes,"setpropdouble") 
+			|| !strcmp(mes,"setpropint")
+			|| !strcmp(mes,"setpropstring")
+			|| !strcmp(mes,"setpropfile")
+			|| !strcmp(mes,"setpropvec2")
+			|| !strcmp(mes,"setpropvec3")
+			|| !strcmp(mes,"setpropquat")
+			) {
 		if (!nodes || lasthover<0 || lasthover>=nodes->nodes.n || lasthoverprop<0
 				|| lasthoverprop >= nodes->nodes.e[lasthover]->properties.n) return 0;
 
-        const SimpleMessage *s = dynamic_cast<const SimpleMessage*>(data);
+		int type = VALUE_None;
+		if      (!strcmp(mes,"setpropdouble")) type = VALUE_Real;
+		else if (!strcmp(mes,"setpropint"))    type = VALUE_Int;
+		else if (!strcmp(mes,"setpropstring")) type = VALUE_String;
+		else if (!strcmp(mes,"setpropfile"))   type = VALUE_File;
+		else if (!strcmp(mes,"setpropvec2"))   type = VALUE_Flatvector;
+		else if (!strcmp(mes,"setpropvec3"))   type = VALUE_Spacevector;
+		else if (!strcmp(mes,"setpropquat"))   type = VALUE_Quaternion;
+
+		const SimpleMessage *s = dynamic_cast<const SimpleMessage*>(data);
 
 		NodeBase *node = nodes->nodes.e[lasthover];
 		NodeProperty *prop = node->properties.e[lasthoverprop];
 
 		const char *str = s->str;
 		char *sstr = NULL;
-		double d = 0;
 		LineEdit *e = dynamic_cast<LineEdit*>(viewport->GetInputBox());
 		
 		if (s->info1 == -1) {
@@ -3555,7 +3570,14 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 					if (node->properties.e[pi]->IsEditable()) {
 						v = node->properties.e[pi]->GetData();
 						if (!v) continue;
-						if (v->type()!=VALUE_Real && v->type()!=VALUE_Int && v->type()!=VALUE_String && v->type()!=VALUE_File) continue;
+						if (   v->type() != VALUE_Real
+						    && v->type() != VALUE_Int 
+						    && v->type() != VALUE_String 
+						    && v->type() != VALUE_File
+						    && v->type() != VALUE_Flatvector
+						    && v->type() != VALUE_Spacevector
+						    && v->type() != VALUE_Quaternion
+						    ) continue;
 						break;
 					}
 				}
@@ -3567,7 +3589,14 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 					if (node->properties.e[pi]->IsEditable()) {
 						v = node->properties.e[pi]->GetData();
 						if (!v) continue;
-						if (v->type()!=VALUE_Real && v->type()!=VALUE_Int && v->type()!=VALUE_String && v->type()!=VALUE_File) continue;
+						if (   v->type() != VALUE_Real
+						    && v->type() != VALUE_Int 
+						    && v->type() != VALUE_String 
+						    && v->type() != VALUE_File
+						    && v->type() != VALUE_Flatvector
+						    && v->type() != VALUE_Spacevector
+						    && v->type() != VALUE_Quaternion
+						    ) continue;
 						break;
 					}
 				}
@@ -3583,43 +3612,60 @@ int NodeInterface::Event(const Laxkit::EventData *data, const char *mes)
 				viewport->ClearInputBox();
 				EditProperty(lasthover, lasthoverprop);
 				setold = true;
-
 			}
+
 			if (!setold) return 0;
 		}
 
-		 //parse the new data
-		bool isint    = (strcmp(mes, "setpropint")    == 0);
-		bool isdouble = (strcmp(mes, "setpropdouble") == 0);
-		bool isstring = (strcmp(mes, "setpropstring") == 0);
-		// bool isfile   = (strcmp(mes, "setpropfile")   == 0);
+		//parse the new data
+		if (type == VALUE_Int || type == VALUE_Real || type == VALUE_Flatvector || type == VALUE_Spacevector || type == VALUE_Quaternion) {
+			double d[4];
+			int n = DoubleListAttribute(str,d,4);
 
-		if (isint || isdouble) {
-			char *endptr = nullptr;
-			d = strtod(str, &endptr);
-			if (endptr == str) {
+			int err = 0;
+			if (type == VALUE_Real) {
+				if (n == 1) {
+					DoubleValue *v = dynamic_cast<DoubleValue*>(prop->data);
+					v->d = d[0];
+				} else err = 1;
+
+			} else if (type == VALUE_Int) {
+				if (n == 1) {
+					IntValue *v = dynamic_cast<IntValue*>(prop->data);
+					v->i = d[0];
+				} else err = 1;
+
+			} else if (type == VALUE_Flatvector) {
+				if (n == 2) {
+					FlatvectorValue *v = dynamic_cast<FlatvectorValue*>(prop->data);
+					v->v.set(d);
+				} else err = 1;
+
+			} else if (type == VALUE_Spacevector) {
+				if (n == 3) {
+					SpacevectorValue *v = dynamic_cast<SpacevectorValue*>(prop->data);
+					v->v.set(d);
+				} else err = 1;
+
+			} else if (type == VALUE_Quaternion) {
+				if (n == 4) {
+					QuaternionValue *v = dynamic_cast<QuaternionValue*>(prop->data);
+					v->v.set(d);
+				} else err = 1;
+			}
+
+			if (err) {
 				PostMessage(_("Bad value."));
 				delete[] sstr;
 				return 0;
-			}			
-
-			if (isdouble) {
-				DoubleValue *v = dynamic_cast<DoubleValue*>(prop->data);
-				v->d = d;
-
-			} else {
-				IntValue *v = dynamic_cast<IntValue*>(prop->data);
-				v->i = d;
 			}
 
 		} else {
-			// if (isblank(str)) { delete[] sstr; return  0; } //don't set if blank ? really?
-			
-			if (isstring) {
+			if (type == VALUE_String) {
 				StringValue *v = dynamic_cast<StringValue*>(prop->data);
 				v->Set(str);
 
-			} else if (!strcmp(mes,"setpropfile")) {
+			} else if (type == VALUE_File) {
 				FileValue *v = dynamic_cast<FileValue*>(prop->data);
 				v->Set(str);
 			}
@@ -4544,19 +4590,48 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 				dp->textout(node->x+node->width-th, node->y+prop->y+prop->height/2, extra, -1, LAX_RIGHT|LAX_VCENTER);
 
 			} else if (v && (v->type()==VALUE_Flatvector || v->type()==VALUE_Spacevector || v->type()==VALUE_Quaternion)) {
-				 //for now just text out the v
-				dp->NewFG(&nodes->colors->fg);
-				if (v->type()==VALUE_Flatvector) {
-					FlatvectorValue *vv = dynamic_cast<FlatvectorValue*>(v);
-					sprintf(extra, "%s: (%.2g, %.2g)", prop->Label(), vv->v.x, vv->v.y);
-				} else if (v->type()==VALUE_Spacevector) {
-					SpacevectorValue *vv = dynamic_cast<SpacevectorValue*>(v);
-					sprintf(extra, "%s: (%.2g, %.2g, %.2g)", prop->Label(), vv->v.x, vv->v.y, vv->v.z);
-				} else if (v->type()==VALUE_Quaternion) {
-					QuaternionValue *vv = dynamic_cast<QuaternionValue*>(v);
-					sprintf(extra, "%s: (%.2g, %.2g, %.2g, %.2g)", prop->Label(), vv->v.x, vv->v.y, vv->v.z, vv->v.w);
+				// dp->NewFG(&nodes->colors->fg);
+
+			
+				if (prop->IsEditable()) {
+					//draw:  Name: [ x | y ]
+					dp->NewFG(&nodes->colors->fg_edit);
+					double w = dp->textout(node->x+prop->x+th, node->y+prop->y+prop->height/2, prop->Label(), -1, LAX_LEFT|LAX_VCENTER);
+					double xx = node->x+prop->x+w+th*1.5;
+					dp->NewFG(coloravg(&col, &nodes->colors->bg_edit, &nodes->colors->fg_edit));
+					dp->NewBG(&nodes->colors->bg_edit);
+					dp->drawRoundedRect(xx, node->y+prop->y+th/4, node->width-th*2-w, prop->height*.66, th/3, false, th/3, false, 2);
+
+					if (v->type()==VALUE_Flatvector) {
+						FlatvectorValue *vv = dynamic_cast<FlatvectorValue*>(v);
+						sprintf(extra, "%.2g, %.2g", vv->v.x, vv->v.y);
+					} else if (v->type()==VALUE_Spacevector) {
+						SpacevectorValue *vv = dynamic_cast<SpacevectorValue*>(v);
+						sprintf(extra, "%.2g, %.2g, %.2g", vv->v.x, vv->v.y, vv->v.z);
+					} else if (v->type()==VALUE_Quaternion) {
+						QuaternionValue *vv = dynamic_cast<QuaternionValue*>(v);
+						sprintf(extra, "%.2g, %.2g, %.2g, %.2g", vv->v.x, vv->v.y, vv->v.z, vv->v.w);
+					}
+
+					dp->NewFG(&nodes->colors->fg_edit);
+					dp->textout(xx + (node->width-th*2-w)/2, node->y+prop->y+prop->height/2, extra, -1, LAX_HCENTER|LAX_VCENTER);
+					
+				} else {
+					if (v->type()==VALUE_Flatvector) {
+						FlatvectorValue *vv = dynamic_cast<FlatvectorValue*>(v);
+						sprintf(extra, "%s: (%.2g, %.2g)", prop->Label(), vv->v.x, vv->v.y);
+					} else if (v->type()==VALUE_Spacevector) {
+						SpacevectorValue *vv = dynamic_cast<SpacevectorValue*>(v);
+						sprintf(extra, "%s: (%.2g, %.2g, %.2g)", prop->Label(), vv->v.x, vv->v.y, vv->v.z);
+					} else if (v->type()==VALUE_Quaternion) {
+						QuaternionValue *vv = dynamic_cast<QuaternionValue*>(v);
+						sprintf(extra, "%s: (%.2g, %.2g, %.2g, %.2g)", prop->Label(), vv->v.x, vv->v.y, vv->v.z, vv->v.w);
+					}
+
+					dp->NewFG(&nodes->colors->fg_edit);
+					dp->textout(node->x+prop->x+th, node->y+prop->y+prop->height/2, extra, -1, LAX_LEFT|LAX_VCENTER);
 				}
-				dp->textout(node->x+prop->x+th, node->y+prop->y+prop->height/2, extra, -1, LAX_LEFT|LAX_VCENTER);
+
 
 			} else if (v && (v->type()==VALUE_String || v->type() == VALUE_File)) {
 				dp->NewFG(&nodes->colors->fg);
@@ -5452,7 +5527,9 @@ int NodeInterface::EditProperty(int nodei, int propertyi)
 	Value *v=dynamic_cast<Value*>(prop->GetData());
 	if (!v) return 2;
 
-	if (v->type()!=VALUE_Real && v->type()!=VALUE_Int && v->type()!=VALUE_String && v->type()!=VALUE_File) return 3;
+	if (v->type()!=VALUE_Real && v->type()!=VALUE_Int && v->type()!=VALUE_String && v->type()!=VALUE_File
+		&& v->type() != VALUE_Flatvector && v->type() != VALUE_Spacevector && v->type() != VALUE_Quaternion)
+		return 3;
 
 	flatpoint ul= nodes->m.transformPoint(flatpoint(node->x, node->y+prop->y));
 	flatpoint lr= nodes->m.transformPoint(flatpoint(node->x+node->width, node->y+prop->y+prop->height));
@@ -5468,13 +5545,27 @@ int NodeInterface::EditProperty(int nodei, int propertyi)
 	bounds.addtobounds(lr);
 
 	char valuestr[200];
+	const char *msg = nullptr;
 	if (v->type() != VALUE_String && v->type() != VALUE_File) v->getValueStr(valuestr, 199);
+	if (v->type() == VALUE_Flatvector || v->type() == VALUE_Spacevector || v->type() == VALUE_Quaternion) {
+		valuestr[strlen(valuestr)-1] = '\0';
+		memmove(valuestr, valuestr+1, strlen(valuestr));
+	}
+
+	switch (v->type()) {
+		case VALUE_String: msg = "setpropstring"; break;
+		case VALUE_File: msg = "setpropfile"; break;
+		case VALUE_Int: msg = "setpropint"; break;
+		case VALUE_Real: msg = "setpropdouble"; break;
+		case VALUE_Flatvector: msg = "setpropvec2"; break;
+		case VALUE_Spacevector: msg = "setpropvec3"; break;
+		case VALUE_Quaternion: msg = "setpropquat"; break;
+	}
 
 	viewport->SetupInputBox(object_id, NULL,
 			v->type()==VALUE_String ? dynamic_cast<StringValue*>(v)->str
 				: v->type() == VALUE_File ? dynamic_cast<FileValue*>(v)->filename : valuestr,
-			v->type()==VALUE_String ? "setpropstring"
-				: v->type() == VALUE_File ? "setpropfile" : (v->type()==VALUE_Int ? "setpropint" : "setpropdouble"),
+			msg,
 			bounds,
 			NULL, true);
 
@@ -5511,7 +5602,8 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		Value *v=dynamic_cast<Value*>(prop->data);
 		if (!v) return 0;
 
-		if (v->type()==VALUE_Real || v->type()==VALUE_Int || v->type()==VALUE_String || v->type()==VALUE_File) {
+		if (v->type()==VALUE_Real || v->type()==VALUE_Int || v->type()==VALUE_String || v->type()==VALUE_File
+			|| v->type() == VALUE_Flatvector || v->type() == VALUE_Spacevector || v->type() == VALUE_Quaternion) {
 
 			if (v->type()==VALUE_File && x > node->x + prop->x + prop->width - prop->height) {
 				app->rundialog(new FileDialog(NULL,"GetFile",_("Get filename..."),ANXWIN_REMEMBER|ANXWIN_CENTER,0,0,0,0,0,
@@ -6867,19 +6959,19 @@ int NodeInterface::PerformAction(int action)
 		NodeBase *sel = nullptr;
 		if (selected.n) sel = selected.e[0];
 		
-		// i->UseThisObject(selection->e(0));
-		// i->owner = this;
-		// child = i;
-		// viewport->Push(i,-1,0);
-		// ----
-
 		if (originating_data) interf->UseThis(originating_data);
-		if (sel) interf->UseThis(sel);
+		else {
+			//use top level nodes object to prep the interface
+			if (grouptree.n) interf->UseThis(grouptree.e[0]);
+			else interf->UseThis(nodes);
+		}
+		if (sel) interf->UseThis(sel); //if node is an ObjectFilterNode, this makes it select within it
 		inc_count();
 		ViewerWindow *viewer=dynamic_cast<ViewerWindow *>(curwindow->win_parent);
 		viewer->PopInterface(this); //makes sure viewer->curtool is maintained
 		// viewport->Pop(this);
 		viewport->Push(interf,-1,1);
+		viewer->SetAsCurrentTool(interf);
 		dec_count();
 
 		return 0;

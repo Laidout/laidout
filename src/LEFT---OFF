@@ -56,6 +56,7 @@ memory hole in ExportDialog.. open export, cycle through formats, quit
 memory hole in reimpose .. reimposed 5 page booklet
 memory hole when graphical shell activated
 memory hole do laidout -n letter, split a window, then quit. undeleted Objects remain!
+DONE memory hole, open up examples/nodes-asciichart.laidout, then quit. 1 object remains
 DONE memory hole in calculator
 DONE memory hole: start blank, exit. 3 remain!!
 DONE memory hole helpwindow -> probably something to do with ShortcutWindow and ShortcutTreeSelector not refcounting as expected
@@ -907,16 +908,38 @@ from big import:
   DONE export directory should default to last loaded file
   DONE selecting ranges
 
-ObjectFilter objectfilters object filter:
-  bug: did something that made object filter totally disappear.. not sure what
+MirrorInterface: LineGuideInterface
+  ---0.099:
+  merge widget, near and outside p1. show merge distance as max(actual, th/2)
+  label editing
+  colors
+  double click to force p1 or p2 to be under mouse when p1 or p2 way off screen?
+ 
+ObjectFilter objectfilters object filter: objectfilterinterface:
+  memory hole: going from nodes to filter editor, objects remain on quit
+  bug: muting and unmuting many times causing endless loop
+  bug: muting is not rendered in node view.. and can't toggle in node view
+
+  DONE bug: object tool up, you can somehow click through to path tool, then crash on escape
+  DONE bug: select filter editor tool, does not use currently selected data
+  DONE need menu options: Apply filters (currently crashes)
+  DONE when jumping between tools, tool icon needs to update
+  DONE if mirror plane is node connected, should ask if you want to edit
+  DONE clicking the eye should only toggle, not select the node
+  DONE bug: 2 mirrors, eye toggle second, apparently no effect until you mess with the other: no PropagateUpdate??
+  DONE bug: should auto select correct node when you jump to node view
+  DONE bug: won't activate when clicking from node interface
+  DONE need way to go from node interface to interactive
+
+  ---0.099:
+  menu option: Create filtered copy
+  implement unlink if connections locked
+  implement X for get rid of filter
+  implement easy menu driven adding of filters, with possible rearrange order of filters
 
   need a way to easily apply one object's filter to another object
-  need menu options:
-    Create filtered copy
-    Apply filters
   clean up filefilter.h definition to allow explicit declaration of ObjectFilter in DrawableObject
-  anchoring to other objects
-  DONE need way to go from node interface to interactive
+  filter to anchor to other objects, migrate the old anchor stuff to nodes
 
 Perspective perspective:
   map() should be able to map from a different base
@@ -1196,6 +1219,11 @@ node editor node interface NodeInterface nodes: node: interface:
       anchor nodes to mostly replace alignment rules
       anchor point transforms
 	mirror node
+	  merge
+	  filter interface icons crunched when interf has small name (like Mirror)
+	  filter interface buttons not working
+	  edit with filter interface from node view not working
+	  crash on exit after filter interface
 	boolean pathops node
     "Object Properties".. maybe have a string field with list of desired properties? Array of props that show enum but output value?
     have a dangerous "Object Function" node? needs to dup in, then run function
@@ -1379,6 +1407,9 @@ plugins:
     how to specify plugin is built at all
     how to specify plugin is compiled in, or exists as .so
     plugins (c++) vs extensions (scripted)
+
+color fonts issue #6 svg otf svg
+  see this freetype gsoc 2019 project: https://www.mail-archive.com/freetype-devel@nongnu.org/msg11459.html
 
 captioninterface CaptionInterface captiondata CaptionData
   default text size is super small
@@ -2145,6 +2176,7 @@ global Laidout settings:
 
 pagemarkerinterface:
   option to lock label size to real space? make export contact sheets a little prettier in some cases
+  right click option to turn off? sometimes it overrides other interface clicks, mouseovers are confusing
 
 page thumbnail should be rational, ie image should be whole page, not just contents+transform,
      and thumb transform makes image dims to page coords
@@ -2283,9 +2315,6 @@ need to implement DRAW_Hires for all interfaces that default to preview renders.
 
 mousemove decorations shouldn't change when an interface absorbs one
 
-color fonts issue #6 svg otf svg
-  see this freetype gsoc 2019 project: https://www.mail-archive.com/freetype-devel@nongnu.org/msg11459.html
-
 dataobjects/datafactory should somehow combine with stylemanager.. seems redundant as is
  
 raster paint layers, mypaint?
@@ -2417,6 +2446,9 @@ load document, should load images on display only(done), or create previews in b
 guides:
   snap guides to objects
   snap objects edges to various things
+  straigt lines at any angle
+  grids
+  polar grids
 
 Spread Editor:
   need to make pagelocation ref count pages, or (need to anyway) check all known views for errant page refs after delete pages
@@ -3010,6 +3042,7 @@ Current deficiencies:
   Being Linux only limits user base, and thus also limits user testing
   no color management
   raster/paint/editable image layers, or stroke based on non-destructive vector paths would help
+  too many complex custom systems is not attractive to new devs
 Considerations:
   Pure svg/pdf vector graphics is limiting, current custom format is very flexible
   Game engine-esque, real time animation and 3d tools are rising in importance as everyone aquires powerful cheap devices
@@ -3161,4 +3194,5 @@ DONE a built in global variable: current frame/time
 DONE bug: ImagePatch doing anything with it causes crash.. before crash, image distorts incorrectly
 DONE get splash image working..
 DONE have an actual splash image shown
+DONE bug: expressions are broken again!!
 

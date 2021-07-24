@@ -160,6 +160,7 @@ otherobjs= \
 	dataobjects/limageinterface.o \
 	dataobjects/lgradientdata.o \
 	dataobjects/lperspectiveinterface.o \
+	dataobjects/lmirrorinterface.o \
 	dataobjects/lpathsdata.o \
 	dataobjects/mysterydata.o \
 	dataobjects/lsomedataref.o \

@@ -37,6 +37,7 @@ objs= \
 	lsomedataref.o \
 	lengraverfilldata.o \
 	lperspectiveinterface.o \
+	lmirrorinterface.o \
 	lcaptiondata.o \
 	ltextonpath.o \
 	lvoronoidata.o \

@@ -18,8 +18,10 @@
 #include "../nodes/nodes.h"
 #include "drawableobject.h"
 #include "lpathsdata.h"
-#include "lperspectiveinterface.h"
 #include "../language.h"
+
+#include "lperspectiveinterface.h"
+#include "lmirrorinterface.h"
 
 #include <lax/interfaces/somedatafactory.h>
 #include <lax/anxapp.h>
@@ -39,6 +41,7 @@ namespace Laidout {
  * Class for a component of an ObjectFilter that has an interface usable in main viewport.
  *
  * Derived classes need to act like a passthrough when IsMuted() in their Update() function.
+ * There MUST be at least two specific properties: property 0 must be "in", and property.n-1 must be "out".
  */
 
 ObjectFilterNode::ObjectFilterNode()
@@ -54,19 +57,14 @@ ObjectFilterNode::~ObjectFilterNode()
 //------------------------ ObjectFilter ------------------------
 
 /*! \class ObjectFilter
- * Container for filter nodes that transform a DrawableObject.
+ * Top level container for filter nodes that transform a DrawableObject.
  * These are meant to be owned by either a DrawableObject or a Resource (via parent variable).
  * If neither of these, it is a free, local object.
  * ObjectFilter is implemented as a NodeGroup, with a few convenience functions
  * specific to operating on parent objects.
  *
- * This could be blur, contrast, saturation, distort, etc. 
- *
- * This could also be a adapted to be a dynamic
- * filter that depends on some resource, such as a global integer resource
- * representing the current frame, that might
- * adjust an object's matrix based on keyframes, for instance.
- *
+ * ObjectFilter might contain, for instance, ObjectFilterNodes to transform
+ * a DrawableObject to something else.
  */
 
 
@@ -255,19 +253,16 @@ LaxInterfaces::anInterface *ObjectFilter::AlternateInterface()
 
 //------------------------ ObjectFilterNode ------------------------
 
-Laxkit::anObject *newPerspectiveNode(int p, Laxkit::anObject *ref)
-{
-    return new PerspectiveNode();
-}
+Laxkit::anObject *newPerspectiveNode(int p, Laxkit::anObject *ref) { return new PerspectiveNode(); }
+Laxkit::anObject *newMirrorNode(int p, Laxkit::anObject *ref)      { return new MirrorPathNode(); }
 
 /*! Register nodes for DrawableObject filters.
  * This is called from SetupDefaultNodeTypes().
  */
 int RegisterFilterNodes(Laxkit::ObjectFactory *factory)
 {
-     //--- PerspectiveNode
-    factory->DefineNewObject(getUniqueNumber(), "Filters/PerspectiveFilter",    newPerspectiveNode,  NULL, 0);
-
+    factory->DefineNewObject(getUniqueNumber(), "Filters/PerspectiveFilter", newPerspectiveNode,  NULL, 0);
+    factory->DefineNewObject(getUniqueNumber(), "Filters/MirrorFilter",      newMirrorNode,  NULL, 0);
 
 	return 0;
 }

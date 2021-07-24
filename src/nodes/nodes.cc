@@ -261,7 +261,7 @@ VectorNode::VectorNode(int dimensions, double *initialvalues)
 		AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, names[c],
 					new DoubleValue(initialvalues ? initialvalues[c] : 0), 1, labels[c])); 
 	}
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, _("V"), out,1)); 
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "V", out,1, _("V"),nullptr,0,false));
 }
 
 VectorNode::~VectorNode()
@@ -3050,7 +3050,7 @@ int ConcatNode::Update()
 		out = dynamic_cast<StringValue*>(properties.e[properties.n-1]->GetData());
 		if (!out) {
 			out = new StringValue();
-			properties.e[properties.n-1]->SetData(outset, 1);
+			properties.e[properties.n-1]->SetData(out, 1);
 		} else properties.e[properties.n-1]->Touch();
 	}
 

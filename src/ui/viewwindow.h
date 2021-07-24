@@ -170,6 +170,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	virtual const char *SetViewMode(int m,int page);
 	virtual int ViewMode(int *page);
 	virtual int PlopData(LaxInterfaces::SomeData *ndata,char nearmouse=0);
+	virtual int PlopDataAt(LaxInterfaces::SomeData *data, LaxInterfaces::ObjectContext *oc, bool clear_selection, bool add_to_selection);
 	virtual void postmessage(const char *mes);
 	virtual int DeleteObject();
 	virtual int DeleteObject(LaxInterfaces::ObjectContext *oc);
@@ -257,6 +258,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 	virtual void SetParentTitle(const char *str);
 	virtual void setCurdoc(Document *newdoc);
 	virtual char *CurrentDirectory();
+	virtual int SetAsCurrentTool(LaxInterfaces::anInterface *interf);
 
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);

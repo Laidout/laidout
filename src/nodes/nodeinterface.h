@@ -630,7 +630,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 
 	Laxkit::ObjectFactory *node_factory; //usually, convenience cast to return of NodeBase::NodeFactory()
 
-	Nodes *nodes; //top of grouptree
+	Nodes *nodes; //current group
 	NodeColors *default_colors;
 
 	Laxkit::MenuInfo *node_menu;

@@ -159,9 +159,10 @@ Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 			menu->AddItem(_("Edit filter nodes..."), GIA_Edit_Filter_Nodes);
 			if (obj->filter) {
 				menu->AddItem(_("Interactive filters..."), GIA_Filter_Editor);
+				menu->AddItem(_("Update filter"), GIA_Refresh_Filter);
+				menu->AddSep();
 				menu->AddItem(_("Remove filter"), GIA_Remove_Filter);
 				menu->AddItem(_("Apply filter"), GIA_Apply_Filter);
-				menu->AddItem(_("Update filter"), GIA_Refresh_Filter);
 
 				// menu->SubMenu(_("Resources"));
 				// menu->AddItem(_("Create resource from filter"), GIA_Resourceify_Filter);
@@ -1078,6 +1079,7 @@ int GroupInterface::PerformAction(int action)
 		viewer->PopInterface(this); //makes sure viewer->curtool is maintained
 		// viewport->Pop(this);
 		viewport->Push(i,-1,1);
+		viewer->SetAsCurrentTool(i);
 		dec_count();
 		PostMessage(_("Edit filters"));
 
@@ -1096,13 +1098,25 @@ int GroupInterface::PerformAction(int action)
 
 		DrawableObject *obj = dynamic_cast<DrawableObject*>(selection->e(0)->obj);
 		if (!obj || !obj->filter) return 0;
-		DrawableObject *fobj = dynamic_cast<DrawableObject*>(obj->filter)->FinalObject();
+		DrawableObject *fobj = dynamic_cast<DrawableObject*>(dynamic_cast<ObjectFilter*>(obj->filter)->FinalObject());
 		if (!fobj) {
 			PostMessage(_("Filter does not produce an object!"));
 			return 0;
 		}
-		// need to replace in tree and reparent children
-		//*** 
+
+		// need to replace object and its children with the filtered object
+		
+		//Delete current object
+		LaidoutViewport *vp = ((LaidoutViewport *)viewport);
+		VObjContext context;
+		context.Set(selection->e(0));
+		vp->DeleteObject();
+
+		//Add fobj at current context
+		vp->PlopDataAt(fobj, &context, true, true);
+
+		RemapBounds();
+
 		needtodraw = 1;
 		return 0;
 

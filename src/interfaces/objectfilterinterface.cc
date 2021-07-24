@@ -23,6 +23,7 @@
 
 
 #include "objectfilterinterface.h"
+#include "../ui/viewwindow.h"
 
 #include <lax/interfaces/somedatafactory.h>
 #include <lax/interfaces/interfacemanager.h>
@@ -106,7 +107,7 @@ anInterface *ObjectFilterInterface::duplicate(anInterface *dup)
 	return anInterface::duplicate(dup);
 }
 
-//! Use the object at oc if it is an ObjectFilterData.
+//! Use the object at oc if it is a DrawableObject. oc is duplicated.
 int ObjectFilterInterface::UseThisObject(ObjectContext *oc)
 {
 	if (!oc) return 0;
@@ -155,6 +156,20 @@ int ObjectFilterInterface::UseThis(anObject *nobj, unsigned int mask)
 
 	ObjectFilter *f = dynamic_cast<ObjectFilter *>(nobj);
 	if (f != NULL) {
+		// find objectcontext for filter parent
+		if (f->parent) {
+			DrawableObject *d = dynamic_cast<DrawableObject*>(f->parent);
+			if (d) {
+				VObjContext oc;
+				oc.SetObject(d);
+				// *** crash magnet here, future self: do something responsible instead
+				if (((LaidoutViewport*)viewport)->locateObject(d, oc.context) > 0) {
+					//found the object in viewport, thank goodness.. *** if not, search in whole document to update the viewport?
+					UseThisObject(&oc);
+				}
+			}
+		}
+		
 		if (data && data->filter != f) {
 			filternodes.flush();
 			f->FindInterfaceNodes(filternodes);
@@ -196,6 +211,12 @@ ObjectContext *ObjectFilterInterface::Context()
  */
 int ObjectFilterInterface::InterfaceOn()
 {
+	if (!dataoc) {
+		Selection *sel = viewport->GetSelection();
+		if (sel && sel->n() > 0) {
+			UseThisObject(sel->e(0));
+		}
+	}
 	showdecs=1;
 	needtodraw=1;
 	return 0;
@@ -309,7 +330,7 @@ int ObjectFilterInterface::Refresh()
 			 //draw:
 			 //   Name
 			 //   [eyeball] [nodes] [remove]
-			width = 2*th;
+			width = 6*th;
 			w = dp->textextent(filternodes.e[c]->Label(),-1, NULL,NULL);
 			if (w > width) width = w;
 			width += th;
@@ -344,14 +365,14 @@ int ObjectFilterInterface::Refresh()
 
 
 			 //remove
-			if (hover == OFI_Remove && hoverindex == c) {
-				dp->NewFG(1.,0.,0.);
-				dp->drawcircle(x + width-th, th*1.75, th/2, 1);
-				dp->NewFG(1.,1.,1.);
+			// if (hover == OFI_Remove && hoverindex == c) {
+			// 	dp->NewFG(1.,0.,0.);
+			// 	dp->drawcircle(x + width-th, th*1.75, th/2, 1);
+			// 	dp->NewFG(1.,1.,1.);
 
-			} else dp->NewFG(curwindow->win_themestyle->fg);
+			// } else dp->NewFG(curwindow->win_themestyle->fg);
 
-			dp->drawthing(x+width - th, th*1.75, th/3,th/3, 0, THING_X);
+			// dp->drawthing(x+width - th, th*1.75, th/3,th/3, 0, THING_X);
 
 			x += width;
 		}
@@ -383,7 +404,7 @@ int ObjectFilterInterface::scan(int x, int y, unsigned int state, int *nhoverind
 	for (int c=0; c<filternodes.n; c++) {
 		 //   Name
 		 //   [eyeball] [remove]
-		width = 2*th;
+		width = 6*th;
 		w = dp->textextent(filternodes.e[c]->Label(),-1, NULL,NULL);
 		if (w > width) width = w;
 		width += th;
@@ -393,7 +414,7 @@ int ObjectFilterInterface::scan(int x, int y, unsigned int state, int *nhoverind
 			if (y > offset.y + 1.25*th) {
 				if (x < offset.x + xx + 1.5*th) return OFI_Mute;
 				if (x > offset.x + xx + width/2 - th && x < offset.x + xx + width/2 + th) return OFI_Edit_Nodes;
-				if (x > offset.x + xx + width - 2*th) return OFI_Remove;
+				// if (x > offset.x + xx + width - 2*th) return OFI_Remove;
 			}
 			return OFI_On_Block;
 		}
@@ -408,9 +429,9 @@ int ObjectFilterInterface::scan(int x, int y, unsigned int state, int *nhoverind
 
 int ObjectFilterInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit::LaxMouse *d) 
 {
-
 	int nhoverindex = -1;
 	int nhover = scan(x,y,state, &nhoverindex);
+	if (nhover == OFI_None) return 1;
 
 	buttondown.down(d->id, LEFTBUTTON, x,y, nhover, nhoverindex);
 
@@ -431,7 +452,7 @@ int ObjectFilterInterface::ActivateTool(int index)
 
 	ObjectFilterNode *fnode = filternodes.e[index];
 	anInterface *i = fnode->ObjectFilterInterface()->duplicate(NULL);
-	i->Id("duptool");
+	i->Id("ObjectFilterDup");
 	//NodeProperty *in = fnode->FindProperty("in");
 	//NodeProperty *out = fnode->FindProperty("out");
 
@@ -454,6 +475,8 @@ int ObjectFilterInterface::ActivateTool(int index)
 
 int ObjectFilterInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *d) 
 {
+	if (!buttondown.isdown(d->id, LEFTBUTTON)) return 1;
+
 	int hovered = -1, hoveredindex = -1;
 	int dragged = buttondown.up(d->id,LEFTBUTTON, &hovered, &hoveredindex);
 	//int nhoverindex = -1;
@@ -485,9 +508,11 @@ int ObjectFilterInterface::LBUp(int x,int y,unsigned int state, const Laxkit::La
 
 	} else if (hovered == OFI_Mute) {
 		if (!dragged) {
-			current = hoveredindex;
-			if (current >= 0) {
-				filternodes.e[current]->Mute(!filternodes.e[current]->IsMuted());
+			if (hoveredindex >= 0) {
+				filternodes.e[hoveredindex]->Mute(!filternodes.e[hoveredindex]->IsMuted());
+				filternodes.e[hoveredindex]->Update();
+				filternodes.e[hoveredindex]->PropagateUpdate();
+				Modified();
 				needtodraw=1;
 			}
 		}
@@ -619,22 +644,21 @@ int ObjectFilterInterface::PerformAction(int action)
 			obj->SetFilter(filter, 0);
 		}
 
-		NodeInterface *i = nullptr;
 
 
-		// //---------------
 		// Replace ourself with a NodeInterface
-		i = new NodeInterface(NULL,-1,dp);
+		NodeInterface *i = new NodeInterface(NULL,-1,dp);
 		i->UseThis(filter);
 		ObjectFilterInfo *info = new ObjectFilterInfo(dataoc, dynamic_cast<DrawableObject*>(dataoc->obj), nullptr, current >= 0 ? filternodes.e[current] : nullptr);
 		i->SetOriginatingData(info, 1);
 		filter->dec_count();
 		inc_count();
 		ViewerWindow *viewer = dynamic_cast<ViewerWindow *>(curwindow->win_parent);
+		NodeBase *cur_node = (current >= 0 ? filternodes.e[current] : nullptr); //pop clears nodes, so grab beforehand
 		viewer->PopInterface(this); //makes sure viewer->curtool is maintained
-		// viewport->Pop(this);
 		viewport->Push(i,-1,1);
-		if (current >= 0) i->SelectNode(filternodes.e[current], true);
+		viewer->SetAsCurrentTool(i);
+		if (cur_node) i->SelectNode(cur_node, true);
 		dec_count();
 		return 0;
 	}
