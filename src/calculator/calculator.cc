@@ -1496,7 +1496,7 @@ int LaidoutCalculator::Evaluate(const char *in, int len, Value **value_ret, Erro
 		answer=evalLevel(0);
 		if (calcerror) break;
 
-		if (answer && answer->type()==VALUE_LValue) {
+		if (run_mode != RUN_NameCatalog && answer && answer->type()==VALUE_LValue) {
 			Value *v=dynamic_cast<LValue*>(answer)->Resolve();
 			answer->dec_count();
 			if (calcerror || !v) {
