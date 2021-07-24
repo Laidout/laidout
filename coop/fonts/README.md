@@ -10,3 +10,6 @@ that the ttx utility from fonttools can parse into an OTF svg based color font.
 Note currently this is limited to stroke and fill as solid colors.
 
 
+Note that [`./asciichart.svg`](asciichart.svg) was created from the
+Laidout example file [`nodes-asciichart.laidout`](../../examples/nodes-asciichart.laidout)
+
