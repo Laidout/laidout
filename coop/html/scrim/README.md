@@ -3,8 +3,8 @@ Scrim
 Simple static html image gallery.
 
 You can use index-TEMPLATE.html in Laidout's Html Gallery exporter.
-After exporting, copy `scrim.css`, `scrim.js`, and `jquery-3.0.0.min.js` to
-the `js/` directory to the exported directory.
+After exporting, copy `scrim.css`, `scrim.js`, and `jquery-3.6.0.min.js` to
+the `js/` directory of the exported directory.
 
 
 License
