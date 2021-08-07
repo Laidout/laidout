@@ -12,8 +12,6 @@ down to major items in ../features.md.
 
 
 ------------ serious bugs to fix right now:
-bug: export, switch off current target then back on: error: missing export source!
-
 bug: home and end throw selection bounds out of whack.. try with gradient tool for instance, controls bad until reselect
 
 bug: Engraver fill, just moving mouse around is rerendering to buffer for preview
@@ -909,6 +907,7 @@ from big import:
   DONE selecting ranges
 
 MirrorInterface: LineGuideInterface
+  should be able to mirror non-paths: arbitrary objects
   ---0.099:
   merge widget, near and outside p1. show merge distance as max(actual, th/2)
   label editing
@@ -916,6 +915,7 @@ MirrorInterface: LineGuideInterface
   double click to force p1 or p2 to be under mouse when p1 or p2 way off screen?
  
 ObjectFilter objectfilters object filter: objectfilterinterface:
+  debug merge
   memory hole: going from nodes to filter editor, objects remain on quit
   bug: muting and unmuting many times causing endless loop
   bug: muting is not rendered in node view.. and can't toggle in node view
@@ -975,7 +975,8 @@ node editor node interface NodeInterface nodes: node: interface:
 	DONE MapFromRange
 	DONE MapToRange
   	DONE Invert
-  bug: expressions broken: out not at last, is yellow, Math should be imported, crashes
+  bug: expressions broken: out not at last, is yellow,
+  expressions: Math should be imported
   bug: why is captiondata preview render getting triggered every node update?
   bug: work on filter, save nodes, switch to object, load nodes, destroys proper in/out of filter
   SetTransforms if single in, should be single out
@@ -3195,4 +3196,5 @@ DONE bug: ImagePatch doing anything with it causes crash.. before crash, image d
 DONE get splash image working..
 DONE have an actual splash image shown
 DONE bug: expressions are broken again!!
+DONE bug: export, switch off current target then back on: error: missing export source!
 

@@ -1713,7 +1713,9 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgE
 
 DocumentExportConfig *SvgOutputFilter::CreateConfig(DocumentExportConfig *fromconfig)
 {
-	return new SvgExportConfig(fromconfig);
+	SvgExportConfig* conf = new SvgExportConfig(fromconfig);
+	conf->filter = this;
+	return conf;
 }
 
 //! Save the document as SVG.

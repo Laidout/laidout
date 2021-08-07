@@ -516,7 +516,9 @@ const char *PageAtlasExportFilter::Version()
 
 DocumentExportConfig *PageAtlasExportFilter::CreateConfig(DocumentExportConfig *fromconfig)
 {
-	return new PageAtlasExportConfig(fromconfig);
+	PageAtlasExportConfig* conf = new PageAtlasExportConfig(fromconfig);
+	conf->filter = this;
+	return conf;
 }
 
 //! Try to grab from stylemanager, and install a new one there if not found.

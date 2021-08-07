@@ -432,7 +432,9 @@ int createImageExportConfig(ValueHash *context,ValueHash *parameters,Value **val
 
 DocumentExportConfig *ImageExportFilter::CreateConfig(DocumentExportConfig *fromconfig)
 {
-	return new ImageExportConfig(fromconfig);
+	ImageExportConfig* conf = new ImageExportConfig(fromconfig);
+	conf->filter = this;
+	return conf;
 }
 
 //! Try to grab from stylemanager, and install a new one there if not found.

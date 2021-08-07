@@ -133,6 +133,8 @@ class DocumentExportConfig : public Value
 						 int l,int s,int e,PaperGroup *group);
 	virtual ~DocumentExportConfig();
 
+	virtual void CopySource(DocumentExportConfig *config);
+
 	virtual ObjectDef* makeObjectDef();
 	virtual Value* duplicate();
 

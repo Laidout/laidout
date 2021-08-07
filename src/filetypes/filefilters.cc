@@ -701,8 +701,9 @@ class ProjectExportSettings : public Value
  */
 DocumentExportConfig *ExportFilter::CreateConfig(DocumentExportConfig *fromconfig)
 {
-	return new DocumentExportConfig(fromconfig);
-	//return new GenericValue(GetObjectDef(), fromconfig);
+	DocumentExportConfig* conf = new DocumentExportConfig(fromconfig);
+	conf->filter = this;
+	return conf;
 }
 
 
@@ -1173,37 +1174,36 @@ DocumentExportConfig::DocumentExportConfig(DocumentExportConfig *config)
 		return;
 	}
 
-    paperrotation  = config->paperrotation;
+	paperrotation  = config->paperrotation;
 	rotate180      = config->rotate180;
 	reverse_order  = config->reverse_order;
-    evenodd        = config->evenodd;
-    batches        = config->batches;
-    target         = config->target;
-    range          = config->range;
-    layout         = config->layout;
-    collect_for_out= config->collect_for_out;
-    rasterize      = config->rasterize;
+	evenodd        = config->evenodd;
+	batches        = config->batches;
+	target         = config->target;
+	range          = config->range;
+	layout         = config->layout;
+	collect_for_out= config->collect_for_out;
+	rasterize      = config->rasterize;
 	textaspaths    = config->textaspaths;
 
-    filename       = newstr(config->filename);
-    tofiles        = newstr(config->tofiles);
-    custom_command = newstr(config->custom_command);
-    command        = config->command;
-    if (command) command->inc_count();
+	filename       = newstr(config->filename);
+	tofiles        = newstr(config->tofiles);
+	custom_command = newstr(config->custom_command);
+	command        = config->command;
+	if (command) command->inc_count();
 
-    send_to_command   = config->send_to_command;
+	send_to_command   = config->send_to_command;
 	del_after_command = config->del_after_command;
 
-    filter         = config->filter; //object, but does not get inc_counted
+	filter         = config->filter; //object, but does not get inc_counted
 
-    doc            = config->doc;
-    papergroup     = config->papergroup;
-    limbo          = config->limbo;
+	doc            = config->doc;
+	papergroup     = config->papergroup;
+	limbo          = config->limbo;
 
-    if (doc)        doc->inc_count();
-    if (limbo)      limbo->inc_count();
-    if (papergroup) papergroup->inc_count();
-
+	if (doc)        doc->inc_count();
+	if (limbo)      limbo->inc_count();
+	if (papergroup) papergroup->inc_count();
 }
 
 /*! Decrements doc if it exists.
@@ -1223,6 +1223,32 @@ Value* DocumentExportConfig::duplicate()
 {
 	DocumentExportConfig *c = new DocumentExportConfig(this);
 	return c;
+}
+
+/*! Copy references to doc, limbo, and papergroup.
+ * Nulls are copied also.
+ */
+void DocumentExportConfig::CopySource(DocumentExportConfig *config)
+{
+	if (!config) return;
+
+	if (doc != config->doc) {
+		if (doc) doc->dec_count();
+		doc = config->doc;
+		if (doc) doc->inc_count();
+	}
+
+	if (limbo != config->limbo) {
+		if (limbo) limbo->dec_count();
+		limbo = config->limbo;
+		if (limbo) limbo->inc_count();
+	}
+
+	if (papergroup != config->papergroup) {
+		if (papergroup) papergroup->dec_count();
+		papergroup = config->papergroup;
+		if (papergroup) papergroup->inc_count();
+	}
 }
 
 Value *DocumentExportConfig::dereference(const char *extstring, int len)

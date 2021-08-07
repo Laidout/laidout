@@ -52,7 +52,7 @@ namespace Laidout {
  */
 ConfigEventData::ConfigEventData(DocumentExportConfig *c)
 {
-	config=c;
+	config = c;
 	if (config) config->inc_count();
 }
 
@@ -95,7 +95,7 @@ ExportDialog::ExportDialog(unsigned long nstyle,unsigned long nowner,const char 
 
 	filter = nfilter;
 	if (filter) {
-		config=filter->CreateConfig(NULL);
+		config = filter->CreateConfig(NULL);
 		config->layout = layout;
 		config->range.Clear();
 		config->range.AddRange(pmin, pmax);
@@ -117,7 +117,7 @@ ExportDialog::ExportDialog(unsigned long nstyle,unsigned long nowner,const char 
 			if (config->papergroup) config->papergroup->inc_count(); 
 		}
 
-	} else config=new DocumentExportConfig(doc,limbo,file,NULL,layout,pmin,pmax,papergroup);
+	} else config = new DocumentExportConfig(doc,limbo,file,NULL,layout,pmin,pmax,papergroup);
 
 	cur = pcur;
 
@@ -162,9 +162,9 @@ int ExportDialog::preinit()
 		if (!filter) filter=laidout->exportfilters.e[0];
 
 		 //update config to new filter
-		DocumentExportConfig *nconfig=filter->CreateConfig(config);
+		DocumentExportConfig *nconfig = filter->CreateConfig(config);
 		if (config) config->dec_count();
-		config=nconfig;
+		config = nconfig;
 	}
 
 	return 0;
@@ -971,16 +971,37 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"format")) {
-		filter=laidout->exportfilters.e[e->info1];
-		int prev = previous_configs.findIndex(filter->VersionName());
-		if (prev >= 0) {
-			DocumentExportConfig *nconfig = dynamic_cast<DocumentExportConfig*>(previous_configs.value(prev)->duplicate());
-			config->dec_count();
-			config = nconfig;
-		} else {
-			DocumentExportConfig *nconfig=filter->CreateConfig(config);
-			config->dec_count();
-			config=nconfig;
+		DBG cerr << "old config: "<<filter->VersionName()<<", config filter: "<<config->filter->VersionName()<<endl;
+
+		for (int c=0; c<laidout->exportfilters.n; c++ ){
+			cerr << c<<": "<<laidout->exportfilters.e[c]->VersionName()<<endl;
+		}
+
+		filter = laidout->exportfilters.e[e->info1];
+
+		int newconf = previous_configs.findIndex(filter->VersionName());
+		int cur  = config ? previous_configs.findIndex(config->filter->VersionName()) : -1;
+
+		DBG cerr << "select new config "<<e->info1<<": "<<filter->VersionName()<<endl;
+		DBG cerr << "new vname: "<<filter->VersionName()<<", old vname: "<<config->filter->VersionName()<<endl;
+		DBG cerr << "new in prev: "<<newconf<<"  cur index: "<<cur<<endl;
+
+		if (newconf != cur) {
+			DocumentExportConfig *old = config;
+
+			if (newconf >= 0) {
+				// use former config
+				DocumentExportConfig *nconfig = dynamic_cast<DocumentExportConfig*>(previous_configs.value(newconf)->duplicate());
+				config = nconfig;
+				config->CopySource(old);
+			} else {
+				// make new config
+				DocumentExportConfig *nconfig = filter->CreateConfig(config);
+				config = nconfig;
+			}
+
+			previous_configs.push(old->filter->VersionName(), old); //remember old
+			old->dec_count();
 		}
 
 		updateEdits();
