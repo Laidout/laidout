@@ -1402,6 +1402,7 @@ int GroupInterface::Refresh()
 	if (!needtodraw) return 0;
 	if (child) { needtodraw=0; return 0; }
 
+	if (!somedata && selection && selection->n()) RemapBounds();
 
 	ObjectInterface::Refresh();
 

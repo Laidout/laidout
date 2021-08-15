@@ -398,6 +398,7 @@ inline std::ostream &operator<<(std::ostream &os, VObjContext const &o)
 	for (int c=0; c<o.context.n(); c++) {
 		os << o.context.e(c)<< " ";
 	}
+	if (o.obj) os << "obj: "<<o.obj->Id()<<" ("<<o.obj->whattype()<<")"<<endl;
 	return os;
 }
 
@@ -1649,6 +1650,17 @@ int LaidoutViewport::SelectObject(int i)
 	return 1;
 }
 
+/*! Returns 1 for current object changed, otherwise 0 for not changed or d not found.
+ */
+int LaidoutViewport::SelectObject(const char *path, bool switchtool, bool replace_selection)
+{
+	VObjContext *oc = GetContextFromPath(path);
+	if (!oc) return 0;
+	int status = ChangeObject(oc, switchtool, replace_selection);
+	delete oc;
+	return status;
+}
+
 //! Change the current object to be oc.
 /*! Item must be in the tree already. You may not push objects from here. For
  * that, use NewData().
@@ -1657,14 +1669,15 @@ int LaidoutViewport::SelectObject(int i)
  * the current spread somewhere. If oc->obj==NULL, then the same goes for where oc points to.
  * The first interface to report being able to handle oc->obj->whattype() will be activated.
  *
- * If update_selection, flush current selection and add current object.
+ * If replace_selection, flush current selection and add current object.
+ * If !replace_selection, then just add to selection.
  * 
  * Returns 1 for current object changed, otherwise 0 for not changed or d not found.
  *
  * \todo *** for laxkit also, but must have some mechanism to optionally pass the LBDown grab
  * to new interface in control of new object..
  */
-int LaidoutViewport::ChangeObject(LaxInterfaces::ObjectContext *oc, int switchtool, bool update_selection)
+int LaidoutViewport::ChangeObject(LaxInterfaces::ObjectContext *oc, bool switchtool, bool replace_selection)
 {
 	if (!oc || !oc->obj) return 0;
 
@@ -1672,7 +1685,7 @@ int LaidoutViewport::ChangeObject(LaxInterfaces::ObjectContext *oc, int switchto
 	if (voc==NULL || !IsValidContext(voc)) return 0;
 	setCurobj(voc);
 	
-	if (update_selection) {
+	if (replace_selection) {
 		if (!selection) selection = new Selection();
 		if (selection->FindIndex(oc) >= 0 && oc->obj) {
 			//flush all but this one
@@ -1685,6 +1698,13 @@ int LaidoutViewport::ChangeObject(LaxInterfaces::ObjectContext *oc, int switchto
 		}
 		laidout->notifyDocTreeChanged(nullptr, TreeSelectionChange, 0,0);
 		needtodraw = 1;
+
+	} else {
+		if (!selection) selection = new Selection();
+		if (selection->AddNoDup(oc, -1) >= 0) {
+			laidout->notifyDocTreeChanged(nullptr, TreeSelectionChange, 0,0);
+			needtodraw = 1;
+		}
 	}
 
 	 // makes sure curtool can take it, and makes it take it.
@@ -1695,8 +1715,6 @@ int LaidoutViewport::ChangeObject(LaxInterfaces::ObjectContext *oc, int switchto
 			viewer->updateContext(1);
 		}
 	}
-
-
 
 	return 1;
 }
@@ -2108,6 +2126,47 @@ int LaidoutViewport::nextObject(VObjContext *oc,int inc)//inc=0
 	return 0;
 }
 
+/*! From an explicit path of id1/id2/id3/..., return a new object context, or null if it does not exist.
+ */
+VObjContext *LaidoutViewport::GetContextFromPath(const char *path)
+{
+	VObjContext *oc = new VObjContext;
+
+	ObjectContainer *o = this;
+
+	bool found = false;
+	while (*path) {
+		const char *next = strchr(path, '/');
+		if (!next) next = path + strlen(path);
+
+		bool foundpiece = false;
+		for (int c=0; c<o->n(); c++) {
+			const char *oname = o->object_e_name(c);
+			if ((long)strlen(oname) == next-path && !strncmp(oname, path, next-path)) {
+				oc->context.push(c);
+				o = dynamic_cast<ObjectContainer*>(o->object_e(c));
+				oc->SetObject(dynamic_cast<SomeData*>(o));
+				foundpiece = true;
+				break;
+			}
+		}
+
+		if (!foundpiece) break;
+
+		if (*next == '\0') {
+			found = true;
+			break;
+		}
+		path = next+1; //skip over the '/'
+	}
+
+	if (!found) {
+		delete oc;
+		return nullptr;
+	}
+	return oc;
+}
+
 //! Return place.n if d is found in the displayed pages or in limbo somewhere, and put location in place.
 /*! Flushes place whether or not the object is found, it does not append to an existing spot.
  *
@@ -2254,6 +2313,10 @@ int LaidoutViewport::UpdateSelection(Selection *sel)
 	return n;
 }
 
+void LaidoutViewport::ClearSelection()
+{
+	SetSelection(nullptr);
+}
 
 //! Set curobj to limbo, which is always valid. This is done after page removal, for instance, to prevent crashing.
 int LaidoutViewport::wipeContext()
@@ -4062,9 +4125,15 @@ void ViewWindow::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *con
 		return;
 	}
 
+	LaidoutViewport *vp=((LaidoutViewport *)viewport);
+
+	if (!doc && vp->doc) {
+		doc = vp->doc;
+		doc->inc_count();
+	}
+
 	if (doc) fprintf(f,"%sdocument %s\n",spc,doc->Id());
 
-	LaidoutViewport *vp=((LaidoutViewport *)viewport);
 	int vm=vp->viewmode;
 	if (doc && doc->imposition->LayoutName(vm)) 
 		fprintf(f,"%slayout %s\n",spc,doc->imposition->LayoutName(vm));

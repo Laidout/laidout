@@ -77,7 +77,7 @@ ObjectTree::ObjectTree(anXWindow *parnt,const char *nname,const char *ntitle,
                 nullptr)
 {
 	tree_column = 1;
-	AddColumn("Flags", nullptr, 2*GetDefaultDisplayer()->textheight(),0,    TreeSelector::ColumnInfo::ColumnFlags,  1);
+	AddColumn("Flags", nullptr, 4*GetDefaultDisplayer()->textheight(),0,    TreeSelector::ColumnInfo::ColumnFlags,  1);
 	AddColumn("Object",nullptr, 400-2*GetDefaultDisplayer()->textheight(),0,TreeSelector::ColumnInfo::ColumnString, 0);
 }
 
@@ -113,6 +113,7 @@ ObjectTreeWindow::ObjectTreeWindow(anXWindow *parnt,const char *nname,const char
     objcontainer = nullptr;
 	domain       = Unknown;
 	selection    = nullptr;
+	inited       = false; //whether dump_in has been run already
 
 	if (dynamic_cast<LaidoutViewport*>(container)) domain = InViewport;
 
@@ -218,9 +219,11 @@ void ObjectTreeWindow::UseContainerRecursive(ObjectContainer *container)
 		menu->AddDetail(flagstr,nullptr);
 
 		if (oc && oc->n()) {
+			MenuItem *mi = menu->Top();
 			menu->SubMenu();
 			UseContainerRecursive(oc);
 			menu->EndSubMenu();
+			mi->Open();
 		}
 	}
 
@@ -314,12 +317,59 @@ int ObjectTreeWindow::Event(const Laxkit::EventData *data,const char *mes)
 		DBG cerr << "ObjectTreeWindow event: "<<sm->info1<<" "<<sm->info2<<" "<<sm->info3<<" "<<sm->info4<<" "<<(sm->str ? sm->str : "null")<<endl;
 
 		if (sm->info3 == 2) { //flag toggled
+			LaidoutViewport *viewport = FindViewport();
+
 			if (sm->info4 == 'e' || sm->info4 == 'E') {
 				bool visible = (sm->info4 == 'E');
 				DBG cerr << ".. toggle visible, now: "<<visible<<endl;
+
+				//viewport->SetVisible(sm->str, visible);
+				if (viewport) {
+					VObjContext *oc = viewport->GetContextFromPath(sm->str);
+					if (oc) {
+						DBG cerr << "found context "<<*oc<<endl;
+						oc->obj->Visible(visible);
+						viewport->Needtodraw(1);
+						delete oc;
+					}
+				}
+				
 			} else if (sm->info4 == 'l' || sm->info4 == 'L') {
 				bool locked = (sm->info4 == 'L');
 				DBG cerr << ".. toggle locked, now: "<<locked<<endl;
+
+				//viewport->SetLocked(sm->str, locked);
+				if (viewport) {
+					VObjContext *oc = viewport->GetContextFromPath(sm->str);
+					if (oc) {
+						DBG cerr << "found context "<<*oc<<endl;
+						if (locked) oc->obj->Lock(~0);
+						else oc->obj->Unlock(~0);
+						viewport->Needtodraw(1);
+						delete oc;
+					}
+				}
+			}
+
+		} else {
+			//TODO: this should probably add objects, then remove the ones in viewport->selection that are not selected 
+			//      so as to avoid disruption as much as possible
+			
+			//probably just a selection change, try to sync up with viewport.
+			LaidoutViewport *viewport = FindViewport();
+			viewport->ClearSelection();
+
+			for (int c=0; c<tree->NumSelected(); c++) {
+				MenuItem *itm = tree->GetSelected(c);
+
+				char *path = nullptr;
+				makestr(path, itm ? itm->name : NULL);
+	            while (itm && itm->parent && itm->parent->parent) {
+	                itm = itm->parent->parent;
+	                prependstr(path, "/");
+	                prependstr(path, itm->name);
+	            }
+				viewport->SelectObject(path, false, false);
 			}
 		}
 
@@ -366,9 +416,9 @@ void ObjectTreeWindow::RefreshList()
 
 int ObjectTreeWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const LaxKeyboard *d)
 {
-	if (ch == 'r' && (state & ControlMask)) {
-		RefreshList();
-	}
+	//if (ch == 'r' && (state & ControlMask)) {
+	//	RefreshList();
+	//}
 
 	return anXWindow::CharInput(ch, buffer, len, state, d);
 }
@@ -405,7 +455,7 @@ LaxFiles::Attribute *ObjectTreeWindow::dump_out_atts(LaxFiles::Attribute *att,in
 }
 
 void ObjectTreeWindow::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *loadcontext)
-{
+{	
 	Attribute *datt = att->find("domain");
 	if (datt) {
 		Domain ndomain = WholeProject;
@@ -427,9 +477,10 @@ void ObjectTreeWindow::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::
 		}
 	}
 
-	if (tree) return tree->dump_in_atts(att,flag,loadcontext); 
-	return anXWindow::dump_in_atts(att,flag,loadcontext);
-
+	if (tree) {
+		if (!inited) tree->dump_in_atts(att,flag,loadcontext); 
+		inited = true;
+	} else anXWindow::dump_in_atts(att,flag,loadcontext);
 }
 
 

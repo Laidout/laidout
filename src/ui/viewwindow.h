@@ -155,7 +155,8 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	virtual int PreviousSpread();
 	virtual int CurrentSpread() { return spreadi; }
 	
-	virtual int ChangeObject(LaxInterfaces::ObjectContext *oc,int switchtool, bool update_selection);
+	virtual int ChangeObject(LaxInterfaces::ObjectContext *oc, bool switchtool, bool replace_selection);
+	virtual int SelectObject(const char *path, bool switchtool, bool replace_selection);
 	virtual int SelectObject(int i);
 	virtual int FindObject(int x,int y, const char *dtype, 
 					LaxInterfaces::SomeData *exclude, int start,
@@ -181,12 +182,15 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	virtual LaxInterfaces::SomeData *GetObject(LaxInterfaces::ObjectContext *oc);
 	virtual LaxInterfaces::ObjectContext *CurrentContext();
 	virtual int UpdateSelection(LaxInterfaces::Selection *sel);
+	virtual void ClearSelection();
 	virtual int wipeContext();
 	virtual void clearCurobj();
 	virtual int locateObject(LaxInterfaces::SomeData *d,FieldPlace &place);
 	virtual int curobjPage();
 	virtual int isDefaultPapergroup(int yes_if_in_project);
 	virtual void TriggerFilterUpdates(int reason);
+
+	virtual VObjContext *GetContextFromPath(const char *path);
 
 	 //from objectcontainer
 	virtual int n();

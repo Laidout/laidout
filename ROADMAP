@@ -33,7 +33,7 @@ VERSION 0.098
 (done) If curobj, select siblings first. If no curobj, select direct children of context first
 (done) double click on group should change selection area to group contents like inkscape?
 
-       Object tree window, at least allow toggling locked and visible.
+(done) Object tree window, at least allow toggling locked, visible, and select from list.
 (done) Find object interface
 
 (done) Empty objects that can be parents, or whose contents are defined by nodes
@@ -49,7 +49,6 @@ VERSION 0.098
        engraver tool, resolution cut mode
        engraver tool, blockout needs to be more precise
        engraver tool, fully test tool effects when many objects selected
-       debug and optimize line outline cache, especially for joins
 (done) PathInterface: adding point hint
 (done) PathInterface: Mouse based delete segments
 
@@ -71,7 +70,7 @@ VERSION 0.099
        pdf export, unicode capable
        Optimize pdf export to rescale to target dpi, and compress image data
 
-       Global Settings window, so you don't have to tinker with laidoutrc
+       Global Settings window, so you don't have to manually tinker with laidoutrc
        Tools should remember their settings
        Import Images dialog needs total reprogramming
        Tool scripting
@@ -99,6 +98,7 @@ VERSION 0.099
        Object and resource tags interface
        Custom line caps
        make PathInterface extrapolate line join work
+       debug and optimize line outline cache, especially for joins
        Finish implementing anchor tool
        Custom alignments to parents, not just affine transform to parent
        Externally rendered objects, similar to Scribus render frames

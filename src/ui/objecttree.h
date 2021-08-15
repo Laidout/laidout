@@ -51,6 +51,7 @@ class ObjectTreeWindow : public Laxkit::RowFrame
 	Laxkit::MenuInfo *menu;
 
 	Domain domain;
+	bool inited;
 
 	virtual void UseContainerRecursive(ObjectContainer *container);
 	void ConstructTree();

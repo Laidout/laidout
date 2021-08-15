@@ -315,18 +315,16 @@ Find interface: findinterface:
   DONE need draggable window frame
 
 layers palette Layers ObjectTree
-  bug: not remembering flags column width.. for a flags column, should always be visible?
-  must sync viewport selection with selected in tree
-  need to update menu, not flush and repopulate which wrecks selection
-  should have document list at top, showing current doc
+  must set tree selected to viewport selected on viewport selection change
 
-  flags, click to change: 
-    locked
-    visible
-
+  DONE bug: not remembering flags column width.. for a flags column, should always be visible?
+  DONE must set viewport selected on tree selected change
+  DONE flags, click to change: locked visible
   DONE edit colors not highlighting every other
 
   ---0.099:
+  need to update tree list, not flush and repopulate which wrecks selection and open/closed
+  should have document list at top, showing current doc
   need icons for object types
   hidden/locked objects should grey out contained objects
   visible gray out non-visible
@@ -344,6 +342,7 @@ layers palette Layers ObjectTree
 	move up .. maybe do away with the button, and just implement drag and drop?
 	move down
 	duplicate
+	delete
   copy item path?
 
 you can't control unclick selected directories
