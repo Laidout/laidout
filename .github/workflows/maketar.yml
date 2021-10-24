@@ -23,7 +23,7 @@ jobs:
       - name: Configure
         run: |
           sudo apt update
-          sudo apt-get install g++ pkg-config libpng-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxrandr-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libcairo2-dev libharfbuzz-dev libsqlite3-dev libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev zlib1g-dev libgegl-dev
+          sudo apt-get install g++ pkg-config libpng-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxrandr-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libcairo2-dev libharfbuzz-dev libsqlite3-dev libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev zlib1g-dev libgegl-dev gettext
           cd laidout
           ./configure --laxkit=`pwd`/../laxkit/lax --prefix=`pwd`/../build --relocatable --gegl-version gegl-0.4
           cd ../laxkit && make touchdepends && make hidegarbage && cd ../laidout
@@ -39,16 +39,17 @@ jobs:
 
       - name: Make icons
         run: |
-          echo make icons curdir: `pwd`
+          cd laidout
+          #echo make icons curdir: `pwd`
           make -C src/icons all-with-lax
 
       - name: Install
         run: |
+          cd laidout
           make install
 
       - name: Package
         run: |
-          cd ..
           mv build laidout-{{ env.LAIDOUT_VERSION }}
           tar cjv laidout-{{ env.LAIDOUT_VERSION }} > ../laidout-{{ env.LAIDOUT_VERSION }}.tar.bz2
 
