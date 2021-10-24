@@ -246,10 +246,14 @@ if [ ! -e $LAXDIR/configured.h ] ; then
 	LAXTRAS=""
 	if [ $USESQLITE == "no" ] ; then LAXTRAS="$LAXTRAS --disable-sqlite"; fi
 	if [ $RELOCATABLE == "yes" ] ; then LAXTRAS="$LAXTRAS --relocatable"; fi
-	if [ $EXTRA_CPPFLAGS != "" ] ; then LAXTRAS="$LAXTRAS --extra-cppflags \"$EXTRA_CPPFLAGS\""; fi
+	if [ "$EXTRA_CPPFLAGS" != "" ] ; then LAXTRAS="$LAXTRAS --extra-cppflags \"$EXTRA_CPPFLAGS\""; fi
 	echo "Laxkit not configured, configuring: $LAXTRAS";
 	CURDIR=`pwd`
-	cd $LAXDIR/.. && ./configure $LAXTRAS
+	cd $LAXDIR/..
+	echo `pwd`
+	echo $LAXDIR
+	ls
+	./configure $LAXTRAS
 	cd $CURDIR
 fi
 
