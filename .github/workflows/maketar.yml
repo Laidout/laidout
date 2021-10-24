@@ -1,0 +1,67 @@
+name: make-tar
+on:
+  push:
+    branches:
+      
+jobs:
+  Create-Laidout-bintar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout Laidout"
+        uses: actions/checkout@v2
+        with:
+          repository: Laidout/laidout
+          path: laidout
+
+      - name: "Checkout Laxkit"
+        uses: actions/checkout@v2
+        with:
+          repository: Laidout/laxkit
+          path: laxkit
+
+
+      - name: Configure
+        run: |
+          cd laidout
+          ./configure --laxkit=../laxkit --prefix=`pwd`/../build --relocatable
+          cd ../laxkit && make touchdepends && make hidegarbage && cd ../laidout
+          make touchdepends
+          make hidegarbage
+
+      - name: Build
+        run: |
+          make
+
+      - name: Make icons
+        run: |
+          make -C src/icons all-with-lax
+
+      - name: Install
+        run: |
+          make install
+
+      - name: Package
+        run: |
+          cd ..
+          mv build laidout-{{ env.LAIDOUT_VERSION }}
+          tar cjv laidout-{{ env.LAIDOUT_VERSION }} > ../laidout-{{ env.LAIDOUT_VERSION }}.tar.bz2
+
+      - name: Upload-Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: laidout-tar
+          path: laidout-{{ env.LAIDOUT_VERSION }}.tar.bz2
+
+#      - name: Upload-to-release
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ github.token }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: ../laidout-{{ env.LAIDOUT_VERSION }}.tar.bz2
+#          asset_name: laidout-{{ env.LAIDOUT_VERSION }}.tar.bz2
+#          asset_content_type: application/x-gtar
+
+
+
+
