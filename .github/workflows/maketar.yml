@@ -32,14 +32,14 @@ jobs:
 
       - name: Build
         run: |
-		  cd laidout
-		  echo Build curdir: `pwd`
-		  ls -l
+          cd laidout
+          ls -l
+          echo Build curdir: `pwd`
           make
 
       - name: Make icons
         run: |
-		  echo make icons curdir: `pwd`
+          echo make icons curdir: `pwd`
           make -C src/icons all-with-lax
 
       - name: Install
