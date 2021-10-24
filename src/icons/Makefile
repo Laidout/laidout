@@ -5,11 +5,14 @@
 DEFAULT_ICON_SIZE=24
 DEFAULT_WIDE_ICON=100
 
+include ../../Makefile-toinclude
 
-LAXICONS=../laxkit/lax/icons/icons.svg
-ifeq (,$(wildcard $(LAXICONS)))
-LAXICONS=../../laxkit/lax/icons/icons.svg
-endif
+LAXICONS=$(LAXDIR)/icons/icons.svg
+
+#LAXICONS=../laxkit/lax/icons/icons.svg
+#ifeq (,$(wildcard $(LAXICONS)))
+#LAXICONS=../../laxkit/lax/icons/icons.svg
+#endif
 
 
 all:
