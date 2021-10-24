@@ -33,8 +33,6 @@ jobs:
       - name: Build
         run: |
           cd laidout
-#          ls -l
-#          echo Build curdir: `pwd`
           make
 
       - name: Make icons
