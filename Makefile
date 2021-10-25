@@ -52,7 +52,7 @@ install:
 	$(INSTALLDIR) $(SHAREDIR)/applications
 	$(INSTALL) -m644 deb/laidout.desktop $(SHAREDIR)/applications
 	$(INSTALLDIR) $(SHAREDIR)/icons/hicolor/48x48/apps
-	$(INSTALL) -m644 src/icons/laidout-48x48.png $(SHAREDIR)/icons/hicolor/48x48/apps/laidout.png
+	$(INSTALL) -m644 src/icons/laidout.png $(SHAREDIR)/icons/hicolor/48x48/apps/laidout.png
 	$(INSTALLDIR) $(SHAREDIR)/icons/hicolor/scalable/apps
 	$(INSTALL) -m644 src/icons/laidout.svg $(SHAREDIR)/icons/hicolor/scalable/apps/laidout.svg
 	$(INSTALLDIR)       $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop/processing
