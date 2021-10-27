@@ -8,6 +8,7 @@ TODO:
   TilingNode
   PathIntersections
   PathBooleanNode
+  RoundCorners
   ObjectArrayNode // linear, radial, object target
   FlipNode
   MergePaths
@@ -20,6 +21,185 @@ TODO:
   Swizzle
 
 
+
+//----------------------- PathCornersNode ------------------------
+
+/*! \class PathCornersNode
+ *
+ * Do stuff.
+ */
+class PathCornerFilter : public ObjectFilter
+{
+  public:
+	PathCornersNode();
+	virtual ~PathCornersNode();
+	virtual NodeBase *Duplicate();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new PathCornersNode(); }
+};
+
+PathCornersNode::PathCornersNode()
+{
+	makestr(type, "Paths/Corners");
+	makestr(Name, _("Path Corners"));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,     _("Input"), _("A path or model")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "dir",   new FlatvectorValue(0,0,1),1,  _("Vector"),  _("Vector or path")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out"), NULL,0, false));
+}
+
+PathCornersNode::~PathCornersNode()
+{
+}
+
+NodeBase *PathCornersNode::Duplicate()
+{
+	PathCornersNode *newnode = new PathCornersNode();
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int PathCornersNode::GetStatus()
+{
+	return NodeBase::GetStatus();
+}
+
+void PathCornersNode::FindCorners(PathsData *paths, double *inouts, int num_inouts, LPathsData *pathout)
+{
+	Coordinate *p, *pp, *p2, *end, *c1 = nullptr, *c2 = nullptr, *prev = nullptr;
+	double prev_len = 0, len = 0;
+	double in, out, out_prev, in_prev;
+	double t_prev, t_next;
+	flatpoint dirp, dirn;
+	flatpoint pc1, pc2, pp2, nc1, nc2, np2;
+	flatpoint in_axis, out_axis;
+
+	int resolution = 20;
+
+	if (!pathout) pathout = new LPathsData();
+	pathout->Id(paths->Id());
+
+	for (int c=0; c<paths->paths.n; c++) {
+		p = paths->paths.e[c];
+		if (!p) continue;
+
+		p->resolveToControls(p1, c1, c2, p2, true);
+		int i = 0;
+		end = p2;
+
+		if (p2) {
+			do {
+				np2 = p2->fp;
+				if (c1 == p1 && c2 == p2) {
+					len = (p1->fp - p2->fp).norm();
+					nc1 = p->fp + (np2 - p->fp)/3;
+					nc2 = p->fp + (np2 - p->fp)*(2./3);
+				} else {
+					len = bez_segment_length(p1, c1, c2, p2, resolution);
+					nc1 = c1->fp;
+					nc2 = c2->fp;
+				}
+
+				if (prev) {
+					// if corner:
+					dirp = p->direction(false);
+					dirn = p->direction(true);
+					if (dirp.SmoothnessFlag(dirn) != LINE_Corner) {
+						//   find in and out distances
+						out = inouts[i % num_inouts];
+						in = inouts[(i+1) % num_inouts];
+
+						//   compute points + directions at the in/out points
+						if (in > prev_len) in = prev_len;
+						if (out > len - in) out = len - in;
+						if (out > len) out = len;
+
+						t_prev = bez_distance_to_t(in_prev, p->fp, nc1, nc2, p2->fp);
+						t_next = bez_distance_to_t(out, p->fp, pc1, pc2, prev->fp);
+
+						***
+
+						//   compute axis for corner "square"
+						***
+
+						//   break path and insert corner transformed from def
+						***
+					}
+				}
+
+				prev = p;
+				prev_len = len;
+				prev_out = out;
+				prev_in = in;
+				pc1 = nc2;
+				pc2 = nc1;
+				pp1 = p->fp;
+				p = p2;
+
+				if (!p->resolveToControls(pp, c1, c2, p2, true)) break;
+
+				i += 2;
+			} while (p != end);
+		}
+	}
+}
+
+int PathCornersNode::Update() //possible set ins
+{
+	//update with set parsing helpers
+	
+	ClearError();
+
+	int num_ins = 3;
+	ins[0] = properties.e[0]->GetData();
+	ins[1] = properties.e[1]->GetData();
+	ins[2] = properties.e[2]->GetData();
+
+	SetValue *setins[3];
+	SetValue *setouts[2];
+
+	int num_outs = 2;
+	int outprops[2];
+	outprops[0] = 3;
+	outprops[1] = 4;
+
+	int max = 0;
+	const char *err = nullptr;
+	bool dosets = false;
+	if (DetermineSetIns(num_ins, ins, setins, max, dosets) == -1) {; //does not check contents of sets.
+		//had a null input
+		return -1;
+	}
+
+	*** check for easy to spot errors with inputs
+
+	//establish outprop: make it either type, or set. do prop->Touch(). clamp to max. makes setouts[*] null or the out set
+	DoubleValue *out1 = UpdatePropType<DoubleValue>(properties.e[outprops[0]], dosets, max, setouts[0]);
+	LPathsData  *out2 = UpdatePropType<LPathsData> (properties.e[outprops[1]], dosets, max, setouts[1]);
+
+	DoubleValue *in1 = nullptr; //dynamic_cast<DoubleValue*>(ins[0]);
+	IntValue    *in2 = nullptr; //dynamic_cast<IntValue*>(ins[1]);
+	LPathsData  *in3 = nullptr; //dynamic_cast<LPathsData*>(ins[2]);
+
+	for (int c=0; c<max; c++) {
+		in1 = GetInValue<DoubleValue>(c, dosets, in1, ins[0], setins[0]);
+		in2 = GetInValue<IntValue>   (c, dosets, in2, ins[1], setins[1]);
+		in3 = GetInValue<LPathsData> (c, dosets, in3, ins[2], setins[2]);
+
+		*** error check ins
+
+		GetOutValue<DoubleValue>(c, dosets, out1, setouts[0]);
+		GetOutValue<LPathsData> (c, dosets, out2, setouts[1]);
+			
+
+		*** based on ins, update outs
+	}
+
+
+	return NodeBase::Update();
+}
 
 
 //----------------------- PathIntersectionsNode ------------------------
