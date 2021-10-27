@@ -20,10 +20,12 @@
 namespace Laidout {
 
 
-class TextEffect
+//------------------------------ TextEffect ---------------------------------
+class TextEffect : public Laxkit::Resourceable
 {
   public:
 	virtual ~TextEffect();
+	virtual int Compute(StreamCache *start, StreamCache *end, StreamCache **new_start, StreamCache **new_end) = 0;
 };
 
 class TextUnderline : public TextEffect
@@ -69,110 +71,232 @@ class DropCaps : public TextEffect
 	//	                          Blah blah...
 };
 
-class LFont
-{
-  public:
-	char *file;
-	double font_size;
-	const char *font_family, *font_style;
-	virtual double Extent(const char *str,int len, double *real_ascent, double *real_descent);
-	virtual double Em();
-};
 
-class MultiFont : public LFont
-{
-  public:
-	class FontComponent
-	{
-	  public:
-		LFont *font;
-		Color *color;
-	};
+//------------------------------ Tabs ---------------------------------
 
-	PtrStack<FontComponent> fonts;
-};
-
-class CharacterStyle : public Style
-{
-  public:
-	LFont *font;
-
-	Color *color; //including alpha
-	Color *bg_color; //highlighting
-
-	double space_shrink;
-	double space_grow;  //as percent of overriding font size
-	double inner_shrink, inner_grow; //char spacing within words
-
-	 //basic positioning info
-	double kerning_before;
-	double kerning_after;
-	double h_scaling, v_scaling; //contentious glyph scaling
-
-	 //more thorough text effects
-	PtrStack<TextEffect> glyph_effects; //adjustments to characters or glyphs that changes metrics, making them different shapes or chars, like small caps, all caps, no caps, scramble, etc
-	PtrStack<TextEffect> below_effects; //additions like highlighting, that exist under the glyphs
-	PtrStack<TextEffect>  char_effects; //transforms to glyphs that do not change metrics, fake outline, fake bold, etc
-	PtrStack<TextEffect> above_effects; //lines and such drawn after the glyphs are drawn
-
-	CharacterStyle();
-	virtual ~CharacterStyle();
-};
-
-enum LengthType {
-	LEN_Percent_Text_Height,
-	LEN_Percent_Parent,
-	LEN_Absolute
-};
-
+/*! \class TabStopInfo
+ *  Properties relating to tab stops.
+ */
 class TabStopInfo
 {
   public:
-	int tabtype; //left, center, right, char
-	char tab_char_utf8[10]; //if char type
+//	enum class TABTYPE {
+//		Left,
+//		Center,
+//		Right,
+//		Char
+//	};
+	double alignment; //left==0, center==50, right==100
+	bool use_char;
+	char tab_char_utf8[10]; //if use_char
 
 	int positiontype; //automatic position, definite position, path
 	double position; //if not path
-	PathsData *path;
+	PathsData *path; //we assume this is a generally downward path
 
 	TabStopInfo *next;
+
+	TabStopInfo();
+	virtual ~TabStopInfo();
 };
 
-class ParagraphStyle : public Style
+TabStopInfo::TabStopInfo()
+{
+	alignment        = 0;
+	use_char         = false;
+	tab_char_utf8[0] = '\0';
+	positiontype     = 0;
+	position         = 0;
+	path             = nullptr;
+}
+
+TabStopInfo::~TabStopInfo()
+{
+	if (path) path->dec_count();
+}
+
+/*! \class TabStops
+ * Definition of tab placements for a paragraph style.
+ */
+class TabStops : public Value
 {
   public:
-	int hyphens; //whether to have them or not
-	double h_width,h_shrink,h_grow, h_penalty; //hyphen metrics, still use the font's character, though
+	Laxkit::PtrStack<TabStopInfo> stops;
+
+	int ComputeAt(double height, PtrStack<TabStopInfo> &tabstops); //for path based tab stops, update tabstops at this height in path space
+};
 
 
-	int gap_above_type; //0 for  % of font size, 1 for absolute number
-	double gap_above;
 
-	int gap_after_type; //0 for  % of font size, 1 for absolute number
-	double gap_after;
+//------------------------------ Style ---------------------------------
 
-	int gap_between_type; //0 for  % of font size, 1 for absolute number
-	double gap_between_lines;
+class Style : public ValueHash, public Laxkit::Resourceable
+{
+  public:
+    Style *parent;
+
+    Style();
+    virtual ~Style();
+    virtual const char *whattype() { return "Style"; }
+
+    virtual Value *FindValue(int attribute_name);
+    virtual int MergeFromMissing(Style *s); //only from s not in *this
+    virtual int MergeFrom(Style *s); //all in s override *this
+    virtual Style *Collapse();
+
+	virtual void dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
+	virtual void dump_out (FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+};
 
 
-	int lines_of_first_indent; //default is 1
-	double first_indent;
-	double normal_indent;
-	double far_margin; //for left to right, this would be the right margin for instance
+//------------------------------ StreamElement ---------------------------------
 
-	int tab_strategy; //regular intervals, by lines
-	TabStopInfo *tabs;
+class StreamElement : public LaxAttributes::DumpUtility
+{
+  public:
+	bool style_is_temp;
+	Style *style;
 
-	int justify_type; //0 for allow widow-like lines, 1 allow widows but do not fill space to edges, 2 for force justify all
-	double justification; // (0..100) left=0, right=100, center=50, full justify
-	int flow_direction;
-	
-	PtrStack<TextEffect> conditional_effects; //like initial drop caps, first line char style, etc
+	//int type_hint; //like pure char, pure pp, container type
 
-	CharacterStyle *default_charstyle;
+	StreamElement *treeparent;
+	PtrStack<StreamElement> kids;
 
-	ParagraphStyle();
-	virtual ~ParagraphStyle();
+	PtrStack<StreamChunk> chunks; // has chunks only when we are a leaf element
+
+	StreamElement(StreamElement *nparent, Style *nstyle);
+	virtual ~StreamElement();
+    virtual const char *whattype() { return "StreamElement"; }
+};
+
+
+//------------------------------ StreamChunk ---------------------------------
+
+enum StreamChunkTypes {
+	CHUNK_Text,
+	CHUNK_Image,
+	CHUNK_Break,
+	CHUNK_MAX
+};
+
+class StreamChunk
+{
+ public:
+	StreamElement *parent;
+	StreamChunk *next, *prev; //these are maintained by StreamElement
+
+	StreamChunk(StreamElement *nparent);
+	virtual ~StreamChunk();
+
+	virtual int NumBreaks() = 0;
+	virtual int BreakInfo(int *type) = 0;
+	virtual int Type() = 0;
+
+	virtual StreamChunk *AddAfter(StreamChunk *chunk);
+	virtual void AddBefore(StreamChunk *chunk);
+};
+
+
+//------------------------------ StreamBreak ---------------------------------
+
+enum class StreamBreakTypes {
+    BREAK_Paragraph,
+    BREAK_Column,
+    BREAK_Section,
+    BREAK_Page,
+    BREAK_Tab,
+	BREAK_Weak,
+	BREAK_Hyphen,
+    BREAK_MAX
+};
+
+class StreamBreak : public StreamChunk
+{
+	int break_type; //newline (paragraph), column, section, page
+
+	StreamBreak (int ntype) { type = ntype; }
+	virtual int NumBreaks() { return 0; }
+	virtual int BreakInfo(int *type) { return 0; }
+	virtual int Type() { return CHUNK_Break; }
+
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *context);
+};
+
+
+//------------------------------ StreamImage ---------------------------------
+
+class StreamImage : public StreamChunk
+{
+ public:
+	DrawableObject *img;
+
+	StreamImage(DrawableObject *nimg,StreamElement *pstyle);
+	virtual ~StreamImage();
+	virtual int NumBreaks() { return 0; }
+	virtual int BreakInfo(int *type) { return 0; }
+	virtual int Type() { return CHUNK_Image; }
+
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *context);
+};
+
+
+//------------------------------ StreamText ---------------------------------
+
+class StreamText : public StreamChunk
+{
+  public:
+	int len; //number of bytes in text (excluding any '\0')
+	char *text; //utf8 string
+
+	int numspaces;
+
+	StreamText(const char *txt,int n, StreamElement *pstyle);
+	virtual ~StreamText();
+	virtual int NumBreaks(); //either hyphen, spaces, pp
+	virtual int BreakInfo(int index);
+	virtual int Type() { return CHUNK_Text; }
+
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *context);
+};
+
+
+//------------------------------ Stream ---------------------------------
+
+class Stream : public Laxkit::anObject, public Laxkit::DumpUtility
+{
+  public:
+	char *id;
+	char *file; 
+
+	clock_t modtime;
+
+	StreamElement *top;
+	StreamChunk *chunk_start; //convenience pointer for leftmost leaf element
+
+	Stream();
+	virtual ~Stream();
+
+	virtual void dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
+	virtual void dump_out (FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+};
+
+
+//------------------------------ StreamImporter ---------------------------------
+
+class StreamImporter : public FileFilter, public Value
+{
+  public:
+  	StreamImporter();
+  	virtual ~StreamImporter();
+
+  	virtual const char *whattype() { return "StreamImporter"; }
+	virtual const char *FileType(const char *first100bytes) = 0;
+	virtual int In(const char *file, Laxkit::anObject *context, Laxkit::ErrorLog &log, const char *filecontents,int contentslen) = 0;
 };
 
 

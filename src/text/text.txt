@@ -73,6 +73,7 @@ character styles
 paragraph styles
 tagging, to signal urls, colors, special behavior or cataloging, dynamic content, etc
 short words (Mr. Mrs. etc, that must bind to following word)
+bidi
 language switches:
   sometimes one sees things like
    <i18n>
@@ -92,7 +93,6 @@ continued on page ?? <- auto update
 character substitution, like for elipses, dashes, ff, other ligatures, etc
 
 "Math equations support"
-"Story Editor"                            
 "Tabstops that lie on arbitrary paths, not just vertical and horizontal lines"
 "Text on a line"                            
 "Convert Text to editable path"                            
@@ -105,7 +105,7 @@ Tables that can optionally span multiple pages
 
 text direction
 --------------
-Arabic can use Kashidas to justif text, not stretching whitespace. These are basically extra stretch marks
+Arabic can use Kashidas to justify text, not stretching whitespace. These are basically extra stretch marks that
 span direction versus larger flow direction across columns, for instance
 
 
@@ -215,3 +215,4 @@ tab lines
 drop caps at front of pp: num lines to span, how to wrap, hang initial punc..
 justification (0..100) left=0, right=100, center=50, full justify
 text flow direction
+
