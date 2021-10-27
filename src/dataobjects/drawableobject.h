@@ -232,6 +232,7 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 	//virtual void dump_out_group(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	//virtual void dump_in_group_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	static DrawableObject* CreateFromAttribute(LaxFiles::Attribute *att, const char *type, LaxFiles::DumpContext *context);
 	
 	 //new functions for DrawableObject
 	virtual LaxInterfaces::SomeData *EquivalentObject();

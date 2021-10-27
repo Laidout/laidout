@@ -651,7 +651,7 @@ int LaidoutApp::init(int argc,char **argv)
 	 //-----define default icon
 	for (int c=0; c<icons->NumPaths(); c++) {
 		Utf8String path(newstr(icons->GetPath(c)), -1, true);
-		path.Append("/laidout-48x48.png");
+		path.Append("/laidout.png");
 		if (file_exists(path.c_str(), 1, nullptr) == S_IFREG) {
 			DefaultIcon(path.c_str());
 			break;
@@ -1425,13 +1425,13 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 
 			case OPT_shell: { // --shell
-					donotusex=2;
-					runmode=RUNMODE_Shell;
+					donotusex = true;
+					runmode = RUNMODE_Shell;
 				} break;
 
 			case OPT_script: { // --script
-					donotusex=1;
-					int size=file_size(o->arg(),1,NULL);
+					donotusex = true;
+					int size = file_size(o->arg(),1,NULL);
 					if (size<=0) {
 						cerr <<_("No input script!")<<endl;
 						exit(1);
@@ -1452,7 +1452,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 
 			case OPT_command: { // --command
-					donotusex=1;
+					donotusex = true;
 					runmode = RUNMODE_Commands;
 					char *str = calculator->In(o->arg(), NULL);
 					if (str) cout <<str<<endl;
@@ -1492,7 +1492,8 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 
 			case OPT_export: { // export
-					exprt=newstr(o->arg());
+					donotusex = 1;					
+					exprt = newstr(o->arg());
 				} break;
 
 			case OPT_list_export_options: { // list export options for a given format

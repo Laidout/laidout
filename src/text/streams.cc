@@ -21,39 +21,44 @@
 namespace Laidout {
 
 
-//----------------------------------- LengthValue -----------------------------------
+//----------------------------------- CharacterStyle -----------------------------------
 
-
-class LengthValue : public Value
+class CharacterStyle : public Style
 {
   public:
-	double value;
-	enum LengthType {
-		LEN_Number,
-		LEN_Percent
-	};
+	LFont *font;
 
-	LengthType type;
-	Unit units;
+	Color *color; //including alpha
+	Color *bg_color; //highlighting
 
-	LengthValue(); 
+	double space_shrink;
+	double space_grow;  //as percent of overriding font size
+	double inner_shrink, inner_grow; //char spacing within words
+
+	 //basic positioning info
+	double kerning_before;
+	double kerning_after;
+	double h_scaling, v_scaling; //contentious glyph scaling
+
+	 //more thorough text effects
+	PtrStack<TextEffect> glyph_effects; //adjustments to characters or glyphs that changes metrics, making them different shapes or chars, like small caps, all caps, no caps, scramble, etc
+	PtrStack<TextEffect> below_effects; //additions like highlighting, that exist under the glyphs
+	PtrStack<TextEffect>  char_effects; //transforms to glyphs that do not change metrics, fake outline, fake bold, etc
+	PtrStack<TextEffect> above_effects; //lines and such drawn after the glyphs are drawn
+
+	CharacterStyle();
+	virtual ~CharacterStyle();
+
+	virtual void ParseFrom(StreamChunk *chunk);
+
+	static Style *Default(Style *s = nullptr);
 };
 
-LengthValue::LengthValue()
-{
-	value=0;
-	type=LEN_Number;
-}
-
-
-
-//----------------------------------- Base text related styles -----------------------------------
-
-/*! Add to s if s!=NULL.
+/*! Add to s if s!=nullptr.
  */
-Style *CreateDefaultCharStyle(Style *s)
+Style *CharacterStyle::Default(Style *s)
 {
-	if (!s) s=new Style("Character");
+	if (!s) s = new Style("Character");
 
 	s->pushString("fontfamily","serif");
 	s->pushString("fontstyle","normal");
@@ -64,11 +69,54 @@ Style *CreateDefaultCharStyle(Style *s)
 	return s;
 }
 
-/*! Add to s if s!=NULL.
- */
-Style *CreateDefaultParagraphStyle(Style *s)
+
+//----------------------------------- ParagraphStyle -----------------------------------
+
+class ParagraphStyle : public Style
 {
-	if (!s) s=new Style("Paragraph");
+  public:
+	int hyphens; //whether to have them or not
+	double h_width,h_shrink,h_grow, h_penalty; //hyphen metrics, still use the font's character, though
+
+	int gap_above_type; //0 for  % of font size, 1 for absolute number
+	double gap_above;
+
+	int gap_after_type; //0 for  % of font size, 1 for absolute number
+	double gap_after;
+
+	int gap_between_type; //0 for  % of font size, 1 for absolute number
+	double gap_between_lines;
+
+
+	int lines_of_first_indent; //default is 1
+	double first_indent;
+	double normal_indent;
+	double far_margin; //for left to right, this would be the right margin for instance
+
+	int tab_strategy; //regular intervals, by lines
+	TabStops *tabs;
+
+	int justify_type; //0 for allow widow-like lines, 1 allow widows but do not fill space to edges, 2 for force justify all
+	double justification; // (0..100) left=0, right=100, center=50, full justify
+	int flow_direction;
+	
+	PtrStack<TextEffect> conditional_effects; //like initial drop caps, first line char style, etc
+
+	CharacterStyle *default_charstyle;
+
+	ParagraphStyle();
+	virtual ~ParagraphStyle();
+
+	virtual void ParseFrom(StreamChunk *chunk);
+
+	static Style *Default(Style *s = nullptr);
+};
+
+/*! Add to s if s!=nullptr. Else return a new Style.
+ */
+Style *ParagraphStyle::Default(Style *s)
+{
+	if (!s) s = new Style("Paragraph");
 
 	s->pushDouble("firstIndent",0.);
 	s->pushDouble("leftIndent",0.);
@@ -80,31 +128,66 @@ Style *CreateDefaultParagraphStyle(Style *s)
 	return s;
 }
 
+
+
+//----------------------------------- LengthValue -----------------------------------
+
+
+class LengthValue : public Value
+{
+  public:
+	double v;
+	double v_tr; //context dependent computed value. Not set internally.
+
+	enum LengthType {
+		LEN_Number,
+		LEN_Percent_Parent,
+		LEN_Percent_Paper
+	};
+
+	LengthType type;
+
+	Unit units;
+
+	LengthValue(); 
+	LengthValue(double val, LengthType len_type)
+	LengthValue(const char *val);
+};
+
+LengthValue::LengthValue()
+{
+	value = 0;
+	type = LEN_Number;
+}
+
+LengthValue::LengthValue(const char *val)
+  : LengthValue()
+{
+	if (isblank(val)) return;
+	char *endptr = nullptr;
+	value = strtod(val, &endptr);
+	if (endptr != val) {
+		while (isspace(*endptr)) endptr++;
+		if (*endptr == '%') {
+			type = LEN_Percent;
+		} else {
+			*** parse units
+		}
+	}
+}
+
+
+
 //----------------------------------- Style -----------------------------------
 /*! \class Style
  * \brief Class to hold cascading styles.
+ *
+ * Style objects are either temporary objects embedded in StreamStyle, or they are resources.
  */
-class Style : public ValueHash
-{
-  public:
-    Style *parent;
-
-    Style();
-    virtual ~Style();
-    virtual const char *whattype() { return "Style"; }
-
-    virtual Value *FindValue(int attribute_name);
-    virtual int CascadeUp(Style *s);
-    virtual Style *Collapse();
-
-	virtual void dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *context);
-	virtual void dump_out_atts(Attribute *att,int what,LaxFiles::DumpContext *context);
-	virtual void dump_out (FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-};
 
 Style::Style()
 {
-    parent=NULL;
+    parent = nullptr;
 }
 
 Style::~Style()
@@ -116,26 +199,40 @@ Style::~Style()
  */
 Style *Style::Collapse()
 {
-    Style *s=new Style();
-    Style *f=this;
+    Style *s = new Style();
+    Style *f = this;
     while (f) {
-        s->CascadeUp(f);
-        f=f->parent;
+        s->MergeFromMissing(f);
+        f = f->parent;
     }
     return s;
 }
 
 /*! Adds to *this any key+value in s that are not already included in this->values. It does not replace values.
- * Note only checks against *this, not this->parent or this->kids.
+ * Note ONLY checks against *this, NOT this->parent or this->kids.
  * Return number of items added.
+ *
+ * So, say you have:
+ *     s:
+ *       bold: true
+ *       color: red
+ *     this: 
+ *       bold: false
+ *       width: 5
+ *
+ * you will end up with:
+ *     this:
+ *       bold: false
+ *       width: 5
+ *       color: red
  */
-int Style::CascadeUp(Style *s)
+int Style::MergeFromMissing(Style *s)
 {
     const char *str;
-    int n=0;
-    for (int c=0; c<s->n(); c++) {
-        str=s->key(c);
-        if (FindValue(str)) continue; //don't use if we have it already
+    int n = 0;
+    for (int c = 0; c < s->n(); c++) {
+        str = s->key(c);
+        if (findIndex(str) >= 0) continue; //don't use if we have it already
         push(str, s->e(c));
         n++;
     }
@@ -143,51 +240,40 @@ int Style::CascadeUp(Style *s)
 }
 
 /*! Adds or replaces any key+value from s into this->values.
- * Note only checks against *this, not this->parent or this->kids.
+ * Note ONLY checks against *this, NOT this->parent or this->kids.
  * Return number of items added.
+ *
+ * So, say you have:
+ *     s:
+ *       bold: true
+ *       color: red
+ *     this: 
+ *       bold: false
+ *       width: 5
+ *
+ * you will end up with:
+ *     this:
+ *       bold: true
+ *       width: 5
+ *       color: red
  */
-int Style::CascadeDown(Style *s)
+int Style::MergeFrom(Style *s)
 {
     const char *str;
-    int n=0;
+    int n = 0;
     for (int c=0; c<s->n(); c++) {
-        str=s->key(c);
-        Set(str, s->values.e(c));
+        str = s->key(c);
+        push(str, s->values.e(c)); //adds or replaces
         n++;
     }
     return n;
 }
 
 
-//----------------------------------- StreamTreeElement -----------------------------------
-/*! \class StreamTreeElement
- * Base class for StreamStyle and StreamChunk objects.
- */
-class StreamTreeElement
-{
-  public:
-	StreamTreeElement *treeparent;
-
-	StreamTreeElement(StreamTreeElement *nparent);
-	virtual ~StreamTreeElement();
-
-	PtrStack<StreamElement> kids;
-}
-
-StreamTreeElement::StreamTreeElement(StreamTreeElement *nparent)
-{
-	treeparent=nparent;
-}
-
-StreamTreeElement::~StreamTreeElement()
-{
-}
-
-
 //----------------------------------- StreamStyle -----------------------------------
 /*! \class StreamStyle 
- * \brief Class to hold a stream broken down into a tree
- *
+ * \brief Class to hold a stream broken down into a tree.
+ * 
  * Please note this is different than general cascaded styles in that parents
  * AND kids exist as a specific hierarchy. Children are kept track of, and the order of children
  * depends on the associated stream. General styles don't care about particular
@@ -195,25 +281,19 @@ StreamTreeElement::~StreamTreeElement()
  *
  * Streams need to traverse styles up and down when changing their contents. Leaves in
  * the tree are the actual content, and are derived from StreamChunk.
+ *
+ * These are very much like XML blocks, in that style holds the element attributes,
+ * and kids holds the element content. It differs from XML in that Style implements
+ * a lot of management of styles.
+ *
  */
-class StreamStyle : public StreamTreeElement
-{
-  public:
-	bool style_is_temp;
-	Style *style;
-
-	StreamStyle(StreamStyle *nparent, Style *nstyle);
-	virtual ~StreamStyle();
-    virtual const char *whattype() { return "StreamStyle"; }
-};
 
 StreamStyle::StreamStyle(StreamStyle *nparent, Style *nstyle)
   : StreamTreeElement(nparent)
 {
-	***
-	style=nstyle;
+	style = nstyle;
 	if (style) style->inc_count();
-	style_is_temp=true;
+	style_is_temp = true;
 }
 
 StreamStyle::~StreamStyle()
@@ -224,12 +304,6 @@ StreamStyle::~StreamStyle()
 
 //----------------------------------- StreamChunk ------------------------------------
 
-enum StreamChunkTypes {
-	CHUNK_Text,
-	CHUNK_Image,
-	CHUNK_Break,
-	CHUNK_MAX
-};
 
 
 /*! \class StreamChunk
@@ -240,29 +314,11 @@ enum StreamChunkTypes {
  * These are explicitly leaf nodes in a StreamStyle tree, that point to other leaf nodes
  * for convenience. Anything in style is ignored. All actual style information should be contained in the parent tree.
  */
-class StreamChunk : public StreamTreeElement
-{
- public:
-	StreamChunk *next, *prev;
-
-	StreamChunk(StreamTreeElement *nparent);
-	virtual ~StreamChunk();
-	virtual int NumBreaks()=0;
-	virtual int BreakInfo(int *type)=0;
-	virtual int Type()=0;
-
-	virtual StreamChunk *AddAfter(StreamChunk *chunk);
-	virtual void AddBefore(StreamChunk *chunk);
-
-	virtual void dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *context) = 0;
-	virtual void dump_out_atts(Attribute *att,int what,LaxFiles::DumpContext *context) = 0; //output label + content
-	virtual void dump_out (FILE *f,int indent,int what,LaxFiles::DumpContext *context) = 0;
-};
 
 StreamChunk::StreamChunk(StreamTreeElement *nparent)
-  : StreamTreeElement(nparent)
 {
-	next=prev=NULL;
+	parent = nparent;
+	next = prev = nullptr;
 }
 
 /* Default do nothing.
@@ -272,10 +328,13 @@ StreamChunk::~StreamChunk()
 	//if (next) delete next; no deleting, as chunks must ALWAYS be contained somewhere in a single StreamTreeElement tree.
 }
 
-/*! Assumes chunk->prev==NULL. Ok for chunk->next to not be null.
+/*! Insert a currently unstyled list of chunks after ourself.
+ * 
+ * Assumes chunk->prev == nullptr. Ok for chunk->next to not be nullptr.
  * Inserts between this and this->next.
  *
- * If chunk->style==NULL, then use same style as *this. 
+ * If chunk->style == nullptr, then use same style as *this. 
+ * Otherwise, integrate the contained styles into the StreamElement tree.
  *
  * Returns next most StreamChunk of chunk.
  */
@@ -283,26 +342,26 @@ StreamChunk *StreamChunk::AddAfter(StreamChunk *chunk)
 { *** need to work out style management
 
 	if (!chunk) return;
-	if (!chunk->parent) chunk->parent=parent;
+	if (!chunk->parent) chunk->parent = parent;
 
-	StreamChunk *chunkend=chunk;
-	while (chunkend->next) chunkend=chunkend->next;
+	StreamChunk *chunkend = chunk;
+	while (chunkend->next) chunkend = chunkend->next;
 
-	if (!next) { next=chunk; chunk->prev=this; }
+	if (!next) { next=chunk; chunk->prev = this; }
 	else {
-		chunkend->next=next;
-		if (chunkend->next) chunkend->next->prev=chunkend;
-		next=chunk;
-		chunk->prev=this;
+		chunkend->next = next;
+		if (chunkend->next) chunkend->next->prev = chunkend;
+		next = chunk;
+		chunk->prev = this;
 	}
 
 	return chunkend;
 }
 
-/*! Assumes chunk->prev==NULL. Ok for chunk->next to not be null.
+/*! Assumes chunk->prev==nullptr. Ok for chunk->next to not be nullptr.
  * Inserts between this and this->next.
  *
- * If chunk->style==NULL, then use same style as *this.
+ * If chunk->style==nullptr, then use same style as *this.
  */
 void StreamChunk::AddBefore(StreamChunk *chunk)
 { *** need to work out style management
@@ -319,48 +378,32 @@ void StreamChunk::AddBefore(StreamChunk *chunk)
 	prev=chunkend;
 }
 
+
 //----------------------------------- StreamBreak ------------------------------------
-typedef enum StreamBreakTypes {
-    BREAK_Paragraph,
-    BREAK_Column,
-    BREAK_Section,
-    BREAK_Page,
-    BREAK_Tab,
-    BREAK_MAX
-};
 
-class StreamBreak : public StreamChunk
+
+LaxFiles::Attribute *StreamBreak::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
 {
-	int break_type; //newline (paragraph), column, section, page
-
-	StreamBreak (int ntype) { type=ntype; }
-	virtual int NumBreaks() { return 0; }
-	virtual int BreakInfo(int *type) { return 0; }
-	virtual int Type() { return CHUNK_Break; }
-
-	virtual void dump_out_atts(Attribute *att,int what,LaxFiles::DumpContext *context) = 0; //output label + content
-	virtual void dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *context) = 0;
-};
-
-void StreamBreak::dump_out_atts(Attribute *att,int what,LaxFiles::DumpContext *context) //output label + content
-{
-	if (break_type==BREAK_Paragraph)    att->push("break","pp");
-	else if (break_type==BREAK_Column)  att->push("break","column");
-	else if (break_type==BREAK_Section) att->push("break","section");
-	else if (break_type==BREAK_Page)    att->push("break","page");
-	else if (break_type==BREAK_Tab)     att->push("break","tab");
+	if (break_type == BREAK_Paragraph)    att->push("break","pp");
+	else if (break_type == BREAK_Column)  att->push("break","column");
+	else if (break_type == BREAK_Section) att->push("break","section");
+	else if (break_type == BREAK_Page)    att->push("break","page");
+	else if (break_type == BREAK_Tab)     att->push("break","tab");
+	else if (break_type == BREAK_Weak)    att->push("break","weak");
+	else if (break_type == BREAK_Hyphen)  att->push("break","hyphen");
 }
 
 /*! NOTE! Uses whole attribute, not just kids. Meaning it compares att->value to various break types.
  */
 void StreamBreak::dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
-	if      (!strcmp(att->value,"pp"     )) break_type=BREAK_Paragraph;
-	else if (!strcmp(att->value,"column" )) break_type=BREAK_Column;
-	else if (!strcmp(att->value,"section")) break_type=BREAK_Section;
-	else if (!strcmp(att->value,"page"   )) break_type=BREAK_Page;   
-	else if (!strcmp(att->value,"tab"    )) break_type=BREAK_Tab;     
-
+	if      (!strcmp(att->value,"pp"     )) break_type = BREAK_Paragraph;
+	else if (!strcmp(att->value,"column" )) break_type = BREAK_Column;
+	else if (!strcmp(att->value,"section")) break_type = BREAK_Section;
+	else if (!strcmp(att->value,"page"   )) break_type = BREAK_Page;
+	else if (!strcmp(att->value,"tab"    )) break_type = BREAK_Tab;
+	else if (!strcmp(att->value,"weak"   )) break_type = BREAK_Weak;
+	else if (!strcmp(att->value,"hyphen" )) break_type = BREAK_Hyphen;
 }
 
 
@@ -370,25 +413,11 @@ void StreamBreak::dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *c
  *
  * Note this can be ANY drawable object, not just images.
  */
-class StreamImage : public StreamChunk
-{
- public:
-	DrawableObject *img;
-
-	StreamImage(DrawableObject *nimg,StreamStyle *pstyle);
-	virtual ~StreamImage();
-	virtual int NumBreaks() { return 0; }
-	virtual int BreakInfo(int *type) { return 0; }
-	virtual int Type() { return CHUNK_Image; }
-
-	virtual void dump_out_atts(Attribute *att,int what,LaxFiles::DumpContext *context) = 0; //output label + content
-	virtual void dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *context) = 0;
-};
 
 StreamImage::StreamImage(DrawableObject *nimg,StreamStyle *pstyle)
   : StreamChunk(pstyle)
 {
-	img=nimg;
+	img = nimg;
 	if (img) img->inc_count();
 }
 
@@ -397,43 +426,35 @@ StreamImage::~StreamImage()
 	if (img) img->dec_count();
 }
 
-void StreamImage::dump_out_atts(Attribute *att,int what,LaxFiles::DumpContext *context)
+LaxFiles::Attribute *StreamImage::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
 {
-	***
+	if (!img) {
+		att->push("object");
+		return att;
+	}
+	Attribute *att2 = att->PushSubatt("object", img->whattype());
+	img->dump_out_atts(att2, what, context);
+	return att;
 }
 
 void StreamImage::dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *context)
 {
-	***
+	DrawableObject *newimg = DrawableObject::CreateFromAttribute(att, att->value, context);
+
+	if (img) img->dec_count();
+	img = newimg;
 }
 
 
 
 //----------------------------------- StreamText ------------------------------------
 /*! \class StreamText
- * \brief Type of stream component made of text.
+ * \brief Type of stream chunk made only of simple text.
  *
  * One StreamText object contains a string of characters not including a newline.
  * This string is a single style of text. Any links, font changes, or anything else
  * that distinguishes this text from adjacent text requires a different StreamText.
  */
-class StreamText : public StreamChunk
-{
- public:
-	int len; //number of bytes in text (excluding any '\0')
-	char *text; //utf8 string
-
-	int numspaces;
-
-	StreamText(const char *txt,int n, StreamStyle *pstyle);
-	virtual ~StreamText();
-	virtual int NumBreaks();
-	virtual int BreakInfo(int *type);
-	virtual int Type() { return CHUNK_Text; }
-
-	virtual void dump_out_atts(Attribute *att,int what,LaxFiles::DumpContext *context) = 0; //output label + content
-	virtual void dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *context) = 0;
-};
 
 StreamText::StreamText(const char *txt,int n, StreamStyle *pstyle)
   : StreamChunk(pstyle)
@@ -452,12 +473,8 @@ StreamText::~StreamText()
 	delete[] text;
 }
 
-int StreamText::ChunkInfo(double *width,double *height)
-{ ***
-}
-
 //! Return the number of possible (not actual) breaks within the string of characters.
-/*! This can include hyphen points, spaces.
+/*! This can include hyphen points, spaces, or newlines.
  */
 int StreamText::NumBreaks()
 {
@@ -480,55 +497,27 @@ int StreamText::NumBreaks()
  * hyphens have low break potential, spaces have a lot, but not as much
  * as line breaks.
  */
-int StreamText::BreakInfo(int *type)
+int StreamText::BreakInfo(int index)
 { ***
 }
 
 
 //------------------------------------- Stream ----------------------------------
 /*! \class Stream
- * \brief The head of StreamChunk objects.
+ * \brief Hold a stream of things, usually text.
+ * 
+ * These are essentially heads of StreamStyle + StreamChunk objects.
  */
-
-class Stream : public Laxkit::anObject, public Laxkit::DumpUtility
-{
-  public:
-	char *id;
-	char *file; 
-
-	clock_t modtime;
-
-	StreamStyle *top;
-	StreamChunk *chunks;
-
-	Stream();
-	virtual ~Stream();
-
-	virtual void dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *context);
-	virtual void dump_out_atts(Attribute *att,int what,LaxFiles::DumpContext *context);
-	virtual void dump_out (FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-};
-
-
-/*! for more standardized contexts, with bare minimum filename accessible.
- * maybe base on Boost file path classes for portability??
- */
-class FileIOContext
-{
-  public:
-	char *filename;
-};
-
 
 
 Stream::Stream()
 {
-	modtime=0;
-	file=NULL;
-	id=NULL;
+	modtime = 0;
+	file    = nullptr;
+	id      = nullptr;
 
-	top=NULL;
-	chunks=NULL;
+	top    = nullptr;
+	chunks = nullptr;
 }
 
 Stream::~Stream()
@@ -564,19 +553,19 @@ Stream::~Stream()
  *     <span class="#laidout_default_style" style="font-size:10; line-spacing:110%;">first text<img file="/blah/blah.jpg"/>Some text all up in here</span>
  * </pre>
  */
-void Stream::dump_out_atts(Attribute *att,int what,LaxFiles::DumpContext *context)
+LaxFiles::Attribute *Stream::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
 {
 	if (!chunks) return;
 
-	if (!att) att=new Attribute;
+	if (!att) att = new Attribute;
 
-	Attribute *att2=att->Subatt("streamdata");
+	Attribute *att2 = att->Subatt("streamdata");
 	dump_out_recursive(value, att2,top,context);
 }
 
 void Stream::dump_out_recursive(Attribute *att,StreamTreeElement *element,LaxFiles::DumpContext *context)
 {
-	StreamChunk *chunk=dynamic_cast<StreamChunk*>(element);
+	StreamChunk *chunk = dynamic_cast<StreamChunk*>(element);
 	if (chunk) {
 		 //no kids, leaf node
 		chunk->dump_out_atts(att,0,context);
@@ -584,7 +573,7 @@ void Stream::dump_out_recursive(Attribute *att,StreamTreeElement *element,LaxFil
 	}
 
 
-	StreamStyle *sstyle=dynamic_cast<StreamStyle*>(element);
+	StreamStyle *sstyle = dynamic_cast<StreamStyle*>(element);
 	if (!sstyle) {
 		DBG cerr <<"Warning! unrecognized StreamTreeElement object!"<<endl;
 		return;
@@ -620,7 +609,6 @@ void Stream::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context
 
 		if (!strcmp(name,"streamdata")) {
 			 //default Laidout format.... maybe should just use htmltext for simplicity??
-			***
 			dump_in_att_stream(att->attributes.e[c], context, log);
 
 		} else if (!strcmp(name,"htmltext")) {
@@ -636,84 +624,165 @@ void Stream::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context
 			 //Try to read in a file, which can be formatted any which way.
 			 //Scan for hints about:
 			 //  format, such as txt, html, etc
-			 //  importer, from list of know TextImporter objects
+			 //  importer, from list of know StreamImporter objects
 			 //  encoding, such as latin-1, utf8, etc
 			 //
-			const char *file=value;
-			const char *format=NULL;
-			const char *importer=NULL;
-			const char *encoding=NULL;
+			 const char *file     = value;
+			 const char *format   = nullptr;
+			 const char *importer = nullptr;
+			 const char *encoding = nullptr;
 
-			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
-				name =att->attributes.e[c]->attributes.e[c2]->name;
-				value=att->attributes.e[c]->attributes.e[c2]->value;
+			 for (int c2 = 0; c2 < att->attributes.e[c]->attributes.n; c2++) {
+				 name  = att->attributes.e[c]->attributes.e[c2]->name;
+				 value = att->attributes.e[c]->attributes.e[c2]->value;
 
-				if (!strcmp(name,"format")) format=value;
-				else if (!strcmp(name,"importer")) importer=value;
-				else if (!strcmp(name,"encoding")) encoding=value;
+				 if (!strcmp(name, "format"))
+					 format = value;
+				 else if (!strcmp(name, "importer"))
+					 importer = value;
+				 else if (!strcmp(name, "encoding"))
+					 encoding = value;
 			}
 			if (format && !strcasecmp(format,"txt")) format="text";
 
-			int status=-2;
+			int status = -2;
+
 			if (importer) {
 				 //find and try importer on file with format
-				TextImporter *importer_obj=laidout->GetTextImporter(importer,format);
-				if (importer_obj) status=importer_obj->ImportStream(this, file, format, encoding);
+				StreamImporter *importer_obj = laidout->GetStreamImporter(importer,format);
+				if (importer_obj) status = importer_obj->ImportStream(this, file, format, encoding);
 				else {
-					status=1;
-					log.AddWarning(_("Unknown importer %s, ignoring file %s"), importer,file);
+					status = 1;
+					log.AddWarning(_("Unknown importer %s, ignoring file %s"), importer, file);
 				}
 
 			} else { //importer not found
 				 //try to guess from extension
 				if (!format) {
-					const char *s=hasExtension(file,"txt");
-					if (s) format="text";
-					if (!format) {
-						s=hasExtension(file,"html");
-						if (s) format="html";
-					}
-					if (!format) {
-						s=hasExtension(file,"md");
-						if (s) format="markdown";
-					}
-				}
-				if (!format) format="text";
+					const char *ext = lax_extension(file);
 
-				 //no importer found, try some defaults based on format
-				if (!strcmp(format,"html")) ImportXMLFile(value);
-				else if (!strcmp(format,"markdown")) ImportMarkdown(value,-1);
-				else { //text
-					char *str=FileToStr(file, encoding); // *** must convert to utf8
-					if (!isblank(str)) {
-						if (!strcasecmp(format,"text")) ImportText(str,-1);
+					if (!ext)
+						format = "text";
+					else if (!strncasecmp(ext, "html"))
+						format = "html";
+					else if (!strncasecmp(ext, "md"))
+						format = "markdown";
+				}
+
+				if (!format) format = "text";
+
+				int len = 0;
+				char *contents = read_in_whole_file(file, &len);
+				if (!contents) {
+					log.AddWarning(0,0,0, _("Cannot load stream file %s!"), file);
+
+				} else {
+					 //no importer found, try some defaults based on format
+					if (!strcmp(format, "html")) {
+						ImportXMLFile(contents, len);
+
+					} else if (!strcmp(format, "markdown")) {
+						ImportMarkdown(contents, len);
+
+					} else { //text
+						char *str = FileToStr(file, encoding); // *** must convert to utf8
+						if (!isblank(str)) {
+							ImportText(contents, len);
+						}
+						delete[] str;
 					}
-					delete[] str;
+
 				}
 			}
 		}
 	}
-	modtime=times(NULL);
+
+	modtime = times(nullptr);
 }
 
+
+// Headings:  # blah   .. recommended to have space after the hash
+//            ## blah   ... up to 6 #s
+//            # Heading {#custom-id}  <- makes like <h1 id="custom-id">Heading</h1>
+// Like h1:   =====
+// Like h2:   -----
+// Paragraphs separated by blank line.
+// Force newline with 2 or more spaces at eol, or use <br>
+// **bold**  __bold__
+// Bold**in**word
+// *Italic*  _Italic_
+// ***Bold+Italic***  ___B+I___  __*B+I*__
+// > Blockquote
+// > More blockquote
+// >> Nested
+// 1. List
+// 2. List
+// 1. List
+// - Olist
+// - Olist
+// * olist
+// + olist
+//   - sublist
+// - 1\. thing
+// Code blocks:  indent 4 spaces or one tab.. in list, indent 8 spaces or 2 tabs
+// ![Alt text](/path/to/image.png)
+// ![Alt](/path/to/image.png "Title")
+// `code`
+// ```
+// code block
+// ```
+// ```json
+// {"stuff":"syntax highlighted"}
+// ```
+// `` <- escaped backtick
+// ***     <- <hr>
+// ---     <- <hr>
+// ______  <- <hr>
+// [Link text](https://somewhere.org)
+// [Text](#header-id)
+// <https://fastlink.org>
+// http://autolink.com
+// `http://not_autolink.com`
+// [`code link`](#code)
+// [Shortcut links][1]
+// [1]: https://something.org    <- link will be rendered in original place
+// Escaping chars: \ ` * _ { } [ ] ( ) # + - . ! |
+// 
+// Word
+// : definition   ->  <dl><dt>Word</dt><dd>definition</dd></dl>
+// ~~Strikethrough~~
+// - [ ] Task
+// - [x] Checked task
+// :emoji:
+// --------- Extended ----------
+// footnote [^1]
+// [^1]: footnote text
+// Tables:
+//   | Normal | Left | Center|Right|
+//   |---|:-----|:-----:|---:|
+//   | 1   | 2   |3|4|
+//   
+// Docfx extension:
+// [!NOTE]
+//    code
 int Stream::ImportMarkdown(const char *text, int n, StreamChunk *addto, bool after)
 {
 	cerr << " *** must implement a markdown importer! defaulting to text"<<endl;
 	return ImportText(text,n,addto,after);
 }
 
-/*! afterthis MUST be a chunk of *this or NULL. No verification is done.
- * If NULL, then add to end of chunks.
+/*! afterthis MUST be a chunk of *this or nullptr. No verification is done.
+ * If nullptr, then add to end of chunks.
  *
  * Return 0 for success or nonzero for error.
  */
 int Stream::ImportText(const char *text, int n, StreamChunk *addto, bool after)
 {
 	if (!text) return 0;
-	if (n<0) n=strlen(text);
-	if (n==0) return 0;
+	if (n < 0) n = strlen(text);
+	if (n == 0) return 0;
 	
-	StreamText *txt=new StreamText(text,n, NULL);
+	StreamText *txt=new StreamText(text,n, nullptr);
 
 	if (addto) {
 		if (after) addto->AddAfter(txt);
@@ -753,8 +822,8 @@ int Stream::ImportXMLFile(const char *nfile)
 {
 	makestr(file,nfile);
 	Attribute att;
-	XMLFileToAttribute(&att,nfile,NULL);
-	return ImportXMLAtt(att, NULL, top);
+	XMLFileToAttribute(&att,nfile,nullptr);
+	return ImportXMLAtt(att, nullptr, top);
 }
 
 /*! From string value, assume it is xml formatted text, and parse into StreamChunk objects, completely
@@ -763,13 +832,13 @@ int Stream::ImportXMLFile(const char *nfile)
 int Stream::ImportXML(const char *value)
 {
 	delete chunks;
-	chunks=NULL;
+	chunks=nullptr;
 
 	long pos=0;
 	Attribute att;
-	XMLChunkToAttribute(&att, value, strlen(value), &pos, NULL, NULL);
+	XMLChunkToAttribute(&att, value, strlen(value), &pos, nullptr, nullptr);
 
-	return ImportXMLAtt(att, NULL, top);
+	return ImportXMLAtt(att, nullptr, top);
 }
 
 
@@ -816,7 +885,7 @@ int ParseFofS(const char *value, int *f_len_ret, const char **s_ret, int *s_len_
 /*! 
  * See https://www.w3.org/TR/css-fonts-3/#font-face-rule.
  *
- * Return NULL on could not process.
+ * Return nullptr on could not process.
  */
 Style *ProcessCSSFontFace(Style *style, Attribute *att, Laxkit::ErrorLog *log)
 {
@@ -1035,8 +1104,8 @@ Style *ProcessCSSBlock(Style *style, const char *cssvalue)
 	Attribute att;
 	CSSBlockToAttribute(&att, cssvalue);
 
-	const char *variant=NULL;
-	const char *familylist=NULL;
+	const char *variant=nullptr;
+	const char *familylist=nullptr;
 	int weight=400;
 	int italic=-1;
 
@@ -1103,9 +1172,9 @@ Style *ProcessCSSBlock(Style *style, const char *cssvalue)
 			} else if (!strcmp(value,"status-bar")) {
 			} else {
 
-				const char *endptr=NULL;
+				const char *endptr=nullptr;
 				int font_style=CSSFontStyle(value, &endptr);
-				char *font_variant=NULL;
+				char *font_variant=nullptr;
 				int font_weight=-1;
 
 				if (endptr==value) {
@@ -1143,7 +1212,7 @@ Style *ProcessCSSBlock(Style *style, const char *cssvalue)
 			if (!strcmp(value,"none")) {
 				//should be 100% of font-size
 			} else {
-				LengthValue *v=ParseLengthOrPercent(value, "font-size", NULL);
+				LengthValue *v=ParseLengthOrPercent(value, "font-size", nullptr);
 				if (v) {
 					style->set("line-height",v,1);
 				} else {
@@ -1205,23 +1274,29 @@ Style *ProcessCSSBlock(Style *style, const char *cssvalue)
 	return style;
 }
 
-Value *ParseLengthOrPercent(const char *value, const char *relative_to, const char **endptr)
+LengthValue *ParseLengthOrPercent(const char *value, const char *relative_to, const char **endptr)
 {
-	*** em, ex, px, and usual cm, etc
-	----
-	double l=-1;
-	char *endptr=NULL;
-	DoubleAttribute(value,&l,&endptr);
-	if (endptr==value) {
-		//error! can't use this!
-	} else {
-		if (endptr && *endptr=='%') {
-			PercentageValue *v=new PercentageValue(l,"font-size");
-			style->set("line-height", v);
-		} else {
+	*** % em, ex, px, and usual cm, etc-- --double val = -1;
 
-		}
+	char *endptr = nullptr;
+	DoubleAttribute(value, &val, &endptr);
+
+	if (endptr == value) {
+		// error! can't use this!
+		return nullptr;
+		
+	} 
+	while (isspace(*endptr)) endptr++;
+
+	LengthValue *v = nullptr;
+	if (*endptr == '%') {
+		v = new LengthValue(l, "font-size");
+
+	} else if (*endptr == 'e' && *endptr == 'm') {
+	} else {
 	}
+
+	return v;
 }
 
 
@@ -1231,7 +1306,7 @@ LFont *MatchCSSFont(const char *font_family, int italic, const char *variant, in
 	// font_family is the css attribute:
 	//  font-family: Bookman, serif, ..... <-- use first one found
 	//    or generic:  serif  sans-serif  cursive  fantasy  monospace
-	LFont *font=NULL;
+	LFont *font=nullptr;
 	const char *v;
 	while (value && *value) {
 		while (isspace(*value)) value++;
@@ -1249,55 +1324,24 @@ LFont *MatchCSSFont(const char *font_family, int italic, const char *variant, in
 	return font;
 }
 
-/*! If inherit, set ret_type=-1, return NULL.
- * If there was an error converting to a color, ret_type=-2, return NULL.
- * Else return a new Color, and ret_type==0.
- */
-Color *CSSColorValue(const char *value, int *ret_type)
+int ParseBidi(const char *str, int len)
 {
-	//css3 has 147 named colors
-	//css3 has rgba, and hsl/hsla
-	//  not implemented: x11 colors
-	//  not implemented: system colors: see http://www.w3.org/TR/CSS2/ui.html#system-colors
+	if (len < 0) len = strlen(str);
+	int bidi=-2;
 
-	if (!strcmp(value,"inherit")) {
-		*ret_type=-1;
-		return NULL;
-	}
+	if      (!strncasecmp(value,"ltr" , len))  bidi = LAX_LRTB;
+	else if (!strncasecmp(value,"rtl" , len))  bidi = LAX_RLTB;
+	else if (!strncasecmp(value,"auto", len)) bidi = -1;
+	else if (!strncasecmp(value,"lrtb", len)) bidi = LAX_LRTB;
+	else if (!strncasecmp(value,"ltbt", len)) bidi = LAX_LTBT;
+	else if (!strncasecmp(value,"rltb", len)) bidi = LAX_RLTB;
+	else if (!strncasecmp(value,"rlbt", len)) bidi = LAX_RLBT;
+	else if (!strncasecmp(value,"tblr", len)) bidi = LAX_TBLR;
+	else if (!strncasecmp(value,"tbrl", len)) bidi = LAX_TBRL;
+	else if (!strncasecmp(value,"btlr", len)) bidi = LAX_BTLR;
+	else if (!strncasecmp(value,"btrl", len)) bidi = LAX_BTRL;
 
-	Color *color=NULL;
-	int r=-1,g=-1,b=-1, a=0xff;
-
-	 //css named colors
-	if      (!strcmp(value,"white"))   { r=0xff; g=0xff; b=0xff; }
-	else if (!strcmp(value,"black"))   { r=0x00; g=0x00; b=0x00; }
-	else if (!strcmp(value,"maroon"))  { r=0x80; g=0x00; b=0x00; }
-	else if (!strcmp(value,"red"))     { r=0xff; g=0x00; b=0x00; }
-	else if (!strcmp(value,"orange"))  { r=0xff; g=0xA5; b=0x00; }
-	else if (!strcmp(value,"yellow"))  { r=0xff; g=0xff; b=0x00; }
-	else if (!strcmp(value,"olive"))   { r=0x80; g=0x80; b=0x00; }
-	else if (!strcmp(value,"purple"))  { r=0x80; g=0x00; b=0x80; }
-	else if (!strcmp(value,"fuchsia")) { r=0xff; g=0x00; b=0xff; }
-	else if (!strcmp(value,"white"))   { r=0xff; g=0xff; b=0xff; }
-	else if (!strcmp(value,"lime"))    { r=0x00; g=0xff; b=0x00; }
-	else if (!strcmp(value,"green"))   { r=0x00; g=0x80; b=0x00; }
-	else if (!strcmp(value,"navy"))    { r=0x00; g=0x00; b=0x80; }
-	else if (!strcmp(value,"blue"))    { r=0x00; g=0x00; b=0xff; }
-	else if (!strcmp(value,"aqua"))    { r=0x00; g=0xff; b=0xff; }
-	else if (!strcmp(value,"teal"))    { r=0x00; g=0x80; b=0x80; }
-
-	else if (!strcmp(value,"cyan"))    { r=0x00; g=0xff; b=0xff; } //not css, but is x11 color, widely accepted
-
-	if (r>=0) color=newRGBColor(r,g,b,255, 255);
-	else if (!color) ColorAttribute(value, &color, error_ret);
-
-	if (!color) {
-		*ret_type=-2;
-		return NULL;
-	}
-
-	*ret_type=0;
-	return color;
+	return bidi;
 }
 
 void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&chunk, StreamStyle *laststyle)
@@ -1305,11 +1349,11 @@ void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&chunk, StreamStyle *last
 	const char *name;
 	const char *value;
 	
-	char *title=NULL;
+	char *title = nullptr;
 
 	for (int c=0; c<att->attributes.n; c++) {
-		name =att->attributes.e[c]->name;
-		value=att->attributes.e[c]->value;
+		name  = att->attributes.e[c]->name;
+		value = att->attributes.e[c]->value;
 
 		//
 		//first process one off elements... currently: br wbr hr img tab "cdata:"
@@ -1353,7 +1397,7 @@ void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&chunk, StreamStyle *last
 			//<img width="100" height="100" alt=".." src=".."   style class id ... />
 			
 			double w=-1, h=-1;
-			const char *alt=NULL, *src=NULL, *img_title=NULL;
+			const char *alt=nullptr, *src=nullptr, *img_title=nullptr;
 
 			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
 				name =att->attributes.e[c]->attributes.e[c2]->name;
@@ -1380,7 +1424,7 @@ void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&chunk, StreamStyle *last
 			}
 
 			ImageData *img=datafactory->NewObject("ImageData");
-			img->LoadImage(src,NULL, 0,0,0,0);
+			img->LoadImage(src,nullptr, 0,0,0,0);
 			if (alt) *** make as description;
 			if (title) ***;
 			if (h<=0) *** //make same size as font (ascent+descent)?
@@ -1399,7 +1443,7 @@ void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&chunk, StreamStyle *last
 		} else if (!strcmp(name,"cdata:")) {
 			// *** &quot; and stuff
 
-			StreamText *txt=new StreamText(NULL,0, laststyle);
+			StreamText *txt=new StreamText(nullptr,0, laststyle);
 			txt->SetFromEntities(value); *** //<- needs to compress whitespace, and change &stuff; to chars
 			//char *text=ConvertEntitiesToChars(value);
 			//delete[] text;
@@ -1420,16 +1464,16 @@ void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&chunk, StreamStyle *last
 		// *** //make exception for <a> elements?
 
 
-		StreamStyle *newstyle=NULL;
+		StreamStyle *newstyle = nullptr;
 
 		 //Parse global attributes: style class id dir="ltr|rtl|auto" title
 		for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
-			name =att->attributes.e[c]->attributes.e[c2]->name;
-			value=att->attributes.e[c]->attributes.e[c2]->value;
+			name  = att->attributes.e[c]->attributes.e[c2]->name;
+			value = att->attributes.e[c]->attributes.e[c2]->value;
 
 			if (!strcmp(name,"style")) {
 				 //update newstyle with style found
-				newstyle=ProcessCSSBlock(newstyle, laststyle, value);
+				newstyle = ProcessCSSBlock(newstyle, laststyle, value);
 
 			} if (!strcmp(name,"class")) {
 				 //*** update newstyle with style found
@@ -1446,23 +1490,10 @@ void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&chunk, StreamStyle *last
 				 // flow direction: html has "ltr" "rtl" "auto"
 				 // 				-> extend with all 8 lrtb, lrbt, tblr, etc?
 	
-				int bidi=-2;
+				int bidi = ParseBidi(value,-1);
 
-				if (!strcasecmp(value,"ltr")) bidi=LAX_LRTB;
-				else if (!strcasecmp(value,"rtl")) bidi=LAX_RLTB;
-				else if (!strcasecmp(value,"auto")) bidi=-1;
-
-				else if (!strcasecmp(value,"lrtb")) bidi=LAX_LRTB;
-				else if (!strcasecmp(value,"ltbt")) bidi=LAX_LTBT;
-				else if (!strcasecmp(value,"rltb")) bidi=LAX_RLTB;
-				else if (!strcasecmp(value,"rlbt")) bidi=LAX_RLBT;
-				else if (!strcasecmp(value,"tblr")) bidi=LAX_TBLR;
-				else if (!strcasecmp(value,"tbrl")) bidi=LAX_TBRL;
-				else if (!strcasecmp(value,"btlr")) bidi=LAX_BTLR;
-				else if (!strcasecmp(value,"btrl")) bidi=LAX_BTRL;
-
-				if (!newstyle) newstyle=new StreamStyle();
-				if (bidi>=0) newstyle->set("bidi",bidi); ***
+				if (!newstyle) newstyle = new StreamStyle();
+				if (bidi >= 0) newstyle->set("bidi",bidi); ***
 			}
 		}
 
@@ -1548,7 +1579,7 @@ void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&chunk, StreamStyle *last
 		}
 
 
-		if (title) { delete[] title; title=NULL; }
+		if (title) { delete[] title; title = nullptr; }
 		if (newstyle) newstyle->dec_count();
 	}
 }
@@ -1560,14 +1591,14 @@ void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&chunk, StreamStyle *last
  * DrawableObject, as well as cached rendering info in a StreamCache.
  */
 
-class StreamAttachment
+class StreamAttachment : public Laxkit::RefCounted
 {
   public:
     DrawableObject *owner;
 	int attachment_target; //area path, inset path, outset path, inset area
 
     Stream *stream;
-    StreamCache *cache;
+    StreamCache *cache; //owned by *this, assume any other refs are for temporary rendering purposes
 
     StreamAttachment(DrawableObject *nobject, Stream *nstream);
     ~StreamAttachment();
@@ -1575,37 +1606,40 @@ class StreamAttachment
 
 StreamAttachment::StreamAttachment(DrawableObject *nobject, Stream *nstream)
 {
-    owner=nobject; //assume *this is a child of object
+    owner = nobject; //assume *this is a child of object
 
-    stream=nstream;
+    stream = nstream;
     if (stream) stream->inc_count();
 
-    cache=NULL;
+    cache = nullptr;
 }
 
 StreamAttachment::~StreamAttachment()
 {
 	if (stream) stream->dec_count();
-	if (cache) delete cache;
+	if (cache) cache->dec_count();
 }
+
 
 //------------------------------------- StreamCache ----------------------------------
 /*! \class StreamCache
  * \brief Rendering info for Stream objects.
  *
  * This is stored on each StreamAttachment object that connects the streams to objects.
+ *
+ * One StreamChunk object will correspond to one or more contiguous StreamCache objects.
  */
 
-class StreamCache : public SquishyBox
+class StreamCache : public Laxkit::SquishyBox, public Laxkit::RefCounted
 {
   public:
 	clock_t modtime;
-	StreamCache *next;
+	StreamCache *next, *prev;
 
 	StreamStyle *style;
 	StreamChunk *chunk;
-	long offset;
-	long len;
+	long offset; //how many breaks into chunk to start
+	long len; //how many breaks long in chunk is this cache
 
 	Affine transform;
 
@@ -1616,20 +1650,20 @@ class StreamCache : public SquishyBox
 
 StreamCache::StreamCache(StreamChuck *ch, long noffset, long nlen)
 {
-	modtime=0;
-	next=NULL;
-	chunk=ch;
-	if (ch) style=ch->style; else style=NULL;
-	offset=noffset;
-	len=nlen;
+	modtime = 0;
+	next    = nullptr;
+	chunk   = ch;
+	offset  = noffset;
+	len     = nlen;
+	if (ch) style = ch->style; else style=nullptr;
 }
 
 StreamCache::StreamCache()
 {
-	next=NULL;
-	style=NULL;
-	chunk=NULL;
-	offset=len=0;
+	next   = nullptr;
+	style  = nullptr;
+	chunk  = nullptr;
+	offset = len = 0;
 }
 
 StreamCache::~StreamCache()
@@ -1643,16 +1677,16 @@ StreamCache::~StreamCache()
  * affect wrapping.
  *
  * Overwrites anything in cache chain, adding more nodes if necessary, and deleting unused ones.
- * or create and return a new one if cache==NULL.
+ * or create and return a new one if cache==nullptr.
  */
-StreamCache *RemapAreaStream(DrawableObject *target, StreamAttachment *attachment, int startchuck, int chunkoffset)
+StreamCache *RemapAreaStream(DrawableObject *target, StreamAttachment *attachment, int start_chunck, int chunk_offset)
 { ***
 	if (!attachment) return 1;
 	
-	Stream      *stream=attachment->stream;
-	StreamCache *cache=attachment->cache;
+	Stream      *stream = attachment->stream;
+	StreamCache *cache  = attachment->cache;
 
-	if (cache->modtime>0 && stream->modtime<cache->modtime) return 0; //probably set ok
+	if (cache->modtime > 0 && stream->modtime < cache->modtime) return 0; //probably set ok
 
 
 	 //-------- compute possible breaks if necessary
@@ -1662,16 +1696,16 @@ StreamCache *RemapAreaStream(DrawableObject *target, StreamAttachment *attachmen
 	 //----------compute layout area:
 	 //  start with target inset path
 	 //  We need to remove the wrap path of any lesser siblings and aunts/uncles from that path
-	PathsData *area=target->GetInsetPath()->duplicate();
+	PathsData *area = target->GetInsetPath()->duplicate();
 
-	DrawableObject *so=target;
-	DrawableObject *o=target->parent;
+	DrawableObject *so = target;
+	DrawableObject *o = target->parent;
 	while (o) {
-		for (int c=0; c<o->n() && o->e(c)!=so; c++) {
+		for (int c = 0; c < o->n() && o->e(c) != so; c++) {
 			area->CutOut(o->e(c)->GetWrapPath());
 		}
-		so=o;
-		o=o->parent;
+		so = o;
+		o = o->parent;
 	}
 
 

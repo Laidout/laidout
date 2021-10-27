@@ -17,6 +17,7 @@
 #include "datafactory.h"
 #include "../core/stylemanager.h"
 #include "../language.h"
+#include "../ui/viewwindow.h"
 
 
 using namespace Laxkit;
@@ -61,6 +62,13 @@ int LTextOnPath::pointin(flatpoint pp,int pin)
 	return TextOnPath::pointin(pp,pin);
 }
 
+bool LTextOnPath::IsLinkedToParent()
+{
+	if (!pathcontext) return false;
+	VObjContext *oc = dynamic_cast<VObjContext*>(pathcontext);
+	if (!oc) return false;
+	return oc->context.n() == 1 && oc->context.e(0) == -1;
+}
 
 void LTextOnPath::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {

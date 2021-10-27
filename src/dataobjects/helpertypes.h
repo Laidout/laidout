@@ -44,6 +44,7 @@ class LLineStyle : public Value
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
     virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
 
+
 	//from Value:
 	virtual Value *duplicate();
     virtual ObjectDef *makeObjectDef();
@@ -52,6 +53,9 @@ class LLineStyle : public Value
     //virtual int assign(FieldExtPlace *ext,Value *v);
 //    virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 //                         Value **value_ret, Laxkit::ErrorLog *log);
+
+    //from anObject:
+	virtual anObject *duplicate(anObject *ref) { return duplicate(); }
 };
 
 
@@ -79,6 +83,9 @@ class LFillStyle : public Value
     virtual ObjectDef *makeObjectDef();
     virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(Value *v, const char *extstring);
+
+    //from anObject:
+	virtual anObject *duplicate(anObject *ref) { return duplicate(); }
 };
 
 

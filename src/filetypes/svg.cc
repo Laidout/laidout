@@ -1519,8 +1519,13 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgE
 
 	} else if (!strcmp(obj->whattype(),"GradientData")) {
 		GradientData *grad;
-		grad=dynamic_cast<GradientData *>(obj);
+		grad = dynamic_cast<GradientData *>(obj);
 		if (!grad) return 0;
+
+		const char *spreadMethod = "pad";
+		if (grad->spread_method == LAXSPREAD_Reflect)     spreadMethod = "reflect";
+		else if (grad->spread_method == LAXSPREAD_Repeat) spreadMethod = "repeat";
+		//svg doesn't have a "none"
 
 		if (grad->IsRadial()) {
 			double r1,r2;
@@ -1582,6 +1587,7 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgE
 			if (r1!=0) cout <<"*** need to fix placement of fx in svg out for radial gradients"<<endl;
 			fprintf(f,"        fy=\"%f\"\n", opp1.y);
 			fprintf(f,"        r=\"%f\"\n", r2);
+			fprintf(f,"        spreadMethod=\"%s\"\n", spreadMethod);
 			fprintf(f,"        gradientUnits=\"userSpaceOnUse\">\n");
 
 			for (int c=(r1==0?0:-2); c<grad->strip->colors.n; c++) {
@@ -1600,10 +1606,11 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgE
 
 		} else {
 			fprintf(f,"    <linearGradient  id=\"linearGradient%ld\"\n", grad->object_id);
-			fprintf(f,"        x1=\"%f\"\n", grad->P1().x);
-			fprintf(f,"        y1=\"%f\"\n", grad->P1().y);
-			fprintf(f,"        x2=\"%f\"\n", grad->P2().x);
-			fprintf(f,"        y2=\"%f\"\n", grad->P2().y);
+			fprintf(f,"        x1=\"%f\"\n", grad->transformPoint(grad->P1()).x);
+			fprintf(f,"        y1=\"%f\"\n", grad->transformPoint(grad->P1()).y);
+			fprintf(f,"        x2=\"%f\"\n", grad->transformPoint(grad->P2()).x);
+			fprintf(f,"        y2=\"%f\"\n", grad->transformPoint(grad->P2()).y);
+			fprintf(f,"        spreadMethod=\"%s\"\n", spreadMethod);
 			fprintf(f,"        gradientUnits=\"userSpaceOnUse\">\n");
 			double clen=grad->strip->colors.e[grad->strip->colors.n-1]->t-grad->strip->colors.e[0]->t;
 			for (int c=0; c<grad->strip->colors.n; c++) {

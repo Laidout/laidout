@@ -43,6 +43,7 @@ class LTextOnPath : public DrawableObject,
 	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
 
+	virtual bool IsLinkedToParent();
 
 	virtual Value *duplicate();
 	virtual ObjectDef *makeObjectDef();
