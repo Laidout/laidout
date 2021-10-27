@@ -318,9 +318,18 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 
 		} else {
 			 //valid all refs in selection
+			LaidoutViewport *vp=((LaidoutViewport *)viewport);
+
 			for (int c=selection->n()-1; c>=0; c--) {
 				if (!viewport->IsValidContext(selection->e(c))) {
-					selection->Remove(c);
+					if (te->changetype == TreeObjectReorder) {
+						VObjContext oc;
+						if (vp->locateObject(selection->e(c)->obj, oc.context)) {
+							dynamic_cast<VObjContext*>(selection->e(c))->context = oc.context;
+						} else selection->Remove(c);
+					} else {
+						selection->Remove(c);
+					}		
 				} 
 			}
 		}
