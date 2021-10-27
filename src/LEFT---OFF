@@ -12,7 +12,6 @@ down to major items in ../features.md.
 
 
 ------------ serious bugs to fix right now:
-bug: home and end throw selection bounds out of whack.. try with gradient tool for instance, controls bad until reselect
 
 bug: Engraver fill, just moving mouse around is rerendering to buffer for preview
 
@@ -132,9 +131,6 @@ Need better mouse shape support
 
 possible modifier-pairing error with multiple mice...
 
-
-should not be able to group select an object and another object nested within
-
 file previewer not updating preview when using arrow keys
 
 shrink image lets you go immeasurably small
@@ -185,36 +181,6 @@ test:
 
 
 
-Gradients: gradientinterface
-  check svg export of gradients with new spread method
-  DONE SHOWCOLORS should be off by default
-  dragging around color points from inside to outside should allow going out of bounds
-    DONE linear
-    radial
-  radial:
-    default on r1,r2 should be change radius, not move
-  perhaps split radial and linear gradients to different tools? makes more sense
-  tool: drag define gradients ala substance
-  tool: sketch define gradient fields ala sketch studio
-
-  bug: on start, colors get zapped to window origin ?? can't duplicate
-
-  do dithering to reduce banding
-  color interpolation: render to image, then use that as color source
-    linear (current default and only option)
-	constant
-	auto bez
-	curve editor rgba
-
-  gradient data should be able to use resource GradientStrip
-    owner: file/user global/system global
-    name
-    tags
-    color strip:
-      stops
-        position
-        r1, r2
-
 alternate packaging:
   flatpak: https://github.com/Laidout/laidout/issues/11
   --- 0.099
@@ -260,27 +226,54 @@ cairo:
 graphicsmagick:
   load_image() always loads full, even if ping_only (confirm?)
 
-utf8string:
-  move semantics to be more efficient
-
 debug inkscape node extension
 
 text on path textonpath: TextOnPath
-  bug: final letter in envelope size is wrong size
-  convert to path rendering to wrong place and orientation
-  doesn't handle transforms with nested objects properly
-  dragging size handle with shift|control does not scale properly
-  convert to path: not respecting transform, putting upside down(done)
-  select font, key up/down scrolls uncomfortably SOMETIMES!!
-
+  bug: offset and baseline handles disappeared for large offset values
+  bug: bezier length resolution inconsistencies making gaps. need solution with consistent approximation
+  bug: visible selected bounds not updating?
+  bug: convert to path rendering to wrong place and orientation
+  bug: dragging the offest handle sometimes jumps to really bad
+  bug: when direction is reversed, offset needs to be reversed
+  bug: sometimes path weights don't recache along with glyph positions
+  bug: duplicate isn't always initing the dup properly
+  bug: some problem with paths when link_to_parent
+  handle to remove from current path, and possibly attach it to some other path
+    how to attach to diff path
+    how to attach to any path
+  move mouse around hover over objects, indicate when you can apply text on an existing path
   envelope:
+    bug: change offset on closed path, flips around envelope size
+    bug: glyph positioning is wrong: position glyphs based on middle of glyph, not start of glyph
+    bug: final letter in envelope size is wrong size
     vertical position bad
     horizontal spacing a bit wonky
-  bug: drag the baseline handle off to the sides, makes huge bad jumps in value
-  bug: dragging the offest handle sometimes jumps to really bad
-  handle to remove from current path, and possibly attach it to some other path
-  glyph positioning is wrong
-  position glyphs based on middle of glyph, not start of glyph
+
+  when baseline is from_path, should indicate path, not offsetted path
+  select font, key up/down scrolls uncomfortably SOMETIMES!!
+  dragging size handle with shift|control for precision does not scale properly
+
+  ---0.99:
+  mouse click to position caret
+  size of offset and baseline widgets is not screen space, should they be?
+  cursor behavior and color should match the caption tool
+  halignment options for open paths?
+  need kern control, with kern handles
+  copy and paste text
+  should not add new object with special check for blank on interf exit, should cache add point, but only add if new text pressed
+  rotation handle: glyphs align with path, or orient absolute, or distort with path flow, or distort with absolute angle
+  multiline?
+  option to auto expand line
+
+  DONE bug: baseline options don't work, seem to all use offset path only. 
+  DONE should have menu option to reverse direction on path without actually reversing path itself
+  DONE bug: when you duplicate, it's linking the path
+  DONE (? can't dup anymore) doesn't handle transforms with nested objects properly
+  DONE bug: not setting current color when object entered
+  DONE bug: color not loading and saving
+  DONE how to you actually edit path? ^p.. menu option
+  DONE bug: drag voffset shifts the text start?
+  DONE bug: drag the baseline handle off to the sides, makes huge bad jumps in value <- restrict to mod only baseline
 
 
 Find interface: findinterface:
@@ -662,6 +655,7 @@ shape brush shapebrush:
   DONE not saving to file
 
 PathInterface: pathinterface
+  bug: if path doesn't have linestyle in file, later crashes since it does not fill in
   bug: width handle has bit of a hitch when handle near a vertex.. extra temp width node being added?
   bug: seems to be possible to move nodes out of order, only occassionally
   bug: shift click down then up on a point selects then deselects.. control can toggle
@@ -862,22 +856,6 @@ engraving tool: Engraving  engraver
   must implement mode based shortcuts in Laxkit. currently all mesh shortcuts are active
   stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
     per stipple, adjust rotation, scale, color, morph
-
-text on path textonpath: TextOnPath
-  need kern control
-  kern handles
-  mouse click to position caret
-  need to do proper coordinate finding for mouseposition when paste into a nested group
-  copy
-  offset from stroke or from path
-  click for new, then save, saves a blank one! probably issue in captioninterface also
-    need to only add to the document only after there is non-null text, like add_on_change flag
-  bbox should be better.. currently is a wide approximation
-  option to auto expand line
-  stretch envelope
-  rotation handle
-  drag out line to define chain connection
-  multiline?
 
 from big import:
   bug: delete discontinous range of pages doesn't delete all sometimes
@@ -1393,6 +1371,11 @@ node editor node interface NodeInterface nodes: node: interface:
   DONE image from file node
   DONE (using Name) idea seen in anim nodes: collapsing math shows expression as label
 
+Label widget:
+  harfbuzzed, fribidi
+  abstract to form base of both widgets and CaptionData
+  replace all MessageBar with these
+  make editable one replace LineEdit/MultiLineEdit
 
 plugins:
   need more automatic way to install:
@@ -2173,6 +2156,32 @@ global Laidout settings:
 
 
 ---------------- 0.099 ROADMAP ITEMS: features and enhancements ------------------------
+
+Gradients: gradientinterface
+  ---0.99:
+  constrain to x/y/45 dragging end points
+  dragging around color points from inside to outside should allow going out of bounds
+    DONE linear
+    radial
+  perhaps split radial and linear gradients to different tools? makes more sense
+  tool: drag define gradients ala substance
+  tool: sketch define gradient fields ala sketch studio
+
+  do dithering to reduce banding
+  color interpolation: render to image, then use that as color source
+    linear (current default and only option)
+	constant
+	auto bez
+	curve editor rgba
+
+  gradient data should be able to use resource GradientStrip
+    owner: file/user global/system global
+    name
+    tags
+    color strip:
+      stops
+        position
+        r1, r2
 
 pagemarkerinterface:
   option to lock label size to real space? make export contact sheets a little prettier in some cases
@@ -3196,4 +3205,12 @@ DONE get splash image working..
 DONE have an actual splash image shown
 DONE bug: expressions are broken again!!
 DONE bug: export, switch off current target then back on: error: missing export source!
+DONE bug: home and end throw selection bounds out of whack.. try with gradient tool for instance, controls bad until reselect
+DONE should not be able to group select an object and another object nested within
+DONE utf8string: move semantics to be more efficient
+DONE Gradients: gradientinterface
+  DONE check svg export of gradients with new spread method
+  DONE should have menu option for radial/linear
+  DONE bug: radial gradient not loading
+  DONE SHOWCOLORS should be off by default
 

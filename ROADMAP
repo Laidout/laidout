@@ -45,14 +45,11 @@ VERSION 0.098
 (done) Mirror node, coupled with a Mirror Interface
 (done) Animation play/stop overlay, with node hooks
 
-       engraver tool grow point mode
-       engraver tool, resolution cut mode
-       engraver tool, blockout needs to be more precise
-       engraver tool, fully test tool effects when many objects selected
+       engraver tool, fix so that current render is not rerendering every frame
 (done) PathInterface: adding point hint
 (done) PathInterface: Mouse based delete segments
 
-       Debug Text on path tool
+       Debug Text on path tool somewhat
 (done) Clean up mesh controls
 
 (done) debug svg in enough to be able to load icons.svg
@@ -65,6 +62,11 @@ VERSION 0.099
 -------------
        debug previous version a bit
        Undo/Redo
+
+       engraver tool grow point mode
+       engraver tool, resolution cut mode
+       engraver tool, blockout needs to be more precise
+       engraver tool, fully test tool effects when many objects selected
 
        PDF in, at least as 1 image per page, for purposes of imposition
        pdf export, unicode capable
