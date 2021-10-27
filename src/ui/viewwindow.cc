@@ -2221,6 +2221,7 @@ void LaidoutViewport::findAny(int searcharea)
 		}
 
 		Group *tosearch = dynamic_cast<Group*>(GetObject(&curobj));
+		if (!tosearch) return;
 		if (tosearch->n()) {
 			firstobj.context.push(0);
 			firstobj.SetObject(tosearch->e(0));
@@ -3705,6 +3706,7 @@ int LaidoutViewport::CirculateInLayer(int dir, int i,int objOrSelection)
 		g->swap(curpos,curpos+1);
 		curobj.push(curpos+1);
 		//DBG curobj.context.out("raise by 1");
+		laidout->notifyDocTreeChanged(NULL,TreeObjectReorder,0,0);
 		needtodraw=1;
 		return 1;
 
@@ -3719,6 +3721,7 @@ int LaidoutViewport::CirculateInLayer(int dir, int i,int objOrSelection)
 		g->swap(curpos,curpos-1);
 		curobj.push(curpos-1);
 		//DBG curobj.context.out("lower by 1");
+		laidout->notifyDocTreeChanged(NULL,TreeObjectReorder,0,0);
 		needtodraw=1;
 		return 1;
 
@@ -3733,6 +3736,7 @@ int LaidoutViewport::CirculateInLayer(int dir, int i,int objOrSelection)
 		g->slide(curpos,g->n()-1);
 		curobj.push(g->n()-1);
 		//DBG curobj.context.out("raise by 1");
+		laidout->notifyDocTreeChanged(NULL,TreeObjectReorder,0,0);
 		needtodraw=1;
 		return 1;
 
@@ -3747,6 +3751,7 @@ int LaidoutViewport::CirculateInLayer(int dir, int i,int objOrSelection)
 		g->slide(curpos,0);
 		curobj.push(0);
 		//DBG curobj.context.out("raise by 1");
+		laidout->notifyDocTreeChanged(NULL,TreeObjectReorder,0,0);
 		needtodraw=1;
 		return 1;
 
