@@ -1966,5 +1966,43 @@ int DrawableObject::Evaluate(const char *func,int len, ValueHash *context, Value
 }
 
 
+/*! Static function to make it easy to load in a random object from an Attribute.
+ * If type == nullptr, then use att->value for the type.
+ */
+DrawableObject* DrawableObject::CreateFromAttribute(LaxFiles::Attribute *att, const char *type, LaxFiles::DumpContext *context)
+{
+	if (type == nullptr) type = att->value;
+	if (isblank(type)) return nullptr;
+
+	DrawableObject *data = nullptr;
+	InterfaceManager *imanager = InterfaceManager::GetDefault(true);
+
+	if (!strncmp(type, "resource:", 9)) {
+		ResourceManager *resourcemanager = imanager->GetResourceManager();
+		data = dynamic_cast<DrawableObject*>(resourcemanager->FindResource(type+9, "Drawables"));
+		if (data) {
+			data->inc_count();
+			return data;
+		}
+		if (context && context->log) context->log->AddWarning(0,0,0, "Could not find resource %s", type+9);
+		return nullptr;
+	}
+
+	// could use the number as some sort of object id?
+	// currently out put was like: "object 2 ImageData"
+	//***strs[0]==that id
+	SomeData *obj = imanager->NewDataObject(type); //objs have 1 count
+	data = dynamic_cast<DrawableObject*>(obj);
+	if (!data) {
+		obj->dec_count();
+	}
+
+	if (!data) return nullptr;
+
+	data->dump_in_atts(att,0,context);
+	DBG if (!dynamic_cast<Group*>(data)) cerr <<" --- WARNING! DrawableObject::CreateFromAttribute returned a non-Group"<<endl;
+	return data;
+}
+
 } //namespace Laidout
 
