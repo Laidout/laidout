@@ -3756,7 +3756,7 @@ PointSetNode::PointSetNode(PointSetNode::SetTypes ntype)
 	psetvalue = nullptr;
 	settype = ntype;
 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  false, "plain", new BooleanValue(false),1,  _("Plain set"),  NULL));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  false, "plain", new BooleanValue(false),1,  _("Plain set"),  _("Just a set of points. Else use PointSet object.")));
 
 	if (settype == Grid) {
 		makestr(type, "Points/Grid");
