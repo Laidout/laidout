@@ -840,21 +840,29 @@ int isPdfFile(const char *file,float *pdfversion)
 /*! Pop up a box showing any errors in log (or generallog if log==NULL). Flushes log afterwards.
  * This is done, for instance, at startup, to notify of any plugin load errors.
  * If there aren't any, then do nothing.
+ * If headless, then output to cerr instead.
  */
 void NotifyGeneralErrors(Laxkit::ErrorLog *log)
 {
-    if (log==NULL) return;
+    if (log == nullptr) return;
 
     if (log->Total() == 0) return;
 
     char *mes = log->FullMessageStr();
-    MessageBox *box = new MessageBox(NULL,"Errors",_("Errors"), ANXWIN_CENTER,
-                                  0,0,0,0,0,
-                                  NULL,0,NULL,
-                                  mes);
-    box->AddButton(BUTTON_OK);
-    box->AddButton(_("Dammit"), 0);
-    anXApp::app->addwindow(box);
+
+    if (!anXApp::app->donotusex) {
+	    MessageBox *box = new MessageBox(NULL,"Errors",_("Errors"), ANXWIN_CENTER,
+	                                  0,0,0,0,0,
+	                                  NULL,0,NULL,
+	                                  mes);
+	    box->AddButton(BUTTON_OK);
+	    box->AddButton(_("Dammit"), 0);
+	    anXApp::app->addwindow(box);
+
+	} else {
+		cerr << mes << endl;
+	}
+
     delete[] mes;
 
     log->Clear();

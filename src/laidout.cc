@@ -670,7 +670,7 @@ int LaidoutApp::init(int argc,char **argv)
 
 	if (runmode == RUNMODE_Normal) {
 		 //try to load the default template if no windows are up
-		if (topwindows.n == 0 && !force_new_dialog && prefs.start_with_last) {
+		if (!donotusex && topwindows.n == 0 && !force_new_dialog && prefs.start_with_last) {
 			MenuInfo recent;
 	        recently_used(NULL, NULL, "Laidout", 0, &recent);
 			if (recent.n()) {
@@ -692,13 +692,13 @@ int LaidoutApp::init(int argc,char **argv)
 			}
 		}
 
-		if (topwindows.n==0 && !force_new_dialog && prefs.default_template) {
+		if (!donotusex && topwindows.n==0 && !force_new_dialog && prefs.default_template) {
 			ErrorLog log;
 			LoadTemplate(prefs.default_template,log);
 		}
 		
 		 // if no other windows have been launched yet, then launch newdoc window
-		if (topwindows.n==0)
+		if (!donotusex && topwindows.n==0)
 			//addwindow(new NewDocWindow(NULL,"New Document",ANXWIN_LOCAL_ACTIVE,0,0,0,0, 0));
 			addwindow(BrandNew());
 
@@ -707,7 +707,7 @@ int LaidoutApp::init(int argc,char **argv)
 		}
 
 		 //let the user know of any snafus during startup
-		NotifyGeneralErrors(NULL);
+		NotifyGeneralErrors(nullptr);
 
 	} else if (runmode == RUNMODE_Impose_Only) {
 		//***
@@ -1492,7 +1492,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 
 			case OPT_export: { // export
-					donotusex = 1;					
+					donotusex = 1;
 					exprt = newstr(o->arg());
 				} break;
 
