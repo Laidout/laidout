@@ -44,6 +44,11 @@ jobs:
           #echo make icons curdir: `pwd`
           make -C src/icons all-with-lax
 
+      - name: Set version
+        run: |
+          cd laidout
+          echo "LAIDOUT_VERSION=`cat src/laidout_version.txt`" >> $GITHUB_ENV
+
       - name: Install
         run: |
           cd laidout
@@ -51,14 +56,14 @@ jobs:
 
       - name: Package
         run: |
-          mv installed laidout-{{ env.LAIDOUT_VERSION }}
-          tar cjv laidout-{{ env.LAIDOUT_VERSION }} > ../laidout-bin-{{ env.LAIDOUT_VERSION }}.tar.bz2
+          mv installed laidout-${{ env.LAIDOUT_VERSION }}
+          tar cjv laidout-${{ env.LAIDOUT_VERSION }} > ../laidout-bin-${{ env.LAIDOUT_VERSION }}.tar.bz2
 
       - name: Upload-Artifact
         uses: actions/upload-artifact@v2
         with:
           name: laidout-tar
-          path: laidout-bin-{{ env.LAIDOUT_VERSION }}.tar.bz2
+          path: laidout-bin-${{ env.LAIDOUT_VERSION }}.tar.bz2
 
 #      - name: Upload-to-release
 #        uses: actions/upload-release-asset@v1
