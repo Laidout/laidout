@@ -57,7 +57,7 @@ jobs:
       - name: Package
         run: |
           mv installed laidout-${{ env.LAIDOUT_VERSION }}
-          tar cjv laidout-${{ env.LAIDOUT_VERSION }} > ../laidout-bin-${{ env.LAIDOUT_VERSION }}.tar.bz2
+          tar cjv laidout-${{ env.LAIDOUT_VERSION }} > laidout-bin-${{ env.LAIDOUT_VERSION }}.tar.bz2
 
       - name: Upload-Artifact
         uses: actions/upload-artifact@v2
