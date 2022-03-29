@@ -204,8 +204,7 @@ DrawableObject::DrawableObject()
 	child_clip_type = CLIP_None;
 	clip_path = wrap_path = inset_path = nullptr;
 	autowrap = autoinset = 0;
-	proxy_shape = nullptr;
-
+	
 	opacity = 1;
 	blur    = 0;
 	filter  = nullptr;
@@ -229,7 +228,6 @@ DrawableObject::~DrawableObject()
 	if (inset_path)  inset_path ->dec_count();
 	if (filter)      filter     ->dec_count();
 	if (metadata)    metadata   ->dec_count();
-	if (proxy_shape) proxy_shape->dec_count();
 
 	if (importer)      importer     ->dec_count();
 	if (importer_data) importer_data->dec_count();

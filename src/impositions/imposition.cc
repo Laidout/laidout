@@ -23,7 +23,7 @@
 #include <lax/transformmath.h>
 
 //template implementation:
-#include <lax/lists.cc>
+//#include <lax/lists.cc>
 
 
 #include <iostream>
@@ -90,10 +90,10 @@ const char *PageLocationStack::object_e_name(int i)
  */
 PageLocation::PageLocation(int ni,Page *npage,LaxInterfaces::SomeData *poutline)
 {
-	info=0;
-	index=ni;
-	page=npage;
-	outline=poutline;
+	info    = 0;
+	index   = ni;
+	page    = npage;
+	outline = poutline;
 	if (outline) poutline->inc_count();
 }
 
@@ -181,13 +181,13 @@ PageLocation::~PageLocation()
 //! Basic init, set all to 0.
 Spread::Spread()
 {
-	doc=NULL;
-	papergroup=NULL;
-	mask=0;
-	spreadtype=0;
-	style=0;
-	path=marks=NULL;
-	obj_flags|=OBJ_Unselectable|OBJ_Zone;
+	doc        = NULL;
+	papergroup = NULL;
+	mask       = 0;
+	spreadtype = 0;
+	style      = 0;
+	path = marks = NULL;
+	obj_flags |= OBJ_Unselectable | OBJ_Zone;
 }
 
 //! Dec count of path and marks.
@@ -560,14 +560,14 @@ ImpositionInterface::ImpositionInterface(LaxInterfaces::anInterface *nowner,int 
  *  in the first place.
  */
 Imposition::Imposition(const char *nsname)
-{ 
-	name=newstr(nsname);
-	description=NULL;
+{
+	name        = newstr(nsname);
+	description = nullptr;
 
-	doc=NULL;
-	paper=NULL; 
-	papergroup=NULL;
-	numpages=numpapers=0; 
+	doc        = nullptr;
+	paper      = nullptr;
+	papergroup = nullptr;
+	numpages = numpapers = 0;
 	numdocpages=0;
 	
 	DBG cerr <<"imposition base class init for object "<<object_id<<endl;
@@ -693,11 +693,11 @@ int Imposition::SetPaperGroup(PaperGroup *ngroup)
 {
 	if (!ngroup) return 1;
 	if (papergroup) papergroup->dec_count();
-	papergroup=ngroup;
+	papergroup = ngroup;
 	if (papergroup) papergroup->inc_count();
 	if (papergroup->papers.n) {
 		if (paper) paper->dec_count();
-		paper=papergroup->papers.e[0]->box;
+		paper = papergroup->papers.e[0]->box;
 		paper->inc_count();
 	}
 	return 0;
@@ -717,15 +717,15 @@ int Imposition::SetPaperSize(PaperStyle *npaper)
 {
 	if (!npaper) return 1;
 
-	PaperStyle *newpaper=(PaperStyle *)npaper->duplicate();
+	PaperStyle *newpaper = (PaperStyle *)npaper->duplicate();
 	if (paper) paper->dec_count();
-	paper=new PaperBox(newpaper, true);
-	PaperBoxData *newboxdata=new PaperBoxData(paper);
+	paper = new PaperBox(newpaper, true);
+	PaperBoxData *newboxdata = new PaperBoxData(paper);
 
 	if (papergroup) papergroup->dec_count();
-	papergroup=new PaperGroup;
+	papergroup = new PaperGroup;
 	papergroup->papers.push(newboxdata);
-	papergroup->OutlineColor(1.0,0,0); //default to red papergroup
+	papergroup->OutlineColor(1.0, 0, 0);  // default to red papergroup
 	newboxdata->dec_count();
 
 	return 0;
@@ -745,18 +745,18 @@ PaperStyle *Imposition::GetDefaultPaper()
 }
 
 //! Return the number of spreads of type layout.
-/*! Please note the number returned for LITTLESPREADLAYOUT and PAGELAYOUT is just NumPages(), the same as for SINGLELAYOUT.
+/*! Please note by default the number returned for LITTLESPREADLAYOUT and PAGELAYOUT is just NumPages(), the same as for SINGLELAYOUT.
  *
  * \todo Ultimately, this will replace the other NumPapers(), NumPages(), etc.
- *    it is much more adaptible for nets right now, just relays based on 
+ *    it is much more adaptable for nets right now, just relays based on 
  *    PAGELAYOUT, PAPERLAYOUT, SINGLESLAYOUT
  */
 int Imposition::NumSpreads(int layout)
 {
-	if (layout==PAPERLAYOUT) return NumPapers();
-	if (layout==PAGELAYOUT) return NumPages();
-	if (layout==SINGLELAYOUT) return NumPages();
-	if (layout==LITTLESPREADLAYOUT) return NumPages();
+	if (layout == PAPERLAYOUT)        return NumPapers();
+	if (layout == PAGELAYOUT)         return NumPages();
+	if (layout == SINGLELAYOUT)       return NumPages();
+	if (layout == LITTLESPREADLAYOUT) return NumPages();
 	return 0;
 }
 
@@ -770,8 +770,8 @@ int Imposition::NumSpreads(int layout)
  */
 int Imposition::NumPapers(int npapers)
 {
-	numpapers=npapers;
-	numpages=GetPagesNeeded(numpapers);
+	numpapers = npapers;
+	numpages  = GetPagesNeeded(numpapers);
 	return numpapers;
 }
 
@@ -787,9 +787,9 @@ int Imposition::NumPapers(int npapers)
  */
 int Imposition::NumPages(int npages)
 {
-	numdocpages=npages;
-	numpapers=GetPapersNeeded(numdocpages);
-	numpages =GetPagesNeeded(numpapers);
+	numdocpages = npages;
+	numpapers   = GetPapersNeeded(numdocpages);
+	numpages    = GetPagesNeeded(numpapers);
 	return numpages;
 }
 
@@ -800,10 +800,10 @@ int Imposition::NumPages(int npages)
  */
 Spread *Imposition::Layout(int layout,int which)
 {
-	if (layout==PAPERLAYOUT) return PaperLayout(which);
-	if (layout==PAGELAYOUT) return PageLayout(which);
-	if (layout==SINGLELAYOUT) return SingleLayout(which);
-	if (layout==LITTLESPREADLAYOUT) return GetLittleSpread(which);
+	if (layout == PAPERLAYOUT)        return PaperLayout(which);
+	if (layout == PAGELAYOUT)         return PageLayout(which);
+	if (layout == SINGLELAYOUT)       return SingleLayout(which);
+	if (layout == LITTLESPREADLAYOUT) return GetLittleSpread(which);
 	return NULL;
 }
 
@@ -824,7 +824,7 @@ int Imposition::NumLayoutTypes()
  * is the origin of the page, not necessarily a corner of the margin outline.
  */
 SomeData *Imposition::GetPageMarginOutline(int pagenum,int local)
-{ return NULL; }
+{ return nullptr; }
 
 //! Return the name of layout, or NULL if layout not recognized.
 /*! Default is to return "Papers" for 2, "Pages" for 1, or "Singles" for 0.
@@ -835,11 +835,11 @@ SomeData *Imposition::GetPageMarginOutline(int pagenum,int local)
  */
 const char *Imposition::LayoutName(int layout)
 {
-	if (layout==PAPERLAYOUT) return _("Papers");
-	if (layout==PAGELAYOUT) return _("Pages");
-	if (layout==SINGLELAYOUT) return _("Singles");
-	if (layout==LITTLESPREADLAYOUT) return _("Little Spreads");
-	return NULL;
+	if (layout == PAPERLAYOUT)        return _("Papers");
+	if (layout == PAGELAYOUT)         return _("Pages");
+	if (layout == SINGLELAYOUT)       return _("Singles");
+	if (layout == LITTLESPREADLAYOUT) return _("Little Spreads");
+	return nullptr;
 }
 
 //! Return a spread corresponding to the single whichpage.
@@ -874,7 +874,7 @@ Spread *Imposition::SingleLayout(int whichpage)
 
 	 // setup spread->pagestack with the single page.
 	 // page width/height must map to proper area on page.
-	spread->pagestack.push(new PageLocation(whichpage,NULL,spread->path)); //(index,page,somedata)
+	spread->pagestack.push(new PageLocation(whichpage,nullptr,spread->path)); //(index,page,somedata)
 	//at this point spread->path has additional count of 2, 1 for pagestack.e[0]->outline
 	//and 1 for spread->path
 
@@ -896,12 +896,12 @@ Spread *Imposition::SingleLayout(int whichpage)
 ImpositionResource::ImpositionResource(const char *sdef,const char *nname, const char *file, const char *desc,
 					   				   LaxFiles::Attribute *conf,int local)
 {
-	objectdef=newstr(sdef);
-	name=newstr(nname);
-	impositionfile=newstr(file);
-	description=newstr(desc);
-	config=conf;
-	configislocal=local;
+	objectdef      = newstr(sdef);
+	name           = newstr(nname);
+	impositionfile = newstr(file);
+	description    = newstr(desc);
+	config         = conf;
+	configislocal  = local;
 }
 
 ImpositionResource::~ImpositionResource()
@@ -924,26 +924,26 @@ ImpositionResource::~ImpositionResource()
  */
 Imposition *ImpositionResource::Create()
 {
-	Imposition *imp=NULL;
+	Imposition *imp = nullptr;
 	if (impositionfile) {
-		FILE *f=open_laidout_file_to_read(impositionfile,"Imposition",NULL);
-		if (!f) return NULL; //file was bad
+		FILE *f = open_laidout_file_to_read(impositionfile,"Imposition", nullptr);
+		if (!f) return nullptr; //file was bad
 	
 		LaxFiles::Attribute att;
-		att.dump_in(f,0,NULL);
+		att.dump_in(f,0,nullptr);
 		if (att.attributes.n!=0 && !strcmp(att.attributes.e[0]->name,"type")) {
-			imp=newImpositionByType(att.attributes.e[0]->value);
-			if (imp) imp->dump_in_atts(&att,0,NULL);
+			imp = newImpositionByType(att.attributes.e[0]->value);
+			if (imp) imp->dump_in_atts(&att,0,nullptr);
 		}
 
 		fclose(f);
 
 	} else if (objectdef) {
-		imp=newImpositionByType(objectdef);
+		imp = newImpositionByType(objectdef);
 
-	} else return NULL; //no file and no objectdef!
+	} else return nullptr; //no file and no objectdef!
 
-	if (config && imp) imp->dump_in_atts(config,0,NULL);
+	if (config && imp) imp->dump_in_atts(config,0,nullptr);
 	return imp;
 }
 

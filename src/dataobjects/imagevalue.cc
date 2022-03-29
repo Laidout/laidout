@@ -32,9 +32,10 @@ namespace Laidout {
  * \brief Adds scripting functions for a Laxkit::LaxImage object.
  */
 
-ImageValue::ImageValue()
+ImageValue::ImageValue(Laxkit::LaxImage *img, bool absorb)
 {
-	image = nullptr;
+	image = img;
+	if (image && !absorb) image->inc_count();
 }
 
 //ImageValue::ImageValue(int width, int height)

@@ -15,6 +15,7 @@
 
 #include <lax/language.h>
 #include <lax/interfaces/svgcoord.h>
+#include <lax/bezutils.h>
 
 #include "../laidout.h"
 
@@ -29,6 +30,7 @@
 #include "../dataobjects/lvoronoidata.h"
 #include "../dataobjects/imagevalue.h"
 #include "../dataobjects/fontvalue.h"
+#include "../dataobjects/helpertypes.h"
 #include "../core/objectiterator.h"
 
 #include <unistd.h>
@@ -2235,6 +2237,328 @@ int ExtremaNode::Update()
 }
 
 
+//----------------------- PathIntersectionsNode ------------------------
+
+/*! \class PathIntersectionsNode
+ *
+ * 
+ */
+class PathIntersectionsNode : public NodeBase
+{
+  public:
+	PathIntersectionsNode();
+	virtual ~PathIntersectionsNode();
+	virtual NodeBase *Duplicate();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new PathIntersectionsNode(); }
+};
+
+PathIntersectionsNode::PathIntersectionsNode()
+{
+	makestr(type, "Paths/Intersections");
+	makestr(Name, _("Path Intersections"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in",     NULL,1,     _("Paths"), nullptr));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "self", new BooleanValue(true),1, _("Check self"), _("Check for self intersects"),0,true));
+	
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "points", NULL,1, _("Points"), NULL,0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "dir1", NULL,1, _("Direction 1"), NULL,0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "dir2", NULL,1, _("Direction 2"), NULL,0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "info", NULL,1, _("info"), NULL,0, false));
+}
+
+PathIntersectionsNode::~PathIntersectionsNode()
+{
+}
+
+NodeBase *PathIntersectionsNode::Duplicate()
+{
+	PathIntersectionsNode *newnode = new PathIntersectionsNode();
+	dynamic_cast<BooleanValue*>(newnode->properties.e[1]->GetData())->i
+		= dynamic_cast<BooleanValue*>(properties.e[1]->GetData())->i;
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int PathIntersectionsNode::GetStatus()
+{
+	Value *v = properties.e[0]->GetData();
+	if (!v || (!dynamic_cast<LPathsData*>(v) && v->type() != VALUE_Set)) return -1;
+	return NodeBase::GetStatus();
+}
+
+int PathIntersectionsNode::Update()
+{
+	Value *v = properties.e[0]->GetData();
+	LPathsData *path1 = dynamic_cast<LPathsData*>(v);
+	if (!v) return -1;
+	if (!path1 && v->type() != VALUE_Set) return -1;
+
+	SetValue *setin = path1 ? nullptr : dynamic_cast<SetValue*>(v);
+
+	int isnum;
+	bool check_self = getIntValue(properties.e[1]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	NumStack<flatpoint> points;
+	NumStack<int> obj1, obj2, pathi1, pathi2;
+	NumStack<double> t1, t2;
+	
+	LPathsData *path2;
+	flatpoint pts1[4], pts2[4];
+	flatpoint found[9];
+	double foundt1[9], foundt2[9];
+	double t_p1, t_p2;
+	Coordinate *start1, *start2, *p1, *p2, *p1next, *p2next;
+	int num; //num per segment (up to 9 each check)
+	int isline;
+	double threshhold = 1e-5;
+	double maxdepth = 0;
+	Affine m2to1;
+	
+	for (int c=0; c < (setin ? setin->n() : 1); c++) {
+		if (setin) {
+			path1 = dynamic_cast<LPathsData*>(setin->e(c));
+			if (!path1) {
+				Error(_("In must be a path or set of paths"));
+				return -1;
+			}
+		}
+
+		path2 = path1;
+		
+		for (int c2 = c + (check_self ? 0 : 1); c2 < (setin ? setin->n() : 1); c2++) { //foreach pathsdata in set
+			if (setin) {
+				path2 = dynamic_cast<LPathsData*>(setin->e(c2));
+				if (!path2) {
+					Error(_("In must be a path or set of paths"));
+					return -1;
+				}
+			}
+
+			// check each bez segment in path1 vs each in path2
+			if (path1 == path2 && check_self) {
+				// check for self intersections
+				
+				// part one, check for loops in each segment
+				for (int c3 = 0; c3 < path1->paths.n; c3++) { //foreach path in pathsdata1
+					if (!path1->paths.e[c3]->path) continue;
+					start1 = p1 = path1->paths.e[c3]->path;
+
+					pts1[0] = p1->p();
+					if (p1->getNext(pts1[1], pts1[2], p1next, isline) != 0) break;
+					pts1[3] = p1next->p();
+
+					do { //foreach segment in path1
+						flatpoint p;
+						double tt1, tt2;
+						if (bez_self_intersection(pts1[0], pts1[1], pts1[2], pts1[3], &p, &tt1, &tt2)) {
+							points.push(p);
+							obj1.push(c);
+							obj2.push(c2);
+							pathi1.push(c3);
+							pathi2.push(c3);
+							t1.push(tt1);
+							t2.push(tt2);
+						}
+
+						p1 = p1next;
+						pts1[0] = p1->p();
+						if (p1->getNext(pts1[1], pts1[2], p1next, isline) != 0) break;
+						pts1[3] = p1next->p();
+					} while (p1 && p1 != start1);
+
+				}
+
+				// part two, check for segments intersecting other segments
+				//***this part can be below?
+
+				continue;
+			}
+
+			//transform to bring points in path2 to path1
+			SomeData *pnt = path1->FindCommonParent(path2);
+			if (pnt) {
+				m2to1 = path1->GetTransforms(path2, false);
+			} else {
+				m2to1.setIdentity();
+			}
+			
+			for (int c3 = 0; c3 < path1->paths.n; c3++) { //foreach path in pathsdata1
+				if (!path1->paths.e[c3]->path) continue;
+				start1 = p1 = path1->paths.e[c3]->path;
+				t_p1 = 0;
+
+				do { //foreach segment in path1
+					pts1[0] = p1->p();
+					if (p1->getNext(pts1[1], pts1[2], p1next, isline) != 0) break;
+					pts1[3] = p1next->p();
+
+					for (int c4 = 0; c4 < path2->paths.n; c4++) { //foreach path in pathsdata2
+						if (!path2->paths.e[c4]->path) continue;
+						start2 = p2 = path2->paths.e[c4]->path;
+						t_p2 = 0;
+
+						do { //foreach segment in path2
+							pts2[0] = p2->p();
+							if (p2->getNext(pts2[1], pts2[2], p2next, isline) != 0) break;
+							pts2[3] = p2next->p();
+
+							pts2[0] = m2to1.transformPoint(pts2[0]);
+							pts2[1] = m2to1.transformPoint(pts2[1]);
+							pts2[2] = m2to1.transformPoint(pts2[2]);
+							pts2[3] = m2to1.transformPoint(pts2[3]);
+
+							num = 0;
+							//DBG cerr <<"---at bez t1: "<<t_p1<<" t2: "<<t_p2<<endl;
+							bez_intersect_bez(
+									pts1[0], pts1[1], pts1[2], pts1[3],
+									pts2[0], pts2[1], pts2[2], pts2[3],
+									found, foundt1, foundt2, num,
+									threshhold,
+									0,0,1,
+									1, maxdepth
+								);
+
+							for (int c5 = 0; c5 < num; c5++) {
+								DBG cerr << "bez_intersect: t1: "<<(t_p1 + foundt1[c5])<<" t2: "<<(t_p2 + foundt2[c5])<<endl;
+								points.push(found[c5]);
+								obj1.push(c);
+								obj2.push(c2);
+								pathi1.push(c3);
+								pathi2.push(c4);
+								t1.push(t_p1 + foundt1[c5]);
+								t2.push(t_p2 + foundt2[c5]);
+							}
+							DBG if (num == 0) cerr <<"bez_intersect: No intersections"<<endl;
+
+							p2 = p2next;
+							t_p2 += 1;
+						} while (p2 && p2 != start2);
+					}
+
+					p1 = p1next;
+					t_p1 += 1;
+				} while (p1 && p1 != start1);
+			}
+		}
+	}
+
+	//only update things that are connected to other things
+	if (properties.e[2]->IsConnected()) { //points
+		SetValue *outpoints = dynamic_cast<SetValue*>(properties.e[2]->GetData());
+		if (!outpoints) {
+			outpoints = new SetValue();
+			properties.e[2]->SetData(outpoints, 1);
+		} else properties.e[2]->Touch();
+
+		for (int c=0; c<points.n; c++) {
+			if (c >= outpoints->n()) {
+				outpoints->Push(new FlatvectorValue(points.e[c]), 1);
+			} else {
+				FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(outpoints->e(c));
+				fv->v = points.e[c];
+			}
+		}
+
+		while (outpoints->n() != points.n) outpoints->Remove(outpoints->n()-1);
+	}
+
+	if (properties.e[3]->IsConnected()) { //dir1
+		SetValue *out = dynamic_cast<SetValue*>(properties.e[3]->GetData());
+		if (!out) {
+			out = new SetValue();
+			properties.e[3]->SetData(out, 1);
+		} else properties.e[3]->Touch();
+
+		flatpoint v;
+		for (int c=0; c<points.n; c++) {
+			int i = obj1[c];
+			LPathsData *paths = setin ? dynamic_cast<LPathsData*>(setin->e(i)) : path1;
+			paths->PointAlongPath(pathi1[c], foundt1[c], false, nullptr, &v);
+			v.normalize();
+
+			if (c >= out->n()) {
+				out->Push(new FlatvectorValue(v), 1);
+			} else {
+				FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(out->e(c));
+				fv->v = v;
+			}
+		}
+
+		while (out->n() != points.n) out->Remove(out->n()-1);
+	}
+	if (properties.e[4]->IsConnected()) { //dir2
+		SetValue *out = dynamic_cast<SetValue*>(properties.e[4]->GetData());
+		if (!out) {
+			out = new SetValue();
+			properties.e[4]->SetData(out, 1);
+		} else properties.e[4]->Touch();
+
+		flatpoint v;
+		for (int c=0; c<points.n; c++) {
+			int i = obj2[c];
+			LPathsData *paths = setin ? dynamic_cast<LPathsData*>(setin->e(i)) : path1;
+			paths->PointAlongPath(pathi2[c], foundt2[c], false, nullptr, &v);
+			v.normalize();
+
+			if (c >= out->n()) {
+				out->Push(new FlatvectorValue(v), 1);
+			} else {
+				FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(out->e(c));
+				fv->v = v;
+			}
+		}
+
+		while (out->n() != points.n) out->Remove(out->n()-1);
+	}
+	if (properties.e[5]->IsConnected()) { //info []
+		// info [
+		//   int    which path object1
+		//   int    which path index1
+		//   float  path1 t
+		//   int    which path object2
+		//   int    which path index2
+		//   float  path2 t
+		//  ]
+		SetValue *out = dynamic_cast<SetValue*>(properties.e[5]->GetData());
+		if (!out) {
+			out = new SetValue();
+			properties.e[5]->SetData(out, 1);
+		} else properties.e[5]->Touch();
+
+		flatpoint v;
+		for (int c=0; c<points.n; c++) {
+			if (c >= out->n()) {
+				SetValue *set = new SetValue();
+				set->Push(new IntValue(obj1[c]), 1);
+				set->Push(new IntValue(pathi1[c]), 1);
+				set->Push(new DoubleValue(foundt1[c]), 1);
+				set->Push(new IntValue(obj2[c]), 1);
+				set->Push(new IntValue(pathi2[c]), 1);
+				set->Push(new DoubleValue(foundt2[c]), 1);
+				out->Push(set, 1);
+				
+			} else {
+				SetValue *set = dynamic_cast<SetValue*>(out->e(c));
+				dynamic_cast<IntValue*>(set->e(0))->i    = obj1[c];
+				dynamic_cast<IntValue*>(set->e(1))->i    = pathi1[c];
+				dynamic_cast<DoubleValue*>(set->e(2))->d = foundt1[c];
+				dynamic_cast<IntValue*>(set->e(3))->i    = obj2[c];
+				dynamic_cast<IntValue*>(set->e(4))->i    = pathi2[c];
+				dynamic_cast<DoubleValue*>(set->e(5))->d = foundt2[c];
+			}
+		}
+
+		while (out->n() != points.n) out->Remove(out->n()-1);
+	}
+
+	return NodeBase::Update();
+}
+
+
 //------------------------ CornersNode ------------------------
 
 /*! 
@@ -3082,6 +3406,10 @@ RoundedRectNode::RoundedRectNode()
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "h", new DoubleValue(2),1,  _("Height")));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "r", new DoubleValue(.5),1,  _("Round"), _("Round must be a number, vector2, or list of up to 4 of those")));
 	
+	//AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "line",   new DoubleValue(.1),1,         _("Line width"), NULL));
+	//AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "stroke", new ColorValue(1.,0.,0.,1.),1, _("Stroke"), NULL));
+	//AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "fill",   new ColorValue(1.,0.,1.,0.),1, _("Fill"), NULL));
+
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out"), NULL,0, false));
 }
 
@@ -4048,6 +4376,214 @@ Laxkit::anObject *newPointsRandomRadialNode(int p, Laxkit::anObject *ref) { retu
 Laxkit::anObject *newPointsRandomPoisson(int p, Laxkit::anObject *ref)    { return new PointSetNode(PointSetNode::RandomPoisson); }
 
 
+//------------------------  PathFromPointsNode -----------------------------
+
+class PathFromPointsNode : public NodeBase
+{
+
+  public:
+	enum class Types {
+		Polyline,
+		SimpleCubic, //each point is a vertex, but auto compute something curvy
+		Quadratic, //v-c-v-c-v-[c]
+		Cubic,  //v-c-c-v-c-c-v-[c-[c]]
+		Spiro1,
+		Spiro2
+	};
+	static SingletonKeeper typesKeeper;
+	Types points_type;
+	LPathsData *path;
+
+	PathFromPointsNode(Types ntype);
+	virtual ~PathFromPointsNode();
+
+	virtual Value *PreviewFrom() { return properties.e[properties.n-1]->GetData(); }
+	//virtual NodeBase *Duplicate();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new PathFromPointsNode(PathFromPointsNode::Types::Polyline); }
+};
+
+SingletonKeeper PathFromPointsNode::typesKeeper;
+
+/*! Returns error string or nullptr for no error.
+ */
+const char *ValidateWidthLineStyle(Value *width, Value *line, Value *fill, 
+		double *d_ret, ColorValue **line_ret, LLineStyle **lstyle_ret, ColorValue **fill_ret, LFillStyle **fstyle_ret)
+{
+		//linewidth
+	double d;
+	if (!isNumberType(width, &d) || d < 0) {
+		return _("Line width must be >= 0");
+	}
+	if (d_ret) *d_ret = d;
+
+	//stroke
+	//TODO should allow LineStyle, FillStyle
+	if (!line || (line->type() != VALUE_Color)) return _("Bad line color");
+	if (line_ret) *line_ret = dynamic_cast<ColorValue*>(line);
+
+	//fill
+	if (!fill || (fill->type() != VALUE_Color)) return _("Bad fill color");
+	if (fill_ret) *fill_ret = dynamic_cast<ColorValue*>(fill);
+
+	return nullptr;
+}
+
+	
+	
+PathFromPointsNode::PathFromPointsNode(PathFromPointsNode::Types ntype)
+{
+	points_type = ntype;
+
+	makestr(type, "Paths/PathFromPoints");
+	makestr(Name, _("Path From Points"));
+
+	ObjectDef *typesdef = dynamic_cast<ObjectDef*>(typesKeeper.GetObject());
+	if (!typesdef) {
+		typesdef = new ObjectDef("PointPathTypes", _("How to interpret a list of points."), NULL,NULL,"enum", 0);
+
+		typesdef->pushEnumValue("Polyline"    ,_("Polyline")    ,_("Linear path"),                (int)Types::Polyline);
+		typesdef->pushEnumValue("SimpleCubic" ,_("SimpleCubic") ,_("Roughly approximated cubic"), (int)Types::SimpleCubic);
+		//typesdef->pushEnumValue("Quadratic"   ,_("Quadratic")   ,_("Quadratic bezier"),           Types::Quadratic);
+		//typesdef->pushEnumValue("Cubic"       ,_("Cubic")       ,_("Cubic bezier"),               Types::Cubic);
+		//typesdef->pushEnumValue("Spiro1"      ,_("Spiro1")      ,_("Spiro"),                      Types::Spiro1);
+		//typesdef->pushEnumValue("Spiro2"      ,_("Spiro2")      ,_("Spiro2"),                     Types::Spiro2);
+
+		typesKeeper.SetObject(typesdef, true);
+	}
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "points", nullptr,1,  _("Points"), _("Either a list of points, or a PointSet")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  false, "type", new EnumValue(typesdef, 0),1, _("Points type"), nullptr));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  false, "closed", new BooleanValue(false),1,  _("Closed"), nullptr));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "line",   new DoubleValue(.1),1,         _("Line width"), NULL));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "stroke", new ColorValue(1.,0.,0.,1.),1, _("Stroke"), NULL));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "fill",   new ColorValue(1.,0.,1.,0.),1, _("Fill"), NULL));
+
+	path = new LPathsData();
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", path,1, _("Out"), NULL,0, false));
+
+	Update();
+	Wrap();
+}
+
+PathFromPointsNode::~PathFromPointsNode()
+{}
+
+int PathFromPointsNode::GetStatus()
+{
+	const char *err = ValidateWidthLineStyle(properties.e[3]->GetData(), properties.e[4]->GetData(), properties.e[5]->GetData(), 
+										nullptr, nullptr, nullptr, nullptr, nullptr);
+	if (err) {
+		Error(err);
+		return -1;
+	} else ClearError();
+
+	return NodeBase::GetStatus();
+}
+
+int PathFromPointsNode::Update()
+{
+	Value *points = properties.e[0]->GetData();
+	if (!points || (points->type() != VALUE_Set && points->type() != PointSetValue::TypeNumber())) {
+		Error(_("Points must be list or PointSet"));
+		return -1;
+	}
+
+	double linewidth = 0;
+	ColorValue *stroke = nullptr, *fill = nullptr;
+	const char *err = ValidateWidthLineStyle(properties.e[3]->GetData(), properties.e[4]->GetData(), properties.e[5]->GetData(), 
+										&linewidth, &stroke, nullptr, &fill, nullptr);
+	if (err || !stroke || !fill) {
+		Error(err ? err : (stroke ? _("Missing fill color") : _("Missing line color")));
+		return -1;
+	} else ClearError();
+
+	NumStack<flatvector> pts;
+
+	if (points->type() == VALUE_Set) {
+		SetValue *set = dynamic_cast<SetValue*>(points);
+		for (int c=0; c < set->n(); c++) {
+			FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(set->e(c));
+			if (fv) {
+				pts.push(fv->v);
+			} else {
+				AffineValue *av = dynamic_cast<AffineValue*>(set->e(c));
+				if (av) {
+					pts.push(av->origin());
+				} else {
+					Error(_("Point must be Vector2 or Affine"));
+					return -1;
+				}
+			}
+		}
+	} else {
+		PointSetValue *set = dynamic_cast<PointSetValue*>(points);
+		for (int c=0; c<set->NumPoints(0); c++) {
+			pts.push(set->Point(c));
+		}
+	}
+
+	BooleanValue *bv = dynamic_cast<BooleanValue*>(properties.e[2]->GetData());
+	if (!bv) {
+		Error(_("Bad closed type"));
+		return -1;
+	}
+	bool closed = bv->i;
+
+	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[1]->GetData());
+	if (!ev) {
+		Error(_("Bad type value"));
+		return -1;
+	}
+	Types type = (Types)ev->EnumId();
+
+	if (path->paths.n) path->paths[0]->clear();
+	else path->pushEmpty();
+
+	if (type == Types::Polyline) {
+		if (closed) pts.e[pts.n-1].info |= LINE_Closed;
+		path->paths[0]->append(pts.e, pts.n);
+		if (closed) path->close();
+
+	} else if (type == Types::SimpleCubic) {
+		NumStack<flatvector> pts2;
+		pts2.Allocate(3*pts.n);
+		pts2.n = 3*pts.n;
+		if (closed) pts.e[pts.n-1].info |= LINE_Closed;
+		bez_from_points(pts2.e, pts.e, pts.n, 0, pts.n);
+		path->paths[0]->append(pts2.e, pts2.n);
+		if (closed) path->close();
+
+	//} else if (type == Quadratic) {
+	//} else if (type == Cubic) {
+	//} else if (type == Spiro1,) {
+	//} else if (type == Spiro2) {
+	} else {
+		Error(_("Unimplemented points type"));
+		return -1;
+	}
+
+	path->touchContents();
+
+	//if (closed) path->paths.e[0]->close();
+
+	ScreenColor col(stroke->color.Red(), stroke->color.Green(), stroke->color.Blue(), stroke->color.Alpha());
+	path->line(linewidth, -1, -1, &col);
+	col.rgbf(fill->color.Red(), fill->color.Green(), fill->color.Blue(), fill->color.Alpha());
+	path->fill(&col);
+	path->FindBBox();
+
+	properties.e[properties.n-1]->Touch();
+	UpdatePreview();
+	Wrap();
+	return NodeBase::Update();
+}
+
+
 //------------------------  PathGeneratorNode -----------------------------
 
 class PathGeneratorNode : public NodeBase
@@ -4058,8 +4594,11 @@ class PathGeneratorNode : public NodeBase
   public:
 	enum PathTypes {
 		Square,
-		Circle,     //num points, is bez, start, end
-		Rectangle, //x,y,w,h, roundh, roundv
+		Circle,      //num points, is bez, start, end
+		Rectangle,   //x,y,w,h
+		RoundedRect, 
+		SquircleCubic,
+		//Squircle, //the actual quadratic
 		Polygon, // vertices, winds
 		Svgd, // svg style d string
 		Function, //y=f(x), x range, step
@@ -4104,6 +4643,15 @@ PathGeneratorNode::PathGeneratorNode(PathGeneratorNode::PathTypes ntype)
 		// AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "r3", new DoubleValue(0),1, _("Round 3"), NULL));
 		// AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "r4", new DoubleValue(0),1, _("Round 4"), NULL));
 
+	} else if (pathtype == SquircleCubic) {
+		makestr(type, "Paths/SquircleCubic");
+		makestr(Name, _("SquircleCubic"));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "x", new DoubleValue(0),1,  _("X"),     NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "y", new DoubleValue(0),1,  _("Y"),     NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "w", new DoubleValue(1),1,  _("Width"), NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "h", new DoubleValue(1),1,  _("Height"),NULL));
+		AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "r1", new DoubleValue(1),1, _("Round"), NULL));
+		
 	} else if (pathtype == Circle) {
 		makestr(type, "Paths/Circle");
 		makestr(Name, _("Circle"));
@@ -4210,6 +4758,7 @@ const char *PathGeneratorNode::paramsig()
 		case Square:         return "n    ";
 		case Circle:         return "nn   ";
 		case Rectangle:      return "nnnn ";
+		case SquircleCubic:  return "nnnnn";
 		case Polygon:        return "nnnn ";
 		case FunctionT:      return "ssnnn";
 		case Function:       return "snnn ";
@@ -4357,7 +4906,7 @@ int PathGeneratorNode::Update()
 				psetout->AddPoint(flatpoint(0, r));
 			}
 
-		} else if (pathtype == Rectangle) {
+		} else if (pathtype == Rectangle || pathtype == SquircleCubic) {
 			if (GetInNumber(c, dosets, x, ins[0], setins[0]) == -1) {
 				Error(_("Bad x"));
 				return -1;
@@ -4374,9 +4923,18 @@ int PathGeneratorNode::Update()
 				Error(_("Bad height"));
 				return -1;
 			}
+			if (pathtype == SquircleCubic) {
+				if (GetInNumber(c, dosets, r, ins[4], setins[4]) == -1) {
+					Error(_("Bad round value"));
+					return -1;
+				}
+			}
 			
-			if (path) path->appendRect(x,y,w,h);
-			else {
+			if (path) {
+				if (pathtype == SquircleCubic) path->MakeSquircleCubic(0, x,y,w,h, &r,1);
+				else path->appendRect(x,y,w,h);
+
+			} else {
 				psetout->AddPoint(flatpoint(x,y));
 				psetout->AddPoint(flatpoint(x+w,y));
 				psetout->AddPoint(flatpoint(x+w,y+h));
@@ -4661,6 +5219,7 @@ int PathGeneratorNode::Update()
 
 Laxkit::anObject *newPathCircleNode(int p, Laxkit::anObject *ref)         { return new PathGeneratorNode(PathGeneratorNode::Circle); }
 Laxkit::anObject *newPathRectangleNode(int p, Laxkit::anObject *ref)      { return new PathGeneratorNode(PathGeneratorNode::Rectangle); }
+Laxkit::anObject *newPathSquircleCubic(int p, Laxkit::anObject *ref)      { return new PathGeneratorNode(PathGeneratorNode::SquircleCubic); }
 Laxkit::anObject *newPathSquareNode(int p, Laxkit::anObject *ref)         { return new PathGeneratorNode(PathGeneratorNode::Square); }
 Laxkit::anObject *newPathPolygonNode(int p, Laxkit::anObject *ref)        { return new PathGeneratorNode(PathGeneratorNode::Polygon); }
 Laxkit::anObject *newPathFunctionNode(int p, Laxkit::anObject *ref)       { return new PathGeneratorNode(PathGeneratorNode::Function); }
@@ -5034,6 +5593,7 @@ int SetupDataObjectNodes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Paths/Circle",            newPathCircleNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/Square",            newPathSquareNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/RectanglePath",     newPathRectangleNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/SquircleCubic",     newPathSquircleCubic,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/Polygon",           newPathPolygonNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/PathFunctionX",     newPathFunctionNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/PathFunctionT",     newPathFunctionTNode, NULL, 0);
@@ -5042,6 +5602,7 @@ int SetupDataObjectNodes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Paths/Svgd",              newPathSvgdNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/EndPoints",         EndPointsNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/Extrema",           ExtremaNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/Intersections",     PathIntersectionsNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/Corners",           CornersNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/SetOriginToBBox",   SetOriginBBoxNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/Extrude",           ExtrudeNode::NewNode,  NULL, 0);
@@ -5049,6 +5610,7 @@ int SetupDataObjectNodes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Paths/SamplePath",        SamplePathNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/ClosestPoint",      ClosestPointNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Paths/RoundedRect",       RoundedRectNode::NewNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Paths/PathFromPoints",    PathFromPointsNode::NewNode,  NULL, 0);
 
 	factory->DefineNewObject(getUniqueNumber(), "Points/Grid",             newPointsGridNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Points/HexGrid",          newPointsHexNode,  NULL, 0);

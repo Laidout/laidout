@@ -1335,7 +1335,9 @@ void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext 
  */
 int Net::Basenet(AbstractNet *newbasenet)
 {
+	int oldactive = active;
 	clear();
+	active = oldactive;
 	newbasenet->inc_count();
 	basenet=newbasenet;
 	return 0;
@@ -1815,6 +1817,7 @@ int Net::validateNet()
 int Net::rebuildLines()
 {
 	cerr <<" ***need to do real implementation of Net::rebuildLines()..."<<endl;
+
 	 // remove auto lines from lines stack...
 	for (int c=lines.n-1; c>=0; c--) {
 		if (lines.e[c]->lineinfo==0) lines.remove(c);
@@ -1896,14 +1899,14 @@ int Net::Unwrap(int netfacei,int atedge)
 	if (netfacei<0) {
 		 //unwrap all or drop a new seed face
 
-		if (atedge<0) { TotalUnwrap(); return 0; }
-		if (atedge>=basenet->NumFaces()) return 2;
+		if (atedge < 0) { TotalUnwrap(); return 0; }
+		if (atedge >= basenet->NumFaces()) return 2;
 		if (findOriginalFace(atedge,1,0,NULL)==1) return 0;
 		 
 		 //drop down original face atedge, starting new group
 		 //***this does not properly adjust potentials...
-		NetFace *face=basenet->GetFace(atedge,1);
-		face->tag=FACE_Actual;
+		NetFace *face = basenet->GetFace(atedge,1);
+		face->tag = FACE_Actual;
 		faces.push(face,1);
 		addPotentialsToFace(faces.n-1);
 
@@ -1914,7 +1917,7 @@ int Net::Unwrap(int netfacei,int atedge)
 		DBG cerr <<"...done unwrap 1"<<endl;
 		return 0;
 	}
-	if (netfacei>=faces.n) return 3;
+	if (netfacei >= faces.n) return 3;
 
 
 	NetFace *f1=faces.e[netfacei],
@@ -1960,19 +1963,42 @@ int Net::Unwrap(int netfacei,int atedge)
 }
 
 //! For any edges with potential faces, unwrap there, until all is unwrapped.
-int Net::TotalUnwrap()
+int Net::TotalUnwrap(bool all_chunks)
 {
-	if (!faces.n) Unwrap(-1,0);
-	if (!faces.n) return 1;
+	if (!faces.n) Unwrap(-1,0); //drop a single face
+	if (!faces.n) return 1; //could not find a new face to drop
+
+	//now unwrap along all edges that have potential faces
 	do {
 		for (int c=0; c<faces.n; c++) {
 			if (faces.e[c]->tag!=FACE_Actual) continue;
 			for (int c2=0; c2<faces.e[c]->edges.n; c2++) {
-				if (faces.e[c]->edges.e[c2]->tag==FACE_Potential) Unwrap(c,c2);
+				if (faces.e[c]->edges.e[c2]->tag == FACE_Potential) Unwrap(c,c2);
 			}
 
 		}
-		break;
+		if (!all_chunks) break;
+
+		//drop and unwrap any face not already unwrapped
+		bool done = true;
+		for (int c=0; c<basenet->NumFaces(); c++) {
+			bool found = false;
+			for (int c2=0; c2<faces.n; c2++) {
+				if (faces.e[c2]->original == c) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				NetFace *pface = basenet->GetFace(c,1);
+				pface->tag = FACE_Actual;
+				faces.push(pface,1);
+				done = false;
+				break;
+			}
+		}
+
+		if (done) break;
 	} while (1);
 	FindBBox();
 	return 0;

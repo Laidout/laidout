@@ -12,8 +12,8 @@
 //
 // Copyright (C) 2004-2010 by Tom Lechner
 //
-#ifndef IMPOSITIONINST_H
-#define IMPOSITIONINST_H
+#ifndef SINGLES_H
+#define SINGLES_H
 
 #include "imposition.h"
 
@@ -28,17 +28,20 @@ ObjectDef *makeSinglesObjectDef();
 class Singles : public Imposition
 {
   private:
-  	LaxInterfaces::PathsData *cached_margin_outline;
-  	double c_ml, c_mr, c_mt, c_mb, c_w, c_h;
+  	Laxkit::RefPtrStack<LaxInterfaces::PathsData> cached_margin_outlines; //1 per paper
+  	Laxkit::NumStack<double> cached_margins; //6*(num papergroup->papers), l,r,t,b,w,h
 
   public:
-	double insetleft,insetright,insettop,insetbottom;
-	double marginleft,marginright,margintop,marginbottom;
-	double gapx,gapy;
-	int tilex,tiley; 
-	RectPageStyle *pagestyle;
+	double marginleft,marginright,margintop,marginbottom; //default margins
+	double insetleft, insetright, insettop, insetbottom;  //default insets
+	double gapx, gapy; //gap between tiles
+	int tilex, tiley; //tiles within insets
+	bool double_sided = false;
+	RectPageStyle *pagestyle; //default style
+	Laxkit::RefPtrStack<RectPageStyle> pagestyles; //default styles
 
 	Singles();
+	Singles(PaperGroup *pgroup, bool absorb);
 	virtual ~Singles();
 	virtual const char *whattype() { return "Singles"; }
 	static ImpositionResource **getDefaultResources();

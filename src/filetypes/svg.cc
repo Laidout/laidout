@@ -37,6 +37,7 @@
 #include "../core/utils.h"
 #include "../core/drawdata.h"
 #include "../core/guides.h"
+#include "../impositions/netimposition.h"
 
 //template implementation:
 #include <lax/refptrstack.cc>
@@ -67,6 +68,9 @@ static int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData 
 
 //------------------------ Svg in/reimpose/out helpers -------------------------------------
 
+//forward declarations:
+Imposition *ParseInkscapeMultipage(Attribute *namedview, double *viewbox, double scalex, double scaley);
+
 //! Creates a Laidout Document from a Svg file, and adds to laidout->project.
 /*! Assumes something has already checked that file is an SVG, so things like failure to
  * open, and munched up file data will produce fatal errors.
@@ -91,8 +95,8 @@ int AddSvgDocument(const char *file, Laxkit::ErrorLog &log, Document *existingdo
 
 	 //find default page width and height
 	double width,height = -100;
-	//double scalex = 1, scaley = 1;
-	//bool needtoscale = false;
+	double scalex = 1, scaley = 1;
+	bool needtoscale = false;
 	UnitManager *unitm = GetUnitManager();
 
 	 //width
@@ -113,11 +117,11 @@ int AddSvgDocument(const char *file, Laxkit::ErrorLog &log, Document *existingdo
 		int units = unitm->UnitId(ptr, eptr-ptr);
 		if (units!=UNITS_None) {
 			width = unitm->Convert(width, units, UNITS_Inches, nullptr);
-			//needtoscale = false;
+			needtoscale = false;
 		}
 	} else {
 		width /= DEFAULT_PPINCH;
-		//scalex = 1./DEFAULT_PPINCH;
+		scalex = 1./DEFAULT_PPINCH;
 	}
 	if (width<=0) {
 		log.AddError(_("Bad width value"));
@@ -143,31 +147,31 @@ int AddSvgDocument(const char *file, Laxkit::ErrorLog &log, Document *existingdo
 				int units = unitm->UnitId(ptr, eptr-ptr);
 				if (units!=UNITS_None) {
 					height = unitm->Convert(height, units, UNITS_Inches, nullptr);
-					//needtoscale = false;
+					needtoscale = false;
 				}
 			} else {
 				height /= DEFAULT_PPINCH;
-				//scaley = 1./DEFAULT_PPINCH;
+				scaley = 1./DEFAULT_PPINCH;
 			}
 		}
 	}
 
 	ptr = strstr(chunk,"viewBox"); // viewBox="0 0 1530 1530", map this rectangle to 0,0 -> width,height
 	double viewbox_aspect = 1;
+	double viewbox[4];
 	if (ptr) {
 		ptr+=7;
 		while (isspace(*ptr) || *ptr=='=' || *ptr=='"') ptr++;
-		double l[4];
-		int n = DoubleListAttribute(ptr, l, 4, nullptr);
-		if (n==4) {
-			//scalex = width  / l[2];
-			//scaley = height / l[3]; ***note auto height not found yet
-			//needtoscale = true;
-			if (fabs(l[2] - l[0]) < 1e-8) {
+		int n = DoubleListAttribute(ptr, viewbox, 4, nullptr);
+		if (n == 4) {
+			scalex = width  / viewbox[2];
+			scaley = height / viewbox[3]; //***note auto height not found yet
+			needtoscale = true;
+			if (fabs(viewbox[2] - viewbox[0]) < 1e-8) {
 				log.AddError(_("Bad viewbox!"));
 				return 8;
 			}
-			viewbox_aspect = (l[3] - l[1]) / (l[2] - l[0]);
+			viewbox_aspect = (viewbox[3] - viewbox[1]) / (viewbox[2] - viewbox[0]);
 		}
 	}
 
@@ -180,18 +184,41 @@ int AddSvgDocument(const char *file, Laxkit::ErrorLog &log, Document *existingdo
 	}
 	PaperStyle paper("custom",width,height, 0,300, "in");
 	
-	Singles *imp=new Singles;
-	imp->SetPaperSize(&paper);
-	imp->NumPages(1);
+	//parse Inkscape multipage if present
+	Imposition *imp = nullptr;
+	char *papersPtr = strstr(chunk, "<sodipodi:namedview");
+	if (papersPtr) {
+		Attribute *namedview = XMLChunkToAttribute(nullptr, papersPtr, 2000-(papersPtr - chunk), nullptr, nullptr, nullptr);
+		if (namedview) {
+			Imposition *netimp = ParseInkscapeMultipage(namedview, viewbox, scalex, scaley);
+			if (netimp) {
+				imp = netimp;
+			}
+			delete namedview;
+		}
+	}
 
-	Document *newdoc=existingdoc;
+	if (!imp) {
+		// no valid multipage found, default to ordinary Singles
+		imp = new Singles;
+		imp->SetPaperSize(&paper);
+		imp->NumPages(1);
+	}
+
+	Document *newdoc = existingdoc;
+	int num_pages = imp->NumPages();
+
 	if (newdoc) {
 		makestr(newdoc->saveas,nullptr); //force rename later
 		if (newdoc->imposition) newdoc->imposition->dec_count();
-		newdoc->imposition=imp;
+		newdoc->imposition = imp;
 		imp->inc_count();
 	} else {
-		newdoc=new Document(imp,nullptr);//null file name to force rename on save
+		newdoc = new Document(imp,nullptr);//null file name to force rename on save
+	}
+
+	if (num_pages > newdoc->NumPages()) {
+		newdoc->NewPages(newdoc->NumPages(), num_pages - newdoc->NumPages());
 	}
 
 	makestr(newdoc->name,"From ");
@@ -2142,6 +2169,97 @@ void CompoundTransformForRef(SomeDataRef *ref, Group *top);
 void CompoundTransforms(Group *group, Group *top);
 
 
+
+Imposition *ParseInkscapeMultipage(Attribute *namedview, double *viewbox, double scalex, double scaley)
+{
+	if (!namedview) return nullptr;
+	Attribute *content = namedview->find("sodipodi:namedview");
+	if (!content) content = namedview;
+	content = content->find("content:");
+	if (!content) return nullptr;
+
+	PaperGroup *papergroup = nullptr;
+	//Polyhedron *hedron = nullptr;
+	int pages_found = 0;
+	double m[6];
+	const char *name, *value;
+	//transform_set(m, 1.0/DEFAULT_PPINCH, 0,0, 1.0/DEFAULT_PPINCH, 0,0);
+	transform_identity(m);
+
+	for (int c=0; c<content->attributes.n; c++) {
+		name  = content->attributes.e[c]->name;
+		value = content->attributes.e[c]->value;
+
+		if (!strcmp(name,"inkscape:page")) {
+			double x=0, y=0, width=0, height=0;
+			const char *id = nullptr;
+
+			for (int c2=0; c2<content->attributes.e[c]->attributes.n; c2++) {
+				name  = content->attributes.e[c]->attributes.e[c2]->name;
+				value = content->attributes.e[c]->attributes.e[c2]->value;
+
+
+				if (!strcmp(name,"x")) {
+					DoubleAttribute(value, &x);
+				} else if (!strcmp(name,"y")) {
+					DoubleAttribute(value, &y);
+				} else if (!strcmp(name,"width")) {
+					DoubleAttribute(value, &width);
+				} else if (!strcmp(name,"height")) {
+					DoubleAttribute(value, &height);
+				} else if (!strcmp(name,"id")) {					
+					id = value;
+				}
+			}
+
+			if (width > 0 && height > 0) {
+				//add page
+				
+				y = viewbox[3] - y - height;
+				x *= scalex;
+				y *= scaley;
+				width *= scalex;
+				height *= scaley;
+				
+				//if (!hedron) hedron = new Polyhedron();
+				//int pt1 = hedron->AddPoint(x,y);
+				//int pt2 = hedron->AddPoint(x+width,y);
+				//int pt3 = hedron->AddPoint(x+width,y+height);
+				//int pt4 = hedron->AddPoint(x,y+height);
+				//hedron->AddFace(4, pt1, pt2, pt3, pt4);
+
+				if (!papergroup) papergroup = new PaperGroup();
+				//m[4] = x / DEFAULT_PPINCH;
+				//m[5] = y / DEFAULT_PPINCH;
+				m[4] = x;
+				m[5] = y;
+				papergroup->AddPaper(id, width, height, m);
+
+				pages_found++;
+			}
+		}
+	}
+
+	//---- hedron based:
+	//if (!hedron) return nullptr;
+	//hedron->makeedges();	 
+	//Net *net = new Net;
+	//makestr(net->netname, poly->name);
+	//net->basenet = hedron;
+	//net->TotalUnwrap();
+	//net->rebuildLines();
+	//NetImposition *netimp = new NetImposition(hedron);
+
+	//---- papergroup based:
+	if (!papergroup) return nullptr;
+	Singles *imp = new Singles(papergroup, true);
+	//NetImposition *netimp = new NetImposition(papergroup);
+	//papergroup->dec_count();
+
+	imp->NumPages(pages_found);
+	return imp;
+}
+
 int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log, const char *filecontents,int contentslen)
 {
 	ImportConfig *in = dynamic_cast<ImportConfig *>(context);
@@ -2358,6 +2476,9 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 //							//extract inkscape:grid, a child of namedview
 //							GridGuide *grid = ParseGrid(vatt->attributes.e[c]);
 //							if (grid) document->guides.push(grid);
+//							
+//						} else if (!strcmp(name,"inkscape:page")) {
+//						   *** will need to check for object overlap with defined pages in order to parse
 //						}
 //					}
 				}

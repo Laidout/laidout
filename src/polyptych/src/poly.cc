@@ -104,10 +104,16 @@ DBG }
 //! Create empty face.
 Face::Face()
 {
-	cache=NULL;
-	planeid=setid=-1; pn=0; v=NULL; f=NULL; p=NULL;
-	facegroupid=-1;
-	dihedral=NULL;
+	label       = nullptr;
+	cache       = NULL;
+	planeid     = -1;
+	setid       = -1;
+	pn          = 0;
+	v           = NULL;
+	f           = NULL;
+	p           = NULL;
+	facegroupid = -1;
+	dihedral    = NULL;
 }
 
 //! Create a Face with the ps array as the point indices.
@@ -115,16 +121,19 @@ Face::Face()
  */
 Face::Face(int numof,int *ps) 
 {
-	cache=NULL;
-	p=NULL; f=NULL; v=NULL;
-	planeid=setid=-1;
-	facegroupid=-1;
-	if (numof<3) { pn=0; return; }
-	pn=numof;
-	v=new int[pn];
-	f=new int[pn];
-	p=new int[pn];
-	dihedral=new double[pn];
+	label   = nullptr;
+	cache   = NULL;
+	p       = NULL;
+	f       = NULL;
+	v       = NULL;
+	planeid = setid = -1;
+	facegroupid     = -1;
+	if (numof < 3) { pn = 0; return; }
+	pn       = numof;
+	v        = new int[pn];
+	f        = new int[pn];
+	p        = new int[pn];
+	dihedral = new double[pn];
 	if (ps) for (int c=0; c<pn; c++) { p[c]=ps[c]; f[c]=-1; v[c]=-1; dihedral[c]=0; }
 }
 
@@ -135,21 +144,28 @@ Face::Face(int numof,int *ps)
  */
 Face::Face(int p1,int p2,int p3, int p4, int p5) /* p4=-1, p5=-1 */
 {
-	cache=NULL;
-	planeid=setid=-1;
-	facegroupid=-1;
-	if (p4==-1) pn=3;
-	else if (p5==-1) pn=4;
-	else pn=5;
+	label   = nullptr;
+	cache   = NULL;
+	planeid = setid = -1;
+	facegroupid     = -1;
+	if (p4 == -1) pn = 3;
+	else if (p5 == -1) pn = 4;
+	else pn = 5;
 
-	p=new int[pn];
-	f=new int[pn];
-	v=new int[pn];
-	dihedral=new double[pn];
-	p[0]=p1; p[1]=p2; p[2]=p3;
-	if (pn>3) p[3]=p4;
-	if (pn>4) p[4]=p5;
-	for (int c=0; c<pn; c++) { f[c]=-1; v[c]=-1; dihedral[c]=0; }
+	p        = new int[pn];
+	f        = new int[pn];
+	v        = new int[pn];
+	dihedral = new double[pn];
+	p[0]     = p1;
+	p[1]     = p2;
+	p[2]     = p3;
+	if (pn > 3) p[3] = p4;
+	if (pn > 4) p[4] = p5;
+	for (int c = 0; c < pn; c++) {
+		f[c]        = -1;
+		v[c]        = -1;
+		dihedral[c] = 0;
+	}
 }
 
 //! Create a new face from a string like "3 4 5" or "3,5,6". Delimiter is ignored.
@@ -157,10 +173,15 @@ Face::Face(int p1,int p2,int p3, int p4, int p5) /* p4=-1, p5=-1 */
  */
 Face::Face(const char *pointlist,const char *linklist)
 {
-	cache=NULL;
-	planeid=setid=-1; pn=0; v=NULL; f=NULL; p=NULL;
-	facegroupid=-1;
-	dihedral=NULL;
+	label   = nullptr;
+	cache   = NULL;
+	planeid = setid = -1;
+	pn              = 0;
+	v               = NULL;
+	f               = NULL;
+	p               = NULL;
+	facegroupid     = -1;
+	dihedral        = NULL;
 
 	IntListAttribute(pointlist,&p,&pn,NULL);
 	if (!pn) return;
@@ -178,16 +199,18 @@ Face::Face(const char *pointlist,const char *linklist)
 //! Create copy of fce.
 Face::Face(const Face &fce)
 {
-	dihedral=NULL;
-	cache=NULL;
-	v=NULL;
-	f=NULL;
-	p=NULL;
-	*this=fce;
+	label    = nullptr;
+	dihedral = nullptr;
+	cache    = nullptr;
+	v        = nullptr;
+	f        = nullptr;
+	p        = nullptr;
+	*this = fce;
 }
 
 Face::~Face()
 { 
+	delete[] label;
 	if (cache) delete cache;
 	delete[] p;
 	delete[] f;
@@ -214,6 +237,7 @@ Face &Face::operator=(const Face &fce)
 	planeid=fce.planeid;
 	setid=fce.setid;
 	facegroupid=fce.facegroupid;
+	makestr(label, fce.label);
 	return *this;
 }
 
@@ -1040,6 +1064,30 @@ int Polyhedron::AddFace(const char *str)
 	faces.push(f,1);
 	return 0;
 }
+
+/* Add a face referencing n existing vertices.
+ * Warning: no bounds checking is done.
+ */
+int Polyhedron::AddFace(int n, ...)
+{
+	va_list ap;
+	va_start(ap,n);
+
+	Face *f = new Face();
+	f->v = new int[n];
+	f->f = new int[n];
+	f->p = new int[n];
+
+	for (int c=0; c<n; c++) {
+		f->v[c]=f->f[c]=-1;
+		f->p[0] = va_arg(ap,int);
+	}
+	faces.push(f,1);
+	
+	va_end(ap);
+	return 0;
+}
+
 
 /*! Search all existing faces to find a unique number for use as a new facegroupid.
  */

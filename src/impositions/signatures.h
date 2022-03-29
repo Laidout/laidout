@@ -40,7 +40,9 @@ class Fold : public Value
 	char direction; //l,r,t, or b
 	int under; //1 for folding under in direction
 	int whichfold; //index from the left or top side of completely unfolded paper of which fold to act on
-	Fold(char dir,int u, int which) { direction=dir; under=u; whichfold=which; }
+	int face; //only for Nets, whichfold is edge of this face
+
+	Fold(char dir,int u, int which, int whichface = -1) { direction = dir; under = u; whichfold = which; face = whichface; }
 	virtual ObjectDef *makeObjectDef();
 	virtual Value *duplicate();
 };

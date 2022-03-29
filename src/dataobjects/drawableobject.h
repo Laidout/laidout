@@ -198,8 +198,6 @@ class DrawableObject :  virtual public ObjectContainer,
 
 	//Laxkit::RefPtrStack<anObject *> refs; //what other resources this objects depends on?
 
-	LaxInterfaces::SomeDataRef *proxy_shape; //a ref to a DrawableObject Resource
-
 	ValueHash properties;
 	LaxFiles::AttributeObject *metadata;
 	LaxFiles::Attribute iohints;
@@ -225,7 +223,6 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual int AddAlignmentRule(AlignmentRule *newlink, bool replace=false, int where=-1);
 	virtual int RemoveAlignmentRule(int index);
 	virtual void UpdateFromRules();
-	//virtual Laxkit::Affine GetTransformToContext(bool invert, int partial);
 
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);

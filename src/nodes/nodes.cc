@@ -285,6 +285,7 @@ int VectorNode::GetStatus()
 	int isnum = 0;
 	for (int c=0; c<dims; c++) {
 		Value *v = properties.e[c]->GetData();
+		if (!v) return -1;
 		getNumberValue(v,&isnum);
 		if (!isnum && v->type() != VALUE_Set) return -1;
 	}
@@ -560,6 +561,116 @@ int BBoxInfoNode::Update()
 	return NodeBase::Update();
 }
 
+
+//----------------------- BBoxPointNode ------------------------
+
+/*! \class BBoxPointNode
+ *
+ * Do stuff.
+ */
+class BBoxPointNode : public NodeBase
+{
+  public:
+	BBoxPointNode();
+	virtual ~BBoxPointNode();
+	virtual NodeBase *Duplicate();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new BBoxPointNode(); }
+};
+
+BBoxPointNode::BBoxPointNode()
+{
+	makestr(type, "Drawable/BBoxPoint");
+	makestr(Name, _("BBox Point"));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,     _("Object"), _("A bounded object")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "x",   new DoubleValue(.5),1,  _("X"),  _("minx is 0, maxx is 1")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "y",   new DoubleValue(.5),1,  _("Y"),  _("miny is 0, maxy is 1")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out"), NULL,0, false));
+}
+
+BBoxPointNode::~BBoxPointNode()
+{
+}
+
+NodeBase *BBoxPointNode::Duplicate()
+{
+	BBoxPointNode *newnode = new BBoxPointNode();
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int BBoxPointNode::GetStatus()
+{
+	return NodeBase::GetStatus();
+}
+
+int BBoxPointNode::Update() //possible set ins
+{
+	ClearError();
+
+	int num_ins = 3;
+	Value *ins[3];
+	ins[0] = properties.e[0]->GetData();
+	ins[1] = properties.e[1]->GetData();
+	ins[2] = properties.e[2]->GetData();
+
+	SetValue *setins[3];
+	SetValue *setouts[1];
+
+	//int num_outs = 1;
+	int outprops[1];
+	outprops[0] = 3;
+
+	int max = 0;
+	//const char *err = nullptr;
+	bool dosets = false;
+	if (DetermineSetIns(num_ins, ins, setins, max, dosets) == -1) {; //does not check contents of sets.
+		//had a null input
+		return -1;
+	}
+
+	//establish outprop: make it either type, or set. do prop->Touch(). clamp to max. makes setouts[*] null or the out set
+	FlatvectorValue *out1 = UpdatePropType<FlatvectorValue>(properties.e[outprops[0]], dosets, max, setouts[0]);
+	
+	DoubleBBox *in1 = nullptr; //dynamic_cast<DoubleValue*>(ins[0]);
+	//DoubleValue *in2 = nullptr; //dynamic_cast<IntValue*>(ins[1]);
+	//DoubleValue *in3 = nullptr; //dynamic_cast<LPathsData*>(ins[2]);
+	double in2 = 0;
+	double in3 = 0;
+
+	for (int c=0; c<max; c++) {
+		in1 = GetInValue<DoubleBBox> (c, dosets, in1, ins[0], setins[0]);
+		//in2 = GetInValue<DoubleValue>(c, dosets, in2, ins[1], setins[1]);
+		//in3 = GetInValue<DoubleValue>(c, dosets, in3, ins[2], setins[2]);
+
+		// error check ins
+		if (!in1) {
+			Error(_("Missing in bbox"));
+			return -1;
+		}
+		if (GetInNumber(c, dosets, in2, ins[1], setins[1]) != 0) {
+			Error(_("Expected number"));
+			return -1;
+		}
+		if (GetInNumber(c, dosets, in3, ins[2], setins[2]) != 0) {
+			Error(_("Expected number"));
+			return -1;
+		}
+
+
+		GetOutValue<FlatvectorValue>(c, dosets, out1, setouts[0]);
+			
+
+		// based on ins, update outs
+		out1->v = in1->BBoxPoint(in2,in3);
+	}
+
+
+	return NodeBase::Update();
+}
 
 
 //------------ ColorNode
@@ -869,13 +980,14 @@ int InvertNode::Update()
 		}
 		vv->v = -dynamic_cast<QuaternionValue*>(v)->v.conjugate();
 
-	} else if (v->type() == AffineValue::TypeNumber()) {
+	//} else if (v->type() == AffineValue::TypeNumber()) {
+	} else if (dynamic_cast<Affine*>(v)) {
 		AffineValue *vv = dynamic_cast<AffineValue*>(properties.e[1]->GetData());
 		if (!vv) {
 			vv = new AffineValue();
 			properties.e[1]->SetData(vv, 1);
 		}
-		vv = dynamic_cast<AffineValue*>(v);
+		vv->m(dynamic_cast<Affine*>(v)->m());
 		vv->Invert();
 
 	} else {
@@ -925,6 +1037,7 @@ enum MathNodeOps {
 	OP_Norm2,
 	OP_Flip,
 	OP_Normalize,
+	OP_Transpose,
 	OP_Angle,
 	OP_Angle2,
 	OP_LAST_1_ARG,
@@ -1024,6 +1137,7 @@ ObjectDef *DefineMathNode1Def()
 	def->pushEnumValue("Norm2"          ,_("Norm2"),         _("Square of length"),OP_Norm2       );
 	def->pushEnumValue("Flip"           ,_("Flip"),          _("Flip"),          OP_Flip          );
 	def->pushEnumValue("Normalize"      ,_("Normalize"),     _("Normalize"),     OP_Normalize     );
+	def->pushEnumValue("Transpose"      ,_("Transpose"),     _("Transpose"),     OP_Transpose     );
 	def->pushEnumValue("Angle"          ,_("Angle"),        _("Angle, -pi to pi. 2d only"),   OP_Angle);
 
 
@@ -1339,6 +1453,16 @@ int MathNode1::UpdateThisOnly()
 					return -1;
 				}
 				for (int c=0; c<aisnum; c++) rv[c] = va[c]/result;
+
+			} else if (operation == OP_Transpose) {
+				result = 0;
+				if (aisnum != 2) {
+					Error(_("Transpose only works on Vector2"));
+					return -1;
+				}
+				//double vv = rv[0];
+				rv[0] = -va[1];
+				rv[1] = va[0];
 
 			} else if (operation == OP_Angle) {
 				if (aisnum != 2) {
@@ -5394,6 +5518,10 @@ class TransformAffineNode : public NodeBase
 	virtual NodeBase *Duplicate();
 	virtual int GetStatus();
 	virtual int Update();
+
+	Value *TransformData(Affine *affine, Value *v, Value *old_out);
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new TransformAffineNode(); }
 };
 
 TransformAffineNode::TransformAffineNode()
@@ -5432,6 +5560,7 @@ int TransformAffineNode::GetStatus()
 		int vtype = v->type();
 		if (   vtype != AffineValue::TypeNumber()
 			&& vtype != VALUE_Flatvector
+			&& vtype != VALUE_Set
 			&& vtype != PointSetValue::TypeNumber()
 			&& !dynamic_cast<Affine*>(v)
 		   ) return -1;
@@ -5442,12 +5571,93 @@ int TransformAffineNode::GetStatus()
 	return NodeBase::GetStatus(); //default checks mod times
 }
 
+Value *TransformAffineNode::TransformData(Affine *affine, Value *v, Value *old_out)
+{
+	int vtype = v->type();
+	Value *nv = nullptr;
+
+	if (vtype == VALUE_Flatvector) {
+		FlatvectorValue *fv  = dynamic_cast<FlatvectorValue*>(v);
+		FlatvectorValue *nnv = dynamic_cast<FlatvectorValue*>(old_out);
+		if (!nnv) nnv = new FlatvectorValue(affine->transformPoint(fv->v));
+		else {
+			nnv->v = affine->transformPoint(fv->v);
+			nnv->inc_count();
+		}
+		nv = nnv;
+
+	} else if (dynamic_cast<DrawableObject*>(v)) {
+		// ***** refs cause unending render loops
+//			DrawableObject *d = dynamic_cast<DrawableObject*>(v);
+//			LSomeDataRef *ref = dynamic_cast<LSomeDataRef*>(properties.e[2]->GetData());
+//			if (!ref) ref = new LSomeDataRef(d);
+//			else {
+//				ref->Set(d, 0);
+//				ref->inc_count();
+//			}
+//			ref->Multiply(*affine);
+//			nv = ref;
+		//---------------------
+		DrawableObject *d = dynamic_cast<DrawableObject*>(v);
+		anObject *filter = d->filter;
+		d->filter = NULL;
+		DrawableObject *copy = dynamic_cast<DrawableObject*>(d->duplicate());
+		copy->FindBBox();
+		d->filter = filter;
+		copy->Multiply(*affine);
+		nv = copy;
+
+	} else if (vtype == AffineValue::TypeNumber()) {
+		AffineValue *fv  = dynamic_cast<AffineValue*>(v);
+		AffineValue *nnv = dynamic_cast<AffineValue*>(old_out);
+		if (!nnv) nnv = new AffineValue(fv->m());
+		else {
+			nnv->m(fv->m());
+			nnv->inc_count();
+		}
+		nnv->Multiply(*affine);
+		nv = nnv;
+
+	} else if (vtype == PointSetValue::TypeNumber()) {
+		nv = v->duplicate();
+		PointSetValue *pv = dynamic_cast<PointSetValue*>(nv);
+		pv->Map([&](const flatpoint &pin, flatpoint &pout) { pout = affine->transformPoint(pin); return 1; } );
+
+	} else if (vtype == VALUE_Set) {
+		SetValue *sv = dynamic_cast<SetValue*>(v);
+		SetValue *sout = dynamic_cast<SetValue*>(old_out);
+		nv = sout;
+		if (!sout) {
+			sout = new SetValue();
+			properties.e[2]->SetData(sout, true);
+		} else {
+			sout->Flush();
+			nv->inc_count();
+		}
+
+		for (int c=0; c<sv->n(); c++) {
+			Value *nnv = TransformData(affine, sv->e(c), nullptr);
+			if (!nnv) return nullptr;
+			sout->Push(nnv, 1);
+		}
+
+	} else {
+		Error(_("Cannot transform that"));
+		return nullptr;
+	}
+
+	return nv;
+}
+
 int TransformAffineNode::Update()
 {
-	Error(nullptr);
+	ClearError();
 
-	Value *nv = NULL;
+	Value *nv = nullptr;
 	Value *v = properties.e[0]->GetData();
+	if (!v) {
+		return -1;
+	}
 
 	Value *aff = properties.e[1]->GetData();
 	DBG cerr << "TransformAfffineNode::Update with prop 1 type: "<<(aff ? aff->whattype() : "null")<<endl;
@@ -5460,66 +5670,10 @@ int TransformAffineNode::Update()
 		return -1;
 	}
 
-	if (!v) {
-		 //clear output when there is no input
-		if (properties.e[2]->GetData()) properties.e[2]->SetData(NULL,0);
-		Error(_("Missing input"));
+	Value *old_out = properties.e[2]->GetData();
+	nv = TransformData(affine, v, old_out);
+	if (!nv) {
 		return -1;
-
-	} else {
-		int vtype = v->type();
-		if (vtype == VALUE_Flatvector) {
-			FlatvectorValue *fv  = dynamic_cast<FlatvectorValue*>(v);
-			FlatvectorValue *nnv = dynamic_cast<FlatvectorValue*>(properties.e[2]->GetData());
-			if (!nnv) nnv = new FlatvectorValue(affine->transformPoint(fv->v));
-			else {
-				nnv->v = affine->transformPoint(fv->v);
-				nnv->inc_count();
-			}
-			nv = nnv;
-
-		} else if (dynamic_cast<DrawableObject*>(v)) {
-			// ***** refs cause unending render loops
-//			DrawableObject *d = dynamic_cast<DrawableObject*>(v);
-//			LSomeDataRef *ref = dynamic_cast<LSomeDataRef*>(properties.e[2]->GetData());
-//			if (!ref) ref = new LSomeDataRef(d);
-//			else {
-//				ref->Set(d, 0);
-//				ref->inc_count();
-//			}
-//			ref->Multiply(*affine);
-//			nv = ref;
-			//---------------------
-			DrawableObject *d = dynamic_cast<DrawableObject*>(v);
-			anObject *filter = d->filter;
-			d->filter = NULL;
-			DrawableObject *copy = dynamic_cast<DrawableObject*>(d->duplicate());
-			copy->FindBBox();
-			d->filter = filter;
-			copy->Multiply(*affine);
-			nv = copy;
-
-		} else if (vtype == AffineValue::TypeNumber()) {
-			AffineValue *fv  = dynamic_cast<AffineValue*>(v);
-			AffineValue *nnv = dynamic_cast<AffineValue*>(properties.e[2]->GetData());
-			if (!nnv) nnv = new AffineValue(fv->m());
-			else {
-				nnv->m(fv->m());
-				nnv->inc_count();
-			}
-			nnv->Multiply(*affine);
-			nv = nnv;
-
-		} else if (vtype == PointSetValue::TypeNumber()) {
-			nv = v->duplicate();
-			PointSetValue *pv = dynamic_cast<PointSetValue*>(nv);
-			pv->Map([&](const flatpoint &pin, flatpoint &pout) { pout = affine->transformPoint(pin); return 1; } );
-
-		} else {
-			Error(_("Cannot transform that type"));
-			return -1;
-		}
-
 	}
 
 	properties.e[2]->SetData(nv, 1);
@@ -5527,10 +5681,6 @@ int TransformAffineNode::Update()
 	return NodeBase::Update();
 }
 
-Laxkit::anObject *newTransformAffineNode(int p, Laxkit::anObject *ref)
-{
-	return new TransformAffineNode();
-}
 
 
 //------------------------ CurveProperty ------------------------
@@ -7063,7 +7213,7 @@ int ObjectFunctionNode::Update()
 		// ValueHash *context = nullptr;
 		ErrorLog log;
 		// oo->Evaluate(fname,-1, context, &parameters, settings, &result, &log);
-		if (func->Evaluate(fname,-1, nullptr, &parameters, nullptr, &result, &log) != 0) {
+		if (func->Evaluate(fname,strlen(fname), nullptr, &parameters, nullptr, &result, &log) != 0) {
 			// error!
 			char *err = log.FullMessageStr();
 			Error(err ? err : _("Error returned!"));
@@ -8033,9 +8183,7 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Basics/Set",        newEmptySetNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Basics/Value",      newDoubleNode, NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Basics/String",     newStringNode,  NULL, 0);
-
-	 //--- ColorNode
-	factory->DefineNewObject(getUniqueNumber(), "Color",    newColorNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Basics/Color",      newColorNode,  NULL, 0);
 
 	 //--- GradientStrip
 	factory->DefineNewObject(getUniqueNumber(), "Gradient", newGradientNode,  NULL, 0);
@@ -8076,6 +8224,7 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Math/Rectangle", RectangleNode::NewNode,  NULL, 0);
 	factory->DefineNewObject(getUniqueNumber(), "Math/BBox",      RectangleNode::NewNode,  NULL, 1);
 	factory->DefineNewObject(getUniqueNumber(), "Math/BBoxInfo",  BBoxInfoNode::NewNode,  NULL, 1);
+	factory->DefineNewObject(getUniqueNumber(), "Math/BBoxPoint", BBoxPointNode::NewNode,  NULL, 0);
 
 	 //--- Affine nodes
 	factory->DefineNewObject(getUniqueNumber(), "Math/Affine",      newAffineNode,  NULL, 0);
@@ -8126,7 +8275,7 @@ int SetupDefaultNodeTypes(Laxkit::ObjectFactory *factory)
 	factory->DefineNewObject(getUniqueNumber(), "Files/CSVFile",       CSVFileNode::NewNode,  NULL, 0);
 
 	 //-------------------- FILTERS -------------
-	factory->DefineNewObject(getUniqueNumber(), "Filters/TransformAffine", newTransformAffineNode,  NULL, 0);
+	factory->DefineNewObject(getUniqueNumber(), "Filters/TransformAffine", TransformAffineNode::NewNode,  NULL, 0);
 
 	 //-------------------- THREADS -------------
 	factory->DefineNewObject(getUniqueNumber(), "Threads/Thread",     newThreadNode,  NULL, 0);

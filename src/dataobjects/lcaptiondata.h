@@ -37,6 +37,7 @@ class LCaptionData : public DrawableObject,
 	virtual const char *whattype() { return "CaptionData"; }
 	virtual void FindBBox();
 	virtual void ComputeAABB(const double *transform, DoubleBBox &box);
+	virtual void touchContents();
 	virtual int pointin(flatpoint pp,int pin=1);
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);

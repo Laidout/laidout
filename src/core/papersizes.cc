@@ -22,6 +22,7 @@
 
 #include <lax/strmanip.h>
 #include <lax/units.h>
+#include <lax/interfaces/interfacemanager.h>
 
 #include "papersizes.h"
 #include "stylemanager.h"
@@ -29,12 +30,13 @@
 #include "../laidout.h"
 
 //template implementation:
-#include <lax/refptrstack.cc>
+//#include <lax/refptrstack.cc>
 
 
 using namespace std;
 using namespace LaxFiles;
 using namespace Laxkit;
+using namespace LaxInterfaces;
 
 
 
@@ -44,71 +46,72 @@ namespace Laidout {
 
 //      PAPERSIZE   Width  Height  Units
 //      ----------------------------------------
-const char *BuiltinPaperSizes[64*4]=
+const char *BuiltinPaperSizes[65*5]=
 	{
-		"Letter"   ,"8.5" ,"11"  ,"in",
-		"Legal"    ,"8.5" ,"14"  ,"in",
-		"Tabloid"  ,"11"  ,"17"  ,"in",
-		"A4"       ,"210" ,"297" ,"mm",
-		"A3"       ,"297" ,"420" ,"mm",
-		"A2"       ,"420" ,"594" ,"mm",
-		"A1"       ,"594" ,"841" ,"mm",
-		"A0"       ,"841" ,"1189","mm",
-		"A5"       ,"148" ,"210" ,"mm",
-		"A6"       ,"105" ,"148" ,"mm",
-		"A7"       ,"74"  ,"105" ,"mm",
-		"A8"       ,"52"  ,"74"  ,"mm",
-		"A9"       ,"37"  ,"52"  ,"mm",
-		"A10"      ,"26"  ,"37"  ,"mm",
-		"B0"       ,"1000","1414","mm",
-		"B1"       ,"707" ,"1000","mm",
-		"B2"       ,"500" ,"707" ,"mm",
-		"B3"       ,"353" ,"500" ,"mm",
-		"B4"       ,"250" ,"353" ,"mm",
-		"B5"       ,"176" ,"250" ,"mm",
-		"B6"       ,"125" ,"176" ,"mm",
-		"B7"       ,"88"  ,"125" ,"mm",
-		"B8"       ,"62"  ,"88"  ,"mm",
-		"B9"       ,"44"  ,"62"  ,"mm",
-		"B10"      ,"31"  ,"44"  ,"mm",
-		"C0"       ,"917" ,"1297","mm",
-		"C1"       ,"648" ,"917" ,"mm",
-		"C2"       ,"458" ,"648" ,"mm",
-		"C3"       ,"324" ,"458" ,"mm",
-		"C4"       ,"229" ,"324" ,"mm",
-		"C5"       ,"162" ,"229" ,"mm",
-		"C6"       ,"114" ,"162" ,"mm",
-		"C7"       ,"81"  ,"114" ,"mm",
-		"C8"       ,"57"  ,"81"  ,"mm",
-		"C9"       ,"40"  ,"57"  ,"mm",
-		"C10"      ,"28"  ,"40"  ,"mm",
-		"ArchA"    ,"9"   ,"12"  ,"in",
-		"ArchB"    ,"12"  ,"18"  ,"in",
-		"ArchC"    ,"18"  ,"24"  ,"in",
-		"ArchD"    ,"24"  ,"36"  ,"in",
-		"ArchE"    ,"36"  ,"48"  ,"in",
-		"Flsa"     ,"8.5" ,"13"  ,"in",
-		"Flse"     ,"8.5" ,"13"  ,"in",
-		"Index"    ,"3"   ,"5"   ,"in",
-		"Executive","7.25","10.5","in",
-		"Ledger"   ,"17"  ,"11"  ,"in",
-		"Halfletter","5.5","8.5" ,"in",
-		"Note"      ,"7.5","10"  ,"in",
-		"1:1"       ,"1"  ,"1"   ,"in",
-		"4:3"       ,"4"  ,"3"   ,"in",
-		"16:9"      ,"16" ,"9"   ,"in",
-		"640x480"   ,"640","480" ,"px",
-		"800x600"   ,"800","600" ,"px",
-		"1024x768"  ,"1024","768","px",
-		"1280x1024" ,"1280","1024","px",
-		"1600x1200" ,"1600","1200","px",
-		"1920x1080" ,"1920","1080","px",
-		"1920x1200" ,"1920","1200","px",
-		"2560x1440 (2k)", "2560","1440","px",
-		"3840x2160 (4k)", "3840","2160","px",
-		"7680x4320 (8k)", "7680","4320","px",
-		"Custom"    ,"8.5","11"   ,"in", /* NOTE!!! these two must be last!! */
-		"Whatever"  ,"8.5","11"   ,"in", /* NOTE!!! these two must be last!! */
+		"Letter"   ,"8.5" ,"11"  ,"in", "US",
+		"Legal"    ,"8.5" ,"14"  ,"in", "US",
+		"Tabloid"  ,"11"  ,"17"  ,"in", "US",
+		"A4"       ,"210" ,"297" ,"mm", "A",
+		"A3"       ,"297" ,"420" ,"mm", "A",
+		"A2"       ,"420" ,"594" ,"mm", "A",
+		"A1"       ,"594" ,"841" ,"mm", "A",
+		"A0"       ,"841" ,"1189","mm", "A",
+		"A5"       ,"148" ,"210" ,"mm", "A",
+		"A6"       ,"105" ,"148" ,"mm", "A",
+		"A7"       ,"74"  ,"105" ,"mm", "A",
+		"A8"       ,"52"  ,"74"  ,"mm", "A",
+		"A9"       ,"37"  ,"52"  ,"mm", "A",
+		"A10"      ,"26"  ,"37"  ,"mm", "A",
+		"B0"       ,"1000","1414","mm", "B",
+		"B1"       ,"707" ,"1000","mm", "B",
+		"B2"       ,"500" ,"707" ,"mm", "B",
+		"B3"       ,"353" ,"500" ,"mm", "B",
+		"B4"       ,"250" ,"353" ,"mm", "B",
+		"B5"       ,"176" ,"250" ,"mm", "B",
+		"B6"       ,"125" ,"176" ,"mm", "B",
+		"B7"       ,"88"  ,"125" ,"mm", "B",
+		"B8"       ,"62"  ,"88"  ,"mm", "B",
+		"B9"       ,"44"  ,"62"  ,"mm", "B",
+		"B10"      ,"31"  ,"44"  ,"mm", "B",
+		"C0"       ,"917" ,"1297","mm", "C",
+		"C1"       ,"648" ,"917" ,"mm", "C",
+		"C2"       ,"458" ,"648" ,"mm", "C",
+		"C3"       ,"324" ,"458" ,"mm", "C",
+		"C4"       ,"229" ,"324" ,"mm", "C",
+		"C5"       ,"162" ,"229" ,"mm", "C",
+		"C6"       ,"114" ,"162" ,"mm", "C",
+		"C7"       ,"81"  ,"114" ,"mm", "C",
+		"C8"       ,"57"  ,"81"  ,"mm", "C",
+		"C9"       ,"40"  ,"57"  ,"mm", "C",
+		"C10"      ,"28"  ,"40"  ,"mm", "C",
+		"ArchA"    ,"9"   ,"12"  ,"in", "Arch",
+		"ArchB"    ,"12"  ,"18"  ,"in", "Arch",
+		"ArchC"    ,"18"  ,"24"  ,"in", "Arch",
+		"ArchD"    ,"24"  ,"36"  ,"in", "Arch",
+		"ArchE"    ,"36"  ,"48"  ,"in", "Arch",
+		"Flsa"     ,"8.5" ,"13"  ,"in", "US",
+		"Flse"     ,"8.5" ,"13"  ,"in", "US",
+		"Index"    ,"3"   ,"5"   ,"in", "US",
+		"Executive","7.25","10.5","in", "US",
+		"Ledger"   ,"17"  ,"11"  ,"in", "US",
+		"Halfletter","5.5","8.5" ,"in", "US",
+		"Note"      ,"7.5","10"  ,"in", "US",
+		"1:1"       ,"1"  ,"1"   ,"in", "Aspect",
+		"1:2"       ,"1"  ,"2"   ,"in", "Aspect",
+		"4:3"       ,"4"  ,"3"   ,"in", "Aspect",
+		"16:9"      ,"16" ,"9"   ,"in", "Aspect",
+		"640x480"   ,"640","480" ,      "px", "Screen",
+		"800x600"   ,"800","600" ,      "px", "Screen",
+		"1024x768"  ,"1024","768",      "px", "Screen",
+		"1280x1024" ,"1280","1024",     "px", "Screen",
+		"1600x1200" ,"1600","1200",     "px", "Screen",
+		"1920x1080" ,"1920","1080",     "px", "Screen",
+		"1920x1200" ,"1920","1200",     "px", "Screen",
+		"2560x1440 (2k)", "2560","1440","px", "Screen",
+		"3840x2160 (4k)", "3840","2160","px", "Screen",
+		"7680x4320 (8k)", "7680","4320","px", "Screen",
+		"Custom"    ,"8.5","11"   ,"in", "", /* NOTE!!! these two must be last!! */
+		"Whatever"  ,"8.5","11"   ,"in", "", /* NOTE!!! these two must be last!! */
 		NULL,NULL,NULL,NULL
 	};
 
@@ -125,8 +128,6 @@ const char *BuiltinPaperSizes[64*4]=
  * where the others are fixed. Whatever means you only want a big scratch space, and
  * displaying a paper outline (and thus using any imposition at all) is not important.
  *
- * \todo *** add NTSC, HDTV, a "Monitor" setting 72dpi, etc.. This could also imply
- *   splitting dpi to xdpi and ydpi
  * \todo this needs nested organizing
  * \todo is "whatever" useful anymore with the no-doc option in ViewWindow?
  */
@@ -137,7 +138,7 @@ PtrStack<PaperStyle> *GetBuiltinPaperSizes(PtrStack<PaperStyle> *papers)
 	double dpi;
 
 	setlocale(LC_ALL,"C"); //because "8.5" in the list above is not the same as "8,5" for some locales
-	for (int c=0; BuiltinPaperSizes[c]; c+=4) {
+	for (int c=0; BuiltinPaperSizes[c]; c += 5) {
 		 // x,y were in inches
 		x=atof(BuiltinPaperSizes[c+1]);
 		y=atof(BuiltinPaperSizes[c+2]);
@@ -149,6 +150,40 @@ PtrStack<PaperStyle> *GetBuiltinPaperSizes(PtrStack<PaperStyle> *papers)
 	setlocale(LC_ALL,"");
 
 	return papers;
+}
+
+/*! TODO!! USE THIS INSTEAD OF GetBuiltinPaperSizes!!!! */
+int InstallPaperResources()
+{
+	double x,y; 
+	double dpi;
+
+	InterfaceManager *imanager = InterfaceManager::GetDefault(true);
+    ResourceManager *rm = imanager->GetResourceManager();
+    ResourceType *objs = rm->FindType("Papers");
+
+	const char *menu, *name, *units;
+	int num_added = 0;
+
+	setlocale(LC_ALL,"C"); //because "8.5" in the list above is not the same as "8,5" for some locales
+	for (int c=0; BuiltinPaperSizes[c]; c += 5) {
+		name  = BuiltinPaperSizes[c];
+		units = BuiltinPaperSizes[c+3];
+		menu  = BuiltinPaperSizes[c+4];
+
+		 // x,y were in inches
+		x = atof(BuiltinPaperSizes[c+1]);
+		y = atof(BuiltinPaperSizes[c+2]);
+
+		if (!strcmp(units,"px")) dpi=1;  else dpi=300;
+
+		PaperStyle *newpaper = new PaperStyle(name, x,y, 0, dpi, units);
+		objs->AddResource(newpaper, nullptr, name, name, nullptr, nullptr, nullptr, true, menu);
+		num_added++;
+	}
+	setlocale(LC_ALL,"");
+
+	return num_added;
 }
 
 /*! Try to match width and height to a named paper.

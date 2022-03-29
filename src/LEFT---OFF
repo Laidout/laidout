@@ -13,19 +13,17 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
-bug: Engraver fill, just moving mouse around is rerendering to buffer for preview
-
 bug: severing clone link does some weird things, including crashing
 bug: clone tool clones do not have proper bounding box
-
-bug: curve is terrible approximation at end points
-
-bug: back to not maximizing properly on default ubuntu. Seems to work fine on every other window manager I've tried.
 
 bug: gegl nodes, connect sinus to waves and also to displace, freeze!
 
 
 ------------ other bugs:
+
+bug: back to not maximizing properly on default ubuntu. Seems to work fine on every other window manager I've tried.
+
+bug: curve is terrible approximation at end points
 
 bug: popup menus: submenus spawning on wrong side on far right monitors
 
@@ -144,6 +142,23 @@ website:
   screenshots:
     half the videos are not linking
 	need to redo screenshots section for mobile friendliness
+	  Color fonts
+	  Caption tool
+	  Text on path tool
+	  Image tool
+	  Engraver tool
+	  How to make booklets
+	  Paths
+	  Alignment tool
+	  Page range interface
+	  paper tiler
+	  Color patches
+	  Viewport/navigation/window arrangements
+	  Gradients
+	  Nets
+	  Warping
+	  Spread editor
+	  Node tool
 	rename to Tutorials or maybe Media. Inkscape uses "Learn"
 	on index should show version and date
 for CI, https://github.com/Laidout/laidout-icons.git needs to be updated
@@ -229,10 +244,10 @@ graphicsmagick:
 debug inkscape node extension
 
 text on path textonpath: TextOnPath
+  bug: crash sometimes when click down for new text on path object
   bug: offset and baseline handles disappeared for large offset values
   bug: bezier length resolution inconsistencies making gaps. need solution with consistent approximation
   bug: visible selected bounds not updating?
-  bug: convert to path rendering to wrong place and orientation
   bug: dragging the offest handle sometimes jumps to really bad
   bug: when direction is reversed, offset needs to be reversed
   bug: sometimes path weights don't recache along with glyph positions
@@ -265,6 +280,7 @@ text on path textonpath: TextOnPath
   multiline?
   option to auto expand line
 
+  DONE (apparently) bug: convert to path rendering to wrong place and orientation
   DONE bug: baseline options don't work, seem to all use offset path only. 
   DONE should have menu option to reverse direction on path without actually reversing path itself
   DONE bug: when you duplicate, it's linking the path
@@ -633,6 +649,15 @@ xtg from quark?
 idml from indesign?
 
 
+Singles:
+  revamp to be art board centric, based on random PaperGroup
+  need to cache page margins properly for papergroup GetPageMarginOutline()
+  PageLayout() lines
+  PaperLayout()
+  implement double sided
+  multi page inkscape import needs to assign proper pages
+
+
 freehand tool:
   should have option to output base weighted path, with custom filter resource to copy onto it
   keep a stack of lines previously made for fake undo by repeated delete? or just implement undo for object added
@@ -761,136 +786,6 @@ simplepathinterface:
   implement quadratic
   implement cubic
 
-engraving tool: Engraving  engraver
-  bug: trace object opacity is not working for non-image trace objects.. stroke and fill needs mask integration!!
-  bug: 'z' zaps mesh, but does not change cache border or point mapping
-
-  cairo render NEEDS VAST IMPROVEMENT.. the clunky xlib approximation was fast, but not transferrable to cairo
-
-  multiobject:
-    object lines in group list needs eye per object, affect actual object visibility
-    need to enforce resource unique names
-    need ability to store overall styles of a patch, not just each individually
-    on resource menus, should check mark if current matches a resource??
-
-  orient:
-    should adjust all linked
-    with test-engrave-trace2.laidout, do the quick adjust, does not preserve width the first time, using old value of thickness?
-    option to remember old values while adjusting position, rotation, spacing
-     -> when manual tweaking of spacing, need to produce value reference so that future line orienting preserves line thicknesses
-
-  tracing:
-    seems to be grabbing spurious tracing values outside of the tracing object, and at borders of trace object
-    tracing object, lines abort just inside the image, maybe should just go one off the edge?
-    trace object needs flip, at least h and v, not really needing the whole affine thing
-    need option to export trace object in same position as the traced lines, so it can be further processed elsewhere
-    custom sample of channels
-    sharp edge detection in tracing
-    snapshot should be for all in selection
-    shift-drag (or drag anything not covered by trace object) should drag ANY of the meshes in selection, not just current
-    when multi objects, the traceobject is interweaved, based on draw order, only under current object, should be under all?
-    make gradient interface work in trace mode
-
-  freehand/path:
-    freehand not being interpreted correctly: non-equal smooth is adding erroneous extra mesh column
-    drawing custom freehand (with width) lines within the mesh area
-
-  mesh path:
-    'a' not selecting all in line
-
-  curvemap needs predefined ramp profiles, remember last, load/save (per context?)
-    -> options to insert various predefined patterns
-    need magnify do dads for easy expanding of countour without having to place each and every node
-
-  direction:
-    need accuracy modifiers for dragging controls around
-    only when at endpoints, lineprofile not producing smooth results at random spots inside
-    should be able to adjust number of sample points to match up well enough for points in lineprofile
-    random end point sliders should inc or dec according to which side mouse clicked down on compared to absolute end point
-    spiral spacing computation bad when spokes are nearer radial
-    save the opensimplex line displacement from line/point randomness, to be used to also adjust a spacing map to preserve value when viewed at a distance
-    be able to trigger a reline on load in
-    be able to set a 3-d parameter for noise? useful for animated noise
-    option for "adjust for spacing", making weight reflect the spacing, either for constant width or trace
-    line profiles: (done) linear, circular, radial, spiral?
-    be able to edit and create new profiles
-    grow
-    spiral arm count makes poor resolution
-    line generation:
-      grow: implement custom line merge and break to preserve spacing across mesh contraction
-      grow: edge abutment when generating
-      sample point generation should be based on lines per mesh square, not total mesh field
-      finish implementing spacing section -> spacing map
-
-  add special group: half offset, perpendicular
-  need stroke+fill options?
-  need convert to path object ability
-  current blockout is not very precise, needs approximation between existing point samples
-  fully implement resolution adjustments for auto lines -> needs resolution tool
-  single group (not group list) view is too old, doesn't do link circle, and can only select from current object groups.. remove it entirely?
-  export doesn't work for: nothing for scribus, eps, ps
-  edit brush ramp as symmetric ramp
-  resolution tool: click to add between points within brush, control to destroy points in brush
-  need merge group
-
-  screen view, need option for Fast|Accurate
-  no writability check on exportsnapshot
-  allow temp override of linked to adjust only current?
-  establish path needs better smoothness assignments
-  keys being caught in patch, not in child path
-  test: bez cache needs updating when points are moved around
-  test: dash cache needs updating when points are moved OR thickness changed
-  always brings current object to front (normal refresh in place, and then interface draw on top).. should be very optional, as it blocks out white overlays
-  don't warp, move points, then warp, almost always has bad points: PatchData::getPointReverse() is too inaccurate
-  undo/redo
-  finish implement making the circle lines be closed circles
-  need some kind of smooth out: smooth out width, and smooth out path
-  hover over mode icons should show text of what you are hovering over (verbose mode?).. hard to remember, annoying to look at status bar otherwise
-  should be able to draw a line and have that be a baseline for dash division
-  option: either drop out of bounds points, or zap mesh to point bounds
-  numsliders should have click on arrows for single increase, and a dismiss x for input box
-  should probably abstract control panel creation so we don't have to hardcode everything all the time
-  sampling could be more sophisticated, currently just grabs pixels, could downsample the image based on current spacing
-  Danger! coons patch produces discontinuous contours within multiblock meshes!! who knew!?
-  perhaps allow path objects to be adjusted with engrave tool for custom outlier lines not part of mesh?
-  must implement mode based shortcuts in Laxkit. currently all mesh shortcuts are active
-  stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
-    per stipple, adjust rotation, scale, color, morph
-
-from big import:
-  bug: delete discontinous range of pages doesn't delete all sometimes
-  ---0.099---
-  thumbs refreshing a lot unnecessarily
-  load in seems to wholely load images, instead of only grabbing info
-  need some kind of "loading" indication when loading in large images
-  load in of many images needs threaded load
-  need image path mass reassign
-  spread editor:
-    need a force thumb refresh, or actually make modified propagation work
-    there should be a paper view for previewing purposes
-    select all for current marker type
-    arrange in rows at current scale not scaling and placing correctly
-    crash during thumbnail generation if you delete pages while there are still some to render
-    auto-arrange not consistent.. doesn't really respect the screen aspect
-  should be able to save from any window
-  undo extremely necessary
-  for images, need edit image feature, with watch for changes, or "reload image"
-  save as should have sample file names: from directory name with ".laidout", incremented from any *.laidout
-  large images all being loaded in, need way to ask about creating proxy images. only img info is supposed to be read in until img data is actually needed
-  need better ui for selecting templates
-  load in autosave should ask if you want to save as the original
-  spread editor needs edge dragging
-  DONE export directory should default to last loaded file
-  DONE selecting ranges
-
-MirrorInterface: LineGuideInterface
-  should be able to mirror non-paths: arbitrary objects
-  ---0.099:
-  merge widget, near and outside p1. show merge distance as max(actual, th/2)
-  label editing
-  colors
-  double click to force p1 or p2 to be under mouse when p1 or p2 way off screen?
- 
 ObjectFilter objectfilters object filter: objectfilterinterface:
   debug merge
   memory hole: going from nodes to filter editor, objects remain on quit
@@ -944,15 +839,24 @@ valgrind:
   DONE mismatch free colorbase.cc 298
 
 node editor node interface NodeInterface nodes: node: interface: 
+  bug: duplicating placing at strange place
+  need a way to dissolve reroute or nodes, so we don't break routes
+  bug: multiply v*v after node dup, try to enter a single value, weird things happen
+  DONE bug: vector display, uses 2e+2 for 200
+  bug: new object, "Net" is actually a "NetImposition"
+  bug: new LineStyle object node, object info has fields, but no data, lists type as "anObject"
+  bug: curve mouse postion is wrong
   bug: file prop popup not working... sometimes?!?
+  CRASH: Math.flatvector((a+b)/2, (c+d)/2) .. also default (1,2) producing a set, not a vec2
   bug: red: Lerp
   bug: yellow:
+    CSVFile
 	ObjectToFile
+	BBoxPoint
 	DONE Math1 (only on initial add, fine on load in or dup)
 	DONE MapFromRange
 	DONE MapToRange
   	DONE Invert
-  bug: expressions broken: out not at last, is yellow,
   expressions: Math should be imported
   bug: why is captiondata preview render getting triggered every node update?
   bug: work on filter, save nodes, switch to object, load nodes, destroys proper in/out of filter
@@ -982,6 +886,7 @@ node editor node interface NodeInterface nodes: node: interface:
   implement objectfilterinterface/nodeinterface interchange with nested node groups
   drop files into FileValue properties?
   drop text/numbers to properties
+  drag on vec2 x/y should shift values
 
   ---0.099---
   would be nice to have a property type PROP_List so you can input "1px,2%,3,4" and have it parse to [1,.02,3,4] automatically
@@ -993,6 +898,8 @@ node editor node interface NodeInterface nodes: node: interface:
   some people are going to want grid snapping
   some people are going to want straight connection lines
 
+  DONE BBoxPoint
+  DONE Math1 needs transpose
   DONE CSVFileNode
   DONE JsonFileNode, by adding or by drag and drop
   DONE changing node width (like many image ones you drop in): all by same diff, all to same width
@@ -1032,10 +939,10 @@ node editor node interface NodeInterface nodes: node: interface:
   DONE Number list
   DONE NumToString
   DONE bug: color property doesn't show transparency checkerboard
+  DONE Switch: variable in list, index element
 
   need: 
   expand list i..j
-  Switch: variable in list, index element
   GetFromEach: set in, get specified index from each element of in set, element must be hash, index, or have property with that name
   multi-input revamp:
     ExpandVectorNode
@@ -1067,7 +974,6 @@ node editor node interface NodeInterface nodes: node: interface:
     tail point + direction
 	tail attach point + direction
 	text -> get extent from CaptionData bbox
-	font
 	target rect to fit in if possible
   data node types:
     how to systematize read only field overrides (like minx,maxx,...), also "const" functions for sanity re duping before ObjectFunction returns
@@ -1096,13 +1002,17 @@ node editor node interface NodeInterface nodes: node: interface:
 	  gradient interpolation type?
       nodes must receive correct color messages from viewport color box
 	  needs a little settings button to pop interpolation or do strip resource selection
+	  create radial or linear gradient image
+	  missing radial/linear flip, color strip fields in NewObject with GradientData
 	  DONE(?) bug: gradient controls broken sometimes
       DONE check: dereference assign Evaluate extend from Group, not affine
       DONE double click to call up color box
     delaunay/point set tool: Vector2 + properties
       functions:
-        delaunay
-        voronoi
+        DONE delaunay
+        DONE voronoi
+		path from points
+		  polyline, quartic, cubic, spiro, spiro2, lofi curve
         convex hull
         tsp
         relax (optionally within path)
@@ -1121,11 +1031,17 @@ node editor node interface NodeInterface nodes: node: interface:
 		DONE grid, hexgrid, random square, random circle
 		DONE apply positions to groups of drawables
       DONE check: dereference assign Evaluate extend from Group, not affine
+	  DONE imp property access for VoronoiData
     paths
 	  intersections
 	  generators:
+	    generator is flushing path each time, would be better to overwrite when possible
 	    DONE need linewidth, stroke, fill
-		DONE rounded rect
+		DONE squircles
+		rounded rect:
+		  needs stroke/fill/line width
+		  DONE need variant with rounded per corner -> pass in list
+		  DONE at all
 		stroke should accept color, gradient, or LineStyle.. LineStyle overrides line width
 		fill should accept color, gradient, FillStyle.. or other path object?
       weight controls:
@@ -1138,6 +1054,7 @@ node editor node interface NodeInterface nodes: node: interface:
 	  DONE path extrema
 
       path ops:
+	    apply LineProfile (along s, not t)
 	    path morph
 	    path from points: linear or smooth
 		sample path to points, optionally with transforms. sample at t OR s by step OR by n points OR squishy step
@@ -1246,6 +1163,10 @@ node editor node interface NodeInterface nodes: node: interface:
     DONE Gegl to LaxImage
     DONE LaxImage to Gegl
   svg/inkscape specific filter interface, io passthrough
+    inkscape multipage
+	  pages are defined upside down.. has to scale to viewbox?
+	  need to insert pages at load time, and assign objects to proper pages
+	  Need to test actual exporting mechanism
     svg color properties are strings, but there should be button for color select
     need full "length" readin, not just floats, ie "100%", "15in"
     feTurbulence->baseFrequency is TWO numbers, not one, need data[] support
@@ -1496,17 +1417,17 @@ Clean up patch/mesh controls: Mesh PatchInterface
   bug: convert path to mesh inserting null patches at each point
   bug: rotate/scale single or more control points should move attached controls in smooth mode
 
-  circle warp:
-    DONE bug: circle: non-circle breaks ellipse scan
-    DONE bug: circle: drag center, breaks ellipse scan
-    DONE bug: sets "circle" property, but does not output the data to file
-    DONE bug: render initially displaying in small rect. changing inner radius gets it to sync
-
   ---0.099---
   bug: base on path remove/add should try to remember previous weight nodes, scratch only when mod points (not colors) too far off
   bug: should still be able to edit colors while based on path
   need ability to rect select points, like for cone gradient, points on overlapping edge can't be selected
   no ellipse right click options
+
+  DONE circle warp:
+    DONE bug: circle: non-circle breaks ellipse scan
+    DONE bug: circle: drag center, breaks ellipse scan
+    DONE bug: sets "circle" property, but does not output the data to file
+    DONE bug: render initially displaying in small rect. changing inner radius gets it to sync
 
   DONE bug: select whole edge fails when points overlap and select near active
   DONE when color points overlap like with circle warp, have a way to change all coincident color points -> workaround: auto_select_close
@@ -1760,6 +1681,7 @@ themes:
   DONE laxprofile not working
 
 laxkit:
+  inotify hooks?
   save dialog should probably ignore clobber safety and allow enter key in edit to be "save". also auto focus file edit on start and on ^l
     if you enter a new location in file edit, first go to that place. else save with that file name
   FileDialog, when you instantiate with particular thing, it should be highlighted and shown in file pane
@@ -2157,6 +2079,136 @@ global Laidout settings:
 
 ---------------- 0.099 ROADMAP ITEMS: features and enhancements ------------------------
 
+engraving tool: Engraving  engraver
+  bug: trace object opacity is not working for non-image trace objects.. stroke and fill needs mask integration!!
+  bug: 'z' zaps mesh, but does not change cache border or point mapping
+
+  cairo render NEEDS VAST IMPROVEMENT.. the clunky xlib approximation was fast, but not transferrable to cairo
+
+  multiobject:
+    object lines in group list needs eye per object, affect actual object visibility
+    need to enforce resource unique names
+    need ability to store overall styles of a patch, not just each individually
+    on resource menus, should check mark if current matches a resource??
+
+  orient:
+    should adjust all linked
+    with test-engrave-trace2.laidout, do the quick adjust, does not preserve width the first time, using old value of thickness?
+    option to remember old values while adjusting position, rotation, spacing
+     -> when manual tweaking of spacing, need to produce value reference so that future line orienting preserves line thicknesses
+
+  tracing:
+    seems to be grabbing spurious tracing values outside of the tracing object, and at borders of trace object
+    tracing object, lines abort just inside the image, maybe should just go one off the edge?
+    trace object needs flip, at least h and v, not really needing the whole affine thing
+    need option to export trace object in same position as the traced lines, so it can be further processed elsewhere
+    custom sample of channels
+    sharp edge detection in tracing
+    snapshot should be for all in selection
+    shift-drag (or drag anything not covered by trace object) should drag ANY of the meshes in selection, not just current
+    when multi objects, the traceobject is interweaved, based on draw order, only under current object, should be under all?
+    make gradient interface work in trace mode
+
+  freehand/path:
+    freehand not being interpreted correctly: non-equal smooth is adding erroneous extra mesh column
+    drawing custom freehand (with width) lines within the mesh area
+
+  mesh path:
+    'a' not selecting all in line
+
+  curvemap needs predefined ramp profiles, remember last, load/save (per context?)
+    -> options to insert various predefined patterns
+    need magnify do dads for easy expanding of countour without having to place each and every node
+
+  direction:
+    need accuracy modifiers for dragging controls around
+    only when at endpoints, lineprofile not producing smooth results at random spots inside
+    should be able to adjust number of sample points to match up well enough for points in lineprofile
+    random end point sliders should inc or dec according to which side mouse clicked down on compared to absolute end point
+    spiral spacing computation bad when spokes are nearer radial
+    save the opensimplex line displacement from line/point randomness, to be used to also adjust a spacing map to preserve value when viewed at a distance
+    be able to trigger a reline on load in
+    be able to set a 3-d parameter for noise? useful for animated noise
+    option for "adjust for spacing", making weight reflect the spacing, either for constant width or trace
+    line profiles: (done) linear, circular, radial, spiral?
+    be able to edit and create new profiles
+    grow
+    spiral arm count makes poor resolution
+    line generation:
+      grow: implement custom line merge and break to preserve spacing across mesh contraction
+      grow: edge abutment when generating
+      sample point generation should be based on lines per mesh square, not total mesh field
+      finish implementing spacing section -> spacing map
+
+  add special group: half offset, perpendicular
+  need stroke+fill options?
+  need convert to path object ability
+  current blockout is not very precise, needs approximation between existing point samples
+  fully implement resolution adjustments for auto lines -> needs resolution tool
+  single group (not group list) view is too old, doesn't do link circle, and can only select from current object groups.. remove it entirely?
+  export doesn't work for: nothing for scribus, eps, ps
+  edit brush ramp as symmetric ramp
+  resolution tool: click to add between points within brush, control to destroy points in brush
+  need merge group
+
+  screen view, need option for Fast|Accurate
+  no writability check on exportsnapshot
+  allow temp override of linked to adjust only current?
+  establish path needs better smoothness assignments
+  keys being caught in patch, not in child path
+  test: bez cache needs updating when points are moved around
+  test: dash cache needs updating when points are moved OR thickness changed
+  always brings current object to front (normal refresh in place, and then interface draw on top).. should be very optional, as it blocks out white overlays
+  don't warp, move points, then warp, almost always has bad points: PatchData::getPointReverse() is too inaccurate
+  undo/redo
+  finish implement making the circle lines be closed circles
+  need some kind of smooth out: smooth out width, and smooth out path
+  hover over mode icons should show text of what you are hovering over (verbose mode?).. hard to remember, annoying to look at status bar otherwise
+  should be able to draw a line and have that be a baseline for dash division
+  option: either drop out of bounds points, or zap mesh to point bounds
+  numsliders should have click on arrows for single increase, and a dismiss x for input box
+  should probably abstract control panel creation so we don't have to hardcode everything all the time
+  sampling could be more sophisticated, currently just grabs pixels, could downsample the image based on current spacing
+  Danger! coons patch produces discontinuous contours within multiblock meshes!! who knew!?
+  perhaps allow path objects to be adjusted with engrave tool for custom outlier lines not part of mesh?
+  must implement mode based shortcuts in Laxkit. currently all mesh shortcuts are active
+  stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
+    per stipple, adjust rotation, scale, color, morph
+
+from big import:
+  bug: delete discontinous range of pages doesn't delete all sometimes
+  ---0.099---
+  thumbs refreshing a lot unnecessarily
+  load in seems to wholely load images, instead of only grabbing info
+  need some kind of "loading" indication when loading in large images
+  load in of many images needs threaded load
+  need image path mass reassign
+  spread editor:
+    need a force thumb refresh, or actually make modified propagation work
+    there should be a paper view for previewing purposes
+    select all for current marker type
+    arrange in rows at current scale not scaling and placing correctly
+    crash during thumbnail generation if you delete pages while there are still some to render
+    auto-arrange not consistent.. doesn't really respect the screen aspect
+  should be able to save from any window
+  undo extremely necessary
+  for images, need edit image feature, with watch for changes, or "reload image"
+  save as should have sample file names: from directory name with ".laidout", incremented from any *.laidout
+  large images all being loaded in, need way to ask about creating proxy images. only img info is supposed to be read in until img data is actually needed
+  need better ui for selecting templates
+  load in autosave should ask if you want to save as the original
+  spread editor needs edge dragging
+  DONE export directory should default to last loaded file
+  DONE selecting ranges
+
+MirrorInterface: LineGuideInterface
+  should be able to mirror non-paths: arbitrary objects
+  ---0.099:
+  merge widget, near and outside p1. show merge distance as max(actual, th/2)
+  label editing
+  colors
+  double click to force p1 or p2 to be under mouse when p1 or p2 way off screen?
+ 
 Gradients: gradientinterface
   ---0.99:
   constrain to x/y/45 dragging end points
@@ -3213,4 +3265,5 @@ DONE Gradients: gradientinterface
   DONE should have menu option for radial/linear
   DONE bug: radial gradient not loading
   DONE SHOWCOLORS should be off by default
+DONE bug: Engraver fill, just moving mouse around is rerendering to buffer for preview
 
