@@ -211,83 +211,135 @@ ObjectDef *LVoronoiData::makeObjectDef()
             NewLVoronoiData,NULL);
 	stylemanager.AddObjectDef(sd, 0);
 
-//	sd->pushFunction("FlipColors",_("Flip Colors"),_("Flip the order of colors"), NULL,
-//					 NULL);
-//
-//	sd->pushVariable("p1", _("p1"),         _("The starting point"), "real",0, NULL,0);
-//	sd->pushVariable("p2", _("p2"),         _("The ending point"),   "real",0, NULL,0);
-//	sd->pushVariable("r1", _("Distance 1"), _("Radius or distance"), "real",0, NULL,0);
-//	sd->pushVariable("r2", _("Distance 2"), _("Radius or distance"), "real",0, NULL,0);
-	//sd->pushVariable("angle",_("Angle"),_("Angle gradient exists at"), NULL,0);
-
-	//sd->pushVariable("stops",  _("Stops"),  _("The set of color positions"), NULL,0);
-
+	
+	sd->pushVariable("show_points",  _("Show points"),   _("Render individual points"), "boolean",0, nullptr,false);
+	sd->pushVariable("show_delaunay",_("Show Delaunay"), _("Render Delaunay triangles"),"boolean",0, nullptr,false);
+	sd->pushVariable("show_voronoi", _("Show Voronoi"),  _("Render Voronoi shapes"),    "boolean",0, nullptr,false);
+	sd->pushVariable("show_numbers", _("Show numbers"),  _("Render point indices"),     "boolean",0, nullptr,false);
+	sd->pushVariable("custom_radii", _("Custom radii"),  _("Points have custom radii"), "boolean",0, nullptr,false);
+	sd->pushVariable("color_delaunay", _("Delaunay color"),  nullptr, "Color",0, nullptr,false);
+	sd->pushVariable("color_voronoi",  _("Voronoi color"),   nullptr, "Color",0, nullptr,false);
+	sd->pushVariable("color_points",   _("Point color"),     nullptr, "Color",0, nullptr,false);
+	sd->pushVariable("color_bg",       _("Background color"),nullptr, "Color",0, nullptr,false);
+	sd->pushVariable("width_delaunay", _("Trangle line width"),  nullptr, "real",0, nullptr,false);
+	sd->pushVariable("width_voronoi",  _("Voronoi line width"),  nullptr, "real",0, nullptr,false);
+	sd->pushVariable("width_points",   _("Default point radius"),nullptr, "real",0, nullptr,false);
+	
 	return sd;
 }
 
 Value *LVoronoiData::dereference(const char *extstring, int len)
 {
-//	if (extequal(extstring,len, "p1")) {
-//		return new DoubleValue(p1);
-//	}
-//
-//	if (extequal(extstring,len, "p2")) {
-//		return new DoubleValue(p2);
-//	}
-//
-//	if (extequal(extstring,len, "r1")) {
-//		return new DoubleValue(r1);
-//	}
-//
-//	if (extequal(extstring,len, "r2")) {
-//		return new DoubleValue(r2);
-//	}
-
-//	if (extequal(extstring,len, "colors")) {
-//		return new DoubleValue(maxy);
-//	}
+	if (extequal(extstring,len, "show_points"))    { return new BooleanValue(show_points); }
+	if (extequal(extstring,len, "show_delaunay"))  { return new BooleanValue(show_delaunay); }
+	if (extequal(extstring,len, "show_voronoi"))   { return new BooleanValue(show_voronoi); }
+	if (extequal(extstring,len, "show_numbers"))   { return new BooleanValue(show_numbers); }
+	if (extequal(extstring,len, "custom_radii"))   { return new BooleanValue(custom_radii); }
+	if (extequal(extstring,len, "color_delaunay")) { return new ColorValue(*color_delaunay); }
+	if (extequal(extstring,len, "color_voronoi"))  { return new ColorValue(*color_voronoi); }
+	if (extequal(extstring,len, "color_points"))   { return new ColorValue(*color_points); }
+	if (extequal(extstring,len, "color_bg"))       { return new ColorValue(*color_bg); }
+	if (extequal(extstring,len, "width_delaunay")) { return new DoubleValue(width_delaunay); }
+	if (extequal(extstring,len, "width_voronoi"))  { return new DoubleValue(width_voronoi); }
+	if (extequal(extstring,len, "width_points"))   { return new DoubleValue(width_points); }
 
 	return DrawableObject::dereference(extstring, len);
 }
 
 int LVoronoiData::assign(FieldExtPlace *ext,Value *v)
 {
-//	if (ext && ext->n()==1) {
-//		const char *str=ext->e(0);
-//		int isnum;
-//		double d;
-//		if (str) {
-//			if (!strcmp(str,"p1")) {
-//				d=getNumberValue(v, &isnum);
-//				if (!isnum) return 0;
-//				p1=d;
-//				FindBBox();
-//				return 1;
-//
-//			} else if (!strcmp(str,"p2")) {
-//				d=getNumberValue(v, &isnum);
-//				if (!isnum) return 0;
-//				p2=d;
-//				FindBBox();
-//				return 1;
-//
-//			} else if (!strcmp(str,"r1")) {
-//				d=getNumberValue(v, &isnum);
-//				if (!isnum) return 0;
-//				r1=d;
-//				FindBBox();
-//				return 1;
-//
-//			} else if (!strcmp(str,"r2")) {
-//				d=getNumberValue(v, &isnum);
-//				if (!isnum) return 0;
-//				r2=d;
-//				FindBBox();
-//				return 1;
-//
-//			}
-//		}
-//	}
+	bool found = false;
+
+	if (ext && ext->n()==1) {
+		const char *str=ext->e(0);
+		int isnum;
+		double d;
+		int i;
+		if (str) {
+			if (!strcmp(str,"show_points")) {
+				i = getBooleanValue(v, &isnum);
+				if (!isnum) return 0;
+				show_points = i;
+				found = true;
+
+			} else if (!strcmp(str,"show_delaunay")) {
+				i = getBooleanValue(v, &isnum);
+				if (!isnum) return 0;
+				show_delaunay = i;
+				found = true;
+
+			} else if (!strcmp(str,"show_voronoi")) {
+				i = getBooleanValue(v, &isnum);
+				if (!isnum) return 0;
+				show_voronoi = i;
+				found = true;
+
+			} else if (!strcmp(str,"show_numbers")) {
+				i = getBooleanValue(v, &isnum);
+				if (!isnum) return 0;
+				show_numbers = i;
+				found = true;
+
+			} else if (!strcmp(str,"custom_radii")) {
+				i = getBooleanValue(v, &isnum);
+				if (!isnum) return 0;
+				custom_radii = i;
+				found = true;
+
+			} else if (!strncmp(str,"width_", 6)) {
+				str += 6;
+
+				d = getNumberValue(v, &isnum);
+				if (!isnum || d < 0) return 0;
+
+				found = true;
+				if (!strcmp(str, "delaunay")) {
+					width_delaunay = d;
+				} else if (!strcmp(str, "delaunay")) {
+					width_voronoi = d;
+				} else if (!strcmp(str, "delaunay")) {
+					width_points = d;
+				} else found = false;
+
+			} else if (!strncmp(str,"color_", 6)) {
+				str += 6;
+				ColorValue *cv = dynamic_cast<ColorValue*>(v);
+				if (!cv) return 0;
+
+				found = true;
+				if (!strcmp(str, "delaunay")) {
+					//cv->inc_count();
+					//if (color_delaunay) color_delaunay->dec_count();
+					//color_delaunay = cv;
+					cv->GetColor(color_delaunay);
+
+				} else if (!strcmp(str, "voronoi")) {
+					//cv->inc_count();
+					//if (color_voronoi) color_voronoi->dec_count();
+					//color_voronoi = cv;
+					cv->GetColor(color_voronoi);
+
+				} else if (!strcmp(str, "points")) {
+					//cv->inc_count();
+					//if (color_points) color_points->dec_count();
+					//color_points = cv;
+					cv->GetColor(color_points);
+
+				} else if (!strcmp(str, "bg")) {
+					//cv->inc_count();
+					//if (color_bg) color_bg->dec_count();
+					//color_bg = cv;
+					cv->GetColor(color_bg);
+
+				} else found = false;
+			}
+		}
+	}
+
+	if (found) {
+		Rebuild();
+		return 1;
+	}
 
 	return DrawableObject::assign(ext,v);
 }

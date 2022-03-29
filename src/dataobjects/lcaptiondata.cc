@@ -18,6 +18,7 @@
 #include "datafactory.h"
 #include "../core/stylemanager.h"
 #include "../language.h"
+#include "objectfilter.h"
 
 
 using namespace Laxkit;
@@ -60,6 +61,23 @@ void LCaptionData::ComputeAABB(const double *transform, DoubleBBox &box)
 int LCaptionData::pointin(flatpoint pp,int pin)
 {
 	return CaptionData::pointin(pp,pin);
+}
+
+void LCaptionData::touchContents()
+{
+	SomeData::touchContents();
+
+	ObjectFilter *ofilter = dynamic_cast<ObjectFilter*>(filter);
+	if (ofilter) {
+		NodeProperty *prop = ofilter->FindProperty("out");
+		//DrawableObject *fobj = dynamic_cast<DrawableObject*>(ofilter->FinalObject());
+		clock_t recent = ofilter->MostRecentIn(nullptr);
+		if (recent > prop->modtime) {
+			// filter needs updating
+			ofilter->FindProperty("in")->topropproxy->owner->Update();
+			//ofilter->Update();
+		}
+	}
 }
 
 

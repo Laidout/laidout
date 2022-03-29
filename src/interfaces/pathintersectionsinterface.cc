@@ -265,6 +265,19 @@ int PathIntersectionsInterface::Refresh()
 		}
 	}
 
+	// draw self intersections
+	if (paths.e[1]->n > 3) {
+		PointPath *path = paths.e[1];
+		flatvector p;
+		double t1=-1, t2=-1;
+		if (bez_self_intersection(path->e[0], path->e[1], path->e[2], path->e[3], &p, &t1, &t2))
+		{
+			double rad = 2*point_radius;
+			dp->drawrectangle(p.x - rad, p.y - rad, 2*rad, 2*rad, 0);
+		}
+
+	} 
+
 
 	return 0;
 }
@@ -543,15 +556,6 @@ int PathIntersectionsInterface::DetectIntersections()
 	return 0;
 }
 
-bool bez_self_intersection(const flatpoint &p1, const flatpoint &c1, const flatpoint &c2, const flatpoint &p2, flatpoint *p_ret)
-{
-	if (c1 == p1 && c2 == p2) return false; //we know straight line doesn't intesect self
-
-	// cut segment in half, and intersect
-
-
-	return false;
-}
 
 
 } // namespace LaxInterfaces

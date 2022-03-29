@@ -147,6 +147,7 @@ class Document : public ObjectContainer, public Value
 	
 	
 	 //object content
+	virtual int NumPages() { return pages.n; }
 	virtual int n() { return pages.n; }
 	virtual Laxkit::anObject *object_e(int i) 
 		{ if (i>=0 && i<pages.n) return (anObject *)(pages.e[i]); return nullptr; }

@@ -1466,6 +1466,7 @@ Laxkit::MenuInfo *GetGeglOps()
 			const char *value = gegl_operation_get_key(operations[i], keys[c]);
 
 			if (!strcmp(keys[c], "source")) value="...code...";
+			if (!strcmp(keys[c], "operation-class")) value="...class..."; //value gets non-ascii.. what is it??!?
 			DBG if (!strcmp(keys[c], "cl-source")) cerr <<"    operation key: "<<keys[c]<<": "<<"(...source code...)"<<endl;
 			DBG else cerr <<"    operation key: "<<keys[c]<<": "<<value<<endl;
 

@@ -1,72 +1,379 @@
 
 //*********** WORKS IN PROGRESS ****************
 
-TODO:
-  FitIn
-  AlignToBounds
-  AlignNode //using AlignInfo
-  TilingNode
-  PathIntersections
-  PathBooleanNode
-  RoundCorners
-  ObjectArrayNode // linear, radial, object target
-  FlipNode
-  MergePaths
-  Printf
-  MenuValue
-  CutPathFromTo
+// TODO:
+//   PathCutAt -> cut points, or cut out segments, return point list of new endpoints
+//     CutPathNear:
+//       at t value
+//       +- s 
+//       bool slice_only .. do not actually remove segment, just add points
+//       bool keep_handles .. when !slice_only, preserve bez handles, else delete them too
+//   PathBooleanNode
+//   PathCorners
+//   EditDrawable:
+//       Transform relative to filter in
+//       obj
+//   TransformSpace, from object to object (must share an ancestor)
+//   FitIn
+//   AlignToBounds
+//   AlignNode //using AlignInfo
+//   TilingNode
+//   set min/max/mean/mode
+//   ObjectArrayNode // linear, radial, object target
+//   FlipNode
+//   MergePaths
+//   Printf
+//   MenuValue
+//   NineSlice
+// 
+//   EulerToQuaternion
+//   QuaternionToEuler
+//   Swizzle
 
-  EulerToQuaternion
-  QuaternionToEuler
-  Swizzle
 
+//----------------------- NineSliceNode ------------------------
 
-
-//----------------------- PathCornersNode ------------------------
-
-/*! \class PathCornersNode
+/*! \class NineSliceNode
  *
  * Do stuff.
  */
-class PathCornerFilter : public ObjectFilter
+class NineSliceNode : public NodeBase
 {
   public:
-	PathCornersNode();
-	virtual ~PathCornersNode();
+	NineSliceNode();
+	virtual ~NineSliceNode();
 	virtual NodeBase *Duplicate();
 	virtual int GetStatus();
 	virtual int Update();
 
-	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new PathCornersNode(); }
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new NineSliceNode(); }
 };
 
-PathCornersNode::PathCornersNode()
+NineSliceNode::NineSliceNode()
 {
-	makestr(type, "Paths/Corners");
-	makestr(Name, _("Path Corners"));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,     _("Input"), _("A path or model")));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "dir",   new FlatvectorValue(0,0,1),1,  _("Vector"),  _("Vector or path")));
-
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out"), NULL,0, false));
+	makestr(type, "Images/NineSlice");
+	makestr(Name, _("Nine Slice"));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "base",   NULL,1,     _("Base"), _("Image to be cut")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "width",  new IntValue(100),1,   _("Width of final image")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "height", new IntValue(100),1,   _("Height of final image")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "scale",  new DoubleValue(1),1,  _("Extra scale for edges")));
+	
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "hslice", new FlatvectorValue(.3,.3),1, _("H slice"),  _("Positions of horizontal slice, 0..1")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "vslice", new FlatvectorValue(.3,.3),1, _("V slice"),  _("Positions of vertical slice, 0..1")));
+	
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", NULL,1, _("Out"), NULL,0, false));
 }
 
-PathCornersNode::~PathCornersNode()
+NineSliceNode::~NineSliceNode()
 {
 }
 
-NodeBase *PathCornersNode::Duplicate()
+NodeBase *NineSliceNode::Duplicate()
 {
-	PathCornersNode *newnode = new PathCornersNode();
+	NineSliceNode *newnode = new NineSliceNode();
 	newnode->DuplicateBase(this);
 	return newnode;
 }
 
-int PathCornersNode::GetStatus()
+int NineSliceNode::GetStatus()
 {
 	return NodeBase::GetStatus();
 }
 
-void PathCornersNode::FindCorners(PathsData *paths, double *inouts, int num_inouts, LPathsData *pathout)
+int NineSliceNode::Update() //bare bones
+{
+	ClearError();
+
+
+	ImageValue *base = dynamic_cast<ImageValue*>(properties.e[0]->GetData());
+	if (!base) {
+		Error(_("In must be an image")).
+		return -1;
+	}
+
+	// parse parameters
+	int isnum;
+	int width = getIntValue(properties.e[1]->GetData(), &isnum);;
+	if (!isnum || width <= 0) {
+		Error(_("Value must be a positive integer"));
+		return -1;
+	}
+
+	int height = getIntValue(properties.e[2]->GetData(), &isnum);;
+	if (!isnum || height <= 0) {
+		Error(_("Value must be a positive integer"));
+		return -1;
+	}
+
+	double scale = getNumberValue(properties.e[3]->GetData(), &isnum);;
+	if (!isnum || scale <= 0) {
+		Error(_("Value must be a positive number"));
+		return -1;
+	}
+
+	flatvector hslice; ***
+	flatvector vslice; ***
+
+	int h1, h2, v1, v2;
+
+
+	ImageValue *out = dynamic_cast<ImageValue*>(properties.e[properties.n-1]->GetData());
+	if (out) {
+		if (!out->image || out->image->w() <= 0 || out->image->h() <= 0) out = nullptr;
+		else properties.e[properties.n-1]->Touch();
+	}
+
+	if (!out)
+	{
+		LaxImage *outimg = ImageLoader::NewImage(width, height);
+		out = new ImageValue(outimg, true);
+		properties.e[properties.n-1]->SetData(out, 1);
+	}
+
+	// render image
+	*** 
+
+	return NodeBase::Update();
+}
+
+
+//----------------------- PathCutNode ------------------------
+
+/*! \class PathCutNode
+ *
+ * Do stuff.
+ */
+class PathCutNode : public NodeBase
+{
+  public:
+	PathCutNode();
+	virtual ~PathCutNode();
+	virtual NodeBase *Duplicate();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new PathCutNode(); }
+};
+
+PathCutNode::PathCutNode()
+{
+	makestr(type, "Paths/Cut");
+	makestr(Name, _("Path Cut"));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,     _("In"), _("Path to cut")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "pathi", new IntValue(0),1,  _("Subpath"), _("Subpath indices of t values")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "t", new DoubleValue(.5),1,  _("t"), _("Position(s) to cut at")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "around", new DoubleValue(0),1,  _("Near"), _("Cut at t plus or minus this distance")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "remove", new BooleanValue(true),1, _("Remove"), _("Remove segments, rather than just slice")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "handles",new BooleanValue(true),1, _("Keep handles"), _("When Remove is true, do not also remove handles")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", NULL,1, _("Out"), NULL,0, false));
+}
+
+PathCutNode::~PathCutNode()
+{
+}
+
+NodeBase *PathCutNode::Duplicate()
+{
+	PathCutNode *newnode = new PathCutNode();
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int PathCutNode::GetStatus()
+{
+	Value *v = properties.e[0]->GetData();
+	if (!v || strcmp(v->whattype(), "PathsData")) return -1;
+
+	return NodeBase::GetStatus();
+}
+
+int PathCutNode::Update() //bare bones
+{
+	ClearError();
+
+	// in
+	PathsData *in = dynamic_cast<PathsData*>(propertie.e[0]->GetData());
+	if (!in) return -1;
+
+	int isnum;
+
+	// pathi
+	Value *pi = properties.e[1]->GetData();
+	int pathi = getIntValue(pi, &isnum);
+	NumStack<int> pathis;
+	if (isnum) {
+		if (pathi < 0 || pathi >= in->paths.n) {
+			Error(_("Bad subpath index"));
+			return -1;
+		}
+	} else {
+		SetValue *set = dynamic_cast<Setvalue*>(pi);
+		if (!set) {
+			Error(_("Subpath must be an int or set of numbers"));
+			return -1;
+		}
+		for (int c=0; c<set->n(); c++) {
+			pathi = getIntValue(set->e(c), &isnum);
+			if (!isnum || pathi<0 || pathi >= in->paths.n) {
+				Error(_("Bad subpath index"));
+				return -1;
+			}
+			pathis.push(pathi);
+		}
+	}
+
+	// t values
+	double t = 0;
+	Value *tv = properties.e[2]->GetData();
+	if (!tv) return -1;
+	t = getNumberValue(tv, &isnum);
+	NumStack<double> tvals;
+	if (isnum) {
+		tvals.push(t);
+
+	} else {
+		SetValue *set = dynamic_cast<Setvalue*>(tv);
+		if (!set) {
+			Error(_("t must be a number or set of numbers"));
+			return -1;
+		}
+		for (int c=0; c<set->n(); c++) {
+			t = getNumberValue(set->e(c), &isnum);
+			if (!isnum) {
+				Error(_("t must be a number or set of numbers"));
+				return -1;
+			}
+			tvals.push(t);
+		}
+	}
+	if (!tvals.n) {
+		Error(_("Missing t values"));
+		return -1;
+	}
+
+	while (pathis.n < tvals.n) pathis.push(pathis.e[pathis.n-1]);
+
+	// s values
+	double s = 0;
+	Value *sv = properties.e[3]->GetData();
+	if (!sv) return -1;
+	s = getNumberValue(sv, &isnum);
+	NumStack<double> svals;
+	if (isnum) {
+		svals.push(s);
+
+	} else {
+		SetValue *set = dynamic_cast<Setvalue*>(sv);
+		if (!set) {
+			Error(_("Must be a number or set of numbers"));
+			return -1;
+		}
+		for (int c=0; c<set->n(); c++) {
+			s = getNumberValue(set->e(c), &isnum);
+			if (!isnum) {
+				Error(_("t must be a number or set of numbers"));
+				return -1;
+			}
+			svals.push(s);
+		}
+	}
+
+	// apply s span
+	int i = 0;
+	for (int c=0; c<svals.n; c++) {
+		if (svals.e[c] == 0) { i++; continue; }
+		if (c < pathis.n) pathi = pathis.e[c];
+		if (i >= tvals.n) break;
+		double s  = in->paths.e[pathi]->t_to_distance(tvals.e[i]);
+		double t1 = in->paths.e[pathi]->distance_to_t(s-svals.e[c]);
+		double t2 = in->paths.e[pathi]->distance_to_t(s+svals.e[c]);
+
+		tvals.e[i] = t1;
+		tvals.push(t2, i+1);
+
+		pathis.push(pathis.e[i], i+1);
+
+		i += 2;
+	}
+
+	// cut
+	bool cut_segments = getBooleanValue(properties.e[4]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	// handles
+	bool keep_handles = getBooleanValue(properties.e[5]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+
+	//do stuff
+	out = in->duplicate();
+	properties.e[properties.n-1]->SetData(out, 1);
+
+	if (cut_segments) {
+		out->CutAt(tvals.n, pathis.e, tvals.e); // **** does NOT cut segments, will sever path at points sequentially
+
+	} else {
+		out->AddAt(tvals.n, pathis.e, tvals.e);
+	}
+
+	return NodeBase::Update();
+}
+
+
+
+//----------------------- PathBevelNode ------------------------
+
+/*! \class PathBevelNode
+ *
+ * Bevel all corners of a path according to a bevel curve.
+ */
+class PathBevelNode : public ObjectFilter
+{
+  public:
+	PathBevelNode();
+	virtual ~PathBevelNode();
+	virtual NodeBase *Duplicate();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new PathBevelNode(); }
+};
+
+PathBevelNode::PathBevelNode()
+{
+	makestr(type, "Paths/Bevel");
+	makestr(Name, _("Bevel Path Corners"));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "path",   NULL,1,     _("Path"),   _("Path to apply corners")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "corner", NULL,1,     _("Corner"), _("A path of a corner")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "dist",   new DoubleValue(.1),1, _("Width"), _("Corner size. Number, or list of numbers.")));
+	
+	//corner:
+	//  path: first open path is considered the through path? should it have to be a through path?
+	//  type:
+	//    bevel  round  rev-round
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out"), NULL,0, false));
+}
+
+PathBevelNode::~PathBevelNode()
+{
+}
+
+NodeBase *PathBevelNode::Duplicate()
+{
+	PathBevelNode *newnode = new PathBevelNode();
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int PathBevelNode::GetStatus()
+{
+	return NodeBase::GetStatus();
+}
+
+void PathBevelNode::FindCorners(PathsData *paths, double *inouts, int num_inouts, LPathsData *pathout)
 {
 	Coordinate *p, *pp, *p2, *end, *c1 = nullptr, *c2 = nullptr, *prev = nullptr;
 	double prev_len = 0, len = 0;
@@ -76,7 +383,7 @@ void PathCornersNode::FindCorners(PathsData *paths, double *inouts, int num_inou
 	flatpoint pc1, pc2, pp2, nc1, nc2, np2;
 	flatpoint in_axis, out_axis;
 
-	int resolution = 20;
+	int resolution = 50;
 
 	if (!pathout) pathout = new LPathsData();
 	pathout->Id(paths->Id());
@@ -89,64 +396,65 @@ void PathCornersNode::FindCorners(PathsData *paths, double *inouts, int num_inou
 		int i = 0;
 		end = p2;
 
-		if (p2) {
-			do {
-				np2 = p2->fp;
-				if (c1 == p1 && c2 == p2) {
-					len = (p1->fp - p2->fp).norm();
-					nc1 = p->fp + (np2 - p->fp)/3;
-					nc2 = p->fp + (np2 - p->fp)*(2./3);
-				} else {
-					len = bez_segment_length(p1, c1, c2, p2, resolution);
-					nc1 = c1->fp;
-					nc2 = c2->fp;
+		if (!p2) continue;
+
+		do {
+			np2 = p2->fp;
+			if (c1 == p1 && c2 == p2) {
+				len = (p1->fp - p2->fp).norm();
+				nc1 = p->fp + (np2 - p->fp)/3;
+				nc2 = p->fp + (np2 - p->fp)*(2./3);
+			} else {
+				len = bez_segment_length(p1, c1, c2, p2, resolution);
+				nc1 = c1->fp;
+				nc2 = c2->fp;
+			}
+
+			if (prev) {
+				// if corner:
+				dirp = p->direction(false);
+				dirn = p->direction(true);
+
+				if (dirp.SmoothnessFlag(dirn) == LINE_Corner) {
+					//   find in and out distances
+					out = inouts[i % num_inouts];
+					in = inouts[(i+1) % num_inouts];
+
+					//   compute points + directions at the in/out points
+					if (in > prev_len) in = prev_len;
+					if (out > len - in) out = len - in;
+					if (out > len) out = len;
+
+					t_prev = bez_distance_to_t(in_prev, p->fp, nc1, nc2, p2->fp);
+					t_next = bez_distance_to_t(out, p->fp, pc1, pc2, prev->fp);
+
+					***
+
+					//   compute axis for corner "square"
+					***
+
+					//   break path and insert corner transformed from def
+					***
 				}
+			}
 
-				if (prev) {
-					// if corner:
-					dirp = p->direction(false);
-					dirn = p->direction(true);
-					if (dirp.SmoothnessFlag(dirn) != LINE_Corner) {
-						//   find in and out distances
-						out = inouts[i % num_inouts];
-						in = inouts[(i+1) % num_inouts];
+			prev = p;
+			prev_len = len;
+			prev_out = out;
+			prev_in = in;
+			pc1 = nc2;
+			pc2 = nc1;
+			pp1 = p->fp;
+			p = p2;
 
-						//   compute points + directions at the in/out points
-						if (in > prev_len) in = prev_len;
-						if (out > len - in) out = len - in;
-						if (out > len) out = len;
+			if (!p->resolveToControls(pp, c1, c2, p2, true)) break;
 
-						t_prev = bez_distance_to_t(in_prev, p->fp, nc1, nc2, p2->fp);
-						t_next = bez_distance_to_t(out, p->fp, pc1, pc2, prev->fp);
-
-						***
-
-						//   compute axis for corner "square"
-						***
-
-						//   break path and insert corner transformed from def
-						***
-					}
-				}
-
-				prev = p;
-				prev_len = len;
-				prev_out = out;
-				prev_in = in;
-				pc1 = nc2;
-				pc2 = nc1;
-				pp1 = p->fp;
-				p = p2;
-
-				if (!p->resolveToControls(pp, c1, c2, p2, true)) break;
-
-				i += 2;
-			} while (p != end);
-		}
+			i += 2;
+		} while (p != end);
 	}
 }
 
-int PathCornersNode::Update() //possible set ins
+int PathBevelNode::Update() //possible set ins
 {
 	//update with set parsing helpers
 	
@@ -192,7 +500,7 @@ int PathCornersNode::Update() //possible set ins
 
 		GetOutValue<DoubleValue>(c, dosets, out1, setouts[0]);
 		GetOutValue<LPathsData> (c, dosets, out2, setouts[1]);
-			
+		
 
 		*** based on ins, update outs
 	}
@@ -201,267 +509,6 @@ int PathCornersNode::Update() //possible set ins
 	return NodeBase::Update();
 }
 
-
-//----------------------- PathIntersectionsNode ------------------------
-
-/*! \class PathIntersectionsNode
- *
- * 
- */
-class PathIntersectionsNode : public NodeBase
-{
-  public:
-	PathIntersectionsNode();
-	virtual ~PathIntersectionsNode();
-	virtual NodeBase *Duplicate();
-	virtual int GetStatus();
-	virtual int Update();
-
-	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new PathIntersectionsNode(); }
-};
-
-PathIntersectionsNode::PathIntersectionsNode()
-{
-	makestr(type, "Paths/Intersections");
-	makestr(Name, _("Path Intersections"));
-
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,     _("Paths"), nullptr));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "self", new BooleanValue(true),1, _("Check self"), _("Whether to check for a path intersecting itself"),0,true));
-	
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "points", NULL,1, _("Points"), NULL,0, false));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "dir1", NULL,1, _("Direction 1"), NULL,0, false));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "dir2", NULL,1, _("Direction 2"), NULL,0, false));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "info", NULL,1, _("info"), NULL,0, false));
-}
-
-PathIntersectionsNode::~PathIntersectionsNode()
-{
-}
-
-NodeBase *PathIntersectionsNode::Duplicate()
-{
-	PathIntersectionsNode *newnode = new PathIntersectionsNode();
-	dynamic_cast<BooleanValue*>(newnode->properties.e[1]->GetData())->i
-		= dynamic_cast<BooleanValue*>(properties.e[1]->GetData())->i;
-	newnode->DuplicateBase(this);
-	return newnode;
-}
-
-int PathIntersectionsNode::GetStatus()
-{
-	Value *v = properties.e[0]->GetData();
-	if (!v || (!dynamic_cast<LPathsData*>(v) && v->type() != VALUE_Set)) return -1;
-	return NodeBase::GetStatus();
-}
-
-int PathIntersectionsNode::Update()
-{
-	Value *v = properties.e[0]->GetData();
-	LPathsData *path1 = dynamic_cast<LPathsData*>(v);
-	if (!path1 && v->type() != VALUE_Set) return -1;
-
-	SetValue *setin = path1 ? nullptr : dynamic_cast<SetValue*>(v);
-
-	int isnum;
-	bool check_self = getIntValue(properties.e[1]->GetData(), &isnum);
-	if (!isnum) return -1;
-
-	NumStack<flatpoint> points;
-	NumStack<int> obj1, obj2, pathi1, pathi2;
-	NumStack<double> t1, t2;
-	
-	int n = 0; //grand total
-	LPathsData *path2;
-	flatpoint pts1[4], pts2[4];
-	flatpoint found[9];
-	double foundt1[9], foundt2[9];
-	Coordinate *start1, *start2, *p1, *p2, *p1next, *p2next;
-	int num; //num per segment (up to 9 each check)
-	int isline;
-
-	for (int c=0; c< setin ? setin->n() : 1; c++) {
-		if (setin) {
-			path1 = dynamic_cast<LPathsData*>(setin->e(c));
-			if (!pathin) {
-				Error(_("In must be a path or set of paths"));
-				return -1;
-			}
-		}
-
-		path2 = path1;
-		for (int c2 = c + (check_self ? 0 : 1); c2 < setin ? setin->n() : 1; c2++) {
-			if (setin) {
-				path2 = dynamic_cast<LPathsData*>(setin->e(c2));
-				if (!path2) {
-					Error(_("In must be a path or set of paths"));
-					return -1;
-				}
-			}
-
-			// check each bez segment in path1 vs each in path2
-			if (path1 == path2) {
-				// *** TODO !!!!! IMPLEMENT ME!!!!!!
-				// bez_intersect_self(...);
-				continue;
-			}
-			
-			for (int c3 = 0; c3 < path1->paths.n; c3++) {
-				if (!path1->paths.e[c3]->path) continue;
-				start1 = p1 = path1->paths.e[c3]->path;
-
-				pts1[0] = p1->p();
-				if (!p1->getNext(pts1[1], pts1[2], p1next) != 0) break;
-				pts1[3] = p1next->p();
-
-				do {
-					for (int c4 = 0; c4 < path2->paths.n; c4++) {
-						if (!path2->paths.e[c4]->path) continue;
-						start2 = p2 = path2->paths.e[c4]->path;
-
-						do {
-							pts2[0] = p2->p();
-							if (!p2->getNext(pts2[1], pts2[2], p2next) != 0) break;
-							pts2[3] = p2next->p();
-
-							bez_intersect_bez(
-									pts1[0], pts1[1], pts1[2], pts1[3],
-									pts2[0], pts2[1], pts2[2], pts2[3],
-									found, foundt1, foundt2, num,
-									threshhold,
-									0,0,1,
-									1, maxdepth
-								);
-
-							for (int c5 = 0; c5 < num; c5++) {
-								points.push(found[c5]);
-								obj1.push(c);
-								obj2.push(c2);
-								pathi1.push(c3);
-								pathi2.push(c4);
-								t1.push(foundt1[c5]);
-								t2.push(foundt2[c5]);
-							}
-
-							p2 = p2next;
-						} while (p2 && p2 != start2);
-					}
-
-					p1 = p1next;
-				} while (p1 && p1 != start1);
-			}
-		}
-	}
-
-	//only update things that are connected to other things
-	if (properties.e[2]->IsConnected()) { //points
-		SetValue *outpoints = dynamic_cast<SetValue*>(properties.e[2]->GetData());
-		if (!outpoints) {
-			outpoints = new SetValue();
-			properties.e[2]->SetData(outpoints, 1);
-		} else properties.e[2]->Touch();
-
-		for (int c=0; c<points.n; c++) {
-			if (c >= outpoints->n()) {
-				outpoints->push(new FlatvectorValue(points.e[c]), 1);
-			} else {
-				FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(outpoints->e(c))
-				fv->v = points.e[c];
-			}
-		}
-
-		while (outpoints->n() != points.n) outpoints->Remove(outpoints->n()-1);
-	}
-	if (properties.e[3]->IsConnected()) { //dir1
-		SetValue *out = dynamic_cast<SetValue*>(properties.e[3]->GetData());
-		if (!out) {
-			out = new SetValue();
-			properties.e[3]->SetData(out, 1);
-		} else properties.e[3]->Touch();
-
-		flatpoint v;
-		for (int c=0; c<points.n; c++) {
-			int i = obj1[c];
-			LPathsData *paths = setin ? dynamic_cast<LPathsData*>(setin->e(i)) : path1;
-			paths->PointAlongPath(pathi1[c], foundt1[c], false, nullptr, &v);
-			v.normalize();
-
-			if (c >= out->n()) {
-				out->push(new FlatvectorValue(v), 1);
-			} else {
-				FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(out->e(c))
-				fv->v = v;
-			}
-		}
-
-		while (out->n() != points.n) out->Remove(out->n()-1);
-	}
-	if (properties.e[4]->IsConnected()) { //dir2
-		SetValue *out = dynamic_cast<SetValue*>(properties.e[4]->GetData());
-		if (!out) {
-			out = new SetValue();
-			properties.e[4]->SetData(out, 1);
-		} else properties.e[4]->Touch();
-
-		flatpoint v;
-		for (int c=0; c<points.n; c++) {
-			int i = obj2[c];
-			LPathsData *paths = setin ? dynamic_cast<LPathsData*>(setin->e(i)) : path1;
-			paths->PointAlongPath(pathi2[c], foundt2[c], false, nullptr, &v);
-			v.normalize();
-
-			if (c >= out->n()) {
-				out->push(new FlatvectorValue(v), 1);
-			} else {
-				FlatvectorValue *fv = dynamic_cast<FlatvectorValue*>(out->e(c))
-				fv->v = v;
-			}
-		}
-
-		while (out->n() != points.n) out->Remove(out->n()-1);
-	}
-	if (properties.e[5]->IsConnected()) { //info []
-		// info [
-		//   int    which path object1
-		//   int    which path index1
-		//   float  path1 t
-		//   int    which path object2
-		//   int    which path index2
-		//   float  path2 t
-		//  ]
-		SetValue *out = dynamic_cast<SetValue*>(properties.e[5]->GetData());
-		if (!out) {
-			out = new SetValue();
-			properties.e[5]->SetData(out, 1);
-		} else properties.e[5]->Touch();
-
-		flatpoint v;
-		for (int c=0; c<points.n; c++) {
-			if (c >= out->n()) {
-				SetValue *set = new SetValue();
-				set->push(new IntValue(obj1[c]), 1);
-				set->push(new IntValue(pathi1[c]), 1);
-				set->push(new DoubleValue(foundt1[c]), 1);
-				set->push(new IntValue(obj2[c]), 1);
-				set->push(new IntValue(pathi2[c]), 1);
-				set->push(new DoubleValue(foundt2[c]), 1);
-				out->Push(set, 1);
-				
-			} else {
-				SetValue *set = dynamic_cast<SetValue*>(out->e(c))
-				dynamic_cast<IntValue*>(set->e(0))->i    = obj1[c];
-				dynamic_cast<IntValue*>(set->e(1))->i    = pathi1[c];
-				dynamic_cast<DoubleValue*>(set->e(2))->i = foundt1[c];
-				dynamic_cast<IntValue*>(set->e(3))->i    = obj2[c];
-				dynamic_cast<IntValue*>(set->e(4))->i    = pathi2[c];
-				dynamic_cast<DoubleValue*>(set->e(5))->i = foundt2[c];
-			}
-		}
-
-		while (out->n() != points.n) out->Remove(out->n()-1);
-	}
-
-	return NodeBase::Update();
-}
 
 
 //----------------------- FitInNode ------------------------
@@ -605,49 +652,6 @@ int ObjectArrayNode::Update()
 
 
 
-//----------------------- GroupProxyNode ------------------------
-
- *** not sure if this class is worth it
-/*! \class GroupProxyNode
- * Specific node to coordinate passing parameters across group nesting boundaries
- */
-class GroupProxyNode : public NodeBase
-{
-  public:
-	GroupProxyNode();
-	virtual ~GroupProxyNode();
-	virtual int GetStatus();
-	virtual int Update();
-
-	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new GroupProxyNode(); }
-};
-
-GroupProxyNode::GroupProxyNode(bool ins)
-{
-	makestr(type, "GroupProxy");
-	makestr(Name, ins ? _("Inputs") : _("Outputs"));
-
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,     _("Input"), _("A path or model")));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "dir",   new FlatvectorValue(0,0,1),1,  _("Vector"),  _("Vector or path")));
-
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out"), NULL,0, false));
-}
-
-GroupProxyNode::~GroupProxyNode()
-{
-}
-
-int GroupProxyNode::GetStatus()
-{
-	return NodeBase::GetStatus();
-}
-
-int GroupProxyNode::Update()
-{
-
-}
-
-
 //----------------------- SetToPointsetNode ------------------------
 
 /*! \class SetToPointsetNode
@@ -688,6 +692,8 @@ NodeBase *SetToPointsetNode::Duplicate()
 
 int SetToPointsetNode::GetStatus()
 {
+	Value *v = properties.e[0]->GetData();
+	if (!v || v->type() != VALUE_Set) return -1;
 	return NodeBase::GetStatus();
 }
 
@@ -699,8 +705,22 @@ int SetToPointsetNode::Update()
 	//    Affine
 	//    Affine[]
 
-	Value *v = properties.e[0]->GetData();
+	SetValue *sv = dynamic_cast<SetValue*>(properties.e[0]->GetData());
+	if (!sv) return -1;
+
 	PointSetValue *out = dynamic_cast<PointSetValue*>(properties.e[properties.n-1]->GetData());
+
+	for (int c=0; c<sv->n(); c++) {
+		Value *v = s->e(c);
+		if (!v) continue;
+
+		switch (v->type()) {
+			case VALUE_Flatvector: break;
+			case VALUE_Spacevector: break;
+			case AffineValue::TypeNumber(): break;
+			case VALUE_Set: break;
+		}
+	}
 
 	return NodeBase::Update();
 }
@@ -990,7 +1010,7 @@ Laxkit::anObject *AlignToBoundsNode::NewNode(int p, Laxkit::anObject *ref)
 
 AlignToBoundsNode::AlignToBoundsNode()
 {
-	makestr(Name, _("Find Drawable"));
+	makestr(Name, _("Align To Bounds"));
 	makestr(type, "Drawable/AlignToBounds");
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,  _("In"),     _("Object to align")));
@@ -1099,58 +1119,6 @@ void NodePanel::ShowAddButton()
 
 
 
-//----------------------------- SimpleArrayValue ----------------------------------
-template <class T>
-class SimpleArrayValue : public Value
-{
-  public:
-	NumStack<T> stack;
-
-    SimpleArrayValue();
-    virtual ~SimpleArrayValue();
-    virtual const char *whattype() { return "SimpleArrayValue"; }
-    virtual int getValueStr(char *buffer,int len);
-    virtual Value *duplicate();
-    virtual int type() { return VALUE_SimpleArray; }
-    virtual ObjectDef *makeObjectDef();
-};
-
-
-typedef SimpleArrayValue<int> IntStackValue;
-typedef SimpleArrayValue<double> DoubleStackValue;
-typedef SimpleArrayValue<flatvector> Vector2StackValue;
-typedef SimpleArrayValue<spacevector> Vector3StackValue;
-typedef SimpleArrayValue<Quaternion> QuaternionStackValue;
-
-typedef SimpleArrayValue<anObject> ObjectStackValue;
-
-
-SimpleArrayValue<Int>::whattype() { return "IntStackValue"; }
-SimpleArrayValue<Double>::whattype() { return "DoubleStackValue"; }
-SimpleArrayValue<Vector2>::whattype() { return "Vector2StackValue"; }
-SimpleArrayValue<Vector3>::whattype() { return "Vector3StackValue"; }
-SimpleArrayValue<Quaternion>::whattype() { return "QuaternionStackValue"; }
-SimpleArrayValue<String>::whattype() { return "StringStackValue"; }
-
-
-
-class Vector2StackValue : public Value
-{
-  public:
-	NumStack<flatvector> stack;
-
-    Vector2StackValue();
-    virtual ~SimpleArrayValue();
-    virtual const char *whattype() { return "Vector2StackValue"; }
-    virtual int getValueStr(char *buffer,int len);
-    virtual Value *duplicate();
-    virtual int type() { return VALUE_Vector2Stack; }
-    virtual ObjectDef *makeObjectDef();
-};
-
-
-
-
 
 //------------------------ Path Effects ------------------------
 
@@ -1229,85 +1197,6 @@ int Cube(double xwidth, double ywidth, double zwidth,
 		}
 	}
 }
-
-
-//----------------------- ScriptNode ------------------------
-
-/*! \class ScriptNode
- * A runnable script with optional parameters.
- *
- * If the final value is a hash, then output links are created corresponding to those.
- * Otherwise, a single out property is made for the final value in the expression.
- */
-class ScriptNode : public NodeBase
-{
-  public:
-	PlainText *script;
-	Interpreter *interpreter;
-	Value *output;
-
-	ScriptNode();
-	virtual ~ScriptNode();
-	virtual NodeBase *Duplicate();
-	virtual int Update();
-	virtual int GetStatus();
-};
-
-ScriptNode::ScriptNode(const char *expression, const char *runner)
-{
-	//script = new PlainText(expression);
-	//script = FindResource("PlainText", textobject);
-	//if (script) script->inc_count();
-
-	interpreter = GetInterpreter(runner);
-
-	output = NULL;
-}
-
-ScriptNode::~ScriptNode()
-{
-	if (script) script->dec_count();
-	if (interpreter) interpreter->dec_count();
-	if (output) output->dec_count();
-}
-
-NodeBase *ScriptNode::Duplicate()
-{
-	ScriptNode *node = new ScriptNode(script, interpreter);
-
-	***
-	
-	return node;
-}
-
-int ScriptNode::Update()
-{
-}
-
-int ScriptNode::GetStatus()
-{
-	return NodeBase::GetStatus();
-}
-
-/*! Set up inputs. These can be accessed from the expression by name.
- */
-int ScriptNode::AddParameters(const char *pname, const char *pName, const char *pTip, ...)
-{
-	***
-}
-
-/*! Create these as output properties. The script must return a hash with keys corresponding
- * to the pname.
- */
-int ScriptNode::AddOutputs(const char *pname, const char *pName, const char *pTip, ...)
-{
-	***
-}
-
-int ScriptNode::Run()
-{
-}
-
 
 
 //------------------------------ HistogramNode --------------------------------------------
@@ -1559,7 +1448,6 @@ Laxkit::anObject *newSwizzle(int p, Laxkit::anObject *ref)
 //------------------------------ PathBooleanNode --------------------------------------------
 
 /*! \class PathBooleanNode
- * Map arrays to other arrays using a special Boolean interface.
  */
 
 class PathBooleanNode : public NodeBase
@@ -1573,6 +1461,8 @@ class PathBooleanNode : public NodeBase
 	virtual NodeBase *Duplicate();
 	virtual int Update();
 	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new PathBooleanNode(); }
 };
 
 static SingletonKeeper PathBooleanNode::defkeeper;
@@ -1584,11 +1474,11 @@ static ObjectDef *PathBooleanNode::GetDef()
 
 	def = new ObjectDef("PathBooleanDef", _("Path Boolean Def"), NULL,NULL,"enum", 0);
 
-	def->pushEnumValue("Union",        _("Union"),         _("Union"),                     BOOL_Union         );
-	def->pushEnumValue("Intersection", _("Intersection"),  _("Intersection"),              BOOL_Intersection  );
-	def->pushEnumValue("OneMinusTwo",  _("A - B"),         _("Remove second from first"),  BOOL_AMinusB  );
-	def->pushEnumValue("Intersection", _("B - A"),         _("Remove first from second"),  BOOL_BMinusA  );
-	def->pushEnumValue("Xor",          _("Xor"),           _("A or B but not both"),       BOOL_Xor  );
+	def->pushEnumValue("Union",        _("Union"),         _("Union"),                     Bezier::PathOp::Union       );
+	def->pushEnumValue("Intersection", _("Intersection"),  _("Intersection"),              Bezier::PathOp::Intersection);
+	def->pushEnumValue("OneMinusTwo",  _("A - B"),         _("Remove second from first"),  Bezier::PathOp::AMinusB     );
+	def->pushEnumValue("Intersection", _("B - A"),         _("Remove first from second"),  Bezier::PathOp::BMinusA     );
+	def->pushEnumValue("Xor",          _("Xor"),           _("A or B but not both"),       Bezier::PathOp::Xor         );
 	
 
 	defkeeper.SetObject(def,1);
@@ -1618,26 +1508,52 @@ PathBooleanNode::~PathBooleanNode()
 }
 
 NodeBase *PathBooleanNode::Duplicate()
-{ ***
+{
 	PathBooleanNode *node = new PathBooleanNode(op);
 	node->DuplicateBase(this);
     node->DuplicateProperties(this);
 	return node;
 }
 
-int PathBooleanNode::Update()
-{ ***
-}
-
 int PathBooleanNode::GetStatus()
-{ ***
+{
+	PathsData *path1 = dynamic_cast<PathsData*>(properties.e[0]->GetData());
+	PathsData *path2 = dynamic_cast<PathsData*>(properties.e[1]->GetData());
+
+	if (!path1 || !path2) return -1;
+
 	return NodeBase::GetStatus();
 }
 
-Laxkit::anObject *newPathBoolean(int p, Laxkit::anObject *ref)
+int PathBooleanNode::Update()
 {
-	return new PathBooleanNode();
+	PathsData *path1 = dynamic_cast<PathsData*>(properties.e[0]->GetData());
+	PathsData *path2 = dynamic_cast<PathsData*>(properties.e[1]->GetData());
+
+	if (!path1 || !path2) return -1;
+
+	EnumValue *ev = dynamic_cast<EnumValue*>(properties.e[2]->GetData());
+	if (!ev) return -1;
+	int op = ev->EnumId();
+
+	Affine m2to1;
+	SomeData *pnt = path1->FindCommonParent(path2);
+	if (pnt) {
+		m2to1 = path1->GetTransforms(path2, false);
+	} else {
+		m2to1.setIdentity();
+	}
+	PathsData *out = PathBoolean(path1, path2, op, m2to1.m());
+	if (!out) {
+		Error(_("Could not compute path op"));
+		return -1;
+	}
+
+	out->m(path1->m());
+	properties.e[properties.n-1]->SetData(out, 1);
+	return NodeBase::Update();
 }
+
 
 
 //------------------------------ ActionNode --------------------------------------------
@@ -1650,7 +1566,7 @@ Laxkit::anObject *newPathBoolean(int p, Laxkit::anObject *ref)
  *       Out o
  * [o] New through
  * [o] New In
- * str: Expression
+ * str|TextObject: Expression
  *     New Out [o]
  */
 
@@ -1679,9 +1595,10 @@ BoilerPlateNode::BoilerPlateNode()
 	makestr(type, "Paths/Extrude");
 	makestr(Name, _("Extrude"));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,     _("Input"), _("A path or model")));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "dir",   new FlatvectorValue(0,0,1),1,  _("Vector"),  _("Vector or path")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "dir", new FlatvectorValue(0,0,1),1,  _("Vector"),  _("Vector or path")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "b",   new BooleanValue(false),1,  _("Check this"),  _("Some boolean thing")));
 
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "Out", NULL,1, _("Out"), NULL,0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", NULL,1, _("Out"), NULL,0, false));
 }
 
 BoilerPlateNode::~BoilerPlateNode()
@@ -1703,6 +1620,13 @@ int BoilerPlateNode::GetStatus()
 int BoilerPlateNode::Update() //bare bones
 {
 	ClearError();
+
+	int isnum;
+
+	// cut
+	bool cut_segments = getBooleanValue(properties.e[3]->GetData(), &isnum);
+	if (!isnum) return -1;
+
 	return NodeBase::Update();
 }
 

@@ -5388,6 +5388,12 @@ int getIntValue(Value *v, int *isnum)
 	return 0;
 }
 
+bool getBooleanValue(Value *v, int *isnum)
+{
+	int i = getIntValue(v, isnum);
+	return i != 0;
+}
+
 /*! Like getNumberValue(), but swap order of returns.
  */
 int isNumberType(Value *v, double *number_ret)
@@ -5476,7 +5482,9 @@ int extequal(const char *str, int len, const char *field, char **next_ret)
  * See also extequal(). The check here is simpler and requires a definite len > 0.
  */
 int isName(const char *longstr,int len, const char *null_term_str)
-{ return len==(int)strlen(null_term_str) && !strncmp(longstr,null_term_str,len); }
+{
+	return len==(int)strlen(null_term_str) && !strncmp(longstr,null_term_str,len);
+}
 
 
 // /*! Convenience cast to handle direct dynamic cast, or if object is within an ObjectValue.

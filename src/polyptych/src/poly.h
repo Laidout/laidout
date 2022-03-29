@@ -30,7 +30,9 @@
 
 namespace Polyptych {
 
+
 //-------------------------------- Edge --------------------------------------
+
 class Edge
 {
  public:
@@ -42,7 +44,9 @@ class Edge
 	Edge(const Edge &e) { p1=e.p1; p2=e.p2; f1=e.f1; f2=e.f2; }
 };
 
+
 //-------------------------------- Face --------------------------------------
+
 /*! \class ExtraFace
  * \brief class to hold extra cache data for a Polyhedron's faces.
  */
@@ -75,6 +79,7 @@ class Face
 	double *dihedral;
 	int planeid,setid;
 	int facegroupid;
+	char *label;
 	ExtraFace *cache;
 
 	Face();
@@ -86,7 +91,9 @@ class Face
 	Face &operator=(const Face &);
 };
 
+
 //-------------------------------- Pgon --------------------------------------
+
 class Pgon
 {
  public:
@@ -107,7 +114,9 @@ class Pgon
 	flatpoint center();
 };
 
+
 //-------------------------------- Settype --------------------------------------
+
 class Settype
 {
  public:
@@ -123,7 +132,9 @@ class Settype
 	void newname(const char *n);
 };
 
+
 //-------------------------------- Polyhedron --------------------------------------
+
 class Polyhedron : 
 	virtual public Laxkit::anObject,
 	virtual public LaxFiles::DumpUtility,
@@ -169,6 +180,7 @@ class Polyhedron :
 	virtual int AddPoint(spacepoint p);
 	virtual int AddPoint(double x,double y,double z);
 	virtual int AddFace(const char *str);
+	virtual int AddFace(int n, ...);
 	virtual void BuildExtra(); //create face cache
 	virtual ExtraFace *newExtraFace();
 	virtual void collapseVertices(double zero, int vstart=-1, int vend=-1);

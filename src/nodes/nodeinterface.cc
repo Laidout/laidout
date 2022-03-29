@@ -4604,13 +4604,15 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 
 					if (v->type()==VALUE_Flatvector) {
 						FlatvectorValue *vv = dynamic_cast<FlatvectorValue*>(v);
-						sprintf(extra, "%.2g, %.2g", vv->v.x, vv->v.y);
+						sprintf(extra, "%.4g, %.4g", vv->v.x, vv->v.y);
+
 					} else if (v->type()==VALUE_Spacevector) {
 						SpacevectorValue *vv = dynamic_cast<SpacevectorValue*>(v);
-						sprintf(extra, "%.2g, %.2g, %.2g", vv->v.x, vv->v.y, vv->v.z);
+						sprintf(extra, "%.4g, %.4g, %.4g", vv->v.x, vv->v.y, vv->v.z);
+
 					} else if (v->type()==VALUE_Quaternion) {
 						QuaternionValue *vv = dynamic_cast<QuaternionValue*>(v);
-						sprintf(extra, "%.2g, %.2g, %.2g, %.2g", vv->v.x, vv->v.y, vv->v.z, vv->v.w);
+						sprintf(extra, "%.3g, %.3g, %.3g, %.3g", vv->v.x, vv->v.y, vv->v.z, vv->v.w);
 					}
 
 					dp->NewFG(&nodes->colors->fg_edit);
@@ -4619,13 +4621,13 @@ void NodeInterface::DrawProperty(NodeBase *node, NodeProperty *prop, double y, i
 				} else {
 					if (v->type()==VALUE_Flatvector) {
 						FlatvectorValue *vv = dynamic_cast<FlatvectorValue*>(v);
-						sprintf(extra, "%s: (%.2g, %.2g)", prop->Label(), vv->v.x, vv->v.y);
+						sprintf(extra, "%s: (%.4g, %.4g)", prop->Label(), vv->v.x, vv->v.y);
 					} else if (v->type()==VALUE_Spacevector) {
 						SpacevectorValue *vv = dynamic_cast<SpacevectorValue*>(v);
-						sprintf(extra, "%s: (%.2g, %.2g, %.2g)", prop->Label(), vv->v.x, vv->v.y, vv->v.z);
+						sprintf(extra, "%s: (%.4g, %.4g, %.4g)", prop->Label(), vv->v.x, vv->v.y, vv->v.z);
 					} else if (v->type()==VALUE_Quaternion) {
 						QuaternionValue *vv = dynamic_cast<QuaternionValue*>(v);
-						sprintf(extra, "%s: (%.2g, %.2g, %.2g, %.2g)", prop->Label(), vv->v.x, vv->v.y, vv->v.z, vv->v.w);
+						sprintf(extra, "%s: (%.3g, %.3g, %.3g, %.3g)", prop->Label(), vv->v.x, vv->v.y, vv->v.z, vv->v.w);
 					}
 
 					dp->NewFG(&nodes->colors->fg_edit);

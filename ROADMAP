@@ -27,6 +27,7 @@ VERSION 0.098
 (done) Show/hide objects
 (done) Address icon/text/thin line sizing issues for high dpi monitors (issue #16)
 (done) System to manage external tools, like print command or image editor
+       Be able to import/export new Inkscape multipage art boards
 
 (done) Moving selected things in group contents does not update group bounds
 (done) should not be able to select both group and group contents at same time
@@ -45,11 +46,11 @@ VERSION 0.098
 (done) Mirror node, coupled with a Mirror Interface
 (done) Animation play/stop overlay, with node hooks
 
-       engraver tool, fix so that current render is not rerendering every frame
+(done) engraver tool, fix so that current render is not rerendering every frame
 (done) PathInterface: adding point hint
 (done) PathInterface: Mouse based delete segments
 
-       Debug Text on path tool somewhat
+(done) Debug Text on path tool a little
 (done) Clean up mesh controls
 
 (done) debug svg in enough to be able to load icons.svg
@@ -63,6 +64,7 @@ VERSION 0.099
        debug previous version a bit
        Undo/Redo
 
+	   engraver tool direction overlay should be cached
        engraver tool grow point mode
        engraver tool, resolution cut mode
        engraver tool, blockout needs to be more precise

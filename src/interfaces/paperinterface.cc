@@ -1233,7 +1233,18 @@ int PaperInterface::PerformAction(int action)
 		return 0;
 
 	} else if (action == PAPERI_CreateImposition) {
+		// Save paper group as a Net
+		//  Name ___________
+		//  [ ] Save as global asset (else save with resources of document)
+		// [ok] [cancel]
 		PostMessage("IMPLEMENT ME!!!!");
+
+		//ValueHash props;
+		//props.push("name", StringValue(papergroup ? new papergroup->Id() : nullptr), -1, true);
+		//props.push("save_global", new BooleanValue(false), -1, true);
+		//ValueWindow *win = new ValueWindow(props);
+		//app->rundialog(win);
+
 		return 0;
 
 	}  else if (action == PAPERI_DupPapers) {

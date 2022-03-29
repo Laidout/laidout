@@ -180,7 +180,7 @@ class Net : public LaxInterfaces::SomeData
 	 //wrap functions
 	virtual int Anchor(int basenetfacei);
 	virtual int Unwrap(int netfacei,int atedge);
-	virtual int TotalUnwrap();
+	virtual int TotalUnwrap(bool all_chunks = false);
 	virtual int PickUp(int netfacei,int cutatedge);
 	virtual int Drop(int netfacei);
 	virtual int addPotentialsToFace(int facenum);

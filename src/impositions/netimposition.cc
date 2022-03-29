@@ -140,6 +140,8 @@ NetImposition::NetImposition()
 	DBG cerr <<"imposition netimposition init"<<endl;
 }
 
+/*! This converts the papergroup into a BasicNet. papergroup itself is NOT stored or referenced anywhere.
+ */
 NetImposition::NetImposition(PaperGroup *papergroup)
   : NetImposition()
 {
@@ -150,6 +152,7 @@ NetImposition::NetImposition(PaperGroup *papergroup)
 		PaperBoxData *paper = papergroup->papers.e[c];
 
 		NetFace *face = new NetFace();
+		face->original = c;
 		face->tag = FACE_Actual;
 		net->push(face, 1);
 
@@ -177,8 +180,10 @@ NetImposition::NetImposition(PaperGroup *papergroup)
 	Net *nnet = new Net();
 	nnet->Basenet(net);
 	net->dec_count();
+	nnet->TotalUnwrap(true);
+	nnet->rebuildLines();
 	SetNet(nnet);
-	net->dec_count();
+	nnet->dec_count();
 }
 
 //! Constructor. Transfers newnet pointer, does not duplicate.

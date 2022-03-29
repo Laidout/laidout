@@ -31,7 +31,7 @@ class ImageValue : virtual public Value, virtual public FunctionEvaluator
 	static int TypeNumber();
 	Laxkit::LaxImage *image;
 
-	ImageValue();
+	ImageValue(Laxkit::LaxImage *img = nullptr, bool absorb = false);
 	virtual ~ImageValue();
 	virtual int type();
     virtual const char *whattype() { return "ImageValue"; }
