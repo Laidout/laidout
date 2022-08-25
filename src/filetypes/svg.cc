@@ -4162,8 +4162,8 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 							 //parse units
 							UnitManager *unitm = GetUnitManager();
 							int units = unitm->UnitId(v);
-							if (units != UNITS_None && units != UNITS_Em) {
-								ems = unitm->Convert(ems, units, UNITS_Em, nullptr);
+							if (units != UNITS_None && units != UNITS_em) {
+								ems = unitm->Convert(ems, units, UNITS_em, nullptr);
 							}
 						}
 					}

@@ -644,7 +644,7 @@ void SignatureInterface::remapHandles(int which)
 	double w=signature->PageWidth(0), h=signature->PageHeight(0); // *** patternwidth not updating with landscape change?
 	double www=siginstance->PatternWidth(), hhh=siginstance->PatternHeight();
 
-	SimpleUnit *units=GetUnitManager();
+	UnitManager *units = GetUnitManager();
 
 	arrowscale=2*INDICATOR_SIZE;
 	//arrowscale=2*INDICATOR_SIZE/dp->Getmag();
@@ -1327,7 +1327,7 @@ int SignatureInterface::Refresh()
 	 //write out final page dimensions
 	dp->NewFG(0.,0.,0.);
 	dp->DrawScreen();
-	SimpleUnit *units=GetUnitManager();
+	UnitManager *units = GetUnitManager();
 	sprintf(str,_("Final size: %g x %g %s"),
 				units->Convert(signature->PageWidth(1), UNITS_Inches,laidout->prefs.default_units,NULL),
 				units->Convert(signature->PageHeight(1),UNITS_Inches,laidout->prefs.default_units,NULL),
