@@ -286,8 +286,6 @@ LaidoutApp::LaidoutApp()
 	GetUnitManager()->DefaultUnits(prefs.unitname);
 	GetUnitManager()->PixelSize(1./96,UNITS_Inches); //use css style 96 ppi
 
-	resources.SetAppName("laidout",LAIDOUT_VERSION);
-
 	pipeout = false;
 	pipeoutarg = NULL;
 
@@ -866,7 +864,7 @@ int LaidoutApp::createlaidoutrc()
 					  "autosave false #Whether to autosave. true or false.\n"
 					  "autosave_time 0  #number of minutes (such as 1.5) between autosaves. 0 means no autosave\n"
 					  "autosave_path ./%%f.autosave  #default location for autosave, relative to actual file\n"
-					  "                             #%%f is filename, %%f is full path, %%b is name without extension\n"
+					  "                             #%%f is filename, %%b is name without extension\n"
 					  "                             #%%e is extension, # or ### is autosave number (or padded number)\n"
 					  "autosave_num 0  #number of autosave files to maintain. 0 means no limit. Ignored if no '#' in autosave_path.\n"
 					  "\n"
