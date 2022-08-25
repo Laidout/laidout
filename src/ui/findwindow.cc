@@ -77,6 +77,12 @@ FindWindow::~FindWindow()
 {
 }
 
+int FindWindow::Finalize()
+{
+	iterator.Clear();
+	return anXWindow::Finalize();
+}
+
 int FindWindow::preinit()
 {
 	anXWindow::preinit();
@@ -241,11 +247,13 @@ int FindWindow::init()
 	last->CloseControlLoop();
 	SetChild(rowframe);
 	rowframe->Sync(1);
+	rowframe->dec_count();
 	return 0;
 }
 
 void FindWindow::SearchNext()
 {
+	last_search_type = LastSearchType::Next;
 	anObject *obj = nullptr;
 	FieldPlace place;
 	if (!search_started) {
@@ -265,6 +273,7 @@ void FindWindow::SearchNext()
 
 void FindWindow::SearchPrevious()
 {
+	last_search_type = LastSearchType::Previous;
 	anObject *obj = nullptr;
 	FieldPlace place;
 	if (!search_started) {
@@ -284,6 +293,7 @@ void FindWindow::SearchPrevious()
 
 void FindWindow::SearchAll()
 {
+	last_search_type = LastSearchType::All;
 	anObject *obj = nullptr;
 	FieldPlace place;
 	InitiateSearch();
@@ -367,10 +377,16 @@ int FindWindow::Event(const EventData *data,const char *mes)
 
 	const SimpleMessage *s = dynamic_cast<const SimpleMessage *>(data);
 
-	if (!strcmp(mes,"pattern")) { 
-		const char *pat = pattern->GetCText();
-		iterator.Pattern(pat, regex, caseless, true, false, false);
-		iterator.Pattern(MatchDrawableObject, true, false, true);
+	if (!strcmp(mes,"pattern")) {
+		if (s->info1 == 1) { //enter was pressed
+			if (last_search_type == LastSearchType::Next) SearchNext();
+			else if (last_search_type == LastSearchType::Previous) SearchPrevious();
+			else if (last_search_type == LastSearchType::All) SearchAll();
+		} else if (s->info1 == 0) { //contents changed
+			const char *pat = pattern->GetCText();
+			iterator.Pattern(pat, regex, caseless, true, false, false);
+			iterator.Pattern(MatchDrawableObject, true, false, true);
+		}
 		return 0;
 
 	} else if (!strcmp(mes,"where")) {

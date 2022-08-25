@@ -64,6 +64,8 @@ class FindWindow : public Laxkit::DraggableFrame
 
 	ObjectIterator iterator;
 	bool search_started;
+	enum class LastSearchType { Next, Previous, All };
+	LastSearchType last_search_type = LastSearchType::All;
 	
 	FindThings where;
 
@@ -84,6 +86,7 @@ class FindWindow : public Laxkit::DraggableFrame
 	virtual const char *whattype() { return "FindWindow"; }
 	virtual int preinit();
 	virtual int init();
+	virtual int Finalize();
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual void SetFocus();
