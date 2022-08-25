@@ -257,7 +257,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 	} else if (type == VALUE_File) {
 		FileValue *v = dynamic_cast<FileValue*>(val);
 		LineInput *box;
-		last = box = new LineInput(this, def->name,def->Name, LINP_SEND_ANY | LINP_FILE,
+		last = box = new LineInput(this, def->name,def->Name, LINP_SEND_ANY | (v->hint_is_dir ? LINP_DIRECTORY : LINP_FILE),
 							 0,0,0,0,0,
 							 last,object_id, mes.c_str(),
 							 fieldName, v->filename);
@@ -352,7 +352,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 			Initialize(prevpath, vv, fdef, path2.c_str());
 
 			rowframe->AddHSpacer(th/2,0,0,0, rowframe->NumBoxes()-1);
-			path3 = "-" + path + "." + c;
+			path3 = "-" + path + "." + c;  // -elementName.5
 			last = tbut = new Button(this,path3.c_str(),NULL,IBUT_FLAT, 0,0,0,0, 0,
 									last, object_id, path3.c_str(),
 									-1,
@@ -438,13 +438,18 @@ int ValueWindow::Event(const EventData *data,const char *mes)
 
 	if (!value) return ScrolledWindow::Event(data,mes);
 
-	//mes should be structured like BaseClassName.fieldname[.fieldname.fieldname].type
+	//mes should be structured like BaseClassName.fieldname[.fieldname.fieldname...].type
+	//  type is the final type encoded into the event
+	//  ext will be all the fieldname[.fieldname.fieldname...]
 	
 	Value *val = value;
 	int basetype = value->type();
 	int type = VALUE_None;
+	char action = ' '; // if action is ' ', then assume the message is a direct assign
+	if (mes[0] == '-' || mes[0] == '+') action = mes[0];
 
 	const char *finaltype = strrchr(mes, '.');
+	// const char *index = mes+strlen(mes);
 	char *ext = nullptr;
 	if (finaltype) {
 		type = element_NameToType(finaltype+1);
@@ -460,7 +465,7 @@ int ValueWindow::Event(const EventData *data,const char *mes)
 	}
 
 	const SimpleMessage *e = dynamic_cast<const SimpleMessage *>(data);
-	DBG cerr << "ValueWindow got: "<< (mes?mes:"(nullmes)")<<endl;
+	DBG cerr << "ValueWindow got: "<< (mes?mes:"(nullmes)")<<", action: "<<action<<", ext: "<<ext<<", finaltype: "<<(finaltype+1)<<endl;
 
 	if (e) {
 
