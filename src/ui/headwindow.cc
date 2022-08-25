@@ -687,24 +687,14 @@ int HeadWindow::Event(const Laxkit::EventData *data,const char *mes)
 		const TreeChangeEvent *te=dynamic_cast<const TreeChangeEvent *>(data);
 
 		if (!te) return 1;
-		ViewWindow *view;
-		SpreadEditor *s;
 
 		// Relay docTreeChange to each pane 
-		int yes=0;
 		for (int c=0; c<windows.n; c++) {
-			view=dynamic_cast<ViewWindow *>(windows.e[c]->win());
-			if (view) yes=1;
-			else if (s=dynamic_cast<SpreadEditor *>(windows.e[c]->win()), s) yes=1;
-
 			//construct events for the panes
-			if (yes){
-				TreeChangeEvent *edata=new TreeChangeEvent(*te);
-				app->SendMessage(edata,windows.e[c]->win()->object_id,"docTreeChange",object_id);
-				DBG cerr <<"---sending docTreeChange to "<<
-				DBG 	(windows.e[c]->win()->WindowTitle())<<endl;
-				yes=0;
-			}
+			TreeChangeEvent *edata=new TreeChangeEvent(*te);
+			app->SendMessage(edata,windows.e[c]->win()->object_id,"docTreeChange",object_id);
+			DBG cerr <<"---sending docTreeChange to "<<
+			DBG 	(windows.e[c]->win()->WindowTitle())<<endl;
 		}
 		return 0;
 
