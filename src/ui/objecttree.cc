@@ -405,6 +405,43 @@ int ObjectTreeWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 int ObjectTreeWindow::UpdateSelection()
 {
+	LaidoutViewport *viewport = FindViewport();
+	if (!viewport) return 1;
+
+	LaxInterfaces::Selection *selection = viewport->GetSelection();
+	PtrStack<const char> path(LISTS_DELETE_None);
+	ObjectContainer *cc;
+	VObjContext *context;
+
+	if (selection->n() > 0) tree->DeselectAll();
+
+	for (int c=0; c<selection->n(); c++) {
+		// DrawableObject *obj = dynamic_cast<DrawableObject*>(selection->e(c)->obj);
+		// if (!obj) continue;
+
+		// cc = dynamic_cast<ObjectContainer*>(obj);
+		// path.flush();
+		// while (cc) {
+		// 	path.push(cc->Id(), 0, 0);
+		// 	cc = cc->container_parent();
+		// }
+		
+		context = dynamic_cast<VObjContext*>(selection->e(c));
+		if (!context) continue;
+
+		cc = viewport;
+		for (int c2=0; c2<context->context.n(); c2++) {
+			path.push(cc->object_e_name(context->context.e(c2)));
+			cc = dynamic_cast<ObjectContainer*>(cc->object_e(context->context.e(c2)));
+			if (!cc) break;
+		}
+
+		DBG cerr << "selectatpath: ";
+		DBG for (int c2=0; c2<path.n; c2++) cerr <<"  "<<path.e[c2];
+		DBG cerr <<endl;
+		tree->SelectAtPath(path.e, path.n, false);
+	}
+
 	return 0;
 }
 

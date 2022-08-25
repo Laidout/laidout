@@ -76,7 +76,6 @@ class ObjectTreeWindow : public Laxkit::RowFrame
     virtual void       dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *savecontext);
     virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext);
     virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *loadcontext);
-
 };
 
 
