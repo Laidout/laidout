@@ -705,6 +705,35 @@ class FileValue : public Value, virtual public FunctionEvaluator
 						 Laxkit::ErrorLog *log);
 };
 
+
+// //----------------------------- DirectoryValue ----------------------------------
+// class DirectoryValue : public Value, virtual public FunctionEvaluator
+// {
+//   public:
+// 	char seperator;
+// 	Laxkit::PtrStack<char> parts;
+// 	char *dirname;
+// 	bool hint_for_saving;
+	
+// 	DirectoryValue(const char *f=NULL,int len=-1);
+// 	virtual ~DirectoryValue();
+// 	virtual const char *whattype() { return "DirectoryValue"; }
+// 	virtual int getValueStr(char *buffer,int len);
+// 	virtual Value *duplicate();
+// 	virtual int type() { return VALUE_Directory; }
+//  	virtual ObjectDef *makeObjectDef();
+
+// 	virtual int fileType(); //file link, dir link, file, dir, block
+// 	virtual int isLink();
+// 	virtual int Exists();
+// 	virtual int Depth();
+// 	virtual const char *Part(int i);
+// 	virtual void Set(const char *nstr);
+// 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+// 						 Value **value_ret,
+// 						 Laxkit::ErrorLog *log);
+// };
+
 //----------------------------- ColorValue ----------------------------------
 class ColorValue : public Value
 {
