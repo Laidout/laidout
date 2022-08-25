@@ -1041,7 +1041,7 @@ int LaidoutApp::readinLaidoutDefaults(char **shortcutsfile)
 			prefs.experimental = 1;
 
 		} else if (!strcmp(name,"start_with_last")) {
-			prefs.start_with_last = 1;
+			prefs.start_with_last = BooleanAttribute(value);
 
 		} else if (!strcmp(name,"default_template")) {
 			if (file_exists(value,1,NULL)==S_IFREG) makestr(prefs.default_template,value);
