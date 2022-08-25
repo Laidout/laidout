@@ -17,8 +17,9 @@ objs= \
 
 	#streams.o
 
-
 all: $(objs)
+
+wip: streams.o
 
 depends:
 	../utils/makedependencies -fmakedepend -I$(LAXDIR)/.. *.cc
@@ -32,7 +33,7 @@ unhidegarbage:
 	../hidegarbage -0 *.cc
 
 
-.PHONY: clean hidegarbage unhidegarbage
+.PHONY: wip clean hidegarbage unhidegarbage
 clean:
 	rm -f *.o
 

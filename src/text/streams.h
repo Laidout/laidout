@@ -16,11 +16,16 @@
 #define STREAMS_H
 
 
+#include <lax/resources.h>
+
 
 namespace Laidout {
 
 
 //------------------------------ TextEffect ---------------------------------
+/*! \class TextEffect
+ * Base class for modifications to parts of a Stream.
+ */
 class TextEffect : public Laxkit::Resourceable
 {
   public:
@@ -46,21 +51,34 @@ class DropShadowEffect : public TextEffect
 	Color color; //color or color diff
 };
 
-class CharAdjust : public TextEffect
+ /*! \class CharReplacement
+  * TextEffect where characters are replaced before being rendered indo glyphs.
+  */
+class CharReplacement : public TextEffect
 {
   public:
-	 //glyph replacement effects:
-	int ReplaceLetters(const char *in, char *out, int outbufsize);
-	all caps
-	no caps
-	small caps
+  	enum class Type { AllCaps, NoCaps, SmallCaps };
+  	Type type;
 
-	 //glyph transformation effects:
-	outline (artificial stroking of contour)
-	bold   (artificial growing and filling of contour, or selection of bold font of same type)
-	italic (artificial shearing)
+	int ReplaceLetters(const char *in, char *out, int outbufsize);
 };
 
+/*! \class GlyphReplacement
+  * TextEffect for taking a sequence of glyphs and replacing them with some other rendering.
+  */
+class GlyphReplacement : public TextEffect
+{
+  public:
+	 //glyph transformation effects: ...these are distinct from just using another font for bold, outline, italic
+	//outline (artificial stroking of contour)
+	//bold   (artificial growing and filling of contour, or selection of bold font of same type)
+	//italic (artificial shearing)
+};
+
+/*! \class DropCaps
+  * TextEffect where blocks of text are elevated from their normal stream flow, and can be
+  * made to affect layout of other parts of the stream.
+  */
 class DropCaps : public TextEffect
 {
   public:
@@ -75,7 +93,7 @@ class DropCaps : public TextEffect
 //------------------------------ Tabs ---------------------------------
 
 /*! \class TabStopInfo
- *  Properties relating to tab stops.
+ *  Properties relating to stops in a TabStops object.
  */
 class TabStopInfo
 {
@@ -86,15 +104,15 @@ class TabStopInfo
 //		Right,
 //		Char
 //	};
-	double alignment; //left==0, center==50, right==100
-	bool use_char;
+	double alignment = 0; //left==0, center==50, right==100
+	bool use_char = false;
 	char tab_char_utf8[10]; //if use_char
 
 	int positiontype; //automatic position, definite position, path
 	double position; //if not path
-	PathsData *path; //we assume this is a generally downward path
+	Laxkit::PathsData *path = nullptr; //we assume this is a generally downward path
 
-	TabStopInfo *next;
+	TabStopInfo *next = nullptr;
 
 	TabStopInfo();
 	virtual ~TabStopInfo();
@@ -133,7 +151,7 @@ class TabStops : public Value
 class Style : public ValueHash, public Laxkit::Resourceable
 {
   public:
-    Style *parent;
+    Style *parent; // if non-null, this MUST be a project resource
 
     Style();
     virtual ~Style();
@@ -155,16 +173,17 @@ class Style : public ValueHash, public Laxkit::Resourceable
 class StreamElement : public LaxAttributes::DumpUtility
 {
   public:
-	bool style_is_temp;
+	bool style_is_temp; // false means it is a project resource
 	Style *style;
 
 	//int type_hint; //like pure char, pure pp, container type
 
-	StreamElement *treeparent;
+	StreamElement *treeparent = nullptr;
 	PtrStack<StreamElement> kids;
 
 	PtrStack<StreamChunk> chunks; // has chunks only when we are a leaf element
 
+	StreamElement(); //init with an empty new Style
 	StreamElement(StreamElement *nparent, Style *nstyle);
 	virtual ~StreamElement();
     virtual const char *whattype() { return "StreamElement"; }
@@ -172,6 +191,16 @@ class StreamElement : public LaxAttributes::DumpUtility
 
 
 //------------------------------ StreamChunk ---------------------------------
+
+/*! \class StreamChunk
+ * \brief One part of a stream that can be considered to be all the same type.
+ *
+ * This can be, for instance, an image chunk, text chunk, a break, a non-printing anchor.
+ *
+ * These are explicitly leaf nodes in a StreamElement tree, that point to other leaf nodes
+ * for convenience. Anything in style is ignored. All actual style information should be contained in the parent tree.
+ */
+
 
 enum StreamChunkTypes {
 	CHUNK_Text,
@@ -188,6 +217,7 @@ class StreamChunk
 
 	StreamChunk(StreamElement *nparent);
 	virtual ~StreamChunk();
+	virtual const char *whattype() { return "StreamChunk"; }
 
 	virtual int NumBreaks() = 0;
 	virtual int BreakInfo(int *type) = 0;
@@ -201,6 +231,7 @@ class StreamChunk
 //------------------------------ StreamBreak ---------------------------------
 
 enum class StreamBreakTypes {
+	BREAK_Unknown,
     BREAK_Paragraph,
     BREAK_Column,
     BREAK_Section,
@@ -213,9 +244,11 @@ enum class StreamBreakTypes {
 
 class StreamBreak : public StreamChunk
 {
-	int break_type; //newline (paragraph), column, section, page
+	int break_type; //see StreamBreakType. such as: newline (paragraph), column, section, page
 
-	StreamBreak (int ntype) { type = ntype; }
+	StreamBreak (int ntype, StreamElement *parent_el) : StreamChunk(parent_el) { type = ntype; }
+	virtual const char *whattype() { return "StreamBreak"; }
+
 	virtual int NumBreaks() { return 0; }
 	virtual int BreakInfo(int *type) { return 0; }
 	virtual int Type() { return CHUNK_Break; }
@@ -232,8 +265,10 @@ class StreamImage : public StreamChunk
  public:
 	DrawableObject *img;
 
-	StreamImage(DrawableObject *nimg,StreamElement *pstyle);
+	StreamImage(,StreamElement *parent_el = nullptr);
+	StreamImage(DrawableObject *nimg,StreamElement *parent_el);
 	virtual ~StreamImage();
+	virtual const char *whattype() { return "StreamImage"; }
 	virtual int NumBreaks() { return 0; }
 	virtual int BreakInfo(int *type) { return 0; }
 	virtual int Type() { return CHUNK_Image; }
@@ -253,6 +288,7 @@ class StreamText : public StreamChunk
 
 	int numspaces;
 
+	StreamText(StreamElement *pstyle = nullptr);
 	StreamText(const char *txt,int n, StreamElement *pstyle);
 	virtual ~StreamText();
 	virtual int NumBreaks(); //either hyphen, spaces, pp
@@ -264,29 +300,15 @@ class StreamText : public StreamChunk
 };
 
 
-//------------------------------ Stream ---------------------------------
-
-class Stream : public Laxkit::anObject, public Laxkit::DumpUtility
-{
-  public:
-	char *id;
-	char *file; 
-
-	clock_t modtime;
-
-	StreamElement *top;
-	StreamChunk *chunk_start; //convenience pointer for leftmost leaf element
-
-	Stream();
-	virtual ~Stream();
-
-	virtual void dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *context);
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
-	virtual void dump_out (FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-};
-
-
 //------------------------------ StreamImporter ---------------------------------
+
+class StreamImportData : Laxkit::anObject
+{
+	ImportFilter *importer = nullptr;
+	TextObject *text_object = nullptr;
+	File *file = nullptr;
+}
+
 
 class StreamImporter : public FileFilter, public Value
 {
@@ -297,6 +319,77 @@ class StreamImporter : public FileFilter, public Value
   	virtual const char *whattype() { return "StreamImporter"; }
 	virtual const char *FileType(const char *first100bytes) = 0;
 	virtual int In(const char *file, Laxkit::anObject *context, Laxkit::ErrorLog &log, const char *filecontents,int contentslen) = 0;
+};
+
+
+//------------------------------ Stream ---------------------------------
+
+
+class Stream : public Laxkit::anObject, public Laxkit::DumpUtility
+{
+  public:
+  	ImportData *import_data; //relating to if stream is tied to either a file or a TextObject and run through an importer
+
+	clock_t modtime;
+
+	StreamElement top;
+	StreamChunk *chunk_start = nullptr; //convenience pointer for leftmost leaf element
+
+	Stream();
+	virtual ~Stream();
+
+	virtual void dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
+	virtual void dump_out (FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+};
+
+
+//------------------------------ StreamAttachment ---------------------------------
+
+/*! Held by DrawableObjects, these define various types of attachments of Stream objects to the parent
+ * DrawableObject, as well as cached rendering info in a StreamCache.
+ */
+
+class StreamAttachment : public Laxkit::RefCounted
+{
+  public:
+    DrawableObject *owner;
+	int attachment_target; //area path, inset path, outset path, inset area
+
+    Stream *stream;
+    StreamCache *cache; //owned by *this, assume any other refs are for temporary rendering purposes
+
+    StreamAttachment(DrawableObject *nobject, Stream *nstream);
+    ~StreamAttachment();
+};
+
+
+//------------------------------------- StreamCache ----------------------------------
+
+/*! \class StreamCache
+ * \brief Rendering info for Stream objects.
+ *
+ * This is stored on each StreamAttachment object that connects the Stream to DrawableObject.
+ *
+ * One StreamChunk object will correspond to one or more contiguous StreamCache objects.
+ */
+
+class StreamCache : public Laxkit::SquishyBox, public Laxkit::RefCounted
+{
+  public:
+	clock_t modtime;
+	StreamCache *next, *prev;
+
+	StreamElement *style;
+	StreamChunk *chunk;
+	long offset; //how many breaks into chunk to start
+	long len; //how many breaks long in chunk is this cache
+
+	Affine transform;
+
+	StreamCache();
+	StreamCache(StreamChuck *ch, long noffset, long nlen);
+	virtual ~StreamCache();
 };
 
 

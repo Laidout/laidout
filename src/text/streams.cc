@@ -20,16 +20,122 @@
 
 namespace Laidout {
 
+/*! \file
+ *
+ * DrawableObjects can have text streams attached in various ways. general structure is:
+ *
+ * ```
+ * DrawableObject
+ *   StreamAttachment
+ *     StreamCache - a particular rendering of Stream to the DrawableObject
+ *     Stream
+ *       top: StreamElement - a tree of Style objects, with leaf elements pointing to lists of StreamChunk
+ *       chunk_start: a linked list of final leaf chunks
+ */
+
+
+//----------------------------------- Style -----------------------------------
+/*! \class Style
+ * \brief Class to hold cascading styles.
+ *
+ * Style objects are either temporary objects embedded in StreamElement, or they are resources.
+ */
+
+Style::Style()
+{
+    parent = nullptr;
+}
+
+Style::~Style()
+{
+}
+
+/*! Create and return a new Style cascaded upward from this.
+ * Values in *this override values in parents.
+ */
+Style *Style::Collapse()
+{
+    Style *s = new Style();
+    Style *f = this;
+    while (f) {
+        s->MergeFromMissing(f);
+        f = f->parent;
+    }
+    return s;
+}
+
+/*! Adds to *this any key+value in s that are not already included in this->values. It does not replace values.
+ * Note ONLY checks against *this, NOT this->parent or this->kids.
+ * Return number of items added.
+ *
+ * So, say you have:
+ *     s:
+ *       bold: true
+ *       color: red
+ *     this: 
+ *       bold: false
+ *       width: 5
+ *
+ * you will end up with:
+ *     this:
+ *       bold: false
+ *       width: 5
+ *       color: red
+ */
+int Style::MergeFromMissing(Style *s)
+{
+    const char *str;
+    int n = 0;
+    for (int c = 0; c < s->n(); c++) {
+        str = s->key(c);
+        if (findIndex(str) >= 0) continue; //don't use if we have it already
+        push(str, s->e(c));
+        n++;
+    }
+    return n;
+}
+
+/*! Adds or replaces any key+value from s into this->values.
+ * Note ONLY checks against *this, NOT this->parent or this->kids.
+ * Return number of items added.
+ *
+ * So, say you have:
+ *     s:
+ *       bold: true
+ *       color: red
+ *     this: 
+ *       bold: false
+ *       width: 5
+ *
+ * you will end up with:
+ *     this:
+ *       bold: true
+ *       width: 5
+ *       color: red
+ */
+int Style::MergeFrom(Style *s)
+{
+    const char *str;
+    int n = 0;
+    for (int c=0; c<s->n(); c++) {
+        str = s->key(c);
+        push(str, s->values.e(c)); //adds or replaces
+        n++;
+    }
+    return n;
+}
+
 
 //----------------------------------- CharacterStyle -----------------------------------
 
 class CharacterStyle : public Style
 {
   public:
-	LFont *font;
+  	// these member variables are cached from collapsed Style tree
+	FontValue *font;
 
-	Color *color; //including alpha
-	Color *bg_color; //highlighting
+	Laxkit::Color *color; //including alpha
+	Laxkit::Color *bg_color; //highlighting
 
 	double space_shrink;
 	double space_grow;  //as percent of overriding font size
@@ -118,11 +224,11 @@ Style *ParagraphStyle::Default(Style *s)
 {
 	if (!s) s = new Style("Paragraph");
 
-	s->pushDouble("firstIndent",0.);
-	s->pushDouble("leftIndent",0.);
-	s->pushDouble("rightIndent",0.);
-	s->pushDouble("spaceBefore",0.);
-	s->pushDouble("spaceAfter",0.);
+	s->pushDouble("firstIndent", 0.);
+	s->pushDouble("leftIndent",  0.);
+	s->pushDouble("rightIndent", 0.);
+	s->pushDouble("spaceBefore", 0.);
+	s->pushDouble("spaceAfter",  0.);
 	s->pushDouble("spaceBetween",0.);
 
 	return s;
@@ -142,16 +248,24 @@ class LengthValue : public Value
 	enum LengthType {
 		LEN_Number,
 		LEN_Percent_Parent,
-		LEN_Percent_Paper
+		LEN_Percent_Paper,
+		LEN_em,
+		LEN_ex,
+		LEN_ch,
+		LEN_vw,
+		LEN_vh,
+		LEN_vmin,
+		LEN_vmax
 	};
 
 	LengthType type;
 
-	Unit units;
+	static Laxkit::UnitManager unit_manager;
+	Laxkit::Unit units;
 
 	LengthValue(); 
 	LengthValue(double val, LengthType len_type)
-	LengthValue(const char *val);
+	LengthValue(const char *val, int len);
 };
 
 LengthValue::LengthValue()
@@ -160,143 +274,94 @@ LengthValue::LengthValue()
 	type = LEN_Number;
 }
 
-LengthValue::LengthValue(const char *val)
+LengthValue::LengthValue(const char *val, int len)
   : LengthValue()
 {
+	//TODO: properly use len to truncate val if necessary
+
 	if (isblank(val)) return;
+
+	if (len < 0) len = strlen(val);
 	char *endptr = nullptr;
 	value = strtod(val, &endptr);
+
 	if (endptr != val) {
 		while (isspace(*endptr)) endptr++;
 		if (*endptr == '%') {
 			type = LEN_Percent;
 		} else {
-			*** parse units
+			// parse units
+			int _units = ParseUnits(endptr, len - (endptr - val));
+			if (_units != Laxkit::UNITS_None) {
+				units = _units;
+				if      (units == Laxkit::UNITS_em)   { type = LEN_em;   }
+				else if (units == Laxkit::UNITS_ex)   { type = LEN_ex;   }
+				else if (units == Laxkit::UNITS_ch)   { type = LEN_ch;   }
+				else if (units == Laxkit::UNITS_vw)   { type = LEN_vw;   }
+				else if (units == Laxkit::UNITS_vh)   { type = LEN_vh;   }
+				else if (units == Laxkit::UNITS_vmin) { type = LEN_vmin; }
+				else if (units == Laxkit::UNITS_vmax) { type = LEN_vmax; }
+				else type = LEN_Number;				
+			}
 		}
 	}
 }
 
-
-
-//----------------------------------- Style -----------------------------------
-/*! \class Style
- * \brief Class to hold cascading styles.
- *
- * Style objects are either temporary objects embedded in StreamStyle, or they are resources.
- */
-
-Style::Style()
+int LengthValue::ParseUnits(const char *str, int len)
 {
-    parent = nullptr;
-}
+	if (unit_manager.NumberOfUnits() == 0) {
+		Laxkit::CreateDefaultUnits(&unit_manager, false, false);
 
-Style::~Style()
-{
-}
+		unit_manager->AddUnits(Laxkit::UNITS_Pixels, .0254/96, _("px"), _("pixel"), _("pixels"));
+		unit_manager->AddUnits(Laxkit::UNITS_em,     1, _("em"), _("em"),    _("em"));
 
-/*! Create and return a new Style cascaded upward from this.
- * Values in *this override values in parents.
- */
-Style *Style::Collapse()
-{
-    Style *s = new Style();
-    Style *f = this;
-    while (f) {
-        s->MergeFromMissing(f);
-        f = f->parent;
-    }
-    return s;
-}
+		unit_manager->AddUnits(Laxkit::UNITS_ex,     1, _("ex"), _("ex"),    _("ex"));
+		unit_manager->AddUnits(Laxkit::UNITS_ch,     1, _("ch"), _("ch"),    _("ch"));
+		unit_manager->AddUnits(Laxkit::UNITS_rem,    1, _("rem"),_("rem"),   _("rem"));
+		unit_manager->AddUnits(Laxkit::UNITS_vw,     1, _("vw"), _("vw"),    _("vw"));
+		unit_manager->AddUnits(Laxkit::UNITS_vh,     1, _("vh"), _("vh"),    _("vh"));
+		unit_manager->AddUnits(Laxkit::UNITS_vmin,   1, _("vmin"), _("vmin"),_("vmin"));
+		unit_manager->AddUnits(Laxkit::UNITS_vmax,   1, _("vmax"), _("vmax"),_("vmax"));
+	}
 
-/*! Adds to *this any key+value in s that are not already included in this->values. It does not replace values.
- * Note ONLY checks against *this, NOT this->parent or this->kids.
- * Return number of items added.
- *
- * So, say you have:
- *     s:
- *       bold: true
- *       color: red
- *     this: 
- *       bold: false
- *       width: 5
- *
- * you will end up with:
- *     this:
- *       bold: false
- *       width: 5
- *       color: red
- */
-int Style::MergeFromMissing(Style *s)
-{
-    const char *str;
-    int n = 0;
-    for (int c = 0; c < s->n(); c++) {
-        str = s->key(c);
-        if (findIndex(str) >= 0) continue; //don't use if we have it already
-        push(str, s->e(c));
-        n++;
-    }
-    return n;
-}
-
-/*! Adds or replaces any key+value from s into this->values.
- * Note ONLY checks against *this, NOT this->parent or this->kids.
- * Return number of items added.
- *
- * So, say you have:
- *     s:
- *       bold: true
- *       color: red
- *     this: 
- *       bold: false
- *       width: 5
- *
- * you will end up with:
- *     this:
- *       bold: true
- *       width: 5
- *       color: red
- */
-int Style::MergeFrom(Style *s)
-{
-    const char *str;
-    int n = 0;
-    for (int c=0; c<s->n(); c++) {
-        str = s->key(c);
-        push(str, s->values.e(c)); //adds or replaces
-        n++;
-    }
-    return n;
+	return unit_manager->UnitId(str, len);
 }
 
 
-//----------------------------------- StreamStyle -----------------------------------
-/*! \class StreamStyle 
+//----------------------------------- StreamElement -----------------------------------
+/*! \class StreamElement
  * \brief Class to hold a stream broken down into a tree.
  * 
  * Please note this is different than general cascaded styles in that parents
  * AND kids exist as a specific hierarchy. Children are kept track of, and the order of children
- * depends on the associated stream. General styles don't care about particular
- * children, only parents.
+ * depends on the associated stream. General Style objects don't care about particular
+ * children, only parents from which they are derived.
  *
  * Streams need to traverse styles up and down when changing their contents. Leaves in
  * the tree are the actual content, and are derived from StreamChunk.
  *
- * These are very much like XML blocks, in that style holds the element attributes,
- * and kids holds the element content. It differs from XML in that Style implements
- * a lot of management of styles.
+ * StreamElement are very much like XML blocks, in that style holds the element attributes,
+ * and kids holds the element content.
  *
  */
 
-StreamStyle::StreamStyle(StreamStyle *nparent, Style *nstyle)
-  : StreamTreeElement(nparent)
+StreamElement::StreamElement()
 {
+	style = new Style();
+	style_is_temp = true;
+}
+
+/*! nparent should have already added *this to its kids. */
+StreamElement::StreamElement(StreamElement *nparent, Style *nstyle)
+{
+	treeparent = nparent;
+
 	style = nstyle;
 	if (style) style->inc_count();
 	style_is_temp = true;
 }
 
-StreamStyle::~StreamStyle()
+StreamElement::~StreamElement()
 {
 	if (style) style->dec_count();
 }
@@ -306,14 +371,6 @@ StreamStyle::~StreamStyle()
 
 
 
-/*! \class StreamChunk
- * \brief One part of a stream that can be considered to be all the same type.
- *
- * This can be, for instance, an image chunk, text chunk, a break, a non-printing anchor.
- *
- * These are explicitly leaf nodes in a StreamStyle tree, that point to other leaf nodes
- * for convenience. Anything in style is ignored. All actual style information should be contained in the parent tree.
- */
 
 StreamChunk::StreamChunk(StreamTreeElement *nparent)
 {
@@ -325,7 +382,7 @@ StreamChunk::StreamChunk(StreamTreeElement *nparent)
  */
 StreamChunk::~StreamChunk()
 {
-	//if (next) delete next; no deleting, as chunks must ALWAYS be contained somewhere in a single StreamTreeElement tree.
+	//if (next) delete next; no deleting, as chunks must ALWAYS be owned somewhere by a single StreamElement.
 }
 
 /*! Insert a currently unstyled list of chunks after ourself.
@@ -384,13 +441,13 @@ void StreamChunk::AddBefore(StreamChunk *chunk)
 
 LaxFiles::Attribute *StreamBreak::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
 {
-	if (break_type == BREAK_Paragraph)    att->push("break","pp");
-	else if (break_type == BREAK_Column)  att->push("break","column");
-	else if (break_type == BREAK_Section) att->push("break","section");
-	else if (break_type == BREAK_Page)    att->push("break","page");
-	else if (break_type == BREAK_Tab)     att->push("break","tab");
-	else if (break_type == BREAK_Weak)    att->push("break","weak");
-	else if (break_type == BREAK_Hyphen)  att->push("break","hyphen");
+	if      (break_type == BREAK_Paragraph) att->push("break","pp");
+	else if (break_type == BREAK_Column)    att->push("break","column");
+	else if (break_type == BREAK_Section)   att->push("break","section");
+	else if (break_type == BREAK_Page)      att->push("break","page");
+	else if (break_type == BREAK_Tab)       att->push("break","tab");
+	else if (break_type == BREAK_Weak)      att->push("break","weak");
+	else if (break_type == BREAK_Hyphen)    att->push("break","hyphen");
 }
 
 /*! NOTE! Uses whole attribute, not just kids. Meaning it compares att->value to various break types.
@@ -414,8 +471,8 @@ void StreamBreak::dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *c
  * Note this can be ANY drawable object, not just images.
  */
 
-StreamImage::StreamImage(DrawableObject *nimg,StreamStyle *pstyle)
-  : StreamChunk(pstyle)
+StreamImage::StreamImage(DrawableObject *nimg,StreamElement *parent_el)
+  : StreamChunk(parent_el)
 {
 	img = nimg;
 	if (img) img->inc_count();
@@ -456,15 +513,22 @@ void StreamImage::dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *c
  * that distinguishes this text from adjacent text requires a different StreamText.
  */
 
-StreamText::StreamText(const char *txt,int n, StreamStyle *pstyle)
-  : StreamChunk(pstyle)
+StreamText::StreamText(StreamElement *parent_el)
+  : StreamChunk(parent_el)
 {
-	if (n<0) {
-		len=strlen(txt);
-		text=newstr(txt,len);
+	len = 0;
+	text = nullptr;
+}
+
+StreamText::StreamText(const char *txt,int n, StreamElement *parent_el)
+  : StreamChunk(parent_el)
+{
+	if (n < 0) {
+		len  = strlen(txt);
+		text = newstr(txt, len);
 	} else {
-		text=newnstr(txt,n);
-		len=n;
+		text = newnstr(txt, n);
+		len  = n;
 	}
 }
 
@@ -492,13 +556,17 @@ int StreamText::NumBreaks()
 	return n;
 }
 
-//! Return an indicator of the severity of the break.
-/*! For instance, in between letters in a word has almost no break potential,
+/*! Return an indicator of the severity of the break.
+ * 0 <= index < NumBreaks().
+ * 
+ * For instance, in between letters in a word there is almost no break potential,
  * hyphens have low break potential, spaces have a lot, but not as much
  * as line breaks.
  */
 int StreamText::BreakInfo(int index)
-{ ***
+{
+	//assume we only have spaces, and that tabs and returns previously converted to explicit break chunks.
+	return 1;
 }
 
 
@@ -506,27 +574,26 @@ int StreamText::BreakInfo(int index)
 /*! \class Stream
  * \brief Hold a stream of things, usually text.
  * 
- * These are essentially heads of StreamStyle + StreamChunk objects.
+ * These are essentially heads of StreamElement + StreamChunk objects.
  */
 
 
 Stream::Stream()
 {
 	modtime = 0;
-	file    = nullptr;
-	id      = nullptr;
-
-	top    = nullptr;
-	chunks = nullptr;
 }
 
 Stream::~Stream()
 {
-	delete[] file;
-	delete[] id;
+	if (import_data) import_data->dec_count();
+	//chunks are not explicitly deleted, since they exist somewhere in top tree
+}
 
-	if (top) top->dec_count();
-	//chunks is not deleted, since they exist in top tree
+void Stream::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+{
+	Attribute att;
+	dump_out_atts(&att, what,context);
+	att.dump_out(f,indent);
 }
 
 /*! Starting with top, dump out the whole tree recursively with dump_out_recursive().
@@ -537,17 +604,17 @@ Stream::~Stream()
  *       basedon laidout_default_style
  *       font-size     10
  *       line-spacing  110%
- *
- *       kids:
- *         text "first text"
+ *     chunks
+ *     kids
+ *       text "first text"
  *         style ...
- *           kids:
- *             image /blah/blah.jpg
- *             text "Some text all up in here"
- *             dynamic context.page.label+"/"+string
- *             break line
- *             break column
- *             break section #or page
+ *         kids
+ *           image /blah/blah.jpg
+ *           text "Some text all up in here"
+ *           dynamic context.page.label+"/"+string
+ *           break line
+ *           break column
+ *           break section #or page
  *
  *   htmltext \\
  *     <span class="#laidout_default_style" style="font-size:10; line-spacing:110%;">first text<img file="/blah/blah.jpg"/>Some text all up in here</span>
@@ -560,56 +627,107 @@ LaxFiles::Attribute *Stream::dump_out_atts(LaxFiles::Attribute *att,int what,Lax
 	if (!att) att = new Attribute;
 
 	Attribute *att2 = att->Subatt("streamdata");
-	dump_out_recursive(value, att2,top,context);
+	dump_out_recursive(value, att2, &top, context);
+
+	if (import_data) {
+		if (import_data->file) att->push("file", import_data->file);
+		if (import_data->text_object) att->push("text_object", import_data->text_object->Id()); //assume the text object is a resource??
+		if (import_data->importer) att->push("importer", import_data->importer->whattype());
+	}
 }
 
-void Stream::dump_out_recursive(Attribute *att,StreamTreeElement *element,LaxFiles::DumpContext *context)
+
+void Stream::dump_out_recursive(Attribute *att, StreamElement *element, LaxFiles::DumpContext *context)
 {
-	StreamChunk *chunk = dynamic_cast<StreamChunk*>(element);
-	if (chunk) {
-		 //no kids, leaf node
-		chunk->dump_out_atts(att,0,context);
-		return;
+	if (element->style) {
+		if (element->style_is_temp) {
+			att->push("style",style->name); //is a style recorded somewhere
+		} else {
+			Attribute *att2 = att->pushSubAtt("style");
+			style->dump_out_atts(att2, context);
+		}
 	}
 
-
-	StreamStyle *sstyle = dynamic_cast<StreamStyle*>(element);
-	if (!sstyle) {
-		DBG cerr <<"Warning! unrecognized StreamTreeElement object!"<<endl;
-		return;
+	if (element->kids.n) {
+		Attribute *att2 = att->pushSubAtt("kids");
+		for (int c=0; c < element->kids.n; c++) {
+			dump_out_recursive(att2, element->kids.e[c], context);
+		}
 	}
 
-	Attribute *att2;
-	if (sstyle->style) {
-		att->push("style",style->name); //is a style recorded somewhere
-	}
-
-	if (sstyle->kids.n) {
-		att2=att->Subattribute("child:");
-		for (int c=0; c<sstyle->kids.n; c++) {
-			dump_out_recursive(att2,sstyle->kids.e[c],context);
+	if (element->chunks.n) {
+		Attribute *att2 = att->pushSubAtt("chunks");
+		for (int c=0; c < element->chunks.n; c++) {
+			Attribute *att3 = att->pushSubAtt("chunk", element->chunks.e[c]->whattype());
+			element->chunks.e[c]->dump_out_atts(att3, context);
 		}
 	}
 }
 
-void Stream::dump_out (FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+
+
+StreamChunk *NewStreamChunk(const char *type, StreamElement *parent)
 {
-	Attribute att;
-	dump_out_atts(&att, what,context);
-	att.dump_out(f,indent);
+	if (!strcmp(type, "text"))  return new StreamText(parent);
+	if (!strcmp(type, "image")) return new StreamImage(parent);
+	if (!strcmp(type, "break")) return new StreamBreak(BREAK_Unknown, parent);
+	return nullptr;
 }
 
-void Stream::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context, Laxkit::ErrorLog &log)
+/*! Return true for success, or false for some error.
+ */
+bool StreamElement::dump_in_att_stream(LaxFiles::Attribute *att, LaxFiles::DumpContext *context, Laxkit::ErrorLog &log)
 {
 	const char *name, *value;
 
 	for (int c=0; c<att->attributes.n; c++) {
-		name =att->attributes.e[c]->name;
-		value=att->attributes.e[c]->value;
+		name  = att->attributes.e[c]->name;
+		value = att->attributes.e[c]->value;
+
+		if (!strcmp(name,"style")) {
+			if (!style) style = new Style();
+			style->dump_in_atts(att->attributes.e[c], context, log);
+
+		} else if (!strcmp(name,"kids")) {
+			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c++) {
+				name  = att->attributes.e[c]->attributes.e[c2]->name;
+				value = att->attributes.e[c]->attributes.e[c2]->value;
+
+				StreamElement *el = new StreamElement(this, nullptr);
+				kids.push(el);
+
+				el->dump_in_att_stream(att->attributes.e[c]->attributes.e[c2], context, log);
+			}
+			
+		} else if (!strcmp(name,"chunks")) {
+			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c++) {
+				name  = att->attributes.e[c]->attributes.e[c2]->name;
+				//value = att->attributes.e[c]->attributes.e[c2]->value;
+
+				StreamChunk *chunk = NewStreamChunk(name, self);
+				if (!chunk) {
+					log.AddError(0,0,0, _("Unknown chunk type %s"), name);
+					return false;
+				}
+				chunks.push(chunk);
+
+				chunk->dump_in_atts(att->attributes.e[c]->attributes.e[c2], context, log);
+			}
+		}
+	}
+}
+
+void Stream::dump_in_atts(Attribute *att,int flag, LaxFiles::DumpContext *context, Laxkit::ErrorLog &log)
+{
+	const char *name, *value;
+
+	for (int c=0; c<att->attributes.n; c++) {
+		name  = att->attributes.e[c]->name;
+		value = att->attributes.e[c]->value;
 
 		if (!strcmp(name,"streamdata")) {
 			 //default Laidout format.... maybe should just use htmltext for simplicity??
-			dump_in_att_stream(att->attributes.e[c], context, log);
+			top.dump_in_att_stream(att->attributes.e[c], context, log);
 
 		} else if (!strcmp(name,"htmltext")) {
 			ImportXML(value);
@@ -649,7 +767,7 @@ void Stream::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context
 
 			if (importer) {
 				 //find and try importer on file with format
-				StreamImporter *importer_obj = laidout->GetStreamImporter(importer,format);
+				StreamImporter *importer_obj = laidout->GetStreamImporter(importer, format);
 				if (importer_obj) status = importer_obj->ImportStream(this, file, format, encoding);
 				else {
 					status = 1;
@@ -815,32 +933,6 @@ int Stream::ImportText(const char *text, int n, StreamChunk *addto, bool after)
 
 	return 0;
 }
-
-/*! Read in the file to a string, then call ImportXML(). Updates this->file.
- */
-int Stream::ImportXMLFile(const char *nfile)
-{
-	makestr(file,nfile);
-	Attribute att;
-	XMLFileToAttribute(&att,nfile,nullptr);
-	return ImportXMLAtt(att, nullptr, top);
-}
-
-/*! From string value, assume it is xml formatted text, and parse into StreamChunk objects, completely
- * replacing old stream chucks.
- */
-int Stream::ImportXML(const char *value)
-{
-	delete chunks;
-	chunks=nullptr;
-
-	long pos=0;
-	Attribute att;
-	XMLChunkToAttribute(&att, value, strlen(value), &pos, nullptr, nullptr);
-
-	return ImportXMLAtt(att, nullptr, top);
-}
-
 
 
 /*! Something like:
@@ -1267,7 +1359,7 @@ Style *ProcessCSSBlock(Style *style, const char *cssvalue)
 	}
 
 	if (fontfamily) {
-		LFont *font = MatchCSSFont(fontfamily, italic, variant, weight);
+		LaxFont *font = MatchCSSFont(fontfamily, italic, variant, weight);
 		if (font) style->push("font",font);
 	}
 
@@ -1300,13 +1392,13 @@ LengthValue *ParseLengthOrPercent(const char *value, const char *relative_to, co
 }
 
 
-LFont *MatchCSSFont(const char *font_family, int italic, const char *variant, int weight)
+LaxFont *MatchCSSFont(const char *font_family, int italic, const char *variant, int weight)
 {
 	***
 	// font_family is the css attribute:
 	//  font-family: Bookman, serif, ..... <-- use first one found
 	//    or generic:  serif  sans-serif  cursive  fantasy  monospace
-	LFont *font=nullptr;
+	Laxkit::LaxFont *font=nullptr;
 	const char *v;
 	while (value && *value) {
 		while (isspace(*value)) value++;
@@ -1344,19 +1436,81 @@ int ParseBidi(const char *str, int len)
 	return bidi;
 }
 
-void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&chunk, StreamStyle *laststyle)
+
+
+/*! Read in the file to a string, then call ImportXML(). Updates this->file.
+ */
+int Stream::ImportXMLFile(const char *nfile)
+{
+	makestr(file,nfile);
+	Attribute att;
+	XMLFileToAttribute(&att,nfile,nullptr);
+	return ImportXMLAtt(att, nullptr, top);
+}
+
+/*! From string value, assume it is xml formatted text, and parse into StreamChunk objects, completely
+ * replacing old stream chucks.
+ *
+ * Supported tags:
+ * ```
+ *    <b>bold</b> <i>italic</i>
+ *    <br> <tab>
+ *    <br section>
+ *    <br page>
+ *    <br column>
+ *    <br tab>
+ *    <img width="100" height="100" alt=".." src=".."   style class id ... />
+ *    <hr>
+ *    <div>stuff</div>
+ *    <span>stuff</span>
+ *    <code>stuff</code>
+ *    <pre>stuff</pre>
+ *    <ol> <li/> </ol>
+ *    <ul> <li/> </ul>
+ * ```
+ */
+int Stream::ImportXML(const char *value)
+{
+	delete chunks;
+	chunks=nullptr;
+
+	long pos=0;
+	Attribute att;
+	XMLChunkToAttribute(&att, value, strlen(value), &pos, nullptr, nullptr);
+
+	return ImportXMLAtt(att, nullptr, top);
+}
+
+
+/*! Import att as chunks under last_style_el, adding sub-StreamElement objects as needed.
+ * last_chunk must be either null or a chunk within last_style_el.
+ */
+void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&last_chunk, StreamElement *last_style_el)
 {
 	const char *name;
 	const char *value;
 	
 	char *title = nullptr;
 
-	for (int c=0; c<att->attributes.n; c++) {
-		name  = att->attributes.e[c]->name;
-		value = att->attributes.e[c]->value;
+	StreamElement *cur_style = ParseCommonStyle(att, nullptr);
+	if (cur_style) {
+		if (last_style_el) {
+			// we need to install a subelement, since cur_style has additional styling.
+			// if last_chunk is not at edge of last_style_el, we'll need to split it
+		}
+	}
 
+	Attribute *elements = att->find("content:");
+	if (!elements) return;
+
+	for (int c=0; c<elements->attributes.n; c++) {
+		name  = elements->attributes.e[c]->name;
+		value = elements->attributes.e[c]->value;
+
+		//br tab wbr img hr cdata:
+		
 		//
-		//first process one off elements... currently: br wbr hr img tab "cdata:"
+		//first process elements net expected to have kids ... currently: br wbr hr img tab "cdata:"
 		//
 		if (!strcmp(name,"br") || !strcmp(name,"tab")) {
 			 //extended to have: <br section> <br chapter> <br column> <br page>
@@ -1379,19 +1533,20 @@ void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&chunk, StreamStyle *last
 			}
 			 
 			if (type!=BREAK_Unknown) {
-				StreamBreak *br=new StreamBreak(type);
+				StreamBreak *br = new StreamBreak(type);
 				if (!chunk) { chunks=chunk=br; }
 				else chunk=chunk->AddAfter(br);
 			} else {
-				setlocale(***);
+				setlocale(LC_ALL, "");
 				log.AddMessage(ERROR_Warning, _("Unknown break %s"), value);
-				setlocale(***);
+				setlocale(LC_ALL, "C");
 			}
 			continue;
 
 		} else if (!strcmp(name,"wbr")) {
 			//html: Word Break Opportunity
-			*** if occurs between cdata blocks, then insert as weak break point in a combined StreamText
+			//*** if occurs between cdata blocks, then insert as weak break point in a combined StreamText
+			cerr << " *** NEED TO IMPLEMENT wbr in Stream::ImportXMLAtt"<<endl;
 
 		} else if (!strcmp(name,"img")) {
 			//<img width="100" height="100" alt=".." src=".."   style class id ... />
@@ -1423,7 +1578,7 @@ void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&chunk, StreamStyle *last
 				}
 			}
 
-			ImageData *img=datafactory->NewObject("ImageData");
+			ImageData *img = datafactory->NewObject("ImageData");
 			img->LoadImage(src,nullptr, 0,0,0,0);
 			if (alt) *** make as description;
 			if (title) ***;
@@ -1437,7 +1592,7 @@ void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&chunk, StreamStyle *last
 
 		} else if (!strcmp(name,"hr")) {
 			 //<hr>  add a filled path rectangle?
-			cerr <<" *** "<<name<<" not implemented!! Rats!"<<endl;
+			cerr <<" *** <hr> not implemented!! Rats!"<<endl;
 			continue;
 
 		} else if (!strcmp(name,"cdata:")) {
@@ -1451,54 +1606,13 @@ void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&chunk, StreamStyle *last
 			if (!chunk) { chunks=chunk=txt; }
 			else chunk=chunk->AddAfter(txt);
 			continue;
-		}
-
 
 
 		//
 		//now process those that can have sub elements...
 		//
 
-		Attribute *elements=att->attributes.e[c]->find("content:");
-		if (!elements) continue; //ignore if no actual content!
-		// *** //make exception for <a> elements?
-
-
-		StreamStyle *newstyle = nullptr;
-
-		 //Parse global attributes: style class id dir="ltr|rtl|auto" title
-		for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
-			name  = att->attributes.e[c]->attributes.e[c2]->name;
-			value = att->attributes.e[c]->attributes.e[c2]->value;
-
-			if (!strcmp(name,"style")) {
-				 //update newstyle with style found
-				newstyle = ProcessCSSBlock(newstyle, laststyle, value);
-
-			} if (!strcmp(name,"class")) {
-				 //*** update newstyle with style found
-				cerr << " *** class attribute not implemented! lazy programmer!"<<endl;
-
-			} if (!strcmp(name,"id")) {
-				 //*** update newstyle with style found
-				cerr << " *** id attribute not implemented! lazy programmer!"<<endl;
-
-			} if (!strcmp(name,"title")) {
-				makestr(title,value);
-
-			} if (!strcmp(name,"dir")) {
-				 // flow direction: html has "ltr" "rtl" "auto"
-				 // 				-> extend with all 8 lrtb, lrbt, tblr, etc?
-	
-				int bidi = ParseBidi(value,-1);
-
-				if (!newstyle) newstyle = new StreamStyle();
-				if (bidi >= 0) newstyle->set("bidi",bidi); ***
-			}
-		}
-
-
-		if (!strcmp(name,"div") || !strcmp(name,"p")) {
+		} else if (!strcmp(name,"div") || !strcmp(name,"p")) {
 			ImportXMLAtt(elements, chunk, newstyle);
 
 			 //add a line break after div if not right after one
@@ -1579,30 +1693,62 @@ void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&chunk, StreamStyle *last
 		}
 
 
-		if (title) { delete[] title; title = nullptr; }
 		if (newstyle) newstyle->dec_count();
 	}
 }
 
 
+/*! Convert direct attributes of att to parts of current->style.
+ */
+StreamElement *ParseCommonStyle(Laxkit::Attribute *att, StreamElement *current)
+{
+	const char *name;
+	const char *value;
+
+	 //Parse current element attributes: style class id dir="ltr|rtl|auto" title
+	for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
+		name  = att->attributes.e[c]->name;
+		value = att->attributes.e[c]->value;
+
+		if (!strcmp(name,"style")) {
+			 //update newstyle with style found
+			current = ProcessCSSBlock(current, value);
+
+		} if (!strcmp(name,"class")) {
+			 //*** update newstyle with style found
+			cerr << " *** need to actually implement class import! lazy programmer!"<<endl;
+			
+			if (!isblank(value)) {
+				if (!current) current = new StreamElement();
+				current->style->set("class", value);
+			}
+
+		} if (!strcmp(name,"id")) {
+			if (!isblank(value)) current->Id(value);
+
+		//} if (!strcmp(name,"title")) {
+		//	makestr(title,value);
+
+		} if (!strcmp(name,"dir")) {
+			 // flow direction: html has "ltr" "rtl" "auto"
+			 // 				-> extend with all 8 lrtb, lrbt, tblr, etc?
+
+			int bidi = ParseBidi(value,-1);
+
+			if (!current) current = new StreamElement();
+			if (bidi >= 0) current->style->set("bidi",bidi);
+
+		} else {
+			DBG cerr << "warning: ParseCommonStyle attribute "<<name<<" not handled"<<endl;
+		}
+	}
+
+	return current;
+}
+
+
 //------------------------------------- StreamAttachment ----------------------------------
 
-/*! Held by DrawableObjects, these define various types of attachments of Stream objects to the parent
- * DrawableObject, as well as cached rendering info in a StreamCache.
- */
-
-class StreamAttachment : public Laxkit::RefCounted
-{
-  public:
-    DrawableObject *owner;
-	int attachment_target; //area path, inset path, outset path, inset area
-
-    Stream *stream;
-    StreamCache *cache; //owned by *this, assume any other refs are for temporary rendering purposes
-
-    StreamAttachment(DrawableObject *nobject, Stream *nstream);
-    ~StreamAttachment();
-};
 
 StreamAttachment::StreamAttachment(DrawableObject *nobject, Stream *nstream)
 {
@@ -1622,31 +1768,7 @@ StreamAttachment::~StreamAttachment()
 
 
 //------------------------------------- StreamCache ----------------------------------
-/*! \class StreamCache
- * \brief Rendering info for Stream objects.
- *
- * This is stored on each StreamAttachment object that connects the streams to objects.
- *
- * One StreamChunk object will correspond to one or more contiguous StreamCache objects.
- */
 
-class StreamCache : public Laxkit::SquishyBox, public Laxkit::RefCounted
-{
-  public:
-	clock_t modtime;
-	StreamCache *next, *prev;
-
-	StreamStyle *style;
-	StreamChunk *chunk;
-	long offset; //how many breaks into chunk to start
-	long len; //how many breaks long in chunk is this cache
-
-	Affine transform;
-
-	StreamCache();
-	StreamCache(StreamChuck *ch, long noffset, long nlen);
-	virtual ~StreamCache();
-};
 
 StreamCache::StreamCache(StreamChuck *ch, long noffset, long nlen)
 {
