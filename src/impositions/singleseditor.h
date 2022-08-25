@@ -41,7 +41,7 @@ class SinglesEditor : public Laxkit::RowFrame, public ImpositionWindow
 
  	SinglesEditor(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,
 			unsigned long nowner, const char *mes,
-			Document *ndoc, Singles *simp, PaperStyle *paper);
+			Document *ndoc, Singles *simp, PaperStyle *paper, bool escapable=false);
 	virtual ~SinglesEditor();
 	virtual const char *whattype() { return "SinglesEditor"; }
 	virtual int preinit();

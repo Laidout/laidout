@@ -187,6 +187,8 @@ PageStyle *Singles::GetPageStyle(int pagenum,int local)
 
 	while (pagestyles.n < papergroup->papers.n) {
 		RectPageStyle *rectstyle = new RectPageStyle();
+		rectstyle->width = papergroup->papers.e[papergroup->papers.n-1]->boxwidth();
+		rectstyle->height = papergroup->papers.e[papergroup->papers.n-1]->boxheight();
 		pagestyles.push(rectstyle);
 		rectstyle->dec_count();
 	}
@@ -656,7 +658,8 @@ SomeData *Singles::GetPageOutline(int pagenum,int local)
 	newpath->appendRect(0,0,pstyle->w(),pstyle->h());
 	newpath->maxx = pstyle->w();
 	newpath->maxy = pstyle->h();
-	//nothing special is done when local==0
+	pstyle->dec_count(); //note: GetPageStyle incs count of non-local
+	
 	return newpath;
 }
 
@@ -758,6 +761,8 @@ Spread *Singles::PageLayout(int whichpage)
 		newpath->close();
 	}
 
+	newpath->FindBBox();
+
 	return spread;
 }
 
@@ -800,6 +805,8 @@ Spread *Singles::PaperLayout(int whichpaper)
 		newpath->append(insetleft, insetbottom+y*(paper->media.maxy-insetbottom-insettop)/tiley);
 		newpath->append(insetright, insetbottom+y*(paper->media.maxy-insetbottom-insettop)/tiley);
 	}
+
+	newpath->FindBBox();
 	
 	 // setup spread->pagestack
 	 // page width/height must map to proper area on page.

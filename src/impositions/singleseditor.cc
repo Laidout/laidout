@@ -22,9 +22,11 @@
 #include <lax/sliderpopup.h>
 #include <lax/numslider.h>
 #include <lax/units.h>
+#include <lax/interfaces/interfacemanager.h>
 
 
 using namespace Laxkit;
+using namespace LaxInterfaces;
 
 #define DBG
 
@@ -49,8 +51,9 @@ namespace Laidout {
  */
 SinglesEditor::SinglesEditor(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,
 							unsigned long nowner, const char *mes,
-							Document *ndoc, Singles *simp, PaperStyle *paper)
-		: RowFrame(parnt,nname,ntitle,ROWFRAME_HORIZONTAL|ROWFRAME_LEFT|ROWFRAME_VCENTER|ANXWIN_REMEMBER|ANXWIN_ESCAPABLE,
+							Document *ndoc, Singles *simp, PaperStyle *paper, bool escapable)
+		: RowFrame(parnt,nname,ntitle,
+					ROWFRAME_HORIZONTAL|ROWFRAME_LEFT|ROWFRAME_VCENTER|ANXWIN_REMEMBER|(escapable ? ANXWIN_ESCAPABLE : 0),
 					0,0,500,500,0, nullptr,nowner,mes,
 					10)
 {
@@ -92,115 +95,139 @@ int SinglesEditor::preinit()
 int SinglesEditor::init()
 {
 	
-	int textheight=app->defaultlaxfont->textheight();
-	int linpheight=textheight+12;
-	anXWindow *last=nullptr;
-	LineInput *linp;
+	int textheight  = app->defaultlaxfont->textheight();
+	int linpheight  = 1.5*textheight;
+	anXWindow *last = nullptr;
+	LineInput *linp = nullptr;
+
+	UnitManager *units = GetUnitManager();
+
+
+	 //--------------- PaperGroup ----------------
+	
+	InterfaceManager *imanager = InterfaceManager::GetDefault(true);
+    ResourceManager *rm = imanager->GetResourceManager();
+    //MenuInfo *papergroup_menu = new MenuInfo("PaperGroups");
+    MenuInfo *papergroup_menu = rm->ResourceMenu("PaperGroup", false, nullptr, 0, 0);
+
+    if (papergroup_menu) {
+		AddWin(new MessageBar(this,"papergroup",nullptr,0, 0,0,0,0,0, _("Paper Group:")), 1,-1);
+
+		AddNull();
+		AddVSpacer(textheight,0,0,50);
+		AddNull();
+    }
 
 
 	 // -------------- Paper Size --------------------
-	
+	AddWin(new MessageBar(this,"defaultpage",nullptr,MB_MOVE, 0,0,0,0,0, _("Default paper size:")), 1,-1);
+	AddNull();
+
 	if (!papertype) papertype=(PaperStyle *)laidout->papersizes.e[0]->duplicate();
 
-	int o=papertype->landscape();
-	curorientation=o;
+	int o = papertype->landscape();
+	curorientation = o;
 
+				// int npw,int nws,int nwg,int nhalign,int nhgap,
+				// int nph,int nhs,int nhg,int nvalign,int nvgap,
 	psizewindow = new PaperSizeWindow(this, "psizewindow", nullptr, 0, object_id, "papersize", 
 										papertype, false, true, false, true);
-	AddWin(psizewindow,1,-1);
+	AddWin(psizewindow,1, 5000,1900,0,50,0, 4*textheight,0,0,50,0, -1);
+	AddNull();
+	AddVSpacer(textheight,0,0,50);
 	AddNull();
 
+
+	//  // ------Tiling
+	// last=tiley=new LineInput(this,"y tiling",nullptr,LINP_ONLEFT, 0,0,0,0, 0, 
+	// 					last,object_id,"ytile",
+	// 		            _("Tile y:"),"1", 0,
+	// 		           100,0,1,1,3,3);
+	// if (imp) tiley->SetText(imp->tiley);
+	// tiley->tooltip("How many times to repeat a spread vertically on a paper.");
+	// AddWin(tiley,1, tiley->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+	// last=tilex=new LineInput(this,"x tiling",nullptr,LINP_ONLEFT, 0,0,0,0, 0, 
+	// 					last,object_id,"xtile",
+	// 		            _("Tile x:"),"1", 0,
+	// 		           100,0,1,1,3,3);
+	// if (imp) tilex->SetText(imp->tilex);
+	// tilex->tooltip(_("How many times to repeat a spread horizontally on a paper."));
+	// AddWin(tilex,1, tilex->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+	// AddNull();
+
+	// last=gapy=new LineInput(this,"y gap",nullptr,LINP_ONLEFT, 0,0,0,0, 0, 
+	// 					last,object_id,"ygap",
+	// 		            _("Gap y:"),"1", 0,
+	// 		           100,0,1,1,3,3);
+	// if (imp) gapy->SetText(units->Convert(imp->gapy,UNITS_Inches,laidout->prefs.default_units,nullptr));
+	// gapy->tooltip("Gap between tiles vertically");
+	// AddWin(gapy,1, gapy->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+
+	// last=gapx=new LineInput(this,"x gap",nullptr,LINP_ONLEFT, 0,0,0,0, 0, 
+	// 					last,object_id,"xgap",
+	// 		            _("Gap x:"),"1", 0,
+	// 		           100,0,1,1,3,3);
+	// if (imp) gapx->SetText(units->Convert(imp->gapx,UNITS_Inches,laidout->prefs.default_units,nullptr));
+	// gapx->tooltip("Gap between tiles horizontally");
+	// AddWin(gapx,1, gapx->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+	// AddNull();
+
+
+	//  // -------  paper inset
+	// //AddWin(new MessageBar(this,"Paper inset",MB_MOVE|MB_LEFT, 0,0,0,0,0, _("Paper inset:")));
+	// //AddWin(nullptr, 2000,2000,0,50,0, 0,0,0,0);//forced linebreak, makes left justify
+
+	// last=linp=insett=new LineInput(this,"inset t",nullptr,LINP_ONLEFT,
+	// 		            5,250,0,0, 0, 
+	// 					last,object_id,"inset t",
+	// 		            _("Inset Top:"),nullptr,0,
+	// 		            0,0,3,0,3,3);
+	// linp->tooltip(_("Amount to chop from paper before applying tiling"));
+	// if (imp) linp->SetText(units->Convert(imp->insettop,UNITS_Inches,laidout->prefs.default_units,nullptr)); 
+	// AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
+	//  // ******
+	// //NumSlider *slider=new NumSlider(this,"inset t",nullptr, NumSlider::NO_MAXIMUM,
+	// //		            0,0,0,linpheight, 0, 
+	// //					last,object_id,"inset t2",
+	// //					nullptr, 0,1000, units->Convert(imp->insettop,UNITS_Inches,laidout->prefs.default_units,nullptr), .05);
+	// //last=slider;
+	// //slider->tooltip(_("Amount to chop from paper before applying tiling"));
+	// //AddWin(slider,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	
-	 // ------Tiling
-	last=tiley=new LineInput(this,"y tiling",nullptr,LINP_ONLEFT, 0,0,0,0, 0, 
-						last,object_id,"ytile",
-			            _("Tile y:"),"1", 0,
-			           100,0,1,1,3,3);
-	if (imp) tiley->SetText(imp->tiley);
-	tiley->tooltip("How many times to repeat a spread vertically on a paper.");
-	AddWin(tiley,1, tiley->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
-	last=tilex=new LineInput(this,"x tiling",nullptr,LINP_ONLEFT, 0,0,0,0, 0, 
-						last,object_id,"xtile",
-			            _("Tile x:"),"1", 0,
-			           100,0,1,1,3,3);
-	if (imp) tilex->SetText(imp->tilex);
-	tilex->tooltip(_("How many times to repeat a spread horizontally on a paper."));
-	AddWin(tilex,1, tilex->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
-	AddNull();
-
-	UnitManager *units = GetUnitManager();
-	last=gapy=new LineInput(this,"y gap",nullptr,LINP_ONLEFT, 0,0,0,0, 0, 
-						last,object_id,"ygap",
-			            _("Gap y:"),"1", 0,
-			           100,0,1,1,3,3);
-	if (imp) gapy->SetText(units->Convert(imp->gapy,UNITS_Inches,laidout->prefs.default_units,nullptr));
-	gapy->tooltip("Gap between tiles vertically");
-	AddWin(gapy,1, gapy->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
-
-	last=gapx=new LineInput(this,"x gap",nullptr,LINP_ONLEFT, 0,0,0,0, 0, 
-						last,object_id,"xgap",
-			            _("Gap x:"),"1", 0,
-			           100,0,1,1,3,3);
-	if (imp) gapx->SetText(units->Convert(imp->gapx,UNITS_Inches,laidout->prefs.default_units,nullptr));
-	gapx->tooltip("Gap between tiles horizontally");
-	AddWin(gapx,1, gapx->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
-	AddNull();
-
-
-	 // -------  paper inset
-	//AddWin(new MessageBar(this,"Paper inset",MB_MOVE|MB_LEFT, 0,0,0,0,0, _("Paper inset:")));
-	//AddWin(nullptr, 2000,2000,0,50,0, 0,0,0,0);//forced linebreak, makes left justify
-
-	last=linp=insett=new LineInput(this,"inset t",nullptr,LINP_ONLEFT,
-			            5,250,0,0, 0, 
-						last,object_id,"inset t",
-			            _("Inset Top:"),nullptr,0,
-			            0,0,3,0,3,3);
-	linp->tooltip(_("Amount to chop from paper before applying tiling"));
-	if (imp) linp->SetText(units->Convert(imp->insettop,UNITS_Inches,laidout->prefs.default_units,nullptr)); 
-	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
-	 // ******
-//	NumSlider *slider=new NumSlider(this,"inset t",nullptr, NumSlider::NO_MAXIMUM,
-//			            0,0,0,linpheight, 0, 
-//						last,object_id,"inset t2",
-//						nullptr, 0,1000, units->Convert(imp->insettop,UNITS_Inches,laidout->prefs.default_units,nullptr), .05);
-//	last=slider;
-//	slider->tooltip(_("Amount to chop from paper before applying tiling"));
-//	AddWin(slider,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
+	// last=linp=insetb=new LineInput(this,"inset b",nullptr,LINP_ONLEFT,
+	// 		            5,250,0,0, 0, 
+	// 					last,object_id,"inset b",
+	// 		            _("Inset Bottom:"),nullptr,0,
+	// 		            0,0,3,0,3,3);
+	// linp->tooltip(_("Amount to chop from paper before applying tiling"));
+	// if (imp) linp->SetText(units->Convert(imp->insetbottom,UNITS_Inches,laidout->prefs.default_units,nullptr));
+	// AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
+	// AddNull();
 	
-	last=linp=insetb=new LineInput(this,"inset b",nullptr,LINP_ONLEFT,
-			            5,250,0,0, 0, 
-						last,object_id,"inset b",
-			            _("Inset Bottom:"),nullptr,0,
-			            0,0,3,0,3,3);
-	linp->tooltip(_("Amount to chop from paper before applying tiling"));
-	if (imp) linp->SetText(units->Convert(imp->insetbottom,UNITS_Inches,laidout->prefs.default_units,nullptr));
-	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
-	AddNull();
+	// last=linp=insetl=new LineInput(this,"inset l",nullptr,LINP_ONLEFT,
+	// 		            5,250,0,0, 0, 
+	// 					last,object_id,"inset l",
+	// 		            _("Inset Left:"),nullptr,0,
+	// 		            0,0,3,0,3,3);
+	// linp->tooltip(_("Amount to chop from paper before applying tiling"));
+	// if (imp) linp->SetText(units->Convert(imp->insetleft,UNITS_Inches,laidout->prefs.default_units,nullptr));
+	// AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	
-	last=linp=insetl=new LineInput(this,"inset l",nullptr,LINP_ONLEFT,
-			            5,250,0,0, 0, 
-						last,object_id,"inset l",
-			            _("Inset Left:"),nullptr,0,
-			            0,0,3,0,3,3);
-	linp->tooltip(_("Amount to chop from paper before applying tiling"));
-	if (imp) linp->SetText(units->Convert(imp->insetleft,UNITS_Inches,laidout->prefs.default_units,nullptr));
-	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
-	
-	last=linp=insetr=new LineInput(this,"inset r",nullptr,LINP_ONLEFT,
-			            5,250,0,0, 0, 
-						last,object_id,"inset r",
-			            _("Inset Right:"),nullptr,0,
-			            0,0,3,0,3,3);
-	linp->tooltip(_("Amount to chop from paper before applying tiling"));
-	if (imp) linp->SetText(units->Convert(imp->insetright,UNITS_Inches,laidout->prefs.default_units,nullptr));
-	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
-	AddNull();
+	// last=linp=insetr=new LineInput(this,"inset r",nullptr,LINP_ONLEFT,
+	// 		            5,250,0,0, 0, 
+	// 					last,object_id,"inset r",
+	// 		            _("Inset Right:"),nullptr,0,
+	// 		            0,0,3,0,3,3);
+	// linp->tooltip(_("Amount to chop from paper before applying tiling"));
+	// if (imp) linp->SetText(units->Convert(imp->insetright,UNITS_Inches,laidout->prefs.default_units,nullptr));
+	// AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
+	// AddNull();
 	
 	
 
 	 //add thin spacer
-	AddSpacer(2000,2000,0,50, textheight*2/3,0,0,0);// forced vertical spacer
+	//AddSpacer(2000,2000,0,50, textheight*2/3,0,0,0);// forced vertical spacer
+	//AddVSpacer(textheight*2/3,0,0,0);
 
 	
 
@@ -215,7 +242,8 @@ int SinglesEditor::init()
 //		imp->insetb=marginb->GetDouble();
 	 // ------------------ margins ------------------
 	AddWin(new MessageBar(this,"page margins",nullptr,MB_MOVE, 0,0,0,0,0, _("Default page margins:")), 1,-1);
-	AddWin(nullptr,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);//forced linebreak, makes left justify
+	//AddWin(nullptr,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);//forced linebreak, makes left justify
+	AddNull();
 
 	last=linp=margint=new LineInput(this,"margin t",nullptr,LINP_ONLEFT,
 			            5,250,0,0, 0, 
@@ -333,7 +361,7 @@ void SinglesEditor::send()
 	if (tilex) xtile=atoi(tilex->GetCText());
 	if (tiley) ytile=atoi(tiley->GetCText());
 
-	SimpleUnit *units=GetUnitManager();
+	UnitManager *units = GetUnitManager();
 	double xgap=0, ygap=0;
 	if (gapx) xgap=units->Convert(atof(gapx->GetCText()),laidout->prefs.default_units,UNITS_Inches,nullptr);
 	if (gapy) ygap=units->Convert(atof(gapy->GetCText()),laidout->prefs.default_units,UNITS_Inches,nullptr);
@@ -374,7 +402,7 @@ Imposition *SinglesEditor::GetImposition()
 	if (tilex) xtile=atoi(tilex->GetCText());
 	if (tiley) ytile=atoi(tiley->GetCText());
 
-	SimpleUnit *units=GetUnitManager();
+	UnitManager *units = GetUnitManager();
 	double xgap=0, ygap=0;
 	if (gapx) xgap=units->Convert(atof(gapx->GetCText()),laidout->prefs.default_units,UNITS_Inches,nullptr);
 	if (gapy) ygap=units->Convert(atof(gapy->GetCText()),laidout->prefs.default_units,UNITS_Inches,nullptr);

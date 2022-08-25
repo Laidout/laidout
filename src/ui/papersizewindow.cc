@@ -48,20 +48,21 @@ PaperSizeWindow::PaperSizeWindow(Laxkit::anXWindow *parnt,const char *nname,cons
 							PaperStyle *paper, bool mod_in_place, bool edit_dpi, bool edit_color, bool send_every_change)
 		: RowFrame(parnt,nname,ntitle,nstyle | ROWFRAME_HORIZONTAL | ROWFRAME_LEFT | ANXWIN_REMEMBER,
 					0,0,600,300,0, nullptr,owner,msg,
-					10)
+					0)
 {
 	modify_in_place = mod_in_place;
 
 	InstallColors(THEME_Panel);
+	padinset = win_themestyle->normal->textheight()/2;
 
-	papernames = nullptr;
+	papernames      = nullptr;
 	paperx = papery = nullptr;
-	papersizes = nullptr; //ends up being just a shadow of laidout->papersizes
-	cur_units = laidout->prefs.default_units;
-	custom_index = -1;
-	with_dpi = edit_dpi;
-	with_color = edit_color;
-	send_on_change = send_every_change;
+	papersizes      = nullptr;  // ends up being just a shadow of laidout->papersizes
+	cur_units       = laidout->prefs.default_units;
+	custom_index    = -1;
+	with_dpi        = edit_dpi;
+	with_color      = edit_color;
+	send_on_change  = send_every_change;
 
 	if (!modify_in_place && paper) papertype = dynamic_cast<PaperStyle*>(paper->duplicate());
 	else {
@@ -106,10 +107,10 @@ int PaperSizeWindow::init()
 	int         linpheight = textheight + 12;
 	Button *    tbut = nullptr;
 	anXWindow * last = nullptr;
-	LineInput * linp;
+	LineInput * linp = nullptr;
+	SliderPopup *popup = nullptr;
 
-
-	 // -------------- Paper Size --------------------
+	int c2 = 0;
 	
 	papersizes = &laidout->papersizes;
 
@@ -119,6 +120,28 @@ int PaperSizeWindow::init()
 	bool o = papertype->landscape();
 	curorientation = o;
 
+
+	 // -----Paper Name
+	last = papernames = new SliderPopup(this,"paperName",nullptr,SLIDER_POP_ONLY, 0,0, 0,0, 1, last,object_id,"paper name");
+	for (int c=0; c<papersizes->n; c++) {
+		if (!strcmp(papersizes->e[c]->name, papertype->name)) c2 = c;
+		if (!strcasecmp(papersizes->e[c]->name, "custom")) custom_index = c;
+		papernames->AddItem(papersizes->e[c]->name,c);
+	}
+	papernames->Select(c2);
+	AddWin(papernames,1, 200,100,50,50,0, linpheight,0,0,50,0, -1);
+	
+	 // -----Paper Orientation
+	last = orientation = popup = new SliderPopup(this,"paperOrientation",nullptr,0, 0,0, 0,0, 1, last,object_id,"orientation");
+	popup->AddItem(_("Portrait"),0);
+	popup->AddItem(_("Landscape"),1);
+	popup->Select(o&1?1:0);
+	AddWin(popup,1, 200,100,50,50,0, linpheight,0,0,50,0, -1);
+	AddNull();
+
+
+	 // -------------- Paper Size --------------------
+	
 	 // -----Paper Size X
 	UnitManager *units=GetUnitManager();
 	sprintf(blah,"%.10g", units->Convert(papertype->w(),UNITS_Inches,laidout->prefs.default_units,nullptr));
@@ -141,10 +164,8 @@ int PaperSizeWindow::init()
 
 
 	 // -----Default Units
-    SliderPopup *popup;
 	last = popup = new SliderPopup(this,"units",nullptr,SLIDER_POP_ONLY, 0,0, 0,0, 1, last,object_id,"units");
 	char *tmp;
-	int c2 = 0;
 	int uniti=-1,tid;
 	units->UnitInfo(laidout->prefs.unitname,&uniti,nullptr,nullptr,nullptr,nullptr,nullptr);
 	for (int c = 0; c < units->NumberOfUnits(); c++) {
@@ -157,25 +178,6 @@ int PaperSizeWindow::init()
 	AddNull();
 
 	
-	 // -----Paper Name
-	last = papernames = new SliderPopup(this,"paperName",nullptr,SLIDER_POP_ONLY, 0,0, 0,0, 1, last,object_id,"paper name");
-	for (int c=0; c<papersizes->n; c++) {
-		if (!strcmp(papersizes->e[c]->name, papertype->name)) c2 = c;
-		if (!strcasecmp(papersizes->e[c]->name, "custom")) custom_index = c;
-		papernames->AddItem(papersizes->e[c]->name,c);
-	}
-	papernames->Select(c2);
-	AddWin(papernames,1, 200,100,50,50,0, linpheight,0,0,50,0, -1);
-	
-	 // -----Paper Orientation
-	last = orientation = popup = new SliderPopup(this,"paperOrientation",nullptr,0, 0,0, 0,0, 1, last,object_id,"orientation");
-	popup->AddItem(_("Portrait"),0);
-	popup->AddItem(_("Landscape"),1);
-	popup->Select(o&1?1:0);
-	AddWin(popup,1, 200,100,50,50,0, linpheight,0,0,50,0, -1);
-	AddNull();
-
-
 	if (with_dpi) {
 		double d = papertype->dpi;
 		last = linp = new LineInput(this,"dpi",nullptr,LINP_ONLEFT, 5,250,0,0, 0, 
