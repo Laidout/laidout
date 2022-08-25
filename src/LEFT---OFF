@@ -13,12 +13,12 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
-bug: Initial zoom for new doc bad. space to center only sporadically works
-
 bug: severing clone link does some weird things, including crashing
 bug: clone tool clones do not have proper bounding box
 
 bug: gegl nodes, connect sinus to waves and also to displace, freeze!
+
+travis is recompiling on non-master branch pushes and it shouldn't
 
 
 ------------ other bugs:
@@ -205,19 +205,6 @@ alternate packaging:
   snapcraft
   DONE appimage, see: https://github.com/Laidout/laidout/issues/10
 
-in singles view, spread number in box should be page label instead of spread number
-
-object clipping:
-  menu should bold the object names.. hard to read as is
-  applying clip path should not destroy path's style settings
-  clip path shouldn't have to be a path.. be able to be text, or whatever provides an Area path
-  generate default clip path for editing from area path or bounding box
-  clip-path export: pdf(done), image(done), svg(done), scribus
-  page object overlap export: DONE pdf, DONE image, DONE svg, scribus
-  DONE page previewer in spread editor doesn't use bleeds.. need to refresh thumbs if has bleeds
-  DONE in place editing
-  DONE apply, remove, extract clip path
-
 valuewindow:
   bug: When scrollers come on, does not trigger an inset of widgets
   bug: shrink for scroller, scroll to bottom, resize big.. window is still scrolled to bottom!!
@@ -235,10 +222,19 @@ valuewindow:
   delete elements of list
   when you quit, does not remember from open windows
 
-cairo:
-  cairo image save should use importer to do non-file creation?
-  cairo render has color problems with gradients
-  cairo development is dead? investigate alternatives
+global Laidout settings:
+  settings dialog
+    rearrange dir lists
+	rebuild icons
+	set uiscale live
+	resource search directories, per resource
+	remove old palette_dir thing, it should be wrapped into resources
+	need "import settings from..." (but always use hardcoded laidoutrc)
+  color theme
+  icons
+  tooltips
+  per tool default settings
+  thin line width (default 1 pixel, but this is bad for high dpi screens)
 
 graphicsmagick:
   load_image() always loads full, even if ping_only (confirm?)
@@ -293,68 +289,6 @@ text on path textonpath: TextOnPath
   DONE bug: drag voffset shifts the text start?
   DONE bug: drag the baseline handle off to the sides, makes huge bad jumps in value <- restrict to mod only baseline
 
-
-Find interface: findinterface:
-  iconselector needs: click-select, drag rect to select, shift to add to selection
-  iconselector needs to scroll
-  bug: FindWindow is not remembering placement
-  bug: key presses aren't propagating up to viewport?
-  memory hole
-  DONE iconselector needs pad + highlight hover + highlight selected option
-  DONE send to viewport and update actually selected
-  DONE toggle list vs icon view
-  DONE bug: dragging suddenly all messed up??!?!? ... worked around, not really fixed: maybe race condition with resizing? 
-
-  ---0.099:
-  ____pattern_____ .* Aa all (is regex, case sensitive)
-  Criteria: [dropdown of predefined criteria] [ ___type:"Image", brokenimages, expr:"obj.maxy < context.page.maxy/2"__ ]
-  [next] [prev] [all]
-  [ 5 found: (found object thumbnail list) ]
-  search:
-    id desc other-meta
-    broken images
-    empty groups
-    empty text
-    by type
-    scriptable pre-flighty conditions
-    current view only | in current selection | everywhere
-  foreach: scriptable action
-  sort found by: modtime, name, page, size, type
-  iconselector should have force image to particular size option so we could use object preview directly
-
-  DONE on pressing cntl-f, must focus on pattern lineedit
-  DONE need draggable window frame
-
-layers palette Layers ObjectTree
-  must set tree selected to viewport selected on viewport selection change
-
-  DONE bug: not remembering flags column width.. for a flags column, should always be visible?
-  DONE must set viewport selected on tree selected change
-  DONE flags, click to change: locked visible
-  DONE edit colors not highlighting every other
-
-  ---0.099:
-  need to update tree list, not flush and repopulate which wrecks selection and open/closed
-  should have document list at top, showing current doc
-  need icons for object types
-  hidden/locked objects should grey out contained objects
-  visible gray out non-visible
-  drag change flags
-  selectable flag
-  key controls for navigation within menu:
-    space/enter toggle open and closed submenu
-  move
-  filter by:
-    type
-	name
-  rename in place
-  implement buttons
-    new empty
-	move up .. maybe do away with the button, and just implement drag and drop?
-	move down
-	duplicate
-	delete
-  copy item path?
 
 you can't control unclick selected directories
 
@@ -653,7 +587,7 @@ idml from indesign?
 
 Singles:
   revamp to be art board centric, based on random PaperGroup
-  need to cache page margins properly for papergroup GetPageMarginOutline()
+  DONE need to cache page margins properly for papergroup GetPageMarginOutline()
   PageLayout() lines
   PaperLayout()
   implement double sided
@@ -1166,6 +1100,7 @@ node editor node interface NodeInterface nodes: node: interface:
     DONE LaxImage to Gegl
   svg/inkscape specific filter interface, io passthrough
     inkscape multipage
+	  import new Inkscape margin features
 	  pages are defined upside down.. has to scale to viewbox?
 	  need to insert pages at load time, and assign objects to proper pages
 	  Need to test actual exporting mechanism
@@ -1294,26 +1229,6 @@ node editor node interface NodeInterface nodes: node: interface:
   DONE image from file node
   DONE (using Name) idea seen in anim nodes: collapsing math shows expression as label
 
-Label widget:
-  harfbuzzed, fribidi
-  abstract to form base of both widgets and CaptionData
-  replace all MessageBar with these
-  make editable one replace LineEdit/MultiLineEdit
-
-plugins:
-  need more automatic way to install:
-    mechanism for plugin config files
-    plugins maybe have plugin.conf resources/
-  beef up the config window, to allow toggling plugins.
-  figure out proper de-loading.. have to restart?
-  check for already loaded
-  think through plugin infrastructure better, and from external perspective
-    need to beef out the plugin readme
-    usually, a plugin dev downloads an sdk that might just have selected headers, and .so file
-    how to specify plugin is built at all
-    how to specify plugin is compiled in, or exists as .so
-    plugins (c++) vs extensions (scripted)
-
 color fonts issue #6 svg otf svg
   see this freetype gsoc 2019 project: https://www.mail-archive.com/freetype-devel@nongnu.org/msg11459.html
 
@@ -1346,43 +1261,8 @@ captioninterface CaptionInterface captiondata CaptionData
   DONE right click menu options for insert char and select font
   DONE bug: why is a font being created and destroyed each refresh??
 
-DrawableObject:
-  bbox and aabb need to build in kids?
-  should transplant child to SomeData? would simplify making new objects considerably. or do (parenting shell)-data like blender
-  DONE SomeData should derive from DumpUtility
-
 fontdialog: FontDialog
   bug: makeinwindow SOMETIMES not working, select one, puts on bottom line
-  ---0.099---
-  need a way to remember layered fonts, to easily activate and deactivate
-    read from standard fonts places, like .config/laidout/(version)/fonts
-  favorites: tag and column
-  user tags, not just fontmatrix tags, option to update fontmatrix?
-  should be able to access list of font favorites, and a user's preferred organization of fonts..
-  need to implement load specific file for a font
-
-  font->SetFromFile() should do more fontconfig checking to grab propper file+family+style+size
-  FindFont() is faulty, as it only lookes up family/style.. should search by the unique file name
-  sometimes family+style is not unique, but has different languages.. should detect this
-    use postscriptname: "DroidSansHebrew-Bold" -->  "Droid Sans Hebrew"/"Bold"
-
-  bookman font style names getting chopped off: due to name collision and using psname as reported by fontconfig
-    this is unreliable! need to have proper unique font naming
-  sample block should be multiline
-  need support for svg fonts.. useful for pure svg fonts, and opentype svg, see cairo user fonts
-  pgup and down doesn't select a reasonable one
-  fontconfig directory config options
-  should REALLY have a LayerFont head containing the whole list, not a stand alone list which causes too many problems
-  figure out why some color fonts are not scanned by fontconfig
-  needs line spacing slider
-  option to search by spacing, ie monospace, see fontconfig: FC_PROPORTIONAL, FC_DUAL, FC_MONO, FC_CHARCELL
-  vague search via fontconfig matching, to find a match for something like a "sans"
-
-  font preview column in list, custom sample
-  language coverage search
-  select default language/script
-  select opentype features
-  optional common font finishers? like centering, underline, color, highlight, fg/bg, etc
 
 ellipseinterface:
   need rotate handles
@@ -2064,22 +1944,120 @@ signature editor  Signature editor Signature Editor signatureeditor
   be able to specify single sided.. allows bound accordian foldings?
   implement creep
 
-global Laidout settings:
-  settings dialog
-    rearrange dir lists
-	rebuild icons
-	set uiscale live
-	resource search directories, per resource
-	remove old palette_dir thing, it should be wrapped into resources
-	need "import settings from..." (but always use hardcoded laidoutrc)
-  color theme
-  icons
-  tooltips
-  per tool default settings
-  thin line width (default 1 pixel, but this is bad for high dpi screens)
-
 
 ---------------- 0.099 ROADMAP ITEMS: features and enhancements ------------------------
+
+layers palette Layers ObjectTree
+  need to update tree list, not flush and repopulate which wrecks selection and open/closed
+  should have document list at top, showing current doc
+  need icons for object types
+  hidden/locked objects should grey out contained objects
+  visible gray out non-visible
+  drag change flags
+  selectable flag
+  key controls for navigation within menu:
+    space/enter toggle open and closed submenu
+  move
+  filter by:
+    type
+	name
+  rename in place
+  implement buttons
+    new empty
+	move up .. maybe do away with the button, and just implement drag and drop?
+	move down
+	duplicate
+	delete
+  copy item path?
+
+object clipping:
+  menu should bold the object names.. hard to read as is
+  clip path shouldn't have to be a path.. be able to be text, or whatever provides an Area path
+  clip-path export: pdf(done), image(done), svg(done), scribus
+  page object overlap export: DONE pdf, DONE image, DONE svg, scribus
+  generate default clip path for editing from area path or bounding box
+
+Label widget:
+  harfbuzzed, fribidi
+  abstract to form base of both widgets and CaptionData
+  replace all MessageBar with these
+  make editable one replace LineEdit/MultiLineEdit
+
+plugins:
+  need more automatic way to install:
+    mechanism for plugin config files
+    plugins maybe have plugin.conf resources/
+  beef up the config window, to allow toggling plugins.
+  figure out proper de-loading.. have to restart?
+  check for already loaded
+  think through plugin infrastructure better, and from external perspective
+    need to beef out the plugin readme
+    usually, a plugin dev downloads an sdk that might just have selected headers, and .so file
+    how to specify plugin is built at all
+    how to specify plugin is compiled in, or exists as .so
+    plugins (c++) vs extensions (scripted)
+
+DrawableObject:
+  bbox and aabb need to build in kids?
+  should transplant child to SomeData? would simplify making new objects considerably. or do (parenting shell)-data like blender
+  DONE SomeData should derive from DumpUtility
+
+fontdialog: FontDialog
+  need a way to remember layered fonts, to easily activate and deactivate
+    read from standard fonts places, like .config/laidout/(version)/fonts
+  favorites: tag and column
+  user tags, not just fontmatrix tags, option to update fontmatrix?
+  should be able to access list of font favorites, and a user's preferred organization of fonts..
+  need to implement load specific file for a font
+
+  font->SetFromFile() should do more fontconfig checking to grab propper file+family+style+size
+  FindFont() is faulty, as it only lookes up family/style.. should search by the unique file name
+  sometimes family+style is not unique, but has different languages.. should detect this
+    use postscriptname: "DroidSansHebrew-Bold" -->  "Droid Sans Hebrew"/"Bold"
+
+  bookman font style names getting chopped off: due to name collision and using psname as reported by fontconfig
+    this is unreliable! need to have proper unique font naming
+  sample block should be multiline
+  need support for svg fonts.. useful for pure svg fonts, and opentype svg, see cairo user fonts
+  pgup and down doesn't select a reasonable one
+  fontconfig directory config options
+  should REALLY have a LayerFont head containing the whole list, not a stand alone list which causes too many problems
+  figure out why some color fonts are not scanned by fontconfig
+  needs line spacing slider
+  option to search by spacing, ie monospace, see fontconfig: FC_PROPORTIONAL, FC_DUAL, FC_MONO, FC_CHARCELL
+  vague search via fontconfig matching, to find a match for something like a "sans"
+
+  font preview column in list, custom sample
+  language coverage search
+  select default language/script
+  select opentype features
+  optional common font finishers? like centering, underline, color, highlight, fg/bg, etc
+
+Find interface: findinterface:
+  bug: key presses aren't propagating up to viewport?
+  bug: FindWindow is not remembering placement
+  iconselector needs: click-select, drag rect to select, shift to add to selection
+  iconselector needs to scroll
+  ____pattern_____ .* Aa all (is regex, case sensitive)
+  Criteria: [dropdown of predefined criteria] [ ___type:"Image", brokenimages, expr:"obj.maxy < context.page.maxy/2"__ ]
+  [next] [prev] [all]
+  [ 5 found: (found object thumbnail list) ]
+  search:
+    id desc other-meta
+    broken images
+    empty groups
+    empty text
+    by type
+    scriptable pre-flighty conditions
+    current view only | in current selection | everywhere
+  foreach: scriptable action
+  sort found by: modtime, name, page, size, type
+  iconselector should have force image to particular size option so we could use object preview directly
+
+cairo:
+  cairo image save should use importer to do non-file creation?
+  cairo render has color problems with gradients
+  cairo development is dead? investigate alternatives
 
 engraving tool: Engraving  engraver
   bug: trace object opacity is not working for non-image trace objects.. stroke and fill needs mask integration!!
@@ -3268,4 +3246,26 @@ DONE Gradients: gradientinterface
   DONE bug: radial gradient not loading
   DONE SHOWCOLORS should be off by default
 DONE bug: Engraver fill, just moving mouse around is rerendering to buffer for preview
+DONE bug: Initial zoom for new doc bad. space to center only sporadically works
+DONE in singles view, spread number in box should be page label instead of spread number
+DONE FindInterface:
+  DONE pressing enter should trigger last search type (next/prev/all)
+  DONE memory hole -> because of ObjectIterator keeping ref to viewportwindow, which is never getting explicitly destroyed as a result
+  DONE iconselector needs pad + highlight hover + highlight selected option
+  DONE send to viewport and update actually selected
+  DONE toggle list vs icon view
+  DONE bug: dragging suddenly all messed up??!?!? ... worked around, not really fixed: maybe race condition with resizing? 
+  DONE on pressing cntl-f, must focus on pattern lineedit
+  DONE need draggable window frame
+DONE object clipping:
+  DONE (i guess, can't duplicate) applying clip path should not destroy path's style settings
+  DONE page previewer in spread editor doesn't use bleeds.. need to refresh thumbs if has bleeds
+  DONE in place editing
+  DONE apply, remove, extract clip path
+DONE layers palette Layers ObjectTree
+  DONE must set tree selected to viewport selected on viewport selection change: must implement ObjectTreeWindow::UpdateSelection()
+  DONE bug: not remembering flags column width.. for a flags column, should always be visible?
+  DONE must set viewport selected on tree selected change
+  DONE flags, click to change: locked visible
+  DONE edit colors not highlighting every other
 
