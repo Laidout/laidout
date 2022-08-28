@@ -1016,8 +1016,7 @@ int GraphicalShell::Refresh()
 		double textheight=le->GetFont()->textheight();
 
 		do {
-			ls=nl;
-			nl=strchrnul(nl,'\n');
+			ls=lax_strchrnul(nl, '\n');
 			if (*nl) nl++;
 			numlines++;
 			w=dp->textextent(ls,nl-ls, NULL,NULL);

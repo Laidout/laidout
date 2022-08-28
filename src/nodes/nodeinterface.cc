@@ -530,7 +530,8 @@ int NodeProperty::SetData(Value *newdata, bool absorb)
  */
 void NodeProperty::Touch()
 {
-	modtime = times(NULL);
+	tms tms_;
+	modtime = times(&tms_);
 }
 
 
@@ -545,7 +546,8 @@ void NodeProperty::Touch()
 NodeThread::NodeThread(NodeBase *node, NodeProperty *prop, ValueHash *payload, int absorb)
 {
 	thread_id = getUniqueNumber();
-	start_time = times(NULL);
+	tms tms_;
+	start_time = times(&tms_);
 	process_time = 0;
 	last_tick_end_time = 0;
 	tick = 0;
@@ -782,7 +784,8 @@ NodeBase::~NodeBase()
  */
 void NodeBase::Touch()
 {
-	modtime = times(NULL);
+	tms tms_;
+	modtime = times(&tms_);
 }
 
 /*! Defualt just return muted.
@@ -962,7 +965,8 @@ int NodeBase::GetStatus()
  */
 int NodeBase::Update()
 {
-	modtime = times(NULL);
+	tms tms_;
+	modtime = times(&tms_);
 
 	// int outs = 0; // *** hack to make a node of all outs
 	// for (int c=0; c<properties.n; c++) {
@@ -4867,7 +4871,8 @@ void NodeInterface::DrawConnection(NodeConnection *connection)
 		if (IsLive(connection)) {
 			 //draw arrows offset
 			len *= sysconf(_SC_CLK_TCK);
-			offset = (times(NULL) % (int)len) / len;
+			tms tms_;
+			offset = (times(&tms_) % (int)len) / len;
 		}
 
 		len = bez_segment_length(p1,c1,c2,p2, 20);
@@ -4907,7 +4912,8 @@ int NodeInterface::Play()
 		elapsed_wall_time = 0;
 		elapsed_time = 0;
 		time_at_pause = 0;
-		run_start_time = times(NULL);
+		tms tms_;
+		run_start_time = times(&tms_);
 	}
 	play_timer = app->addtimer(this, 1000/play_fps, 1000/play_fps, -1);
 	playing = 1;
@@ -4923,7 +4929,8 @@ int NodeInterface::TogglePause()
 		// just remove timer, but playing still == 1
 		app->removetimer(this, play_timer);
 		play_timer = 0;
-		time_at_pause = times(NULL);
+		tms tms_;
+		time_at_pause = times(&tms_);
 		return 0;
 	}
 
@@ -4995,8 +5002,8 @@ int NodeInterface::ExecuteThreads()
 	std::clock_t t, t2, ts;
 
 	if (threads.n) needtodraw=1;
-
-	ts = times(NULL);
+	tms tms_;
+	ts = times(&tms_);
 
 	for (int c=threads.n-1; c>=0; c--) {
 		thread = threads.e[c];
@@ -5004,10 +5011,11 @@ int NodeInterface::ExecuteThreads()
 		NodeBase *next = thread->next->Execute(thread, forks);
 		if (next) {
 			//node has given us somewhere to go to
-			t = times(NULL);
+			t = times(&tms_);
 			thread->UpdateThread(next, NULL);
 			thread->tick++;
-			t2 = times(NULL);
+
+			t2 = times(&tms_);
 			thread->process_time += t - t2;
 			thread->last_tick_end_time = t;
 
@@ -5028,12 +5036,12 @@ int NodeInterface::ExecuteThreads()
 			}
 		}
 	}
-
-	elapsed_time += times(NULL) - ts;
+	elapsed_time += times(&tms_) - ts;
 	NodesChanged();
 
 	if (!threads.n) {
-		elapsed_wall_time = times(NULL) - run_start_time;
+		tms tms_;
+		elapsed_wall_time = times(&tms_) - run_start_time;
 		DBG cerr <<"Threads done! took: elapsed:"<< (elapsed_time / (double)sysconf(_SC_CLK_TCK)) <<
 		DBG           "  elapsed wall:"<< (elapsed_wall_time / (double)sysconf(_SC_CLK_TCK)) <<endl;
 		return 1;

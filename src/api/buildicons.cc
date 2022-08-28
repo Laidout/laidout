@@ -102,7 +102,8 @@ int BuildIconsFunction(ValueHash *context,
 {
 	Document *doc = nullptr;
 	int        numhits = 0;
-	clock_t time_start = times(nullptr);
+	tms tms_;
+	clock_t time_start = times(&tms_);
 	SetValue *files = nullptr;
 
 	try {
@@ -347,7 +348,7 @@ int BuildIconsFunction(ValueHash *context,
 	}
 	
 	if (files) files->dec_count();
-	time_start = times(nullptr) - time_start;
+	time_start = times(&tms_) - time_start;
 	cout << "Generated "<<numhits<<" icons in "<< (time_start / (float)sysconf(_SC_CLK_TCK)) <<" seconds."<<endl;
 	if (value_ret) *value_ret=NULL;
 	return 0;

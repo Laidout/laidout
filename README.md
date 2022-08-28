@@ -290,6 +290,27 @@ There are a few places where I use GNU-only functions, like getline(),
 which shouldn't be very difficult to replace or define similar functions.
 
 
+
+Compiling on Mac OS X with homebrew environment
+---------------------
+1. Install dependencies
+
+        brew install coreutils
+        brew unlink coreutils
+        brew install harfbuzz graphicsmagick imlib2 openssl@1.1 sqlite gegl mesa-glu ftgl xinput cups
+        brew install XQuartz
+
+2. Configure
+
+        epxort PKG_CONFIG_PATH=/usr/local/opt/openssl@1.1/lib/pkgconfig/
+        ./configure --prefix=./install --relocatable  --extra-cppflags "-std=c++11 `pkg-config --cflags openssl`" --pkg-config-path "/usr/local/opt/openssl@1.1/lib/pkgconfig/" --extra-ldflags "`pkg-config --libs imlib2 openssl freetype2 sqlite3 imlib2 cairo x11 fontconfig GraphicsMagick++ xft xrender`"
+
+3. Build
+
+        make
+        make install
+
+
 Compiling on Windows
 --------------------
 Sorry, you're out of luck at the moment. If this is important to you,

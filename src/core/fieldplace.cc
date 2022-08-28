@@ -403,7 +403,7 @@ int FieldMask::operator==(const FieldMask &mask)
 }
 
 //! Shortcut to check for a single, top field, such as stack with only {5,-1}, what==5 returns 1.
-/*! For checking to see if there are ANY fields defined, use "!fieldmask" or fieldmask.howmany()
+/*! For checking to see if there are ANY fields defined, use "!fieldmask" or fieldmask.how_many()
  */
 int FieldMask::operator==(int what) 
 {
@@ -412,11 +412,11 @@ int FieldMask::operator==(int what)
 }
 
 //! Check for existence of fields defined in fieldmask.
-/*! This just returns fieldmask.howmany()
+/*! This just returns fieldmask.how_many()
  */
 int operator!(FieldMask &fieldmask)
 {
-	return fieldmask.howmany(); 
+	return fieldmask.how_many(); 
 }
 
 //! This sets the value of stacked field f, element where of f.

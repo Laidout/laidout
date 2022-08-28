@@ -4871,8 +4871,8 @@ int DrawableInfoNode::Update()
 	Affine ff = dr->GetTransformToContext(false, 0);
 	f->set(ff);
 	b->setbounds(dr);
-
-	for (int c=1; c<properties.n; c++) properties.e[c]->modtime = times(NULL);
+	tms tms_;
+	for (int c=1; c<properties.n; c++) properties.e[c]->modtime = times(&tms_);
 
 	//find page
 	StringValue *pg    = dynamic_cast<StringValue*>(properties.e[6]->GetData());

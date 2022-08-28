@@ -567,7 +567,7 @@ int PageRangeInterface::scan(int x,int y, int *position, int *range, int *part, 
 	if (part && pos>=0) *part=PART_Position;
 	if (position) *position=pos;
 	
-	if (pos>=0 || r>=0 || part>0) return 1;
+	if (pos>=0 || r>=0 || *part>0) return 1;
 	return 0;
 }
 

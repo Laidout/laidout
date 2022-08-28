@@ -1146,7 +1146,8 @@ int GeglRectNode::Update()
 			dynamic_cast<DoubleValue*>(properties.e[2]->GetData())->d = rect.y;
 			dynamic_cast<DoubleValue*>(properties.e[3]->GetData())->d = rect.width;
 			dynamic_cast<DoubleValue*>(properties.e[4]->GetData())->d = rect.height;
-			for (int c=1; c<5; c++) properties.e[c]->modtime = times(NULL);
+			tms tms_;
+			for (int c=1; c<5; c++) properties.e[c]->modtime = times(&tms_);
 		}
 	}
 
@@ -1243,8 +1244,8 @@ int GeglToLaxImageNode::Update()
 				total_preview->inc_count();
 				if (layout) UpdateLayout();
 			}
-
-			for (int c=1; c<properties.n; c++) properties.e[c]->modtime = times(NULL);
+			tms tms_;
+			for (int c=1; c<properties.n; c++) properties.e[c]->modtime = times(&tms_);
 		}
 	}
 

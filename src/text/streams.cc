@@ -696,8 +696,8 @@ void Stream::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context
 			}
 		}
 	}
-
-	modtime = times(nullptr);
+	tms tms_;
+	modtime = times(&tms_);
 }
 
 

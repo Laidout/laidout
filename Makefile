@@ -18,9 +18,9 @@ SHAREDIR=$(PREFIX)/share
  ### If you want to be sure that an install does not clobber anything that exists
  ### already, then uncomment the line with the '--backup=t' and comment out the other.
 #INSTALL=install -D --backup=t 
-INSTALL=install -D
+INSTALL=$(INSTALLEXE) -D
 
-INSTALLDIR=install -d
+INSTALLDIR=$(INSTALLEXE) -d
 
 LAIDOUTNAME=laidout-$(LAIDOUTVERSION)
 
