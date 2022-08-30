@@ -25,7 +25,7 @@ geglnodes.so: geglnodes.o svgnodes.o
 	@echo "Compiling geglnodes with pkg-config path $(PKG_CONFIG_PATH)"
 	@echo "gegl cflags: $(GEGLCPPFLAGS)"
 	@echo "gegl libs  : $(GEGLLIBS)"
-	g++ -shared -fPIC $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) svgnodes.o geglnodes.o -llaxkit $(GEGLLIBS) -o geglnodes.so
+	g++ -shared -fPIC -Wl,-undefined,dynamic_lookup  $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) svgnodes.o geglnodes.o  $(GEGLLIBS) -o geglnodes.so
 
 geglnodes.o: geglnodes.cc
 	g++ -shared -fPIC $(CPPFLAGS) $(GEGLCPPFLAGS) -L$(LAXDIR) geglnodes.cc -llaxkit $(GEGLLIBS) -c -o $@

@@ -209,7 +209,8 @@ int ExpandVectorNode::Update()
 
 	for (int c=0; c<4; c++) {
 		dynamic_cast<DoubleValue* >(properties.e[c+1]->data)->d = vs[c];
-		properties.e[c+1]->modtime = times(NULL);
+		tms tms_;
+		properties.e[c+1]->modtime = times(&tms_);
 	}
 
 	return NodeBase::Update();
@@ -1655,9 +1656,10 @@ int MathNode2::GetStatus()
 int MathNode2::Update()
 {
 	last_status = UpdateThisOnly();
-	status_time = times(nullptr);
+	tms tms_;
+	status_time = times(&tms_);
 	if (last_status == 0) {
-		modtime = times(NULL);
+		modtime = times(&tms_);
 		return last_status;
 	}
 	return NodeBase::Update();
@@ -2288,8 +2290,8 @@ int ExpressionNode::Update()
 	int status;
 	ErrorLog log;
 	Value *ret = nullptr;
-
-	last_eval = times(nullptr);
+	tms tms_;
+	last_eval = times(&tms_);
 	status = laidout->calculator->EvaluateWithParams(expression,-1, nullptr, &params, &ret, &log);
 	if (status != 0 || !ret) {
 		char *er = log.FullMessageStr();
@@ -3703,8 +3705,8 @@ NodeBase *IfNode::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &fork
 
 	NodeBase *next = NULL;
 	if (prop->connections.n) next = prop->connections.e[0]->to;
-
-	modtime = times(NULL);
+	tms tms_;
+	modtime = times(&tms_);
 	MarkMustUpdate();
 	// PropagateUpdate();
 
@@ -4080,8 +4082,8 @@ NodeBase *ForkNode::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &fo
 		next2 = prop2->connections.e[0]->to;
 		forks.push(new NodeThread(next2, prop2, NULL,0));
 	}
-
-	modtime = times(NULL);
+	tms tms_;
+	modtime = times(&tms_);
 	//PropagateUpdate();
 
 	return next;
@@ -4338,8 +4340,8 @@ NodeBase *DelayNode::Execute(NodeThread *thread, Laxkit::PtrStack<NodeThread> &f
 		Update(); //updates wait_until
 		return this;
 	}
-
-	clock_t curtime = times(NULL);
+	tms tms_;
+	clock_t curtime = times(&tms_);
 	if (wait_until > curtime) {
 		//still waiting
 		return this;
@@ -4362,7 +4364,8 @@ int DelayNode::Update()
 	int isnum = 0;
 	double secs = getNumberValue(properties.e[2]->GetData(), &isnum);
 	if (isnum && secs>0) {
-		clock_t curtime = times(NULL);
+		tms tms_;
+		clock_t curtime = times(&tms_);
 		wait_until = curtime + secs * sysconf(_SC_CLK_TCK);
 	}
 

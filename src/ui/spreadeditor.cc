@@ -236,7 +236,8 @@ void SpreadInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::D
  */
 int SpreadInterface::InterfaceOn()
 {
-	if (doc) for (int c=0; c<doc->pages.n; c++) doc->pages.e[c]->modtime=times(NULL);
+	tms tms_;
+	if (doc) for (int c=0; c<doc->pages.n; c++) doc->pages.e[c]->modtime=times(&tms_);
 	return 0;
 }
 
@@ -2005,7 +2006,8 @@ int SpreadEditor::Event(const Laxkit::EventData *data,const char *mes)
 
 	} else if (!strcmp("updatethumbs",mes)) {
 		 // *** kind of a hack
-		for (int c=0; c<doc->pages.n; c++) doc->pages.e[c]->modtime=times(NULL);
+		 tms tms_;
+		for (int c=0; c<doc->pages.n; c++) doc->pages.e[c]->modtime=times(&tms_);
 		((anXWindow *)viewport)->Needtodraw(1);
 		return 0;
 

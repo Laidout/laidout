@@ -60,7 +60,7 @@ FindWindow::FindWindow(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 	
 	if (!win_parent) win_style |= ANXWIN_ESCAPABLE;
 
-	howmany = nullptr;
+	how_many = nullptr;
 	pattern = nullptr;
 	founditems = nullptr;
 
@@ -202,8 +202,8 @@ int FindWindow::init()
 
 
 	//--------------- Found ---------------------------
-	howmany = new MessageBar(this,"foundmsg",nullptr, 0, 0,0,0,0,0, _("Found (0)"));
-	rowframe->AddWin(howmany,1, 40,0,5000,50,0, linpheight,0,0,50,0, -1);
+	how_many = new MessageBar(this,"foundmsg",nullptr, 0, 0,0,0,0,0, _("Found (0)"));
+	rowframe->AddWin(how_many,1, 40,0,5000,50,0, linpheight,0,0,50,0, -1);
 
 	last = tbut = new Button(this,"togglelist",nullptr,0, 0,0,0,0,1, last,object_id,"togglelist",
 						 0,
@@ -336,10 +336,10 @@ void FindWindow::InitiateSearch()
 
 void FindWindow::UpdateFound()
 {
-	if (howmany) {
+	if (how_many) {
 		Utf8String str;
 		str.Sprintf(_("Found (%d):"), selection.n);
-		howmany->SetText(str.c_str());
+		how_many->SetText(str.c_str());
 	}
 
 	int dim = 50 * UIScale();

@@ -55,7 +55,7 @@ class FindWindow : public Laxkit::DraggableFrame
 	Laxkit::PtrStack<FindResult> selection;
 	int most_recent;
 
-	Laxkit::MessageBar *howmany;
+	Laxkit::MessageBar *how_many;
 	Laxkit::LineInput *pattern;
 	Laxkit::IconSelector *founditems;
 

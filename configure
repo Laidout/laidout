@@ -47,7 +47,7 @@ while true ; do
   ARG=$1;
 #  echo "arg: $ARG"
 
-  if [ x$ARG == x ] ; then break; fi
+  if [ "x$ARG" == x ] ; then break; fi
   
   option=`expr "x$ARG" : 'x\([^=]*\)=.*'`;
   if [ x$option == x ] ; then
@@ -109,7 +109,7 @@ while true ; do
 		shift ;;
 
 	--extra-ldflags)
-        if [ -z $optarg ] ; then 
+        if [ -z "$optarg" ] ; then 
           optarg=$2
           shift
         fi
@@ -243,13 +243,13 @@ if [ ! -d $LAXDIR ] ; then
 fi
 
 if [ ! -e $LAXDIR/configured.h ] ; then
-	LAXTRAS=""
-	if [ $USESQLITE == "no" ] ; then LAXTRAS="$LAXTRAS --disable-sqlite"; fi
-	if [ $RELOCATABLE == "yes" ] ; then LAXTRAS="$LAXTRAS --relocatable"; fi
-	if [ $EXTRA_CPPFLAGS != "" ] ; then LAXTRAS="$LAXTRAS --extra-cppflags \"$EXTRA_CPPFLAGS\""; fi
-	echo "Laxkit not configured, configuring: $LAXTRAS";
+	LAXTRAS=()
+	if [ $USESQLITE == "no" ] ; then LAXTRAS+=("--disable-sqlite"); fi
+	if [ $RELOCATABLE == "yes" ] ; then LAXTRAS+=("--relocatable"); fi
+	if [ "$EXTRA_CPPFLAGS" != "" ] ; then LAXTRAS+=(--extra-cppflags "$EXTRA_CPPFLAGS"); fi
+	echo "Laxkit not configured, configuring: ${LAXTRAS[@]}";
 	CURDIR=`pwd`
-	cd $LAXDIR/.. && ./configure $LAXTRAS
+	cd $LAXDIR/.. && ./configure "${LAXTRAS[@]}"
 	cd $CURDIR
 fi
 
@@ -306,7 +306,8 @@ done
  ## readline doesn't seem to have a pkg-config entry, so do this hackier check
 echo -n Checking for readline......;
 #---attempt 3, check for existence of cups-config program:
-if [ ! -e /usr/local/include/readline/readline.h -a \
+if [ ! -e /usr/local/opt/readline/include/readline/readline.h -a \
+   ! -e /usr/local/include/readline/readline.h -a \
 	 ! -e /usr/include/readline/readline.h  ] ; then 
     echo "Can't find libreadline headers."; 
     NUM="";
@@ -414,6 +415,16 @@ echo "else"                                 >> Makefile-toinclude
 echo 'PKG_CONFIG_PATH+=:$(EXTRA_PKG)'       >> Makefile-toinclude
 echo 'export PKG_CONFIG_PATH'               >> Makefile-toinclude
 echo "endif"                                >> Makefile-toinclude
+
+# install on macos do not support -D option, use install in coreutils instead
+HOMEBREW_COREUTILS_INSTALL=/usr/local/opt/coreutils/libexec/gnubin/install
+
+if [ -f $HOMEBREW_COREUTILS_INSTALL ]
+then
+  echo "INSTALLEXE=$HOMEBREW_COREUTILS_INSTALL"  >> Makefile-toinclude
+else
+  echo "INSTALLEXE=install"  >> Makefile-toinclude
+fi
 
 echo "" >> Makefile-toinclude
 

@@ -245,6 +245,9 @@ after_success:
   - bash upload.sh Laidout*.AppImage*
   
 branches:
-  except:
-    - # Do not build tags that we create when we upload to GitHub Releases
-    - /^(?i:continuous)/
+  only:
+    - master
+    - release
+  #except:
+  #  - # Do not build tags that we create when we upload to GitHub Releases
+  #  - /^(?i:continuous)/

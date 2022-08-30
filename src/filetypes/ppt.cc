@@ -30,6 +30,10 @@
 #include "ppt.h"
 
 #include <iostream>
+
+#include <libgen.h>
+
+
 #define DBG 
 
 using namespace std;
