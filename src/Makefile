@@ -64,7 +64,6 @@ objs= \
 #object files from other directories. Listing them all explicitly to prevent
 #spurious inclusion of temporary testing stuff.
 otherobjs= \
-	plugins/addonaction.o \
 	core/document.o \
 	core/objectiterator.o \
 	core/drawdata.o \
@@ -98,6 +97,7 @@ otherobjs= \
 	impositions/netdialog.o \
 	impositions/polyptychwindow.o \
 	impositions/singleseditor.o \
+	plugins/addonaction.o \
 	plugins/plugin.o \
 	api/reimpose.o \
 	api/openandnew.o \

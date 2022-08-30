@@ -11,14 +11,14 @@ compile:
 install:
 	@echo Installing language files: $(wildcard *.mo)...
 	$(foreach NAME, $(basename $(wildcard *.mo)), \
-		$(shell	$(INSTALL) -D -m644 $(NAME).mo $(PO) $(LANGUAGE_PATH)/$(NAME)/LC_MESSAGES/laidout-$(LAIDOUTVERSION).mo))
+		$(shell	$(INSTALLEXE) -D -m644 $(NAME).mo $(PO) $(LANGUAGE_PATH)/$(NAME)/LC_MESSAGES/laidout-$(LAIDOUTVERSION).mo))
 	@echo Done installing language files.
 
 #PO=$(foreach NAME, $(basename $(wildcard *.mo)), $(shell echo temp-install/locale/$(NAME)/LC_MESSAGES/laidout.mo >> temp))
 installhere:
 	@echo Installing language files...
 	$(foreach NAME, $(basename $(wildcard *.mo)), \
-		$(shell	$(INSTALL) -D -m755 $(NAME).mo $(PO) temp-install/locale/$(NAME)/LC_MESSAGES/laidout-$(LAIDOUTVERSION).mo))
+		$(shell	$(INSTALLEXE) -D -m755 $(NAME).mo $(PO) temp-install/locale/$(NAME)/LC_MESSAGES/laidout-$(LAIDOUTVERSION).mo))
 	@echo Done installing language files.
 
 uninstall:
