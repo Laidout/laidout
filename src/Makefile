@@ -7,10 +7,14 @@
 include ../Makefile-toinclude
 LAXIDIR=$(LAXDIR)/interfaces
 
+LIBINTL=-lintl
+ifeq ($(shell uname -s),Linux)
+	LIBINTL=
+endif
 
 LD=g++
 LDFLAGS= $(EXTRA_LDFLAGS) -L/usr/local/lib -L/usr/X11R6/lib -rdynamic -lXi -lXext -lX11 -lm -lpng `imlib2-config --libs` `pkg-config --libs freetype2`\
-		 `pkg-config --libs GraphicsMagick++` `cups-config --libs` -ldl -lXft -lXrandr
+		 `pkg-config --libs GraphicsMagick++` `cups-config --libs` -ldl -lXft -lXrandr $(LIBINTL)
 DEBUGFLAGS= -g -gdwarf-2
 CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) $(EXTRA_CPPFLAGS)  -I$(LAXDIR)/.. `pkg-config --cflags freetype2` -I$(POLYPTYCHBASEDIR)
 
@@ -93,6 +97,7 @@ otherobjs= \
 	impositions/netdialog.o \
 	impositions/polyptychwindow.o \
 	impositions/singleseditor.o \
+	plugins/addonaction.o \
 	plugins/plugin.o \
 	api/reimpose.o \
 	api/openandnew.o \

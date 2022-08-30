@@ -65,3 +65,7 @@ src/polyptych/src/*jpg
 docs/web
 coop/fonts/namerecord-TEMPLATE.txt
 coop/fonts/asciichart.png
+
+# Ignore miscellaneous
+.DS_Store
+.vscode

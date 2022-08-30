@@ -415,7 +415,8 @@ Document::Document(const char *filename)
 	name=NULL;
 	saveas=NULL;
 	makestr(saveas,filename);
-	modtime=times(NULL);
+	tms tms_;
+	modtime=times(&tms_);
 	curpage=-1;
 	imposition=NULL;
 	metadata = nullptr;
@@ -435,7 +436,9 @@ Document::Document(const char *filename)
  */
 Document::Document(Imposition *imp,const char *filename)//stuff=NULL
 { 
-	modtime=times(NULL);
+	tms tms_;
+
+	modtime=times(&tms_);
 	curpage=-1;
 	saveas=newstr(filename);
 	name=NULL;

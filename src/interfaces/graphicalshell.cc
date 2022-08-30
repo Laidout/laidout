@@ -1017,7 +1017,7 @@ int GraphicalShell::Refresh()
 
 		do {
 			ls=nl;
-			nl=strchrnul(nl,'\n');
+			nl=lax_strchrnul(nl, '\n');
 			if (*nl) nl++;
 			numlines++;
 			w=dp->textextent(ls,nl-ls, NULL,NULL);

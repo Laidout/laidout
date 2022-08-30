@@ -3,6 +3,7 @@
 #############  Polyptych Makefile  ##############
 ##############                    ###############
 #################################################
+include ../../../Makefile-toinclude
 
 
 ##Comment the next 2 lines out if you don't want to include tuio capability
@@ -17,7 +18,7 @@ include ../../../Makefile-toinclude
 LD=g++
 DEBUGFLAGS= -g -gdwarf-2
 
-CPPFLAGS= -Wall $(DEBUGFLAGS) -I$(LAXDIR)/.. -I$(LAXIDIR) `pkg-config --cflags freetype2` `pkg-config GraphicsMagick++ --cflags`
+CPPFLAGS= -Wall $(DEBUGFLAGS) $(EXTRA_CPPFLAGS) -I$(LAXDIR)/.. -I$(LAXIDIR) `pkg-config --cflags freetype2` `pkg-config GraphicsMagick++ --cflags`
 LDFLAGS= -L/usr/X11R6/lib -lsqlite3 -lXft -lXi -lXext -lX11 -lXrandr -lftgl -lfontconfig -lm -lpng -lcairo -lcrypto `pkg-config GraphicsMagick++ --libs` `pkg-config --libs freetype2` `imlib2-config --libs` -L$(LAXDIR) -L$(LAXIDIR)
 
 

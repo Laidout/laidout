@@ -3225,7 +3225,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 				while (value && *value) {
 					if (*value=='#') value++;
 
-					char *endptr=strchrnul(value,';');
+					char *endptr=lax_strchrnul(value, ';');
 					const char *id;
 
 					for (int c2=0; c2<powerstrokes.n; c2++) {

@@ -588,7 +588,8 @@ Page::Page(PageStyle *npagestyle,int num)
 {
 	label        = NULL;
 	thumbmodtime = 0;
-	modtime      = times(NULL);
+	tms tms_;
+	modtime      = times(&tms_);
 	pagestyle    = npagestyle;
 	if (pagestyle) pagestyle->inc_count();
 	labeltype = MARKER_Circle;
@@ -853,8 +854,9 @@ void Page::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 //! Update modtime to at_time. If at_time==0, then use current time.
 void Page::Touch(clock_t at_time)
 {
+	tms tms_;
 	if (at_time) modtime=at_time;
-	else modtime=times(NULL);
+	else modtime=times(&tms_);
 }
 
 /*! Update thumbnail if necessary.
@@ -931,7 +933,8 @@ ImageData *Page::Thumbnail()
 	//DBG save_image(img, "DBG.png", "png");
 
 	DBG cerr <<"==--- Done Page::updating thumbnail.."<<endl;
-	thumbmodtime = times(NULL);
+	tms tms_;
+	thumbmodtime = times(&tms_);
 
 
 	dp->EndDrawing();
