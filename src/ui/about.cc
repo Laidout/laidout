@@ -97,8 +97,9 @@ int AboutWindow::preinit()
 			"laidout.org\n"
 			"\n"
 			"Contributors:\n"
-			"Probonopd\n"
+			"AkiSakurai\n"
 			"Nabyl Bennouri\n"
+			"Probonopd\n"
 			));
 	MessageBar *mesbar=new MessageBar(this,"aboutmesbar",NULL,MB_CENTER|MB_TOP|MB_MOVE, 0,0,0,0,0,about);
 	delete[] about;
