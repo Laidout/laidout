@@ -13,12 +13,16 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
+bug: image properties layout for filename truncates
+
 bug: severing clone link does some weird things, including crashing
 bug: clone tool clones do not have proper bounding box
 
 bug: gegl nodes, connect sinus to waves and also to displace, freeze!
 
 travis is recompiling on non-master branch pushes and it shouldn't
+
+crash: Start blank, then open recent doc with an ObjectTree. click on an object, crash! querying wrong viewport?
 
 
 ------------ other bugs:
@@ -586,7 +590,9 @@ idml from indesign?
 
 
 Singles:
+  inset should be per paper in papergroup
   revamp to be art board centric, based on random PaperGroup
+  what's with the old cached_margin stuff, obsolete now with pagestyles stack?
   DONE need to cache page margins properly for papergroup GetPageMarginOutline()
   PageLayout() lines
   PaperLayout()
@@ -1563,6 +1569,8 @@ themes:
   DONE laxprofile not working
 
 laxkit:
+  migrate the Value system to Laxkit
+    Value whattypes() should just be the type, rather than c++ class name
   inotify hooks?
   save dialog should probably ignore clobber safety and allow enter key in edit to be "save". also auto focus file edit on start and on ^l
     if you enter a new location in file edit, first go to that place. else save with that file name
@@ -1988,6 +1996,8 @@ plugins:
     mechanism for plugin config files
     plugins maybe have plugin.conf resources/
   beef up the config window, to allow toggling plugins.
+  plugin config window should list which file corresponds to the plugin
+  if there is a plugin conflict, should say which one is actually loaded
   figure out proper de-loading.. have to restart?
   check for already loaded
   think through plugin infrastructure better, and from external perspective
