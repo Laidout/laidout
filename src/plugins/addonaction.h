@@ -19,6 +19,7 @@
 #include <lax/interfaces/aninterface.h>
 #include <lax/anobject.h>
 #include <lax/dump.h>
+#include <lax/utf8string.h>
 
 #include "../calculator/values.h"
 #include "../core/plaintext.h"
@@ -30,12 +31,12 @@ namespace Laidout {
 class AddonAction : public Laxkit::anObject, public LaxFiles::DumpUtility, public SimpleFunctionEvaluator
 {
   protected:
+	Laxkit::Utf8String label; //human readable for menu
 
   public:
-	char *label; //human readable for menu
-
+  	ObjectDef *action_definition; //optional extra information about parameters and action purpose
 	ValueHash *parameters;
-	PlainText *script; //should be script -or- function
+	PlainText *script; //should be script -or- function, if both defined, use function
 	ObjectFunc function;
 
 	AddonAction();
@@ -43,10 +44,10 @@ class AddonAction : public Laxkit::anObject, public LaxFiles::DumpUtility, publi
 	const char *whattype() { return "AddonAction"; }
 
 	virtual const char *Name() { return Id(); }
-	virtual const char *Label() = 0;
-	virtual ValueHash *Config() = 0;
-	virtual int SetConfig(ValueHash *config) = 0; //new parameters object returned maybe after a dialog configures Config()
-	virtual LaxInterfaces::anInterface *Interface() = 0; //if a link back to the action, then use this interface to edit parameters
+	virtual const char *Label();
+	virtual ValueHash *Config(); //return the parameters object
+	virtual int SetConfig(ValueHash *config, bool link_values); //new parameters object returned maybe after a dialog configures Config()
+	virtual LaxInterfaces::anInterface *Interface(); // use this interface to edit parameters
 
 	 //i/o
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);

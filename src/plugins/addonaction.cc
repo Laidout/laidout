@@ -38,24 +38,50 @@ namespace Laidout {
 AddonAction::AddonAction()
 	: SimpleFunctionEvaluator(nullptr)
 {
-	label      = nullptr;
+	action_definition = nullptr;
 	parameters = nullptr;
 	script     = nullptr;
 }
 
 AddonAction::~AddonAction()
 {
+	if (action_definition) action_definition->dec_count();
 	if (parameters) parameters->dec_count();
 	if (script) script->dec_count();
-	delete[] label;
 }
 
 const char *AddonAction::Label()
 {
-	if (label) return label;
+	if (!label.IsEmpty()) return label.c_str();
 	if (script) return script->Id();
 	return Id();
 }
+
+ValueHash *AddonAction::Config()
+{
+	return parameters;
+}
+
+/*! New parameters object returned maybe after a dialog configures Config().
+ * config does not have to correspond 1:1 to parameters. values in config are added to or replace
+ * corresponding values in parameters.
+ *
+ * Return 1 for values changed/updated, else 0.
+ */
+int AddonAction::SetConfig(ValueHash *config, bool link_values)
+{
+	if (!parameters) parameters = new ValueHash();
+	parameters->CopyFrom(config, link_values);
+	return 1;
+}
+
+/*! Use this interface to edit parameters.
+ */
+LaxInterfaces::anInterface *AddonAction::Interface()
+{
+	return nullptr;
+}
+
 
 void AddonAction::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 {
@@ -69,18 +95,20 @@ LaxFiles::Attribute *AddonAction::dump_out_atts(LaxFiles::Attribute *att,int wha
 	if (what==-1) {
 		if (!att) att = new LaxFiles::Attribute;
 		att->push("label", "Text for menu");
-		att->push("parameters", nullptr, "(optional) Dictionary of paremeters to use for this action");
+		att->push("parameters", nullptr, "(optional) Dictionary of parameters to use for this action");
 		att->push("script", nullptr, "(optional) The script of this action. If the action is built in, no script is usually necessary.");
 
 		return att;
 	}
 
 	if (!att) att = new LaxFiles::Attribute;
-	att->push("label", label);
+	if (!label.IsEmpty()) att->push("label", label.c_str());
+
 	if (parameters) {
-		LaxFiles::Attribute *att2 = att->pushSubAtt("parameters", nullptr, "Dictionary of paremeters to use for this action");
+		LaxFiles::Attribute *att2 = att->pushSubAtt("parameters", nullptr, "Dictionary of parameters to use for this action");
 		parameters->dump_out_atts(att2, what, savecontext);
 	}
+
 	if (script) {
 		LaxFiles::Attribute *att2 = att->pushSubAtt("script");
 		script->dump_out_atts(att2, what, savecontext);
@@ -99,10 +127,11 @@ void AddonAction::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpC
         value=att->attributes.e[c]->value;
 
         if (!strcmp(name,"label")) {
-			makestr(label, value);
+        	label = value;
         
 		} else if (!strcmp(name,"parameters")) {
-			cerr << " *** TODO!!  AddonAction::dump_in_atts() parameters"<<endl;
+			if (!parameters) parameters = new ValueHash();
+			parameters->dump_in_atts(att->attributes.e[c], flag, context);
 
 		} else if (!strcmp(name,"script")) {
 			cerr << " *** TODO!!  AddonAction::dump_in_atts() script"<<endl;
