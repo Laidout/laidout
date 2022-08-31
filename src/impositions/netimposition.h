@@ -52,7 +52,8 @@ class NetImposition : public Imposition
 	virtual ObjectDef *makeObjectDef();
 	virtual Value *duplicate();
 	virtual const char *BriefDescription();
-	virtual void GetDimensions(int which, double *x, double *y);
+	virtual void GetDefaultPaperDimensions(double *x, double *y);
+	virtual void GetDefaultPageDimensions(double *x, double *y);
 	virtual ImpositionInterface *Interface();
 	
 	virtual int SetPaperSize(PaperStyle *npaper);

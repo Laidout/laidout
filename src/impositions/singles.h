@@ -28,6 +28,7 @@ ObjectDef *makeSinglesObjectDef();
 class Singles : public Imposition
 {
   private:
+  	//TODO: these are obsolete with pagestyles stack?
   	Laxkit::RefPtrStack<LaxInterfaces::PathsData> cached_margin_outlines; //1 per paper
   	Laxkit::NumStack<double> cached_margins; //6*(num papergroup->papers), l,r,t,b,w,h
 
@@ -37,7 +38,7 @@ class Singles : public Imposition
 	double gapx, gapy; //gap between tiles
 	int tilex, tiley; //tiles within insets
 	bool double_sided = false;
-	RectPageStyle *pagestyle; //default style
+	//RectPageStyle *pagestyle; //default style
 	Laxkit::RefPtrStack<RectPageStyle> pagestyles; //default styles
 
 	Singles();
@@ -51,7 +52,8 @@ class Singles : public Imposition
     virtual int dec_count();
     // ***********end TEMP!!!
 
-	virtual void GetDimensions(int which, double *x, double *y);
+	virtual void GetDefaultPaperDimensions(double *x, double *y);
+	virtual void GetDefaultPageDimensions(double *x, double *y);
 	virtual const char *BriefDescription();
 	virtual ObjectDef *makeObjectDef();
 	virtual Value *duplicate();

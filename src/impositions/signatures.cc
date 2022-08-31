@@ -2584,19 +2584,22 @@ int SignatureImposition::UseThisSignature(Signature *newsig)
 	return 0;
 }
 
-//! Return default paper dimensions if paperorpage==0, or page dimensions for paperorpage==1.
-void SignatureImposition::GetDimensions(int paperorpage, double *x, double *y)
+//! Return default paper for informational purposes.
+void SignatureImposition::GetDefaultPaperDimensions(double *x, double *y)
 {
-	if (paperorpage==0) {
-		 //paper dimensions
-		*x=signatures->partition->totalwidth;
-		*y=signatures->partition->totalheight;
-		return;
-	}
-
-	*x=signatures->pattern->PageWidth(1);
-	*y=signatures->pattern->PageHeight(1);
+	 //paper dimensions
+	*x = signatures->partition->totalwidth;
+	*y = signatures->partition->totalheight;
+	return;
 }
+
+//! Return default page for informational purposes.
+void SignatureImposition::GetDefaultPageDimensions(double *x, double *y)
+{
+	*x = signatures->pattern->PageWidth(1);
+	*y = signatures->pattern->PageHeight(1);
+}
+
 
 //! Return something like "2 fold, 8 page signature".
 const char *SignatureImposition::BriefDescription()

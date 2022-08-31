@@ -99,6 +99,8 @@ class RectPageStyle : public PageStyle
 	virtual const char *whattype() { return "RectPageStyle"; }
 	virtual ObjectDef *makeObjectDef();
 	virtual Value *duplicate();
+	virtual void RebuildOutline();
+	virtual void RebuildMarginPath();
 	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
 };

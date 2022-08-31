@@ -188,7 +188,7 @@ int PodofooutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 		fprintf(f," # %d papers\n\n",out->range.NumInRanges());
 
 		double dx,dy;
-		doc->imposition->GetDimensions(0,&dx,&dy);
+		doc->imposition->GetDefaultPaperDimensions(&dx,&dy);
 		fprintf(f,"$PageWidth=%.10g\n",dx*72);
 		fprintf(f,"$PageHeight=%.10g\n",dy*72);
 		fprintf(f,"$ScaleFactor=%.10g\n\n",scale);

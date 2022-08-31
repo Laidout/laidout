@@ -544,13 +544,18 @@ ImpositionInterface::ImpositionInterface(LaxInterfaces::anInterface *nowner,int 
  * This exists to try to avoid unnecessarily large dialogs and still have it easy
  * to navigate to a particular imposition you want.
  */
-/*! \fn void Imposition::GetDimensions(int paperorpage, double *x, double *y)
- * \brief Return default paper dimensions if paperorpage==0, or page dimensions for paperorpage==1.
+/*! \fn void Imposition::GetDefaultPaperDimensions(double *x, double *y)
+ * Return default paper dimensions.
  *
  * Please note that this is for informational descriptions only. SignatureImposition, for instance,
  * only returns dimenions of paper in first signature instance.
  */
-
+/*! \fn void Imposition::GetDefaultPageDimensions(double *x, double *y)
+ * Return default page dimensions.
+ *
+ * Please note that this is for informational descriptions only. SignatureImposition, for instance,
+ * only returns dimenions of the first page of the first paper in first signature instance.
+ */
 
 
 //! Constructor.

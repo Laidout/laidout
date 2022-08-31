@@ -466,7 +466,7 @@ const char *NewDocWindow::pagesDescription(int updatetoo)
 	}
 
 	double x,y;
-	imp->GetDimensions(1, &x,&y);
+	imp->GetDefaultPageDimensions(&x,&y);
 	int n=imp->NumPages();
 	if (n<=0) {
 		int nn=atoi(numpages->GetCText());

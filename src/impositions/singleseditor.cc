@@ -371,14 +371,14 @@ void SinglesEditor::send()
 	if (xtile<=0) xtile=1;
 	if (ytile<=0) ytile=1;
 
-	imposition->tilex=xtile;
-	imposition->tiley=ytile;
-	imposition->gapx=xgap;
-	imposition->gapy=ygap;
-	imposition->insetleft  =units->Convert(insetl->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
-	imposition->insetright =units->Convert(insetr->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
-	imposition->insettop   =units->Convert(insett->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
-	imposition->insetbottom=units->Convert(insetb->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
+	imposition->tilex = xtile;
+	imposition->tiley = ytile;
+	imposition->gapx = xgap;
+	imposition->gapy = ygap;
+	// imposition->insetleft  =units->Convert(insetl->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
+	// imposition->insetright =units->Convert(insetr->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
+	// imposition->insettop   =units->Convert(insett->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
+	// imposition->insetbottom=units->Convert(insetb->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
 	imposition->SetDefaultMargins(
 					units->Convert(marginl->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr),
 					units->Convert(marginr->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr),
@@ -416,10 +416,10 @@ Imposition *SinglesEditor::GetImposition()
 	imp->tiley=ytile;
 	imp->gapx=xgap;
 	imp->gapy=ygap;
-	imp->insetleft  =units->Convert(insetl->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
-	imp->insetright =units->Convert(insetr->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
-	imp->insettop   =units->Convert(insett->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
-	imp->insetbottom=units->Convert(insetb->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
+	// imp->insetleft  =units->Convert(insetl->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
+	// imp->insetright =units->Convert(insetr->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
+	// imp->insettop   =units->Convert(insett->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
+	// imp->insetbottom=units->Convert(insetb->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
 	imp->SetDefaultMargins(
 					units->Convert(marginl->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr),
 					units->Convert(marginr->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr),

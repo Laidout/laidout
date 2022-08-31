@@ -334,6 +334,32 @@ RectPageStyle::RectPageStyle(unsigned int ntype,double l,double r,double t,doubl
 	mb=b; //*** these would later start out at global default page margins.
 }
 
+/*! Replace this->outline with a rebuilt path. */
+void RectPageStyle::RebuildOutline()
+{
+	if (outline) outline->dec_count();
+	
+	outline = new PathsData();//count==1
+	outline->style |= PathsData::PATHS_Ignore_Weights;
+
+	outline->appendRect(0, 0, w(), h());
+	outline->maxx = w();
+	outline->maxy = h();
+}
+
+/*! Replace this->margin with a rebuilt path. */
+void RectPageStyle::RebuildMarginPath()
+{
+	if (margin) margin->dec_count();
+
+	margin = new PathsData();//count==1
+	margin->style |= PathsData::PATHS_Ignore_Weights;
+
+	margin->appendRect(ml, mb, w() - mr - ml, h() - mt - mb);
+	margin->FindBBox();
+}
+
+
 /*! Recognizes  margin[lrtb], leftpage, rightpage, lrtb, iotb, lrio,
  * 'marginsclip', 'facingpagesbleed', 'width', and 'height'.
  * Discards all else.

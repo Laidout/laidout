@@ -243,19 +243,21 @@ const char *NetImposition::NetImpositionName()
 	return _("Net");
 }
 
-void NetImposition::GetDimensions(int which, double *x, double *y)
+	
+void NetImposition::GetDefaultPaperDimensions(double *x, double *y)
 {
-	if (which==0) {
-		*x=papergroup->papers.e[0]->box->paperstyle->w();
-		*y=papergroup->papers.e[0]->box->paperstyle->h();
-		return;
-	}
+	*x = papergroup->papers.e[0]->box->paperstyle->w();
+	*y = papergroup->papers.e[0]->box->paperstyle->h();
+}
 
-	PageStyle *p=GetPageStyle(0,1);
-	*x=p->w();
-	*y=p->h();
+void NetImposition::GetDefaultPageDimensions(double *x, double *y)
+{
+	PageStyle *p = GetPageStyle(0,1);
+	*x = p->w();
+	*y = p->h();
 	p->dec_count();
 }
+
 
 //! Return something "Dodecahedron, 12 page net".
 /*! If briefdesc!=NULL, then return that. Otherwise make briefdesc

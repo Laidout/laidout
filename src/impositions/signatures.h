@@ -258,7 +258,8 @@ class SignatureImposition : public Imposition
 	virtual ImpositionInterface *Interface();
 
 	virtual const char *BriefDescription();
-	virtual void GetDimensions(int paperorpage, double *x, double *y);
+	virtual void GetDefaultPaperDimensions(double *x, double *y);
+	virtual void GetDefaultPageDimensions(double *x, double *y);
 	virtual Value *duplicate();
 	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual int SetPaperGroup(PaperGroup *ngroup);

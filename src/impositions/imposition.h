@@ -117,7 +117,7 @@ class ImpositionInterface : public LaxInterfaces::anInterface
     virtual const char *ImpositionType() = 0;
     virtual Imposition *GetImposition() = 0;
     virtual int SetTotalDimensions(double width, double height) = 0;
-    virtual int GetDimensions(double &width, double &height) = 0;
+    virtual int GetDimensions(double &width, double &height) = 0; //Return default paper size
     virtual int SetPaper(PaperStyle *paper) = 0;
     virtual int UseThisDocument(Document *doc) =0;
     virtual int UseThisImposition(Imposition *imp) =0;
@@ -162,7 +162,8 @@ class Imposition : public Value
 
 	virtual Laxkit::DoubleBBox *GoodWorkspaceSize(Laxkit::DoubleBBox *bbox=NULL);
 	virtual const char *BriefDescription() = 0;
-	virtual void GetDimensions(int paperorpage, double *x, double *y) = 0;
+	virtual void GetDefaultPaperDimensions(double *x, double *y) = 0; // for displayed summary purposes
+	virtual void GetDefaultPageDimensions(double *x, double *y) = 0; // for displayed summary purposes
 
 	virtual PaperStyle *GetDefaultPaper();
 	virtual int SetPaperSize(PaperStyle *npaper);

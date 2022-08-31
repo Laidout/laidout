@@ -45,17 +45,17 @@ namespace Laidout {
 
 
 Singles::Singles() : Imposition(_("Singles"))
-{ 
+{
 	insetleft  = insetright  = insettop  = insetbottom  = 0;
 	marginleft = marginright = margintop = marginbottom = 0;
 	tilex = tiley = 1;
 	gapx  = gapy  = 0;
-	pagestyle     = nullptr;
+	//pagestyle     = nullptr; // this is the default pagestyle, distinct from pagestyles stack
 	
 	PaperStyle *paperstyle = laidout->GetDefaultPaper();
 	if (paperstyle) paperstyle = static_cast<PaperStyle *>(paperstyle->duplicate());
 	else paperstyle = new PaperStyle("letter", 8.5, 11.0, 0, 300, "in");
-	SetPaperSize(paperstyle);
+	SetPaperSize(paperstyle); //sets papergroup based on paperstyle
 	paperstyle->dec_count();
 
 	setPage();
@@ -81,11 +81,10 @@ Singles::Singles(PaperGroup *pgroup, bool absorb)
 	if (absorb) pgroup->dec_count();
 }
 
-//! Calls pagestyle->dec_count().
 Singles::~Singles()
 {
 	DBG cerr <<"--Singles destructor object "<<object_id<<endl;
-	pagestyle->dec_count();
+	//pagestyle->dec_count();
 }
 
 
@@ -122,16 +121,18 @@ ImpositionResource **Singles::getDefaultResources()
 	return r;
 }
 
-//! Return paper dimensions (which==0) or page dimensions (which!=0).
-void Singles::GetDimensions(int which, double *x, double *y)
+//! Return default paper dimensions for informational purposes.
+void Singles::GetDefaultPaperDimensions(double *x, double *y)
 {
-	if (which == 0) {
-		*x = papergroup->papers.e[0]->box->paperstyle->w();
-		*y = papergroup->papers.e[0]->box->paperstyle->h();
-	}
+	*x = papergroup->papers.e[0]->box->paperstyle->w();
+	*y = papergroup->papers.e[0]->box->paperstyle->h();
+}
 
-	*x = pagestyle->w();
-	*y = pagestyle->h();
+//! Return page dimensions for informational purposes.
+void Singles::GetDefaultPageDimensions(double *x, double *y)
+{
+	*x = pagestyles.e[0]->w();
+	*y = pagestyles.e[0]->h();
 }
 
 //! Just return "Singles".
@@ -140,32 +141,51 @@ const char *Singles::BriefDescription()
 	return _("Singles");
 }
 
-//! Using the paperstyle, create a new default pagestyle.
-/*! dec_count() on old.
+/*! Using the papergroup, create new pagestyle(s).
+ *  Do nothing if papergroup is null.
  */
 void Singles::setPage()
 {
-	if (!paper) return;
-	double oldl=0, oldr=0, oldt=0, oldb=0;
-	if (pagestyle) {
-		oldl = pagestyle->ml;
-		oldr = pagestyle->mr;
-		oldt = pagestyle->mt;
-		oldb = pagestyle->mb;
-		pagestyle->dec_count();
-	}
-	
-	pagestyle=new RectPageStyle(RECTPAGE_LRTB);
-	pagestyle->width  = (paper->media.maxx-insetleft-insetright)/tilex;
-	pagestyle->height = (paper->media.maxy-insettop-insetbottom)/tiley;
-	pagestyle->pagetype = 0;
-	pagestyle->ml = oldl;
-	pagestyle->mr = oldr;
-	pagestyle->mt = oldt;
-	pagestyle->mb = oldb;
+	if (!papergroup) return;
 
-	pagestyle->outline = dynamic_cast<PathsData*>(GetPageOutline(0,0));
-	pagestyle->margin  = dynamic_cast<PathsData*>(GetPageMarginOutline(0,0));
+	for (int c = 0; c < papergroup->papers.n; c++) {
+		PaperBox *paper = papergroup->papers.e[c]->box;
+
+		double oldl=0, oldr=0, oldt=0, oldb=0;
+		if (c < pagestyles.n) {
+			oldl = pagestyles.e[c]->ml;
+			oldr = pagestyles.e[c]->mr;
+			oldt = pagestyles.e[c]->mt;
+			oldb = pagestyles.e[c]->mb;
+			pagestyles.e[c]->dec_count();
+		} else {
+			oldl = marginleft;
+			oldr = marginright;
+			oldt = margintop;
+			oldb = marginbottom;
+		}
+		
+		RectPageStyle *pagestyle = new RectPageStyle(RECTPAGE_LRTB);
+		pagestyle->width  = (paper->media.maxx-insetleft-insetright)/tilex;
+		pagestyle->height = (paper->media.maxy-insettop-insetbottom)/tiley;
+		pagestyle->pagetype = 0;
+		pagestyle->ml = oldl;
+		pagestyle->mr = oldr;
+		pagestyle->mt = oldt;
+		pagestyle->mb = oldb;
+		pagestyle->RebuildOutline();
+		pagestyle->RebuildMarginPath();
+
+		if (c < pagestyles.n) {
+			pagestyles.e[c] = pagestyle;
+		} else {
+			pagestyles.push(pagestyle);
+			pagestyle->dec_count();
+		}
+
+		//pagestyle->outline = dynamic_cast<PathsData*>(GetPageOutline(0,0));
+		//pagestyle->margin  = dynamic_cast<PathsData*>(GetPageMarginOutline(0,0));
+	}
 }
 
 //! Return the default page style for that page.
@@ -173,27 +193,33 @@ void Singles::setPage()
  */
 PageStyle *Singles::GetPageStyle(int pagenum,int local)
 {
-	if (!papergroup) {
-		if (!pagestyle) setPage();
-		if (!pagestyle) return nullptr;
-		if (local) {
-			PageStyle *ps = (PageStyle *)pagestyle->duplicate();
-			ps->flags |= PAGESTYLE_AUTONOMOUS;
-			return ps;
-		}
-		pagestyle->inc_count();
-		return pagestyle;
-	}
+	if (!papergroup) return nullptr;
+	// if (!papergroup) {
+	// 	if (!pagestyle) setPage();
+	// 	if (!pagestyle) return nullptr;
+	// 	if (local) {
+	// 		PageStyle *ps = (PageStyle *)pagestyle->duplicate();
+	// 		ps->flags |= PAGESTYLE_AUTONOMOUS;
+	// 		return ps;
+	// 	}
+	// 	pagestyle->inc_count();
+	// 	return pagestyle;
+	// }
 
 	while (pagestyles.n < papergroup->papers.n) {
 		RectPageStyle *rectstyle = new RectPageStyle();
-		rectstyle->width = papergroup->papers.e[papergroup->papers.n-1]->boxwidth();
+		rectstyle->width  = papergroup->papers.e[papergroup->papers.n-1]->boxwidth();
 		rectstyle->height = papergroup->papers.e[papergroup->papers.n-1]->boxheight();
+		rectstyle->ml = marginleft  ;
+		rectstyle->mr = marginright ;
+		rectstyle->mt = margintop   ;
+		rectstyle->mb = marginbottom;
+		rectstyle->RebuildOutline();
+		rectstyle->RebuildMarginPath();
 		pagestyles.push(rectstyle);
 		rectstyle->dec_count();
 	}
 
-	//PaperStyle *pstyle = papergroup->papers.e[pagenum % papergroup->papers.n]->box->paperstyle;
 	PageStyle *pstyle = pagestyles.e[pagenum % papergroup->papers.n];
 
 	if (local) {
@@ -215,7 +241,7 @@ PageStyle *Singles::GetPageStyle(int pagenum,int local)
  */
 int Singles::SetPaperSize(PaperStyle *npaper)
 {
-	if (Imposition::SetPaperSize(npaper)) return 1;
+	if (Imposition::SetPaperSize(npaper)) return 1; // note this will REPLACE the old papergroup
 	setPage();
 	return 0;
 }
@@ -225,12 +251,10 @@ int Singles::SetPaperSize(PaperStyle *npaper)
  */
 int Singles::SetDefaultMargins(double l,double r,double t,double b)
 {
-	if (!pagestyle) return 1;
-	pagestyle->ml = marginleft  = l;
-	pagestyle->mr = marginright = r;
-	pagestyle->mt = margintop   = t;
-	pagestyle->mb = marginbottom= b;
-
+	marginleft  = l;
+	marginright = r;
+	margintop   = t;
+	marginbottom= b;
 	return 0;
 }
 
@@ -280,14 +304,14 @@ void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpConte
 			IntAttribute(value,&numpages);
 			if (numpages<0) numpages=0;
 
-		} else if (!strcmp(name,"defaultpagestyle")) {
-			if (pagestyle) pagestyle->dec_count();
-			pagestyle=new RectPageStyle(RECTPAGE_LRTB);
-			pagestyle->dump_in_atts(att->attributes.e[c],flag,context);
+		// } else if (!strcmp(name,"defaultpagestyle")) {
+		// 	if (pagestyle) pagestyle->dec_count();
+		// 	pagestyle=new RectPageStyle(RECTPAGE_LRTB);
+		// 	pagestyle->dump_in_atts(att->attributes.e[c],flag,context);
 
 		} else if (!strcmp(name,"defaultpaperstyle")) {
 			PaperStyle *paperstyle;
-			paperstyle=new PaperStyle("Letter",8.5,11,0,300,"in");//***should be global def
+			paperstyle=new PaperStyle("Letter",8.5,11,0,300,"in");//TODO: ***should be global def
 			paperstyle->dump_in_atts(att->attributes.e[c],flag,context);
 			SetPaperSize(paperstyle);
 			paperstyle->dec_count();
@@ -350,8 +374,8 @@ void Singles::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *contex
 		fprintf(f,"%snumpages 3 #number of pages in the document. This is ignored on readin\n",spc);
 		fprintf(f,"%spaper_layout  #optional definition of multiple pages per page spread\n", spc);
 		papergroup->dump_out(f,indent+2,-1,NULL);
-		fprintf(f,"%sdefaultpagestyle #default page style\n",spc);
-		pagestyle->dump_out(f,indent+2,-1,NULL);
+		//fprintf(f,"%sdefaultpagestyle #default page style\n",spc);
+		//pagestyle->dump_out(f,indent+2,-1,NULL);
 		return;
 	}
 	fprintf(f,"%smarginleft   %.10g\n",spc,marginleft);
@@ -366,9 +390,14 @@ void Singles::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *contex
 	fprintf(f,"%stiley %d\n",spc,tiley);
 
 	if (numpages) fprintf(f,"%snumpages %d\n",spc,numpages);
-	if (pagestyle) {
-		fprintf(f,"%sdefaultpagestyle\n",spc);
-		pagestyle->dump_out(f,indent+2,0,context);
+
+	if (pagestyles.n) {
+		//Attribute *att2 = att->pushSubAtt("pagestyles");
+		fprintf(f,"%spagestyles\n",spc);
+		for (int c=0; c < pagestyles.n; c++) {
+			fprintf(f,"%s  pagestyle\n",spc);
+			pagestyles.e[c]->dump_out(f,indent+2,0,context);
+		}
 	}
 
 	if (papergroup) {
@@ -381,29 +410,37 @@ void Singles::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *contex
 Value *Singles::duplicate()
 {
 	Singles *sn;
-	sn=new Singles();
+	sn = new Singles();
 
 	if (objectdef) {
 		objectdef->inc_count();
 		if (sn->objectdef) sn->objectdef->dec_count();
 		sn->objectdef=objectdef;
 	}
-	if (pagestyle) {
-		if (sn->pagestyle) sn->pagestyle->dec_count();
-		pagestyle->inc_count();
-		sn->pagestyle=pagestyle;
+
+	if (papergroup && papergroup->papers.n) {
+		for (int c=0; c < papergroup->papers.n; c++) {
+			if (c < sn->pagestyles.n && sn->pagestyles.e[c]) sn->pagestyles.e[c]->dec_count();
+
+			RectPageStyle *dup = dynamic_cast<RectPageStyle*>(pagestyles.e[c]->duplicate());
+			if (c < sn->pagestyles.n) sn->pagestyles.e[c] = dup;
+			else {
+				sn->pagestyles.push(dup);
+				dup->dec_count();
+			}
+		}
 	}
 
-	sn->marginleft  =marginleft;
-	sn->marginright =marginright;
-	sn->margintop   =margintop;
-	sn->marginbottom=marginbottom;
-	sn->insetleft   =insetleft;
-	sn->insetright  =insetright;
-	sn->insettop    =insettop;
-	sn->insetbottom =insetbottom;
-	sn->tilex       =tilex;
-	sn->tiley       =tiley;
+	sn->marginleft   = marginleft;
+	sn->marginright  = marginright;
+	sn->margintop    = margintop;
+	sn->marginbottom = marginbottom;
+	sn->insetleft    = insetleft;
+	sn->insetright   = insetright;
+	sn->insettop     = insettop;
+	sn->insetbottom  = insetbottom;
+	sn->tilex        = tilex;
+	sn->tiley        = tiley;
 
 	return sn;  
 }
@@ -411,7 +448,7 @@ Value *Singles::duplicate()
 //! The newfunc for Singles instances.
 Value *NewSingles()
 { 
-	Singles *s=new Singles;
+	Singles *s = new Singles;
 	return s;
 }
 
@@ -630,17 +667,17 @@ ObjectDef *makeSinglesObjectDef()
  */
 Page **Singles::CreatePages(int npages)
 {
-	if (npages>0) NumPages(npages);
-	if (numpages==0) return NULL;
+	if (npages > 0) NumPages(npages);
+	if (numpages == 0) return NULL;
 
-	Page **pages=new Page*[numpages+1];
+	Page **pages = new Page*[numpages+1];
 	int c;
 	PageStyle *ps;
 	for (c=0; c<numpages; c++) {
-		ps=GetPageStyle(c,0);
+		ps = GetPageStyle(c,0);
 		 // pagestyle is passed to Page, not duplicated.
 		 // There its count is inc'd.
-		pages[c]=new Page(ps,c); 
+		pages[c] = new Page(ps,c); 
 		ps->dec_count(); //remove extra count
 	}
 	pages[c]=NULL;
@@ -669,19 +706,32 @@ SomeData *Singles::GetPageOutline(int pagenum,int local)
 SomeData *Singles::GetPageMarginOutline(int pagenum,int local)
 {
 	if (!papergroup || !papergroup->papers.n) return nullptr;
-	if (!doc || pagenum >= doc->pages.n) return nullptr;
+	//if (!doc || pagenum >= doc->pages.n) return nullptr;
 
-	RectPageStyle *pstyle = dynamic_cast<RectPageStyle*>(doc->pages.e[pagenum]->pagestyle);
 	int which = pagenum % papergroup->papers.n;
 	int i = which * 6;
 
+	double ml = 0, mr = 0, mt = 0, mb = 0, w = 0, h = 0;
+	if (doc) {
+		RectPageStyle *pstyle = dynamic_cast<RectPageStyle*>(doc->pages.e[pagenum]->pagestyle);
+		ml = pstyle->ml;
+		mr = pstyle->mr;
+		mt = pstyle->mt;
+		mb = pstyle->mb;
+		w  = pstyle->w();
+		h  = pstyle->h();
+	} else {
+		w = papergroup->papers.e[which]->box->media.boxwidth();
+		h = papergroup->papers.e[which]->box->media.boxheight();;
+	}
+	
 	if (which < cached_margin_outlines.n && cached_margin_outlines.e[which]) {
-		if (   cached_margins[i  ] == pstyle->ml
-			&& cached_margins[i+1] == pstyle->mr
-			&& cached_margins[i+2] == pstyle->mt
-			&& cached_margins[i+3] == pstyle->mb
-			&& cached_margins[i+4] == pstyle->w()
-			&& cached_margins[i+5] == pstyle->h()
+		if (   cached_margins[i  ] == ml
+			&& cached_margins[i+1] == mr
+			&& cached_margins[i+2] == mt
+			&& cached_margins[i+3] == mb
+			&& cached_margins[i+4] == w
+			&& cached_margins[i+5] == h
 			)
 		{
 			cached_margin_outlines.e[which]->inc_count();
@@ -690,9 +740,9 @@ SomeData *Singles::GetPageMarginOutline(int pagenum,int local)
 	}
 
 	PathsData *newpath = new PathsData();
-	newpath->appendRect(pstyle->ml, pstyle->mb, 
-						pstyle->w()-pstyle->mr-pstyle->ml,
-						pstyle->h()-pstyle->mt-pstyle->mb);
+	newpath->appendRect(ml, mb, 
+						w-mr-ml,
+						h-mt-mb);
 	newpath->FindBBox();
 	//nothing special is done when local==0
 
@@ -701,12 +751,12 @@ SomeData *Singles::GetPageMarginOutline(int pagenum,int local)
 	while (cached_margins.n < 6*papergroup->papers.n) cached_margins.push(-10000);
 
 	cached_margin_outlines.e[which] = newpath;
-	cached_margins[i  ] = pstyle->ml;
-	cached_margins[i+1] = pstyle->mr;
-	cached_margins[i+2] = pstyle->mt;
-	cached_margins[i+3] = pstyle->mb;
-	cached_margins[i+4] = pstyle->w();
-	cached_margins[i+5] = pstyle->h();
+	cached_margins[i  ] = ml;
+	cached_margins[i+1] = mr;
+	cached_margins[i+2] = mt;
+	cached_margins[i+3] = mb;
+	cached_margins[i+4] = w;
+	cached_margins[i+5] = h;
 
 	newpath->inc_count();
 	return newpath;
@@ -812,6 +862,7 @@ Spread *Singles::PaperLayout(int whichpaper)
 	 // page width/height must map to proper area on page.
 	 // makes rects with local origin in ll corner
 	PathsData *ntrans;
+	RectPageStyle *pagestyle = pagestyles.e[whichpaper % papergroup->papers.n];
 	for (x=0; x<tilex; x++) {
 		for (y=0; y<tiley; y++) {
 			ntrans=new PathsData();//count of 1
@@ -884,7 +935,7 @@ int Singles::PaperFromPage(int pagenumber)
 //! Return the page layout spread, which is either pagenumber, if papergroup != null is pagenumber/(papers in papergroup).
 int Singles::SpreadFromPage(int pagenumber)
 {
-	if (papergroup && papergroup->n()) return pagenumber / papergroup->n();
+	if (papergroup && papergroup->papers.n) return pagenumber / papergroup->papers.n;
 	return pagenumber;
 }
 
@@ -906,7 +957,7 @@ int Singles::GetPapersNeeded(int npages)
 /*! Page spread is all papers in papergroup. */
 int Singles::GetSpreadsNeeded(int npages)
 {
-	if (papergroup) return 1 + papergroup->n() / npages;
+	if (papergroup) return 1 + papergroup->papers.n / npages;
 	return npages;
 } 
 
