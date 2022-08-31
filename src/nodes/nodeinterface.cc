@@ -1640,7 +1640,7 @@ int NodeBase::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att,
 	}
 
 
-	Value *val = AttributeToValue(att); //this handles simple (but not compound) types in values.cc
+	Value *val = AttributeToValue(att, 0); //this handles simple (but not compound) types in values.cc
 	if (!val) {
 		// consult stylemanager for Laidout.* ... *** need better way to define not dependent on Laidout
 		ObjectDef *def = stylemanager.FindDef(att->name, -1, 2);
