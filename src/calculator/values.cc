@@ -2690,97 +2690,221 @@ void Value::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
 }
 
 void Value::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
-{ //  ***
-	cerr << " *** WARNING! Need to implement Value::dump_in_atts!"<<endl;
+{
+	for (int c=0; c<att->attributes.n; c++) {
+		const char *name  = att->attributes.e[c]->name;
+		//const char *value = att->attributes.e[c]->value;
+
+		int error_ret = 0;
+		Value *v = AttributeToValue(att->attributes.e[c], 1, &error_ret, context);
+		if (v) {
+			if (assign(v, name) != 1) {
+				if (context && context->log) context->log->AddError(0,0,0, _("Could not assign value to %s"), name);
+			}
+			v->dec_count();
+		}
+	}
 }
 
-/*! Try to convert att into a builtin Value object. This is designed to work well
- * with various dump_in_atts functions.
+
+/*! Try to convert att into a builtin Value object. This is supposed to work well
+ * with various dump_in_atts parsing functions.
  *
  * For simple values, the value is in att->value.
  * Otherwise, assume subfields.
+ *
+ * format == 0 means name is type, value or subatts are contents.
+ * format == 1 means value is either a number or a type. If type, subatts are contents.
+ *
+ * error_ret will be 0 on success, 1 for wrong format for type, 2 for unknown type,
+ * 3 for error parsing for type.
+ *
+ * ```
+ * DoubleValue 1
+ * DoubleValue
+ *   d 1
+ * SetValue
+ *   BooleanValue true
+ *   IntValue 23
+ *   
+ * pname 1
+ * pname DoubleValue
+ *   d 1
+ * pname SetValue
+ *   BooleanValue true
+ *   IntValue 23
+ * pname
+ *   IntValue 23
+ * ```
  */
-Value *AttributeToValue(Attribute *att)
+Value *AttributeToValue(Attribute *att, int format, int *error_ret, LaxFiles::DumpContext *context)
 {
-	if (!strcmp(att->name, "DoubleValue")) {
+	if (!att->name || !att->value) return nullptr;
+
+	if (error_ret) *error_ret = 0;
+
+	const char *type = nullptr;
+	const char *value = nullptr;
+
+
+	if (format == 0) {
+		// type simplevalue
+		// type
+		//   contents
+		// type
+		//   name simplevalue
+		type = att->name;
+		value = att->value;
+
+	} else {
+		// ignored_name simplevalue
+		Value *v = ParseSimpleType(att->value, error_ret); //when value is an actual number, not a type
+		if (v) return v;
+
+		// ignored_name type
+		//   contents
+		//   
+		type = att->value;
+
+		// ignored_name
+		//   type simplevalue
+		// ignored_name
+		//   type
+		//     contents
+		if (isblank(type)) {
+			if (!att->attributes.n) {
+				if (error_ret) *error_ret = 3;
+				return nullptr;
+			}
+			type = att->attributes.e[0]->name;
+			value = att->attributes.e[0]->value;
+			att = att->attributes.e[0];
+		}
+	}
+
+	if (!strcmp(type, "DoubleValue")) {
+		if (isblank(value) && att->attributes.n) value = att->attributes.e[0]->value;
 		double d=0;
-		if (DoubleAttribute(att->value, &d)) {
+		if (value && DoubleAttribute(value, &d)) {
 			return new DoubleValue(d);
 		} else {
-			return NULL;
+			if (error_ret) *error_ret = 3;
+			return nullptr;
 		}
 
-	} else if (!strcmp(att->name, "IntValue")) {
+	} else if (!strcmp(type, "IntValue")) {
+		if (isblank(value) && att->attributes.n) value = att->attributes.e[0]->value;
 		long v=0;
-		if (LongAttribute(att->value, &v)) {
+		if (LongAttribute(value, &v)) {
 			return new IntValue(v);
 		} else {
-			return NULL;
+			if (error_ret) *error_ret = 3;
+			return nullptr;
 		}
 
-	} else if (!strcmp(att->name, "BooleanValue")) {
-		return new BooleanValue(att->value);
+	} else if (!strcmp(type, "BooleanValue")) {
+		return new BooleanValue(value);
 
-    } else if (!strcmp(att->name, "StringValue")) {
-		return new StringValue(att->value);
+    } else if (!strcmp(type, "StringValue")) {
+    	if (isblank(value) && att->attributes.n) value = att->attributes.e[0]->value;
+		return new StringValue(value);
 
-    } else if (!strcmp(att->name, "BytesValue")) {
+    //} else if (!strcmp(att->name, "BytesValue")) {
+    	//if (isblank(value) && att->attributes.n) value = att->attributes.e[0]->value;
 		//encoded binary in value: "123ascii_escaped:\ff\fe\a8\03"
 		//-or- subatt[0].name == "binary[byte length]", subatt[0].value == straight binary data
-		//return new BytesValue(att->value);
+		//return new BytesValue(value);
 
-    } else if (!strcmp(att->name, "ColorValue")) {
-		return new ColorValue(att->value);
+    } else if (!strcmp(type, "ColorValue")) {
+    	if (isblank(value) && att->attributes.n) value = att->attributes.e[0]->value;
+    	//TODO: needs error checking
+		return new ColorValue(value);
 
-    } else if (!strcmp(att->name, "FlatvectorValue")) {
+    } else if (!strcmp(type, "FlatvectorValue")) {
+    	if (isblank(value) && att->attributes.n) value = att->attributes.e[0]->value;
 		flatvector v;
-		char *endptr=NULL;
-		if (FlatvectorAttribute(att->value, &v, &endptr)) {
+		char *endptr = nullptr;
+		if (FlatvectorAttribute(value, &v, &endptr)) {
 			return new FlatvectorValue(v);
 		}
-		return NULL;
+		if (error_ret) *error_ret = 3;
+		return nullptr;
 
-    } else if (!strcmp(att->name, "SpacevectorValue")) {
+    } else if (!strcmp(type, "SpacevectorValue")) {
+    	if (isblank(value) && att->attributes.n) value = att->attributes.e[0]->value;
 		spacevector v;
-		char *endptr=NULL;
-		if (SpacevectorAttribute(att->value, &v, &endptr)) {
+		char *endptr = nullptr;
+		if (SpacevectorAttribute(value, &v, &endptr)) {
 			return new SpacevectorValue(v);
 		}
-		return NULL;
+		if (error_ret) *error_ret = 3;
+		return nullptr;
 
-    } else if (!strcmp(att->name, "QuaternionValue")) {
+    } else if (!strcmp(type, "QuaternionValue")) {
+    	if (isblank(value) && att->attributes.n) value = att->attributes.e[0]->value;
 		Quaternion v;
 		char *endptr=NULL;
 		if (QuaternionAttribute(att->value, &v, &endptr)) {
 			return new QuaternionValue(v);
 		}
+		if (error_ret) *error_ret = 3;
 		return NULL;
 
-    } else if (!strcmp(att->name, "FileValue")) {
+    } else if (!strcmp(type, "FileValue")) {
+    	if (isblank(value) && att->attributes.n) value = att->attributes.e[0]->value;
+    	//TODO: needs error checking
 		return new FileValue(att->value);
 
-    } else if (!strcmp(att->name, "NullValue")) {
+    } else if (!strcmp(type, "NullValue")) {
 		return new NullValue();
 
-    } else if (!strcmp(att->name, "ValueHash")) {
+    } else if (!strcmp(type, "ValueHash")) {
     	ValueHash *hash = new ValueHash();
-    	DumpContext context;
-    	hash->dump_in_atts(att, 0, &context);
+    	hash->dump_in_atts(att, 0, context);
     	return hash;
 
-    // } else if (!strcmp(att->name, "SetValue")) {
+    } else if (!strcmp(att->name, "SetValue")) {
+    	SetValue *set = new SetValue();
+    	set->dump_in_atts(att, 0, context);
+    	return set;
+
     // } else if (!strcmp(att->name, "EnumValue")) {
     // } else if (!strcmp(att->name, "GenericValue")) {
-    // } else if (!strcmp(att->name, "MatrixValue")) {
     // } else if (!strcmp(att->name, "FunctionValue")) {
     // } else if (!strcmp(att->name, "ObjectValue")) {
+    // } else if (!strcmp(att->name, "MatrixValue")) {
     } else {
+    	if (error_ret) *error_ret = 2;
 		cerr << " *** NEED TO IMPLEMENT AttributeToValue() with "<<att->name<<"!"<<endl;
 	}
 
-	return NULL;
+	return nullptr;
 }
 
+Value *ParseSimpleType(const char *value, int *error_ret)
+{
+	if (error_ret) *error_ret = 0;
+
+	if (!value) {
+		if (error_ret) *error_ret = 1;
+		return nullptr;
+	}
+
+	if (!strcasecmp(value, "true"))  return new BooleanValue(true);
+	if (!strcasecmp(value, "false")) return new BooleanValue(false);
+	if (!strcasecmp(value, "null"))  return new NullValue();
+
+	int i = 0;
+	double d =0;
+	if (IsOnlyInt(value, strlen(value), &i)) {
+		return new IntValue(i);
+	} else if (IsOnlyDouble(value, strlen(value), &d)) {
+		return new DoubleValue(d);
+	}
+
+	if (error_ret) *error_ret = 2;
+	return nullptr;
+}
 
 Value *NewSimpleType(int type)
 {

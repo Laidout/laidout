@@ -50,9 +50,10 @@ enum ValueTypes {
 	VALUE_Flatvector, //!< two dimensional vector
 	VALUE_Spacevector,//!< three dimensional vector
 	VALUE_Quaternion, //!< four dimensional vector
-	VALUE_File,       //!< string like object refering to a file on disk
+	VALUE_File,       //!< string like object referring to a file on disk
 	VALUE_FileSave,   //!< Same as VALUE_File, but hinted to be for saving a file
 	VALUE_FileLoad,   //!< Same as VALUE_File, but hinted to be for loading a file
+	VALUE_Directory,  //!< Similar to VALUE_File, but geared specifically for directories.
 	VALUE_Enum,       //!< One of a list of string like labels, with associated integer value
 	VALUE_EnumVal,    //!< these do not exist independently of a VALUE_Enum's ObjectDef
 	VALUE_Boolean,    //!< Translatable as 1 for true, or 0 for false
@@ -692,12 +693,12 @@ class FileValue : public Value, virtual public FunctionEvaluator
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_File; }
- 	virtual ObjectDef *makeObjectDef();
+	virtual ObjectDef *makeObjectDef();
 
 	virtual int fileType(); //file link, dir link, file, dir, block
 	virtual int isLink();
 	virtual int Exists();
-	virtual int Depth();
+	virtual int Depth(); // number of path components
 	virtual const char *Part(int i);
 	virtual void Set(const char *nstr);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
@@ -710,7 +711,6 @@ class FileValue : public Value, virtual public FunctionEvaluator
 // class DirectoryValue : public Value, virtual public FunctionEvaluator
 // {
 //   public:
-// 	char seperator;
 // 	Laxkit::PtrStack<char> parts;
 // 	char *dirname;
 // 	bool hint_for_saving;
@@ -721,18 +721,20 @@ class FileValue : public Value, virtual public FunctionEvaluator
 // 	virtual int getValueStr(char *buffer,int len);
 // 	virtual Value *duplicate();
 // 	virtual int type() { return VALUE_Directory; }
-//  	virtual ObjectDef *makeObjectDef();
+//	virtual ObjectDef *makeObjectDef();
 
-// 	virtual int fileType(); //file link, dir link, file, dir, block
 // 	virtual int isLink();
 // 	virtual int Exists();
-// 	virtual int Depth();
+// 	virtual int Make(bool full_path);
+// 	virtual int Remove();
+// 	virtual int NumParts();
 // 	virtual const char *Part(int i);
 // 	virtual void Set(const char *nstr);
 // 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 // 						 Value **value_ret,
 // 						 Laxkit::ErrorLog *log);
 // };
+
 
 //----------------------------- ColorValue ----------------------------------
 class ColorValue : public Value
@@ -784,7 +786,8 @@ int isVectorType(Value *v, double *values);
 int extequal(const char *str, int len, const char *field, char **next_ret=NULL);
 int isName(const char *longstr,int len, const char *null_terminated_str);
 
-Value *AttributeToValue(LaxFiles::Attribute *att);
+Value *AttributeToValue(LaxFiles::Attribute *att, int format, int *error_ret = nullptr, LaxFiles::DumpContext *context = nullptr);
+Value *ParseSimpleType(const char *value, int *error_ret);
 Value *NewSimpleType(int type);
 
 Value *JsonToValue(const char *str, const char **end_ptr);
