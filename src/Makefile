@@ -64,14 +64,24 @@ objs= \
 #object files from other directories. Listing them all explicitly to prevent
 #spurious inclusion of temporary testing stuff.
 otherobjs= \
+	api/buildicons.o \
+	api/functions.o \
+	api/importexport.o \
+	api/openandnew.o \
+	api/reimpose.o \
+	calculator/calculator.o \
+	calculator/curvevalue.o \
+	calculator/interpreter.o \
+	calculator/shortcuttodef.o \
+	calculator/values.o \
 	core/document.o \
-	core/objectiterator.o \
 	core/drawdata.o \
 	core/externaltools.o \
 	core/fieldplace.o \
 	core/guides.o \
 	core/importimage.o \
 	core/laidoutprefs.o \
+	core/objectiterator.o \
 	core/page.o \
 	core/papersizes.o \
 	core/plaintext.o \
@@ -79,65 +89,41 @@ otherobjs= \
 	core/spreadview.o \
 	core/stylemanager.o \
 	core/utils.o \
-	calculator/values.o \
-	calculator/calculator.o \
-	calculator/interpreter.o \
-	calculator/curvevalue.o \
-	calculator/shortcuttodef.o \
-	impositions/imposition.o \
-	impositions/impositioneditor.o \
-	impositions/singles.o \
-	impositions/impositions.o \
-	impositions/dodecahedron.o \
-	impositions/box.o \
-	impositions/netimposition.o \
-	impositions/simplenet.o \
-	impositions/signatures.o \
-	impositions/signatureinterface.o \
-	impositions/netdialog.o \
-	impositions/polyptychwindow.o \
-	impositions/singleseditor.o \
-	plugins/addonaction.o \
-	plugins/plugin.o \
-	api/reimpose.o \
-	api/openandnew.o \
-	api/importexport.o \
-	api/buildicons.o \
-	api/functions.o \
-	interfaces/actionarea.o \
-	interfaces/nupinterface.o \
-	interfaces/aligninterface.o \
-	interfaces/anchorinterface.o \
-	interfaces/pagerangeinterface.o \
-	interfaces/graphicalshell.o \
-	interfaces/objectindicator.o \
-	interfaces/paperinterface.o \
-	interfaces/cloneinterface.o \
-	interfaces/animationinterface.o \
-	interfaces/pagemarkerinterface.o \
-	interfaces/objectfilterinterface.o \
-	interfaces/pathintersectionsinterface.o \
-	nodes/nodeinterface.o \
-	nodes/nodeeditor.o \
-	nodes/nodes-dataobjects.o \
-	nodes/nodes.o \
-	printing/print.o \
-	printing/psfilters.o \
-	printing/pscolorpatch.o \
-	printing/psgradient.o \
-	printing/psimage.o \
-	printing/psimagepatch.o \
-	printing/pspathsdata.o \
-	printing/pseps.o \
-	printing/epsutils.o \
-	printing/psout.o \
+	dataobjects/affinevalue.o \
+	dataobjects/bboxvalue.o \
+	dataobjects/datafactory.o \
+	dataobjects/drawableobject.o \
+	dataobjects/epsdata.o \
+	dataobjects/fontvalue.o \
+	dataobjects/group.o \
+	dataobjects/groupinterface.o \
+	dataobjects/helpertypes.o \
+	dataobjects/imagevalue.o \
+	dataobjects/lcaptiondata.o \
+	dataobjects/lellipsedata.o \
+	dataobjects/lengraverfilldata.o \
+	dataobjects/lgradientdata.o \
+	dataobjects/limagedata.o \
+	dataobjects/limageinterface.o \
+	dataobjects/limagepatch.o \
+	dataobjects/lmirrorinterface.o \
+	dataobjects/lpathsdata.o \
+	dataobjects/lperspectiveinterface.o \
+	dataobjects/lsomedataref.o \
+	dataobjects/ltextonpath.o \
+	dataobjects/lvoronoidata.o \
+	dataobjects/mysterydata.o \
+	dataobjects/objectcontainer.o \
+	dataobjects/objectfilter.o \
+	dataobjects/pointsetvalue.o \
+	dataobjects/printermarks.o \
+	filetypes/exportdialog.o \
 	filetypes/filefilters.o \
 	filetypes/filters.o \
-	filetypes/exportdialog.o \
 	filetypes/htmlgallery.o \
-	filetypes/importdialog.o \
-	filetypes/image.o \
 	filetypes/image-gs.o \
+	filetypes/image.o \
+	filetypes/importdialog.o \
 	filetypes/laidoutimport.o \
 	filetypes/pageatlas.o \
 	filetypes/pdf.o \
@@ -146,34 +132,48 @@ otherobjs= \
 	filetypes/ppt.o \
 	filetypes/scribus.o \
 	filetypes/svg.o \
-	dataobjects/affinevalue.o \
-	dataobjects/pointsetvalue.o \
-	dataobjects/bboxvalue.o \
-	dataobjects/group.o \
-	dataobjects/objectcontainer.o \
-	dataobjects/objectfilter.o \
-	dataobjects/drawableobject.o \
-	dataobjects/datafactory.o \
-	dataobjects/groupinterface.o \
-	dataobjects/epsdata.o \
-	dataobjects/fontvalue.o \
-	dataobjects/helpertypes.o \
-	dataobjects/imagevalue.o \
-	dataobjects/limagepatch.o \
-	dataobjects/lellipsedata.o \
-	dataobjects/limagedata.o \
-	dataobjects/limageinterface.o \
-	dataobjects/lgradientdata.o \
-	dataobjects/lperspectiveinterface.o \
-	dataobjects/lmirrorinterface.o \
-	dataobjects/lpathsdata.o \
-	dataobjects/mysterydata.o \
-	dataobjects/lsomedataref.o \
-	dataobjects/lengraverfilldata.o \
-	dataobjects/lcaptiondata.o \
-	dataobjects/ltextonpath.o \
-	dataobjects/lvoronoidata.o \
-	dataobjects/printermarks.o \
+	impositions/box.o \
+	impositions/dodecahedron.o \
+	impositions/imposition.o \
+	impositions/impositioneditor.o \
+	impositions/impositions.o \
+	impositions/netdialog.o \
+	impositions/netimposition.o \
+	impositions/polyptychwindow.o \
+	impositions/signatureinterface.o \
+	impositions/signatures.o \
+	impositions/simplenet.o \
+	impositions/singles.o \
+	impositions/singleseditor.o \
+	interfaces/actionarea.o \
+	interfaces/aligninterface.o \
+	interfaces/anchorinterface.o \
+	interfaces/animationinterface.o \
+	interfaces/cloneinterface.o \
+	interfaces/graphicalshell.o \
+	interfaces/nupinterface.o \
+	interfaces/objectfilterinterface.o \
+	interfaces/objectindicator.o \
+	interfaces/pagemarkerinterface.o \
+	interfaces/pagerangeinterface.o \
+	interfaces/paperinterface.o \
+	interfaces/pathintersectionsinterface.o \
+	nodes/nodeeditor.o \
+	nodes/nodeinterface.o \
+	nodes/nodes-dataobjects.o \
+	nodes/nodes.o \
+	plugins/addonaction.o \
+	plugins/plugin.o \
+	printing/epsutils.o \
+	printing/print.o \
+	printing/pscolorpatch.o \
+	printing/pseps.o \
+	printing/psfilters.o \
+	printing/psgradient.o \
+	printing/psimage.o \
+	printing/psimagepatch.o \
+	printing/psout.o \
+	printing/pspathsdata.o \
 	ui/about.o \
 	ui/autosavewindow.o \
 	ui/buttonbox.o \
@@ -182,8 +182,9 @@ otherobjs= \
 	ui/findwindow.o \
 	ui/headwindow.o \
 	ui/helpwindow.o \
-	ui/metawindow.o \
 	ui/importimagesdialog.o \
+	ui/interfaces.o \
+	ui/metawindow.o \
 	ui/newdoc.o \
 	ui/objecttree.o \
 	ui/palettes.o \
@@ -192,9 +193,8 @@ otherobjs= \
 	ui/pluginwindow.o \
 	ui/settingswindow.o \
 	ui/spreadeditor.o \
-	ui/viewwindow.o \
 	ui/valuewindow.o \
-	ui/interfaces.o \
+	ui/viewwindow.o \
 
 
 all: laidout
