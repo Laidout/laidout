@@ -1,0 +1,438 @@
+name: ci
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "[0-9]+.[0-9]+*"
+
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  maketar:
+    strategy:
+      fail-fast: false
+
+      matrix:
+        os: [ubuntu-latest]
+
+        container: 
+          - ubuntu:xenial
+          - ubuntu:jammy
+          - debian:stable
+
+        type: [tar, deb]
+
+        release: 
+          - ${{ startsWith(github.ref, 'refs/tags/') }}
+
+        exclude:
+          - type: deb
+            container: ubuntu:xenial
+
+          - type: tar
+            container: ubuntu:jammy
+
+          - type: tar
+            container: debian:stable
+
+          - release: false
+            container: ubuntu:jammy
+
+          - release: false
+            container: debian:stable
+
+        include:
+          - os: macos-latest
+            type: tar
+ 
+    runs-on: ${{ matrix.os }}
+    container:  ${{ matrix.container }}
+
+    steps:
+      - name: "Checkout Laidout"
+        uses: actions/checkout@v2
+        with:
+          path: laidout
+
+      - name: "Checkout Laxkit"
+        uses: actions/checkout@v2
+        with:
+          repository: laidout/laxkit
+          ref: master
+          path: laidout/laxkit
+
+      - name: Install dependencies (macos)
+        if: ${{ matrix.os == 'macos-latest'}}
+        run: |
+          brew update
+          brew install coreutils harfbuzz graphicsmagick imlib2 openssl@1.1 sqlite gegl mesa-glu ftgl xinput cups
+          brew info coreutils
+
+      - name: Install dependencies (linux)
+        if: ${{ matrix.os == 'ubuntu-latest'}}
+        run: |
+          apt update
+          apt-get -y install lsb-release debhelper fuse inkscape wget g++ pkg-config libpng-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxrandr-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libcairo2-dev libsqlite3-dev libharfbuzz-dev libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev zlib1g-dev libgegl-dev gettext
+
+        # harfbuzz is too old on xenial
+      - name: Install harfbuzz (appimage)
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.container == 'ubuntu:xenial' }}
+        run: |
+             wget https://github.com/behdad/harfbuzz/releases/download/2.2.0/harfbuzz-2.2.0.tar.bz2
+             tar xf harfbuzz-2.2.0.tar.bz2
+             cd harfbuzz-2.2.0
+             ./configure --prefix=/usr --disable-dependency-tracking --disable-static --with-glib=no --with-gobject=no --with-cairo=no --with-fontconfig=no --with-icu=no --with-directwrite=no --with-freetype=yes --libdir=/usr/lib/x86_64-linux-gnu
+             make -j$(nproc)
+             make install
+             pkg-config --cflags harfbuzz
+
+      - name: Configure (macos)
+        if: ${{ matrix.os == 'macos-latest'}}
+        env:
+          PKG_CONFIG_PATH: /usr/local/opt/openssl@1.1/lib/pkgconfig/
+        run: |
+          cd laidout
+          ./configure --laxkit=`pwd`/laxkit/lax --prefix=`pwd`/../installed --relocatable  --extra-cppflags "-std=c++11 `pkg-config --cflags openssl`" --pkg-config-path "/usr/local/opt/openssl@1.1/lib/pkgconfig/" --extra-ldflags "`pkg-config --libs imlib2 openssl freetype2 sqlite3 imlib2 cairo x11 fontconfig GraphicsMagick++ xft xrender`"
+
+      - name: Set gegl version (ubuntu xenial)
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.container == 'ubuntu:xenial' }}
+        run: |
+          echo "GEGL_VERSION=gegl-0.3" >> $GITHUB_ENV
+
+      - name: Set gegl version (ubuntu jammy / debian stable)
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.container != 'ubuntu:xenial' }}
+        run: |
+          echo "GEGL_VERSION=gegl-0.4" >> $GITHUB_ENV
+
+      - name: Set prefix (tar)
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.type == 'tar' }}
+        run: |
+          echo "PREFIX=`pwd`/installed" >> $GITHUB_ENV
+
+      - name: Set prefix (deb)
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.type == 'deb' }}
+        run: |
+          echo "PREFIX=/usr" >> $GITHUB_ENV
+
+      - name: Configure (linux)
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+          cd laidout
+          ./configure --laxkit=`pwd`/laxkit/lax --prefix=$PREFIX --relocatable --gegl-version $GEGL_VERSION
+
+      - name: Build (tar)
+        if: ${{ matrix.type == 'tar' }}
+        env:
+          CXXFLAGS: -std=c++11
+        run: |
+          cd laidout
+          make -j3
+
+      - name: Build (deb)
+        if: ${{ matrix.type == 'deb' }}
+        env:
+          CXXFLAGS: -std=c++11
+        run: |
+          cd laidout
+          make unsigneddeb -j3
+
+      - name: Make icons (tar)
+        if: ${{ matrix.type == 'tar' }}
+        run: |
+          cd laidout
+          #echo make icons curdir: `pwd`
+          make -C src/icons all-with-lax
+
+      - name: Set version
+        run: |
+          cd laidout
+          echo "LAIDOUT_VERSION=`cat src/laidout_version.txt`" >> $GITHUB_ENV
+
+      # for some unkown reasons, purge is needed before reading the laidout executable
+      # https://github.com/actions/runner-images/issues/2619
+
+      - name: Install (tar)
+        if: ${{ matrix.type == 'tar' }}
+        run: |
+          if [ ${{ matrix.os }} ==  "macos-latest" ]
+          then
+            echo "purging"
+            sudo /usr/sbin/purge
+          fi
+          cd laidout
+          make install
+
+      - name: Package (tar)
+        if: ${{ matrix.type == 'tar' }}
+        run: |
+          if [ ${{ matrix.os }} ==  "macos-latest" ]
+          then
+            echo "purging"
+            sudo /usr/sbin/purge
+          fi
+          mv installed laidout-${{ env.LAIDOUT_VERSION }}
+          tar cjvf laidout-bin-${{ env.LAIDOUT_VERSION }}-${{ runner.os }}.tar.bz2 laidout-${{ env.LAIDOUT_VERSION }}
+
+      - name: Package (appimage)
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.container == 'ubuntu:xenial' }}
+        run: |
+          wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
+          chmod a+x linuxdeployqt-continuous-x86_64.AppImage
+          ./linuxdeployqt-continuous-x86_64.AppImage --appimage-extract-and-run laidout-${{ env.LAIDOUT_VERSION }}/share/applications/*.desktop -appimage \
+          -executable=$(readlink -f laidout-${{ env.LAIDOUT_VERSION }}/share/laidout/*/plugins/geglnodes.so) \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/hard-light.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/stretch-contrast.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/matting-global.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/plasma.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/convert-format.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/png-save.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/posterize.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/open-buffer.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/noise-simplex.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/color-enhance.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/exr-load.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/diffraction-patterns.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/add.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/tile-seamless.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/grid.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/vector-stroke.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/unsharp-mask.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/emboss.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/plus.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/video-degradation.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/display.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/map-absolute.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/maze.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/channel-mixer.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/sinus.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/distance-transform.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/dst-over.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/color-exchange.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/ppm-load.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/rgbe-save.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/npd.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/buffer-sink.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/lighten.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/gamma.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/warp.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/raw-load.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/map-relative.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/checkerboard.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/texturize-canvas.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/load.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/exr-save.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/convolution-matrix.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/cast-format.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/threshold.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/rgbe-load.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/soft-light.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/text.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/svg-huerotate.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/multiply.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/vignette.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/color-reduction.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/mblur.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/buffer-source.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/clear.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/fractal-trace.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/gegl-buffer-save-op.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/nop.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/save.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/motion-blur-linear.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/cartoon.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/matting-levin.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/noise-hurl.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/panorama-projection.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/noise-perlin.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/write-buffer.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/copy-buffer.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/noise-pick.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/softglow.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/invert-linear.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/vector-fill.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/polar-coordinates.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/src-atop.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/dropshadow.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/color-temperature.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/contrast-curve.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/red-eye-removal.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/jp2-load.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/color-burn.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/edge-sobel.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/overlay.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/exp-combine.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/color-rotate.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/brightness-contrast.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/edge.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/crop.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/exposure.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/npy-save.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/color.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/image-compare.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/displace.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/gaussian-blur.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/dst-out.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/noise-rgb.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/stretch-contrast-hsv.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/lcms-from-profile.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/src-out.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/cache.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/lens-distortion.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/motion-blur-zoom.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/motion-blur-circular.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/difference.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/src.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/svg-load.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/darken.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/grey.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/remap.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/wind.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/divide.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/deinterlace.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/tile.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/save-pixbuf.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/bump-map.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/color-dodge.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/cubism.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/layer.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/alien-map.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/tile-paper.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/engrave.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/fractal-explorer.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/noise-cie-lch.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/svg-matrix.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/src-in.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/over.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/color-to-alpha.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/dst-atop.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/clone.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/seamless-clone-compose.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/sdl-display.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/ppm-save.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/value-invert.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/box-blur.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/pixbuf.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/fattal02.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/edge-laplace.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/png-load.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/svg-multiply.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/value-propagate.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/svg-luminancetoalpha.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/mono-mixer.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/dcraw-load.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/illusion.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/noise-reduction.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/bilateral-filter.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/sepia.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/exclusion.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/jpg-load.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/ripple.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/snn-mean.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/mantiuk06.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/difference-of-gaussians.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/jpg-save.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/dst.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/linear-gradient.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/subtract.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/screen.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/transformops.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/noise-hsv.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/c2g.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/noise-slur.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/json.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/dst-in.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/noise-cell.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/xor.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/radial-gradient.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/bilateral-filter-fast.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/photocopy.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/levels.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/weighted-blend.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/waves.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/stress.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/introspect.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/svg-saturate.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/oilify.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/apply-lens.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/mirrors.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/mosaic.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/noise-spread.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/path.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/tile-glass.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/invert-gamma.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/high-pass.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/supernova.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/antialias.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/gaussian-blur-iir.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/pixelize.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/seamless-clone.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/reinhard05.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/whirl-pinch.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/noise-solid.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/magick-load.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/shift.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/lens-flare.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/gblur-1d.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/opacity.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/rectangle.so \
+          -executable=/usr/lib/x86_64-linux-gnu/gegl-0.3/gegl-buffer-load-op.so
+
+      - name: Set os version 
+        if: ${{ matrix.type == 'deb' }}
+        run: |
+          echo "OS_VERSION=`lsb_release -i -s`-`lsb_release -c -s`" >> $GITHUB_ENV
+
+      - name: Package (deb)
+        if: ${{ matrix.type == 'deb' }}
+        run: |
+          tar cjv laidout*.*  > laidout-deb-${{ env.LAIDOUT_VERSION }}-${{ env.OS_VERSION }}.tar.bz2
+
+      - name: Upload-Artifact (deb)
+        if: ${{ matrix.type == 'deb' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: laidout-deb-${{ env.LAIDOUT_VERSION }}-${{ env.OS_VERSION }}.tar.bz2
+          path: laidout-deb-${{ env.LAIDOUT_VERSION }}-${{ env.OS_VERSION }}.tar.bz2
+
+      - name: Upload-Artifact (appimage)
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.container == 'ubuntu:xenial' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: Laidout.AppImage
+          path: Laidout*.AppImage*
+
+      - name: Upload-Artifact (tar)
+        uses: actions/upload-artifact@v3
+        if: ${{ matrix.type == 'tar' }}
+        with:
+          name: laidout-bin-${{ env.LAIDOUT_VERSION }}-${{ runner.os }}.tar.bz2
+          path: laidout-bin-${{ env.LAIDOUT_VERSION }}-${{ runner.os }}.tar.bz2
+
+  release:
+    needs: maketar
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Continous Build
+        uses: "marvinpinto/action-automatic-releases@latest"
+        if: startsWith(github.ref, 'refs/heads/')
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          automatic_release_tag: "gh_continous"
+          prerelease: true
+          title: "Continous Build"
+          files: |
+            **
+
+      - name: Release
+        uses: "softprops/action-gh-release@v1"
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            **
