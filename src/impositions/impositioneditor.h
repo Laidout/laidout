@@ -25,7 +25,7 @@ namespace Laidout {
 
 class ImpositionEditor : public LaxInterfaces::ViewerWindow
 {
- protected:
+  protected:
 	ImpositionInterface *tool;
 	Laxkit::anXWindow *neteditor;
 	Laxkit::anXWindow *singleseditor;
@@ -35,7 +35,8 @@ class ImpositionEditor : public LaxInterfaces::ViewerWindow
 	char *imposeout, *imposeformat;
 	int rescale_pages;
 	Document *doc;
- public:
+
+  public:
 	ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,
 						unsigned long nowner, const char *mes,
 						Document *doc,

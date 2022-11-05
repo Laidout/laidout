@@ -1155,17 +1155,18 @@ int Document::ReImpose(Imposition *newimp,int scale_page_contents_to_fit)
 
 	if (scale_page_contents_to_fit) {
 		 //first grab old page sizes for reference
-		flatpoint old[pages.n]; //w+h
 		flatpoint  dd[pages.n]; //origin
+		flatpoint old[pages.n]; //w,h
+		
 		for (int c=0; c<pages.n; c++) {
 			//dd[c].x=pages.e[c]->pagestyle->minx();
 			//dd[c].y=pages.e[c]->pagestyle->miny();
 			//old[c].x=pages.e[c]->pagestyle->w();
 			//old[c].y=pages.e[c]->pagestyle->h();
-			dd[c].x=pages.e[c]->pagestyle->margin->minx;
-			dd[c].y=pages.e[c]->pagestyle->margin->miny;
-			old[c].x=pages.e[c]->pagestyle->margin->maxx-dd[c].x;
-			old[c].y=pages.e[c]->pagestyle->margin->maxy-dd[c].y;
+			dd[c].x  = pages.e[c]->pagestyle->margin->minx;
+			dd[c].y  = pages.e[c]->pagestyle->margin->miny;
+			old[c].x = pages.e[c]->pagestyle->margin->maxx - dd[c].x;
+			old[c].y = pages.e[c]->pagestyle->margin->maxy - dd[c].y;
 		}
 	
 		 //then install new page styles

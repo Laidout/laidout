@@ -346,6 +346,9 @@ const NetFaceEdge &NetFaceEdge::operator=(const NetFaceEdge &e)
 /*! \var int NetFace::original
  * \brief The index in the AbstractNet corresponding to this face.
  */
+/*! \var int NetFace::reverse_index
+ * \brief The index in the AbstractNet corresponding to the backside of this face.
+ */
 /*! \var char NetFace::isfront
  * \brief If nonzero (the default) then this face is the front side. Otherwise, it is the backside.
  *
@@ -370,6 +373,7 @@ NetFace::NetFace()
 	matrix   =NULL;
 	isfront  =  1;
 	original = -1;
+	reverse_index = -1;
 	binding  = -1; //edge to be considered a binding edge when stacked with other things, or -1 if none
 }
 	
@@ -380,6 +384,7 @@ NetFace::NetFace(const NetFace &f)
 	matrix   = NULL;
 	isfront  = 1;
 	original = -1;
+	reverse_index = -1;
 	binding  = -1; //edge to be considered a binding edge when stacked with other things, or -1 if none
 
 	*this=f;
@@ -397,6 +402,7 @@ void NetFace::clear()
 	if (matrix) { delete[] matrix; matrix=NULL; }
 	edges.flush();
 	original = -1;
+	reverse_index = -1;
 	isfront  = 1;
 	binding  = -1;
 }
@@ -410,6 +416,7 @@ const NetFace &NetFace::operator=(const NetFace &face)
 	edges.flush();
 
 	original = face.original;
+	reverse_index = face.reverse_index;
 	isfront  = face.isfront;
 	binding  = face.binding;
 
@@ -610,6 +617,8 @@ void NetFace::dumpOut(FILE *f,int indent,int what)
 	}
 	
 	fprintf(f,"%soriginal %d\n",spc,original);
+	fprintf(f,"%sreverse_index %d\n",spc,reverse_index);
+
 	if (!isfront) fprintf(f,"%sback\n",spc);
 	if (matrix) fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
 				spc,matrix[0],matrix[1],matrix[2],matrix[3],matrix[4],matrix[5]);
@@ -694,7 +703,9 @@ void NetFace::dumpInAtts(LaxFiles::Attribute *att)
 		} else if (!strcmp(name,"potential")) {
 			tag=FACE_Potential;
 		} else if (!strcmp(name,"original")) {
-			IntAttribute(value,&original);
+			IntAttribute(value, &original);
+		} else if (!strcmp(name,"reverse_index")) {
+			IntAttribute(value, &reverse_index);
 		} else if (!strcmp(name,"edge")) {
 			edge=new NetFaceEdge;
 			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {

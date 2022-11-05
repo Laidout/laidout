@@ -30,7 +30,7 @@ char *new_paper_group_name();
 
 #define PAPERTILE_ONE_ONLY   (1<<0)
 
-class PaperInterface : public LaxInterfaces::anInterface
+class PaperInterface : virtual public LaxInterfaces::anInterface
 {
   protected:
 	int showdecs;

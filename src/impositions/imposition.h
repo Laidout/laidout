@@ -108,7 +108,7 @@ class Spread : public ObjectContainer
 
 
 //------------------------------------- ImpositionInterface --------------------------------------
-class ImpositionInterface : public LaxInterfaces::anInterface
+class ImpositionInterface : virtual public LaxInterfaces::anInterface
 {               
   public:   
     ImpositionInterface() {}

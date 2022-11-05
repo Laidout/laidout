@@ -1066,13 +1066,13 @@ int PaperInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 Laxkit::ShortcutHandler *PaperInterface::GetShortcuts()
 {
 	if (sc) return sc;
-	ShortcutManager *manager=GetDefaultShortcutManager();
-	sc=manager->NewHandler("PaperInterface");
+	ShortcutManager *manager = GetDefaultShortcutManager();
+	sc = manager->NewHandler(whattype());
 	if (sc) return sc;
 
 	//virtual int Add(int nid, const char *nname, const char *desc, const char *icon, int nmode, int assign);
 
-	sc=new ShortcutHandler("PaperInterface");
+	sc = new ShortcutHandler(whattype());
 
 	sc->Add(PAPERI_DupPapers,   ' ',0,1,         "DupPapers",_("Duplicate selected papers"),nullptr,0);
 	sc->Add(PAPERI_Select,      'a',0,0,         "Select",   _("Select or deselect all"),nullptr,0);
@@ -1088,7 +1088,7 @@ Laxkit::ShortcutHandler *PaperInterface::GetShortcuts()
 
 
 
-	manager->AddArea("PaperInterface",sc);
+	manager->AddArea(whattype(),sc);
 	return sc;
 }
 
@@ -1237,7 +1237,7 @@ int PaperInterface::PerformAction(int action)
 		//  Name ___________
 		//  [ ] Save as global asset (else save with resources of document)
 		// [ok] [cancel]
-		PostMessage("IMPLEMENT ME!!!!");
+		PostMessage("IMPLEMENT PAPERI_CreateImposition!!!!");
 
 		//ValueHash props;
 		//props.push("name", StringValue(papergroup ? new papergroup->Id() : nullptr), -1, true);

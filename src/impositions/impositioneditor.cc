@@ -112,14 +112,14 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 					|VIEWPORT_RIGHT_HANDED|VIEWPORT_BACK_BUFFER|VIEWPORT_NO_SCROLLERS|VIEWPORT_NO_RULERS, 
 					0,0,500,500, 0, NULL)
 {
-	SetOwner(nowner,mes);
-	doc=ndoc;
+	SetOwner(nowner, mes);
+	doc = ndoc;
 
-	rescale_pages=1;
-	singleseditor=NULL;
-	neteditor=NULL;
-	tool=NULL;
-	whichactive=WHICH_Signature;
+	rescale_pages = 1;
+	singleseditor = NULL;
+	neteditor     = NULL;
+	tool          = NULL;
+	whichactive   = WHICH_Signature;
 
 	if (!viewport) {
 		viewport=new ViewportWindow(this,"imposition-editor-viewport","imposition-editor-viewport",
@@ -134,29 +134,29 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 	win_themestyle->bg.rgbf(200/255.,200/255.,200/255.);
 	viewport->dp->NewBG(200,200,200);
 
-	DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(viewport->dp);
-	DBG if (ddp->GetCairo()) cerr <<" ImpositionEditor initialized, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+	//DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(viewport->dp);
+	//DBG if (ddp->GetCairo()) cerr <<" ImpositionEditor initialized, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
-	needtodraw=1;
-	tool=interface;
+	needtodraw = 1;
+	tool = interface;
 
-	firstimp=imposition;
+	firstimp = imposition;
 	if (imposition) {
 		firstimp->inc_count();
 
 		if (tool) tool->UseThisImposition(imposition);
-		else tool=imposition->Interface();
+		else tool = imposition->Interface();
 		if (tool && ndoc) tool->UseThisDocument(ndoc);
 	}
 	if (!tool) {
-		tool=new SignatureInterface(NULL,1,viewport->dp, NULL,p,ndoc);
+		tool = new SignatureInterface(NULL,1,viewport->dp, NULL,p,ndoc);
 	}
 	tool->GetShortcuts();
 	if (imposearg) tool->ShowSplash(1);
 
 
 	AddTool(tool,1,1); // local, and select it
-	DBG if (ddp->GetCairo()) cerr <<" ImpositionEditor initialized, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+	//DBG if (ddp->GetCairo()) cerr <<" ImpositionEditor initialized, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 	
 
 	if (imposition && dynamic_cast<NetImposition*>(imposition)) {
@@ -273,7 +273,7 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 		DBG cerr <<"Impose only from "<<in<<" to "<<out<<endl;
 	}
 
-	DBG if (ddp->GetCairo()) cerr <<" ImpositionEditor initialized, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+	//DBG if (ddp->GetCairo()) cerr <<" ImpositionEditor initialized, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 }
 
@@ -497,6 +497,7 @@ int ImpositionEditor::ChangeImposition(Imposition *newimp)
 {
 	//if necessary replace the viewport/tool with a separate window
 
+	PostMessage("");
 
 	if (dynamic_cast<SignatureImposition*>(newimp)) {
 		whichactive=WHICH_Signature;

@@ -65,6 +65,7 @@ class Singles : public Imposition
 	virtual LaxInterfaces::SomeData *GetPageMarginOutline(int pagenum,int local);
 	virtual Spread *PageLayout(int whichpage); 
 	virtual Spread *PaperLayout(int whichpaper);
+	virtual int PapersPerPageSpread();
 	virtual int PaperFromPage(int pagenumber);
 	virtual int SpreadFromPage(int pagenumber);
 	virtual int SpreadFromPage(int layout, int pagenumber);

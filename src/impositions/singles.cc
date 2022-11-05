@@ -932,7 +932,13 @@ int Singles::PaperFromPage(int pagenumber)
 	return pagenumber;
 }
 
-//! Return the page layout spread, which is either pagenumber, if papergroup != null is pagenumber/(papers in papergroup).
+int Singles::PapersPerPageSpread()
+{
+	if (!papergroup || papergroup->papers.n == 0) return 1;
+	return papergroup->papers.n;
+}
+
+//! Return the page layout spread, which is either pagenumber, or if papergroup != null is pagenumber/(papers in papergroup).
 int Singles::SpreadFromPage(int pagenumber)
 {
 	if (papergroup && papergroup->papers.n) return pagenumber / papergroup->papers.n;
