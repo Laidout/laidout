@@ -8,6 +8,7 @@ The latest releases: https://github.com/Laidout/laidout/releases
 
 What it can do right now
 ------------------------
+
 Laidout is desktop publishing software built from the ground up with
 imposition in mind. Currently one may arrange pages into various
 impositions, such as a booklet, or even a dodecahedron. You can fill
@@ -24,21 +25,18 @@ Please post about any snags to Laidout's
 github issue tracker: https://github.com/Laidout/laidout/issues.
 
 Laidout is currently in the 'mostly works on my machine' stage of development.
-It was created by and developed by Tom Lechner (https://www.tomlechner.com).
-
+It was created and developed by Tom Lechner (https://www.tomlechner.com)
+since around 2005.
 
 
 System Requirements
 -------------------
+
 Currently, Laidout only runs in variations of Linux. It is being developed
 on a Debian stable system, thus that one is the most hassle free to setup.
 
-Ubuntu 14.04 needs a more recent harfbuzz than is included, but more
-recent Ubuntu should work well.
-
-Laidout does not run out of the box on Macs, but it should not be difficult
-to run under X11 with a few (currently undone) changes. I have no Mac to
-test on. Donations of the newest, most expensive and lightest Macs are welcome!
+Laidout should work on variations of mostly recent Linux distributions,
+and also Macs.
 
 Laidout will not currently run on Windows. Feel free to subsidize a port
 by showering the developer with money.
@@ -55,14 +53,13 @@ Compiling Releases
 If you are compiling from development git, not from a release, please see
 [Compiling from development git](#compilegit) below.
 
-
 You will need a few extra development libraries on your computer in order
-to compile Laidout. Running ./configure does a simple check for these,
+to compile Laidout. Running `./configure` does a simple check for these,
 but the check is so simple, that it may miss them or otherwise get confused.
 
 For everything, you will need the header files for at least:
-  harfbuzz, freetype2, fontconfig, cairo, graphicsmagick++, x11, ssl, cups, gegl, sqlite3,
-  ftgl, opengl, Imlib2
+  harfbuzz, freetype2, fontconfig, cairo, graphicsmagick++, x11,
+  ssl, cups, gegl, sqlite3, ftgl, opengl, Imlib2
 
 If you are on a debian based system, you can probably install these with this command:
 
@@ -74,7 +71,6 @@ On Fedora, this list is more like this:
 
 
 Some of the above packages are technically optional. See [Optional Dependencies](#optionaldeps) section below for more about that.
-
 
 
 To compile and install Laidout, just run these three easy steps:
@@ -106,6 +102,7 @@ be (this directory)/src/icons.
 
 Making a deb package
 --------------------
+
 If you want to create a deb package of Laidout, make sure you have the fakeroot,
 dpkg-dev, and debhelper packages installed, and have all the other packages listed
 from the [Compiling Releases](#compilerelease) section above, and do this from the top laidout directory:
@@ -140,7 +137,7 @@ If you get in a bind about dependencies, from `./configure` you can disable cert
 Specifically:
  - OpenGL: If you don't need the opengl polyhedron unwrapper, use `--nogl`
  - Sqlite: If you don't care about Fontmatrix font tags, use `--disable-sqlite`
- - Gegl: If you don't want to mess around with gegl, it's trickier, but just comment out geglnodes.so in src/plugins/Makefile
+ - Gegl: If you don't want to mess around with gegl, it's trickier, but just probably just comment out geglnodes.so in src/plugins/Makefile
 
 
 <a name="compilegit"></a>
@@ -206,7 +203,7 @@ Here is a fast and easy way to get Laidout up and running from development sourc
 	let me know, and I'll try to finally fix this.
 
 6.  Running Laidout might spit out copious amounts of debugging info to stderr
-    if you run from a terminal. If this is the case, you can turn this
+    if you run from a terminal. If this is not desired, you can turn this
     off with `make hidegarbage` before doing `make` (the same goes for the
     Laxkit). Be advised that this requires Perl to be installed. Or, you
     can just run Laidout like this:
@@ -221,15 +218,15 @@ Installing different versions at the same time
 ----------------------------------------------
 
 It is quite ok to install different versions of Laidout at the same time.
-The ~/.config/laidout/ directory keeps all the config information in subdirectories
+The `~/.config/laidout/` directory keeps all the config information in subdirectories
 based on the version. The same applies for installed binaries and other
-resources that get put in prefix/share/laidout. This way, you do not risk
+resources that get put in `prefix/share/laidout`. This way, you do not risk
 clobbering or corrupting files from other versions.
 
 You can change the version number manually by specifying it when you run
-./configure with something like:
+`./configure` with something like:
 
-    ./configure --version=0.096-different
+    ./configure --version=0.097-different
 
 You should try to preserve the main version number (which is 0.096 in this
 example), or it might confuse Laidout at some point.
@@ -243,7 +240,36 @@ by default. To change that, you would have to tinker with debian/control. If thi
 something you need, please let me know, and I can make instructions for that.
 
 
-Source code documentation and contributing
+Compiling on Mac OS X with homebrew
+-----------------------------------
+
+1. Install dependencies
+
+        brew install coreutils
+        brew unlink coreutils
+        brew install harfbuzz graphicsmagick imlib2 openssl@1.1 sqlite gegl mesa-glu ftgl xinput cups
+        brew install XQuartz
+
+2. Configure
+
+        export PKG_CONFIG_PATH=/usr/local/opt/openssl@1.1/lib/pkgconfig/
+        ./configure --prefix=./install --relocatable  --extra-cppflags "-std=c++11 `pkg-config --cflags openssl`" --pkg-config-path "/usr/local/opt/openssl@1.1/lib/pkgconfig/" --extra-ldflags "`pkg-config --libs imlib2 openssl freetype2 sqlite3 imlib2 cairo x11 fontconfig GraphicsMagick++ xft xrender`"
+
+3. Build
+
+        make
+        make install
+
+
+Compiling on Windows
+--------------------
+
+Sorry, you're out of luck at the moment. If this is important to you,
+and you don't want to figure it out yourself, feel free to subsidize
+a windows port with copious amounts of money.
+
+
+Contributing and source code documentation
 ------------------------------------------
 
 There is a lot of source code documentation available via doxygen, just type:
@@ -256,9 +282,10 @@ and do:
 
     make alldocs
 
-This will dump it all out to docs/html. In particular, you will have a
+This will dump it all out to `docs/html`. In particular, you will have a
 rapidly expanding todo list. If you want to contribute, that is a good
-place to start. That and the Laxkit todo list.
+place to start. There is also a different sort of very lengthy low level
+task list [here](src/LEFT---OFF).
 
 A down and dirty way to become aquainted with the source code is to
 download the Laxkit to the top laidout directory (if it is not there
@@ -279,42 +306,11 @@ Also check out the dev page on the Laidout website:
 https://laidout.org/dev.html
 
 
-Compiling on Mac OS X
----------------------
-For the adventurous, you can help make Laidout work on OS X.
-Straight from downloading, it will not compile all the way on OS X.
-You'll still need all the libraries listed above.
-I'm just guessing, since I don't have access to an OS X or other BSD
-based machine, but it shouldn't be too hard to make Laidout work on them.
-There are a few places where I use GNU-only functions, like getline(),
-which shouldn't be very difficult to replace or define similar functions.
+License
+-------
 
-
-
-Compiling on Mac OS X with homebrew environment
----------------------
-1. Install dependencies
-
-        brew install coreutils
-        brew unlink coreutils
-        brew install harfbuzz graphicsmagick imlib2 openssl@1.1 sqlite gegl mesa-glu ftgl xinput cups
-        brew install XQuartz
-
-2. Configure
-
-        epxort PKG_CONFIG_PATH=/usr/local/opt/openssl@1.1/lib/pkgconfig/
-        ./configure --prefix=./install --relocatable  --extra-cppflags "-std=c++11 `pkg-config --cflags openssl`" --pkg-config-path "/usr/local/opt/openssl@1.1/lib/pkgconfig/" --extra-ldflags "`pkg-config --libs imlib2 openssl freetype2 sqlite3 imlib2 cairo x11 fontconfig GraphicsMagick++ xft xrender`"
-
-3. Build
-
-        make
-        make install
-
-
-Compiling on Windows
---------------------
-Sorry, you're out of luck at the moment. If this is important to you,
-and you don't want to figure it out yourself, feel free to subsidize
-a windows port with copious amounts of money.
+Unless otherwise specified within particular files or folders, everything in
+Laidout is distributed under the [GPL Version 3 license](COPYING),
+and any contributions to the repo should be compatible with this license.
 
 

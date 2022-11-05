@@ -13,8 +13,6 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
-bug: image properties layout for filename truncates
-
 bug: severing clone link does some weird things, including crashing
 bug: clone tool clones do not have proper bounding box
 
@@ -202,11 +200,29 @@ test:
 
 
 
-alternate packaging:
+build: building: build process
+  should be able to specify include directories to configure, to work around hacky existence checks
+  should be able to specify default icon size as a compile option
+  should update faq with details about graphicsmagick, harfbuzz, and gegl versioning
+  update configure message about try installing packages.. when fail on gegl, it's not listed
+  should be able to do out-of-source builds
+  make "make uninstall" work, and remove coop from installed position
+  remove the lax onamac parts from configure? poorly named, more a bsd issue, not mac
+  modernize debian/rules. See Laidout PR #5, https://github.com/Laidout/laxkit/pull/5
+
+  DONE make a laxkit.pc from laxkit configure
+  use that laxkit.pc from Laidout and laxkit examples
+
+  DONE fix hardcoded /usr/include/cups in laxkit/configure
+  DONE laidout ./configure needs to pass on relevant things to laxkit
+  DONE in config.log should show actual configure line for easy duplicating
+
+packaging:
+  update CI: https://github.com/Laidout/laidout/pull/28
   flatpak: https://github.com/Laidout/laidout/issues/11
   --- 0.099
   debian (get in to main repository)
-  snapcraft
+  snapcraft?
   DONE appimage, see: https://github.com/Laidout/laidout/issues/10
 
 valuewindow:
@@ -295,23 +311,6 @@ text on path textonpath: TextOnPath
 
 
 you can't control unclick selected directories
-
-build: building: build process
-  modernize debian/rules. See Laidout PR #5, https://github.com/Laidout/laxkit/pull/5
-  should be able to specify include directories to configure, to work around hacky existence checks
-  should be able to specify default icon size as a compile option
-  should update faq with details about graphicsmagick, harfbuzz, and gegl versioning
-  update configure message about try installing packages.. when fail on gegl, it's not listed
-  should be able to do out-of-source builds
-  make "make uninstall" work, and remove coop from installed position
-  remove the lax onamac parts from configure? poorly named, more a bsd issue, not mac
-
-  DONE make a laxkit.pc from laxkit configure
-  use that laxkit.pc from Laidout and laxkit examples
-
-  DONE fix hardcoded /usr/include/cups in laxkit/configure
-  DONE laidout ./configure needs to pass on relevant things to laxkit
-  DONE in config.log should show actual configure line for easy duplicating
 
 
 export/print dialog
@@ -463,6 +462,7 @@ pdf: PDF:
   graphicsmagick for import? subimage and subrange of image_info passed to ReadImage
   page labels?
   implement crop
+  start using podofo instead of custom? higher quality pdf output, pdf input options. https://github.com/podofo/podofo, soon to be built from https://github.com/pdfmm/pdfmm
   DONE obey object visible
 Scribus scribus:
   ---0.099---
@@ -659,7 +659,8 @@ PathInterface: pathinterface
   DONE if background is green or red, hard to see the direction indicator
 
   ---0.099---
-  that hot new spiro curve
+  investigate Raph Levien's new curve offset method: https://raphlinus.github.io/curves/2022/09/09/parallel-beziers.html
+  that hot new spiro curve from Raph Levien
   boolean ops
   mirror, array, with join (akin to blender modifiers)
   dup path object links the path style, but save and load, it is not linked... need to sort out line/fill style inheritance/linking
@@ -3278,4 +3279,5 @@ DONE layers palette Layers ObjectTree
   DONE must set viewport selected on tree selected change
   DONE flags, click to change: locked visible
   DONE edit colors not highlighting every other
+DONE bug: image properties layout for filename truncates
 
