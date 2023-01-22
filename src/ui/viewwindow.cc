@@ -91,7 +91,8 @@ namespace Laidout {
 
 //---------------------------
  //***standard action ids for corner button menu
- //0..996 are current documents and "none" document
+ //0..995 are current documents and "none" document
+#define ACTION_ShowInFilesystem        995
 #define ACTION_EditDocMeta             996
 #define ACTION_EditImposition          997
 #define ACTION_RemoveCurrentDocument   998
@@ -967,6 +968,16 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 				app->addwindow(new MetaWindow(NULL,"meta",_("Document Meta"),0, win_parent->object_id,"docMeta", doc->metadata));
 			} else {
 				postmessage(_("Missing doc!"));
+			}
+			return 0;
+
+		} else if (i == ACTION_ShowInFilesystem) {
+			ExternalTool *tool = laidout->prefs.GetDefaultTool(ExternalToolCategory::FileBrowser);
+			if (doc && tool->Valid()) {
+				ErrorLog log;
+				PtrStack<char> files(LISTS_DELETE_Array);
+				files.push(newstr(doc->Saveas()));
+				tool->RunCommand(files, log, true);
 			}
 			return 0;
 		}
@@ -5019,6 +5030,9 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		if (doc) {
 			menu->AddItem(_("Remove current document"),ACTION_RemoveCurrentDocument);
 			menu->AddItem(_("Edit document meta"),ACTION_EditDocMeta);
+
+			ExternalTool *tool = laidout->prefs.GetDefaultTool(ExternalToolCategory::FileBrowser);
+			menu->AddItem(_("Show in filesystem"),ACTION_ShowInFilesystem,0,nullptr,-1,tool == nullptr || !tool->Valid() ? LAX_GRAY : 0);
 		}
 
 		 //----add limbo list, numbers starting at 1000...
