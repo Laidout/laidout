@@ -32,20 +32,16 @@ class ExternalTool : public Laxkit::anObject
   	int category;
 
   	char *command_name; //"lp" non-translated name, not necessarily basename
-	char *binary_path;  //"/usr/bin/lp" (including executable)
+	char *binary_path;  //"/usr/bin/lp" full path to executable
 	char *parameters; // command_name "{filename} --stuff {extra1} {extra2} {extra3}"
 	int verified; //1 yes binary_path exists, 0 failed, -1 unknown
 
 	char *name;         //_("Print")
 	char *description;  //_("Send pdf files to this command to print")
 	char *doc_website;
-	char *file_in_ext;  //"pdf"
+	//char *file_in_ext;  //"pdf"
 
 	ValueHash *extra_config;
-
-	// function to verify file
-	// glob for expected output files (so that we can import generated images, for instance)
-	
 
 	ExternalTool(const char *cmd_name, const char *name, int category);
 	virtual ~ExternalTool();
@@ -72,6 +68,7 @@ class ExternalToolCategory : public Laxkit::anObject
   		TextEditor,
   		ImageEditor,
   		ImageViewer,
+		FileBrowser,
   		MAX
   	};
   	

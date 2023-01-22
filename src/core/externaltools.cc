@@ -69,11 +69,10 @@ ExternalTool::ExternalTool(const char *cmd_name, const char *name, int category)
 	this->name   = newstr(name);
 	description  = nullptr;  //_("Print")
 	doc_website  = nullptr;
-	file_in_ext  = nullptr;  //"pdf"
+	//file_in_ext  = nullptr;  //"pdf"
 	extra_config = nullptr;
 
-	// function to verify file
-	// glob for expected output files (so that we can import generated images, for instance)
+	//TODO: ?  glob for expected output files (so that we can import generated images, for instance)
 	
 	parameters = nullptr; // command_name "{filename} --stuff {extra1} {extra2} {extra3}"
 
@@ -87,7 +86,7 @@ ExternalTool::~ExternalTool()
 	delete[] name;
 	delete[] description;
 	delete[] doc_website;
-	delete[] file_in_ext;
+	//delete[] file_in_ext;
 	delete[] parameters;
 	if (extra_config) extra_config->dec_count();
 }
@@ -98,8 +97,9 @@ anObject *ExternalTool::duplicate(anObject *ref)
 	ExternalTool *tool = new ExternalTool(command_name, name, category);
 	makestr(tool->binary_path, binary_path);
 	makestr(tool->description, description);
+	makestr(tool->parameters,  parameters);
 	makestr(tool->doc_website, doc_website);
-	makestr(tool->file_in_ext, file_in_ext);
+	//makestr(tool->file_in_ext, file_in_ext);
 	return tool;
 }
 
@@ -111,8 +111,9 @@ void ExternalTool::SetFrom(ExternalTool *tool)
 	makestr(binary_path,  tool->binary_path);
 	makestr(name,         tool->name);
 	makestr(description,  tool->description);
+	makestr(parameters,   tool->parameters);
 	makestr(doc_website,  tool->doc_website);
-	makestr(file_in_ext,  tool->file_in_ext);
+	//makestr(file_in_ext,  tool->file_in_ext);
 	// extra_config = nullptr;
 }
 
@@ -186,24 +187,49 @@ int ExternalTool::FindPath()
 
 /*! Return the command return. Note this will be -1 for misc error, else the return value of the command.
  */
-int ExternalTool::RunCommand(Laxkit::PtrStack<char> &files, Laxkit::ErrorLog &log, bool in_background)
+int ExternalTool::RunCommand(Laxkit::PtrStack<char> &arguments, Laxkit::ErrorLog &log, bool in_background)
 {
 	if (!Valid()) {
 		log.AddError(_("Command is not valid!"));
 		return -1;
 	}
 	
-	//build command:   command %f {files} {context.page_label}
+	//build command:   command {arguments} {context.page_label}
 	Utf8String cm;
 	cm.Sprintf("%s", binary_path);
 
-	// add files
-	for (int c=0; c<files.n; c++) {
-		cm.Append(" ");
-		cm.Append(files.e[c]);
-	}
+	// add arguments
+	if (!isblank(parameters)) {
+		Utf8String args = parameters;
+		// {files} {file} {dir} {basename} %f
+		if (args.Find("{files}",0,true) >= 0) {
+			Utf8String all;
+			for (int c=0; c<arguments.n; c++) {
+				all.Append(" ");
+				all.Append(arguments.e[c]);
+			}
+			args.Replace("{files}", all.c_str(), true);
+		}
 
-	// *** add parameters
+		args.Replace("%f", arguments[0], true);
+		args.Replace("{file}", arguments[0], true);
+
+		if (args.Find("{dirname}", 0, false) >= 0) {
+			char *dname = lax_dirname(arguments[0], false);
+			args.Replace("{dirname}", dname, true);
+			delete[] dname;
+		}
+		args.Replace("{basename}", lax_basename(arguments[0]), true);
+
+		cm.Append(" ");
+		cm.Append(args);
+
+	} else { // do default parameters, as list of arguments
+		for (int c=0; c<arguments.n; c++) {
+			cm.Append(" ");
+			cm.Append(arguments.e[c]);
+		}
+	}
 
 	if (isblank(cm.c_str())) {
 		log.AddError(_("Missing command!"));
@@ -264,6 +290,9 @@ void ExternalToolManager::SetupDefaults()
 	cat = new ExternalToolCategory(ExternalToolCategory::WebBrowser, "WebBrowser", _("Web browser"), nullptr, false);
 	AddExternalCategory(cat);
 
+	cat = new ExternalToolCategory(ExternalToolCategory::FileBrowser, "FileBrowser", _("File browser"), nullptr, false);
+	AddExternalCategory(cat);
+
 	bool do_default = true;
 	char *configfile = ConfigDir(nullptr);
 	appendstr(configfile, "external_tools.conf");
@@ -308,6 +337,11 @@ void ExternalToolManager::SetupDefaults()
 		}
 
 		cmd = new ExternalTool("xdg-open", _("xdg-open"), ExternalToolCategory::WebBrowser);
+		cmd->FindPath();
+		if (cmd->Valid()) AddExternalTool(cmd);
+		else delete cmd;
+
+		cmd = new ExternalTool("xdg-open", _("xdg-open"), ExternalToolCategory::FileBrowser);
 		cmd->FindPath();
 		if (cmd->Valid()) AddExternalTool(cmd);
 		else delete cmd;
@@ -456,7 +490,7 @@ LaxFiles::Attribute *ExternalToolManager::dump_out_atts(LaxFiles::Attribute *att
 			att3->push("parameters", tool->parameters); // command_name "{filename} --stuff {extra1} {extra2} {extra3}"
 			att3->push("description", tool->description);  //_("Send pdf files to this command to print")
 			if (tool->doc_website) att3->push("doc_website", tool->doc_website);
-			if (tool->file_in_ext) att3->push("file_in_ext", tool->file_in_ext);  //"pdf"
+			//if (tool->file_in_ext) att3->push("file_in_ext", tool->file_in_ext);  //"pdf"
 
 			// ValueHash *extra_config;
 		}
@@ -513,8 +547,8 @@ void ExternalToolManager::dump_in_atts(Attribute *att,int flag, LaxFiles::DumpCo
 							makestr(tool->description, value);
 						} else if (!strcmp(name,"doc_website")) {
 							makestr(tool->doc_website, value);
-						} else if (!strcmp(name,"file_in_ext")) {
-							makestr(tool->file_in_ext, value);
+						//} else if (!strcmp(name,"file_in_ext")) {
+						//	makestr(tool->file_in_ext, value);
 						}
 					}
 
