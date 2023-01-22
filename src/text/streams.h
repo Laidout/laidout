@@ -31,6 +31,7 @@ class TextEffect : public Laxkit::Resourceable
   public:
 	virtual ~TextEffect();
 	virtual int Compute(StreamCache *start, StreamCache *end, StreamCache **new_start, StreamCache **new_end) = 0;
+	//virtual ValueHash *GetValues() = 0;
 };
 
 class TextUnderline : public TextEffect
@@ -95,7 +96,7 @@ class DropCaps : public TextEffect
 /*! \class TabStopInfo
  *  Properties relating to stops in a TabStops object.
  */
-class TabStopInfo
+class TabStopInfo : public Value
 {
   public:
 //	enum class TABTYPE {
@@ -118,20 +119,6 @@ class TabStopInfo
 	virtual ~TabStopInfo();
 };
 
-TabStopInfo::TabStopInfo()
-{
-	alignment        = 0;
-	use_char         = false;
-	tab_char_utf8[0] = '\0';
-	positiontype     = 0;
-	position         = 0;
-	path             = nullptr;
-}
-
-TabStopInfo::~TabStopInfo()
-{
-	if (path) path->dec_count();
-}
 
 /*! \class TabStops
  * Definition of tab placements for a paragraph style.
@@ -139,7 +126,7 @@ TabStopInfo::~TabStopInfo()
 class TabStops : public Value
 {
   public:
-	Laxkit::PtrStack<TabStopInfo> stops;
+	Laxkit::RefPtrStack<TabStopInfo> stops;
 
 	int ComputeAt(double height, PtrStack<TabStopInfo> &tabstops); //for path based tab stops, update tabstops at this height in path space
 };
@@ -262,7 +249,7 @@ class StreamBreak : public StreamChunk
 
 class StreamImage : public StreamChunk
 {
- public:
+  public:
 	DrawableObject *img;
 
 	StreamImage(,StreamElement *parent_el = nullptr);
@@ -304,6 +291,7 @@ class StreamText : public StreamChunk
 
 class StreamImportData : Laxkit::anObject
 {
+  public:
 	ImportFilter *importer = nullptr;
 	TextObject *text_object = nullptr;
 	File *file = nullptr;
@@ -324,11 +312,10 @@ class StreamImporter : public FileFilter, public Value
 
 //------------------------------ Stream ---------------------------------
 
-
 class Stream : public Laxkit::anObject, public Laxkit::DumpUtility
 {
   public:
-  	ImportData *import_data; //relating to if stream is tied to either a file or a TextObject and run through an importer
+	StreamImportData *import_data; //relating to if stream is tied to either a file or a TextObject and run through an importer
 
 	clock_t modtime;
 
@@ -347,7 +334,7 @@ class Stream : public Laxkit::anObject, public Laxkit::DumpUtility
 //------------------------------ StreamAttachment ---------------------------------
 
 /*! Held by DrawableObjects, these define various types of attachments of Stream objects to the parent
- * DrawableObject, as well as cached rendering info in a StreamCache.
+ * DrawableObject, as well as cached rendering info in StreamAttachment::cache.
  */
 
 class StreamAttachment : public Laxkit::RefCounted

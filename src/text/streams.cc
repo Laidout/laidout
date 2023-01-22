@@ -34,11 +34,187 @@ namespace Laidout {
  */
 
 
+
+//----------------------------------- General helper functions -----------------------------------
+
+int ParseFlowDirection(const char *str, int len)
+{
+	if (len < 0) len = strlen(str);
+	int bidi=-2;
+
+	if      (!strncasecmp(value,"ltr" , len))  bidi = LAX_LRTB;
+	else if (!strncasecmp(value,"rtl" , len))  bidi = LAX_RLTB;
+	else if (!strncasecmp(value,"auto", len)) bidi = -1;
+	else if (!strncasecmp(value,"lrtb", len)) bidi = LAX_LRTB;
+	else if (!strncasecmp(value,"ltbt", len)) bidi = LAX_LTBT;
+	else if (!strncasecmp(value,"rltb", len)) bidi = LAX_RLTB;
+	else if (!strncasecmp(value,"rlbt", len)) bidi = LAX_RLBT;
+	else if (!strncasecmp(value,"tblr", len)) bidi = LAX_TBLR;
+	else if (!strncasecmp(value,"tbrl", len)) bidi = LAX_TBRL;
+	else if (!strncasecmp(value,"btlr", len)) bidi = LAX_BTLR;
+	else if (!strncasecmp(value,"btrl", len)) bidi = LAX_BTRL;
+
+	return bidi;
+}
+
+
+/*! Something with simple contents in parantheses, like:
+ *  - local(blah)
+ *  - local("Blah")
+ *  - local('Blah')
+ *  - url(https://thing)
+ *
+ *  Return 1 for successful parse, else 0.
+ */
+int ParseFofS(const char *value, int *f_len_ret, const char **s_ret, int *s_len_ret, const char **end_ret)
+{
+	//while (isspace(*value)) value++;
+	const char *ptr = value;
+	while (isalnum(*ptr)) ptr++;
+	if (ptr == value) return 0;
+	*f_len_ret = ptr - value;
+
+	value = ptr;
+	while (isspace(*value)) value++;
+	if (*value != '(') return 0;
+	value++;
+
+	while (isspace(*value)) value++;
+	char has_quote = '\0';
+	if (*value == '"' || *value == '\'') { has_quote = *value; value++; }
+	ptr = value;
+	*s_ret = value;
+	while (*ptr && *ptr != has_quote && *ptr != ')') ptr++;
+	*s_len_ret = ptr - value;
+	if (has_quote) {
+		if (*ptr != has_quote) return 0;
+		ptr++;
+	}
+	if (*ptr != ')') return 0;
+
+	value = ptr+1; 
+	*end_ret = value;
+	return 1;
+}
+
+
+//----------------------------------- LengthValue -----------------------------------
+
+class LengthValue : public Value
+{
+  public:
+	double v;
+	double v_tr; //cached context dependent computed value. This will be set from outside LengthValue, usually when computing a StreamCache.
+
+	enum LengthType {
+		LEN_Number,
+		LEN_Percent_Parent,
+		LEN_Percent_Paper,
+		LEN_em,
+		LEN_ex,
+		LEN_ch,
+		LEN_vw,
+		LEN_vh,
+		LEN_vmin,
+		LEN_vmax
+	};
+
+	LengthType type;
+
+	static Laxkit::UnitManager unit_manager;
+	Laxkit::Unit units;
+
+	LengthValue(); 
+	LengthValue(double val, LengthType len_type)
+	LengthValue(const char *val, int len);
+};
+
+LengthValue::LengthValue()
+{
+	value = 0;
+	type = LEN_Number;
+}
+
+LengthValue::LengthValue(const char *val, int len)
+  : LengthValue()
+{
+	//TODO: properly use len to truncate val if necessary
+
+	if (isblank(val)) return;
+
+	if (len < 0) len = strlen(val);
+	char *endptr = nullptr;
+	value = strtod(val, &endptr);
+
+	if (endptr != val) {
+		while (isspace(*endptr)) endptr++;
+		if (*endptr == '%') {
+			type = LEN_Percent;
+		} else {
+			// parse units
+			int _units = ParseUnits(endptr, len - (endptr - val));
+			if (_units != Laxkit::UNITS_None) {
+				units = _units;
+				if      (units == Laxkit::UNITS_em)   { type = LEN_em;   }
+				else if (units == Laxkit::UNITS_ex)   { type = LEN_ex;   }
+				else if (units == Laxkit::UNITS_ch)   { type = LEN_ch;   }
+				else if (units == Laxkit::UNITS_vw)   { type = LEN_vw;   }
+				else if (units == Laxkit::UNITS_vh)   { type = LEN_vh;   }
+				else if (units == Laxkit::UNITS_vmin) { type = LEN_vmin; }
+				else if (units == Laxkit::UNITS_vmax) { type = LEN_vmax; }
+				else type = LEN_Number;				
+			}
+		}
+	}
+}
+
+
+int LengthValue::ParseUnits(const char *str, int len)
+{
+	if (unit_manager.NumberOfUnits() == 0) {
+		Laxkit::CreateDefaultUnits(&unit_manager, false, false);
+
+		unit_manager->AddUnits(Laxkit::UNITS_Pixels, .0254/96, _("px"), _("pixel"), _("pixels"));
+		unit_manager->AddUnits(Laxkit::UNITS_em,     1, _("em"), _("em"),    _("em"));
+
+		unit_manager->AddUnits(Laxkit::UNITS_ex,     1, _("ex"), _("ex"),    _("ex"));
+		unit_manager->AddUnits(Laxkit::UNITS_ch,     1, _("ch"), _("ch"),    _("ch"));
+		unit_manager->AddUnits(Laxkit::UNITS_rem,    1, _("rem"),_("rem"),   _("rem"));
+		unit_manager->AddUnits(Laxkit::UNITS_vw,     1, _("vw"), _("vw"),    _("vw"));
+		unit_manager->AddUnits(Laxkit::UNITS_vh,     1, _("vh"), _("vh"),    _("vh"));
+		unit_manager->AddUnits(Laxkit::UNITS_vmin,   1, _("vmin"), _("vmin"),_("vmin"));
+		unit_manager->AddUnits(Laxkit::UNITS_vmax,   1, _("vmax"), _("vmax"),_("vmax"));
+	}
+
+	return unit_manager->UnitId(str, len);
+}
+
+
+//----------------------------------- TabStopInfo -----------------------------------
+
+
+TabStopInfo::TabStopInfo()
+{
+	alignment        = 0;
+	use_char         = false;
+	tab_char_utf8[0] = '\0';
+	positiontype     = 0;
+	position         = 0;
+	path             = nullptr;
+}
+
+TabStopInfo::~TabStopInfo()
+{
+	if (path) path->dec_count();
+}
+
+
 //----------------------------------- Style -----------------------------------
 /*! \class Style
  * \brief Class to hold cascading styles.
  *
- * Style objects are either temporary objects embedded in StreamElement, or they are resources.
+ * Style objects are either temporary objects embedded in StreamElement, or they are project resources.
+ * A Style may be based on a "parent" style. In this case, the parent style must be a project resource.
  */
 
 Style::Style()
@@ -131,26 +307,26 @@ int Style::MergeFrom(Style *s)
 class CharacterStyle : public Style
 {
   public:
-  	// these member variables are cached from collapsed Style tree
-	FontValue *font;
+  	// // these member variables are cached from collapsed Style tree
+	// FontValue *font;
 
-	Laxkit::Color *color; //including alpha
-	Laxkit::Color *bg_color; //highlighting
+	// Laxkit::Color *color; //including alpha
+	// Laxkit::Color *bg_color; //highlighting
 
-	double space_shrink;
-	double space_grow;  //as percent of overriding font size
-	double inner_shrink, inner_grow; //char spacing within words
+	// double space_shrink;
+	// double space_grow;  //as percent of overriding font size
+	// double inner_shrink, inner_grow; //char spacing within words
 
-	 //basic positioning info
-	double kerning_before;
-	double kerning_after;
-	double h_scaling, v_scaling; //contentious glyph scaling
+	//  //basic positioning info
+	// double kerning_before;
+	// double kerning_after;
+	// double h_scaling, v_scaling; //contentious glyph scaling
 
-	 //more thorough text effects
-	PtrStack<TextEffect> glyph_effects; //adjustments to characters or glyphs that changes metrics, making them different shapes or chars, like small caps, all caps, no caps, scramble, etc
-	PtrStack<TextEffect> below_effects; //additions like highlighting, that exist under the glyphs
-	PtrStack<TextEffect>  char_effects; //transforms to glyphs that do not change metrics, fake outline, fake bold, etc
-	PtrStack<TextEffect> above_effects; //lines and such drawn after the glyphs are drawn
+	//  //more thorough text effects
+	// PtrStack<TextEffect> glyph_effects; //adjustments to characters or glyphs that changes metrics, making them different shapes or chars, like small caps, all caps, no caps, scramble, etc
+	// PtrStack<TextEffect> below_effects; //additions like highlighting, that exist under the glyphs
+	// PtrStack<TextEffect>  char_effects; //transforms to glyphs that do not change metrics, fake outline, fake bold, etc
+	// PtrStack<TextEffect> above_effects; //lines and such drawn after the glyphs are drawn
 
 	CharacterStyle();
 	virtual ~CharacterStyle();
@@ -166,12 +342,25 @@ Style *CharacterStyle::Default(Style *s)
 {
 	if (!s) s = new Style("Character");
 
+	s->push("font", nullptr);
 	s->pushString("fontfamily","serif");
 	s->pushString("fontstyle","normal");
-	s->pushString("fontcolor","black");
 	s->pushLength("fontsize","11pt");
-	s->pushLength("kern","0%");
+	s->push("color", new ColorValue("black"), -1, true);
+	s->pushString("bg_color", nullptr);
+	s->pushLength("kern_before","0%");
+	s->pushLength("kern_after","0%");
+	// s->push("h_scaling", 1.0);
+	// s->push("v_scaling", 1.0);
+	s->push("space_shrink", 0.0);
+	s->push("space_grow", 0.0);
+	s->push("inner_shrink", 0.0);
 
+	s->push("glpyh_effects", new SetValue(), -1, true);
+	s->push("below_effects", new SetValue(), -1, true);
+	s->push("char_effects",  new SetValue(), -1, true);
+	s->push("above_effects", new SetValue(), -1, true);
+	
 	return s;
 }
 
@@ -224,107 +413,40 @@ Style *ParagraphStyle::Default(Style *s)
 {
 	if (!s) s = new Style("Paragraph");
 
-	s->pushDouble("firstIndent", 0.);
-	s->pushDouble("leftIndent",  0.);
-	s->pushDouble("rightIndent", 0.);
-	s->pushDouble("spaceBefore", 0.);
-	s->pushDouble("spaceAfter",  0.);
-	s->pushDouble("spaceBetween",0.);
+	s->push("firstIndent", 0.);
+	s->push("leftIndent",  0.);
+	s->push("rightIndent", 0.);
+	s->push("spaceBefore", 0.);
+	s->push("spaceAfter",  0.);
+	s->push("spaceBetween",0.);
+
+	s->push("hyphens", new BooleanValue(false), -1, true); //whether to have them or not
+	s->push("hyphen_width",   1.0);
+	s->push("hyphen_shrink",  0.0);
+	s->push("hyphen_grow",    0.0);
+	s->push("hyphen_penalty", 1.0);
+
+	s->push("gap_above",   new LengthValue(1.0), -1, true); //0 for  % of font size, 1 for absolute number
+	s->push("gap_after",   new LengthValue(1.0), -1, true); //0 for  % of font size, 1 for absolute number
+	s->push("gap_between", new LengthValue(1.0), -1, true); //0 for  % of font size, 1 for absolute number
+
+	s->push("first_indent_lines", 1);
+	s->push("first_indent", 0.0);
+	s->push("normal_indent", 0.0);
+	s->push("far_indent", 0.0); //for left to right, this would be the right margin for instance
+
+	int tab_strategy; //regular intervals, by lines
+	TabStops *tabs;
+
+	s->push("justify_type", 0); //0 for allow widow-like lines, 1 allow widows but do not fill space to edges, 2 for force justify all
+	s->push("justification", 0.0); // (0..100) left=0, right=100, center=50, full justify
+	s->push("flow_direction", 0); //*** need to implement all LAX_LRTB
+	
+	//PtrStack<TextEffect> conditional_effects; //like initial drop caps, first line char style, etc
+
+	s->push("default_charstyle", nullptr);
 
 	return s;
-}
-
-
-
-//----------------------------------- LengthValue -----------------------------------
-
-
-class LengthValue : public Value
-{
-  public:
-	double v;
-	double v_tr; //context dependent computed value. Not set internally.
-
-	enum LengthType {
-		LEN_Number,
-		LEN_Percent_Parent,
-		LEN_Percent_Paper,
-		LEN_em,
-		LEN_ex,
-		LEN_ch,
-		LEN_vw,
-		LEN_vh,
-		LEN_vmin,
-		LEN_vmax
-	};
-
-	LengthType type;
-
-	static Laxkit::UnitManager unit_manager;
-	Laxkit::Unit units;
-
-	LengthValue(); 
-	LengthValue(double val, LengthType len_type)
-	LengthValue(const char *val, int len);
-};
-
-LengthValue::LengthValue()
-{
-	value = 0;
-	type = LEN_Number;
-}
-
-LengthValue::LengthValue(const char *val, int len)
-  : LengthValue()
-{
-	//TODO: properly use len to truncate val if necessary
-
-	if (isblank(val)) return;
-
-	if (len < 0) len = strlen(val);
-	char *endptr = nullptr;
-	value = strtod(val, &endptr);
-
-	if (endptr != val) {
-		while (isspace(*endptr)) endptr++;
-		if (*endptr == '%') {
-			type = LEN_Percent;
-		} else {
-			// parse units
-			int _units = ParseUnits(endptr, len - (endptr - val));
-			if (_units != Laxkit::UNITS_None) {
-				units = _units;
-				if      (units == Laxkit::UNITS_em)   { type = LEN_em;   }
-				else if (units == Laxkit::UNITS_ex)   { type = LEN_ex;   }
-				else if (units == Laxkit::UNITS_ch)   { type = LEN_ch;   }
-				else if (units == Laxkit::UNITS_vw)   { type = LEN_vw;   }
-				else if (units == Laxkit::UNITS_vh)   { type = LEN_vh;   }
-				else if (units == Laxkit::UNITS_vmin) { type = LEN_vmin; }
-				else if (units == Laxkit::UNITS_vmax) { type = LEN_vmax; }
-				else type = LEN_Number;				
-			}
-		}
-	}
-}
-
-int LengthValue::ParseUnits(const char *str, int len)
-{
-	if (unit_manager.NumberOfUnits() == 0) {
-		Laxkit::CreateDefaultUnits(&unit_manager, false, false);
-
-		unit_manager->AddUnits(Laxkit::UNITS_Pixels, .0254/96, _("px"), _("pixel"), _("pixels"));
-		unit_manager->AddUnits(Laxkit::UNITS_em,     1, _("em"), _("em"),    _("em"));
-
-		unit_manager->AddUnits(Laxkit::UNITS_ex,     1, _("ex"), _("ex"),    _("ex"));
-		unit_manager->AddUnits(Laxkit::UNITS_ch,     1, _("ch"), _("ch"),    _("ch"));
-		unit_manager->AddUnits(Laxkit::UNITS_rem,    1, _("rem"),_("rem"),   _("rem"));
-		unit_manager->AddUnits(Laxkit::UNITS_vw,     1, _("vw"), _("vw"),    _("vw"));
-		unit_manager->AddUnits(Laxkit::UNITS_vh,     1, _("vh"), _("vh"),    _("vh"));
-		unit_manager->AddUnits(Laxkit::UNITS_vmin,   1, _("vmin"), _("vmin"),_("vmin"));
-		unit_manager->AddUnits(Laxkit::UNITS_vmax,   1, _("vmax"), _("vmax"),_("vmax"));
-	}
-
-	return unit_manager->UnitId(str, len);
 }
 
 
@@ -345,6 +467,7 @@ int LengthValue::ParseUnits(const char *str, int len)
  *
  */
 
+/*! Default constructor will create a new empty Style(). */
 StreamElement::StreamElement()
 {
 	style = new Style();
@@ -505,6 +628,7 @@ void StreamImage::dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *c
 
 
 //----------------------------------- StreamText ------------------------------------
+
 /*! \class StreamText
  * \brief Type of stream chunk made only of simple text.
  *
@@ -571,6 +695,7 @@ int StreamText::BreakInfo(int index)
 
 
 //------------------------------------- Stream ----------------------------------
+
 /*! \class Stream
  * \brief Hold a stream of things, usually text.
  * 
@@ -814,6 +939,7 @@ void Stream::dump_in_atts(Attribute *att,int flag, LaxFiles::DumpContext *contex
 			}
 		}
 	}
+
 	tms tms_;
 	modtime = times(&tms_);
 }
@@ -886,6 +1012,10 @@ void Stream::dump_in_atts(Attribute *att,int flag, LaxFiles::DumpContext *contex
 int Stream::ImportMarkdown(const char *text, int n, StreamChunk *addto, bool after)
 {
 	cerr << " *** must implement a markdown importer! defaulting to text"<<endl;
+
+	// MarkdownImporter *importer = laidout->GetStreamImporter("markdown", nullptr);
+	// importer->ImportTo(text, n, addto, after);
+
 	return ImportText(text,n,addto,after);
 }
 
@@ -900,13 +1030,13 @@ int Stream::ImportText(const char *text, int n, StreamChunk *addto, bool after)
 	if (n < 0) n = strlen(text);
 	if (n == 0) return 0;
 	
-	StreamText *txt=new StreamText(text,n, nullptr);
+	StreamText *txt = new StreamText(text,n, nullptr);
 
 	if (addto) {
 		if (after) addto->AddAfter(txt);
 		else {
 			addto->AddBefore(txt);
-			if (addto==chunks) chunks=addto; //reposition head
+			if (addto == chunks) chunks = addto; //reposition head
 		}
 	} else {
 		if (!chunks) {
@@ -920,13 +1050,13 @@ int Stream::ImportText(const char *text, int n, StreamChunk *addto, bool after)
 			if (!addto) {
 				 //prepend to beginning of all, or append to end of all
 				addto=chunks;
-				if (after) while (addto->next) addto=addto->next;
+				if (after) while (addto->next) addto = addto->next;
 			}
 			if (after) {
 				addto->AddAfter(txt); //AddAfter() and AddBefore() install a style
 			} else {
 				chunk->AddBefore(txt);
-				if (addto==chunks) chunks=addto; //reposition head
+				if (addto == chunks) chunks = addto; //reposition head
 			}
 		}
 	}
@@ -934,45 +1064,6 @@ int Stream::ImportText(const char *text, int n, StreamChunk *addto, bool after)
 	return 0;
 }
 
-
-/*! Something like:
- *  - local(blah)
- *  - local("Blah")
- *  - local('Blah')
- *  - url(https://thing)
- *
- *  Return 1 for successful parse, else 0.
- */
-int ParseFofS(const char *value, int *f_len_ret, const char **s_ret, int *s_len_ret, const char **end_ret)
-{
-	//while (isspace(*value)) value++;
-	const char *ptr = value;
-	while (isalnum(*ptr)) ptr++;
-	if (ptr == value) return 0;
-	*f_len_ret = ptr - value;
-
-	value = ptr;
-	while (isspace(*value)) value++;
-	if (*value != '(') return 0;
-	value++;
-
-	while (isspace(*value)) value++;
-	char has_quote = '\0';
-	if (*value == '"' || *value == '\'') { has_quote = *value; value++; }
-	ptr = value;
-	*s_ret = value;
-	while (*ptr && *ptr != has_quote && *ptr != ')') ptr++;
-	*s_len_ret = ptr - value;
-	if (has_quote) {
-		if (*ptr != has_quote) return 0;
-		ptr++;
-	}
-	if (*ptr != ')') return 0;
-
-	value = ptr+1; 
-	*end_ret = value;
-	return 1;
-}
 
 /*! 
  * See https://www.w3.org/TR/css-fonts-3/#font-face-rule.
@@ -1366,31 +1457,12 @@ Style *ProcessCSSBlock(Style *style, const char *cssvalue)
 	return style;
 }
 
-LengthValue *ParseLengthOrPercent(const char *value, const char *relative_to, const char **endptr)
+class CSSParseCache
 {
-	*** % em, ex, px, and usual cm, etc-- --double val = -1;
+  public:
+  	Laxkit::RefPtrStack<LaxFont> fonts;
 
-	char *endptr = nullptr;
-	DoubleAttribute(value, &val, &endptr);
-
-	if (endptr == value) {
-		// error! can't use this!
-		return nullptr;
-		
-	} 
-	while (isspace(*endptr)) endptr++;
-
-	LengthValue *v = nullptr;
-	if (*endptr == '%') {
-		v = new LengthValue(l, "font-size");
-
-	} else if (*endptr == 'e' && *endptr == 'm') {
-	} else {
-	}
-
-	return v;
-}
-
+};
 
 LaxFont *MatchCSSFont(const char *font_family, int italic, const char *variant, int weight)
 {
@@ -1415,27 +1487,6 @@ LaxFont *MatchCSSFont(const char *font_family, int italic, const char *variant, 
 
 	return font;
 }
-
-int ParseBidi(const char *str, int len)
-{
-	if (len < 0) len = strlen(str);
-	int bidi=-2;
-
-	if      (!strncasecmp(value,"ltr" , len))  bidi = LAX_LRTB;
-	else if (!strncasecmp(value,"rtl" , len))  bidi = LAX_RLTB;
-	else if (!strncasecmp(value,"auto", len)) bidi = -1;
-	else if (!strncasecmp(value,"lrtb", len)) bidi = LAX_LRTB;
-	else if (!strncasecmp(value,"ltbt", len)) bidi = LAX_LTBT;
-	else if (!strncasecmp(value,"rltb", len)) bidi = LAX_RLTB;
-	else if (!strncasecmp(value,"rlbt", len)) bidi = LAX_RLBT;
-	else if (!strncasecmp(value,"tblr", len)) bidi = LAX_TBLR;
-	else if (!strncasecmp(value,"tbrl", len)) bidi = LAX_TBRL;
-	else if (!strncasecmp(value,"btlr", len)) bidi = LAX_BTLR;
-	else if (!strncasecmp(value,"btrl", len)) bidi = LAX_BTRL;
-
-	return bidi;
-}
-
 
 
 /*! Read in the file to a string, then call ImportXML(). Updates this->file.
@@ -1552,6 +1603,8 @@ void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&last_chunk, StreamElemen
 			//<img width="100" height="100" alt=".." src=".."   style class id ... />
 			
 			double w=-1, h=-1;
+			LengthValue *w_value = nullptr;
+			LengthValue *h_value = nullptr;
 			const char *alt=nullptr, *src=nullptr, *img_title=nullptr;
 
 			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
@@ -1559,22 +1612,21 @@ void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&last_chunk, StreamElemen
 				value=att->attributes.e[c]->attributes.e[c2]->value;
 
 				if (!strcmp(name,"width")) {
-					*** watch for relative dims
-					DoubleAttribute(value,&w);
+					w_value = LengthAttribute(value);
+					// DoubleAttribute(value,&w);
 
 				} else if (!strcmp(name,"height")) {
-					*** watch for relative dims
-					*** maybe allow em, ascent, descent, xh, %font-size
-					DoubleAttribute(value,&h);
+					h_value = LengthAttribute(value);
+					// DoubleAttribute(value,&h);
 
 				} else if (!strcmp(name,"title")) {
-					img_title=value;
+					img_title = value;
 
 				} else if (!strcmp(name,"alt")) {
-					alt=value;
+					alt = value;
 
 				} else if (!strcmp(name,"src")) {
-					src=value;
+					src = value;
 				}
 			}
 
@@ -1733,7 +1785,7 @@ StreamElement *ParseCommonStyle(Laxkit::Attribute *att, StreamElement *current)
 			 // flow direction: html has "ltr" "rtl" "auto"
 			 // 				-> extend with all 8 lrtb, lrbt, tblr, etc?
 
-			int bidi = ParseBidi(value,-1);
+			int bidi = ParseFlowDirection(value,-1);
 
 			if (!current) current = new StreamElement();
 			if (bidi >= 0) current->style->set("bidi",bidi);
@@ -1750,9 +1802,13 @@ StreamElement *ParseCommonStyle(Laxkit::Attribute *att, StreamElement *current)
 //------------------------------------- StreamAttachment ----------------------------------
 
 
+/*! Create this StreamAttachment as being owned by nobject.
+ *  nstream will be inc_counted.
+ *  cache is set to null, it is not computed here.
+ */
 StreamAttachment::StreamAttachment(DrawableObject *nobject, Stream *nstream)
 {
-    owner = nobject; //assume *this is a child of object
+    owner = nobject; //assume *this is owned by nobject
 
     stream = nstream;
     if (stream) stream->inc_count();
@@ -1763,7 +1819,7 @@ StreamAttachment::StreamAttachment(DrawableObject *nobject, Stream *nstream)
 StreamAttachment::~StreamAttachment()
 {
 	if (stream) stream->dec_count();
-	if (cache) cache->dec_count();
+	if (cache)  cache ->dec_count();
 }
 
 
@@ -1794,6 +1850,8 @@ StreamCache::~StreamCache()
 }
 
 
+//------------------------------- Stream mapping ------------------------------------------
+
 /*! Update cache for stream laid into target->GetInsetPath(), as blocked by appropriate objects in
  * the same page. Note that only page objects affect wrapping. Paper and limbo objects do not
  * affect wrapping.
@@ -1802,7 +1860,7 @@ StreamCache::~StreamCache()
  * or create and return a new one if cache==nullptr.
  */
 StreamCache *RemapAreaStream(DrawableObject *target, StreamAttachment *attachment, int start_chunck, int chunk_offset)
-{ ***
+{
 	if (!attachment) return 1;
 	
 	Stream      *stream = attachment->stream;
