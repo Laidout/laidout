@@ -65,7 +65,6 @@ namespace Laidout {
 // }
 
 
-
 //------------------------------ ExternalToolManagerWindow ----------------------------
 
 /*! \class ExternalToolManagerWindow
@@ -319,39 +318,10 @@ int ExternalToolManagerWindow::init()
 {
 	int        th         = app->defaultlaxfont->textheight();
 	int        linpheight = th * 1.3;
-	// int        pad        = th / 3;
-	// int        lpad       = th / 4;
+	
 	Button *   tbut       = NULL;
 	anXWindow *last       = NULL;
-	// LineInput *linp=NULL;
-	// CheckBox *check = NULL;
-	// Utf8String scratch;
-
-//default external tools:
-//  
-// External Tools
-//   Web Browser
-//     New tool...
-//   Image Editor
-//     Gimp
-//     Krita
-//     New tool...
-//   Image Viewer
-//     feh
-//     New tool...
-//   Text Editor
-//     gvim
-//     sublime
-//     New tool...
-//   Print command
-//     New tool...
-//   New category...
-//   
-//  new category:
-//    Name
-//    Description
-//    id (automatically assigned)
-
+	
 	//add empty box that we deal with manually:
 	GetMainExtent();
 	main_box = new SquishyBox(0, 0,main_w,main_w,0,10000,50,0, 0,main_h,main_h,0,100000,50,0);
@@ -463,15 +433,7 @@ int ExternalToolManagerWindow::Event(const EventData *data,const char *mes)
  */
 int ExternalToolManagerWindow::send()
 {
-	// if (!tool || !win_owner) return 0;
-
-	// makestr(tool->name, name->GetCText());
-	// makestr(tool->command_name, commandid->GetCText());
-	// makestr(tool->binary_path, path->GetCText());
-	// makestr(tool->description, description->GetCText());
-	// makestr(tool->parameters, parameters->GetCText());
-	// if (website) makestr(tool->website, website->GetCText());
-
+	if (!win_owner) return 0;
 	SimpleMessage *mes = new SimpleMessage();
 	app->SendMessage(mes,win_owner,win_sendthis,object_id);
 
@@ -701,10 +663,10 @@ int ExternalToolWindow::init()
 	//     Parameters  _________________
 	last = parameters = new LineInput(this,"parameters",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
 						last,object_id,"parameters",
-			            _("Parameters"), tool->parameters,0,
+			            _("Parameters"), tool->parameters, 0,
 			            0,0, pad,pad, lpad,lpad);
 	//last->tooltip(_("%f = filename\n%b = basename without extension\n%e = extension\n# = autosave number"));
-	last->tooltip(_("Optional parameters. Default is to list files.\nUse %f or {file} for file."));
+	last->tooltip(_("Optional parameters. Default is to list files.\nUse %f or {file} for file.\n{dirname} for directory of file\n{basename} for file basename\n{files} for list of all arguments"));
 	AddWin(last,1, 300,0,10000,50,0, last->win_h,0,0,50,0, -1);
 	AddNull();
 
