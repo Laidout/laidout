@@ -184,6 +184,7 @@ text: auto track chapter/section
 text: Automatic, yet overrideable hyphenation
 text: layout inside anything that provides an 'area' and runaround facility.  
 text: math mode
+Implement .obj file material import
 Full multi-contact, blob and pressure sensitive touch for possible tablet interface
 partial Laidout export
 implement export even/odd, batches, and paper rotation for other exporters: ps eps plan ppt 

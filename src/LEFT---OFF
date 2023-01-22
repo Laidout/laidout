@@ -244,6 +244,7 @@ valuewindow:
 
 global Laidout settings:
   settings dialog
+    need to be able to set external programs
     rearrange dir lists
 	rebuild icons
 	set uiscale live
@@ -334,7 +335,7 @@ export/print dialog
   DONE For now remove print button, as it produces incorrect results. All it does is allow "to command" option, not vital
 file filters: filefilters:
   multiple export targets, including per object export settings
-  export with custom project files:
+  export with custom project files: project export project
     like html gallery, has project config in coop/
     some files templated
     project defined by:
@@ -344,7 +345,7 @@ file filters: filefilters:
     export.config
       filter: "Html Gallery",
 	  filter_config: { ... },
-      copy: [f1, f2, "**/*.png", { from: "here.txt", to: "to/there.txt" } ],
+      copy: ["path/to/f1", "path/to/f2", "**/*.png", { from: "here.txt", to: "to/there.txt" } ],
       templates:
 		[
  		  { pass_id: "template1",
@@ -1272,13 +1273,20 @@ fontdialog: FontDialog
   bug: makeinwindow SOMETIMES not working, select one, puts on bottom line
 
 ellipseinterface:
-  need rotate handles
-  select object, but controls not visible.. not passing current seleceted?
-  del on center cross hair should straighten?
-  incorporate as special mode in path tool
-  angle drag lapping should preserve large arc
-  if you click and release without dragging, should not make a really tiny new data, should keep old if any
+  bug: click down+up with minimal drag makes zero length handles that we can't move. should not make a really tiny new data, should keep old if any
+  bug: input box and you change tool, does not abort the box
+  bug: need fill color response, also line width handle
+  switch between rounded rect and ellipse?
+  incorporate as special mode in path tool so we don't have to duplicate all the weight node interface
 
+  ---0.099:
+  angle drag lapping should preserve large arc
+  need rotate handles
+  del on center cross hair should straighten?
+
+  DONE bug: drag size movement is not 1:1
+  DONE better drag indicators
+  DONE bug: double click on ellipse, does not activate controls
   DONE center cross hair should be slanted when shape is slanted
   DONE incorporate to mesh tool
   DONE derive from Value in LEllipseData, needed to make object property i/o work correctly
@@ -1608,13 +1616,12 @@ laxkit:
   DONE dlopen seems to be wiping singletons???? -> making them static in files seems to fix
 
 TreeSelector:
-  shift-control o to bring up window, click on flag: crash!
   click open jumping current to 0
-  with text colors, mouse over highlight is off (can't dup?!?)
-  not showing alternate gray/white bgs (can't dup?!?)
   option to use markup for labels
   tree display flat option
   makeinwindow() doesn't account for columns
+  DONE? with text colors, mouse over highlight is off (can't dup?!?)
+  DONE? not showing alternate gray/white bgs (can't dup?!?)
   DONE left and right need to open and close
 
 
@@ -1803,7 +1810,7 @@ nup:
   unclump. Lloyds algo? voronoi of points, move original point to centroid
   unoverlap -> define strategy, either shift H, Vert, along v, or shift on axes between objects
   object reorder: drag outline of object to new position (when you enter another object, assume you want to slide to that place
-  scale panel should allow mpx and control zoom around point
+  scale panel should allow control zoom around point
   show flow with numbers and arrows?
   DONE fill in box
 
@@ -1876,26 +1883,6 @@ image import: ImportImagesDialog
 
   DONE need drag and drop from system for multi-image import
 
-external tools: external commands:
-  to image renderers
-  to object renderers
-  Image editor (gimp, krita)
-  plain text editor (gvim, console vim, command, etc)
-  associate (laidout object type) <-> (external editor)
-
-  properties:
-    DONE command_name, ie   "lp"
-    DONE binary_path        "/usr/bin/lp"
-    DONE description        "Print"
-    DONE doc_website
-    file_in_ext        "pdf"
-    extra config
-    function to verify file
-    glob for expected output files (so that we can import generated images, for instance)
-    command structure "command {filename} --stuff {extra1} {extra2} {extra3}"
-
-  DONE figure out a way to standardize verifying that tool exists: command name: search in $PATH, check if executable
-
 shortcut dialog: shortcuts: shortcut manager shortcutmanager
   bug: ObjectInterface Duplicate objects has key u0000 ???
   bug: on pulling up window, action list shows current tool, but that is not highlighted in area list
@@ -1955,6 +1942,28 @@ signature editor  Signature editor Signature Editor signatureeditor
 
 
 ---------------- 0.099 ROADMAP ITEMS: features and enhancements ------------------------
+
+external tools: external commands:
+  need to be able to rearrange order, first in list is default or select one for default
+  need access anywhere an object links to a file
+  use in image importer
+  use to import to objects
+  associate (laidout object type) <-> (external editor)
+
+  properties:
+    DONE command_name, ie   "lp"
+    DONE binary_path        "/usr/bin/lp"
+    DONE description        "Print"
+    DONE doc_website        "https://somewhere.com/sometime"
+	DONE parameters: $f {files} {file} {dirname} {basename}
+    DONE function to verify file is executable
+    extra config: additional context that may be used for templates?
+    glob for expected output files (so that we can import generated images, for instance)
+    command structure "command {file} --stuff {extra.stuff} {{laidout.globals.frame}} {extra3}"
+
+  DONE Image editor (gimp, krita)
+  DONE plain text editor (gvim, console vim, command, etc)
+  DONE figure out a way to standardize verifying that tool exists: command name: search in $PATH, check if executable
 
 layers palette Layers ObjectTree
   need to update tree list, not flush and repopulate which wrecks selection and open/closed
