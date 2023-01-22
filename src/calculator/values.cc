@@ -4936,7 +4936,12 @@ int FileValue::isLink()
 
 int FileValue::Exists()
 {
-	return file_exists(filename,1,NULL);
+	return file_exists(filename, 1, nullptr);
+}
+
+int FileValue::Size()
+{
+	return file_size(filename, 1, nullptr);
 }
 
 Value *NewFileValueFunc() { return new FileValue; }

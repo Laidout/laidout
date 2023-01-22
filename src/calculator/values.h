@@ -677,7 +677,9 @@ class FunctionValue : public Value
  	virtual ObjectDef *makeObjectDef();
 };
 
+
 //----------------------------- FileValue ----------------------------------
+
 class FileValue : public Value, virtual public FunctionEvaluator
 {
   public:
@@ -698,6 +700,7 @@ class FileValue : public Value, virtual public FunctionEvaluator
 	virtual int fileType(); //file link, dir link, file, dir, block
 	virtual int isLink();
 	virtual int Exists();
+	virtual int Size();
 	virtual int Depth(); // number of path components
 	virtual const char *Part(int i);
 	virtual void Set(const char *nstr);
