@@ -1476,10 +1476,9 @@ static ObjectDef *PathBooleanNode::GetDef()
 
 	def->pushEnumValue("Union",        _("Union"),         _("Union"),                     Bezier::PathOp::Union       );
 	def->pushEnumValue("Intersection", _("Intersection"),  _("Intersection"),              Bezier::PathOp::Intersection);
-	def->pushEnumValue("OneMinusTwo",  _("A - B"),         _("Remove second from first"),  Bezier::PathOp::AMinusB     );
-	def->pushEnumValue("Intersection", _("B - A"),         _("Remove first from second"),  Bezier::PathOp::BMinusA     );
+	def->pushEnumValue("AMinusB",      _("A - B"),         _("Remove second from first"),  Bezier::PathOp::AMinusB     );
+	def->pushEnumValue("BMinusA",      _("B - A"),         _("Remove first from second"),  Bezier::PathOp::BMinusA     );
 	def->pushEnumValue("Xor",          _("Xor"),           _("A or B but not both"),       Bezier::PathOp::Xor         );
-	
 
 	defkeeper.SetObject(def,1);
 	return def;
