@@ -54,23 +54,23 @@ Laxkit::anXWindow *newImpositionEditor(Laxkit::anXWindow *parnt,const char *nnam
 						PaperStyle *papertype, const char *type, Imposition *imp, const char *imposearg,
 						Document *doc)
 {
-	if (!type && !imp) return NULL;
+	if (!type && !imp) return nullptr;
 
-	anXWindow *win=NULL;
+	anXWindow *win = nullptr;
 
-	int dec=0;
+	int dec = 0;
 	if (!imp && type) {
-		if (!strcmp(type,"NetImposition")) imp=new NetImposition;
-		else if (!strcmp(type,"Singles")) imp=new Singles;
-		else if (!strcmp(type,"SignatureImposition")) imp=new SignatureImposition;
-		if (imp) dec=1;
+		if (!strcmp(type,"NetImposition")) imp = new NetImposition;
+		else if (!strcmp(type,"Singles")) imp = new Singles;
+		else if (!strcmp(type,"SignatureImposition")) imp = new SignatureImposition;
+		if (imp) dec = 1;
 	}
 
-	ImpositionInterface *iface=NULL;
-	if (imp) iface=imp->Interface();
-	win=new ImpositionEditor(parnt,nname,ntitle,
+	ImpositionInterface *iface = nullptr;
+	if (imp) iface = imp->Interface();
+	win = new ImpositionEditor(parnt,nname,ntitle,
 						nowner,mes,
-						doc,imp,NULL,
+						doc,imp,nullptr,
 						imposearg,
 						iface);
 
@@ -110,21 +110,21 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 	: ViewerWindow(parnt,nname,ntitle,
 				   ANXWIN_REMEMBER
 					|VIEWPORT_RIGHT_HANDED|VIEWPORT_BACK_BUFFER|VIEWPORT_NO_SCROLLERS|VIEWPORT_NO_RULERS, 
-					0,0,500,500, 0, NULL)
+					0,0,500,500, 0, nullptr)
 {
 	SetOwner(nowner, mes);
 	doc = ndoc;
 
 	rescale_pages = 1;
-	singleseditor = NULL;
-	neteditor     = NULL;
-	tool          = NULL;
+	singleseditor = nullptr;
+	neteditor     = nullptr;
+	tool          = nullptr;
 	whichactive   = WHICH_Signature;
 
 	if (!viewport) {
 		viewport=new ViewportWindow(this,"imposition-editor-viewport","imposition-editor-viewport",
 									ANXWIN_HOVER_FOCUS|VIEWPORT_RIGHT_HANDED|VIEWPORT_BACK_BUFFER|VIEWPORT_ROTATABLE,
-									0,0,0,0,0,NULL);
+									0,0,0,0,0,nullptr);
 		app->reparent(viewport,this);
 		viewport->dec_count();
 	}
@@ -149,7 +149,7 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 		if (tool && ndoc) tool->UseThisDocument(ndoc);
 	}
 	if (!tool) {
-		tool = new SignatureInterface(NULL,1,viewport->dp, NULL,p,ndoc);
+		tool = new SignatureInterface(nullptr,1,viewport->dp, nullptr,p,ndoc);
 	}
 	tool->GetShortcuts();
 	if (imposearg) tool->ShowSplash(1);
@@ -161,31 +161,31 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 
 	if (imposition && dynamic_cast<NetImposition*>(imposition)) {
 		if (!neteditor) {
-			neteditor=new NetDialog(this,"Net",_("Net"),
-									object_id,"newnet",NULL,
+			neteditor = new NetDialog(this,"Net",_("Net"),
+									object_id,"newnet",nullptr,
 									dynamic_cast<NetImposition*>(imposition));
 			app->addwindow(neteditor,0,1);
 		}
-		whichactive=WHICH_Net;
+		whichactive = WHICH_Net;
 
 	} else if (imposition && dynamic_cast<Singles*>(imposition)) {
 		if (!singleseditor) {
-			singleseditor=new SinglesEditor(this,"Singles",_("Singles"),
+			singleseditor = new SinglesEditor(this,"Singles",_("Singles"),
 									object_id,"newsingles",
 								    doc,
 								    dynamic_cast<Singles*>(imposition),
-								    NULL); //paper
+								    nullptr); //paper
 			app->addwindow(singleseditor,0,1);
 		}
-		whichactive=WHICH_Singles;
+		whichactive = WHICH_Singles;
 	}
 
 
 
 	 //**** this is a hack! Should instead be parsed into an export config with extra fields for additional
 	 // 		imposing
-	imposeout=NULL;
-	imposeformat=NULL;
+	imposeout=nullptr;
+	imposeformat=nullptr;
 	double ww=-1, hh=-1;
 
 	if (imposearg) {
@@ -198,7 +198,7 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 		Attribute att;
 		NameValueToAttribute(&att,imposearg,'=',',');
 
-		const char *prefer=NULL;
+		const char *prefer=nullptr;
 		const char *name,*value;
 
 		for (int c=0; c<att.attributes.n; c++) {
@@ -217,7 +217,7 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 						}
 					}
 
-				} else if (isPdfFile(value,NULL)) {
+				} else if (isPdfFile(value,nullptr)) {
 					//  pdf: if you know number of pages, create singles with that many pages and page sizes,
 					//     export temp podofo plan, call podofoimpose?
 					//     or figure out how to remap pdf pages.. should just be matter of 
@@ -239,10 +239,10 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 				prefer=value;
 
 			} else if (!strcmp(name,"width")) {
-				DoubleAttribute(value,&ww,NULL);
+				DoubleAttribute(value,&ww,nullptr);
 
 			} else if (!strcmp(name,"height")) {
-				DoubleAttribute(value,&hh,NULL);
+				DoubleAttribute(value,&hh,nullptr);
 			}
 		}
 
@@ -311,7 +311,7 @@ int ImpositionEditor::init()
 	ViewerWindow::init();
 	viewport->dp->NewBG(200,200,200);
 
-	anXWindow *last=NULL;
+	anXWindow *last=nullptr;
 	Button *tbut;
 
 	int textheight=app->defaultlaxfont->textheight();
@@ -331,7 +331,7 @@ int ImpositionEditor::init()
 	menu->AddItem(_("NEW Net..."),       IMP_NEW_NET);
 	menu->AddItem(_("From file..."),     IMP_FROM_FILE);
 
-	MenuButton *mbut=new MenuButton(this,"imp",NULL,MENUBUTTON_DOWNARROW|MENUBUTTON_LEFT|MENUBUTTON_ICON_ONLY,
+	MenuButton *mbut=new MenuButton(this,"imp",nullptr,MENUBUTTON_DOWNARROW|MENUBUTTON_LEFT|MENUBUTTON_ICON_ONLY,
 									0,0,textheight,textheight,1,last,object_id,"newimp",-1,menu,1);
 	mbut->pad=textheight/4;
 	last=mbut;
@@ -341,16 +341,16 @@ int ImpositionEditor::init()
 
 
 
-	last=tbut=new Button(this,"ok",NULL, 0, 0,0,0,0,1, last,object_id,"ok",0,_("Ok"));
+	last=tbut=new Button(this,"ok",nullptr, 0, 0,0,0,0,1, last,object_id,"ok",0,_("Ok"));
 	AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0, -1);
 
-	last=tbut=new Button(this,"cancel",NULL, 0, 0,0,0,0,1, last,object_id,"cancel",0,_("Cancel"));
+	last=tbut=new Button(this,"cancel",nullptr, 0, 0,0,0,0,1, last,object_id,"cancel",0,_("Cancel"));
 	AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0, -1);
 
 //	if (imposeout) {
 //		AddNull();
 //		LineInput *linp;
-//		last=linp=new LineInput(NULL,"imp",_("Impose..."),0,
+//		last=linp=new LineInput(nullptr,"imp",_("Impose..."),0,
 //									  0,0,0,0,0,
 //									  last,object_id,"out",
 //									  _("Out:"),imposeout,0,
@@ -374,8 +374,8 @@ int ImpositionEditor::init()
 		ChangeImposition(firstimp);
 	}
 
-	DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(viewport->dp);
-	DBG if (ddp->GetCairo()) cerr <<" ImpositionEditor initialized, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+	//DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(viewport->dp);
+	//DBG if (ddp->GetCairo()) cerr <<" ImpositionEditor initialized, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 	return 0;
 }
@@ -383,7 +383,7 @@ int ImpositionEditor::init()
 //! Send the current imposition to win_owner.
 void ImpositionEditor::send()
 {
-	Imposition *imp=NULL;
+	Imposition *imp=nullptr;
 
 	if (whichactive==WHICH_Signature) {
 		if (tool) imp=(Imposition*)(tool->GetImposition());
@@ -445,17 +445,17 @@ int ImpositionEditor::Event(const Laxkit::EventData *data,const char *mes)
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
 
 		 //when new imposition type selected from popup menu
-		Imposition *newimp=NULL;
+		Imposition *newimp=nullptr;
 		if (s->info2==IMP_NEW_SIGNATURE) {
 			SignatureImposition *simp=new SignatureImposition;
-			simp->AddStack(0,0,NULL); //sigimp starts with null signatures
+			simp->AddStack(0,0,nullptr); //sigimp starts with null signatures
 			newimp=simp;
 
 		} else if (s->info2==IMP_NEW_NET) {
 			newimp=new NetImposition;
 
 		} else if (s->info2==IMP_FROM_FILE) {
-			app->rundialog(new FileDialog(NULL,NULL,_("Imposition from file"),
+			app->rundialog(new FileDialog(nullptr,nullptr,_("Imposition from file"),
 					ANXWIN_REMEMBER, 0,0, 0,0,0,
 					object_id, "impfile",
 					FILES_OPEN_ONE
@@ -535,7 +535,7 @@ int ImpositionEditor::ChangeImposition(Imposition *newimp)
 									object_id,"newsingles",
 								    doc,
 								    dynamic_cast<Singles*>(newimp),
-								    NULL); //paper
+								    nullptr); //paper
 			app->addwindow(singleseditor,0,0);
 		} else {
 			dynamic_cast<ImpositionWindow*>(singleseditor)->UseThisImposition(newimp);
@@ -565,7 +565,7 @@ int ImpositionEditor::ChangeImposition(Imposition *newimp)
 
 		if (!neteditor) {
 			neteditor=new NetDialog(this,"Net",_("Net"),
-									object_id,"newnet",NULL,
+									object_id,"newnet",nullptr,
 									dynamic_cast<NetImposition*>(newimp));
 			app->addwindow(neteditor,0,0);
 		} else {
@@ -593,7 +593,7 @@ Imposition *ImpositionEditor::impositionFromFile(const char *file)
 	DBG cerr<<"----------attempting to impositionFromFile()-------"<<endl;
 
 	
-	if (laidout_file_type(file,NULL,NULL,NULL,"Imposition",NULL)==0) {
+	if (laidout_file_type(file,nullptr,nullptr,nullptr,"Imposition",nullptr)==0) {
 		Attribute att;
 		att.dump_in(file);
 
@@ -601,16 +601,16 @@ Imposition *ImpositionEditor::impositionFromFile(const char *file)
 		Imposition *imp=newImpositionByType(type);
 		if (!imp) {
 			DBG cerr<<"   impositionFromFile() -> unknown imposition type "<<(type?type:"unknown type")<<"..."<<endl;
-			return NULL;
+			return nullptr;
 		}
-		imp->dump_in_atts(&att,0,NULL);
+		imp->dump_in_atts(&att,0,nullptr);
 		return imp;
 	}
 
 
 	 //check if it's a polyhedron file, autogenerate a net from it...
 	Polyptych::Polyhedron *poly=new Polyptych::Polyhedron();
-	if (poly->dumpInFile(file,NULL)==0) {
+	if (poly->dumpInFile(file,nullptr)==0) {
 		Polyptych::Net *net=new Polyptych::Net;
 		net->basenet=poly;
 		net->TotalUnwrap();
@@ -628,7 +628,7 @@ Imposition *ImpositionEditor::impositionFromFile(const char *file)
 
 
 	DBG cerr<<"   impositionFromFile() FAILED..."<<endl;
-	return NULL;
+	return nullptr;
 }
 
 
