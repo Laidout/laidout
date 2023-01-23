@@ -51,7 +51,7 @@ class PptoutFilter : public ExportFilter
 class PptinFilter : public ImportFilter
 {
  protected:
-	virtual int pptDumpInGroup(LaxFiles::Attribute *att, Group *group);
+	virtual int pptDumpInGroup(Laxkit::Attribute *att, Group *group);
  public:
 	virtual const char *Author() { return "Laidout"; }
 	virtual const char *FilterVersion() { return LAIDOUT_VERSION; }

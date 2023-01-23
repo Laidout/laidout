@@ -45,7 +45,6 @@ using namespace std;
 
 
 using namespace Laxkit;
-using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
@@ -145,7 +144,7 @@ void SpreadInterface::Clear(LaxInterfaces::SomeData *)
  *   if (checkPendingChanges(thing)) thing->applyChanges();
  * \todo xbounds and ybounds!!
  */
-void SpreadInterface::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void SpreadInterface::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	
@@ -181,7 +180,7 @@ void SpreadInterface::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext
 
 /*! Note that 'index' is currently ignored.
  */
-void SpreadInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void SpreadInterface::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	if (!att) return;
 	char *name,*value;
@@ -1796,13 +1795,13 @@ SpreadEditor::~SpreadEditor()
 }
 
 //! Passes off to SpreadInterface::dump_out().
-void SpreadEditor::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void SpreadEditor::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	spreadtool->dump_out(f,indent,what,context);
 }
 
 //! Passes off to SpreadInterface::dump_in_atts().
-void SpreadEditor::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void SpreadEditor::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	spreadtool->dump_in_atts(att,flag,context);
 }

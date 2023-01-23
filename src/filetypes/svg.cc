@@ -47,7 +47,6 @@
 
 using namespace std;
 using namespace Laxkit;
-using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
@@ -437,8 +436,8 @@ ObjectDef* SvgExportConfig::makeObjectDef()
 	return def;
 }
 
-//void SvgExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
-LaxFiles::Attribute *SvgExportConfig::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+//void SvgExportConfig::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
+Laxkit::Attribute *SvgExportConfig::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	att = DocumentExportConfig::dump_out_atts(att, what, context);
 
@@ -458,7 +457,7 @@ LaxFiles::Attribute *SvgExportConfig::dump_out_atts(LaxFiles::Attribute *att,int
 	return att;
 }
 
-void SvgExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void SvgExportConfig::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	DocumentExportConfig::dump_in_atts(att,flag,context);
 

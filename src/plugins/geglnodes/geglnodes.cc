@@ -32,6 +32,7 @@
 
 
 using namespace std;
+using namespace Laxkit;
 
 
 /*! dl entry point for laidout
@@ -785,7 +786,7 @@ int GeglLaidoutNode::Connected(NodeConnection *connection)
 	return 0;
 }
 
-int GeglLaidoutNode::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att, LaxFiles::DumpContext *context)
+int GeglLaidoutNode::SetPropertyFromAtt(const char *propname, Laxkit::Attribute *att, Laxkit::DumpContext *context)
 {
     return NodeBase::SetPropertyFromAtt(propname, att, context);
 }
@@ -1637,7 +1638,7 @@ int GeglLoader::Export(const char *file, anObject *object, anObject *context, La
 		cout << xml <<endl;
 
 	} else {
-		if (LaxFiles::save_string_to_file(xml,-1, file) != 0) {
+		if (Laxkit::save_string_to_file(xml,-1, file) != 0) {
 			log.AddMessage(_("Could not open file for writing!"), ERROR_Fail);
 			return 1;
 		}
@@ -1759,7 +1760,7 @@ int GeglNodesPlugin::Initialize()
 
 //	//a TEMPORARY, altogether inadequate hack for testing purposes to set environment variables for gegl and babl when Laidout is relocatable:
 //	if (!strncmp(INSTALL_PREFIX, "..", 2)) {
-//        char *gegl_dir = LaxFiles::ExecutablePath();
+//        char *gegl_dir = Laxkit::ExecutablePath();
 //        appendstr(gegl_dir, "/../../"); //since path points to binary file, assume it's */bin/laidout
 //        appendstr(gegl_dir, "lib/x86_64-linux-gnu/gegl-0.3");
 //        simplify_path(gegl_dir, 1);

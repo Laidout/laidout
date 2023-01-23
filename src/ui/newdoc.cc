@@ -39,7 +39,6 @@ using namespace std;
 #define DBG 
 
 using namespace Laxkit;
-using namespace LaxFiles;
 using namespace Polyptych;
 
 

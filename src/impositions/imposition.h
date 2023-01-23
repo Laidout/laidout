@@ -86,7 +86,7 @@ class Spread : public ObjectContainer
 	Document *doc;
 	PaperGroup *papergroup;
 
-	flatpoint minimum,maximum; //are in path coordinates, useful for littlespreads in Spread editor
+	Laxkit::flatpoint minimum,maximum; //are in path coordinates, useful for littlespreads in Spread editor
 	LaxInterfaces::SomeData *path;
 	LaxInterfaces::SomeData *marks; //automatic objects for the spread
 	//Group spreadobjects; // for custom objects not on a page, or other imposition specific objects
@@ -217,10 +217,10 @@ class ImpositionResource
 	char *impositionfile;
 	char *description;
 	char *objectdef;
-	LaxFiles::Attribute *config;
+	Laxkit::Attribute *config;
 	char configislocal;
 	ImpositionResource(const char *sdef,const char *nname, const char *file, const char *desc,
-					   LaxFiles::Attribute *conf,int local);
+					   Laxkit::Attribute *conf,int local);
 	~ImpositionResource();
 	Imposition *Create();
 };

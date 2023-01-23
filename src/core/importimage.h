@@ -30,7 +30,7 @@ class ImagePlopInfo
 	int scaleflag; //0=scale by dpi, 3=scale to fit always, 1=scale up if necessary 2=scale down to fit if necessary
 	double alignx; //0=full left, 100=full right
 	double aligny; //0=full top, 100=full bottom
-	Laxkit::NumStack<flatpoint> *alignment; //one per imposition page type
+	Laxkit::NumStack<Laxkit::flatpoint> *alignment; //one per imposition page type
 	int error;
 	double dpi;
 	int page;
@@ -44,13 +44,13 @@ class ImagePlopInfo
 
 
 //------------------------------------- ImportImageSettings ------------------------------------
-class ImportImageSettings : public Laxkit::anObject, public LaxFiles::DumpUtility
+class ImportImageSettings : public Laxkit::anObject, public Laxkit::DumpUtility
 {
  public:
 	char *settingsname, *filename;
 	double defaultdpi; //overrideable per image
 	int scaleup, scaledown; //overrideable per image
-	Laxkit::NumStack<flatpoint> alignment; //one per imposition page type
+	Laxkit::NumStack<Laxkit::flatpoint> alignment; //one per imposition page type
 	bool expand_gifs;
 
 	int perpage; //number per page, or as will fit (-1), or all in 1 page (-2)
@@ -67,15 +67,15 @@ class ImportImageSettings : public Laxkit::anObject, public LaxFiles::DumpUtilit
 	virtual ~ImportImageSettings();
 	virtual ImportImageSettings *duplicate();
 
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
 };
 
 
 //------------------------------------- functions -------------------------------
 int dumpOutImageListFormat(FILE *f);
 int dumpInImageList(ImportImageSettings *settings, Document *doc,const char *file);
-int dumpInImageList(ImportImageSettings *settings, Document *doc,LaxFiles::Attribute *att);
+int dumpInImageList(ImportImageSettings *settings, Document *doc,Laxkit::Attribute *att);
 int dumpInImages(ImportImageSettings *settings, Document *doc, const char *pathtoimagedir);
 int dumpInImages(ImportImageSettings *settings, Document *doc,
 				 const char **imagefiles, const char **previewfiles, int nimages);

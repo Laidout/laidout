@@ -40,7 +40,7 @@ class SimpleNetLine
 	virtual int Set(int n, int closed);
 	
 	virtual void dump_out(FILE *f,int indent, int pfirst=0);
-	virtual void dump_in_atts(LaxFiles::Attribute *att, const char *val,int flag);//val=NULL
+	virtual void dump_in_atts(Laxkit::Attribute *att, const char *val,int flag);//val=NULL
 };
 
 //----------------------------------- SimpleNetFace -----------------------------------
@@ -60,7 +60,7 @@ class SimpleNetFace
 	virtual int Set(int n,int *list,int *link=NULL,int dellists=0);
 	
 	virtual void dump_out(FILE *f,int indent, int pfirst=0);
-	virtual void dump_in_atts(LaxFiles::Attribute *att, const char *val,int flag);//val=NULL
+	virtual void dump_in_atts(Laxkit::Attribute *att, const char *val,int flag);//val=NULL
 };
 
 //----------------------------------- SimpleNet -----------------------------------
@@ -72,8 +72,8 @@ class SimpleNet : public Polyptych::AbstractNet,
 	char *filename;
 	char *thenettype;
 	int np,tabs; 
-	flatpoint *points;
-	spacepoint *vertices; // optional list of 3-d points
+	Laxkit::flatpoint *points;
+	Laxkit::spacepoint *vertices; // optional list of 3-d points
 	int nvertices;
 	int *pointmap; // which thing (possibly 3-d points) corresponding point maps to
 	int nl;
@@ -90,17 +90,17 @@ class SimpleNet : public Polyptych::AbstractNet,
 	virtual void FitToData(Laxkit::DoubleBBox *data,double margin);
 	virtual void ApplyTransform(const double *mm=NULL);
 	virtual void Center();
-	virtual int pointinface(flatpoint pp,int innetcoord);
+	virtual int pointinface(Laxkit::flatpoint pp,int innetcoord);
 	virtual int rotateface(int f,int alignxonly=0);
 	virtual void pushline(SimpleNetLine &l,int where=-1);
 	virtual void pushface(SimpleNetFace &f);
-	virtual void pushpoint(flatpoint pp,int pmap=-1);
+	virtual void pushpoint(Laxkit::flatpoint pp,int pmap=-1);
 	virtual void push3dpoint(double x,double y,double z);
 	virtual double *basisOfFace(int which,double *mm=NULL,int total=0);
 
 	 //io functions
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 
 	 //AbstractNet functions
 	virtual const char *whattype() { return "SimpleNet"; }

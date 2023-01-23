@@ -59,7 +59,6 @@
 
 using namespace std;
 using namespace Laxkit;
-using namespace LaxFiles;
 using namespace Polyptych;
 
 #define DBG
@@ -323,7 +322,7 @@ int main(int argc, char **argv)
 	app.close();
 
 	DBG cerr <<"-----------------program done, cleanup follows--------------------"<<endl;
-	DBG FinalizeShortcutManager();
+	DBG InstallShortcutManager(nullptr);
 
 	//DBG cerr << "extra_basis:"<<endl
 	//DBG	 << extra_basis.p.x << ',' <<extra_basis.p.y << ',' <<extra_basis.p.z << " \\" <<endl

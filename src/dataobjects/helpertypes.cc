@@ -63,17 +63,17 @@ void LLineStyle::Set(LaxInterfaces::LineStyle *style, bool absorb)
 	}
 }
 
-void LLineStyle::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void LLineStyle::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	if (linestyle) linestyle->dump_out(f,indent,what,context);
 }
 
-void LLineStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void LLineStyle::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	if (linestyle) linestyle->dump_in_atts(att,flag,context);
 }
 
-LaxFiles::Attribute *LLineStyle::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+Laxkit::Attribute *LLineStyle::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	if (linestyle) return linestyle->dump_out_atts(att,what,context);
 	return att;
@@ -392,17 +392,17 @@ void LFillStyle::Set(LaxInterfaces::FillStyle *style, bool absorb)
 	}
 }
 
-void LFillStyle::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void LFillStyle::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	if (fillstyle) fillstyle->dump_out(f,indent,what,context);
 }
 
-void LFillStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void LFillStyle::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	if (fillstyle) fillstyle->FillStyle::dump_in_atts(att,flag,context);
 }
 
-LaxFiles::Attribute *LFillStyle::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+Laxkit::Attribute *LFillStyle::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	if (!fillstyle) return att;
 	return fillstyle->dump_out_atts(att,what,context);

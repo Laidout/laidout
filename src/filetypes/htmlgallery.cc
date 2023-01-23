@@ -38,7 +38,6 @@
 
 using namespace std;
 using namespace Laxkit;
-using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
@@ -130,7 +129,7 @@ class HtmlGalleryExportConfig : public DocumentExportConfig
 	bool make_thumbs;
 	bool render_each_page;
 
-	LaxFiles::AttributeObject *templatevars;
+	Laxkit::AttributeObject *templatevars;
 
 	HtmlGalleryExportConfig();
 	HtmlGalleryExportConfig(DocumentExportConfig *config);
@@ -140,9 +139,9 @@ class HtmlGalleryExportConfig : public DocumentExportConfig
 	virtual ObjectDef* makeObjectDef();
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 	virtual void DefaultTemplateVars();
 	virtual void UpdateTemplateVarsToDoc();
 };
@@ -278,7 +277,7 @@ void HtmlGalleryExportConfig::UpdateTemplateVarsToDoc()
 	}
 }
 
-void HtmlGalleryExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void HtmlGalleryExportConfig::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
@@ -308,7 +307,7 @@ void HtmlGalleryExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::Dum
 	if (image_template_file) fprintf(f,"%simage_template_file %s\n",spc, image_template_file);
 }
 
-LaxFiles::Attribute *HtmlGalleryExportConfig::dump_out_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+Laxkit::Attribute *HtmlGalleryExportConfig::dump_out_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	att=DocumentExportConfig::dump_out_atts(att,flag,context);
 	att->push("image_format", image_format);
@@ -324,7 +323,7 @@ LaxFiles::Attribute *HtmlGalleryExportConfig::dump_out_atts(LaxFiles::Attribute 
 	return att;
 }
 
-void HtmlGalleryExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void HtmlGalleryExportConfig::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	DocumentExportConfig::dump_in_atts(att,flag,context);
 

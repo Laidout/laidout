@@ -28,7 +28,7 @@ namespace Laidout {
 
 //----------------------------- AddonAction -------------------------------
 
-class AddonAction : public Laxkit::anObject, public LaxFiles::DumpUtility, public SimpleFunctionEvaluator
+class AddonAction : public Laxkit::anObject, public Laxkit::DumpUtility, public SimpleFunctionEvaluator
 {
   protected:
 	Laxkit::Utf8String label; //human readable for menu
@@ -50,9 +50,9 @@ class AddonAction : public Laxkit::anObject, public LaxFiles::DumpUtility, publi
 	virtual LaxInterfaces::anInterface *Interface(); // use this interface to edit parameters
 
 	 //i/o
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *savecontext);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 
     virtual int RunAction(ValueHash *context, Value **value_ret, Laxkit::ErrorLog *log);
 

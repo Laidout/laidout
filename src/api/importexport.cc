@@ -21,9 +21,8 @@
 
 #include <lax/fileutils.h>
 
-using namespace LaxFiles;
-using namespace Laxkit;
 
+using namespace Laxkit;
 
 
 namespace Laidout {

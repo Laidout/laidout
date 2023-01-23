@@ -34,14 +34,11 @@
 using namespace std;
 #define DBG
 
-using namespace Laxkit;
-using namespace LaxFiles;
 
+using namespace Laxkit;
 
 
 namespace Laidout {
-
-
 
 
 
@@ -487,11 +484,11 @@ int ObjectDef::SetType(const char *type)
 	return 0;
 }
 
-LaxFiles::Attribute *ObjectDef::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
+Laxkit::Attribute *ObjectDef::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *savecontext)
 {
 	if (what==0 || what==-1) {
 		 //Attribute format, ala indented data
-		if (!att) att=new LaxFiles::Attribute();
+		if (!att) att=new Laxkit::Attribute();
 
 		att->push("name",name);
 		if (Name)        att->push("Name",Name);
@@ -663,7 +660,7 @@ LaxFiles::Attribute *ObjectDef::dump_out_atts(LaxFiles::Attribute *att,int what,
 /*! If this styledef extends another, this does not write out the whole
  * def of that, only the name element of it.
  */
-void ObjectDef::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void ObjectDef::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
@@ -790,7 +787,7 @@ void ObjectDef::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *cont
 	}
 }
 
-void ObjectDef::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context)
+void ObjectDef::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	int what=0;
 	if (what==0 || what==-1) {
@@ -1598,12 +1595,12 @@ int ValueHash::getValueStr(char *buffer,int len)
 	return 0;
 }
 
-void ValueHash::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void ValueHash::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	return Value::dump_out(f,indent,what,context); //note: this just reroutes to ValueHash::dump_in_atts
 }
 
-LaxFiles::Attribute *ValueHash::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+Laxkit::Attribute *ValueHash::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	if (!att) att = new Attribute;
 	if (what == -1) {
@@ -1621,7 +1618,7 @@ LaxFiles::Attribute *ValueHash::dump_out_atts(LaxFiles::Attribute *att,int what,
 	return att;
 }
 
-void ValueHash::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void ValueHash::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	if (!att) return;
 
@@ -2459,7 +2456,7 @@ int Value::FieldIndex(const char *name)
  *
  * After that, one subatt gets pushed by anything that is not a function, class, or op, as per the value's ObjectDef.
  */
-LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
+Laxkit::Attribute *Value::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *savecontext)
 {
 	if (!att) att=new Attribute;
 
@@ -2640,7 +2637,7 @@ void dump_out_desc(Attribute *att, FILE *f, int indent, int columns)
 
 /*! Default will not output the Value's id string. The object calling this class should be doing that.
  */
-void Value::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void Value::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	if (what==-1) {
 		Attribute att;
@@ -2689,7 +2686,7 @@ void Value::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
     att.dump_out(f,indent);
 }
 
-void Value::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void Value::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	for (int c=0; c<att->attributes.n; c++) {
 		const char *name  = att->attributes.e[c]->name;
@@ -2737,7 +2734,7 @@ void Value::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext
  *   IntValue 23
  * ```
  */
-Value *AttributeToValue(Attribute *att, int format, int *error_ret, LaxFiles::DumpContext *context)
+Value *AttributeToValue(Attribute *att, int format, int *error_ret, Laxkit::DumpContext *context)
 {
 	if (!att->name || !att->value) return nullptr;
 

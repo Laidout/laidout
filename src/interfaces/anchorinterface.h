@@ -61,10 +61,10 @@ class AnchorInterface : public LaxInterfaces::anInterface
 	{
 	  public:
 		PointAnchor *anchor;
-		flatpoint real_point;
+		Laxkit::flatpoint real_point;
 		int anchorsource;
 		int on;
-		Anchors(PointAnchor *aa, flatpoint real, int source, int oon);
+		Anchors(PointAnchor *aa, Laxkit::flatpoint real, int source, int oon);
 		~Anchors();
 	};
 
@@ -73,9 +73,9 @@ class AnchorInterface : public LaxInterfaces::anInterface
 	LaxInterfaces::SomeDataRef *proxy;
 	PointAnchor temptarget;
 	AlignmentRule *current_rule;
-	flatpoint current_target;
-	flatpoint offset_dir;
-	flatpoint current_offset;
+	Laxkit::flatpoint current_target;
+	Laxkit::flatpoint offset_dir;
+	Laxkit::flatpoint current_offset;
 
 	unsigned int anchor_regions;
 	bool show_region_selector;
@@ -91,7 +91,7 @@ class AnchorInterface : public LaxInterfaces::anInterface
 	virtual int scan(int x,int y, int *anchor);
 	virtual void DrawSelectedIndicator(LaxInterfaces::ObjectContext *oc);
 	virtual void RefreshMenu();
-	virtual void DrawText(flatpoint p,const char *s);
+	virtual void DrawText(Laxkit::flatpoint p,const char *s);
 	virtual int RemoveAnchors(LaxInterfaces::ObjectContext *oc);
 	virtual int UpdateAnchors(int region);
 	virtual void UpdateSelectionAnchors();
@@ -113,7 +113,7 @@ class AnchorInterface : public LaxInterfaces::anInterface
 	virtual const char *whattype() { return "AnchorInterface"; }
 	virtual const char *whatdatatype() { return NULL; }
 	virtual int draws(const char *atype);
-	virtual int AddAnchor(flatpoint p,int p_type, const char *name, int source, int id, Laxkit::anObject *owner);
+	virtual int AddAnchor(Laxkit::flatpoint p,int p_type, const char *name, int source, int id, Laxkit::anObject *owner);
 	virtual int AddAnchors(VObjContext *context, int source);
 
 	virtual int InterfaceOn();

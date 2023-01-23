@@ -32,7 +32,7 @@ class NodeEditor : public LaxInterfaces::ViewerWindow
 	char *fileout, *outformat;
 	bool pipeout;
 
-	LaxFiles::Attribute passthrough;
+	Laxkit::Attribute passthrough;
 
   public:
 	NodeEditor(Laxkit::anXWindow *parnt, const char *nname,const char *ntitle,
@@ -48,8 +48,8 @@ class NodeEditor : public LaxInterfaces::ViewerWindow
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 	virtual void send();
 
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 

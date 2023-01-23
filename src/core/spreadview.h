@@ -70,14 +70,14 @@ class LittleSpread : public LaxInterfaces::SomeData, virtual public Laxkit::Tagg
 	LittleSpread();
 	LittleSpread(Spread *sprd, LittleSpread *prv);
 	virtual ~LittleSpread();
-	virtual int pointin(flatpoint pp,int pin=1);
+	virtual int pointin(Laxkit::flatpoint pp,int pin=1);
 	virtual void mapConnection();
 	virtual void FindBBox();
 };
 
 //----------------------- SpreadView --------------------------------------
 class SpreadView : public Laxkit::anObject,
-				   public LaxFiles::DumpUtility,
+				   public Laxkit::DumpUtility,
 				   public Laxkit::DoubleBBox
 {
  protected:
@@ -117,8 +117,8 @@ class SpreadView : public Laxkit::anObject,
 	virtual int MoveToThread(int pageindex,int thread, int threadplace);
 	virtual void FindBBox();
 
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 

@@ -126,7 +126,7 @@ PluginBase *LoadPlugin(const char *path_to_plugin, Laxkit::ErrorLog &log)
 	DBG cerr <<"  Author:      "<< plugin->Author()      << endl;
 	DBG cerr <<"  ReleaseDate: "<< plugin->ReleaseDate() << endl;
 	DBG cerr <<"  License:     "<< plugin->License()     << endl;
-	DBG if (plugin->OtherMeta()) const_cast<LaxFiles::Attribute*>(plugin->OtherMeta())->dump_out_full(stderr, 2);
+	DBG if (plugin->OtherMeta()) const_cast<Laxkit::Attribute*>(plugin->OtherMeta())->dump_out_full(stderr, 2);
 
 	return plugin;
 }

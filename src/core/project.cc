@@ -32,9 +32,9 @@
 using namespace std;
 #define DBG 
 
+
 using namespace LaxInterfaces;
 using namespace Laxkit;
-using namespace LaxFiles;
 
 
 namespace Laidout {
@@ -202,7 +202,7 @@ int Project::Pop(Document *doc)
  *
  * If what==-1, then dump out a pseudocode mockup of the file format.
  */
-void Project::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void Project::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -279,7 +279,7 @@ void Project::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *contex
 	laidout->DumpWindows(f,0,NULL);
 }
 
-void Project::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void Project::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	if (!att) return;
 	char *name,*value;

@@ -26,7 +26,6 @@
 
 
 using namespace Laxkit;
-using namespace LaxFiles;
 
 
 namespace Laidout {
@@ -460,14 +459,14 @@ ExternalTool *ExternalToolManager::GetDefaultTool(int category)
 	return nullptr;
 }
 
-void ExternalToolManager::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void ExternalToolManager::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	Attribute *att=dump_out_atts(NULL,0,context);
 	att->dump_out(f,indent);
 	delete att;
 }
 
-LaxFiles::Attribute *ExternalToolManager::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+Laxkit::Attribute *ExternalToolManager::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	if (!att) att = new Attribute();
 
@@ -499,7 +498,7 @@ LaxFiles::Attribute *ExternalToolManager::dump_out_atts(LaxFiles::Attribute *att
 	return att;
 }
 
-void ExternalToolManager::dump_in_atts(Attribute *att,int flag, LaxFiles::DumpContext *context)
+void ExternalToolManager::dump_in_atts(Attribute *att,int flag, Laxkit::DumpContext *context)
 {
 	//we are assuming that built in categories exist already, but not tools
 	

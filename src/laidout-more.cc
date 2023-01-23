@@ -38,7 +38,6 @@ using namespace std;
 #define DBG 
 
 using namespace Laxkit;
-using namespace LaxFiles;
 
 
 namespace Laidout {

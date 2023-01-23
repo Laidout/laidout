@@ -37,7 +37,6 @@ using namespace std;
 
 using namespace Laxkit;
 using namespace LaxInterfaces;
-using namespace LaxFiles;
 using namespace Polyptych;
  
 
@@ -992,7 +991,7 @@ int NetImposition::SpreadType(int spread)
  *
  * \todo *** dump_out what==-1 with list of built in net types
  */
-void NetImposition::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void NetImposition::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -1076,7 +1075,7 @@ void NetImposition::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *
  *
  * \todo implement clear()!! Currently assumes that it is blank.
  */
-void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void NetImposition::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	if (!att) return;
 	char *name,*value;

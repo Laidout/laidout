@@ -30,9 +30,7 @@
 using namespace std;
 
 
-using namespace LaxFiles;
 using namespace Laxkit;
-
 
 
 namespace Laidout {
@@ -488,14 +486,14 @@ ImportConfig::~ImportConfig()
 	//if (filter) filter->dec_count(); ***filter assumed non-local, always living in laidoutapp?
 }
 
-void ImportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void ImportConfig::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	Attribute att;
 	dump_out_atts(&att, what, context);
 	att.dump_out(f, indent);
 }
 
-LaxFiles::Attribute *ImportConfig::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+Laxkit::Attribute *ImportConfig::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	if (!att) att = new Attribute;
 	if (what==-1) {
@@ -529,7 +527,7 @@ LaxFiles::Attribute *ImportConfig::dump_out_atts(LaxFiles::Attribute *att,int wh
 }
 	
 
-void ImportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context)
+void ImportConfig::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	char *name,*value;
 	int c,c2;
@@ -664,9 +662,9 @@ class ProjectExportSettings : public Value
   	virtual ObjectDef *makeObjectDef(); //calling code responsible for ref
 
   	//from DumpUtility:
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 //------------------------------------- ExportFilter -----------------------------------
@@ -1406,7 +1404,7 @@ int DocumentExportConfig::assign(FieldExtPlace *ext,Value *v)
 	return -1;
 }
 
-LaxFiles::Attribute *DocumentExportConfig::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+Laxkit::Attribute *DocumentExportConfig::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	if (!att) att=new Attribute;
 
@@ -1465,14 +1463,14 @@ LaxFiles::Attribute *DocumentExportConfig::dump_out_atts(LaxFiles::Attribute *at
 	return att;
 }
 
-void DocumentExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void DocumentExportConfig::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	Attribute att;
 	dump_out_atts(&att, what, context);
 	att.dump_out(f, indent);
 }
 
-void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context)
+void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	char *name,*value;
 	int c,c2;
@@ -1734,8 +1732,8 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 		config->target = DocumentExportConfig::TARGET_Single;
 		PaperGroup *pg;
 		char *filebase=nullptr;
-		if (config->tofiles) filebase=LaxFiles::make_filename_base(config->tofiles);//###.ext -> %03d.ext
-		else filebase=LaxFiles::make_filename_base(config->filename);//###.ext -> %03d.ext
+		if (config->tofiles) filebase=Laxkit::make_filename_base(config->tofiles);//###.ext -> %03d.ext
+		else filebase=Laxkit::make_filename_base(config->filename);//###.ext -> %03d.ext
 		if (papergroup->papers.n>1) {
 			 // basically make base###.ps --> base(spread number)-(paper number).ps
 			char *pos=strchr(filebase,'%'); //pos will never be 0

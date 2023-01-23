@@ -51,13 +51,13 @@ class PaperInterface : virtual public LaxInterfaces::anInterface
 
 	Document *doc;
 	int rx,ry; //used for context menu, also moving maybebox
-	flatpoint lbdown;
+	Laxkit::flatpoint lbdown;
 	bool search_snap;
 	double snap_px_threshhold;
 	double snap_running_angle;
 
 	virtual int scan(int x,int y);
-	virtual void CreateMaybebox(flatpoint p);
+	virtual void CreateMaybebox(Laxkit::flatpoint p);
 	virtual int SnapBoxes();
 
 	Laxkit::ShortcutHandler *sc;

@@ -32,7 +32,7 @@
 #include <iostream>
 using namespace std;
 #define DBG 
-using namespace LaxFiles;
+
 using namespace Laxkit;
 using namespace LaxInterfaces;
 
@@ -189,7 +189,7 @@ void NetLine::dumpOut(FILE *f,int indent, int what)
  *      3   #optional integer tag
  * </pre>
  */
-void NetLine::dumpInAtts(LaxFiles::Attribute *att, const char *val,int flag)
+void NetLine::dumpInAtts(Laxkit::Attribute *att, const char *val,int flag)
 {
 	if (!att) return;
 	int c;
@@ -677,7 +677,7 @@ void NetFace::dumpOut(FILE *f,int indent,int what)
 /*!
  * See dumpOut() for what gets put out.
  */
-void NetFace::dumpInAtts(LaxFiles::Attribute *att)
+void NetFace::dumpInAtts(Laxkit::Attribute *att)
 {
 	if (!att) return;
 	int c;
@@ -872,12 +872,12 @@ int BasicNet::dumpOutNet(FILE *f,int indent,int what)
 	return 0;
 }
 
-void BasicNet::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *savecontext)
+void BasicNet::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *savecontext)
 {
 	cout <<"***imp BasicNet::dump_out!"<<endl;
 }
 
-void BasicNet::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void BasicNet::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	cout <<"***imp BasicNet::dump_in_atts!"<<endl;
 }
@@ -1212,7 +1212,7 @@ void Net::pushline(NetLine &l,int what,int where,int how)//where=-1, how=1
  *
  * \todo *** implement abstract net references and file references
  */
-void Net::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void Net::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -1275,7 +1275,7 @@ void Net::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
  * 
  * \todo *** MUST implement the sanity check..
  */
-void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void  Net::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	if (!att) return;
 	char *name,*value;

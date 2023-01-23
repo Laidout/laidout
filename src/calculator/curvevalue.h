@@ -36,7 +36,7 @@ class CurveValue : virtual public Value, virtual public Laxkit::CurveInfo, virtu
 	virtual ~CurveValue();
 	virtual const char *whattype() { return "CurveValue"; }
 	virtual int type();
-	virtual void dump_in_atts(LaxFiles::Attribute*, int, LaxFiles::DumpContext*);
+	virtual void dump_in_atts(Laxkit::Attribute*, int, Laxkit::DumpContext*);
 	virtual ObjectDef *makeObjectDef();
     virtual int getValueStr(char *buffer,int len);
     virtual Value *duplicate();

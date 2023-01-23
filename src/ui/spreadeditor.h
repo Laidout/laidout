@@ -65,7 +65,7 @@ enum SpreadInterfaceActions {
 	SIA_MAX
 };
 
-class SpreadInterface : public LaxInterfaces::anInterface, virtual public LaxFiles::DumpUtility
+class SpreadInterface : public LaxInterfaces::anInterface, virtual public Laxkit::DumpUtility
 {
  protected:
 	int maxmarkertype;
@@ -75,7 +75,7 @@ class SpreadInterface : public LaxInterfaces::anInterface, virtual public LaxFil
 
 	int firsttime;
 	int reversebuttons;
-	flatpoint lbdown, lastmove;
+	Laxkit::flatpoint lbdown, lastmove;
 
 	int curpage, dragpage;
 	Laxkit::NumStack<int> curpages;
@@ -142,8 +142,8 @@ class SpreadInterface : public LaxInterfaces::anInterface, virtual public LaxFil
 	virtual int ChangeMarks(int newmark);
 	virtual int DeselectPage(int page,LittleSpread *spread);
 
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 
 	friend class SpreadEditor;
 };
@@ -171,8 +171,8 @@ class SpreadEditor : public LaxInterfaces::ViewerWindow
 	virtual int UseThisDoc(Document *ndoc);
 	virtual int SelectTool(int id);
 
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 

@@ -51,15 +51,15 @@ class LPerspectiveInterface : public LaxInterfaces::PerspectiveInterface
 	//virtual int assign(FieldExtPlace *ext,Value *v);
 	//virtual Value *dereference(const char *extstring, int len);
 
-	//virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	//virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	//virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	//virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 
 //------------------------------- PerspectiveNode --------------------------------
 class PerspectiveNode : public ObjectFilterNode
 {
-	static SingletonKeeper keeper; //the def for the op enum
+	static Laxkit::SingletonKeeper keeper; //the def for the op enum
 
   public:
 	static LaxInterfaces::PerspectiveInterface *GetPerspectiveInterface();

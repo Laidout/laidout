@@ -40,11 +40,10 @@
 
 #define DBG 
 
+
 using namespace std;
 using namespace Laxkit;
-using namespace LaxFiles;
 using namespace LaxInterfaces;
-
 
 
 namespace Laidout {
@@ -328,14 +327,14 @@ Attribute *PageRange::dump_out_atts(Attribute *att,int what,DumpContext *context
  *
  * If what==-1, write out pseudocode mockup.
  */
-void PageRange::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void PageRange::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	Attribute att;
 	dump_out_atts(&att, what, context);
 	att.dump_out(f, indent);
 }
 
-void PageRange::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void PageRange::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	if (!att) return;
 	char *name,*value;
@@ -396,10 +395,10 @@ void PageRange::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCon
 /*! \var char Document::saveas
  * \brief The full absolute path to the document.
  */
-/*! \var LaxFiles::AttributeObject *Document::metadata
+/*! \var Laxkit::AttributeObject *Document::metadata
  * \brief Extra descriptive metadata attached to the document.
  */
-/*! \var LaxFiles::Attribute Document::iohints
+/*! \var Laxkit::Attribute Document::iohints
  * \brief Extra hints attached through an import of a document.
  *
  * This stuff is installed by importers, and helps exporters export data with a
@@ -1248,7 +1247,7 @@ int Document::ReImpose(Imposition *newimp,int scale_page_contents_to_fit)
  *   handling all the window business. Always nice to separate the windows
  *   from the doc structure.
  */
-void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void Document::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	if (!att) return;
 	Page *page;
@@ -1368,7 +1367,7 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpCont
 //! Dumps imposition, pages, pageranges, plus various project attributes if not in project mode.
 /*! If what==-1, write out pseudocode mockup.
  */
-void Document::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void Document::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 

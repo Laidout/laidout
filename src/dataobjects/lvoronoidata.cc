@@ -64,9 +64,9 @@ int LVoronoiData::pointin(flatpoint pp,int pin)
 	return VoronoiData::pointin(pp,pin);
 }
 
-void LVoronoiData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void LVoronoiData::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
-	LaxFiles::Attribute att;
+	Laxkit::Attribute att;
 	dump_out_atts(&att, what, context);
 	att.dump_out(f, indent);
 	// char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
@@ -75,15 +75,15 @@ void LVoronoiData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *c
 	// VoronoiData::dump_out(f,indent+2,what,context);
 }
 
-LaxFiles::Attribute *LVoronoiData::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+Laxkit::Attribute *LVoronoiData::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	att = DrawableObject::dump_out_atts(att, what,context);
-	LaxFiles::Attribute *att2 = att->pushSubAtt("config");
+	Laxkit::Attribute *att2 = att->pushSubAtt("config");
 	VoronoiData::dump_out_atts(att2, what,context);
 	return att;
 }
 
-void LVoronoiData::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void LVoronoiData::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	DrawableObject::dump_in_atts(att,flag,context);
 	int foundconfig=0;
@@ -446,17 +446,17 @@ Value *LDelaunayInterface::dereference(const char *extstring, int len)
 	return NULL;
 }
 
-void LDelaunayInterface::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void LDelaunayInterface::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	anInterface::dump_out(f,indent,what,context);
 }
 
-void LDelaunayInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void LDelaunayInterface::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	anInterface::dump_in_atts(att,flag,context);
 }
 
-LaxFiles::Attribute *LDelaunayInterface::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
+Laxkit::Attribute *LDelaunayInterface::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *savecontext)
 {
 	return att;
 }

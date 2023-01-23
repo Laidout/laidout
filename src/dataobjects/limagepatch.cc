@@ -64,9 +64,9 @@ int LImagePatchData::pointin(flatpoint pp,int pin)
 	return PatchData::pointin(pp,pin);
 }
 
-void LImagePatchData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void LImagePatchData::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
-	LaxFiles::Attribute att;
+	Laxkit::Attribute att;
 	dump_out_atts(&att, what, context);
 	att.dump_out(f, indent);
 	// char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
@@ -75,15 +75,15 @@ void LImagePatchData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext
 	// ImagePatchData::dump_out(f,indent+2,what,context);
 }
 
-LaxFiles::Attribute *LImagePatchData::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+Laxkit::Attribute *LImagePatchData::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	att = DrawableObject::dump_out_atts(att, what,context);
-	LaxFiles::Attribute *att2 = att->pushSubAtt("config");
+	Laxkit::Attribute *att2 = att->pushSubAtt("config");
 	ImagePatchData::dump_out_atts(att2, what,context);
 	return att;
 }
 
-void LImagePatchData::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void LImagePatchData::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	DrawableObject::dump_in_atts(att,flag,context);
 	int foundconfig=0;
@@ -212,9 +212,9 @@ void LColorPatchData::FindBBox()
 	ColorPatchData::FindBBox();
 }
 
-void LColorPatchData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void LColorPatchData::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
-	LaxFiles::Attribute att;
+	Laxkit::Attribute att;
 	dump_out_atts(&att, what, context);
 	att.dump_out(f, indent);
 	// char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
@@ -223,15 +223,15 @@ void LColorPatchData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext
 	// ColorPatchData::dump_out(f,indent+2,what,context);
 }
 
-LaxFiles::Attribute *LColorPatchData::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+Laxkit::Attribute *LColorPatchData::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	att = DrawableObject::dump_out_atts(att, what,context);
-	LaxFiles::Attribute *att2 = att->pushSubAtt("config");
+	Laxkit::Attribute *att2 = att->pushSubAtt("config");
 	ColorPatchData::dump_out_atts(att2, what,context);
 	return att;
 }
 
-void LColorPatchData::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void LColorPatchData::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	DrawableObject::dump_in_atts(att,flag,context);
 	int foundconfig=0;
@@ -440,17 +440,17 @@ Value *LImagePatchInterface::dereference(const char *extstring, int len)
 	return nullptr;
 }
 
-void LImagePatchInterface::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void LImagePatchInterface::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	ImagePatchInterface::dump_out(f,indent,what,context);
 }
 
-void LImagePatchInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void LImagePatchInterface::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	ImagePatchInterface::dump_in_atts(att,flag,context);
 }
 
-LaxFiles::Attribute *LImagePatchInterface::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
+Laxkit::Attribute *LImagePatchInterface::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *savecontext)
 {
 	return att;
 }
@@ -558,17 +558,17 @@ Value *LColorPatchInterface::dereference(const char *extstring, int len)
 	return NULL;
 }
 
-void LColorPatchInterface::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void LColorPatchInterface::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	ColorPatchInterface::dump_out(f,indent,what,context);
 }
 
-void LColorPatchInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void LColorPatchInterface::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	ColorPatchInterface::dump_in_atts(att,flag,context);
 }
 
-LaxFiles::Attribute *LColorPatchInterface::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
+Laxkit::Attribute *LColorPatchInterface::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *savecontext)
 {
 	return att;
 }

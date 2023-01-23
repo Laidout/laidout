@@ -899,7 +899,7 @@ Spread *Imposition::SingleLayout(int whichpage)
 /*! If local!=0, then delete the Attribute in the destructor.
  */
 ImpositionResource::ImpositionResource(const char *sdef,const char *nname, const char *file, const char *desc,
-					   				   LaxFiles::Attribute *conf,int local)
+					   				   Laxkit::Attribute *conf,int local)
 {
 	objectdef      = newstr(sdef);
 	name           = newstr(nname);
@@ -934,7 +934,7 @@ Imposition *ImpositionResource::Create()
 		FILE *f = open_laidout_file_to_read(impositionfile,"Imposition", nullptr);
 		if (!f) return nullptr; //file was bad
 	
-		LaxFiles::Attribute att;
+		Laxkit::Attribute att;
 		att.dump_in(f,0,nullptr);
 		if (att.attributes.n!=0 && !strcmp(att.attributes.e[0]->name,"type")) {
 			imp = newImpositionByType(att.attributes.e[0]->value);

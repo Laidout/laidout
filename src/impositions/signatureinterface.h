@@ -71,7 +71,7 @@ class SignatureInterface : public ImpositionInterface
 	int onoverlay; //nonzero if mouse clicked down on and is over an overlay
 	int onoverlay_i, onoverlay_ii;
 	int overoverlay; //handle of item last hovered over
-	flatpoint lasthover;
+	Laxkit::flatpoint lasthover;
 	double arrowscale;
 	ActionArea *control(int what);
 
@@ -92,11 +92,11 @@ class SignatureInterface : public ImpositionInterface
 	int scanForFoldIndicator(int x, int y, int ignorex);
 	void remapHandles(int which=0);
 	void createHandles();
-	int offsetHandle(ActionArea *which, flatpoint d);
-	int offsetHandle(int which, flatpoint d);
+	int offsetHandle(ActionArea *which, Laxkit::flatpoint d);
+	int offsetHandle(int which, Laxkit::flatpoint d);
 	int adjustControl(int handle, int dir);
 	void remapAffectedCells(int whichfold);
-	void drawHandle(ActionArea *area, flatpoint offset);
+	void drawHandle(ActionArea *area, Laxkit::flatpoint offset);
 	virtual void drawStacks();
 	void drawAdd(double x,double y,double r, int fill);
 	void SetPaperFromInstance(SignatureInstance *sig);

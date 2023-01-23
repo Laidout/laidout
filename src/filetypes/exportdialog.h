@@ -91,8 +91,8 @@ class ExportDialog : public Laxkit::RowFrame
 	virtual int CharInput(unsigned int ch, unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what, LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag, LaxFiles::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what, Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag, Laxkit::DumpContext *context);
 };
 
 

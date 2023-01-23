@@ -21,7 +21,8 @@
 #include <lax/fileutils.h>
 #include <sys/times.h>
 
-using namespace LaxFiles;
+
+using namespace Laxkit;
 
 
 namespace Laidout {
@@ -205,7 +206,7 @@ const char *PlainText::GetText()
  *    final line of text
  * </pre>
  */
-void PlainText::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void PlainText::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -225,11 +226,11 @@ void PlainText::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *cont
 	if (!isblank(Filename())) fprintf(f,"%sfilename %s\n",spc,Filename());
 	else if (thetext) {
 		fprintf(f,"%stext \\\n",spc);
-		LaxFiles::dump_out_indented(f,indent+2,thetext);
+		Laxkit::dump_out_indented(f,indent+2,thetext);
 	}
 }
 
-void PlainText::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void PlainText::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	if (!att) return;
 	char *nme,*value;

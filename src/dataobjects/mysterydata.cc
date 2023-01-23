@@ -23,8 +23,10 @@
 #include <iostream>
 using namespace std;
 
-using namespace LaxFiles;
+
+using namespace Laxkit;
 using namespace LaxInterfaces;
+
 
 namespace Laidout {
 
@@ -68,14 +70,14 @@ MysteryData::~MysteryData()
  *
  * If att==NULL, then this->attributes becomes NULL.
  */
-int MysteryData::installAtts(LaxFiles::Attribute *att)
+int MysteryData::installAtts(Laxkit::Attribute *att)
 {
 	if (attributes) delete attributes;
 	attributes=att;
 	return 0;
 }
 
-void MysteryData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void MysteryData::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	
@@ -104,7 +106,7 @@ void MysteryData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *co
 	}
 }
 	
-LaxFiles::Attribute *MysteryData::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+Laxkit::Attribute *MysteryData::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	if (!att) att = new Attribute;
 
@@ -142,7 +144,7 @@ LaxFiles::Attribute *MysteryData::dump_out_atts(LaxFiles::Attribute *att,int wha
  * height as given in the file are curretly ignored, and the actual pixel 
  * width and height of the image are used instead.
  */
-void MysteryData::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context)
+void MysteryData::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	if (!att) return;
 	char *nname,*value;

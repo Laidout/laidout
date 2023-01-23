@@ -29,9 +29,8 @@
 using namespace std;
 #define DBG 
 
-using namespace Laxkit;
-using namespace LaxFiles;
 
+using namespace Laxkit;
 
 
 namespace Laidout {
@@ -79,7 +78,7 @@ ImportFileDialog::~ImportFileDialog()
 	if (config) config->dec_count();
 }
 
-void ImportFileDialog::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void ImportFileDialog::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	Attribute *att=dump_out_atts(NULL,0,context);
 	att->dump_out(f,indent);
@@ -88,7 +87,7 @@ void ImportFileDialog::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContex
 
 /*! Append to att if att!=NULL, else return new att.
  */
-Attribute *ImportFileDialog::dump_out_atts(Attribute *att,int what,LaxFiles::DumpContext *context)
+Attribute *ImportFileDialog::dump_out_atts(Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	if (!att) att=new Attribute("ImportFileDialog",NULL);
 	char scratch[100];
@@ -115,7 +114,7 @@ Attribute *ImportFileDialog::dump_out_atts(Attribute *att,int what,LaxFiles::Dum
 
 /*! \todo  *** ensure that the dimensions read in are in part on screen...
  */
-void ImportFileDialog::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context)
+void ImportFileDialog::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	char *name,*value;
 	for (int c=0; c<att->attributes.n; c++) {

@@ -29,7 +29,6 @@
 #define DBG 
 
 using namespace std;
-using namespace LaxFiles;
 using namespace Laxkit;
 
 
@@ -1142,7 +1141,7 @@ int Polyhedron::FindUniqueFaceId()
  *    z 0 0 1
  * </pre>
  */
-void Polyhedron::dump_out(FILE *ff,int indent,int what,LaxFiles::DumpContext *context)
+void Polyhedron::dump_out(FILE *ff,int indent,int what,Laxkit::DumpContext *context)
 {
 	DBG cerr << "\ndump_out Polyhedron... "<<endl;
 	if (!ff) return;
@@ -1243,7 +1242,7 @@ void Polyhedron::dump_out(FILE *ff,int indent,int what,LaxFiles::DumpContext *co
 }
 
 //! Read in a polyhedron from an Attribute.
-void Polyhedron::dump_in_atts(Attribute *att,int what,LaxFiles::DumpContext *context)
+void Polyhedron::dump_in_atts(Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	clear();
 

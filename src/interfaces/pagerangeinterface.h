@@ -33,7 +33,7 @@ class PageRangeInterface : public LaxInterfaces::anInterface, public DocumentUse
 	Document *doc;
 	Laxkit::ButtonDownInfo buttondown;
 	double panelwidth, panelheight;
-	flatpoint offset;
+	Laxkit::flatpoint offset;
 	int InstallDefaultRange();
 	char *LabelPreview(int range,int first,int labeltype);
 	char *LabelPreview(PageRange *rangeobj,int first,int labeltype);

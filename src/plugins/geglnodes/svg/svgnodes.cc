@@ -28,6 +28,7 @@
 
 
 using namespace std;
+using namespace Laxkit;
 
 
 //---- svg blend to gegl:
@@ -1033,7 +1034,7 @@ ObjectDef *GetSvgDefs()
 
 
 // *********** DON'T USE, NOT FUNCTIONAL
-ValueHash *XMLAttToHash(ObjectDef *types, LaxFiles::Attribute *att, ValueHash *append_to_this, Laxkit::ErrorLog *log)
+ValueHash *XMLAttToHash(ObjectDef *types, Laxkit::Attribute *att, ValueHash *append_to_this, Laxkit::ErrorLog *log)
 {
 	ObjectDef *svgdefs = GetSvgDefs();
 

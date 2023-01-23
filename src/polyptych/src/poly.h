@@ -40,7 +40,7 @@ class Edge
 	int f1,f2; //index in Polyhedron::faces
 	Edge(void) { p1=p2=0; f1=f2=-1; }
 	Edge(int x, int y,int f=-1,int g=-1) {p1=x; p2=y; f1=f; f2=g; }
-	Edge(flatpoint &f) { p1=(int) f.x; p2=(int) f.y;  f1=f2=-1; }
+	Edge(Laxkit::flatpoint &f) { p1=(int) f.x; p2=(int) f.y;  f1=f2=-1; }
 	Edge(const Edge &e) { p1=e.p1; p2=e.p2; f1=e.f1; f2=e.f2; }
 };
 
@@ -54,12 +54,12 @@ class ExtraFace
 {
  public:
 	int numsides;
-	spacepoint *points3d; //actual 3-d positions of vertices in space
-	spacepoint center;
-	flatpoint *points2d; //2-d points in relation to axis
+	Laxkit::spacepoint *points3d; //actual 3-d positions of vertices in space
+	Laxkit::spacepoint center;
+	Laxkit::flatpoint *points2d; //2-d points in relation to axis
 	int *connectionedge; //edge index in another face this one connects to
 	int *connectionstate; //whether face is actually connected to face in connections
-	Basis axis;
+	Laxkit::Basis axis;
 	int facemode; //is face still in normal position, or maybe stage of animation to other position
 	double a;    //can be used for a temporary angle face is tilted at
 	double *dihedral;
@@ -99,7 +99,7 @@ class Pgon
  public:
 	Laxkit::ScreenColor color;
 	int pn,id;
-	flatpoint *p;
+	Laxkit::flatpoint *p;
 	int *vlabel,*elabel,*flabel;
 	double *dihedral;
 	Pgon();
@@ -111,7 +111,7 @@ class Pgon
 	void setup(int c,int newid);
 	void clear();
 	int findextent(double &xl,double &xr,double &yt,double &yb);
-	flatpoint center();
+	Laxkit::flatpoint center();
 };
 
 
@@ -137,16 +137,16 @@ class Settype
 
 class Polyhedron : 
 	virtual public Laxkit::anObject,
-	virtual public LaxFiles::DumpUtility,
+	virtual public Laxkit::DumpUtility,
 	virtual public AbstractNet
 {
  public:
 	char *name, *filename;
 
-	Laxkit::NumStack<spacepoint> vertices;
+	Laxkit::NumStack<Laxkit::spacepoint> vertices;
 	Laxkit::PtrStack<Edge>       edges;
 	Laxkit::PtrStack<Face>       faces;
-	Laxkit::NumStack<Basis>      planes;
+	Laxkit::NumStack<Laxkit::Basis>      planes;
 	Laxkit::PtrStack<Settype>    sets;
 
 	Polyhedron();
@@ -165,19 +165,19 @@ class Polyhedron :
 	virtual int AddToSet(int face, int set, const char *newsetname);
 
 	 //informational functions
-	spacepoint CenterOfFace(int,int cache=0);
-	spacevector VertexOfFace(int fce, int pt, int cache);
+	Laxkit::spacepoint CenterOfFace(int,int cache=0);
+	Laxkit::spacevector VertexOfFace(int fce, int pt, int cache);
 	Pgon FaceToPgon(int n,char useplanes);
-	Basis basisOfFace(int n);
-	Plane planeof(int pln);
-	Plane planeOfFace(int fce,char centr=1);
+	Laxkit::Basis basisOfFace(int n);
+	Laxkit::Plane planeof(int pln);
+	Laxkit::Plane planeOfFace(int fce,char centr=1);
 	double pdistance(int a, int b);
 	double segdistance(int fce,int fr,int p1,int p2);
 	double angle(int a, int b,int dec=0); //uses planes, not faces
 
 
 	 //building functions
-	virtual int AddPoint(spacepoint p);
+	virtual int AddPoint(Laxkit::spacepoint p);
 	virtual int AddPoint(double x,double y,double z);
 	virtual int AddFace(const char *str);
 	virtual int AddFace(int n, ...);
@@ -187,8 +187,8 @@ class Polyhedron :
 	virtual void MergeFaces(int face1, int edge);
 	virtual int FindUniqueFaceId();
 
-	virtual void dump_out(FILE *ff,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *ff,int indent,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
 
 	virtual const char *InFileFormats();
 	virtual int dumpInFile(const char *file, char **error_ret);

@@ -50,7 +50,6 @@
 
 using namespace std;
 using namespace Laxkit;
-using namespace LaxFiles;
 using namespace LaxInterfaces;
 using namespace Magick;
 using namespace Polyptych;
@@ -321,7 +320,7 @@ int SphereToPoly(Image spheremap,
 		b.y/=norm(b.y);
 		b.z=b.x / b.y;
 
-		bbox.clear();
+		bbox.ClearBBox();
 		pgon=new Pgon();
 		pgon->setup(poly->faces.e[c]->pn,c);
 		for (int c2=0; c2<poly->faces.e[c]->pn; c2++) {
@@ -723,7 +722,7 @@ int main(int argc,char **argv)
 			  } break;
 			case 'b': { //has basis of form "p,x,y,z"=="x,y,z, x,y,z, x,y,z, x,y,z"
 				double l[12];
-				int c=LaxFiles::DoubleListAttribute(o->arg(),l,12,NULL);
+				int c=Laxkit::DoubleListAttribute(o->arg(),l,12,NULL);
 				if (c!=12) {
 					cerr<<"Not enough numbers for basis option! You need to supply 12 numbers,"<<endl
 						<<"4 vectors with x, y, and z components. The order is the point,"<<endl
@@ -740,7 +739,7 @@ int main(int argc,char **argv)
 			case 'L': { //point-at-pix
 				figure_pointat=(c=='P'?2:1);
 				double d[4];
-				int n=LaxFiles::DoubleListAttribute(o->arg(),d,4,NULL);
+				int n=Laxkit::DoubleListAttribute(o->arg(),d,4,NULL);
 				if (n<3) {
 					cerr <<"Need more numbers for point-at:\n  x,y, (face number), (optional rotation)"<<endl;
 					exit(1);

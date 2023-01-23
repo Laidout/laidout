@@ -83,17 +83,17 @@ LaxInterfaces::anInterface *AddonAction::Interface()
 }
 
 
-void AddonAction::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void AddonAction::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
-	LaxFiles::Attribute att;
+	Laxkit::Attribute att;
 	dump_out_atts(&att,what,context);
 	att.dump_out(f,indent);
 }
 
-LaxFiles::Attribute *AddonAction::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
+Laxkit::Attribute *AddonAction::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *savecontext)
 {
 	if (what==-1) {
-		if (!att) att = new LaxFiles::Attribute;
+		if (!att) att = new Laxkit::Attribute;
 		att->push("label", "Text for menu");
 		att->push("parameters", nullptr, "(optional) Dictionary of parameters to use for this action");
 		att->push("script", nullptr, "(optional) The script of this action. If the action is built in, no script is usually necessary.");
@@ -101,23 +101,23 @@ LaxFiles::Attribute *AddonAction::dump_out_atts(LaxFiles::Attribute *att,int wha
 		return att;
 	}
 
-	if (!att) att = new LaxFiles::Attribute;
+	if (!att) att = new Laxkit::Attribute;
 	if (!label.IsEmpty()) att->push("label", label.c_str());
 
 	if (parameters) {
-		LaxFiles::Attribute *att2 = att->pushSubAtt("parameters", nullptr, "Dictionary of parameters to use for this action");
+		Laxkit::Attribute *att2 = att->pushSubAtt("parameters", nullptr, "Dictionary of parameters to use for this action");
 		parameters->dump_out_atts(att2, what, savecontext);
 	}
 
 	if (script) {
-		LaxFiles::Attribute *att2 = att->pushSubAtt("script");
+		Laxkit::Attribute *att2 = att->pushSubAtt("script");
 		script->dump_out_atts(att2, what, savecontext);
 	}
 
 	return att;
 }
 
-void AddonAction::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void AddonAction::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	char *name;
     char *value;

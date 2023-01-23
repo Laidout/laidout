@@ -70,9 +70,9 @@ bool LTextOnPath::IsLinkedToParent()
 	return oc->context.n() == 1 && oc->context.e(0) == -1;
 }
 
-void LTextOnPath::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void LTextOnPath::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
-	LaxFiles::Attribute att;
+	Laxkit::Attribute att;
 	dump_out_atts(&att, what, context);
 	att.dump_out(f, indent);
 	// char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
@@ -81,17 +81,17 @@ void LTextOnPath::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *co
 	// TextOnPath::dump_out(f,indent+2,what,context);
 }
 
-LaxFiles::Attribute *LTextOnPath::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+Laxkit::Attribute *LTextOnPath::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	att = DrawableObject::dump_out_atts(att, what,context);
-	LaxFiles::Attribute *att2 = att->pushSubAtt("config");
+	Laxkit::Attribute *att2 = att->pushSubAtt("config");
 	TextOnPath::dump_out_atts(att2, what,context);
 	return att;
 }
 
 /*! If no "config" element, then it is assumed there are no DrawableObject fields.
  */
-void LTextOnPath::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void LTextOnPath::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	DrawableObject::dump_in_atts(att,flag,context);
 	int foundconfig=0;

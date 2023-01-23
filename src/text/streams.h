@@ -149,9 +149,9 @@ class Style : public ValueHash, public Laxkit::Resourceable
     virtual int MergeFrom(Style *s); //all in s override *this
     virtual Style *Collapse();
 
-	virtual void dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *context);
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
-	virtual void dump_out (FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts (Attribute *att,int flag,Laxkit::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
+	virtual void dump_out (FILE *f,int indent,int what,Laxkit::DumpContext *context);
 };
 
 
@@ -240,8 +240,8 @@ class StreamBreak : public StreamChunk
 	virtual int BreakInfo(int *type) { return 0; }
 	virtual int Type() { return CHUNK_Break; }
 
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts (Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 
@@ -260,8 +260,8 @@ class StreamImage : public StreamChunk
 	virtual int BreakInfo(int *type) { return 0; }
 	virtual int Type() { return CHUNK_Image; }
 
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts (Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 
@@ -282,8 +282,8 @@ class StreamText : public StreamChunk
 	virtual int BreakInfo(int index);
 	virtual int Type() { return CHUNK_Text; }
 
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts (Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 
@@ -325,9 +325,9 @@ class Stream : public Laxkit::anObject, public Laxkit::DumpUtility
 	Stream();
 	virtual ~Stream();
 
-	virtual void dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *context);
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
-	virtual void dump_out (FILE *f,int indent,int what,LaxFiles::DumpContext *context);
+	virtual void dump_in_atts (Attribute *att,int flag,Laxkit::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
+	virtual void dump_out (FILE *f,int indent,int what,Laxkit::DumpContext *context);
 };
 
 

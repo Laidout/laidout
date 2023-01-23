@@ -81,7 +81,7 @@ void LCaptionData::touchContents()
 }
 
 
-void LCaptionData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void LCaptionData::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	DrawableObject::dump_out(f,indent,what,context);
@@ -89,17 +89,17 @@ void LCaptionData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *c
 	CaptionData::dump_out(f,indent+2,what,context);
 }
 
-LaxFiles::Attribute *LCaptionData::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+Laxkit::Attribute *LCaptionData::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	att = DrawableObject::dump_out_atts(att, what,context);
-	LaxFiles::Attribute *att2 = att->pushSubAtt("config");
+	Laxkit::Attribute *att2 = att->pushSubAtt("config");
 	CaptionData::dump_out_atts(att2, what,context);
 	return att;
 }
 
 /*! If no "config" element, then it is assumed there are no DrawableObject fields.
  */
-void LCaptionData::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void LCaptionData::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	DrawableObject::dump_in_atts(att,flag,context);
 	int foundconfig=0;

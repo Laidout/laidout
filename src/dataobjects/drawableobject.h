@@ -90,7 +90,7 @@ class AlignmentRule
 	enum TargetType { UNKNOWN, NONE, PARENT, OBJECT, PAGE, OTHER_OBJECT };
 
 	TargetType constraintype; //vector is object coords, or parent, or page, or none
-	flatpoint constraindir;
+	Laxkit::flatpoint constraindir;
 
 	 // too many types in one class!!
 	 //1.
@@ -104,11 +104,11 @@ class AlignmentRule
 	char *target_anchor; //stub info for loading
 
 	TargetType offset_units; //page, object, or parent
-	flatpoint offset; //displacement off the target anchor
+	Laxkit::flatpoint offset; //displacement off the target anchor
 
 	 //3.
-	flatpoint align1; //alignment to parent bounding box
-	flatpoint align2; //where in bounding box to align to parent point from align1
+	Laxkit::flatpoint align1; //alignment to parent bounding box
+	Laxkit::flatpoint align2; //where in bounding box to align to parent point from align1
 
 	 //4.
 	int code_id; //id of a TextObject with runnable code that returns an offset
@@ -199,8 +199,8 @@ class DrawableObject :  virtual public ObjectContainer,
 	//Laxkit::RefPtrStack<anObject *> refs; //what other resources this objects depends on?
 
 	ValueHash properties;
-	LaxFiles::AttributeObject *metadata;
-	LaxFiles::Attribute iohints;
+	Laxkit::AttributeObject *metadata;
+	Laxkit::Attribute iohints;
 
 
 	//DrawableObject(LaxInterfaces::SomeData *refobj=NULL);
@@ -217,19 +217,19 @@ class DrawableObject :  virtual public ObjectContainer,
 
 	 //sub classes MUST redefine pointin() and FindBBox() to point to the proper things.
 	 //default is point to things particular to Groups.
-	//virtual int pointin(flatpoint pp,int pin=1);
+	//virtual int pointin(Laxkit::flatpoint pp,int pin=1);
 	virtual void FindBBox();
 	virtual void ComputeAABB(const double *transform, DoubleBBox &box);
 	virtual int AddAlignmentRule(AlignmentRule *newlink, bool replace=false, int where=-1);
 	virtual int RemoveAlignmentRule(int index);
 	virtual void UpdateFromRules();
 
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
-	//virtual void dump_out_group(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	//virtual void dump_in_group_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
-	static DrawableObject* CreateFromAttribute(LaxFiles::Attribute *att, const char *type, LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
+	//virtual void dump_out_group(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	//virtual void dump_in_group_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
+	static DrawableObject* CreateFromAttribute(Laxkit::Attribute *att, const char *type, Laxkit::DumpContext *context);
 	
 	 //new functions for DrawableObject
 	virtual LaxInterfaces::SomeData *EquivalentObject();
@@ -241,12 +241,12 @@ class DrawableObject :  virtual public ObjectContainer,
 
 	Laxkit::RefPtrStack<PointAnchor> anchors;
 	virtual int NumAnchors();
-	virtual int GetAnchorInfoI(int anchor_index, int *id, const char **name, flatpoint *p, int *anchor_type, bool transform_to_parent);
-	virtual int GetAnchorInfo(int anchor_id, const char **name, flatpoint *p, int *anchor_type, bool transform_to_parent);
+	virtual int GetAnchorInfoI(int anchor_index, int *id, const char **name, Laxkit::flatpoint *p, int *anchor_type, bool transform_to_parent);
+	virtual int GetAnchorInfo(int anchor_id, const char **name, Laxkit::flatpoint *p, int *anchor_type, bool transform_to_parent);
 	virtual int GetAnchorI(int anchor_index, PointAnchor **anchor);
 	virtual int GetAnchor(int anchor_id, PointAnchor **anchor);
 	virtual int FindAnchorId(const char *name, int *index_ret);
-	virtual int AddAnchor(const char *name, flatpoint pos, int type, int nid);
+	virtual int AddAnchor(const char *name, Laxkit::flatpoint pos, int type, int nid);
 	virtual int RemoveAnchor(int anchor_id);
 	virtual int RemoveAnchorI(int index);
 	virtual int ResolveAnchorRefs(Document *doc, Page *page, DrawableObject *g, Laxkit::ErrorLog &log);

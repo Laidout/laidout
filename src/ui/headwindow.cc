@@ -40,7 +40,6 @@ using namespace std;
 #define DBG 
 
 using namespace Laxkit;
-using namespace LaxFiles;
 
 
 namespace Laidout {
@@ -222,7 +221,7 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
  *  \todo *** for plugins that have new pane types, there must be mechanism to
  *    add those types to new and existing headwindows
  */
-anXWindow *newHeadWindow(LaxFiles::Attribute *att)
+anXWindow *newHeadWindow(Laxkit::Attribute *att)
 {
 	HeadWindow *head=new HeadWindow(NULL,"head",_("Laidout"),0, 0,0,700,700,0);
 	head->dump_in_atts(att,0,NULL);//**context?
@@ -493,7 +492,7 @@ int HeadWindow::splitthewindow(anXWindow *fillwindow)
 //! Dump out what's in the window, and the borders.
 /*! \todo *** stacked panes, simply have multiple window blocks under pane
 */
-void HeadWindow::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void HeadWindow::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
@@ -521,7 +520,7 @@ void HeadWindow::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *con
 	}
 
 	//anXWindow *win;
-	LaxFiles::DumpUtility *wind;
+	Laxkit::DumpUtility *wind;
 
 	fprintf(f,"%sxywh %d %d %d %d\n", spc,win_x,win_y,win_w,win_h);
 
@@ -541,14 +540,14 @@ void HeadWindow::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *con
 /*! 
  * \todo *** as time goes on, must ensure that header can deal with new types of windows...
  */
-void HeadWindow::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void HeadWindow::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	if (!att) return;
 	char *name,*value;
 	int c,c2,c3;
 	PlainWinBox *box;
 	anXWindow *win;
-	LaxFiles::DumpUtility *wind;
+	Laxkit::DumpUtility *wind;
 	int i[4];
 	windows.flush();
 	for (c=0; c<att->attributes.n; c++) {

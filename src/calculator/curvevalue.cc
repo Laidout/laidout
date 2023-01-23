@@ -144,7 +144,7 @@ int CurveValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash
 	return 1;
 }
 
-void CurveValue::dump_in_atts(LaxFiles::Attribute*att, int what, LaxFiles::DumpContext *context)
+void CurveValue::dump_in_atts(Laxkit::Attribute*att, int what, Laxkit::DumpContext *context)
 {
 	Laxkit::CurveInfo::dump_in_atts(att, what, context);
 }

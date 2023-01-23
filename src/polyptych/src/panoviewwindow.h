@@ -73,7 +73,7 @@ class PanoViewWindow : public Laxkit::anXWindow
 	int spheremap_height;
 	Polyhedron *poly;
 	Thing *hedron;
-	Basis extra_basis;
+	Laxkit::Basis extra_basis;
 	char *consolefontfile;
 	FTFont *consolefont;
 
@@ -84,8 +84,8 @@ class PanoViewWindow : public Laxkit::anXWindow
 	int timerid;
 	Laxkit::ButtonDownInfo buttondown;
 
-	spacevector tracker;
-	spaceline pointer; //points where mouse points
+	Laxkit::spacevector tracker;
+	Laxkit::spaceline pointer; //points where mouse points
 
 	int currentpotential;   //index in currentnet->faces, or -1
 	int currentface;   //index in Polyhedron of current face, or -1
@@ -145,8 +145,8 @@ class PanoViewWindow : public Laxkit::anXWindow
 
 	 //hedron gl mapping
 	virtual void installSpheremapTexture(int definetid);
-	virtual void triangulate(spacepoint p1 ,spacepoint p2 ,spacepoint p3,
-							 spacepoint p1o,spacepoint p2o,spacepoint p3o,
+	virtual void triangulate(Laxkit::spacepoint p1 ,Laxkit::spacepoint p2 ,Laxkit::spacepoint p3,
+							 Laxkit::spacepoint p1o,Laxkit::spacepoint p2o,Laxkit::spacepoint p3o,
 							 int n);
 	virtual void mapPolyhedronTexture(Thing *thing);
 	virtual void mapPolyhedronTexture2(Thing *thing);

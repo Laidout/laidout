@@ -562,7 +562,7 @@ void StreamChunk::AddBefore(StreamChunk *chunk)
 //----------------------------------- StreamBreak ------------------------------------
 
 
-LaxFiles::Attribute *StreamBreak::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
+Laxkit::Attribute *StreamBreak::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
 {
 	if      (break_type == BREAK_Paragraph) att->push("break","pp");
 	else if (break_type == BREAK_Column)    att->push("break","column");
@@ -575,7 +575,7 @@ LaxFiles::Attribute *StreamBreak::dump_out_atts(LaxFiles::Attribute *att,int wha
 
 /*! NOTE! Uses whole attribute, not just kids. Meaning it compares att->value to various break types.
  */
-void StreamBreak::dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *context)
+void StreamBreak::dump_in_atts (Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	if      (!strcmp(att->value,"pp"     )) break_type = BREAK_Paragraph;
 	else if (!strcmp(att->value,"column" )) break_type = BREAK_Column;
@@ -606,7 +606,7 @@ StreamImage::~StreamImage()
 	if (img) img->dec_count();
 }
 
-LaxFiles::Attribute *StreamImage::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
+Laxkit::Attribute *StreamImage::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
 {
 	if (!img) {
 		att->push("object");
@@ -617,7 +617,7 @@ LaxFiles::Attribute *StreamImage::dump_out_atts(LaxFiles::Attribute *att,int wha
 	return att;
 }
 
-void StreamImage::dump_in_atts (Attribute *att,int flag,LaxFiles::DumpContext *context)
+void StreamImage::dump_in_atts (Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	DrawableObject *newimg = DrawableObject::CreateFromAttribute(att, att->value, context);
 
@@ -714,7 +714,7 @@ Stream::~Stream()
 	//chunks are not explicitly deleted, since they exist somewhere in top tree
 }
 
-void Stream::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void Stream::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	Attribute att;
 	dump_out_atts(&att, what,context);
@@ -745,7 +745,7 @@ void Stream::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context
  *     <span class="#laidout_default_style" style="font-size:10; line-spacing:110%;">first text<img file="/blah/blah.jpg"/>Some text all up in here</span>
  * </pre>
  */
-LaxFiles::Attribute *Stream::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
+Laxkit::Attribute *Stream::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
 {
 	if (!chunks) return;
 
@@ -762,7 +762,7 @@ LaxFiles::Attribute *Stream::dump_out_atts(LaxFiles::Attribute *att,int what,Lax
 }
 
 
-void Stream::dump_out_recursive(Attribute *att, StreamElement *element, LaxFiles::DumpContext *context)
+void Stream::dump_out_recursive(Attribute *att, StreamElement *element, Laxkit::DumpContext *context)
 {
 	if (element->style) {
 		if (element->style_is_temp) {
@@ -801,7 +801,7 @@ StreamChunk *NewStreamChunk(const char *type, StreamElement *parent)
 
 /*! Return true for success, or false for some error.
  */
-bool StreamElement::dump_in_att_stream(LaxFiles::Attribute *att, LaxFiles::DumpContext *context, Laxkit::ErrorLog &log)
+bool StreamElement::dump_in_att_stream(Laxkit::Attribute *att, Laxkit::DumpContext *context, Laxkit::ErrorLog &log)
 {
 	const char *name, *value;
 
@@ -842,7 +842,7 @@ bool StreamElement::dump_in_att_stream(LaxFiles::Attribute *att, LaxFiles::DumpC
 	}
 }
 
-void Stream::dump_in_atts(Attribute *att,int flag, LaxFiles::DumpContext *context, Laxkit::ErrorLog &log)
+void Stream::dump_in_atts(Attribute *att,int flag, Laxkit::DumpContext *context, Laxkit::ErrorLog &log)
 {
 	const char *name, *value;
 

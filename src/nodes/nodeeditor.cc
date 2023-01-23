@@ -34,7 +34,6 @@
 
 
 using namespace Laxkit;
-using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
@@ -216,12 +215,12 @@ NodeEditor::~NodeEditor()
 { 
 }
 
-void NodeEditor::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void NodeEditor::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	anXWindow::dump_out(f,indent,what,context);
 }
 
-void NodeEditor::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void NodeEditor::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	anXWindow::dump_in_atts(att,flag,context);
 }

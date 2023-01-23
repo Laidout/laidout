@@ -30,6 +30,7 @@
 #include <lax/refptrstack.cc>
 
 
+using namespace Laxkit;
 using namespace LaxInterfaces;
 
 
@@ -234,7 +235,7 @@ int ObjectFilter::FindInterfaceNodes(Laxkit::RefPtrStack<ObjectFilterNode> &filt
 }
 
 
-LaxFiles::Attribute *ObjectFilter::dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context)
+Laxkit::Attribute *ObjectFilter::dump_out_atts(Laxkit::Attribute *att, int what, Laxkit::DumpContext *context)
 {
 	if (parent) parent->inc_count();
 	NodeProperty *in = FindProperty("in");

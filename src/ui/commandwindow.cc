@@ -22,9 +22,6 @@
 #include <lax/fileutils.h>
 #include <sys/stat.h>
 
-using namespace LaxFiles;
-
-
 
 namespace Laidout {
 

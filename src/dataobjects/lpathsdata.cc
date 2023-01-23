@@ -23,9 +23,10 @@
 #include "objectfilter.h"
 
 
+using namespace Laxkit;
+
 
 namespace Laidout {
-
 
 
 //------------------------------- LPathsData ---------------------------------------
@@ -82,7 +83,7 @@ void LPathsData::touchContents()
 	}
 }
 
-void LPathsData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void LPathsData::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	Attribute att;
 	dump_out_atts(&att, what, context);
@@ -93,15 +94,15 @@ void LPathsData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *con
 	// PathsData::dump_out(f,indent+2,what,context);
 }
 
-LaxFiles::Attribute *LPathsData::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+Laxkit::Attribute *LPathsData::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	att = DrawableObject::dump_out_atts(att, what,context);
-	LaxFiles::Attribute *att2 = att->pushSubAtt("config");
+	Laxkit::Attribute *att2 = att->pushSubAtt("config");
 	PathsData::dump_out_atts(att2, what,context);
 	return att;
 }
 
-void LPathsData::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void LPathsData::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	DrawableObject::dump_in_atts(att,flag,context);
 	int foundconfig=0;
@@ -577,17 +578,17 @@ Value *LPathInterface::dereference(const char *extstring, int len)
 	return NULL;
 }
 
-void LPathInterface::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void LPathInterface::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	PathInterface::dump_out(f,indent,what,context);
 }
 
-void LPathInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void LPathInterface::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	PathInterface::dump_in_atts(att,flag,context);
 }
 
-LaxFiles::Attribute *LPathInterface::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
+Laxkit::Attribute *LPathInterface::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *savecontext)
 {
 	return att;
 }

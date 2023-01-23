@@ -37,7 +37,6 @@ using namespace std;
 
 
 using namespace Laxkit;
-using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
@@ -1048,7 +1047,7 @@ int DrawableObject::dec_count()
 }
 
 //! Dump out iohints and metadata, if any.
-void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void DrawableObject::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	
@@ -1224,7 +1223,7 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext 
 	}
 }
 
-LaxFiles::Attribute *DrawableObject::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+Laxkit::Attribute *DrawableObject::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	if (!att) att = new Attribute;
 
@@ -1427,7 +1426,7 @@ LaxFiles::Attribute *DrawableObject::dump_out_atts(LaxFiles::Attribute *att,int 
 	return att;
 }
 
-void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void DrawableObject::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	char *name,*value;
 	int foundconfig = 0;
@@ -1967,7 +1966,7 @@ int DrawableObject::Evaluate(const char *func,int len, ValueHash *context, Value
 /*! Static function to make it easy to load in a random object from an Attribute.
  * If type == nullptr, then use att->value for the type.
  */
-DrawableObject* DrawableObject::CreateFromAttribute(LaxFiles::Attribute *att, const char *type, LaxFiles::DumpContext *context)
+DrawableObject* DrawableObject::CreateFromAttribute(Laxkit::Attribute *att, const char *type, Laxkit::DumpContext *context)
 {
 	if (type == nullptr) type = att->value;
 	if (isblank(type)) return nullptr;

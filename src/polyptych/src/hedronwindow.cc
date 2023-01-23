@@ -36,7 +36,6 @@
 
 using namespace std;
 using namespace Laxkit;
-using namespace LaxFiles;
 
 
 //! Namespace for various polyhedron 3-d stuff.

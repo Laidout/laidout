@@ -60,7 +60,7 @@ class RenderConfig : public Laxkit::anObject
 	Magick::Image spheremap;
 
 	Polyhedron *poly;
-	Basis extra_basis;
+	Laxkit::Basis extra_basis;
 
 	Net *net;
 	Laxkit::RefPtrStack<Net> nets;
@@ -102,7 +102,7 @@ class SphereMapper
 				 double edge_width, 
 				 Polyhedron &poly,
 				 int oversample,      
-				 Basis *extra_basis, 
+				 Laxkit::Basis *extra_basis, 
 				 Laxkit::ErrorLog *log   
 				);
 	int RollSphere(double theta, double gamma, double rotation);
@@ -113,8 +113,8 @@ class SphereMapper
 int SaveSvgWithImages(Net *net,
 					  const char *filename,
 					  const char *filebase,
-					  flatpoint *imagedims,
-					  flatpoint *imageoffset,
+					  Laxkit::flatpoint *imagedims,
+					  Laxkit::flatpoint *imageoffset,
 					  double pixPerUnit,
 				 	  int net_only,
 					  int num_papers,
@@ -130,7 +130,7 @@ int SphereToPoly(const char *spherefile,
 				 int oversample,
 				 int generate_images,
 				 int net_only,
-				 Basis *extra_basis,
+				 Laxkit::Basis *extra_basis,
 				 int num_papers,
 				 PaperBound **papers,
 			 	 Laxkit::ErrorLog *log
@@ -145,15 +145,15 @@ int SphereToPoly(Magick::Image spheremap,
 				 int oversample,
 				 int generate_images,
 				 int net_only,
-				 Basis *extra_basis,
+				 Laxkit::Basis *extra_basis,
 				 int num_papers,
 				 PaperBound **papers,
 				 Laxkit::ErrorLog *log
 				);
 
 int SphereToCubeMap(Magick::Image spheremap,
-				 //spacepoint sphere_z,
-				 //spacepoint sphere_x,
+				 //Laxkit::spacepoint sphere_z,
+				 //Laxkit::spacepoint sphere_x,
 				 int defaultimagewidth, //of one side
 				 const char *tofile,
 				 int AA=2, //how much to oversample

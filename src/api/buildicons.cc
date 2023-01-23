@@ -27,7 +27,6 @@
 
 
 using namespace Laxkit;
-using namespace LaxFiles;
 
 
 namespace Laidout {

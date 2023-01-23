@@ -35,10 +35,10 @@ class MetaWindow : public Laxkit::RowFrame
 	unsigned long dialog_style;
 
   public:
-	LaxFiles::AttributeObject *meta;
+	Laxkit::AttributeObject *meta;
 
 	MetaWindow(anXWindow *prnt, const char *nname,const char *ntitle,unsigned long nstyle, unsigned long nowner, const char *msg,
-					  LaxFiles::AttributeObject *nMeta);
+					  Laxkit::AttributeObject *nMeta);
 	virtual ~MetaWindow();
 	const char *whattype() { return "MetaWindow"; }
 
@@ -48,8 +48,8 @@ class MetaWindow : public Laxkit::RowFrame
 	virtual void AddVariable(const char *name, const char *value, bool syncToo);
 
 	 //i/o
-	//virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext);
-	//virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	//virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *savecontext);
+	//virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 

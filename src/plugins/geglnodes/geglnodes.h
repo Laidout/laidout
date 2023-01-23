@@ -66,7 +66,7 @@ class GeglLaidoutNode : public GeglUser
 	virtual int UpdatePreview();
 	virtual int Disconnected(NodeConnection *connection, bool from_will_be_replaced, bool to_will_be_replaced);
 	virtual int Connected(NodeConnection *connection);
-	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att, LaxFiles::DumpContext *context);
+	virtual int SetPropertyFromAtt(const char *propname, Laxkit::Attribute *att, Laxkit::DumpContext *context);
 	virtual int GetRect(Laxkit::DoubleBBox &box);
 };
 
@@ -88,7 +88,7 @@ class GeglNodesPlugin : public Laidout::PluginBase
 	virtual const char *Author();
 	virtual const char *ReleaseDate();
 	virtual const char *License();
-	//virtual const LaxFiles::Attribute *OtherMeta();
+	//virtual const Laxkit::Attribute *OtherMeta();
 
 	virtual int Initialize(); //install stuff
 	virtual void Finalize();

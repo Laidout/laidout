@@ -21,6 +21,9 @@
 #include <lax/misc.h>
 
 
+using namespace Laxkit;
+
+
 namespace Laidout {
 
 
@@ -70,9 +73,9 @@ int LSomeDataRef::pointin(flatpoint pp,int pin)
 }
 
 
-void LSomeDataRef::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void LSomeDataRef::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
-	LaxFiles::Attribute att;
+	Laxkit::Attribute att;
 	dump_out_atts(&att, what, context);
 	att.dump_out(f, indent);
 	// char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
@@ -81,17 +84,17 @@ void LSomeDataRef::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *c
 	// SomeDataRef::dump_out(f,indent+2,what,context);
 }
 
-LaxFiles::Attribute *LSomeDataRef::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+Laxkit::Attribute *LSomeDataRef::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	att = DrawableObject::dump_out_atts(att, what,context);
-	LaxFiles::Attribute *att2 = att->pushSubAtt("config");
+	Laxkit::Attribute *att2 = att->pushSubAtt("config");
 	SomeDataRef::dump_out_atts(att2, what,context);
 	return att;
 }
 
 /*! If no "config" element, then it is assumed there are no DrawableObject fields.
  */
-void LSomeDataRef::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void LSomeDataRef::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	DrawableObject::dump_in_atts(att,flag,context);
 	int foundconfig=0;

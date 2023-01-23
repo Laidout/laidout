@@ -34,9 +34,8 @@
 using namespace std;
 #define DBG 
 
-using namespace Laxkit;
-using namespace LaxFiles;
 
+using namespace Laxkit;
 
 
 namespace Laidout {
@@ -172,7 +171,7 @@ int ExportDialog::preinit()
 
 /*! Append to att if att!=NULL, else return new att.
  */
-Attribute *ExportDialog::dump_out_atts(Attribute *att,int what, LaxFiles::DumpContext *context)
+Attribute *ExportDialog::dump_out_atts(Attribute *att,int what, Laxkit::DumpContext *context)
 {
 	if (!att) att=new Attribute(whattype(),NULL);
 	char scratch[100];
@@ -210,7 +209,7 @@ Attribute *ExportDialog::dump_out_atts(Attribute *att,int what, LaxFiles::DumpCo
 
 /*! \todo  *** ensure that the dimensions read in are in part on screen...
  */
-void ExportDialog::dump_in_atts(Attribute *att,int flag, LaxFiles::DumpContext *context)
+void ExportDialog::dump_in_atts(Attribute *att,int flag, Laxkit::DumpContext *context)
 {
 	char *name,*value;
 	for (int c=0; c<att->attributes.n; c++) {
@@ -1395,7 +1394,7 @@ void ExportDialog::overwriteCheck()
 
 		char *filebase;
 		int   e = 0, w = 0;  // errors and warnings
-		filebase = LaxFiles::make_filename_base(config->tofiles);
+		filebase = Laxkit::make_filename_base(config->tofiles);
 		char file[strlen(filebase) + 10];  //*** someone could trick this with more than "##" blocks maybe!! check!
 		for (int c = config->range.Start(); c >= 0; c = config->range.Next()) {
 			sprintf(file, filebase, c);

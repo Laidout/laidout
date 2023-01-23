@@ -65,8 +65,8 @@ class PageStyle : public Value
 	virtual ObjectDef *makeObjectDef();
 	virtual const char *whattype() { return "PageStyle"; }
 	virtual Value *duplicate();
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 
 	virtual double minx() { return min_x; }
 	virtual double miny() { return min_y; }
@@ -101,8 +101,8 @@ class RectPageStyle : public PageStyle
 	virtual Value *duplicate();
 	virtual void RebuildOutline();
 	virtual void RebuildMarginPath();
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 
@@ -144,8 +144,8 @@ class Page : public ObjectContainer
 	Page(PageStyle *npagestyle=NULL,int num=-1); 
 	virtual ~Page(); 
 	virtual const char *whattype() { return "Page"; }
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 	virtual LaxInterfaces::ImageData *Thumbnail();
 	virtual Laxkit::LaxImage *RenderPage(int width, int height, Laxkit::LaxImage *existing, bool transparent);
 	virtual int InstallPageStyle(PageStyle *pstyle, bool shift_within_margins);

@@ -34,7 +34,6 @@
 
 
 using namespace Laxkit;
-using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
@@ -388,7 +387,7 @@ ObjectDef *Tiling::makeObjectDef()
 	return sd;
 }
 
-void Tiling::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void Tiling::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
@@ -479,7 +478,7 @@ void Tiling::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context
 	}
 }
 
-LaxFiles::Attribute *Tiling::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+Laxkit::Attribute *Tiling::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	if (!att) att = new Attribute();
 
@@ -575,7 +574,7 @@ LaxFiles::Attribute *Tiling::dump_out_atts(LaxFiles::Attribute *att,int what,Lax
 	return att;
 }
 
-void Tiling::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context)
+void Tiling::dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::DumpContext *context)
 {
     if (!att) return;
 

@@ -28,7 +28,6 @@
 #include <iostream>
 using namespace std;
 #define DBG 
-using namespace LaxFiles;
 using namespace Laxkit;
 using namespace LaxInterfaces;
 using namespace Polyptych;
@@ -130,7 +129,7 @@ void SimpleNetLine::dump_out(FILE *f,int indent, int pfirst)//pfirst=0
  * If there's a list "1 2 3 1" it will make a point list 1,2,3, and
  * set isclosed=1.
  */
-void SimpleNetLine::dump_in_atts(LaxFiles::Attribute *att, const char *val,int flag)
+void SimpleNetLine::dump_in_atts(Laxkit::Attribute *att, const char *val,int flag)
 {
 	if (!att) return;
 	int c;
@@ -339,7 +338,7 @@ void SimpleNetFace::dump_out(FILE *f,int indent, int pfirst)//pfirst=0
  * that here in val. Otherwise, this function will expect a 
  * "points 1 2 3" sub attribute somewhere in att.
  */
-void SimpleNetFace::dump_in_atts(LaxFiles::Attribute *att, const char *val,int flag)//val=NULL
+void SimpleNetFace::dump_in_atts(Laxkit::Attribute *att, const char *val,int flag)//val=NULL
 {
 	if (!att) return;
 	int c,n=0;
@@ -559,7 +558,7 @@ SimpleNet *SimpleNet::duplicate()
  *    matrix 1 0 0 1 .2 .3
  * </pre>
  */
-void SimpleNet::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void SimpleNet::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -638,7 +637,7 @@ void SimpleNet::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *cont
  * 
  * \todo *** MUST implement the sanity check..
  */
-void SimpleNet::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void SimpleNet::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	if (!att) return;
 	char *name,*value,*t,*e,*newname=NULL;

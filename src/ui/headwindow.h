@@ -66,12 +66,12 @@ class HeadWindow : public Laxkit::SplitWindow
 	virtual int HasOnlyThis(Document *doc);
 	virtual Document *findAnyDoc();
 
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 Laxkit::anXWindow *newHeadWindow(Document *doc=NULL,const char *which=NULL);
-Laxkit::anXWindow *newHeadWindow(LaxFiles::Attribute *att);
+Laxkit::anXWindow *newHeadWindow(Laxkit::Attribute *att);
 
 
 } // namespace Laidout

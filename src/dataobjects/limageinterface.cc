@@ -149,17 +149,17 @@ Value *LImageInterface::dereference(const char *extstring, int len)
 	return NULL;
 }
 
-void LImageInterface::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void LImageInterface::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	ImageInterface::dump_out(f,indent,what,context);
 }
 
-void LImageInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void LImageInterface::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	ImageInterface::dump_in_atts(att,flag,context);
 }
 
-LaxFiles::Attribute *LImageInterface::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
+Laxkit::Attribute *LImageInterface::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *savecontext)
 {
 	return att;
 }

@@ -16,9 +16,9 @@
 #include <lax/fileutils.h>
 #include "poly.h"
 
-using namespace LaxFiles;
 using namespace Laxkit;
 using namespace Polyptych;
+
 
 //Right now, convert between "idat", obj, and off
 

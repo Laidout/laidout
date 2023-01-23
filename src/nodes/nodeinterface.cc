@@ -42,8 +42,8 @@
 using namespace std;
 #define DBG 
 
+
 using namespace Laxkit;
-using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
@@ -663,7 +663,7 @@ void NodeFrame::Wrap(double gap)
 	height = box.maxy - box.miny;
 }
 
-LaxFiles::Attribute *NodeFrame::dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context)
+Laxkit::Attribute *NodeFrame::dump_out_atts(Laxkit::Attribute *att, int what, Laxkit::DumpContext *context)
 {
 	if (what == -1) {
 		if (!att) att = new Attribute();
@@ -694,7 +694,7 @@ LaxFiles::Attribute *NodeFrame::dump_out_atts(LaxFiles::Attribute *att, int what
 	return att;
 }
 
-void NodeFrame::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context)
+void NodeFrame::dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::DumpContext *context)
 {
 	if (!att) return;
 
@@ -1593,7 +1593,7 @@ int NodeBase::SetProperty(const char *prop, Value *value, bool absorb)
  *
  * Return 1 for property set, 0 for could not set.
  */
-int NodeBase::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att, LaxFiles::DumpContext *context)
+int NodeBase::SetPropertyFromAtt(const char *propname, Laxkit::Attribute *att, Laxkit::DumpContext *context)
 {
 	NodeProperty *prop = FindProperty(propname);
 	if (!prop) return 0; //only work on existing props.
@@ -1691,14 +1691,14 @@ int NodeBase::NumOutputs(bool connected)
 	return n;
 }
 
-void NodeBase::dump_out(FILE *f, int indent, int what, LaxFiles::DumpContext *context)
+void NodeBase::dump_out(FILE *f, int indent, int what, Laxkit::DumpContext *context)
 {
     Attribute att;
     dump_out_atts(&att,what,context);
     att.dump_out(f,indent);
 }
 
-LaxFiles::Attribute *NodeBase::dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context)
+Laxkit::Attribute *NodeBase::dump_out_atts(Laxkit::Attribute *att, int what, Laxkit::DumpContext *context)
 {
    if (!att) att=new Attribute();
 
@@ -1786,7 +1786,7 @@ LaxFiles::Attribute *NodeBase::dump_out_atts(LaxFiles::Attribute *att, int what,
 	return att;
 }
 
-void NodeBase::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context)
+void NodeBase::dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::DumpContext *context)
 {
 	if (!att) return;
 
@@ -7343,7 +7343,7 @@ int NodeInterface::DuplicateNodes()
 	return 1;
 }
 
-void NodeInterface::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *savecontext)
+void NodeInterface::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *savecontext)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
@@ -7353,7 +7353,7 @@ void NodeInterface::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *
 	fprintf(f, "%snodes %s\n", spc, cur->Id());
 }
 
-void NodeInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *loadcontext)
+void NodeInterface::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *loadcontext)
 {
     char *name,*value;
 
@@ -7544,7 +7544,7 @@ bool NodeInterface::DndWillAcceptDrop(int x, int y, const char *action, Laxkit::
 /*! Takes mm and nstuff. WILL delete[] mm in destructor.
  * Does NOT increment count on nstuff, but WILL decrement in destructor.
  */
-NodeUndo::NodeUndo(int ntype, int nisauto, double *mm, anObject *nstuff)
+NodeUndo::NodeUndo(int ntype, int nisauto, double *mm, Laxkit::anObject *nstuff)
  : UndoData(nisauto)
 {
 	type = ntype;

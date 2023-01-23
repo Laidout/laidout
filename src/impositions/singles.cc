@@ -24,7 +24,6 @@
 
 using namespace Laxkit;
 using namespace LaxInterfaces;
-using namespace LaxFiles;
 
 #include <iostream>
 using namespace std;
@@ -267,7 +266,7 @@ int Singles::SetDefaultMargins(double l,double r,double t,double b)
  * to letter if defaultpaperstyle attribute found, then dumps in that
  * paper style. see todos in Page also.....
  */
-void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void Singles::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	if (!att) return;
 	char *name,*value;
@@ -351,7 +350,7 @@ void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpConte
  *
  * \todo *** finish what==-1
  */
-void Singles::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void Singles::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {

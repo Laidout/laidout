@@ -88,7 +88,7 @@ class PanoramaInfo : public Laxkit::anObject
 	unsigned char *spheremap_data_rotated;
 	int spheremap_width;
 	int spheremap_height;
-	Basis extra_basis;
+	Laxkit::Basis extra_basis;
 
 	PanoramaInfo(const char *file);
 };
@@ -152,7 +152,7 @@ class HedronWindow : public Laxkit::anXWindow
 	Laxkit::PtrStack<PaperBound> papers;
 	PaperBound default_paper;
 	int currentpaper;
-	Basis extra_basis;
+	Laxkit::Basis extra_basis;
 	Net *currentnet;
 	double unwrapangle;
 
@@ -179,8 +179,8 @@ class HedronWindow : public Laxkit::anXWindow
 
 	 //camera views
 	double fovy;
-	spacevector tracker;
-	spaceline pointer; //points where mouse points
+	Laxkit::spacevector tracker;
+	Laxkit::spaceline pointer; //points where mouse points
 	Thing camera_shape;
 	Laxkit::PtrStack<EyeType> cameras;
 	int current_camera;
@@ -231,8 +231,8 @@ class HedronWindow : public Laxkit::anXWindow
 
 	 //hedron gl mapping
 	virtual void installSpheremapTexture(int definetid);
-	virtual void triangulate(spacepoint p1 ,spacepoint p2 ,spacepoint p3,
-							 spacepoint p1o,spacepoint p2o,spacepoint p3o,
+	virtual void triangulate(Laxkit::spacepoint p1 ,Laxkit::spacepoint p2 ,Laxkit::spacepoint p3,
+							 Laxkit::spacepoint p1o,Laxkit::spacepoint p2o,Laxkit::spacepoint p3o,
 							 int n);
 	virtual void mapPolyhedronTexture(Thing *thing);
 	virtual Thing *makeGLPolyhedron();
@@ -266,7 +266,7 @@ class HedronWindow : public Laxkit::anXWindow
 	virtual int findCurrentPotential();
 	virtual int findCurrentFace();
 	virtual int scanPaper(int x,int y, int &index);
-	virtual flatpoint pointInNetPlane(int x,int y);
+	virtual Laxkit::flatpoint pointInNetPlane(int x,int y);
 
 	 //misc
 	virtual int changePaper(int towhich,int index);

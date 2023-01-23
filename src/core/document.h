@@ -57,7 +57,7 @@ enum PageLabelType {
 
 const char *pageLabelTypeName(PageLabelType t);
 
-class PageRange : public LaxFiles::DumpUtility
+class PageRange : public Laxkit::DumpUtility
 {
  public:
 	char *name;
@@ -73,9 +73,9 @@ class PageRange : public LaxFiles::DumpUtility
 	char *GetLabel(int i);
 	char *GetLabel(int i,int altfirst,int alttype);
 
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 //------------------------- Document ------------------------------------
@@ -88,8 +88,8 @@ class Document : public ObjectContainer, public Value
 	
 	Imposition *imposition;
 
-	LaxFiles::AttributeObject *metadata;
-	LaxFiles::Attribute iohints;
+	Laxkit::AttributeObject *metadata;
+	Laxkit::Attribute iohints;
 
 	int curpage;
 	Laxkit::RefPtrStack<Page> pages;
@@ -135,8 +135,8 @@ class Document : public ObjectContainer, public Value
 	virtual int FindPageIndexFromLabel(const char *label, int lookafter=-1);
 	
 	 //i/o
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 	virtual int Load(const char *file,Laxkit::ErrorLog &log);
 	virtual int Save(int includelimbos,int includewindows,Laxkit::ErrorLog &log, bool add_to_recent=true);
 	virtual int SaveACopy(const char *filename, int includelimbos,int includewindows,Laxkit::ErrorLog &log, bool add_to_recent);

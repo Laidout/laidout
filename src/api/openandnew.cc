@@ -24,7 +24,6 @@
 #include <unistd.h>
 
 
-using namespace LaxFiles;
 using namespace Laxkit;
 
 

@@ -40,7 +40,7 @@ enum AlignFinalLayout {
 	FALIGN_ObjectRotate
 };
 
-class AlignInfo : public Laxkit::anObject, public LaxFiles::DumpUtility
+class AlignInfo : public Laxkit::anObject, public Laxkit::DumpUtility
 {
 	//mask for what to apply from a preset:
 	// snap_dir/alignment
@@ -54,11 +54,11 @@ class AlignInfo : public Laxkit::anObject, public LaxFiles::DumpUtility
 
 	int snap_align_type;//can be FALIGN_None, FALIGN_Align, or FALIGN_Proportional
 	int visual_align;  //how to rotate objects to lay on lines: FALIGN_Visual, FALIGN_VisualRotate, FALIGN_ObjectRotate
-	flatvector snap_direction;
+	Laxkit::flatpoint snap_direction;
 	double snapalignment;
 
 	int final_layout_type; //FALIGN_*, none, flow+gap, random, even placement, aligned, other
-	flatvector layout_direction;
+	Laxkit::flatpoint layout_direction;
 	double finalalignment; //for when not flow and gap based
 	double leftbound, rightbound; //line parameter for path, dist between vertices is 1
 	double extrarotation;
@@ -69,15 +69,15 @@ class AlignInfo : public Laxkit::anObject, public LaxFiles::DumpUtility
 	int gaptype; //whether custom for whole list (weighted or absolute), or single value gap, or function gap
 
 	double uiscale; //width of main alignment bar
-	flatpoint center;
-	flatpoint centeroffset; //used only when path==nullptr
+	Laxkit::flatpoint center;
+	Laxkit::flatpoint centeroffset; //used only when path==nullptr
 	LaxInterfaces::PathsData *path; //custom alignment path
 
 	AlignInfo();
 	virtual ~AlignInfo();
 
-	virtual void dump_out(FILE*, int, int, LaxFiles::DumpContext*);
-	virtual void dump_in_atts(LaxFiles::Attribute*, int, LaxFiles::DumpContext*);
+	virtual void dump_out(FILE*, int, int, Laxkit::DumpContext*);
+	virtual void dump_in_atts(Laxkit::Attribute*, int, Laxkit::DumpContext*);
 };
 
 
@@ -136,12 +136,12 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	class ControlInfo //one per object
 	{
 	  public:
-		flatpoint p;
-		flatpoint v;
+		Laxkit::flatpoint p;
+		Laxkit::flatpoint v;
 		double amount;
-		flatpoint snapto;
+		Laxkit::flatpoint snapto;
 		int flags;
-		flatpoint original_center;
+		Laxkit::flatpoint original_center;
 		LaxInterfaces::SomeData *original_transform;
 
 		ControlInfo();
@@ -157,8 +157,8 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	bool show_presets;
 
 	int hover, hoverindex;
-	flatpoint hoverpoint;
-	flatpoint *presetpoints;
+	Laxkit::flatpoint hoverpoint;
+	Laxkit::flatpoint *presetpoints;
 	LaxInterfaces::PathsData *presetdata;
 	int presetpointsn;
 	int explodemode;
@@ -172,7 +172,7 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	virtual int scanForLineControl(int x,int y, int &index);
 	virtual void postHoverMessage();
 	virtual void postAlignMessage(int a);
-	virtual void DrawAlignBox(flatpoint dir, double amount, int aligntype, int with_rotation_handles, int hover);
+	virtual void DrawAlignBox(Laxkit::flatpoint dir, double amount, int aligntype, int with_rotation_handles, int hover);
 	virtual void ShowPresets();
 	virtual void SetPreset(int which);
 	virtual int createPath();
@@ -233,10 +233,10 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	virtual int ApplyAlignment(int updateorig);
 	virtual int ResetAlignment();
 	virtual void ResetPath();
-	virtual int PointToLine(flatpoint p, flatpoint &ip, int isfinal, flatpoint *tangent);
-	virtual int PointToPath(flatpoint p, flatpoint &ip, flatpoint *tangent);
-	virtual int PointAlongPath(double t,int tisdistance, flatpoint &point, flatpoint *tangent);
-	virtual flatpoint ClosestPoint(flatpoint p, double *d, double *t);
+	virtual int PointToLine(Laxkit::flatpoint p, Laxkit::flatpoint &ip, int isfinal, Laxkit::flatpoint *tangent);
+	virtual int PointToPath(Laxkit::flatpoint p, Laxkit::flatpoint &ip, Laxkit::flatpoint *tangent);
+	virtual int PointAlongPath(double t,int tisdistance, Laxkit::flatpoint &point, Laxkit::flatpoint *tangent);
+	virtual Laxkit::flatpoint ClosestPoint(Laxkit::flatpoint p, double *d, double *t);
 	virtual int ClampBoundaries(int fill);
 	virtual double DFromT(double t);
 
@@ -246,8 +246,8 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 
 	virtual int UpdateFromPath();
 
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *savecontext);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *loadcontext);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *savecontext);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *loadcontext);
 };
 
 

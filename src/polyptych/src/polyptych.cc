@@ -48,7 +48,6 @@
 #include <iostream>
 using namespace std;
 using namespace Laxkit;
-using namespace LaxFiles;
 
 #include "../language.h"
 #include "glbase.h"
@@ -451,7 +450,7 @@ int main(int argc, char **argv)
 	DBG cerr <<"-----------------program done, cleanup follows--------------------"<<endl;
 	DBG cerr <<"delete "<<nets.n<<" nets..."<<endl;
 	DBG nets.flush();
-	DBG FinalizeShortcutManager();
+	DBG InstallShortcutManager(nullptr);
 	DBG cerr <<"done deleting nets."<<endl;
 
 	//DBG cerr << "extra_basis:"<<endl

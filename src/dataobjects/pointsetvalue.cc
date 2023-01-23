@@ -49,17 +49,17 @@ int PointSetValue::type()
 	return TypeNumber();
 }
 
-void PointSetValue::dump_out(FILE *f,int indent,int what, LaxFiles::DumpContext *context)
+void PointSetValue::dump_out(FILE *f,int indent,int what, Laxkit::DumpContext *context)
 {
 	PointSet::dump_out(f,indent,what,context);
 }
 
-LaxFiles::Attribute *PointSetValue::dump_out_atts(LaxFiles::Attribute *att,int what, LaxFiles::DumpContext *context)
+Laxkit::Attribute *PointSetValue::dump_out_atts(Laxkit::Attribute *att,int what, Laxkit::DumpContext *context)
 {
 	return PointSet::dump_out_atts(att,what,context);
 }
 
-void PointSetValue::dump_in_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context)
+void PointSetValue::dump_in_atts(Laxkit::Attribute *att, int what, Laxkit::DumpContext *context)
 {
 	PointSet::dump_in_atts(att,what,context);
 }

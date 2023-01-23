@@ -72,12 +72,12 @@ void PointAnchor::Set(const char *nname, int type, flatpoint pp1,flatpoint pp2, 
     p2=pp2;
 }
 
-void PointAnchor::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void PointAnchor::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	cerr <<" *** need to implement PathGuide::dump_out"<<endl;
 }
 
-void PointAnchor::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void PointAnchor::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	cerr <<" *** need to implement PathGuide::dump_in_atts"<<endl;
 }
@@ -119,8 +119,8 @@ class PathGuide : public LaxInterfaces::SomeData
 	PathGuide();
 	virtual ~PathGuide();
 	virtual const char *whattype() { return "PathGuide"; }
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 PathGuide::PathGuide()
@@ -138,12 +138,12 @@ PathGuide::~PathGuide()
 	if (guide) guide->dec_count();
 }
 
-void PathGuide::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void PathGuide::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	cerr <<" *** need to implement PathGuide::dump_out"<<endl;
 }
 
-void PathGuide::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void PathGuide::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	cerr <<" *** need to implement PathGuide::dump_in_atts"<<endl;
 }
@@ -193,12 +193,12 @@ flatpoint GridGuide::Snap(flatpoint p)
 	return p; // ***
 }
 
-void GridGuide::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void GridGuide::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	cerr <<" *** need to implement GridGuide::dump_out"<<endl;
 }
 
-void GridGuide::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void GridGuide::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	cerr <<" *** need to implement GridGuide::dump_in_atts"<<endl;
 }

@@ -28,7 +28,6 @@
 
 
 using namespace Laxkit;
-using namespace LaxFiles;
 
 
 namespace Laidout {
@@ -461,14 +460,14 @@ int ObjectTreeWindow::CharInput(unsigned int ch,const char *buffer,int len,unsig
 }
 
 
-void ObjectTreeWindow::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *savecontext)
+void ObjectTreeWindow::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *savecontext)
 {   
-    LaxFiles::Attribute att;
+    Laxkit::Attribute att;
     dump_out_atts(&att,what,savecontext); 
     att.dump_out(f,indent);
 }   
 
-LaxFiles::Attribute *ObjectTreeWindow::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
+Laxkit::Attribute *ObjectTreeWindow::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *savecontext)
 { 
 	if (tree) {
 		att = tree->dump_out_atts(att,what,savecontext); 
@@ -491,7 +490,7 @@ LaxFiles::Attribute *ObjectTreeWindow::dump_out_atts(LaxFiles::Attribute *att,in
 	return anXWindow::dump_out_atts(att,what,savecontext);
 }
 
-void ObjectTreeWindow::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *loadcontext)
+void ObjectTreeWindow::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *loadcontext)
 {	
 	Attribute *datt = att->find("domain");
 	if (datt) {

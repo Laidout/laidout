@@ -77,7 +77,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 
   protected:
 	int fakepointer;   //***for lack of screencast recorder for multipointer
-	flatpoint fakepos; //***for lack of screencast recorder for multipointer
+	Laxkit::flatpoint fakepos; //***for lack of screencast recorder for multipointer
 
 	unsigned int drawflags;
 	int viewportmode;
@@ -141,8 +141,8 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	
 	virtual int ApplyThis(Laxkit::anObject *thing,unsigned long mask);
 	
-	virtual flatpoint realtoscreen(flatpoint r);
-	virtual flatpoint screentoreal(int x,int y);
+	virtual Laxkit::flatpoint realtoscreen(Laxkit::flatpoint r);
+	virtual Laxkit::flatpoint screentoreal(int x,int y);
 	virtual double Getmag(int c=0);
 	virtual double GetVMag(int x,int y);
 
@@ -212,9 +212,9 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	virtual ValueHash *build_context();
 
 	 //for i/o
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 
 
 	friend class ViewWindow;
@@ -264,9 +264,9 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 	virtual char *CurrentDirectory();
 	virtual int SetAsCurrentTool(LaxInterfaces::anInterface *interf);
 
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 

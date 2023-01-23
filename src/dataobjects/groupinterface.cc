@@ -1670,17 +1670,17 @@ Value *GroupInterface::dereference(const char *extstring, int len)
 }
 
 
-void GroupInterface::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void GroupInterface::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	ObjectInterface::dump_out(f,indent,what,context);
 }
 
-void GroupInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void GroupInterface::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	ObjectInterface::dump_in_atts(att,flag,context);
 }
 
-LaxFiles::Attribute *GroupInterface::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
+Laxkit::Attribute *GroupInterface::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *savecontext)
 {
 	return att;
 }

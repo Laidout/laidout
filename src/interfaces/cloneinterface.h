@@ -147,12 +147,12 @@ class Tiling : public Value
 
 	virtual int isXRepeatable();
 	virtual int isYRepeatable();
-	virtual flatpoint repeatOrigin();
-	virtual flatpoint repeatOrigin(flatpoint norigin);
-	virtual flatpoint repeatXDir();
-	virtual flatpoint repeatXDir(flatpoint nx);
-	virtual flatpoint repeatYDir();
-	virtual flatpoint repeatYDir(flatpoint ny);
+	virtual Laxkit::flatpoint repeatOrigin();
+	virtual Laxkit::flatpoint repeatOrigin(Laxkit::flatpoint norigin);
+	virtual Laxkit::flatpoint repeatXDir();
+	virtual Laxkit::flatpoint repeatXDir(Laxkit::flatpoint nx);
+	virtual Laxkit::flatpoint repeatYDir();
+	virtual Laxkit::flatpoint repeatYDir(Laxkit::flatpoint ny);
 	virtual Laxkit::Affine finalTransform(); //transform applied after tiling to entire pattern, to squish around
 
 	virtual int HasRecursion();
@@ -175,9 +175,9 @@ class Tiling : public Value
 //					   );
 	
 	virtual ObjectDef *makeObjectDef();
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att, int, LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att, int, Laxkit::DumpContext *context);
 };
 
 
@@ -239,7 +239,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 	LaxInterfaces::RectInterface rectinterface;
 
 	virtual int scan(int x,int y, int *i, int *dest);
-	virtual int scanBasecells(flatpoint fp, int *i, int *dest);
+	virtual int scanBasecells(Laxkit::flatpoint fp, int *i, int *dest);
 	virtual int scanSelected(int x,int y);
 
 	virtual int ToggleOrientations();

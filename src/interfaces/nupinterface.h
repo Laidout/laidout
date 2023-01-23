@@ -63,7 +63,7 @@ enum NUpControlType {
 #define NUP_TtoB  4
 
 //---------------------------------- NUpInfo -----------------------------------------
-class NUpInfo : public Laxkit::DoubleBBox, public Laxkit::anObject, public LaxFiles::DumpUtility
+class NUpInfo : public Laxkit::DoubleBBox, public Laxkit::anObject, public Laxkit::DumpUtility
 {
   public:
 	char *name;
@@ -74,13 +74,13 @@ class NUpInfo : public Laxkit::DoubleBBox, public Laxkit::anObject, public LaxFi
 	double defaultgap;
 
 	double scale; //transform for where the arrows are, works on screen space?
-	flatpoint uioffset;
+	Laxkit::flatpoint uioffset;
 	
 	NUpInfo();
 	virtual ~NUpInfo();
 
-	virtual void dump_out(FILE*, int, int, LaxFiles::DumpContext*);
-	virtual void dump_in_atts(LaxFiles::Attribute*, int, LaxFiles::DumpContext*);
+	virtual void dump_out(FILE*, int, int, Laxkit::DumpContext*);
+	virtual void dump_in_atts(Laxkit::Attribute*, int, Laxkit::DumpContext*);
 };
 
 
@@ -99,12 +99,12 @@ class NUpInterface : public LaxInterfaces::ObjectInterface
 	class ControlInfo //one per object
 	{
 	  public:
-		flatpoint p;
-		flatpoint v;
+		Laxkit::flatpoint p;
+		Laxkit::flatpoint v;
 		double amountx,amounty;
 		int flags;
-		flatpoint new_center;
-		flatpoint original_center;
+		Laxkit::flatpoint new_center;
+		Laxkit::flatpoint original_center;
 		LaxInterfaces::SomeData *original_transform;
 
 		ControlInfo();
@@ -144,7 +144,7 @@ class NUpInterface : public LaxInterfaces::ObjectInterface
 
 	virtual int PerformAction(int action);
 
-	virtual void WidthHeight(LaxInterfaces::ObjectContext *oc,flatvector x,flatvector y, double *width, double *height, flatpoint *cc);
+	virtual void WidthHeight(LaxInterfaces::ObjectContext *oc,Laxkit::flatpoint x,Laxkit::flatpoint y, double *width, double *height, Laxkit::flatpoint *cc);
   public:
 	unsigned long nup_style;//options for interface
 
@@ -176,7 +176,7 @@ class NUpInterface : public LaxInterfaces::ObjectInterface
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int Refresh();
-	virtual void drawHandle(ActionArea *area, unsigned int color, flatpoint offset);
+	virtual void drawHandle(ActionArea *area, unsigned int color, Laxkit::flatpoint offset);
 	
 	virtual int UseThis(Laxkit::anObject *ndata,unsigned int mask=0); 
 	virtual int validateInfo();

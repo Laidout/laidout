@@ -69,7 +69,7 @@ class PluginBase : public Laxkit::anObject
 	virtual const char *Author()      = 0;
 	virtual const char *ReleaseDate() = 0;
 	virtual const char *License()     = 0;
-	virtual const LaxFiles::Attribute *OtherMeta() { return NULL; }
+	virtual const Laxkit::Attribute *OtherMeta() { return NULL; }
 
 	virtual unsigned long WhatYouGot() = 0; //or'd list of PluginBaseContents
 

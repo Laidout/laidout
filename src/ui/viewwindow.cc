@@ -81,7 +81,6 @@ using namespace std;
 
 
 using namespace Laxkit;
-using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
@@ -4022,17 +4021,17 @@ Value *LaidoutViewport::dereference(const char *extstring, int len)
 	return NULL;
 }
 
-void LaidoutViewport::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void LaidoutViewport::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	anXWindow::dump_out(f,indent,what,context);
 }
 
-LaxFiles::Attribute *LaidoutViewport::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+Laxkit::Attribute *LaidoutViewport::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	return anXWindow::dump_out_atts(att,what,context);
 }
 
-void LaidoutViewport::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void LaidoutViewport::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	anXWindow::dump_in_atts(att,flag,context);
 }
@@ -4120,7 +4119,7 @@ ViewWindow::~ViewWindow()
  * \todo *** need to dump_out the space, not just the matrix!!
  * \todo *** dump out limbo...
  */
-void ViewWindow::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void ViewWindow::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	
@@ -4191,7 +4190,7 @@ void ViewWindow::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *con
 	}
 }
 
-LaxFiles::Attribute *ViewWindow::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+Laxkit::Attribute *ViewWindow::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	cout << "******** ViewWindow::dump_out_atts("<<endl;
 	return NULL;
@@ -4200,7 +4199,7 @@ LaxFiles::Attribute *ViewWindow::dump_out_atts(LaxFiles::Attribute *att,int what
 //! Reverse of dump_out().
 /*! \todo *** need to dump_out the space, not just the matrix!!
  */
-void ViewWindow::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context)
+void ViewWindow::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	if (!att) return;
 	char *name,*value;

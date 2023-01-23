@@ -41,7 +41,7 @@ class NetLine
 	virtual int Set(const char *d,LaxInterfaces::LineStyle *ls);
 	
 	virtual void dumpOut(FILE *f,int indent, int what);
-	virtual void dumpInAtts(LaxFiles::Attribute *att, const char *val,int flag);//val=NULL
+	virtual void dumpInAtts(Laxkit::Attribute *att, const char *val,int flag);//val=NULL
 };
 
 //----------------------------------- NetFaceEdge -----------------------------------
@@ -91,19 +91,19 @@ class NetFace
 	virtual void clear();
 	//virtual int Set(const char *list, const char *link=NULL);
 	//virtual int Set(int n,int *list,int *link=NULL,int dellists=0);
-	virtual int getOutline(int *n, flatpoint **p, int convert);
+	virtual int getOutline(int *n, Laxkit::flatpoint **p, int convert);
 
-	virtual flatpoint Origin();
-	virtual flatpoint XaxisPoint();
+	virtual Laxkit::flatpoint Origin();
+	virtual Laxkit::flatpoint XaxisPoint();
 	
 	virtual void dumpOut(FILE *f,int indent,int what);
-	virtual void dumpInAtts(LaxFiles::Attribute *att);
+	virtual void dumpInAtts(Laxkit::Attribute *att);
 };
 
 //----------------------------------- AbstractNet -----------------------------------
 class AbstractNet : 
 	virtual public Laxkit::anObject,
-	virtual public LaxFiles::DumpUtility
+	virtual public Laxkit::DumpUtility
 {
  public:
 	char *name;
@@ -130,8 +130,8 @@ class BasicNet : public AbstractNet, public Laxkit::PtrStack<NetFace>
 	virtual NetFace *GetFace(int i,double scaling);
 
 	virtual int dumpOutNet(FILE *f,int indent,int what);
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *savecontext);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *savecontext);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 //----------------------------------- Net -----------------------------------
@@ -167,8 +167,8 @@ class Net : public LaxInterfaces::SomeData
 	virtual int validateNet();
 
 	 //informational functions
-	virtual int pathOfFace(int i, int *n, flatpoint **p, int convert);
-	virtual int pointinface(flatpoint pp, int innetcoords);
+	virtual int pathOfFace(int i, int *n, Laxkit::flatpoint **p, int convert);
+	virtual int pointinface(Laxkit::flatpoint pp, int innetcoords);
 	virtual int actualLink(int facei, int edgei);
 	virtual int numActual();
 	virtual void resetTick(int t);
@@ -198,8 +198,8 @@ class Net : public LaxInterfaces::SomeData
 	virtual int LoadFile(const char *file,char **error_ret);
 	virtual int SaveSvg(const char *file,char **error_ret);
 
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *savecontext);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *savecontext);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 					
 };
 

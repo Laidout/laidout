@@ -41,7 +41,9 @@
 #include <lax/refptrstack.cc>
 
 
+using namespace Laxkit;
 using namespace LaxInterfaces;
+
 
 namespace Laidout {
 

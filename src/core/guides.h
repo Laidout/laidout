@@ -34,7 +34,7 @@ enum PointAnchorTypes {
 };
 
 class PointAnchor : public Laxkit::anObject,
-					public LaxFiles::DumpUtility
+					public Laxkit::DumpUtility
 {
   public:
     char *name;
@@ -44,20 +44,20 @@ class PointAnchor : public Laxkit::anObject,
 	unsigned int owner_id;
 
 	Laxkit::ScreenColor color, hcolor;
-    flatpoint p, p2;
+    Laxkit::flatpoint p, p2;
     int anchor_type; //alignment point in bounding box in owner,
                      //or absolute coordinate in owner
                      //or segment of absolute points in owner
                      //or infinite line
 
 	PointAnchor();
-    PointAnchor(const char *nname, int type, flatpoint pp1,flatpoint pp2,int nid);
+    PointAnchor(const char *nname, int type, Laxkit::flatpoint pp1,Laxkit::flatpoint pp2,int nid);
     virtual ~PointAnchor();
     virtual const char *whattype() { return "PointAnchor"; }
-    virtual void Set(const char *nname, int type, flatpoint pp1,flatpoint pp2,int nid);
+    virtual void Set(const char *nname, int type, Laxkit::flatpoint pp1,Laxkit::flatpoint pp2,int nid);
 
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 
@@ -85,8 +85,8 @@ class GridGuide : public Guide
 	GridType            gridtype;
 	bool                enabled;
 	bool                visible;
-	flatpoint           offset;
-	flatvector          majordir, minordir;
+	Laxkit::flatpoint   offset;
+	Laxkit::flatpoint   majordir, minordir;
 	int                 spacingunits;
 	double              xspacing, yspacing;
 	Laxkit::ScreenColor minorcolor, majorcolor;
@@ -96,10 +96,10 @@ class GridGuide : public Guide
 	GridGuide();
 	virtual ~GridGuide();
 	virtual const char *whattype() { return "GridGuide"; }
-	virtual flatpoint Snap(flatpoint p);
+	virtual Laxkit::flatpoint Snap(Laxkit::flatpoint p);
 	virtual int SetUnits(const char *units);
-	virtual void dump_out(FILE *f, int indent, int what, LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f, int indent, int what, Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::DumpContext *context);
 };
 
 } // namespace Laidout

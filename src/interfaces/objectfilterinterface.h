@@ -44,7 +44,7 @@ class ObjectFilterInterface : public LaxInterfaces::anInterface
 	DrawableObject *data; //points to dataoc->obj
 	LaxInterfaces::ObjectContext *dataoc;
 	int current;
-	flatpoint offset;
+	Laxkit::flatpoint offset;
 
 	int hover;
 	int hoverindex;

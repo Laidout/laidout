@@ -42,13 +42,13 @@ class ActionArea : public Laxkit::DoubleBBox
   public:
 	char *tip;
 	char *text;
-	flatpoint offset;
-	flatpoint xdirection;
-	flatpoint hotspot;
-	flatpoint tail;
+	Laxkit::flatpoint offset;
+	Laxkit::flatpoint xdirection;
+	Laxkit::flatpoint hotspot;
+	Laxkit::flatpoint tail;
 	int usetail;
 
-	flatpoint *outline;
+	Laxkit::flatpoint *outline;
 	int npoints;
 
 	unsigned long color;
@@ -65,13 +65,13 @@ class ActionArea : public Laxkit::DoubleBBox
 	ActionArea(int what,int ntype,const char *txt,const char *ntooltip,
 			   int isreal,int isvisible,unsigned long ncolor,int ncategory,unsigned long ntcolor=0);
 	virtual ~ActionArea();
-	virtual flatpoint *Points(flatpoint *pts, int n, int takethem);
+	virtual Laxkit::flatpoint *Points(Laxkit::flatpoint *pts, int n, int takethem);
 	virtual void FindBBox();
-	virtual flatpoint Position();
+	virtual Laxkit::flatpoint Position();
 	virtual void Position(double x,double y,int which=3);
 	virtual int PointIn(double x,double y);
-	virtual flatpoint Center();
-	virtual void Tail(flatpoint ntail) { tail=ntail; usetail=1; }
+	virtual Laxkit::flatpoint Center();
+	virtual void Tail(Laxkit::flatpoint ntail) { tail=ntail; usetail=1; }
 	virtual void SetRect(double x,double y,double w,double h);
 };
 

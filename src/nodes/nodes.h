@@ -39,7 +39,7 @@ Laxkit::anObject *newNodeGroup(int p, Laxkit::anObject *ref);
 //--------------------- CurveProperty ---------------------------------
 class CurveProperty : public NodeProperty
 {
-	static SingletonKeeper interfacekeeper;
+	static Laxkit::SingletonKeeper interfacekeeper;
 
   public:
 	static LaxInterfaces::CurveMapInterface *GetCurveInterface();
@@ -63,7 +63,7 @@ class CurveProperty : public NodeProperty
 
 class GradientProperty : public NodeProperty
 {
-	static SingletonKeeper interfacekeeper;
+	static Laxkit::SingletonKeeper interfacekeeper;
 
   public:
 	LaxInterfaces::GradientInterface *GetGradientInterface();

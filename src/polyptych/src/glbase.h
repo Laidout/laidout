@@ -40,9 +40,9 @@ namespace Polyptych {
 
 void dumpMatrix4(GLfloat *m,const char *str);
 
-void addGLSphereTexpt(float x,float y,float z, Basis *extra_basis);
+void addGLSphereTexpt(float x,float y,float z, Laxkit::Basis *extra_basis);
 void makecylinder(void);
-void drawCylinder(spacepoint p1, spacepoint p2, double scalew=-1,GLfloat *extram=NULL);
+void drawCylinder(Laxkit::spacepoint p1, Laxkit::spacepoint p2, double scalew=-1,GLfloat *extram=NULL);
 void makesphere(void);
 GLuint sphereCallList();
 void makecube(void);
@@ -142,9 +142,9 @@ void setmaterial(GLfloat r,GLfloat g,GLfloat b);
 class EyeType
 {
  public:
-	Basis m,l,r; /* get x/y coords, z is away from focus */
+	Laxkit::Basis m,l,r; /* get x/y coords, z is away from focus */
 	double left_fov, right_fov, middle_fov;
-	spacepoint focus;
+	Laxkit::spacepoint focus;
 	double dist,fplane; /* dist=between eyes, flpane dist p to plane */
 	GLfloat projection[16],model[16]; // gl transform matrix for projection view
 
@@ -153,7 +153,7 @@ class EyeType
 	void makestereo();
 	void transformForDrawing();
 	void transformTo();
-	void Set(spacepoint atpoint, spacepoint nfocus, spacepoint up);
+	void Set(Laxkit::spacepoint atpoint, Laxkit::spacepoint nfocus, Laxkit::spacepoint up);
 	void Rotate(double angle, char axis);
 };
 
@@ -170,7 +170,7 @@ class Thing
 	GLfloat color[4]; // any additional color to set before calling list(?)
 	Material *mat; 
 	GLfloat m[16]; // transform matrix to set before calling list
-	Basis bas;
+	Laxkit::Basis bas;
 	//textures
 	//animation, modified==1 triggers remap call list?
 

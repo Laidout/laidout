@@ -38,7 +38,6 @@ using namespace std;
 
 
 using namespace Laxkit;
-using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
@@ -98,7 +97,7 @@ ImportImageSettings *ImportImageSettings::duplicate()
 	return d;
 }
 
-void ImportImageSettings::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void ImportImageSettings::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	char *name,*value;
 	for (int c=0; c<att->attributes.n; c++) {
@@ -150,7 +149,7 @@ void ImportImageSettings::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFile
 	}
 }
 
-void ImportImageSettings::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void ImportImageSettings::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
     char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
@@ -341,7 +340,7 @@ int dumpOutImageListFormat(FILE *f)
  * Any file in the list that does not appear to be an image will be installed as a broken image.
  * 
  * This function reads in the file to a Laxkit::Attribute, then calls 
- * dumpInImageList(Document *,LaxFiles::Attribute *, int, int, int).
+ * dumpInImageList(Document *,Laxkit::Attribute *, int, int, int).
  * 
  * The file should be formated as in the dumpOutImageListFormat() function.
  *
@@ -350,7 +349,7 @@ int dumpOutImageListFormat(FILE *f)
  */
 int dumpInImageList(ImportImageSettings *settings, Document *doc,const char *file)
 {
-	LaxFiles::Attribute att;
+	Laxkit::Attribute att;
 	if (att.dump_in(file)) return -1;
 	char *dir=lax_dirname(file,0);
 	if (!dir) {
@@ -363,7 +362,7 @@ int dumpInImageList(ImportImageSettings *settings, Document *doc,const char *fil
 	return dumpInImageList(settings,doc,&att);
 }
 
-//! Plop down images from the list contained in a LaxFiles::Attribute.
+//! Plop down images from the list contained in a Laxkit::Attribute.
 /*! \ingroup extras
  *
  * The Attribute will have been generated from an image list file.
@@ -389,7 +388,7 @@ int dumpInImageList(ImportImageSettings *settings, Document *doc,const char *fil
  *   to limit only to images, say, or only TIFFS, EPS, etc..
  * \todo implement dumping in Images for page numbers at defined positions (arrangements)
  */
-int dumpInImageList(ImportImageSettings *settings, Document *doc,LaxFiles::Attribute *att)
+int dumpInImageList(ImportImageSettings *settings, Document *doc,Laxkit::Attribute *att)
 {
 	int	startpage =settings->startpage,
 		defaultdpi=settings->defaultdpi,

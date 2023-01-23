@@ -34,7 +34,6 @@
 
 
 using namespace std;
-using namespace LaxFiles;
 using namespace Laxkit;
 using namespace LaxInterfaces;
 
@@ -431,7 +430,7 @@ int PaperStyle::SetFromString(const char *nname)
  *   landscape
  * </pre>
  */
-void PaperStyle::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void PaperStyle::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -457,7 +456,7 @@ void PaperStyle::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *con
 	fprintf(f,"%s%s\n",spc,(flags&1?"landscape":"portrait"));
 }
 
-LaxFiles::Attribute *PaperStyle::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
+Laxkit::Attribute *PaperStyle::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *savecontext)
 {
 	if (!att) att=new Attribute;
 
@@ -483,7 +482,7 @@ LaxFiles::Attribute *PaperStyle::dump_out_atts(LaxFiles::Attribute *att,int what
 }
 
 //! Basically reverse of dump_out.
-void PaperStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void PaperStyle::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	if (!att) return;
 
@@ -1062,7 +1061,7 @@ int PaperGroup::FindPaperBBox(Laxkit::DoubleBBox *box_ret)
  *     dpi 300
  * </pre>
  */
-void PaperGroup::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void PaperGroup::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -1104,7 +1103,7 @@ void PaperGroup::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *con
 	}	
 }
 
-void PaperGroup::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context)
+void PaperGroup::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	if (!att) return;
 

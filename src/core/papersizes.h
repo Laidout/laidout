@@ -82,9 +82,9 @@ class PaperStyle : public Value, public FunctionEvaluator
                          Value **value_ret, Laxkit::ErrorLog *log);
 	virtual int IsMatch(double w, double h, double epsilon = 0);
 
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
 };
 
 
@@ -128,7 +128,7 @@ class PaperBoxData : public LaxInterfaces::SomeData
 
 
 //------------------------------------- PaperGroup --------------------------------------
-class PaperGroup : public ObjectContainer, public LaxFiles::DumpUtility
+class PaperGroup : public ObjectContainer, public Laxkit::DumpUtility
 {
  public:
 	char *name;
@@ -144,8 +144,8 @@ class PaperGroup : public ObjectContainer, public LaxFiles::DumpUtility
 	PaperGroup(PaperStyle *paperstyle);
 	virtual ~PaperGroup();
 	virtual const char *whattype() { return "PaperGroup"; }
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 
 	virtual int AddPaper(double w,double h,double offsetx,double offsety);
 	virtual int AddPaper(const char *nme,double w,double h,const double *m);

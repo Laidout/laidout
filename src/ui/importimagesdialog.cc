@@ -36,7 +36,6 @@ using namespace std;
 
 
 using namespace Laxkit;
-using namespace LaxFiles;
 
 
 namespace Laidout {
@@ -96,7 +95,7 @@ ImportImagesDialog::~ImportImagesDialog()
 	if (settings) settings->dec_count();
 }
 
-void ImportImagesDialog::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void ImportImagesDialog::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	Attribute *att=dump_out_atts(NULL,0,context);
 	att->dump_out(f,indent);
@@ -105,7 +104,7 @@ void ImportImagesDialog::dump_out(FILE *f,int indent,int what,LaxFiles::DumpCont
 
 /*! Append to att if att!=NULL, else return new att.
  */
-Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what,LaxFiles::DumpContext *context)
+Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	if (!att) att=new Attribute("ImportImagesDialog",NULL);
 	char scratch[100];
@@ -168,7 +167,7 @@ Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what,LaxFiles::D
 
 /*! \todo  *** ensure that the dimensions read in are in part on screen...
  */
-void ImportImagesDialog::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context)
+void ImportImagesDialog::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	char *name,*value;
 	for (int c=0; c<att->attributes.n; c++) {

@@ -38,17 +38,17 @@ GradientValue::GradientValue()
 	Id();
 }
 
-void GradientValue::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void GradientValue::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	GradientStrip::dump_out(f,indent,what,context);
 }
 
-void GradientValue::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void GradientValue::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	GradientStrip::dump_in_atts(att,flag,context);
 }
 
-LaxFiles::Attribute *GradientValue::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+Laxkit::Attribute *GradientValue::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	return GradientStrip::dump_out_atts(att,what,context);
 }
@@ -157,9 +157,9 @@ int LGradientData::pointin(flatpoint pp,int pin)
 	return GradientData::pointin(pp,pin);
 }
 
-void LGradientData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void LGradientData::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
-	LaxFiles::Attribute att;
+	Laxkit::Attribute att;
 	dump_out_atts(&att, what, context);
 	att.dump_out(f, indent);
 	// char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
@@ -168,15 +168,15 @@ void LGradientData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *
 	// GradientData::dump_out(f,indent+2,what,context);
 }
 
-LaxFiles::Attribute *LGradientData::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+Laxkit::Attribute *LGradientData::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	att = DrawableObject::dump_out_atts(att, what,context);
-	LaxFiles::Attribute *att2 = att->pushSubAtt("config");
+	Laxkit::Attribute *att2 = att->pushSubAtt("config");
 	GradientData::dump_out_atts(att2, what,context);
 	return att;
 }
 
-void LGradientData::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void LGradientData::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	DrawableObject::dump_in_atts(att,flag,context);
 	int foundconfig=0;
@@ -421,17 +421,17 @@ Value *LGradientInterface::dereference(const char *extstring, int len)
 	return NULL;
 }
 
-void LGradientInterface::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void LGradientInterface::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	GradientInterface::dump_out(f,indent,what,context);
 }
 
-void LGradientInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void LGradientInterface::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	GradientInterface::dump_in_atts(att,flag,context);
 }
 
-LaxFiles::Attribute *LGradientInterface::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
+Laxkit::Attribute *LGradientInterface::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *savecontext)
 {
 	return att;
 }

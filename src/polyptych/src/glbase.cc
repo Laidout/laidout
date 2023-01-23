@@ -22,6 +22,8 @@ using namespace std;
 #define DBG
 
 
+using namespace Laxkit;
+
 namespace Polyptych {
 
 

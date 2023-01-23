@@ -2096,7 +2096,7 @@ class ExpressionNode : public NodeBase
 	virtual int Update();
 	virtual int GetStatus();
 	virtual int UpdatePreview();
-	virtual void dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::DumpContext *context);
 
 	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ExpressionNode(nullptr); }
 };
@@ -2130,7 +2130,7 @@ const char *ExpressionNode::Label()
 
 /*! Intercept to make sure property labels are correct.
  */
-void ExpressionNode::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context)
+void ExpressionNode::dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::DumpContext *context)
 {
 	NodeBase::dump_in_atts(att, flag, context);
 
@@ -4868,7 +4868,7 @@ class SwitchNode : public NodeBase
 	virtual NodeBase *Duplicate();
 	virtual int GetStatus();
 	virtual int Update();
-	virtual void dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::DumpContext *context);
 
 	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new SwitchNode(); }
 };
@@ -4897,7 +4897,7 @@ NodeBase *SwitchNode::Duplicate()
 
 /*! Clean up after NodeBase::dump_in_atts() to make sure the out property is at the end.
  */
-void SwitchNode::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context)
+void SwitchNode::dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::DumpContext *context)
 {
 	NodeBase::dump_in_atts(att,flag,context);
 	int i = -1;
@@ -5066,7 +5066,7 @@ class JoinSetsNode : public NodeBase
 	virtual NodeBase *Duplicate();
 	virtual int GetStatus();
 	virtual int Update();
-	virtual void dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::DumpContext *context);
 
 	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new JoinSetsNode(); }
 };
@@ -5096,7 +5096,7 @@ NodeBase *JoinSetsNode::Duplicate()
 
 /*! Clean up after NodeBase::dump_in_atts() to make sure the out property is at the end.
  */
-void JoinSetsNode::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context)
+void JoinSetsNode::dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::DumpContext *context)
 {
 	NodeBase::dump_in_atts(att,flag,context);
 	int i = -1;
@@ -5183,7 +5183,7 @@ class MakeSetNode : public NodeBase
 	virtual NodeBase *Duplicate();
 	virtual int GetStatus();
 	virtual int Update();
-	virtual void dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::DumpContext *context);
 
 	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new MakeSetNode(); }
 };
@@ -5213,7 +5213,7 @@ NodeBase *MakeSetNode::Duplicate()
 
 /*! Clean up after NodeBase::dump_in_atts() to make sure the out property is at the end.
  */
-void MakeSetNode::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context)
+void MakeSetNode::dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::DumpContext *context)
 {
 	NodeBase::dump_in_atts(att,flag,context);
 	int i = -1;
@@ -5806,7 +5806,7 @@ class CurveNode : public NodeBase
 	virtual NodeBase *Duplicate();
 	virtual int Update();
 	virtual int GetStatus();
-	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att, LaxFiles::DumpContext *context);
+	virtual int SetPropertyFromAtt(const char *propname, Laxkit::Attribute *att, Laxkit::DumpContext *context);
 };
 
 /*! absorbs ncurve.
@@ -5862,7 +5862,7 @@ NodeBase *CurveNode::Duplicate()
 
 /*! Return 1 for set, 0 for not set.
  */
-int CurveNode::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att, LaxFiles::DumpContext *context)
+int CurveNode::SetPropertyFromAtt(const char *propname, Laxkit::Attribute *att, Laxkit::DumpContext *context)
 {
 	if (!strcmp(propname, "Curve")) {
 		CurveProperty *prop = dynamic_cast<CurveProperty*>(FindProperty(propname));
@@ -6032,7 +6032,7 @@ class GradientNode : public NodeBase
 	virtual NodeBase *Duplicate();
 	virtual int Update();
 	virtual int GetStatus();
-	// virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att, LaxFiles::DumpContext *context);
+	// virtual int SetPropertyFromAtt(const char *propname, Laxkit::Attribute *att, Laxkit::DumpContext *context);
 };
 
 Laxkit::anObject *newGradientNode(int p, Laxkit::anObject *ref)
@@ -6097,7 +6097,7 @@ NodeBase *GradientNode::Duplicate()
 
 // /*! Return 1 for set, 0 for not set.
 //  */
-// int GradientNode::SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att, LaxFiles::DumpContext *context)
+// int GradientNode::SetPropertyFromAtt(const char *propname, Laxkit::Attribute *att, Laxkit::DumpContext *context)
 // {
 // 	int status = NodeBase::SetPropertyFromAtt(propname, att, context);
 // 	return status;
@@ -6385,7 +6385,7 @@ class ListOfNode : public NodeBase
 	virtual int GetStatus();
 	virtual int Update();
 	virtual int UpdateProps(int num);
-	virtual void dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::DumpContext *context);
 
 	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ListOfNode(nullptr, 1); }
 };
@@ -6445,7 +6445,7 @@ int ListOfNode::GetStatus()
 	return NodeBase::GetStatus();
 }
 
-void ListOfNode::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context)
+void ListOfNode::dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::DumpContext *context)
 {
 	NodeBase::dump_in_atts(att,flag,context);
 	int i = -1;
@@ -6802,7 +6802,7 @@ class ModifyObjectNode : public NodeBase
 	virtual NodeBase *Duplicate();
 	virtual int Connected(NodeConnection *connection);
 	virtual int Disconnected(NodeConnection *connection, bool from_will_be_replaced, bool to_will_be_replaced);
-	virtual void dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::DumpContext *context);
 
 	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ModifyObjectNode(nullptr, 0); }
 };
@@ -6934,7 +6934,7 @@ int ModifyObjectNode::Connected(NodeConnection *connection)
 
 /*! Clean up after NodeBade::dump_in_atts() to make sure the out property is at the end.
  */
-void ModifyObjectNode::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context)
+void ModifyObjectNode::dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::DumpContext *context)
 {
 	NodeBase::dump_in_atts(att,flag,context);
 	int i = -1;
@@ -6996,7 +6996,7 @@ class ObjectFunctionNode : public NodeBase
 	virtual int Connected(NodeConnection *connection);
 	virtual int Disconnected(NodeConnection *connection, bool from_will_be_replaced, bool to_will_be_replaced);
 	virtual Value *PreviewFrom() { return FindProperty("out")->GetData(); }
-	virtual void dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::DumpContext *context);
 	
 	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ObjectFunctionNode(); }
 };
@@ -7029,7 +7029,7 @@ ObjectFunctionNode::~ObjectFunctionNode()
 
 /*! Clean up after NodeBade::dump_in_atts() to make sure the out property is at the end.
  */
-void ObjectFunctionNode::dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context)
+void ObjectFunctionNode::dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::DumpContext *context)
 {
 	NodeBase::dump_in_atts(att,flag,context);
 	int i = -1;
@@ -7295,7 +7295,7 @@ int TextFileNode::Update()
 	if (isblank(file)) return -1;
 
 	int n = 0;
-	char *contents = LaxFiles::read_in_whole_file(file, &n);
+	char *contents = Laxkit::read_in_whole_file(file, &n);
 	if (!contents) return -1;
 
 	StringValue *sv = dynamic_cast<StringValue*>(properties.e[1]->data);
@@ -7368,7 +7368,7 @@ int JsonFileNode::Update()
 	if (isblank(file)) return -1;
 
 	int n = 0;
-	char *contents = LaxFiles::read_in_whole_file(file, &n);
+	char *contents = Laxkit::read_in_whole_file(file, &n);
 	if (!contents) return -1;
 
 	const char *error_ptr = nullptr;
@@ -7475,7 +7475,7 @@ int CSVFileNode::Update()
 	if (!isnum) return -1;
 
 	int n = 0;
-	char *contents = LaxFiles::read_in_whole_file(file, &n);
+	char *contents = Laxkit::read_in_whole_file(file, &n);
 	if (!contents) return -1;
 
 	int err = 0;

@@ -36,7 +36,7 @@ class ProjDocument
 };
 
 //------------------------- Project ------------------------------------
-class Project : public LaxFiles::DumpUtility, public ObjectContainer
+class Project : public Laxkit::DumpUtility, public ObjectContainer
 {
   public:
 	char *name,*filename,*dir;
@@ -48,14 +48,14 @@ class Project : public LaxFiles::DumpUtility, public ObjectContainer
 	Group limbos;
 	Laxkit::RefPtrStack<PaperGroup> papergroups;
 
-	LaxFiles::Attribute iohints;
+	Laxkit::Attribute iohints;
 
 	Project();
 	virtual ~Project();
 
 	virtual int initDirs();
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 	virtual int Load(const char *file,Laxkit::ErrorLog &log);
 	virtual int Save(Laxkit::ErrorLog &log);
 	virtual int clear();

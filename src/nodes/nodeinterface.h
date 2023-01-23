@@ -26,9 +26,6 @@
 #include "../filetypes/objectio.h"
 
 
-using namespace LaxFiles;
-using namespace Laxkit;
-
 namespace Laidout { 
 
 
@@ -47,7 +44,7 @@ class NodeConnection : public Laxkit::RefCounted
   public:
 	//Laxkit::ScreenColor color;
 
-	Laxkit::NumStack<flatpoint> path; //points between (and including) start and end points for custom winding,
+	Laxkit::NumStack<Laxkit::flatpoint> path; //points between (and including) start and end points for custom winding,
 									  //though start and end are taken from the connected node properties
 
 	NodeBase     *from,     *to;
@@ -118,7 +115,7 @@ class NodeProperty : public Laxkit::RefCounted
 	Laxkit::ScreenColor color;
 	Laxkit::RefPtrStack<NodeConnection> connections; //input just has one
 
-	flatpoint pos; //clickable spot relative to parent NodeBase origin
+	Laxkit::flatpoint pos; //clickable spot relative to parent NodeBase origin
 
 	NodeProperty();
 	NodeProperty(PropertyTypes input, bool linkable, const char *nname, Value *ndata, int absorb_count,
@@ -177,7 +174,7 @@ class NodeThread
 	ValueHash *data;
 	NodeBase *next;
 	NodeProperty *property; //property from preceding node
-	RefPtrStack<NodeBase> scopes;
+	Laxkit::RefPtrStack<NodeBase> scopes;
 
 	NodeThread(NodeBase *next, NodeProperty *prop, ValueHash *payload, int absorb);
 	virtual ~NodeThread();
@@ -262,8 +259,8 @@ class NodeFrame : public Laxkit::anObject,
 	virtual int NumNodes() { return nodes.n; }
 	virtual void Wrap(double gap=-1);
 
-    virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context);
-    virtual void dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context);
+    virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att, int what, Laxkit::DumpContext *context);
+    virtual void dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::DumpContext *context);
 };
 
 
@@ -321,8 +318,8 @@ class NodeBase : virtual public Laxkit::anObject,
 	virtual LaxInterfaces::anInterface *GetInterface(LaxInterfaces::anInterface *interface);
 	virtual int InterfaceEvent(NodeProperty *prop, LaxInterfaces::anInterface *interf, const Laxkit::EventData *data, const char *mes);
 
-	virtual int Undo(UndoData *data);
-	virtual int Redo(UndoData *data);
+	virtual int Undo(Laxkit::UndoData *data);
+	virtual int Redo(Laxkit::UndoData *data);
 
 	virtual int Update();
 	virtual int UpdateRecursively();
@@ -361,7 +358,7 @@ class NodeBase : virtual public Laxkit::anObject,
 	virtual int RemoveProperty(NodeProperty *prop);
 	virtual NodeProperty *FindProperty(const char *prop, int *index_ret = nullptr);
 	virtual int SetProperty(const char *prop, Value *value, bool absorb);
-	virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att, LaxFiles::DumpContext *context);
+	virtual int SetPropertyFromAtt(const char *propname, Laxkit::Attribute *att, Laxkit::DumpContext *context);
 	virtual int NumInputs(bool connected, bool include_execin);
 	virtual int NumOutputs(bool connected);
 
@@ -372,15 +369,15 @@ class NodeBase : virtual public Laxkit::anObject,
 	virtual int AssignFrame(NodeFrame *nframe);
 	//virtual NodeColors *GetColors(); //return either this->colors, or the first defined one in owners
 
-	virtual void       dump_out(FILE *f, int indent, int what, LaxFiles::DumpContext *context);
-    virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context);
-    virtual void dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context);
+	virtual void       dump_out(FILE *f, int indent, int what, Laxkit::DumpContext *context);
+    virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att, int what, Laxkit::DumpContext *context);
+    virtual void dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::DumpContext *context);
 };
 
 
 //---------------------------- NodeGroup ------------------------------------
 
-class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
+class NodeGroup : public NodeBase, public Laxkit::DumpUtility
 {
 	static Laxkit::SingletonKeeper factorykeeper;
 
@@ -407,8 +404,8 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	NodeGroup();
 	virtual ~NodeGroup();
 	virtual const char *whattype() { return "NodeGroup"; }
-	virtual int Undo(UndoData *data);
-	virtual int Redo(UndoData *data);
+	virtual int Undo(Laxkit::UndoData *data);
+	virtual int Redo(Laxkit::UndoData *data);
 	virtual int InstallColors(NodeColors *newcolors, bool absorb_count);
 	virtual int DesignateOutput(NodeBase *noutput);
 	virtual int DesignateInput(NodeBase *ninput);
@@ -419,7 +416,7 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	virtual int AddNode(NodeBase *node);
 	virtual NodeFrame *GetFrame(int index);
 	virtual int NoOverlap(NodeBase *which, double gap);
-	virtual void BoundingBox(DoubleBBox &box);
+	virtual void BoundingBox(Laxkit::DoubleBBox &box);
 	virtual NodeBase *Duplicate();
 	virtual NodeBase *DuplicateGroup(NodeGroup *newgroup);
 	virtual bool HasAlternateInterface() { return false; }
@@ -440,9 +437,9 @@ class NodeGroup : public NodeBase, public LaxFiles::DumpUtility
 	virtual void ManualUpdate(bool yes);
 	virtual void SoftUpdate(int reason);
 
-	virtual void       dump_out(FILE *f, int indent, int what, LaxFiles::DumpContext *context);
-    virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context);
-    virtual void dump_in_atts(LaxFiles::Attribute *att, int flag, LaxFiles::DumpContext *context);
+	virtual void       dump_out(FILE *f, int indent, int what, Laxkit::DumpContext *context);
+    virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att, int what, Laxkit::DumpContext *context);
+    virtual void dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::DumpContext *context);
 
 };
 
@@ -451,18 +448,18 @@ typedef NodeGroup Nodes;
 
 
 //--------------------------- NodeExportContext ---------------------------------
-class NodeExportContext : public anObject
+class NodeExportContext : public Laxkit::anObject
 {
   public:
 	bool pipe;
-	Attribute *passthrough;
+	Laxkit::Attribute *passthrough;
 	NodeGroup *group;
 	NodeGroup *top;
 	NodeColors *colors;
 	Laxkit::RefPtrStack<NodeBase> *selection;
 
 	NodeExportContext();
-	NodeExportContext(Laxkit::RefPtrStack<NodeBase> *selected, Attribute *passth,
+	NodeExportContext(Laxkit::RefPtrStack<NodeBase> *selected, Laxkit::Attribute *passth,
 			NodeGroup *ngroup, NodeGroup *top, NodeColors *ncolors, bool npipe);
 	virtual ~NodeExportContext();
 	virtual void SetTop(NodeGroup *ntop);
@@ -471,11 +468,11 @@ class NodeExportContext : public anObject
 
 //---------------------------- NodeViewArea ------------------------------------
 
-class NodeViewArea : public DoubleRectangle
+class NodeViewArea : public Laxkit::DoubleRectangle
 {
   public:
 	NodeGroup *group;
-	flatpoint anchor;
+	Laxkit::flatpoint anchor;
 	bool is_anchored;
 	//bool is_minimized;
 	Laxkit::Affine m;
@@ -591,25 +588,25 @@ enum NodeInterfaceActions {
 class NodeInterface : public LaxInterfaces::anInterface
 {
   private:
-	flatpoint bezbuf[4];
-	flatpoint panpath[4];
+	Laxkit::flatpoint bezbuf[4];
+	Laxkit::flatpoint panpath[4];
 	int    pan_timer;
 	double pan_current; //0..1
 	double pan_duration; //seconds
 	int    pan_tick_ms;
 	char scratch[200];
 
-	PtrStack<char> recent_node_types;
+	Laxkit::PtrStack<char> recent_node_types;
 
-	PtrStack<NodeThread> forks; //used each Execute tick
+	Laxkit::PtrStack<NodeThread> forks; //used each Execute tick
 
-	Attribute *passthrough; //pipe io helper data
+	Laxkit::Attribute *passthrough; //pipe io helper data
 	NodeConnection *onconnection;
 
 	Laxkit::anObject *originating_data; //for when we are used as an on the spot editor for another tool
 
   protected:
-	void GetConnectionBez(NodeConnection *connection, flatpoint *pts);
+	void GetConnectionBez(NodeConnection *connection, Laxkit::flatpoint *pts);
 
 	bool try_refresh;
 	virtual void NodesChanged();
@@ -645,12 +642,12 @@ class NodeInterface : public LaxInterfaces::anInterface
 	NodeConnection *tempconnection;
 	int hover_action;
 	int lasthover, lasthoverslot, lasthoverprop, lastconnection;
-	flatpoint lastpos;
+	Laxkit::flatpoint lastpos;
 	int lastmenuindex;
 	char *search_term;
 	int last_search_index;
 
-	PtrStack<NodeThread> threads;
+	Laxkit::PtrStack<NodeThread> threads;
 
 	//Laxkit::Affine transform; //from nodes to screen coords
 
@@ -679,7 +676,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual int send();
 	virtual void UpdateCurrentColor(const Laxkit::ScreenColor &col);
 	virtual void DebugOut(double x, double &y, Value *v);
-	virtual void PlaceNewNode(NodeBase *newnode, flatpoint pos, bool place_near_mouse, bool is_new);
+	virtual void PlaceNewNode(NodeBase *newnode, Laxkit::flatpoint pos, bool place_near_mouse, bool is_new);
 
   public:
 	unsigned int node_interface_style;
@@ -729,7 +726,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual int EnterGroup(NodeGroup *group=NULL);
 	virtual int LeaveGroup();
 	virtual int DuplicateNodes();
-	virtual int CutConnections(flatpoint p1,flatpoint p2);
+	virtual int CutConnections(Laxkit::flatpoint p1,Laxkit::flatpoint p2);
 	virtual int SaveNodes(const char *file);
 	virtual int ExportNodes(const char *file, const char *format);
 	virtual int LoadNodes(const char *file, bool append, int file_is_string_data, bool keep_passthrough);
@@ -738,8 +735,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual NodeGroup *GetCurrent() { return nodes; }
 	virtual int SelectNode(NodeBase *what, bool also_center);
 
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *savecontext);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *loadcontext);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *savecontext);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *loadcontext);
 
 	//system dnd
 	virtual int selectionDropped(const unsigned char *data,unsigned long len,const char *actual_type,const char *which);
@@ -858,9 +855,9 @@ class NodeUndo : public Laxkit::UndoData
 
     int type;
 	double *m;
-	anObject *stuff;
+	Laxkit::anObject *stuff;
 
-    NodeUndo(int ntype, int nisauto, double *mm, anObject *nstuff);
+    NodeUndo(int ntype, int nisauto, double *mm, Laxkit::anObject *nstuff);
 	virtual ~NodeUndo();
     virtual const char *Description();
 };

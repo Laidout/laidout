@@ -26,7 +26,7 @@
 using namespace std;
 #define DBG 
 
-using namespace LaxFiles;
+
 using namespace Laxkit;
 
 
@@ -81,7 +81,7 @@ EpsData::~EpsData()
  * update this code as change happens.
  * Otherwise dumps out in indented data format as above.
  */
-void EpsData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void EpsData::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	
@@ -117,7 +117,7 @@ void EpsData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *contex
  * height as given in the file are curretly ignored, and the actual pixel 
  * width and height of the image are used instead.
  */
-void EpsData::dump_in_atts(Attribute *att,int flag,LaxFiles::DumpContext *context)
+void EpsData::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	if (!att) return;
 	char *name,*value;

@@ -37,13 +37,13 @@ class PathIntersectionsInterface : public anInterface
 	{
 	  public:
 		int p1, p2;
-		flatpoint c1, c2; //relative to the points, for easy sorting
+		Laxkit::flatpoint c1, c2; //relative to the points, for easy sorting
 	};
 
 	class IntersectionPoint
 	{
 	  public:
-		flatpoint p;
+		Laxkit::flatpoint p;
 		int type; // 0 bez on bez, 1 bez self intersection, 2 base point, not an intersection
 		Laxkit::PtrStack<BezEdge> edges; //each edge radiates from p
 	};
@@ -51,13 +51,13 @@ class PathIntersectionsInterface : public anInterface
   protected:
 	int showdecs;
 
-	typedef Laxkit::NumStack<flatpoint> PointPath;
+	typedef Laxkit::NumStack<Laxkit::flatpoint> PointPath;
 	Laxkit::PtrStack<PointPath> paths;
 
 	Laxkit::PtrStack<PointPath> areas;
 
 
-	Laxkit::NumStack<flatpoint> intersections;
+	Laxkit::NumStack<Laxkit::flatpoint> intersections;
 	int pathi;
 
 	double point_radius;

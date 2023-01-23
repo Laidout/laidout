@@ -64,7 +64,7 @@ class LMirrorInterface : public LaxInterfaces::MirrorInterface
 
 class MirrorPathNode : public ObjectFilterNode
 {
-	static SingletonKeeper keeper; //the def for the op enum
+	static Laxkit::SingletonKeeper keeper; //the def for the op enum
 
   public:
 	static LaxInterfaces::MirrorInterface *GetMirrorInterface();
@@ -81,7 +81,7 @@ class MirrorPathNode : public ObjectFilterNode
 	// virtual int Mute(bool yes=true);
 	//virtual int Connected(NodeConnection *connection);
 
-	virtual int UpdateMirror(flatpoint p1, flatpoint p2);
+	virtual int UpdateMirror(Laxkit::flatpoint p1, Laxkit::flatpoint p2);
 };
 
 

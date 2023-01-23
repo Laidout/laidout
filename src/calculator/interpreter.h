@@ -29,7 +29,7 @@ namespace Laidout {
 /*! \class Interpreter
  * \brief Base class for all extra interpreter language bindings.
  */
-class Interpreter : public Laxkit::anObject, public LaxFiles::DumpUtility
+class Interpreter : public Laxkit::anObject, public Laxkit::DumpUtility
 {
   protected:
 	int runstate; //0 is ok, nonzero is it needs to be killed if in mid-process
@@ -59,9 +59,9 @@ class Interpreter : public Laxkit::anObject, public LaxFiles::DumpUtility
 	virtual void ClearError() = 0;
 
 	 //dumping in and out history
-    virtual void       dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-    virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context) = 0;
-    virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context) =0;
+    virtual void       dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+    virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context) = 0;
+    virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context) =0;
 
 };
 

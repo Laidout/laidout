@@ -17,7 +17,6 @@
 
 
 using namespace Laxkit;
-using namespace LaxFiles;
 
 
 namespace Laidout {
@@ -40,7 +39,7 @@ Interpreter::~Interpreter()
 }
 
 
-void Interpreter::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *savecontext)
+void Interpreter::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *savecontext)
 {
 	Attribute att;
 	dump_out_atts(&att, what, savecontext);

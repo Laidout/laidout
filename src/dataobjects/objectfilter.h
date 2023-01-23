@@ -70,7 +70,7 @@ class ObjectFilter : public NodeGroup
 	virtual bool HasAlternateInterface() { return true; }
 	virtual LaxInterfaces::anInterface *AlternateInterface();
 
-    virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att, int what, LaxFiles::DumpContext *context);
+    virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att, int what, Laxkit::DumpContext *context);
 };
 
 

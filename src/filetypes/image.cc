@@ -36,7 +36,6 @@
 
 using namespace std;
 using namespace Laxkit;
-using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
@@ -114,14 +113,14 @@ ImageExportConfig::~ImageExportConfig()
 	delete[] format;
 }
 
-void ImageExportConfig::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void ImageExportConfig::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	Attribute att;
 	dump_out_atts(&att, what, context);
 	att.dump_out(f, indent);
 }
 
-LaxFiles::Attribute *ImageExportConfig::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+Laxkit::Attribute *ImageExportConfig::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	att = DocumentExportConfig::dump_out_atts(att,what,context);
 
@@ -146,7 +145,7 @@ LaxFiles::Attribute *ImageExportConfig::dump_out_atts(LaxFiles::Attribute *att,i
 	return att;
 }
 
-void ImageExportConfig::dump_in_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context)
+void ImageExportConfig::dump_in_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
 	DocumentExportConfig::dump_in_atts(att,what,context);
 

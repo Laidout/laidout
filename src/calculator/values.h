@@ -170,7 +170,7 @@ enum ObjectDefFlags {
 	OBJECTDEF_MAX
 };
 
-class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
+class ObjectDef : public Laxkit::anObject, public Laxkit::DumpUtility
 {
   public:
 	ObjectDef *parent_namespace;
@@ -287,15 +287,15 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 //	virtual int callFunction(const char *field, ValueHash *context, ValueHash *parameters,
 //							 Value **value_ret, CalcSettings *settings, Laxkit::ErrorLog *log);
 
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 
 //----------------------------- Value ----------------------------------
 
-class Value : virtual public Laxkit::anObject, virtual public LaxFiles::DumpUtility
+class Value : virtual public Laxkit::anObject, virtual public Laxkit::DumpUtility
 {
   protected:
 	int modified;
@@ -328,9 +328,9 @@ class Value : virtual public Laxkit::anObject, virtual public LaxFiles::DumpUtil
     virtual int FieldIndex(const char *name);
 
     //from DumpUtility:
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 
@@ -372,7 +372,7 @@ class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual
 	double      findDouble(const char *name, int which=-1, int *error_ret=NULL);
 	double      findIntOrDouble(const char *name, int which=-1, int *error_ret=NULL);
 	const char *findString(const char *name, int which=-1, int *error_ret=NULL);
-	flatvector  findFlatvector(const char *name, int which, int *error_ret=NULL);
+	Laxkit::flatpoint  findFlatvector(const char *name, int which, int *error_ret=NULL);
 	Laxkit::anObject *findObject(const char *name, int which=-1, int *error_ret=NULL);
 
 	 //from Value:
@@ -391,9 +391,9 @@ class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual
 						 Value **value_ret,
 						 Laxkit::ErrorLog *log);
 
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 //----------------------------- GenericValue ----------------------------------
@@ -532,10 +532,10 @@ class FlatvectorValue : public Value, virtual public FunctionEvaluator
 {
   public:
 	Unit units;
-	flatvector v;
+	Laxkit::flatpoint v;
 	FlatvectorValue() { }
 	FlatvectorValue(double x, double y) { v.set(x,y); }
-	FlatvectorValue(flatvector vv) { v=vv; }
+	FlatvectorValue(Laxkit::flatpoint vv) { v=vv; }
 	virtual const char *whattype() { return "FlatvectorValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
@@ -553,9 +553,9 @@ class SpacevectorValue : public Value, virtual public FunctionEvaluator
 {
   public:
 	Unit units;
-	spacevector v;
+	Laxkit::spacevector v;
 	SpacevectorValue() { }
-	SpacevectorValue(spacevector vv) { v=vv; }
+	SpacevectorValue(Laxkit::spacevector vv) { v=vv; }
 	virtual const char *whattype() { return "SpacevectorValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
@@ -573,9 +573,9 @@ class QuaternionValue : public Value, virtual public FunctionEvaluator
 {
   public:
 	Unit units;
-	Quaternion v;
+	Laxkit::Quaternion v;
 	QuaternionValue() { }
-	QuaternionValue(Quaternion vv) { v=vv; }
+	QuaternionValue(Laxkit::Quaternion vv) { v=vv; }
 	virtual const char *whattype() { return "QuaternionValue"; }
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
@@ -789,7 +789,7 @@ int isVectorType(Value *v, double *values);
 int extequal(const char *str, int len, const char *field, char **next_ret=NULL);
 int isName(const char *longstr,int len, const char *null_terminated_str);
 
-Value *AttributeToValue(LaxFiles::Attribute *att, int format, int *error_ret = nullptr, LaxFiles::DumpContext *context = nullptr);
+Value *AttributeToValue(Laxkit::Attribute *att, int format, int *error_ret = nullptr, Laxkit::DumpContext *context = nullptr);
 Value *ParseSimpleType(const char *value, int *error_ret);
 Value *NewSimpleType(int type);
 

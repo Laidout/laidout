@@ -57,7 +57,7 @@ class FoldedPageInfo
 	int finalindexfront, finalindexback;
 
 	double rotation; //minute adjustment when putting page to paper
-	flatpoint shift; //minute adjustment when putting page to paper
+	Laxkit::flatpoint shift; //minute adjustment when putting page to paper
 
 	Laxkit::NumStack<int> pages; //what pages are actually there, r,c are pushed
 
@@ -104,9 +104,9 @@ class Signature : public Value
 	const Signature &operator=(const Signature &sig);
 	virtual ObjectDef *makeObjectDef();
 
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 
 	virtual int IsVertical();
 	virtual unsigned int Validity();
@@ -156,9 +156,9 @@ class PaperPartition : public Value
 	virtual double PatternHeight();
 	virtual double PatternWidth();
 
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts (LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts (Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 //------------------------------------ SignatureInstance -----------------------------------------
@@ -187,9 +187,9 @@ class SignatureInstance : public Value
 	virtual SignatureInstance *duplicateSingle();
 	virtual ObjectDef *makeObjectDef();
 
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts (LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts (Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 
 	virtual int PagesPerSignature(int whichstack, int ignore_inserts);
 	virtual int PaperSpreadsPerSignature(int whichstack, int ignore_inserts);
@@ -252,9 +252,9 @@ class SignatureImposition : public Imposition
 
 	 //Imposition functions:
 	virtual ObjectDef *makeObjectDef();
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 	virtual ImpositionInterface *Interface();
 
 	virtual const char *BriefDescription();

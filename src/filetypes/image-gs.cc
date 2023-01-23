@@ -35,7 +35,6 @@
 
 using namespace std;
 using namespace Laxkit;
-using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
@@ -226,7 +225,7 @@ int ImageGsExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	sprintf(str1,"-r%f",dpi);
 	arglist[5]=str1;
 
-	if (!filetemplate) filetemplate=LaxFiles::make_filename_base(filename);
+	if (!filetemplate) filetemplate=Laxkit::make_filename_base(filename);
 	prependstr(filetemplate,"-sOutputFile=");
 	arglist[6]=filetemplate;
 

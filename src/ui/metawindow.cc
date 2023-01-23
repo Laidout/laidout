@@ -28,7 +28,6 @@
 using namespace std;
 
 using namespace Laxkit;
-using namespace LaxFiles;
 
 
 namespace Laidout {
@@ -41,7 +40,7 @@ namespace Laidout {
 /*! nMeta is inc_counted.
  */
 MetaWindow::MetaWindow(anXWindow *prnt, const char *nname,const char *ntitle,unsigned long nstyle, unsigned long nowner, const char *msg,
-					  LaxFiles::AttributeObject *nMeta)
+					  Laxkit::AttributeObject *nMeta)
   : RowFrame(prnt, nname, ntitle, ROWFRAME_ROWS | ROWFRAME_STRETCH_IN_COL | ROWFRAME_LEFT | ANXWIN_REMEMBER | ANXWIN_ESCAPABLE, 0,0,600,500,0, NULL,nowner,msg)
 {
 	dialog_style = nstyle & ~ANXWIN_MASK;
@@ -217,7 +216,7 @@ int MetaWindow::Event(const EventData *e,const char *mes)
 }
 
 
-//LaxFiles::Attribute *MetaWindow::dump_out_atts(LaxFiles::Attribute *att,int what,LaxFiles::DumpContext *savecontext)
+//Laxkit::Attribute *MetaWindow::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *savecontext)
 //{ ***
 //	if (what==-1) {
 //		if (!att) att = new Attribute;
@@ -230,7 +229,7 @@ int MetaWindow::Event(const EventData *e,const char *mes)
 //	return att;
 //}
 //
-//void MetaWindow::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+//void MetaWindow::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 //{ ***
 //	char *name;
 //    char *value;

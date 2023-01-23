@@ -21,6 +21,7 @@
 
 using namespace std;
 using namespace Magick;
+using namespace Laxkit;
 
 #define DBG 
 
