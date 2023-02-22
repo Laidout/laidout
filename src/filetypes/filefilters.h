@@ -41,7 +41,7 @@ class DocumentExportConfig;
 #define FILTER_MANY_FILES (1<<1)
 #define FILTER_DIR_BASED  (1<<2)
 
-class FileFilter : public Laxkit::anObject
+class FileFilter : virtual public Laxkit::anObject
 {
  public:
 	unsigned int flags;
