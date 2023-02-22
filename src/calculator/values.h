@@ -21,6 +21,7 @@
 #include <lax/dump.h>
 #include <lax/errorlog.h>
 #include <lax/colorbase.h>
+#include <lax/colorevents.h>
 
 #include <lax/shortcuts.h>
 
@@ -372,7 +373,7 @@ class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual
 	double      findDouble(const char *name, int which=-1, int *error_ret=NULL);
 	double      findIntOrDouble(const char *name, int which=-1, int *error_ret=NULL);
 	const char *findString(const char *name, int which=-1, int *error_ret=NULL);
-	Laxkit::flatpoint  findFlatvector(const char *name, int which, int *error_ret=NULL);
+	Laxkit::flatpoint findFlatvector(const char *name, int which, int *error_ret=NULL);
 	Laxkit::anObject *findObject(const char *name, int which=-1, int *error_ret=NULL);
 
 	 //from Value:
@@ -778,7 +779,9 @@ class ObjectValue : public Value
 	virtual void SetObject(anObject *nobj, bool absorb_count);
 };
 
+
 //------------------------------- parsing helpers ------------------------------------
+
 ValueHash *MapParameters(ObjectDef *def,ValueHash *rawparams);
 double getNumberValue(Value *v, int *isnum);
 bool setNumberValue(double *d, Value *v);
@@ -798,7 +801,9 @@ Value *ValueToJson(const char *str);
 
 Value *CSVStringToValue(const char *str, const char *delimiter, bool has_headers, bool prefer_cols, int *error_ret);
 
+
 //-------------------------- Default ObjectDefs for builtin types ---------------------
+
 ObjectDef *Get_BooleanValue_ObjectDef();
 ObjectDef *Get_BytesValue_ObjectDef();
 ObjectDef *Get_ColorValue_ObjectDef();
