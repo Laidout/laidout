@@ -171,7 +171,7 @@ void InitializeDataFactory()
 
 	lobjectfactory->DefineNewObject(LAX_GROUPDATA,       "Group",           createGroup,            NULL, 0);
 	lobjectfactory->DefineNewObject(LO_MYSTERYDATA,      "MysteryData",     createMysteryData,      NULL, 0);
-	lobjectfactory->DefineNewObject(LAX_ELLIPSEDATA,     "EllipseData",     createLEllipseData,       NULL, 0);
+	lobjectfactory->DefineNewObject(LAX_ELLIPSEDATA,     "EllipseData",     createLEllipseData,     NULL, 0);
 	lobjectfactory->DefineNewObject(LAX_IMAGEDATA,       "ImageData",       createLImageData,       NULL, 0);
 	lobjectfactory->DefineNewObject(LAX_PATHSDATA,       "PathsData",       createLPathsData,       NULL, 0);
 	lobjectfactory->DefineNewObject(LAX_GRADIENTDATA,    "GradientData",    createLGradientData,    NULL, 0);
