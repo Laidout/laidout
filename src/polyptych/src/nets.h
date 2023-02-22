@@ -78,7 +78,7 @@ class NetFace
 	Laxkit::PtrStack<NetFaceEdge> edges;
 	int original;
 	int reverse_index;
-	char isfront;
+	bool isfront;
 	int binding;
 	FaceTag tag; //FACE_Actual, FACE_Potential
 	Laxkit::DoubleBBox bounds;

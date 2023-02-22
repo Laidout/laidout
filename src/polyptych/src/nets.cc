@@ -349,7 +349,7 @@ const NetFaceEdge &NetFaceEdge::operator=(const NetFaceEdge &e)
 /*! \var int NetFace::reverse_index
  * \brief The index in the AbstractNet corresponding to the backside of this face.
  */
-/*! \var char NetFace::isfront
+/*! \var bool NetFace::isfront
  * \brief If nonzero (the default) then this face is the front side. Otherwise, it is the backside.
  *
  * Somewhere else in the net, there may be the reverse side, but that shape will be the
@@ -371,7 +371,7 @@ NetFace::NetFace()
 	tick     = 0;
 	tag      = FACE_None;
 	matrix   =NULL;
-	isfront  =  1;
+	isfront  =  true;
 	original = -1;
 	reverse_index = -1;
 	binding  = -1; //edge to be considered a binding edge when stacked with other things, or -1 if none
@@ -382,7 +382,7 @@ NetFace::NetFace(const NetFace &f)
 	tick     = 0;
 	tag      = FACE_None;
 	matrix   = NULL;
-	isfront  = 1;
+	isfront  = true;
 	original = -1;
 	reverse_index = -1;
 	binding  = -1; //edge to be considered a binding edge when stacked with other things, or -1 if none
@@ -396,14 +396,14 @@ NetFace::~NetFace()
 	//edges.flush();
 }
 
-//! Delete matrix, set isfront=1, original=-1, flush edges.
+//! Delete matrix, set isfront=true, original=-1, flush edges.
 void NetFace::clear()
 {
 	if (matrix) { delete[] matrix; matrix=NULL; }
 	edges.flush();
 	original = -1;
 	reverse_index = -1;
-	isfront  = 1;
+	isfront  = true;
 	binding  = -1;
 }
 
@@ -685,7 +685,7 @@ void NetFace::dumpInAtts(Laxkit::Attribute *att)
 	NetFaceEdge *edge;
 	int error=0;
 
-	isfront=1;
+	isfront = true;
 	tag=FACE_Actual;
 
 	for (c=0; c<att->attributes.n; c++) {
@@ -695,9 +695,9 @@ void NetFace::dumpInAtts(Laxkit::Attribute *att)
 			if (!matrix) matrix=new double[6];
 			DoubleListAttribute(value,matrix,6);
 		} else if (!strcmp(name,"back")) {
-			isfront=!BooleanAttribute(value);
+			isfront = !BooleanAttribute(value);
 		} else if (!strcmp(name,"front")) {
-			isfront=BooleanAttribute(value);
+			isfront = BooleanAttribute(value);
 		} else if (!strcmp(name,"actual")) {
 			tag=FACE_Actual;
 		} else if (!strcmp(name,"potential")) {
