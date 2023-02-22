@@ -1318,7 +1318,7 @@ int LaidoutCalculator::RunShell()
 	
 		input=readline(prompt); //tempexprs is malloc based
 
-		if (input==NULL) continue;
+		if (input==NULL) return 0;
 		//DBG cout<<"\nreadline:"<<input;
 
 		if (strlen(input)>0) {
