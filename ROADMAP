@@ -7,38 +7,32 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.098
 -------------
+       Flatpak creation, submit for Flathub (issue #11)
+       Be able to import/export new Inkscape multipage art boards
+(done) debug svg in enough to be able to load icons.svg
+(done) svg in/out with powerstroke
+(done) svg in/(done)out with meshes, at miminum round trip export/import should work
+(done) Import svg gradients with proper filling of parent
 (done) Animated gif import
-(done) Clip paths
-(done) Clip path in place editing
-(done) Convert backend to using Theme objects for easier adjusting in the future
-(done) Fix object bleeding across pages for signatures and nets (issue #12)
-(done) Make Imlib2 dependency optional, prepare replacement image loading with GraphicsMagick
-(done) Replace x11-dev makedepend with custom script
-(done) make laidout.org twitterable with an image card
-(done) Investigate AppImage creation (issue #10)
-(done) Html gallery output with optional template
-(done) Gradients able to fill parents with none,pad,reflect,repeat spread methods
-(done) Debug gradient radial controls
-(done) Be able to generate icons from source svg directly
 (done) Page Atlas exporter
 (done) Way to export pages as svg embedded into html
 (done) pick and choose export range, not single "from:start to:end", but like "1-3,5,19-20"
-(done) drag-n-drop from system, like drag images into viewwindow from an external file browser
+
+(done) Clip paths
+(done) Clip path in place editing
+(done) Gradients able to fill parents with none,pad,reflect,repeat spread methods
+(done) Debug gradient radial controls
 (done) Show/hide objects
-(done) Address icon/text/thin line sizing issues for high dpi monitors (issue #16)
-(done) System to manage external tools, like print command or image editor
-       Be able to import/export new Inkscape multipage art boards
-
-(done) Moving selected things in group contents does not update group bounds
-(done) should not be able to select both group and group contents at same time
-(done) If curobj, select siblings first. If no curobj, select direct children of context first
-(done) double click on group should change selection area to group contents like inkscape?
-
 (done) Object tree window, at least allow toggling locked, visible, and select from list.
 (done) Find object interface
-
 (done) Empty objects that can be parents, or whose contents are defined by nodes
 (done) Perspective transform object filter, proof of concept for hybrid interface/node workflow
+(done) engraver tool, fix so that current render is not rerendering every frame
+(done) PathInterface: adding point hint
+(done) PathInterface: Mouse based delete segments
+(done) Debug Text on path tool a little
+(done) Clean up mesh controls
+
 (done) Node based image "importer"
 (done) More nodes: global var access, any drawable object, expressions, path generators, reroute
 (done) Even more nodes: point set creators and converters, path endpoints, path extrema
@@ -46,17 +40,22 @@ VERSION 0.098
 (done) Mirror node, coupled with a Mirror Interface
 (done) Animation play/stop overlay, with node hooks
 
-(done) engraver tool, fix so that current render is not rerendering every frame
-(done) PathInterface: adding point hint
-(done) PathInterface: Mouse based delete segments
+(done) Convert backend to using Theme objects for easier adjusting in the future
+(done) Fix object bleeding across pages for signatures and nets (issue #12)
+(done) Make Imlib2 dependency optional, prepare replacement image loading with GraphicsMagick
+(done) Replace x11-dev makedepend with custom script
+(done) Investigate AppImage creation (issue #10)
+(done) Be able to generate icons from source svg directly
+(done) drag-n-drop from system, like drag images into viewwindow from an external file browser
+(done) Address icon/text/thin line sizing issues for high dpi monitors (issue #16)
+(done) System to manage external tools, like print command or image editor
+(done) Moving selected things in group contents does not update group bounds
+(done) should not be able to select both group and group contents at same time
+(done) If curobj, select siblings first. If no curobj, select direct children of context first
+(done) double click on group should change selection area to group contents like inkscape?
 
-(done) Debug Text on path tool a little
-(done) Clean up mesh controls
-
-(done) debug svg in enough to be able to load icons.svg
-(done) svg in/out with powerstroke
-(done) svg in/(done)out with meshes, at miminum round trip export/import should work
-(done) Import svg gradients with proper filling of parent
+(done) make laidout.org twitterable with an image card
+(done) Html gallery output with optional template
 
 
 VERSION 0.099
@@ -165,7 +164,6 @@ VERSION 0.1
        update french and spanish translations, if possible
        Paper sizes should be translated strings
        Implement poor man's multi-contact interface for all appropriate interfaces
-       Flatpak creation, submit for Flathub (issue #11)
 
 
 VERSION 0.2

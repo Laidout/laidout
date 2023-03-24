@@ -205,17 +205,17 @@ build: building: build process
   should be able to specify default icon size as a compile option
   should update faq with details about graphicsmagick, harfbuzz, and gegl versioning
   update configure message about try installing packages.. when fail on gegl, it's not listed
+
+  DONE make a laxkit.pc from laxkit configure
+  DONE fix hardcoded /usr/include/cups in laxkit/configure
+  DONE laidout ./configure needs to pass on relevant things to laxkit
+  DONE in config.log should show actual configure line for easy duplicating
+  --- 0.099:
   should be able to do out-of-source builds
   make "make uninstall" work, and remove coop from installed position
   remove the lax onamac parts from configure? poorly named, more a bsd issue, not mac
   modernize debian/rules. See Laidout PR #5, https://github.com/Laidout/laxkit/pull/5
-
-  DONE make a laxkit.pc from laxkit configure
   use that laxkit.pc from Laidout and laxkit examples
-
-  DONE fix hardcoded /usr/include/cups in laxkit/configure
-  DONE laidout ./configure needs to pass on relevant things to laxkit
-  DONE in config.log should show actual configure line for easy duplicating
 
 packaging:
   update CI: https://github.com/Laidout/laidout/pull/28
@@ -1578,6 +1578,9 @@ themes:
   DONE laxprofile not working
 
 laxkit:
+  resources:
+    resource names should default to object->Id(). Is Name important? refactor with "label" instead of "Name"?
+    should probably go all in on stacks of data, with container pointers to the data.. would help with name collisions
   migrate the Value system to Laxkit
     Value whattypes() should just be the type, rather than c++ class name
   inotify hooks?
@@ -2913,6 +2916,7 @@ tiling cloner: clone tiler  CloneInterface
   design interface for clone on path
   Hirschhorn Medallion, and other pentagon tilings https://en.wikipedia.org/wiki/Pentagonal_tiling
   truchet tiling
+  einstein's hat: https://cs.uwaterloo.ca/~csk/hat/
   penrose/heesch/net clone interface
     penrose p1: pentagons, pentagrams, rhombus, sliced pentagram
     penrose p2: kite and dart
@@ -2996,6 +3000,8 @@ implement undo.. ideally use same code for both undo and recordable/assignable a
   saveable?
 
 PlainTextWindow plaintextwindow PlainText plain text window:
+  bug: ref count 2 remain on exit
+  bug: not loading text when stored as file
   bug: doesn't handle tabs
   need control zoom to change font size
   clicking around doesn't properly update caret drawing
@@ -3086,6 +3092,9 @@ to be a decent editing platform, Laidout needs:
   DONE more specific control over transform.. numerical specification
   DONE clipping
 
+ebook conversion, such as by importing from Project Gutenberg
+
+spell checker.. aspell? hunspell? nuspell?
 
 
 ============== Future of Laidout ================
