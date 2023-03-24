@@ -26,34 +26,32 @@
 namespace Laidout {
 
 
-//------------------------------ FileRef -------------------------------
-class FileRef : public Laxkit::anObject
-{
- public:
-	char *filename;
-	FileRef(const char *file);
-	virtual ~FileRef() { if (filename) delete[] filename; }
-	virtual const char *whattype() { return "FileRef"; }
-};
+// //------------------------------ FileRef -------------------------------
+// class FileRef : public Laxkit::anObject
+// {
+//  public:
+// 	char *filename;
+// 	FileRef(const char *file);
+// 	virtual ~FileRef() { if (filename) delete[] filename; }
+// 	virtual const char *whattype() { return "FileRef"; }
+// };
 
 //------------------------------ PlainText -------------------------------
 
 enum PlainTextType {
-	TEXT_Note,
+	TEXT_Plain,
 	TEXT_Component,
-	TEXT_Script,
-	TEXT_Temporary
+	TEXT_Script
 };
 
 class PlainText : virtual public Laxkit::Resourceable, virtual public Value, virtual public FunctionEvaluator
 {
  public:
-	Laxkit::anObject *owner;
-	int texttype, textsubtype;
+	int texttype;
+	int textsubtype;
 	clock_t lastmodtime;
 	clock_t lastfiletime;
 	char *thetext;
-	char *name;
 	char *filename;
 	bool loaded;
 
@@ -71,6 +69,8 @@ class PlainText : virtual public Laxkit::Resourceable, virtual public Value, vir
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
 	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 
+	virtual bool IsTemporary() { return ResourceOwner() == nullptr; }
+
 	//from Value:
 	virtual ObjectDef *makeObjectDef();
 	virtual Value *duplicate();
@@ -79,6 +79,8 @@ class PlainText : virtual public Laxkit::Resourceable, virtual public Value, vir
 	//from FunctionEvaluator:
 	virtual int Evaluate(const char *function,int len, ValueHash *context, ValueHash *pp, CalcSettings *settings,
 			             Value **value_ret, Laxkit::ErrorLog *log);
+
+	static void uniqueName(PlainText *obj);
 };
 
 

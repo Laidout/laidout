@@ -42,6 +42,7 @@
 #include "configured.h"
 #include "core/stylemanager.h"
 #include "core/utils.h"
+#include "dataobjects/datafactory.h"
 #include "filetypes/filters.h"
 #include "impositions/impositioneditor.h"
 #include "impositions/netimposition.h"
@@ -64,10 +65,6 @@
 ////for debugging below, uncomment here and below
 //#include <cairo/cairo-xlib.h>
 #endif
-
-//template implementations
-#include <lax/lists.cc>
-#include <lax/refptrstack.cc>
 
 
 using namespace Laxkit;
@@ -232,6 +229,7 @@ LaidoutApp::LaidoutApp()
 	LaxInterfaces::InterfaceManager *ifc = LaxInterfaces::InterfaceManager::GetDefault(true);
 	resourcemanager = ifc->GetResourceManager();
 	resourcemanager->inc_count();
+	InitializeResourceManager(resourcemanager);
 
 	colorManager = new ColorManager();
 	colorManager->AddSystem(Create_sRGB_System(true), true);

@@ -26,11 +26,12 @@
 #include "lcaptiondata.h"
 #include "ltextonpath.h"
 #include "lvoronoidata.h"
+#include "../language.h"
+
+#include "../core/plaintext.h"
 
 #include <lax/interfaces/interfacemanager.h>
-
-//template implementation:
-#include <lax/lists.cc>
+#include <lax/fileutils.h>
 
 #include <iostream>
 #define DBG
@@ -161,6 +162,24 @@ Laxkit::anObject *createVoronoiData(int p, Laxkit::anObject *refobj)
 }
 
 
+//---------------------------- PlainText --------------------------------
+
+//! For somedatafactory.
+Laxkit::anObject *createPlainText(int p, Laxkit::anObject *refobj)
+{
+	return new PlainText();
+}
+
+//! from file func for ResourceManager.
+Laxkit::anObject *LoadPlainText(const char *file, Laxkit::Attribute *config)
+{
+	if (!file_exists(file, true, nullptr)) return nullptr;
+	PlainText *text = new PlainText();
+	if (text->LoadFromFile(file) == 0) return text;
+	text->dec_count();
+	return nullptr;
+}
+
 //---------------------------- SomeDataFactory Setup --------------------------
 
 
@@ -169,6 +188,7 @@ void InitializeDataFactory()
 	InterfaceManager *imanager=InterfaceManager::GetDefault(true);
 	ObjectFactory *lobjectfactory = imanager->GetObjectFactory();
 
+	// drawable object types
 	lobjectfactory->DefineNewObject(LAX_GROUPDATA,       "Group",           createGroup,            NULL, 0);
 	lobjectfactory->DefineNewObject(LO_MYSTERYDATA,      "MysteryData",     createMysteryData,      NULL, 0);
 	lobjectfactory->DefineNewObject(LAX_ELLIPSEDATA,     "EllipseData",     createLEllipseData,     NULL, 0);
@@ -183,11 +203,22 @@ void InitializeDataFactory()
 	lobjectfactory->DefineNewObject(LAX_TEXTONPATH,      "TextOnPath",      createLTextOnPath,      NULL, 0);
 	lobjectfactory->DefineNewObject(LAX_VORONOIDATA,     "VoronoiData",     createVoronoiData,      NULL, 0);
 
+	// other data types
+	lobjectfactory->DefineNewObject(LO_PLAINTEXT,        "PlainText",       createPlainText,      NULL, 0);
+
 	 //experimental:
 	// ...
 
 
 	DBG lobjectfactory->dump_out(stderr,0);
+}
+
+
+//-------------------------- ResourceManager ---------------------------------------
+
+void InitializeResourceManager(Laxkit::ResourceManager *resourcemanager)
+{
+	resourcemanager->AddResourceType("PlainText", _("Plain text"), _("Plain, unformatted text"), nullptr /*icon*/, nullptr, LoadPlainText);
 }
 
 

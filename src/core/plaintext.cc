@@ -19,6 +19,8 @@
 
 #include <lax/strmanip.h>
 #include <lax/fileutils.h>
+#include <lax/interfaces/interfacemanager.h>
+
 #include <sys/times.h>
 
 
@@ -33,19 +35,19 @@ namespace Laidout {
 static struct tms tmptimestruct;
 
 
-//------------------------------ FileRef -------------------------------
-/*! \class FileRef 
- * \ingroup misc
- * \brief Reference counted pointer to an external file.
- *
- * At some point, this class may become the basis for an external link manager.
- * Then again, it might not.
- *
- * \todo put me somewhere useful, or remove me!!
- */
-
-FileRef::FileRef(const char *file)
-{ filename=newstr(file); }
+// //------------------------------ FileRef -------------------------------
+// /*! \class FileRef 
+//  * \ingroup misc
+//  * \brief Reference counted pointer to an external file.
+//  *
+//  * At some point, this class may become the basis for an external link manager.
+//  * Then again, it might not.
+//  *
+//  * \todo put me somewhere useful, or remove me!!
+//  */
+// 
+// FileRef::FileRef(const char *file)
+// { filename=newstr(file); }
 
 //------------------------------ PlainText ------------------------------
 
@@ -76,10 +78,8 @@ FileRef::FileRef(const char *file)
 PlainText::PlainText()
 {
 	thetext      = nullptr;
-	name         = nullptr;
 	filename     = nullptr;
-	owner        = nullptr;
-	texttype     = TEXT_Temporary;
+	texttype     = TEXT_Plain;
 	textsubtype  = -1;
 	lastmodtime  = 0;
 	lastfiletime = 0;
@@ -96,8 +96,6 @@ PlainText::~PlainText()
 {
 	if (thetext) delete[] thetext;
 	if (filename) delete[] filename;
-	if (name) delete[] name;
-	if (owner) owner->dec_count();
 }
 
 const char *PlainText::Filename()
@@ -144,11 +142,12 @@ int PlainText::LoadFromFile(const char *fname)
 	if (!filetext) return 1;
 	
 	makestr(filename, fname);
-	makestr(name, lax_basename(fname));
-	prependstr(name, _("file: "));
+	if (isblank(Id())) {
+		Id(lax_basename(fname));
+	}
 	if (thetext) delete[] thetext;
 	thetext = filetext;
-	texttype = TEXT_Temporary;
+	texttype = TEXT_Plain;
 	textsubtype = -1;
 	lastmodtime = lastfiletime = times(&tmptimestruct);
 	loaded = true;
@@ -222,7 +221,7 @@ void PlainText::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *contex
 	}
 	fprintf(f,"%stexttype %d\n",spc,texttype);
 	fprintf(f,"%stextsubtype %d\n",spc,textsubtype);
-	if (!isblank(name)) fprintf(f,"%sname %s\n",spc,name);
+	if (!isblank(Id())) fprintf(f,"%sname %s\n",spc,Id());
 	if (!isblank(Filename())) fprintf(f,"%sfilename %s\n",spc,Filename());
 	else if (thetext) {
 		fprintf(f,"%stext \\\n",spc);
@@ -237,8 +236,9 @@ void PlainText::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext
 	for (int c=0; c<att->attributes.n; c++)  {
 		nme  =att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
+
 		if (!strcmp(nme,"name")) {
-			makestr(name,value);
+			if (!isblank(value)) Id(value);
 		} else if (!strcmp(nme,"text")) {
 			makestr(thetext,value);
 		} else if (!strcmp(nme,"filename")) {
@@ -255,7 +255,7 @@ Value *PlainText::duplicate()
 	PlainText *obj = new PlainText(thetext);
 	obj->texttype = texttype;
 	obj->textsubtype = textsubtype;
-	makestr(obj->name, name);
+	//makestr(obj->name, name);
 	return obj;
 }
 
@@ -303,6 +303,23 @@ Value *PlainText::dereference(const char *extstring, int len)
 	
 	return nullptr;
 }
+
+
+//------------- static func:
+
+//! Make obj->name be a new name not found in the project.
+void PlainText::uniqueName(PlainText *obj)
+{
+	if (!obj) return;
+	if (isblank(obj->Id())) obj->Id(_("Text object"));
+
+	LaxInterfaces::InterfaceManager *imanager = LaxInterfaces::InterfaceManager::GetDefault(true);
+	ResourceManager *rm = imanager->GetResourceManager();
+	ResourceType *objs = rm->FindType("PlainText");
+	if (!objs) return; //no PlainText resources yet, so name definitely unique
+	objs->MakeNameUnique(obj->object_idstr);
+}
+
 
 } //namespace Laidout
 

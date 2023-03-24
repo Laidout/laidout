@@ -17,7 +17,7 @@
 
 
 #include <lax/interfaces/somedatafactory.h>
-
+#include <lax/resources.h>
 
 namespace Laidout {
 
@@ -25,12 +25,14 @@ namespace Laidout {
 
 enum LaidoutDataObjects {
 	LO_MYSTERYDATA = LaxInterfaces::LAX_DATA_MAX,
+	LO_PLAINTEXT,
 
 	LO_DATA_MAX
 };
 
 void InitializeDataFactory();
 
+void InitializeResourceManager(Laxkit::ResourceManager *resourcemanager);
 
 
 

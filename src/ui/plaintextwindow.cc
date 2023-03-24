@@ -26,10 +26,7 @@
 #include "../language.h"
 #include "../laidout.h"
 
-
-#define DBG
-#include <iostream>
-using namespace std;
+#include <lax/debug.h>
 
 
 using namespace Laxkit;
@@ -45,6 +42,7 @@ namespace Laidout {
 #define TEXT_Save_With_Project -4
 #define TEXT_Save_Internally   -5
 #define TEXT_Save_In_File      -6
+#define TEXT_Duplicate         -7
 
 
 //------------------------------ PlainTextWindow -------------------------------
@@ -81,28 +79,34 @@ PlainTextWindow::~PlainTextWindow()
 //! Update window controls to reflect current state of textobj.
 void PlainTextWindow::updateControls()
 {
-	//***
-	cout <<"Must implement PlainTextWindow::updateControls()!!"<<endl;
+	LineInput *inp = dynamic_cast<LineInput *>(findChildWindowByName("nameinput"));
+	if (inp) {
+		const char *str = (textobj 
+							? (textobj->IsTemporary() ? _("(temporary)") : textobj->Id())
+							: NULL);
+		inp->SetText(str);
+	}
 }
 
 //! Make obj->name be a new name not found in the project.
 void PlainTextWindow::uniqueName(PlainText *obj)
 {
-	if (isblank(obj->name)) makestr(obj->name, obj->Id());
-	if (isblank(obj->name)) makestr(obj->name,_("Text object"));
+	if (obj) PlainText::uniqueName(obj);
+	//if (isblank(obj->Id())) obj->Id(_("Text object"));
 
-	InterfaceManager *imanager = InterfaceManager::GetDefault(true);
-	ResourceManager *rm = imanager->GetResourceManager();
-	ResourceType *objs = rm->FindType("PlainText");
-	if (!objs) return; //no PlainText resources yet, so name definitely unique
-	objs->MakeNameUnique(obj->name);
+	//InterfaceManager *imanager = InterfaceManager::GetDefault(true);
+	//ResourceManager *rm = imanager->GetResourceManager();
+	//ResourceType *objs = rm->FindType("PlainText");
+	//if (!objs) return; //no PlainText resources yet, so name definitely unique
+	//objs->MakeNameUnique(obj->object_idstr);
 }
 
 int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 {
-	DBG cerr <<"plaintext message: "<<(mes?mes:"(some event)")<<endl;
+	//DBG cerr <<"plaintext message: "<<(mes?mes:"(some event)")<<endl;
 
 	if (!strcmp(mes,"openPopup")) {
+		// returned from file open dialog
 		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
 		if (!s || !s->str) return 1;
 
@@ -110,12 +114,13 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 		PlainText *newobj = new PlainText();
 		newobj->Id("PlainText");
 		if (newobj->LoadFromFile(s->str)==0) {
-			newobj->texttype = TEXT_Note;
+			newobj->texttype = TEXT_Plain;
+			uniqueName(newobj);
 			UseThis(newobj);
 
 			InterfaceManager *imanager = InterfaceManager::GetDefault(true);
 			ResourceManager *rm = imanager->GetResourceManager();
-			rm->AddResource("PlainText", newobj, nullptr, newobj->Id(), newobj->name, nullptr, s->str, nullptr);
+			rm->AddResource("PlainText", newobj, nullptr, newobj->Id(), newobj->Id(), nullptr, s->str, nullptr);
 		} // else failed to load, do not replace text object
 		newobj->dec_count(); //remove excess count
 
@@ -128,7 +133,7 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 		makestr(textobj->filename,s->str);
 		textobj->SaveText();// ***if save error, should notify something
 
-		if (isblank(textobj->name)) uniqueName(textobj);
+		if (isblank(textobj->Id())) uniqueName(textobj);
 
 		return 0;
 
@@ -154,19 +159,12 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 				 //If it is file text, then the project will save the file location, not the contents
 				if (dynamic_cast<Resource*>(textobj->ResourceOwner())) return 0; //already a resource
 
-				if (textobj->texttype==TEXT_Temporary) textobj->texttype = TEXT_Note;
-				if (isblank(textobj->name)) {
-					uniqueName(textobj);
-					LineInput *inp=dynamic_cast<LineInput *>(findChildWindowByName("nameinput"));
-					if (inp) {
-						const char *str=(textobj?(textobj->texttype==TEXT_Temporary?_("(temporary)"):textobj->name):NULL);
-						inp->SetText(str);
-					}
-				}
+				if (textobj->IsTemporary()) textobj->texttype = TEXT_Plain;
+				if (isblank(textobj->Id())) uniqueName(textobj);
 
 				InterfaceManager *imanager = InterfaceManager::GetDefault(true);
 				ResourceManager *rm = imanager->GetResourceManager();
-				rm->AddResource("PlainText", textobj, nullptr, textobj->Id(), textobj->name, nullptr, nullptr, nullptr);
+				rm->AddResource("PlainText", textobj, nullptr, textobj->Id(), textobj->Id(), nullptr, nullptr, nullptr);
 				updateControls();
 				return 0;
 
@@ -184,11 +182,23 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 				callSaveAs();
 				return 0;
 
+			} else if (i==TEXT_Duplicate) {
+				if (!textobj) return 0;
+				PlainText *obj = dynamic_cast<PlainText*>(textobj->duplicate());
+				
+				InterfaceManager *imanager = InterfaceManager::GetDefault(true);
+				ResourceManager *rm = imanager->GetResourceManager();
+				rm->AddResource("PlainText", obj, nullptr, obj->Id(), nullptr, nullptr, nullptr, nullptr);
+
+				UseThis(obj);
+				obj->dec_count();
+				return 0;
+
 			} else if (i==TEXT_Add_New) {
 				 //Create a new blank text object, push onto project, 
 				 //and make it the current one in editor
 				PlainText *obj=new PlainText();
-				obj->texttype=TEXT_Note;
+				obj->texttype=TEXT_Plain;
 
 				 //figure out a unique name
 				uniqueName(obj);
@@ -196,7 +206,7 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 				 //push object onto project
 				InterfaceManager *imanager = InterfaceManager::GetDefault(true);
 				ResourceManager *rm = imanager->GetResourceManager();
-				rm->AddResource("PlainText", obj, nullptr, obj->Id(), obj->name, nullptr, nullptr, nullptr);
+				rm->AddResource("PlainText", obj, nullptr, obj->Id(), nullptr, nullptr, nullptr, nullptr);
 				UseThis(obj);
 				obj->dec_count();
 				return 0;
@@ -204,7 +214,7 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 			} else if (i==TEXT_Delete_Current) {
 				 //if in project, remove from project
 				if (!textobj) return 0;
-				if (textobj->texttype==TEXT_Temporary) return 0;
+				if (textobj->IsTemporary()) return 0;
 
 				InterfaceManager *imanager = InterfaceManager::GetDefault(true);
 				ResourceManager *rm = imanager->GetResourceManager();
@@ -218,19 +228,25 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 			InterfaceManager *imanager = InterfaceManager::GetDefault(true);
 			ResourceManager *rm = imanager->GetResourceManager();
 			Resource *res = rm->FindResourceFromRID(i, "PlainText");
-			UseThis(dynamic_cast<PlainText*>(res->object));
+			if (res) {
+				PlainText *obj = dynamic_cast<PlainText*>(res->GetObject());
+				if (obj) UseThis(obj);
+				else {
+					DBGW("can't get PlainText resource object");
+				}
+			}
 		}
 		return 0;
 
 	} else if (!strcmp(mes,"whichtextbutton")) { 
 		MenuInfo *menu;
-		menu=new MenuInfo("Text Objects");
+		menu = new MenuInfo("Text Objects");
 
 		 //---add textobject list, info2 in return event is Resource object_id
 		InterfaceManager *imanager = InterfaceManager::GetDefault(true);
 		ResourceManager *rm = imanager->GetResourceManager();
 		menu->AddSep(_("Project texts"));
-		rm->ResourceMenu("PlainText", false, menu, 0, 0);
+		rm->ResourceMenu("PlainText", false, menu, 0, 0, textobj);
 
 		int currentobj=-1;
 		int isprojects=0;
@@ -249,16 +265,16 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 		 //temporary indicator only if text IS temporary..
 		//if (!isprojects) menu->AddItem(_("(Temporary)"),TEXT_Select_Temp,LAX_ISTOGGLE|LAX_OFF|(isprojects?0:LAX_CHECKED));
-		if (!isprojects) menu->AddItem(_("Save with project"),TEXT_Save_With_Project, LAX_OFF);
-		if (isinternal) menu->AddItem(_("Save in its own file"),   TEXT_Save_In_File,LAX_OFF);
+		if (!isprojects) menu->AddToggleItem(_("Save with project"),TEXT_Save_With_Project, 0,false);
+		if (isinternal)  menu->AddToggleItem(_("Save in text file..."),   TEXT_Save_In_File,0,false);
 		else {
-			char *str=new char[strlen(_("Save in file: "))+strlen(textobj->filename)+5];
-			sprintf(str,"%s %s",_("Save in file: "),textobj->filename);
-			menu->AddItem(str,   TEXT_Save_In_File,LAX_ISTOGGLE|LAX_OFF|LAX_CHECKED);
-			menu->AddItem(_("Save within project file"),   TEXT_Save_Internally,LAX_ISTOGGLE|LAX_OFF);
+			char *str = new char[strlen(_("Save in file: "))+strlen(textobj->filename)+5];
+			sprintf(str,"%s %s",_("Save in file: "), textobj->filename);
+			menu->AddToggleItem(str,   TEXT_Save_In_File, 0, true);
+			menu->AddToggleItem(_("Save within project file"), TEXT_Save_Internally, 0, false);
 		}
 
-		if (currentobj>=0) menu->menuitems.e[currentobj]->state|=LAX_CHECKED;
+		if (currentobj>=0) menu->menuitems.e[currentobj]->state |= LAX_CHECKED;
 
 		 //-----further text object operations
 		//if (laidout->interpreters.n) {
@@ -272,8 +288,11 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 		//	menu->EndSubMenu();
 		//}
 		menu->AddSep();
-		menu->AddItem(_("Add new to project"), TEXT_Add_New);
-		if (isprojects) menu->AddItem(_("Remove current"), TEXT_Delete_Current);
+		menu->AddItem(_("New text object"), TEXT_Add_New);
+		if (isprojects) {
+			menu->AddItem(_("Duplicate current"), TEXT_Duplicate);
+			menu->AddItem(_("Remove current"), TEXT_Delete_Current);
+		}
 
 
 		 //create the actual popup menu...
@@ -336,12 +355,14 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 	} else if (!strcmp(mes,"nameinput")) { 
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
 		DBG cerr<<"plaintextwindow nameinput update "<<s->info1<<endl;
+
 		if (!textobj) return 0;
+
 		int i=s->info1;
 		if (i==1 || i==3) { //focus left or enter pressed for nameinput
 			LineInput *inp=dynamic_cast<LineInput *>(findChildWindowByName("nameinput"));
 			if (!inp) return 0;
-			makestr(textobj->name,inp->GetCText());
+			textobj->Id(inp->GetCText());
 		}
 	}
 	return 1;
@@ -396,7 +417,7 @@ int PlainTextWindow::init()
 
 	//-----------textobject name edit
 	LineInput *nameinput=NULL;
-	const char *str=(textobj?(textobj->texttype==TEXT_Temporary?_("(temporary)"):textobj->name):NULL);
+	const char *str=(textobj?(textobj->IsTemporary() ? _("(temporary)"):textobj->Id()):NULL);
 	last=nameinput=new LineInput(this,"nameinput",NULL,
 						0, 0,0,0,0,0, 
 						last,object_id,"nameinput",
@@ -414,19 +435,19 @@ int PlainTextWindow::init()
 
 
 	 //--------open
-	last=ibut=new Button(this,"open",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"open",-1,
+	last=ibut=new Button(this,"open",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"open",-1,
 						 _("Open"),NULL,laidout->icons->GetIcon("Open"));
 	ibut->tooltip(_("Open a file from disk"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	 //--------save
-	last=ibut=new Button(this,"save",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"save",-1,
+	last=ibut=new Button(this,"save",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"save",-1,
 						 _("Save"),NULL,laidout->icons->GetIcon("Save"));
 	ibut->tooltip(_("Save the current text"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	 //--------apply
-	last=ibut=new Button(this,"apply",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"apply",-1,
+	last=ibut=new Button(this,"apply",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"apply",-1,
 						 _("Apply"),NULL,laidout->icons->GetIcon("ApplyText"));
 	ibut->tooltip(_("Syncronize the text object with the text in the editor\n"
 				    "This should update any objects that depend on the current\n"
@@ -434,7 +455,7 @@ int PlainTextWindow::init()
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	 //--------run
-	last=ibut=new Button(this,"Run",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"run",-1,
+	last=ibut=new Button(this,"Run",NULL,IBUT_ICON_ONLY|IBUT_FLAT, 0,0,0,0,0, last,object_id,"run",-1,
 						 _("Run"),NULL,laidout->icons->GetIcon("Run"));
 	ibut->tooltip(_("Run this text as a script"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
@@ -455,19 +476,13 @@ int PlainTextWindow::UseThis(PlainText *txt)
 	if (textobj) textobj->inc_count();
 	if (!textobj) textobj=new PlainText();
 
-	//***update edit from textobj
-	cout <<"*******need to update the controls in PlainTextWindow!!"<<endl;
-
-	MultiLineEdit *edit=dynamic_cast<MultiLineEdit *>(findChildWindowByName("plain-text-edit"));
+	MultiLineEdit *edit = dynamic_cast<MultiLineEdit *>(findChildWindowByName("plain-text-edit"));
 	if (edit) {
 		edit->SetText(textobj->GetText());
 	}
-	LineInput *inp=dynamic_cast<LineInput *>(findChildWindowByName("nameinput"));
-	if (inp) {
-		const char *str=(textobj?(textobj->texttype==TEXT_Temporary?_("(temporary)"):textobj->name):NULL);
-		inp->SetText(str);
-	}
 
+	updateControls();
+	
 	return 0;
 }
 
@@ -478,6 +493,10 @@ void PlainTextWindow::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *
 
 Laxkit::Attribute *PlainTextWindow::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
 {
+	if (textobj) {
+		if (!att) att = new Attribute();
+		att->push("textobject", textobj->Id());
+	}
     return anXWindow::dump_out_atts(att,what,context);
 }
 
