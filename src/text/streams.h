@@ -10,16 +10,28 @@
 // version 3 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2012 by Tom Lechner
+// Copyright (C) 2023-present by Tom Lechner
 //
 #ifndef STREAMS_H
 #define STREAMS_H
 
 
 #include <lax/resources.h>
+#include <lax/interfaces/pathinterface.h>
+#include <lax/boxarrange.h>
+#include <lax/transformmath.h>
 
+#include "../calculator/values.h"
+#include "../dataobjects/drawableobject.h"
+#include "../core/plaintext.h"
+#include "../filetypes/filefilters.h"
 
 namespace Laidout {
+
+
+class Stream;
+class StreamCache;
+class StreamChunk;
 
 
 //------------------------------ TextEffect ---------------------------------
@@ -41,15 +53,15 @@ class TextUnderline : public TextEffect
 	int wordunderline; //nonzero if so
 	int underlinestyle;
 	double offset; //% of fontsize off baseline, either underline or strikethrough
-	LineStyle *linestyle;
+	LaxInterfaces::LineStyle *linestyle;
 };
 
 class DropShadowEffect : public TextEffect
 {
   public:
-	flatvector direction;
+	Laxkit::flatvector direction;
 	double blur_amount;
-	Color color; //color or color diff
+	Laxkit::Color color; //color or color diff
 };
 
  /*! \class CharReplacement
@@ -111,7 +123,7 @@ class TabStopInfo : public Value
 
 	int positiontype; //automatic position, definite position, path
 	double position; //if not path
-	Laxkit::PathsData *path = nullptr; //we assume this is a generally downward path
+	LaxInterfaces::PathsData *path = nullptr; //we assume this is a generally downward path
 
 	TabStopInfo *next = nullptr;
 
@@ -128,7 +140,7 @@ class TabStops : public Value
   public:
 	Laxkit::RefPtrStack<TabStopInfo> stops;
 
-	int ComputeAt(double height, PtrStack<TabStopInfo> &tabstops); //for path based tab stops, update tabstops at this height in path space
+	int ComputeAt(double height, Laxkit::PtrStack<TabStopInfo> &tabstops); //for path based tab stops, update tabstops at this height in path space
 };
 
 
@@ -138,9 +150,10 @@ class TabStops : public Value
 class Style : public ValueHash, public Laxkit::Resourceable
 {
   public:
-    Style *parent; // if non-null, this MUST be a project resource
+    Style *parent; // if non-null, this MUST be EITHER a project resource OR a temporary StreamElement owned Style
 
     Style();
+    Style(const char *new_name);
     virtual ~Style();
     virtual const char *whattype() { return "Style"; }
 
@@ -149,7 +162,7 @@ class Style : public ValueHash, public Laxkit::Resourceable
     virtual int MergeFrom(Style *s); //all in s override *this
     virtual Style *Collapse();
 
-	virtual void dump_in_atts (Attribute *att,int flag,Laxkit::DumpContext *context);
+	virtual void dump_in_atts (Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
 	virtual void dump_out (FILE *f,int indent,int what,Laxkit::DumpContext *context);
 };
@@ -157,7 +170,7 @@ class Style : public ValueHash, public Laxkit::Resourceable
 
 //------------------------------ StreamElement ---------------------------------
 
-class StreamElement : public LaxAttributes::DumpUtility
+class StreamElement //: public Laxkit::DumpUtility
 {
   public:
 	bool style_is_temp; // false means it is a project resource
@@ -166,14 +179,16 @@ class StreamElement : public LaxAttributes::DumpUtility
 	//int type_hint; //like pure char, pure pp, container type
 
 	StreamElement *treeparent = nullptr;
-	PtrStack<StreamElement> kids;
+	Laxkit::PtrStack<StreamElement> kids;
 
-	PtrStack<StreamChunk> chunks; // has chunks only when we are a leaf element
+	Laxkit::PtrStack<StreamChunk> chunks; // has chunks only when we are a leaf element
 
 	StreamElement(); //init with an empty new Style
 	StreamElement(StreamElement *nparent, Style *nstyle);
 	virtual ~StreamElement();
     virtual const char *whattype() { return "StreamElement"; }
+
+    bool dump_in_att_stream(Laxkit::Attribute *att, Laxkit::DumpContext *context);
 };
 
 
@@ -207,18 +222,21 @@ class StreamChunk
 	virtual const char *whattype() { return "StreamChunk"; }
 
 	virtual int NumBreaks() = 0;
-	virtual int BreakInfo(int *type) = 0;
-	virtual int Type() = 0;
+	virtual int BreakInfo(int index) = 0;
+	virtual int Type() = 0; //see StreamChunkTypes
 
 	virtual StreamChunk *AddAfter(StreamChunk *chunk);
 	virtual void AddBefore(StreamChunk *chunk);
+
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context) = 0;
+	virtual void dump_in_atts (Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context) = 0;
 };
 
 
 //------------------------------ StreamBreak ---------------------------------
 
-enum class StreamBreakTypes {
-	BREAK_Unknown,
+enum class StreamBreakTypes : int {
+	BREAK_Unknown = 0,
     BREAK_Paragraph,
     BREAK_Column,
     BREAK_Section,
@@ -231,17 +249,19 @@ enum class StreamBreakTypes {
 
 class StreamBreak : public StreamChunk
 {
+  public:
 	int break_type; //see StreamBreakType. such as: newline (paragraph), column, section, page
 
-	StreamBreak (int ntype, StreamElement *parent_el) : StreamChunk(parent_el) { type = ntype; }
+	StreamBreak (int ntype, StreamElement *parent_el) : StreamChunk(parent_el) { break_type = ntype; }
 	virtual const char *whattype() { return "StreamBreak"; }
 
+	// StreamChunk overrides:
 	virtual int NumBreaks() { return 0; }
-	virtual int BreakInfo(int *type) { return 0; }
+	virtual int BreakInfo(int type) { return 0; }
 	virtual int Type() { return CHUNK_Break; }
 
 	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
-	virtual void dump_in_atts (Attribute *att,int flag,Laxkit::DumpContext *context);
+	virtual void dump_in_atts (Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 
@@ -252,16 +272,17 @@ class StreamImage : public StreamChunk
   public:
 	DrawableObject *img;
 
-	StreamImage(,StreamElement *parent_el = nullptr);
-	StreamImage(DrawableObject *nimg,StreamElement *parent_el);
+	StreamImage(StreamElement *parent_el = nullptr);
+	StreamImage(DrawableObject *nimg, StreamElement *parent_el);
 	virtual ~StreamImage();
 	virtual const char *whattype() { return "StreamImage"; }
+
 	virtual int NumBreaks() { return 0; }
-	virtual int BreakInfo(int *type) { return 0; }
+	virtual int BreakInfo(int type) { return 0; }
 	virtual int Type() { return CHUNK_Image; }
 
 	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
-	virtual void dump_in_atts (Attribute *att,int flag,Laxkit::DumpContext *context);
+	virtual void dump_in_atts (Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 
@@ -283,19 +304,21 @@ class StreamText : public StreamChunk
 	virtual int Type() { return CHUNK_Text; }
 
 	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
-	virtual void dump_in_atts (Attribute *att,int flag,Laxkit::DumpContext *context);
+	virtual void dump_in_atts (Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
 
 //------------------------------ StreamImporter ---------------------------------
 
-class StreamImportData : Laxkit::anObject
+class StreamImportData : public Laxkit::anObject
 {
   public:
 	ImportFilter *importer = nullptr;
-	TextObject *text_object = nullptr;
-	File *file = nullptr;
-}
+	PlainText *text_object = nullptr;
+	FileValue *file = nullptr;
+
+	virtual ~StreamImportData();
+};
 
 
 class StreamImporter : public FileFilter, public Value
@@ -306,7 +329,11 @@ class StreamImporter : public FileFilter, public Value
 
   	virtual const char *whattype() { return "StreamImporter"; }
 	virtual const char *FileType(const char *first100bytes) = 0;
-	virtual int In(const char *file, Laxkit::anObject *context, Laxkit::ErrorLog &log, const char *filecontents,int contentslen) = 0;
+	virtual int In(Stream *stream, const char *file, Laxkit::DumpContext *context, const char *filecontents,int contentslen) = 0;
+
+	//Value overrides:
+	virtual Value *duplicate();
+ 	virtual ObjectDef *makeObjectDef(); //calling code responsible for ref
 };
 
 
@@ -314,6 +341,10 @@ class StreamImporter : public FileFilter, public Value
 
 class Stream : public Laxkit::anObject, public Laxkit::DumpUtility
 {
+  protected:
+  	void EstablishDefaultStyle();
+  	void dump_out_recursive(Laxkit::Attribute *att, StreamElement *element, Laxkit::DumpContext *context);
+
   public:
 	StreamImportData *import_data; //relating to if stream is tied to either a file or a TextObject and run through an importer
 
@@ -325,9 +356,15 @@ class Stream : public Laxkit::anObject, public Laxkit::DumpUtility
 	Stream();
 	virtual ~Stream();
 
-	virtual void dump_in_atts (Attribute *att,int flag,Laxkit::DumpContext *context);
+	virtual void dump_in_atts (Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
 	virtual void dump_out (FILE *f,int indent,int what,Laxkit::DumpContext *context);
+
+	virtual int ImportMarkdown(const char *text, int n, StreamChunk *addto, bool after, Laxkit::ErrorLog *log);
+	virtual int ImportText(const char *text, int n, StreamChunk *addto, bool after, Laxkit::ErrorLog *log);
+	virtual int ImportXMLFile(const char *file, Laxkit::ErrorLog *log);
+	virtual int ImportXML(const char *value, int len, Laxkit::ErrorLog *log);
+	virtual void ImportXMLAtt(Laxkit::Attribute *att, StreamChunk *&last_chunk, StreamElement *last_style_el, Laxkit::ErrorLog *log);
 };
 
 
@@ -364,18 +401,18 @@ class StreamAttachment : public Laxkit::RefCounted
 class StreamCache : public Laxkit::SquishyBox, public Laxkit::RefCounted
 {
   public:
-	clock_t modtime;
-	StreamCache *next, *prev;
+	clock_t modtime = 0;
+	StreamCache *next = nullptr, *prev = nullptr;
 
-	StreamElement *style;
-	StreamChunk *chunk;
-	long offset; //how many breaks into chunk to start
-	long len; //how many breaks long in chunk is this cache
+	StreamElement *style = nullptr;
+	StreamChunk *chunk = nullptr;
+	long offset = 0; //how many breaks into chunk to start
+	long len = 0; //how many breaks long in chunk is this cache
 
-	Affine transform;
+	Laxkit::Affine transform;
 
 	StreamCache();
-	StreamCache(StreamChuck *ch, long noffset, long nlen);
+	StreamCache(StreamChunk *ch, long noffset, long nlen);
 	virtual ~StreamCache();
 };
 
