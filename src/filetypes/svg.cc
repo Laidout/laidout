@@ -39,8 +39,8 @@
 #include "../core/guides.h"
 #include "../impositions/netimposition.h"
 
-//template implementation:
-#include <lax/refptrstack.cc>
+////template implementation:
+//#include <lax/refptrstack.cc>
 
 #include <iostream>
 #define DBG 
