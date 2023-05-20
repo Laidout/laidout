@@ -395,6 +395,7 @@ int ImportImagesDialog::init()
 	AddSpacer(linpheight,0,0,50, linpheight,0,0,50);
 	last=check=new CheckBox(this,"perpageexactly",NULL,CHECK_LEFT, 0,0,0,0,0, 
 						last,object_id,"perpageexactly", _("Exactly this many:"),5,5);
+	check->tooltip(_("Append \"/n\" for every nth, so \"1/2\" means import one image every 2 pages"));
 	if (settings->perpage>=0) {
 		check->State(LAX_ON); 
 		sprintf(str,"%d",settings->perpage);
