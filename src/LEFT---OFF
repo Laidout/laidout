@@ -1777,7 +1777,9 @@ paperinterface: papergroupinterface papergroup interface
     laidoutrc needs list of custom paper sizes
     need reusable resource [ name ][load][save][dup][delete]
     papergroups:
-      Load, save, add, delete paper groups..
+	  renaming.. resources should default to obj->Id()?
+      Load(DONE), save(DONE), add(DONE), delete paper groups..
+	  PaperGroup should be a Value
       work out scheme for resource ownership: they can be owned by:
 
         1.DONE  Document: if no project, save with document by default
@@ -2262,7 +2264,7 @@ lgm 2019 feedback and ideas:
     old path: _____     new path: _____
   method to collect all used resources of a doc for distribution
   be able to load old docs
-  from here on out, ensure backwards compatibility of files still works
+  from here on out, ensure backwards compatibility of files still works (at least loading, saving is stretch goal) 
     enhance mystery data to work with laidout data too?
   some kind of graphicsmagick LoadToMemory bug.. could be only on loading old file, bad config translation?
   out clicking from a dialog should probably destroy that dialog.. too easy to get buried confusedly in windows
@@ -2584,8 +2586,8 @@ resources:
     Palette
     Linestyle
     Fillstyle
-    PaperGroups
     PaperStyle
+    DONE PaperGroups
     DONE PlainTextObject
 
 when closing a document window, decide whether this removes access to it, or just the view to it
@@ -3094,7 +3096,7 @@ to be a decent editing platform, Laidout needs:
 
 ebook conversion, such as by importing from Project Gutenberg
 
-spell checker.. aspell? hunspell? nuspell?
+spell checker.. aspell (oldest, lgpl 2.1)? hunspell (used by libreoffice, firefox, lgpl 2.1)? nuspell (c++, lgpl 3.0)?
 
 
 ============== Future of Laidout ================
@@ -3298,4 +3300,4 @@ DONE layers palette Layers ObjectTree
   DONE flags, click to change: locked visible
   DONE edit colors not highlighting every other
 DONE bug: image properties layout for filename truncates
-
+DONE fix off by one error when importing "m/n" for every nth
