@@ -29,6 +29,7 @@
 #include "../language.h"
 
 #include "../core/plaintext.h"
+#include "../core/papersizes.h"
 
 #include <lax/interfaces/interfacemanager.h>
 #include <lax/fileutils.h>
@@ -180,6 +181,23 @@ Laxkit::anObject *LoadPlainText(const char *file, Laxkit::Attribute *config)
 	return nullptr;
 }
 
+
+//---------------------------- PaperGroup --------------------------------
+
+////! For somedatafactory.
+//Laxkit::anObject *createPaperGroup(int p, Laxkit::anObject *refobj)
+//{
+//	return new PaperGroup();
+//}
+
+//! For resourcemanager.
+Laxkit::anObject *createPaperGroup(Laxkit::Attribute *config)
+{
+	PaperGroup *pg = new PaperGroup();
+	if (config) pg->dump_in_atts(config, 0, nullptr);
+	return pg;
+}
+
 //---------------------------- SomeDataFactory Setup --------------------------
 
 
@@ -204,7 +222,7 @@ void InitializeDataFactory()
 	lobjectfactory->DefineNewObject(LAX_VORONOIDATA,     "VoronoiData",     createVoronoiData,      NULL, 0);
 
 	// other data types
-	lobjectfactory->DefineNewObject(LO_PLAINTEXT,        "PlainText",       createPlainText,      NULL, 0);
+	lobjectfactory->DefineNewObject(LO_PLAINTEXT,        "PlainText",       createPlainText,        NULL, 0);
 
 	 //experimental:
 	// ...
@@ -219,6 +237,7 @@ void InitializeDataFactory()
 void InitializeResourceManager(Laxkit::ResourceManager *resourcemanager)
 {
 	resourcemanager->AddResourceType("PlainText", _("Plain text"), _("Plain, unformatted text"), nullptr /*icon*/, nullptr, LoadPlainText);
+	resourcemanager->AddResourceType("PaperGroup", _("Paper Group"), nullptr /*desc*/, nullptr /*icon*/, createPaperGroup, nullptr /*file load func*/);
 }
 
 

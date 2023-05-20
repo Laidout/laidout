@@ -128,14 +128,13 @@ class PaperBoxData : public LaxInterfaces::SomeData
 
 
 //------------------------------------- PaperGroup --------------------------------------
-class PaperGroup : public ObjectContainer, public Laxkit::DumpUtility
+class PaperGroup : virtual public Laxkit::Resourceable, virtual public ObjectContainer, virtual public Laxkit::DumpUtility
 {
  public:
 	char *name;
 	char *Name;
 	char locked;
 	Laxkit::RefPtrStack<PaperBoxData> papers;
-	Laxkit::anObject *owner;
 
 	Group objs;
 

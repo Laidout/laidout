@@ -252,15 +252,6 @@ void Project::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 		}
 	}
 
-	if (papergroups.n) {
-		PaperGroup *pg;
-		for (int c=0; c<papergroups.n; c++) {
-			pg=papergroups.e[c];
-			fprintf(f,"%spapergroup %s\n",spc,(pg->name?pg->name:(pg->Name?pg->Name:"")));
-			pg->dump_out(f,indent+2,0,context);
-		}
-	}
-
 	if (docs.n) {
 		for (int c=0; c<docs.n; c++) {
 			fprintf(f,"%sDocument",spc);
@@ -330,10 +321,11 @@ void Project::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *
 			g->dec_count();   //remove extra first count
 
 		} else if (!strcmp(name,"papergroup")) {
-			PaperGroup *pg=new PaperGroup;
+			// provided for backwards compatibility. Normally these are in resources
+			PaperGroup *pg = new PaperGroup;
 			pg->dump_in_atts(att->attributes.e[c],flag,context);
 			if (isblank(pg->Name) && !isblank(value)) makestr(pg->Name,value);
-			papergroups.push(pg);
+			laidout->resourcemanager->AddResource("PaperGroup", pg, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
 			pg->dec_count();
 		}
 	}

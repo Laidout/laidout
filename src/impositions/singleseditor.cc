@@ -107,16 +107,21 @@ int SinglesEditor::init()
 	
 	InterfaceManager *imanager = InterfaceManager::GetDefault(true);
     ResourceManager *rm = imanager->GetResourceManager();
-    //MenuInfo *papergroup_menu = new MenuInfo("PaperGroups");
     MenuInfo *papergroup_menu = rm->ResourceMenu("PaperGroup", false, nullptr, 0, 0);
 
     if (papergroup_menu) {
 		AddWin(new MessageBar(this,"papergroup",nullptr,0, 0,0,0,0,0, _("Paper Group:")), 1,-1);
-
+		SliderPopup *groups = new SliderPopup(this, "papergroups",nullptr,
+				SLIDER_POP_ONLY, 0,0,0,0,0,
+				last, object_id, "papergroup",
+				papergroup_menu,1);
+		AddWin(groups,1, groups->win_w,0,0,50,0, 1.25 * textheight,0,0,50,0, -1);
 		AddNull();
-		AddVSpacer(textheight,0,0,50);
-		AddNull();
+    } else {
+    	AddWin(new MessageBar(this,"papergroup",nullptr,0, 0,0,0,0,0, _("Paper Group: default")), 1,-1);
     }
+	AddVSpacer(textheight,0,0,50);
+	AddNull();
 
 
 	 // -------------- Paper Size --------------------
@@ -280,8 +285,8 @@ int SinglesEditor::init()
 	AddNull();
 	
 
-
-
+	AddVSpacer(textheight,0,0,50);
+	AddNull();
 
 	
 	//------------------------------ final ok -------------------------------------------------------

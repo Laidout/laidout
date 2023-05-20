@@ -888,8 +888,7 @@ int Document::SaveACopy(const char *filename, int includelimbos,int includewindo
 //! Return 0 if saved, return nonzero if not saved.
 /*! Save as document file.
  *
- * If includelimbos, then also save laidout->project->papergroups,  
- * laidout->project->textobjects in addition to existing limbo objects.
+ * If includelimbos, then also save laidout->project->limbos.
  *
  * \todo *** only checks for saveas existence, does no sanity checking on it...
  * \todo  need to work out saving Specific project/no proj but many docs/single doc
@@ -954,15 +953,6 @@ int Document::Save(int includelimbos,int includewindows,ErrorLog &log, bool add_
 			fprintf(f,"limbo %s\n",(gg->id?gg->id:""));
 			//fprintf(f,"%s  object %s\n",spc,limbos.e(c)->whattype());
 			gg->dump_out(f,2,0,NULL);
-		}
-
-		if (laidout->project->papergroups.n) {
-			PaperGroup *pg;
-			for (int c=0; c<laidout->project->papergroups.n; c++) {
-				pg=laidout->project->papergroups.e[c];
-				fprintf(f,"papergroup %s\n",(pg->name?pg->name:(pg->Name?pg->Name:"")));
-				pg->dump_out(f,2,0,NULL);
-			}
 		}
 	}
 
@@ -1300,10 +1290,12 @@ void Document::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext 
 			g->dec_count();   //remove extra first count
 
 		} else if (!strcmp(nme,"papergroup")) {
-			PaperGroup *pg=new PaperGroup;
+			// provided for backwards compatibility. Normally these are in resources
+			PaperGroup *pg = new PaperGroup;
 			pg->dump_in_atts(att->attributes.e[c],flag,context);
 			if (isblank(pg->Name) && !isblank(value)) makestr(pg->Name,value);
-			laidout->project->papergroups.push(pg);
+			laidout->resourcemanager->AddResource("PaperGroup", pg, nullptr,
+							nullptr, nullptr, nullptr, nullptr, nullptr);
 			pg->dec_count();
 
 		} else if (!strcmp(nme,"iohints")) {

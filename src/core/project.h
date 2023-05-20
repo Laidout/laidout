@@ -46,7 +46,6 @@ class Project : public Laxkit::DumpUtility, public ObjectContainer
 
 	Laxkit::PtrStack<ProjDocument> docs;
 	Group limbos;
-	Laxkit::RefPtrStack<PaperGroup> papergroups;
 
 	Laxkit::Attribute iohints;
 

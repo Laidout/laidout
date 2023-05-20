@@ -66,10 +66,6 @@
 #include "../dataobjects/objectfilter.h"
 
 
-//template implementation:
-#include <lax/lists.cc>
-
-
 #include <iostream>
 using namespace std;
 
@@ -101,11 +97,16 @@ namespace Laidout {
 #define ACTION_AddNewLimbo             1999
 #define ACTION_RenameCurrentLimbo      1998
 #define ACTION_DeleteCurrentLimbo      1997
+#define ACTION_LimboMIN                1000
+#define ACTION_LimboMAX                1996
 
- //2000..2996 are paper groups (2000 is "default")
+ //2000..2996 are paper groups
+#define ACTION_Menu_Papergroup         1
 #define ACTION_AddNewPaperGroup        2999
 #define ACTION_RenameCurrentPaperGroup 2998
 #define ACTION_DeleteCurrentPaperGroup 2997
+#define ACTION_PaperGroupMIN           2000
+#define ACTION_PaperGroupMAX           2996
 
 #define ACTION_NewProject              3000
 #define ACTION_SaveProject             3001
@@ -931,187 +932,186 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 	} else if (!strcmp(mes,"rulercornermenu")) {
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
 
-		int i=s->info2;
+		int i = s->info2;
+		int info = s->info4;
 
+
+		if (info == 0) {
 		 //0-999 was document things
-		if (i>=0 && i<laidout->project->docs.n) {
-			UseThisDoc(laidout->project->docs.e[i]->doc);
-			return 0;
-		}
-		if (i==laidout->project->docs.n) {
-			UseThisDoc(NULL);
-			return 0;
-		}
-		if (i==ACTION_AddNewDocument) {
-			 //add new document
-			app->rundialog(new NewDocWindow(NULL,NULL,"New Document",0,0,0,0,0, 0));
-			return 0;
-
-		} else if (i==ACTION_RemoveCurrentDocument) {
-			 //Remove current document
-			if (!doc) { postmessage(_("How does one remove nothing?")); return 0; }
-			Document *sdoc=doc;
-			UseThisDoc(NULL);
-			laidout->project->Pop(sdoc);
-			postmessage(_("Document removed"));
-			return 0;
-
-		} else if (i==ACTION_EditImposition) {
-			app->addwindow(newImpositionEditor(NULL,"impose",_("Impose..."),this->object_id,"newimposition",
-						                        NULL, NULL, doc?doc->imposition:NULL, NULL, doc));
-			return 0;
-
-		} else if (i == ACTION_EditDocMeta) {
-			if (doc) {
-				if (!doc->metadata || doc->metadata->NumAtts() == 0) doc->InitMeta();
-				app->addwindow(new MetaWindow(NULL,"meta",_("Document Meta"),0, win_parent->object_id,"docMeta", doc->metadata));
-			} else {
-				postmessage(_("Missing doc!"));
+			
+			if (i>=0 && i<laidout->project->docs.n) {
+				UseThisDoc(laidout->project->docs.e[i]->doc);
+				return 0;
 			}
-			return 0;
-
-		} else if (i == ACTION_ShowInFilesystem) {
-			ExternalTool *tool = laidout->prefs.GetDefaultTool(ExternalToolCategory::FileBrowser);
-			if (doc && tool->Valid()) {
-				ErrorLog log;
-				PtrStack<char> files(LISTS_DELETE_Array);
-				files.push(newstr(doc->Saveas()));
-				tool->RunCommand(files, log, true);
+			if (i==laidout->project->docs.n) {
+				UseThisDoc(NULL);
+				return 0;
 			}
-			return 0;
-		}
-
-
-		 //1000..1999 are limbo related
-		if (i>=1000 && i<1000+laidout->project->limbos.n()) {
-			 //select a limbo
-			int l=i-1000;
-			if (limbo==laidout->project->limbos.e(l)) return 0;
-			for (int c=0; c<interfaces.n; c++) interfaces.e[c]->Clear();
-			clearCurobj();
-			limbo->dec_count();
-			limbo=dynamic_cast<Group *>(laidout->project->limbos.e(l));
-			limbo->inc_count();
-			needtodraw=1;
-			return 0;
-		}
-
-		if (i<2000) {
-			if (i==ACTION_AddNewLimbo) {
-				 //add new limbo with name such as "Limbo 3"
-				if (limbo) limbo->dec_count();
-				limbo=new Group;//group with 1 count
-				limbo->obj_flags |= OBJ_Unselectable|OBJ_Zone;
-				limbo->selectable = false;
-				char txt[30];
-				sprintf(txt,_("Limbo %d"),laidout->project->limbos.n()+1);
-				makestr(limbo->id,txt);
-				laidout->project->limbos.push(limbo);//adds 1 count
+			if (i==ACTION_AddNewDocument) {
+				 //add new document
+				app->rundialog(new NewDocWindow(NULL,NULL,"New Document",0,0,0,0,0, 0));
 				return 0;
 
-			} else if (i==ACTION_RenameCurrentLimbo) {
-				 //rename current limbo
-				app->rundialog(new InputDialog(NULL,"rename limbo",NULL,ANXWIN_CENTER,
+			} else if (i==ACTION_RemoveCurrentDocument) {
+				 //Remove current document
+				if (!doc) { postmessage(_("How does one remove nothing?")); return 0; }
+				Document *sdoc=doc;
+				UseThisDoc(NULL);
+				laidout->project->Pop(sdoc);
+				postmessage(_("Document removed"));
+				return 0;
+
+			} else if (i==ACTION_EditImposition) {
+				app->addwindow(newImpositionEditor(NULL,"impose",_("Impose..."),this->object_id,"newimposition",
+							                        NULL, NULL, doc?doc->imposition:NULL, NULL, doc));
+				return 0;
+
+			} else if (i == ACTION_EditDocMeta) {
+				if (doc) {
+					if (!doc->metadata || doc->metadata->NumAtts() == 0) doc->InitMeta();
+					app->addwindow(new MetaWindow(NULL,"meta",_("Document Meta"),0, win_parent->object_id,"docMeta", doc->metadata));
+				} else {
+					postmessage(_("Missing doc!"));
+				}
+				return 0;
+
+			} else if (i == ACTION_ShowInFilesystem) {
+				ExternalTool *tool = laidout->prefs.GetDefaultTool(ExternalToolCategory::FileBrowser);
+				if (doc && tool->Valid()) {
+					ErrorLog log;
+					PtrStack<char> files(LISTS_DELETE_Array);
+					files.push(newstr(doc->Saveas()));
+					tool->RunCommand(files, log, true);
+				}
+				return 0;
+			}
+
+
+			 //1000..1999 are limbo related
+			if (i >= ACTION_LimboMIN && i<ACTION_LimboMIN+laidout->project->limbos.n()) {
+				 //select a limbo
+				int l=i-ACTION_LimboMIN;
+				if (limbo==laidout->project->limbos.e(l)) return 0;
+				for (int c=0; c<interfaces.n; c++) interfaces.e[c]->Clear();
+				clearCurobj();
+				limbo->dec_count();
+				limbo=dynamic_cast<Group *>(laidout->project->limbos.e(l));
+				limbo->inc_count();
+				needtodraw=1;
+				return 0;
+			}
+
+			if (i < ACTION_PaperGroupMIN) {
+				if (i == ACTION_AddNewLimbo) {
+					 //add new limbo with name such as "Limbo 3"
+					if (limbo) limbo->dec_count();
+					limbo=new Group;//group with 1 count
+					limbo->obj_flags |= OBJ_Unselectable|OBJ_Zone;
+					limbo->selectable = false;
+					char txt[30];
+					sprintf(txt,_("Limbo %d"),laidout->project->limbos.n()+1);
+					makestr(limbo->id,txt);
+					laidout->project->limbos.push(limbo);//adds 1 count
+					return 0;
+
+				} else if (i==ACTION_RenameCurrentLimbo) {
+					 //rename current limbo
+					app->rundialog(new InputDialog(NULL,"rename limbo",NULL,ANXWIN_CENTER,
+									0,0,0,0,1,
+									NULL, object_id, "rename limbo",
+									limbo->id,
+									_("New name?"),
+									_("Rename"), 1,
+									_("Cancel"), 0));
+					return 0;
+
+				} else if (i==ACTION_DeleteCurrentLimbo) {
+					 //remove current limbo from project, and unlink it from this viewport
+					 //***other viewports might link to the limbo. In that case, each
+					 //   viewport must select another limbo before it stops using the deleted one..
+					 //   would be better to do search for any windows that use it and delete?
+					if (laidout->project->limbos.n()==1) {
+						postmessage(_("Cannot delete the only limbo."));
+						return 0;
+					}
+					int i=laidout->project->limbos.findindex(limbo);
+					if (i<0) return 0;
+					laidout->project->limbos.remove(i);
+					limbo->dec_count();
+					i=(i+1)%laidout->project->limbos.n();
+					limbo=dynamic_cast<Group *>(laidout->project->limbos.e(i));
+					limbo->inc_count();
+					needtodraw=1;
+					return 0;
+				}
+				return 0;
+			}
+
+			if (i==ACTION_AddNewPaperGroup) {
+				 //new papergroup
+				PaperGroup *pg = new PaperGroup;
+				pg->Name = new_paper_group_name();
+				laidout->resourcemanager->AddResource("PaperGroup", pg, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+				UseThisPaperGroup(pg);
+				return 0;
+
+			} else if (i==ACTION_RenameCurrentPaperGroup) {
+				 //rename current paper group
+				if (!papergroup) return 0;
+				app->rundialog(new InputDialog(NULL,"rename papergroup",NULL,ANXWIN_CENTER,
 								0,0,0,0,1,
-								NULL, object_id, "rename limbo",
-								limbo->id,
+								NULL, object_id, "rename papergroup",
+								papergroup->Name,
 								_("New name?"),
 								_("Rename"), 1,
 								_("Cancel"), 0));
 				return 0;
 
-			} else if (i==ACTION_DeleteCurrentLimbo) {
-				 //remove current limbo from project, and unlink it from this viewport
-				 //***other viewports might link to the limbo. In that case, each
-				 //   viewport must select another limbo before it stops using the deleted one..
-				 //   would be better to do search for any windows that use it and delete?
-				if (laidout->project->limbos.n()==1) {
-					postmessage(_("Cannot delete the only limbo."));
-					return 0;
-				}
-				int i=laidout->project->limbos.findindex(limbo);
-				if (i<0) return 0;
-				laidout->project->limbos.remove(i);
-				limbo->dec_count();
-				i=(i+1)%laidout->project->limbos.n();
-				limbo=dynamic_cast<Group *>(laidout->project->limbos.e(i));
-				limbo->inc_count();
+			} else if (i==ACTION_DeleteCurrentPaperGroup) {
+				 //delete current paper group
+				if (!papergroup) return 0;
+				laidout->resourcemanager->RemoveResource(papergroup, "PaperGroup");
+				UseThisPaperGroup(nullptr);
+
 				needtodraw=1;
 				return 0;
 			}
-			return 0;
-		}
 
-		 //2000-2999 was papergroup things
-		if (i>=2000 && i<=2000+laidout->project->papergroups.n) {
-			int p=i-2000;
-			 //select different paper group
-			p--; //so "default" translates to -1
-			if (p<0) UseThisPaperGroup(NULL); //***use the default one, must reinstall default!
-			else UseThisPaperGroup(laidout->project->papergroups.e[p]);
+
+			if (i==ACTION_SaveProject) {
+				 //save to the project file
+				cerr << " *** implement SaveProject!!"<<endl;
+			} else if (i==ACTION_NewProject) {
+				cerr << " *** implement NewProject!!"<<endl;
+			} else if (i==ACTION_ToggleSaveAsProject) {
+				if (laidout->IsProject()) {
+					 //make not a project, rulercornerbutton needs refreshing
+					makestr(laidout->project->dir,NULL);
+					makestr(laidout->project->filename,NULL);
+				} else {
+					 //save project as...
+					cerr << " *** implement ToggleProject on!!"<<endl;
+				}
+				ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); 
+				if (viewer) viewer->updateProjectStatus();
+				return 0;
+			}
+
+		} else if (info == ACTION_Menu_Papergroup) {
+			if (i == 0) UseThisPaperGroup(nullptr); // use the default paper group
+
+			// i is resource object_id
+			Resource *resource = laidout->resourcemanager->FindResourceFromRID(i, "PaperGroup");
+			if (!resource) return 0;
+
+			UseThisPaperGroup(dynamic_cast<PaperGroup*>(resource->object));
+
 			if (!strcmp(interfaces.e[0]->whattype(),"PaperInterface")) {
 				interfaces.e[0]->UseThis(papergroup);
 			}
 			return 0;
-
-		} else if (i==ACTION_AddNewPaperGroup) {
-			 //new papergroup
-			PaperGroup *pg=new PaperGroup;
-			pg->Name=new_paper_group_name();
-			laidout->project->papergroups.push(pg);
-			UseThisPaperGroup(pg);
-			return 0;
-
-		} else if (i==ACTION_RenameCurrentPaperGroup) {
-			 //rename current paper group
-			if (!papergroup) return 0;
-			int c=laidout->project->papergroups.findindex(papergroup);
-			if (c<0) return 0;
-			app->rundialog(new InputDialog(NULL,"rename papergroup",NULL,ANXWIN_CENTER,
-							0,0,0,0,1,
-							NULL, object_id, "rename papergroup",
-							papergroup->Name,
-							_("New name?"),
-							_("Rename"), 1,
-							_("Cancel"), 0));
-			return 0;
-
-		} else if (i==ACTION_DeleteCurrentPaperGroup) {
-			 //delete current paper group
-			if (!papergroup) return 0;
-			int c=laidout->project->papergroups.findindex(papergroup);
-			if (c<0) return 0;
-			if (laidout->project->papergroups.e[c]==papergroup) {
-				UseThisPaperGroup(NULL);
-				needtodraw=1;
-			}
-			laidout->project->papergroups.remove(c);
-
-			needtodraw=1;
-			return 0;
 		}
 
-
-		if (i==ACTION_SaveProject) {
-			 //save to the project file
-			cerr << " *** implement SaveProject!!"<<endl;
-		} else if (i==ACTION_NewProject) {
-			cerr << " *** implement NewProject!!"<<endl;
-		} else if (i==ACTION_ToggleSaveAsProject) {
-			if (laidout->IsProject()) {
-				 //make not a project, rulercornerbutton needs refreshing
-				makestr(laidout->project->dir,NULL);
-				makestr(laidout->project->filename,NULL);
-			} else {
-				 //save project as...
-				cerr << " *** implement ToggleProject on!!"<<endl;
-			}
-			ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); 
-			if (viewer) viewer->updateProjectStatus();
-			return 0;
-		}
-
-		//**** change zones? other menu?
 		return 0;
 
 	} else if (!strcmp(mes,"moveto")) {
@@ -2584,10 +2584,7 @@ int LaidoutViewport::isDefaultPapergroup(int yes_if_in_project)
 	if (papergroup && spread && spread->papergroup==papergroup) return 1;
 	if (!yes_if_in_project) return 0;
 
-	for (int c=0; c<laidout->project->papergroups.n; c++) {
-		if (laidout->project->papergroups.e[c]==papergroup) return 1;
-	}
-	return 0;
+	return laidout->resourcemanager->FindResource(papergroup, "PaperGroup") != nullptr;
 }
 
 
@@ -5059,28 +5056,11 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		c++;
 		if (laidout->project->limbos.n()>1) menu->AddItem(_("Delete current limbo"),ACTION_DeleteCurrentLimbo);
 
-		 //----add papergroup list, numbers starting at 2000...
-		PaperGroup *pg;
-		char *temp;
-		where=-1;
-		int defaultoption;
-		c=0;
+		 //----add papergroup list
 		menu->AddSep(_("Paper Groups"));
-		defaultoption=menu->AddItem(_("default"),2000,LAX_ISTOGGLE|LAX_OFF|(((LaidoutViewport *)viewport)->isDefaultPapergroup(0)?LAX_CHECKED:0),0)-1;
+		menu->AddToggleItem(_("default"), 0, ACTION_Menu_Papergroup, ((LaidoutViewport *)viewport)->isDefaultPapergroup(0));
 
-		for (c=0; c<laidout->project->papergroups.n; c++) {
-			pg=dynamic_cast<PaperGroup *>(laidout->project->papergroups.e[c]);
-			if (!isblank(pg->Name)) temp=pg->Name;
-			else if (!isblank(pg->name)) temp=pg->name;
-			else {
-				sprintf(txt,_("(Paper Group %d)"),c);
-				temp=txt;
-			}
-			pos=menu->AddItem(temp,2000+c+1,LAX_ISTOGGLE|LAX_OFF, 0)-1; 
-			if (pg==((LaidoutViewport *)viewport)->papergroup) where=pos;
-		}
-		 //viewport is using a non-default papergroup when where>=0
-		menu->menuitems.e[where>=0 ? where : defaultoption]->state|=LAX_CHECKED;
+		laidout->resourcemanager->ResourceMenu("PaperGroup", false, menu, 0, ACTION_Menu_Papergroup, ((LaidoutViewport *)viewport)->papergroup);
 
 		menu->AddItem(_("Add new paper group"),ACTION_AddNewPaperGroup);
 		if (where>=0) {
@@ -5112,7 +5092,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 						menu,1,
 						NULL,
 						TREESEL_LEFT);
-		popup->pad=5;
+		popup->pad = 5;
 		popup->Select(0);
 		popup->WrapToMouse(None);
 		app->rundialog(popup);

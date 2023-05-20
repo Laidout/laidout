@@ -28,8 +28,6 @@
 #include <lax/colors.h>
 #include <lax/interfaces/interfacemanager.h>
 
-//template implementation:
-#include <lax/lists.cc>
 
 using namespace Laxkit;
 using namespace LaxInterfaces;
@@ -51,21 +49,11 @@ namespace Laidout {
  */
 char *new_paper_group_name()
 {
-	static int num=1;
-	char *str;
-	int c;
-	while (1) {
-		str=new char[strlen(_("Paper Group %d"))+15];
-		sprintf(str,_("Paper Group %d"),num++);
-		for (c=0; c<laidout->project->papergroups.n; c++) {
-			if (laidout->project->papergroups.e[c]->Name) {
-				if (!strcmp(str,laidout->project->papergroups.e[c]->Name)) break;
-			} else if (!strcmp(str,laidout->project->papergroups.e[c]->name)) break;
-		}
-		if (c==laidout->project->papergroups.n) return str;
-		delete[] str;
-	}
-	return nullptr;
+	ResourceType *groups = laidout->resourcemanager->FindType("PaperGroup");
+	char *name = newstr(_("Paper Group"));
+	if (!groups || groups->NumResources() == 0) return name;
+	groups->MakeNameUnique(name);
+	return name;
 }
 
 //------------------------------------- PaperInterface --------------------------------------
@@ -158,6 +146,7 @@ enum PaperInterfaceActions {
 
 	PAPERI_first_pagesize   = 1000,
 	PAPERI_first_papergroup = 2000,
+	PAPERI_Menu_Papergroup  = 1,
 
 	PAPERI_MAX = 5000
 };
@@ -208,21 +197,9 @@ Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 		menu->AddSep();	
 	}
 
-	if (laidout->project->papergroups.n) {		
-		menu->AddItem(_("Paper Group"));
-		menu->SubMenu(_("Paper group"));
-		const char *nme;
-		PaperGroup *pg;
-		for (int c=0; c<laidout->project->papergroups.n; c++) {
-			pg=laidout->project->papergroups.e[c];
-			nme=pg->Name;
-			if (!nme) nme=pg->name;
-			if (!nme) nme=_("(unnamed)");
-			menu->AddItem(nme, PAPERI_first_papergroup+c,
-						  LAX_ISTOGGLE | LAX_OFF | (papergroup==pg ? LAX_CHECKED : 0));
-		}
-		menu->EndSubMenu();
-	}
+
+	laidout->resourcemanager->ResourceMenu("PaperGroup", false, menu, 0, PAPERI_Menu_Papergroup, papergroup);
+
 	menu->AddItem(_("New paper group..."),PAPERI_NewPaperGroup);
 	if (papergroup) menu->AddItem(_("Rename current paper group..."),PAPERI_RenamePaperGroup);
 	if (papergroup) menu->AddItem(_("Delete current paper group..."),PAPERI_DeletePaperGroup);
@@ -245,7 +222,21 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 
 	} else if (!strcmp(mes,"menuevent")) {
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
-		int i=s->info2; //id of menu item
+		int i = s->info2; //id of menu item
+		int info = s->info4;
+
+		if (info == PAPERI_Menu_Papergroup) {
+			Resource *resource = laidout->resourcemanager->FindResourceFromRID(i, "PaperGroup");
+			if (!resource) return 0;
+
+			Clear(nullptr);
+			papergroup = dynamic_cast<PaperGroup*>(resource->GetObject());
+			papergroup->inc_count();
+			LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
+			if (lvp) lvp->UseThisPaperGroup(papergroup);
+			needtodraw=1;
+			return 0;
+		}
 
 		if (     i == PAPERI_ToggleSnap
 			  || i == PAPERI_ToggleLabels
@@ -257,6 +248,7 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			  || i == PAPERI_CreateImposition
 			  || i == PAPERI_EditMargins
 			  || i == PAPERI_ToggleLandscape
+			  || i == PAPERI_DeletePaperGroup
 		   ) {
 			PerformAction(i);
 			return 0;
@@ -294,25 +286,13 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			}
 			return 0;
 
-		} else if (i >= PAPERI_first_papergroup && i < PAPERI_first_papergroup + 1000) {
-			//***is selecting a new papergroup from laidout->project->papergroups	
-			i-=PAPERI_first_papergroup;
-			if (i<0 || i>laidout->project->papergroups.n) return 0;
-
-			Clear(nullptr);
-			papergroup=laidout->project->papergroups.e[i];
-			papergroup->inc_count();
-			LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
-			if (lvp) lvp->UseThisPaperGroup(papergroup);
-			needtodraw=1;
-			return 0;
-
 		} else if (i == PAPERI_NewPaperGroup) {
 			// New paper group...
 			if (papergroup) papergroup->dec_count();
-			papergroup=new PaperGroup;
-			papergroup->name=new_paper_group_name();
-			laidout->project->papergroups.push(papergroup);
+			papergroup = new PaperGroup;
+			papergroup->name = new_paper_group_name();
+			laidout->resourcemanager->AddResource("PaperGroup", papergroup, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+			//papergroup->dec_count();
 			
 			LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
 			if (lvp) lvp->UseThisPaperGroup(papergroup);
@@ -786,9 +766,9 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 		DBG fp=dp->screentoreal(x,y);
 		DBG cerr <<"3 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 		if (!papergroup) {
-			papergroup=new PaperGroup;
-			papergroup->Name=new_paper_group_name();
-			laidout->project->papergroups.push(papergroup);
+			papergroup = new PaperGroup;
+			papergroup->Name = new_paper_group_name();
+			laidout->resourcemanager->AddResource("PaperGroup", papergroup, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
 			//papergroup->dec_count();
 			
 			DBG fp=dp->screentoreal(x,y);
@@ -1291,6 +1271,15 @@ int PaperInterface::PerformAction(int action)
 		for (int c=0; c<curboxes.n; c++) {
 			curboxes.e[c]->box->paperstyle->landscape(0);
 		}
+		return 0;
+
+	} else if (action == PAPERI_DeletePaperGroup) {
+		if (!papergroup) return 0;
+		laidout->resourcemanager->RemoveResource(papergroup, "PaperGroup");
+		Clear(nullptr);
+		LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
+		if (lvp) lvp->UseThisPaperGroup(nullptr);
+		needtodraw=1;
 		return 0;
 	}
 
