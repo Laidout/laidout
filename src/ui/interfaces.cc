@@ -35,6 +35,7 @@
 #include "../interfaces/animationinterface.h"
 #include "../interfaces/pathintersectionsinterface.h"
 #include <lax/interfaces/pressuremapinterface.h>
+#include <lax/interfaces/beznetinterface.h>
 
 
 #include "interfaces.h"
@@ -155,6 +156,12 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 
 		 //------Pressure Map
 		i = new PressureMapInterface(NULL,id++,NULL);
+		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+		existingpool->push(i);
+		i->dec_count();
+
+		//------BezNetInterface
+		i = new BezNetInterface(NULL,id++,NULL);
 		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 		existingpool->push(i);
 		i->dec_count();
