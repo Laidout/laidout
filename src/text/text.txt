@@ -23,6 +23,11 @@ menu:insert
   object reference -> limbo1->obj1, ...
   object copy (dup an existing object
 
+
+investigate
+-----------
+css parser ? https://github.com/Sigil-Ebook/cssparser/blob/master/cssparser/CSSParser.h
+
 math mode, basically latex formatting:
 -------------------------------------
 $blah blah$ set as span
