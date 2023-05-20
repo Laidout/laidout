@@ -784,7 +784,7 @@ int dumpInImages(ImportImageSettings *settings,
 		if (xywh) { delete[] xywh; xywh = NULL; }
 		if (numonpage == 0) {
 			if (settings->every_nth > 1) curpage += settings->every_nth;
-			curpage++;
+			else curpage++;
 		}
 	}
 
