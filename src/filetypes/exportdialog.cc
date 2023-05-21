@@ -21,6 +21,7 @@
 #include <lax/fileutils.h>
 #include <lax/laxutils.h>
 #include <lax/colorbox.h>
+#include <lax/debug.h>
 
 #include "../version.h"
 #include "../laidout.h"
@@ -29,10 +30,9 @@
 #include "../ui/externaltoolwindow.h"
 #include "exportdialog.h"
 
-
 #include <iostream>
 using namespace std;
-#define DBG 
+//#define DBG 
 
 
 using namespace Laxkit;
@@ -116,7 +116,10 @@ ExportDialog::ExportDialog(unsigned long nstyle,unsigned long nowner,const char 
 			if (config->papergroup) config->papergroup->inc_count(); 
 		}
 
-	} else config = new DocumentExportConfig(doc,limbo,file,NULL,layout,pmin,pmax,papergroup);
+	} else {
+		// generic config with no associated filter
+		config = new DocumentExportConfig(doc,limbo,file,NULL,layout,pmin,pmax,papergroup);
+	}
 
 	cur = pcur;
 
@@ -245,6 +248,7 @@ void ExportDialog::dump_in_atts(Attribute *att,int flag, Laxkit::DumpContext *co
 			char *oldfile = newstr(config->filename);
 			char *oldfiles = newstr(config->tofiles);
 			config->dump_in_atts(att->attributes.e[c], flag, context);
+			config->filter = filter; //just in case there's badly recorded autolaidoutrc
 			makestr(config->filename, oldfile);
 			makestr(config->tofiles, oldfiles);
 			delete[] oldfile;
@@ -329,15 +333,15 @@ int ExportDialog::init()
 	last=format=new SliderPopup(this, "format",NULL,SLIDER_LEFT|SLIDER_POP_ONLY, 0,0,0,0,1, last, object_id, "format",NULL,0);
 	for (c=0; c<laidout->exportfilters.n; c++) {
 		format->AddItem(laidout->exportfilters.e[c]->VersionName(),c);
-		if (filter==laidout->exportfilters.e[c]) c2=c;
+		if (filter == laidout->exportfilters.e[c]) c2=c;
 	}
-	if (c2>=0) format->Select(c2);
+	if (c2 >= 0) format->Select(c2);
 	format->WrapToExtent();
 	format->tooltip(_("The file format to export into"));
 	AddWin(format,1, format->win_w,0,50,50,0, 2*textheight,0,0,50,0, -1);
 	AddNull();
 
-		
+
 	 //--------- to file
 	last=filecheck=new CheckBox(this,"tofile-check",NULL,CHECK_CIRCLE|CHECK_LEFT, 
 						 0,0,0,0,0, 
@@ -468,10 +472,11 @@ int ExportDialog::init()
 		//****doc->imposition->Layouts()
 		SliderPopup *layouts;
 		last=layouts=new SliderPopup(this, "layouts",NULL,SLIDER_POP_ONLY, 0,0,0,0,1, last, object_id, "layout",NULL,0);
-	//	for (c=0; c<config->doc->imposition->NumLayouts(); c++) {
-	//		layouts->AddItem(config->doc->imposition->LayoutName(c),c);
-	//		if (filter==laidout->exportfilters.e[c]) c2=c;
-	//	}
+		//TODO:
+		//for (c=0; c<config->doc->imposition->NumLayouts(); c++) {
+		//	layouts->AddItem(config->doc->imposition->LayoutName(c),c);
+		//	if (filter==laidout->exportfilters.e[c]) c2=c;
+		//}
 		layouts->AddItem(config->doc->imposition->LayoutName(SINGLELAYOUT),SINGLELAYOUT);
 		layouts->AddItem(config->doc->imposition->LayoutName(PAGELAYOUT),  PAGELAYOUT);
 		layouts->AddItem(config->doc->imposition->LayoutName(PAPERLAYOUT), PAPERLAYOUT);
@@ -760,6 +765,8 @@ void ExportDialog::updateEdits()
 
 
 	//now modify panel to have the correct custom edits
+	
+	// first remove old extra edits
 	for (int c=wholelist.n-1; c>=0; c--) {
 		box=dynamic_cast<WinFrameBox*>(wholelist.e[c]);
 		if (!box || !box->win()) continue;
@@ -769,13 +776,14 @@ void ExportDialog::updateEdits()
 		}
 	}
 
+	// now add new edits if necessary
 	ObjectDef *def = config->GetObjectDef();
+	DBG cerr << "Setting extra edits for config: " << def->name <<endl;
 	if (strcmp(def->name,"ExportConfig")) {
 		 //only do this section for non-default export configs.
 		 // *** Note this will add any fields returned by def->getFieldOfThis(),
 		 //which is not quite accurate for defs that have more inheritance than just 
 		 //straight from ExportConfig
-		 //
 
 		char scratch[200];
 		anXWindow *last=NULL;
@@ -970,11 +978,12 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"format")) {
-		DBG cerr << "old config: "<<filter->VersionName()<<", config filter: "<<config->filter->VersionName()<<endl;
+		DBG cerr << "old config: "<<(filter ? filter->VersionName() : "no filter")
+		DBG      <<", config filter: "<<(config && config->filter ? config->filter->VersionName() : "no config->filter")<<endl;
 
-		for (int c=0; c<laidout->exportfilters.n; c++ ){
-			cerr << c<<": "<<laidout->exportfilters.e[c]->VersionName()<<endl;
-		}
+		DBG for (int c=0; c<laidout->exportfilters.n; c++ ) {
+		DBG 	cerr << c<<": "<<laidout->exportfilters.e[c]->VersionName()<<endl;
+		DBG }
 
 		filter = laidout->exportfilters.e[e->info1];
 
@@ -982,14 +991,16 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 		int cur  = config ? previous_configs.findIndex(config->filter->VersionName()) : -1;
 
 		DBG cerr << "select new config "<<e->info1<<": "<<filter->VersionName()<<endl;
-		DBG cerr << "new vname: "<<filter->VersionName()<<", old vname: "<<config->filter->VersionName()<<endl;
+		DBG cerr << "new vname: "<<filter->VersionName()<<", old vname: "
+		DBG      <<(config ? (config->filter ? config->filter->VersionName() : "no config->filter") : "no config")<<endl;
 		DBG cerr << "new in prev: "<<newconf<<"  cur index: "<<cur<<endl;
 
-		if (newconf != cur) {
+		if (newconf != cur || newconf < 0) {
+			// we need to create a new config
 			DocumentExportConfig *old = config;
 
 			if (newconf >= 0) {
-				// use former config
+				// use config previously stored in previous_configs
 				DocumentExportConfig *nconfig = dynamic_cast<DocumentExportConfig*>(previous_configs.value(newconf)->duplicate());
 				config = nconfig;
 				config->CopySource(old);
@@ -1002,6 +1013,8 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 			previous_configs.push(old->filter->VersionName(), old); //remember old
 			old->dec_count();
 		}
+
+		DBG cerr << "config->filter == filter: "<<(config->filter == filter)<<endl;
 
 		updateEdits();
 		findMinMax();

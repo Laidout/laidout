@@ -745,7 +745,9 @@ int createHtmlGalleryExportConfig(ValueHash *context,ValueHash *parameters,Value
 
 DocumentExportConfig *HtmlGalleryExportFilter::CreateConfig(DocumentExportConfig *fromconfig)
 {
-	return new HtmlGalleryExportConfig(fromconfig);
+	DocumentExportConfig *new_config = new HtmlGalleryExportConfig(fromconfig);
+	new_config->filter = this;
+	return new_config;
 }
 
 //! Try to grab from stylemanager, and install a new one there if not found.

@@ -66,7 +66,7 @@ void installImageFilter()
 //! Set the filter to the Image export filter stored in the laidout object.
 ImageExportConfig::ImageExportConfig()
 {
-	format = newstr("png");
+	image_format = newstr("png");
 	background = ColorManager::newColor(LAX_COLOR_RGB, 4, 1.,1.,1.,1.);
 	use_transparent_bg = true;
 	width = height = 0;
@@ -86,14 +86,14 @@ ImageExportConfig::ImageExportConfig(DocumentExportConfig *config)
 
 	ImageExportConfig *conf = dynamic_cast<ImageExportConfig*>(config);
 	if (conf) {
-		format = newstr(conf->format);
+		image_format = newstr(conf->image_format);
 		use_transparent_bg = conf->use_transparent_bg;
 		width  = conf->width;
 		height = conf->height;
 		if (conf->background) background = conf->background->duplicate();
 
 	} else {
-		format = newstr("png");
+		image_format = newstr("png");
 		use_transparent_bg = true;
 		width = height = 0;
 		background = ColorManager::newColor(LAX_COLOR_RGB, 4, 1.,1.,1.,1.);;
@@ -110,7 +110,7 @@ Value* ImageExportConfig::duplicate()
 ImageExportConfig::~ImageExportConfig()
 {
 	if (background) background->dec_count();
-	delete[] format;
+	delete[] image_format;
 }
 
 void ImageExportConfig::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
@@ -125,11 +125,11 @@ Laxkit::Attribute *ImageExportConfig::dump_out_atts(Laxkit::Attribute *att,int w
 	att = DocumentExportConfig::dump_out_atts(att,what,context);
 
 	if (what == -1) {
-		att->push("transparent", nullptr,      "Use a transparent background, not a rendered color.");
-		att->push("background", "rgbf(1,1,1)", "The color to use as background when not explicitly transparent.");
-		att->push("format",     "png",         "File format to use. Default is png");
-		att->push("width",      "0",           "Pixel width of resulting image. 0 means auto calculate from dpi.");
-		att->push("height",     "0",           "Pixel height of resulting image. 0 means auto calculate from dpi.");
+		att->push("transparent",  nullptr,       "Use a transparent background, not a rendered color.");
+		att->push("background",   "rgbf(1,1,1)", "The color to use as background when not explicitly transparent.");
+		att->push("image_format", "png",         "Image file format to use. Default is png.");
+		att->push("width",        "0",           "Pixel width of resulting image. 0 means auto calculate from dpi.");
+		att->push("height",       "0",           "Pixel height of resulting image. 0 means auto calculate from dpi.");
 		return att;
 	}
 
@@ -139,7 +139,7 @@ Laxkit::Attribute *ImageExportConfig::dump_out_atts(Laxkit::Attribute *att,int w
 		att->push("color", str);
 		delete[] str;
 	}
-	att->push("format", format);
+	att->push("image_format", image_format);
 	att->push("width", width);
 	att->push("height", height);
 	return att;
@@ -157,8 +157,8 @@ void ImageExportConfig::dump_in_atts(Laxkit::Attribute *att,int what,Laxkit::Dum
 		if (!strcmp(name, "transparent")) {
 			use_transparent_bg = BooleanAttribute(value);
 
-		} else if (!strcmp(name, "format")) {
-			makestr(format, value);
+		} else if (!strcmp(name, "image_format")) {
+			makestr(image_format, value);
 
 		} else if (!strcmp(name, "width")) {
 			IntAttribute(value, &width, NULL);
@@ -225,9 +225,9 @@ ObjectDef *ImageExportConfig::makeObjectDef()
             0,      //flags
             NULL); //newfunc
 
-    def->push("format",
+    def->push("image_format",
             _("File format"),
-            _("What file format to export as."),
+            _("What image file format to export as. You should use png, jpg, or tif."),
             "string",
             NULL,   //range
             "png", //defvalue
@@ -263,8 +263,8 @@ Value *ImageExportConfig::dereference(const char *extstring, int len)
 	if (!strncmp(extstring,"transparent",8)) {
 		return new BooleanValue(use_transparent_bg);
 
-	} else if (!strncmp(extstring,"format",8)) {
-		return new StringValue(format);
+	} else if (!strncmp(extstring,"image_format",8)) {
+		return new StringValue(image_format);
 
 	} else if (!strncmp(extstring,"width",8)) {
 		return new IntValue(width);
@@ -292,10 +292,10 @@ int ImageExportConfig::assign(FieldExtPlace *ext,Value *v)
                 use_transparent_bg = (d==0 ? false : true);
                 return 1;
 
-			} else if (!strcmp(str,"format")) {
+			} else if (!strcmp(str,"image_format")) {
 				StringValue *str=dynamic_cast<StringValue*>(v);
 				if (!str) return 0;
-				makestr(format, str->str);
+				makestr(image_format, str->str);
                 return 1;
 
 			} else if (!strcmp(str,"width")) {
@@ -391,9 +391,9 @@ int createImageExportConfig(ValueHash *context,ValueHash *parameters,Value **val
 		int i, e;
 
 		 //---format
-		const char *str=parameters->findString("format",-1,&e);
-		if (e==0) { if (str) makestr(config->format, str); }
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"format"); throw error; }
+		const char *str=parameters->findString("image_format",-1,&e);
+		if (e==0) { if (str) makestr(config->image_format, str); }
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"image_format"); throw error; }
 
 		 //---use_transparent_bg
 		i=parameters->findInt("transparent",-1,&e);
@@ -491,8 +491,8 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 		}
 		file=newstr(doc->saveas);
 		appendstr(file,".");
-		if (isblank(out->format)) appendstr(file,"png");
-		else appendstr(file,out->format);
+		if (isblank(out->image_format)) appendstr(file,"png");
+		else appendstr(file,out->image_format);
 
 		filename = file;
 	}
@@ -691,7 +691,7 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 
 	 //Now save the page
 	LaxImage *img = dp->GetSurface();
-	int err = img->Save(filename, out->format);
+	int err = img->Save(filename, out->image_format);
 	if (err) {
 		log.AddMessage(_("Could not save the image"), ERROR_Fail);
 	}

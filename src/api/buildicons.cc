@@ -213,7 +213,7 @@ int BuildIconsFunction(ValueHash *context,
 		config.target = DocumentExportConfig::TARGET_Single;
 		config.range.AddRange(0,0);
 		config.use_transparent_bg = true;
-		makestr(config.format, "png");
+		makestr(config.image_format, "png");
 		PaperGroup *papergroup = new PaperGroup();
 		papergroup->AddPaper(grid_cell_size, grid_cell_size, 0,0);
 		config.papergroup = papergroup;

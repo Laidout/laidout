@@ -13,6 +13,8 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
+bug: PDF export does not handle object bleeds
+
 bug: severing clone link does some weird things, including crashing
 bug: clone tool clones do not have proper bounding box
 
@@ -24,6 +26,8 @@ crash: Start blank, then open recent doc with an ObjectTree. click on an object,
 
 
 ------------ other bugs:
+
+ux: if there is a page/file snafu on export, should return to the export dialog after the error
 
 bug: back to not maximizing properly on default ubuntu. Seems to work fine on every other window manager I've tried.
 
@@ -3301,3 +3305,4 @@ DONE layers palette Layers ObjectTree
   DONE edit colors not highlighting every other
 DONE bug: image properties layout for filename truncates
 DONE fix off by one error when importing "m/n" for every nth
+DONE bug: crashes when changing export formats away from Image

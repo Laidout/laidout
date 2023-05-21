@@ -31,7 +31,7 @@ void installImageFilter();
 class ImageExportConfig : public DocumentExportConfig
 {
  public:
-	char *format;
+	char *image_format;
 	int use_transparent_bg;
 	Laxkit::Color *background;
 	int width, height; //px of output

@@ -1515,7 +1515,7 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,Laxkit::DumpCont
 			}
 
 		} else if (!strcmp(name,"format")) {
-			filter=laidout->FindExportFilter(value,false);
+			if (!filter) filter = laidout->FindExportFilter(value,false);
 
 		} else if (!strcmp(name,"imposition")) {
 			//***

@@ -36,10 +36,6 @@
 #include "../dataobjects/mysterydata.h"
 #include "../core/drawdata.h"
 
-//template implementation
-#include <lax/lists.cc>
-#include <lax/refptrstack.cc>
-
 
 #include <iostream>
 #define DBG 
@@ -307,6 +303,7 @@ ObjectDef* PageAtlasExportConfig::makeObjectDef()
 
 	ObjectDef *exportdef = stylemanager.FindDef("ExportConfig");
 	if (!exportdef) {
+		// make and install the default ExportConfig definition
         exportdef = makeExportConfigDef();
 		stylemanager.AddObjectDef(exportdef,1);
     }
