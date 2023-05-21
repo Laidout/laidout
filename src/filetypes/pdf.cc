@@ -786,9 +786,9 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 							psPushCtm();
 							psConcat(bleed->matrix);
 
-							//for (int l = 0; l < otherpage->layers.n(); l++) {
-								//pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,otherpage->layers.e(l),log,warning,config);
-							//}
+							for (int l = 0; l < otherpage->layers.n(); l++) {
+								pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,otherpage->layers.e(l),log,warning,config);
+							}
 
 							appendstr(stream,"Q\n"); //pop ctm, bleed transform
 							transforms.PopAxes();
