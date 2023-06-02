@@ -1555,6 +1555,115 @@ int PathBooleanNode::Update()
 
 
 
+//----------------------- CatenaryNode ------------------------
+
+/*! \class CatenaryNode
+ *
+ * Create a catenary between two points.
+ */
+class CatenaryNode : public NodeBase
+{
+  public:
+	CatenaryNode();
+	virtual ~CatenaryNode();
+	virtual NodeBase *Duplicate();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new CatenaryNode(); }
+};
+
+CatenaryNode::CatenaryNode()
+{
+	makestr(type, "Paths/Catenary");
+	makestr(Name, _("Catenary"));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "p2",     new FlatvectorValue(0,0),1,     _("P2"), _("P2")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "p1",     new FlatvectorValue(1,0),1,     _("P1"), _("P1")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "length", new DoubleValue(1.5),1,  _("Length"),  _("Length of the arc. If too short, just make a straight line.")));
+	
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", NULL,1, _("Out"), NULL,0, false));
+}
+
+CatenaryNode::~CatenaryNode()
+{
+}
+
+NodeBase *CatenaryNode::Duplicate()
+{
+	CatenaryNode *newnode = new CatenaryNode();
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int CatenaryNode::GetStatus()
+{
+	return NodeBase::GetStatus();
+}
+
+/*! Compute a, p, and q for a catenary that hangs between p1 and p2, and that has the given length.
+ * If length is less than the distance between p1 and p2, then the distance between p1 and p2 is used for the length.
+ *
+ * The function returned is as follows, and passes through p1 and p2:
+ *     y = a * cosh((x-p)/2*a) + q
+ */
+int ComputeCatenary(flatpoint p1, flatpoint p2, double length, double *a_ret, double *p_ret, double *q_ret)
+{
+	***
+}
+
+int CatenaryNode::Update() //possible set ins
+{
+	//update with set parsing helpers
+	
+	ClearError();
+
+	int num_ins = 3;
+	Value *ins[3];
+	ins[0] = properties.e[0]->GetData();
+	ins[1] = properties.e[1]->GetData();
+	ins[2] = properties.e[2]->GetData();
+
+	SetValue *setins[3];
+	SetValue *setouts[1];
+
+	int num_outs = 1;
+	int outprops[1];
+	outprops[0] = 3;
+
+	int max = 0;
+	const char *err = nullptr;
+	bool dosets = false;
+	if (DetermineSetIns(num_ins, ins, setins, max, dosets) == -1) { //does not check contents of sets.
+		//had a null input
+		return -1;
+	}
+
+	//*** check for easy to spot errors with inputs
+
+	//establish outprop: make it either type, or set. do prop->Touch(). clamp to max. makes setouts[*] null or the out set
+	LPathsData  *out1 = UpdatePropType<LPathsData> (properties.e[outprops[0]], dosets, max, setouts[0]);
+
+	FlatvectorValue *p1 = nullptr;
+	FlatvectorValue *p2 = nullptr;
+	DoubleValue *len    = nullptr;
+	
+	for (int c=0; c<max; c++) {
+		p1 = GetInValue<DoubleValue>(c, dosets, in1, ins[0], setins[0]);
+		p2 = GetInValue<IntValue>   (c, dosets, in2, ins[1], setins[1]);
+		len = GetInValue<LPathsData> (c, dosets, in3, ins[2], setins[2]);
+
+		*** error check ins
+
+		GetOutValue<LPathsData>(c, dosets, out1, setouts[0]);
+			
+
+		*** based on ins, update outs
+	}
+
+
+	return NodeBase::Update();
+}
+
 //------------------------------ ActionNode --------------------------------------------
 
 /*! \class ActionNode
@@ -1636,6 +1745,7 @@ int BoilerPlateNode::Update() //possible set ins
 	ClearError();
 
 	int num_ins = 3;
+	Value *ins[num_ins];
 	ins[0] = properties.e[0]->GetData();
 	ins[1] = properties.e[1]->GetData();
 	ins[2] = properties.e[2]->GetData();
