@@ -538,8 +538,18 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 			dp->NewFG(128,128,128);
 			flatpoint center = dp->realtoscreen((p[1] + p[2])/2);
 			double y = center.y+th;
+			// write paper name
 			dp->textout(-atan2(ang.y, ang.x), center.x,y, box->paperstyle->name,-1,LAX_HCENTER|LAX_BOTTOM);
 			y += th;
+			// write out dimensions
+			double scale = data->xaxis().norm();
+			if (fabs(scale-1.0) > 1e-5) {
+				char str[20];
+				sprintf(str, "%d%%", int(scale*100));
+				dp->textout(-atan2(ang.y, ang.x), center.x,y, str,-1, LAX_HCENTER|LAX_BOTTOM);
+				y += th;
+			}
+			//write paper label
 			if (!data->label.IsEmpty()) dp->textout(-atan2(ang.y, ang.x), center.x,y, data->label.c_str(),-1, LAX_HCENTER|LAX_BOTTOM);
 			dp->DrawReal();
 		}
