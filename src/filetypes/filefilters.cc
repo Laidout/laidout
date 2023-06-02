@@ -667,6 +667,7 @@ class ProjectExportSettings : public Value
 	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
+
 //------------------------------------- ExportFilter -----------------------------------
 /*! \class ExportFilter
  * \brief Abstract base class of file export filters.
@@ -1098,7 +1099,7 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 /*! \var int DocumentExportConfig::collect_for_out
  * \brief Whether to gather needed extra files to one place.
  *
- * If you export to svg, for instance, there will be references to files whereever they are,
+ * If you export to svg, for instance, there will be references to files wherever they are,
  * plus things that can only be rasterized. This option lets you put copies of all the 
  * extra files, plus new files resulting from rasterizing all in one directory for later use.
  * That directory is just the dirname of filename or tofiles.
@@ -1120,27 +1121,27 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 
 DocumentExportConfig::DocumentExportConfig()
 {
-	curpaperrotation= 0;
-	paperrotation   = 0;
-	rotate180       = 0;
-	reverse_order   = 0;
-	evenodd         = All;
-	batches         = 0;
-	filter          = nullptr;
-	target          = TARGET_Single;
-	send_to_command = false;
+	curpaperrotation  = 0;
+	paperrotation     = 0;
+	rotate180         = 0;
+	reverse_order     = 0;
+	evenodd           = All;
+	batches           = 0;
+	filter            = nullptr;
+	target            = TARGET_Single;
+	send_to_command   = false;
 	del_after_command = false;
-	command         = nullptr;
-	custom_command  = nullptr;
-	filename        = nullptr;
-	tofiles         = nullptr;
-	layout          = 0;
-	doc             = nullptr;
-	papergroup      = nullptr;
-	limbo           = nullptr;
-	collect_for_out = COLLECT_Dont_Collect;
-	rasterize       = 0;
-	textaspaths     = true; // *** change to false when text is better implemented!!
+	command           = nullptr;
+	custom_command    = nullptr;
+	filename          = nullptr;
+	tofiles           = nullptr;
+	layout            = 0;
+	doc               = nullptr;
+	papergroup        = nullptr;
+	limbo             = nullptr;
+	collect_for_out   = COLLECT_Dont_Collect;
+	rasterize         = 0;
+	textaspaths       = true; // *** change to false when text is better implemented!!
 	range.parse_from_one = true;
 }
 
@@ -1221,6 +1222,26 @@ Value* DocumentExportConfig::duplicate()
 {
 	DocumentExportConfig *c = new DocumentExportConfig(this);
 	return c;
+}
+
+/*! For each in range count up the number of exporting areas.
+ * If even or odd, those indices of range are skipped. For included range indices,
+ * if a papergroup is provided, then do that many papers per range index.
+ * If a papergroup is not provided, then add as many default papers, according
+ * to doc->imposition->GetNumInPaperGroupForSpread().
+ */
+int DocumentExportConfig::NumOutputAreas()
+{
+	int totalnumpages = 0;
+	for (int c = range.Start(); c >= 0; c = range.Next()) {
+		if (evenodd == DocumentExportConfig::Even && (c % 2 == 1)) continue;
+		if (evenodd == DocumentExportConfig::Odd  && (c % 2 == 0)) continue;
+
+		if (papergroup) totalnumpages += papergroup->papers.n;
+		else if (doc) totalnumpages += doc->imposition->GetNumInPaperGroupForSpread(layout, c);
+		else totalnumpages++;
+	}
+	return totalnumpages;
 }
 
 /*! Copy references to doc, limbo, and papergroup.
@@ -1609,11 +1630,9 @@ ObjectDef *DocumentExportConfig::makeObjectDef()
  * If the filter cannot support multiple file output, but there are multiple files to be output,
  * then this function will call filter->Out() with the correct data for each file.
  *
- * Also does sanity checking on config->papergoup, config->start, and config->end. Ensures that
- * config->papergroup is never nullptr, that start<=end, and that start and end are proper for
- * the requested spreads. If end<0, then make end the last spread. WARNING! This will
- * modify contents of config to have those sane values.
- *
+ * If no config->papergroup, then filters should use the default papergroup of the spread.
+ * If the spread does not have a papergroup, then filters should construct basic bounds for the spread.
+ * 
  * If no doc is specified, then start=end=0 is passed to the filter. Also ensures that at least
  * one of doc and limbo is not nullptr before calling the filter.O
  *
@@ -1634,90 +1653,50 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 
 	PtrStack<char> files_outputted(LISTS_DELETE_Array);
 
-//	if (config->target == DocumentExportConfig::TARGET_Command) {
-//		// TODO! *** this currently bypasses all the safety checks normally done below...
-//		if (isblank(config->command)) {
-//			log.AddMessage(_("Expected command!"),ERROR_Fail);
-//			return 1;
-//		}
-//		if (!config->filter) {
-//			log.AddMessage(_("Missing filter!"),ERROR_Fail);
-//			return 1;
-//		}
-//
-//        char *cm = newstr(config->command);
-//        appendstr(cm," ");
-//
-//        char tmp[256];
-//        //cupsTempFile2(tmp,sizeof(tmp));
-//		//tmpnam(tmp);
-//		sprintf(tmp, "laidoutTmpXXXXXX");
-//		mkstemp(tmp);
-//        DBG cerr <<"attempting to write temp file "<<tmp<<" for export by command "<< cm <<endl;
-//
-//		FILE *f = fopen(tmp, "w");
-//		if (f) { //make sure it is writable
-//            fclose(f);
-//
-//            if (config->filter->Out(tmp,config,log)==0) {
-//                appendstr(cm,tmp);
-//
-//                 //now do the actual command
-//                int c=system(cm); //-1 for error, else the return value of the call
-//                if (c!=0) {
-//					log.AddMessage(_("Error running command!"),ERROR_Fail);
-//					return 1;
-//                } else {
-//					//done, no error!
-//                }
-//                //***maybe should have to delete (unlink) tmp, but only after actually done printing?
-//                //does cups keep file in place, or copy when queueing?
-//
-//            } else {
-//                 //there was an error during filter export
-//				log.AddMessage(_("Error exporting with command!"),ERROR_Fail);
-//				return 1;
-//            }
-//            
-//        } else {
-//        	log.AddError(_("Could not open temp file!"));
-//        	return 1;
-//        }
-//        return 0;
-//    } //if command
 
-
-	 //figure out what paper arrangement to print out on
-	PaperGroup *papergroup=config->papergroup;
-	if (papergroup && papergroup->papers.n==0) papergroup=nullptr;
-	if (!papergroup && config->doc) papergroup=config->doc->imposition->papergroup;
-	if (!papergroup && config->doc) papergroup=new PaperGroup(config->doc->imposition->GetDefaultPaper());
-	if (papergroup && papergroup->papers.n==0) papergroup=nullptr;
-	if (!papergroup) {
-		 //use global default paper
-		int c;
-		for (c=0; c<laidout->papersizes.n; c++) {
-			if (!strcasecmp(laidout->prefs.defaultpaper,laidout->papersizes.e[c]->name)) 
-				break;
+	// figure out what paper arrangement to print out on, if possible
+	// - if config->papergroup, that is used
+	// - else:
+	//   - if config->doc, then use default papergroup in spread
+	//   - else:
+	//     - use papergroup of 1 paper based on default paper size
+	if (!config->papergroup) {
+		if (!config->doc) { // if yes config->doc, then config->papergroup remain null, generated per spread in filters
+			 //use global default paper
+			int c;
+			for (c=0; c<laidout->papersizes.n; c++) {
+				if (!strcasecmp(laidout->prefs.defaultpaper, laidout->papersizes.e[c]->name)) 
+					break;
+			}
+			PaperStyle *ps;
+			if (c == laidout->papersizes.n) c = 0;
+			ps = (PaperStyle *)laidout->papersizes.e[0]->duplicate();
+			config->papergroup = new PaperGroup(ps);
+			ps->dec_count();
 		}
-		PaperStyle *ps;
-		if (c==laidout->papersizes.n) c=0;
-		ps=(PaperStyle *)laidout->papersizes.e[0]->duplicate();
-		papergroup=new PaperGroup(ps);
-		ps->dec_count();
-	} else papergroup->inc_count();
-	if (config->papergroup) config->papergroup->dec_count();
-	config->papergroup=papergroup;
+	}
 
-	 //establish starting and ending spreads. If no doc, then use only limbo (1 spread)
+	// establish spread range. If no doc, then use only limbo (1 spread)
 	if (!config->doc) {
 		config->range.Clear();
 	} else {
 		config->range.Max(config->doc->imposition->NumSpreads(config->layout), true);
 	}
 
-	int numoutput = config->range.NumInRanges() * papergroup->papers.n; //number of output "pages"
-	//int numdigits=log10(numoutput);
+	int numoutput = 0; //number of output files
+	bool has_multipaper = false;
+	if (config->papergroup) numoutput = config->range.NumInRanges() * config->papergroup->papers.n;
+	else {
+		// we need to figure out the default papergroup per spread, and count everything up
+		for (int c = config->range.Start(); c >= 0; c = config->range.Next()) {
+			if (config->doc) {
+				int num = config->doc->imposition->GetNumInPaperGroupForSpread(config->layout, c);
+				if (num > 1) has_multipaper = true;
+				numoutput += num;
+			} else numoutput++;
+		}
+	}
+
 	if (numoutput>1 && config->target == DocumentExportConfig::TARGET_Single && !(config->filter->flags&FILTER_MULTIPAGE)) {
 		log.AddMessage(_("Filter cannot export more than one page to a single file."),ERROR_Fail);
 		return 1;
@@ -1730,15 +1709,16 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 
 		int oldtarget = config->target;
 		config->target = DocumentExportConfig::TARGET_Single;
-		PaperGroup *pg;
-		char *filebase=nullptr;
-		if (config->tofiles) filebase=Laxkit::make_filename_base(config->tofiles);//###.ext -> %03d.ext
-		else filebase=Laxkit::make_filename_base(config->filename);//###.ext -> %03d.ext
-		if (papergroup->papers.n>1) {
+		//PaperGroup *pg = nullptr;
+
+		char *filebase = nullptr;
+		if (config->tofiles) filebase = Laxkit::make_filename_base(config->tofiles);//###.ext -> %03d.ext
+		else filebase = Laxkit::make_filename_base(config->filename);//###.ext -> %03d.ext
+		if (has_multipaper) {
 			 // basically make base###.ps --> base(spread number)-(paper number).ps
-			char *pos=strchr(filebase,'%'); //pos will never be 0
-			while (*pos!='d') pos++;
-			replace(filebase,"d-%d",pos-filebase,1,nullptr);
+			char *pos = strchr(filebase,'%'); //pos will never be 0
+			while (*pos != 'd') pos++;
+			replace(filebase,"d-%d", pos-filebase,1,nullptr);
 		}
 		char filename[strlen(filebase)+20];
 
@@ -1754,7 +1734,11 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 			if (config->evenodd == DocumentExportConfig::Even && c%2==0) continue;
 			if (config->evenodd == DocumentExportConfig::Odd  && c%2==1) continue;
 
-			for (int p=0; p<papergroup->papers.n; p++) { //loop over each paper in a spread
+			// get number in papergroup for this spread
+			int papers_in_spread = 1;
+			if (config->doc) papers_in_spread = config->doc->imposition->GetNumInPaperGroupForSpread(config->layout, c);
+
+			for (int p=0; p<papers_in_spread; p++) { //loop over each paper in a spread
 				config->range.Clear();
 				config->range.AddRange(c,c);
 
@@ -1764,19 +1748,19 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 					if (config->curpaperrotation >= 360) config->curpaperrotation -= 360;
 				}
 
-				if (papergroup->papers.n == 1)
+				if (has_multipaper)
 					sprintf(filename, filebase, c);
 				else
 					sprintf(filename, filebase, c, p);
 
-				pg = new PaperGroup(papergroup->papers.e[p]);
-				if (papergroup->objs.n()) {
-					for (int o = 0; o < papergroup->objs.n(); o++) pg->objs.push(papergroup->objs.e(o));
-				}
-				config->papergroup = pg;
+				// ***pg = new PaperGroup(papergroup->papers.e[p]);
+				// if (papergroup->objs.n()) {
+				// 	for (int o = 0; o < papergroup->objs.n(); o++) pg->objs.push(papergroup->objs.e(o));
+				// }
+				// config->papergroup = pg;
 
 				err = config->filter->Out(filename, config, log);
-				pg->dec_count();
+				// pg->dec_count();
 				if (err > 0) break;
 
 				if (err == 0 && config->send_to_command) files_outputted.push(newstr(filename));
@@ -1792,15 +1776,11 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 		delete[] filebase;
 
 		if (err) {
-			// char scratch[strlen(_("Export failed at file %d out of %d"))+20];
-			// sprintf(scratch,_("Export failed at file %d out of %d"), filenum, numoutput);
-			// log.AddMessage(scratch,ERROR_Fail);
-			// ---
 			log.AddError(0,0,0, _("Export failed at file %d out of %d"), filenum, numoutput);
 		}
 
 	} else {
-		 //output filter can handle multiple pages...
+		 //output filter can handle multiple pages and we have more than one to output...
 		 //
 		if (config->target == DocumentExportConfig::TARGET_Single && config->batches > 0 && config->batches < config->range.NumInRanges()) {
 			 //divide into batches

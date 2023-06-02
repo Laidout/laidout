@@ -319,10 +319,27 @@ you can't control unclick selected directories
 
 
 export/print dialog
-  what happens about background programs, like opening something in gimp? can't delete temporary files
+  ux: if files needed == 1, then should not error about not being able to export many pages to single file, like with page atlas
+  DONE bug: for Singles export with non-single impositions, defaults to paper layout PaperGroup, instead of just encasing the single page.
+    DONE pdf
+	DONE svg
+	DONE scribus
+	DONE image
+	DONE image gs
+	DONE html
+	DONE plan
+	DONE ppt
+	DONE ps
+	DONE eps
+	DONE page atlas
+  bug: bleeds:
+    html
+	DONE page atlas
   ---0.099---
+  what happens about background programs, like opening something in gimp? can't delete temporary files
+  when there is a failing mismatch between multifile/multipage, dialog should warn, then resume the dialog, should not exit dialog
   maybe flag whether to export limbo with spreads?
-  need propper print dialog.. old ppd cups stuff is deprecated
+  need proper print dialog.. old ppd cups stuff is deprecated
   export should have a preview of what is actually going out, flip through spreads
   in papergroups with multiple papers and double sided impositions, need to ensure front and back are output properly for printer
   double check: export current appears to be broken
@@ -386,6 +403,8 @@ pageatlas: page atlas:
   DONE file names should be like exported-01-05.jpg not exported-1-5.jpg
   DONE needs bg color
   DONE basically n-up page out, lrtb
+  ---0.099
+  should be able to go on a random papergroup, not depend on a doc
 equirectangular:
   ---0.099---
   export:
@@ -407,6 +426,7 @@ importdialog ImportDialog import dialog:
   importing should sort out duplicate names
   would be nice to show preview of what is to be imported
 html: htmlgallery: html out htmlout:
+  bug: not handling bleeds
   obey object visible
   ---0.099---
   webcomic features:
@@ -470,7 +490,9 @@ pdf: PDF:
   start using podofo instead of custom? higher quality pdf output, pdf input options. https://github.com/podofo/podofo, soon to be built from https://github.com/pdfmm/pdfmm
   DONE obey object visible
 Scribus scribus:
+  bug: objects are not placed properly on papers
   ---0.099---
+  bug: doesn't cope with different paper sizes
   needs better error return: use try/catch
   outputting with settings that result in 0 pages result in scribus crash
   caption as path flips
@@ -1733,11 +1755,14 @@ Tools should remember their settings
      well as the running tool use settings
 
 paperinterface: papergroupinterface papergroup interface
+  should be able to snap to spread pages also 
   when reset scale or rotation, preserve relative orientations
   bug: sometimes clicking around when you have custom papergroup in viewport crashes
   options to edit order of papers.. drag indices (front or "back")
   define papergroup, convert papergroup to NetImposition
-  need snap to margins
+  need snap to:
+    margins
+	spread/page borders
     need to be able to edit margins: edit the art box
   need an easy toggle for landscape/portrait
   menu options:
@@ -1756,6 +1781,7 @@ paperinterface: papergroupinterface papergroup interface
     paperinterface: in spread editor (done), and able to print it out
     in spread editor (done), and be able to print it out
 
+  DONE option to show numeric print dimensions.. with the label? with indicator that it is not 1:1, maybe like show "110%"
   DONE maybebox needs to snap
   DONE if page is too big, need indicator around mouse that we are placing something
   DONE space while dragging should dup boxes

@@ -119,11 +119,12 @@ class DocumentExportConfig : public Value
 	Laxkit::DoubleBBox crop;
 
 	Document *doc;
-	Group *limbo;
+	Group *limbo; // doc or limbo or both should be defined
 	char *filename;
 	char *tofiles;
 	char *custom_command;
-	PaperGroup *papergroup;
+	PaperGroup *papergroup; //non-null to override default
+	//todo: int papergroup_index = -1; //-1 means all, or just a single one within papergroup
 
 	ExportFilter *filter;
 
@@ -135,6 +136,7 @@ class DocumentExportConfig : public Value
 	virtual const char *whattype() { return "DocumentExportConfig"; }
 
 	virtual void CopySource(DocumentExportConfig *config);
+	virtual int NumOutputAreas();
 
 	virtual ObjectDef* makeObjectDef();
 	virtual Value* duplicate();

@@ -111,7 +111,7 @@ ObjectDef *ImageGsExportFilter::GetObjectDef()
 	styledef = makeObjectDef();
 	makestr(styledef->name,"ImageGsExportConfig");
 	makestr(styledef->Name,_("Image Export Config with GS"));
-	makestr(styledef->description,_("Configuration to export a document to a png using Ghostscript."));
+	makestr(styledef->description,_("(DEPRECATED) Configuration to export a document to a png using Ghostscript."));
 	styledef->newfunc = newImageGsExportConfig;
 	styledef->stylefunc = createImageGsExportConfig;
 
@@ -125,29 +125,23 @@ ObjectDef *ImageGsExportFilter::GetObjectDef()
 
 
 //! Save the document as png files with transparency.
-/*! This currently uses the postscript filter to make a temporary postscript file,
- * then uses ghostscript to translate that to images.
+/*! This currently uses the pdf filter to make a temporary pdf file,
+ * then uses ghostscript executable to translate that to images.
  *
  * Return 0 for success, or nonzero error. Possible errors are error and nothing written,
  * and corrupted file possibly written.
  * 
  * Currently uses a DocumentExportConfig for context.
- *
- * \todo output file names messed up when papergroup has more than one paper, plus starting number
- *   not accurate...
  */
 int ImageGsExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 {
 	DocumentExportConfig *out = dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;
 
-	Document *doc =out->doc;
-	//int start     =out->start;
-	//int end       =out->end;
-	//int layout    =out->layout;
-	int numout = (out->range.NumInRanges())*(out->papergroup?out->papergroup->papers.n:1);
-	if (!filename && numout==1) filename=out->filename;
-	if (!filename) filename=out->tofiles;
+	Document *doc = out->doc;
+	int numout = (out->range.NumInRanges())*(out->papergroup ? out->papergroup->papers.n : 1);
+	if (!filename && numout==1) filename = out->filename;
+	if (!filename) filename = out->tofiles;
 	
 	 //we must have something to export...
 	if (!doc && !out->limbo) {
@@ -156,20 +150,21 @@ int ImageGsExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 		return 1;
 	}
 	
-	const char *gspath=laidout->binary("gs");
-	if (!gspath) {
-		log.AddMessage(_("Ghostscript needed for this exporter!."),ERROR_Fail);
+	ExternalTool *gs_tool = laidout->prefs.FindExternalTool("Misc:gs");
+	if (!gs_tool || !gs_tool->Valid()) {
+		log.AddMessage(_("Ghostscript needed for this exporter! Need to configure Misc:gs external tool."),ERROR_Fail);
 		return 2;
-	} 
+	}
+	const char *gspath = gs_tool->binary_path;
 
-	char *filetemplate=NULL;
+	char *filetemplate = nullptr;
 	if (!filename) {
 		if (!doc || isblank(doc->saveas)) {
 			DBG cerr <<"**** cannot save, doc->saveas is null."<<endl;
 			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
 			return 3;
 		}
-		filetemplate=newstr(doc->saveas);
+		filetemplate = newstr(doc->saveas);
 		appendstr(filetemplate,"%d-gs.png");
 	}
 	
@@ -207,12 +202,13 @@ int ImageGsExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
  	 //* gs -dNOPAUSE -sDEVICE=pngalpha -sOutputFile=temp%02d.png
 	 //     -dBATCH -r(resolution) whatever.ps
 	//cout <<"*** fix export image dpi!!"<<endl;
-	double dpi;
+	double dpi = 150.0;
 	//dpi=maxw ? maxw*72./epsw : 200;
 	//t  =maxh*72./epsh;
 	//if (maxh && t && t<dpi) dpi=t;
 	//dpi=150;//***
-	dpi=doc->imposition->paper->paperstyle->dpi;
+	if (doc && doc->imposition && doc->imposition->paper && doc->imposition->paper->paperstyle)
+		dpi = doc->imposition->paper->paperstyle->dpi;
 	
 	char const * arglist[10];
 	char str1[20];

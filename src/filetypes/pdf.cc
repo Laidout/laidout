@@ -576,11 +576,11 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	DocumentExportConfig *config=dynamic_cast<DocumentExportConfig *>(context);
 	if (!config) return 1;
 
-	Document *doc =config->doc;
-	int layout    =config->layout;
-	Group *limbo  =config->limbo;
-	PaperGroup *papergroup=config->papergroup;
-	if (!filename) filename=config->filename;
+	Document *doc = config->doc;
+	int layout    = config->layout;
+	Group *limbo  = config->limbo;
+	PaperGroup *papergroup  = config->papergroup;
+	if (!filename) filename = config->filename;
 	
 
 	 //we must have something to export...
@@ -614,8 +614,8 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 
 	setlocale(LC_ALL,"C");
 	
-	DBG cerr <<"=================== start pdf out range "<<config->range.ToString(false, false, false)<<", papers:"
-	DBG      <<papergroup->papers.n<<" ====================\n";
+	DBG cerr <<"=================== start pdf out range "<<config->range.ToString(false, false, false)<<", paper override:"
+	DBG      <<(papergroup ? papergroup->papers.n : -1)<<" ====================\n";
 
 	 // initialize outside accessible ctm
 	transforms.ClearAxes();
@@ -629,80 +629,90 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	 //   trailer
 	
 	
-	int warning=0;
-	Spread *spread=NULL;
+	int warning = 0;
+	Spread *spread = nullptr;
 
 	 // Start the list of objects with the head of free objects, which
 	 // has generation number of 65535. Its number is the object number of
 	 // the next free object. Since this is a fresh pdf, there are no 
 	 // other free objects.
-	PdfObjInfo *objs=new PdfObjInfo, //head of all pdf objects
-			   *obj=NULL;            //temp object pointer
-	obj=objs;
-	obj->inuse='f';
-	obj->number=0; 
-	obj->generation=65535;
-	int objcount=1;
-	
-	 // print out header
-	if (pdf_version==4) fprintf (f,"%%PDF-1.4\n");
+	PdfObjInfo *objs= new PdfObjInfo; //head of all pdf objects
+	PdfObjInfo *obj = NULL;            //temp object pointer
+	obj             = objs;
+	obj->inuse      = 'f';
+	obj->number     = 0;
+	obj->generation = 65535;
+	int objcount    = 1;
+
+	// print out header
+	if (pdf_version == 4) fprintf (f,"%%PDF-1.4\n");
 	else fprintf (f,"%%PDF-1.3\n");
 	fprintf(f,"%%\xff\xff\xff\xff\n"); //4 byte binary file indicator
 
-	
-	 //object numbers of various dictionaries
-	int pages=-1;        //Pages dictionary
-	int outlines=-1;     //Outlines dictionary
-	int pagelabels=-1;   //PageLabels dictionary
-	long doccatalog=-1;  //document's Catalog
-	long infodict=-1;    //document's info dict
-	
-	PdfPageInfo *pageobj=NULL,   //temp pointer
-				*pageobjs=NULL;  //points to first page dict
+	// object numbers of various dictionaries
+	int  pages      = -1;  // Pages dictionary
+	int  outlines   = -1;  // Outlines dictionary
+	int  pagelabels = -1;  // PageLabels dictionary
+	long doccatalog = -1;  // document's Catalog
+	long infodict   = -1;  // document's info dict
+
+	PdfPageInfo *pageobj  = NULL;   //temp pointer
+	PdfPageInfo *pageobjs = NULL;  //points to first page dict
 	double m[6];
-	Page *page=NULL;   //temp pointer
-	char *stream=NULL; //page stream
-	char scratch[300]; //temp buffer
-	int pgindex;  //convenience variable
-	char *desc=NULL;
-	int paperrotate;
-	int p;
-	
-	 // find basic pdf page info, and generate content streams.
-	 // Actual page objects are written out after the contents of all the pages have been processed.
+	Page *page   = NULL;  // temp pointer
+	char *stream = NULL;  // page stream
+	char  scratch[300];   // temp buffer
+	int   pgindex;        // convenience variable
+	char *desc = NULL;
+	int   paperrotate;
+	int   p;
+
+	// find basic pdf page info, and generate content streams.
+	// Actual page objects are written out after the contents of all the pages have been processed.
 	for (int c = (config->reverse_order ? config->range.End() : config->range.Start());
 		 c >= 0;
 		 c = (config->reverse_order ? config->range.Previous() : config->range.Next())) 
 	{
-		if (config->evenodd==DocumentExportConfig::Even && c%2==0) continue;
-        if (config->evenodd==DocumentExportConfig::Odd && c%2==1) continue;
+		if (config->evenodd == DocumentExportConfig::Even && c%2==0) continue;
+		if (config->evenodd == DocumentExportConfig::Odd  && c%2==1) continue;
 			
-		if (spread) { delete spread; spread=NULL; }
-		if (doc) spread=doc->imposition->Layout(layout,c);
-		if (spread) desc=spread->pagesFromSpreadDesc(doc);
+		if (spread) { delete spread; spread = NULL; }
+		if (doc) spread = doc->imposition->Layout(layout,c);
+		if (spread) desc = spread->pagesFromSpreadDesc(doc);
 		else desc = limbo->Id() ? newstr(limbo->Id()) : NULL;
 
-		for (p=0; p<papergroup->papers.n; p++) {
+		papergroup = config->papergroup;
+		if (!papergroup && spread) papergroup = spread->papergroup;
+
+		for (p=0; p < (papergroup ? papergroup->papers.n : 1); p++) {
 			if (!pageobjs) {
-				pageobjs=pageobj=new PdfPageInfo;
+				pageobjs = pageobj = new PdfPageInfo;
 			} else {
-				pageobj->next=new PdfPageInfo;
-				pageobj=(PdfPageInfo *)pageobj->next;
+				pageobj->next = new PdfPageInfo;
+				pageobj = (PdfPageInfo *)pageobj->next;
 			}
 
-			paperrotate=config->paperrotation;
-			if (config->rotate180 && c%2==1) paperrotate+=180;
-			if (paperrotate>=360) paperrotate-=360; 
+			paperrotate = config->paperrotation;
+			if (config->rotate180 && c%2==1) paperrotate += 180;
+			if (paperrotate >= 360) paperrotate -= 360; 
 			pageobj->rotation = paperrotate;
-			pageobj->landscape=papergroup->papers.e[p]->box->paperstyle->landscape();
+			pageobj->landscape = papergroup ? papergroup->papers.e[p]->box->paperstyle->landscape() : 0;
 
-			pageobj->pagelabel=newstr(desc);//***should be specific to spread/paper
+			pageobj->pagelabel = newstr(desc);//***should be specific to spread/paper
 			//not we don't need to explicitly worry about landscape: papergroup->papers.e[p]->box->paperstyle->landscape();
 			//since paper->w() and h() take it into account. paperrotate is something different
-			pageobj->bbox.setbounds(0,
-									papergroup->papers.e[p]->box->paperstyle->w(), //takes in to account paper landscape
-									0,
-									papergroup->papers.e[p]->box->paperstyle->h());
+			double spread_width = 0, spread_height = 0;
+			if (papergroup) {
+				spread_width  = papergroup->papers.e[p]->box->paperstyle->w(); //takes into account paper landscape
+				spread_height = papergroup->papers.e[p]->box->paperstyle->h();
+			} else if (spread) {
+				spread_width  = spread->path->boxwidth();
+				spread_height = spread->path->boxheight();
+			} else if (config->limbo) {
+				spread_width  = config->limbo->boxwidth();
+				spread_height = config->limbo->boxheight();
+			}
+			pageobj->bbox.setbounds(0, spread_width, 0, spread_height);
 
 			 //set initial transform: convert from inches and map to paper in papergroup
 			//transform_set(m,1,0,0,1,0,0);
@@ -714,13 +724,23 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 
 
 			 //apply papergroup->paper transform
-			transform_invert(m,papergroup->papers.e[p]->m());
-			sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
-					m[0], m[1], m[2], m[3], m[4], m[5]); 
-			appendstr(stream,scratch);
-			//transforms.Multiply(m);
-			psConcat(m);
-			transforms.PushAndNewAxes(m);
+			if (papergroup) {
+				transform_invert(m, papergroup->papers.e[p]->m());
+				sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
+						m[0], m[1], m[2], m[3], m[4], m[5]); 
+				appendstr(stream,scratch);
+				psConcat(m);
+				transforms.PushAndNewAxes(m);
+			} else if (spread) {
+				//transform_invert(m, spread->path->m());
+				//transform_copy(m, spread->path->m());
+				transform_set(m, 1,0,0,1, -spread->path->minx, -spread->path->miny);
+				sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
+						m[0], m[1], m[2], m[3], m[4], m[5]); 
+				appendstr(stream,scratch);
+				psConcat(m);
+				transforms.PushAndNewAxes(m);
+			}
 			
 			 //write out limbo object if any
 			if (limbo && limbo->n()) {
@@ -728,14 +748,14 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			}
 
 			 //write out any papergroup objects
-			if (papergroup->objs.n()) {
+			if (papergroup && papergroup->objs.n()) {
 				pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,&papergroup->objs,log,warning,config);
 			}
 
 			if (spread) {
 				 // print out printer marks
 				 // *** later maybe this will be more like pdf printer mark annotations
-				if ((spread->mask&SPREAD_PRINTERMARKS) && spread->marks) {
+				if ((spread->mask & SPREAD_PRINTERMARKS) && spread->marks) {
 					pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,spread->marks,log,warning,config);
 				}
 				
@@ -763,16 +783,16 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 
 					 // set clipping region
 					DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
-					if ((page->pagestyle->flags&PAGE_CLIPS) || config->layout == PAPERLAYOUT) {
+					if ((page->pagestyle->flags & PAGE_CLIPS) || config->layout == PAPERLAYOUT) {
 						pdfSetClipToPath(stream,spread->pagestack.e[c2]->outline,0, NULL);
-					} 
+					}
 
 
 					 // handle object bleeds from other pages
 					if (page->pagebleeds.n && (config->layout == PAPERLAYOUT || config->layout == SINGLELAYOUT)) {
 						 //assume PAGELAYOUT already renders bleeds properly, since that's where the bleed objects come from
 
-						for (int pb=0; pb<page->pagebleeds.n; pb++) {
+						for (int pb = 0; pb < page->pagebleeds.n; pb++) {
 							PageBleed *bleed = page->pagebleeds[pb];
 							if (bleed->index < 0 || bleed->index >= doc->pages.n) continue;
 							Page *otherpage = doc->pages[bleed->index];
@@ -809,9 +829,16 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			}
 
 			 // print out paper footer
-			appendstr(stream,"Q\n"); //pop papergroup transform
-			transforms.PopAxes();
-			psPopCtm();
+			if (papergroup) {
+				appendstr(stream,"Q\n"); //pop papergroup transform
+				transforms.PopAxes();
+				psPopCtm();
+			} else if (spread) {
+				appendstr(stream,"Q\n"); //pop papergroup transform
+				transforms.PopAxes();
+				psPopCtm();
+			
+			}
 //			if (paperrotate>0) {
 //				appendstr(stream,"Q\n"); //pop paper rotation transform
 //				psPopCtm();
@@ -824,10 +851,10 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 
 			 // pdfdumpobj() outputs objects relevant to the stream. Now dump out this
 			 // page's content stream XObject to an object:
-			obj->next=new PdfObjInfo;
-			obj=obj->next;
-			obj->number=objcount++;
-			obj->byteoffset=ftell(f);
+			obj->next = new PdfObjInfo;
+			obj = obj->next;
+			obj->number = objcount++;
+			obj->byteoffset = ftell(f);
 			fprintf(f,"%ld 0 obj\n"
 					  "<< /Length %lu >>\n"
 					  "stream\n",
@@ -837,28 +864,27 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 					  "endobj\n");
 			delete[] stream; stream=NULL;
 
-			pageobj->contents=obj->number;
+			pageobj->contents = obj->number;
 			//pageobj gets its own number and byte offset later
 		}
-		if (spread) { delete spread; spread=NULL; }
+		if (spread) { delete spread; spread = nullptr; }
 		if (desc) delete[] desc;
 	}
 
 	
 	
 	 // write out pdf /Page dicts, which do not have their object number or offsets yet.
-	//int numpages=(end-start+1)*papergroup->papers.n;
 	int numpages=0;
 	for (pageobj=pageobjs; pageobj; pageobj=(PdfPageInfo *)pageobj->next) numpages++;
 
-	pages=objcount + numpages; //object number of parent Pages dict
-	pageobj=pageobjs;
-	obj->next=pageobj;
-	obj=obj->next; //both obj and pageobj now point to first page object
+	pages = objcount + numpages; //object number of parent Pages dict
+	pageobj = pageobjs;
+	obj->next = pageobj;
+	obj = obj->next; //both obj and pageobj now point to first page object
 
 	while (pageobj) {
-		pageobj->number=objcount++;
-		pageobj->byteoffset=ftell(f);
+		pageobj->number = objcount++;
+		pageobj->byteoffset = ftell(f);
 
 		fprintf(f,"%ld 0 obj\n",pageobj->number);
 		 //required
@@ -1005,8 +1031,10 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	fprintf(f,"%ld 0 obj\n<<\n",infodict);
 	const char *title=NULL;
 	if (doc) { if (!isblank(doc->Name(0))) title=doc->Name(0); }
-	if (!title) title=papergroup->Name;
-	if (!title) title=papergroup->name;
+	if (config->papergroup) {
+		if (!title) title = config->papergroup->Name;
+		if (!title) title = config->papergroup->name;
+	}
 	if (title) fprintf(f,"  /Title (%s)\n",title); //***warning, does not sanity check the string
 	//fprintf(f,"  /Author (%s)\n",***);
 	//fprintf(f,"  /Subject (%s)\n",***);

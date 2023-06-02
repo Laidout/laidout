@@ -32,7 +32,7 @@ class PrintingDialog : public ExportDialog
 	PrintingDialog(Document *ndoc,unsigned long nowner,const char *nsend,
 						 const char *file, const char *command,
 						 const char *thisfile,
-						 int layout,int pmin,int pmax,int pcur,
+						 int layout,int pmin,int pmax,int pcur, int cur_page,
 						 PaperGroup *group,
 						 Group *limbo,
 						 Laxkit::MessageBar *progress);

@@ -27,9 +27,6 @@
 #include "dodecahedron.h"
 #include "box.h"
 
-//template implementation:
-#include <lax/refptrstack.cc>
-
 #include <iostream>
 using namespace std;
 #define DBG 
@@ -941,6 +938,15 @@ int NetImposition::GetPapersNeeded(int npages)
 int NetImposition::GetSpreadsNeeded(int npages)
 {
 	return GetPapersNeeded(npages);
+}
+
+int NetImposition::GetNumInPaperGroupForSpread(int layout, int spread)
+{
+	if (layout == SINGLELAYOUT) return 1;
+	if (layout == PAGELAYOUT) return 1;
+	if (layout == SINGLES_WITH_ADJACENT_LAYOUT) return 1;
+	if (layout == PAPERLAYOUT) return papergroup->papers.n;
+	return 0;
 }
 
 //! Assuming one page type per active face.

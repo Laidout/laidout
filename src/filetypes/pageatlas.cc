@@ -79,7 +79,6 @@ class PageAtlasExportConfig : public DocumentExportConfig
 	int px_height;
 	bool round_up_to_power_2;
 	ColorValue *color;
-	// Laxkit::Color *color;
 
 	PageAtlasExportConfig();
 	PageAtlasExportConfig(DocumentExportConfig *config);
@@ -97,8 +96,8 @@ PageAtlasExportConfig::PageAtlasExportConfig()
 {
 	pages_wide          = 1;
 	pages_tall          = 1;
-	px_width            = 128;
-	px_height           = 128;
+	px_width            = 1024;
+	px_height           = 1024;
 	round_up_to_power_2 = true;
 	color               = new ColorValue();
 	color->color.SetRGB(1.,1.,1.,1.);
@@ -131,8 +130,8 @@ PageAtlasExportConfig::PageAtlasExportConfig(DocumentExportConfig *config)
 	} else {
 		pages_wide          = 1;
 		pages_tall          = 1;
-		px_width            = 128;
-		px_height           = 128;
+		px_width            = 1024;
+		px_height           = 1024;
 		round_up_to_power_2 = true;
 		color               = nullptr;
 	}
@@ -549,10 +548,11 @@ int PageAtlasExportFilter::Out(const char *filename, Laxkit::anObject *context, 
 	int         layout     = config->layout;
 	// Group *     limbo      = config->limbo;
 	bool        rev        = config->reverse_order;
-	PaperGroup *papergroup = config->papergroup;
+	//PaperGroup *papergroup = config->papergroup;
 	if (!filename) filename = config->filename;
 
 	// we must have something to export...
+	//todo: should be able to go on a random papergroup
 	if (!doc) {
 		log.AddError(_("Page atlas requires a document!"));
 		return 1;
@@ -590,36 +590,19 @@ int PageAtlasExportFilter::Out(const char *filename, Laxkit::anObject *context, 
 		return 2;
 	}
 
-	// if (layout != SINGLELAYOUT) {
-	// 	log.AddWarning(_("Using Singles layout. Page Atlas only supports Singles layout."));
-	// 	layout = SINGLELAYOUT;
+	// if (layout != PAPERLAYOUT) {
+	// 	papergroup = nullptr; //force using spread bounds
 	// }
 
-	if (layout != PAPERLAYOUT) {
-		papergroup = nullptr; //force using spread bounds
-	}
-
-	int num_subs_per_image = config->pages_wide * config->pages_tall;
+	int num_subs_per_image = config->pages_wide * config->pages_tall; //how many rendered images to fit on single output image
 	double sub_width  = (double)px_width  / config->pages_wide;
 	double sub_height = (double)px_height / config->pages_tall;
 	LaxImage *wholeimg = ImageLoader::NewImage(px_width, px_height);
 	LaxImage *subimg   = ImageLoader::NewImage(sub_width, sub_height);
 
-	int totalnumpages = 0;
+	int totalnumpages = config->NumOutputAreas();
 
-	if (config->evenodd == DocumentExportConfig::Even) {
-		for (int c = range->Start(); c >= 0; c = range->Next())
-			if (c % 2 == 0) totalnumpages++;
-	} else if (config->evenodd == DocumentExportConfig::Odd) {
-		for (int c = range->Start(); c >= 0; c = range->Next())
-			if (c % 2 == 1) totalnumpages++;
-	} else {
- 		totalnumpages = (range->NumInRanges());
-	}
-
-	if (papergroup) totalnumpages *= papergroup->papers.n;
-
-	int subs_on_image = 0; //num on whole image so far
+	int subs_on_image = 0; //num on whole output image so far
 	int img_num = 1;
 	int img_start_num = 1;
 
@@ -655,7 +638,8 @@ int PageAtlasExportFilter::Out(const char *filename, Laxkit::anObject *context, 
 		if (config->evenodd == DocumentExportConfig::Odd  && c % 2 == 1) continue;
 
 		Spread *spread = doc->imposition->Layout(layout, c);
-
+		PaperGroup *papergroup = config->papergroup;
+		if (!papergroup) papergroup = spread->papergroup;
 
 		for (int p = 0; p<(papergroup ? papergroup->papers.n : 1); p++) { //for each paper
 
@@ -684,7 +668,6 @@ int PageAtlasExportFilter::Out(const char *filename, Laxkit::anObject *context, 
 			//}
 
 			if (spread) {
-				//spread->GetBounds(bounds);
 
 				if (spread->marks) {
 					//objects created by the imposition
@@ -696,7 +679,36 @@ int PageAtlasExportFilter::Out(const char *filename, Laxkit::anObject *context, 
 					int pg = spread->pagestack.e[c2]->index;
 					if (pg < 0 || pg >= doc->pages.n) continue;
 
+					Page *page = spread->pagestack.e[c2]->page;
+					if (!page) page = doc->pages.e[pg];
+
 					dp->PushAndNewTransform(spread->pagestack.e[c2]->outline->m());
+
+					if (page->pagebleeds.n && (config->layout == PAPERLAYOUT || config->layout == SINGLELAYOUT)) {
+		                 //assume PAGELAYOUT already renders bleeds properly, since that's where the bleed objects come from
+
+		                //if (out->layout == PAPERLAYOUT) {
+		                //    //only clip in paper view
+		                //    dp->PushClip(1);
+		                //    SetClipFromPaths(dp,sd,NULL);
+		                //}
+
+		                for (int pb=0; pb<page->pagebleeds.n; pb++) {
+		                    PageBleed *bleed = page->pagebleeds[pb];
+		                    Page *otherpage = doc->pages[bleed->index];
+
+		                    dp->PushAndNewTransform(bleed->matrix);
+
+		                    for (int c2 = 0; c2 < otherpage->layers.n(); c2++) {
+		                        DrawData(dp,otherpage->e(c2),NULL,NULL,0);
+		                    }
+
+		                    dp->PopAxes();
+		                }
+
+                        //if (out->layout == PAPERLAYOUT) dp->PopClip();
+					}
+
 
 					// for each layer on the page..
 					for (int l = 0; l < doc->pages[pg]->layers.n(); l++) {

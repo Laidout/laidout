@@ -43,13 +43,13 @@ namespace Laidout {
 PrintingDialog::PrintingDialog(Document *ndoc,Window nowner,const char *nsend,
 						 const char *file, const char *command,
 						 const char *thisfile,
-						 int layout,int pmin,int pmax,int pcur,
+						 int layout,int pmin,int pmax,int pcur, int cur_page,
 						 PaperGroup *group,
 						 Group *limbo,
 						 Laxkit::MessageBar *progress)
 	: ExportDialog(EXPORT_COMMAND,nowner,nsend,
 				   ndoc,limbo,group,NULL,file,
-				   layout,pmin,pmax,pcur)
+				   layout,pmin,pmax,pcur,cur_page)
 {
 	for (int c=0; c<laidout->exportfilters.n; c++)
 		if (!strcasecmp(laidout->exportfilters.e[c]->VersionName(), _("Pdf"))) { //Postscript LL3"))) {

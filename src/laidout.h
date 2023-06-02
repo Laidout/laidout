@@ -125,7 +125,7 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	Laxkit::PtrStack<char>preview_file_bases;
 	int max_preview_length, max_preview_width, max_preview_height;
 
-	char *ghostscript_binary;
+	//char *ghostscript_binary;
 	
 //	Laxkit::PtrStack<Style> stylestack:
 //	Laxkit::PtrStack<FontThing> fontstack;
@@ -198,7 +198,7 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	 //resource and external executable management
 	char *full_path_for_resource(const char *name,const char *dir = nullptr);
 	char *default_path_for_resource(const char *resource);
-	const char *binary(const char *what);
+	//const char *binary(const char *what);
 };
 
 // if included in laidout.cc, then don't include "extern" when defining *laidout

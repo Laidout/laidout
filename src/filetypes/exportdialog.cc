@@ -72,6 +72,8 @@ ConfigEventData::~ConfigEventData()
  * \todo allow selecting alternate imposition (with preview?) as well as layout type..
  */
 
+#define ACTION_MANAGE_COMMANDS (-1)
+
 
 /*! Controls are added here, rather than waiting for init().
  */
@@ -84,7 +86,8 @@ ExportDialog::ExportDialog(unsigned long nstyle,unsigned long nowner,const char 
 						   int layout, //!< Type of layout to export
 						   int pmin, //!< The minimum of the range
 						   int pmax, //!< The maximum of the range
-						   int pcur) //!< The current element of the range
+						   int pcur, //!< The current element of the range
+						   int cur_page) //!< for reference when you switch targets, try to keep cur_page in the "current" spread
 	: RowFrame(NULL,NULL,_("Export"),
 			   (nstyle&ANXWIN_MASK)|ROWFRAME_ROWS|ROWFRAME_TOP|ANXWIN_REMEMBER|ANXWIN_ESCAPABLE,
 			   0,0,0,0,0,
@@ -122,6 +125,7 @@ ExportDialog::ExportDialog(unsigned long nstyle,unsigned long nowner,const char 
 	}
 
 	cur = pcur;
+	current_page = cur_page;
 
 	fileedit = filesedit = printspreadrange = command = NULL;
 	filecheck = filescheck = commandcheck = delaftercommand = printall = printcurrent = printrange = NULL;
@@ -407,7 +411,7 @@ int ExportDialog::init()
 	AddNull();
 
  	//--------- to command
-	if (dialog_style&EXPORT_COMMAND) {
+	if (dialog_style & EXPORT_COMMAND) {
 		last = commandcheck = new CheckBox(this,"command-check",NULL,CHECK_CIRCLE|CHECK_LEFT, 
 							 0,0,0,0,0, 
 							 last,object_id,"command-check",
@@ -438,7 +442,7 @@ int ExportDialog::init()
 			}
 		}
 		commands->AddSep();
-		commands->AddItem(_("Manage commands..."), -1);
+		commands->AddItem(_("Manage commands..."), ACTION_MANAGE_COMMANDS);
 		commands->SetState(-1, SLIDER_IGNORE_ON_BROWSE, 1);
 		if (cur_tool < 1) cur_tool = 1;
 		commands->Select(cur_tool);
@@ -709,6 +713,8 @@ int ExportDialog::init()
 void ExportDialog::configBounds()
 {
 	config->range.Max(max, true);
+	//CheckBox *box = dynamic_cast<CheckBox*>(findChildWindowByName("ps-printrange"));
+	printspreadrange->SetText(config->range.ToString(false,false,false));
 }
 
 //! Update extensions in file edits.
@@ -1040,7 +1046,7 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 
 	} else if (!strcmp(mes,"commands")) { //from a sliderpopup
 		int id = e->info1;
-		if (id == -1) {
+		if (id == ACTION_MANAGE_COMMANDS) {
 			//manage commands
 			app->rundialog(new ExternalToolManagerWindow(nullptr, object_id, "managedcommands"));
 

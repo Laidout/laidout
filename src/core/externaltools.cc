@@ -126,6 +126,8 @@ void ExternalTool::Name(const char *name)
 	makestr(this->name, name);
 }
 
+/*! True when verified == 1. This should mean there is an executable at binary_path.
+ */
 bool ExternalTool::Valid()
 {
 	if (verified == -1) FindPath();
@@ -290,6 +292,9 @@ void ExternalToolManager::SetupDefaults()
 	AddExternalCategory(cat);
 
 	cat = new ExternalToolCategory(ExternalToolCategory::FileBrowser, "FileBrowser", _("File browser"), nullptr, false);
+	AddExternalCategory(cat);
+
+	cat = new ExternalToolCategory(ExternalToolCategory::Misc, "Misc", _("Misc"), nullptr, false);
 	AddExternalCategory(cat);
 
 	bool do_default = true;

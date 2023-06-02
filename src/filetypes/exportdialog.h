@@ -49,7 +49,7 @@ class ExportDialog : public Laxkit::RowFrame
 	int overwriteok;
 	unsigned long dialog_style;
 	int tofile;
-	int cur, max;
+	int cur, max, current_page;
 	char *last_meta_dir;
 	Laxkit::LineEdit *fileedit,*filesedit,*printspreadrange,*command;
 	Laxkit::CheckBox *filecheck,*filescheck;
@@ -83,7 +83,7 @@ class ExportDialog : public Laxkit::RowFrame
 				 Group *limbo,
 				 PaperGroup *group,
 				 ExportFilter *nfilter, const char *file, int layout,
-				 int pmin, int pmax, int pcur);
+				 int pmin, int pmax, int pcur, int cur_page);
 	virtual ~ExportDialog();
 	virtual const char *whattype() { return "ExportDialog"; }
 	virtual int preinit();

@@ -111,36 +111,6 @@ const char *LaidoutVersion()
  * is perhaps a little more meaningful or something...
  */
 
-////! Redefinition of the default Laxkit preview generator.
-///*! \ingroup misc
-// *
-// * This can create previews of eps files..
-// *
-// * Return 0 for success.
-// */
-//int laidout_preview_maker(const char *original, const char *preview, const char *format, int width, int height, int fit)
-//{
-//	// *** need to wrap eps handling into something else...
-//	if (!GeneratePreviewFile(original,preview,format,width,height,fit)) return 0;
-//
-//	 //normal preview maker didn't work, so try something else...
-//	DoubleBBox bbox;
-//	char *title,*date;
-//	int depth,w,h;
-//	FILE *f=fopen(original,"r");
-//	if (!f) return 1;
-//	setlocale(LC_ALL,"C");
-//	int c=scaninEPS(f,&bbox,&title,&date,NULL,&depth,&w,&h);
-//	setlocale(LC_ALL,"");
-//	fclose(f);
-//	if (c) return 1; //not eps probably
-//	return WriteEpsPreviewAsPng(GHOSTSCRIPT_BIN,
-//						 original,w,h,
-//						 preview,width,height,
-//						 NULL);
-//}
-
-
 
 
 //------------------------------- LaidoutApp --------------------------------------------
@@ -276,9 +246,8 @@ LaidoutApp::LaidoutApp()
 
 	defaultpaper=NULL;
 
-	//ghostscript_binary=newstr(GHOSTSCRIPT_BIN);
-	if (file_exists("/usr/bin/gs", 0, nullptr) == S_IFREG) ghostscript_binary = newstr("/usr/bin/gs");
-	else ghostscript_binary = nullptr;
+	// if (file_exists("/usr/bin/gs", 0, nullptr) == S_IFREG) ghostscript_binary = newstr("/usr/bin/gs");
+	// else ghostscript_binary = nullptr;
 
 	calculator = nullptr;
 	GetUnitManager()->DefaultUnits(prefs.unitname);
@@ -322,7 +291,7 @@ LaidoutApp::~LaidoutApp()
 	if (defaultpaper)       defaultpaper->dec_count();
 	if (curdoc)             curdoc->dec_count();
 	if (project)            delete project;
-	if (ghostscript_binary) delete[] ghostscript_binary;
+	//if (ghostscript_binary) delete[] ghostscript_binary;
 	if (calculator)		    calculator->dec_count();
 	delete[] pipeoutarg;
 	delete[] shared_dir;
@@ -1066,8 +1035,8 @@ int LaidoutApp::readinLaidoutDefaults(char **shortcutsfile)
 			// > laidout --template consumptionIssue
 			// > laidout --template 1paperPamphlet
 		
-		} else if (!strcmp(name,"ghostscript_binary")) {
-			if (file_exists(value,1,NULL)==S_IFREG) makestr(ghostscript_binary,value);
+		//} else if (!strcmp(name,"ghostscript_binary")) {
+		//	if (file_exists(value,1,NULL)==S_IFREG) makestr(ghostscript_binary,value);
 
 		} else if (!strcmp(name,"icon_dir")) {
 			if (file_exists(value,1,NULL) == S_IFDIR) {
@@ -1765,19 +1734,19 @@ Document *LaidoutApp::findDocument(const char *saveas)
 	return NULL;
 }
 
-//! Return the path corresponding to the requested program.
-/*! Currently, this responds only to "gs", which returns the current path for 
- * ghostscript, if any.
- *
- * \todo the undocumented laidoutrc attribute ghostscript_binary will set that variable in LaidoutApp. 
- *   In future, should probably have section devoted to known, modifiable external executables like
- *   gs, inkscape, gimp, tex, etc.
- */
-const char *LaidoutApp::binary(const char *what)
-{
-	if (!strcmp(what,"gs")) return ghostscript_binary;
-	return NULL;
-}
+// //! Return the path corresponding to the requested program.
+// /*! Currently, this responds only to "gs", which returns the current path for 
+//  * ghostscript, if any.
+//  *
+//  * \todo the undocumented laidoutrc attribute ghostscript_binary will set that variable in LaidoutApp. 
+//  *   In future, should probably have section devoted to known, modifiable external executables like
+//  *   gs, inkscape, gimp, tex, etc.
+//  */
+// const char *LaidoutApp::binary(const char *what)
+// {
+// 	if (!strcmp(what,"gs")) return ghostscript_binary;
+// 	return NULL;
+// }
 
 //! Given a Laidout resource name, find the absolute file path for it. Returns a new char[].
 /*! \todo *** this should be expanded to be a more full featured search for resources.

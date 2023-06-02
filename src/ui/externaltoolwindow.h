@@ -72,6 +72,8 @@ class ExternalToolWindow : public Laxkit::RowFrame
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 
 	virtual int send();
+
+	static int SpawnExternalToolsWindow(ValueHash *context, ValueHash *parameters, Value **value_ret, Laxkit::ErrorLog &log);
 };
 
 

@@ -966,6 +966,12 @@ int Singles::GetSpreadsNeeded(int npages)
 	return npages;
 } 
 
+int Singles::GetNumInPaperGroupForSpread(int layout, int spread)
+{
+	if (layout == SINGLELAYOUT) return 1;
+	return papergroup->papers.n;
+}
+
 int Singles::NumPageTypes()
 { 
 	if (!papergroup) return 1;

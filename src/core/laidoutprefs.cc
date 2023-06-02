@@ -23,14 +23,13 @@
 #include "../configured.h"
 #include "stylemanager.h"
 #include "utils.h"
+#include "../ui/externaltoolwindow.h"
 
 #include <sys/file.h>
 #include <clocale>
 #include <cctype>
 #include <unistd.h>
 
-//template implementation:
-#include <lax/lists.cc>
 
 #include <iostream>
 #define DBG
@@ -136,6 +135,7 @@ Value *LaidoutPreferences::duplicate()
 
 	return p;
 }
+
 
 ObjectDef *LaidoutPreferences::makeObjectDef()
 {
@@ -295,13 +295,22 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 			0,
 			NULL);
 
+	def->pushFunction("edit_external_tools",
+			_("Edit external tools..."),
+			_("Bring up window to configure external tools"),
+			nullptr
+			);
+	makestr(def->last()->uihint, "button");
+	def->last()->stylefunc = ExternalToolWindow::SpawnExternalToolsWindow;
+	
 	 //---------
-//	def->push("",
-//			_(""),
-//			_(""),
-//			VALUE_, NULL,"",
-//			0,
-//			NULL);
+//	def->push("",  // id
+//			_(""), // label
+//			_(""), // description
+//			"int", NULL,"", //type, range, defaultvalue
+//			0, // flags
+//			nullptr,  //NewObjectFunc
+//			nullptr); //ObjectFunc
 	return def;
 
 

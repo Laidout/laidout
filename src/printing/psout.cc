@@ -37,9 +37,6 @@
 #include "pspathsdata.h"
 #include "pseps.h"
 
-//template implementation:
-#include <lax/lists.cc>
-
 #include <iostream>
 using namespace std;
 #define DBG 
@@ -289,7 +286,7 @@ int psSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing)//
 	return n;
 }
 
-//! Print a postscript file of doc to already open f.
+//! Output a postscript file.
 /*! \ingroup postscript
  * Does not open or close f. This sets up the ctm as accessible through psCTM(),
  * and flushes the ctm stack.
@@ -316,7 +313,6 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	Document *doc =out->doc;
 	int layout    =out->layout;
 	Group *limbo  =out->limbo;
-	PaperGroup *papergroup=out->papergroup;
 	if (!filename) filename=out->filename;
 
 	 //we must have something to export...
@@ -326,9 +322,55 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	}
 
 
+	 //figure out paper size and orientation
+	 // note this is orientation for only the first paper in papergroup.
+	 // If there are more than one papers, this may not work as expected...
+	 // The ps Orientation comment determines how onscreen viewers will show 
+	 // pages. This can be overridden by the %%PageOrientation: comment
+	int landscape = 0, plandscape = 0;
+	double paperwidth = 0, paperheight = 0;
+	 // note this is orientation for only the first paper in papergroup.
+	 // If there are more than one papers, this may not work as expected...
+	PaperGroup *papergroup = out->papergroup;
+	Spread *spread = nullptr;
+	if (!papergroup) {
+		int pg = out->range.Start();
+		spread = doc->imposition->Layout(out->layout,pg);
+		papergroup = spread->papergroup;
+	}
+	if (papergroup) {
+		PaperStyle *defaultpaper = nullptr;
+		defaultpaper = papergroup->papers.e[0]->box->paperstyle;
+		landscape   = (defaultpaper->flags & 1) ? 1 : 0;
+		paperwidth  = defaultpaper->width;
+		paperheight = defaultpaper->height;
+	} else if (spread) {
+		paperwidth  = spread->path->boxwidth();
+		paperheight = spread->path->boxheight();
+	} else if (out->limbo) {
+		paperwidth  = out->limbo->boxwidth();
+		paperheight = out->limbo->boxheight();
+	}
+	if (spread) { delete spread; spread = nullptr; }
+	papergroup = out->papergroup;
+
+	if (paperwidth <= 0 || paperheight <= 0) {
+		DBG cerr <<" bad bounds, aborting. w x h: "<<paperwidth <<" x "<<paperheight<<endl;
+		log.AddError(_("Bad bounds for export!"));
+		return 4;
+	}
+
+	int totalnumpages = out->NumOutputAreas();
+
+
+	// if (!papergroup) {
+	// 	log.AddError(_("There must be a Paper Group for this filter."),ERROR_Fail);
+	// 	return 2;
+	// }
+
 	 //we must be able to open the export file location...
-	FILE *f=NULL;
-	char *file=NULL;
+	FILE *f = nullptr;
+	char *file = nullptr;
 	if (!filename) {
 		if (isblank(doc->saveas)) {
 			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
@@ -381,16 +423,8 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	 // %%EOF
 
 
-	 //figure out paper orientation
-	int landscape=0;
-	double paperwidth; //,paperheight;
+	
 	int c;
-	 // note this is orientation for only the first paper in papergroup.
-	 // If there are more than one papers, this may not work as expected...
-	 // The ps Orientation comment determines how onscreen viewers will show 
-	 // pages. This can be overridden by the %%PageOrientation: comment
-	landscape=(papergroup->papers.e[0]->box->paperstyle->flags&1)?1:0;
-	paperwidth=papergroup->papers.e[0]->box->paperstyle->width;
 	
 	 // initialize outside accessible ctm
 	psctms.flush();
@@ -401,7 +435,7 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	fprintf (f,"%%!PS-Adobe-3.0\n"
 			   "%%%%Orientation: ");
 	fprintf (f,"%s\n",(landscape?"Landscape":"Portrait"));
-	fprintf(f,"%%%%Pages: %d\n",(out->range.NumInRanges())*(papergroup?papergroup->papers.n:1));
+	fprintf(f,"%%%%Pages: %d\n", totalnumpages);
 	time_t t=time(NULL);
 	fprintf(f,"%%%%PageOrder: Ascend\n"
 			  "%%%%CreationDate: %s" //ctime puts a terminating newline
@@ -416,15 +450,16 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	 //%%+ ...list of used media in order of most used first
 	 //Each page refers to a given media with: %%PageMedia: tag
 	fprintf(f,"%%%%DocumentMedia: %s %.10g %.10g 75 white ( )\n", //75 g/m^2 = 20lb * 3.76 g/lb/m^2 
-			papergroup->papers.e[0]->box->paperstyle->name, 
-			72*papergroup->papers.e[0]->box->paperstyle->width,  //width and height ignoring landscape/portrait
-			72*papergroup->papers.e[0]->box->paperstyle->height);
+			"Paper", //papergroup->papers.e[0]->box->paperstyle->name, 
+			72 * paperwidth, //papergroup->papers.e[0]->box->paperstyle->width,  //width and height ignoring landscape/portrait
+			72 * paperheight //papergroup->papers.e[0]->box->paperstyle->height
+			);
 	fprintf(f,"%%%%EndComments\n");
 			
 
 	 //---------------------------Defaults
 	fprintf(f,"%%%%BeginDefaults\n"
-			  "%%%%PageMedia: %s\n",papergroup->papers.e[0]->box->paperstyle->name);//***
+			  "%%%%PageMedia: %s\n", "Paper" /*papergroup->papers.e[0]->box->paperstyle->name*/);//***
 	fprintf(f,"%%%%EndDefaults\n"
 			  "\n");
 			  
@@ -472,14 +507,17 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 			  "\n");
 	
 	 // Write out paper spreads....
-	Spread *spread=NULL;
 	double m[6];
 	int c2,l,pg;
 	transform_set(m,1,0,0,1,0,0);
 	Page *page=NULL;
 	char *desc=NULL;
-	int p,plandscape;
+	int p;
 	int cur_page_index = 1;
+	double dpi = 150;
+	if (doc && doc->imposition && doc->imposition->paper && doc->imposition->paper->paperstyle)
+		dpi = doc->imposition->paper->paperstyle->dpi;
+
 	for (c = out->range.Start(); c >= 0; c = out->range.Next()) {
 		 //get spread if any
 		if (doc) spread=doc->imposition->Layout(layout,c);
@@ -490,11 +528,16 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 		else desc=limbo->id?newstr(limbo->id):NULL;
 		prependstr(desc,"(");
 		appendstr(desc,")");
+
+		papergroup = out->papergroup;
+		if (!papergroup && spread) papergroup = spread->papergroup;
 			
-		for (p=0; p<papergroup->papers.n; p++) {
+		for (p=0; p<(papergroup ? papergroup->papers.n : 1); p++) {
 			DBG cerr<<"Printing paper "<<p<<"..."<<endl;
-			plandscape=papergroup->papers.e[p]->box->paperstyle->flags&1;
-			paperwidth=papergroup->papers.e[p]->box->paperstyle->width;
+			if (papergroup) {
+				plandscape = papergroup->papers.e[p]->box->paperstyle->flags&1;
+				paperwidth = papergroup->papers.e[p]->box->paperstyle->width;
+			}
 
 			 //print (postscript) page header
 			 //%%Page label (ordinal starting at 1)
@@ -529,7 +572,8 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 
 			fprintf(f,"gsave\n");
 			psPushCtm();
-			transform_invert(m,papergroup->papers.e[p]->m());
+			if (papergroup) transform_invert(m,papergroup->papers.e[p]->m());
+			else transform_identity(m);
 			fprintf(f,"[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
 					m[0], m[1], m[2], m[3], m[4], m[5]); 
 			psConcat(m);
@@ -560,7 +604,7 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 				
 				 // for each page in spread..
 				for (c2=0; c2<spread->pagestack.n(); c2++) {
-					psDpi(doc->imposition->paper->paperstyle->dpi);
+					psDpi(dpi);
 					
 					pg=spread->pagestack.e[c2]->index;
 					if (pg<0 || pg>=doc->pages.n) continue;
@@ -638,15 +682,14 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
  */
 int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 {
-	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
+	DocumentExportConfig *out = dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;
 
 	 //set up config
 	Document *doc =out->doc;
 	int layout    =out->layout;
 	Group *limbo  =out->limbo;
-	PaperGroup *papergroup=out->papergroup;
-	char *file=NULL;
+	char *file = nullptr;
 
 	if (!filename) filename=out->filename;
 	if (!filename) filename=out->tofiles;
@@ -655,52 +698,82 @@ int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
             log.AddMessage(_("Cannot save without a filename."),ERROR_Fail); 
             return 3; 
         } 
-        file=newstr(doc->saveas);
+        file = newstr(doc->saveas);
         appendstr(file,".png");
-		filename=file;
+		filename = file;
 	}
 
-
+	double dpi = 150;
+	if (doc && doc->imposition && doc->imposition->paper && doc->imposition->paper->paperstyle)
+		dpi = doc->imposition->paper->paperstyle->dpi;
 
 	DBG cerr <<"=================== start printing eps "<<out->range.ToString(true, false, false)<<" ====================\n";
 		
-	Spread *spread=NULL;
+	Spread *spread = nullptr;
 	DoubleBBox bbox;
 	double m[6];
 	int c2,l,pg;
 	transform_set(m,1,0,0,1,0,0);
 	Page *page;
-	FILE *f;
-
-	f=open_file_for_writing(filename,0,&log);
-	delete[] file;
-	if (!f) return 1;
 	
-	setlocale(LC_ALL,"C");
-
 	 // initialize outside accessible ctm
 	psctms.flush();
 	psctm=transform_identity(psctm);
 
 	 // Find bbox
 	 //*** note bbox is not used!!
-	if (doc) spread=doc->imposition->Layout(layout,out->range.Start());
+	if (doc) spread = doc->imposition->Layout(layout,out->range.Start());
 	bbox.ClearBBox();
 	bbox.addtobounds(spread->path);
 	
 
-	 //figure out paper orientation
-	int landscape=0;
-	double paperwidth; //,paperheight;
-	landscape=(papergroup->papers.e[0]->box->paperstyle->flags&1)?1:0;
-	paperwidth=papergroup->papers.e[0]->box->paperstyle->width;
+	// figure out paper size and orientation
+	int landscape = 0;
+	double paperwidth = 0, paperheight = 0;
+	 // note this is orientation for only the first paper in papergroup.
+	 // If there are more than one papers, this may not work as expected...
+	PaperGroup *papergroup = out->papergroup;
+	if (!papergroup) {
+		papergroup = spread->papergroup;
+	}
+	if (papergroup) {
+		PaperStyle *defaultpaper = nullptr;
+		defaultpaper = papergroup->papers.e[0]->box->paperstyle;
+		landscape   = (defaultpaper->flags & 1) ? 1 : 0;
+		paperwidth  = defaultpaper->width;
+		paperheight = defaultpaper->height;
+	} else if (spread) {
+		paperwidth  = spread->path->boxwidth();
+		paperheight = spread->path->boxheight();
+	} else if (out->limbo) {
+		paperwidth  = out->limbo->boxwidth();
+		paperheight = out->limbo->boxheight();
+	}
+	papergroup = out->papergroup;
+
+	if (paperwidth <= 0 || paperheight <= 0) {
+		DBG cerr <<" bad bounds, aborting. w x h: "<<paperwidth <<" x "<<paperheight<<endl;
+		log.AddError(_("Bad bounds for export!"));
+		if (spread) { delete spread; spread = nullptr; }
+		return 4;
+	}
+
+
+	FILE *f = open_file_for_writing(filename,0,&log);
+	delete[] file;
+	if (!f) {
+		if (spread) { delete spread; spread = nullptr; }
+		return 1;
+	}
 	
+	setlocale(LC_ALL,"C");
+
 
 	 // print out header
 	fprintf(f, "%%!PS-Adobe-3.0 EPSF-3.0\n");
 	fprintf(f,"%%%%BoundingBox: 0 0 %d %d\n",
-			(int)(72*papergroup->papers.e[0]->box->paperstyle->width),
-			(int)(72*papergroup->papers.e[0]->box->paperstyle->height));
+			(int)(72 * paperwidth),
+			(int)(72 * paperheight));
 
 	fprintf(f,"%%%%Pages: 1\n");
 	time_t t=time(NULL);
@@ -755,7 +828,8 @@ int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 
 	fprintf(f,"gsave\n");
 	psPushCtm();
-	transform_invert(m,papergroup->papers.e[0]->m());
+	if (papergroup) transform_invert(m,papergroup->papers.e[0]->m());
+	else transform_identity(m);
 	fprintf(f,"[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
 			m[0], m[1], m[2], m[3], m[4], m[5]); 
 	psConcat(m);
@@ -785,7 +859,7 @@ int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	
 		 // for each page in spread..
 		for (c2=0; c2<spread->pagestack.n(); c2++) {
-			psDpi(doc->imposition->paper->paperstyle->dpi);
+			psDpi(dpi);
 			
 			pg=spread->pagestack.e[c2]->index;
 			if (pg<0 || pg>=doc->pages.n) continue;
@@ -817,6 +891,7 @@ int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 		}
 
 		delete spread;
+		spread = nullptr;
 	}
 	fprintf(f,"grestore\n");//remove papergroup->paper transform
 	psPopCtm();

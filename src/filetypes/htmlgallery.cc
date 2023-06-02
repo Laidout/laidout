@@ -910,6 +910,7 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 
 	int num_images = 0;
 	Spread *spread = nullptr;
+	
 	try {
 
 		int end = out->range.End();
@@ -923,6 +924,9 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 				spread = doc->imposition->Layout(out->layout, sc);
 			}
 
+			PaperGroup *papergroup = out->papergroup;
+			if (!papergroup && spread) papergroup = spread->papergroup;
+
 			int width  = out->width;
 			int height = out->height;
 
@@ -930,8 +934,11 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 				 //use crop to override any bounds derived from PaperGroup
 				bounds.setbounds(&out->crop);
 
-			} else	if (out->papergroup) {
-				out->papergroup->FindPaperBBox(&bounds);
+			} else if (papergroup) {
+				papergroup->FindPaperBBox(&bounds);
+
+			} else if (spread) {
+				bounds.setbounds(spread->path);
 			}
 
 			if (!bounds.validbounds() && out->limbo) {
@@ -1004,7 +1011,6 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 
 			 //limbo objects
 			if (out->limbo) DrawData(dp, out->limbo, NULL,NULL,DRAW_HIRES);
-			//if (out->limbo) imanager->DrawData(dp, out->limbo, NULL,NULL,DRAW_HIRES);
 			
 			 //papergroup objects
 			if (out->papergroup && out->papergroup->objs.n()) {
@@ -1024,16 +1030,15 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 				SomeData *sd=NULL;
 				for (int c=0; c<spread->pagestack.n(); c++) {
 					DBG cerr <<" drawing from pagestack.e["<<c<<"], which has page "<<spread->pagestack.e[c]->index<<endl;
-					page=spread->pagestack.e[c]->page;
-					pagei=spread->pagestack.e[c]->index;
+					page  = spread->pagestack.e[c]->page;
+					pagei = spread->pagestack.e[c]->index;
 
 					if (!page) { // try to look up page in doc using pagestack->index
 						if (spread->pagestack.e[c]->index>=0 && spread->pagestack.e[c]->index<doc->pages.n) {
-							page=spread->pagestack.e[c]->page=doc->pages.e[pagei];
+							page = spread->pagestack.e[c]->page=doc->pages.e[pagei];
 						}
 					}
 
-					//if (spread->pagestack.e[c]->index<0) {
 					if (!page) continue;
 
 					 //else we have a page, so draw it all

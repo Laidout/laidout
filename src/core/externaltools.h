@@ -69,6 +69,7 @@ class ExternalToolCategory : public Laxkit::anObject
   		ImageEditor,
   		ImageViewer,
 		FileBrowser,
+		Misc,
   		MAX
   	};
   	

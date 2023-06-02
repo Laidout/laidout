@@ -474,7 +474,7 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 	//int start     =out->start;
 	//int end       =out->end;
 	//int layout    =out->layout;
-	if (!filename) filename=out->filename;
+	if (!filename) filename = out->filename;
 	
 	 //we must have something to export...
 	if (!doc && !out->limbo) {
@@ -483,13 +483,13 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 		return 1;
 	}
 	
-	char *file=NULL;
+	char *file = nullptr;
 	if (!filename) {
 		if (!doc || isblank(doc->saveas)) {
 			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
 			return 3;
 		}
-		file=newstr(doc->saveas);
+		file = newstr(doc->saveas);
 		appendstr(file,".");
 		if (isblank(out->image_format)) appendstr(file,"png");
 		else appendstr(file,out->image_format);
@@ -505,12 +505,24 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 	int width  = out->width;
 	int height = out->height;
 
+	Spread *spread = nullptr;
+	if (doc) {
+		spread = doc->imposition->Layout(out->layout, out->range.Start());
+	}
+	
+	PaperGroup *papergroup = out->papergroup;
+	if (!papergroup) papergroup = spread->papergroup;
+
+	// determine content area
 	if (out->crop.validbounds()) {
 		 //use crop to override any bounds derived from PaperGroup
 		bounds.setbounds(&out->crop);
 
-	} else	if (out->papergroup) {
-		out->papergroup->FindPaperBBox(&bounds);
+	} else if (papergroup) {
+		papergroup->FindPaperBBox(&bounds);
+
+	} else if (spread) {
+		bounds.setbounds(spread->path);
 	}
 
 	if (!bounds.validbounds() && out->limbo) {
@@ -531,9 +543,9 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 	} else if (width == 0 && out->height == 0) {
 		 //both zero means use dpi to compute
 		double dpi=300; // *** maybe make this an option??
-		if (out->papergroup) dpi=out->papergroup->GetBasePaper(0)->dpi;
-		width =bounds.boxwidth ()*dpi;
-		height=bounds.boxheight()*dpi;
+		if (papergroup) dpi = papergroup->GetBasePaper(0)->dpi;
+		width  = bounds.boxwidth ()*dpi;
+		height = bounds.boxheight()*dpi;
 
 	} else if (width == 0) {
 		 //compute based on height, which must be zonzero
@@ -545,9 +557,9 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 
 	}
 
-	if (width==0 || height==0) {
-		if (width==0)  log.AddMessage(_( "Null width, nothing to output!"),ERROR_Fail);
-		if (height==0) log.AddMessage(_("Null height, nothing to output!"),ERROR_Fail);
+	if (width == 0 || height == 0) {
+		if (width  == 0) log.AddMessage(_( "Null width, nothing to output!"),ERROR_Fail);
+		if (height == 0) log.AddMessage(_("Null height, nothing to output!"),ERROR_Fail);
 		delete[] file;
 		return 5;
 	}
@@ -569,8 +581,8 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 		 //fill output with an appropriate background color
 		 // *** this should really color papers according to their characteristics
 		 // *** and have a default for non-transparent limbo color
-		if (out->papergroup && out->papergroup->papers.n) {
-			dp->NewBG(&out->papergroup->papers.e[0]->color);
+		if (papergroup && papergroup->papers.n) {
+			dp->NewBG(&papergroup->papers.e[0]->color);
 		} else dp->NewBG(1.0, 1.0, 1.0);
 
 		dp->ClearWindow();
@@ -585,19 +597,13 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 	//if (out->limbo) imanager->DrawData(dp, out->limbo, NULL,NULL,DRAW_HIRES);
 	
 	 //papergroup objects
-	if (out->papergroup && out->papergroup->objs.n()) {
-		for (int c=0; c<out->papergroup->objs.n(); c++) {
-			  //imanager->DrawData(dp, out->papergroup->objs.e(c), NULL,NULL,DRAW_HIRES);
-			  DrawData(dp, out->papergroup->objs.e(c), NULL,NULL,DRAW_HIRES);
+	if (papergroup && papergroup->objs.n()) {
+		for (int c = 0; c < papergroup->objs.n(); c++) {
+			  DrawData(dp, papergroup->objs.e(c), NULL,NULL,DRAW_HIRES);
 		}
 	}
 
 	 //spread objects
-	Spread *spread = NULL;
-	if (doc) {
-		spread = doc->imposition->Layout(out->layout, out->range.Start());
-	}
-
 	if (spread) {
 		dp->BlendMode(LAXOP_Over);
 

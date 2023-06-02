@@ -2726,6 +2726,10 @@ int SignatureImposition::GetPapersNeeded(int npages)
 int SignatureImposition::GetSpreadsNeeded(int npages)
 { return (npages)/2+1; } 
 
+int SignatureImposition::GetNumInPaperGroupForSpread(int layout, int spread)
+{
+	return 1;
+}
 
 //! With the final trimmed page size (w,h), set the paper size to the proper size to just contain it.
 /*! This adjusts all SignatureInstance objects in signatures.

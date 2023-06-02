@@ -254,7 +254,6 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog 
 	Document *doc =config->doc;
 	int layout    =config->layout;
 	Group *limbo  =config->limbo;
-	PaperGroup *papergroup=config->papergroup;
 	if (!filename) filename=config->filename;
 	
 	 //we must have something to export...
@@ -262,6 +261,12 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog 
 		//|| !doc->imposition || !doc->imposition->paper)...
 		log.AddMessage(_("Nothing to export!"),ERROR_Fail);
 		return 1;
+	}
+
+	PaperGroup *papergroup = config->papergroup;
+	if (!papergroup) {
+		log.AddError(_("You must supply a custom papergroup for this filter."));
+		return 1;	
 	}
 	
 	 //we must be able to open the export file location...

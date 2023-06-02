@@ -31,6 +31,17 @@ using namespace Laxkit;
 namespace Laidout {
 
 
+/*! Static func to create an ExternalToolWindow from anywhere.
+ */
+int ExternalToolWindow::SpawnExternalToolsWindow(ValueHash *context, ValueHash *parameters, Value **value_ret, Laxkit::ErrorLog &log)
+{
+	*value_ret = nullptr;
+	laidout->rundialog(new ExternalToolManagerWindow(nullptr, 0, nullptr));
+	return 0;
+}
+
+
+
 //------------------------------ ExternalToolManagerWindow2 ----------------------------
 
 // class ListArranger : public Laxkit::RowFrame

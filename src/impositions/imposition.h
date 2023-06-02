@@ -153,8 +153,8 @@ class Imposition : public Value
 	int numpages;
 	int numdocpages;
 	Document *doc;
-	PaperGroup *papergroup;
-	PaperBox *paper;
+	PaperGroup *papergroup; //this is a default..? todo: decide whether subclasses need to maintain this instead
+	PaperBox *paper; //this is a default..? todo: decide whether subclasses need to maintain this instead
 
 	Imposition(const char *nsname);
 	virtual ~Imposition();
@@ -198,6 +198,7 @@ class Imposition : public Value
 	virtual int GetPagesNeeded(int npapers) = 0;
 	virtual int GetPapersNeeded(int npages) = 0;
 	virtual int GetSpreadsNeeded(int npages) = 0;
+	virtual int GetNumInPaperGroupForSpread(int layout, int spread) = 0; // this helps set up exports
 	
 	virtual int NumPageTypes() = 0;
 	virtual const char *PageTypeName(int pagetype) = 0;

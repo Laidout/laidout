@@ -22,9 +22,6 @@
 #include <lax/interfaces/pathinterface.h>
 #include <lax/transformmath.h>
 
-//template implementation:
-//#include <lax/lists.cc>
-
 
 #include <iostream>
 using namespace std;

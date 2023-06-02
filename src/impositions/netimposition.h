@@ -81,6 +81,7 @@ class NetImposition : public Imposition
 	virtual int GetPagesNeeded(int npapers);
 	virtual int GetPapersNeeded(int npages);
 	virtual int GetSpreadsNeeded(int npages);
+	virtual int GetNumInPaperGroupForSpread(int layout, int spread);
 
 	virtual int NumPageTypes();
 	virtual const char *PageTypeName(int pagetype);

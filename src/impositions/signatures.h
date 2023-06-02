@@ -15,11 +15,9 @@
 #ifndef SIGNATURES_H
 #define SIGNATURES_H
 
-//#include <lax/anobject.h>
 #include <lax/dump.h>
-//#include <lax/refcounted.h>
-#include "imposition.h"
 #include <lax/interfaces/linestyle.h>
+#include "imposition.h"
 
 
 
@@ -292,6 +290,7 @@ class SignatureImposition : public Imposition
 	virtual int GetPagesNeeded(int npapers);
 	virtual int GetPapersNeeded(int npages);
 	virtual int GetSpreadsNeeded(int npages);
+	virtual int GetNumInPaperGroupForSpread(int layout, int spread);
 
 	virtual int NumPageTypes();
 	virtual const char *PageTypeName(int pagetype);

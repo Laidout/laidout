@@ -37,10 +37,6 @@
 #include "../dataobjects/mysterydata.h"
 #include "../core/drawdata.h"
 
-//template implementation
-#include <lax/lists.cc>
-#include <lax/refptrstack.cc>
-
 
 #include <iostream>
 #define DBG 
@@ -377,8 +373,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	Document *doc =config->doc;
 	int layout    =config->layout;
 	Group *limbo  =config->limbo;
-	PaperGroup *papergroup=config->papergroup;
-	if (!filename) filename=config->filename;
+	if (!filename) filename = config->filename;
 	
 	 //we must have something to export...
 	if (!doc && !limbo) {
@@ -390,6 +385,41 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	Attribute *scribushints=NULL;
 	if (doc) scribushints=doc->iohints.find("Scribus");
 	else scribushints=laidout->project->iohints.find("Scribus");
+
+
+	 //figure out paper size and orientation
+	int landscape = 0, plandscape = 0;
+	double paperwidth = 0, paperheight = 0;
+	Spread *spread = nullptr;
+	 // note this is orientation for only the first paper in papergroup.
+	 // If there are more than one papers, this may not work as expected...
+	PaperGroup *papergroup = config->papergroup;
+	if (!papergroup) {
+		int pg = config->range.Start();
+		spread = doc->imposition->Layout(config->layout,pg);
+		papergroup = spread->papergroup;
+	}
+	if (papergroup) {
+		PaperStyle *defaultpaper = nullptr;
+		defaultpaper = papergroup->papers.e[0]->box->paperstyle;
+		landscape   = (defaultpaper->flags & 1) ? 1 : 0;
+		paperwidth  = defaultpaper->width;
+		paperheight = defaultpaper->height;
+	} else if (spread) {
+		paperwidth  = spread->path->boxwidth();
+		paperheight = spread->path->boxheight();
+	} else if (config->limbo) {
+		paperwidth  = config->limbo->boxwidth();
+		paperheight = config->limbo->boxheight();
+	}
+	if (spread) { delete spread; spread = nullptr; }	
+
+	if (paperwidth <= 0 || paperheight <= 0) {
+		DBG cerr <<" bad bounds, aborting. w x h: "<<paperwidth <<" x "<<paperheight<<endl;
+		log.AddError(_("Bad bounds for export!"));
+		return 4;
+	}
+
 
 	 //we must be able to open the export file location...
 	FILE *f=NULL;
@@ -405,7 +435,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 		appendstr(file,".sla");
 	} else file=newstr(filename);
 
-	f=open_file_for_writing(file,0,&log);
+	f = open_file_for_writing(file,0,&log);
 	if (!f) {
 		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
 		delete[] file;
@@ -415,9 +445,8 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 
 	setlocale(LC_ALL,"C");
 
-	int warning=0;
-	Spread *spread=NULL;
-	Group *g=NULL;
+	int warning = 0;
+	Group *g = nullptr;
 	Palette palette;
 	int c2,l,pg,c3;
 
@@ -442,6 +471,11 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 //		}
 //	}
 	
+	
+
+	int totalnumpages = config->NumOutputAreas();
+	
+
 	 // write out header
 	Attribute *temp=NULL;
 	const char *str="1.4.5";
@@ -454,29 +488,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 		fprintf(f,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 				  "<SCRIBUSUTF8NEW Version=\"%s\">\n",str);
 	} else fprintf(f,"<SCRIBUSUTF8NEW Version=\"%s\">\n",str);
-	
-	
-	 //figure out paper size and orientation
-	int landscape=0,plandscape;
-	double paperwidth,paperheight;
-	 // note this is orientation for only the first paper in papergroup.
-	 // If there are more than one papers, this may not work as expected...
-	PaperStyle *defaultpaper=papergroup->papers.e[0]->box->paperstyle;
-	landscape=( defaultpaper->flags&1)?1:0;
-	paperwidth= defaultpaper->width;
-	paperheight=defaultpaper->height;
 
-	int totalnumpages = 0;
-	if (config->evenodd == DocumentExportConfig::Even) {
-		for (int c = config->range.Start(); c >= 0; c = config->range.Next())
-			if (c % 2 == 0) totalnumpages++;
-	} else if (config->evenodd == DocumentExportConfig::Odd) {
-		for (int c = config->range.Start(); c >= 0; c = config->range.Next())
-			if (c % 2 == 1) totalnumpages++;
-	} else {
- 		totalnumpages = (config->range.NumInRanges());
-	}
-	totalnumpages *= papergroup->papers.n;
 	
 	 //------------ write out document attributes
 	 //****** all the scribushints.slahead blocks are output as DOCUMENT attributes
@@ -689,10 +701,14 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 		if (config->evenodd==DocumentExportConfig::Even && c%2==0) continue;
 		if (config->evenodd==DocumentExportConfig::Odd  && c%2==1) continue;
 
-		if (doc) spread=doc->imposition->Layout(layout,c);
-		for (p=0; p<papergroup->papers.n; p++) { //for each paper
+		if (doc) spread = doc->imposition->Layout(layout,c);
+
+		papergroup = config->papergroup;
+		if (!papergroup) papergroup = spread->papergroup;
+
+		for (p = 0; p < (papergroup ? papergroup->papers.n : 1); p++) { //for each paper
 					
-			if (papergroup->objs.n()) {
+			if (papergroup && papergroup->objs.n()) {
 				appendobjfordumping(config, pageobjects,palette,&papergroup->objs);
 			}
 
@@ -876,27 +892,28 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 		 c >= 0;
 		 c = (config->reverse_order ? config->range.Previous() : config->range.Next()))  //for each spread
 	{
-		if (config->evenodd==DocumentExportConfig::Even && c%2==0) continue;
-		if (config->evenodd==DocumentExportConfig::Odd && c%2==1) continue;
+		if (config->evenodd == DocumentExportConfig::Even && c%2==0) continue;
+		if (config->evenodd == DocumentExportConfig::Odd  && c%2==1) continue;
 
-		if (doc) spread=doc->imposition->Layout(layout,c);
+		if (doc) spread = doc->imposition->Layout(layout,c);
 
-		for (p=0; p<papergroup->papers.n; p++) { //for each paper
-			paperrotation=config->paperrotation;
+		papergroup = config->papergroup;
+		if (!papergroup) papergroup = spread->papergroup;
+
+		for (p = 0; p < (papergroup ? papergroup->papers.n : 1); p++) { //for each paper
+			paperrotation = config->paperrotation;
             if (config->rotate180 && c%2==1) paperrotation+=180;
             if (paperrotation>=360) paperrotation-=360;
 
-			paperwidth= 72*papergroup->papers.e[p]->box->paperstyle->w(); //scribus wants visual w/h
-			paperheight=72*papergroup->papers.e[p]->box->paperstyle->h();
+			//paperwidth  = 72*papergroup->papers.e[p]->box->paperstyle->w(); //scribus wants visual w/h
+			//paperheight = 72*papergroup->papers.e[p]->box->paperstyle->h();
 
-			if (paperrotation==90 || paperrotation==270) {
+			if (paperrotation == 90 || paperrotation == 270) {
 				double tt=paperwidth;  paperwidth=paperheight;  paperheight=tt;
 			}
 
-			plandscape=papergroup->papers.e[p]->box->paperstyle->landscape();
-			//pagec=(c-start)*papergroup->papers.n+p; //effective scribus page index
-			//currentpage=pagec;
-			currentpage=scribuspagei;
+			//plandscape = papergroup->papers.e[p]->box->paperstyle->landscape();
+			currentpage = scribuspagei;
 
 			 //build transform from laidout space to current page on scribus canvas
 			 //current laidout paper origin (lower left corner) must map to the
@@ -907,7 +924,8 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 
 			psCtmInit();
 			psPushCtm(); //so we can always fall back to identity
-			transform_invert(mmm,papergroup->papers.e[p]->m()); // papergroup->paper transform
+			if (papergroup) transform_invert(mmm,papergroup->papers.e[p]->m()); // papergroup->paper transform
+			else transform_identity(mmm);
 			transform_set(mm, 72.,0.,0.,72.,0.,0.); //correction for inches <-> ps points
 			transform_mult(mmmm,mmm,mm);
 			transform_mult(m,mmmm,ms); //m = mmmm * ms
@@ -915,8 +933,8 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 			if (paperrotation>0) {
 				transform_rotate(m, paperrotation*M_PI/180.);
 			}
-			if (paperrotation==0) { }
-			else if (paperrotation==90) { /*m[4]+=paperwidth;*/ m[5]-=paperheight; }
+			if      (paperrotation==0)   { }
+			else if (paperrotation==90)  { /*m[4]+=paperwidth;*/ m[5]-=paperheight; }
 			else if (paperrotation==180) { m[4]+=paperwidth; m[5]-=paperheight;}
 			else if (paperrotation==270) { m[4]+=paperwidth; }
 
@@ -937,10 +955,10 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 			 //------------page header
 			fprintf(f,"  <PAGE \n"
 					  "    Size=\"Custom\" \n");
-			fprintf(f,"    PAGEHEIGHT=\"%f\" \n",paperheight);
-			fprintf(f,"    PAGEWIDTH=\"%f\" \n",paperwidth);
+			fprintf(f,"    PAGEHEIGHT=\"%f\" \n",72*paperheight);
+			fprintf(f,"    PAGEWIDTH=\"%f\" \n", 72*paperwidth);
 			fprintf(f,"    PAGEXPOS=\"%f\" \n",CANVAS_MARGIN_X);
-			fprintf(f,"    PAGEYPOS=\"%f\" \n",pageypos);
+			fprintf(f,"    PAGEYPOS=\"%f\" \n",pageypos-72*paperheight);
 			fprintf(f,"    NUM=\"%d\" \n",currentpage); //number of the page, starting at 0
 			fprintf(f,"    BORDERTOP=\"0\" \n"     //page margins?
 					  "    BORDERLEFT=\"0\" \n"
@@ -960,7 +978,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 			//	scribusdumpobj(config, f,curobj,pageobjects,NULL,limbo,log,warning);
 			//}
 
-			if (papergroup->objs.n()) {
+			if (papergroup && papergroup->objs.n()) {
 				scribusdumpobj(config, f,curobj,pageobjects,NULL,&papergroup->objs,log,warning);
 			}
 
@@ -995,7 +1013,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 			psPopCtm();
 			//pageypos+=72*(papergroup->papers.e[p]->box->media.maxy-papergroup->papers.e[p]->box->media.miny)
 			//				+ CANVAS_GAP;
-			pageypos+=paperheight + CANVAS_GAP;
+			pageypos += 72*paperheight + CANVAS_GAP;
 			
 			scribuspagei++;
 		} //for each paper

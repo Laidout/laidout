@@ -5058,7 +5058,8 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 		 //----add papergroup list
 		menu->AddSep(_("Paper Groups"));
-		menu->AddToggleItem(_("default"), 0, ACTION_Menu_Papergroup, ((LaidoutViewport *)viewport)->isDefaultPapergroup(0));
+		menu->AddToggleItem(_("default"), 0, ACTION_Menu_Papergroup,
+			((LaidoutViewport *)viewport)->papergroup == nullptr || ((LaidoutViewport *)viewport)->isDefaultPapergroup(0));
 
 		laidout->resourcemanager->ResourceMenu("PaperGroup", false, menu, 0, ACTION_Menu_Papergroup, ((LaidoutViewport *)viewport)->papergroup);
 
@@ -5554,14 +5555,14 @@ int ViewWindow::PerformAction(int action)
 	} else if (action==VIEW_Print) {
 		 //user clicked print button
 		 // *** note: somehow this uses incorrect papergroup:
-		LaidoutViewport *vp=((LaidoutViewport *)viewport);
-		int curpage=doc?doc->imposition->PaperFromPage(vp->curobjPage()):0;
-		if (curpage<0 && vp->doc && vp->spread) {
+		LaidoutViewport *vp = ((LaidoutViewport *)viewport);
+		int curpage = doc ? doc->imposition->PaperFromPage(vp->curobjPage()) : 0;
+		if (curpage < 0 && vp->doc && vp->spread) {
 			 //grab what is first page found in spread->pagestack
 			int c;
-			for (c=0; c<vp->spread->pagestack.n(); c++) {
-				if (vp->spread->pagestack.e[c]->index>=0) {
-					curpage=vp->spread->pagestack.e[c]->index>=0;
+			for (c = 0; c < vp->spread->pagestack.n(); c++) {
+				if (vp->spread->pagestack.e[c]->index >= 0) {
+					curpage = vp->spread->pagestack.e[c]->index;
 					break;
 				}
 			}
@@ -5590,8 +5591,9 @@ int ViewWindow::PerformAction(int action)
 										"lp",        //command
 										NULL,        //thisfile
 										PAPERLAYOUT, 
-										0,              //min
-										doc?doc->imposition->NumPapers()-1:0, //max
+										0,              //min spread
+										doc ? doc->imposition->NumPapers()-1 : 0, //max spread
+										doc ? doc->imposition->PaperFromPage(curpage) : 0, //current spread
 										curpage,       //cur
 										pg,           //papergroup
 										l,           //limbo
@@ -5601,11 +5603,13 @@ int ViewWindow::PerformAction(int action)
 		return 0;
 
 	} else if (action==VIEW_Export) {
-		 //user clicked down on the export button
-		PaperGroup *pg = ((LaidoutViewport *)viewport)->papergroup;
-		Group *l;
-		if (!pg || !pg->papers.n) l=NULL; else l=((LaidoutViewport *)viewport)->limbo;
-		char *file=NULL;
+		// user clicked down on the export button
+		LaidoutViewport *vp = ((LaidoutViewport *)viewport);
+		PaperGroup *pg = vp->papergroup;
+		Group *l = nullptr;
+		if (!pg || !pg->papers.n) l = nullptr; else l = vp->limbo; //todo: assume no papergroup means use limbo objs? not such a good assumption?
+		if (vp->isDefaultPapergroup(0)) pg = nullptr;
+		char *file = nullptr;
 		if (doc) {
 			if (!isblank(laidout->prefs.exportfilename)) {
 				char *nfile = newstr(laidout->prefs.exportfilename); //this is a name template
@@ -5632,6 +5636,7 @@ int ViewWindow::PerformAction(int action)
 			appendstr(file, "exported-file.huh");
 			//file = full_path_for_file("exported-file.huh",NULL);
 		}
+
 		ExportDialog *d = new ExportDialog(EXPORT_COMMAND,object_id,"export config", 
 										 doc,
 										 l,
@@ -5640,9 +5645,9 @@ int ViewWindow::PerformAction(int action)
 										 file,
 										 PAPERLAYOUT,
 										 0,
-										 doc?doc->imposition->NumPapers()-1:0,
-										 doc?doc->imposition->PaperFromPage(
-											((LaidoutViewport *)viewport)->curobjPage()):0);
+										 doc ? doc->imposition->NumPapers()-1 : 0,
+										 doc ? doc->imposition->PaperFromPage(vp->curobjPage()) : 0,
+										 vp->curobjPage());
 		app->rundialog(d);
 		delete[] file;
 		return 0; 

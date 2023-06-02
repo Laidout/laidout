@@ -1766,18 +1766,18 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	DocumentExportConfig *dout=dynamic_cast<DocumentExportConfig *>(context);
 	if (!dout) return 1;
 
-	SvgExportConfig *out=dynamic_cast<SvgExportConfig *>(context);
+	SvgExportConfig *out = dynamic_cast<SvgExportConfig *>(context);
 	
 	if (!out) {
-		out=new SvgExportConfig(dout);
+		out = new SvgExportConfig(dout);
 	} else out->inc_count();
 
-	Document *doc =out->doc;
-	int start     =out->range.Start(); //we assume there's only one, so rest of range if any doesn't matter
-	int layout    =out->layout;
-	Group *limbo  =out->limbo;
-	PaperGroup *papergroup=out->papergroup;
-	if (!filename) filename=out->filename;
+	Document *doc = out->doc;
+	int start     = out->range.Start(); //we assume there's only one, so rest of range if any doesn't matter
+	int layout    = out->layout;
+	Group *limbo  = out->limbo;
+	PaperGroup *papergroup = out->papergroup;
+	if (!filename) filename = out->filename;
 	
 	 //we must have something to export...
 	if (!doc && !limbo) {
@@ -1788,8 +1788,8 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	}
 	
 	 //we must be able to open the export file location...
-	FILE *f=nullptr;
-	char *file=nullptr;
+	FILE *f = nullptr;
+	char *file = nullptr;
 	if (!filename) {
 		if (isblank(doc->saveas)) {
 			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
@@ -1800,11 +1800,12 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 		}
 		file=newstr(doc->saveas);
 		appendstr(file,".svg");
-	} else file=newstr(filename);
+	} else file = newstr(filename);
 
-	f=open_file_for_writing(file,0,&log);//appends any error string
+	f = open_file_for_writing(file,0,&log);//appends any error string
 	if (!f) {
 		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
+		log.AddError(0,0,0, _("%s cannot be opened for writing"), file);
 		delete[] file;
 		out->dec_count();
 		return 3;
@@ -1812,29 +1813,39 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 
 	setlocale(LC_ALL,"C");
 
-	int warning=0;
-	Spread *spread=nullptr;
-	Group *g=nullptr;
-	double m[6],mm[6],mmm[6];
-	//int c;
+	int warning = 0;
+	Spread *spread = nullptr;
+	Group *g = nullptr;
+	double m[6], mm[6], mmm[6];
 	int c2,pg,c3;
 	transform_set(m,1,0,0,1,0,0);
 
-	if (doc) spread=doc->imposition->Layout(layout,start);
+	if (doc) spread = doc->imposition->Layout(layout,start);
+	if (!papergroup) papergroup = spread->papergroup;
 	
 	 // write out header
-	double height=0,width=0;
-	if (spread) {
-		height=spread->path->maxy-spread->path->miny;
-		width =spread->path->maxx-spread->path->minx;
+	double height = 0, width = 0;
+	double paper_m[6];
+	transform_identity(paper_m);
+	if (papergroup) {
+		transform_invert(paper_m, papergroup->papers.e[0]->m());
+		height = papergroup->papers.e[0]->box->paperstyle->h(); //takes into account landscape status
+		width  = papergroup->papers.e[0]->box->paperstyle->w();
+	} else if (spread) {
+		transform_set(paper_m, 1,0,0,1, -spread->path->minx, -spread->path->miny);
+		height = spread->path->maxy - spread->path->miny;
+		width  = spread->path->maxx - spread->path->minx;
+	} else if (limbo) {
+		transform_invert(paper_m, limbo->m());
+		width  = limbo->boxwidth();
+		height = limbo->boxheight();
 	}
-	if (height==0) height=papergroup->papers.e[0]->box->paperstyle->h(); //takes in to account landscape status
-	if (width==0)  width =papergroup->papers.e[0]->box->paperstyle->w();
 
-	if (out->curpaperrotation==90 || out->curpaperrotation==270) {
-		double tt=height;
-		height=width;
-		width=tt;
+
+	if (out->curpaperrotation == 90 || out->curpaperrotation == 270) {
+		double tt = height;
+		height = width;
+		width  = tt;
 	}
 
 	 //write out header, sodipodi is extra stuff for assumed use in Inkscape
@@ -1875,7 +1886,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 		svgdumpdef(f,m,limbo,warning,log, out);
 	}
 
-	if (papergroup->objs.n()) {
+	if (papergroup && papergroup->objs.n()) {
 		svgdumpdef(f,m,&papergroup->objs,warning,log, out);
 	}
 
@@ -1954,9 +1965,12 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	else if (out->curpaperrotation==270) { }
 
 	//fprintf(f,"  <g transform=\"matrix(90,0,0,-90, 0,%f)\">\n", height*72*1.25);
-	fprintf(f,"    <g transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
+	fprintf(f,"    <g id=\"paper_rotation\" transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
 					m[0], m[1], m[2], m[3], m[4], m[5]); 
 
+	// paper transform
+	fprintf(f,"    <g id=\"paper\" transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
+					paper_m[0], paper_m[1], paper_m[2], paper_m[3], paper_m[4], paper_m[5]);
 
 
 	 //dump out limbo objects if any
@@ -1965,7 +1979,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 		svgdumpobj(f,m,limbo,warning,4,log, out, false, out->data_meta);
 	}
 
-	if (papergroup->objs.n()) {
+	if (papergroup && papergroup->objs.n()) {
 		transform_set(m,1,0,0,1,0,0);
 		svgdumpobj(f,m,&papergroup->objs,warning,4,log, out, false, out->data_meta);
 	}
@@ -2038,6 +2052,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 		delete spread;
 	}
 
+	fprintf(f,"  </g>\n"); //paper transform
 	fprintf(f,"  </g>\n"); //from unit correction and paper
 
 

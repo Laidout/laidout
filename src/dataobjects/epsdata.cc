@@ -203,15 +203,22 @@ int EpsData::LoadImage(const char *fname, const char *npreview, int maxpw, int m
 		// do nothing if preview file already exists..
 		//*** perhaps optionally regenerate?
 
-	} else if (laidout->binary("gs") != nullptr) {
+	} else if (laidout->prefs.FindExternalTool("Misc:gs") != nullptr) {
 		 // call ghostscript from command line, save preview ***where?
 		char *error = nullptr;
 		
-		c = WriteEpsPreviewAsPng(laidout->binary("gs"),
-						 fname, width, height,
-						 npreview, maxpw, maxph,
-						 &error);
-		DBG if (error) cerr <<"EPS gs preview generation returned with error: "<<error<<endl;
+		ExternalTool *gs_tool = laidout->prefs.FindExternalTool("Misc:gs");
+		if (!gs_tool->Valid()) {
+			makestr(error, _("External tool Misc:gs needs to be configured to a ghostscript executable"));
+			c = 1;
+
+		} else {
+			c = WriteEpsPreviewAsPng(gs_tool->binary_path,
+							 fname, width, height,
+							 npreview, maxpw, maxph,
+							 &error);
+			DBG if (error) cerr <<"EPS gs preview generation returned with error: "<<error<<endl;
+		}
 		if (c) {
 			if (error) delete[] error;
 			return -3;
