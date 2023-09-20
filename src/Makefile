@@ -13,8 +13,10 @@ ifeq ($(shell uname -s),Linux)
 endif
 
 LD=g++
-LDFLAGS= $(EXTRA_LDFLAGS) -L/usr/local/lib -L/usr/X11R6/lib -rdynamic -lXi -lXext -lX11 -lm -lpng `imlib2-config --libs` `pkg-config --libs freetype2`\
-		 `pkg-config --libs GraphicsMagick++` `cups-config --libs` -ldl -lXft -lXrandr $(LIBINTL)
+#LDFLAGS= $(EXTRA_LDFLAGS) -L/usr/local/lib -L/usr/X11R6/lib -rdynamic -lXi -lXext -lX11 -lm -lpng `imlib2-config --libs` `pkg-config --libs freetype2`\
+#		 `pkg-config --libs GraphicsMagick++` `cups-config --libs` -ldl -lXft -lXrandr $(LIBINTL)
+LDFLAGS= $(EXTRA_LDFLAGS) -L/usr/local/lib -L/usr/X11R6/lib -rdynamic `pkg-config --libs $(LAXKIT_PC)`\
+		 `cups-config --libs` -ldl -lreadline $(LIBINTL)
 DEBUGFLAGS= -g -gdwarf-2
 CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) $(EXTRA_CPPFLAGS)  -I$(LAXDIR)/.. `pkg-config --cflags freetype2` -I$(POLYPTYCHBASEDIR)
 
@@ -201,7 +203,7 @@ all: laidout
 
 laidout: lax laxinterface $(objs) $(POLYPTYCHFORLAIDOUT)
 	for NAME in $(dirs); do $(MAKE) -C $$NAME || exit ; done
-	$(LD) $(otherobjs) $(objs) $(POLYPTYCH_GL_OBJS) $(POLYPTYCHOBJS) -L$(LAXIDIR) -L$(LAXDIR) -llaxinterfaces -llaxkit -lharfbuzz -lcairo -lfontconfig $(LDFLAGS) $(OPTIONALLIBS) -lreadline -lcrypto $(POLYPTYCHLIBS) -o $@
+	$(LD) $(otherobjs) $(objs) $(POLYPTYCH_GL_OBJS) $(POLYPTYCHOBJS) -L$(LAXIDIR) -L$(LAXDIR) $(LDFLAGS) $(OPTIONALLIBS) $(POLYPTYCHLIBS) -o $@
 
 icons:
 	cd icons && $(MAKE)
