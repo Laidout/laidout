@@ -13,21 +13,17 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
-bug: PDF export does not handle object bleeds
-
 bug: severing clone link does some weird things, including crashing
 bug: clone tool clones do not have proper bounding box
 
 bug: gegl nodes, connect sinus to waves and also to displace, freeze!
 
-travis is recompiling on non-master branch pushes and it shouldn't
+travis is recompiling on non-master branch pushes, eating up all my minutes, and it shouldn't
 
 crash: Start blank, then open recent doc with an ObjectTree. click on an object, crash! querying wrong viewport?
 
 
 ------------ other bugs:
-
-ux: if there is a page/file snafu on export, should return to the export dialog after the error
 
 bug: back to not maximizing properly on default ubuntu. Seems to work fine on every other window manager I've tried.
 
@@ -272,7 +268,7 @@ text on path textonpath: TextOnPath
   bug: bezier length resolution inconsistencies making gaps. need solution with consistent approximation
   bug: visible selected bounds not updating?
   bug: dragging the offest handle sometimes jumps to really bad
-  bug: when direction is reversed, offset needs to be reversed
+  bug: reversing direction should change offset so that text occupies roughly the same place. currently in scrunches up
   bug: sometimes path weights don't recache along with glyph positions
   bug: duplicate isn't always initing the dup properly
   bug: some problem with paths when link_to_parent
@@ -638,6 +634,7 @@ freehand tool:
   mesh outputs should still be Mesh based on path
   implement Shape Brush?
     output to either "shape brush" line profile, or flattened path
+  implement flash-like brush
   DONE numerical input for brush size
   DONE brush_size should be real, not screen units
   DONE need "brush size" controls
@@ -1978,6 +1975,9 @@ signature editor  Signature editor Signature Editor signatureeditor
 
 ---------------- 0.099 ROADMAP ITEMS: features and enhancements ------------------------
 
+make a copyright update tool to change years to match git commits:
+  git log --date=format:'%Y' laidout.cc|grep '^Date'|grep '[0-9][0-9][0-9][0-9]' -o | uniq | sort | tr '\n' ','| rev | cut -c2- | rev
+
 external tools: external commands:
   need to be able to rearrange order, first in list is default or select one for default
   need access anywhere an object links to a file
@@ -3092,6 +3092,7 @@ how to keep track of class hierarchy? impositions are now listed by resource ins
 
 
 polish: ux:
+  if there is a page/file snafu on export, should return to the export dialog after the error
   when you save, also save a preview of current spread in freedesktop thumbs?
   resizeable ui
   should be able to mass disconnect clones
@@ -3332,3 +3333,4 @@ DONE layers palette Layers ObjectTree
 DONE bug: image properties layout for filename truncates
 DONE fix off by one error when importing "m/n" for every nth
 DONE bug: crashes when changing export formats away from Image
+DONE bug: PDF export does not handle object bleeds
