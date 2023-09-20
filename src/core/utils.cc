@@ -470,6 +470,7 @@ char *previewFileName(const char *file, const char *nametemplate)
 			unsigned char md[17];
 			bname=new char[40];
 			
+			//TODO: MD5() is deprecated, need to find a suitable replacement
 			MD5((unsigned char *)str, strlen(str), md);
 			h=bname;
 			for (int c2=0; c2<16; c2++) {
