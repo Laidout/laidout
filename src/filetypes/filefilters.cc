@@ -1789,7 +1789,7 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 			IndexRange range = config->range;
 			char *oldfilename = config->filename;
 			char *fname       = nullptr;
-			char  str[20];
+			char  str[22];
 			char *ext = strrchr(oldfilename, '.');
 
 			for (int c = range.Start(); err == 0 && c >= 0; /*no inc step*/) {
