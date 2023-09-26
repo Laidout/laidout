@@ -239,6 +239,7 @@ class DrawableObject :  virtual public ObjectContainer,
 
 	virtual int InstallClip(LaxInterfaces::PathsData *pathsdata);
 
+	// for snapping
 	Laxkit::RefPtrStack<PointAnchor> anchors;
 	virtual int NumAnchors();
 	virtual int GetAnchorInfoI(int anchor_index, int *id, const char **name, Laxkit::flatpoint *p, int *anchor_type, bool transform_to_parent);
@@ -251,6 +252,7 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual int RemoveAnchorI(int index);
 	virtual int ResolveAnchorRefs(Document *doc, Page *page, DrawableObject *g, Laxkit::ErrorLog &log);
 
+	// custom properties
 	virtual Laxkit::anObject *GetProperty(const char *name);
 	virtual int SetProperty(const char *name, Laxkit::anObject *prop, bool absorb);
 
