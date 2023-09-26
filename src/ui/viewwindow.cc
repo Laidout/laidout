@@ -1847,8 +1847,10 @@ int LaidoutViewport::FindObject(int x,int y,
 			pp = transform_point(m,p);
 			pnt = dynamic_cast<DrawableObject*>(curobj.obj->GetParent());
 
-			for (int c=0; c < pnt->n(); c++) {
-				if (curobj.obj == pnt->e(c)) { from = c+1; break; }
+			if (pnt) { // pnt might be null if curobj.obj is some kind of bare experimental object
+				for (int c=0; c < pnt->n(); c++) {
+					if (curobj.obj == pnt->e(c)) { from = c+1; break; }
+				}
 			}
 
 		} else {
