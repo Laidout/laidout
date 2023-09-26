@@ -18,7 +18,7 @@ FINALPREFIX=""
 #LAXDIR="/usr/local/include/lax"
 LAXDIR="`pwd`/laxkit/lax"
 
-# in case no Laxkit found, download manually
+# in case no Laxkit found, download manually (down below)
 LAXREPO="https://github.com/Laidout/laxkit.git"
 
 
@@ -242,6 +242,9 @@ if [ ! -d $LAXDIR ] ; then
 	$LAXDIR = `pwd`/laxkit/lax
 fi
 
+# path to laxkit.pc, used by the linker
+LAXKIT_PC=$LAXDIR/../laxkit.pc
+
 if [ ! -e $LAXDIR/configured.h ] ; then
 	LAXTRAS=()
 	if [ $USESQLITE == "no" ] ; then LAXTRAS+=("--disable-sqlite"); fi
@@ -397,6 +400,7 @@ echo ""                                     >> Makefile-toinclude
 echo "PREFIX=$PREFIX"                       >> Makefile-toinclude
 echo "LAIDOUTVERSION=$LAIDOUTVERSION"       >> Makefile-toinclude
 echo "LAXDIR=$LAXDIR"                       >> Makefile-toinclude
+echo "LAXKIT_PC=$LAXKIT_PC"                 >> Makefile-toinclude
 echo "LAXIDIR=$LAXDIR/interfaces"           >> Makefile-toinclude
 echo "LANGUAGE_PATH=$PREFIX/$LANGUAGE_PATH" >> Makefile-toinclude
 echo "POLYPTYCHBASEDIR="`pwd`"/src"         >> Makefile-toinclude
@@ -446,6 +450,7 @@ echo "    Install here:  $PREFIX"                 >> config.log
 echo "  Runtime prefix:  $FINALPREFIX"            >> config.log
 echo "   Language Path:  $PREFIX/$LANGUAGE_PATH"  >> config.log
 echo "  Laxkit headers:  $LAXDIR"                 >> config.log
+echo "       laxkit.pc:  $LAXKIT_PC"              >> config.log
 echo "       Enable GL:  $USINGGL"                >> config.log
 echo "          Sqlite:  $USESQLITE"              >> config.log
 echo "  Extra cppflags:  $EXTRA_CPPFLAGS"         >> config.log
@@ -466,6 +471,7 @@ echo "    Install here:  $PREFIX"
 echo "  Runtime prefix:  $FINALPREFIX"           
 echo "   Language Path:  $PREFIX/$LANGUAGE_PATH"
 echo "  Laxkit headers:  $LAXDIR"
+echo "       laxkit.pc:  $LAXKIT_PC"
 echo "       Enable GL:  $USINGGL"
 echo "          Sqlite:  $USESQLITE"             
 echo "  Extra cppflags:  $EXTRA_CPPFLAGS"
