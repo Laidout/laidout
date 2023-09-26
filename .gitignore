@@ -65,7 +65,11 @@ src/polyptych/src/*jpg
 docs/web
 coop/fonts/namerecord-TEMPLATE.txt
 coop/fonts/asciichart.png
+src/point_dump.txt
+src/text/spelltest/test-aspell
 
-# Ignore miscellaneous
+
+# Ignore miscellaneous editor and filesystem arcana
 .DS_Store
 .vscode
+
