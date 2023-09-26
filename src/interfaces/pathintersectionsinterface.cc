@@ -38,14 +38,9 @@
 #include <lax/vectors-out.h>
 
 
-//template implementation:
-#include <lax/lists.cc>
-//#include <lax/refptrstack.cc>
-
-
 using namespace Laxkit;
 
-
+#include <fstream>
 #include <iostream>
 using namespace std;
 #define DBG 
@@ -207,6 +202,7 @@ int PathIntersectionsInterface::Refresh()
 	needtodraw=0;
 
 	dp->NewBG(.2,0.,0.);
+	dp->fontsize(.25);
 
 	ScreenColor current(.3,1.,.3,1.);
 	ScreenColor other(.6,.6,.6,1.);
@@ -259,6 +255,11 @@ int PathIntersectionsInterface::Refresh()
 		if (p.info == INTERS_Normal) {
 			//dp->NewFG(1., .6, .6);
 			dp->drawcircle(p, point_radius, 0);
+			//dp->DrawScreen();
+			//flatpoint pp = dp->realtoscreen(p);
+			//dp->drawnum(pp.x, pp.y, c);
+			//dp->DrawReal();
+			dp->drawnum(p.x, p.y, c);
 
 		} else { //self intersection
 			dp->drawrectangle(p.x - point_radius, p.y - point_radius, 2*point_radius, 2*point_radius, 0);
@@ -447,6 +448,17 @@ int PathIntersectionsInterface::CharInput(unsigned int ch, const char *buffer,in
 
 		hover = -1;
 		needtodraw = 1;
+		return 0;
+
+	} else if (ch == 'd') { //dump
+		ofstream out("point_dump.txt", std::ofstream::out);
+		for (int c=0; c < paths.n; c++) {
+			out<<c<<":"<<endl;
+			for (int c2=0; c2< paths.e[c]->n; c2++) {
+				out<<"  "<<paths.e[c]->e[c2].x<<", "<<paths.e[c]->e[c2].y<<", "<<endl;
+			}
+		}
+		out.close();
 		return 0;
 
 	} else {
