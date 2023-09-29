@@ -60,7 +60,7 @@ research: find compromise between tex, css, svg, scribus layout mechanisms
 research: what really does latex, context, metapost, metafont add, what requirements to support
 tab stops are arbitrary paths
 streams lay out in sections/pages
-streams composed of any level of parts/chapters/sections/subsections
+streams composed of any level of parts/chapters/sections/subsections == "section"+priority? part=priority 0, chapter=priority 1, etc
 toc
 index
 bibliography

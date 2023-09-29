@@ -65,7 +65,7 @@ class DropShadowEffect : public TextEffect
 };
 
  /*! \class CharReplacement
-  * TextEffect where characters are replaced before being rendered indo glyphs.
+  * TextEffect where characters are replaced before being rendered into glyphs.
   */
 class CharReplacement : public TextEffect
 {
@@ -302,6 +302,7 @@ class StreamText : public StreamChunk
 	virtual int NumBreaks(); //either hyphen, spaces, pp
 	virtual int BreakInfo(int index);
 	virtual int Type() { return CHUNK_Text; }
+	virtual int SetFromEntities(const char *cdata, int cdata_len);
 
 	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
 	virtual void dump_in_atts (Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
@@ -362,9 +363,9 @@ class Stream : public Laxkit::anObject, public Laxkit::DumpUtility
 
 	virtual int ImportMarkdown(const char *text, int n, StreamChunk *addto, bool after, Laxkit::ErrorLog *log);
 	virtual int ImportText(const char *text, int n, StreamChunk *addto, bool after, Laxkit::ErrorLog *log);
-	virtual int ImportXMLFile(const char *file, Laxkit::ErrorLog *log);
 	virtual int ImportXML(const char *value, int len, Laxkit::ErrorLog *log);
-	virtual void ImportXMLAtt(Laxkit::Attribute *att, StreamChunk *&last_chunk, StreamElement *last_style_el, Laxkit::ErrorLog *log);
+	virtual int ImportXMLFile(const char *file, Laxkit::ErrorLog *log);
+	virtual int ImportXMLAtt(Laxkit::Attribute *att, StreamChunk *&last_chunk, StreamElement *&next_style, StreamElement *last_style_el, Laxkit::ErrorLog *log);
 };
 
 
@@ -404,7 +405,7 @@ class StreamCache : public Laxkit::SquishyBox, public Laxkit::RefCounted
 	clock_t modtime = 0;
 	StreamCache *next = nullptr, *prev = nullptr;
 
-	StreamElement *style = nullptr;
+	StreamElement *element = nullptr;
 	StreamChunk *chunk = nullptr;
 	long offset = 0; //how many breaks into chunk to start
 	long len = 0; //how many breaks long in chunk is this cache
