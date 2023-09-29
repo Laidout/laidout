@@ -39,8 +39,6 @@
 #include "../core/guides.h"
 #include "../impositions/netimposition.h"
 
-////template implementation:
-//#include <lax/refptrstack.cc>
 
 #include <iostream>
 #define DBG 
@@ -99,16 +97,16 @@ int AddSvgDocument(const char *file, Laxkit::ErrorLog &log, Document *existingdo
 	UnitManager *unitm = GetUnitManager();
 
 	 //width
-	char *endptr;
-	const char *ptr=strstr(chunk,"width");
+	char *endptr = nullptr;
+	const char *ptr = strstr(chunk,"width");
 	if (!ptr) return 2;
-	ptr+=5;
+	ptr += 5;
 	while (isspace(*ptr) || *ptr=='=') ptr++;
-	if (*ptr!='\"') return 3;
+	if (*ptr != '\"') return 3;
 	ptr++;
-	width=strtod(ptr,&endptr);
-	ptr=endptr;
-	if (*ptr!='\"') {
+	width = strtod(ptr,&endptr);
+	ptr = endptr;
+	if (*ptr != '\"') {
 		 //need to parse units
 		while (isspace(*ptr)) ptr++;
 		const char *eptr=ptr;
@@ -185,13 +183,15 @@ int AddSvgDocument(const char *file, Laxkit::ErrorLog &log, Document *existingdo
 	
 	//parse Inkscape multipage if present
 	Imposition *imp = nullptr;
+	bool parsing_multipage = false;
 	char *papersPtr = strstr(chunk, "<sodipodi:namedview");
 	if (papersPtr) {
 		Attribute *namedview = XMLChunkToAttribute(nullptr, papersPtr, 2000-(papersPtr - chunk), nullptr, nullptr, nullptr);
 		if (namedview) {
-			Imposition *netimp = ParseInkscapeMultipage(namedview, viewbox, scalex, scaley);
-			if (netimp) {
-				imp = netimp;
+			Imposition *parsed_imp = ParseInkscapeMultipage(namedview, viewbox, scalex, scaley);
+			if (parsed_imp) {
+				imp = parsed_imp;
+				parsing_multipage = true;
 			}
 			delete namedview;
 		}
@@ -229,8 +229,8 @@ int AddSvgDocument(const char *file, Laxkit::ErrorLog &log, Document *existingdo
 
 	SvgImportFilter filter;
 	ImportConfig config(file,300, 0,-1, 0,-1,-1, newdoc,nullptr);
-	config.keepmystery=0;
-	config.filter=&filter;
+	config.keepmystery = 0;
+	config.filter = &filter;
 	filter.In(file,&config,log, nullptr,0);
 
 	 //scale down
@@ -2183,7 +2183,8 @@ void CompoundTransformForRef(SomeDataRef *ref, Group *top);
 void CompoundTransforms(Group *group, Group *top);
 
 
-
+/*! Parse a sodipodi:namedview block, and create a Singles imposition from it.
+ */
 Imposition *ParseInkscapeMultipage(Attribute *namedview, double *viewbox, double scalex, double scaley)
 {
 	if (!namedview) return nullptr;
@@ -2627,7 +2628,9 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 	return 0;
 }
 
-/*! Overcome linking issues for nested refs.
+/*! Overcome linking issues for nested refs, by multiplying the transforms of any nested referencing.
+ * This is necessary because Laidout SomeDataRef overwrites referenced object transforms, but SVG
+ * "use" objects multiplie them all together.
  */
 void CompoundTransformForRef(SomeDataRef *ref, Group *top)
 {
