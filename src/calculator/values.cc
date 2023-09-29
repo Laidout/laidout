@@ -2056,7 +2056,7 @@ void ValueHash::renameKey(int i,const char *newname)
 }
 
 /*! Set value of an existing key. Return 0 for success, or nonzero for error such as key not found.
- * Increments count of newv. If key not found, use push instead.
+ * Increments count of newv. If key not found, then nothing is set. In that case you should use push() instead.
  */
 int ValueHash::set(const char *key, Value *newv, bool absorb)
 {
