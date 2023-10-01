@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="1920"
+   height="1080"
+   viewBox="0 0 1920 1080"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.3 (0e150ed, 2023-07-21)"
+   sodipodi:docname="stream-diagram.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="px"
+     inkscape:zoom="0.7015625"
+     inkscape:cx="960"
+     inkscape:cy="539.51002"
+     inkscape:window-width="1920"
+     inkscape:window-height="1011"
+     inkscape:window-x="0"
+     inkscape:window-y="32"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1">
+    <marker
+       style="overflow:visible"
+       id="ArrowWideHeavy"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Wide, heavy arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
+         d="m 1,0 -3,3 h -2 l 3,-3 -3,-3 h 2 z"
+         id="path3" />
+    </marker>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <text
+       xml:space="preserve"
+       style="fill:#000000"
+       x="329.53024"
+       y="430.35114"
+       id="text3"><tspan
+         sodipodi:role="line"
+         id="tspan3"
+         x="329.53024"
+         y="430.35114"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal">StreamElement</tspan></text>
+    <text
+       xml:space="preserve"
+       style="fill:#000000"
+       x="241.8566"
+       y="566.62384"
+       id="text4"><tspan
+         sodipodi:role="line"
+         id="tspan4"
+         x="241.8566"
+         y="566.62384"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal">StreamElement</tspan></text>
+    <text
+       xml:space="preserve"
+       style="fill:#000000"
+       x="538.13757"
+       y="632.284"
+       id="text5"><tspan
+         sodipodi:role="line"
+         id="tspan5"
+         x="538.13757"
+         y="632.284"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal">StreamElement</tspan></text>
+    <text
+       xml:space="preserve"
+       style="fill:#000000"
+       x="449.99365"
+       y="752.37231"
+       id="text6"><tspan
+         sodipodi:role="line"
+         id="tspan6"
+         x="449.99365"
+         y="752.37231"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal">StreamElement</tspan></text>
+    <text
+       xml:space="preserve"
+       style="fill:#000000"
+       x="751.58099"
+       y="748.41321"
+       id="text7"><tspan
+         sodipodi:role="line"
+         id="tspan7"
+         x="751.58099"
+         y="748.41321"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal">StreamElement</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000"
+       x="140.2357"
+       y="945.31158"
+       id="text10"><tspan
+         sodipodi:role="line"
+         id="tspan10"
+         x="140.2357"
+         y="945.31158">StreamChunk</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000"
+       x="459.14044"
+       y="944.9375"
+       id="text11"><tspan
+         sodipodi:role="line"
+         id="tspan11"
+         x="459.14044"
+         y="944.9375">StreamChunk</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000"
+       x="315.09326"
+       y="1031.0413"
+       id="text12"><tspan
+         sodipodi:role="line"
+         id="tspan12"
+         x="315.09326"
+         y="1031.0413">StreamChunk</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000"
+       x="635.70001"
+       y="1022.9419"
+       id="text13"><tspan
+         sodipodi:role="line"
+         id="tspan13"
+         x="635.70001"
+         y="1022.9419">StreamChunk</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000"
+       x="798.328"
+       y="947.34924"
+       id="text14"><tspan
+         sodipodi:role="line"
+         id="tspan14"
+         x="798.328"
+         y="947.34924">StreamChunk</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000"
+       x="968.20557"
+       y="1023.9198"
+       id="text2"><tspan
+         sodipodi:role="line"
+         id="tspan2"
+         x="968.20557"
+         y="1023.9198">StreamChunk</tspan></text>
+    <path
+       style="fill:#000000;stroke:#000000;stroke-width:7;stroke-dasharray:none;stroke-opacity:1"
+       d="m 423.51389,451.46893 -56.48633,76.80275"
+       id="path7"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:#000000;stroke:#000000;stroke-width:7;stroke-dasharray:none;stroke-opacity:1"
+       d="M 429.79721,449.52095 595.53987,596.90276"
+       id="path8"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:7;stroke-dasharray:none;stroke-opacity:1"
+       d="m 632.23492,716.22029 36.33743,-65.29818 172.80572,55.28113"
+       id="path9" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:7;stroke-dasharray:none;stroke-opacity:1"
+       d="M 367.19037,592.04657 189.00745,908.73374"
+       id="path10"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:7;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#ArrowWideHeavy)"
+       d="m 273.27242,956.7747 52.73129,39.41719"
+       id="path15" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:7;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#ArrowWideHeavy)"
+       d="m 681.34278,953.95507 52.73129,39.41719"
+       id="path16" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:7;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#ArrowWideHeavy)"
+       d="m 1010.0071,952.11147 52.7312,39.41719"
+       id="path17" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:7;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#ArrowWideHeavy)"
+       d="m 419.97422,996.84301 55.01866,-36.15593"
+       id="path18" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:7;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#ArrowWideHeavy)"
+       d="m 825.12343,993.90767 55.01866,-36.15593"
+       id="path14" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:7;stroke-dasharray:none;stroke-opacity:1"
+       d="m 365.3871,586.02759 16.63519,410.4862"
+       id="path19" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:7;stroke-dasharray:none;stroke-opacity:1"
+       d="M 649.21997,772.66765 607.50383,897.75526"
+       id="path20" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:7;stroke-dasharray:none;stroke-opacity:1"
+       d="m 656.19023,776.05539 97.60841,218.17076"
+       id="path21" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:7;stroke-dasharray:none;stroke-opacity:1"
+       d="M 656.9105,774.82331 870.38967,910.94003"
+       id="path22"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:7;stroke-dasharray:none;stroke-opacity:1"
+       d="M 989.90674,765.53165 1122.1675,991.86483"
+       id="path23" />
+    <g
+       id="g25"
+       transform="translate(-422.10424,-806.81719)">
+      <rect
+         style="fill:#08d6f9;fill-opacity:1;stroke:#000000;stroke-width:7;stroke-dasharray:none;stroke-opacity:1"
+         id="rect23"
+         width="169.26691"
+         height="128.93692"
+         x="1616.2622"
+         y="850.20966"
+         ry="37.9711"
+         rx="0" />
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:7;stroke-dasharray:none;stroke-opacity:1"
+         x="1643.9061"
+         y="921.33002"
+         id="text23"><tspan
+           sodipodi:role="line"
+           x="1643.9061"
+           y="921.33002"
+           id="tspan24">object</tspan></text>
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:7;stroke-dasharray:none;stroke-opacity:1"
+       x="876.9361"
+       y="96.328979"
+       id="text25"><tspan
+         sodipodi:role="line"
+         id="tspan25"
+         x="876.9361"
+         y="96.328979">StreamAttachment</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:7;stroke-dasharray:none;stroke-opacity:1"
+       x="365.14609"
+       y="371.29935"
+       id="text26"><tspan
+         sodipodi:role="line"
+         id="tspan26"
+         x="365.14609"
+         y="371.29935">Stream</tspan></text>
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:7;stroke-dasharray:none;stroke-opacity:1"
+       d="m 302.01903,444.89704 0.61395,-45.09039 292.91037,-2.86979 0.87091,45.41747"
+       id="path26" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:7;stroke-dasharray:none;stroke-opacity:1"
+       d="m 419.4486,375.22868 2.03369,18.89104"
+       id="path27" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:7;stroke-dasharray:none;stroke-opacity:1"
+       x="964.44983"
+       y="139.20726"
+       id="text27"><tspan
+         sodipodi:role="line"
+         id="tspan27"
+         x="964.44983"
+         y="139.20726">StreamCache</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:25.5884px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:5.59745;stroke-dasharray:none;stroke-opacity:1"
+       x="516.81451"
+       y="456.83908"
+       id="text29"><tspan
+         sodipodi:role="line"
+         id="tspan29"
+         x="516.81451"
+         y="456.83908"
+         style="stroke-width:5.59745">Style</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:25.5884px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:5.59745;stroke-dasharray:none;stroke-opacity:1"
+       x="400.91989"
+       y="590.19861"
+       id="text30"><tspan
+         sodipodi:role="line"
+         id="tspan30"
+         x="400.91989"
+         y="590.19861"
+         style="stroke-width:5.59745">Style</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:25.5884px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:5.59745;stroke-dasharray:none;stroke-opacity:1"
+       x="726.72241"
+       y="659.42676"
+       id="text31"><tspan
+         sodipodi:role="line"
+         id="tspan31"
+         x="726.72241"
+         y="659.42676"
+         style="stroke-width:5.59745">Style</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:25.5884px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:5.59745;stroke-dasharray:none;stroke-opacity:1"
+       x="517.74713"
+       y="775.14386"
+       id="text32"><tspan
+         sodipodi:role="line"
+         id="tspan32"
+         x="517.74713"
+         y="775.14386"
+         style="stroke-width:5.59745">Style</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:25.5884px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:5.59745;stroke-dasharray:none;stroke-opacity:1"
+       x="851.59033"
+       y="776.89246"
+       id="text28"><tspan
+         sodipodi:role="line"
+         id="tspan28"
+         x="851.59033"
+         y="776.89246"
+         style="stroke-width:5.59745">Style</tspan></text>
+  </g>
+</svg>
