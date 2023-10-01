@@ -1601,16 +1601,6 @@ int CatenaryNode::GetStatus()
 	return NodeBase::GetStatus();
 }
 
-/*! Compute a, p, and q for a catenary that hangs between p1 and p2, and that has the given length.
- * If length is less than the distance between p1 and p2, then the distance between p1 and p2 is used for the length.
- *
- * The function returned is as follows, and passes through p1 and p2:
- *     y = a * cosh((x-p)/2*a) + q
- */
-int ComputeCatenary(flatpoint p1, flatpoint p2, double length, int num_samples, double *a_ret, double *p_ret, double *q_ret)
-{
-	***
-}
 
 int CatenaryNode::Update() //possible set ins
 {
@@ -1654,11 +1644,23 @@ int CatenaryNode::Update() //possible set ins
 		len = GetInValue<DoubleValue> (c, dosets, len, ins[2], setins[2]);
 		samples = GetInValue<IntValue> (c, dosets, samples, ins[3], setins[3]);
 
-		*** error check ins
+		// error check ins
+		if (!p1 || !p2 || !len || !samples) {
+			Error(_("Bad input"));
+			return -1;
+		}
+		if (samples->i < 2) {
+			Error(_("Samples must be >= 2"));
+			return -1;
+		}
 
 		GetOutValue<LPathsData>(c, dosets, out1, setouts[0]);
 
-		*** based on ins, update outs
+		// based on ins, update outs
+		flatpoint pts[samples];
+		ComputeCatenary2D(p1->v, p2->v, len->d, samples->i, pts);
+
+		*** convert points to bezier, and install into out1
 	}
 
 
