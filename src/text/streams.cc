@@ -50,29 +50,30 @@ namespace Laidout {
 
 //----------------------------------- General helper functions -----------------------------------
 
-/*! -2 means type not found.
- *  -1 means auto.
- *  Else return one of LAX_LRTB, LAX_RLTB, LAX_LTBT, LAX_RLTB, LAX_ RLBT, LAX_TBLR, LAX_TBRL, LAX_BTLR, LAX_BTRL.
- */
-int ParseFlowDirection(const char *str, int len)
-{
-	if (len < 0) len = strlen(str);
-	int bidi = -2;
-
-	if      (!strncasecmp(str,"ltr" , len)) bidi = LAX_LRTB;
-	else if (!strncasecmp(str,"rtl" , len)) bidi = LAX_RLTB;
-	else if (!strncasecmp(str,"auto", len)) bidi = -1;
-	else if (!strncasecmp(str,"lrtb", len)) bidi = LAX_LRTB;
-	else if (!strncasecmp(str,"lrbt", len)) bidi = LAX_LRBT;
-	else if (!strncasecmp(str,"rltb", len)) bidi = LAX_RLTB;
-	else if (!strncasecmp(str,"rlbt", len)) bidi = LAX_RLBT;
-	else if (!strncasecmp(str,"tblr", len)) bidi = LAX_TBLR;
-	else if (!strncasecmp(str,"tbrl", len)) bidi = LAX_TBRL;
-	else if (!strncasecmp(str,"btlr", len)) bidi = LAX_BTLR;
-	else if (!strncasecmp(str,"btrl", len)) bidi = LAX_BTRL;
-
-	return bidi;
-}
+// ***** use Laxkit::flow_id() instead.. should that one use strncasecmp and len instead??
+///*! -2 means type not found.
+// *  -1 means auto.
+// *  Else return one of LAX_LRTB, LAX_RLTB, LAX_LTBT, LAX_RLTB, LAX_ RLBT, LAX_TBLR, LAX_TBRL, LAX_BTLR, LAX_BTRL.
+// */
+//int ParseFlowDirection(const char *str, int len)
+//{
+//	if (len < 0) len = strlen(str);
+//	int bidi = -2;
+//
+//	if      (!strncasecmp(str,"ltr" , len)) bidi = LAX_LRTB;
+//	else if (!strncasecmp(str,"rtl" , len)) bidi = LAX_RLTB;
+//	else if (!strncasecmp(str,"auto", len)) bidi = -1;
+//	else if (!strncasecmp(str,"lrtb", len)) bidi = LAX_LRTB;
+//	else if (!strncasecmp(str,"lrbt", len)) bidi = LAX_LRBT;
+//	else if (!strncasecmp(str,"rltb", len)) bidi = LAX_RLTB;
+//	else if (!strncasecmp(str,"rlbt", len)) bidi = LAX_RLBT;
+//	else if (!strncasecmp(str,"tblr", len)) bidi = LAX_TBLR;
+//	else if (!strncasecmp(str,"tbrl", len)) bidi = LAX_TBRL;
+//	else if (!strncasecmp(str,"btlr", len)) bidi = LAX_BTLR;
+//	else if (!strncasecmp(str,"btrl", len)) bidi = LAX_BTRL;
+//
+//	return bidi;
+//}
 
 
 /*! Something with simple contents in parantheses, like:
@@ -81,7 +82,18 @@ int ParseFlowDirection(const char *str, int len)
  *  - local('Blah')
  *  - url(https://thing)
  *
- *  Return 1 for successful parse, else 0.
+ * If there are no parantheses, thern 0 is returned.
+ *
+ * f_len_ret is the length of the function, so "local(blah)" will have f_len_ret == 5.
+ *
+ * s_ret will point to the start of the parameter. So "local(blah)" will have s_ret point to the 'b' in blah.
+ * A parameter in quotes like `local("blah")` will have s_ret still point to the 'b' in blah.
+ *
+ * s_len_ret will be the number of characters of the parameter, not including quotes.
+ *
+ * end_ret will point to the character right after the closing ')'.
+ * 
+ * Return 1 for successful parse, else 0.
  */
 int ParseSimpleFofS(const char *value, int *f_len_ret, const char **s_ret, int *s_len_ret, const char **end_ret)
 {
@@ -123,7 +135,7 @@ class LengthValue : public Value
 	double value;
 	double v_cached; //cached context dependent computed absolute value. This will be set from outside LengthValue, such as when computing a StreamCache.
 
-	//enum LengthType {
+	//enum LengthType {   *** use Laxkit::CSSName instead
 	//	LEN_Number, // absolute units are used
 	//	LEN_Percent_Parent,
 	//	LEN_Percent_Paper,
@@ -136,7 +148,7 @@ class LengthValue : public Value
 	//	LEN_vmax  // 100 = maximum of viewport width, height
 	//};
 
-	CSSName type;
+	Laxkit::CSSName type;
 
 	static Laxkit::UnitManager unit_manager;
 	Laxkit::Unit units;
@@ -249,6 +261,7 @@ ObjectDef *LengthValue::makeObjectDef()
 	DBGE("IMPLEMENT ME!!");
 	return nullptr;
 }
+
 
 //----------------------------------- TabStopInfo -----------------------------------
 
@@ -1491,7 +1504,8 @@ StreamElement *ParseCommonStyle(Laxkit::Attribute *att, StreamElement *current, 
 			 // flow direction: html has "ltr" "rtl" "auto"
 			 // 				-> extend with all 8 lrtb, lrbt, tblr, etc?
 
-			int bidi = ParseFlowDirection(value,-1);
+			//int bidi = ParseFlowDirection(value,-1);
+			int bidi = Laxkit::flow_id(value);
 
 			if (!current) current = new StreamElement();
 			if (bidi >= 0) current->style->set("bidi", new IntValue(bidi), true);
