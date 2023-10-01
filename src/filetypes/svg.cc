@@ -4145,7 +4145,7 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 			} else if (!strcmp(name,"font-weight")) { // normal | bold | bolder | lighter | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | inherit
 				bool relative = false;
 				const char *endptr = nullptr;
-				int weight = CSSFontWeight(value, endptr, &relative);
+				int weight = CSSFontWeight(value, &endptr, &relative);
 				extra->push(name, new IntValue(weight), -1, true);
 
 			} else if (!strcmp(name,"font-stretch")) {
