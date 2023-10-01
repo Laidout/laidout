@@ -199,8 +199,8 @@ class StreamElement //: public Laxkit::DumpUtility
  *
  * This can be, for instance, an image chunk, text chunk, a break, a non-printing anchor.
  *
- * These are explicitly leaf nodes in a StreamElement tree, that point to other leaf nodes
- * for convenience. Anything in style is ignored. All actual style information should be contained in the parent tree.
+ * These are explicitly leaf nodes in a StreamElement tree, that point to adjacent leaf nodes
+ * for convenience.
  */
 
 
@@ -371,15 +371,18 @@ class Stream : public Laxkit::anObject, public Laxkit::DumpUtility
 
 //------------------------------ StreamAttachment ---------------------------------
 
-/*! Held by DrawableObjects, these define various types of attachments of Stream objects to the parent
- * DrawableObject, as well as cached rendering info in StreamAttachment::cache.
+/*! One StreamAttachment is held by each DrawableObject that the stream needs to lay on,
+ * StreamAttachment defines how a Stream is meant to lay out on or in the DrawableObject,
+ * as well as cached rendering info in StreamAttachment::cache.
  */
 
 class StreamAttachment : public Laxkit::RefCounted
 {
   public:
     DrawableObject *owner;
-	int attachment_target; //area path, inset path, outset path, inset area
+	enum Target { Skip, BoundingBox, ObjectPath, InsetPath, OutsetPath };
+	Target attachment_target = InsetPath;
+	bool on_path = false;
 
     Stream *stream;
     StreamCache *cache; //owned by *this, assume any other refs are for temporary rendering purposes
