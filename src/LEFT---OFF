@@ -620,7 +620,6 @@ Singles:
   PageLayout() lines
   PaperLayout()
   implement double sided
-  multi page inkscape import needs to assign proper pages
 
 
 freehand tool:
@@ -1131,6 +1130,7 @@ node editor node interface NodeInterface nodes: node: interface:
     DONE LaxImage to Gegl
   svg/inkscape specific filter interface, io passthrough
     inkscape multipage
+      multi page inkscape import needs to assign proper pages
 	  import new Inkscape margin features
 	  pages are defined upside down.. has to scale to viewbox?
 	  need to insert pages at load time, and assign objects to proper pages
@@ -1601,6 +1601,7 @@ themes:
   DONE laxprofile not working
 
 laxkit:
+  strmanip is not in Laxkit namespace, wtf!
   resources:
     resource names should default to object->Id(). Is Name important? refactor with "label" instead of "Name"?
     should probably go all in on stacks of data, with container pointers to the data.. would help with name collisions
@@ -2422,6 +2423,16 @@ Units:
   page units should be adjustible so that node enthusiasts don't have to use inches.. maybe make page layer transforms scale by a units conversion
   need something like Convert(value, units_from, units_to, &error, overrides), where overrides is
     something like: list of [units_id, newscaling], like for temp redefining "Em" or "px"
+    maybe UnitManager maintain relative categories:
+      font-size
+      line-height
+      viewport-width
+      viewport-height
+      viewport-min
+      paper-height
+      paper-width
+
+pixels units should be set as per document dpi
 
 selecting in viewwindow
   on limbo, and spread/page, papergroup, select  first object it finds
@@ -3053,8 +3064,6 @@ PlainTextWindow plaintextwindow PlainText plain text window:
   multicursor edit
   some day should have syntax highlighting in Laxkit::MultiLineEdit
 
-pixels units should be set as per document dpi
-
 CharacterInterface characterinterface
   should show unicode number/glyph name if available
   implement recent
@@ -3334,3 +3343,5 @@ DONE bug: image properties layout for filename truncates
 DONE fix off by one error when importing "m/n" for every nth
 DONE bug: crashes when changing export formats away from Image
 DONE bug: PDF export does not handle object bleeds
+DONE bug: bez_intersect_bez is returning spurious result when there are 9 intersections. One point frequently returns as 0 -> (0,0)
+
