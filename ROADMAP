@@ -8,7 +8,7 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 VERSION 0.098
 -------------
        Flatpak creation, submit for Flathub (issue #11)
-       Be able to import/export new Inkscape multipage art boards
+       Import/export new Inkscape multipage art boards via expanded Singles imposition type
 (done) debug svg in enough to be able to load icons.svg
 (done) svg in/out with powerstroke
 (done) svg in/(done)out with meshes, at miminum round trip export/import should work
