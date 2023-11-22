@@ -20,6 +20,7 @@
 #include <lax/fileutils.h>
 #include <lax/laximages.h>
 #include <lax/misc.h>
+#include <lax/freedesktop.h>
 #include <lax/messagebox.h>
 
 #include <cctype>
@@ -471,8 +472,10 @@ char *previewFileName(const char *file, const char *nametemplate)
 			bname=new char[40];
 			
 			//TODO: MD5() is deprecated, need to find a suitable replacement
-			MD5((unsigned char *)str, strlen(str), md);
-			h=bname;
+			//MD5((unsigned char *)str, strlen(str), md);
+			freedesktop_md5((unsigned char *)str, strlen(str), md);
+
+			h = bname;
 			for (int c2=0; c2<16; c2++) {
 				sprintf(h,"%02x",(int)md[c2]);
 				h+=2;
