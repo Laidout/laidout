@@ -35,9 +35,6 @@
 #include "../language.h"
 
 
-//template implementation:
-#include <lax/refptrstack.cc>
-
 #define DBG 
 
 
@@ -463,13 +460,6 @@ Document::Document(Imposition *imp,const char *filename)//stuff=NULL
 		}
 	}
 	
-	//****this exists here for debugging purposes, would be preemptible later?
-	//****perhaps this could be the default page range type?
-	//PageRange *range=new PageRange();
-	//range->start=0;
-	//range->end=pages.n-1;
-	//range->offset=5;
-	//pageranges.push(range);
 	SyncPages(0,-1, false);
 }
 
@@ -1135,9 +1125,9 @@ int Document::ReImpose(Imposition *newimp,int scale_page_contents_to_fit)
 {
 	if (!newimp) return 1;
 
-	if (newimp!=imposition) {
+	if (newimp != imposition) {
 		if (imposition) imposition->dec_count();
-		imposition=newimp;
+		imposition = newimp;
 		imposition->inc_count();
 	}
 
