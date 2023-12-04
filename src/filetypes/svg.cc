@@ -925,10 +925,10 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			fprintf(f,"%s   y =\"%.10g\"\n", spc, caption->font->ascent());
 
 			if (palette && layer<palette->colors.n) {
-				rr=palette->colors.e[layer]->channels[0]/(double)palette->colors.e[layer]->maxcolor;
-				gg=palette->colors.e[layer]->channels[1]/(double)palette->colors.e[layer]->maxcolor;
-				bb=palette->colors.e[layer]->channels[2]/(double)palette->colors.e[layer]->maxcolor;
-				aa=palette->colors.e[layer]->channels[3]/(double)palette->colors.e[layer]->maxcolor; 
+				rr = palette->colors.e[layer]->color->values[0];
+				gg = palette->colors.e[layer]->color->values[1];
+				bb = palette->colors.e[layer]->color->values[2];
+				aa = palette->colors.e[layer]->color->values[3]; 
 
 			} else {
 				rr=caption->red;
@@ -1005,17 +1005,17 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			//fprintf(f,"%s   y =\"%.10g\"\n", spc, text->font->ascent());
 
 			if (palette && layer<palette->colors.n) {
-				rr=palette->colors.e[layer]->channels[0]/(double)palette->colors.e[layer]->maxcolor;
-				gg=palette->colors.e[layer]->channels[1]/(double)palette->colors.e[layer]->maxcolor;
-				bb=palette->colors.e[layer]->channels[2]/(double)palette->colors.e[layer]->maxcolor;
-				aa=palette->colors.e[layer]->channels[3]/(double)palette->colors.e[layer]->maxcolor; 
+				rr = palette->colors.e[layer]->color->values[0];
+				gg = palette->colors.e[layer]->color->values[1];
+				bb = palette->colors.e[layer]->color->values[2];
+				aa = palette->colors.e[layer]->color->values[3]; 
 
 			} else if (text->color) {
 				if (text->color->ColorSystemId()==LAX_COLOR_RGB) {
-					rr=text->color->values[0];
-					gg=text->color->values[1];
-					bb=text->color->values[2];
-					aa=text->color->values[3];
+					rr = text->color->values[0];
+					gg = text->color->values[1];
+					bb = text->color->values[2];
+					aa = text->color->values[3];
 				}
 
 			} else {

@@ -42,27 +42,24 @@ const char *PalettePane::PaletteDir()
 
 
 //! Send a anXWindow::sendthis message to laidout->lastview. 
-/*! 
- * \todo *** there is every possibility that laidout->lastview is no longer valid?
- */
 int PalettePane::send()
 {
 	if (!win_sendthis || !palette || curcolor<0) return 0;
 
 	unsigned long owner=0;
-	if (laidout->lastview) owner=laidout->lastview->object_id;
+	if (laidout->lastview) owner = laidout->lastview->object_id;
 	if (!owner) owner=win_owner;
 	if (!owner) return 0;
 
 	SimpleColorEventData *e=new SimpleColorEventData;
 
-	e->max=palette->defaultmaxcolor;
-	e->numchannels=palette->colors.e[curcolor]->numcolors;
-	e->channels=new int[e->numchannels];
+	e->max = 65535; //palette->defaultmaxcolor;
+	e->numchannels = palette->colors.e[curcolor]->color->nvalues;
+	e->channels = new int[e->numchannels];
 
 	int c;
-	for (c=0; c<palette->colors.e[curcolor]->numcolors; c++) 
-		e->channels[c]=palette->colors.e[curcolor]->channels[c];
+	for (c=0; c<palette->colors.e[curcolor]->color->nvalues; c++) 
+		e->channels[c] = palette->colors.e[curcolor]->color->values[c] * 65535;
 	
 	app->SendMessage(e,owner,win_sendthis,object_id);
 	return 1;

@@ -148,10 +148,10 @@ DrawableObject *ColorBars(double pointsize, Palette *palette, int numrows, int n
 		for (int r=0; r<numrows; r++) {
 			b=dynamic_cast<LPathsData*>(somedatafactory()->NewObject(LAX_PATHSDATA));
 			b->appendRect(c*s,r*s,s,s);
-			color.rgb(palette->colors.e[c]->channels[0],
-					  palette->colors.e[c]->channels[1],
-					  palette->colors.e[c]->channels[2],
-					  65535);
+			color.rgbf(palette->colors.e[c]->color->values[0],
+					   palette->colors.e[c]->color->values[1],
+					   palette->colors.e[c]->color->values[2],
+					   1.0);
 			b->fill(&color);
 			b->line(0);
 			b->FindBBox();

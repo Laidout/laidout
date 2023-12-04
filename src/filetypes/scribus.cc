@@ -23,7 +23,7 @@
 #include <lax/transformmath.h>
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
-#include <lax/palette.h>
+#include <lax/gradientstrip.h>
 #include <lax/colors.h>
 
 #include "../language.h"
@@ -836,40 +836,40 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 		 //provide an easy fallback color
 		fprintf(f,"    <COLOR NAME=\"Black\" RGB=\"#000000\" Spot=\"0\" Register=\"0\" />\n");
 
-		PaletteEntry *color;
+		GradientStrip::GradientSpot *color;
 		for (int c=0; c<palette.colors.n; c++) {
-			color=palette.colors.e[c];
-			if (color->color_space==LAX_COLOR_RGB) {
+			color = palette.colors.e[c];
+			if (color->color->colorsystemid == LAX_COLOR_RGB) {
 				fprintf(f,"    <COLOR NAME=\"%d,%d,%d\" RGB=\"#%02x%02x%02x\" Spot=\"0\" Register=\"0\" />\n",
-					palette.colors.e[c]->channels[0],  //r
-					palette.colors.e[c]->channels[1],  //g
-					palette.colors.e[c]->channels[2],  //b
+					(int)(palette.colors.e[c]->color->values[0]*256),  //r
+					(int)(palette.colors.e[c]->color->values[1]*256),  //g
+					(int)(palette.colors.e[c]->color->values[2]*256),  //b
 
-					palette.colors.e[c]->channels[0]>>8,  //r hex
-					palette.colors.e[c]->channels[1]>>8,  //g
-					palette.colors.e[c]->channels[2]>>8); //b
+					(int)(palette.colors.e[c]->color->values[0]*256),  //r hex
+					(int)(palette.colors.e[c]->color->values[1]*256),  //g
+					(int)(palette.colors.e[c]->color->values[2]*256)); //b
 
-			} else if (color->color_space==LAX_COLOR_CMYK) {
+			} else if (color->color->colorsystemid == LAX_COLOR_CMYK) {
 				fprintf(f,"    <COLOR NAME=\"%d,%d,%d,%d\" CMYK=\"#%02x%02x%02x%02x\" Spot=\"0\" Register=\"0\" />\n",
-					palette.colors.e[c]->channels[0],  //c
-					palette.colors.e[c]->channels[1],  //m
-					palette.colors.e[c]->channels[2],  //y
-					palette.colors.e[c]->channels[3],  //k
+					(int)(palette.colors.e[c]->color->values[0]*256),  //c
+					(int)(palette.colors.e[c]->color->values[1]*256),  //m
+					(int)(palette.colors.e[c]->color->values[2]*256),  //y
+					(int)(palette.colors.e[c]->color->values[3]*256),  //k
 
-					palette.colors.e[c]->channels[0]>>8,  //c hex
-					palette.colors.e[c]->channels[1]>>8,  //m
-					palette.colors.e[c]->channels[2]>>8,  //y
-					palette.colors.e[c]->channels[3]>>8); //k
+					(int)(palette.colors.e[c]->color->values[0]*256),  //c hex
+					(int)(palette.colors.e[c]->color->values[1]*256),  //m
+					(int)(palette.colors.e[c]->color->values[2]*256),  //y
+					(int)(palette.colors.e[c]->color->values[3]*256)); //k
 
-			} else if (color->color_space==LAX_COLOR_GRAY) {
+			} else if (color->color->colorsystemid == LAX_COLOR_GRAY) {
 				fprintf(f,"    <COLOR NAME=\"%d,%d,%d\" RGB=\"#%02x%02x%02x\" Spot=\"0\" Register=\"0\" />\n",
-					palette.colors.e[c]->channels[0],  //r
-					palette.colors.e[c]->channels[0],  //g
-					palette.colors.e[c]->channels[0],  //b
+					(int)(palette.colors.e[c]->color->values[0] * 256),  //r
+					(int)(palette.colors.e[c]->color->values[0] * 256),  //g
+					(int)(palette.colors.e[c]->color->values[0] * 256),  //b
 
-					palette.colors.e[c]->channels[0]>>8,  //r hex
-					palette.colors.e[c]->channels[0]>>8,  //g
-					palette.colors.e[c]->channels[0]>>8); //b
+					(int)(palette.colors.e[c]->color->values[0] * 256),  //r hex
+					(int)(palette.colors.e[c]->color->values[0] * 256),  //g
+					(int)(palette.colors.e[c]->color->values[0] * 256)); //b
 			}
 		}
 	} else {
@@ -1047,7 +1047,7 @@ int addColor(Palette &palette, ScreenColor *color)
 	for (int c=0; c<palette.colors.n; c++) {
 		if (!strcmp(palette.colors.e[c]->name,name)) return 0;
 	}
-	palette.AddRGB(name, color->red, color->green, color->blue, color->alpha);
+	palette.AddColor(0, color->red, color->green, color->blue, color->alpha, name);
 	return 1;
 }
 
@@ -1112,10 +1112,10 @@ static void appendobjfordumping(ScribusExportConfig *config, PtrStack<PageObject
 
 					for (LaxFont *font=caption->font; font; font=font->nextlayer) {
 						if (fpalette && layer<fpalette->colors.n) {
-							color.rgbf(fpalette->colors.e[layer]->channels[0]/(double)fpalette->colors.e[layer]->maxcolor,
-									   fpalette->colors.e[layer]->channels[1]/(double)fpalette->colors.e[layer]->maxcolor,
-									   fpalette->colors.e[layer]->channels[2]/(double)fpalette->colors.e[layer]->maxcolor,
-									   fpalette->colors.e[layer]->channels[3]/(double)fpalette->colors.e[layer]->maxcolor
+							color.rgbf(fpalette->colors.e[layer]->color->values[0],
+									   fpalette->colors.e[layer]->color->values[1],
+									   fpalette->colors.e[layer]->color->values[2],
+									   fpalette->colors.e[layer]->color->values[3]
 									);
 							addColor(palette, &color);
 						}
@@ -1152,10 +1152,10 @@ static void appendobjfordumping(ScribusExportConfig *config, PtrStack<PageObject
 
 					for (LaxFont *font=textonpath->font; font; font=font->nextlayer) {
 						if (fpalette && layer<fpalette->colors.n) {
-							color.rgbf(fpalette->colors.e[layer]->channels[0]/(double)fpalette->colors.e[layer]->maxcolor,
-									   fpalette->colors.e[layer]->channels[1]/(double)fpalette->colors.e[layer]->maxcolor,
-									   fpalette->colors.e[layer]->channels[2]/(double)fpalette->colors.e[layer]->maxcolor,
-									   fpalette->colors.e[layer]->channels[3]/(double)fpalette->colors.e[layer]->maxcolor
+							color.rgbf(fpalette->colors.e[layer]->color->values[0],
+									   fpalette->colors.e[layer]->color->values[1],
+									   fpalette->colors.e[layer]->color->values[2],
+									   fpalette->colors.e[layer]->color->values[3]
 									);
 							addColor(palette, &color);
 						}
@@ -1444,10 +1444,10 @@ static void scribusdumpobj(ScribusExportConfig *config, FILE *f,int &curobj,PtrS
 		int i=pageobjects.e[curobj]->index-1;
 		if (palette && i>=0 && i<palette->colors.n) {
 			tstyle=new FillStyle(
-							palette->colors.e[i]->channels[0]/(double)palette->colors.e[i]->maxcolor*65535, //r
-							palette->colors.e[i]->channels[1]/(double)palette->colors.e[i]->maxcolor*65535, //g
-							palette->colors.e[i]->channels[2]/(double)palette->colors.e[i]->maxcolor*65535, //b
-							palette->colors.e[i]->channels[3]/(double)palette->colors.e[i]->maxcolor*65535, //a
+							palette->colors.e[i]->color->values[0]*65535, //r
+							palette->colors.e[i]->color->values[1]*65535, //g
+							palette->colors.e[i]->color->values[2]*65535, //b
+							palette->colors.e[i]->color->values[3]*65535, //a
 							 LAXFILL_EvenOdd, FillSolid, LAXOP_Over);
 		} else {
 			tstyle=new FillStyle(text->red*65535,text->green*65535,text->blue*65535,text->alpha*65535,
@@ -2489,7 +2489,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 			 // Spot "0"
 			 // Register "0"
 			//***** finish me!
-//			Palette *palette=new Palette;
+//			Palette *palette = GradientStrip::newPalette();
 //			char *cname=NULL;
 //			Color *color=NULL;
 //			int isspot=0, isreg=0;

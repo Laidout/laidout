@@ -22,7 +22,7 @@
 #include <lax/transformmath.h>
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
-#include <lax/palette.h>
+#include <lax/gradientstrip.h>
 #include <lax/colors.h>
 
 #include "pageatlas.h"

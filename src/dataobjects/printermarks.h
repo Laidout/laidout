@@ -16,7 +16,7 @@
 #define PRINTERMARKS_H
 
 #include "drawableobject.h"
-#include <lax/palette.h>
+#include <lax/gradientstrip.h>
 
 
 namespace Laidout {

@@ -132,8 +132,6 @@ const char *LaidoutVersion()
  * that provides more than one type of behavior, like having a default BoldStyle and a default ItalicStyle,
  * but both might be instances of the same class...
  *
- * \todo When Laxkit::FileDialog is more fully developed, palette_dir should be more
- *   like palette_path, and the paths beyound the first dir would be bookmarks.
  * \todo would be nice for debugging to be able to restart laidout in any language,
  *   whatever the current locale actually is (?)
  */
