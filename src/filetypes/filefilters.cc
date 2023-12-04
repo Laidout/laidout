@@ -145,7 +145,7 @@ bool FileFilter::DirectoryBased()
  * \brief Return the version of the filter's format that the file seems to be, or nullptr if not recognized.
  */
 /*! \fn int ImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log, const char *filecontents, int contentslen)
- * \brief The function that outputs the stuff.
+ * \brief The function that imports the stuff.
  *
  * If file!=nullptr, then input from that single file, and ignore the files in context.
  * If file==nullptr and filecontents!=nullptr, then assume filecontents is a string containing file data of contentslen bytes.
