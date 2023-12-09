@@ -292,15 +292,15 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 			"  right click brings up menu"
 		   );
 
-	lastview=lastedit=NULL;
+	lastview = lastedit = nullptr;
 
 	// add the window generator funcs
-	AddWindowType("ViewWindow","View Window",0,newViewWindowFunc,1);
-	AddWindowType("SpreadEditor","Spread Editor",0,newSpreadEditorFunc,0);
-	AddWindowType("HelpWindow","Help Window",0,newHelpWindowFunc,0);
-	AddWindowType("CommandWindow","Command Prompt",0,newCommandWindowFunc,0);
-	AddWindowType("PaletteWindow","Palette",PALW_DBCLK_TO_LOAD,newPaletteWindowFunc,0);
-	AddWindowType("PlainTextWindow","Text Editor",0,newPlainTextWindowFunc,0);
+	AddWindowType("ViewWindow",     "View Window",    0, newViewWindowFunc,      1);
+	AddWindowType("SpreadEditor",   "Spread Editor",  0, newSpreadEditorFunc,    0);
+	AddWindowType("HelpWindow",     "Help Window",    0, newHelpWindowFunc,      0);
+	AddWindowType("CommandWindow",  "Command Prompt", 0, newCommandWindowFunc,   0);
+	AddWindowType("PaletteWindow",  "Palette",        0, newPaletteWindowFunc,   0);
+	AddWindowType("PlainTextWindow","Text Editor",    0, newPlainTextWindowFunc, 0);
 
 	if (laidout->prefs.experimental) 
 		AddWindowType("ObjectTreeWindow","Layers",0,newObjectTreeWindowFunc,0);
