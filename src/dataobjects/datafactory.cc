@@ -33,6 +33,7 @@
 
 #include <lax/interfaces/interfacemanager.h>
 #include <lax/fileutils.h>
+#include <lax/gradientstrip.h>
 
 #include <iostream>
 #define DBG
@@ -198,12 +199,31 @@ Laxkit::anObject *createPaperGroup(Laxkit::Attribute *config)
 	return pg;
 }
 
+
+//---------------------------- Palette --------------------------------
+
+////! For somedatafactory.
+//Laxkit::anObject *createPaperGroup(int p, Laxkit::anObject *refobj)
+//{
+//	return new PaperGroup();
+//}
+
+//! For resourcemanager.
+Laxkit::anObject *createPalette(Laxkit::Attribute *config)
+{
+	Palette *p = new Palette();
+	p->SetFlags(GradientStrip::AsPalette, true);
+	if (config) p->dump_in_atts(config, 0, nullptr);
+	return p;
+}
+
+
 //---------------------------- SomeDataFactory Setup --------------------------
 
 
 void InitializeDataFactory()
 {
-	InterfaceManager *imanager=InterfaceManager::GetDefault(true);
+	InterfaceManager *imanager = InterfaceManager::GetDefault(true);
 	ObjectFactory *lobjectfactory = imanager->GetObjectFactory();
 
 	// drawable object types
@@ -236,8 +256,9 @@ void InitializeDataFactory()
 
 void InitializeResourceManager(Laxkit::ResourceManager *resourcemanager)
 {
-	resourcemanager->AddResourceType("PlainText", _("Plain text"), _("Plain, unformatted text"), nullptr /*icon*/, nullptr, LoadPlainText);
+	resourcemanager->AddResourceType("PlainText",  _("Plain text"), _("Plain, unformatted text"), nullptr /*icon*/, nullptr, LoadPlainText);
 	resourcemanager->AddResourceType("PaperGroup", _("Paper Group"), nullptr /*desc*/, nullptr /*icon*/, createPaperGroup, nullptr /*file load func*/);
+	resourcemanager->AddResourceType("Palette",    _("Palette"),     nullptr /*desc*/, nullptr /*icon*/, createPalette,    nullptr /*file load func*/);
 }
 
 
