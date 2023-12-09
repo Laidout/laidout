@@ -1492,6 +1492,8 @@ overwrite:
   tab/left/right/enter not doing anything. should be able to control with keys
 
 FileDialog filedialog:
+  types for saving, must be included in return message:
+    file type id (int), file name label (string), description
   when on recent, going back should just revert to directory view
   click on big image/pdf, takes time to generate preview. click on already selected, regenerates preview
     need a click to generate preview, gen preview in background
@@ -2467,23 +2469,37 @@ need to clarify what happens when you open and close documents.
     open doc:  limbo->SetResourceOwner(document);
     close doc: if (limbo->ObjectOwner() == doc) limbo->SetResourceOwner(nullptr);
  
-Palettes:
+Palettes: palettewindow gradientstrip
   load palette should have a preview: file dialog preview function
-  allow editing palette strips, import those to gradient tools
-  custom palettes
-  swatchbook sbz support? A sort of super format from 2010, but people talk about it
-  css palette import/export
-  if height < 2*textheight, then hide name info
-  wheel between loaded palettes?
+  coop:
+    swatchbooker sbz import/export? A sort of super format from 2010, but people still talk about it in 2023
+	krita            import/export        zip files with color profiles
+    DONE css              import/export        just define a bunch of classes?
+	DONE gimp             import-DONE/export   text based
+	DONE inkscape         import(uses gimp gpl)/export
+	DONE scribus          import/export        <SCRIBUSCOLORS>
+  DONE allow transparent colors
+  DONE custom palettes: finish implementing editability
+  DONE move color with keys
+  DONE right click for:
+    DONE select palette from resources
+	DONE new color
+	DONE rename color
+    DONE load palette
+    DONE save palette
+    DONE dup palette
+  generate new editable palette:
+		generate palette from document objects
+		generate palette from selected objects
+		sample from random points in image
+		sample from dragging line in image
+		DONE rainbow
+
+  if height < 2*textheight, then hide name info, or have flag to hide in for inkscape-ish palette display
+  be able to drag color with mouse
   have a none color
-  right click for:
-    load palette
-    select palette
-    save palette
-    dup palette
-    New from a generator (like rainbow)
-Soup up the color box so one can recall previous colors, and/or integration with palette window
-    -->delay until proper color implementation in place
+  transform palette by a gradient? levels/curves?
+
 
 Gradients: gradientinterface
   ---0.99:
@@ -2512,6 +2528,8 @@ Gradients: gradientinterface
         r1, r2
 
 colorbox color box:
+  Soup up the color box so one can recall previous colors, and/or integration with palette window
+    -->delay until proper color implementation in place
   hsv slide, configurable clicks
 
 color slider popup: colorpicker color picker colorsliders
