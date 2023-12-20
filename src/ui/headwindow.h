@@ -19,6 +19,7 @@
 #include <lax/attributes.h>
 #include "../core/document.h"
 
+#include "viewwindow.h"
 
 
 namespace Laidout {
@@ -65,6 +66,7 @@ class HeadWindow : public Laxkit::SplitWindow
 	virtual Laxkit::PlainWinBox *windowe(int i) { if (i>=0 && i<windows.n) return windows.e[i]; return NULL; }
 	virtual int HasOnlyThis(Document *doc);
 	virtual Document *findAnyDoc();
+	virtual ViewWindow *findAnyViewport();
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
 	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);

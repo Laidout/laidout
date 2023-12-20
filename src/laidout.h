@@ -188,6 +188,7 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	ExportFilter *FindExportFilter(const char *name, bool exact_only);
 	void PushImportFilter(ImportFilter *filter);
 	void NotifyGeneralErrors(Laxkit::ErrorLog *log);
+	Laxkit::anXWindow *LastView();
 
 	virtual void UpdateAutosave();
 

@@ -218,6 +218,17 @@ Laxkit::anObject *createPalette(Laxkit::Attribute *config)
 }
 
 
+//---------------------------- GradientStrip --------------------------------
+
+//! For resourcemanager.
+Laxkit::anObject *createGradientStrip(Laxkit::Attribute *config)
+{
+	GradientStrip *g = new GradientStrip();
+	if (config) g->dump_in_atts(config, 0, nullptr);
+	return g;
+}
+
+
 //---------------------------- SomeDataFactory Setup --------------------------
 
 
@@ -256,9 +267,10 @@ void InitializeDataFactory()
 
 void InitializeResourceManager(Laxkit::ResourceManager *resourcemanager)
 {
-	resourcemanager->AddResourceType("PlainText",  _("Plain text"), _("Plain, unformatted text"), nullptr /*icon*/, nullptr, LoadPlainText);
-	resourcemanager->AddResourceType("PaperGroup", _("Paper Group"), nullptr /*desc*/, nullptr /*icon*/, createPaperGroup, nullptr /*file load func*/);
-	resourcemanager->AddResourceType("Palette",    _("Palette"),     nullptr /*desc*/, nullptr /*icon*/, createPalette,    nullptr /*file load func*/);
+	resourcemanager->AddResourceType("PlainText",    _("Plain text"), _("Plain, unformatted text"), nullptr /*icon*/, nullptr, LoadPlainText);
+	resourcemanager->AddResourceType("PaperGroup",   _("Paper Group"),  nullptr /*desc*/, nullptr /*icon*/, createPaperGroup, nullptr /*file load func*/);
+	resourcemanager->AddResourceType("Palette",      _("Palette"),      nullptr /*desc*/, nullptr /*icon*/, createPalette,    nullptr /*file load func*/);
+	resourcemanager->AddResourceType("GradientStrip",_("GradientStrip"),nullptr /*desc*/, nullptr /*icon*/, createGradientStrip, nullptr /*file load func*/);
 }
 
 

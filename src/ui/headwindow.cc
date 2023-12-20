@@ -95,8 +95,12 @@ anXWindow *newPlainTextWindowFunc(anXWindow *parnt,const char *ntitle,unsigned l
 anXWindow *newPaletteWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style, anXWindow *nowner)
 {
 	unsigned long owner=0;
-	if (laidout->lastview) owner=laidout->lastview->object_id;
-	PaletteWindow *palette=new PalettePane(parnt,ntitle,ntitle,style, 0,0,0,0,1, NULL,owner,"curcolor");
+	if (laidout->lastview) {
+		owner = laidout->lastview->object_id;
+		anXWindow *colorbox = laidout->lastview->findChildWindowByName("colorbox");
+		if (colorbox) owner = colorbox->object_id;
+	}
+	PaletteWindow *palette = new PalettePane(parnt,ntitle,ntitle,style, 0,0,0,0,1, NULL,owner,"newcolor");
 	return palette;
 }
 
@@ -454,6 +458,25 @@ Document *HeadWindow::findAnyDoc()
 	}
 	if (laidout->project && laidout->project->docs.n) return laidout->project->docs.e[0]->doc;
 	return NULL;
+}
+
+//! Return the first ViewWindow that is in a pane.
+ViewWindow *HeadWindow::findAnyViewport()
+{
+	ViewWindow *v = nullptr;
+
+	if (curbox) {
+		v = dynamic_cast<ViewWindow *>(curbox->win());
+		if (v) return v;
+	}
+
+	for (int c=0; c<windows.n; c++) {
+		if (!windows.e[c]->win()) continue;
+		v = dynamic_cast<ViewWindow *>(windows.e[c]->win());
+		if (v) return v;
+	}
+
+	return nullptr;
 }
 
 /*! \todo ***** should be able to duplicate views/spreadeditor/etc..

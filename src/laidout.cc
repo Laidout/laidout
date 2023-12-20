@@ -1685,6 +1685,21 @@ int LaidoutApp::isTopWindow(anXWindow *win)
 	return topwindows.findindex(win)>=0;
 }
 
+/*! Return lastview if not null, else return the first viewport found.
+ */
+Laxkit::anXWindow *LaidoutApp::LastView()
+{
+	if (!lastview) {
+		for (int c=0; c<topwindows.n; c++) {
+			HeadWindow *h = dynamic_cast<HeadWindow*>(topwindows.e[c]);
+			lastview = h->findAnyViewport();
+			if (lastview) return lastview;
+		}
+	}
+	return lastview;
+}
+
+
 //! Find the doc with the given obect_id. Does not increment its count.
 Document *LaidoutApp::findDocumentById(unsigned long id)
 {

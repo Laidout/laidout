@@ -2469,15 +2469,25 @@ need to clarify what happens when you open and close documents.
     open doc:  limbo->SetResourceOwner(document);
     close doc: if (limbo->ObjectOwner() == doc) limbo->SetResourceOwner(nullptr);
  
+color management, ColorManager:
+  lcms based
+  look into oklab, Godot seems to use it sometimes?
+
 Palettes: palettewindow gradientstrip
   load palette should have a preview: file dialog preview function
   coop:
     swatchbooker sbz import/export? A sort of super format from 2010, but people still talk about it in 2023
 	krita            import/export        zip files with color profiles
-    DONE css              import/export        just define a bunch of classes?
-	DONE gimp             import-DONE/export   text based
+    DONE css              import/export   just define a bunch of classes?
+	DONE gimp             import/export   text based .gpl
 	DONE inkscape         import(uses gimp gpl)/export
 	DONE scribus          import/export        <SCRIBUSCOLORS>
+	export gradient image
+	export voronoi palette svg
+	export voronoi gradient mesh svg
+  DONE bug: when no viewport was previously active, color messages do not update viewport color box
+  DONE memory hole: start a new palette, close, objects remain!
+  DONE bug: selecting color not going to a reasonable target
   DONE allow transparent colors
   DONE custom palettes: finish implementing editability
   DONE move color with keys

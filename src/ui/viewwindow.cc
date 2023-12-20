@@ -4949,6 +4949,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"curcolor")) {
+		// this event is sent by the ViewWindow's ColorBox, and is generally propagated down to the viewport's interfaces
 		const SimpleColorEventData *ce=dynamic_cast<const SimpleColorEventData *>(data);
 		if (!ce) return 1;
 
@@ -4961,7 +4962,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		linestyle.color.blue= (unsigned short) (ce->channels[2]/max*65535);
 		if (ce->numchannels>3) linestyle.color.alpha=(unsigned short) (ce->channels[3]/max*65535);
 		else linestyle.color.alpha=65535;
-		linestyle.mask = (ce->colorindex == 0 ? LINESTYLE_Color : LINESTYLE_Color2);
+		linestyle.mask = (ce->colorindex == -1 ? LINESTYLE_CurColor : (ce->colorindex == 0 ? LINESTYLE_Color : LINESTYLE_Color2));
 
 		char blah[100];
 		colorbox->SetRGB(linestyle.color.red/65535.,linestyle.color.green/65535.,linestyle.color.blue/65535.,linestyle.color.alpha/65535.);

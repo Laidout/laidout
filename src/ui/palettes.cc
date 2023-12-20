@@ -47,19 +47,16 @@ int PalettePane::send()
 	if (!win_sendthis || !palette || curcolor<0) return 0;
 
 	unsigned long owner=0;
-	if (laidout->lastview) owner = laidout->lastview->object_id;
-	if (!owner) owner=win_owner;
+	if (laidout->LastView()) {
+		owner = laidout->LastView()->object_id;
+		anXWindow *colorbox = laidout->LastView()->findChildWindowByName("colorbox");
+		if (colorbox) owner = colorbox->object_id;
+	}
+	if (!owner) owner = win_owner;
 	if (!owner) return 0;
 
-	SimpleColorEventData *e=new SimpleColorEventData;
-
-	e->max = 65535; //palette->defaultmaxcolor;
-	e->numchannels = palette->colors.e[curcolor]->color->nvalues;
-	e->channels = new int[e->numchannels];
-
-	int c;
-	for (c=0; c<palette->colors.e[curcolor]->color->nvalues; c++) 
-		e->channels[c] = palette->colors.e[curcolor]->color->values[c] * 65535;
+	ColorEventData *e = new ColorEventData(palette->colors.e[curcolor]->color, 0, 0,0,0);
+	e->colorindex = -1;
 	
 	app->SendMessage(e,owner,win_sendthis,object_id);
 	return 1;
