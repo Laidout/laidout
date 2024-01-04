@@ -16,21 +16,21 @@ down to major items in ../features.md.
 bug: severing clone link does some weird things, including crashing
 bug: clone tool clones do not have proper bounding box
 
-bug: plugin initialization is getting tons of errors like:
+bug: gegl plugin initialization is getting tons of errors like:
        (laidout:159244): GLib-GObject-WARNING **: 21:50:05.430: Two different plugins tried to register 'GeglOprgbe-save_c'.
 	  something about gegl upgrade leaving behind reside from previous version?
 bug: gegl nodes, connect sinus to waves and also to displace, freeze!
 
 travis is recompiling on non-master branch pushes, eating up all my minutes, and it shouldn't
 
-crash: Start blank, then open recent doc with an ObjectTree. click on an object, crash! querying wrong viewport?
+crash: color grabbing under Wayland completely crashes with extreme prejudice. something about XGetImage
 
 
 ------------ other bugs:
 
 bug: back to not maximizing properly on default ubuntu. Seems to work fine on every other window manager I've tried.
 
-bug: curve is terrible approximation at end points
+bug: path curve is terrible approximation at end points
 
 bug: popup menus: submenus spawning on wrong side on far right monitors
 
@@ -651,7 +651,6 @@ shape brush shapebrush:
 
 PathInterface: pathinterface
   ux: when you drag mouse outside of window, should now draw the green add point hint
-  ux: when you select a palette color, it only goes to foreground
   bug: if path doesn't have linestyle in file, later crashes since it does not fill in
   bug: width handle has bit of a hitch when handle near a vertex.. extra temp width node being added?
   bug: seems to be possible to move nodes out of order, only occassionally
@@ -677,6 +676,7 @@ PathInterface: pathinterface
       Combine and merge endpoints (select from menu?)
 	  cross link linestyle or fillstyle
 
+  DONE bug: when you select a palette color, it only goes to foreground
   DONE need numerical entry for all weight node characteristics
   DONE not show every single handle. only ones associated with active vertices
   DONE impliment flip curpoints horizontally or vertically
@@ -690,6 +690,8 @@ PathInterface: pathinterface
   DONE if background is green or red, hard to see the direction indicator
 
   ---0.099---
+  ux: copy selected to a new object
+  ux: select inverse
   weight nodes:
     drag one, but have proportional effect on adjacent widths
   investigate Raph Levien's new curve offset method: https://raphlinus.github.io/curves/2022/09/09/parallel-beziers.html
@@ -754,6 +756,13 @@ PathInterface: pathinterface
       at specific intervals, or n per line
 
 simplepathinterface:
+  controls are flipped in laidout, but not in default Displayer
+  indicator animation not working
+  bug: cannot set colors
+  bug: cannot set linewidth
+  bug: cannot set object name?!
+  bug: cannot press enter to resume editing
+  holes/subpaths
   make circle green when manual, gray when auto
   snap:
     toggle auto snap (control will reverse)
@@ -1271,6 +1280,7 @@ node editor node interface NodeInterface nodes: node: interface:
   DONE (using Name) idea seen in anim nodes: collapsing math shows expression as label
 
 color fonts issue #6 svg otf svg
+  freetype ot-svg example: https://freetype.org/freetype2/docs/reference/ft2-svg_fonts.html#ft_svg_documentrec
   see this freetype gsoc 2019 project: https://www.mail-archive.com/freetype-devel@nongnu.org/msg11459.html
 
 captioninterface CaptionInterface captiondata CaptionData
@@ -1899,6 +1909,10 @@ calculator/scripting
   DONE bug: var a={a:1,b:2}; a["a"]=3 -> cannot assign  like a["b"] = c or a.b = c
   DONE bug: can't remove dict elements
   DONE bug: var a={a:1,b:2}, cannot add to dict, like a.c = 234; a["d"] = 5655
+
+thumbnails:
+  generate for laidout files from current view?
+  default to ~/.cache/thumbnails or $XDG_CACHE_HOME/thumbnails instead of ~/.thumbnails
 
 image import: ImportImagesDialog
   bug: import all to one page with scale up/scale down doesn't scale properly
@@ -3067,6 +3081,8 @@ implement undo.. ideally use same code for both undo and recordable/assignable a
       object deletion
   nodes
   image
+    quirk with transform between blank image and setting images
+    bug: select new file not updating preview
   gradients
   paths
   meshes
@@ -3388,3 +3404,4 @@ DONE bug: bez_intersect_bez is returning spurious result when there are 9 inters
 DONE work around MD5() in openssl being deprecated to remove compile warning
 DONE bug: can zoom in too far, crashes cairo matrices. unrecoverable!!
 DONE convert Laxkit::Palette to GradientStrip instead
+DONE (can't duplicate) crash: Start blank, then open recent doc with an ObjectTree. click on an object, crash! querying wrong viewport?
