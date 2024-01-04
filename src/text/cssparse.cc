@@ -1,6 +1,7 @@
 
 
-/*! Read in alphanum, return pointer to just after final character. */
+/*! Read in alphanum and/or any of the characters in extra if any.
+ * Return pointer to just after final character. */
 const char *ParseName(const char *start, int *n_ret, const char *extra)
 {
 	*n_ret = 0;
