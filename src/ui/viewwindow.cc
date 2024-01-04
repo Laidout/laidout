@@ -2433,27 +2433,25 @@ int LaidoutViewport::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse 
 	return ViewportWindow::LBUp(x,y,state,mouse);
 }
 
-//! *** for debugging, show which page mouse is over..
 int LaidoutViewport::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
 {
-	//**** for screencasting, do a fake mouse pointer for my second mouse
-	//cerr <<"xid:"<<mouse->xid<<endl;
-	//if (mouse->xid==15) { needtodraw=1; fakepointer=1; fakepos=flatpoint(x,y); }
+	last_mouse = mouse->id;
 
-	last_mouse=mouse->id;
-
-	if (viewportmode==VIEW_GRAB_COLOR) {
-		//***on focus off, reset mode to normal
-			//click down starts grabbing color
-			//click up ends grabbing, and sets viewmode no to normal
+	if (viewportmode == VIEW_GRAB_COLOR) {
+		//click down starts grabbing color
+		//click up ends grabbing, and sets viewmode no to normal
 		if (buttondown.isdown(mouse->id,LEFTBUTTON)) {
-			unsigned long pix=screen_color_at_mouse(mouse->id);
+			unsigned long pix = screen_color_at_mouse(mouse->id);
 			int r,g,b;
-			colorrgb(pix,&r,&g,&b);
+			colorrgb(pix, &r,&g,&b);
 			DBG cerr << "grab color:"<<r<<','<<g<<','<<b<<endl;
 
-			SimpleColorEventData *e=new SimpleColorEventData(255,r,g,b,255, 0);
-			app->SendMessage(e,win_parent->object_id,"curcolor",object_id);
+			SimpleColorEventData *e = new SimpleColorEventData(255,r,g,b,255, 0);
+			e->colorindex = -1;
+			unsigned int target = win_parent->object_id;
+			anXWindow *colorbox = win_parent->findChildWindowByName("colorbox");
+			if (colorbox) target = colorbox->object_id;
+			app->SendMessage(e, target, "newcolor", object_id);
 		}
 		return 0;
 	}
