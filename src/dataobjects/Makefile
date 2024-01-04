@@ -38,6 +38,7 @@ objs= \
 	lperspectiveinterface.o \
 	lmirrorinterface.o \
 	lcaptiondata.o \
+	lsimplepath.o \
 	ltextonpath.o \
 	lvoronoidata.o \
 	printermarks.o 

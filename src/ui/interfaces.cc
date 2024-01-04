@@ -34,6 +34,7 @@
 #include "../interfaces/anchorinterface.h"
 #include "../interfaces/animationinterface.h"
 #include "../interfaces/pathintersectionsinterface.h"
+#include "../dataobjects/lsimplepath.h"
 #include <lax/interfaces/pressuremapinterface.h>
 #include <lax/interfaces/beznetinterface.h>
 
@@ -162,6 +163,12 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 
 		//------BezNetInterface
 		i = new BezNetInterface(NULL,id++,NULL);
+		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+		existingpool->push(i);
+		i->dec_count();
+
+		//----SimplePathInterface
+		i = new SimplePathInterface(NULL,id++,NULL);
 		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 		existingpool->push(i);
 		i->dec_count();

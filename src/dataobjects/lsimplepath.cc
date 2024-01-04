@@ -18,6 +18,7 @@
 #include "../core/stylemanager.h"
 #include "../language.h"
 #include "../calculator/shortcuttodef.h"
+#include "affinevalue.h"
 
 #include <lax/interfaces/pathinterface.h>
 
@@ -64,7 +65,7 @@ int LSimplePathData::pointin(flatpoint pp,int pin)
 	return SimplePathData::pointin(pp,pin);
 }
 
-void LSimplePathData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void LSimplePathData::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	Attribute att;
 	dump_out_atts(&att, what, context);
@@ -75,7 +76,17 @@ void LSimplePathData::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext
 	// SimplePathData::dump_out(f,indent+2,what,context);
 }
 
-void LSimplePathData::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+
+Laxkit::Attribute *LSimplePathData::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
+{
+	att = DrawableObject::dump_out_atts(att, what,context);
+	Laxkit::Attribute *att2 = att->pushSubAtt("config");
+	SimplePathData::dump_out_atts(att2, what,context);
+	return att;
+}
+
+
+void LSimplePathData::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	DrawableObject::dump_in_atts(att,flag,context);
 	int foundconfig=0;
@@ -335,14 +346,19 @@ Value *LSimplePathInterface::dereference(const char *extstring, int len)
 	return nullptr;
 }
 
-void LSimplePathInterface::dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context)
+void LSimplePathInterface::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
 	anInterface::dump_out(f,indent,what,context);
 }
 
-void LSimplePathInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context)
+void LSimplePathInterface::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	anInterface::dump_in_atts(att,flag,context);
+}
+
+Laxkit::Attribute *LSimplePathInterface::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
+{
+	return anInterface::dump_out_atts(att, what, context);
 }
 
 } //namespace Laidout

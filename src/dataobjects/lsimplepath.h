@@ -32,11 +32,12 @@ class LSimplePathData : public DrawableObject,
 	LSimplePathData(LaxInterfaces::SomeData *refobj = nullptr);
 	virtual ~LSimplePathData();
 	virtual const char *whattype() { return "SimplePathData"; }
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 	virtual void FindBBox();
 	virtual void ComputeAABB(const double *transform, DoubleBBox &box);
-	virtual int pointin(flatpoint pp,int pin=1);
+	virtual int pointin(Laxkit::flatpoint pp,int pin=1);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
 
 	virtual LaxInterfaces::SomeData *EquivalentObject();
@@ -67,8 +68,9 @@ class LSimplePathInterface : public LaxInterfaces::SimplePathInterface,
 	virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual Value *dereference(const char *extstring, int len);
 
-	virtual void dump_out(FILE *f,int indent,int what,LaxFiles::DumpContext *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,LaxFiles::DumpContext *context);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
 };
 
 
