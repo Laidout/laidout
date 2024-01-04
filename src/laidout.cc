@@ -1685,6 +1685,16 @@ int LaidoutApp::isTopWindow(anXWindow *win)
 	return topwindows.findindex(win)>=0;
 }
 
+void LaidoutApp::postmessage(const char *str)
+{
+	DBG cerr <<str<<endl;
+
+	ViewWindow *viewer = dynamic_cast<ViewWindow*>(LastView());
+	if (viewer) {
+		viewer->PostMessage(str);
+	}
+}
+
 /*! Return lastview if not null, else return the first viewport found.
  */
 Laxkit::anXWindow *LaidoutApp::LastView()

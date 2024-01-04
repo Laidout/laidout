@@ -164,6 +164,7 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	int createlaidoutrc();
 	int isTopWindow(Laxkit::anXWindow *win);
 	int numTopWindows() { return topwindows.n; }
+	virtual void postmessage(const char *str);
 
 	int dump_out_file_format(const char *file, int nooverwrite);
 	int dump_out_shortcuts(FILE *f, int indent, int how);
