@@ -83,8 +83,9 @@ const char *PdfImportFilter::FileType(const char *first100bytes)
 	if (!strncmp(first100bytes+5,"1.5",3)) return "1.5";
 	if (!strncmp(first100bytes+5,"1.6",3)) return "1.6";
 	if (!strncmp(first100bytes+5,"1.7",3)) return "1.7";
-	if (!strncmp(first100bytes+5,"1.8",3)) return "1.8";
-	if (!strncmp(first100bytes+5,"1.9",3)) return "1.9";
+	if (!strncmp(first100bytes+5,"1.8",3)) return "1.8"; // doesn't exist?
+	if (!strncmp(first100bytes+5,"1.9",3)) return "1.9"; // doesn't exist?
+	if (!strncmp(first100bytes+5,"2.0",3)) return "2.0";
 	return NULL;
 }
 
