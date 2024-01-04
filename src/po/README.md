@@ -132,3 +132,5 @@ For reference, here's the basics of translation file management:
 
        foreach *.mo  install $(prefix)/share/locale/`basename $NAME .po`/LC_MESSAGES/laidout.mo
 
+5. Programs will know which translation file to use with a call to gettext's `bindtextdomain()`.
+
