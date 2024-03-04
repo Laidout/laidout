@@ -735,7 +735,6 @@ PathInterface: pathinterface
   should have shortcut to offset ALL weight nodes, or angle ALL nodes
   how to deal with bbox when using wacky weights?? -> use bbox of outlinecache (or centercache), non-weighted (optional): use flat bbox + linewidth
   need something like path->PointInfo(t, &pp, &vprev_ret, &vnext_ret).. done is GetWeight(t, &width, &offset, &angle)
-  maybe should revisit PathOperator stuff, such as for spiro paths
   per vertex join type?
   linestyles are always output independently, can't currently cascade with current code
   line join round should add extra point for really wide angles to make them more circular
@@ -746,7 +745,10 @@ PathInterface: pathinterface
   transform handles for selected points, including flip
   subdivide, repeat key press restores old segment, then adds 1 more point to num of points from last press
   toggle between add points / select points?
-  finish new path/pathoperator/pathsubinterface/pathinterface structure
+  PathOperator:
+    should get rid of this. It is overly complicated for not much benefit, does not allow flexibility of custom widgets
+	  instead just have subinterfaces generate base bezier, so width handles can attach to a variety of path types
+	  maybe width handles are a totally separate interface?
 
   markers:
     resource drawables with extra "origin" and "direction", maybe stored as properties?
@@ -756,12 +758,12 @@ PathInterface: pathinterface
       at specific intervals, or n per line
 
 simplepathinterface:
-  controls are flipped in laidout, but not in default Displayer
   indicator animation not working
+  would be nice to do zoopy animation for circle when you first hover over point
   bug: cannot set colors
-  bug: cannot set linewidth
   bug: cannot set object name?!
   bug: cannot press enter to resume editing
+  bug: bbox is mpoint bbox, not bezier extent
   holes/subpaths
   make circle green when manual, gray when auto
   snap:
@@ -770,6 +772,8 @@ simplepathinterface:
   debug first point corner issue
   implement quadratic
   implement cubic
+  DONE controls are flipped in laidout, but not in default Displayer
+  DONE bug: cannot set linewidth
 
 ObjectFilter objectfilters object filter: objectfilterinterface:
   debug merge
@@ -1283,6 +1287,16 @@ color fonts issue #6 svg otf svg
   freetype ot-svg example: https://freetype.org/freetype2/docs/reference/ft2-svg_fonts.html#ft_svg_documentrec
   see this freetype gsoc 2019 project: https://www.mail-archive.com/freetype-devel@nongnu.org/msg11459.html
 
+
+CharacterInterface characterinterface character selector
+  should show what font is used
+  should have search for \u2BEF for instance
+  implement suggestions, like if you start with e, suggest various accented e
+  DONE should optionally show unicode number
+  DONE bug: zoom does incorrect margins.. pads out a lot on left
+  DONE implement recent
+  DONE needs to remember scaling between instantiation
+
 captioninterface CaptionInterface captiondata CaptionData
   default text size is super small
   bug: bitstream vera sans, "Text" convert to path puts e correct, but screen render puts it out too far. huh??
@@ -1316,6 +1330,8 @@ fontdialog: FontDialog
   bug: makeinwindow SOMETIMES not working, select one, puts on bottom line
 
 ellipseinterface:
+  handles to rotate
+  handles need to stand out more
   bug: click down+up with minimal drag makes zero length handles that we can't move. should not make a really tiny new data, should keep old if any
   bug: input box and you change tool, does not abort the box
   bug: need fill color response, also line width handle
@@ -1327,6 +1343,7 @@ ellipseinterface:
   need rotate handles
   del on center cross hair should straighten?
 
+  DONE option to flip wedge
   DONE bug: drag size movement is not 1:1
   DONE better drag indicators
   DONE bug: double click on ellipse, does not activate controls
@@ -1623,6 +1640,8 @@ themes:
   DONE laxprofile not working
 
 laxkit:
+  building seems to including twice: -I/usr/include/GraphicsMagick
+  would be nice if Displayer had a "highlight" stroke mode: draw line with FG, draw thicker line with BG
   strmanip is not in Laxkit namespace, wtf!
   resources:
     resource names should default to object->Id(). Is Name important? refactor with "label" instead of "Name"?
@@ -2028,6 +2047,8 @@ external tools: external commands:
   DONE figure out a way to standardize verifying that tool exists: command name: search in $PATH, check if executable
 
 layers palette Layers ObjectTree
+  export file dialog needs to remember type
+  export file dialog needs to update extension when changing type
   need to update tree list, not flush and repopulate which wrecks selection and open/closed
   should have document list at top, showing current doc
   need icons for object types
@@ -2062,6 +2083,16 @@ Label widget:
   abstract to form base of both widgets and CaptionData
   replace all MessageBar with these
   make editable one replace LineEdit/MultiLineEdit
+
+
+plugin ideas:
+  plugin to copy and paste html straight out of the interface, such as what penpot allows
+  plugin for easy antiprism import for net creation
+
+python plugin:
+  need python implementation of Attribute and class structure in/out to help file importers in other python based environments
+  need headless, no-x compile option to allow minimal usage as python plugins for Scribus
+
 
 plugins:
   need more automatic way to install:
@@ -2489,10 +2520,13 @@ color management, ColorManager:
 
 Palettes: palettewindow gradientstrip
   load palette should have a preview: file dialog preview function
+  on import/export error, should do toast with the error message
+  cur color outline size needs to be customized for hidpi
+  really all these export/import things should be modular, not all hardcoded in GradientStrip
   coop:
-    swatchbooker sbz import/export? A sort of super format from 2010, but people still talk about it in 2023
-	krita            import/export        zip files with color profiles
-    DONE css              import/export   just define a bunch of classes?
+    swatchbooker sbz   import/DONE-export? A sort of super format from 2010, but people still talk about it in 2023
+	DONE krita            import/export        zip files with color profiles
+    css              import/DONE-export   just define a bunch of classes?
 	DONE gimp             import/export   text based .gpl
 	DONE inkscape         import(uses gimp gpl)/export
 	DONE scribus          import/export        <SCRIBUSCOLORS>
@@ -2527,6 +2561,9 @@ Palettes: palettewindow gradientstrip
 
 Gradients: gradientinterface
   ---0.99:
+  swatchbooker cool things:
+    translations of palette/color names, and other meta, stored with palette
+	batch converting
   constrain to x/y/45 dragging end points
   dragging around color points from inside to outside should allow going out of bounds
     DONE linear
@@ -2586,8 +2623,6 @@ Colors:
 
 need a global Laidout method of making unique ids
  -> update in Engraver tool, and object indicator overlay
-
-plugin for easy antiprism import for net creation
 
 for purely command line execution, should be able to make a binary totally not X dependent.
 
@@ -2916,6 +2951,16 @@ measure tool.. configure measurements to be:
 have arrows, and write on screen what the size is...
 
 
+notes / comments
+  be able to apply non-printing notes/comments to page, or page elements that save with the file
+  for instance, Penpot has a sort of chat bar
+  note should have:
+    - source (author): name [avatar]?
+	- plain text. or markdown?
+	- point to something, a la grease pencil
+	- date
+	- fg/bg/outline/arrow style
+
 collect for out:
   define directory to pull all files and external resources in
   write out new .laidout file linked for the new system
@@ -3121,18 +3166,8 @@ PlainTextWindow plaintextwindow PlainText plain text window:
   multicursor edit
   some day should have syntax highlighting in Laxkit::MultiLineEdit
 
-CharacterInterface characterinterface
-  should show unicode number/glyph name if available
-  implement recent
-  implement suggestions
-  alternate glyphs
-
 Spread editor: SpreadEditor spread editor spreadeditor
   should have border drag to move, not middle drag
-
-python plugin:
-  need python implementation of Attribute and class structure in/out to help file importers in other python based environments
-  need headless, no-x compile option to allow minimal usage as python plugins for Scribus
 
 limbo transform should be obeyed. It can be moved, scaled, etc,
 page layers should be simplified, each layer behaves according to its transform, and more controls inserted to handle layer maneuvering
