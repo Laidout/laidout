@@ -27,6 +27,8 @@ menu:insert
 investigate
 -----------
 css parser ? https://github.com/Sigil-Ebook/cssparser/blob/master/cssparser/CSSParser.h
+text layout techniques: https://raphlinus.github.io/text/2020/10/26/text-layout.html
+
 
 math mode, basically latex formatting:
 -------------------------------------
