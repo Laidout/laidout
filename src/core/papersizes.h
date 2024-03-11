@@ -152,7 +152,7 @@ class PaperGroup : virtual public Laxkit::Resourceable, virtual public ObjectCon
 	virtual PaperStyle *GetBasePaper(int index);
 	virtual int FindPaperBBox(Laxkit::DoubleBBox *box_ret);
 
-	virtual int n();
+	virtual int n(); //this is the number of papergroup.objs, NOT the number of papers
 	virtual Laxkit::anObject *object_e(int i);
 	virtual const char *object_e_name(int i);
 	virtual const double *object_transform(int i);

@@ -91,7 +91,7 @@ int AboutWindow::preinit()
 	appendstr(about,LAIDOUT_VERSION);
 	appendstr(about,_(
 			"\nusing Laxkit version " LAXKIT_VERSION "\n"
-			"2004-2023\n"
+			"2004-2024\n"
 			"\n"
 			"by Tom Lechner,\n"
 			"laidout.org\n"
