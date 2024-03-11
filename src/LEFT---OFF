@@ -70,8 +70,6 @@ DONE memory hole cairo backend (can't duplicate)
 
 "edit imposition", then escape.. removes window, but not the frame!
 
-lineinput not propagating escapable
-
 clones of images scale not like images.. should also snap aspect to start of drag, not when control key pressed
 
 select no doc, select doc, viewport jumps around... it should stay the same area
@@ -1326,9 +1324,6 @@ captioninterface CaptionInterface captiondata CaptionData
   DONE right click menu options for insert char and select font
   DONE bug: why is a font being created and destroyed each refresh??
 
-fontdialog: FontDialog
-  bug: makeinwindow SOMETIMES not working, select one, puts on bottom line
-
 ellipseinterface:
   handles to rotate
   handles need to stand out more
@@ -1519,6 +1514,7 @@ overwrite:
   tab/left/right/enter not doing anything. should be able to control with keys
 
 FileDialog filedialog:
+  selecting sort dirs first works, but undoing that option doesn't undo the sort
   types for saving, must be included in return message:
     file type id (int), file name label (string), description
   when on recent, going back should just revert to directory view
@@ -1555,8 +1551,7 @@ dual monitors: multi monitor multimonitor
 high dpi hidpi:
   uiscale option
     passing in 1 is different than having no uiscale, why??? forcing it to check screen??
-	should have option to use native icons.. otherwise they render kind of bad.
-      prefs.scale_icons ?
+	DONE should have option to use native icons.. otherwise they render kind of bad. <- LaidoutPrefs::dont_scale_icons
   DONE don't hardcode for instance thin as 1
     DONE check interfaces, make sure everything uses ScreenLine,Threshhold,UIScale:
       DONE curvemap
@@ -1581,8 +1576,15 @@ high dpi hidpi:
       DONE path
       DONE voronoi
 	  DONE spread editor
-  check windows, need ThemeUpdate
-	defaultlaxfont
+  check windows, need ThemeUpdate()/UIScaleChanged()
+    MessageBar
+    NumSlider
+    RulerWin
+    TabFrame
+    PaletteWindow
+    IconSlider
+	ToolTip
+	DONE ObjectIndicator
 	DONE overwrite
 	DONE reimpose
 	DONE filedialog
@@ -1612,6 +1614,38 @@ high dpi hidpi:
       thin line in interfaces
       various interface threshholds, like path node indicator size, touch distance
   DONE supply a "default" ppi? for instance xlib thinks: 94.1467h or 94.0741v of multisync lcd2490wiki2 (specs say 94)
+
+themeeditor:
+  DONE extremely excessive recomputing UIScale on window resize
+  DONE checkboxes
+    DONE circles need to scale
+	gaps are too big
+  TreeSelector
+    not setting proper font for refresh
+	treeselector not using scrollers??
+	DONE arrows not scaling
+  LineInput
+    lineinput not propagating escapable
+    not setting proper font for refresh
+    DONE not syncing baseline of fonts
+	DONE LineEdit
+	  DONE text not centering
+	  DONE Black() is blanking out with old textheight
+  MenuButton
+    with no text is super small
+    DONE popup fonts getting scaled twice
+	DONE arrow not scaling
+  colors not yet editable
+  icon substitution
+  optionally allow icon paths relative to saved theme file
+  memory hole
+  RowFrame not spacing correctly?? -> due to being within ScrolledWindow
+  fonts
+    font buttons are not wrapping properly
+	must allow default font size.. currently each font is using its own size
+	in buttons, monospace baseline is way above all the other baselines
+  DONE can't change preferred width of widgets
+  DONE Button
 
 accessibility:
   allow changing theme from command line, config file, or settings window
@@ -2116,6 +2150,8 @@ DrawableObject:
   DONE SomeData should derive from DumpUtility
 
 fontdialog: FontDialog
+  mouse follow shouldn't select highlight. current font should stay highlighted
+  bug: makeinwindow SOMETIMES not working, select one, puts on bottom line
   need a way to remember layered fonts, to easily activate and deactivate
     read from standard fonts places, like .config/laidout/(version)/fonts
   favorites: tag and column
