@@ -157,10 +157,11 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 
 	def->push("uiscale",
 			_("UI Scale"),
-			_("UI Scale"),
-			"real", NULL,"1",
+			_("Values <= 0 mean to use default."),
+			"real", "[-1,200]", "1",
 			0,
 			NULL);
+	makestr(def->last()->uihint, "NumSlider");
 
 	def->push("dont_scale_icons",
 			_("Don't scale icons"),

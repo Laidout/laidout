@@ -27,8 +27,12 @@ class LaidoutPreferences : public Value
   public:
   	char *rc_file;
 
+	double uiscale;
+	bool dont_scale_icons;
+
 	int default_units;
 	char *unitname;
+
 	int pagedropshadow;
 	int preview_size;
 	bool start_with_last;
@@ -38,15 +42,11 @@ class LaidoutPreferences : public Value
 	char *defaultpaper;
 	char *temp_dir;
 	char *palette_dir;
-	double uiscale;
-	bool dont_scale_icons;
 	char *clobber_protection;
 	bool   autosave;
 	double autosave_time;
 	char  *autosave_path;
-	//int    autosave_num;
 	char *exportfilename;
-	//Laxkit::PtrStack<char> palette_dirs;
 	Laxkit::PtrStack<char> icon_dirs;
 	Laxkit::PtrStack<char> plugin_dirs;
 	bool experimental;

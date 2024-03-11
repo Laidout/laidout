@@ -242,7 +242,7 @@ int ObjectIndicator::Refresh()
 	dp->DrawScreen();
 
 	if (!font) { font=laidout->defaultlaxfont; font->inc_count(); }
-	dp->font(font);
+	dp->font(font, UIScale() * font->textheight());
 	double th = dp->textheight();
 
 	flatpoint origin(0,viewport->win_h);
@@ -315,15 +315,15 @@ int ObjectIndicator::Refresh()
 
 int ObjectIndicator::scan(int x,int y)
 {
-	if (!context) context=&dynamic_cast<LaidoutViewport*>(viewport)->curobj;
+	if (!context) context = &dynamic_cast<LaidoutViewport*>(viewport)->curobj;
 
-	if (!font) { font=laidout->defaultlaxfont; font->inc_count(); }
-	double th=font->textheight();
+	if (!font) { font = laidout->defaultlaxfont; font->inc_count(); }
+	double th = UIScale() * font->textheight();
 
-	if (x<0 || x>MaxWidth()) return -1;
+	if (x < 0 || x > MaxWidth()) return -1;
 
-	int i=(dp->Maxy-y)/th;
-	if (i>=context->context.n()) i=-1;
+	int i = (dp->Maxy-y)/th;
+	if (i >= context->context.n()) i = -1;
 	return i;
 }
 
@@ -331,7 +331,7 @@ int ObjectIndicator::LBDown(int x,int y,unsigned int state,int count,const Laxki
 {
 	if (buttondown.any(0,LEFTBUTTON)) return 1; //only allow one button at a time
 
-	int i=scan(x,y);
+	int i = scan(x,y);
 	if (i<0) return 1;
 	
 	DBG cerr <<" -------------lbdown indicator: "<<i<<endl;

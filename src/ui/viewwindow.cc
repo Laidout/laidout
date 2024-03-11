@@ -4493,6 +4493,7 @@ int ViewWindow::init()
 	ibut->tooltip(_("Next spread"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
+
 	pagenumber=NULL;
 	last=pagenumber=new PageFlipper(doc,this,"spread number", 
 									last,object_id,"newSpreadNumber",
@@ -4500,15 +4501,10 @@ int ViewWindow::init()
 	//pagenumber->LabelBase(_("Spread: %d"));
 	pagenumber->NewMin(1);
 	pagenumber->tooltip(_("The current spread"));
-	double th=viewport->dp->textheight();
-	AddWin(pagenumber,1, 4*th,0,50,50,0, pagenumber->win_h,0,50,50,0, -1);
+	//double th=viewport->dp->textheight();
+	AddWin(pagenumber,1, pagenumber->win_w,0,50,50,0, pagenumber->win_h,0,50,50,0, -1);
 	
-//	NumSlider *num=new NumSlider(this,"layer number",NUMSLIDER_WRAP, 0,0,0,0,1, 
-//								NULL,object_id,"newLayerNumber",
-//								"Layer: ",1,1,1); //*** get cur page, use those layers....
-//	num->tooltip(_("Sorry, layer control not well\nimplemented yet"));
-//	AddWin(num,num->win_w,0,50,50,0, num->win_h,0,50,50,0);
-	
+
 	SliderPopup *p=new SliderPopup(this,"view type",NULL,SLIDER_POP_ONLY, 0,0,0,0,0, NULL,object_id,"newViewType");
 	int vm=((LaidoutViewport *)viewport)->ViewMode(NULL);
 	//*****this needs dynamic adjustment for imposition layout options....

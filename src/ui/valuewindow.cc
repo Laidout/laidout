@@ -20,6 +20,7 @@
 #include <lax/checkbox.h>
 #include <lax/colorbox.h>
 #include <lax/utf8string.h>
+#include <lax/numslider.h>
 #include <lax/language.h>
 
 #include "valuewindow.h"
@@ -100,8 +101,8 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 	if (!val) return;
 
 
-	double th = win_themestyle->normal->textheight();
-	double HMULT = 1.5;
+	double th = UIScale() * win_themestyle->normal->textheight();
+	double HMULT = 2; //1.5;
 	double NUMW = 12;
 
 	if (rowframe == nullptr) {
@@ -160,17 +161,39 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 		rowframe->AddNull();
 
 	} else if (type == VALUE_Real || type == VALUE_Number) {
-		//gui hint: range
-
 		DoubleValue *v = dynamic_cast<DoubleValue*>(val);
-		scratch = v->d;
-		LineInput *box;
-		last = box = new LineInput(this, def->name,def->Name, LINP_FLOAT,
-							 0,0,0,0,0,
-							 last,object_id, mes.c_str(),
-							 fieldName, scratch.c_str());
-		if (fieldTooltip) last->tooltip(fieldTooltip);
-		rowframe->AddWin(box,1, th * NUMW,0,0,50,0, th*HMULT,0,0,50,0, -1);
+
+		if (starts_with(mainDef->uihint, "NumSlider")) {
+			MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,0,0,1, fieldName);
+			if (fieldTooltip) bar->tooltip(fieldTooltip);
+			rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
+
+			double minmax[2];
+			minmax[0] = 0.0;
+			minmax[1] = 100.0;
+			if (mainDef->range) {
+				const char *range = mainDef->range;
+				if (*range == '(' || *range == '[') range++; //todo: parse the inclusivity
+				DoubleListAttribute(range, minmax, 2);
+				//if (n == 0) { minmax[0] = 0.0; minmax[1] = 100.0; }
+				//else if (n == 1) { minmax[1] = 100.0; }
+			}
+			NumSlider *slider = new NumSlider(this, def->name, def->Name,
+							NumSlider::DOUBLES | ItemSlider::EDITABLE | ItemSlider::SENDALL,
+							0,0,0,0,0, last, object_id, mes.c_str(), nullptr, minmax[0], minmax[1], v->d);
+			slider->SetFloatRange(minmax[0], minmax[1], .1);
+			slider->tooltip(fieldTooltip);
+			rowframe->AddWin(slider,1, th * 5,0,0,50,0, th*HMULT,0,0,50,0, -1);
+		} else {
+			scratch = v->d;
+			LineInput *box;
+			last = box = new LineInput(this, def->name,def->Name, LINP_FLOAT,
+								 0,0,0,0,0,
+								 last,object_id, mes.c_str(),
+								 fieldName, scratch.c_str());
+			if (fieldTooltip) last->tooltip(fieldTooltip);
+			rowframe->AddWin(box,1, th * NUMW,0,0,50,0, th*HMULT,0,0,50,0, -1);
+		}
 		rowframe->AddNull();
 
 
