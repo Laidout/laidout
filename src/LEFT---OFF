@@ -1577,13 +1577,16 @@ high dpi hidpi:
       DONE voronoi
 	  DONE spread editor
   check windows, need ThemeUpdate()/UIScaleChanged()
-    MessageBar
-    NumSlider
-    RulerWin
-    TabFrame
-    PaletteWindow
-    IconSlider
-	ToolTip
+	PathInterface: control for insert point not scaling hint
+	NumSlider arrows hogging the area
+	DONE popup Input box not scaling outer
+	DONE PopupMenu icons not scaling
+	DONE MessageBar
+	DONE RulerWin
+	DONE TabFrame
+	DONE PaletteWindow
+	DONE IconSlider
+	DONE ToolTip
 	DONE ObjectIndicator
 	DONE overwrite
 	DONE reimpose
@@ -1606,13 +1609,7 @@ high dpi hidpi:
     xrandr only gives monitor names like DP-5 DP-0
     xrandr --verbose lists EDID hex block that usually contains monitor model somehow
     auto scale by detected pixel density
-  perhaps respond to GDK_SCALE or QT_SCREEN_SCALE_FACTOR (or maybe only QT_SCALE_FACTOR)
-    update all widgets accordingly
-    affected:
-      font sizes
-      window bevel, padding
-      thin line in interfaces
-      various interface threshholds, like path node indicator size, touch distance
+  DONE perhaps respond to GDK_SCALE or QT_SCALE_FACTOR
   DONE supply a "default" ppi? for instance xlib thinks: 94.1467h or 94.0741v of multisync lcd2490wiki2 (specs say 94)
 
 themeeditor:
