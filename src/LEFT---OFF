@@ -1284,6 +1284,7 @@ node editor node interface NodeInterface nodes: node: interface:
 color fonts issue #6 svg otf svg
   freetype ot-svg example: https://freetype.org/freetype2/docs/reference/ft2-svg_fonts.html#ft_svg_documentrec
   see this freetype gsoc 2019 project: https://www.mail-archive.com/freetype-devel@nongnu.org/msg11459.html
+  COLR version 1 now supports gradients? does freetype? https://learn.microsoft.com/en-us/typography/opentype/spec/colr
 
 
 CharacterInterface characterinterface character selector
@@ -1577,6 +1578,9 @@ high dpi hidpi:
       DONE voronoi
 	  DONE spread editor
   check windows, need ThemeUpdate()/UIScaleChanged()
+	LineInput and LineEdit not aligning baseline again
+	TreeSelector final line is often offscreen, and can't stroll to it
+	CaptionInterface: popup context menu has wrong window bounds
 	PathInterface: control for insert point not scaling hint
 	NumSlider arrows hogging the area
 	DONE popup Input box not scaling outer
@@ -1671,6 +1675,7 @@ themes:
   DONE laxprofile not working
 
 laxkit:
+  DONE Scroller, click on scrollbar outside of the drag handle scrolls in the wrong direction
   building seems to including twice: -I/usr/include/GraphicsMagick
   would be nice if Displayer had a "highlight" stroke mode: draw line with FG, draw thicker line with BG
   strmanip is not in Laxkit namespace, wtf!
@@ -2147,6 +2152,11 @@ DrawableObject:
   DONE SomeData should derive from DumpUtility
 
 fontdialog: FontDialog
+  DONE the ... is added to both lineinput and outside it
+  list should group by first word? Noto* is sooooooooo many!!!
+  bug: crash on big X on layers
+  cursor missing in LineEdits
+  search term is duplicated in the tree list
   mouse follow shouldn't select highlight. current font should stay highlighted
   bug: makeinwindow SOMETIMES not working, select one, puts on bottom line
   need a way to remember layered fonts, to easily activate and deactivate
