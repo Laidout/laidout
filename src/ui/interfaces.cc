@@ -123,7 +123,7 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		existingpool->push(i);
 		i->dec_count();
 
-		 //------Animation
+		 //------Animation (overlay)
 		i=new AnimationInterface(NULL,id++,NULL);
 		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 		existingpool->push(i);
@@ -212,6 +212,7 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	pdata.GetObjectDef();
 	i=new LPathInterface(id++,NULL);
 	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+	i->InitializeResources();
 	existingpool->push(i);
 	i->dec_count();
 
