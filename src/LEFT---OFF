@@ -21,6 +21,8 @@ bug: gegl plugin initialization is getting tons of errors like:
 	  something about gegl upgrade leaving behind reside from previous version?
 bug: gegl nodes, connect sinus to waves and also to displace, freeze!
 
+bug: zoom handles mangle cairo sometimes.. can't reproduce reliably
+
 travis is recompiling on non-master branch pushes, eating up all my minutes, and it shouldn't
 
 crash: color grabbing under Wayland completely crashes with extreme prejudice. something about XGetImage
@@ -623,6 +625,15 @@ Singles:
   implement double sided
 
 
+Bevel Tool BevelInterface:
+  Work on any path, apply to any non-smooth vertex
+  Clone corner?
+    Apply single bevel to all corners
+    Mirror corner x/y or with closest quadrant
+	Custom for particular corners
+  distance from corner x/y --OR-- % of length to next corner
+  programmable custom shapes per corner?
+
 freehand tool:
   should have option to output base weighted path, with custom filter resource to copy onto it
   keep a stack of lines previously made for fake undo by repeated delete? or just implement undo for object added
@@ -634,21 +645,33 @@ freehand tool:
   gradient select: custom or resource
   pressure curve
   mesh outputs should still be Mesh based on path
-  implement Shape Brush?
-    output to either "shape brush" line profile, or flattened path
-  implement flash-like brush: bez outline, subsequent strokes can add to or subtract from previous (complex) paths
+  implement bezier path with ShapeBrush
+    output to either "shape brush" line, or flattened path
+  implement flash-like brush:
+    bez outline, subsequent strokes can add to or subtract from previous (complex) paths
+	merge with similar colors
+	be able to drag around islands
   DONE numerical input for brush size
   DONE brush_size should be real, not screen units
   DONE need "brush size" controls
   DONE needs to respond to viewport color change
 
 shape brush shapebrush:
+  shape brush not being applied on load in
+  need to be able to edit shape brushes
   pathi -> save to shape brush should ask for a name
   use shape brush should show previews
+  if shape brush has multiple paths, should union sweeps of each path
+  when new subpaths are created, they should be assigned current shape brush
+  DONE finish implementing min/max along direction
   DONE not saving to file
 
 PathInterface: pathinterface
-  ux: when you drag mouse outside of window, should now draw the green add point hint
+  DONE horizontal extrema orientation sometimes wrong near other vertical extrema
+  click on extrema: add point at | move nearby vertex to this point
+  DONE Path should probably be anObject
+  ux: when you drag mouse outside of window, should not draw the green add point hint
+  ux: when you first activate with new path, need to refresh where mouse is for green add point hint
   bug: if path doesn't have linestyle in file, later crashes since it does not fill in
   bug: width handle has bit of a hitch when handle near a vertex.. extra temp width node being added?
   bug: seems to be possible to move nodes out of order, only occassionally
@@ -1326,7 +1349,8 @@ captioninterface CaptionInterface captiondata CaptionData
   DONE bug: why is a font being created and destroyed each refresh??
 
 ellipseinterface:
-  handles to rotate
+  bug: number input does not cancel on non parsing string
+  handles to rotate?
   handles need to stand out more
   bug: click down+up with minimal drag makes zero length handles that we can't move. should not make a really tiny new data, should keep old if any
   bug: input box and you change tool, does not abort the box
@@ -1336,9 +1360,9 @@ ellipseinterface:
 
   ---0.099:
   angle drag lapping should preserve large arc
-  need rotate handles
   del on center cross hair should straighten?
 
+  DONE when ellipse is off axis, handles need to point in correct direction
   DONE option to flip wedge
   DONE bug: drag size movement is not 1:1
   DONE better drag indicators
@@ -2465,13 +2489,18 @@ Whenever there's a byte read in, like with read_in_whole_file to string, really 
 resource manager needs to store unknown objects as Attribute trees, so they can still be preserved
   for future processing. for instance, be able to recover from when a plugin is missing
 
+dataobjects/datafactory should somehow combine with stylemanager.. severe duplication as is:
+  Laxkit has:
+    ObjectFactory
+    ResourceManager
+  Laidout has:
+    ObjectDef/Value system accessed through global stylemanager
+ 
 need to implement DRAW_Hires for all interfaces that default to preview renders. needed for proper image out
   includes at least image(done), path, engraver
 
 mousemove decorations shouldn't change when an interface absorbs one
 
-dataobjects/datafactory should somehow combine with stylemanager.. seems redundant as is
- 
 raster paint layers, mypaint?
 
 newdoc:
