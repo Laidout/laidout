@@ -53,6 +53,8 @@ class PathIntersectionsInterface : public anInterface
 
 	typedef Laxkit::NumStack<Laxkit::flatpoint> PointPath;
 	Laxkit::PtrStack<PointPath> paths;
+	Laxkit::NumStack<Laxkit::flatvector> extrema;
+	Laxkit::NumStack<double> extrema_t;
 
 	Laxkit::PtrStack<PointPath> areas;
 

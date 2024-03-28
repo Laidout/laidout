@@ -84,6 +84,8 @@ PathIntersectionsInterface::PathIntersectionsInterface(anInterface *nowner, int 
 	paths.e[1]->push(flatpoint(5,7));
 	paths.e[1]->push(flatpoint(7,5));
 
+	extrema_t.Allocate(10);
+	extrema.Allocate(10);
 
 	hover = -1;
 }
@@ -279,6 +281,26 @@ int PathIntersectionsInterface::Refresh()
 
 	} 
 
+	// draw tangents and acceleration
+	if (paths.e[1]->n > 3) {
+		PointPath *path = paths.e[1];
+
+		int n = bez_extrema(path->e[0], path->e[1], path->e[2], path->e[3], extrema_t.e, extrema.e);
+		extrema_t.n = n;
+		extrema.n = n;
+		
+		for (int c = 0; c<n; c++) {
+			flatpoint tangent = bez_tangent     (extrema_t[c], path->e[0], path->e[1], path->e[2], path->e[3]);
+			flatpoint accel   = bez_acceleration(extrema_t[c], path->e[0], path->e[1], path->e[2], path->e[3]);
+			flatpoint bitangent = bez_bitangent (extrema_t[c], path->e[0], path->e[1], path->e[2], path->e[3]);;
+			dp->NewFG(1.0,0.,0.);
+			dp->drawarrow(extrema[c], tangent, 0, 1., 2, 3, false);
+			dp->NewFG(.0,1.0,0.);
+			dp->drawarrow(extrema[c], accel, 0, 1., 2, 3, false);
+			dp->NewFG(.0,.0,1.0);
+			dp->drawarrow(extrema[c], bitangent, 0, 1., 2, 3, false);
+		}
+	}
 
 	return 0;
 }
