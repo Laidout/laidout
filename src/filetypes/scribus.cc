@@ -1448,10 +1448,10 @@ static void scribusdumpobj(ScribusExportConfig *config, FILE *f,int &curobj,PtrS
 							palette->colors.e[i]->color->values[1]*65535, //g
 							palette->colors.e[i]->color->values[2]*65535, //b
 							palette->colors.e[i]->color->values[3]*65535, //a
-							 LAXFILL_EvenOdd, FillSolid, LAXOP_Over);
+							 LAXFILL_EvenOdd, LAXFILL_Solid, LAXOP_Over);
 		} else {
 			tstyle=new FillStyle(text->red*65535,text->green*65535,text->blue*65535,text->alpha*65535,
-							 LAXFILL_EvenOdd, FillSolid, LAXOP_Over);
+							 LAXFILL_EvenOdd, LAXFILL_Solid, LAXOP_Over);
 		}
 
 		isize=text->MSize()*TEXTHACK;

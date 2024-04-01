@@ -487,7 +487,7 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 		p[2]=flatpoint(box->media.maxx,box->media.maxy);
 		p[3]=flatpoint(box->media.maxx,box->media.miny);
 
-		dp->FillAttributes(FillSolid,WindingRule);
+		dp->FillAttributes(LAXFILL_Solid, LAXFILL_Nonzero);
 
 		 //draw black shadow
 		//dp->NewFG(255,0,0);

@@ -467,7 +467,7 @@ inline std::ostream &operator<<(std::ostream &os, VObjContext const &o)
 /*! Incs count on newdoc. */
 LaidoutViewport::LaidoutViewport(Document *newdoc)
 	: ViewportWindow(NULL,"laidoutviewport",NULL,ANXWIN_HOVER_FOCUS|ANXWIN_DOUBLEBUFFER|VIEWPORT_ROTATABLE,0,0,0,0,0),
-	  fs(0,0,0,0xffff, WindingRule,FillSolid,LAXOP_Over)
+	  fs(0,0,0,0xffff, LAXFILL_Nonzero, LAXFILL_Solid, LAXOP_Over)
 {
 	DBG cerr <<"in LaidoutViewport constructor, obj "<<object_id<<endl;
 
@@ -3086,8 +3086,6 @@ void LaidoutViewport::Refresh()
 		 // draw shadow
 		if (spread->path) {
 			 //draw shadow if papergroup does not exist
-			// FillStyle fs(0,0,0,0xffff, WindingRule,FillSolid,LAXOP_Over);
-			// LineStyle ls; //(0xffff,0,0,0xffff, 1, LAXCAP_Round,LAXJOIN_Miter,0,LAXOP_Over);
 			ls.Colorf(1.0,0.,0.,1.0);
 			ls.width = 1;
 			ls.capstyle = LAXCAP_Round;
