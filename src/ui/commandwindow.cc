@@ -23,6 +23,9 @@
 #include <sys/stat.h>
 
 
+using namespace Laxkit;
+
+
 namespace Laidout {
 
 

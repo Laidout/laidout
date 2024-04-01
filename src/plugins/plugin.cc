@@ -25,8 +25,9 @@
 #include <iostream>
 #define DBG
 
-using namespace std;
 
+using namespace std;
+using namespace Laxkit;
 
 
 namespace Laidout {
