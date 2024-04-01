@@ -411,9 +411,9 @@ int SpreadInterface::Refresh()
 	int pg;
 	flatpoint p;
 	
-	FillStyle fs(0xffff,0xffff,0xffff,0xffff, WindingRule,FillSolid,GXcopy); //normal page
-	FillStyle hfs(0xdddd,0xffff,0xffff,0xffff, WindingRule,FillSolid,GXcopy); //hidden
-	FillStyle efs(0xdddd,0xdddd,0xdddd,0xffff, WindingRule,FillSolid,GXcopy); //empty
+	FillStyle fs(0xffff,0xffff,0xffff,0xffff,  LAXFILL_Nonzero, LAXFILL_Solid, LAXOP_Over); //normal page
+	FillStyle hfs(0xdddd,0xffff,0xffff,0xffff, LAXFILL_Nonzero, LAXFILL_Solid, LAXOP_Over); //hidden
+	FillStyle efs(0xdddd,0xdddd,0xdddd,0xffff, LAXFILL_Nonzero, LAXFILL_Solid, LAXOP_Over); //empty
 	LineStyle ls; //(0,0,0xffff,0xffff, 4/dp->Getmag(),CapButt,JoinMiter,~0,GXcopy);
 	ls.Colorf(0.,0.,1.0,1.0);
 	ls.width = 4*ScreenLine();
