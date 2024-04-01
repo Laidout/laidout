@@ -93,7 +93,7 @@ void psPathsData(FILE *f,PathsData *pdata)
 		fstyle=pdata->fillstyle;//default for all data paths
 
 		
-		if (fstyle && fstyle->fillstyle!=FillNone) {
+		if (fstyle && fstyle->hasFill()) {
 			n=addpath(f,p);
 			if (n) {
 				fprintf(f,"%.10g %.10g %.10g setrgbcolor\n",
