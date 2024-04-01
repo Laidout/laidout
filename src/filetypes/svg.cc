@@ -2471,13 +2471,13 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 				 //svg/inkscape uses width and height, but not paper names as far as I can see
 				 //search for paper size known to laidout within certain approximation
 				for (c=0; c<laidout->papersizes.n; c++) {
-					if (     fabs(width- laidout->papersizes.e[c]->width)<.0001
-						  && fabs(height-laidout->papersizes.e[c]->height)) {
+					if (     fabs(width  - laidout->papersizes.e[c]->width)  < .0001
+						  && fabs(height - laidout->papersizes.e[c]->height) < .0001) {
 						paper=laidout->papersizes.e[c];
 						break;
 					}
-					if (     fabs(height-laidout->papersizes.e[c]->width)<.0001
-						  && fabs(width -laidout->papersizes.e[c]->height)) {
+					if (     fabs(height - laidout->papersizes.e[c]->width)  < .0001
+						  && fabs(width  - laidout->papersizes.e[c]->height) < .0001) {
 						paper=laidout->papersizes.e[c];
 						landscape=1;
 						break;
@@ -4203,7 +4203,6 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 		} else if (extra) {
 
 			 //TODo: other stuff found in inkscape svgs:
-			//} else if (!strcmp(name,"opacity")) { //1
 			//} else if (!strcmp(name,"clip-rule")) { //nonzero
 			//} else if (!strcmp(name,"display")) { //inline for ?, none for hidden
 			//} else if (!strcmp(name,"overflow")) { //visible
@@ -4218,9 +4217,13 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 			//} else if (!strcmp(name,"shape-rendering")) { //auto
 			//} else if (!strcmp(name,"text-rendering")) { //auto
 			//} else if (!strcmp(name,"enable-background")) { //accumulate"
-			//} else if (!strcmp(name,"sodipodi:insensitive")) { //true or false
 
-			if (!strcmp(name,"font-style")) {
+			if (!strcmp(name,"opacity")) { //1
+				double o = 1.0;
+				DoubleAttribute(value, &o);
+				extra->push("opacity", new DoubleValue(o), -1, true);
+				
+			} else if (!strcmp(name,"font-style")) {
 				extra->push(name, new StringValue(value), -1, true); //normal italic oblique
 
 			} else if (!strcmp(name,"font-variant")) { // normal | small-caps | inherit
