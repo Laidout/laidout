@@ -202,7 +202,6 @@ test:
   make some test scripts for command line testing
 
 
-
 build: building: build process
   should be able to specify include directories to configure, to work around hacky existence checks
   should be able to specify default icon size as a compile option
@@ -516,13 +515,18 @@ Scribus scribus:
 
   DONE obey object visible (no hidden objects natively)
 
-svg: SVG
+svg: SVG svgin: svg in:
   in:
+    bug: object opacity (as opposed to fill-opacity or stroke-opacity) not handled
     bug: gradient with no p1,p2 defaults to 0,0. should perhaps be 0,1 
     ---0.099---
+	should parse sodipodi:nodetypes:
+	  c = corner node, s = smooth node, z = symmetric, a = auto smooth 
+	  if closed, has 1 more nodetype to define initial previous control handle, and final next
 	in units should default to csspoints
     bug: when stroke+fill presentation atts are not under a "style" att, they are ignored
     stroke fill
+      bug: old LaidoutIcon renders incorrectly, has stroke fill
     fill/stroke for text
     any clipping
     grid guides
@@ -530,6 +534,7 @@ svg: SVG
     dotted line style
     for new docs, should set rulers to use some reasonable units, from either width="100px", or namedview.document-units
 
+    DONE bug: incorrect page size on import
     DONE locked: sodipodi:insensitive="true"
     DONE obey object visible: style="display:none;..."
       DONE in: update StyleToFillAndStroke() calls to extra and react to display:none
@@ -645,12 +650,19 @@ freehand tool:
   gradient select: custom or resource
   pressure curve
   mesh outputs should still be Mesh based on path
-  implement bezier path with ShapeBrush
-    output to either "shape brush" line, or flattened path
+  ShapeBrush features:
+    rotate the brush
+	bug: rendering solid block, not just outline
+    implement bezier path with ShapeBrush
+    output to either line with ShapeBrush, or flattened path
   implement flash-like brush:
     bez outline, subsequent strokes can add to or subtract from previous (complex) paths
 	merge with similar colors
 	be able to drag around islands
+  settings:
+    set raw point simplify amount
+	colors: stroke/fill/gradient, shapebrush outline color
+	speed influence
   DONE numerical input for brush size
   DONE brush_size should be real, not screen units
   DONE need "brush size" controls
@@ -665,6 +677,13 @@ shape brush shapebrush:
   when new subpaths are created, they should be assigned current shape brush
   DONE finish implementing min/max along direction
   DONE not saving to file
+
+LineStyle:
+  Finish making LineStyle a resource
+  needs a stroke fill option
+FillStyle:
+  Finish making FillStyle a resource
+  should probably have an "enabled" field? otherwise when you toggle fill, it currently sets fillstyle and function to something you may not want
 
 PathInterface: pathinterface
   DONE horizontal extrema orientation sometimes wrong near other vertical extrema
@@ -1349,6 +1368,7 @@ captioninterface CaptionInterface captiondata CaptionData
   DONE bug: why is a font being created and destroyed each refresh??
 
 ellipseinterface:
+  should be able to start a new ellipse from the tool, and maybe select other ellipses
   bug: number input does not cancel on non parsing string
   handles to rotate?
   handles need to stand out more
@@ -1579,6 +1599,9 @@ high dpi hidpi:
 	DONE should have option to use native icons.. otherwise they render kind of bad. <- LaidoutPrefs::dont_scale_icons
   DONE don't hardcode for instance thin as 1
     DONE check interfaces, make sure everything uses ScreenLine,Threshhold,UIScale:
+	  NetInterface
+	  DONE singlesInterface
+	  DONE SignatureInterface
       DONE curvemap
       DONE freehand
       DONE perspective
@@ -1602,13 +1625,29 @@ high dpi hidpi:
       DONE voronoi
 	  DONE spread editor
   check windows, need ThemeUpdate()/UIScaleChanged()
+	checkbox not circular
+	ShortcutWindow
+	  settings wrench is getting cut if button too small
+	  key column incorrect width: "control" cut off
+	  tree triangle overlapping header
+	  DONE upper line squashed
+	  DONE bad gap in lower left
 	LineInput and LineEdit not aligning baseline again
-	TreeSelector final line is often offscreen, and can't stroll to it
+	TreeSelector final line is often offscreen, and can't scroll to it
 	CaptionInterface: popup context menu has wrong window bounds
 	PathInterface: control for insert point not scaling hint
-	NumSlider arrows hogging the area
+	filedialog:
+	  has ugly spacing
+	  no pad in the bookmarks
+	  DONE top inputs are scrunched up
+	  DONE final ok buttons squashed
+	DONE ColorSliders hex display too small
+    DONE KeyboardWindow
+	DONE NumSlider arrows hogging the area
 	DONE popup Input box not scaling outer
-	DONE PopupMenu icons not scaling
+	DONE PopupMenu
+      DONE icons in menus are slightly too small
+	  DONE icons not scaling
 	DONE MessageBar
 	DONE RulerWin
 	DONE TabFrame
@@ -1618,7 +1657,6 @@ high dpi hidpi:
 	DONE ObjectIndicator
 	DONE overwrite
 	DONE reimpose
-	DONE filedialog
 	DONE export
 	DONE import
 	DONE Import images
@@ -1700,7 +1738,7 @@ themes:
 
 laxkit:
   DONE Scroller, click on scrollbar outside of the drag handle scrolls in the wrong direction
-  building seems to including twice: -I/usr/include/GraphicsMagick
+  DONE? building seems to including twice: -I/usr/include/GraphicsMagick
   would be nice if Displayer had a "highlight" stroke mode: draw line with FG, draw thicker line with BG
   strmanip is not in Laxkit namespace, wtf!
   resources:
@@ -1729,10 +1767,12 @@ laxkit:
   in laxkit, key and mouse state should already be filtered to only contain laxkit modifiers,
   reserve names for CommandMask (macs), and a few other custom masks for other weird keyboards
   lineedit:
+	should reduce where text is draw when x-for-clear is up
     seems to be an occasional redo bug, reinserting in wrong position
     password
     date
     time
+    DONE bug: not showing the x-for-clear
     DONE dir
   for blend modes, maybe place name conversion in Displayer, in case there are a ton of custom blend modes??
   rowframe/squishybox would be nice to have aspect preserving squishes
@@ -1744,6 +1784,7 @@ laxkit:
   DONE dlopen seems to be wiping singletons???? -> making them static in files seems to fix
 
 TreeSelector:
+  should have default pad
   click open jumping current to 0
   option to use markup for labels
   tree display flat option
@@ -2214,8 +2255,11 @@ fontdialog: FontDialog
   optional common font finishers? like centering, underline, color, highlight, fg/bg, etc
 
 Find interface: findinterface:
+  going through next/prev should say Found (3/16) instead of "Found (1):", and have tooltip
+  DONE bug: can't input search?? <- ui scaling issue
   bug: key presses aren't propagating up to viewport?
   bug: FindWindow is not remembering placement
+  view type should be: icons, flat list, hierarchy tree list
   iconselector needs: click-select, drag rect to select, shift to add to selection
   iconselector needs to scroll
   ____pattern_____ .* Aa all (is regex, case sensitive)
@@ -2269,7 +2313,7 @@ engraving tool: Engraving  engraver
     when multi objects, the traceobject is interweaved, based on draw order, only under current object, should be under all?
     make gradient interface work in trace mode
 
-  freehand/path:
+  engraving freehand/path mode:
     freehand not being interpreted correctly: non-equal smooth is adding erroneous extra mesh column
     drawing custom freehand (with width) lines within the mesh area
 
@@ -2401,6 +2445,7 @@ lgm 2019 feedback and ideas:
   from talk: diffusion curves, "local mod" mesh manipulation
 
 ViewWindow:
+  DONE implement wheel left and right to drag
   maybe drawaxes should show dotted line from origin to bbox?
 
 WATCH OUT for when preview file is OLDER than original file!!
@@ -2502,8 +2547,10 @@ need to implement DRAW_Hires for all interfaces that default to preview renders.
 mousemove decorations shouldn't change when an interface absorbs one
 
 raster paint layers, mypaint?
+  raster path effects?
 
 newdoc:
+  DONE ui placement all messed up now.. ui scale issues?
   open on image should create a new singles with default paper and image centered
 
 Units:
@@ -2666,6 +2713,7 @@ colorbox color box:
   hsv slide, configurable clicks
 
 color slider popup: colorpicker color picker colorsliders
+  DONE font too small for hex display
   font size is small when mousing over from ruler.. not being set properly in Refresh()?
   optionally show numbers, click to edit
   color strips for full transparent should show checkers in all strips, not just the alpha strip
@@ -2786,10 +2834,10 @@ resources:
     either that, or do away with whole project/document difference, and use only
     projects with their own directory, and documents without their own directory
   should be resources:
-    Palette
     Linestyle
     Fillstyle
     PaperStyle
+    DONE Palette
     DONE PaperGroups
     DONE PlainTextObject
 
@@ -3191,6 +3239,7 @@ hedron window:
   DONE proper units for papers
 
 implement undo.. ideally use same code for both undo and recordable/assignable actions
+  bug: seems like SomeData undo doesn't work anymore?
   object interface
     need to account for:
       DONE dragging matrix changes
@@ -3263,8 +3312,12 @@ animationinterface animation interface:
 how to keep track of class hierarchy? impositions are now listed by resource instance, what is
   best way of keeping track of base imposition classes? this is needed for file format description output
 
+ObjectIndicator:
+  When you select down in a list, should not destroy upper stack
+  if you click on the (#number siblings) popup list of siblings to select from?
 
-polish: ux:
+ux polish:
+  ux: corner menu, if current document is not in file system, should gray out "Show in filesystem"
   if there is a page/file snafu on export, should return to the export dialog after the error
   when you save, also save a preview of current spread in freedesktop thumbs?
   resizeable ui
