@@ -25,10 +25,6 @@
 #include "../ui/viewwindow.h"
 #include "../laidout.h"
 
-
-//template implementation:
-#include <lax/lists.cc>
-
 	
 #include <iostream>
 using namespace std;
@@ -124,8 +120,8 @@ int FindWindow::init()
 					10);
 	// if (win_w <= 0 || win_h <= 0) flags |= BOX_WRAP_TO_EXTENT; //WrapToExtent();
 
-	int         textheight = win_themestyle->normal->textheight();
-	int         linpheight = textheight + 12;
+	int         textheight = UIScale() * win_themestyle->normal->textheight();
+	int         linpheight = textheight * 1.5;
 	Button *    tbut = nullptr;
 	anXWindow * last = nullptr;
 
@@ -136,8 +132,7 @@ int FindWindow::init()
 
 	last = pattern = new LineInput(this,"pattern",nullptr,LINP_ONLEFT, 0,0,0,0, 0, 
 						last,object_id,"pattern",
-			            _("Find:"), nullptr,0,
-			            100,0,1,1,3,3);
+			            _("Find:"), nullptr, 0);
 	pattern->tooltip(
 			regex 
 			  ? _("Pattern as a regular expressions.")
@@ -146,6 +141,7 @@ int FindWindow::init()
 	pattern->GetLineEdit()->SetWinStyle(LINEEDIT_CLEAR_X, true);
 	pattern->GetLineEdit()->SetWinStyle(LINEEDIT_SEND_FOCUS_OFF, true);
 	rowframe->AddWin(pattern,1, pattern->win_w+3*textheight,textheight,5000,50,0, linpheight,0,0,50,0, -1);
+	rowframe->AddNull();
 
 
 	 // -------------- regex
@@ -183,18 +179,21 @@ int FindWindow::init()
 						 0, //id
 						 _("Next"), //label
 						 nullptr,nullptr); //img filename, img
+	tbut->tooltip(_("Cycle through results"));
 	rowframe->AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 
 	last = tbut = new Button(this, "prev", nullptr,0, 0,0,0,0,1, last,object_id,"prev",
 						 0, //id
 						 _("Prev"), //label
 						 nullptr,nullptr); //img filename, img
+	tbut->tooltip(_("Cycle through results"));
 	rowframe->AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	
 	last = tbut = new Button(this, "all", nullptr,0, 0,0,0,0,1, last,object_id,"findall",
 						 0, //id
 						 _("All"), //label
 						 nullptr,nullptr); //img filename, img
+	tbut->tooltip(_("Show all results"));
 	rowframe->AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 
 	rowframe->AddNull();
@@ -213,13 +212,14 @@ int FindWindow::init()
 	rowframe->AddNull();
 	
 	last = founditems = new IconSelector(this, "founditems", nullptr,
-						BOXSEL_ONE_ONLY | BOXSEL_ROWS | BOXSEL_TOP | BOXSEL_HCENTER | BOXSEL_SPACE | BOXSEL_FLAT,
+						BOXSEL_ONE_ONLY | BOXSEL_ROWS | BOXSEL_TOP | BOXSEL_HCENTER | BOXSEL_SPACE
+						// | BOXSEL_FLAT,
+						,
 						0,0,0,0, 1,
 						last,object_id,"founditems",
 						0,textheight/4, textheight/2);
-	founditems->display_style = BoxSelector::BOXES_Highlighted;
+	founditems->display_style = BoxSelector::BOXES_Highlighted | BoxSelector::BOXES_Beveled;
 	// founditems->selection_style = BoxSelector::SEL_List_Select;
-	// founditems->boxinset = textheight/2;
 	founditems->labelstyle = LAX_ICON_ONLY;
 	rowframe->AddWin(founditems,1, 100,0,5000,50,0, linpheight * 2,0,5000,50,0, -1);
 
@@ -333,6 +333,8 @@ void FindWindow::InitiateSearch()
 	search_started = true;
 }
 
+/*! Update labels and contents of founditems.
+ */
 void FindWindow::UpdateFound()
 {
 	if (how_many) {

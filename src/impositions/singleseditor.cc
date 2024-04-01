@@ -95,7 +95,7 @@ int SinglesEditor::preinit()
 int SinglesEditor::init()
 {
 	
-	int textheight  = app->defaultlaxfont->textheight();
+	int textheight  = UIScale() * win_themestyle->normal->textheight(); //app->defaultlaxfont->textheight();
 	int linpheight  = 1.5*textheight;
 	anXWindow *last = nullptr;
 	LineInput *linp = nullptr;
@@ -137,7 +137,8 @@ int SinglesEditor::init()
 				// int nph,int nhs,int nhg,int nvalign,int nvgap,
 	psizewindow = new PaperSizeWindow(this, "psizewindow", nullptr, 0, object_id, "papersize", 
 										papertype, false, true, false, true);
-	AddWin(psizewindow,1, 5000,4900,0,50,0, 4*textheight,0,0,50,0, -1);
+	AddWin(psizewindow,1, -1);
+	//AddWin(psizewindow,1, 5000,4900,0,50,0, 4*textheight,0,0,50,0, -1);
 	AddNull();
 	AddVSpacer(textheight,0,0,50);
 	AddNull();

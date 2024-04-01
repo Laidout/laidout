@@ -47,12 +47,15 @@ PaperSizeWindow::PaperSizeWindow(Laxkit::anXWindow *parnt,const char *nname,cons
 							unsigned long owner, const char *msg,
 							PaperStyle *paper, bool mod_in_place, bool edit_dpi, bool edit_color, bool send_every_change)
 		: RowFrame(parnt,nname,ntitle,nstyle | ROWFRAME_HORIZONTAL | ROWFRAME_LEFT | ANXWIN_REMEMBER,
-					0,0,600,300,0, nullptr,owner,msg,
+					0,0,0,0,0, nullptr,owner,msg,
 					0)
 {
 	modify_in_place = mod_in_place;
 
 	InstallColors(THEME_Panel);
+	if (win_h <= 0) win_h = 5 * UIScale() * win_themestyle->normal->textheight();
+	if (win_w <= 0) win_w = 30 * UIScale() * win_themestyle->normal->textheight();
+	
 	padinset = win_themestyle->normal->textheight()/2;
 
 	papernames      = nullptr;
@@ -103,8 +106,8 @@ int PaperSizeWindow::init()
       // [default dpi]
       // [other properties]
 
-	int         textheight = win_themestyle->normal->textheight();
-	int         linpheight = textheight + 12;
+	int         textheight = UIScale() * win_themestyle->normal->textheight();
+	int         linpheight = textheight * 1.5;
 	Button *    tbut = nullptr;
 	anXWindow * last = nullptr;
 	LineInput * linp = nullptr;
@@ -143,24 +146,25 @@ int PaperSizeWindow::init()
 	 // -------------- Paper Size --------------------
 	
 	 // -----Paper Size X
-	UnitManager *units=GetUnitManager();
+	UnitManager *units = GetUnitManager();
 	sprintf(blah,"%.10g", units->Convert(papertype->w(),UNITS_Inches,laidout->prefs.default_units,nullptr));
 	sprintf(blah2,"%.10g",units->Convert(papertype->h(),UNITS_Inches,laidout->prefs.default_units,nullptr));
+
+	AddWin(new MessageBar(this,"paperlabel",nullptr, MB_MOVE, 0,0,0,0,0, _("Paper")), 1, -1);
+		
 	last = paperx = new LineInput(this,"paper x",nullptr,LINP_ONLEFT/*|LINP_FLOAT*/, 0,0,0,0, 0, 
 						last,object_id,"paper x",
-			            _("Paper Size  w:"),(o&1?blah2:blah),0,
-			            100,0,1,1,3,3);
+			            _("w:"),(o&1?blah2:blah),0);
 	paperx->GetLineEdit()->SetWinStyle(LINEEDIT_SEND_FOCUS_OFF, true);
-	AddWin(paperx,1, paperx->win_w,0,0,50,0, linpheight,0,0,50,0, -1);
+	AddWin(paperx,1, 8*textheight,0,0,50,0, linpheight,0,0,50,0, -1);
 
 	
 	 // -----Paper Size Y
 	last = papery = new LineInput(this,"paper y",nullptr,LINP_ONLEFT/*|LINP_FLOAT*/, 0,0,0,0, 0, 
 						last,object_id,"paper y",
-			            _("h:"),(o ? blah : blah2),0,
-			           100,0,1,1,3,3);
+			            _("h:"),(o ? blah : blah2),0);
 	papery->GetLineEdit()->SetWinStyle(LINEEDIT_SEND_FOCUS_OFF, true);
-	AddWin(papery,1, papery->win_w,0,0,50,0, linpheight,0,0,50,0, -1);
+	AddWin(papery,1, 8*textheight,0,0,50,0, linpheight,0,0,50,0, -1);
 
 
 	 // -----Default Units
@@ -182,8 +186,7 @@ int PaperSizeWindow::init()
 		double d = papertype->dpi;
 		last = linp = new LineInput(this,"dpi",nullptr,LINP_ONLEFT, 5,250,0,0, 0, 
 							last,object_id,"dpi",
-				            _("Default dpi:"),nullptr,0,
-				            0,0,1,1,3,3);
+				            _("Default dpi:"),nullptr,0);
 		linp->SetText(d);
 		AddWin(linp,1, linp->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 		AddNull();

@@ -260,31 +260,30 @@ int NewDocWindow::preinit()
 int NewDocWindow::init()
 {
 	
-	int textheight = win_themestyle->normal->textheight();
-	int linpheight = textheight + 12;
-	Button *tbut;
-	anXWindow *last=NULL;
-	MessageBar *mesbar;
+	int textheight = UIScale() * win_themestyle->normal->textheight();
+	int linpheight = textheight * 1.5;
+	Button *tbut = nullptr;
+	anXWindow *last = nullptr;
+	MessageBar *mesbar = nullptr;
 
 
 	
 	 // ------ General Directory Setup ---------------
 	 
 	int o;
-	char *where=NULL;
-	if (doc) where=newstr(doc->Saveas());
-	if (!where && !isblank(laidout->project->filename)) where=lax_dirname(laidout->project->filename,0);
+	char *where = nullptr;
+	if (doc) where = newstr(doc->Saveas());
+	if (!where && !isblank(laidout->project->filename)) where = lax_dirname(laidout->project->filename,0);
 
-	last=saveas=new LineInput(this,"save as",NULL,LINP_ONLEFT, 0,0,0,0, 1, 
+	last = saveas = new LineInput(this,"save as",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
 						NULL,object_id,"save as",
-			            _("Save As:"),where,0,
-			            0,0,1,0,3,3);
+			            _("Save As:"),where,0);
 	if (where) { delete[] where; where=NULL; }
 	AddWin(saveas,1, 300,0,2000,50,0, linpheight,0,0,50,0, -1);
-	last=tbut=new Button(this,"saveas",NULL,0, 0,0,0,0, 1, 
+	last = tbut = new Button(this,"saveas",NULL,0, 0,0,0,0, 1, 
 			last,object_id,"saveas",
 			-1,
-			"...",NULL,NULL,3,3);
+			"...",NULL,NULL);
 	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();//*** forced linebreak
 	
@@ -322,8 +321,7 @@ int NewDocWindow::init()
 	if (doc) npages=doc->pages.n;
 	last = numpages = new LineInput(this,"numpages",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
 						last,object_id,"numpages",
-			            _("Number of pages:"),NULL,0, // *** must do auto set papersize
-			            100,0,1,1,3,3);
+			            _("Number of pages:"),NULL,0); // *** must do auto set papersize
 	numpages->GetLineEdit()->SetWinStyle(LINEEDIT_SEND_FOCUS_OFF,1);
 	numpages->SetText(npages);
 	numpages->tooltip(_("The number of pages with which to start a document."));
@@ -401,7 +399,7 @@ int NewDocWindow::init()
 	last=tbut=new Button(this,"impedit",NULL,0, 0,0,0,0, 1, 
 			last,object_id,"impedit",
 			-1,
-			"Edit imposition...",NULL,NULL,3,3);
+			"Edit imposition...",NULL,NULL);
 	tbut->tooltip(_("Edit the currently selected imposition"));
 	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 
@@ -830,57 +828,55 @@ int NewProjectWindow::preinit()
 
 int NewProjectWindow::init()
 {
-	int textheight = win_themestyle->normal->textheight();
-	int linpheight = textheight+12;
-	Button *tbut=NULL;
-	anXWindow *last=NULL;
-	LineInput *linp=NULL;
+	int textheight = UIScale() * win_themestyle->normal->textheight();
+	int linpheight = textheight * 1.5;
+	Button    *tbut = nullptr;
+	anXWindow *last = nullptr;
+	LineInput *linp = nullptr;
 
 
 	
 	 // ------ General Directory Setup ---------------
 	 
 	 //--------------Project Name
-	last=new LineInput(this,"name",NULL,LINP_ONLEFT, 0,0,0,0, 1, 
+	last = new LineInput(this,"name",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
 						NULL,object_id,"name",
-			            _("Project Name:"),NULL,0,
-			            0,0,1,0,3,3);
+			            _("Project Name:"),NULL,0);
 	last->tooltip(_("A descriptive name for the project"));
 	AddWin(last,1, 300,0,2000,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 
 	 //------------Project file name
-	last=linp=new LineInput(this,"filename",NULL,LINP_ONLEFT, 0,0,0,0, 1, 
+	last = linp = new LineInput(this,"filename",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
 							NULL,object_id,"filenameinput",
-							_("Project filename:"),NULL,0,
-							0,0,1,0,3,3);
+							_("Project filename:"),NULL,0);
 	projectfile=linp->GetLineEdit();
 	last->tooltip(_("Project file location"));
 	AddWin(last,1, 300,0,2000,50,0, linpheight,0,0,50,0, -1);
-	last=tbut=new Button(this,"saveprojectfile",NULL,0, 0,0,0,0, 1, 
+	last = tbut = new Button(this,"saveprojectfile",NULL,0, 0,0,0,0, 0, 
 						last,object_id,"projfilebrowse",
 						-1,
-						"...",NULL,NULL,3,3);
+						"...",NULL,NULL);
 	last->tooltip(_("Browse for a location"));
 	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 	 
 	 //-------------Project Directory
-	last=useprojectdir=new CheckBox(this,"usedir",NULL,CHECK_LEFT, 0,0,0,0,1, 
-									last,object_id,"usedir", _("Create directory"),5,5);
+	last = useprojectdir = new CheckBox(this,"usedir",NULL,CHECK_LEFT, 0,0,0,0,0, 
+									last,object_id,"usedir", _("Create directory"));
 	useprojectdir->tooltip(_("Check if you want to use a dedicated project directory"));
 	AddWin(useprojectdir,1, useprojectdir->win_w,0,0,50,0, linpheight,0,0,50,0, -1);
-	last=projectdir=new LineEdit(this,"projdir",NULL,
+	last = projectdir = new LineEdit(this,"projdir",NULL,
 								LINEEDIT_SEND_FOCUS_ON|LINEEDIT_SEND_FOCUS_OFF|LINEEDIT_SEND_ANY_CHANGE, 
 								0,0,0,0, 1, 
 								last,object_id,"projdirinput",
 								NULL,0);
 	last->tooltip(_("Optional directory for storing project resources and data"));
 	AddWin(last,1, 200,0,2000,50,0, linpheight,0,0,50,0, -1);
-	last=tbut=new Button(this,"saveprojectdir",NULL,0, 0,0,0,0, 1, 
+	last = tbut = new Button(this,"saveprojectdir",NULL,0, 0,0,0,0, 1, 
 						last,object_id,"projdirbrowse",
 						-1,
-						"...",NULL,NULL,3,3);
+						"...",NULL,NULL);
 	last->tooltip(_("Browse for a location"));
 	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
@@ -914,10 +910,9 @@ int NewProjectWindow::init()
 		
 	 // ------------------- printing misc ---------------------------
 	 // target dpi:		__300____
-	last=linp=new LineInput(this,"dpi",NULL,LINP_ONLEFT, 5,250,0,0, 0, 
+	last = linp = new LineInput(this,"dpi",NULL,LINP_ONLEFT, 5,250,0,0, 0, 
 						last,object_id,"dpi",
-			            _("Default dpi:"),"300",0,
-			            0,0,1,1,3,3);
+			            _("Default dpi:"),"300",0);
 	AddWin(linp,1, linp->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);//forced linebreak
 	
@@ -964,11 +959,11 @@ int NewProjectWindow::init()
 	AddWin(NULL,0, 2000,1990,0,50,0, 20,0,0,50,0, -1);
 	
 	 // [ ok ]   [ cancel ]
-	last=tbut=new Button(this,"ok",NULL,0,0,0,0,0,1, last,object_id,"Ok", BUTTON_OK,_("Create Project"));
+	last = tbut = new Button(this,"ok",NULL,0,0,0,0,0,1, last,object_id,"Ok", BUTTON_OK,_("Create Project"));
 	tbut->State(LAX_OFF);
 	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddWin(NULL,0, 20,0,0,50,0, 5,0,0,50,0, -1); // add space of 20 pixels
-	last=tbut=new Button(this,"cancel",NULL,BUTTON_CANCEL,0,0,0,0,1, last,object_id,"Cancel");
+	last = tbut = new Button(this,"cancel",NULL,BUTTON_CANCEL,0,0,0,0,1, last,object_id,"Cancel");
 	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 
 	UpdateOkToCreate();
@@ -976,7 +971,6 @@ int NewProjectWindow::init()
 	
 	last->CloseControlLoop();
 	Sync(1);
-//	wrapextent();
 	return 0;
 }
 

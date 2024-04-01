@@ -632,6 +632,9 @@ void SignatureInterface::remapHandles(int which)
 	if (!dp) return;
 	if (controls.n==0) createHandles();
 
+	LaxFont *font = curwindow->win_themestyle->normal;
+	dp->font(font, UIScale() * font->textheight());
+		
 	DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(dp);
 	DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf remapHandles, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
@@ -657,14 +660,14 @@ void SignatureInterface::remapHandles(int which)
 
 
 		char buffer[100];
-		double hhhh = dp->textheight()*1.4;
+		double hhhh = 1.4 * UIScale() * font->textheight(); //dp->textheight()*1.4;
 		double wwww;
 
 		//----------left side
 		 //SP_Paper_Name
 		area=control(SP_Paper_Name);
 		makestr(area->text,siginstance->partition->paper->name);
-		wwww=dp->textextent(area->text,-1, NULL,NULL)+hhhh;
+		wwww = dp->textextent(area->text,-1, NULL,NULL)+hhhh;
 		area->SetRect(0,hhhh, wwww,hhhh);
 		double xxxx=wwww;
 
@@ -917,6 +920,8 @@ int SignatureInterface::Refresh()
 {
 	if (!needtodraw) return 0;
 	needtodraw=0;
+
+	dp->font(curwindow->win_themestyle->normal, UIScale() * curwindow->win_themestyle->normal->textheight());
 
 	if (firsttime) { remapHandles(); firsttime=0; }
 
@@ -1465,7 +1470,7 @@ void SignatureInterface::drawStacks()
 {
 	double w,h;
 	GetDimensions(w,h);
-	double textheight=dp->textheight()/dp->Getmag();
+	double textheight = dp->textheight()/dp->Getmag();
 	double yoff=3*INDICATOR_SIZE/dp->Getmag();
 	double sh=3*textheight;
 	double a=textheight/4;
