@@ -1625,6 +1625,7 @@ high dpi hidpi:
       DONE voronoi
 	  DONE spread editor
   check windows, need ThemeUpdate()/UIScaleChanged()
+    Plugin info window too small
 	checkbox not circular
 	ShortcutWindow
 	  settings wrench is getting cut if button too small
@@ -1641,6 +1642,8 @@ high dpi hidpi:
 	  no pad in the bookmarks
 	  DONE top inputs are scrunched up
 	  DONE final ok buttons squashed
+	DONE Import vector
+	DONE Import Images
 	DONE ColorSliders hex display too small
     DONE KeyboardWindow
 	DONE NumSlider arrows hogging the area
@@ -1737,16 +1740,14 @@ themes:
   DONE laxprofile not working
 
 laxkit:
-  DONE Scroller, click on scrollbar outside of the drag handle scrolls in the wrong direction
-  DONE? building seems to including twice: -I/usr/include/GraphicsMagick
+  Button: icon should shift slightly when pressed, like text does
   would be nice if Displayer had a "highlight" stroke mode: draw line with FG, draw thicker line with BG
-  strmanip is not in Laxkit namespace, wtf!
   resources:
     resource names should default to object->Id(). Is Name important? refactor with "label" instead of "Name"?
     should probably go all in on stacks of data, with container pointers to the data.. would help with name collisions
   migrate the Value system to Laxkit
     Value whattypes() should just be the type, rather than c++ class name
-  inotify hooks?
+  inotify hooks for edit in bg or filesystem lists? linux only. See kqueue for BSD, or FSEvents on Mac
   save dialog should probably ignore clobber safety and allow enter key in edit to be "save". also auto focus file edit on start and on ^l
     if you enter a new location in file edit, first go to that place. else save with that file name
   FileDialog, when you instantiate with particular thing, it should be highlighted and shown in file pane
@@ -1762,7 +1763,6 @@ laxkit:
   from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
       focus off a dialog, then refocus, must manually set control focus. should store which subwindow
        gets the focus when autofocused.
-  having managers as singletons in Laidout seems to make crash on exit.. for some reason manager destructor order matters
   should take precautions so that dialogs do not get buried, would need to respond to circulate events
   in laxkit, key and mouse state should already be filtered to only contain laxkit modifiers,
   reserve names for CommandMask (macs), and a few other custom masks for other weird keyboards
@@ -1772,11 +1772,16 @@ laxkit:
     password
     date
     time
+	date+time
     DONE bug: not showing the x-for-clear
     DONE dir
   for blend modes, maybe place name conversion in Displayer, in case there are a ton of custom blend modes??
   rowframe/squishybox would be nice to have aspect preserving squishes
 
+  DONE Scroller, click on scrollbar outside of the drag handle scrolls in the wrong direction
+  DONE? building seems to including twice: -I/usr/include/GraphicsMagick
+  DONE strmanip is not in Laxkit namespace, wtf!
+  DONE ?-can no longer duplicate: having managers as singletons in Laidout seems to make crash on exit.. for some reason manager destructor order matters
   DONE interfs example has memory hole: interfaces are not being destroyed
     DONE shortcutmanager should be singleton
 	DONE unitmanager should be singleton

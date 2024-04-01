@@ -31,10 +31,6 @@ using namespace std;
 #define DBG 
 
 
-//template implementation:
-#include <lax/lists.cc>
-
-
 using namespace Laxkit;
 
 
@@ -202,16 +198,16 @@ int ImportImagesDialog::init()
 //			const char *newlabel,const char *newtext,unsigned int ntstyle,
 //			int nlew,int nleh,int npadx,int npady,int npadlx,int npadly) // all after and inc newtext==0
 	
-	int textheight=app->defaultlaxfont->textheight();
-	int linpheight=textheight+4;
+	int textheight = UIScale() * app->defaultlaxfont->textheight();
+	int linpheight = 1.5 * textheight;
 	char str[50];
 	int c;
-	
-	anXWindow *last=NULL;
-	LineInput *linp=NULL;
-	MessageBar *mesbar=NULL;
-	CheckBox *check=NULL;
-	Button *tbut=NULL;
+
+    anXWindow  *last   = nullptr;
+    LineInput  *linp   = nullptr;
+    MessageBar *mesbar = nullptr;
+    CheckBox   *check  = nullptr;
+    Button     *tbut   = nullptr;
 
 
 // ************** tabframe stuff NOT WORKING!!!
@@ -265,13 +261,13 @@ int ImportImagesDialog::init()
 	AddWin(new MessageBar(this,"file",NULL,MB_MOVE, 0,0, 0,0, 0, "File? "), 1,c);
 	tbut=new Button(this,"prev file",NULL,0, 0,0,0,0, 1, 
 					linp,object_id,"prevfile",
-					0,"<",NULL,NULL,3,3);
+					0,"<",NULL,NULL);
 	tbut->tooltip(_("Jump to previous selected file"));
 	AddWin(tbut,1, c+1);
 	tbut=new Button(this,"next file",NULL,0, 0,0,0,0, 1, 
 					tbut,object_id,"nextfile",
 					0,
-					">",NULL,NULL,3,3);
+					">",NULL,NULL);
 	tbut->tooltip(_("Jump to next selected file"));
 	AddWin(tbut,1, c+2);
 	
@@ -288,13 +284,12 @@ int ImportImagesDialog::init()
 	last=linp=new LineInput(this,"preview",NULL,
 						LINP_FILE, 0,0,0,0,0, 
 						last,object_id,"preview",
-						" ",NULL,0,
-						0,0,2,2,2,2);
+						" ",NULL,0);
 	linp->GetLineEdit()->win_style|=LINEEDIT_SEND_ANY_CHANGE;
 	AddWin(linp,1, 200,100,1000,50,0, linp->win_h,0,0,50,0, c+2);
 	last=tbut=new Button(this,"generate preview",NULL,0, 0,0,0,0, 1, 
 			last,object_id,"generate",0,
-			_("Generate"),NULL,NULL,3,3);
+			_("Generate"),NULL,NULL);
 	tbut->tooltip(_("Generate a preview for file at this location."));
 	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, c+3);
 	AddNull(c+4);
@@ -310,11 +305,10 @@ int ImportImagesDialog::init()
 
 	 //---------------------- extra image layout controls ---------------------------
 	 //start page __0__   alignx___ aligny___
-	last=NULL;
+	last = nullptr;
 	sprintf(str,"%d",settings->startpage);
-	last=linp=new LineInput(this,"StartPage",NULL,0, 0,0,0,0,0, last,object_id,"startpage",
-						_("Start Page:"),str,0,
-						0,0,2,2,2,2);
+	last = linp = new LineInput(this,"StartPage",NULL,0, 0,0,0,0,0, last,object_id,"startpage",
+						_("Start Page:"),str,0);
 	linp->tooltip(_("The starting document page index to drop images onto. 0 is the first page."));
 	AddWin(linp,1, linp->win_w+linpheight*8,100,1000,50,0, linp->win_h,0,0,50,0, -1);
 
@@ -344,18 +338,16 @@ int ImportImagesDialog::init()
 	 //-----align x and y for each page type, this shows the settings for currentpagetype
 	if (settings->alignment.n) sprintf(str,"%.10g",settings->alignment.e[currentpagetype].x);
 	else sprintf(str,"center"); 
-	last=linp=new LineInput(this,"alignx",NULL,0, 0,0,0,0,0, last,object_id,"alignx",
-						_("Align X:"),str,0,
-						0,0,2,2,2,2);
+	last = linp = new LineInput(this,"alignx",NULL,0, 0,0,0,0,0, last,object_id,"alignx",
+						_("Align X:"),str,0);
 	linp->GetLineEdit()->SetWinStyle(LINEEDIT_SEND_ANY_CHANGE,1);
 	linp->tooltip(_("0 means align left, 50 center, 100 right, etc."));
 	AddWin(linp,1, 200,100,1000,50,0, linp->win_h,0,0,50,0, -1);
 
 	if (settings->alignment.n) sprintf(str,"%.10g",settings->alignment.e[currentpagetype].y);
 	else sprintf(str,"center"); 
-	last=linp=new LineInput(this,"aligny",NULL,0, 0,0,0,0,0, last,object_id,"aligny",
-						_("Align Y:"),str,0,
-						0,0,2,2,2,2);
+	last = linp = new LineInput(this,"aligny",NULL,0, 0,0,0,0,0, last,object_id,"aligny",
+						_("Align Y:"),str,0);
 	linp->GetLineEdit()->SetWinStyle(LINEEDIT_SEND_ANY_CHANGE,1);
 	linp->tooltip(_("0 means align top, 50 center, 100 bottom, etc."));
 	AddWin(linp,1, 200,100,1000,50,0, linp->win_h,0,0,50,0, -1);
@@ -365,18 +357,17 @@ int ImportImagesDialog::init()
 	 //----dpi
 	sprintf(str,"%.10g",settings->defaultdpi);
 	last=linp=new LineInput(this,"DPI",NULL,0, 0,0,0,0,0, last,object_id,"dpi",
-						_("Default dpi:"),str,0,
-						0,0,2,2,2,2);
+						_("Default dpi:"),str,0);
 	AddWin(linp,1, linp->win_w+linpheight*8,10,100,50,0, linp->win_h,0,0,50,0, -1);
 	
 	last=check=new CheckBox(this,"scaleup",NULL,CHECK_LEFT, 0,0,0,0,0, 
-						last,object_id,"scaleup", _("Scale up"),5,5);
+						last,object_id,"scaleup", _("Scale up"));
 	if (settings->scaleup) check->State(LAX_ON); else check->State(LAX_OFF);
 	check->tooltip(_("If necessary, scale up images to just fit within the target area"));
 	AddWin(check,1,  check->win_w,0,0,50,0, check->win_h,0,0,50,0, -1);
 
 	last=check=new CheckBox(this,"scaledown",NULL,CHECK_LEFT, 0,0,0,0,0, 
-						last,object_id,"scaledown", _("Scale down"),5,5);
+						last,object_id,"scaledown", _("Scale down"));
 	if (settings->scaledown) check->State(LAX_ON); else check->State(LAX_OFF);
 	check->tooltip(_("If necessary, scale down images to just fit within the target area"));
 	AddWin(check,1, check->win_w,0,0,50,0, check->win_h,0,0,50,0, -1);
@@ -394,7 +385,7 @@ int ImportImagesDialog::init()
 	
 	AddSpacer(linpheight,0,0,50, linpheight,0,0,50);
 	last=check=new CheckBox(this,"perpageexactly",NULL,CHECK_LEFT, 0,0,0,0,0, 
-						last,object_id,"perpageexactly", _("Exactly this many:"),5,5);
+						last,object_id,"perpageexactly", _("Exactly this many:"));
 	check->tooltip(_("Append \"/n\" for every nth, so \"1/2\" means import one image every 2 pages"));
 	if (settings->perpage>=0) {
 		check->State(LAX_ON); 
@@ -409,7 +400,7 @@ int ImportImagesDialog::init()
 	else sprintf(str,"%d",settings->perpage>0?settings->perpage:1);
 	last = linp = new LineInput(this,"NumPerPage",NULL,0, 0,0,0,0,0, last,object_id,"perpageexactlyn",
 						NULL,str,0,
-						textheight*10,textheight+4,2,2,2,2);
+						textheight*10,1.2*textheight+4);
 	linp->GetLineEdit()->SetWinStyle(LINEEDIT_SEND_FOCUS_ON,1);
 	AddWin(linp,1, -1);
 	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,50,0, -1);
@@ -417,7 +408,7 @@ int ImportImagesDialog::init()
 
 	AddSpacer(linpheight,0,0,50, linpheight,0,0,50);
 	last=check=new CheckBox(this,"perpagefit",NULL,CHECK_LEFT, 0,0,0,0,0, 
-						last,object_id,"perpagefit", _("As many as will fit per page"),5,5);
+						last,object_id,"perpagefit", _("As many as will fit per page"));
 	if (settings->perpage==-1) check->State(LAX_ON); else check->State(LAX_OFF);
 	AddWin(check,1, check->win_w,0,0,50,0, check->win_h,0,0,50,0, -1);
 	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,50,0, -1);
@@ -425,7 +416,7 @@ int ImportImagesDialog::init()
 
 	AddSpacer(linpheight,0,0,50, linpheight,0,0,50);
 	last=check=new CheckBox(this,"perpageall",NULL,CHECK_LEFT, 0,0,0,0,0, 
-						last,object_id,"perpageall", _("All on one page"),5,5);
+						last,object_id,"perpageall", _("All on one page"));
 	if (settings->perpage==-2) check->State(LAX_ON); else check->State(LAX_OFF);
 	AddWin(check,1, check->win_w,1,0,50,0, check->win_h,0,0,50,0, -1);
 	AddWin(NULL,0, 2001,2000,0,50,0, 0,0,0,50,0, -1);
@@ -433,7 +424,7 @@ int ImportImagesDialog::init()
 
 	 //------------------------ preview options ----------------------
 	last = check = new CheckBox(this,"expandgifs",NULL,CHECK_LEFT, 0,0,0,0,0, 
-						last,object_id,"expandgifs", _("Expand animated gifs"),5,5);
+						last,object_id,"expandgifs", _("Expand animated gifs"));
 	if (settings->expand_gifs) check->State(LAX_ON); else check->State(LAX_OFF);
 	AddWin(check,1, check->win_w,1,0,50,0, check->win_h,0,0,50,0, -1);
 	AddWin(NULL,0, 2001,2000,0,50,0, 0,0,0,50,0, -1);
@@ -442,9 +433,7 @@ int ImportImagesDialog::init()
 	 //------------------------ preview options ----------------------
 	last=linp=new LineInput(this,"PreviewBase",NULL,0, 0,0,0,0,0, last,object_id,"previewbase",
 						_("Default name for previews:"),
-						_("any"),0,
-						//laidout->preview_file_bases.n?laidout->preview_file_bases.e[0]:".laidout.%.jpg",0,
-						0,0,2,2,2,2);
+						_("any"),0);
 	linp->tooltip(_("For file.jpg,\n"
 				  "* gets replaced with the original file name (\"file.jpg\"), and\n"
 				  "% gets replaced with the file name without the final suffix (\"file\")\n"));
@@ -462,22 +451,21 @@ int ImportImagesDialog::init()
 	AddWin(NULL,0, 3000,3000,0,50,0, 0,0,0,50,0, -1);//force left justify
 
 	last=linp=new LineInput(this,"PreviewWidth",NULL,0, 0,0,0,0,0, last,object_id,"previewwidth",
-						_("Default max width for new previews:"),NULL,0,
-						0,0,2,2,2,2);
+						_("Default max width for new previews:"),NULL,0);
 	linp->GetLineEdit()->SetText(laidout->max_preview_length);
 	linp->tooltip(_("Any newly generated previews must fit\nin a square this many pixels wide"));
 	AddWin(linp,1, -1);
 	AddWin(NULL,0, 3000,3000,0,50,0, 0,0,0,50,0, -1);//force left justify
 	 
 	last=check=new CheckBox(this,"autopreview",NULL,CHECK_LEFT, 0,0,0,0,1, 
-						last,object_id,"autopreview", _("Make previews for files larger than"),5,5);
+						last,object_id,"autopreview", _("Make previews for files larger than"));
 	check->State(LAX_OFF);
 	AddWin(check,1, check->win_w,0,0,50,0, linpheight,0,0,50,0, -1);
 	
 	 //----------------- file size to maybe generate previews for 
 	last=linp=new LineInput(this,"MinSize",NULL,0, 0,0,0,0,0, last,object_id,"mintopreview",
 						" ",NULL,0,
-						textheight*6,0,2,2,2,2);
+						textheight*6,0);
 	linp->GetLineEdit()->SetText(laidout->preview_over_this_size);
 	linp->tooltip(_("Previews will be automatically generated \n"
 			      "for files over this size, and then only \n"
