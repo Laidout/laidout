@@ -27,9 +27,6 @@
 #include <cstdio>
 #include <iostream>
 
-//template implementation
-#include <lax/refptrstack.cc>
-
 
 using namespace std;
 #define DBG
@@ -216,6 +213,11 @@ int SimpleFunctionEvaluator::Evaluate(const char *func,int len, ValueHash *conte
 
 
 //------------------------------ ObjectDef --------------------------------------------
+
+// *** useful? callback for UI settings window needs some more thought.
+// //! Function called in a ValueWindow when a value changes.
+// typedef std::function<void(Value *value, Value *context, const FieldPlace &place)> UIValueCallback;
+
 
 /*! \enum ValueTypes
  * \ingroup stylesandstyledefs
