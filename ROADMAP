@@ -7,9 +7,10 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.098
 -------------
-       Flatpak creation, submit for Flathub (issue #11)
        Import/export new Inkscape multipage art boards via expanded Singles imposition type
-(done) Update color palette window with various export/import options	   
+       Update CI to not use travis
+       Dynamic UI scaling
+(done) Update color palette window with various export/import options
 (done) debug svg in enough to be able to load icons.svg
 (done) svg in/out with powerstroke
 (done) svg in/(done)out with meshes, at miminum round trip export/import should work
@@ -64,7 +65,7 @@ VERSION 0.099
        debug previous version a bit
        Undo/Redo
 
-	   engraver tool direction overlay should be cached
+       engraver tool direction overlay should be cached
        engraver tool grow point mode
        engraver tool, resolution cut mode
        engraver tool, blockout needs to be more precise
@@ -120,6 +121,7 @@ VERSION 0.099
        Scribus import should try to do something appropriate with page spreads >= 2 pages wide
        Scribus import should do something meaningful with original Scribus page bleed values
 
+       Flatpak creation, submit for Flathub (issue #11)
 
 VERSION 0.1 
 -----------

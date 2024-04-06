@@ -1594,6 +1594,7 @@ dual monitors: multi monitor multimonitor
   DONE Menus should respect actual screen borders, not just full virtual screen
 
 high dpi hidpi:
+  thin_line should be theme level so widgets can use it, not just InterfaceManager level
   uiscale option
     passing in 1 is different than having no uiscale, why??? forcing it to check screen??
 	DONE should have option to use native icons.. otherwise they render kind of bad. <- LaidoutPrefs::dont_scale_icons
@@ -1625,15 +1626,16 @@ high dpi hidpi:
       DONE voronoi
 	  DONE spread editor
   check windows, need ThemeUpdate()/UIScaleChanged()
+	SettingsWindow
+	  number edit has text off screen?!
     Plugin info window too small
-	checkbox not circular
 	ShortcutWindow
-	  settings wrench is getting cut if button too small
+	  dnd key definition box not scaling
 	  key column incorrect width: "control" cut off
 	  tree triangle overlapping header
+	  DONE settings wrench is getting cut if button too small
 	  DONE upper line squashed
 	  DONE bad gap in lower left
-	LineInput and LineEdit not aligning baseline again
 	TreeSelector final line is often offscreen, and can't scroll to it
 	CaptionInterface: popup context menu has wrong window bounds
 	PathInterface: control for insert point not scaling hint
@@ -1642,11 +1644,13 @@ high dpi hidpi:
 	  no pad in the bookmarks
 	  DONE top inputs are scrunched up
 	  DONE final ok buttons squashed
+	NumSlider arrows hogging the area
+	DONE checkbox not circular
+	DONE LineInput and LineEdit not aligning baseline again
 	DONE Import vector
 	DONE Import Images
 	DONE ColorSliders hex display too small
     DONE KeyboardWindow
-	DONE NumSlider arrows hogging the area
 	DONE popup Input box not scaling outer
 	DONE PopupMenu
       DONE icons in menus are slightly too small
@@ -1789,11 +1793,12 @@ laxkit:
   DONE dlopen seems to be wiping singletons???? -> making them static in files seems to fix
 
 TreeSelector:
-  should have default pad
+  pad, padg, leading, iwidth should all be em units
   click open jumping current to 0
   option to use markup for labels
   tree display flat option
   makeinwindow() doesn't account for columns
+  DONE should have default pad
   DONE? with text colors, mouse over highlight is off (can't dup?!?)
   DONE? not showing alternate gray/white bgs (can't dup?!?)
   DONE left and right need to open and close
