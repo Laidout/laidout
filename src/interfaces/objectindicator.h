@@ -38,6 +38,7 @@ class ObjectIndicator : public LaxInterfaces::anInterface
 
 	Laxkit::LaxFont *font;
 	VObjContext *context;
+	VObjContext *prev_context;
 	DrawableObject *hover_object;
 	int last_hover;
 	unsigned long color_arrow, color_num;

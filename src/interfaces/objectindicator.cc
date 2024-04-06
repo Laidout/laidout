@@ -21,8 +21,6 @@
 #include <lax/transformmath.h>
 #include <lax/lineedit.h>
 
-//template implementation:
-#include <lax/refptrstack.cc>
 
 using namespace Laxkit;
 using namespace LaxInterfaces;
@@ -42,9 +40,6 @@ namespace Laidout {
 
 
 
-
-
-
 //------------------------------------- ObjectIndicator --------------------------------------
 	
 /*! \class ObjectIndicator 
@@ -60,10 +55,11 @@ ObjectIndicator::ObjectIndicator(anInterface *nowner,int nid,Displayer *ndp)
 	color_arrow    = rgbcolor(60, 60, 60);
 	color_num      = rgbcolor(0, 0, 0);
 	interface_type = INTERFACE_Overlay;
-	context        = NULL;
-	hover_object   = NULL;
+	context        = nullptr;
+	prev_context   = nullptr;
+	hover_object   = nullptr;
 	last_hover     = -1;
-	font           = NULL;
+	font           = nullptr;
 }
 
 ObjectIndicator::ObjectIndicator(int nid,Displayer *ndp)
@@ -81,14 +77,8 @@ const char *ObjectIndicator::Name()
 { return _("Object Indicator"); }
 
 
-
-/*! \todo much of this here will change in future versions as more of the possible
- *    boxes are implemented.
- */
 Laxkit::MenuInfo *ObjectIndicator::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
-	//MenuInfo *menu=new MenuInfo(_("N-up Interface"));
-	//return menu;
 	return menu;
 }
 
@@ -222,12 +212,13 @@ int CommonAnscestor(Selection *selection, VObjContext *oc)
 int ObjectIndicator::Refresh()
 {
 	if (!needtodraw) return 0;
-	needtodraw=0;
+	needtodraw = 0;
 
 	if (firsttime) {
-		firsttime=0;
+		firsttime = 0;
 	}
-	if (!context) context=&dynamic_cast<LaidoutViewport*>(viewport)->curobj;
+
+	if (!context) context = &dynamic_cast<LaidoutViewport*>(viewport)->curobj;
 	if (!context) return 0;
 
 
@@ -235,8 +226,6 @@ int ObjectIndicator::Refresh()
 
 	dp->DrawScreen();
 	dp->NewBG(1.,1.,1.);
-
-	//char buffer[30];
 
 	 //draw ui outline
 	dp->DrawScreen();
@@ -419,12 +408,11 @@ int ObjectIndicator::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
  */
 int ObjectIndicator::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	DBG cerr<<" got ch:"<<ch<<"  "<<(state&LAX_STATE_MASK)<<endl;
+	DBG cerr<<" ObjectIndicator got ch:"<<ch<<"  "<<(state&LAX_STATE_MASK)<<endl;
 
-	if (ch==LAX_Esc) {
-
-	} else if (ch=='o') {
-	}
+	// if (ch==LAX_Esc) {
+	// } else if (ch=='o') {
+	// }
 	return 1;
 }
 
