@@ -406,6 +406,7 @@ int LaidoutPreferences::assign(FieldExtPlace *ext,Value *v)
 		double d;
 		if (!isNumberType(v, &d)) return 0;
 		uiscale = d;
+		anXApp::app->theme->ui_scale = uiscale;
 		anXApp::app->ThemeReconfigure();
 		if (autosave_prefs) UpdatePreference(extstring, uiscale, nullptr);
 		return 1;
