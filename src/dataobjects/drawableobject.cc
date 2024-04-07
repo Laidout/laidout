@@ -28,8 +28,6 @@
 #include "affinevalue.h"
 #include "bboxvalue.h"
 
-//template instantiation:
-#include <lax/refptrstack.cc>
 
 #include <iostream>
 #define DBG
@@ -205,7 +203,7 @@ DrawableObject::DrawableObject()
 	autowrap = autoinset = 0;
 	
 	opacity = 1;
-	blur    = 0;
+	//blur    = 0;
 	filter  = nullptr;
 
 	parent_link = nullptr;
@@ -526,7 +524,7 @@ LaxInterfaces::SomeData *DrawableObject::duplicate(LaxInterfaces::SomeData *dup)
 
 	 //filter
 	d->opacity = opacity;
-	d->blur  = blur;
+	//d->blur  = blur;
 	if (filter) {
 		ObjectFilter *ofilter = dynamic_cast<ObjectFilter*>(filter);
 		ObjectFilter *nfilter = dynamic_cast<ObjectFilter*>(ofilter->Duplicate());
@@ -1107,6 +1105,9 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *c
 		delete[] str;
 	}
 
+	if (opacity != 1.0) fprintf(f, "%sopacity %.10g", spc, opacity);
+	//if (blur    != 0.0) fprintf(f, "%sblur %.10g", spc, blur);
+
 	if (filter) {
 		ObjectFilter *ofilter = dynamic_cast<ObjectFilter*>(filter);
 		fprintf(f,"%sfilter\n",spc);
@@ -1232,7 +1233,8 @@ Laxkit::Attribute *DrawableObject::dump_out_atts(Laxkit::Attribute *att,int what
 		att->push("iohints",  "...", "(optional) object level i/o leftovers from importing");
 		att->push("metadata", "...", "(optional) object level metadata");
 		att->push("tags", "tag1 \"tag 2\"","(optional) list of string tags");
-		att->push("filter", nullptr, "(optional) Nodes defining filter transformationss");
+		att->push("opacity", "1.0", "(optional) Opacity to apply to entire object");
+		att->push("filter", nullptr, "(optional) Nodes defining filter transformations");
 		att->push("alignmentrule", "align (a1x,a1y) (a2x,a2y)", "(optional) if different than simple matrix");
 		att->push("clip_path", nullptr, "(optional) a path object");
 		//att->pushSubAtt("...");
@@ -1286,6 +1288,9 @@ Laxkit::Attribute *DrawableObject::dump_out_atts(Laxkit::Attribute *att,int what
 		delete[] str;
 	}
 
+	if (opacity != 1.0) att->push("opacity", opacity);
+	//if (blur != 1.0) att->push("blur", blur);
+		
 	if (filter) {
 		ObjectFilter *ofilter = dynamic_cast<ObjectFilter*>(filter);
 		att2 = att->pushSubAtt("filter");
@@ -1685,6 +1690,10 @@ void DrawableObject::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpCo
 
 		} else if (foundconfig==0 && !strcmp(name,"config")) {
 			foundconfig=1;
+
+		} else if (!strcmp(name,"opacity")) {
+			double d = 1.0;
+			if (DoubleAttribute(value, &d)) opacity = d;
 
 		} else if (!strcmp(name,"filter")) {
 			foundfilter = c;

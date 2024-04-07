@@ -625,8 +625,8 @@ Singles:
   revamp to be art board centric, based on random PaperGroup
   what's with the old cached_margin stuff, obsolete now with pagestyles stack?
   DONE need to cache page margins properly for papergroup GetPageMarginOutline()
-  PageLayout() lines
-  PaperLayout()
+  PageLayout lines
+  PaperLayout, needs to optionally be a different PaperGroup compared to page layout
   implement double sided
 
 
@@ -1677,6 +1677,7 @@ high dpi hidpi:
     need to install the source svg
     detect if scaled icons make fuzzy and ask to rebuild
 	detect if missing icons, ask to build
+	bug: running make in src/icons causes window to be created. it shouldn't be activating any actual window
   need in app themeeditor to easily adjust things that are off
   per monitor ui scaling:
     xrandr only gives monitor names like DP-5 DP-0
@@ -2222,6 +2223,7 @@ plugins:
     plugins (c++) vs extensions (scripted)
 
 DrawableObject:
+  implement opacity as inherent property to, for instance, simplify processing svg/inkscape files
   bbox and aabb need to build in kids?
   should transplant child to SomeData? would simplify making new objects considerably. or do (parenting shell)-data like blender
   DONE SomeData should derive from DumpUtility
@@ -2432,6 +2434,7 @@ page thumbnail should be rational, ie image should be whole page, not just conte
 
 global resources:
   build use case of setting a global var for current language, then have objects update according to it
+  have some way to enable/disable listing various built in resources, like historical imposition types (see below)
 
 need a Revert option
 
@@ -3337,8 +3340,17 @@ ux polish:
   in menus, click down, then drag, will return what is under mouse.. should default to not do anything but stay in menu
   page navigator should allow type in shortcuts like "end" or "-2" for second from last
 
+
+copy/paste:
+  selection of objects
+  an object
+  object components, like styles
+  plain text
+
+
 General design usability
 to be a decent editing platform, Laidout needs:
+  copy/paste
   undo/redo
   viewport rendering needs to be far,far better
   master pages with auto page number is important.. for image based page numbers, dynamic objects important!!
@@ -3375,7 +3387,8 @@ Current deficiencies:
   Render update is way too slow
   Too many bugs/quirks in object management, resource coordiation
   undo/redo barely implemented
-  cairo is only 8 bit, limits use for animation
+  copy/paste barely implemented
+  cairo is only 8 bit, which limits use
   Way too hard to have user created tools
     internal object system is flexible, but not without a huge amount of boilerplate-like code to tie to scripter
   Being Linux only limits user base, and thus also limits user testing
@@ -3393,7 +3406,7 @@ Ways forward:
    - cross code with gimp/gegl has long term benefits
    - gegl already can access hardware acceleration for many things
   consider gigantic revamp so that ui is all made with python..
-   - essentially the blender route
+   - it's good enough for Blender and Krita, right?
    - makes tool development way more accessible to new users
 
 
@@ -3407,7 +3420,7 @@ for translations, there is a difference between locale translations and language
 
 investigate pdfcreator as method to reduce file size
 
-historical impositions:
+historical imposition types:
  Name                  Abbr.       Folds     Leaves    Pages
  Folio                  fo, f        1         2         4
  Quarto                 4to          2         4         8

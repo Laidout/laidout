@@ -89,6 +89,10 @@ void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,uns
 
 	}
 
+	if (ddata && ddata->opacity != 1.0) {
+		dp->PushGroup();
+	}
+
 	//draw children
 	if (ddata && ddata->n()) {
 		if (ddata->child_clip_type == CLIP_From_Parent_Area) {
@@ -206,6 +210,13 @@ void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,uns
 			dp->drawline(ll,ul);
 			dp->DrawReal();
 		}
+	}
+
+	if (ddata && ddata->opacity != 1.0) {
+		dp->PopGroup();
+		dp->setSourceAlpha(ddata->opacity);
+		dp->BlendMode(LAXOP_Over);
+		dp->show();
 	}
 
 	//if (clipobj || (ddata && ddata->clip_path)) {

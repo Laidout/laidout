@@ -189,8 +189,8 @@ class DrawableObject :  virtual public ObjectContainer,
 	//Laxkit::RefPtrStack<ObjectStream> area_streams; //applied into areapath area
 
 	//--filters:
-	double opacity;//TODO! object alpha applied to anything drawn by this and kids
-	double blur;   //TODO! opacity and blur: built in filters?
+	double opacity;
+	//double blur;   //TODO! opacity and blur: built in filters?
 	Laxkit::anObject *filter; // *** can't declare as ObjectFilter directly due to absurd filefilter.h definitions.. need to fix this!
 	virtual DrawableObject *FinalObject();
 	virtual int SetFilter(Laxkit::anObject *nfilter, int absorb);

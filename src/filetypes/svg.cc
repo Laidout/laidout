@@ -3545,6 +3545,12 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 			}
 
 			paths->FindBBox();
+			int err = 0;
+			double alpha = extra.findIntOrDouble("opacity", -1, &err);
+			if (err == 0) {
+				DrawableObject *ddata = dynamic_cast<DrawableObject*>(paths);
+				if (ddata) ddata->opacity = alpha;
+			}
 			group->push(paths);
 
 			if (fillobj) InsertFillobj(fillobj, paths, group);
