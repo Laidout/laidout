@@ -1593,10 +1593,13 @@ dual monitors: multi monitor multimonitor
   when you open a new window, ensure that it is always on screen
   DONE Menus should respect actual screen borders, not just full virtual screen
 
-high dpi hidpi:
+high dpi hidpi: uiscale: ui_scale:
   thin_line should be theme level so widgets can use it, not just InterfaceManager level
   uiscale option
     passing in 1 is different than having no uiscale, why??? forcing it to check screen??
+	live ui change from settings window
+	  when dragging numslider, mouse delta is local coords, so jerks around a lot
+	  DONE rework SquishyBox to use floating point, not ints, for easier, automatic ui change
 	DONE should have option to use native icons.. otherwise they render kind of bad. <- LaidoutPrefs::dont_scale_icons
   DONE don't hardcode for instance thin as 1
     DONE check interfaces, make sure everything uses ScreenLine,Threshhold,UIScale:
@@ -1630,21 +1633,29 @@ high dpi hidpi:
 	  number edit has text off screen?!
     Plugin info window too small
 	ShortcutWindow
+	  Keyset name missing cursor
+	  wrench is too big
 	  dnd key definition box not scaling
 	  key column incorrect width: "control" cut off
 	  tree triangle overlapping header
 	  DONE settings wrench is getting cut if button too small
 	  DONE upper line squashed
 	  DONE bad gap in lower left
-	TreeSelector final line is often offscreen, and can't scroll to it
+	TreeSelector
+	  final line is often offscreen, and can't scroll to it
+	  toggle trees makes view jump crazily
 	CaptionInterface: popup context menu has wrong window bounds
 	PathInterface: control for insert point not scaling hint
 	filedialog:
 	  has ugly spacing
-	  no pad in the bookmarks
+	  File, Path, Mask LineInputs are too small vertically. seems like missing pads
+	  in mask LineEdit, the clear "x" is too big
+	  DONE no pad in the bookmarks
 	  DONE top inputs are scrunched up
 	  DONE final ok buttons squashed
 	NumSlider arrows hogging the area
+	  LineEdit haywire placement, missing cursor
+	DONE TabFrame tabs not scaling with ui
 	DONE checkbox not circular
 	DONE LineInput and LineEdit not aligning baseline again
 	DONE Import vector
@@ -2223,9 +2234,10 @@ plugins:
     plugins (c++) vs extensions (scripted)
 
 DrawableObject:
-  implement opacity as inherent property to, for instance, simplify processing svg/inkscape files
   bbox and aabb need to build in kids?
   should transplant child to SomeData? would simplify making new objects considerably. or do (parenting shell)-data like blender
+  implement blur to simplify processing svg/inkscape files
+  DONE implement opacity as inherent property to, for instance, simplify processing svg/inkscape files
   DONE SomeData should derive from DumpUtility
 
 fontdialog: FontDialog
