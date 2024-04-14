@@ -83,6 +83,7 @@ ValueWindow::~ValueWindow()
 
 int ValueWindow::init()
 {
+	last_scale = UIScale();
 	if (!initialized) Initialize();
 	return ScrolledWindow::init();
 }

@@ -331,9 +331,9 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 		}
 		if (!input) return 0;
 		char *output = laidout->calculator->In(input, NULL);
-		DBG if (!output) cerr  << "script in: "<<input<<endl<< "script out: (none)" <<endl;
+		DBG if (!output) std::cerr  << "script in: "<<input<<std::endl<< "script out: (none)" <<std::endl;
 		if (output) {
-			DBG cerr << "script in: "<<input<<endl<< "script out" << output<<endl;
+			DBG std::cerr << "script in: "<<input<<std::endl<< "script out" << output<<std::endl;
 			//prependstr(output,":\n");
 			//prependstr(output,_("Script output"));
 			MessageBox *mbox=new MessageBox(NULL,NULL,_("Script output"),ANXWIN_CENTER|MB_LEFT, 0,0,0,0,0,
@@ -354,7 +354,7 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 	} else if (!strcmp(mes,"nameinput")) { 
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
-		DBG cerr<<"plaintextwindow nameinput update "<<s->info1<<endl;
+		DBG std::cerr<<"plaintextwindow nameinput update "<<s->info1<<std::endl;
 
 		if (!textobj) return 0;
 

@@ -24,7 +24,9 @@
 #include <lax/displayer.h>
 
 
+#include <iostream>
 #define DBG
+using namespace std;
 
 
 using namespace Laxkit;

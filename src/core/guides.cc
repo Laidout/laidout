@@ -17,9 +17,10 @@
 #include <lax/interfaces/somedata.h>
 #include <lax/interfaces/pathinterface.h>
 
+#include <iostream>
+using namespace std;
 
 using namespace Laxkit;
-//using namespace LaxInterfaces;
 
 
 namespace Laidout {

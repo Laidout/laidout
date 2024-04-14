@@ -35,11 +35,9 @@
 
 #include <unistd.h>
 
-
-//template implementation
-#include <lax/lists.cc>
-#include <lax/refptrstack.cc>
-
+#include <iostream>
+using namespace std;
+#define DBG
 
 using namespace Laxkit;
 using namespace LaxInterfaces;

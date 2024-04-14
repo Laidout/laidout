@@ -26,8 +26,7 @@
 #include <lax/interfaces/somedatafactory.h>
 #include <lax/anxapp.h>
 
-//template implementation:
-#include <lax/refptrstack.cc>
+#include <lax/debug.h>
 
 
 using namespace Laxkit;
@@ -75,7 +74,7 @@ ObjectFilterNode::~ObjectFilterNode()
  */
 ObjectFilter::ObjectFilter(anObject *nparent, int make_in_outs)
 {
-	DBG cerr << "ObjectFilter constructor, id: "<<object_id<<", "<<(Id()?Id():"")<<endl;
+	DBGM("ObjectFilter constructor, id: "<<object_id<<", "<<(Id()?Id():""));
 
 	parent = nparent;
 
@@ -111,7 +110,7 @@ ObjectFilter::ObjectFilter(anObject *nparent, int make_in_outs)
 
 ObjectFilter::~ObjectFilter()
 {
-	DBG cerr << "ObjectFilter destructor, id: "<<object_id<<", "<<(Id()?Id():"")<<endl;
+	DBGM("ObjectFilter destructor, id: "<<object_id<<", "<<(Id()?Id():""));
 }
 
 anObject *ObjectFilter::ObjectOwner()

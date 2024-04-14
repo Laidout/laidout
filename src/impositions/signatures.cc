@@ -22,14 +22,13 @@
 #include <lax/attributes.h>
 #include <lax/transformmath.h>
 
-//template implementation:
-#include <lax/lists.cc>
 
+#include <iostream>
+#define DBG
+using namespace std;
 
 using namespace Laxkit;
 using namespace LaxInterfaces;
-
-#define DBG 
 
 
 

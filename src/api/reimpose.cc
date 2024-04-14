@@ -17,6 +17,8 @@
 #include "../language.h"
 #include "../laidout.h"
 
+#include <iostream>
+
 using namespace Laxkit;
 
 
@@ -197,7 +199,7 @@ int ReImposeFunction(ValueHash *context,
 			if (paper) paper=(PaperStyle*)paper->duplicate();
 		} else if (i==1) {
 			//***use a papersize that is big enough to fit;
-			cout <<"*** must implement auto compute paper size for reimposition"<<endl;
+			std::cout <<"*** must implement auto compute paper size for reimposition"<<std::endl;
 			//figure out w and h of current document
 			//step through list of papers, find one that will fit either WxH or HxW
 			//if no fit, then custom size
@@ -243,7 +245,7 @@ int ReImposeFunction(ValueHash *context,
 	 //so parameters passed, so now try to actually reimpose...
 	if (createnew) {
 		 //must duplicate the document, install in laidout, then call reimpose on it
-		cerr <<" *** must implement createnew in Reimpose()!!"<<endl;
+		std::cerr <<" *** must implement createnew in Reimpose()!!"<<std::endl;
 	}
 	int c=doc->ReImpose(imp, scalepages);
 	imp->dec_count();

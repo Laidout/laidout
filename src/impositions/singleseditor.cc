@@ -25,11 +25,12 @@
 #include <lax/interfaces/interfacemanager.h>
 
 
+#include<iostream>
+#define DBG
+using namespace std;
+
 using namespace Laxkit;
 using namespace LaxInterfaces;
-
-#define DBG
-
 
 
 namespace Laidout {

@@ -24,6 +24,8 @@
 
 #include "externaltools.h"
 
+#include <lax/debug.h>
+using namespace std;
 
 using namespace Laxkit;
 
@@ -239,7 +241,7 @@ int ExternalTool::RunCommand(Laxkit::PtrStack<char> &arguments, Laxkit::ErrorLog
 
 	if (in_background) cm.Append(" &");
 
-	DBG cerr << "Running command: "<<cm.c_str()<<endl;
+	DBGM("Running command: "<<cm.c_str());
 
 	//run command in foreground:
 	int status = system(cm.c_str()); //-1 for error, else the return value of the call

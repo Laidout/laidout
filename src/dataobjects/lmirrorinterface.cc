@@ -24,7 +24,7 @@
 
 #include <iostream>
 #define DBG
-
+using namespace std;
 
 using namespace Laxkit;
 using namespace LaxInterfaces;
