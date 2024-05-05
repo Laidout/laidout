@@ -34,13 +34,9 @@ bug: back to not maximizing properly on default ubuntu. Seems to work fine on ev
 
 bug: path curve is terrible approximation at end points
 
-bug: popup menus: submenus spawning on wrong side on far right monitors
-
 bug: command prompt window cursor often invisible
 bug: command prompt window input sometimes unrecoverably locks if cursor not at very end
 DONE bug: command prompt window missing Laidout module
-
-bug: lineedit cursor is leaving artifacts
 
 Overwrite dialog box and other centering boxes should center over calling window, or current screen if no specified owner
 
@@ -249,10 +245,10 @@ global Laidout settings:
     need to be able to set external programs
     rearrange dir lists
 	rebuild icons
-	set uiscale live
 	resource search directories, per resource
 	remove old palette_dir thing, it should be wrapped into resources
 	need "import settings from..." (but always use hardcoded laidoutrc)
+	DONE set uiscale live
   color theme
   icons
   tooltips
@@ -517,8 +513,10 @@ Scribus scribus:
 
 svg: SVG svgin: svg in:
   in:
+    page labels appear to not set on read in
     bug: object opacity (as opposed to fill-opacity or stroke-opacity) not handled
     bug: gradient with no p1,p2 defaults to 0,0. should perhaps be 0,1 
+	on reading in svg directly, should short out the filename so no accidental overwriting
     ---0.099---
 	should parse sodipodi:nodetypes:
 	  c = corner node, s = smooth node, z = symmetric, a = auto smooth 
@@ -621,6 +619,8 @@ idml from indesign?
 
 
 Singles:
+  object bleeds not implemented
+  export to pdf has wrong paper sizes with multipage, also not handling page bleed with inkscpae multipage import
   inset should be per paper in papergroup
   revamp to be art board centric, based on random PaperGroup
   what's with the old cached_margin stuff, obsolete now with pagestyles stack?
@@ -1341,6 +1341,7 @@ CharacterInterface characterinterface character selector
 captioninterface CaptionInterface captiondata CaptionData
   default text size is super small
   bug: bitstream vera sans, "Text" convert to path puts e correct, but screen render puts it out too far. huh??
+  DONE bug: handles scan zone not working
   ---0.099---
   should be able access fonts as resources, to preserve links on load/save
   implement proper pdf export
@@ -1588,47 +1589,22 @@ FileDialog filedialog:
   DONE should probably have a scroll bar
 
 dual monitors: multi monitor multimonitor
-  centering windows should center on monitor of originating window
   open in same screen as mouse
   when you open a new window, ensure that it is always on screen
+  DONE centering windows should center on monitor of originating window
   DONE Menus should respect actual screen borders, not just full virtual screen
 
 high dpi hidpi: uiscale: ui_scale:
-  thin_line should be theme level so widgets can use it, not just InterfaceManager level
-  uiscale option
-    passing in 1 is different than having no uiscale, why??? forcing it to check screen??
-	live ui change from settings window
-	  when dragging numslider, mouse delta is local coords, so jerks around a lot
-	  DONE rework SquishyBox to use floating point, not ints, for easier, automatic ui change
-	DONE should have option to use native icons.. otherwise they render kind of bad. <- LaidoutPrefs::dont_scale_icons
-  DONE don't hardcode for instance thin as 1
-    DONE check interfaces, make sure everything uses ScreenLine,Threshhold,UIScale:
-	  NetInterface
-	  DONE singlesInterface
-	  DONE SignatureInterface
-      DONE curvemap
-      DONE freehand
-      DONE perspective
-      DONE simplepath
-      DONE textonpath
-	  DONE align
-	  DONE-ish nup
-	  DONE clone
-      DONE object
-	  DONE nodes
-      DONE engraver
-      DONE ellipse
-      DONE character
-      DONE caption
-      DONE patch
-      DONE imagepatch
-      DONE colorpatch
-      DONE gradient
-      DONE image
-      DONE path
-      DONE voronoi
-	  DONE spread editor
   check windows, need ThemeUpdate()/UIScaleChanged()
+	image preview label text not scaling, not setting font first?
+	ToolTip text seems small sometimes
+	ImportImagesDialog: scale is a bit all over.. too big padding especially
+	newdoc:
+	  PaperSizeWindow has too small LineInputs, also missing caret when too small
+	DONE MultiLineEdit
+	PromptEdit
+	CommandWindow
+	DONE LineEdit cursor sometimes disappears, and text does not get displayed at proper place
 	SettingsWindow
 	  number edit has text off screen?!
     Plugin info window too small
@@ -1654,7 +1630,7 @@ high dpi hidpi: uiscale: ui_scale:
 	  DONE top inputs are scrunched up
 	  DONE final ok buttons squashed
 	NumSlider arrows hogging the area
-	  LineEdit haywire placement, missing cursor
+	  DONE LineEdit haywire placement, missing cursor
 	DONE TabFrame tabs not scaling with ui
 	DONE checkbox not circular
 	DONE LineInput and LineEdit not aligning baseline again
@@ -1684,6 +1660,39 @@ high dpi hidpi: uiscale: ui_scale:
 	DONE viewport
 	DONE color sliders
 	DONE error message box
+  DONE check interfaces, make sure everything uses ScreenLine,Threshhold,UIScale:
+    NetInterface
+    DONE singlesInterface
+    DONE SignatureInterface
+    DONE curvemap
+    DONE freehand
+    DONE perspective
+    DONE simplepath
+    DONE textonpath
+    DONE align
+    DONE-ish nup
+    DONE clone
+    DONE object
+    DONE nodes
+    DONE engraver
+    DONE ellipse
+    DONE character
+    DONE caption
+    DONE patch
+    DONE imagepatch
+    DONE colorpatch
+    DONE gradient
+    DONE image
+    DONE path
+    DONE voronoi
+    DONE spread editor
+  thin_line should be theme level so widgets can use it, not just InterfaceManager level
+  uiscale option
+    passing in 1 is different than having no uiscale, why??? from monitor ppi?
+	DONE live ui change from settings window
+	  DONE when dragging numslider, mouse delta is local coords, so jerks around a lot
+	  DONE rework SquishyBox to use floating point, not ints, for easier, automatic ui change
+	DONE should have option to use native icons.. otherwise they render kind of bad. <- LaidoutPrefs::dont_scale_icons
   rebuild icons in app:
     need to install the source svg
     detect if scaled icons make fuzzy and ask to rebuild
@@ -1694,10 +1703,12 @@ high dpi hidpi: uiscale: ui_scale:
     xrandr only gives monitor names like DP-5 DP-0
     xrandr --verbose lists EDID hex block that usually contains monitor model somehow
     auto scale by detected pixel density
+  DONE don't hardcode for instance thin as 1
   DONE perhaps respond to GDK_SCALE or QT_SCALE_FACTOR
   DONE supply a "default" ppi? for instance xlib thinks: 94.1467h or 94.0741v of multisync lcd2490wiki2 (specs say 94)
 
 themeeditor:
+  layout suddenly all messed up
   DONE extremely excessive recomputing UIScale on window resize
   DONE checkboxes
     DONE circles need to scale
@@ -1707,8 +1718,8 @@ themeeditor:
 	treeselector not using scrollers??
 	DONE arrows not scaling
   LineInput
-    lineinput not propagating escapable
     not setting proper font for refresh
+    DONE lineinput not propagating escapable
     DONE not syncing baseline of fonts
 	DONE LineEdit
 	  DONE text not centering
@@ -1793,6 +1804,10 @@ laxkit:
     DONE dir
   for blend modes, maybe place name conversion in Displayer, in case there are a ton of custom blend modes??
   rowframe/squishybox would be nice to have aspect preserving squishes
+  viewport overlays:
+    overlays should have flag for under or over viewport tool stack, such as page marker, which should be below tools
+    overlays should get first pick of input, BUT if another has a button lock, it shouldn't mouse move update
+
 
   DONE Scroller, click on scrollbar outside of the drag handle scrolls in the wrong direction
   DONE? building seems to including twice: -I/usr/include/GraphicsMagick
@@ -1855,6 +1870,7 @@ make drag and drop selections work dnd
 	DONE text file
   dnd to CaptionInterface
   dnd to ImageInterface
+    bug: drag from Nautilus, drag image created by nautilus doesn't go away.. improper dnd response?
   dnd to ImagePatchInterface
   dnd colors somehow? interpret text "#fff" as a color
   drag from lax edits to other places (in and outside app)
@@ -1873,6 +1889,14 @@ make drag and drop selections work dnd
   DONE implement viewport bitmap image drop
   DONE xlib_dnd->preferred_type not being set?? -> was bad child selection coords
   DONE do proper translation between screen coords and window coords during acceptance query
+
+imageinterface: imagedata:
+  actions to scale to proper dpi for destination paper
+  grab particular exif info to show in labels?
+  would be nice to autocrop to specific portion without explicit clip mask, ie select a sprite in a sprite sheet
+  auto resource-ize images to make them reusable more easily?
+  DONE 'f' show labels should shadow label, and put it on upper edge
+  DONE optionally show pixel size of image
 
 align tool: aligninterface AlignInterface align:
   needs polishing, the lines and indicators get a bit lost
@@ -2204,7 +2228,7 @@ object clipping:
 Label widget:
   harfbuzzed, fribidi
   abstract to form base of both widgets and CaptionData
-  replace all MessageBar with these
+  replace all MessageBar with these, to enable copy
   make editable one replace LineEdit/MultiLineEdit
 
 
@@ -2244,7 +2268,7 @@ fontdialog: FontDialog
   DONE the ... is added to both lineinput and outside it
   list should group by first word? Noto* is sooooooooo many!!!
   bug: crash on big X on layers
-  cursor missing in LineEdits
+  DONE cursor missing in LineEdits
   search term is duplicated in the tree list
   mouse follow shouldn't select highlight. current font should stay highlighted
   bug: makeinwindow SOMETIMES not working, select one, puts on bottom line
@@ -2819,8 +2843,6 @@ Convert impose-only to be based on feeding it an ExportConfig
 
 clarify how locks, visible, selectable works. base in Laxkit?
 
-overlays should get first pick of input, BUT if another has a button lock, it shouldn't mouse move update
-
 standardize new Impositions: convert to new ResourceManager system. each has:
    interface OR window editor
    class type
@@ -3263,8 +3285,9 @@ hedron window:
   need to implement more options for polyhedron connections, to allow mobius strips...
   DONE proper units for papers
 
-implement undo.. ideally use same code for both undo and recordable/assignable actions
+implement undo: ideally use same code for both undo and recordable/assignable actions undo/redo:
   bug: seems like SomeData undo doesn't work anymore?
+  would be nice to have right click cancel during a left-drag action
   object interface
     need to account for:
       DONE dragging matrix changes
@@ -3600,3 +3623,6 @@ DONE work around MD5() in openssl being deprecated to remove compile warning
 DONE bug: can zoom in too far, crashes cairo matrices. unrecoverable!!
 DONE convert Laxkit::Palette to GradientStrip instead
 DONE (can't duplicate) crash: Start blank, then open recent doc with an ObjectTree. click on an object, crash! querying wrong viewport?
+DONE bug: popup menus: submenus spawning on wrong side on far right monitors
+DONE bug: lineedit cursor is leaving artifacts
+
