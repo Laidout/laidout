@@ -351,17 +351,16 @@ int ObjectIndicator::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse 
 			if (i == context->context.n()-1 && context->obj) {
 				 //rename top object
 				//const char *str=objc->object_e_name(context->context.e(i));
-				const char *str=d->Id();
-				if (!font) { font=laidout->defaultlaxfont; font->inc_count(); }
-				double th=font->textheight(); 
+				const char *str = d->Id();
+				if (!font) { font = laidout->defaultlaxfont; font->inc_count(); }
+				double th = font->textheight(); 
 
-				LineEdit *le= new LineEdit(viewport,"rename",_("Rename object"),
+				LineEdit *le = new LineEdit(viewport,"rename",_("Rename object"),
 											ANXWIN_OUT_CLICK_DESTROYS|LINEEDIT_DESTROY_ON_ENTER|LINEEDIT_GRAB_ON_MAP|ANXWIN_ESCAPABLE,
 											2*th,dp->Maxy-(i+3)*th, 2*dp->textextent(str,-1,NULL,NULL),1.2*th, 4,
 											   NULL,object_id,"renameobj",
 											   str);
-				hover_object=d;
-				le->padx=le->pady=th*.1;
+				hover_object = d;
 				le->SetCurpos(-1);
 				app->addwindow(le);
 

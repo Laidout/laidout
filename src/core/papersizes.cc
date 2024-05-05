@@ -1140,11 +1140,17 @@ void PaperGroup::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *conte
 
 int PaperGroup::AddPaper(const char *nme,double w,double h,const double *m)
 {
-	PaperStyle *paperstyle=new PaperStyle(nme,w,h,0,72,NULL);
-	PaperBox *box=new PaperBox(paperstyle, false);
+	int landscape = 0;
+	PaperStyle *paperstyle = GetNamedPaper(w,h, &landscape, 0,nullptr, .0001);
+	if (paperstyle) {
+		paperstyle = dynamic_cast<PaperStyle*>(paperstyle->duplicate());
+	} else {
+		paperstyle = new PaperStyle(nme,w,h,0,72,NULL);
+	}
+	PaperBox *box = new PaperBox(paperstyle, false);
 	paperstyle->dec_count();
 
-	PaperBoxData *boxdata=new PaperBoxData(box);
+	PaperBoxData *boxdata = new PaperBoxData(box);
 	box->dec_count();
 	boxdata->m(m);
 

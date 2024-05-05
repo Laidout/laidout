@@ -40,7 +40,6 @@ CommandWindow::CommandWindow(Laxkit::anXWindow *parnt,const char *nname,const ch
 	: PromptEdit(parnt,nname,ntitle,nstyle,xx,yy,ww,hh,brder,NULL,None,NULL)
 {
 	textstyle |= TEXT_WORDWRAP;
-	padx = pady = 6;
 	LaidoutCalculator *calc = new LaidoutCalculator();
 	calc->InstallModule(&stylemanager, 1);
 	calculator = calc;

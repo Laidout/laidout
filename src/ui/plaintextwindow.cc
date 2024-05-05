@@ -402,15 +402,11 @@ int PlainTextWindow::init()
 	anXWindow *last=NULL;
 
 	MultiLineEdit *editbox;
-	last=editbox=new MultiLineEdit(this,"plain-text-edit",NULL,0, 0,0,0,0,1, NULL,object_id,"ptedit",
-							  0,textobj?textobj->thetext:NULL);
-	//LaxFont *font=app->fontmanager->MakeFontFromStr("Courier",getUniqueNumber());
-    //LaxFont *font=app->fontmanager->MakeFontFromStr(":spacing=100",getUniqueNumber());
-    LaxFont *font=app->fontmanager->MakeFontFromStr("mono",getUniqueNumber());
+	last = editbox = new MultiLineEdit(this,"plain-text-edit",NULL,0, 0,0,0,0,1, NULL,object_id,"ptedit",
+							  0, textobj ? textobj->thetext : NULL);
+    LaxFont *font = app->fontmanager->MakeFontFromStr("mono",getUniqueNumber());
     editbox->UseThisFont(font);
-	editbox->pady = editbox->padx = font->textheight()/2;
-    //font->dec_count();<- causes crash... it really shouldn't!!!
-
+	
 	AddWin(editbox,1, 100,95,2000,50,0, 100,95,20000,50,0, -1);
 	AddNull();
 

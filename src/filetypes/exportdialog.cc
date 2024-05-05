@@ -363,7 +363,6 @@ int ExportDialog::init()
 						 0,0,100,linpheight, 1,
 						 last,object_id,"tofile",
 						 config->filename,0);
-	fileedit->padx=5;
 	fileedit->tooltip(_("Export to this file"));
 	fileedit->SetCurpos(-1);
 	AddWin(fileedit,1, fileedit->win_w,0,1000,50,0, linpheight,0,0,50,0, -1);
@@ -392,7 +391,6 @@ int ExportDialog::init()
 						 0,0,100,20, 1,
 						 last,object_id,"tofiles",
 						 config->tofiles,0);
-	filesedit->padx=5;
 	filesedit->tooltip(_("Export to these paths. A '#' is replaced with\n"
 						  "the spread index. A \"###\" for an index like 3\n"
 						  "will get replaced with \"003\"."));
@@ -424,7 +422,6 @@ int ExportDialog::init()
 		// 					 0,0,100,20, 1,
 		// 					 last,object_id,"command",
 		// 					 "lp",0);
-		// command->padx=5;
 		// command->tooltip(_("Run this command with the exported files"));
 		// AddWin(command,1, command->win_w,0,1000,50,0, linpheight,0,0,50,0, -1);
 		
@@ -531,7 +528,6 @@ int ExportDialog::init()
 						 0,0,50,20, 1,
 						 last,object_id,"range",
 						 prange,0);
-	printspreadrange->padx = 5;
 	printspreadrange->tooltip(_("The index range of spreads, counting from 1.\nNegative numbers mean index count from end."));
 	AddWin(printspreadrange,1, printspreadrange->win_w,0,1000,50,0, printspreadrange->win_h,0,0,50,0, -1);
 		
@@ -561,7 +557,6 @@ int ExportDialog::init()
 						 0,0,50,20, 1,
 						 last,object_id,"batchnumber",
 						 blah,0);
-	batchnumber->padx=5;
 	batchnumber->tooltip(_("The number of spreads in one batch"));
 	AddWin(batchnumber,1, batchnumber->win_w,0,1000,50,0, batchnumber->win_h,0,0,50,0, -1);
 	AddNull();
