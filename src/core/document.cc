@@ -430,37 +430,43 @@ Document::Document(const char *filename)
  *
  * The filename is put in saveas, but the file is NOT loaded or saved.
  */
-Document::Document(Imposition *imp,const char *filename)//stuff=NULL
+Document::Document(Imposition *imp,const char *filename)
 { 
 	tms tms_;
 
-	modtime=times(&tms_);
-	curpage=-1;
-	saveas=newstr(filename);
-	name=NULL;
+	modtime  = times(&tms_);
+	curpage  = -1;
+	saveas   = newstr(filename);
+	name     = nullptr;
 	metadata = nullptr;
 	
-	imposition=imp;
+	imposition = imp;
 	if (imposition) imposition->inc_count();
 
-	if (imposition==NULL) {
+	if (imposition == nullptr) {
 		//null imposition is used for code that manually builds a Document, so no special treatment necessary
 	} else {
-		 // create the pages
-		pages.e=imposition->CreatePages(-1);
-		if (pages.e) { // must manually count how many element in e, put that in n
-			int c=0;
-			while (pages.e[c]!=NULL) c++;
-			pages.n=c;
-			if (c) {
-				pages.islocal=new char[c];
-				for (c=0; c<pages.n; c++) pages.islocal[c]=LISTS_DELETE_Refcount;
-				curpage=0;
+		// create the pages
+		if (imposition->NumPages()) {
+			for (int c = 0; c < imposition->NumPages(); c++) {
+				pages.push(new Page());
 			}
 		}
+		// ----
+		// pages.e = imposition->CreatePages(-1);
+		// if (pages.e) { // must manually count how many element in e, put that in n
+		// 	int c = 0;
+		// 	while (pages.e[c] != nullptr) c++;
+		// 	pages.n = c;
+		// 	if (c) {
+		// 		pages.islocal = new char[c];
+		// 		for (c = 0; c < pages.n; c++) pages.islocal[c] = LISTS_DELETE_Refcount;
+		// 		curpage = 0;
+		// 	}
+		// }
 	}
 	
-	SyncPages(0,-1, false);
+	SyncPages(0, -1, false);
 }
 
 Document::~Document()
@@ -551,35 +557,35 @@ int Document::NewPages(int starting,int np)
 {
 	if (!imposition) return -1;
 
-	if (np<=0) return 0;
+	if (np <= 0) return 0;
 	Page *p;
 
-	 //create the pages
-	if (starting<0) starting=pages.n;
-	for (int c=0; c<np; c++) {
-		p=new Page(NULL);
-		pages.push(p,LISTS_DELETE_Refcount,starting);
+	// create the pages
+	if (starting < 0) starting = pages.n;
+	for (int c = 0; c < np; c++) {
+		p = new Page(nullptr);
+		pages.push(p, LISTS_DELETE_Refcount, starting);
 		p->dec_count();
 	}
 
-	 //adjust pageranges if necessary
+	// adjust pageranges if necessary
 	if (pageranges.n) {
 		int c;
-		for (c=0; c<pageranges.n; c++)
-			if (starting>=pageranges.e[c]->start && starting<=pageranges.e[c]->end) break;
-		if (c==pageranges.n) c=pageranges.n-1; //if adding to end, extend final pagerange
+		for (c = 0; c < pageranges.n; c++)
+			if (starting >= pageranges.e[c]->start && starting <= pageranges.e[c]->end) break;
+		if (c == pageranges.n) c = pageranges.n-1; //if adding to end, extend final pagerange
 
-		for (int c2=c; c2<pageranges.n; c2++) {
-			if (c2!=c) pageranges.e[c2]->start+=np;
-			pageranges.e[c2]->end+=np;
+		for (int c2 = c; c2 < pageranges.n; c2++) {
+			if (c2 != c) pageranges.e[c2]->start += np;
+			pageranges.e[c2]->end += np;
 		}
 	}
 
-	 //sync up with the imposition
+	// sync up with the imposition
 	imposition->NumPages(pages.n);
-	SyncPages(starting,-1, true);
+	SyncPages(starting, -1, true);
 
-	laidout->notifyDocTreeChanged(NULL,TreePagesAdded, starting,-1);
+	laidout->notifyDocTreeChanged(nullptr, TreePagesAdded, starting,-1);
 	return np;
 }
 
@@ -1016,19 +1022,24 @@ int Document::Load(const char *file,ErrorLog &log)
 	makestr(saveas,file);
 	if (saveas[0]!='/') convert_to_full_path(saveas,NULL);
 
-	if (!imposition) imposition=newImpositionByType("Singles");
-	if (pages.n==0) {
-		pages.e=imposition->CreatePages(-1);
-		if (pages.e) { // must manually count how many element in e, put that in n
-			int c=0;
-			while (pages.e[c]!=NULL) c++;
-			pages.n=c;
-			if (c) {
-				pages.islocal=new char[c];
-				for (c=0; c<pages.n; c++) pages.islocal[c]=LISTS_DELETE_Refcount;
-				curpage=0;
-			}
+	if (!imposition) imposition = newImpositionByType("Singles");
+	if (pages.n == 0 && imposition->NumPages()) {
+		for (int c = 0; c < imposition->NumPages(); c++) {
+			pages.push(new Page());
 		}
+		curpage = 0;
+		//-------------------
+		// pages.e = imposition->CreatePages(-1);
+		// if (pages.e) { // must manually count how many element in e, put that in n
+		// 	int c=0;
+		// 	while (pages.e[c]!=NULL) c++;
+		// 	pages.n=c;
+		// 	if (c) {
+		// 		pages.islocal=new char[c];
+		// 		for (c=0; c<pages.n; c++) pages.islocal[c]=LISTS_DELETE_Refcount;
+		// 		curpage=0;
+		// 	}
+		// }
 	}
 	imposition->NumPages(pages.n);
 	SyncPages(0,-1, false);
@@ -1079,9 +1090,9 @@ void Document::ForceFilterUpdates(int frompage, int topage)
  */
 int Document::SyncPages(int start,int n, bool shift_within_margins)
 {
-	if (start>=pages.n) return 0;
-	if (n<0) n=pages.n;
-	if (start+n>pages.n) n=pages.n-start;
+	if (start >= pages.n) return 0;
+	if (n < 0) n = pages.n;
+	if (start + n > pages.n) n = pages.n - start;
 	
 	if (imposition) imposition->SyncPageStyles(this,start,n, shift_within_margins);
 	

@@ -32,13 +32,14 @@ class Singles : public Imposition
   	Laxkit::RefPtrStack<LaxInterfaces::PathsData> cached_margin_outlines; //1 per paper
   	Laxkit::NumStack<double> cached_margins; //6*(num papergroup->papers), l,r,t,b,w,h
 
+  	virtual void FixPageBleeds(int index, Page *page);
+
   public:
 	double marginleft,marginright,margintop,marginbottom; //default margins
 	double insetleft, insetright, insettop, insetbottom;  //default insets
 	double gapx, gapy; //gap between tiles
 	int tilex, tiley; //tiles within insets
 	bool double_sided = false;
-	//RectPageStyle *pagestyle; //default style
 	Laxkit::RefPtrStack<RectPageStyle> pagestyles; //default styles
 
 	Singles();
@@ -47,20 +48,16 @@ class Singles : public Imposition
 	virtual const char *whattype() { return "Singles"; }
 	static ImpositionResource **getDefaultResources();
 
-	// ***********TEMP!!!
-    virtual int inc_count();
-    virtual int dec_count();
-    // ***********end TEMP!!!
-
 	virtual void GetDefaultPaperDimensions(double *x, double *y);
 	virtual void GetDefaultPageDimensions(double *x, double *y);
 	virtual const char *BriefDescription();
 	virtual ObjectDef *makeObjectDef();
 	virtual Value *duplicate();
+	virtual int SetPaperGroup(PaperGroup *ngroup);
 	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual int SetDefaultMargins(double l,double r,double t,double b);
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
-	virtual Page **CreatePages(int npages);
+	virtual int SyncPageStyles(Document *doc,int start,int n, bool shift_within_margins);
 	virtual LaxInterfaces::SomeData *GetPageOutline(int pagenum,int local);
 	virtual LaxInterfaces::SomeData *GetPageMarginOutline(int pagenum,int local);
 	virtual Spread *PageLayout(int whichpage); 

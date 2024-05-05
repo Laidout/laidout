@@ -50,7 +50,6 @@ Singles::Singles() : Imposition(_("Singles"))
 	marginleft = marginright = margintop = marginbottom = 0;
 	tilex = tiley = 1;
 	gapx  = gapy  = 0;
-	//pagestyle     = nullptr; // this is the default pagestyle, distinct from pagestyles stack
 	
 	PaperStyle *paperstyle = laidout->GetDefaultPaper();
 	if (paperstyle) paperstyle = static_cast<PaperStyle *>(paperstyle->duplicate());
@@ -84,26 +83,7 @@ Singles::Singles(PaperGroup *pgroup, bool absorb)
 Singles::~Singles()
 {
 	DBG cerr <<"--Singles destructor object "<<object_id<<endl;
-	//pagestyle->dec_count();
 }
-
-
-
-// ***********TEMP!!!
-int Singles::inc_count()
-{
-    DBG cerr <<"document "<<object_id<<" inc_count to "<<_count+1<<endl;
-    return anObject::inc_count();
-}
-
-int Singles::dec_count()
-{
-    DBG cerr <<"document "<<object_id<<" dec_count to "<<_count-1<<endl;
-    return anObject::dec_count();
-}
-// ***********end TEMP!!!
-
-
 
 
 //! Static imposition resource creation function.
@@ -120,6 +100,17 @@ ImpositionResource **Singles::getDefaultResources()
 	r[1] = NULL;
 	return r;
 }
+
+
+int Singles::SetPaperGroup(PaperGroup *ngroup)
+{
+	if (!ngroup) return 1;
+	Imposition::SetPaperGroup(ngroup);
+	setPage();
+	return 0;
+}
+
+
 
 //! Return default paper dimensions for informational purposes.
 void Singles::GetDefaultPaperDimensions(double *x, double *y)
@@ -139,6 +130,42 @@ void Singles::GetDefaultPageDimensions(double *x, double *y)
 const char *Singles::BriefDescription()
 {
 	return _("Singles");
+}
+
+void Singles::FixPageBleeds(int index, Page *page)
+{
+	if (!papergroup) return;
+
+	int pindex = index % papergroup->papers.n;
+	int group0 = (index / papergroup->papers.n) * papergroup->papers.n;
+	int i = 0;
+
+	PaperBoxData *paper = papergroup->papers.e[pindex];
+	double p_inv[6];
+	transform_invert(p_inv, paper->m());
+
+	for (int c = 0; c < papergroup->papers.n; c++) {
+		if (c == pindex) continue;
+
+		//PaperBox *p = papergroup->papers.e[c]->box;
+		PaperBoxData *pdata = papergroup->papers.e[c];
+
+		PageBleed *bleed = nullptr;
+		if (i < page->pagebleeds.n) bleed = page->pagebleeds.e[i];
+		else {
+			bleed = new PageBleed();
+			page->pagebleeds.push(bleed);
+		}
+
+		bleed->index = group0 + c;
+		bleed->page = (doc && bleed->index < doc->pages.n) ? doc->pages.e[bleed->index] : nullptr;
+		transform_mult(bleed->matrix, pdata->m(), p_inv);
+
+		i++;
+	}
+
+	while (page->pagebleeds.n > papergroup->papers.n-1)
+		page->pagebleeds.remove(page->pagebleeds.n-1);
 }
 
 /*! Using the papergroup, create new pagestyle(s).
@@ -166,8 +193,8 @@ void Singles::setPage()
 		}
 		
 		RectPageStyle *pagestyle = new RectPageStyle(RECTPAGE_LRTB);
-		pagestyle->width  = (paper->media.maxx-insetleft-insetright)/tilex;
-		pagestyle->height = (paper->media.maxy-insettop-insetbottom)/tiley;
+		pagestyle->width  = (paper->media.maxx - insetleft - insetright)/tilex;
+		pagestyle->height = (paper->media.maxy - insettop - insetbottom)/tiley;
 		pagestyle->pagetype = 0;
 		pagestyle->ml = oldl;
 		pagestyle->mr = oldr;
@@ -396,7 +423,7 @@ void Singles::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 		fprintf(f,"%spagestyles\n",spc);
 		for (int c=0; c < pagestyles.n; c++) {
 			fprintf(f,"%s  pagestyle\n",spc);
-			pagestyles.e[c]->dump_out(f,indent+2,0,context);
+			pagestyles.e[c]->dump_out(f,indent+4,0,context);
 		}
 	}
 
@@ -662,27 +689,23 @@ ObjectDef *makeSinglesObjectDef()
 	return sd;
 }
 
-//! Create necessary pages based on default pagestyle.
-/*! Currently returns NULL terminated list of pages.
- */
-Page **Singles::CreatePages(int npages)
-{
-	if (npages > 0) NumPages(npages);
-	if (numpages == 0) return NULL;
 
-	Page **pages = new Page*[numpages+1];
-	int c;
-	PageStyle *ps;
-	for (c=0; c<numpages; c++) {
-		ps = GetPageStyle(c,0);
-		 // pagestyle is passed to Page, not duplicated.
-		 // There its count is inc'd.
-		pages[c] = new Page(ps,c); 
-		ps->dec_count(); //remove extra count
+//! Ensure that each page has a proper pagestyle and bleed information.
+/*! This is called when pages are added or removed. It replaces the pagestyle for
+ *  each page with the pagestyle returned by GetPageStyle(c,0).
+ */
+int Singles::SyncPageStyles(Document *doc,int start,int n, bool shift_within_margins)
+{
+	int status = Imposition::SyncPageStyles(doc,start,n, shift_within_margins);
+
+	this->doc = doc;
+	for (int c = start; c < doc->pages.n; c++) {
+		FixPageBleeds(c,doc->pages.e[c]);
 	}
-	pages[c]=NULL;
-	return pages;
+
+	return status;
 }
+
 
 //! Return outline of page in page coords. 
 SomeData *Singles::GetPageOutline(int pagenum,int local)

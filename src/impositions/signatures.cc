@@ -2922,29 +2922,6 @@ void SignatureImposition::setPageStyles(int force_new)
 	}
 }
 
-//! Return NULL terminated list of Page objects.
-Page **SignatureImposition::CreatePages(int npages)
-{
-	if (npages>0) NumPages(npages);
-
-	if (numdocpages==0) return NULL;
-	 //create if they were null
-	setPageStyles(1);
-	
-	Page **newpages=new Page*[numdocpages+1];
-	int c;
-	SignatureInstance *sig;
-	for (c=0; c<numdocpages; c++) {
-		sig=signatures->InstanceFromPage(c,NULL,NULL,NULL,NULL,NULL,NULL);
-		newpages[c]=new Page(((c%2)?sig->pagestyleodd:sig->pagestyle),c); // this incs count of pagestyle
-
-		 //add bleed information
-		fixPageBleeds(c,newpages[c],false);
-	}
-	newpages[c]=NULL;
-
-	return newpages;
-}
 
 //! Make sure the page bleeding is set up correctly for the specified document page.
 /*! There are 4 different possible page arrangements for signatures,
@@ -2953,7 +2930,7 @@ Page **SignatureImposition::CreatePages(int npages)
  * \todo assumption is that each signature has the same final page size.. maybe this isn't necessary?
  */
 void SignatureImposition::fixPageBleeds(int index, //!< Document page index
-										Page *page, //!< Actual document page
+										Page *page, //!< Actual document page at index
 										bool update_pagestyle)
 {
 	 //fix pagestyle
@@ -2978,13 +2955,13 @@ void SignatureImposition::fixPageBleeds(int index, //!< Document page index
 	if      (binding=='l') { if (odd) { dir='r'; adjacent=index+1; } else { dir='l'; adjacent=index-1; } }
 	else if (binding=='r') { if (odd) { dir='l'; adjacent=index+1; } else { dir='r'; adjacent=index-1; } }
 	else if (binding=='t') { if (odd) { dir='b'; adjacent=index+1; } else { dir='t'; adjacent=index-1; } }
-	else {                   if (odd) { dir='t'; adjacent=index+1; } else { dir='b'; adjacent=index-1; } } //botom binding
+	else {                   if (odd) { dir='t'; adjacent=index+1; } else { dir='b'; adjacent=index-1; } } //bottom binding
 
 	m[4]=m[5]=0;
 	if      (dir=='l') { m[4] = -pw; }
 	else if (dir=='r') { m[4] = pw; }
 	else if (dir=='t') { m[5] = -ph; }
-	else               { m[5] = ph; } //botom binding
+	else               { m[5] = ph; } //bottom binding
 
 	if (adjacent<0 && showwholecover) {
 		adjacent = numpages-1;

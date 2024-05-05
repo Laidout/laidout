@@ -264,7 +264,6 @@ class SignatureImposition : public Imposition
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
 	virtual PaperStyle *GetDefaultPaper();
 	
-	virtual Page **CreatePages(int npages);
 	virtual int SyncPageStyles(Document *doc,int start,int n, bool shift_within_margins);
 	
 	virtual LaxInterfaces::SomeData *GetPrinterMarks(int papernum=-1);

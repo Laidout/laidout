@@ -25,10 +25,6 @@
 #include "../language.h"
 
 
-//template implementation:
-#include <lax/lists.cc>
-
-
 #include <iostream>
 using namespace std;
 #define DBG 
@@ -49,12 +45,19 @@ namespace Laidout {
  * that page are transformed to the current page.
  */
 
+PageBleed::PageBleed()
+{
+	index = -1;
+	page = nullptr;
+	transform_identity(matrix);
+}
+
+
 PageBleed::PageBleed(int doc_page_index, const double *m, Page *docpage)
 {
 	index = doc_page_index;
 	page = docpage;
 	transform_copy(matrix,m);
-	hasbleeds = 0;
 }
 
 //----------------------------------- PageStyles ----------------------------------------

@@ -497,29 +497,6 @@ int NetImposition::numActiveNets()
 	return n;
 }
 
-/*! \fn Page **NetImposition::CreatePages()
- * \brief Create the required pages, with appropriate PageStyle objects attached.
- */
-Page **NetImposition::CreatePages(int npages)
-{
-	if (!nets.n || numActiveFaces()==0) return NULL;
-
-	if (npages>0) NumPages(npages);
-
-	int c=0;
-	Page **pages=new Page*[numpages+1]; //assumes numpages set properly
-	PageStyle *ps;
-	for (c=0; c<numpages; c++) {
-		 // pagestyle is passed to Page where its count is inc'd..
-		ps=GetPageStyle(c,0); //count of 1
-		pages[c]=new Page(ps,c);//adds count to ps
-		ps->dec_count(); //remove extra count
-	}
-
-	pages[c]=NULL;
-	return pages;
-}
-
 
 //! Return outline of page in page coords. Origin is page origin.
 /*!

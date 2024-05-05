@@ -406,11 +406,6 @@ ImpositionInterface::ImpositionInterface(LaxInterfaces::anInterface *nowner,int 
  * Default is to return NULL.
  * This is usually a group of SomeData.
  */
-/*! \fn Page **Imposition::CreatePages(int npages)
- * \brief Create the required pages. If npages>0, then assume the document wants this many pages.
- *
- * Derived class must define this function.
- */
 /*! \fn SomeData *Imposition::GetPageOutline(int pagenum,int local)
  * \brief Return outline of page in page coords. Origin is page origin.
  *

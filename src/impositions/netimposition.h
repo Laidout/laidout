@@ -58,7 +58,6 @@ class NetImposition : public Imposition
 	
 	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
-	virtual Page **CreatePages(int npages);
 
 	virtual LaxInterfaces::SomeData *GetPageOutline(int pagenum,int local);
 

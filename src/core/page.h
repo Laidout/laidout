@@ -36,8 +36,8 @@ class PageBleed
  public:
 	int index;
 	Page *page;
-	int hasbleeds;
 	double matrix[6];
+	PageBleed();
 	PageBleed(int doc_page_index, const double *m, Page *docpage);
 };
 
@@ -141,7 +141,7 @@ class Page : public ObjectContainer
 	//char *external_page_file;
 	//int page_loaded; //-1 for not applicable, 0 for no, 1 for yes
 
-	Page(PageStyle *npagestyle=NULL,int num=-1); 
+	Page(PageStyle *npagestyle = nullptr, int num = -1); 
 	virtual ~Page(); 
 	virtual const char *whattype() { return "Page"; }
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
@@ -156,7 +156,7 @@ class Page : public ObjectContainer
 	virtual int n() { return layers.n(); }
 	virtual Group *e(int i) { return dynamic_cast<Group *>(layers.e(i)); }
 	virtual Laxkit::anObject *object_e(int i) { return layers.object_e(i); }
-	virtual const double *object_transform(int i) { return NULL; }
+	virtual const double *object_transform(int i) { return nullptr; }
 	virtual const char *object_e_name(int i);
 
 	virtual void Touch(clock_t at_time=0);

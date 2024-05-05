@@ -170,7 +170,6 @@ class Imposition : public Value
 	virtual int SetPaperGroup(PaperGroup *ngroup);
 	virtual PageStyle *GetPageStyle(int pagenum,int local) = 0;
 	
-	virtual Page **CreatePages(int npages) = 0;
 	virtual int SyncPageStyles(Document *doc,int start,int n, bool shift_within_margins);
 	
 	virtual LaxInterfaces::SomeData *GetPrinterMarks(int papernum=-1) { return NULL; }
@@ -180,14 +179,12 @@ class Imposition : public Value
 	virtual Spread *Layout(int layout,int which); 
 	virtual int NumLayoutTypes();
 	virtual const char *LayoutName(int layout); 
-	//----*** ^^ this will ultimately replace these vv
 	virtual Spread *SingleLayout(int whichpage); 
 	virtual Spread *PageLayout(int whichspread) = 0; 
 	virtual Spread *PaperLayout(int whichpaper) = 0;
 	virtual Spread *GetLittleSpread(int whichspread) { return PageLayout(whichspread); } 
 	
 	virtual int NumSpreads(int layout); 
-	//----*** ^^ this will ultimately replace these vv
 	virtual int NumPapers() { return numpapers; } 
 	virtual int NumPapers(int npapers);
 	virtual int NumPages() { return numpages; }
