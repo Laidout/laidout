@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Make distribution Laidout tarball.
+# Make distribution Laidout source tarball: laidout-$LAIDOUTVERSION.tar.bz2
 #
 # Do a FRESH clone of Laidout, then:
 #   cd laidout
@@ -9,6 +9,9 @@
 #
 # Note, clone needs to be fresh because the .git directory is removed along the way,
 # and you probably don't want to do that to your working directory.
+#
+# Also note, this tarball is for building from source.
+# It does NOT contain an executable.
 #
 
 LAIDOUTVERSION=$1
@@ -27,15 +30,6 @@ exit_if_error() {
       exit $exit_code
   fi
 }
-
-# #
-# # Pull Laxkit
-# #
-# if [ ! -d laxkit ]; then
-# 	echo Cloning Laxkit...
-# 	git clone http://github.com/Laidout/laxkit.git laxkit
-# 	exit_if_error $? 'Could not clone Laxkit'
-# fi
 
 #
 # Configure Laidout
