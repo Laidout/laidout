@@ -1108,7 +1108,7 @@ LaidoutCalculator::LaidoutCalculator()
 	calcmes=NULL;
 	messagebuffer=NULL;
 	errorlog=&default_errorlog;
-	last_answer=NULL;
+	last_answer = nullptr;
 
 	global_scope.scope_namespace=new ObjectDef(NULL, "Global", _("Global"), _("Global namespace"), "namespace",NULL,NULL);
 	scopes.push(&global_scope,0); //push so as to not delete global scope
@@ -1447,38 +1447,38 @@ ObjectDef *LaidoutCalculator::GetInfo(const char *expr)
  */
 int LaidoutCalculator::Evaluate(const char *in, int len, Value **value_ret, ErrorLog *log)
 {
-	int num_expr_parsed=0;
+	int num_expr_parsed = 0;
 	ClearError();
 	errorlog = log;
-	if (errorlog == NULL) errorlog=&default_errorlog;
+	if (errorlog == nullptr) errorlog=&default_errorlog;
 
-	if (in==NULL) { calcerr(_("Blank expression")); return 1; }
+	if (in == nullptr) { calcerr(_("Blank expression")); return 1; }
 
-	Value *answer=NULL;
-	if (len<0) len=strlen(in);
+	Value *answer = nullptr;
+	if (len < 0) len = strlen(in);
 
 	newcurexprs(in,len);
 
-	if (curexprslen>len) curexprslen=len;
+	if (curexprslen > len) curexprslen = len;
 
 	skipwscomment();
-	int curscope=scopes.n;
+	int curscope = scopes.n;
 
 
 	int tfrom=-1;
 	int numerr=errorlog->Total();
 
 
-	while(!calcerror && tfrom!=from && from<curexprslen) { 
-		tfrom=from;
-		if (answer) { answer->dec_count(); answer=NULL; }
+	while(!calcerror && tfrom != from && from < curexprslen) { 
+		tfrom = from;
+		if (answer) { answer->dec_count(); answer = nullptr; }
 
 
 		if (sessioncommand()) { //  checks for session commands 
 			if (calcerror) break;
 			//if (!messagebuffer) messageOut(_("Ok."));
 			skipwscomment();
-			if (from>=curexprslen) break;
+			if (from >= curexprslen) break;
 			if (nextchar(';')) ; //advance past a ;
 			continue;
 		}
@@ -1492,11 +1492,11 @@ int LaidoutCalculator::Evaluate(const char *in, int len, Value **value_ret, Erro
 		//	continue;
 		//}
 
-		answer=evalLevel(0);
+		answer = evalLevel(0);
 		if (calcerror) break;
 
-		if (run_mode != RUN_NameCatalog && answer && answer->type()==VALUE_LValue) {
-			Value *v=dynamic_cast<LValue*>(answer)->Resolve();
+		if (run_mode != RUN_NameCatalog && answer && answer->type() == VALUE_LValue) {
+			Value *v = dynamic_cast<LValue*>(answer)->Resolve();
 			answer->dec_count();
 			if (calcerror || !v) {
 				answer = nullptr;
@@ -1513,18 +1513,18 @@ int LaidoutCalculator::Evaluate(const char *in, int len, Value **value_ret, Erro
 		if (nextchar(';')) ; //advance past a ;
 	} 
 
-	if (!calcerror && scopes.n!=curscope) {
+	if (!calcerror && scopes.n != curscope) {
 		calcerr(_("Unterminated scope!"));
-		if (answer) { answer->dec_count(); answer=NULL; }
+		if (answer) { answer->dec_count(); answer = nullptr; }
 	}
 
-	while (scopes.n!=curscope) scopes.remove(scopes.n-1);
+	while (scopes.n != curscope) scopes.remove(scopes.n-1);
 
-	if (value_ret) { *value_ret=answer; if (answer) answer->inc_count(); }
+	if (value_ret) { *value_ret = answer; if (answer) answer->inc_count(); }
 	if (last_answer) last_answer->dec_count();
-	last_answer=answer; //last_answer takes the reference
+	last_answer = answer; //last_answer takes the reference
 
-	return calcerror>0 ? 1 : (errorlog->Total()>numerr && errorlog->Warnings(numerr)>0 ? -1: 0);
+	return calcerror > 0 ? 1 : (errorlog->Total() > numerr && errorlog->Warnings(numerr) > 0 ? -1: 0);
 }
 
 /*! Return 0 for success, nonzero for error. */
