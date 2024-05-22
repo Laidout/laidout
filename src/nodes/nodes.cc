@@ -3553,7 +3553,9 @@ int NumToStringNode::Update()
 		if (!setout) {
 			setout = new SetValue();
 			properties.e[properties.n-1]->SetData(setout, 1);
-		} else properties.e[properties.n-1]->Touch();
+		} else {
+			properties.e[properties.n-1]->Touch();
+		}
 
 	} else {
 		out = dynamic_cast<StringValue*>(properties.e[properties.n-1]->GetData());
@@ -3574,6 +3576,8 @@ int NumToStringNode::Update()
 		char type = capitalize ? 'G' : 'g'; // %010.10g
 		sprintf(format, "%%%s%s%d.%d%c", left ? "-" : "", zeropadding ? "0" : (padding > 0 ? " " : ""), padding, precision, type);
 	}
+
+	int i = 0;
 	for (int c=0; c < (setin ? setin->n() : 1); c++) {
 		if (setin) {
 			d = getNumberValue(setin->e(c), &isnum);
@@ -3600,8 +3604,11 @@ int NumToStringNode::Update()
 			scratch.Sprintf(format, d);
 		}
 		out->Set(scratch.c_str());
-
+		i++;
 	}
+
+	// remove any excess garbage from previous Updates
+	if (setout) while (setout->n() > i) setout->Remove(i);
 
 	return NodeBase::Update();
 }

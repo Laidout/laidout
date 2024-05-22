@@ -1575,6 +1575,14 @@ NodeProperty *NodeBase::FindProperty(const char *prop, int *index_ret)
 	return NULL;
 }
 
+
+NodeProperty *NodeBase::Property(int index)
+{
+	if (index < 0 || index >= properties.n) return nullptr;
+	return properties[index];
+}
+
+
 /*! Return 1 for property set, 0 for could not set.
  */
 int NodeBase::SetProperty(const char *prop, Value *value, bool absorb)
@@ -4013,7 +4021,7 @@ int NodeInterface::Refresh()
 	if (needtodraw==0) return 0;
 	needtodraw=0;
 
-	DBG cerr <<" NodeInterface::Refresh()"<<endl;
+	//DBG cerr <<" NodeInterface::Refresh()"<<endl;
 
 	int overnode=-1, overslot=-1, overprop=-1, overconn=-1; 
 	if (buttondown.any(0,LEFTBUTTON)) {
@@ -4430,16 +4438,25 @@ int NodeInterface::Refresh()
 //	}
 
 	 //draw mouse action decorations
-	if (hover_action==NODES_Cut_Connections || hover_action==NODES_Selection_Rect) {
-		dp->LineWidthScreen(1);
-		dp->NewFG(&color_controls);
+	if (    hover_action == NODES_Cut_Connections
+		 || hover_action == NODES_Add_Reroutes
+		 || hover_action == NODES_Selection_Rect) {
 
 		flatpoint p1 = nodes->m.transformPointInverse(flatpoint(selection_rect.minx,selection_rect.miny));
 		flatpoint p2 = nodes->m.transformPointInverse(flatpoint(selection_rect.maxx,selection_rect.maxy));
 
 		if (hover_action == NODES_Selection_Rect) {
+			dp->LineWidthScreen(1);
+			dp->NewFG(&color_controls);
 			dp->drawrectangle(p1.x,p1.y, p2.x-p1.x,p2.y-p1.y, 0);
 		} else {
+			dp->LineWidthScreen(2*ScreenLine());
+			dp->NewFG(&color_controls);
+			dp->drawline(p1, p2);
+			dp->LineWidthScreen(ScreenLine());
+			if (hover_action == NODES_Cut_Connections)
+				dp->NewFG(1.0, .2, .2);
+			else dp->NewFG(.2, 1.0, .2);
 			dp->drawline(p1, p2);
 		}
 
@@ -5367,9 +5384,18 @@ int NodeInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit
 	} else if ((state&LAX_STATE_MASK) == ControlMask && overnode==-1 && overproperty==-1) {
 		 //control-drag make a cut line for connections
 		action = NODES_Cut_Connections;
+		PostMessage(_("Cut connections"));
 		selection_rect.minx=selection_rect.maxx=x;
 		selection_rect.miny=selection_rect.maxy=y;
 		needtodraw=1;
+
+	} else if ((state&LAX_STATE_MASK) == AltMask && overnode==-1 && overproperty==-1) {
+		 //control-drag make an add line for adding reroutes
+		action = NODES_Add_Reroutes;
+		PostMessage(_("Add ReRoutes"));
+		selection_rect.minx = selection_rect.maxx = x;
+		selection_rect.miny = selection_rect.maxy = y;
+		needtodraw = 1;
 
 	} else if (overnode>=0 && overproperty<0 && overpropslot == NODES_PreviewResize) {
 		action = NODES_Resize_Preview;
@@ -5756,6 +5782,15 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 		needtodraw=1;
 		return 0;
 
+	} else if (action == NODES_Add_Reroutes) {
+		 //Add reroutes on any connections that cross the line between selection_rect.min to max
+		flatpoint p1 = nodes->m.transformPointInverse(flatpoint(selection_rect.minx,selection_rect.miny));
+		flatpoint p2 = nodes->m.transformPointInverse(flatpoint(selection_rect.maxx,selection_rect.maxy));
+		AddReroutes(p1,p2);
+		hover_action = NODES_None;
+		needtodraw=1;
+		return 0;
+
 	} else if (action == NODES_Selection_Rect) {
 		 //select or deselect any touching selection_rect
 		if ((state&ShiftMask)==0) {
@@ -5997,24 +6032,9 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 
 	} else if (action == NODES_Add_Reroute) {
 		if (overnode>=0 && overpropslot>=0) {
-			NodeProperty *prop = nodes->nodes.e[overnode]->properties.e[overpropslot];
-			NodeConnection *connection = prop->connections.e[0];
 			flatpoint p = nodes->m.transformPointInverse(flatpoint(x,y));
-			NodeBase *reroute = new RerouteNode();
-			reroute->InstallColors(nodes->colors, false);
-			reroute->x = p.x;
-			reroute->y = p.y;
-			NodeBase *to = connection->to;
-			NodeProperty *toprop = connection->toprop;
-			toprop->RemoveConnection(connection);
-			connection->to = reroute;
-			connection->toprop = reroute->properties.e[0];
-			reroute->properties.e[0]->AddConnection(connection, 0);
-			connection = new NodeConnection(reroute, to, reroute->properties.e[1], toprop);
-			reroute->properties.e[1]->AddConnection(connection, 1);
-			toprop->AddConnection(connection,0);
-			reroute->Update();
-			nodes->AddNode(reroute);
+			//FIXME: 0 is connection number, for thread props or future set accumulator slot MAYBE NOT 0!!
+			AddRerouteAt(nodes->nodes.e[overnode], overpropslot, 0, p);
 			needtodraw = 1;
 		}
 
@@ -6042,9 +6062,6 @@ int NodeInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxMouse *
 				panpath[1] = panpath[2];
 				panpath[2] = pp;
 			}
-			//flatpoint last = nodes->m.transformPointInverse(lastpos);
-			//flatpoint offset = last - panpath[0];
-			//for (int c=0; c<4; c++) panpath[c] += offset;
 
 			//start timer
 			pan_duration = pan_tick_ms/1000. + bez_length(panpath, 4, false, true, 10) / (nodes->colors->font->textheight()*100);
@@ -6119,8 +6136,10 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 
 			//post hover message
 			if (lasthover<0) {
-				if (lasthoverprop == NODES_Frame || lasthoverprop == NODES_Move_Frame 
-					|| lasthoverprop == NODES_Frame_Label || lasthoverprop == NODES_Frame_Label_Size) {
+				if (lasthoverprop == NODES_Frame_Label_Size) {
+					PostMessage("Drag to change frame label size");
+				} else if (lasthoverprop == NODES_Frame || lasthoverprop == NODES_Move_Frame 
+					|| lasthoverprop == NODES_Frame_Label) {
 					PostMessage2("Frame %s", nodes->frames.e[lasthoverslot]->Label());
 				} else PostMessage("");
 			} else {
@@ -6131,7 +6150,7 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 				} else {
 					
 					char scratch[200];
-					sprintf(scratch, "%s.%d.%d", nodes->nodes.e[lasthover]->Label(), lasthoverprop, lasthoverslot);
+					sprintf(scratch, "%s.%d.%d.%d", nodes->nodes.e[lasthover]->Label(), lasthoverprop, lasthoverslot, lastconnection);
 					PostMessage(scratch);
 				}
 			}
@@ -6234,7 +6253,7 @@ int NodeInterface::MouseMove(int x,int y,unsigned int state, const Laxkit::LaxMo
 
 		return 0;
 
-	} else if (action == NODES_Cut_Connections) {
+	} else if (action == NODES_Cut_Connections || action == NODES_Add_Reroutes) {
 		 //control mouse drag over non-nodes breaks any connections
 		 //update so cut line is selection_rect min to max
 		selection_rect.maxx=x;
@@ -7284,6 +7303,71 @@ int NodeInterface::CutConnections(flatpoint p1,flatpoint p2)
 
 				if (bez_intersection(p1,p2, 0, bezbuf[0],bezbuf[1],bezbuf[2],bezbuf[3], 7, &p,NULL)) {
 					nodes->Disconnect(connection, false, false);
+				}
+			}
+		}
+	}
+
+	NodesChanged();
+	return n;
+}
+
+/*! p is in node space.
+ * \todo this should probably be a NodeBase method?
+ */
+bool NodeInterface::AddRerouteAt(NodeBase *node, int prop_slot, int connection_slot, flatpoint p)
+{
+	if (!node || prop_slot < 0 || prop_slot >= node->properties.n) return false;
+
+	NodeProperty *prop = node->properties.e[prop_slot];
+	if (connection_slot < 0 || connection_slot >= prop->connections.n) return false;
+	NodeConnection *connection = prop->connections.e[connection_slot];
+	NodeBase *reroute = new RerouteNode();
+	reroute->InstallColors(nodes->colors, false);
+	reroute->x = p.x;
+	reroute->y = p.y;
+	NodeBase *to = connection->to;
+	NodeProperty *toprop = connection->toprop;
+	toprop->RemoveConnection(connection);
+	connection->to = reroute;
+	connection->toprop = reroute->properties.e[0];
+	reroute->properties.e[0]->AddConnection(connection, 0);
+	connection = new NodeConnection(reroute, to, reroute->properties.e[1], toprop);
+	reroute->properties.e[1]->AddConnection(connection, 1);
+	toprop->AddConnection(connection,0);
+	reroute->Update();
+	nodes->AddNode(reroute);
+	reroute->dec_count();
+	needtodraw = 1;
+	return true;
+}
+
+/*! Return number of reroutes added.
+ */
+int NodeInterface::AddReroutes(flatpoint p1,flatpoint p2)
+{
+	if (!nodes) return 0;
+
+	int n = 0;
+
+	NodeBase *node;
+	NodeProperty *prop;
+	NodeConnection *connection;
+	flatpoint p;
+
+	for (int c=0; c<nodes->nodes.n; c++) {
+		node = nodes->nodes.e[c];
+
+		for (int c2=0; c2<node->properties.n; c2++) {
+			prop = node->properties.e[c2];
+			if (!prop->IsInput() && !prop->IsExecOut()) continue;
+
+			for (int c3=prop->connections.n-1; c3>=0; c3--) {
+				connection = prop->connections.e[c3];
+				GetConnectionBez(connection, bezbuf);
+
+				if (bez_intersection(p1,p2, 0, bezbuf[0],bezbuf[1],bezbuf[2],bezbuf[3], 7, &p,NULL)) {
+					AddRerouteAt(node, c2, c3, p);
 				}
 			}
 		}

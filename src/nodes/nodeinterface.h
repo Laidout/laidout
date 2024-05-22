@@ -357,6 +357,7 @@ class NodeBase : virtual public Laxkit::anObject,
 	virtual NodeProperty *AddNewOut(int is_for_list, const char *nname, const char *nlabel, const char *ttip, int where=-1);
 	virtual int RemoveProperty(NodeProperty *prop);
 	virtual NodeProperty *FindProperty(const char *prop, int *index_ret = nullptr);
+	virtual NodeProperty *Property(int index); //!< Convenience function to return object from properties array.
 	virtual int SetProperty(const char *prop, Value *value, bool absorb);
 	virtual int SetPropertyFromAtt(const char *propname, Laxkit::Attribute *att, Laxkit::DumpContext *context);
 	virtual int NumInputs(bool connected, bool include_execin);
@@ -536,7 +537,8 @@ enum NodeInterfaceActions {
 	NODES_Move_Nodes,
 	NODES_Move_Or_Select,
 	NODES_Cut_Connections,
-	NODES_Add_Reroute,
+	NODES_Add_Reroutes, // Add reroutes at every intersection with a dragged line
+	NODES_Add_Reroute,  // Add a single ReRoute at point of a connection clicked upon
 	NODES_Property,
 	NODES_Drag_Property,
 	NODES_Resize_Left,
@@ -727,6 +729,8 @@ class NodeInterface : public LaxInterfaces::anInterface
 	virtual int LeaveGroup();
 	virtual int DuplicateNodes();
 	virtual int CutConnections(Laxkit::flatpoint p1,Laxkit::flatpoint p2);
+	virtual bool AddRerouteAt(NodeBase *node, int prop_slot, int connection_slot, Laxkit::flatpoint p);
+	virtual int AddReroutes(Laxkit::flatpoint p1, Laxkit::flatpoint p2);
 	virtual int SaveNodes(const char *file);
 	virtual int ExportNodes(const char *file, const char *format);
 	virtual int LoadNodes(const char *file, bool append, int file_is_string_data, bool keep_passthrough);

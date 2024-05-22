@@ -13,6 +13,8 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
+bug: Math Expression node, do "Math.whatever": crash!
+
 bug: severing clone link does some weird things, including crashing
 bug: clone tool clones do not have proper bounding box
 
@@ -42,8 +44,6 @@ Overwrite dialog box and other centering boxes should center over calling window
 
 drag off page, space to duplicate, copy is not in limbo!
 duplicate does not duplicate clip_path
-
-packaging woes: update deb/control to have more of the dependencies
 
 booklet, use paper group tool, default paper group no longer displays
 
@@ -218,6 +218,7 @@ build: building: build process
 packaging:
   update CI: https://github.com/Laidout/laidout/pull/28
   flatpak: https://github.com/Laidout/laidout/issues/11
+  packaging woes: update deb/control to have more of the dependencies
   --- 0.099
   debian (get in to main repository)
   snapcraft?
@@ -867,7 +868,16 @@ valgrind:
   conditional jump on uninit: strlens in newnstr re attributes.cc 2673, 2192, 2206/1007, 2651
   DONE mismatch free colorbase.cc 298
 
-node editor node interface NodeInterface nodes: node: interface: 
+node editor node interface NodeInterface: nodes: node: interface:
+  bug: hangs when alt drag to add reroute, lift up alt before releasing mouse SOMETIMES. UGH!
+  ux: control click for pan along connection: too easy to activate control-drag-cut-line. use double click for traverse?
+  bug: frame label size should change frame size if label doesn't fit
+  bug: memory hole when adding reroute
+  ux: add reroute needs tooltip and visual indicator
+  ux: add reroutes should visually indicate
+  cut connections should highlight, maybe with X, what will be cut
+  DONE dragging frame label sizer needs tooltip.
+  Ctrl-drag frame label sizer to change all frame label sizes?
   bug: duplicating placing at strange place
   need a way to dissolve reroute or nodes, so we don't break routes
   bug: multiply v*v after node dup, try to enter a single value, weird things happen
@@ -916,8 +926,11 @@ node editor node interface NodeInterface nodes: node: interface:
   drop files into FileValue properties?
   drop text/numbers to properties
   drag on vec2 x/y should shift values
+  finish testing AddReroutes() and have action call AddReroute()
+    shift/control while dragging should flip Cut_Connections with Add_Reroutes
 
   ---0.099---
+  convert to script.. each node should be basically compatible with a function
   would be nice to have a property type PROP_List so you can input "1px,2%,3,4" and have it parse to [1,.02,3,4] automatically
   GetGlobal needs to use a menu
   undo redo
@@ -926,7 +939,12 @@ node editor node interface NodeInterface nodes: node: interface:
   need option to turn off main viewport render while tool up, since sometimes that render takes a long time
   some people are going to want grid snapping
   some people are going to want straight connection lines
+  need color/styling of node boxes
+  need color/styling of node slots
+  need color/styling of node connections
+  blender has a multi-input that automatically creates concatenated lists somehow
 
+  DONE NumToString: not setting arrays to proper size when input size changes
   DONE BBoxPoint
   DONE Math1 needs transpose
   DONE CSVFileNode
@@ -966,7 +984,6 @@ node editor node interface NodeInterface nodes: node: interface:
   DONE but: Color node only has output, but outputting data of output nodes currently forbidden.. make exception when output is editable?
   DONE Get document node
   DONE Number list
-  DONE NumToString
   DONE bug: color property doesn't show transparency checkerboard
   DONE Switch: variable in list, index element
 
@@ -1859,7 +1876,6 @@ implement clobber_protection: "%f~", %f is basename, save in same dir as file (c
   Document::Save
 
 make drag and drop selections work dnd
-  bug: seems like errant end of dnd animation after you drop something from nautilus??
   implement viewport vector file drop
   implement image file drop to nodes:
     drop text onto specific properties
@@ -1870,13 +1886,14 @@ make drag and drop selections work dnd
 	DONE text file
   dnd to CaptionInterface
   dnd to ImageInterface
-    bug: drag from Nautilus, drag image created by nautilus doesn't go away.. improper dnd response?
   dnd to ImagePatchInterface
   dnd colors somehow? interpret text "#fff" as a color
   drag from lax edits to other places (in and outside app)
 
   implement proper action querying, like when you press shift, control for copy or replace while dragging.. is it necessary, we always copy?
 
+  DONE bug: seems like errant end of dnd animation after you drop something from nautilus??
+  DONE  drop preview remains hanging and won't go away until you stop nautilus
   DONE Initiate dnd
     DONE set up system dnd state
     DONE send regular updates per protocol
@@ -2299,7 +2316,8 @@ fontdialog: FontDialog
   font preview column in list, custom sample
   language coverage search
   select default language/script
-  select opentype features
+  select opentype variations
+  save particular otf variation as selectable favorite
   optional common font finishers? like centering, underline, color, highlight, fg/bg, etc
 
 Find interface: findinterface:
@@ -3419,7 +3437,7 @@ Goals:
   2D Vector graphics editor built for multiple output types, such as multi-page physical prints, html, or image files
   While 2D focused, has some limited capabilities to lay out on 3d surfaces made out of flat but bent or folded surfaces
 Current deficiencies:
-  Render update is way too slow
+  Render update is way too slow, no hardware acceleration and is single threaded
   Too many bugs/quirks in object management, resource coordiation
   undo/redo barely implemented
   copy/paste barely implemented
@@ -3431,18 +3449,21 @@ Current deficiencies:
   raster/paint/editable image layers, or stroke based on non-destructive vector paths would help
   too many complex custom systems is not attractive to new devs
 Considerations:
-  Pure svg/pdf vector graphics is limiting, current custom format is very flexible
+  Pure svg/pdf vector graphics is limiting, current custom format is very flexible at expense of shareability
   Game engine-esque, real time animation and 3d tools are rising in importance as everyone aquires powerful cheap devices
-  Compute shader/ graphics shaders are very powerful and should be used for speed and image effects
+  Compute shaders and graphics shaders are very powerful and should be used for speed and image effects
 Ways forward:
   maybe gegl-ify everything?
    - fixes 8 bit limit
    - babl flexibility
-   - cross code with gimp/gegl has long term benefits
+   - potential cross code with gimp/gegl has long term benefits
    - gegl already can access hardware acceleration for many things
-  consider gigantic revamp so that ui is all made with python..
-   - it's good enough for Blender and Krita, right?
-   - makes tool development way more accessible to new users
+  consider gigantic revamp so that ui is thoroughly customizable:
+   - with python:
+     - it's good enough for Blender and Krita, right?
+     - makes tool development way more accessible to new users
+     - downside: you now have to depend on python, which comes with its own version problems
+   - with some kind of yaml-like custom format, with css for styling?
 
 
 
