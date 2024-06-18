@@ -1347,9 +1347,13 @@ color fonts issue #6 svg otf svg
 
 
 CharacterInterface characterinterface character selector
-  should show what font is used
+  ux: when you move with keys, does not keep within window
+  should optionally show what font is used
   should have search for \u2BEF for instance
+  paste something like "U+0022" to jump to that code point
+  just typing normal characters should jump to that character if possible?
   implement suggestions, like if you start with e, suggest various accented e
+  opentype glyph alternates
   DONE should optionally show unicode number
   DONE bug: zoom does incorrect margins.. pads out a lot on left
   DONE implement recent
@@ -1825,7 +1829,8 @@ laxkit:
     overlays should have flag for under or over viewport tool stack, such as page marker, which should be below tools
     overlays should get first pick of input, BUT if another has a button lock, it shouldn't mouse move update
 
-
+  DONE Build a single laxkit.a/so instead of a separate liblaxinterfaces.a. separate makes less sense these days
+  DONE boxarrange: Pop should probably be Remove, since it's not actually popping
   DONE Scroller, click on scrollbar outside of the drag handle scrolls in the wrong direction
   DONE? building seems to including twice: -I/usr/include/GraphicsMagick
   DONE strmanip is not in Laxkit namespace, wtf!
@@ -1836,7 +1841,16 @@ laxkit:
 	DONE interfacemanager should be singleton
   DONE dlopen seems to be wiping singletons???? -> making them static in files seems to fix
 
-TreeSelector:
+railslider: slider:
+  line render should allow gradient, or custom render for squiggles
+  different styles for dragging?
+  hover styles
+  right click or ESC to cancel drag
+
+popupmenu:
+  bug: incorrect size on popup sometimes
+
+TreeSelector: 
   pad, padg, leading, iwidth should all be em units
   click open jumping current to 0
   option to use markup for labels
@@ -2281,20 +2295,27 @@ DrawableObject:
   DONE implement opacity as inherent property to, for instance, simplify processing svg/inkscape files
   DONE SomeData should derive from DumpUtility
 
+fontmanager:
+  favorites:
+    load in 0 or more favorites files, with specific tags, so you can define reusable purpose built sets of fonts
+    a fav is a particular configuration of a font, or stack of fonts (for layered fonts)
 fontdialog: FontDialog
-  DONE the ... is added to both lineinput and outside it
+  bug: select tag, not setting scroller bar size
   list should group by first word? Noto* is sooooooooo many!!!
-  bug: crash on big X on layers
-  DONE cursor missing in LineEdits
+  bug: wiping search moves screen to 0, but should center on current selection
   search term is duplicated in the tree list
   mouse follow shouldn't select highlight. current font should stay highlighted
-  bug: makeinwindow SOMETIMES not working, select one, puts on bottom line
   need a way to remember layered fonts, to easily activate and deactivate
     read from standard fonts places, like .config/laidout/(version)/fonts
   favorites: tag and column
   user tags, not just fontmatrix tags, option to update fontmatrix?
   should be able to access list of font favorites, and a user's preferred organization of fonts..
   need to implement load specific file for a font
+  settings:
+    grouping
+    include/exclude tags
+    extra font directories
+    load/unload custom sets
 
   font->SetFromFile() should do more fontconfig checking to grab propper file+family+style+size
   FindFont() is faulty, as it only lookes up family/style.. should search by the unique file name
@@ -2303,7 +2324,9 @@ fontdialog: FontDialog
 
   bookman font style names getting chopped off: due to name collision and using psname as reported by fontconfig
     this is unreliable! need to have proper unique font naming
-  sample block should be multiline
+  sample:
+    block should be multiline
+    if glyphs blank for a font, try to find a sample that has non-empty glyphs
   need support for svg fonts.. useful for pure svg fonts, and opentype svg, see cairo user fonts
   pgup and down doesn't select a reasonable one
   fontconfig directory config options
@@ -2316,9 +2339,19 @@ fontdialog: FontDialog
   font preview column in list, custom sample
   language coverage search
   select default language/script
-  select opentype variations
-  save particular otf variation as selectable favorite
+  opentype:
+    select opentype variations
+    glyph substitutions
+    save particular otf variation as selectable favorite
+    variation presets defined in the font
+    color palette info from the font: there can be multiple palettes defined!
   optional common font finishers? like centering, underline, color, highlight, fg/bg, etc
+
+  DONE should be able to pop up a CharacterInterface
+  DONE bug: crash on big X on layers
+  DONE the ... is added to both lineinput and outside it
+  DONE cursor missing in LineEdits
+  DONE bug: makeinwindow SOMETIMES not working, select one, puts on bottom line
 
 Find interface: findinterface:
   going through next/prev should say Found (3/16) instead of "Found (1):", and have tooltip
@@ -2347,7 +2380,9 @@ Find interface: findinterface:
 cairo:
   cairo image save should use importer to do non-file creation?
   cairo render has color problems with gradients
-  cairo development is dead? investigate alternatives
+  cairo development is dead? investigate alternatives <- update: not dead, at least 1.18 was late 2023!
+  1.18 has COLRv1 support, and ot svg support, and custom font color palette support!!
+
 
 engraving tool: Engraving  engraver
   bug: trace object opacity is not working for non-image trace objects.. stroke and fill needs mask integration!!
@@ -2492,8 +2527,6 @@ global resources:
 
 need a Revert option
 
-Reconfigure text edits. Need something that works in interface land, with harfbuzz, that integrates with lax fontmanager
-
 lgm 2019 feedback and ideas:
   path tool:
     hard to see helper graphics, needs haloing
@@ -2519,7 +2552,6 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 panel editing:
   selecting objects really sucks
-  data-data-
   bulk assign meta
   meta edit:
     should allow both name+value for new
@@ -2565,11 +2597,13 @@ gif exporter:
   use graphicsmagick? C example: http://www.graphicsmagick.org/api/api.html
   set custom timing in page properties
 
+Reconfigure text edits. Need something that works in interface land, with harfbuzz, that integrates with lax fontmanager
+
 text (see also src/text/text.txt):
   need options per font on export to: convert to path, subset, embed
   need standard way to have default font, apart from defaultlaxfont, as well as default color/other visual attributes
   global font list, finish implementing uniquinizing font names, need final step of some kind of file name diff
-  freetype/fribidi/harfbuzz all over everything?
+  fontconfig/freetype/fribidi/harfbuzz/libunibreak all over everything?
   interface base for utf8 based editing.. share this with window edits somehow
   maybe fonts should point to their creators to make duplication more reliable if there are more than just default fontmanager
   need support for font substitution

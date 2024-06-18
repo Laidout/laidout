@@ -33,17 +33,205 @@ text layout techniques: https://raphlinus.github.io/text/2020/10/26/text-layout.
 Opentype variations
 -------------------
 GSUB GPOS
-harfbuzz activates these automatically: abvm, blwm, ccmp, locl, mark, mkmk, rlig
-  if text dir is horizontal, also use by default:  calt, clig, curs, dist, kern, liga, rclt
-  fraction slashes (U+2044) make hb look for: numr, dnom, frac
+list of features: https://en.wikipedia.org/wiki/List_of_typographic_features
+
+harfbuzz allegedly activates these automatically:
+    - abvm  Above base mark positioning
+	- blwm  Below base mark positioning
+	- ccmp  Glyph composition/decomposition
+	- locl  Localized forms
+	- mark  Mark positioning
+	- mkmk  Mark to mark positioning
+	- rlig  Required ligatures
+  if text dir is horizontal, also use by default:
+    - calt  Contextual alternatives
+	- clig  Contextual ligatures
+	- curs  Cursive positioning
+	- dist  Distance, kind of kern, but distances not meant to be user controlled.
+	- kern  Kerning, horizontal positioning potentially controlled by user
+	- liga  Standard ligatures
+	- rclt  Required contextual alternates
+  fraction slashes (U+2044) make hb look for:
+    - numr  Numerators
+    - dnom  Denominators
+    - frac  Diagonal fractions like 1/2, 3/4
   vertical text gets: vert
 
-      hb_feature_t userfeatures[1];
-      userfeatures[0].tag = HB_TAG('d','l','i','g');
-      userfeatures[0].value = 1;
-      userfeatures[0].start = HB_FEATURE_GLOBAL_START;
-      userfeatures[0].end = HB_FEATURE_GLOBAL_END;
-      hb_shape(font, buf, userfeatures, num_features);
+    hb_feature_t userfeatures[1];
+    userfeatures[0].tag = HB_TAG('d','l','i','g');
+    userfeatures[0].value = 1;
+    userfeatures[0].start = HB_FEATURE_GLOBAL_START;
+    userfeatures[0].end = HB_FEATURE_GLOBAL_END;
+    hb_shape(font, buf, userfeatures, num_features);
+
+    int num_axes = hb_ot_var_get_axis_count(face);
+    ...
+    int num_axes = hb_ot_var_get_axis_infos(hb_face_t *face,
+                            uint 0, // start offset
+                            unsigned int *axes_count, // in: max number to return, out: actual number returned (could be 0)
+                            hb_ot_var_axis_info_t *axes_array);
+
+    typedef uint32_t hb_tag_t;
+
+    typedef struct {
+      unsigned int           axis_index;
+      hb_tag_t               tag;
+      hb_ot_name_id_t        name_id;
+      hb_ot_var_axis_flags_t flags; // currently only: HB_OT_VAR_AXIS_FLAG_HIDDEN
+      float                  min_value;
+      float                  default_value;
+      float                  max_value;
+    } hb_ot_var_axis_info_t;
+
+    typedef struct hb_variation_t {
+      hb_tag_t tag;
+      float    value;
+    } hb_variation_t;
+
+    typedef struct hb_feature_t {
+      hb_tag_t      tag;
+      uint32_t      value;
+      unsigned int  start;
+      unsigned int  end;
+    } hb_feature_t;
+
+
+    unsigned int variation_count = 2;
+    hb_variation_t variation_data[variation_count];
+    variation_data[0].tag = HB_OT_TAG_VAR_AXIS_WIDTH;
+    variation_data[0].value = 80;
+    variation_data[1].tag = HB_OT_TAG_VAR_AXIS_WEIGHT;
+    variation_data[1].value = 750;
+    hb_font_set_variations(font, variation_data, variation_count);
+
+
+Features:
+'aalt' 	Access All Alternates
+'abvf' 	Above-base Forms
+'abvm' 	Above-base Mark Positioning
+'abvs' 	Above-base Substitutions
+'afrc' 	Alternative Fractions
+'akhn' 	Akhand
+'apkn' 	Kerning for Alternate Proportional Widths
+'blwf' 	Below-base Forms
+'blwm' 	Below-base Mark Positioning
+'blws' 	Below-base Substitutions
+'calt' 	Contextual Alternates
+'case' 	Case-sensitive Forms
+'ccmp' 	Glyph Composition / Decomposition
+'cfar' 	Conjunct Form After Ro
+'chws' 	Contextual Half-width Spacing
+'cjct' 	Conjunct Forms
+'clig' 	Contextual Ligatures
+'cpct' 	Centered CJK Punctuation
+'cpsp' 	Capital Spacing
+'cswh' 	Contextual Swash
+'curs' 	Cursive Positioning
+'cv01' – 'cv99' 	Character Variant 1 – Character Variant 99
+'c2pc' 	Petite Capitals From Capitals
+'c2sc' 	Small Capitals From Capitals
+'dist' 	Distances
+'dlig' 	Discretionary Ligatures
+'dnom' 	Denominators
+'dtls' 	Dotless Forms
+'expt' 	Expert Forms
+'falt' 	Final Glyph on Line Alternates
+'fin2' 	Terminal Forms #2
+'fin3' 	Terminal Forms #3
+'fina' 	Terminal Forms
+'flac' 	Flattened Accent Forms
+'frac' 	Fractions
+'fwid' 	Full Widths
+'half' 	Half Forms
+'haln' 	Halant Forms
+'halt' 	Alternate Half Widths
+'hist' 	Historical Forms
+'hkna' 	Horizontal Kana Alternates
+'hlig' 	Historical Ligatures
+'hngl' 	Hangul
+'hojo' 	Hojo Kanji Forms (JIS X 0212-1990 Kanji Forms)
+'hwid' 	Half Widths
+'init' 	Initial Forms
+'isol' 	Isolated Forms
+'ital' 	Italics
+'jalt' 	Justification Alternates
+'jp78' 	JIS78 Forms
+'jp83' 	JIS83 Forms
+'jp90' 	JIS90 Forms
+'jp04' 	JIS2004 Forms
+'kern' 	Kerning
+'lfbd' 	Left Bounds
+'liga' 	Standard Ligatures
+'ljmo' 	Leading Jamo Forms
+'lnum' 	Lining Figures
+'locl' 	Localized Forms
+'ltra' 	Left-to-right Alternates
+'ltrm' 	Left-to-right Mirrored Forms
+'mark' 	Mark Positioning
+'med2' 	Medial Forms #2
+'medi' 	Medial Forms
+'mgrk' 	Mathematical Greek
+'mkmk' 	Mark to Mark Positioning
+'mset' 	Mark Positioning via Substitution
+'nalt' 	Alternate Annotation Forms
+'nlck' 	NLC Kanji Forms
+'nukt' 	Nukta Forms
+'numr' 	Numerators
+'onum' 	Oldstyle Figures
+'opbd' 	Optical Bounds
+'ordn' 	Ordinals
+'ornm' 	Ornaments
+'palt' 	Proportional Alternate Widths
+'pcap' 	Petite Capitals
+'pkna' 	Proportional Kana
+'pnum' 	Proportional Figures
+'pref' 	Pre-base Forms
+'pres' 	Pre-base Substitutions
+'pstf' 	Post-base Forms
+'psts' 	Post-base Substitutions
+'pwid' 	Proportional Widths
+'qwid' 	Quarter Widths
+'rand' 	Randomize
+'rclt' 	Required Contextual Alternates
+'rkrf' 	Rakar Forms
+'rlig' 	Required Ligatures
+'rphf' 	Reph Form
+'rtbd' 	Right Bounds
+'rtla' 	Right-to-left Alternates
+'rtlm' 	Right-to-left Mirrored Forms
+'ruby' 	Ruby Notation Forms
+'rvrn' 	Required Variation Alternates
+'salt' 	Stylistic Alternates
+'sinf' 	Scientific Inferiors
+'size' 	Optical size
+'smcp' 	Small Capitals
+'smpl' 	Simplified Forms
+'ss01' – 'ss20' 	Stylistic Set 1 – Stylistic Set 20
+'ssty' 	Math Script-style Alternates
+'stch' 	Stretching Glyph Decomposition
+'subs' 	Subscript
+'sups' 	Superscript
+'swsh' 	Swash
+'titl' 	Titling
+'tjmo' 	Trailing Jamo Forms
+'tnam' 	Traditional Name Forms
+'tnum' 	Tabular Figures
+'trad' 	Traditional Forms
+'twid' 	Third Widths
+'unic' 	Unicase
+'valt' 	Alternate Vertical Metrics
+'vapk' 	Kerning for Alternate Proportional Vertical Metrics
+'vatu' 	Vattu Variants
+'vchw' 	Vertical Contextual Half-width Spacing
+'vert' 	Vertical Alternates
+'vhal' 	Alternate Vertical Half Metrics
+'vjmo' 	Vowel Jamo Forms
+'vkna' 	Vertical Kana Alternates
+'vkrn' 	Vertical Kerning
+'vpal' 	Proportional Alternate Vertical Metrics
+'vrt2' 	Vertical Alternates and Rotation
+'vrtr' 	Vertical Alternates for Rotation
+'zero' 	Slashed Zero
 
 
 
@@ -136,6 +324,7 @@ span direction versus larger flow direction across columns, for instance
 
 line breaking:
 ------------
+libunibreak?
 choose strategy:
   first fit: fast, considers only 1 line at a time
   surrounding fit: sort of fast, define how big a section of text to consider
