@@ -202,7 +202,8 @@ otherobjs= \
 
 all: laidout
 
-laidout: lax laxinterface $(objs) $(POLYPTYCHFORLAIDOUT)
+#laidout: lax laxinterface $(objs) $(POLYPTYCHFORLAIDOUT)
+laidout: lax $(objs) $(POLYPTYCHFORLAIDOUT)
 	for NAME in $(dirs); do $(MAKE) -C $$NAME || exit ; done
 	$(LD) $(otherobjs) $(objs) $(POLYPTYCH_GL_OBJS) $(POLYPTYCHOBJS) -L$(LAXIDIR) -L$(LAXDIR) $(LDFLAGS) $(OPTIONALLIBS) $(POLYPTYCHLIBS) -o $@
 
@@ -237,13 +238,15 @@ unhidegarbage:
 lax:
 	cd $(LAXDIR) && $(MAKE)
 
-laxinterface:
-	cd $(LAXIDIR) && $(MAKE)
+#laxinterface:
+#	cd $(LAXIDIR) && $(MAKE)
 
-test2: lax laxinterface interfaces test2.o papersizes.o
+#test2: lax laxinterface interfaces test2.o papersizes.o
+test2: lax interfaces test2.o papersizes.o
 	$(LD) test2.o styles.o dataobjects/group.o dataobjects/objectcontainer.o papersizes.o interfaces/paperinterface.o $(LDFLAGS)  -llaxinterfaces -llaxkit -o $@
 
-test: lax laxinterface $(objs) $(POLYPTYCHFORLAIDOUT)
+#test: lax laxinterface $(objs) $(POLYPTYCHFORLAIDOUT)
+test: lax $(objs) $(POLYPTYCHFORLAIDOUT)
 	for NAME in $(dirs); do $(MAKE) -C $$NAME || exit ; done
 	$(LD) $(CPPFLAGS) $(otherobjs) test.cc $(POLYPTYCH_GL_OBJS) $(POLYPTYCHOBJS) -L$(LAXIDIR) -L$(LAXDIR) -llaxinterfaces -llaxkit -lharfbuzz -lcairo -lfontconfig $(LDFLAGS) $(OPTIONALLIBS) -lreadline -lcrypto $(POLYPTYCHLIBS) -o $@
 

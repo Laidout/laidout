@@ -773,7 +773,7 @@ void ExportDialog::updateEdits()
 		if (!box || !box->win()) continue;
 		str = box->win()->win_name;
 		if (strstr(str,"extra-")) {
-			Pop(c);
+			Remove(c);
 		}
 	}
 

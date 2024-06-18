@@ -187,9 +187,9 @@ int MetaWindow::Event(const EventData *e,const char *mes)
 			sprintf(scratch, ".%s", name);
 			int i = findWindowIndex(scratch);
 			if (i >= 0) {
-				Pop(i); //the lineinput
-				Pop(i); //the X
-				Pop(i); //the null
+				Remove(i); //the lineinput
+				Remove(i); //the X
+				Remove(i); //the null
 				addpoint -= 3;
 			}
 		}
