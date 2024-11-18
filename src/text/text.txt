@@ -32,6 +32,12 @@ text layout techniques: https://raphlinus.github.io/text/2020/10/26/text-layout.
 
 Opentype variations
 -------------------
+hb_face_t: wraps a blob, lowest encapsulation
+hb_font_t: specific settings of a face
+
+hb_face = hb_font_get_face(hb_font);
+hb_font = hb_font_create_sub_font(old_font); // in case you want to mod slightly an already configured font
+
 GSUB GPOS
 list of features: https://en.wikipedia.org/wiki/List_of_typographic_features
 

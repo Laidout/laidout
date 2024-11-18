@@ -208,12 +208,12 @@ build: building: build process
   DONE fix hardcoded /usr/include/cups in laxkit/configure
   DONE laidout ./configure needs to pass on relevant things to laxkit
   DONE in config.log should show actual configure line for easy duplicating
+  DONE use that laxkit.pc from Laidout and laxkit examples
   --- 0.099:
   should be able to do out-of-source builds
   make "make uninstall" work, and remove coop from installed position
   remove the lax onamac parts from configure? poorly named, more a bsd issue, not mac
   modernize debian/rules. See Laidout PR #5, https://github.com/Laidout/laxkit/pull/5
-  use that laxkit.pc from Laidout and laxkit examples
 
 packaging:
   update CI: https://github.com/Laidout/laidout/pull/28
@@ -260,6 +260,8 @@ graphicsmagick:
   load_image() always loads full, even if ping_only (confirm?)
 
 debug inkscape node extension
+
+have a clickable history of recently edited objects (as seen in Godot!)
 
 text on path textonpath: TextOnPath
   bug: crash sometimes when click down for new text on path object
@@ -1841,11 +1843,18 @@ laxkit:
 	DONE interfacemanager should be singleton
   DONE dlopen seems to be wiping singletons???? -> making them static in files seems to fix
 
+boxarrange: SquishyBox:
+  when metrics are flipped for vertical layout, metrics from AddWin() don't make sense, they are flipped x/y
+stackframe:
+  implement sticky, so stuck boxes don't have ..., and resizes as a block with boxes stuck to it
+  BUG: for vertical, preferred values currently must be flowdir-linedir, NOT ACTUAL w and h, arrrgg!!
+
 railslider: slider:
   line render should allow gradient, or custom render for squiggles
   different styles for dragging?
-  hover styles
   right click or ESC to cancel drag
+  Line style on opposite sides of the ball be different?
+  hover styles
 
 popupmenu:
   bug: incorrect size on popup sometimes
@@ -1861,6 +1870,8 @@ TreeSelector:
   DONE? not showing alternate gray/white bgs (can't dup?!?)
   DONE left and right need to open and close
 
+
+if there is an error while saving, the whole file possibly is corrupted. Should probably save to temp, then mv the temp
 
 icons
   if no png icons detected, try to autogenerate
