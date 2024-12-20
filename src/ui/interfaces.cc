@@ -67,16 +67,11 @@
 #include "../interfaces/pagemarkerinterface.h"
 
 
-//template implementation:
-#include <lax/lists.cc>
-
-
 using namespace Laxkit;
 using namespace LaxInterfaces;
 
 
 #define DBG 
-
 
 
 namespace Laidout {
