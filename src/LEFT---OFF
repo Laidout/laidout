@@ -13,6 +13,10 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
+bug: ShortcutWindow totally messed up. StackFrame issues
+
+bug: document-> show in filesystem opens file in text editor??!?
+
 bug: Math Expression node, do "Math.whatever": crash!
 
 bug: severing clone link does some weird things, including crashing
@@ -682,16 +686,12 @@ shape brush shapebrush:
   DONE not saving to file
 
 LineStyle:
-  Finish making LineStyle a resource
   needs a stroke fill option
 FillStyle:
-  Finish making FillStyle a resource
   should probably have an "enabled" field? otherwise when you toggle fill, it currently sets fillstyle and function to something you may not want
 
 PathInterface: pathinterface
-  DONE horizontal extrema orientation sometimes wrong near other vertical extrema
   click on extrema: add point at | move nearby vertex to this point
-  DONE Path should probably be anObject
   ux: when you drag mouse outside of window, should not draw the green add point hint
   ux: when you first activate with new path, need to refresh where mouse is for green add point hint
   bug: if path doesn't have linestyle in file, later crashes since it does not fill in
@@ -718,7 +718,26 @@ PathInterface: pathinterface
       Combine to single object    (select from menu?)
       Combine and merge endpoints (select from menu?)
 	  cross link linestyle or fillstyle
+  generators? or just spin off weight node interface and use that as a sub interface for object specific interfaces?
+    interfaces for creation of the whole path object.
+    separate scan/select/mouse down,up,move, BUT uses the PathInterface weight node display and controls
+  DONE PathOperator: should get rid of this
+      It is overly complicated for not much benefit, does not allow useful flexibility of custom widgets
+	  instead just have subinterfaces generate base bezier, so width handles can attach to a variety of path types
+	  maybe width handles are a totally separate interface?
 
+  DONE Finish making LineStyle a resource
+    DONE load/save
+    DONE menu selection
+    DONE conversion of current style to resource
+    DONE make current resource local
+  DONE Finish making FillStyle a resource
+    DONE load/save
+    DONE menu selection
+    DONE conversion of current style to resource
+    DONE make current resource local
+  DONE horizontal extrema orientation sometimes wrong near other vertical extrema
+  DONE Path should probably be anObject
   DONE bug: when you select a palette color, it only goes to foreground
   DONE need numerical entry for all weight node characteristics
   DONE not show every single handle. only ones associated with active vertices
@@ -788,10 +807,6 @@ PathInterface: pathinterface
   transform handles for selected points, including flip
   subdivide, repeat key press restores old segment, then adds 1 more point to num of points from last press
   toggle between add points / select points?
-  PathOperator:
-    should get rid of this. It is overly complicated for not much benefit, does not allow flexibility of custom widgets
-	  instead just have subinterfaces generate base bezier, so width handles can attach to a variety of path types
-	  maybe width handles are a totally separate interface?
 
   markers:
     resource drawables with extra "origin" and "direction", maybe stored as properties?
@@ -2324,6 +2339,8 @@ fontdialog: FontDialog
   need to implement load specific file for a font
   settings:
     grouping
+      group by first n words
+      group by family
     include/exclude tags
     extra font directories
     load/unload custom sets
