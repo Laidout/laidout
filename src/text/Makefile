@@ -12,13 +12,14 @@ DEBUGFLAGS= -g -gdwarf-2
 CPPFLAGS= -Wall $(DEBUGFLAGS) $(EXTRA_CPPFLAGS) -I$(LAXDIR)/.. `pkg-config --cflags freetype2`
 
 
+# uncomment these when they are actually ready for Laidout inclusion. Otherwise put them in wip
 objs= \
-
+	#cssparse.o
 	#streams.o
 
 all: $(objs)
 
-wip: streams.o
+wip: streams.o cssparse.o opentype.o
 
 depends:
 	../utils/makedependencies -fmakedepend -I$(LAXDIR)/.. *.cc

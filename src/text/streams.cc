@@ -14,6 +14,7 @@
 //
 
 #include "streams.h"
+#include "cssparse.h"
 #include "../language.h"
 #include "../dataobjects/fontvalue.h"
 #include "../laidout.h"
@@ -76,13 +77,13 @@ namespace Laidout {
 //}
 
 
-/*! Something with simple contents in parantheses, like:
+/*! Something with simple contents in parentheses, like:
  *  - local(blah)
  *  - local("Blah")
  *  - local('Blah')
  *  - url(https://thing)
  *
- * If there are no parantheses, thern 0 is returned.
+ * If there are no parantheses, then 0 is returned.
  *
  * f_len_ret is the length of the function, so "local(blah)" will have f_len_ret == 5.
  *
@@ -133,7 +134,8 @@ class LengthValue : public Value
 {
   public:
 	double value;
-	double v_cached; //cached context dependent computed absolute value. This will be set from outside LengthValue, such as when computing a StreamCache.
+	double v_cached; // cached context dependent computed absolute value. This will be set from
+					 // outside LengthValue, such as when computing a StreamCache.
 
 	Laxkit::CSSName type;
 
@@ -409,7 +411,7 @@ Style *CharacterStyle::Default(Style *s)
 	if (!s) s = new Style("Character");
 
 	FontValue *font = new FontValue(); //todo: *** this needs to be some configurable default font
-	DBG cerr << __FILE__<<" #"<<__LINE__<<": fix me!"<<endl;
+	DBGE(": fix me!");
 
 	s->push("font",       font, -1, true);
 	s->push("fontfamily", "serif");
@@ -553,6 +555,15 @@ StreamElement::~StreamElement()
 	if (style) style->dec_count();
 }
 
+//TODO: this should probably be more flexible for the future, not hard coded for three cases.
+StreamChunk *NewStreamChunk(const char *type, StreamElement *parent)
+{
+	if (!strcmp(type, "text"))  return new StreamText(parent);
+	if (!strcmp(type, "image")) return new StreamImage(parent);
+	if (!strcmp(type, "break")) return new StreamBreak((int)StreamBreakTypes::BREAK_Unknown, parent);
+	return nullptr;
+}
+
 
 /*! Return true for success, or false for some error.
  */
@@ -638,7 +649,7 @@ StreamChunk::~StreamChunk()
 StreamChunk *StreamChunk::AddAfter(StreamChunk *chunk)
 {
 	if (!chunk) {
-		DBG cerr << __FILE__<<" #"<<__LINE__<<": fix me!"<<endl;
+		DBGE("fix me!");
 		return nullptr;
 	}
 	
@@ -971,15 +982,6 @@ void Stream::dump_out_recursive(Laxkit::Attribute *att, StreamElement *element, 
 
 
 
-StreamChunk *NewStreamChunk(const char *type, StreamElement *parent)
-{
-	if (!strcmp(type, "text"))  return new StreamText(parent);
-	if (!strcmp(type, "image")) return new StreamImage(parent);
-	if (!strcmp(type, "break")) return new StreamBreak((int)StreamBreakTypes::BREAK_Unknown, parent);
-	return nullptr;
-}
-
-
 void Stream::dump_in_atts(Attribute *att,int flag, Laxkit::DumpContext *context)
 {
 	const char *name, *value;
@@ -1026,7 +1028,7 @@ void Stream::dump_in_atts(Attribute *att,int flag, Laxkit::DumpContext *context)
 			}
 			if (format && !strcasecmp(format,"txt")) format="text";
 
-			DBG cerr << "Import text: "<<(format?format:"null")<<" "<<(importer?importer:"null")<<" "<<(encoding?encoding:"null")<<endl;
+			DBGM("Import text: "<<(format?format:"null")<<" "<<(importer?importer:"null")<<" "<<(encoding?encoding:"null"));
 
 			int status = -2;
 
@@ -1092,7 +1094,7 @@ void Stream::dump_in_atts(Attribute *att,int flag, Laxkit::DumpContext *context)
 
 int Stream::ImportMarkdown(const char *text, int n, StreamChunk *addto, bool after, Laxkit::ErrorLog *log)
 {
-	cerr << " *** must implement a markdown importer! defaulting to text"<<endl;
+	DBGE(" *** must implement a markdown importer! defaulting to text");
 
 	// MarkdownImporter *importer = laidout->GetStreamImporter("markdown", nullptr);
 	// importer->ImportTo(text, n, addto, after);
@@ -1102,7 +1104,7 @@ int Stream::ImportMarkdown(const char *text, int n, StreamChunk *addto, bool aft
 
 void Stream::EstablishDefaultStyle()
 {
-	cerr << __FILE__<<" "<<__LINE__<<" IMPME!"<<endl;
+	DBGE(" IMPME!");
 }
 
 /*! afterthis MUST be a chunk of *this or nullptr. No verification is done.
@@ -1211,7 +1213,7 @@ int Stream::ImportXMLAtt(Attribute *att, StreamChunk *&last_chunk, StreamElement
 	//char *title = nullptr;
 
 	StreamChunk *chunk = nullptr;
-	StreamElement *cur_style = ParseCommonStyle(att, nullptr, log);
+	StreamElement *cur_style = nullptr; //ParseCommonStyle(att, nullptr, log);
 
 	if (cur_style) {
 		if (last_style_el) {
@@ -1269,7 +1271,7 @@ int Stream::ImportXMLAtt(Attribute *att, StreamChunk *&last_chunk, StreamElement
 		} else if (!strcmp(name,"wbr")) {
 			//html: Word Break Opportunity
 			//*** if occurs between cdata blocks, then insert as weak break point in a combined StreamText
-			cerr << " *** NEED TO IMPLEMENT wbr in Stream::ImportXMLAtt"<<endl;
+			DBGE(" *** NEED TO IMPLEMENT wbr in Stream::ImportXMLAtt");
 
 		} else if (!strcmp(name,"img")) {
 			//<img width="100" height="100" alt=".." src=".."   style class id ... />
@@ -1310,7 +1312,7 @@ int Stream::ImportXMLAtt(Attribute *att, StreamChunk *&last_chunk, StreamElement
 			if (img_title) makestr(img->title, img_title);
 
 			// img->maxx is pixel width, so we want w_value * xaxis().norm() == maxx
-			cerr << "FIXME! do proper aspect ratio for inline image"<<endl;
+			DBGE("FIXME! do proper aspect ratio for inline image");
 			if (w_value) {
 				img->xaxis(w_value->value / img->maxx * img->xaxis());
 			}
@@ -1327,7 +1329,7 @@ int Stream::ImportXMLAtt(Attribute *att, StreamChunk *&last_chunk, StreamElement
 
 		} else if (!strcmp(name,"hr")) {
 			 //<hr>  add a filled path rectangle?
-			cerr <<" *** <hr> not implemented!! Rats!"<<endl;
+			DBGE(" *** <hr> not implemented!! Rats!");
 			continue;
 
 		} else if (!strcmp(name,"cdata:")) {
@@ -1365,67 +1367,67 @@ int Stream::ImportXMLAtt(Attribute *att, StreamChunk *&last_chunk, StreamElement
 		} else if (!strcmp(name,"strong") || !strcmp(name,"b")) {
 			//bold
 			//search for a bold equivalent of current font
-			cerr <<" *** "<<name<<" not implemented!! Rats!"<<endl;
+			DBGE(" *** "<<name<<" not implemented!! Rats!");
 
 		} else if (!strcmp(name,"em") || !strcmp(name,"i")) {
 			//italic
 			//search for an italic equivalent of current font
-			cerr <<" *** "<<name<<" not implemented!! Rats!"<<endl;
+			DBGE(" *** "<<name<<" not implemented!! Rats!");
 
 		} else if (!strcmp(name,"blockquote")) {
 			//*** //set paragraph indent
-			cerr <<" *** "<<name<<" not implemented!! Rats!"<<endl;
+			DBGE(" *** "<<name<<" not implemented!! Rats!");
 
 		} else if (!strcmp(name,"code") || !strcmp(name, "tt")) {
 			//*** //use a monospace font
 				//if "code" then do like a div?
-			cerr <<" *** "<<name<<" not implemented!! Rats!"<<endl;
+			DBGE(" *** "<<name<<" not implemented!! Rats!");
 
 		} else if (!strcmp(name,"pre")) {
 			// *** convert \n chars to <br> elements
-			cerr <<" *** "<<name<<" not implemented!! Rats!"<<endl;
+			DBGE(" *** "<<name<<" not implemented!! Rats!");
 
 		} else if (!strcmp(name,"font")) { //deprecated as of html4.1
 			//<font size="-1">blah</font>
-			cerr <<" *** "<<name<<" not implemented!! Rats!"<<endl;
+			DBGE(" *** "<<name<<" not implemented!! Rats!");
 			
 		} else if (!strcmp(name,"a")) {
 			// *** anchors.. use for html links, bookmark designations, citations?
 			//<a name="..." href="..." class="..." id="..">...</a>
-			cerr <<" *** "<<name<<" not implemented!! Rats!"<<endl;
+			DBGE(" *** "<<name<<" not implemented!! Rats!");
 
 		} else if (!strcmp(name,"dl")) {
 			//<dl> <dt> <dd>
-			cerr << " *** need to implement dl lists!"<<endl;
+			DBGE( " *** need to implement dl lists!");
 
 		} else if (!strcmp(name,"ol")) {
 			//<ol> <li> ...</li> </ol>
-			cerr << " *** need to implement ol lists!"<<endl;
+			DBGE( " *** need to implement ol lists!");
 
 		} else if (!strcmp(name,"ul")) {
 			//<ul> <li> ...</li> </ul>
-			cerr << " *** need to implement ul lists!"<<endl;
+			DBGE( " *** need to implement ul lists!");
 
 		} else if (!strcmp(name,"table")) {
 			//<table><tr><td colspan rowspan>
-			cerr <<" *** "<<name<<" not implemented!! Rats!"<<endl;
+			DBGE(" *** "<<name<<" not implemented!! Rats!");
 
 		} else if (name[0]=='h' && name[1]>='1' && name[1]<='6' && name[2]=='\0') {
 			//int heading = name[1]-'1'+1;
 			//***
-			cerr <<" *** "<<name<<" not implemented!! Rats!"<<endl;
+			DBGE(" *** "<<name<<" not implemented!! Rats!");
 
 		} else if (!strcmp(name,"math")) {
 			//*** //mathml stuff
-			cerr <<" *** "<<name<<" not implemented!! Rats!"<<endl;
+			DBGE(" *** "<<name<<" not implemented!! Rats!");
 
 		} else if (!strcmp(name,"texmath")) {
 			//*** math markup
 			//<math> (for mathml) or not html: <latex> <tex> $latex stuff$  $$latex eqns$$
-			cerr <<" *** "<<name<<" not implemented!! Rats!"<<endl;
+			DBGE(" *** "<<name<<" not implemented!! Rats!");
 
 		} else {
-			cerr <<" *** "<<name<<" not implemented!! Rats!"<<endl;
+			DBGE(" *** "<<name<<" not implemented!! Rats!");
 		}
 
 
@@ -1498,7 +1500,7 @@ StreamCache::~StreamCache()
  */
 LaxInterfaces::PathsData *PathBooleanSubtract(LaxInterfaces::PathsData *area, LaxInterfaces::PathsData *to_remove, bool modify_in_place)
 {
-	cerr << __FILE__<<':'<<__LINE__<<"  IMPLEMENT ME!!"<<endl;
+	DBGE("  IMPLEMENT ME!!");
 	return nullptr;
 }
 
