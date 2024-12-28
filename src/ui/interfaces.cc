@@ -31,6 +31,7 @@
 #include <lax/interfaces/perspectiveinterface.h>
 #include <lax/interfaces/textstreaminterface.h>
 #include <lax/interfaces/ellipseinterface.h>
+#include <lax/interfaces/roundedrectinterface.h>
 #include "../interfaces/anchorinterface.h"
 #include "../interfaces/animationinterface.h"
 #include "../interfaces/pathintersectionsinterface.h"
@@ -140,6 +141,14 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		EllipseInterface *ei = new EllipseInterface(NULL,id++,NULL);
 		ei->linestyle.width = .1;
 		i = ei;
+		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+		existingpool->push(i);
+		i->dec_count();
+
+		 //------Rounded Rectangle
+		RoundedRectInterface *rri = new RoundedRectInterface(NULL,id++,NULL);
+		//rri->linestyle.width = .1;
+		i = rri;
 		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 		existingpool->push(i);
 		i->dec_count();
