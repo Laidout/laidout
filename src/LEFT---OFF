@@ -13,7 +13,9 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
-bug: ShortcutWindow totally messed up. StackFrame issues
+bug: affine transform to SetTransform node, put x at 0,0, destroys cairo transform! unrecoverable!
+
+bug: ShortcutWindow totally messed up. StackFrame issues? fixes when you resize window, missing initial need to layout flag?
 
 bug: document-> show in filesystem opens file in text editor??!?
 
@@ -717,15 +719,13 @@ PathInterface: pathinterface
       Edit all objects at same time (default) -> box that says [3 objects] click for action menu?
       Combine to single object    (select from menu?)
       Combine and merge endpoints (select from menu?)
+      PathBoolean: intersect, union, xor, subtract
 	  cross link linestyle or fillstyle
   generators? or just spin off weight node interface and use that as a sub interface for object specific interfaces?
     interfaces for creation of the whole path object.
     separate scan/select/mouse down,up,move, BUT uses the PathInterface weight node display and controls
-  DONE PathOperator: should get rid of this
-      It is overly complicated for not much benefit, does not allow useful flexibility of custom widgets
-	  instead just have subinterfaces generate base bezier, so width handles can attach to a variety of path types
-	  maybe width handles are a totally separate interface?
 
+  DONE remove PathOperator: overly complicated, not much benefit, its theoretical flexibility isn't worth it
   DONE Finish making LineStyle a resource
     DONE load/save
     DONE menu selection
@@ -814,6 +814,16 @@ PathInterface: pathinterface
     start, end
     mid
       at specific intervals, or n per line
+
+beznet:
+  merge faces
+  merge vertices
+  build path from selected faces
+  net from path
+  rect/square/perpendicular-corner relaxation
+  implement pathboolean here
+  save/load
+  curved edges
 
 simplepathinterface:
   indicator animation not working
@@ -1407,20 +1417,22 @@ captioninterface CaptionInterface captiondata CaptionData
   DONE bug: why is a font being created and destroyed each refresh??
 
 ellipseinterface:
-  should be able to start a new ellipse from the tool, and maybe select other ellipses
+  should be able to start a new ellipse from the tool if some distance away from current, and maybe select other ellipses
   bug: number input does not cancel on non parsing string
-  handles to rotate?
-  handles need to stand out more
-  bug: click down+up with minimal drag makes zero length handles that we can't move. should not make a really tiny new data, should keep old if any
   bug: input box and you change tool, does not abort the box
-  bug: need fill color response, also line width handle
+  bug: click down+up with minimal drag makes zero length handles that we can't move. should not make a really tiny new data, should keep old if any
+  handles need to stand out more
   switch between rounded rect and ellipse?
   incorporate as special mode in path tool so we don't have to duplicate all the weight node interface
 
   ---0.099:
+  handles to rotate?
   angle drag lapping should preserve large arc
   del on center cross hair should straighten?
 
+  DONE add better support for linestyle and fillstyle
+    DONE be able to use resources for them
+    DONE set colorbox to stroke+fill
   DONE when ellipse is off axis, handles need to point in correct direction
   DONE option to flip wedge
   DONE bug: drag size movement is not 1:1
@@ -1451,9 +1463,9 @@ ellipseinterface:
 
 Clean up patch/mesh controls: Mesh PatchInterface
   bug: convert path to mesh inserting null patches at each point
-  bug: rotate/scale single or more control points should move attached controls in smooth mode
 
   ---0.099---
+  bug: rotate/scale single or more control points should move attached controls in smooth mode
   bug: base on path remove/add should try to remember previous weight nodes, scratch only when mod points (not colors) too far off
   bug: should still be able to edit colors while based on path
   need ability to rect select points, like for cone gradient, points on overlapping edge can't be selected
@@ -1508,8 +1520,12 @@ Clean up patch/mesh controls: Mesh PatchInterface
   See that lgm talk about "local mod" to do subdivided mesh modifications that reduces control point clutter
   make base path dump_out as Path, not PathsData? make it easier to read file removing the unnecessary??
 
-GroupInterface groupinterface ObjectInterface objectinterface: group: object interface object tool
-  select/unselect all
+rectinterface:
+  need snap to angle
+  controls need: ship to snap drag, control to constrain to ORIGINAL aspect, shift+control? alt? for scale around pivot?
+  should be able to snap pivot point to common bbox points
+  controls fail for tiny dimensions.. need minimum ui size
+  tips for modifier actions
   new drag/scale/rotate behavior:
     anchor point drag should use the new widgets as appropriate
     DONE rotation circle, inner: number +-/absolute,  mid: free rotate,  outer: snap rotate
@@ -1520,6 +1536,12 @@ GroupInterface groupinterface ObjectInterface objectinterface: group: object int
   maybe show flip and 90 deg rotate handles only when mouse outside the selection area?
   anchors:
     need to be able to control click outside box to create? currenty you must click inside, then drag it out
+  For objects that appear very small, the drag handles should not be operable.. shift only
+  For objects that are really skinny, it is not practical to have the handles be a percentage of the skinny
+    part.. should have minimum drag areas?
+
+GroupInterface groupinterface ObjectInterface objectinterface: group: object interface object tool
+  select/unselect all
   world / local transforms:
     screen
     world
@@ -1529,11 +1551,6 @@ GroupInterface groupinterface ObjectInterface objectinterface: group: object int
   object select, 'a' toggle select or not, select all in current selection area (ie page or layer base)
   
   'm' should be able to move whole groups, means must be in object tool?
-  
-  For objects that appear very small, the drag handles should not be operable.. shift only
-  For objects that are really skinny, it is not practical to have the handles be a percentage of the skinny
-    part.. should have minimum drag areas?
-
 
   parent options colors don't really make sense
   real menuify the clone options
@@ -1625,6 +1642,10 @@ FileDialog filedialog:
   DONE bug: overwrite not escapable?
   DONE enter on file line: if has dir, change dir, else trigger save
   DONE should probably have a scroll bar
+
+ShortcutWindow2
+  bug: area list is missing
+  "new action" doesn't work, just adds first action from existing menu
 
 dual monitors: multi monitor multimonitor
   open in same screen as mouse
