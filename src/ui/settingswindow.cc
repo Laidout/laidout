@@ -17,7 +17,7 @@
 #include <lax/button.h>
 #include <lax/tabframe.h>
 
-#include <lax/shortcutwindow.h>
+//#include <lax/shortcutwindow.h>
 #include <lax/shortcutwindow2.h>
 
 #include "settingswindow.h"
