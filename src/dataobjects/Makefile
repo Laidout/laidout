@@ -26,21 +26,22 @@ objs= \
 	fontvalue.o \
 	helpertypes.o \
 	imagevalue.o \
+	lcaptiondata.o \
 	lellipsedata.o \
-	limagepatch.o \
+	lengraverfilldata.o \
+	lgradientdata.o \
 	limagedata.o \
 	limageinterface.o \
-	lgradientdata.o \
-	lpathsdata.o \
-	mysterydata.o \
-	lsomedataref.o \
-	lengraverfilldata.o \
-	lperspectiveinterface.o \
+	limagepatch.o \
 	lmirrorinterface.o \
-	lcaptiondata.o \
+	lpathsdata.o \
+	lperspectiveinterface.o \
+	lroundedrectdata.o \
 	lsimplepath.o \
+	lsomedataref.o \
 	ltextonpath.o \
 	lvoronoidata.o \
+	mysterydata.o \
 	printermarks.o 
 
 

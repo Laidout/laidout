@@ -24,6 +24,7 @@
 #include "lsomedataref.h"
 #include "lengraverfilldata.h"
 #include "lcaptiondata.h"
+#include "lroundedrectdata.h"
 #include "ltextonpath.h"
 #include "lvoronoidata.h"
 #include "../language.h"
@@ -35,9 +36,8 @@
 #include <lax/fileutils.h>
 #include <lax/gradientstrip.h>
 
-#include <iostream>
-#define DBG
-using namespace std;
+#include <lax/debug.h>
+
 
 using namespace Laxkit;
 using namespace LaxInterfaces;
@@ -62,6 +62,15 @@ Laxkit::anObject *createGroup(int p, Laxkit::anObject *refobj)
 Laxkit::anObject *createMysteryData(int p, Laxkit::anObject *refobj)
 {
 	return new MysteryData();
+}
+
+
+//---------------------------- LRoundedRectData --------------------------------
+
+//! For somedatafactory.
+Laxkit::anObject *createLRoundedRectData(int p, Laxkit::anObject *refobj)
+{
+	return new LRoundedRectData();
 }
 
 
@@ -240,6 +249,7 @@ void InitializeDataFactory()
 	// drawable object types
 	lobjectfactory->DefineNewObject(LAX_GROUPDATA,       "Group",           createGroup,            NULL, 0);
 	lobjectfactory->DefineNewObject(LO_MYSTERYDATA,      "MysteryData",     createMysteryData,      NULL, 0);
+	lobjectfactory->DefineNewObject(LAX_ROUNDEDRECTDATA, "RoundedRectData", createLRoundedRectData, NULL, 0);
 	lobjectfactory->DefineNewObject(LAX_ELLIPSEDATA,     "EllipseData",     createLEllipseData,     NULL, 0);
 	lobjectfactory->DefineNewObject(LAX_IMAGEDATA,       "ImageData",       createLImageData,       NULL, 0);
 	lobjectfactory->DefineNewObject(LAX_PATHSDATA,       "PathsData",       createLPathsData,       NULL, 0);

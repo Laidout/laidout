@@ -1416,51 +1416,6 @@ captioninterface CaptionInterface captiondata CaptionData
   DONE right click menu options for insert char and select font
   DONE bug: why is a font being created and destroyed each refresh??
 
-ellipseinterface:
-  should be able to start a new ellipse from the tool if some distance away from current, and maybe select other ellipses
-  bug: number input does not cancel on non parsing string
-  bug: input box and you change tool, does not abort the box
-  bug: click down+up with minimal drag makes zero length handles that we can't move. should not make a really tiny new data, should keep old if any
-  handles need to stand out more
-  switch between rounded rect and ellipse?
-  incorporate as special mode in path tool so we don't have to duplicate all the weight node interface
-
-  ---0.099:
-  handles to rotate?
-  angle drag lapping should preserve large arc
-  del on center cross hair should straighten?
-
-  DONE add better support for linestyle and fillstyle
-    DONE be able to use resources for them
-    DONE set colorbox to stroke+fill
-  DONE when ellipse is off axis, handles need to point in correct direction
-  DONE option to flip wedge
-  DONE bug: drag size movement is not 1:1
-  DONE better drag indicators
-  DONE bug: double click on ellipse, does not activate controls
-  DONE center cross hair should be slanted when shape is slanted
-  DONE incorporate to mesh tool
-  DONE derive from Value in LEllipseData, needed to make object property i/o work correctly
-  DONE bug: inner radius hint not using center
-  DONE memory hole
-  DONE implement minimal fill:color, stroke:color+width
-  DONE should have menu options for wedge and toggle circle
-  DONE debug wedge hover
-  DONE draw dotted for wedge edge?
-  DONE click or drag to/away from origin  on open arc edge to toggle wedge, open, chord
-  DONE render with inner bad since drawfocusellipse ignores inner
-  DONE drag radii, toggle control, original center point should also be remembered
-  DONE angles mess up when foci flip
-  DONE snap angles with control
-  DONE control drag on x or y should move center, keep opposite
-  DONE inner radius
-  DONE snap closed if drag start to end near enough (multiple of 2*pi)
-  DONE outer, inner, center hover need indicators
-  DONE need numerical entry
-  DONE implement angles.. bug with bez_ellipse, not spanning start to end properly
-  DONE shift, control down up to toggle hover 
-  DONE Remove old rect interface stuff, debug basic render and new object creation
-
 Clean up patch/mesh controls: Mesh PatchInterface
   bug: convert path to mesh inserting null patches at each point
 
@@ -1519,6 +1474,61 @@ Clean up patch/mesh controls: Mesh PatchInterface
   nudge mode with shift + arrow keys?
   See that lgm talk about "local mod" to do subdivided mesh modifications that reduces control point clutter
   make base path dump_out as Path, not PathsData? make it easier to read file removing the unnecessary??
+
+ellipseinterface:
+  bug: start angle snaps with control key but not end angle
+  should be able to start a new ellipse from the tool if some distance away from current, and maybe select other ellipses
+  bug: number input does not cancel on non parsing string
+  bug: input box and you change tool, does not abort the box
+  bug: click down+up with minimal drag makes zero length handles that we can't move. should not make a really tiny new data, should keep old if any
+  handles need to stand out more
+  switch between rounded rect and ellipse?
+  incorporate as special mode in path tool so we don't have to duplicate all the weight node interface
+
+  ---0.099:
+  handles to rotate?
+  angle drag lapping should preserve large arc
+  del on center cross hair should straighten?
+
+  DONE add better support for linestyle and fillstyle
+    DONE be able to use resources for them
+    DONE set colorbox to stroke+fill
+  DONE when ellipse is off axis, handles need to point in correct direction
+  DONE option to flip wedge
+  DONE bug: drag size movement is not 1:1
+  DONE better drag indicators
+  DONE bug: double click on ellipse, does not activate controls
+  DONE center cross hair should be slanted when shape is slanted
+  DONE incorporate to mesh tool
+  DONE derive from Value in LEllipseData, needed to make object property i/o work correctly
+  DONE bug: inner radius hint not using center
+  DONE memory hole
+  DONE implement minimal fill:color, stroke:color+width
+  DONE should have menu options for wedge and toggle circle
+  DONE debug wedge hover
+  DONE draw dotted for wedge edge?
+  DONE click or drag to/away from origin  on open arc edge to toggle wedge, open, chord
+  DONE render with inner bad since drawfocusellipse ignores inner
+  DONE drag radii, toggle control, original center point should also be remembered
+  DONE angles mess up when foci flip
+  DONE snap angles with control
+  DONE control drag on x or y should move center, keep opposite
+  DONE inner radius
+  DONE snap closed if drag start to end near enough (multiple of 2*pi)
+  DONE outer, inner, center hover need indicators
+  DONE need numerical entry
+  DONE implement angles.. bug with bez_ellipse, not spanning start to end properly
+  DONE shift, control down up to toggle hover 
+  DONE Remove old rect interface stuff, debug basic render and new object creation
+
+roundedrectinterface rrectinterface:
+  implement equivalent object
+  need width controls
+  control toggling confusing if you lift control just before button. jumps modes and screws up everything
+  option to clamp round when dragging
+  custom corners: like blender's bevel editor
+  click without drag should not add a tiny rect. should need minimum size before adding to tree
+  DONE bug: getting fill color not working
 
 rectinterface:
   need snap to angle

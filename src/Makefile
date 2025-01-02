@@ -111,6 +111,7 @@ otherobjs= \
 	dataobjects/lmirrorinterface.o \
 	dataobjects/lpathsdata.o \
 	dataobjects/lperspectiveinterface.o \
+	dataobjects/lroundedrectdata.o \
 	dataobjects/lsimplepath.o \
 	dataobjects/lsomedataref.o \
 	dataobjects/ltextonpath.o \
