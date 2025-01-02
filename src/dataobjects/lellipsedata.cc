@@ -18,6 +18,7 @@
 #include "../core/stylemanager.h"
 #include "../language.h"
 
+#include <lax/debug.h>
 
 using namespace Laxkit;
 
@@ -101,7 +102,7 @@ Value *LEllipseData::duplicate()
 
 LaxInterfaces::SomeData *LEllipseData::duplicate(LaxInterfaces::SomeData *dup)
 {
-	if (dup && !dynamic_cast<LEllipseData*>(dup)) return NULL; //wrong type for referencc object!
+	if (dup && !dynamic_cast<LEllipseData*>(dup)) return nullptr; //wrong type for reference object!
 	if (!dup) dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("EllipseData"));
 	EllipseData::duplicate(dup);
 	DrawableObject::duplicate(dup);
@@ -222,6 +223,11 @@ int LEllipseData::Evaluate(const char *func,int len, ValueHash *context, ValueHa
 	return DrawableObject::Evaluate(func, len, context, parameters, settings, value_ret, log);
 }
 
+LaxInterfaces::SomeData *LEllipseData::EquivalentObject()
+{
+	DBGE("IMPLEMENT ME!!!");
+	return nullptr; //TODO!!
+}
 
 } //namespace Laidout
 

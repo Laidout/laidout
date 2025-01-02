@@ -43,7 +43,7 @@ class LEllipseData : public DrawableObject,
 	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
 
-
+	virtual LaxInterfaces::SomeData *EquivalentObject();
 	virtual Value *duplicate();
 	virtual ObjectDef *makeObjectDef();
 	virtual Value *dereference(const char *extstring, int len);
