@@ -1490,6 +1490,7 @@ ellipseinterface:
   angle drag lapping should preserve large arc
   del on center cross hair should straighten?
 
+  DONE implement EquivalentObject
   DONE add better support for linestyle and fillstyle
     DONE be able to use resources for them
     DONE set colorbox to stroke+fill
@@ -1521,13 +1522,13 @@ ellipseinterface:
   DONE shift, control down up to toggle hover 
   DONE Remove old rect interface stuff, debug basic render and new object creation
 
-roundedrectinterface rrectinterface:
-  implement equivalent object
+roundedrectinterface rrectinterface roundedrectangle:
   need width controls
   control toggling confusing if you lift control just before button. jumps modes and screws up everything
   option to clamp round when dragging
   custom corners: like blender's bevel editor
   click without drag should not add a tiny rect. should need minimum size before adding to tree
+  DONE implement EquivalentObject
   DONE bug: getting fill color not working
 
 rectinterface:
@@ -1766,6 +1767,7 @@ high dpi hidpi: uiscale: ui_scale:
     need to install the source svg
     detect if scaled icons make fuzzy and ask to rebuild
 	detect if missing icons, ask to build
+	icon regen renedering all instead of just the one if only one specified
 	bug: running make in src/icons causes window to be created. it shouldn't be activating any actual window
   need in app themeeditor to easily adjust things that are off
   per monitor ui scaling:
@@ -2346,6 +2348,7 @@ plugins:
     plugins (c++) vs extensions (scripted)
 
 DrawableObject:
+  in general, equivalentobject should probably cache objects?
   bbox and aabb need to build in kids?
   should transplant child to SomeData? would simplify making new objects considerably. or do (parenting shell)-data like blender
   implement blur to simplify processing svg/inkscape files

@@ -17,6 +17,7 @@
 #include "datafactory.h"
 #include "../core/stylemanager.h"
 #include "../language.h"
+#include <lax/interfaces/pathinterface.h>
 
 #include <lax/debug.h>
 
@@ -225,8 +226,14 @@ int LEllipseData::Evaluate(const char *func,int len, ValueHash *context, ValueHa
 
 LaxInterfaces::SomeData *LEllipseData::EquivalentObject()
 {
-	DBGE("IMPLEMENT ME!!!");
-	return nullptr; //TODO!!
+	flatpoint pts[24];
+	int n = GetPath(3, pts);
+	LaxInterfaces::PathsData *pathsdata = new LaxInterfaces::PathsData();
+	pathsdata->append(pts, n);
+	pathsdata->InstallLineStyle(linestyle);
+	pathsdata->InstallFillStyle(fillstyle);
+	pathsdata->m(m());
+	return pathsdata;
 }
 
 } //namespace Laidout

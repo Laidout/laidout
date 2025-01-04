@@ -17,6 +17,7 @@
 #include "datafactory.h"
 #include "../core/stylemanager.h"
 #include "../language.h"
+#include <lax/interfaces/pathinterface.h>
 
 #include <lax/debug.h>
 
@@ -189,8 +190,14 @@ int LRoundedRectData::Evaluate(const char *func,int len, ValueHash *context, Val
 
 LaxInterfaces::SomeData *LRoundedRectData::EquivalentObject()
 {
-	DBGE("IMPLEMENT ME!!!");
-	return nullptr; //TODO!!
+	flatpoint pts[24]; //todo: subject to change when custom corners implemented
+	int n = GetPath(pts);
+	LaxInterfaces::PathsData *pathsdata = new LaxInterfaces::PathsData();
+	pathsdata->append(pts, n);
+	pathsdata->InstallLineStyle(linestyle);
+	pathsdata->InstallFillStyle(fillstyle);
+	pathsdata->m(m());
+	return pathsdata;
 }
 
 
