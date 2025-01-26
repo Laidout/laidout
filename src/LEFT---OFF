@@ -17,9 +17,6 @@ bug: affine transform to SetTransform node, put x at 0,0, destroys cairo transfo
 
 bug: ShortcutWindow totally messed up. StackFrame issues? fixes when you resize window, missing initial need to layout flag?
 
-bug: document-> show in filesystem opens file in text editor??!?
-
-bug: Math Expression node, do "Math.whatever": crash!
 
 bug: severing clone link does some weird things, including crashing
 bug: clone tool clones do not have proper bounding box
@@ -3742,4 +3739,5 @@ DONE convert Laxkit::Palette to GradientStrip instead
 DONE (can't duplicate) crash: Start blank, then open recent doc with an ObjectTree. click on an object, crash! querying wrong viewport?
 DONE bug: popup menus: submenus spawning on wrong side on far right monitors
 DONE bug: lineedit cursor is leaving artifacts
-
+DONE (but now only xdg-open on a dir, not a file) bug: document-> show in filesystem opens file in text editor??!?
+DONE bug: Math Expression node, do "Math.whatever": crash!

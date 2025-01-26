@@ -3445,9 +3445,12 @@ Value *LaidoutCalculator::dereference(Value *val)
 	if (n) {
 		 //we have a name
 		from += n;
-		if (run_mode != RUN_NameCatalog) 
+		if (run_mode == RUN_NameCatalog) { // basically ignore all dotted names in the dereference
+			value = val;
+			value->inc_count();
+		} else {
 			value = val->dereference(name,n); //if a simple value can be returned, we are in luck!
-		else value = val;
+		}
 		if (!value) {
 			 //if val is a normal Value, if deref comes back NULL, then we can look in
 			 //the ObjectDef. If name is defined, and object can be cast to a FunctionEvaluator,
