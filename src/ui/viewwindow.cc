@@ -30,6 +30,7 @@
 #include <lax/mouseshapes.h>
 #include <lax/units.h>
 #include <lax/shortcutwindow.h>
+#include <lax/strmanip.h>
 
 #include <cstdarg>
 #include <sys/stat.h>
@@ -980,7 +981,8 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 				if (doc && tool->Valid()) {
 					ErrorLog log;
 					PtrStack<char> files(LISTS_DELETE_Array);
-					files.push(newstr(doc->Saveas()));
+					char *dir = lax_dirname(doc->Saveas(), false);
+					files.push(dir);
 					tool->RunCommand(files, log, true);
 				}
 				return 0;
