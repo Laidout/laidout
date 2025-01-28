@@ -1364,13 +1364,13 @@ node editor node interface NodeInterface: nodes: node: interface:
   DONE image from file node
   DONE (using Name) idea seen in anim nodes: collapsing math shows expression as label
 
-color fonts issue #6 svg otf svg
+0.099: color fonts issue #6 svg otf svg
   freetype ot-svg example: https://freetype.org/freetype2/docs/reference/ft2-svg_fonts.html#ft_svg_documentrec
   see this freetype gsoc 2019 project: https://www.mail-archive.com/freetype-devel@nongnu.org/msg11459.html
   COLR version 1 now supports gradients? does freetype? https://learn.microsoft.com/en-us/typography/opentype/spec/colr
 
 
-CharacterInterface characterinterface character selector
+0.099: CharacterInterface characterinterface character selector
   ux: when you move with keys, does not keep within window
   should optionally show what font is used
   should have search for \u2BEF for instance
@@ -1475,12 +1475,11 @@ Clean up patch/mesh controls: Mesh PatchInterface
 ellipseinterface:
   bug: start angle snaps with control key but not end angle
   should be able to start a new ellipse from the tool if some distance away from current, and maybe select other ellipses
-  bug: number input does not cancel on non parsing string
-  bug: input box and you change tool, does not abort the box
   bug: click down+up with minimal drag makes zero length handles that we can't move. should not make a really tiny new data, should keep old if any
-  handles need to stand out more
-  switch between rounded rect and ellipse?
   incorporate as special mode in path tool so we don't have to duplicate all the weight node interface
+  DONE bug: number input does not cancel on non parsing string
+  DONE handles need to stand out more
+  DONE bug: input box and you change tool, does not abort the box
 
   ---0.099:
   handles to rotate?
