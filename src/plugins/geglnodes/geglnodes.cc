@@ -189,6 +189,20 @@ int ValueToProperty(Value *v, const char *gvtype, GeglNode *node, const char *pr
 		gegl_node_set(node, property, gcurve, NULL);
 		g_object_unref (gcurve);
 
+	} else if (!strcmp(gvtype, "GeglPath")) {
+		bool success = false;
+		GeglPath *gpath = nullptr;
+		StringValue *d = dynamic_cast<StringValue*>(v);
+		if (d) {
+			gpath = gegl_path_new_from_string(d->str);
+		}
+		if (gpath) {
+			gegl_node_set(node, property, gpath, nullptr);
+			g_object_unref (gpath);
+		}
+		if (success) return 0;
+		return -1;
+
 	} else if (!strcmp(gvtype, "BablFormat")) {
 		StringValue *s = dynamic_cast<StringValue*>(v);
 		if (!s) return -1;
@@ -990,14 +1004,16 @@ int GeglLaidoutNode::SetOperation(const char *oper)
 
 				newprop = new CurveProperty(locurve, 1, 0);
 
-			//} else if (!strcmp(proptype, "GeglPath"                )) {
-			//	GeglPath *path = NULL;
-			//	gegl_node_get(gegl, prop->name, &path, NULL);
-			//	LPathsData *pathobject = new LPathsData;
-			//	char *pathstr = gegl_path_to_string(path);
-			//	pathobject->appendSvg(pathstr);
-			//	g_free(pathstr);
-			//	v = pathobject;
+			} else if (!strcmp(proptype, "GeglPath")) {
+				GeglPath *path = NULL;
+				gegl_node_get(gegl, prop->name, &path, NULL);
+				//LPathsData *pathobject = new LPathsData;
+				char *pathstr = gegl_path_to_string(path);
+				StringValue *sv = new StringValue(pathstr);
+				//pathobject->appendSvg(pathstr);
+				g_free(pathstr);
+				//v = pathobject;
+				v = sv;
 
 			//} else if (!strcmp(proptype, "GeglAudioFragment"       )) {
 			//} else if (!strcmp(proptype, "GeglBuffer"              )) {
