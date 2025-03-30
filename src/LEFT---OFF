@@ -267,7 +267,7 @@ debug inkscape node extension
 have a clickable history of recently edited objects (as seen in Godot!)
 
 text on path textonpath: TextOnPath
-  bug: crash sometimes when click down for new text on path object
+  crash: link to parent path crashing
   bug: offset and baseline handles disappeared for large offset values
   bug: bezier length resolution inconsistencies making gaps. need solution with consistent approximation
   bug: visible selected bounds not updating?
@@ -276,13 +276,14 @@ text on path textonpath: TextOnPath
   bug: sometimes path weights don't recache along with glyph positions
   bug: duplicate isn't always initing the dup properly
   bug: some problem with paths when link_to_parent
+  input offset should allow "left", "right" and "center"
   handle to remove from current path, and possibly attach it to some other path
     how to attach to diff path
     how to attach to any path
   move mouse around hover over objects, indicate when you can apply text on an existing path
   envelope:
     bug: change offset on closed path, flips around envelope size
-    bug: glyph positioning is wrong: position glyphs based on middle of glyph, not start of glyph
+    bug: glyph positioning is wrong: should be position glyphs based on middle of glyph, not start of glyph
     bug: final letter in envelope size is wrong size
     vertical position bad
     horizontal spacing a bit wonky
@@ -303,6 +304,9 @@ text on path textonpath: TextOnPath
   multiline?
   option to auto expand line
 
+  DONE crash: not loading in correctly? works in debugger, but loads wrong normally
+  DONE bug: crash sometimes when click down for new text on path object
+  DONE disable control to slide offset and baseline at the same time.. it causes too much chaos by default
   DONE (apparently) bug: convert to path rendering to wrong place and orientation
   DONE bug: baseline options don't work, seem to all use offset path only. 
   DONE should have menu option to reverse direction on path without actually reversing path itself
@@ -1216,6 +1220,7 @@ node editor node interface NodeInterface: nodes: node: interface:
     search in child groups
     find all
   gegl nodes:
+    implement GeglPath to pass in to gegl:path
     maybe have gegl node preview gen be in different thread, as they can be quite lengthy
     not responding to curve updates
     reload file, load node out of sync or something, not showing preview after file load in
@@ -2352,6 +2357,7 @@ DrawableObject:
   DONE SomeData should derive from DumpUtility
 
 fontmanager:
+  object fonts should all be resources, and objects need to be able to read in "resource:..."
   favorites:
     load in 0 or more favorites files, with specific tags, so you can define reusable purpose built sets of fonts
     a fav is a particular configuration of a font, or stack of fonts (for layered fonts)
