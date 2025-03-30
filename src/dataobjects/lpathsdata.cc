@@ -593,6 +593,34 @@ Laxkit::Attribute *LPathInterface::dump_out_atts(Laxkit::Attribute *att,int what
 	return att;
 }
 
+Laxkit::ShortcutHandler *LPathInterface::GetShortcuts()
+{
+	if (sc) return sc;
+	PathInterface::GetShortcuts();
+
+	sc->Add(PATHIA_ToggleClipKids, 'C',AltMask|ShiftMask,0, "ToggleClipKids", _("Toggle whether the path clips child objects"),NULL,0);
+	return sc;
+}
+
+int LPathInterface::PerformAction(int action)
+{
+	if (action == PATHIA_ToggleClipKids) {
+		if (!data) return 0;
+		DrawableObject *ddata = dynamic_cast<DrawableObject*>(data);
+		if (!ddata) return 0;
+		if (ddata->child_clip_type == CLIP_None) {
+			ddata->child_clip_type = CLIP_From_Parent_Area;
+			PostMessage(_("Clip kids with path"));
+		} else {
+			ddata->child_clip_type = CLIP_None;
+			PostMessage(_("Do not clip kids with path"));
+		}
+		needtodraw = 1;		
+		return 0;
+	}
+	return PathInterface::PerformAction(action);
+}
+
 
 } //namespace Laidout
 

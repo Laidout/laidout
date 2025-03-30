@@ -61,6 +61,10 @@ class LPathInterface : public LaxInterfaces::PathInterface,
 	void UpdateFilter();
 
  protected:
+ 	enum ExtraActions {
+ 		PATHIA_ToggleClipKids = LaxInterfaces::PATHIA_MAX
+ 	};
+
  public:
  	bool always_update_filter;
 
@@ -80,6 +84,9 @@ class LPathInterface : public LaxInterfaces::PathInterface,
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
 	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *savecontext);
+
+	virtual Laxkit::ShortcutHandler *GetShortcuts();
+	virtual int PerformAction(int action);
 };
 
 
