@@ -25,6 +25,8 @@
 #include "../dataobjects/drawableobject.h"
 #include "../core/plaintext.h"
 #include "../filetypes/filefilters.h"
+#include "style.h"
+
 
 namespace Laidout {
 
@@ -141,30 +143,6 @@ class TabStops : public Value
 	Laxkit::RefPtrStack<TabStopInfo> stops;
 
 	int ComputeAt(double height, Laxkit::PtrStack<TabStopInfo> &tabstops); //for path based tab stops, update tabstops at this height in path space
-};
-
-
-
-//------------------------------ Style ---------------------------------
-
-class Style : public ValueHash, public Laxkit::Resourceable
-{
-  public:
-    Style *parent; // if non-null, this MUST be EITHER a project resource OR a temporary StreamElement owned Style
-
-    Style();
-    Style(const char *new_name);
-    virtual ~Style();
-    virtual const char *whattype() { return "Style"; }
-
-    virtual Value *FindValue(int attribute_name);
-    virtual int MergeFromMissing(Style *s); //only from s not in *this
-    virtual int MergeFrom(Style *s); //all in s override *this
-    virtual Style *Collapse();
-
-	virtual void dump_in_atts (Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
-	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
-	virtual void dump_out (FILE *f,int indent,int what,Laxkit::DumpContext *context);
 };
 
 
@@ -321,7 +299,6 @@ class StreamImportData : public Laxkit::anObject
 	virtual ~StreamImportData();
 };
 
-
 class StreamImporter : public FileFilter, public Value
 {
   public:
@@ -424,4 +401,3 @@ class StreamCache : public Laxkit::SquishyBox, public Laxkit::RefCounted
 } // namespace Laidout
 
 #endif
-

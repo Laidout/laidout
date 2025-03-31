@@ -19,7 +19,7 @@ objs= \
 
 all: $(objs)
 
-wip: streams.o cssparse.o opentype.o
+wip: streams.o cssparse.o opentype.o style.o
 
 depends:
 	../utils/makedependencies -fmakedepend -I$(LAXDIR)/.. *.cc

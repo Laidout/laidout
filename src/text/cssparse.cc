@@ -180,12 +180,6 @@ Style *ProcessCSSFontFace(Style *style, Attribute *att, Laxkit::ErrorLog *log)
 }
 
 
-class CSSParseCache
-{
-  public:
-  	Laxkit::RefPtrStack<LaxFont> fonts;
-
-};
 
 /*! Convert a css block with selectors into a more accessible Attribute object.
  */
@@ -196,34 +190,6 @@ Attribute *CSSBlockToAttribute(Attribute *att, const char *cssvalue, CSSParseCac
 
 	return att;
 }
-
-class CSSSelector
-{
-  public:
-    char *name = nullptr;
-	char *pseudo_class = nullptr;
-	char *pseudo_element = nullptr;
-
-	// any descended, ie "E F"
-	// direct child, ie "E > F"
-	char qualifier = 0; // relative to previous selector in stack, can be ' ' or '>', or nul.
-	char type = 0;
-
-	CSSSelector *next = nullptr;
-
-    CSSSelector() {}
-	~CSSSelector()
-	{
-		delete[] name;
-		delete[] pseudo_class;
-		delete[] pseudo_element;
-		if (next) delete next;
-	}
-
-	bool IsType()  { return type != '.' && type != '#'; }
-	bool IsClass() { return type == '.'; }
-	bool IsID()    { return type == '>'; }
-};
 
 
 CSSSelector *ParseCSSSelector(const char *cssvalue, const char **endptr)
