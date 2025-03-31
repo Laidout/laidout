@@ -817,13 +817,17 @@ PathInterface: pathinterface
       at specific intervals, or n per line
 
 beznet:
-  merge faces
+  remove edge / merge faces
+    DONE edge has two faces
+    edge has one face
+    edge has no faces
   merge vertices
   build path from selected faces
   net from path
   rect/square/perpendicular-corner relaxation
   implement pathboolean here
-  save/load
+  save
+  load
   curved edges
 
 simplepathinterface:
