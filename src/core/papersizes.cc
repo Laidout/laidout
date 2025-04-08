@@ -43,7 +43,7 @@ namespace Laidout {
 
 //-------------------------------- GetBuiltinPaperSizes ------------------
 
-//      PAPERSIZE   Width  Height  Units
+//      PAPERSIZE   Width  Height  Units  Category
 //      ----------------------------------------
 const char *BuiltinPaperSizes[65*5]=
 	{
