@@ -145,6 +145,7 @@ stackframe seems to be ignoring window borders on layout
 ----------------0.098 ROADMAP ITEMS: features and enhancements------------------------
 DONE website: Rework download to be easier
 website:
+  rss feed: use index.xml instead of rss.xml, and make link on front page
   screenshots:
     half the videos are not linking
 	need to redo screenshots section for mobile friendliness
@@ -897,8 +898,9 @@ Perspective perspective:
   DONE bug: chained filter nodes make context wrong, thus bad Refresh
 
 valgrind:
-  conditional jump on uninit: strlens in newnstr re attributes.cc 2673, 2192, 2206/1007, 2651
+  DONE conditional jump on uninit: strlens in newnstr re attributes.cc 2673, 2192, 2206/1007, 2651
   DONE mismatch free colorbase.cc 298
+  DONE memory lost warnings in PtrStack
 
 node editor node interface NodeInterface: nodes: node: interface:
   bug: hangs when alt drag to add reroute, lift up alt before releasing mouse SOMETIMES. UGH!
@@ -1672,7 +1674,7 @@ dual monitors: multi monitor multimonitor
 high dpi hidpi: uiscale: ui_scale:
   check windows, need ThemeUpdate()/UIScaleChanged()
 	image preview label text not scaling, not setting font first?
-	ToolTip text seems small sometimes
+	ToolTip text seems small sometimes. bounds not being computed correctly
 	ImportImagesDialog: scale is a bit all over.. too big padding especially
 	newdoc:
 	  PaperSizeWindow has too small LineInputs, also missing caret when too small
@@ -2675,7 +2677,7 @@ text (see also src/text/text.txt):
   interface base for utf8 based editing.. share this with window edits somehow
   maybe fonts should point to their creators to make duplication more reliable if there are more than just default fontmanager
   need support for font substitution
-  harfbuzz support
+  harfbuzz support, just depend on new harfbuzz lib, as deb lags behind quite a bit
   math mode
   track bookmarks
   inline graphics
