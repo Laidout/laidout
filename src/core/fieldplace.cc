@@ -21,9 +21,6 @@
 
 #include <lax/strmanip.h>
 
-//template implementation:
-#include <lax/lists.cc>
-
 using namespace Laxkit;
 using namespace std;
 #define DBG

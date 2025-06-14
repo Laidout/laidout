@@ -21,9 +21,6 @@
 #include "../laidout.h"
 #include "../language.h"
 
-//template implementation:
-#include <lax/refptrstack.cc>
-
 
 #define DBG
 #include <iostream>

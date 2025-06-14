@@ -8,10 +8,6 @@
 #include <lax/laxutils.h>
 
 
-//template implementation:
-#include <lax/lists.cc>
-
-
 
 //
 //

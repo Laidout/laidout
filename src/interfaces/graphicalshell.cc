@@ -26,9 +26,6 @@
 #include <lax/transformmath.h>
 #include <lax/colors.h>
 
-//template implementation:
-#include <lax/lists.cc>
-
 using namespace Laxkit;
 using namespace LaxInterfaces;
 

@@ -24,9 +24,6 @@
 
 #include "../language.h"
 
-//template implementation:
-#include <lax/lists.cc>
-
 #include <fstream>
 
 #include <iostream>

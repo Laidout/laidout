@@ -28,10 +28,6 @@
 #include "utils.h"
 
 
-//template implementation:
-#include <lax/lists.cc>
-
-
 #include <iostream>
 using namespace std;
 #define DBG 

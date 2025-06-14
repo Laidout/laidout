@@ -21,10 +21,6 @@
 #include <lax/laxutils.h>
 #include <lax/transformmath.h>
 
-
-//template implementation:
-#include <lax/refptrstack.cc>
-
 #include <iostream>
 using namespace std;
 #define DBG 

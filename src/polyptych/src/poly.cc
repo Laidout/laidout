@@ -23,9 +23,6 @@
 #include <lax/fileutils.h>
 #include "poly.h"
 
-//template implementation:
-#include <lax/lists.cc>
-
 #define DBG 
 
 using namespace std;

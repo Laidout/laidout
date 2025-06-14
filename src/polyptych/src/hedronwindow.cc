@@ -29,10 +29,6 @@
 #include <iostream>
 #define DBG
 
-//template implementation:
-#include <lax/lists.cc>
-#include <lax/refptrstack.cc>
-
 
 using namespace std;
 using namespace Laxkit;

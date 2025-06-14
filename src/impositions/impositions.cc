@@ -45,9 +45,6 @@
 #include <iostream>
 using namespace std;
 
-//template implentation:
-#include <lax/lists.cc>
-
 
 using namespace Laxkit;
 

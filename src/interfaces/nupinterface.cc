@@ -21,9 +21,6 @@
 #include "nupinterface.h"
 
 
-//template implementation:
-#include <lax/refptrstack.cc>
-
 #include <iostream>
 using namespace std;
 #define DBG 

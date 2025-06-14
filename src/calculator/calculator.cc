@@ -29,10 +29,6 @@
 #include <iostream>
 
 
-//template implementation
-#include <lax/refptrstack.cc>
-
-
 using namespace std;
 using namespace Laxkit;
 

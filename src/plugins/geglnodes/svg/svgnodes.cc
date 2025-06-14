@@ -23,9 +23,6 @@
 #include <iostream>
 #define DBG
 
-//template implementation:
-#include <lax/lists.cc>
-
 
 using namespace std;
 using namespace Laxkit;

@@ -18,10 +18,6 @@
 #include "curvevalue.h"
 
 
-//template implementation
-#include <lax/lists.cc>
-
-
 using namespace Laxkit;
 
 

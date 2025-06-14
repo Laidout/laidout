@@ -25,10 +25,6 @@
 #include "../laidout.h"
 #include "../language.h"
 
-//template implementation:
-#include <lax/lists.cc>
-#include <lax/refptrstack.cc>
-
 using namespace std;
 #define DBG 
 

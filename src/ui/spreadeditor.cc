@@ -36,9 +36,6 @@
 #include "../interfaces/paperinterface.h"
 
 
-//template implementation:
-#include <lax/lists.cc>
-
 #include <iostream>
 using namespace std;
 #define DBG 

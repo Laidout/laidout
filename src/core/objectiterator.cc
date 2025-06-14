@@ -16,9 +16,6 @@
 
 #include "objectiterator.h"
 
-//template implementation:
-#include <lax/lists.cc>
-
 
 #include <iostream>
 #define DBG

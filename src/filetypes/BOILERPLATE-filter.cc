@@ -36,10 +36,6 @@
 #include "../dataobjects/mysterydata.h"
 #include "../core/drawdata.h"
 
-//template implementation
-#include <lax/lists.cc>
-#include <lax/refptrstack.cc>
-
 
 #include <iostream>
 #define DBG 

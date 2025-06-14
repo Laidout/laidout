@@ -31,10 +31,6 @@
 #include <openssl/md5.h>
 
 
-//template implementation:
-#include <lax/lists.cc>
-
-
 #include <iostream>
 #define DBG
 

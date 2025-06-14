@@ -33,11 +33,6 @@
 #include <string>
 
 
-//Template implementation:
-#include <lax/lists.cc>
-#include <lax/refptrstack.cc>
-
-
 #include <iostream>
 using namespace std;
 #define DBG 

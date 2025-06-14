@@ -23,9 +23,6 @@
 #include "pagerangeinterface.h"
 #include "../ui/viewwindow.h"
 
-//template implementation:
-#include <lax/lists.cc>
-
 
 #include <iostream>
 using namespace std;

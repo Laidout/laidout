@@ -26,11 +26,6 @@
 #include "../core/drawdata.h"
 
 
-//template implementation:
-#include <lax/refptrstack.cc>
-#include <lax/lists.cc>
-
-
 //for debugging purposes:
 #include <iostream>
 using namespace std;

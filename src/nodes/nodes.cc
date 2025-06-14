@@ -38,10 +38,6 @@
 #include <unistd.h>
 #include <iostream>
 
-//template implementation
-#include <lax/lists.cc>
-#include <lax/refptrstack.cc>
-
 using namespace std;
 #define DBG
 
