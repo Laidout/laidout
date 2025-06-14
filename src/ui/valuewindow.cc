@@ -106,6 +106,9 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 	double HMULT = 2; //1.5;
 	double NUMW = 12;
 
+	double max_label_width = 0;
+	PtrStack<LineInput> labels(LISTS_DELETE_None);
+
 	if (rowframe == nullptr) {
 		const char *id = val->Id();
 		if (!id) id = val->whattype();
@@ -143,7 +146,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 	else mes = def->name;
 	Utf8String path = mes;
 
-	bool do_kids = false;
+	bool do_kids = false; // whether the data is a class or hash
 	//bool rearrangeable = false;
 	//bool deleteable = false;
 
@@ -160,6 +163,8 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 		if (fieldTooltip) last->tooltip(fieldTooltip);
 		rowframe->AddWin(box,1, th * NUMW,0,0,50,0, th*HMULT,0,0,50,0, -1);
 		rowframe->AddNull();
+		max_label_width = MAX(box->LabelWidth(), max_label_width);
+		labels.push(box);
 
 	} else if (type == VALUE_Real || type == VALUE_Number) {
 		DoubleValue *v = dynamic_cast<DoubleValue*>(val);
@@ -194,6 +199,8 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 								 fieldName, scratch.c_str());
 			if (fieldTooltip) last->tooltip(fieldTooltip);
 			rowframe->AddWin(box,1, th * NUMW,0,0,50,0, th*HMULT,0,0,50,0, -1);
+			max_label_width = MAX(box->LabelWidth(), max_label_width);
+			labels.push(box);
 		}
 		rowframe->AddNull();
 
@@ -220,6 +227,8 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 		if (fieldTooltip) last->tooltip(fieldTooltip);
 		rowframe->AddWin(box,1, box->win_w,0,10000,50,0, th*HMULT,0,0,50,0, -1);
 		rowframe->AddNull();
+		max_label_width = MAX(box->LabelWidth(), max_label_width);
+		labels.push(box);
 
 	} else if (type == VALUE_Flatvector || type == VALUE_Spacevector || type == VALUE_Quaternion) {
 		Quaternion sv;
@@ -288,6 +297,8 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 		if (fieldTooltip) last->tooltip(fieldTooltip);
 		rowframe->AddWin(box,1, box->win_w,0,10000,50,0, th*HMULT,0,0,50,0, -1);
 		rowframe->AddNull();
+		max_label_width = MAX(box->LabelWidth(), max_label_width);
+		labels.push(box);
 
 	} else if (type == VALUE_Enum) { //} else if (type == VALUE_EnumVal) {
 		EnumValue *ev = dynamic_cast<EnumValue*>(val);
@@ -418,6 +429,20 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 		MessageBar *bar = new MessageBar(this,"unhandled",NULL,MB_MOVE, 0,0,0,0,1, scratch.c_str());
 		rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
 	}
+
+	// if (max_label_width > 0) {
+	// 	for (int c = 0; c < labels.n; c++) {
+	// 		LineInput *input = labels.e[c];
+	// 		input->LabelWidth(max_label_width);
+	// 		// DBG cerr << "  valuewindow lineinput lwidth: "<<input->LabelWidth()<<endl;
+	// 	}
+	// 	DBG cerr << "valuewindow lineinput max_label_width: "<<max_label_width<<endl;
+	// 	for (int c = 0; c < labels.n; c++) {
+	// 		LineInput *input = labels.e[c];
+	// 		DBG cerr << "  valuewindow lineinput lwidth: "<<input->LabelWidth()<<endl;
+	// 	}
+	// 	DBG cerr << "---"<<endl;
+	// }
 
 	if (do_kids) {
 		const char *nm;
