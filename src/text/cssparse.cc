@@ -18,6 +18,9 @@
 #include "cssparse.h"
 #include <lax/cssutils.h>
 #include <lax/strmanip.h>
+#include <lax/laxutils.h>
+#include <lax/language.h>
+
 #include <lax/debug.h>
 
 
@@ -26,6 +29,58 @@ using namespace Laxkit;
 namespace Laidout {
 namespace CSS {
 
+
+//------------------------------ non-css specific parsing utils -----------------------------
+
+/*! Something with simple contents in parentheses, like:
+ *  - local(blah)
+ *  - local("Blah")
+ *  - local('Blah')
+ *  - url(https://thing)
+ *
+ * If there are no parantheses, then 0 is returned.
+ *
+ * f_len_ret is the length of the function, so "local(blah)" will have f_len_ret == 5.
+ *
+ * s_ret will point to the start of the parameter. So "local(blah)" will have s_ret point to the 'b' in blah.
+ * A parameter in quotes like `local("blah")` will have s_ret still point to the 'b' in blah. ***TODO: why? better to preserve whole param??
+ *
+ * s_len_ret will be the number of characters of the parameter, not including quotes.
+ *
+ * end_ret will point to the character right after the closing ')'.
+ * 
+ * Return 1 for successful parse, else 0.
+ */
+int ParseSimpleFofS(const char *value, int *f_len_ret, const char **s_ret, int *s_len_ret, const char **end_ret)
+{
+	//while (isspace(*value)) value++;
+	const char *ptr = value;
+	while (isalnum(*ptr)) ptr++;
+	if (ptr == value) return 0;
+	*f_len_ret = ptr - value;
+
+	value = ptr;
+	while (isspace(*value)) value++;
+	if (*value != '(') return 0;
+	value++;
+
+	while (isspace(*value)) value++;
+	char has_quote = '\0';
+	if (*value == '"' || *value == '\'') { has_quote = *value; value++; }
+	ptr = value;
+	*s_ret = value;
+	while (*ptr && *ptr != has_quote && *ptr != ')') ptr++;
+	*s_len_ret = ptr - value;
+	if (has_quote) {
+		if (*ptr != has_quote) return 0;
+		ptr++;
+	}
+	if (*ptr != ')') return 0;
+
+	value = ptr+1; 
+	*end_ret = value;
+	return 1;
+}
 
 
 /*! Read in alphanum and/or any of the characters in extra if any.
@@ -40,6 +95,8 @@ const char *ParseName(const char *start, int *n_ret, const char *extra)
 }
 
 
+//------------------------------ css specific parsing utils -----------------------------
+
 /*! 
  * See https://www.w3.org/TR/css-fonts-3/#font-face-rule.
  *
@@ -50,7 +107,7 @@ const char *ParseName(const char *start, int *n_ret, const char *extra)
  *       src: "http://somewhere.fonts/oogabooga.woff";
  *     }
  *
- * Return nullptr on could not process.
+ * Return nullptr on could not parse.
  */
 Style *ProcessCSSFontFace(Style *style, Attribute *att, Laxkit::ErrorLog *log)
 {
@@ -291,71 +348,79 @@ LaxFont *MatchCSSFont(const char *family_list, int italic, const char *variant, 
 }
 
 //forward declaration:
-Style *ProcessCSSBlock(Style *existing_style, const char *cssvalue, const char **error_pos_ret, Laxkit::ErrorLog &log);
+Style *ParseCSSBlock(Style *existing_style, const char *cssvalue, const char **error_pos_ret, Laxkit::ErrorLog &log);
 
 
 /*! Convert direct attributes of att to parts of current->style.
  * Look for "style", "class", "id".
+ *
+ * On parse success, return true, and style_ret gets the parsed Style object. If current != nullptr, then style_ret will be current.
+ * If there were no style elements and current == nullptr, then style_ret will be nullptr.
+ *
+ * On parse failure, return false, style_ret = nullptr.
  */
-StreamElement *ParseCommonStyle(Laxkit::Attribute *att, StreamElement *current, Laxkit::ErrorLog *log)
+bool ParseCommonStyle(Laxkit::Attribute *att, Style *current, Laxkit::ErrorLog &log, Style **style_ret)
 {
 	const char *name;
 	const char *value;
-	Style *style = new Style(); //todo: how is this even supposed to work
-
+	Style *style = current;
+	
 	 //Parse current element attributes: style class id dir="ltr|rtl|auto" title
 	for (int c=0; c<att->attributes.n; c++) {
 		name  = att->attributes.e[c]->name;
 		value = att->attributes.e[c]->value;
 
-		if (!strcmp(name,"style")) {
+		if (!strcmp(name,"style")) { // inline style definition
 			 //update newstyle with style found
 			const char *endptr = nullptr;
-			Style *style_ret = ProcessCSSBlock(style, value, &endptr, *log);
-			if (!style_ret) {
-				cerr << "error or something"<<endl;
+			int error_status = 0;
+			Style *style_ret = ParseCSSBlock(style, value, &endptr, log, &error_status);
+			if (error_status) {
+				*style_ret = nullptr;
+				if (style && !current) style->dec_count();
+				return false;
 			}
 
 		} if (!strcmp(name,"class")) {
-			 //*** update newstyle with style found
-			cerr << " *** need to actually implement class import! lazy programmer!"<<endl;
-			
 			if (!isblank(value)) {
-				if (!current) current = new StreamElement();
-				current->style->set("class", new StringValue(value), true);
+				if (!style) style = new Style();
+				style->set("class", new StringValue(value), true);
 			}
 
 		} if (!strcmp(name,"id")) {
-			//if (!isblank(value)) current->Id(value);
-			if (!isblank(value)) current->style->push("id", value);
+			if (!isblank(value)) {
+				if (!style) style = new Style();
+				style->push("id", value);
+			}
 
 		//} if (!strcmp(name,"title")) {
 		//	makestr(title,value);
 
-		} if (!strcmp(name,"dir")) {
+		} if (!strcmp(name,"dir")) { // *** this shouldn't be here as it's not "common"?
 			 // flow direction: html has "ltr" "rtl" "auto"
 			 // 				-> extend with all 8 lrtb, lrbt, tblr, etc?
 
 			//int bidi = ParseFlowDirection(value,-1);
 			int bidi = Laxkit::flow_id(value);
 
-			if (!current) current = new StreamElement();
-			if (bidi >= 0) current->style->set("bidi", new IntValue(bidi), true);
+			if (!style) style = new Style();
+			if (bidi >= 0) style->set("bidi", new IntValue(bidi), true);
 
 		} else {
-			DBG cerr << "warning: ParseCommonStyle attribute "<<name<<" not handled"<<endl;
+			DBGW("warning: ParseCommonStyle attribute "<<name<<" not handled");
 		}
 	}
 
-	return current;
+	*style_ret = style;
+	return true;
 }
 
 
 
-/*! Returns style on success, or nullptr on error.
+/*! Returns existing_style on success, or nullptr on error.
  * If `style == null`, then create a new Style object.
   */
-Style *ProcessCSSBlock(Style *existing_style, const char *cssvalue, const char **error_pos_ret, Laxkit::ErrorLog &log)
+Style *ParseCSSBlock(Style *existing_style, const char *cssvalue, const char **error_pos_ret, Laxkit::ErrorLog &log)
 {
 	//CSS:
 	// selectors:    selector[, selector] { ... }
@@ -640,7 +705,7 @@ Style *ProcessCSSBlock(Style *existing_style, const char *cssvalue, const char *
 
 
 		} else {
-			DBG cerr << "Unimplemented attribute "<<name<<"!!"<<endl;
+			DBGW("Unimplemented attribute "<<name<<"!!");
 		}
 	}
 

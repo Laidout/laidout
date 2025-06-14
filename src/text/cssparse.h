@@ -23,6 +23,8 @@
 #include <lax/debug.h>
 #include <lax/fontmanager.h>
 
+#include "style.h"
+
 
 namespace Laidout {
 namespace CSS {
@@ -32,6 +34,7 @@ namespace CSS {
 //--------------------------- text parsing utils ------------------------------
 
 const char *ParseName(const char *start, int *n_ret, const char *extra);
+int ParseSimpleFofS(const char *value, int *f_len_ret, const char **s_ret, int *s_len_ret, const char **end_ret);
 
 
 //-------------------------------- css classes ----------------------------------------
@@ -54,7 +57,7 @@ class CSSSelector
 	// any descended, ie "E F"
 	// direct child, ie "E > F"
 	char qualifier = 0; // relative to previous selector in stack, can be ' ' or '>', or nul.
-	char type = 0; // '.' == class type, '#' == id type, '>' == qualifier
+	char type = 0; // 0 == base type, '.' == class type, '#' == id type, '>' == qualifier
 
 	CSSSelector *next = nullptr;
 
@@ -79,9 +82,9 @@ class CSSSelector
 Style *ProcessCSSFontFace(Style *style, Laxkit::Attribute *att, Laxkit::ErrorLog *log);
 CSSSelector *ParseCSSSelector(const char *cssvalue, const char **endptr);
 Laxkit::LaxFont *MatchCSSFont(const char *family_list, int italic, const char *variant, int weight, CSSParseCache *cache);
-StreamElement *ParseCommonStyle(Laxkit::Attribute *att, StreamElement *current, Laxkit::ErrorLog *log);
 Style *ProcessCSSBlock(Style *existing_style, const char *cssvalue, const char **error_pos_ret, Laxkit::ErrorLog &log);
 
+bool ParseCommonStyle(Laxkit::Attribute *att, Style *current, Laxkit::ErrorLog &log, Style **style_ret);
 
 } // namespace CSS
 } // namespace Laidout

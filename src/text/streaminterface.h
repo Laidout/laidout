@@ -23,7 +23,7 @@ namespace Laidout {
 
 //--------------------------- PathIntersectionsInterface -------------------------------------
 
-class StreamInterface : public TextStreamInterface
+class StreamInterface : public LaxInterfaces::TextStreamInterface
 {
   protected:
 	virtual bool AttachStream();
@@ -35,12 +35,12 @@ class StreamInterface : public TextStreamInterface
 	// 	INTERSECTIONS_MAX
 	// };
 
-	unsigned int interface_flags;
-	double threshhold;
+	// unsigned int interface_flags;
+	// double threshhold;
 
-	StreamInterface(anInterface *nowner, int nid,Laxkit::Displayer *ndp);
+	StreamInterface(LaxInterfaces::anInterface *nowner, int nid,Laxkit::Displayer *ndp);
 	virtual ~StreamInterface();
-	virtual anInterface *duplicate(anInterface *dup);
+	virtual LaxInterfaces::anInterface *duplicate(LaxInterfaces::anInterface *dup);
 	virtual const char *IconId() { return "TextStream"; }
 	virtual const char *Name();
 	virtual const char *whattype() { return "StreamInterface"; }
