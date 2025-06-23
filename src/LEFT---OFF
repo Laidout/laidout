@@ -13,6 +13,8 @@ down to major items in ../features.md.
 
 ------------ serious bugs to fix right now:
 
+bug: in ImageInterface, just undo without doing anything else wrecks image transform, which wrecks whole view
+
 bug: affine transform to SetTransform node, put x at 0,0, destroys cairo transform! unrecoverable!
 
 bug: ShortcutWindow totally messed up. StackFrame issues? fixes when you resize window, missing initial need to layout flag?
@@ -270,9 +272,9 @@ have a clickable history of recently edited objects (as seen in Godot!)
 text on path textonpath: TextOnPath
   crash: link to parent path crashing
   bug: offset and baseline handles disappeared for large offset values
+  bug: dragging the offset handle sometimes jumps to really bad
   bug: bezier length resolution inconsistencies making gaps. need solution with consistent approximation
   bug: visible selected bounds not updating?
-  bug: dragging the offest handle sometimes jumps to really bad
   bug: reversing direction should change offset so that text occupies roughly the same place. currently in scrunches up
   bug: sometimes path weights don't recache along with glyph positions
   bug: duplicate isn't always initing the dup properly
@@ -643,7 +645,7 @@ idml from indesign?
 
 Singles:
   object bleeds not implemented
-  export to pdf has wrong paper sizes with multipage, also not handling page bleed with inkscpae multipage import
+  export to pdf has wrong paper sizes with multipage, also not handling page bleed with inkscape multipage import
   inset should be per paper in papergroup
   revamp to be art board centric, based on random PaperGroup
   what's with the old cached_margin stuff, obsolete now with pagestyles stack?
@@ -1996,8 +1998,14 @@ make drag and drop selections work dnd
 imageinterface: imagedata:
   actions to scale to proper dpi for destination paper
   grab particular exif info to show in labels?
-  would be nice to autocrop to specific portion without explicit clip mask, ie select a sprite in a sprite sheet
+  would be nice to autocrop to specific portion without explicit clip mask, ie select a sprite in a sprite sheet from imageinfo dialog
   auto resource-ize images to make them reusable more easily?
+  undo/redo
+  labels:
+    need to decide if these are printing objects, or just screen writing
+    adjust attachment point
+    adjust rotation
+    adjust content: pick from exif? custom label templates?
   DONE 'f' show labels should shadow label, and put it on upper edge
   DONE optionally show pixel size of image
 
@@ -3417,7 +3425,7 @@ hedron window:
   DONE proper units for papers
 
 implement undo: ideally use same code for both undo and recordable/assignable actions undo/redo:
-  bug: seems like SomeData undo doesn't work anymore?
+  DONE (can't reproduce) bug: seems like SomeData undo doesn't work anymore?
   would be nice to have right click cancel during a left-drag action
   object interface
     need to account for:
