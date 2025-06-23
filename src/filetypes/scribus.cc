@@ -2350,7 +2350,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 				image->LoadImage(fullfile); //this will set maxx, maxy to dimensions of the image
 				delete[] fullfile;
 				image->m(matrix);
-				image->m(0,image->m(0)*w/image->maxx/72.);
+				image->m(0,image->m((int)0)*w/image->maxx/72.);
 				image->m(1,image->m(1)*w/image->maxx/72.);
 				image->m(2,image->m(2)*h/image->maxy/72.);
 				image->m(3,image->m(3)*h/image->maxy/72.);

@@ -711,7 +711,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 		fprintf(f,"%s<g %s id=\"%s\" %s transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
 					spc, 
 					datameta.c_str_nonnull(),
-					obj->Id(), clipid, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5)); 
+					obj->Id(), clipid, obj->m((int)0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5)); 
 		Group *g=dynamic_cast<Group *>(obj);
 		for (int c=0; c<g->n(); c++) 
 			svgdumpobj(f,nullptr,g->e(c),warning,indent+2,log, out, false, data_meta); 
@@ -730,7 +730,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			fprintf(f,"%s<circle %s transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
 						 spc,
 						 datameta.c_str_nonnull(),
-						 obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
+						 obj->m((int)0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
 			fprintf(f,"%s    id=\"%s\" %s\n", spc,grad->Id(), clipid);
 			fprintf(f,"%s    style=\"%sstroke:none;fill:url(#radialGradient%ld)\"\n", spc, hiddenstr, grad->object_id);
 			fprintf(f,"%s    cx=\"%f\"\n",spc, fabs(grad->R1()) > fabs(grad->R2()) ? grad->P1().x : grad->P2().x);
@@ -741,7 +741,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 		} else {
 			fprintf(f,"%s<rect %s transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
 						 spc, datameta.c_str_nonnull(),
-						 obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
+						 obj->m((int)0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
 			fprintf(f,"%s    id=\"%s\" %s\n", spc,grad->Id(), clipid);
 			fprintf(f,"%s    style=\"%sstroke:none;fill:url(#linearGradient%ld)\"\n", spc, hiddenstr, grad->object_id);
 			fprintf(f,"%s    x=\"%f\"\n", spc,grad->minx);
@@ -769,7 +769,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 		int layer=0;
 		for (LaxFont *font=caption->font; font; font=font->nextlayer) {
 			fprintf(f,"%s<text %s transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
-						spc, datameta.c_str_nonnull(), obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
+						spc, datameta.c_str_nonnull(), obj->m((int)0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
 
 			fprintf(f,"%s   id=\"%s\" %s\n", spc, caption->Id(), clipid);
 			fprintf(f,"%s   x =\"0\"\n", spc);
@@ -922,7 +922,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 		o+=obj->yaxis()*(obj->maxy-obj->miny);
 		
 		fprintf(f,"%s<image %s transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
-				     spc, datameta.c_str_nonnull(), obj->m(0), obj->m(1), -obj->m(2), -obj->m(3), o.x, o.y);
+				     spc, datameta.c_str_nonnull(), obj->m((int)0), obj->m(1), -obj->m(2), -obj->m(3), o.x, o.y);
 		fprintf(f,"%s    id=\"%s\" %s\n", spc,img->Id(), clipid);
 		fprintf(f,"%s    xlink:href=\"%s\" \n", spc,img->filename);
 		fprintf(f,"%s    x=\"%f\"\n", spc,img->minx);
@@ -949,7 +949,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 
 			 //make a group with a mask of outline of original patch, and blur filter
 			fprintf(f,"%s<g %s transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
-				     spc, datameta.c_str_nonnull(), obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
+				     spc, datameta.c_str_nonnull(), obj->m((int)0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
 			fprintf(f,"%s    id=\"%s\"\n", spc,patch->Id());
 			fprintf(f,"%s   clip-path=\"url(#colorPatchMask%ld)\" filter=\"url(#patchBlur%ld)\">\n", 
 						spc, patch->object_id, patch->object_id);
@@ -1100,7 +1100,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			if (!patch) return 0;
 
 			fprintf(f,"%s<rect %s transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
-						 spc, datameta.c_str_nonnull(), obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
+						 spc, datameta.c_str_nonnull(), obj->m((int)0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
 			fprintf(f,"%s    id=\"%s\"\n", spc,patch->Id());
 			fprintf(f,"%s    style=\"%sfill:url(#ColorPatchFill%ld)\"\n", spc, hiddenstr, patch->object_id);
 			fprintf(f,"%s    x=\"%f\"\n", spc, patch->minx);
@@ -1155,7 +1155,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			 //plain, ordinary path with no offset and constant width
 
 			fprintf(f,"%s<path %s  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
-						 spc, datameta.c_str_nonnull(), obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
+						 spc, datameta.c_str_nonnull(), obj->m((int)0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
 			fprintf(f,"%s       id=\"%s\" %s\n", spc,obj->Id(), clipid);
 
 			fprintf(f,"%s       d=\"",spc);
@@ -1184,7 +1184,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 
 			if (fstyle && fstyle->hasFill() && !open) {
 				fprintf(f,"%s<path %s transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
-							 spc, datameta.c_str_nonnull(), obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
+							 spc, datameta.c_str_nonnull(), obj->m((int)0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
 				fprintf(f,"%s       id=\"%s-fill\" %s\n", spc,obj->Id(), clipid);
 
 				 //---write style for fill within centercache.. no stroke to that, as we apply artificial stroke
@@ -1210,7 +1210,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			if (lstyle) {
 				 //second "stroke" path to be filled, or to be set up as powerstroke base
 				fprintf(f,"%s<path %s transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
-							 spc, datameta.c_str_nonnull(), obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
+							 spc, datameta.c_str_nonnull(), obj->m((int)0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
 				fprintf(f,"%s       id=\"%s\" %s\n", spc,obj->Id(), clipid);
 
 				 //---write style: no linestyle, but fill style is based on linestyle
@@ -1576,7 +1576,7 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgE
 			fprintf(f, "%s    <meshgradient gradientUnits=\"userSpaceOnUse\" id=\"ColorPatchFill%ld\" "
 							" gradientTransform=\"matrix(%.10g,%.10g,%.10g,%.10g,%.10g,%.10g)\" x=\"%.10g\" y=\"%.10g\">\n",
 					spc, patch->object_id,
-					patch->m(0), patch->m(1), patch->m(2), patch->m(3), patch->m(4), patch->m(5),
+					patch->m((int)0), patch->m(1), patch->m(2), patch->m(3), patch->m(4), patch->m(5),
 					patch->points[0].x, patch->points[0].y); 
 
 			int xsize = patch->xsize;

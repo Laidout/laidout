@@ -368,7 +368,7 @@ void pdfdumpobj(FILE *f,
 		psConcat(object->m());
 		sprintf(scratch,"q\n"
 				  "%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
-					object->m(0), object->m(1), object->m(2), object->m(3), object->m(4), object->m(5)); 
+					object->m((int)0), object->m(1), object->m(2), object->m(3), object->m(4), object->m(5)); 
 		appendstr(stream,scratch);
 	}
 	
@@ -515,7 +515,7 @@ int pdfSetClipToPath(char *&stream,LaxInterfaces::SomeData *outline,int iscontin
 			d=g->e(c);
 			 //add transform of group element
 			sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
-					d->m(0), d->m(1), d->m(2), d->m(3), d->m(4), d->m(5)); 
+					d->m((int)0), d->m(1), d->m(2), d->m(3), d->m(4), d->m(5)); 
 			appendstr(stream,scratch);
 			n += pdfSetClipToPath(stream,g->e(c),1, NULL);
 			transform_invert(m,d->m());
@@ -1597,7 +1597,7 @@ static void pdfImagePatch(FILE *f,
 	char scratch[100];
 	sprintf(scratch,"q\n"
 			  "%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
-				img.m(0), img.m(1), img.m(2), img.m(3), img.m(4), img.m(5)); 
+				img.m((int)0), img.m(1), img.m(2), img.m(3), img.m(4), img.m(5)); 
 	appendstr(stream,scratch);
 	
 	pdfImage(f,objs,obj,stream,objectcount,resources,&img, log,warning,config);

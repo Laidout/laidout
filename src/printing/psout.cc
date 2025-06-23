@@ -174,7 +174,7 @@ void psdumpobj(FILE *f,LaxInterfaces::SomeData *obj)
 	psConcat(obj->m());
 	fprintf(f,"gsave\n"
 			  "[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
-				obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5)); 
+				obj->m((int)0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5)); 
 	
 	if (!strcmp(obj->whattype(),"Group")) {
 		Group *g=dynamic_cast<Group *>(obj);
@@ -249,7 +249,7 @@ int psSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing)//
 			d=g->e(c);
 			 //add transform of group element
 			fprintf(f,"[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
-					d->m(0), d->m(1), d->m(2), d->m(3), d->m(4), d->m(5)); 
+					d->m((int)0), d->m(1), d->m(2), d->m(3), d->m(4), d->m(5)); 
 			n+=psSetClipToPath(f,g->e(c),1);
 			transform_invert(m,d->m());
 			 //reverse the transform

@@ -277,7 +277,7 @@ void SpreadView::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *conte
 			fprintf(f,"%sthread\n",spc);
 			fprintf(f,"%s  pageindex %d\n",spc,s->spread->pagestack.e[0]->index);
 			fprintf(f,"%s    matrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
-					 spc,s->m(0),s->m(1),s->m(2),s->m(3),s->m(4),s->m(5));
+					 spc,s->m((int)0),s->m(1),s->m(2),s->m(3),s->m(4),s->m(5));
 			s=s->next;
 			if (s==threads.e[c]) break; //watching out for circular threads
 		}

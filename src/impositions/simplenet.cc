@@ -583,7 +583,7 @@ void SimpleNet::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *contex
 	int c;
 	fprintf(f,"%sname %s\n",spc,whatshape());
 	fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
-			spc,m(0),m(1),m(2),m(3),m(4),m(5));
+			spc,m((int)0),m(1),m(2),m(3),m(4),m(5));
 	
 	if (tabs==0) fprintf(f,"%stabs no\n",spc);
 	else if (tabs==1) fprintf(f,"%stabs even\n",spc);

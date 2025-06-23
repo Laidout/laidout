@@ -95,7 +95,7 @@ void psImagePatch(FILE *f,LaxInterfaces::ImagePatchData *i)
 	psConcat(img.m());
 	fprintf(f,"gsave\n"
 			  "[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
-				img.m(0), img.m(1), img.m(2), img.m(3), img.m(4), img.m(5)); 
+				img.m((int)0), img.m(1), img.m(2), img.m(3), img.m(4), img.m(5)); 
 	
 	psImage(f,&img);
 	

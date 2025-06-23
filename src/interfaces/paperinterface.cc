@@ -1207,7 +1207,7 @@ int PaperInterface::PerformAction(int action)
 		for (int c=0; c<curboxes.n; c++) {
 			flatpoint i1 = curboxes.e[c]->transformPointInverse(invariant);
 			 //rotate x axis
-			x = curboxes.e[c]->m(0);
+			x = curboxes.e[c]->m((int)0);
 			y = curboxes.e[c]->m(1);
 			curboxes.e[c]->m(0, ccw ? y : -y);
 			curboxes.e[c]->m(1, ccw ? -x : x);

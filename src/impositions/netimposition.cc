@@ -368,7 +368,7 @@ void NetImposition::setPage()
 
 		DBG cerr <<"new scalefromnet: "<<scalefromnet<<endl;
 
-		DBG cerr <<"net "<<c<<" matrix: "<<nets.e[c]->m(0)<<", "
+		DBG cerr <<"net "<<c<<" matrix: "<<nets.e[c]->m((int)0)<<", "
 		DBG 	<<nets.e[c]->m(1)<<", "
 		DBG 	<<nets.e[c]->m(2)<<", "
 		DBG 	<<nets.e[c]->m(3)<<", "

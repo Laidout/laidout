@@ -62,7 +62,7 @@ int AffineValue::getValueStr(char *buffer,int len)
     int needed=6*30;
     if (!buffer || len<needed) return needed;
 
-	sprintf(buffer,"[%.10g,%.10g,%.10g,%.10g,%.10g,%.10g]",m(0),m(1),m(2),m(3),m(4),m(5));
+	sprintf(buffer,"[%.10g,%.10g,%.10g,%.10g,%.10g,%.10g]",m((int)0),m(1),m(2),m(3),m(4),m(5));
     modified=0;
     return 0;
 }
