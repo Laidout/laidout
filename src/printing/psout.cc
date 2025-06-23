@@ -341,7 +341,7 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	if (papergroup) {
 		PaperStyle *defaultpaper = nullptr;
 		defaultpaper = papergroup->papers.e[0]->box->paperstyle;
-		landscape   = (defaultpaper->flags & 1) ? 1 : 0;
+		landscape   = defaultpaper->landscape();
 		paperwidth  = defaultpaper->width;
 		paperheight = defaultpaper->height;
 	} else if (spread) {
@@ -535,7 +535,7 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 		for (p=0; p<(papergroup ? papergroup->papers.n : 1); p++) {
 			DBG cerr<<"Printing paper "<<p<<"..."<<endl;
 			if (papergroup) {
-				plandscape = papergroup->papers.e[p]->box->paperstyle->flags&1;
+				plandscape = papergroup->papers.e[p]->box->paperstyle->landscape();
 				paperwidth = papergroup->papers.e[p]->box->paperstyle->width;
 			}
 
@@ -739,7 +739,7 @@ int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	if (papergroup) {
 		PaperStyle *defaultpaper = nullptr;
 		defaultpaper = papergroup->papers.e[0]->box->paperstyle;
-		landscape   = (defaultpaper->flags & 1) ? 1 : 0;
+		landscape   = defaultpaper->landscape();
 		paperwidth  = defaultpaper->width;
 		paperheight = defaultpaper->height;
 	} else if (spread) {

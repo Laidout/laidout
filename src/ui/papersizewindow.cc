@@ -264,12 +264,12 @@ bool ParseAspectRatio(const char *str, double *d1_ret, double *d2_ret)
 
 void PaperSizeWindow::UpdatePaperName()
 {
-	int o_ret = 0, i_ret = -1;
-	PaperStyle *pp = GetNamedPaper(papertype->w(), papertype->h(), &o_ret, 0, &i_ret, 1e-8);
+	int landscape_ret = 0, i_ret = -1;
+	PaperStyle *pp = GetNamedPaper(papertype->w(), papertype->h(), &landscape_ret, 0, &i_ret, 1e-8);
 	if (pp) {
 		papernames->Select(i_ret);
 		makestr(papertype->name, pp->name);
-		if (o_ret < 0) {
+		if (landscape_ret) {
 			if (papertype->landscape() == pp->landscape()) {
 				papertype->landscape(!papertype->landscape());
 				double d = papertype->width;

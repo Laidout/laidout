@@ -186,21 +186,21 @@ int InstallPaperResources()
 }
 
 /*! Try to match width and height to a named paper.
- * orientation_ret gets 1 if match is same as returned object's orientation,
- * or -1 if opposite.
+ * is_landscape_ret gets 0 if match is same as returned object's orientation,
+ * or 1 if opposite (i.e. is landscape mode for that paper).
  *
  * If startfrom != 0, then start the search starting from this index, instead of first paper.
  *
  * If epsilon==0 (the default), w and h must match exactly. Else the values must be at least that close.
  */
-PaperStyle *GetNamedPaper(double width, double height, int *orientation_ret, int startfrom, int *index_ret, double epsilon)
+PaperStyle *GetNamedPaper(double width, double height, int *is_landscape_ret, int startfrom, int *index_ret, double epsilon)
 {
 	int match;
 	if (startfrom<0) startfrom=0;
 	for (int c = startfrom; c < laidout->papersizes.n; c++) {
 		match = laidout->papersizes.e[c]->IsMatch(width, height, epsilon);
 		if (match) {
-			if (orientation_ret) *orientation_ret = match;
+			if (is_landscape_ret) *is_landscape_ret = (match == -1);
 			if (index_ret) *index_ret = c;
 			return laidout->papersizes.e[c];
 		}
@@ -228,15 +228,14 @@ PaperStyle *GetPaperFromName(const char *name)
  * For instance, a "Letter" paper is 8.5 x 11 inches, usually portrait.
  *
  * A number of standard sizes are built in. See GetBuiltinPaperSizes() for a list of them.
- * The only thing in flags is (flags&1) if it is landscape, or !(flags&1) if portrait.
  * Width/height will stay the same, but w() and h() will return the swapped values
  * for landscape.
  *
  * The extra peculiar paper type is "Whatever", which is used when you don't care about paper,
  * and don't want the paper outline drawn. Really this makes Laidout perform in full scratchboard mode.
  */
-/*! \var unsigned int PaperStyle::flags
- * \brief flags&&1==landscape, !&&1=portrait
+/*! \var unsigned bool PaperStyle::is_landscape
+ * \brief Whether the paper should be used in landscape mode, with width and height flipped.
  */
 /*! \var double PaperStyle::width
  * \brief The portrait style width of the paper.
@@ -245,10 +244,10 @@ PaperStyle *GetPaperFromName(const char *name)
  * \brief The portrait style height of the paper.
  */
 /*! \fn double PaperStyle::w()
- * \brief If landscape (flags&&1), then return height, else return width.
+ * \brief If landscape, then return height, else return width.
  */
 /*! \fn double PaperStyle::h()
- * \brief If landscape (flags&&1), then return width, else return height.
+ * \brief If landscape, then return width, else return height.
  */
 /*! \var char *PaperStyle::defaultunits
  * \brief Hint for what should be default units for this paper type.
@@ -264,7 +263,7 @@ PaperStyle::PaperStyle(const char *nname)
 	if (!isblank(nname)) name=newstr(nname); else name=NULL;
 
 	favorite     = false;
-	flags        = 0;
+	is_landscape = false;
 	dpi          = 300;
 	width        = 8.5;
 	height       = 11;
@@ -280,7 +279,7 @@ PaperStyle::PaperStyle(const char *nname)
 		if (strcasecmp(name,laidout->papersizes.e[c]->name)==0) {
 			width  = laidout->papersizes.e[c]->width;
 			height = laidout->papersizes.e[c]->height;
-			flags  = laidout->papersizes.e[c]->flags;
+			is_landscape = laidout->papersizes.e[c]->is_landscape;
 			dpi    = laidout->papersizes.e[c]->dpi;
 			makestr(defaultunits, laidout->papersizes.e[c]->defaultunits);
 			break;
@@ -292,13 +291,13 @@ PaperStyle::PaperStyle(const char *nname)
 /*! w and h are in units. They are converted to inches internally,
  * and PaperStyle::defaultunits is only a hint.
  */
-PaperStyle::PaperStyle(const char *nname,double w,double h,unsigned int nflags,double ndpi,const char *units)
+PaperStyle::PaperStyle(const char *nname,double w,double h,unsigned int nis_landscape,double ndpi,const char *units)
 {
 	name         = newstr(nname);
 	width        = w;
 	height       = h;
 	dpi          = ndpi;
-	flags        = nflags;
+	is_landscape = nis_landscape;
 	defaultunits = newstr(units);
 	if (!defaultunits) defaultunits = newstr("in");
 
@@ -344,7 +343,7 @@ int PaperStyle::SetFromString(const char *nname)
 {
 	if (!nname) return 1;
 
-	flags &= ~PAPERSTYLE_Landscape;
+	is_landscape = false;
 	if (!strncasecmp(nname,"custom",6)) {
 		nname+=6;
 		makestr(name,"Custom");
@@ -404,16 +403,16 @@ int PaperStyle::SetFromString(const char *nname)
 				makestr(name, laidout->papersizes.e[c]->name);
 				width  = laidout->papersizes.e[c]->width;
 				height = laidout->papersizes.e[c]->height;
-				flags  = laidout->papersizes.e[c]->flags;
 				dpi    = laidout->papersizes.e[c]->dpi;
+				is_landscape = laidout->papersizes.e[c]->is_landscape;
 				makestr(defaultunits, laidout->papersizes.e[c]->defaultunits);
 				break;
 			}
 		}
 	}
 
-	if (strcasestr(nname, "portrait"))       flags &= ~PAPERSTYLE_Landscape;
-	else if (strcasestr(nname, "landscape")) flags |= PAPERSTYLE_Landscape;
+	if (strcasestr(nname, "portrait"))       is_landscape = false;
+	else if (strcasestr(nname, "landscape")) is_landscape = true;
 
 	return 0;
 }
@@ -453,7 +452,7 @@ void PaperStyle::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *conte
 	fprintf(f,"%swidth %.10g\n",spc,width*scale); 
 	fprintf(f,"%sheight %.10g\n",spc,height*scale);
 	fprintf(f,"%sdpi %.10g\n",spc,dpi);
-	fprintf(f,"%s%s\n",spc,(flags&1?"landscape":"portrait"));
+	fprintf(f,"%s%s\n",spc,(is_landscape ? "landscape" : "portrait"));
 }
 
 Laxkit::Attribute *PaperStyle::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *savecontext)
@@ -476,7 +475,7 @@ Laxkit::Attribute *PaperStyle::dump_out_atts(Laxkit::Attribute *att,int what,Lax
 	att->push("width",width*scale); 
 	att->push("height",height*scale);
 	att->push("dpi",dpi);
-	att->push("orientation",(flags&1?"landscape":"portrait"));
+	att->push("orientation",(is_landscape ? "landscape" : "portrait"));
 
 	return att;
 }
@@ -507,15 +506,15 @@ void PaperStyle::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContex
 
 		} else if (!strcmp(aname,"orientation")) {
 			if (!strcasecmp(value,"portrait"))
-				flags&=~PAPERSTYLE_Landscape;
+				is_landscape = false;
 			else  //landscape
-				flags|=PAPERSTYLE_Landscape;
+				is_landscape = true;
 
 		} else if (!strcmp(aname,"landscape")) {
-			flags|=PAPERSTYLE_Landscape;
+			is_landscape = true;
 
 		} else if (!strcmp(aname,"portrait")) {
-			flags&=~PAPERSTYLE_Landscape;
+			is_landscape = false;
 
 		} else if (!strcmp(aname,"defaultunits")) {
 			makestr(defaultunits,value);
@@ -655,8 +654,8 @@ int createPaperStyle(ValueHash *context, ValueHash *parameters, Value **value_re
 		int orientation=parameters->findInt("orientation",-1,&i);
 		if (i==2) throw _("Invalid format for orientation!");
 		if (i==0) {
-			if (orientation==0) paper->flags&=~1;
-			else paper->flags|=1;
+			if (orientation==0) paper->is_landscape = false;
+			else paper->is_landscape = true;
 		}
 
 		 //---width
@@ -1138,12 +1137,13 @@ void PaperGroup::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *conte
 	}
 }
 
-int PaperGroup::AddPaper(const char *nme,double w,double h,const double *m)
+int PaperGroup::AddPaper(const char *nme,double w,double h,const double *m, const char *label)
 {
 	int landscape = 0;
 	PaperStyle *paperstyle = GetNamedPaper(w,h, &landscape, 0,nullptr, .0001);
 	if (paperstyle) {
 		paperstyle = dynamic_cast<PaperStyle*>(paperstyle->duplicate());
+		paperstyle->landscape(landscape);
 	} else {
 		paperstyle = new PaperStyle(nme,w,h,0,72,NULL);
 	}
@@ -1153,8 +1153,10 @@ int PaperGroup::AddPaper(const char *nme,double w,double h,const double *m)
 	PaperBoxData *boxdata = new PaperBoxData(box);
 	box->dec_count();
 	boxdata->m(m);
+	if (label) boxdata->label = label;
 
 	papers.push(boxdata);
+	boxdata->dec_count();
 	return 0;
 }
 

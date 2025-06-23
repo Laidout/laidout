@@ -191,8 +191,8 @@ int NewDocumentFunction(ValueHash *context,
 		if (!imp) throw _("Missing an imposition type!");
 
 		 //correct orientation if necessary
-		if (orientation && (paper->flags&1)==0) paper->flags|=1;
-		else if (!orientation && (paper->flags&1)!=0) paper->flags&=~1;
+		if (orientation && !paper->landscape()) paper->landscape(true);
+		else if (!orientation && paper->landscape()) paper->landscape(false);
 
 		 //finally, create the document
 		imp->NumPages(numpages);

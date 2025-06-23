@@ -41,7 +41,7 @@ enum BoxTypes {
 	MediaBox     = (1<<0), //paper size
 	PrintableBox = (1<<3), //printable area
 	BleedBox     = (1<<4), //area outside trimbox to print, usually 3-5mm
-	TrimBox      = (1<<2), //area after trimming, final page size
+	TrimBox      = (1<<2), //area after bleed trimming, final page size
 	ArtBox       = (1<<1), //guide for area of image interest
 	AllBoxes     = ((1<<0)|(1<<3)|(1<<4)|(1<<2)|(1<<1))
 };
@@ -57,19 +57,19 @@ class PaperStyle : public Value, public FunctionEvaluator
 	double width,height;
 	double dpi;
 	char *defaultunits;
-	unsigned int flags; //1=landscape !(&1)=portrait
+	bool is_landscape;
 	bool favorite;
 
 	PaperStyle(const char *nname=NULL);
-	PaperStyle(const char *nname,double ww,double hh,unsigned int nflags,double ndpi,const char *defunits);
+	PaperStyle(const char *nname,double ww,double hh,unsigned int nis_landscape,double ndpi,const char *defunits);
 	virtual ~PaperStyle();
 	virtual double w() { if (landscape()) return height; else return width; }
 	virtual double h() { if (landscape()) return width; else return height; }
 	virtual double w(double v) { if (landscape()) height = v; else width = v; return w(); }
 	virtual double h(double v) { if (landscape()) width = v; else height = v; return h(); }
-	virtual int landscape() { return flags&PAPERSTYLE_Landscape; }
-	virtual int landscape(int l)
-		{ if (l) flags|=PAPERSTYLE_Landscape; else flags&=~PAPERSTYLE_Landscape; return flags&PAPERSTYLE_Landscape; }
+	virtual bool landscape() { return is_landscape; }
+	virtual bool landscape(bool l)
+		{ is_landscape = l; return is_landscape; }
 	virtual int SetFromString(const char *nname);
 
 	//from Value:
@@ -89,7 +89,7 @@ class PaperStyle : public Value, public FunctionEvaluator
 
 
 //----------------------------- Paper Helper Funcs --------------------------------------
-PaperStyle *GetNamedPaper(double width, double height, int *orientation_ret, int startfrom, int *index_ret, double epsilon);
+PaperStyle *GetNamedPaper(double width, double height, int *is_landscape_ret, int startfrom, int *index_ret, double epsilon);
 PaperStyle *GetPaperFromName(const char *name);
 Laxkit::PtrStack<PaperStyle> *GetBuiltinPaperSizes(Laxkit::PtrStack<PaperStyle> *papers);
 
@@ -117,7 +117,7 @@ class PaperBoxData : public LaxInterfaces::SomeData
 	Laxkit::ScreenColor color, outlinecolor;
 	PaperBox *box;
 	int index, index_back;
-	unsigned int which; //usused?
+	unsigned int which; //unused?
 
 	PaperBoxData(PaperBox *paper);
 	virtual ~PaperBoxData();
@@ -147,7 +147,7 @@ class PaperGroup : virtual public Laxkit::Resourceable, virtual public ObjectCon
 	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 
 	virtual int AddPaper(double w,double h,double offsetx,double offsety);
-	virtual int AddPaper(const char *nme,double w,double h,const double *m);
+	virtual int AddPaper(const char *nme,double w,double h,const double *m, const char *label);
 	virtual double OutlineColor(double r,double g,double b);
 	virtual PaperStyle *GetBasePaper(int index);
 	virtual int FindPaperBBox(Laxkit::DoubleBBox *box_ret);

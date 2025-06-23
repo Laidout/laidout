@@ -402,7 +402,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	if (papergroup) {
 		PaperStyle *defaultpaper = nullptr;
 		defaultpaper = papergroup->papers.e[0]->box->paperstyle;
-		landscape   = (defaultpaper->flags & 1) ? 1 : 0;
+		landscape   = (defaultpaper->landscape()) ? 1 : 0;
 		paperwidth  = defaultpaper->width;
 		paperheight = defaultpaper->height;
 	} else if (spread) {
@@ -2161,7 +2161,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 	 //create the document if necessary
 	if (!doc && !in->toobj) {
 		Imposition *imp = new Singles;  //*** this is not necessarily so! uses PageSets??
-		paper->flags = ((paper->flags) & ~1) | (landscape ? 1 : 0);
+		paper->landscape(landscape);
 		imp->SetPaperSize(paper);
 		doc = new Document(imp, Untitled_name());  // incs imp count
 		imp->dec_count();                          // remove initial count

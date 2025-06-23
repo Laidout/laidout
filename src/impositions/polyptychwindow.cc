@@ -216,7 +216,8 @@ NetImposition *PolyptychWindow::getImposition()
 		for (int c=0; c<hw->papers.n; c++) {
 			papers->AddPaper(hw->papers.e[c]->name,
 					hw->papers.e[c]->width,hw->papers.e[c]->height,
-					hw->papers.e[c]->matrix.m()
+					hw->papers.e[c]->matrix.m(),
+					nullptr // label
 					);
 		}
 	}

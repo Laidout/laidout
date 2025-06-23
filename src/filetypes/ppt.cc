@@ -301,7 +301,7 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog 
 	 // If there are more than one papers, this may not work as expected...
 	 // The ps Orientation comment determines how onscreen viewers will show 
 	 // pages. This can be overridden by the %%PageOrientation: comment
-	landscape=(papergroup->papers.e[0]->box->paperstyle->flags&1)?"true":"false";
+	landscape = (papergroup->papers.e[0]->box->paperstyle->landscape())?"true":"false";
 	//paperwidth=papergroup->papers.e[0]->box->paperstyle->width;
 
 	 //match the first paper name with a passepartout paper name
@@ -550,7 +550,7 @@ int PptinFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log, 
 	 //create the document
 	if (!doc && !in->toobj) {
 		Imposition *imp=new Singles;
-		paper->flags=((paper->flags)&~1)|(landscape?1:0);
+		paper->landscape(landscape);
 		imp->SetPaperSize(paper);
 		doc=new Document(imp,Untitled_name());
 		imp->dec_count();
