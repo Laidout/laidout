@@ -178,6 +178,7 @@ otherobjs= \
 	printing/psimagepatch.o \
 	printing/psout.o \
 	printing/pspathsdata.o \
+	text/streaminterface.o \
 	ui/about.o \
 	ui/autosavewindow.o \
 	ui/buttonbox.o \
@@ -246,10 +247,52 @@ lax:
 test2: lax interfaces test2.o papersizes.o
 	$(LD) test2.o styles.o dataobjects/group.o dataobjects/objectcontainer.o papersizes.o interfaces/paperinterface.o $(LDFLAGS)  -llaxinterfaces -llaxkit -o $@
 
-#test: lax laxinterface $(objs) $(POLYPTYCHFORLAIDOUT)
-test: lax $(objs) $(POLYPTYCHFORLAIDOUT)
+testobjs= \
+	calculator/calculator.o \
+	calculator/curvevalue.o \
+	calculator/interpreter.o \
+	calculator/shortcuttodef.o \
+	calculator/values.o \
+	core/fieldplace.o \
+	core/plaintext.o \
+	core/utils.o \
+	dataobjects/affinevalue.o \
+	dataobjects/bboxvalue.o \
+	dataobjects/datafactory.o \
+	dataobjects/drawableobject.o \
+	dataobjects/epsdata.o \
+	dataobjects/fontvalue.o \
+	dataobjects/group.o \
+	dataobjects/groupinterface.o \
+	dataobjects/helpertypes.o \
+	dataobjects/imagevalue.o \
+	dataobjects/lcaptiondata.o \
+	dataobjects/lellipsedata.o \
+	dataobjects/lengraverfilldata.o \
+	dataobjects/lgradientdata.o \
+	dataobjects/limagedata.o \
+	dataobjects/limageinterface.o \
+	dataobjects/limagepatch.o \
+	dataobjects/lmirrorinterface.o \
+	dataobjects/lpathsdata.o \
+	dataobjects/lperspectiveinterface.o \
+	dataobjects/lroundedrectdata.o \
+	dataobjects/lsimplepath.o \
+	dataobjects/lsomedataref.o \
+	dataobjects/ltextonpath.o \
+	dataobjects/lvoronoidata.o \
+	dataobjects/mysterydata.o \
+	dataobjects/objectcontainer.o \
+	dataobjects/objectfilter.o \
+	dataobjects/pointsetvalue.o \
+	dataobjects/printermarks.o \
+	filetypes/exportdialog.o \
+	filetypes/filefilters.o \
+	filetypes/filters.o \
+
+test: lax $(objs) $(POLYPTYCHFORLAIDOUT) test.o
 	for NAME in $(dirs); do $(MAKE) -C $$NAME || exit ; done
-	$(LD) $(CPPFLAGS) $(otherobjs) test.cc $(POLYPTYCH_GL_OBJS) $(POLYPTYCHOBJS) -L$(LAXIDIR) -L$(LAXDIR) -llaxinterfaces -llaxkit -lharfbuzz -lcairo -lfontconfig $(LDFLAGS) $(OPTIONALLIBS) -lreadline -lcrypto $(POLYPTYCHLIBS) -o $@
+	$(LD) $(testobjs) test.o $(POLYPTYCH_GL_OBJS) $(POLYPTYCHOBJS) -L$(LAXIDIR) -L$(LAXDIR) $(LDFLAGS) $(OPTIONALLIBS) $(POLYPTYCHLIBS) text/*.o -o $@
 
 docs:
 	cd ../docs && doxygen 
