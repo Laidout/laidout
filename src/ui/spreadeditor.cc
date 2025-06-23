@@ -952,7 +952,7 @@ int SpreadInterface::rLBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse
 		double m[6];
 		for (int c=0; c<view->spreads.n; c++) {
 			transform_mult(m, view->spreads.e[c]->m(), dp->Getctm());
-			if (box.intersect(m, view->spreads.e[c], true, false)) {
+			if (box.intersect(m, view->spreads.e[c])) {
 				curspreads.pushnodup(view->spreads.e[c],0);
 
 				for (int c2=0; c2<view->spreads.e[c]->spread->pagestack.n(); c2++) {

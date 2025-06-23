@@ -1998,7 +1998,7 @@ int LaidoutViewport::FindObjects(Laxkit::DoubleBBox *box, char real, char ascuro
 		DBG cerr <<"lov.FindObject oc: "; nextindex.context.out("");
 		DBG	if (nextindex.obj) cerr <<nextindex.obj->object_id<<" ("<<nextindex.obj->whattype()<<") "<<endl;
 
-		if (box->intersect(mm,nextindex.obj,1,0)) {
+		if (box->intersect(mm,nextindex.obj)) {
 			// *** 1st approximation of intersection! maybe now check for actual touching?
 
 			 // matching object found! add to list that gets returned
