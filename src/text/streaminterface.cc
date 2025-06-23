@@ -14,6 +14,7 @@
 //
 
 #include "streaminterface.h"
+#include "../language.h"
 
 
 using namespace LaxInterfaces;
@@ -23,12 +24,6 @@ namespace Laidout {
 
 //--------------------------- StreamInterface -------------------------------------
 
-bool StreamInterface::AttachStream()
-{
-	// *** IMP ME!!
-	return false;
-}
-
 
 StreamInterface::StreamInterface(anInterface *nowner, int nid,Laxkit::Displayer *ndp)
   : TextStreamInterface(nowner, nid, ndp)
@@ -37,11 +32,27 @@ StreamInterface::StreamInterface(anInterface *nowner, int nid,Laxkit::Displayer 
 StreamInterface::~StreamInterface()
 {}
 
+const char *StreamInterface::Name()
+{
+	return _("Streams");
+}
+
+const char *StreamInterface::whatdatatype()
+{
+	return nullptr;
+}
+
 anInterface *StreamInterface::duplicate(anInterface *dup)
 {
 	if (dup == nullptr) dup = new StreamInterface(nullptr,-1,nullptr);
 	else if (!dynamic_cast<StreamInterface *>(dup)) return nullptr;
 	return TextStreamInterface::duplicate(dup);
+}
+
+bool StreamInterface::AttachStream()
+{
+	PostMessage("IMP ME!!");
+	return false;
 }
 
 

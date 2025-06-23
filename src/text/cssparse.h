@@ -37,6 +37,7 @@ const char *ParseName(const char *start, int *n_ret, const char *extra);
 int ParseSimpleFofS(const char *value, int *f_len_ret, const char **s_ret, int *s_len_ret, const char **end_ret);
 
 
+
 //-------------------------------- css classes ----------------------------------------
 
 class CSSParseCache
@@ -82,7 +83,7 @@ class CSSSelector
 Style *ProcessCSSFontFace(Style *style, Laxkit::Attribute *att, Laxkit::ErrorLog *log);
 CSSSelector *ParseCSSSelector(const char *cssvalue, const char **endptr);
 Laxkit::LaxFont *MatchCSSFont(const char *family_list, int italic, const char *variant, int weight, CSSParseCache *cache);
-Style *ProcessCSSBlock(Style *existing_style, const char *cssvalue, const char **error_pos_ret, Laxkit::ErrorLog &log);
+Style *ProcessCSSBlock(Style *existing_style, const char *cssvalue, const char **error_pos_ret, Laxkit::ErrorLog &log, int *error_status);
 
 bool ParseCommonStyle(Laxkit::Attribute *att, Style *current, Laxkit::ErrorLog &log, Style **style_ret);
 

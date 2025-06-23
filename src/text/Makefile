@@ -14,12 +14,18 @@ CPPFLAGS= -Wall $(DEBUGFLAGS) $(EXTRA_CPPFLAGS) -I$(LAXDIR)/.. `pkg-config --cfl
 
 # uncomment these when they are actually ready for Laidout inclusion. Otherwise put them in wip
 objs= \
-	#cssparse.o
-	#streams.o
+	streaminterface.o
+#	entities.o \
+#	lengthvalue.o \
+#	cssparse.o \
+#	opentype.o \
+#	style.o \
+#	streams.o \
+#	markdownimporter.o \
 
 all: $(objs)
 
-wip: streams.o cssparse.o opentype.o style.o
+wip: lengthvalue.o cssparse.o opentype.o style.o streams.o
 
 depends:
 	../utils/makedependencies -fmakedepend -I$(LAXDIR)/.. *.cc

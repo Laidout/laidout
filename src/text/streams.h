@@ -295,6 +295,7 @@ class StreamImportData : public Laxkit::anObject
 	ImportFilter *importer = nullptr;
 	PlainText *text_object = nullptr;
 	FileValue *file = nullptr;
+	clock_t import_time = 0;
 
 	virtual ~StreamImportData();
 };

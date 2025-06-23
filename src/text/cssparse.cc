@@ -21,6 +21,9 @@
 #include <lax/laxutils.h>
 #include <lax/language.h>
 
+#include "../dataobjects/fontvalue.h"
+#include "lengthvalue.h"
+
 #include <lax/debug.h>
 
 
@@ -348,7 +351,7 @@ LaxFont *MatchCSSFont(const char *family_list, int italic, const char *variant, 
 }
 
 //forward declaration:
-Style *ParseCSSBlock(Style *existing_style, const char *cssvalue, const char **error_pos_ret, Laxkit::ErrorLog &log);
+Style *ProcessCSSBlock(Style *existing_style, const char *cssvalue, const char **error_pos_ret, Laxkit::ErrorLog &log, int *error_status);
 
 
 /*! Convert direct attributes of att to parts of current->style.
@@ -374,7 +377,7 @@ bool ParseCommonStyle(Laxkit::Attribute *att, Style *current, Laxkit::ErrorLog &
 			 //update newstyle with style found
 			const char *endptr = nullptr;
 			int error_status = 0;
-			Style *style_ret = ParseCSSBlock(style, value, &endptr, log, &error_status);
+			Style *style_ret = ProcessCSSBlock(style, value, &endptr, log, &error_status);
 			if (error_status) {
 				*style_ret = nullptr;
 				if (style && !current) style->dec_count();
@@ -420,7 +423,7 @@ bool ParseCommonStyle(Laxkit::Attribute *att, Style *current, Laxkit::ErrorLog &
 /*! Returns existing_style on success, or nullptr on error.
  * If `style == null`, then create a new Style object.
   */
-Style *ParseCSSBlock(Style *existing_style, const char *cssvalue, const char **error_pos_ret, Laxkit::ErrorLog &log)
+Style *ProcessCSSBlock(Style *existing_style, const char *cssvalue, const char **error_pos_ret, Laxkit::ErrorLog &log, int *error_status)
 {
 	//CSS:
 	// selectors:    selector[, selector] { ... }

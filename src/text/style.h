@@ -35,7 +35,7 @@ class Style : public ValueHash, public Laxkit::Resourceable
     virtual ~Style();
     virtual const char *whattype() { return "Style"; }
 
-    virtual Value *FindValue(int attribute_name);
+    //virtual Value *FindValue(int attribute_name);
     virtual int MergeFromMissing(Style *s); //only from s not in *this
     virtual int MergeFrom(Style *s); //all in s override *this
     virtual Style *Collapse();

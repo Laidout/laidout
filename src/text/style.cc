@@ -119,4 +119,22 @@ int Style::MergeFrom(Style *s)
 }
 
 
+void Style::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
+{
+	ValueHash::dump_in_atts(att, flag, context);
+}
+
+Laxkit::Attribute *Style::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
+{
+	return ValueHash::dump_out_atts(att, what, context);
+}
+
+void Style::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
+{
+	Attribute att;
+	dump_out_atts(&att, what,context);
+	att.dump_out(f,indent);
+}
+
+
 } // namespace Laidout
