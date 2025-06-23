@@ -212,17 +212,17 @@ int ReImposeFunction(ValueHash *context,
 				}
 			}
 			if (paper) {
-				paper=(PaperStyle*)paper->duplicate();
-				if (strcasestr(str,"landscape")) paper->flags=1;
-				else if (strcasestr(str,"portrait")) paper->flags=0;
+				paper = (PaperStyle*)paper->duplicate();
+				if (strcasestr(str,"landscape")) paper->landscape(true);
+				else if (strcasestr(str,"portrait")) paper->landscape(false);
 			}
 		}
 		if (!paper) { delete imp; throw _("You must provide a paper size!"); }
 
 		 //apply orientation
 		if (orientation>=0) {
-			if (orientation) paper->flags|=1;
-			else paper->flags&=~1;
+			if (orientation) paper->landscape(true);
+			else paper->landscape(false);
 		}
 		imp->SetPaperSize(paper); // makes a duplicate of paper
 		paper->dec_count();
