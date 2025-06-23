@@ -210,6 +210,31 @@ char *ConfigDir(const char *what)
 	return config_dir;
 }
 
+/*! Prep a save file, but write to a temporary file so if there is a bug or other error
+ * you do not obliterate your original file.
+ * Use in conjunction with close_and_copy_temp_file().
+ * temp_file_name_ret should be large enough to hold a string 20 characters larger than file.
+ */
+// FILE *open_temp_file_for_writing(const char *file, char *temp_file_name_ret)
+// {
+// 	**** TODO!!
+// }
+
+/*! Used with open_temp_file_for_writing(), finish a file write by copying the temp file
+ * to the actual file, and deleting the temporary file.
+ * Return 0 on success, else:
+ * - 1 for fail at closing f
+ * - 2 for fail at copying the temp file
+ * - 3 for fail at removing temp_file_name
+ */
+// int close_and_copy_temp_file(FILE *f, const char *file, const char *temp_file_name)
+// {
+// 	if (fclose(f) != 0) return 1;
+// 	if (!std::filesystem::copy(temp_file_name, file)) return 2;
+// 	if (!std::filesystem::remove(temp_file_name)) return 3;
+// 	return 0;
+// }
+
 //! Simplify opening any sort of file for writing, does basic error checking, such as for existence, and writability.
 /*! \ingroup misc
  *
