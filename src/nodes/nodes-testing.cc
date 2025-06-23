@@ -536,8 +536,8 @@ FitInNode::FitInNode()
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "bounds", nullptr,1, _("Bounds"), nullptr));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "padding", new DoubleValue(0),1, _("Padding"), _("A number, or set of 4: [top, right, bottom, left]")));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "space", new IntValue(1),1, _("Parent space"), _("Number of parents up to use as bounds space. -1 for top.")));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "scaleup", new BooleanValue(false),1, _("If smaller that bounds, scale up"), nullptr,0,true));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "scaledown", new BooleanValue(true),1, _("If Larger than bounds, scale down"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "scaleup", new BooleanValue(false),1, _("If smaller than bounds, scale up"), nullptr,0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "scaledown", new BooleanValue(true),1, _("If larger than bounds, scale down"), nullptr,0,true));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "alignx", new DoubleValue(50),1, _("Align horizontally, 0..100"), nullptr,0,true));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "aligny", new DoubleValue(50),1, _("Align vertically, 0..100"), nullptr,0,true));
 
