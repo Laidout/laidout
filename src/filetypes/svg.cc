@@ -67,6 +67,8 @@ static int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData 
 
 //forward declarations:
 Imposition *ParseInkscapeMultipage(Attribute *namedview, double *viewbox, double scalex, double scaley);
+int ObjOnPaperTest(DrawableObject *obj, PaperGroup *papergroup);
+
 
 //! Creates a Laidout Document from a Svg file, and adds to laidout->project.
 /*! Assumes something has already checked that file is an SVG, so things like failure to
@@ -133,14 +135,15 @@ SvgExportConfig::SvgExportConfig()
 	use_mesh        = false;
 	data_meta       = false;
 	use_powerstroke = false;
+	use_multipage   = true;
 	pixels_per_inch = DEFAULT_PPINCH;
 
-	for (int c=0; c<laidout->exportfilters.n; c++) {
-		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Image")) {
-			filter=laidout->exportfilters.e[c];
-			break;
-		}
-	}
+	// for (int c=0; c<laidout->exportfilters.n; c++) {
+	// 	if (!strcmp(laidout->exportfilters.e[c]->Format(),"Svg")) {
+	// 		filter = laidout->exportfilters.e[c];
+	// 		break;
+	// 	}
+	// }
 }
 
 /*! Base on config, copy over its stuff.
@@ -148,16 +151,18 @@ SvgExportConfig::SvgExportConfig()
 SvgExportConfig::SvgExportConfig(DocumentExportConfig *config)
 	: DocumentExportConfig(config)
 {
-	SvgExportConfig *svgconf=dynamic_cast<SvgExportConfig*>(config);
+	SvgExportConfig *svgconf = dynamic_cast<SvgExportConfig*>(config);
 	if (svgconf) {
 		use_mesh        = svgconf->use_mesh;
 		use_powerstroke = svgconf->use_powerstroke;
+		use_multipage   = svgconf->use_multipage;
 		pixels_per_inch = svgconf->pixels_per_inch;
 		data_meta       = svgconf->data_meta;
 
 	} else {
 		use_mesh        = false;
 		use_powerstroke = false;
+		use_multipage   = true;
 		pixels_per_inch = DEFAULT_PPINCH;
 		data_meta       = false;
 	}
@@ -172,16 +177,19 @@ Value* SvgExportConfig::duplicate()
 
 Value *SvgExportConfig::dereference(const char *extstring, int len)
 {
-	if (!strncmp(extstring,"use_mesh",8)) {
+	if (isName(extstring,len, "use_mesh")) {
 		return new BooleanValue(use_mesh);
 
-	} else if (!strncmp(extstring,"use_powerstroke",15)) {
+	} else if (isName(extstring,len, "use_powerstroke")) {
 		return new BooleanValue(use_powerstroke);
 
-	} else if (!strncmp(extstring,"data_meta",9)) {
+	} else if (isName(extstring,len, "use_multipage")) {
+		return new BooleanValue(use_multipage);
+
+	} else if (isName(extstring,len, "data_meta")) {
 		return new BooleanValue(data_meta);
 
-	} else if (!strncmp(extstring,"pixels_per_inch",15)) {
+	} else if (isName(extstring,len, "pixels_per_inch")) {
 		return new DoubleValue(pixels_per_inch);
 
 	}
@@ -272,6 +280,15 @@ ObjectDef* SvgExportConfig::makeObjectDef()
             0,     //flags
             nullptr);//newfunc
  
+ 	def->push("use_multipage",
+            _("Use Inkscape multipage"),
+            _("Whether to use Inkscape's multipage specification."),
+            "boolean",
+            nullptr,   //range
+            "true", //defvalue
+            0,     //flags
+            nullptr);//newfunc
+
     def->push("data_meta",
             _("Meta to data-*"),
             _("Convert any object metadata starting with \"data-\" to data-* attributes in elements. Also class is used as the class attribute. Note letters for data are forced to lower case."),
@@ -301,17 +318,19 @@ Laxkit::Attribute *SvgExportConfig::dump_out_atts(Laxkit::Attribute *att,int wha
 	att = DocumentExportConfig::dump_out_atts(att, what, context);
 
 	if (what == -1) {
-		att->push("use_mesh","no",       "whether to output meshes as svg2 meshes");
-		att->push("use_powerstroke","no","whether to use Inkscape's powerstroke LPE with paths where appropriate");
+		att->push("use_mesh","no",       "Whether to output meshes as svg2 meshes");
+		att->push("use_powerstroke","no","Whether to use Inkscape's powerstroke LPE with paths where appropriate");
+		att->push("use_multipage","yes", "Whether to use Inkscape's multipage specification");
 		att->push("pixels_per_inch","96","Pixels per inch. Usually 96 (css's value) is a safe bet.");
 		att->push("data_meta","no",      "Whether to convert object metadata to data-* attributes.");
 		return att;
 	}
 
-	att->push("use_mesh",        use_mesh?"yes":"no");
-	att->push("use_powerstroke", use_powerstroke?"yes":"no");
 	att->push("pixels_per_inch", pixels_per_inch);
-	att->push("data_meta",       data_meta?"yes":"no");
+	att->push("use_mesh",        use_mesh        ? "yes" : "no");
+	att->push("use_powerstroke", use_powerstroke ? "yes" : "no");
+	att->push("use_multipage",   use_multipage   ? "yes" : "no");
+ 	att->push("data_meta",       data_meta       ? "yes" : "no");
 
 	return att;
 }
@@ -327,6 +346,7 @@ void SvgExportConfig::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpC
 
 		if (!strcmp(name,"use_mesh")) use_mesh = BooleanAttribute(value);
 		else if (!strcmp(name,"use_powerstroke")) use_powerstroke = BooleanAttribute(value);
+		else if (!strcmp(name,"use_multipage")) use_multipage = BooleanAttribute(value);
 		else if (!strcmp(name,"data_meta")) data_meta = BooleanAttribute(value);
 		else if (!strcmp(name,"pixels_per_inch")) {
 			double d=0;
@@ -339,14 +359,14 @@ void SvgExportConfig::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpC
 //! Returns a new SvgExportConfig.
 Value *newSvgExportConfig()
 {
-	SvgExportConfig *d=new SvgExportConfig;
+	SvgExportConfig *d = new SvgExportConfig;
 	for (int c=0; c<laidout->exportfilters.n; c++) {
 		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Svg"))
-			d->filter=laidout->exportfilters.e[c];
+			d->filter = laidout->exportfilters.e[c];
 	}
-	ObjectValue *v=new ObjectValue(d);
-	d->dec_count();
-	return v;
+	// ObjectValue *v = new ObjectValue(d);
+	// d->dec_count();
+	return d;
 }
 
 
@@ -360,9 +380,9 @@ Value *newSvgImportConfig()
 		if (!strcmp(laidout->importfilters.e[c]->Format(),"Svg"))
 			d->filter=laidout->importfilters.e[c];
 	}
-	ObjectValue *v=new ObjectValue(d);
-	d->dec_count();
-	return v;
+	// ObjectValue *v=new ObjectValue(d);
+	// d->dec_count();
+	return d;
 }
 
 //------------------------------------ SvgOutputFilter ----------------------------------
@@ -1672,6 +1692,9 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 
 	setlocale(LC_ALL,"C");
 
+	double PPINCH = DEFAULT_PPINCH;
+	PPINCH = out->pixels_per_inch;
+
 	int warning = 0;
 	Spread *spread = nullptr;
 	Group *g = nullptr;
@@ -1723,18 +1746,47 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	          "     viewBox=\"0 0 %f %f\"\n", height, width*96, height*96);
 	fprintf(f,"   >\n");
 
-	 //set default units for use later in Inkscape
-	char *units=nullptr;
+	//set default units for use later in Inkscape
+	char *units = nullptr;
 	GetUnitManager()->UnitInfoId(laidout->prefs.default_units, nullptr, &units,nullptr,nullptr,nullptr);
+
+	// write namedview
+	fprintf(f,"  <sodipodi:namedview\n"
+				  "      id=\"base\"\n");
 	if (units) {
-		fprintf(f,"  <sodipodi:namedview\n"
-				  "      id=\"base\"\n"
-				  "      inkscape:document-units=\"%s\"\n"
-				  "      units=\"%s\"\n"
-				  "  />\n",
+		fprintf(f,"      inkscape:document-units=\"%s\"\n"
+				  "      units=\"%s\"\n",
 				 units, units);
 	}
-			
+	fprintf(f,"  >\n");
+	if (out->use_multipage && papergroup && papergroup->papers.n) {
+		for (int c = 0; c < papergroup->papers.n; c++) {
+			PaperBoxData *box = papergroup->papers.e[c];
+			RectPageStyle *r = nullptr;
+			const char *label = box->label.c_str();
+			if (!label) label = "";
+			fprintf(f, "    <inkscape:page\n"
+					   "      x=\"%f\"\n"
+					   "      y=\"%f\"\n"
+					   "      width=\"%f\"\n"
+					   "      height=\"%f\"\n"
+					   "      id=\"%s\"\n"
+					   "      margin=\"%f %f %f %f\"\n"
+					   "      bleed=\"0\"\n" //\"%f\"\n"
+					   "      inkscape:label=\"%s\" />\n",
+					   box->m(4)*PPINCH, box->m(5)*PPINCH, // x,y
+					   box->boxwidth()*PPINCH, box->boxheight()*PPINCH, // w,h
+					   label, // id
+					   r ? r->mt*PPINCH : 0, //margin
+					   r ? r->mr*PPINCH : 0,
+					   r ? r->mb*PPINCH : 0,
+					   r ? r->ml*PPINCH : 0,
+					   label
+					   );
+		}
+	}
+	fprintf(f,"  </sodipodi:namedview>\n");
+
 
 	 //----write out global defs section
 	 //   ..gradients and such
@@ -1806,8 +1858,6 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			
 	
 	 //----Write out objects....
-	double PPINCH = DEFAULT_PPINCH;
-	PPINCH = out->pixels_per_inch;
 
 	 //transform to paper * conversion to left handed system, and 1/96th of an inch per unit
 	transform_set(m,PPINCH,0,0,-PPINCH, 0,0);
@@ -1818,10 +1868,10 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 		transform_copy(m,mmm);
 	}
 
-	if (out->curpaperrotation==0) { m[5]=height*PPINCH; }
-	else if (out->curpaperrotation==90) { m[4]=width*PPINCH; m[5]=height*PPINCH; }
-	else if (out->curpaperrotation==180) { m[4]=width*PPINCH; }
-	else if (out->curpaperrotation==270) { }
+	if      (out->curpaperrotation == 0)   { m[5] = height * PPINCH; }
+	else if (out->curpaperrotation == 90)  { m[4] = width  * PPINCH; m[5] = height * PPINCH; }
+	else if (out->curpaperrotation == 180) { m[4] = width  * PPINCH; }
+	else if (out->curpaperrotation == 270) { }
 
 	//fprintf(f,"  <g transform=\"matrix(90,0,0,-90, 0,%f)\">\n", height*72*1.25);
 	fprintf(f,"    <g id=\"paper_rotation\" transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
@@ -2053,12 +2103,11 @@ Imposition *ParseInkscapeMultipage(Attribute *namedview, double *viewbox, double
 	if (!content) return nullptr;
 
 	PaperGroup *papergroup = nullptr;
-	//Polyhedron *hedron = nullptr;
 	int pages_found = 0;
 	double m[6];
 	const char *name, *value;
-	//transform_set(m, 1.0/DEFAULT_PPINCH, 0,0, 1.0/DEFAULT_PPINCH, 0,0);
 	transform_identity(m);
+	RefPtrStack<RectPageStyle> pagestyles;
 
 	for (int c=0; c<content->attributes.n; c++) {
 		name  = content->attributes.e[c]->name;
@@ -2066,13 +2115,15 @@ Imposition *ParseInkscapeMultipage(Attribute *namedview, double *viewbox, double
 
 		if (!strcmp(name,"inkscape:page")) {
 			double x=0, y=0, width=0, height=0;
+			double margin_left = 0, margin_top = 0, margin_right = 0, margin_bottom = 0;
 			const char *id = nullptr;
+			const char *label = nullptr;
 
 			for (int c2=0; c2<content->attributes.e[c]->attributes.n; c2++) {
 				name  = content->attributes.e[c]->attributes.e[c2]->name;
 				value = content->attributes.e[c]->attributes.e[c2]->value;
 
-
+				// for reference: https://wiki.inkscape.org/wiki/Release_notes/1.3#Page_Tool
 				if (!strcmp(name,"x")) {
 					DoubleAttribute(value, &x);
 				} else if (!strcmp(name,"y")) {
@@ -2081,54 +2132,75 @@ Imposition *ParseInkscapeMultipage(Attribute *namedview, double *viewbox, double
 					DoubleAttribute(value, &width);
 				} else if (!strcmp(name,"height")) {
 					DoubleAttribute(value, &height);
-				} else if (!strcmp(name,"id")) {					
+				} else if (!strcmp(name,"id")) {
 					id = value;
+				} else if (!strcmp(name,"inkscape:label")) {
+					label = value;
+				} else if (!strcmp(name, "margin")) {
+					// top/right/bottom/left e.g. '10mm'
+					// top/bottom left/right e.g. '10mm 20mm'
+					// top left/right bottom e.g. '10mm 20mm 30mm'
+					// top right bottom left e.g. '10mm 20mm 30mm 40mm'
+					
+					// when inkscape saves, it appears to convert to unitless numbers, so default art board space.
+					// todo: for completeness, should really parse the units if there
+					double mm[4];
+					int num = DoubleListAttribute(value, mm, 4);
+					if (num == 1) {
+						margin_left = margin_top = margin_right = margin_bottom = mm[0];
+					} else if (num == 2) {
+						margin_top  = margin_bottom = mm[0];
+						margin_left = margin_right  = mm[1];
+					} else if (num == 3) {
+						margin_top    = mm[0];
+						margin_left   = margin_right = mm[1];
+						margin_bottom = mm[2];
+					} else {
+						margin_top    = mm[0];
+						margin_left   = mm[1];
+						margin_bottom = mm[2];
+						margin_right  = mm[3];
+					}
+				} else if (!strcmp(name, "bleed")) {
+					// *** todo!
 				}
 			}
 
 			if (width > 0 && height > 0) {
 				//add page
 				
-				y = viewbox[3] - y - height;
-				x *= scalex;
-				y *= scaley;
-				width *= scalex;
+				y       = viewbox[3] - y - height;
+				x      *= scalex;
+				y      *= scaley;
+				width  *= scalex;
 				height *= scaley;
 				
-				//if (!hedron) hedron = new Polyhedron();
-				//int pt1 = hedron->AddPoint(x,y);
-				//int pt2 = hedron->AddPoint(x+width,y);
-				//int pt3 = hedron->AddPoint(x+width,y+height);
-				//int pt4 = hedron->AddPoint(x,y+height);
-				//hedron->AddFace(4, pt1, pt2, pt3, pt4);
-
 				if (!papergroup) papergroup = new PaperGroup();
 				//m[4] = x / DEFAULT_PPINCH;
 				//m[5] = y / DEFAULT_PPINCH;
 				m[4] = x;
 				m[5] = y;
-				papergroup->AddPaper(id, width, height, m);
+				margin_left   *= scalex;
+				margin_right  *= scalex;
+				margin_top    *= scaley;
+				margin_bottom *= scaley;
+				RectPageStyle *rpagestyle = new RectPageStyle(RECTPAGE_LRTB, margin_left, margin_right, margin_top, margin_bottom);
+				rpagestyle->width = width;
+				rpagestyle->height = height;
+				pagestyles.push(rpagestyle);
+				rpagestyle->dec_count();
+				papergroup->AddPaper(id, width, height, m, label);
 
 				pages_found++;
 			}
 		}
 	}
 
-	//---- hedron based:
-	//if (!hedron) return nullptr;
-	//hedron->makeedges();	 
-	//Net *net = new Net;
-	//makestr(net->netname, poly->name);
-	//net->basenet = hedron;
-	//net->TotalUnwrap();
-	//net->rebuildLines();
-	//NetImposition *netimp = new NetImposition(hedron);
-
-	//---- papergroup based:
 	if (!papergroup) return nullptr;
 	Singles *imp = new Singles(papergroup, true);
-	//NetImposition *netimp = new NetImposition(papergroup);
-	//papergroup->dec_count();
+	for (int c = 0; c < pagestyles.n; c++) {
+		imp->SetDefaultPageStyle(c, pagestyles.e[c]);
+	}
 
 	imp->NumPages(pages_found);
 	return imp;
@@ -2461,7 +2533,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 				SomeData test;
 				Affine a;
 				Affine aa;
-
+				
 				for (int c = group->n()-1; c >= oldn; c--) {
 					obj = dynamic_cast<DrawableObject*>(group->e(c));
 					if (scalex != 1 || scaley != 1) {
@@ -2473,29 +2545,42 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 						obj->m(3, -obj->m(3));
 					}
 
+					// If inkscape:groupmode == "layer" then we need to step through children and reparent to proper pages.
+					// If not "layer", then layer probably spans all the papers
 					if (parsing_multipage) { //we need to figure out what page the object needs to be on
-						a = obj->GetTransformToContext(false, 0);
-						
-						for (int c2 = 1; c2 < doc->imposition->papergroup->papers.n; c2++) {
-							PaperBoxData *paperdata = doc->imposition->papergroup->papers.e[c2];
-							test.setbounds(paperdata);
-							aa = paperdata->Inversion();
-							aa.PreMultiply(a);
-							if (test.intersect(aa.m(), obj, true, false)) {
-								cout << "premult change svg object "<<obj->Id()<<" to paper "<<c2<<endl;
+						if (obj->metadata && strEquals(obj->metadata->findValue("inkscape:groupmode"), "layer")) {
+							PaperBoxData *paper0 = doc->imposition->papergroup->papers.e[0];
+							for (int c2 = obj->n()-1; c2 >= 0; c2--) {
+								DrawableObject *obj2 = dynamic_cast<DrawableObject*>(obj->e(c2));
+								int paperi = ObjOnPaperTest(obj2, doc->imposition->papergroup);
+								if (paperi > 0) { // if paper == 0, then we are already good, as everything starts on paper 0
+									// add object to appropriate page
+									PaperBoxData *paperdata = doc->imposition->papergroup->papers.e[paperi];
+									Affine oldglobal = obj2->GetTransformToContext(false, 0);
+									Affine newm = oldglobal;
+									newm.Multiply(paper0->m());
+									newm.Multiply(paperdata->Inversion());
+									obj->popp(obj2);
+									dynamic_cast<Group *>(doc->pages[paperi]->layers.e(0))->push(obj2,0);
+									obj2->m(newm.m());
+									obj2->dec_count();
+								}
 							}
-
-							aa = paperdata->Inversion();
-							aa.Multiply(a);
-							if (test.intersect(aa.m(), obj, true, false)) {
-								cout << "mult change svg object "<<obj->Id()<<" to paper "<<c2<<endl;
-							}
+							obj->FindBBox();
 						}
+						//  else {
+						// 	int paperi = ObjOnPaperTest(obj, doc->imposition->papergroup);
+						// 	if (paperi >= 0) {
+						// 		// *** apply group transforms? add new group for paper?
+						// 		//     add object to paper
+						// 	}
+						// }
 					}
 				}
 
 				continue;
 			}
+
 
 			 //push any other blocks into svghints.. not expected, but you never know
 			if (svghints) {
@@ -2505,6 +2590,16 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 			}
 		} // each svgdoc attribute
 		
+		// Make page labels correspond to inkscape page labels
+		if (parsing_multipage) {
+			for (int c=0; c < doc->imposition->papergroup->papers.n; c++) {
+				PaperBoxData *box = doc->imposition->papergroup->papers.e[c];
+				if (!box->label.IsEmpty()) {
+					// page range of 1, since inkscape pages might each have unique labels
+					doc->ApplyPageRange(box->label.c_str(), Numbers_Default, box->label.c_str(), c, c, c, 0);
+				}
+			}
+		}
 
 		// install global hints if they exist
 		if (svghints) {
@@ -2538,6 +2633,40 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 	return 0;
 }
 
+int ObjOnPaperTest(DrawableObject *obj, PaperGroup *papergroup)
+{
+	Affine a = obj->GetTransformToContext(false, 0);
+	DoubleBBox test;
+	
+	cerr << "check obj: "<<obj->Id()<<endl;
+
+	DoubleBBox aabb;
+
+	for (int c2 = 0; c2 < papergroup->papers.n; c2++) {
+		PaperBoxData *paperdata = papergroup->papers.e[c2];
+		cerr <<"  against "<<paperdata->label.c_str()<<endl;
+
+		test.setbounds(paperdata);
+		Affine aa = paperdata->Inversion();
+		aa.PreMultiply(a);
+		obj->ComputeAABB(aa.m(), aabb);
+
+		if (test.intersect(aa.m(), obj)) {
+			cerr << "    hit: premult change svg object "<<obj->Id()<<" to paper "<<c2<<endl;
+			return c2;
+		}
+
+		// aa = paperdata->Inversion();
+		// aa.Multiply(a);
+		// obj->ComputeAABB(aa.m(), aabb);
+
+		// if (test.intersect(aa.m(), obj)) {
+		// 	cout << "    hit: mult change svg object "<<obj->Id()<<" to paper "<<c2<<endl;
+		// }
+	}
+
+	return -1;
+}
 
 /*! Overcome linking issues for nested refs, by multiplying the transforms of any nested referencing.
  * This is necessary because Laidout SomeDataRef overwrites referenced object transforms, but SVG
@@ -2600,7 +2729,7 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, RefPtrStack<
 	}
 
 	double      cx, cy, fx, fy, r;
-	flatpoint   p1, p2;
+	flatpoint   p1, p2(1,0); //technically default p2 is (100%, 0)
 	int         spreadMethod = LAXSPREAD_Pad;
 	bool        foundf = false;
 	bool foundp1 = false;
@@ -3135,12 +3264,13 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 {
 	char *name,*value;
 	ValueHash extra;
+	DrawableObject *obj = nullptr;
 
 	if (!strcmp(element->name,"g")) {
-		Group *g=new Group;
+		Group *g = new Group;
 		for (int c=0; c<element->attributes.n; c++) {
-			name=element->attributes.e[c]->name;
-			value=element->attributes.e[c]->value;
+			name  = element->attributes.e[c]->name;
+			value = element->attributes.e[c]->value;
 
 			if (!strcmp(name,"id")) {
 				if (!isblank(value)) g->Id(value);
@@ -3159,27 +3289,23 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 					g->Visible(false);
 				}
 
+			} else if (!strcmp(name,"inkscape:groupmode")) {
+				if (!g->metadata) g->metadata = new AttributeObject();
+				g->metadata->push("inkscape:groupmode", value); // is "layer" if it's an inkscape layer
+
 			} else if (!strcmp(name,"content:")) {
 				for (int c2=0; c2<element->attributes.e[c]->attributes.n; c2++) 
 					svgDumpInObjects(0,g,element->attributes.e[c]->attributes.e[c2],powerstrokes,gradients,log, filedir, docwidth,docheight);
 			}
 		}
 
-		//if (top) {
-		//	for (int c=0; c<6; c++) g->m(c,g->m(c)/DEFAULT_PPINCH); //correct for svg scaling
-        //
-		//	g->m(5,top-g->m(5)); //flip in page
-		//	g->m(2, -g->m(2));
-		//	g->m(3, -g->m(3));
-		//}
-
 		 //do not add empty groups
 		if (g->n()!=0) {
 			g->FindBBox();
 			group->push(g);
+			obj = g;
 		}
 		g->dec_count();
-		return 1;
 
 	} else if (!strcmp(element->name,"image")) {
 		ImageData *image=dynamic_cast<ImageData *>(newObject("ImageData"));
@@ -3242,10 +3368,10 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 			image->Flip(0);
 			group->push(image);
+			obj = dynamic_cast<DrawableObject*>(image);
 		} //else error loading image
 
 		image->dec_count();
-		return 1;
 
 	} else if (!strcmp(element->name,"path")) {
 		PathsData *paths=dynamic_cast<PathsData *>(newObject("PathsData"));
@@ -3377,19 +3503,12 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 			}
 
 			paths->FindBBox();
-			int err = 0;
-			double alpha = extra.findIntOrDouble("opacity", -1, &err);
-			if (err == 0) {
-				DrawableObject *ddata = dynamic_cast<DrawableObject*>(paths);
-				if (ddata) ddata->opacity = alpha;
-			}
 			group->push(paths);
+			obj = dynamic_cast<DrawableObject*>(paths);
 
 			if (fillobj) InsertFillobj(fillobj, paths, group);
 		}
 		paths->dec_count();
-
-		return 1;
 
 	} else if (!strcmp(element->name,"rect")) {
 		double x=0,y=0,w=0,h=0;
@@ -3479,12 +3598,11 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 			paths->FindBBox();
 			group->push(paths);
+			obj = dynamic_cast<DrawableObject*>(paths);
 
 			if (fillobj) InsertFillobj(fillobj, paths, group);
 		}
 		paths->dec_count();
-
-		return 1;
 
 	} else if (!strcmp(element->name,"circle") || !strcmp(element->name,"ellipse")) {
 		 //using 4 vertices as bez points, the vector length is 4*(sqrt(2)-1)/3 = about .5523 with radius 1
@@ -3554,12 +3672,12 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 			paths->FindBBox();
 			group->push(paths);
+			obj = dynamic_cast<DrawableObject*>(paths);
 
 			if (fillobj) InsertFillobj(fillobj, paths, group);
 		}
 
 		paths->dec_count();
-		return 1;
 
 	} else if (!strcmp(element->name,"line")) {
 		double x1=0,y1=0, x2=0,y2=0;
@@ -3609,12 +3727,12 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 			}
 			paths->FindBBox();
 			group->push(paths);
+			obj = dynamic_cast<DrawableObject*>(paths);
 
 			if (fillobj) InsertFillobj(fillobj, paths, group);
 		}
 
 		paths->dec_count();
-		return 1;
 
 	} else if (!strcmp(element->name,"polyline") || !strcmp(element->name,"polygon")) {
 		PathsData *paths=dynamic_cast<PathsData *>(newObject("PathsData"));
@@ -3661,12 +3779,11 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 			paths->FindBBox();
 			group->push(paths);
+			obj = dynamic_cast<DrawableObject*>(paths);
 
 			if (fillobj) InsertFillobj(fillobj, paths, group);
 		}
 		paths->dec_count();
-		return 1;
-
 
 	} else if (!strcmp(element->name,"text")) {
 
@@ -3810,11 +3927,9 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 			else if (font_size != -1) textobj->Size(font_size);
 			textobj->origin(textobj->transformPoint(flatpoint(x,y-font_size)));
 			group->push(textobj);
+			obj = dynamic_cast<DrawableObject*>(textobj);
 			textobj->dec_count();
 		}
-
-		DBG cerr <<" *** need to finish implementing svg in:  text"<<endl;
-		return 1;
 
 	} else if (!strcmp(element->name,"use")) {
 		 //references to other objects, create SomeDataRef
@@ -3880,15 +3995,22 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 			group->push(ref);
 			ref->dec_count();
+			obj = dynamic_cast<DrawableObject*>(ref);
 		}
-
-		return 1;
 
 	} else if (!strcmp(element->name,"symbol")) {
 		// ***
 		cerr <<"***need to implement svg symbol in!"<<endl;
 	}
 
+	if (obj) {
+		int err = 0;
+		double alpha = extra.findIntOrDouble("opacity", -1, &err);
+		if (err == 0) {
+			obj->opacity = alpha;
+		}
+		return 1;
+	}
 	return 0;
 }
 

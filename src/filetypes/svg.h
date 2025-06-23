@@ -40,8 +40,8 @@ class SvgExportConfig : public DocumentExportConfig
 	bool use_powerstroke;
 	bool use_mesh;
 	bool data_meta;
-	//bool use_multipage;
-	double pixels_per_inch; //if rasterizing anything
+	bool use_multipage; // add inkscape:page elements
+	double pixels_per_inch; // if rasterizing anything
 
 	SvgExportConfig();
 	SvgExportConfig(DocumentExportConfig *config);

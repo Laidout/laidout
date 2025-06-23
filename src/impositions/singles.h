@@ -57,6 +57,7 @@ class Singles : public Imposition
 	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual int SetDefaultMargins(double l,double r,double t,double b);
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
+	virtual bool SetDefaultPageStyle(int index_in_spread, RectPageStyle *pstyle);
 	virtual int SyncPageStyles(Document *doc,int start,int n, bool shift_within_margins);
 	virtual LaxInterfaces::SomeData *GetPageOutline(int pagenum,int local);
 	virtual LaxInterfaces::SomeData *GetPageMarginOutline(int pagenum,int local);
@@ -71,6 +72,7 @@ class Singles : public Imposition
 	virtual int GetSpreadsNeeded(int npages);
 	virtual int GetNumInPaperGroupForSpread(int layout, int spread);
 	virtual int NumPageTypes();
+	virtual int NumSpreads(int layout); 
 	virtual const char *PageTypeName(int pagetype);
 	virtual int PageType(int page);
 	virtual int SpreadType(int spread);

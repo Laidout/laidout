@@ -259,6 +259,24 @@ PageStyle *Singles::GetPageStyle(int pagenum,int local)
 	return pstyle;
 }
 
+bool Singles::SetDefaultPageStyle(int index_in_spread, RectPageStyle *pstyle)
+{
+	if (papergroup && index_in_spread >= papergroup->papers.n) return false;
+	if (!papergroup && index_in_spread > 0) return false;
+
+	while (pagestyles.n < index_in_spread) pagestyles.push(nullptr);
+	if (pagestyles.e[index_in_spread] != nullptr) {
+		pstyle->inc_count();
+		pagestyles.e[index_in_spread]->dec_count();
+		pagestyles.e[index_in_spread] = pstyle;
+	} else {
+		pagestyles.e[index_in_spread] = pstyle;
+		pstyle->inc_count();
+	}
+
+	return true;
+}
+
 /*! Set paper size, completely replacing previous papergroup with a single paper new size.
  * Duplicates npaper, not pointer tranfser.
  * 
@@ -977,16 +995,23 @@ int Singles::SpreadFromPage(int layout, int pagenumber)
 
 //! Is singles, so 1 paper=1 page
 int Singles::GetPagesNeeded(int npapers) 
-{ return npapers; }
+{
+	if (papergroup && papergroup->papers.n) return npapers * papergroup->papers.n;
+	return npapers;
+}
 
 //! Is singles, so 1 page=1 paper
 int Singles::GetPapersNeeded(int npages) 
-{ return npages; } 
+{
+	if (papergroup && papergroup->papers.n) return 1 + (npages-1) / papergroup->papers.n;
+	return npages;
+}
 
 /*! Page spread is all papers in papergroup. */
 int Singles::GetSpreadsNeeded(int npages)
 {
-	if (papergroup) return 1 + papergroup->papers.n / npages;
+	if (npages <= 0) return 0;
+	if (papergroup && papergroup->papers.n) return 1 + (npages-1) / papergroup->papers.n;
 	return npages;
 } 
 
@@ -1000,6 +1025,15 @@ int Singles::NumPageTypes()
 { 
 	if (!papergroup) return 1;
 	return papergroup->papers.n;
+}
+
+int Singles::NumSpreads(int layout)
+{
+	if (layout == PAPERLAYOUT)        return NumPapers();
+	if (layout == PAGELAYOUT)         return NumPapers();
+	if (layout == SINGLELAYOUT)       return NumPages();
+	if (layout == LITTLESPREADLAYOUT) return NumPages();
+	return 0;
 }
 
 //! Just return "Page".
