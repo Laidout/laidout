@@ -48,7 +48,6 @@
 #include "impositions/netimposition.h"
 #include "impositions/singles.h"
 #include "nodes/nodeeditor.h"
-#include "printing/epsutils.h"
 #include "ui/headwindow.h"
 #include "ui/newdoc.h"
 #include "ui/viewwindow.h"
@@ -1298,6 +1297,7 @@ enum LaidoutOptions {
 	OPT_helphtml,
 	OPT_helpman,
 	OPT_version,
+	OPT_debug,
 	OPT_help,
 };
 
@@ -1332,6 +1332,7 @@ void InitOptions()
 	options.Add("uiscale",            'U', 1, "UI scale multiplier",                         OPT_uiscale,"1");
 	options.Add("helphtml",           'H', 0, "Output an html fragment of key shortcuts.",   OPT_helphtml, nullptr);
 	options.Add("helpman",             0 , 0, "Output a man page fragment of options.",      OPT_helpman, nullptr);
+	options.Add("debug",               0 , 1, "Provide an object number to assist in debugging", OPT_debug, nullptr);
 	options.Add("version",            'v', 0, "Print out version info, then exit.",          OPT_version, nullptr);
 	options.Add("help",               'h', 0, "Show this summary and exit.",                 OPT_help, nullptr);
 }
@@ -1488,7 +1489,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					exit(0);
 				} break;
 
-			case OPT_impose_only: { // impose-only
+			case OPT_impose_only: {
 					runmode = RUNMODE_Impose_Only;
 					anXWindow *editor = newImpositionEditor(NULL,"impedit",_("Impose..."),0,NULL,
 														  NULL,"SignatureImposition",NULL,o->arg(),
@@ -1496,23 +1497,23 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					addwindow(editor);
 				} break;
 
-			case OPT_nodes_only: { // nodes-only
+			case OPT_nodes_only: {
 					runmode = RUNMODE_Nodes_Only;
 					anXWindow *editor = newNodeEditor(NULL,"nodeedit",_("Nodes"), 0,NULL, NULL,0, o->arg());
 					addwindow(editor);
 				} break;
 
-			case OPT_pipein: { //pipein
+			case OPT_pipein: {
 					pipein = true;
 					pipeinarg = o->arg();
 			    } break;
 
-			case OPT_pipeout: { //pipeout
+			case OPT_pipeout: {
 					pipeout = true;
 					makestr(pipeoutarg, o->arg());
 			    } break;
 
-			case OPT_default_units: { // default units
+			case OPT_default_units: {
 					UnitManager *units=GetUnitManager();
 					int id=0;
 					if (units->UnitInfo(o->arg(),&id,NULL,NULL,NULL,NULL,NULL)==0) {
@@ -1523,6 +1524,11 @@ void LaidoutApp::parseargs(int argc,char **argv)
 						DBG cerr <<"laidout:units->DefaultUnits:"<<prefs.default_units<<"  from um:"<<units->DefaultUnits(prefs.unitname)<<endl;
 					}
 
+				} break;
+
+			case OPT_debug: {
+					unsigned int id = strtol(o->arg(), nullptr, 10);
+					if (id > 0) anObject::SETCHECK(id);
 				} break;
 		} //switch
 	}
@@ -2053,8 +2059,8 @@ int LaidoutApp::NewDocument(const char *spec)
 	if (!imp) imp=new Singles(); //either way, imp has count of 1 now
 	 
 	if (!paper) paper=papersizes.e[0];
-	unsigned int flags=paper->flags;
-	paper->flags=(paper->flags&~1)|landscape;
+	bool old_landscape = paper->landscape();
+	paper->landscape(landscape);
 	if (!strcmp("NetImposition",imp->whattype())) {
 		NetImposition *neti=dynamic_cast<NetImposition *>(imp);
 		if (!neti->nets.n) {
@@ -2062,9 +2068,9 @@ int LaidoutApp::NewDocument(const char *spec)
 		}
 	}
 	imp->SetPaperSize(paper); // makes a duplicate of paper
-	if (numpages==0) numpages=1;
+	if (numpages == 0) numpages = 1;
 	imp->NumPages(numpages);
-	paper->flags=flags;
+	paper->landscape(old_landscape);
 	
 	if (!saveas) { // make a unique temporary name...
 		makestr(saveas,Untitled_name());
