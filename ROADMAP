@@ -9,6 +9,7 @@ VERSION 0.098
 -------------
        Import/export new Inkscape multipage art boards via expanded Singles imposition type
        Update CI to not use travis (issue #28)
+       Update Singles editor to edit new artboard style
        Rescale icons on ui_scale changes so icons aren't fuzzy (issue #16)
 (done) Dynamic UI scaling (issue #16)
 (done) Update color palette window with various export/import options
