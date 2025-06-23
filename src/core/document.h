@@ -100,8 +100,8 @@ class Document : public ObjectContainer, public Value
 	clock_t modtime;
 
 	// ***********TEMP!!!
-	virtual int inc_count();
-    virtual int dec_count();
+	// virtual int inc_count();
+    // virtual int dec_count();
 	// ***********end TEMP!!!
 
 

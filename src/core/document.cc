@@ -48,17 +48,17 @@ namespace Laidout {
 
 
 	// ***********TEMP!!!
-int Document::inc_count()
-{
-	DBG cerr <<"document "<<object_id<<" inc_count to "<<_count+1<<endl;
-	return anObject::inc_count();
-}
+// int Document::inc_count()
+// {
+// 	DBG cerr <<"document "<<object_id<<" inc_count to "<<_count+1<<endl;
+// 	return anObject::inc_count();
+// }
 
-int Document::dec_count()
-{
-	DBG cerr <<"document "<<object_id<<" dec_count to "<<_count-1<<endl;
-	return anObject::dec_count();
-}
+// int Document::dec_count()
+// {
+// 	DBG cerr <<"document "<<object_id<<" dec_count to "<<_count-1<<endl;
+// 	return anObject::dec_count();
+// }
 
 	// ***********end TEMP!!!
 
@@ -187,7 +187,7 @@ ObjectDef *PageRangeObjectDef()
 
 	sd->push("start",
 			_("Start"),
-			_("The document page index at which this range starts."),
+			_("The document page index at which this range starts. First document page is 0."),
 			"int",
 			"0,context.doc.pages.n", //range
 			"0",                    //default value
