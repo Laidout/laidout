@@ -524,10 +524,22 @@ Scribus scribus:
 
 svg: SVG svgin: svg in:
   in:
-    page labels appear to not set on read in
-    bug: object opacity (as opposed to fill-opacity or stroke-opacity) not handled
-    bug: gradient with no p1,p2 defaults to 0,0. should perhaps be 0,1 
-	on reading in svg directly, should short out the filename so no accidental overwriting
+    bug: text size is way off.. like 75% smaller after import
+    inkscape multipage:
+	  export:
+	    margins, add a RectPageStyle to papergroup?
+	    space rotation
+	    DONE papergroup boxes
+      DONE memory hole: load inkscape-multipage.svg, close
+      DONE pages are defined upside down.. has to scale to viewbox?
+	  DONE import new Inkscape margin features
+      DONE page labels should be set from inkscape:label or id
+      DONE multi page inkscape import needs to assign proper pages
+	  DONE import to Singles art board
+    DONE bug: import non-multipage, now doing wrong paper orientation?
+    DONE bug: gradient with no p1,p2 defaults to 0,0. should perhaps be 0,1 
+    DONE bug: object opacity (as opposed to fill-opacity or stroke-opacity) not handled
+	DONE on reading in svg directly, should short out the filename so no accidental overwriting
     ---0.099---
 	should parse sodipodi:nodetypes:
 	  c = corner node, s = smooth node, z = symmetric, a = auto smooth 
@@ -1244,12 +1256,6 @@ node editor node interface NodeInterface: nodes: node: interface:
     DONE Gegl to LaxImage
     DONE LaxImage to Gegl
   svg/inkscape specific filter interface, io passthrough
-    inkscape multipage
-      multi page inkscape import needs to assign proper pages
-	  import new Inkscape margin features
-	  pages are defined upside down.. has to scale to viewbox?
-	  need to insert pages at load time, and assign objects to proper pages
-	  Need to test actual exporting mechanism
     svg color properties are strings, but there should be button for color select
     need full "length" readin, not just floats, ie "100%", "15in"
     feTurbulence->baseFrequency is TWO numbers, not one, need data[] support
@@ -2760,6 +2766,9 @@ Nudge tool nudgeinterface nudge interface:
 
 build net interface graph
 
+saving:
+  should save to a temporary file, and copy over main file when done, so that failed saves don't destroy your original file
+
 autosave
   start fresh doc, autosaves which may be saving into confusing location. maybe save in config dir?
   autorecover.. -> when an autosave is newer than the file we are opening
@@ -3545,7 +3554,7 @@ Current deficiencies:
   Too many bugs/quirks in object management, resource coordiation
   undo/redo barely implemented
   copy/paste barely implemented
-  cairo is only 8 bit, which limits use
+  cairo is only 8 bit, which limits use. cairo is also barely maintained
   Way too hard to have user created tools
     internal object system is flexible, but not without a huge amount of boilerplate-like code to tie to scripter
   Being Linux only limits user base, and thus also limits user testing
@@ -3564,7 +3573,7 @@ Ways forward:
    - gegl already can access hardware acceleration for many things
   consider gigantic revamp so that ui is thoroughly customizable:
    - with python:
-     - it's good enough for Blender and Krita, right?
+     - it's good enough for Blender, Krita, Inkscape, and Scribus right?
      - makes tool development way more accessible to new users
      - downside: you now have to depend on python, which comes with its own version problems
    - with some kind of yaml-like custom format, with css for styling?
@@ -3752,3 +3761,4 @@ DONE bug: popup menus: submenus spawning on wrong side on far right monitors
 DONE bug: lineedit cursor is leaving artifacts
 DONE (but now only xdg-open on a dir, not a file) bug: document-> show in filesystem opens file in text editor??!?
 DONE bug: Math Expression node, do "Math.whatever": crash!
+DONE bug: popup menus have incorrect y size, causing scroll -> related to querying scale factor for monitor, but it hops to other monitor! popupmenu not getting scale notification?
