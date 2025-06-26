@@ -138,6 +138,7 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 
 	needtodraw = 1;
 	tool = interface;
+	if (tool) tool->CurrentWindow(viewport);
 
 	firstimp = imposition;
 	if (imposition) {
