@@ -63,6 +63,7 @@ memory hole in ExportDialog.. open export, cycle through formats, quit
 memory hole in reimpose .. reimposed 5 page booklet
 memory hole when graphical shell activated
 memory hole do laidout -n letter, split a window, then quit. undeleted Objects remain!
+DONE memory hole in ?, start with -N and create, or even just "-n letter", then quit
 DONE memory hole, open up examples/nodes-asciichart.laidout, then quit. 1 object remains
 DONE memory hole in calculator
 DONE memory hole: start blank, exit. 3 remain!!
@@ -646,6 +647,7 @@ idml from indesign?
 
 
 Singles:
+  need optional paper packer for Paper view, while a papergroup is for pages view
   object bleeds not implemented
   export to pdf has wrong paper sizes with multipage, also not handling page bleed with inkscape multipage import
   inset should be per paper in papergroup
@@ -2055,11 +2057,12 @@ Tools should remember their settings
      well as the running tool use settings
 
 paperinterface: papergroupinterface papergroup interface
+  bug: zoom in, hang!
   should be able to snap to spread pages also 
   when reset scale or rotation, preserve relative orientations
   bug: sometimes clicking around when you have custom papergroup in viewport crashes
   options to edit order of papers.. drag indices (front or "back")
-  define papergroup, convert papergroup to NetImposition
+  define papergroup, convert papergroup to NetImposition or Singles
   need snap to:
     margins
 	spread/page borders
@@ -2081,6 +2084,7 @@ paperinterface: papergroupinterface papergroup interface
     paperinterface: in spread editor (done), and able to print it out
     in spread editor (done), and be able to print it out
 
+  DONE bug: menu toggle orientation not working
   DONE option to show numeric print dimensions.. with the label? with indicator that it is not 1:1, maybe like show "110%"
   DONE maybebox needs to snap
   DONE if page is too big, need indicator around mouse that we are placing something
@@ -3036,6 +3040,9 @@ resources:
     DONE PlainTextObject
 
 when closing a document window, decide whether this removes access to it, or just the view to it
+
+imposition:
+  it would be nice to print out a signature dummy, with inset/fold/trim/margin/labels. maybe even folding instructions
 
 how best to integrate Styles, Attributes, and Values???
 various object types:
