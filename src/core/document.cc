@@ -449,7 +449,9 @@ Document::Document(Imposition *imp,const char *filename)
 		// create the pages
 		if (imposition->NumPages()) {
 			for (int c = 0; c < imposition->NumPages(); c++) {
-				pages.push(new Page());
+				Page *page = new Page();
+				pages.push(page);
+				page->dec_count();
 			}
 		}
 		// ----
@@ -1025,7 +1027,9 @@ int Document::Load(const char *file,ErrorLog &log)
 	if (!imposition) imposition = newImpositionByType("Singles");
 	if (pages.n == 0 && imposition->NumPages()) {
 		for (int c = 0; c < imposition->NumPages(); c++) {
-			pages.push(new Page());
+			Page *page = new Page();
+			pages.push(page);
+			page->dec_count();
 		}
 		curpage = 0;
 		//-------------------
