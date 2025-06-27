@@ -103,6 +103,8 @@ class PaperBox :  public Laxkit::anObject
 	Laxkit::DoubleBBox media, printable, bleed, trim, crop, art;
 	PaperBox(PaperStyle *paper, bool absorb_count);
 	virtual ~PaperBox();
+	virtual bool landscape();
+	virtual bool landscape(bool l);
 	virtual int Set(PaperStyle *paper);
 	virtual anObject *duplicate(anObject *ref);
 };

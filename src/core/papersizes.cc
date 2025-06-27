@@ -808,6 +808,24 @@ PaperBox::~PaperBox()
 	DBG cerr <<"PaperBox destroyed, obj "<<object_id<<endl;
 }
 
+bool PaperBox::landscape()
+{
+	return paperstyle ? paperstyle->landscape() : false;
+}
+
+bool PaperBox::landscape(bool l)
+{
+	if (!paperstyle) return false;
+	if (l == paperstyle->landscape()) return l;
+
+	// else need to update box info
+	paperstyle->landscape(l);
+	media.minx = media.miny = 0;
+	media.maxx = paperstyle->w(); //takes into account paper orientation
+	media.maxy = paperstyle->h();
+	return l;
+}
+
 //! Replace the current paper with the given paper.
 /*! Updates media box, but not the other boxes.
  * Incs count of paper, and decs count of old paperstyle.
