@@ -10,12 +10,11 @@ VERSION 0.098
        Import/export new Inkscape multipage art boards via expanded Singles imposition type
        Update CI to not use travis (issue #28)
        Update Singles editor to edit new artboard style
-       Rescale icons on ui_scale changes so icons aren't fuzzy (issue #16)
 (done) Dynamic UI scaling (issue #16)
 (done) Update color palette window with various export/import options
 (done) debug svg in enough to be able to load icons.svg
 (done) svg in/out with powerstroke
-(done) svg in/(done)out with meshes, at miminum round trip export/import should work
+(done) svg in/out with meshes, at miminum round trip export/import should work
 (done) Import svg gradients with proper filling of parent
 (done) Animated gif import
 (done) Page Atlas exporter
@@ -66,6 +65,9 @@ VERSION 0.099
 -------------
        debug previous version a bit
        Undo/Redo
+
+       Rescale icons on ui_scale changes so icons aren't fuzzy (issue #16)
+       Better icon management with changing ui size. Just generate from svg on the fly always?
 
        engraver tool direction overlay should be cached
        engraver tool grow point mode
