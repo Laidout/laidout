@@ -133,6 +133,7 @@ enum PaperInterfaceActions {
 	PAPERI_ToggleIndices,
 	PAPERI_ToggleBackIndices,
 	PAPERI_ToggleSyncSizes,
+	PAPERI_Swap_Orientation,
 	PAPERI_CreateImposition,
 	PAPERI_DupPapers,
 	PAPERI_EditMargins,
@@ -182,6 +183,8 @@ Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 
 		menu->AddItem(_("Reset paper scaling"),PAPERI_ResetScaling);
 		menu->AddItem(_("Reset paper angle"),PAPERI_ResetAngle);
+
+		menu->AddItem(_("Swap orientation"),PAPERI_ToggleLandscape);
 		menu->AddItem(_("Paper Size"),PAPERI_PaperSize);
 		menu->SubMenu(_("Paper Size"));
 		for (int c=0; c<laidout->papersizes.n; c++) {
@@ -533,8 +536,9 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 		if (show_labels) {
 			if (!font) { font = laidout->defaultlaxfont; font->inc_count(); }
 			dp->DrawScreen();
-			dp->font(font);
+			dp->font(font, UIScale() * font->textheight());
 			double th = dp->textheight();
+			cerr << "show labels with height: "<<th<<endl;
 			dp->NewFG(128,128,128);
 			flatpoint center = dp->realtoscreen((p[1] + p[2])/2);
 			double y = center.y+th;
@@ -569,9 +573,10 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 				dp->NewFG(128,128,128);
 				char str[20];
 				sprintf(str, "%d", index+1);
-				dp->textout(-atan2(ang.y, ang.x), center.x,center.y, str,-1);
+				double angle = -atan2(ang.y, ang.x);
+				dp->textout(angle, center.x,center.y, str,-1);
 				dp->LineWidth(h*.1);
-				dp->drawline(center + v * h *.6 - v.transpose() * h*.5, center + v * h *.6 + v.transpose() * h*.5);
+				dp->drawline(center + v * h *.6 - v.transpose() * h*.5, center + v * h *.6 + v.transpose() * h*.5); // underline
 				dp->DrawReal();
 				dp->fontsize(th);
 			}
@@ -1265,22 +1270,28 @@ int PaperInterface::PerformAction(int action)
 	} else if (action == PAPERI_ToggleLandscape) {
 		if (!curboxes.n) return 0;
 		for (int c=0; c<curboxes.n; c++) {
-			curboxes.e[c]->box->paperstyle->landscape(!curboxes.e[c]->box->paperstyle->landscape());
+			curboxes.e[c]->box->landscape(!curboxes.e[c]->box->landscape());
 		}
+		needtodraw = 1;
+		PostMessage(_("Orientation toggled."));
 		return 0;
 
 	} else if (action == PAPERI_Landscape) {
 		if (!curboxes.n) return 0;
 		for (int c=0; c<curboxes.n; c++) {
-			curboxes.e[c]->box->paperstyle->landscape(1);
+			curboxes.e[c]->box->landscape(true);
 		}
+		needtodraw = 1;
+		PostMessage(_("Landscape orientation"));
 		return 0;
 	
 	} else if (action == PAPERI_Portrait) {
 		if (!curboxes.n) return 0;
 		for (int c=0; c<curboxes.n; c++) {
-			curboxes.e[c]->box->paperstyle->landscape(0);
+			curboxes.e[c]->box->landscape(false);
 		}
+		needtodraw = 1;
+		PostMessage(_("Portrait orientation"));
 		return 0;
 
 	} else if (action == PAPERI_DeletePaperGroup) {
