@@ -141,7 +141,7 @@ int LMirrorInterface::UseThis(Laxkit::anObject *nobj,unsigned int mask)
 
 int LMirrorInterface::LBDown(int x,int y,unsigned int state,int count, const Laxkit::LaxMouse *d) 
 {
-	int nhover = scan(x,y,state);
+	int nhover = scan(x,y,state,count);
 	if (nhover != MIRROR_None && mirror_node_connected) {
 		// node is locked by node connections, ask user what they want
 		PostMessage(_("Mirror has connected nodes, cannot edit."));

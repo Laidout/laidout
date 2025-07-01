@@ -3402,9 +3402,16 @@ Imposition use cases:
   moebius
   need cutting marks for posterizing for lining up different sheets
   impose only needs access to papergroups
-  maybe any spread setup temporarily to another imposition on export?
+  maybe any spread setup temporarily to another imposition on export, not just export with custom papergroup?
 
-Net imposition
+Net imposition: netimposition: net:
+  better linestyle support for displayed lines
+  tabs, like for folding up polyhedra
+    custom tab shapes
+    custom tab placement, in case you need to override automatic, like doubling up tabs on an edge
+    writing on the tab to say what to connect to
+    auto tab: put one on every other edge in the outline. it's magic!
+  page status symbol should show near first point, not by bbox min
   create from papergroup: one papergroup used as page spreads, another used as actual paper group?
   net extra scaling non-functional
   NetImposition needs import/export net,
@@ -3414,7 +3421,7 @@ Net imposition
   figure out more efficient clipping of Imlib images
   finish implementing double sided nets
   saving when net is internal is not proper.. does not distinguish between diff. nets and whole
-  import/export cff2?
+  import/export cff2/cf2 cad (not font) format?
   export pdf 1.6?
   save different setups: papertile AND net layout
   load save nets from: 1.net files or 2.OFF files(done)
@@ -3424,7 +3431,7 @@ polyptych:
   can't seem to save new bookmarks or use old ones in polyptych, but it's ok in Laidout
 
 hedron window:
-  opengl impl needs a modern refresh
+  opengl impl needs a modern refresh. whatabout vulkan?
   send imp
   receive imp
   remember net and paper placement

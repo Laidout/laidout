@@ -63,6 +63,7 @@ class NetFaceEdge
 	double svalue;
 	LaxInterfaces::Coordinate *points;
 	//double *basis_adjustment; ***not useful?
+	int info = 0; // for convenience. not used internally.
 	
 	NetFaceEdge();
 	NetFaceEdge(const NetFaceEdge &e);

@@ -687,7 +687,7 @@ Spread *NetImposition::GenerateSpread(Spread *spread, //!< If not null, append t
 			tt=tt->next;
 		} while (tt && tt!=path->path);
 
-		spreadpath->paths.push(path,1);
+		spreadpath->paths.push(path);
 		path->dec_count();
 	}
 	spreadpath->FindBBox();
