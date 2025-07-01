@@ -11,7 +11,7 @@ down to major items in ../features.md.
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
 
 
------------- serious bugs to fix right now:
+------------ serious release blocking bugs to fix right now:
 
 bug: in ImageInterface, just undo without doing anything else wrecks image transform, which wrecks whole view
 
@@ -25,17 +25,19 @@ bug: clone tool clones do not have proper bounding box
 
 bug: gegl plugin initialization is getting tons of errors like:
        (laidout:159244): GLib-GObject-WARNING **: 21:50:05.430: Two different plugins tried to register 'GeglOprgbe-save_c'.
-	  something about gegl upgrade leaving behind reside from previous version?
+	  something about gegl upgrade leaving behind residue from previous version?
 bug: gegl nodes, connect sinus to waves and also to displace, freeze!
 
 bug: zoom handles mangle cairo sometimes.. can't reproduce reliably
-
-travis is recompiling on non-master branch pushes, eating up all my minutes, and it shouldn't
 
 crash: color grabbing under Wayland completely crashes with extreme prejudice. something about XGetImage
 
 
 ------------ other bugs:
+
+laxkit spiro editor mouse overs appear to be broken
+
+travis is recompiling on non-master branch pushes, eating up all my minutes, and it shouldn't
 
 bug: back to not maximizing properly on default ubuntu. Seems to work fine on every other window manager I've tried.
 
@@ -1996,6 +1998,7 @@ make drag and drop selections work dnd
   DONE do proper translation between screen coords and window coords during acceptance query
 
 imageinterface: imagedata:
+  redo seems ok for image change and transform, but undo doesn't apply correcty??
   actions to scale to proper dpi for destination paper
   grab particular exif info to show in labels?
   would be nice to autocrop to specific portion without explicit clip mask, ie select a sprite in a sprite sheet from imageinfo dialog
@@ -2281,6 +2284,9 @@ signature editor  Signature editor Signature Editor signatureeditor
 
 make a copyright update tool to change years to match git commits:
   git log --date=format:'%Y' laidout.cc|grep '^Date'|grep '[0-9][0-9][0-9][0-9]' -o | uniq | sort | tr '\n' ','| rev | cut -c2- | rev
+
+dateutils:
+  finish integrating time with a LaxDate
 
 external tools: external commands:
   need to be able to rearrange order, first in list is default or select one for default
@@ -2591,12 +2597,14 @@ from big import:
   DONE selecting ranges
 
 MirrorInterface: LineGuideInterface
-  should be able to mirror non-paths: arbitrary objects
   ---0.099:
+  guide mode vs mirror mode: guide just disables "mirror" specific menu items and shortcuts? make mirror a subclass of guide?
+  should be able to mirror non-paths: arbitrary objects
   merge widget, near and outside p1. show merge distance as max(actual, th/2)
   label editing
   colors
-  double click to force p1 or p2 to be under mouse when p1 or p2 way off screen?
+  DONE double click should remap nearest point, or reassign a point that is off screen
+  DONE doing snap wrong, should be rounded not int. can't really snap directly to left
 
 pagemarkerinterface:
   option to lock label size to real space? make export contact sheets a little prettier in some cases
@@ -3262,10 +3270,12 @@ notes / comments
   for instance, Penpot has a sort of chat bar
   note should have:
     - source (author): name [avatar]?
+	- date added
+	- date modified
 	- plain text. or markdown?
 	- point to something, a la grease pencil
-	- date
 	- fg/bg/outline/arrow style
+	  - custom presets for done, wip, urgent, important, todo
 
 collect for out:
   define directory to pull all files and external resources in
