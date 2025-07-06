@@ -2177,7 +2177,7 @@ static void pdfLineStyle(LineStyle *lstyle, char *&stream)
 	appendstr(stream,buffer);
 
 	 //dash pattern
-	if (lstyle->dotdash==0 || lstyle->dotdash==~0)
+	if (lstyle->use_dashes)
 		appendstr(stream," [] 0 d\n"); //clear dash array
 	else {
 		sprintf(buffer," [%.10g %.10g] 0 d\n",lstyle->width,2*lstyle->width); //set dash array

@@ -1794,7 +1794,7 @@ static void scribusdumpobj(ScribusExportConfig *config, FILE *f,int &curobj,PtrS
 				  "    SHADE2=\"100\" \n"       //shading for stroke
 				  "    DASHOFF=\"0\" \n");        //(opt) offset for first dash
 
-			if (lstyle->dotdash) {
+			if (lstyle->use_dashes) {
 				fprintf(f,
 					  "    DASHS=\"\" \n"           //List of dash values, see the postscript manual for details
 					  "    NUMDASH=\"0\" \n"        //number of entries in dash

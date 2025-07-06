@@ -119,7 +119,7 @@ void psPathsData(FILE *f,PathsData *pdata)
 				//setstrokeadjust
 
 				fprintf(f," %.10g setlinewidth\n",lstyle->width);
-				if (lstyle->dotdash==0 || lstyle->dotdash==~0)
+				if (lstyle->use_dashes)
 					fprintf(f," [] 0 setdash\n");
 				else fprintf(f," [%.10g %.10g] 0 setdash\n",lstyle->width,2*lstyle->width);
 

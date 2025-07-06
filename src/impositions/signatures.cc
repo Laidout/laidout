@@ -3541,7 +3541,9 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 			fold->flags|=SOMEDATA_LOCK_CONTENTS|SOMEDATA_UNSELECTABLE;
 			ScreenColor color(0,0,0,0xffff);
 			fold->line(MWIDTH,CapButt,JoinMiter,&color);
-			fold->linestyle->dotdash=715827882;
+			fold->linestyle->use_dashes = true;
+			double d = 3;
+			fold->linestyle->Dashes(&d, 1, 0);
 			g->push(fold);
 			fold->dec_count();
 			fold->FindBBox();

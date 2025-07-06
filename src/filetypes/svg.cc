@@ -598,7 +598,7 @@ void svgStyleTagsDump(FILE *f, LineStyle *lstyle, FillStyle *fstyle, DrawableObj
 		else fprintf(f,"stroke-width:%.10g; ",lstyle->width);
 
 		 //dash or not
-		if (lstyle->dotdash==0 || lstyle->dotdash==~0)
+		if (lstyle->use_dashes)
 			fprintf(f,"stroke-dasharray:none; ");
 		else fprintf(f,"stroke-dasharray:%.10g,%.10g; ",lstyle->width,2*lstyle->width);
 
