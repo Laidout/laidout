@@ -51,12 +51,12 @@ namespace Polyptych {
 ExtraFace::ExtraFace()
 {
 	numsides=0;
-	points3d=NULL;
-	points2d=NULL;
-	dihedral=NULL;
-	connectionedge=connectionstate=NULL;
+	points3d=nullptr;
+	points2d=nullptr;
+	dihedral=nullptr;
+	connectionedge=connectionstate=nullptr;
 	facemode=-1;
-	extra=NULL;
+	extra=nullptr;
 	timestamp=0;
 }
 
@@ -101,36 +101,36 @@ DBG }
 Face::Face()
 {
 	label       = nullptr;
-	cache       = NULL;
+	cache       = nullptr;
 	planeid     = -1;
 	setid       = -1;
 	pn          = 0;
-	v           = NULL;
-	f           = NULL;
-	p           = NULL;
+	v           = nullptr;
+	f           = nullptr;
+	p           = nullptr;
 	facegroupid = -1;
-	dihedral    = NULL;
+	dihedral    = nullptr;
 }
 
 //! Create a Face with the ps array as the point indices.
-/*! ps is copied, if ps!=NULL.
+/*! ps is copied, if ps!=nullptr.
  */
-Face::Face(int numof,int *ps) 
+Face::Face(int numof,int *ps)
+  : Face()
 {
-	label   = nullptr;
-	cache   = NULL;
-	p       = NULL;
-	f       = NULL;
-	v       = NULL;
-	planeid = setid = -1;
-	facegroupid     = -1;
-	if (numof < 3) { pn = 0; return; }
-	pn       = numof;
-	v        = new int[pn];
-	f        = new int[pn];
-	p        = new int[pn];
-	dihedral = new double[pn];
-	if (ps) for (int c=0; c<pn; c++) { p[c]=ps[c]; f[c]=-1; v[c]=-1; dihedral[c]=0; }
+	if (numof >= 3) {
+		pn       = numof;
+		v        = new int[pn];
+		f        = new int[pn];
+		p        = new int[pn];
+		dihedral = new double[pn];
+		for (int c=0; c<pn; c++) {
+			p[c] = ps ? ps[c] : -1;
+			f[c] = -1;
+			v[c] = -1;
+			dihedral[c] = 0;
+		}
+	}
 }
 
 //! Shortcut to create polygons with up to 5 vertices.
@@ -139,11 +139,8 @@ Face::Face(int numof,int *ps)
  * \todo *** could have this with the ... variadic func thing
  */
 Face::Face(int p1,int p2,int p3, int p4, int p5) /* p4=-1, p5=-1 */
+  : Face()
 {
-	label   = nullptr;
-	cache   = NULL;
-	planeid = setid = -1;
-	facegroupid     = -1;
 	if (p4 == -1) pn = 3;
 	else if (p5 == -1) pn = 4;
 	else pn = 5;
@@ -168,18 +165,9 @@ Face::Face(int p1,int p2,int p3, int p4, int p5) /* p4=-1, p5=-1 */
 /*! \todo is delimiter ignored???
  */
 Face::Face(const char *pointlist,const char *linklist)
+  : Face()
 {
-	label   = nullptr;
-	cache   = NULL;
-	planeid = setid = -1;
-	pn              = 0;
-	v               = NULL;
-	f               = NULL;
-	p               = NULL;
-	facegroupid     = -1;
-	dihedral        = NULL;
-
-	IntListAttribute(pointlist,&p,&pn,NULL);
+	IntListAttribute(pointlist,&p,&pn,nullptr);
 	if (!pn) return;
 
 	if (!f) f=new int[pn];
@@ -188,19 +176,14 @@ Face::Face(const char *pointlist,const char *linklist)
 	for (int c=0; c<pn; c++) { f[c]=-1; v[c]=-1; dihedral[c]=0; }
 
 	int n;
-	if (linklist) IntListAttribute(linklist,&f,&n,NULL);
+	if (linklist) IntListAttribute(linklist,&f,&n,nullptr);
 	//if (pn!=n) there is a problem!!
 }
 
 //! Create copy of fce.
 Face::Face(const Face &fce)
+  : Face()
 {
-	label    = nullptr;
-	dihedral = nullptr;
-	cache    = nullptr;
-	v        = nullptr;
-	f        = nullptr;
-	p        = nullptr;
 	*this = fce;
 }
 
@@ -217,22 +200,24 @@ Face::~Face()
 //! Face equals operator.
 Face &Face::operator=(const Face &fce)
 {
-	delete[] v; delete[] f; delete[] p;
+	delete[] v; delete[] f; delete[] p; delete[] dihedral;
 	if (fce.pn) {
-		pn=fce.pn;
-		v=new int[pn];
-		f=new int[pn];
-		p=new int[pn];
-		for (int c=0; c<pn; c++) {
-			v[c]=fce.v[c];
-			f[c]=fce.f[c];
-			p[c]=fce.p[c];
+		pn = fce.pn;
+		v  = new int[pn];
+		f  = new int[pn];
+		p  = new int[pn];
+		dihedral = new double[pn];
+		for (int c = 0; c < pn; c++) {
+			v[c] = fce.v[c];
+			f[c] = fce.f[c];
+			p[c] = fce.p[c];
+			dihedral[c] = fce.dihedral[c];
 		}
 
-	} else {pn=0; p=NULL; f=NULL; p=NULL; }
-	planeid=fce.planeid;
-	setid=fce.setid;
-	facegroupid=fce.facegroupid;
+	} else { pn = 0; p = nullptr; f = nullptr; p = nullptr; dihedral = nullptr; }
+	planeid     = fce.planeid;
+	setid       = fce.setid;
+	facegroupid = fce.facegroupid;
 	makestr(label, fce.label);
 	return *this;
 }
@@ -263,9 +248,9 @@ Pgon::Pgon()
 {
 	id=-1;
 	pn=0;
-	p=NULL;
-	vlabel=elabel=flabel=NULL;
-	dihedral=NULL;
+	p=nullptr;
+	vlabel=elabel=flabel=nullptr;
+	dihedral=nullptr;
 }
 
 //! Clear the Pgon, then allocate all the arrays for c points.
@@ -280,7 +265,7 @@ void Pgon::setup(int c,int newid)
 	id=newid;
 	pn=c;
 	p=new flatpoint[pn];
-	dihedral=NULL;
+	dihedral=nullptr;
 	elabel=new int[pn];
 	flabel=new int[pn];
 	vlabel=new int[pn];
@@ -300,7 +285,7 @@ Pgon::Pgon(const Face &f)
 	id=-1;
 	pn=f.pn;
 	p=new flatpoint[pn];
-	dihedral=NULL;
+	dihedral=nullptr;
 	elabel=new int[pn];
 	flabel=new int[pn];
 	vlabel=new int[pn];
@@ -320,9 +305,9 @@ Pgon::Pgon(int n,double r,int w) // r=radius=1,w 1 on+x,-1 on-x
 {
 	if (w!=-1) w=1;
 	id=-1;
-	vlabel=elabel=flabel=NULL;
-	dihedral=NULL;
-	if (n<3) { pn=0; p=NULL; return; }
+	vlabel=elabel=flabel=nullptr;
+	dihedral=nullptr;
+	if (n<3) { pn=0; p=nullptr; return; }
 	pn=n;
 	p=new flatpoint[pn];
 	for (int c=0; c<pn; c++)
@@ -332,9 +317,9 @@ Pgon::Pgon(int n,double r,int w) // r=radius=1,w 1 on+x,-1 on-x
 //! Create copy of np.
 Pgon::Pgon(const Pgon &np)
 {
-	p=NULL;
-	vlabel=elabel=flabel=NULL;
-	dihedral=NULL;
+	p=nullptr;
+	vlabel=elabel=flabel=nullptr;
+	dihedral=nullptr;
 	*this=np;
 }
 
@@ -350,11 +335,11 @@ Pgon::~Pgon()
 //! Flush all the data of the Pgon.
 void Pgon::clear()
 {
-	delete[] p; 	 p=NULL;
-	delete[] vlabel;	 vlabel=NULL;
-	delete[] elabel;	 elabel=NULL;
-	delete[] flabel;	 flabel=NULL;
-	delete[] dihedral; dihedral=NULL;
+	delete[] p; 	 p=nullptr;
+	delete[] vlabel;	 vlabel=nullptr;
+	delete[] elabel;	 elabel=nullptr;
+	delete[] flabel;	 flabel=nullptr;
+	delete[] dihedral; dihedral=nullptr;
 	pn=0; id=-1;
 }
 
@@ -373,23 +358,23 @@ Pgon &Pgon::operator=(const Pgon &np)
 	if (np.p) {
 		p=new flatpoint[pn];
 		for (c=0; c<pn; c++) p[c]=np.p[c];
-	} else p=NULL;
+	} else p=nullptr;
 	if (np.vlabel) {
 		vlabel=new int[pn];
 		for (c=0; c<pn; c++) vlabel[c]=np.vlabel[c];
-	} else vlabel=NULL;
+	} else vlabel=nullptr;
 	if (np.elabel) {
 		elabel=new int[pn];
 		for (c=0; c<pn; c++) elabel[c]=np.elabel[c];
-	} else elabel=NULL;
+	} else elabel=nullptr;
 	if (np.flabel) {
 		flabel=new int[pn];
 		for (c=0; c<pn; c++) flabel[c]=np.flabel[c];
-	} else flabel=NULL;
+	} else flabel=nullptr;
 	if (np.dihedral) {
 		dihedral=new double[pn];
 		for (c=0; c<pn; c++) dihedral[c]=np.dihedral[c];
-	} else dihedral=NULL;
+	} else dihedral=nullptr;
 	return *this;
 }
 
@@ -459,7 +444,7 @@ Settype &Settype::operator=(const Settype &nset)
 //! Create a totally blank polyhedron.
 Polyhedron::Polyhedron()
 {
-	name=filename=NULL;
+	name=filename=nullptr;
 }
 
 //! Destructor, just calls clear().
@@ -554,8 +539,8 @@ Polyhedron &Polyhedron::operator=(const Polyhedron &nphed)
 //! Wipe out all the data in the polyhedron.
 void Polyhedron::clear()
 {
-	if (name) { delete[] name;  name=NULL; }
-	if (filename) { delete[] filename;  filename=NULL; }
+	if (name) { delete[] name;  name=nullptr; }
+	if (filename) { delete[] filename;  filename=nullptr; }
 
 	faces.flush();
 	edges.flush();
@@ -1270,7 +1255,7 @@ void Polyhedron::dump_in_atts(Attribute *att,int what,Laxkit::DumpContext *conte
 				if (ee==tt) break;
 				if (n!=3) { tt=ee; continue; }
 				while (*ee && *ee!='\n') ee++;
-				tt=*ee?ee+1:NULL;
+				tt=*ee?ee+1:nullptr;
 				vertices.push(spacepoint(p3[0],p3[1],p3[2]));
 			}
 
@@ -1627,7 +1612,7 @@ int Polyhedron::dumpInOFF(FILE *f,char **error_ret)
 	IOBuffer ff;
 	ff.UseThis(f);
 
-	char *line=NULL;
+	char *line=nullptr;
 	size_t n=0,c;
 	int p;
 	char multidim=0;
@@ -1684,7 +1669,7 @@ int Polyhedron::dumpInOFF(FILE *f,char **error_ret)
 		 //read in the faces
 		int nfv,*i;
 		char *endptr;
-		Face *nface=NULL;
+		Face *nface=nullptr;
 		for (int c2=0; c2<nf; c2++) {
 			c = getline_indent_nonblank(&line,&n,ff,0,"#");
 			if (c<=0) throw 5;
@@ -1702,7 +1687,7 @@ int Polyhedron::dumpInOFF(FILE *f,char **error_ret)
 		}
 
 	} catch (int err) {
-		ff.UseThis(NULL);
+		ff.UseThis(nullptr);
 		if (line) ff.FreeGetLinePtr(line);
 		return err;
 	}
@@ -1710,7 +1695,7 @@ int Polyhedron::dumpInOFF(FILE *f,char **error_ret)
 	validate();
 	makeedges();
 	if (line) ff.FreeGetLinePtr(line);
-	ff.UseThis(NULL);
+	ff.UseThis(nullptr);
 	return 0;
 }
 
@@ -1745,7 +1730,7 @@ int Polyhedron::dumpInOFF(FILE *f,char **error_ret)
  */
 int Polyhedron::dumpInObj(FILE *f,char **error_ret)
 {
-	char *line=NULL, *ptr,*e;
+	char *line=nullptr, *ptr,*e;
 	size_t n=0;
 	int c;
 	int firstvertex=vertices.n;
@@ -1766,7 +1751,7 @@ int Polyhedron::dumpInObj(FILE *f,char **error_ret)
 		if (*ptr=='v' && ptr[1]==' ') {
 			 //found vertex
 			ptr++;
-			e=NULL;
+			e=nullptr;
 			c=DoubleListAttribute(ptr,d,3, &e);
 			if (c!=3) { error=1; break; } // *** Error! Broken vertex definition
 
@@ -1797,7 +1782,7 @@ int Polyhedron::dumpInObj(FILE *f,char **error_ret)
 			} while (*e);
 			if (error) break;
 
-			Face *face=new Face(ptr,NULL); //face disects as a point list
+			Face *face=new Face(ptr,nullptr); //face disects as a point list
 			if (face->pn<3) { error=2; delete face; break; }
 
 			 //remap to actual vertex list
@@ -1826,7 +1811,7 @@ int Polyhedron::dumpOutFile(const char *outfile, const char *outformat,char **er
 	if (!strcasecmp(outformat,"idat")) {
 		fprintf(f,"#Polyp\n");
 		status=0;
-		dump_out(f,2,0,NULL);
+		dump_out(f,2,0,nullptr);
 	} else if (!strcasecmp(outformat,"off")) status=dumpOutOFF(f,error_ret);
 	else if (!strcasecmp(outformat,"obj"))   status=dumpOutObj(f,error_ret);
 	else if (!strcasecmp(outformat,"vrml"))  status=dumpOutVrml(f,error_ret);
@@ -1867,8 +1852,8 @@ int Polyhedron::dumpInFile(const char *file, char **error_ret)
 	 //first check for default format
 	if (!strncmp("#Polyp",first1000,6) && isspace(first1000[6])) {
 		Attribute att;
-		att.dump_in(f,0,NULL);
-		dump_in_atts(&att,0,NULL);
+		att.dump_in(f,0,nullptr);
+		dump_in_atts(&att,0,nullptr);
 		filefound=1;
 		c=0;
 	}
@@ -1919,7 +1904,7 @@ const char *Polyhedron::Filename()
 //! Currently, just pass along to dump_out().
 int Polyhedron::dumpOutNet(FILE *f,int indent,int what)
 {
-	dump_out(f,indent,what,NULL);
+	dump_out(f,indent,what,nullptr);
 	return 0;
 }
 
@@ -1930,7 +1915,7 @@ int Polyhedron::NumFaces() { return faces.n; }
  */
 NetFace *Polyhedron::GetFace(int i,double scaling)
 {
-	if (i<0 || i>=faces.n) return NULL;
+	if (i<0 || i>=faces.n) return nullptr;
 
 	NetFaceEdge *e;
 	NetFace *f=new NetFace();
