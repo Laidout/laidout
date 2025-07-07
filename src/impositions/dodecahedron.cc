@@ -13,17 +13,9 @@
 // Copyright (C) 2004-2010 by Tom Lechner
 //
 
-
 #include "dodecahedron.h"
 #include "polyptych/src/poly.h"
 #include <lax/strmanip.h>
-
-using namespace Laxkit;
-using namespace LaxInterfaces;
-using namespace Polyptych;
-
-#include <iostream>
-using namespace std;
 
 
 #include <iostream>
@@ -31,6 +23,9 @@ using namespace std;
 #define DBG 
 
 
+using namespace Laxkit;
+using namespace LaxInterfaces;
+using namespace Polyptych;
 
 namespace Laidout {
 
@@ -94,6 +89,7 @@ Net *makeDodecahedronNet(double ww,double hh)
 	net->Unwrap(7,0);
 	net->Unwrap(15,-1);
 
+	net->DetectAndSetEdgeStyles();
 	net->rebuildLines();
 	
 	return net;

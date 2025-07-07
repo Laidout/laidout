@@ -91,6 +91,7 @@ Net *makeBox(const char *str,double x,double y,double z)
 	net->basenet=poly;
 	net->TotalUnwrap();
 
+	net->DetectAndSetEdgeStyles();
 	net->rebuildLines();
 
 	return net;

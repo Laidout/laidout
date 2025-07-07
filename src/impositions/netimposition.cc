@@ -111,13 +111,19 @@ namespace Laidout {
 NetImposition::NetImposition()
   : Imposition(_("NetImposition"))
 {
-	briefdesc        = NULL;
+	DBG cerr <<"imposition netimposition init"<<endl;
+
+	briefdesc        = nullptr;
 	scalefromnet     = 1;
 	maptoabstractnet = 0;
-	pagestyle        = NULL;
+	pagestyle        = nullptr;
 	netisbuiltin     = 0;
-	abstractnet      = NULL;
+	abstractnet      = nullptr;
 	printnet         = 1;
+	line_fold        = nullptr;
+	line_cut         = nullptr;
+	line_soft_cut    = nullptr;
+	line_debug       = nullptr;
 
 	// setup default paperstyle
 	PaperStyle *paperstyle = dynamic_cast<PaperStyle *>(stylemanager.FindDef("defaultpapersize"));
@@ -133,7 +139,30 @@ NetImposition::NetImposition()
 		if (objectdef) stylemanager.AddObjectDef(objectdef,0);
 	}
 
-	DBG cerr <<"imposition netimposition init"<<endl;
+	// set up default spread line styles
+	line_fold = new LineStyle();
+	line_fold->Colorf(.6,.6,.6,1.);
+	line_fold->widthtype = 0;
+	line_fold->width = 2; //screen px
+	line_fold->Id("fold");
+	double d[2] { .05,.05 };
+	line_fold->Dashes(d, 2, 0);
+	line_fold->use_dashes = true;
+	line_cut = new LineStyle();
+	line_cut->Colorf(1.,0.,0.,1.);
+	line_cut->widthtype = 0;
+	line_cut->width = 2; //screen px
+	line_cut->Id("cut");
+	line_soft_cut = new LineStyle();
+	line_soft_cut->Colorf(0.,1.,0.,1.);
+	line_soft_cut->widthtype = 0;
+	line_soft_cut->width = 2; //screen px
+	line_soft_cut->Id("soft_cut");
+	line_debug = new LineStyle();
+	line_debug->Colorf(1.,0.,1.,1.);
+	line_debug->widthtype = 0;
+	line_debug->width = 1; //screen px
+	line_debug->Id("debug");
 }
 
 /*! This converts the papergroup into a BasicNet. papergroup itself is NOT stored or referenced anywhere.
@@ -185,24 +214,27 @@ NetImposition::NetImposition(PaperGroup *papergroup)
 //! Constructor. Transfers newnet pointer, does not duplicate.
 /*!  Default is to have a dodecahedron.
  *
- * If newnet is not NULL, then its count is incremented (in SetNet()).
+ * If newnet is not nullptr, then its count is incremented (in SetNet()).
  */
 NetImposition::NetImposition(Net *newnet)
   : NetImposition()
 { 
 	if (newnet) SetNet(newnet);
 }
- 
+
 NetImposition::~NetImposition()
 {
-	if (abstractnet) abstractnet->dec_count();
 	if (briefdesc) delete[] briefdesc;
-	//nets.flush();
+	if (abstractnet)   abstractnet  ->dec_count();
+	if (line_fold)     line_fold    ->dec_count();
+	if (line_cut)      line_cut     ->dec_count();
+	if (line_soft_cut) line_soft_cut->dec_count();
+	if (line_debug)    line_debug   ->dec_count();
 }
 
 ImpositionInterface *NetImposition::Interface()
 {
-	return NULL;
+	return nullptr;
 }
 
 //! Static imposition resource creation function.
@@ -215,17 +247,17 @@ ImpositionResource **NetImposition::getDefaultResources()
 	att->push("net","dodecahedron");
 	r[0]=new ImpositionResource("NetImposition",     //objectdef
 								  _("Dodecahedron"), //name
-								  NULL,              //file
+								  nullptr,              //file
 								  _("12 pentagons"),
 								  att,1);
 	att=new Attribute;
 	att->push("net","cube");
 	r[1]=new ImpositionResource("NetImposition",     //objectdef
 								  _("Cube"),         //name
-								  NULL,              //file
+								  nullptr,              //file
 								  _("6 squares"),
 								  att,1);
-	r[2]=NULL;
+	r[2]=nullptr;
 	return r;
 }
 
@@ -256,7 +288,7 @@ void NetImposition::GetDefaultPageDimensions(double *x, double *y)
 
 
 //! Return something "Dodecahedron, 12 page net".
-/*! If briefdesc!=NULL, then return that. Otherwise make briefdesc
+/*! If briefdesc!=nullptr, then return that. Otherwise make briefdesc
  * reflect teh current net info.
  */
 const char *NetImposition::BriefDescription()
@@ -290,7 +322,7 @@ int NetImposition::SetNet(const char *nettype)
 		newnet->dec_count(); //remove creation count
 		netisbuiltin=1;
 		makestr(briefdesc,_("Dodecahedron"));
-		return c;	
+		return c;
 
 	} else if (strcasestr(nettype,"box")==nettype) {
 		Net *newnet=makeBox(nettype,0,0,0); 
@@ -299,7 +331,7 @@ int NetImposition::SetNet(const char *nettype)
 		newnet->dec_count(); //remove creation count
 		netisbuiltin=1;
 		makestr(briefdesc,newnet->basenet->NetName());
-		return c;	
+		return c;
 
 	} else if (strcasestr(nettype,"cube")==nettype) {
 		Net *newnet=makeBox(nettype,1,1,1);
@@ -308,7 +340,7 @@ int NetImposition::SetNet(const char *nettype)
 		newnet->dec_count(); //remove creation count
 		netisbuiltin=1;
 		makestr(briefdesc,_("Cube"));
-		return c;	
+		return c;
 	}
 	return 1;
 }
@@ -392,25 +424,25 @@ Value *NewNetImposition()
 //! Make an instance of the NetImposition objectdef.
 ObjectDef *makeNetImpositionObjectDef()
 {
-	ObjectDef *sd=new ObjectDef(NULL,
+	ObjectDef *sd=new ObjectDef(nullptr,
 			"NetImposition",
 			_("Net"),
 			_("Imposition of a fairly arbitrary net"),
 			"class",
-			NULL,NULL,
-			NULL,
+			nullptr,nullptr,
+			nullptr,
 			0, //new flags
 			NewNetImposition);
 
 	sd->push("printnet", _("Print Net"), _("Whether to show the net outline when printing out a document."),
 			"boolean",
-			NULL, "1",
+			nullptr, "1",
 			0,0);
 
 	sd->push("net", _("Net"),  _("What kind of net is the imposition using"),
 			"enum",
-			NULL, "0",
-			0,NULL); // *** 0,0,CreateNetListEnum);
+			nullptr, "0",
+			0,nullptr); // *** 0,0,CreateNetListEnum);
 	DBG cerr << " *** need to make enum list work again in makeNetImpositionObjectDef()"<<endl;
 	return sd;
 }
@@ -515,13 +547,13 @@ int NetImposition::numActiveNets()
  */
 LaxInterfaces::SomeData *NetImposition::GetPageOutline(int pagenum,int local)
 {
-	if (!nets.n) return NULL;
-	//if (!doc || pagenum<0 || pagenum>=doc->pages.n) return NULL; ***
-	if (pagenum<0 || pagenum>=numpages) return NULL;
+	if (!nets.n) return nullptr;
+	//if (!doc || pagenum<0 || pagenum>=doc->pages.n) return nullptr; ***
+	if (pagenum<0 || pagenum>=numpages) return nullptr;
 
 	int isbez=0;
 	int n=0;
-	flatpoint *pts=NULL;
+	flatpoint *pts=nullptr;
 	if (maptoabstractnet && abstractnet) {
 		 //existing nets may or may not have the face defined, so it is safer,
 		 //though sometimes slower, to grab from the abstract net
@@ -633,7 +665,7 @@ Spread *NetImposition::SingleLayoutWithAdjacent(int whichpage)
 	 //unwrap all edges adjacent to that.
 	newnet.Unwrap(0,-1);
 
-	Spread *spread=GenerateSpread(NULL, &newnet,
+	Spread *spread=GenerateSpread(nullptr, &newnet,
 								  (whichpage/numActiveFaces())*numActiveFaces());
 	spread->style=SINGLES_WITH_ADJACENT_LAYOUT;
 	
@@ -651,52 +683,67 @@ Spread *NetImposition::GenerateSpread(Spread *spread, //!< If not null, append t
 {
 	DBG cerr <<"-- NetImposition::GenerateSpread--"<<endl;
 	DBG cerr <<"   net dump:"<<endl;
-	DBG net->dump_out(stderr,0,0,NULL);
+	DBG net->dump_out(stderr,0,0,nullptr);
 	DBG cerr <<"-- end net dump"<<endl;
 
 	if (!spread) spread = new Spread();
-	spread->mask = SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
+	spread->mask = SPREAD_PATH | SPREAD_PAGES | SPREAD_MINIMUM | SPREAD_MAXIMUM;
 
-	 // fill pagestack
-	PathsData *spreadpath = dynamic_cast<PathsData *>(spread->path);
-	DBG if (!spreadpath && spread->path) cerr <<"**** error!!! wrong type for net spread path!"<<endl;
-	if (!spreadpath) { 
-		spreadpath = new PathsData;
-		spread->path = spreadpath;
-	}
+	// fill pagestack
+	PathsData *soft_cuts = nullptr;
+	PathsData *folds = nullptr;
+	PathsData *hard_cuts = nullptr;
+	PathsData *debugs = nullptr;
+	if (spread->path) { spread->path->dec_count(); spread->path = nullptr; } // *** todo: does laidout ever repurpose already created spreads?
+	Group *spread_paths = new Group;
+	spread_paths->Id("spreadpath group");
+	spread->path = spread_paths;
 
-	spreadpath->style |= PathsData::PATHS_Ignore_Weights;
-
-	 // build lines...
-	NetLine *l=NULL;
-	Path *path=NULL;
+	// build lines...
+	Path *path = nullptr;
 	Coordinate *tt;
 	for (int c=0; c<net->lines.n; c++) {
-		 //shortcut: use copy function in NetLine to create new coord list
-		l=new NetLine;
-		*l=*net->lines.e[c];
-		 
-		path=new Path(l->points,l->linestyle);
-		l->points=NULL;
-		delete l;
+		NetLine *line = net->lines.e[c];
+		if (!line->points) continue;
 
-		 //transform points out of net coords into paper coords
-		tt=path->path;
+		LineStyle *ls = line->linestyle;
+		if (!ls && net->lines.e[c]->style_hint == Net::EDGE_Fold)     ls = line_fold;
+		if (!ls && net->lines.e[c]->style_hint == Net::EDGE_Hard_Cut) ls = line_cut;
+		if (!ls && net->lines.e[c]->style_hint == Net::EDGE_Soft_Cut) ls = line_soft_cut;
+		if (!ls) ls = line_debug;
+
+		path = new Path(line->points->duplicateAll(), ls);
+		path->Id("subline path");
+
+		//transform points out of net coords into paper coords
+		tt = path->path;
 		do {
-			tt->p(transform_point(net->m(),tt->p()));
-			tt=tt->next;
-		} while (tt && tt!=path->path);
+			tt->p(transform_point(net->m(), tt->p()));
+			tt = tt->next;
+		} while (tt && tt != path->path);
 
-		spreadpath->paths.push(path);
+		PathsData *pp = nullptr;
+		if      (ls == line_fold)     { if (!folds)     { folds     = new PathsData(); folds    ->InstallLineStyle(line_fold);     } pp = folds;     }
+		else if (ls == line_cut)      { if (!hard_cuts) { hard_cuts = new PathsData(); hard_cuts->InstallLineStyle(line_cut);      } pp = hard_cuts; }
+		else if (ls == line_soft_cut) { if (!soft_cuts) { soft_cuts = new PathsData(); soft_cuts->InstallLineStyle(line_soft_cut); } pp = soft_cuts; }
+		else if (ls == line_debug)    { if (!debugs)    { debugs    = new PathsData(); debugs   ->InstallLineStyle(line_debug);    } pp = debugs;    }
+		pp->style |= PathsData::PATHS_Ignore_Weights;
+		pp->paths.push(path);
+		pp->Id("net subline");
+		if (spread_paths->pushnodup(pp) == -1) pp->dec_count();
 		path->dec_count();
 	}
-	spreadpath->FindBBox();
+	if (folds)     folds    ->FindBBox();
+	if (hard_cuts) hard_cuts->FindBBox();
+	if (soft_cuts) soft_cuts->FindBBox();
+	if (debugs)    debugs   ->FindBBox();
+	spread_paths->FindBBox();
 
-	 //construct faces
+	//construct pagestack
 	int page;
-	PathsData *newpath=NULL;
+	PathsData *newpath = nullptr;
 	int n, isbez;
-	flatpoint *p=NULL;
+	flatpoint *p = nullptr;
 	NetFace *netface;
 	unsigned long flag;
 	double mm[6];
@@ -749,22 +796,19 @@ Spread *NetImposition::GenerateSpread(Spread *spread, //!< If not null, append t
 		newpath->origin(origin);
 		delete[] p;
 
-		//DBG Path *ppp=newpath->paths.e[0]->duplicate();
-		//DBG spreadpath->paths.push(ppp);
-		//DBG spreadpath->FindBBox();
-
-		spread->pagestack.push(new PageLocation(page,NULL,newpath)); //incs newpath count
+		spread->pagestack.push(new PageLocation(page,nullptr,newpath)); //incs newpath count
 		newpath->dec_count();//remove extra count
 	}
 
 
 	 // define max/min points
-	if (spread->path) newpath=dynamic_cast<PathsData *>(spread->path);
-	else if (spread->pagestack.n()) newpath=dynamic_cast<PathsData *>(spread->pagestack.e[0]->outline);
-	spread->minimum=transform_point(newpath->m(),
-			flatpoint(newpath->minx,newpath->miny+(newpath->maxy-newpath->miny)/2));
-	spread->maximum=transform_point(newpath->m(),
-			flatpoint(newpath->maxx,newpath->miny+(newpath->maxy-newpath->miny)/2));
+	SomeData *pm = nullptr;
+	if (spread->path) pm = spread->path;
+	else if (spread->pagestack.n()) pm = spread->pagestack.e[0]->outline;
+	spread->minimum=transform_point(pm->m(),
+			flatpoint(pm->minx,pm->miny+(pm->maxy-pm->miny)/2));
+	spread->maximum=transform_point(pm->m(),
+			flatpoint(pm->maxx,pm->miny+(pm->maxy-pm->miny)/2));
 
 	return spread;
 }
@@ -777,13 +821,13 @@ Spread *NetImposition::GenerateSpread(Spread *spread, //!< If not null, append t
  */
 Spread *NetImposition::PageLayout(int whichspread)
 {
-	if (!nets.n) return NULL;
-	if (numActiveNets()==0) return NULL;
+	if (!nets.n) return nullptr;
+	if (numActiveNets()==0) return nullptr;
 
 	int c;
 	int numactive=numActiveFaces();
 
-	Spread *spread=NULL;
+	Spread *spread=nullptr;
 	for (c=0; c<nets.n; c++) {
 		if (nets.e[c]->active) {
 			spread=GenerateSpread(spread,nets.e[c],whichspread*numactive);
@@ -802,27 +846,27 @@ Spread *NetImposition::PageLayout(int whichspread)
  */
 Spread *NetImposition::PaperLayout(int whichpaper)
 {
-	if (!nets.n) return NULL;
+	if (!nets.n) return nullptr;
 
-	Spread *spread=PageLayout(whichpaper);
-	spread->style=SPREAD_PAPER;
+	Spread *spread = PageLayout(whichpaper);
+	spread->style = SPREAD_PAPER;
 
-	PathsData *path = dynamic_cast<PathsData *>(spread->path);//this was a non-local PathsData obj
+	//PathsData *path = dynamic_cast<PathsData *>(spread->path);//this was a non-local PathsData obj
 
 	 // put a reference to the outline in marks if printnet
 	if (printnet) {
-		spread->mask|=SPREAD_PRINTERMARKS;
-		spread->marks=path;
-		spread->marks->flags|=SOMEDATA_UNSELECTABLE;
-		ScreenColor color(.7,.7,.7, 1.);
-		dynamic_cast<PathsData *>(spread->marks)->line(-1,-1,-1, &color);
-		dynamic_cast<PathsData *>(spread->marks)->fill(NULL);
-		path->inc_count();
+		spread->mask |= SPREAD_PRINTERMARKS;
+		spread->marks = spread->path;
+		spread->path->inc_count();
+		spread->marks->flags |= SOMEDATA_UNSELECTABLE;
+		// ScreenColor color(.7,.7,.7, 1.);
+		// dynamic_cast<PathsData *>(spread->marks)->line(-1,-1,-1, &color);
+		// dynamic_cast<PathsData *>(spread->marks)->fill(nullptr);
 	}
 	
 	if (papergroup) {
 		 //there is no need to actually draw the paper, since that is done by the viewer code
-		spread->papergroup=papergroup;
+		spread->papergroup = papergroup;
 		spread->papergroup->inc_count();
 
 		 //center spread in paper
@@ -830,7 +874,7 @@ Spread *NetImposition::PaperLayout(int whichpaper)
 		flatpoint center2((spread->path->maxx+spread->path->minx)/2, (spread->path->maxy+spread->path->miny)/2);
 		spread->path->origin(spread->path->origin() + center1 - center2);
 
-		for (int c=0; c<spread->pagestack.n(); c++) {
+		for (int c = 0; c < spread->pagestack.n(); c++) {
 			if (!spread->pagestack.e[c]->outline) continue;
 			spread->pagestack.e[c]->outline->origin(spread->pagestack.e[c]->outline->origin()+ center1 - center2);
 		}
@@ -939,7 +983,7 @@ int NetImposition::NumPageTypes()
  */
 const char *NetImposition::PageTypeName(int pagetype)
 {
-	if (pagetype<0 || pagetype>=numActiveFaces()) return NULL;
+	if (pagetype<0 || pagetype>=numActiveFaces()) return nullptr;
 	static char str[50];
 	sprintf(str,"%d",pagetype);
 	return str;
@@ -995,18 +1039,18 @@ void NetImposition::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *co
 		fprintf(f,"%s                  #but using only vertices (with only 2-d vertices) and faces blocks.\n",spc);
 		fprintf(f,"%sabstractnet Polyhedron  #this block demonstrates Polyhedron abstract nets.\n",spc);
 		Polyhedron p;
-		p.dump_out(f,indent+2,-1,NULL);//**** if abstract nets get automated, this must change...
+		p.dump_out(f,indent+2,-1,nullptr);//**** if abstract nets get automated, this must change...
 
 		fprintf(f,"%snet NetType   #There can be none or more nets. If there is no abstractnet, then\n",spc);
 		fprintf(f,"%s              #there must be one or more nets. Nets are usually different arrangements\n",spc);
 		fprintf(f,"%s              #of an abstract net.\n",spc);
-		if (nets.n) nets.e[0]->dump_out(f,indent+2,-1,NULL);
+		if (nets.n) nets.e[0]->dump_out(f,indent+2,-1,nullptr);
 		else {
 			Net n;
-			n.dump_out(f,indent+2,-1,NULL);
+			n.dump_out(f,indent+2,-1,nullptr);
 		}
 		//fprintf(f,"%sdefaultpaperstyle #default paper style\n",spc);
-		//***paperstyle->dump_out(f,indent+2,-1,NULL);
+		//***paperstyle->dump_out(f,indent+2,-1,nullptr);
 		return;
 	}
 
@@ -1063,7 +1107,7 @@ void NetImposition::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpCon
 {
 	if (!att) return;
 	char *name,*value;
-	Net *tempnet=NULL;
+	Net *tempnet=nullptr;
 	int foundscaling=0;
 	for (int c=0; c<att->attributes.n; c++) {
 		name= att->attributes.e[c]->name;
@@ -1161,14 +1205,14 @@ void NetImposition::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpCon
 AbstractNet *NetImposition::AbstractNetFromFile(const char *filename)
 {
 	Polyhedron *poly=new Polyhedron;
-	if (poly->dumpInFile(filename,NULL)==0) {
+	if (poly->dumpInFile(filename,nullptr)==0) {
 		 //successfully loaded a polyhedron
 		return poly;
 	}
 	delete poly;
 
 	//***try to load a simple net...
-	return NULL;
+	return nullptr;
 }
 
 //! Try to set up imposition based on file.
@@ -1183,7 +1227,7 @@ int NetImposition::SetNetFromFile(const char *file)
 		nets.flush();
 		if (abstractnet) abstractnet->dec_count();
 		abstractnet=absnet;
-		makestr(briefdesc,NULL);
+		makestr(briefdesc,nullptr);
 
 		if (numActiveFaces()==0 && abstractnet) {
 			Net *n=new Net;

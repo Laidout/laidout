@@ -41,6 +41,11 @@ class NetImposition : public Imposition
 	int printnet;
 	int netisbuiltin;
 
+	LaxInterfaces::LineStyle *line_fold;
+	LaxInterfaces::LineStyle *line_cut;
+	LaxInterfaces::LineStyle *line_soft_cut;
+	LaxInterfaces::LineStyle *line_debug;
+
 	//Polyhedron *polyhedron;
 
 	NetImposition();

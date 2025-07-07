@@ -30,7 +30,8 @@ class NetLine
 {
  public:
 	int tag; //is an outline, or inner line, for instance, if not using linestyle
-	char lineinfo;
+	int lineinfo;
+	int style_hint; // see Net::EdgeTypes
 	LaxInterfaces::Coordinate *points;
 	LaxInterfaces::LineStyle *linestyle;
 
@@ -63,7 +64,7 @@ class NetFaceEdge
 	double svalue;
 	LaxInterfaces::Coordinate *points;
 	//double *basis_adjustment; ***not useful?
-	int info = 0; // for convenience. not used internally.
+	int info = 0; // see Net::EdgeTypes
 	
 	NetFaceEdge();
 	NetFaceEdge(const NetFaceEdge &e);
@@ -149,6 +150,15 @@ class Net : public LaxInterfaces::SomeData
 	double mtopaper[6];
 	LaxInterfaces::SomeData paper;
 
+	enum EdgeTypes {
+		EDGE_Unknown = 0,
+		EDGE_Fold,
+		EDGE_Soft_Cut,
+		EDGE_Hard_Cut,
+		EDGE_FoldPeak,
+		EDGE_FoldValley
+	};
+
 	AbstractNet *basenet;
 	Laxkit::PtrStack<NetLine> lines;
 	Laxkit::PtrStack<NetFace> faces;
@@ -189,6 +199,7 @@ class Net : public LaxInterfaces::SomeData
 	virtual int findOriginalFace(int i,int status,int startsearchhere,int *index_ret);
 	virtual int clearPotentials(int original);
 	virtual int rebuildLines();
+	virtual void DetectAndSetEdgeStyles();
 	virtual int connectFaces(int f1,int f2,int e);
 
 

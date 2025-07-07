@@ -3079,15 +3079,12 @@ void LaidoutViewport::Refresh()
 	// DBGCAIROSTATUS(" LO viewport after  papergroup, cairo status:  ")
 
 	
-	// DBG cerr <<"drawing spread objects.."<<endl;
 	if (spread && showstate==1) {
 		dp->BlendMode(LAXOP_Over);
 
 
-		 // draw 5 pixel offset heavy line like shadow for page first, then fill draw the path...
-		 // draw shadow
+		// draw spread drop shadow, white out pages, draw spread lines
 		if (spread->path) {
-			 //draw shadow if papergroup does not exist
 			ls.Colorf(1.0,0.,0.,1.0);
 			ls.width = 1;
 			ls.capstyle = LAXCAP_Round;
@@ -3095,24 +3092,32 @@ void LaidoutViewport::Refresh()
 			ls.function = LAXOP_None;
 			fs.Color(0,0,0,0xffff);
 
+			// draw offset shadow if papergroup does not exist
 			if (!(papergroup && papergroup->papers.n)) {
 				dp->NewFG(0,0,0);
 				dp->PushAxes();
-				dp->ShiftScreen(laidout->prefs.pagedropshadow,laidout->prefs.pagedropshadow);
-				DrawData(dp,spread->path, &ls,&fs,drawflags);
+				dp->ShiftScreen(laidout->prefs.pagedropshadow, laidout->prefs.pagedropshadow);
+				for (int c = 0; c < spread->pagestack.n(); c++) {
+					if (spread->pagestack.e[c]->outline) {
+						DrawData(dp, spread->pagestack.e[c]->outline, &ls,&fs,drawflags);
+					}
+				}
 				dp->PopAxes();
 			}
 
-			 // draw outline *** must draw filled with paper color
+			// draw spread path after filling in paper color
 			fs.Color(0xffff,0xffff,0xffff,0xffff);
-			ls.function = LAXOP_Over;
-			DrawData(dp,spread->path, &ls,&fs,drawflags);
+			ls.function = LAXOP_None;
+			for (int c = 0; c < spread->pagestack.n(); c++) {
+				if (spread->pagestack.e[c]->outline) {
+					DrawData(dp, spread->pagestack.e[c]->outline, &ls,&fs,drawflags);
+				}
+			}
+			DrawData(dp,spread->path, nullptr,nullptr,drawflags);
 		}
 
 		if (spread->marks) DrawData(dp,spread->marks,NULL,NULL,drawflags);
 		 
-		// DBGCAIROSTATUS(" LO viewport after spread, cairo status:  ")
-
 		 // draw the page's objects and margins
 		Page *page = NULL;
 		int pagei = -1;
@@ -3130,7 +3135,6 @@ void LaidoutViewport::Refresh()
 				}
 			}
 
-			//if (spread->pagestack.e[c]->index<0) {
 			if (!page) {
 				 //if no page, then draw an x through the page stack outline
 				if (!spread->pagestack.e[c]->outline) continue;
