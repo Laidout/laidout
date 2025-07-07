@@ -37,7 +37,7 @@ namespace Laidout {
 
 const char *arrangetypestring(int a)
 {
-	if (a==ArrangeAutoAlways)       return _("Auto arrange on each window size change");
+	if      (a==ArrangeAutoAlways)  return _("Auto arrange on each window size change");
 	else if (a==ArrangeAutoTillMod) return _("Auto arrange until you move a spread");
 	else if (a==Arrange1Row)        return _("Arrange in one row");
 	else if (a==ArrangeRows)        return _("Arrange in rows at current scale");
