@@ -153,10 +153,10 @@ class Net : public LaxInterfaces::SomeData
 	enum EdgeTypes {
 		EDGE_Unknown = 0,
 		EDGE_Fold,
+		EDGE_Fold_Peak,
+		EDGE_Fold_Valley,
 		EDGE_Soft_Cut,
-		EDGE_Hard_Cut,
-		EDGE_FoldPeak,
-		EDGE_FoldValley
+		EDGE_Hard_Cut
 	};
 
 	AbstractNet *basenet;
@@ -201,6 +201,7 @@ class Net : public LaxInterfaces::SomeData
 	virtual int rebuildLines();
 	virtual void DetectAndSetEdgeStyles();
 	virtual int connectFaces(int f1,int f2,int e);
+	virtual int CollapseEdges();
 
 
 	 //input and output functions

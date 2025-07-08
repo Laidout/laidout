@@ -705,15 +705,15 @@ int Polyhedron::makeedges()
 	 //for each edge of each face, see if it matches any edge in any other face.
 	for (c=0; c<faces.n; c++) {              //for each face in polyhedron
 		for (c2=0; c2<faces.e[c]->pn; c2++) { //for each edge in face
-			p1=faces.e[c]->p[c2];  //point 1 of a face's edge
-			p2=faces.e[c]->p[(c2+1)%faces.e[c]->pn]; //point 2 of a face's edge
+			p1 = faces.e[c]->p[c2];  //point 1 of a face's edge
+			p2 = faces.e[c]->p[(c2+1)%faces.e[c]->pn]; //point 2 of a face's edge
 			for (c3=0; c3<edges.n; c3++) { //check current edge against known edges
 				if ((edges.e[c3]->p1==p1 && edges.e[c3]->p2==p2) ||
 					(edges.e[c3]->p1==p2 && edges.e[c3]->p2==p1)) break;
 			}
-			if (c3==edges.n) { // edge not found in this->edges
+			if (c3 == edges.n) { // edge not found in this->edges
 				edges.push(new Edge(p1,p2,c,-1));
-				faces.e[c]->f[c2]=-1; //-1 because we are not sure what face it connects to yet
+				faces.e[c]->f[c2] = -1; //-1 because we are not sure what face it connects to yet
 			} else {
 				 //edge already exists, which means that the edge references 1 face, since
 				 //edges was flushed above, and edges will be encountered a total of exactly 2 times.
@@ -745,6 +745,26 @@ int Polyhedron::makeedges()
 	DBG }
 
 	return 1;
+}
+
+/*! Return true for success, else false for edge not found. */
+bool Polyhedron::SetEdgeInfo(int v1, int v2, int info)
+{
+	if (v1 < 0 || v1 >= vertices.n || v2 < 0 || v2 >= vertices.n) return false;
+
+	int c;
+	for (c = 0; c < edges.n; c++) {
+		if ((edges.e[c]->p1 == v1 && edges.e[c]->p2 == v2) || (edges.e[c]->p1 == v2 && edges.e[c]->p2 == v1)) {
+			edges.e[c]->info = info;
+			break;
+		}
+	}
+	if (c == edges.n-1) {
+		Edge *e = new Edge(v1,v2);
+		e->info = info;
+		edges.push(e);
+	}
+	return true;
 }
 
 /*! Merge the face connected to face1 at edge with face1.
@@ -1055,13 +1075,14 @@ int Polyhedron::AddFace(int n, ...)
 	va_start(ap,n);
 
 	Face *f = new Face();
+	f->pn = n;
 	f->v = new int[n];
 	f->f = new int[n];
 	f->p = new int[n];
 
-	for (int c=0; c<n; c++) {
-		f->v[c]=f->f[c]=-1;
-		f->p[0] = va_arg(ap,int);
+	for (int c = 0; c < n; c++) {
+		f->v[c] = f->f[c] = -1;
+		f->p[c] = va_arg(ap,int);
 	}
 	faces.push(f,1);
 	

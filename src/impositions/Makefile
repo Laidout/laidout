@@ -15,6 +15,7 @@ CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) $(EXTRA_CPPFLAGS) -I$(LAXDIR)/.. `p
 objs= \
 	imposition.o \
 	impositioneditor.o \
+	accordion.o \
 	singles.o \
 	impositions.o \
 	dodecahedron.o \

@@ -1158,22 +1158,22 @@ void Net::FindBBox()
 void Net::FitToData(Laxkit::DoubleBBox *data,double margin,int setpaper)
 {
 	DoubleBBox box(*data);
-	if (margin*2<box.maxx-box.minx) {
-		box.minx+=margin;
-		box.maxx-=margin;
+	if (margin * 2 < box.maxx - box.minx) {
+		box.minx += margin;
+		box.maxx -= margin;
 	}
-	if (margin*3<box.maxy-box.miny) {
-		box.miny+=margin;
-		box.maxy-=margin;
+	if (margin * 3 < box.maxy - box.miny) {
+		box.miny += margin;
+		box.maxy -= margin;
 	}
-	fitto(nullptr,&box,50,50);
+	fitto(nullptr, &box, 50, 50);
 
 	if (setpaper) {
 		paper.setIdentity();
-		paper.origin(flatpoint(data->minx,data->miny));
-		paper.minx=paper.maxx=0;
-		paper.maxx=data->maxx-data->minx;
-		paper.maxy=data->maxy-data->miny;
+		paper.origin(flatpoint(data->minx, data->miny));
+		paper.minx = paper.maxx = 0;
+		paper.maxx              = data->maxx - data->minx;
+		paper.maxy              = data->maxy - data->miny;
 	}
 }
 
@@ -1723,40 +1723,40 @@ int	Net::connectFaces(int f1,int f2,int ee)
 {
 	if (f1<0 || f1>=faces.n) return 1;
 	if (f2<0 || f2>=faces.n) return 2;
-	if (ee>=faces.e[f1]->edges.n) return 3;
+	if (ee >= faces.e[f1]->edges.n) return 3;
 
-	NetFace *from=faces.e[f1],
-			*to=faces.e[f2];
+	NetFace *from = faces.e[f1];
+	NetFace *to   = faces.e[f2];
 
 	 //if necessary, autodetect the correct edge to place the face
 	if (ee<0) {
 		for (int c=0; c<from->edges.n; c++) {
-			if (from->edges.e[c]->tooriginal==to->original) {
-				ee=c;
+			if (from->edges.e[c]->tooriginal == to->original) {
+				ee = c;
 				break; 
 			}
 		}
 	}
 
-	int e2=from->edges.e[ee]->tofaceedge; //the edge number in f2
-	flatpoint p1 =from->edges.e[ee]->points->fp,
-			  p2 =from->edges.e[(ee+1)%from->edges.n]->points->fp,
-			  pt2=  to->edges.e[e2]->points->fp,
-			  pt1=  to->edges.e[(e2+1)%to->edges.n]->points->fp;
+	int e2 = from->edges.e[ee]->tofaceedge; //the edge number in f2
+	flatpoint p1  = from->edges.e[ee]->points->fp;
+	flatpoint p2  = from->edges.e[(ee+1)%from->edges.n]->points->fp;
+	flatpoint pt2 =   to->edges.e[e2]->points->fp;
+	flatpoint pt1 =   to->edges.e[(e2+1)%to->edges.n]->points->fp;
 
-	from->edges.e[ee]->tag   =to->tag;
-	to  ->edges.e[e2]->tag   =from->tag;
-	from->edges.e[ee]->toface=f2;
-	to  ->edges.e[e2]->toface=f1;
+	from->edges.e[ee]->tag    = to->tag;
+	to  ->edges.e[e2]->tag    = from->tag;
+	from->edges.e[ee]->toface = f2;
+	to  ->edges.e[e2]->toface = f1;
 
-	if (!from->matrix) from->matrix=transform_identity(nullptr);
-	if (!  to->matrix)   to->matrix=transform_identity(nullptr);
+	if (!from->matrix) from->matrix = transform_identity(nullptr);
+	if (!  to->matrix)   to->matrix = transform_identity(nullptr);
 
 	 //connect pt1 -> p1,  pt2 -> p2
-	p1 =transform_point(from->matrix,p1);
-	p2 =transform_point(from->matrix,p2);
-	pt1=transform_point(  to->matrix,pt1);
-	pt2=transform_point(  to->matrix,pt2);
+	p1  = transform_point(from->matrix, p1);
+	p2  = transform_point(from->matrix, p2);
+	pt1 = transform_point(  to->matrix, pt1);
+	pt2 = transform_point(  to->matrix, pt2);
 	
 	 // pt1*tm --> T --> p1*fm
 	 // pt2*tm --> T --> p2*fm
@@ -1800,6 +1800,62 @@ int	Net::connectFaces(int f1,int f2,int ee)
 	return 0;
 }
 
+/*! Connect faces that physically share an edge.
+ * If face == -1 and edge == -1, then collapse all coincident edges.
+ * If face >= 0 and edge == -1, then collapse any coincident edges of net face.
+ *
+ * Return the number of edges collapsed.
+ */
+int Net::CollapseEdges()
+{
+	int n = 0;
+
+	for (int f = 0; f < faces.n; f++) {
+		NetFace *face = faces.e[f];
+		for (int e = 0; e < face->edges.n; e++) {
+			NetFaceEdge *edge = face->edges.e[e];
+			if (edge->toface >= 0 || edge->tooriginal < 0) continue; // already connected
+
+			flatpoint e1p1 = edge->points->fp;
+			flatpoint e1p2 = face->edges.e[(e+1)%face->edges.n]->points->fp;
+			if (face->matrix) {
+				e1p1 = transform_point(face->matrix, e1p1);
+				e1p2 = transform_point(face->matrix, e1p2);
+			}
+			bool found = false;
+
+			for (int f2 = f+1; f2 < faces.n; f2++) {
+				NetFace *face2 = faces.e[f2];
+				for (int e2 = 0; e2 < face2->edges.n; e2++) {
+					NetFaceEdge *edge2 = face2->edges.e[e2];
+					if (edge2->toface >= 0 || edge2->tooriginal < 0) continue; // already connected
+
+					flatpoint e2p1 = edge2->points->fp;
+					flatpoint e2p2 = face2->edges.e[(e2+1)%face2->edges.n]->points->fp;
+					if (face2->matrix) {
+						e2p1 = transform_point(face2->matrix, e2p1);
+						e2p2 = transform_point(face2->matrix, e2p2);
+					}
+
+					if ((e1p1.distanceTo(e2p1) < 1e-6 && e1p2.distanceTo(e2p2) < 1e-6)
+						|| (e1p1.distanceTo(e2p2) < 1e-6 && e1p2.distanceTo(e2p1) < 1e-6)) {
+						// touching!
+						edge->toface = f2;
+						edge->tofaceedge = e2;
+						edge2->toface = f;
+						edge2->tofaceedge = e;
+						n++;
+						found = true;
+						break;
+					}
+					if (found) break;
+				}
+			}
+		}
+	}
+	return n;
+}
+
 //! For each edge of each face, make sure edge tag for potential/already-taken is set properly.
 /*! This will add net faces as necessary.
  *
@@ -1833,6 +1889,8 @@ int Net::validateNet()
  */
 void Net::DetectAndSetEdgeStyles()
 {
+	// DBG cerr<<"net dump: "<<endl;
+	// DBG dump_out(stderr, 2,0,nullptr);
 	DBG cerr << "Net DetectAndSetEdgeStyles "<<Id()<<endl;
 
 	for (int c = 0; c < faces.n; c++) {

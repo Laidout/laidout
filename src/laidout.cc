@@ -46,6 +46,7 @@
 #include "filetypes/filters.h"
 #include "impositions/impositioneditor.h"
 #include "impositions/netimposition.h"
+#include "impositions/accordion.h"
 #include "impositions/singles.h"
 #include "nodes/nodeeditor.h"
 #include "ui/headwindow.h"
@@ -1977,18 +1978,18 @@ int LaidoutApp::NewDocument(const char *spec)
 	if (!strcmp(spec,"default")) spec="letter, portrait, singles";
 	DBG cerr <<"------create new doc from \""<<spec<<"\""<<endl;
 
-	char *saveas=NULL;
-	Imposition *imp=NULL;
-	PaperStyle *paper=NULL;
-	int numpages=1;
+	char       *saveas   = nullptr;
+	Imposition *imp      = nullptr;
+	PaperStyle *paper    = nullptr;
+	int         numpages = 1;
 
 	//Attribute *spec_parameters=parse_fields(NULL,spec,NULL);
 
 
 //---------------------****
 	 // break down the spec
-	char **fields=split(spec,',',NULL),
-		 *field=NULL;
+	char **fields = split(spec,',', nullptr);
+	char  *field  = nullptr;
 	if (!fields) { 
 		DBG cout <<"*** broken spec"<<endl;
 		return 2; 
@@ -2009,13 +2010,21 @@ int LaidoutApp::NewDocument(const char *spec)
 			continue;
 		}
 
+		// *** testing!!
+		if (strcasestr(field, "accordion") == field) {
+			NetImposition *nimp = CreateAccordion(field, 11,8.5);
+			if (imp) imp->dec_count();
+			imp = nimp;
+			continue;
+		}
+
 		if (isdigit(*field)) { // assume number of pages
-			char *ee=NULL;
+			char *ee = nullptr;
 			int i=strtol(field,&ee,10);
 			while (isspace(*ee)) ee++;
-			if (*ee=='\0' || !strcasecmp(ee,_("pages"))) {
+			if (*ee == '\0' || !strcasecmp(ee,_("pages"))) {
 				numpages=i;
-				if (numpages<=0) numpages=1;
+				if (numpages <= 0) numpages = 1;
 				continue;
 			}
 		}

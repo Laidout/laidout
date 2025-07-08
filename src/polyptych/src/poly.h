@@ -38,6 +38,8 @@ class Edge
  public:
 	int p1,p2; //index in Polyhedron::vertices
 	int f1,f2; //index in Polyhedron::faces
+	int info = 0;
+
 	Edge(void) { p1=p2=0; f1=f2=-1; }
 	Edge(int x, int y,int f=-1,int g=-1) {p1=x; p2=y; f1=f; f2=g; }
 	Edge(Laxkit::flatpoint &f) { p1=(int) f.x; p2=(int) f.y;  f1=f2=-1; }
@@ -182,6 +184,7 @@ class Polyhedron :
 	virtual int AddFace(const char *str);
 	virtual int AddFace(int n, ...);
 	virtual void BuildExtra(); //create face cache
+	virtual bool SetEdgeInfo(int v1, int v2, int info);
 	virtual ExtraFace *newExtraFace();
 	virtual void collapseVertices(double zero, int vstart=-1, int vend=-1);
 	virtual void MergeFaces(int face1, int edge);

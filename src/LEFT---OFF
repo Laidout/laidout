@@ -3192,12 +3192,17 @@ improve split window
   simplify pane customization, docking
 
 accordion folds:
-  map style
-  various pamphlet types
-  wacky minimal origami: https://www.youtube.com/watch?v=__9_KZi_tpE
+  needs at least minimal ui
+  NetImposition needs a scale to paper option, so we don't have to have a whole new imposition class
+  NetImposition needs paper margin control
+  implement impostion preview images
+  still need to implement correct page orientations on flips
+  explosion/squash books with cross folds on pages, wacky minimal origami: https://www.youtube.com/watch?v=__9_KZi_tpE
   maze books / meander scrapbook
   cootie catcher
-  explodion books with cross folds on pages
+  Miura: a 7x5 with non-rect pages. folds rigidly: https://en.wikipedia.org/wiki/Miura_fold
+  DONE various pamphlet types
+
 
 Make extension to be able to use Inkscape live path effects (lpe)!! Then run on svg snippets, so should be somewhat
   straightforward to call externally.. BUT have optional tool overlay. Figure out how to reverse implement to also
@@ -3405,7 +3410,7 @@ Imposition use cases:
   maybe any spread setup temporarily to another imposition on export, not just export with custom papergroup?
 
 Net imposition: netimposition: net:
-  better linestyle support for displayed lines
+  From new doc dialog, select "new net", old imposition still displays in dropdown
   tabs, like for folding up polyhedra
     custom tab shapes
     custom tab placement, in case you need to override automatic, like doubling up tabs on an edge
@@ -3415,16 +3420,16 @@ Net imposition: netimposition: net:
   create from papergroup: one papergroup used as page spreads, another used as actual paper group?
   net extra scaling non-functional
   NetImposition needs import/export net,
+  load save nets from: 1.net files or 2.OFF files(done)
   export svg
   convert to/from laidout elements
   interactive unwrapper and build net interface figure out bleeding and connectivity infrastructure
-  figure out more efficient clipping of Imlib images
   finish implementing double sided nets
   saving when net is internal is not proper.. does not distinguish between diff. nets and whole
   import/export cff2/cf2 cad (not font) format?
   export pdf 1.6?
   save different setups: papertile AND net layout
-  load save nets from: 1.net files or 2.OFF files(done)
+  DONE better linestyle support for displayed lines
 
 polyptych:
   bug: won't set custom net/paper after edit imposition with polyptych

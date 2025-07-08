@@ -136,6 +136,7 @@ otherobjs= \
 	filetypes/ppt.o \
 	filetypes/scribus.o \
 	filetypes/svg.o \
+	impositions/accordion.o \
 	impositions/box.o \
 	impositions/dodecahedron.o \
 	impositions/imposition.o \

@@ -42,6 +42,8 @@ class NetImposition : public Imposition
 	int netisbuiltin;
 
 	LaxInterfaces::LineStyle *line_fold;
+	LaxInterfaces::LineStyle *line_peak;
+	LaxInterfaces::LineStyle *line_valley;
 	LaxInterfaces::LineStyle *line_cut;
 	LaxInterfaces::LineStyle *line_soft_cut;
 	LaxInterfaces::LineStyle *line_debug;

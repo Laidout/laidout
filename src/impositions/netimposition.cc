@@ -121,6 +121,8 @@ NetImposition::NetImposition()
 	abstractnet      = nullptr;
 	printnet         = 1;
 	line_fold        = nullptr;
+	line_peak        = nullptr;
+	line_valley      = nullptr;
 	line_cut         = nullptr;
 	line_soft_cut    = nullptr;
 	line_debug       = nullptr;
@@ -148,16 +150,37 @@ NetImposition::NetImposition()
 	double d[2] { .05,.05 };
 	line_fold->Dashes(d, 2, 0);
 	line_fold->use_dashes = true;
+
+	line_peak = new LineStyle();
+	line_peak->Colorf(.6,.6,.6,1.);
+	line_peak->widthtype = 0;
+	line_peak->width = 2; //screen px
+	line_peak->Id("fold_peak");
+	d[0] = .15; d[1] = .05;
+	line_peak->Dashes(d, 2, 0);
+	line_peak->use_dashes = true;
+
+	line_valley = new LineStyle();
+	line_valley->Colorf(.6,.6,.6,1.);
+	line_valley->widthtype = 0;
+	line_valley->width = 2; //screen px
+	line_valley->Id("fold_valley");
+	d[0] = .02; d[1] = .05;
+	line_valley->Dashes(d, 2, 0);
+	line_valley->use_dashes = true;
+
 	line_cut = new LineStyle();
 	line_cut->Colorf(1.,0.,0.,1.);
 	line_cut->widthtype = 0;
 	line_cut->width = 2; //screen px
 	line_cut->Id("cut");
+
 	line_soft_cut = new LineStyle();
 	line_soft_cut->Colorf(0.,1.,0.,1.);
 	line_soft_cut->widthtype = 0;
 	line_soft_cut->width = 2; //screen px
 	line_soft_cut->Id("soft_cut");
+
 	line_debug = new LineStyle();
 	line_debug->Colorf(1.,0.,1.,1.);
 	line_debug->widthtype = 0;
@@ -227,6 +250,8 @@ NetImposition::~NetImposition()
 	if (briefdesc) delete[] briefdesc;
 	if (abstractnet)   abstractnet  ->dec_count();
 	if (line_fold)     line_fold    ->dec_count();
+	if (line_peak)     line_peak    ->dec_count();
+	if (line_valley)   line_valley  ->dec_count();
 	if (line_cut)      line_cut     ->dec_count();
 	if (line_soft_cut) line_soft_cut->dec_count();
 	if (line_debug)    line_debug   ->dec_count();
@@ -692,6 +717,8 @@ Spread *NetImposition::GenerateSpread(Spread *spread, //!< If not null, append t
 	// fill pagestack
 	PathsData *soft_cuts = nullptr;
 	PathsData *folds = nullptr;
+	PathsData *peaks = nullptr;
+	PathsData *valleys = nullptr;
 	PathsData *hard_cuts = nullptr;
 	PathsData *debugs = nullptr;
 	if (spread->path) { spread->path->dec_count(); spread->path = nullptr; } // *** todo: does laidout ever repurpose already created spreads?
@@ -707,9 +734,11 @@ Spread *NetImposition::GenerateSpread(Spread *spread, //!< If not null, append t
 		if (!line->points) continue;
 
 		LineStyle *ls = line->linestyle;
-		if (!ls && net->lines.e[c]->style_hint == Net::EDGE_Fold)     ls = line_fold;
-		if (!ls && net->lines.e[c]->style_hint == Net::EDGE_Hard_Cut) ls = line_cut;
-		if (!ls && net->lines.e[c]->style_hint == Net::EDGE_Soft_Cut) ls = line_soft_cut;
+		if (!ls && net->lines.e[c]->style_hint == Net::EDGE_Fold)        ls = line_fold;
+		if (!ls && net->lines.e[c]->style_hint == Net::EDGE_Fold_Peak)   ls = line_peak;
+		if (!ls && net->lines.e[c]->style_hint == Net::EDGE_Fold_Valley) ls = line_valley;
+		if (!ls && net->lines.e[c]->style_hint == Net::EDGE_Hard_Cut)    ls = line_cut;
+		if (!ls && net->lines.e[c]->style_hint == Net::EDGE_Soft_Cut)    ls = line_soft_cut;
 		if (!ls) ls = line_debug;
 
 		path = new Path(line->points->duplicateAll(), ls);
@@ -724,6 +753,8 @@ Spread *NetImposition::GenerateSpread(Spread *spread, //!< If not null, append t
 
 		PathsData *pp = nullptr;
 		if      (ls == line_fold)     { if (!folds)     { folds     = new PathsData(); folds    ->InstallLineStyle(line_fold);     } pp = folds;     }
+		else if (ls == line_peak)     { if (!peaks)     { peaks     = new PathsData(); peaks    ->InstallLineStyle(line_peak);     } pp = peaks;     }
+		else if (ls == line_valley)   { if (!valleys)   { valleys   = new PathsData(); valleys  ->InstallLineStyle(line_valley);   } pp = valleys;   }
 		else if (ls == line_cut)      { if (!hard_cuts) { hard_cuts = new PathsData(); hard_cuts->InstallLineStyle(line_cut);      } pp = hard_cuts; }
 		else if (ls == line_soft_cut) { if (!soft_cuts) { soft_cuts = new PathsData(); soft_cuts->InstallLineStyle(line_soft_cut); } pp = soft_cuts; }
 		else if (ls == line_debug)    { if (!debugs)    { debugs    = new PathsData(); debugs   ->InstallLineStyle(line_debug);    } pp = debugs;    }
@@ -734,6 +765,8 @@ Spread *NetImposition::GenerateSpread(Spread *spread, //!< If not null, append t
 		path->dec_count();
 	}
 	if (folds)     folds    ->FindBBox();
+	if (peaks)     peaks    ->FindBBox();
+	if (valleys)   valleys  ->FindBBox();
 	if (hard_cuts) hard_cuts->FindBBox();
 	if (soft_cuts) soft_cuts->FindBBox();
 	if (debugs)    debugs   ->FindBBox();
