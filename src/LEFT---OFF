@@ -3191,16 +3191,16 @@ improve split window
   debug mouse cursor change when over gap
   simplify pane customization, docking
 
-accordion folds:
-  needs at least minimal ui
-  NetImposition needs a scale to paper option, so we don't have to have a whole new imposition class
-  NetImposition needs paper margin control
+accordion folds: accordion:
+  implement paper change: NetImposition needs an asymmetric scale to paper option, so we don't have to have a whole new imposition class
   implement impostion preview images
-  still need to implement correct page orientations on flips
   explosion/squash books with cross folds on pages, wacky minimal origami: https://www.youtube.com/watch?v=__9_KZi_tpE
   maze books / meander scrapbook
   cootie catcher
-  Miura: a 7x5 with non-rect pages. folds rigidly: https://en.wikipedia.org/wiki/Miura_fold
+  DONE still need to implement correct page orientations on flips
+  DONE Miura: a 7x5 with non-rect pages. folds rigidly: https://en.wikipedia.org/wiki/Miura_fold
+  DONE needs at least minimal ui
+  DONE (single margin value so far) NetImposition needs paper margin control
   DONE various pamphlet types
 
 
@@ -3409,6 +3409,9 @@ Imposition use cases:
   impose only needs access to papergroups
   maybe any spread setup temporarily to another imposition on export, not just export with custom papergroup?
 
+netdialog:
+  memory hole when select new net, ok, cancel
+
 Net imposition: netimposition: net:
   From new doc dialog, select "new net", old imposition still displays in dropdown
   tabs, like for folding up polyhedra
@@ -3429,6 +3432,7 @@ Net imposition: netimposition: net:
   import/export cff2/cf2 cad (not font) format?
   export pdf 1.6?
   save different setups: papertile AND net layout
+  DONE netdialog needs a paper selector
   DONE better linestyle support for displayed lines
 
 polyptych:
@@ -3532,7 +3536,8 @@ ObjectIndicator:
   When you select down in a list, should not destroy upper stack
   if you click on the (#number siblings) popup list of siblings to select from?
 
-ux polish:
+ux polish: ux:
+  if you try to "show in filesystem" with something without save file, like unsaved new doc, should not open file browser
   ux: corner menu, if current document is not in file system, should gray out "Show in filesystem"
   if there is a page/file snafu on export, should return to the export dialog after the error
   when you save, also save a preview of current spread in freedesktop thumbs?
