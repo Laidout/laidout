@@ -6732,7 +6732,7 @@ int NodeInterface::PerformAction(int action)
 		double margin = (w < h ? w*.05 : h*.05);
 
 		DoubleBBox vp(dp->Minx+margin, dp->Maxx-margin, dp->Miny+margin, dp->Maxy-margin);
-		box.fitto(NULL, &vp, 50, 50, 1);
+		box.AlignAndFit(NULL, &vp, 50, 50, 1);
 		nodes->m.m(box.m());
 		needtodraw=1;
 		return 0;

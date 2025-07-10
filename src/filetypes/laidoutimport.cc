@@ -310,7 +310,7 @@ int LaidoutInFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 
 		if (in->scaletopage) {
 			 //center and scale
-			origpagedims.fitto(NULL,&newpagedims, 50,50, in->scaletopage);
+			origpagedims.AlignAndFit(NULL,&newpagedims, 50,50, in->scaletopage);
 
 		} else {
 			 //only center

@@ -1166,7 +1166,9 @@ void Net::FitToData(Laxkit::DoubleBBox *data,double margin,int setpaper)
 		box.miny += margin;
 		box.maxy -= margin;
 	}
-	fitto(nullptr, &box, 50, 50);
+	DBG cerr << "Net::FitToData box: "<<box.minx<<" "<<box.miny<<" "<<box.maxx<<" "<<box.maxy<<endl;
+	DBG cerr << "          net bbox: "<<minx<<" "<<miny<<" "<<maxx<<" "<<maxy<<endl;
+	AlignAndFit(nullptr, &box, 50, 50);
 
 	if (setpaper) {
 		paper.setIdentity();

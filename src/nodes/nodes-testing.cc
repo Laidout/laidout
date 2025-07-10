@@ -1042,7 +1042,7 @@ int AlignToBoundsNode::Update()
 	if (!bbox) return -1;
 
 	DrawableObject *out = in->duplicate();
-	out->fitto
+	out->AlignAndFit
 	
 	properties.e[4]->SetData(in, 0);
 	return NodeBase::Update();

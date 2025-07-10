@@ -3364,7 +3364,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 		if (err==0) {
 			DoubleBBox bbox(x,x+w, y,y+h);
-			image->fitto(nullptr, &bbox, 50, 50);
+			image->AlignAndFit(nullptr, &bbox, 50, 50);
 
 			image->Flip(0);
 			group->push(image);
