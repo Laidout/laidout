@@ -19,9 +19,10 @@
 #include <lax/rowframe.h>
 #include <lax/lineinput.h>
 #include <lax/checkbox.h>
+#include <lax/sliderpopup.h>
 #include "../core/papersizes.h"
 #include "netimposition.h"
-
+#include "../ui/papersizewindow.h"
 
 namespace Laidout {
 
@@ -32,10 +33,13 @@ class NetDialog : public Laxkit::RowFrame, public ImpositionWindow
 	NetImposition *current;
 	NetImposition *original;
 	Document *doc;
+
   public:
 	PaperStyle *paperstyle;
-	Laxkit::CheckBox *checkcurrent,*checkbox,*checkdod,*checkfile;
-	Laxkit::LineInput *boxdims,*impfromfile,*scaling;
+	Laxkit::CheckBox *checkcurrent, *checkbox, *checkdod, *checkfile, *checkaccordion;
+	Laxkit::LineInput *accordion_1, *accordion_2, *boxdims, *impfromfile, *scaling;
+	PaperSizeWindow *psizewindow;
+	Laxkit::SliderPopup *accordions;
 
 	NetDialog(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,
 					 unsigned int owner, const char *mes,

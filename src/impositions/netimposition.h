@@ -33,13 +33,16 @@ class NetImposition : public Imposition
 {
 	char *briefdesc;
  public:
+	double margin = .05;
+	bool margin_is_percent = true;
+	int printnet;
+	
 	PageStyle *pagestyle;
 	Polyptych::AbstractNet *abstractnet;
 	double scalefromnet;
-	Laxkit::RefPtrStack<Polyptych::Net> nets;
 	int maptoabstractnet;
-	int printnet;
 	int netisbuiltin;
+	Laxkit::RefPtrStack<Polyptych::Net> nets;
 
 	LaxInterfaces::LineStyle *line_fold;
 	LaxInterfaces::LineStyle *line_peak;

@@ -34,9 +34,10 @@ namespace Laidout {
  */
 NetImposition *CreateAccordion(const char *which, double paper_width, double paper_height)
 {
-	if (isblank(which)) return nullptr;
+	//if (isblank(which)) return nullptr;
 
-	if (strcasestr(which, "accordion") == which) which += 9;
+	DBG cerr << "CreateAccordion in "<<paper_width<<' '<<paper_height<<endl;
+	if (strcasestr(which, "accordion") == which && !isalnum(which[9])) which += 9;
 	while (isspace(*which)) which++;
 
 	int n = 0;
@@ -55,7 +56,7 @@ NetImposition *CreateAccordion(const char *which, double paper_width, double pap
 		else if (strcasecmp(strs[0], "DoubleGate")     == 0) type = Accordion::DoubleGate;
 		else if (strcasecmp(strs[0], "Roll")           == 0) type = Accordion::Roll;
 		else if (strcasecmp(strs[0], "DoubleParallel") == 0) type = Accordion::DoubleParallel;
-		else if (strcasecmp(strs[0], "MapFold")        == 0) type = Accordion::MapFold;
+		else if (strcasecmp(strs[0], "MapNxM")         == 0) type = Accordion::MapNxM;
 		else if (strcasecmp(strs[0], "EasyZine")       == 0) type = Accordion::EasyZine;
 		else if (strcasecmp(strs[0], "Accordion1xN")   == 0) type = Accordion::Accordion1xN;
 		else if (strcasecmp(strs[0], "Accordion2xN")   == 0) type = Accordion::Accordion2xN;
@@ -96,40 +97,65 @@ Accordion::Accordion()
 {}
 
 
-void Accordion::DefinePresets(ObjectDef *def)
-{
-	//virtual int pushEnum(const char *nname,const char *nName,const char *ndesc,
-//			 bool is_class, //false means this enum works ONLY for this field. else it can be used elsewhere as a type
-//			 const char *newdefval,
-//			 NewObjectFunc nnewfunc,
-//			 ObjectFunc nstylefunc,
-//			 ...);
-//			 * - the enum value scripting name,
-//			 * - the enum value translated, human readable name for menus
-//			 * - the description of the value for tool tips
+//the ObjectDef for the presets enum
+Laxkit::SingletonKeeper Accordion::presets;
 
-	def->pushEnum("AccordionPresets", _("Accordion Presets"), nullptr, true, 
-			nullptr, nullptr, nullptr,
-	  		"Unknown",       Unknown,        _("Unknown"),     nullptr,
-	  		"HalfFold",      HalfFold,       _("HalfFold"),       _("pamphlet just folded down the middle"),
-			"VerticalHalf",  VerticalHalf,   _("VerticalHalf"),   _("like HalfFold, but vertical"),
-			"TriFold",       TriFold,        _("TriFold"),        _("aka C-fold, 3 panels, one folded forward from right, one folded forward from left"),
-			"ZFold",         ZFold,          _("ZFold"),          _("3 panel accordion"),
-			"ZFoldVertical", ZFoldVertical,  _("ZFoldVertical"),  _("3 panel accordion, vertical"),
-			"FrenchQuarter", FrenchQuarter,  _("FrenchQuarter"),  _("fold down vertically in hald, then horizontally in half"),
-			"Gate",          Gate,           _("Gate"),           _("aka Single Open, 3 panel, but center panel is twice the l and r panels"),
-			"DoubleGate",    DoubleGate,     _("DoubleGate"),     _("aka Double Open, 4 panels, fold in from right to center, fold from left to center, fold at center"),
-			"Roll",          Roll,           _("Roll"),           _("4 panel, fold in from R, again from r, then l"),
-			"DoubleParallel",DoubleParallel, _("DoubleParallel"), _("fold in half from r, then fold in half again"),
-			"MapFold",       MapFold,        _("MapFold"),        _("3x4?"),
-			"EasyZine",      EasyZine,       _("EasyZine"),       _("2x4, with cut in the middle. Same as Accordion2xN with n=4"),
-			"Accordion",     Accordion1xN,   _("Accordion1xN"),   _("1 x n accordion. Not even numbers fold out nicely."),
-			"Accordion2xN",  Accordion2xN,   _("Accordion2xN"),   _("n is even. fold in half vertically, cut across middle panels, lower left 2 panels are front/back"),
-			"Accordion4x4",  Accordion4x4,   _("Accordion4x4"),   _("cut in 3 panels horizontally from left, then right, then left"),
-			"AccordionNxM",  AccordionNxM,   _("AccordionNxM"),   _("zig zagging accordion, n and m must be even"),
-			"Miura",         Miura,          _("Miura"),          _("7x5 with slanting pages for rigid origami-like folding."),
-	  		nullptr
-		);
+ObjectDef *Accordion::GetPresets()
+{
+	ObjectDef *def = dynamic_cast<ObjectDef*>(presets.GetObject());
+	if (def) return def;
+
+	def = new ObjectDef(nullptr, "AccordionPresets", _("Accordion Presets"), nullptr /*ndesc*/,
+							 "enum", NULL, "EasyZine",
+							 NULL, 0,
+							 nullptr /*nnewfunc*/, nullptr /*nstylefunc*/);
+	presets.SetObject(def, 1);
+
+	def->pushEnumValue("Unknown",       _("Unknown"),        nullptr, Unknown);
+	def->pushEnumValue("HalfFold",      _("HalfFold"),       _("pamphlet just folded down the middle")                        , HalfFold       );
+	def->pushEnumValue("VerticalHalf",  _("VerticalHalf"),   _("like HalfFold, but vertical")                                 , VerticalHalf   );
+	def->pushEnumValue("TriFold",       _("TriFold"),        _("aka C-fold, 3 panels, fold from right, then from left")       , TriFold        );
+	def->pushEnumValue("ZFold",         _("ZFold"),          _("3 panel accordion")                                           , ZFold          );
+	def->pushEnumValue("ZFoldVertical", _("ZFoldVertical"),  _("3 panel accordion, vertical")                                 , ZFoldVertical  );
+	def->pushEnumValue("FrenchQuarter", _("FrenchQuarter"),  _("fold down vertically, then horizontally")                     , FrenchQuarter  );
+	def->pushEnumValue("Gate",          _("Gate"),           _("aka Single Open, 3 panel, but center panel is double size")   , Gate           );
+	def->pushEnumValue("DoubleGate",    _("DoubleGate"),     _("aka Double Open, 4 panels, like Gate, but fold in center")    , DoubleGate     );
+	def->pushEnumValue("Roll",          _("Roll"),           _("4 panel, fold in from R, again from r, then l")               , Roll           );
+	def->pushEnumValue("DoubleParallel",_("DoubleParallel"), _("fold in half from r, then fold in half again")                , DoubleParallel );
+	def->pushEnumValue("MapNxM",        _("MapNxM"),         _("A generic N x M grid of pages")                               , MapNxM         );
+	def->pushEnumValue("EasyZine",      _("EasyZine"),       _("4x2, with cut in the middle. Same as Accordion2xN with n=4")  , EasyZine       );
+	def->pushEnumValue("Accordion",     _("Accordion1xN"),   _("1 x n accordion. Not even numbers fold out nicely.")          , Accordion1xN   );
+	def->pushEnumValue("Accordion2xN",  _("Accordion2xN"),   _("n is even. fold in half vertically, cut across middle panels"), Accordion2xN   );
+	def->pushEnumValue("Accordion4x4",  _("Accordion4x4"),   _("4x4, but partial cuts from left, right, left")                , Accordion4x4   );
+	def->pushEnumValue("AccordionNxM",  _("AccordionNxM"),   _("zig zagging accordion, n and m must be even")                 , AccordionNxM   );
+	def->pushEnumValue("Miura",         _("Miura"),          _("7x5 with slanting pages for rigid origami-like folding.")     , Miura          );
+
+	return def;
+}
+
+int Accordion::NumParams(AccordionPresets type, int *default_1_ret, int *default_2_ret)
+{
+	switch (type) {
+		case Unknown:        if (default_1_ret) { *default_1_ret = 0; *default_2_ret = 0; } return 0;
+		case HalfFold:       if (default_1_ret) { *default_1_ret = 2; *default_2_ret = 1; } return 0;
+		case VerticalHalf:   if (default_1_ret) { *default_1_ret = 1; *default_2_ret = 2; } return 0;
+		case TriFold:        if (default_1_ret) { *default_1_ret = 3; *default_2_ret = 1; } return 0;
+		case ZFold:          if (default_1_ret) { *default_1_ret = 3; *default_2_ret = 1; } return 0;
+		case ZFoldVertical:  if (default_1_ret) { *default_1_ret = 1; *default_2_ret = 3; } return 0;
+		case DoubleGate:     if (default_1_ret) { *default_1_ret = 4; *default_2_ret = 1; } return 0;
+		case Roll:           if (default_1_ret) { *default_1_ret = 4; *default_2_ret = 1; } return 0;
+		case EasyZine:       if (default_1_ret) { *default_1_ret = 4; *default_2_ret = 2; } return 0;
+		case FrenchQuarter:  if (default_1_ret) { *default_1_ret = 2; *default_2_ret = 2; } return 0;
+		case Gate:           if (default_1_ret) { *default_1_ret = 3; *default_2_ret = 1; } return 0;
+		case Accordion1xN:   if (default_1_ret) { *default_1_ret = 4; *default_2_ret = 1; } return 1;
+		case Accordion2xN:   if (default_1_ret) { *default_1_ret = 4; *default_2_ret = 2; } return 2;
+		case Accordion4x4:   if (default_1_ret) { *default_1_ret = 4; *default_2_ret = 4; } return 0;
+		case AccordionNxM:   if (default_1_ret) { *default_1_ret = 5; *default_2_ret = 5; } return 2;
+		case DoubleParallel: if (default_1_ret) { *default_1_ret = 4; *default_2_ret = 1; } return 0;
+		case MapNxM:         if (default_1_ret) { *default_1_ret = 4; *default_2_ret = 3; } return 0;
+		case Miura:          if (default_1_ret) { *default_1_ret = 7; *default_2_ret = 5; } return 2;
+	}
+	return 0;
 }
 
 
@@ -185,12 +211,11 @@ NetImposition *Accordion::Build(AccordionPresets preset, double paper_width, dou
 		case DoubleParallel: // fold in half from r, then fold in half again
 			return BuildAccordionNxM(2, 2, paper_width, paper_height, DoubleParallel, existing_netimp);
 
-		case MapFold: // 4x3?
-			return BuildAccordionNxM(4, 3, paper_width, paper_height, MapFold, existing_netimp);
+		case MapNxM: // Generic grid of pages
+			return BuildAccordionNxM(4, 3, paper_width, paper_height, MapNxM, existing_netimp);
 
 		case Miura: // 7x5 with slanting pages for rigid origami-like folding.
-			// *** TODO!
-			break;
+			return BuildMiura(config1, config2, 6, paper_width, paper_height, existing_netimp);
 	}
 
 	return nullptr;
@@ -199,7 +224,7 @@ NetImposition *Accordion::Build(AccordionPresets preset, double paper_width, dou
 /*! Returns hedron on success, or nullptr if settings invalid.
  * If hedron == nullptr; return a new Polyhedron.
  */
-Polyhedron *CreateRectangleGrid(Polyhedron *hedron,double paper_width, double paper_height, int num_wide, int num_tall)
+Polyhedron *CreateRectangleGrid(Polyhedron *hedron,double paper_width, double paper_height, int num_wide, int num_tall, bool alternate_up)
 {
 	double page_w = paper_width / num_wide;
 	double page_h = paper_height / num_tall;
@@ -217,8 +242,13 @@ Polyhedron *CreateRectangleGrid(Polyhedron *hedron,double paper_width, double pa
 	// add faces
 	for (int y = 0; y < num_tall; y++) {
 		for (int x = 0; x < num_wide; x++) {
-			int i = x + y*(num_wide+1);
-			poly->AddFace(4, i, i+1, i+num_wide+2, i+num_wide+1);
+			if (alternate_up && y%2 == 1) {
+				int i = (num_wide - x - 1) + y*(num_wide+1);
+				poly->AddFace(4, i+num_wide+2, i+num_wide+1, i, i+1);
+			} else {
+				int i = x + y*(num_wide+1);
+				poly->AddFace(4, i, i+1, i+num_wide+2, i+num_wide+1);
+			}
 		}
 	}
 
@@ -235,7 +265,10 @@ NetImposition *Accordion::BuildGate(double paper_width, double paper_height, Net
 	if (netimp) {
 		if (netimp->abstractnet) { netimp->abstractnet->dec_count(); netimp->abstractnet = nullptr; }
 		netimp->nets.flush();
-	} else netimp = new NetImposition();
+	} else {
+		netimp = new NetImposition();
+		netimp->margin = 0;
+	}
 	
 	double page_w = paper_width / 4;
 	double page_h = paper_height;
@@ -281,12 +314,15 @@ NetImposition *Accordion::BuildEasyZine(double paper_width, double paper_height,
 	if (netimp) {
 		if (netimp->abstractnet) { netimp->abstractnet->dec_count(); netimp->abstractnet = nullptr; }
 		netimp->nets.flush();
-	} else netimp = new NetImposition();
+	} else {
+		netimp = new NetImposition();
+		netimp->margin = 0;
+	}
 	
 	// htiles = 4;
 	// vtiles = 2;
 
-	Polyhedron *poly = CreateRectangleGrid(nullptr, paper_width, paper_height, 4, 2);
+	Polyhedron *poly = CreateRectangleGrid(nullptr, paper_width, paper_height, 4, 2, true);
 	// DBG cerr << "--------make accordion:"<<endl;
 	// DBG poly->dump_out(stderr, 2,0,nullptr);
 
@@ -329,12 +365,15 @@ NetImposition *Accordion::BuildAccordion1xN(int n, bool vertical, double paper_w
 	if (netimp) {
 		if (netimp->abstractnet) { netimp->abstractnet->dec_count(); netimp->abstractnet = nullptr; }
 		netimp->nets.flush();
-	} else netimp = new NetImposition();
+	} else {
+		netimp = new NetImposition();
+		netimp->margin = 0;
+	}
 	
 	// if (vertical) { htiles = 1; vtiles = n; }
 	// else  { htiles = n; vtiles = 1; }
 	
-	Polyhedron *poly = CreateRectangleGrid(nullptr, paper_width, paper_height, vertical ? 1 : n, vertical ? n : 1);
+	Polyhedron *poly = CreateRectangleGrid(nullptr, paper_width, paper_height, vertical ? 1 : n, vertical ? n : 1, false);
 	Net *net = new Net;
 	makestr(net->netname, "Accordion");
 	net->basenet = poly;
@@ -361,14 +400,66 @@ NetImposition *Accordion::BuildAccordionNxM(int n, int m, double paper_width, do
 	if (netimp) {
 		if (netimp->abstractnet) { netimp->abstractnet->dec_count(); netimp->abstractnet = nullptr; }
 		netimp->nets.flush();
-	} else netimp = new NetImposition();
+	} else {
+		netimp = new NetImposition();
+		netimp->margin = 0;
+	}
 	
 	// if (vertical) { htiles = 1; vtiles = n; }
 	// else  { htiles = n; vtiles = 1; }
 	
-	Polyhedron *poly = CreateRectangleGrid(nullptr, paper_width, paper_height, n, m);
+	Polyhedron *poly = CreateRectangleGrid(nullptr, paper_width, paper_height, n, m, variation == MapNxM ? false : true);
 	Net *net = new Net;
 	makestr(net->netname, "Accordion");
+	net->basenet = poly;
+
+	//unwrap
+	net->Anchor(0);
+	net->TotalUnwrap(true);
+	net->CollapseEdges();
+	net->DetectAndSetEdgeStyles();
+	net->rebuildLines();
+	
+	netimp->SetNet(net);
+	net->dec_count();
+
+	return netimp;
+}
+
+
+/*! The Miura fold, a rigid origami style of paper fold that kind of folds itself. */
+NetImposition *Accordion::BuildMiura(int n, int m, double angle_degrees, double paper_width, double paper_height, NetImposition *existing_netimp)
+{
+	if (n == 0 && m == 0) { n = 7; m = 5; }
+	if (n < 2 || m < 2) return nullptr;
+
+	NetImposition *netimp = existing_netimp;
+	if (netimp) {
+		if (netimp->abstractnet) { netimp->abstractnet->dec_count(); netimp->abstractnet = nullptr; }
+		netimp->nets.flush();
+	} else {
+		netimp = new NetImposition();
+		netimp->margin = 0;
+	}
+	
+	// if (vertical) { htiles = 1; vtiles = n; }
+	// else  { htiles = n; vtiles = 1; }
+	
+	// jiggle the vertices left and right
+	double h = paper_height / m;
+	double d = h * tan(angle_degrees * M_PI/180);
+	//double w = (paper_width - d) / n;
+	Polyhedron *poly = CreateRectangleGrid(nullptr, paper_width, paper_height, n, m, false);
+	for (int y = 0; y <= m; y++) {
+		for (int x = 1; x < n; x++) {
+			int i = x + y*(n+1);
+			
+			double dd = (y%2 == 0 ? d/2 : -d/2);
+			poly->vertices.e[i].x += dd;
+		}
+	}
+	Net *net = new Net;
+	makestr(net->netname, "Miura");
 	net->basenet = poly;
 
 	//unwrap

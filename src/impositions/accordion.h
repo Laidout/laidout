@@ -17,6 +17,7 @@
 
 
 #include "netimposition.h"
+#include <lax/singletonkeeper.h>
 
 
 namespace Laidout {
@@ -27,6 +28,9 @@ NetImposition *CreateAccordion(const char *which, double paper_width, double pap
 
 class Accordion : public NetImposition
 {
+  protected:
+  	static Laxkit::SingletonKeeper presets; //the ObjectDef for the presets enum
+
   public:
 
   	enum AccordionPresets {
@@ -41,7 +45,7 @@ class Accordion : public NetImposition
 		DoubleGate,    // aka Double Open, 4 panels, fold in from right to center, fold from left to center, fold at center
 		Roll,          // 4 panel, fold in from R, again from r, then l
 		DoubleParallel,// fold in half from r, then fold in half again
-		MapFold,       // 3x4?
+		MapNxM,        // Generic grid of pages
 		EasyZine,      // 2x4, with cut in the middle. Same as Accordion2xN with n=4
 		Accordion1xN,  // 1 x n accordion. Not even numbers fold out nicely.
 		Accordion2xN,  // n is even. fold in half vertically, cut across middle panels, lower left 2 panels are front/back
@@ -64,13 +68,15 @@ class Accordion : public NetImposition
 
 	bool Resize(double width, double height);
 
-	void DefinePresets(ObjectDef *def);
+	static ObjectDef *GetPresets();
+	static int NumParams(AccordionPresets type, int *default_1_ret, int *default_2_ret);
 
 	static NetImposition *Build(AccordionPresets preset, double paper_width, double paper_height, int config1, int config2, NetImposition *existing_netimp);
 	static NetImposition *BuildEasyZine(double paper_width, double paper_height, NetImposition *existing_netimp);
 	static NetImposition *BuildAccordion1xN(int n, bool vertical, double paper_width, double paper_height, int variation, NetImposition *existing_netimp);
 	static NetImposition *BuildAccordionNxM(int n, int m, double paper_width, double paper_height, int variation, NetImposition *existing_netimp);
 	static NetImposition *BuildGate(double paper_width, double paper_height, NetImposition *existing_netimp);
+	static NetImposition *BuildMiura(int n, int m, double angle_degrees, double paper_width, double paper_height, NetImposition *existing_netimp);
 };
 
 

@@ -1981,7 +1981,7 @@ int LaidoutApp::NewDocument(const char *spec)
 	char       *saveas   = nullptr;
 	Imposition *imp      = nullptr;
 	PaperStyle *paper    = nullptr;
-	int         numpages = 1;
+	int         numpages = 0;
 
 	//Attribute *spec_parameters=parse_fields(NULL,spec,NULL);
 
@@ -1995,7 +1995,9 @@ int LaidoutApp::NewDocument(const char *spec)
 		return 2; 
 	}
 	int c,c2,n; // n is length of first alnum word in field
-	int landscape=0;
+	int landscape = 0;
+	const char *accordion_spec = nullptr;
+
 	for (c=0; fields[c]; c++) {
 		field=fields[c];
 		while (field && isspace(*field)) field++;
@@ -2010,11 +2012,9 @@ int LaidoutApp::NewDocument(const char *spec)
 			continue;
 		}
 
-		// *** testing!!
 		if (strcasestr(field, "accordion") == field) {
-			NetImposition *nimp = CreateAccordion(field, 11,8.5);
-			if (imp) imp->dec_count();
-			imp = nimp;
+			accordion_spec = field += 9;
+			while (isspace(*accordion_spec)) accordion_spec++;
 			continue;
 		}
 
@@ -2029,55 +2029,64 @@ int LaidoutApp::NewDocument(const char *spec)
 			}
 		}
 
-		 // check for new filename
+		// check for new filename
 		if (!strncasecmp(field,"saveas",n)) {
-			field+=n;
-			n=0;
+			field += n;
+			n = 0;
 			while (isspace(*field)) field++;
 			while (isalnum(field[n]) || field[n]=='.' || field[n]=='_' || field[n]=='-' || field[n]=='+') n++;
-			saveas=newnstr(field,n);
+			saveas = newnstr(field,n);
 			continue;
 		}
 		
-		 // check papertypes
-		for (c2=0; c2<papersizes.n; c2++) {
+		// check papertypes
+		for (c2 = 0; c2 < papersizes.n; c2++) {
 			if (!strncasecmp(field,papersizes.e[c2]->name,n)) {
-				paper=papersizes.e[c2];
+				paper = papersizes.e[c2];
 				break;
 			}
 		}
-		if (c2!=papersizes.n) continue;
+		if (c2 != papersizes.n) continue;
 		if (!strncasecmp(field,"landscape",n)) {
-			landscape=1;
+			landscape = 1;
 			continue;
 		} else if (!strncasecmp(field,"portrait",n)) {
-			landscape=0;
+			landscape = 0;
 			continue;
 		}
 
-		 // check imposition resources
-		if (!imp) for (c2=0; c2<impositionpool.n; c2++) {
+		// check imposition resources
+		if (!imp) for (c2 = 0; c2 < impositionpool.n; c2++) {
 			if (!strncasecmp(field,impositionpool.e[c2]->name,n)) {
-				imp=impositionpool.e[c2]->Create();
+				imp = impositionpool.e[c2]->Create();
 				break;
 			}
 		}
-		if (c2!=impositionpool.n) continue;
+		if (c2 != impositionpool.n) continue;
 	}
 	
-	if (!imp) imp=new Singles(); //either way, imp has count of 1 now
-	 
-	if (!paper) paper=papersizes.e[0];
+	if (!paper) paper = papersizes.e[0];
 	bool old_landscape = paper->landscape();
 	paper->landscape(landscape);
+
+	if (accordion_spec) {
+		NetImposition *nimp = CreateAccordion(accordion_spec, paper->w(), paper->h());
+		if (imp) imp->dec_count();
+		imp = nimp;
+		if (numpages == 0) numpages = imp->GetPagesNeeded(1);
+		nimp->nets.e[0]->info = 0;
+	}
+	
+	if (!imp) imp = new Singles(); //either way, imp has count of 1 now
+	 
 	if (!strcmp("NetImposition",imp->whattype())) {
-		NetImposition *neti=dynamic_cast<NetImposition *>(imp);
+		NetImposition *neti = dynamic_cast<NetImposition *>(imp);
 		if (!neti->nets.n) {
 			neti->SetNet("Dodecahedron");
 		}
 	}
 	imp->SetPaperSize(paper); // makes a duplicate of paper
-	if (numpages == 0) numpages = 1;
+	if (numpages <= 0) numpages = 1;
 	imp->NumPages(numpages);
 	paper->landscape(old_landscape);
 	
@@ -2085,7 +2094,7 @@ int LaidoutApp::NewDocument(const char *spec)
 		makestr(saveas,Untitled_name());
 	}
 	
-	Document *newdoc=new Document(imp,saveas);
+	Document *newdoc = new Document(imp,saveas);
 	if (imp) imp->dec_count();
 	if (!project) project=new Project();
 	project->Push(newdoc); //adds count to newdoc

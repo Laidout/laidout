@@ -393,6 +393,7 @@ int NetImposition::SetNet(Net *newnet)
 	 // fit to paper
 	//newnet->rebuildLines();  <--shouldn't have to do this
 	newnet->FindBBox();
+	DBG cerr << "NetImposition::SetNet()"<<endl;
 	setPage();
 
 	return 0;
@@ -410,18 +411,20 @@ void NetImposition::setPage()
 	if (!nets.n) return;
 
 	SomeData page;
-	page.minx=paper->media.minx;
-	page.miny=paper->media.miny;
-	page.maxx=paper->media.maxx;
-	page.maxy=paper->media.maxy;
+	page.minx = paper->media.minx;
+	page.miny = paper->media.miny;
+	page.maxx = paper->media.maxx;
+	page.maxy = paper->media.maxy;
+	DBG cerr << "NetImposition paper minx,miny,maxx,maxy: "<<page.minx<<" "<<page.miny<<" "<<page.maxx<<" "<<page.maxy<<endl;
+	DBG cerr << "   paper w,h: "<<paper->paperstyle->w()<<" "<<paper->paperstyle->h()<<endl;
 
 	for (int c=0; c<nets.n; c++) {
 		if (nets.e[c]->info & NETIMP_AlreadyScaled) continue;
 
-		nets.e[c]->info|=NETIMP_AlreadyScaled;
-
-		nets.e[c]->FitToData(&page,page.maxx*.05, 1);
-		scalefromnet=norm(nets.e[c]->xaxis());
+		nets.e[c]->info |= NETIMP_AlreadyScaled;
+		//double scalex = std::max();
+		nets.e[c]->FitToData(&page, margin_is_percent ? (page.maxx-page.minx) * margin : margin, 1);
+		scalefromnet = norm(nets.e[c]->xaxis());
 
 		DBG cerr <<"new scalefromnet: "<<scalefromnet<<endl;
 
@@ -464,6 +467,16 @@ ObjectDef *makeNetImpositionObjectDef()
 			nullptr, "1",
 			0,0);
 
+	sd->push("margin_is_percent", _("Margin is percent"), _("Whether the margin value is absolute (false) or a percent of paper width (true)."),
+			"boolean",
+			nullptr, "1",
+			0,0);
+
+	sd->push("margin", _("Margin"), _("Margin within which to place net."),
+			"real",
+			nullptr, ".05",
+			0,0);
+
 	sd->push("net", _("Net"),  _("What kind of net is the imposition using"),
 			"enum",
 			nullptr, "0",
@@ -481,7 +494,10 @@ ObjectDef *NetImposition::makeObjectDef()
 Value *NetImposition::duplicate()
 {
 	NetImposition *d;
-	d=new NetImposition();
+	d = new NetImposition();
+
+	d->margin = margin;
+	d->margin_is_percent = margin_is_percent;
 	
 	 // copy net
 	if (d->nets.n) d->nets.flush();
@@ -495,7 +511,11 @@ Value *NetImposition::duplicate()
 //! Set paper size, also reset the pagestyle. Duplicates npaper, not pointer transer.
 int NetImposition::SetPaperSize(PaperStyle *npaper)
 {
-	if (Imposition::SetPaperSize(npaper)) return 1;
+	DBG cerr << "NetImposition::SetPaperSize(PaperStyle *npaper)"<<endl;
+	if (Imposition::SetPaperSize(npaper)) {
+		DBG cerr <<"  ----> ret early"<<endl;
+		return 1;
+	}
 	setPage();
 	return 0;
 }
@@ -1096,6 +1116,9 @@ void NetImposition::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *co
 	if (printnet) fprintf(f,"%sprintnet\n",spc);
 		else fprintf(f,"%sprintnet false\n",spc);
 
+	fprintf(f, "%smargin %f\n",spc, margin);
+	fprintf(f, "%smargin_is_percent %s\n",spc, margin_is_percent ? "yes" : "no");
+
 	if (scalefromnet!=1) fprintf(f,"%sscalingfromnet %.10g\n",spc,scalefromnet);
 
 	if (papergroup) {
@@ -1180,6 +1203,12 @@ void NetImposition::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpCon
 			paperstyle->dump_in_atts(att->attributes.e[c],flag,context);
 			SetPaperSize(paperstyle);
 			paperstyle->dec_count();
+
+		} else if (!strcmp(name,"margin")) {
+			DoubleAttribute(value, &margin);
+
+		} else if (!strcmp(name,"margin_is_percent")) {
+			margin_is_percent = BooleanAttribute(value);
 
 		} else if (!strcmp(name,"papers")) {
 			if (papergroup) papergroup->dec_count();
