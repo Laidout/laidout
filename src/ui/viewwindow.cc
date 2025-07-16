@@ -1170,8 +1170,8 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
         if (s->info1!=RULER_AlwaysCurrent) return ViewportWindow::Event(data,mes);
 
 		UnitManager *units=GetUnitManager();
-		char *unitname=NULL;
-		units->UnitInfoId(laidout->prefs.default_units, NULL, NULL,NULL,&unitname,NULL);
+		char *unitname = nullptr;
+		units->UnitInfoId(laidout->prefs.default_units, nullptr, nullptr,nullptr,&unitname,nullptr,nullptr);
 
 		char path[strlen(laidout->config_dir)+20];
 		sprintf(path,"%s/laidoutrc",laidout->config_dir);
@@ -1369,12 +1369,16 @@ void LaidoutViewport::setupthings(int tospread, int topage)//tospread=-1
 
 	DBG cerr <<"LaidoutViewport::setupthings:  viewmode="<<viewmode<<"  tospread="<<tospread<<endl;
 	 // retrieve the proper spread according to viewmode
-	if (!spread && tospread>=0 && doc && doc->imposition) {
-		spread=doc->imposition->Layout(viewmode,tospread);
-		spreadi=tospread;
-		if (!papergroup && spread->papergroup) {
-			papergroup=spread->papergroup;
-			papergroup->inc_count();
+	if (!spread && tospread >= 0 && doc && doc->imposition) {
+		spread = doc->imposition->Layout(viewmode,tospread);
+		if (spread) {
+			spreadi = tospread;
+			if (!papergroup && spread->papergroup) {
+				papergroup = spread->papergroup;
+				papergroup->inc_count();
+			}	
+		} else {
+			spreadi = -1;
 		}
 	}
 

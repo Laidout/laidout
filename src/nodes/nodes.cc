@@ -2012,7 +2012,7 @@ ObjectDef *ConvertNumberNode::GetConvertDef()
 	int id;
 
 	for (int c=0; c<units->NumberOfUnits(); c++) {
-		units->UnitInfoIndex(c, &id, &scale, &shortname, &singular, &plural, &label);
+		units->UnitInfoIndex(c, &id, &scale, &shortname, &singular, &plural, &label, nullptr);
 		def->pushEnumValue(shortname, label, nullptr, id);
 	}
 
@@ -2066,7 +2066,7 @@ int ConvertNumberNode::Update()
 
 	UnitManager *units = GetUnitManager();
 	int err = 0;
-	double out = units->Convert(in, from->EnumId(), to->EnumId(), &err);
+	double out = units->Convert(in, from->EnumId(), to->EnumId(), UNITS_Length, &err);
 	DoubleValue *vv = dynamic_cast<DoubleValue*>(properties.e[3]->GetData());
 	vv->d = out;
 	properties.e[3]->Touch();
