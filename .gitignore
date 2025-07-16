@@ -26,6 +26,9 @@ src/plugins/**/*.so
 coop/scribus/out.html
 laxkit
 
+#
+# Ignore misc
+src/screenshots
 
 #
 # ignore configured files
