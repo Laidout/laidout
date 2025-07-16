@@ -64,8 +64,7 @@ LImageInterface::LImageInterface(int nid,Laxkit::Displayer *ndp)
  */
 void LImageInterface::runImageDialog()
 {
-	 //after Laxkit event system is rewritten, this will be very different:
-	ImageInfo *inf=new ImageInfo(data->filename,data->previewfile,NULL,data->description,0);
+	ImageInfo *inf = new ImageInfo(data->filename, data->previewfile, nullptr, data->description,0, data->index);
 	curwindow->app->rundialog(new ImageDialog(NULL,"Image Properties",_("Image Properties"),
 					ANXWIN_REMEMBER,
 					0,0,400,400,0,
