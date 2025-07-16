@@ -1273,7 +1273,7 @@ Value *ObjectDef::newValue(const char *objectdef)
 	return NULL;
 }
 
-//! Return the def with the given name.
+//! Return the child def with the given name.
 /*! This returns the pointer, but does NOT increase the count on it.
  *
  * If which&1, then only look in functions.
