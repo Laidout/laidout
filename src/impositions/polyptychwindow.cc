@@ -69,21 +69,21 @@ PolyhedronWindow::PolyhedronWindow(anXWindow *parent)
 int PolyhedronWindow::changePaper(int towhich,int index)
 {
 	DBG cerr << "change paper"<<endl;
-	if (index<0 || index>=papers.n) return 0;
+	if (index < 0 || index >= papers.n) return 0;
 
-	int i=papers.e[index]->id;
-	if (towhich==-2) i--;
-	else if (towhich==-1) i++;
-	if (i<0) i=laidout->papersizes.n-1;
-	else if (i>laidout->papersizes.n-1) i=0;
+	int i = papers.e[index]->id;
+	if (towhich == -2) i--;
+	else if (towhich == -1) i++;
+	if (i<0) i = laidout->papersizes.n-1;
+	else if (i > laidout->papersizes.n-1) i = 0;
 
-	PaperStyle *p=laidout->papersizes.e[i];
+	PaperStyle *p = laidout->papersizes.e[i];
 
-	UnitManager *unitm=GetUnitManager();
+	UnitManager *unitm = GetUnitManager();
 
-	papers.e[index]->id=i;
-	papers.e[index]->width =unitm->Convert(p->width, "in",p->defaultunits,NULL);
-	papers.e[index]->height=unitm->Convert(p->height,"in",p->defaultunits,NULL);
+	papers.e[index]->id     = i;
+	papers.e[index]->width  = unitm->Convert(p->width, "in",p->defaultunits, UNITS_Length);
+	papers.e[index]->height = unitm->Convert(p->height,"in",p->defaultunits, UNITS_Length);
 	makestr(papers.e[index]->name,p->name);
 	makestr(papers.e[index]->units,p->defaultunits);
 	remapPaperOverlays();

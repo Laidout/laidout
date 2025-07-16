@@ -79,7 +79,7 @@ using namespace std;
 namespace Laidout {
 
 
-ObjectDef stylemanager(NULL,"Laidout",_("Laidout"),_("Global Laidout namespace"),"namespace",NULL,NULL);
+ObjectDef stylemanager(nullptr,"Laidout",_("Laidout"),_("Global Laidout namespace"),"namespace",nullptr,nullptr);
 
 
 
@@ -90,8 +90,8 @@ ObjectDef stylemanager(NULL,"Laidout",_("Laidout"),_("Global Laidout namespace")
  */
 const char *LaidoutVersion() 
 { 
-	static char *version_str=NULL;
-	if (version_str==NULL) {
+	static char *version_str=nullptr;
+	if (version_str==nullptr) {
 		const char *outstr=
 						_("Laidout Version %s\n"
 						  "http://www.laidout.org\n"
@@ -230,10 +230,10 @@ LaidoutApp::LaidoutApp()
 	makestr(controlfontstr,"sans-15");
 
 	curcolor=0;
-	lastview=NULL;
+	lastview=nullptr;
 	
 	project=new Project;
-	curdoc=NULL;
+	curdoc=nullptr;
 	tooltips=1000;
 
 	 // laidoutrc defaults
@@ -242,7 +242,7 @@ LaidoutApp::LaidoutApp()
 	max_preview_width=max_preview_height=-1;
 	preview_transient=1; 
 
-	defaultpaper=NULL;
+	defaultpaper=nullptr;
 
 	// if (file_exists("/usr/bin/gs", 0, nullptr) == S_IFREG) ghostscript_binary = newstr("/usr/bin/gs");
 	// else ghostscript_binary = nullptr;
@@ -252,7 +252,7 @@ LaidoutApp::LaidoutApp()
 	GetUnitManager()->PixelSize(1./96,UNITS_Inches); //use css style 96 ppi
 
 	pipeout = false;
-	pipeoutarg = NULL;
+	pipeoutarg = nullptr;
 
 	//initialize some globals because of optimism
 	Value *v = new DoubleValue(0);
@@ -356,14 +356,14 @@ int LaidoutApp::Autosave()
 		if (strstr(fmt, "%f")) {
 			bname=lax_basename(doc->Saveas());
 			fname=replaceallname(fmt, "%f", isblank(bname)?"untitled":bname);
-			delete[] fmt;  fmt=fname;  fname=NULL;
+			delete[] fmt;  fmt=fname;  fname=nullptr;
 		}
 
 		if (strstr(fmt, "%e")) {
 			ext=lax_extension(doc->Saveas());
 			if (!isblank(ext)) {
 				fname=replaceallname(fmt, "%e", ext);
-				delete[] fmt;  fmt=fname;  fname=NULL;
+				delete[] fmt;  fmt=fname;  fname=nullptr;
 			}
 		}
 
@@ -375,14 +375,14 @@ int LaidoutApp::Autosave()
 			}
 
 			fname=replaceallname(fmt, "%b", bbname);
-			delete[] fmt;  fmt=fname;  fname=NULL;
+			delete[] fmt;  fmt=fname;  fname=nullptr;
 			delete[] bbname;
 		}
 
 		//if (strstr(fmt, "#")) {
 		//}
 
-		if (fname==NULL) { fname=fmt; fmt=NULL; }
+		if (fname==nullptr) { fname=fmt; fmt=nullptr; }
 
 		//expand with dir of doc->saveas
 		//fname should be either absolute or relative to that saveas
@@ -403,14 +403,14 @@ int LaidoutApp::Autosave()
 
 		if (status==0) {
 			cerr <<" .... autosaved to: "<<fname<<endl;
-			notifyPrefsChanged(NULL, PrefsJustAutosaved);
+			notifyPrefsChanged(nullptr, PrefsJustAutosaved);
 
 		} else {
 			cerr <<" .... ERROR trying to autosave to: "<<fname<<endl;
 		}
 
-		delete[] fmt;   fmt=NULL;
-		delete[] fname; fname=NULL;
+		delete[] fmt;   fmt=nullptr;
+		delete[] fname; fname=nullptr;
 	}
 
 	//DBG cerr <<" *** need to finish implementing autosave!!"<<endl;
@@ -427,42 +427,42 @@ ObjectDef *LaidoutApp::makeObjectDef()
 		return sd;
 	}
 
-	sd=new ObjectDef(NULL,
+	sd=new ObjectDef(nullptr,
 						  "Laidout",
 						  _("Laidout"),
 						  _("Main Laidout container"),
 						  "namespace",
-						  NULL,NULL);
+						  nullptr,nullptr);
 	sd->push("documents",
 			_("Documents"),
 			_("List of available documents."),
-			"set", "Document", NULL,
-			0,NULL);
+			"set", "Document", nullptr,
+			0,nullptr);
 	sd->push("limbos",
 			_("Limbos"),
 			_("List of available limbo areas."),
-			"set", "Group", NULL,
-			0,NULL);
+			"set", "Group", nullptr,
+			0,nullptr);
 	sd->push("resources",
 			_("Resources"),
 			_("List of available resources."),
-			"set", "Resource", NULL,
-			0,NULL);
+			"set", "Resource", nullptr,
+			0,nullptr);
 	sd->push("windows",
 			_("Windows"),
 			_("List of current top level windows."),
-			"set", "HeadWindow", NULL,
-			0,NULL);
+			"set", "HeadWindow", nullptr,
+			0,nullptr);
 	sd->push("settings",
 			_("Settings"),
 			_("List of various settings. These get loaded and saved in a laidoutrc file."),
-			"LaidoutPreferences", NULL, NULL,
-			0,NULL);
+			"LaidoutPreferences", nullptr, nullptr,
+			0,nullptr);
 	sd->push("globals",
 			_("Globals"),
 			_("User defined global properties that can be used in scripts and nodes"),
-			"Hash", NULL, NULL,
-			0,NULL);
+			"Hash", nullptr, nullptr,
+			0,nullptr);
 
 	return sd;
 }
@@ -588,14 +588,14 @@ int LaidoutApp::init(int argc,char **argv)
 	sprintf(configfile,"%s/autolaidoutrc",config_dir);
 	FILE *f;
 	if (readable_file(configfile,&f)) { //***i suppose this should have a flock capability?
-		app_resources.dump_in(f,0,NULL);
+		app_resources.dump_in(f,0,nullptr);
 		fclose(f);
 	}
 
 	 //-----add Templates dir as default bookmark
 	Attribute *att=app->AppResource("Bookmarks");
     if (att) {
-		if (att->find(_("Templates"))==NULL) {
+		if (att->find(_("Templates"))==nullptr) {
 			char *tdir=default_path_for_resource("templates");
 			att->push(_("Templates"), tdir);
 			delete[] tdir;
@@ -635,11 +635,11 @@ int LaidoutApp::init(int argc,char **argv)
 		 //try to load the default template if no windows are up
 		if (!donotusex && topwindows.n == 0 && !force_new_dialog && prefs.start_with_last) {
 			MenuInfo recent;
-	        recently_used(NULL, NULL, "Laidout", 0, &recent);
+	        recently_used(nullptr, nullptr, "Laidout", 0, &recent);
 			if (recent.n()) {
 				const char *file_to_load = recent.e(0)->name;
 				if (!isblank(file_to_load)) {
-					Document *doc = NULL;
+					Document *doc = nullptr;
 					int index = topwindows.n;
 
 					if (Load(file_to_load, generallog) == 0) doc = curdoc;
@@ -662,7 +662,7 @@ int LaidoutApp::init(int argc,char **argv)
 		
 		 // if no other windows have been launched yet, then launch newdoc window
 		if (!donotusex && topwindows.n==0)
-			//addwindow(new NewDocWindow(NULL,"New Document",ANXWIN_LOCAL_ACTIVE,0,0,0,0, 0));
+			//addwindow(new NewDocWindow(nullptr,"New Document",ANXWIN_LOCAL_ACTIVE,0,0,0,0, 0));
 			addwindow(BrandNew());
 
 		if (prefs.autosave>0) {
@@ -722,7 +722,7 @@ Interpreter *LaidoutApp::FindInterpreter(const char *name)
 	for (int c=0; c<interpreters.n; c++) {
 		if (!strcmp(name, interpreters.e[c]->Id())) return interpreters.e[c];
 	}
-	return NULL;
+	return nullptr;
 }
 
 //! Write out resources to ~/.laidout/(version)/autolaidoutrc.
@@ -872,7 +872,7 @@ int LaidoutApp::createlaidoutrc()
 			fprintf(f,"dont_scale_icons true #If true, use native icon pixel size. If false, icons are scaled along with font size\n");
 			fprintf(f,"laxprofile Light #Default built in profiles are Dark, Light, and Gray. You can define others in the laxconfig section.\n");
 			fprintf(f,"laxconfig-sample #Remove the \"-sample\" part to redefine various default window behavior settings\n");
-			dump_out_rc(f,NULL,2,0);
+			dump_out_rc(f,nullptr,2,0);
 
 
 //					   //preview generation
@@ -947,7 +947,7 @@ int LaidoutApp::readinLaidoutDefaults(char **shortcutsfile)
 
 	DBG cerr <<"-------------Checking $HOME/.laidout/(version)/laidoutrc----------"<<endl;
 
-	FILE *f = NULL;
+	FILE *f = nullptr;
 	char  configfile[strlen(config_dir) + 20];
 	sprintf(configfile, "%s/laidoutrc", config_dir);
 	if (!readable_file(configfile, &f)) return 0;
@@ -955,7 +955,7 @@ int LaidoutApp::readinLaidoutDefaults(char **shortcutsfile)
 	// now f is open, must read in...
 	setlocale(LC_ALL,"C");
 	Attribute att;
-	att.dump_in(f,0,NULL);
+	att.dump_in(f,0,nullptr);
 	char *name,*value;
 
 	for (int c=0; c<att.attributes.n; c++) {
@@ -983,7 +983,7 @@ int LaidoutApp::readinLaidoutDefaults(char **shortcutsfile)
 		} else if (!strcmp(name,"theme")) {
 			if (isblank(app_profile) || (!isblank(app_profile) && value && !strcmp(app_profile, value))) {
 				Theme *thme = new Theme(app_profile);
-				thme->dump_in_atts(att.attributes.e[c], 0, NULL);
+				thme->dump_in_atts(att.attributes.e[c], 0, nullptr);
 				if (theme) theme->dec_count();
 				theme = thme;
 			}
@@ -1009,11 +1009,11 @@ int LaidoutApp::readinLaidoutDefaults(char **shortcutsfile)
 			prefs.start_with_last = BooleanAttribute(value);
 
 		} else if (!strcmp(name,"default_template")) {
-			if (file_exists(value,1,NULL)==S_IFREG) makestr(prefs.default_template,value);
+			if (file_exists(value,1,nullptr)==S_IFREG) makestr(prefs.default_template,value);
 			else {
 				char *fullname=full_path_for_resource(value,"templates");
-				//if (file_exists(fullname,1,NULL)==S_IFREG) makestr(prefs.default_template,value);
-				if (file_exists(fullname,1,NULL)==S_IFREG) makestr(prefs.default_template,fullname);
+				//if (file_exists(fullname,1,nullptr)==S_IFREG) makestr(prefs.default_template,value);
+				if (file_exists(fullname,1,nullptr)==S_IFREG) makestr(prefs.default_template,fullname);
 				delete[] fullname;
 			}
 			//default to config_dir/templates/default?
@@ -1034,15 +1034,15 @@ int LaidoutApp::readinLaidoutDefaults(char **shortcutsfile)
 			// > laidout --template 1paperPamphlet
 		
 		//} else if (!strcmp(name,"ghostscript_binary")) {
-		//	if (file_exists(value,1,NULL)==S_IFREG) makestr(ghostscript_binary,value);
+		//	if (file_exists(value,1,nullptr)==S_IFREG) makestr(ghostscript_binary,value);
 
 		} else if (!strcmp(name,"icon_dir")) {
-			if (file_exists(value,1,NULL) == S_IFDIR) {
+			if (file_exists(value,1,nullptr) == S_IFDIR) {
 				icons->AddPath(value);
 			}
 		
 		} else if (!strcmp(name,"plugin_dir")) {
-			if (file_exists(value,1,NULL) == S_IFDIR) {
+			if (file_exists(value,1,nullptr) == S_IFDIR) {
 				prefs.AddPath("plugins", value);
 			}
 
@@ -1051,7 +1051,7 @@ int LaidoutApp::readinLaidoutDefaults(char **shortcutsfile)
 			if (!isblank(value)) disabled_plugins.push(newstr(value));
 			
 		} else if (!strcmp(name,"palette_dir")) {
-			if (file_exists(value,1,NULL) == S_IFDIR) makestr(prefs.palette_dir,value);
+			if (file_exists(value,1,nullptr) == S_IFDIR) makestr(prefs.palette_dir,value);
 		
 		} else if (!strcmp(name,"temp_dir")) {
 			//**** default "config_dir/temp/pid/"?
@@ -1064,13 +1064,13 @@ int LaidoutApp::readinLaidoutDefaults(char **shortcutsfile)
 		
 		} else if (!strcmp(name,"defaultunits")) {
 			if (value) {
-				int id=0;
-				UnitManager *units=GetUnitManager();
-				if (units->UnitInfo(value,&id,NULL,NULL,NULL,NULL,NULL)==0) {
+				int id = 0;
+				UnitManager *units = GetUnitManager();
+				if (units->UnitInfo(value,&id,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr) == 0) {
 					makestr(prefs.unitname,value);
-					prefs.default_units=id;
+					prefs.default_units = id;
 					units->DefaultUnits(value);
-					notifyPrefsChanged(NULL,PrefsDefaultUnits);
+					notifyPrefsChanged(nullptr,PrefsDefaultUnits);
 				}
 			}
 
@@ -1081,10 +1081,10 @@ int LaidoutApp::readinLaidoutDefaults(char **shortcutsfile)
 			if (!isblank(value)) makestr(prefs.autosave_path, value);
 
 		} else if (!strcmp(name,"autosave_time")) {
-			DoubleAttribute(value, &prefs.autosave_time, NULL);
+			DoubleAttribute(value, &prefs.autosave_time, nullptr);
 
 		//} else if (!strcmp(name,"autosave_num")) {
-		//	IntAttribute(value, &prefs.autosave_num, NULL);
+		//	IntAttribute(value, &prefs.autosave_num, nullptr);
 
 		} else if (!strcmp(name,"autosave")) {
 			prefs.autosave = BooleanAttribute(value);
@@ -1164,7 +1164,7 @@ int LaidoutApp::InitializePlugins()
 	prefs.AddPath("plugins", scratch);
 
 	glob_t globbuf;
-	char *path = NULL;
+	char *path = nullptr;
 	const char *file;
 	struct stat statbuf;
 	int status;
@@ -1176,7 +1176,7 @@ int LaidoutApp::InitializePlugins()
 
 		DBG cerr <<"scanning for plugins in "<<path<<"..."<<endl;
 
-		glob(path, GLOB_ERR, NULL, &globbuf);
+		glob(path, GLOB_ERR, nullptr, &globbuf);
 
 		for (int c2=0; c2<(int)globbuf.gl_pathc; c2++) {
 			status = stat(globbuf.gl_pathv[c2], &statbuf);
@@ -1202,9 +1202,9 @@ int LaidoutApp::InitializePlugins()
 						char scratch[strlen(_("Plugin called \"%s\" exists already, skipping!")) + strlen(plugin->PluginName()) + 5];
 						sprintf(scratch, _("Plugin called \"%s\" exists already, skipping!"), plugin->PluginName());
 
-						generallog.AddMessage(0, NULL, file, scratch, Laxkit::ERROR_Warning);
+						generallog.AddMessage(0, nullptr, file, scratch, Laxkit::ERROR_Warning);
 						DeletePlugin(plugin);
-						plugin = NULL;
+						plugin = nullptr;
 						break;
 					}
 				}
@@ -1228,13 +1228,13 @@ int LaidoutApp::InitializePlugins()
 	return n;
 }
 
-/*! Pop up a box showing any errors in log (or generallog if log==NULL). Flushes log afterwards.
+/*! Pop up a box showing any errors in log (or generallog if log==nullptr). Flushes log afterwards.
  * This is done, for instance, at startup, to notify of any plugin load errors.
  * If there aren't any, then do nothing.
  */
 void LaidoutApp::NotifyGeneralErrors(ErrorLog *log)
 {
-	if (log==NULL) log = &generallog;
+	if (log==nullptr) log = &generallog;
 	Laidout::NotifyGeneralErrors(log);
 }
 
@@ -1347,9 +1347,9 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	//InitOptions(); <- this is done in main()
 	//c=options.Parse(argc,argv, &index); <- now down in main also
 	
-	char *exprt = NULL;
+	char *exprt = nullptr;
 	bool pipein = false;
-	const char *pipeinarg = NULL;
+	const char *pipeinarg = nullptr;
 
 
 	LaxOption *o;
@@ -1396,7 +1396,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 			case OPT_script: { // --script
 					donotusex = true;
-					int size = file_size(o->arg(),1,NULL);
+					int size = file_size(o->arg(),1,nullptr);
 					if (size<=0) {
 						cerr <<_("No input script!")<<endl;
 						exit(1);
@@ -1411,7 +1411,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					if (size > (int)len) size = (int)len;
 					instr[size]='\0';
 					runmode = RUNMODE_Commands;
-					char *str = calculator->In(instr, NULL);
+					char *str = calculator->In(instr, nullptr);
 					if (str) cout <<str<<endl;
 					if (runmode != RUNMODE_Shell) runmode = RUNMODE_Quit;
 				} break;
@@ -1419,7 +1419,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			case OPT_command: { // --command
 					donotusex = true;
 					runmode = RUNMODE_Commands;
-					char *str = calculator->In(o->arg(), NULL);
+					char *str = calculator->In(o->arg(), nullptr);
 					if (str) cout <<str<<endl;
 					if (runmode != RUNMODE_Shell) runmode = RUNMODE_Quit;
 				} break;
@@ -1437,7 +1437,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 
 			case OPT_no_template: { // do not use a default template
-					//if (prefs.default_template) { delete[] prefs.default_template; prefs.default_template=NULL; }
+					//if (prefs.default_template) { delete[] prefs.default_template; prefs.default_template=nullptr; }
 					force_new_dialog = true;
 				} break;
 
@@ -1477,10 +1477,10 @@ void LaidoutApp::parseargs(int argc,char **argv)
 						exit(1);
 					}
 
-					DocumentExportConfig *config=filter->CreateConfig(NULL);
+					DocumentExportConfig *config=filter->CreateConfig(nullptr);
 					config->filter=filter;
 					cout << filter->VersionName() << " options:" << endl;
-					config->dump_out(stdout, 2, -1, NULL);
+					config->dump_out(stdout, 2, -1, nullptr);
 					exit(0);
 				} break;
 
@@ -1492,15 +1492,15 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 			case OPT_impose_only: {
 					runmode = RUNMODE_Impose_Only;
-					anXWindow *editor = newImpositionEditor(NULL,"impedit",_("Impose..."),0,NULL,
-														  NULL,"SignatureImposition",NULL,o->arg(),
-														  NULL);
+					anXWindow *editor = newImpositionEditor(nullptr,"impedit",_("Impose..."),0,nullptr,
+														  nullptr,"SignatureImposition",nullptr,o->arg(),
+														  nullptr);
 					addwindow(editor);
 				} break;
 
 			case OPT_nodes_only: {
 					runmode = RUNMODE_Nodes_Only;
-					anXWindow *editor = newNodeEditor(NULL,"nodeedit",_("Nodes"), 0,NULL, NULL,0, o->arg());
+					anXWindow *editor = newNodeEditor(nullptr,"nodeedit",_("Nodes"), 0,nullptr, nullptr,0, o->arg());
 					addwindow(editor);
 				} break;
 
@@ -1515,13 +1515,13 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			    } break;
 
 			case OPT_default_units: {
-					UnitManager *units=GetUnitManager();
-					int id=0;
-					if (units->UnitInfo(o->arg(),&id,NULL,NULL,NULL,NULL,NULL)==0) {
+					UnitManager *units = GetUnitManager();
+					int id = 0;
+					if (units->UnitInfo(o->arg(),&id,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr) == 0) {
 						makestr(prefs.unitname,o->arg());
-						prefs.default_units=id;
+						prefs.default_units = id;
 						units->DefaultUnits(prefs.unitname);
-						notifyPrefsChanged(NULL,PrefsDefaultUnits);
+						notifyPrefsChanged(nullptr, PrefsDefaultUnits);
 						DBG cerr <<"laidout:units->DefaultUnits:"<<prefs.default_units<<"  from um:"<<units->DefaultUnits(prefs.unitname)<<endl;
 					}
 
@@ -1561,7 +1561,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		DBG att.dump_out(stdout,2);
 
 		 //figure out where to export from
-		const char *filename=NULL;
+		const char *filename=nullptr;
 		o=options.remaining();
 		if (o) filename=o->arg();
 
@@ -1574,7 +1574,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 		 //load in document to pass with config
 		ErrorLog error;		 
-		Document *doc=NULL;
+		Document *doc=nullptr;
 
 		if (Load(filename,error)==0) doc=curdoc;
 		if (error.Total()) {
@@ -1594,13 +1594,13 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			exit(1);
 		}
 
-		DocumentExportConfig *config=filter->CreateConfig(NULL);
-		//config->dump_in_atts(&att,0,NULL);
+		DocumentExportConfig *config=filter->CreateConfig(nullptr);
+		//config->dump_in_atts(&att,0,nullptr);
 		 
 		config->doc=doc;
 		config->doc->inc_count();
 		config->filter=filter;
-		config->dump_in_atts(&att,0,NULL);//second time with doc!
+		config->dump_in_atts(&att,0,nullptr);//second time with doc!
 		if (config->range.NumRanges() == 0) config->range.AddRange(0,-1);
 
 		int err=export_document(config,error);
@@ -1626,14 +1626,14 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 
 	 // load in any projects or documents after the args
-	Document *doc=NULL;
+	Document *doc=nullptr;
 	int index=topwindows.n;
 	if (!project) project=new Project;
 	ErrorLog log;
 
 	for (o=options.remaining(); o; o=options.next()) {
 		DBG cerr <<"----Read in:  "<<o->arg()<<endl;
-		doc = NULL;
+		doc = nullptr;
 		if (Load(o->arg(),log)==0) doc = curdoc;
 		else {
 			generallog.AddError(0,0,0, _("Could not load %s!"), o->arg());
@@ -1655,7 +1655,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		if (!strcasecmp(pipeinarg, "default")) {
 			 //assume is laidout file
 
-//			if (Load(NULL, log, data) == 0) doc = curdoc;
+//			if (Load(nullptr, log, data) == 0) doc = curdoc;
 //			if (topwindows.n == index) {
 //				if (!doc && project->docs.n) doc = project->docs.e[0]->doc;
 //				if (doc && runmode == RUNMODE_Normal) addwindow(newHeadWindow(doc));
@@ -1666,12 +1666,12 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			NameValueToAttribute(&att, pipeinarg, '=', ',');
 
 			ImportConfig config;
-			config.dump_in_atts(&att, 0, NULL);
+			config.dump_in_atts(&att, 0, nullptr);
 
 			//ErrorLog log;
 			import_document(&config, generallog, data,n);
 
-			NotifyGeneralErrors(NULL);
+			NotifyGeneralErrors(nullptr);
 		}
 
 		delete[] data;
@@ -1720,12 +1720,12 @@ Laxkit::anXWindow *LaidoutApp::LastView()
 //! Find the doc with the given obect_id. Does not increment its count.
 Document *LaidoutApp::findDocumentById(unsigned long id)
 {
-	if (!project) return NULL;
+	if (!project) return nullptr;
 	for (int c=0; c<project->docs.n; c++) {
 		if (project->docs.e[c]->doc && project->docs.e[c]->doc->object_id==id)
 			return project->docs.e[c]->doc;
 	}
-	return NULL;
+	return nullptr;
 }
 
 //! Find the doc with the given obect_id. Does not increment its count.
@@ -1742,7 +1742,7 @@ Document *LaidoutApp::findDocumentByIdStr(const char *id)
 //! Find the doc with saveas. Does not increment its count.
 Document *LaidoutApp::findDocument(const char *saveas)
 {
-	if (!project) return NULL;
+	if (!project) return nullptr;
 
 	 //search for full name
 	for (int c=0; c<project->docs.n; c++) {
@@ -1761,7 +1761,7 @@ Document *LaidoutApp::findDocument(const char *saveas)
 			 && strstr(project->docs.e[c]->doc->saveas,saveas))
 			return project->docs.e[c]->doc;
 	}
-	return NULL;
+	return nullptr;
 }
 
 // //! Return the path corresponding to the requested program.
@@ -1775,7 +1775,7 @@ Document *LaidoutApp::findDocument(const char *saveas)
 // const char *LaidoutApp::binary(const char *what)
 // {
 // 	if (!strcmp(what,"gs")) return ghostscript_binary;
-// 	return NULL;
+// 	return nullptr;
 // }
 
 //! Given a Laidout resource name, find the absolute file path for it. Returns a new char[].
@@ -1787,7 +1787,7 @@ Document *LaidoutApp::findDocument(const char *saveas)
  *   system wide directory
  * \todo allow "~/whatever" as an absolute path
  *
- * If dir!=NULL, then look in ~/.laidout/(version)/dir for the file. 
+ * If dir!=nullptr, then look in ~/.laidout/(version)/dir for the file. 
  *
  * name should be either an absolute file path or a more general name. If it is an
  * absolute path, then dir is ignored. Absolute paths will begin with "file://", "./",
@@ -1800,9 +1800,9 @@ Document *LaidoutApp::findDocument(const char *saveas)
  * found, then if "thing.laidout" is found, then that is used.
  *
  * If dir/name exists, and that file is readable, return the full path to it in a new char[].
- * Otherwise return NULL.
+ * Otherwise return nullptr.
  */
-char *LaidoutApp::full_path_for_resource(const char *name,const char *dir)//dir=NULL
+char *LaidoutApp::full_path_for_resource(const char *name,const char *dir)//dir=nullptr
 {
 	int c=0;
 	if (!strncmp(name,"file://",7)) { name+=7; c=1; }
@@ -1810,10 +1810,10 @@ char *LaidoutApp::full_path_for_resource(const char *name,const char *dir)//dir=
 
 	if (c || !strncmp(fullname,"/",1) || !strncmp(fullname,"./",2) || !strncmp(fullname,"../",3)) {
 		 // is path with filename
-		convert_to_full_path(fullname,NULL);
+		convert_to_full_path(fullname,nullptr);
 		if (readable_file(fullname)) return fullname;
 		delete[] fullname;
-		return NULL;
+		return nullptr;
 
 	} else {
 		 // else is a name
@@ -1823,13 +1823,13 @@ char *LaidoutApp::full_path_for_resource(const char *name,const char *dir)//dir=
 			prependstr(fullname,"/");
 			prependstr(fullname,config_dir);
 		} 
-		convert_to_full_path(fullname,NULL);
+		convert_to_full_path(fullname,nullptr);
 		if (readable_file(fullname)) return fullname;
 
 		DBG cerr <<" *** need to fully implement full_path_for_resource() name search!"<<endl;
 	}
 	delete[] fullname;//***
-	fullname=NULL;//***
+	fullname=nullptr;//***
 
 	return fullname;
 }
@@ -1845,7 +1845,7 @@ char *LaidoutApp::default_path_for_resource(const char *resource)
 }
 
 ////! ***todo Find a resource by the human readable name, rather than by filename
-//char *full_path_for_resource_by_name(const char *name,char *dir)//dir=NULL
+//char *full_path_for_resource_by_name(const char *name,char *dir)//dir=nullptr
 //{
 //}
 
@@ -1862,23 +1862,23 @@ Document *LaidoutApp::LoadTemplate(const char *name, ErrorLog &log)
 {
 	 // find absolute path to a file
 	char *fullname=full_path_for_resource(name,"templates");
-	if (file_exists(fullname,1,NULL)!=S_IFREG) {
+	if (file_exists(fullname,1,nullptr)!=S_IFREG) {
 		delete[] fullname;
-		return NULL;
+		return nullptr;
 	}
 		
-	Document *doc=new Document(NULL,fullname);
+	Document *doc=new Document(nullptr,fullname);
 	
 	 //must push before Load to not screw up setting up windows and other controls
 	project->Push(doc);
 	doc->dec_count();//so now has 1 count for project
 	if (doc->Load(fullname,log)==0) { // load failed
-		project->Pop(NULL);
+		project->Pop(nullptr);
 		//doc->dec_count();
-		return NULL;
+		return nullptr;
 	}
 	
-	makestr(doc->saveas,NULL); // this forces a change of name, must be done after Load
+	makestr(doc->saveas,nullptr); // this forces a change of name, must be done after Load
 	delete[] fullname;
 	if (curdoc && curdoc!=doc) {
 		curdoc->dec_count();
@@ -1891,7 +1891,7 @@ Document *LaidoutApp::LoadTemplate(const char *name, ErrorLog &log)
 //! Load a project or document from filename, make it curdoc and return on successful load.
 /*! If a doc with the same filename is already loaded, then make that curdoc.
  *
- * If there are fatal errors, then an error message is returned in error_ret, and NULL is returned.
+ * If there are fatal errors, then an error message is returned in error_ret, and nullptr is returned.
  * Sometimes there are merely warnings, in which case those are returned in error_ret, but
  * the document or project is still loaded.
  *
@@ -1903,7 +1903,7 @@ int LaidoutApp::Load(const char *filename, ErrorLog &log)
 {
 	if (!strncmp(filename,"file://",7)) filename+=7;
 	char *fullname=newstr(filename);
-	convert_to_full_path(fullname,NULL);
+	convert_to_full_path(fullname,nullptr);
 	Document *doc=findDocument(fullname);
 	if (doc) {
 		delete[] fullname;
@@ -1927,16 +1927,16 @@ int LaidoutApp::Load(const char *filename, ErrorLog &log)
 
 
 	// not a project file, so try something else
-	doc = new Document(NULL, fullname);
+	doc = new Document(nullptr, fullname);
 	if (!project) project = new Project;
 	project->Push(doc); //important: this must be before doc->Load() also important: Shouldn't be necessary!!! FIX!!!
 	doc->dec_count();
 	
 	if (doc->Load(fullname, log)==0) {
 		 //load failed
-		project->Pop(NULL);
+		project->Pop(nullptr);
 		//doc->dec_count();
-		doc=NULL;
+		doc=nullptr;
 	}
 	delete[] fullname;
 	if (doc) { 
@@ -1983,7 +1983,7 @@ int LaidoutApp::NewDocument(const char *spec)
 	PaperStyle *paper    = nullptr;
 	int         numpages = 0;
 
-	//Attribute *spec_parameters=parse_fields(NULL,spec,NULL);
+	//Attribute *spec_parameters=parse_fields(nullptr,spec,nullptr);
 
 
 //---------------------****
@@ -2111,7 +2111,7 @@ int LaidoutApp::NewDocument(const char *spec)
  * The imposition is passed onto Document, which increments its count.
  *
  * filename is where is should be saved, and is assumed to not exist. If the calling
- * code is not sure if something exists there, then filename should be passed NULL.
+ * code is not sure if something exists there, then filename should be passed nullptr.
  * The file is not saved here. The filename is merely where the document will
  * be saved to at the next save.
  *
@@ -2152,7 +2152,7 @@ int LaidoutApp::NewProject(Project *proj, ErrorLog &log)
 		if (dynamic_cast<HeadWindow *>(topwindows.e[c])) n++;
 	}
 	
-	if (!laidout->donotusex && !n) addwindow(newHeadWindow(NULL,"ViewWindow"));
+	if (!laidout->donotusex && !n) addwindow(newHeadWindow(nullptr,"ViewWindow"));
 
 	project->initDirs();
 	project->Save(log);
@@ -2166,7 +2166,7 @@ int LaidoutApp::NewProject(Project *proj, ErrorLog &log)
  */
 ExportFilter *LaidoutApp::FindExportFilter(const char *name, bool exact_only)
 {
-	if (!name) return NULL;
+	if (!name) return nullptr;
 
 	 //search for exact format match first
 	for (int c=0; c<laidout->exportfilters.n; c++) {
@@ -2175,7 +2175,7 @@ ExportFilter *LaidoutApp::FindExportFilter(const char *name, bool exact_only)
 		}
 	}
 
-	if (exact_only) return NULL;
+	if (exact_only) return nullptr;
 
 	 //if no match, search for first case insensitive match
 	for (int c=0; c<laidout->exportfilters.n; c++) {
@@ -2184,7 +2184,7 @@ ExportFilter *LaidoutApp::FindExportFilter(const char *name, bool exact_only)
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 //! Push onto exportfilters, in alphabetical order.
@@ -2236,7 +2236,7 @@ int LaidoutApp::DumpWindows(FILE *f,int indent,Document *doc)
 		head=dynamic_cast<HeadWindow *>(topwindows.e[c]);
 		if (!head || (doc && !head->HasOnlyThis(doc))) continue;
 		fprintf(f,"%swindow\n",spc);
-		head->dump_out(f,indent+2,0,NULL);
+		head->dump_out(f,indent+2,0,nullptr);
 		n++;
 	}
 	return n;
@@ -2266,9 +2266,9 @@ int main(int argc,char **argv)
 	textdomain(scratch);
 
 	DBG cerr<<"---------Intl settings----------"<<endl;
-	DBG cerr<<"Text domain: "<<textdomain(NULL)<<endl;
-	DBG cerr<<"Domain dir:  "<<bindtextdomain(scratch,NULL)<<endl;
-	DBG cerr<<"Locale:      "<<setlocale(LC_MESSAGES,NULL)<<endl;
+	DBG cerr<<"Text domain: "<<textdomain(nullptr)<<endl;
+	DBG cerr<<"Domain dir:  "<<bindtextdomain(scratch,nullptr)<<endl;
+	DBG cerr<<"Locale:      "<<setlocale(LC_MESSAGES,nullptr)<<endl;
 	DBG cerr<<"--------------------------------"<<endl;
 
 
@@ -2316,7 +2316,7 @@ int main(int argc,char **argv)
 		else if (!strcasecmp(o->arg(),"cairo")) backend="cairo";
 	}
 
-	const char *theme=NULL;
+	const char *theme=nullptr;
 	o=options.find("theme",0);
 	if (o && o->parsed_present) {
 		theme = o->arg();
@@ -2348,19 +2348,19 @@ int main(int argc,char **argv)
 	laidout->close();
 
 	DBG cerr <<"---------  close interface manager..."<<endl;
-	LaxInterfaces::InterfaceManager::SetDefault(NULL,true);
+	LaxInterfaces::InterfaceManager::SetDefault(nullptr,true);
 	DBG cerr <<"---------  close undo manager..."<<endl;
-	Laxkit::SetUndoManager(NULL);
+	Laxkit::SetUndoManager(nullptr);
 	DBG cerr <<"---------  close shortcut manager..."<<endl;
-	Laxkit::InstallShortcutManager(NULL); //forces deletion of shortcut lists in Laxkit
+	Laxkit::InstallShortcutManager(nullptr); //forces deletion of shortcut lists in Laxkit
 	DBG cerr <<"---------  close icon manager..."<<endl;
-	Laxkit::IconManager::SetDefault(NULL);
+	Laxkit::IconManager::SetDefault(nullptr);
 	DBG cerr <<"---------  close image processor..."<<endl;
-	Laxkit::ImageProcessor::SetDefault(NULL);
+	Laxkit::ImageProcessor::SetDefault(nullptr);
 	DBG cerr <<"---------  close image loaders manager..."<<endl;
 	Laxkit::ImageLoader::FlushLoaders();
 	DBG cerr <<"---------  close units manager..."<<endl;
-	Laxkit::SetUnitManager(NULL);
+	Laxkit::SetUnitManager(nullptr);
 	DBG cerr <<"---------  final dec_count of laidout app..."<<endl;
 	laidout->dec_count();
 

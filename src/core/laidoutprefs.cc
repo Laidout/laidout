@@ -63,14 +63,14 @@ LaidoutPreferences::LaidoutPreferences()
 	pagedropshadow = 5;
 	dont_scale_icons = true;
 
-    default_template = NULL;
+    default_template = nullptr;
     defaultpaper = get_system_default_paper();
-    temp_dir = NULL;
+    temp_dir = nullptr;
 	start_with_last = false;
 
-	if (S_ISDIR(file_exists("/usr/share/gimp/2.0/palettes", 1, NULL)))
+	if (S_ISDIR(file_exists("/usr/share/gimp/2.0/palettes", 1, nullptr)))
 		palette_dir=newstr("/usr/share/gimp/2.0/palettes");
-	else palette_dir = NULL;
+	else palette_dir = nullptr;
 
 	preview_size = 400;
 
@@ -145,156 +145,156 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 		return def;
 	}
 
-	def=new ObjectDef(NULL, //extensd
+	def=new ObjectDef(nullptr, //extensd
 			"LaidoutPreferences", //name
 			_("General preferences"), //Name
 			_("Laidout global configuration options go here. They are stored in ~/.config/laidout-(version)/laidoutrc."
 			  "If you modify settings from within Laidout, the file will be overwritten,"
 			  "and you'll lose any comments or formatting you have inserted directly in that file."),
 			"class", //Value format
-			NULL, //range
-			NULL); //defaultvalue
+			nullptr, //range
+			nullptr); //defaultvalue
 
 	def->push("uiscale",
 			_("UI Scale"),
 			_("Values <= 0 mean to use default."),
 			"real", "[-1,200]", "1",
 			0,
-			NULL);
+			nullptr);
 	makestr(def->last()->uihint, "NumSlider");
 
 	def->push("dont_scale_icons",
 			_("Don't scale icons"),
 			_("Use native icon size, not scaled along with font size"),
-			"boolean", NULL,"true",
+			"boolean", nullptr,"true",
 			0,
-			NULL);
+			nullptr);
 
 	def->push("shortcuts_file",
 			_("Shortcuts file"),
 			_("File for shortcuts"),
-			"File", NULL,NULL,
+			"File", nullptr,nullptr,
 			0,
-			NULL);
+			nullptr);
 
 	def->push("splashimage",
 			_("Splash image file"),
 			_("Splash image file"),
-			"File", NULL,NULL,
+			"File", nullptr,nullptr,
 			0,
-			NULL);
+			nullptr);
 
 	def->push("previewsize",
 			_("Preview size"),
 			_("Pixel width or height to render cached previews of objects for on screen viewing. "),
-			"real", NULL,"400",
+			"real", nullptr,"400",
 			0,
-			NULL);
+			nullptr);
 
 	def->push("pagedropshadow",
 			_("Page drop shadow"),
 			_("How much to offset drop shadows around papers and pages"),
-			"real", NULL,"5",
+			"real", nullptr,"5",
 			0,
-			NULL);
+			nullptr);
 
 	def->push("start_with_last",
 			_("Start With Last Document"),
 			_("Start with last document used."),
-			"boolean", NULL,NULL,
+			"boolean", nullptr,nullptr,
 			0,
-			NULL);
+			nullptr);
 
 	def->push("defaulttemplate",
 			_("Default template"),
 			_("Default template to create new blank documents from"),
-			"File", NULL,NULL,
+			"File", nullptr,nullptr,
 			0,
-			NULL);
+			nullptr);
 
 	def->push("defaultunits",
 			_("Default units"),
 			_("Default units to use in all controls. Inside files, still uses inches."),
-			"string", NULL,NULL,
+			"string", nullptr,nullptr,
 			0,
-			NULL);
+			nullptr);
 
 	def->push("defaultpaper",
 			_("Default paper"),
 			_("Default paper"),
-			"string", "letter",NULL,
+			"string", "letter",nullptr,
 			0,
-			NULL);
+			nullptr);
 
 //	def->push("activate_color",
 //			_("Activate color"),
 //			_("Activate color, usually a green"),
-//			"Color", NULL,"rgbf(0,.78,0)",
+//			"Color", nullptr,"rgbf(0,.78,0)",
 //			0,
-//			NULL);
+//			nullptr);
 //
 //	def->push("deactivate_color",
 //			_("Deactivate color"),
 //			_("Deactivate color, usually a red"),
-//			"Color", NULL,"rgbf(1,.39,.39)",
+//			"Color", nullptr,"rgbf(1,.39,.39)",
 //			0,
-//			NULL);
+//			nullptr);
 
 	def->push("icon_dirs",
 			_("Icon directories"),
 			_("A list of directories to look for icons in"),
-			"set", "File",NULL,
+			"set", "File",nullptr,
 			OBJECTDEF_ISSET,
-			NULL);
+			nullptr);
 
 	def->push("plugin_dirs",
 			_("Plugin directories"),
 			_("A list of directories to look for plugins in"),
-			"set", "File",NULL,
+			"set", "File",nullptr,
 			OBJECTDEF_ISSET,
-			NULL);
+			nullptr);
 
 	def->push("autosave",
 			_("Autosave"),
 			_("Whether to autosave"),
-			"boolean", "false",NULL,
+			"boolean", "false",nullptr,
 			0,
-			NULL);
+			nullptr);
 
 	def->push("autosave_time",
 			_("Autosave time"),
 			_("How many minutes between autosaves (0==never)."),
-			"real", "0",NULL,
+			"real", "0",nullptr,
 			0,
-			NULL);
+			nullptr);
 
 //	def->push("autosave_num",
 //			_("Number of autosaves"),
 //			_("Don't have more than this number of autosave files. 0 means no limit."),
-//			"int", "0",NULL,
+//			"int", "0",nullptr,
 //			0,
-//			NULL);
+//			nullptr);
 
 	def->push("autosave_path",
 			_("Autosave path"),
 			_("Where and how to save when autosaving. Relative paths are to current file"),
-			"string", "./%f.autosave",NULL,
+			"string", "./%f.autosave",nullptr,
 			0,
-			NULL);
+			nullptr);
 
 	def->push("export_file_name",
 			_("Export file name"),
 			_("Default base name (without extension) to use when exporting."),
-			"string", NULL,"%f-exported",
+			"string", nullptr,"%f-exported",
 			0,
-			NULL);
+			nullptr);
 
 	def->push("experimental",
 			_("Experimental"),
 			_("Whether to activate experimental features. Requires restart."),
-			"boolean", NULL,"false",
+			"boolean", nullptr,"false",
 			0,
-			NULL);
+			nullptr);
 
 	def->pushFunction("edit_external_tools",
 			_("Edit external tools..."),
@@ -308,7 +308,7 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 //	def->push("",  // id
 //			_(""), // label
 //			_(""), // description
-//			"int", NULL,"", //type, range, defaultvalue
+//			"int", nullptr,"", //type, range, defaultvalue
 //			0, // flags
 //			nullptr,  //NewObjectFunc
 //			nullptr); //ObjectFunc
@@ -317,7 +317,7 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 
 //	fprintf(f,"laxprofile Light #Default built in profiles are Dark and Light. You can define others in the laxconfig section.\n");
 //	fprintf(f,"laxconfig-sample #Remove the \"-sample\" part to redefine various default window behaviour settingss\n");
-//	dump_out_rc(f,NULL,2,-1);
+//	dump_out_rc(f,nullptr,2,-1);
 //	fprintf(f,"\n"
 //			  "#laxcolors  #To set only the colors of laxconfig, use this\n"
 //			  "#  panel\n"
@@ -539,27 +539,27 @@ int LaidoutPreferences::assign(FieldExtPlace *ext,Value *v)
 Value *LaidoutPreferences::dereference(const char *extstring, int len)
 {
 	if (!strcmp(extstring, "defaultunits")) {
-		UnitManager *units=GetUnitManager();
-		char *name=NULL;
-		units->UnitInfoId(default_units, NULL, NULL,NULL,&name,NULL);
-		StringValue *s=new StringValue(name);
+		UnitManager *units = GetUnitManager();
+		char *name = nullptr;
+		units->UnitInfoId(default_units, nullptr, nullptr,nullptr,&name,nullptr,nullptr);
+		StringValue *s = new StringValue(name);
 		return s;
 	}
 
 	if (!strcmp(extstring, "shortcuts_file")) {
-		return shortcuts_file ? new FileValue(shortcuts_file) : NULL;
+		return shortcuts_file ? new FileValue(shortcuts_file) : nullptr;
 	}
 
 	if (!strcmp(extstring, "splashimage")) {
-		return splash_image_file ? new FileValue(splash_image_file) : NULL;
+		return splash_image_file ? new FileValue(splash_image_file) : nullptr;
 	}
 
 	if (!strcmp(extstring, "defaulttemplate")) {
-		return default_template ? new FileValue(default_template) : NULL;
+		return default_template ? new FileValue(default_template) : nullptr;
 	}
 
 	if (!strcmp(extstring, "defaultpaper")) {
-		return defaultpaper ? new StringValue(defaultpaper) : NULL;
+		return defaultpaper ? new StringValue(defaultpaper) : nullptr;
 	}
 
 	if (!strcmp(extstring, "pagedropshadow")) {
@@ -583,7 +583,7 @@ Value *LaidoutPreferences::dereference(const char *extstring, int len)
 	}
 
 	if (!strcmp(extstring, "temp_dir")) {
-		return temp_dir ? new StringValue(temp_dir) : NULL;
+		return temp_dir ? new StringValue(temp_dir) : nullptr;
 	}
 
 	if (!strcmp(extstring, "autosave")) {
@@ -599,15 +599,15 @@ Value *LaidoutPreferences::dereference(const char *extstring, int len)
 //	}
 
 	if (!strcmp(extstring, "autosave_path")) {
-		return autosave_path ? new StringValue(autosave_path) : NULL;
+		return autosave_path ? new StringValue(autosave_path) : nullptr;
 	}
 
 	if (!strcmp(extstring, "export_file_name")) {
-		return exportfilename ? new StringValue(exportfilename) : NULL;
+		return exportfilename ? new StringValue(exportfilename) : nullptr;
 	}
 
 	if (!strcmp(extstring, "palette_dir")) {
-		return palette_dir ? new StringValue(palette_dir) : NULL;
+		return palette_dir ? new StringValue(palette_dir) : nullptr;
 	}
 
 	if (!strcmp(extstring, "previewsize")) {
@@ -632,7 +632,7 @@ Value *LaidoutPreferences::dereference(const char *extstring, int len)
 	}
 
 
-	return NULL;
+	return nullptr;
 }
 
 /*! Note this totally clobbers old file. */
@@ -643,7 +643,7 @@ int LaidoutPreferences::SavePrefs(const char *file)
 	FILE *f=fopen(file,"w");
 	if (f) {
 		setlocale(LC_ALL,"C");
-		dump_out(f,0,0,NULL);
+		dump_out(f,0,0,nullptr);
 		fclose(f);
 		setlocale(LC_ALL,"");
 		return 0;
@@ -661,7 +661,7 @@ int LaidoutPreferences::SavePrefs(const char *file)
  */
 int LaidoutPreferences::AddPath(const char *resource, const char *path)
 {
-	if (file_exists(path, 1, NULL) != S_IFDIR) {
+	if (file_exists(path, 1, nullptr) != S_IFDIR) {
 		DBG cerr << "LaidoutPreferences::AddPath("<<resource<<", "<<path<<"): not a directory!"<<endl;
 		return 1;
 	}
@@ -755,7 +755,7 @@ int LaidoutPreferences::UpdatePreference(const char *which, const char *value, c
 
 	char *outfile=newstr(laidoutrc);
 	appendstr(outfile, "-TEMP");
-	while (file_exists(outfile, 1, NULL)) {
+	while (file_exists(outfile, 1, nullptr)) {
 		char *nout = increment_file(outfile);
 		delete[] outfile;
 		outfile = nout;
@@ -775,12 +775,12 @@ int LaidoutPreferences::UpdatePreference(const char *which, const char *value, c
 	// *** Note that if you do a lot of tinkering with the laidoutrc, this may wipe
 	//     out comments you put in on those specific lines
 
-	char *line=NULL;
+	char *line=nullptr;
 	size_t n=0;
 	int c;
 	int found=0;
 
-	char *vvalue=NULL;
+	char *vvalue=nullptr;
 	if (strpbrk(value, "\"\'#\t\n\r")) {
 		vvalue=escape_string(value, '"', true);
 		value=vvalue;

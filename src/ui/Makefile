@@ -23,6 +23,7 @@ objs= \
 	helpwindow.o \
 	metawindow.o \
 	importimagesdialog.o \
+	impositionselectwindow.o \
 	newdoc.o \
 	objecttree.o \
 	palettes.o \

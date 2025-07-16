@@ -32,6 +32,7 @@
 #include "../core/utils.h"
 #include "../filetypes/scribus.h"
 #include "headwindow.h"
+#include "impositionselectwindow.h"
 
 	
 #include <iostream>
@@ -96,8 +97,6 @@ LaidoutOpenWindow::LaidoutOpenWindow(int whichstart)
 					"Laidout");//recent group
 	fd->AddFinalButton(_("Open a copy"),_("This means use that document as a template"),2,1);
 	AddWin(fd, 1, _("Open"), NULL,0);
-
-
 }
 
 LaidoutOpenWindow::~LaidoutOpenWindow()
@@ -393,7 +392,6 @@ int NewDocWindow::init()
 	impsel->WrapToExtent();
 	AddWin(impsel,1, impsel->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 
-
 	 //--------edit imp...
 	AddWin(NULL,0, linpheight/2,0,0,50,0, 20,0,0,50,0, -1);
 	last=tbut=new Button(this,"impedit",NULL,0, 0,0,0,0, 1, 
@@ -416,6 +414,16 @@ int NewDocWindow::init()
 
 	AddWin(NULL,0, 2000,2000,0,50,0, textheight*2/3,0,0,0,0, -1);// forced linebreak, vertical spacer
 
+	//------ imposition selection via icons
+	AddNull();
+
+	ImpositionSelectWindow *imps = new ImpositionSelectWindow(nullptr, "Impositions", "Impositions", 0);
+	imps->win_x = -1;
+	imps->win_y = -1;
+	imps->win_w = 600;
+	imps->win_h = 400;
+	AddWin(imps,1, 5000,4900,0,50,0, 5000,4950,0,50,0, -1);
+	AddNull();
 
 	 //------- scale pages to fit
 	if (doc) {
@@ -433,7 +441,9 @@ int NewDocWindow::init()
 
 	//------------------------------ final ok -------------------------------------------------------
 
-	AddWin(NULL,0, 2000,1990,0,50,0, 20,0,0,50,0, -1);
+	AddVSpacer(20,0,0,50);
+	AddNull();
+	AddWin(NULL,0, 0,0,5000,50,0, 20,0,0,50,0, -1);
 	
 	 // [ ok ]   [ cancel ]
 	last=tbut=new Button(this,"ok",NULL,0, 0,0,0,0,1, last,object_id,"Ok",
@@ -446,6 +456,7 @@ int NewDocWindow::init()
 	last=tbut=new Button(this,"cancel",NULL,BUTTON_CANCEL, 0,0,0,0,1, last,object_id,"Cancel");
 	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 
+	AddWin(NULL,0, 0,0,5000,50,0, 20,0,0,50,0, -1); // forces centering of this row ..?
 
 	
 	tbut->CloseControlLoop();
@@ -589,6 +600,7 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 
 		} else if (s->info1<0 || s->info1>=laidout->impositionpool.n) return 0;
 
+		// create from imposition pool
 		if (imp) imp->dec_count();
 		oldimp=s->info1;
 		imp=laidout->impositionpool.e[s->info1]->Create();

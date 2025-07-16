@@ -423,9 +423,10 @@ int ImportImagesDialog::init()
 
 
 	 //------------------------ preview options ----------------------
-	last = check = new CheckBox(this,"expandgifs",NULL,CHECK_LEFT, 0,0,0,0,0, 
-						last,object_id,"expandgifs", _("Expand animated gifs"));
-	if (settings->expand_gifs) check->State(LAX_ON); else check->State(LAX_OFF);
+	last = check = new CheckBox(this,"expand_subimages",NULL,CHECK_LEFT, 0,0,0,0,0, 
+						last,object_id,"expand_subimages", _("Expand files with multiple images"));
+	check->tooltip(_("Such as animated gif or pdf (rendered to pixels)"));
+	if (settings->expand_subimages) check->State(LAX_ON); else check->State(LAX_OFF);
 	AddWin(check,1, check->win_w,1,0,50,0, check->win_h,0,0,50,0, -1);
 	AddWin(NULL,0, 2001,2000,0,50,0, 0,0,0,50,0, -1);
 
@@ -617,10 +618,10 @@ int ImportImagesDialog::Event(const Laxkit::EventData *data,const char *mes)
 
 		return 0;
 
-	} else if (!strcmp(mes,"expandgifs")) {
+	} else if (!strcmp(mes,"expand_subimages")) {
 		CheckBox *check;
-		check = dynamic_cast<CheckBox *>(findWindow("expandgifs"));
-		settings->expand_gifs = (check->State() == LAX_ON);
+		check = dynamic_cast<CheckBox *>(findWindow("expand_subimages"));
+		settings->expand_subimages = (check->State() == LAX_ON);
 		return 0;
 
 	} else if (!strcmp(mes,"dpi")) {
@@ -801,12 +802,12 @@ void ImportImagesDialog::updateFileList()
 		item=filelist->GetSelected(c);
 		
 		 // find file in list 
-		full=fullFilePath(item->name);
+		full = fullFilePath(item->name);
 		if (file_exists(full,1,NULL)==S_IFREG) {
-			info=findImageInfo(full);
+			info = findImageInfo(full);
 			if (!info) {
 				 // add node
-				char *prev=getPreviewFileName(full);
+				char *prev = getPreviewFileName(full);
 				images.push(new ImageInfo(full,prev,NULL,NULL,0));
 				delete[] prev;
 			} 

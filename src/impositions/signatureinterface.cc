@@ -670,7 +670,7 @@ void SignatureInterface::remapHandles(int which)
 
 		 //SP_Paper_Width
 		area=control(SP_Paper_Width);
-		sprintf(buffer,"%g",units->Convert(siginstance->partition->paper->w(), UNITS_Inches,laidout->prefs.default_units,NULL));
+		sprintf(buffer,"%g", units->Convert(siginstance->partition->paper->w(), UNITS_Inches,laidout->prefs.default_units, UNITS_Length));
 		makestr(area->text,buffer);
 		wwww=dp->textextent(area->text,-1, NULL,NULL)+hhhh;
 		area->SetRect(xxxx,hhhh, wwww,hhhh);
@@ -678,7 +678,7 @@ void SignatureInterface::remapHandles(int which)
 
 		 //SP_Paper_Height
 		area=control(SP_Paper_Height);
-		sprintf(buffer,"%g",units->Convert(siginstance->partition->paper->h(), UNITS_Inches,laidout->prefs.default_units,NULL));
+		sprintf(buffer,"%g",units->Convert(siginstance->partition->paper->h(), UNITS_Inches,laidout->prefs.default_units, UNITS_Length));
 		makestr(area->text,buffer);
 		wwww=dp->textextent(area->text,-1, NULL,NULL)+hhhh;
 		area->SetRect(xxxx,hhhh, wwww,hhhh);
@@ -1330,8 +1330,8 @@ int SignatureInterface::Refresh()
 	dp->DrawScreen();
 	UnitManager *units = GetUnitManager();
 	sprintf(str,_("Final size: %g x %g %s"),
-				units->Convert(signature->PageWidth(1), UNITS_Inches,laidout->prefs.default_units,NULL),
-				units->Convert(signature->PageHeight(1),UNITS_Inches,laidout->prefs.default_units,NULL),
+				units->Convert(signature->PageWidth(1), UNITS_Inches,laidout->prefs.default_units, UNITS_Length),
+				units->Convert(signature->PageHeight(1),UNITS_Inches,laidout->prefs.default_units, UNITS_Length),
 				laidout->prefs.unitname);
 	dp->textout(0,0, str,-1, LAX_LEFT|LAX_TOP);
 	dp->DrawReal();

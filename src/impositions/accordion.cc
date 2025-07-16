@@ -267,6 +267,7 @@ NetImposition *Accordion::BuildGate(double paper_width, double paper_height, Net
 		netimp->nets.flush();
 	} else {
 		netimp = new NetImposition();
+		netimp->fit_paper_asymmetric = true;
 		netimp->margin = 0;
 	}
 	
@@ -316,6 +317,7 @@ NetImposition *Accordion::BuildEasyZine(double paper_width, double paper_height,
 		netimp->nets.flush();
 	} else {
 		netimp = new NetImposition();
+		netimp->fit_paper_asymmetric = true;
 		netimp->margin = 0;
 	}
 	
@@ -367,6 +369,7 @@ NetImposition *Accordion::BuildAccordion1xN(int n, bool vertical, double paper_w
 		netimp->nets.flush();
 	} else {
 		netimp = new NetImposition();
+		netimp->fit_paper_asymmetric = true;
 		netimp->margin = 0;
 	}
 	
@@ -402,6 +405,7 @@ NetImposition *Accordion::BuildAccordionNxM(int n, int m, double paper_width, do
 		netimp->nets.flush();
 	} else {
 		netimp = new NetImposition();
+		netimp->fit_paper_asymmetric = true;
 		netimp->margin = 0;
 	}
 	
@@ -439,6 +443,7 @@ NetImposition *Accordion::BuildMiura(int n, int m, double angle_degrees, double 
 		netimp->nets.flush();
 	} else {
 		netimp = new NetImposition();
+		netimp->fit_paper_asymmetric = true;
 		netimp->margin = 0;
 	}
 	

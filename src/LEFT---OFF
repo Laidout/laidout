@@ -19,7 +19,6 @@ bug: affine transform to SetTransform node, put x at 0,0, destroys cairo transfo
 
 bug: ShortcutWindow totally messed up. StackFrame issues? fixes when you resize window, missing initial need to layout flag?
 
-
 bug: severing clone link does some weird things, including crashing
 bug: clone tool clones do not have proper bounding box
 
@@ -28,12 +27,16 @@ bug: gegl plugin initialization is getting tons of errors like:
 	  something about gegl upgrade leaving behind residue from previous version?
 bug: gegl nodes, connect sinus to waves and also to displace, freeze!
 
-bug: zoom handles mangle cairo sometimes.. can't reproduce reliably
-
 crash: color grabbing under Wayland completely crashes with extreme prejudice. something about XGetImage
 
 
 ------------ other bugs:
+
+bug: zoom handles mangle cairo sometimes.. can't reproduce reliably
+
+bug: import pdf with "expand_subimages", dragging/rendering is super laggy
+
+bug: if you create FilePreviewer with hstack as parent, doesn't even addwindow. somehow the reparent is installing where just parent doesn't??!??
 
 laxkit spiro editor mouse overs appear to be broken
 
@@ -1857,6 +1860,7 @@ themes:
   DONE laxprofile not working
 
 laxkit:
+  rulerwin: would be nice to resize the tiny text labels with control-wheel
   Button: icon should shift slightly when pressed, like text does
   would be nice if Displayer had a "highlight" stroke mode: draw line with FG, draw thicker line with BG
   resources:
@@ -3191,7 +3195,11 @@ improve split window
   debug mouse cursor change when over gap
   simplify pane customization, docking
 
+busywork:
+  replace refs to LineSolid with 0, as LineSolid is X11 leftover
+
 accordion folds: accordion:
+  bug: finish implementing NetDialog paper selection
   implement paper change: NetImposition needs an asymmetric scale to paper option, so we don't have to have a whole new imposition class
   implement impostion preview images
   explosion/squash books with cross folds on pages, wacky minimal origami: https://www.youtube.com/watch?v=__9_KZi_tpE
@@ -3399,7 +3407,7 @@ tiling cloner: clone tiler  CloneInterface
 
 Imposition use cases:
   for sig editor, need paper partitioner, then stack sections
-  for same document, have stack of impostions, each with its own page set? would make docs with body pages and
+  for same document, have stack of impositions, each with its own page set? would make docs with body pages and
     cover easier, without having to implement full "project"
   booklet contains two threads, read one way, flip book over, read the other way
     remember custom views, to swap rotated display, for instance
@@ -3413,6 +3421,7 @@ netdialog:
   memory hole when select new net, ok, cancel
 
 Net imposition: netimposition: net:
+  finish fit_paper_asymmetric for accordions
   From new doc dialog, select "new net", old imposition still displays in dropdown
   tabs, like for folding up polyhedra
     custom tab shapes
@@ -3804,3 +3813,7 @@ DONE bug: lineedit cursor is leaving artifacts
 DONE (but now only xdg-open on a dir, not a file) bug: document-> show in filesystem opens file in text editor??!?
 DONE bug: Math Expression node, do "Math.whatever": crash!
 DONE bug: popup menus have incorrect y size, causing scroll -> related to querying scale factor for monitor, but it hops to other monitor! popupmenu not getting scale notification?
+DONE bug: filepreviewer seems to not work anymore?
+DONE bug: save doc with images, load. image matrix is not identity!!  <- was problem with SomeData::AlignAndFit
+DONE bug: if you expand_subimages (or pdf), then dblclck into image, it shows image 1, not the subimage.
+DONE crash: calculator: do `var t = 1`, then `t = 2`.. crash!!

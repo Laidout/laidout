@@ -35,6 +35,7 @@ class NetImposition : public Imposition
  public:
 	double margin = .05;
 	bool margin_is_percent = true;
+	bool fit_paper_asymmetric = false;
 	int printnet;
 	
 	PageStyle *pagestyle;

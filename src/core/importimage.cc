@@ -63,7 +63,7 @@ ImportImageSettings::ImportImageSettings()
 	every_nth    = 1;
 	destination  = 0;
 	destobject   = NULL;
-	expand_gifs  = true;
+	expand_subimages  = true;
 }
 
 ImportImageSettings::~ImportImageSettings()
@@ -86,7 +86,7 @@ ImportImageSettings *ImportImageSettings::duplicate()
 	d->every_nth    = every_nth;
 	d->destination  = destination;
 	d->destobject   = destobject;
-	d->expand_gifs  = expand_gifs;
+	d->expand_subimages = expand_subimages;
 
 	for (int c=0; c<alignment.n; c++) d->alignment.push(alignment.e[c]);
 
@@ -122,8 +122,8 @@ void ImportImageSettings::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::D
 		} else if (!strcmp(name,"scaleDownToFit")) {
 			scaledown = BooleanAttribute(value);
 
-		} else if (!strcmp(name,"expand_gifs")) {
-			expand_gifs = BooleanAttribute(value);
+		} else if (!strcmp(name,"expand_subimages")) {
+			expand_subimages = BooleanAttribute(value);
 
 		} else if (!strcmp(name,"startpage")) {
 			IntAttribute(value, &startpage);
@@ -165,7 +165,7 @@ void ImportImageSettings::dump_out(FILE *f,int indent,int what,Laxkit::DumpConte
 
 	fprintf(f, "%sstartpage %d\n", spc, startpage);
 
-	fprintf(f, "%sexpand_gifs %s\n", spc, expand_gifs ? "yes" : "no");
+	fprintf(f, "%sexpand_subimages %s\n", spc, expand_subimages ? "yes" : "no");
 
 	if (alignment.n) {
 		fprintf(f, "%salignment\n", spc);
@@ -660,7 +660,7 @@ int dumpInImages(ImportImageSettings *settings,
 
 		dpi = settings->defaultdpi;
 
-		if (settings->expand_gifs) {
+		if (settings->expand_subimages) {
 			if (ImageLoader::Ping(imagefiles[c], &width, &height, &filesize, &subimages) == 0) {
 				if (subimages > 1) {
 					for (int c2=0; c2<subimages; c2++) {
@@ -671,6 +671,7 @@ int dumpInImages(ImportImageSettings *settings,
 
 						imaged = dynamic_cast<ImageData*>(LaxInterfaces::somedatafactory()->NewObject("ImageData"));
 						imaged->SetImage(image,NULL);//incs count of image
+						imaged->index = image->index;
 						image->dec_count();
 
 						str.Sprintf("%s (%d)", lax_basename(imagefiles[c]), c2);

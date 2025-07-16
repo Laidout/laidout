@@ -257,7 +257,7 @@ int SinglesEditor::init()
 						last,object_id,"margin t",
 			            _("Top Margin"),nullptr,0,
 			            0,0,3,0,3,3);
-	if (imp) linp->SetText(units->Convert(imp->margintop,UNITS_Inches,laidout->prefs.default_units,nullptr));
+	if (imp) linp->SetText(units->Convert(imp->margintop,UNITS_Inches,laidout->prefs.default_units, UNITS_Length));
 	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	
 	last=linp=marginb=new LineInput(this,"margin b",nullptr,LINP_ONLEFT,
@@ -265,7 +265,7 @@ int SinglesEditor::init()
 						last,object_id,"margin b",
 			            _("Bottom Margin"),nullptr,0,
 			            0,0,3,0,3,3);
-	if (imp) linp->SetText(units->Convert(imp->marginbottom,UNITS_Inches,laidout->prefs.default_units,nullptr));
+	if (imp) linp->SetText(units->Convert(imp->marginbottom,UNITS_Inches,laidout->prefs.default_units, UNITS_Length));
 	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 	
@@ -274,7 +274,7 @@ int SinglesEditor::init()
 						last,object_id,"margin l",
 			            _("Left Margin"),nullptr,0,
 			            0,0,3,0,3,3);
-	if (imp) linp->SetText(units->Convert(imp->marginleft,UNITS_Inches,laidout->prefs.default_units,nullptr));
+	if (imp) linp->SetText(units->Convert(imp->marginleft,UNITS_Inches,laidout->prefs.default_units, UNITS_Length));
 	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	
 	last=linp=marginr=new LineInput(this,"margin r",nullptr,LINP_ONLEFT,
@@ -282,7 +282,7 @@ int SinglesEditor::init()
 						last,object_id,"margin r",
 			            _("Right Margin"),nullptr,0,
 			            0,0,3,0,3,3);
-	if (imp) linp->SetText(units->Convert(imp->marginright,UNITS_Inches,laidout->prefs.default_units,nullptr));
+	if (imp) linp->SetText(units->Convert(imp->marginright,UNITS_Inches,laidout->prefs.default_units, UNITS_Length));
 	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 	
@@ -370,8 +370,8 @@ void SinglesEditor::send()
 
 	UnitManager *units = GetUnitManager();
 	double xgap=0, ygap=0;
-	if (gapx) xgap=units->Convert(atof(gapx->GetCText()),laidout->prefs.default_units,UNITS_Inches,nullptr);
-	if (gapy) ygap=units->Convert(atof(gapy->GetCText()),laidout->prefs.default_units,UNITS_Inches,nullptr);
+	if (gapx) xgap=units->Convert(atof(gapx->GetCText()),laidout->prefs.default_units,UNITS_Inches, UNITS_Length);
+	if (gapy) ygap=units->Convert(atof(gapy->GetCText()),laidout->prefs.default_units,UNITS_Inches, UNITS_Length);
 
 	if (npgs<=0) npgs=1;
 
@@ -382,15 +382,15 @@ void SinglesEditor::send()
 	imposition->tiley = ytile;
 	imposition->gapx = xgap;
 	imposition->gapy = ygap;
-	// imposition->insetleft  =units->Convert(insetl->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
-	// imposition->insetright =units->Convert(insetr->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
-	// imposition->insettop   =units->Convert(insett->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
-	// imposition->insetbottom=units->Convert(insetb->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
+	// imposition->insetleft  =units->Convert(insetl->GetDouble(),laidout->prefs.default_units,UNITS_Inches, UNITS_Length);
+	// imposition->insetright =units->Convert(insetr->GetDouble(),laidout->prefs.default_units,UNITS_Inches, UNITS_Length);
+	// imposition->insettop   =units->Convert(insett->GetDouble(),laidout->prefs.default_units,UNITS_Inches, UNITS_Length);
+	// imposition->insetbottom=units->Convert(insetb->GetDouble(),laidout->prefs.default_units,UNITS_Inches, UNITS_Length);
 	imposition->SetDefaultMargins(
-					units->Convert(marginl->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr),
-					units->Convert(marginr->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr),
-					units->Convert(margint->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr),
-					units->Convert(marginb->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr)
+					units->Convert(marginl->GetDouble(),laidout->prefs.default_units,UNITS_Inches, UNITS_Length),
+					units->Convert(marginr->GetDouble(),laidout->prefs.default_units,UNITS_Inches, UNITS_Length),
+					units->Convert(margint->GetDouble(),laidout->prefs.default_units,UNITS_Inches, UNITS_Length),
+					units->Convert(marginb->GetDouble(),laidout->prefs.default_units,UNITS_Inches, UNITS_Length)
 				);
 
 	imposition->NumPages(npgs);
@@ -411,8 +411,8 @@ Imposition *SinglesEditor::GetImposition()
 
 	UnitManager *units = GetUnitManager();
 	double xgap=0, ygap=0;
-	if (gapx) xgap=units->Convert(atof(gapx->GetCText()),laidout->prefs.default_units,UNITS_Inches,nullptr);
-	if (gapy) ygap=units->Convert(atof(gapy->GetCText()),laidout->prefs.default_units,UNITS_Inches,nullptr);
+	if (gapx) xgap=units->Convert(atof(gapx->GetCText()),laidout->prefs.default_units,UNITS_Inches, UNITS_Length);
+	if (gapy) ygap=units->Convert(atof(gapy->GetCText()),laidout->prefs.default_units,UNITS_Inches, UNITS_Length);
 
 	if (npgs<=0) npgs=1;
 
@@ -423,15 +423,15 @@ Imposition *SinglesEditor::GetImposition()
 	imp->tiley=ytile;
 	imp->gapx=xgap;
 	imp->gapy=ygap;
-	// imp->insetleft  =units->Convert(insetl->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
-	// imp->insetright =units->Convert(insetr->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
-	// imp->insettop   =units->Convert(insett->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
-	// imp->insetbottom=units->Convert(insetb->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr);
+	// imp->insetleft  =units->Convert(insetl->GetDouble(),laidout->prefs.default_units,UNITS_Inches, UNITS_Length);
+	// imp->insetright =units->Convert(insetr->GetDouble(),laidout->prefs.default_units,UNITS_Inches, UNITS_Length);
+	// imp->insettop   =units->Convert(insett->GetDouble(),laidout->prefs.default_units,UNITS_Inches, UNITS_Length);
+	// imp->insetbottom=units->Convert(insetb->GetDouble(),laidout->prefs.default_units,UNITS_Inches, UNITS_Length);
 	imp->SetDefaultMargins(
-					units->Convert(marginl->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr),
-					units->Convert(marginr->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr),
-					units->Convert(margint->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr),
-					units->Convert(marginb->GetDouble(),laidout->prefs.default_units,UNITS_Inches,nullptr)
+					units->Convert(marginl->GetDouble(),laidout->prefs.default_units,UNITS_Inches, UNITS_Length),
+					units->Convert(marginr->GetDouble(),laidout->prefs.default_units,UNITS_Inches, UNITS_Length),
+					units->Convert(margint->GetDouble(),laidout->prefs.default_units,UNITS_Inches, UNITS_Length),
+					units->Convert(marginb->GetDouble(),laidout->prefs.default_units,UNITS_Inches, UNITS_Length)
 				);
 
 	imp->NumPages(npgs);

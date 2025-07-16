@@ -111,12 +111,12 @@ const char *BuiltinPaperSizes[65*5]=
 		"7680x4320 (8k)", "7680","4320","px", "Screen",
 		"Custom"    ,"8.5","11"   ,"in", "", /* NOTE!!! these two must be last!! */
 		"Whatever"  ,"8.5","11"   ,"in", "", /* NOTE!!! these two must be last!! */
-		NULL,NULL,NULL,NULL
+		nullptr,nullptr,nullptr,nullptr
 	};
 
 //! Get a stack of PaperStyles with all the builtin paper sizes.
 /*! \ingroup pools
- * If papers is NULL, then a new stack is created, filled and returned, otherwise,
+ * If papers is nullptr, then a new stack is created, filled and returned, otherwise,
  * the buitlins are pushed onto the given stack.
  * 
  * See src/papersizes.cc for all the built in paper sizes. This includes common
@@ -132,7 +132,7 @@ const char *BuiltinPaperSizes[65*5]=
  */
 PtrStack<PaperStyle> *GetBuiltinPaperSizes(PtrStack<PaperStyle> *papers)
 {
-	if (papers==NULL) papers=new PtrStack<PaperStyle>;
+	if (papers==nullptr) papers=new PtrStack<PaperStyle>;
 	double x,y; 
 	double dpi;
 
@@ -255,12 +255,12 @@ PaperStyle *GetPaperFromName(const char *name)
  * The width and height are still in inches. This is just a hint.
  */
 
-/*! nname==NULL uses laidout's default paper name.
+/*! nname==nullptr uses laidout's default paper name.
  * Looks up name in laidout's list of papers, and sets data accordingly.
  */
 PaperStyle::PaperStyle(const char *nname)
 {
-	if (!isblank(nname)) name=newstr(nname); else name=NULL;
+	if (!isblank(nname)) name=newstr(nname); else name=nullptr;
 
 	favorite     = false;
 	is_landscape = false;
@@ -273,7 +273,7 @@ PaperStyle::PaperStyle(const char *nname)
 
 	if (!name) name = newstr(laidout->prefs.defaultpaper);
 	if (!name) name = newstr("letter");
-	//if (!name) name=get_system_default_paper(NULL);
+	//if (!name) name=get_system_default_paper(nullptr);
 
 	for (int c=0; c<laidout->papersizes.n; c++) {
 		if (strcasecmp(name,laidout->papersizes.e[c]->name)==0) {
@@ -358,7 +358,7 @@ int PaperStyle::SetFromString(const char *nname)
 		//	}
 		//}
 
-		char *endptr=NULL;
+		char *endptr = nullptr;
 		double d = strtod(nname, &endptr);
 		if (endptr == nname) return 2;
 		width = d;
@@ -373,7 +373,7 @@ int PaperStyle::SetFromString(const char *nname)
 			while (isalpha(*cendptr)) cendptr++;
 			units = unitmanager->UnitId(nname, cendptr - nname);
 			if (units == UNITS_None) return 3;
-			width = unitmanager->Convert(width, units, UNITS_Inches, NULL);
+			width = unitmanager->Convert(width, units, UNITS_Inches, UNITS_Length, nullptr);
 			makenstr(defaultunits, nname, cendptr - nname);
 			nname = cendptr;
 		}
@@ -390,7 +390,7 @@ int PaperStyle::SetFromString(const char *nname)
 			while (isalpha(*cendptr)) cendptr++;
 			units = unitmanager->UnitId(nname, cendptr - nname);
 			if (units == UNITS_None) return 3;
-			height = unitmanager->Convert(height, units, UNITS_Inches, NULL);
+			height = unitmanager->Convert(height, units, UNITS_Inches, UNITS_Length, nullptr);
 			makenstr(defaultunits, nname, cendptr - nname);
 			nname = cendptr;
 		}
@@ -486,7 +486,7 @@ void PaperStyle::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContex
 	if (!att) return;
 
 	char *aname,*value;
-	const char *convertunits=NULL;
+	const char *convertunits=nullptr;
 
 	for (int c=0; c<att->attributes.n; c++) {
 		aname= att->attributes.e[c]->name;
@@ -588,7 +588,7 @@ Value *PaperStyle::dereference(const char *extstring, int len)
 		return new StringValue(defaultunits);
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 int PaperStyle::Evaluate(const char *function,int len, ValueHash *context, ValueHash *pp, CalcSettings *settings,
@@ -619,20 +619,20 @@ Value *NewPaperStyle()
 int createPaperStyle(ValueHash *context, ValueHash *parameters, Value **value_ret, ErrorLog &log)
 {
 	if (!parameters) {
-		if (value_ret) *value_ret=NULL;
+		if (value_ret) *value_ret=nullptr;
 		log.AddMessage(_("Easy for you to say!"),ERROR_Fail);
 		return 1;
 	}
 
 
-	PaperStyle *paper=NULL;
+	PaperStyle *paper=nullptr;
 	int err=0;
 	try {
 		int i=0;
 
 		 //---name
 		Value *v=parameters->find("paper");
-		const char *str=NULL;
+		const char *str=nullptr;
 		if (v) {
 			if (v->type()==VALUE_String) {
 				const char *str=(const char *)dynamic_cast<StringValue*>(v)->str;
@@ -682,7 +682,7 @@ int createPaperStyle(ValueHash *context, ValueHash *parameters, Value **value_re
 
 	} catch (const char *str) {
 		log.AddMessage(str,ERROR_Fail);
-		if (paper) { paper->dec_count(); paper=NULL; }
+		if (paper) { paper->dec_count(); paper=nullptr; }
 		err=1;
 	}
 
@@ -690,7 +690,7 @@ int createPaperStyle(ValueHash *context, ValueHash *parameters, Value **value_re
 	if (err==0) {
 		if (value_ret) {
 			if (paper) *value_ret=paper;
-			else *value_ret=NULL;
+			else *value_ret=nullptr;
 		}
 	}
 
@@ -706,14 +706,14 @@ ObjectDef *PaperStyle::makeObjectDef()
 	}
 
 
-	sd=new ObjectDef(NULL,
+	sd=new ObjectDef(nullptr,
 							  "Paper",
 							  _("Paper"),
 							  _("A basic rectangular paper with orientation"),
 							  "class",
-							  NULL, //range
-							  NULL, //defval
-							  NULL,0, //fields, flags
+							  nullptr, //range
+							  nullptr, //defval
+							  nullptr,0, //fields, flags
 							  NewPaperStyle,
 							  createPaperStyle);
 
@@ -721,39 +721,39 @@ ObjectDef *PaperStyle::makeObjectDef()
 			_("Name"),
 			_("Name of the paper, like A4 or Letter"),
 			"string",
-			NULL, //range
-			NULL, //def value
+			nullptr, //range
+			nullptr, //def value
 			0,
-			NULL);
+			nullptr);
 	sd->pushEnum("orientation",
 			_("Orientation"),
 			_("Either portrait (0) or landscape (1)"),
 			false, //whether is enumclass or enum instance
 			"portrait",//defval
-			NULL,NULL,//new funcs
+			nullptr,nullptr,//new funcs
 			  "portrait",_("Portrait"),_("Width and height are as normal"),
 			  "landscape",_("Landscape"),_("Width and height are swapped"),
-			  NULL);
+			  nullptr);
 	sd->push("width",
 			_("Width"),
 			_("Width of the paper, after orientation is applied"),
-			"real", NULL,NULL,
+			"real", nullptr,nullptr,
 			0,
-			NULL);
+			nullptr);
 	sd->push("height",
 			_("Height"),
 			_("Height of the paper, after orientation is applied"),
-			"real", NULL,NULL,
+			"real", nullptr,nullptr,
 			0,
-			NULL);
+			nullptr);
 	sd->push("dpi",
 			_("Dpi"),
 			_("Default dots per inch of the paper"),
 			"real", 
-			NULL,
-			NULL,
+			nullptr,
+			nullptr,
 			0,
-			NULL);
+			nullptr);
 	sd->pushFunction("SetFromName", _("Set from name"), _("Set paper from common paper names like letter or A4"), 
 			nullptr,
 			"name", _("Paper Name"), _("Paper name"), "string", nullptr, nullptr,
@@ -951,7 +951,7 @@ LaxInterfaces::SomeData *PaperBoxData::duplicate(LaxInterfaces::SomeData *dup)
 PaperGroup::PaperGroup()
 {
 	locked      = 0;
-	name = Name = NULL;
+	name = Name = nullptr;
 	obj_flags  |= OBJ_Zone | OBJ_Unselectable;
 
 	DBG cerr <<"PaperGroup created, obj "<<object_id<<endl;
@@ -963,7 +963,7 @@ PaperGroup::PaperGroup()
 PaperGroup::PaperGroup(PaperStyle *paperstyle)
 {
 	locked      = 0;
-	name = Name = NULL;
+	name = Name = nullptr;
 	obj_flags  |= OBJ_Zone | OBJ_Unselectable;
 
 	PaperBox *box=new PaperBox(paperstyle, false);
@@ -981,7 +981,7 @@ PaperGroup::PaperGroup(PaperStyle *paperstyle)
 PaperGroup::PaperGroup(PaperBoxData *boxdata)
 {
 	locked      = 0;
-	name = Name = NULL;
+	name = Name = nullptr;
 	obj_flags  |= OBJ_Zone | OBJ_Unselectable;
 
 	papers.push(boxdata);
@@ -1004,19 +1004,19 @@ int PaperGroup::n()
 Laxkit::anObject *PaperGroup::object_e(int i)
 {
 	if (i>=0 && i<objs.n()) return objs.e(i);
-	return NULL;
+	return nullptr;
 }
 
 const char *PaperGroup::object_e_name(int i)
 {
 	if (i>=0 && i<objs.n()) return objs.e(i)->Id();
-	return NULL;
+	return nullptr;
 }
 
 const double *PaperGroup::object_transform(int i)
 {
 	if (i>=0 && i<objs.n()) return objs.e(i)->m();
-	return NULL;
+	return nullptr;
 }
 
 //! Make the outline this color. Range [0..65535].
@@ -1028,16 +1028,16 @@ double PaperGroup::OutlineColor(double r,double g,double b)
 	return papers.n;
 }
 
-/*! Returns NULL when out of range, or missing paper.
+/*! Returns nullptr when out of range, or missing paper.
  */
 PaperStyle *PaperGroup::GetBasePaper(int index)
 {
-	if (index<0 || index>=papers.n) return NULL;
+	if (index<0 || index>=papers.n) return nullptr;
 	if (papers.e[index]->box
 			&& papers.e[index]->box->paperstyle
 			&& papers.e[index]->box->paperstyle->width)
 		return papers.e[index]->box->paperstyle;
-	return NULL;
+	return nullptr;
 }
 
 /*! Fill in the bounds required to fit all the defined papers.
@@ -1045,7 +1045,7 @@ PaperStyle *PaperGroup::GetBasePaper(int index)
  * Return 0 for success or nonzero for invalid set of papers.
  * -1 means there are no defined papers.
  *
- * box_ret must NOT be NULL.
+ * box_ret must NOT be nullptr.
  */
 int PaperGroup::FindPaperBBox(Laxkit::DoubleBBox *box_ret)
 {
@@ -1087,8 +1087,8 @@ void PaperGroup::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *conte
 		fprintf(f,"%smarks                 #any optional printer marks for the group\n",spc);
 		fprintf(f,"%s  ...",spc);
 		//fprintf(f,"%s  outlinecolor 65535 0 0 #color of the outline of a paper in the interface\n",spc);
-		PaperStyle paperstyle(NULL,0,0,0,0,"in");
-		paperstyle.dump_out(f,indent+2,-1,NULL);
+		PaperStyle paperstyle(nullptr,0,0,0,0,"in");
+		paperstyle.dump_out(f,indent+2,-1,nullptr);
 		//fprintf(f,"%s  minx 0              #the bounds for the media box\n",spc);
 		//fprintf(f,"%s  miny 0\n",spc);
 		//fprintf(f,"%s  maxx 8.5\n",spc);
@@ -1136,7 +1136,7 @@ void PaperGroup::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *conte
 			objs.dump_in_atts(att->attributes.e[c],flag,context);
 
 		} else if (!strcmp(nme,"paper")) {
-			PaperStyle *paperstyle=new PaperStyle(NULL,0,0,0,0,"in");
+			PaperStyle *paperstyle=new PaperStyle(nullptr,0,0,0,0,"in");
 			paperstyle->dump_in_atts(att->attributes.e[c],flag,context);
 			PaperBox *paperbox=new PaperBox(paperstyle, true);
 			PaperBoxData *boxdata=new PaperBoxData(paperbox);
@@ -1145,7 +1145,7 @@ void PaperGroup::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *conte
 
 			Attribute *foundcolor = att->attributes.e[c]->find("outlinecolor");
 			if (foundcolor) {
-				SimpleColorAttribute(foundcolor->value, NULL, &boxdata->outlinecolor, NULL);
+				SimpleColorAttribute(foundcolor->value, nullptr, &boxdata->outlinecolor, nullptr);
 			} else {
 				boxdata->outlinecolor.rgbf(1.0, 0.0, 1.0);
 			} 
@@ -1163,7 +1163,7 @@ int PaperGroup::AddPaper(const char *nme,double w,double h,const double *m, cons
 		paperstyle = dynamic_cast<PaperStyle*>(paperstyle->duplicate());
 		paperstyle->landscape(landscape);
 	} else {
-		paperstyle = new PaperStyle(nme,w,h,0,72,NULL);
+		paperstyle = new PaperStyle(nme,w,h,0,72,nullptr);
 	}
 	PaperBox *box = new PaperBox(paperstyle, false);
 	paperstyle->dec_count();
@@ -1180,7 +1180,7 @@ int PaperGroup::AddPaper(const char *nme,double w,double h,const double *m, cons
 
 int PaperGroup::AddPaper(double w,double h,double offsetx,double offsety)
 {
-	PaperStyle *paperstyle=new PaperStyle("paper",w,h,0,72,NULL);
+	PaperStyle *paperstyle=new PaperStyle("paper",w,h,0,72,nullptr);
 	PaperBox *box=new PaperBox(paperstyle, false);
 	paperstyle->dec_count();
 

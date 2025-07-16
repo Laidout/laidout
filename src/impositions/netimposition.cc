@@ -18,6 +18,7 @@
 #include "netimposition.h"
 #include "simplenet.h"
 #include "box.h"
+#include "accordion.h"
 #include "../core/stylemanager.h"
 #include <lax/interfaces/pathinterface.h>
 #include <lax/transformmath.h>
@@ -27,11 +28,9 @@
 #include "dodecahedron.h"
 #include "box.h"
 
-#include <iostream>
+#include <lax/debug.h>
+
 using namespace std;
-#define DBG 
-
-
 using namespace Laxkit;
 using namespace LaxInterfaces;
 using namespace Polyptych;
@@ -111,7 +110,7 @@ namespace Laidout {
 NetImposition::NetImposition()
   : Imposition(_("NetImposition"))
 {
-	DBG cerr <<"imposition netimposition init"<<endl;
+	DBGL("imposition netimposition init")
 
 	briefdesc        = nullptr;
 	scalefromnet     = 1;
@@ -265,24 +264,50 @@ ImpositionInterface *NetImposition::Interface()
 //! Static imposition resource creation function.
 ImpositionResource **NetImposition::getDefaultResources()
 {
-	ImpositionResource **r=new ImpositionResource*[3];
+	ObjectDef *accordions = Accordion::GetPresets();
+	int num_accordions = accordions->getNumEnumFields() - 1; // minus one to take out "unknown"
+
+	ImpositionResource **r = new ImpositionResource*[3 + num_accordions];
 	Attribute *att;
 	
-	att=new Attribute;
+	att = new Attribute;
 	att->push("net","dodecahedron");
-	r[0]=new ImpositionResource("NetImposition",     //objectdef
+	r[0] = new ImpositionResource("NetImposition",     //objectdef
 								  _("Dodecahedron"), //name
 								  nullptr,              //file
 								  _("12 pentagons"),
 								  att,1);
-	att=new Attribute;
+	att = new Attribute;
 	att->push("net","cube");
-	r[1]=new ImpositionResource("NetImposition",     //objectdef
+	r[1] = new ImpositionResource("NetImposition",     //objectdef
 								  _("Cube"),         //name
 								  nullptr,              //file
 								  _("6 squares"),
 								  att,1);
-	r[2]=nullptr;
+	
+	// add accordions
+	for (int c = 0; c < num_accordions; c++) {
+		ObjectDef *def = accordions->getField(c+1); //skip "unknown"
+		int id = 0;
+		def->getEnumInfo(c, nullptr, nullptr, nullptr, &id);
+		int p1 = 0, p2 = 0;
+		int num_p = Accordion::NumParams((Accordion::AccordionPresets)id, &p1, &p2);
+
+		att = new Attribute();
+		Attribute *att2 = att->pushSubAtt("generator", "accordion");
+		att2->push("variant", def->name);
+		Utf8String str("params=%d, p1=%d, p2=%d", num_p, p1, p2);
+		att2->push("uihint", str.c_str());
+		att2->push("p1", p1);
+		att2->push("p2", p2);
+		r[2 + c] = new ImpositionResource("NetImposition",     //objectdef
+								  def->Name,
+								  nullptr,
+								  def->description,
+								  att,1);
+	}
+
+	r[2 + num_accordions] = nullptr;
 	return r;
 }
 
@@ -393,7 +418,7 @@ int NetImposition::SetNet(Net *newnet)
 	 // fit to paper
 	//newnet->rebuildLines();  <--shouldn't have to do this
 	newnet->FindBBox();
-	DBG cerr << "NetImposition::SetNet()"<<endl;
+	DBGL("NetImposition::SetNet()")
 	setPage();
 
 	return 0;
@@ -1162,9 +1187,13 @@ void NetImposition::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *co
 void NetImposition::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	if (!att) return;
-	char *name,*value;
-	Net *tempnet=nullptr;
-	int foundscaling=0;
+	char *name, *value;
+	Net *tempnet = nullptr;
+	int foundscaling = 0;
+	bool is_accordion = false;
+	int acc_1 = 0, acc_2 = 0;
+	const char *acc_type = nullptr;
+
 	for (int c=0; c<att->attributes.n; c++) {
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
@@ -1244,15 +1273,45 @@ void NetImposition::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpCon
 				if (abstractnet) abstractnet->dec_count();
 				abstractnet=poly;
 			}
+
+		} else if (!strcmp(name,"generator")) {
+			// this is abbreviated accordion def, like selected from newdoc dialog
+			if (strEquals(value, "accordion", true)) {
+				acc_type = att->attributes.e[c]->findValue("variant");
+				acc_1 = att->attributes.e[c]->findLong("p1");
+				acc_2 = att->attributes.e[c]->findLong("p2");
+				is_accordion = true;
+			}
 		}
 	}
 
-	if (numActiveFaces()==0 && abstractnet) {
-		Net *n=new Net;
-		if (foundscaling) n->info|=NETIMP_AlreadyScaled;
+	if (is_accordion) {
+		ObjectDef *def = Accordion::GetPresets();
+		ObjectDef *edef = def->FindDef(acc_type);
+		int id = strtol(edef->defaultvalue, NULL, 10);
+		Accordion::AccordionPresets preset = (Accordion::AccordionPresets) id;
+		double width = 8.5;
+		double height = 11;
+		PaperStyle *paper = GetDefaultPaper();
+		if (paper) {
+			width  = paper->w();
+			height = paper->h();
+		}
+
+		margin = 0;
+		fit_paper_asymmetric = true;
+		NetImposition *imp = Accordion::Build(preset, width, height, acc_1, acc_2, this);
+		if (!imp) {
+			DBG cerr << " *** error creating Accordion!!"<<endl;
+		}
+	}
+
+	if (numActiveFaces() == 0 && abstractnet) {
+		Net *n = new Net;
+		if (foundscaling) n->info |= NETIMP_AlreadyScaled;
 		n->Basenet(abstractnet);
 		n->TotalUnwrap();
-		n->active=1;
+		n->active = 1;
 		nets.push(n);
 		n->dec_count();
 	}

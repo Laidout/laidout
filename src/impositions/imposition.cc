@@ -26,6 +26,7 @@
 #include <iostream>
 using namespace std;
 #define DBG 
+
 using namespace Laxkit;
 using namespace LaxInterfaces;
 
@@ -922,13 +923,14 @@ ImpositionResource::~ImpositionResource()
 Imposition *ImpositionResource::Create()
 {
 	Imposition *imp = nullptr;
+	Laxkit::Attribute att;
+
 	if (impositionfile) {
 		FILE *f = open_laidout_file_to_read(impositionfile,"Imposition", nullptr);
 		if (!f) return nullptr; //file was bad
 	
-		Laxkit::Attribute att;
 		att.dump_in(f,0,nullptr);
-		if (att.attributes.n!=0 && !strcmp(att.attributes.e[0]->name,"type")) {
+		if (att.attributes.n != 0 && !strcmp(att.attributes.e[0]->name,"type")) {
 			imp = newImpositionByType(att.attributes.e[0]->value);
 			if (imp) imp->dump_in_atts(&att,0,nullptr);
 		}

@@ -147,8 +147,8 @@ int PaperSizeWindow::init()
 	
 	 // -----Paper Size X
 	UnitManager *units = GetUnitManager();
-	sprintf(blah,"%.10g", units->Convert(papertype->w(),UNITS_Inches,laidout->prefs.default_units,nullptr));
-	sprintf(blah2,"%.10g",units->Convert(papertype->h(),UNITS_Inches,laidout->prefs.default_units,nullptr));
+	sprintf(blah,"%.10g", units->Convert(papertype->w(),UNITS_Inches,laidout->prefs.default_units,UNITS_Length));
+	sprintf(blah2,"%.10g",units->Convert(papertype->h(),UNITS_Inches,laidout->prefs.default_units,UNITS_Length));
 
 	AddWin(new MessageBar(this,"paperlabel",nullptr, MB_MOVE, 0,0,0,0,0, _("Paper")), 1, -1);
 		
@@ -171,9 +171,9 @@ int PaperSizeWindow::init()
 	last = popup = new SliderPopup(this,"units",nullptr,SLIDER_POP_ONLY, 0,0, 0,0, 1, last,object_id,"units");
 	char *tmp;
 	int uniti=-1,tid;
-	units->UnitInfo(laidout->prefs.unitname,&uniti,nullptr,nullptr,nullptr,nullptr,nullptr);
+	units->UnitInfo(laidout->prefs.unitname,&uniti,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr);
 	for (int c = 0; c < units->NumberOfUnits(); c++) {
-		units->UnitInfoIndex(c, &tid, nullptr, nullptr, nullptr, &tmp, nullptr);
+		units->UnitInfoIndex(c, &tid, nullptr, nullptr, nullptr, &tmp, nullptr,nullptr);
 		if (uniti == tid) c2 = c;
 		popup->AddItem(tmp, c);
 	}
@@ -303,9 +303,9 @@ int PaperSizeWindow::UsePaper(PaperStyle *paper, bool mod_in_place)
 
 	char num[30];
 	UnitManager *units=GetUnitManager();
-	numtostr(num,30, units->Convert(papertype->w(),UNITS_Inches,cur_units,nullptr),0);
+	numtostr(num,30, units->Convert(papertype->w(),UNITS_Inches,cur_units,UNITS_Length),0);
 	paperx->SetText(num);
-	numtostr(num,30, units->Convert(papertype->h(),UNITS_Inches,cur_units,nullptr),0);
+	numtostr(num,30, units->Convert(papertype->h(),UNITS_Inches,cur_units,UNITS_Length),0);
 	papery->SetText(num);
 
 	UpdatePaperName();
@@ -332,9 +332,9 @@ int PaperSizeWindow::Event(const EventData *data,const char *mes)
 		papertype->landscape(curorientation);
 		char num[30];
 		UnitManager *units=GetUnitManager();
-		numtostr(num,30, units->Convert(papertype->w(),UNITS_Inches,cur_units,nullptr),0);
+		numtostr(num,30, units->Convert(papertype->w(),UNITS_Inches,cur_units, UNITS_Length),0);
 		paperx->SetText(num);
-		numtostr(num,30, units->Convert(papertype->h(),UNITS_Inches,cur_units,nullptr),0);
+		numtostr(num,30, units->Convert(papertype->h(),UNITS_Inches,cur_units, UNITS_Length),0);
 		papery->SetText(num);
 
 		if (send_on_change) send(false);
@@ -369,12 +369,12 @@ int PaperSizeWindow::Event(const EventData *data,const char *mes)
 			double y = papery->GetDouble();
 			double x = y * d1 / d2;
 			paperx->SetText(x);
-			x = units->Convert(x, cur_units, UNITS_Inches, nullptr);
+			x = units->Convert(x, cur_units, UNITS_Inches, UNITS_Length);
 			papertype->w(x);
 		} else {
 			d1 = strtod(s->str, nullptr);
-			if (d1 > 0) papertype->w(units->Convert(d1, cur_units, UNITS_Inches, nullptr));
-			else paperx->SetText(units->Convert(papertype->w(), UNITS_Inches, cur_units, nullptr));
+			if (d1 > 0) papertype->w(units->Convert(d1, cur_units, UNITS_Inches, UNITS_Length));
+			else paperx->SetText(units->Convert(papertype->w(), UNITS_Inches, cur_units, UNITS_Length));
 		}
 
 		// if not currently custom, try to match to a known paper portrait or landscape?
@@ -393,12 +393,12 @@ int PaperSizeWindow::Event(const EventData *data,const char *mes)
 			double x = paperx->GetDouble();
 			double y = x * d2 / d1;
 			papery->SetText(y);
-			y = units->Convert(y, cur_units, UNITS_Inches, nullptr);
+			y = units->Convert(y, cur_units, UNITS_Inches, UNITS_Length);
 			papertype->h(y);
 		} else {
 			d1 = strtod(s->str, nullptr);
-			if (d1 > 0) papertype->h(units->Convert(d1, cur_units, UNITS_Inches, nullptr));
-			else papery->SetText(units->Convert(papertype->h(), UNITS_Inches, cur_units, nullptr));
+			if (d1 > 0) papertype->h(units->Convert(d1, cur_units, UNITS_Inches, UNITS_Length));
+			else papery->SetText(units->Convert(papertype->h(), UNITS_Inches, cur_units, UNITS_Length));
 		}
 
 		// if not currently custom, try to match to a known paper portrait or landscape?
@@ -424,9 +424,9 @@ int PaperSizeWindow::Event(const EventData *data,const char *mes)
 		int   i = s->info1;
 		int   id;
 		char *name;
-		units->UnitInfoIndex(i, &id, nullptr, nullptr, nullptr, &name, nullptr);
-		paperx->SetText(units->Convert(paperx->GetDouble(), cur_units, id, nullptr));
-		papery->SetText(units->Convert(papery->GetDouble(), cur_units, id, nullptr));
+		units->UnitInfoIndex(i, &id, nullptr, nullptr, nullptr, &name, nullptr,nullptr);
+		paperx->SetText(units->Convert(paperx->GetDouble(), cur_units, id, UNITS_Length));
+		papery->SetText(units->Convert(papery->GetDouble(), cur_units, id, UNITS_Length));
 		cur_units = id;
 		//laidout->prefs.default_units = id;
 		//makestr(laidout->prefs.unitname, name);

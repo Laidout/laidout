@@ -15,6 +15,7 @@
 
 #include <lax/colors.h>
 #include <lax/fileutils.h>
+#include <lax/interfaces/somedatafactory.h>
 
 #include "buildicons.h"
 #include "../language.h"
@@ -22,6 +23,7 @@
 #include "../filetypes/image.h"
 #include "../filetypes/svg.h"
 #include "../core/utils.h"
+#include "../dataobjects/limagedata.h"
 
 #include <unistd.h>
 
@@ -30,23 +32,33 @@ using namespace std;
 
 
 using namespace Laxkit;
+using namespace LaxInterfaces;
 
 
 namespace Laidout {
 
 
-/*! \ingroup api */
+/*! \ingroup api
+ *  ```
+ *    BuildIcons(files=[string, string, ...],
+ *               grid_cell_size = (in page units),
+ *               output_px_size = (dim of smallest block),
+ *               [output_dir = (path to save images)],
+ *               [output_list = (SetValue to put LaxImage objects)]
+ *              )
+ *  ```
+ */
 ObjectDef *makeBuildIconsDef()
 {
 	 //define base
-	ObjectDef *sd=new ObjectDef(NULL,"BuildIcons",
+	ObjectDef *sd=new ObjectDef(nullptr,"BuildIcons",
 			_("Build Icons"),
 			_("Build icons from source svg files"),
 			"function",
-			NULL,NULL,
-			NULL,
+			nullptr,nullptr,
+			nullptr,
 			0, //new flags
-			NULL,
+			nullptr,
 			BuildIconsFunction);
 
 	 //define parameters
@@ -54,39 +66,46 @@ ObjectDef *makeBuildIconsDef()
 			_("Source files"),
 			_("Set of source SVG files"),
 			"set",
-			NULL, //range
+			nullptr, //range
 			nullptr,  //defvalue
 			0,    //flags
-			NULL);//newfunc
+			nullptr);//newfunc
 //	sd->push("pattern",
 //			_("Pattern"),
 //			_("Object id pattern"),
 //			"any", //VALUE_DynamicEnum, ***
-//			NULL, //range
-//			NULL,  //defvalue
+//			nullptr, //range
+//			nullptr,  //defvalue
 //			0,    //flags
-//			NULL);//newfunc
+//			nullptr);//newfunc
 	sd->push("grid_cell_size",
 			_("Grid cell size"),
 			_("Grid cell size in page units"),
 			"real",
-			NULL,
+			nullptr,
 			".5",
-			0,NULL);
+			0,nullptr);
 	sd->push("output_px_size",
 			_("Output pixel size"),
 			_("Output pngs will have dimensions in multiples of output_px_size"),
 			"int",
-			NULL,
+			nullptr,
 			"24",
-			0,NULL);
+			0,nullptr);
 	sd->push("output_dir",
 			_("Output directory"),
 			_("Where to put the generated image files."),
 			"File",
-			NULL,
-			NULL,
-			0,NULL);
+			nullptr,
+			nullptr,
+			0,nullptr);
+	sd->push("output_list",
+			_("Output list"),
+			_("List to push image objects onto."),
+			"set",
+			nullptr,
+			nullptr,
+			0,nullptr);
 
 	return sd;
 }
@@ -107,6 +126,7 @@ int BuildIconsFunction(ValueHash *context,
 	tms tms_;
 	clock_t time_start = times(&tms_);
 	SetValue *files = nullptr;
+	SetValue *output_list = nullptr;
 
 	try {
 		if (!parameters) throw _("BuildIcons needs parameters!");
@@ -145,6 +165,12 @@ int BuildIconsFunction(ValueHash *context,
 		} else files->inc_count();
 		if (!files || !files->n()) throw _("Missing file list!");
 
+		//---- output_images_to_list
+		v = parameters->find("output_list");
+		if (v) {
+			output_list = dynamic_cast<SetValue*>(v);
+			if (!output_list) throw _("Wrong format for output_list!");
+		}
 
 		 //----grid_cell_size.... TODO: accept lists
 		int i;
@@ -195,15 +221,19 @@ int BuildIconsFunction(ValueHash *context,
 		//Utf8String output_dir = "./icon-dump-test";
 		Utf8String output_dir;
 		v = parameters->find("output_dir");
-		if (!v) throw _("Missing output_dir!");
-		if (dynamic_cast<StringValue*>(v)) {
-			StringValue *sv = dynamic_cast<StringValue*>(v);
-			output_dir = sv->str;
-		} else if (dynamic_cast<FileValue*>(v)) {
-			FileValue *fv = dynamic_cast<FileValue*>(v);
-			output_dir = fv->filename;
-		} else throw _("Wrong format for output_dir!");
-		if (!output_dir.EndsWith("/")) output_dir.Append("/");
+		if (!v) {
+			if (!output_list) throw _("Missing output target!");
+
+		} else {
+			if (dynamic_cast<StringValue*>(v)) {
+				StringValue *sv = dynamic_cast<StringValue*>(v);
+				output_dir = sv->str;
+			} else if (dynamic_cast<FileValue*>(v)) {
+				FileValue *fv = dynamic_cast<FileValue*>(v);
+				output_dir = fv->filename;
+			} else throw _("Wrong format for output_dir!");
+			if (!output_dir.EndsWith("/")) output_dir.Append("/");
+		}
 
 
 		Utf8String str;
@@ -220,14 +250,14 @@ int BuildIconsFunction(ValueHash *context,
 		PaperGroup *papergroup = new PaperGroup();
 		papergroup->AddPaper(grid_cell_size, grid_cell_size, 0,0);
 		config.papergroup = papergroup;
-		ExportFilter *imagefilter = laidout->FindExportFilter(_("Image"), false); //<- searches by VersionName()
-		if (!imagefilter) throw(_("Could not find image export filter!"));
+		// ExportFilter *imagefilter = laidout->FindExportFilter(_("Image"), false); //<- searches by VersionName()
+		// if (!imagefilter) throw(_("Could not find image export filter!"));
 
 		for (int c=0; !error && c<files->n(); c++) {
 			StringValue *file = dynamic_cast<StringValue*>(files->e(c));
 			if (!file) throw(_("Wrong value format for file!"));
 
-			cout <<"----Parsing file "<<file->str<<endl;
+			cout <<"----BuildIcons Parsing file "<<file->str<<endl;
 
 			output_px_size = px_sizes.e[c];
 
@@ -242,7 +272,7 @@ int BuildIconsFunction(ValueHash *context,
 				throw str.c_str();
 			}
 			
-			if (AddSvgDocument(file->str, log) != 0) {
+			if (AddSvgDocument(file->str, log, nullptr, true) != 0) {
 				str.Sprintf(_("Problem reading svg file %s!"), file->str);
 				throw str.c_str();
 			}
@@ -255,7 +285,7 @@ int BuildIconsFunction(ValueHash *context,
 			doc->inc_count();
 			int nx,ny;
 
-			// method 2, with single large image:
+			// with single large image:
 			// render page once, grab icons off it.. maybe 1 px rounding errors? need testing...
 			int pagew = page->pagestyle->w() / grid_cell_size * output_px_size;
 			int pageh = page->pagestyle->h() / grid_cell_size * output_px_size;
@@ -263,14 +293,10 @@ int BuildIconsFunction(ValueHash *context,
 			// double scx = pagew / page->pagestyle->w();
 			// double scy = pageh / page->pagestyle->h();
 			LaxImage *page_image = page->RenderPage(pagew, pageh, nullptr, true);
+			Utf8String TESTSTR = "TEMP.jpg";
 			// Utf8String TESTSTR = file->str;
 			// TESTSTR.Append(".png");
-			// page_image->Save(TESTSTR.c_str());
-
-			// LaxImage *croptest = page_image->Crop(50,50,100,100, true);
-			// croptest->Save("CROPTESTPLUS.png");
-			// croptest = page_image->Crop(-50,-50,100,100, true);
-			// croptest->Save("CROPTESTMINUS.png");
+			page_image->Save(TESTSTR.c_str());
 
 			// walk through searching for pattern
 			for (int c3=0; c3<pagelayer->n(); c3++) { //for each inkscape "layer"
@@ -311,32 +337,48 @@ int BuildIconsFunction(ValueHash *context,
 
 					//   export
 					Utf8String outfile(output_dir);
-					outfile.Append(obj->Id());
-					outfile.Append(".png");
+					if (!output_dir.IsEmpty()) {
+						outfile.Append(obj->Id());
+						outfile.Append(".png");
+						makestr(config.filename, outfile.c_str());
+					}
 					config.width  = nx * output_px_size;
 					config.height = ny * output_px_size;
-					makestr(config.filename, outfile.c_str());
 
-					if (file_exists(output_dir.c_str(), 1, nullptr) != S_IFDIR) {
-						//note: do this here so directory only gets created if we have an icon to actually make
-						check_dirs(output_dir.c_str(), true, 0700);
-					}
-					cout << "Writing icon: "<<outfile.c_str()<<endl;
-					// //method 1: use image out filter, which rerenders page over and over: ~36 seconds
-					// if (imagefilter->Out(outfile.c_str(), &config, log) != 0) throw _("Error outputting image file!");
-					//method 2: crop down from large single image: ~3 seconds
 					int x = int(outbox.minx / grid_cell_size);
 					int y = int(outbox.miny / grid_cell_size);
-					cout << "x,y: "<<x<<','<<y<<",  w,h: "<<config.width<<" x "<<config.height << endl;
+					// cout << "x,y: "<<x<<','<<y<<",  w,h: "<<config.width<<" x "<<config.height << endl;
+					
 					LaxImage *cropped = page_image->Crop(x * output_px_size, (pagehunits-y-ny) * output_px_size, config.width, config.height, true);
-					cropped->Save(outfile.c_str());
-					cropped->dec_count();
+					cropped->Id(obj->Id());
 
+					if (output_list) {
+						// create an ImageData and add to set
+						LImageData *img = dynamic_cast<LImageData*>(LaxInterfaces::somedatafactory()->NewObject("ImageData"));
+						img->SetImage(cropped, nullptr);
+						img->Id(obj->Id());
+						output_list->Push(img, true);
+						// if (output_dir.IsEmpty()) { cropped->dec_count(); cropped = nullptr; }
+					}
+
+					if (!output_dir.IsEmpty()) {
+						if (file_exists(output_dir.c_str(), 1, nullptr) != S_IFDIR) {
+							//note: do this here so directory only gets created if we have an icon to actually make
+							check_dirs(output_dir.c_str(), true, 0700);
+						}
+						// cout << "Writing icon: "<<outfile.c_str()<<endl;
+						// //method 1: use image out filter, which rerenders page over and over: ~36 seconds
+						// if (imagefilter->Out(outfile.c_str(), &config, log) != 0) throw _("Error outputting image file!");
+						//method 2: crop down from large single image: ~3 seconds
+						cropped->Save(outfile.c_str());
+					}
+					
+					cropped->dec_count();
 					numhits++;
 				}
 			}
 
-			// remove file
+			// remove temporary document.. todo: you shouldn't have to add a fake document to do this!!
 			laidout->project->Pop(doc);
 			doc = nullptr;
 		}
@@ -345,14 +387,14 @@ int BuildIconsFunction(ValueHash *context,
 		if (doc) laidout->project->Pop(doc);
 		if (files) files->dec_count();
 		log.AddMessage(error,ERROR_Fail);
-		if (value_ret) *value_ret=NULL;
+		if (value_ret) *value_ret = nullptr;
 		return 1;
 	}
 	
 	if (files) files->dec_count();
 	time_start = times(&tms_) - time_start;
 	cout << "Generated "<<numhits<<" icons in "<< (time_start / (float)sysconf(_SC_CLK_TCK)) <<" seconds."<<endl;
-	if (value_ret) *value_ret=NULL;
+	if (value_ret) *value_ret = nullptr;
 	return 0;
 }
 

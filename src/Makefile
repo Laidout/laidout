@@ -189,6 +189,7 @@ otherobjs= \
 	ui/headwindow.o \
 	ui/helpwindow.o \
 	ui/importimagesdialog.o \
+	ui/impositionselectwindow.o \
 	ui/interfaces.o \
 	ui/metawindow.o \
 	ui/newdoc.o \

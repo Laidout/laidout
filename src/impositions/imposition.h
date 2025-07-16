@@ -216,7 +216,7 @@ class ImpositionResource
 	char *description;
 	char *objectdef;
 	Laxkit::Attribute *config;
-	char configislocal;
+	bool configislocal;
 	ImpositionResource(const char *sdef,const char *nname, const char *file, const char *desc,
 					   Laxkit::Attribute *conf,int local);
 	~ImpositionResource();
