@@ -170,6 +170,7 @@ class ImportConfig : public Value
 	Group *toobj;
 	ImportFilter *filter;
 	double dpi;
+	bool no_new_windows;
 
 	ImportConfig();
 	ImportConfig(const char *file, double ndpi, int ins, int ine, int top, int spr, int lay,

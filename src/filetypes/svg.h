@@ -29,7 +29,7 @@ void installSvgFilter();
 
 
 //------------------------ Svg in/reimpose/out helpers -------------------------------------
-int AddSvgDocument(const char *file, Laxkit::ErrorLog &log, Document *existingdoc = nullptr);
+int AddSvgDocument(const char *file, Laxkit::ErrorLog &log, Document *existingdoc = nullptr, bool no_new_windows = false);
 
 
 //------------------------------------ SvgExportConfig ----------------------------------

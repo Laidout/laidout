@@ -80,7 +80,7 @@ int ObjOnPaperTest(DrawableObject *obj, PaperGroup *papergroup);
  * pushed onto the project, as it is assumed it is elsewhere. Note that this will
  * basically wipe the existing document, and replace with the Svg document.
  */
-int AddSvgDocument(const char *file, Laxkit::ErrorLog &log, Document *existingdoc)
+int AddSvgDocument(const char *file, Laxkit::ErrorLog &log, Document *existingdoc, bool no_new_windows)
 {
 	FILE *f = fopen(file,"r");
 	if (!f) {
@@ -99,6 +99,7 @@ int AddSvgDocument(const char *file, Laxkit::ErrorLog &log, Document *existingdo
 
 	SvgImportFilter filter; //todo: this should be grabbed from somewhere in case users replace default svg importer
 	ImportConfig config(file,300, 0,-1, 0,-1,-1, existingdoc,nullptr);
+	config.no_new_windows = no_new_windows;
 	config.keepmystery = 0;
 	config.filter = &filter;
 
@@ -1748,7 +1749,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 
 	//set default units for use later in Inkscape
 	char *units = nullptr;
-	GetUnitManager()->UnitInfoId(laidout->prefs.default_units, nullptr, &units,nullptr,nullptr,nullptr);
+	GetUnitManager()->UnitInfoId(laidout->prefs.default_units, nullptr, &units,nullptr,nullptr,nullptr,nullptr);
 
 	// write namedview
 	fprintf(f,"  <sodipodi:namedview\n"
@@ -2272,7 +2273,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 				while (isalpha(*endptr)) endptr++;
 				int units = unitm->UnitId(ptr, endptr-ptr);
 				double raw_width = width;
-				if (units != UNITS_None) width = unitm->Convert(width, units, UNITS_Inches, nullptr);
+				if (units != UNITS_None) width = unitm->Convert(width, units, UNITS_Inches, UNITS_Length, nullptr);
 				scalex = width / raw_width;
 
 			} else {
@@ -2298,7 +2299,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 					while (isalpha(*endptr)) endptr++;
 					int units = unitm->UnitId(ptr, endptr-ptr);
 					double raw_height = height;
-					if (units != UNITS_None) height = unitm->Convert(height, units, UNITS_Inches, nullptr);
+					if (units != UNITS_None) height = unitm->Convert(height, units, UNITS_Inches, UNITS_Length, nullptr);
 					scaley = height / raw_height;
 
 				} else {
@@ -2616,7 +2617,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 		// if doc is new, push into the project
 		if (doc && doc != in->doc) {
 			laidout->project->Push(doc);
-			laidout->app->addwindow(newHeadWindow(doc));
+			if (!in->no_new_windows) laidout->app->addwindow(newHeadWindow(doc));
 		}
 
 		//fix clone transform complications
@@ -4227,7 +4228,7 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 							UnitManager *unitm = GetUnitManager();
 							int units = unitm->UnitId(v);
 							if (units != UNITS_None && units != UNITS_em) {
-								ems = unitm->Convert(ems, units, UNITS_em, nullptr);
+								ems = unitm->Convert(ems, units, UNITS_em, UNITS_Length, nullptr);
 							}
 						}
 					}

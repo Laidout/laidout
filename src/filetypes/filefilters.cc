@@ -447,6 +447,7 @@ ImportConfig::ImportConfig()
 	filter      = nullptr;
 	dpi         = 300;
 	topage = spread = layout = -1;
+	no_new_windows = false;
 
 	range.parse_from_one = true;
 }
@@ -468,6 +469,7 @@ ImportConfig::ImportConfig(const char *file, double ndpi, int ins, int ine, int 
 	toobj       = nobj;
 	filter      = nullptr;
 	if (dpi > 0) dpi = ndpi; else dpi = 300;
+	no_new_windows = false;
 
 	range.parse_from_one = true;
 	if (ins >= 0 && ine < 0) range.AddRange(ins,ins);
