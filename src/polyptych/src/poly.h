@@ -39,6 +39,8 @@ class Edge
 	int p1,p2; //index in Polyhedron::vertices
 	int f1,f2; //index in Polyhedron::faces
 	int info = 0;
+	bool is_seam = false; // for unwrapping
+	bool is_cut = false;
 
 	Edge(void) { p1=p2=0; f1=f2=-1; }
 	Edge(int x, int y,int f=-1,int g=-1) {p1=x; p2=y; f1=f; f2=g; }
@@ -77,9 +79,11 @@ class Face
  public:
 	int pn; // number of edges/points
 	int *p; // list of vertices
-	int *f,*v;  // Face, vert labels (not edges yet)
+	int *f; // face connections
+	int *v; // vert labels (not edges yet)
 	double *dihedral;
-	int planeid,setid;
+	int planeid;
+	int setid;
 	int facegroupid;
 	char *label;
 	ExtraFace *cache;
@@ -157,7 +161,7 @@ class Polyhedron :
 	virtual ~Polyhedron();
 	virtual const char *whattype() { return "Polyhedron"; }
 
-	 //low level management functions
+	// low level management functions
 	virtual void clear();
 	int validate();
 	void connectFaces();
@@ -166,7 +170,7 @@ class Polyhedron :
 	void applysets();
 	virtual int AddToSet(int face, int set, const char *newsetname);
 
-	 //informational functions
+	// informational functions
 	Laxkit::spacepoint CenterOfFace(int,int cache=0);
 	Laxkit::spacevector VertexOfFace(int fce, int pt, int cache);
 	Pgon FaceToPgon(int n,char useplanes);
@@ -178,13 +182,16 @@ class Polyhedron :
 	double angle(int a, int b,int dec=0); //uses planes, not faces
 
 
-	 //building functions
+	// building functions
 	virtual int AddPoint(Laxkit::spacepoint p);
 	virtual int AddPoint(double x,double y,double z);
 	virtual int AddFace(const char *str);
 	virtual int AddFace(int n, ...);
 	virtual void BuildExtra(); //create face cache
-	virtual bool SetEdgeInfo(int v1, int v2, int info);
+	virtual int FindEdge(int v1, int v2, int *dir_ret = nullptr);
+	virtual bool SetEdgeInfo(int v1, int v2, int info,  bool add_if_not_exists = true);
+	virtual bool SetEdgeSeam(int v1, int v2, bool seam, bool add_if_not_exists = true);
+	virtual bool SetEdgeCut (int v1, int v2, bool cut,  bool add_if_not_exists = true);
 	virtual ExtraFace *newExtraFace();
 	virtual void collapseVertices(double zero, int vstart=-1, int vend=-1);
 	virtual void MergeFaces(int face1, int edge);
@@ -197,6 +204,7 @@ class Polyhedron :
 	virtual int dumpInFile(const char *file, char **error_ret);
 	virtual int dumpInOFF(FILE *f,char **error_ret);
 	virtual int dumpInObj(FILE *f,char **error_ret);
+	virtual int dumpInFold(FILE *f,char **error_ret);
 
 	virtual const char *OutFileFormats();
 	virtual int dumpOutFile(const char *file, const char *format,char **error_ret);
@@ -205,8 +213,9 @@ class Polyhedron :
 	virtual int dumpOutVrml(FILE *f,char **error_ret);
 	virtual int dumpOutGlb(FILE *f,char **error_ret);
 	virtual int dumpOutGltfJson(FILE *f,char **error_ret, long binlength, const char *binfile);
+	virtual int dumpOutFold(FILE *f,char **error_ret);
 
-	 //Abstract net functions
+	// Abstract net functions
 	virtual NetFace *GetFace(int i,double scaling);
 	virtual int NumFaces();
 	virtual const char *Filename();

@@ -747,23 +747,83 @@ int Polyhedron::makeedges()
 	return 1;
 }
 
-/*! Return true for success, else false for edge not found. */
-bool Polyhedron::SetEdgeInfo(int v1, int v2, int info)
+/*! Return the index of edge that has v1 and v2, or -1 if not found.
+ * If dir_ret, return 1 in dir_ret if edge runs v1 to v2, else -1 if v2 to v1, or 0 if edge not found.
+ */
+int Polyhedron::FindEdge(int v1, int v2, int *dir_ret)
+{
+	if (v1 < 0 || v1 >= vertices.n || v2 < 0 || v2 >= vertices.n) {
+		if (dir_ret) *dir_ret = 0;
+		return -1;
+	}
+	for (int c = 0; c < edges.n; c++) {
+		if ((edges.e[c]->p1 == v1 && edges.e[c]->p2 == v2)) {
+			if (dir_ret) *dir_ret = 1;
+			return c;
+		} else if (edges.e[c]->p1 == v2 && edges.e[c]->p2 == v1) {
+			if (dir_ret) *dir_ret = -1;
+			return c;
+		}
+	}
+
+	if (dir_ret) *dir_ret = 0;
+	return -1;
+}
+
+/*! Return true for success. Edge is created if it doesn't exist. Else false for bad vertex indices. */
+bool Polyhedron::SetEdgeInfo(int v1, int v2, int info, bool add_if_not_exists)
 {
 	if (v1 < 0 || v1 >= vertices.n || v2 < 0 || v2 >= vertices.n) return false;
 
-	int c;
-	for (c = 0; c < edges.n; c++) {
-		if ((edges.e[c]->p1 == v1 && edges.e[c]->p2 == v2) || (edges.e[c]->p1 == v2 && edges.e[c]->p2 == v1)) {
-			edges.e[c]->info = info;
-			break;
+	int ei = FindEdge(v1,v2);
+	if (ei < 0) {
+		if (add_if_not_exists) {
+			Edge *e = new Edge(v1,v2);
+			edges.push(e);
+			ei = edges.n-1;
+		} else {
+			return false;
 		}
 	}
-	if (c == edges.n-1) {
-		Edge *e = new Edge(v1,v2);
-		e->info = info;
-		edges.push(e);
+	edges.e[ei]->info = info;
+	return true;
+}
+
+/*! Return true for success. Edge is created if it doesn't exist. Else false for bad vertex indices. */
+bool Polyhedron::SetEdgeSeam(int v1, int v2, bool seam, bool add_if_not_exists)
+{
+	if (v1 < 0 || v1 >= vertices.n || v2 < 0 || v2 >= vertices.n) return false;
+
+	int ei = FindEdge(v1,v2);
+	if (ei < 0) {
+		if (add_if_not_exists) {
+			Edge *e = new Edge(v1,v2);
+			edges.push(e);
+			ei = edges.n-1;
+		} else {
+			return false;
+		}
 	}
+	edges.e[ei]->is_seam = seam;
+	return true;
+}
+
+/*! Return true for success. Edge is created if it doesn't exist. Else false for bad vertex indices. */
+bool Polyhedron::SetEdgeCut(int v1, int v2, bool cut, bool add_if_not_exists)
+{
+	if (v1 < 0 || v1 >= vertices.n || v2 < 0 || v2 >= vertices.n) return false;
+
+	int ei = FindEdge(v1,v2);
+	if (ei < 0) {
+		if (add_if_not_exists) {
+			Edge *e = new Edge(v1,v2);
+			edges.push(e);
+			ei = edges.n-1;
+		} else {
+			return false;
+		}
+	}
+	edges.e[ei]->is_cut = cut;
 	return true;
 }
 
@@ -1057,10 +1117,10 @@ int Polyhedron::AddPoint(double x,double y,double z)
  */
 int Polyhedron::AddFace(const char *str)
 {
-	Face *f=new Face();
-	IntListAttribute(str,&f->p,&f->pn);
-	f->v=new int[f->pn];
-	f->f=new int[f->pn];
+	Face *f = new Face();
+	IntListAttribute(str, &f->p, &f->pn);
+	f->v = new int[f->pn];
+	f->f = new int[f->pn];
 	for (int c=0; c<f->pn; c++) { f->v[c]=f->f[c]=-1; }
 	faces.push(f,1);
 	return 0;
@@ -1158,7 +1218,7 @@ void Polyhedron::dump_out(FILE *ff,int indent,int what,Laxkit::DumpContext *cont
 		fprintf(ff,"%s   1 0 0    #the 1st vertex\n",spc);
 		fprintf(ff,"%s   0 1 0    #etc\n",spc);
 		fprintf(ff,"%s   0 0 1\n",spc);
-		fprintf(ff,"%sedge 0 1    #an edge connected those vertices. optional, generated automatically\n",spc);
+		fprintf(ff,"%sedge 0 1 0 1 1   # v1 v2 info is_seam is_cut. optional, generated automatically if not provided\n",spc);
 		fprintf(ff,"%sface 0 1 2  #a face, defined by connected vertices 0, 1, and 2\n",spc);
 		fprintf(ff,"%sset \"Some set name\"  #extra information for grouping faces\n",spc);
 		fprintf(ff,"%s  faces 0 1  #which faces are in the set (number is order they appear in file)\n",spc);
@@ -1184,7 +1244,8 @@ void Polyhedron::dump_out(FILE *ff,int indent,int what,Laxkit::DumpContext *cont
 	if (edges.n) { 	
 		fprintf(ff,"%s #%d edges\n",spc,edges.n);
 		for (c=0; c<edges.n; c++) {
-			fprintf(ff,"%sedge %d %d #%d\n",spc,edges.e[c]->p1,edges.e[c]->p2,c);
+			fprintf(ff,"%sedge %d %d %d %s %s #%d\n",spc,
+				edges.e[c]->p1, edges.e[c]->p2, edges.e[c]->info, edges.e[c]->is_seam ? "true" : "false", edges.e[c]->is_cut ? "true" : "false", c);
 		}
 	}
 	if (faces.n) { 
@@ -1281,9 +1342,15 @@ void Polyhedron::dump_in_atts(Attribute *att,int what,Laxkit::DumpContext *conte
 			}
 
 		} else if (!strcmp(nme,"edge")) {
-			int i[2];
-			n=IntListAttribute(value,i,2);
-			if (n==2) edges.push(new Edge(i[0],i[1]));
+			int i[5];
+			n = IntListAttribute(value,i,5);
+			if (n >=2 ) {
+				Edge *e = new Edge(i[0],i[1]);
+				if (n >= 3) e->info    = i[2];
+				if (n >= 4) e->is_seam = i[3];
+				if (n >= 5) e->is_cut  = i[4];
+				edges.push(e);
+			}
 
 		} else if (!strcmp(nme,"face")) {
 			Face *newface=new Face();
@@ -1914,6 +1981,19 @@ int Polyhedron::dumpInFile(const char *file, char **error_ret)
 	return c | !filefound;
 }
 
+int Polyhedron::dumpInFold(FILE *f,char **error_ret)
+{
+	DBGE("IMPLEMENT ME!!")
+	return 1;
+}
+
+int Polyhedron::dumpOutFold(FILE *f,char **error_ret)
+{
+	DBGE("IMPLEMENT ME!!")
+	return 1;
+}
+
+
 //--------------AbstractNet methods:
 
 //! Just return filename.
@@ -1931,34 +2011,41 @@ int Polyhedron::dumpOutNet(FILE *f,int indent,int what)
 
 int Polyhedron::NumFaces() { return faces.n; }
 
-//! Returns a new NetFace object for face i.
+//! From AbstractNet, returns a new NetFace object for face i.
 /*! \todo if face normals are not defined properly, this may not work as expected.
  */
-NetFace *Polyhedron::GetFace(int i,double scaling)
+NetFace *Polyhedron::GetFace(int i, double scaling)
 {
-	if (i<0 || i>=faces.n) return nullptr;
+	if (i < 0 || i >= faces.n) return nullptr;
 
 	NetFaceEdge *e;
-	NetFace *f=new NetFace();
-	f->original=i;
+	NetFace *f = new NetFace();
+	f->original = i;
 
-	Pgon pgon=FaceToPgon(i,0); //generate flattened face
-	for (int c=0; c<faces.e[i]->pn; c++) {
-		e=new NetFaceEdge();
-		e->id=c;
-		e->tooriginal=faces.e[i]->f[c]; //edge connects to which face
-		e->toface=-1;
+	Pgon pgon = FaceToPgon(i,0); //generate flattened face
+	for (int c = 0; c < faces.e[i]->pn; c++) {
+		e = new NetFaceEdge();
+		e->id = c;
+		e->tooriginal = faces.e[i]->f[c]; //edge connects to which face
+		e->toface = -1;
+
 
 		 //find edge of the face this edge connects to
-		if (e->tooriginal>=0) {
-			for (int c2=0; c2<faces.e[e->tooriginal]->pn; c2++) {
-				if (faces.e[e->tooriginal]->f[c2]==i) {
-					e->tofaceedge=c2;
+		if (e->tooriginal >= 0) {
+			for (int c2 = 0; c2 < faces.e[e->tooriginal]->pn; c2++) {
+				if (faces.e[e->tooriginal]->f[c2] == i) {
+					e->tofaceedge = c2;
 					break;
 				}
 			}
 		}
-		e->points=new LaxInterfaces::Coordinate(pgon.p[c].x*scaling, pgon.p[c].y*scaling);
+
+		int he = FindEdge(faces.e[i]->p[c], faces.e[i]->p[(c+1) % faces.e[i]->pn]);
+		if (he >= 0) {
+			e->info = edges.e[he]->info;
+		}
+
+		e->points = new LaxInterfaces::Coordinate(pgon.p[c].x*scaling, pgon.p[c].y*scaling);
 		f->edges.push(e,1);
 	}
 	return f;

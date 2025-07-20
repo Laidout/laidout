@@ -891,13 +891,14 @@ Spread *Imposition::SingleLayout(int whichpage)
 
 /*! If local!=0, then delete the Attribute in the destructor.
  */
-ImpositionResource::ImpositionResource(const char *sdef,const char *nname, const char *file, const char *desc,
+ImpositionResource::ImpositionResource(const char *sdef,const char *nname, const char *file, const char *desc, const char *iconkey,
 					   				   Laxkit::Attribute *conf,int local)
 {
 	objectdef      = newstr(sdef);
 	name           = newstr(nname);
 	impositionfile = newstr(file);
 	description    = newstr(desc);
+	icon_key       = newstr(iconkey);
 	config         = conf;
 	configislocal  = local;
 }
@@ -908,6 +909,7 @@ ImpositionResource::~ImpositionResource()
 	delete[] name;
 	delete[] impositionfile;
 	delete[] description;
+	delete[] icon_key;
 	if (configislocal && config) delete config;
 }
 
@@ -944,6 +946,17 @@ Imposition *ImpositionResource::Create()
 
 	if (config && imp) imp->dump_in_atts(config,0,nullptr);
 	return imp;
+}
+
+Attribute *ImpositionResource::UIHint()
+{
+	if (!config) return nullptr;
+	Attribute *att = config->find("uihint");
+	if (!att) {
+		att = config->find("generator");
+		if (att) att->find("uihint");
+	}
+	return att;
 }
 
 } // namespace Laidout

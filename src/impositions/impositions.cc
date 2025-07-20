@@ -60,14 +60,14 @@ namespace Laidout {
  */
 Imposition *newImpositionByResource(const char *impos)
 {
-	if (!impos) return NULL;
+	if (!impos) return nullptr;
 	int c;
 	for (c=0; c<laidout->impositionpool.n; c++) {
 		if (!strcmp(impos,laidout->impositionpool.e[c]->name)) {
 			return laidout->impositionpool.e[c]->Create();
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 //! Return a new Imposition instance that is like the imposition resource named impos.
@@ -85,7 +85,7 @@ Imposition *newImpositionByType(const char *impos)
 	if (!strcmp(impos,"NetImposition")) return new NetImposition;
 	if (!strcmp(impos,"SignatureImposition")) return new SignatureImposition;
 
-	return NULL;
+	return nullptr;
 }
 
 //! For file format dump, write out type definitions for Singles, NetImposition, and SignatureImposition.
@@ -97,15 +97,15 @@ void dumpOutImpositionTypes(FILE *f,int indent)
 
 	Singles singles;
 	fprintf(f,"\n%simposition Singles\n",spc);
-	singles.dump_out(f,indent+2,-1,NULL);
+	singles.dump_out(f,indent+2,-1,nullptr);
 
 	SignatureImposition sig;
 	fprintf(f,"\n%simposition SignatureImposition\n",spc);
-	sig.dump_out(f,indent+2,-1,NULL);
+	sig.dump_out(f,indent+2,-1,nullptr);
 
 	NetImposition net;
 	fprintf(f,"\n%simposition NetImposition\n",spc);
-	net.dump_out(f,indent+2,-1,NULL);
+	net.dump_out(f,indent+2,-1,nullptr);
 }
 
 //--------------------------------- GetBuiltinImpositionPool -------------------------------------
@@ -113,7 +113,7 @@ void dumpOutImpositionTypes(FILE *f,int indent)
 //! Return a stack of defined impositions.
 /*! \ingroup pools
  * 
- * If existingpool==NULL, then return a new pool. Otherwise, add to it.
+ * If existingpool==nullptr, then return a new pool. Otherwise, add to it.
  */
 PtrStack<ImpositionResource> *GetBuiltinImpositionPool(PtrStack<ImpositionResource> *existingpool)
 {
@@ -190,9 +190,9 @@ int AddToImpositionPool(PtrStack<ImpositionResource> *existingpool, const char *
 	DIR *dir=opendir(directory);
 	if (!dir) return 0;
 
-	char *str=NULL;
+	char *str=nullptr;
 	struct dirent *entry;
-	char *name=NULL,*desc=NULL,*temp=NULL;
+	char *name=nullptr,*desc=nullptr,*temp=nullptr;
 	int numadded=0;
 
 	do {
@@ -203,7 +203,7 @@ int AddToImpositionPool(PtrStack<ImpositionResource> *existingpool, const char *
 
 		if (str) delete[] str;
 		str=full_path_for_file(entry->d_name, directory);
-		FILE *f=open_laidout_file_to_read(str,"Imposition",NULL);
+		FILE *f=open_laidout_file_to_read(str,"Imposition",nullptr);
 		if (!f) {
 			cerr << " Warning! Non imposition file in imposition resource directory " <<endl
 				 << "   file: "<<entry->d_name<<"   directory: "<<directory<<endl;
@@ -220,17 +220,18 @@ int AddToImpositionPool(PtrStack<ImpositionResource> *existingpool, const char *
 			}
 		}
 		numadded++;
-		existingpool->push(new ImpositionResource(NULL,   //styledef name
-												  name?name:temp,//instance name
-												  str,    //filename
-												  desc,//desc
-												  NULL,0) //attribute
+		existingpool->push(new ImpositionResource(nullptr,    // styledef name
+												  name ? name : temp, // instance name
+												  str,     // filename
+												  desc,    // desc
+												  nullptr, // icon key
+												  nullptr,0)  // attribute
 						  );
 		DBG cerr <<"2"<<endl;
 
-		if (temp) { delete[] temp; temp=NULL; }
-		if (name) { delete[] name; name=NULL; }
-		if (desc) { delete[] desc; desc=NULL; }
+		if (temp) { delete[] temp; temp = nullptr; }
+		if (name) { delete[] name; name = nullptr; }
+		if (desc) { delete[] desc; desc = nullptr; }
 		fclose(f);
 		DBG cerr <<"3"<<endl;
 	} while (entry);

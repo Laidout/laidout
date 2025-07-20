@@ -215,12 +215,14 @@ class ImpositionResource
 	char *impositionfile;
 	char *description;
 	char *objectdef;
+	char *icon_key = nullptr;
 	Laxkit::Attribute *config;
 	bool configislocal;
-	ImpositionResource(const char *sdef,const char *nname, const char *file, const char *desc,
+	ImpositionResource(const char *sdef,const char *nname, const char *file, const char *desc, const char *iconkey,
 					   Laxkit::Attribute *conf,int local);
 	~ImpositionResource();
 	Imposition *Create();
+	Laxkit::Attribute *UIHint();
 };
 
 

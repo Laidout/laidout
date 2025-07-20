@@ -15,10 +15,12 @@
 
 #include <lax/utf8string.h>
 #include <lax/iconmanager.h>
+#include <lax/language.h>
 
 #include "impositionselectwindow.h"
 #include "../api/buildicons.h"
 #include "../configured.h"
+#include "../laidout.h"
 
 #include <lax/debug.h>
 
@@ -30,13 +32,14 @@ using namespace LaxInterfaces;
 namespace Laidout {
 
 
-ImpositionSelectWindow::ImpositionSelectWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle)
+ImpositionSelectWindow::ImpositionSelectWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle, unsigned long owner, const char *msg)
   : InterfaceWindow(parnt, nname, ntitle, nstyle,
 						0,0,0,0, 2,
-						nullptr, 0, nullptr, //Laxkit::anXWindow *prev, unsigned long nowner, const char *nsend,
+						nullptr, owner, msg, //Laxkit::anXWindow *prev, unsigned long nowner, const char *nsend,
 						nullptr, false)
 {
-	ginterface = new GridSelectInterface(nullptr, -1, nullptr);
+	ginterface = new GridSelectInterface(nullptr, -1, nullptr, owner, msg);
+	ginterface->select_type = LAX_ONE_ONLY;
 	SetInterface(ginterface);
 
 	InstallDefaultList();
@@ -49,6 +52,13 @@ void ImpositionSelectWindow::ColorsFromTheme()
 	ginterface->color_normal = win_themestyle->fg.Lerp(win_themestyle->bg, .9);
 	ginterface->color_selected = win_themestyle->fg.Lerp(win_themestyle->bg, .5);
 }
+
+//todo: coordinate with newdoc
+#define IMP_NEW_SINGLES    10000
+#define IMP_NEW_SIGNATURE  10001
+#define IMP_NEW_NET        10002
+#define IMP_FROM_FILE      10003
+#define IMP_CURRENT        10004
 
 /*! Parse the icons from impositions.svg.
  * Return true for things parsed, else false.
@@ -78,17 +88,31 @@ bool ImpositionSelectWindow::InstallDefaultList()
 	params.push("output_list", &list);
 
 	ErrorLog log;
-	int status = BuildIconsFunction(context, &params, &ret, log);
+	BuildIconsFunction(context, &params, &ret, log);
 
 	MenuInfo *menu = new MenuInfo;
-	if (status == 0) {
-		for (int c = 0; c < list.n(); c++) {
-			ImageData *data = dynamic_cast<ImageData*>(list.e(c));
-			LaxImage *img = data->image;
-			menu->AddItem(data->Id(), 0, 0, img);
-			img->inc_count(); //todo: should probably make the AddItem inc or absorb but that's too much work at the moment
-		}
+	ImageData *data = dynamic_cast<ImageData*>(list.FindID("NewSingles"));
+	menu->AddItem(_("New Singles"), IMP_NEW_SINGLES, 0, data ? data->image : nullptr);
+	if (data) data->image->inc_count();
+
+	data = dynamic_cast<ImageData*>(list.FindID("NewSignature"));
+	menu->AddItem(_("New Signature"), IMP_NEW_SIGNATURE, 0, data ? data->image : nullptr);
+	if (data) data->image->inc_count();
+
+	data = dynamic_cast<ImageData*>(list.FindID("NewNet"));
+	menu->AddItem(_("New Net"), IMP_NEW_NET, 0, data ? data->image : nullptr);
+	if (data) data->image->inc_count();
+
+	data = dynamic_cast<ImageData*>(list.FindID("FromFile"));
+	menu->AddItem(_("From file..."), IMP_FROM_FILE, 0, data ? data->image : nullptr);
+	if (data) data->image->inc_count();
+
+	for (int c = 0; c < laidout->impositionpool.n; c++) {
+		data = dynamic_cast<ImageData*>(list.FindID(laidout->impositionpool.e[c]->icon_key));
+		menu->AddItem(laidout->impositionpool.e[c]->name, c, 0, data ? data->image : nullptr);
+		if (data) data->image->inc_count();
 	}
+
 	ginterface->UseThisMenu(menu);
 	menu->dec_count();
 
@@ -100,6 +124,10 @@ ImpositionSelectWindow::~ImpositionSelectWindow()
 
 }
 
+bool ImpositionSelectWindow::Select(int id)
+{
+	return ginterface->Select(id);
+}
 
 int ImpositionSelectWindow::init()
 {

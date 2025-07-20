@@ -96,6 +96,7 @@ ImpositionResource **Singles::getDefaultResources()
 								  _("Singles"),
 								  NULL,
 								  _("Single pages per paper"),
+								  "Singles",
 								  NULL,0);
 	r[1] = NULL;
 	return r;

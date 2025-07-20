@@ -2465,6 +2465,7 @@ ImpositionResource **SignatureImposition::getDefaultResources()
 								  _("Double Sided Singles"),
 								  NULL,
 								  _("Imposition of single pages meant to be next to each other"),
+								  "DoubleSidedSingles",
 								  att,1);
 
 	att=new Attribute;
@@ -2482,6 +2483,7 @@ ImpositionResource **SignatureImposition::getDefaultResources()
 								  _("Booklet"),
 								  NULL,
 								  _("Imposition for a stack of sheets, folded down the middle"),
+								  "Booklet",
 								  att,1);
 	r[2]=NULL;
 	return r;

@@ -23,6 +23,7 @@
 #include <lax/messagebar.h>
 
 #include "../laidout.h"
+#include "impositionselectwindow.h"
 #include "../core/papersizes.h"
 #include "papersizewindow.h"
 
@@ -52,6 +53,7 @@ class NewDocWindow : public Laxkit::RowFrame
 	Laxkit::LineInput *saveas,*numpages,*impfromfile;
 	Laxkit::MessageBar *impmesbar, *pageinfo;
 	Laxkit::CheckBox *defaultpage,*custompage;
+	ImpositionSelectWindow *imps = nullptr;
 
  	NewDocWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 			int xx,int yy,int ww,int hh,int brder,Document *ndoc=NULL);

@@ -124,7 +124,7 @@ ObjectDef *Accordion::GetPresets()
 	def->pushEnumValue("DoubleParallel",_("DoubleParallel"), _("fold in half from r, then fold in half again")                , DoubleParallel );
 	def->pushEnumValue("MapNxM",        _("MapNxM"),         _("A generic N x M grid of pages")                               , MapNxM         );
 	def->pushEnumValue("EasyZine",      _("EasyZine"),       _("4x2, with cut in the middle. Same as Accordion2xN with n=4")  , EasyZine       );
-	def->pushEnumValue("Accordion",     _("Accordion1xN"),   _("1 x n accordion. Not even numbers fold out nicely.")          , Accordion1xN   );
+	def->pushEnumValue("Accordion1xN",  _("Accordion1xN"),   _("1 x n accordion. Not even numbers fold out nicely.")          , Accordion1xN   );
 	def->pushEnumValue("Accordion2xN",  _("Accordion2xN"),   _("n is even. fold in half vertically, cut across middle panels"), Accordion2xN   );
 	def->pushEnumValue("Accordion4x4",  _("Accordion4x4"),   _("4x4, but partial cuts from left, right, left")                , Accordion4x4   );
 	def->pushEnumValue("AccordionNxM",  _("AccordionNxM"),   _("zig zagging accordion, n and m must be even")                 , AccordionNxM   );
@@ -150,7 +150,7 @@ int Accordion::NumParams(AccordionPresets type, int *default_1_ret, int *default
 		case Accordion1xN:   if (default_1_ret) { *default_1_ret = 4; *default_2_ret = 1; } return 1;
 		case Accordion2xN:   if (default_1_ret) { *default_1_ret = 4; *default_2_ret = 2; } return 2;
 		case Accordion4x4:   if (default_1_ret) { *default_1_ret = 4; *default_2_ret = 4; } return 0;
-		case AccordionNxM:   if (default_1_ret) { *default_1_ret = 5; *default_2_ret = 5; } return 2;
+		case AccordionNxM:   if (default_1_ret) { *default_1_ret = 6; *default_2_ret = 4; } return 2;
 		case DoubleParallel: if (default_1_ret) { *default_1_ret = 4; *default_2_ret = 1; } return 0;
 		case MapNxM:         if (default_1_ret) { *default_1_ret = 4; *default_2_ret = 3; } return 0;
 		case Miura:          if (default_1_ret) { *default_1_ret = 7; *default_2_ret = 5; } return 2;
@@ -185,7 +185,7 @@ NetImposition *Accordion::Build(AccordionPresets preset, double paper_width, dou
 			return BuildAccordion1xN(4, false, paper_width, paper_height, DoubleGate, existing_netimp);
 
 		case Roll: // 4 panel, fold in from R, again from r, then l
-			return BuildAccordion1xN(config1, false, paper_width, paper_height, Roll, existing_netimp);
+			return BuildAccordion1xN(4, false, paper_width, paper_height, Roll, existing_netimp);
 
 		case EasyZine: // 2x4, with cut in the middle. Same as Accordion2xN with n=4
 			return BuildEasyZine(paper_width, paper_height, existing_netimp);
@@ -327,6 +327,13 @@ NetImposition *Accordion::BuildEasyZine(double paper_width, double paper_height,
 	Polyhedron *poly = CreateRectangleGrid(nullptr, paper_width, paper_height, 4, 2, true);
 	// DBG cerr << "--------make accordion:"<<endl;
 	// DBG poly->dump_out(stderr, 2,0,nullptr);
+	poly->SetEdgeInfo(6,7, Net::EDGE_Hard_Cut);
+	poly->SetEdgeInfo(7,8, Net::EDGE_Hard_Cut);
+	poly->SetEdgeInfo(1,6,  Net::EDGE_Fold_Peak);
+	poly->SetEdgeInfo(2,7,  Net::EDGE_Fold_Peak);
+	poly->SetEdgeInfo(8,9,  Net::EDGE_Fold_Peak);
+	poly->SetEdgeInfo(7,12, Net::EDGE_Fold_Peak);
+	poly->SetEdgeInfo(5,6,  Net::EDGE_Fold_Peak);
 
 	Net *net = new Net;
 	// makestr(net->netname,poly->name);
@@ -334,22 +341,28 @@ NetImposition *Accordion::BuildEasyZine(double paper_width, double paper_height,
 
 	//unwrap
 	net->Anchor(0);
+	net->Unwrap(0,1);
+	net->Unwrap(1,1);
+	net->Unwrap(2,1);
 	net->TotalUnwrap(true);
 	net->CollapseEdges();
 	net->DetectAndSetEdgeStyles();
 
-	net->faces.e[1]->edges[2]->info = Net::EDGE_Hard_Cut; //todo: this should really be built into the hedron
-	net->faces.e[3]->edges[2]->info = Net::EDGE_Hard_Cut;
-	net->faces.e[4]->edges[0]->info = Net::EDGE_Hard_Cut;
-	net->faces.e[6]->edges[0]->info = Net::EDGE_Hard_Cut;
-	net->faces.e[4]->edges[1]->info = Net::EDGE_Fold_Peak;
-	net->faces.e[6]->edges[3]->info = Net::EDGE_Fold_Peak;
-	net->faces.e[1]->edges[1]->info = Net::EDGE_Fold_Peak;
-	net->faces.e[3]->edges[3]->info = Net::EDGE_Fold_Peak;
-	net->faces.e[0]->edges[2]->info = Net::EDGE_Fold_Peak;
-	net->faces.e[2]->edges[0]->info = Net::EDGE_Fold_Peak;
-	net->faces.e[5]->edges[2]->info = Net::EDGE_Fold_Peak;
-	net->faces.e[7]->edges[0]->info = Net::EDGE_Fold_Peak;
+	// net->faces.e[1]->edges[2]->info = Net::EDGE_Hard_Cut; //todo: this should really be built into the hedron
+	// net->faces.e[2]->edges[2]->info = Net::EDGE_Hard_Cut;
+	// net->faces.e[5]->edges[2]->info = Net::EDGE_Hard_Cut;
+	// net->faces.e[6]->edges[2]->info = Net::EDGE_Hard_Cut;
+
+	// net->faces.e[0]->edges[1]->info = Net::EDGE_Fold_Peak;
+	// net->faces.e[0]->edges[2]->info = Net::EDGE_Fold_Peak;
+	// net->faces.e[1]->edges[1]->info = Net::EDGE_Fold_Peak;
+	// net->faces.e[1]->edges[3]->info = Net::EDGE_Fold_Peak;
+	// net->faces.e[2]->edges[3]->info = Net::EDGE_Fold_Peak;
+	// net->faces.e[3]->edges[2]->info = Net::EDGE_Fold_Peak;
+	// net->faces.e[4]->edges[2]->info = Net::EDGE_Fold_Peak;
+	// net->faces.e[5]->edges[1]->info = Net::EDGE_Fold_Peak;
+	// net->faces.e[6]->edges[3]->info = Net::EDGE_Fold_Peak;
+	// net->faces.e[7]->edges[2]->info = Net::EDGE_Fold_Peak;
 	net->rebuildLines();
 	
 	netimp->SetNet(net);
@@ -394,7 +407,7 @@ NetImposition *Accordion::BuildAccordion1xN(int n, bool vertical, double paper_w
 	return netimp;
 }
 
-// 4x2 with a cut in the middle.
+// Zig zagging accordion.
 NetImposition *Accordion::BuildAccordionNxM(int n, int m, double paper_width, double paper_height, int variation, NetImposition *existing_netimp)
 {
 	if (n < 2) return nullptr;
@@ -416,6 +429,30 @@ NetImposition *Accordion::BuildAccordionNxM(int n, int m, double paper_width, do
 	Net *net = new Net;
 	makestr(net->netname, "Accordion");
 	net->basenet = poly;
+
+	int xoff, i;
+	for (int y = 1; y < m; y++) {
+		for (int x = 1; x < n; x++) {
+			i = y*(n+1) + x;
+			xoff = 0;
+			if (y % 2 == 1) xoff = 1;
+			poly->SetEdgeInfo(i-xoff, i-xoff+1, Net::EDGE_Hard_Cut); // horizontal cuts
+			if (x % 2 == 0) {
+				poly->SetEdgeInfo(i, i-(n+1), Net::EDGE_Fold_Peak); //peaks below
+				if (y == m -1) poly->SetEdgeInfo(i, i+(n+1), Net::EDGE_Fold_Peak); //final peaks above
+			}
+		}
+		// horizontal folds
+		i = y * (n+1);
+		if (y % 2 == 1) xoff = n-1; else xoff = 0;
+		if (m % 2 == 1) {
+			if (y % 2 == 1)
+				poly->SetEdgeInfo(i+xoff, i+xoff+1, Net::EDGE_Fold_Peak);
+			// else
+			// 	poly->SetEdgeInfo(i+xoff, i+xoff+1, Net::EDGE_Fold);
+		}
+		else poly->SetEdgeInfo(i+xoff, i+xoff+1, Net::EDGE_Fold_Peak);
+	}
 
 	//unwrap
 	net->Anchor(0);
@@ -455,6 +492,26 @@ NetImposition *Accordion::BuildMiura(int n, int m, double angle_degrees, double 
 	double d = h * tan(angle_degrees * M_PI/180);
 	//double w = (paper_width - d) / n;
 	Polyhedron *poly = CreateRectangleGrid(nullptr, paper_width, paper_height, n, m, false);
+	
+	// define folds
+	int i;
+	for (int y = 0; y < m; y++) {
+		for (int x = 0; x < n; x++) {
+			i = y*(n+1) + x;
+
+			if (x % 2 == 0 && x > 0)
+				poly->SetEdgeInfo(i, i+n+1, Net::EDGE_Fold_Peak); // vertical fold
+
+			if (y % 2 == 0) {
+				if (x % 2 == 0) poly->SetEdgeInfo(i, i+1, Net::EDGE_Fold_Peak);
+			} else {
+				if (x % 2 == 1) poly->SetEdgeInfo(i, i+1, Net::EDGE_Fold_Peak);
+			}
+
+		}
+	}
+
+	// apply jiggle
 	for (int y = 0; y <= m; y++) {
 		for (int x = 1; x < n; x++) {
 			int i = x + y*(n+1);

@@ -155,7 +155,7 @@ class Net : public LaxInterfaces::SomeData
 		EDGE_Fold,
 		EDGE_Fold_Peak,
 		EDGE_Fold_Valley,
-		EDGE_Soft_Cut,
+		EDGE_Soft_Cut, // was probably a seam in a polyhedron
 		EDGE_Hard_Cut
 	};
 
@@ -199,7 +199,7 @@ class Net : public LaxInterfaces::SomeData
 	virtual int findOriginalFace(int i,int status,int startsearchhere,int *index_ret);
 	virtual int clearPotentials(int original);
 	virtual int rebuildLines();
-	virtual void DetectAndSetEdgeStyles();
+	virtual void DetectAndSetEdgeStyles(bool ignore_if_nonzero_info = true);
 	virtual int connectFaces(int f1,int f2,int e);
 	virtual int CollapseEdges();
 

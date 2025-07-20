@@ -271,32 +271,35 @@ ImpositionResource **NetImposition::getDefaultResources()
 	Attribute *att;
 	
 	att = new Attribute;
-	att->push("net","dodecahedron");
-	r[0] = new ImpositionResource("NetImposition",     //objectdef
-								  _("Dodecahedron"), //name
-								  nullptr,              //file
-								  _("12 pentagons"),
-								  att,1);
-	att = new Attribute;
 	att->push("net","cube");
 	r[1] = new ImpositionResource("NetImposition",     //objectdef
 								  _("Cube"),         //name
 								  nullptr,              //file
 								  _("6 squares"),
+								  "Cube",
+								  att,1);
+	att = new Attribute;
+	att->push("net","dodecahedron");
+	r[0] = new ImpositionResource("NetImposition",     //objectdef
+								  _("Dodecahedron"), //name
+								  nullptr,              //file
+								  _("12 pentagons"),
+								  "Dodecahedron",
 								  att,1);
 	
 	// add accordions
 	for (int c = 0; c < num_accordions; c++) {
 		ObjectDef *def = accordions->getField(c+1); //skip "unknown"
-		int id = 0;
-		def->getEnumInfo(c, nullptr, nullptr, nullptr, &id);
+		int _id = 0;
+		accordions->getEnumInfo(c+1, nullptr, nullptr, nullptr, &_id);
+		Accordion::AccordionPresets id = (Accordion::AccordionPresets)_id;
 		int p1 = 0, p2 = 0;
-		int num_p = Accordion::NumParams((Accordion::AccordionPresets)id, &p1, &p2);
+		int num_p = Accordion::NumParams(id, &p1, &p2);
 
 		att = new Attribute();
 		Attribute *att2 = att->pushSubAtt("generator", "accordion");
 		att2->push("variant", def->name);
-		Utf8String str("params=%d, p1=%d, p2=%d", num_p, p1, p2);
+		Utf8String str("params=%d, p1:int=%d, p2:int=%d", num_p, p1, p2);
 		att2->push("uihint", str.c_str());
 		att2->push("p1", p1);
 		att2->push("p2", p2);
@@ -304,6 +307,7 @@ ImpositionResource **NetImposition::getDefaultResources()
 								  def->Name,
 								  nullptr,
 								  def->description,
+								  def->name,
 								  att,1);
 	}
 
@@ -1277,6 +1281,8 @@ void NetImposition::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpCon
 		} else if (!strcmp(name,"generator")) {
 			// this is abbreviated accordion def, like selected from newdoc dialog
 			if (strEquals(value, "accordion", true)) {
+				DBG att->attributes.e[c]->dump_out(stderr, 2);
+
 				acc_type = att->attributes.e[c]->findValue("variant");
 				acc_1 = att->attributes.e[c]->findLong("p1");
 				acc_2 = att->attributes.e[c]->findLong("p2");

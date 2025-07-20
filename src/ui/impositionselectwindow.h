@@ -52,7 +52,7 @@ class ImpositionSelectWindow : public LaxInterfaces::InterfaceWindow
 	// Laxkit::MessageBar *impmesbar, *pageinfo;
 	// Laxkit::CheckBox *defaultpage,*custompage;
 
-	ImpositionSelectWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle);
+	ImpositionSelectWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle, unsigned long owner, const char *msg);
 	virtual ~ImpositionSelectWindow();
 	virtual const char *whattype() { return "ImpositionSelectWindow"; }
 	// virtual int preinit();
@@ -62,6 +62,7 @@ class ImpositionSelectWindow : public LaxInterfaces::InterfaceWindow
 	bool InstallDefaultList();
 	void ColorsFromTheme();
 	int UseThisImposition(Imposition *imp);
+	bool Select(int id);
 };
 
 } // namespace Laidout

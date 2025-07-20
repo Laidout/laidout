@@ -1889,24 +1889,29 @@ int Net::validateNet()
  * This is not mandatory, but can be used to simplify fold indicators
  * for unwrapped polyhedra.
  */
-void Net::DetectAndSetEdgeStyles()
+void Net::DetectAndSetEdgeStyles(bool ignore_if_nonzero_info)
 {
 	// DBG cerr<<"net dump: "<<endl;
 	// DBG dump_out(stderr, 2,0,nullptr);
-	DBG cerr << "Net DetectAndSetEdgeStyles "<<Id()<<endl;
+	// DBG cerr << "Net DetectAndSetEdgeStyles "<<Id()<<endl;
 
 	for (int c = 0; c < faces.n; c++) {
 		DBG cerr <<" face "<<c<<": ";
 		for (int c2 = 0; c2 < faces.e[c]->edges.n; c2++) {
 			NetFaceEdge *edge = faces.e[c]->edges.e[c2];
+			if (ignore_if_nonzero_info && edge->info != Net::EDGE_Unknown) continue;
+
 			if (edge->toface >= 0 && edge->tofaceedge >= 0) {
 				edge->info = Net::EDGE_Fold;
+
 			} else if (edge->tag == FACE_Taken) {
 				edge->info = Net::EDGE_Soft_Cut;
+
 			} else edge->info = Net::EDGE_Hard_Cut;
-			DBG cerr <<" "<<c2<<":"<<edge->info;
+			
+			// DBG cerr <<" "<<c2<<":"<<edge->info;
 		}
-		DBG cerr << endl;
+		// DBG cerr << endl;
 	}
 }
 

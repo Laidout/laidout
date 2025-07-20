@@ -250,6 +250,7 @@ int NewDocWindow::preinit()
 	return 0;
 }
 
+//todo: coordinate with impositionselectwindow
 #define IMP_NEW_SINGLES    10000
 #define IMP_NEW_SIGNATURE  10001
 #define IMP_NEW_NET        10002
@@ -366,18 +367,18 @@ int NewDocWindow::init()
 	AddWin(mesbar,1, mesbar->win_w,0,0,50,0, mesbar->win_h,0,0,50,0, -1);
 	last=impsel=new SliderPopup(this,"Imposition",NULL,SLIDER_POP_ONLY|SLIDER_LEFT, 0,0,0,0, 1, 
 						last,object_id,"imposition");
-	int whichimp=-1,singles=-1;
+	int whichimp = -1,singles = -1;
 	if (doc) {
-		whichimp=laidout->impositionpool.n;
+		whichimp = laidout->impositionpool.n;
 		impsel->AddItem(_("Current"),IMP_CURRENT);
 	}
-	for (int c=0; c<laidout->impositionpool.n; c++) {
+	for (int c = 0; c < laidout->impositionpool.n; c++) {
 		impsel->AddItem(laidout->impositionpool.e[c]->name,c);
 		if (whichimp<0 && doc && !strcmp(doc->imposition->Name(),laidout->impositionpool.e[c]->name))
-			whichimp=c;
-		if (!strcmp(laidout->impositionpool.e[c]->name,_("Singles"))) singles=c;
+			whichimp = c;
+		if (!strcmp(laidout->impositionpool.e[c]->name, _("Singles"))) singles = c;
 	}
-	if (whichimp<0) whichimp=singles;
+	if (whichimp < 0) whichimp = singles;
 
 	 // *** these need to be all the imposition base creation types
 	//impsel->AddItem(_("NEW Singles...",   IMP_NEW_SINGLES);
@@ -417,11 +418,12 @@ int NewDocWindow::init()
 	//------ imposition selection via icons
 	AddNull();
 
-	ImpositionSelectWindow *imps = new ImpositionSelectWindow(nullptr, "Impositions", "Impositions", 0);
+	imps = new ImpositionSelectWindow(nullptr, "Impositions", "Impositions", 0, object_id, "gridselectimp");
 	imps->win_x = -1;
 	imps->win_y = -1;
 	imps->win_w = 600;
 	imps->win_h = 400;
+	imps->Select(whichimp);
 	AddWin(imps,1, 5000,4900,0,50,0, 5000,4950,0,50,0, -1);
 	AddNull();
 
@@ -557,60 +559,79 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 	// 	makestr(laidout->prefs.unitname,name);
 	// 	return 0;
 
-	} else if (!strcmp(mes,"imposition")) {
+	} else if (!strcmp(mes,"imposition") || !strcmp(mes, "gridselectimp")) {
 		 //sent by the impsel SliderPopup 
 
-		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
+		const SimpleMessage *s = dynamic_cast<const SimpleMessage *>(data);
+		int id = s->info1; //sliderpopup default id slot
+		if (!strcmp(mes, "gridselectimp")) id = s->info2;
 
 		 //when new imposition type selected from popup menu
-		if (s->info1==IMP_NEW_SIGNATURE) {
-			oldimp=impsel->GetCurrentItemIndex();
-			SignatureImposition *sig=new SignatureImposition;
+		if (id == IMP_NEW_SIGNATURE) {
+			oldimp = impsel->GetCurrentItemIndex();
+			SignatureImposition *sig = new SignatureImposition;
 			app->rundialog(new ImpositionEditor(NULL,"impeditor",_("Imposition Editor"),
 						   this->object_id,"newimposition",
 						   doc, sig, papertype));
+			// imps->Select(IMP_NEW_SIGNATURE);
 			sig->dec_count();
 			return 0;
 
-		} else if (s->info1==IMP_NEW_NET) {
-			oldimp=impsel->GetCurrentItemIndex();
-			NetImposition *net=new NetImposition;
+		} else if (id == IMP_NEW_NET) {
+			oldimp = impsel->GetCurrentItemIndex();
+			NetImposition *net = new NetImposition;
 			app->rundialog(new ImpositionEditor(NULL,"impeditor",_("Imposition Editor"),
 						   this->object_id,"newimposition",
 						   doc, net, papertype));
+			// imps->Select(IMP_NEW_NET);
 			net->dec_count();
 			return 0;
 
-		} else if (s->info1==IMP_FROM_FILE) {
-			oldimp=impsel->GetCurrentItemIndex();
+		} else if (id == IMP_FROM_FILE) {
+			oldimp = impsel->GetCurrentItemIndex();
 			app->rundialog(new FileDialog(NULL,NULL,_("Imposition from file"),
 					ANXWIN_REMEMBER, 0,0, 0,0,0,
 					object_id, "impfile",
 					FILES_OPEN_ONE,
 					impfromfile?impfromfile->GetCText():NULL));
+
 			return 0;
 
 		}
 
-		if (s->info1==IMP_CURRENT && doc) {
+		if (id == IMP_CURRENT && doc) {
 			if (imp) imp->dec_count();
-			imp=(Imposition*)doc->imposition->duplicate();
+			imp = (Imposition*)doc->imposition->duplicate();
 			impmesbar->SetText(imp->BriefDescription());
 			return 0;
 
-		} else if (s->info1<0 || s->info1>=laidout->impositionpool.n) return 0;
+		} else if (id < 0 || id >= laidout->impositionpool.n) return 0;
 
 		// create from imposition pool
 		if (imp) imp->dec_count();
-		oldimp=s->info1;
-		imp=laidout->impositionpool.e[s->info1]->Create();
+		oldimp = id;
+		imp = laidout->impositionpool.e[id]->Create();
+		Attribute *uihint = laidout->impositionpool.e[id]->UIHint();
+		if (uihint) {
+			// Utf8String str("params=%d, p1:int=%d, p2:int=%d", num_p, p1, p2);
+			***
+		}
 		if (imp->papergroup && imp->papergroup->GetBasePaper(0)) UpdatePaper(0);
 		else imp->SetPaperSize(papertype);
+		imps->Select(id);
+		impsel->Select(id);
 
-		int nn=atoi(numpages->GetCText());
-		if (nn<=0) nn=1;
+		NetImposition *netimp = dynamic_cast<NetImposition*>(imp);
+		int nn = 1;
+		if (netimp) {
+			nn = netimp->GetPagesNeeded(1);
+			numpages->SetText(nn);
+		} else {
+			nn = atoi(numpages->GetCText());
+			if (nn <= 0) nn = 1;
+		}
 		imp->NumPages(nn);
-		impmesbar->SetText(laidout->impositionpool.e[s->info1]->description);
+		impmesbar->SetText(laidout->impositionpool.e[id]->description);
 		pagesDescription(1);
 
 		return 0;

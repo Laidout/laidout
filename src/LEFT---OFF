@@ -2751,8 +2751,10 @@ raster paint layers, mypaint?
   raster path effects?
 
 newdoc:
-  DONE ui placement all messed up now.. ui scale issues?
+  uihint on main screen?
+  should update Accordion/box when you select icon and "Edit imposition"
   open on image should create a new singles with default paper and image centered
+  DONE ui placement all messed up now.. ui scale issues?
 
 Units:
   page units should be adjustible so that node enthusiasts don't have to use inches.. maybe make page layer transforms scale by a units conversion
@@ -3199,12 +3201,17 @@ busywork:
   replace refs to LineSolid with 0, as LineSolid is X11 leftover
 
 accordion folds: accordion:
+  implement accordion uihint config boxes
+  newdoc should allocate enough pages to fill net
   bug: finish implementing NetDialog paper selection
   implement paper change: NetImposition needs an asymmetric scale to paper option, so we don't have to have a whole new imposition class
-  implement impostion preview images
+  implement impostion preview images for custom impositions
   explosion/squash books with cross folds on pages, wacky minimal origami: https://www.youtube.com/watch?v=__9_KZi_tpE
   maze books / meander scrapbook
   cootie catcher
+  DONE bug: easyzine has two wrong fold marks
+  DONE bug: broken: roll, accordion1xn, 2xn, NxM
+  DONE implement impostion preview images for builtins
   DONE still need to implement correct page orientations on flips
   DONE Miura: a 7x5 with non-rect pages. folds rigidly: https://en.wikipedia.org/wiki/Miura_fold
   DONE needs at least minimal ui
@@ -3445,6 +3452,7 @@ Net imposition: netimposition: net:
   DONE better linestyle support for displayed lines
 
 polyptych:
+  implement FOLD format in/out: https://github.com/edemaine/fold
   bug: won't set custom net/paper after edit imposition with polyptych
   can't seem to save new bookmarks or use old ones in polyptych, but it's ok in Laidout
 
