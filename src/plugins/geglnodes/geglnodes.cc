@@ -197,7 +197,7 @@ int ValueToProperty(Value *v, const char *gvtype, GeglNode *node, const char *pr
 			gpath = gegl_path_new_from_string(d->str);
 		}
 		if (gpath) {
-			gegl_node_set(node, property, gpath, nullptr);
+			gegl_node_set(node, property, gpath, (char*)0); //note pass in nullptr makes "missing sentinel" error
 			g_object_unref (gpath);
 		}
 		if (success) return 0;
