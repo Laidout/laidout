@@ -17,6 +17,7 @@
 
 #include <lax/refptrstack.h>
 #include <lax/utf8string.h>
+#include <lax/menuinfo.h>
 #include <lax/interfaces/somedata.h>
 
 #include "../calculator/values.h"
@@ -92,6 +93,7 @@ class PaperStyle : public Value, public FunctionEvaluator
 PaperStyle *GetNamedPaper(double width, double height, int *is_landscape_ret, int startfrom, int *index_ret, double epsilon);
 PaperStyle *GetPaperFromName(const char *name);
 Laxkit::PtrStack<PaperStyle> *GetBuiltinPaperSizes(Laxkit::PtrStack<PaperStyle> *papers);
+Laxkit::MenuInfo *BuildGroupedPaperMenu(Laxkit::MenuInfo *menu, int item_info, bool include_custom, bool include_whatever);
 
 
 //------------------------------------- PaperBox --------------------------------------

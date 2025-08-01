@@ -21,6 +21,7 @@
 #include <lax/attributes.h>
 #include <lax/strmanip.h>
 #include <lax/fileutils.h>
+#include <lax/debug.h>
 #include "poly.h"
 
 #define DBG 
@@ -1981,9 +1982,101 @@ int Polyhedron::dumpInFile(const char *file, char **error_ret)
 	return c | !filefound;
 }
 
-int Polyhedron::dumpInFold(FILE *f,char **error_ret)
+void DumpInFoldFrame(Polyhedron *poly, Attribute *att, char **error_ret)
 {
 	DBGE("IMPLEMENT ME!!")
+
+	const char *name, *value;
+	for (int c = 0; c < att->attributes.n; c++) {
+		name  = att->attributes.e[c]->name;
+		value = att->attributes.e[c]->value;
+
+		if (strEquals(name, "frame_author")) {
+			if (!isblank(value)) poly->meta.push(name, value);
+
+		} else if (strEquals(name, "frame_title")) {
+			if (!isblank(value)) poly->meta.push(name, value);
+
+		} else if (strEquals(name, "frame_description")) {
+			if (!isblank(value)) poly->meta.push(name, value);
+
+		} else if (strEquals(name, "frame_classes")) {
+		} else if (strEquals(name, "frame_attributes")) {
+			// 2D, 3D, abstract, manifold/nonManifold, orientable/nonOrientable, selfTouching/nonSelfTouching
+			// cuts, noCuts, joins, noJoins, convexFaces, nonConvexFaces
+			// other custom attributes
+			if (!isblank(value)) poly->meta.push(name, value);
+
+		} else if (strEquals(name, "frame_unit")) {
+			// unit, in, pt, m, cm, mm, um, nm
+		} else if (strEquals(name, "vertices_coords")) {
+		} else if (strEquals(name, "vertices_vertices")) {
+		} else if (strEquals(name, "vertices_edges")) {
+		} else if (strEquals(name, "vertices_faces")) {
+
+		} else if (strEquals(name, "edges_vertices")) {
+		} else if (strEquals(name, "edges_faces")) {
+		} else if (strEquals(name, "edges_assignment")) {
+		} else if (strEquals(name, "edges_foldAngle")) {
+		} else if (strEquals(name, "edges_length")) {
+
+		} else if (strEquals(name, "faces_vertices")) {
+		} else if (strEquals(name, "faces_edges")) {
+		} else if (strEquals(name, "faces_faces")) {
+
+		} else if (strEquals(name, "faceOrders")) {
+		} else if (strEquals(name, "edgeOrders")) {
+
+		} else if (strEquals(name, "frame_parent")) {
+		} else if (strEquals(name, "frame_inherit")) {
+		}
+	}	
+}
+
+int Polyhedron::dumpInFold(const char *filename, char **error_ret)
+{
+	DBGE("IMPLEMENT ME!!")
+
+	Attribute att;
+	Attribute *a = JsonFileToAttribute(filename, &att);
+	if (!a) return 1;
+
+	const char *name, *value;
+	for (int c = 0; c < att.attributes.n; c++) {
+		name  = att.attributes.e[c]->name;
+		value = att.attributes.e[c]->value;
+
+		if (strEquals(name, "file_creator")) {
+			if (!isblank(value)) meta.push(name, value);
+
+		} else if (strEquals(name, "file_author")) {
+			if (!isblank(value)) meta.push(name, value);
+
+		} else if (strEquals(name, "file_title")) {
+			makestr(this->name, value);
+
+		} else if (strEquals(name, "file_description")) {
+			if (!isblank(value)) meta.push(name, value);
+
+		} else if (strEquals(name, "file_classes")) {
+			// common standards:
+			// - "singleModel"
+			// - "multiModel"
+			// - "animation"
+			// - "diagrams"
+			// - custom class should have a colon, like yournamespace:property
+			if (!isblank(value)) meta.push(name, value);
+		
+		} else if (strEquals(name, "file_frames")) {
+			// array of frame dictionaries
+			
+		} else if (strEquals(name, "file_spec")) {
+			// ignore spec for now! assume 1.2
+		}
+	}
+
+	DumpInFoldFrame(this, &att, error_ret);
+
 	return 1;
 }
 

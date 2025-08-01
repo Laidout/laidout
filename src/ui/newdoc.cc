@@ -614,7 +614,7 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		Attribute *uihint = laidout->impositionpool.e[id]->UIHint();
 		if (uihint) {
 			// Utf8String str("params=%d, p1:int=%d, p2:int=%d", num_p, p1, p2);
-			***
+			// ***
 		}
 		if (imp->papergroup && imp->papergroup->GetBasePaper(0)) UpdatePaper(0);
 		else imp->SetPaperSize(papertype);

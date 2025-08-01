@@ -138,9 +138,8 @@ PtrStack<PaperStyle> *GetBuiltinPaperSizes(PtrStack<PaperStyle> *papers)
 
 	setlocale(LC_ALL,"C"); //because "8.5" in the list above is not the same as "8,5" for some locales
 	for (int c=0; BuiltinPaperSizes[c]; c += 5) {
-		 // x,y were in inches
-		x=atof(BuiltinPaperSizes[c+1]);
-		y=atof(BuiltinPaperSizes[c+2]);
+		x = atof(BuiltinPaperSizes[c+1]);
+		y = atof(BuiltinPaperSizes[c+2]);
 
 		if (!strcmp(BuiltinPaperSizes[c+3],"px")) dpi=1;  else dpi=300;
 
@@ -149,6 +148,52 @@ PtrStack<PaperStyle> *GetBuiltinPaperSizes(PtrStack<PaperStyle> *papers)
 	setlocale(LC_ALL,"");
 
 	return papers;
+}
+
+/*! Build a menu for built in paper sizes.
+ * MenuItem ids are the index/5 in BuiltInPaperSizes list.
+ * ... todo: this should just be InstallPaperResources? 
+ */
+MenuInfo *BuildGroupedPaperMenu(MenuInfo *menu, int item_info, bool include_custom, bool include_whatever)
+{
+	if (!menu) menu = new MenuInfo();
+
+	const char *category = nullptr;
+	Utf8String str;
+
+	for (int c = 0; BuiltinPaperSizes[c]; c += 5) {
+		const char *name = BuiltinPaperSizes[c];
+		if (strEquals(name, "Custom")) {
+			if (!include_custom) continue;
+			menu->DoneSubMenus();
+			menu->AddItem(_("Custom..."), c/5, item_info);
+			continue;
+		}
+		if (strEquals(name, "Whatever")) {
+			if (!include_whatever) continue;
+			menu->DoneSubMenus();
+			menu->AddItem(_("Whatever"), c/5, item_info);
+			continue;
+		}
+		
+		if (!category) {
+			category = BuiltinPaperSizes[c+4];
+			menu->AddItem(category);
+			menu->SubMenu(category);
+
+		} else if (!strEquals(category, BuiltinPaperSizes[c+4])) {
+			menu->EndSubMenu();
+			category = BuiltinPaperSizes[c+4];
+			menu->AddItem(category);
+			menu->SubMenu(category);
+		}
+
+		str.Sprintf("%s  %sx%s %s", BuiltinPaperSizes[c], BuiltinPaperSizes[c+1], BuiltinPaperSizes[c+2], BuiltinPaperSizes[c+3]);
+		menu->AddItem(str.c_str(), c/5, item_info);
+	}
+	menu->DoneSubMenus();
+
+	return menu;
 }
 
 /*! TODO!! USE THIS INSTEAD OF GetBuiltinPaperSizes!!!! */

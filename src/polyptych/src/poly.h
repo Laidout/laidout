@@ -150,10 +150,12 @@ class Polyhedron :
 	char *name, *filename;
 
 	Laxkit::NumStack<Laxkit::spacepoint> vertices;
-	Laxkit::PtrStack<Edge>       edges;
-	Laxkit::PtrStack<Face>       faces;
 	Laxkit::NumStack<Laxkit::Basis>      planes;
-	Laxkit::PtrStack<Settype>    sets;
+	Laxkit::PtrStack<Edge>    edges;
+	Laxkit::PtrStack<Face>    faces;
+	Laxkit::PtrStack<Settype> sets;
+
+	Laxkit::Attribute meta;
 
 	Polyhedron();
 	Polyhedron(const Polyhedron &);
@@ -204,7 +206,7 @@ class Polyhedron :
 	virtual int dumpInFile(const char *file, char **error_ret);
 	virtual int dumpInOFF(FILE *f,char **error_ret);
 	virtual int dumpInObj(FILE *f,char **error_ret);
-	virtual int dumpInFold(FILE *f,char **error_ret);
+	virtual int dumpInFold(const char *filename, char **error_ret);
 
 	virtual const char *OutFileFormats();
 	virtual int dumpOutFile(const char *file, const char *format,char **error_ret);

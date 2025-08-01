@@ -162,6 +162,7 @@ otherobjs= \
 	interfaces/pagemarkerinterface.o \
 	interfaces/pagerangeinterface.o \
 	interfaces/paperinterface.o \
+	interfaces/partitioninterface.o \
 	interfaces/pathintersectionsinterface.o \
 	nodes/nodeeditor.o \
 	nodes/nodeinterface.o \

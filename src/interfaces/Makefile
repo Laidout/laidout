@@ -21,6 +21,7 @@ objs= \
 	graphicalshell.o \
 	objectindicator.o \
 	paperinterface.o \
+	partitioninterface.o \
 	cloneinterface.o \
 	animationinterface.o \
 	pagemarkerinterface.o \

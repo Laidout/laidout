@@ -38,6 +38,7 @@
 #include "../dataobjects/lsimplepath.h"
 #include <lax/interfaces/pressuremapinterface.h>
 #include <lax/interfaces/beznetinterface.h>
+#include "../interfaces/partitioninterface.h"
 
 
 #include "interfaces.h"
@@ -177,7 +178,20 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		existingpool->push(i);
 		i->dec_count();
 
-		// *************** end testing
+		//------BezNetInterface
+		i = new BezNetInterface(NULL,id++,NULL);
+		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+		existingpool->push(i);
+		i->dec_count();
+
+		//------PartitionInterface
+		i = new PartitionInterface(NULL,id++,NULL);
+		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+		existingpool->push(i);
+		i->dec_count();
+
+
+		// *************** end experimental
 	}
 
 
