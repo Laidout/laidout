@@ -13,6 +13,8 @@ down to major items in ../features.md.
 
 ------------ serious release blocking bugs to fix right now:
 
+bug: if you add a registration mark, you can't move it, but also causes infinite search
+
 bug: in ImageInterface, just undo without doing anything else wrecks image transform, which wrecks whole view
 
 bug: affine transform to SetTransform node, put x at 0,0, destroys cairo transform! unrecoverable!
@@ -1836,6 +1838,7 @@ themeeditor:
 accessibility:
   allow changing theme from command line, config file, or settings window
   have alternatives whenever a tool expects modifiers + mouse movement
+  intergrate AccessKit
 themes:
   option to use different go/don't go colors
   on ThemeUpdated events, things need to account for:
@@ -2088,6 +2091,7 @@ paperinterface: papergroupinterface papergroup interface
     paperinterface: in spread editor (done), and able to print it out
     in spread editor (done), and be able to print it out
 
+  DONE option to edit trim box
   DONE bug: menu toggle orientation not working
   DONE option to show numeric print dimensions.. with the label? with indicator that it is not 1:1, maybe like show "110%"
   DONE maybebox needs to snap
@@ -2250,7 +2254,7 @@ shortcut dialog: shortcuts: shortcut manager shortcutmanager
   svg keyboard out
   DONE need ability to add multiple keys for same action
 
-signature editor  Signature editor Signature Editor signatureeditor
+signature editor  Signature editor Signature Editor signatureeditor signatures
   bug: edit imp from viewport, change page number, should it insert pages??
   bug: background colors are wrong now.. supposed to be gray background
   mouse roll on paper size is confusing
@@ -2263,6 +2267,7 @@ signature editor  Signature editor Signature Editor signatureeditor
     if start from whichever, should show inverse of folds to normal as necessary
   scale pages preview needs to use margin area, not page area
   needs indicator of number of groups, show 3/10 for current sheet in little box above stack, allow numerical input
+  marks on spine edge per signature in diagonal pattern to easily tell stacking order when binding
 
   show margin, trim, binding when not totally folded
   for large page counts, need number entry in stacks
@@ -3049,6 +3054,7 @@ when closing a document window, decide whether this removes access to it, or jus
 
 imposition:
   it would be nice to print out a signature dummy, with inset/fold/trim/margin/labels. maybe even folding instructions
+  ganging: on a single sheet, include pages from other, possibly unopened, files to not waste special papers
 
 how best to integrate Styles, Attributes, and Values???
 various object types:
@@ -3825,3 +3831,4 @@ DONE bug: filepreviewer seems to not work anymore?
 DONE bug: save doc with images, load. image matrix is not identity!!  <- was problem with SomeData::AlignAndFit
 DONE bug: if you expand_subimages (or pdf), then dblclck into image, it shows image 1, not the subimage.
 DONE crash: calculator: do `var t = 1`, then `t = 2`.. crash!!
+DONE crash: right button in ellipseinterface

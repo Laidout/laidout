@@ -64,9 +64,6 @@ char *new_paper_group_name()
  * This can be used to position a single paper over real space, or set to allow any
  * number of papers. Also can be used to set rectangles for crop, bleed, and trim.
  */
-/*! \var PaperBoxData *PaperInterface::paperboxdata
- * \brief Temporary pointer to aid viewport refreshing of PaperBoxData objects.
- */
 
 PaperInterface::PaperInterface(anInterface *nowner,int nid,Displayer *ndp)
 	: anInterface(nowner,nid,ndp) 
@@ -88,7 +85,6 @@ PaperInterface::PaperInterface(anInterface *nowner,int nid,Displayer *ndp)
 	curbox = maybebox = nullptr;
 
 	papergroup   = nullptr;
-	paperboxdata = nullptr;
 	doc          = nullptr;
 
 	sc = nullptr;
@@ -137,6 +133,7 @@ enum PaperInterfaceActions {
 	PAPERI_CreateImposition,
 	PAPERI_DupPapers,
 	PAPERI_EditMargins,
+	PAPERI_EditTrim,
 
 	PAPERI_Select,
 	PAPERI_Decorations,
@@ -148,6 +145,16 @@ enum PaperInterfaceActions {
 	PAPERI_first_pagesize   = 1000,
 	PAPERI_first_papergroup = 2000,
 	PAPERI_Menu_Papergroup  = 1,
+
+	PAPERI_Trim_Top    = 1000000,
+	PAPERI_Trim_Right  = 1000001,
+	PAPERI_Trim_Bottom = 1000002,
+	PAPERI_Trim_Left   = 1000003,
+
+	PAPERI_Margin_Top    = 2000000,
+	PAPERI_Margin_Right  = 2000001,
+	PAPERI_Margin_Bottom = 2000002,
+	PAPERI_Margin_Left   = 2000003,
 
 	PAPERI_MAX = 5000
 };
@@ -167,7 +174,8 @@ Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 	menu->AddToggleItem(_("Show labels"),  PAPERI_ToggleLabels,   0, show_labels);
 	menu->AddToggleItem(_("Show indices"), PAPERI_ToggleIndices,  0, show_indices);
 	menu->AddToggleItem(_("Sync physical sizes"), PAPERI_ToggleSyncSizes,0, sync_physical_size);
-	menu->AddToggleItem(_("Edit margin"), PAPERI_EditMargins,  0, edit_margins);	
+	if (allow_margin_edit) menu->AddToggleItem(_("Edit margin"), PAPERI_EditMargins, 0, edit_margins);
+	if (allow_trim_edit)   menu->AddToggleItem(_("Edit trim"),   PAPERI_EditTrim,    0, edit_trim);
 	menu->AddSep();
 
 	if (papergroup) {
@@ -250,6 +258,7 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			  || i == PAPERI_ResetAngle
 			  || i == PAPERI_CreateImposition
 			  || i == PAPERI_EditMargins
+			  || i == PAPERI_EditTrim
 			  || i == PAPERI_ToggleLandscape
 			  || i == PAPERI_DeletePaperGroup
 		   ) {
@@ -345,6 +354,25 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 		}
 		needtodraw = 1;
 		return 0;
+	
+	} else if (strstr(mes, "trim_") == mes) {
+		mes += 5;
+		const SimpleMessage *s = dynamic_cast<const SimpleMessage*>(e);
+		char *endptr = nullptr;
+		double d = strtod(s->str, &endptr);
+		if (endptr != s->str) {
+			PaperBox *box = curbox->box;
+			if (*mes == 'l') {
+				box->trim.minx = d;
+			} else if (*mes == 'r') {
+				box->trim.maxx = curbox->w() - d;
+			} else if (*mes == 't') {
+				box->trim.maxy = curbox->h() - d;
+			} else if (*mes == 'b') {
+				box->trim.miny = d;
+			}
+			needtodraw = 1;
+		}
 	}
 	return 1;
 }
@@ -445,7 +473,7 @@ int PaperInterface::DrawDataDp(Laxkit::Displayer *tdp,SomeData *tdata,
 	bool labels        = show_labels;
 	bool indices       = show_indices;
 	int ntd            = needtodraw;
-	BoxTypes tdrawwhat = drawwhat;
+	int tdrawwhat      = drawwhat;
 	drawwhat           = AllBoxes;
 	showdecs           = 1;
 	show_labels        = false;
@@ -453,14 +481,15 @@ int PaperInterface::DrawDataDp(Laxkit::Displayer *tdp,SomeData *tdata,
 	needtodraw         = 1;
 	Displayer *olddp   = dp;
 	dp                 = tdp;
+
 	DrawPaper(data, ~0, 1, 5, 0);
+
 	show_labels  = labels;
 	show_indices = indices;
 	dp           = olddp;
 	drawwhat     = tdrawwhat;
 	needtodraw   = ntd;
 	showdecs     = td;
-	paperboxdata = nullptr;
 	return 1;
 }
 
@@ -481,14 +510,14 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 	//double sshadow = shadow*dp->Getmag(); <- this one scales properly
 	double sshadow = shadow;
 
-	PaperBox *box=data->box;
+	PaperBox *box = data->box;
 	flatpoint p[4];
 
-	if ((what&MediaBox) && (box->which&MediaBox)) {
-		p[0]=flatpoint(box->media.minx,box->media.miny);
-		p[1]=flatpoint(box->media.minx,box->media.maxy);
-		p[2]=flatpoint(box->media.maxx,box->media.maxy);
-		p[3]=flatpoint(box->media.maxx,box->media.miny);
+	if ((what & MediaBox) && (box->which & MediaBox)) {
+		p[0] = flatpoint(box->media.minx,box->media.miny);
+		p[1] = flatpoint(box->media.minx,box->media.maxy);
+		p[2] = flatpoint(box->media.maxx,box->media.maxy);
+		p[3] = flatpoint(box->media.maxx,box->media.miny);
 
 		dp->FillAttributes(LAXFILL_Solid, LAXFILL_Nonzero);
 
@@ -520,8 +549,8 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 					  p2=dp->realtoscreen((p[1]+p[2])/2),
 					  v=p2-p1,
 					  v2=transpose(v);
-			p1=p1+.1*v;
-			p2=p2-.1*v;
+			p1 = p1+.1*v;
+			p2 = p2-.1*v;
 			dp->DrawScreen();
 			dp->LineWidthScreen(w);
 			dp->drawline(p1,p2);
@@ -583,35 +612,51 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 		}
 	}
 
-	dp->DrawScreen();
+	// dp->DrawScreen();
 	dp->LineWidthScreen(w);
 
-	if ((what&ArtBox) && (box->which&ArtBox)) {
-		p[0]=dp->realtoscreen(box->art.minx,box->art.miny);
-		p[1]=dp->realtoscreen(box->art.minx,box->art.maxy);
-		p[2]=dp->realtoscreen(box->art.maxx,box->art.maxy);
-		p[3]=dp->realtoscreen(box->art.maxx,box->art.miny);
+	if ((what & TrimBox) && (box->which & TrimBox)) {
+		dp->NewFG(.5, .0, .0);
+		dp->LineWidthScreen(ScreenLine());
+
+		p[0] = flatvector(box->trim.minx, box->trim.miny);
+		p[1] = flatvector(box->trim.minx, box->trim.maxy);
+		p[2] = flatvector(box->trim.maxx, box->trim.maxy);
+		p[3] = flatvector(box->trim.maxx, box->trim.miny);
+		dp->drawlines(p,4,1,0);
+
+		// draw trim arrows
+		if (showdecs && curbox == data) {
+			// double r = settings->arrow_size * ScreenLine() / dp->Getmag();
+			double r = arrow_threshold * ScreenLine() / dp->Getmag();
+			DBG cerr <<"--- r: "<<r << "  maxy: "<<box->trim.maxy<<"  x:"<<data->xaxis().norm()<<" y:"<<data->yaxis().norm()<<endl;
+			dp->drawthing(trim_offset * p[1] + (1-trim_offset) * p[2] + flatpoint(0, r), r,r, hover_item == PAPERI_Trim_Top    ? 1 : 0, THING_Arrow_Down);
+			dp->drawthing(trim_offset * p[3] + (1-trim_offset) * p[0] + flatpoint(0,-r), r,r, hover_item == PAPERI_Trim_Bottom ? 1 : 0, THING_Arrow_Up);
+			dp->drawthing(trim_offset * p[2] + (1-trim_offset) * p[3] + flatpoint( r,0), r,r, hover_item == PAPERI_Trim_Left   ? 1 : 0, THING_Arrow_Left);
+			dp->drawthing(trim_offset * p[0] + (1-trim_offset) * p[1] + flatpoint(-r,0), r,r, hover_item == PAPERI_Trim_Right  ? 1 : 0, THING_Arrow_Right);
+		}
+	}
+
+	if ((what & ArtBox) && (box->which & ArtBox)) {
+		p[0] = flatvector(box->art.minx,box->art.miny);
+		p[1] = flatvector(box->art.minx,box->art.maxy);
+		p[2] = flatvector(box->art.maxx,box->art.maxy);
+		p[3] = flatvector(box->art.maxx,box->art.miny);
 		dp->drawlines(p,4,1,0);
 	}
-	if ((what&TrimBox) && (box->which&TrimBox)) {
-		p[0]=dp->realtoscreen(box->trim.minx,box->trim.miny);
-		p[1]=dp->realtoscreen(box->trim.minx,box->trim.maxy);
-		p[2]=dp->realtoscreen(box->trim.maxx,box->trim.maxy);
-		p[3]=dp->realtoscreen(box->trim.maxx,box->trim.miny);
+	
+	if ((what & PrintableBox) && (box->which & PrintableBox)) {
+		p[0] = flatvector(box->printable.minx,box->printable.miny);
+		p[1] = flatvector(box->printable.minx,box->printable.maxy);
+		p[2] = flatvector(box->printable.maxx,box->printable.maxy);
+		p[3] = flatvector(box->printable.maxx,box->printable.miny);
 		dp->drawlines(p,4,1,0);
 	}
-	if ((what&PrintableBox) && (box->which&PrintableBox)) {
-		p[0]=dp->realtoscreen(box->printable.minx,box->printable.miny);
-		p[1]=dp->realtoscreen(box->printable.minx,box->printable.maxy);
-		p[2]=dp->realtoscreen(box->printable.maxx,box->printable.maxy);
-		p[3]=dp->realtoscreen(box->printable.maxx,box->printable.miny);
-		dp->drawlines(p,4,1,0);
-	}
-	if ((what&BleedBox) && (box->which&BleedBox)) {
-		p[0]=dp->realtoscreen(box->bleed.minx,box->bleed.miny);
-		p[1]=dp->realtoscreen(box->bleed.minx,box->bleed.maxy);
-		p[2]=dp->realtoscreen(box->bleed.maxx,box->bleed.maxy);
-		p[3]=dp->realtoscreen(box->bleed.maxx,box->bleed.miny);
+	if ((what & BleedBox) && (box->which & BleedBox)) {
+		p[0] = flatvector(box->bleed.minx,box->bleed.miny);
+		p[1] = flatvector(box->bleed.minx,box->bleed.maxy);
+		p[2] = flatvector(box->bleed.maxx,box->bleed.maxy);
+		p[3] = flatvector(box->bleed.maxx,box->bleed.miny);
 		dp->drawlines(p,4,1,0);
 	}
 
@@ -631,8 +676,8 @@ void PaperInterface::DrawGroup(PaperGroup *group, char shadow, char fill, char a
 		show_indices = false;
 	}
 
-	if (which&1) {
-		 //draw shadow under whole group
+	if (which & 1) {
+		// draw shadow under whole group
 		if (shadow) {
 			for (int c=0; c<group->papers.n; c++) {
 				dp->PushAndNewTransform(group->papers.e[c]->m());
@@ -641,16 +686,16 @@ void PaperInterface::DrawGroup(PaperGroup *group, char shadow, char fill, char a
 			}
 		}
 
-		 //draw paper
+		// draw paper
 		for (int c=0; c<group->papers.n; c++) {
 			dp->PushAndNewTransform(group->papers.e[c]->m());
-			DrawPaper(group->papers.e[c],drawwhat, fill,0,arrow);
+			DrawPaper(group->papers.e[c], drawwhat, fill,0,arrow);
 			dp->PopAxes(); 
 		}
 	}
 
-	 //draw papergroup objects
-	if (which&2) {
+	// draw papergroup objects
+	if (which & 2) {
 		if (group->objs.n()) {
 			for (int c=0; c<group->objs.n(); c++) {
 				Laidout::DrawData(dp,group->objs.e(c),nullptr,nullptr,0);
@@ -709,11 +754,42 @@ int PaperInterface::Refresh()
 int PaperInterface::scan(int x,int y)
 {
 	if (!papergroup || !papergroup->papers.n) return -1;
-	flatpoint fp=dp->screentoreal(x,y);
+	flatpoint fp = dp->screentoreal(x,y);
 
 	//if (curbox && curbox->pointin(fp)) return papergroup->papers.findindex(curbox);
+	if (curbox) {
+		flatpoint pp = curbox->transformPointInverse(fp);
+		flatpoint p[4];
 
-	for (int c=papergroup->papers.n-1; c>=0; c--) {
+		double r = arrow_threshold * ScreenLine() / Getmag() / curbox->xaxis().norm();
+		
+		if (edit_margins) {
+
+		}
+		if (allow_trim_edit && edit_trim) {
+			PaperBox *box = curbox->box;
+			p[0] = flatvector(box->trim.minx, box->trim.miny);
+			p[1] = flatvector(box->trim.minx, box->trim.maxy);
+			p[2] = flatvector(box->trim.maxx, box->trim.maxy);
+			p[3] = flatvector(box->trim.maxx, box->trim.miny);
+
+			flatpoint h;
+
+			h = trim_offset * p[1] + (1-trim_offset) * p[2] + flatpoint(0, r);
+			if (pp.x >= h.x-r && pp.x <= h.x+r && pp.y >= h.y-r && pp.y <= h.y+r) return PAPERI_Trim_Top;
+
+			h = trim_offset * p[3] + (1-trim_offset) * p[0] + flatpoint(0,-r);
+			if (pp.x >= h.x-r && pp.x <= h.x+r && pp.y >= h.y-r && pp.y <= h.y+r) return PAPERI_Trim_Bottom;
+
+			h = trim_offset * p[2] + (1-trim_offset) * p[3] + flatpoint( r,0);
+			if (pp.x >= h.x-r && pp.x <= h.x+r && pp.y >= h.y-r && pp.y <= h.y+r) return PAPERI_Trim_Left;
+
+			h = trim_offset * p[0] + (1-trim_offset) * p[1] + flatpoint(-r,0);
+			if (pp.x >= h.x-r && pp.x <= h.x+r && pp.y >= h.y-r && pp.y <= h.y+r) return PAPERI_Trim_Right;
+		}
+	}
+
+	for (int c = papergroup->papers.n-1; c >= 0; c--) {
 		if (papergroup->papers.e[c]->pointin(fp)) return c;
 	}
 	return -1;
@@ -766,33 +842,34 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 	if (buttondown.isdown(0,LEFTBUTTON)) return 1;
 	buttondown.down(d->id,LEFTBUTTON,x,y,state);
 
-	DBG flatpoint fp;
-	DBG fp=dp->screentoreal(x,y);
-	DBG cerr <<"1 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
+	// DBG flatpoint fp;
+	// DBG fp=dp->screentoreal(x,y);
+	// DBG cerr <<"1 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 
 	int over = scan(x, y);
+	hover_item = -1;
 
-	DBG fp=dp->screentoreal(x,y);
-	DBG cerr <<"2 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
+	// DBG fp=dp->screentoreal(x,y);
+	// DBG cerr <<"2 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 	if ((state&LAX_STATE_MASK) == ShiftMask && over < 0) {
 		//add a new box
 		if (!maybebox) CreateMaybebox(dp->screentoreal(x,y));
 
-		DBG fp=dp->screentoreal(x,y);
-		DBG cerr <<"3 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
+		// DBG fp=dp->screentoreal(x,y);
+		// DBG cerr <<"3 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 		if (!papergroup) {
 			papergroup = new PaperGroup;
 			papergroup->Name = new_paper_group_name();
 			laidout->resourcemanager->AddResource("PaperGroup", papergroup, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
 			//papergroup->dec_count();
 			
-			DBG fp=dp->screentoreal(x,y);
-			DBG cerr <<"4 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
+			// DBG fp=dp->screentoreal(x,y);
+			// DBG cerr <<"4 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 			LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
 			if (lvp) lvp->UseThisPaperGroup(papergroup);
 
-			DBG fp=dp->screentoreal(x,y);
-			DBG cerr <<"5 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
+			// DBG fp=dp->screentoreal(x,y);
+			// DBG cerr <<"5 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 		}
 		over = papergroup->papers.push(maybebox);
 
@@ -802,9 +879,9 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 		//return 0; -- do not return, continue to let box be added..
 	}
 
-	DBG fp = dp->screentoreal(x,y);
-	DBG cerr <<"6 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
-	if (over >= 0) {
+	// DBG fp = dp->screentoreal(x,y);
+	// DBG cerr <<"6 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
+	if (over >= 0 && over < papergroup->papers.n) {
 		if (curbox) curbox->dec_count();
 		curbox = papergroup->papers.e[over];
 		curbox->inc_count();
@@ -816,19 +893,24 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 		curboxes.pushnodup(curbox,0);
 		flatpoint xx = curbox->xaxis();
 		snap_running_angle = atan2(xx.y, xx.x);
-		needtodraw=1;
+		needtodraw = 1;
+
+	} else if (over > 0) {
+		buttondown.moveinfo(d->id, LEFTBUTTON, state, over);
+		hover_item = over;
+
 	} else {
 		curboxes.flush();
 		if (curbox) { curbox->dec_count(); curbox = nullptr; }
 		needtodraw = 1;
 	}
 
-	DBG fp=dp->screentoreal(x,y);
-	DBG cerr <<"7 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
+	// DBG fp=dp->screentoreal(x,y);
+	// DBG cerr <<"7 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 
-	lbdown=dp->screentoreal(x,y);
-	DBG fp=dp->screentoreal(x,y);
-	DBG cerr <<"8 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
+	lbdown = dp->screentoreal(x,y);
+	// DBG fp=dp->screentoreal(x,y);
+	// DBG cerr <<"8 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 
 	return 0;
 }
@@ -836,20 +918,51 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 int PaperInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {
 	if (!buttondown.isdown(d->id,LEFTBUTTON)) return 1;
+	
 	int dragged = buttondown.up(d->id,LEFTBUTTON);
-	if (dragged < DraggedThreshhold() && maybe_flush) {
-		maybe_flush = false;
-		curboxes.flush();
-		curboxes.pushnodup(curbox, 0);
+	if (dragged < DraggedThreshhold()) {
+		if (hover_item == PAPERI_Trim_Top || hover_item == PAPERI_Trim_Left || hover_item == PAPERI_Trim_Right || hover_item == PAPERI_Trim_Bottom) {
+			flatpoint p;
+			double startvalue = 0;
+			const char *message = nullptr;
+			PaperBox *box = curbox->box;
+
+			if (hover_item == PAPERI_Trim_Top) {
+				p = flatpoint((1-trim_offset)*curbox->w(), box->trim.maxy);
+				startvalue = curbox->h() - box->trim.maxy;
+				message = "trim_top";
+			
+			} else if (hover_item == PAPERI_Trim_Right) {
+				p = flatpoint(box->trim.minx, (1-trim_offset)*curbox->h());
+				startvalue = box->trim.minx;
+				message = "trim_left";
+			
+			} else if (hover_item == PAPERI_Trim_Left) {
+				p = flatpoint(box->trim.maxx, (1-trim_offset)*curbox->h());
+				startvalue = curbox->w() - box->trim.maxx;
+				message = "trim_right";
+			
+			} else if (hover_item == PAPERI_Trim_Bottom) {
+				p = flatpoint((1-trim_offset)*curbox->w(), box->trim.miny);
+				startvalue = box->trim.miny;
+				message = "trim_bottom";
+			}
+
+			p = dp->realtoscreen(curbox->transformPoint(p));
+
+			double th = curwindow->win_themestyle->normal->textheight();
+			DoubleBBox bounds(p.x - 5*th, p.x + 5*th, p.y - th, p.y + th);
+			char scratch[30];
+			sprintf(scratch, "%g", startvalue);
+			viewport->SetupInputBox(object_id, name, scratch, message, bounds);
+
+		} else if (maybe_flush) {
+			maybe_flush = false;
+			curboxes.flush();
+			curboxes.pushnodup(curbox, 0);
+		}
 		needtodraw = 1;
 	}
-
-	DBG flatpoint fp=dp->screentoreal(x,y);
-	DBG cerr <<"9 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
-
-	//***
-	//if (curbox) { curbox->dec_count(); curbox=nullptr; }
-	//if (curboxes.n) curboxes.flush();
 
 	return 0;
 }
@@ -945,18 +1058,24 @@ int PaperInterface::SnapBoxes()
 
 int PaperInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
 {
-	DBG flatpoint fpp = dp->screentoreal(x, y);
-	DBG cerr <<"mm *****ARG**** "<<fpp.x<<","<<fpp.y<<endl;
+	// DBG flatpoint fpp = dp->screentoreal(x, y);
+	// DBG cerr <<"mm *****ARG**** "<<fpp.x<<","<<fpp.y<<endl;
 
 	int over = scan(x, y);
 
 	DBG cerr <<"over box: "<<over<<endl;
 
 	if (!buttondown.any()) {
-		if (!(state & ShiftMask)) return 1;
+		if (!(state & ShiftMask)) {
+			if (over != hover_item) {
+				hover_item = over;
+				needtodraw = 1;
+			}
+			return 1;
+		}
 
 		//update maybebox when shift key down
-		if (over >= 0) { //don't show maybebox when we hover over an existing box
+		if (over >= 0) { //don't show maybebox when we hover over something
 			if (maybebox) {
 				maybebox->dec_count();
 				maybebox   = nullptr;
@@ -984,7 +1103,37 @@ int PaperInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 	// if curboxes.n>0, this implies papergroup!=nullptr
 
 	flatpoint fp = dp->screentoreal(x, y);
-	flatpoint d  = fp - dp->screentoreal(mx, my);
+	flatpoint p0 = dp->screentoreal(mx, my);
+
+	if (curbox && hover_item > 10000) {
+		flatpoint d = curbox->transformPointInverse(fp) - curbox->transformPointInverse(p0);
+		PaperBox *box = curbox->box;
+
+		if (hover_item == PAPERI_Trim_Top) {
+			box->trim.maxy += d.y;
+			if (box->trim.maxy > curbox->h()) box->trim.maxy = curbox->h();
+			else if (box->trim.maxy <= box->trim.miny) box->trim.maxy = box->trim.miny;
+
+		} else if (hover_item == PAPERI_Trim_Bottom) {
+			box->trim.miny += d.y;
+			if (box->trim.miny < 0) box->trim.miny = 0;
+			else if (box->trim.miny >= box->trim.maxy) box->trim.miny = box->trim.maxy;
+
+		} else if (hover_item == PAPERI_Trim_Left) {
+			box->trim.maxx += d.x;
+			if (box->trim.maxx > curbox->w()) box->trim.maxx = curbox->w();
+			else if (box->trim.maxx <= box->trim.minx) box->trim.maxx = box->trim.minx;
+
+		} else if (hover_item == PAPERI_Trim_Right) {
+			box->trim.minx += d.x;
+			if (box->trim.minx < 0) box->trim.minx = 0;
+			else if (box->trim.minx >= box->trim.maxx) box->trim.minx = box->trim.maxx;
+		}
+		needtodraw = 1;
+		return 0;
+	}
+
+	flatpoint d  = fp - p0;
 
 	// plain or + moves curboxes (or the box given by editwhat)
 	if ((state&LAX_STATE_MASK)==0 || (state&LAX_STATE_MASK)==ShiftMask) {
@@ -1264,6 +1413,30 @@ int PaperInterface::PerformAction(int action)
 	} else if (action == PAPERI_EditMargins) {
 		edit_margins = !edit_margins;
 		if (edit_margins) PostMessage("IMPLEMENT ME!!!!");
+		needtodraw = 1;
+		return 0;
+
+	} else if (action == PAPERI_EditTrim) {
+		if (!allow_trim_edit) {
+			edit_trim = false;
+		} else {
+			edit_trim = !edit_trim;
+		}
+		if (edit_trim) {
+			 drawwhat |= TrimBox;
+			 if (curbox && curbox->box) {
+			 	if (!(curbox->box->Has(TrimBox))) {
+			 		curbox->box->trim.minx = curbox->box->trim.miny = 0;
+			 		curbox->box->trim.maxx = curbox->w();
+			 		curbox->box->trim.maxy = curbox->h();
+			 		curbox->box->which |= TrimBox;
+			 	}
+			 }
+			 PostMessage(_("Edit trim"));
+		} else {
+			drawwhat = (~TrimBox) & drawwhat;
+			PostMessage(_("Don't edit trim"));
+		}
 		needtodraw = 1;
 		return 0;
 

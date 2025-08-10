@@ -39,14 +39,20 @@ class PaperInterface : virtual public LaxInterfaces::anInterface
 	bool show_labels;
 	bool show_indices;
 	bool sync_physical_size;
+
 	bool edit_back_indices;
-	bool edit_margins;
+	bool edit_margins; // if a RectPageStyle is available
+	bool edit_trim; // edits PaperBox::trim
+	double trim_offset = .5;
+	double margin_offset = .5;
+	double arrow_threshold = 10; // multpiles of ScreenLine()
+	int hover_item = -1;
 
 	PaperGroup *papergroup;
-	PaperBoxData *paperboxdata;
 	Laxkit::PtrStack<PaperBoxData> curboxes;
 	PaperBoxData *curbox, *maybebox;
-	BoxTypes editwhat, drawwhat, snapto;
+	BoxTypes editwhat, snapto;
+	int drawwhat;
 	Laxkit::LaxFont *font;
 
 	Document *doc;
@@ -64,6 +70,9 @@ class PaperInterface : virtual public LaxInterfaces::anInterface
 	virtual int PerformAction(int action);
 
   public:
+  	bool allow_margin_edit = true;
+  	bool allow_trim_edit = true;
+
 	PaperInterface(int nid=0,Laxkit::Displayer *ndp=nullptr);
 	PaperInterface(anInterface *nowner=nullptr,int nid=0,Laxkit::Displayer *ndp=nullptr);
 	virtual ~PaperInterface();
