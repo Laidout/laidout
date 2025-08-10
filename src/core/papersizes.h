@@ -49,7 +49,6 @@ enum BoxTypes {
 
 
 //------------------------------------- PaperStyle --------------------------------------
-#define PAPERSTYLE_Landscape  1
 
 class PaperStyle : public Value, public FunctionEvaluator
 {
@@ -60,6 +59,8 @@ class PaperStyle : public Value, public FunctionEvaluator
 	char *defaultunits;
 	bool is_landscape;
 	bool favorite;
+	Laxkit::ScreenColor color_hint;
+	ValueHash meta; // like stock, thickness, glossiness, other printer specific settings
 
 	PaperStyle(const char *nname=NULL);
 	PaperStyle(const char *nname,double ww,double hh,unsigned int nis_landscape,double ndpi,const char *defunits);
@@ -109,6 +110,8 @@ class PaperBox :  public Laxkit::anObject
 	virtual bool landscape(bool l);
 	virtual int Set(PaperStyle *paper);
 	virtual anObject *duplicate(anObject *ref);
+
+	bool Has(BoxTypes type) { return (which & type) != 0; }
 };
 
 
@@ -128,6 +131,9 @@ class PaperBoxData : public LaxInterfaces::SomeData
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
 	virtual const char *whattype() { return "PaperBoxData"; }
 	virtual void FindBBox();
+
+	virtual double w() { if (box && box->paperstyle) return box->paperstyle->w(); else return 0; }
+	virtual double h() { if (box && box->paperstyle) return box->paperstyle->h(); else return 0; }
 };
 
 

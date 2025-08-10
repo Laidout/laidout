@@ -313,6 +313,7 @@ PaperStyle::PaperStyle(const char *nname)
 	width        = 8.5;
 	height       = 11;
 	defaultunits = newstr("in");
+	color_hint.rgbf(1.,1.,1.);
 
 	DBG cerr <<"blank PaperStyle created, obj "<<object_id<<endl;
 
@@ -521,6 +522,7 @@ Laxkit::Attribute *PaperStyle::dump_out_atts(Laxkit::Attribute *att,int what,Lax
 	att->push("height",height*scale);
 	att->push("dpi",dpi);
 	att->push("orientation",(is_landscape ? "landscape" : "portrait"));
+	att->pushStr("color_hint", -1, "rgbf(%f,%f,%f)", color_hint.Red(), color_hint.Green(), color_hint.Blue());
 
 	return att;
 }
@@ -552,7 +554,7 @@ void PaperStyle::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContex
 		} else if (!strcmp(aname,"orientation")) {
 			if (!strcasecmp(value,"portrait"))
 				is_landscape = false;
-			else  //landscape
+			else  // assume "landscape"
 				is_landscape = true;
 
 		} else if (!strcmp(aname,"landscape")) {
@@ -565,7 +567,13 @@ void PaperStyle::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContex
 			makestr(defaultunits,value);
 
 		} else if (!strcmp(aname,"units")) {
-			convertunits=value;
+			convertunits = value;
+
+		} else if (!strcmp(aname,"color_hint")) {
+			ScreenColor col;
+			if (SimpleColorAttribute(value, nullptr, &col, nullptr) == 0) {
+				color_hint = col;
+			};
 		}
 	}
 
