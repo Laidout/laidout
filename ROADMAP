@@ -10,6 +10,8 @@ VERSION 0.098
        Import/export new Inkscape multipage art boards via expanded Singles imposition type
        Update CI to not use travis (issue #28)
        Update Singles editor to edit new artboard style
+(done) Ellipse tool
+(done) Rounded rectangle tool
 (done) Dynamic UI scaling (issue #16)
 (done) Update color palette window with various export/import options
 (done) debug svg in enough to be able to load icons.svg
