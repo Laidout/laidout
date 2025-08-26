@@ -31,6 +31,123 @@
 //   Swizzle
 
 
+//----------------------- ContextNode ------------------------
+
+/*! \class ContextNode
+ *
+ * Get context information for owning object, such as imposition_instance.
+ * This is a special node requiring special handling to populate with relevant information.
+ */
+class ContextNode : public NodeBase
+{
+  public:
+	ContextNode();
+	virtual ~ContextNode();
+	virtual NodeBase *Duplicate();
+	virtual int GetStatus();
+	virtual int Update();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref) { return new ContextNode(); }
+};
+
+ContextNode::ContextNode()
+{
+	makestr(type, "Object/Context");
+	makestr(Name, _("Context"));
+	// AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,     _("Input"), _("A path or model")));
+	// AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "dir", new FlatvectorValue(0,0,1),1,  _("Vector"),  _("Vector or path")));
+	// AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "b",   new BooleanValue(false),1,  _("Check this"),  _("Some boolean thing")));
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out", NULL,1, _("Out"), NULL,0, false));
+}
+
+ContextNode::~ContextNode()
+{
+}
+
+NodeBase *ContextNode::Duplicate()
+{
+	ContextNode *newnode = new ContextNode();
+	newnode->DuplicateBase(this);
+	return newnode;
+}
+
+int ContextNode::GetStatus()
+{
+	return NodeBase::GetStatus();
+}
+
+int ContextNode::Update() //bare bones
+{
+	ClearError();
+
+	int isnum;
+
+	// cut
+	bool cut_segments = getBooleanValue(properties.e[3]->GetData(), &isnum);
+	if (!isnum) return -1;
+
+	return NodeBase::Update();
+}
+
+int ContextNode::Update() //possible set ins
+{
+	//update with set parsing helpers
+	
+	ClearError();
+
+	int num_ins = 3;
+	int num_outs = 2;
+
+	Value *ins[num_ins];
+	ins[0] = properties.e[0]->GetData();
+	ins[1] = properties.e[1]->GetData();
+	ins[2] = properties.e[2]->GetData();
+
+	SetValue *setins[num_ins];
+	SetValue *setouts[num_outs];
+
+	int outprops[2];
+	outprops[0] = 3;
+	outprops[1] = 4;
+
+	int max = 0; // max number of elements of any input sets
+	const char *err = nullptr;
+	bool dosets = false;
+	if (DetermineSetIns(num_ins, ins, setins, max, dosets) == -1) {; //does not check contents of sets.
+		//had a null input
+		return -1;
+	}
+
+	*** check for easy to spot errors with inputs
+
+	//establish outprop: make it either type, or set. do prop->Touch(). clamp to max. makes setouts[*] null or the out set
+	DoubleValue *out1 = UpdatePropType<DoubleValue>(properties.e[outprops[0]], dosets, max, setouts[0]);
+	LPathsData  *out2 = UpdatePropType<LPathsData> (properties.e[outprops[1]], dosets, max, setouts[1]);
+
+	DoubleValue *in1 = nullptr; //dynamic_cast<DoubleValue*>(ins[0]);
+	IntValue    *in2 = nullptr; //dynamic_cast<IntValue*>(ins[1]);
+	LPathsData  *in3 = nullptr; //dynamic_cast<LPathsData*>(ins[2]);
+
+	for (int c=0; c<max; c++) {
+		in1 = GetInValue<DoubleValue>(c, dosets, in1, ins[0], setins[0]);
+		in2 = GetInValue<IntValue>   (c, dosets, in2, ins[1], setins[1]);
+		in3 = GetInValue<LPathsData> (c, dosets, in3, ins[2], setins[2]);
+
+		*** error check ins
+
+		GetOutValue<DoubleValue>(c, dosets, out1, setouts[0]);
+		GetOutValue<LPathsData> (c, dosets, out2, setouts[1]);
+			
+
+		*** based on ins, update outs
+	}
+
+
+	return NodeBase::Update();
+}
+
+
 //----------------------- NineSliceNode ------------------------
 
 /*! \class NineSliceNode
@@ -770,19 +887,14 @@ int PrintfNode::GetStatus()
 
 int PrintfNode::SetProperties(const char *fmt)
 {
-
-}
-
-int PrintfNode::Update()
-{
-	// NOT doing: %2$
+// NOT doing: %2$
 	// NOT doing: length modifiers
 
 	StringValue *fmtstr = dynamic_cast<StringValue*>(properties.e[0]->GetData());
 	if (!fmtstr) return -1;
 	const char *fmt = fmtstr->str();
 
-	if (modtime == 0 || modtime < properties.e[0]->modtime) SetProperties(fmt);
+	NumStack<char> props;
 
 	Utf8String str, str2, str3;
 
@@ -813,6 +925,141 @@ int PrintfNode::Update()
 	ptr = fmt;
 	while (*ptr) {
 		if (*ptr != '%') {
+			ptr++;
+			continue;
+		}
+
+		if (ptr[1] == '%') {
+			ptr += 2;
+			continue;
+		}
+
+		fstart = ptr;
+		ptr++;
+		precision = 1;
+		fieldwidth = 1;
+		flags = 0;
+
+		while (strchr("0- +", *ptr)) {
+			switch(*ptr) {
+				case '0': flags |= ZEROPAD; break;
+				case '-': flags |= LEFTJUST; break;
+				case ' ': flags |= BLANKSIGN; break;
+				case '+': flags |= PLUSMINUS; break;
+			}
+			ptr++;
+		}
+
+		if (isdigit(*ptr)) {
+			// read in field width
+			i = strtol(ptr, &endptr, 10);
+			fieldwidth = i;
+			ptr = endptr;
+		}
+		if (*ptr == '.') {
+			// read in precision
+			ptr++;
+			if (isdigit(*ptr)) {
+				i = strtol(ptr, &endptr, 10);
+				precision = i;
+				ptr = endptr;
+			} else precision = 0;
+		}
+
+		if (!strchr("diouxXbeEfFgGcs", *ptr)) { //NOT doing aA (fractional hex), or p n m
+			// add unformatted string, type was not recognized
+			ptr++;
+		} else {
+			//valid formatting, perform conversion
+			char type = *ptr;
+			char prop_type = 0;
+			ptr++;
+			if (type == 'c') {
+				type = 's'; //we don't do chars per se
+				prop_type = 's';
+			
+			} else if (type == 'b') {
+				// our own special binary out
+				prop_type = 'd';
+
+			} else if (type == 's') {
+				//string/char
+				prop_type = 's';
+
+			} else if (type == 'd' || type == 'i' || type == 'o' || type == 'u' || type == 'x' || type == 'X') {
+				//integers
+				prop_type = 'd';
+
+			} else if (type == 'e' || type == 'E' || type == 'f' || type == 'F' || type == 'g' || type == 'G') {
+				//floating point
+				prop_type = 'f';
+			
+			} else {
+				// unhandled prop type!
+				return -1;
+			}
+
+			props.push(prop_type);
+		}
+	}
+
+	for (int c = 0; c < props.n; c++) {
+		if (props.e[c] == 's') {
+			// add string
+			***
+		} else if (props.e[c] == 'd') {
+			// add integer
+			***
+		} else if (props.e[c] == 'f') {
+			// add float
+			***
+		}
+	}
+
+	return 0;
+}
+
+int PrintfNode::Update()
+{
+	// NOT doing: %2$
+	// NOT doing: length modifiers
+
+	StringValue *fmtstr = dynamic_cast<StringValue*>(properties.e[0]->GetData());
+	if (!fmtstr) return -1;
+	const char *fmt = fmtstr->str();
+
+	if (modtime == 0 || modtime < properties.e[0]->modtime) SetProperties(fmt);
+
+	Utf8String str, str2, str3;
+
+	int cur_param = 0;
+	int precision = 0;
+	int fieldwidth = 0;
+	int flags = 0;
+	const char *ptr;
+	const char *fstart = nullptr, *endptr;
+	int i;
+	int prop_i = 0;
+	char ch[2];
+	ch[1] = '\0';
+
+	#define ZEROPAD   (1<<0)
+	#define LEFTJUST  (1<<1)
+	#define BLANKSIGN (1<<2)
+	#define PLUSMINUS (1<<3)
+
+	//each input has: flags, field width, precision, type
+	// flags: 
+	//   0  zero padding
+	//   -  make left justified within field
+	//  ' ' insert a blank before positive number
+	//   +  insert a + or - before numbers (never blank)
+	//   #  NOT IMPLEMENTED -- force output with a decimal point, make first char a digit
+	//   '  NOT IMPLEMENTED -- group by thousands
+	//   I  NOT IMPLEMENTED -- locale alternate digits
+	ptr = fmt;
+	while (*ptr) {
+		if (*ptr != '%') {
 			ch[0] = *ptr;
 			str.Append(ch);
 			ptr++;
@@ -825,6 +1072,8 @@ int PrintfNode::Update()
 			ptr += 2;
 			continue;
 		}
+
+		prop_i += 1;
 
 		fstart = ptr;
 		ptr++;
