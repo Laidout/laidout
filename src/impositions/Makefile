@@ -10,6 +10,7 @@ LAXOBJDIR=$(LAXDIR)
 LD=g++
 DEBUGFLAGS= -g -gdwarf-2
 CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) $(EXTRA_CPPFLAGS) -I$(LAXDIR)/.. `pkg-config --cflags freetype2` -I$(POLYPTYCHBASEDIR) `pkg-config --cflags GraphicsMagick++`
+#CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) $(EXTRA_CPPFLAGS) -I$(LAXDIR)/.. `pkg-config --cflags freetype2` -I$(POLYPTYCHBASEDIR)
 
 
 objs= \
@@ -24,6 +25,7 @@ objs= \
 	simplenet.o \
 	signatures.o \
 	signatureinterface.o \
+	singlesinterface.o \
 	netdialog.o \
 	polyptychwindow.o \
 	singleseditor.o

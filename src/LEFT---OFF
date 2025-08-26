@@ -926,6 +926,7 @@ valgrind:
   DONE memory lost warnings in PtrStack
 
 node editor node interface NodeInterface: nodes: node: interface:
+  bug: gradient to ModifyObject node: hang!
   bug: hangs when alt drag to add reroute, lift up alt before releasing mouse SOMETIMES. UGH!
   ux: control click for pan along connection: too easy to activate control-drag-cut-line. use double click for traverse?
   bug: frame label size should change frame size if label doesn't fit
@@ -944,8 +945,11 @@ node editor node interface NodeInterface: nodes: node: interface:
   bug: curve mouse postion is wrong
   bug: file prop popup not working... sometimes?!?
   CRASH: Math.flatvector((a+b)/2, (c+d)/2) .. also default (1,2) producing a set, not a vec2
-  bug: red: Lerp
+  bug: red:
+    GetDocument
+    Lerp
   bug: yellow:
+    typeinfo
     CSVFile
 	ObjectToFile
 	BBoxPoint
@@ -2063,7 +2067,33 @@ Tools should remember their settings
      windows are using diff tools? which settings are remembered? have tool styles that are saved, as
      well as the running tool use settings
 
+impositioneditor:
+  implement SinglesInterface
+  implement a 2d net editor
+  3d developable surfaces? origami?
+  from/to files
+
+singlesinterface:
+  propagate trim and margin to spread renders and page styles
+  if you trim in paper view, page view should show trimmed?
+  sheet group select
+  show page previews
+  tiles edit with adjustable gap
+  change name of imposition
+  save to file
+  resource menu populated by files
+  papergroup objects: reg marks, color bars, custom
+  allow setting paper color
+  arrow draw independent of fill
+
+  DONE margin edit
+  DONE not loading papergroup
+  DONE default paper outline colors
+
 paperinterface: papergroupinterface papergroup interface
+  show numbers when you drag arrows
+  arrow offsets should be across total w/h, not box w/h
+  marks should be per paper, with additional per group
   bug: zoom in, hang!
   should be able to snap to spread pages also 
   when reset scale or rotation, preserve relative orientations
@@ -2091,6 +2121,7 @@ paperinterface: papergroupinterface papergroup interface
     paperinterface: in spread editor (done), and able to print it out
     in spread editor (done), and be able to print it out
 
+  DONE bug: changing paper should only change current paper
   DONE option to edit trim box
   DONE bug: menu toggle orientation not working
   DONE option to show numeric print dimensions.. with the label? with indicator that it is not 1:1, maybe like show "110%"
@@ -2137,6 +2168,7 @@ paperinterface: papergroupinterface papergroup interface
   DONE need a paper size editor stand alone window, entering numbers should convert name to custom
 
 new PaperSizeWindow:
+  preview image of paper
   bug: rowframe WrapToExtent() doesn't work
   DONE integrate with:
     DONE signature interface
@@ -3034,6 +3066,8 @@ when importing, have MysteryData, which has special attributes "@file-pos" which
 
 viewport:
   allow multiple, positionable spread views visible on same viewport
+  prefs for colors: margin, inset, page, current page
+  use paper background color instead of default to white
 
 resources:
   should have a way to narrow down what resources are saved when you save a single document.. right now, if you
@@ -3053,6 +3087,8 @@ resources:
 when closing a document window, decide whether this removes access to it, or just the view to it
 
 imposition:
+  implement PageLocationStack::imposition_instance, access from Context.imposition_instance ? 
+  implement Spread::spread_index, access from Context.imposition_index ? 
   it would be nice to print out a signature dummy, with inset/fold/trim/margin/labels. maybe even folding instructions
   ganging: on a single sheet, include pages from other, possibly unopened, files to not waste special papers
 

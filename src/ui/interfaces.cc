@@ -23,6 +23,8 @@
 #include <lax/interfaces/freehandinterface.h>
 #include <lax/interfaces/textonpathinterface.h>
 #include <lax/interfaces/delaunayinterface.h>
+#include <lax/interfaces/ellipseinterface.h>
+#include <lax/interfaces/roundedrectinterface.h>
 
 #include "../nodes/nodeinterface.h"
 #include "../interfaces/objectfilterinterface.h"
@@ -30,14 +32,12 @@
 //experimental:
 #include <lax/interfaces/perspectiveinterface.h>
 #include <lax/interfaces/textstreaminterface.h>
-#include <lax/interfaces/ellipseinterface.h>
-#include <lax/interfaces/roundedrectinterface.h>
+#include <lax/interfaces/pressuremapinterface.h>
+#include <lax/interfaces/beznetinterface.h>
 #include "../interfaces/anchorinterface.h"
 #include "../interfaces/animationinterface.h"
 #include "../interfaces/pathintersectionsinterface.h"
 #include "../dataobjects/lsimplepath.h"
-#include <lax/interfaces/pressuremapinterface.h>
-#include <lax/interfaces/beznetinterface.h>
 #include "../interfaces/partitioninterface.h"
 
 
@@ -138,22 +138,6 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		existingpool->push(i);
 		i->dec_count();
 
-		 //------Ellipse
-		EllipseInterface *ei = new EllipseInterface(NULL,id++,NULL);
-		ei->linestyle.width = .1;
-		i = ei;
-		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
-		existingpool->push(i);
-		i->dec_count();
-
-		 //------Rounded Rectangle
-		RoundedRectInterface *rri = new RoundedRectInterface(NULL,id++,NULL);
-		//rri->linestyle.width = .1;
-		i = rri;
-		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
-		existingpool->push(i);
-		i->dec_count();
-
 		 //------Anchor
 		i=new AnchorInterface(NULL,id++,NULL);
 		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
@@ -189,7 +173,6 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 		existingpool->push(i);
 		i->dec_count();
-
 
 		// *************** end experimental
 	}
@@ -231,6 +214,22 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	i=new LPathInterface(id++,NULL);
 	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 	i->InitializeResources();
+	existingpool->push(i);
+	i->dec_count();
+
+	//------Ellipse
+	EllipseInterface *ei = new EllipseInterface(NULL,id++,NULL);
+	ei->linestyle.width = .1;
+	i = ei;
+	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+	existingpool->push(i);
+	i->dec_count();
+
+	//------Rounded Rectangle
+	RoundedRectInterface *rri = new RoundedRectInterface(NULL,id++,NULL);
+	//rri->linestyle.width = .1;
+	i = rri;
+	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 	existingpool->push(i);
 	i->dec_count();
 

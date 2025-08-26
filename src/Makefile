@@ -145,8 +145,9 @@ otherobjs= \
 	impositions/netdialog.o \
 	impositions/netimposition.o \
 	impositions/polyptychwindow.o \
-	impositions/signatureinterface.o \
 	impositions/signatures.o \
+	impositions/signatureinterface.o \
+	impositions/singlesinterface.o \
 	impositions/simplenet.o \
 	impositions/singles.o \
 	impositions/singleseditor.o \
