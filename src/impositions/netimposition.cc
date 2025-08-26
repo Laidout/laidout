@@ -18,13 +18,13 @@
 #include "netimposition.h"
 #include "simplenet.h"
 #include "box.h"
-#include "accordion.h"
 #include "../core/stylemanager.h"
 #include <lax/interfaces/pathinterface.h>
 #include <lax/transformmath.h>
 
  //built in nets:
  /*! \todo this should have a much more automated mechanism... */
+#include "accordion.h"
 #include "dodecahedron.h"
 #include "box.h"
 
@@ -34,7 +34,6 @@ using namespace std;
 using namespace Laxkit;
 using namespace LaxInterfaces;
 using namespace Polyptych;
- 
 
 
 namespace Laidout {
@@ -112,6 +111,8 @@ NetImposition::NetImposition()
 {
 	DBGL("imposition netimposition init")
 
+	papergroup = nullptr;
+
 	briefdesc        = nullptr;
 	scalefromnet     = 1;
 	maptoabstractnet = 0;
@@ -130,8 +131,14 @@ NetImposition::NetImposition()
 	PaperStyle *paperstyle = dynamic_cast<PaperStyle *>(stylemanager.FindDef("defaultpapersize"));
 	if (paperstyle) paperstyle = static_cast<PaperStyle *>(paperstyle->duplicate());
 	else paperstyle = new PaperStyle("letter",8.5,11.0,0,300,"in");
-	Imposition::SetPaperSize(paperstyle);
+	PaperBox *paper = new PaperBox(paperstyle, true);
 	paperstyle->dec_count();
+	PaperBoxData *newboxdata = new PaperBoxData(paper);
+	paper->dec_count();
+	papergroup = new PaperGroup;
+	papergroup->papers.push(newboxdata);
+	papergroup->OutlineColor(1.0, 0, 0);  // default to red papergroup
+	newboxdata->dec_count();
 
 	objectdef = stylemanager.FindDef("NetImposition");
 	if (objectdef) objectdef->inc_count(); 
@@ -247,6 +254,7 @@ NetImposition::NetImposition(Net *newnet)
 NetImposition::~NetImposition()
 {
 	if (briefdesc) delete[] briefdesc;
+	if (papergroup)    papergroup   ->dec_count();
 	if (abstractnet)   abstractnet  ->dec_count();
 	if (line_fold)     line_fold    ->dec_count();
 	if (line_peak)     line_peak    ->dec_count();
@@ -370,7 +378,8 @@ const char *NetImposition::BriefDescription()
 int NetImposition::SetNet(const char *nettype)
 {
 	if (!strcasecmp(nettype,"dodecahedron")) {
-		Net *newnet=makeDodecahedronNet(paper->media.maxx,paper->media.maxy); //1 count
+		PaperStyle *paper = GetDefaultPaper();
+		Net *newnet=makeDodecahedronNet(paper->w(), paper->h()); //1 count
 		int c=SetNet(newnet); //adds a count
 		newnet->info|=NETIMP_Internal;
 		newnet->dec_count(); //remove creation count
@@ -428,6 +437,26 @@ int NetImposition::SetNet(Net *newnet)
 	return 0;
 }
 
+/*! Default is to return papergroup->papers.e[0]->box->paperstyle, if it exists.
+ * Returned value is an internal reference. If you use it much you must inc_count on it yourself.
+ */
+PaperStyle *NetImposition::GetDefaultPaper()
+{
+	if (papergroup
+			&& papergroup->papers.n
+			&& papergroup->papers.e[0]->box
+			&& papergroup->papers.e[0]->box->paperstyle) 
+		return papergroup->papers.e[0]->box->paperstyle;
+	return nullptr;
+}
+
+PaperGroup *NetImposition::GetPaperGroup(int layout, int index)
+{
+	if (layout == SINGLELAYOUT) return nullptr;
+
+	return papergroup;
+}
+
 //! Using a presumably new paper, scale the net to fit the new paper.
 /*! Based on new paper also set up a default page style, if possible.
  *
@@ -440,12 +469,11 @@ void NetImposition::setPage()
 	if (!nets.n) return;
 
 	SomeData page;
-	page.minx = paper->media.minx;
-	page.miny = paper->media.miny;
-	page.maxx = paper->media.maxx;
-	page.maxy = paper->media.maxy;
-	DBG cerr << "NetImposition paper minx,miny,maxx,maxy: "<<page.minx<<" "<<page.miny<<" "<<page.maxx<<" "<<page.maxy<<endl;
-	DBG cerr << "   paper w,h: "<<paper->paperstyle->w()<<" "<<paper->paperstyle->h()<<endl;
+	PaperStyle *paper = GetDefaultPaper();
+	page.minx = 0; //paper->media.minx;
+	page.miny = 0; //paper->media.miny;
+	page.maxx = paper->w(); //paper->media.maxx;
+	page.maxy = paper->h(); //paper->media.maxy;
 
 	for (int c=0; c<nets.n; c++) {
 		if (nets.e[c]->info & NETIMP_AlreadyScaled) continue;
@@ -474,14 +502,14 @@ void NetImposition::setPage()
 //! The newfunc for NetImposition instances.
 Value *NewNetImposition()
 { 
-	NetImposition *n=new NetImposition;
+	NetImposition *n = new NetImposition;
 	return n;
 }
 
 //! Make an instance of the NetImposition objectdef.
 ObjectDef *makeNetImpositionObjectDef()
 {
-	ObjectDef *sd=new ObjectDef(nullptr,
+	ObjectDef *sd = new ObjectDef(nullptr,
 			"NetImposition",
 			_("Net"),
 			_("Imposition of a fairly arbitrary net"),
@@ -540,11 +568,25 @@ Value *NetImposition::duplicate()
 //! Set paper size, also reset the pagestyle. Duplicates npaper, not pointer transer.
 int NetImposition::SetPaperSize(PaperStyle *npaper)
 {
-	DBG cerr << "NetImposition::SetPaperSize(PaperStyle *npaper)"<<endl;
-	if (Imposition::SetPaperSize(npaper)) {
-		DBG cerr <<"  ----> ret early"<<endl;
-		return 1;
-	}
+ 	if (!npaper) return 1;
+
+	// DBG cerr << "NetImposition::SetPaperSize(PaperStyle *npaper)"<<endl;
+	// if (Imposition::SetPaperSize(npaper)) {
+	// 	DBG cerr <<"  ----> ret early"<<endl;
+	// 	return 1;
+	// }
+
+	PaperStyle *newpaper = (PaperStyle *)npaper->duplicate();
+	PaperBox *paper = new PaperBox(newpaper, true);
+	PaperBoxData *newboxdata = new PaperBoxData(paper);
+	paper->dec_count();
+
+	if (papergroup) papergroup->dec_count();
+	papergroup = new PaperGroup;
+	papergroup->papers.push(newboxdata);
+	papergroup->OutlineColor(1.0, 0, 0);  // default to red papergroup
+	newboxdata->dec_count();
+
 	setPage();
 	return 0;
 }
@@ -1245,13 +1287,13 @@ void NetImposition::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpCon
 
 		} else if (!strcmp(name,"papers")) {
 			if (papergroup) papergroup->dec_count();
-			papergroup=new PaperGroup;
+			papergroup = new PaperGroup;
 			papergroup->dump_in_atts(att->attributes.e[c],flag,context);
-			if (papergroup->papers.n) {
-				if (paper) paper->dec_count();
-				paper=papergroup->papers.e[0]->box;
-				paper->inc_count();
-			}
+			// if (papergroup->papers.n) {
+			// 	if (paper) paper->dec_count();
+			// 	paper = papergroup->papers.e[0]->box;
+			// 	paper->inc_count();
+			// }
 
 		} else if (!strcmp(name,"simplenet")
 					|| (!strcmp(name,"abstractnet") && value && !strcmp(value,"simple"))) {

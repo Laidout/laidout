@@ -28,11 +28,13 @@ ObjectDef *makeSinglesObjectDef();
 class Singles : public Imposition
 {
   private:
-  	//TODO: these are obsolete with pagestyles stack?
-  	Laxkit::RefPtrStack<LaxInterfaces::PathsData> cached_margin_outlines; //1 per paper
-  	Laxkit::NumStack<double> cached_margins; //6*(num papergroup->papers), l,r,t,b,w,h
+  	// //TODO: these are obsolete with pagestyles stack?
+  	// Laxkit::RefPtrStack<LaxInterfaces::PathsData> cached_margin_outlines; //1 per paper
+  	// Laxkit::NumStack<double> cached_margins; //6*(num papergroup->papers), l,r,t,b,w,h
 
   	virtual void FixPageBleeds(int index, Page *page);
+
+  	void SetStylesFromPapergroup();
 
   public:
 	double marginleft,marginright,margintop,marginbottom; //default margins
@@ -41,6 +43,8 @@ class Singles : public Imposition
 	int tilex, tiley; //tiles within insets
 	bool double_sided = false;
 	Laxkit::RefPtrStack<RectPageStyle> pagestyles; //default styles
+	PaperGroup *papergroup = nullptr;
+	PaperGroup *custom_paper_packing = nullptr;
 
 	Singles();
 	Singles(PaperGroup *pgroup, bool absorb);
@@ -53,6 +57,8 @@ class Singles : public Imposition
 	virtual const char *BriefDescription();
 	virtual ObjectDef *makeObjectDef();
 	virtual Value *duplicate();
+	virtual PaperGroup *GetPaperGroup(int layout = -1, int index = -1);
+	virtual PaperStyle *GetDefaultPaper();
 	virtual int SetPaperGroup(PaperGroup *ngroup);
 	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual int SetDefaultMargins(double l,double r,double t,double b);
@@ -72,6 +78,7 @@ class Singles : public Imposition
 	virtual int GetSpreadsNeeded(int npages);
 	virtual int GetNumInPaperGroupForSpread(int layout, int spread);
 	virtual int NumPageTypes();
+	virtual int NumPapers();
 	virtual int NumSpreads(int layout); 
 	virtual const char *PageTypeName(int pagetype);
 	virtual int PageType(int page);

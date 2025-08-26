@@ -58,18 +58,18 @@ SinglesEditor::SinglesEditor(Laxkit::anXWindow *parnt,const char *nname,const ch
 					0,0,500,500,0, nullptr,nowner,mes,
 					10)
 {
-	curorientation=0;
+	curorientation = 0;
 
-	doc=ndoc;
+	doc = ndoc;
 	if (doc) doc->inc_count();
 
-	papertype=nullptr;
-	if (paper) papertype=(PaperStyle*)paper->duplicate(); else papertype=nullptr;
-	if (!papertype && doc && doc->imposition->paper && doc->imposition->paper->paperstyle)
-		papertype=(PaperStyle*)doc->imposition->paper->paperstyle->duplicate();
+	papertype = nullptr;
+	if (paper) papertype = (PaperStyle*)paper->duplicate(); else papertype = nullptr;
+	if (!papertype && doc && doc->imposition)
+		papertype = doc->imposition->GetDefaultPaper();
 
-	imp=nullptr;
-	if (simp) imp=(Singles*)simp->duplicate();
+	imp = nullptr;
+	if (simp) imp = (Singles*)simp->duplicate();
 
 	tilex = tiley = nullptr;
 	gapx = gapy = nullptr;

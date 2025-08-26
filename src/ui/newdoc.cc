@@ -296,9 +296,9 @@ int NewDocWindow::init()
 
 	papersizes = &laidout->papersizes;
 
-	if (doc && doc->imposition->paper && doc->imposition->paper->paperstyle)
-		papertype=(PaperStyle*)doc->imposition->paper->paperstyle->duplicate();
-	if (!papertype) papertype=dynamic_cast<PaperStyle*>(laidout->GetDefaultPaper()->duplicate());
+	if (doc && doc->imposition)
+		papertype = (PaperStyle*)doc->imposition->GetDefaultPaper()->duplicate();
+	if (!papertype) papertype = dynamic_cast<PaperStyle*>(laidout->GetDefaultPaper()->duplicate());
 
 	o = papertype->landscape();
 	curorientation = o;
@@ -616,7 +616,7 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 			// Utf8String str("params=%d, p1:int=%d, p2:int=%d", num_p, p1, p2);
 			// ***
 		}
-		if (imp->papergroup && imp->papergroup->GetBasePaper(0)) UpdatePaper(0);
+		if (imp->GetPaperGroup() && imp->GetPaperGroup()->GetBasePaper(0)) UpdatePaper(0);
 		else imp->SetPaperSize(papertype);
 		imps->Select(id);
 		impsel->Select(id);
@@ -699,10 +699,10 @@ void NewDocWindow::UpdatePaper(int dialogtoimp)
 
 	if (!imp) return;
 
-	PaperStyle *paper=imp->GetDefaultPaper();
+	PaperStyle *paper = imp->GetDefaultPaper();
 	if (paper) {
 		if (papertype) delete papertype;
-		papertype=(PaperStyle*)paper->duplicate();
+		papertype = (PaperStyle*)paper->duplicate();
 
 		psizewindow->UsePaper(papertype, false);
 

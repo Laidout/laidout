@@ -39,12 +39,14 @@ namespace Laidout {
  */
 enum BoxTypes {
 	NoBox        = 0,
-	MediaBox     = (1<<0), //paper size
-	PrintableBox = (1<<3), //printable area
-	BleedBox     = (1<<4), //area outside trimbox to print, usually 3-5mm
-	TrimBox      = (1<<2), //area after bleed trimming, final page size
-	ArtBox       = (1<<1), //guide for area of image interest
-	AllBoxes     = ((1<<0)|(1<<3)|(1<<4)|(1<<2)|(1<<1))
+	MediaBox     = (1<<0), // paper size
+	PrintableBox = (1<<1), // area that a printer can physically print to
+	BleedBox     = (1<<2), // area outside trimbox to print, usually 3-5mm
+	TrimBox      = (1<<3), // area after bleed trimming, final page size
+	MarginBox    = (1<<4), // editing guides. Laidout specific, not part of PDF spec.
+	ArtBox       = (1<<5), // guide for area of interest on page
+	// CropBox      = (1<<6), // area that should be shown in an editor window
+	AllBoxes     = ((1<<0)|(1<<1)|(1<<2)|(1<<3)|(1<<4)|(1<<5))
 };
 
 
@@ -101,9 +103,9 @@ Laxkit::MenuInfo *BuildGroupedPaperMenu(Laxkit::MenuInfo *menu, int item_info, b
 class PaperBox :  public Laxkit::anObject
 {
  public:
-	int which;
+	int which; // see BoxTypes
 	PaperStyle *paperstyle;
-	Laxkit::DoubleBBox media, printable, bleed, trim, crop, art;
+	Laxkit::DoubleBBox media, printable, bleed, trim, crop, art, margin;
 	PaperBox(PaperStyle *paper, bool absorb_count);
 	virtual ~PaperBox();
 	virtual bool landscape();
@@ -124,7 +126,7 @@ class PaperBoxData : public LaxInterfaces::SomeData
 	Laxkit::ScreenColor color, outlinecolor;
 	PaperBox *box;
 	int index, index_back;
-	unsigned int which; //unused?
+	// unsigned int which; //unused?
 
 	PaperBoxData(PaperBox *paper);
 	virtual ~PaperBoxData();
@@ -154,7 +156,9 @@ class PaperGroup : virtual public Laxkit::Resourceable, virtual public ObjectCon
 	virtual ~PaperGroup();
 	virtual const char *whattype() { return "PaperGroup"; }
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
 	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
+	virtual anObject *duplicate(anObject *ref);
 
 	virtual int AddPaper(double w,double h,double offsetx,double offsety);
 	virtual int AddPaper(const char *nme,double w,double h,const double *m, const char *label);

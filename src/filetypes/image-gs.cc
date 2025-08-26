@@ -207,8 +207,9 @@ int ImageGsExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	//t  =maxh*72./epsh;
 	//if (maxh && t && t<dpi) dpi=t;
 	//dpi=150;//***
-	if (doc && doc->imposition && doc->imposition->paper && doc->imposition->paper->paperstyle)
-		dpi = doc->imposition->paper->paperstyle->dpi;
+	PaperStyle *default_paper = (doc && doc->imposition ? doc->imposition->GetDefaultPaper() : nullptr);
+	if (default_paper)
+		dpi = default_paper->dpi;
 	
 	char const * arglist[10];
 	char str1[20];

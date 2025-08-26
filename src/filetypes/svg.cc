@@ -2362,7 +2362,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 					parsing_multipage = true;
 
 					if (docpagenum < 0) docpagenum = 0;
-					num_pages_needed = imp->papergroup->papers.n;
+					num_pages_needed = imp->GetPaperGroup()->papers.n;
 				}
 			}
 
@@ -2550,13 +2550,13 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 					// If not "layer", then layer probably spans all the papers
 					if (parsing_multipage) { //we need to figure out what page the object needs to be on
 						if (obj->metadata && strEquals(obj->metadata->findValue("inkscape:groupmode"), "layer")) {
-							PaperBoxData *paper0 = doc->imposition->papergroup->papers.e[0];
+							PaperBoxData *paper0 = doc->imposition->GetPaperGroup()->papers.e[0];
 							for (int c2 = obj->n()-1; c2 >= 0; c2--) {
 								DrawableObject *obj2 = dynamic_cast<DrawableObject*>(obj->e(c2));
-								int paperi = ObjOnPaperTest(obj2, doc->imposition->papergroup);
+								int paperi = ObjOnPaperTest(obj2, doc->imposition->GetPaperGroup());
 								if (paperi > 0) { // if paper == 0, then we are already good, as everything starts on paper 0
 									// add object to appropriate page
-									PaperBoxData *paperdata = doc->imposition->papergroup->papers.e[paperi];
+									PaperBoxData *paperdata = doc->imposition->GetPaperGroup()->papers.e[paperi];
 									Affine oldglobal = obj2->GetTransformToContext(false, 0);
 									Affine newm = oldglobal;
 									newm.Multiply(paper0->m());
@@ -2593,8 +2593,8 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 		
 		// Make page labels correspond to inkscape page labels
 		if (parsing_multipage) {
-			for (int c=0; c < doc->imposition->papergroup->papers.n; c++) {
-				PaperBoxData *box = doc->imposition->papergroup->papers.e[c];
+			for (int c=0; c < doc->imposition->GetPaperGroup()->papers.n; c++) {
+				PaperBoxData *box = doc->imposition->GetPaperGroup()->papers.e[c];
 				if (!box->label.IsEmpty()) {
 					// page range of 1, since inkscape pages might each have unique labels
 					doc->ApplyPageRange(box->label.c_str(), Numbers_Default, box->label.c_str(), c, c, c, 0);

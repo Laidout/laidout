@@ -39,12 +39,19 @@ class PaperInterface : virtual public LaxInterfaces::anInterface
 	bool show_labels;
 	bool show_indices;
 	bool sync_physical_size;
+	bool full_menu = true;
 
 	bool edit_back_indices;
-	bool edit_margins; // if a RectPageStyle is available
-	bool edit_trim; // edits PaperBox::trim
+
+	bool edit_margins = false;
+	bool edit_trim = false;
+
 	double trim_offset = .5;
 	double margin_offset = .5;
+	// double bleed_offset = .5;
+	// double art_offset = .5;
+	// double printable_offset = .5;
+
 	double arrow_threshold = 10; // multpiles of ScreenLine()
 	int hover_item = -1;
 
@@ -65,6 +72,10 @@ class PaperInterface : virtual public LaxInterfaces::anInterface
 	virtual int scan(int x,int y);
 	virtual void CreateMaybebox(Laxkit::flatpoint p);
 	virtual int SnapBoxes();
+	
+	void DrawBox(const Laxkit::DoubleBBox &box, PaperBoxData *boxd, const Laxkit::ScreenColor &color, double arrow_offset, int hoveri);
+	void AdjustBoxInsets();
+	void EnsureBox(PaperBoxData *data, BoxTypes type, Laxkit::DoubleBBox &box);
 
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);
@@ -72,6 +83,8 @@ class PaperInterface : virtual public LaxInterfaces::anInterface
   public:
   	bool allow_margin_edit = true;
   	bool allow_trim_edit = true;
+  	Laxkit::ScreenColor default_outline_color;
+  	Laxkit::ScreenColor default_fill;
 
 	PaperInterface(int nid=0,Laxkit::Displayer *ndp=nullptr);
 	PaperInterface(anInterface *nowner=nullptr,int nid=0,Laxkit::Displayer *ndp=nullptr);
@@ -99,8 +112,8 @@ class PaperInterface : virtual public LaxInterfaces::anInterface
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int Refresh();
-	virtual void DrawPaper(PaperBoxData *data,int what,char fill,int shadow,char arrow);
-	virtual void DrawGroup(PaperGroup *group,char shadow,char fill,char arrow, int which=3, bool with_decs = false);
+	virtual void DrawPaper(PaperBoxData *data, int what, bool fill, int shadow, bool arrow);
+	virtual void DrawGroup(PaperGroup *group, bool shadow, bool fill, bool arrow, int which=3, bool with_decs = false);
 	virtual int DrawDataDp(Laxkit::Displayer *tdp,LaxInterfaces::SomeData *tdata,
 					Laxkit::anObject *a1=nullptr,Laxkit::anObject *a2=nullptr,int info=1);
 

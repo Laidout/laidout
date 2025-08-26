@@ -238,6 +238,7 @@ class SignatureInstance : public Value
 class SignatureImposition : public Imposition
 {
   protected:
+  	PaperGroup *papergroup;
 	SignatureInstance *signatures;
 	
 	virtual void setPageStyles(int force_new);
@@ -261,6 +262,7 @@ class SignatureImposition : public Imposition
 	virtual Value *duplicate();
 	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual int SetPaperGroup(PaperGroup *ngroup);
+	virtual PaperGroup *GetPaperGroup(int layout, int index);
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
 	virtual PaperStyle *GetDefaultPaper();
 	

@@ -2433,13 +2433,14 @@ SignatureImposition::SignatureImposition(SignatureInstance *newsig)
 	}
 
 	name=description=nullptr;
+	papergroup = nullptr;
 }
 
 SignatureImposition::~SignatureImposition()
 {
 	if (signatures) delete signatures;
+	if (papergroup) papergroup->dec_count();
 	//if (partition) partition->dec_count();
-
 }
 
 ImpositionInterface *SignatureImposition::Interface()
@@ -2744,8 +2745,15 @@ int SignatureImposition::SetPaperFromFinalSize(double w,double h)
  */
 PaperStyle *SignatureImposition::GetDefaultPaper()
 {
-	PaperStyle *p=Imposition::GetDefaultPaper();
-	if (p) return p;
+	// PaperStyle *p = Imposition::GetDefaultPaper();
+	
+	if (papergroup
+			&& papergroup->papers.n
+			&& papergroup->papers.e[0]->box
+			&& papergroup->papers.e[0]->box->paperstyle) 
+		return papergroup->papers.e[0]->box->paperstyle;
+
+	// if (p) return p;
 	return signatures->partition->paper;
 }
 
@@ -2758,24 +2766,58 @@ PaperStyle *SignatureImposition::GetDefaultPaper()
  */
 int SignatureImposition::SetPaperSize(PaperStyle *npaper)
 {
-	Imposition::SetPaperSize(npaper); //sets imposition::paperbox and papergroup
+	// Imposition::SetPaperSize(npaper); //sets imposition::paperbox and papergroup
+	PaperStyle *newpaper = (PaperStyle *)npaper->duplicate();
+	PaperBox *paper = new PaperBox(newpaper, true);
+	PaperBoxData *newboxdata = new PaperBoxData(paper);
+	paper->dec_count();
+
+	if (papergroup) papergroup->dec_count();
+	papergroup = new PaperGroup;
+	papergroup->papers.push(newboxdata);
+	papergroup->OutlineColor(1.0, 0, 0);  // default to red papergroup
+	newboxdata->dec_count();
+
 	signatures->SetPaper(npaper, 1);
 	return 0;
 }
 
 int SignatureImposition::SetDefaultPaperSize(PaperStyle *npaper)
 {
-	Imposition::SetPaperSize(npaper); //sets imposition::paperbox and papergroup
+	// Imposition::SetPaperSize(npaper); //sets imposition::paperbox and papergroup
+	PaperStyle *newpaper = (PaperStyle *)npaper->duplicate();
+	PaperBox *paper = new PaperBox(newpaper, true);
+	PaperBoxData *newboxdata = new PaperBoxData(paper);
+	paper->dec_count();
+
+	if (papergroup) papergroup->dec_count();
+	papergroup = new PaperGroup;
+	papergroup->papers.push(newboxdata);
+	papergroup->OutlineColor(1.0, 0, 0);  // default to red papergroup
+	newboxdata->dec_count();
 	return 0;
+}
+
+
+PaperGroup *SignatureImposition::GetPaperGroup(int layout, int index)
+{
+	if (layout == SINGLELAYOUT) return nullptr;
+
+	return papergroup;
 }
 
 /*! Signatures will be set only with the paper style of the first paper in group.
  */
 int SignatureImposition::SetPaperGroup(PaperGroup *ngroup)
 {
-	Imposition::SetPaperGroup(ngroup);
-	signatures->SetPaper(paper->paperstyle,1);
-	return 1;
+	// Imposition::SetPaperGroup(ngroup);
+	if (papergroup) papergroup->dec_count();
+	papergroup = ngroup;
+	if (papergroup) papergroup->inc_count();
+
+	PaperStyle *paper_style = GetDefaultPaper();
+	signatures->SetPaper(paper_style,1);
+	return 0;
 }
 
 //! Return the number of spreads for the given type that currently exist.

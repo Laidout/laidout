@@ -39,12 +39,13 @@ class Spread;
 class PageLocation
 {	
  public:
-	PageLocation(int ni,Page *npage,LaxInterfaces::SomeData *trans);
+	PageLocation(int ni, Page *npage, LaxInterfaces::SomeData *trans, LaxInterfaces::SomeData *nmargin = nullptr);
 	~PageLocation();
 	int info;
 	int index;
 	Page *page;
 	LaxInterfaces::SomeData *outline;
+	LaxInterfaces::SomeData *margin;
 };
 
 //----------------------- Spread -------------------------------
@@ -67,6 +68,9 @@ class PageLocation
 class PageLocationStack : public Laxkit::PtrStack<PageLocation>, public ObjectContainer
 {
   public:
+  	int imposition_instance = -1;
+  	// ValueHash properties; // other imposition specific info about this instance
+
 	PageLocationStack() { obj_flags|=OBJ_Unselectable|OBJ_Zone; }
 	virtual ~PageLocationStack() {}
 	virtual const char *whattype() { return "PageLocation"; }
@@ -82,6 +86,7 @@ class Spread : public ObjectContainer
 	unsigned int mask; // which of path,min,max,pages is defined
 	unsigned int style; // says what is the type of thing this spread refers to. See Imposition.
 	int spreadtype;
+	int spread_index = -1;
 
 	Document *doc;
 	PaperGroup *papergroup;
@@ -118,9 +123,9 @@ class ImpositionInterface : virtual public LaxInterfaces::anInterface
     virtual Imposition *GetImposition() = 0;
     virtual int SetTotalDimensions(double width, double height) = 0;
     virtual int GetDimensions(double &width, double &height) = 0; //Return default paper size
-    virtual int SetPaper(PaperStyle *paper) = 0;
-    virtual int UseThisDocument(Document *doc) =0;
-    virtual int UseThisImposition(Imposition *imp) =0;
+    virtual int SetPaper(PaperStyle *paper) = 0; // installs duplicate of paper
+    virtual int UseThisDocument(Document *doc) = 0;
+    virtual int UseThisImposition(Imposition *imp) = 0;
 
     virtual int ShowThisPaperSpread(int index) = 0;
     virtual void ShowSplash(int yes) = 0;
@@ -153,26 +158,28 @@ class Imposition : public Value
 	int numpages;
 	int numdocpages;
 	Document *doc;
-	PaperGroup *papergroup; //this is a default..? todo: decide whether subclasses need to maintain this instead
-	PaperBox *paper; //this is a default..? todo: decide whether subclasses need to maintain this instead
+
+	// PaperGroup *papergroup; //this is a default..? todo: decide whether subclasses need to maintain this instead
+	// PaperBox *paper; //this is a default..? todo: decide whether subclasses need to maintain this instead
 
 	Imposition(const char *nsname);
 	virtual ~Imposition();
 	virtual const char *Name();
 
-	virtual Laxkit::DoubleBBox *GoodWorkspaceSize(Laxkit::DoubleBBox *bbox=NULL);
+	virtual void GoodWorkspaceSize(Laxkit::DoubleBBox &bbox);
 	virtual const char *BriefDescription() = 0;
 	virtual void GetDefaultPaperDimensions(double *x, double *y) = 0; // for displayed summary purposes
 	virtual void GetDefaultPageDimensions(double *x, double *y) = 0; // for displayed summary purposes
 
-	virtual PaperStyle *GetDefaultPaper();
-	virtual int SetPaperSize(PaperStyle *npaper);
-	virtual int SetPaperGroup(PaperGroup *ngroup);
+	virtual PaperGroup *GetPaperGroup(int layout = -1, int index = -1) = 0; // index is hint for custom marks
+	virtual PaperStyle *GetDefaultPaper() = 0;
+	virtual int SetPaperSize(PaperStyle *npaper) = 0;
+	// virtual int SetPaperGroup(PaperGroup *ngroup) = 0;
 	virtual PageStyle *GetPageStyle(int pagenum,int local) = 0;
 	
 	virtual int SyncPageStyles(Document *doc,int start,int n, bool shift_within_margins);
 	
-	virtual LaxInterfaces::SomeData *GetPrinterMarks(int papernum=-1) { return NULL; }
+	virtual LaxInterfaces::SomeData *GetPrinterMarks(int papernum=-1) { return nullptr; }
 	virtual LaxInterfaces::SomeData *GetPageOutline(int pagenum,int local) = 0; // return outline of page in page coords
 	virtual LaxInterfaces::SomeData *GetPageMarginOutline(int pagenum,int local);
 	

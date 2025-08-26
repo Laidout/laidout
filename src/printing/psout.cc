@@ -515,8 +515,8 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	int p;
 	int cur_page_index = 1;
 	double dpi = 150;
-	if (doc && doc->imposition && doc->imposition->paper && doc->imposition->paper->paperstyle)
-		dpi = doc->imposition->paper->paperstyle->dpi;
+	if (doc && doc->imposition)
+		dpi = doc->imposition->GetDefaultPaper()->dpi;
 
 	for (c = out->range.Start(); c >= 0; c = out->range.Next()) {
 		 //get spread if any
@@ -704,8 +704,8 @@ int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	}
 
 	double dpi = 150;
-	if (doc && doc->imposition && doc->imposition->paper && doc->imposition->paper->paperstyle)
-		dpi = doc->imposition->paper->paperstyle->dpi;
+	if (doc && doc->imposition)
+		dpi = doc->imposition->GetDefaultPaper()->dpi;
 
 	DBG cerr <<"=================== start printing eps "<<out->range.ToString(true, false, false)<<" ====================\n";
 		

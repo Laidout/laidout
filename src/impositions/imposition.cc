@@ -86,19 +86,22 @@ const char *PageLocationStack::object_e_name(int i)
 /*! The page is assumed to not be owned locally. The count of poutline will be incremented here,
  * and decremented in the destructor.
  */
-PageLocation::PageLocation(int ni,Page *npage,LaxInterfaces::SomeData *poutline)
+PageLocation::PageLocation(int ni,Page *npage,LaxInterfaces::SomeData *poutline, LaxInterfaces::SomeData *nmargin)
 {
 	info    = 0;
 	index   = ni;
 	page    = npage;
 	outline = poutline;
 	if (outline) poutline->inc_count();
+	margin  = nmargin;
+	if (margin) margin->inc_count();
 }
 
 //! Page not delete'd, see constructor for how outline is dealt with.
 PageLocation::~PageLocation()
 {
 	if (outline) outline->dec_count();
+	if (margin)  margin->dec_count();
 }
 
 //----------------------- Spread -------------------------------
@@ -563,8 +566,8 @@ Imposition::Imposition(const char *nsname)
 	description = nullptr;
 
 	doc        = nullptr;
-	paper      = nullptr;
-	papergroup = nullptr;
+	// paper      = nullptr;
+	// papergroup = nullptr;
 	numpages = numpapers = 0;
 	numdocpages=0;
 	
@@ -579,8 +582,8 @@ Imposition::~Imposition()
 	if (name) delete[] name;
 	if (description) delete[] description;
 
-	if (paper) paper->dec_count();
-	if (papergroup) papergroup->dec_count();
+	// if (paper) paper->dec_count();
+	// if (papergroup) papergroup->dec_count();
 
 	DBG cerr <<"imposition base class destructor for object "<<object_id<<endl;
 }
@@ -607,32 +610,31 @@ const char *Imposition::Name()
 //! Return a box describing a good scratchboard size for this imposition.
 /*! Default is to return bounds 3 times the paper size wide, and twice the height.
  *
- * Place results in bbox if bbox!=NULL. If bbox==NULL, then create a new DoubleBBox and return that.
+ * Does NOT clear bbox beforehand.
  */
-Laxkit::DoubleBBox *Imposition::GoodWorkspaceSize(Laxkit::DoubleBBox *bbox)
+void Imposition::GoodWorkspaceSize(Laxkit::DoubleBBox &bbox)
 {
-	if (!bbox) bbox=new DoubleBBox();
-	else bbox->ClearBBox();
-
-	if (papergroup) {
-		for (int c=0; c<papergroup->papers.n; c++) {
-			bbox->addtobounds(papergroup->papers.e[c]);
+	for (int c = 0; c < NumLayoutTypes(); c++) {
+		PaperGroup *papergroup = GetPaperGroup(c);
+		
+		if (papergroup) {
+			for (int c = 0; c < papergroup->papers.n; c++) {
+				bbox.addtobounds(papergroup->papers.e[c]);
+			}
+		// } else if (paper) {
+		// 	bbox.addtobounds(&paper->media);
+		} else {
+			bbox.addtobounds(0.,1.,0.,1.);
 		}
-	} else if (paper) {
-		bbox->setbounds(&paper->media);
-	} else {
-		bbox->setbounds(0,1,0,1);
 	}
 
-	 //add a bit of a buffer
-	double w=bbox->maxx-bbox->minx;
-	double h=bbox->maxy-bbox->miny;
-	bbox->minx-=w;
-	bbox->maxx+=w;
-	bbox->miny-=h/2;
-	bbox->maxy+=h/2;
-
-	return bbox;
+	// add a bit of a buffer
+	double w = bbox.maxx - bbox.minx;
+	double h = bbox.maxy - bbox.miny;
+	bbox.minx -= w;
+	bbox.maxx += w;
+	bbox.miny -= h/2;
+	bbox.maxy += h/2;
 }
 
 
@@ -680,67 +682,67 @@ int Imposition::SyncPageStyles(Document *doc,int start,int n, bool shift_within_
 	return 0;
 }
 
-//! This incs count of ngroup and sets papergroup to it, dec_counting the old group if any.
-/*! 
- * Derived classes are responsible for setting PageStyle objects to appropriate
- * values in response to the new papersize.
- *
- * Return 0 success, nonzero error.
- */
-int Imposition::SetPaperGroup(PaperGroup *ngroup)
-{
-	if (!ngroup) return 1;
-	if (papergroup) papergroup->dec_count();
-	papergroup = ngroup;
-	if (papergroup) papergroup->inc_count();
-	if (papergroup->papers.n) {
-		if (paper) paper->dec_count();
-		paper = papergroup->papers.e[0]->box;
-		paper->inc_count();
-	}
-	return 0;
-}
+// //! This incs count of ngroup and sets papergroup to it, dec_counting the old group if any.
+// /*! 
+//  * Derived classes are responsible for setting PageStyle objects to appropriate
+//  * values in response to the new papersize.
+//  *
+//  * Return 0 success, nonzero error.
+//  */
+// int Imposition::SetPaperGroup(PaperGroup *ngroup)
+// {
+// 	if (!ngroup) return 1;
+// 	if (papergroup) papergroup->dec_count();
+// 	papergroup = ngroup;
+// 	if (papergroup) papergroup->inc_count();
+// 	if (papergroup->papers.n) {
+// 		if (paper) paper->dec_count();
+// 		paper = papergroup->papers.e[0]->box;
+// 		paper->inc_count();
+// 	}
+// 	return 0;
+// }
 
-//! Default is to duplicate npaper and base a brand new papergroup on the duplicate.
-/*! This is a convenience function to simply alter a paper size an imposition
- * goes by. The newly created paper group will work from a copy of npaper,
- * not from a link to it.
- *
- * Derived classes are responsible for setting PageStyle objects to appropriate
- * values in response to the new paper size.
- *
- * Return 0 success, nonzero error.
- */
-int Imposition::SetPaperSize(PaperStyle *npaper)
-{
-	if (!npaper) return 1;
+// //! Default is to duplicate npaper and base a brand new papergroup on the duplicate.
+// /*! This is a convenience function to simply alter a paper size an imposition
+//  * goes by. The newly created paper group will work from a copy of npaper,
+//  * not from a link to it.
+//  *
+//  * Derived classes are responsible for setting PageStyle objects to appropriate
+//  * values in response to the new paper size.
+//  *
+//  * Return 0 success, nonzero error.
+//  */
+// int Imposition::SetPaperSize(PaperStyle *npaper)
+// {
+// 	if (!npaper) return 1;
 
-	PaperStyle *newpaper = (PaperStyle *)npaper->duplicate();
-	if (paper) paper->dec_count();
-	paper = new PaperBox(newpaper, true);
-	PaperBoxData *newboxdata = new PaperBoxData(paper);
+// 	PaperStyle *newpaper = (PaperStyle *)npaper->duplicate();
+// 	if (paper) paper->dec_count();
+// 	paper = new PaperBox(newpaper, true);
+// 	PaperBoxData *newboxdata = new PaperBoxData(paper);
 
-	if (papergroup) papergroup->dec_count();
-	papergroup = new PaperGroup;
-	papergroup->papers.push(newboxdata);
-	papergroup->OutlineColor(1.0, 0, 0);  // default to red papergroup
-	newboxdata->dec_count();
+// 	if (papergroup) papergroup->dec_count();
+// 	papergroup = new PaperGroup;
+// 	papergroup->papers.push(newboxdata);
+// 	papergroup->OutlineColor(1.0, 0, 0);  // default to red papergroup
+// 	newboxdata->dec_count();
 
-	return 0;
-}
+// 	return 0;
+// }
 
-/*! Default is to return papergroup->papers.e[0]->box->paperstyle, if it exists.
- * Returned value is an internal reference. If you use it much you must inc_count on it yourself.
- */
-PaperStyle *Imposition::GetDefaultPaper()
-{
-	if (papergroup
-			&& papergroup->papers.n
-			&& papergroup->papers.e[0]->box
-			&& papergroup->papers.e[0]->box->paperstyle) 
-		return papergroup->papers.e[0]->box->paperstyle;
-	return NULL;
-}
+// /*! Default is to return papergroup->papers.e[0]->box->paperstyle, if it exists.
+//  * Returned value is an internal reference. If you use it much you must inc_count on it yourself.
+//  */
+// PaperStyle *Imposition::GetDefaultPaper()
+// {
+// 	if (papergroup
+// 			&& papergroup->papers.n
+// 			&& papergroup->papers.e[0]->box
+// 			&& papergroup->papers.e[0]->box->paperstyle) 
+// 		return papergroup->papers.e[0]->box->paperstyle;
+// 	return NULL;
+// }
 
 //! Return the number of spreads of type layout.
 /*! Please note by default the number returned for LITTLESPREADLAYOUT and PAGELAYOUT is just NumPages(), the same as for SINGLELAYOUT.
@@ -852,26 +854,26 @@ const char *Imposition::LayoutName(int layout)
  */
 Spread *Imposition::SingleLayout(int whichpage)
 {
-	Spread *spread=new Spread();
-	spread->style=SPREAD_PAGE;
-	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
+	Spread *spread = new Spread();
+	spread->style = SPREAD_PAGE;
+	spread->mask = SPREAD_PATH | SPREAD_PAGES | SPREAD_MINIMUM | SPREAD_MAXIMUM;
+	spread->spread_index = whichpage;
 
-	 // Get the page outline. It will be a counted object with 1 count for path pointer.
-	spread->path=GetPageOutline(whichpage,0);
-	//spread->path->style|=PathsData::PATHS_Ignore_Weights;
+	// Get the page outline. It will be a counted object with 1 count for path pointer.
+	spread->path = GetPageOutline(whichpage,0);
 	spread->path->setIdentity(); // clear any transform
 	
-	 // define maximum/minimum points 
-	double x,y,w,h;
-	x=spread->path->minx;
-	y=spread->path->miny;
-	w=spread->path->maxx-spread->path->minx;
-	h=spread->path->maxy-spread->path->miny;
-	spread->minimum=flatpoint(x+w/4,   y+h/2);
-	spread->maximum=flatpoint(x+w*3/4, y+h/2);
+	// define maximum/minimum points
+	double x, y, w, h;
+	x = spread->path->minx;
+	y = spread->path->miny;
+	w = spread->path->maxx - spread->path->minx;
+	h = spread->path->maxy - spread->path->miny;
+	spread->minimum = flatpoint(x + w/4,   y + h/2);
+	spread->maximum = flatpoint(x + w*3/4, y + h/2);
 
-	 // setup spread->pagestack with the single page.
-	 // page width/height must map to proper area on page.
+	// setup spread->pagestack with the single page.
+	// page width/height must map to proper area on page.
 	spread->pagestack.push(new PageLocation(whichpage,nullptr,spread->path)); //(index,page,somedata)
 	//at this point spread->path has additional count of 2, 1 for pagestack.e[0]->outline
 	//and 1 for spread->path

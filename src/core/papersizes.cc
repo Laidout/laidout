@@ -840,15 +840,15 @@ ObjectDef *PaperStyle::makeObjectDef()
  */
 PaperBox::PaperBox(PaperStyle *paper, bool absorb_count)
 {
-	which=0; //a mask of which boxes are defined
-	paperstyle=paper;
+	which = 0; //a mask of which boxes are defined
+	paperstyle = paper;
 
 	if (paper) {
 		if (!absorb_count) paper->inc_count();
-		which=MediaBox;
-		media.minx=media.miny=0;
-		media.maxx=paper->w(); //takes into account paper orientation
-		media.maxy=paper->h();
+		which = MediaBox;
+		media.minx = media.miny=0;
+		media.maxx = paper->w(); //takes into account paper orientation
+		media.maxy = paper->h();
 	}
 	DBG cerr <<"PaperBox created, obj "<<object_id<<endl;
 }
@@ -889,13 +889,13 @@ int PaperBox::Set(PaperStyle *paper)
 {
 	if (!paper) return 1;
 	if (paperstyle) paperstyle->dec_count();
-	paperstyle=paper;
+	paperstyle = paper;
 
 	paper->inc_count();
-	which|=MediaBox;
-	media.minx=media.miny=0;
-	media.maxx=paper->w(); //takes into account paper orientation
-	media.maxy=paper->h();
+	which |= MediaBox;
+	media.minx = media.miny = 0;
+	media.maxx = paper->w(); //takes into account paper orientation
+	media.maxy = paper->h();
 
 	return 0;
 }
@@ -914,9 +914,10 @@ anObject *PaperBox::duplicate(anObject *ref)
 	box->which = which;
 	box->paperstyle = (paperstyle ? dynamic_cast<PaperStyle*>(paperstyle->duplicate()) : nullptr);
 	box->media = media;
+	box->trim = trim;
+	box->margin = margin;
 	box->printable = printable;
 	box->bleed = bleed;
-	box->trim = trim;
 	box->crop = crop;
 	box->art = art;
 
@@ -1050,6 +1051,27 @@ PaperGroup::~PaperGroup()
 	DBG cerr <<"PaperGroup destroyed, obj "<<object_id<<endl;
 }
 
+anObject *PaperGroup::duplicate(anObject *ref)
+{
+	PaperGroup *dup = dynamic_cast<PaperGroup*>(ref);
+	// if (ref && !dup) return nullptr; // bad ref object!
+	if (!dup) dup = new PaperGroup;
+
+	for (int c = 0; c < papers.n; c++) {
+		PaperBoxData *d = dynamic_cast<PaperBoxData*>(papers.e[c]->duplicate(nullptr));
+		dup->papers.push(d);
+		d->dec_count();
+	}
+
+	for (int c = 0; c < objs.n(); c++) {
+		SomeData *v = objs.e(c)->duplicate(nullptr);
+		dup->objs.push(v);
+		v->dec_count();
+	}
+
+	return dup;
+}
+
 //! The number of extra objects in the group.
 int PaperGroup::n()
 { return objs.n(); }
@@ -1130,54 +1152,109 @@ int PaperGroup::FindPaperBBox(Laxkit::DoubleBBox *box_ret)
  */
 void PaperGroup::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
-	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	if (what==-1) {
-		fprintf(f,"%sname somename         #a string id. no whitespace\n",spc);
-		fprintf(f,"%sName Descriptive Name #human readable name\n",spc);
-		//if (owner) ***;
-		fprintf(f,"%spaper                 #there can be 0 or more paper sections\n",spc);
-		fprintf(f,"%s  matrix 1 0 0 1 0 0  #transform for the paper to limbo space\n",spc);
-		fprintf(f,"%smarks                 #any optional printer marks for the group\n",spc);
-		fprintf(f,"%s  ...",spc);
-		//fprintf(f,"%s  outlinecolor 65535 0 0 #color of the outline of a paper in the interface\n",spc);
+	Attribute att;
+	PaperGroup::dump_out_atts(&att, what, context);
+	att.dump_out(f, indent);
+}
+
+Laxkit::Attribute *PaperGroup::dump_out_atts(Laxkit::Attribute *att, int what, Laxkit::DumpContext *context)
+{
+	if (what == -1) {
+		if (!att) att = new Attribute();
+		att->push("name", "somename", "a string id. no whitespace");
+		att->push("Name", "Descriptive Name # human readable name");
 		PaperStyle paperstyle(nullptr,0,0,0,0,"in");
-		paperstyle.dump_out(f,indent+2,-1,nullptr);
-		//fprintf(f,"%s  minx 0              #the bounds for the media box\n",spc);
-		//fprintf(f,"%s  miny 0\n",spc);
-		//fprintf(f,"%s  maxx 8.5\n",spc);
-		//fprintf(f,"%s  minx 11\n",spc);
-		return;
+		paperstyle.dump_out_atts(att, -1, context);
+		
+		Attribute *att2 = att->pushSubAtt("paper", nullptr, "there can be 0 or more paper sections");
+		att2->push("matrix", "1 0 0 1 0 0", "transform for the paper to limbo space");
+		att2->push("trim",      "0 0 0 0",  "trbl inset values for a trim box");
+		att2->push("margin",    "0 0 0 0",  "trbl inset values for a margin box");
+		att2->push("bleed",     "0 0 0 0",  "trbl inset values for a bleed box");
+		att2->push("printable", "0 0 0 0",  "trbl inset values for a printable box");
+		att2->push("art",       "0 0 0 0",  "trbl inset values for a art box");
+		att2->push("color", "rgbf(1,1,1)",  "color of the paper in the interface");
+		att2->push("outlinecolor", "rgbf(1,0,0)", "color of the outline of a paper in the interface");
+		
+		att2 = att->pushSubAtt("marks", nullptr, "any optional drawable objects");
+		att2->push("...");
+		
+		return att;
 	}
-	if (name) fprintf(f,"%sname %s\n",spc,name);
-	if (Name) fprintf(f,"%sName %s\n",spc,Name);
-	//if (owner) ***;
+
+	if (!att) att = new Attribute();
+
+	if (name) att->push("name", name);
+	if (Name) att->push("Name", Name);
 	
 	const double *m;
-	for (int c=0; c<papers.n; c++) {
-		fprintf(f,"%spaper\n",spc);
-		m=papers.e[c]->m();
-		fprintf(f,"%s  matrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
-			spc, m[0],m[1],m[2],m[3],m[4],m[5]);
-		fprintf(f,"%s  outlinecolor rgbf(%.10g, %.10g, %.10g)\n",
-			spc, papers.e[c]->outlinecolor.Red(),
-				 papers.e[c]->outlinecolor.Green(),
-				 papers.e[c]->outlinecolor.Blue());
-		papers.e[c]->box->paperstyle->dump_out(f,indent+2,0,context);
+	for (int c = 0; c < papers.n; c++) {
+		Attribute *att2 = att->pushSubAtt("paper");
+
+		m = papers.e[c]->m();
+		att2->pushStr("matrix", -1, "%.10g %.10g %.10g %.10g %.10g %.10g",
+			m[0],m[1],m[2],m[3],m[4],m[5]);
+		att2->pushStr("color", -1, "rgbf(%.10g, %.10g, %.10g)",
+			papers.e[c]->color.Red(),
+			papers.e[c]->color.Green(),
+			papers.e[c]->color.Blue());
+		att2->pushStr("outlinecolor", -1, "rgbf(%.10g, %.10g, %.10g)",
+			papers.e[c]->outlinecolor.Red(),
+			papers.e[c]->outlinecolor.Green(),
+			papers.e[c]->outlinecolor.Blue());
+
+		papers.e[c]->box->paperstyle->dump_out_atts(att2, 0, context);
+		
+		PaperBoxData *boxd = papers.e[c];
+		PaperBox *box = papers.e[c]->box;
+		
+		if (box->which & TrimBox) {
+			att2->pushStr("trim", -1, "%f %f %f %f", boxd->h() - box->trim.maxy, boxd->w() - box->trim.maxx, box->trim.miny, box->trim.minx);
+		}
+		if (box->which & MarginBox) {
+			att2->pushStr("margin", -1, "%f %f %f %f", boxd->h() - box->margin.maxy, boxd->w() - box->margin.maxx, box->margin.miny, box->margin.minx);
+		}
+		if (box->which & BleedBox) {
+			att2->pushStr("bleed", -1, "%f %f %f %f", boxd->h() - box->bleed.maxy, boxd->w() - box->bleed.maxx, box->bleed.miny, box->bleed.minx);
+		}
+		if (box->which & PrintableBox) {
+			att2->pushStr("sprintable", -1, "%f %f %f %f", boxd->h() - box->printable.maxy, boxd->w() - box->printable.maxx, box->printable.miny, box->printable.minx);
+		}
+		if (box->which & ArtBox) {
+			att2->pushStr("art", -1, "%f %f %f %f", boxd->h() - box->art.maxy, boxd->w() - box->art.maxx, box->art.miny, box->art.minx);
+		}
 	}
+
 	if (objs.n()) {
-		fprintf(f,"%smarks\n",spc);
-		objs.dump_out(f,indent+2,0,context);
-	}	
+		Attribute *att2 = att->pushSubAtt("marks");
+		objs.dump_out_atts(att2, 0, context);
+	}
+
+	return att;
+}
+
+void SetBox(DoubleBBox &box, PaperBoxData *data, const char *list, int which)
+{
+	if (isblank(list)) { data->box->which &= ~(which); return; }
+	double d[4];
+	int n = DoubleListAttribute(list, d, 4);
+	if (n != 4) { data->box->which &= ~(which); return; }
+
+	box.minx = d[3];
+	box.miny = d[2];
+	box.maxx = data->w() - d[1];
+	box.maxy = data->h() - d[0];
+	data->box->which |= which;
 }
 
 void PaperGroup::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *context)
 {
 	if (!att) return;
 
-	char *nme,*value;
+	char *nme, *value;
 	for (int c=0; c<att->attributes.n; c++)  {
-		nme=att->attributes.e[c]->name;
-		value=att->attributes.e[c]->value;
+		nme   = att->attributes.e[c]->name;
+		value = att->attributes.e[c]->value;
 
 		if (!strcmp(nme,"name")) {
 			makestr(name,value);
@@ -1191,8 +1268,8 @@ void PaperGroup::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *conte
 		} else if (!strcmp(nme,"paper")) {
 			PaperStyle *paperstyle=new PaperStyle(nullptr,0,0,0,0,"in");
 			paperstyle->dump_in_atts(att->attributes.e[c],flag,context);
-			PaperBox *paperbox=new PaperBox(paperstyle, true);
-			PaperBoxData *boxdata=new PaperBoxData(paperbox);
+			PaperBox *paperbox = new PaperBox(paperstyle, true);
+			PaperBoxData *boxdata = new PaperBoxData(paperbox);
 			paperbox->dec_count();
 			boxdata->dump_in_atts(att->attributes.e[c],flag,context);
 
@@ -1204,9 +1281,21 @@ void PaperGroup::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *conte
 			} 
 			papers.push(boxdata);
 			boxdata->dec_count();
+
+			const char *trim      = att->attributes.e[c]->findValue("trim");
+			const char *margin    = att->attributes.e[c]->findValue("margin");
+			const char *bleed     = att->attributes.e[c]->findValue("bleed");
+			const char *printable = att->attributes.e[c]->findValue("printable");
+			const char *art       = att->attributes.e[c]->findValue("art");
+			SetBox(paperbox->trim,      boxdata, trim,      TrimBox);
+			SetBox(paperbox->margin,    boxdata, margin,    MarginBox);
+			SetBox(paperbox->bleed,     boxdata, bleed,     BleedBox);
+			SetBox(paperbox->printable, boxdata, printable, PrintableBox);
+			SetBox(paperbox->art,       boxdata, art,       ArtBox);
 		}
 	}
 }
+
 
 int PaperGroup::AddPaper(const char *nme,double w,double h,const double *m, const char *label)
 {

@@ -510,7 +510,7 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 	// Set workspace bounds.
 	if (newdoc && newdoc->imposition) {
 		DoubleBBox bb;
-		newdoc->imposition->GoodWorkspaceSize(&bb);
+		newdoc->imposition->GoodWorkspaceSize(bb);
 		dp->SetSpace(bb.minx, bb.maxx, bb.miny, bb.maxy);
 		// Center(); //this doesn't do anything because dp->Minx,Maxx... are 0
 	} else {
@@ -3083,64 +3083,108 @@ void LaidoutViewport::Refresh()
 	// DBGCAIROSTATUS(" LO viewport after  papergroup, cairo status:  ")
 
 	
-	if (spread && showstate==1) {
+	if (spread && showstate == 1) {
+		int pagei = -1;
+		Page *page = nullptr;
+		
 		dp->BlendMode(LAXOP_Over);
-
+		double pg_thickness = 1; //todo: should be ScreenLine()
 
 		// draw spread drop shadow, white out pages, draw spread lines
-		if (spread->path) {
-			ls.Colorf(1.0,0.,0.,1.0);
-			ls.width = 1;
-			ls.capstyle = LAXCAP_Round;
-			ls.widthtype = 0;
-			ls.function = LAXOP_None;
-			fs.Color(0,0,0,0xffff);
+		ls.Colorf(1.0,0.,0.,1.0); // todo: this color should be a pref somewhere
+		ls.width = pg_thickness;
+		ls.capstyle = LAXCAP_Round;
+		ls.widthtype = 0;
+		ls.function = LAXOP_None;
+		fs.Color(0,0,0,0xffff); // shadow color
 
-			// draw offset shadow if papergroup does not exist
-			if (!(papergroup && papergroup->papers.n)) {
-				dp->NewFG(0,0,0);
-				dp->PushAxes();
-				dp->ShiftScreen(laidout->prefs.pagedropshadow, laidout->prefs.pagedropshadow);
-				for (int c = 0; c < spread->pagestack.n(); c++) {
-					if (spread->pagestack.e[c]->outline) {
-						DrawData(dp, spread->pagestack.e[c]->outline, &ls,&fs,drawflags);
-					}
-				}
-				dp->PopAxes();
-			}
-
-			// draw spread path after filling in paper color
-			fs.Color(0xffff,0xffff,0xffff,0xffff);
-			ls.function = LAXOP_None;
+		// draw offset shadow if papergroup does not exist
+		if (!(papergroup && papergroup->papers.n)) {
+			dp->NewFG(0,0,0);
+			dp->PushAxes();
+			dp->ShiftScreen(laidout->prefs.pagedropshadow, laidout->prefs.pagedropshadow);
 			for (int c = 0; c < spread->pagestack.n(); c++) {
 				if (spread->pagestack.e[c]->outline) {
 					DrawData(dp, spread->pagestack.e[c]->outline, &ls,&fs,drawflags);
 				}
 			}
-			DrawData(dp,spread->path, nullptr,nullptr,drawflags);
+			dp->PopAxes();
 		}
 
-		if (spread->marks) DrawData(dp,spread->marks,NULL,NULL,drawflags);
+		// draw spread path after filling in paper color
+		fs.Color(0xffff,0xffff,0xffff,0xffff); //todo: use paper background color
+		for (int c = 0; c < spread->pagestack.n(); c++) {
+			// fill in page ref if null
+			pagei = spread->pagestack.e[c]->index;
+			if (!spread->pagestack.e[c]->page) { // try to look up page in doc using pagestack->index
+				if (pagei >= 0 && pagei < doc->pages.n) {
+					spread->pagestack.e[c]->page = doc->pages.e[pagei];
+				}
+			}
+
+			// blank out page area with no outline
+			if (spread->pagestack.e[c]->outline) {
+				ls.function = LAXOP_None;
+				// ls.Colorf(1.0,0.,0.,1.0);
+				DrawData(dp, spread->pagestack.e[c]->outline, &ls,&fs,drawflags);
+			}
+
+			// Draw page margin path, if any
+			SomeData *marginoutline = doc->imposition->GetPageMarginOutline(pagei,1);
+			//todo: specific page should be able to override imp defined pagestyle
+			if (marginoutline) {
+				// DBG cerr <<"********outline bounds ll:"<<marginoutline->minx<<','<<marginoutline->miny
+				// DBG      <<"  ur:"<<marginoutline->maxx<<','<<marginoutline->maxy<<endl;
+				
+				// LineStyle ls; //(0xa000,0xa000,0xa000,0xffff, 1,CapButt,JoinBevel,0,LAXOP_Over);
+				ls.Color(0xa000,0xa000,0xa000,0xffff);
+				ls.width = 1;
+				ls.widthtype = 0;
+				ls.function = LAXOP_Over;
+				if (dynamic_cast<PathsData*>(marginoutline)) {
+					dynamic_cast<PathsData*>(marginoutline)->style |= PathsData::PATHS_Ignore_Weights;
+				}
+				dp->PushAndNewTransform(spread->pagestack.e[c]->outline->m()); // transform to page coords
+				DrawData(dp,marginoutline, &ls, nullptr, drawflags);
+				dp->PopAxes();
+				marginoutline->dec_count();
+			}
+		}
+
+		// heavy outline around current page
+		for (int c = 0; c < spread->pagestack.n(); c++) {
+			if (spread->pagestack.e[c]->page == curpage) {
+				ls.Colorf(1.,0.,1.,1.0); //todo: current page color pref somewhere
+				ls.function = LAXOP_Over;
+				ls.width = 2;
+				ls.widthtype = 0;
+				DrawData(dp, spread->pagestack.e[c]->outline, &ls,nullptr,drawflags);
+				ls.width = 1;
+				break;
+			}
+		}
+
+		dp->LineWidthScreen(1);
+		if (spread->path)  DrawData(dp,spread->path, nullptr,nullptr, drawflags);
+		if (spread->marks) DrawData(dp,spread->marks,nullptr,nullptr, drawflags);
 		 
-		 // draw the page's objects and margins
-		Page *page = NULL;
-		int pagei = -1;
+		// draw the page's objects
 		flatpoint p,p2;
-		SomeData *sd = NULL;
-		for (c=0; c<spread->pagestack.n(); c++) {
+		SomeData *sd = nullptr;
+		for (c = 0; c < spread->pagestack.n(); c++) {
 			// DBG cerr <<" drawing from pagestack.e["<<c<<"], which has page "<<spread->pagestack.e[c]->index<<endl;
 			page  = spread->pagestack.e[c]->page;
 			pagei = spread->pagestack.e[c]->index;
 
 			if (!page) { // try to look up page in doc using pagestack->index
-				if (spread->pagestack.e[c]->index>=0 && spread->pagestack.e[c]->index<doc->pages.n) {
+				if (spread->pagestack.e[c]->index >= 0 && spread->pagestack.e[c]->index < doc->pages.n) {
 					pagei = spread->pagestack.e[c]->index;
-					page  = spread->pagestack.e[c]->page=doc->pages.e[pagei];
+					page  = spread->pagestack.e[c]->page = doc->pages.e[pagei];
 				}
 			}
 
 			if (!page) {
-				 //if no page, then draw an x through the page stack outline
+				// if no page, then draw an x through the page stack outline
 				if (!spread->pagestack.e[c]->outline) continue;
 				PathsData *paths = dynamic_cast<PathsData *>(spread->pagestack.e[c]->outline);
 				if (!paths || !paths->paths.n) continue;
@@ -3166,25 +3210,22 @@ void LaidoutViewport::Refresh()
 			}
 
 
-			 //else we have a page, so draw it all
+			// else we have a page, so draw it all
 			sd = spread->pagestack.e[c]->outline;
 			dp->PushAndNewTransform(sd->m()); // transform to page coords
-			if (drawflags&DRAW_AXES) dp->drawaxes();
+			if (drawflags & DRAW_AXES) dp->drawaxes();
 			
 			bool show_page_bleeds = true;
 			if (show_page_bleeds && page->pagebleeds.n && (viewmode == PAPERLAYOUT || viewmode == SINGLELAYOUT)) {
-				 //assume PAGELAYOUT already renders bleeds properly, since that's where the bleed objects come from
-				//char scratch[100];
-				//flatpoint page_center = page->pagestyle->outline->BBoxPoint(.5,.5, false);
+				// assume PAGELAYOUT already renders bleeds properly, since that's where the bleed objects come from
 
 				if (viewmode == PAPERLAYOUT) {
-					//only paper view clip
+					// only paper view clip
 					dp->PushClip(1);
 					SetClipFromPaths(dp,sd,NULL);
 				}
 
-				//dp->setSourceAlpha(.5);
-				for (int pb=0; pb<page->pagebleeds.n; pb++) {
+				for (int pb = 0; pb < page->pagebleeds.n; pb++) {
 					PageBleed *bleed = page->pagebleeds[pb];
 					if (bleed->index < 0 || bleed->index >= doc->pages.n) continue;
 					Page *otherpage = doc->pages[bleed->index];
@@ -3219,48 +3260,21 @@ void LaidoutViewport::Refresh()
 				if (viewmode == PAPERLAYOUT) dp->PopClip();
 			}
 
-			if ((page->pagestyle->flags&PAGE_CLIPS) || viewmode == PAPERLAYOUT) {
+			if ((page->pagestyle->flags & PAGE_CLIPS) || viewmode == PAPERLAYOUT) {
 				 // setup clipping region to be the page
 				dp->PushClip(1);
 				//SetClipFromPaths(dp,sd,dp->Getctm());
-				SetClipFromPaths(dp,sd,NULL);
-			}
-			
-			 //*** debuggging: draw X over whole page...
-	//		DBG dp->NewFG(255,0,0);
-	//		DBG dp->drawrline(flatpoint(sd->minx,sd->miny), flatpoint(sd->maxx,sd->miny));
-	//		DBG dp->drawrline(flatpoint(sd->maxx,sd->miny), flatpoint(sd->maxx,sd->maxy));
-	//		DBG dp->drawrline(flatpoint(sd->maxx,sd->maxy), flatpoint(sd->minx,sd->maxy));
-	//		DBG dp->drawrline(flatpoint(sd->minx,sd->maxy), flatpoint(sd->minx,sd->miny));
-	//		DBG dp->drawrline(flatpoint(sd->minx,sd->miny), flatpoint(sd->maxx,sd->maxy));
-	//		DBG dp->drawrline(flatpoint(sd->maxx,sd->miny), flatpoint(sd->minx,sd->maxy));
-	
-
-			 // Draw page margin path, if any
-			SomeData *marginoutline = doc->imposition->GetPageMarginOutline(pagei,1);
-			if (marginoutline) {
-				// DBG cerr <<"********outline bounds ll:"<<marginoutline->minx<<','<<marginoutline->miny
-				// DBG      <<"  ur:"<<marginoutline->maxx<<','<<marginoutline->maxy<<endl;
-				
-				// LineStyle ls; //(0xa000,0xa000,0xa000,0xffff, 1,CapButt,JoinBevel,0,LAXOP_Over);
-				ls.Color(0xa000,0xa000,0xa000,0xffff);
-				ls.width = 1;
-				ls.widthtype=0;
-				if (dynamic_cast<PathsData*>(marginoutline)) {
-					dynamic_cast<PathsData*>(marginoutline)->style|=PathsData::PATHS_Ignore_Weights;
-				}
-				DrawData(dp,marginoutline,&ls,NULL,drawflags);
-				marginoutline->dec_count();
+				SetClipFromPaths(dp, sd, nullptr);
 			}
 
-			 // Draw all the page's objects.
-			for (c2=0; c2<page->layers.n(); c2++) {
+			// Draw all the page's objects.
+			for (c2 = 0; c2 < page->layers.n(); c2++) {
 				// DBG cerr <<"  num objs in page: "<<page->n()<<endl;
 				// DBG cerr <<"  Layer "<<c2<<", objs.n="<<page->e(c2)->n()<<endl;
 				DrawData(dp,page->e(c2),NULL,NULL,drawflags);
 			}
 			
-			if (page->pagestyle->flags&PAGE_CLIPS) {
+			if (page->pagestyle->flags & PAGE_CLIPS) {
 				 //remove clipping region
 				dp->PopClip();
 			}
@@ -3271,8 +3285,8 @@ void LaidoutViewport::Refresh()
 	
 	if (papergroup) {
 		 //draw paper objects
-		ViewerWindow *vw=dynamic_cast<ViewerWindow *>(win_parent);
-		PaperInterface *pi=dynamic_cast<PaperInterface *>(vw->FindInterface("PaperInterface"));
+		ViewerWindow *vw = dynamic_cast<ViewerWindow *>(win_parent);
+		PaperInterface *pi = dynamic_cast<PaperInterface *>(vw->FindInterface("PaperInterface"));
 		if (pi) pi->DrawGroup(papergroup,1,1,0, 2);
 	}
 
@@ -5572,29 +5586,29 @@ int ViewWindow::PerformAction(int action)
 				}
 			}
 		}
-		PaperGroup *pg=vp->papergroup;
+		PaperGroup *pg = vp->papergroup;
 		Group *l;
 		if (!pg || !pg->papers.n) {
-			l=NULL;
-			if (vp->doc) pg=vp->doc->imposition->papergroup;
-			if (pg && pg->papers.n==0) pg=NULL;
+			l = nullptr;
+			if (vp->doc) pg = vp->doc->imposition->GetPaperGroup();
+			if (pg && pg->papers.n == 0) pg = nullptr;
 			if (!pg) {
 				int c;
-				for (c=0; c<laidout->papersizes.n; c++) {
+				for (c = 0; c < laidout->papersizes.n; c++) {
 					if (!strcasecmp(laidout->prefs.defaultpaper,laidout->papersizes.e[c]->name)) 
 						break;
 				}
 				PaperStyle *ps;
-				if (c==laidout->papersizes.n) c=0;
-				ps=(PaperStyle *)laidout->papersizes.e[0]->duplicate();
+				if (c == laidout->papersizes.n) c=0;
+				ps = (PaperStyle *)laidout->papersizes.e[0]->duplicate();
 				pg=new PaperGroup(ps);
 				ps->dec_count();
 			} else pg->inc_count();
-		} else l=vp->limbo;
-		PrintingDialog *p=new PrintingDialog(doc,object_id,"export config",
+		} else l = vp->limbo;
+		PrintingDialog *p = new PrintingDialog(doc,object_id,"export config",
 										"output.ps", //file
 										"lp",        //command
-										NULL,        //thisfile
+										nullptr,        //thisfile
 										PAPERLAYOUT, 
 										0,              //min spread
 										doc ? doc->imposition->NumPapers()-1 : 0, //max spread

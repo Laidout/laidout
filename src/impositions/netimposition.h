@@ -45,6 +45,8 @@ class NetImposition : public Imposition
 	int netisbuiltin;
 	Laxkit::RefPtrStack<Polyptych::Net> nets;
 
+	PaperGroup *papergroup;
+
 	LaxInterfaces::LineStyle *line_fold;
 	LaxInterfaces::LineStyle *line_peak;
 	LaxInterfaces::LineStyle *line_valley;
@@ -66,6 +68,8 @@ class NetImposition : public Imposition
 	virtual void GetDefaultPaperDimensions(double *x, double *y);
 	virtual void GetDefaultPageDimensions(double *x, double *y);
 	virtual ImpositionInterface *Interface();
+	virtual PaperGroup *GetPaperGroup(int layout = -1, int index = -1);
+	virtual PaperStyle *GetDefaultPaper();
 	
 	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual PageStyle *GetPageStyle(int pagenum,int local);

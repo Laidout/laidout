@@ -16,6 +16,7 @@
 #define IMPOSITIONEDITOR_H
 
 #include <lax/interfaces/viewerwindow.h>
+#include <lax/menubutton.h>
 
 #include "imposition.h"
 
@@ -27,14 +28,23 @@ class ImpositionEditor : public LaxInterfaces::ViewerWindow
 {
   protected:
 	ImpositionInterface *tool;
+	ImpositionInterface *tool_signatures;
+	ImpositionInterface *tool_net;
+	ImpositionInterface *tool_singles;
+
 	Laxkit::anXWindow *neteditor;
-	Laxkit::anXWindow *singleseditor;
+	
 	int whichactive;
 	Imposition *firstimp;
-
+	Document *doc;
+	
 	char *imposeout, *imposeformat;
 	int rescale_pages;
-	Document *doc;
+	bool show_splash = false;
+
+	Laxkit::MenuButton *type_mbut = nullptr;
+
+	void SetMenuButton(const char *text);
 
   public:
 	ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,
@@ -42,8 +52,7 @@ class ImpositionEditor : public LaxInterfaces::ViewerWindow
 						Document *doc,
 						Imposition *imposition,
 						PaperStyle *p,
-						const char *imposearg=NULL,
-						ImpositionInterface *interface=NULL
+						const char *imposearg = nullptr
 						);
 	virtual ~ImpositionEditor();
 	virtual int init();
@@ -55,6 +64,7 @@ class ImpositionEditor : public LaxInterfaces::ViewerWindow
 	virtual int ChangeImposition(Imposition *newimp);
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
+	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
 	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 };
 
