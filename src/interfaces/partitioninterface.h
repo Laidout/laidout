@@ -53,6 +53,17 @@ class PaperCut
   	}
 };
 
+class PaperGrid : public Laxkit::RefCounted
+{
+  public:
+  	int tile_x = 1;
+  	int tile_y = 1;
+  	double gap_x = 0;
+  	double gap_y = 0;
+  	double FinalWidth (double media_w) { return (media_w - (tile_x-1)*gap_x)/ tile_x; }
+  	double FinalHeight(double media_h) { return (media_h - (tile_y-1)*gap_y)/ tile_y; }
+};
+
 class Region : virtual public LaxInterfaces::SomeData, virtual public Value
 {
   public:

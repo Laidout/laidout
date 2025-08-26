@@ -636,8 +636,6 @@ void PartitionInterface::DrawRegion(Region *region, bool arrow)
 	// dp->DrawReal();
 }
 
-/*! Draws maybebox if any, then DrawGroup() with the current papergroup.
- */
 int PartitionInterface::Refresh()
 {
 	if (!needtodraw) return 0;
@@ -681,7 +679,6 @@ int PartitionInterface::Refresh()
 	return 0;
 }
 
-//! Return the region papergroup->papers element index underneath x,y, or -1.
 int PartitionInterface::scan(int x,int y, Region *start_here, int &edge_ret, flatpoint &p_ret, double &dist, Region *&region_ret)
 {
 	if (!start_here) start_here = main_region;
