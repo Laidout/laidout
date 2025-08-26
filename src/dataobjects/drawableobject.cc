@@ -525,12 +525,14 @@ LaxInterfaces::SomeData *DrawableObject::duplicate(LaxInterfaces::SomeData *dup)
 	 //filter
 	d->opacity = opacity;
 	//d->blur  = blur;
-	if (filter) {
-		ObjectFilter *ofilter = dynamic_cast<ObjectFilter*>(filter);
-		ObjectFilter *nfilter = dynamic_cast<ObjectFilter*>(ofilter->Duplicate());
-		d->filter = nfilter;
-		nfilter->SetParent(d);
-	}
+	
+	// *** this causes recursion: FIXME
+	// if (filter) {
+	// 	ObjectFilter *ofilter = dynamic_cast<ObjectFilter*>(filter);
+	// 	ObjectFilter *nfilter = dynamic_cast<ObjectFilter*>(ofilter->Duplicate());
+	// 	d->filter = nfilter;
+	// 	nfilter->SetParent(d);
+	// }
 
 	 //kids
 	SomeData *obj;
