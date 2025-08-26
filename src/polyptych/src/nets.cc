@@ -22,7 +22,7 @@
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
 
-#include "../language.h"
+#include <lax/language.h>
 
 #include <fstream>
 
