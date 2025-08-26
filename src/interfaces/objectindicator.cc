@@ -207,8 +207,6 @@ int CommonAnscestor(Selection *selection, VObjContext *oc)
 }
 
 
-/*! Draws maybebox if any, then DrawGroup() with the current papergroup.
- */
 int ObjectIndicator::Refresh()
 {
 	if (!needtodraw) return 0;

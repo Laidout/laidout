@@ -15,6 +15,7 @@
 #ifndef LAIDOUTDEFS_H
 #define LAIDOUTDEFS_H
 
+// note: the 0,1,2 need to be hardcoded currently as they are also used as indices in class Imposition
 #define LITTLESPREADLAYOUT -1
 #define SINGLELAYOUT 0
 #define PAGELAYOUT   1
