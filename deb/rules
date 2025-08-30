@@ -38,6 +38,7 @@ install: build
 	dh_testroot
 	dh_clean -k 
 	dh_installdirs
+	$(MAKE) -C src/icons all-with-lax
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/laidout
 
 # Build architecture-independent files here.

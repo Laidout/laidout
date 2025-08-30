@@ -92,6 +92,11 @@ deb: touchdepends
 	if [ ! -e debian ] ; then ln -s deb debian; fi
 	dpkg-buildpackage -rfakeroot
 
+unsigneddeb: touchdepends
+	touch Makefile-toinclude
+	if [ ! -e debian ] ; then ln -s deb debian; fi
+	dpkg-buildpackage -rfakeroot -us -uc
+
 tar:
 	sh deb/maketar.sh $(LAIDOUTVERSION) 
 
