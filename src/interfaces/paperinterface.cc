@@ -1027,47 +1027,56 @@ int PaperInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 			flatpoint p;
 			double startvalue = 0;
 			const char *message = nullptr;
+			const char *label = nullptr;
 			PaperBox *box = curbox->box;
 
 			if (hover_item == PAPERI_Trim_Top) {
 				// p = flatpoint((1-trim_offset)*curbox->w(), box->trim.maxy);
 				startvalue = curbox->h() - box->trim.maxy;
 				message = "trim_top";
+				label = _("Trim top");
 			
 			} else if (hover_item == PAPERI_Trim_Right) {
 				// p = flatpoint(box->trim.minx, (1-trim_offset)*curbox->h());
 				startvalue = box->trim.minx;
 				message = "trim_left";
+				label = _("Trim left");
 			
 			} else if (hover_item == PAPERI_Trim_Left) {
 				// p = flatpoint(box->trim.maxx, (1-trim_offset)*curbox->h());
 				startvalue = curbox->w() - box->trim.maxx;
 				message = "trim_right";
+				label = _("Trim right");
 			
 			} else if (hover_item == PAPERI_Trim_Bottom) {
 				// p = flatpoint((1-trim_offset)*curbox->w(), box->trim.miny);
 				startvalue = box->trim.miny;
 				message = "trim_bottom";
+				label = _("Trim bottom");
 			
 			} else if (hover_item == PAPERI_Margin_Top) {
 				// p = flatpoint((1-margin_offset)*curbox->w(), box->margin.maxy);
 				startvalue = curbox->h() - box->margin.maxy;
 				message = "margin_top";
+				label = _("Margin top");
 			
 			} else if (hover_item == PAPERI_Margin_Right) {
 				// p = flatpoint(box->margin.minx, (1-margin_offset)*curbox->h());
 				startvalue = box->margin.minx;
 				message = "margin_left";
+				label = _("Margin left");
 			
 			} else if (hover_item == PAPERI_Margin_Left) {
 				// p = flatpoint(box->margin.maxx, (1-margin_offset)*curbox->h());
 				startvalue = curbox->w() - box->margin.maxx;
 				message = "margin_right";
+				label = _("Margin right");
 			
 			} else if (hover_item == PAPERI_Margin_Bottom) {
 				// p = flatpoint((1-margin_offset)*curbox->w(), box->margin.miny);
 				startvalue = box->margin.miny;
 				message = "margin_bottom";
+				label = _("Margin bottom");
 			}
 
 			// p = dp->realtoscreen(curbox->transformPoint(p));
@@ -1077,7 +1086,7 @@ int PaperInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 			DoubleBBox bounds(p.x - 5*th, p.x + 5*th, p.y - th, p.y + th);
 			char scratch[30];
 			sprintf(scratch, "%g", startvalue);
-			viewport->SetupInputBox(object_id, name, scratch, message, bounds);
+			viewport->SetupInputBox(object_id, label, scratch, message, bounds);
 
 		} else if (maybe_flush) {
 			maybe_flush = false;
