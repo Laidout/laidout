@@ -34,6 +34,9 @@ class LaidoutPreferences : public Value
 	char *unitname;
 
 	int pagedropshadow;
+	Laxkit::ScreenColor shadow_color;
+	Laxkit::ScreenColor current_page_color;
+	
 	int preview_size;
 	bool start_with_last;
 	char *shortcuts_file;

@@ -84,6 +84,9 @@ LaidoutPreferences::LaidoutPreferences()
 	experimental = false;
 
 	exportfilename = newstr("%f-exported.whatever");
+
+	shadow_color.rgbf(0.,0.,0.,1.0);
+	current_page_color.rgbf(.8,0.,0.,1.0);
 }
 
 LaidoutPreferences::~LaidoutPreferences()
@@ -132,6 +135,9 @@ Value *LaidoutPreferences::duplicate()
 	for (int c=0; c<plugin_dirs.n; c++) {
 		p->plugin_dirs.push(newstr(plugin_dirs.e[c]), LISTS_DELETE_Array);
 	}
+
+	p->shadow_color = shadow_color;
+	p->current_page_color = current_page_color;
 
 	return p;
 }
@@ -195,6 +201,20 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 			_("Page drop shadow"),
 			_("How much to offset drop shadows around papers and pages"),
 			"real", nullptr,"5",
+			0,
+			nullptr);
+
+	def->push("shadow_color",
+			_("Color of page drop shadow"),
+			nullptr,
+			"Color", nullptr,"rgbf(0,0,0)",
+			0,
+			nullptr);
+
+	def->push("current_page_color",
+			_("Color of current page indicator"),
+			nullptr,
+			"Color", nullptr,"rgbf(1,0,0)",
 			0,
 			nullptr);
 
@@ -402,6 +422,22 @@ int LaidoutPreferences::assign(FieldExtPlace *ext,Value *v)
 		return 1;
 	}
 
+	// if (!strcmp(extstring, "shadow_color")) {
+	// 	TODO
+	// 	if (v->type() != VALUE_Color) return 0;
+	// 	shadow_color = d;
+	// 	if (autosave_prefs) UpdatePreference(extstring, shadow_color, nullptr);
+	// 	return 1;
+	// }
+
+	// if (!strcmp(extstring, "current_page_color")) {
+	// 	TODO
+	// 	if (v->type() != VALUE_Color) return 0;
+	// 	current_page_color = d;
+	// 	if (autosave_prefs) UpdatePreference(extstring, current_page_color, nullptr);
+	// 	return 1;
+	// }
+	
 	if (!strcmp(extstring, "uiscale")) {
 		double d;
 		if (!isNumberType(v, &d)) return 0;
@@ -564,6 +600,14 @@ Value *LaidoutPreferences::dereference(const char *extstring, int len)
 
 	if (!strcmp(extstring, "pagedropshadow")) {
 		return new IntValue(pagedropshadow);
+	}
+
+	if (!strcmp(extstring, "shadow_color")) {
+		return new ColorValue(shadow_color);
+	}
+
+	if (!strcmp(extstring, "current_page_color")) {
+		return new ColorValue(current_page_color);
 	}
 
 	if (!strcmp(extstring, "uiscale")) {

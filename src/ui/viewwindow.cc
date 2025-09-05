@@ -3096,7 +3096,8 @@ void LaidoutViewport::Refresh()
 		ls.capstyle = LAXCAP_Round;
 		ls.widthtype = 0;
 		ls.function = LAXOP_None;
-		fs.Color(0,0,0,0xffff); // shadow color
+		// fs.Color(0,0,0,0xffff); // shadow color
+		fs.Colorf(laidout->prefs.shadow_color);
 
 		// draw offset shadow if papergroup does not exist
 		if (!(papergroup && papergroup->papers.n)) {
@@ -3159,8 +3160,8 @@ void LaidoutViewport::Refresh()
 		// heavy outline around current page
 		if (curpage) for (int c = 0; c < spread->pagestack.n(); c++) {
 			if (spread->pagestack.e[c]->page == curpage) {
-				//ls.Colorf(1.,0.,1.,1.0); //todo: current page color pref somewhere
-				ls.Colorf(.8,0.,0.,1.0); //todo: current page color pref somewhere
+				ls.Colorf(laidout->prefs.current_page_color);
+				// ls.Colorf(.8,0.,0.,1.0); //todo: current page color pref somewhere
 				ls.function = LAXOP_Over;
 				ls.width = 2;
 				ls.widthtype = 0;
