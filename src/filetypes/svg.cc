@@ -395,8 +395,8 @@ Value *newSvgImportConfig()
 
 SvgOutputFilter::SvgOutputFilter()
 {
-	version=1.1;
-	//flags=FILTERS_MULTIPAGE; //***not multipage yet!
+	version = 1.1;
+	flags = FILTER_MULTIPAGE;
 }
 
 const char *SvgOutputFilter::Version()
@@ -1761,6 +1761,9 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	}
 	fprintf(f,"  >\n");
 	if (out->use_multipage && papergroup && papergroup->papers.n) {
+		DoubleBBox bbox;
+		papergroup->FindPaperBBox(&bbox);
+
 		for (int c = 0; c < papergroup->papers.n; c++) {
 			PaperBoxData *box = papergroup->papers.e[c];
 			RectPageStyle *r = nullptr;
@@ -1775,7 +1778,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 					   "      margin=\"%f %f %f %f\"\n"
 					   "      bleed=\"0\"\n" //\"%f\"\n"
 					   "      inkscape:label=\"%s\" />\n",
-					   box->m(4)*PPINCH, box->m(5)*PPINCH, // x,y
+					   box->m(4)*PPINCH, (bbox.boxheight() - box->m(5) - box->h())*PPINCH, // x,y
 					   box->boxwidth()*PPINCH, box->boxheight()*PPINCH, // w,h
 					   label, // id
 					   r ? r->mt*PPINCH : 0, //margin
