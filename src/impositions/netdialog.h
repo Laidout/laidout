@@ -48,6 +48,7 @@ class NetDialog : public Laxkit::RowFrame, public ImpositionWindow
 	virtual const char *whattype() { return "NetDialog"; }
 	virtual int init();
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
+	virtual int deletenow();
 
 	int sendNewImposition();
 	NetImposition *getNetImposition();

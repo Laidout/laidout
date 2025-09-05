@@ -22,6 +22,7 @@
 #include <lax/attributes.h>
 #include <lax/transformmath.h>
 
+#include <cassert>
 
 #include <iostream>
 #define DBG
@@ -754,38 +755,39 @@ int Signature::PagesPerPattern()
  */
 int Signature::locatePaperFromPage(int pagenumber, int *row, int *col, int num_sheets)
 {
-	int pageindex=pagenumber%PagesPerPattern();//page index within the signature
-	int pagespercell=2*num_sheets; //total pages per cell
-	int sigindex      =pageindex/(pagespercell/2);//page index assuming a single page in signature
-	int sigindexoffset=pageindex%(pagespercell/2);//index within cell of the page
+	int pageindex      = pagenumber % PagesPerPattern();  // page index within the signature
+	int pagespercell   = 2 * num_sheets;                  // total pages per cell
+	int sigindex       = pageindex / (pagespercell / 2);  // page index assuming a single page in signature
+	int sigindexoffset = pageindex % (pagespercell / 2);  // index within cell of the page
 
-	 //sigindex is the same as pageindex when there is only 1 sheet per signature.
-	 //Now we need to find which side of the paper sigindex is on, then map that if necessary
-	 //to the right piece of paper.
-	 //
-	 //To do this, we find where it is in the pattern...
+	// sigindex is the same as pageindex when there is only 1 sheet per signature.
+	// Now we need to find which side of the paper sigindex is on, then map that if necessary
+	// to the right piece of paper.
+	//
+	// To do this, we find where it is in the pattern...
 
 	DBG int front;  //Whether sigindex is on top or bottom of unfolded pattern
 	int countdir; //Whether a pattern cell has a higher page number on top (1) or not (0).
-	int rr=-1, cc=-1;
-	for (rr=0; rr<numhfolds+1; rr++) {
-	  for (cc=0; cc<numvfolds+1; cc++) {
-		if (sigindex==foldinfo[rr][cc].finalindexfront) {
-			DBG front=1;
-			countdir=(foldinfo[rr][cc].finalindexfront>foldinfo[rr][cc].finalindexback);
+	int rr = -1, cc = -1;
+	for (rr = 0; rr < numhfolds+1; rr++) {
+	  for (cc = 0; cc < numvfolds+1; cc++) {
+		if (sigindex == foldinfo[rr][cc].finalindexfront) {
+			DBG front = 1;
+			countdir = (foldinfo[rr][cc].finalindexfront>foldinfo[rr][cc].finalindexback);
 			break;
-		} else if (sigindex==foldinfo[rr][cc].finalindexback) {
-			DBG front=0;
-			countdir=(foldinfo[rr][cc].finalindexfront>foldinfo[rr][cc].finalindexback);
+		} else if (sigindex == foldinfo[rr][cc].finalindexback) {
+			DBG front = 0;
+			countdir = (foldinfo[rr][cc].finalindexfront>foldinfo[rr][cc].finalindexback);
 			break;
 		}
 	  } //cc
-	  if (cc!=numvfolds+1) break;
+	  if (cc != numvfolds+1) break;
 	}  //rr
 
-	DBG if (rr==numhfolds+1) { 
-	DBG 	cerr << " *** could not find place "<<sigindex<<" in rr,cc"<<endl;
-	DBG 	exit(0);
+	DBG if (rr == numhfolds+1) { 
+	DBG 	cerr << " *** could not find place "<<sigindex<<" in rr,cc ABORT ABORT!!!"<<endl;
+	DBG 	assert(rr != numhfolds+1);
+	DBG 	//exit(0);
 	DBG }
 	DBG cerr <<"front:"<<front<<endl;
 
@@ -1605,6 +1607,7 @@ SignatureInstance::SignatureInstance(Signature *sig, PaperPartition *paper)
 	// automarks=AUTOMARK_Margins|AUTOMARK_InnerDot; //1.margin marks, 2.interior dotted line, 4.interior dots
 	// automarks=AUTOMARK_Margins|AUTOMARK_InnerDottedLines; //1.margin marks, 2.interior dotted line, 4.interior dots
 	automarks = 0;  // 1.margin marks, 2.interior dotted line, 4.interior dots
+	spine_marks = true;
 	linestyle = nullptr;
 }
 
@@ -1704,6 +1707,7 @@ Value *SignatureInstance::duplicate()
 	sig->creep              = creep;
 
 	sig->automarks = automarks;
+	sig->spine_marks = spine_marks;
 
 	return sig;
 }
@@ -1725,6 +1729,7 @@ SignatureInstance *SignatureInstance::duplicateSingle()
 	sig->creep = creep;
 
 	sig->automarks = automarks;
+	sig->spine_marks = spine_marks;
 
 	return sig;
 }
@@ -2224,6 +2229,8 @@ Laxkit::Attribute *SignatureInstance::dump_out_atts(Laxkit::Attribute *att,int w
 		if (str[0]!='\0') att->push("automarks",str);
 	}
 
+	att->push("spine_marks", spine_marks ? "yes" : "no");
+
 	att->push("autoaddsheets",autoaddsheets?"yes":"no");
 	char ii[10];
 	sprintf(ii,"%d",sheetspersignature);
@@ -2262,6 +2269,9 @@ void SignatureInstance::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::Dum
 			if (strstr(value,"outer")) automarks|=AUTOMARK_Margins;
 			if (strstr(value,"innerdot")) automarks|=AUTOMARK_InnerDot;
 			//else if (strstr(value,"innerdotlines")) automarks|=AUTOMARK_InnerDottedLines;
+
+		} else if (!strcmp(name,"spine_marks")) {
+			spine_marks = BooleanAttribute(value);
 
 		} else if (!strcmp(name,"numpages")) {
 			IntAttribute(value, &nump);
@@ -2326,6 +2336,9 @@ ObjectDef *SignatureInstance::makeObjectDef()
 	sd->push("automarks", _("Automarks"), _("outer|innerdot: Whether to automatically apply some printer marks."),
 			"string", nullptr, nullptr, 0, nullptr);
 
+	sd->push("spine_marks", _("Spine marks"), _("Draw markings in diagonal pattern on binding side of signatures to keep track of order."),
+			"boolean", nullptr, "true", 0, nullptr);
+
 	sd->push("partition", _("Partition"), _("Sectioning info of the piece of paper"),
 			"PaperPartition", nullptr, nullptr, 0, nullptr);
 
@@ -2361,6 +2374,11 @@ int createSignatureInstance(ValueHash *context, ValueHash *parameters,
 		i=parameters->findBoolean("autoaddsheets",-1,&e);
 		if (e==0) sig->autoaddsheets=(i?1:0);
 		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"autoaddsheets"); throw error; }
+
+		//---spine_marks
+		i = parameters->findBoolean("spine_marks",-1,&e);
+		if (e == 0) sig->spine_marks = (i ? true : false);
+		else if (e == 2) { sprintf(error, _("Invalid format for %s!"),"spine_marks"); throw error; }
 
 		 //---pattern
 		Value *v=parameters->find("pattern");
@@ -3059,7 +3077,9 @@ LaxInterfaces::SomeData *SignatureImposition::GetPageOutline(int pagenum,int loc
  */
 LaxInterfaces::SomeData *SignatureImposition::GetPageMarginOutline(int pagenum,int local)
 {
-	SignatureInstance *sig=signatures->InstanceFromPage(pagenum,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr);
+	if (pagenum < 0) return nullptr;
+	SignatureInstance *sig = signatures->InstanceFromPage(pagenum,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr);
+	if (!sig) return nullptr;
 	return sig->GetPageMarginOutline(pagenum);
 }
 
@@ -3238,12 +3258,20 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 {
 	if (whichpaper<0) whichpaper=0;
 
-	 //find containing siginstance
+	// find containing siginstance
 	int mainpageoffset=0, opposite_offset=0;
 	int sigpaper;
-	SignatureInstance *sig = InstanceFromPaper(whichpaper, nullptr,nullptr, &sigpaper, &mainpageoffset, &opposite_offset, nullptr);
+	int stack_index = -1;
+	int insert_index = -1;
+	SignatureInstance *sig = InstanceFromPaper(whichpaper, &stack_index, &insert_index, &sigpaper, &mainpageoffset, &opposite_offset, nullptr);
 	int front = (1+sigpaper)%2; //whether to horizontally flip columns
 
+	flatpoint spine_mark_from;
+	flatpoint spine_mark_to;
+	if (signatures->spine_marks && insert_index == 0) { // *** spine_marks should be SignatureImposition property?
+		// mark must go between the first and last pages for the particular stack
+		// *** TODO
+	}
 
 	//Create the actual Spread...
 
@@ -3260,7 +3288,7 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 	spread->papergroup=new PaperGroup(paper);
 
 
-	 // define max/min points
+	// define max/min points
 	spread->minimum = flatpoint(paper->w()/5,  paper->h()/2);
 	spread->maximum = flatpoint(paper->w()*4/5,paper->h()/2);
 	//double paperwidth = paper->w();
@@ -3269,14 +3297,14 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 //		*** signature is incomplete, should do something meaningful?
 //	}
 	
-	 //--- make the paper outline
+	//--- make the paper outline
 	PathsData *newpath = new PathsData();
 	//newpath->appendRect(0,0,paper->media.maxx,paper->media.maxy);
 	//newpath->FindBBox();
 	spread->path = (SomeData *)newpath;
 
 
-	 //---- make the pagelocation stack
+	//---- make the pagelocation stack
 	double x,y;
 	double xx,yy;
 	int xflip, yflip;

@@ -164,6 +164,8 @@ enum SignatureInterfaceActions {
 	SIA_MarginMask,
 	SIA_MarginInc,
 	SIA_MarginDec,
+	SIA_Automarks_Cut_Lines,
+	SIA_Automarks_Inner_Dots,
 	SIA_MAX
 };
 
@@ -329,6 +331,7 @@ void SignatureInterface::checkFoldLevel(int update)
 	hasfinal=signature->checkFoldLevel(foldinfo,&finalr,&finalc);
 }
 
+// context menu ids
 #define SIGM_Portrait        2000
 #define SIGM_Landscape       2001
 #define SIGM_SaveAsResource  2002
@@ -336,6 +339,9 @@ void SignatureInterface::checkFoldLevel(int update)
 #define SIGM_CustomPaper     2004
 #define SIGM_Thumbs          2005
 #define SIGM_Rescale_Pages   2006
+#define SIGM_Automarks_Cut_Lines  2007
+#define SIGM_Automarks_Inner_Dots 2008
+#define SIGM_Spine_Marks          2009
 
 /*! Return whether every siginstance has a totally folded pattern.
  */
@@ -359,14 +365,14 @@ int SignatureInterface::IsFinal()
  */
 Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid, Laxkit::MenuInfo *menu)
 {
-	if (!menu) menu=new MenuInfo(_("Signature Interface"));
-	else if (menu->n()==0) menu->AddSep(_("Signatures"));
+	if (!menu) menu = new MenuInfo(_("Signature Interface"));
+	else if (menu->n() == 0) menu->AddSep(_("Signatures"));
 
-	int landscape=0;
+	int landscape = 0;
 	const char *paper="";
 	if (siginstance->partition->paper) {
-		landscape=siginstance->partition->paper->landscape();
-		paper=siginstance->partition->paper->name;
+		landscape = siginstance->partition->paper->landscape();
+		paper = siginstance->partition->paper->name;
 	}
 
 	menu->AddToggleItem(_("Portrait"),  SIGM_Portrait,  0, !landscape);
@@ -387,6 +393,11 @@ Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid, Lax
 	menu->EndSubMenu();
 	//menu->AddItem(_("Custom paper size"),SIGM_CustomPaper);
 	menu->AddItem(_("Paper Size to Final Size"),SIGM_FinalFromPaper);
+
+	menu->AddSep(_("Automarks"));
+	menu->AddToggleItem(_("Cut lines"),  SIGM_Automarks_Cut_Lines,  0, (siginstance->automarks & AUTOMARK_Margins)  != 0);
+	menu->AddToggleItem(_("Inner dots"), SIGM_Automarks_Inner_Dots, 0, (siginstance->automarks & AUTOMARK_InnerDot) != 0);
+	menu->AddToggleItem(_("Spine marks"),SIGM_Spine_Marks,          0, siginstance->spine_marks);
 
 	if (IsFinal()) {
 		menu->AddSep();
@@ -465,6 +476,28 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 				needtodraw=1;
 			}
 			if (siginstance==sigimp->GetSignature(0,0)) sigimp->SetDefaultPaperSize(paper);
+			return 0;
+
+		} else if (i == SIGM_Automarks_Cut_Lines || i == SIGM_Automarks_Inner_Dots) {
+			if (!siginstance) return 0;
+			
+			if (i == SIGM_Automarks_Inner_Dots)
+				 siginstance->automarks ^= AUTOMARK_InnerDot;
+			else siginstance->automarks ^= AUTOMARK_Margins;
+
+			ActionArea *area = control(SP_Automarks);
+			if (siginstance->automarks == 0) makestr(area->text,"No automarks");
+			else if (siginstance->automarks == AUTOMARK_Margins) makestr(area->text,"Automarks outside");
+			else if (siginstance->automarks == AUTOMARK_InnerDot) makestr(area->text,"Automarks inside");
+			else if (siginstance->automarks == (AUTOMARK_InnerDot | AUTOMARK_Margins)) makestr(area->text,"Automarks inside and outside");
+			remapHandles(SP_Automarks);
+			needtodraw = 1;
+			return 0;
+
+		} else if (i == SIGM_Spine_Marks) {
+			if (!siginstance) return 0;
+			siginstance->spine_marks = !siginstance->spine_marks;
+			needtodraw = 1;
 			return 0;
 
 		} else if (i<999) {
@@ -2263,7 +2296,7 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 
 		} else if (onoverlay == curhandle && onoverlay == SP_Paper_Name) {
 			PaperStyle *paper = siginstance->partition->paper;
-			PaperSizeWindow *psizewindow = new PaperSizeWindow(nullptr, "psizewindow", nullptr, 0, object_id, "papersize", 
+			PaperSizeWindow *psizewindow = new PaperSizeWindow(nullptr, "PaperSizeWindow", _("Paper Size"), ANXWIN_REMEMBER | ANXWIN_ESCAPABLE, object_id, "papersize", 
 										paper, false, false, false, false);
 			app->rundialog(psizewindow);
 			return 0;

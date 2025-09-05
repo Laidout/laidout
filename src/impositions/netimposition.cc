@@ -132,7 +132,6 @@ NetImposition::NetImposition()
 	if (paperstyle) paperstyle = static_cast<PaperStyle *>(paperstyle->duplicate());
 	else paperstyle = new PaperStyle("letter",8.5,11.0,0,300,"in");
 	PaperBox *paper = new PaperBox(paperstyle, true);
-	paperstyle->dec_count();
 	PaperBoxData *newboxdata = new PaperBoxData(paper);
 	paper->dec_count();
 	papergroup = new PaperGroup;

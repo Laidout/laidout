@@ -360,8 +360,8 @@ int ImpositionEditor::init()
 
 	ChangeImposition(firstimp);
 	
-	double w = 1,h = 1;
-	tool->GetDimensions(w,h);
+	double w = 10,h = 10;
+	if (tool) tool->GetDimensions(w,h);
 	viewport->dp->Center(-w*.15,w*1.15, -h*.15,h*1.15);
 	PostMessage(" ");
 
@@ -396,7 +396,6 @@ void ImpositionEditor::send()
 
 	} else if (whichactive == WHICH_Singles) {
 		if (tool_singles) imp = (Imposition*)(tool_singles->GetImposition());
-		// if (singleseditor) imp = dynamic_cast<SinglesEditor*>(singleseditor)->GetImposition();
 	}
 
 	if (!imp) return;

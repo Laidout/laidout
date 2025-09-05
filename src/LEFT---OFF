@@ -79,8 +79,6 @@ DONE memory hole ./laidout -n letter then quit
 DONE memory hole paper interface, activate tool, lay down one paper, quit, 3 objects remain
 DONE memory hole cairo backend (can't duplicate)
 
-"edit imposition", then escape.. removes window, but not the frame!
-
 clones of images scale not like images.. should also snap aspect to start of drag, not when control key pressed
 
 select no doc, select doc, viewport jumps around... it should stay the same area
@@ -156,7 +154,8 @@ stackframe seems to be ignoring window borders on layout
 DONE website: Rework download to be easier
 website:
   rss feed: use index.xml instead of rss.xml, and make link on front page
-  screenshots:
+  website revamp:
+    rebuild with hugo
     half the videos are not linking
 	need to redo screenshots section for mobile friendliness
 	  Color fonts
@@ -176,8 +175,8 @@ website:
 	  Warping
 	  Spread editor
 	  Node tool
-	rename to Tutorials or maybe Media. Inkscape uses "Learn"
 	on index should show version and date
+	DONE rename to docs
 for CI, https://github.com/Laidout/laidout-icons.git needs to be updated
 update fileformat.txt
   DONE missing Palette/GradientStrip
@@ -192,7 +191,6 @@ DONE update splash image at icons/LaidoutSplash.png
 update docs to have new release number
 update translation base files
 update screenshots, sync with features
-  some of the old youtube embedding doesn't work any more
 update links page
 update help page
 update quickref.html
@@ -652,16 +650,16 @@ idml from indesign?
 
 
 Singles:
+  memory hole on export multipage svg
   need optional paper packer for Paper view, while a papergroup is for pages view
   object bleeds not implemented
-  export to pdf has wrong paper sizes with multipage, also not handling page bleed with inkscape multipage import
-  inset should be per paper in papergroup
-  revamp to be art board centric, based on random PaperGroup
-  what's with the old cached_margin stuff, obsolete now with pagestyles stack?
-  DONE need to cache page margins properly for papergroup GetPageMarginOutline()
-  PageLayout lines
+  export to pdf has wrong paper sizes with multipage
   PaperLayout, needs to optionally be a different PaperGroup compared to page layout
   implement double sided
+  DONE inset should be per paper in papergroup
+  DONE what's with the old cached_margin stuff, obsolete now with pagestyles stack?
+  DONE revamp to be art board centric, based on random PaperGroup
+  DONE need to cache page margins properly for papergroup GetPageMarginOutline()
 
 
 Bevel Tool BevelInterface:
@@ -2286,9 +2284,10 @@ shortcut dialog: shortcuts: shortcut manager shortcutmanager
   svg keyboard out
   DONE need ability to add multiple keys for same action
 
-signature editor  Signature editor Signature Editor signatureeditor signatures
+signature editor:  Signature editor Signature Editor signatureeditor: signatures: signatureinterface:
   bug: edit imp from viewport, change page number, should it insert pages??
-  bug: background colors are wrong now.. supposed to be gray background
+  bug: paper dialog doesn't remember
+  bug: SOMETIMES SignatureInterface arrows not tracking correctly, especially left/right
   mouse roll on paper size is confusing
   number input for everything
   symmetric trim
@@ -2301,6 +2300,11 @@ signature editor  Signature editor Signature Editor signatureeditor signatures
   needs indicator of number of groups, show 3/10 for current sheet in little box above stack, allow numerical input
   marks on spine edge per signature in diagonal pattern to easily tell stacking order when binding
 
+  tiling style:
+    repeat
+    stack then fold
+    fold then insert
+    fold then place adjacent
   show margin, trim, binding when not totally folded
   for large page counts, need number entry in stacks
   would be nice to indicate when there is a centerfold of any signature
@@ -2682,8 +2686,11 @@ lgm 2019 feedback and ideas:
   from talk: diffusion curves, "local mod" mesh manipulation
 
 ViewWindow:
+  current page outline should highlight proper pagestack instance.. currently just goes to first curpage match in stack
+  LaidoutViewport::UpdateMarkers() should be in PageMarkerInterface.. maybe add anInterface::ViewportContextChanged()?
+  maybe optionally drawaxes should show dotted line from origin to bbox?
+  DONE current page outline needs to go above net lines
   DONE implement wheel left and right to drag
-  maybe drawaxes should show dotted line from origin to bbox?
 
 WATCH OUT for when preview file is OLDER than original file!!
 
@@ -2710,6 +2717,9 @@ need a better file preview system
   need to wrap laidout_preview_maker(), which previews EPS with the help of gs
 
 createlaidoutrc() should migrate to a LaidoutPrefs::CreateLaidoutrc(), not a direct LaidoutApp func
+
+laidoutprefs:
+  finish implementing saveable shadow_color and current_page_color settings
 
 remove imlib/"xlib" font, image, and render backends, replace with GraphicsMagick and cairo, keep imlib loader but load to cairo image only
   remove displayer-xlib
@@ -3868,3 +3878,5 @@ DONE bug: save doc with images, load. image matrix is not identity!!  <- was pro
 DONE bug: if you expand_subimages (or pdf), then dblclck into image, it shows image 1, not the subimage.
 DONE crash: calculator: do `var t = 1`, then `t = 2`.. crash!!
 DONE crash: right button in ellipseinterface
+DONE "edit imposition", then escape.. removes window, but not the frame!
+DONE crash: select booklet imposition from imposition editor, then paperlayout.. silently quits! no apparent crash! no valgrind error!

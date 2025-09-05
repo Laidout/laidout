@@ -171,6 +171,7 @@ class SignatureInstance : public Value
 	int autoaddsheets;
 
 	int automarks;
+	bool spine_marks; // diagonal markings on binding side to keep track of order
 	LaxInterfaces::LineStyle *linestyle; //for optional automatic printer marks
 
 

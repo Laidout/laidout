@@ -88,6 +88,10 @@ NetDialog::~NetDialog()
 	if (doc) doc->dec_count();
 }
 
+int NetDialog::deletenow()
+{
+	return win_parent == nullptr;
+}
 
 int NetDialog::init()
 {

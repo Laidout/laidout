@@ -897,7 +897,9 @@ Spread *Singles::PageLayout(int whichpage)
 	spread->mask = SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
 	spread->spread_index = whichpage;
 
-
+	spread->papergroup = papergroup;
+	papergroup->inc_count();
+	
 	 // define max/min points for spread editor
 	PaperBox *pp = papergroup->papers.e[0]->box;
 	spread->minimum = flatpoint(pp->media.maxx/5,  pp->media.maxy/2);
