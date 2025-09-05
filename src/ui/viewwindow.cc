@@ -3151,10 +3151,16 @@ void LaidoutViewport::Refresh()
 			}
 		}
 
+
+		dp->LineWidthScreen(1);
+		if (spread->path)  DrawData(dp,spread->path, nullptr,nullptr, drawflags);
+		if (spread->marks) DrawData(dp,spread->marks,nullptr,nullptr, drawflags);
+
 		// heavy outline around current page
-		for (int c = 0; c < spread->pagestack.n(); c++) {
+		if (curpage) for (int c = 0; c < spread->pagestack.n(); c++) {
 			if (spread->pagestack.e[c]->page == curpage) {
-				ls.Colorf(1.,0.,1.,1.0); //todo: current page color pref somewhere
+				//ls.Colorf(1.,0.,1.,1.0); //todo: current page color pref somewhere
+				ls.Colorf(.8,0.,0.,1.0); //todo: current page color pref somewhere
 				ls.function = LAXOP_Over;
 				ls.width = 2;
 				ls.widthtype = 0;
@@ -3163,10 +3169,6 @@ void LaidoutViewport::Refresh()
 				break;
 			}
 		}
-
-		dp->LineWidthScreen(1);
-		if (spread->path)  DrawData(dp,spread->path, nullptr,nullptr, drawflags);
-		if (spread->marks) DrawData(dp,spread->marks,nullptr,nullptr, drawflags);
 		 
 		// draw the page's objects
 		flatpoint p,p2;
