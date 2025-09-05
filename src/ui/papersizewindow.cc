@@ -90,6 +90,8 @@ int PaperSizeWindow::preinit()
 	flags |= BOX_WRAP_TO_EXTENT;
 	// if (win_w <= 0) win_w = 500;
 	// if (win_h <= 0) win_h = 600;
+	x(win_x);
+	y(win_y);
 	return 0;
 }
 
@@ -233,6 +235,7 @@ int PaperSizeWindow::init()
 
 	
 	WrapToExtent();
+	last_scale = UIScale();
 	last->CloseControlLoop();
 	Sync(1);
 	return 0;
@@ -445,7 +448,8 @@ int PaperSizeWindow::Event(const EventData *data,const char *mes)
 		else app->destroywindow(this);
 		return 0;
 	}
-	return 1;
+
+	return anXWindow::Event(data, mes);
 }
 
 
