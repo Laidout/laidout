@@ -774,7 +774,7 @@ void ImportImagesDialog::rebuildPreviewName()
 	char *full=fullFilePath(NULL);
 	ImageInfo *info=findImageInfo(full);
 	LineInput *preview= dynamic_cast<LineInput *>(findWindow("preview"));
-	DBG if (!preview) { cerr <<"*********rebuildPreviewName ERROR!!"<<endl; exit(1); }
+	DBG if (!preview) { cerr <<"*********rebuildPreviewName ERROR!! ABORT ABORT SHOULDN'T HAPPEN!!"<<endl; exit(1); }
 	
 	char *prev=NULL;
 	if (info) prev=newstr(info->previewfile);
