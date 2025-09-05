@@ -1128,7 +1128,7 @@ int PaperGroup::FindPaperBBox(Laxkit::DoubleBBox *box_ret)
 
 	for (int c=0; c<papers.n; c++) {
 		papers.e[c]->FindBBox();
-		if (!papers.e[c]->validbounds()) return 1;
+		if (!papers.e[c]->validbounds()) continue;
 
 		box_ret->addtobounds(papers.e[c]->m(), papers.e[c]);
 	}
