@@ -7,9 +7,11 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.098
 -------------
-       Import/export new Inkscape multipage art boards via expanded Singles imposition type
+       Convert website to use hugo
        Update CI to not use travis (issue #28)
-       Update Singles editor to edit new artboard style
+(done) Import/export new Inkscape multipage art boards via expanded Singles imposition type
+(done) Update Singles editor to edit new artboard style
+(done) Implement some accordion net impositions
 (done) Ellipse tool
 (done) Rounded rectangle tool
 (done) Dynamic UI scaling (issue #16)
