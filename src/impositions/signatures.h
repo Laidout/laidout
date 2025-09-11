@@ -174,6 +174,12 @@ class SignatureInstance : public Value
 	bool spine_marks; // diagonal markings on binding side to keep track of order
 	LaxInterfaces::LineStyle *linestyle; //for optional automatic printer marks
 
+	enum TileStacking {
+		Repeat,
+	    StackThenFold,
+	    FoldThenInsert,
+	    FoldThenPlaceAdjacent
+	};
 
 	double creep; //amount of creep for this signature stack, size difference between innermost and outer page
 
