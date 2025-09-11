@@ -205,15 +205,15 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 			nullptr);
 
 	def->push("shadow_color",
+			_("Shadow color"),
 			_("Color of page drop shadow"),
-			nullptr,
 			"Color", nullptr,"rgbf(0,0,0)",
 			0,
 			nullptr);
 
 	def->push("current_page_color",
+			_("Current page outline"),
 			_("Color of current page indicator"),
-			nullptr,
 			"Color", nullptr,"rgbf(1,0,0)",
 			0,
 			nullptr);
@@ -422,21 +422,21 @@ int LaidoutPreferences::assign(FieldExtPlace *ext,Value *v)
 		return 1;
 	}
 
-	// if (!strcmp(extstring, "shadow_color")) {
-	// 	TODO
-	// 	if (v->type() != VALUE_Color) return 0;
-	// 	shadow_color = d;
-	// 	if (autosave_prefs) UpdatePreference(extstring, shadow_color, nullptr);
-	// 	return 1;
-	// }
+	if (!strcmp(extstring, "shadow_color")) {
+		ColorValue *color = dynamic_cast<ColorValue*>(v);
+		if (!color) return 0;
+		shadow_color.rgbf(color->color.Red(), color->color.Green(), color->color.Blue(), color->color.Alpha());
+		if (autosave_prefs) UpdatePreference(extstring, shadow_color, nullptr);
+		return 1;
+	}
 
-	// if (!strcmp(extstring, "current_page_color")) {
-	// 	TODO
-	// 	if (v->type() != VALUE_Color) return 0;
-	// 	current_page_color = d;
-	// 	if (autosave_prefs) UpdatePreference(extstring, current_page_color, nullptr);
-	// 	return 1;
-	// }
+	if (!strcmp(extstring, "current_page_color")) {
+		ColorValue *color = dynamic_cast<ColorValue*>(v);
+		if (!color) return 0;
+		current_page_color.rgbf(color->color.Red(), color->color.Green(), color->color.Blue(), color->color.Alpha());
+		if (autosave_prefs) UpdatePreference(extstring, current_page_color, nullptr);
+		return 1;
+	}
 	
 	if (!strcmp(extstring, "uiscale")) {
 		double d;
@@ -762,6 +762,12 @@ ExternalTool *LaidoutPreferences::GetDefaultTool(int category)
 	return external_tool_manager.GetDefaultTool(category);
 }
 
+int LaidoutPreferences::UpdatePreference(const char *which, const ScreenColor &color, const char *laidoutrc)
+{
+	char scratch[100];
+	sprintf(scratch, "rgbf(%.10g,%.10g,%.10g,%.10g)", color.Red(), color.Green(), color.Blue(), color.Alpha());
+	return UpdatePreference(which, scratch, laidoutrc);
+}
 
 int LaidoutPreferences::UpdatePreference(const char *which, double value, const char *laidoutrc)
 {

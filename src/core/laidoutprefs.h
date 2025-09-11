@@ -80,6 +80,7 @@ class LaidoutPreferences : public Value
 	int UpdatePreference(const char *which, double value, const char *laidoutrc);
 	int UpdatePreference(const char *which, int value, const char *laidoutrc);
 	int UpdatePreference(const char *which, bool value, const char *laidoutrc);
+	int UpdatePreference(const char *which, const Laxkit::ScreenColor &color, const char *laidoutrc);
 };
 
 
