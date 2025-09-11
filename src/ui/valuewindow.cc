@@ -25,9 +25,7 @@
 
 #include "valuewindow.h"
 
-
-#define DBG
-#include <iostream>
+#include <lax/debug.h>
 using namespace std;
 
 
@@ -65,13 +63,15 @@ class ValueGUI
 
 ValueWindow::ValueWindow(Laxkit::anXWindow *prnt, const char *nname, const char *ntitle, unsigned long nowner, const char *mes, Value *nvalue)
   : ScrolledWindow(prnt, nname ? nname : (nvalue ? nvalue->Id() : nullptr), ntitle, SW_MOVE_WINDOW | SW_RIGHT /*| SW_BOTTOM*/,
-		  0,0,600,600,0, nullptr,nowner,mes)
+		  0,0,600,600,2, nullptr,nowner,mes)
 {
 	rowframe = nullptr;
 	value = nvalue;
 	if (value) value->inc_count();
 
 	initialized = false;
+	panner->boxaspect[0] = panner->boxaspect[1] = 0;
+	panner->Id("for-valuewindow");
 
 	InstallColors(THEME_Panel);
 }
@@ -88,32 +88,37 @@ int ValueWindow::init()
 	return ScrolledWindow::init();
 }
 
+void ValueWindow::UIScaleChanged()
+{
+	// RowFrame::UIScaleChanged();
+	anXWindow::UIScaleChanged();
+	syncWindows();
+}
 
 void ValueWindow::Initialize()
 {
-	Initialize(nullptr, value, value ? value->GetObjectDef() : nullptr, nullptr);
-	rowframe->WrapToExtent();
+	Initialize(nullptr, value, value ? value->GetObjectDef() : nullptr, nullptr, 0);
+	if (rowframe) rowframe->WrapToExtent();
 	initialized = true;
 }
 
-void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDef, const char *pathOverride)
+void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDef, const char *pathOverride, double label_width)
 {
 	if (!val) val = value;
 	if (!val) return;
-
 
 	double th = UIScale() * win_themestyle->normal->textheight();
 	double HMULT = 2; //1.5;
 	double NUMW = 12;
 
-	double max_label_width = 0;
 	PtrStack<LineInput> labels(LISTS_DELETE_None);
 
 	if (rowframe == nullptr) {
 		const char *id = val->Id();
 		if (!id) id = val->whattype();
 		rowframe = new RowFrame(this, id, id, ROWFRAME_ROWS | ROWFRAME_STRETCH_IN_ROW | ROWFRAME_STRETCH_IN_COL,
-				0,0,0,0,1, nullptr,0,nullptr, th*.25);
+				0,0,0,0,3, nullptr,0,nullptr, th*.25);
+		rowframe->flags |= BOX_WRAP_TO_Y_EXTENT;
 		//rowframe->flags |= BOX_WRAP_TO_EXTENT;
 	}
 
@@ -160,17 +165,17 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 							 0,0,0,0,0,
 							 last,object_id, mes.c_str(),
 							 fieldName, scratch.c_str());
+		if (label_width > 0) box->LabelWidth(label_width);
 		if (fieldTooltip) last->tooltip(fieldTooltip);
 		rowframe->AddWin(box,1, th * NUMW,0,0,50,0, th*HMULT,0,0,50,0, -1);
 		rowframe->AddNull();
-		max_label_width = MAX(box->LabelWidth(), max_label_width);
 		labels.push(box);
 
 	} else if (type == VALUE_Real || type == VALUE_Number) {
 		DoubleValue *v = dynamic_cast<DoubleValue*>(val);
 
 		if (starts_with(mainDef->uihint, "NumSlider")) {
-			MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,0,0,1, fieldName);
+			MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,label_width,0,1, fieldName);
 			if (fieldTooltip) bar->tooltip(fieldTooltip);
 			rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
 
@@ -198,8 +203,8 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 								 last,object_id, mes.c_str(),
 								 fieldName, scratch.c_str());
 			if (fieldTooltip) last->tooltip(fieldTooltip);
+			if (label_width > 0) box->LabelWidth(label_width);
 			rowframe->AddWin(box,1, th * NUMW,0,0,50,0, th*HMULT,0,0,50,0, -1);
-			max_label_width = MAX(box->LabelWidth(), max_label_width);
 			labels.push(box);
 		}
 		rowframe->AddNull();
@@ -225,9 +230,9 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 							 last,object_id, mes.c_str(),
 							 fieldName, sv->str);
 		if (fieldTooltip) last->tooltip(fieldTooltip);
+		if (label_width > 0) box->LabelWidth(label_width);
 		rowframe->AddWin(box,1, box->win_w,0,10000,50,0, th*HMULT,0,0,50,0, -1);
 		rowframe->AddNull();
-		max_label_width = MAX(box->LabelWidth(), max_label_width);
 		labels.push(box);
 
 	} else if (type == VALUE_Flatvector || type == VALUE_Spacevector || type == VALUE_Quaternion) {
@@ -244,7 +249,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 			sv = v->v;
 		}
 
-		MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,0,0,1, fieldName);
+		MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,label_width,0,1, fieldName);
 		if (fieldTooltip) bar->tooltip(fieldTooltip);
 		rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
 
@@ -295,16 +300,16 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 							 last,object_id, mes.c_str(),
 							 fieldName, v->filename);
 		if (fieldTooltip) last->tooltip(fieldTooltip);
+		if (label_width > 0) box->LabelWidth(label_width);
 		rowframe->AddWin(box,1, box->win_w,0,10000,50,0, th*HMULT,0,0,50,0, -1);
 		rowframe->AddNull();
-		max_label_width = MAX(box->LabelWidth(), max_label_width);
 		labels.push(box);
 
 	} else if (type == VALUE_Enum) { //} else if (type == VALUE_EnumVal) {
 		EnumValue *ev = dynamic_cast<EnumValue*>(val);
 		const char *nm=NULL, *Nm=NULL;
 
-		MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,0,0,1, fieldName);
+		MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,label_width,0,0, fieldName);
 		rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
 
 		SliderPopup *popup;
@@ -324,21 +329,26 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 		rowframe->AddNull();
 
 	} else if (type == VALUE_Color) {
+		ColorValue *col = dynamic_cast<ColorValue*>(val);
+		MessageBar *bar = new MessageBar(this,"label",nullptr, MB_MOVE | MB_LEFT, 0,0,label_width,0,0, fieldName);
+		rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
+
 		ColorBox *colorbox;
 		last = colorbox = new ColorBox(this,"colorbox",NULL,
 								   //COLORBOX_ALLOW_NONE|COLORBOX_ALLOW_REGISTRATION|COLORBOX_ALLOW_KNOCKOUT,
 								   0,
-								   0,0,0,0,1, last,object_id,"curcolor",
+								   0,0,0,0,1, last,object_id, mes.c_str(),
 								   LAX_COLOR_RGB,
 								   .01,
-								   1.,0.,0.,1.);
+								   col->color.Red(), col->color.Green(), col->color.Blue(), col->color.Alpha());
 		if (fieldTooltip) last->tooltip(fieldTooltip);
 		rowframe->AddWin(colorbox,1, 50,0,50,50,0, colorbox->win_h,0,50,50,0, -1);
+		rowframe->AddNull();
 
 	} else if (type == VALUE_Object) {
 		ObjectValue *v = dynamic_cast<ObjectValue*>(val);
 
-		MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,0,0,1, fieldName);
+		MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,label_width,0,1, fieldName);
 		if (fieldTooltip) bar->tooltip(fieldTooltip);
 		rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
 		if (v) {
@@ -384,7 +394,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 			//rowframe->AddWin(new MoveElementHandle(***));
 
 			path2 = c;
-			Initialize(prevpath, vv, fdef, path2.c_str());
+			Initialize(prevpath, vv, fdef, path2.c_str(), 0);
 
 			rowframe->AddHSpacer(th/2,0,0,0, rowframe->NumBoxes()-1);
 			path3 = "-" + path + "." + c;  // -elementName.5
@@ -430,27 +440,22 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 		rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
 	}
 
-	// if (max_label_width > 0) {
-	// 	for (int c = 0; c < labels.n; c++) {
-	// 		LineInput *input = labels.e[c];
-	// 		input->LabelWidth(max_label_width);
-	// 		// DBG cerr << "  valuewindow lineinput lwidth: "<<input->LabelWidth()<<endl;
-	// 	}
-	// 	DBG cerr << "valuewindow lineinput max_label_width: "<<max_label_width<<endl;
-	// 	for (int c = 0; c < labels.n; c++) {
-	// 		LineInput *input = labels.e[c];
-	// 		DBG cerr << "  valuewindow lineinput lwidth: "<<input->LabelWidth()<<endl;
-	// 	}
-	// 	DBG cerr << "---"<<endl;
-	// }
-
 	if (do_kids) {
 		const char *nm;
-		//ValueTypes tp; *** should make sure it's data, not function that we are querying
 		Utf8String path2;
 		ObjectDef *fdef;
 
-		for (int c=0; c<def->getNumFields(); c++) {
+		double label_width = 0;
+		double scale = UIScale();
+		for (int c = 0; c < def->getNumFields(); c++) {
+			fdef = def->getField(c);
+			nm = fdef->Name;
+			if (isblank(nm)) continue;
+			double w = scale * win_themestyle->normal->Extent(nm,-1);
+			if (w > label_width) label_width = w;
+		}
+
+		for (int c = 0; c < def->getNumFields(); c++) {
 			fdef = def->getField(c);
 			//def->getInfo(c, &nm);
 			//if (!nm) continue;
@@ -459,7 +464,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 			Value *v = val->dereference(nm, -1);
 			if (!v) continue;
 			path2 = path + "." + nm;
-			Initialize(path2.c_str(), v, fdef, nullptr);
+			Initialize(path2.c_str(), v, fdef, nullptr, label_width);
 			v->dec_count();
 		}
 	}
@@ -471,10 +476,29 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 
 void ValueWindow::syncWindows()
 {
-	if (rowframe != nullptr && rowframe->win_w < win_w - scrollwidth) {
-		rowframe->pw(win_w - scrollwidth);
-	}
+	// if (rowframe != nullptr && rowframe->win_w < win_w - scrollwidth) {
+	// 	rowframe->pw(win_w - scrollwidth);
+	// }
 	ScrolledWindow::syncWindows();
+
+	// DBG if (rowframe) cout << "after syncWindows: valuewindow size: "<<win_w<<" x "<<win_h<<"  rowframe wh: "<<rowframe->win_w<<" x "<<rowframe->win_h<<endl;
+	// DBG else cout << "after syncWindows: valuewindow size: "<<win_w<<" x "<<win_h<<"  rowframe wh: (no rowframe)"<<endl;
+}
+
+/*! Called during ScrolledWindow::syncWindows(). 
+ * Recompute rowframe preferred height based on its new width,
+ * and set the panner accordingly.
+ */
+void ValueWindow::AdjustTheWindow()
+{
+	//rowframe->h(BOX_SHOULD_WRAP);
+	rowframe->figureDimensions(rowframe); //recomputes preferred width and height
+	// DBG cout << "...... found rowframe ph: "<<rowframe->ph()<<endl;
+	rowframe->MoveResize(rowframe->win_x, rowframe->win_y, rowframe->win_w, rowframe->ph());
+	panner->dontTell(this);
+	// DBG cout << "..........setting pan wholebox size: "<<rowframe->win_w<<" x "<<rowframe->win_h<<endl;
+	panner->SetWholeboxOnly(0, rowframe->win_w, 0, rowframe->win_h, false, true);
+	panner->dontTell(nullptr);
 }
 
 int ValueWindow::Event(const EventData *data,const char *mes)
@@ -587,23 +611,23 @@ int ValueWindow::Event(const EventData *data,const char *mes)
 			cerr << "ValueWindow enum FIX ME!!"<<endl;
 			EnumValue *ev = dynamic_cast<EnumValue*>(val);
 			ev->value = e->info1;
+
+		} else if (type == VALUE_Color) {
+			ColorValue *v = dynamic_cast<ColorValue*>(val);
+			const SimpleColorEventData *ce = dynamic_cast<const SimpleColorEventData *>(data);
+			if (ce) {
+				v->color.Set(ce->colorsystem, ce->Valuef(0), ce->Valuef(1), ce->Valuef(2), ce->Valuef(3), ce->Valuef(4));
+				value->assign(v, ext);
+			} else {
+				DBGW("bad color event!");
+			}
+
 		}
 
 		delete[] ext;
 		return 0;
 	}
 
-	if (type == VALUE_Color) {
-		ColorValue *v = dynamic_cast<ColorValue*>(val);
-		const SimpleColorEventData *ce = dynamic_cast<const SimpleColorEventData *>(data);
-		if (!ce) return ScrolledWindow::Event(data,mes);
-
-		//if (ce->colorsystem = LAX_COLOR_RGB) v->color...
-		v->color.Set(ce->colorsystem, ce->Valuef(0), ce->Valuef(1), ce->Valuef(2), ce->Valuef(3), ce->Valuef(4));
-		
-		delete[] ext;
-		return 0;
-	}
 
 //	} else if (type == VALUE_Date) {
 //	} else if (type == VALUE_Image) {
@@ -689,6 +713,14 @@ void ValueWindow::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpConte
 //	}
 }
 
+int ValueWindow::MoveResize(int nx,int ny,int nw,int nh)
+{
+	return ScrolledWindow::MoveResize(nx,ny,nw,nh);
+}
+int ValueWindow::Resize(int nw,int nh)
+{
+	return ScrolledWindow::Resize(nw,nh);
+}
 
 } // namespace Laidout
 

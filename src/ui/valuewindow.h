@@ -33,8 +33,10 @@ class ValueWindow : public Laxkit::ScrolledWindow, public Laxkit::SquishyBox
 	Laxkit::RowFrame *rowframe;
 	bool initialized;
 
-	virtual void Initialize(const char *prevpath, Value *val, ObjectDef *mainDef, const char *pathOverride);
+	virtual void Initialize(const char *prevpath, Value *val, ObjectDef *mainDef, const char *pathOverride, double label_width);
 	void Send();
+
+	virtual void AdjustTheWindow();
 
   public:
 	ValueWindow(Laxkit::anXWindow *prnt, const char *nname, const char *ntitle, unsigned long nowner, const char *mes, Value *nvalue);
@@ -42,6 +44,7 @@ class ValueWindow : public Laxkit::ScrolledWindow, public Laxkit::SquishyBox
 	virtual const char *whattype() { return "ValueWindow"; }
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 	virtual int init();
+	virtual void UIScaleChanged();
 
 	 //i/o
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
@@ -50,6 +53,9 @@ class ValueWindow : public Laxkit::ScrolledWindow, public Laxkit::SquishyBox
 
 	virtual void syncWindows();
 	virtual void Initialize();
+
+	virtual int MoveResize(int nx,int ny,int nw,int nh);
+	virtual int Resize(int nw,int nh);
 };
 
 
