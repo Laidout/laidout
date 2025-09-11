@@ -57,18 +57,25 @@ MetaWindow::~MetaWindow()
 
 int MetaWindow::init()
 {
-	double th = win_themestyle->normal->textheight();
+	double th = UIScale() * win_themestyle->normal->textheight();
 	anXWindow *last = nullptr;
 	Button *button = nullptr;
 	padinset = th/2;
 
 	LineInput *linp = nullptr;
+	double max_label_width = 0;
 
 	if (meta) {
 		Attribute *att;
 		Utf8String scratch;
 
-		for (int c=0; c<meta->attributes.n; c++) {
+		for (int c = 0; c < meta->attributes.n; c++) {
+			att = meta->Att(c);
+			double w = UIScale() * win_themestyle->normal->Extent(att->name,-1);
+			if (w > max_label_width) max_label_width = w;
+		}
+
+		for (int c = 0; c < meta->attributes.n; c++) {
 			att = meta->Att(c);
 
 			scratch.Sprintf(".%s", att->name);
@@ -76,6 +83,7 @@ int MetaWindow::init()
 			        0,0,0,0,0,
 			        last, object_id, scratch.c_str(),
 			        att->name, att->value);
+			linp->LabelWidth(max_label_width);
 			//last->tooltip(sd->tooltip);
 			AddWin(linp,1, linp->win_w,0,10000,50,0, linp->win_h,0,0,50,0, -1);
 
