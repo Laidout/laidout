@@ -237,8 +237,7 @@ packaging:
   DONE appimage, see: https://github.com/Laidout/laidout/issues/10
 
 valuewindow:
-  bug: When scrollers come on, does not trigger an inset of widgets
-  bug: shrink for scroller, scroll to bottom, resize big.. window is still scrolled to bottom!!
+  use ValueGUI for automated type handling?
   FileValue needs a directory hint.. currently turning red on any change
   ui hints:
     DoubleRectangle      [maxy]
@@ -251,7 +250,14 @@ valuewindow:
   ValueHash
   rearrange set elements
   delete elements of list
-  when you quit, does not remember from open windows
+  DONE when you quit, does not remember from open windows
+  DONE bug: When scrollers come on, does not trigger an inset of widgets
+  DONE bug: shrink for scroller, scroll to bottom, resize big.. window is still scrolled to bottom!!
+
+metawindow:
+  should be scrolled
+  final done not scrolled?
+  DONE line up the edits
 
 global Laidout settings:
   settings dialog
@@ -267,6 +273,9 @@ global Laidout settings:
   tooltips
   per tool default settings
   thin line width (default 1 pixel, but this is bad for high dpi screens)
+
+options:
+  --impose-only and --nodes-only arg needs better description of arg
 
 graphicsmagick:
   load_image() always loads full, even if ping_only (confirm?)
@@ -374,6 +383,7 @@ file filters: filefilters:
     some files templated
     project defined by:
       directory with project files to copy
+      destination directory to put resulting project files
       export config to create files that go along with copied project files
       template vars to replace in set of copied project files
     export.config
