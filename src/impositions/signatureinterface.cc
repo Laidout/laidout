@@ -136,7 +136,7 @@ enum SignatureInterfaceAreas {
 
 
 enum SignatureInterfaceActions {
-	SIA_Decorations,
+	SIA_Decorations = 10000,
 	SIA_Thumbs,
 	SIA_Center,
 	SIA_CenterStacks,
@@ -166,8 +166,27 @@ enum SignatureInterfaceActions {
 	SIA_MarginDec,
 	SIA_Automarks_Cut_Lines,
 	SIA_Automarks_Inner_Dots,
+
+	// context menu ids
+	SIGM_Portrait = 20000,
+	SIGM_Landscape,
+	SIGM_SaveAsResource,
+	SIGM_FinalFromPaper,
+	SIGM_CustomPaper,
+	SIGM_Thumbs,
+	SIGM_Rescale_Pages,
+	SIGM_Automarks_Cut_Lines,
+	SIGM_Automarks_Inner_Dots,
+	SIGM_Spine_Marks,
+	SIGM_Tile_Repeat,
+	SIGM_Tile_StackAndFold,
+	SIGM_Tile_FoldThenInsert,
+	SIGM_Tile_FoldThenAdjacent,
+	SIGM_Tile_Custom,
+
 	SIA_MAX
 };
+
 
 
 //------------------------------------- SignatureInterface --------------------------------------
@@ -331,18 +350,6 @@ void SignatureInterface::checkFoldLevel(int update)
 	hasfinal=signature->checkFoldLevel(foldinfo,&finalr,&finalc);
 }
 
-// context menu ids
-#define SIGM_Portrait        2000
-#define SIGM_Landscape       2001
-#define SIGM_SaveAsResource  2002
-#define SIGM_FinalFromPaper  2003
-#define SIGM_CustomPaper     2004
-#define SIGM_Thumbs          2005
-#define SIGM_Rescale_Pages   2006
-#define SIGM_Automarks_Cut_Lines  2007
-#define SIGM_Automarks_Inner_Dots 2008
-#define SIGM_Spine_Marks          2009
-
 /*! Return whether every siginstance has a totally folded pattern.
  */
 int SignatureInterface::IsFinal()
@@ -399,6 +406,13 @@ Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid, Lax
 	menu->AddToggleItem(_("Inner dots"), SIGM_Automarks_Inner_Dots, 0, (siginstance->automarks & AUTOMARK_InnerDot) != 0);
 	menu->AddToggleItem(_("Spine marks"),SIGM_Spine_Marks,          0, siginstance->spine_marks);
 
+	menu->AddSep(_("Tile stacking")); // see SignatureInstance::TileStacking
+	menu->AddToggleItem(_("Repeat"),             SIGM_Tile_Repeat          , 0, siginstance->tile_stacking == SignatureInstance::Repeat);
+	menu->AddToggleItem(_("Stack then fold"),    SIGM_Tile_StackAndFold    , 0, siginstance->tile_stacking == SignatureInstance::StackThenFold);
+	menu->AddToggleItem(_("Fold then insert"),   SIGM_Tile_FoldThenInsert  , 0, siginstance->tile_stacking == SignatureInstance::FoldThenInsert);
+	menu->AddToggleItem(_("Fold then adjacent"), SIGM_Tile_FoldThenAdjacent, 0, siginstance->tile_stacking == SignatureInstance::FoldThenPlaceAdjacent);
+	menu->AddToggleItem(_("Custom"),             SIGM_Tile_Custom,           0, siginstance->tile_stacking == SignatureInstance::Custom);
+	
 	if (IsFinal()) {
 		menu->AddSep();
 		menu->AddItem(_("Save as resource..."),SIGM_SaveAsResource);
@@ -500,9 +514,25 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 			needtodraw = 1;
 			return 0;
 
-		} else if (i<999) {
+		} else if (i == SIGM_Tile_Repeat
+				|| i == SIGM_Tile_StackAndFold
+				|| i == SIGM_Tile_FoldThenInsert
+				|| i == SIGM_Tile_FoldThenAdjacent
+				|| i == SIGM_Tile_Custom) {
+			PostMessage(_("IMPLEMENT ME!!"));
+			if (!siginstance) return 0;
+			// siginstance->tile_stacking = Repeat;
+		    // siginstance->tile_stacking = StackThenFold,
+		    // siginstance->tile_stacking = FoldThenInsert,
+		    // siginstance->tile_stacking = FoldThenPlaceAdjacent,
+		    // siginstance->tile_stacking = Custom
+
+			needtodraw = 1;
+			return 0;
+
+		} else if (i < 999) {
 			 //selecting new paper size
-			if (i>=0 && i<laidout->papersizes.n) {
+			if (i >= 0 && i < laidout->papersizes.n) {
 				if (!strcmp(laidout->papersizes.e[i]->name,"Custom")) {
 					makestr(siginstance->partition->paper->name, _("Custom"));
 					remapHandles();
@@ -510,7 +540,7 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 				}
 				SetPaper(laidout->papersizes.e[i]);
 				remapHandles();
-				needtodraw=1;
+				needtodraw = 1;
 			}
 			return 0;
 		}

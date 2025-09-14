@@ -178,8 +178,10 @@ class SignatureInstance : public Value
 		Repeat,
 	    StackThenFold,
 	    FoldThenInsert,
-	    FoldThenPlaceAdjacent
+	    FoldThenPlaceAdjacent,
+	    Custom
 	};
+	TileStacking tile_stacking = Repeat;
 
 	double creep; //amount of creep for this signature stack, size difference between innermost and outer page
 
