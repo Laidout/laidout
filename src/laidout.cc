@@ -1107,7 +1107,12 @@ int LaidoutApp::readinLaidoutDefaults(char **shortcutsfile)
 		
 		} else if (!strcmp(name,"maxPreviewLength")) {
 			IntAttribute(value,&max_preview_length);
-		
+
+		} else if (!strcmp(name,"shadow_color")) {
+			SimpleColorAttribute(value, nullptr, &prefs.shadow_color, nullptr);
+
+		} else if (!strcmp(name,"current_page_color")) {
+			SimpleColorAttribute(value, nullptr, &prefs.current_page_color, nullptr);
 		}
 	}
 	
@@ -1324,8 +1329,8 @@ void InitOptions()
 	options.Add("load-dir",           'l', 1, "Start in this directory.",                    OPT_load_dir, "path");
 	options.Add("experimental",       'E', 0, "Enable any compiled in experimental features",OPT_experimental, nullptr);
 	//options.Add("backend",            'B', 1, "Either cairo or xlib (xlib very deprecated).",OPT_backend, nullptr);
-	options.Add("impose-only",        'I', 1, "Run only as a file imposer, not full Laidout",OPT_impose_only, nullptr);
-	options.Add("nodes-only",         'o', 1, "Run only as a node editor on argument",       OPT_nodes_only, nullptr);
+	options.Add("impose-only",        'I', 1, "Run only as a file imposer, not full Laidout",OPT_impose_only, "in=in.file out=out.file prefer=booklet width=10 height=10");
+	options.Add("nodes-only",         'o', 1, "Run only as a node editor on argument",       OPT_nodes_only, "in=in.file out=out.file format=default pipein pipeout");
 	options.Add("pipein",             'p', 1, "Start with a document piped in on stdin",     OPT_pipein, "default");
 	options.Add("pipeout",            'P', 1, "On exit, export document[0] to stdout",       OPT_pipeout, "default");
 	options.Add("list-shortcuts",     'S', 0, "Print out a list of current keyboard bindings, then exit",OPT_list_shortcuts,nullptr);
@@ -1353,8 +1358,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 
 	LaxOption *o;
-	for (o=options.start(); o; o=options.next()) {
-		//switch(o->chr()) {
+	for (o = options.start(); o; o = options.next()) {
 		switch(o->id()) {
 			case OPT_help: // Show usage summary, then exit
 				options.Help(stdout);

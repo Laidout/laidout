@@ -611,23 +611,21 @@ int ValueWindow::Event(const EventData *data,const char *mes)
 			cerr << "ValueWindow enum FIX ME!!"<<endl;
 			EnumValue *ev = dynamic_cast<EnumValue*>(val);
 			ev->value = e->info1;
-
-		} else if (type == VALUE_Color) {
-			ColorValue *v = dynamic_cast<ColorValue*>(val);
-			const SimpleColorEventData *ce = dynamic_cast<const SimpleColorEventData *>(data);
-			if (ce) {
-				v->color.Set(ce->colorsystem, ce->Valuef(0), ce->Valuef(1), ce->Valuef(2), ce->Valuef(3), ce->Valuef(4));
-				value->assign(v, ext);
-			} else {
-				DBGW("bad color event!");
-			}
-
 		}
-
-		delete[] ext;
-		return 0;
+	} else if (type == VALUE_Color) {
+		const SimpleColorEventData *ce = dynamic_cast<const SimpleColorEventData *>(data);
+		if (ce) {
+			ColorValue *v = new ColorValue(); //dynamic_cast<ColorValue*>(val);
+			v->color.Set(ce->colorsystem, ce->Valuef(0), ce->Valuef(1), ce->Valuef(2), ce->Valuef(3), ce->Valuef(4));
+			value->assign(v, ext);
+			v->dec_count();
+		} else {
+			DBGW("bad color event!");
+		}
 	}
 
+	delete[] ext;
+	return 0;
 
 //	} else if (type == VALUE_Date) {
 //	} else if (type == VALUE_Image) {

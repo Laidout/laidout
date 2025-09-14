@@ -1165,17 +1165,19 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 
     } else if (!strcmp(mes,"xruler") || !strcmp(mes,"yruler")) {
          //units change from ruler
-        const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
+        const SimpleMessage *s = dynamic_cast<const SimpleMessage*>(data);
         if (!s) return 0;
-        if (s->info1!=RULER_AlwaysCurrent) return ViewportWindow::Event(data,mes);
+        if (s->info1 != RULER_AlwaysCurrent) return ViewportWindow::Event(data,mes);
 
 		UnitManager *units=GetUnitManager();
 		char *unitname = nullptr;
-		units->UnitInfoId(laidout->prefs.default_units, nullptr, nullptr,nullptr,&unitname,nullptr,nullptr);
+		units->UnitInfoId(s->info2, nullptr, nullptr,nullptr,&unitname,nullptr,nullptr);
 
 		char path[strlen(laidout->config_dir)+20];
 		sprintf(path,"%s/laidoutrc",laidout->config_dir);
 		laidout->prefs.UpdatePreference("defaultunits", unitname, path);
+		makestr(laidout->prefs.unitname, unitname);
+		laidout->prefs.default_units = s->info2;
 
 		postmessage(_("Global preference updated."));
 		return 0;
@@ -5050,7 +5052,8 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 			menu->AddItem(_("Edit document meta"),ACTION_EditDocMeta);
 
 			ExternalTool *tool = laidout->prefs.GetDefaultTool(ExternalToolCategory::FileBrowser);
-			menu->AddItem(_("Show in filesystem"),ACTION_ShowInFilesystem,0,nullptr,-1,tool == nullptr || !tool->Valid() ? LAX_GRAY : 0);
+			bool exists = (isblank(doc->saveas) ? false : (file_exists(doc->saveas, true, nullptr) == S_IFREG));
+			menu->AddItem(_("Show in filesystem"),ACTION_ShowInFilesystem,0,nullptr,-1, !exists || tool == nullptr || !tool->Valid() ? LAX_GRAY : 0);
 		}
 
 		 //----add limbo list, numbers starting at 1000...
