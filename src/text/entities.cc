@@ -1,58 +1,34 @@
+//
+//	
+// Laidout, for laying out
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
+//
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public
+// License as published by the Free Software Foundation; either
+// version 3 of the License, or (at your option) any later version.
+// For more details, consult the COPYING file in the top directory.
+//
+// Copyright (C) 2025 by Tom Lechner
+//
 
 // Converted from a big json file of entities at: https://html.spec.whatwg.org/entities.json
 //
 // Most entities have only one unicode codepoint, but some have two, so watch out.
 
+#include "entities.h"
+
+#include <cstring>
+
+
+namespace Laidout {
 
 struct HTMLEntity {
 	const char *entity;
 	int codepoint1; // unicode codepoint
 	int codepoint2; // second unicode codepoint, or -1 if not used
 };
-
-/*! Return true if found, else false.
- * Codepoints are returned in codepoint1 and codepoint2. Usually there is a single
- * codepoint, in which case codepoint2 is assigned -1.
- */
-static bool GetEntity(const char *entity, &codepoint1, &codepoint2)
-{
-	if (num_html_entities == -1) {
-		num_html_entities = 0;
-		while (html_entities[num_html_entities].entity) num_html_entities++;
-	}
-
-	int s = 0;
-	int e = num_html_entities;
-	int m;
-	int c;
-	while (s <= e) {
-		c = strcasecmp(entity, html_entities[s].entity);
-		if (c < 0) return false;
-		if (c == 0) {
-			codepoint1 = html_entities[s].codepoint1;
-			codepoint2 = html_entities[s].codepoint2;
-			return true;
-		}
-		c = strcasecmp(entity, html_entities[e].entity);
-		if (c > 0) return false;
-		if (c == 0) {
-			codepoint1 = html_entities[e].codepoint1;
-			codepoint2 = html_entities[e].codepoint2;
-			return true;
-		}
-		m = (s+e)/2;
-		if (m == s || m == e) break;
-		c = strcasecmp(entity, html_entities[m].entity);
-		if (c == 0) {
-			codepoint1 = html_entities[m].codepoint1;
-			codepoint2 = html_entities[m].codepoint2;
-			return true;
-		}
-		if (c > 0) { s = m+1; e--; }
-		else { e = m-1; s++; }
-	}
-	return false;
-}
 
 static int num_html_entities = -1;
 static const HTMLEntity html_entities[] =
@@ -2290,3 +2266,52 @@ static const HTMLEntity html_entities[] =
   { "&zwnj;", 8204, -1 },
 
 };
+
+/*! Return true if found, else false.
+ * Codepoints are returned in codepoint1 and codepoint2. Usually there is a single
+ * codepoint, in which case codepoint2 is assigned -1.
+ */
+bool GetEntity(const char *entity, int &codepoint1, int &codepoint2)
+{
+	if (num_html_entities == -1) {
+		num_html_entities = 0;
+		while (html_entities[num_html_entities].entity) num_html_entities++;
+	}
+
+	int s = 0;
+	int e = num_html_entities;
+	int m;
+	int c;
+	while (s <= e) {
+		c = strcasecmp(entity, html_entities[s].entity);
+		if (c < 0) return false;
+		if (c == 0) {
+			codepoint1 = html_entities[s].codepoint1;
+			codepoint2 = html_entities[s].codepoint2;
+			return true;
+		}
+		c = strcasecmp(entity, html_entities[e].entity);
+		if (c > 0) return false;
+		if (c == 0) {
+			codepoint1 = html_entities[e].codepoint1;
+			codepoint2 = html_entities[e].codepoint2;
+			return true;
+		}
+		m = (s+e)/2;
+		if (m == s || m == e) break;
+		c = strcasecmp(entity, html_entities[m].entity);
+		if (c == 0) {
+			codepoint1 = html_entities[m].codepoint1;
+			codepoint2 = html_entities[m].codepoint2;
+			return true;
+		}
+		if (c > 0) { s = m+1; e--; }
+		else { e = m-1; s++; }
+	}
+	return false;
+}
+
+
+
+} // namespace Laidout
+
