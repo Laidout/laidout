@@ -115,16 +115,15 @@ int LengthValue::ParseUnits(const char *str, int len)
 	if (unit_manager.NumberOfUnits() == 0) {
 		Laxkit::CreateDefaultUnits(&unit_manager);
 
-		unit_manager.AddUnits(Laxkit::UNITS_Pixels, .0254/96, _("px"), _("pixel"), _("pixels"));
-		unit_manager.AddUnits(Laxkit::UNITS_em,     1, _("em"), _("em"),    _("em"));
-
-		unit_manager.AddUnits(Laxkit::UNITS_ex,     1, _("ex"), _("ex"),    _("ex"));
-		unit_manager.AddUnits(Laxkit::UNITS_ch,     1, _("ch"), _("ch"),    _("ch"));
-		unit_manager.AddUnits(Laxkit::UNITS_rem,    1, _("rem"),_("rem"),   _("rem"));
-		unit_manager.AddUnits(Laxkit::UNITS_vw,     1, _("vw"), _("vw"),    _("vw"));
-		unit_manager.AddUnits(Laxkit::UNITS_vh,     1, _("vh"), _("vh"),    _("vh"));
-		unit_manager.AddUnits(Laxkit::UNITS_vmin,   1, _("vmin"), _("vmin"),_("vmin"));
-		unit_manager.AddUnits(Laxkit::UNITS_vmax,   1, _("vmax"), _("vmax"),_("vmax"));
+		unit_manager.AddUnits(Laxkit::UNITS_Length, Laxkit::UNITS_Pixels, .0254/96, 0, _("px"),   _("pixel"), _("pixels"));
+		unit_manager.AddUnits(Laxkit::UNITS_Length, Laxkit::UNITS_em,     1,        0, _("em"),   _("em"),    _("em"));
+		unit_manager.AddUnits(Laxkit::UNITS_Length, Laxkit::UNITS_ex,     1,        0, _("ex"),   _("ex"),    _("ex"));
+		unit_manager.AddUnits(Laxkit::UNITS_Length, Laxkit::UNITS_ch,     1,        0, _("ch"),   _("ch"),    _("ch"));
+		unit_manager.AddUnits(Laxkit::UNITS_Length, Laxkit::UNITS_rem,    1,        0, _("rem"),  _("rem"),   _("rem"));
+		unit_manager.AddUnits(Laxkit::UNITS_Length, Laxkit::UNITS_vw,     1,        0, _("vw"),   _("vw"),    _("vw"));
+		unit_manager.AddUnits(Laxkit::UNITS_Length, Laxkit::UNITS_vh,     1,        0, _("vh"),   _("vh"),    _("vh"));
+		unit_manager.AddUnits(Laxkit::UNITS_Length, Laxkit::UNITS_vmin,   1,        0, _("vmin"), _("vmin"),  _("vmin"));
+		unit_manager.AddUnits(Laxkit::UNITS_Length, Laxkit::UNITS_vmax,   1,        0, _("vmax"), _("vmax"),  _("vmax"));
 	}
 
 	return unit_manager.UnitId(str, len);

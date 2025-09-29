@@ -22,7 +22,7 @@
 
 #include "../core/papersizes.h"
 #include "../core/externaltools.h"
-#include "../dataobjects/group.h"
+// #include "../dataobjects/drawableobject.h"
 #include "../calculator/values.h"
 #include "../plugins/plugin.h"
 
@@ -30,7 +30,8 @@
 namespace Laidout {
 
 
-
+class PaperGroup;
+class DrawableObject;
 class Document;
 class DocumentExportConfig;
 
@@ -119,7 +120,7 @@ class DocumentExportConfig : public Value
 	Laxkit::DoubleBBox crop;
 
 	Document *doc;
-	Group *limbo; // doc or limbo or both should be defined
+	DrawableObject *limbo; // doc or limbo or both should be defined
 	char *filename;
 	char *tofiles;
 	char *custom_command;
@@ -130,7 +131,7 @@ class DocumentExportConfig : public Value
 
 	DocumentExportConfig();
 	DocumentExportConfig(DocumentExportConfig *config);
-	DocumentExportConfig(Document *ndoc, Group *lmbo, const char *file, const char *to,
+	DocumentExportConfig(Document *ndoc, DrawableObject *lmbo, const char *file, const char *to,
 						 int l,int s,int e,PaperGroup *group);
 	virtual ~DocumentExportConfig();
 	virtual const char *whattype() { return "DocumentExportConfig"; }
@@ -167,14 +168,14 @@ class ImportConfig : public Value
 	int topage,spread,layout;
 	int scaletopage;
 	Document *doc;
-	Group *toobj;
+	DrawableObject *toobj;
 	ImportFilter *filter;
 	double dpi;
 	bool no_new_windows;
 
 	ImportConfig();
 	ImportConfig(const char *file, double ndpi, int ins, int ine, int top, int spr, int lay,
-				 Document *ndoc, Group *nobj);
+				 Document *ndoc, DrawableObject *nobj);
 	virtual ~ImportConfig();
 
 	virtual ObjectDef* makeObjectDef();

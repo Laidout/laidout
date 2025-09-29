@@ -94,7 +94,8 @@ int MarkdownImporter::ImportMarkdownFile(const char *filename)
 
 const char *MarkdownImporter::FileType(const char *first100bytes)
 {
-	*** is file all utf8?
+	// *** is file all utf8?
+	return "Markdown";
 }
 
 /*! Standard import pathway.

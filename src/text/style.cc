@@ -16,6 +16,7 @@
 
 #include "style.h"
 
+using namespace Laxkit;
 
 namespace Laidout {
 	

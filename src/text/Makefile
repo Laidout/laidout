@@ -14,13 +14,13 @@ CPPFLAGS= -Wall $(DEBUGFLAGS) $(EXTRA_CPPFLAGS) -I$(LAXDIR)/.. `pkg-config --cfl
 
 # uncomment these when they are actually ready for Laidout inclusion. Otherwise put them in wip
 objs= \
-	streaminterface.o
-#	entities.o \
-#	lengthvalue.o \
-#	cssparse.o \
+	cssparse.o \
+	entities.o \
+	lengthvalue.o \
+	streaminterface.o \
+	streams.o \
+	style.o \
 #	opentype.o \
-#	style.o \
-#	streams.o \
 #	markdownimporter.o \
 
 all: $(objs)

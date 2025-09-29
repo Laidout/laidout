@@ -22,7 +22,7 @@
 #include <lax/transformmath.h>
 
 #include "../calculator/values.h"
-#include "../dataobjects/drawableobject.h"
+// #include "../dataobjects/drawableobject.h"
 #include "../core/plaintext.h"
 #include "../filetypes/filefilters.h"
 #include "style.h"
@@ -31,6 +31,7 @@
 namespace Laidout {
 
 
+class DrawableObject;
 class Stream;
 class StreamCache;
 class StreamChunk;
@@ -386,8 +387,8 @@ class StreamCache : public Laxkit::SquishyBox, public Laxkit::RefCounted
 	clock_t modtime = 0;
 	StreamCache *next = nullptr, *prev = nullptr;
 
-	StreamElement *element = nullptr;
-	StreamChunk *chunk = nullptr;
+	StreamElement *element = nullptr; // has style
+	StreamChunk *chunk = nullptr;     // has content
 	long offset = 0; //how many breaks into chunk to start
 	long len = 0; //how many breaks long in chunk is this cache
 

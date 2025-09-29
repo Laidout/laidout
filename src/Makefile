@@ -181,7 +181,12 @@ otherobjs= \
 	printing/psimagepatch.o \
 	printing/psout.o \
 	printing/pspathsdata.o \
+	text/cssparse.o \
+	text/entities.o \
+	text/lengthvalue.o \
 	text/streaminterface.o \
+	text/streams.o \
+	text/style.o \
 	ui/about.o \
 	ui/autosavewindow.o \
 	ui/buttonbox.o \

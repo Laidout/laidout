@@ -17,6 +17,7 @@
 #include "cssparse.h"
 #include "lengthvalue.h"
 #include "../language.h"
+#include "../dataobjects/drawableobject.h"
 #include "../dataobjects/fontvalue.h"
 #include "../laidout.h"
 
@@ -461,6 +462,12 @@ void StreamBreak::dump_in_atts (Laxkit::Attribute *att,int flag,Laxkit::DumpCont
  * Note this can be ANY drawable object, not just images.
  */
 
+StreamImage::StreamImage(StreamElement *parent_el)
+  : StreamChunk(parent_el)
+{
+	img = nullptr;
+}
+
 StreamImage::StreamImage(DrawableObject *nimg,StreamElement *parent_el)
   : StreamChunk(parent_el)
 {
@@ -524,7 +531,6 @@ StreamText::~StreamText()
 	delete[] text;
 }
 
-	//virtual int SetFromEntities(const char *cdata, int len);
 int StreamText::SetFromEntities(const char *cdata, int cdata_len)
 {
 	//***TODO: compress whitespace
@@ -570,6 +576,23 @@ int StreamText::BreakInfo(int index)
 {
 	//assume we only have spaces, and that tabs and returns previously converted to explicit break chunks.
 	return 1;
+}
+
+Laxkit::Attribute *StreamText::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)
+{
+	if (!att) att = new Attribute();
+	att->push("text", text);
+	return att;
+}
+
+void StreamText::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context)
+{
+	if (!att) return;
+	Attribute *txt = att->find("text");
+	if (!txt) return;
+	makestr(text, txt->value);
+	if (text) len = strlen(text);
+	else len = 0;
 }
 
 
@@ -832,15 +855,16 @@ int Stream::ImportText(const char *text, int n, StreamChunk *addto, bool after, 
 		}
 	} else {
 		if (!chunk_start) {
-			 //blank stream! install first chunk...
-			if (!top.style) EstablishDefaultStyle();
+			// blank stream! install first chunk...
+			if (!top.style || !top.style->n()) EstablishDefaultStyle();
 		   	chunk_start = txt;
 			chunk_start->parent = &top;
+			top.chunks.push(chunk_start);
 
 	   	} else {
-			 //append or prepend to addto
+			// append or prepend to addto
 			if (!addto) {
-				 //prepend to beginning of all, or append to end of all
+				// prepend to beginning of all, or append to end of all
 				addto = chunk_start;
 				if (after) while (addto->next) addto = addto->next;
 			}
@@ -956,7 +980,7 @@ int Stream::ImportXMLAtt(Attribute *att, StreamChunk *&last_chunk, StreamElement
 					else type = (int)StreamBreakTypes::BREAK_Unknown;
 				}
 			}
-			 
+			
 			if (type != (int)StreamBreakTypes::BREAK_Unknown) {
 				StreamBreak *br = new StreamBreak(type, nullptr);
 				if (!chunk) { last_chunk = chunk = br; }
@@ -1049,7 +1073,7 @@ int Stream::ImportXMLAtt(Attribute *att, StreamChunk *&last_chunk, StreamElement
 
 
 		//
-		//now process those that can have sub elements...
+		// now process those that can have sub elements...
 		//
 
 		} else if (!strcmp(name,"div") || !strcmp(name,"p")) {
@@ -1223,22 +1247,23 @@ StreamCache *RemapAreaStream(DrawableObject *target, StreamAttachment *attachmen
 	Stream      *stream = attachment->stream;
 	StreamCache *cache  = attachment->cache;
 
-	if (cache->modtime > 0 && stream->modtime < cache->modtime) return cache; //probably set ok
+	if (cache && cache->modtime > 0 && stream->modtime < cache->modtime) return cache; //probably set ok
 
 
-	 //-------- compute possible breaks if necessary
-	 //***
+	//-------- compute possible breaks if necessary
+	//***
 
 
-	 //----------compute layout area:
-	 //  start with target inset path
-	 //  We need to remove the wrap path of any lesser siblings and aunts/uncles from that path
+	//----------compute layout area:
+	//  start with target inset path
+	//  We need to remove the wrap path of any lesser siblings and aunts/uncles from that path
 	LaxInterfaces::PathsData *area = dynamic_cast<LaxInterfaces::PathsData*>(target->GetInsetPath()->duplicate(nullptr));
 
 	DrawableObject *so = target;
 	DrawableObject *o = target->GetDrawableParent();
 	while (o) {
-		for (int c = 0; c < o->n() && o->e(c) != so; c++) {
+		for (int c = 0; c < o->n(); c++) {
+			if (o->e(c) == so) continue;
 			DrawableObject *dro = dynamic_cast<DrawableObject*>(o->e(c));
 			PathBooleanSubtract(area, dro->GetWrapPath(), true);
 			//area->CutOut(dro->GetWrapPath());
@@ -1248,7 +1273,7 @@ StreamCache *RemapAreaStream(DrawableObject *target, StreamAttachment *attachmen
 	}
 
 
-	 //--------------compute actual breaks within area
+	//--------------compute actual breaks within area
 	//***
 	
 

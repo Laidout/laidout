@@ -31,9 +31,9 @@
 
 //experimental:
 #include <lax/interfaces/perspectiveinterface.h>
-#include <lax/interfaces/textstreaminterface.h>
 #include <lax/interfaces/pressuremapinterface.h>
 #include <lax/interfaces/beznetinterface.h>
+#include "../text/streaminterface.h"
 #include "../interfaces/anchorinterface.h"
 #include "../interfaces/animationinterface.h"
 #include "../interfaces/pathintersectionsinterface.h"
@@ -126,8 +126,8 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		existingpool->push(i);
 		i->dec_count();
 
-		 //------TextStream
-		i=new TextStreamInterface(NULL,id++,NULL);
+		 //------StreamInterface
+		i = new StreamInterface(NULL,id++,NULL);
 		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
 		existingpool->push(i);
 		i->dec_count();

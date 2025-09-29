@@ -27,13 +27,14 @@
 #include "../core/guides.h"
 #include "../calculator/values.h"
 //#include "objectfilter.h"
-
+// #include "../text/streams.h"
 
 
 namespace Laidout {
 
 
 
+class StreamAttachment;
 class DrawableObject;
 class PointAnchor;
 class Document;
@@ -185,8 +186,7 @@ class DrawableObject :  virtual public ObjectContainer,
 
 	Laxkit::RefPtrStack<DrawObjectChain> chains; //for linked objects
 
-	//Laxkit::RefPtrStack<ObjectStream> path_streams; //applied to areapath outline
-	//Laxkit::RefPtrStack<ObjectStream> area_streams; //applied into areapath area
+	Laxkit::RefPtrStack<StreamAttachment> streams;
 
 	//--filters:
 	double opacity;

@@ -23,6 +23,7 @@
 #include "../language.h"
 #include "../core/stylemanager.h"
 #include "objectfilter.h"
+#include "../text/streams.h"
 
 #include "lpathsdata.h"
 #include "affinevalue.h"
@@ -1241,6 +1242,7 @@ Laxkit::Attribute *DrawableObject::dump_out_atts(Laxkit::Attribute *att,int what
 		att->push("clip_path", nullptr, "(optional) a path object");
 		//att->pushSubAtt("...");
 		att->push("kids", nullptr, "child object list...");
+		att->push("streams", nullptr, "Stream attachment information");
 		return att;
 	}
 
@@ -1418,6 +1420,20 @@ Laxkit::Attribute *DrawableObject::dump_out_atts(Laxkit::Attribute *att,int what
 		inset_path->dump_out_atts(att2, what, context);
 	}
 
+	if (streams.n) {
+		att2 = att->pushSubAtt("streams");
+		Utf8String *str;
+		for (int c = 0; c < streams.n; c++) {
+			att2->push("FIXME");
+			// if (streams.e[c]->IsResourced()) {
+			// 	str.Sprintf("resource:%s", streams.e[c]->Id());
+			// 	att2->push("stream", str.c_str());
+			// } else {
+			// 	Attribute *satt = att2->pushSubAtt("stream");
+			// 	streams.e[c]->dump_out_atts(satt, what, context);
+			// }
+		}
+	}
 
 	if (properties.n()) {
 		att2 = att->pushSubAtt("properties");

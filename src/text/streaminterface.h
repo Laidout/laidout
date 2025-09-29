@@ -27,6 +27,7 @@ class StreamInterface : public LaxInterfaces::TextStreamInterface
 {
   protected:
 	virtual bool AttachStream();
+	virtual void SetupDefaultFont();
 
   public:
 	// enum PathIntersectionsActions {
