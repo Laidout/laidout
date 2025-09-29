@@ -1592,9 +1592,12 @@ SignatureInstance::SignatureInstance(Signature *sig, PaperPartition *paper)
 	if (paper) paper->inc_count();
 	else partition = new PaperPartition;
 
+	partitioned_from = nullptr;
+
 	pattern->patternheight = partition->PatternHeight();
 	pattern->patternwidth  = partition->PatternWidth();
 
+	base_sheets_per_signature = 1;
 	sheetspersignature = 1;
 	autoaddsheets      = 1;
 	creep              = 0;
@@ -1702,6 +1705,7 @@ Value *SignatureInstance::duplicate()
 	sig->pattern->patternheight = partition->PatternHeight();
 	sig->pattern->patternwidth  = partition->PatternWidth();
 
+	sig->base_sheets_per_signature = base_sheets_per_signature;
 	sig->sheetspersignature = sheetspersignature;
 	sig->autoaddsheets      = autoaddsheets;
 	sig->creep              = creep;
@@ -1724,6 +1728,7 @@ SignatureInstance *SignatureInstance::duplicateSingle()
 	sig->pattern->patternheight = partition->PatternHeight();
 	sig->pattern->patternwidth  = partition->PatternWidth();
 
+	sig->base_sheets_per_signature = base_sheets_per_signature;
 	sig->sheetspersignature = sheetspersignature;
 	sig->autoaddsheets = autoaddsheets;
 	sig->creep = creep;
@@ -2235,6 +2240,7 @@ Laxkit::Attribute *SignatureInstance::dump_out_atts(Laxkit::Attribute *att,int w
 	char ii[10];
 	sprintf(ii,"%d",sheetspersignature);
 	att->push("sheetspersignature",ii);
+	att->push("base_sheets_per_signature", base_sheets_per_signature);
 
 	Attribute *satt=att->pushSubAtt("pattern",nullptr);
 	pattern->dump_out_atts(satt,what,context);
@@ -2278,6 +2284,9 @@ void SignatureInstance::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::Dum
 
 		} else if (!strcmp(name,"sheetspersignature")) {
 			IntAttribute(value, &sheetspersignature);
+		
+		} else if (!strcmp(name,"base_sheets_per_signature")) {
+			IntAttribute(value, &base_sheets_per_signature);
 
 		} else if (!strcmp(name,"autoaddsheets")) {
 			autoaddsheets=BooleanAttribute(value);
@@ -2327,7 +2336,10 @@ ObjectDef *SignatureInstance::makeObjectDef()
 			nullptr);
 			
 
-	sd->push("sheetspersignature", _("Sheets per signature"), _("Sheets of paper per signature"),
+	sd->push("sheetspersignature", _("Sheets per signature"), _("Sheets of paper per signature including stacking"),
+			"int", nullptr, "1", 0, nullptr);
+
+	sd->push("base_sheets_per_signature", _("Baes sheets per signature"), _("Sheets of paper per signature ignoring stacking"),
 			"int", nullptr, "1", 0, nullptr);
 
 	sd->push("autoaddsheets", _("Auto add sheets"), _("Auto add or remove sheets to cover all actual pages"),
@@ -2369,6 +2381,11 @@ int createSignatureInstance(ValueHash *context, ValueHash *parameters,
 		i=parameters->findInt("sheetspersignature",-1,&e);
 		if (e==0) sig->sheetspersignature=i;
 		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"sheetspersignature"); throw error; }
+
+		//--- base_sheets_per_signature
+		i=parameters->findInt("base_sheets_per_signature",-1,&e);
+		if (e==0) sig->base_sheets_per_signature = i;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"base_sheets_per_signature"); throw error; }
 
 		 //---autoaddsheets
 		i=parameters->findBoolean("autoaddsheets",-1,&e);

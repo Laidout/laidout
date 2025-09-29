@@ -167,7 +167,10 @@ class SignatureInstance : public Value
 	PaperPartition *partition;
 	Signature *pattern;
 
-	int sheetspersignature; //Current number of sheets. May change if autoaddsheets!=0
+	SignatureInstance *partitioned_from; // non-null if this instance spawned from a piece
+
+	int base_sheets_per_signature; // number of sheets from only this instance, without partition stacking
+	int sheetspersignature; //Current number of sheets including partition stacking. May change if autoaddsheets!=0
 	int autoaddsheets;
 
 	int automarks;
@@ -179,7 +182,7 @@ class SignatureInstance : public Value
 	    StackThenFold,
 	    FoldThenInsert,
 	    FoldThenPlaceAdjacent,
-	    Custom
+	    Custom // use full custom partition
 	};
 	TileStacking tile_stacking = Repeat;
 
