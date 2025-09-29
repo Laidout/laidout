@@ -62,6 +62,7 @@ LaidoutPreferences::LaidoutPreferences()
 	uiscale        = 1;
 	pagedropshadow = 5;
 	dont_scale_icons = true;
+	use_monitor_ppi  = true;
 
     default_template = nullptr;
     defaultpaper = get_system_default_paper();

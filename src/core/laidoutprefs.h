@@ -29,6 +29,7 @@ class LaidoutPreferences : public Value
 
 	double uiscale;
 	bool dont_scale_icons;
+	bool use_monitor_ppi;
 
 	int default_units;
 	char *unitname;
