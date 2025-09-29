@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<!-- Laidout Page Flipping demo using Nodlik's StPageFlip library: https://github.com/Nodlik/StPageFlip -->
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width" />
+
+  <title><!--TITLE--></title>
+  <meta name="description" content="<!--META-DESCRIPTION-->">
+
+  <meta property="og:title" content="<!--TITLE-->">
+  <meta property="og:description" content="<!--META-DESCRIPTION-->">
+  <meta property="og:image" content="<!--META-IMAGE-->">
+  <meta property="og:url" content="<!--META-URL--">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="<!--SITE-NAME-->">
+  <meta name="twitter:image" content="<!--META-IMAGE-->">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:site" content="<!--HANDLE-->">
+  <meta name="twitter:image:alt" content="<!--META-DESCRIPTION-->">
+
+
+  <link href="https://fonts.googleapis.com/css?family=Cantarell|Vollkorn" rel="stylesheet">
+
+  <link rel="icon" href="icon.png" type="image/png">
+  <link rel="stylesheet" href="style.css" type="text/css">
+
+  <script src="page-flip.browser.js"></script>
+
+  <style type="text/css">
+  	.my-page {
+		background: #fff;
+		border-width: 1px;
+		border-color: #aaa;
+		border-style: solid;
+	}
+	.my-page img {
+		max-width: 100%;
+		max-height: 100%;
+		
+		border-width: 1px;
+		border-color: #aaa;
+		border-style: solid;
+	}
+
+	#book-container {
+		margin: 50px 50px 50px 50px;
+		padding: 50px 50px 50px 50px;
+		background: #ddd;
+		/*max-width: 90vw;*/
+	}
+  </style>
+
+</head>
+
+<body>
+<center>
+
+<div id="top"></div>
+
+
+    <div class="images_title"><!--TITLE--></div>
+    <br>
+	<div class="images_byline"><!--BLURB--></div>
+	
+	<br><br>
+	
+	<div id="book-container">
+	<div id="book">
+		<div class="my-page" data-density="hard"> Cover </div>
+		<div class="my-page"> Inner cover </div>
+
+		<div class="my-page"><img src="../TEST/exported00.png"></div>
+		<div class="my-page"><img src="../TEST/exported01.png"></div>
+		<div class="my-page"><img src="../TEST/exported02.png"></div>
+		<div class="my-page"><img src="../TEST/exported03.png"></div>
+		<div class="my-page"><img src="../TEST/exported04.png"></div>
+		<div class="my-page"><img src="../TEST/exported05.png"></div>
+		<div class="my-page"><img src="../TEST/exported06.png"></div>
+		<div class="my-page"><img src="../TEST/exported07.png"></div>
+		<div class="my-page"><img src="../TEST/exported08.png"></div>
+		<div class="my-page"><img src="../TEST/exported09.png"></div>
+		<div class="my-page"><img src="../TEST/exported10.png"></div>
+		<div class="my-page"><img src="../TEST/exported11.png"></div>
+		<div class="my-page"><img src="../TEST/exported12.png"></div>
+		<div class="my-page"><img src="../TEST/exported13.png"></div>
+		<div class="my-page"><img src="../TEST/exported14.png"></div>
+		<div class="my-page"><img src="../TEST/exported15.png"></div>
+		<div class="my-page"><img src="../TEST/exported16.png"></div>
+		<div class="my-page"><img src="../TEST/exported17.png"></div>
+		<div class="my-page"><img src="../TEST/exported18.png"></div>
+		<div class="my-page"><img src="../TEST/exported19.png"></div>
+		<div class="my-page"><img src="../TEST/exported20.png"></div>
+		<div class="my-page"><img src="../TEST/exported21.png"></div>
+		<div class="my-page"><img src="../TEST/exported22.png"></div>
+		<div class="my-page"><img src="../TEST/exported23.png"></div>
+		<div class="my-page"><img src="../TEST/exported24.png"></div>
+		<div class="my-page"><img src="../TEST/exported25.png"></div>
+		<div class="my-page"><img src="../TEST/exported26.png"></div>
+		<div class="my-page"><img src="../TEST/exported27.png"></div>
+
+		<div class="my-page" data-density="hard"> Inner back </div>
+		<div class="my-page"> Back cover </div>
+	</div>
+	</div>
+	<div class="text-center mt-3 mb-2">
+		<button type="button" class="btn btn-info btn-sm btn-book-prev" onclick="pageFlip.flipPrev();">Previous page</button>
+		<span id="page-count" class="page-count">1</span> / <span id="page-total" class="page-total">-</span>
+		<button type="button" class="btn btn-info btn-sm btn-book-next" onclick="pageFlip.flipNext();">Next page</button>
+	</div>
+
+	<script>
+		//import { PageFlip } from 'page-flip'
+		const pageFlip = new St.PageFlip(document.getElementById('book'), {
+			width: 600,
+			height: 618,
+			flippingTime: 500,
+			showCover: true,
+			maxShadowOpacity: .7,
+			usePortrait: false,
+		});
+		pageFlip.loadFromHTML(document.querySelectorAll('.my-page'));
+
+		document.getElementById("page-total").innerHTML = pageFlip.getPageCount();
+		pageFlip.on('flip', (e) => {
+			var page = e.data + 1;
+			if (page != 1 && page != pageFlip.getPageCount()) page = page.toString()+"-"+(page+1).toString();
+		    document.getElementById("page-count").innerHTML = page;
+		  }
+		);
+		document.addEventListener(
+		  "keyup",
+		  (event) => {
+			const keyName = event.key;
+
+			// As the user releases the Ctrl key, the key is no longer active,
+			// so event.ctrlKey is false.
+			if (keyName === "ArrowLeft") {
+			  pageFlip.flipPrev();
+			} else if (keyName === "ArrowRight") {
+			  pageFlip.flipNext();
+			}
+		  },
+		  false,
+		);
+
+		window.addEventListener("orientationchange", (event) => {
+		  console.log(
+			`new orientation: ${event.target.screen.orientation.angle}`,
+		  );
+		});
+	</script>
+
+<!--IMAGE-LIST-->
+
+
+<br>
+<br>
+	<br><br>
+	<br><br>
+	<br><br>
+	<br><br>
+
+</center>
+</body>
+</html>
+
+
