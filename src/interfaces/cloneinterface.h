@@ -14,7 +14,7 @@
 //
 
 #include "../calculator/values.h"
-#include "../dataobjects/group.h"
+#include "../dataobjects/drawableobject.h"
 #include "../language.h"
 #include "../ui/viewwindow.h"
 

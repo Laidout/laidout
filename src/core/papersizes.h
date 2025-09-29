@@ -22,7 +22,7 @@
 
 #include "../calculator/values.h"
 #include "../dataobjects/objectcontainer.h"
-#include "../dataobjects/group.h"
+#include "../dataobjects/drawableobject.h"
 
 
 
@@ -148,7 +148,7 @@ class PaperGroup : virtual public Laxkit::Resourceable, virtual public ObjectCon
 	char locked;
 	Laxkit::RefPtrStack<PaperBoxData> papers;
 
-	Group objs;
+	DrawableObject objs;
 
 	PaperGroup();
 	PaperGroup(PaperBoxData *boxdata);

@@ -19,7 +19,7 @@
 #include <lax/interfaces/imageinterface.h>
 #include <lax/interfaces/pathinterface.h>
 
-#include "../dataobjects/group.h"
+#include "../dataobjects/drawableobject.h"
 #include "../calculator/values.h"
 
 

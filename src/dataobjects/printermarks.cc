@@ -15,7 +15,6 @@
 
 
 #include "printermarks.h"
-#include "group.h"
 #include "lpathsdata.h"
 #include "datafactory.h"
 #include "../language.h"

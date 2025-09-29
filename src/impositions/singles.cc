@@ -385,8 +385,6 @@ bool Singles::SetDefaultPageStyle(int index_in_spread, RectPageStyle *pstyle)
  * Duplicates npaper, not pointer tranfser.
  * 
  * Return 0 success, nonzero error.
- * 
- * Calls Imposition::SetPaperSize(npaper), then setPage().
  */
 int Singles::SetPaperSize(PaperStyle *npaper)
 {
@@ -491,6 +489,9 @@ void Singles::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *
 			// 	paper = papergroup->papers.e[0]->box;
 			// 	paper->inc_count();
 			// }
+		
+		} else if (!strcmp(name,"double_sided")) {
+			double_sided = BooleanAttribute(value);
 		}
 	}
 
@@ -538,6 +539,7 @@ void Singles::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 		fprintf(f,"%smarginbottom 0   #The default bottom page margin\n",spc);
 		fprintf(f,"%snumpages 3 #number of pages in the document. This is ignored on readin\n",spc);
 		fprintf(f,"%spaper_layout  #optional definition of multiple pages per page spread\n", spc);
+		fprintf(f,"%sdouble_sided  # whether the pages are double sided", spc);
 		papergroup->dump_out(f,indent+2,-1,NULL);
 		//fprintf(f,"%sdefaultpagestyle #default page style\n",spc);
 		//pagestyle->dump_out(f,indent+2,-1,NULL);
@@ -553,6 +555,7 @@ void Singles::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 	fprintf(f,"%sinsetbottom  %.10g\n",spc,insetbottom);
 	fprintf(f,"%stilex %d\n",spc,tilex);
 	fprintf(f,"%stiley %d\n",spc,tiley);
+	fprintf(f,"%sdouble_sided  %s", spc, double_sided ? "yes" : "no");
 
 	if (numpages) fprintf(f,"%snumpages %d\n",spc,numpages);
 
@@ -609,6 +612,7 @@ Value *Singles::duplicate()
 	sn->insetbottom  = insetbottom;
 	sn->tilex        = tilex;
 	sn->tiley        = tiley;
+	sn->double_sided = double_sided;
 
 	return sn;  
 }
@@ -701,6 +705,10 @@ int createSingles(ValueHash *context, ValueHash *parameters,
 		if (e==0) imp->tiley=i;
 		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"tiley"); throw error; }
 
+		//---double_sided
+		bool b = parameters->findBoolean("double_sided",-1,&e);
+		if (e == 0) imp->double_sided = b;
+		else if (e == 2) { sprintf(error, _("Invalid format for %s!"),"double_sided"); throw error; }
 
 	} catch (const char *str) {
 		log.AddMessage(str,ERROR_Fail);
@@ -825,6 +833,13 @@ ObjectDef *makeSinglesObjectDef()
 			"real",
 			NULL,
 			"0",
+			0,0);
+	sd->push("double_sided",
+			_("Double Sided"),
+			_("Whether pages have backs that need to align to fronts"),
+			"boolean",
+			NULL,
+			"false",
 			0,0);
 
 	return sd;
