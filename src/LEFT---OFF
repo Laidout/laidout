@@ -34,6 +34,8 @@ crash: color grabbing under Wayland completely crashes with extreme prejudice. s
 
 ------------ other bugs:
 
+bug: rename window input dialog has terrible spacing
+
 bug: zoom handles mangle cairo sometimes.. can't reproduce reliably
 
 bug: import pdf with "expand_subimages", dragging/rendering is super laggy
@@ -41,8 +43,6 @@ bug: import pdf with "expand_subimages", dragging/rendering is super laggy
 bug: if you create FilePreviewer with hstack as parent, doesn't even addwindow. somehow the reparent is installing where just parent doesn't??!??
 
 laxkit spiro editor mouse overs appear to be broken
-
-travis is recompiling on non-master branch pushes, eating up all my minutes, and it shouldn't
 
 bug: back to not maximizing properly on default ubuntu. Seems to work fine on every other window manager I've tried.
 
@@ -152,31 +152,33 @@ stackframe seems to be ignoring window borders on layout
 
 ----------------0.098 ROADMAP ITEMS: features and enhancements------------------------
 DONE website: Rework download to be easier
-website:
-  rss feed: use index.xml instead of rss.xml, and make link on front page
+website hugo rework:
+  DONE rss feed: use index.xml instead of rss.xml, and make link on front page
   website revamp:
-    rebuild with hugo
+    DONE rebuild with hugo
     half the videos are not linking
 	need to redo screenshots section for mobile friendliness
+	  Image tool
+	  Paths
+	  Gradients
 	  Color fonts
 	  Caption tool
 	  Text on path tool
-	  Image tool
 	  Engraver tool
-	  How to make booklets
-	  Paths
+	  Color patches
 	  Alignment tool
 	  Page range interface
 	  paper tiler
-	  Color patches
 	  Viewport/navigation/window arrangements
-	  Gradients
-	  Nets
-	  Warping
 	  Spread editor
+	  How to make booklets
+	  SinglesEditor
+	  SignatureEditor
+	  Nets
 	  Node tool
-	on index should show version and date
-	DONE rename to docs
+	  Warping
+	  UI scale
+	DONE rename screenshots to docs
 for CI, https://github.com/Laidout/laidout-icons.git needs to be updated
 update fileformat.txt
   DONE missing Palette/GradientStrip
@@ -191,11 +193,11 @@ DONE update splash image at icons/LaidoutSplash.png
 update docs to have new release number
 update translation base files
 update screenshots, sync with features
-update links page
+DONE update links page
 update help page
 update quickref.html
 update dtpcompare.html
-update features.md: sweep LEFT-OFF to DONE, edit major items to features.md
+update features.md: sweep LEFT-OFF and edit major items to features.md
 update dev page
   document pull request process on dev.html page, sync with repo readme.md
 comment out cairo_debug_reset_static_data before release, since it usually means crash, interferes with pipeout
@@ -237,6 +239,7 @@ packaging:
   DONE appimage, see: https://github.com/Laidout/laidout/issues/10
 
 valuewindow:
+  bug: uiscale messing up widget scaling.. out of sync with resizes, especially initial
   use ValueGUI for automated type handling?
   FileValue needs a directory hint.. currently turning red on any change
   ui hints:
@@ -274,9 +277,6 @@ global Laidout settings:
   per tool default settings
   thin line width (default 1 pixel, but this is bad for high dpi screens)
 
-options:
-  --impose-only and --nodes-only arg needs better description of arg
-
 graphicsmagick:
   load_image() always loads full, even if ping_only (confirm?)
 
@@ -285,6 +285,7 @@ debug inkscape node extension
 have a clickable history of recently edited objects (as seen in Godot!)
 
 text on path textonpath: TextOnPath
+  bug: font size dragging goes weird on some fonts.. problem between textheight and Msize
   crash: link to parent path crashing
   bug: offset and baseline handles disappeared for large offset values
   bug: dragging the offset handle sometimes jumps to really bad
@@ -293,7 +294,8 @@ text on path textonpath: TextOnPath
   bug: reversing direction should change offset so that text occupies roughly the same place. currently in scrunches up
   bug: sometimes path weights don't recache along with glyph positions
   bug: duplicate isn't always initing the dup properly
-  bug: some problem with paths when link_to_parent
+  would be neat to have multiple lines
+    when on closed path, option to progressively offset by textheight so you can easily spiral text around
   input offset should allow "left", "right" and "center"
   handle to remove from current path, and possibly attach it to some other path
     how to attach to diff path
@@ -378,7 +380,7 @@ export/print dialog
   DONE For now remove print button, as it produces incorrect results. All it does is allow "to command" option, not vital
 file filters: filefilters:
   multiple export targets, including per object export settings
-  export with custom project files: project export project
+  export with custom project files: project export project.. ProjectTemplate
     like html gallery, has project config in coop/
     some files templated
     project defined by:
@@ -449,6 +451,8 @@ importdialog ImportDialog import dialog:
   importing should sort out duplicate names
   would be nice to show preview of what is to be imported
 html: htmlgallery: html out htmlout:
+  page flip html example
+    debug StPageFlip for mobile friendliness
   bug: not handling bleeds
   obey object visible
   ---0.099---
@@ -458,7 +462,7 @@ html: htmlgallery: html out htmlout:
       control over parallax point
        autoplay repeating parallax elements
     follow mouse
-    video objects as mystery data?
+    video objects as mystery data? proxy objects with meta for videos?
     path follow
     scrolling object: speed direction
     shake
@@ -665,7 +669,7 @@ Singles:
   object bleeds not implemented
   export to pdf has wrong paper sizes with multipage
   PaperLayout, needs to optionally be a different PaperGroup compared to page layout
-  implement double sided
+  implement double_sided
   DONE inset should be per paper in papergroup
   DONE what's with the old cached_margin stuff, obsolete now with pagestyles stack?
   DONE revamp to be art board centric, based on random PaperGroup
@@ -1422,6 +1426,9 @@ node editor node interface NodeInterface: nodes: node: interface:
   DONE bug: zoom does incorrect margins.. pads out a lot on left
   DONE implement recent
   DONE needs to remember scaling between instantiation
+
+streaminterface: streams:
+  option for local or global baselines.. select a particular baseline grid?
 
 captioninterface CaptionInterface captiondata CaptionData
   default text size is super small
@@ -3890,3 +3897,6 @@ DONE crash: calculator: do `var t = 1`, then `t = 2`.. crash!!
 DONE crash: right button in ellipseinterface
 DONE "edit imposition", then escape.. removes window, but not the frame!
 DONE crash: select booklet imposition from imposition editor, then paperlayout.. silently quits! no apparent crash! no valgrind error!
+DONE (removed) travis is recompiling on non-master branch pushes, eating up all my minutes, and it shouldn't
+DONE bug: greyed option still selectable in menu
+DONE options: --impose-only and --nodes-only arg needs better description of arg
