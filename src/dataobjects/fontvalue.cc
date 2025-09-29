@@ -79,7 +79,7 @@ int FontValue::getValueStr(char *buffer,int len)
 	if (!font) {
 		int needed = 7;
 		if (!buffer || len<needed) return needed;
-		sprintf(buffer,"Font()");
+		sprintf(buffer, "Font()");
 		return 0;
 	}
 
@@ -87,10 +87,10 @@ int FontValue::getValueStr(char *buffer,int len)
     const char *style  = font ? font->Style()    : "";
     const char *file   = font ? font->FontFile() : "";
     int needed = 70 + strlen(family) + strlen(style) + strlen(file);
-    if (!buffer || len<needed) return needed;
+    if (!buffer || len < needed) return needed;
 
-	sprintf(buffer,"Image(family=\"%s\", style=\"%s\", file=\"%s\", size=%f)", family, style, file, font->Msize());
-    modified=0;
+	sprintf(buffer,"Font(family=\"%s\", style=\"%s\", file=\"%s\", size=%f)", family, style, file, font->Msize());
+    modified = 0;
     return 0;
 }
 
