@@ -50,17 +50,17 @@ const char *StreamInterface::whatdatatype()
 	return nullptr;
 }
 
-anInterface *StreamInterface::duplicate(anInterface *dup)
+anInterface *StreamInterface::duplicateInterface(anInterface *dup)
 {
 	if (dup == nullptr) dup = new StreamInterface(nullptr,-1,nullptr);
 	else if (!dynamic_cast<StreamInterface *>(dup)) return nullptr;
-	return TextStreamInterface::duplicate(dup);
+	return TextStreamInterface::duplicateInterface(dup);
 }
 
 void StreamInterface::SetupDefaultFont()
 {
 	if (default_font) return;
-	default_font = anXApp::app->defaultlaxfont->duplicate(); //TODO: should be a laidout option? like laidout->last_font
+	default_font = anXApp::app->defaultlaxfont->duplicateFont(); //TODO: should be a laidout option? like laidout->last_font
 }
 
 bool StreamInterface::AttachStream()
@@ -73,7 +73,7 @@ bool StreamInterface::AttachStream()
 			tonpath->Text(text_to_place.c_str());
 
 		if (!default_font) SetupDefaultFont();
-		LaxFont *font = default_font->duplicate();
+		LaxFont *font = default_font->duplicateFont();
 		double default_size = 20;
 		font->Resize(default_size);
 		tonpath->Font(font);

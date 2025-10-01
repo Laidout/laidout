@@ -132,7 +132,7 @@ class SvgFilterNode : public Laidout::NodeBase
     //virtual int SetPropertyFromAtt(const char *propname, LaxFiles::Attribute *att);
 
 	virtual const char *ResultName();
-	virtual int dump_in_atts(Attribute *att, NodeGroup *filter, SvgFilterNode *last, SvgFilterNode *srcnode, Laxkit::ErrorLog &log);
+	virtual int dump_in_node_atts(Attribute *att, NodeGroup *filter, SvgFilterNode *last, SvgFilterNode *srcnode, Laxkit::ErrorLog &log);
 	//virtual int dump_out_to_svg(Attribute *defs);
 	virtual NodeProperty *FindRef(const char *name, NodeGroup *filter);
 
@@ -254,7 +254,7 @@ NodeBase *SvgFilterNode::Duplicate()
 
 		Value *v = property->GetData();
 		if (v) {
-			v = v->duplicate();
+			v = v->duplicateValue();
 			NodeProperty *newprop = newnode->FindProperty(property->name);
 			newprop->SetData(v, 1);
 		}
@@ -276,7 +276,7 @@ const char *SvgFilterNode::ResultName()
 
 /*! Dump in an XML based Attribute presumably from an svg file.
  */
-int SvgFilterNode::dump_in_atts(Attribute *att, NodeGroup *filter, SvgFilterNode *last, SvgFilterNode *srcnode, Laxkit::ErrorLog &log)
+int SvgFilterNode::dump_in_node_atts(Attribute *att, NodeGroup *filter, SvgFilterNode *last, SvgFilterNode *srcnode, Laxkit::ErrorLog &log)
 {
 	//ObjectDef *svgdefs = dynamic_cast<ObjectDef*>(SvgFilterNode::svg_def_keeper.GetObject());
 	//ObjectDef *sourcedef = svgdefs->FindDef("SvgSource");
@@ -324,7 +324,7 @@ int SvgFilterNode::dump_in_atts(Attribute *att, NodeGroup *filter, SvgFilterNode
 						SvgFilterNode *pp = new SvgFilterNode(name);
 						//pp->def should == def.. assume it is so for now
 
-						pp->dump_in_atts(contents->attributes.e[c3], filter, last, srcnode, log);
+						pp->dump_in_node_atts(contents->attributes.e[c3], filter, last, srcnode, log);
 						filter->AddNode(pp);
 						pp->dec_count();
 
@@ -1204,7 +1204,7 @@ int LoadSVGFilters(const char *file, int file_is_data, const char *which_filter,
 								SvgFilterNode *pp = new SvgFilterNode(name);
 								//pp->def should == def.. assume it is so for now
 
-								pp->dump_in_atts(primitives->attributes.e[c3], filter, last, srcnode, log);
+								pp->dump_in_node_atts(primitives->attributes.e[c3], filter, last, srcnode, log);
 								filter->AddNode(pp);
 								pp->dec_count();
 								last = pp;
@@ -1379,7 +1379,7 @@ int SvgFilterLoader::Export(const char *file, anObject *object, anObject *contex
 					if (!strcmp(att->attributes.e[c]->name, "filter")) att->attributes.remove(c);
 				}
 				for (int c = 0; c<defs.attributes.n; c++) {
-					att->push(defs.attributes.e[c]->duplicate(),-1);
+					att->push(defs.attributes.e[c]->duplicateAtt(),-1);
 				}
 			}
 		}

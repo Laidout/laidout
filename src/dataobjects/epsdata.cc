@@ -176,7 +176,7 @@ void EpsData::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *context)
  *    for instance.
  * \todo del is ignored
  */
-int EpsData::LoadImage(const char *fname, const char *npreview, int maxpw, int maxph, char del)
+int EpsData::LoadImage(const char *fname, const char *npreview, int maxpw, int maxph, char del, char fit, int index)
 {
 	FILE *f = fopen(fname,"r");
 	if (!f) return -1;

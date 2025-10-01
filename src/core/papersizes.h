@@ -77,7 +77,7 @@ class PaperStyle : public Value, public FunctionEvaluator
 	virtual int SetFromString(const char *nname);
 
 	//from Value:
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
 	virtual ObjectDef *makeObjectDef();
 	virtual int type();
 	virtual int getValueStr(char *buffer,int len);
@@ -111,7 +111,7 @@ class PaperBox :  public Laxkit::anObject
 	virtual bool landscape();
 	virtual bool landscape(bool l);
 	virtual int Set(PaperStyle *paper);
-	virtual anObject *duplicate(anObject *ref);
+	virtual anObject *duplicate();
 
 	bool Has(BoxTypes type) { return (which & type) != 0; }
 };
@@ -130,7 +130,7 @@ class PaperBoxData : public LaxInterfaces::SomeData
 
 	PaperBoxData(PaperBox *paper);
 	virtual ~PaperBoxData();
-	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
+	virtual LaxInterfaces::SomeData *duplicateData(LaxInterfaces::SomeData *dup);
 	virtual const char *whattype() { return "PaperBoxData"; }
 	virtual void FindBBox();
 
@@ -158,7 +158,7 @@ class PaperGroup : virtual public Laxkit::Resourceable, virtual public ObjectCon
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
 	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
 	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
-	virtual anObject *duplicate(anObject *ref);
+	virtual anObject *duplicate();
 
 	virtual int AddPaper(double w,double h,double offsetx,double offsety);
 	virtual int AddPaper(const char *nme,double w,double h,const double *m, const char *label);

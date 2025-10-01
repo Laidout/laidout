@@ -104,7 +104,7 @@ LaidoutPreferences::~LaidoutPreferences()
 	delete[] clobber_protection;
 }
 
-Value *LaidoutPreferences::duplicate()
+Value *LaidoutPreferences::duplicateValue()
 {
 	LaidoutPreferences *p=new LaidoutPreferences;
 

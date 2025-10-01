@@ -323,7 +323,7 @@ int LaidoutInFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 		for (int c2=0; c2<fdoc->pages.e[c]->layers.n(); c2++) {
 			obj      = fdoc->pages.e[c]->layers.e(c2);
 
-			layerdup = obj->duplicate(NULL); 
+			layerdup = obj->duplicateData(nullptr); 
 			layer=dynamic_cast<DrawableObject*>(layerdup);
 
 			if (layer) {

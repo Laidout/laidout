@@ -103,7 +103,8 @@ class Region : virtual public LaxInterfaces::SomeData, virtual public Value
 	virtual void dump_in_atts(Laxkit::Attribute*att, int flag, Laxkit::DumpContext *context);
 
   	// Value funcs
-  	virtual Value *duplicate();
+  	virtual Value *duplicateValue();
+  	virtual anObject *duplicate() { return duplicateValue(); }
 	virtual ObjectDef *makeObjectDef();
 
 	Laxkit::flatpoint DetectNewCutBoundary(Laxkit::flatvector cut_from, Laxkit::flatvector dir, int ignore, int *on_cut_ret);
@@ -165,7 +166,7 @@ class PartitionInterface : virtual public LaxInterfaces::anInterface
 	PartitionInterface();
 	PartitionInterface(anInterface *nowner = nullptr, int nid = 0, Laxkit::Displayer *ndp = nullptr);
 	virtual ~PartitionInterface();
-	virtual LaxInterfaces::anInterface *duplicate(LaxInterfaces::anInterface *dup=nullptr);
+	virtual LaxInterfaces::anInterface *duplicateInterface(LaxInterfaces::anInterface *dup);
 	virtual Laxkit::ShortcutHandler *GetShortcuts();
 
 	virtual const char *IconId() { return "Partition"; }

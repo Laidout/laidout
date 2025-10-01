@@ -74,7 +74,7 @@ class ObjectFilterInterface : public LaxInterfaces::anInterface
 
 	ObjectFilterInterface(LaxInterfaces::anInterface *nowner, int nid,Laxkit::Displayer *ndp);
 	virtual ~ObjectFilterInterface();
-	virtual LaxInterfaces::anInterface *duplicate(LaxInterfaces::anInterface *dup);
+	virtual LaxInterfaces::anInterface *duplicateInterface(LaxInterfaces::anInterface *dup);
 	virtual const char *IconId() { return "Filters"; }
 	virtual const char *Name();
 	virtual const char *whattype() { return "ObjectFilterInterface"; }

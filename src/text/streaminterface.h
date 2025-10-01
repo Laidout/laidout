@@ -41,7 +41,7 @@ class StreamInterface : public LaxInterfaces::TextStreamInterface
 
 	StreamInterface(LaxInterfaces::anInterface *nowner, int nid,Laxkit::Displayer *ndp);
 	virtual ~StreamInterface();
-	virtual LaxInterfaces::anInterface *duplicate(LaxInterfaces::anInterface *dup);
+	virtual LaxInterfaces::anInterface *duplicateInterface(LaxInterfaces::anInterface *dup);
 	virtual const char *IconId() { return "TextStream"; }
 	virtual const char *Name();
 	virtual const char *whattype() { return "StreamInterface"; }

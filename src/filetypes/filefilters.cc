@@ -601,7 +601,7 @@ ObjectDef* ImportConfig::makeObjectDef()
 	return makeImportConfigDef();
 }
 
-Value* ImportConfig::duplicate()
+Value* ImportConfig::duplicateValue()
 {
 	ImportConfig *c=new ImportConfig;
 	*c=*this; //warning, shallow copy!
@@ -628,46 +628,6 @@ int import_document(ImportConfig *config, Laxkit::ErrorLog &log, const char *fil
 	return config->filter->In(config->filename,config,log, filecontents,contentslen);
 }
 
-
-//------------------------------------- ProjectExportSettings -----------------------------------
-
-/*! \class ProjectExportSettings
- * 
- * TODO!! 
- * Settings to copy extra files and process basic templates in addition to
- * the files exported normally by the filter.
- */
-class ProjectExportSettings : public Value
-{
-  public:
-  	// Laxkit::Utf8String label;
-  	ExportFilter *filter;
-  	DocumentExportConfig *config;
-
-  	class CopyFiles
-  	{
-  	  public:
-  	  	enum CopyType { Copy, Template, TemplaceEachSpread };
-  	  	CopyType type;
-  	  	Laxkit::Utf8String pass_id;
-  	    Laxkit::Utf8String from_pattern;
-  	    Laxkit::Utf8String to;
-  	    ValueHash vars;
-  	};
-
-  	ProjectExportSettings();
-  	virtual ~ProjectExportSettings();
-
-  	//from value:
-  	virtual int type();
-	virtual Value *duplicate();
-  	virtual ObjectDef *makeObjectDef(); //calling code responsible for ref
-
-  	//from DumpUtility:
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
-	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
-	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
-};
 
 
 //------------------------------------- ExportFilter -----------------------------------
@@ -1220,7 +1180,7 @@ DocumentExportConfig::~DocumentExportConfig()
 	if (papergroup) papergroup->dec_count();
 }
 
-Value* DocumentExportConfig::duplicate()
+Value* DocumentExportConfig::duplicateValue()
 {
 	DocumentExportConfig *c = new DocumentExportConfig(this);
 	return c;
@@ -1672,7 +1632,7 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 			}
 			PaperStyle *ps;
 			if (c == laidout->papersizes.n) c = 0;
-			ps = (PaperStyle *)laidout->papersizes.e[0]->duplicate();
+			ps = (PaperStyle *)laidout->papersizes.e[0]->duplicateValue();
 			config->papergroup = new PaperGroup(ps);
 			ps->dec_count();
 		}

@@ -330,7 +330,7 @@ int PaperSizeWindow::Event(const EventData *data,const char *mes)
 		if (i < 0 || i >= papersizes->n) return 0;
 
 		papertype->dec_count();
-		papertype = (PaperStyle *)papersizes->e[i]->duplicate();
+		papertype = (PaperStyle *)papersizes->e[i]->duplicateValue();
 		if (!strcmp(papertype->name,"custom")) return 0;
 		papertype->landscape(curorientation);
 		char num[30];

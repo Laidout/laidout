@@ -166,12 +166,12 @@ int NewDocumentFunction(ValueHash *context,
 				const char *str=dynamic_cast<StringValue*>(v)->str;
 				if (!str) throw _("Invalid object for paper!");
 				PaperStyle *paper = GetPaperFromName(str);
-				if (paper) paper = (PaperStyle*)paper->duplicate();
+				if (paper) paper = (PaperStyle*)paper->duplicateValue();
 			
 			} else if (v->type()==VALUE_Object) {
 				paper = dynamic_cast<PaperStyle *>(dynamic_cast<ObjectValue *>(v));
 				if (!paper) throw _("Invalid object for paper!");
-				paper = (PaperStyle *)paper->duplicate();
+				paper = (PaperStyle *)paper->duplicateValue();
 			}
 		}
 

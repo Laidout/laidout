@@ -60,7 +60,7 @@ class PageMarkerInterface : public LaxInterfaces::anInterface
 
 	PageMarkerInterface(LaxInterfaces::anInterface *nowner, int nid,Laxkit::Displayer *ndp);
 	virtual ~PageMarkerInterface();
-	virtual LaxInterfaces::anInterface *duplicate(LaxInterfaces::anInterface *dup);
+	virtual LaxInterfaces::anInterface *duplicateInterface(LaxInterfaces::anInterface *dup);
 	virtual const char *IconId() { return "PageMarker"; }
 	const char *Name();
 	const char *whattype() { return "PageMarkerInterface"; }

@@ -129,7 +129,7 @@ NetImposition::NetImposition()
 
 	// setup default paperstyle
 	PaperStyle *paperstyle = dynamic_cast<PaperStyle *>(stylemanager.FindDef("defaultpapersize"));
-	if (paperstyle) paperstyle = static_cast<PaperStyle *>(paperstyle->duplicate());
+	if (paperstyle) paperstyle = static_cast<PaperStyle *>(paperstyle->duplicateValue());
 	else paperstyle = new PaperStyle("letter",8.5,11.0,0,300,"in");
 	PaperBox *paper = new PaperBox(paperstyle, true);
 	PaperBoxData *newboxdata = new PaperBoxData(paper);
@@ -547,7 +547,7 @@ ObjectDef *NetImposition::makeObjectDef()
 }
 
 //! Copy over net and whether it is builtin..
-Value *NetImposition::duplicate()
+Value *NetImposition::duplicateValue()
 {
 	NetImposition *d;
 	d = new NetImposition();
@@ -575,7 +575,7 @@ int NetImposition::SetPaperSize(PaperStyle *npaper)
 	// 	return 1;
 	// }
 
-	PaperStyle *newpaper = (PaperStyle *)npaper->duplicate();
+	PaperStyle *newpaper = (PaperStyle *)npaper->duplicateValue();
 	PaperBox *paper = new PaperBox(newpaper, true);
 	PaperBoxData *newboxdata = new PaperBoxData(paper);
 	paper->dec_count();

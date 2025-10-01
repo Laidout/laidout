@@ -75,17 +75,17 @@ void LImageInterface::runImageDialog()
 }
 
 
-LaxInterfaces::anInterface *LImageInterface::duplicate(LaxInterfaces::anInterface *dup)
+LaxInterfaces::anInterface *LImageInterface::duplicateInterface(LaxInterfaces::anInterface *dup)
 {
 	if (dup==NULL) dup=dynamic_cast<anInterface *>(new LImageInterface(id,NULL));
 	else if (!dynamic_cast<LImageInterface *>(dup)) return NULL;
 
-	return ImageInterface::duplicate(dup);
+	return ImageInterface::duplicateInterface(dup);
 }
 
 
 //! Returns this, but count is incremented.
-Value *LImageInterface::duplicate()
+Value *LImageInterface::duplicateValue()
 {
     this->inc_count();
     return this;

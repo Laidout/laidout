@@ -40,14 +40,15 @@ class FieldExtPlace : protected Laxkit::PtrStack<char>
 	virtual ~FieldExtPlace() {}
 	int Set(const char *str, int len, const char **next);
 	virtual int n() const { return ext.n; }
-	virtual const char *e(int i, int *ei=NULL) const;
+	virtual const char *e(int i, int *ei = nullptr) const;
 	virtual int e(int i,const char *val, int ei);
 	virtual int operator==(const FieldExtPlace &place) const;
 	virtual int operator!=(const FieldExtPlace &place) const;
 	virtual FieldExtPlace &operator=(const FieldExtPlace &place);
-	virtual int push(const char *nd,int where=-1);
-	virtual int push(int i,int where=-1);
-	virtual char *pop(int *i, int which=-1);
+	virtual int push(const char *nd, int where=-1);
+	virtual int push(char *nd, char local=-1, int where=-1) { return PtrStack<char>::push(nd, local, where); }
+	virtual int pushIndex(int i,int where=-1);
+	virtual char *popWithIndex(int *i, int which=-1);
 	virtual int remove(int which=-1);
 	virtual void flush() { ext.flush(); }
 	virtual void out(const char *str);//for debugging
@@ -94,8 +95,9 @@ class FieldMask : public Laxkit::PtrStack<FieldPlace>
 	virtual FieldMask &operator=(int f); // shorthand for single level fields
 	//virtual int push(FieldMask &f);
 	virtual int push(int where,int n, ...);
-	virtual int push(int n,int *list,int where=-1);
-	virtual int has(const char *ext,int *index=NULL); // does ext correspond to any in mask?
+	virtual int push(int n,int *list,int where = -1);
+	virtual int push(FieldPlace *nd, char local=-1, int where = -1) { return PtrStack<FieldPlace>::push(nd, local, where); }
+	virtual int has(const char *ext,int *index = nullptr); // does ext correspond to any in mask?
 	virtual int value(int f,int where);
 	virtual int value(int f,int where,int newval);
 };

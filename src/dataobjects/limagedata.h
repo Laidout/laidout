@@ -41,10 +41,10 @@ class LImageData : public DrawableObject,
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
 	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
 	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
-	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
+	virtual LaxInterfaces::SomeData *duplicateData(LaxInterfaces::SomeData *dup);
 
 
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
 	virtual ObjectDef *makeObjectDef();
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);

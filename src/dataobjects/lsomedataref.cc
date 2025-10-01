@@ -107,20 +107,20 @@ void LSomeDataRef::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpCont
 	if (!foundconfig) SomeDataRef::dump_in_atts(att,flag,context);
 }
 
-Value *LSomeDataRef::duplicate()
+Value *LSomeDataRef::duplicateValue()
 {
-	SomeData *dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("SomeDataRef"));
-	SomeDataRef::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	SomeData *dup = dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("SomeDataRef"));
+	SomeDataRef::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dynamic_cast<Value*>(dup);
 }
 
-LaxInterfaces::SomeData *LSomeDataRef::duplicate(LaxInterfaces::SomeData *dup)
+LaxInterfaces::SomeData *LSomeDataRef::duplicateData(LaxInterfaces::SomeData *dup)
 {
 	if (dup && !dynamic_cast<LSomeDataRef*>(dup)) return NULL; //wrong type for referencc object!
-	if (!dup) dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("SomeDataRef"));
-	SomeDataRef::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	if (!dup) dup = dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("SomeDataRef"));
+	SomeDataRef::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dup;
 }
 

@@ -29,7 +29,7 @@
 #include <lax/colors.h>
 #include <lax/mouseshapes.h>
 #include <lax/units.h>
-#include <lax/shortcutwindow.h>
+// #include <lax/shortcutwindow.h>
 #include <lax/strmanip.h>
 
 #include <cstdarg>
@@ -3877,7 +3877,7 @@ int LaidoutViewport::type()
 { return VALUE_Fields; }
 
 //! Returns this, but count is incremented.
-Value *LaidoutViewport::duplicate()
+Value *LaidoutViewport::duplicateValue()
 { 
 	this->inc_count();
 	return this;
@@ -4336,7 +4336,7 @@ void ViewWindow::setup()
 			i = laidout->interfacepool.e[c]->id;
 		else if (!strcmp(laidout->interfacepool.e[c]->whattype(),"ObjectIndicator"))
 			i2 = laidout->interfacepool.e[c]->id;
-		AddTool(laidout->interfacepool.e[c]->duplicate(NULL),0,1);
+		AddTool(laidout->interfacepool.e[c]->duplicateInterface(nullptr),0,1);
 	}
 	SelectTool(0);
 	if (i  >= 0) SelectTool(i);
@@ -5144,7 +5144,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		if (c>=0) {
 			PageStyle *ps=doc->pages.e[c]->pagestyle;
 			if (!(ps->flags&PAGESTYLE_AUTONOMOUS)) {
-				ps=(PageStyle *)ps->duplicate();
+				ps = (PageStyle *)ps->duplicateValue();
 				doc->pages.e[c]->InstallPageStyle(ps, false);
 			}
 			doc->pages.e[c]->pagestyle->set("pageclips",-1);
@@ -5606,7 +5606,7 @@ int ViewWindow::PerformAction(int action)
 				}
 				PaperStyle *ps;
 				if (c == laidout->papersizes.n) c=0;
-				ps = (PaperStyle *)laidout->papersizes.e[0]->duplicate();
+				ps = (PaperStyle *)laidout->papersizes.e[0]->duplicateValue();
 				pg=new PaperGroup(ps);
 				ps->dec_count();
 			} else pg->inc_count();

@@ -98,12 +98,12 @@ void LSimplePathData::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpC
 	if (!foundconfig) SimplePathData::dump_in_atts(att,flag,context);
 }
 
-LaxInterfaces::SomeData *LSimplePathData::duplicate(LaxInterfaces::SomeData *dup)
+LaxInterfaces::SomeData *LSimplePathData::duplicateData(LaxInterfaces::SomeData *dup)
 {
 	if (dup && !dynamic_cast<LSimplePathData*>(dup)) return nullptr; //wrong type for referencc object!
 	if (!dup) dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("SimplePathData"));
-	SimplePathData::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	SimplePathData::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dup;
 }
 
@@ -124,11 +124,11 @@ LaxInterfaces::SomeData *LSimplePathData::EquivalentObject()
 
 //------- SimplePathData.Value functions:
 
-Value *LSimplePathData::duplicate()
+Value *LSimplePathData::duplicateValue()
 {
 	SomeData *dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("SimplePathData"));
-	SimplePathData::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	SimplePathData::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dynamic_cast<Value*>(dup);
 }
 
@@ -272,17 +272,17 @@ LSimplePathInterface::LSimplePathInterface(int nid,Laxkit::Displayer *ndp)
 }
 
 
-LaxInterfaces::anInterface *LSimplePathInterface::duplicate(LaxInterfaces::anInterface *dup)
+LaxInterfaces::anInterface *LSimplePathInterface::duplicateInterface(LaxInterfaces::anInterface *dup)
 {
-	if (dup==nullptr) dup=dynamic_cast<anInterface *>(new LSimplePathInterface(id,nullptr));
+	if (dup == nullptr) dup = dynamic_cast<anInterface *>(new LSimplePathInterface(id,nullptr));
 	else if (!dynamic_cast<LSimplePathInterface *>(dup)) return nullptr;
 
-	return SimplePathInterface::duplicate(dup);
+	return SimplePathInterface::duplicateInterface(dup);
 }
 
 
 //! Returns this, but count is incremented.
-Value *LSimplePathInterface::duplicate()
+Value *LSimplePathInterface::duplicateValue()
 {
     this->inc_count();
     return this;

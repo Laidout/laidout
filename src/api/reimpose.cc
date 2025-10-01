@@ -181,7 +181,7 @@ int ReImposeFunction(ValueHash *context,
 			Imposition *impmaybe=dynamic_cast<Imposition*>(obj);
 			if (!impmaybe) throw _("Wrong format for imposition!");
 
-			imp=(Imposition*)impmaybe->duplicate();
+			imp = (Imposition*)impmaybe->duplicateValue();
 		}
 
 		 //3.
@@ -192,12 +192,12 @@ int ReImposeFunction(ValueHash *context,
 		if (i==2) throw _("Invalid format for orientation!");
 
 		 //----paper
-		PaperStyle *paper=NULL;
-		str=parameters->findString("paper",-1,&i);
-		if (i==2) {
+		PaperStyle *paper = nullptr;
+		str = parameters->findString("paper",-1,&i);
+		if (i == 2) {
 			paper=dynamic_cast<PaperStyle*>(parameters->findObject("paper"));
-			if (paper) paper=(PaperStyle*)paper->duplicate();
-		} else if (i==1) {
+			if (paper) paper = (PaperStyle*)paper->duplicateValue();
+		} else if (i == 1) {
 			//***use a papersize that is big enough to fit;
 			std::cout <<"*** must implement auto compute paper size for reimposition"<<std::endl;
 			//figure out w and h of current document
@@ -212,7 +212,7 @@ int ReImposeFunction(ValueHash *context,
 				}
 			}
 			if (paper) {
-				paper = (PaperStyle*)paper->duplicate();
+				paper = (PaperStyle*)paper->duplicateValue();
 				if (strcasestr(str,"landscape")) paper->landscape(true);
 				else if (strcasestr(str,"portrait")) paper->landscape(false);
 			}

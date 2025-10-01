@@ -1257,7 +1257,7 @@ StreamCache *RemapAreaStream(DrawableObject *target, StreamAttachment *attachmen
 	//----------compute layout area:
 	//  start with target inset path
 	//  We need to remove the wrap path of any lesser siblings and aunts/uncles from that path
-	LaxInterfaces::PathsData *area = dynamic_cast<LaxInterfaces::PathsData*>(target->GetInsetPath()->duplicate(nullptr));
+	LaxInterfaces::PathsData *area = dynamic_cast<LaxInterfaces::PathsData*>(target->GetInsetPath()->duplicateData(nullptr));
 
 	DrawableObject *so = target;
 	DrawableObject *o = target->GetDrawableParent();

@@ -100,7 +100,7 @@ int CurveValue::getValueStr(char *buffer,int len)
 	return Value::getValueStr(buffer,len);
 }
 
-Value *CurveValue::duplicate()
+Value *CurveValue::duplicateValue()
 {
 	CurveValue *v = new CurveValue();
 

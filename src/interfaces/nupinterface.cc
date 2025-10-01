@@ -560,15 +560,15 @@ int NUpInterface::draws(const char *atype)
 { return 0; }
 
 
-//! Return a new NUpInterface if dup=NULL, or anInterface::duplicate(dup) otherwise.
+//! Return a new NUpInterface if dup=NULL, or anInterface::duplicateInterface(dup) otherwise.
 /*! 
  */
-anInterface *NUpInterface::duplicate(anInterface *dup)//dup=NULL
+anInterface *NUpInterface::duplicateInterface(anInterface *dup)
 {
 	if (dup==NULL) dup=new NUpInterface(id,NULL);
 	else if (!dynamic_cast<NUpInterface *>(dup)) return NULL;
 
-	return anInterface::duplicate(dup);
+	return anInterface::duplicateInterface(dup);
 }
 
 

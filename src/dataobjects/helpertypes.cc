@@ -79,7 +79,7 @@ Laxkit::Attribute *LLineStyle::dump_out_atts(Laxkit::Attribute *att,int what,Lax
 	return att;
 }
 
-Value *LLineStyle::duplicate()
+Value *LLineStyle::duplicateValue()
 {
 	LineStyle *style = nullptr;
 	if (linestyle) style = new LineStyle(*linestyle);
@@ -408,7 +408,7 @@ Laxkit::Attribute *LFillStyle::dump_out_atts(Laxkit::Attribute *att,int what,Lax
 	return fillstyle->dump_out_atts(att,what,context);
 }
 
-Value *LFillStyle::duplicate()
+Value *LFillStyle::duplicateValue()
 {
 	FillStyle *style = nullptr;
 	if (fillstyle) style = new FillStyle(*fillstyle);

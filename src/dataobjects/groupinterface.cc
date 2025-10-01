@@ -65,14 +65,15 @@ GroupInterface::~GroupInterface()
 	DBG cerr <<"---- in GroupInterface destructor"<<endl;
 }
 
-anInterface *GroupInterface::duplicate(anInterface *dup)
+anInterface *GroupInterface::duplicateInterface(anInterface *dup)
 {
 	GroupInterface *g;
-	if (dup==NULL) g=new GroupInterface(id,dp);
-	else {g=dynamic_cast<GroupInterface *>(dup);
-		if (g==NULL) return NULL;
+	if (dup == nullptr) g = new GroupInterface(id,dp);
+	else {
+		g = dynamic_cast<GroupInterface *>(dup);
+		if (g == nullptr) return nullptr;
 	}
-	return ObjectInterface::duplicate(g);
+	return ObjectInterface::duplicateInterface(g);
 }
 
 void GroupInterface::TransformSelection(const double *N, int s, int e) 
@@ -1178,7 +1179,7 @@ int GroupInterface::PerformAction(int action)
 			DrawableObject *dobj = dynamic_cast<DrawableObject*>(selection->e(c)->obj);
 			anObject *filter = dobj->filter;
 			if (filter) dobj->filter = nullptr;
-			obj = dobj->duplicate(NULL);
+			obj = dobj->duplicateData(nullptr);
 			// *** duplicate filter separately for safety... otherwise needs a ton of overloaded funcs to deal with.. needs more thought
 			if (filter) {
 				ObjectFilter *nfilter = dynamic_cast<ObjectFilter*>(dynamic_cast<ObjectFilter*>(filter)->Duplicate());
@@ -1243,7 +1244,7 @@ int GroupInterface::PerformAction(int action)
 			PostMessage(_("Nothing to sever!"));
 			return 0;
 		}
-		SomeData *obj = ref->thedata->duplicate(NULL);
+		SomeData *obj = ref->thedata->duplicateData(nullptr);
 		obj->m(ref->m());
 		obj->FindBBox();
 		selection->e(0)->SetObject(obj);
@@ -1606,7 +1607,7 @@ void GroupInterface::DrawReparentArrows()
 }
 
 //! Returns this, but count is incremented.
-Value *GroupInterface::duplicate()
+Value *GroupInterface::duplicateValue()
 {
     this->inc_count();
     return this;

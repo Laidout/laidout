@@ -31,6 +31,7 @@
 #include <lax/fileutils.h>
 #include <lax/freedesktop.h>
 #include <lax/laxoptions.h>
+#include <lax/language.h>
 
 #include <GraphicsMagick/Magick++.h>
 
@@ -41,7 +42,6 @@
 //#endif
 
 
-#include "../language.h"
 #include "glbase.h"
 #include "gloverlay.h"
 #include "poly.h"
@@ -50,11 +50,6 @@
 
 
 #include <iostream>
-
-
-////template implementation:
-//#include <lax/lists.cc>
-//#include <lax/refptrstack.cc>
 
 
 using namespace std;

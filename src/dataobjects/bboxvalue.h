@@ -31,7 +31,7 @@ class BBoxValue : virtual public Value, virtual public Laxkit::DoubleBBox, virtu
     virtual const char *whattype() { return "BBoxValue"; }
 	virtual ObjectDef *makeObjectDef();
 	virtual int getValueStr(char *buffer,int len);
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,

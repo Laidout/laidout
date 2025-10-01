@@ -49,7 +49,7 @@
 using namespace std;
 using namespace Laxkit;
 
-#include "../language.h"
+#include <lax/language.h>
 #include "glbase.h"
 #include "gloverlay.h"
 #include "poly.h"

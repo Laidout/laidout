@@ -33,7 +33,7 @@
 #include <lax/laxutils.h>
 #include <lax/filedialog.h>
 #include <lax/mouseshapes.h>
-#include <lax/shortcutwindow.h>
+// #include <lax/shortcutwindow.h>
 
 #include <iostream>
 using namespace std;

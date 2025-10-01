@@ -1550,12 +1550,12 @@ int ValueHash::type()
 
 /*! Currently copies references, does not create new instances of value objects.
  */
-Value *ValueHash::duplicate()
+Value *ValueHash::duplicateValue()
 {
-	ValueHash *v=new ValueHash;
-	Value *vv;
-	for (int c=0; c<keys.n; c++) {
-		vv=values.e[c]->duplicate();
+	ValueHash *v = new ValueHash;
+	Value     *vv;
+	for (int c = 0; c < keys.n; c++) {
+		vv = values.e[c]->duplicateValue();
 		vv->inc_count();
 		v->push(keys.e[c],vv);
 	}
@@ -2091,7 +2091,7 @@ int ValueHash::CopyFrom(ValueHash *hash, bool linked)
 		Value *v = hash->value(c);
 		if (linked) push(k,v);
 		else {
-			v = v->duplicate();
+			v = v->duplicateValue();
 			push(k,v);
 			v->dec_count();
 		}
@@ -3562,13 +3562,13 @@ int GenericValue::getValueStr(char *buffer,int len)
 	return elements.getValueStr(buffer,len);
 }
 
-Value *GenericValue::duplicate()
+Value *GenericValue::duplicateValue()
 {
-	GenericValue *v=new GenericValue(objectdef);
-	Value *vv;
-	for (int c=0; c<elements.n(); c++) {
-		vv=elements.e(c)->duplicate();
-		if (v->elements.set(elements.key(c),vv)==0) vv->dec_count();
+	GenericValue *v = new GenericValue(objectdef);
+	Value        *vv;
+	for (int c = 0; c < elements.n(); c++) {
+		vv = elements.e(c)->duplicateValue();
+		if (v->elements.set(elements.key(c), vv) == 0) vv->dec_count();
 	}
 	return v;
 }
@@ -3718,12 +3718,12 @@ int SetValue::getValueStr(char *buffer,int len)
 
 /*! Returns set with each element duplicate()'d.
  */
-Value *SetValue::duplicate()
+Value *SetValue::duplicateValue()
 {
-	SetValue *s=new SetValue;
+	SetValue *s = new SetValue;
 	Value *v;
-	for (int c=0; c<values.n; c++) {
-		v=values.e[c]->duplicate();
+	for (int c = 0; c < values.n; c++) {
+		v = values.e[c]->duplicateValue();
 		s->Push(v,1);
 	}
 	return s;
@@ -3897,18 +3897,19 @@ const char *SetValue::FieldName(int i)
 
 // //----------------------------- MatrixValue ----------------------------------
 // /*! \class MatrixValue
-//  * Just a set with optional element type.
+//  * Numerical multidimensional matrix of real numbers.
 //  */
 
 // MatrixValue::MatrixValue(const char *elementtype, int size)
 // {
-// 	element_type=newstr(elementtype);
-// 	fixed_size=size;
+// 	num_dimensions = 1;
+// 	dims = new int[1];
+// 	dims[0] = 1;
 // }
 
 // MatrixValue::~MatrixValue()
 // {
-// 	if (element_type) delete[] element_type;
+// 	delete[] dims;
 // }
 
 // ObjectDef *MatrixValue::makeObjectDef()
@@ -3938,12 +3939,12 @@ const char *SetValue::FieldName(int i)
 
 // /*! Returns set with each element duplicate()'d.
 //  */
-// Value *MatrixValue::duplicate()
+// Value *MatrixValue::duplicateValue()
 // {
 // 	MatrixValue *s=new MatrixValue;
 // 	Value *v;
 // 	for (int c=0; c<values.n; c++) {
-// 		v=values.e[c]->duplicate();
+// 		v=values.e[c]->duplicateValue();
 // 		s->Push(v,1);
 // 	}
 // 	return s;
@@ -3968,7 +3969,7 @@ int NullValue::getValueStr(char *buffer,int len)
 }
 
 //! Return ref to this.. all null values are the same.
-Value *NullValue::duplicate()
+Value *NullValue::duplicateValue()
 {
 	inc_count();
 	return this;
@@ -4001,7 +4002,7 @@ int BooleanValue::getValueStr(char *buffer,int len)
 	return 0;
 }
 
-Value *BooleanValue::duplicate()
+Value *BooleanValue::duplicateValue()
 { return new BooleanValue(i); }
 
 int BooleanValue::assign(FieldExtPlace *ext,Value *v)
@@ -4049,7 +4050,7 @@ int IntValue::getValueStr(char *buffer,int len)
 	return 0;
 }
 
-Value *IntValue::duplicate()
+Value *IntValue::duplicateValue()
 { return new IntValue(i); }
 
 int IntValue::assign(FieldExtPlace *ext,Value *v)
@@ -4103,7 +4104,7 @@ int DoubleValue::getValueStr(char *buffer,int len)
 	return 0;
 }
 
-Value *DoubleValue::duplicate()
+Value *DoubleValue::duplicateValue()
 { return new DoubleValue(d); }
 
 int DoubleValue::assign(FieldExtPlace *ext,Value *v)
@@ -4188,7 +4189,7 @@ int FlatvectorValue::getValueStr(char *buffer,int len)
 	return 0;
 }
 
-Value *FlatvectorValue::duplicate()
+Value *FlatvectorValue::duplicateValue()
 { return new FlatvectorValue(v); }
 
 
@@ -4329,7 +4330,7 @@ int SpacevectorValue::getValueStr(char *buffer,int len)
 	return 0;
 }
 
-Value *SpacevectorValue::duplicate()
+Value *SpacevectorValue::duplicateValue()
 { return new SpacevectorValue(v); }
 
 Value *SpacevectorValue::dereference(const char *extstring, int len)
@@ -4448,7 +4449,7 @@ int QuaternionValue::getValueStr(char *buffer,int len)
 	return 0;
 }
 
-Value *QuaternionValue::duplicate()
+Value *QuaternionValue::duplicateValue()
 { return new QuaternionValue(v); }
 
 Value *QuaternionValue::dereference(const char *extstring, int len)
@@ -4583,7 +4584,7 @@ int StringValue::getValueStr(char *buffer,int len)
 	return 0;
 }
 
-Value *StringValue::duplicate()
+Value *StringValue::duplicateValue()
 { return new StringValue(str); }
 
 /*! Replace current str with nstr.
@@ -4748,7 +4749,7 @@ int BytesValue::getValueStr(char *buffer,int len)
 	return 0;
 }
 
-Value *BytesValue::duplicate()
+Value *BytesValue::duplicateValue()
 {
 	return new BytesValue(str,len);
 }
@@ -4823,7 +4824,7 @@ int DateValue::getValueStr(char *buffer,int len)
 	return 0;
 }
 
-Value *DateValue::duplicate()
+Value *DateValue::duplicateValue()
 {
 	return new DateValue();
 }
@@ -4916,7 +4917,7 @@ int FileValue::getValueStr(char *buffer,int len)
 }
 
 
-Value *FileValue::duplicate()
+Value *FileValue::duplicateValue()
 { return new FileValue(filename); }
 
 int FileValue::fileType()
@@ -5128,7 +5129,7 @@ int EnumValue::SetFromId(int id)
 	return -1;
 }
 
-Value *EnumValue::duplicate()
+Value *EnumValue::duplicateValue()
 { return new EnumValue(objectdef,value); }
 
 //! Returns enumdef.
@@ -5172,7 +5173,7 @@ int ObjectValue::getValueStr(char *buffer,int len)
 	return 0;
 }
 
-Value *ObjectValue::duplicate()
+Value *ObjectValue::duplicateValue()
 { return new ObjectValue(object); }
 
 Value *NewObjectValueFunc() { return new ObjectValue; }
@@ -5313,7 +5314,7 @@ int ColorValue::getValueStr(char *buffer,int len)
 	return 0;
 }
 
-Value *ColorValue::duplicate()
+Value *ColorValue::duplicateValue()
 {
 	char buffer[12];
 	color.HexValue(buffer);

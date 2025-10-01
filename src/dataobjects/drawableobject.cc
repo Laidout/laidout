@@ -502,7 +502,7 @@ void DrawableObject::UpdateFromRules()
 
 /*! Returns copy with copies of kids.
  */
-LaxInterfaces::SomeData *DrawableObject::duplicate(LaxInterfaces::SomeData *dup)
+LaxInterfaces::SomeData *DrawableObject::duplicateData(LaxInterfaces::SomeData *dup)
 {
 	DrawableObject *d=dynamic_cast<DrawableObject*>(dup);
 	if (dup && !d) return NULL; //not a drawableobject!
@@ -538,11 +538,11 @@ LaxInterfaces::SomeData *DrawableObject::duplicate(LaxInterfaces::SomeData *dup)
 	 //kids
 	SomeData *obj;
 	DrawableObject *dobj;
-	for (int c=0; c<kids.n; c++) {
-		obj=kids.e[c]->duplicate(NULL);
-		dobj=dynamic_cast<DrawableObject*>(obj);
+	for (int c = 0; c < kids.n; c++) {
+		obj = kids.e[c]->duplicateData(nullptr);
+		dobj = dynamic_cast<DrawableObject*>(obj);
 		d->push(obj);
-		dobj->parent=d;
+		dobj->parent = d;
 		obj->dec_count();
 	}
 
@@ -1274,20 +1274,20 @@ Laxkit::Attribute *DrawableObject::dump_out_atts(Laxkit::Attribute *att,int what
 
 	 // dump notes/meta data
 	if (metadata && metadata->attributes.n) {
-		att2 = metadata->duplicate();
+		att2 = metadata->duplicateAtt();
 		makestr(att2->name, "metadata");
 		att->push(att2,-1);
 	}
 	
 	 // dump iohints if any
 	if (iohints.attributes.n) {
-		att2 = iohints.duplicate();
+		att2 = iohints.duplicateAtt();
 		makestr(att2->name, "iohints");
 		att->push(att2,-1);
 	}
 
 	if (NumberOfTags()) {
-		char *str=GetAllTags();
+		char *str = GetAllTags();
 		att->push("tags", str);
 		delete[] str;
 	}
@@ -1487,13 +1487,13 @@ void DrawableObject::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpCo
 		} else if (!strcmp(name,"iohints")) {
 			if (iohints.attributes.n) iohints.clear();
 			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) 
-				iohints.push(att->attributes.e[c]->attributes.e[c2]->duplicate(),-1);
+				iohints.push(att->attributes.e[c]->attributes.e[c2]->duplicateAtt(),-1);
 
 		} else if (!strcmp(name,"metadata")) {
 			if (!metadata) metadata = new AttributeObject();
 			if (metadata->attributes.n) metadata->clear();
 			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) 
-				metadata->push(att->attributes.e[c]->attributes.e[c2]->duplicate(),-1);
+				metadata->push(att->attributes.e[c]->attributes.e[c2]->duplicateAtt(),-1);
 
 		} else if (!strcmp(name,"anchor")) {
 			 //anchor value will be something like: "name" bbox 1.5,3.5
@@ -1915,16 +1915,16 @@ ObjectDef *DrawableObject::makeObjectDef()
 	return def;
 }
 
-Value *DrawableObject::duplicate()
+Value *DrawableObject::duplicateValue()
 {
-	DrawableObject *o=dynamic_cast<DrawableObject*>(duplicate(NULL));
+	DrawableObject *o = dynamic_cast<DrawableObject*>(duplicateData(nullptr));
 	return o;
 }
 
 Value *DrawableObject::dereference(const char *extstring, int len)
 {
 
-	return NULL;
+	return nullptr;
 }
 
 /*! If ext==NULL, then assign v to replace what exists in this.

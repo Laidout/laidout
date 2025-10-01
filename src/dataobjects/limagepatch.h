@@ -38,10 +38,11 @@ class LImagePatchData : public DrawableObject,
 	virtual void FindBBox();
 	virtual void ComputeAABB(const double *transform, DoubleBBox &box);
 	virtual int pointin(Laxkit::flatpoint pp,int pin=1);
-	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
+	virtual LaxInterfaces::SomeData *duplicateData(LaxInterfaces::SomeData *dup);
 
 	 //from Value:
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
+	virtual anObject *duplicate() { return duplicateValue(); }
 	virtual ObjectDef *makeObjectDef();
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);
@@ -63,10 +64,10 @@ class LColorPatchData : public DrawableObject,
 	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
 	virtual void FindBBox();
 	virtual int pointin(Laxkit::flatpoint pp,int pin=1);
-	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
+	virtual LaxInterfaces::SomeData *duplicateData(LaxInterfaces::SomeData *dup);
 
 	 //from Value:
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
 	virtual ObjectDef *makeObjectDef();
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);
@@ -84,11 +85,12 @@ class LImagePatchInterface : public LaxInterfaces::ImagePatchInterface,
  public:
 	LImagePatchInterface(int nid,Laxkit::Displayer *ndp);
 	virtual const char *whattype() { return "ImagePatchInterface"; }
-	virtual anInterface *duplicate(anInterface *dup);
+	virtual anInterface *duplicateInterface(anInterface *dup);
 	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *k);
 
 	//from value
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
+	virtual anObject *duplicate() { return duplicateValue(); }
 	virtual ObjectDef *makeObjectDef();
 	virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual Value *dereference(const char *extstring, int len);
@@ -106,11 +108,12 @@ class LColorPatchInterface : public LaxInterfaces::ColorPatchInterface,
  public:
 	LColorPatchInterface(int nid,Laxkit::Displayer *ndp);
 	virtual const char *whattype() { return "ColorPatchInterface"; }
-	virtual anInterface *duplicate(anInterface *dup);
+	virtual anInterface *duplicateInterface(anInterface *dup);
 	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *k);
 
 	//from value
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
+	virtual anObject *duplicate() { return duplicateValue(); }
 	virtual ObjectDef *makeObjectDef();
 	virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual Value *dereference(const char *extstring, int len);

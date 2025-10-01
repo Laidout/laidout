@@ -95,20 +95,17 @@ void LImageData::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContex
 	if (!foundconfig) ImageData::dump_in_atts(att,flag,context);
 }
 
-Value *LImageData::duplicate()
+Value *LImageData::duplicateValue()
 {
-	SomeData *dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("ImageData"));
-	ImageData::duplicate(dup);
-	DrawableObject::duplicate(dup);
-	return dynamic_cast<Value*>(dup);
+	return dynamic_cast<Value*>(duplicateData(nullptr));
 }
 
-LaxInterfaces::SomeData *LImageData::duplicate(LaxInterfaces::SomeData *dup)
+LaxInterfaces::SomeData *LImageData::duplicateData(LaxInterfaces::SomeData *dup)
 {
-	if (dup && !dynamic_cast<LImageData*>(dup)) return NULL; //wrong type for referencc object!
+	if (dup && !dynamic_cast<LImageData*>(dup)) return nullptr; //wrong type for referencc object!
 	if (!dup) dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("ImageData"));
-	ImageData::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	ImageData::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dup;
 }
 

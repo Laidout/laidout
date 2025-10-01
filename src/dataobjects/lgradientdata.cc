@@ -58,13 +58,9 @@ GradientStrip *GradientValue::newGradientStrip()
 	return new GradientValue();
 }
 
-Value *GradientValue::duplicate()
+Value *GradientValue::duplicateValue()
 {
-	GradientValue *dup = new GradientValue();
-
-	GradientStrip::duplicate(dynamic_cast<anObject*>(dup));
-
-	return dup;
+	return dynamic_cast<Value*>(duplicate()); // ends up using newGradientStrip()
 }
 
 Value *NewGradientValue() { return new GradientValue; }
@@ -189,23 +185,23 @@ void LGradientData::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpCon
 	if (!foundconfig) GradientData::dump_in_atts(att,flag,context);
 }
 
-LaxInterfaces::SomeData *LGradientData::duplicate(LaxInterfaces::SomeData *dup)
+LaxInterfaces::SomeData *LGradientData::duplicateData(LaxInterfaces::SomeData *dup)
 {
-	if (dup && !dynamic_cast<LGradientData*>(dup)) return NULL; //wrong type for referencc object!
-	if (!dup) dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("GradientData"));
-	GradientData::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	if (dup && !dynamic_cast<LGradientData*>(dup)) return nullptr; //wrong type for referencc object!
+	if (!dup) dup = dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("GradientData"));
+	GradientData::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dup;
 }
 
 
 //------- GradientData.Value functions:
 
-Value *LGradientData::duplicate()
+Value *LGradientData::duplicateValue()
 {
-	SomeData *dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("GradientData"));
-	GradientData::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	SomeData *dup = dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("GradientData"));
+	GradientData::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dynamic_cast<Value*>(dup);
 }
 
@@ -342,12 +338,12 @@ LGradientInterface::LGradientInterface(int nid,Laxkit::Displayer *ndp)
 }
 
 
-LaxInterfaces::anInterface *LGradientInterface::duplicate(LaxInterfaces::anInterface *dup)
+LaxInterfaces::anInterface *LGradientInterface::duplicateInterface(LaxInterfaces::anInterface *dup)
 {
 	if (dup==NULL) dup=dynamic_cast<anInterface *>(new LGradientInterface(id,NULL));
 	else if (!dynamic_cast<LGradientInterface *>(dup)) return NULL;
 
-	return GradientInterface::duplicate(dup);
+	return GradientInterface::duplicateInterface(dup);
 }
 
 int LGradientInterface::InterfaceOn()
@@ -359,7 +355,7 @@ int LGradientInterface::InterfaceOn()
 
 
 //! Returns this, but count is incremented.
-Value *LGradientInterface::duplicate()
+Value *LGradientInterface::duplicateValue()
 {
     this->inc_count();
     return this;

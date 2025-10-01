@@ -55,7 +55,7 @@ class ObjectIndicator : public LaxInterfaces::anInterface
 	ObjectIndicator(int nid=0,Laxkit::Displayer *ndp=NULL);
 	ObjectIndicator(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
 	virtual ~ObjectIndicator();
-	virtual anInterface *duplicate(anInterface *dup=NULL);
+	virtual anInterface *duplicateInterface(anInterface *dup);
 
 	virtual const char *IconId() { return "ObjectIndicator"; }
 	virtual const char *Name();

@@ -95,7 +95,7 @@ int ImageValue::getValueStr(char *buffer,int len)
     return 0;
 }
 
-Value *ImageValue::duplicate()
+Value *ImageValue::duplicateValue()
 {
 	ImageValue *dup = new ImageValue();
 	return dup;

@@ -37,10 +37,11 @@ class LImageInterface : public LaxInterfaces::ImageInterface,
  public:
 	LImageInterface(int nid,Laxkit::Displayer *ndp);
 	virtual const char *whattype() { return "ImageInterface"; }
-	virtual LaxInterfaces::anInterface *duplicate(LaxInterfaces::anInterface *dup);
+	virtual LaxInterfaces::anInterface *duplicateInterface(LaxInterfaces::anInterface *dup);
 
 	//from value
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
+	virtual anObject *duplicate() { return duplicateValue(); }
 	virtual ObjectDef *makeObjectDef();
 	virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual Value *dereference(const char *extstring, int len);

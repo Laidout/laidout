@@ -116,7 +116,7 @@ void Region::dump_in_atts(Laxkit::Attribute*att, int flag, Laxkit::DumpContext *
 	DBGE("IMPLEMENT ME!!!")
 }
 
-Value *Region::duplicate()
+Value *Region::duplicateValue()
 {
 	Region *dup = new Region();
 	dup->maxx = maxx;
@@ -377,15 +377,15 @@ int PartitionInterface::Event(const Laxkit::EventData *e,const char *mes)
 
 
 
-//! Return a new PartitionInterface if dup=nullptr, or anInterface::duplicate(dup) otherwise.
+//! Return a new PartitionInterface if dup=nullptr, or anInterface::duplicateInterface(dup) otherwise.
 /*! 
  */
-anInterface *PartitionInterface::duplicate(anInterface *dup)//dup=nullptr
+anInterface *PartitionInterface::duplicateInterface(anInterface *dup)
 {
 	if (dup == nullptr) dup = new PartitionInterface(nullptr, id,nullptr);
 	else if (!dynamic_cast<PartitionInterface *>(dup)) return nullptr;
 	
-	return anInterface::duplicate(dup);
+	return anInterface::duplicateInterface(dup);
 }
 
 

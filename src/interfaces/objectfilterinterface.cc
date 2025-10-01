@@ -95,11 +95,11 @@ const char *ObjectFilterInterface::Name()
 //! Return new ObjectFilterInterface.
 /*! If dup!=NULL and it cannot be cast to ObjectFilterInterface, then return NULL.
  */
-anInterface *ObjectFilterInterface::duplicate(anInterface *dup)
+anInterface *ObjectFilterInterface::duplicateInterface(anInterface *dup)
 {
 	if (dup==NULL) dup = new ObjectFilterInterface(NULL,id,NULL);
 	else if (!dynamic_cast<ObjectFilterInterface *>(dup)) return NULL;
-	return anInterface::duplicate(dup);
+	return anInterface::duplicateInterface(dup);
 }
 
 //! Use the object at oc if it is a DrawableObject. oc is duplicated.
@@ -446,7 +446,7 @@ int ObjectFilterInterface::ActivateTool(int index)
 	if (child) RemoveChild();
 
 	ObjectFilterNode *fnode = filternodes.e[index];
-	anInterface *i = fnode->ObjectFilterInterface()->duplicate(NULL);
+	anInterface *i = fnode->ObjectFilterInterface()->duplicateInterface(nullptr);
 	i->Id("ObjectFilterDup");
 	//NodeProperty *in = fnode->FindProperty("in");
 	//NodeProperty *out = fnode->FindProperty("out");

@@ -140,7 +140,7 @@ class AnimationInterface : public LaxInterfaces::anInterface
 	AnimationInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
 	virtual ~AnimationInterface();
 	virtual Laxkit::ShortcutHandler *GetShortcuts();
-	virtual anInterface *duplicate(anInterface *dup=NULL);
+	virtual anInterface *duplicateInterface(anInterface *dup);
 
 	virtual const char *IconId() { return "Animation"; }
 	virtual const char *Name();

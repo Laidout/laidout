@@ -124,7 +124,7 @@ AnimationInterface::AnimationInterface(anInterface *nowner,int nid,Laxkit::Displ
 	hoveri = -1;
 
 	sc = NULL;
-	font = app->defaultlaxfont->duplicate();
+	font = app->defaultlaxfont->duplicateFont();
 
 	firsttime      = 1;
 	uiscale        = 1;
@@ -163,12 +163,12 @@ const char *AnimationInterface::Name()
 }
 
 
-anInterface *AnimationInterface::duplicate(anInterface *dup)
+anInterface *AnimationInterface::duplicateInterface(anInterface *dup)
 {
 	if (dup==NULL) dup=new AnimationInterface(NULL,id,NULL);
 	else if (!dynamic_cast<AnimationInterface *>(dup)) return NULL;
 	
-	return anInterface::duplicate(dup);
+	return anInterface::duplicateInterface(dup);
 }
 
 void AnimationInterface::Clear(LaxInterfaces::SomeData *d)

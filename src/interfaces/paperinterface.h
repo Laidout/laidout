@@ -89,7 +89,7 @@ class PaperInterface : virtual public LaxInterfaces::anInterface
 	PaperInterface(int nid=0,Laxkit::Displayer *ndp=nullptr);
 	PaperInterface(anInterface *nowner=nullptr,int nid=0,Laxkit::Displayer *ndp=nullptr);
 	virtual ~PaperInterface();
-	virtual anInterface *duplicate(anInterface *dup=nullptr);
+	virtual anInterface *duplicateInterface(anInterface *dup);
 	virtual Laxkit::ShortcutHandler *GetShortcuts();
 
 	virtual const char *IconId() { return "Paper"; }

@@ -22,7 +22,6 @@
 
 #include "../core/papersizes.h"
 #include "../core/externaltools.h"
-// #include "../dataobjects/drawableobject.h"
 #include "../calculator/values.h"
 #include "../plugins/plugin.h"
 
@@ -140,7 +139,7 @@ class DocumentExportConfig : public Value
 	virtual int NumOutputAreas();
 
 	virtual ObjectDef* makeObjectDef();
-	virtual Value* duplicate();
+	virtual Value* duplicateValue();
 
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);
@@ -179,7 +178,7 @@ class ImportConfig : public Value
 	virtual ~ImportConfig();
 
 	virtual ObjectDef* makeObjectDef();
-	virtual Value* duplicate();
+	virtual Value* duplicateValue();
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
 	virtual Laxkit::Attribute * dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
 	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);

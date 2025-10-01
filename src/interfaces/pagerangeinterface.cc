@@ -307,15 +307,15 @@ int PageRangeInterface::draws(const char *atype)
 { return 0; }
 
 
-//! Return a new PageRangeInterface if dup=NULL, or anInterface::duplicate(dup) otherwise.
+//! Return a new PageRangeInterface if dup=NULL, or anInterface::duplicateInterface(dup) otherwise.
 /*! 
  */
-anInterface *PageRangeInterface::duplicate(anInterface *dup)//dup=NULL
+anInterface *PageRangeInterface::duplicateInterface(anInterface *dup)
 {
 	if (dup==NULL) dup=new PageRangeInterface(id,NULL);
 	else if (!dynamic_cast<PageRangeInterface *>(dup)) return NULL;
 	
-	return anInterface::duplicate(dup);
+	return anInterface::duplicateInterface(dup);
 }
 
 

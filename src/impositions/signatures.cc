@@ -115,7 +115,7 @@ const char *CtoStr(char c)
 
 Value *NewFoldValue() { return new Fold('r', 0, 0); }
 
-Value *Fold::duplicate()
+Value *Fold::duplicateValue()
 { return new Fold(direction,under,whichfold); }
 
 /*! Create a new ObjectDef of Fold.
@@ -395,10 +395,10 @@ const Signature &Signature::operator=(const Signature &sig)
 	return *this;
 }
 
-Value *Signature::duplicate()
+Value *Signature::duplicateValue()
 {
-	Signature *sig=new Signature;
-	*sig=*this;
+	Signature *sig = new Signature;
+	*sig = *this;
 	return sig;
 }
 
@@ -1242,7 +1242,7 @@ PaperPartition::~PaperPartition()
 	paper->dec_count();
 }
 
-Value *PaperPartition::duplicate()
+Value *PaperPartition::duplicateValue()
 {
 	PaperPartition *p = new PaperPartition;
 	
@@ -1424,7 +1424,7 @@ int PaperPartition::SetPaper(PaperStyle *p)
 {
 	if (p != paper) {
 		if (paper) paper->dec_count();
-		paper = dynamic_cast<PaperStyle *>(p->duplicate());
+		paper = dynamic_cast<PaperStyle *>(p->duplicateValue());
 	}
 	totalwidth  = paper->w();
 	totalheight = paper->h();
@@ -1686,19 +1686,19 @@ int SignatureInstance::SetPaperFromFinalSize(double w,double h, int all)
 
 /*! Duplicate *this, AND creates duplicates of inserts and next_stack.
  */
-Value *SignatureInstance::duplicate()
+Value *SignatureInstance::duplicateValue()
 {
 	SignatureInstance *sig = new SignatureInstance;
 
-	if (partition) sig->partition = (PaperPartition *)partition->duplicate();
+	if (partition) sig->partition = (PaperPartition *)partition->duplicateValue();
 	if (pattern) { sig->UseThisSignature(pattern, 0); }
 
 	if (next_insert) {
-		sig->next_insert = (SignatureInstance *)next_insert->duplicate();
+		sig->next_insert = (SignatureInstance *)next_insert->duplicateValue();
 		sig->next_insert->prev_insert = sig;
 	}
 	if (next_stack) {
-		sig->next_stack = (SignatureInstance *)next_stack->duplicate();
+		sig->next_stack = (SignatureInstance *)next_stack->duplicateValue();
 		sig->next_stack->prev_stack = sig;
 	}
 
@@ -1722,7 +1722,7 @@ SignatureInstance *SignatureInstance::duplicateSingle()
 {
 	SignatureInstance *sig=new SignatureInstance;
 
-	if (partition) sig->partition = (PaperPartition*)partition->duplicate();
+	if (partition) sig->partition = (PaperPartition*)partition->duplicateValue();
 	if (pattern) { 	sig->UseThisSignature(pattern,0); }
 
 	sig->pattern->patternheight = partition->PatternHeight();
@@ -1751,7 +1751,7 @@ int SignatureInstance::UseThisSignature(Signature *sig, int link)
 			pattern->inc_count();
 		}
 	} else {
-		pattern = (Signature*)sig->duplicate();
+		pattern = (Signature*)sig->duplicateValue();
 	}
 	return 0;
 }
@@ -2458,7 +2458,7 @@ SignatureImposition::SignatureImposition(SignatureInstance *newsig)
 	showwholecover=0;
 
 	signatures=nullptr;
-	if (newsig) signatures=(SignatureInstance*)newsig->duplicate();
+	if (newsig) signatures=(SignatureInstance*)newsig->duplicateValue();
 	
 	objectdef = stylemanager.FindDef("SignatureImposition");
 	if (objectdef) objectdef->inc_count(); 
@@ -2651,7 +2651,7 @@ const char *SignatureImposition::BriefDescription()
 	return briefdesc;
 }
 
-Value *SignatureImposition::duplicate()
+Value *SignatureImposition::duplicateValue()
 {
 	SignatureImposition *sn;
 	sn=new SignatureImposition(signatures);
@@ -2802,7 +2802,7 @@ PaperStyle *SignatureImposition::GetDefaultPaper()
 int SignatureImposition::SetPaperSize(PaperStyle *npaper)
 {
 	// Imposition::SetPaperSize(npaper); //sets imposition::paperbox and papergroup
-	PaperStyle *newpaper = (PaperStyle *)npaper->duplicate();
+	PaperStyle *newpaper = (PaperStyle *)npaper->duplicateValue();
 	PaperBox *paper = new PaperBox(newpaper, true);
 	PaperBoxData *newboxdata = new PaperBoxData(paper);
 	paper->dec_count();
@@ -2820,7 +2820,7 @@ int SignatureImposition::SetPaperSize(PaperStyle *npaper)
 int SignatureImposition::SetDefaultPaperSize(PaperStyle *npaper)
 {
 	// Imposition::SetPaperSize(npaper); //sets imposition::paperbox and papergroup
-	PaperStyle *newpaper = (PaperStyle *)npaper->duplicate();
+	PaperStyle *newpaper = (PaperStyle *)npaper->duplicateValue();
 	PaperBox *paper = new PaperBox(newpaper, true);
 	PaperBoxData *newboxdata = new PaperBoxData(paper);
 	paper->dec_count();

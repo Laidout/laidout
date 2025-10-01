@@ -530,7 +530,7 @@ ObjectDef* Document::makeObjectDef()
 //! Duplicate a document.
 /*! \todo *** unimplemented! 
  */
-Value *Document::duplicate()
+Value *Document::duplicateValue()
 {
 	cout <<"*** implement Document::duplicate()!!!"<<endl;
 	return NULL;
@@ -1306,13 +1306,13 @@ void Document::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext 
 		} else if (!strcmp(nme,"iohints")) {
 			if (iohints.attributes.n) iohints.clear();
 			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) 
-				iohints.push(att->attributes.e[c]->attributes.e[c2]->duplicate(),-1);
+				iohints.push(att->attributes.e[c]->attributes.e[c2]->duplicateAtt(),-1);
 
 		} else if (!strcmp(nme,"metadata")) {
 			if (!metadata) metadata = new AttributeObject;
 			if (metadata->attributes.n) metadata->clear();
 			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) 
-				metadata->push(att->attributes.e[c]->attributes.e[c2]->duplicate(),-1);
+				metadata->push(att->attributes.e[c]->attributes.e[c2]->duplicateAtt(),-1);
 
 		} else if (!strcmp(nme,"view")) {
 			SpreadView *v=new SpreadView;

@@ -52,7 +52,7 @@ Singles::Singles() : Imposition(_("Singles"))
 	gapx  = gapy  = 0;
 	
 	PaperStyle *paperstyle = laidout->GetDefaultPaper();
-	if (paperstyle) paperstyle = static_cast<PaperStyle *>(paperstyle->duplicate());
+	if (paperstyle) paperstyle = static_cast<PaperStyle *>(paperstyle->duplicateValue());
 	else paperstyle = new PaperStyle("letter", 8.5, 11.0, 0, 300, "in");
 	SetPaperSize(paperstyle); //sets papergroup based on paperstyle
 	paperstyle->dec_count();
@@ -349,7 +349,7 @@ PageStyle *Singles::GetPageStyle(int pagenum,int local)
 	PageStyle *pstyle = pagestyles.e[pagenum % papergroup->papers.n];
 
 	if (local) {
-		PageStyle *ps = (PageStyle *)pstyle->duplicate();
+		PageStyle *ps = (PageStyle *)pstyle->duplicateValue();
 		ps->flags |= PAGESTYLE_AUTONOMOUS;
 		return ps;
 	}
@@ -392,7 +392,7 @@ int Singles::SetPaperSize(PaperStyle *npaper)
 
 	// if (Imposition::SetPaperSize(npaper)) return 1; // note this will REPLACE the old papergroup
 
-	PaperStyle *newpaper = (PaperStyle *)npaper->duplicate();
+	PaperStyle *newpaper = (PaperStyle *)npaper->duplicateValue();
 	PaperBox *paper = new PaperBox(newpaper, true);
 	PaperBoxData *newboxdata = new PaperBoxData(paper);
 	paper->dec_count();
@@ -575,12 +575,12 @@ void Singles::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 }
 
 //! Duplicate this, or fill in this attributes.
-Value *Singles::duplicate()
+Value *Singles::duplicateValue()
 {
 	Singles *sn;
-	sn = new Singles(dynamic_cast<PaperGroup*>(papergroup->duplicate(nullptr)), true);
+	sn = new Singles(dynamic_cast<PaperGroup*>(papergroup->duplicate()), true);
 	if (custom_paper_packing) {
-		sn->custom_paper_packing = dynamic_cast<PaperGroup*>(custom_paper_packing->duplicate(nullptr));
+		sn->custom_paper_packing = dynamic_cast<PaperGroup*>(custom_paper_packing->duplicate());
 	}
 
 	if (objectdef) {
@@ -593,7 +593,7 @@ Value *Singles::duplicate()
 		for (int c=0; c < papergroup->papers.n; c++) {
 			if (c < sn->pagestyles.n && sn->pagestyles.e[c]) sn->pagestyles.e[c]->dec_count();
 
-			RectPageStyle *dup = dynamic_cast<RectPageStyle*>(pagestyles.e[c]->duplicate());
+			RectPageStyle *dup = dynamic_cast<RectPageStyle*>(pagestyles.e[c]->duplicateValue());
 			if (c < sn->pagestyles.n) sn->pagestyles.e[c] = dup;
 			else {
 				sn->pagestyles.push(dup);

@@ -112,20 +112,20 @@ void LCaptionData::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpCont
 	if (!foundconfig) CaptionData::dump_in_atts(att,flag,context);
 }
 
-Value *LCaptionData::duplicate()
+Value *LCaptionData::duplicateValue()
 {
-	SomeData *dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("CaptionData"));
-	CaptionData::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	SomeData *dup = dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("CaptionData"));
+	CaptionData::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dynamic_cast<Value*>(dup);
 }
 
-LaxInterfaces::SomeData *LCaptionData::duplicate(LaxInterfaces::SomeData *dup)
+LaxInterfaces::SomeData *LCaptionData::duplicateData(LaxInterfaces::SomeData *dup)
 {
 	if (dup && !dynamic_cast<LCaptionData*>(dup)) return NULL; //wrong type for referencc object!
 	if (!dup) dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("CaptionData"));
-	CaptionData::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	CaptionData::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dup;
 }
 
@@ -187,7 +187,7 @@ Value *LCaptionData::dereference(const char *extstring, int len)
 
 	if (extequal(extstring,len, "font")) {
 		if (!font) return new NullValue();
-		return new FontValue(font->duplicate(), 1);
+		return new FontValue(font->duplicateFont(), 1);
 	}
 
 	if (extequal(extstring,len, "text")) {
@@ -283,7 +283,7 @@ int LCaptionData::assign(FieldExtPlace *ext,Value *v)
 			} else if (!strcmp(str,"font")) {
 				FontValue *f = dynamic_cast<FontValue*>(v);
 				if (!f || !f->font) return 0;
-				LaxFont *ff = f->font->duplicate();
+				LaxFont *ff = f->font->duplicateFont();
 				Font(ff);
 				ff->dec_count();
 				return 1;

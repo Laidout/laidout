@@ -129,7 +129,7 @@ int LengthValue::ParseUnits(const char *str, int len)
 	return unit_manager.UnitId(str, len);
 }
 
-Value *LengthValue::duplicate()
+Value *LengthValue::duplicateValue()
 {
 	LengthValue *dup = new LengthValue(value, units, type);
 	return dup;

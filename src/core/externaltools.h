@@ -45,7 +45,7 @@ class ExternalTool : public Laxkit::anObject
 
 	ExternalTool(const char *cmd_name, const char *name, int category);
 	virtual ~ExternalTool();
-	virtual anObject *duplicate(anObject *ref);
+	virtual anObject *duplicate();
 	virtual void SetFrom(ExternalTool *tool);
 
 	virtual void Description(const char *desc);

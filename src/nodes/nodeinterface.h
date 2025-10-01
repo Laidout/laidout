@@ -685,7 +685,7 @@ class NodeInterface : public LaxInterfaces::anInterface
 
 	NodeInterface(LaxInterfaces::anInterface *nowner, int nid,Laxkit::Displayer *ndp);
 	virtual ~NodeInterface();
-	virtual LaxInterfaces::anInterface *duplicate(LaxInterfaces::anInterface *dup);
+	virtual LaxInterfaces::anInterface *duplicateInterface(LaxInterfaces::anInterface *dup);
 	virtual const char *IconId() { return "Node"; }
 	const char *Name();
 	const char *whattype() { return "NodeInterface"; }

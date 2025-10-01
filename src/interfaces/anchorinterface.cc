@@ -193,15 +193,15 @@ int AnchorInterface::draws(const char *atype)
 { return 0; }
 
 
-//! Return a new AnchorInterface if dup=NULL, or anInterface::duplicate(dup) otherwise.
+//! Return a new AnchorInterface if dup=NULL, or anInterface::duplicateInterface(dup) otherwise.
 /*! 
  */
-anInterface *AnchorInterface::duplicate(anInterface *dup)//dup=NULL
+anInterface *AnchorInterface::duplicateInterface(anInterface *dup)
 {
 	if (dup==NULL) dup=new AnchorInterface(NULL,id,NULL);
 	else if (!dynamic_cast<AnchorInterface *>(dup)) return NULL;
 	
-	return anInterface::duplicate(dup);
+	return anInterface::duplicateInterface(dup);
 }
 
 

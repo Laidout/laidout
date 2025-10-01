@@ -629,12 +629,12 @@ int AlignInterface::draws(const char *atype)
 
 
 //! Return a new AlignInterface if dup = nullptr, or anInterface::duplicate(dup) otherwise.
-anInterface *AlignInterface::duplicate(anInterface *dup)
+anInterface *AlignInterface::duplicateInterface(anInterface *dup)
 {
 	if (dup == nullptr) dup = new AlignInterface(nullptr, id, nullptr);
 	else if (!dynamic_cast<AlignInterface *>(dup)) return nullptr;
 	
-	return ObjectInterface::duplicate(dup);
+	return ObjectInterface::duplicateInterface(dup);
 }
 
 
@@ -1175,7 +1175,7 @@ void AlignInterface::ApplyPreset(int type)
 //! Return which alignment handle mouse is over
 /*! If state&ControlMask, then search for line controls first.
  */
-int AlignInterface::scan(int x,int y, int &index, unsigned int state)
+int AlignInterface::scanAlign(int x,int y, int &index, unsigned int state)
 {
 	flatpoint fp(x,y);
 
@@ -1375,14 +1375,14 @@ int AlignInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
     
 	if (show_presets) {
 		int index = -1;
-		scan(x,y,index, state);
+		scanAlign(x,y,index, state);
 		buttondown.moveinfo(d->id,LEFTBUTTON, ALIGN_Presets, index);
 		return 0;
 	}
 	
-	int index=-1;
-	int over=scan(x,y, index,state);
-	if (over==RP_None) over=ALIGN_None;
+	int index = -1;
+	int over = scanAlign(x,y, index,state);
+	if (over == RP_None) over = ALIGN_None;
 
 	if (over==ALIGN_None && (state&LAX_STATE_MASK)==ControlMask) {
 		buttondown.moveinfo(d->id,LEFTBUTTON, ALIGN_MaybePresets,-1);
@@ -1600,13 +1600,13 @@ int AlignInterface::ToggleShift(int dir)
 
 int AlignInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
-	int index=-1;
-	int over=scan(x,y, index, state);
-	if (over<=ALIGN_None) return 1;
+	int index = -1;
+	int over = scanAlign(x,y, index, state);
+	if (over <= ALIGN_None) return 1;
 
-	if ((state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) {
-		aligninfo->uiscale*=1.05;
-		needtodraw=1;
+	if ((state & LAX_STATE_MASK) == (ShiftMask | ControlMask)) {
+		aligninfo->uiscale *= 1.05;
+		needtodraw = 1;
 		return 0;
 	}
 
@@ -1630,13 +1630,13 @@ int AlignInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxki
 
 int AlignInterface::WheelDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
-	int index=-1;
-	int over=scan(x,y, index, state);
-	if (over<=ALIGN_None) return 1;
+	int index = -1;
+	int over = scanAlign(x,y, index, state);
+	if (over <= ALIGN_None) return 1;
 
-	if ((state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) {
-		aligninfo->uiscale*=.95;
-		needtodraw=1;
+	if ((state & LAX_STATE_MASK) == (ShiftMask | ControlMask)) {
+		aligninfo->uiscale *= .95;
+		needtodraw = 1;
 		return 0;
 	}
 
@@ -1749,13 +1749,11 @@ double SnapDistance(double d, double threshhold, int n,const double *snapto, int
 
 int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
 {
-	//int over=scan(x,y);
-
 	if (child) return 0;
 
 	int action = -1, index = -1;
 
-	DBG action = scan(x,y,index, state);
+	DBG action = scanAlign(x,y,index, state);
 	DBG cerr <<"Align move: "<<action<<','<<index<<endl;
 	
 	//DBG flatpoint pp=dp->screentoreal(x,y);
@@ -1765,7 +1763,7 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 
 
 	if (!buttondown.any()) {
-		action = scan(x,y,index, state);
+		action = scanAlign(x,y,index, state);
 		if (action != hover || index != hoverindex) {
 			hover = action;
 			hoverindex = index;
@@ -1817,7 +1815,7 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
         return 0;
 
 	} else if (action == ALIGN_Presets) {
-		scan(x,y,index, state);
+		scanAlign(x,y,index, state);
 		if (index!=hoverindex) {
             buttondown.moveinfo(mouse->id,LEFTBUTTON, ALIGN_Presets,index);
 			hoverindex = index;

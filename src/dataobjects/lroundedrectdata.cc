@@ -88,20 +88,20 @@ void LRoundedRectData::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::Dump
 	if (!foundconfig) RoundedRectData::dump_in_atts(att,flag,context);
 }
 
-Value *LRoundedRectData::duplicate()
+Value *LRoundedRectData::duplicateValue()
 {
 	SomeData *dup = dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("RoundedRectData"));
-	RoundedRectData::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	RoundedRectData::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dynamic_cast<Value*>(dup);
 }
 
-LaxInterfaces::SomeData *LRoundedRectData::duplicate(LaxInterfaces::SomeData *dup)
+LaxInterfaces::SomeData *LRoundedRectData::duplicateData(LaxInterfaces::SomeData *dup)
 {
 	if (dup && !dynamic_cast<LRoundedRectData*>(dup)) return nullptr; //wrong type for reference object!
 	if (!dup) dup = dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("RoundedRectData"));
-	RoundedRectData::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	RoundedRectData::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dup;
 }
 

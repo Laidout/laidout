@@ -58,7 +58,7 @@ class PageRangeInterface : public LaxInterfaces::anInterface, public DocumentUse
 	PageRangeInterface(int nid=0,Laxkit::Displayer *ndp=NULL,Document *ndoc=NULL);
 	PageRangeInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
 	virtual ~PageRangeInterface();
-	virtual anInterface *duplicate(anInterface *dup=NULL);
+	virtual anInterface *duplicateInterface(anInterface *dup);
 
 	virtual const char *IconId() { return "PageRange"; }
 	virtual const char *Name();

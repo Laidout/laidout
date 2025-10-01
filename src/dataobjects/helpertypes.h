@@ -46,7 +46,7 @@ class LLineStyle : public Value
 
 
 	//from Value:
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
     virtual ObjectDef *makeObjectDef();
     virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(Value *v, const char *extstring);
@@ -55,7 +55,7 @@ class LLineStyle : public Value
 //                         Value **value_ret, Laxkit::ErrorLog *log);
 
     //from anObject:
-	virtual anObject *duplicate(anObject *ref) { return duplicate(); }
+	virtual anObject *duplicate() { return duplicateValue(); }
 };
 
 
@@ -79,13 +79,13 @@ class LFillStyle : public Value
     virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
 
 	//from Value:
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
     virtual ObjectDef *makeObjectDef();
     virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(Value *v, const char *extstring);
 
     //from anObject:
-	virtual anObject *duplicate(anObject *ref) { return duplicate(); }
+	virtual anObject *duplicate() { return duplicateValue(); }
 };
 
 

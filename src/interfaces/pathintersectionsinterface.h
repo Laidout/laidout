@@ -92,7 +92,7 @@ class PathIntersectionsInterface : public anInterface
 
 	PathIntersectionsInterface(anInterface *nowner, int nid,Laxkit::Displayer *ndp);
 	virtual ~PathIntersectionsInterface();
-	virtual anInterface *duplicate(anInterface *dup);
+	virtual anInterface *duplicateInterface(anInterface *dup);
 	virtual const char *IconId() { return "Path"; }
 	virtual const char *Name();
 	virtual const char *whattype() { return "PathIntersectionsInterface"; }

@@ -46,7 +46,7 @@ class LengthValue : public Value
 	int ParseUnits(const char *str, int len);
 
 	//Value overrides:
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
  	virtual ObjectDef *makeObjectDef(); //calling code responsible for ref
 
 	static LengthValue *Parse(const char *val, int len = -1, const char **endptr = nullptr);

@@ -110,7 +110,7 @@ class SignatureInterface : public ImpositionInterface
 	SignatureInterface(LaxInterfaces::anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL,
 						SignatureImposition *sig=NULL, PaperStyle *p=NULL, Document *ndoc=NULL);
 	virtual ~SignatureInterface();
-	virtual anInterface *duplicate(anInterface *dup=NULL);
+	virtual anInterface *duplicateInterface(anInterface *dup);
 	virtual Laxkit::ShortcutHandler *GetShortcuts();
 	virtual const char *Name();
 	virtual const char *IconId() { return "Folding"; }

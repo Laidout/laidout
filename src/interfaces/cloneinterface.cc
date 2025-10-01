@@ -99,7 +99,7 @@ TilingDest *TilingDest::duplicate()
 
 	makestr(dup->scripted_condition, scripted_condition);
 
-	if (scripted_transform) dup->scripted_transform = scripted_transform->duplicate();
+	if (scripted_transform) dup->scripted_transform = scripted_transform->duplicateValue();
 	dup->transform = transform;
 
 	return dup;
@@ -136,7 +136,7 @@ TilingOp *TilingOp::duplicate()
 	dup->shearable = shearable;
 	dup->flexible_aspect = flexible_aspect;
 
-	if (celloutline) dup->celloutline = dynamic_cast<PathsData*>(celloutline->duplicate(nullptr));
+	if (celloutline) dup->celloutline = dynamic_cast<PathsData*>(celloutline->duplicateData(nullptr));
 	
 	for (int c=0; c<transforms.n; c++) {
 		dup->transforms.push(transforms.e[c]->duplicate());
@@ -224,7 +224,7 @@ Tiling::~Tiling()
 	if (boundary) boundary->dec_count();
 }
 
-Value *Tiling::duplicate()
+Value *Tiling::duplicateValue()
 {
 	Tiling *dup = new Tiling();
 
@@ -232,7 +232,7 @@ Value *Tiling::duplicate()
 	makestr(dup->category, category);
 	dup->icon = icon;
 	if (icon) icon->inc_count();
-	if (boundary) dup->boundary = dynamic_cast<PathsData*>(boundary->duplicate(nullptr));
+	if (boundary) dup->boundary = dynamic_cast<PathsData*>(boundary->duplicateData(nullptr));
 	dup->required_interface = required_interface;
 	dup->repeat_basis = repeat_basis;
 	dup->repeatable = repeatable;
@@ -817,7 +817,7 @@ Group *Tiling::Render(Group *parent_space,
 
 			for (int c=0; c<basecells.n; c++) {
 				if (basecells.e[c]->celloutline) {
-					d = dynamic_cast<PathsData*>(basecells.e[c]->celloutline->duplicate(NULL));
+					d = dynamic_cast<PathsData*>(basecells.e[c]->celloutline->duplicateData(nullptr));
 					d->InstallLineStyle(ls);
 					d->FindBBox();
 					trace->push(d);
@@ -1995,7 +1995,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 
 		if (!strcasecmp(coloring,"truncated square 2")) {
 			 //second octagon
-			path=dynamic_cast<PathsData*>(path->duplicate(NULL));
+			path=dynamic_cast<PathsData*>(path->duplicateData(nullptr));
 			path->Translate(flatpoint(1+sqrt(2),0));
 			path->ApplyTransform();
 			op=tiling->AddBase(path,1,1, false,false);
@@ -2154,7 +2154,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		op->AddTransform(affine);
 
 		if (!strcasecmp(coloring,"triangular 8")) {
-			path=dynamic_cast<PathsData*>(path->duplicate(NULL));
+			path=dynamic_cast<PathsData*>(path->duplicateData(nullptr));
 			op=tiling->AddBase(path,1,1, false,false);
 			path->Rotate(-2*M_PI/3, flatpoint(1,0));
 			path->ApplyTransform();
@@ -2227,14 +2227,14 @@ Tiling *CreateUniformColoring(const char *coloring)
 		op=tiling->AddBase(path,1,1, false,false);
 		op->AddTransform(affine);
 
-		path=dynamic_cast<PathsData*>(path->duplicate(NULL));
+		path=dynamic_cast<PathsData*>(path->duplicateData(nullptr));
 		path->Rotate(2*M_PI/3, flatpoint(1,0));
 		path->ApplyTransform();
 		op=tiling->AddBase(path,1,1, false,false);
 		op->AddTransform(affine);
 
 		if (!strcasecmp(coloring,"triangular 9")) {
-			path=dynamic_cast<PathsData*>(path->duplicate(NULL));
+			path=dynamic_cast<PathsData*>(path->duplicateData(nullptr));
 			path->Rotate(2*M_PI/3, flatpoint(1,0));
 			path->ApplyTransform();
 			op=tiling->AddBase(path,1,1, false,false);
@@ -2285,7 +2285,7 @@ Tiling *CreateUniformColoring(const char *coloring)
 		op->AddTransform(affine);
 
 		if (!strcasecmp(coloring,"trihexagonal 2")) {
-			path=dynamic_cast<PathsData*>(path->duplicate(NULL));
+			path=dynamic_cast<PathsData*>(path->duplicateData(nullptr));
 			path->Rotate(M_PI,flatpoint(2,0));
 			path->ApplyTransform();
 			op=tiling->AddBase(path,1,1, false,false);
@@ -2764,12 +2764,12 @@ const char *CloneInterface::Name()
 }
 
 
-anInterface *CloneInterface::duplicate(anInterface *dup)
+anInterface *CloneInterface::duplicateInterface(anInterface *dup)
 {
 	if (dup==NULL) dup=new CloneInterface(NULL,id,NULL);
 	else if (!dynamic_cast<CloneInterface *>(dup)) return NULL;
 	
-	return anInterface::duplicate(dup);
+	return anInterface::duplicateInterface(dup);
 }
 
 void CloneInterface::Clear(LaxInterfaces::SomeData *d)
@@ -3014,7 +3014,7 @@ int CloneInterface::UpdateBasecells()
 		}
 
 		 //create the base outline
-		d = dynamic_cast<DrawableObject*>(tiling->basecells.e[c]->celloutline->duplicate(NULL));
+		d = dynamic_cast<DrawableObject*>(tiling->basecells.e[c]->celloutline->duplicateData(nullptr));
 		d->properties.push("base",c);
 		po= dynamic_cast<PathsData*>(d);
 		po->style=PathsData::PATHS_Ignore_Weights;
@@ -3031,7 +3031,7 @@ int CloneInterface::UpdateBasecells()
 
 		 //install minor base cell copies
 		for (int c2=1; c2<tiling->basecells.e[c]->transforms.n; c2++) {
-			o=tiling->basecells.e[c]->celloutline->duplicate(NULL);
+			o=tiling->basecells.e[c]->celloutline->duplicateData(nullptr);
 			o->FindBBox();
 			o->Multiply(tiling->basecells.e[c]->transforms.e[c2]->transform);
 			po = dynamic_cast<PathsData*>(o);

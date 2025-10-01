@@ -37,7 +37,7 @@ class TraceSettingsValue : public Value
  	TraceSettingsValue(LaxInterfaces::EngraverTraceSettings *nsettings);
  	virtual ~TraceSettingsValue();
 
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
 	virtual ObjectDef *makeObjectDef();
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);
@@ -56,7 +56,7 @@ TraceSettingsValue::~TraceSettingsValue()
 	if (settings) settings->dec_count();
 }
 
-Value *TraceSettingsValue::duplicate()
+Value *TraceSettingsValue::duplicateValue()
 {
 	TraceSettingsValue *dup = new TraceSettingsValue(settings);
 	return dup;
@@ -191,20 +191,20 @@ void LEngraverFillData::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::Dum
 	if (!foundconfig) EngraverFillData::dump_in_atts(att,flag,context);
 }
 
-Value *LEngraverFillData::duplicate()
+Value *LEngraverFillData::duplicateValue()
 {
-	SomeData *dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("EngraverFillData"));
-	EngraverFillData::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	SomeData *dup = dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("EngraverFillData"));
+	EngraverFillData::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dynamic_cast<Value*>(dup);
 }
 
-LaxInterfaces::SomeData *LEngraverFillData::duplicate(LaxInterfaces::SomeData *dup)
+LaxInterfaces::SomeData *LEngraverFillData::duplicateData(LaxInterfaces::SomeData *dup)
 {
 	if (dup && !dynamic_cast<LEngraverFillData*>(dup)) return NULL; //wrong type for referencc object!
-	if (!dup) dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("EngraverFillData"));
-	EngraverFillData::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	if (!dup) dup = dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("EngraverFillData"));
+	EngraverFillData::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dup;
 }
 

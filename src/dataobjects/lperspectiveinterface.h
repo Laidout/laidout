@@ -40,13 +40,13 @@ class LPerspectiveInterface : public LaxInterfaces::PerspectiveInterface
 	LPerspectiveInterface(LaxInterfaces::anInterface *nowner, int nid,Laxkit::Displayer *ndp);
 	virtual ~LPerspectiveInterface();
 	virtual const char *whattype() { return "PerspectiveInterface"; }
-	virtual LaxInterfaces::anInterface *duplicate(LaxInterfaces::anInterface *dup);
+	virtual LaxInterfaces::anInterface *duplicateInterface(LaxInterfaces::anInterface *dup);
 
 	virtual int UseThis(Laxkit::anObject *nobj,unsigned int mask=0);
 
 
 	//from value
-	//virtual Value *duplicate();
+	//virtual Value *duplicateValue();
 	//virtual ObjectDef *makeObjectDef();
 	//virtual int assign(FieldExtPlace *ext,Value *v);
 	//virtual Value *dereference(const char *extstring, int len);

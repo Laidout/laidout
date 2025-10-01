@@ -454,15 +454,15 @@ int PaperInterface::draws(const char *atype)
 }
 
 
-//! Return a new PaperInterface if dup=nullptr, or anInterface::duplicate(dup) otherwise.
+//! Return a new PaperInterface if dup=nullptr, or anInterface::duplicateInterface(dup) otherwise.
 /*! 
  */
-anInterface *PaperInterface::duplicate(anInterface *dup)//dup=nullptr
+anInterface *PaperInterface::duplicateInterface(anInterface *dup)//dup=nullptr
 {
-	if (dup==nullptr) dup=new PaperInterface(id,nullptr);
+	if (dup==nullptr) dup = new PaperInterface(id, nullptr);
 	else if (!dynamic_cast<PaperInterface *>(dup)) return nullptr;
-	
-	return anInterface::duplicate(dup);
+
+	return anInterface::duplicateInterface(dup);
 }
 
 
@@ -885,18 +885,18 @@ void PaperInterface::CreateMaybebox(flatpoint p)
 	int del = 0;
 
 	if (curbox) {
-		box = dynamic_cast<PaperBox*>(curbox->box->duplicate(nullptr));
+		box = dynamic_cast<PaperBox*>(curbox->box->duplicate());
 		del = 1;
 		boxdata = curbox;
 	} else if (papergroup && papergroup->papers.n) {
-		box = dynamic_cast<PaperBox*>(papergroup->papers.e[0]->box->duplicate(nullptr));
+		box = dynamic_cast<PaperBox*>(papergroup->papers.e[0]->box->duplicate());
 		boxdata = papergroup->papers.e[0];
 		del = 1;
 	} else if (doc) {
-		box = new PaperBox((PaperStyle *)doc->imposition->GetDefaultPaper()->duplicate(), true);
+		box = new PaperBox((PaperStyle *)doc->imposition->GetDefaultPaper()->duplicateValue(), true);
 		del = 1;
 	} else {
-		box = new PaperBox((PaperStyle *)laidout->papersizes.e[0]->duplicate(), true);
+		box = new PaperBox((PaperStyle *)laidout->papersizes.e[0]->duplicateValue(), true);
 		del = 1;
 	}
 
@@ -1519,7 +1519,7 @@ int PaperInterface::PerformAction(int action)
 		for (int c=0; c<curboxes.n; c++) {
 			PaperBoxData *paper = curboxes.e[c];
 
-			PaperBoxData *newpaper = dynamic_cast<PaperBoxData*>(paper->duplicate(nullptr));
+			PaperBoxData *newpaper = dynamic_cast<PaperBoxData*>(paper->duplicateData(nullptr));
 
 			newpaper->origin(newpaper->origin() + offset);
 			papergroup->papers.push(newpaper);

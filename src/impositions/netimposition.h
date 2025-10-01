@@ -63,7 +63,7 @@ class NetImposition : public Imposition
 	virtual const char *whattype() { return "NetImposition"; }
 	static ImpositionResource **getDefaultResources();
 	virtual ObjectDef *makeObjectDef();
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
 	virtual const char *BriefDescription();
 	virtual void GetDefaultPaperDimensions(double *x, double *y);
 	virtual void GetDefaultPageDimensions(double *x, double *y);

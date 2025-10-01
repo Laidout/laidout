@@ -15,7 +15,6 @@ CPPFLAGS= -Wall $(DEBUGFLAGS) $(EXTRA_CPPFLAGS) -I$(LAXDIR)/.. `pkg-config --cfl
 objs= \
 	affinevalue.o \
 	bboxvalue.o \
-	group.o \
 	objectcontainer.o \
 	objectfilter.o \
 	pointsetvalue.o \

@@ -87,9 +87,9 @@ int BBoxValue::getValueStr(char *buffer,int len)
     return 0;
 }
 
-Value *BBoxValue::duplicate()
+Value *BBoxValue::duplicateValue()
 {
-	BBoxValue *dup=new BBoxValue(minx,maxx,miny,maxy);
+	BBoxValue *dup = new BBoxValue(minx,maxx,miny,maxy);
 	return dup;
 }
 

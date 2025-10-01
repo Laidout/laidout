@@ -41,7 +41,7 @@ class SinglesInterface : virtual public ImpositionInterface, virtual public Pape
 	virtual ~SinglesInterface();
 	virtual const char *whattype() { return "SinglesInterface"; }
 	virtual const char *IconId() { return "SinglePageView"; }
-	virtual anInterface *duplicate(anInterface *dup = nullptr);
+	virtual anInterface *duplicateInterface(anInterface *dup);
 	virtual const char *Name();
 
 	//virtual int Event(const Laxkit::EventData *data,const char *mes);

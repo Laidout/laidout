@@ -564,7 +564,7 @@ NodeBase *GeglLaidoutNode::Duplicate()
 
 		Value *v = property->GetData();
 		if (v) {
-			v = v->duplicate();
+			v = v->duplicateValue();
 			NodeProperty *newprop = newnode->FindProperty(property->name);
 			newprop->SetData(v, 1);
 		}

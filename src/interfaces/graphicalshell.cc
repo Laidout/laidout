@@ -228,13 +228,13 @@ int GraphicalShell::draws(const char *atype)
 { return 0; }
 
 
-//! Return a new GraphicalShell if dup=NULL, or anInterface::duplicate(dup) otherwise.
-anInterface *GraphicalShell::duplicate(anInterface *dup)//dup=NULL
+//! Return a new GraphicalShell if dup=NULL, or anInterface::duplicateInterface(dup) otherwise.
+anInterface *GraphicalShell::duplicateInterface(anInterface *dup)//dup=NULL
 {
-	if (dup==NULL) dup=new GraphicalShell(id,NULL);
-	else if (!dynamic_cast<GraphicalShell *>(dup)) return NULL;
+	if (dup == nullptr) dup = new GraphicalShell(id, nullptr);
+	else if (!dynamic_cast<GraphicalShell *>(dup)) return nullptr;
 	
-	return anInterface::duplicate(dup);
+	return anInterface::duplicateInterface(dup);
 }
 
 
@@ -281,7 +281,7 @@ void GraphicalShell::ClearError()
 int GraphicalShell::Setup()
 {
 	if (!le) {
-		LaxFont *font = app->defaultlaxfont->duplicate();
+		LaxFont *font = app->defaultlaxfont->duplicateFont();
 		double width=dp->Maxx-dp->Minx-2*pad;
 		double height=font->textheight()*1.5;
 		le=new GraphicalShellEdit(viewport, this, dp->Minx+pad,dp->Maxy-height-pad,width,height);

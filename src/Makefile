@@ -97,7 +97,6 @@ otherobjs= \
 	dataobjects/drawableobject.o \
 	dataobjects/epsdata.o \
 	dataobjects/fontvalue.o \
-	dataobjects/group.o \
 	dataobjects/groupinterface.o \
 	dataobjects/helpertypes.o \
 	dataobjects/imagevalue.o \
@@ -150,7 +149,6 @@ otherobjs= \
 	impositions/singlesinterface.o \
 	impositions/simplenet.o \
 	impositions/singles.o \
-	impositions/singleseditor.o \
 	interfaces/actionarea.o \
 	interfaces/aligninterface.o \
 	interfaces/anchorinterface.o \

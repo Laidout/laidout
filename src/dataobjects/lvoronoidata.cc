@@ -95,12 +95,12 @@ void LVoronoiData::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpCont
 	if (!foundconfig) VoronoiData::dump_in_atts(att,flag,context);
 }
 
-LaxInterfaces::SomeData *LVoronoiData::duplicate(LaxInterfaces::SomeData *dup)
+LaxInterfaces::SomeData *LVoronoiData::duplicateData(LaxInterfaces::SomeData *dup)
 {
 	if (dup && !dynamic_cast<LVoronoiData*>(dup)) return NULL; //wrong type for referencc object!
-	if (!dup) dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("VoronoiData"));
-	VoronoiData::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	if (!dup) dup = dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("VoronoiData"));
+	VoronoiData::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dup;
 }
 
@@ -180,11 +180,11 @@ LaxInterfaces::SomeData *LVoronoiData::EquivalentObject()
 
 //------- VoronoiData.Value functions:
 
-Value *LVoronoiData::duplicate()
+Value *LVoronoiData::duplicateValue()
 {
-	SomeData *dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("VoronoiData"));
-	VoronoiData::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	SomeData *dup = dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("VoronoiData"));
+	VoronoiData::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dynamic_cast<Value*>(dup);
 }
 
@@ -372,17 +372,17 @@ LDelaunayInterface::LDelaunayInterface(int nid,Laxkit::Displayer *ndp)
 }
 
 
-LaxInterfaces::anInterface *LDelaunayInterface::duplicate(LaxInterfaces::anInterface *dup)
+LaxInterfaces::anInterface *LDelaunayInterface::duplicateInterface(LaxInterfaces::anInterface *dup)
 {
 	if (dup==NULL) dup=dynamic_cast<anInterface *>(new LDelaunayInterface(id,NULL));
 	else if (!dynamic_cast<LDelaunayInterface *>(dup)) return NULL;
 
-	return DelaunayInterface::duplicate(dup);
+	return DelaunayInterface::duplicateInterface(dup);
 }
 
 
 //! Returns this, but count is incremented.
-Value *LDelaunayInterface::duplicate()
+Value *LDelaunayInterface::duplicateValue()
 {
     this->inc_count();
     return this;

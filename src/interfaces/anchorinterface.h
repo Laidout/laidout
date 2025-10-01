@@ -106,7 +106,7 @@ class AnchorInterface : public LaxInterfaces::anInterface
 
 	AnchorInterface(LaxInterfaces::anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
 	virtual ~AnchorInterface();
-	virtual anInterface *duplicate(anInterface *dup=NULL);
+	virtual anInterface *duplicateInterface(anInterface *dup);
 
 	virtual const char *IconId() { return "Anchor"; }
 	virtual const char *Name();

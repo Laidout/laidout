@@ -159,7 +159,7 @@ NodeBase *ExpandVectorNode::Duplicate()
 			|| vtype == VALUE_Quaternion
 			|| vtype == VALUE_Real
 			|| vtype == VALUE_Color)
-		  v = v->duplicate();
+		  v = v->duplicateValue();
 		else v = NULL;
 	}
 	ExpandVectorNode *newnode = new ExpandVectorNode(dims, v, 1);
@@ -1255,7 +1255,7 @@ NodeBase *MathNode1::Duplicate()
 
 	Value *a = properties.e[1]->GetData();
 	if (isNumberType(a,nullptr) || a->type() == VALUE_Flatvector || a->type() == VALUE_Spacevector || a->type() == VALUE_Quaternion) {
-		a = a->duplicate();
+		a = a->duplicateValue();
 		newnode->properties.e[1]->SetData(a, 1);
 	}
 	newnode->DuplicateBase(this);
@@ -1612,12 +1612,12 @@ NodeBase *MathNode2::Duplicate()
 	MathNode2 *newnode = new MathNode2(operation);
 	Value *a = properties.e[1]->GetData();
 	if (isNumberType(a,nullptr) || a->type() == VALUE_Flatvector || a->type() == VALUE_Spacevector || a->type() == VALUE_Quaternion) {
-		a = a->duplicate();
+		a = a->duplicateValue();
 		newnode->properties.e[1]->SetData(a, 1);
 	}
 	a = properties.e[2]->GetData();
 	if (isNumberType(a,nullptr) || a->type() == VALUE_Flatvector || a->type() == VALUE_Spacevector || a->type() == VALUE_Quaternion) {
-		a = a->duplicate();
+		a = a->duplicateValue();
 		newnode->properties.e[2]->SetData(a, 1);
 	}
 	newnode->DuplicateBase(this);
@@ -2244,7 +2244,7 @@ NodeBase *ExpressionNode::Duplicate()
 
 	for (int c=1; c<properties.n-1 && c < newnode->properties.n-1; c++) {
 		Value *v = properties.e[c]->GetData();
-		if (v) newnode->properties.e[c]->SetData(v->duplicate(), 1);
+		if (v) newnode->properties.e[c]->SetData(v->duplicateValue(), 1);
 	}
 
 	return newnode;
@@ -5625,7 +5625,7 @@ Value *TransformAffineNode::TransformData(Affine *affine, Value *v, Value *old_o
 		nv = nnv;
 
 	} else if (vtype == PointSetValue::TypeNumber()) {
-		nv = v->duplicate();
+		nv = v->duplicateValue();
 		PointSetValue *pv = dynamic_cast<PointSetValue*>(nv);
 		pv->Map([&](const flatpoint &pin, flatpoint &pout) { pout = affine->transformPoint(pin); return 1; } );
 
@@ -5967,7 +5967,7 @@ LaxInterfaces::GradientInterface *GradientProperty::GetGradientInterface()
 		interfacekeeper.SetObject(interf, 1);
 	}
 
-	ginterf = dynamic_cast<GradientInterface*>(interf->duplicate(nullptr));
+	ginterf = dynamic_cast<GradientInterface*>(interf->duplicateInterface(nullptr));
 	ginterf->showdecs |= GradientInterface::ShowColors;
 	makestr(ginterf->owner_message, "GradientChange");
 	return ginterf;
@@ -6951,7 +6951,7 @@ int ModifyObjectNode::Update()
 {
 	Value *o = properties.e[0]->GetData();
 	if (o) {
-		o = o->duplicate();
+		o = o->duplicateValue();
 		for (int c=1; c<properties.n-1; c++) {
 			Value *v = properties.e[c]->GetData();
 			if (v) {
@@ -7142,7 +7142,7 @@ void ObjectFunctionNode::UpdateProps()
 					// update property with new name, Name, desc...
 					NodeProperty *prop = nullptr;
 					Value *default_val = nullptr;
-					if (funcdef->defaultValue) default_val = funcdef->defaultValue->duplicate();
+					if (funcdef->defaultValue) default_val = funcdef->defaultValue->duplicateValue();
 					else {
 						if (funcdef->format_str) {
 							//try to create new object from type
@@ -7210,7 +7210,7 @@ int ObjectFunctionNode::Update()
 // 						 Laxkit::ErrorLog *log) = 0;
 
 	// Value *oo = o; oo->inc_count();
-	Value *oo = o->duplicate(); // *** should do this only for non-"const" functions, or have it be optional
+	Value *oo = o->duplicateValue(); // *** should do this only for non-"const" functions, or have it be optional
 	FunctionEvaluator *func = dynamic_cast<FunctionEvaluator*>(oo);
 	if (!func) {
 		Error(_("Value cannot evaluate functions"));

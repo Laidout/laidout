@@ -167,7 +167,7 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	int showextra;
 	int showrotation;
 
-	virtual int scan(int x,int y, int &index, unsigned int state);
+	virtual int scanAlign(int x,int y, int &index, unsigned int state);
 	virtual int onPath(int x,int y);
 	virtual int scanForLineControl(int x,int y, int &index);
 	virtual void postHoverMessage();
@@ -197,7 +197,7 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 
 	AlignInterface(anInterface *nowner, int nid=0, Laxkit::Displayer *ndp=nullptr);
 	virtual ~AlignInterface();
-	virtual anInterface *duplicate(anInterface *dup=nullptr);
+	virtual anInterface *duplicateInterface(anInterface *dup=nullptr);
 	virtual Laxkit::ShortcutHandler *GetShortcuts();
 
 	virtual const char *IconId() { return "Align"; }

@@ -70,15 +70,15 @@ int FieldExtPlace::Set(const char *str, int len, const char **next)
 
 		 // check for number first: "34.blah.blah"
 		if (isdigit(str[0])) {
-			char *nxt=NULL;
-			int nn=strtol(str,&nxt,10); 
-			if (nxt-str==n) {
+			char *nxt = nullptr;
+			int nn = strtol(str,&nxt,10); 
+			if (nxt-str == n) {
 				 //found valid number
-				if (nn>=0) {
-					push(nn); nf++;
-					str+=n;
-					len-=n;
-					if (*str=='.') str++;
+				if (nn >= 0) {
+					pushIndex(nn); nf++;
+					str += n;
+					len -= n;
+					if (*str == '.') str++;
 					continue;
 				}
 			}
@@ -101,10 +101,10 @@ FieldExtPlace::FieldExtPlace(const FieldExtPlace &place)
 {
 	int i;
 	const char *str;
-	for (int c=0; c<place.n(); c++) {
-		str=place.e(c,&i);
+	for (int c = 0; c < place.n(); c++) {
+		str = place.e(c,&i);
 		if (str) push(str);
-		else push(i);
+		else pushIndex(i);
 	}
 }
 	
@@ -114,10 +114,10 @@ FieldExtPlace &FieldExtPlace::operator=(const FieldExtPlace &place)
 	flush();
 	int i;
 	const char *str;
-	for (int c=0; c<place.n(); c++) {
-		str=place.e(c,&i);
+	for (int c = 0; c < place.n(); c++) {
+		str = place.e(c, &i);
 		if (str) push(str);
-		else push(i);
+		else pushIndex(i);
 	}
 	return *this;
 }
@@ -173,21 +173,21 @@ int FieldExtPlace::push(const char *nd,int where)
 	return ext.push(new ExtNode(nd,-1), 1, where);
 }
 
-int FieldExtPlace::push(int i,int where)
+int FieldExtPlace::pushIndex(int i,int where)
 {
 	return ext.push(new ExtNode(NULL,i), 1, where);
 }
 
 /*! Remember the returned string must be delete[]'d.
  */
-char *FieldExtPlace::pop(int *i, int which)
+char *FieldExtPlace::popWithIndex(int *i, int which)
 {
-	ExtNode *node=ext.pop(which);
-	if (!node) { if (i) *i=-1; return NULL; }
+	ExtNode *node = ext.pop(which);
+	if (!node) { if (i) *i = -1; return nullptr; }
 
-	if (i) *i=node->exti;
-	char *str=node->ext;
-	node->ext=NULL;
+	if (i) *i = node->exti;
+	char *str = node->ext;
+	node->ext = nullptr;
 	return str;
 }
 

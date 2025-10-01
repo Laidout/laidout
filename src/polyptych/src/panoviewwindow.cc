@@ -16,8 +16,8 @@
 
 
 #include "panoviewwindow.h"
-#include "../language.h"
 
+#include <lax/language.h>
 #include <lax/strmanip.h>
 #include <lax/freedesktop.h>
 #include <lax/transformmath.h>

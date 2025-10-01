@@ -42,7 +42,7 @@ class Fold : public Value
 
 	Fold(char dir,int u, int which, int whichface = -1) { direction = dir; under = u; whichfold = which; face = whichface; }
 	virtual ObjectDef *makeObjectDef();
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
 };
 
 //--------------------------------------- FoldedPageInfo ---------------------------------------
@@ -119,7 +119,7 @@ class Signature : public Value
 	virtual int SetPatternSize(double w,double h);
 	virtual int locatePaperFromPage(int pagenumber, int *row, int *col, int num_sheets);
 
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
 };
 
 
@@ -147,7 +147,7 @@ class PaperPartition : public Value
 	
 	PaperPartition();
 	virtual ~PaperPartition();
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
 	virtual ObjectDef *makeObjectDef();
 
 	virtual int SetPaper(PaperStyle *p);
@@ -193,7 +193,7 @@ class SignatureInstance : public Value
 
 	SignatureInstance(Signature *sig=NULL, PaperPartition *paper=NULL);
 	virtual ~SignatureInstance();
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
 	virtual SignatureInstance *duplicateSingle();
 	virtual ObjectDef *makeObjectDef();
 
@@ -271,7 +271,7 @@ class SignatureImposition : public Imposition
 	virtual const char *BriefDescription();
 	virtual void GetDefaultPaperDimensions(double *x, double *y);
 	virtual void GetDefaultPageDimensions(double *x, double *y);
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
 	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual int SetPaperGroup(PaperGroup *ngroup);
 	virtual PaperGroup *GetPaperGroup(int layout, int index);

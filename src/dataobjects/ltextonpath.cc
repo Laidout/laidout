@@ -104,20 +104,20 @@ void LTextOnPath::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpConte
 	if (!foundconfig) TextOnPath::dump_in_atts(att,flag,context);
 }
 
-Value *LTextOnPath::duplicate()
+Value *LTextOnPath::duplicateValue()
 {
-	SomeData *dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("TextOnPath"));
-	TextOnPath::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	SomeData *dup = dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("TextOnPath"));
+	TextOnPath::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dynamic_cast<Value*>(dup);
 }
 
-LaxInterfaces::SomeData *LTextOnPath::duplicate(LaxInterfaces::SomeData *dup)
+LaxInterfaces::SomeData *LTextOnPath::duplicateData(LaxInterfaces::SomeData *dup)
 {
 	if (dup && !dynamic_cast<LTextOnPath*>(dup)) return NULL; //wrong type for referencc object!
-	if (!dup) dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("TextOnPath"));
-	TextOnPath::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	if (!dup) dup = dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("TextOnPath"));
+	TextOnPath::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dup;
 }
 

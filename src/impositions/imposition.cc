@@ -669,10 +669,10 @@ int Imposition::SyncPageStyles(Document *doc,int start,int n, bool shift_within_
 				oldflags=doc->pages.e[c]->pagestyle->flags;
 				if (oldflags!=temppagestyle->flags) {
 					 //we need to create a local copy with custom settings based on the new page style
-					PageStyle *ttt=temppagestyle;
-					temppagestyle=static_cast<PageStyle *>(temppagestyle->duplicate());
+					PageStyle *ttt = temppagestyle;
+					temppagestyle = static_cast<PageStyle *>(temppagestyle->duplicateValue());
 					ttt->dec_count();
-					temppagestyle->flags=oldflags;
+					temppagestyle->flags = oldflags;
 				}
 			}
 		}

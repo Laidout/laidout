@@ -21,7 +21,7 @@
 #include <lax/popupmenu.h>
 #include <lax/mouseshapes.h>
 #include <lax/lineinput.h>
-#include <lax/shortcutwindow.h>
+// #include <lax/shortcutwindow.h>
 
 #include "../language.h"
 #include "spreadeditor.h"

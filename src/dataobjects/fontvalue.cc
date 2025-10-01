@@ -96,11 +96,11 @@ int FontValue::getValueStr(char *buffer,int len)
 
 /*! Note: this deep copies the font.
  */
-Value *FontValue::duplicate()
+Value *FontValue::duplicateValue()
 {
 	FontValue *dup = new FontValue();
 	if (font) {
-		LaxFont *nfont = font->duplicate();
+		LaxFont *nfont = font->duplicateFont();
 		if (nfont) dup->Set(nfont, 1);
 	}
 	return dup;

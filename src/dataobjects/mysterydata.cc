@@ -130,7 +130,7 @@ Laxkit::Attribute *MysteryData::dump_out_atts(Laxkit::Attribute *att,int what,La
 				m((int)0),m(1),m(2),m(3),m(4),m(5));
 	att->push("nativeid", nativeid);
 	if (attributes) {
-		Attribute *att2 = attributes->duplicate();
+		Attribute *att2 = attributes->duplicateAtt();
 		makestr(att2->name, "attributes");
 		att->push(att2, -1);
 	}
@@ -170,7 +170,7 @@ void MysteryData::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *cont
 			LongAttribute(value,&nativeid);
 		} else if (!strcmp(nname,"attributes")) {
 			if (attributes) delete attributes;
-			attributes=att->attributes.e[c]->duplicate();
+			attributes = att->attributes.e[c]->duplicateAtt();
 		}
 	}
 	minx=0;
@@ -179,7 +179,7 @@ void MysteryData::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *cont
 	maxy=y2;
 }
 
-LaxInterfaces::SomeData *MysteryData::duplicate(LaxInterfaces::SomeData *dup)
+LaxInterfaces::SomeData *MysteryData::duplicateData(LaxInterfaces::SomeData *dup)
 {
 	MysteryData *mdata=dynamic_cast<MysteryData*>(dup);
 	if (!mdata && dup) return NULL;
@@ -201,11 +201,11 @@ LaxInterfaces::SomeData *MysteryData::duplicate(LaxInterfaces::SomeData *dup)
 			if (mdata->outline) delete[] mdata->outline;
 			mdata->outline=NULL;
 		}
-		mdata->attributes=attributes->duplicate();
+		mdata->attributes = attributes->duplicateAtt();
 	}
 
 	 //somedata elements:
-	dup->bboxstyle=bboxstyle;
+	dup->bboxstyle = bboxstyle;
 	dup->setbounds(this);
 	dup->m(m());
 	return dup;
@@ -225,7 +225,7 @@ class MysteryInterface : public LaxInterfaces::RectInterface
 {
  public:
 	MysteryInterface(int nid,Laxkit::Displayer *ndp);
-	LaxInterfaces::anInterface *duplicate(anInterface *dup);
+	LaxInterfaces::anInterface *duplicateInterface(anInterface *dup);
 	virtual const char *whattype() { return "MysteryInterface"; }
 	virtual const char *whatdatatype() { return "MysteryData"; }
 	virtual int draws(const char *what);
@@ -250,11 +250,11 @@ int MysteryInterface::draws(const char *what)
 //! Return new MysteryInterface.
 /*! If dup!=NULL and it cannot be cast to MysteryInterface, then return NULL.
  */
-LaxInterfaces::anInterface *MysteryInterface::duplicate(LaxInterfaces::anInterface *dup)
+LaxInterfaces::anInterface *MysteryInterface::duplicateInterface(LaxInterfaces::anInterface *dup)
 {
-	if (dup==NULL) dup=new MysteryInterface(id,NULL);
-	else if (!dynamic_cast<MysteryInterface *>(dup)) return NULL;
-	return RectInterface::duplicate(dup);
+	if (dup == nullptr) dup = new MysteryInterface(id, nullptr);
+	else if (!dynamic_cast<MysteryInterface *>(dup)) return nullptr;
+	return RectInterface::duplicateInterface(dup);
 }
 
 //! Draw name, box around it, and a bunch of question marks.

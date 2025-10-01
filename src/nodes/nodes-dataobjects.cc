@@ -250,7 +250,7 @@ int DuplicateSingleNode::Update()
 
 	anObject *filter = o->filter;
 	if (filter) o->filter = nullptr;
-	DrawableObject *dup = dynamic_cast<DrawableObject*>(o->duplicate(NULL));
+	DrawableObject *dup = dynamic_cast<DrawableObject*>(o->duplicateData(nullptr));
 	// *** duplicate filter separately for safety... otherwise needs a ton of overloaded funcs to deal with.. needs more thought
 	// *** just ignore filter for now
 	// if (filter) {
@@ -752,7 +752,7 @@ int SetScalesNode::Update()
 	// apply into output
 	if (o) { //single object, easy!
 		if (!override) {
-			ov = ov->duplicate();
+			ov = ov->duplicateValue();
 			o = dynamic_cast<Affine*>(ov);
 		} else ov->inc_count();
 		properties.e[3]->SetData(ov, 1);
@@ -824,7 +824,7 @@ int SetScalesNode::Update()
 			} //else just go with current scalev
 
 			if (!override) {
-				ov = ov->duplicate();
+				ov = ov->duplicateValue();
 				o = dynamic_cast<Affine*>(ov);
 				if (dynamic_cast<DrawableObject*>(ov)) dynamic_cast<DrawableObject*>(ov)->FindBBox();
 				out->Push(ov, 1);
@@ -972,7 +972,7 @@ int SetRotationsNode::Update()
 	// apply into output
 	if (o) { //single object, easy!
 		if (!override) {
-			ov = ov->duplicate();
+			ov = ov->duplicateValue();
 			o = dynamic_cast<Affine*>(ov);
 		} else ov->inc_count();
 		properties.e[3]->SetData(ov, 1);
@@ -1049,7 +1049,7 @@ int SetRotationsNode::Update()
 			} //else just go with current rotv
 
 			if (!override) {
-				ov = ov->duplicate();
+				ov = ov->duplicateValue();
 				o = dynamic_cast<Affine*>(ov);
 				if (dynamic_cast<DrawableObject*>(ov)) dynamic_cast<DrawableObject*>(ov)->FindBBox();
 				out->Push(ov, 1);
@@ -1186,7 +1186,7 @@ int SetTransformsNode::Update()
 	// apply into output
 	if (o) { //single object, easy!
 		if (!override) {
-			ov = ov->duplicate();
+			ov = ov->duplicateValue();
 			o = dynamic_cast<Affine*>(ov);
 		} else ov->inc_count();
 		properties.e[properties.n-1]->SetData(ov, 1);
@@ -1265,7 +1265,7 @@ int SetTransformsNode::Update()
 			}
 
 			if (!override) {
-				ov = ov->duplicate();
+				ov = ov->duplicateValue();
 				o = dynamic_cast<Affine*>(ov);
 				if (dynamic_cast<DrawableObject*>(ov)) dynamic_cast<DrawableObject*>(ov)->FindBBox();
 				out->Push(ov, 1);
@@ -2804,7 +2804,7 @@ int ExtrudeNode::Update()
 			Error(_("Must have more than 1 point extrusion"));
 			return -1;
 		}
-		dir = pdir->paths.e[0]->duplicate();
+		dir = pdir->paths.e[0]->duplicatePath();
 		dir->openAt(nullptr,0);
 		
 		flatpoint dir_start = dir->path->p();
@@ -2828,7 +2828,7 @@ int ExtrudeNode::Update()
 		Path *path1 = in->paths.e[c];
 		if (!path1 || !path1->path) continue;
 
-		path1 = path1->duplicate();
+		path1 = path1->duplicatePath();
 		path1->openAt(nullptr,0);
 
 		//remove initial/trailing controls if any
@@ -2845,7 +2845,7 @@ int ExtrudeNode::Update()
 		}
 
 		// offset new edge
-		Path *path2 = path1->duplicate();
+		Path *path2 = path1->duplicatePath();
 		path2->Reverse();
 		af.origin(v_diff);
 		path2->Transform(af.m());
@@ -2888,8 +2888,8 @@ int ExtrudeNode::Update()
 
 		} else {
 			//we need to install dups of a path between end points
-			Path *dir1 = dir->duplicate();
-			Path *dir2 = dir->duplicate();
+			Path *dir1 = dir->duplicatePath();
+			Path *dir2 = dir->duplicatePath();
 
 			// so now we have vertex....vertex to add as new edges, minus the initial/final vertices
 			
@@ -4151,7 +4151,7 @@ NodeBase *PointSetNode::Duplicate()
 
 	for (int c=0; c<properties.n-1; c++) {
 		Value *v = properties.e[c]->GetData();
-		if (v) newnode->properties.e[c]->SetData(v->duplicate(), 1);
+		if (v) newnode->properties.e[c]->SetData(v->duplicateValue(), 1);
 	}
 
 	return newnode;
@@ -4746,7 +4746,7 @@ NodeBase *PathGeneratorNode::Duplicate()
 
 	for (int c=0; c<properties.n-1; c++) {
 		Value *v = properties.e[c]->GetData();
-		if (v && v->type() != VALUE_Set) newnode->properties.e[c]->SetData(v->duplicate(), 1);
+		if (v && v->type() != VALUE_Set) newnode->properties.e[c]->SetData(v->duplicateValue(), 1);
 	}
 
 	return newnode;

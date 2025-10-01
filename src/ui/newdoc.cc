@@ -27,7 +27,6 @@
 #include "../impositions/netimposition.h"
 #include "../impositions/impositioneditor.h"
 #include "../impositions/netdialog.h"
-#include "../impositions/singleseditor.h"
 #include "../impositions/signatures.h"
 #include "../core/utils.h"
 #include "../filetypes/scribus.h"
@@ -226,7 +225,7 @@ NewDocWindow::NewDocWindow(Laxkit::anXWindow *parnt,const char *nname,const char
 
 	doc = ndoc;
 	if (doc) {
-		imp = (Imposition *)doc->imposition->duplicate();
+		imp = (Imposition *)doc->imposition->duplicateValue();
 		doc->inc_count();
 	}
 
@@ -297,8 +296,8 @@ int NewDocWindow::init()
 	papersizes = &laidout->papersizes;
 
 	if (doc && doc->imposition)
-		papertype = (PaperStyle*)doc->imposition->GetDefaultPaper()->duplicate();
-	if (!papertype) papertype = dynamic_cast<PaperStyle*>(laidout->GetDefaultPaper()->duplicate());
+		papertype = (PaperStyle*)doc->imposition->GetDefaultPaper()->duplicateValue();
+	if (!papertype) papertype = dynamic_cast<PaperStyle*>(laidout->GetDefaultPaper()->duplicateValue());
 
 	o = papertype->landscape();
 	curorientation = o;
@@ -601,7 +600,7 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 
 		if (id == IMP_CURRENT && doc) {
 			if (imp) imp->dec_count();
-			imp = (Imposition*)doc->imposition->duplicate();
+			imp = (Imposition*)doc->imposition->duplicateValue();
 			impmesbar->SetText(imp->BriefDescription());
 			return 0;
 
@@ -702,7 +701,7 @@ void NewDocWindow::UpdatePaper(int dialogtoimp)
 	PaperStyle *paper = imp->GetDefaultPaper();
 	if (paper) {
 		if (papertype) delete papertype;
-		papertype = (PaperStyle*)paper->duplicate();
+		papertype = (PaperStyle*)paper->duplicateValue();
 
 		psizewindow->UsePaper(papertype, false);
 

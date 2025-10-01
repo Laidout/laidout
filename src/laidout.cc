@@ -467,7 +467,7 @@ ObjectDef *LaidoutApp::makeObjectDef()
 	return sd;
 }
 
-Value *LaidoutApp::duplicate()
+Value *LaidoutApp::duplicateValue()
 {
 	inc_count();
 	return this;

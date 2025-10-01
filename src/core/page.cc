@@ -232,7 +232,7 @@ void PageStyle::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *contex
 }
 
 //! Creates brand new object if s==NULL. Copies over width, height, and flags.
-Value *PageStyle::duplicate()
+Value *PageStyle::duplicateValue()
 {
 	PageStyle *ps=new PageStyle();
 	if (!ps) return NULL;
@@ -242,8 +242,8 @@ Value *PageStyle::duplicate()
 	ps->height=height;
 	ps->min_x=min_x;
 	ps->min_y=min_y;
-	if (margin)  ps->margin  = dynamic_cast<PathsData*>(margin ->duplicate(NULL));
-	if (outline) ps->outline = dynamic_cast<PathsData*>(outline->duplicate(NULL));
+	if (margin)  ps->margin  = dynamic_cast<PathsData*>(margin ->duplicateData(nullptr));
+	if (outline) ps->outline = dynamic_cast<PathsData*>(outline->duplicateData(nullptr));
 
 	return ps;
 }
@@ -442,7 +442,7 @@ void RectPageStyle::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *co
 }
 
 //! Copy over ml,mr,mt,mb,recttype.
-Value *RectPageStyle::duplicate()
+Value *RectPageStyle::duplicateValue()
 {
 	RectPageStyle *ps = new RectPageStyle(recttype);
 	ps->recttype=recttype;
@@ -456,8 +456,8 @@ Value *RectPageStyle::duplicate()
 	ps->height=height;
 	ps->min_x=min_x;
 	ps->min_y=min_y;
-	if (margin)  ps->margin  = dynamic_cast<PathsData*>(margin ->duplicate(NULL));
-	if (outline) ps->outline = dynamic_cast<PathsData*>(outline->duplicate(NULL));
+	if (margin)  ps->margin  = dynamic_cast<PathsData*>(margin ->duplicateData(nullptr));
+	if (outline) ps->outline = dynamic_cast<PathsData*>(outline->duplicateData(nullptr));
 
 	return ps;
 }

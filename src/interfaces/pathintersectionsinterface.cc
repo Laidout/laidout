@@ -111,11 +111,11 @@ const char *PathIntersectionsInterface::Name()
 //! Return new PathIntersectionsInterface.
 /*! If dup!=NULL and it cannot be cast to PathIntersectionsInterface, then return NULL.
  */
-anInterface *PathIntersectionsInterface::duplicate(anInterface *dup)
+anInterface *PathIntersectionsInterface::duplicateInterface(anInterface *dup)
 {
 	if (dup==NULL) dup=new PathIntersectionsInterface(NULL,id,NULL);
 	else if (!dynamic_cast<PathIntersectionsInterface *>(dup)) return NULL;
-	return anInterface::duplicate(dup);
+	return anInterface::duplicateInterface(dup);
 }
 
 

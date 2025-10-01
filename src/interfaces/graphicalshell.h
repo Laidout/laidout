@@ -107,7 +107,7 @@ class GraphicalShell : public LaxInterfaces::anInterface
 	GraphicalShell(int nid=0,Laxkit::Displayer *ndp=NULL);
 	GraphicalShell(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
 	virtual ~GraphicalShell();
-	virtual anInterface *duplicate(anInterface *dup);
+	virtual anInterface *duplicateInterface(anInterface *dup);
 	virtual Laxkit::ShortcutHandler *GetShortcuts();
 
 	virtual const char *IconId() { return "GraphicalShell"; }

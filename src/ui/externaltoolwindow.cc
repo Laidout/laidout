@@ -234,7 +234,7 @@ int ExternalToolManagerWindow::LBUp(int x,int y,unsigned int state,const Laxkit:
 			return 0;
 
 		} else if (haction == EXT_On_Tool) {
-			ExternalTool *t = dynamic_cast<ExternalTool*>(laidout->prefs.external_tool_manager.external_categories.e[hcat]->tools.e[hitem]->duplicate(nullptr));
+			ExternalTool *t = dynamic_cast<ExternalTool*>(laidout->prefs.external_tool_manager.external_categories.e[hcat]->tools.e[hitem]->duplicate());
 			t->object_id = laidout->prefs.external_tool_manager.external_categories.e[hcat]->tools.e[hitem]->object_id;
 			ExternalToolWindow *win = new ExternalToolWindow(nullptr, t, object_id, "updatetool");
 			t->dec_count();

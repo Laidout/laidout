@@ -119,7 +119,7 @@ class Document : public ObjectContainer, public Value
 	virtual void InitMeta();
 
 	 //Value functions
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
 	virtual ObjectDef* makeObjectDef();
 
 	 //page and imposition management

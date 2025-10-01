@@ -2233,7 +2233,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 		if (svghints) {
 			for (int c=0; c<att.attributes.n; c++) {
 				if (!strcmp(att.attributes.e[c]->name,"svg")) continue;
-				svghints->push(att.attributes.e[c]->duplicate(),-1);
+				svghints->push(att.attributes.e[c]->duplicateAtt(),-1);
 			}
 			svg = new Attribute("svg", nullptr);
 			svghints->push(svg,-1);
@@ -2317,7 +2317,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 			value = svgdoc->attributes.e[c]->value;
 			if (!strcmp(name, "content:")) continue;
 
-			if (svghints) svg->push(svgdoc->attributes.e[c]->duplicate(),-1);
+			if (svghints) svg->push(svgdoc->attributes.e[c]->duplicateAtt(),-1);
 		}
 
 		// now svgdoc's subattributes should be a combination of 
@@ -2472,7 +2472,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 				 //  "metadata"
 				 //  "sodipodi:namedview"
 				if (svghints) {
-					svg->push(svgdoc->attributes.e[c]->duplicate(),-1);
+					svg->push(svgdoc->attributes.e[c]->duplicateAtt(),-1);
 				}
 
 				continue;
@@ -2589,7 +2589,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 			 //push any other blocks into svghints.. not expected, but you never know
 			if (svghints) {
 				Attribute *more = new Attribute("docContent",nullptr);
-				more->push(svgdoc->attributes.e[c]->duplicate(),-1);
+				more->push(svgdoc->attributes.e[c]->duplicateAtt(),-1);
 				svghints->push(more,-1);
 			}
 		} // each svgdoc attribute
@@ -4109,7 +4109,7 @@ int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData *paths,
 							//DBG cerr << "-----------fillobj pre"<<endl;
 							//fillobj->dump_out(stdout, 2, 0, nullptr);
 							const char *id = fillobj->Id();
-							fillobj = fillobj->duplicate(nullptr);
+							fillobj = fillobj->duplicateData(nullptr);
 							fillobj->Id(id);
 							fillobj->FindBBox();
 							//DBG cerr << "-----------fillobj post"<<endl;

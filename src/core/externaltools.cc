@@ -92,7 +92,7 @@ ExternalTool::~ExternalTool()
 	if (extra_config) extra_config->dec_count();
 }
 
-anObject *ExternalTool::duplicate(anObject *ref)
+anObject *ExternalTool::duplicate()
 {
 	// ExternalTool *rf = dynamic_cast<ExternalTool*>(ref);
 	ExternalTool *tool = new ExternalTool(command_name, name, category);

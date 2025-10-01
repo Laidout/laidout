@@ -203,20 +203,19 @@ class DrawableObject :  virtual public ObjectContainer,
 	Laxkit::Attribute iohints;
 
 
-	//DrawableObject(LaxInterfaces::SomeData *refobj=NULL);
 	DrawableObject();
 	virtual ~DrawableObject();
 	virtual const char *whattype() { return "Group"; }
 	virtual const char *IconKey() { return "Group"; }
-	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
+	virtual LaxInterfaces::SomeData *duplicateData(LaxInterfaces::SomeData *dup);
 	virtual const char *Id();
 	virtual const char *Id(const char *newid);
 	virtual int dec_count();
 
 	virtual int Selectable();
 
-	 //sub classes MUST redefine pointin() and FindBBox() to point to the proper things.
-	 //default is point to things particular to Groups.
+	// sub classes MUST redefine pointin() and FindBBox() to point to the proper things.
+	// default is point to things particular to Groups.
 	//virtual int pointin(Laxkit::flatpoint pp,int pin=1);
 	virtual void FindBBox();
 	virtual void ComputeAABB(const double *transform, DoubleBBox &box);
@@ -278,7 +277,8 @@ class DrawableObject :  virtual public ObjectContainer,
 
 	 //for Value
 	virtual ObjectDef *makeObjectDef();
-	virtual Value *duplicate();
+	virtual anObject *duplicate() { return duplicateValue(); }
+	virtual Value *duplicateValue();
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,

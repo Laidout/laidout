@@ -2094,7 +2094,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 	int landscape = 0;
 
 	 //****setup paper based on scribus pagesize only if creating a new document....
-	Attribute *a=scribusdoc->find("PAGESIZE");
+	Attribute *a = scribusdoc->find("PAGESIZE");
 	if (a && a->value) {
 		for (c=0; c<laidout->papersizes.n; c++)
 			if (!strcasecmp(laidout->papersizes.e[c]->name,a->value)) {
@@ -2144,7 +2144,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 			 //store all document xml attributes in scribus hints, 
 			 //but not the whole content, 
 			if (!strcmp(scribusdoc->attributes.e[c]->name,"content:")) continue;
-			slahead->push(scribusdoc->attributes.e[c]->duplicate(),-1);
+			slahead->push(scribusdoc->attributes.e[c]->duplicateAtt(),-1);
 		}
 		scribushints->push(slahead,-1);
 	}
@@ -2212,7 +2212,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 
 			 //remaining stuff is iohint 
 			if (scribushints) {
-				a=page->duplicate();
+				a = page->duplicateAtt();
 				sprintf(scratch,"%d",pagenum);
 				makestr(a->name,"scribusPageHint");
 				makestr(a->value,scratch);
@@ -2383,7 +2383,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 				mdata->m(matrix);
 				mdata->maxx=w/72;
 				mdata->maxy=h/72;
-				mdata->attributes=object->duplicate();
+				mdata->attributes = object->duplicateAtt();
 				//int i=-1;
 				//if (mdata->attributes->find("PFILE",&i)) {
 				//	mdata->attributes.remove(i);
@@ -2519,7 +2519,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 		} else if (scribushints) {
 			 //push any other blocks into scribushints.. we can usually safely ignore them
 			Attribute *more=new Attribute("docContent",NULL);
-			more->push(scribusdoc->attributes.e[c]->duplicate(),-1);
+			more->push(scribusdoc->attributes.e[c]->duplicateAtt(),-1);
 			scribushints->push(more,-1);
 			continue;
 		}
@@ -2553,7 +2553,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 				obj=layer->e(c3);
 				DBG cerr<<"scribus master page object: "<<obj->whattype()<<endl;
 
-				newobj=obj->duplicate(NULL);
+				newobj = obj->duplicateData(nullptr);
 				if (!newobj) {
 					DBG cerr<<" *** could not duplicate "<<obj->whattype()<<endl;
 					continue;

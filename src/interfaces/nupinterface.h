@@ -152,7 +152,7 @@ class NUpInterface : public LaxInterfaces::ObjectInterface
 	NUpInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
 	virtual ~NUpInterface();
 	virtual Laxkit::ShortcutHandler *GetShortcuts();
-	virtual anInterface *duplicate(anInterface *dup=NULL);
+	virtual anInterface *duplicateInterface(anInterface *dup);
 
 	virtual const char *IconId() { return "NUp"; }
 	virtual const char *Name();

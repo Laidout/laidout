@@ -220,9 +220,9 @@ SignatureInterface::SignatureInterface(LaxInterfaces::anInterface *nowner,int ni
 	firsttime=1;
 
 	if (sig) {
-		sigimp=(SignatureImposition*)sig->duplicate();
+		sigimp = (SignatureImposition*)sig->duplicateValue();
 	} else {
-		sigimp=new SignatureImposition;
+		sigimp = new SignatureImposition;
 	}
 	siginstance=sigimp->GetSignature(0,0);
 	signature=siginstance->pattern;
@@ -940,12 +940,12 @@ int SignatureInterface::draws(const char *atype)
 //! Return a new SignatureInterface if dup=NULL, or anInterface::duplicate(dup) otherwise.
 /*! 
  */
-anInterface *SignatureInterface::duplicate(anInterface *dup)//dup=NULL
+anInterface *SignatureInterface::duplicateInterface(anInterface *dup)
 {
 	if (dup==NULL) dup=new SignatureInterface(NULL,id,NULL);
 	else if (!dynamic_cast<SignatureInterface *>(dup)) return NULL;
 	
-	return anInterface::duplicate(dup);
+	return anInterface::duplicateInterface(dup);
 }
 
 
@@ -2172,7 +2172,7 @@ int SignatureInterface::adjustControl(int handle, int dir)
 		else if (i>laidout->papersizes.n-3) i=0;
 		int landscape=paper->landscape();
 
-		paper=(PaperStyle*)laidout->papersizes.e[i]->duplicate();
+		paper = (PaperStyle*)laidout->papersizes.e[i]->duplicateValue();
 		paper->landscape(landscape);
 		SetPaper(paper);
 		paper->dec_count();
@@ -3504,7 +3504,7 @@ int SignatureInterface::UseThisImposition(Imposition *imp)
 	if (!simp) return 1;
 
 	if (sigimp) sigimp->dec_count();
-	sigimp=(SignatureImposition*)imp->duplicate();
+	sigimp = (SignatureImposition*)imp->duplicateValue();
 	siginstance=sigimp->GetSignature(0,0);
 	signature=siginstance->pattern;
 	foldinfo=signature->foldinfo;

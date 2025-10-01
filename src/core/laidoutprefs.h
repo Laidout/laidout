@@ -63,7 +63,7 @@ class LaidoutPreferences : public Value
 	virtual ~LaidoutPreferences();
 
 	virtual ObjectDef *makeObjectDef();
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v); //return 1 for success, 2 for success, but other contents changed too, -1 for unknown
 	virtual int SavePrefs(const char *file=NULL);

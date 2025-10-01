@@ -39,11 +39,12 @@ class LPathsData : public DrawableObject,
 	virtual void FindBBox();
 	virtual void ComputeAABB(const double *transform, DoubleBBox &box);
 	virtual int pointin(Laxkit::flatpoint pp,int pin=1);
-	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
+	virtual LaxInterfaces::SomeData *duplicateData(LaxInterfaces::SomeData *dup);
 	virtual void touchContents();
 
 	 //from Value:
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
+	virtual anObject *duplicate() { return duplicateValue(); }
 	virtual ObjectDef *makeObjectDef();
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);
@@ -70,10 +71,11 @@ class LPathInterface : public LaxInterfaces::PathInterface,
 
 	LPathInterface(int nid,Laxkit::Displayer *ndp);
 	virtual const char *whattype() { return "PathInterface"; }
-	virtual LaxInterfaces::anInterface *duplicate(LaxInterfaces::anInterface *dup);
+	virtual LaxInterfaces::anInterface *duplicateInterface(LaxInterfaces::anInterface *dup);
 
 	//from value
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
+	virtual anObject *duplicate() { return duplicateValue(); }
 	virtual ObjectDef *makeObjectDef();
 	virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual Value *dereference(const char *extstring, int len);

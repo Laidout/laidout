@@ -120,12 +120,12 @@ void LPathsData::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContex
 	}
 }
 
-LaxInterfaces::SomeData *LPathsData::duplicate(LaxInterfaces::SomeData *dup)
+LaxInterfaces::SomeData *LPathsData::duplicateData(LaxInterfaces::SomeData *dup)
 {
 	if (dup && !dynamic_cast<LPathsData*>(dup)) return NULL; //wrong type for referencc object!
 	if (!dup) dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
-	PathsData::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	PathsData::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dup;
 }
 
@@ -133,11 +133,11 @@ LaxInterfaces::SomeData *LPathsData::duplicate(LaxInterfaces::SomeData *dup)
 //--------Value functions: 
 
 
-Value *LPathsData::duplicate()
+Value *LPathsData::duplicateValue()
 {
-	SomeData *dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
-	PathsData::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	SomeData *dup = dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("PathsData"));
+	PathsData::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dynamic_cast<Value*>(dup);
 }
 
@@ -320,7 +320,7 @@ int LPathsData::Evaluate(const char *func,int len, ValueHash *context, ValueHash
 			pathsdata->m(m());
 			pathsdata->InstallLineStyle(linestyle);
 			pathsdata->InstallFillStyle(fillstyle);
-			LaxInterfaces::Path *path = paths.e[c]->duplicate();
+			LaxInterfaces::Path *path = paths.e[c]->duplicatePath();
 			pathsdata->paths.push(path);
 			set->Push(pathsdata, 1);
 		}
@@ -339,7 +339,7 @@ int LPathsData::Evaluate(const char *func,int len, ValueHash *context, ValueHash
 				return 1;
 			}
 			for (int c2=0; c2<p->paths.n; c2++) {
-				LaxInterfaces::Path *pp = p->paths.e[c2]->duplicate();
+				LaxInterfaces::Path *pp = p->paths.e[c2]->duplicatePath();
 				paths->paths.push(pp);
 			}
 		}
@@ -472,17 +472,17 @@ LPathInterface::LPathInterface(int nid,Laxkit::Displayer *ndp)
 }
 
 
-LaxInterfaces::anInterface *LPathInterface::duplicate(LaxInterfaces::anInterface *dup)
+LaxInterfaces::anInterface *LPathInterface::duplicateInterface(LaxInterfaces::anInterface *dup)
 {
 	if (dup==NULL) dup=dynamic_cast<anInterface *>(new LPathInterface(id,NULL));
 	else if (!dynamic_cast<LPathInterface *>(dup)) return NULL;
 
-	return PathInterface::duplicate(dup);
+	return PathInterface::duplicateInterface(dup);
 }
 
 
 //! Returns this, but count is incremented.
-Value *LPathInterface::duplicate()
+Value *LPathInterface::duplicateValue()
 {
     this->inc_count();
     return this;

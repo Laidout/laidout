@@ -46,12 +46,12 @@ SinglesInterface::~SinglesInterface()
 const char *SinglesInterface::Name()
 { return _("Singles"); }
 
-anInterface *SinglesInterface::duplicate(anInterface *dup)
+anInterface *SinglesInterface::duplicateInterface(anInterface *dup)
 {
 	if (dup == nullptr) dup = new SinglesInterface(nullptr,id,nullptr);
 	else if (!dynamic_cast<SinglesInterface *>(dup)) return nullptr;
 	
-	return anInterface::duplicate(dup);
+	return anInterface::duplicateInterface(dup);
 }
 
 int SinglesInterface::InterfaceOn()
@@ -123,7 +123,7 @@ int SinglesInterface::UseThisImposition(Imposition *imp)
 	if (!s) return 1;
 
 	if (singles) singles->dec_count();
-	singles = (Singles*)imp->duplicate();
+	singles = (Singles*)imp->duplicateValue();
 	
 	if (singles->NumPages() == 0) {
 		singles->NumPages(1);

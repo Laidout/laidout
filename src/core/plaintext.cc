@@ -250,7 +250,7 @@ void PlainText::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext
 
 /*! Does NOT copy file or owner.
  */
-Value *PlainText::duplicate()
+Value *PlainText::duplicateValue()
 {
 	PlainText *obj = new PlainText(thetext);
 	obj->texttype = texttype;

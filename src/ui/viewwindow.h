@@ -44,6 +44,7 @@ class VObjContext : public LaxInterfaces::ObjectContext
 	virtual VObjContext &operator=(const VObjContext &oc);
 	virtual int Set(ObjectContext *oc);
 	virtual int set(LaxInterfaces::SomeData *nobj, int n, ...);
+	virtual void set(int ii, LaxInterfaces::SomeData *o) { ObjectContext::set(ii,o); }
 	virtual void clear();
 	virtual void ClearTop();
 	virtual void clearToPage();
@@ -201,7 +202,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 
 	 //from Value
 	virtual int type();
-    virtual Value *duplicate();
+    virtual Value *duplicateValue();
 	virtual ObjectDef *makeObjectDef();
 	virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual Value *dereference(const char *extstring, int len);

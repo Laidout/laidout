@@ -73,7 +73,7 @@ class PlainText : virtual public Laxkit::Resourceable, virtual public Value, vir
 
 	//from Value:
 	virtual ObjectDef *makeObjectDef();
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
 	virtual Value *dereference(const char *extstring, int len);
 
 	//from FunctionEvaluator:

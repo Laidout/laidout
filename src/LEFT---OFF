@@ -1698,6 +1698,7 @@ FileDialog filedialog:
   DONE should probably have a scroll bar
 
 ShortcutWindow2
+  remove old ShortcutWindow
   bug: area list is missing
   "new action" doesn't work, just adds first action from existing menu
 

@@ -96,23 +96,23 @@ void LImagePatchData::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpC
 	if (!foundconfig) ImagePatchData::dump_in_atts(att,flag,context);
 }
 
-LaxInterfaces::SomeData *LImagePatchData::duplicate(LaxInterfaces::SomeData *dup)
+LaxInterfaces::SomeData *LImagePatchData::duplicateData(LaxInterfaces::SomeData *dup)
 {
 	if (dup && !dynamic_cast<LImagePatchData*>(dup)) return NULL; //wrong type for referencc object!
 	if (!dup) dup=dynamic_cast<SomeData*>(somedatafactory()->NewObject("ImagePatchData"));
-	ImagePatchData::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	ImagePatchData::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dup;
 }
 
 
 //------Value functions:
 
-Value *LImagePatchData::duplicate()
+Value *LImagePatchData::duplicateValue()
 {
 	SomeData *dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("ImagePatchData"));
-	ImagePatchData::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	ImagePatchData::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dynamic_cast<Value*>(dup);
 }
 
@@ -245,23 +245,23 @@ void LColorPatchData::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpC
 	FindBBox();
 }
 
-LaxInterfaces::SomeData *LColorPatchData::duplicate(LaxInterfaces::SomeData *dup)
+LaxInterfaces::SomeData *LColorPatchData::duplicateData(LaxInterfaces::SomeData *dup)
 {
 	if (dup && !dynamic_cast<LColorPatchData*>(dup)) return NULL; //wrong type for referencc object!
 	if (!dup) dup=dynamic_cast<SomeData*>(somedatafactory()->NewObject("ColorPatchData"));
-	ColorPatchData::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	ColorPatchData::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dup;
 }
 
 
 //------Value functions:
 
-Value *LColorPatchData::duplicate()
+Value *LColorPatchData::duplicateValue()
 {
 	SomeData *dup=dynamic_cast<SomeData*>(LaxInterfaces::somedatafactory()->NewObject("ColorPatchData"));
-	ColorPatchData::duplicate(dup);
-	DrawableObject::duplicate(dup);
+	ColorPatchData::duplicateData(dup);
+	DrawableObject::duplicateData(dup);
 	return dynamic_cast<Value*>(dup);
 }
 
@@ -352,9 +352,9 @@ LImagePatchInterface::LImagePatchInterface(int nid,Laxkit::Displayer *ndp)
 	rendermode = RENDER_Controls_Only;
 }
 
-anInterface *LImagePatchInterface::duplicate(anInterface *dup)
+anInterface *LImagePatchInterface::duplicateInterface(anInterface *dup)
 {
-	return ImagePatchInterface::duplicate(new LImagePatchInterface(id,NULL));
+	return ImagePatchInterface::duplicateInterface(new LImagePatchInterface(id, nullptr));
 }
 
 int LImagePatchInterface::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *k)
@@ -377,7 +377,7 @@ int LImagePatchInterface::CharInput(unsigned int ch,const char *buffer,int len,u
 
 
 //! Returns this, but count is incremented.
-Value *LImagePatchInterface::duplicate()
+Value *LImagePatchInterface::duplicateValue()
 {
     this->inc_count();
     return this;
@@ -473,9 +473,9 @@ LColorPatchInterface::LColorPatchInterface(int nid,Laxkit::Displayer *ndp)
 	rendermode = RENDER_Controls_Only;
 }
 
-anInterface *LColorPatchInterface::duplicate(anInterface *dup)
+anInterface *LColorPatchInterface::duplicateInterface(anInterface *dup)
 {
-	return ColorPatchInterface::duplicate(new LColorPatchInterface(id,NULL));
+	return ColorPatchInterface::duplicateInterface(new LColorPatchInterface(id, nullptr));
 }
 
 int LColorPatchInterface::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *k)
@@ -497,7 +497,7 @@ int LColorPatchInterface::CharInput(unsigned int ch,const char *buffer,int len,u
 }
 
 //! Returns this, but count is incremented.
-Value *LColorPatchInterface::duplicate()
+Value *LColorPatchInterface::duplicateValue()
 {
     this->inc_count();
     return this;

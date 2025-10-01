@@ -56,7 +56,7 @@ class Singles : public Imposition
 	virtual void GetDefaultPageDimensions(double *x, double *y);
 	virtual const char *BriefDescription();
 	virtual ObjectDef *makeObjectDef();
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
 	virtual PaperGroup *GetPaperGroup(int layout = -1, int index = -1);
 	virtual PaperStyle *GetDefaultPaper();
 	virtual int SetPaperGroup(PaperGroup *ngroup);

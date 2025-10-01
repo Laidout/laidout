@@ -64,7 +64,7 @@ class PageStyle : public Value
 	virtual ~PageStyle();
 	virtual ObjectDef *makeObjectDef();
 	virtual const char *whattype() { return "PageStyle"; }
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
 	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 
@@ -98,7 +98,7 @@ class RectPageStyle : public PageStyle
 	RectPageStyle(unsigned int ntype=RECTPAGE_LRTB,double l=0,double r=0,double t=0,double b=0);
 	virtual const char *whattype() { return "RectPageStyle"; }
 	virtual ObjectDef *makeObjectDef();
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
 	virtual void RebuildOutline();
 	virtual void RebuildMarginPath();
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);

@@ -1303,7 +1303,7 @@ void NodeBase::DuplicateProperties(NodeBase *from)
 {
 	for (int c=0; c < from->properties.n; c++) {
 		NodeProperty *property = from->properties.e[c];
-		Value *v = NULL;
+		Value *v = nullptr;
 
 		 //sometimes dup data, just in case
 		if (property->IsBlock()
@@ -1312,7 +1312,7 @@ void NodeBase::DuplicateProperties(NodeBase *from)
 			 ) {
 			v = property->GetData();
 			if (v && property->data_is_linked) v->inc_count();
-			else if (v) v = v->duplicate();
+			else if (v) v = v->duplicateValue();
 		}
 
 		NodeProperty *prop = FindProperty(property->name);
@@ -3234,11 +3234,11 @@ void NodeInterface::SetOriginatingData(Laxkit::anObject *data, int absorb)
 //! Return new NodeInterface.
 /*! If dup!=NULL and it cannot be cast to NodeInterface, then return NULL.
  */
-anInterface *NodeInterface::duplicate(anInterface *dup)
+anInterface *NodeInterface::duplicateInterface(anInterface *dup)
 {
 	if (dup==NULL) dup=new NodeInterface(NULL,id,NULL);
 	else if (!dynamic_cast<NodeInterface *>(dup)) return NULL;
-	return anInterface::duplicate(dup);
+	return anInterface::duplicateInterface(dup);
 }
 
 
@@ -7206,7 +7206,7 @@ int NodeInterface::ExportNodes(const char *file, const char *format)
 	NodeExportContext context(&selected, NULL,NULL,(grouptree.n ? grouptree.e[0] : nodes), (nodes ? nodes->colors : NULL), false);
 		
 	if (passthrough) { 
-		context.passthrough = passthrough->duplicate();
+		context.passthrough = passthrough->duplicateAtt();
 	}
 
 	if (!file || !strcmp(file, "pipe")) {

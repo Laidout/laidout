@@ -36,7 +36,7 @@ class FontValue : virtual public Value, virtual public FunctionEvaluator
     virtual const char *whattype() { return "FontValue"; }
 	virtual ObjectDef *makeObjectDef();
 	virtual int getValueStr(char *buffer,int len);
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
 	// virtual Value *dereference(int index);
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);

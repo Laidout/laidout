@@ -89,7 +89,7 @@ int PointSetValue::getValueStr(char *buffer,int len)
 
 /*! Note, this duplicates point info.
  */
-Value *PointSetValue::duplicate()
+Value *PointSetValue::duplicateValue()
 {
 	PointSetValue *dup = new PointSetValue();
 	dup->CopyFrom(this, 2, 0);

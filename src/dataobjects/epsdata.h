@@ -30,7 +30,7 @@ class EpsData : public LaxInterfaces::ImageData
 			  int maxpx=0, int maxpy=0, char delpreview=0);
 	virtual ~EpsData();
 	virtual const char *whattype() { return "EpsData"; }
-	virtual int LoadImage(const char *fname, const char *npreview=NULL, int maxpx=0, int maxpy=0, char del=0);
+	virtual int LoadImage(const char *fname, const char *npreview=NULL, int maxpx=0, int maxpy=0, char del=0,char fit=0,int index=0);
 	
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
 	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);

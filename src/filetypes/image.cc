@@ -90,7 +90,7 @@ ImageExportConfig::ImageExportConfig(DocumentExportConfig *config)
 		use_transparent_bg = conf->use_transparent_bg;
 		width  = conf->width;
 		height = conf->height;
-		if (conf->background) background = conf->background->duplicate();
+		if (conf->background) background = conf->background->duplicateColor();
 
 	} else {
 		image_format = newstr("png");

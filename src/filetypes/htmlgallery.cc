@@ -135,7 +135,7 @@ class HtmlGalleryExportConfig : public DocumentExportConfig
 	HtmlGalleryExportConfig(DocumentExportConfig *config);
 	virtual ~HtmlGalleryExportConfig();
 	virtual const char *whattype() { return "HtmlGalleryExportConfig"; }
-	virtual Value* duplicate();
+	virtual Value* duplicateValue();
 	virtual ObjectDef* makeObjectDef();
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);
@@ -206,7 +206,7 @@ HtmlGalleryExportConfig::~HtmlGalleryExportConfig()
 	delete[] image_template_file;
 }
 
-Value* HtmlGalleryExportConfig::duplicate()
+Value* HtmlGalleryExportConfig::duplicateValue()
 {
 	HtmlGalleryExportConfig *dup = new HtmlGalleryExportConfig(this);
 	return dup;
@@ -319,7 +319,7 @@ Laxkit::Attribute *HtmlGalleryExportConfig::dump_out_atts(Laxkit::Attribute *att
 	if (html_template_file) att->push("html_template_file", html_template_file);
 	if (page_template_file) att->push("page_template_file", page_template_file);
 	if (image_template_file) att->push("image_template_file", image_template_file);
-	if (templatevars) att->push(templatevars->duplicate(), -1);
+	if (templatevars) att->push(templatevars->duplicateAtt(), -1);
 	return att;
 }
 
@@ -364,7 +364,7 @@ void HtmlGalleryExportConfig::dump_in_atts(Laxkit::Attribute *att,int flag,Laxki
 			templatevars = new AttributeObject(name, value);
 			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
 				if (!att->attributes.e[c]->attributes.e[c2]) continue; //tweak to ignore NULL attributes
-				templatevars->push(att->attributes.e[c]->attributes.e[c2]->duplicate(),-1);
+				templatevars->push(att->attributes.e[c]->attributes.e[c2]->duplicateAtt(),-1);
 			}
 		}
 	}

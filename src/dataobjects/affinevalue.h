@@ -35,7 +35,7 @@ class AffineValue : virtual public Value, virtual public Laxkit::Affine, virtual
     virtual const char *whattype() { return "AffineValue"; }
 	virtual ObjectDef *makeObjectDef();
 	virtual int getValueStr(char *buffer,int len);
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
 	virtual Value *dereference(int index);
 	//virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,

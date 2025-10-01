@@ -36,7 +36,8 @@ class PointSetValue : virtual public Value, virtual public Laxkit::PointSet, vir
 
 	virtual ObjectDef *makeObjectDef();
 	virtual int getValueStr(char *buffer,int len);
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
+	virtual anObject *duplicate() { return duplicateValue(); }
 	virtual Value *dereference(int index);
 	//virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,

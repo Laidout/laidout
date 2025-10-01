@@ -104,15 +104,15 @@ int ObjectIndicator::draws(const char *atype)
 { return 0; }
 
 
-//! Return a new ObjectIndicator if dup=NULL, or anInterface::duplicate(dup) otherwise.
+//! Return a new ObjectIndicator if dup=NULL, or anInterface::duplicateInterface(dup) otherwise.
 /*! 
  */
-anInterface *ObjectIndicator::duplicate(anInterface *dup)//dup=NULL
+anInterface *ObjectIndicator::duplicateInterface(anInterface *dup)
 {
-	if (dup==NULL) dup=new ObjectIndicator(id,NULL);
-	else if (!dynamic_cast<ObjectIndicator *>(dup)) return NULL;
+	if (dup == nullptr) dup = new ObjectIndicator(id, nullptr);
+	else if (!dynamic_cast<ObjectIndicator *>(dup)) return nullptr;
 	
-	return anInterface::duplicate(dup);
+	return anInterface::duplicateInterface(dup);
 }
 
 

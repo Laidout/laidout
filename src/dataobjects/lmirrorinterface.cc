@@ -52,7 +52,7 @@ LMirrorInterface::~LMirrorInterface()
 }
 
 
-LaxInterfaces::anInterface *LMirrorInterface::duplicate(LaxInterfaces::anInterface *dup)
+LaxInterfaces::anInterface *LMirrorInterface::duplicateInterface(LaxInterfaces::anInterface *dup)
 {
 	if (dup==NULL) {
 		MirrorInterface *p = new LMirrorInterface(NULL,id,NULL);
@@ -61,7 +61,7 @@ LaxInterfaces::anInterface *LMirrorInterface::duplicate(LaxInterfaces::anInterfa
 
     } else if (!dynamic_cast<LMirrorInterface *>(dup)) return NULL;
 
-	return MirrorInterface::duplicate(dup);
+	return MirrorInterface::duplicateInterface(dup);
 }
 
 int LMirrorInterface::UseThis(Laxkit::anObject *nobj,unsigned int mask)

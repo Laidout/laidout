@@ -42,7 +42,7 @@ class LMirrorInterface : public LaxInterfaces::MirrorInterface
 	LMirrorInterface(LaxInterfaces::anInterface *nowner, int nid,Laxkit::Displayer *ndp);
 	virtual ~LMirrorInterface();
 	virtual const char *whattype() { return "MirrorInterface"; }
-	virtual LaxInterfaces::anInterface *duplicate(LaxInterfaces::anInterface *dup);
+	virtual LaxInterfaces::anInterface *duplicateInterface(LaxInterfaces::anInterface *dup);
 	virtual int LBDown(int x,int y,unsigned int state,int count, const Laxkit::LaxMouse *d);
 	virtual int Event(const Laxkit::EventData *e, const char *mes);
 
@@ -50,7 +50,7 @@ class LMirrorInterface : public LaxInterfaces::MirrorInterface
 
 
 	//from value
-	//virtual Value *duplicate();
+	//virtual Value *duplicateValue();
 	//virtual ObjectDef *makeObjectDef();
 	//virtual int assign(FieldExtPlace *ext,Value *v);
 	//virtual Value *dereference(const char *extstring, int len);

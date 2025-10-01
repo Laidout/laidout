@@ -174,7 +174,7 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 
 	 //for Value:
 	ObjectDef *makeObjectDef();
-	Value *duplicate();
+	Value *duplicateValue();
 
 	 //commands
 	Document *findDocumentByIdStr(const char *id);

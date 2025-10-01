@@ -594,14 +594,14 @@ int PaperStyle::type()
 }
 
 //! Copy over name, width, height, dpi.
-Value *PaperStyle::duplicate()
+Value *PaperStyle::duplicateValue()
 {
-	PaperStyle *ps=new PaperStyle();
+	PaperStyle *ps = new PaperStyle();
 
 	makestr(ps->name,name);
-	ps->width=width;
-	ps->height=height;
-	makestr(ps->defaultunits,defaultunits);
+	ps->width  = width;
+	ps->height = height;
+	makestr(ps->defaultunits, defaultunits);
 	ps->landscape(landscape());
 
 	return ps;
@@ -696,7 +696,7 @@ int createPaperStyle(ValueHash *context, ValueHash *parameters, Value **value_re
 		if (!str) str="letter";
 		for (int c=0; c<laidout->papersizes.n; c++) {
 			if (strcasecmp(str,laidout->papersizes.e[c]->name)==0) {
-				paper=(PaperStyle*)laidout->papersizes.e[c]->duplicate();
+				paper = (PaperStyle*)laidout->papersizes.e[c]->duplicateValue();
 				break;
 			}
 		}
@@ -900,16 +900,10 @@ int PaperBox::Set(PaperStyle *paper)
 	return 0;
 }
 
-anObject *PaperBox::duplicate(anObject *ref)
+anObject *PaperBox::duplicate()
 {
 	PaperBox *box = nullptr;
-	if (!ref) {
-		box = new PaperBox(nullptr, 0);
-		ref = box;
-	} else {
-		box = dynamic_cast<PaperBox*>(ref);
-		if (!box) return nullptr; //wrong dup type!
-	}
+	box = new PaperBox(nullptr, 0);
 
 	box->which = which;
 	box->paperstyle = (paperstyle ? dynamic_cast<PaperStyle*>(paperstyle->duplicate()) : nullptr);
@@ -966,7 +960,7 @@ void PaperBoxData::FindBBox()
 	}
 }
 
-LaxInterfaces::SomeData *PaperBoxData::duplicate(LaxInterfaces::SomeData *dup)
+LaxInterfaces::SomeData *PaperBoxData::duplicateData(LaxInterfaces::SomeData *dup)
 {
 	PaperBoxData *pdata = nullptr;
 	if (!dup) {
@@ -980,7 +974,7 @@ LaxInterfaces::SomeData *PaperBoxData::duplicate(LaxInterfaces::SomeData *dup)
 	pdata->label        = label;
 	pdata->color        = color;
 	pdata->outlinecolor = outlinecolor;
-	pdata->box          = dynamic_cast<PaperBox*>(box->duplicate(nullptr));
+	pdata->box          = dynamic_cast<PaperBox*>(box->duplicate());
 	pdata->index        = index;
 	pdata->index_back   = index_back;
 	pdata->m(m());
@@ -1051,20 +1045,18 @@ PaperGroup::~PaperGroup()
 	DBG cerr <<"PaperGroup destroyed, obj "<<object_id<<endl;
 }
 
-anObject *PaperGroup::duplicate(anObject *ref)
+anObject *PaperGroup::duplicate()
 {
-	PaperGroup *dup = dynamic_cast<PaperGroup*>(ref);
-	// if (ref && !dup) return nullptr; // bad ref object!
-	if (!dup) dup = new PaperGroup;
+	PaperGroup *dup = new PaperGroup;
 
 	for (int c = 0; c < papers.n; c++) {
-		PaperBoxData *d = dynamic_cast<PaperBoxData*>(papers.e[c]->duplicate(nullptr));
+		PaperBoxData *d = dynamic_cast<PaperBoxData*>(papers.e[c]->duplicate());
 		dup->papers.push(d);
 		d->dec_count();
 	}
 
 	for (int c = 0; c < objs.n(); c++) {
-		SomeData *v = objs.e(c)->duplicate(nullptr);
+		SomeData *v = objs.e(c)->duplicateData(nullptr);
 		dup->objs.push(v);
 		v->dec_count();
 	}

@@ -67,9 +67,9 @@ int AffineValue::getValueStr(char *buffer,int len)
     return 0;
 }
 
-Value *AffineValue::duplicate()
+Value *AffineValue::duplicateValue()
 {
-	AffineValue *dup=new AffineValue(m());
+	AffineValue *dup = new AffineValue(m());
 	return dup;
 }
 

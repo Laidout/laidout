@@ -106,7 +106,7 @@ class GroupInterface : public LaxInterfaces::ObjectInterface, public Value
 	virtual Laxkit::ShortcutHandler *GetShortcuts();
 	virtual const char *whattype() { return "ObjectInterface"; }
 	virtual const char *whatdatatype() { return "Group"; }
-	virtual anInterface *duplicate(anInterface *dup);
+	virtual anInterface *duplicateInterface(anInterface *dup);
 	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu);
 	virtual int Event(const Laxkit::EventData *e,const char *mes);
 	virtual int UseThis(anObject *newdata,unsigned int);
@@ -124,7 +124,8 @@ class GroupInterface : public LaxInterfaces::ObjectInterface, public Value
 
 	//from value
 	virtual int type() { return VALUE_Fields; }
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
+	virtual anObject *duplicate() { return duplicateValue(); }
 	virtual ObjectDef *makeObjectDef();
 	virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual Value *dereference(const char *extstring, int len);

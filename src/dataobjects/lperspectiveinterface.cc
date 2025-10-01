@@ -56,7 +56,7 @@ LPerspectiveInterface::~LPerspectiveInterface()
 }
 
 
-LaxInterfaces::anInterface *LPerspectiveInterface::duplicate(LaxInterfaces::anInterface *dup)
+LaxInterfaces::anInterface *LPerspectiveInterface::duplicateInterface(LaxInterfaces::anInterface *dup)
 {
 	if (dup==NULL) {
 		PerspectiveInterface *p = new LPerspectiveInterface(NULL,id,NULL);
@@ -65,7 +65,7 @@ LaxInterfaces::anInterface *LPerspectiveInterface::duplicate(LaxInterfaces::anIn
 
     } else if (!dynamic_cast<LPerspectiveInterface *>(dup)) return NULL;
 
-	return PerspectiveInterface::duplicate(dup);
+	return PerspectiveInterface::duplicateInterface(dup);
 }
 
 int LPerspectiveInterface::UseThis(Laxkit::anObject *nobj,unsigned int mask)
@@ -499,7 +499,7 @@ int PerspectiveNode::Update()
 
 	} else if (dynamic_cast<PointCollection*>(torig)) {
 		// should catch VoronoiData and *PatchData classes
-		SomeData *newobj = torig->duplicate(nullptr);
+		SomeData *newobj = torig->duplicateData(nullptr);
 		PointCollection *pc = dynamic_cast<PointCollection*>(newobj);
 		pc->Map([&](const flatpoint &pin, flatpoint &pout) { pout = transform->transform(pin); return 1; } );
 		outprop->SetData(dynamic_cast<Value*>(newobj),1);

@@ -39,7 +39,8 @@ class CurveValue : virtual public Value, virtual public Laxkit::CurveInfo, virtu
 	virtual void dump_in_atts(Laxkit::Attribute*, int, Laxkit::DumpContext*);
 	virtual ObjectDef *makeObjectDef();
     virtual int getValueStr(char *buffer,int len);
-    virtual Value *duplicate();
+    virtual Value *duplicateValue();
+    virtual anObject *duplicate() { return duplicateValue(); }
     virtual Value *dereference(int index);
     //virtual int assign(FieldExtPlace *ext,Value *v);
     virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,

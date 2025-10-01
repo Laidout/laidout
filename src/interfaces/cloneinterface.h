@@ -140,7 +140,7 @@ class Tiling : public Value
 	Tiling(const char *nname=NULL, const char *ncategory=NULL);
 	virtual ~Tiling();
 	virtual const char *whattype() { return "Tiling"; }
-	virtual Value *duplicate();
+	virtual Value *duplicateValue();
 
 	virtual void InstallDefaultIcon();
 	virtual void DefaultHex(double side_length);
@@ -267,7 +267,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 	CloneInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
 	virtual ~CloneInterface();
 	virtual Laxkit::ShortcutHandler *GetShortcuts();
-	virtual anInterface *duplicate(anInterface *dup=NULL);
+	virtual anInterface *duplicateInterface(anInterface *dup);
 
 	virtual const char *IconId() { return "Tiler"; }
 	virtual const char *Name();
