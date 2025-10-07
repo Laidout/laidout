@@ -192,7 +192,6 @@ otherobjs= \
 	ui/externaltoolwindow.o \
 	ui/findwindow.o \
 	ui/headwindow.o \
-	ui/helpwindow.o \
 	ui/importimagesdialog.o \
 	ui/impositionselectwindow.o \
 	ui/interfaces.o \
