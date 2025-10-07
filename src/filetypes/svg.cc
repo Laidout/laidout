@@ -3882,7 +3882,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 				}
 
 			} else if (!strcmp(name,"content:")) {
-				int nl=0,pos=0;
+				int nl = 0, pos = 0;
 
 				for (int c2=0; c2<element->attributes.e[c]->attributes.n; c2++) {
 					name  = element->attributes.e[c]->attributes.e[c2]->name;
@@ -3890,7 +3890,10 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 
 					if (!strcmp(name, "tspan")) {
 						Attribute *att = element->attributes.e[c]->attributes.e[c2]->find("content:");
-						if (att && !isblank(att->value)) textobj->InsertString(att->value,-1, 0, -1, &nl,&pos);
+						if (att && !isblank(att->value)) {
+							if (!textobj->IsBlank()) textobj->InsertChar('\n', nl,-1, &nl,&pos);
+							textobj->InsertString(att->value,-1, -1, -1, &nl,&pos);
+						}
 
 						for (int c3=0; c3<element->attributes.e[c]->attributes.e[c2]->attributes.n; c3++) {
 							name  = element->attributes.e[c]->attributes.e[c2]->attributes.e[c3]->name;
@@ -3901,13 +3904,16 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribut
 								ValueHash extra;
 								InlineCSSToAttribute(value, &spanstyle);
 
-								for (int c4=0; c4<spanstyle.attributes.n; c4++) {
+								for (int c4 = 0; c4 < spanstyle.attributes.n; c4++) {
 									name  = spanstyle.attributes.e[c4]->name;
 									value = spanstyle.attributes.e[c4]->value;
 
 									if (!strcmp(name, "font-size")) {
 										DoubleAttribute(value, &font_size); // *** note this is wrong, ignores keywords and units
 										if (font_size == 0) font_size = -1;
+									
+									} else if (!strcmp(name, "line-height")) { //TODO: custom line spacing per line
+										DoubleAttribute(value, &textobj->linespacing); //TODO: this assumes em.. check for units or %!!!
 									}
 								}
 							}
