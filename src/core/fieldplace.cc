@@ -39,8 +39,8 @@ namespace Laidout {
 
 FieldExtPlace::ExtNode::ExtNode(const char *str, int i)
 {
-	ext=newstr(str);
-	exti=i;
+	ext  = newstr(str);
+	exti = i;
 }
 
 
@@ -151,8 +151,11 @@ int FieldExtPlace::operator!=(const FieldExtPlace &place) const
 //! Return the string and integer of element i (if ei!=NULL).
 const char *FieldExtPlace::e(int i, int *ei) const
 {
-	if (i<0 && i>=ext.n) { if (ei) *ei=-1; return NULL; }
-	if (ei) *ei=ext.e[i]->exti;
+	if (i < 0 && i >= ext.n) {
+		if (ei) *ei=-1;
+		return nullptr;
+	}
+	if (ei) *ei = ext.e[i]->exti;
 	return ext.e[i]->ext;
 }
 
@@ -166,6 +169,12 @@ int FieldExtPlace::e(int i,const char *val, int ei)
 	makestr(ext.e[i]->ext,val);
 	ext.e[i]->exti=ei;
 	return 0;
+}
+
+int FieldExtPlace::push(char *nd, char local, int where)
+{
+	// return PtrStack<char>::push(nd, local, where);
+	return ext.push(new ExtNode(nd,-1), 1, where);
 }
 
 int FieldExtPlace::push(const char *nd,int where)
@@ -188,6 +197,7 @@ char *FieldExtPlace::popWithIndex(int *i, int which)
 	if (i) *i = node->exti;
 	char *str = node->ext;
 	node->ext = nullptr;
+	delete node;
 	return str;
 }
 

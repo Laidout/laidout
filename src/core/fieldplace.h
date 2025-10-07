@@ -23,7 +23,7 @@ namespace Laidout {
 
 //------------------------------ FieldExtPlace -------------------------------------------
 
-class FieldExtPlace : protected Laxkit::PtrStack<char>
+class FieldExtPlace
 {
 	class ExtNode {
 	  public:
@@ -46,7 +46,7 @@ class FieldExtPlace : protected Laxkit::PtrStack<char>
 	virtual int operator!=(const FieldExtPlace &place) const;
 	virtual FieldExtPlace &operator=(const FieldExtPlace &place);
 	virtual int push(const char *nd, int where=-1);
-	virtual int push(char *nd, char local=-1, int where=-1) { return PtrStack<char>::push(nd, local, where); }
+	virtual int push(char *nd, char local = -1, int where = -1);
 	virtual int pushIndex(int i,int where=-1);
 	virtual char *popWithIndex(int *i, int which=-1);
 	virtual int remove(int which=-1);
