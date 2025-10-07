@@ -83,6 +83,8 @@ bool StreamInterface::AttachStream()
 		// *** set StreamAttachment and/or tonpath link to object
 		// *** todo: need to clarify how textonpath links to other objects.. this extrahover is meaningless outside viewport context
 		tonpath->UseThisPath(extrahover, outline_index);
+		tonpath->Baseline(hover_baseline * default_size / 72, false);
+		if (hover_reverse_dir) tonpath->PathDirection(1);
 
 		ObjectContext *oc = nullptr;
 		viewport->NewData(tonpath, &oc);//viewport adds only its own counts
@@ -111,13 +113,17 @@ bool StreamInterface::AttachStream()
 		ErrorLog log;
 		stream->ImportText(txt,-1, nullptr, false, &log);
 		stream->dump_out(stderr, 0, 0, nullptr);
-		dumperrorlog("Stream test error log", log);
 
 		DrawableObject *dobj = dynamic_cast<DrawableObject*>(extrahover->obj);
 		StreamAttachment *attachment = new StreamAttachment(dobj, stream);
 		dobj->streams.push(attachment);
 		attachment->dec_count();
 		stream->dec_count();
+
+		DBGL("-----------dobj with area attachment:");
+		dobj->dump_out(stderr, 0, 0, nullptr);
+
+		dumperrorlog("Stream test error log", log);
 
 		PostMessage("IMP ME!!");
 	}

@@ -531,6 +531,31 @@ StreamText::~StreamText()
 	delete[] text;
 }
 
+
+/*! Returns the found number of breaks.
+ */
+int StreamText::DetectBreaks()
+{
+	const char *s = text;
+	num_breaks = 0;
+	while (*s) {
+		while(*s && isspace(*s)) s++;
+		if (!*s) break;
+		while (*s && !isspace(*s)) s++;
+		num_breaks++;
+	}
+	return num_breaks;
+}
+
+int StreamText::SetText(const char *txt,int n)
+{
+	if (n < 0) n = strlen(txt);
+	delete[] text;
+	text = newnstr(txt, n);
+	len  = n;
+	return 0;
+}
+
 int StreamText::SetFromEntities(const char *cdata, int cdata_len)
 {
 	//***TODO: compress whitespace
@@ -572,7 +597,7 @@ int StreamText::NumBreaks()
  * hyphens have low break potential, spaces have a lot, but not as much
  * as line breaks.
  */
-int StreamText::BreakInfo(int index)
+int StreamText::BreakSeverity(int index)
 {
 	//assume we only have spaces, and that tabs and returns previously converted to explicit break chunks.
 	return 1;
@@ -1165,6 +1190,36 @@ int Stream::ImportXMLAtt(Attribute *att, StreamChunk *&last_chunk, StreamElement
 }
 
 
+//------------------------------ BaselineGrid ---------------------------------
+
+Value *NewBaselineGridFunc() { return new FlatvectorValue; }
+
+ObjectDef default_BaselineGrid_ObjectDef(nullptr,"BaselineGrid",_("Baseline grid"),_("For area streams, a guild to sync baseline across objects"),
+							 "class", nullptr, nullptr,
+							 nullptr, 0,
+							 NewBaselineGridFunc, nullptr);
+
+ObjectDef *Get_BaselineGrid_ObjectDef()
+{
+	ObjectDef *def = &default_BaselineGrid_ObjectDef;
+	if (def->fields) return def;
+
+	// virtual int pushVariable(const char *name,const char *nName, const char *ndesc, const char *type, unsigned int fflags, Value *v,int absorb);
+
+	def->pushVariable("default_spacing", _("Default spacing"), _("Distance between baselines"), "real", 0, new DoubleValue(15.0),true);
+	def->pushVariable("direction", _("Direction"), _("Direction of baselines"), "Vector2", 0, new FlatvectorValue(1,0),true);
+	def->pushVariable("offset", _("Offset"), _("Offset from origin to start a line"), "Vector2", 0, new FlatvectorValue(0,0),true);
+	
+	return def;
+}
+
+ObjectDef *BaselineGrid::makeObjectDef()
+{
+	Get_BaselineGrid_ObjectDef()->inc_count();
+	return Get_BaselineGrid_ObjectDef();
+}
+
+
 //------------------------------------- StreamAttachment ----------------------------------
 
 
@@ -1179,6 +1234,7 @@ StreamAttachment::StreamAttachment(DrawableObject *nobject, Stream *nstream)
     stream = nstream;
     if (stream) stream->inc_count();
 
+    baseline_dir.x = 1;
     cache = nullptr;
 }
 
@@ -1186,6 +1242,7 @@ StreamAttachment::~StreamAttachment()
 {
 	if (stream) stream->dec_count();
 	if (cache)  cache ->dec_count();
+	if (baseline_grid) baseline_grid->dec_count();
 }
 
 
@@ -1240,18 +1297,27 @@ LaxInterfaces::PathsData *PathBooleanSubtract(LaxInterfaces::PathsData *area, La
  * Overwrites anything in cache chain, adding more nodes if necessary, and deleting unused ones.
  * or create and return a new one if cache == nullptr.
  */
-StreamCache *RemapAreaStream(DrawableObject *target, StreamAttachment *attachment, int start_chunck, int chunk_offset)
+StreamCache *RemapAreaStream(DrawableObject *target, StreamAttachment *attachment)
 {
 	if (!attachment) return nullptr;
 	
 	Stream      *stream = attachment->stream;
 	StreamCache *cache  = attachment->cache;
+	StreamChunk *start_chunk = attachment->starting_chunk;
+	// StreamChunk *end_chunk   = attachment->ending_chunk;
 
-	if (cache && cache->modtime > 0 && stream->modtime < cache->modtime) return cache; //probably set ok
+	if (cache && cache->modtime > 0 && stream->modtime < cache->modtime && target->modtime < cache->modtime)
+		return cache; //probably set ok
 
 
 	//-------- compute possible breaks if necessary
-	//***
+	StreamChunk *chunk = start_chunk;
+	if (!chunk) return nullptr;
+	while (chunk) {
+		chunk->DetectBreaks();
+		chunk = chunk->next;
+	}
+	chunk = start_chunk;
 
 
 	//----------compute layout area:
@@ -1274,8 +1340,27 @@ StreamCache *RemapAreaStream(DrawableObject *target, StreamAttachment *attachmen
 
 
 	//--------------compute actual breaks within area
-	//***
 	
+	// determine baseline
+	flatvector baseline = attachment->baseline_dir;
+	flatvector baseline_offset;
+	if (attachment->baseline_grid) {
+		Affine trn = target->GetTransformToContext(true, 0);
+		baseline = trn.transformVector(attachment->baseline_grid->direction);
+		baseline_offset = trn.transformPoint(attachment->baseline_grid->offset);
+	}
+	
+	// intersect baseline with area path
+	// *** there may be many intersections, need to break down in-out segments
+	
+	// add chunk pieces along trimmed baseline until max reached
+	// ***
+	
+	// next line... repeat until out of bounds for area..
+	// ***
+	
+	// compute chunks/cache for next area in chain if any
+	// ***
 
 
 	return cache;

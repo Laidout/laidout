@@ -200,9 +200,10 @@ class StreamChunk
 	virtual ~StreamChunk();
 	virtual const char *whattype() { return "StreamChunk"; }
 
-	virtual int NumBreaks() = 0;
-	virtual int BreakInfo(int index) = 0;
 	virtual int Type() = 0; //see StreamChunkTypes
+	virtual int NumBreaks() = 0;
+	virtual int BreakSeverity(int index) = 0;
+	virtual int DetectBreaks() = 0;
 
 	virtual StreamChunk *AddAfter(StreamChunk *chunk);
 	virtual void AddBefore(StreamChunk *chunk);
@@ -235,9 +236,10 @@ class StreamBreak : public StreamChunk
 	virtual const char *whattype() { return "StreamBreak"; }
 
 	// StreamChunk overrides:
-	virtual int NumBreaks() { return 0; }
-	virtual int BreakInfo(int type) { return 0; }
 	virtual int Type() { return CHUNK_Break; }
+	virtual int NumBreaks() { return 0; }
+	virtual int BreakSeverity(int type) { return 0; }
+	virtual int DetectBreaks() { return 1; }
 
 	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
 	virtual void dump_in_atts (Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
@@ -256,9 +258,10 @@ class StreamImage : public StreamChunk
 	virtual ~StreamImage();
 	virtual const char *whattype() { return "StreamImage"; }
 
-	virtual int NumBreaks() { return 0; }
-	virtual int BreakInfo(int type) { return 0; }
 	virtual int Type() { return CHUNK_Image; }
+	virtual int NumBreaks() { return 0; }
+	virtual int BreakSeverity(int type) { return 0; }
+	virtual int DetectBreaks() { return 1; }
 
 	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
 	virtual void dump_in_atts (Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
@@ -273,15 +276,19 @@ class StreamText : public StreamChunk
 	int len; //number of bytes in text (excluding any '\0')
 	char *text; //utf8 string
 
-	int numspaces;
+	int num_breaks = -1; // -1 means need to recompute
 
 	StreamText(StreamElement *pstyle = nullptr);
 	StreamText(const char *txt,int n, StreamElement *pstyle);
 	virtual ~StreamText();
-	virtual int NumBreaks(); //either hyphen, spaces, pp
-	virtual int BreakInfo(int index);
+
 	virtual int Type() { return CHUNK_Text; }
-	virtual int SetFromEntities(const char *cdata, int cdata_len);
+	virtual int NumBreaks(); //either hyphen, spaces, pp
+	virtual int BreakSeverity(int index);
+	virtual int DetectBreaks();
+	
+	int SetText(const char *txt,int n);
+	int SetFromEntities(const char *cdata, int cdata_len);
 
 	virtual Laxkit::Attribute *dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context);
 	virtual void dump_in_atts (Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
@@ -319,7 +326,7 @@ class StreamImporter : public FileFilter, public Value
 
 //------------------------------ Stream ---------------------------------
 
-class Stream : public Laxkit::anObject, public Laxkit::DumpUtility
+class Stream : public Laxkit::Resourceable, public Laxkit::DumpUtility
 {
   protected:
   	void EstablishDefaultStyle();
@@ -348,6 +355,28 @@ class Stream : public Laxkit::anObject, public Laxkit::DumpUtility
 };
 
 
+//------------------------------ BaselineGrid ---------------------------------
+
+class BaselineGrid : public Value
+{
+  public:
+  	double default_spacing = 15;  // in pts? 72 pt / inch, in page space
+  	Laxkit::flatvector direction; // in page space
+  	Laxkit::flatvector offset;    // in page space
+
+
+  	BaselineGrid(double spacing, Laxkit::flatvector dir) { default_spacing = spacing; direction = dir; }
+
+  	// from Value:
+  	virtual Value *duplicateValue() { return new BaselineGrid(default_spacing, direction); }
+  	virtual ObjectDef *makeObjectDef(); //calling code responsible for ref
+  	// virtual int assign(Value *v, const char *extstring); //1 success, 0 fail, 2 for success but other contents changed too, -1 for unknown
+	// virtual int assign(FieldExtPlace *ext,Value *v); //return 1 for success, 2 for success, but other contents changed too, -1 for unknown
+	// virtual Value *dereference(const char *extstring, int len);
+	// virtual Value *dereference(int index);
+};
+
+
 //------------------------------ StreamAttachment ---------------------------------
 
 /*! One StreamAttachment is held by each DrawableObject that the stream needs to lay on,
@@ -363,8 +392,17 @@ class StreamAttachment : public Laxkit::RefCounted
 	Target attachment_target = InsetPath;
 	bool on_path = false;
 
-    Stream *stream;
-    StreamCache *cache; //owned by *this, assume any other refs are for temporary rendering purposes
+
+	Laxkit::flatvector in_point; // these part of TextOnPath or StreamAreaData?
+	Laxkit::flatvector out_point;
+
+	Laxkit::flatvector baseline_dir;
+	BaselineGrid *baseline_grid = nullptr; //overrides baseline_dir if not null. in page space.
+
+	StreamChunk *starting_chunk = nullptr;
+	StreamChunk *ending_chunk = nullptr;
+    Stream *stream = nullptr;
+    StreamCache *cache = nullptr; //owned by *this, assume any other refs are for temporary rendering purposes
 
     StreamAttachment(DrawableObject *nobject, Stream *nstream);
     ~StreamAttachment();
@@ -387,12 +425,16 @@ class StreamCache : public Laxkit::SquishyBox, public Laxkit::RefCounted
 	clock_t modtime = 0;
 	StreamCache *next = nullptr, *prev = nullptr;
 
+	// either image OR font:
+	DrawableObject *image = nullptr;
+	Laxkit::LaxFont *font = nullptr;
+
 	StreamElement *element = nullptr; // has style
 	StreamChunk *chunk = nullptr;     // has content
 	long offset = 0; //how many breaks into chunk to start
 	long len = 0; //how many breaks long in chunk is this cache
 
-	Laxkit::Affine transform;
+	Laxkit::Affine transform; // additional tweak before render
 
 	StreamCache();
 	StreamCache(StreamChunk *ch, long noffset, long nlen);
