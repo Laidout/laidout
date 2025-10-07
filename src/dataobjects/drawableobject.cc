@@ -30,8 +30,7 @@
 #include "bboxvalue.h"
 
 
-#include <iostream>
-#define DBG
+#include <lax/debug.h>
 using namespace std;
 
 
@@ -270,7 +269,7 @@ DrawableObject *DrawableObject::FinalObject()
 		if (fobj) return fobj;
 	}
 
-	DBG cerr << " *** Warning! filter did not return a valid object for "<<Id()<<"!"<<endl;
+	DBGW(" *** Warning! filter did not return a valid object for "<<Id()<<"!");
 	return this;
 }
 
@@ -375,9 +374,10 @@ void DrawableObject::UpdateFromRules()
 			//a do nothing rule
 
 		} else if (link->type==ALIGNMENTRULE_EdgeMagnet) {
-			DBG cerr <<" *** need to implement ALIGNMENTRULE_EdgeMagnet"<<endl;
+			DBGE(" *** need to implement ALIGNMENTRULE_EdgeMagnet");
+
 		} else if (link->type==ALIGNMENTRULE_Code) {
-			DBG cerr <<" *** need to implement ALIGNMENTRULE_Code"<<endl;
+			DBGE(" *** need to implement ALIGNMENTRULE_Code");
 
 		} else if (link->type==ALIGNMENTRULE_Align) {
 			 // Align particular bounding box point to particular parent bounding box point
@@ -396,7 +396,7 @@ void DrawableObject::UpdateFromRules()
 
 		} else {
 			if (!link->target) {
-				DBG cerr << " warning: null rule link->target, skipping for now"<<endl;
+				DBGW(" warning: null rule link->target, skipping for now");
 				break;
 			}
 
@@ -1422,16 +1422,29 @@ Laxkit::Attribute *DrawableObject::dump_out_atts(Laxkit::Attribute *att,int what
 
 	if (streams.n) {
 		att2 = att->pushSubAtt("streams");
-		Utf8String *str;
+		Utf8String str;
 		for (int c = 0; c < streams.n; c++) {
-			att2->push("FIXME");
-			// if (streams.e[c]->IsResourced()) {
-			// 	str.Sprintf("resource:%s", streams.e[c]->Id());
-			// 	att2->push("stream", str.c_str());
-			// } else {
-			// 	Attribute *satt = att2->pushSubAtt("stream");
-			// 	streams.e[c]->dump_out_atts(satt, what, context);
-			// }
+			StreamAttachment *aa = streams.e[c];
+			Attribute *att3 = att2->pushSubAtt("attachment");
+
+			switch(aa->attachment_target) {
+				case StreamAttachment::Skip:        att3->push("target", "Skip");        break;
+				case StreamAttachment::BoundingBox: att3->push("target", "BoundingBox"); break;
+				case StreamAttachment::ObjectPath:  att3->push("target", "ObjectPath");  break;
+				case StreamAttachment::InsetPath:   att3->push("target", "InsetPath");   break;
+				case StreamAttachment::OutsetPath:  att3->push("target", "OutsetPath");  break;
+			}
+
+			att3->push("on_path", aa->on_path ? "yes" : "no");
+			if (aa->stream) {
+				if (aa->stream->IsResourced()) {
+					str.Sprintf("resource:%s", aa->stream->Id());
+					att3->push("stream", str.c_str());
+				} else {
+					Attribute *satt = att3->pushSubAtt("stream");
+					aa->stream->dump_out_atts(satt, what, context);
+				}
+			}
 		}
 	}
 
@@ -1715,11 +1728,50 @@ void DrawableObject::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpCo
 
 		} else if (!strcmp(name,"filter")) {
 			foundfilter = c;
+
+		} else if (!strcmp(name,"streams")) {
+			for (int c2 = 0; c2 < att->attributes.e[c]->attributes.n; c2++) {
+				name  = att->attributes.e[c]->attributes.e[c2]->name;
+				value = att->attributes.e[c]->attributes.e[c2]->value;
+
+				if (!strcmp(name, "attachment")) {
+					StreamAttachment *attachment = new StreamAttachment(this, nullptr);
+
+					for (int c3 = 0; c3 < att->attributes.e[c]->attributes.e[c2]->attributes.n; c3++) {
+						name  = att->attributes.e[c]->attributes.e[c2]->attributes.e[c3]->name;
+						value = att->attributes.e[c]->attributes.e[c2]->attributes.e[c3]->value;
+
+						if (!strcmp(name, "on_path")) {
+							attachment->on_path = BooleanAttribute(value);
+
+						} else if (!strcmp(name, "target")) {							
+							if      (!strcasecmp(value, "Skip"       )) attachment->attachment_target = StreamAttachment::Skip;
+							else if (!strcasecmp(value, "BoundingBox")) attachment->attachment_target = StreamAttachment::BoundingBox;
+							else if (!strcasecmp(value, "ObjectPath" )) attachment->attachment_target = StreamAttachment::ObjectPath;
+							else if (!strcasecmp(value, "InsetPath"  )) attachment->attachment_target = StreamAttachment::InsetPath;
+							else if (!strcasecmp(value, "OutsetPath" )) attachment->attachment_target = StreamAttachment::OutsetPath;
+
+						} else if (!strcmp(name, "stream")) {
+							if (starts_with(value, "resource:")) {
+								value += 9;
+								while (isspace(*value)) value ++;
+								InterfaceManager *imanager = InterfaceManager::GetDefault(true);
+								ResourceManager *rm = imanager->GetResourceManager();
+								attachment->stream = dynamic_cast<Stream*>(rm->FindResource(value,"Stream"));
+
+							} else {
+								attachment->stream = new Stream;
+								attachment->stream->dump_in_atts(att->attributes.e[c]->attributes.e[c2]->attributes.e[c3], 0, context);
+							}
+						}
+					}
+				} // if attachment
+			} // stream attachments
 		}
 	}
 
 	 //is plain group, need to grab the base somedata stuff
-	if (foundconfig==-1) SomeData::dump_in_atts(att, flag,context);
+	if (foundconfig == -1) SomeData::dump_in_atts(att, flag,context);
 
 
 	if (foundfilter >= 0) {
