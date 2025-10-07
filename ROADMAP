@@ -7,8 +7,8 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.098
 -------------
-       Convert website to use hugo
-       Update CI to not use travis (issue #28)
+       Convert website to use hugo, make some new tutorials for really out of date ones
+       Implement tile stacking of signatures, in addition to just duplication
 (done) Import/export new Inkscape multipage art boards via expanded Singles imposition type
 (done) Update Singles editor to edit new artboard style
 (done) Implement some accordion net impositions
@@ -67,6 +67,7 @@ VERSION 0.098
 
 VERSION 0.099
 -------------
+       Update CI to not use travis (issue #28)
        debug previous version a bit
        Undo/Redo
 

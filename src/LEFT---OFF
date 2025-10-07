@@ -13,6 +13,10 @@ down to major items in ../features.md.
 
 ------------ serious release blocking bugs to fix right now:
 
+bug: engraver severely broken.. no lines visible!!
+
+bug: severe numerous clone tiler bugs.. tiling patterns seem messed up. one icon out of whack
+
 bug: if you add a registration mark, you can't move it, but also causes infinite search
 
 bug: in ImageInterface, just undo without doing anything else wrecks image transform, which wrecks whole view
@@ -237,6 +241,11 @@ packaging:
   debian (get in to main repository)
   snapcraft?
   DONE appimage, see: https://github.com/Laidout/laidout/issues/10
+
+settingswindow:
+  need to implement list reordering widget
+  DONE need to implement prefs.UpdatePreference(PtrStack<char>&)
+    DONE put whole list at first occurence, and remove any subsequent occurences
 
 valuewindow:
   bug: uiscale messing up widget scaling.. out of sync with resizes, especially initial
@@ -546,6 +555,7 @@ Scribus scribus:
 
 svg: SVG svgin: svg in:
   in:
+  bug: text multi lines are concatted instead of newlined
     bug: text size is way off.. like 75% smaller after import
     inkscape multipage:
 	  export:
@@ -558,6 +568,7 @@ svg: SVG svgin: svg in:
       DONE page labels should be set from inkscape:label or id
       DONE multi page inkscape import needs to assign proper pages
 	  DONE import to Singles art board
+	DONE bug: text block with line-spacing only in tspan element ignored
     DONE bug: import non-multipage, now doing wrong paper orientation?
     DONE bug: gradient with no p1,p2 defaults to 0,0. should perhaps be 0,1 
     DONE bug: object opacity (as opposed to fill-opacity or stroke-opacity) not handled
@@ -1265,6 +1276,7 @@ node editor node interface NodeInterface: nodes: node: interface:
     search in child groups
     find all
   gegl nodes:
+    clear deprecation warnings
     implement GeglPath to pass in to gegl:path
     maybe have gegl node preview gen be in different thread, as they can be quite lengthy
     not responding to curve updates
@@ -1428,9 +1440,11 @@ node editor node interface NodeInterface: nodes: node: interface:
   DONE needs to remember scaling between instantiation
 
 streaminterface: streams:
+  hover memory leak
   option for local or global baselines.. select a particular baseline grid?
 
-captioninterface CaptionInterface captiondata CaptionData
+captioninterface: CaptionInterface captiondata: CaptionData caption:
+  line spacing optionally per line (in some inkscape svgs)
   default text size is super small
   bug: bitstream vera sans, "Text" convert to path puts e correct, but screen render puts it out too far. huh??
   DONE bug: handles scan zone not working
@@ -1702,7 +1716,7 @@ ShortcutWindow2
   bug: area list is missing
   "new action" doesn't work, just adds first action from existing menu
 
-dual monitors: multi monitor multimonitor
+dual monitors: multi monitor: multimonitor
   open in same screen as mouse
   when you open a new window, ensure that it is always on screen
   DONE centering windows should center on monitor of originating window
@@ -1710,7 +1724,7 @@ dual monitors: multi monitor multimonitor
 
 high dpi hidpi: uiscale: ui_scale:
   check windows, need ThemeUpdate()/UIScaleChanged()
-	image preview label text not scaling, not setting font first?
+    image preview label text not scaling, not setting font first?
 	ToolTip text seems small sometimes. bounds not being computed correctly
 	ImportImagesDialog: scale is a bit all over.. too big padding especially
 	newdoc:
@@ -1745,6 +1759,7 @@ high dpi hidpi: uiscale: ui_scale:
 	  DONE final ok buttons squashed
 	NumSlider arrows hogging the area
 	  DONE LineEdit haywire placement, missing cursor
+	DONE ExternalToolWindow
 	DONE TabFrame tabs not scaling with ui
 	DONE checkbox not circular
 	DONE LineInput and LineEdit not aligning baseline again
@@ -1994,7 +2009,7 @@ implement clobber_protection: "%f~", %f is basename, save in same dir as file (c
   save a copy
   Document::Save
 
-make drag and drop selections work dnd
+make drag and drop selections work dnd:
   implement viewport vector file drop
   implement image file drop to nodes:
     drop text onto specific properties
@@ -2084,10 +2099,10 @@ Tools should remember their settings
      well as the running tool use settings
 
 impositioneditor:
-  implement SinglesInterface
   implement a 2d net editor
   3d developable surfaces? origami?
-  from/to files
+  from(done)/to files
+  DONE implement SinglesInterface
 
 singlesinterface:
   propagate trim and margin to spread renders and page styles
@@ -2250,38 +2265,6 @@ calculator/scripting
   DONE bug: can't remove dict elements
   DONE bug: var a={a:1,b:2}, cannot add to dict, like a.c = 234; a["d"] = 5655
 
-thumbnails:
-  generate for laidout files from current view?
-  default to ~/.cache/thumbnails or $XDG_CACHE_HOME/thumbnails instead of ~/.thumbnails
-
-image import: ImportImagesDialog
-  bug: import all to one page with scale up/scale down doesn't scale properly
-  bug: cancel button is white and no mouseover??
-  bug: cannot import images directly from recents
-  SelectFile should update file/path.. right now only updates filelist
-  ---0.099---
-  ImageImport dialog: (actually, needs a total redesign) import images importimage
-  need thumbnail preview of images in directories
-  when you have a filter, should still show directories(?)
-  Import image list: default previews
-  should have preview for alignment options.. grab destination page to show preview
-  auto bookmarks, one for examples, or save as template
-  Choose/Review tabbed window
-  horizontal stack frame between choose/review and preview window
-  fancier path selector
-  for preview field, show green or something and change tooltip if preview will get generated
-  click on file to preview file, preview to preview preview
-  generate image previews progress box...
-  autogenerate should do special check for ~/.thumbnails to conform to freedesktop spec size and type...
-  importimages-> eps --> they are fit into boxes!! they should maybe be inserted into a stream..
-  importimages: remember last settings
-  DumpImages within Arrangements? a template of rect regions (2-d guides)?  maybe use custom papergroups?
-    would also implement the dump into Limbo
-    dump into any chain of objects, this is really the same thing as laying out a stream, maybe merge this?
-  a "Place" tool like indesign?? preview images and place by dragging out one by one, as well as optionally into Arrangements
-
-  DONE need drag and drop from system for multi-image import
-
 shortcut dialog: shortcuts: shortcut manager shortcutmanager
   bug: ObjectInterface Duplicate objects has key u0000 ???
   bug: on pulling up window, action list shows current tool, but that is not highlighted in area list
@@ -2319,10 +2302,10 @@ signature editor:  Signature editor Signature Editor signatureeditor: signatures
   marks on spine edge per signature in diagonal pattern to easily tell stacking order when binding
 
   tiling style:
-    repeat
     stack then fold
     fold then insert
     fold then place adjacent
+    DONE repeat
   show margin, trim, binding when not totally folded
   for large page counts, need number entry in stacks
   would be nice to indicate when there is a centerfold of any signature
@@ -2356,12 +2339,15 @@ dateutils:
   finish integrating time with a LaxDate
 
 external tools: external commands:
-  need to be able to rearrange order, first in list is default or select one for default
   need access anywhere an object links to a file
   use in image importer
   use to import to objects
-  associate (laidout object type) <-> (external editor)
+  should be able to access manager from settings window
+  DONE window is not escapable
+  DONE External tools window tiny font
 
+  need to be able to rearrange order, first in list is default or select one for default
+  associate (laidout object type) <-> (external editor)
   properties:
     DONE command_name, ie   "lp"
     DONE binary_path        "/usr/bin/lp"
@@ -2369,9 +2355,9 @@ external tools: external commands:
     DONE doc_website        "https://somewhere.com/sometime"
 	DONE parameters: $f {files} {file} {dirname} {basename}
     DONE function to verify file is executable
+    command structure "command {file} --stuff {extra.stuff} {{laidout.globals.frame}} {extra3}"
     extra config: additional context that may be used for templates?
     glob for expected output files (so that we can import generated images, for instance)
-    command structure "command {file} --stuff {extra.stuff} {{laidout.globals.frame}} {extra3}"
 
   DONE Image editor (gimp, krita)
   DONE plain text editor (gvim, console vim, command, etc)
@@ -2510,9 +2496,9 @@ fontdialog: FontDialog
   DONE cursor missing in LineEdits
   DONE bug: makeinwindow SOMETIMES not working, select one, puts on bottom line
 
-Find interface: findinterface:
+Find interface: findinterface: find window:
+  find doesn't seem to work in icons-tiling.svg
   going through next/prev should say Found (3/16) instead of "Found (1):", and have tooltip
-  DONE bug: can't input search?? <- ui scaling issue
   bug: key presses aren't propagating up to viewport?
   bug: FindWindow is not remembering placement
   view type should be: icons, flat list, hierarchy tree list
@@ -2533,12 +2519,13 @@ Find interface: findinterface:
   foreach: scriptable action
   sort found by: modtime, name, page, size, type
   iconselector should have force image to particular size option so we could use object preview directly
+  DONE bug: can't input search?? <- ui scaling issue
 
 cairo:
   cairo image save should use importer to do non-file creation?
   cairo render has color problems with gradients
-  cairo development is dead? investigate alternatives <- update: not dead, at least 1.18 was late 2023!
-  1.18 has COLRv1 support, and ot svg support, and custom font color palette support!!
+  cairo development is dead? investigate alternatives gegl? ctx?
+  1.18 (since late 2023) has COLRv1 support, and ot svg support, and custom font color palette support!!
 
 
 engraving tool: Engraving  engraver
@@ -2638,8 +2625,8 @@ engraving tool: Engraving  engraver
     per stipple, adjust rotation, scale, color, morph
 
 from big import:
-  bug: delete discontinous range of pages doesn't delete all sometimes
   ---0.099---
+  bug: delete discontinous range of pages doesn't delete all sometimes
   thumbs refreshing a lot unnecessarily
   load in seems to wholely load images, instead of only grabbing info
   need some kind of "loading" indication when loading in large images
@@ -2686,23 +2673,6 @@ global resources:
 
 need a Revert option
 
-lgm 2019 feedback and ideas:
-  path tool:
-    hard to see helper graphics, needs haloing
-    press space to dup weight node while dragging
-  method to fix all broken images at once
-    mass image edit, need to remap dirs for old files!!
-    option: do just this one, or fix all
-    old path: _____     new path: _____
-  method to collect all used resources of a doc for distribution
-  be able to load old docs
-  from here on out, ensure backwards compatibility of files still works (at least loading, saving is stretch goal) 
-    enhance mystery data to work with laidout data too?
-  some kind of graphicsmagick LoadToMemory bug.. could be only on loading old file, bad config translation?
-  out clicking from a dialog should probably destroy that dialog.. too easy to get buried confusedly in windows
-  make connecting to online information easy: click to open web browser, xdg-open?
-  from talk: diffusion curves, "local mod" mesh manipulation
-
 ViewWindow:
   current page outline should highlight proper pagestack instance.. currently just goes to first curpage match in stack
   LaidoutViewport::UpdateMarkers() should be in PageMarkerInterface.. maybe add anInterface::ViewportContextChanged()?
@@ -2731,13 +2701,103 @@ need ability to show "reprocessing.." or "progress.." indicator in different thr
 
 object content selector menu to more easily flip between tools for object-content-streams-otherSpecials
 
-need a better file preview system
-  need to wrap laidout_preview_maker(), which previews EPS with the help of gs
+
+previews: thumbs:
+  implement blender like '//' to be path of current document file (like what '^/' does now)
+  need a better file preview system
+    need to wrap to a laidout_preview_maker(), which previews EPS with the help of gs
+  need to implement DRAW_Hires for all interfaces that default to preview renders. needed for proper image out
+    includes at least image(done), path, engraver
+  load document, should load images on display only(done), or create previews in background..
+  When importing from an image list file, should be able to say if and when to auto-make previews
+    new option in file, should be easy
+  DONE implement '^' for preview base
+  DONE move preview_file_bases to prefs
+
+dynamic objects (generated images, dynamic images, rendered images)
+    eps objects to pdf: export as image, plant in PDF as image
+    group objects with laidout elements, updateable with script
+    image objects using ImageImportFilters
+    perhaps add TEX_BIN, LATEX_BIN, and text editor to quickly add stuff like that!!
+    external commands:
+      website to recommend learn more
+      needs what type of file
+      needs how many files
+      needs what other info
+ImageProperties image properties imageinfo image info: imagedialog:
+  option to crop on load?
+  click for file should show preview... there are two "..." !!
+  select file, not updating view?
+  In image properties dialog, have the popup list of potential previews
+    preview style needs debugging and testing so as not to fry the freedesktop ones
+
+if you change an eps to a non eps with the insert file, it still thinks it is an eps..
+ image objects should auto change between the available image formats:
+  bitmap--eps--embedded svg--dynamic
+  Dynamic Content:
+    displayed as images, or displayed as group of laidout objects
+    possibly multiple images or objects in linked list:
+      one source creates multipage ps, for instance, each page gets its own object
+    controller source object:
+      generator command + context
+   examples:
+    ps/tex/pdf/etc to eps files, import the eps files
+    broken down equirect panorama to net
+Image import chain:
+  1. eps|EPS: Laidout builtin
+  2. svg|SVG: inkscape command line export
+  3. other external renderer: asymptote, structure synth, sunflow, pov-ray, lilypond, latex, graphviz, gnuplot
+  3. * images: graphicsmagick
+  4. jpg, png, gif, tiff: Imlib2
+
+thumbnails:
+  generate thumb for laidout files from current page or current view if no current page?
+  when making thumbs, implement gm Image.attribute(key, value) with: https://specifications.freedesktop.org/thumbnail-spec/latest/creation.html
+    - Thumb::URI  file://path/to/original
+    - Thumb::MTime  last mod time, seconds since jan 1, 1970
+    - Thumb::Size   in bytes
+    - Thumb::MimeType  (optional)
+    - Description      (optional)
+    - Software         (optional)
+    extra common attributes:
+    - Thumb::Image::Width
+    - Thumb::Image::Height
+    - Thumb::Document::Pages
+  DONE default to $XDG_CACHE_HOME/thumbnails or ~/.cache/thumbnails instead of ~/.thumbnails
+
+image import: ImportImagesDialog
+  bug: import all to one page with scale up/scale down doesn't scale properly
+  bug: cancel button is white and no mouseover??
+  bug: cannot import images directly from recents
+  SelectFile should update file/path.. right now only updates filelist
+  ---0.099---
+  ImageImport dialog: (actually, needs a total redesign) import images importimage
+  need thumbnail preview of images in directories
+  when you have a filter, should still show directories(?)
+  Import image list: default previews
+  should have preview for alignment options.. grab destination page to show preview
+  auto bookmarks, one for examples, or save as template
+  Choose/Review tabbed window
+  horizontal stack frame between choose/review and preview window
+  fancier path selector
+  for preview field, show green or something and change tooltip if preview will get generated
+  click on file to preview file, preview to preview preview
+  generate image previews progress box...
+  autogenerate should do special check for ~/.thumbnails to conform to freedesktop spec size and type...
+  importimages-> eps --> they are fit into boxes!! they should maybe be inserted into a stream..
+  importimages: remember last settings
+  DumpImages within Arrangements? a template of rect regions (2-d guides)?  maybe use custom papergroups?
+    would also implement the dump into Limbo
+    dump into any chain of objects, this is really the same thing as laying out a stream, maybe merge this?
+  a "Place" tool like indesign?? preview images and place by dragging out one by one, as well as optionally into Arrangements
+
+  DONE need drag and drop from system for multi-image import
+
 
 createlaidoutrc() should migrate to a LaidoutPrefs::CreateLaidoutrc(), not a direct LaidoutApp func
 
 laidoutprefs:
-  finish implementing saveable shadow_color and current_page_color settings
+  DONE finish implementing saveable shadow_color and current_page_color settings
 
 remove imlib/"xlib" font, image, and render backends, replace with GraphicsMagick and cairo, keep imlib loader but load to cairo image only
   remove displayer-xlib
@@ -2807,9 +2867,6 @@ dataobjects/datafactory should somehow combine with stylemanager.. severe duplic
   Laidout has:
     ObjectDef/Value system accessed through global stylemanager
  
-need to implement DRAW_Hires for all interfaces that default to preview renders. needed for proper image out
-  includes at least image(done), path, engraver
-
 mousemove decorations shouldn't change when an interface absorbs one
 
 raster paint layers, mypaint?
@@ -3029,7 +3086,6 @@ command prompt window: command line
   up/down should traverse history
   control-up/down, break out so you can go anywhere
 
-load document, should load images on display only(done), or create previews in background..
 
 guides:
   snap guides to objects
@@ -3073,9 +3129,6 @@ standardize new Impositions: convert to new ResourceManager system. each has:
 
 option to select region by intersect, not by corner inclusion...
 
-When importing from an image list file, should be able to say if and when to auto-make previews
-    new option in file, should be easy
-
 mystery data enhancement: import as placeholder objects: if convertible to laidout elements, do not actually
                 expose them as such. Keep source in external location, current laidout only rearranges.
                   ---> this is same as import as image, but using laidout objects to render them with, not bitmap images
@@ -3112,13 +3165,14 @@ resources:
     DONE PaperGroups
     DONE PlainTextObject
 
-when closing a document window, decide whether this removes access to it, or just the view to it
-
 imposition:
   implement PageLocationStack::imposition_instance, access from Context.imposition_instance ? 
   implement Spread::spread_index, access from Context.imposition_index ? 
   it would be nice to print out a signature dummy, with inset/fold/trim/margin/labels. maybe even folding instructions
   ganging: on a single sheet, include pages from other, possibly unopened, files to not waste special papers
+  how to keep track of class hierarchy? impositions are now listed by resource instance, what is
+    best way of keeping track of base imposition classes? this is needed for file format description output
+
 
 how best to integrate Styles, Attributes, and Values???
 various object types:
@@ -3209,41 +3263,6 @@ implement marks
   bleed marks
   color bars from a palette
   spread info: spread type, current date and time, creator, spread number/total number of spreads
-
-dynamic objects (generated images, dynamic images, rendered images)
-    eps objects to pdf: export as image, plant in PDF as image
-    group objects with laidout elements, updateable with script
-    image objects using ImageImportFilters
-    perhaps add TEX_BIN, LATEX_BIN, and text editor to quickly add stuff like that!!
-    external commands:
-      website to recommend learn more
-      needs what type of file
-      needs how many files
-      needs what other info
-ImageProperties image properties imageinfo image info:
-  click for file should show preview... there are two "..." !!
-  select file, not updating view?
-  In image properties dialog, have the popup list of potential previews
-    preview style needs debugging and testing so as not to fry the freedesktop ones
-
-if you change an eps to a non eps with the insert file, it still thinks it is an eps..
- image objects should auto change between the available image formats:
-  bitmap--eps--embedded svg--dynamic
-  Dynamic Content:
-    displayed as images, or displayed as group of laidout objects
-    possibly multiple images or objects in linked list:
-      one source creates multipage ps, for instance, each page gets its own object
-    controller source object:
-      generator command + context
-   examples:
-    ps/tex/pdf/etc to eps files, import the eps files
-    broken down equirect panorama to net
-Image import chain:
-  1. eps|EPS: Laidout builtin
-  2. svg|SVG: inkscape command line export
-  3. other external renderer: asymptote, structure synth, sunflow, pov-ray, lilypond, latex, graphviz, gnuplot
-  3. * images: graphicsmagick
-  4. jpg, png, gif, tiff: Imlib2
 
 move Value and FieldPlace to laxkit? ValueHash would be very useful to ease configs
 
@@ -3422,8 +3441,9 @@ for clones, it would be easier to have a "defs" group or something, so deleting 
   not cause problems. When deleting objects, must then take care to update parent, so it is immediately known
   if an object is without a home.
 
-tiling cloner: clone tiler  CloneInterface
-  escape doesn't let you go back to object tool
+tiling cloner: clone tiler:  CloneInterface:
+  spurious text writing on elongated triangular
+  UI bad.. selector box is huge
   options:
     show/not-show base + source_clones
     embed origin in pattern
@@ -3435,6 +3455,7 @@ tiling cloner: clone tiler  CloneInterface
   should not assume preview has I transform
   memory hole back, third time!!!
   radial needs wind scale input
+  DONE escape doesn't let you go back to object tool
   DONE fill out the Tiling objectdef
   DONE bug: Tiling doesn't save, need to make Tiling be a Value so it can be io with drawable->properties
   DONE various source refs should take names from ref'd objects
@@ -3616,24 +3637,37 @@ animationinterface animation interface:
   DONE make strip an overlay that can trigger filter updates
 
 
-how to keep track of class hierarchy? impositions are now listed by resource instance, what is
-  best way of keeping track of base imposition classes? this is needed for file format description output
-
 ObjectIndicator:
   When you select down in a list, should not destroy upper stack
   if you click on the (#number siblings) popup list of siblings to select from?
 
+
+lgm 2019 feedback and ideas:
+  path tool:
+    hard to see helper graphics, needs haloing
+    press space to dup weight node while dragging
+  method to fix all broken images at once
+    mass image edit, need to remap dirs for old files!!
+    option: do just this one, or fix all
+    old path: _____     new path: _____
+  method to collect all used resources of a doc for distribution
+  be able to load old docs
+  from here on out, ensure backwards compatibility of files still works (at least loading, saving is stretch goal) 
+    enhance mystery data to work with laidout data too?
+  some kind of graphicsmagick LoadToMemory bug.. could be only on loading old file, bad config translation?
+  out clicking from a dialog should probably destroy that dialog.. too easy to get buried confusedly in windows
+  make connecting to online information easy: click to open web browser, xdg-open?
+  from talk: diffusion curves, "local mod" mesh manipulation
+
 ux polish: ux:
+  when closing a document window, decide whether this removes access to it, or just the view to it
   if you try to "show in filesystem" with something without save file, like unsaved new doc, should not open file browser
   ux: corner menu, if current document is not in file system, should gray out "Show in filesystem"
   if there is a page/file snafu on export, should return to the export dialog after the error
   when you save, also save a preview of current spread in freedesktop thumbs?
-  resizeable ui
   should be able to mass disconnect clones
-  current page should be highlighted
-
-  in menus, click down, then drag, will return what is under mouse.. should default to not do anything but stay in menu
   page navigator should allow type in shortcuts like "end" or "-2" for second from last
+  DONE current page should be highlighted
 
 
 copy/paste:
@@ -3649,7 +3683,7 @@ to be a decent editing platform, Laidout needs:
   undo/redo
   viewport rendering needs to be far,far better
   master pages with auto page number is important.. for image based page numbers, dynamic objects important!!
-  would be convenient to send to gimp for editing, update later live
+  would be convenient to send to gimp for editing, update later live.. needs fam?
   when delete/add pages, need option to reposition to same orientation in margin area
   snapping:
     selection snapping: select a bunch of stuff, mark as snap sources, next selection tries to snap against those in old sel, not in new sel
@@ -3657,7 +3691,7 @@ to be a decent editing platform, Laidout needs:
     snap to bbox vs aabb
   drag constraints more accessible in only y or x direction
   per object visibility
-  per object opacity
+  per object opacity (technically implemented, but needs ui)
   better key shortcut edits, right click on menu items to ch key
   guides
   text
@@ -3677,7 +3711,7 @@ spell checker.. aspell (oldest, lgpl 2.1)? hunspell (used by libreoffice, firefo
 
 Goals:
   2D Vector graphics editor built for multiple output types, such as multi-page physical prints, html, or image files
-  While 2D focused, has some limited capabilities to lay out on 3d surfaces made out of flat but bent or folded surfaces
+  While 2D focused, has some limited capabilities to lay out on 3d surfaces made out of developable (flat but bent or folded) surfaces
 Current deficiencies:
   Render update is way too slow, no hardware acceleration and is single threaded
   Too many bugs/quirks in object management, resource coordiation
@@ -3688,6 +3722,7 @@ Current deficiencies:
     internal object system is flexible, but not without a huge amount of boilerplate-like code to tie to scripter
   Being Linux only limits user base, and thus also limits user testing
   no color management
+  text tools not remotely adequate
   raster/paint/editable image layers, or stroke based on non-destructive vector paths would help
   too many complex custom systems is not attractive to new devs
 Considerations:
@@ -3704,7 +3739,7 @@ Ways forward:
    - with python:
      - it's good enough for Blender, Krita, Inkscape, and Scribus right?
      - makes tool development way more accessible to new users
-     - downside: you now have to depend on python, which comes with its own version problems
+     - downside: you now have to depend on python, which comes with its own version and threading problems
    - with some kind of yaml-like custom format, with css for styling?
 
 
@@ -3754,7 +3789,6 @@ DONE html out
 DONE bug: text selection and highlighting is really out of whack.. int/float troubles?  <-- dp->textextent is NOT returning same as font->Extent!!
 DONE skip pages (at regular intervals) on multi-image import.
 DONE animated gif import
-DONE Remove obsolete HelpWindow code?
 DONE finish phasing out MenuSelector
 DONE laidout settings option to always load last file on startup
 DONE added rudimentary plugin list window
@@ -3901,3 +3935,6 @@ DONE crash: select booklet imposition from imposition editor, then paperlayout..
 DONE (removed) travis is recompiling on non-master branch pushes, eating up all my minutes, and it shouldn't
 DONE bug: greyed option still selectable in menu
 DONE options: --impose-only and --nodes-only arg needs better description of arg
+DONE clear new g++ warnings about hiding virtual functions, mostly relating to various duplicate()s
+DONE fix FieldExtPlace snafu about multiple conflicting PtrStack
+DONE Remove obsolete HelpWindow code.. replace with settingswindow
