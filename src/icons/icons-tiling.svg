@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:xlink="http://www.w3.org/1999/xlink"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    viewBox="0 0 765 990"
    sodipodi:docname="icons-tiling.svg"
-   inkscape:version="1.0 (4035a4f, 2020-05-01)"
+   inkscape:version="1.4.2 (ebf0e94, 2025-05-08)"
    version="1.1"
    id="svg2"
    height="1056"
-   width="816">
+   width="816"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
   <defs
      id="defs4">
     <marker
@@ -144,21 +144,24 @@
      inkscape:snap-global="true"
      inkscape:window-maximized="1"
      inkscape:window-y="1"
-     inkscape:window-x="1920"
-     inkscape:window-height="1387"
-     inkscape:window-width="2559"
+     inkscape:window-x="1"
+     inkscape:window-height="1149"
+     inkscape:window-width="1919"
      showgrid="true"
-     inkscape:current-layer="Wallpaper__p6m"
+     inkscape:current-layer="layer1"
      inkscape:document-units="px"
-     inkscape:cy="851.34907"
-     inkscape:cx="188.63149"
-     inkscape:zoom="15.159596"
+     inkscape:cy="508.47114"
+     inkscape:cx="772.77055"
+     inkscape:zoom="3.0306538"
      inkscape:pageshadow="2"
      inkscape:pageopacity="0.0"
      borderopacity="1.0"
      bordercolor="#666666"
      pagecolor="#ffffff"
-     id="base">
+     id="base"
+     inkscape:showpageshadow="2"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1">
     <inkscape:grid
        originy="0"
        originx="0"
@@ -195,7 +198,9 @@
        empspacing="5"
        units="in"
        id="grid5707"
-       type="axonomgrid" />
+       type="axonomgrid"
+       originx="0"
+       originy="0" />
   </sodipodi:namedview>
   <metadata
      id="metadata7">
@@ -15668,20 +15673,37 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
-       x="684.88055"
-       y="524.40155"
-       id="text7712"
+       x="685.49548"
+       y="524.0849"
+       id="text4"
        transform="rotate(0.68126631)"><tspan
          sodipodi:role="line"
-         x="684.88055"
-         y="524.40155"
+         x="685.49548"
+         y="524.0849"
          style="font-size:8px;line-height:1.25;font-family:sans-serif"
-         id="tspan7714">snub</tspan><tspan
+         id="tspan3">snub</tspan><tspan
+         id="tspan4"
+         sodipodi:role="line"
+         x="685.49548"
+         y="534.0849"
+         style="font-size:8px;line-height:1.25;font-family:sans-serif">hexagonal</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
+       x="684.67865"
+       y="481.40277"
+       id="elongatedtriangular"
+       transform="rotate(0.68126631)"><tspan
          id="tspan8175"
          sodipodi:role="line"
-         x="684.88055"
-         y="534.40155"
-         style="font-size:8px;line-height:1.25;font-family:sans-serif">hexagonal</tspan></text>
+         x="684.67865"
+         y="481.40277"
+         style="font-size:8px;line-height:1.25;font-family:sans-serif">elongated</tspan><tspan
+         sodipodi:role="line"
+         x="684.67865"
+         y="491.40277"
+         style="font-size:8px;line-height:1.25;font-family:sans-serif"
+         id="tspan5">triangular</tspan></text>
     <text
        transform="rotate(-89.318734)"
        id="text7848"
@@ -15728,22 +15750,6 @@
          y="580.18488"
          x="595.45758"
          sodipodi:role="line">trihexagonal</tspan></text>
-    <text
-       id="text8163"
-       y="486.36218"
-       x="698.5"
-       style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0%;font-family:sans-serif;-inkscape-font-specification:Sans;text-align:center;writing-mode:lr-tb;text-anchor:middle;display:inline;overflow:visible;visibility:visible;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.18;marker:none;enable-background:accumulate"
-       xml:space="preserve"><tspan
-         style="font-size:8px;line-height:1.25;font-family:sans-serif"
-         y="486.36218"
-         x="698.5"
-         id="tspan8165"
-         sodipodi:role="line">elongated</tspan><tspan
-         style="font-size:8px;line-height:1.25;font-family:sans-serif"
-         id="tspan8167"
-         y="496.36218"
-         x="698.5"
-         sodipodi:role="line">triangular</tspan></text>
     <text
        id="text8177"
        y="669.36218"
