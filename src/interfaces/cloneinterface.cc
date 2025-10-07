@@ -3474,8 +3474,8 @@ void CloneInterface::DrawSelected()
  */
 void CloneInterface::RefreshSelectMode()
 {
-	double th=dp->textheight();
-	double pad=th;
+	double th = dp->textheight();
+	double pad = th;
 
 	dp->LineAttributes(1,LineSolid,CapButt,JoinMiter);
 	dp->NewBG(bg_color);
@@ -3606,23 +3606,21 @@ int CloneInterface::Refresh()
 
 
 	double thin = ScreenLine();
-	double circle_radius = INTERFACE_CIRCLE*uiscale*thin;
+	double circle_radius = INTERFACE_CIRCLE * uiscale * thin;
 
-	if (firsttime==1) {
-		firsttime=0;
-		box.minx=10;
-		box.maxx=10+4*circle_radius*uiscale*thin;
-		box.miny=10;
-		box.maxy=10+5*circle_radius*uiscale*thin + 2*dp->textheight();
+	if (firsttime == 1) {
+		firsttime = 0;
+		box.minx  = 10;
+		box.maxx  = 10 + 4 * circle_radius * uiscale * thin;
+		box.miny  = 10;
+		box.maxy  = 10 + 5 * circle_radius * uiscale * thin + 2 * dp->textheight();
 
-	} else if (firsttime==2) {
-		 //remap control box size only, leave in same place
-		firsttime=0;
-		box.maxx=box.minx+4*circle_radius*uiscale;
-		box.maxy=box.miny+5*circle_radius*uiscale + 2*dp->textheight();
+	} else if (firsttime == 2) {
+		// remap control box size only, leave in same place
+		firsttime = 0;
+		box.maxx  = box.minx + 4 * circle_radius * uiscale;
+		box.maxy  = box.miny + 5 * circle_radius * uiscale + 2 * dp->textheight();
 	}
-
-
 
 	 //preview lines when either not active, or active and not rendering lines
 	if (lines->n() && preview_lines && (!active || (active && !trace_cells))) {
@@ -3807,7 +3805,7 @@ int CloneInterface::scan(int x,int y, int *i, int *dest)
 {
 	flatpoint cc((box.minx+box.maxx)/2,box.maxy);
 	double thin = ScreenLine();
-	double circle_radius = INTERFACE_CIRCLE*uiscale*thin;
+	double circle_radius = INTERFACE_CIRCLE * uiscale * thin;
 
 	if (norm((cc-flatpoint(x,y)))<circle_radius) return CLONEI_Circle;
 
@@ -4328,24 +4326,24 @@ int CloneInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 
 int CloneInterface::Mode(int newmode)
 {
-	if (newmode==mode) return mode;
+	if (newmode == mode) return mode;
 
-	if (newmode==CMODE_Normal) {
-		mode=newmode;
-		needtodraw=1;
+	if (newmode == CMODE_Normal) {
+		mode = newmode;
+		needtodraw = 1;
 
-	} else if (newmode==CMODE_Select) {
-		int builtin=NumBuiltinTilings();
+	} else if (newmode == CMODE_Select) {
+		int builtin = NumBuiltinTilings();
 
-		double th=dp->textheight();
-		double pad=th;
-		icon_width=(box.maxx-box.minx)*.8;
-		num_cols=(dp->Maxx-dp->Minx-2*pad-icon_width*.2)/(icon_width*1.2);
-		num_rows=builtin/num_cols+1;
-		selected_offset=0;
-		current_selected=cur_tiling;
-		mode=newmode;
-		needtodraw=1;
+		double th        = dp->textheight();
+		double pad       = th;
+		icon_width       = (box.maxx - box.minx) * .8;
+		num_cols         = (dp->Maxx - dp->Minx - 2 * pad - icon_width * .2) / (icon_width * 1.2);
+		num_rows         = builtin / num_cols + 1;
+		selected_offset  = 0;
+		current_selected = cur_tiling;
+		mode             = newmode;
+		needtodraw       = 1;
 	}
 
 	return mode;
@@ -4518,11 +4516,11 @@ int CloneInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 {
 	DBG cerr<<" got ch:"<<ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
 	
-	if (mode==CMODE_Select) {
+	if (mode == CMODE_Select) {
 		 //in the tiling box selection popup box
 
-		int found=0;
-		if (ch==LAX_Esc) {
+		int found = 0;
+		if (ch == LAX_Esc) {
 			Mode(CMODE_Normal);
 			return 0;
 
@@ -4615,15 +4613,19 @@ int CloneInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 		return 0;
 	}
 
-	if (ch==LAX_Esc) {
+	if (ch == LAX_Esc) {
 		if (child) {
 			RemoveChild();
-			needtodraw=1;
+			needtodraw = 1;
 			return 0;
 		}
 
-		if (active) ToggleActivated();
-		return 0;
+		if (active) {
+			ToggleActivated();
+			return 0;
+		}
+
+		return 1;
 	}
 
 	return 1;
