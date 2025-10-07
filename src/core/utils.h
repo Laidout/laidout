@@ -41,7 +41,8 @@ FILE *open_laidout_file_to_read(const char *file,const char *what,Laxkit::ErrorL
 FILE *open_file_for_reading(const char *file,Laxkit::ErrorLog *log);
 FILE *open_file_for_writing(const char *file,int nooverwrite,Laxkit::ErrorLog *log);
 int resource_name_and_desc(FILE *f,char **name, char **desc);
-char *previewFileName(const char *file, const char *nametemplate);
+
+char *PreviewFileName(const char *file, const char *nametemplate, const char *doc_path);
 
 int laidout_file_type(const char *file, const char *minversion, const char *maxversion, char **actual_version,
 					  const char *typ, char **actual_type);

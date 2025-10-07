@@ -120,11 +120,6 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	ValueHash globals;
 	unsigned long curcolor;
 	
-	char preview_transient;
-	int preview_over_this_size;
-	Laxkit::PtrStack<char>preview_file_bases;
-	int max_preview_length, max_preview_width, max_preview_height;
-
 	//char *ghostscript_binary;
 	
 //	Laxkit::PtrStack<Style> stylestack:

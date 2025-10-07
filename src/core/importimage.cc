@@ -739,24 +739,24 @@ int dumpInImages(ImportImageSettings *settings,
 
 					 //---check if is EPS
 					if (!strncmp(data,"%!PS-Adobe-",11)) { // possible EPS
-						float psversion,epsversion;
-						n=sscanf(data,"%%!PS-Adobe-%f EPSF-%f",&psversion,&epsversion);
-						if (n==2) {
+						float psversion, epsversion;
+						n = sscanf(data,"%%!PS-Adobe-%f EPSF-%f", &psversion, &epsversion);
+						if (n == 2) {
 							DBG cerr <<"--found EPS, ps:"<<psversion<<", eps:"<<epsversion<<endl;
 							 //create new EpsData, which has bounding box pulled from
 							 //the eps file, kept in postscript units (1 inch == 72 units)
 							//*******
-							char *pname;
-							if (previewfiles && previewfiles[c]) pname=newstr(previewfiles[c]);
-								else pname=previewFileName(imagefiles[c],"%-s.png");
-							imaged=new EpsData(imagefiles[c],pname,200,200,0);//*** should use laidout->maxwidth..
+							char *pname = nullptr;
+							// if (previewfiles && previewfiles[c]) pname = newstr(previewfiles[c]);
+							// 	else pname = PreviewFileName(imagefiles[c], "%-s.png");
+							imaged = new EpsData(imagefiles[c], pname,200,200,0);//*** should use laidout->maxwidth..
 							delete[] pname;
-							xywh=new double[4];
-							xywh[0]=imaged->minx/72;
-							xywh[1]=imaged->miny/72;
-							xywh[2]=(imaged->maxx-imaged->minx)/72;
-							xywh[3]=(imaged->maxy-imaged->miny)/72;
-							dpi=72;
+							xywh = new double[4];
+							xywh[0] = imaged->minx/72;
+							xywh[1] = imaged->miny/72;
+							xywh[2] = (imaged->maxx-imaged->minx)/72;
+							xywh[3] = (imaged->maxy-imaged->miny)/72;
+							dpi = 72;
 						} else continue;
 					}
 				}

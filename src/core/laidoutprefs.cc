@@ -46,11 +46,39 @@ namespace Laidout {
  * 
  * Global preferences of Laidout. These things get input and output with laidoutrc.
  */
+/*! \var Laxkit::PtrStack<char> LaidoutPreferences::preview_file_bases
+ * \brief The templates used to name preview files for images.
+ *
+ * When Laidout generates new preview images for existing image files,
+ * the original suffix for the image file is stripped and inserted
+ * into this string. So say a file is "image.tiff" and preview_file_base
+ * is "%-s.jpg" (which is the default), then the preview file will
+ * be "image-s.jpg". Generated preview files are typically jpg files. If
+ * the base is "../thumbs/%-s.jpg" then the preview file will be
+ * generated at "../thumbs" relative to where the image file is located.
+ *
+ * If the base is ".laidout-*.jpg", using a '*' rather than a '%', when
+ * the full filename is substituted, rather than just the basename.
+ *
+ * A '@' will expand to the freedesktop.org thumbnail management spec, namely
+ * the md5 digest of "file:///path/to/file", with ".png" added to the end.
+ * This can be used to search in XDG_CACHE_HOME/thumbnails/large/@ and XDG_CACHE_HOME/thumbnails/normal/@".
+ * 
+ * \todo be able to create preview files of different types by default... Should be able
+ *   to more fully suggest preview generation perhaps? The thing with '@' is a little
+ *   hacky maybe. Should be able to select something equivalent to 
+ *   "Search by freedesktop thumb spec" which would automatically search both the large
+ *   and normal dirs.. that also affects default max width for previews......
+ */ 
+/*! \var int LaidoutPreferences::preview_over_this_size
+ * \brief The file size in kilobytes over which preview images should be used where possible.
+ */
 
 
 LaidoutPreferences::LaidoutPreferences()
- : icon_dirs(2),
-   plugin_dirs(2)
+ : preview_file_bases(LISTS_DELETE_Array),
+   icon_dirs(LISTS_DELETE_Array),
+   plugin_dirs(LISTS_DELETE_Array)
 {
 	rc_file = nullptr;
 	autosave_prefs = true; //immediately on any change
@@ -70,10 +98,11 @@ LaidoutPreferences::LaidoutPreferences()
 	start_with_last = false;
 
 	if (S_ISDIR(file_exists("/usr/share/gimp/2.0/palettes", 1, nullptr)))
-		palette_dir=newstr("/usr/share/gimp/2.0/palettes");
+		palette_dir = newstr("/usr/share/gimp/2.0/palettes");
 	else palette_dir = nullptr;
 
-	preview_size = 400;
+	preview_size = 512;
+	auto_generate_previews = false;
 
 	clobber_protection = nullptr;
 
@@ -111,7 +140,12 @@ Value *LaidoutPreferences::duplicateValue()
 	makestr(p->rc_file, rc_file);
 	p->autosave_prefs = autosave_prefs;
 
+	p->auto_generate_previews = auto_generate_previews;
 	p->preview_size  = preview_size;
+	for (int c = 0; c < preview_file_bases.n; c++) {
+		p->preview_file_bases.push(newstr(preview_file_bases.e[c]), LISTS_DELETE_Array);
+	}
+
 	p->default_units = default_units;
 	makestr(p->unitname,unitname);
 	p->pagedropshadow= pagedropshadow;
@@ -191,10 +225,17 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 			0,
 			nullptr);
 
-	def->push("previewsize",
+	def->push("auto_generate_previews",
+			_("Auto generate previews"),
+			_("If true, when you import an image, automatically create a smaller copy to speed up screen rendering"),
+			"boolean", nullptr,"false",
+			0,
+			nullptr);
+
+	def->push("preview_size",
 			_("Preview size"),
 			_("Pixel width or height to render cached previews of objects for on screen viewing. "),
-			"real", nullptr,"400",
+			"real", nullptr,"512",
 			0,
 			nullptr);
 
@@ -260,6 +301,13 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 //			"Color", nullptr,"rgbf(1,.39,.39)",
 //			0,
 //			nullptr);
+
+	def->push("preview_file_bases",
+			_("Preview file names"),
+			_("A list of possible preview file names. Use '@' for freedesktop hash, ^ for dir of document, % for file name without extension, and * for basename."),
+			"set", "String", nullptr,
+			OBJECTDEF_ISSET,
+			nullptr);
 
 	def->push("icon_dirs",
 			_("Icon directories"),
@@ -352,7 +400,7 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 
 }
 
-/*! Return 1 for success, 2 for success, but other contents changed too, -1 for unknown */
+/*! Return 1 for success, 2 for success, but other contents changed too, -1 for unknown, 0 for total failure */
 int LaidoutPreferences::assign(FieldExtPlace *ext,Value *v)
 {
 	const char *extstring = ext->e(0);
@@ -528,7 +576,16 @@ int LaidoutPreferences::assign(FieldExtPlace *ext,Value *v)
 		return 1;
 	}
 
-	if (!strcmp(extstring, "previewsize")) {
+	if (!strcmp(extstring, "auto_generate_previews")) {
+		int e = 0;
+		bool b = getBooleanValue(v, &e);
+		if (e == 0) return 0;
+		auto_generate_previews = b;
+		if (autosave_prefs) UpdatePreference(extstring, auto_generate_previews, nullptr);
+		return 1;
+	}
+
+	if (!strcmp(extstring, "preview_size")) {
 		double d;
 		if (!isNumberType(v, &d)) return 0;
 		if (d < 1.0) return 0;
@@ -549,25 +606,34 @@ int LaidoutPreferences::assign(FieldExtPlace *ext,Value *v)
 		return 1;
 	}
 
+	if (!strcmp(extstring, "preview_file_bases")) {
+		SetValue *sv = dynamic_cast<SetValue*>(v);
+		if (!sv) return 0;
+		for (int c = 0; c < sv->n(); c++) {
+			Value *v = sv->e(c);
+			if (v->type() != VALUE_String && v->type() != VALUE_File) return 0;
+		}
+		for (int c = 0; c < sv->n(); c++) {
+			Value *v = sv->e(c);
+			if (v->type() == VALUE_String) {
+				StringValue *s = dynamic_cast<StringValue*>(v);
+				preview_file_bases.push(newstr(s->str));
+			} else { // VALUE_File
+				FileValue *s = dynamic_cast<FileValue*>(v);
+				preview_file_bases.push(newstr(s->filename));
+			}
+		}
+		return 1;
+	}
+
 	if (!strcmp(extstring, "icon_dirs")) {
+		// ***
 		return 0;
-		// -
-		// SetValue *set = new SetValue("File");
-		// IconManager *icons=IconManager::GetDefault();
-		// for (int c=0; c<icons->NumPaths(); c++) {
-		// 	set->Push(new FileValue(icons->GetPath(c)), 1);
-		// }
-		// return set; 
 	}
 
 	if (!strcmp(extstring, "plugin_dirs")) {
+		// ***
 		return 0;
-		// -
-		// SetValue *set = new SetValue("File");
-		// for (int c=0; c<plugin_dirs.n; c++) {
-		// 	set->Push(new FileValue(plugin_dirs.e[c]), 1);
-		// }
-		// return set; 
 	}
 
 	return -1;
@@ -655,8 +721,20 @@ Value *LaidoutPreferences::dereference(const char *extstring, int len)
 		return palette_dir ? new StringValue(palette_dir) : nullptr;
 	}
 
-	if (!strcmp(extstring, "previewsize")) {
+	if (!strcmp(extstring, "auto_generate_previews")) {
+		return new BooleanValue(auto_generate_previews);
+	}
+
+	if (!strcmp(extstring, "preview_size")) {
 		return new IntValue(preview_size);
+	}
+
+	if (!strcmp(extstring, "preview_file_bases")) {
+		SetValue *set = new SetValue("String");
+		for (int c = 0; c < preview_file_bases.n; c++) {
+			set->Push(new StringValue(preview_file_bases.e[c]), 1);
+		}
+		return set; 
 	}
 
 	if (!strcmp(extstring, "icon_dirs")) {
@@ -763,6 +841,29 @@ ExternalTool *LaidoutPreferences::GetDefaultTool(int category)
 	return external_tool_manager.GetDefaultTool(category);
 }
 
+
+
+/*! Returns a null terminated list.
+ * You should delete the returned list with deletestrs(strs, 0).
+ * file should be full path for file.
+ */
+char **LaidoutPreferences::DefaultPreviewLocations(const char *file, const char *doc_path)
+{
+	char **bases = new char*[preview_file_bases.n + 1];
+	bases[preview_file_bases.n] = nullptr;
+
+	int i = 0;
+	for (int c = 0; c < preview_file_bases.n; c++) {
+		bases[i] = PreviewFileName(file, preview_file_bases.e[c], doc_path);
+		if (bases[i] != nullptr) i++;
+	}
+	for ( ; i < preview_file_bases.n; i++)
+		bases[i] = nullptr;
+
+	return bases;
+}
+
+
 int LaidoutPreferences::UpdatePreference(const char *which, const ScreenColor &color, const char *laidoutrc)
 {
 	char scratch[100];
@@ -793,6 +894,8 @@ int LaidoutPreferences::UpdatePreference(const char *which, bool value, const ch
  * This only works when which/value is supposed to be on one line. value shouldn't have any newlines.
  *
  * The line containing which at the beginning of the line or "#which" will be entirely replaced with "which value".
+ *
+ * Return 0 for success or nonzero for error.
  */
 int LaidoutPreferences::UpdatePreference(const char *which, const char *value, const char *laidoutrc)
 {
@@ -878,6 +981,121 @@ int LaidoutPreferences::UpdatePreference(const char *which, const char *value, c
 
 	return 0;
 }
+
+/*! Return 1 for uncommented match, -1 for commented match, 0 for no match. */
+static int match_key(const char *line, const char *which, int slen)
+{
+	if (strncmp(line, which, slen) == 0 && (isspace(line[slen]) || !line[slen])) return 1;
+	if (*line != '#') return 0;
+	line++;
+	while (isspace(*line)) line++;
+	if (strncmp(line, which, slen) == 0 && (isspace(line[slen]) || !line[slen])) return -1;
+	return 0;
+}
+
+static void fprint_list(FILE *out, const char *which, PtrStack<char> &stack)
+{
+	for (int cc = 0; cc < stack.n; cc++) {
+		const char *value = stack.e[cc];
+		char *vvalue = nullptr;
+		if (strpbrk(value, "\"\'#\t\n\r")) {
+			vvalue = escape_string(value, '"', true);
+			value = vvalue;
+		}
+		fprintf(out, "%s %s\n", which, value);
+		delete[] vvalue;
+	}
+}
+
+/*! Update global preference by writing out a new laidoutrc.
+ * This only works when which/value is supposed to be a list of several items of the same name.
+ *
+ * The line containing which at the beginning of the line will be entirely replaced with the whole
+ * list formatted as "which value". Any subsequent "which ..." lines will be removed.
+ * Any "#which" lines will not be touched.
+ *
+ * Return 0 for success or nonzero for error.
+ */
+int LaidoutPreferences::UpdatePreference(const char *which, PtrStack<char> &stack, const char *laidoutrc)
+{
+	if (!laidoutrc) laidoutrc = rc_file;
+	if (!laidoutrc) return 1;
+
+	int fd = open(laidoutrc, O_RDONLY, 0);
+	if (fd < 0) { return 1; }
+	flock(fd, LOCK_EX);
+	FILE *f = fdopen(fd,"r");
+	if (!f) { close(fd); return 2; }
+
+	char *outfile = newstr(laidoutrc);
+	appendstr(outfile, "-TEMP");
+	while (file_exists(outfile, 1, nullptr)) {
+		char *nout = increment_file(outfile);
+		delete[] outfile;
+		outfile = nout;
+	}
+
+	int slen = strlen(which);
+
+	FILE *out = fopen(outfile, "w");
+	if (!out) {
+		fclose(f); //also closes fd
+		delete[] outfile;
+		return 3;
+	}
+
+	setlocale(LC_ALL,"C");
+
+	//read each line, if "^which ..." is found, replace with "which value"
+
+	char *line = nullptr;
+	size_t n = 0;
+	int c;
+	int found = 0;
+
+	while (!feof(f)) {
+		c = getline(&line, &n, f);
+		if (c <= 0) continue;
+
+		int match = match_key(line, which, slen);
+
+		if (!found && match == 1) {
+			found = 1;
+			fprint_list(out, which, stack);
+
+		} else if (found && match == 1) {
+			// found an uncommented option, but we already wrote out, so ignore
+			// fprintf(out, "#%s", line);
+
+		} else if (!found && match == -1) {
+			// found a commented option, and we haven't written out yet
+			// leave it commented just in case
+			found = 1;
+			fprint_list(out, which, stack);
+			fwrite(line, 1, strlen(line), out);
+
+		} else {
+			fwrite(line, 1, strlen(line), out);
+		}
+	}
+
+	if (!found) fprint_list(out, which, stack);
+	
+	if (line) free(line);
+
+	fclose(out);
+	flock(fd,LOCK_UN);
+	fclose(f); //also closes the fd	
+	setlocale(LC_ALL,"");
+
+	 //finally move temp file to real file
+	unlink(laidoutrc);
+	rename(outfile, laidoutrc);
+	delete[] outfile;
+
+	return 0;	
+}
+
 
 
 } // namespace Laidout

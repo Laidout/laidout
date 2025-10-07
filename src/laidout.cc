@@ -147,41 +147,11 @@ const char *LaidoutVersion()
  * \ingroup pools
  * \brief Stack of available paper sizes.
  */
-/*! \var char LaidoutApp::preview_transient
- * \brief Whether newly created previews should be deleted when no longer in use.
- */
 /*! \var char *LaidoutApp::temp_dir
  * \brief Where to store temporary files.
  *
  * \todo *** imp me! Maybe: create laidoutrc->temp_dir/pid, then upon program termination
  *   or completion, delete that directory.
- */
-/*! \var Laxkit::PtrStack<char> LaidoutApp::preview_file_bases
- * \brief The templates used to name preview files for images.
- *
- * When Laidout generates new preview images for existing image files,
- * the original suffix for the image file is stripped and inserted
- * into this string. So say a file is "image.tiff" and preview_file_base
- * is "%-s.jpg" (which is the default), then the preview file will
- * be "image-s.jpg". Generated preview files are typically jpg files. If
- * the base is "../thumbs/%-s.jpg" then the preview file will be
- * generated at "../thumbs" relative to where the image file is located.
- *
- * If the base is ".laidout-*.jpg", using a '*' rather than a '%', when
- * the full filename is substituted, rather than just the basename.
- *
- * A '@' will expand to the freedesktop.org thumbnail management spec, namely
- * the md5 digest of "file:///path/to/file", with ".png" added to the end.
- * This can be used to search in "~/.thumbnails/large/@ and "~/.thumbnails/normal/@".
- * 
- * \todo be able to create preview files of different types by default... Should be able
- *   to more fully suggest preview generation perhaps? The thing with '@' is a little
- *   hacky maybe. Should be able to select something equivalent to 
- *   "Search by freedesktop thumb spec" which would automatically search both the large
- *   and normal dirs.. that also affects default max width for previews......
- */ 
-/*! \var int LaidoutApp::preview_over_this_size
- * \brief The file size in kilobytes over which preview images should be used where possible.
  */
 
 ColorManager *colorManager = nullptr;
@@ -191,7 +161,6 @@ ColorManager *colorManager = nullptr;
  */
 LaidoutApp::LaidoutApp()
   : anXApp(),
-	preview_file_bases(LISTS_DELETE_Array),
 	disabled_plugins(LISTS_DELETE_Array)
 {	
 	LaxInterfaces::InterfaceManager *ifc = LaxInterfaces::InterfaceManager::GetDefault(true);
@@ -236,13 +205,8 @@ LaidoutApp::LaidoutApp()
 	curdoc=nullptr;
 	tooltips=1000;
 
-	 // laidoutrc defaults
-	preview_over_this_size=250; 
-	max_preview_length=200;
-	max_preview_width=max_preview_height=-1;
-	preview_transient=1; 
-
-	defaultpaper=nullptr;
+	// laidoutrc defaults
+	defaultpaper = nullptr; // note: prefs hold string, this holds PaperStyle object
 
 	// if (file_exists("/usr/bin/gs", 0, nullptr) == S_IFREG) ghostscript_binary = newstr("/usr/bin/gs");
 	// else ghostscript_binary = nullptr;
@@ -603,12 +567,15 @@ int LaidoutApp::init(int argc,char **argv)
 	}
 
 
-	 //-----if no bases defined add freedesktop style
-	if (!preview_file_bases.n) {
-		preview_file_bases.push(newstr("~/.thumbnails/large/@"));
-		preview_file_bases.push(newstr("~/.thumbnails/normal/@"));
-		preview_file_bases.push(newstr(".laidout-%.jpg"));
-		preview_file_bases.push(newstr(".laidout-%.jpg"));
+	 //-----if no bases defined by now, add some defaults
+	if (!prefs.preview_file_bases.n) {
+		prefs.preview_file_bases.push(newstr("&/thumbnails/large/@"));
+		prefs.preview_file_bases.push(newstr("&/thumbnails/normal/@"));
+		prefs.preview_file_bases.push(newstr("&/thumbnails/x-large/@"));
+		prefs.preview_file_bases.push(newstr("&/thumbnails/xx-large/@"));
+		prefs.preview_file_bases.push(newstr(".%-s.png"));
+		prefs.preview_file_bases.push(newstr(".laidout-%.png"));
+		prefs.preview_file_bases.push(newstr("^/.thumbcache/%.png"));
 	}
 	
 	 //-----define default icon
@@ -761,7 +728,6 @@ int LaidoutApp::IsProject()
  * See also dump_out_file_format().
  *
  * \todo should separate the laidoutrc writing functions to allow easy dumping to any stream like stdout.
- * \todo maybe be able to preserve user comments in a laidoutrc?
  */
 int LaidoutApp::createlaidoutrc()
 {
@@ -867,52 +833,46 @@ int LaidoutApp::createlaidoutrc()
 					  "\n");
 
 
+			// preview generation
+			fprintf(f," # Whether to automatically create smaller preview images\n"
+					  " # when you load a new image, to speed up screen rendering.\n"
+					  "#auto_generate_previews false\n"
+					  "#preview_size 512\n"
+					  "\n"
+					  " # When preview files are not explicitly specified, Laidout tries to find one\n"
+					  " # based on a sort of name template. Say an image is filename.tiff, then:\n"
+					  " # Three possible wildcards at the beginning:\n"
+					  " #   &  ->  environment variable XDG_CACHE_HOME, default \"~/.cache\"\n"
+					  " #   ^  ->  the directory of the Laidout document\n"
+					  " #   ~  ->  home directory\n"
+					  " # Three possible file replacement later in string, but only one. Others replaced with dash:\n"
+					  " #   %%  ->  the original filename minus the extension, eg \"filename\".\n"
+					  " #   *  ->  the whole original image basename, eg \"filename.tiff\"\n"
+					  " #   @  ->  freedesktop defined md5 hash of the original file path, plus \".png\"\n"
+					  " #          Note that normal, large, x-large, xx-large fit in px size 128,256,512,1024\n"
+					  " #          which will override preview_size.\n"
+					  " # Any other relative preview_file_base is relative to the original image file.\n"
+					  " # The first preview_file_base is the default.\n"
+					  " # Any of *@%% after the first will be replaced with a dash."
+					  " # The file type will always end up as png. You've been warned.\n"
+					  " #preview_file_base &/thumbnails/large/@\n"
+					  " #preview_file_base &/thumbnails/normal/@\n"
+					  " #preview_file_base &/thumbnails/x-large/@\n"
+					  " #preview_file_base &/thumbnails/xx-large/@\n"
+					  " #preview_file_base .%%-s.png\n"
+					  " #preview_file_base .laidout-%%.png\n"
+					  " #preview_file_base ^/.thumbcache/%%.png\n"
+					  "\n");
+
 					   ////theme
 			fprintf(f,"#uiscale -1            #-1 is use default, otherwise multiply default by this.\n");
 			fprintf(f,"dont_scale_icons true #If true, use native icon pixel size. If false, icons are scaled along with font size\n");
 			fprintf(f,"laxprofile Light #Default built in profiles are Dark, Light, and Gray. You can define others in the laxconfig section.\n");
 			fprintf(f,"laxconfig-sample #Remove the \"-sample\" part to redefine various default window behavior settings\n");
-			dump_out_rc(f,nullptr,2,0);
+
+			dump_out_rc(f,nullptr,2,0); // dumps out the laxrc format
 
 
-//					   //preview generation
-//					  //" # Alternately, you can specify the maximum width and height separately:\n"
-//					  //"#maxPreviewWidth 200\n"
-//					  //"#maxPreviewHeight 200\n"
-//					  "#*** note, the following preview stuff is maybe not so accurate, code is in flux:\n"
-//					  " #The size a file (unless specified, default is kilobytes) must be to trigger\n"
-//					  " #the automatic creation of a smaller preview image file.\n"
-//					  "#previewThreshhold 200kb\n"
-//					  "#previewThreshhold never\n"
-//					  "\n"
-//					  " #You can have previews that are created during the program\n"
-//					  " #be deleted when the program exits, or have newly created previews remain:\n"
-//					  "#temporaryPreviews yes  #yes to delete new previews on exit\n"
-//					  "#temporaryPreviews      #same as: temporaryPreviews yes\n"
-//					  "#permanentPreviews yes  #yes to not delete new preview images on exit\n"
-//					  "\n"
-//					  " #When preview files are not specified, Laidout tries to find one\n"
-//					  " #based on a sort of name template. Say an image is filename.tiff, then\n"
-//					  " #the first line implies using a preview file called filename-s.jpg,\n"
-//					  " #where the '%%' stands for the original filename minus its the final suffix.\n"
-//					  " #The second looks for .laidout-previews/filename.tiff.jpg, relative to the\n"
-//					  " #directory of the original file. The '*' stands for the entire original filename.\n"
-//					  " #The final example is an absolute path, and will try to create all preview files\n"
-//					  " #in that place, in this case, it would try ~/laidout/tmp/filename.tiff.jpg.\n"
-//					  " #A '@' will expand to the freedesktop.org thumbnail management defined md5\n"
-//					  " #representation of the original file. In other words, ~/.thumbnails/large/@\n"
-//					  " #is a valid preview name. When you have many previewName, then all are selectable\n"
-//					  " #in various dialogs, and the first one is the default.\n"
-//					  "#previewName %%-s.jpg\n"
-//					  "#previewName .laidout-previews/*.jpg\n"
-//					  "#previewName ~/.laidout/tmp/*.jpg\n"
-//					  "#previewName ~/.thumbnails/large/@    #these two cover all the current freedesktop\n"  
-//					  "#previewName ~/.thumbnails/normal/@   #thumbnail locations\n"
-//					  "\n"
-//					  "\n# The maximum width or height for preview images\n"
-//					  "#maxPreviewLength 200\n"
-//					  "\n"
-//					  "\n");
 
 			fclose(f);
 			setlocale(LC_ALL,"");
@@ -1054,8 +1014,6 @@ int LaidoutApp::readinLaidoutDefaults(char **shortcutsfile)
 			if (file_exists(value,1,nullptr) == S_IFDIR) makestr(prefs.palette_dir,value);
 		
 		} else if (!strcmp(name,"temp_dir")) {
-			//**** default "config_dir/temp/pid/"?
-			//				or projectdir/.laidouttemp/previews
 			//	make sure supplied tempdir is writable before using.
 			cout <<" *** imp temp_dir in laidoutrc"<<endl;
 
@@ -1091,22 +1049,15 @@ int LaidoutApp::readinLaidoutDefaults(char **shortcutsfile)
 
 
 		 //--------------preview related options:
-		} else if (!strcmp(name,"previewThreshhold")) {
-			if (value && !strcmp(value,"never")) preview_over_this_size=INT_MAX;
-			else IntAttribute(value,&preview_over_this_size);
+		} else if (!strcmp(name,"auto_generate_previews")) {
+			if (strEquals(value, "never", true)) prefs.auto_generate_previews = false;
+			else prefs.auto_generate_previews = BooleanAttribute(value);
 		
-		} else if (!strcmp(name,"permanentPreviews")) {
-			preview_transient = !BooleanAttribute(value);
+		} else if (!strcmp(name,"preview_file_base")) {
+			prefs.preview_file_bases.push(newstr(value));
 		
-		} else if (!strcmp(name,"temporaryPreviews")) {
-			preview_transient = BooleanAttribute(value);
-		
-		} else if (!strcmp(name,"previewName")) {
-			preview_file_bases.push(newstr(value));
-			DBG cerr<<"preview_file_bases local for top="<<(int)preview_file_bases.islocal[preview_file_bases.n-1]<<endl;
-		
-		} else if (!strcmp(name,"maxPreviewLength")) {
-			IntAttribute(value,&max_preview_length);
+		} else if (!strcmp(name,"preview_size")) {
+			IntAttribute(value,&prefs.preview_size);
 
 		} else if (!strcmp(name,"shadow_color")) {
 			SimpleColorAttribute(value, nullptr, &prefs.shadow_color, nullptr);
@@ -2327,11 +2278,8 @@ int main(int argc,char **argv)
 	}
 
 
-	 //redefine Laxkit's default preview maker
-	//generate_preview_image = laidout_preview_maker;
-
-	laidout=new LaidoutApp();
-	if (theme) laidout->SetTheme(theme);
+	laidout = new LaidoutApp();
+	if (theme)   laidout->SetTheme(theme);
 	if (backend) laidout->Backend(backend);
 	o = options.find("experimental",0);
 	if (o && o->parsed_present) laidout->prefs.experimental = 1;

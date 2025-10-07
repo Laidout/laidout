@@ -415,6 +415,8 @@ int resource_name_and_desc(FILE *f,char **name, char **desc)
 //! Create a preview file name based on a name template and the absolute path in file.
 /*! \ingroup misc
  *
+ * doc_path should be a full, simplified, absolute path, or nullptr.
+ * 
  * An initial "~/" will expand to the user's $HOME environment variable.
  * 
  * From something like "%-s.png", transform a file like "/blah/2/file.tiff"
@@ -431,106 +433,124 @@ int resource_name_and_desc(FILE *f,char **name, char **desc)
  * There should be only one of '%', '@' or '*'. Any such characters after the first one
  * will be replaced by a '-' character. If there are none of those characters, then assume
  * nametemplate is just a prefix to tack onto file, thus "path/to/file.jpg" with a template of
- * "blah." will return "path/to/blah.file.jpg". In this case if there are further '/' chars 
+ * "blah." will return "path/to/blah.file.png". In this case if there are further '/' chars 
  * in nametemplate, they are converted to '-' chars, so just be sure to include a proper wildcard.
  *
  * Note that this does not check the filesystem for existence or not of the generated preview
  * name. Those duties lie elsewhere.
  *
- * \todo *** maybe should do check to make sure file is an absolute path...
- * \todo **** should probably keep relative templates as relative files...
+ * WARNING: If file is not an absolute path and you use '@', the path will NOT correspond to a valid
+ * freedesktop thumbnail file.
+ *
+ * If you use '^' with a blank doc_path, this is an error, and nullptr is returned
  */
-char *previewFileName(const char *file, const char *nametemplate)
+char *PreviewFileName(const char *file, const char *nametemplate, const char *doc_path)
 {
-	if (!file || !nametemplate) return NULL;
+	if (!file || !nametemplate) return nullptr;
 	
-	const char *b=lax_basename(file);
-	if (!b) return NULL;
+	const char *b = lax_basename(file);
+	if (!b) return nullptr;
 
-	char *path=NULL;
-	char *bname=NULL;
+	char *bname = nullptr;
 
-	 //fix up nametemplate
-	char *tmplate=new char[strlen(nametemplate)+5];
-	strcpy(tmplate,nametemplate);
+	// fix up nametemplate
+	char *tmplate = new char[strlen(nametemplate)+5];
+	strcpy(tmplate, nametemplate);
 	
-	 //set bname to the thing to be placed in the template wildcard
-	 //and replace the wildcard in tmplate with "%s" to be used in 
-	 //later sprintf
-	char *tmp=NULL;
-	//------------**** wtf is wrong with strpbrk!!!! OMFG!!!
-	//tmp=strpbrk(tmplate,"%*@");
-	//-----------
-	tmp=strchr(tmplate,'%');
-	if (!tmp) tmp=strchr(tmplate,'*');
-	if (!tmp) tmp=strchr(tmplate,'@');
-	//------------
-	if (tmp) { //found a wildcard	
-		char c=*tmp        ;//the wildcard
-		int pos=tmp-tmplate;
-		replace(tmplate,"%s",tmp-tmplate,tmp-tmplate,NULL);//tmplate different afterwards!!
-		char *tmp2=tmplate+pos+1;
+	// set bname to the thing to be placed in the template wildcard
+	// and replace the wildcard in tmplate with "%s" to be used in 
+	// later sprintf
+	char *tmp = nullptr;
+	tmp = strchr(tmplate,'%');
+	if (!tmp) tmp = strchr(tmplate,'*');
+	if (!tmp) tmp = strchr(tmplate,'@');
+	if (tmp) { // found a wildcard	
+		char fwildcard = *tmp; // the wildcard
+		int pos = tmp - tmplate;
+		replace(tmplate, "%s", tmp-tmplate, tmp-tmplate, nullptr); // tmplate different afterwards!!
+		char *tmp2 = tmplate + pos + 1;
 
-		 //remove extraneous wildcard chars
-		//------
-		//while (tmp=strpbrk(tmp+1,"%*@"),tmp) *tmp='-';
-		//------
+		// remove extraneous file wildcard chars
 		do {
-			tmp=strchr(tmp2,'%');
-			if (!tmp) tmp=strchr(tmp2,'*');
-			if (!tmp) tmp=strchr(tmp2,'@');
-			if (tmp) *tmp='-';
-			tmp2=tmp+1;
+			tmp = strchr(tmp2,'%');
+			if (!tmp) tmp = strchr(tmp2,'*');
+			if (!tmp) tmp = strchr(tmp2,'@');
+			if (tmp) {
+				*tmp = '-';
+				tmp2 = tmp + 1;
+			}
 		} while (tmp);
-		//------------
 		
-		if (c=='@') {
-			 //bname gets something like "83ab3492fa02f3bcd23829eaf2837243.png"
-			//*******note if file is not an absolute path, this will crash
-			char *str=file_to_uri(file);
+		if (fwildcard == '@') {
+			// bname gets something like "83ab3492fa02f3bcd23829eaf2837243.png"
+			char *str = file_to_uri(file);
+			if (!str) str = newstr(file); // was relative path. Beware!!
 			char *h;
 			unsigned char md[17];
-			bname=new char[40];
+			bname = new char[40];
 			
 			//TODO: MD5() is deprecated, need to find a suitable replacement
 			//MD5((unsigned char *)str, strlen(str), md);
 			freedesktop_md5((unsigned char *)str, strlen(str), md);
 
 			h = bname;
-			for (int c2=0; c2<16; c2++) {
-				sprintf(h,"%02x",(int)md[c2]);
-				h+=2;
+			for (int c2 = 0; c2 < 16; c2++) {
+				sprintf(h, "%02x", (int)md[c2]);
+				h += 2;
 			}
 			strcat(bname,".png");
 			delete[] str;
-		} else if (c=='%') { //chop suffix in bname
-			bname=newstr(b);
-			tmp=strrchr(bname,'.');
-			if (tmp && tmp!=bname) *tmp='\0';
+
+		} else if (fwildcard == '%') { //chop suffix in bname
+			bname = newstr(b);
+			tmp = strrchr(bname,'.');
+			if (tmp && tmp != bname) *tmp = '\0';
+
 		} else { //'*'
-			bname=newstr(b);
+			bname = newstr(b);
 		}
+
 	} else { //no "%*@" found
 		//***is this even rational: 
 		//  if template was "/a/b/c" then make it "-a-b-c%s", 
 		//  a file "/d/e/f/blah.jpg" becomes "/d/e/f/-a-b-cblah.jpg"
-		while (tmp=strchr(tmplate,'/'),tmp) *tmp='-';//removes template path identifiers
-		bname=newstr(b);
-		appendstr(tmplate,"%s");
+		while (tmp = strchr(tmplate,'/'), tmp) *tmp = '-'; //removes extra '/' identifiers
+		bname = newstr(b);
+		appendstr(tmplate, "%s");
+	}
+
+	// expand any initial directory	
+	if (tmplate[1] == '/' && tmplate[0] != '/') {
+		if (tmplate[0] == '~') {
+			expand_home_inplace(tmplate);
+
+		} else if (tmplate[0] == '&') {
+			replace(tmplate, xdg_cache_home(), 0,0, nullptr);
+
+		} else if (tmplate[0] == '^') {
+			if (isblank(doc_path)) {
+				delete[] bname;
+				delete[] tmplate;
+				return nullptr;
+			}
+			replace(tmplate, doc_path, 0,0, nullptr);
+		}
+	}
+
+	char *previewname = new char[strlen(bname) + strlen(tmplate) + 1];
+	sprintf(previewname, tmplate, bname);
+
+	if (previewname[0] != '/') {
+		char *path = lax_dirname(file, 1);
+		if (path) {
+			prependstr(previewname, path);
+			delete[] path;
+		}
 	}
 	
-	if (tmplate[0]=='~' && tmplate[1]=='/') expand_home_inplace(tmplate);
-	if (tmplate[0]!='/') path=lax_dirname(file,1); else path=NULL;
-		
-	char *previewname=new char[strlen(bname)+strlen(tmplate)];
-	sprintf(previewname,tmplate,bname);
-	if (path) {
-		prependstr(previewname,path);
-		delete[] path;
-	}
 	delete[] bname;
 	delete[] tmplate;
-	simplify_path(previewname,1);
+	simplify_path(previewname, 1);
 	return previewname;
 }
 
@@ -635,6 +655,7 @@ int laidout_version_check(const char *version, const char *minversion, const cha
 
 	return v>=min && v<=max;
 }
+
 
 //! Return string identifying the type of file.
 /*! \ingroup misc

@@ -18,6 +18,8 @@
 #include "../language.h"
 #include "../core/stylemanager.h"
 #include "../calculator/shortcuttodef.h"
+#include "../ui/viewwindow.h"
+#include "../laidout.h"
 
 
 using namespace Laxkit;
@@ -33,19 +35,38 @@ namespace Laidout {
 
 class LImageDialog : public Laxkit::ImageDialog
 {
+  protected:
+  	char *doc_path;
+  	virtual char **GetPossiblePreviewFiles();
+
   public:
-	LImageDialog(anXWindow *parnt, unsigned long nowner, ImageInfo *inf);
+	LImageDialog(anXWindow *parnt, unsigned long nowner, ImageInfo *inf, const char *document_path);
+	virtual ~LImageDialog();
 };
 
 
-LImageDialog::LImageDialog(anXWindow *parnt, unsigned long nowner, ImageInfo *inf)
+LImageDialog::LImageDialog(anXWindow *parnt, unsigned long nowner, ImageInfo *inf, const char *document_path)
   : ImageDialog(parnt,_("Image Properties"),_("Image Properties"), ANXWIN_REMEMBER,
 				0,0,400,400,0,NULL, nowner,"image properties",
 				IMGD_NO_TITLE,
 				inf)
 {
+	doc_path = newstr(document_path);
 }
 
+LImageDialog::~LImageDialog()
+{
+	delete[] doc_path;
+}
+
+char **LImageDialog::GetPossiblePreviewFiles()
+{
+	if (isblank(imageinfo->filename)) return nullptr;
+
+	char **dirs = laidout->prefs.DefaultPreviewLocations(imageinfo->filename, doc_path);
+
+	return dirs;
+}
 
 
 //------------------------------- LImageInterface --------------------------------
@@ -64,14 +85,14 @@ LImageInterface::LImageInterface(int nid,Laxkit::Displayer *ndp)
  */
 void LImageInterface::runImageDialog()
 {
+	LaidoutViewport *vp = dynamic_cast<LaidoutViewport*>(curwindow);
+	char *doc_path = nullptr;
+	if (vp && vp->doc) doc_path = lax_dirname(vp->doc->Saveas(), true);
+
 	ImageInfo *inf = new ImageInfo(data->filename, data->previewfile, nullptr, data->description,0, data->index);
-	curwindow->app->rundialog(new ImageDialog(NULL,"Image Properties",_("Image Properties"),
-					ANXWIN_REMEMBER,
-					0,0,400,400,0,
-					NULL,object_id,"image properties",
-					IMGD_NO_TITLE,
-					inf));
+	curwindow->app->rundialog(new LImageDialog(nullptr, object_id, inf, doc_path));
 	inf->dec_count();
+	delete[] doc_path;
 }
 
 

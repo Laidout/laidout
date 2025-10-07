@@ -38,7 +38,10 @@ class LaidoutPreferences : public Value
 	Laxkit::ScreenColor shadow_color;
 	Laxkit::ScreenColor current_page_color;
 	
-	int preview_size;
+	bool auto_generate_previews;
+	int preview_size; // px dimensions over which to render previews if auto_generate_previews
+	Laxkit::PtrStack<char> preview_file_bases; // @ = freedesktop hash, * is basename, % is base without ext
+
 	bool start_with_last;
 	char *shortcuts_file;
 	char *splash_image_file;
@@ -76,12 +79,15 @@ class LaidoutPreferences : public Value
 	virtual const char *GetToolCategoryName(int id, const char **idstr = nullptr);
 	virtual ExternalTool *FindExternalTool(const char *str);
 	virtual ExternalTool *GetDefaultTool(int category);
+
+	char **DefaultPreviewLocations(const char *file, const char *doc_path);
 	
 	int UpdatePreference(const char *which, const char *value, const char *laidoutrc);
 	int UpdatePreference(const char *which, double value, const char *laidoutrc);
 	int UpdatePreference(const char *which, int value, const char *laidoutrc);
 	int UpdatePreference(const char *which, bool value, const char *laidoutrc);
 	int UpdatePreference(const char *which, const Laxkit::ScreenColor &color, const char *laidoutrc);
+	int UpdatePreference(const char *which, Laxkit::PtrStack<char> &stack, const char *laidoutrc);
 };
 
 

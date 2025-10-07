@@ -34,6 +34,7 @@ class LImageInterface : public LaxInterfaces::ImageInterface,
 {
  protected:
 	virtual void runImageDialog();
+	
  public:
 	LImageInterface(int nid,Laxkit::Displayer *ndp);
 	virtual const char *whattype() { return "ImageInterface"; }
