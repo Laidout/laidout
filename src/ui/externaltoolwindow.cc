@@ -84,16 +84,18 @@ int ExternalToolWindow::SpawnExternalToolsWindow(ValueHash *context, ValueHash *
  */
 ExternalToolManagerWindow::ExternalToolManagerWindow(Laxkit::anXWindow *parnt, unsigned long nowner, const char *mes)
 		: RowFrame(parnt,"exttools",_("External tools"),
-					ANXWIN_DOUBLEBUFFER|ROWFRAME_HORIZONTAL|ROWFRAME_LEFT|ANXWIN_REMEMBER|ANXWIN_CENTER|(parnt?ANXWIN_ESCAPABLE:0),
+					ANXWIN_DOUBLEBUFFER|ROWFRAME_HORIZONTAL|ROWFRAME_LEFT|ANXWIN_REMEMBER|ANXWIN_CENTER|(parnt ? 0 : ANXWIN_ESCAPABLE),
 					0,0,600,800,0, NULL,nowner,mes,
 					0)
 {
+	InstallColors(THEME_Panel);
+
 	main_box = nullptr;
 	hover_cat = -1;
 	hover_item = -1;
 	hover_action = -1;
 	lb_action = -1;
-	pad = padinset = win_themestyle->normal->textheight()/2;
+	pad = padinset = UIScale() * win_themestyle->normal->textheight()/2;
 }
 
 enum ExtToolOptions {
@@ -116,7 +118,7 @@ void ExternalToolManagerWindow::GetMainExtent()
 {
 	double h = 2*pad;
 	double w = 0, ww;
-	int th = win_themestyle->normal->textheight();
+	int th = UIScale() * win_themestyle->normal->textheight();
 	Utf8String scratch;
 
 	for (int c=0; c<laidout->prefs.external_tool_manager.external_categories.n; c++) {
@@ -155,7 +157,7 @@ void ExternalToolManagerWindow::GetMainExtent()
 int ExternalToolManagerWindow::scan(int x, int y, int *hitem, int *haction)
 {
 	double yy = pad;
-	int th = win_themestyle->normal->textheight();
+	double th = UIScale() * win_themestyle->normal->textheight();
 	// Utf8String scratch;
 	
 	*hitem = -1;
@@ -327,7 +329,7 @@ int ExternalToolManagerWindow::MouseMove(int x,int y,unsigned int state,const La
 
 int ExternalToolManagerWindow::init()
 {
-	int        th         = app->defaultlaxfont->textheight();
+	int        th         = UIScale() * win_themestyle->normal->textheight();
 	int        linpheight = th * 1.3;
 	
 	Button *   tbut       = NULL;
@@ -460,9 +462,9 @@ void ExternalToolManagerWindow::Refresh()
 
 	Displayer *dp = MakeCurrent();
 	dp->ClearWindow();
-	dp->font(win_themestyle->normal);
+	double th = UIScale() * win_themestyle->normal->textheight();
+	dp->font(win_themestyle->normal, th);
 
-	double th = win_themestyle->normal->textheight();
 	double y = pad;
 	double pad = th/2;
 	Utf8String scratch;
@@ -559,10 +561,11 @@ void ExternalToolManagerWindow::Refresh()
 
 ExternalToolWindow::ExternalToolWindow(Laxkit::anXWindow *parnt, ExternalTool *etool, unsigned long nowner, const char *mes)
 		: RowFrame(parnt,"newtool",_("New tool..."),
-					ROWFRAME_HORIZONTAL|ROWFRAME_LEFT|ANXWIN_REMEMBER|ANXWIN_CENTER|(parnt?ANXWIN_ESCAPABLE:0),
-					0,0,0,0,0, NULL,nowner,mes,
-					laidout->defaultlaxfont->textheight()/3)
+					ROWFRAME_HORIZONTAL|ROWFRAME_LEFT|ANXWIN_REMEMBER|ANXWIN_CENTER|(parnt ? 0 : ANXWIN_ESCAPABLE),
+					0,0,0,0,0, NULL,nowner,mes)
 {
+	InstallColors(THEME_Panel);
+
 	name = commandid = path = parameters = description = website = nullptr;
 	tool = etool;
 	if (tool) {
@@ -579,6 +582,8 @@ ExternalToolWindow::ExternalToolWindow(Laxkit::anXWindow *parnt, ExternalTool *e
 			}
 		}
 	}
+
+	padinset = pad = UIScale() * win_themestyle->normal->textheight()/3;
 }
 
 ExternalToolWindow::~ExternalToolWindow()
@@ -590,8 +595,8 @@ int ExternalToolWindow::preinit()
 {
 	anXWindow::preinit();
 
-	if (win_w<=0) win_w=400;
-	if (win_h<=0) win_h=laidout->defaultlaxfont->textheight()*10;
+	if (win_w <= 0) win_w = 400;
+	if (win_h <= 0) win_h = UIScale() * 2 * win_themestyle->normal->textheight();
 
 //	if (win_w<=0 || win_h<=0) {
 //		arrangeBoxes(1);
@@ -604,12 +609,12 @@ int ExternalToolWindow::preinit()
 
 int ExternalToolWindow::init()
 {
-	int        th         = app->defaultlaxfont->textheight();
+	int        th         = UIScale() * win_themestyle->normal->textheight();
 	int        linpheight = th * 1.3;
-	int        pad        = th / 3;
-	int        lpad       = th / 4;
-	Button *   tbut       = NULL;
-	anXWindow *last       = NULL;
+	// int        pad        = th / 3;
+	// int        lpad       = th / 4;
+	Button *   tbut       = nullptr;
+	anXWindow *last       = nullptr;
 	// LineInput *linp=NULL;
 	// CheckBox *check = NULL;
 	// char      scratch[200];
@@ -641,8 +646,7 @@ int ExternalToolWindow::init()
 	 //-------------  Name
 	last = name = new LineInput(this,"name",NULL,LINP_ONLEFT|LINP_SEND_ANY, 0,0,0,0, 0, 
 						last,object_id,"name",
-			            _("Name"), tool->name,0,
-			            0,0, pad,pad, lpad,lpad);
+			            _("Name"), tool->name,0);
 	last->tooltip(_("Human readable name of tool"));
 	AddWin(last,1, 300,0,10000,50,0, last->win_h,0,0,50,0, -1);
 	AddNull();
@@ -651,8 +655,7 @@ int ExternalToolWindow::init()
 	 //-------------  CommandID
 	last = commandid = new LineInput(this,"command_id",NULL,LINP_ONLEFT|LINP_SEND_ANY, 0,0,0,0, 0, 
 						last,object_id,"command_id",
-			            _("Command id"), tool->command_name,0,
-			            0,0, pad,pad, lpad,lpad);
+			            _("Command id"), tool->command_name,0);
 	last->tooltip(_("Unique id of the tool, independent of languages"));
 	AddWin(last,1, 300,0,10000,50,0, last->win_h,0,0,50,0, -1);
 	last=tbut=new Button(this,"findpath",NULL,0,0,0,0,0,1, last,object_id,"findpath", 0,_("Find path"));
@@ -664,8 +667,7 @@ int ExternalToolWindow::init()
 	//     path        _______[...]
 	last = path = new LineInput(this,"path",NULL,LINP_ONLEFT | LINP_FILE|LINP_SEND_ANY, 0,0,0,0, 0, 
 						last,object_id,"path",
-			            _("Path"), tool->binary_path,0,
-			            0,0, pad,pad, lpad,lpad);
+			            _("Path"), tool->binary_path,0);
 	last->tooltip(_("Full file path of command"));
 	AddWin(last,1, 300,0,10000,50,0, last->win_h,0,0,50,0, -1);
 	AddNull();
@@ -674,8 +676,7 @@ int ExternalToolWindow::init()
 	//     Parameters  _________________
 	last = parameters = new LineInput(this,"parameters",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
 						last,object_id,"parameters",
-			            _("Parameters"), tool->parameters, 0,
-			            0,0, pad,pad, lpad,lpad);
+			            _("Parameters"), tool->parameters, 0);
 	//last->tooltip(_("%f = filename\n%b = basename without extension\n%e = extension\n# = autosave number"));
 	last->tooltip(_("Optional parameters. Default is to list files.\nUse %f or {file} for file.\n{dirname} for directory of file\n{basename} for file basename\n{files} for list of all arguments"));
 	AddWin(last,1, 300,0,10000,50,0, last->win_h,0,0,50,0, -1);
@@ -685,8 +686,7 @@ int ExternalToolWindow::init()
 	//     description _______
 	last = description = new LineInput(this,"description",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
 						last,object_id,"description",
-			            _("Description"), tool->description,0,
-			            0,0, pad,pad, lpad,lpad);
+			            _("Description"), tool->description,0);
 	last->tooltip(_("Optional tooltip for command."));
 	AddWin(last,1, 300,0,10000,50,0, last->win_h,0,0,50,0, -1);
 	AddNull();
@@ -695,8 +695,7 @@ int ExternalToolWindow::init()
 	// //     website     _______
 	// last = website = new LineInput(this,"website",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
 	// 					last,object_id,"website",
-	// 		            _("website"), tool->website,0,
-	// 		            0,0, pad,pad, lpad,lpad);
+	// 		            _("website"), tool->website,0);
 	// last->tooltip(_("Website (if any) for further information."));
 	// AddWin(last,1, 300,0,10000,50,0, last->win_h,0,0,50,0, -1);
 	// AddNull();
