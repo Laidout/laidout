@@ -55,7 +55,7 @@ ImportImagesDialog::ImportImagesDialog(anXWindow *parnt,const char *nname,const 
 			Document *ndoc,int startpg,double defdpi,
 			const char *urilist)
 	: FileDialog(parnt,nname,ntitle,
-			(nstyle&0xffff)|ANXWIN_REMEMBER|ANXWIN_ESCAPABLE,
+			(nstyle & 0xffff) | ANXWIN_REMEMBER | ANXWIN_ESCAPABLE,
 			xx,yy,ww,hh,brder,
 			nowner,nsend,
 			FILES_PREVIEW|FILES_OPEN_MANY,
@@ -63,24 +63,25 @@ ImportImagesDialog::ImportImagesDialog(anXWindow *parnt,const char *nname,const 
 {
 	toobj=obj;
 	if (toobj) toobj->inc_count();
-	doc=ndoc;
+	doc = ndoc;
 	if (doc) doc->inc_count();
-	curitem=-1;
+	curitem = -1;
 
-	//reviewlist=NULL;
+	//reviewlist=nullptr;
 
-	settings=new ImportImageSettings;
+	settings = new ImportImageSettings;
 	settings->startpage=startpg;
 
-	double dpi=defdpi;
-	if (dpi<=0) {
+	double dpi = defdpi;
+	if (dpi <= 0) {
 		if (doc && doc->imposition && doc->imposition->GetDefaultPaper())
-			dpi=doc->imposition->GetDefaultPaper()->dpi;
-		else dpi=300;//***
+			dpi = doc->imposition->GetDefaultPaper()->dpi;
+		else
+			dpi = 300;  //*** should be a pref?
 	}
-	settings->defaultdpi=dpi;
+	settings->defaultdpi = dpi;
 
-	dialog_style|=FILES_PREVIEW;
+	dialog_style |= FILES_PREVIEW;
 }
 
 ImportImagesDialog::~ImportImagesDialog()
@@ -93,16 +94,16 @@ ImportImagesDialog::~ImportImagesDialog()
 
 void ImportImagesDialog::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 {
-	Attribute *att=dump_out_atts(NULL,0,context);
+	Attribute *att=dump_out_atts(nullptr,0,context);
 	att->dump_out(f,indent);
 	delete att;
 }
 
-/*! Append to att if att!=NULL, else return new att.
+/*! Append to att if att!=nullptr, else return new att.
  */
 Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what,Laxkit::DumpContext *context)
 {
-	if (!att) att=new Attribute("ImportImagesDialog",NULL);
+	if (!att) att=new Attribute("ImportImagesDialog",nullptr);
 	char scratch[100];
 
 	 //window settings
@@ -119,7 +120,7 @@ Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what,Laxkit::Dum
 	att->push("win_h",scratch);
 
 	 //------------export settings
-	double dpi      =dynamic_cast<LineInput *>(findWindow("DPI"))->GetLineEdit()->GetDouble(NULL);
+	double dpi      =dynamic_cast<LineInput *>(findWindow("DPI"))->GetLineEdit()->GetDouble(nullptr);
 
 	int perpage = -2; //force to 1 page
 	if (dynamic_cast<CheckBox *>(findWindow("perpageexactly"))->State()==LAX_ON) {
@@ -151,7 +152,7 @@ Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what,Laxkit::Dum
 				(dynamic_cast<CheckBox *>(findWindow("autopreview"))->State()==LAX_ON)?"yes":"no");
 
 	 //maxPreviewWidth 200
-	int w=dynamic_cast<LineInput *>(findWindow("PreviewWidth"))->GetLineEdit()->GetLong(NULL);
+	int w=dynamic_cast<LineInput *>(findWindow("PreviewWidth"))->GetLineEdit()->GetLong(nullptr);
 	att->push("maxPreviewWidth",w,-1);
 
 	 //defaultPreviewName any
@@ -188,7 +189,7 @@ int ImportImagesDialog::init()
 	dialog_style|=FILES_PREVIEW;
 	FileDialog::init();
 	AddNull();
-	AddWin(NULL,0, 2000,1990,0,50,0, 15,0,0,50,0, -1);
+	AddWin(nullptr,0, 2000,1990,0,50,0, 15,0,0,50,0, -1);
 
 	 // set up the extra windows....
 	  
@@ -217,28 +218,28 @@ int ImportImagesDialog::init()
 	 //---------------------- create choose/review  ---------------------------
 	 //*** need [Add] on choose tab, and [remove] on review tab
 //	c=findWindowIndex("files"); //the original file MenuSelector
-//	TabFrame *tabframe=new TabFrame(this,"choose",NULL,BOXSEL_LEFT|BOXSEL_TOP|BOXSEL_ONE_ONLY|BOXSEL_ROWS,
+//	TabFrame *tabframe=new TabFrame(this,"choose",nullptr,BOXSEL_LEFT|BOXSEL_TOP|BOXSEL_ONE_ONLY|BOXSEL_ROWS,
 //										50,50,300,200,0, 
-//										NULL, object_id, "choose");
+//										nullptr, object_id, "choose");
 //	tabframe->pw(100);
 //	tabframe->wg(1000);
 //	tabframe->ph(30);
 //	tabframe->hg(1000);
 ////	reviewlist=new MenuSelector(this,"reviewlist",0, 0,0,0,0,1,
-////			NULL,window,"reviewlist",
+////			nullptr,window,"reviewlist",
 ////			MENUSEL_SEND_ON_UP|MENUSEL_CURSSELECTS|MENUSEL_TEXTCOLORS|
-////			MENUSEL_LEFT|MENUSEL_SUB_ON_LEFT|MENUSEL_SUB_FOLDER, NULL,0);
+////			MENUSEL_LEFT|MENUSEL_SUB_ON_LEFT|MENUSEL_SUB_FOLDER, nullptr,0);
 ////	//***populate reviewlist as needed...
 //
 //	MenuSelector *oldfilelist=filelist;
-//	filelist=new MenuSelector(this,"files",NULL,0, 0,0,0,0,1,
+//	filelist=new MenuSelector(this,"files",nullptr,0, 0,0,0,0,1,
 //			last,object_id,"files",
 //			MENUSEL_SEND_ON_UP|MENUSEL_CURSSELECTS|MENUSEL_TEXTCOLORS|
 //			MENUSEL_LEFT|MENUSEL_SUB_ON_LEFT|MENUSEL_SUB_FOLDER, &files,0);
 //	filelist->tooltip(_("Choose from these files.\nRight-click drag scrolls"));
 //
-//	tabframe->AddWin(filelist,1, _("Choose"),NULL,0);
-////	tabframe->AddWin(reviewlist,1, _("Review"),NULL);
+//	tabframe->AddWin(filelist,1, _("Choose"),nullptr,0);
+////	tabframe->AddWin(reviewlist,1, _("Review"),nullptr);
 //	//tabframe->SelectN(0);
 //	wholelist.remove(c);
 //	app->destroywindow(oldfilelist);
@@ -258,38 +259,38 @@ int ImportImagesDialog::init()
 	linp->Label(" ");
 	linp->GetLineEdit()->win_style|=LINEEDIT_SEND_ANY_CHANGE;
 	c=findWindowIndex("file");
-	AddWin(new MessageBar(this,"file",NULL,MB_MOVE, 0,0, 0,0, 0, "File? "), 1,c);
-	tbut=new Button(this,"prev file",NULL,0, 0,0,0,0, 1, 
+	AddWin(new MessageBar(this,"file",nullptr,MB_MOVE, 0,0, 0,0, 0, "File? "), 1,c);
+	tbut=new Button(this,"prev file",nullptr,0, 0,0,0,0, 1, 
 					linp,object_id,"prevfile",
-					0,"<",NULL,NULL);
+					0,"<",nullptr,nullptr);
 	tbut->tooltip(_("Jump to previous selected file"));
 	AddWin(tbut,1, c+1);
-	tbut=new Button(this,"next file",NULL,0, 0,0,0,0, 1, 
+	tbut=new Button(this,"next file",nullptr,0, 0,0,0,0, 1, 
 					tbut,object_id,"nextfile",
 					0,
-					">",NULL,NULL);
+					">",nullptr,nullptr);
 	tbut->tooltip(_("Jump to next selected file"));
 	AddWin(tbut,1, c+2);
 	
 	 //---------------------- insert preview line input
 	c=findWindowIndex("path");
-	AddWin(new MessageBar(this,"previewm",NULL,MB_MOVE, 0,0, 0,0, 0, "Preview: "),1, c);
+	AddWin(new MessageBar(this,"previewm",nullptr,MB_MOVE, 0,0, 0,0, 0, "Preview: "),1, c);
 	MenuButton *menub;
-	last=menub=new MenuButton(this,"previewlist",NULL,MENUBUTTON_DOWNARROW|MENUBUTTON_CLICK_CALLS_OWNER, 0,0,0,0,0,
+	last=menub=new MenuButton(this,"previewlist",nullptr,MENUBUTTON_DOWNARROW|MENUBUTTON_CLICK_CALLS_OWNER, 0,0,0,0,0,
 							  linp,object_id,"previewlist",0,
-							  NULL,1,
-							  "  ",NULL,NULL);
+							  nullptr,1,
+							  "  ",nullptr,nullptr);
 	menub->tooltip(_("Select from possible automatic previews"));
 	AddWin(menub,1, c+1);
-	last=linp=new LineInput(this,"preview",NULL,
+	last=linp=new LineInput(this,"preview",nullptr,
 						LINP_FILE, 0,0,0,0,0, 
 						last,object_id,"preview",
-						" ",NULL,0);
+						" ",nullptr,0);
 	linp->GetLineEdit()->win_style|=LINEEDIT_SEND_ANY_CHANGE;
 	AddWin(linp,1, 200,100,1000,50,0, linp->win_h,0,0,50,0, c+2);
-	last=tbut=new Button(this,"generate preview",NULL,0, 0,0,0,0, 1, 
+	last=tbut=new Button(this,"generate preview",nullptr,0, 0,0,0,0, 1, 
 			last,object_id,"generate",0,
-			_("Generate"),NULL,NULL);
+			_("Generate"),nullptr,nullptr);
 	tbut->tooltip(_("Generate a preview for file at this location."));
 	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, c+3);
 	AddNull(c+4);
@@ -307,21 +308,21 @@ int ImportImagesDialog::init()
 	 //start page __0__   alignx___ aligny___
 	last = nullptr;
 	sprintf(str,"%d",settings->startpage);
-	last = linp = new LineInput(this,"StartPage",NULL,0, 0,0,0,0,0, last,object_id,"startpage",
+	last = linp = new LineInput(this,"StartPage",nullptr,0, 0,0,0,0,0, last,object_id,"startpage",
 						_("Start Page:"),str,0);
 	linp->tooltip(_("The starting document page index to drop images onto. 0 is the first page."));
 	AddWin(linp,1, linp->win_w+linpheight*8,100,1000,50,0, linp->win_h,0,0,50,0, -1);
 
 	int currentpagetype=0;
 	if (doc) {
-		AddWin(NULL,0, linpheight*6,0,0,50,0, linpheight,0,0,50,0, -1);
+		AddWin(nullptr,0, linpheight*6,0,0,50,0, linpheight,0,0,50,0, -1);
 		if (doc->imposition->NumPageTypes()>1) {
 			 //only add this for more than one type
-			mesbar=new MessageBar(this,"thispage",NULL,MB_MOVE, 0,0, 0,0, 0, _("Align on page:"));
+			mesbar=new MessageBar(this,"thispage",nullptr,MB_MOVE, 0,0, 0,0, 0, _("Align on page:"));
 			AddWin(mesbar,1, mesbar->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	
 			SliderPopup *pagetypes;
-			last=pagetypes=new SliderPopup(this,"pageTypes",NULL,0, 0,0, 0,0, 1, last,object_id,"pagetype");
+			last=pagetypes=new SliderPopup(this,"pageTypes",nullptr,0, 0,0, 0,0, 1, last,object_id,"pagetype");
 			for (int c=0; c<doc->imposition->NumPageTypes(); c++) {
 				pagetypes->AddItem(doc->imposition->PageTypeName(c),c);
 			}
@@ -338,7 +339,7 @@ int ImportImagesDialog::init()
 	 //-----align x and y for each page type, this shows the settings for currentpagetype
 	if (settings->alignment.n) sprintf(str,"%.10g",settings->alignment.e[currentpagetype].x);
 	else sprintf(str,"center"); 
-	last = linp = new LineInput(this,"alignx",NULL,0, 0,0,0,0,0, last,object_id,"alignx",
+	last = linp = new LineInput(this,"alignx",nullptr,0, 0,0,0,0,0, last,object_id,"alignx",
 						_("Align X:"),str,0);
 	linp->GetLineEdit()->SetWinStyle(LINEEDIT_SEND_ANY_CHANGE,1);
 	linp->tooltip(_("0 means align left, 50 center, 100 right, etc."));
@@ -346,7 +347,7 @@ int ImportImagesDialog::init()
 
 	if (settings->alignment.n) sprintf(str,"%.10g",settings->alignment.e[currentpagetype].y);
 	else sprintf(str,"center"); 
-	last = linp = new LineInput(this,"aligny",NULL,0, 0,0,0,0,0, last,object_id,"aligny",
+	last = linp = new LineInput(this,"aligny",nullptr,0, 0,0,0,0,0, last,object_id,"aligny",
 						_("Align Y:"),str,0);
 	linp->GetLineEdit()->SetWinStyle(LINEEDIT_SEND_ANY_CHANGE,1);
 	linp->tooltip(_("0 means align top, 50 center, 100 bottom, etc."));
@@ -356,35 +357,36 @@ int ImportImagesDialog::init()
 
 	 //----dpi
 	sprintf(str,"%.10g",settings->defaultdpi);
-	last=linp=new LineInput(this,"DPI",NULL,0, 0,0,0,0,0, last,object_id,"dpi",
+	last=linp=new LineInput(this,"DPI",nullptr,0, 0,0,0,0,0, last,object_id,"dpi",
 						_("Default dpi:"),str,0);
 	AddWin(linp,1, linp->win_w+linpheight*8,10,100,50,0, linp->win_h,0,0,50,0, -1);
 	
-	last=check=new CheckBox(this,"scaleup",NULL,CHECK_LEFT, 0,0,0,0,0, 
+	last=check=new CheckBox(this,"scaleup",nullptr,CHECK_LEFT, 0,0,0,0,0, 
 						last,object_id,"scaleup", _("Scale up"));
 	if (settings->scaleup) check->State(LAX_ON); else check->State(LAX_OFF);
 	check->tooltip(_("If necessary, scale up images to just fit within the target area"));
 	AddWin(check,1,  check->win_w,0,0,50,0, check->win_h,0,0,50,0, -1);
 
-	last=check=new CheckBox(this,"scaledown",NULL,CHECK_LEFT, 0,0,0,0,0, 
+	last=check=new CheckBox(this,"scaledown",nullptr,CHECK_LEFT, 0,0,0,0,0, 
 						last,object_id,"scaledown", _("Scale down"));
 	if (settings->scaledown) check->State(LAX_ON); else check->State(LAX_OFF);
 	check->tooltip(_("If necessary, scale down images to just fit within the target area"));
 	AddWin(check,1, check->win_w,0,0,50,0, check->win_h,0,0,50,0, -1);
 
-	AddWin(NULL,0, 3000,2990,0,50,0, 0,0,0,50,0, -1);
+	AddWin(nullptr,0, 3000,2990,0,50,0, 0,0,0,50,0, -1);
 	
 	
 	 //------------------------------ Images Per Page
 	//Images Per Page ____, or "as many as will fit", or "all on 1 page"
 		
-	mesbar=new MessageBar(this,"perpage",NULL,MB_MOVE, 0,0, 0,0, 0, _("Images Per Page:"));
+	mesbar=new MessageBar(this,"perpage",nullptr,MB_MOVE, 0,0, 0,0, 0, _("Images Per Page:"));
 	AddWin(mesbar,1, mesbar->win_w,0,0,50,0, mesbar->win_h,0,0,50,0, -1);
-	AddWin(NULL,0, 1000,1000,0,50,0, 0,0,0,50,0, -1);
+	AddWin(nullptr,0, 1000,1000,0,50,0, 0,0,0,50,0, -1);
 	AddNull();
 	
-	AddSpacer(linpheight,0,0,50, linpheight,0,0,50);
-	last=check=new CheckBox(this,"perpageexactly",NULL,CHECK_LEFT, 0,0,0,0,0, 
+	// AddSpacer(linpheight,0,0,50, linpheight,0,0,50);
+	AddSpacer(linpheight,0,0,50, 0,0,0,50);
+	last=check=new CheckBox(this,"perpageexactly",nullptr,CHECK_LEFT, 0,0,0,0,0, 
 						last,object_id,"perpageexactly", _("Exactly this many:"));
 	check->tooltip(_("Append \"/n\" for every nth, so \"1/2\" means import one image every 2 pages"));
 	if (settings->perpage>=0) {
@@ -398,41 +400,43 @@ int ImportImagesDialog::init()
 
 	if (settings->every_nth > 1) sprintf(str,"%d/%d", settings->perpage>0?settings->perpage:1, settings->every_nth);
 	else sprintf(str,"%d",settings->perpage>0?settings->perpage:1);
-	last = linp = new LineInput(this,"NumPerPage",NULL,0, 0,0,0,0,0, last,object_id,"perpageexactlyn",
-						NULL,str,0,
+	last = linp = new LineInput(this,"NumPerPage",nullptr,0, 0,0,0,0,0, last,object_id,"perpageexactlyn",
+						nullptr,str,0,
 						textheight*10,1.2*textheight+4);
 	linp->GetLineEdit()->SetWinStyle(LINEEDIT_SEND_FOCUS_ON,1);
 	AddWin(linp,1, -1);
-	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,50,0, -1);
+	AddWin(nullptr,0, 2000,2000,0,50,0, 0,0,0,50,0, -1);
 	AddNull();
 
-	AddSpacer(linpheight,0,0,50, linpheight,0,0,50);
-	last=check=new CheckBox(this,"perpagefit",NULL,CHECK_LEFT, 0,0,0,0,0, 
+	// AddSpacer(linpheight,0,0,50, linpheight,0,0,50);
+	AddSpacer(linpheight,0,0,50, 0,0,0,50);
+	last=check=new CheckBox(this,"perpagefit",nullptr,CHECK_LEFT, 0,0,0,0,0, 
 						last,object_id,"perpagefit", _("As many as will fit per page"));
 	if (settings->perpage==-1) check->State(LAX_ON); else check->State(LAX_OFF);
 	AddWin(check,1, check->win_w,0,0,50,0, check->win_h,0,0,50,0, -1);
-	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,50,0, -1);
+	AddWin(nullptr,0, 2000,2000,0,50,0, 0,0,0,50,0, -1);
 	AddNull();
 
-	AddSpacer(linpheight,0,0,50, linpheight,0,0,50);
-	last=check=new CheckBox(this,"perpageall",NULL,CHECK_LEFT, 0,0,0,0,0, 
+	// AddSpacer(linpheight,0,0,50, linpheight,0,0,50);
+	AddSpacer(linpheight,0,0,50, 0,0,0,50);
+	last=check=new CheckBox(this,"perpageall",nullptr,CHECK_LEFT, 0,0,0,0,0, 
 						last,object_id,"perpageall", _("All on one page"));
 	if (settings->perpage==-2) check->State(LAX_ON); else check->State(LAX_OFF);
 	AddWin(check,1, check->win_w,1,0,50,0, check->win_h,0,0,50,0, -1);
-	AddWin(NULL,0, 2001,2000,0,50,0, 0,0,0,50,0, -1);
+	AddWin(nullptr,0, 2001,2000,0,50,0, 0,0,0,50,0, -1);
 
 
-	 //------------------------ preview options ----------------------
-	last = check = new CheckBox(this,"expand_subimages",NULL,CHECK_LEFT, 0,0,0,0,0, 
+	 //------------------------ subimage options ----------------------
+	last = check = new CheckBox(this,"expand_subimages",nullptr,CHECK_LEFT, 0,0,0,0,0, 
 						last,object_id,"expand_subimages", _("Expand files with multiple images"));
 	check->tooltip(_("Such as animated gif or pdf (rendered to pixels)"));
 	if (settings->expand_subimages) check->State(LAX_ON); else check->State(LAX_OFF);
 	AddWin(check,1, check->win_w,1,0,50,0, check->win_h,0,0,50,0, -1);
-	AddWin(NULL,0, 2001,2000,0,50,0, 0,0,0,50,0, -1);
+	AddWin(nullptr,0, 2001,2000,0,50,0, 0,0,0,50,0, -1);
 
 
 	 //------------------------ preview options ----------------------
-	last=linp=new LineInput(this,"PreviewBase",NULL,0, 0,0,0,0,0, last,object_id,"previewbase",
+	last=linp=new LineInput(this,"PreviewBase",nullptr,0, 0,0,0,0,0, last,object_id,"previewbase",
 						_("Default name for previews:"),
 						_("any"),0);
 	linp->tooltip(_("For file.jpg,\n"
@@ -440,42 +444,44 @@ int ImportImagesDialog::init()
 				  "% gets replaced with the file name without the final suffix (\"file\")\n"));
 	AddWin(linp,1, -1);
 	MenuInfo *menu=new MenuInfo("Preview Bases");
-	for (c=0; c<laidout->preview_file_bases.n; c++) {
-		menu->AddItem(laidout->preview_file_bases.e[c],c);
+	for (c = 0; c < laidout->prefs.preview_file_bases.n; c++) {
+		menu->AddItem(laidout->prefs.preview_file_bases.e[c],c);
 	}
-	menub=new MenuButton(this,"PreviewBase",NULL,MENUBUTTON_DOWNARROW, 0,0,0,0,0,
+	menub=new MenuButton(this,"PreviewBase",nullptr,MENUBUTTON_DOWNARROW, 0,0,0,0,0,
 									 last,object_id,"previewbasemenu",0,
 									 menu,1,
 									 " ");
 	menub->tooltip(_("Select from the available preview bases"));
 	AddWin(menub,1, -1);
-	AddWin(NULL,0, 3000,3000,0,50,0, 0,0,0,50,0, -1);//force left justify
+	AddWin(nullptr,0, 3000,3000,0,50,0, 0,0,0,50,0, -1);//force left justify
 
-	last=linp=new LineInput(this,"PreviewWidth",NULL,0, 0,0,0,0,0, last,object_id,"previewwidth",
-						_("Default max width for new previews:"),NULL,0);
-	linp->GetLineEdit()->SetText(laidout->max_preview_length);
-	linp->tooltip(_("Any newly generated previews must fit\nin a square this many pixels wide"));
-	AddWin(linp,1, -1);
-	AddWin(NULL,0, 3000,3000,0,50,0, 0,0,0,50,0, -1);//force left justify
-	 
-	last=check=new CheckBox(this,"autopreview",NULL,CHECK_LEFT, 0,0,0,0,1, 
-						last,object_id,"autopreview", _("Make previews for files larger than"));
+	last = check = new CheckBox(this,"autopreview",nullptr,CHECK_LEFT, 0,0,0,0,1, 
+						last,object_id,"autopreview", _("Auto generate missing previews"));
 	check->State(LAX_OFF);
 	AddWin(check,1, check->win_w,0,0,50,0, linpheight,0,0,50,0, -1);
+	AddWin(nullptr,0, 5000,5000,0,50,0, 0,0,0,50,0, -1);//force left justify
+
+	last = linp = new LineInput(this,"PreviewWidth",nullptr,0, 0,0,0,0,0, last,object_id,"previewwidth",
+						_("Default max width for new previews:"),nullptr,0);
+	linp->GetLineEdit()->SetText(laidout->prefs.preview_size);
+	linp->tooltip(_("Any newly generated previews must fit\nin a square this many pixels wide"));
+	AddWin(linp,1, -1);
+	AddWin(nullptr,0, 3000,3000,0,50,0, 0,0,0,50,0, -1);//force left justify
+	 
 	
 	 //----------------- file size to maybe generate previews for 
-	last=linp=new LineInput(this,"MinSize",NULL,0, 0,0,0,0,0, last,object_id,"mintopreview",
-						" ",NULL,0,
-						textheight*6,0);
-	linp->GetLineEdit()->SetText(laidout->preview_over_this_size);
-	linp->tooltip(_("Previews will be automatically generated \n"
-			      "for files over this size, and then only \n"
-				  "whenever the generated preview name doesn't\n"
-				  "exist already"));
-	AddWin(linp,1, -1);
-	mesbar=new MessageBar(this,"kb",NULL,MB_MOVE, 0,0, 0,0, 0, "kB");
-	AddWin(mesbar,1,  mesbar->win_w,0,0,50,0, mesbar->win_h,0,0,50,0, -1);
-	AddWin(NULL,0, 3000,3000,0,50,0, 0,0,0,50,0, -1);//force left justify
+	// last=linp=new LineInput(this,"MinSize",nullptr,0, 0,0,0,0,0, last,object_id,"mintopreview",
+	// 					" ",nullptr,0,
+	// 					textheight*6,0);
+	// linp->GetLineEdit()->SetText(laidout->preview_over_this_size);
+	// linp->tooltip(_("Previews will be automatically generated \n"
+	// 		      "for files over this size, and then only \n"
+	// 			  "whenever the generated preview name doesn't\n"
+	// 			  "exist already"));
+	// AddWin(linp,1, -1);
+	// mesbar=new MessageBar(this,"kb",nullptr,MB_MOVE, 0,0, 0,0, 0, "kB");
+	// AddWin(mesbar,1,  mesbar->win_w,0,0,50,0, mesbar->win_h,0,0,50,0, -1);
+	// AddWin(nullptr,0, 3000,3000,0,50,0, 0,0,0,50,0, -1);//force left justify
 	 
 
 	 //-------------------- change Ok to Import
@@ -496,7 +502,7 @@ int ImportImagesDialog::Event(const Laxkit::EventData *data,const char *mes)
 
 		LineInput *preview= dynamic_cast<LineInput *>(findWindow("preview"));
 		preview->SetText(strs->strs[0]+2);
-		char *full=fullFilePath(NULL);
+		char *full=fullFilePath(nullptr);
 		ImageInfo *info=findImageInfo(full);
 		delete[] full;
 		if (info) makestr(info->previewfile,strs->strs[0]+2);
@@ -532,8 +538,8 @@ int ImportImagesDialog::Event(const Laxkit::EventData *data,const char *mes)
 
 	} else if (!strcmp(mes,"new file")) {
 //		FileDialog::ClientEvent(e,mes);
-		char *full=fullFilePath(NULL);
-		if (file_exists(full,1,NULL)) updateFileList();
+		char *full=fullFilePath(nullptr);
+		if (file_exists(full,1,nullptr)) updateFileList();
 		delete[] full;
 		rebuildPreviewName();
 		return 0;
@@ -648,36 +654,45 @@ int ImportImagesDialog::Event(const Laxkit::EventData *data,const char *mes)
 				
 		MenuInfo *menu=new MenuInfo("Possible Preview Files");
 		char *str,*full;
-		LaxImage *img;
-		full=fullFilePath(NULL);
-		for (int c=0; c<laidout->preview_file_bases.n; c++) {
-			str=previewFileName(full,laidout->preview_file_bases.e[c]);
-			img = ImageLoader::LoadImage(str);
-			if (img) {
+		full = fullFilePath(nullptr);
+		char *doc_path = nullptr;
+		if (doc) doc_path = lax_dirname(doc->Saveas(), true);
+
+		for (int c = 0; c < laidout->prefs.preview_file_bases.n; c++) {
+			str = PreviewFileName(full, laidout->prefs.preview_file_bases.e[c], doc_path);
+			if (!str) continue;
+
+			int image_width = 0;
+			int image_height = 0;
+			int ping = ImageLoader::Ping(str, &image_width,&image_height, nullptr,nullptr); //return 0 for success. subfiles is number of "frames" in file
+			if (ping == 0) {
 				prependstr(str,"* ");
-				img->dec_count();
-			} else prependstr(str,"  ");
+			} else {
+				prependstr(str,"  ");
+			}
 			menu->AddItem(str,c);
 		}
-		PopupMenu *popup=new PopupMenu(NULL,menu->title, 0,
+		delete[] doc_path;
+
+		PopupMenu *popup = new PopupMenu(nullptr,menu->title, 0,
                         0,0,0,0, 1,
                         object_id,"usethispreview",
                         0, //mouse to position near?
-                        menu,1, NULL,
+                        menu,1, nullptr,
                         TREESEL_LEFT|TREESEL_SEND_STRINGS|TREESEL_LIVE_SEARCH|TREESEL_SUB_ON_RIGHT);
 		popup->Select(0);
-		popup->WrapToMouse(0,NULL);
+		popup->WrapToMouse(0,nullptr);
 		app->rundialog(popup);
 		if (popup->object_id) app->setfocus(popup);
-		else { app->destroywindow(popup); popup=NULL; }
+		else { app->destroywindow(popup); popup=nullptr; }
 		return 0;	
 
 	} else if (!strcmp(mes,"previewbasemenu")) {
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
-		int i=s->info1;
-		if (i>=0 && i<laidout->preview_file_bases.n) {
-			LineInput *prevbase=dynamic_cast<LineInput *>(findWindow("PreviewBase"));
-			prevbase->SetText(laidout->preview_file_bases.e[i]);
+		int i = s->info1;
+		if (i >= 0 && i < laidout->prefs.preview_file_bases.n) {
+			LineInput *prevbase = dynamic_cast<LineInput *>(findWindow("PreviewBase"));
+			prevbase->SetText(laidout->prefs.preview_file_bases.e[i]);
 		}
 		return 0;
 
@@ -771,15 +786,15 @@ void ImportImagesDialog::rebuildPreviewName()
 	//const char *f=linp->GetCText();
 	
 	 // find file in list 
-	char *full=fullFilePath(NULL);
+	char *full=fullFilePath(nullptr);
 	ImageInfo *info=findImageInfo(full);
 	LineInput *preview= dynamic_cast<LineInput *>(findWindow("preview"));
 	DBG if (!preview) { cerr <<"*********rebuildPreviewName ERROR!! ABORT ABORT SHOULDN'T HAPPEN!!"<<endl; exit(1); }
 	
-	char *prev=NULL;
-	if (info) prev=newstr(info->previewfile);
-	if (!prev) prev=getPreviewFileName(full);
-	if (!prev) prev=newstr("");
+	char *prev=nullptr;
+	if (info)  prev = newstr(info->previewfile);
+	if (!prev) prev = getPreviewFileName(full);
+	if (!prev) prev = newstr("");
 	preview->SetText(prev);
 	delete[] full;
 	delete[] prev;
@@ -794,21 +809,21 @@ void ImportImagesDialog::updateFileList()
 	DBG cerr <<"ImportImagesDialog::updateFileList()"<<endl;
 	curitem=-1;
 
-	const MenuItem *item=NULL;
-	ImageInfo *info=NULL;
-	char *full=NULL;
+	const MenuItem *item=nullptr;
+	ImageInfo *info=nullptr;
+	char *full=nullptr;
 
 	for (int c=0; c<filelist->NumSelected(); c++) {
 		item=filelist->GetSelected(c);
 		
 		 // find file in list 
 		full = fullFilePath(item->name);
-		if (file_exists(full,1,NULL)==S_IFREG) {
+		if (file_exists(full,1,nullptr)==S_IFREG) {
 			info = findImageInfo(full);
 			if (!info) {
 				 // add node
 				char *prev = getPreviewFileName(full);
-				images.push(new ImageInfo(full,prev,NULL,NULL,0));
+				images.push(new ImageInfo(full,prev,nullptr,nullptr,0));
 				delete[] prev;
 			} 
 		}
@@ -840,7 +855,7 @@ int str_to_byte_size(const char *s, long *ll)
 		return 0;
 	}
 	char *e;
-	long l=strtol(str,&e,10);//supposedly, e will never be NULL
+	long l=strtol(str,&e,10);//supposedly, e will never be nullptr
 	if (e==str) {
 		delete[] str;
 		if (ll) *ll=0;
@@ -864,7 +879,7 @@ int str_to_byte_size(const char *s, long *ll)
 }
 
 //! Return the Laxkit::ImageInfo in images with fullfile as the path.
-/*! If i!=NULL, then set *i=(index of the imageinfo), -1 if not found.
+/*! If i!=nullptr, then set *i=(index of the imageinfo), -1 if not found.
  */
 Laxkit::ImageInfo *ImportImagesDialog::findImageInfo(const char *fullfile,int *i)
 {
@@ -880,7 +895,7 @@ Laxkit::ImageInfo *ImportImagesDialog::findImageInfo(const char *fullfile,int *i
 		delete[] full;
 	}
 	if (i) *i=-1;
-	return NULL;
+	return nullptr;
 }
 
 /*! Turn a string like "234/656" to the two numbers. If no second number return 0 for it.
@@ -925,7 +940,7 @@ int ImportImagesDialog::send(int id)
 	DBG cerr <<"====Generating file names for import images..."<<endl;
 	
 	int n=0;
-	char **imagefiles=NULL, **previewfiles=NULL;
+	char **imagefiles=nullptr, **previewfiles=nullptr;
 
 	if (filelist->NumSelected()>0) {
 		n=0;
@@ -934,7 +949,7 @@ int ImportImagesDialog::send(int id)
 		
 		const MenuItem *item;
 		for (int c=0; c<filelist->NumSelected(); c++) {
-			imagefiles[n] = previewfiles[n] = NULL;
+			imagefiles[n] = previewfiles[n] = nullptr;
 			item = filelist->GetSelected(c);
 
 			if (item) {
@@ -950,8 +965,8 @@ int ImportImagesDialog::send(int id)
 			}
 		}
 		if (!n) {
-			delete[] imagefiles;   imagefiles=NULL;
-			delete[] previewfiles; previewfiles=NULL;
+			delete[] imagefiles;   imagefiles=nullptr;
+			delete[] previewfiles; previewfiles=nullptr;
 		}
 
 	} else { 
@@ -968,9 +983,9 @@ int ImportImagesDialog::send(int id)
 				imagefiles  =new char*[n];
 				previewfiles=new char*[n];
 				imagefiles[0]=blah;
-				previewfiles[0]=NULL;
+				previewfiles[0]=nullptr;
 			} else {
-				delete[] blah; blah=NULL;
+				delete[] blah; blah=nullptr;
 				n=0;
 			}
 		}
@@ -986,25 +1001,25 @@ int ImportImagesDialog::send(int id)
 	ImageInfo *info;
 	for (int c=0; c<n; c++) {
 		if (!imagefiles[c]) continue;
-		if (file_exists(imagefiles[c],1,NULL) != S_IFREG) {
+		if (file_exists(imagefiles[c],1,nullptr) != S_IFREG) {
 			delete[] imagefiles[c];
-			imagefiles[c] = NULL;
+			imagefiles[c] = nullptr;
 			continue;
 		}
 		info = findImageInfo(imagefiles[c]);
 		if (info) previewfiles[c] = newstr(info->previewfile);
 			else  previewfiles[c] = getPreviewFileName(imagefiles[c]);
 
-		if (!file_exists(previewfiles[c],1,NULL)) {
+		if (!file_exists(previewfiles[c],1,nullptr)) {
 			if (dynamic_cast<CheckBox *>(findWindow("autopreview"))->State()==LAX_ON) {
 
 				long si,
-					 s=file_size(imagefiles[c],1,NULL);
+					 s=file_size(imagefiles[c],1,nullptr);
 				templi=dynamic_cast<LineInput *>(findWindow("MinSize"));			
 				str_to_byte_size(templi->GetCText(), &si);
 				if (s>si) {
 					DBG cerr <<"-=-=-=--=-==-==-=-==-- Generate preview at: "<<previewfiles[c]<<endl;
-					si=dynamic_cast<LineInput *>(findWindow("PreviewWidth"))->GetLineEdit()->GetLong(NULL);
+					si=dynamic_cast<LineInput *>(findWindow("PreviewWidth"))->GetLineEdit()->GetLong(nullptr);
 					if (si<10) si=128;
 					if (GeneratePreviewFile(imagefiles[c],previewfiles[c],"jpg",si,si,1)) {
 						DBG cerr <<"              ***generate preview failed....."<<endl;
@@ -1012,12 +1027,12 @@ int ImportImagesDialog::send(int id)
 				}
 			} else {
 				delete[] previewfiles[c];
-				previewfiles[c]=NULL;
+				previewfiles[c]=nullptr;
 			}
 		}
 	}
-	settings->startpage =dynamic_cast<LineInput *>(findWindow("StartPage"))->GetLineEdit()->GetLong(NULL);
-	settings->defaultdpi=dynamic_cast<LineInput *>(findWindow("DPI"))->GetLineEdit()->GetDouble(NULL);
+	settings->startpage =dynamic_cast<LineInput *>(findWindow("StartPage"))->GetLineEdit()->GetLong(nullptr);
+	settings->defaultdpi=dynamic_cast<LineInput *>(findWindow("DPI"))->GetLineEdit()->GetDouble(nullptr);
 	if (toobj) { settings->destobject = toobj;  toobj->inc_count(); }
 
 	int perpage=-2; //force to 1 page
@@ -1042,7 +1057,7 @@ int ImportImagesDialog::send(int id)
 	deletestrs(imagefiles,n);
 	deletestrs(previewfiles,n);
 
-	SimpleMessage *mes=new SimpleMessage(NULL, n,0,0,0, win_sendthis);
+	SimpleMessage *mes=new SimpleMessage(nullptr, n,0,0,0, win_sendthis);
 	app->SendMessage(mes,win_owner,win_sendthis,object_id);
 
 	return 1;
@@ -1061,25 +1076,25 @@ int ImportImagesDialog::send(int id)
  */
 char *ImportImagesDialog::getPreviewFileName(const char *full)
 {
-	LineInput *prevbase=dynamic_cast<LineInput *>(findWindow("PreviewBase"));
-	const char *prevtext=prevbase->GetCText();
-	char *prev=NULL;
+	LineInput *prevbase = dynamic_cast<LineInput *>(findWindow("PreviewBase"));
+	const char *prevtext = prevbase->GetCText();
+	char *prev = nullptr;
 
 	if (!strcasecmp(prevtext,_("any"))) {
 		int c;
-		if (!laidout->preview_file_bases.n) prev=previewFileName(full,".laidout-*.jpg");
+		if (!laidout->prefs.preview_file_bases.n) prev = PreviewFileName(full, ".laidout-*.jpg", doc ? doc->Saveas() : nullptr);
 		else {
-			for (c=0; c<laidout->preview_file_bases.n; c++) {
-				prev=previewFileName(full,laidout->preview_file_bases.e[c]);
-				if (file_exists(prev,1,NULL)==S_IFREG) {
+			for (c = 0; c < laidout->prefs.preview_file_bases.n; c++) {
+				prev = PreviewFileName(full, laidout->prefs.preview_file_bases.e[c], doc ? doc->Saveas() : nullptr);
+				if (file_exists(prev,1,nullptr) == S_IFREG) {
 					break;
 				}
-				delete[] prev; prev=NULL;
+				delete[] prev; prev = nullptr;
 			}
-			if (c==laidout->preview_file_bases.n) 
-				prev=previewFileName(full,laidout->preview_file_bases.e[0]);
+			if (c == laidout->prefs.preview_file_bases.n) 
+				prev = PreviewFileName(full, laidout->prefs.preview_file_bases.e[0], doc ? doc->Saveas() : nullptr);
 		}
-	} else prev=previewFileName(full,prevtext);
+	} else prev = PreviewFileName(full, prevtext, doc ? doc->Saveas() : nullptr);
 
 	return prev;
 }
