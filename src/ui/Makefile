@@ -20,7 +20,6 @@ objs= \
 	externaltoolwindow.o \
 	findwindow.o \
 	headwindow.o \
-	helpwindow.o \
 	metawindow.o \
 	importimagesdialog.o \
 	impositionselectwindow.o \

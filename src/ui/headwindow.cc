@@ -17,7 +17,7 @@
 #include "../laidout.h"
 #include "viewwindow.h"
 #include "spreadeditor.h"
-#include "helpwindow.h"
+#include "settingswindow.h"
 #include "commandwindow.h"
 #include "buttonbox.h"
 #include "palettes.h"
@@ -33,7 +33,6 @@
 #include <lax/laxutils.h>
 #include <lax/filedialog.h>
 #include <lax/mouseshapes.h>
-// #include <lax/shortcutwindow.h>
 
 #include <iostream>
 using namespace std;
@@ -157,17 +156,16 @@ anXWindow *newObjectTreeWindowFunc(anXWindow *parnt,const char *ntitle,unsigned 
 								//dynamic_cast<ObjectContainer*>(laidout));
 }
 
-//------------------------ newHelpWindowFunc
-/*! \ingroup mainwindows
- * \brief Help window generator for use in HeadWindow.
- */
-anXWindow *newHelpWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style, anXWindow *nowner)
-{
-	anXWindow *help=newHelpWindow(NULL);
-	help->win_style&=~ANXWIN_ESCAPABLE;
-	help->win_parent=parnt;
-	return help;
-}
+// //------------------------ newSettingsWindowFunc
+// /*! \ingroup mainwindows
+//  * \brief Help window generator for use in HeadWindow.
+//  */
+// anXWindow *newSettingsWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style, anXWindow *nowner)
+// {
+// 	anXWindow *help = newSettingsWindow(nullptr, nullptr);
+// 	return help;
+// }
+
 
 //---------------------------- newHeadWindow() -----------------------
 /*! \ingroup mainwindows
@@ -177,7 +175,6 @@ anXWindow *newHelpWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long s
  * <pre>
  *  ViewWindow
  *  SpreadEditor
- *  HelpWindow
  *  CommandWindow
  *  PaletteWindow (will be modified later)
  *  PlainTextEditor
@@ -300,7 +297,7 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 	// add the window generator funcs
 	AddWindowType("ViewWindow",     "View Window",    0, newViewWindowFunc,      1);
 	AddWindowType("SpreadEditor",   "Spread Editor",  0, newSpreadEditorFunc,    0);
-	AddWindowType("HelpWindow",     "Help Window",    0, newHelpWindowFunc,      0);
+	// AddWindowType("SettingsWindow",     "Help Window",    0, newSettingsWindowFunc,      0);
 	AddWindowType("CommandWindow",  "Command Prompt", 0, newCommandWindowFunc,   0);
 	AddWindowType("PaletteWindow",  "Palette",        0, newPaletteWindowFunc,   0);
 	AddWindowType("PlainTextWindow","Text Editor",    0, newPlainTextWindowFunc, 0);
@@ -977,9 +974,9 @@ int HeadWindow::PerformAction(int action)
 					NULL,NULL,NULL,"Laidout"));
 		return 0;
 		
-	} else if (action==HEAD_OpenKeys) {
+	} else if (action == HEAD_OpenKeys) {
 		laidout->InitializeShortcuts();
-		app->addwindow(newHelpWindow("HeadWindow"));
+		app->addwindow(newSettingsWindow("keys", "HeadWindow"));
 		return 0;
 
 	} else if (action==HEAD_Quit) {

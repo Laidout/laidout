@@ -27,7 +27,6 @@ class UnwrapInterface : public LaxInterfaces::anInterface
 	int firsttime;
 
 	NetFace *findNewSeed();
-	//virtual void runImageDialog();
 
   public:
 	int showdecs;

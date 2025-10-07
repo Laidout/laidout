@@ -29,7 +29,6 @@
 #include <lax/colors.h>
 #include <lax/mouseshapes.h>
 #include <lax/units.h>
-// #include <lax/shortcutwindow.h>
 #include <lax/strmanip.h>
 
 #include <cstdarg>
@@ -42,7 +41,6 @@
 #include "../printing/psout.h"
 #include "../impositions/impositioneditor.h"
 #include "findwindow.h"
-#include "helpwindow.h"
 #include "settingswindow.h"
 #include "about.h"
 #include "autosavewindow.h"
@@ -53,7 +51,6 @@
 #include "newdoc.h"
 #include "../core/importimage.h"
 #include "../core/drawdata.h"
-#include "helpwindow.h"
 #include "../configured.h"
 #include "importimagesdialog.h"
 #include "../core/stylemanager.h"
@@ -5125,8 +5122,6 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"help")) {
-		//anXWindow *win = newHelpWindow(CurrentTool()?CurrentTool()->whattype():"ViewWindow");
-		//app->addwindow(win);
 		app->addwindow(newSettingsWindow("keys", CurrentTool()?CurrentTool()->whattype():"LaidoutViewport"));
 		return 0;
 
@@ -5956,7 +5951,6 @@ int ViewWindow::PerformAction(int action)
 		return 0;
 
 	} else if (action==VIEW_Help) {
-		//app->addwindow(new HelpWindow());
 		app->addwindow(newSettingsWindow("keys", CurrentTool()?CurrentTool()->whattype():"LaidoutViewport"));
 		return 0;
 

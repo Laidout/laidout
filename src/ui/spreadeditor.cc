@@ -21,7 +21,6 @@
 #include <lax/popupmenu.h>
 #include <lax/mouseshapes.h>
 #include <lax/lineinput.h>
-// #include <lax/shortcutwindow.h>
 
 #include "../language.h"
 #include "spreadeditor.h"
@@ -29,7 +28,7 @@
 #include "../core/drawdata.h"
 #include "../core/document.h"
 #include "headwindow.h"
-#include "helpwindow.h"
+#include "settingswindow.h"
 #include "viewwindow.h"
 #include "../interfaces/pagerangeinterface.h"
 #include "../interfaces/pagemarkerinterface.h"
@@ -1707,8 +1706,8 @@ Laxkit::ShortcutHandler *SpreadEditorViewport::GetShortcuts()
 
 int SpreadEditorViewport::PerformAction(int action)
 {
-	if (action==SPREADE_Help) {
-		app->addwindow(newHelpWindow("SpreadInterface"));
+	if (action == SPREADE_Help) {
+		app->addwindow(newSettingsWindow("keys", "SpreadInterface"));
 		return 0;
 	}
 
@@ -2100,7 +2099,7 @@ int SpreadEditor::CharInput(unsigned int ch,const char *buffer,int len,unsigned 
 		return 0;
 
 	} else if (ch==LAX_F1 && (state&LAX_STATE_MASK)==0) {
-		app->addwindow(newHelpWindow(whattype()));
+		app->addwindow(newSettingsWindow("keys", whattype()));
 		return 0;
 	}
 	return ViewerWindow::CharInput(ch,buffer,len,state,d);
