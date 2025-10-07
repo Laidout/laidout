@@ -251,10 +251,8 @@ Value *PageStyle::duplicateValue()
 //! The newfunc for PageStyle instances.
 Value *NewPageStyle()
 {
-	PageStyle *d=new PageStyle;
-	ObjectValue *v=new ObjectValue(d);
-	d->dec_count();
-	return v;
+	PageStyle *d = new PageStyle;
+	return d;
 }
 
  //! Return a pointer to a new local ObjectDef class with the PageStyle description.
@@ -467,10 +465,8 @@ Value *RectPageStyle::duplicateValue()
  */
 Value *NewRectPageStyle()
 {
-	RectPageStyle *d=new RectPageStyle;
-	ObjectValue *v=new ObjectValue(d);
-	d->dec_count();
-	return v;
+	RectPageStyle *d = new RectPageStyle;
+	return d;
 }
 
 /*! \todo **** the newfunc is not quite right...
@@ -751,15 +747,15 @@ void Page::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *con
 			const char *which=value;
 			if (!which || !strcmp(value,"default")) which="PageStyle";
 			if (!isblank(which)) {
-				ObjectDef *def=stylemanager.FindDef(which);
+				ObjectDef *def = stylemanager.FindDef(which);
 				if (def) {
-					Value *v=def->newObject(def);
-					ps=dynamic_cast<PageStyle *>(v);
+					Value *v = def->newObject(def);
+					ps = dynamic_cast<PageStyle *>(v);
 					if (!ps) {
 						 //maybe it was embedded in an object value
-						ObjectValue *vv=dynamic_cast<ObjectValue*>(v);
+						ObjectValue *vv = dynamic_cast<ObjectValue*>(v);
 						if (vv) {
-							ps=dynamic_cast<PageStyle *>(vv->object);
+							ps = dynamic_cast<PageStyle *>(vv->object);
 							if (ps) ps->inc_count();
 						}
 					}
