@@ -64,8 +64,8 @@ class PaperStyle : public Value, public FunctionEvaluator
 	Laxkit::ScreenColor color_hint;
 	ValueHash meta; // like stock, thickness, glossiness, other printer specific settings
 
-	PaperStyle(const char *nname=NULL);
-	PaperStyle(const char *nname,double ww,double hh,unsigned int nis_landscape,double ndpi,const char *defunits);
+	PaperStyle(const char *nname = nullptr);
+	PaperStyle(const char *nname, double ww, double hh, bool nis_landscape, double ndpi,const char *defunits);
 	virtual ~PaperStyle();
 	virtual double w() { if (landscape()) return height; else return width; }
 	virtual double h() { if (landscape()) return width; else return height; }

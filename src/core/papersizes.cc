@@ -237,6 +237,9 @@ int InstallPaperResources()
  * If startfrom != 0, then start the search starting from this index, instead of first paper.
  *
  * If epsilon==0 (the default), w and h must match exactly. Else the values must be at least that close.
+ *
+ * You probably should NOT modify the returned object, as it is what is n storage.
+ * Make a duplicate if you want to modify it.
  */
 PaperStyle *GetNamedPaper(double width, double height, int *is_landscape_ret, int startfrom, int *index_ret, double epsilon)
 {
@@ -337,7 +340,7 @@ PaperStyle::PaperStyle(const char *nname)
 /*! w and h are in units. They are converted to inches internally,
  * and PaperStyle::defaultunits is only a hint.
  */
-PaperStyle::PaperStyle(const char *nname,double w,double h,unsigned int nis_landscape,double ndpi,const char *units)
+PaperStyle::PaperStyle(const char *nname, double w, double h, bool nis_landscape, double ndpi, const char *units)
 {
 	name         = newstr(nname);
 	width        = w;
