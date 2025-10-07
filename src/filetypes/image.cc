@@ -355,27 +355,23 @@ const char *ImageExportFilter::VersionName()
 
 Value *newImageExportConfig()
 {
-	ImageExportConfig *o=new ImageExportConfig;
-	ObjectValue *v=new ObjectValue(o);
-	o->dec_count();
-	return v;
+	return new ImageExportConfig;
 }
 
 /*! \todo *** this needs a going over for safety's sake!! track down ref counting
  */
 int createImageExportConfig(ValueHash *context,ValueHash *parameters,Value **value_ret,ErrorLog &log)
 {
-	ImageExportConfig *config=new ImageExportConfig;
+	ImageExportConfig *config = new ImageExportConfig;
 
-	ValueHash *pp=parameters;
-	if (pp==NULL) pp=new ValueHash;
+	ValueHash *pp = parameters;
+	if (pp == nullptr) pp = new ValueHash;
 
-	Value *vv=NULL, *v=NULL;
-	vv=new ObjectValue(config);
-	pp->push("exportconfig",vv);
+	Value *v = nullptr;
+	pp->push("exportconfig", config);
 
-	int status=createExportConfig(context,pp, &v, log);
-	if (status==0 && v && v->type()==VALUE_Object) config=dynamic_cast<ImageExportConfig *>(((ObjectValue *)v)->object);
+	int status = createExportConfig(context,pp, &v, log);
+	if (status == 0 && v && v->type() == VALUE_Object) config = dynamic_cast<ImageExportConfig *>(((ObjectValue *)v)->object);
 
 	 //assign proper base filter
 	if (config) for (int c=0; c<laidout->exportfilters.n; c++) {
