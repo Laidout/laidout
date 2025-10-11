@@ -741,6 +741,11 @@ FillStyle:
   should probably have an "enabled" field? otherwise when you toggle fill, it currently sets fillstyle and function to something you may not want
 
 PathInterface: pathinterface
+  bug: '0' wasn't making full circle on subpath? later crashed
+  grab areas need to be bigger
+  tiny stuff needs halos
+  would be nice for weight nodes to have a minimized appearance when far from mouse
+  would be nice to have context options for hovered item right on top
   click on extrema: add point at | move nearby vertex to this point
   ux: when you drag mouse outside of window, should not draw the green add point hint
   ux: when you first activate with new path, need to refresh where mouse is for green add point hint
@@ -1421,6 +1426,7 @@ node editor node interface NodeInterface: nodes: node: interface:
   DONE (using Name) idea seen in anim nodes: collapsing math shows expression as label
 
 0.099: color fonts issue #6 svg otf svg
+  bug: layer color fonts appear to be broken
   freetype ot-svg example: https://freetype.org/freetype2/docs/reference/ft2-svg_fonts.html#ft_svg_documentrec
   see this freetype gsoc 2019 project: https://www.mail-archive.com/freetype-devel@nongnu.org/msg11459.html
   COLR version 1 now supports gradients? does freetype? https://learn.microsoft.com/en-us/typography/opentype/spec/colr
@@ -1683,6 +1689,7 @@ overwrite:
   tab/left/right/enter not doing anything. should be able to control with keys
 
 FileDialog filedialog:
+  option to hide/show bookmarks
   selecting sort dirs first works, but undoing that option doesn't undo the sort
   types for saving, must be included in return message:
     file type id (int), file name label (string), description
@@ -1898,6 +1905,7 @@ themes:
   DONE laxprofile not working
 
 laxkit:
+  if you click on a backgrounded window when a dialog is up, the dialog should be circulated to front
   rulerwin: would be nice to resize the tiny text labels with control-wheel
   Button: icon should shift slightly when pressed, like text does
   would be nice if Displayer had a "highlight" stroke mode: draw line with FG, draw thicker line with BG
@@ -2042,6 +2050,8 @@ make drag and drop selections work dnd:
   DONE do proper translation between screen coords and window coords during acceptance query
 
 imageinterface: imagedata:
+  implement reload
+  implement straight load
   redo seems ok for image change and transform, but undo doesn't apply correcty??
   actions to scale to proper dpi for destination paper
   grab particular exif info to show in labels?
@@ -2053,6 +2063,7 @@ imageinterface: imagedata:
     adjust attachment point
     adjust rotation
     adjust content: pick from exif? custom label templates?
+  DONE fix crash toggling show pixel size if data but no image
   DONE 'f' show labels should shadow label, and put it on upper edge
   DONE optionally show pixel size of image
 
@@ -3442,8 +3453,9 @@ for clones, it would be easier to have a "defs" group or something, so deleting 
   if an object is without a home.
 
 tiling cloner: clone tiler:  CloneInterface:
-  spurious text writing on elongated triangular
-  UI bad.. selector box is huge
+  DONE spurious text writing on elongated triangular
+  DONE bug: tiling fails on some <-- new g++ maps append(0,0) to append(*ptr, int) instead of append(double,double) now!!! arrrrg
+  DONE UI bad.. selector box is huge
   options:
     show/not-show base + source_clones
     embed origin in pattern
@@ -3489,7 +3501,6 @@ tiling cloner: clone tiler:  CloneInterface:
     boundary outline style
     base cell outline styles
   should have a render preview to show actual grid coverage
-  need finishing tool
   design interface for clone on path
   Hirschhorn Medallion, and other pentagon tilings https://en.wikipedia.org/wiki/Pentagonal_tiling
   truchet tiling
@@ -3502,6 +3513,8 @@ tiling cloner: clone tiler:  CloneInterface:
   autocreate seamless tile image
   autofit source objects/images to the pattern to minimize gaps
   map to inkscape tiling clone on export?
+
+Finishing tool finishingtool: styleinterface: finishing:
 
 Imposition use cases:
   for sig editor, need paper partitioner, then stack sections
