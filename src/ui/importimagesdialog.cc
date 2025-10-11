@@ -402,7 +402,7 @@ int ImportImagesDialog::init()
 	else sprintf(str,"%d",settings->perpage>0?settings->perpage:1);
 	last = linp = new LineInput(this,"NumPerPage",nullptr,0, 0,0,0,0,0, last,object_id,"perpageexactlyn",
 						nullptr,str,0,
-						textheight*10,1.2*textheight+4);
+						textheight*10);
 	linp->GetLineEdit()->SetWinStyle(LINEEDIT_SEND_FOCUS_ON,1);
 	AddWin(linp,1, -1);
 	AddWin(nullptr,0, 2000,2000,0,50,0, 0,0,0,50,0, -1);
@@ -413,7 +413,8 @@ int ImportImagesDialog::init()
 	last=check=new CheckBox(this,"perpagefit",nullptr,CHECK_LEFT, 0,0,0,0,0, 
 						last,object_id,"perpagefit", _("As many as will fit per page"));
 	if (settings->perpage==-1) check->State(LAX_ON); else check->State(LAX_OFF);
-	AddWin(check,1, check->win_w,0,0,50,0, check->win_h,0,0,50,0, -1);
+	AddWin(check,1, check->win_w,0,0,50,0, textheight,0,0,50,0, -1);
+	// AddWin(check,1, check->win_w,0,0,50,0, check->win_h,0,0,50,0, -1);
 	AddWin(nullptr,0, 2000,2000,0,50,0, 0,0,0,50,0, -1);
 	AddNull();
 
