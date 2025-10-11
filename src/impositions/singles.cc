@@ -1030,10 +1030,10 @@ Spread *Singles::PaperLayout(int whichpaper)
 
 		if (insetleft>0) {
 			marks->pushEmpty();
-			marks->append(0,        box->media.maxy-insettop);
+			marks->append(0., box->media.maxy-insettop);
 			marks->append(insetleft*.9,box->media.maxy-insettop);
 			marks->pushEmpty();
-			marks->append(0,        insetbottom);
+			marks->append(0., insetbottom);
 			marks->append(insetleft*.9,insetbottom);
 		}
 		if (insetright>0) {

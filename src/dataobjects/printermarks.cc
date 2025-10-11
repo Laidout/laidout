@@ -59,8 +59,8 @@ DrawableObject *RegistrationMark(double pointsize, double linewidthinpoints)
 	paths->append(-d,0);
 	paths->append( d,0);
 	paths->pushEmpty();
-	paths->append(0,-d);
-	paths->append(0, d);
+	paths->append(0.,-d);
+	paths->append(0., d);
 
 	paths->FindBBox();
 	paths->Id(_("Registration"));
@@ -135,8 +135,8 @@ DrawableObject *ColorBars(double pointsize, Palette *palette, int numrows, int n
 
 	 //create outline
 	b->appendRect(0,0,numcols*s,numrows*s);
-	for (int c=1; c<=numcols; c++) { b->append(c*s,0); b->append(c*s,numrows*s); b->pushEmpty(); }
-	for (int r=1; r<=numrows; r++) { b->append(0,r*s); b->append(numcols*s,r*s); b->pushEmpty(); }
+	for (int c=1; c<=numcols; c++) { b->append(c*s,0.); b->append(c*s,numrows*s); b->pushEmpty(); }
+	for (int r=1; r<=numrows; r++) { b->append(0.,r*s); b->append(numcols*s,r*s); b->pushEmpty(); }
 	b->line(s/72);
 	g->push(b);
 	b->dec_count();

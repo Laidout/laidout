@@ -3211,7 +3211,7 @@ Spread *SignatureImposition::PageLayout(int whichspread)
 		newpath->appendRect(0,o, pw,h);
 		if (page1>=0 && page2>=0) {
 			newpath->pushEmpty();
-			newpath->append(0,ph);
+			newpath->append(0.,ph);
 			newpath->append(pw,ph);
 		}
 	}
