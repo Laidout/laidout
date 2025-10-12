@@ -36,30 +36,32 @@
 //   pattern "*"
 //     exclude "*template*"
 //
-// templates  # transform template file(s) into destination files
-//   template "Template pass name"  # one created per export
-//     from  index-template.html
-//     to    index.html
-//     copy ...
-//     vars
-//       <!--SITE-NAME-->  "Default value"
-//           tooltip "Description"
-//       <!--NUM-DOC-PAGES-->
-//           compute "context.doc.pages"
-//           tooltip "Automatically add number of doc pages"
-//       <!--TITLE-->
-//       <!--DATE-->
-//         uihint Date:now
-//       <!--META-DESCRIPTION-->
-//       <!--META-IMAGE-->
-//       <!--META-URL-->
-//       <!--META-IMAGE-->
-//       <!--HANDLE-->
-//       <!--BLURB-->
-//       <!--IMAGE-LIST-->
-//   template_spread # one of these created per output file from normal filter
-//     from  page-template.html
-//     to    "page####.html"
+// # transform template file(s) into destination files
+// template "Template pass name"  # one created per export
+//   from  index-template.html
+//   to    index.html
+//   copy ...
+//   vars
+//     <!--SITE-NAME-->  "Default value"
+//         tooltip "Description"
+//     <!--NUM-DOC-PAGES-->
+//         compute "context.doc.pages"
+//         tooltip "Automatically add number of doc pages"
+//     <!--TITLE-->
+//     <!--DATE-->
+//       uihint Date:now
+//     <!--META-DESCRIPTION-->
+//     <!--META-IMAGE-->
+//     <!--META-URL-->
+//     <!--META-IMAGE-->
+//     <!--HANDLE-->
+//     <!--BLURB-->
+//     <!--IMAGE-LIST-->
+// 
+// # transform this template once for each rendered Laidout spread
+// template_spread # one of these created per output file from normal filter
+//   from  page-template.html
+//   to    "page####.html"
 
 namespace fs = std::filesystem;
 
@@ -70,23 +72,25 @@ namespace Laidout {
  */
 int ExpandPattern(const char *base_path, const char *pattern, NumStack<filesystem::path> &paths, bool follow_links)
 {
+	***
 }
 
 int CopyRecursive(const char *base_path, const char *pattern, const char *destination_path, bool follow_links)
 {
+	***
+
 	fs::path pth(string(base_path));
 
 	for (const fs::directory_entry& dir_entry : fs::recursive_directory_iterator(pth)) {
         std::cout << dir_entry << '\n';
     }
 
-
 	filesystem::copy(from, to, filesystem::copy_options::overwrite_existing | filesystem::copy_options::recursive);
 }
 
 int TraverseRecursive(std::path at, std::set &visited_dirs, function per_file)
 {
-
+	***
 }
 
 
@@ -128,7 +132,58 @@ void ProjectTemplate::dump_out(FILE *f, int indent, int what, Laxkit::DumpContex
 
 Laxkit::Attribute *ProjectTemplate::dump_out_atts(Laxkit::Attribute *att, int what, Laxkit::DumpContext *context)
 {
-	DBGE("IMPLEMENT ME!!");
+	if (!att) att = new Attribute();
+
+	if (meta->attributes.n) {
+		Attribute *att2 = att->pushSubAtt("meta");
+		for (int c = 0; c < meta->attributes.n; c++) {
+			att2->push(meta->attributes.e[c]->name, meta->attributes.e[c]->value);
+		}
+	}
+
+	for (int c = 0; c < export_filters.n; c++) {
+		DocumentExportConfig *config = export_filters.e[c];
+		Attribute *att2 = att->pushSubAtt("filter_pass", config->filter->Format());
+		config->dump_out_atts(att2, what, context);
+	}
+
+	if (copy.n) {
+		Attribute *att2 = att->pushSubAtt("copy");
+		for (int c = 0; c < copy.n; c++) {
+			CopyPatter *cc = copy.e[c];
+			Attribute *att3 = att2->pushSubAtt("pattern", cc->src_pattern.c_str());
+			if (!cc->exclude_pattern.IsEmpty()) att3->push("exclude", cc->exclude_pattern.c_str());
+			att3->push("to", dest_pattern.c_str());
+		}
+	}
+
+	for (int c = 0; c < templates.n; c++) {
+		Template *template = templates.[c];
+		Attribute *att2;
+		if (template->roll == Template::OneOff) att2 = att->pushSubAtt("template");
+		else att2 = att->pushSubAtt("template_spread");
+		att2->push("template_file", template->template_file.c_str());
+		att2->push("dest_path", template->dest_path.c_str());
+		if (template->vars.n) {
+			Attribute *att3 = att2->pushSubAtt("vars");
+			for (int c2 = 0; c2 < template->vars.n; c2++) {
+				TemplateVar *v = template->vars.e[c2];
+				att3->push(v->name, v->is_compute ? nullptr, v->default_value.c_str());
+				if (v->is_compute) att3->Top()->push("compute", v->default_value.c_str());
+				if (!v->tooltip.IsEmpty()) att3->Top()->push("tooltip", v->tooltip.c_str());
+			}
+		}
+		if (template->copy.n) {
+			Attribute *att3 = att->pushSubAtt("copy");
+			for (int c = 0; c < template->copy.n; c++) {
+				CopyPatter *cc = template->copy.e[c];
+				Attribute *att4 = att3->pushSubAtt("pattern", cc->src_pattern.c_str());
+				if (!cc->exclude_pattern.IsEmpty()) att4->push("exclude", cc->exclude_pattern.c_str());
+				att4->push("to", dest_pattern.c_str());
+			}
+		}
+	}
+
 	return nullptr;
 }
 
@@ -139,10 +194,23 @@ void ProjectTemplate::dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::Dum
 		const char *name  = att->attributes.e[c]->name;
 		const char *value = att->attributes.e[c]->value;
 
-		if (strEquals(name, "copy")) {
-		} else if (strEquals(name, "meta")) {
+		if (strEquals(name, "meta")) {
+			for (int c = 0; c < att->attributes.n; c++) {
+				const char *name  = att->attributes.e[c]->name;
+				const char *value = att->attributes.e[c]->value;
+
+				meta.push(name, value);
+			}
+
+		} else if (strEquals(name, "copy")) {
+			***
+
 		} else if (strEquals(name, "filter_pass")) {
+			***
+
 		} else if (strEquals(name, "templates")) {
+			***
+
 		}
 	}
 }

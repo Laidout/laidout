@@ -73,6 +73,7 @@ class ProjectTemplate : public Value
   public:
   	std::path project_template_path;
 
+  	Laxkit::Attribute meta;
   	NumStack<CopyPattern> copy;
   	PtrStack<DocumentExportConfig> export_filters;
   	NumStack<Template> templates;
