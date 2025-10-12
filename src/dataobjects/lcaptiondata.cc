@@ -132,6 +132,7 @@ LaxInterfaces::SomeData *LCaptionData::duplicateData(LaxInterfaces::SomeData *du
 Value *NewLCaptionData()
 {
 	LCaptionData *cap = new LCaptionData;
+	cap->Size(35);
 	cap->yaxis(-cap->yaxis()); //premptively reorient for right handed coordinates
 	return cap;
 }
