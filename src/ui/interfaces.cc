@@ -238,6 +238,7 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	caption.GetObjectDef();
 	i=new CaptionInterface(id++,NULL);
 	tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
+	i->InitializeResources();
 	existingpool->push(i);
 	i->dec_count();
 		
