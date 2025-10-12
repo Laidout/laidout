@@ -368,14 +368,14 @@ class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual
 	int n();
 	Value *e(int i);
 	Value *find(const char *name);
-	int         findIndex(const char *name,int len=-1);
-	long        findInt(const char *name, int which=-1, int *error_ret=NULL);
-	int         findBoolean(const char *name, int which=-1, int *error_ret=NULL);
-	double      findDouble(const char *name, int which=-1, int *error_ret=NULL);
-	double      findIntOrDouble(const char *name, int which=-1, int *error_ret=NULL);
-	const char *findString(const char *name, int which=-1, int *error_ret=NULL);
-	Laxkit::flatpoint findFlatvector(const char *name, int which, int *error_ret=NULL);
-	Laxkit::anObject *findObject(const char *name, int which=-1, int *error_ret=NULL);
+	int               findIndex      (const char *name, int len=-1);
+	long              findInt        (const char *name, int which=-1, int *error_ret = nullptr);
+	int               findBoolean    (const char *name, int which=-1, int *error_ret = nullptr);
+	double            findDouble     (const char *name, int which=-1, int *error_ret = nullptr);
+	double            findIntOrDouble(const char *name, int which=-1, int *error_ret = nullptr);
+	const char       *findString     (const char *name, int which=-1, int *error_ret = nullptr);
+	Laxkit::flatpoint findFlatvector (const char *name, int which=-1, int *error_ret = nullptr);
+	Laxkit::anObject *findObject     (const char *name, int which=-1, int *error_ret = nullptr);
 
 	 //from Value:
 	virtual int     type();
