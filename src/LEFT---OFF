@@ -1450,12 +1450,15 @@ streaminterface: streams:
   option for local or global baselines.. select a particular baseline grid?
 
 captioninterface: CaptionInterface captiondata: CaptionData caption:
-  line spacing optionally per line (in some inkscape svgs)
-  default text size is super small
   bug: bitstream vera sans, "Text" convert to path puts e correct, but screen render puts it out too far. huh??
+  DONE default text size is super small
+  DONE line spacing optionally per line (in some inkscape svgs)
   DONE bug: handles scan zone not working
+  DONE should be able access fonts as resources, to preserve links on load/save
+  DONE right click menu options for insert char and select font
+  DONE bug: why is a font being created and destroyed each refresh??
   ---0.099---
-  should be able access fonts as resources, to preserve links on load/save
+  custom offsets per line? drag grey double h arrow off to side?
   implement proper pdf export
   color fonts: consider native otf:
     Mozilla and Adobe’s svg table, microsoft's colr/cpal, Google’s PNG images (CBDT/CBLC tables), Apple’s PNG images (SBIX table)
@@ -1475,10 +1478,8 @@ captioninterface: CaptionInterface captiondata: CaptionData caption:
   control-u hack for poweruser unicode character insertion
   toggle for evaluated text? only allow edit on the raw text, run {{expression}} through calcualtor?
   use selected text as sample when popping up font dialog
+  optional alignment to page level baseline grid?
   lorem ipsum
-  markov ipsum
-  DONE right click menu options for insert char and select font
-  DONE bug: why is a font being created and destroyed each refresh??
 
 Clean up patch/mesh controls: Mesh PatchInterface
   bug: convert path to mesh inserting null patches at each point
@@ -3453,9 +3454,11 @@ for clones, it would be easier to have a "defs" group or something, so deleting 
   if an object is without a home.
 
 tiling cloner: clone tiler:  CloneInterface:
-  DONE spurious text writing on elongated triangular
-  DONE bug: tiling fails on some <-- new g++ maps append(0,0) to append(*ptr, int) instead of append(double,double) now!!! arrrrg
-  DONE UI bad.. selector box is huge
+  should be able to lock a source object to particular cell, since auto isn't so reliable
+  bug: if a source object has children, they sometimes get selected first, like a gradient in a path
+  bug: not selecting correct base cell.. point transform broken
+  boundary should be editable
+  should be able to lock boundary, because it gets selected before source objects
   options:
     show/not-show base + source_clones
     embed origin in pattern
@@ -3467,6 +3470,11 @@ tiling cloner: clone tiler:  CloneInterface:
   should not assume preview has I transform
   memory hole back, third time!!!
   radial needs wind scale input
+
+  DONE bug: boundary has super large margin
+  DONE spurious text writing on elongated triangular
+  DONE bug: tiling fails on some <-- new g++ maps append(0,0) to append(*ptr, int) instead of append(double,double) now!!! arrrrg
+  DONE UI bad.. selector box is huge
   DONE escape doesn't let you go back to object tool
   DONE fill out the Tiling objectdef
   DONE bug: Tiling doesn't save, need to make Tiling be a Value so it can be io with drawable->properties
