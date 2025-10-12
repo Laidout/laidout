@@ -132,9 +132,9 @@ class Tiling : public Value
 	Laxkit::PtrStack<TilingOp> basecells; //typically basecells must share same coordinate system, 
 								 //and must be defined such as they appear laid into the default unit
 
-	 //more flexible than built in overal P1 repeating.
-	 //1st dimension is simply basecells stack. Additional dimensions are applied on top
-	 //of each object produced by the 1st dimension.
+	// more flexible than built in overall P1 repeating.
+	// 1st dimension is simply basecells stack. Additional dimensions are applied on top
+	// of each object produced by the 1st dimension.
 	Laxkit::RefPtrStack<Tiling> dimensions;
 
 	Tiling(const char *nname=NULL, const char *ncategory=NULL);
@@ -194,7 +194,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 	int firsttime;
 	int lastover;
 	int lastoveri;
-	int cur_tiling; //for built ins
+	int cur_tiling; // for built ins
 	int mode;
 
 	bool active;
@@ -212,7 +212,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 	LaxInterfaces::PathsData *boundary;
 
 	Group *base_cells;
-	Group *source_proxies; //points to a child in base_cells
+	Group *source_proxies; // points to a child in base_cells
 	int current_base;
 	LaxInterfaces::LineStyle preview_cell;
 	LaxInterfaces::LineStyle preview_cell2;
@@ -221,7 +221,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 	double uiscale;
 	Laxkit::DoubleBBox box;
 
-	 //selected mode stuff
+	// selected mode stuff
 	int current_selected;
 	int num_rows, num_cols;
 	int selected_offset;
@@ -229,7 +229,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 	double base_lastm[6];
 	bool preempt_clear;
 
-
+	// box colors
 	unsigned int bg_color;
 	unsigned int hbg_color;
 	unsigned int fg_color;
@@ -240,7 +240,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 
 	virtual int scan(int x,int y, int *i, int *dest);
 	virtual int scanBasecells(Laxkit::flatpoint fp, int *i, int *dest);
-	virtual int scanSelected(int x,int y);
+	virtual int scanTilingList(int x,int y);
 
 	virtual int ToggleOrientations();
 	virtual int ToggleActivated();
