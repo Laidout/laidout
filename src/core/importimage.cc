@@ -633,44 +633,44 @@ int dumpInImages(ImportImageSettings *settings,
 				 const char **previewfiles,
 				 int nfiles)
 {
-	ImagePlopInfo *images=NULL;
-	int c,numonpage=0;
-	LaxImage *image=NULL;
-	LaxImage *pimage=NULL;
-	ImageData *imaged=NULL;
+	int c, numonpage = 0;
+	ImagePlopInfo *images = nullptr;
+	LaxImage      *image  = nullptr;
+	LaxImage      *pimage = nullptr;
+	ImageData     *imaged = nullptr;
 
-	int curpage = settings->startpage;
-	double dpi;
+	double dpi    = 300;
+	int curpage   = settings->startpage;
 	int scaleup   = settings->scaleup;
 	int scaledown = settings->scaledown;
-	int scaleflag = (scaleup?1:0)|(scaledown?2:0);
-	double *xywh  = NULL;
+	int scaleflag = (scaleup ? 1 : 0) | (scaledown ? 2 : 0);
+	double *xywh  = nullptr;
 	int width, height, subimages;
 	long filesize;
 	Utf8String str;
 
 	FILE *f;
-	char data[50],*p;
+	char data[50], *p;
 	
-	for (c=0; c<nfiles; c++) {
+	for (c = 0; c < nfiles; c++) {
 		if (!imagefiles[c] || !strcmp(imagefiles[c],".") || !strcmp(imagefiles[c],"..")) continue;
 		
-		imaged = NULL;
-		image = pimage = NULL;
+		imaged = nullptr;
+		image = pimage = nullptr;
 
 		dpi = settings->defaultdpi;
 
 		if (settings->expand_subimages) {
 			if (ImageLoader::Ping(imagefiles[c], &width, &height, &filesize, &subimages) == 0) {
 				if (subimages > 1) {
-					for (int c2=0; c2<subimages; c2++) {
-						image = ImageLoader::LoadImage(imagefiles[c], (previewfiles ? previewfiles[c] : NULL),0,0,&pimage, 0,-1,NULL, true, c2);
+					for (int c2 = 0; c2 < subimages; c2++) {
+						image = ImageLoader::LoadImage(imagefiles[c], (previewfiles ? previewfiles[c] : nullptr),0,0,&pimage, 0,-1,nullptr, true, c2);
 						if (!image) continue;
 
 						DBG cerr << "dump image files subfile "<<c2<<": "<<imagefiles[c]<<endl;
 
 						imaged = dynamic_cast<ImageData*>(LaxInterfaces::somedatafactory()->NewObject("ImageData"));
-						imaged->SetImage(image,NULL);//incs count of image
+						imaged->SetImage(image, nullptr);//incs count of image
 						imaged->index = image->index;
 						image->dec_count();
 
@@ -689,7 +689,7 @@ int dumpInImages(ImportImageSettings *settings,
 						}
 						if (!images) images = new ImagePlopInfo(imaged,dpi,pg,scaleflag,xywh);
 						else images->add(imaged,dpi,pg,scaleflag,xywh);
-						if (xywh) { delete[] xywh; xywh = NULL; }
+						if (xywh) { delete[] xywh; xywh = nullptr; }
 						if (numonpage == 0) {
 							if (settings->every_nth > 1) curpage += settings->every_nth;
 							else curpage++;
