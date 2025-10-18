@@ -576,6 +576,14 @@ bool LaidoutViewport::DndWillAcceptDrop(int x, int y, const char *action, Laxkit
 int LaidoutViewport::selectionDropped(const unsigned char *data,unsigned long len,const char *actual_type,const char *which)
 {
 	//check interfaces first...
+	if (pastedest) {
+		PostMessage(_("Still trying to paste"));
+		pastedest->Paste((const char *)data,len, nullptr, actual_type);
+		pastedest->dec_count();
+		pastedest = nullptr;
+		return 0;
+	}
+
 	for (int c=0; c<interfaces.n; c++) {
 		if (interfaces.e[c]->selectionDropped(data, len, actual_type, which) == 0) return 0;
 	}
