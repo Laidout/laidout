@@ -905,7 +905,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			strncpy(txt, text->text+text->start, text->end-text->start);
 			txt[text->end - text->start] = '\0';
 			fprintf(f,"%s  <textPath xlink:href=\"#%s\" startOffset=\"%.10g\"><tspan>%s</tspan></textPath>\n",
-					spc, text->paths->Id(), text->start_offset, txt);
+					spc, text->paths->Id(), text->start_inset, txt);
 
 			//y+=text->fontsize*text->LineSpacing();
 

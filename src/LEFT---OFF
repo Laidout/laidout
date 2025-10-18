@@ -13,9 +13,9 @@ down to major items in ../features.md.
 
 ------------ serious release blocking bugs to fix right now:
 
-bug: engraver severely broken.. no lines visible!!
+bug: import 1 image, preview creator seems to make 1x1 preview image???
 
-bug: severe numerous clone tiler bugs.. tiling patterns seem messed up. one icon out of whack
+bug: engraver severely broken.. no lines visible!!
 
 bug: if you add a registration mark, you can't move it, but also causes infinite search
 
@@ -294,17 +294,15 @@ debug inkscape node extension
 have a clickable history of recently edited objects (as seen in Godot!)
 
 text on path textonpath: TextOnPath
+  have a reset inset just in case
   bug: font size dragging goes weird on some fonts.. problem between textheight and Msize
   crash: link to parent path crashing
   bug: offset and baseline handles disappeared for large offset values
   bug: dragging the offset handle sometimes jumps to really bad
   bug: bezier length resolution inconsistencies making gaps. need solution with consistent approximation
   bug: visible selected bounds not updating?
-  bug: reversing direction should change offset so that text occupies roughly the same place. currently in scrunches up
   bug: sometimes path weights don't recache along with glyph positions
   bug: duplicate isn't always initing the dup properly
-  would be neat to have multiple lines
-    when on closed path, option to progressively offset by textheight so you can easily spiral text around
   input offset should allow "left", "right" and "center"
   handle to remove from current path, and possibly attach it to some other path
     how to attach to diff path
@@ -320,19 +318,29 @@ text on path textonpath: TextOnPath
   when baseline is from_path, should indicate path, not offsetted path
   select font, key up/down scrolls uncomfortably SOMETIMES!!
   dragging size handle with shift|control for precision does not scale properly
+  
+  DONE maybe call offset indent instead? offset too easily confused with baseline
+  DONE bug: reverse, now offset handle is reversed
+  DONE bug: reversing direction should change offset so that text occupies roughly the same place. currently in scrunches up
 
   ---0.99:
+  would be neat to have multiple lines
+    when on closed path, option to progressively offset by textheight so you can easily spiral text around
   mouse click to position caret
   size of offset and baseline widgets is not screen space, should they be?
-  cursor behavior and color should match the caption tool
+  cursor behavior and color(done) should match the caption tool
   halignment options for open paths?
   need kern control, with kern handles
-  copy and paste text
+  copy text.. means implementing selections
   should not add new object with special check for blank on interf exit, should cache add point, but only add if new text pressed
   rotation handle: glyphs align with path, or orient absolute, or distort with path flow, or distort with absolute angle
   multiline?
   option to auto expand line
 
+  DONE paste text
+  DONE implement insert character
+  DONE implement join chars
+  DONE implement unicode insert
   DONE crash: not loading in correctly? works in debugger, but loads wrong normally
   DONE bug: crash sometimes when click down for new text on path object
   DONE disable control to slide offset and baseline at the same time.. it causes too much chaos by default
@@ -1451,6 +1459,8 @@ streaminterface: streams:
 
 captioninterface: CaptionInterface captiondata: CaptionData caption:
   bug: bitstream vera sans, "Text" convert to path puts e correct, but screen render puts it out too far. huh??
+  DONE fix paste
+  DONE implement unicode insert
   DONE default text size is super small
   DONE line spacing optionally per line (in some inkscape svgs)
   DONE bug: handles scan zone not working
@@ -1513,7 +1523,9 @@ Clean up patch/mesh controls: Mesh PatchInterface
   DONE implement more right button config options to make the settings more discoverable
   DONE smooth edit mode should be default. 
 
-0.099: ImagePatch:
+0.099: ImagePatch: image mesh: mesh warping:
+  bug: rendering artifacts, draws stuff to window origin
+  This is suuuuuuper slow
   abstract to be a filter, with optional stand alone object
 
 0.099: ColorPatch / MeshGradient:
@@ -2298,6 +2310,7 @@ shortcut dialog: shortcuts: shortcut manager shortcutmanager
   DONE need ability to add multiple keys for same action
 
 signature editor:  Signature editor Signature Editor signatureeditor: signatures: signatureinterface:
+  implement signature marks along spine
   bug: edit imp from viewport, change page number, should it insert pages??
   bug: paper dialog doesn't remember
   bug: SOMETIMES SignatureInterface arrows not tracking correctly, especially left/right
@@ -2737,6 +2750,8 @@ dynamic objects (generated images, dynamic images, rendered images)
       needs how many files
       needs what other info
 ImageProperties image properties imageinfo image info: imagedialog:
+  generate preview doesn't seem to work?
+  filepreviewer at first has tiny font
   option to crop on load?
   click for file should show preview... there are two "..." !!
   select file, not updating view?
@@ -2778,6 +2793,7 @@ thumbnails:
   DONE default to $XDG_CACHE_HOME/thumbnails or ~/.cache/thumbnails instead of ~/.thumbnails
 
 image import: ImportImagesDialog
+  need to have check ping only at first works
   bug: import all to one page with scale up/scale down doesn't scale properly
   bug: cancel button is white and no mouseover??
   bug: cannot import images directly from recents
@@ -2793,9 +2809,8 @@ image import: ImportImagesDialog
   horizontal stack frame between choose/review and preview window
   fancier path selector
   for preview field, show green or something and change tooltip if preview will get generated
-  click on file to preview file, preview to preview preview
   generate image previews progress box...
-  autogenerate should do special check for ~/.thumbnails to conform to freedesktop spec size and type...
+  autogenerate should do special check to conform to freedesktop spec size and type...
   importimages-> eps --> they are fit into boxes!! they should maybe be inserted into a stream..
   importimages: remember last settings
   DumpImages within Arrangements? a template of rect regions (2-d guides)?  maybe use custom papergroups?
@@ -2803,6 +2818,7 @@ image import: ImportImagesDialog
     dump into any chain of objects, this is really the same thing as laying out a stream, maybe merge this?
   a "Place" tool like indesign?? preview images and place by dragging out one by one, as well as optionally into Arrangements
 
+  DONE click on file to preview file, preview to preview preview
   DONE need drag and drop from system for multi-image import
 
 

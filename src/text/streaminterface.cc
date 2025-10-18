@@ -84,7 +84,7 @@ bool StreamInterface::AttachStream()
 		// *** todo: need to clarify how textonpath links to other objects.. this extrahover is meaningless outside viewport context
 		tonpath->UseThisPath(extrahover, outline_index);
 		tonpath->Baseline(hover_baseline * default_size / 72, false);
-		if (hover_reverse_dir) tonpath->PathDirection(1);
+		if (hover_reverse_dir) tonpath->PathReversed(true);
 
 		ObjectContext *oc = nullptr;
 		viewport->NewData(tonpath, &oc);//viewport adds only its own counts
