@@ -294,6 +294,7 @@ debug inkscape node extension
 have a clickable history of recently edited objects (as seen in Godot!)
 
 text on path textonpath: TextOnPath
+  bug: envelope doesn't reverse
   have a reset inset just in case
   bug: font size dragging goes weird on some fonts.. problem between textheight and Msize
   crash: link to parent path crashing
@@ -318,25 +319,24 @@ text on path textonpath: TextOnPath
   when baseline is from_path, should indicate path, not offsetted path
   select font, key up/down scrolls uncomfortably SOMETIMES!!
   dragging size handle with shift|control for precision does not scale properly
-  
+
   DONE maybe call offset indent instead? offset too easily confused with baseline
   DONE bug: reverse, now offset handle is reversed
   DONE bug: reversing direction should change offset so that text occupies roughly the same place. currently in scrunches up
 
   ---0.99:
-  would be neat to have multiple lines
-    when on closed path, option to progressively offset by textheight so you can easily spiral text around
   mouse click to position caret
   size of offset and baseline widgets is not screen space, should they be?
-  cursor behavior and color(done) should match the caption tool
   halignment options for open paths?
   need kern control, with kern handles
   copy text.. means implementing selections
   should not add new object with special check for blank on interf exit, should cache add point, but only add if new text pressed
   rotation handle: glyphs align with path, or orient absolute, or distort with path flow, or distort with absolute angle
-  multiline?
-  option to auto expand line
+  option to auto expand line so glyphs don't scrunch up
+  would be neat to have multiple lines
+    when on closed path, option to progressively offset by textheight so you can easily spiral text around
 
+  DONE cursor color should match the caption tool
   DONE paste text
   DONE implement insert character
   DONE implement join chars
@@ -566,6 +566,7 @@ svg: SVG svgin: svg in:
   bug: text multi lines are concatted instead of newlined
     bug: text size is way off.. like 75% smaller after import
     inkscape multipage:
+      implement svg2 "view" support, as Inkscape is moving to that instead of inkscape:page
 	  export:
 	    margins, add a RectPageStyle to papergroup?
 	    space rotation
@@ -638,8 +639,8 @@ svg: SVG svgin: svg in:
     DONE radial gradients
     DONE in needs to parse "use" elements and other "#" refs
   out:
-    needs option to not clip by page, or auto to not clip when single page in spread
     ---0.099---
+    needs option to not clip by page, or auto to not clip when single page in spread
     special check for paths with a single gradient child
     text linespacing.. unclear how Msize/linespacing maps to svg options
     DONE locked: sodipodi:insensitive="true"
@@ -755,7 +756,6 @@ PathInterface: pathinterface
   would be nice for weight nodes to have a minimized appearance when far from mouse
   would be nice to have context options for hovered item right on top
   click on extrema: add point at | move nearby vertex to this point
-  ux: when you drag mouse outside of window, should not draw the green add point hint
   ux: when you first activate with new path, need to refresh where mouse is for green add point hint
   bug: if path doesn't have linestyle in file, later crashes since it does not fill in
   bug: width handle has bit of a hitch when handle near a vertex.. extra temp width node being added?
@@ -786,6 +786,7 @@ PathInterface: pathinterface
     interfaces for creation of the whole path object.
     separate scan/select/mouse down,up,move, BUT uses the PathInterface weight node display and controls
 
+  DONE ux: when you drag mouse outside of window, should not draw the green add point hint
   DONE remove PathOperator: overly complicated, not much benefit, its theoretical flexibility isn't worth it
   DONE Finish making LineStyle a resource
     DONE load/save
@@ -2062,24 +2063,6 @@ make drag and drop selections work dnd:
   DONE xlib_dnd->preferred_type not being set?? -> was bad child selection coords
   DONE do proper translation between screen coords and window coords during acceptance query
 
-imageinterface: imagedata:
-  implement reload
-  implement straight load
-  redo seems ok for image change and transform, but undo doesn't apply correcty??
-  actions to scale to proper dpi for destination paper
-  grab particular exif info to show in labels?
-  would be nice to autocrop to specific portion without explicit clip mask, ie select a sprite in a sprite sheet from imageinfo dialog
-  auto resource-ize images to make them reusable more easily?
-  undo/redo
-  labels:
-    need to decide if these are printing objects, or just screen writing
-    adjust attachment point
-    adjust rotation
-    adjust content: pick from exif? custom label templates?
-  DONE fix crash toggling show pixel size if data but no image
-  DONE 'f' show labels should shadow label, and put it on upper edge
-  DONE optionally show pixel size of image
-
 align tool: aligninterface AlignInterface align:
   needs polishing, the lines and indicators get a bit lost
   context menu seems to be the group interface menu
@@ -2739,6 +2722,27 @@ previews: thumbs:
   DONE implement '^' for preview base
   DONE move preview_file_bases to prefs
 
+imageinterface: imagedata:
+  on broken image, should be options to fix
+  implement reload
+  implement straight load
+  redo seems ok for image change and transform, but undo doesn't apply correcty??
+  actions to scale to proper dpi for destination paper
+  grab particular exif info to show in labels?
+  would be nice to autocrop to specific portion without explicit clip mask, ie select a sprite in a sprite sheet from imageinfo dialog
+  auto resource-ize images to make them reusable more easily?
+  undo/redo
+  labels:
+    need to decide if these are printing objects, or just screen writing
+    adjust attachment point
+    adjust rotation
+    adjust content: pick from exif? custom label templates?
+  DONE fix preview render
+  DONE not showing broken image indicator, just shows arrow for null image
+  DONE fix crash toggling show pixel size if data but no image
+  DONE 'f' show labels should shadow label, and put it on upper edge
+  DONE optionally show pixel size of image
+
 dynamic objects (generated images, dynamic images, rendered images)
     eps objects to pdf: export as image, plant in PDF as image
     group objects with laidout elements, updateable with script
@@ -2750,6 +2754,8 @@ dynamic objects (generated images, dynamic images, rendered images)
       needs how many files
       needs what other info
 ImageProperties image properties imageinfo image info: imagedialog:
+  file / preview buttons should be toggles and show which is shown
+  when you generate should update the valid state of the preview box
   generate preview doesn't seem to work?
   filepreviewer at first has tiny font
   option to crop on load?
@@ -3298,11 +3304,17 @@ soft masking
     mask object optionally converted to grayscale
 
 pagerangeinterface:
-  incorporate IndexRange?
-  drag off screen should toggle off
-  need overlay close box?
+  bug: reversed showing wrong indices
+  bug: reversing changing index 0 not one clicked on
+  show a bar with the page status icons, click on to jump to page
+  implement color
+  control over an existing line should be drag? or join?
+  use toggle items for number display
+  needs to adjust on viewport change
   edit base in place
   should remember old label format strings, to easily select back to them
+  drag off screen should toggle off
+  need overlay close box?
 
 have option to specify language from command line
 
@@ -3313,7 +3325,7 @@ improve split window
   load/save split bevel settings
   debug mouse cursor change when over gap
   simplify pane customization, docking
-
+	
 busywork:
   replace refs to LineSolid with 0, as LineSolid is X11 leftover
 
