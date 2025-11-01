@@ -98,7 +98,7 @@ void EpsData::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 	}
 	
 	if (filename) fprintf(f,"%sfilename \"%s\"\n",spc,filename);
-	if (previewfile && !(previewflag&1)) fprintf(f,"%spreviewfile \"%s\"\n",spc,previewfile);
+	if (previewfile) fprintf(f,"%spreviewfile \"%s\"\n",spc,previewfile);
 	fprintf(f,"%sminx %.10g\n",spc,minx);
  	fprintf(f,"%sminy %.10g\n",spc,miny);
 	fprintf(f,"%smaxx %.10g\n",spc,maxx);
@@ -126,7 +126,7 @@ void EpsData::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *context)
 	char *fname=NULL,*pname=NULL;
 	double x1,x2,y1,y2;
 	x1=x2=y1=y2=0;
-	previewflag=(previewflag&~1);
+
 	for (int c=0; c<att->attributes.n; c++) {
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
@@ -151,7 +151,6 @@ void EpsData::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *context)
 	}
 	 // if filename is given, and old file is NULL, or is different...
 	if (fname && (!filename || (filename && strcmp(fname,filename)))) {
-		//if (pname) previewflag|=1;
 		 // load an image with existing preview, do not destroy that preview when
 		 // image is destroyed:
 		if (LoadImage(fname,pname,0,0,0)) {
