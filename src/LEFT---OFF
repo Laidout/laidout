@@ -13,10 +13,6 @@ down to major items in ../features.md.
 
 ------------ serious release blocking bugs to fix right now:
 
-bug: import 1 image, preview creator seems to make 1x1 preview image???
-
-bug: engraver severely broken.. no lines visible!!
-
 bug: if you add a registration mark, you can't move it, but also causes infinite search
 
 bug: in ImageInterface, just undo without doing anything else wrecks image transform, which wrecks whole view
@@ -2536,9 +2532,17 @@ cairo:
   1.18 (since late 2023) has COLRv1 support, and ot svg support, and custom font color palette support!!
 
 
-engraving tool: Engraving  engraver
+engraving tool: Engraving  engraver:
+  really need undo/redo
+  need a force refresh option
+  circular mesh has discontinuity on connecting edge
+  bug: when you use ellipse for mesh, then change mode, ellipse interface still active
   bug: trace object opacity is not working for non-image trace objects.. stroke and fill needs mask integration!!
   bug: 'z' zaps mesh, but does not change cache border or point mapping
+  should set current color on select
+
+  DONE need option to change size of preview
+  DONE bug: ui font bad when tracing panel up, when 'p'
 
   cairo render NEEDS VAST IMPROVEMENT.. the clunky xlib approximation was fast, but not transferrable to cairo
 
@@ -2548,6 +2552,13 @@ engraving tool: Engraving  engraver
     need ability to store overall styles of a patch, not just each individually
     on resource menus, should check mark if current matches a resource??
 
+  thick/thin:
+    thin from very low value seems impossible
+    needs a smoothing mode
+    needs a smooth to value
+    needs greater range of sensitive
+    implement hardness curve
+    minimum/maximum line thickness should be settable
   orient:
     should adjust all linked
     with test-engrave-trace2.laidout, do the quick adjust, does not preserve width the first time, using old value of thickness?
@@ -2571,6 +2582,7 @@ engraving tool: Engraving  engraver
     drawing custom freehand (with width) lines within the mesh area
 
   mesh path:
+    shift extending does not add new points, you have to reorient or otherwise refresh
     'a' not selecting all in line
 
   curvemap needs predefined ramp profiles, remember last, load/save (per context?)
@@ -2596,18 +2608,25 @@ engraving tool: Engraving  engraver
       grow: edge abutment when generating
       sample point generation should be based on lines per mesh square, not total mesh field
       finish implementing spacing section -> spacing map
+  grow:
+    implement!
+
+  blockout:
+    current blockout is not very precise, needs approximation between existing point samples
+
+  resolution:
+    fully implement resolution adjustments for auto lines -> needs resolution tool
+    resolution tool: click to add between points within brush, control to destroy points in brush
 
   add special group: half offset, perpendicular
   need stroke+fill options?
   need convert to path object ability
-  current blockout is not very precise, needs approximation between existing point samples
-  fully implement resolution adjustments for auto lines -> needs resolution tool
   single group (not group list) view is too old, doesn't do link circle, and can only select from current object groups.. remove it entirely?
   export doesn't work for: nothing for scribus, eps, ps
   edit brush ramp as symmetric ramp
-  resolution tool: click to add between points within brush, control to destroy points in brush
   need merge group
 
+  need some kind of smooth out: smooth out width, and smooth out path
   screen view, need option for Fast|Accurate
   no writability check on exportsnapshot
   allow temp override of linked to adjust only current?
@@ -2617,9 +2636,7 @@ engraving tool: Engraving  engraver
   test: dash cache needs updating when points are moved OR thickness changed
   always brings current object to front (normal refresh in place, and then interface draw on top).. should be very optional, as it blocks out white overlays
   don't warp, move points, then warp, almost always has bad points: PatchData::getPointReverse() is too inaccurate
-  undo/redo
   finish implement making the circle lines be closed circles
-  need some kind of smooth out: smooth out width, and smooth out path
   hover over mode icons should show text of what you are hovering over (verbose mode?).. hard to remember, annoying to look at status bar otherwise
   should be able to draw a line and have that be a baseline for dash division
   option: either drop out of bounds points, or zap mesh to point bounds
@@ -2682,6 +2699,7 @@ global resources:
 need a Revert option
 
 ViewWindow:
+  not remembering current overlays
   current page outline should highlight proper pagestack instance.. currently just goes to first curpage match in stack
   LaidoutViewport::UpdateMarkers() should be in PageMarkerInterface.. maybe add anInterface::ViewportContextChanged()?
   maybe optionally drawaxes should show dotted line from origin to bbox?
@@ -3304,17 +3322,19 @@ soft masking
     mask object optionally converted to grayscale
 
 pagerangeinterface:
-  bug: reversed showing wrong indices
-  bug: reversing changing index 0 not one clicked on
-  show a bar with the page status icons, click on to jump to page
-  implement color
   control over an existing line should be drag? or join?
-  use toggle items for number display
-  needs to adjust on viewport change
-  edit base in place
+  needs to clamp on viewport change
+  edit base in place.. provide hints for what '#' or '###' is?
+  current base editor has terrible window sizing
+
+  implement color
   should remember old label format strings, to easily select back to them
   drag off screen should toggle off
-  need overlay close box?
+  show a bar with the page status icons, click on to jump to page
+
+  DONE use toggle items for number display
+  DONE bug: reversed showing wrong indices
+  DONE bug: reversing changing index 0 not one clicked on
 
 have option to specify language from command line
 
@@ -3987,3 +4007,5 @@ DONE options: --impose-only and --nodes-only arg needs better description of arg
 DONE clear new g++ warnings about hiding virtual functions, mostly relating to various duplicate()s
 DONE fix FieldExtPlace snafu about multiple conflicting PtrStack
 DONE Remove obsolete HelpWindow code.. replace with settingswindow
+DONE bug: engraver severely broken.. no lines visible!!
+DONE bug: import 1 image, preview creator seems to make 1x1 preview image???
