@@ -35,7 +35,7 @@ namespace Laidout {
 
 
 
-#define PAD 5
+// #define PAD 5
 #define FUDGE 5.0
 
 
@@ -50,59 +50,60 @@ namespace Laidout {
  */
 
 
-#define PART_None          0
-#define PART_Label         1
-#define PART_DocPageStart  2
-#define PART_LabelStart    3
-#define PART_Position      4
-#define PART_Index         5
+#define PART_None           0
+#define PART_Label          1
+#define PART_DocPageStart   2
+#define PART_LabelStart     3
+#define PART_Position       4
+#define PART_Index          5
+#define PART_RemoveDivision 6
 
 
 PageRangeInterface::PageRangeInterface(int nid,Displayer *ndp,Document *ndoc)
 	: anInterface(nid,ndp) 
 {
-	panelwidth=1;
-	panelheight=1;
+	panelwidth  = 1;
+	panelheight = 1;
 
-	currange=0;
-	hover_part=-1;
-	hover_range=-1;
-	hover_position=-1;
-	hover_index=-1;
-	temp_range_l=NULL;
-	temp_range_r=NULL;
+	currange       = 0;
+	hover_part     = -1;
+	hover_range    = -1;
+	hover_position = -1;
+	hover_index    = -1;
+	temp_range_l   = nullptr;
+	temp_range_r   = nullptr;
 
-	interface_type=INTERFACE_Overlay;
-	showdecs=0;
-	firsttime=1;
-	doc=NULL;
+	interface_type = INTERFACE_Overlay;
+	showdecs       = 0;
+	firsttime      = 1;
+	doc            = nullptr;
 	UseThisDocument(ndoc);
 
-	defaultbg=rgbcolor(255,255,255);
-	defaultfg=rgbcolor(0,0,0);
+	defaultbg = rgbcolor(255, 255, 255);
+	defaultfg = rgbcolor(0, 0, 0);
 }
 
 PageRangeInterface::PageRangeInterface(anInterface *nowner,int nid,Displayer *ndp)
 	: anInterface(nowner,nid,ndp) 
 {
-	panelwidth=1;
-	panelheight=1;
+	panelwidth  = 1;
+	panelheight = 1;
 
-	currange=0;
-	hover_part=-1;
-	hover_range=-1;
-	hover_position=-1;
-	hover_index=-1;
-	temp_range_l=NULL;
-	temp_range_r=NULL;
+	currange       = 0;
+	hover_part     = -1;
+	hover_range    = -1;
+	hover_position = -1;
+	hover_index    = -1;
+	temp_range_l   = nullptr;
+	temp_range_r   = nullptr;
 
-	interface_type=INTERFACE_Overlay;
-	showdecs=0;
-	firsttime=1;
-	doc=NULL;
+	interface_type = INTERFACE_Overlay;
+	showdecs       = 0;
+	firsttime      = 1;
+	doc            = nullptr;
 
-	defaultbg=rgbcolor(255,255,255);
-	defaultfg=rgbcolor(0,0,0);
+	defaultbg = rgbcolor(255, 255, 255);
+	defaultfg = rgbcolor(0, 0, 0);
 }
 
 PageRangeInterface::~PageRangeInterface()
@@ -129,11 +130,11 @@ char *PageRangeInterface::LabelPreview(int range,int first,int labeltype)
 }
 
 //! Return something like "1,2,3,..." or "iv,iii,ii,..."
-/*! If range==NULL, then use currange. If first<0, use default start for that range.
+/*! If range==nullptr, then use currange. If first<0, use default start for that range.
  */
 char *PageRangeInterface::LabelPreview(PageRange *rangeobj,int first,int labeltype)
 {
-	char *str=NULL;
+	char *str=nullptr;
 	int f,l; //first, length of range
 
 	if (first<0) f=rangeobj->first; 
@@ -175,32 +176,32 @@ char *PageRangeInterface::LabelPreview(PageRange *rangeobj,int first,int labelty
 Laxkit::MenuInfo *PageRangeInterface::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
 	 //no menu when not right click in box...
-	int range=-1, index=-1, part=0;
-	int pos=-1;
-	int s=scan(x,y, &pos, &range, &part, &index);
-	if (!s) return menu;
-	currange=range;
+	 int range = -1, index = -1, part = 0;
+	 int pos = -1;
+	 int s   = scan(x, y, &pos, &range, &part, &index);
+	 if (!s) return menu;
+	 currange = range;
 
-	if (!menu) menu=new MenuInfo(_("Paper Interface"));
-	else menu->AddSep(_("Paper"));
+	 if (!menu) menu = new MenuInfo(_("Paper Interface"));
+	 else menu->AddSep(_("Paper"));
 
-	menu->AddItem(_("Custom base..."),RANGE_Custom_Base);
-	menu->AddItem(_("Reverse"),RANGE_Reverse);
-	menu->AddSep();
-	//if (doc && doc->pageranges.n>1) {
-	//	menu->AddItem(_("Delete range"),RANGE_Delete);
-	//	menu->AddSep();
-	//}
+	 menu->AddItem(_("Custom base..."), RANGE_Custom_Base);
+	 menu->AddItem(_("Reverse"), RANGE_Reverse);
+	 menu->AddSep();
+	 // if (doc && doc->pageranges.n>1) {
+	 //	menu->AddItem(_("Delete range"),RANGE_Delete);
+	 //	menu->AddSep();
+	 // }
 
-	char *str=NULL;
-	for (int c=0; c<Numbers_MAX; c++) {
-		//if (c==Numbers_Default) menu->AddItem(_("(default)"),c);
-		if (c==Numbers_Default) ;
-		else if (c==Numbers_None) menu->AddItem(_("(none)"),c);
-		else {
-			 //add first, first++, first+++, ...  in number format
-			str=LabelPreview(currange,-1,c);
-			menu->AddItem(str, RANGE_NumberType, c);
+	 char *str = nullptr;
+	 for (int c = 0; c < Numbers_MAX; c++) {
+		 // if (c==Numbers_Default) menu->AddItem(_("(default)"),c);
+		 if (c == Numbers_Default) ;
+		 else if (c == Numbers_None) menu->AddToggleItem(_("(none)"), c, doc->pageranges.e[currange]->labeltype == c);
+		 else {
+			//add first, first++, first+++, ...  in number format
+			str = LabelPreview(currange,-1,c);
+			menu->AddToggleItem(str, RANGE_NumberType, c, doc->pageranges.e[currange]->labeltype == c);
 			delete[] str;
 		}
 	}
@@ -213,46 +214,46 @@ Laxkit::MenuInfo *PageRangeInterface::ContextMenu(int x,int y,int deviceid, Laxk
 int PageRangeInterface::Event(const Laxkit::EventData *e,const char *mes)
 {
 	if (!strcmp(mes,"menuevent")) {
-		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
-		int i=s->info2; //id of menu item
+		const SimpleMessage *s = dynamic_cast<const SimpleMessage*>(e);
+		int i = s->info2; //id of menu item
 		
-		if (i==RANGE_Custom_Base) {
-			if (!doc || hover_range<0 || hover_range>=doc->pageranges.n) return 0;
+		if (i == RANGE_Custom_Base) {
+			if (!doc || hover_range < 0 || hover_range >= doc->pageranges.n) return 0;
 
 			// ***** THIS IS TEMPORARY!! should be edit in place
-			InputDialog *i=new InputDialog(NULL,_("New page label base"),_("New page label base"),ANXWIN_CENTER,
+			InputDialog *i=new InputDialog(nullptr,_("New page label base"),_("New page label base"), ANXWIN_CENTER | ANXWIN_REMEMBER,
 									 0,0,0,0,0,
-									 NULL,object_id,"newbase",
+									 nullptr,object_id,"newbase",
 									 doc->pageranges.e[hover_range]->labelbase, _("Label:"),
 									 _("Ok"),BUTTON_OK,
 									 _("Cancel"),BUTTON_CANCEL);
 			app->rundialog(i);
 			return 0;
 
-		} else if (i==RANGE_Delete) {
+		} else if (i == RANGE_Delete) {
 			// *** imp
 			return 0;
 
-		} else if (i==RANGE_Reverse) {
-			if (!doc || currange<0) return 0;
-			PageRange *r=NULL;
-			if (doc->pageranges.n) r=doc->pageranges.e[0];
-			if (!r) doc->ApplyPageRange(NULL,Numbers_Arabic,"#",0,-1,doc->pages.n,1);
+		} else if (i == RANGE_Reverse) {
+			if (!doc || currange < 0) return 0;
+			PageRange *r = nullptr;
+			if (doc->pageranges.n) r=doc->pageranges.e[currange];
+			if (!r) doc->ApplyPageRange(nullptr,Numbers_Arabic,"#",0,-1,doc->pages.n,1);
 			else {
 				if (r->decreasing) 
 					doc->ApplyPageRange(r->name,r->labeltype,r->labelbase,r->start,r->end,r->first-(r->end-r->start),0);
 				else
 					doc->ApplyPageRange(r->name,r->labeltype,r->labelbase,r->start,r->end,r->first+(r->end-r->start),1);
 			}
-			needtodraw=1;
+			needtodraw = 1;
 			return 0;
 
-		} else if (i==RANGE_NumberType) {
-			if (!doc || hover_range<0 || hover_range>=doc->pageranges.n) return 0;
-			int num=s->info4;
+		} else if (i == RANGE_NumberType) {
+			if (!doc || hover_range < 0 || hover_range >= doc->pageranges.n) return 0;
+			int num = s->info4;
 			doc->pageranges.e[currange]->labeltype=num;
 			doc->UpdateLabels(currange);
-			needtodraw=1;
+			needtodraw = 1;
 			return 0;
 		}
 
@@ -262,10 +263,10 @@ int PageRangeInterface::Event(const Laxkit::EventData *e,const char *mes)
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
 		if (!s) return 0;
 
-		if (!doc || hover_range<0 || hover_range>=doc->pageranges.n) return 0;
+		if (!doc || hover_range < 0 || hover_range >= doc->pageranges.n) return 0;
 		makestr(doc->pageranges.e[hover_range]->labelbase,s->str);
 		doc->UpdateLabels(hover_range);
-		needtodraw=1;
+		needtodraw = 1;
 
 		return 0;
 	}
@@ -307,13 +308,13 @@ int PageRangeInterface::draws(const char *atype)
 { return 0; }
 
 
-//! Return a new PageRangeInterface if dup=NULL, or anInterface::duplicateInterface(dup) otherwise.
+//! Return a new PageRangeInterface if dup=nullptr, or anInterface::duplicateInterface(dup) otherwise.
 /*! 
  */
 anInterface *PageRangeInterface::duplicateInterface(anInterface *dup)
 {
-	if (dup==NULL) dup=new PageRangeInterface(id,NULL);
-	else if (!dynamic_cast<PageRangeInterface *>(dup)) return NULL;
+	if (dup==nullptr) dup=new PageRangeInterface(id,nullptr);
+	else if (!dynamic_cast<PageRangeInterface *>(dup)) return nullptr;
 	
 	return anInterface::duplicateInterface(dup);
 }
@@ -323,18 +324,20 @@ int PageRangeInterface::InterfaceOn()
 {
 	DBG cerr <<"pagerangeinterfaceOn()"<<endl;
 
-	panelheight=50;
-	panelwidth=dp->Maxx-dp->Minx-2*PAD;
-	//if (!doc) UseThisDocument(doc);
+	double th = UIScale() * curwindow->win_themestyle->normal->textheight();
+	double PAD = pad * th;
+	panelheight = 3*th;
+	panelwidth  = dp->Maxx - dp->Minx - 2 * PAD;
+	// if (!doc) UseThisDocument(doc);
 
-	showdecs=2;
-	needtodraw=1;
+	showdecs   = 2;
+	needtodraw = 1;
 	return 0;
 }
 
 int PageRangeInterface::InterfaceOff()
 {
-	Clear(NULL);
+	Clear(nullptr);
 	showdecs=0;
 	needtodraw=1;
 	return 0;
@@ -342,70 +345,74 @@ int PageRangeInterface::InterfaceOff()
 
 void PageRangeInterface::Clear(SomeData *d)
 {
-	//panelheight=50;
-	//panelwidth=dp->Maxx-dp->Minx-2*PAD;
-	//offset=-flatpoint(dp->Minx+PAD,dp->Maxy-PAD);
+}
+
+void PageRangeInterface::ViewportResized()
+{
+	firsttime = 1;
 }
 
 int PageRangeInterface::Refresh()
 {
 	if (!needtodraw) return 0;
-	needtodraw=0;
+	needtodraw = 0;
 	if (!doc) return 0;
 
 	if (firsttime) {
-		firsttime=0;
-		panelheight=50;
-		panelwidth=dp->Maxx-dp->Minx-2*PAD;
-		offset=-flatpoint(dp->Minx+PAD,dp->Maxy-PAD);
+		firsttime   = 0;
+		double th = UIScale() * curwindow->win_themestyle->normal->textheight();
+		double PAD = pad * th;
+		panelheight = 3 * th;
+		panelwidth  = dp->Maxx - dp->Minx - 2 * PAD;
+		offset      = -flatpoint(dp->Minx + PAD, dp->Maxy - PAD);
 	}
 
 	DBG cerr <<"PageRangeInterface::Refresh()..."<<doc->pageranges.n<<endl;
 
 	dp->DrawScreen();
-	dp->LineAttributes(1,LineSolid,CapButt,JoinMiter);
+	dp->LineAttributes(ScreenLine(),LineSolid,CapButt,JoinMiter);
 
 	double h = panelheight;
 	flatpoint o;
 	o -= offset;
 	o.y -= h;
 
-	 //draw blocks
-	for (int c=0; c<(doc->pageranges.n?doc->pageranges.n:1); c++) {
-		if (doc->pageranges.n) drawBox(doc->pageranges.e[c], (hover_range==c ? 1 : 0));
+	// draw blocks
+	for (int c = 0; c < (doc->pageranges.n ? doc->pageranges.n : 1); c++) {
+		if (doc->pageranges.n)
+			drawBox(doc->pageranges.e[c], (hover_range == c ? 1 : 0));
 		else {
-			PageRange r(NULL,"#",Numbers_Arabic,0,doc->pages.n-1,1,0);
-			drawBox(&r,(hover_range==c?1:0));
+			PageRange r(nullptr, "#", Numbers_Arabic, 0, doc->pages.n - 1, 1, 0);
+			drawBox(&r, (hover_range == c ? 1 : 0));
 		}
 	}
 
-	 //draw green position bar
+	// draw green position bar
 	if (hover_part == PART_Position) {
-		double pos=0;
+		double pos = 0;
 		if (buttondown.isdown(0,LEFTBUTTON)) {
-			if (temp_range_l) { drawBox(temp_range_l,0); pos=temp_range_l->end  /(double)doc->pages.n; }
-			if (temp_range_r) { drawBox(temp_range_r,0); pos=temp_range_r->start/(double)doc->pages.n; }
+			if (temp_range_l) { drawBox(temp_range_l,0); pos = temp_range_l->end   / (double)doc->pages.n; }
+			if (temp_range_r) { drawBox(temp_range_r,0); pos = temp_range_r->start / (double)doc->pages.n; }
 		} else {
 			if (doc->pageranges.n) {
-				if (hover_position<doc->pageranges.n)
-					pos = doc->pageranges.e[hover_position]->start/(double)doc->pages.n;
+				if (hover_position < doc->pageranges.n)
+					pos = doc->pageranges.e[hover_position]->start / (double)doc->pages.n;
 				else pos = 1;
 			} else if (hover_position) pos = 1;
 		}
 
 		dp->NewFG(0.,1.,0.);
-		o.x=-offset.x + panelwidth*pos;
-		o.y=-offset.y-h;
+		o.x = -offset.x + panelwidth*pos;
+		o.y = -offset.y-h;
 		dp->drawrectangle(o.x-FUDGE/2,o.y, FUDGE,h, 1);
 	}
 
 	if (hover_part == PART_Index) {
 		dp->NewFG(1.,0.,0.);
-		o.x=-offset.x + panelwidth*((double)hover_index/doc->pages.n);
-		o.y=-offset.y-h;
+		o.x = -offset.x + panelwidth*((double)hover_index/doc->pages.n);
+		o.y = -offset.y-h;
 		dp->drawrectangle(o.x-FUDGE/2,o.y, FUDGE,h, 1);
 	}
-
 
 	dp->DrawReal();
 
@@ -432,7 +439,7 @@ void PageRangeInterface::drawBox(PageRange *r, int includehover)
 	//o.y -= h;
 
 	 //draw blocks
-	char *str=NULL;
+	char *str=nullptr;
 	char sstr[30];
 	int s,e,f, th=dp->textheight();
 
@@ -462,7 +469,9 @@ void PageRangeInterface::drawBox(PageRange *r, int includehover)
 	 //draw black outline around area
 	//dp->NewFG(0.,0.,0.);
 	dp->NewFG(coloravg(defaultfg, defaultbg, .5));
+	if (includehover) dp->LineWidth(2*ScreenLine());
 	dp->drawrectangle(o.x,o.y, w,h, 0);
+	if (includehover) dp->LineWidth(ScreenLine());
 	//dp->drawline(o.x,o.y, o.x+w,o.y+h);
 
 	dp->NewFG(defaultfg);
@@ -474,15 +483,20 @@ void PageRangeInterface::drawBox(PageRange *r, int includehover)
 	e = r->end;
 	f = r->first;
 
-	 //draw range numbers
-	 //start - end 
-	if (s-e==0) sprintf(sstr,"%d",s); else sprintf(sstr,"%d-%d",s,e);
-	dp->textout(o.x+w/2-th/2,o.y+h/4, sstr,-1, LAX_RIGHT|LAX_VCENTER);
-	sprintf(sstr,":");
-	 //first - (first+start-end)
-	dp->textout(o.x+w/2,o.y+h/4, sstr,-1, LAX_HCENTER|LAX_VCENTER);
-	if (s-e==0) sprintf(sstr,"%d",f); else sprintf(sstr,"%d-%d",f,f+e-s);
-	dp->textout(o.x+w/2+th/2,o.y+h/4, sstr,-1, LAX_LEFT|LAX_VCENTER);
+	// draw range numbers
+	
+	// start - end
+	if (s - e == 0) sprintf(sstr, "%d", s);
+	else sprintf(sstr, "%d-%d", s, e);
+	dp->textout(o.x + w / 2 - th / 2, o.y + h / 4, sstr, -1, LAX_RIGHT | LAX_VCENTER);
+	sprintf(sstr, ":");
+
+	// first - (first+start-end)
+	dp->textout(o.x + w / 2, o.y + h / 4, sstr, -1, LAX_HCENTER | LAX_VCENTER);
+	if (s - e == 0) sprintf(sstr, "%d", f);
+	else if (r->decreasing) sprintf(sstr, "%d-%d", f, f - e + s);
+	else sprintf(sstr, "%d-%d", f, f + e - s);
+	dp->textout(o.x + w / 2 + th / 2, o.y + h / 4, sstr, -1, LAX_LEFT | LAX_VCENTER);
 }
 
 //! Return a number in range [0..1] corresponding to page positions [0..doc->pages.n]
@@ -502,7 +516,7 @@ double PageRangeInterface::position(int pagenumber)
  * part is which section of the page range chunk the mouse is over.
  * part is 1 for label preview, 2 for doc page index start, 3 for label start index, 0 for none.
  *
- * If index!=NULL, then return also the document page index that the position corresponds to.
+ * If index!=nullptr, then return also the document page index that the position corresponds to.
  *
  * If any of position, range, part, index are found, return 1, else return 0.
  *
@@ -512,14 +526,14 @@ int PageRangeInterface::scan(int x,int y, int *position, int *range, int *part, 
 {
 	if (!doc) return 0;
 
-	flatpoint fp(x,y);
-	fp+=offset;
-	fp.x/=panelwidth; 
-	fp.y/=-panelheight; //now fp in range 0..1
-	double fudge=FUDGE/panelwidth;
+	flatpoint fp(x, y);
+	fp += offset;
+	fp.x /= panelwidth;
+	fp.y /= -panelheight;  // now fp in range 0..1
+	double fudge = FUDGE / panelwidth;
 	DBG cerr <<"x,y="<<x<<","<<y<<"  pos="<<fp.x<<","<<fp.y<<"  offset="<<offset.x<<","<<offset.y<<endl;
 
-	if (fp.y<0 || fp.y>1) return 0;
+	if (fp.y < 0 || fp.y > 1) return 0;
 
 	int r=-1;   //which pagerange
 	int pos=-1; //which page index
@@ -617,7 +631,7 @@ int PageRangeInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 	int dragged=buttondown.up(d->id,LEFTBUTTON);
 
 	int range=-1, index=-1, part=0;
-	scan(x,y, NULL, &range, &part, &index);
+	scan(x,y, nullptr, &range, &part, &index);
 
 	if (hover_part==PART_Position) {
 		if (temp_range_l && temp_range_l->end>=temp_range_l->start) 
@@ -637,8 +651,8 @@ int PageRangeInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 								temp_range_r->first,
 								temp_range_r->decreasing);
 
-		if (temp_range_l) { delete temp_range_l; temp_range_l=NULL; }
-		if (temp_range_r) { delete temp_range_r; temp_range_r=NULL; }
+		if (temp_range_l) { delete temp_range_l; temp_range_l=nullptr; }
+		if (temp_range_r) { delete temp_range_r; temp_range_r=nullptr; }
 		needtodraw=1;
 		hover_part=0;
 		return 0;
@@ -649,7 +663,7 @@ int PageRangeInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 			if (!doc->pageranges.n) InstallDefaultRange();
 			if (range>=0 && range<doc->pageranges.n && index>doc->pageranges.e[range]->start && index<=doc->pageranges.e[range]->end) {
 				 //Split range if clicking on an index in a range, but not on range endpoints
-				char *name=NULL;
+				char *name=nullptr;
 				int f;
 				PageRange *r=doc->pageranges.e[range];
 				if (r->decreasing) f=r->first-(index-r->start); else f=r->first+(index-r->start);
@@ -678,14 +692,14 @@ int PageRangeInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 int PageRangeInterface::InstallDefaultRange()
 {
 	if (!doc) return 1;
-	doc->ApplyPageRange(NULL,Numbers_Arabic,"#",0,-1,1,0);
+	doc->ApplyPageRange(nullptr,Numbers_Arabic,"#",0,-1,1,0);
 	return 0;
 }
 
 int PageRangeInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
 	if ((state&LAX_STATE_MASK)==ControlMask) {
-		if (!scan(x,y, NULL,NULL,NULL,NULL)) return 1;
+		if (!scan(x,y, nullptr,nullptr,nullptr,nullptr)) return 1;
 		panelwidth*=1.2;
 		offset.x=1.2*(x+offset.x)-x;
 		//offset.y=1.2*(y+offset.y)-y;
@@ -722,7 +736,7 @@ int PageRangeInterface::WheelUp(int x,int y,unsigned int state,int count,const L
 int PageRangeInterface::WheelDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
 	if ((state&LAX_STATE_MASK)==ControlMask) {
-		if (!scan(x,y, NULL,NULL,NULL,NULL)) return 1;
+		if (!scan(x,y, nullptr,nullptr,nullptr,nullptr)) return 1;
 		panelwidth/=1.2;
 		offset.x=1/1.2*(x+offset.x)-x;
 		//offset.y=1/1.2*(y+offset.y)-y;
@@ -775,10 +789,13 @@ int PageRangeInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 		if ((state&LAX_STATE_MASK)==ControlMask) {
 			if (index<=0) part=PART_None; else part=PART_Index;
 
-			if (part==PART_Index && hover_index!=index) {
-				hover_part=part;
-				hover_index=index;
-				needtodraw=1;
+			if (part == PART_Position) {
+				
+			}
+			if (part == PART_Index && hover_index != index) {
+				hover_part  = part;
+				hover_index = index;
+				needtodraw  = 1;
 			}
 		}
 		if (hover_part!=part || hover_range!=range || hover_position!=over) {
@@ -787,12 +804,12 @@ int PageRangeInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 			hover_position=over;
 			hover_index=index;
 
-			if      (hover_part==PART_None)         PostMessage(NULL);
-			else if (hover_part==PART_Index)        PostMessage(_("Click to divide range"));
-			else if (hover_part==PART_Label)        PostMessage(_("Wheel to change label type"));
-			else if (hover_part==PART_DocPageStart) PostMessage(_("Document page range"));
-			else if (hover_part==PART_LabelStart)   PostMessage(_("Wheel to change first page of labels"));
-			else if (hover_part==PART_Position)     PostMessage(_("Drag to adjust range"));
+			if      (hover_part == PART_None)         PostMessage(nullptr);
+			else if (hover_part == PART_Index)        PostMessage(_("Click to divide range"));
+			else if (hover_part == PART_Label)        PostMessage(_("Wheel to change label type"));
+			else if (hover_part == PART_DocPageStart) PostMessage(_("Document page index range, starting from 0"));
+			else if (hover_part == PART_LabelStart)   PostMessage(_("Wheel to change first page of labels"));
+			else if (hover_part == PART_Position)     PostMessage(_("Drag to adjust range"));
 
 			needtodraw=1;
 		}
@@ -875,22 +892,15 @@ int PageRangeInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 {
 	DBG cerr<<" got ch:"<<ch<<"  "<<(state&LAX_STATE_MASK)<<endl;
 
-	if (ch==LAX_Esc) {
-
-	} else if (ch==LAX_Shift) {
-	} else if ((ch==LAX_Del || ch==LAX_Bksp) && (state&LAX_STATE_MASK)==0) {
-	} else if (ch=='a' && (state&LAX_STATE_MASK)==0) {
-	} else if (ch=='r' && (state&LAX_STATE_MASK)==0) {
-	} else if (ch=='d' && (state&LAX_STATE_MASK)==0) {
-	} else if (ch=='9' && (state&LAX_STATE_MASK)==0) {
-
-	} else if (ch==' ' && (state&LAX_STATE_MASK)==0) {
-		panelheight = 50;
-		panelwidth  = dp->Maxx-dp->Minx-2*PAD;
-		offset = -flatpoint(dp->Minx+PAD,dp->Maxy-PAD);
-		needtodraw = 1;
-		return 0;
-	}
+	// if (ch == ' ' && (state & LAX_STATE_MASK) == 0) {
+	// 	double th = UIScale() * curwindow->win_themestyle->normal->textheight();
+	// 	double PAD  = pad * th;
+	// 	panelheight = 3 * th;
+	// 	panelwidth  = dp->Maxx - dp->Minx - 2 * PAD;
+	// 	offset      = -flatpoint(dp->Minx + PAD, dp->Maxy - PAD);
+	// 	needtodraw  = 1;
+	// 	return 0;
+	// }
 
 	return 1;
 }

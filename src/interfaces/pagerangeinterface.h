@@ -39,6 +39,7 @@ class PageRangeInterface : public LaxInterfaces::anInterface, public DocumentUse
 	char *LabelPreview(PageRange *rangeobj,int first,int labeltype);
 	PageRange *findRangeWith(int i);
 
+	double pad = .5;
 	unsigned long defaultfg, defaultbg;
 
 	int currange;
@@ -71,6 +72,7 @@ class PageRangeInterface : public LaxInterfaces::anInterface, public DocumentUse
 	virtual void Clear(LaxInterfaces::SomeData *d);
 	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu);
 	virtual int Event(const Laxkit::EventData *e,const char *mes);
+	virtual void ViewportResized();
 
 	
 	 // return 0 if interface absorbs event, MouseMove never absorbs: must return 1;
