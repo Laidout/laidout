@@ -73,9 +73,10 @@ class PaperInterface : virtual public LaxInterfaces::anInterface
 	virtual void CreateMaybebox(Laxkit::flatpoint p);
 	virtual int SnapBoxes();
 	
-	void DrawBox(const Laxkit::DoubleBBox &box, PaperBoxData *boxd, const Laxkit::ScreenColor &color, double arrow_offset, int hoveri);
+	void DrawBox(const Laxkit::DoubleBBox *box, const Laxkit::Insets *inset, PaperBoxData *boxd, const Laxkit::ScreenColor &color, double arrow_offset, int hoveri);
 	void AdjustBoxInsets();
 	void EnsureBox(PaperBoxData *data, BoxTypes type, Laxkit::DoubleBBox &box);
+	void EnsureBox(PaperBoxData *data, BoxTypes type, Laxkit::Insets &box);
 
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);
