@@ -26,9 +26,8 @@
 #include "polyptychwindow.h"
 #include "../polyptych/src/poly.h"
 	
-#include <iostream>
+#include <lax/debug.h>
 using namespace std;
-#define DBG 
 
 using namespace Laxkit;
 using namespace Polyptych;
@@ -260,7 +259,7 @@ int NetDialog::init()
 
 int NetDialog::Event(const EventData *data,const char *mes)
 {
-	DBG cerr <<"newdocmessage: "<<(mes?mes:"(unknown)")<<endl;
+	// DBGM("newdocmessage: "<<(mes?mes:"(unknown)"));
 
 	if (!strcmp(mes,"checkfile")) {
 		if (checkcurrent)
@@ -319,9 +318,9 @@ int NetDialog::Event(const EventData *data,const char *mes)
 #ifndef LAIDOUT_NOGL
 	} else if (!strcmp(mes,"polyptych")) {
 		NetImposition *imp=getNetImposition();
-		DBG cerr <<" ...editing with polyptych maybe..."<<endl;
+		// DBG cerr <<" ...editing with polyptych maybe..."<<endl;
 		if (imp && imp->abstractnet && dynamic_cast<Polyhedron*>(imp->abstractnet)) {
-			DBG cerr <<" ...imp found, editing with polyptych definitely..."<<endl;
+			// DBG cerr <<" ...imp found, editing with polyptych definitely..."<<endl;
 			 //ok from PolyptychWindow sends NetImposition to win_owner
 			PolyptychWindow *pw=new PolyptychWindow(imp, nullptr,win_owner,win_sendthis);
 			app->rundialog(pw);
