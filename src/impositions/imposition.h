@@ -39,13 +39,16 @@ class Spread;
 class PageLocation
 {	
  public:
-	PageLocation(int ni, Page *npage, LaxInterfaces::SomeData *trans, LaxInterfaces::SomeData *nmargin = nullptr);
-	~PageLocation();
+	int imposition_instance = -1; // identifier of page, unique within spread type
+  	// ValueHash properties; // other imposition specific info about this instance
 	int info;
 	int index;
 	Page *page;
 	LaxInterfaces::SomeData *outline;
 	LaxInterfaces::SomeData *margin;
+
+	PageLocation(int ni, Page *npage, LaxInterfaces::SomeData *trans, LaxInterfaces::SomeData *nmargin = nullptr, int imp_instance = -1);
+	~PageLocation();
 };
 
 //----------------------- Spread -------------------------------
@@ -68,9 +71,6 @@ class PageLocation
 class PageLocationStack : public Laxkit::PtrStack<PageLocation>, public ObjectContainer
 {
   public:
-  	int imposition_instance = -1;
-  	// ValueHash properties; // other imposition specific info about this instance
-
 	PageLocationStack() { obj_flags|=OBJ_Unselectable|OBJ_Zone; }
 	virtual ~PageLocationStack() {}
 	virtual const char *whattype() { return "PageLocation"; }

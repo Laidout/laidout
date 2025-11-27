@@ -86,7 +86,7 @@ const char *PageLocationStack::object_e_name(int i)
 /*! The page is assumed to not be owned locally. The count of poutline will be incremented here,
  * and decremented in the destructor.
  */
-PageLocation::PageLocation(int ni,Page *npage,LaxInterfaces::SomeData *poutline, LaxInterfaces::SomeData *nmargin)
+PageLocation::PageLocation(int ni,Page *npage,LaxInterfaces::SomeData *poutline, LaxInterfaces::SomeData *nmargin, int imp_instance)
 {
 	info    = 0;
 	index   = ni;
@@ -95,6 +95,7 @@ PageLocation::PageLocation(int ni,Page *npage,LaxInterfaces::SomeData *poutline,
 	if (outline) poutline->inc_count();
 	margin  = nmargin;
 	if (margin) margin->inc_count();
+	imposition_instance = imp_instance;
 }
 
 //! Page not delete'd, see constructor for how outline is dealt with.
