@@ -61,6 +61,13 @@ int SinglesInterface::InterfaceOn()
 	return 0;
 }
 
+Imposition *SinglesInterface::GetImposition()
+{
+	// singles->SetStylesFromPapergroup();
+	singles->setPage();
+	return singles;
+}
+
 /*! Set default paper size */
 int SinglesInterface::SetTotalDimensions(double width, double height)
 {

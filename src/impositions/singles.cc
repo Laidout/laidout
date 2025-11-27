@@ -165,6 +165,7 @@ const char *Singles::BriefDescription()
 	return _("Singles");
 }
 
+//  **** this is redundant? see setPage()
 void Singles::SetStylesFromPapergroup()
 {
 	for (int c = 0; c < papergroup->papers.n; c++) {
@@ -181,10 +182,10 @@ void Singles::SetStylesFromPapergroup()
 		pagestyle->width  = data->w();
 		pagestyle->height = data->h();
 		if (box->Has(MarginBox)) {
-			pagestyle->ml = box->margin.minx;
-			pagestyle->mr = papergroup->papers.e[c]->w() - box->margin.maxx;
-			pagestyle->mt = papergroup->papers.e[c]->h() - box->margin.maxy;
-			pagestyle->mb = box->margin.miny;
+			pagestyle->ml = box->margin.left;
+			pagestyle->mr = box->margin.right;
+			pagestyle->mt = box->margin.top;
+			pagestyle->mb = box->margin.bottom;
 		} else {
 			pagestyle->ml = marginleft;
 			pagestyle->mr = marginright;
@@ -263,10 +264,10 @@ void Singles::setPage()
 			pagestyles.e[c] = nullptr;
 		} else {
 			if (box->Has(MarginBox)) {
-				oldl = box->margin.minx;
-				oldr = papergroup->papers.e[c]->w() - box->margin.maxx;
-				oldt = papergroup->papers.e[c]->h() - box->margin.maxy;
-				oldb = box->margin.miny;
+				oldl = box->margin.left;
+				oldr = box->margin.right;
+				oldt = box->margin.top;
+				oldb = box->margin.bottom;
 			} else {
 				oldl = marginleft;
 				oldr = marginright;
@@ -276,10 +277,10 @@ void Singles::setPage()
 		}
 
 		if (box->Has(TrimBox)) {
-			insetl = box->trim.minx;
-			insetr = papergroup->papers.e[c]->w() - box->trim.maxx;
-			insett = papergroup->papers.e[c]->h() - box->trim.maxy;
-			insetb = box->trim.miny;
+			insetl = box->trim.left;
+			insetr = box->trim.right;
+			insett = box->trim.top;
+			insetb = box->trim.bottom;
 		}
 		
 		RectPageStyle *pagestyle = new RectPageStyle(RECTPAGE_LRTB);
@@ -301,15 +302,15 @@ void Singles::setPage()
 		}
 
 		// update paper
-		papergroup->papers.e[c]->box->margin.minx = oldl;
-		papergroup->papers.e[c]->box->margin.miny = oldb;
-		papergroup->papers.e[c]->box->margin.maxx = papergroup->papers.e[c]->w() - oldr;
-		papergroup->papers.e[c]->box->margin.maxy = papergroup->papers.e[c]->h() - oldt;
+		papergroup->papers.e[c]->box->margin.left   = oldl;
+		papergroup->papers.e[c]->box->margin.bottom = oldb;
+		papergroup->papers.e[c]->box->margin.right  = oldr;
+		papergroup->papers.e[c]->box->margin.top    = oldt;
 
-		papergroup->papers.e[c]->box->trim.minx = insetl;
-		papergroup->papers.e[c]->box->trim.miny = insetb;
-		papergroup->papers.e[c]->box->trim.maxx = papergroup->papers.e[c]->w() - insetr;
-		papergroup->papers.e[c]->box->trim.maxy = papergroup->papers.e[c]->h() - insett;
+		papergroup->papers.e[c]->box->trim.left   = insetl;
+		papergroup->papers.e[c]->box->trim.bottom = insetb;
+		papergroup->papers.e[c]->box->trim.right  = insetr;
+		papergroup->papers.e[c]->box->trim.top    = insett;
 	}
 }
 
@@ -375,7 +376,7 @@ bool Singles::SetDefaultPageStyle(int index_in_spread, RectPageStyle *pstyle)
 
 	if (papergroup) {
 		PaperBoxData *data = papergroup->papers.e[index_in_spread];
-		data->box->margin.setbounds(pstyle->ml, data->w() - pstyle->mr, pstyle->mb, data->h() - pstyle->mt);
+		data->box->margin.Set(pstyle->mt, pstyle->mr, pstyle->mb, pstyle->ml);
 	}
 
 	return true;

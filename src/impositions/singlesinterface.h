@@ -54,7 +54,7 @@ class SinglesInterface : virtual public ImpositionInterface, virtual public Pape
 
 	// from ImpositionInterface:
     virtual const char *ImpositionType() { return whattype(); }
-    virtual Imposition *GetImposition() { return singles; }
+    virtual Imposition *GetImposition();
     virtual int SetTotalDimensions(double width, double height); //set default paper size
     virtual int GetDimensions(double &width, double &height); //Return default paper size
     virtual int SetPaper(PaperStyle *paper);
