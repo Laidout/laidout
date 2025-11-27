@@ -120,7 +120,7 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 			InterfaceManager *imanager = InterfaceManager::GetDefault(true);
 			ResourceManager *rm = imanager->GetResourceManager();
-			rm->AddResource("PlainText", newobj, nullptr, newobj->Id(), newobj->Id(), nullptr, s->str, nullptr);
+			rm->AddResource("PlainText", newobj, nullptr, newobj->Id(), nullptr, nullptr, s->str, nullptr);
 		} // else failed to load, do not replace text object
 		newobj->dec_count(); //remove excess count
 
@@ -164,7 +164,7 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 				InterfaceManager *imanager = InterfaceManager::GetDefault(true);
 				ResourceManager *rm = imanager->GetResourceManager();
-				rm->AddResource("PlainText", textobj, nullptr, textobj->Id(), textobj->Id(), nullptr, nullptr, nullptr);
+				rm->AddResource("PlainText", textobj, nullptr, textobj->Id(), nullptr, nullptr, nullptr, nullptr);
 				updateControls();
 				return 0;
 
@@ -194,16 +194,16 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 				obj->dec_count();
 				return 0;
 
-			} else if (i==TEXT_Add_New) {
-				 //Create a new blank text object, push onto project, 
-				 //and make it the current one in editor
-				PlainText *obj=new PlainText();
-				obj->texttype=TEXT_Plain;
+			} else if (i == TEXT_Add_New) {
+				// Create a new blank text object, push onto project, 
+				// and make it the current one in editor
+				PlainText *obj = new PlainText();
+				obj->texttype = TEXT_Plain;
 
-				 //figure out a unique name
+				// figure out a unique name
 				uniqueName(obj);
 
-				 //push object onto project
+				// push object onto project
 				InterfaceManager *imanager = InterfaceManager::GetDefault(true);
 				ResourceManager *rm = imanager->GetResourceManager();
 				rm->AddResource("PlainText", obj, nullptr, obj->Id(), nullptr, nullptr, nullptr, nullptr);
@@ -358,11 +358,14 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 		if (!textobj) return 0;
 
-		int i=s->info1;
-		if (i==1 || i==3) { //focus left or enter pressed for nameinput
-			LineInput *inp=dynamic_cast<LineInput *>(findChildWindowByName("nameinput"));
+		int i = s->info1;
+		if (i == 0 || i==1 || i==3) { //focus left or enter pressed for nameinput
+			LineInput *inp = dynamic_cast<LineInput *>(findChildWindowByName("nameinput"));
 			if (!inp) return 0;
-			textobj->Id(inp->GetCText());
+			const char *txt = inp->GetCText();
+			textobj->Id(txt);
+			Resource *r = dynamic_cast<Resource*>(textobj->ResourceOwner());
+			if (r && !isblank(txt)) makestr(r->name, txt);
 		}
 	}
 	return 1;
@@ -415,11 +418,10 @@ int PlainTextWindow::init()
 	LineInput *nameinput=NULL;
 	const char *str=(textobj?(textobj->IsTemporary() ? _("(temporary)"):textobj->Id()):NULL);
 	last=nameinput=new LineInput(this,"nameinput",NULL,
-						0, 0,0,0,0,0, 
+						LINP_SEND_ANY, 0,0,0,0,0, 
 						last,object_id,"nameinput",
-						_("Name:"),str,0,
-						0,0,2,2,2,2);
-	nameinput->GetLineEdit()->win_style|=LINEEDIT_SEND_FOCUS_OFF;
+						_("Name:"),str,0);
+	nameinput->GetLineEdit()->win_style |= LINEEDIT_SEND_FOCUS_OFF;
 	AddWin(nameinput,1, 200,100,1000,50,0, nameinput->win_h,0,0,50,0, -1);
 
 
