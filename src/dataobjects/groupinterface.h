@@ -74,6 +74,8 @@ enum GroupInterfaceActions {
 	GIA_Parent_Matrix,
 	GIA_Jump_To_Parent,
 	GIA_Reparent,
+	GIA_ParentUnderFirst,
+	GIA_ParentUnderLast,
 	GIA_Unparent,
 
 	GIA_Create_Empty,
@@ -88,6 +90,7 @@ class GroupInterface : public LaxInterfaces::ObjectInterface, public Value
 	int rx,ry;
 	GroupInterfaceActions popupcontrols;
 	VObjContext reparent_temp;
+	int reparent_hint = 0;
 
 	virtual int PerformAction(int action);
 	virtual const char *hoverMessage(int p);

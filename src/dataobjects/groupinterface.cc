@@ -188,7 +188,11 @@ Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 		DrawableObject *obj = dynamic_cast<DrawableObject*>(selection->e(0)->obj);
 		
 		menu->AddSep(_("Parenting"));
-		menu->AddItem(_("Reparent..."),    GIA_Reparent);
+		if (selection->n() > 1) {
+			// menu->AddItem(_("Reparent..."),    GIA_Reparent);
+			menu->AddItem(_("Parent under first..."),   GIA_ParentUnderFirst);
+			menu->AddItem(_("Parent under last..."),    GIA_ParentUnderLast);
+		}
 		if (obj->GetParent() && obj->GetParent()->Selectable()) {
 			menu->AddItem(_("Jump to parent"), GIA_Jump_To_Parent);
 			menu->AddItem(_("Unparent"),       GIA_Unparent);
@@ -203,9 +207,9 @@ Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 	//}
 
 	LaidoutViewport *lvp=dynamic_cast<LaidoutViewport*>(viewport);
-	if (lvp->papergroup) {
-		if (!menu) menu=new MenuInfo(_("Group Interface"));
-		else if (menu->n()==0) menu->AddSep(_("Group"));
+	if (lvp->papergroup && lvp->ViewMode(nullptr) == PAPERLAYOUT) {
+		if (!menu) menu=new MenuInfo(_("Paper group"));
+		else if (menu->n() != 0) menu->AddSep(_("Paper group"));
 
 		menu->AddItem(_("Add Registration Mark"), GIA_RegistrationMark);
 		menu->AddItem(_("Add Gray Bars"), GIA_GrayBars);
@@ -268,6 +272,8 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 				|| i == GIA_Edit_Object_Meta
 				|| i == GIA_Jump_To_Parent
 				|| i == GIA_Reparent 
+				|| i == GIA_ParentUnderFirst
+				|| i == GIA_ParentUnderLast
 				|| i == GIA_Unparent
 				|| i == GIA_Create_Empty
 				) {
@@ -282,16 +288,20 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 
 		if (i == GIA_Jump_To_Parent
 				|| i == GIA_Reparent 
+				|| i == GIA_ParentUnderFirst
+				|| i == GIA_ParentUnderLast
 				|| i == GIA_Unparent) {
 			if (s->info3) {
 				//hovered only, do special indicator hover
 				hover = i;
 				PostMessage(hoverMessage(hover));
 
-				if (hover == GIA_Reparent) {
+				if (hover == GIA_Reparent || hover == GIA_ParentUnderLast || hover == GIA_ParentUnderFirst) {
 					if (selection->n() > 1) {
-						if (reparent_temp.obj != selection->e(selection->n()-1)->obj)
-							reparent_temp = *dynamic_cast<VObjContext*>(selection->e(selection->n()-1));
+						int parent_index = 0;
+						if (hover != GIA_ParentUnderFirst) parent_index = selection->n()-1;
+						if (reparent_temp.obj != selection->e(parent_index)->obj)
+							reparent_temp = *dynamic_cast<VObjContext*>(selection->e(parent_index));
 					}
 				//} else if (hover == GIA_Jump_To_Parent) {
 				} else {
@@ -364,13 +374,15 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 
 const char *GroupInterface::hoverMessage(int p)
 {
-	if (p == GIA_Link) return _("Clone options");
-	if (p == GIA_Jump_To_Link) return _("Jump to original");
-	if (p == GIA_Sever_Link) return _("Sever link");
-	if (p == GIA_Parent_Link) return _("Parent options");
-	if (p == GIA_Reparent) return _("Parent to");
-	if (p == GIA_Unparent) return _("Remove parent of each selected");
-	if (p == GIA_Jump_To_Parent) return _("Select parent");
+	if (p == GIA_Link)             return _("Clone options");
+	if (p == GIA_Jump_To_Link)     return _("Jump to original");
+	if (p == GIA_Sever_Link)       return _("Sever link");
+	if (p == GIA_Parent_Link)      return _("Parent options");
+	if (p == GIA_Reparent)         return _("Parent to");
+	if (p == GIA_ParentUnderFirst) return _("Parent under first");
+	if (p == GIA_ParentUnderLast)  return _("Parent under last");
+	if (p == GIA_Unparent)         return _("Remove parent of each selected");
+	if (p == GIA_Jump_To_Parent)   return _("Select parent");
 	const char *mes = RectInterface::hoverMessage(p);
 	static char msg[20];
 	if (mes == nullptr) { sprintf(msg, "%d", p); mes = msg; }
@@ -512,8 +524,10 @@ void GroupInterface::PopupParentOptions(double x,double y,unsigned int state,con
 	MenuInfo *menu = new MenuInfo(_("Parent options"));
 
 	menu->AddItem(_("Jump to parent"), GIA_Jump_To_Parent);
-	menu->AddItem(_("Reparent..."),    GIA_Reparent);
-	menu->AddItem(_("Unparent"),       GIA_Unparent);
+	// menu->AddItem(_("Reparent..."),    GIA_Reparent);
+	menu->AddItem(_("Parent under first..."), GIA_ParentUnderFirst);
+	menu->AddItem(_("Parent under last..."),  GIA_ParentUnderLast);
+	menu->AddItem(_("Unparent"), GIA_Unparent);
 
 	PopupMenu *popup = new PopupMenu(NULL,_("Parent options"), 0,
                         0,0,0,0, 1,
@@ -587,8 +601,8 @@ int GroupInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 		} else if (hover==GIA_Jump_To_Parent) {
 			PerformAction(GIA_Jump_To_Parent);
 
-		} else if (hover==GIA_Reparent) {
-			 //reparent
+		} else if (hover == GIA_Reparent || hover == GIA_ParentUnderLast) {
+			// reparent
 			if (reparent_temp.obj) {
 				PerformAction(GIA_Reparent);
 			}
@@ -633,14 +647,20 @@ int GroupInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
             PostMessage(mes?mes:" ");
 		}
 
-		if (hover == GIA_Reparent) {
+		if (hover == GIA_Reparent || hover == GIA_ParentUnderLast) {
 			//highlight object to parent to, use last object if more than one selection
 			//check is mousemove if selection->n()==1, then grab from viewport search
 			if (selection->n()>1) {
 				if (reparent_temp.obj != selection->e(selection->n()-1)->obj)
-					reparent_temp=*dynamic_cast<VObjContext*>(selection->e(selection->n()-1));
+					reparent_temp = *dynamic_cast<VObjContext*>(selection->e(selection->n()-1));
 			}
-		} else if (oldhover==GIA_Reparent && hover!=oldhover) {
+		} else if (hover == GIA_ParentUnderFirst) {
+			//highlight object to parent to
+			if (selection->n() > 1) {
+				if (reparent_temp.obj != selection->e(0)->obj)
+					reparent_temp = *dynamic_cast<VObjContext*>(selection->e(0));
+			}
+		} else if (oldhover == GIA_Reparent && hover != oldhover) {
 			reparent_temp.SetObject(NULL); 
 		}
 		return 0;
@@ -886,6 +906,7 @@ Laxkit::ShortcutHandler *GroupInterface::GetShortcuts()
 	sc->Add(GIA_DuplicateB,' ',0,1,    "DuplicateB",  _("Duplicate objects, if button down"),NULL,0);
 
 	sc->Add(GIA_Reparent,  'p',AltMask,0,          "Parent",  _("Parent selected objects to last selected"),NULL,0);
+	sc->Add(GIA_ParentUnderFirst, 'f',AltMask,0,   "ParentUnderFirst",  _("Parent selected objects to first selected"),NULL,0);
 	sc->Add(GIA_Unparent,  'P',AltMask|ShiftMask,0,"Unparent",_("Unparent selected objects from their immediate parents"),NULL,0);
 
 	sc->Add(GIA_Edit_Contents,LAX_Enter,0,0, "EditObject",   _("Switch to content edit tool"),NULL,0);
@@ -1281,22 +1302,26 @@ int GroupInterface::PerformAction(int action)
 
 		return 0;
 
-	} else if (action == GIA_Reparent) {
-		if (selection->n()<=1) { PostMessage(_("Need at least 2 objects to do parenting")); return 0; }
+	} else if (action == GIA_Reparent || action == GIA_ParentUnderLast || action == GIA_ParentUnderFirst) {
+		if (selection->n() <= 1) { PostMessage(_("Need at least 2 objects to do parenting")); return 0; }
 
-		DrawableObject *newparent=dynamic_cast<DrawableObject*>(selection->e(selection->n()-1)->obj);
+		int parent_index = 0;
+		if (action != GIA_ParentUnderFirst) parent_index = selection->n()-1;
+
+		DrawableObject *newparent = dynamic_cast<DrawableObject*>(selection->e(parent_index)->obj);
 		DrawableObject *oldparent;
 		ObjectContext *oc;
 		double m[6],mnewinv[6],mnew[6],mm[6];
-		viewport->transformToContext(mnew,selection->e(selection->n()-1),0,1);
+		viewport->transformToContext(mnew,selection->e(parent_index),0,1);
 		transform_invert(mnewinv,mnew);
 
-		for (int c=0; c<selection->n()-1; c++) {
-			oc=selection->e(c);
-			oldparent=NULL;
+		for (int c = 0; c < selection->n(); c++) {
+			if (c == parent_index) continue;
+			oc = selection->e(c);
+			oldparent = nullptr;
 
 			if (dynamic_cast<DrawableObject*>(oc->obj)) {
-				oldparent=dynamic_cast<DrawableObject*>(oc->obj->GetParent());
+				oldparent = dynamic_cast<DrawableObject*>(oc->obj->GetParent());
 				viewport->transformToContext(m,oc,0,1);
 
 				if (oldparent && oldparent->popp(oc->obj)) {
@@ -1516,7 +1541,9 @@ int GroupInterface::Refresh()
 			//}
 			//if (hover==GIA_Jump_To_Parent) dp->NewBG(.9,.9,.9); else dp->NewBG(1.,1.,1.);
 			//----
-			if (hover==GIA_Reparent || hover==GIA_Jump_To_Parent) dp->NewBG(.9,.9,.9); else dp->NewBG(1.,1.,1.);
+			if (hover==GIA_Reparent || hover == GIA_ParentUnderLast || hover == GIA_ParentUnderFirst || hover==GIA_Jump_To_Parent)
+				 dp->NewBG(.9,.9,.9);
+			else dp->NewBG(1.,1.,1.);
 			dp->drawellipse(p.x,p.y+2*th, w/2,th, 0,2*M_PI, 2);
 			//----
 
@@ -1548,8 +1575,9 @@ int GroupInterface::Refresh()
 			dp->stroke(0);
 			dp->LineAttributes(1,LineSolid,LAXCAP_Butt,LAXJOIN_Miter);
 
-			DBG cerr << "GroupInterface hover: "<<hoverMessage(hover)<<endl;
-			if (hover == GIA_Reparent && selection->n()>1) DrawReparentArrows();
+			// DBG cerr << "GroupInterface hover: "<<hoverMessage(hover)<<endl;
+			if ((hover == GIA_Reparent || hover == GIA_ParentUnderFirst || hover == GIA_ParentUnderLast) && selection->n() > 1)
+				DrawReparentArrows();
 			dp->DrawReal();
 		}
 
@@ -1573,9 +1601,17 @@ int GroupInterface::Refresh()
 void GroupInterface::DrawReparentArrows()
 {
 	//assume dp->DrawScreen() already
-	SomeData *obj = selection->e(selection->n()-1)->obj;
+	// int parent_index = 0;
+	// if (hover != GIA_ParentUnderFirst) parent_index = selection->n() - 1;
+
+	// SomeData *obj = selection->e(parent_index)->obj;
+	SomeData *obj = reparent_temp.obj;
+	const char *parent_name = obj->Id();
+
 	double m[6];
-	viewport->transformToContext(m,selection->e(selection->n()-1),0,1);
+	viewport->transformToContext(m, &reparent_temp, 0,1);
+	// viewport->transformToContext(m,selection->e(parent_index),0,1);
+	Utf8String scratch;
 
 	flatpoint pp;
 	flatpoint p = transform_point(m, (flatpoint(obj->minx,obj->miny)+flatpoint(obj->maxx,obj->maxy))/2); //new parent center
@@ -1585,8 +1621,12 @@ void GroupInterface::DrawReparentArrows()
 	dp->NewBG(0.,0.,0.,.85);
 	dp->LineAttributes(-2,LineSolid,LAXCAP_Butt,LAXJOIN_Miter);
 	dp->LineWidthScreen(2);
-	for (int c=0; c<selection->n()-1; c++) {
+	for (int c = 0; c < selection->n(); c++) {
 		obj = selection->e(c)->obj;
+
+		// if (c == parent_index) continue;
+		if (obj == reparent_temp.obj) continue;
+
 		viewport->transformToContext(m,selection->e(c),0,1);
 		pp = transform_point(m, (flatpoint(obj->minx,obj->miny)+flatpoint(obj->maxx,obj->maxy))/2); //center
 		pp = dp->realtoscreen(pp);
@@ -1594,16 +1634,14 @@ void GroupInterface::DrawReparentArrows()
 		dp->drawline(pp, p);
 		//dp->drawarrow(pp,p-pp, 0,1,2,3);
 		dp->NewFG(0.,1.,0.);
-		dp->textout_bg(th/4, pp.x,pp.y, _("Child"),-1, LAX_CENTER);
+		scratch.Sprintf(_("Child: %s"), obj->Id());
+		dp->textout_bg(th/4, pp.x,pp.y, scratch.c_str(),-1, LAX_CENTER);
 	}
 
 	dp->NewBG(0.,0.,0.,.85);
 	dp->NewFG(1.,1.,1.,1.);
-	dp->textout_bg(th/4, p.x,p.y, _("Parent"),-1, LAX_CENTER, true);
-
-	//dp->NewBG(0.,0.,0.,.85);
-	//dp->NewFG(1.,1.,1.,1.);
-	//dp->textout_bg(th/4, p.x,p.y,        _("Parent"),-1, LAX_CENTER);
+	scratch.Sprintf(_("Parent: %s"), parent_name);
+	dp->textout_bg(th/4, p.x,p.y, scratch.c_str(),-1, LAX_CENTER, true);
 }
 
 //! Returns this, but count is incremented.
