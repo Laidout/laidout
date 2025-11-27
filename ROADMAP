@@ -8,7 +8,8 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 VERSION 0.098
 -------------
        Convert website to use hugo, make some new tutorials for really out of date ones
-       Implement tile stacking of signatures, in addition to just duplication
+       Implement tile stacking of signatures from same sheet, in addition to just duplication
+       Spine marks to indicate signature order
 (done) Import/export new Inkscape multipage art boards via expanded Singles imposition type
 (done) Update Singles editor to edit new artboard style
 (done) Implement some accordion net impositions

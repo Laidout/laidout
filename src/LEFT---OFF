@@ -13,9 +13,13 @@ down to major items in ../features.md.
 
 ------------ serious release blocking bugs to fix right now:
 
-bug: if you add a registration mark, you can't move it, but also causes infinite search
+ux: right clicking on viewport buttons screws hover and passes event to split window
 
-bug: in ImageInterface, just undo without doing anything else wrecks image transform, which wrecks whole view
+crash: freehand with a couple of lines with weight nodes crashes sometimes
+
+bug: if you add a registration mark, you can't move it, also causes infinite search
+
+bug: in ImageInterface, just undo without doing anything else sometimes wrecks image transform, which wrecks whole view
 
 bug: affine transform to SetTransform node, put x at 0,0, destroys cairo transform! unrecoverable!
 
@@ -29,16 +33,16 @@ bug: gegl plugin initialization is getting tons of errors like:
 	  something about gegl upgrade leaving behind residue from previous version?
 bug: gegl nodes, connect sinus to waves and also to displace, freeze!
 
-crash: color grabbing under Wayland completely crashes with extreme prejudice. something about XGetImage
-
 
 ------------ other bugs:
+
+crash: color grabbing under Wayland completely crashes with extreme prejudice. something about XGetImage (color sample currently disabled)
 
 bug: rename window input dialog has terrible spacing
 
 bug: zoom handles mangle cairo sometimes.. can't reproduce reliably
 
-bug: import pdf with "expand_subimages", dragging/rendering is super laggy
+bug: import pdf with "expand_subimages", dragging/rendering is super laggy. need a default dpi option
 
 bug: if you create FilePreviewer with hstack as parent, doesn't even addwindow. somehow the reparent is installing where just parent doesn't??!??
 
@@ -107,16 +111,6 @@ gnome "application" does one per window, not one per app. this is not a bad thin
 icon needs to be bigger.. is fuzzy on ubuntu alt-tab
 DONE App/window icon in window manager not showing..
 
-DONE??? need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)
-
-splitwindow SplitWindow:
-create new pane should dup old pane.. currently divide viewport, removes document focus
-viewwindow, change to spreadview, change back to view.. Horizontal ruler origin is REALLY off
-splitwindow cursors existing in subwindows
-create new window, defaults to no doc. should select doc of last pane
-headwindow swapping is now REALLY messed up
-pane swapping/dropto on maximized, swapping in general...
-
 svg out, EquivalentObject doesn't play nice with defs.. only accessed once.. how to upkeep clones in this case?
     -> when equiv objects are composed of groups, what happens?
 svg coord numpoints==0???? numpoints doesn't really serve any purpose other than debugging, but....
@@ -134,7 +128,6 @@ make sure all imposition types are available in interpreter
 resource impositions not showing description when selected
 
 fold indicator foldprogress just at crossover points incorrectly indicating affected folds
-
 
 object tool shift-control for rotate does not allow positioning on drag bars
 
@@ -679,13 +672,20 @@ xtg from quark?
 idml from indesign?
 
 
-Singles:
+Singles: singleseditor: singlesinterface:
+  memory hole: edit, swap landscape, ok, quit
   memory hole on export multipage svg
   need optional paper packer for Paper view, while a papergroup is for pages view
   object bleeds not implemented
   export to pdf has wrong paper sizes with multipage
   PaperLayout, needs to optionally be a different PaperGroup compared to page layout
   implement double_sided
+  DONE bug: scan ignoring orientation
+  DONE bug: swap orientation shows old + new back in viewport
+  DONE bug: swap orientation twice wrecks matrix
+  DONE bug: changing paper reverts orientation to portrait
+  DONE implement Insets instead of bbox for paper boxes
+  DONE bug: swap orientation does not update handles
   DONE inset should be per paper in papergroup
   DONE what's with the old cached_margin stuff, obsolete now with pagestyles stack?
   DONE revamp to be art board centric, based on random PaperGroup
@@ -701,7 +701,9 @@ Bevel Tool BevelInterface:
   distance from corner x/y --OR-- % of length to next corner
   programmable custom shapes per corner?
 
-freehand tool:
+freehand tool: freehand:
+  need a way to auto-close paths
+  should show line width hint
   should have option to output base weighted path, with custom filter resource to copy onto it
   keep a stack of lines previously made for fake undo by repeated delete? or just implement undo for object added
   path simplification needs to be considerably better
@@ -709,7 +711,7 @@ freehand tool:
 	particularly weight nodes: making one node per vertex, but those weight points need easing
   needs to account for time and speed
   auto apply line profile
-  gradient select: custom or resource
+  gradient select: new custom or resource
   pressure curve
   mesh outputs should still be Mesh based on path
   ShapeBrush features:
@@ -725,6 +727,7 @@ freehand tool:
     set raw point simplify amount
 	colors: stroke/fill/gradient, shapebrush outline color
 	speed influence
+  DONE fill color is not indicated in color box
   DONE numerical input for brush size
   DONE brush_size should be real, not screen units
   DONE need "brush size" controls
@@ -745,7 +748,8 @@ LineStyle:
 FillStyle:
   should probably have an "enabled" field? otherwise when you toggle fill, it currently sets fillstyle and function to something you may not want
 
-PathInterface: pathinterface
+PathInterface: pathinterface: paths:
+  option to stack stroke styles for halo effect for instance
   bug: '0' wasn't making full circle on subpath? later crashed
   grab areas need to be bigger
   tiny stuff needs halos
@@ -871,6 +875,7 @@ PathInterface: pathinterface
     they need to respond to object color.. marker is a SomeDataRef with filter to respond to obj.marker_color ?
     start, end
     mid
+      marker-mid in svg is at each vertex
       at specific intervals, or n per line
 
 beznet:
@@ -1521,12 +1526,13 @@ Clean up patch/mesh controls: Mesh PatchInterface
   DONE smooth edit mode should be default. 
 
 0.099: ImagePatch: image mesh: mesh warping:
-  bug: rendering artifacts, draws stuff to window origin
+  doesn't remember patch type
+  bug: rendering artifacts, rect sectioning draws stuff to window origin on one edge
   This is suuuuuuper slow
   abstract to be a filter, with optional stand alone object
 
 0.099: ColorPatch / MeshGradient:
-  need bicubic color interpolation, as just cairo bilinear is pretty ugly
+  need bicubic color interpolation, as just cairo bilinear is pretty ugly. see: https://en.wikipedia.org/wiki/Bicubic_interpolation
   need sampling from beneath
   convert from/to linear/radial gradient as possible
   DONE flip colors vertically or horizontally
@@ -1648,6 +1654,7 @@ GroupInterface groupinterface ObjectInterface objectinterface: group: object int
   DONE menuify parent options
 
 Reparenting:
+  bug: when you cancel the reparent menu while preview active, doesn't turn off the highlight
   the label hint should have "Parent: ItsId" and "Child:Id"
   need option to select parent from current selected, like Parent to > (list)
 
@@ -2059,7 +2066,11 @@ make drag and drop selections work dnd:
   DONE xlib_dnd->preferred_type not being set?? -> was bad child selection coords
   DONE do proper translation between screen coords and window coords during acceptance query
 
-align tool: aligninterface AlignInterface align:
+align tool: aligninterface AlignInterface align: alignment:
+  bug: presets scan is off
+  bug: rotation not checking in menu
+  initial path should be liner bez, with smooth equal controls.. else endpoints have bad orientation
+  editing path, cannot del final control rod
   needs polishing, the lines and indicators get a bit lost
   context menu seems to be the group interface menu
   need way to specify center of rotation per object
@@ -2124,7 +2135,13 @@ singlesinterface:
   DONE not loading papergroup
   DONE default paper outline colors
 
-paperinterface: papergroupinterface papergroup interface
+paperinterface: papergroupinterface papergroup interface papergroups:
+  should be able to copy/paste/share margin/trim with other papers
+  ux: indices and arrows should be haloed
+  ux: arrows shouldn't overlap labels
+  bug: swap orientation.. somehow let show margin arrows, but edit margins wasn't checked
+  should have papergroup name and resource selection options along top
+  should render the pages behind limbo objects
   show numbers when you drag arrows
   arrow offsets should be across total w/h, not box w/h
   marks should be per paper, with additional per group
@@ -2140,6 +2157,7 @@ paperinterface: papergroupinterface papergroup interface
     need to be able to edit margins: edit the art box
   need an easy toggle for landscape/portrait
   menu options:
+    auto tile contents with custom overlap, derived from margin or printable, for instance
     fit to selection
     fit to page
     fit to spread
@@ -2155,6 +2173,7 @@ paperinterface: papergroupinterface papergroup interface
     paperinterface: in spread editor (done), and able to print it out
     in spread editor (done), and be able to print it out
 
+  DONE bug: landscape paper messes up label placement
   DONE bug: changing paper should only change current paper
   DONE option to edit trim box
   DONE bug: menu toggle orientation not working
@@ -2175,7 +2194,6 @@ paperinterface: papergroupinterface papergroup interface
   ---0.099
   maybe need to be able to edge drag custom paper to resize, maybe with grid snapping
   when you add gray bars/reg marks, center on paper?
-  buff out the paper interface to be the net builder?
 
   PaperSize/PaperGroup as resource:
     papersize names are not translated. Should they be??
@@ -2211,15 +2229,17 @@ new PaperSizeWindow:
     DONE paper interface
   DONE from gimp: in either field, input aspect like 1:2 or 16:9 and it autocomputes value
 
-nup:
+nup: n-up:
   bug: not showing highlight on rectangle
   bug: drag rect turns off scale handles until you click down again
   need gap around arrows
   need numerical input
-  need gap adjustments
+  need gap adjustments.. adjust selection size as needed
   what is "sized grid" supposed to be doing?? perhaps auto size rect when this?
   doesn't appear to update random target area when you resize area
+  snap to areas, like margin, page, original selection size
   implement flowed
+  unclump, unoverlap not working?
   unclump. Lloyds algo? voronoi of points, move original point to centroid
   unoverlap -> define strategy, either shift H, Vert, along v, or shift on axes between objects
   object reorder: drag outline of object to new position (when you enter another object, assume you want to slide to that place
@@ -2288,11 +2308,26 @@ shortcut dialog: shortcuts: shortcut manager shortcutmanager
   svg keyboard out
   DONE need ability to add multiple keys for same action
 
-signature editor:  Signature editor Signature Editor signatureeditor: signatures: signatureinterface:
+book assembly: partitioninterface:
+  rework partitions to allow net based foldouts to be inserted as a SignatureInstance
+  rework Document to have list of:
+    class PageSet
+    {
+      public:
+    	Imposition *imposition = nullptr;
+		Laxkit::RefPtrStack<Page> pages;
+    }
+    Document:
+    	PtrStack<PageSet> pagesets;
+    -> this would allow, for instance, designing book cover in same doc as body pages
+
+signature editor:  Signature editor Signature Editor signatureeditor: signatures: signatureinterface: signature:
   implement signature marks along spine
+    should be previewable in signature editor
   bug: edit imp from viewport, change page number, should it insert pages??
   bug: paper dialog doesn't remember
   bug: SOMETIMES SignatureInterface arrows not tracking correctly, especially left/right
+  ux: if sig assembly does not fit allocated doc pages, should show warning
   mouse roll on paper size is confusing
   number input for everything
   symmetric trim
@@ -2332,6 +2367,8 @@ signature editor:  Signature editor Signature Editor signatureeditor: signatures
   test impose-only for all imposition types
   be able to specify single sided.. allows bound accordian foldings?
   implement creep
+
+  DONE ux: folding grey blends in with grey background
 
 
 ---------------- 0.099 ROADMAP ITEMS: features and enhancements ------------------------
@@ -2533,6 +2570,9 @@ cairo:
 
 
 engraving tool: Engraving  engraver:
+  bug: can't apply thickness after using trace
+  bug: trace object transparency not working
+  bug: trace object text is really tiny
   really need undo/redo
   need a force refresh option
   circular mesh has discontinuity on connecting edge
@@ -2698,7 +2738,21 @@ global resources:
 
 need a Revert option
 
+splitwindow SplitWindow:
+  highlight purple ONLY if hover over gap
+  highlight slightly for currently focused pane
+  maximizing:
+    unmaxing glitched
+    highlight should go over whole rect when maximized
+  create new pane should dup old pane.. currently divide viewport, removes document focus
+  viewwindow, change to spreadview, change back to view.. Horizontal ruler origin is REALLY off
+  splitwindow cursors existing in subwindows
+  create new window, defaults to no doc. should select doc of last pane
+  headwindow swapping is now REALLY messed up
+  pane swapping/dropto on maximized, swapping in general...
+
 ViewWindow:
+  ux: when squished up, page number box's arrows are squashed together and you can't click to enter number
   not remembering current overlays
   current page outline should highlight proper pagestack instance.. currently just goes to first curpage match in stack
   LaidoutViewport::UpdateMarkers() should be in PageMarkerInterface.. maybe add anInterface::ViewportContextChanged()?
@@ -2760,6 +2814,29 @@ imageinterface: imagedata:
   DONE fix crash toggling show pixel size if data but no image
   DONE 'f' show labels should shadow label, and put it on upper edge
   DONE optionally show pixel size of image
+
+generated: generated pages:
+  for each object in doc
+    exclude pages, sections, matched objects
+    perform some kind of collation
+    map resulting data to objects that may span multiple pages
+  table of contents: toc:
+    auto grab section starts?
+    tag things with { toc_entry, special formatting hints, auto: [section, subsection, ...]
+  indexes:
+    group by "A", "B", etc.
+    tag with { index_entry, category, special formatting hints }
+      thing1 1,2,3
+      thing2 2, 5-7
+      category
+        subthing1  10, 11
+        subthnig2  12, 24
+  footnotes:
+    bottom of page: wrap text around it, size to contain note
+    end of section
+    end of document
+
+
 
 dynamic objects (generated images, dynamic images, rendered images)
     eps objects to pdf: export as image, plant in PDF as image
@@ -2873,6 +2950,9 @@ gif flipbooks:
 gif exporter:
   use graphicsmagick? C example: http://www.graphicsmagick.org/api/api.html
   set custom timing in page properties
+
+api: functions:
+  would be nice to have an option to specifically set window size for screenshot help
 
 Reconfigure text edits. Need something that works in interface land, with harfbuzz, that integrates with lax fontmanager
 
@@ -3058,7 +3138,8 @@ Palettes: palettewindow gradientstrip
   transform palette by a gradient? levels/curves?
 
 
-Gradients: gradientinterface
+Gradients: gradientinterface gradient:
+  bug: when you have path object and gradient object set to fill parent+repeat, bleeds over into path. path not resetting pattern?
   ---0.99:
   swatchbooker cool things:
     translations of palette/color names, and other meta, stored with palette
@@ -3093,6 +3174,8 @@ colorbox color box:
   hsv slide, configurable clicks
 
 color slider popup: colorpicker color picker colorsliders
+  select desktop color using system color picker?
+  needs an eye dropper
   DONE font too small for hex display
   font size is small when mousing over from ruler.. not being set properly in Refresh()?
   optionally show numbers, click to edit
@@ -3132,19 +3215,23 @@ externally saved pages, for long documents
 
 conformal mapping option instead of mesh? see http://benpaulthurstonblog.blogspot.com/2015/12/parameterized-quadratic-conformal.html
 
-command prompt window: command line
+command prompt window: command line console: prompt:
+  scroll wheel or right click should change font size
+  bug: font all messed up
   bug: delete at pos 1 deletes space after prompt, then does not allow any input
   option to record/save/load whole session of prompt window
   up/down should traverse history
   control-up/down, break out so you can go anywhere
 
-
 guides:
   snap guides to objects
   snap objects edges to various things
-  straigt lines at any angle
-  grids
+  straight lines at any angle
+  even spacing grid
   polar grids
+  hex grids
+  column grids
+  baseline grid
 
 Spread Editor:
   need to make pagelocation ref count pages, or (need to anyway) check all known views for errant page refs after delete pages
@@ -3210,9 +3297,10 @@ resources:
     either that, or do away with whole project/document difference, and use only
     projects with their own directory, and documents without their own directory
   should be resources:
-    Linestyle
-    Fillstyle
     PaperStyle
+    Gradients
+    DONE Linestyle
+    DONE Fillstyle
     DONE Palette
     DONE PaperGroups
     DONE PlainTextObject
@@ -3322,6 +3410,7 @@ soft masking
     mask object optionally converted to grayscale
 
 pagerangeinterface:
+  be able to name sections
   control over an existing line should be drag? or join?
   needs to clamp on viewport change
   edit base in place.. provide hints for what '#' or '###' is?
@@ -3331,6 +3420,8 @@ pagerangeinterface:
   should remember old label format strings, to easily select back to them
   drag off screen should toggle off
   show a bar with the page status icons, click on to jump to page
+  subsections?
+  special formatting instructions per section, like chapter must start on right hand side
 
   DONE use toggle items for number display
   DONE bug: reversed showing wrong indices
@@ -3347,13 +3438,14 @@ improve split window
   simplify pane customization, docking
 	
 busywork:
-  replace refs to LineSolid with 0, as LineSolid is X11 leftover
+  replace refs to LineSolid with 0, as LineSolid is X11 leftover. check all the LineAttributes() calls
+  replace NULL with nullptr, except in those C functions that expect NULL (will warn on compiling)
 
 accordion folds: accordion:
   implement accordion uihint config boxes
   newdoc should allocate enough pages to fill net
   bug: finish implementing NetDialog paper selection
-  implement paper change: NetImposition needs an asymmetric scale to paper option, so we don't have to have a whole new imposition class
+  implement paper change: NetImposition needs an asymmetric scale to paper option, so we don't have to have a whole new imposition class. some nets can stretch.
   implement impostion preview images for custom impositions
   explosion/squash books with cross folds on pages, wacky minimal origami: https://www.youtube.com/watch?v=__9_KZi_tpE
   maze books / meander scrapbook
@@ -3432,13 +3524,11 @@ file format prettification  --file-format
     next_att #(one or more) next_att docs
   DONE make names/values/comments all kind of line up for those that use dump_out_atts
 
-export with limbo, and no doc or papergroup, means use bounding box for limbo?
-
 measure tool.. configure measurements to be:
- displayer units
- object units
- units mapped to either type of units, so can use light years for units that are actually inch physical paper units
-have arrows, and write on screen what the size is...
+  displayer units
+  object units
+  units mapped to either type of units, so can use light years for units that are actually inch physical paper units
+  have arrows, and write on screen what the size is...
 
 
 notes / comments
@@ -3663,6 +3753,7 @@ implement undo: ideally use same code for both undo and recordable/assignable ac
   saveable?
 
 PlainTextWindow plaintextwindow PlainText plain text window:
+  resource name should be object id, but on new getting set to a default name and not updating with newly typed name
   bug: ref count 2 remain on exit
   bug: not loading text when stored as file
   bug: doesn't handle tabs
@@ -3687,8 +3778,10 @@ PlainTextWindow plaintextwindow PlainText plain text window:
 Spread editor: SpreadEditor spread editor spreadeditor
   should have border drag to move, not middle drag
 
-limbo transform should be obeyed. It can be moved, scaled, etc,
-page layers should be simplified, each layer behaves according to its transform, and more controls inserted to handle layer maneuvering
+limbo:
+  bug: open new viewport pane seems to create a new limbo. should just use existing one
+  limbo transform should be obeyed. It can be moved, scaled, etc,
+  export with limbo, and no doc or papergroup, means use bounding box for limbo?
 
 configurable command buttons to automate certain things with minimal window clutter....
 
@@ -3728,7 +3821,8 @@ lgm 2019 feedback and ideas:
   make connecting to online information easy: click to open web browser, xdg-open?
   from talk: diffusion curves, "local mod" mesh manipulation
 
-ux polish: ux:
+ux polish: ux: general ux:
+  when you exit a popup window, focus should revert to the spawing context
   when closing a document window, decide whether this removes access to it, or just the view to it
   if you try to "show in filesystem" with something without save file, like unsaved new doc, should not open file browser
   ux: corner menu, if current document is not in file system, should gray out "Show in filesystem"
@@ -4009,3 +4103,7 @@ DONE fix FieldExtPlace snafu about multiple conflicting PtrStack
 DONE Remove obsolete HelpWindow code.. replace with settingswindow
 DONE bug: engraver severely broken.. no lines visible!!
 DONE bug: import 1 image, preview creator seems to make 1x1 preview image???
+DONE need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)
+DONE crash: right click in splitwindow gap, hover over change, but be in first window. escape. crash!
+DONE crash: split window rearranging causing crash <- missing MakeCurrent in a dp call
+DONE ux: font really messed up in console panel and text editor
