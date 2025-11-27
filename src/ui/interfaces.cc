@@ -162,12 +162,6 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		existingpool->push(i);
 		i->dec_count();
 
-		//------BezNetInterface
-		i = new BezNetInterface(NULL,id++,NULL);
-		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
-		existingpool->push(i);
-		i->dec_count();
-
 		//------PartitionInterface
 		i = new PartitionInterface(NULL,id++,NULL);
 		tools->AddResource("tools", i, NULL, i->whattype(), i->Name(), NULL,NULL,NULL);
