@@ -17,8 +17,8 @@
 #include "../language.h"
 #include "netimposition.h"
 #include "simplenet.h"
-#include "box.h"
 #include "../core/stylemanager.h"
+
 #include <lax/interfaces/pathinterface.h>
 #include <lax/transformmath.h>
 
@@ -27,6 +27,7 @@
 #include "accordion.h"
 #include "dodecahedron.h"
 #include "box.h"
+
 
 #include <lax/debug.h>
 
