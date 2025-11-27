@@ -825,7 +825,7 @@ ObjectDef *PaperStyle::makeObjectDef()
 /*! \class PaperBox 
  * \brief Wrapper around a PaperStyle, for use in a PaperInterface.
  *
- * PaperBox contains rectangles to define areas for media, printable, bleed, trim, crop, art.
+ * PaperBox contains rectangles to define areas for media, printable, bleed, trim, art.
  * These are typically based on the initial PaperStyle (PaperBox::paperstyle).
  *
  * These descriptive boxes can be transformed via a PaperBoxData, to be part of a PaperGroup.
@@ -869,17 +869,18 @@ bool PaperBox::landscape()
 	return paperstyle ? paperstyle->landscape() : false;
 }
 
-bool PaperBox::landscape(bool l)
+bool PaperBox::landscape(bool ll)
 {
 	if (!paperstyle) return false;
-	if (l == paperstyle->landscape()) return l;
+	if (ll == paperstyle->landscape()) return ll;
 
 	// else need to update box info
-	paperstyle->landscape(l);
+	paperstyle->landscape(ll);
+	// media
 	media.minx = media.miny = 0;
 	media.maxx = paperstyle->w(); //takes into account paper orientation
 	media.maxy = paperstyle->h();
-	return l;
+	return ll;
 }
 
 //! Replace the current paper with the given paper.
@@ -908,15 +909,15 @@ anObject *PaperBox::duplicate()
 	PaperBox *box = nullptr;
 	box = new PaperBox(nullptr, 0);
 
-	box->which = which;
-	box->paperstyle = (paperstyle ? dynamic_cast<PaperStyle*>(paperstyle->duplicate()) : nullptr);
-	box->media = media;
-	box->trim = trim;
-	box->margin = margin;
-	box->printable = printable;
-	box->bleed = bleed;
-	box->crop = crop;
-	box->art = art;
+	box->which      = which;
+	box->paperstyle = (paperstyle ? dynamic_cast<PaperStyle *>(paperstyle->duplicate()) : nullptr);
+	box->media      = media;
+	box->trim       = trim;
+	box->margin     = margin;
+	box->printable  = printable;
+	box->bleed      = bleed;
+	box->art        = art;
+	// box->crop    = crop;
 
 	return box;
 }
@@ -1204,19 +1205,19 @@ Laxkit::Attribute *PaperGroup::dump_out_atts(Laxkit::Attribute *att, int what, L
 		PaperBox *box = papers.e[c]->box;
 		
 		if (box->which & TrimBox) {
-			att2->pushStr("trim", -1, "%f %f %f %f", boxd->h() - box->trim.maxy, boxd->w() - box->trim.maxx, box->trim.miny, box->trim.minx);
+			att2->pushStr("trim", -1, "%f %f %f %f", box->trim.top, box->trim.right, box->trim.bottom, box->trim.left);
 		}
 		if (box->which & MarginBox) {
-			att2->pushStr("margin", -1, "%f %f %f %f", boxd->h() - box->margin.maxy, boxd->w() - box->margin.maxx, box->margin.miny, box->margin.minx);
+			att2->pushStr("margin", -1, "%f %f %f %f", box->margin.top, box->margin.right, box->margin.bottom, box->margin.left);
 		}
 		if (box->which & BleedBox) {
-			att2->pushStr("bleed", -1, "%f %f %f %f", boxd->h() - box->bleed.maxy, boxd->w() - box->bleed.maxx, box->bleed.miny, box->bleed.minx);
+			att2->pushStr("bleed", -1, "%f %f %f %f", box->bleed.top, box->bleed.right, box->bleed.bottom, box->bleed.left);
 		}
 		if (box->which & PrintableBox) {
 			att2->pushStr("sprintable", -1, "%f %f %f %f", boxd->h() - box->printable.maxy, boxd->w() - box->printable.maxx, box->printable.miny, box->printable.minx);
 		}
 		if (box->which & ArtBox) {
-			att2->pushStr("art", -1, "%f %f %f %f", boxd->h() - box->art.maxy, boxd->w() - box->art.maxx, box->art.miny, box->art.minx);
+			att2->pushStr("art", -1, "%f %f %f %f", box->art.top, box->art.right, box->art.bottom, box->art.left);
 		}
 	}
 
@@ -1226,6 +1227,20 @@ Laxkit::Attribute *PaperGroup::dump_out_atts(Laxkit::Attribute *att, int what, L
 	}
 
 	return att;
+}
+
+void SetInset(Insets &box, PaperBoxData *data, const char *list, int which)
+{
+	if (isblank(list)) { data->box->which &= ~(which); return; }
+	double d[4];
+	int n = DoubleListAttribute(list, d, 4);
+	if (n != 4) { data->box->which &= ~(which); return; }
+
+	box.top    = d[0];
+	box.right  = d[1];
+	box.bottom = d[2];
+	box.left   = d[3];
+	data->box->which |= which;
 }
 
 void SetBox(DoubleBBox &box, PaperBoxData *data, const char *list, int which)
@@ -1282,11 +1297,11 @@ void PaperGroup::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *conte
 			const char *bleed     = att->attributes.e[c]->findValue("bleed");
 			const char *printable = att->attributes.e[c]->findValue("printable");
 			const char *art       = att->attributes.e[c]->findValue("art");
-			SetBox(paperbox->trim,      boxdata, trim,      TrimBox);
-			SetBox(paperbox->margin,    boxdata, margin,    MarginBox);
-			SetBox(paperbox->bleed,     boxdata, bleed,     BleedBox);
+			SetInset(paperbox->trim,      boxdata, trim,      TrimBox);
+			SetInset(paperbox->margin,    boxdata, margin,    MarginBox);
+			SetInset(paperbox->bleed,     boxdata, bleed,     BleedBox);
+			SetInset(paperbox->art,       boxdata, art,       ArtBox);
 			SetBox(paperbox->printable, boxdata, printable, PrintableBox);
-			SetBox(paperbox->art,       boxdata, art,       ArtBox);
 		}
 	}
 }

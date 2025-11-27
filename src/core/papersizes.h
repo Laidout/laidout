@@ -105,7 +105,8 @@ class PaperBox :  public Laxkit::anObject
  public:
 	int which; // see BoxTypes
 	PaperStyle *paperstyle;
-	Laxkit::DoubleBBox media, printable, bleed, trim, crop, art, margin;
+	Laxkit::DoubleBBox media, printable;
+	Laxkit::Insets bleed, trim, art, margin;
 	PaperBox(PaperStyle *paper, bool absorb_count);
 	virtual ~PaperBox();
 	virtual bool landscape();
