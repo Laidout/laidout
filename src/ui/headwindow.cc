@@ -682,7 +682,7 @@ MenuInfo *HeadWindow::GetMenu()
 
 		//laidout additions:
 		menu->AddItem("Swap with...",HEADW_SwapWith);
-		menu->AddItem("Drop To...",HEADW_DropTo);
+		// menu->AddItem("Drop To...",HEADW_DropTo);
 		menu->AddItem("Float",HEADW_Float);
 	}
 
