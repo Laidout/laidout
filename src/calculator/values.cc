@@ -2099,6 +2099,11 @@ int ValueHash::CopyFrom(ValueHash *hash, bool linked)
 	return n;
 }
 
+bool ValueHash::HasKey(const char *name)
+{
+	return findIndex(name) >= 0;
+}
+
 //! Return the index corresponding to name, or -1 if not found.
 int ValueHash::findIndex(const char *name,int len)
 {

@@ -368,6 +368,7 @@ class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual
 	int n();
 	Value *e(int i);
 	Value *find(const char *name);
+	bool HasKey(const char *name);
 	int               findIndex      (const char *name, int len=-1);
 	long              findInt        (const char *name, int which=-1, int *error_ret = nullptr);
 	int               findBoolean    (const char *name, int which=-1, int *error_ret = nullptr);
