@@ -178,11 +178,20 @@ enum SignatureInterfaceActions {
 	SIGM_Automarks_Cut_Lines,
 	SIGM_Automarks_Inner_Dots,
 	SIGM_Spine_Marks,
+
 	SIGM_Tile_Repeat,
 	SIGM_Tile_StackAndFold,
 	SIGM_Tile_FoldThenInsert,
 	SIGM_Tile_FoldThenAdjacent,
 	SIGM_Tile_Custom,
+	SIGM_Tile_LRTB,
+	SIGM_Tile_LRBT,
+	SIGM_Tile_RLTB,
+	SIGM_Tile_RLBT,
+	SIGM_Tile_TBLR,
+	SIGM_Tile_TBRL,
+	SIGM_Tile_BTLR,
+	SIGM_Tile_BTRL,
 
 	SIA_MAX
 };
@@ -404,7 +413,7 @@ Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid, Lax
 	menu->AddSep(_("Automarks"));
 	menu->AddToggleItem(_("Cut lines"),  SIGM_Automarks_Cut_Lines,  0, (siginstance->automarks & AUTOMARK_Margins)  != 0);
 	menu->AddToggleItem(_("Inner dots"), SIGM_Automarks_Inner_Dots, 0, (siginstance->automarks & AUTOMARK_InnerDot) != 0);
-	menu->AddToggleItem(_("Spine marks"),SIGM_Spine_Marks,          0, siginstance->spine_marks);
+	menu->AddToggleItem(_("Spine marks"),SIGM_Spine_Marks,          0, sigimp->spine_marks);
 
 	menu->AddSep(_("Tile stacking")); // see SignatureInstance::TileStacking
 	menu->AddToggleItem(_("Repeat"),             SIGM_Tile_Repeat          , 0, siginstance->tile_stacking == SignatureInstance::Repeat);
@@ -413,6 +422,18 @@ Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid, Lax
 	menu->AddToggleItem(_("Fold then adjacent"), SIGM_Tile_FoldThenAdjacent, 0, siginstance->tile_stacking == SignatureInstance::FoldThenPlaceAdjacent);
 	menu->AddToggleItem(_("Custom"),             SIGM_Tile_Custom,           0, siginstance->tile_stacking == SignatureInstance::Custom);
 	
+	menu->AddItem(_("Stacking order"));
+	menu->SubMenu();
+	menu->AddToggleItem(flow_name_translated(LAX_LRTB), SIGM_Tile_LRTB, 0, siginstance->stacking_order == LAX_LRTB);
+	menu->AddToggleItem(flow_name_translated(LAX_LRBT), SIGM_Tile_LRBT, 0, siginstance->stacking_order == LAX_LRBT);
+	menu->AddToggleItem(flow_name_translated(LAX_RLTB), SIGM_Tile_RLTB, 0, siginstance->stacking_order == LAX_RLTB);
+	menu->AddToggleItem(flow_name_translated(LAX_RLBT), SIGM_Tile_RLBT, 0, siginstance->stacking_order == LAX_RLBT);
+	menu->AddToggleItem(flow_name_translated(LAX_TBLR), SIGM_Tile_TBLR, 0, siginstance->stacking_order == LAX_TBLR);
+	menu->AddToggleItem(flow_name_translated(LAX_TBRL), SIGM_Tile_TBRL, 0, siginstance->stacking_order == LAX_TBRL);
+	menu->AddToggleItem(flow_name_translated(LAX_BTLR), SIGM_Tile_BTLR, 0, siginstance->stacking_order == LAX_BTLR);
+	menu->AddToggleItem(flow_name_translated(LAX_BTRL), SIGM_Tile_BTRL, 0, siginstance->stacking_order == LAX_BTRL);
+	menu->EndSubMenu();
+
 	if (IsFinal()) {
 		menu->AddSep();
 		menu->AddItem(_("Save as resource..."),SIGM_SaveAsResource);
@@ -509,8 +530,8 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 			return 0;
 
 		} else if (i == SIGM_Spine_Marks) {
-			if (!siginstance) return 0;
-			siginstance->spine_marks = !siginstance->spine_marks;
+			if (!sigimp) return 0;
+			sigimp->spine_marks = !sigimp->spine_marks;
 			needtodraw = 1;
 			return 0;
 
@@ -1331,7 +1352,8 @@ int SignatureInterface::Refresh()
 			if (folddirection=='l' || folddirection=='r') axis.y=-axis.y;
 			else axis.x=-axis.x;
 		} else {
-			dp->NewFG(.9,.9,.9);
+			dp->NewBG(.9,.9,.9);
+			dp->NewFG(.6,.6,.6);
 			dp->LineAttributes(-1, LineSolid, CapButt, JoinMiter);
 			dp->LineWidthScreen(1);
 		}
@@ -1354,7 +1376,7 @@ int SignatureInterface::Refresh()
 				pts[3]=pts[0]+flatpoint(w,0);
 			}
 			if (foldunder) dp->drawlines(pts,4,0,0);
-			else dp->drawlines(pts,4,1,1);
+			else dp->drawlines(pts,4,1,2);
 			
 			y+=patternheight+siginstance->partition->tilegapy;
 		  }
@@ -2242,6 +2264,8 @@ int SignatureInterface::LBDown(int x,int y,unsigned int state,int count,const La
 		lbdown_col=col;
 		folddirection=0;
 		foldprogress=0;
+
+		PostMessage(_("Drag to fold, Shift-drag to fold underneath"));
 	}
 
 

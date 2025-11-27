@@ -118,6 +118,7 @@ class Signature : public Value
 
 	virtual int SetPatternSize(double w,double h);
 	virtual int locatePaperFromPage(int pagenumber, int *row, int *col, int num_sheets);
+	virtual bool LocatePositionFromPage(int page_num, int &row, int &col, bool &front);
 
 	virtual Value *duplicateValue();
 };
@@ -167,14 +168,15 @@ class SignatureInstance : public Value
 	PaperPartition *partition;
 	Signature *pattern;
 
-	SignatureInstance *partitioned_from; // non-null if this instance spawned from a piece
+	// SignatureInstance *partitioned_from = nullptr; // non-null if this instance spawned from a piece
+	int tile_x = -1; // x index of a tiled partition
+	int tile_y = -1; // y index of a tiled partition
 
 	int base_sheets_per_signature; // number of sheets from only this instance, without partition stacking
 	int sheetspersignature; //Current number of sheets including partition stacking. May change if autoaddsheets!=0
 	int autoaddsheets;
 
 	int automarks;
-	bool spine_marks; // diagonal markings on binding side to keep track of order
 	LaxInterfaces::LineStyle *linestyle; //for optional automatic printer marks
 
 	enum TileStacking {
@@ -185,6 +187,7 @@ class SignatureInstance : public Value
 	    Custom // use full custom partition
 	};
 	TileStacking tile_stacking = Repeat;
+	int stacking_order = LAX_LRTB;
 
 	double creep; //amount of creep for this signature stack, size difference between innermost and outer page
 
@@ -257,6 +260,8 @@ class SignatureImposition : public Imposition
 	virtual void fixPageBleeds(int index,Page *page, bool update_pagestyle);
 
   public:
+	bool spine_marks; // diagonal markings on binding side to keep track of order
+
 	SignatureImposition(SignatureInstance *newsig=NULL);
 	virtual ~SignatureImposition();
 	virtual const char *whattype() { return "SignatureImposition"; }
