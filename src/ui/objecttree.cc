@@ -248,9 +248,8 @@ int ObjectTreeWindow::init()
 {
 	anXWindow *last = nullptr;
 	Button *tbut;
-	Displayer *dp=GetDefaultDisplayer();
-	double th=dp->textheight();
-	double lineh = th*1.5;
+	double th = UIScale() * win_themestyle->normal->textheight();
+	double lineh = th*1.75;
 
 	if (domain == Unknown) UseContainer(InViewport);
 
@@ -264,7 +263,7 @@ int ObjectTreeWindow::init()
 	 //Add buttons: [add][remove][up][down][dup]
 
  	 //add
-    last = tbut = new Button(this,"add",nullptr,IBUT_ICON_ONLY, 0,0,0,0, 1,
+    last = tbut = new Button(this,"add",nullptr,IBUT_ICON_ONLY | IBUT_FLAT, 0,0,0,0, 0,
                         last,object_id,"add",
                         0,_("+"),nullptr,nullptr,3,3);
 	tbut->SetIcon(laidout->icons->GetIcon("Add"));
@@ -272,7 +271,7 @@ int ObjectTreeWindow::init()
     AddWin(tbut,1, tbut->win_w,0,50,50,0, lineh,0,0,50,0, -1);
 
 	 //up
-    last=tbut=new Button(this,"up",nullptr,IBUT_ICON_ONLY, 0,0,0,0, 1,
+    last=tbut=new Button(this,"up",nullptr,IBUT_ICON_ONLY | IBUT_FLAT, 0,0,0,0, 0,
                         last,object_id,"up",
                         0,_("^"),nullptr,nullptr,3,3);
 	tbut->SetIcon(laidout->icons->GetIcon("MoveUp"));
@@ -280,7 +279,7 @@ int ObjectTreeWindow::init()
     AddWin(tbut,1, tbut->win_w,0,50,50,0, lineh,0,0,50,0, -1);
 
 	 //down
-    last=tbut=new Button(this,"down",nullptr,IBUT_ICON_ONLY, 0,0,0,0, 1,
+    last=tbut=new Button(this,"down",nullptr,IBUT_ICON_ONLY | IBUT_FLAT, 0,0,0,0, 0,
                         last,object_id,"down",
                         0,_("v"),nullptr,nullptr,3,3);
 	tbut->SetIcon(laidout->icons->GetIcon("MoveDown"));
@@ -288,7 +287,7 @@ int ObjectTreeWindow::init()
     AddWin(tbut,1, tbut->win_w,0,50,50,0, lineh,0,0,50,0, -1);
 
 	 //duplicate
-    last=tbut=new Button(this,"dup",nullptr,IBUT_ICON_ONLY, 0,0,0,0, 1,
+    last=tbut=new Button(this,"dup",nullptr,IBUT_ICON_ONLY | IBUT_FLAT, 0,0,0,0, 0,
                         last,object_id,"dup",
                         0,_("dup"),nullptr,nullptr,3,3);
 	tbut->SetIcon(laidout->icons->GetIcon("Duplicate"));
@@ -298,7 +297,7 @@ int ObjectTreeWindow::init()
 	AddHSpacer(th/2,th/2,th/2, 50,-1);
 
 	 //remove
-    last=tbut=new Button(this,"remove",nullptr,IBUT_ICON_ONLY, 0,0,0,0, 1,
+    last=tbut=new Button(this,"remove",nullptr,IBUT_ICON_ONLY | IBUT_FLAT, 0,0,0,0, 0,
                         last,object_id,"remove",
                         0,_("-"),nullptr,nullptr,3,3);
 	tbut->SetIcon(laidout->icons->GetIcon("Trash"));

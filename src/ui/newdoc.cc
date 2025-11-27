@@ -260,7 +260,7 @@ int NewDocWindow::init()
 {
 	
 	int textheight = UIScale() * win_themestyle->normal->textheight();
-	int linpheight = textheight * 1.5;
+	int linpheight = textheight * 1.75;
 	Button *tbut = nullptr;
 	anXWindow *last = nullptr;
 	MessageBar *mesbar = nullptr;
