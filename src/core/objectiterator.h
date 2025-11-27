@@ -33,7 +33,8 @@ class ObjectIterator
   public:
 
 	class SearchPattern;
-	typedef bool (*MatchFunc)(Laxkit::anObject *obj, SearchPattern *pattern);
+	typedef bool (*MatchFunc)(Laxkit::anObject *obj, SearchPattern *pattern); // whether an object matches
+	// typedef void (*OnMatchFunc)(Laxkit::anObject *obj, const FieldPlace &path, void *user_data);
 
 	class SearchPattern {
 	  public:
