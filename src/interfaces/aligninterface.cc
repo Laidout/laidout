@@ -779,7 +779,7 @@ int AlignInterface::Refresh()
 
 	dp->DrawScreen();
 	dp->NewFG(&controlcolor);
-	dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+	dp->LineAttributes(1,LineSolid, LAXCAP_Butt, LAXJOIN_Miter);
 	double thin = ScreenLine();
 
 	//DBG dp->drawpoint(dp->realtoscreen(closestpoint),5,0);
@@ -792,7 +792,7 @@ int AlignInterface::Refresh()
 		if (!(aligni_style & ALIGNI_Hide_Path)) {
 			if (!aligninfo->path) {
 				 //draw a straight line, in lieu of an actual path
-				if (hover == ALIGN_Path) dp->LineAttributes(3*thin, LineSolid, CapButt, JoinMiter);
+				if (hover == ALIGN_Path) dp->LineAttributes(3*thin, LineSolid, LAXCAP_Butt, LAXJOIN_Miter);
 				//dp->drawline(aligninfo->center+aligninfo->leftbound*aligninfo->layout_direction, <- screen, not real
 				//			 aligninfo->center+aligninfo->rightbound*aligninfo->layout_direction);
 				dp->LineWidthScreen(hover == ALIGN_Path ? 4*thin : 2*thin);
@@ -819,7 +819,7 @@ int AlignInterface::Refresh()
 				ls.width = (hover==ALIGN_Path ? 3*thin : 1*thin);
 				Laidout::DrawData(dp,aligninfo->path,&ls,nullptr,0);
 
-				dp->LineAttributes(thin,LineSolid, CapButt, JoinMiter);
+				dp->LineAttributes(thin,LineSolid, LAXCAP_Butt, LAXJOIN_Miter);
 				dp->NewFG(&controlcolor);
 				dp->DrawScreen();
 			}
@@ -829,7 +829,7 @@ int AlignInterface::Refresh()
 			flatpoint cc(dp->realtoscreen(aligninfo->center + (aligninfo->path ? flatpoint() : aligninfo->centeroffset)));
 			double r = aligninfo->uiscale*RADIUS*ROTRADIUS*thin;
 			flatpoint wub[6];
-			if (hover == ALIGN_Rotation) dp->LineAttributes(2*thin,LineSolid, CapButt, JoinRound);
+			if (hover == ALIGN_Rotation) dp->LineAttributes(2*thin,LineSolid, LAXCAP_Butt, LAXJOIN_Round);
 			else dp->LineWidthScreen(1*thin);
 			WubPoints(wub, cc, r,r*1.2, M_PI/2+M_PI/4 + aligninfo->extrarotation, M_PI/2-M_PI/4 + aligninfo->extrarotation);
 
@@ -922,7 +922,7 @@ int AlignInterface::Refresh()
 		 //draw control circle
 		flatpoint cc(dp->realtoscreen(aligninfo->center+(aligninfo->path?flatpoint():aligninfo->centeroffset)));
 		if (active) dp->NewFG(0,200,0); else dp->NewFG(255,100,100);
-		dp->LineAttributes(3*thin,LineSolid, CapButt, JoinMiter);
+		dp->LineAttributes(3*thin,LineSolid, LAXCAP_Butt, LAXJOIN_Miter);
 		dp->drawellipse(cc.x,cc.y,
 						aligninfo->uiscale*RADIUS*thin,aligninfo->uiscale*RADIUS*thin,
 						0,2*M_PI,
@@ -931,7 +931,7 @@ int AlignInterface::Refresh()
 
 		 //draw left and right bounds
 		flatpoint p;
-		dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+		dp->LineAttributes(1,LineSolid, LAXCAP_Butt, LAXJOIN_Miter);
 		dp->NewFG(&controlcolor);
 		if (!(aligni_style&ALIGNI_Hide_Path)) {
 			if (!child) {
@@ -974,8 +974,8 @@ int AlignInterface::Refresh()
 
 			} else if (aligninfo->final_layout_type==FALIGN_Gap) {
 				if (hover==ALIGN_MoveGap && hoverindex==c)
-					dp->LineAttributes(4*thin,LineSolid, CapButt, JoinMiter);
-				else dp->LineAttributes(2*thin,LineSolid, CapButt, JoinMiter);
+					dp->LineAttributes(4*thin,LineSolid, LAXCAP_Butt, LAXJOIN_Miter);
+				else dp->LineAttributes(2*thin,LineSolid, LAXCAP_Butt, LAXJOIN_Miter);
 
 				dp->NewFG(.5,0.,0.);
 				//double a = controls.e[c]->amount;
@@ -1059,7 +1059,7 @@ void AlignInterface::ShowPresets()
 	 //blank out panel area
 	dp->NewFG(&controlcolor);
 	dp->NewBG(1.,1.,1.);
-	dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+	dp->LineAttributes(1,LineSolid, LAXCAP_Butt, LAXJOIN_Miter);
 	dp->LineWidthScreen(1);
 	dp->drawrectangle(hoverpoint.x,hoverpoint.y, panelwidth,panelwidth, 2);
 
@@ -1084,7 +1084,7 @@ void AlignInterface::ShowPresets()
 	Laidout::DrawData(dp,presetdata,nullptr,nullptr,0);
 	dp->PopAxes();
 
-	dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+	dp->LineAttributes(1,LineSolid, LAXCAP_Butt, LAXJOIN_Miter);
 	dp->NewFG(&controlcolor);
 }
 
@@ -1182,7 +1182,8 @@ int AlignInterface::scanAlign(int x,int y, int &index, unsigned int state)
 	double thin = ScreenLine();
 
 	if (show_presets || hover==ALIGN_Presets) {
-		double panelwidth = aligninfo->uiscale*PRESETSPANEL*thin;
+		// double panelwidth = aligninfo->uiscale*PRESETSPANEL*thin;
+		double panelwidth = aligninfo->uiscale*PRESETSPANEL;
 		double cc = panelwidth/4;
 		fp-=hoverpoint;
 		int r=floor(fp.y/cc);
