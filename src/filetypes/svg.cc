@@ -66,7 +66,7 @@ static int StyleToFillAndStroke(const char *inlinecss, LaxInterfaces::PathsData 
 //------------------------ Svg in/reimpose/out helpers -------------------------------------
 
 //forward declarations:
-Imposition *ParseInkscapeMultipage(Attribute *namedview, double *viewbox, double scalex, double scaley);
+Imposition *ParseInkscapeMultipage(Attribute *namedview, Attribute *defs, double *viewbox, double scalex, double scaley);
 int ObjOnPaperTest(DrawableObject *obj, PaperGroup *papergroup);
 
 
@@ -599,7 +599,7 @@ void svgStyleTagsDump(FILE *f, LineStyle *lstyle, FillStyle *fstyle, DrawableObj
 		else fprintf(f,"stroke-width:%.10g; ",lstyle->width);
 
 		 //dash or not
-		if (lstyle->use_dashes)
+		if (!lstyle->use_dashes)
 			fprintf(f,"stroke-dasharray:none; ");
 		else fprintf(f,"stroke-dasharray:%.10g,%.10g; ",lstyle->width,2*lstyle->width);
 
@@ -1706,8 +1706,9 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	if (doc) spread = doc->imposition->Layout(layout,start);
 	if (!papergroup) papergroup = spread->papergroup;
 	
-	 // write out header
+	// write out header
 	double height = 0, width = 0;
+	flatpoint origin;
 	double paper_m[6];
 	transform_identity(paper_m);
 	if (papergroup) {
@@ -1741,10 +1742,10 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			  "     xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\n"
 			  "     xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\n"
 			  "     version=\"1.0\"\n");
-	fprintf(f,"     width=\"%fin\"\n", width); //***inches by default?
+	fprintf(f,"     width=\"%.10gin\"\n", width); //***inches by default?
 	// fprintf(f,"     height=\"%fin\"\n", height);
-	fprintf(f,"     height=\"%fin\"\n" //was auto?!
-	          "     viewBox=\"0 0 %f %f\"\n", height, width*96, height*96);
+	fprintf(f,"     height=\"%.10gin\"\n" //was auto?!
+	          "     viewBox=\"%.10g %.10g %.10g %.10g\"\n", height, origin.x, origin.y, width*96, height*96);
 	fprintf(f,"   >\n");
 
 	//set default units for use later in Inkscape
@@ -1760,26 +1761,52 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 				 units, units);
 	}
 	fprintf(f,"  >\n");
+	fprintf(f,"  </sodipodi:namedview>\n");
+
+
+	//----write out global defs section
+	//   ..gradients and such
+	fprintf(f,"  <defs>\n");
+
+	// write out <view viewBox="..."> per page in papergroup
 	if (out->use_multipage && papergroup && papergroup->papers.n) {
-		DoubleBBox bbox;
-		papergroup->FindPaperBBox(&bbox);
+		DoubleBBox full_bbox;
+		papergroup->FindPaperBBox(&full_bbox, paper_m);
+		double yy;
 
 		for (int c = 0; c < papergroup->papers.n; c++) {
 			PaperBoxData *box = papergroup->papers.e[c];
 			RectPageStyle *r = nullptr;
+			DoubleBBox paper_bbox;
+			double pm[6];
+			transform_mult(pm, papergroup->papers.e[c]->m(), paper_m);
+			paper_bbox.addtobounds(pm, papergroup->papers.e[c]);
+
+			if (c == 0) yy = paper_bbox.maxy;
+			double t = paper_bbox.miny;
+			double h = paper_bbox.boxheight();
+			paper_bbox.miny = yy - paper_bbox.maxy;
+			paper_bbox.maxy = paper_bbox.miny + h;
+			// paper_bbox.miny = -paper_bbox.maxy + h;
+			// paper_bbox.maxy = -t + h;
+
 			const char *label = box->label.c_str();
 			if (!label) label = "";
-			fprintf(f, "    <inkscape:page\n"
-					   "      x=\"%f\"\n"
-					   "      y=\"%f\"\n"
-					   "      width=\"%f\"\n"
-					   "      height=\"%f\"\n"
+
+			fprintf(f, "    <view\n"
+					   "      viewBox=\"%.10g %.10g %.10g %.10g\"\n"
 					   "      id=\"%s\"\n"
-					   "      margin=\"%f %f %f %f\"\n"
-					   "      bleed=\"0\"\n" //\"%f\"\n"
+					   "      inkscape:margin=\"%.10g %.10g %.10g %.10g\"\n"
+					   "      inkscape:bleed=\"0\"\n" //\"%f\"\n"
 					   "      inkscape:label=\"%s\" />\n",
-					   box->m(4)*PPINCH, (bbox.boxheight() - box->m(5) - box->h())*PPINCH, // x,y
-					   box->boxwidth()*PPINCH, box->boxheight()*PPINCH, // w,h
+					   // box->m(4)*PPINCH, (full_bbox.boxheight() - box->m(5) - box->h())*PPINCH, // x,y
+					   // box->boxwidth()*PPINCH, box->boxheight()*PPINCH, // w,h
+					   // ---
+					   // paper_bbox.minx*PPINCH, (full_bbox.boxheight() - paper_bbox.miny - paper_bbox.boxheight())*PPINCH, // x,y
+					   // ---
+					   paper_bbox.minx*PPINCH, paper_bbox.miny*PPINCH, // x,y
+					   // ---
+					   paper_bbox.boxwidth()*PPINCH, paper_bbox.boxheight()*PPINCH, // w,h
 					   label, // id
 					   r ? r->mt*PPINCH : 0, //margin
 					   r ? r->mr*PPINCH : 0,
@@ -1789,12 +1816,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 					   );
 		}
 	}
-	fprintf(f,"  </sodipodi:namedview>\n");
-
-
-	 //----write out global defs section
-	 //   ..gradients and such
-	fprintf(f,"  <defs>\n");
+	
 
 	 //dump out defs for limbo objects if any
 	if (limbo && limbo->n()) {
@@ -2098,14 +2120,10 @@ void CompoundTransforms(Group *group, Group *top);
 
 /*! Parse a sodipodi:namedview block, and create a Singles multipage imposition from it.
  */
-Imposition *ParseInkscapeMultipage(Attribute *namedview, double *viewbox, double scalex, double scaley)
+Imposition *ParseInkscapeMultipage(Attribute *namedview, Attribute *defs, double *viewbox, double scalex, double scaley)
 {
-	if (!namedview) return nullptr;
-	Attribute *content = namedview->find("sodipodi:namedview");
-	if (!content) content = namedview;
-	content = content->find("content:");
-	if (!content) return nullptr;
-
+	if (!namedview && !defs) return nullptr;
+	
 	PaperGroup *papergroup = nullptr;
 	int pages_found = 0;
 	double m[6];
@@ -2113,17 +2131,18 @@ Imposition *ParseInkscapeMultipage(Attribute *namedview, double *viewbox, double
 	transform_identity(m);
 	RefPtrStack<RectPageStyle> pagestyles;
 
-	for (int c=0; c<content->attributes.n; c++) {
+	Attribute *content = namedview ? namedview->find("content:") : nullptr;
+	if (content) for (int c = 0; c < content->attributes.n; c++) {
 		name  = content->attributes.e[c]->name;
 		value = content->attributes.e[c]->value;
 
 		if (!strcmp(name,"inkscape:page")) {
-			double x=0, y=0, width=0, height=0;
+			double x = 0, y = 0, width = 0, height = 0;
 			double margin_left = 0, margin_top = 0, margin_right = 0, margin_bottom = 0;
-			const char *id = nullptr;
+			const char *id    = nullptr;
 			const char *label = nullptr;
 
-			for (int c2=0; c2<content->attributes.e[c]->attributes.n; c2++) {
+			for (int c2 = 0; c2 < content->attributes.e[c]->attributes.n; c2++) {
 				name  = content->attributes.e[c]->attributes.e[c2]->name;
 				value = content->attributes.e[c]->attributes.e[c2]->value;
 
@@ -2178,6 +2197,8 @@ Imposition *ParseInkscapeMultipage(Attribute *namedview, double *viewbox, double
 				y      *= scaley;
 				width  *= scalex;
 				height *= scaley;
+
+				if (!label) label = id;
 				
 				if (!papergroup) papergroup = new PaperGroup();
 				//m[4] = x / DEFAULT_PPINCH;
@@ -2193,7 +2214,103 @@ Imposition *ParseInkscapeMultipage(Attribute *namedview, double *viewbox, double
 				rpagestyle->height = height;
 				pagestyles.push(rpagestyle);
 				rpagestyle->dec_count();
-				papergroup->AddPaper(id, width, height, m, label);
+				papergroup->AddPaper(nullptr, width, height, m, label);
+
+				pages_found++;
+			}
+		}
+	}
+
+	content = defs ? defs->find("content:") : nullptr;
+	if (content) for (int c = 0; c < content->attributes.n; c++) {
+		name  = content->attributes.e[c]->name;
+		value = content->attributes.e[c]->value;
+
+		if (!strcmp(name,"view")) {
+			double x = 0, y = 0, width = 0, height = 0;
+			double margin_left = 0, margin_top = 0, margin_right = 0, margin_bottom = 0;
+			const char *id    = nullptr;
+			const char *label = nullptr;
+
+			for (int c2 = 0; c2 < content->attributes.e[c]->attributes.n; c2++) {
+				name  = content->attributes.e[c]->attributes.e[c2]->name;
+				value = content->attributes.e[c]->attributes.e[c2]->value;
+
+				// for reference: https://wiki.inkscape.org/wiki/Release_notes/1.3#Page_Tool
+				if (!strcmp(name,"viewBox")) {
+					double v[4];
+					int n = DoubleListAttribute(value, v, 4, nullptr);
+					if (n == 4) {
+						x = v[0];
+						y = v[1];
+						width = v[2];
+						height = v[3];
+					}
+				
+				} else if (!strcmp(name,"id")) {
+					id = value;
+
+				} else if (!strcmp(name,"inkscape:label")) {
+					label = value;
+
+				} else if (!strcmp(name, "margin") || !strcmp(name, "inkscape:margin")) {
+					// top/right/bottom/left e.g. '10mm'
+					// top/bottom left/right e.g. '10mm 20mm'
+					// top left/right bottom e.g. '10mm 20mm 30mm'
+					// top right bottom left e.g. '10mm 20mm 30mm 40mm'
+					
+					// when inkscape saves, it appears to convert to unitless numbers, so default art board space.
+					// todo: for completeness, should really parse the units if there
+					double mm[4];
+					int num = DoubleListAttribute(value, mm, 4);
+					if (num == 1) {
+						margin_left = margin_top = margin_right = margin_bottom = mm[0];
+					} else if (num == 2) {
+						margin_top  = margin_bottom = mm[0];
+						margin_left = margin_right  = mm[1];
+					} else if (num == 3) {
+						margin_top    = mm[0];
+						margin_left   = margin_right = mm[1];
+						margin_bottom = mm[2];
+					} else {
+						margin_top    = mm[0];
+						margin_left   = mm[1];
+						margin_bottom = mm[2];
+						margin_right  = mm[3];
+					}
+
+				} else if (!strcmp(name, "bleed") || !strcmp(name, "inkscape:bleed")) {
+					// *** todo!
+				// } else if (!strcmp(name, "inkscape:page-size")) {
+				}
+			}
+
+			if (width > 0 && height > 0) {
+				//add page
+				
+				y       = viewbox[3] - y - height;
+				x      *= scalex;
+				y      *= scaley;
+				width  *= scalex;
+				height *= scaley;
+				
+				if (!label) label = id;
+
+				if (!papergroup) papergroup = new PaperGroup();
+				//m[4] = x / DEFAULT_PPINCH;
+				//m[5] = y / DEFAULT_PPINCH;
+				m[4] = x;
+				m[5] = y;
+				margin_left   *= scalex;
+				margin_right  *= scalex;
+				margin_top    *= scaley;
+				margin_bottom *= scaley;
+				RectPageStyle *rpagestyle = new RectPageStyle(RECTPAGE_LRTB, margin_left, margin_right, margin_top, margin_bottom);
+				rpagestyle->width = width;
+				rpagestyle->height = height;
+				pagestyles.push(rpagestyle);
+				rpagestyle->dec_count();
+				papergroup->AddPaper(nullptr, width, height, m, label);
 
 				pages_found++;
 			}
@@ -2341,6 +2458,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 		}
 
 		Attribute *namedview = svgdoc->find("sodipodi:namedview");
+		Attribute *defs = svgdoc->find("defs");
 		bool parsing_multipage = false; //only gets true when we are reading in whole brand new doc
 		
 		 //create a new document if necessary
@@ -2359,7 +2477,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 
 			// for multipage, make sure doc has enough pages
 			if (namedview) {
-				Imposition *multipage_imp = ParseInkscapeMultipage(namedview, viewbox, scalex, scaley);
+				Imposition *multipage_imp = ParseInkscapeMultipage(namedview, defs, viewbox, scalex, scaley);
 				if (multipage_imp) {
 					imp = multipage_imp;
 					parsing_multipage = true;

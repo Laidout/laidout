@@ -1118,7 +1118,7 @@ PaperStyle *PaperGroup::GetBasePaper(int index)
  *
  * box_ret must NOT be nullptr.
  */
-int PaperGroup::FindPaperBBox(Laxkit::DoubleBBox *box_ret)
+int PaperGroup::FindPaperBBox(Laxkit::DoubleBBox *box_ret, double *extram)
 {
 	if (papers.n == 0) return -1;
 
@@ -1126,7 +1126,14 @@ int PaperGroup::FindPaperBBox(Laxkit::DoubleBBox *box_ret)
 		papers.e[c]->FindBBox();
 		if (!papers.e[c]->validbounds()) continue;
 
-		box_ret->addtobounds(papers.e[c]->m(), papers.e[c]);
+		if (extram) {
+			double mm[6];
+			transform_mult(mm, papers.e[c]->m(), extram);
+			box_ret->addtobounds(mm, papers.e[c]);
+
+		} else {
+			box_ret->addtobounds(papers.e[c]->m(), papers.e[c]);
+		}
 	}
 
 	return 0;
@@ -1186,24 +1193,27 @@ Laxkit::Attribute *PaperGroup::dump_out_atts(Laxkit::Attribute *att, int what, L
 	const double *m;
 	for (int c = 0; c < papers.n; c++) {
 		Attribute *att2 = att->pushSubAtt("paper");
-
-		m = papers.e[c]->m();
-		att2->pushStr("matrix", -1, "%.10g %.10g %.10g %.10g %.10g %.10g",
-			m[0],m[1],m[2],m[3],m[4],m[5]);
-		att2->pushStr("color", -1, "rgbf(%.10g, %.10g, %.10g)",
-			papers.e[c]->color.Red(),
-			papers.e[c]->color.Green(),
-			papers.e[c]->color.Blue());
-		att2->pushStr("outlinecolor", -1, "rgbf(%.10g, %.10g, %.10g)",
-			papers.e[c]->outlinecolor.Red(),
-			papers.e[c]->outlinecolor.Green(),
-			papers.e[c]->outlinecolor.Blue());
-
-		papers.e[c]->box->paperstyle->dump_out_atts(att2, 0, context);
 		
 		PaperBoxData *boxd = papers.e[c];
 		PaperBox *box = papers.e[c]->box;
+
+		m = boxd->m();
+		att2->pushStr("matrix", -1, "%.10g %.10g %.10g %.10g %.10g %.10g",
+			m[0],m[1],m[2],m[3],m[4],m[5]);
+		att2->pushStr("color", -1, "rgbf(%.10g, %.10g, %.10g)",
+			boxd->color.Red(),
+			boxd->color.Green(),
+			boxd->color.Blue());
+		att2->pushStr("outlinecolor", -1, "rgbf(%.10g, %.10g, %.10g)",
+			boxd->outlinecolor.Red(),
+			boxd->outlinecolor.Green(),
+			boxd->outlinecolor.Blue());
+
+		box->paperstyle->dump_out_atts(att2, 0, context);
 		
+		if (!boxd->label.IsEmpty()) {
+			att2->push("label", boxd->label.c_str());
+		}
 		if (box->which & TrimBox) {
 			att2->pushStr("trim", -1, "%f %f %f %f", box->trim.top, box->trim.right, box->trim.bottom, box->trim.left);
 		}
@@ -1276,19 +1286,24 @@ void PaperGroup::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *conte
 			objs.dump_in_atts(att->attributes.e[c],flag,context);
 
 		} else if (!strcmp(nme,"paper")) {
-			PaperStyle *paperstyle=new PaperStyle(nullptr,0,0,0,0,"in");
+			PaperStyle *paperstyle = new PaperStyle(nullptr,0,0,0,0,"in");
 			paperstyle->dump_in_atts(att->attributes.e[c],flag,context);
 			PaperBox *paperbox = new PaperBox(paperstyle, true);
 			PaperBoxData *boxdata = new PaperBoxData(paperbox);
 			paperbox->dec_count();
-			boxdata->dump_in_atts(att->attributes.e[c],flag,context);
+			boxdata->dump_in_atts(att->attributes.e[c],flag,context); // only gets SomeData fields
 
-			Attribute *foundcolor = att->attributes.e[c]->find("outlinecolor");
-			if (foundcolor) {
-				SimpleColorAttribute(foundcolor->value, nullptr, &boxdata->outlinecolor, nullptr);
-			} else {
-				boxdata->outlinecolor.rgbf(1.0, 0.0, 1.0);
-			} 
+			Attribute *aa = att->attributes.e[c]->find("outlinecolor");
+			if (aa) SimpleColorAttribute(aa->value, nullptr, &boxdata->outlinecolor, nullptr);
+			else boxdata->outlinecolor.rgbf(1.0, 0.0, 1.0);
+			
+			aa = att->attributes.e[c]->find("color");
+			if (aa) SimpleColorAttribute(aa->value, nullptr, &boxdata->color, nullptr);
+			else boxdata->color.rgbf(1.0, 1.0, 1.0);
+			
+			aa = att->attributes.e[c]->find("label");
+			if (aa) boxdata->label = aa->value;
+
 			papers.push(boxdata);
 			boxdata->dec_count();
 
@@ -1307,20 +1322,22 @@ void PaperGroup::dump_in_atts(Attribute *att,int flag,Laxkit::DumpContext *conte
 }
 
 
-int PaperGroup::AddPaper(const char *nme,double w,double h,const double *m, const char *label)
+int PaperGroup::AddPaper(const char *paper_name,double w,double h,const double *m, const char *label)
 {
 	int landscape = 0;
 	PaperStyle *paperstyle = GetNamedPaper(w,h, &landscape, 0,nullptr, .0001);
 	if (paperstyle) {
 		paperstyle = dynamic_cast<PaperStyle*>(paperstyle->duplicate());
 		paperstyle->landscape(landscape);
+		if (paper_name) makestr(paperstyle->name, paper_name);
 	} else {
-		paperstyle = new PaperStyle(nme,w,h,0,72,nullptr);
+		paperstyle = new PaperStyle(paper_name,w,h,0,72,nullptr);
 	}
 	PaperBox *box = new PaperBox(paperstyle, false);
 	paperstyle->dec_count();
 
 	PaperBoxData *boxdata = new PaperBoxData(box);
+	if (paper_name) boxdata->Id(paper_name);
 	box->dec_count();
 	boxdata->m(m);
 	if (label) boxdata->label = label;

@@ -165,7 +165,7 @@ class PaperGroup : virtual public Laxkit::Resourceable, virtual public ObjectCon
 	virtual int AddPaper(const char *nme,double w,double h,const double *m, const char *label);
 	virtual double OutlineColor(double r,double g,double b);
 	virtual PaperStyle *GetBasePaper(int index);
-	virtual int FindPaperBBox(Laxkit::DoubleBBox *box_ret);
+	virtual int FindPaperBBox(Laxkit::DoubleBBox *box_ret, double *extram = nullptr);
 
 	virtual int n(); //this is the number of papergroup.objs, NOT the number of papers
 	virtual Laxkit::anObject *object_e(int i);

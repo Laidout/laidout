@@ -7,9 +7,13 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.098
 -------------
-       Convert website to use hugo, make some new tutorials for really out of date ones
        Implement tile stacking of signatures from same sheet, in addition to just duplication
        Spine marks to indicate signature order
+       Fix Singles double sided
+       Fix NetImposition double sided
+       Make a 2d version of the 3d Net unwrapper
+(done) Update svg in/out to use Inkscape's new view based multipage
+(done) Convert website to use hugo, make some new tutorials for really out of date ones
 (done) Import/export new Inkscape multipage art boards via expanded Singles imposition type
 (done) Update Singles editor to edit new artboard style
 (done) Implement some accordion net impositions
@@ -242,7 +246,7 @@ Perhaps have animation support/mode, 1 page=1 frame or separate time slider and 
 Akin to animation mode, have movie/sound objects available to html export, for instance?
 a FlexibleImposition for html/streamed output target?
 JDF,JTAPI support?
-Saveable undo stack(?) see http://people.csail.mit.edu/sarasu/history/ for inspiration. Also Xara has this.
+Saveable undo stack(?) see https://people.csail.mit.edu/sarasu/history/ for inspiration. Also Xara has this.
 Implement cross platform
 
 

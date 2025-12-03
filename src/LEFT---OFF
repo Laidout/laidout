@@ -13,6 +13,8 @@ down to major items in ../features.md.
 
 ------------ serious release blocking bugs to fix right now:
 
+bug: missing caret in node input boxes
+
 ux: right clicking on viewport buttons screws hover and passes event to split window
 
 crash: freehand with a couple of lines with weight nodes crashes sometimes
@@ -552,9 +554,15 @@ Scribus scribus:
 
 svg: SVG svgin: svg in:
   in:
-  bug: text multi lines are concatted instead of newlined
+    implement in/out with new svg2 <view> support in Inkscape (1.5+) instead of old inkscape:page (1.2, 1.3, 1.4)
+      <view id="one" viewBox="0 0 100 100" />  viewBox: min-x, min-y, width, height
+      spec: https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Element/view
+      inkscape video has them in defs, but svg spec has it anywhere
+      out for signatures, should do a multi spread view, not just papers in spread. currently assumes papergroup
+    bug: text multi lines are concatted instead of newlined
     bug: text size is way off.. like 75% smaller after import
     inkscape multipage:
+      do something with bleed values
       implement svg2 "view" support, as Inkscape is moving to that instead of inkscape:page
 	  export:
 	    margins, add a RectPageStyle to papergroup?
@@ -572,6 +580,7 @@ svg: SVG svgin: svg in:
     DONE bug: object opacity (as opposed to fill-opacity or stroke-opacity) not handled
 	DONE on reading in svg directly, should short out the filename so no accidental overwriting
     ---0.099---
+    markers
 	should parse sodipodi:nodetypes:
 	  c = corner node, s = smooth node, z = symmetric, a = auto smooth 
 	  if closed, has 1 more nodetype to define initial previous control handle, and final next
@@ -673,6 +682,9 @@ idml from indesign?
 
 
 Singles: singleseditor: singlesinterface:
+  bug: pages layout doesn't advance.. shows only pages from 0
+  should show page previews
+  if you press space, does not center contents, it centers on origin
   memory hole: edit, swap landscape, ok, quit
   memory hole on export multipage svg
   need optional paper packer for Paper view, while a papergroup is for pages view
@@ -972,12 +984,10 @@ node editor node interface NodeInterface: nodes: node: interface:
   ux: add reroute needs tooltip and visual indicator
   ux: add reroutes should visually indicate
   cut connections should highlight, maybe with X, what will be cut
-  DONE dragging frame label sizer needs tooltip.
   Ctrl-drag frame label sizer to change all frame label sizes?
   bug: duplicating placing at strange place
   need a way to dissolve reroute or nodes, so we don't break routes
   bug: multiply v*v after node dup, try to enter a single value, weird things happen
-  DONE bug: vector display, uses 2e+2 for 200
   bug: new object, "Net" is actually a "NetImposition"
   bug: new LineStyle object node, object info has fields, but no data, lists type as "anObject"
   bug: curve mouse postion is wrong
@@ -995,8 +1005,12 @@ node editor node interface NodeInterface: nodes: node: interface:
 	DONE MapFromRange
 	DONE MapToRange
   	DONE Invert
-  expressions: Math should be imported
-  bug: why is captiondata preview render getting triggered every node update?
+  expressions:
+    Math should be imported
+    should be multiline
+    if statements making yellow
+  bug: why is CaptionData preview render getting triggered every node update?
+  bug: CaptionData is creating a new font every single instantiation
   bug: work on filter, save nodes, switch to object, load nodes, destroys proper in/out of filter
   SetTransforms if single in, should be single out
   bug: paths should not clip their children by default
@@ -1007,7 +1021,6 @@ node editor node interface NodeInterface: nodes: node: interface:
     check NodeBase::GetStatus() when no outs, but topropproxy
   memory hole page info? drawableinfo, objectinfo
   bug: new object caption, attach to object function, crash!!
-  bug: CaptionData is creating a new font every single instantiation
   bug: Need to make text objects have expected preview orientations
   bug: trying to open menu for enum with 0 entries should not pop up a window
   bug: ObjectInfo should reset id and type on disconnection or null object, but keep any props that are connected
@@ -1043,6 +1056,8 @@ node editor node interface NodeInterface: nodes: node: interface:
   need color/styling of node connections
   blender has a multi-input that automatically creates concatenated lists somehow
 
+  DONE dragging frame label sizer needs tooltip.
+  DONE bug: vector display, uses 2e+2 for 200
   DONE NumToString: not setting arrays to proper size when input size changes
   DONE BBoxPoint
   DONE Math1 needs transpose
@@ -2136,17 +2151,19 @@ singlesinterface:
   DONE default paper outline colors
 
 paperinterface: papergroupinterface papergroup interface papergroups:
+  needs rectangle select
+  label should be editable
+  select multiple, change margin/trim should change on all selected
   should be able to copy/paste/share margin/trim with other papers
   ux: indices and arrows should be haloed
   ux: arrows shouldn't overlap labels
   bug: swap orientation.. somehow let show margin arrows, but edit margins wasn't checked
   should have papergroup name and resource selection options along top
-  should render the pages behind limbo objects
+  should render the pages behind limbo objects: use PreRefresh()
   show numbers when you drag arrows
   arrow offsets should be across total w/h, not box w/h
   marks should be per paper, with additional per group
   bug: zoom in, hang!
-  should be able to snap to spread pages also 
   when reset scale or rotation, preserve relative orientations
   bug: sometimes clicking around when you have custom papergroup in viewport crashes
   options to edit order of papers.. drag indices (front or "back")
@@ -2155,7 +2172,6 @@ paperinterface: papergroupinterface papergroup interface papergroups:
     margins
 	spread/page borders
     need to be able to edit margins: edit the art box
-  need an easy toggle for landscape/portrait
   menu options:
     auto tile contents with custom overlap, derived from margin or printable, for instance
     fit to selection
@@ -2170,9 +2186,9 @@ paperinterface: papergroupinterface papergroup interface papergroups:
     export settings
       more that one settings per paper
   debug papergroup tool in spread editor
-    paperinterface: in spread editor (done), and able to print it out
     in spread editor (done), and be able to print it out
 
+  DONE need an easy toggle for landscape/portrait
   DONE bug: landscape paper messes up label placement
   DONE bug: changing paper should only change current paper
   DONE option to edit trim box
@@ -3442,6 +3458,7 @@ busywork:
   replace NULL with nullptr, except in those C functions that expect NULL (will warn on compiling)
 
 accordion folds: accordion:
+  should have option of dividing in pages with alternate views, or just set up singles with appropriate guides
   implement accordion uihint config boxes
   newdoc should allocate enough pages to fill net
   bug: finish implementing NetDialog paper selection
@@ -3674,10 +3691,12 @@ Imposition use cases:
   impose only needs access to papergroups
   maybe any spread setup temporarily to another imposition on export, not just export with custom papergroup?
 
-netdialog:
+netdialog: netinterface:
   memory hole when select new net, ok, cancel
+  polyptych not getting results back to viewport.. main imp editor goes blank
 
 Net imposition: netimposition: net:
+  bug: spread net lines should not be editable
   finish fit_paper_asymmetric for accordions
   From new doc dialog, select "new net", old imposition still displays in dropdown
   tabs, like for folding up polyhedra
@@ -3821,7 +3840,10 @@ lgm 2019 feedback and ideas:
   make connecting to online information easy: click to open web browser, xdg-open?
   from talk: diffusion curves, "local mod" mesh manipulation
 
-ux polish: ux: general ux:
+ux polish: ux: general ux: ux issues:
+  need some way to force preview generation for all huge images that don't already have previews.
+    this happens when opening old files whose thumbnails don't exist anymore
+  would be nice to have a menu to select object, if there are many under mouse. Hard to really click on particular objects sometimes
   when you exit a popup window, focus should revert to the spawing context
   when closing a document window, decide whether this removes access to it, or just the view to it
   if you try to "show in filesystem" with something without save file, like unsaved new doc, should not open file browser
@@ -4107,3 +4129,4 @@ DONE need to implement scale pages to new imposition when reimposing (enable in 
 DONE crash: right click in splitwindow gap, hover over change, but be in first window. escape. crash!
 DONE crash: split window rearranging causing crash <- missing MakeCurrent in a dp call
 DONE ux: font really messed up in console panel and text editor
+DONE implement shortcuts NextSpread, PreviousSpread. debug NextPage, PreviousPage
