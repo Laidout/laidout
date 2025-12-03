@@ -5490,6 +5490,7 @@ PageInfoNode::PageInfoNode()
 	AddProperty(new NodeProperty(NodeProperty::PROP_Input, true, "in",  NULL,1, _("In")));
 
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "pagelabel", new StringValue(),1, _("Page label"),nullptr, 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "pageindex", new IntValue(),1,    _("Page index"),nullptr, 0, false));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "pagetype",  new StringValue(),1, _("Page type"), nullptr, 0, false));
 	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "bounds",    new BBoxValue(),1,   _("Bounds"),    nullptr, 0, false));
 	// AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "outline",   nullptr,1,           _("Outline"),   nullptr, 0, false));
@@ -5526,11 +5527,12 @@ int PageInfoNode::Update()
 		return -1;
 	}
 
-	StringValue    *plabel  = dynamic_cast<StringValue *>(properties.e[1]->GetData());
-	StringValue    *ptype   = dynamic_cast<StringValue *>(properties.e[2]->GetData());
-	BBoxValue      *bounds  = dynamic_cast<BBoxValue *>(properties.e[3]->GetData());
+	StringValue *plabel  = dynamic_cast<StringValue *>(properties.e[1]->GetData());
+	IntValue    *pindex  = dynamic_cast<IntValue    *>(properties.e[2]->GetData());
+	StringValue *ptype   = dynamic_cast<StringValue *>(properties.e[3]->GetData());
+	BBoxValue   *bounds  = dynamic_cast<BBoxValue   *>(properties.e[4]->GetData());
 	
-	for (int c=1; c<properties.n; c++) properties.e[c]->Touch();
+	for (int c = 1; c < properties.n; c++) properties.e[c]->Touch();
 
 	//find page
 	LaxInterfaces::SomeData *pnt = dr;
@@ -5538,6 +5540,7 @@ int PageInfoNode::Update()
 	Page *page = dynamic_cast<Page*>(pnt->ResourceOwner());
 	Document *doc = nullptr;
 	int i = (page ? laidout->project->LocatePage(page, &doc) : -1);
+	pindex->i = i;
 	if (page) {
 		if (page->label) {
 			plabel->Set(page->label);
@@ -5553,7 +5556,7 @@ int PageInfoNode::Update()
 		ptype->Set(doc ? doc->imposition->PageTypeName(page->pagestyle->pagetype) : "");
 
 		bounds->setbounds(page->pagestyle->outline);
-		properties.e[4]->SetData(page->pagestyle, 0);
+		properties.e[5]->SetData(page->pagestyle, 0);
 
 	} else {
 		plabel->Set("none");
