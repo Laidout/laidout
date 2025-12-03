@@ -187,6 +187,8 @@ enum LaidoutViewportActions {
 	LOV_ObjectIndicator,
 	LOV_ForceRemap,
 	LOV_Find,
+	LOV_NextSpread,
+	LOV_PreviousSpread,
 	LOV_MAX
 };
 
@@ -3418,6 +3420,8 @@ Laxkit::ShortcutHandler *LaidoutViewport::GetShortcuts()
 	sc->Add(LOV_ObjectIndicator,'i',0,0,        _("ObjectInfo"),     _("Toggle showing object information"),NULL,0);
 	sc->Add(LOV_ForceRemap,     'r',ControlMask,0,_("ForceRemap"),   _("Force reapplication of any alignment rules of objects in current spread"),NULL,0);
 	sc->Add(LOV_Find,           'f',ControlMask,0,_("Find"),         _("Open the find panel"),NULL,0);
+	sc->Add(LOV_NextSpread,     LAX_Pgdown,ShiftMask|ControlMask,0,_("Next spread"),     _("Next spread")   ,nullptr,0);
+	sc->Add(LOV_PreviousSpread, LAX_Pgup,  ShiftMask|ControlMask,0,_("Previous spread"), _("Previous spread"),nullptr,0);
 
 	return sc;
 }
@@ -3634,7 +3638,15 @@ int LaidoutViewport::PerformAction(int action)
 			if (!page) continue;
 			page->UpdateAnchored(NULL);
 		}
+		return 0;
 
+	} else if (action == LOV_NextSpread) {
+		NextSpread();
+		return 0;
+		
+	} else if (action == LOV_PreviousSpread) {
+		PreviousSpread();
+		return 0;
 	}
 
 	return ViewportWindow::PerformAction(action);
@@ -4526,10 +4538,10 @@ int ViewWindow::init()
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 
-	pagenumber=NULL;
-	last=pagenumber=new PageFlipper(doc,this,"spread number", 
+	pagenumber = nullptr;
+	last = pagenumber = new PageFlipper(doc,this,"spread number", 
 									last,object_id,"newSpreadNumber",
-									NULL);
+									nullptr);
 	//pagenumber->LabelBase(_("Spread: %d"));
 	pagenumber->NewMin(1);
 	pagenumber->tooltip(_("The current spread"));
@@ -5495,8 +5507,8 @@ Laxkit::ShortcutHandler *ViewWindow::GetShortcuts()
 	sc->Add(VIEW_NewDocument,    'n',ControlMask,0, _("NewDoc"),        _("New document"),NULL,0);
 	sc->Add(VIEW_NextTool,       't',0,0,           _("NextTool"),      _("Next tool"),NULL,0);
 	sc->Add(VIEW_PreviousTool,   'T',ShiftMask,0,   _("PreviousTool"),  _("Previous tool"),NULL,0);
-	sc->Add(VIEW_NextPage,       '>',ShiftMask,0,   _("NextPage"),      _("Next page"),NULL,0);
-	sc->Add(VIEW_PreviousPage,   '<',ShiftMask,0,   _("PreviousPage"),  _("Previous page"),NULL,0);
+	sc->Add(VIEW_NextPage,       LAX_Pgdown,ControlMask,0, _("NextPage"),      _("Next page"),NULL,0);
+	sc->Add(VIEW_PreviousPage,   LAX_Pgup,  ControlMask,0, _("PreviousPage"),  _("Previous page"),NULL,0);
 	sc->Add(VIEW_Help,           LAX_F1,0,0,        _("Help"),          _("Help"),NULL,0);
 	sc->Add(VIEW_About,          LAX_F2,0,0,        _("About"),         _("About Laidout"),NULL,0);
 	sc->Add(VIEW_SpreadEditor,   LAX_F3,0,0,        _("SpreadEditor"),  _("Popup a spread editor"),NULL,0);
@@ -5939,22 +5951,13 @@ int ViewWindow::PerformAction(int action)
 		SelectToolFor("EngraverFillData");
 		return 0;
 
-	} else if (action==VIEW_NextPage) {
-		int pg=((LaidoutViewport *)viewport)->SelectPage(-1);
-		for (int c=0; c<_kids.n; c++) if (!strcmp(_kids.e[c]->win_title,"page number")) {
-			((NumSlider *)_kids.e[c])->Select(pg+1);
-			break;
-		}
+	} else if (action == VIEW_NextPage) {
+		((LaidoutViewport *)viewport)->SelectPage(-1);
 		updateContext(0);
 		return 0;
 
-	} else if (action==VIEW_PreviousPage) {
-		int pg=((LaidoutViewport *)viewport)->SelectPage(-2);
-		curtool->Clear();
-		for (int c=0; c<_kids.n; c++) if (!strcmp(_kids.e[c]->win_title,"page number")) {
-			((NumSlider *)_kids.e[c])->Select(pg+1);
-			break;
-		}
+	} else if (action == VIEW_PreviousPage) {
+		((LaidoutViewport *)viewport)->SelectPage(-2);
 		updateContext(0);
 		return 0;
 
