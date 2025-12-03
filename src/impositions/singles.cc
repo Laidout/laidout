@@ -16,16 +16,12 @@
 #include <lax/interfaces/pathinterface.h>
 #include <lax/strmanip.h>
 #include <lax/attributes.h>
+#include <lax/debug.h>
 
 #include "../laidout.h"
 #include "singles.h"
 #include "../core/stylemanager.h"
 #include "../language.h"
-
-
-#include <iostream>
-using namespace std;
-#define DBG 
 
 
 using namespace Laxkit;
@@ -68,7 +64,7 @@ Singles::Singles() : Imposition(_("Singles"))
 		// 1 count, and the stylemanager should remove the other
 	}
 
-	DBG cerr <<"imposition singles init"<<endl;
+	DBGL("imposition singles init");
 }
 
 /*! Initialize with a particular "art board" like layout based on pgroup.
@@ -84,7 +80,7 @@ Singles::~Singles()
 {
 	if (papergroup) papergroup->dec_count();
 	if (custom_paper_packing) custom_paper_packing->dec_count();
-	DBG cerr <<"--Singles destructor object "<<object_id<<endl;
+	DBGL("--Singles destructor object "<<object_id);
 }
 
 
@@ -540,7 +536,7 @@ void Singles::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 		fprintf(f,"%smarginbottom 0   #The default bottom page margin\n",spc);
 		fprintf(f,"%snumpages 3 #number of pages in the document. This is ignored on readin\n",spc);
 		fprintf(f,"%spaper_layout  #optional definition of multiple pages per page spread\n", spc);
-		fprintf(f,"%sdouble_sided  # whether the pages are double sided", spc);
+		fprintf(f,"%sdouble_sided  # whether the pages are double sided\n", spc);
 		papergroup->dump_out(f,indent+2,-1,NULL);
 		//fprintf(f,"%sdefaultpagestyle #default page style\n",spc);
 		//pagestyle->dump_out(f,indent+2,-1,NULL);
@@ -556,7 +552,7 @@ void Singles::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context)
 	fprintf(f,"%sinsetbottom  %.10g\n",spc,insetbottom);
 	fprintf(f,"%stilex %d\n",spc,tilex);
 	fprintf(f,"%stiley %d\n",spc,tiley);
-	fprintf(f,"%sdouble_sided  %s", spc, double_sided ? "yes" : "no");
+	fprintf(f,"%sdouble_sided  %s\n", spc, double_sided ? "yes" : "no");
 
 	if (numpages) fprintf(f,"%snumpages %d\n",spc,numpages);
 
@@ -846,6 +842,14 @@ ObjectDef *makeSinglesObjectDef()
 	return sd;
 }
 
+/*! Set double_sided to doublesided, and update page styles as necessary.
+ */
+bool Singles::DoubleSided(bool doublesided)
+{
+	double_sided = doublesided;
+	setPage();
+	return double_sided;
+}
 
 //! Ensure that each page has a proper pagestyle and bleed information.
 /*! This is called when pages are added or removed. It replaces the pagestyle for
@@ -903,15 +907,15 @@ SomeData *Singles::GetPageMarginOutline(int pagenum,int local)
  * The spread->pagestack elements hold only the transform.
  * They do not also have the outlines.
  */
-Spread *Singles::PageLayout(int whichpage)
+Spread *Singles::PageLayout(int which_spread)
 {
-	if (!papergroup || !papergroup->papers.n) return SingleLayout(whichpage);
+	if (!papergroup || !papergroup->papers.n) return SingleLayout(which_spread);
 
 	Spread *spread = new Spread();
 	spread->spreadtype = 1;
 	spread->style = SPREAD_PAGE;
 	spread->mask = SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
-	spread->spread_index = whichpage;
+	spread->spread_index = which_spread;
 
 	spread->papergroup = papergroup;
 	papergroup->inc_count();
@@ -927,7 +931,8 @@ Spread *Singles::PageLayout(int whichpage)
 	newpath->style |= PathsData::PATHS_Ignore_Weights;
 	spread->path = (SomeData *)newpath;
 	
-	int page_start = (whichpage / papergroup->papers.n) * papergroup->papers.n;
+	// int page_start = (whichpage / papergroup->papers.n) * papergroup->papers.n;
+	int page_start = which_spread * papergroup->papers.n;
 
 	for (int c=0; c<papergroup->papers.n; c++)
 	{

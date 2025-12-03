@@ -28,7 +28,7 @@ SinglesInterface::SinglesInterface(LaxInterfaces::anInterface *nowner,int nid,La
 {
 	showdecs = 1;
 	default_outline_color.rgbf(1., 0., 0.);
-	full_menu = false;
+	full_menu = true;
 
 	allow_trim_edit = true;
 	allow_margin_edit = true;
@@ -174,6 +174,47 @@ void SinglesInterface::Clear(SomeData *d)
 	// if (curbox) { curbox->dec_count(); curbox=nullptr; }
 	// curboxes.flush();
 	// if (papergroup) { papergroup->dec_count(); papergroup=nullptr; }
+}
+
+
+Laxkit::MenuInfo *SinglesInterface::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
+{
+	if (!menu) menu = new MenuInfo(_("Singles"));
+
+	if (singles) menu->AddToggleItem(_("Double sided"), SINGLES_ToggleDoubleSided, 0, singles->double_sided);
+
+	return PaperInterface::ContextMenu(x,y, deviceid, menu);
+}
+
+int SinglesInterface::Event(const Laxkit::EventData *e,const char *mes)
+{
+	if (!strcmp(mes,"menuevent")) {
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
+		int i = s->info2; //id of menu item
+		int info = s->info4;
+
+		if (info == 0 && i == SINGLES_ToggleDoubleSided) {
+			PerformAction(i);
+		}
+		return 0;
+	}
+
+	return PaperInterface::Event(e, mes);
+}
+
+int SinglesInterface::PerformAction(int action)
+{
+	if (action == SINGLES_ToggleDoubleSided) {
+		if (singles) {
+			singles->DoubleSided(!singles->double_sided);
+			if (singles->double_sided) PostMessage(_("Double sided"));
+			else PostMessage(_("Not double sided"));
+			needtodraw = 1;
+		}
+		return 0;
+	}
+
+	return PaperInterface::PerformAction(action);
 }
 
 

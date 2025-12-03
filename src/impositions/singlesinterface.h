@@ -36,6 +36,10 @@ class SinglesInterface : virtual public ImpositionInterface, virtual public Pape
 	Document *document = nullptr;
 	PaperStyle *papertype = nullptr;
 
+	enum SinglesActions {
+		SINGLES_ToggleDoubleSided = PAPERI_NORMAL_MAX + 1
+	};
+
   public:
  	SinglesInterface(LaxInterfaces::anInterface *nowner,int nid,Laxkit::Displayer *ndp);
 	virtual ~SinglesInterface();
@@ -60,6 +64,9 @@ class SinglesInterface : virtual public ImpositionInterface, virtual public Pape
     virtual int SetPaper(PaperStyle *paper);
     virtual int UseThisDocument(Document *doc);
     virtual int UseThisImposition(Imposition *imp);
+    virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu);
+    virtual int Event(const Laxkit::EventData *e,const char *mes);
+    virtual int PerformAction(int action);
 
     virtual int ShowThisPaperSpread(int index);
     virtual void ShowSplash(int yes) { showsplash = yes; needtodraw = 1; }

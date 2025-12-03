@@ -85,6 +85,8 @@ class Singles : public Imposition
 	virtual int SpreadType(int spread);
 	virtual ImpositionInterface *Interface();
 
+	virtual bool DoubleSided(bool doublesided);
+
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *context);
 	virtual void dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *context);
 

@@ -205,73 +205,6 @@ PaperInterface::~PaperInterface()
 const char *PaperInterface::Name()
 { return _("Paper Group Tool"); }
 
-enum PaperInterfaceActions {
-	PAPERI_PaperSize = 1,
-	PAPERI_ToggleLandscape,
-	PAPERI_Landscape,
-	PAPERI_Portrait,
-	PAPERI_NewPaperGroup,
-	PAPERI_RenamePaperGroup,
-	PAPERI_DeletePaperGroup, //from resource list
-	PAPERI_Print,
-	PAPERI_RegistrationMark,
-	PAPERI_GrayBars,
-	PAPERI_CutMarks,
-	PAPERI_ResetScaling,
-	PAPERI_ResetAngle,
-	PAPERI_ToggleSnap,
-	PAPERI_ToggleLabels,
-	PAPERI_ToggleIndices,
-	PAPERI_ToggleBackIndices,
-	PAPERI_ToggleSyncSizes,
-	PAPERI_Swap_Orientation,
-	PAPERI_CreateNetImposition,
-	PAPERI_CreateSinglesImposition,
-	PAPERI_DupPapers,
-	PAPERI_EditMargins,
-	PAPERI_EditTrim,
-	PAPERI_TileContent,
-	PAPERI_TileContentWithMargins,
-
-	PAPERI_Select,
-	PAPERI_Decorations,
-	PAPERI_Delete, //curboxes
-	PAPERI_Rectify,
-	PAPERI_Rotate,
-	PAPERI_RotateCC,
-
-	PAPERI_first_pagesize   = 1000,
-	PAPERI_first_papergroup = 2000,
-	PAPERI_Menu_Papergroup  = 1,
-
-	PAPERI_Trim_Top    = 1000000,
-	PAPERI_Trim_Right  = 1000001,
-	PAPERI_Trim_Bottom = 1000002,
-	PAPERI_Trim_Left   = 1000003,
-
-	PAPERI_Margin_Top    = 2000000,
-	PAPERI_Margin_Right  = 2000001,
-	PAPERI_Margin_Bottom = 2000002,
-	PAPERI_Margin_Left   = 2000003,
-
-	PAPERI_Art_Top    = 3000000,
-	PAPERI_Art_Right  = 3000001,
-	PAPERI_Art_Bottom = 3000002,
-	PAPERI_Art_Left   = 3000003,
-
-	PAPERI_Bleed_Top    = 4000000,
-	PAPERI_Bleed_Right  = 4000001,
-	PAPERI_Bleed_Bottom = 4000002,
-	PAPERI_Bleed_Left   = 4000003,
-
-	PAPERI_Printable_Top    = 5000000,
-	PAPERI_Printable_Right  = 5000001,
-	PAPERI_Printable_Bottom = 5000002,
-	PAPERI_Printable_Left   = 5000003,
-
-	PAPERI_MAX = 5000
-};
-
 const char *HoverMessage(int msg)
 {
 	switch(msg) {
@@ -295,7 +228,7 @@ Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 	rx = x;
 	ry = y;
 
-	if (!menu) menu=new MenuInfo(_("Paper Interface"));
+	if (!menu) menu = new MenuInfo(_("Paper Interface"));
 	else menu->AddSep(_("Papers"));
 
 	if (allow_margin_edit) menu->AddToggleItem(_("Edit margin"), PAPERI_EditMargins, 0, edit_margins);
@@ -348,13 +281,12 @@ Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 		}
 	}
 
-	if (full_menu) {
-		laidout->resourcemanager->ResourceMenu("PaperGroup", false, menu, 0, PAPERI_Menu_Papergroup, papergroup);
-
-		menu->AddItem(_("New paper group..."),PAPERI_NewPaperGroup);
-		if (papergroup) menu->AddItem(_("Rename current paper group..."),PAPERI_RenamePaperGroup);
-		if (papergroup) menu->AddItem(_("Delete current paper group..."),PAPERI_DeletePaperGroup);
-	}
+	// resources
+	laidout->resourcemanager->ResourceMenu("PaperGroup", false, menu, 0, PAPERI_Menu_Papergroup, papergroup);
+	menu->AddItem(_("New paper group..."),PAPERI_NewPaperGroup);
+	if (papergroup) menu->AddItem(_("Rename current paper group..."),PAPERI_RenamePaperGroup);
+	if (papergroup) menu->AddItem(_("Delete current paper group..."),PAPERI_DeletePaperGroup);
+	
 
 	return menu;
 }
@@ -733,7 +665,6 @@ void PaperInterface::DrawPaper(PaperBoxData *data, int what, bool fill, int shad
 			dp->DrawScreen();
 			dp->font(font, UIScale() * font->textheight());
 			double th = dp->textheight();
-			cerr << "show labels with height: "<<th<<endl;
 			dp->NewFG(128,128,128);
 			flatpoint center = dp->realtoscreen((p[1] + p[2])/2);
 			flatpoint pp = dp->realtoscreen((p[0] + p[3]) / 2);
@@ -1055,6 +986,7 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 			// DBG cerr <<"5 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 		}
 		over = papergroup->papers.push(maybebox);
+		state = 0;
 
 		maybebox->dec_count();
 		maybebox = nullptr;
