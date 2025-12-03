@@ -175,7 +175,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 		DoubleValue *v = dynamic_cast<DoubleValue*>(val);
 
 		if (starts_with(mainDef->uihint, "NumSlider")) {
-			MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,label_width,0,1, fieldName);
+			MessageBar *bar = new MessageBar(this,"label",nullptr, MB_CENTER, 0,0,label_width,0,1, fieldName);
 			if (fieldTooltip) bar->tooltip(fieldTooltip);
 			rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
 
@@ -249,7 +249,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 			sv = v->v;
 		}
 
-		MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,label_width,0,1, fieldName);
+		MessageBar *bar = new MessageBar(this,"label",nullptr, MB_CENTER, 0,0,label_width,0,1, fieldName);
 		if (fieldTooltip) bar->tooltip(fieldTooltip);
 		rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
 
@@ -309,7 +309,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 		EnumValue *ev = dynamic_cast<EnumValue*>(val);
 		const char *nm=NULL, *Nm=NULL;
 
-		MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,label_width,0,0, fieldName);
+		MessageBar *bar = new MessageBar(this,"label",nullptr, MB_CENTERY | MB_LEFT, 0,0,label_width,0,0, fieldName);
 		rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
 
 		SliderPopup *popup;
@@ -330,7 +330,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 
 	} else if (type == VALUE_Color) {
 		ColorValue *col = dynamic_cast<ColorValue*>(val);
-		MessageBar *bar = new MessageBar(this,"label",nullptr, MB_MOVE | MB_LEFT, 0,0,label_width,0,0, fieldName);
+		MessageBar *bar = new MessageBar(this,"label",nullptr, MB_CENTERY | MB_LEFT, 0,0,label_width,0,0, fieldName);
 		rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
 
 		ColorBox *colorbox;
@@ -348,11 +348,11 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 	} else if (type == VALUE_Object) {
 		ObjectValue *v = dynamic_cast<ObjectValue*>(val);
 
-		MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,label_width,0,1, fieldName);
+		MessageBar *bar = new MessageBar(this,"label",nullptr, MB_CENTER, 0,0,label_width,0,1, fieldName);
 		if (fieldTooltip) bar->tooltip(fieldTooltip);
 		rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
 		if (v) {
-			bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,0,0,1, v->Id());
+			bar = new MessageBar(this,"label",nullptr, MB_CENTER, 0,0,0,0,1, v->Id());
 			rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
 		}
 
@@ -377,7 +377,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 		// [ + ]
 		SetValue *v = dynamic_cast<SetValue*>(val);
 
-		MessageBar *bar = new MessageBar(this,"label",NULL,MB_MOVE, 0,0,0,0,0, fieldName);
+		MessageBar *bar = new MessageBar(this,"label",nullptr, MB_CENTERY | MB_LEFT, 0,0,0,0,0, fieldName);
 		if (fieldTooltip) bar->tooltip(fieldTooltip);
 		rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, HMULT * bar->win_h,0,0,50,0, -1);
 		rowframe->AddNull();
@@ -436,7 +436,7 @@ void ValueWindow::Initialize(const char *prevpath, Value *val, ObjectDef *mainDe
 
 		scratch = "unhandled type ";
 		scratch += def->name;
-		MessageBar *bar = new MessageBar(this,"unhandled",NULL,MB_MOVE, 0,0,0,0,1, scratch.c_str());
+		MessageBar *bar = new MessageBar(this,"unhandled",nullptr, MB_CENTERY | MB_LEFT, 0,0,0,0,1, scratch.c_str());
 		rowframe->AddWin(bar,1, bar->win_w,0,0,50,0, bar->win_h,0,0,50,0, -1);
 	}
 
