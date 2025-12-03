@@ -627,6 +627,112 @@ int PathBevelNode::Update() //possible set ins
 }
 
 
+//------------------------ AlignToBoundsNode ------------------------
+
+/*! \class Node to align one object to another based on bounds.
+ */
+
+class AlignToBoundsNode : public NodeBase
+{
+  public:
+	AlignToBoundsNode();
+	virtual ~AlignToBoundsNode();
+
+	virtual NodeBase *Duplicate();
+	virtual int Update();
+	virtual int GetStatus();
+
+	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref);
+
+	// static SingletonKeeper keeper; //the def for domain enum
+	// static ObjectDef *GetDef() { return dynamic_cast<ObjectDef*>(keeper.GetObject()); }
+};
+
+Laxkit::anObject *AlignToBoundsNode::NewNode(int p, Laxkit::anObject *ref)
+{
+	return new AlignToBoundsNode();
+}
+
+AlignToBoundsNode::AlignToBoundsNode()
+{
+	makestr(Name, _("Align To Bounds"));
+	makestr(type, "Drawable/AlignToBounds");
+
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,  _("In"),     _("Object to align")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "bounds", NULL,1,  _("Bounds"), _("A bounding box to align in")));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "anchorx",   new DoubleValue(.5),1, _("X anchor"),   _("Position in bounds"), 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "onanchorx", new DoubleValue(.5),1, _("X on anchor"),_("How to orient object bbox around anchor"), 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "anchory",   new DoubleValue(.5),1, _("Y anchor"),   _("Position in bounds"), 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "onanchory", new DoubleValue(.5),1, _("Y on anchor"),_("How to orient object bbox around anchor"), 0, false));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "override", new BooleanValue(false),1, _("Modify original"), _("Dangerous!! Modifies original objects. May affect upstream connections."),0,true));
+	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out",  nullptr,1, _("Out"), nullptr, 0, false));
+}
+
+AlignToBoundsNode::~AlignToBoundsNode()
+{
+}
+
+NodeBase *AlignToBoundsNode::Duplicate()
+{
+	AlignToBoundsNode *node = new AlignToBoundsNode();
+	node->DuplicateBase(this);
+	return node;
+}
+
+/*! Return 0 for no error and everything up to date.
+ * -1 means bad inputs and node in error state.
+ * 1 means needs updating.
+ */
+int AlignToBoundsNode::Update()
+{
+	DrawableObject *in = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
+	if (!in) return -1;
+
+	DoubleBBox *bbox = dynamic_cast<DoubleBBox*>(properties.e[1]->GetData());
+	if (!bbox) return -1;
+
+	int is_num;
+	double anchorx = getNumberValue(properties.e[2]->GetData(), &is_num);
+	if (!is_num) {
+		Error(_("Bad anchor value"));
+		return -1;
+	}
+	double on_anchor_x = getNumberValue(properties.e[3]->GetData(), &is_num);
+	if (!is_num) {
+		Error(_("Bad anchor value"));
+		return -1;
+	}
+	double anchory = getNumberValue(properties.e[4]->GetData(), &is_num);
+	if (!is_num) {
+		Error(_("Bad anchor value"));
+		return -1;
+	}
+	double on_anchor_y = getNumberValue(properties.e[5]->GetData(), &is_num);
+	if (!is_num) {
+		Error(_("Bad anchor value"));
+		return -1;
+	}
+
+	DrawableObject *out = in->duplicate();
+	out->AlignAndFit
+	
+	properties.e[4]->SetData(in, 0);
+	return NodeBase::Update();
+}
+
+int AlignToBoundsNode::GetStatus()
+{
+	DrawableObject *dr = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
+	if (!dr) return -1;
+	StringValue *s = dynamic_cast<StringValue*>(properties.e[1]->GetData());
+	if (!s) return -1;
+	const char *pattern = s->str;
+	if (isblank(pattern)) return -1;
+
+	return NodeBase::GetStatus();
+}
+
+
 
 //----------------------- FitInNode ------------------------
 
@@ -1227,86 +1333,6 @@ Value *MirrorPathNode::FlipVector2(Value *in, flatpoint p1, flatpoint p2, Value 
 	// fv->v = affine.transformPoint(fv->v);
 
 	return fv;
-}
-
-
-
-//------------------------ AlignToBoundsNode ------------------------
-
-/*! \class Node to align one object to another based on bounds.
- */
-
-class AlignToBoundsNode : public NodeBase
-{
-  public:
-	AlignToBoundsNode();
-	virtual ~AlignToBoundsNode();
-
-	virtual NodeBase *Duplicate();
-	virtual int Update();
-	virtual int GetStatus();
-
-	static Laxkit::anObject *NewNode(int p, Laxkit::anObject *ref);
-
-	// static SingletonKeeper keeper; //the def for domain enum
-	// static ObjectDef *GetDef() { return dynamic_cast<ObjectDef*>(keeper.GetObject()); }
-};
-
-Laxkit::anObject *AlignToBoundsNode::NewNode(int p, Laxkit::anObject *ref)
-{
-	return new AlignToBoundsNode();
-}
-
-AlignToBoundsNode::AlignToBoundsNode()
-{
-	makestr(Name, _("Align To Bounds"));
-	makestr(type, "Drawable/AlignToBounds");
-
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "in",     NULL,1,  _("In"),     _("Object to align")));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Input,  true, "bounds", NULL,1,  _("Bounds"), _("A bounding box to align in")));
-	AddProperty(new NodeProperty(NodeProperty::PROP_Output, true, "out",  nullptr,1, _("Out"), nullptr, 0, false));
-}
-
-AlignToBoundsNode::~AlignToBoundsNode()
-{
-}
-
-NodeBase *AlignToBoundsNode::Duplicate()
-{
-	AlignToBoundsNode *node = new AlignToBoundsNode();
-	node->DuplicateBase(this);
-	return node;
-}
-
-/*! Return 0 for no error and everything up to date.
- * -1 means bad inputs and node in error state.
- * 1 means needs updating.
- */
-int AlignToBoundsNode::Update()
-{
-	DrawableObject *in = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
-	if (!in) return -1;
-
-	DoubleBBox *bbox = dynamic_cast<DoubleBBox*>(properties.e[1]->GetData());
-	if (!bbox) return -1;
-
-	DrawableObject *out = in->duplicate();
-	out->AlignAndFit
-	
-	properties.e[4]->SetData(in, 0);
-	return NodeBase::Update();
-}
-
-int AlignToBoundsNode::GetStatus()
-{
-	DrawableObject *dr = dynamic_cast<DrawableObject*>(properties.e[0]->GetData());
-	if (!dr) return -1;
-	StringValue *s = dynamic_cast<StringValue*>(properties.e[1]->GetData());
-	if (!s) return -1;
-	const char *pattern = s->str;
-	if (isblank(pattern)) return -1;
-
-	return NodeBase::GetStatus();
 }
 
 
