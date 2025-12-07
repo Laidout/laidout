@@ -745,7 +745,7 @@ int Signature::PagesPerPattern()
 }
 
 /*! page_num is for index in signature, so in range 0..(numhfolds * numvfolds - 1).
- * Retur 
+ * Return whether page_num is found.
  */
 bool Signature::LocatePositionFromPage(int page_num, int &row, int &col, bool &front)
 {
@@ -2482,6 +2482,7 @@ SignatureImposition::~SignatureImposition()
 {
 	if (signatures) delete signatures;
 	if (papergroup) papergroup->dec_count();
+	if (spine_mark_style) spine_mark_style->dec_count();
 	//if (partition) partition->dec_count();
 }
 
@@ -3292,7 +3293,7 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 	int front = (1+sigpaper)%2; //whether to horizontally flip columns
 
 	Group *marks_group = nullptr;
-	LineStyle *spine_mark_style = nullptr;
+	// LineStyle *spine_mark_style = nullptr;
 
 	//Create the actual Spread...
 
@@ -3415,8 +3416,11 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 				int r,c;
 				bool front_of_0;
 				signature->LocatePositionFromPage(0, c,r, front_of_0);
-				if (rr == r && cc == c && front_of_0 == front) {
+
+				// needs to be sheet 0 of insert 0
+				if (sigpaper == 0 && rr == r && cc == c && front_of_0 != front) {
 					PathsData *spine_mark = new PathsData;
+					spine_mark->Id(_("Spine marks"));
 					spine_mark->flags |= SOMEDATA_LOCK_CONTENTS | SOMEDATA_UNSELECTABLE;
 					if (!marks_group) marks_group = new Group();
 					marks_group->push(spine_mark);
@@ -3443,7 +3447,7 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 
 					int num_stacks = signatures->NumStacks();
 					flatpoint vv = spine_end - spine_start;
-					double div_dist = vv.norm() / num_stacks;
+					double div_dist = vv.norm() / (2*num_stacks);
 					vv.normalize();
 					// if (div_dist > .5) div_dist = .5;
 
@@ -3454,6 +3458,7 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 						spine_mark_style->capstyle = LAXCAP_Butt;
 						spine_mark_style->joinstyle = LAXJOIN_Round;
 						spine_mark_style->Colorf(.2, .2, .2, 1.0);
+						spine_mark_style->width = .07; // about 2 mm
 					}
 					spine_mark->InstallLineStyle(spine_mark_style);
 					spine_mark->FindBBox();

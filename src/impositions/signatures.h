@@ -179,6 +179,7 @@ class SignatureInstance : public Value
 	int automarks;
 	LaxInterfaces::LineStyle *linestyle; //for optional automatic printer marks
 
+
 	enum TileStacking {
 		Repeat,
 	    StackThenFold,
@@ -261,6 +262,7 @@ class SignatureImposition : public Imposition
 
   public:
 	bool spine_marks; // diagonal markings on binding side to keep track of order
+	LaxInterfaces::LineStyle *spine_mark_style = nullptr; //for optional automatic printer marks
 
 	SignatureImposition(SignatureInstance *newsig=NULL);
 	virtual ~SignatureImposition();
