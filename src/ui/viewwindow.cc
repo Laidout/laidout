@@ -5366,9 +5366,10 @@ void ViewWindow::updateContext(int messagetoo)
 	int page=lviewport->curobjPage();
 
 	if (pagenumber) {
-		//pagenumber->Label(lviewport->Pageviewlabel());
 		pagenumber->Select(lviewport->spreadi+1);
-		pagenumber->NewMax(doc->imposition->NumSpreads(lviewport->ViewMode(NULL)));
+		int layout_type = lviewport->ViewMode(nullptr);
+		int num_pages = (layout_type == SINGLELAYOUT ? doc->NumPages() : doc->imposition->NumSpreads(layout_type));
+		pagenumber->NewMax(num_pages);
 
 		//pagenumber->Label(lviewport->Pageviewlabel());
 		//pagenumber->Select(page);

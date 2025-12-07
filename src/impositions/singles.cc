@@ -316,17 +316,16 @@ void Singles::setPage()
 PageStyle *Singles::GetPageStyle(int pagenum,int local)
 {
 	if (!papergroup) return nullptr;
-	// if (!papergroup) {
-	// 	if (!pagestyle) setPage();
-	// 	if (!pagestyle) return nullptr;
-	// 	if (local) {
-	// 		PageStyle *ps = (PageStyle *)pagestyle->duplicate();
-	// 		ps->flags |= PAGESTYLE_AUTONOMOUS;
-	// 		return ps;
-	// 	}
-	// 	pagestyle->inc_count();
-	// 	return pagestyle;
-	// }
+	 
+	int which;
+	if (double_sided) {
+		int page_spread = pagenum / (2 * papergroup->papers.n);
+		int page_start  = page_spread * 2 * papergroup->papers.n;
+		int i = pagenum - page_start;
+		which = i/2;
+	} else {
+		which = pagenum % papergroup->papers.n;
+	}
 
 	// fill up pagestyles if necessary
 	while (pagestyles.n < papergroup->papers.n) {
@@ -343,7 +342,7 @@ PageStyle *Singles::GetPageStyle(int pagenum,int local)
 		rectstyle->dec_count();
 	}
 
-	PageStyle *pstyle = pagestyles.e[pagenum % papergroup->papers.n];
+	PageStyle *pstyle = pagestyles.e[which];
 
 	if (local) {
 		PageStyle *ps = (PageStyle *)pstyle->duplicateValue();
@@ -892,7 +891,16 @@ SomeData *Singles::GetPageMarginOutline(int pagenum,int local)
 	if (!papergroup || !papergroup->papers.n) return nullptr;
 	//if (!doc || pagenum >= doc->pages.n) return nullptr;
 
-	int which = pagenum % papergroup->papers.n;
+	int which;
+
+	if (double_sided) {
+		int page_spread = pagenum / (2 * papergroup->papers.n);
+		int page_start  = page_spread * 2 * papergroup->papers.n;
+		int i = pagenum - page_start;
+		which = i/2;
+	} else {
+		which = pagenum % papergroup->papers.n;
+	}
 
 	if (pagestyles.n < papergroup->papers.n) SetStylesFromPapergroup();
 	if (!pagestyles.e[which]->margin) pagestyles.e[which]->RebuildMarginPath();
@@ -932,7 +940,10 @@ Spread *Singles::PageLayout(int which_spread)
 	spread->path = (SomeData *)newpath;
 	
 	// int page_start = (whichpage / papergroup->papers.n) * papergroup->papers.n;
-	int page_start = which_spread * papergroup->papers.n;
+	int page_start;
+	if (double_sided) {
+		page_start = which_spread * 2 * papergroup->papers.n;
+	} else page_start = which_spread * papergroup->papers.n;
 
 	for (int c=0; c<papergroup->papers.n; c++)
 	{
@@ -944,6 +955,8 @@ Spread *Singles::PageLayout(int which_spread)
 		ntrans->origin(pbox->origin());
 		SomeData *margin = pagestyles.e[c]->margin;
 		// margin->origin(pbox->origin());
+		int i = page_start + c;
+		if (double_sided) i += c + (c%2 == 0 ? 0 : 1);
 		spread->pagestack.push(new PageLocation(page_start + c, NULL, ntrans, margin)); //ntrans and margin get count++
 		ntrans->dec_count();//remove extra count
 
@@ -971,8 +984,13 @@ Spread *Singles::PaperLayout(int whichpaper)
 	spread->mask = SPREAD_PATH | SPREAD_PAGES | SPREAD_MINIMUM | SPREAD_MAXIMUM;
 	spread->spread_index = whichpaper;
 
-	int paperi = (papergroup ? whichpaper % papergroup->papers.n : 0);
 	PaperBox *box = nullptr; //paper;
+	int paperi = 0;
+	if (double_sided) {
+		paperi = (whichpaper/2) % papergroup->papers.n;
+	} else {
+		paperi = (papergroup ? whichpaper % papergroup->papers.n : 0);
+	}
 
 	if (papergroup) {
 		spread->papergroup = new PaperGroup(papergroup->papers.e[paperi]->box->paperstyle);
@@ -1011,19 +1029,18 @@ Spread *Singles::PaperLayout(int whichpaper)
 	// makes rects with local origin in ll corner
 	PathsData *ntrans;
 	RectPageStyle *pagestyle = pagestyles.e[whichpaper % papergroup->papers.n];
-	for (x=0; x<tilex; x++) {
-		for (y=0; y<tiley; y++) {
-			ntrans=new PathsData();//count of 1
+	for (x = 0; x < tilex; x++) {
+		for (y = 0; y < tiley; y++) {
+			ntrans = new PathsData();//count of 1
 			ntrans->appendRect(0,0, pagestyle->w(),pagestyle->h());
 			ntrans->FindBBox();
 			ntrans->origin(flatpoint(insetleft  +x*(box->media.maxx-insetright-insetleft)  /tilex,
 									 insetbottom+y*(box->media.maxy-insettop  -insetbottom)/tiley));
-			spread->pagestack.push(new PageLocation(whichpaper,NULL,ntrans));//ntrans count++
+			spread->pagestack.push(new PageLocation(whichpaper, nullptr, ntrans));//ntrans count++
 			ntrans->dec_count();//remove extra count
 		}
 	}
-	
-		
+
 	// make printer marks if necessary
 	//*** make this more responsible lengths:
 	if (insetright>0 || insetleft>0 || insettop>0 || insetbottom>0) {
@@ -1074,7 +1091,7 @@ Spread *Singles::PaperLayout(int whichpaper)
 	return spread;
 }
 
-//! Just return pagenumber, since 1 page==1 paper
+//! Just return pagenumber, since 1 page==1 paper.
 int Singles::PaperFromPage(int pagenumber)
 {
 	return pagenumber;
@@ -1089,7 +1106,14 @@ int Singles::PapersPerPageSpread()
 //! Return the page layout spread, which is either pagenumber, or if papergroup != null is pagenumber/(papers in papergroup).
 int Singles::SpreadFromPage(int pagenumber)
 {
-	if (papergroup && papergroup->papers.n) return pagenumber / papergroup->papers.n;
+	if (papergroup && papergroup->papers.n) {
+		if (double_sided) {
+			int base = pagenumber / (2*papergroup->papers.n);
+			if (pagenumber % 2 == 0) return 2*base;
+			return 2*base+1;
+		}
+		return pagenumber / papergroup->papers.n;
+	}
 	return pagenumber;
 }
 
@@ -1103,14 +1127,27 @@ int Singles::SpreadFromPage(int layout, int pagenumber)
 //! Is singles, so 1 paper=1 page
 int Singles::GetPagesNeeded(int npapers) 
 {
-	if (papergroup && papergroup->papers.n) return npapers * papergroup->papers.n;
+	if (papergroup && papergroup->papers.n) {
+		if (double_sided) {
+			if (npapers%2 == 1) npapers++;
+			return npapers * papergroup->papers.n;	
+		}
+		return npapers * papergroup->papers.n;
+	}
 	return npapers;
 }
 
 //! Is singles, so 1 page=1 paper
 int Singles::GetPapersNeeded(int npages) 
 {
-	if (papergroup && papergroup->papers.n) return 1 + (npages-1) / papergroup->papers.n;
+	if (papergroup && papergroup->papers.n) {
+		if (double_sided) {
+			int page_spreads = 1 + (npages-1) / papergroup->papers.n;
+			if (page_spreads%2 == 1) page_spreads++;
+			return page_spreads;
+		}
+		return 1 + (npages-1) / papergroup->papers.n;
+	}
 	return npages;
 }
 
@@ -1118,13 +1155,17 @@ int Singles::GetPapersNeeded(int npages)
 int Singles::GetSpreadsNeeded(int npages)
 {
 	if (npages <= 0) return 0;
-	if (papergroup && papergroup->papers.n) return 1 + (npages-1) / papergroup->papers.n;
+	if (papergroup && papergroup->papers.n) {
+		// if (double_sided)
+		return 1 + (npages-1) / papergroup->papers.n;
+	}
 	return npages;
-} 
+}
 
 int Singles::GetNumInPaperGroupForSpread(int layout, int spread)
 {
 	if (layout == SINGLELAYOUT) return 1;
+	else if (layout == PAGELAYOUT) return 1;
 	return papergroup->papers.n;
 }
 
@@ -1148,6 +1189,9 @@ int Singles::NumSpreads(int layout)
 	if (layout == LITTLESPREADLAYOUT) return NumPages();
 	if (layout == PAGELAYOUT) {
 		if (!papergroup) return numpages;
+		if (double_sided) {
+			return (numpages - 1) / (papergroup->papers.n) + 1;
+		}
 		return (numpages - 1) / papergroup->papers.n + 1;
 	}
 	return 0;
