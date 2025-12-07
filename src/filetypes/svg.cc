@@ -663,7 +663,7 @@ static void svgMeshPathOut(FILE *f, const char *spc, ColorPatchData *patch, int 
 int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorLog &log, SvgExportConfig *out, 
 				bool ignore_filter = false, bool data_meta = false)
 {
-	Group *g=dynamic_cast<Group *>(obj);
+	Group *g = dynamic_cast<Group *>(obj);
 	if (g && g->filter && !ignore_filter) {
 		obj = g->FinalObject();
 		if (obj) return svgdumpobj(f,mm,obj,warning,indent,log,out, true, data_meta);
@@ -704,7 +704,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 
 	char clipid[100];
 	clipid[0] = '\0';
-	if (dobj->clip_path) sprintf(clipid, "clip-path=\"url(#clipPath%lu)\"", dobj->clip_path->object_id);
+	if (dobj && dobj->clip_path) sprintf(clipid, "clip-path=\"url(#clipPath%lu)\"", dobj->clip_path->object_id);
 
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0'; 
 
@@ -1338,7 +1338,7 @@ void DumpClipPath(FILE *f, const char *clipid, PathsData *obj, const double *ext
 int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgExportConfig *out, bool ignore_filter=false)
 {
 	DrawableObject *dobj = dynamic_cast<DrawableObject*>(obj);
-	if (dobj->clip_path) {
+	if (dobj && dobj->clip_path) {
 		 //not really sure why, but clip path has to be flipped vertically relative to the clipped object.
 		char clipid[100];
 		sprintf(clipid, "clipPath%lu", dobj->clip_path->object_id);
@@ -1349,9 +1349,9 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgE
 		DumpClipPath(f, clipid, dobj->clip_path, a.m(), warning, log, out);
 	}
 
-	Group *g=dynamic_cast<Group *>(obj);
-	if (g && g->filter && !ignore_filter) {
-		obj = g->FinalObject();
+	// Group *g = dynamic_cast<Group *>(obj);
+	if (dobj && dobj->filter && !ignore_filter) {
+		obj = dobj->FinalObject();
 		if (obj) return svgdumpdef(f,mm,obj,warning,log,out, true);
 		return 0;
 	}
@@ -1614,9 +1614,9 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgE
 	}
 
 	//check for kids no matter what type it is
-	if (g) {
-		for (int c=0; c<g->n(); c++) 
-			svgdumpdef(f,nullptr,g->e(c),warning,log, out);
+	if (dobj) {
+		for (int c = 0; c < dobj->n(); c++) 
+			svgdumpdef(f,nullptr,dobj->e(c),warning,log, out);
 	}
 
 
@@ -1783,7 +1783,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			paper_bbox.addtobounds(pm, papergroup->papers.e[c]);
 
 			if (c == 0) yy = paper_bbox.maxy;
-			double t = paper_bbox.miny;
+			// double t = paper_bbox.miny;
 			double h = paper_bbox.boxheight();
 			paper_bbox.miny = yy - paper_bbox.maxy;
 			paper_bbox.maxy = paper_bbox.miny + h;
@@ -1924,7 +1924,9 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	if (spread) {
 		 //write out printer marks
 		transform_set(m,1,0,0,1,0,0);
-		if (spread->marks) svgdumpobj(f,m,spread->marks,warning,4,log, out, false, out->data_meta);
+		if (spread->marks) {
+			svgdumpobj(f,m,spread->marks,warning,4,log, out, false, out->data_meta);
+		}
 
 		 // for each page in spread..
 		char clipstr[100];
@@ -1953,7 +1955,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 					Page *otherpage = doc->pages[bleed->index];
 					if (!otherpage->HasObjects()) continue;
 
-					fprintf(f,"    <g transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\"><!--page object bleed-->\n ",
+					fprintf(f,"    <g class=\"page-object-bleed\" transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
 						bleed->matrix[0], bleed->matrix[1], bleed->matrix[2], bleed->matrix[3], bleed->matrix[4], bleed->matrix[5]); 
 
 					// *** bleeds should be optimized to only have to deal with acually bleeding objects, not all objs
