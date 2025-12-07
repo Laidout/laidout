@@ -428,6 +428,7 @@ const NetFace &NetFace::operator=(const NetFace &face)
 	reverse_index = face.reverse_index;
 	isfront  = face.isfront;
 	binding  = face.binding;
+	tag      = face.tag;
 
 	if (face.matrix) {
 		matrix=new double[6];

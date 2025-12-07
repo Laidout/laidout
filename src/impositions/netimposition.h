@@ -54,8 +54,6 @@ class NetImposition : public Imposition
 	LaxInterfaces::LineStyle *line_soft_cut;
 	LaxInterfaces::LineStyle *line_debug;
 
-	//Polyhedron *polyhedron;
-
 	NetImposition();
 	NetImposition(PaperGroup *papergroup);
 	NetImposition(Polyptych::Net *newnet);

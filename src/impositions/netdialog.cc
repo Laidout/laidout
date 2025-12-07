@@ -322,9 +322,36 @@ int NetDialog::Event(const EventData *data,const char *mes)
 		if (imp && imp->abstractnet && dynamic_cast<Polyhedron*>(imp->abstractnet)) {
 			// DBG cerr <<" ...imp found, editing with polyptych definitely..."<<endl;
 			 //ok from PolyptychWindow sends NetImposition to win_owner
-			PolyptychWindow *pw=new PolyptychWindow(imp, nullptr,win_owner,win_sendthis);
+			PolyptychWindow *pw = new PolyptychWindow(imp, nullptr, object_id,"from_polyptych");
 			app->rundialog(pw);
-			app->destroywindow(this);
+			// app->destroywindow(this);
+		}
+		return 0;
+
+	} else if (!strcmp(mes,"from_polyptych")) {
+		const RefCountedEventData *idata = dynamic_cast<const RefCountedEventData*>(data);
+		if (!idata) return 0;
+		NetImposition *netimp = dynamic_cast<NetImposition*>(const_cast<anObject*>(idata->object));
+		if (netimp) {
+			if (current && current != netimp) {
+				current->dec_count();
+				current = netimp;
+				current->inc_count();
+			}
+
+			if (checkcurrent) {
+				checkcurrent->State(LAX_ON);
+				checkcurrent->Label(_("Edited"));
+			}
+			checkdod      ->State(LAX_OFF);
+			checkfile     ->State(LAX_OFF);
+			checkbox      ->State(LAX_OFF);
+			checkaccordion->State(LAX_OFF);
+
+			sendNewImposition();
+
+			// if (win_parent && dynamic_cast<HeadWindow*>(win_parent)) dynamic_cast<HeadWindow*>(win_parent)->WindowGone(this);
+			// else app->destroywindow(this);
 		}
 		return 0;
 #endif

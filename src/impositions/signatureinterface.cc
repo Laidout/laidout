@@ -1603,7 +1603,7 @@ void SignatureInterface::drawStacks()
 			}
 			if (overoverlay==SP_On_Stack && onoverlay_i==si && onoverlay_ii==ii) {
 				 //currently moused over..
-				dp->NewFG(.9,.9,.9);
+				dp->NewFG(.8,.8,.8);
 				dp->drawlines(pts,8, 1, 1); 
 			}
 			if (i==siginstance) {

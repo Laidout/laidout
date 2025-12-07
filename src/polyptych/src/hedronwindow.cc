@@ -1884,6 +1884,7 @@ int HedronWindow::RBUp(int x,int y,unsigned int state,const LaxMouse *mouse)
 		int orig=currentnet->faces.e[currentpotential]->original;
 		poly->faces.e[orig]->cache->facemode=currentnet->object_id;
 		currentnet->Drop(currentpotential);
+		currentnet->active = 1;
 
 		//remapCache();
 		remapCache(orig,orig);

@@ -47,7 +47,7 @@ class PolyhedronWindow : public HedronWindow
 };
 
 PolyhedronWindow::PolyhedronWindow(anXWindow *parent)
-  : HedronWindow(parent, "Hedron","Hedron",0, 0,0,0,0,0, NULL)
+  : HedronWindow(parent, "Hedron","Hedron",ANXWIN_REMEMBER, 0,0,0,0,0, nullptr)
 {
 	int i=0;
 	PaperStyle *p = laidout->GetDefaultPaper();
@@ -145,8 +145,8 @@ int PolyptychWindow::Event(const EventData *data,const char *mes)
 	DBG cerr <<"newdocmessage: "<<(mes?mes:"(unknown)")<<endl;
 
 	if (!strcmp(mes,"ok")) {
-		int status=sendNewImposition();
-		if (status!=0) return 0;
+		int status = sendNewImposition();
+		if (status != 0) return 0;
 
 		if (win_parent && dynamic_cast<HeadWindow*>(win_parent)) dynamic_cast<HeadWindow*>(win_parent)->WindowGone(this);
 		else app->destroywindow(this);
@@ -240,10 +240,10 @@ NetImposition *PolyptychWindow::getImposition()
 
 int PolyptychWindow::sendNewImposition()
 {
-	NetImposition *imp=getImposition();
+	NetImposition *imp = getImposition();
 	if (!imp) return 1;
 
-	RefCountedEventData *data=new RefCountedEventData(imp);
+	RefCountedEventData *data = new RefCountedEventData(imp);
 	imp->dec_count();
 
 	app->SendMessage(data, win_owner, win_sendthis, object_id);

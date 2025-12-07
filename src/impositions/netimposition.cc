@@ -623,13 +623,13 @@ PageStyle *NetImposition::GetPageStyle(int pagenum,int local)
  */
 int NetImposition::numActiveFaces()
 {
-	if (maptoabstractnet==1 && abstractnet) return abstractnet->NumFaces();
+	if (maptoabstractnet == 1 && abstractnet) return abstractnet->NumFaces();
 
-	int n=0;
-	for (int c=0; c<nets.n; c++) {
+	int n = 0;
+	for (int c = 0; c < nets.n; c++) {
 		if (!nets.e[c]->active) continue;
-		for (int c2=0; c2<nets.e[c]->faces.n; c2++) 
-			if (nets.e[c]->faces.e[c2]->tag==FACE_Actual) n++;
+		for (int c2 = 0; c2 < nets.e[c]->faces.n; c2++)
+			if (nets.e[c]->faces.e[c2]->tag == FACE_Actual) n++;
 	}
 	return n;
 }
@@ -683,7 +683,11 @@ LaxInterfaces::SomeData *NetImposition::GetPageOutline(int pagenum,int local)
 		 //map document page number to a particular net and net face index
 		NetFace face;
 		int neti, netfacei;
-		netfacei=pagenum%numActiveFaces();
+		int numactive = numActiveFaces();
+		if (numactive == 0) {
+			DBGE("numactive faces is 0! shouldn't happen!!");
+		}
+		netfacei = (numactive != 0 ? pagenum % numactive : 0);
 		for (neti=0; neti<nets.n; neti++) {
 			if (nets.e[neti]->active) {
 				if (netfacei-nets.e[neti]->faces.n<0) break;
@@ -862,6 +866,8 @@ Spread *NetImposition::GenerateSpread(Spread *spread, //!< If not null, append t
 	if (soft_cuts) soft_cuts->FindBBox();
 	if (debugs)    debugs   ->FindBBox();
 	spread_paths->FindBBox();
+	spread_paths->flags |= SOMEDATA_UNSELECTABLE;
+	
 
 	//construct pagestack
 	int page;
@@ -946,20 +952,20 @@ Spread *NetImposition::GenerateSpread(Spread *spread, //!< If not null, append t
 Spread *NetImposition::PageLayout(int whichspread)
 {
 	if (!nets.n) return nullptr;
-	if (numActiveNets()==0) return nullptr;
+	if (numActiveNets() == 0) return nullptr;
 
 	int c;
-	int numactive=numActiveFaces();
+	int numactive = numActiveFaces();
 
-	Spread *spread=nullptr;
-	for (c=0; c<nets.n; c++) {
+	Spread *spread = nullptr;
+	for (c = 0; c < nets.n; c++) {
 		if (nets.e[c]->active) {
-			spread=GenerateSpread(spread,nets.e[c],whichspread*numactive);
+			spread = GenerateSpread(spread, nets.e[c], whichspread * numactive);
 		}
 	}
 
-	spread->style=PAGELAYOUT;
-	
+	spread->style = PAGELAYOUT;
+
 	return spread;
 
 }
