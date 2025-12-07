@@ -684,6 +684,7 @@ idml from indesign?
 Singles: singleseditor: singlesinterface:
   bug: pages layout doesn't advance.. shows only pages from 0
   should show page previews
+  labels should be editable
   if you press space, does not center contents, it centers on origin
   memory hole: edit, swap landscape, ok, quit
   memory hole on export multipage svg
@@ -691,7 +692,7 @@ Singles: singleseditor: singlesinterface:
   object bleeds not implemented
   export to pdf has wrong paper sizes with multipage
   PaperLayout, needs to optionally be a different PaperGroup compared to page layout
-  implement double_sided
+  DONE implement double_sided
   DONE bug: scan ignoring orientation
   DONE bug: swap orientation shows old + new back in viewport
   DONE bug: swap orientation twice wrecks matrix
@@ -1730,7 +1731,8 @@ FileDialog filedialog:
     need a click to generate preview, gen preview in background
   file dialog, single click should not enter directory, double click should do that
   bug: layer on a page won't allow collapse/expand
-  bug: sort caseless, other sorts not working
+  DONE bug: sort caseless, other sorts not working
+  should remember sorting style
   should be able to click on column header to sort
   focus should start on file line
   ^l should shift focus to file line
@@ -2336,10 +2338,16 @@ book assembly: partitioninterface:
     Document:
     	PtrStack<PageSet> pagesets;
     -> this would allow, for instance, designing book cover in same doc as body pages
+job control:
+  store number of target copies, to help coordinate book assembly from partitioned papers
 
 signature editor:  Signature editor Signature Editor signatureeditor: signatures: signatureinterface: signature:
   implement signature marks along spine
     should be previewable in signature editor
+  	pad top/bottom for spine marks
+    more style options for spine marks: thickness, color
+    lenticular spine marks.. stretch goal along with fore-edge printing?
+  	DONE marks on spine edge per signature in diagonal pattern to easily tell stacking order when binding
   bug: edit imp from viewport, change page number, should it insert pages??
   bug: paper dialog doesn't remember
   bug: SOMETIMES SignatureInterface arrows not tracking correctly, especially left/right
@@ -2353,8 +2361,6 @@ signature editor:  Signature editor Signature Editor signatureeditor: signatures
   fold replay should start showing FRONT page of stack, not back. THIS IS A BUG
     if start from whichever, should show inverse of folds to normal as necessary
   scale pages preview needs to use margin area, not page area
-  needs indicator of number of groups, show 3/10 for current sheet in little box above stack, allow numerical input
-  marks on spine edge per signature in diagonal pattern to easily tell stacking order when binding
 
   tiling style:
     stack then fold
@@ -2382,8 +2388,10 @@ signature editor:  Signature editor Signature Editor signatureeditor: signatures
   detect non staplable binding edge, show red rather than green
   test impose-only for all imposition types
   be able to specify single sided.. allows bound accordian foldings?
-  implement creep
+  implement auto creep: default total_creep = (numpages-1)/4 * paper_thickness
+  implement manual creep transforms: rotate around page center, and translate
 
+  DONE needs indicator of number of groups, show 3/10 for current sheet in little box above stack
   DONE ux: folding grey blends in with grey background
 
 
@@ -2858,7 +2866,7 @@ dynamic objects (generated images, dynamic images, rendered images)
     eps objects to pdf: export as image, plant in PDF as image
     group objects with laidout elements, updateable with script
     image objects using ImageImportFilters
-    perhaps add TEX_BIN, LATEX_BIN, and text editor to quickly add stuff like that!!
+    perhaps add TEX_BIN, LATEX_BIN, TYPST_BIN and text editor to quickly add stuff like that!!
     external commands:
       website to recommend learn more
       needs what type of file
@@ -3691,10 +3699,6 @@ Imposition use cases:
   impose only needs access to papergroups
   maybe any spread setup temporarily to another imposition on export, not just export with custom papergroup?
 
-netdialog: netinterface:
-  memory hole when select new net, ok, cancel
-  polyptych not getting results back to viewport.. main imp editor goes blank
-
 Net imposition: netimposition: net:
   bug: spread net lines should not be editable
   finish fit_paper_asymmetric for accordions
@@ -3720,17 +3724,33 @@ Net imposition: netimposition: net:
   DONE netdialog needs a paper selector
   DONE better linestyle support for displayed lines
 
-polyptych:
-  implement FOLD format in/out: https://github.com/edemaine/fold
-  bug: won't set custom net/paper after edit imposition with polyptych
-  can't seem to save new bookmarks or use old ones in polyptych, but it's ok in Laidout
+netdialog: netinterface:
+  modes:
+    unwrap
+    paperlayout papergroup modifications
+    build:
+	  remove/add shapes
+	  moving around, snapping shapes
+	  merge shapes
+	  divide shapes
+	  define binding edge for potential insert to signature stacks
+	  define foldings
+	  select from resources
 
-hedron window:
+polyptych: hedron window:
+  bug: select box, edit in polyptych.. box already has an unwrap, should use existing before creating new net
+  bug: created nets are not rendering to lines
+  memory hole when select new net, ok, cancel
+  implement FOLD format in/out: https://github.com/edemaine/fold
+  can't seem to save new bookmarks or use old ones in polyptych, but it's ok in Laidout
+  DONE bug: won't set custom net/paper after edit imposition with polyptych
+  DONE polyptych not getting results back to viewport.. main imp editor goes blank
+
   opengl impl needs a modern refresh. whatabout vulkan?
-  send imp
+  DONE send imp
   receive imp
   remember net and paper placement
-  sometimes paper disappears
+  bug: sometimes paper disappears
   tutorial
   auto generate equirectangular -> flat
   reverse project net onto an equirect for export
@@ -3796,6 +3816,7 @@ PlainTextWindow plaintextwindow PlainText plain text window:
 
 Spread editor: SpreadEditor spread editor spreadeditor
   should have border drag to move, not middle drag
+  bug: singles, page markers not showing
 
 limbo:
   bug: open new viewport pane seems to create a new limbo. should just use existing one
@@ -4130,3 +4151,4 @@ DONE crash: right click in splitwindow gap, hover over change, but be in first w
 DONE crash: split window rearranging causing crash <- missing MakeCurrent in a dp call
 DONE ux: font really messed up in console panel and text editor
 DONE implement shortcuts NextSpread, PreviousSpread. debug NextPage, PreviousPage
+DONE bug: pdf export does dashed lines even if !dashes
