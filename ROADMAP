@@ -8,8 +8,8 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 VERSION 0.098
 -------------
        Implement tile stacking of signatures from same sheet, in addition to just duplication
-       Spine marks to indicate signature order
-       Fix Singles double sided
+(done) Spine marks to indicate signature order
+(done) Fix Singles double sided
        Fix NetImposition double sided
        Make a 2d version of the 3d Net unwrapper
 (done) Update svg in/out to use Inkscape's new view based multipage
@@ -72,6 +72,7 @@ VERSION 0.098
 
 VERSION 0.099
 -------------
+	   Adapt stack section of SignatureEditor/PaperPartition to be broader Book Assembly Editor
        Update CI to not use travis (issue #28)
        debug previous version a bit
        Undo/Redo
