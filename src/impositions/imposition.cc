@@ -480,7 +480,7 @@ ImpositionInterface::ImpositionInterface(LaxInterfaces::anInterface *nowner,int 
  * \brief Return the the number of papers the imposition thinks there are.
  */
 /*! \fn int Imposition::NumPages()
- * \brief Return the the number of pages the imposition thinks there are.
+ * \brief Return the the number of pages the imposition thinks there are defined in the document.
  */
 /*! \fn int Imposition::NumSpreads()
  * \brief Return the the number of page spreads the imposition thinks there are.
@@ -784,7 +784,8 @@ int Imposition::NumPapers(int npapers)
  * 
  * Does not check to make sure npages is a valid number.
  *
- * Returns the new value of numpages. Note  that the number returned may be greater than npages.
+ * Returns the new value of numpages. Note  that the number returned may be greater than npages,
+ * if the ideal number of pages differs from npages.
  */
 int Imposition::NumPages(int npages)
 {

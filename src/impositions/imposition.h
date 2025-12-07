@@ -194,7 +194,7 @@ class Imposition : public Value
 	virtual int NumSpreads(int layout); 
 	virtual int NumPapers() { return numpapers; } 
 	virtual int NumPapers(int npapers);
-	virtual int NumPages() { return numpages; }
+	virtual int NumPages() { return numpages; } // note NOT numdocpages
 	virtual int NumPages(int npages);
 
 	virtual int PaperFromPage(int pagenumber) = 0;
