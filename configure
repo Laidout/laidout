@@ -265,7 +265,7 @@ fi
  ##
  ## The stuff in NEED can be checked with pkg-config. Not all libraries
  ## can be checked this way! (notably cups, apparently)
-NEED="x11 xext freetype2 libssl imlib2 cairo harfbuzz $GEGLVERSION"
+NEED="x11 xext freetype2 libssl cairo harfbuzz libpodofo $GEGLVERSION"
 NEEDGL='ftgl GraphicsMagick++'
 NUM='1'
 
@@ -337,7 +337,7 @@ if [ "$NUM" != "1" -a $FORCE=="no" ]; then
 	echo "or pass in includes with --extra-cppflags."
 	echo
 	echo "On debian based systems, you might try installing all dependencies with this:"
-	echo "    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev libcairo2-dev libharfbuzz-dev"
+	echo "    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libfontconfig-dev libfreetype6-dev libssl-dev libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev libcairo2-dev libharfbuzz-dev"
 	exit 1
 fi
 

@@ -13,12 +13,10 @@ ifeq ($(shell uname -s),Linux)
 endif
 
 LD=g++
-#LDFLAGS= $(EXTRA_LDFLAGS) -L/usr/local/lib -L/usr/X11R6/lib -rdynamic -lXi -lXext -lX11 -lm -lpng `imlib2-config --libs` `pkg-config --libs freetype2`\
-#		 `pkg-config --libs GraphicsMagick++` `cups-config --libs` -ldl -lXft -lXrandr $(LIBINTL)
 LDFLAGS= $(EXTRA_LDFLAGS) -L/usr/local/lib -L/usr/X11R6/lib -rdynamic `pkg-config --libs $(LAXKIT_PC)`\
-		 `cups-config --libs` -ldl -lreadline $(LIBINTL)
+		 `cups-config --libs` `pkg-config --libs libpodofo` -ldl -lreadline $(LIBINTL)
 DEBUGFLAGS= -g -gdwarf-2
-CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) $(EXTRA_CPPFLAGS)  -I$(LAXDIR)/.. `pkg-config --cflags freetype2` -I$(POLYPTYCHBASEDIR)
+CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) $(EXTRA_CPPFLAGS)  -I$(LAXDIR)/.. `pkg-config --cflags freetype2` `pkg-config --cflags libpodofo` -I$(POLYPTYCHBASEDIR)
 
 
 #---optional libs:
