@@ -140,8 +140,8 @@ def AddIncludes(file, dependencies):
 
 makedependFile = open(args.outputFile, "w")
 
-quoted = re.compile('^\s*#\s*include\s*"([^"]*)"')
-bracketed = re.compile('^\s*#\s*include\s*<([^>]*)>')
+quoted = re.compile('^\\s*#\\s*include\\s*"([^"]*)"')
+bracketed = re.compile('^\\s*#\\s*include\\s*<([^>]*)>')
 
 for file in args.files:
     pathToFile = os.path.dirname(file)
